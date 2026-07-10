@@ -50,6 +50,8 @@
 | `motivation/ai_operator_integration_test_plan.md` | 无设备/低端设备/PostgreSQL 18.3 平台的集成与测试方法 | 规划集成和测试时读 |
 | `validation/AGENTS.md` | 可行性验证规则 | 写 benchmark 或实验结果前读 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |
+| `code/scripts/postgres_ai_operator_profile.py` | PostgreSQL 18.3 / 同构 PostgreSQL AI 算子外部执行链路画像脚本 | 真实采集数据库触发、Ray/Arrow、AI operator、fan-in/writeback、backpressure 时读 |
+| `code/requirements.txt` | 真实数据库画像脚本的额外 Python 依赖 | 准备 PostgreSQL 18.3 / 同构实例前读 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |
 

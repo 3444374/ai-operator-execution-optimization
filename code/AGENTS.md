@@ -23,4 +23,10 @@
 
 ## 当前状态
 
-当前工程代码尚未开始。下一步若 fake `AI_EMBED(text)` 端到端链路稳定，再把可复用部分迁移到本目录。
+已新增 PostgreSQL AI 算子外部执行链路画像入口：
+
+- `scripts/postgres_ai_operator_profile.py`
+
+该脚本用于 PostgreSQL 18.3 内部验证平台或同构预演链路，采集数据库触发、外部 worker、Arrow RecordBatch、Ray actor、AI operator invocation、fan-in、writeback 和 bounded backpressure 指标。
+
+当前机器缺少 PostgreSQL/psycopg/Docker daemon，暂时只能做 dry-run 和语法验证；拿到 PostgreSQL 18.3 或同构实例后再运行真实画像。
