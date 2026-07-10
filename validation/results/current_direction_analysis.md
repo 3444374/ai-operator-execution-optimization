@@ -90,6 +90,10 @@ warm-up 后最高平均 task latency 约 `0.183 ms`。
 
 > RecordBatch fan-in 现象已经迁移到模拟数据库 `AI_EMBED(text)` / 批量 embedding 链路；当前可以继续验证收益来源，并推进到 PostgreSQL + pgvector 或外部 worker 真实形态。
 
+严谨性补充：
+
+> 这仍然不是 PostgreSQL 18.3 真实平台数据。它只能说明模拟数据库 AI 算子链路中存在粒度敏感现象；下一步必须在 PostgreSQL 18.3 内部验证平台或其同构预演链路上真实跑通数据库触发、外部执行、AI 算子调用、fan-in/writeback 和指标采集，才能判断真实外部执行链路的主要瓶颈。
+
 ### AI operator granularity attribution
 
 固定 `65536` 行、`512 bytes/row` payload，比较四种执行组织方式：
@@ -173,6 +177,6 @@ warm-up 后最高平均 task latency 约 `0.183 ms`。
 - 基于 granularity attribution 结果，继续做更真实的 Ray task vs actor、actor pool size、`batch_size × concurrency` 对照；
 - 基于 backpressure 结果，接入 Ray actor 或 Ray Serve endpoint，记录真实 queue wait / token backlog / actor idle time；
 - 做 Daft local vs Ray、Lance/Parquet scan、以及其他 AI 算子场景对照；
-- 进入 PostgreSQL + pgvector / PostgreSQL 18.3 真实 AI 算子形态验证。
+- 进入 PostgreSQL 18.3 内部验证平台或同构预演链路，真实采集数据库 AI 算子外部执行链路画像。
 
 如果真实形态中端到端实验仍显示 object/fan-in 是瓶颈，可收敛为数据链路优化；如果 task/actor、模型队列或 backpressure 证据更强，再收敛为特征感知并行执行与跨层调度。

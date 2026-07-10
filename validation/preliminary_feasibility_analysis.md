@@ -66,4 +66,4 @@
 - backpressure 次数；
 - fine vs coalesced 对比。
 
-如果 object/fan-in 仍是主要成本，保留数据链路优化；如果 task/actor/concurrency 或模型服务队列成为主要成本，再把方向升级为特征感知并行执行与跨层调度。无论哪种情况，都需要进入 PostgreSQL + pgvector 或 PostgreSQL 18.3 平台验证。
+如果 object/fan-in 仍是主要成本，保留数据链路优化；如果 task/actor/concurrency 或模型服务队列成为主要成本，再把方向升级为特征感知并行执行与跨层调度。无论哪种情况，都需要进入 PostgreSQL 18.3 内部验证平台验证；普通 PostgreSQL + pgvector 只能作为平台暂不可用时的同构预演替身或输出存储组件。

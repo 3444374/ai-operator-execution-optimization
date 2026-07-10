@@ -14,10 +14,11 @@
 ### 要继续做实验
 
 1. `AGENTS.md`：实验规则。
-2. `validation/feasibility_validation_guide.md`：实验大纲。
-3. `validation/benchmarks/README.md`：实验脚本和运行命令。
-4. `validation/results/README.md`：结果文件命名和报告生成方式。
-5. `validation/benchmarks/analyze_results.py`：自动分析脚本。
+2. `motivation/ai_operator_integration_test_plan.md`：PostgreSQL 18.3 内部平台、低端设备小规模实验和 AI 算子集成路线。
+3. `validation/feasibility_validation_guide.md`：Phase 0 实验大纲。
+4. `validation/benchmarks/README.md`：实验脚本和运行命令。
+5. `validation/results/README.md`：结果文件命名和报告生成方式。
+6. `validation/benchmarks/analyze_results.py`：自动分析脚本。
 
 ### 要写调研/和导师沟通
 
@@ -46,7 +47,7 @@
 | `motivation/ai_operator_backpressure_benchmark.py` | AI 算子模型服务反压模拟脚本 | 验证 queue wait、token backlog、in-flight 请求和 backpressure 动机 |
 | `motivation/results/` | 动机测试正式结果和分析 | 讲解动机测试、写开题动机、整理实验结论时优先读 |
 | `motivation/ai_operator_scenario_and_motivation_test.md` | 数据库 AI 算子现状、推荐业务场景、动机测试标准 | 搭建业务场景前读 |
-| `motivation/ai_operator_integration_test_plan.md` | 无设备/低端设备/后续 PostgreSQL 18.3 平台的集成与测试方法 | 规划集成和测试时读 |
+| `motivation/ai_operator_integration_test_plan.md` | 无设备/低端设备/PostgreSQL 18.3 平台的集成与测试方法 | 规划集成和测试时读 |
 | `validation/AGENTS.md` | 可行性验证规则 | 写 benchmark 或实验结果前读 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
@@ -190,7 +191,8 @@ python motivation/fake_ai_embed_pipeline_benchmark.py \
 主要内容：
 
 - 当前无设备约束；
-- PostgreSQL 18.3 内部统一验证平台作为后续目标；
+- PostgreSQL 18.3 内部统一验证平台作为后续真实端到端实验平台；
+- 已有或开源 AI 算子迁移/等价集成到 PostgreSQL 18.3 的路径；
 - Phase 0 / Phase 1 / Phase 2 分阶段实验；
 - AI_EMBED 算子集成形态；
 - PostgreSQL + pgvector / 外部 worker / Daft + Ray 链路；
@@ -251,6 +253,7 @@ python motivation/fake_ai_embed_pipeline_benchmark.py \
 
 - 拆分 fake `AI_EMBED(text)` 结果中的收益来源；
 - 已补充 granularity attribution 与 backpressure 两个动机实验，下一步需要接 Ray actor / Ray Serve / vLLM 或真实模型服务验证；
+- 把真实链路画像实验收敛到 PostgreSQL 18.3 内部验证平台：SQL/表触发、外部 worker、AI 算子执行、写回和指标采集必须真实跑通；
 - 基于 `ai_infra_candidate_scenarios_and_motivation_tests.md` 比较 3 个候选 AI 算子场景；
 - 不把 3 个候选场景写成 3 个独立方向，而是围绕“数据库 AI 算子的特征感知并行执行与跨层调度”组织；
 - 不把“粒度控制”写成全部贡献，而是评估是否能升级为“AI 算子特征感知并行执行与跨层调度”；

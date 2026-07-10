@@ -31,13 +31,15 @@
 当前研究对象是数据库 AI 算子背后的数据链路：
 
 ```text
-database / table / parquet
+PostgreSQL 18.3 internal validation platform / table / parquet
   -> Arrow RecordBatch
   -> Daft / Ray 批处理执行
   -> AI_EMBED / chunk / preprocess
   -> object transfer / fan-in / shuffle
   -> PostgreSQL + pgvector 或 Lance
 ```
+
+真实形态验证平台优先使用公司内部统一采用的 PostgreSQL 18.3。当前本地 fake benchmark 只用于在设备未到位时隔离系统瓶颈；不能长期停留在 Python toy benchmark。后续需要把已有或开源 AI 算子集成到 PostgreSQL 18.3 上，真实跑通“数据库触发 -> 外部执行链路 -> AI 算子 -> 写回”的端到端画像实验。
 
 不要把主线写成：
 
@@ -91,7 +93,7 @@ database / table / parquet
 
 下一步优先实验：
 
-> 基于 fake `AI_EMBED(text)` 端到端结果继续做收益来源拆分；随后增加 task/actor/concurrency/resource/backpressure 维度的动机实验，验证是否能从 object 粒度问题升级为 AI 算子特征感知的并行执行与跨层调度问题。
+> 基于 PostgreSQL 18.3 内部验证平台设计真实数据库 AI 算子端到端画像实验；在设备未到位前，用低端设备/小模型/小规模数据先跑通同构链路，并继续拆分 fake `AI_EMBED(text)` 结果中的 task、object、operator invocation、fan-in、queue/backpressure 收益来源。
 
 ## 6. 严谨性规则
 
@@ -137,8 +139,10 @@ database / table / parquet
 
 需要继续确认：
 
+- PostgreSQL 18.3 内部验证平台的安装、扩展、外部 worker、网络和权限约束；
+- 已实现 AI 算子的开源数据库/扩展是哪一个，如何迁移或等价集成到 PostgreSQL 18.3；
+- AI 算子在 PostgreSQL 18.3 中是 SQL UDF、表函数、外部执行器，还是批处理服务；
 - 达梦是否会用 Ray/Daft/Lance 支撑数据库内置 AI 算子；
-- AI 算子是 SQL UDF、表函数、外部执行器，还是批处理服务；
 - 数据是否以 Arrow/Parquet/Lance/IPC 格式流转；
 - 是否存在 join/groupby/repartition/embedding preprocessing；
 - 为什么需要 Ray，而不是数据库内部线程池或普通服务。

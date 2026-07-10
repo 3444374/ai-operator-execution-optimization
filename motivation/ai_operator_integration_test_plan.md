@@ -32,17 +32,17 @@
 | 阶段 | 环境 | 目标 | 产物 |
 |---|---|---|---|
 | Phase 0 | Mac / 低端设备 / 小模型 | 隔离系统瓶颈，验证方法可跑 | fake embedding + Ray/Arrow benchmark |
-| Phase 1 | PostgreSQL + pgvector / 开源 AI 算子 | 搭真实数据库 AI 算子形态 | PostgreSQL 表 -> embedding -> vector 表 |
-| Phase 2 | PostgreSQL 18.3 内部验证平台 + 设备 | 验证产品化可行性和性能收益 | 集成方案、端到端实验、优化对比 |
+| Phase 1 | PostgreSQL 18.3 同构预演链路；必要时用普通 PostgreSQL + pgvector 替身 | 搭真实数据库 AI 算子画像形态 | PostgreSQL 表/SQL 触发 -> 外部 worker -> AI 算子 -> 写回 |
+| Phase 2 | PostgreSQL 18.3 内部验证平台 + 设备 | 验证内部平台可行性、真实性能瓶颈和优化收益 | 集成方案、端到端画像实验、优化对比 |
 
-第一阶段用 fake embedding 是为了定位系统瓶颈；后续必须接真实算子或真实数据库形态做验证。
+第一阶段用 fake embedding 是为了定位系统瓶颈；后续必须接 PostgreSQL 18.3 真实平台或同构预演链路做验证。普通 PostgreSQL + pgvector 只能作为设备未到位或内部平台暂不可用时的接口替身，不能替代最终平台结论。
 
 ## 3. 推荐系统形态
 
 目标不是把所有 AI 计算塞进数据库内核，而是构建：
 
 ```text
-PostgreSQL documents 表
+PostgreSQL 18.3 documents 表
   -> 导出/读取为 Arrow RecordBatch
   -> Daft + Ray 分布式执行
   -> AI_EMBED / chunk / preprocess 算子
@@ -132,9 +132,9 @@ worker:
 - shuffle；
 - 写回小 batch / 大 batch 差异。
 
-### 5.3 后续 PostgreSQL 18.3 集成
+### 5.3 PostgreSQL 18.3 集成与画像
 
-在内部统一平台上，尽量保持外部执行链路不变，只替换数据库入口：
+PostgreSQL 18.3 是后续真实实验平台，不只是远期可选项。在内部统一平台上，应尽量保持外部执行链路不变，只替换数据库入口和 AI 算子触发方式：
 
 ```text
 PostgreSQL 18.3 table
@@ -150,7 +150,16 @@ PostgreSQL 18.3 table
 SELECT ai_embed_batch('documents', 'text', 'document_embeddings');
 ```
 
-但第一阶段不要把重点放在 SQL wrapper 上。
+但第一阶段不要把重点放在 SQL wrapper 上。核心是采集真实链路画像：
+
+- 数据库侧读取批次、行数、字节数；
+- Arrow RecordBatch 数量和平均大小；
+- Ray task / actor 数量；
+- `ObjectRef` 数量和 fan-in 依赖数；
+- AI operator invocation 次数、平均输入 batch size；
+- 模型服务 queue wait、service time、in-flight 请求数、token backlog；
+- 写回批次、写回耗时和失败重试；
+- 端到端 rows/s 与各阶段耗时占比。
 
 ## 6. 测试方法
 
@@ -187,34 +196,39 @@ SELECT ai_embed_batch('documents', 'text', 'document_embeddings');
 - write time；
 - memory peak。
 
-### 6.2 Phase 1：PostgreSQL + pgvector 真实形态
+### 6.2 Phase 1：PostgreSQL 18.3 同构预演链路
 
 目标：
 
-> 证明这是数据库 AI 算子形态，而不只是离线脚本。
+> 证明这是数据库 AI 算子触发的外部执行链路，而不只是离线脚本。
 
 链路：
 
 ```text
-PostgreSQL documents
+PostgreSQL 18.3 documents
   -> external worker
   -> fake / local embedding
   -> document_embeddings
   -> vector search query
 ```
 
+如果暂时拿不到 PostgreSQL 18.3 内部平台，可以用普通 PostgreSQL + pgvector 预演同构接口，但实验报告必须标注为“接口替身/合理近似”，不能声称已经验证内部平台。
+
 测试：
 
+- SQL/UDF/表函数/任务表触发方式的开销；
 - 小 batch 写回 vs 大 batch 写回；
 - 直接逐行处理 vs batch processing；
 - 单 worker vs Ray worker；
+- Ray task vs Ray actor；
+- 无界提交 vs backpressure；
 - pgvector 查询是否能正常使用 embedding 输出。
 
-### 6.3 Phase 2：设备到位后验证
+### 6.3 Phase 2：PostgreSQL 18.3 内部平台 + 设备验证
 
 目标：
 
-> 用真实模型和更大数据验证优化是否仍有效。
+> 用内部统一平台、真实或更接近真实的 AI 算子和更大数据验证瓶颈画像与优化是否仍有效。
 
 可加：
 
@@ -246,23 +260,28 @@ PostgreSQL documents
 
 ## 8. 当前下一步
 
-不等设备，继续做 Phase 0。
+不等设备，但下一步不应只继续做 Phase 0。当前要并行推进两件事：
+
+1. 继续用低端设备/小规模数据拆分 Phase 0 中的 task、object、operator invocation、fan-in 和 backpressure 成因；
+2. 设计 PostgreSQL 18.3 真实画像实验，先用同构预演链路跑通数据库触发、外部 worker、AI 算子、Ray/Arrow、fan-in/writeback 和指标采集。
 
 已完成的 Phase 0 证据：
 
 - `ray_many_objects_benchmark.py`：固定 `16MB` 总数据量下，object 数从 `1` 到 `256` 时 fan-in 约放大 `2.59x`；
 - `ray_arrow_fanout_fanin_benchmark.py`：固定 `65536` 行、`128` 维 embedding 下，fine/coalesced 平均 fan-in 比约 `3.17x`。
 
-最小任务：
+PostgreSQL 18.3 画像实验最小任务：
 
-1. 生成 `documents.parquet`；
-2. 实现 fake `AI_EMBED`；
-3. 构造 Arrow RecordBatch；
-4. 用 Ray 跑 small-object 与 coalesced-object 两种策略；
-5. 输出 CSV；
-6. 更新 `feasibility_report.md`。
+1. 准备 `documents` 表；
+2. 确认 AI 算子触发方式：SQL UDF、表函数、任务表、外部执行器或批处理服务；
+3. 实现 fake/local `AI_EMBED` 的 PostgreSQL 18.3 触发入口；
+4. 外部 worker 读取数据库数据并构造 Arrow RecordBatch；
+5. 用 Ray 跑 fine/coalesced、task/actor、bounded/unbounded backpressure 策略；
+6. 写回 `document_embeddings` 或 Lance/output table；
+7. 输出 CSV 和阶段画像报告；
+8. 更新 `motivation/results/` 和 `validation/results/` 中的结果分析。
 
-如果 Phase 0 证明 object / fan-in 是瓶颈，再进入 PostgreSQL + pgvector 真实形态集成。
+如果 PostgreSQL 18.3 画像显示 object/fan-in、task 过细、operator invocation、模型队列或 backpressure 不是主要瓶颈，应及时调整优化方向。
 
 ## 9. 现有实验是否保留
 

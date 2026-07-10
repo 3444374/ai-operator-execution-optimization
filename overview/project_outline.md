@@ -62,5 +62,5 @@ PostgreSQL / documents table / Parquet
 
 1. 搭建 fake `AI_EMBED(text)` 端到端动机测试。
 2. 验证 RecordBatch fan-in 现象是否迁移到批量 embedding / RAG 数据准备链路。
-3. 若成立，进入 PostgreSQL + pgvector / PostgreSQL 18.3 真实形态验证。
+3. 若成立，进入 PostgreSQL 18.3 内部验证平台或同构预演链路，真实采集数据库 AI 算子外部执行画像。
 4. 将稳定代码迁入 `code/`，形成可复现实验工程。

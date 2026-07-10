@@ -14,6 +14,8 @@
 
 其中 object/fan-in/coalescing 是当前已经有本地信号的入口，不是最终全部贡献。具体优化方向还没有最终锁定。项目目标不是传统数据库 GPU 查询算子优化，也不是单纯模型 kernel 优化，而是先围绕 AI 算子场景寻找真实瓶颈，再通过动机测试、可行性测试和真实形态验证收敛到合适的 AI infra / inference infra 方向。
 
+后续真实端到端实验平台优先使用公司内部统一采用的 PostgreSQL 18.3，并把已有或开源 AI 算子迁移/等价集成到该版本上。当前 fake benchmark 只是在设备未到位时做小规模瓶颈隔离；真正需要证明的是 PostgreSQL 18.3 触发 AI 算子后的外部执行链路画像。
+
 ## 目录结构
 
 ```text
@@ -77,7 +79,7 @@
 2. 基于 `ai_infra_candidate_scenarios_and_motivation_tests.md` 比较批量 embedding / RAG、AI_CLASSIFY / AI_FILTER、离线 LLM 生成 / 评测三个场景。
 3. 不把三个场景当成三个独立方向，而是围绕“数据库 AI 算子的特征感知并行执行与跨层调度”做统一问题定义。
 4. 已补 task/object 解耦和 backpressure 动机实验；下一轮优先接 Ray actor / Ray Serve / vLLM 或真实模型服务验证 queue wait、token backlog 和 actor idle time。
-5. 如果场景和瓶颈成立，再进入 PostgreSQL + pgvector / PostgreSQL 18.3 平台真实形态验证。
+5. 设计并跑通 PostgreSQL 18.3 内部平台上的真实画像实验：数据库表/SQL 触发、外部 worker、AI 算子执行、fan-in/writeback、指标采集。
 6. 后续把稳定工程代码迁移到 `code/`。
 
 推荐运行命令：

@@ -396,7 +396,7 @@ def render_report(analyses: dict, recommendation: str, reasons: list[str]) -> st
             f"1. {first_next_step}",
             "2. 如果端到端结果仍显示 Object/Shuffle 证据最强，再做 Daft local vs Ray 和 Lance/Parquet scan 对照。",
             "3. 如果 small task 证据后续变强，再评估 task batching 是否值得作为辅助优化。",
-            "4. 如果端到端证据变弱，优先回到 PostgreSQL + pgvector / PostgreSQL 18.3 真实 AI 算子形态验证。",
+            "4. 如果端到端证据变弱，优先回到 PostgreSQL 18.3 内部验证平台或同构预演链路，真实采集数据库 AI 算子外部执行画像。",
             "",
         ]
     )

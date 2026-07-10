@@ -38,4 +38,4 @@
 1. 基于 fake `AI_EMBED(text)` 端到端结果，继续拆分 build、Ray put、fake embedding、fan-in、write 阶段，判断收益主要来自 object coalescing、task 数减少还是 operator invocation 数减少。
 2. 增加 Ray task vs actor、actor pool size、`batch_size × concurrency`、producer-consumer / backpressure 动机实验。
 3. 为 offline LLM 增加 token-aware / prefix-aware routing，为 AI_FILTER 增加 selectivity / cascade。
-4. 如果端到端证据变弱，优先回到 PostgreSQL + pgvector / PostgreSQL 18.3 真实 AI 算子形态验证。
+4. 如果端到端证据变弱，优先回到 PostgreSQL 18.3 内部验证平台或同构预演链路，真实采集数据库 AI 算子外部执行画像。
