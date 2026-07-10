@@ -27,10 +27,16 @@
 
 - `scripts/postgres_ai_operator_profile.py`
 
-该脚本用于 PostgreSQL 18.3 内部验证平台或同构预演链路，采集数据库触发、外部 worker、Arrow RecordBatch、Ray actor、AI operator invocation、fan-in、writeback 和 bounded backpressure 指标。
+该脚本兼容 PostgreSQL 18，用于公司 PostgreSQL 18.3 内部验证平台或本地
+PostgreSQL 18.4 同构预演链路，采集数据库触发、外部 worker、Arrow
+RecordBatch、Ray actor、AI operator invocation、fan-in、writeback 和 bounded
+backpressure 指标。每条真实运行 CSV 必须记录实际 `server_version` 和
+`pgvector_version`，不能靠目录名推断实验平台。
 
 当前本机已通过 Docker 运行 PostgreSQL 18.4 + pgvector 0.8.2 同构预演实例，
 连接地址和操作说明见 `deploy/postgres18.4/README.md`。数据库基础连通性、
 向量查询和 256 行项目画像链路均已验证，正式 CSV 与三张表核对结果见
 `validation/results/postgres18_local_environment_validation.md`。这仍是一次
 fake embedding 冒烟运行，最终必须在公司 PostgreSQL 18.3 内部平台复验。
+
+代码入口、函数映射、运行命令和结果位置见 `scripts/README.md`。

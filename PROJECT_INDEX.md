@@ -51,6 +51,7 @@
 | `validation/AGENTS.md` | 可行性验证规则 | 写 benchmark 或实验结果前读 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |
 | `code/scripts/postgres_ai_operator_profile.py` | PostgreSQL 18.3 / 同构 PostgreSQL AI 算子外部执行链路画像脚本 | 真实采集数据库触发、Ray/Arrow、AI operator、fan-in/writeback、backpressure 时读 |
+| `code/scripts/README.md` | PG 连接、画像函数映射、运行命令和结果位置 | 查找数据库连接与测试流程代码时读 |
 | `code/requirements.txt` | 真实数据库画像脚本的额外 Python 依赖 | 准备 PostgreSQL 18.3 / 同构实例前读 |
 | `deploy/postgres18.4/AGENTS.md` | 本地 PostgreSQL 18.4 同构预演环境规则 | 修改或运行数据库容器前读 |
 | `deploy/postgres18.4/README.md` | PostgreSQL + pgvector 的启动、连接和验证说明 | 运行本地真实数据库链路时读 |

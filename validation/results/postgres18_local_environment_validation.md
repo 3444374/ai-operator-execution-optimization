@@ -40,6 +40,12 @@ validation/results/postgres_ai_operator_profile.csv
 
 运行环境依赖：NumPy 2.2.6、PyArrow 25.0.0、psycopg 3.3.4、Ray 2.56.0。
 
+连接、读取、Ray 执行与写回代码的函数级索引见：
+
+```text
+code/scripts/README.md
+```
+
 ### 3.1 实验设置
 
 | 参数 | 值 | 含义 |
@@ -85,13 +91,15 @@ PostgreSQL documents/job table
 | object count | 4 |
 | operator invocations | 4 |
 | max in-flight seen | 2 |
-| database fetch | 0.003485 s |
-| Arrow build（包含 fetch-to-Arrow 外层计时） | 0.022018 s |
-| fake model service 累计时间 | 0.289825 s |
-| fan-in | 0.000875 s |
-| writeback | 0.027415 s |
-| end-to-end | 0.616446 s |
-| throughput | 415.284 rows/s |
+| server version | 18.4 (Debian 18.4-1.pgdg12+1) |
+| pgvector version | 0.8.2 |
+| database fetch | 0.004885 s |
+| Arrow build（包含 fetch-to-Arrow 外层计时） | 0.021212 s |
+| fake model service 累计时间 | 0.282211 s |
+| fan-in | 0.000953 s |
+| writeback | 0.038092 s |
+| end-to-end | 0.587693 s |
+| throughput | 435.602 rows/s |
 
 数据库核对：
 
@@ -99,14 +107,14 @@ PostgreSQL documents/job table
 |---|---:|
 | `documents` | 256 rows |
 | `document_embeddings` | 256 rows |
-| `ai_operator_jobs` | 1 row |
-| job 1 | `AI_EMBED / finished` |
+| `ai_operator_jobs` | 2 rows |
+| latest job 2 | `AI_EMBED / finished` |
 
 ### 3.4 严谨性自检
 
 本次是首次连通性冒烟实验，不是性能对比实验：
 
-- 只运行一次，没有 warm-up 和重复统计；
+- 已运行两次连通性冒烟，但没有预先定义 warm-up，也没有正式重复统计；
 - 使用 fake embedding，不是真实 CPU/GPU 模型；
 - 使用 PostgreSQL 18.4 本地替身，不是公司 PostgreSQL 18.3 平台；
 - 只运行 coalesced 策略，没有 fine、Python worker 或 task baseline；

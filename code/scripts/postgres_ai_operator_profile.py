@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Profile a database-triggered AI operator external execution path.
+"""Profile a PostgreSQL 18-compatible AI operator external execution path.
 
-This is a PostgreSQL 18.3-compatible harness. It uses a job table as the
-database trigger substitute so the same worker path can later be connected to
-an internal UDF/table-function trigger without changing Ray/Arrow profiling.
+The local rehearsal environment currently runs PostgreSQL 18.4. The target
+production validation platform is PostgreSQL 18.3. The script records the
+actual server and pgvector versions in every non-dry-run CSV row so results do
+not conflate the two environments.
 """
 
 from __future__ import annotations
@@ -100,6 +101,18 @@ def require_psycopg():
 def connect(database_url: str):
     psycopg = require_psycopg()
     return psycopg.connect(database_url)
+
+
+def database_metadata(conn) -> dict[str, str]:
+    with conn.cursor() as cur:
+        cur.execute("SHOW server_version")
+        server_version = str(cur.fetchone()[0])
+        cur.execute("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
+        row = cur.fetchone()
+    return {
+        "server_version": server_version,
+        "pgvector_version": str(row[0]) if row else "not_installed",
+    }
 
 
 def setup_schema(conn) -> None:
@@ -323,6 +336,7 @@ def run(args: argparse.Namespace) -> dict:
 
     conn = connect(args.database_url)
     try:
+        db_metadata = database_metadata(conn)
         if args.setup:
             setup_schema(conn)
             seed_documents(conn, args.seed_rows)
@@ -378,6 +392,7 @@ def run(args: argparse.Namespace) -> dict:
 
         return {
             "status": "ok",
+            **db_metadata,
             "database_trigger": "job_table",
             "job_id": job_id,
             "strategy": args.strategy,

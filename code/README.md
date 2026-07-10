@@ -10,7 +10,8 @@
 code/scripts/postgres_ai_operator_profile.py
 ```
 
-目标是采集 PostgreSQL 18.3 触发 AI 算子后的外部执行链路画像：
+目标是采集 PostgreSQL 18 触发 AI 算子后的外部执行链路画像；当前本地运行
+18.4，最终目标平台为公司内部 18.3：
 
 ```text
 PostgreSQL documents/job table
@@ -28,6 +29,7 @@ PostgreSQL documents/job table
 -> PostgreSQL 写回冒烟运行。CSV 位于
 `validation/results/postgres_ai_operator_profile.csv`，完整记录见
 `validation/results/postgres18_local_environment_validation.md`。
+脚本内部连接、读取、Ray 执行和写回函数的对应关系见 `scripts/README.md`。
 
 最小 dry-run：
 

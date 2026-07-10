@@ -1,2 +1,2 @@
-status,database_trigger,job_id,strategy,total_rows,written_rows,db_fetch_rows,ray_batch_rows,embedding_dim,model_workers,max_inflight_limit,object_count,operator_invocations,max_inflight_seen,token_count,db_fetch_s,arrow_build_s,model_service_s,bounded_wait_s,avg_bounded_wait_s,fanin_s,writeback_s,e2e_s,rows_per_s
-ok,job_table,1,coalesced,256,256,128,64,128,2,4,4,4,2,9728,0.003485,0.022018,0.289825,0.0,0.0,0.000875,0.027415,0.616446,415.284
+status,server_version,pgvector_version,database_trigger,job_id,strategy,total_rows,written_rows,db_fetch_rows,ray_batch_rows,embedding_dim,model_workers,max_inflight_limit,object_count,operator_invocations,max_inflight_seen,token_count,db_fetch_s,arrow_build_s,model_service_s,bounded_wait_s,avg_bounded_wait_s,fanin_s,writeback_s,e2e_s,rows_per_s
+ok,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,job_table,2,coalesced,256,256,128,64,128,2,4,4,4,2,9728,0.004885,0.021212,0.282211,0.0,0.0,0.000953,0.038092,0.587693,435.602

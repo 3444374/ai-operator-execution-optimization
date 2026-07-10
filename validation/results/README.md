@@ -16,6 +16,13 @@
 | AI operator scenario motivation | `ai_operator_scenario_motivation.csv` |
 | AI operator granularity attribution | `ai_operator_granularity_attribution.csv` |
 | AI operator backpressure | `ai_operator_backpressure.csv` |
+| PostgreSQL 18 local profile | `postgres_ai_operator_profile.csv` |
+
+PostgreSQL 同构链路的完整实验设置、流程、数据库表核对、严谨性边界和结论：
+
+```text
+validation/results/postgres18_local_environment_validation.md
+```
 
 ## 2. 推荐运行命令
 
