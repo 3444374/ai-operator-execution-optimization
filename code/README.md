@@ -22,7 +22,12 @@ PostgreSQL documents/job table
   -> writeback document_embeddings
 ```
 
-当前机器没有 `psql/pg_config`，Python 环境也还没有 `psycopg`，Docker daemon 未启动，因此暂时不能在本机直接跑真实数据库链路。脚本已支持 dry-run 和后续真实连接。
+当前本机已通过 Docker 运行 PostgreSQL 18.4 + pgvector 0.8.2 同构预演实例，
+数据库、扩展和向量查询已经验证；WSL `.venv` 已安装 Ray、PyArrow、NumPy
+和 psycopg，并完成 256 行 PostgreSQL -> Arrow -> Ray actor -> fake embedding
+-> PostgreSQL 写回冒烟运行。CSV 位于
+`validation/results/postgres_ai_operator_profile.csv`，完整记录见
+`validation/results/postgres18_local_environment_validation.md`。
 
 最小 dry-run：
 
@@ -32,10 +37,10 @@ PostgreSQL documents/job table
   --output validation/results/postgres_ai_operator_profile_dry_run.csv
 ```
 
-拿到 PostgreSQL 18.3 或同构 PostgreSQL 实例后：
+连接当前本地同构 PostgreSQL 实例：
 
 ```bash
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DB" \
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
 .venv/bin/python code/scripts/postgres_ai_operator_profile.py \
   --setup \
   --seed-rows 10000 \

@@ -51,12 +51,20 @@
 │   ├── tests/
 │   ├── scripts/
 │   └── configs/
+├── deploy/                 # 本地同构预演环境
+│   └── postgres18.4/       # PostgreSQL 18.4 + pgvector；PG18.3 内部平台替身
 └── notes/                  # 沟通记录、待确认问题
 │   ├── AGENTS.md
 │   └── communication_notes.md
 ```
 
 ## 当前证据
+
+当前工程状态：本机 Docker 已运行 PostgreSQL 18.4 + pgvector 0.8.2，数据库
+基础连通性和向量查询已验证。项目 Python 画像脚本已完成 256 行的
+PostgreSQL -> Arrow -> Ray actor -> fake embedding -> PostgreSQL 写回冒烟运行。
+该实例仍只作为公司 PostgreSQL 18.3 内部平台的本地同构预演替身；本次单次
+fake-model 结果不能作为性能结论。
 
 已有 Phase 0 本地实验显示：
 

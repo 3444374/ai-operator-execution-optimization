@@ -99,6 +99,12 @@ generate documents
 
 ## 6. 后续阶段
 
+截至 2026-07-11，Phase 1 最小同构链路已经首次跑通：本地 PostgreSQL 18.4
+与 pgvector 替身通过 job table 触发，外部 Python worker 使用 Arrow RecordBatch
+和 Ray actor 处理 256 行 fake embedding，并等行数写回 PostgreSQL。该结果只
+证明链路连通，不证明瓶颈或优化收益；完整记录见
+`validation/results/postgres18_local_environment_validation.md`。
+
 如果 AI 算子场景和系统瓶颈继续成立：
 
 1. 在低端设备上先搭 PostgreSQL 18.3 同构预演链路，必要时用普通 PostgreSQL + pgvector 作为接口替身；

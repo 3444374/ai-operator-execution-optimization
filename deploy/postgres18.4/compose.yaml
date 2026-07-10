@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.2-pg18-bookworm
+    container_name: ai-operator-postgres18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ai_operator
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres18_data:/var/lib/postgresql
+      - ./init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_operator"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    shm_size: 1gb
+    restart: unless-stopped
+
+volumes:
+  postgres18_data:

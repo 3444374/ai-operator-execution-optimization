@@ -29,4 +29,8 @@
 
 该脚本用于 PostgreSQL 18.3 内部验证平台或同构预演链路，采集数据库触发、外部 worker、Arrow RecordBatch、Ray actor、AI operator invocation、fan-in、writeback 和 bounded backpressure 指标。
 
-当前机器缺少 PostgreSQL/psycopg/Docker daemon，暂时只能做 dry-run 和语法验证；拿到 PostgreSQL 18.3 或同构实例后再运行真实画像。
+当前本机已通过 Docker 运行 PostgreSQL 18.4 + pgvector 0.8.2 同构预演实例，
+连接地址和操作说明见 `deploy/postgres18.4/README.md`。数据库基础连通性、
+向量查询和 256 行项目画像链路均已验证，正式 CSV 与三张表核对结果见
+`validation/results/postgres18_local_environment_validation.md`。这仍是一次
+fake embedding 冒烟运行，最终必须在公司 PostgreSQL 18.3 内部平台复验。
