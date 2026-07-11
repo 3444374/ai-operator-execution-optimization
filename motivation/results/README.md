@@ -20,6 +20,11 @@
 | `pg18_4_baseline_matrix.csv` | PG18.4 executor × strategy baseline 原始结果 |
 | `pg18_4_actor_batch_workers.csv` | PG18.4 Ray actor batch size × worker 数原始结果 |
 | `pg18_4_baseline_matrix.md` | PG18.4 baseline 矩阵、actor batch/worker 矩阵与下一步分析 |
+| `pg18_4_vector_writeback.csv` | PG18.4 JSON TEXT 与 pgvector vector(128) 写回对照原始结果 |
+| `pg18_4_vector_writeback.md` | PG18.4 pgvector vector(128) 写回对照实验分析 |
+| `pg18_4_pgvector_scaling.csv` | PG18.4 pgvector 批量写回下 total_rows scaling 原始结果 |
+| `pg18_4_pgvector_scaling_fine_contrast.csv` | PG18.4 pgvector 批量写回下少量 fine 对照结果 |
+| `pg18_4_pgvector_scaling.md` | PG18.4 pgvector 批量写回 scaling 实验分析 |
 | `motivation_test_results_analysis.md` | 动机测试综合分析 |
 
 连接验证结果位于：

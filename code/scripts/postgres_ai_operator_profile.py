@@ -24,6 +24,8 @@ import pyarrow as pa
 
 
 SCHEMA_SQL = """
+CREATE EXTENSION IF NOT EXISTS vector;
+
 CREATE TABLE IF NOT EXISTS documents (
   doc_id BIGINT PRIMARY KEY,
   tenant_id INTEGER NOT NULL,
@@ -48,8 +50,12 @@ CREATE TABLE IF NOT EXISTS document_embeddings (
   tenant_id INTEGER NOT NULL,
   category TEXT NOT NULL,
   embedding_json TEXT NOT NULL,
+  embedding_vector vector(128),
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE document_embeddings
+ADD COLUMN IF NOT EXISTS embedding_vector vector(128);
 """
 
 
@@ -83,6 +89,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-inflight", type=int, default=8)
     parser.add_argument("--strategy", choices=["fine", "coalesced"], default="coalesced")
     parser.add_argument("--executor", choices=["ray_actor", "ray_task", "python"], default="ray_actor")
+    parser.add_argument("--writeback-mode", choices=["json_text", "pgvector"], default="json_text")
+    parser.add_argument("--write-batch-rows", type=int, default=0)
     parser.add_argument("--warmup-runs", type=int, default=0)
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--experiment-id", default="manual")
@@ -374,32 +382,67 @@ def submit_python_batches(batches: Iterable[pa.RecordBatch], embedding_dim: int)
     }
 
 
-def write_embeddings(conn, results: list[dict]) -> int:
+def vector_to_pg_literal(vector: np.ndarray) -> str:
+    return json.dumps(vector.tolist(), separators=(",", ":"))
+
+
+def batched_rows(rows: list[tuple], batch_rows: int) -> Iterable[list[tuple]]:
+    if batch_rows <= 0:
+        yield rows
+        return
+    for start in range(0, len(rows), batch_rows):
+        yield rows[start : start + batch_rows]
+
+
+def write_embeddings(conn, results: list[dict], writeback_mode: str, write_batch_rows: int) -> int:
     rows = []
     for result in results:
         vectors = result["embedding"]
         for i, doc_id in enumerate(result["doc_id"]):
-            rows.append(
-                (
-                    doc_id,
-                    result["tenant_id"][i],
-                    result["category"][i],
-                    json.dumps(vectors[i].tolist(), separators=(",", ":")),
+            if writeback_mode == "json_text":
+                rows.append(
+                    (
+                        doc_id,
+                        result["tenant_id"][i],
+                        result["category"][i],
+                        vector_to_pg_literal(vectors[i]),
+                    )
                 )
-            )
+            elif writeback_mode == "pgvector":
+                rows.append(
+                    (
+                        doc_id,
+                        result["tenant_id"][i],
+                        result["category"][i],
+                        vector_to_pg_literal(vectors[i]),
+                    )
+                )
+            else:
+                raise ValueError(f"Unsupported writeback mode: {writeback_mode}")
     with conn.cursor() as cur:
-        cur.executemany(
-            """
-            INSERT INTO document_embeddings (doc_id, tenant_id, category, embedding_json)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (doc_id) DO UPDATE
-            SET tenant_id = EXCLUDED.tenant_id,
-                category = EXCLUDED.category,
-                embedding_json = EXCLUDED.embedding_json,
-                updated_at = CURRENT_TIMESTAMP
-            """,
-            rows,
-        )
+        if writeback_mode == "json_text":
+            statement = """
+                INSERT INTO document_embeddings (doc_id, tenant_id, category, embedding_json)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (doc_id) DO UPDATE
+                SET tenant_id = EXCLUDED.tenant_id,
+                    category = EXCLUDED.category,
+                    embedding_json = EXCLUDED.embedding_json,
+                    updated_at = CURRENT_TIMESTAMP
+                """
+        else:
+            statement = """
+                INSERT INTO document_embeddings (doc_id, tenant_id, category, embedding_json, embedding_vector)
+                VALUES (%s, %s, %s, '[]', %s::vector)
+                ON CONFLICT (doc_id) DO UPDATE
+                SET tenant_id = EXCLUDED.tenant_id,
+                    category = EXCLUDED.category,
+                    embedding_json = EXCLUDED.embedding_json,
+                    embedding_vector = EXCLUDED.embedding_vector,
+                    updated_at = CURRENT_TIMESTAMP
+                """
+        for chunk in batched_rows(rows, write_batch_rows):
+            cur.executemany(statement, chunk)
     conn.commit()
     return len(rows)
 
@@ -429,6 +472,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "ray_batch_rows": args.ray_batch_rows,
             "model_workers": args.model_workers,
             "max_inflight_limit": args.max_inflight,
+            "writeback_mode": args.writeback_mode,
+            "write_batch_rows": args.write_batch_rows,
         }
     if not args.database_url:
         raise SystemExit("Missing --database-url or DATABASE_URL.")
@@ -501,7 +546,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             processed_rows += batch.num_rows
 
         write_timer = StageTimer.start("writeback")
-        written_rows = write_embeddings(conn, operator_results)
+        written_rows = write_embeddings(
+            conn,
+            operator_results,
+            args.writeback_mode,
+            args.write_batch_rows,
+        )
         writeback_s = write_timer.stop()
         finish_job(conn, job_id)
         e2e_s = e2e_timer.stop()
@@ -525,6 +575,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "embedding_dim": args.embedding_dim,
             "model_workers": args.model_workers,
             "max_inflight_limit": args.max_inflight,
+            "writeback_mode": args.writeback_mode,
+            "write_batch_rows": args.write_batch_rows,
             "object_count": object_count,
             "operator_invocations": submit_metrics["operator_invocations"],
             "max_inflight_seen": submit_metrics["max_inflight"],

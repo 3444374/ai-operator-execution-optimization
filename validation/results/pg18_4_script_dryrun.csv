@@ -8,3 +8,5 @@ dry_run,conda_dryrun,warmup,1,job_table,ray_actor,coalesced,10000,1024,1024,2,8
 dry_run,conda_dryrun,formal,1,job_table,ray_actor,coalesced,10000,1024,1024,2,8
 dry_run,dryrun_ray_task,warmup,1,job_table,ray_task,coalesced,128,1024,1024,2,8
 dry_run,dryrun_ray_task,formal,1,job_table,ray_task,coalesced,128,1024,1024,2,8
+dry_run,dryrun_pgvector_writeback,warmup,1,job_table,ray_task,coalesced,128,1024,1024,2,8,pgvector,256
+dry_run,dryrun_pgvector_writeback,formal,1,job_table,ray_task,coalesced,128,1024,1024,2,8,pgvector,256

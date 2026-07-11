@@ -63,6 +63,8 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
 2026-07-11 已为 `postgres_ai_operator_profile.py` 增加可重复对照实验参数：
 
 - `--executor python|ray_task|ray_actor`
+- `--writeback-mode json_text|pgvector`
+- `--write-batch-rows`
 - `--warmup-runs`
 - `--repeats`
 - `--experiment-id`
