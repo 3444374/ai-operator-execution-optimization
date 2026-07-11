@@ -45,15 +45,47 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
   --db-fetch-rows 128 --ray-batch-rows 64 \
   --model-workers 2 --max-inflight 4 \
   --strategy coalesced \
-  --output validation/results/postgres_ai_operator_profile.csv
+  --output validation/results/pg18_4_connection_smoke_256_rows.csv
 ```
 
 ## 结果位置
 
-- 原始数据：`validation/results/postgres_ai_operator_profile.csv`
+- 原始数据：`validation/results/pg18_4_connection_smoke_256_rows.csv`
 - 设置、过程、表核对、严谨性与结论：
-  `validation/results/postgres18_local_environment_validation.md`
+  `validation/results/pg18_4_connection_validation.md`
 - 数据库部署：`deploy/postgres18.4/README.md`
 
 当前结果只证明 PostgreSQL 18.4 同构链路连通，不是公司 PostgreSQL 18.3
 平台结果，也不是性能优化结论。
+
+## 正式对照实验
+
+2026-07-11 已为 `postgres_ai_operator_profile.py` 增加可重复对照实验参数：
+
+- `--executor python|ray_task|ray_actor`
+- `--warmup-runs`
+- `--repeats`
+- `--experiment-id`
+
+脚本现在会拆分 `db_fetch_s` 与 `arrow_build_s`，支持普通 Python baseline，并且只在
+`--executor ray_actor` 时按需导入 Ray。
+
+示例命令：
+
+```powershell
+.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+  --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
+  --setup --seed-rows 4096 --total-rows 4096 `
+  --db-fetch-rows 512 --ray-batch-rows 256 `
+  --embedding-dim 128 --model-workers 2 --max-inflight 8 `
+  --executor ray_actor --strategy coalesced `
+  --warmup-runs 1 --repeats 3 `
+  --experiment-id pg18_4_fake_4096 `
+  --output motivation\results\pg18_4_system_profile_fake_ai_embed.csv
+```
+
+完整矩阵、CSV 位置与结果解释：
+
+```text
+motivation/results/pg18_4_system_profile_fake_ai_embed.md
+```

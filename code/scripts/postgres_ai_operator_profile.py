@@ -21,7 +21,6 @@ from typing import Iterable
 
 import numpy as np
 import pyarrow as pa
-import ray
 
 
 SCHEMA_SQL = """
@@ -83,6 +82,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-workers", type=int, default=2)
     parser.add_argument("--max-inflight", type=int, default=8)
     parser.add_argument("--strategy", choices=["fine", "coalesced"], default="coalesced")
+    parser.add_argument("--executor", choices=["ray_actor", "ray_task", "python"], default="ray_actor")
+    parser.add_argument("--warmup-runs", type=int, default=0)
+    parser.add_argument("--repeats", type=int, default=1)
+    parser.add_argument("--experiment-id", default="manual")
     parser.add_argument("--output", default="validation/results/postgres_ai_operator_profile.csv")
     parser.add_argument("--dry-run", action="store_true", help="Validate configuration without connecting to DB.")
     return parser.parse_args()
@@ -96,6 +99,16 @@ def require_psycopg():
             "Missing dependency: psycopg. Install with `.venv/bin/python -m pip install \"psycopg[binary]\"`."
         ) from exc
     return psycopg
+
+
+def require_ray():
+    try:
+        import ray
+    except ImportError as exc:
+        raise SystemExit(
+            "Missing dependency: ray. Install project dependencies before using --executor ray_actor."
+        ) from exc
+    return ray
 
 
 def connect(database_url: str):
@@ -128,7 +141,8 @@ def count_documents(conn) -> int:
 
 
 def seed_documents(conn, rows: int) -> None:
-    if rows <= 0 or count_documents(conn) > 0:
+    existing_rows = count_documents(conn)
+    if rows <= existing_rows:
         return
     values = [
         (
@@ -137,7 +151,7 @@ def seed_documents(conn, rows: int) -> None:
             f"cat_{i % 8}",
             f"document {i} tenant {i % 16} category {i % 8} " + ("token " * 32),
         )
-        for i in range(rows)
+        for i in range(existing_rows, rows)
     ]
     with conn.cursor() as cur:
         cur.executemany(
@@ -170,7 +184,7 @@ def finish_job(conn, job_id: int) -> None:
     conn.commit()
 
 
-def fetch_record_batch(conn, limit: int, offset: int) -> pa.RecordBatch | None:
+def fetch_record_batch(conn, limit: int, offset: int) -> tuple[pa.RecordBatch | None, dict[str, float]]:
     timer = StageTimer.start("db_fetch")
     with conn.cursor() as cur:
         cur.execute(
@@ -185,7 +199,8 @@ def fetch_record_batch(conn, limit: int, offset: int) -> pa.RecordBatch | None:
         rows = cur.fetchall()
     db_fetch_s = timer.stop()
     if not rows:
-        return None
+        return None, {"db_fetch_s": db_fetch_s, "arrow_build_s": 0.0}
+    arrow_timer = StageTimer.start("arrow_build")
     columns = list(zip(*rows, strict=True))
     batch = pa.record_batch(
         [
@@ -196,8 +211,8 @@ def fetch_record_batch(conn, limit: int, offset: int) -> pa.RecordBatch | None:
         ],
         names=["doc_id", "tenant_id", "category", "text"],
     )
-    batch = batch.append_column("db_fetch_s", pa.array([db_fetch_s] * batch.num_rows, type=pa.float64()))
-    return batch
+    arrow_build_s = arrow_timer.stop()
+    return batch, {"db_fetch_s": db_fetch_s, "arrow_build_s": arrow_build_s}
 
 
 def split_batch(batch: pa.RecordBatch, rows_per_batch: int) -> list[pa.RecordBatch]:
@@ -206,7 +221,6 @@ def split_batch(batch: pa.RecordBatch, rows_per_batch: int) -> list[pa.RecordBat
     return [batch.slice(start, rows_per_batch) for start in range(0, batch.num_rows, rows_per_batch)]
 
 
-@ray.remote
 class FakeEmbeddingActor:
     def __init__(self, embedding_dim: int, service_tokens_per_s: float = 50000.0):
         self.embedding_dim = embedding_dim
@@ -236,7 +250,32 @@ class FakeEmbeddingActor:
         }
 
 
+def fake_embed_batch(batch: pa.RecordBatch, embedding_dim: int, service_tokens_per_s: float = 50000.0) -> dict:
+    service_start = time.perf_counter()
+    texts = batch.column("text").to_pylist()
+    token_count = sum(max(1, len(text.split())) for text in texts)
+    target_s = token_count / service_tokens_per_s
+    if target_s > 0:
+        time.sleep(target_s)
+    vectors = np.empty((batch.num_rows, embedding_dim), dtype=np.float32)
+    for i, text in enumerate(texts):
+        seed = hash(text) & 0xFFFFFFFF
+        rng = np.random.default_rng(seed)
+        vectors[i, :] = rng.random(embedding_dim, dtype=np.float32)
+    service_s = time.perf_counter() - service_start
+    return {
+        "doc_id": batch.column("doc_id").to_pylist(),
+        "tenant_id": batch.column("tenant_id").to_pylist(),
+        "category": batch.column("category").to_pylist(),
+        "embedding": vectors,
+        "rows": batch.num_rows,
+        "token_count": token_count,
+        "service_s": service_s,
+    }
+
+
 def submit_with_backpressure(
+    ray_module,
     actors: list,
     batches: Iterable[pa.RecordBatch],
     max_inflight: int,
@@ -252,10 +291,10 @@ def submit_with_backpressure(
     for batch in batches:
         while len(pending) >= max_inflight:
             wait_timer = StageTimer.start("bounded_wait")
-            ready, pending = ray.wait(pending, num_returns=1)
+            ready, pending = ray_module.wait(pending, num_returns=1)
             queue_wait_samples.append(wait_timer.stop())
             fanin_timer = StageTimer.start("ray_get")
-            results.extend(ray.get(ready))
+            results.extend(ray_module.get(ready))
             fanin_s += fanin_timer.stop()
         actor = actors[submit_count % len(actors)]
         ref = actor.embed.remote(batch)
@@ -265,9 +304,9 @@ def submit_with_backpressure(
         max_seen_inflight = max(max_seen_inflight, len(pending))
 
     while pending:
-        ready, pending = ray.wait(pending, num_returns=1)
+        ready, pending = ray_module.wait(pending, num_returns=1)
         fanin_timer = StageTimer.start("ray_get")
-        results.extend(ray.get(ready))
+        results.extend(ray_module.get(ready))
         fanin_s += fanin_timer.stop()
 
     return results, {
@@ -276,6 +315,62 @@ def submit_with_backpressure(
         "bounded_wait_s": sum(queue_wait_samples),
         "avg_bounded_wait_s": statistics.mean(queue_wait_samples) if queue_wait_samples else 0.0,
         "fanin_s": fanin_s,
+    }
+
+
+def submit_ray_tasks(
+    ray_module,
+    remote_embed,
+    batches: Iterable[pa.RecordBatch],
+    max_inflight: int,
+    embedding_dim: int,
+) -> tuple[list[dict], dict]:
+    pending = []
+    results = []
+    submit_count = 0
+    max_seen_inflight = 0
+    queue_wait_samples = []
+    fanin_s = 0.0
+
+    for batch in batches:
+        while len(pending) >= max_inflight:
+            wait_timer = StageTimer.start("bounded_wait")
+            ready, pending = ray_module.wait(pending, num_returns=1)
+            queue_wait_samples.append(wait_timer.stop())
+            fanin_timer = StageTimer.start("ray_get")
+            results.extend(ray_module.get(ready))
+            fanin_s += fanin_timer.stop()
+        pending.append(remote_embed.remote(batch, embedding_dim))
+        submit_count += 1
+        max_seen_inflight = max(max_seen_inflight, len(pending))
+
+    while pending:
+        ready, pending = ray_module.wait(pending, num_returns=1)
+        fanin_timer = StageTimer.start("ray_get")
+        results.extend(ray_module.get(ready))
+        fanin_s += fanin_timer.stop()
+
+    return results, {
+        "operator_invocations": submit_count,
+        "max_inflight": max_seen_inflight,
+        "bounded_wait_s": sum(queue_wait_samples),
+        "avg_bounded_wait_s": statistics.mean(queue_wait_samples) if queue_wait_samples else 0.0,
+        "fanin_s": fanin_s,
+    }
+
+
+def submit_python_batches(batches: Iterable[pa.RecordBatch], embedding_dim: int) -> tuple[list[dict], dict]:
+    results = []
+    invocation_count = 0
+    for batch in batches:
+        results.append(fake_embed_batch(batch, embedding_dim))
+        invocation_count += 1
+    return results, {
+        "operator_invocations": invocation_count,
+        "max_inflight": 1 if invocation_count else 0,
+        "bounded_wait_s": 0.0,
+        "avg_bounded_wait_s": 0.0,
+        "fanin_s": 0.0,
     }
 
 
@@ -319,11 +414,15 @@ def append_metrics(path: Path, row: dict) -> None:
         writer.writerow(row)
 
 
-def run(args: argparse.Namespace) -> dict:
+def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     if args.dry_run:
         return {
             "status": "dry_run",
+            "experiment_id": args.experiment_id,
+            "phase": phase,
+            "repeat_index": repeat_index,
             "database_trigger": "job_table",
+            "executor": args.executor,
             "strategy": args.strategy,
             "total_rows": args.total_rows,
             "db_fetch_rows": args.db_fetch_rows,
@@ -342,8 +441,17 @@ def run(args: argparse.Namespace) -> dict:
             seed_documents(conn, args.seed_rows)
 
         job_id = create_job(conn)
-        ray.init(ignore_reinit_error=True)
-        actors = [FakeEmbeddingActor.remote(args.embedding_dim) for _ in range(args.model_workers)]
+        actors = []
+        ray_module = None
+        remote_embed = None
+        if args.executor in {"ray_actor", "ray_task"}:
+            ray_module = require_ray()
+            ray_module.init(ignore_reinit_error=True)
+            if args.executor == "ray_actor":
+                RayEmbeddingActor = ray_module.remote(FakeEmbeddingActor)
+                actors = [RayEmbeddingActor.remote(args.embedding_dim) for _ in range(args.model_workers)]
+            else:
+                remote_embed = ray_module.remote(fake_embed_batch)
 
         e2e_timer = StageTimer.start("e2e")
         processed_rows = 0
@@ -361,19 +469,29 @@ def run(args: argparse.Namespace) -> dict:
 
         offset = 0
         while processed_rows < args.total_rows:
-            fetch_timer = StageTimer.start("fetch_to_arrow")
-            batch = fetch_record_batch(conn, args.db_fetch_rows, offset)
-            arrow_build_s += fetch_timer.stop()
+            batch, fetch_metrics = fetch_record_batch(conn, args.db_fetch_rows, offset)
             if batch is None:
                 break
-            db_fetch_s += float(batch.column("db_fetch_s")[0].as_py())
+            db_fetch_s += fetch_metrics["db_fetch_s"]
+            arrow_build_s += fetch_metrics["arrow_build_s"]
             offset += batch.num_rows
             remaining = args.total_rows - processed_rows
             if batch.num_rows > remaining:
                 batch = batch.slice(0, remaining)
             ray_batches = split_batch(batch, 1 if args.strategy == "fine" else args.ray_batch_rows)
             object_count += len(ray_batches)
-            results, metrics = submit_with_backpressure(actors, ray_batches, args.max_inflight)
+            if args.executor == "ray_actor":
+                results, metrics = submit_with_backpressure(ray_module, actors, ray_batches, args.max_inflight)
+            elif args.executor == "ray_task":
+                results, metrics = submit_ray_tasks(
+                    ray_module,
+                    remote_embed,
+                    ray_batches,
+                    args.max_inflight,
+                    args.embedding_dim,
+                )
+            else:
+                results, metrics = submit_python_batches(ray_batches, args.embedding_dim)
             operator_results.extend(results)
             for key in submit_metrics:
                 if key == "max_inflight":
@@ -392,9 +510,13 @@ def run(args: argparse.Namespace) -> dict:
 
         return {
             "status": "ok",
+            "experiment_id": args.experiment_id,
+            "phase": phase,
+            "repeat_index": repeat_index,
             **db_metadata,
             "database_trigger": "job_table",
             "job_id": job_id,
+            "executor": args.executor,
             "strategy": args.strategy,
             "total_rows": processed_rows,
             "written_rows": written_rows,
@@ -421,11 +543,19 @@ def run(args: argparse.Namespace) -> dict:
         conn.close()
 
 
+def iter_run_phases(warmup_runs: int, repeats: int) -> Iterable[tuple[str, int]]:
+    for repeat_index in range(1, warmup_runs + 1):
+        yield "warmup", repeat_index
+    for repeat_index in range(1, repeats + 1):
+        yield "formal", repeat_index
+
+
 def main() -> None:
     args = parse_args()
-    row = run(args)
-    append_metrics(Path(args.output), row)
-    print(json.dumps(row, ensure_ascii=False, indent=2))
+    for phase, repeat_index in iter_run_phases(args.warmup_runs, args.repeats):
+        row = run_once(args, phase, repeat_index)
+        append_metrics(Path(args.output), row)
+        print(json.dumps(row, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

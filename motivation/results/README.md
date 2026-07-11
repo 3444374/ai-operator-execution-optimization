@@ -1,6 +1,11 @@
 # Motivation Results
 
-本目录保存数据库 AI 算子动机测试的正式结果和结果分析。
+本目录保存数据库 AI 算子动机测试、端到端系统画像、瓶颈定位和可优化点分析结果。
+
+规则：
+
+- 只证明环境能连接的结果不放这里，放 `validation/results/`。
+- 能回答“为什么这个问题值得做”“瓶颈在哪里”“可优化点是什么”的结果放这里。
 
 ## 文件
 
@@ -10,8 +15,15 @@
 | `ai_operator_scenario_motivation.csv` | embedding / classify-filter / offline LLM 三类 AI 算子场景对比结果 |
 | `ai_operator_granularity_attribution.csv` | task/object/fan-in/operator invocation 收益来源拆分结果 |
 | `ai_operator_backpressure.csv` | 模型服务 queue wait / token backlog / backpressure 模拟结果 |
-| `motivation_test_results_analysis.md` | 动机测试结果分析 |
+| `pg18_4_system_profile_fake_ai_embed.csv` | PG18.4 真实数据库触发链路上的 fake AI_EMBED 系统画像 CSV |
+| `pg18_4_system_profile_fake_ai_embed.md` | PG18.4 系统画像、瓶颈定位和可优化点分析 |
+| `pg18_4_baseline_matrix.csv` | PG18.4 executor × strategy baseline 原始结果 |
+| `pg18_4_actor_batch_workers.csv` | PG18.4 Ray actor batch size × worker 数原始结果 |
+| `pg18_4_baseline_matrix.md` | PG18.4 baseline 矩阵、actor batch/worker 矩阵与下一步分析 |
+| `motivation_test_results_analysis.md` | 动机测试综合分析 |
 
-## 说明
+连接验证结果位于：
 
-这些结果用于研究方向筛选和动机补强，不等价于最终论文实验。正式结论仍需接真实数据库形态、真实 AI 算子或真实模型服务验证。
+```text
+validation/results/pg18_4_connection_validation.md
+```
