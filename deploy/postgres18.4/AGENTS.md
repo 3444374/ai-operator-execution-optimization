@@ -1,20 +1,19 @@
 # deploy/postgres18.4/AGENTS.md
 
-本目录维护本地 PostgreSQL 18 同构预演环境。进入本目录前先读根目录
-`AGENTS.md`。
+本目录维护本地 PostgreSQL 18.4 + pgvector 同构预演环境。进入本目录前先读根目录 `AGENTS.md`。
 
 ## 定位
 
 - 当前容器实际运行 PostgreSQL 18.4 + pgvector 0.8.2。
 - 它用于预演数据库触发、外部 worker、AI 算子和写回链路。
-- 公司内部 PostgreSQL 18.3 才是最终真实验证平台。
-- 本目录产生的数据和性能结果不得写成 PostgreSQL 18.3 平台结果。
+- 公司内部 PostgreSQL 18.3 才是最终真实实验验证平台。
+- 本目录产生的本地数据和性能结果不得写成 PostgreSQL 18.3 平台结果。
 
 ## 运行规则
 
-- 使用固定镜像标签，不使用 `latest` 或浮动的 `18` 标签。
+- 使用固定镜像标签，不使用 `latest` 或浮动 `18` 标签。
 - 数据保存在 Docker named volume 中；普通 `down` 不删除数据。
-- 未经用户明确同意，不运行 `down --volumes` 或删除 named volume。
+- 未经用户明确同意，不运行 `down --volumes`，不删除 named volume。
 - 修改 PostgreSQL 大版本、扩展版本或数据目录前，先说明兼容性与迁移影响。
 - pgai/Ray/模型服务优先作为独立 worker/service 部署，不默认塞进数据库容器。
 
@@ -22,8 +21,13 @@
 
 环境变更后至少验证：
 
-1. 容器 health 为 `healthy`；
-2. `postgres --version`；
-3. `vector` 扩展版本；
-4. 一个最小向量距离查询；
+1. 容器 health 为 `healthy`。
+2. `postgres --version`。
+3. `vector` 扩展版本。
+4. 一个最小向量距离查询。
 5. 项目画像脚本能通过数据库 URL 建表、读数据并写回。
+
+## 结果归档
+
+- 连接验证记录放在 `validation/results/pg18_4_connection_validation.md`。
+- 系统画像、瓶颈定位和优化收益相关结果放在 `motivation/results/pg18_4_system_profile_fake_ai_embed.md`。

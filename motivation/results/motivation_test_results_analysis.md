@@ -315,3 +315,101 @@ object/fan-in
 2. **PostgreSQL + 外部 worker 形态**：验证数据库读取、批处理、AI 算子执行和写回链路中是否仍有同样瓶颈。
 3. **真实或半真实模型服务**：至少接本地 embedding 模型、小 LLM 或 vLLM/Ray Serve，记录 queue wait、token backlog、actor idle time、tokens/s。
 
+## 9. PG18.4 系统画像实验与 baseline 缺口
+
+### 9.1 文件定位
+
+PG18.4 相关结果现在分成两类：
+
+| 类型 | 文件 | 用途 |
+|---|---|---|
+| 连接验证 | `validation/results/pg18_4_connection_validation.md` | 只说明本地 PG18.4 + pgvector 可连接，项目脚本能读写数据库 |
+| 系统画像 / 瓶颈定位 | `motivation/results/pg18_4_system_profile_fake_ai_embed.md` | 说明 PG18.4 真实数据库触发链路中的瓶颈、可优化点和下一步 baseline |
+| 系统画像原始数据 | `motivation/results/pg18_4_system_profile_fake_ai_embed.csv` | 4096 行 formal CSV，含 warm-up/formal、python/ray_actor、fine/coalesced |
+
+这个划分很关键：连接验证不能用于论证性能收益；系统画像结果才进入动机证据链。
+
+### 9.2 PG18.4 系统画像实验事实
+
+实验链路：
+
+```text
+PostgreSQL 18.4 documents/job table
+  -> psycopg fetch
+  -> Arrow RecordBatch
+  -> python 或 Ray actor fake AI_EMBED
+  -> bounded in-flight / fan-in
+  -> PostgreSQL document_embeddings writeback
+```
+
+固定设置：
+
+| 参数 | 值 |
+|---|---:|
+| total_rows | 4096 |
+| db_fetch_rows | 512 |
+| ray_batch_rows | 256 |
+| embedding_dim | 128 |
+| model_workers | 2 |
+| max_inflight | 8 |
+| warm-up | 1 |
+| formal repeats | 3 |
+
+Formal 均值：
+
+| executor | strategy | object_count | invocations | e2e_s | rows/s | bounded_wait_s | fanin_s | writeback_s |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| python | fine | 4096 | 4096 | 64.288 | 63.713 | 0.000 | 0.000 | 0.479 |
+| python | coalesced | 16 | 16 | 3.798 | 1078.509 | 0.000 | 0.000 | 0.507 |
+| ray_actor | fine | 4096 | 4096 | 32.922 | 124.438 | 28.378 | 0.593 | 0.477 |
+| ray_actor | coalesced | 16 | 16 | 2.435 | 1689.546 | 0.000 | 0.006 | 0.470 |
+
+本地实验事实：
+
+- PG18.4 真实数据库触发链路中，fine 明显慢于 coalesced。
+- Ray actor fine 比 Python fine 快，说明 actor 并行有收益；但 Ray actor fine 仍显著慢于 Ray actor coalesced。
+- Ray actor fine 暴露出明显 `bounded_wait_s` 和 `fanin_s`，说明大量小 invocation/object 会带来队列等待和 fan-in 成本。
+- `db_fetch_s` 与 `arrow_build_s` 在当前 4096 行 fake 链路里不是主要成本。
+- `writeback_s` 在 coalesced Ray actor 下已经是可见成本，后续需要单独测 pgvector 写回。
+
+不能声称：
+
+- 不能说这是 PostgreSQL 18.3 内部平台结果。
+- 不能说真实 GPU embedding 一定有同样收益。
+- 不能说 Ray 本身慢；当前 fine 配置刻意制造了大量小 invocation/object。
+- 不能把 4096 行 fake-model 画像包装成最终论文结论。
+
+### 9.3 技术路线判断
+
+基于 idea-evaluator 的 fatal-flaws 视角，当前最需要防的是 F9：solution hunting for a problem。
+
+更稳妥的主线不是“为了使用 Ray/Daft/Lance 而证明它好”，而是：
+
+> 面向数据库内置 AI 算子的外部批处理执行系统，识别并优化 batch、partition、task/actor、object、fan-in、backpressure 和 writeback 等瓶颈。
+
+因此，当前可以把 Ray/Daft/Lance 类链路作为候选系统和主要调优对象；但不要把 Daft+Ray+Lance 产品化路线写成既定事实。Ray / 非 Ray 的对比应该作为 baseline 和消融，而不是论文主问题本身。
+
+### 9.4 需要补的 baseline
+
+下一轮至少需要补这些 baseline，每个 baseline 回答不同问题：
+
+| baseline | 回答的问题 | 当前状态 |
+|---|---|---|
+| Python serial worker | 不使用 Ray 时，数据库读写 + fake operator 的最低工程基线是多少 | 已有初版，但只跑 4096 行 |
+| Python batched worker | 如果只做 batch，不用 Ray，能获得多少收益 | 待补 |
+| Ray task baseline | actor 是否必要，Ray task 调用粒度成本是多少 | 待补 |
+| Ray actor fine/coalesced | actor 链路中 invocation/object 粒度影响多大 | 已有 4096 行初版 |
+| Ray actor 不同 actor 数 | actor 并行度与 queue wait / throughput 的关系 | 待补 |
+| 不同 batch size | batch size 对 e2e、queue wait、writeback 的影响 | 待补 |
+| pgvector vector 写回 | JSON 文本写回结果是否误导 writeback 成本 | 待补 |
+| 真实 CPU embedding 小模型 | fake sleep 信号是否迁移到真实模型 | 待补 |
+| GPU / Ray Serve / vLLM 服务 | batch、in-flight、GPU 利用率、模型服务队列是否成为主瓶颈 | 待补 |
+
+优先顺序：
+
+1. 先补 Python batched worker、Ray task baseline、Ray actor batch size / actor 数。
+2. 再补 pgvector `vector(128)` 写回。
+3. 再接真实 CPU embedding。
+4. 最后接 GPU / Ray Serve / vLLM。
+
+这条顺序能避免直接上 GPU 后无法解释收益来源。

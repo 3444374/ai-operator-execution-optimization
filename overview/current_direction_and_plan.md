@@ -103,7 +103,16 @@ generate documents
 与 pgvector 替身通过 job table 触发，外部 Python worker 使用 Arrow RecordBatch
 和 Ray actor 处理 256 行 fake embedding，并等行数写回 PostgreSQL。该结果只
 证明链路连通，不证明瓶颈或优化收益；完整记录见
-`validation/results/postgres18_local_environment_validation.md`。
+`validation/results/pg18_4_connection_validation.md`。
+
+同日已完成第一组本地 PG18.4 正式对照画像实验：固定 4096 行、128 维 fake
+embedding，对比 `python/ray_actor × fine/coalesced`，每组 1 次 warm-up 与
+3 次 formal 重复。formal 均值显示，Python baseline 下 fine/coalesced 端到端
+耗时比约 `16.93x`，Ray actor 下约 `13.52x`；Ray actor fine 还暴露出明显
+bounded wait 与 fan-in 成本。该结果支持继续验证 batch / invocation / object
+粒度控制，但仍是本地 PG18.4 fake-model 证据，不能外推为 PostgreSQL 18.3
+内部平台或真实 GPU 模型结论。完整记录见
+`motivation/results/pg18_4_system_profile_fake_ai_embed.md`。
 
 如果 AI 算子场景和系统瓶颈继续成立：
 

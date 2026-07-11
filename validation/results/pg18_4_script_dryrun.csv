@@ -1,0 +1,10 @@
+status,experiment_id,phase,repeat_index,database_trigger,executor,strategy,total_rows,db_fetch_rows,ray_batch_rows,model_workers,max_inflight_limit
+dry_run,dryrun_ray,warmup,1,job_table,ray_actor,fine,10000,1024,1024,2,8
+dry_run,dryrun_ray,formal,1,job_table,ray_actor,fine,10000,1024,1024,2,8
+dry_run,dryrun,warmup,1,job_table,python,coalesced,10000,1024,1024,2,8
+dry_run,dryrun,formal,1,job_table,python,coalesced,10000,1024,1024,2,8
+dry_run,dryrun,formal,2,job_table,python,coalesced,10000,1024,1024,2,8
+dry_run,conda_dryrun,warmup,1,job_table,ray_actor,coalesced,10000,1024,1024,2,8
+dry_run,conda_dryrun,formal,1,job_table,ray_actor,coalesced,10000,1024,1024,2,8
+dry_run,dryrun_ray_task,warmup,1,job_table,ray_task,coalesced,128,1024,1024,2,8
+dry_run,dryrun_ray_task,formal,1,job_table,ray_task,coalesced,128,1024,1024,2,8

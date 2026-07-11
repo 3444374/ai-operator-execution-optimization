@@ -66,6 +66,13 @@ PostgreSQL -> Arrow -> Ray actor -> fake embedding -> PostgreSQL 写回冒烟运
 该实例仍只作为公司 PostgreSQL 18.3 内部平台的本地同构预演替身；本次单次
 fake-model 结果不能作为性能结论。
 
+2026-07-11 已完成第一组 PG18.4 本地正式对照画像实验：固定 4096 行，对比
+`python/ray_actor × fine/coalesced`，每组 1 次 warm-up 与 3 次 formal 重复。
+formal 均值显示 Ray actor 链路中 fine/coalesced 端到端耗时比约 `13.52x`，
+支持继续验证 batch / invocation / object 粒度控制；但该结果仍是本地
+PG18.4 fake-model 证据，不能写成 PostgreSQL 18.3 或真实 GPU 模型结论。
+完整记录见 `motivation/results/pg18_4_system_profile_fake_ai_embed.md`。
+
 已有 Phase 0 本地实验显示：
 
 - Ray small task 不是当前最强瓶颈；

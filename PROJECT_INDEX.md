@@ -55,7 +55,8 @@
 | `code/requirements.txt` | 真实数据库画像脚本的额外 Python 依赖 | 准备 PostgreSQL 18.3 / 同构实例前读 |
 | `deploy/postgres18.4/AGENTS.md` | 本地 PostgreSQL 18.4 同构预演环境规则 | 修改或运行数据库容器前读 |
 | `deploy/postgres18.4/README.md` | PostgreSQL + pgvector 的启动、连接和验证说明 | 运行本地真实数据库链路时读 |
-| `validation/results/postgres18_local_environment_validation.md` | 本地 PG18/pgvector 已验证项与项目画像待办 | 判断数据库连接进度时读 |
+| `validation/results/pg18_4_connection_validation.md` | PG18.4 本地连接与环境验证，只证明系统能连接数据库、读写表和完成冒烟链路 | 判断数据库连接进度时读 |
+| `motivation/results/pg18_4_system_profile_fake_ai_embed.md` | PG18.4 本地同构链路 4096 行系统画像实验，含 python/ray_actor 与 fine/coalesced 对照 | 判断 PG18.4 系统瓶颈、可优化点与下一步 baseline/GPU/真实模型前置条件时读 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |
 
@@ -134,26 +135,23 @@ python motivation/fake_ai_embed_pipeline_benchmark.py \
   --total-rows 65536 \
   --embedding-dim 128 \
   --repeats 3 \
-  --output validation/results/fake_ai_embed_pipeline.csv
+  --output motivation/results/fake_ai_embed_pipeline.csv
 ```
 
 运行环境：
 
 - 使用 `.venv`；
-- 当前没有必要使用 conda；
+- 需要 conda 时使用项目内前缀环境，例如 `.conda/pg-ai-profile`，不要把 `.conda/` 作为结果版本化；
 - Ray benchmark 在当前 macOS 沙箱中可能需要提权运行。
 
 ## 5. 实验结果在哪里
 
-结果目录：
+结果目录分工：
 
-`validation/results/`
+- `validation/results/`：组件级可行性 benchmark、环境验证、PG18.4 连接验证。
+- `motivation/results/`：端到端动机测试、系统画像、瓶颈定位和可优化点分析。
 
-注意：动机测试正式结果已同步到：
-
-`motivation/results/`
-
-讲解动机实验时优先引用 `motivation/results/`，`validation/results/` 继续保留可行性 benchmark 和历史同步副本。
+讲解动机实验和系统画像时优先引用 `motivation/results/`。
 
 | 文件 | 内容 |
 |---|---|
