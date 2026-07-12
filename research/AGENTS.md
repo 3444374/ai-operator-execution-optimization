@@ -8,6 +8,12 @@
 - 为开题、论文动机、导师沟通提供可追溯材料。
 - 把本地实验结果与外部已有证据对应起来。
 
+## 边界
+
+- 放论文、官方文档、源码阅读、文献综述和外部证据对应关系。
+- 不放原始实验 CSV、完整实验报告或学习教程。
+- 项目实验结果放到 `feasibility/results/` 或 `motivation/results/`。
+
 ## 写作规则
 
 - 结论必须标注来源类型：论文、官方文档、源码、本地实验事实、模拟实验事实、合理推断、待确认。
@@ -15,19 +21,6 @@
 - 不把 Daft/Ray/Lance 产品化适配写成既定事实，除非已有接口或实验验证。
 - 不把 PG18.4 本地结果写成 PG18.3 内部平台结果。
 - 优先保留可引用的一手资料：论文、官方文档、源码、真实实验结果。
+- 外部资料、引用和研究定位变化时，及时清理过时判断，避免和 `overview/`、`motivation/` 冲突。
 
-## 当前重点
-
-- Ray object store / ObjectRef / small object anti-pattern。
-- Ray task、actor、object fan-in 与 queue/backpressure。
-- Daft Ray runner、partition、shuffle、join strategy。
-- Arrow RecordBatch / Lance 作为 AI 数据链路中的列式数据形态。
-- PostgreSQL AI 算子、外部 worker、pgvector / vector writeback。
-- 数据库 AI 算子与批量 embedding / RAG 数据准备的关系。
-
-## 当前需要补的依据
-
-- Daft/Ray/Lance 是否适合作为“数据库 AI 算子外部执行系统”的论文定位依据。
-- Ray task baseline、Ray actor baseline、Python batched baseline 的外部参考或官方 anti-pattern 依据。
-- pgvector 写回、vector storage、批量插入成本相关资料。
-- 真实模型服务 / Ray Serve / vLLM 的 batching、queue wait、backpressure 依据。
+详细材料见 `literature_and_evidence_review.md`。

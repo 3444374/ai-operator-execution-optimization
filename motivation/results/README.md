@@ -1,34 +1,55 @@
 # Motivation Results
 
-本目录保存数据库 AI 算子动机测试、端到端系统画像、瓶颈定位和可优化点分析结果。
+本目录保存数据库 AI 算子的端到端动机测试、系统画像、瓶颈定位和可优化点分析。
 
-规则：
+## 结果分层
 
-- 只证明环境能连接的结果不放这里，放 `validation/results/`。
-- 能回答“为什么这个问题值得做”“瓶颈在哪里”“可优化点是什么”的结果放这里。
-
-## 文件
-
-| 文件 | 内容 |
+| 路径 | 地位 |
 |---|---|
-| `fake_ai_embed_pipeline.csv` | fake `AI_EMBED(text)` 端到端动机测试结果 |
-| `ai_operator_scenario_motivation.csv` | embedding / classify-filter / offline LLM 三类 AI 算子场景对比结果 |
-| `ai_operator_granularity_attribution.csv` | task/object/fan-in/operator invocation 收益来源拆分结果 |
-| `ai_operator_backpressure.csv` | 模型服务 queue wait / token backlog / backpressure 模拟结果 |
-| `pg18_4_system_profile_fake_ai_embed.csv` | PG18.4 真实数据库触发链路上的 fake AI_EMBED 系统画像 CSV |
-| `pg18_4_system_profile_fake_ai_embed.md` | PG18.4 系统画像、瓶颈定位和可优化点分析 |
-| `pg18_4_baseline_matrix.csv` | PG18.4 executor × strategy baseline 原始结果 |
-| `pg18_4_actor_batch_workers.csv` | PG18.4 Ray actor batch size × worker 数原始结果 |
-| `pg18_4_baseline_matrix.md` | PG18.4 baseline 矩阵、actor batch/worker 矩阵与下一步分析 |
-| `pg18_4_vector_writeback.csv` | PG18.4 JSON TEXT 与 pgvector vector(128) 写回对照原始结果 |
-| `pg18_4_vector_writeback.md` | PG18.4 pgvector vector(128) 写回对照实验分析 |
-| `pg18_4_pgvector_scaling.csv` | PG18.4 pgvector 批量写回下 total_rows scaling 原始结果 |
-| `pg18_4_pgvector_scaling_fine_contrast.csv` | PG18.4 pgvector 批量写回下少量 fine 对照结果 |
-| `pg18_4_pgvector_scaling.md` | PG18.4 pgvector 批量写回 scaling 实验分析 |
-| `motivation_test_results_analysis.md` | 动机测试综合分析 |
+| `gpu/` | 后续生产式 GPU-backed E2E 主动机结果，优先级最高 |
+| `pg18_4_fake/` | PG18.4 本地同构 fake-model 历史结果 |
+| `fake_cpu/` | fake/CPU 历史预研结果 |
+
+只证明环境连通性的结果不放这里，放 `feasibility/results/`。
+
+## 阅读顺序
+
+1. `gpu/README.md`：GPU-backed 主动机结果入口，目前待补。
+2. `pg18_4_fake/pgvector_scaling.md`：看规模变化后 Ray 与 writeback 的瓶颈迁移。
+3. `pg18_4_fake/vector_writeback.md`：确认 pgvector 批量写回与单行 upsert 的差异。
+4. `pg18_4_fake/baseline_matrix.md`：比较 Python、Ray task、Ray actor 与 batch/worker。
+5. `pg18_4_fake/system_profile.md`：理解 PG18.4 本地同构链路的初始系统画像。
+6. `fake_cpu/analysis.md`：回看历史 fake/CPU 动机测试。
+
+## 下一组主结果
+
+下一组主动机结果应优先补：
+
+```text
+gpu/ai_embed_profile.md
+gpu/ai_embed_profile.csv
+```
+
+之后再补同一计时框架下的三类 baseline：
+
+```text
+gpu/ai_embed_profile.md
+gpu/ai_filter_classify_profile.md
+gpu/ai_complete_profile.md
+```
+
+三类实验都应尽量复用同一套阶段计时：DB trigger/fetch、Arrow/RecordBatch build、external service submit、Ray task/actor、queue wait、GPU model service、fan-in/consolidation、writeback。
+
+## 结论边界
+
+- `gpu/` 才能支撑真实 GPU-backed 链路的主动机和瓶颈归因。
+- `pg18_4_fake/` 只能支撑 PG18.4 本地同构 fake-model 历史信号。
+- `fake_cpu/` 只能支撑历史预研、脚本调试和机制假设，不能替代 GPU-backed 主动机。
+- CPU/fake 阶段瓶颈不能直接写成 GPU-backed 链路瓶颈。
 
 连接验证结果位于：
 
 ```text
-validation/results/pg18_4_connection_validation.md
+feasibility/results/pg18_4_connection_validation.md
 ```
+

@@ -94,7 +94,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warmup-runs", type=int, default=0)
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--experiment-id", default="manual")
-    parser.add_argument("--output", default="validation/results/postgres_ai_operator_profile.csv")
+    parser.add_argument("--output", default="feasibility/results/postgres_ai_operator_profile.csv")
     parser.add_argument("--dry-run", action="store_true", help="Validate configuration without connecting to DB.")
     return parser.parse_args()
 

@@ -10,9 +10,11 @@
 
 技术切入点：
 
-> 基于 Daft/Ray/Lance 的 Object Transfer、fan-in 与 Shuffle 中间数据传输优化。
+> 基于 Ray/Daft/Lance 类外部执行链路的数据库 AI 算子批处理系统调优。
 
 数据库场景是落地入口；真正要沉淀的是 AI infra 能力，包括 distributed execution、object store、shuffle、Arrow/RecordBatch、AI data pipeline、批量推理前后处理等。
+
+当前主攻外部执行链路调优，不把“把 AI 算子搬到数据库内核或 GPU kernel 上执行”作为主要工作量。Snowflake Cortex AISQL、pgai vectorizer、pgvector、PostgresML、OceanBase/达梦类分布式数据库作为工业背景、场景依据和 baseline 对照；真正要研究的是数据库 AI 算子触发后，外部 worker / Ray / Daft / 模型服务 / 写回链路如何组织得更高效。
 
 ## 2. 目标链路
 
@@ -33,11 +35,11 @@ PostgreSQL / documents table / Parquet
 
 当前最有价值的问题是：
 
-> 大量小 RecordBatch/object 在 Ray 下游 fan-in 时产生明显依赖拉取和合并成本，是否可以通过 object coalescing、partition 粒度控制和 fan-in 策略优化降低端到端开销？
+> 数据库 AI 算子外部执行链路对 batch、partition、task/actor、object、fan-in、backpressure 和 writeback 粒度敏感，是否可以通过特征感知任务划分、并行度控制、对象合并、模型服务背压和批量写回降低端到端开销？
 
 ## 4. 当前证据
 
-本地 Phase 0 实验显示：
+本地 fake/CPU 实验显示：
 
 - Ray small task 不是当前最强瓶颈；
 - Arrow IPC 本身不是明显瓶颈；
@@ -63,4 +65,5 @@ PostgreSQL / documents table / Parquet
 1. 搭建 fake `AI_EMBED(text)` 端到端动机测试。
 2. 验证 RecordBatch fan-in 现象是否迁移到批量 embedding / RAG 数据准备链路。
 3. 若成立，进入 PostgreSQL 18.3 内部验证平台或同构预演链路，真实采集数据库 AI 算子外部执行画像。
-4. 将稳定代码迁入 `code/`，形成可复现实验工程。
+4. 优先补外部链路 baseline：Python batched worker、Ray task、Ray actor、主控 fan-in 写回、多 worker 各自写回、Ray Serve / vLLM 或轻量模型服务队列。
+5. 将稳定代码迁入 `code/`，形成可复现实验工程。

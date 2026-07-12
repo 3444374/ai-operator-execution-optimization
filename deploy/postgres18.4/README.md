@@ -28,10 +28,10 @@ code/scripts/postgres_ai_operator_profile.py
 ```
 
 首次真实连接已于 2026-07-11 完成，结果写入
-`validation/results/postgres_ai_operator_profile.csv`。数据库中的 `documents`
+`feasibility/results/postgres_ai_operator_profile.csv`。数据库中的 `documents`
 和 `document_embeddings` 均为 256 行，最新 job 2 状态为 `finished`。完整设置、
 数据和严谨性边界见
-`validation/results/postgres18_local_environment_validation.md`。
+`feasibility/results/postgres18_local_environment_validation.md`。
 
 ## 停止环境
 

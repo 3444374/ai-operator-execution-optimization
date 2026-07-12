@@ -9,6 +9,12 @@
 - 公司内部 PostgreSQL 18.3 才是最终真实实验验证平台。
 - 本目录产生的本地数据和性能结果不得写成 PostgreSQL 18.3 平台结果。
 
+## 边界
+
+- 放本地 PostgreSQL 18.4 + pgvector 部署、连接和环境验证说明。
+- 不放正式系统画像结果、性能结论或论文分析。
+- 连接验证归 `feasibility/results/`；系统画像和瓶颈定位归 `motivation/results/`。
+
 ## 运行规则
 
 - 使用固定镜像标签，不使用 `latest` 或浮动 `18` 标签。
@@ -27,7 +33,4 @@
 4. 一个最小向量距离查询。
 5. 项目画像脚本能通过数据库 URL 建表、读数据并写回。
 
-## 结果归档
-
-- 连接验证记录放在 `validation/results/pg18_4_connection_validation.md`。
-- 系统画像、瓶颈定位和优化收益相关结果放在 `motivation/results/pg18_4_system_profile_fake_ai_embed.md`。
+详细部署说明见 `README.md`。

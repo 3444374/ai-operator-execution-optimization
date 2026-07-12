@@ -1,6 +1,6 @@
 # Project Code
 
-本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `validation/benchmarks/` 或 `motivation/`。
+本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `feasibility/benchmarks/` 或 `motivation/`。
 
 ## PostgreSQL AI 算子链路画像
 
@@ -27,8 +27,8 @@ PostgreSQL documents/job table
 数据库、扩展和向量查询已经验证；WSL `.venv` 已安装 Ray、PyArrow、NumPy
 和 psycopg，并完成 256 行 PostgreSQL -> Arrow -> Ray actor -> fake embedding
 -> PostgreSQL 写回冒烟运行。CSV 位于
-`validation/results/postgres_ai_operator_profile.csv`，完整记录见
-`validation/results/postgres18_local_environment_validation.md`。
+`feasibility/results/postgres_ai_operator_profile.csv`，完整记录见
+`feasibility/results/postgres18_local_environment_validation.md`。
 脚本内部连接、读取、Ray 执行和写回函数的对应关系见 `scripts/README.md`。
 
 最小 dry-run：
@@ -36,7 +36,7 @@ PostgreSQL documents/job table
 ```bash
 .venv/bin/python code/scripts/postgres_ai_operator_profile.py \
   --dry-run \
-  --output validation/results/postgres_ai_operator_profile_dry_run.csv
+  --output feasibility/results/postgres_ai_operator_profile_dry_run.csv
 ```
 
 连接当前本地同构 PostgreSQL 实例：
@@ -52,7 +52,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
   --model-workers 2 \
   --max-inflight 8 \
   --strategy coalesced \
-  --output validation/results/postgres_ai_operator_profile.csv
+  --output feasibility/results/postgres_ai_operator_profile.csv
 ```
 
 真实报告必须说明数据库平台类型：

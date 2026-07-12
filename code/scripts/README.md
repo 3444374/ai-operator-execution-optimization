@@ -45,14 +45,14 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
   --db-fetch-rows 128 --ray-batch-rows 64 \
   --model-workers 2 --max-inflight 4 \
   --strategy coalesced \
-  --output validation/results/pg18_4_connection_smoke_256_rows.csv
+  --output feasibility/results/pg18_4_connection_smoke_256_rows.csv
 ```
 
 ## 结果位置
 
-- 原始数据：`validation/results/pg18_4_connection_smoke_256_rows.csv`
+- 原始数据：`feasibility/results/pg18_4_connection_smoke_256_rows.csv`
 - 设置、过程、表核对、严谨性与结论：
-  `validation/results/pg18_4_connection_validation.md`
+  `feasibility/results/pg18_4_connection_validation.md`
 - 数据库部署：`deploy/postgres18.4/README.md`
 
 当前结果只证明 PostgreSQL 18.4 同构链路连通，不是公司 PostgreSQL 18.3
@@ -83,11 +83,11 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
   --executor ray_actor --strategy coalesced `
   --warmup-runs 1 --repeats 3 `
   --experiment-id pg18_4_fake_4096 `
-  --output motivation\results\pg18_4_system_profile_fake_ai_embed.csv
+  --output motivation\results\pg18_4_fake\system_profile.csv
 ```
 
 完整矩阵、CSV 位置与结果解释：
 
 ```text
-motivation/results/pg18_4_system_profile_fake_ai_embed.md
+motivation/results/pg18_4_fake/system_profile.md
 ```

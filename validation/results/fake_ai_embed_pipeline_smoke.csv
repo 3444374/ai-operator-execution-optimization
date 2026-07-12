@@ -1,3 +1,0 @@
-benchmark,strategy,upstream,downstream,total_rows,embedding_dim,text_tokens,repeat,input_objects,output_objects,avg_input_object_kb,avg_embedding_object_kb,build_ms,put_ms,fake_embed_ms,fanin_ms,write_ms,end_to_end_ms,rows_per_s,reduced_rows,bytes_written
-fake_ai_embed_pipeline,fine,2,2,128,16,4,0,4,4,2.96533203125,2.78125,196.65666701621376,11.647125007584691,126.79770900285803,373.3807500102557,2.2040409967303276,710.6862920336425,180.10759660739416,128,13924
-fake_ai_embed_pipeline,coalesced,2,2,128,16,4,0,2,2,5.9306640625,5.5625,1.2403329892549664,1.1501670232973993,2.7700000209733844,2.3170000058598816,1.0702080035116524,8.547708042897284,14974.77444920005,128,13924
