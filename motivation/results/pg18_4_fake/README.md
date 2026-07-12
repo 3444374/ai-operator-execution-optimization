@@ -1,4 +1,4 @@
-# PG18.4 Fake-Model Results
+﻿# PG18.4 Fake-Model Results
 
 本目录保存 PostgreSQL 18.4 本地同构预演环境上的 fake-model 历史结果。
 
@@ -10,6 +10,7 @@
 | `vector_writeback.md` / `.csv` | JSON TEXT 与 pgvector vector 写回对照 |
 | `pgvector_scaling.md` / `.csv` | pgvector 批量写回下 total_rows scaling |
 | `pgvector_scaling_fine_contrast.csv` | 少量 fine 对照结果 |
+| `simulated_embed_test_20260712.md` / `.csv` | 2026-07-12 本地模拟 embedding 测试结果；同时记录 GPU-backed endpoint 缺失边界 |
 
 这些结果不能写成 PostgreSQL 18.3 内部平台结论，也不能写成真实 GPU 模型服务结论。
 

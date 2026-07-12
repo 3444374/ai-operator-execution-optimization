@@ -1,0 +1,2 @@
+status,experiment_id,phase,repeat_index,database_trigger,executor,strategy,model_backend,embedding_endpoint_url,embedding_model,total_rows,db_fetch_rows,ray_batch_rows,model_workers,max_inflight_limit,writeback_mode,write_batch_rows
+dry_run,multi_endpoint_dry_run,formal,1,job_table,ray_actor,coalesced,http_openai,http://localhost:8000/v1/embeddings;http://localhost:8001/v1/embeddings,local-embedding,10000,1024,1024,2,8,json_text,0

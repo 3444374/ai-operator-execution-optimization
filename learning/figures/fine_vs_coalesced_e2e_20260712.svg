@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="460" viewBox="0 0 720 460" role="img" aria-labelledby="title desc">
+  <title id="title">Fine vs coalesced embedding e2e time</title>
+  <desc id="desc">Grouped bar chart comparing fine and coalesced invocation strategies for CPU and GPU endpoints at 1024 rows.</desc>
+  <rect width="720" height="460" fill="#ffffff"/>
+  <style>
+    .title { font: 700 20px Arial, "Microsoft YaHei", sans-serif; fill: #111827; }
+    .axis-title { font: 13px Arial, "Microsoft YaHei", sans-serif; fill: #374151; }
+    .tick { font: 12px Arial, "Microsoft YaHei", sans-serif; fill: #6b7280; }
+    .value { font: 700 12px Arial, "Microsoft YaHei", sans-serif; fill: #111827; }
+    .axis { stroke: #9ca3af; stroke-width: 1.2; }
+    .grid { stroke: #e5e7eb; stroke-width: 1; }
+    .coalesced { fill: #16a34a; }
+    .fine { fill: #dc2626; }
+  </style>
+
+  <text x="36" y="36" class="title">调用粒度对比：fine vs coalesced 端到端耗时</text>
+
+  <rect x="500" y="24" width="14" height="14" class="coalesced"/>
+  <text x="520" y="36" class="tick">coalesced</text>
+  <rect x="610" y="24" width="14" height="14" class="fine"/>
+  <text x="630" y="36" class="tick">fine</text>
+
+  <line x1="86" y1="380" x2="665" y2="380" class="axis"/>
+  <line x1="86" y1="86" x2="86" y2="380" class="axis"/>
+
+  <line x1="86" y1="380" x2="665" y2="380" class="grid"/>
+  <line x1="86" y1="282" x2="665" y2="282" class="grid"/>
+  <line x1="86" y1="184" x2="665" y2="184" class="grid"/>
+  <line x1="86" y1="86" x2="665" y2="86" class="grid"/>
+
+  <text x="58" y="384" class="tick">0</text>
+  <text x="50" y="286" class="tick">5s</text>
+  <text x="44" y="188" class="tick">10s</text>
+  <text x="44" y="90" class="tick">15s</text>
+  <text x="22" y="236" class="axis-title" transform="rotate(-90 22,236)">e2e_s</text>
+
+  <text x="216" y="414" class="tick">CPU endpoint</text>
+  <text x="486" y="414" class="tick">GPU endpoint</text>
+  <text x="340" y="444" class="axis-title">endpoint</text>
+
+  <!-- scale: 19.6 px/s, baseline y=380 -->
+  <rect x="205" y="322.2" width="36" height="57.8" class="coalesced"/>
+  <rect x="248" y="200.0" width="36" height="180.0" class="fine"/>
+  <text x="203" y="315" class="value">2.95s</text>
+  <text x="246" y="193" class="value">9.19s</text>
+
+  <rect x="475" y="360.6" width="36" height="19.4" class="coalesced"/>
+  <rect x="518" y="116.2" width="36" height="263.8" class="fine"/>
+  <text x="473" y="354" class="value">0.99s</text>
+  <text x="516" y="109" class="value">13.46s</text>
+</svg>

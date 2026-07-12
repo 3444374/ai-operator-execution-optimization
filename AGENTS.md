@@ -63,6 +63,7 @@ PostgreSQL 18.3 internal validation platform / PostgreSQL 18.4 local rehearsal
 - `deploy/`：本地数据库和服务部署。
 - `learning/`：面向用户的学习讲解材料。
 - `notes/`：沟通记录和待确认问题。
+- `opening/`：开题报告、开题 PPT、飞书进度汇报、文献精读、答辩问答和材料同步日志。
 
 ## 4. 目录规则与 README
 

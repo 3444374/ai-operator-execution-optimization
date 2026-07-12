@@ -2,3 +2,5 @@ numpy
 pyarrow
 ray
 psycopg[binary]>=3.2
+torch
+transformers

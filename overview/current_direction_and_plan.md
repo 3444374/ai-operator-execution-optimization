@@ -81,7 +81,7 @@ DB trigger/fetch
 
 > 下一步不能只继续扩展 fake benchmark。必须优先跑通一条可分阶段计时的 GPU-backed E2E 主动机链路：数据库表/SQL 触发、外部执行、Ray/Arrow 中间链路、GPU-backed 模型服务、fan-in/writeback 和指标采集。只有该链路中的画像数据才能回答“为什么外部链路值得优化”。如果 GPU 暂不可用，才用 local/CPU 模型服务作为临时 baseline，并明确不能外推为 GPU 主链路结论。
 
-主动机实验的最低要求是使用真实数据库、真实模型服务和 GPU 计算端点。三类场景的 baseline 都要保留：embedding/RAG ingestion、AI_CLASSIFY / AI_FILTER、offline LLM / AI_COMPLETE。第一组主实验可以先从 `AI_EMBED(text)` 开始，因为它最容易接 pgvector 写回；但后续不能丢掉另外两个场景，否则无法证明方法覆盖不同 AI 算子形态。
+主动机实验的最低要求是使用真实数据库、真实模型服务和 GPU 计算端点。三类场景的 baseline 都要保留：embedding/RAG ingestion、AI_CLASSIFY / AI_FILTER、offline LLM / AI_COMPLETE。第一组主实验可以先从 `AI_EMBED(text)` 开始，因为它最容易接 pgvector 写回、最容易形成开题阶段的真实闭环；但后续不能丢掉另外两个场景。尤其是 `AI_COMPLETE` / offline LLM 应尽量作为后续更贴近 AI infra 的重点主线候选，因为它能自然引出 token-aware batching、prefix/cache locality、模型服务队列、GPU 利用率和 backpressure 等问题。
 
 ## 5. 当前端到端动机实验
 
@@ -150,6 +150,21 @@ bounded wait 与 fan-in 成本。该结果支持继续验证 batch / invocation 
 
 第 2 周：优先设计并实现生产式 GPU-backed E2E 主动机实验的 thin slice：PostgreSQL / pgvector 表、AI-SQL-compatible `AI_EMBED` 算子表面、外部 worker、Ray task/actor、GPU-backed embedding endpoint 或 Ray Serve/vLLM endpoint、主控 fan-in 后写回与多 worker 各自写回、阶段计时 CSV。若 GPU 暂不可用，同步准备 CPU/local 模型服务 baseline，但只作为临时对照。
 
-第 3 周：运行并分析 GPU-backed E2E 主动机实验，固定小规模数据、复用同一套阶段计时，回答生产式 GPU 链路中 AI 算子外部服务链路、模型服务、GPU 利用率、queue wait 和 writeback 的占比关系。随后优先做真实链路上的大块消融，再做 token-aware / prefix-aware batching、AI_FILTER selectivity / cascade 等细化实验。
+第 3 周：运行并分析 GPU-backed E2E 主动机实验，固定小规模数据、复用同一套阶段计时，回答生产式 GPU 链路中 AI 算子外部服务链路、模型服务、GPU 利用率、queue wait 和 writeback 的占比关系。随后优先做真实链路上的大块消融；再把 `AI_COMPLETE` / offline LLM 提升为后续重点 workload，补 token-aware / prefix-aware / queue-aware 实验，同时用 AI_FILTER selectivity / cascade 补足 AI predicate 场景。
 
 第 4 周：用 idea-evaluator 视角做 fatal-flaws audit，整理开题材料、实验设计、baseline、反证条件和论文贡献边界。当前不要把单个场景 C 写成唯一主线，也不要在没有跨层实验数据前把题目写成完整调度系统优化。
+## 8. 现有 AI 算子系统对本项目的约束
+
+现有数据库 AI 算子系统并不都使用 Ray。Snowflake Cortex AISQL 证明 SQL 层 AI functions 是工业真实问题，但其闭源托管链路不能作为本地可拆分 baseline；pgai vectorizer 更接近 PostgreSQL + 外部 worker + embedding endpoint + 写回数据库的形态，但它更适合作为架构参考和 worker 写回对照，而不是长期核心依赖；PostgresML 代表模型靠近数据库或数据库内/近数据库执行的对照路线；pgvector 只负责向量存储和检索，不负责 embedding 计算。
+
+因此，当前方向不改成“复现 Snowflake / pgai”，也不改成“只优化 Ray”。更稳的方向表述是：
+
+> 面向数据库 AI 算子的模型服务感知外部执行链路优化。
+
+后续实验要优先验证三类可控链路问题：
+
+1. Ray task / actor / 多 endpoint 路由是否能降低模型服务阶段墙钟时间；
+2. driver fan-in 后统一写回、Ray worker 各自写回、vectorizer-like 异步 worker 写回三种形态的差异；
+3. PostgreSQL JSON text、PostgreSQL `pgvector(384)`、Lance / Parquet 作为写回 sink 时，哪一段成为瓶颈。
+
+详细外部系统对比见 `research/existing_ai_operator_execution_chains.md`。

@@ -464,18 +464,28 @@ backpressure 模拟结果显示：
 7. **三类场景 baseline**：`AI_EMBED` 作为第一组主动机 baseline；`AI_FILTER/AI_CLASSIFY` 作为 AI predicate/selectivity baseline；`AI_COMPLETE` 作为 offline LLM / token-aware inference baseline。三者都应尽量复用同一套 DB trigger、外部 worker、Ray 调度、GPU model service、writeback 和阶段计时框架。
 8. **真实形态验证**：接 PostgreSQL + 外部 worker + pgvector / Lance 的 embedding/RAG baseline；offline LLM 只有在 PostgresML、外部 vLLM/Ray Serve 或企业目标平台接口可落地后，再作为推理 infra workload 接入。
 
-当前不建议直接优先推进单一场景 C。更稳妥的推进顺序是：
+当前不建议在开题前直接只推进单一场景 C，因为场景 C 需要真实或足够严谨的 LLM 服务、
+token-aware batching、prefix/cache locality 和模型服务队列指标支撑；如果现在只用 fake object
+实验，会把最贴近 AI infra 的问题讲浅。更稳妥的推进顺序是：
 
 ```text
 统一问题：数据库 AI 算子的特征感知并行执行与跨层调度
   -> 场景 A / AI_EMBED 作为第一组数据库落地主动机 baseline
   -> 场景 B / AI_FILTER-AI_CLASSIFY 作为 AI predicate / selectivity baseline
-  -> 场景 C / AI_COMPLETE 作为 inference infra 压力 workload
+  -> 场景 C / AI_COMPLETE 作为后续重点主线候选和 inference infra 压力 workload
 ```
 
 原因：
 
 - 场景 A 最容易和数据库 AI 算子、pgvector、Lance 对齐，适合作为真实系统 baseline。
-- 场景 C 最贴近用户想学习的 inference infra，但必须先补 token-aware / prefix-aware 实验，不能只用当前 fake object 实验支撑。
+- 场景 C 最贴近用户想学习的 inference infra，后续应尽量作为主线候选推进；但必须先补 token-aware / prefix-aware / queue-aware 实验，不能只用当前 fake object 实验支撑。
 - 场景 B 能补足 AI predicate、selectivity 和模型调用次数控制，但要防止课题滑向传统查询优化器。
 - 三者共享 batch / partition / task / actor / object / routing / backpressure / writeback 问题，适合服务于同一个系统方法。
+
+开题阶段的表述建议是：
+
+> 第一阶段以 `AI_EMBED` 建立真实数据库到 GPU-backed 模型服务再写回的端到端主动机；
+> 第二阶段把 `AI_COMPLETE` 提升为更贴近 AI infra 的重点 workload，用 token-aware batching、
+> prefix-aware routing、模型服务队列、GPU utilization 和失败重试等指标验证方法是否能覆盖
+> 更复杂的推理服务链路；`AI_FILTER/AI_CLASSIFY` 用于补足 AI predicate、selectivity 和
+> cascade 场景。

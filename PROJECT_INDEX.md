@@ -169,7 +169,7 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 | `shuffle_simulation.csv` | 本地 shuffle simulation 结果 |
 | `ray_many_objects.csv` | Ray many-object fan-in 结果 |
 | `ray_arrow_fanout_fanin.csv` | Arrow RecordBatch fan-out/fan-in 结果 |
-| `motivation/results/gpu/` | 后续 GPU-backed E2E 主动机结果 |
+| `motivation/results/gpu/` | GPU-backed E2E 主动机结果；当前优先读 `ai_embed_chain_breakdown_20260712.md` |
 | `motivation/results/pg18_4_fake/` | PG18.4 本地同构 fake-model 历史结果 |
 | `motivation/results/fake_cpu/fake_embed_pipeline.csv` | fake `AI_EMBED(text)` 历史预研结果 |
 | `motivation/results/fake_cpu/workload_matrix.csv` | embedding / classify-filter / offline LLM 三类 AI 算子场景历史结果 |
@@ -265,7 +265,7 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 
 下一步优先工作：
 
-- 已补充 granularity attribution 与 backpressure 两个动机实验，下一步优先补生产式 small-scale GPU-backed E2E motivation profile：Python/Ray task/Ray actor、主控 fan-in 写回、多 worker 各自写回、GPU-backed embedding endpoint 应在同一套阶段计时里对比，并用阶段占比回答“为什么外部链路值得优化”；
+- 已补充 granularity attribution、backpressure 和真实 GPU-backed embedding 链路拆分实验。下一步优先补 384 维 pgvector 写回、多 endpoint / Ray Serve / vLLM 形态、主控 fan-in 写回 vs 多 worker 写回，并继续用同一套阶段计时回答“为什么外部链路值得优化”；
 - 消融实验优先在同一条 GPU-backed E2E 链路上做大块对照；CPU/fake 链路只做脚本调试、计时边界验证和历史对照，不能把 CPU-only 分阶段瓶颈直接写成 GPU-backed 链路瓶颈；
 - 把真实链路画像实验收敛到 PostgreSQL 18.3 内部验证平台：SQL/表触发、外部 worker、AI 算子执行、写回和指标采集必须真实跑通；
 - 基于 `motivation/plans/workloads.md` 比较 3 个候选 AI 算子场景；
@@ -291,3 +291,18 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 - 数据从数据库到外部执行链路的格式是什么；
 - 真实 AI 算子是否批处理，是否涉及 join/groupby/repartition/embedding preprocessing；
 - 为什么需要 Ray，而不是数据库内部线程池或普通服务。
+## 开题材料入口
+
+开题报告、开题汇报 PPT、飞书进度汇报、文献精读、答辩问答和材料同步日志统一放在：
+
+```text
+opening/README.md
+```
+
+开题工作规则见：
+
+```text
+opening/work_rules.md
+opening/ppt_rules.md
+opening/outline.md
+```

@@ -63,6 +63,10 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
 2026-07-11 已为 `postgres_ai_operator_profile.py` 增加可重复对照实验参数：
 
 - `--executor python|ray_task|ray_actor`
+- `--model-backend fake|http_openai`
+- `--embedding-endpoint-url`
+- `--embedding-model`
+- `--embedding-api-key`
 - `--writeback-mode json_text|pgvector`
 - `--write-batch-rows`
 - `--warmup-runs`
@@ -70,7 +74,10 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
 - `--experiment-id`
 
 脚本现在会拆分 `db_fetch_s` 与 `arrow_build_s`，支持普通 Python baseline，并且只在
-`--executor ray_actor` 时按需导入 Ray。
+`--executor ray_actor` 或 `--executor ray_task` 时按需导入 Ray。2026-07-12 增加了
+OpenAI-compatible embedding endpoint 后端，用于后续连接本地 vLLM、Ray Serve 或其他
+GPU-backed embedding service。`fake` 仍是默认值，只能作为脚本调试、PG18.4 同构预演或
+历史对照，不能写成 GPU-backed 结论。
 
 示例命令：
 
@@ -91,3 +98,44 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
 ```text
 motivation/results/pg18_4_fake/system_profile.md
 ```
+
+GPU-backed embedding endpoint 配置检查示例：
+
+```powershell
+.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+  --dry-run `
+  --executor ray_actor `
+  --model-backend http_openai `
+  --embedding-endpoint-url http://localhost:8000/v1/embeddings `
+  --embedding-model local-embedding `
+  --experiment-id gpu_ai_embed_config_check `
+  --output feasibility\results\gpu_ai_embed_config_dry_run.csv
+```
+
+正式 GPU-backed 结果应输出到：
+
+```text
+motivation/results/gpu/ai_embed_profile.csv
+```
+
+只有在 `--model-backend http_openai` 连接到真实 GPU-backed endpoint 时，结果才可放入
+`motivation/results/gpu/`。
+
+本地真实模型 endpoint 可用 `local_embedding_server.py` 启动：
+
+```powershell
+$env:HF_HOME="D:\Code\ai-operator-execution-optimization\.cache\huggingface"
+$env:HF_HUB_CACHE="D:\Code\ai-operator-execution-optimization\.cache\huggingface\hub"
+$env:TRANSFORMERS_CACHE=$env:HF_HUB_CACHE
+$env:TORCH_HOME="D:\Code\ai-operator-execution-optimization\.cache\torch"
+
+.conda\pg-ai-profile\python.exe code\scripts\local_embedding_server.py `
+  --model .cache\models\all-MiniLM-L6-v2 `
+  --device cuda `
+  --batch-size 64 `
+  --port 8000
+```
+
+该服务提供 OpenAI-compatible `/v1/embeddings` 接口，供
+`postgres_ai_operator_profile.py --model-backend http_openai` 调用。
+2026-07-12 的首轮 GPU-backed profile 中，该 endpoint 是用户手动启动的。

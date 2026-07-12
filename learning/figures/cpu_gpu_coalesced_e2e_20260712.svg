@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="460" viewBox="0 0 720 460" role="img" aria-labelledby="title desc">
+  <title id="title">CPU vs GPU coalesced embedding e2e time</title>
+  <desc id="desc">Grouped bar chart comparing CPU and GPU endpoint end-to-end time for 1024 and 4096 rows in coalesced mode.</desc>
+  <rect width="720" height="460" fill="#ffffff"/>
+  <style>
+    .title { font: 700 20px Arial, "Microsoft YaHei", sans-serif; fill: #111827; }
+    .axis-title { font: 13px Arial, "Microsoft YaHei", sans-serif; fill: #374151; }
+    .tick { font: 12px Arial, "Microsoft YaHei", sans-serif; fill: #6b7280; }
+    .value { font: 700 12px Arial, "Microsoft YaHei", sans-serif; fill: #111827; }
+    .axis { stroke: #9ca3af; stroke-width: 1.2; }
+    .grid { stroke: #e5e7eb; stroke-width: 1; }
+    .cpu { fill: #64748b; }
+    .gpu { fill: #2563eb; }
+  </style>
+
+  <text x="36" y="36" class="title">CPU/GPU endpoint 对比：coalesced 端到端耗时</text>
+
+  <rect x="500" y="24" width="14" height="14" class="cpu"/>
+  <text x="520" y="36" class="tick">CPU endpoint</text>
+  <rect x="610" y="24" width="14" height="14" class="gpu"/>
+  <text x="630" y="36" class="tick">GPU endpoint</text>
+
+  <line x1="86" y1="380" x2="665" y2="380" class="axis"/>
+  <line x1="86" y1="86" x2="86" y2="380" class="axis"/>
+
+  <line x1="86" y1="380" x2="665" y2="380" class="grid"/>
+  <line x1="86" y1="282" x2="665" y2="282" class="grid"/>
+  <line x1="86" y1="184" x2="665" y2="184" class="grid"/>
+  <line x1="86" y1="86" x2="665" y2="86" class="grid"/>
+
+  <text x="58" y="384" class="tick">0</text>
+  <text x="50" y="286" class="tick">5s</text>
+  <text x="44" y="188" class="tick">10s</text>
+  <text x="44" y="90" class="tick">15s</text>
+  <text x="22" y="236" class="axis-title" transform="rotate(-90 22,236)">e2e_s</text>
+
+  <text x="202" y="414" class="tick">1024 rows</text>
+  <text x="472" y="414" class="tick">4096 rows</text>
+  <text x="335" y="444" class="axis-title">input rows</text>
+
+  <!-- scale: 19.6 px/s, baseline y=380 -->
+  <rect x="205" y="322.2" width="36" height="57.8" class="cpu"/>
+  <rect x="248" y="360.6" width="36" height="19.4" class="gpu"/>
+  <text x="203" y="315" class="value">2.95s</text>
+  <text x="246" y="354" class="value">0.99s</text>
+
+  <rect x="475" y="171.0" width="36" height="209.0" class="cpu"/>
+  <rect x="518" y="318.0" width="36" height="62.0" class="gpu"/>
+  <text x="470" y="164" class="value">10.66s</text>
+  <text x="516" y="312" class="value">3.17s</text>
+</svg>

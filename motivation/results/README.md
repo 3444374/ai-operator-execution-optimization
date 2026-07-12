@@ -1,4 +1,4 @@
-# Motivation Results
+﻿# Motivation Results
 
 本目录保存数据库 AI 算子的端到端动机测试、系统画像、瓶颈定位和可优化点分析。
 
@@ -14,20 +14,25 @@
 
 ## 阅读顺序
 
-1. `gpu/README.md`：GPU-backed 主动机结果入口，目前待补。
-2. `pg18_4_fake/pgvector_scaling.md`：看规模变化后 Ray 与 writeback 的瓶颈迁移。
-3. `pg18_4_fake/vector_writeback.md`：确认 pgvector 批量写回与单行 upsert 的差异。
-4. `pg18_4_fake/baseline_matrix.md`：比较 Python、Ray task、Ray actor 与 batch/worker。
-5. `pg18_4_fake/system_profile.md`：理解 PG18.4 本地同构链路的初始系统画像。
-6. `fake_cpu/analysis.md`：回看历史 fake/CPU 动机测试。
+1. `gpu/ai_embed_chain_breakdown_20260712.md`：真实 GPU-backed embedding 链路拆分结果，当前开题动机优先引用。
+2. `gpu/multi_endpoint_ray_motivation_20260712.md`：两个本地 GPU endpoint 下 Ray 价值的初步动机测试。
+3. `gpu/ai_embed_profile.md`：第一组 GPU-backed 真实 embedding 端到端画像。
+4. `cpu/cpu_vs_gpu_embed_comparison_20260712.md`：真实 embedding CPU/GPU 对比和时间边界解释。
+5. `gpu/README.md`：GPU-backed 主动机结果入口。
+6. `pg18_4_fake/pgvector_scaling.md`：看规模变化后 Ray 与 writeback 的瓶颈迁移。
+7. `pg18_4_fake/vector_writeback.md`：确认 pgvector 批量写回与单行 upsert 的差异。
+8. `pg18_4_fake/baseline_matrix.md`：比较 Python、Ray task、Ray actor 与 batch/worker。
+9. `pg18_4_fake/system_profile.md`：理解 PG18.4 本地同构链路的初始系统画像。
+10. `pg18_4_fake/simulated_embed_test_20260712.md`：查看 2026-07-12 在 GPU endpoint 缺失时补跑的本地模拟 embedding 测试结果。
+11. `fake_cpu/analysis.md`：回看历史 fake/CPU 动机测试。
 
 ## 下一组主结果
 
-下一组主动机结果应优先补：
+当前下一组主动机结果应优先补：
 
 ```text
-gpu/ai_embed_profile.md
-gpu/ai_embed_profile.csv
+gpu/384_dim_pgvector_writeback.md
+gpu/multi_endpoint_or_ray_serve_profile.md
 ```
 
 之后再补同一计时框架下的三类 baseline：
