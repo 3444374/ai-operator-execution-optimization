@@ -244,7 +244,7 @@ SELECT ai_embed_batch('documents', 'text', 'document_embeddings');
 
 目标：
 
-> 证明这是数据库 AI 算子触发的外部执行链路，而不只是离线脚本；如果 GPU 环境可用，进一步证明生产式 GPU-backed 链路中外部执行链路是否是主要损耗来源。
+> 证明这是数据库驱动 AI workload 的分布式数据执行链路，而不只是离线脚本；如果 GPU 环境可用，进一步证明生产式 GPU-backed 链路中数据组织、Ray 执行、模型服务和写回是否存在可分解的主要损耗。
 
 链路：
 

@@ -1,0 +1,4887 @@
+{
+  "schema": "template_fill_pptx_library.v1",
+  "source_pptx": "D:\\Code\\ai-operator-execution-optimization\\opening\\templates\\opening_ppt_template_version_v6_long_notes_source_checked.pptx",
+  "slide_count": 25,
+  "canvas_px": {
+    "width": 960,
+    "height": 720
+  },
+  "slides": [
+    {
+      "slide_index": 1,
+      "page_type": "cover_candidate",
+      "text_summary": "研究方向：Text-to-SQL / SQL+ 中间表示 / 多智能体 / 执行反馈修正\n汇报人：艾筠舜    导师：王芳    时间：2026.7\n面向 SQL+ 简化查询表达的多智能体自然语言数据库查询生成与反馈修正方法研究\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 1",
+      "slots": [
+        {
+          "slot_id": "s01_sh2",
+          "role": "title_candidate",
+          "text": "研究方向：Text-to-SQL / SQL+ 中间表示 / 多智能体 / 执行反馈修正\n汇报人：艾筠舜    导师：王芳    时间：2026.7",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": null,
+            "y": null,
+            "width": null,
+            "height": null
+          },
+          "text_metrics": {
+            "font_size_px": 22.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s01_sh3",
+          "role": "title_candidate",
+          "text": "面向 SQL+ 简化查询表达的多智能体自然语言数据库查询生成与反馈修正方法研究",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 247,
+            "width": 864,
+            "height": 91
+          },
+          "text_metrics": {
+            "font_size_px": 36.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s01_sh4",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 1",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 2,
+      "page_type": "content_candidate",
+      "text_summary": "汇报结构\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 2\n1\n背景与问题\n自然语言数据库查询为什么仍不稳定\n2\n研究发展\nText-to-SQL、IR、Agentic NL2SQL 的演进\n3\n动机测试\n按实验设置、方法、结果和分析说明为什么这样设计\n4\n系统设计\nSQL+ 中间表示与多智能体反馈闭环\n5\n可行性与初期验证\n转换、修复、repair skill 和 Spider 小子集\n6\n后续计划\n多组对比、消融、公开子集和达梦适配",
+      "slots": [
+        {
+          "slot_id": "s02_sh2",
+          "role": "title_candidate",
+          "text": "汇报结构",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 43,
+            "y": 111,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 2",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh4",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 55,
+            "y": 210,
+            "width": 240,
+            "height": 144
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s02_sh5",
+          "role": "label_candidate",
+          "text": "1",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 70,
+            "y": 223,
+            "width": 40,
+            "height": 33
+          },
+          "text_metrics": {
+            "font_size_px": 24.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh6",
+          "role": "label_candidate",
+          "text": "背景与问题",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 112,
+            "y": 224,
+            "width": 158,
+            "height": 29
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh7",
+          "role": "label_candidate",
+          "text": "自然语言数据库查询为什么仍不稳定",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 76,
+            "y": 275,
+            "width": 197,
+            "height": 50
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh8",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 343,
+            "y": 210,
+            "width": 240,
+            "height": 144
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s02_sh9",
+          "role": "label_candidate",
+          "text": "2",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 358,
+            "y": 223,
+            "width": 40,
+            "height": 33
+          },
+          "text_metrics": {
+            "font_size_px": 24.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh10",
+          "role": "label_candidate",
+          "text": "研究发展",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 402,
+            "y": 224,
+            "width": 158,
+            "height": 29
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh11",
+          "role": "label_candidate",
+          "text": "Text-to-SQL、IR、Agentic NL2SQL 的演进",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 364,
+            "y": 275,
+            "width": 197,
+            "height": 50
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh12",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 631,
+            "y": 210,
+            "width": 240,
+            "height": 144
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s02_sh13",
+          "role": "label_candidate",
+          "text": "3",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 646,
+            "y": 223,
+            "width": 40,
+            "height": 33
+          },
+          "text_metrics": {
+            "font_size_px": 24.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh14",
+          "role": "label_candidate",
+          "text": "动机测试",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 687,
+            "y": 224,
+            "width": 158,
+            "height": 29
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh15",
+          "role": "label_candidate",
+          "text": "按实验设置、方法、结果和分析说明为什么这样设计",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 652,
+            "y": 275,
+            "width": 197,
+            "height": 50
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh16",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 55,
+            "y": 416,
+            "width": 240,
+            "height": 144
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s02_sh17",
+          "role": "label_candidate",
+          "text": "4",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 70,
+            "y": 430,
+            "width": 40,
+            "height": 33
+          },
+          "text_metrics": {
+            "font_size_px": 24.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh18",
+          "role": "label_candidate",
+          "text": "系统设计",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 112,
+            "y": 431,
+            "width": 158,
+            "height": 29
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh19",
+          "role": "label_candidate",
+          "text": "SQL+ 中间表示与多智能体反馈闭环",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 76,
+            "y": 481,
+            "width": 197,
+            "height": 50
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh20",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 343,
+            "y": 416,
+            "width": 240,
+            "height": 144
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s02_sh21",
+          "role": "label_candidate",
+          "text": "5",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 358,
+            "y": 430,
+            "width": 40,
+            "height": 33
+          },
+          "text_metrics": {
+            "font_size_px": 24.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh22",
+          "role": "label_candidate",
+          "text": "可行性与初期验证",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 401,
+            "y": 429,
+            "width": 186,
+            "height": 32
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh23",
+          "role": "label_candidate",
+          "text": "转换、修复、repair skill 和 Spider 小子集",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 364,
+            "y": 481,
+            "width": 197,
+            "height": 50
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh24",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 631,
+            "y": 416,
+            "width": 240,
+            "height": 144
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s02_sh25",
+          "role": "label_candidate",
+          "text": "6",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 646,
+            "y": 430,
+            "width": 40,
+            "height": 33
+          },
+          "text_metrics": {
+            "font_size_px": 24.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh26",
+          "role": "label_candidate",
+          "text": "后续计划",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 684,
+            "y": 429,
+            "width": 158,
+            "height": 29
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s02_sh27",
+          "role": "label_candidate",
+          "text": "多组对比、消融、公开子集和达梦适配",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 652,
+            "y": 481,
+            "width": 197,
+            "height": 50
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 3,
+      "page_type": "content_candidate",
+      "text_summary": "背景与问题：自然语言查询需要可修复\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 3\n业务人员\n自然语言问题\n→\nLLM / Agent\n生成 SQL\n→\n数据库执行\n结果或错误反馈\n重点：本课题关注生成失败后的定位、路由和局部修复。\n错误层级\n常见表现\n为什么难修\nschema linking\n表列选择、连接路径错误\n会传导到 WHERE、GROUP 和 SELECT\nvalue linking\n枚举值、日期、阈值错误\n执行可能不报错，但结果语义错\naggregation\nCOUNT、GROUP、HAVING 口径错误\n涉及跨子句依赖\nprojection/order\n输出列、排序字段、top-k 错误\n结果看似合理但不符合问题",
+      "slots": [
+        {
+          "slot_id": "s03_sh2",
+          "role": "title_candidate",
+          "text": "背景与问题：自然语言查询需要可修复",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 43,
+            "y": 111,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s03_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 3",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s03_sh4",
+          "role": "label_candidate",
+          "text": "业务人员\n自然语言问题",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 71,
+            "y": 228,
+            "width": 221,
+            "height": 84
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s03_sh5",
+          "role": "label_candidate",
+          "text": "→",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 301,
+            "y": 252,
+            "width": 33,
+            "height": 25
+          },
+          "text_metrics": {
+            "font_size_px": 21.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s03_sh6",
+          "role": "label_candidate",
+          "text": "LLM / Agent\n生成 SQL",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 340,
+            "y": 228,
+            "width": 221,
+            "height": 84
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s03_sh7",
+          "role": "label_candidate",
+          "text": "→",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 571,
+            "y": 252,
+            "width": 33,
+            "height": 25
+          },
+          "text_metrics": {
+            "font_size_px": 21.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s03_sh8",
+          "role": "label_candidate",
+          "text": "数据库执行\n结果或错误反馈",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 608,
+            "y": 228,
+            "width": 250,
+            "height": 84
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s03_sh10",
+          "role": "label_candidate",
+          "text": "重点：本课题关注生成失败后的定位、路由和局部修复。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 84,
+            "y": 623,
+            "width": 792,
+            "height": 42
+          },
+          "text_metrics": {
+            "font_size_px": 20.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s03_sh9",
+          "role": "body_candidate",
+          "text": "错误层级\n常见表现\n为什么难修\nschema linking\n表列选择、连接路径错误\n会传导到 WHERE、GROUP 和 SELECT\nvalue linking\n枚举值、日期、阈值错误\n执行可能不报错，但结果语义错\naggregation\nCOUNT、GROUP、HAVING 口径错误\n涉及跨子句依赖\nprojection/order\n输出列、排序字段、top-k 错误\n结果看似合理但不符合问题",
+          "paragraph_count": 15,
+          "geometry": {
+            "x": 43,
+            "y": 346,
+            "width": 874,
+            "height": 243
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 15
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s03_tbl9",
+          "row_count": 5,
+          "column_count": 3,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "错误层级"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "常见表现"
+                },
+                {
+                  "row": 0,
+                  "col": 2,
+                  "text": "为什么难修"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "schema linking"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "表列选择、连接路径错误"
+                },
+                {
+                  "row": 1,
+                  "col": 2,
+                  "text": "会传导到 WHERE、GROUP 和 SELECT"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "value linking"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "枚举值、日期、阈值错误"
+                },
+                {
+                  "row": 2,
+                  "col": 2,
+                  "text": "执行可能不报错，但结果语义错"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "aggregation"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "COUNT、GROUP、HAVING 口径错误"
+                },
+                {
+                  "row": 3,
+                  "col": 2,
+                  "text": "涉及跨子句依赖"
+                }
+              ]
+            },
+            {
+              "row": 4,
+              "cells": [
+                {
+                  "row": 4,
+                  "col": 0,
+                  "text": "projection/order"
+                },
+                {
+                  "row": 4,
+                  "col": 1,
+                  "text": "输出列、排序字段、top-k 错误"
+                },
+                {
+                  "row": 4,
+                  "col": 2,
+                  "text": "结果看似合理但不符合问题"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 4,
+      "page_type": "content_candidate",
+      "text_summary": "研究发展：从 benchmark 到可修复的 agentic NL2SQL\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 4\n按研究问题梳理现有工作：复杂查询生成、中间表示/SQL 扩展、执行反馈和多智能体修复。\n2018/2023\nBenchmark 与复杂 schema\nSpider(EMNLP 2018) 定义跨数据库复杂 SQL 任务；BIRD(NeurIPS 2023) 引入真实数据库、外部知识和效率要求。\n启发：评价不能只看语法，还要看执行一致、效率和复杂查询表现。\n2019-2021\n中间表示与 schema linking\nIRNet/SemQL(ACL 2019)、RAT-SQL(ACL 2020)、NatSQL(EMNLP 2021)、PICARD(EMNLP 2021) 分别从语义表示、schema linking、简化表达和约束解码降低生成难度。\n启发：SQL+ 要体现线性、可转换、可局部修复。\n2023-2024\nSQL 扩展与执行反馈\nPipe Syntax(PVLDB 2024) 说明 SQL 可通过线性扩展提升可读性",
+      "slots": [
+        {
+          "slot_id": "s04_sh2",
+          "role": "title_candidate",
+          "text": "研究发展：从 benchmark 到可修复的 agentic NL2SQL",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 41,
+            "y": 108,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 26.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh4",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 4",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh5",
+          "role": "label_candidate",
+          "text": "按研究问题梳理现有工作：复杂查询生成、中间表示/SQL 扩展、执行反馈和多智能体修复。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 49,
+            "y": 179,
+            "width": 845,
+            "height": 22
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh6",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 53,
+            "y": 209,
+            "width": 197,
+            "height": 357
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s04_sh7",
+          "role": "label_candidate",
+          "text": "2018/2023",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 64,
+            "y": 224,
+            "width": 174,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 13.6,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh8",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 82,
+            "y": 255,
+            "width": 139,
+            "height": 2
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s04_sh9",
+          "role": "label_candidate",
+          "text": "Benchmark 与复杂 schema",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 68,
+            "y": 263,
+            "width": 166,
+            "height": 43
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh10",
+          "role": "body_candidate",
+          "text": "Spider(EMNLP 2018) 定义跨数据库复杂 SQL 任务；BIRD(NeurIPS 2023) 引入真实数据库、外部知识和效率要求。\n启发：评价不能只看语法，还要看执行一致、效率和复杂查询表现。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 70,
+            "y": 352,
+            "width": 162,
+            "height": 137
+          },
+          "text_metrics": {
+            "font_size_px": 13.73,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh11",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 271,
+            "y": 209,
+            "width": 197,
+            "height": 357
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s04_sh12",
+          "role": "label_candidate",
+          "text": "2019-2021",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 282,
+            "y": 224,
+            "width": 174,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 13.6,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh13",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 300,
+            "y": 255,
+            "width": 139,
+            "height": 2
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s04_sh14",
+          "role": "label_candidate",
+          "text": "中间表示与 schema linking",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 286,
+            "y": 263,
+            "width": 166,
+            "height": 43
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh15",
+          "role": "body_candidate",
+          "text": "IRNet/SemQL(ACL 2019)、RAT-SQL(ACL 2020)、NatSQL(EMNLP 2021)、PICARD(EMNLP 2021) 分别从语义表示、schema linking、简化表达和约束解码降低生成难度。\n启发：SQL+ 要体现线性、可转换、可局部修复。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 288,
+            "y": 327,
+            "width": 162,
+            "height": 187
+          },
+          "text_metrics": {
+            "font_size_px": 13.73,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh16",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 489,
+            "y": 209,
+            "width": 197,
+            "height": 357
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s04_sh17",
+          "role": "label_candidate",
+          "text": "2023-2024",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 500,
+            "y": 224,
+            "width": 174,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 13.6,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh18",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 517,
+            "y": 255,
+            "width": 139,
+            "height": 2
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s04_sh19",
+          "role": "label_candidate",
+          "text": "SQL 扩展与执行反馈",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 504,
+            "y": 263,
+            "width": 166,
+            "height": 43
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh20",
+          "role": "body_candidate",
+          "text": "Pipe Syntax(PVLDB 2024) 说明 SQL 可通过线性扩展提升可读性；DIN-SQL(NeurIPS 2023)、LEVER(ICML 2023) 强调任务分解和执行验证。\n启发：SQL+ 可作为执行反馈回流的步骤化中间层。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 506,
+            "y": 352,
+            "width": 162,
+            "height": 137
+          },
+          "text_metrics": {
+            "font_size_px": 13.73,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh21",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 707,
+            "y": 209,
+            "width": 197,
+            "height": 357
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s04_sh22",
+          "role": "label_candidate",
+          "text": "2024-2025",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 718,
+            "y": 224,
+            "width": 174,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 13.6,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh23",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 735,
+            "y": 255,
+            "width": 139,
+            "height": 2
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s04_sh24",
+          "role": "label_candidate",
+          "text": "Agentic NL2SQL",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 722,
+            "y": 263,
+            "width": 166,
+            "height": 43
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh25",
+          "role": "body_candidate",
+          "text": "CHESS(arxiv 2024)、CHASE-SQL(arxiv 2024)、MAC-SQL(COLING 2025)、SQL-Factory(arxiv 2025)、Spider 2.0(ICLR 2025) 强调检索、规划、候选生成、选择和验证。\n启发：本课题把多 Agent 落到 Critic、Router、Repair Skill 的可修复闭环。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 724,
+            "y": 319,
+            "width": 162,
+            "height": 203
+          },
+          "text_metrics": {
+            "font_size_px": 13.73,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s04_sh26",
+          "role": "label_candidate",
+          "text": "研究空间：已有工作证明生成和反馈有价值，但 SQL+ 层“错误定位—技能路由—局部修复”仍需专门研究。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 69,
+            "y": 605,
+            "width": 830,
+            "height": 38
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 5,
+      "page_type": "content_candidate",
+      "text_summary": "当前研究与发展：benchmark、IR 与 agentic NL2SQL\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 5\n研究趋势是从单次生成走向真实环境、工具反馈、多智能体协作和可验证修复。\n方向\n代表工作与年份\n已解决问题\n对本课题的启发\n公开评测\nSpider 2018、BIRD 2023、Spider 2.0 2025\n复杂 schema、真实数据、企业工作流\n后续需要从小子集扩展到多库和真实方言\n中间表示\nSemQL 2019、NatSQL 2021、Pipe Syntax 2024\n降低 SQL 生成或表达复杂度\nSQL+ 要证明修复接口价值，而不只是换语法\n约束与验证\nPICARD 2021、LEVER 2023\n语法约束、执行验证、候选筛选\n执行反馈需要进入诊断和 patch 过程\nAgentic NL2SQL\nDIN-SQL 2023、CHESS 2024、CHASE-SQL 2024、MAC-SQL 2025\n分解、多候选、多角色协作\n需要更清楚的步骤级错误定位和 repair skill 评价\n数据生成\nSQL-Facto",
+      "slots": [
+        {
+          "slot_id": "s05_sh2",
+          "role": "title_candidate",
+          "text": "当前研究与发展：benchmark、IR 与 agentic NL2SQL",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 43,
+            "y": 111,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s05_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 5",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s05_sh5",
+          "role": "label_candidate",
+          "text": "研究趋势是从单次生成走向真实环境、工具反馈、多智能体协作和可验证修复。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 69,
+            "y": 616,
+            "width": 830,
+            "height": 46
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s05_sh4",
+          "role": "body_candidate",
+          "text": "方向\n代表工作与年份\n已解决问题\n对本课题的启发\n公开评测\nSpider 2018、BIRD 2023、Spider 2.0 2025\n复杂 schema、真实数据、企业工作流\n后续需要从小子集扩展到多库和真实方言\n中间表示\nSemQL 2019、NatSQL 2021、Pipe Syntax 2024\n降低 SQL 生成或表达复杂度\nSQL+ 要证明修复接口价值，而不只是换语法\n约束与验证\nPICARD 2021、LEVER 2023\n语法约束、执行验证、候选筛选\n执行反馈需要进入诊断和 patch 过程\nAgentic NL2SQL\nDIN-SQL 2023、CHESS 2024、CHASE-SQL 2024、MAC-SQL 2025\n分解、多候选、多角色协作\n需要更清楚的步骤级错误定位和 repair skill 评价\n数据生成\nSQL-Factory 2025\n多智能体生成高质量 SQL 数据\n可用于后续扩充训练和评测样例",
+          "paragraph_count": 24,
+          "geometry": {
+            "x": 43,
+            "y": 210,
+            "width": 874,
+            "height": 390
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 24
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s05_tbl4",
+          "row_count": 6,
+          "column_count": 4,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "方向"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "代表工作与年份"
+                },
+                {
+                  "row": 0,
+                  "col": 2,
+                  "text": "已解决问题"
+                },
+                {
+                  "row": 0,
+                  "col": 3,
+                  "text": "对本课题的启发"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "公开评测"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "Spider 2018、BIRD 2023、Spider 2.0 2025"
+                },
+                {
+                  "row": 1,
+                  "col": 2,
+                  "text": "复杂 schema、真实数据、企业工作流"
+                },
+                {
+                  "row": 1,
+                  "col": 3,
+                  "text": "后续需要从小子集扩展到多库和真实方言"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "中间表示"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "SemQL 2019、NatSQL 2021、Pipe Syntax 2024"
+                },
+                {
+                  "row": 2,
+                  "col": 2,
+                  "text": "降低 SQL 生成或表达复杂度"
+                },
+                {
+                  "row": 2,
+                  "col": 3,
+                  "text": "SQL+ 要证明修复接口价值，而不只是换语法"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "约束与验证"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "PICARD 2021、LEVER 2023"
+                },
+                {
+                  "row": 3,
+                  "col": 2,
+                  "text": "语法约束、执行验证、候选筛选"
+                },
+                {
+                  "row": 3,
+                  "col": 3,
+                  "text": "执行反馈需要进入诊断和 patch 过程"
+                }
+              ]
+            },
+            {
+              "row": 4,
+              "cells": [
+                {
+                  "row": 4,
+                  "col": 0,
+                  "text": "Agentic NL2SQL"
+                },
+                {
+                  "row": 4,
+                  "col": 1,
+                  "text": "DIN-SQL 2023、CHESS 2024、CHASE-SQL 2024、MAC-SQL 2025"
+                },
+                {
+                  "row": 4,
+                  "col": 2,
+                  "text": "分解、多候选、多角色协作"
+                },
+                {
+                  "row": 4,
+                  "col": 3,
+                  "text": "需要更清楚的步骤级错误定位和 repair skill 评价"
+                }
+              ]
+            },
+            {
+              "row": 5,
+              "cells": [
+                {
+                  "row": 5,
+                  "col": 0,
+                  "text": "数据生成"
+                },
+                {
+                  "row": 5,
+                  "col": 1,
+                  "text": "SQL-Factory 2025"
+                },
+                {
+                  "row": 5,
+                  "col": 2,
+                  "text": "多智能体生成高质量 SQL 数据"
+                },
+                {
+                  "row": 5,
+                  "col": 3,
+                  "text": "可用于后续扩充训练和评测样例"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 6,
+      "page_type": "content_candidate",
+      "text_summary": "动机测试：问题、假设与实验分组\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 6\n这一组测试服务于开题动机：证明 SQL+ 的价值主要在可定位、可解释、可修复，而不是单纯更短。\n假设\n要回答的问题\n实验设计\n关键指标\nH1 初次生成\nSQL+ 是否比直接 SQL 更容易生成？\nDirect SQL vs NL2SQL+ prompt\nexecution match / valid rate\nH2 表达复杂度\nSQL+ 与 SemQL、NatSQL、Pipe-style 有何差别？\n同一 gold SQL 改写为多种 IR proxy\ntoken / 步骤 / 嵌套 / 别名依赖\nH3 生成成本\nSQL+ 是否带来额外 token 和延迟？\n同模型生成 Direct SQL、SQL+、NatSQL-style、SemQL-style\ntoken / latency / execution match\nH4 修复收益\nSQL+ 的修复收益能否抵消生成成本？\nDirect Refiner vs SQL+ Critic Router Skills\nrepa",
+      "slots": [
+        {
+          "slot_id": "s06_sh2",
+          "role": "title_candidate",
+          "text": "动机测试：问题、假设与实验分组",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 41,
+            "y": 118,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 26.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s06_sh4",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 6",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s06_sh7",
+          "role": "label_candidate",
+          "text": "这一组测试服务于开题动机：证明 SQL+ 的价值主要在可定位、可解释、可修复，而不是单纯更短。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 69,
+            "y": 607,
+            "width": 830,
+            "height": 38
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s06_sh6",
+          "role": "body_candidate",
+          "text": "假设\n要回答的问题\n实验设计\n关键指标\nH1 初次生成\nSQL+ 是否比直接 SQL 更容易生成？\nDirect SQL vs NL2SQL+ prompt\nexecution match / valid rate\nH2 表达复杂度\nSQL+ 与 SemQL、NatSQL、Pipe-style 有何差别？\n同一 gold SQL 改写为多种 IR proxy\ntoken / 步骤 / 嵌套 / 别名依赖\nH3 生成成本\nSQL+ 是否带来额外 token 和延迟？\n同模型生成 Direct SQL、SQL+、NatSQL-style、SemQL-style\ntoken / latency / execution match\nH4 修复收益\nSQL+ 的修复收益能否抵消生成成本？\nDirect Refiner vs SQL+ Critic Router Skills\nrepair success / patch minimality / rounds",
+          "paragraph_count": 20,
+          "geometry": {
+            "x": 53,
+            "y": 213,
+            "width": 859,
+            "height": 341
+          },
+          "text_metrics": {
+            "font_size_px": 13.87,
+            "paragraph_count": 20
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s06_tbl6",
+          "row_count": 5,
+          "column_count": 4,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "假设"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "要回答的问题"
+                },
+                {
+                  "row": 0,
+                  "col": 2,
+                  "text": "实验设计"
+                },
+                {
+                  "row": 0,
+                  "col": 3,
+                  "text": "关键指标"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "H1 初次生成"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "SQL+ 是否比直接 SQL 更容易生成？"
+                },
+                {
+                  "row": 1,
+                  "col": 2,
+                  "text": "Direct SQL vs NL2SQL+ prompt"
+                },
+                {
+                  "row": 1,
+                  "col": 3,
+                  "text": "execution match / valid rate"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "H2 表达复杂度"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "SQL+ 与 SemQL、NatSQL、Pipe-style 有何差别？"
+                },
+                {
+                  "row": 2,
+                  "col": 2,
+                  "text": "同一 gold SQL 改写为多种 IR proxy"
+                },
+                {
+                  "row": 2,
+                  "col": 3,
+                  "text": "token / 步骤 / 嵌套 / 别名依赖"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "H3 生成成本"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "SQL+ 是否带来额外 token 和延迟？"
+                },
+                {
+                  "row": 3,
+                  "col": 2,
+                  "text": "同模型生成 Direct SQL、SQL+、NatSQL-style、SemQL-style"
+                },
+                {
+                  "row": 3,
+                  "col": 3,
+                  "text": "token / latency / execution match"
+                }
+              ]
+            },
+            {
+              "row": 4,
+              "cells": [
+                {
+                  "row": 4,
+                  "col": 0,
+                  "text": "H4 修复收益"
+                },
+                {
+                  "row": 4,
+                  "col": 1,
+                  "text": "SQL+ 的修复收益能否抵消生成成本？"
+                },
+                {
+                  "row": 4,
+                  "col": 2,
+                  "text": "Direct Refiner vs SQL+ Critic Router Skills"
+                },
+                {
+                  "row": 4,
+                  "col": 3,
+                  "text": "repair success / patch minimality / rounds"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 7,
+      "page_type": "content_candidate",
+      "text_summary": "动机测试：统一实验设置与评价口径\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 7\n实验过程统一围绕同一问题展开：SQL+ 和多 Agent 是否真的让错误更容易被定位和修复。\n设置项\n具体配置\n作用\n数据\n自建订单分析 30 条；SQL+ 已知失败集 13 条；Spider concert_singer 20 条小子集\n覆盖生成、转换、修复和公开子集迁移\n模型与执行\ngpt-5-mini；SQLite；SQL+ parser/translator；Executor 记录结果或错误\n保证各路线在同一环境下比较\n对比对象\nDirect SQL、NL2SQL+、SemQL/NatSQL/Pipe-style proxy、Direct Refiner、SQL+ Router Skills\n回答“为什么 SQL+、为什么多 Agent”\n评价口径\ngold SQL 只用于离线 execution match，不进入 Generator、Refiner 或 Repair Skill\n避免把 gold 诊断伪装成真实修复能力",
+      "slots": [
+        {
+          "slot_id": "s07_sh2",
+          "role": "title_candidate",
+          "text": "动机测试：统一实验设置与评价口径",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 41,
+            "y": 118,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 26.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s07_sh4",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 7",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s07_sh6",
+          "role": "label_candidate",
+          "text": "实验过程统一围绕同一问题展开：SQL+ 和多 Agent 是否真的让错误更容易被定位和修复。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 69,
+            "y": 607,
+            "width": 830,
+            "height": 38
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s07_sh5",
+          "role": "body_candidate",
+          "text": "设置项\n具体配置\n作用\n数据\n自建订单分析 30 条；SQL+ 已知失败集 13 条；Spider concert_singer 20 条小子集\n覆盖生成、转换、修复和公开子集迁移\n模型与执行\ngpt-5-mini；SQLite；SQL+ parser/translator；Executor 记录结果或错误\n保证各路线在同一环境下比较\n对比对象\nDirect SQL、NL2SQL+、SemQL/NatSQL/Pipe-style proxy、Direct Refiner、SQL+ Router Skills\n回答“为什么 SQL+、为什么多 Agent”\n评价口径\ngold SQL 只用于离线 execution match，不进入 Generator、Refiner 或 Repair Skill\n避免把 gold 诊断伪装成真实修复能力",
+          "paragraph_count": 15,
+          "geometry": {
+            "x": 53,
+            "y": 197,
+            "width": 859,
+            "height": 360
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 15
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s07_tbl5",
+          "row_count": 5,
+          "column_count": 3,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "设置项"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "具体配置"
+                },
+                {
+                  "row": 0,
+                  "col": 2,
+                  "text": "作用"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "数据"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "自建订单分析 30 条；SQL+ 已知失败集 13 条；Spider concert_singer 20 条小子集"
+                },
+                {
+                  "row": 1,
+                  "col": 2,
+                  "text": "覆盖生成、转换、修复和公开子集迁移"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "模型与执行"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "gpt-5-mini；SQLite；SQL+ parser/translator；Executor 记录结果或错误"
+                },
+                {
+                  "row": 2,
+                  "col": 2,
+                  "text": "保证各路线在同一环境下比较"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "对比对象"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "Direct SQL、NL2SQL+、SemQL/NatSQL/Pipe-style proxy、Direct Refiner、SQL+ Router Skills"
+                },
+                {
+                  "row": 3,
+                  "col": 2,
+                  "text": "回答“为什么 SQL+、为什么多 Agent”"
+                }
+              ]
+            },
+            {
+              "row": 4,
+              "cells": [
+                {
+                  "row": 4,
+                  "col": 0,
+                  "text": "评价口径"
+                },
+                {
+                  "row": 4,
+                  "col": 1,
+                  "text": "gold SQL 只用于离线 execution match，不进入 Generator、Refiner 或 Repair Skill"
+                },
+                {
+                  "row": 4,
+                  "col": 2,
+                  "text": "避免把 gold 诊断伪装成真实修复能力"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 8,
+      "page_type": "chapter_candidate",
+      "text_summary": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 8\n动机测试一：SQL+ 表达复杂度是否更利于修复",
+      "slots": [
+        {
+          "slot_id": "s08_sh4",
+          "role": "title_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 8",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s08_sh5",
+          "role": "title_candidate",
+          "text": "动机测试一：SQL+ 表达复杂度是否更利于修复",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 72,
+            "y": 101,
+            "width": 1142,
+            "height": 46
+          },
+          "text_metrics": {
+            "font_size_px": 37.33,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 9,
+      "page_type": "chapter_candidate",
+      "text_summary": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 9\n动机测试二：生成成本与执行效果",
+      "slots": [
+        {
+          "slot_id": "s09_sh4",
+          "role": "title_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 9",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s09_sh5",
+          "role": "title_candidate",
+          "text": "动机测试二：生成成本与执行效果",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 72,
+            "y": 101,
+            "width": 1142,
+            "height": 46
+          },
+          "text_metrics": {
+            "font_size_px": 37.33,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 10,
+      "page_type": "content_candidate",
+      "text_summary": "动机测试三：从动机到系统设计\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 10\n前面动机测试给出的不是最终系统性能，而是设计依据：哪些地方需要 SQL+，哪些地方需要 Agent 分工。\n生成\n观察 1：初次生成收益有限\nSQL+ prompt v2 只比 Direct SQL 略高，不能把研究重点放在“换一种格式就更准”。\n表示\n观察 2：表达依赖明显下降\nSQL+ 的 alias dependency 和 cross-clause reference 更低，说明步骤边界更适合错误定位。\n修复\n观察 3：局部修复收益明显\nRouter + Repair Skills 在已知失败集上显著高于单 Refiner，说明修复应工具化、分治化。\n因此系统设计为：NL -> SQL+ -> SQL -> Execution Feedback -> Critic -> Router -> Repair Skill -> Re-execute。",
+      "slots": [
+        {
+          "slot_id": "s10_sh2",
+          "role": "title_candidate",
+          "text": "动机测试三：从动机到系统设计",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 41,
+            "y": 108,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 26.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh4",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 10",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh5",
+          "role": "label_candidate",
+          "text": "前面动机测试给出的不是最终系统性能，而是设计依据：哪些地方需要 SQL+，哪些地方需要 Agent 分工。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 58,
+            "y": 179,
+            "width": 845,
+            "height": 23
+          },
+          "text_metrics": {
+            "font_size_px": 12.27,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh6",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 69,
+            "y": 226,
+            "width": 235,
+            "height": 235
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s10_sh7",
+          "role": "label_candidate",
+          "text": "生成",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 151,
+            "y": 242,
+            "width": 72,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 10.93,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh8",
+          "role": "label_candidate",
+          "text": "观察 1：初次生成收益有限",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 86,
+            "y": 286,
+            "width": 201,
+            "height": 38
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh9",
+          "role": "label_candidate",
+          "text": "SQL+ prompt v2 只比 Direct SQL 略高，不能把研究重点放在“换一种格式就更准”。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 93,
+            "y": 341,
+            "width": 187,
+            "height": 91
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh10",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 357,
+            "y": 226,
+            "width": 235,
+            "height": 235
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s10_sh11",
+          "role": "label_candidate",
+          "text": "表示",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 439,
+            "y": 242,
+            "width": 72,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 10.93,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh12",
+          "role": "label_candidate",
+          "text": "观察 2：表达依赖明显下降",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 374,
+            "y": 286,
+            "width": 201,
+            "height": 38
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh13",
+          "role": "label_candidate",
+          "text": "SQL+ 的 alias dependency 和 cross-clause reference 更低，说明步骤边界更适合错误定位。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 381,
+            "y": 341,
+            "width": 187,
+            "height": 91
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh14",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 645,
+            "y": 226,
+            "width": 235,
+            "height": 235
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s10_sh15",
+          "role": "label_candidate",
+          "text": "修复",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 727,
+            "y": 242,
+            "width": 72,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 10.93,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh16",
+          "role": "label_candidate",
+          "text": "观察 3：局部修复收益明显",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 662,
+            "y": 286,
+            "width": 201,
+            "height": 38
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh17",
+          "role": "label_candidate",
+          "text": "Router + Repair Skills 在已知失败集上显著高于单 Refiner，说明修复应工具化、分治化。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 669,
+            "y": 341,
+            "width": 187,
+            "height": 91
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s10_sh18",
+          "role": "label_candidate",
+          "text": "因此系统设计为：NL -> SQL+ -> SQL -> Execution Feedback -> Critic -> Router -> Repair Skill -> Re-execute。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 69,
+            "y": 562,
+            "width": 830,
+            "height": 38
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 11,
+      "page_type": "content_candidate",
+      "text_summary": "研究不足与本课题切入点\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 11\n中间表示\n多服务于初次生成，对执行反馈后的局部修复关注不足\nAgent 系统\n常用于分解、候选生成和选择，错误不一定映射到可修复步骤\n评价指标\nexecution accuracy 不够，需要 repairability 和成本指标\n真实环境\n公开 benchmark 与企业数据库方言、脏值、外部知识仍有差距\n切入点：让 Critic、Router、Repair Skill 和 Executor 围绕 SQL+ 步骤工作。",
+      "slots": [
+        {
+          "slot_id": "s11_sh2",
+          "role": "title_candidate",
+          "text": "研究不足与本课题切入点",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 41,
+            "y": 109,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s11_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 11",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s11_sh4",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 57,
+            "y": 201,
+            "width": 360,
+            "height": 101
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s11_sh5",
+          "role": "label_candidate",
+          "text": "中间表示",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 78,
+            "y": 217,
+            "width": 298,
+            "height": 25
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s11_sh6",
+          "role": "label_candidate",
+          "text": "多服务于初次生成，对执行反馈后的局部修复关注不足",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 78,
+            "y": 251,
+            "width": 298,
+            "height": 33
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s11_sh7",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 484,
+            "y": 201,
+            "width": 360,
+            "height": 101
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s11_sh8",
+          "role": "label_candidate",
+          "text": "Agent 系统",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 505,
+            "y": 217,
+            "width": 298,
+            "height": 25
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s11_sh9",
+          "role": "label_candidate",
+          "text": "常用于分解、候选生成和选择，错误不一定映射到可修复步骤",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 505,
+            "y": 251,
+            "width": 298,
+            "height": 33
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s11_sh10",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 57,
+            "y": 369,
+            "width": 360,
+            "height": 101
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s11_sh11",
+          "role": "label_candidate",
+          "text": "评价指标",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 78,
+            "y": 385,
+            "width": 298,
+            "height": 25
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s11_sh12",
+          "role": "label_candidate",
+          "text": "execution accuracy 不够，需要 repairability 和成本指标",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 78,
+            "y": 419,
+            "width": 298,
+            "height": 33
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s11_sh13",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 484,
+            "y": 369,
+            "width": 360,
+            "height": 101
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s11_sh14",
+          "role": "label_candidate",
+          "text": "真实环境",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 505,
+            "y": 385,
+            "width": 298,
+            "height": 25
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s11_sh15",
+          "role": "label_candidate",
+          "text": "公开 benchmark 与企业数据库方言、脏值、外部知识仍有差距",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 505,
+            "y": 419,
+            "width": 298,
+            "height": 33
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s11_sh16",
+          "role": "label_candidate",
+          "text": "切入点：让 Critic、Router、Repair Skill 和 Executor 围绕 SQL+ 步骤工作。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 84,
+            "y": 509,
+            "width": 792,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 12,
+      "page_type": "content_candidate",
+      "text_summary": "SQL+ 多智能体反馈修正框架\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 12\n核心思路：不整条重写 SQL，把错误压回 SQL+ 的局部步骤中修。",
+      "slots": [
+        {
+          "slot_id": "s12_sh2",
+          "role": "title_candidate",
+          "text": "SQL+ 多智能体反馈修正框架",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 26,
+            "y": 118,
+            "width": 883,
+            "height": 48
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s12_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 12",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s12_sh20",
+          "role": "label_candidate",
+          "text": "核心思路：不整条重写 SQL，把错误压回 SQL+ 的局部步骤中修。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 84,
+            "y": 588,
+            "width": 792,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 13,
+      "page_type": "content_candidate",
+      "text_summary": "SQL 与 SQL+ 对照：把复杂查询拆成可诊断步骤\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 13\n自然语言问题：查询已支付订单中金额最高的 10 个订单，返回订单编号和订单金额。\n原始 SQL\nSELECT o.order_id,\n       SUM(oi.quantity * oi.unit_price) AS amount\nFROM orders AS o\nJOIN order_items AS oi\n  ON o.order_id = oi.order_id\nWHERE o.status = 'paid'\nGROUP BY o.order_id\nORDER BY amount DESC\nLIMIT 10;\nSQL+ 中间表示\nFROM orders AS o\n| JOIN order_items AS oi ON o.order_id = oi.order_id\n| WHERE o.status = 'paid'\n| GROUP o.order_id\n| AGG o.order_id, SUM(oi.quantity * oi.un",
+      "slots": [
+        {
+          "slot_id": "s13_sh2",
+          "role": "title_candidate",
+          "text": "SQL 与 SQL+ 对照：把复杂查询拆成可诊断步骤",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 41,
+            "y": 108,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 26.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s13_sh4",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 13",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s13_sh5",
+          "role": "label_candidate",
+          "text": "自然语言问题：查询已支付订单中金额最高的 10 个订单，返回订单编号和订单金额。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 56,
+            "y": 189,
+            "width": 840,
+            "height": 34
+          },
+          "text_metrics": {
+            "font_size_px": 12.4,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s13_sh6",
+          "role": "label_candidate",
+          "text": "原始 SQL",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 54,
+            "y": 237,
+            "width": 403,
+            "height": 29
+          },
+          "text_metrics": {
+            "font_size_px": 12.4,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s13_sh7",
+          "role": "body_candidate",
+          "text": "SELECT o.order_id,\n       SUM(oi.quantity * oi.unit_price) AS amount\nFROM orders AS o\nJOIN order_items AS oi\n  ON o.order_id = oi.order_id\nWHERE o.status = 'paid'\nGROUP BY o.order_id\nORDER BY amount DESC\nLIMIT 10;",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 54,
+            "y": 266,
+            "width": 403,
+            "height": 185
+          },
+          "text_metrics": {
+            "font_size_px": 11.07,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s13_sh8",
+          "role": "label_candidate",
+          "text": "SQL+ 中间表示",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 483,
+            "y": 237,
+            "width": 403,
+            "height": 29
+          },
+          "text_metrics": {
+            "font_size_px": 12.4,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s13_sh9",
+          "role": "body_candidate",
+          "text": "FROM orders AS o\n| JOIN order_items AS oi ON o.order_id = oi.order_id\n| WHERE o.status = 'paid'\n| GROUP o.order_id\n| AGG o.order_id, SUM(oi.quantity * oi.unit_price) AS amount\n| SELECT o.order_id, amount\n| ORDER amount DESC\n| LIMIT 10",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 483,
+            "y": 266,
+            "width": 403,
+            "height": 185
+          },
+          "text_metrics": {
+            "font_size_px": 11.07,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s13_sh11",
+          "role": "label_candidate",
+          "text": "重点：SQL+ 不是替代 SQL，而是把错误压到 WHERE、JOIN、AGG、SELECT、ORDER 等局部步骤上。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 608,
+            "y": 485,
+            "width": 283,
+            "height": 112
+          },
+          "text_metrics": {
+            "font_size_px": 12.53,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s13_sh10",
+          "role": "body_candidate",
+          "text": "SQL+ 锚点\n可诊断问题\nWHERE\n状态值 'paid' 是否正确，是否漏过滤\nJOIN\norders 与 order_items 连接键是否正确\nGROUP / AGG\n聚合维度与金额口径是否正确\nSELECT\n最终输出列是否只保留问题要求的列\nORDER / LIMIT\ntop-k 排序字段、方向和数量是否正确",
+          "paragraph_count": 12,
+          "geometry": {
+            "x": 54,
+            "y": 481,
+            "width": 533,
+            "height": 144
+          },
+          "text_metrics": {
+            "font_size_px": 11.73,
+            "paragraph_count": 12
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s13_tbl10",
+          "row_count": 6,
+          "column_count": 2,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "SQL+ 锚点"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "可诊断问题"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "WHERE"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "状态值 'paid' 是否正确，是否漏过滤"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "JOIN"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "orders 与 order_items 连接键是否正确"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "GROUP / AGG"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "聚合维度与金额口径是否正确"
+                }
+              ]
+            },
+            {
+              "row": 4,
+              "cells": [
+                {
+                  "row": 4,
+                  "col": 0,
+                  "text": "SELECT"
+                },
+                {
+                  "row": 4,
+                  "col": 1,
+                  "text": "最终输出列是否只保留问题要求的列"
+                }
+              ]
+            },
+            {
+              "row": 5,
+              "cells": [
+                {
+                  "row": 5,
+                  "col": 0,
+                  "text": "ORDER / LIMIT"
+                },
+                {
+                  "row": 5,
+                  "col": 1,
+                  "text": "top-k 排序字段、方向和数量是否正确"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 14,
+      "page_type": "content_candidate",
+      "text_summary": "系统架构设计：可观察的多智能体分工\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 14\n模块\n输入\n输出\n评价方式\nSchema Agent\n问题、schema、值域样例\n相关表列、join path、候选值\nschema/value/join accuracy\nSQL+ Generator\n问题、schema 上下文\n初始 SQL+\nSQL+ valid, exec match\nCritic Agent\nSQL+、执行反馈、结果摘要\n错误类型、可疑步骤、证据\nlocalization accuracy\nSkill Router\nCritic 输出、SQL+ 结构\nrepair skill 路由\nrouter accuracy\nRepair Skill\nSQL+ 局部步骤、反馈\n候选 patch\npatch minimality\nExecutor\n候选 SQL\n执行结果、错误、最终选择\nrepair success, latency",
+      "slots": [
+        {
+          "slot_id": "s14_sh2",
+          "role": "title_candidate",
+          "text": "系统架构设计：可观察的多智能体分工",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 43,
+            "y": 111,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s14_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 14",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s14_sh4",
+          "role": "body_candidate",
+          "text": "模块\n输入\n输出\n评价方式\nSchema Agent\n问题、schema、值域样例\n相关表列、join path、候选值\nschema/value/join accuracy\nSQL+ Generator\n问题、schema 上下文\n初始 SQL+\nSQL+ valid, exec match\nCritic Agent\nSQL+、执行反馈、结果摘要\n错误类型、可疑步骤、证据\nlocalization accuracy\nSkill Router\nCritic 输出、SQL+ 结构\nrepair skill 路由\nrouter accuracy\nRepair Skill\nSQL+ 局部步骤、反馈\n候选 patch\npatch minimality\nExecutor\n候选 SQL\n执行结果、错误、最终选择\nrepair success, latency",
+          "paragraph_count": 28,
+          "geometry": {
+            "x": 43,
+            "y": 198,
+            "width": 874,
+            "height": 420
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 28
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s14_tbl4",
+          "row_count": 7,
+          "column_count": 4,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "模块"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "输入"
+                },
+                {
+                  "row": 0,
+                  "col": 2,
+                  "text": "输出"
+                },
+                {
+                  "row": 0,
+                  "col": 3,
+                  "text": "评价方式"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "Schema Agent"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "问题、schema、值域样例"
+                },
+                {
+                  "row": 1,
+                  "col": 2,
+                  "text": "相关表列、join path、候选值"
+                },
+                {
+                  "row": 1,
+                  "col": 3,
+                  "text": "schema/value/join accuracy"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "SQL+ Generator"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "问题、schema 上下文"
+                },
+                {
+                  "row": 2,
+                  "col": 2,
+                  "text": "初始 SQL+"
+                },
+                {
+                  "row": 2,
+                  "col": 3,
+                  "text": "SQL+ valid, exec match"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "Critic Agent"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "SQL+、执行反馈、结果摘要"
+                },
+                {
+                  "row": 3,
+                  "col": 2,
+                  "text": "错误类型、可疑步骤、证据"
+                },
+                {
+                  "row": 3,
+                  "col": 3,
+                  "text": "localization accuracy"
+                }
+              ]
+            },
+            {
+              "row": 4,
+              "cells": [
+                {
+                  "row": 4,
+                  "col": 0,
+                  "text": "Skill Router"
+                },
+                {
+                  "row": 4,
+                  "col": 1,
+                  "text": "Critic 输出、SQL+ 结构"
+                },
+                {
+                  "row": 4,
+                  "col": 2,
+                  "text": "repair skill 路由"
+                },
+                {
+                  "row": 4,
+                  "col": 3,
+                  "text": "router accuracy"
+                }
+              ]
+            },
+            {
+              "row": 5,
+              "cells": [
+                {
+                  "row": 5,
+                  "col": 0,
+                  "text": "Repair Skill"
+                },
+                {
+                  "row": 5,
+                  "col": 1,
+                  "text": "SQL+ 局部步骤、反馈"
+                },
+                {
+                  "row": 5,
+                  "col": 2,
+                  "text": "候选 patch"
+                },
+                {
+                  "row": 5,
+                  "col": 3,
+                  "text": "patch minimality"
+                }
+              ]
+            },
+            {
+              "row": 6,
+              "cells": [
+                {
+                  "row": 6,
+                  "col": 0,
+                  "text": "Executor"
+                },
+                {
+                  "row": 6,
+                  "col": 1,
+                  "text": "候选 SQL"
+                },
+                {
+                  "row": 6,
+                  "col": 2,
+                  "text": "执行结果、错误、最终选择"
+                },
+                {
+                  "row": 6,
+                  "col": 3,
+                  "text": "repair success, latency"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 15,
+      "page_type": "content_candidate",
+      "text_summary": "可行性测试：实验分层与验证路径\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 15\n可行性测试不是完整 benchmark，而是证明系统链路可运行、可比较、可继续扩展。\n层次\n实验过程\n验证目标\nA 转换可行性\n人工 SQL+ -> SQL -> SQLite 执行\nSQL+ 是否能稳定转换为可执行 SQL\nB 生成可行性\n自然语言 -> SQL+ / SQL，对比执行结果\nSQL+ 作为生成目标是否可行\nC 修复可行性\n失败输出 -> Critic -> Router -> Repair Skill -> Executor\nSQL+ 层局部修复是否有效\nD 公开子集迁移\nSpider concert_singer 小子集端到端运行\n方法是否能离开自建数据集",
+      "slots": [
+        {
+          "slot_id": "s15_sh2",
+          "role": "title_candidate",
+          "text": "可行性测试：实验分层与验证路径",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 41,
+            "y": 108,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 26.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s15_sh4",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 15",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s15_sh6",
+          "role": "label_candidate",
+          "text": "可行性测试不是完整 benchmark，而是证明系统链路可运行、可比较、可继续扩展。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 69,
+            "y": 607,
+            "width": 830,
+            "height": 38
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s15_sh5",
+          "role": "body_candidate",
+          "text": "层次\n实验过程\n验证目标\nA 转换可行性\n人工 SQL+ -> SQL -> SQLite 执行\nSQL+ 是否能稳定转换为可执行 SQL\nB 生成可行性\n自然语言 -> SQL+ / SQL，对比执行结果\nSQL+ 作为生成目标是否可行\nC 修复可行性\n失败输出 -> Critic -> Router -> Repair Skill -> Executor\nSQL+ 层局部修复是否有效\nD 公开子集迁移\nSpider concert_singer 小子集端到端运行\n方法是否能离开自建数据集",
+          "paragraph_count": 15,
+          "geometry": {
+            "x": 53,
+            "y": 197,
+            "width": 859,
+            "height": 360
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 15
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s15_tbl5",
+          "row_count": 5,
+          "column_count": 3,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "层次"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "实验过程"
+                },
+                {
+                  "row": 0,
+                  "col": 2,
+                  "text": "验证目标"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "A 转换可行性"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "人工 SQL+ -> SQL -> SQLite 执行"
+                },
+                {
+                  "row": 1,
+                  "col": 2,
+                  "text": "SQL+ 是否能稳定转换为可执行 SQL"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "B 生成可行性"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "自然语言 -> SQL+ / SQL，对比执行结果"
+                },
+                {
+                  "row": 2,
+                  "col": 2,
+                  "text": "SQL+ 作为生成目标是否可行"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "C 修复可行性"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "失败输出 -> Critic -> Router -> Repair Skill -> Executor"
+                },
+                {
+                  "row": 3,
+                  "col": 2,
+                  "text": "SQL+ 层局部修复是否有效"
+                }
+              ]
+            },
+            {
+              "row": 4,
+              "cells": [
+                {
+                  "row": 4,
+                  "col": 0,
+                  "text": "D 公开子集迁移"
+                },
+                {
+                  "row": 4,
+                  "col": 1,
+                  "text": "Spider concert_singer 小子集端到端运行"
+                },
+                {
+                  "row": 4,
+                  "col": 2,
+                  "text": "方法是否能离开自建数据集"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 16,
+      "page_type": "content_candidate",
+      "text_summary": "可行性测试总览：数据、流程与指标\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 16\ngold SQL 只用于离线评价，不进入生成、Critic、Router 或 Repair Skill。\n项目\n配置\n用途\n自建订单数据\n4 张表、30 条自然语言问题、30 条 SQL+ gold、13 条已知失败样例\n转换、生成、修复主实验\nSpider 小子集\nconcert_singer 20 条；gold SQL 仅用于离线评价\n公开数据集迁移 smoke test\n模型与工具\ngpt-5-mini；SQL+ parser/translator；SQLite Executor；Skill Router\n保证端到端闭环可复现\n指标\nvalid rate、SQL executable、execution match、repair success、token、latency\n准确率、成本和可修复性同时观察",
+      "slots": [
+        {
+          "slot_id": "s16_sh2",
+          "role": "title_candidate",
+          "text": "可行性测试总览：数据、流程与指标",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 41,
+            "y": 108,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 26.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s16_sh4",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 16",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s16_sh6",
+          "role": "label_candidate",
+          "text": "gold SQL 只用于离线评价，不进入生成、Critic、Router 或 Repair Skill。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 69,
+            "y": 607,
+            "width": 830,
+            "height": 38
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s16_sh5",
+          "role": "body_candidate",
+          "text": "项目\n配置\n用途\n自建订单数据\n4 张表、30 条自然语言问题、30 条 SQL+ gold、13 条已知失败样例\n转换、生成、修复主实验\nSpider 小子集\nconcert_singer 20 条；gold SQL 仅用于离线评价\n公开数据集迁移 smoke test\n模型与工具\ngpt-5-mini；SQL+ parser/translator；SQLite Executor；Skill Router\n保证端到端闭环可复现\n指标\nvalid rate、SQL executable、execution match、repair success、token、latency\n准确率、成本和可修复性同时观察",
+          "paragraph_count": 15,
+          "geometry": {
+            "x": 53,
+            "y": 197,
+            "width": 859,
+            "height": 360
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 15
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s16_tbl5",
+          "row_count": 5,
+          "column_count": 3,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "项目"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "配置"
+                },
+                {
+                  "row": 0,
+                  "col": 2,
+                  "text": "用途"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "自建订单数据"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "4 张表、30 条自然语言问题、30 条 SQL+ gold、13 条已知失败样例"
+                },
+                {
+                  "row": 1,
+                  "col": 2,
+                  "text": "转换、生成、修复主实验"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "Spider 小子集"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "concert_singer 20 条；gold SQL 仅用于离线评价"
+                },
+                {
+                  "row": 2,
+                  "col": 2,
+                  "text": "公开数据集迁移 smoke test"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "模型与工具"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "gpt-5-mini；SQL+ parser/translator；SQLite Executor；Skill Router"
+                },
+                {
+                  "row": 3,
+                  "col": 2,
+                  "text": "保证端到端闭环可复现"
+                }
+              ]
+            },
+            {
+              "row": 4,
+              "cells": [
+                {
+                  "row": 4,
+                  "col": 0,
+                  "text": "指标"
+                },
+                {
+                  "row": 4,
+                  "col": 1,
+                  "text": "valid rate、SQL executable、execution match、repair success、token、latency"
+                },
+                {
+                  "row": 4,
+                  "col": 2,
+                  "text": "准确率、成本和可修复性同时观察"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 17,
+      "page_type": "chapter_candidate",
+      "text_summary": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 17\n可行性测试一：初次生成 baseline 对比",
+      "slots": [
+        {
+          "slot_id": "s17_sh4",
+          "role": "title_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 17",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s17_sh5",
+          "role": "title_candidate",
+          "text": "可行性测试一：初次生成 baseline 对比",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 72,
+            "y": 101,
+            "width": 1142,
+            "height": 46
+          },
+          "text_metrics": {
+            "font_size_px": 37.33,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 18,
+      "page_type": "chapter_candidate",
+      "text_summary": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 18\n可行性测试二：反馈修正策略对比",
+      "slots": [
+        {
+          "slot_id": "s18_sh4",
+          "role": "title_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 18",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s18_sh5",
+          "role": "title_candidate",
+          "text": "可行性测试二：反馈修正策略对比",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 72,
+            "y": 101,
+            "width": 1142,
+            "height": 46
+          },
+          "text_metrics": {
+            "font_size_px": 37.33,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 19,
+      "page_type": "content_candidate",
+      "text_summary": "可行性测试三：Repair Skill 分治结果\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 19\n分治实验说明：不同错误类型需要不同局部修复策略，Router 的作用是选择正确技能。\nSkill\n处理错误\n结果\n说明\nvalue-linking\n字段值或日期边界错误\n3/3\n通过 value lookup 与候选执行验证修复\nORDER / LIMIT\n排序字段、方向、top-k 数量错误\n3/3\n局部改 ORDER/LIMIT，不影响其它步骤\naggregation\nGROUP/AGG 口径、别名、HAVING/ORDER 引用\n3/3\n补聚合维度和排序辅助列\njoin\n连接路径、冗余 join、缺少过滤\n3/3\n规范连接方向并修复关联投影\nprojection\n输出列多余或缺失\n1/1\n保留问题要求列，删除无关 id",
+      "slots": [
+        {
+          "slot_id": "s19_sh2",
+          "role": "title_candidate",
+          "text": "可行性测试三：Repair Skill 分治结果",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 41,
+            "y": 108,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 26.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s19_sh4",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 19",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s19_sh6",
+          "role": "label_candidate",
+          "text": "分治实验说明：不同错误类型需要不同局部修复策略，Router 的作用是选择正确技能。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 69,
+            "y": 616,
+            "width": 830,
+            "height": 38
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s19_sh5",
+          "role": "body_candidate",
+          "text": "Skill\n处理错误\n结果\n说明\nvalue-linking\n字段值或日期边界错误\n3/3\n通过 value lookup 与候选执行验证修复\nORDER / LIMIT\n排序字段、方向、top-k 数量错误\n3/3\n局部改 ORDER/LIMIT，不影响其它步骤\naggregation\nGROUP/AGG 口径、别名、HAVING/ORDER 引用\n3/3\n补聚合维度和排序辅助列\njoin\n连接路径、冗余 join、缺少过滤\n3/3\n规范连接方向并修复关联投影\nprojection\n输出列多余或缺失\n1/1\n保留问题要求列，删除无关 id",
+          "paragraph_count": 24,
+          "geometry": {
+            "x": 46,
+            "y": 187,
+            "width": 874,
+            "height": 418
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 24
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s19_tbl5",
+          "row_count": 6,
+          "column_count": 4,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "Skill"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "处理错误"
+                },
+                {
+                  "row": 0,
+                  "col": 2,
+                  "text": "结果"
+                },
+                {
+                  "row": 0,
+                  "col": 3,
+                  "text": "说明"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "value-linking"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "字段值或日期边界错误"
+                },
+                {
+                  "row": 1,
+                  "col": 2,
+                  "text": "3/3"
+                },
+                {
+                  "row": 1,
+                  "col": 3,
+                  "text": "通过 value lookup 与候选执行验证修复"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "ORDER / LIMIT"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "排序字段、方向、top-k 数量错误"
+                },
+                {
+                  "row": 2,
+                  "col": 2,
+                  "text": "3/3"
+                },
+                {
+                  "row": 2,
+                  "col": 3,
+                  "text": "局部改 ORDER/LIMIT，不影响其它步骤"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "aggregation"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "GROUP/AGG 口径、别名、HAVING/ORDER 引用"
+                },
+                {
+                  "row": 3,
+                  "col": 2,
+                  "text": "3/3"
+                },
+                {
+                  "row": 3,
+                  "col": 3,
+                  "text": "补聚合维度和排序辅助列"
+                }
+              ]
+            },
+            {
+              "row": 4,
+              "cells": [
+                {
+                  "row": 4,
+                  "col": 0,
+                  "text": "join"
+                },
+                {
+                  "row": 4,
+                  "col": 1,
+                  "text": "连接路径、冗余 join、缺少过滤"
+                },
+                {
+                  "row": 4,
+                  "col": 2,
+                  "text": "3/3"
+                },
+                {
+                  "row": 4,
+                  "col": 3,
+                  "text": "规范连接方向并修复关联投影"
+                }
+              ]
+            },
+            {
+              "row": 5,
+              "cells": [
+                {
+                  "row": 5,
+                  "col": 0,
+                  "text": "projection"
+                },
+                {
+                  "row": 5,
+                  "col": 1,
+                  "text": "输出列多余或缺失"
+                },
+                {
+                  "row": 5,
+                  "col": 2,
+                  "text": "1/1"
+                },
+                {
+                  "row": 5,
+                  "col": 3,
+                  "text": "保留问题要求列，删除无关 id"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 20,
+      "page_type": "chapter_candidate",
+      "text_summary": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 20\n可行性测试四：Spider 小规模子集验证",
+      "slots": [
+        {
+          "slot_id": "s20_sh4",
+          "role": "title_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 20",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s20_sh5",
+          "role": "title_candidate",
+          "text": "可行性测试四：Spider 小规模子集验证",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 72,
+            "y": 101,
+            "width": 1142,
+            "height": 46
+          },
+          "text_metrics": {
+            "font_size_px": 37.33,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 21,
+      "page_type": "content_candidate",
+      "text_summary": "前期可行性分析小结\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 21\n表达可行\nSQL+ -> SQL\n30/30 执行一致\n生成有潜力\nSQL+ v2 17/30\nDirect SQL 16/30\n修复更关键\n单 Refiner 不稳\nRouter Skills 13/13\n成本需补齐\nSQL+ token 更高\nlatency 需重跑\n公开子集已跑通\nSpider 20 条\nfresh 19/20 -> 20/20\n不能过度外推\n小样例\n非完整 benchmark\n当前结果支撑开题可行性，但还不足以支撑泛化结论。",
+      "slots": [
+        {
+          "slot_id": "s21_sh2",
+          "role": "title_candidate",
+          "text": "前期可行性分析小结",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 43,
+            "y": 111,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 21",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh4",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 49,
+            "y": 209,
+            "width": 245,
+            "height": 120
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s21_sh5",
+          "role": "label_candidate",
+          "text": "表达可行",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 66,
+            "y": 226,
+            "width": 202,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh6",
+          "role": "label_candidate",
+          "text": "SQL+ -> SQL\n30/30 执行一致",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 66,
+            "y": 264,
+            "width": 202,
+            "height": 40
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh7",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 337,
+            "y": 209,
+            "width": 245,
+            "height": 120
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s21_sh8",
+          "role": "label_candidate",
+          "text": "生成有潜力",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 354,
+            "y": 226,
+            "width": 202,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh9",
+          "role": "label_candidate",
+          "text": "SQL+ v2 17/30\nDirect SQL 16/30",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 354,
+            "y": 264,
+            "width": 202,
+            "height": 40
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh10",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 625,
+            "y": 209,
+            "width": 245,
+            "height": 120
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s21_sh11",
+          "role": "label_candidate",
+          "text": "修复更关键",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 642,
+            "y": 226,
+            "width": 202,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh12",
+          "role": "label_candidate",
+          "text": "单 Refiner 不稳\nRouter Skills 13/13",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 642,
+            "y": 264,
+            "width": 202,
+            "height": 40
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh13",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 49,
+            "y": 382,
+            "width": 245,
+            "height": 120
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s21_sh14",
+          "role": "label_candidate",
+          "text": "成本需补齐",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 66,
+            "y": 399,
+            "width": 202,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh15",
+          "role": "label_candidate",
+          "text": "SQL+ token 更高\nlatency 需重跑",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 66,
+            "y": 437,
+            "width": 202,
+            "height": 40
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh16",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 337,
+            "y": 382,
+            "width": 245,
+            "height": 120
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s21_sh17",
+          "role": "label_candidate",
+          "text": "公开子集已跑通",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 354,
+            "y": 399,
+            "width": 202,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh18",
+          "role": "label_candidate",
+          "text": "Spider 20 条\nfresh 19/20 -> 20/20",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 354,
+            "y": 437,
+            "width": 202,
+            "height": 40
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh19",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 625,
+            "y": 382,
+            "width": 245,
+            "height": 120
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s21_sh20",
+          "role": "label_candidate",
+          "text": "不能过度外推",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 642,
+            "y": 399,
+            "width": 202,
+            "height": 27
+          },
+          "text_metrics": {
+            "font_size_px": 16.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh21",
+          "role": "label_candidate",
+          "text": "小样例\n非完整 benchmark",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 642,
+            "y": 437,
+            "width": 202,
+            "height": 40
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s21_sh22",
+          "role": "label_candidate",
+          "text": "当前结果支撑开题可行性，但还不足以支撑泛化结论。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 84,
+            "y": 543,
+            "width": 792,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 22,
+      "page_type": "content_candidate",
+      "text_summary": "后续实验设计与评价指标\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 22\n结果质量\nexecution accuracy / valid rate\n修复能力\nlocalization / router / patch\n成本效率\ntoken / latency / rounds\n实验组\n目的\n主要指标\nDirect SQL / NL2SQL+\n比较直接生成和 SQL+ 生成\nexecution accuracy、valid rate、token、latency\nSemQL/NatSQL/Pipe-style proxy\n比较中间表示形态\n复杂度、转换、生成成本\nwhole-query rewrite / single refiner / Router skills\n比较修复策略\nrepair success、repair rounds、patch minimality\n消融实验\n去掉 Critic、Router、skill、executor\n性能下降幅度、错误类型变化\nSpider/BIRD/达梦子集\n验证迁移和方言适配\nexec match、方言",
+      "slots": [
+        {
+          "slot_id": "s22_sh2",
+          "role": "title_candidate",
+          "text": "后续实验设计与评价指标",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 43,
+            "y": 110,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s22_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 22",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s22_sh5",
+          "role": "label_candidate",
+          "text": "结果质量\nexecution accuracy / valid rate",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 72,
+            "y": 587,
+            "width": 254,
+            "height": 69
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s22_sh6",
+          "role": "label_candidate",
+          "text": "修复能力\nlocalization / router / patch",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 348,
+            "y": 587,
+            "width": 254,
+            "height": 69
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s22_sh7",
+          "role": "label_candidate",
+          "text": "成本效率\ntoken / latency / rounds",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 623,
+            "y": 587,
+            "width": 254,
+            "height": 69
+          },
+          "text_metrics": {
+            "font_size_px": 13.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s22_sh4",
+          "role": "body_candidate",
+          "text": "实验组\n目的\n主要指标\nDirect SQL / NL2SQL+\n比较直接生成和 SQL+ 生成\nexecution accuracy、valid rate、token、latency\nSemQL/NatSQL/Pipe-style proxy\n比较中间表示形态\n复杂度、转换、生成成本\nwhole-query rewrite / single refiner / Router skills\n比较修复策略\nrepair success、repair rounds、patch minimality\n消融实验\n去掉 Critic、Router、skill、executor\n性能下降幅度、错误类型变化\nSpider/BIRD/达梦子集\n验证迁移和方言适配\nexec match、方言错误、泛化失败类型",
+          "paragraph_count": 18,
+          "geometry": {
+            "x": 43,
+            "y": 194,
+            "width": 874,
+            "height": 365
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 18
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s22_tbl4",
+          "row_count": 6,
+          "column_count": 3,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "实验组"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "目的"
+                },
+                {
+                  "row": 0,
+                  "col": 2,
+                  "text": "主要指标"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "Direct SQL / NL2SQL+"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "比较直接生成和 SQL+ 生成"
+                },
+                {
+                  "row": 1,
+                  "col": 2,
+                  "text": "execution accuracy、valid rate、token、latency"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "SemQL/NatSQL/Pipe-style proxy"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "比较中间表示形态"
+                },
+                {
+                  "row": 2,
+                  "col": 2,
+                  "text": "复杂度、转换、生成成本"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "whole-query rewrite / single refiner / Router skills"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "比较修复策略"
+                },
+                {
+                  "row": 3,
+                  "col": 2,
+                  "text": "repair success、repair rounds、patch minimality"
+                }
+              ]
+            },
+            {
+              "row": 4,
+              "cells": [
+                {
+                  "row": 4,
+                  "col": 0,
+                  "text": "消融实验"
+                },
+                {
+                  "row": 4,
+                  "col": 1,
+                  "text": "去掉 Critic、Router、skill、executor"
+                },
+                {
+                  "row": 4,
+                  "col": 2,
+                  "text": "性能下降幅度、错误类型变化"
+                }
+              ]
+            },
+            {
+              "row": 5,
+              "cells": [
+                {
+                  "row": 5,
+                  "col": 0,
+                  "text": "Spider/BIRD/达梦子集"
+                },
+                {
+                  "row": 5,
+                  "col": 1,
+                  "text": "验证迁移和方言适配"
+                },
+                {
+                  "row": 5,
+                  "col": 2,
+                  "text": "exec match、方言错误、泛化失败类型"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 23,
+      "page_type": "content_candidate",
+      "text_summary": "当前不足、风险控制与进度安排\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 23\n2026.7-2026.10\n统一生成入口\n扩充失败集\n2026.10-2027.1\n消融实验\n公开子集\n2027.1-2027.5\n达梦适配\n论文初稿\n后续\n复现实验\n答辩材料\n后续重点：扩大评测范围，压实泛化边界。\n风险\n当前情况\n控制方式\n样本规模小\nknown-failure set 和 Spider 子集都较小\n扩展失败集、Spider 多库和 BIRD 子集\nSQL+ 成本较高\ntoken 和 latency 未必占优\n补齐成本实验，用 repairability 解释收益\n方言适配不足\n当前主要是 SQLite\n补达梦日期、分页、类型转换和函数规则",
+      "slots": [
+        {
+          "slot_id": "s23_sh2",
+          "role": "title_candidate",
+          "text": "当前不足、风险控制与进度安排",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 43,
+            "y": 105,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 23",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh5",
+          "role": "label_candidate",
+          "text": "2026.7-2026.10",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 72,
+            "y": 428,
+            "width": 168,
+            "height": 46
+          },
+          "text_metrics": {
+            "font_size_px": 14.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh6",
+          "role": "label_candidate",
+          "text": "统一生成入口\n扩充失败集",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 72,
+            "y": 479,
+            "width": 168,
+            "height": 77
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh7",
+          "role": "label_candidate",
+          "text": "2026.10-2027.1",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 283,
+            "y": 428,
+            "width": 168,
+            "height": 46
+          },
+          "text_metrics": {
+            "font_size_px": 14.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh8",
+          "role": "label_candidate",
+          "text": "消融实验\n公开子集",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 283,
+            "y": 479,
+            "width": 168,
+            "height": 77
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh9",
+          "role": "label_candidate",
+          "text": "2027.1-2027.5",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 494,
+            "y": 428,
+            "width": 168,
+            "height": 46
+          },
+          "text_metrics": {
+            "font_size_px": 14.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh10",
+          "role": "label_candidate",
+          "text": "达梦适配\n论文初稿",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 494,
+            "y": 479,
+            "width": 168,
+            "height": 77
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh11",
+          "role": "label_candidate",
+          "text": "后续",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 706,
+            "y": 428,
+            "width": 168,
+            "height": 46
+          },
+          "text_metrics": {
+            "font_size_px": 14.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh12",
+          "role": "label_candidate",
+          "text": "复现实验\n答辩材料",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 706,
+            "y": 479,
+            "width": 168,
+            "height": 77
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh13",
+          "role": "label_candidate",
+          "text": "后续重点：扩大评测范围，压实泛化边界。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 84,
+            "y": 600,
+            "width": 792,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s23_sh4",
+          "role": "body_candidate",
+          "text": "风险\n当前情况\n控制方式\n样本规模小\nknown-failure set 和 Spider 子集都较小\n扩展失败集、Spider 多库和 BIRD 子集\nSQL+ 成本较高\ntoken 和 latency 未必占优\n补齐成本实验，用 repairability 解释收益\n方言适配不足\n当前主要是 SQLite\n补达梦日期、分页、类型转换和函数规则",
+          "paragraph_count": 12,
+          "geometry": {
+            "x": 43,
+            "y": 209,
+            "width": 874,
+            "height": 209
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 12
+          }
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "s23_tbl4",
+          "row_count": 4,
+          "column_count": 3,
+          "rows": [
+            {
+              "row": 0,
+              "cells": [
+                {
+                  "row": 0,
+                  "col": 0,
+                  "text": "风险"
+                },
+                {
+                  "row": 0,
+                  "col": 1,
+                  "text": "当前情况"
+                },
+                {
+                  "row": 0,
+                  "col": 2,
+                  "text": "控制方式"
+                }
+              ]
+            },
+            {
+              "row": 1,
+              "cells": [
+                {
+                  "row": 1,
+                  "col": 0,
+                  "text": "样本规模小"
+                },
+                {
+                  "row": 1,
+                  "col": 1,
+                  "text": "known-failure set 和 Spider 子集都较小"
+                },
+                {
+                  "row": 1,
+                  "col": 2,
+                  "text": "扩展失败集、Spider 多库和 BIRD 子集"
+                }
+              ]
+            },
+            {
+              "row": 2,
+              "cells": [
+                {
+                  "row": 2,
+                  "col": 0,
+                  "text": "SQL+ 成本较高"
+                },
+                {
+                  "row": 2,
+                  "col": 1,
+                  "text": "token 和 latency 未必占优"
+                },
+                {
+                  "row": 2,
+                  "col": 2,
+                  "text": "补齐成本实验，用 repairability 解释收益"
+                }
+              ]
+            },
+            {
+              "row": 3,
+              "cells": [
+                {
+                  "row": 3,
+                  "col": 0,
+                  "text": "方言适配不足"
+                },
+                {
+                  "row": 3,
+                  "col": 1,
+                  "text": "当前主要是 SQLite"
+                },
+                {
+                  "row": 3,
+                  "col": 2,
+                  "text": "补达梦日期、分页、类型转换和函数规则"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "charts": [],
+      "fill_risk": {
+        "has_non_text_content": true,
+        "reason": "has non-text content (table) that text-fill cannot replace; provide table_edits/chart_edits or pick another source slide"
+      }
+    },
+    {
+      "slide_index": 24,
+      "page_type": "content_candidate",
+      "text_summary": "预期创新点与总结\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 24\nSQL+ 中间表示\n面向生成、转换、诊断和局部修复共同设计。\n多智能体反馈修正框架\nCritic、Router、Repair Skill 和 Executor 形成闭环。\nrepairability 评价视角\n不只看最终准确率，还看定位、路由、patch 范围和成本。\n可复现实验体系\n脚本、日志、开题材料和后续公开子集评测同步推进。\n总结：SQL+ 的价值在于把查询计划拆成可检查、可路由、可局部修复的步骤。",
+      "slots": [
+        {
+          "slot_id": "s24_sh2",
+          "role": "title_candidate",
+          "text": "预期创新点与总结",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 43,
+            "y": 109,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s24_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 24",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s24_sh4",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 72,
+            "y": 204,
+            "width": 360,
+            "height": 94
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s24_sh5",
+          "role": "label_candidate",
+          "text": "SQL+ 中间表示",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 91,
+            "y": 218,
+            "width": 298,
+            "height": 25
+          },
+          "text_metrics": {
+            "font_size_px": 17.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s24_sh6",
+          "role": "label_candidate",
+          "text": "面向生成、转换、诊断和局部修复共同设计。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 91,
+            "y": 251,
+            "width": 298,
+            "height": 31
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s24_sh7",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 490,
+            "y": 204,
+            "width": 360,
+            "height": 94
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s24_sh8",
+          "role": "label_candidate",
+          "text": "多智能体反馈修正框架",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 509,
+            "y": 218,
+            "width": 298,
+            "height": 25
+          },
+          "text_metrics": {
+            "font_size_px": 17.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s24_sh9",
+          "role": "label_candidate",
+          "text": "Critic、Router、Repair Skill 和 Executor 形成闭环。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 509,
+            "y": 251,
+            "width": 319,
+            "height": 28
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s24_sh10",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 72,
+            "y": 353,
+            "width": 360,
+            "height": 94
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s24_sh11",
+          "role": "label_candidate",
+          "text": "repairability 评价视角",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 91,
+            "y": 367,
+            "width": 298,
+            "height": 25
+          },
+          "text_metrics": {
+            "font_size_px": 17.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s24_sh12",
+          "role": "label_candidate",
+          "text": "不只看最终准确率，还看定位、路由、patch 范围和成本。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 91,
+            "y": 399,
+            "width": 298,
+            "height": 31
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s24_sh13",
+          "role": "label_candidate",
+          "text": "",
+          "paragraph_count": 0,
+          "geometry": {
+            "x": 490,
+            "y": 353,
+            "width": 360,
+            "height": 94
+          },
+          "text_metrics": {
+            "font_size_px": null,
+            "paragraph_count": 0
+          }
+        },
+        {
+          "slot_id": "s24_sh14",
+          "role": "label_candidate",
+          "text": "可复现实验体系",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 509,
+            "y": 367,
+            "width": 298,
+            "height": 25
+          },
+          "text_metrics": {
+            "font_size_px": 17.33,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s24_sh15",
+          "role": "label_candidate",
+          "text": "脚本、日志、开题材料和后续公开子集评测同步推进。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 509,
+            "y": 399,
+            "width": 323,
+            "height": 29
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s24_sh16",
+          "role": "label_candidate",
+          "text": "总结：SQL+ 的价值在于把查询计划拆成可检查、可路由、可局部修复的步骤。",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 84,
+            "y": 488,
+            "width": 792,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 18.67,
+            "paragraph_count": 1
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    },
+    {
+      "slide_index": 25,
+      "page_type": "ending_candidate",
+      "text_summary": "主要参考文献\n开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 25\nYu et al. 2018. Spider: A Large-Scale Human-Labeled Dataset for Complex and Cross-Domain Text-to-SQL.\nGuo et al. 2019. IRNet: A General Purpose Text-to-SQL Parser with SemQL.\nWang et al. 2020. RAT-SQL: Relation-Aware Schema Encoding and Linking.\nGan et al. 2021. NatSQL: A Simplified SQL Intermediate Representation.\nScholak et al. 2021. PICARD: Parsing Incrementally for Constrained Auto-Regressive Decoding.\nLi et al. 2023. BIRD: A Big Bench for ",
+      "slots": [
+        {
+          "slot_id": "s25_sh2",
+          "role": "title_candidate",
+          "text": "主要参考文献",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 43,
+            "y": 103,
+            "width": 883,
+            "height": 56
+          },
+          "text_metrics": {
+            "font_size_px": 32.0,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s25_sh3",
+          "role": "label_candidate",
+          "text": "开题汇报 | SQL+ / Text-to-SQL / Multi-Agent | 25",
+          "paragraph_count": 1,
+          "geometry": {
+            "x": 53,
+            "y": 675,
+            "width": 854,
+            "height": 21
+          },
+          "text_metrics": {
+            "font_size_px": 10.67,
+            "paragraph_count": 1
+          }
+        },
+        {
+          "slot_id": "s25_sh4",
+          "role": "body_candidate",
+          "text": "Yu et al. 2018. Spider: A Large-Scale Human-Labeled Dataset for Complex and Cross-Domain Text-to-SQL.\nGuo et al. 2019. IRNet: A General Purpose Text-to-SQL Parser with SemQL.\nWang et al. 2020. RAT-SQL: Relation-Aware Schema Encoding and Linking.\nGan et al. 2021. NatSQL: A Simplified SQL Intermediate Representation.\nScholak et al. 2021. PICARD: Parsing Incrementally for Constrained Auto-Regressive Decoding.\nLi et al. 2023. BIRD: A Big Bench for Large-Scale Database Grounded Text-to-SQLs.\nPourreza and Rafiei. 2023. DIN-SQL: Decomposed In-Context Learning of Text-to-SQL.\nNi et al. 2023. LEVER: Learning to Verify Language-to-Code Generation.\nShute et al. 2024. SQL Has Problems. We Can Fix Them: Pipe Syntax in SQL.\nTalaei et al. 2024. CHESS: Contextual Harnessing for Efficient SQL Synthesis.\nPourreza et al. 2024. CHASE-SQL: Multi-Path Reasoning and Preference Optimized Candidate Selection.\nLei et al. 2025. Spider 2.0: Evaluating Language Models on Enterprise Text-to-SQL Workflows.\nWang et al. 2025. MAC-SQL: A Multi-Agent Collaborative Framework for Text-to-SQL.\nLi et al. 2025. SQL-Factory: A Multi-Agent Framework for High-Quality and Large-Scale SQL Generation.",
+          "paragraph_count": 14,
+          "geometry": {
+            "x": 43,
+            "y": 201,
+            "width": 840,
+            "height": 523
+          },
+          "text_metrics": {
+            "font_size_px": 12.0,
+            "paragraph_count": 14
+          }
+        }
+      ],
+      "tables": [],
+      "charts": []
+    }
+  ],
+  "plan_contract": {
+    "schema": "template_fill_pptx_plan.v1",
+    "slides": [
+      {
+        "source_slide": 1,
+        "purpose": "封面 / 章节 / 内容 / 结尾",
+        "replacements": [
+          {
+            "slot_id": "s01_sh2",
+            "text": "替换后的文字"
+          }
+        ],
+        "table_edits": [
+          {
+            "table_id": "s01_tbl3",
+            "cells": [
+              {
+                "row": 0,
+                "col": 0,
+                "text": "替换后的单元格"
+              }
+            ]
+          }
+        ],
+        "chart_edits": [
+          {
+            "chart_id": "s01_ch4",
+            "categories": [
+              "A",
+              "B"
+            ],
+            "series": [
+              {
+                "name": "系列1",
+                "values": [
+                  1,
+                  2
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

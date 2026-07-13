@@ -7,9 +7,13 @@
 ### 只想了解当前课题
 
 1. `AGENTS.md`：长期规则、用户目标、当前确定方向。
-2. `README.md`：项目概览和目录结构。
-3. `overview/current_direction_and_plan.md`：当前技术路线、论文边界、近期任务。
-4. `feasibility/results/current_direction_analysis.md`：基于实验结果的当前方向分析。
+2. `PROJECT_OUTLINE.md`：根目录项目总纲，汇总当前题目、研究内容、实验主线、关键证据和近期优先级。
+3. `README.md`：项目概览和目录结构。
+4. `opening/report/opening_report.md`：当前开题报告正文；其中的正式题目、研究内容和实验边界会反向约束后续项目规划。
+5. `overview/current_direction_and_plan.md`：当前技术路线、论文边界、近期任务。
+6. `feasibility/results/current_direction_analysis.md`：基于实验结果的当前方向分析。
+
+阅读时要把 `opening/report/opening_report.md` 和 `overview/current_direction_and_plan.md` 视为同一方向的两个视角：前者面向开题论证，后者面向项目执行。二者不应长期存在题目、研究内容、实验优先级或边界口径冲突。
 
 ### 要继续做实验
 
@@ -30,14 +34,17 @@
 ### 想从零理解实验和术语
 
 1. `learning/README.md`：学习材料目录说明。
-2. `learning/experiment_walkthrough.md`：按实验时间线解释 Ray/Daft/Lance、Arrow、pgvector、batch、task/actor、fan-in、backpressure、writeback 等术语和实验目的。
-3. 再回到 `motivation/results/` 和 `feasibility/results/` 阅读正式报告。
+2. `learning/AGENTS.md`：实验结论、数据分析和术语讲解的精细度标准。
+3. `learning/experiment_walkthrough.md`：按实验时间线解释 Ray/Daft/Lance、Arrow、pgvector、batch、task/actor、fan-in、backpressure、writeback 等术语和实验目的。
+4. 再回到 `motivation/results/` 和 `feasibility/results/` 阅读正式报告。
 
 ## 2. 核心文件地图
 
 | 文件 | 内容 | 什么时候读 |
 |---|---|---|
 | `AGENTS.md` | 项目长期规则、用户真实目标、当前选题边界 | 每次开始任务先读 |
+| `PROJECT_OUTLINE.md` | 根目录项目总纲，汇总当前方向、实验主线、关键证据、近期优先级和同步规则 | 想快速确认当前主线和大纲时读 |
+| `PROJECT_LOG.md` | 项目级简要操作日志 | 复盘跨目录调整、入口变更和方向同步时读 |
 | `PROJECT_INDEX.md` | 文件索引和阅读顺序 | 不知道材料在哪里时读 |
 | `README.md` | 工作区总览、当前确定方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改总纲、当前计划时读 |
@@ -71,31 +78,33 @@
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |
 
-## 3. 实验大纲在哪里
+## 3. 实验主线与证据入口在哪里
 
-实验大纲文件：
+当前实验主线不再由 `feasibility/guide.md` 承担。该文件只记录早期组件可行性验证和 fake `AI_EMBED(text)` 预研思路，不能作为现在的实验大纲或开题论证主入口。
 
-`feasibility/guide.md`
+当前更可信的实验主线入口是：
 
-主要内容：
+| 文件 | 地位 | 主要用途 |
+|---|---|---|
+| `motivation/README.md` | 动机测试目录总入口 | 判断端到端动机实验、GPU-backed 系统画像和结果分层应该读哪里 |
+| `motivation/plans/workloads.md` | workload 与实验设计主线 | 说明三类 AI 算子场景、为什么不能拆成三个独立方向、下一步动机测试优先级 |
+| `motivation/plans/integration.md` | 真实链路集成路线 | 说明 PostgreSQL / 外部 worker / Ray / GPU model service / writeback 如何组织 |
+| `motivation/results/README.md` | 动机测试结果总入口 | 给出当前 GPU、PG18.4 fake、fake/CPU 结果的阅读顺序和结论边界 |
+| `motivation/results/gpu/README.md` | 真实 GPU-backed 结果入口 | 记录当前真实 embedding endpoint、链路拆分和 multi-endpoint Ray 动机测试 |
+| `opening/report/opening_report.md` | 开题论证入口 | 将项目进展、研究内容、技术路线和可行性分析组织成正式报告 |
 
-- 当前验证目标；
-- 已完成 fake/CPU 实验；
-- fake `AI_EMBED(text)` 历史预研测试设计；
-- fine/coalesced object 对比指标；
-- 当前路线继续推进的判定标准；
-- 动机实验报告模板。
+当前正式论证优先引用：
 
-补充分析文件：
+1. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`：真实 GPU-backed embedding 链路拆分，当前开题动机中最强证据。
+2. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`：双 endpoint 下 Ray task / actor 的初步动机测试。
+3. `motivation/results/pg18_4_fake/system_profile.md`：PG18.4 本地同构 fake-model 历史画像，只作预演与历史信号。
+4. `motivation/results/fake_cpu/analysis.md`：fake/CPU 历史预研，只用于解释早期为什么关注 task/object/invocation/fan-in/backpressure。
 
-`feasibility/analysis.md`
+`feasibility/guide.md` 和 `feasibility/analysis.md` 的当前定位是：
 
-主要内容：
-
-- 已完成实验的阶段性结论；
-- fake `AI_EMBED(text)` 历史预研假设；
-- 当前路线是否继续成立；
-- 风险和近期执行顺序。
+- 记录组件级可行性验证、早期 benchmark 和环境验证思路；
+- 说明哪些结果只能作为 feasibility evidence；
+- 不承担当前实验大纲、开题主线或 GPU-backed 性能结论职责。
 
 ## 4. 实验代码在哪里
 
@@ -159,6 +168,8 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 - `motivation/results/`：端到端动机测试、系统画像、瓶颈定位和可优化点分析。
 
 讲解动机实验和系统画像时优先引用 `motivation/results/`。
+
+写实验结论和分析实验数据时，精细程度参考 `learning/AGENTS.md`：需要说明实验目的、链路流程、参数含义、真实数据来源、结果读法、不能证明的内容、结论类型和下一步验证。正式报告可以更简洁，但不能省略结论边界。
 
 | 文件 | 内容 |
 |---|---|
@@ -236,17 +247,17 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 
 确定场景主线：
 
-> 面向数据库内置 AI 算子的分布式数据处理执行链路优化研究
+> 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究
 
 候选技术切入点：
 
-> 基于 Ray/Daft/Lance 类外部执行链路的数据库 AI 算子批处理系统调优
+> 基于 Daft/Ray/Lance 类系统机制的 AI 数据执行链路调优
 
 候选升级表述：
 
-> 面向数据库 AI 算子的特征感知并行执行与外部链路跨层调度方法研究
+> 面向数据库驱动 AI workload 的特征感知数据组织、并行执行与存储协同优化
 
-具体优化方向尚未最终锁定。当前必须先用生产式 GPU-backed E2E profile 建立主动机：真实数据库 AI 算子触发后，外部执行链路是否产生足够严重、可分解、可优化的损耗。Object/fan-in/coalescing 是已有证据支持的机制入口；task/actor 并行度、外部 worker 形态、模型服务路由、backpressure 和 writeback 是下一步需要验证的扩展轴。GPU-backed model service 是主实验的真实计算端点；GPU/数据库内执行迁移、GPU kernel 和 CPU-only 链路只作为背景或少量必要 baseline，不作为主攻方向。
+具体优化方向尚未最终锁定。当前必须先用生产式 GPU-backed E2E profile 建立主动机：数据库驱动 AI workload 进入 Daft/Ray/Lance-like 数据执行链路后，数据组织、Ray 调度、GPU 模型服务和 Lance / 数据库写回是否产生足够严重、可分解、可优化的损耗。Object/fan-in/coalescing 是已有证据支持的机制入口；task/actor 并行度、Daft/Arrow batch、模型服务路由、backpressure 和 writeback 是下一步需要验证的扩展轴。GPU-backed model service 是主实验的真实计算端点；GPU/数据库内执行迁移、GPU kernel 和 CPU-only 链路只作为背景或少量必要 baseline，不作为主攻方向。
 
 当前不要优先做：
 
@@ -265,12 +276,12 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 
 下一步优先工作：
 
-- 已补充 granularity attribution、backpressure 和真实 GPU-backed embedding 链路拆分实验。下一步优先补 384 维 pgvector 写回、多 endpoint / Ray Serve / vLLM 形态、主控 fan-in 写回 vs 多 worker 写回，并继续用同一套阶段计时回答“为什么外部链路值得优化”；
+- 已补充 granularity attribution、backpressure 和真实 GPU-backed embedding 链路拆分实验。下一步优先补 384 维 pgvector 写回、多 endpoint / Ray Serve / vLLM 形态、主控 fan-in 写回 vs 多 worker 写回，并继续用同一套阶段计时回答“为什么数据执行与存储链路值得优化”；
 - 消融实验优先在同一条 GPU-backed E2E 链路上做大块对照；CPU/fake 链路只做脚本调试、计时边界验证和历史对照，不能把 CPU-only 分阶段瓶颈直接写成 GPU-backed 链路瓶颈；
-- 把真实链路画像实验收敛到 PostgreSQL 18.3 内部验证平台：SQL/表触发、外部 worker、AI 算子执行、写回和指标采集必须真实跑通；
+- 把真实链路画像实验收敛到 PostgreSQL 18.3 内部验证平台：SQL/表触发、Daft/Arrow batch、Ray 执行、GPU 模型服务、写回和指标采集必须真实跑通；
 - 基于 `motivation/plans/workloads.md` 比较 3 个候选 AI 算子场景；
-- 不把 3 个候选场景写成 3 个独立方向，而是围绕“数据库 AI 算子的特征感知并行执行与跨层调度”组织；
-- 不把“粒度控制”写成全部贡献，而是评估是否能升级为“AI 算子特征感知并行执行与跨层调度”；
+- 不把 3 个候选场景写成 3 个独立方向，而是围绕“数据库驱动 AI workload 的特征感知数据组织、并行执行与存储协同”组织；
+- 不把“粒度控制”写成全部贡献，而是评估是否能升级为“AI workload 特征感知数据组织、并行执行与存储协同”；
 - 对候选场景继续做 task/object 解耦、task/actor/concurrency 控制、token-aware / prefix-aware batching、selectivity-aware predicate pipeline、resource/backpressure 等动机测试；
 - 使用 `idea-evaluator` 的 fatal-flaws / 五维贡献视角评估方向；
 - 使用 `deep-research` 的 scoping / Socratic 视角澄清研究问题和证据标准。
@@ -278,7 +289,7 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 需要回答：
 
 - 当前 RecordBatch fan-in 放大是否会迁移到端到端 AI_EMBED 链路；
-- `N × P` object slots 在真实 GPU-backed AI 算子外部服务链路中是否仍导致明显成本；
+- `N × P` object slots 在真实 GPU-backed AI 数据执行链路中是否仍导致明显成本；
 - object coalescing 是否稳定降低端到端耗时；
 - 这个现象能否映射到 Daft join/groupby/repartition。
 - 是否存在比 batch embedding / RAG 准备更贴合 AI infra / inference infra 的 AI 算子场景；
@@ -298,6 +309,24 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 ```text
 opening/README.md
 ```
+
+当前开题题目：
+
+```text
+面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究
+```
+
+开题材料不是独立展示稿。报告中的三项研究内容：AI workload 感知的数据组织与批处理执行调度、GPU 推理服务状态感知的 Ray 并行调度与反压控制、面向 AI 数据流的结果汇聚与 Lance / 数据库持久化协同，应同步作为后续实验计划、PPT、飞书文档和 overview 规划的共同口径。
+
+## 开题与项目规划同步规则
+
+开题材料和项目规划必须双向同步：
+
+- 项目进展、实验结果和后续规划是开题报告的事实来源。
+- 开题报告一旦调整题目、研究内容、技术路线、创新点、实验边界或侧重点，就会反向影响项目的实验计划、优先级和对外表述。
+- 后续做项目规划或实验设计时，不能只看旧的 `overview/` 或 `motivation/` 文档，也要检查当前开题报告是否已经收敛到新的研究口径。
+- 后续修改开题报告时，必须检查项目级 `README.md`、本文件、`overview/current_direction_and_plan.md`、`motivation/plans/workloads.md`、`motivation/plans/integration.md`、`opening/README.md` 和 `opening/work_rules.md` 是否需要同步。
+- 如果只是润色正文或调整格式，可以不改项目规划；如果改变研究问题、实验优先级、可行性结论或贡献边界，必须同步项目规划。
 
 开题工作规则见：
 

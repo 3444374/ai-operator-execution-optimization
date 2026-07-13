@@ -2,6 +2,23 @@
 
 生成日期：2026-07-10
 
+## 0. 当前定位
+
+本文是早期组件可行性验证指南，主要记录 Ray / Arrow / object / fan-in 等组件级实验和 fake `AI_EMBED(text)` 预研思路。随着真实 GPU-backed 端到端动机测试完成，本文不再承担项目实验大纲职责。
+
+当前实验主线、动机测试结论和开题材料依据优先查看：
+
+```text
+motivation/README.md
+motivation/plans/workloads.md
+motivation/plans/integration.md
+motivation/results/README.md
+motivation/results/gpu/README.md
+opening/report/opening_report.md
+```
+
+本文中的判定标准可作为历史预研和组件验证参考，但不能替代 `motivation/results/` 中的端到端系统画像和 GPU-backed 结果。
+
 ## 1. 验证目标
 
 本阶段目标不是完整系统实现，而是判断：

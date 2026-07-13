@@ -6,7 +6,7 @@
 
 | 路径 | 地位 |
 |---|---|
-| `gpu/` | 后续生产式 GPU-backed E2E 主动机结果，优先级最高 |
+| `gpu/` | 真实 GPU-backed E2E 主动机结果，优先级最高 |
 | `pg18_4_fake/` | PG18.4 本地同构 fake-model 历史结果 |
 | `fake_cpu/` | fake/CPU 历史预研结果 |
 

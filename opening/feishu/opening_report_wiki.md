@@ -1,6 +1,16 @@
-# 硕士生论文开题报告
+﻿# 硕士生论文开题报告
 
-题目：面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究
+**题 目：** 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究
+
+| 项目 | 内容 |
+|---|---|
+| 学 号 |  |
+| 姓 名 |  |
+| 专 业 |  |
+| 指 导 教 师 |  |
+| 院（系、所） | 计算机科学与技术学院 |
+
+**华中科技大学研究生院制**
 
 ## 1. 课题背景、目的和意义
 
@@ -351,3 +361,4 @@ flowchart TB
 [16] 本项目实验报告. GPU-Backed AI_EMBED Chain Breakdown, 2026-07-12. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
 
 [17] 本项目实验报告. Multi-Endpoint Ray Motivation Test, 2026-07-12. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
+

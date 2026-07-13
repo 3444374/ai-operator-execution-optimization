@@ -2,18 +2,30 @@
 
 本目录用于放置或记录学校开题报告 Word 模板、PPT 模板和旧版开题材料的适配说明。
 
-当前用户提到的外部文件包括：
+当前已放入本项目工作区的模板文件包括：
 
-- `d:\Code\NL2SQL\docs\opening\opening_ppt.md`
-- `d:\Code\NL2SQL\docs\opening\硕士生开题报告模板0604.docx`
-- `d:\Code\NL2SQL\docs\opening\opening_ppt_template_version_v6_long_notes_source_checked.pptx`
-- `d:\Lab\中国计算机学会推荐国际学术会议和期刊目录-2022.pdf`
+- `opening/templates/硕士生开题报告模板0604.docx`
+- `opening/templates/opening_ppt_template_version_v6_long_notes_source_checked.pptx`
 
-这些文件当前不在本项目工作区内。后续如需读取和迁移，需要用户授权访问外部路径，或将文件复制到本项目的 `opening/templates/` 下。
+本次已使用 `硕士生开题报告模板0604.docx` 抽取开题报告章节结构，并据此重排开题飞书 wiki。若后续还需要使用 CCF 目录、旧版开题材料或其他外部模板，需先将对应文件复制到本目录，或由用户授权访问外部路径。
 
 ## 模板使用原则
 
 - Word 模板用于约束报告结构和格式，不直接改变研究口径。
+- 最终提交版 DOCX 必须使用学校 Word 模板生成，继承模板中的章节样式、字体、行间距、图表标注、参考文献格式和页面设置。
+- 当前阶段不优先生成 DOCX。工作顺序是：先维护本地 Markdown 源稿，再补飞书文档，然后制作 PPT，再把 PPT 同步到飞书，最后才生成 DOCX。
 - PPTX 模板用于约束版式、安全内容区、字体、页眉页脚和母版，不当作背景截图使用。
 - CCF 目录用于优先筛选权威文献，尤其是 CCF-A 会议和期刊。
 
+## DOCX 生成要求
+
+正式生成 `opening/report/opening_report.docx` 时，应从 `硕士生开题报告模板0604.docx` 出发，而不是从空白 Word 文档生成。需要保留或复用模板中的：
+
+- 一级标题：黑体，四号。
+- 二级标题：黑体，小四号。
+- 正文：中文宋体，英文 Times New Roman，小四号。
+- 行间距：1.5 倍。
+- 正文对齐：两侧对齐。
+- 图、表、参考文献等格式要求按模板执行。
+
+在 DOCX 生成前，先确认本地 Markdown、飞书文档、PPT 和飞书 PPT 的题目、研究内容、实验口径一致。

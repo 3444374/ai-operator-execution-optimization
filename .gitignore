@@ -20,6 +20,7 @@ venv/
 env/
 
 # Local logs and temporary files
+tmp/
 *.log
 *.tmp
 *.swp

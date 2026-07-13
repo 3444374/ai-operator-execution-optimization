@@ -6,17 +6,17 @@
 
 当前课题目标：
 
-> 面向数据库内置 AI 算子的分布式数据处理执行链路优化研究。
+> 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究。
 
 用户长期目标是积累 AI infra / inference infra 能力，不希望硕士论文主线回到传统数据库内核或传统 GPU 查询算子。
 
 当前候选切入点：
 
-> 基于 Ray/Daft/Lance 类外部执行链路的数据库 AI 算子批处理系统调优。
+> 基于 Daft/Ray/Lance 类系统机制的 AI 数据执行链路调优。
 
 重点关注 batch、partition、task/actor、object、fan-in、backpressure、writeback、模型服务队列、GPU-backed model-service 资源配比等瓶颈。
 
-当前规划优先做 GPU-backed 外部执行链路调优。最强主动机实验应是生产式 GPU-backed E2E profile：数据库触发 AI 算子，外部 Ray/Daft/Lance-like 链路调用 GPU-backed 模型服务，再写回数据库，并证明外部链路损耗足够大、可分解、值得优化。不要把主要工作量放在“证明 AI 算子从数据库搬到 GPU 会更快”、数据库内核 UDF、GPU kernel 或大量 GPU baseline 上。
+当前规划优先做 GPU-backed AI 数据执行链路调优。最强主动机实验应是生产式 GPU-backed E2E profile：数据库触发 AI workload，数据进入 Daft/Arrow 数据组织层、Ray task/actor 执行层和 GPU-backed 模型服务，再写回 Lance / pgvector / PostgreSQL sink，并证明数据执行与存储链路损耗足够大、可分解、值得优化。不要把主要工作量放在“证明 AI 算子从数据库搬到 GPU 会更快”、数据库内核 UDF、GPU kernel 或大量 GPU baseline 上。
 
 ## 2. 系统边界
 

@@ -6,8 +6,9 @@
 
 | 飞书文档 | 链接 | 承载内容 | 本地来源 |
 |---|---|---|---|
-| 开题报告与开题汇报 | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 开题报告正文、开题 PPT 内容摘要、最终汇报口径 | `opening/report/`、`opening/slides/`、`opening/outline.md` |
-| 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 动机实验、可行性实验、阶段画像、实验结论边界 | `motivation/results/`、`feasibility/results/`、`learning/experiment_walkthrough.md` |
+| 开题报告与开题汇报 | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 开题报告正文、开题 PPT 内容摘要、最终汇报口径 | `opening/feishu/opening_report_wiki.md`、`opening/report/`、`opening/slides/`、`opening/outline.md` |
+| 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 动机实验、可行性实验、阶段画像、实验结论边界 | `opening/feishu/motivation_feasibility_wiki.md`、`motivation/results/`、`feasibility/results/`、`learning/experiment_walkthrough.md` |
+| 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 开题汇报 PPT 在线版 | `opening/slides/opening_defense_20260712.pptx`、`opening/slides/opening_ppt.md` |
 
 ## 同步规则
 
@@ -15,6 +16,7 @@
 - 同步前先检查本地报告、PPT、飞书版、实验报告口径是否一致。
 - 写入飞书前要区分“事实、推断、待验证、不能声称”。
 - 开题报告飞书文档中可以同步 PPT 大纲和关键页摘要，但正式 PPTX 仍由 `opening/slides/` 维护。
+- `opening_report_wiki.md` 是“开题报告与开题汇报”飞书 wiki 的主源稿；`motivation_feasibility_wiki.md` 是“动机测试与可行性测试”飞书 wiki 的主源稿；`progress_update.md` 是阶段进度同步稿。
 - 动机测试与可行性测试飞书文档只写真实实验和明确边界，不把聊天中的临时判断当作正式结论。
 
 ## 工具使用
