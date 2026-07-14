@@ -78,6 +78,7 @@ PostgreSQL 18.3 internal validation platform / table / parquet
 - `figures/`：项目级图资产（架构图、实验图、绘图脚本、图表审计）。
 - `learning/`：面向用户的学习讲解材料。
 - `opening/`：开题报告、PPT、飞书同步、文献精读、答辩问答。
+- `projects/`：PPT 生成工程工作目录（非研究材料）。
 - `notes/`：沟通记录和待确认问题。
 
 进入子目录工作前，先读该目录下的 `AGENTS.md`（规则），再读该目录下的 `README.md`（详细内容说明）。

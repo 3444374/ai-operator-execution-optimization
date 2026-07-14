@@ -9,6 +9,8 @@
 
 ## 启动与验证
 
+首次启动时 `init.sql` 自动执行 `CREATE EXTENSION IF NOT EXISTS vector;`。
+
 ```powershell
 docker compose -f deploy/postgres18.4/compose.yaml up -d
 docker exec ai-operator-postgres18 psql -U postgres -d ai_operator -c "SELECT version();"

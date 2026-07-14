@@ -33,6 +33,8 @@ SQL surface 迁移或等价接入 PostgreSQL 18.4 / PostgreSQL 18.3 平台。
 
 ## 启动
 
+首次启动时 `init.sql` 自动执行 `CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS ai CASCADE;`。
+
 ```powershell
 docker compose -f deploy/pgai/compose.yaml up -d
 ```

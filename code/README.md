@@ -1,8 +1,28 @@
 # Project Code
 
-本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `feasibility/benchmarks/` 或 `motivation/`。
+本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `feasibility/benchmarks/` 或 `motivation/benchmarks/`。
 
 绘图、图表复现和素材筛选脚本统一放在 `figures/scripts/`；本目录优先保留实验主体代码、服务入口和 profiling 驱动。
+
+## 目录结构
+
+```
+code/
+├── scripts/
+│   ├── postgres_ai_operator_profile.py   ← PostgreSQL AI 算子链路画像（Ray actor + GPU endpoint + writeback）
+│   ├── pgai_sql_operator_profile.py      ← pgai SQL 触发面画像（ai.ollama_embed via pgai 扩展）
+│   └── local_embedding_server.py         ← 本地 OpenAI 兼容 embedding 服务（Ollama）
+├── configs/                              ← 后续工程配置文件（当前为空）
+├── src/                                  ← 后续可复用库代码（当前为空）
+├── tests/                                ← 后续测试代码（当前为空）
+└── requirements.txt                      ← Python 依赖（numpy, pyarrow, ray, psycopg, torch, transformers）
+```
+
+安装依赖：
+
+```bash
+pip install -r code/requirements.txt
+```
 
 ## PostgreSQL AI 算子链路画像
 

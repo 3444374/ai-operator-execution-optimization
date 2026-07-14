@@ -23,4 +23,4 @@
 - Python baseline、Ray task、Ray actor、模型服务等 baseline 要尽量共享同一数据读取和写回路径，避免 baseline 不可比。
 - 完成代码实现或功能测试后，按根规则同步更新 `learning/` 中的学习讲解。
 
-详细脚本说明见 `scripts/README.md`。
+详细脚本说明见 `scripts/README.md`。依赖清单见 `requirements.txt`。
