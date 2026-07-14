@@ -30,3 +30,5 @@
 - GPU-backed E2E 链路优先于 CPU/fake 简化实验；CPU/fake 只能作为调试或历史对照。
 - 不把动机测试结果写成方法贡献；动机测试只说明为什么值得继续做。
 - 修改本目录后，同步检查 `README.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、`opening/report/opening_report.md` 和 `figures/README.md` 是否需要更新。
+- 实验设计和结论遵循 `karpathy-guidelines`：不确定就标注不确定，先定义可验证目标，做最小实验，每个结论区分事实/推断/待确认。
+- 实验图统一放在 `figures/`；做图前先读 `figures/AGENTS.md`。设计论文级核心图时参考 `figure-designer`，投稿级质检参考 `nature-figure`。

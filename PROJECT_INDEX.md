@@ -8,22 +8,23 @@
 
 1. `AGENTS.md`：长期规则、用户目标、当前确定方向。
 2. `README.md`：项目概览和目录结构。
-3. `overview/current_direction_and_plan.md`：当前技术路线、论文边界、近期任务。
-4. `validation/results/current_direction_analysis.md`：基于实验结果的当前方向分析。
+3. `PROJECT_OUTLINE.md`：当前题目、研究内容、关键证据、近期优先级。
+4. `overview/current_direction_and_plan.md`：阶段性技术路线和计划。
+5. `motivation/results/gpu/README.md`：真实 GPU-backed E2E 结果入口。
 
 ### 要继续做实验
 
 1. `AGENTS.md`：实验规则。
-2. `motivation/ai_operator_integration_test_plan.md`：PostgreSQL 18.3 内部平台、低端设备小规模实验和 AI 算子集成路线。
-3. `validation/feasibility_validation_guide.md`：实验大纲。
-4. `validation/benchmarks/README.md`：活跃实验脚本和运行命令。
-5. `motivation/results/README.md`：动机测试正式结果的运行命令。
-6. `validation/benchmarks/analyze_results.py`：自动分析脚本。
+2. `motivation/plans/workloads.md`：三类 AI 算子场景、动机测试和后续实验优先级。
+3. `motivation/plans/integration.md`：PostgreSQL / 外部 worker / Ray / GPU model service / writeback 集成路线。
+4. `feasibility/benchmarks/README.md`：组件 benchmark 脚本和运行命令。
+5. `motivation/results/README.md`：动机测试正式结果阅读顺序和结论边界。
+6. `motivation/results/gpu/README.md`：真实 GPU-backed E2E 结果入口。
 
 ### 要写调研/和导师沟通
 
 1. `AGENTS.md`：沟通边界和不能声称什么。
-2. `motivation/ai_operator_scenario_and_motivation_test.md`：数据库 AI 算子场景和动机测试方案。
+2. `motivation/plans/ai_sql_surface.md`：数据库 AI 算子现状和 AI 算子 SQL 触发面分析。
 3. `research/literature_and_evidence_review.md`：文献与官方资料依据。
 4. `notes/communication_notes.md`：已有沟通问题和话术。
 
@@ -33,28 +34,51 @@
 |---|---|---|
 | `AGENTS.md` | 项目长期规则、用户真实目标、当前选题边界 | 每次开始任务先读 |
 | `PROJECT_INDEX.md` | 文件索引和阅读顺序 | 不知道材料在哪里时读 |
-| `README.md` | 工作区总览、当前确定方向、目录结构 | 了解项目背景 |
+| `PROJECT_OUTLINE.md` | 项目总纲：当前题目、研究内容、关键证据、近期优先级 | 快速了解最新进展 |
+| `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改总纲、当前计划时读 |
-| `overview/project_outline.md` | 当前总纲，说明 AI infra / 数据库 AI 算子定位 | 判断方向是否偏题 |
-| `overview/current_direction_and_plan.md` | 技术路线、论文不能是什么、成立条件、近期任务 | 做方向判断、写计划 |
+| `overview/project_outline.md` | 项目总纲（旧版） | 已被根 `PROJECT_OUTLINE.md` 替代，仅作历史参考 |
+| `overview/current_direction_and_plan.md` | 阶段性技术路线和计划 | 了解阶段规划时读 |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
+| `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |
 | `research/literature_and_evidence_review.md` | 文献与官方资料依据 | 写调研、论文动机时读 |
+| `research/existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子与 AI 数据处理执行链路对比 | 比较外部系统路线时读 |
 | `motivation/AGENTS.md` | 动机实验规则 | 搭建 AI 算子场景或端到端动机测试前读 |
-| `motivation/README.md` | 动机测试目录详细说明（脚本、设计文档、结果） | 了解 motivation/ 下有什么、怎么组织 |
-| `motivation/ai_infra_candidate_scenarios_and_motivation_tests.md` | AI infra 候选 AI 算子场景、动机测试和可优化点分析 | 比较候选场景、决定下一步测试时读 |
-| `motivation/fake_ai_embed_pipeline_benchmark.py` | fake `AI_EMBED(text)` 端到端动机测试脚本 | 验证批量 embedding / RAG 链路中的 object fan-in 成本 |
-| `motivation/ai_operator_scenario_motivation_benchmark.py` | 三类候选 AI 算子场景动机测试脚本 | 比较 embedding、classify/filter、offline LLM 的瓶颈形态 |
-| `motivation/ai_operator_granularity_attribution_benchmark.py` | AI 算子粒度归因动机测试脚本 | 拆分 task 数、Ray refs、fan-in refs、operator invocation 的影响 |
-| `motivation/ai_operator_backpressure_benchmark.py` | AI 算子模型服务反压模拟脚本 | 验证 queue wait、token backlog、in-flight 请求和 backpressure 动机 |
-| `motivation/results/` | 动机测试正式结果和分析 | 讲解动机测试、写开题动机、整理实验结论时读 |
-| `motivation/ai_operator_scenario_and_motivation_test.md` | 数据库 AI 算子现状、推荐业务场景、动机测试标准 | 搭建业务场景前读 |
-| `motivation/ai_operator_integration_test_plan.md` | 无设备/低端设备/PostgreSQL 18.3 平台的集成与测试方法 | 规划集成和测试时读 |
-| `validation/AGENTS.md` | 可行性验证规则 | 写 benchmark 或实验结果前读 |
-| `validation/README.md` | 可行性验证目录详细说明（benchmark、结果、归档） | 了解 validation/ 下有什么、怎么组织 |
-| `validation/archive/README.md` | 早期排除性实验归档说明 | 需要引用已排除方向时读 |
+| `motivation/README.md` | 动机测试目录详细说明 | 了解 motivation/ 下有什么、怎么组织 |
+| `motivation/plans/workloads.md` | 三类 AI 算子场景、动机测试和 idea-evaluator 评估 | 比较候选场景、决定下一步测试时读 |
+| `motivation/plans/integration.md` | PostgreSQL / 外部 worker / Ray / GPU model service / writeback 集成路线 | 规划集成和测试时读 |
+| `motivation/plans/ai_sql_surface.md` | 数据库 AI 算子现状、推荐业务场景、动机测试标准 | 搭建业务场景前读 |
+| `motivation/benchmarks/fake_embed_pipeline.py` | fake `AI_EMBED(text)` 端到端动机测试脚本 | 验证 embedding / RAG 链路中的 fan-in 成本 |
+| `motivation/benchmarks/workload_matrix.py` | 三类候选 AI 算子场景动机测试脚本 | 比较不同 AI 算子的瓶颈形态 |
+| `motivation/benchmarks/granularity.py` | AI 算子粒度归因动机测试脚本 | 拆分 task/object/fan-in/invocation 的收益 |
+| `motivation/benchmarks/backpressure.py` | AI 算子模型服务反压模拟脚本 | 验证 queue wait、token backlog、in-flight 和 backpressure |
+| `motivation/results/README.md` | 动机测试结果阅读顺序和结论边界 | 讲解动机测试、整理实验结论时读 |
+| `motivation/results/gpu/README.md` | 真实 GPU-backed E2E 结果入口 | 当前最优先引用的正式证据 |
+| `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md` | GPU-backed embedding 链路拆分 | 引用 stage breakdown 和 fine/coalesced 对比 |
+| `motivation/results/gpu/pgai_integrated_key_rerun_20260714.md` | pgai-integrated GPU-backed rerun | 引用最新 rerun 结果 |
+| `motivation/results/fake_cpu/analysis.md` | fake/CPU 历史预研分析 | 了解早期为什么关注 task/object/invocation/fan-in/backpressure |
+| `motivation/results/pg18_4_fake/` | PG18.4 本地同构预演 | 只作为预演和历史信号，不代表真实 GPU-backed 结论 |
+| `feasibility/AGENTS.md` | 可行性验证规则 | 做组件 benchmark 或环境验证前读 |
+| `feasibility/README.md` | 可行性验证目录入口 | 了解 feasibility/ 下有什么、怎么组织 |
+| `feasibility/guide.md` | 早期组件可行性验证指南 | 不再作为当前实验主线大纲，仅作历史参考 |
+| `feasibility/analysis.md` | 前期可行性分析和阶段性判断 | 了解早期排除性结论 |
+| `feasibility/benchmarks/README.md` | benchmark 说明和运行命令 | 运行组件 benchmark |
+| `feasibility/results/README.md` | 可行性结果索引 | 查看组件验证、连接验证、smoke 结果 |
+| `experiments/AGENTS.md` | 正式研究实验规则 | 设计优化实验、消融实验前读 |
+| `experiments/README.md` | 正式研究实验入口 | 了解三项研究内容的实验规划 |
+| `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
+| `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |
+| `learning/AGENTS.md` | 学习讲解规则 | 写学习材料前读 |
+| `learning/README.md` | 学习材料入口 | 了解实验 walkthrough 和术语讲解 |
+| `learning/experiment_walkthrough.md` | 按推进顺序讲解已完成实验 | 学习实验链路、参数和结果读法 |
+| `opening/AGENTS.md` | 开题工作规则 | 写开题报告、PPT、飞书材料前读 |
+| `opening/README.md` | 开题工作区入口 | 了解开题材料分布和同步规则 |
+| `opening/navigation.md` | 开题材料导航 | 不知道开题材料在哪时读 |
+| `opening/report/opening_report.md` | 开题报告正文 | 写报告、和导师沟通、定方向 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |
-| `code/scripts/postgres_ai_operator_profile.py` | PostgreSQL 18.3 / 同构 PostgreSQL AI 算子外部执行链路画像脚本 | 真实采集数据库触发、Ray/Arrow、AI operator、fan-in/writeback、backpressure 时读 |
-| `code/requirements.txt` | 真实数据库画像脚本的额外 Python 依赖 | 准备 PostgreSQL 18.3 / 同构实例前读 |
+| `code/scripts/README.md` | 脚本详细说明 | 运行 PostgreSQL 画像、pgai SQL profile、本地 embedding server |
+| `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
+| `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |
 
@@ -62,31 +86,34 @@
 
 全局项目路线和近期实验任务：
 
-`overview/current_direction_and_plan.md`
+`PROJECT_OUTLINE.md`
 
 主要内容：
 
-- 当前技术路线、论文边界、成立条件；
-- 近期实验任务和优先级；
-- 四周计划和待回答的关键问题。
+- 当前开题题目、三项研究内容；
+- 实验主线和当前最重要证据；
+- 近期优先级；
+- 双向同步规则。
 
-动机测试的计划（如何完成动机实验、各阶段集成与测试方法）：
+动机测试的计划（场景设计、集成路线）：
 
-`motivation/ai_operator_integration_test_plan.md`
+`motivation/plans/workloads.md`：三类 AI 算子场景、动机测试和后续实验优先级。
 
-可行性验证的参考（仅覆盖隔离系统瓶颈阶段的实验）：
+`motivation/plans/integration.md`：PostgreSQL / 外部 worker / Ray / GPU model service / writeback 集成路线和分阶段实验。
 
-`validation/feasibility_validation_guide.md`
+可行性验证的参考（组件、环境、脚本可用性）：
 
-补充分析：
+`feasibility/guide.md`（历史参考），`feasibility/analysis.md`（阶段性判断）。
 
-`validation/preliminary_feasibility_analysis.md`
+正式研究实验（方法有效性验证）：
+
+`experiments/plans/`（按研究内容组织），`experiments/results/`（优化和消融结果）。
 
 ## 4. 实验代码在哪里
 
-活跃实验代码目录：
+活跃可行性 benchmark：
 
-`validation/benchmarks/`
+`feasibility/benchmarks/`
 
 | 文件 | 作用 |
 |---|---|
@@ -97,79 +124,76 @@
 | `ray_arrow_fanout_fanin_benchmark.py` | Arrow RecordBatch 版 Ray `N upstream -> P downstream` fan-out/fan-in |
 | `analyze_results.py` | 汇总 CSV 并生成可行性报告 |
 
-早期排除性实验（Ray small task、object transfer、Arrow serialization、shuffle simulation）已归档至 `validation/archive/`，这些实验证明了对应方向不是当前瓶颈。详见 [`validation/archive/README.md`](validation/archive/README.md)。
+早期排除性实验（Ray small task、object transfer、Arrow serialization、shuffle simulation）保留在 `feasibility/benchmarks/` 中作为历史组件参考。这些实验证明了对应方向不是当前瓶颈，不代表真实 GPU-backed 数据库 AI 算子链路瓶颈。
 
-端到端动机脚本位于：
+动机测试脚本：
 
-`motivation/fake_ai_embed_pipeline_benchmark.py`
+`motivation/benchmarks/`
 
-候选 AI 算子场景对比脚本位于：
-
-`motivation/ai_operator_scenario_motivation_benchmark.py`
-
-动机补强脚本位于：
-
-- `motivation/ai_operator_granularity_attribution_benchmark.py`
-- `motivation/ai_operator_backpressure_benchmark.py`
+| 文件 | 作用 |
+|---|---|
+| `fake_embed_pipeline.py` | fake `AI_EMBED(text)` 端到端链路 |
+| `workload_matrix.py` | 三类候选 AI 算子场景对比 |
+| `granularity.py` | task/object/fan-in 收益来源拆分 |
+| `backpressure.py` | 模型服务反压离散事件模拟 |
 
 动机测试正式结果位于：
 
 `motivation/results/`
 
-其中 `motivation/results/motivation_test_results_analysis.md` 是当前最完整的动机测试结果分析。
+- `fake_cpu/`：CPU/fake 历史预研（仅作背景参考）
+- `cpu/`：CPU baseline 对照
+- `gpu/`：GPU-backed E2E 主动机结果（当前最优先引用）
+- `pg18_4_fake/`：PG18.4 本地同构预演（不代表真实平台结论）
 
 推荐命令：
 
 ```bash
-python motivation/fake_ai_embed_pipeline_benchmark.py \
+python motivation/benchmarks/fake_embed_pipeline.py \
   --upstream 8 32 \
   --downstream 8 32 \
   --total-rows 65536 \
   --embedding-dim 128 \
   --repeats 3 \
-  --output motivation/results/fake_ai_embed_pipeline.csv
+  --output motivation/results/fake_cpu/fake_embed_pipeline.csv
+```
+
+```bash
+python feasibility/benchmarks/analyze_results.py \
+  --results-dir feasibility/results \
+  --output feasibility/results/feasibility_report.md
 ```
 
 运行环境：
 
 - 使用 `.venv`；
 - 当前没有必要使用 conda；
-- Ray benchmark 在当前 macOS 沙箱中可能需要提权运行。
+- Ray benchmark 在 macOS 沙箱中可能需要提权运行。
 
 ## 5. 实验结果在哪里
 
-可行性验证结果：
+可行性验证结果（组件、环境、连接）：
 
-`validation/results/`
+`feasibility/results/`
 
 动机测试正式结果（唯一来源）：
 
 `motivation/results/`
 
-讲解动机实验时引用 `motivation/results/`；`validation/results/` 仅保留活跃可行性 benchmark 结果和 smoke 测试变体。
+讲解动机实验时引用 `motivation/results/gpu/`（GPU-backed，最优先）或 `motivation/results/fake_cpu/`（历史预研）。`feasibility/results/` 仅保留组件 benchmark 结果和环境验证。
 
-| 文件 | 内容 |
-|---|---|
-| `README.md` | 结果文件说明 |
-| `ray_many_objects.csv` | Ray many-object fan-in 结果 |
-| `ray_arrow_fanout_fanin.csv` | Arrow RecordBatch fan-out/fan-in 结果 |
-| `*_smoke.csv` | 各动机测试的 smoke 变体 |
-| `feasibility_report.md` | 自动生成的分析报告 |
-| `current_direction_analysis.md` | 人工整理的当前方向分析 |
+正式论证优先引用：
 
-动机测试 CSV（`fake_ai_embed_pipeline.csv`、`ai_operator_scenario_motivation.csv`、`ai_operator_granularity_attribution.csv`、`ai_operator_backpressure.csv`）见 [`motivation/results/`](motivation/results/)。
-
-早期排除性实验的 CSV 和脚本已归档至 [`validation/archive/`](validation/archive/README.md)。
-
-当前最强实验信号：
-
-> `ray_arrow_fanout_fanin.csv` 显示：固定 `65536` 行、`128` 维 embedding 下，fine/coalesced 平均 fan-in 比约 `3.17x`。
+1. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`：GPU-backed embedding 链路拆分。
+2. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`：双 endpoint Ray task/actor 动机。
+3. `motivation/results/gpu/pgai_integrated_key_rerun_20260714.md`：pgai-integrated GPU-backed rerun。
+4. `motivation/results/gpu/pgvector_writeback_20260714.md`：pgvector(384) 写回对比。
 
 ## 6. 文献和资料依据在哪里
 
 业务场景和动机测试文件：
 
-`motivation/ai_operator_scenario_and_motivation_test.md`
+`motivation/plans/ai_sql_surface.md`
 
 主要内容：
 
@@ -177,21 +201,17 @@ python motivation/fake_ai_embed_pipeline_benchmark.py \
 - AI 算子、数据库 AI 算子、模型 kernel、传统查询算子的区别；
 - 推荐初步场景：批量 Embedding / RAG 数据准备；
 - 最小原型设计；
-- 要测的瓶颈；
-- 动机测试判定标准。
+- 瓶颈矩阵和动机测试判定标准。
 
 集成与测试方法文件：
 
-`motivation/ai_operator_integration_test_plan.md`
+`motivation/plans/integration.md`
 
 主要内容：
 
-- 当前无设备约束；
-- PostgreSQL 18.3 内部统一验证平台作为后续真实端到端实验平台；
-- 已有或开源 AI 算子迁移/等价集成到 PostgreSQL 18.3 的路径；
+- PostgreSQL / 外部 worker / Ray / GPU model service / writeback 集成路线；
 - 无设备/低端设备/PostgreSQL 18.3 平台的分阶段实验；
 - AI_EMBED 算子集成形态；
-- PostgreSQL + pgvector / 外部 worker / Daft + Ray 链路；
 - 瓶颈与优化点映射。
 
 文献审查文件：
@@ -201,35 +221,36 @@ python motivation/fake_ai_embed_pipeline_benchmark.py \
 主要内容：
 
 - Ray 论文和官方文档；
-- Ray task/object anti-pattern；
 - Daft Ray runner、partitioning、shuffle、join strategy；
 - Spark partition / shuffle / AQE 类比；
 - Arrow / Lance 论文背景；
+- Snowflake / pgai / PostgresML / pgvector 外部系统依据；
 - 本地实验和外部证据如何对应；
-- 当前不能声称什么；
-- 下一步严谨验证计划。
+- 当前不能声称什么。
+
+外部系统执行链路对比：
+
+`research/existing_ai_operator_execution_chains.md`
 
 使用原则：
 
 - 写调研、汇报、论文动机时优先引用该文件；
 - 不要只引用本地 microbenchmark；
-- 结论必须区分“文献/官方文档”“本地实验”“合理推断”“待确认”。
+- 结论必须区分"文献/官方文档""本地实验""合理推断""待确认"。
 
 ## 7. 当前方向边界
 
-确定场景主线：
+开题报告正式题目：
 
-> 面向数据库内置 AI 算子的分布式数据处理执行链路优化研究
+> 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究。
 
-候选技术切入点：
+三项研究内容：
 
-> 基于 Daft/Ray/Lance 的 Object Transfer、fan-in 与 Shuffle 中间数据传输优化
+1. AI workload 感知的数据组织与批处理构造方法。
+2. GPU 推理服务状态感知的 Ray 并行调度与反压控制方法。
+3. 面向 AI 数据流的结果汇聚与 Lance / 数据库持久化协同方法。
 
-候选升级表述：
-
-> 面向数据库 AI 算子的特征感知并行执行与跨层调度方法研究
-
-具体优化方向尚未最终锁定。当前必须围绕 AI 算子场景寻找真实瓶颈，通过动机测试、可行性测试和真实形态验证收敛方向，不能因为已有 benchmark 就反向确定论文主线。Object/fan-in/coalescing 是已有证据支持的入口；task/actor 并行度、CPU/GPU 资源配比、模型服务路由与 backpressure 是下一步需要验证的扩展轴。
+具体优化方向尚未最终锁定。当前必须围绕数据库驱动 AI 工作负载寻找真实瓶颈，通过动机测试、可行性测试和正式研究实验收敛方向。Object/fan-in/coalescing 是早期入口；task/actor 并行度、GPU 资源配比、模型服务路由与 backpressure、写回协同是正在验证的扩展轴。
 
 当前不要优先做：
 
@@ -238,34 +259,31 @@ python motivation/fake_ai_embed_pipeline_benchmark.py \
 - 单纯 Arrow serialization 优化；
 - 单纯数据库 GPU 查询算子优化；
 - 没有真实 workload 的 toy benchmark。
+- 把 PG18.4 本地预演写成 PostgreSQL 18.3 内部平台结论。
 
 ## 8. 下一步优先工作
 
 已完成优先实验：
 
-> fake `AI_EMBED(text)` 端到端动机测试，已把 RecordBatch fan-in 现象初步迁移到批量 Embedding / RAG 数据准备链路。
+- GPU-backed 真实 embedding 链路拆分和阶段画像；
+- pgai-integrated GPU-backed rerun（granularity、stage breakdown、endpoint comparison）；
+- pgvector(384) 写回对比（no writeback / JSON text / vector）。
 
 下一步优先工作：
 
-- 拆分 fake `AI_EMBED(text)` 结果中的收益来源；
-- 已补充 granularity attribution 与 backpressure 两个动机实验，下一步需要接 Ray actor / Ray Serve / vLLM 或真实模型服务验证；
-- 把真实链路画像实验收敛到 PostgreSQL 18.3 内部验证平台：SQL/表触发、外部 worker、AI 算子执行、写回和指标采集必须真实跑通；
-- 基于 `ai_infra_candidate_scenarios_and_motivation_tests.md` 比较 3 个候选 AI 算子场景；
-- 不把 3 个候选场景写成 3 个独立方向，而是围绕“数据库 AI 算子的特征感知并行执行与跨层调度”组织；
-- 不把“粒度控制”写成全部贡献，而是评估是否能升级为“AI 算子特征感知并行执行与跨层调度”；
-- 对候选场景继续做 task/object 解耦、task/actor/concurrency 控制、token-aware / prefix-aware batching、selectivity-aware predicate pipeline、resource/backpressure 等动机测试；
-- 使用 `idea-evaluator` 的 fatal-flaws / 五维贡献视角评估方向；
-- 使用 `deep-research` 的 scoping / Socratic 视角澄清研究问题和证据标准。
+1. 在真实 GPU-backed 链路中做 bounded/unbounded in-flight 对照。
+2. 比较 driver fan-in 写回、Ray worker 写回、vectorizer-like queue worker 写回。
+3. 扩展到 `AI_FILTER/AI_CLASSIFY`，验证 selectivity-aware predicate pipeline。
+4. 扩展到 `AI_COMPLETE`，验证 token-aware batching、prefix-aware routing 和 queue-aware backpressure。
+5. 后续进入 PostgreSQL 18.3 内部平台复测。
+6. 将优化方法和消融实验登记到 `experiments/`。
 
 需要回答：
 
-- 当前 RecordBatch fan-in 放大是否会迁移到端到端 AI_EMBED 链路；
-- `N × P` object slots 在 fake embedding + write path 中是否仍导致明显成本；
-- object coalescing 是否稳定降低端到端耗时；
-- 这个现象能否映射到 Daft join/groupby/repartition。
-- 是否存在比 batch embedding / RAG 准备更贴合 AI infra / inference infra 的 AI 算子场景；
-- PostgreSQL / 开源数据库生态里的离线 LLM 生成是否足够成熟，能否作为主 workload，还是只能作为 inference infra 扩展 workload；
-- 最终优化方向应落在 object transfer/fan-in、batching、partition、task/actor 并行调度、推理服务调用/路由/backpressure、写回链路，还是 scan/filter/pushdown。
+- 当前 PG18.4 + pgai GPU-backed 链路的瓶颈是否能迁移到 PostgreSQL 18.3 内部平台；
+- writeback 路径（driver fan-in、worker-side、queue worker）哪种在真实场景中最可行且有效；
+- 是否存在比 AI_EMBED 更贴合 AI infra / inference infra 的 AI 算子场景；
+- 最终优化方向应落在数据组织、调度反压、写回协同三层中的哪些组合。
 
 优先沟通问题：
 

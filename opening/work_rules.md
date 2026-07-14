@@ -13,12 +13,12 @@
 
 开题不是最终成果发布。更稳的说法是“当前实验作为可行性依据，后续会扩大验证”，不要说“已经完整证明”。
 
-开题也不是项目之外的附属材料。报告中确定的题目、研究内容、评价指标和边界，会反向约束后续项目规划、实验优先级和对外沟通口径。修改这些内容时，需要同步检查项目级 `README.md`、`PROJECT_INDEX.md`、`overview/current_direction_and_plan.md`，以及 `opening/README.md`、PPT、飞书源稿和问答材料。
+开题也不是项目之外的附属材料。报告中确定的题目、研究内容、评价指标和边界，会反向约束后续项目规划、实验优先级和对外沟通口径。修改这些内容时，需要同步检查项目级 `README.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`，以及 `opening/README.md`、PPT、飞书源稿和问答材料。
 
 后续每次调整开题报告，需要先判断调整类型：
 
 - 只改语言、格式、图表位置：通常只同步报告、PPT、飞书源稿和日志。
-- 改题目、研究问题、研究内容、创新点、技术路线、实验优先级或适用边界：必须同步检查项目级 README、`PROJECT_INDEX.md`、`overview/current_direction_and_plan.md`、`motivation/plans/workloads.md`、`motivation/plans/integration.md`、PPT、飞书源稿、问答材料和项目日志。
+- 改题目、研究问题、研究内容、创新点、技术路线、实验优先级或适用边界：必须同步检查项目级 README、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`、`motivation/plans/workloads.md`、`motivation/plans/integration.md`、PPT、飞书源稿、问答材料和项目日志。
 - 改实验结论或新增实验依据：必须同步检查对应的 `motivation/results/` 或 `feasibility/results/` 报告、学习材料和开题可行性分析。
 
 ## 并行任务线

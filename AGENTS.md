@@ -54,42 +54,49 @@ PostgreSQL 18.3 internal validation platform / table / parquet
 
 ## 3. 当前证据
 
-已有实验的详细数据见 `README.md` 和 `motivation/results/motivation_test_results_analysis.md`。
+已有实验的详细数据见 `README.md`、`PROJECT_OUTLINE.md` 和 `motivation/results/README.md`。
 
-当前最强信号：
+当前最强信号来自 GPU-backed 真实 embedding 链路：
 
-> 大量小 RecordBatch/object 进入下游 fan-in 会产生明显成本。
+> `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`：1024 行下 fine/coalesced 端到端约 `13.4x`；16384 行下 operator 和 writeback 均为大块成本。
 
-早期排除性实验已归档至 `validation/archive/`。
+> `motivation/results/gpu/pgai_integrated_key_rerun_20260714.md`：pgai-integrated GPU-backed rerun 进一步验证了 batch granularity、stage breakdown 和 endpoint 对比。
 
-但该信号仍不能直接等价于最终论文方向。下一步必须拆分收益来源，区分 object 数减少、Ray task 数减少、`ray.put` 次数减少、fan-in 依赖数减少、写回阶段变化；随后验证 AI 算子特征是否能驱动更高层的 task/actor 并行度、CPU/GPU 资源配比、模型服务路由和 backpressure 决策。
+早期 CPU/fake 实验（Ray small task、object transfer、Arrow serialization、shuffle simulation 等）已保留在 `feasibility/benchmarks/` 中，仅作为历史组件参考，不代表真实 GPU-backed 数据库 AI 算子链路瓶颈。
+
+下一步必须基于真实 GPU-backed 链路继续拆分收益来源，验证 batch/partition/task/actor/routing/backpressure/writeback 各层的协同优化空间。
 
 ## 4. 目录规则
 
 - `overview/`：项目总纲和当前计划。
 - `research/`：背景调研、资料依据。
-- `motivation/`：数据库 AI 算子场景和端到端动机测试。
-- `validation/`：可行性 benchmark、CSV 结果、自动分析。
-- `validation/archive/`：早期排除性实验（已完成使命，不活跃维护，可引用）。
-- `code/`：后续正式工程代码。
+- `motivation/`：数据库 AI 算子场景和端到端动机测试（脚本在 `benchmarks/`，计划在 `plans/`，结果在 `results/`）。
+- `feasibility/`：组件、环境和脚本可用性验证（原 `validation/`，不再承担实验大纲职责）。
+- `experiments/`：正式研究实验——承接开题三项研究内容的方法有效性验证。
+- `code/`：可复用工程代码、实验驱动脚本和测试入口。
+- `deploy/`：pgai 和 PostgreSQL 18.4 的 Docker Compose 部署配置。
+- `figures/`：项目级图资产（架构图、实验图、绘图脚本、图表审计）。
+- `learning/`：面向用户的学习讲解材料。
+- `opening/`：开题报告、PPT、飞书同步、文献精读、答辩问答。
 - `notes/`：沟通记录和待确认问题。
 
 进入子目录工作前，先读该目录下的 `AGENTS.md`（规则），再读该目录下的 `README.md`（详细内容说明）。
 
 ## 5. 实验规则
 
-- 可行性验证 benchmark 代码放在 `validation/benchmarks/`，结果放在 `validation/results/`。
-- 动机测试脚本放在 `motivation/`，正式结果放在 `motivation/results/`（唯一来源，不往 `validation/results/` 放）。
-- 已归档实验见 `validation/archive/README.md`。
+- 可行性验证 benchmark 代码放在 `feasibility/benchmarks/`，结果放在 `feasibility/results/`。
+- 动机测试脚本放在 `motivation/benchmarks/`，计划放在 `motivation/plans/`，正式结果放在 `motivation/results/`（唯一来源，不往 `feasibility/results/` 放）。
+- GPU-backed E2E 结果优先于 CPU/fake 简化实验；CPU/fake 只能作为调试或历史对照。
 - 使用项目内 `.venv`，当前无必要使用 conda。
 - Ray 在 macOS 沙箱中运行可能需要提权。
 - 新实验必须有明确问题、运行命令、CSV 输出和结果解释。
 - 必须区分数据生成、序列化、`ray.put`、fan-in、写回等时间边界。
 - warm-up 要忽略或明确标注。
+- 正式研究实验（优化方法、消融、对照）登记到 `experiments/`，不在 `motivation/` 或 `feasibility/` 中堆积方法有效性结论。
 
 下一步优先实验：
 
-> 基于 PostgreSQL 18.3 内部验证平台设计真实数据库 AI 算子端到端画像实验；在设备未到位前，用低端设备/小模型/小规模数据先跑通同构链路，并继续拆分 fake `AI_EMBED(text)` 结果中的 task、object、operator invocation、fan-in、queue/backpressure 收益来源。
+> 在真实 GPU-backed 链路中继续做 bounded/unbounded in-flight 对照、384 维 pgvector 写回、worker-side writeback 对比，并扩展到 `AI_FILTER/AI_CLASSIFY`（selectivity-aware）和 `AI_COMPLETE`（token-aware batching、prefix-aware routing、queue-aware backpressure）。后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
 ## 6. 严谨性规则
 
@@ -149,5 +156,6 @@ PostgreSQL 18.3 internal validation platform / table / parquet
 
 - 改了规则 → 更新 `AGENTS.md`；
 - 改了内容 → 更新对应目录的 `README.md`；
-- 改了结构 → 更新 `README.md`、`PROJECT_INDEX.md`、`CLAUDE.md` 目录树；
-- 归档实验 → 更新 `validation/archive/README.md`。
+- 改了结构 → 更新 `README.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`；
+- 改了方向/题目 → 同步检查 `opening/report/opening_report.md`、`opening/feishu/`、`figures/` 和 `learning/`；
+- 新实验结果 → 更新 `motivation/results/` 或 `experiments/results/`，并检查 `PROJECT_OUTLINE.md` 的"当前最重要证据"。

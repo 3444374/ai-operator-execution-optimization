@@ -48,21 +48,22 @@
 - 解释流程时画流程图。
 - 需要比较时用矩阵表。
 - 展示阶段关系时用路线图。
-- 展示风险时用“风险-控制方式”表。
+- 展示风险时用”风险-控制方式”表。
 - 图形优先用 SVG 或 PPT 原生形状，避免低清截图。
 - 图中每个节点只放关键词，解释放讲稿备注。
 - 图表必须包含图表头、颜色含义、横纵坐标或表头。
+- 实验数据图优先从 `figures/` 引用，不手工画、不在 PPT 目录保留副本。
+- 做图、改图、审查图前先读 `figures/AGENTS.md`。
 
-## ECharts 实验图表
+## 实验图表
 
-- 实验结果图可以用 ECharts 脚本生成，不在 PPT 里手工画。
-- ECharts 依赖放项目外，避免把 `node_modules` 放进仓库。
+- 实验数据图统一放在 `figures/data/report_main/`（正文）或 `figures/data/backup/`（支撑）。
+- 正式图优先用 Python + Matplotlib / Seaborn 从 CSV 可复现生成（见 `figures/scripts/`）。
+- ECharts 仅用于 learning 交互图或用户明确要求，不用于正式报告和 PPT 正文图。
 - 每张图建议同时生成 SVG 和 PNG：PPT 用 PNG，Word / 报告用 SVG。
 - 图表按 16:9 大图生成，优先 `1920 x 1080`，不要小图拉伸。
-- 图表样式统一维护在脚本的 `baseOption` 中，标题、字号、颜色、网格和图例位置保持一致。
 - PPT 图表页只替换正文安全区，保留学校模板页眉、页脚、校徽和整体风格。
 - 图表页仍要写备注，包括 `汇报讲稿` 和 `答辩备注`。
-- 详细图资产、生成脚本和审计记录见 `figures/README.md` 与 `figures/scripts/README.md`。
 
 ## 颜色与风格
 

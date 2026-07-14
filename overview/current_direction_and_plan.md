@@ -1,6 +1,8 @@
 # 当前方向与计划
 
-生成日期：2026-07-10
+> **注意：本文件是 2026-07-10 的阶段性规划，大部分内容已被根目录 `PROJECT_OUTLINE.md` 取代。** 当前题目、研究内容、最新证据和近期优先级以 `PROJECT_OUTLINE.md` 为准。本文件保留用于记录早期技术路线演进，路径引用已更新为当前结构。
+
+生成日期：2026-07-10（最后路径校准：2026-07-14）
 
 ## 1. 当前方向
 
@@ -46,7 +48,7 @@ PostgreSQL 18.3 documents table / parquet
 
 ## 4. 当前证据判断
 
-已完成的可行性验证结果位于 `validation/results/`。
+已完成的可行性验证结果位于 `feasibility/results/`。
 
 关键结论：
 
@@ -91,9 +93,9 @@ generate documents
 
 当前结果文件：
 
-- `motivation/fake_ai_embed_pipeline_benchmark.py`
-- `validation/results/fake_ai_embed_pipeline.csv`
-- `validation/results/fake_ai_embed_outputs/`
+- `motivation/benchmarks/fake_embed_pipeline.py`
+- `feasibility/results/fake_ai_embed_pipeline.csv`
+- `feasibility/results/fake_ai_embed_outputs/`
 
 下一步应继续拆分 coalescing 收益来源：区分 object 数减少、Ray task 数减少、`ray.put` 次数减少、fan-in 依赖数减少和写回阶段变化。同时增加跨层调度实验轴：task vs actor、batch_size × concurrency、CPU preprocess worker 与 GPU/model actor 配比、模型服务队列长度、token backlog、backpressure。场景语义上，offline LLM 需要 token-aware / prefix-aware workload，AI_FILTER 需要 selectivity-aware workload，embedding/RAG 需要真实数据库写回 baseline。
 

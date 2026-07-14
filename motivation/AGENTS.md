@@ -14,7 +14,7 @@
 - fake `AI_EMBED(text)` 只用于隔离系统瓶颈的早期验证。
 - 后续必须接 PostgreSQL 18.3 真实数据库形态或真实 AI 算子接口验证，不长期停留在模拟脚本。
 - 每个动机实验都要输出端到端指标：rows/s、object_count、batch size、fan-in time、write time。
-- 动机实验正式结果放在 `motivation/results/`（唯一来源），不再同步到 `validation/results/`。
+- 动机实验正式结果放在 `motivation/results/`（唯一来源），不再同步到 `feasibility/results/`。
 - 如果端到端链路不再显示 object/fan-in 瓶颈，要及时回退并调整课题。
 - 不预设最终优化方向。Object Transfer、fan-in、Shuffle、batching、partition、模型服务调用、批量推理前后处理、向量写回、scan/filter/pushdown 都必须通过实验数据比较后再收敛。
 - 动机测试必须从真实或合理近似的 AI 算子 workload 出发，不能只为了证明某个系统优化点而构造 toy workload。

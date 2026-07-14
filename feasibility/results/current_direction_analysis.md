@@ -14,7 +14,7 @@
 
 ## 2. 已完成实验
 
-结果文件位于 `validation/results/`。
+结果文件位于 `feasibility/results/`。
 
 | 实验 | 文件 | 结论 |
 |---|---|---|
