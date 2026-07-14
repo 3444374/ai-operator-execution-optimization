@@ -152,14 +152,16 @@ PostgreSQL 18.3 internal validation platform / table / parquet
 
 ## 9. 更新规则
 
+**任何影响项目结构、方向、实验结论或关键入口的操作，必须记入 `PROJECT_LOG.md`。** 细粒度修改（修正错字、调整措辞、更新单文件）不需要记。
+
 本项目在 codex 和 Claude Code 之间切换开发。切换前，按变更类型检查并回写：
 
 | 变更类型 | 必须更新 |
 |---|---|
 | 目录结构变化 | `PROJECT_INDEX.md`、`README.md`、`PROJECT_OUTLINE.md`、`PROJECT_LOG.md`、受影响目录的 `README.md` |
-| 实验结论变化 | `motivation/results/` 或 `experiments/results/` 对应报告、`PROJECT_OUTLINE.md` §当前最重要证据 |
-| 方向/题目变化 | `AGENTS.md` §1、`opening/report/opening_report.md`、`opening/feishu/`、`PROJECT_OUTLINE.md` |
-| 规则变化 | 对应目录 `AGENTS.md`；如影响全局则同步更新根 `AGENTS.md` |
+| 实验结论变化 | `motivation/results/` 或 `experiments/results/` 对应报告、`PROJECT_OUTLINE.md` §当前最重要证据、`PROJECT_LOG.md` |
+| 方向/题目变化 | `AGENTS.md` §1、`opening/report/opening_report.md`、`opening/feishu/`、`PROJECT_OUTLINE.md`、`PROJECT_LOG.md` |
+| 规则变化 | 对应目录 `AGENTS.md`；如影响全局则同步更新根 `AGENTS.md`，记入 `PROJECT_LOG.md` |
 | 新增/删除文件 | `PROJECT_INDEX.md`、所在目录 `README.md` |
 | 新增/更新图表 | `figures/README.md`、`figures/audit/`；如影响主线论证则同步 `opening/report/` |
 
