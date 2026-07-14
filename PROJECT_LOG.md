@@ -74,3 +74,21 @@
 - Added result report and CSV under `motivation/results/gpu/`.
 - Added report-main figure `figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png`.
 - Updated opening report, learning walkthrough, figure indexes, and result indexes. Boundary: PG18.4 local rehearsal, not PostgreSQL 18.3 internal platform.
+
+# 2026-07-14 合并 agent/postgres18-local-profile 分支并全项目校准
+
+- 将 `origin/agent/postgres18-local-profile` 合并到 `main`，恢复 `opening/` 开题材料目录。
+- 分支带来的重构：`validation/` → `feasibility/`，`motivation/` 脚本 → `benchmarks/`、设计文档 → `plans/`、结果按 `fake_cpu/cpu/gpu/pg18_4_fake` 分类。
+- 新增目录：`deploy/`、`experiments/`、`figures/`、`learning/`、`opening/`、`projects/`。
+- 创建 `CLAUDE.md` 作为 Claude Code 环境规则入口，导入全部 `AGENTS.md`。
+- 全项目文档路径校准（12 个文件）：
+  - 根 `AGENTS.md`：§3 证据更新为 GPU-backed 结果，§4 目录加新结构，§5 实验规则更新。
+  - 根 `README.md`：目录树重写、标题对齐 `PROJECT_OUTLINE.md`、证据和运行命令更新。
+  - `PROJECT_INDEX.md`：全文重写，所有路径更新，新目录入口，当前证据优先级。
+  - `overview/current_direction_and_plan.md`、`overview/project_outline.md`：加弃用声明，指向根 `PROJECT_OUTLINE.md`。
+  - `motivation/results/README.md`：从扁平文件列表重写为子目录结构。
+  - `feasibility/benchmarks/README.md`：命令路径和脚本引用全部更新。
+  - `opening/ppt_rules.md`：图表规则重写，引用 `figures/` 为权威来源，Python+Matplotlib 优先于 ECharts。
+  - `opening/work_rules.md`：过期引用更新。
+  - `experiments/AGENTS.md`：新增 `karpathy-guidelines` 和图表 skill 引用。
+- 镜像同步规则：`CLAUDE.md` 和 `AGENTS.md` §9 包含相同的 6 行变更→更新清单，互相指向对方。
