@@ -14,7 +14,7 @@
 
 ## 2. 已完成实验
 
-结果文件位于 `feasibility/results/`。
+结果文件位于 `validation/results/`。
 
 | 实验 | 文件 | 结论 |
 |---|---|---|
@@ -147,9 +147,9 @@ warm-up 后最高平均 task latency 约 `0.183 ms`。
 
 原因：
 
-- object/fan-in/coalescing 直接对应已有组件可行性最强信号；
+- object/fan-in/coalescing 直接对应已有最强信号；
 - 新方向仍能挂靠批量 embedding / RAG 数据准备；
-- 新方向进一步覆盖 task/actor 并行度、CPU/GPU-backed 外部模型服务队列、writeback、backpressure 等 AI infra 能力；GPU 是现实模型服务端点之一，但 GPU kernel/数据库内执行迁移不是主线；
+- 新方向进一步覆盖 task/actor 并行度、资源配比、模型服务路由、backpressure 等 AI infra 能力；
 - 比传统数据库内核或单纯系统集成更符合用户目标。
 
 但这还不是最终方向。当前动机测试仍然偏 fake workload，只能证明 object/task 粒度敏感，不能证明资源调度或模型服务路由就是主瓶颈。需要继续比较其他 AI 算子场景，并在真实数据库/真实 AI 算子或外部 worker 形态中验证瓶颈是否仍存在。
@@ -174,8 +174,8 @@ warm-up 后最高平均 task latency 约 `0.183 ms`。
 
 下一步目的：
 
-- 基于 granularity attribution 结果，继续做更真实的 Python batched worker、Ray task、Ray actor、actor pool size、`batch_size × concurrency` 对照；
-- 基于 backpressure 结果，优先接入 Ray actor 或轻量模型服务，记录真实 queue wait / token backlog / actor idle time；Ray Serve / vLLM / GPU-backed service 可作为模型服务端点和后续少量边界 baseline；
+- 基于 granularity attribution 结果，继续做更真实的 Ray task vs actor、actor pool size、`batch_size × concurrency` 对照；
+- 基于 backpressure 结果，接入 Ray actor 或 Ray Serve endpoint，记录真实 queue wait / token backlog / actor idle time；
 - 做 Daft local vs Ray、Lance/Parquet scan、以及其他 AI 算子场景对照；
 - 进入 PostgreSQL 18.3 内部验证平台或同构预演链路，真实采集数据库 AI 算子外部执行链路画像。
 

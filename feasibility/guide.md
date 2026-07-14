@@ -1,5 +1,7 @@
 # 可行性验证指南
 
+> 本文件仅覆盖可行性验证阶段的实验——即隔离系统瓶颈、排除错误方向。全局项目路线见 `overview/current_direction_and_plan.md`，动机测试计划见 `motivation/ai_operator_integration_test_plan.md`。
+
 生成日期：2026-07-10
 
 ## 0. 当前定位
@@ -41,14 +43,21 @@ opening/report/opening_report.md
 
 ## 3. 已有实验
 
+活跃实验：
+
 | 实验 | 目的 | 状态 |
 |---|---|---|
-| Ray small task | 判断 task 调度是否是主瓶颈 | 已完成 |
-| Ray object transfer | 判断小 object 固定成本 | 已完成 |
-| Arrow serialization | 判断 Arrow IPC 是否主瓶颈 | 已完成 |
 | Ray many objects | 判断固定总量下 object 数量影响 | 已完成 |
 | Ray Arrow fan-out/fan-in | 判断 RecordBatch object 数量影响 | 已完成 |
-| Shuffle simulation | 本地对照，不代表真实 Ray shuffle | 已完成 |
+
+早期排除性实验已归档至 [`archive/`](archive/README.md)：
+
+| 实验 | 目的 | 归档原因 |
+|---|---|---|
+| Ray small task | 判断 task 调度是否是主瓶颈 | 排除：非瓶颈 |
+| Ray object transfer | 判断小 object 固定成本 | 排除：不构成主瓶颈 |
+| Arrow serialization | 判断 Arrow IPC 是否主瓶颈 | 排除：非瓶颈 |
+| Shuffle simulation | 本地对照，不代表真实 Ray shuffle | 负结果：不能支撑论文 |
 
 ## 4. 当前最关键实验
 
