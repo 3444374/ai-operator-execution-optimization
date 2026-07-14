@@ -152,10 +152,17 @@ PostgreSQL 18.3 internal validation platform / table / parquet
 
 ## 9. 更新规则
 
-当方向、实验、项目规则或目录结构变化时，必须同步更新受影响文档。详细文件清单和触发条件见 `CLAUDE.md` 的同步规则表。核心原则：
+本项目在 codex 和 Claude Code 之间切换开发。切换前，按变更类型检查并回写：
 
-- 改了规则 → 更新 `AGENTS.md`；
-- 改了内容 → 更新对应目录的 `README.md`；
-- 改了结构 → 更新 `README.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`；
-- 改了方向/题目 → 同步检查 `opening/report/opening_report.md`、`opening/feishu/`、`figures/` 和 `learning/`；
-- 新实验结果 → 更新 `motivation/results/` 或 `experiments/results/`，并检查 `PROJECT_OUTLINE.md` 的"当前最重要证据"。
+| 变更类型 | 必须更新 |
+|---|---|
+| 目录结构变化 | `PROJECT_INDEX.md`、`README.md`、`PROJECT_OUTLINE.md`、受影响目录的 `README.md` |
+| 实验结论变化 | `motivation/results/` 或 `experiments/results/` 对应报告、`PROJECT_OUTLINE.md` §当前最重要证据 |
+| 方向/题目变化 | `AGENTS.md` §1、`opening/report/opening_report.md`、`opening/feishu/`、`PROJECT_OUTLINE.md` |
+| 规则变化 | 对应目录 `AGENTS.md`；如影响全局则同步更新根 `AGENTS.md` |
+| 新增/删除文件 | `PROJECT_INDEX.md`、所在目录 `README.md` |
+| 新增/更新图表 | `figures/README.md`、`figures/audit/`；如影响主线论证则同步 `opening/report/` |
+
+回写目标：`AGENTS.md`（规则）和 `README.md`（内容）都要更新，保持两个环境规则一致。
+
+`CLAUDE.md` 包含相同的清单——在 Claude Code 中做变更时，按同样规则回写。
