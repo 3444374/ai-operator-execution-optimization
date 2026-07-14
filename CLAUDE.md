@@ -22,7 +22,7 @@
 
 | 变更类型 | 必须更新 |
 |---|---|
-| 目录结构变化 | `PROJECT_INDEX.md`、`README.md`、`PROJECT_OUTLINE.md`、受影响目录的 `README.md` |
+| 目录结构变化 | `PROJECT_INDEX.md`、`README.md`、`PROJECT_OUTLINE.md`、`PROJECT_LOG.md`、受影响目录的 `README.md` |
 | 实验结论变化 | `motivation/results/` 或 `experiments/results/` 对应报告、`PROJECT_OUTLINE.md` §当前最重要证据 |
 | 方向/题目变化 | `AGENTS.md` §1、`opening/report/opening_report.md`、`opening/feishu/`、`PROJECT_OUTLINE.md` |
 | 规则变化 | 对应目录 `AGENTS.md`；如影响全局则同步更新根 `AGENTS.md` |
