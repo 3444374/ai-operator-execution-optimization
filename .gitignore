@@ -25,7 +25,10 @@ tmp/
 *.tmp
 *.swp
 
-# Large generated benchmark artifacts.
+# Claude Code local config (not for repo)
+.claude/
+.agents/
+skills-lock.json
 # CSV and Markdown summaries are tracked; Arrow payload dumps are reproducible outputs.
 *.arrow
 validation/results/fake_ai_embed_outputs/
