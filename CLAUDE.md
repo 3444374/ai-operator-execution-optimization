@@ -34,3 +34,7 @@
 回写目标：`AGENTS.md`（规则）和 `README.md`（内容）都要更新，保持两个环境规则一致。
 
 AGENTS.md §9 包含相同的清单——在 codex 中做变更时，按同样规则回写。
+
+## Git 规则
+
+**禁止在 commit message 中添加 Co-Authored-By 或任何形式的 AI 署名。** 所有 commit 的用户署名只能是项目开发者本人，不允许将 Claude、codex 或任何 AI 工具写入 contributor。
