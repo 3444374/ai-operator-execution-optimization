@@ -8,7 +8,7 @@
 
 > 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究。
 
-该题目是当前项目规划的收敛口径。后续工作不再把“阶段划分”或“外部链路画像”单独写成研究内容，而是把它们作为动机测试、方案设计和评价依据；研究内容围绕 AI workload 感知的数据组织与批处理执行、GPU 推理服务状态感知的 Ray 调度与反压、AI 数据流汇聚与 Lance / 数据库持久化协同展开。
+该题目是当前项目规划的收敛口径。后续工作不再把“阶段划分”或“外部链路画像”单独写成研究内容，而是把它们作为动机测试、方案设计和评价依据；研究内容围绕 AI workload 感知的数据组织与批处理构造、GPU 推理服务状态感知的 Ray 调度与反压、AI 数据流汇聚与 Lance / 数据库持久化协同展开。
 
 本文件与开题报告保持双向同步。开题报告需要基于本文件、实验结果和后续规划来写；反过来，开题报告如果根据导师反馈、实验结果或题目收敛调整了研究内容和侧重点，本文件也要同步更新当前方向、后续阶段、四周计划和不能做成什么。项目执行时不能让本文件与 `opening/report/opening_report.md` 长期描述两个不同方向。
 
@@ -89,6 +89,8 @@ DB trigger/fetch
 
 > 下一步不能只继续扩展 fake benchmark。必须优先跑通一条可分阶段计时的 GPU-backed E2E 主动机链路：数据库表/SQL 触发、Daft/Arrow 数据组织、Ray 执行、GPU-backed 模型服务、fan-in/writeback 和指标采集。只有该链路中的画像数据才能回答“为什么数据执行与存储链路值得优化”。如果 GPU 暂不可用，才用 local/CPU 模型服务作为临时 baseline，并明确不能外推为 GPU 主链路结论。
 
+2026-07-14 状态更新：本地 PG18.4 预演环境已经完成 GPU-backed `AI_EMBED` 关键复测，并补齐同一条 Ray actor 链路下的 no writeback、JSON text 和 pgvector `vector(384)` 写回对比。结果入口为 `motivation/results/gpu/pgai_integrated_key_rerun_20260714.md` 和 `motivation/results/gpu/pgvector_writeback_20260714.md`。下一步不再是“是否能写入 pgvector(384)”，而是比较 driver fan-in、worker-side writeback、vectorizer-like queue worker，以及用 Ray Serve / vLLM 或等价模型服务替代手动 endpoint。
+
 主动机实验的最低要求是使用真实数据库、真实模型服务和 GPU 计算端点。三类场景的 baseline 都要保留：embedding/RAG ingestion、AI_CLASSIFY / AI_FILTER、offline LLM / AI_COMPLETE。第一组主实验可以先从 `AI_EMBED(text)` 开始，因为它最容易接 pgvector 写回、最容易形成开题阶段的真实闭环；但后续不能丢掉另外两个场景。尤其是 `AI_COMPLETE` / offline LLM 应尽量作为后续更贴近 AI infra 的重点主线候选，因为它能自然引出 token-aware batching、prefix/cache locality、模型服务队列、GPU 利用率和 backpressure 等问题。
 
 ## 5. 当前端到端动机实验
@@ -121,7 +123,7 @@ generate documents
 - `motivation/benchmarks/fake_embed_pipeline.py`
 - `motivation/results/fake_cpu/fake_embed_pipeline.csv`
 
-下一步优先级应调整为：先补生产式 GPU-backed E2E 主动机画像，再在同一条真实链路上做大块消融。主动机画像要回答 Daft/Arrow 数据组织、Ray 执行、模型服务、GPU 利用率、queue wait、fan-in 和 writeback 的阶段占比；消融实验优先回答 no-Ray vs Ray、single worker vs actor pool、主控 fan-in 写回 vs 多 worker 写回、unbounded vs bounded in-flight、不同 batch/partition 策略分别影响多少。场景语义上，offline LLM 需要 token-aware / prefix-aware workload，AI_FILTER 需要 selectivity-aware workload，embedding/RAG 需要真实数据库写回 baseline。vLLM / Ray Serve / GPU-backed embedding service 是现实模型服务端点；不做大规模“算子迁移到 GPU”或 GPU kernel 优化。
+下一步优先级应调整为：在已经跑通的生产式 GPU-backed E2E 主动机画像基础上，继续在同一条真实链路上做大块消融。消融实验优先回答 no-Ray vs Ray、single worker vs actor pool、主控 fan-in 写回 vs 多 worker 写回、queue/vectorizer-like 写回、unbounded vs bounded in-flight、不同 batch/partition 策略分别影响多少。场景语义上，offline LLM 需要 token-aware / prefix-aware workload，AI_FILTER 需要 selectivity-aware workload，embedding/RAG 需要继续扩展真实数据库写回 baseline。vLLM / Ray Serve / GPU-backed embedding service 是现实模型服务端点；不做大规模“算子迁移到 GPU”或 GPU kernel 优化。
 
 ## 6. 后续阶段
 

@@ -1,5 +1,7 @@
 # PROJECT_INDEX.md
 
+> 图资产规则入口：新增、修改、迁移或审查图表前，先读 `figures/AGENTS.md`、`figures/README.md` 和 `figures/data/selected_motivation_figures.md`。其中 `figures/AGENTS.md` 记录做图 skill、系统架构图返工经验、Python 绘图条件和正式图质检清单。
+
 本文件是项目索引，供 Codex 快速定位材料。先读 `AGENTS.md`，再按任务类型读本文件中的对应材料。
 
 ## 1. 快速阅读顺序
@@ -18,7 +20,7 @@
 ### 要继续做实验
 
 1. `AGENTS.md`：实验规则。
-2. `motivation/README.md`：端到端动机实验、GPU-backed 外部链路系统画像和结果入口。
+2. `motivation/README.md`：端到端动机实验、GPU-backed 数据执行与存储链路系统画像和结果入口。
 3. `feasibility/README.md`：可行性 benchmark、环境验证和结果入口。
 4. `motivation/plans/integration.md`：PostgreSQL 18.3 内部平台、GPU-backed 外部模型服务和 AI 算子集成路线。
 5. `feasibility/benchmarks/README.md`：实验脚本和运行命令。
@@ -70,11 +72,17 @@
 | `code/requirements.txt` | 真实数据库画像脚本的额外 Python 依赖 | 准备 PostgreSQL 18.3 / 同构实例前读 |
 | `deploy/postgres18.4/AGENTS.md` | 本地 PostgreSQL 18.4 同构预演环境规则 | 修改或运行数据库容器前读 |
 | `deploy/postgres18.4/README.md` | PostgreSQL + pgvector 的启动、连接和验证说明 | 运行本地真实数据库链路时读 |
+| `deploy/pgai/AGENTS.md` | pgai SQL 算子触发面隔离预演环境规则 | 修改或运行 pgai / Ollama 容器前读 |
+| `deploy/pgai/README.md` | pgai + Ollama 的启动、模型拉取和 SQL 冒烟验证说明 | 验证真实 SQL 触发 `ai.ollama_embed(...)` 时读 |
+| `feasibility/results/pgai_sql_smoke_20260714.md` | pgai SQL embedding 触发面与 pgvector 写回冒烟验证 | 判断真实 SQL 触发面是否已跑通时读 |
+| `feasibility/results/trigger_surface_validation_20260714.md` | PG18.4 job-table 健康检查、pgai SQL 1024 行 profile 和触发面小对比 | 判断 job_table 与 pgai_sql 两种触发面是否都能跑通时读 |
 | `learning/AGENTS.md` | 学习材料目录规则 | 修改学习讲解材料前读 |
 | `learning/README.md` | 学习材料目录说明 | 想从小白视角理解项目和实验时读 |
 | `learning/experiment_walkthrough.md` | 按时间线讲解已完成实验、术语、目的、流程和结果 | 看不懂实验报告、需要系统学习时读 |
+| `figures/README.md` | 项目级图资产库说明，覆盖 learning、开题、中期汇报和论文图 | 查找、复用或新增图表时读 |
+| `figures/data/selected_motivation_figures.md` | 开题动机图表筛选、A/B/C 图层级和使用边界 | 决定哪些实验图进入报告、PPT、飞书或备份页时读 |
 | `feasibility/results/pg18_4_connection_validation.md` | PG18.4 本地连接与环境验证，只证明系统能连接数据库、读写表和完成冒烟链路 | 判断数据库连接进度时读 |
-| `motivation/results/pg18_4_fake/system_profile.md` | PG18.4 本地同构链路 4096 行系统画像实验，含 python/ray_actor 与 fine/coalesced 对照 | 判断 PG18.4 系统瓶颈、外部链路 baseline、真实模型服务边界和写回瓶颈时读 |
+| `motivation/results/pg18_4_fake/system_profile.md` | PG18.4 本地同构链路 4096 行系统画像实验，含 python/ray_actor 与 fine/coalesced 对照 | 判断 PG18.4 预演链路、历史 baseline、真实模型服务边界和写回瓶颈时读 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |
 
@@ -91,6 +99,7 @@
 | `motivation/plans/integration.md` | 真实链路集成路线 | 说明 PostgreSQL / 外部 worker / Ray / GPU model service / writeback 如何组织 |
 | `motivation/results/README.md` | 动机测试结果总入口 | 给出当前 GPU、PG18.4 fake、fake/CPU 结果的阅读顺序和结论边界 |
 | `motivation/results/gpu/README.md` | 真实 GPU-backed 结果入口 | 记录当前真实 embedding endpoint、链路拆分和 multi-endpoint Ray 动机测试 |
+| `figures/README.md` | 项目级图表入口 | 为 learning、开题、中期汇报和毕业论文提供统一图资产 |
 | `opening/report/opening_report.md` | 开题论证入口 | 将项目进展、研究内容、技术路线和可行性分析组织成正式报告 |
 
 当前正式论证优先引用：
@@ -277,6 +286,9 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 下一步优先工作：
 
 - 已补充 granularity attribution、backpressure 和真实 GPU-backed embedding 链路拆分实验。下一步优先补 384 维 pgvector 写回、多 endpoint / Ray Serve / vLLM 形态、主控 fan-in 写回 vs 多 worker 写回，并继续用同一套阶段计时回答“为什么数据执行与存储链路值得优化”；
+- 已新增 `deploy/pgai/` 隔离预演环境，用于先跑通 pgai SQL embedding 触发面；该环境当前不是 PG18.4 结果，后续只作为替代 `ai_operator_jobs` 模拟触发的参考 baseline；
+- `deploy/pgai/` 已完成 2026-07-14 SQL 冒烟验证：`ai.ollama_embed(...)` 可调用 Ollama `all-minilm` 并写入 `vector(384)`；该结果只证明 SQL surface 可用，不是性能结论；
+- 已完成 2026-07-14 三步触发面验证：PG18.4 job-table 健康检查、pgai SQL 1024 行 profile、job_table vs pgai_sql 小规模可运行性对照；该对照不是性能结论；
 - 消融实验优先在同一条 GPU-backed E2E 链路上做大块对照；CPU/fake 链路只做脚本调试、计时边界验证和历史对照，不能把 CPU-only 分阶段瓶颈直接写成 GPU-backed 链路瓶颈；
 - 把真实链路画像实验收敛到 PostgreSQL 18.3 内部验证平台：SQL/表触发、Daft/Arrow batch、Ray 执行、GPU 模型服务、写回和指标采集必须真实跑通；
 - 基于 `motivation/plans/workloads.md` 比较 3 个候选 AI 算子场景；
@@ -316,7 +328,7 @@ opening/README.md
 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究
 ```
 
-开题材料不是独立展示稿。报告中的三项研究内容：AI workload 感知的数据组织与批处理执行调度、GPU 推理服务状态感知的 Ray 并行调度与反压控制、面向 AI 数据流的结果汇聚与 Lance / 数据库持久化协同，应同步作为后续实验计划、PPT、飞书文档和 overview 规划的共同口径。
+开题材料不是独立展示稿。报告中的三项研究内容：AI workload 感知的数据组织与批处理构造、GPU 推理服务状态感知的 Ray 并行调度与反压控制、面向 AI 数据流的结果汇聚与 Lance / 数据库持久化协同，应同步作为后续实验计划、PPT、飞书文档和 overview 规划的共同口径。
 
 ## 开题与项目规划同步规则
 
@@ -335,3 +347,29 @@ opening/work_rules.md
 opening/ppt_rules.md
 opening/outline.md
 ```
+
+## 2026-07-14 latest GPU rerun entry
+
+After pgai SQL trigger-surface validation, the latest local GPU-backed key rerun
+is:
+
+```text
+motivation/results/gpu/pgai_integrated_key_rerun_20260714.md
+motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
+```
+
+Use this entry for the newest batch granularity, full-chain writeback,
+single/dual endpoint, and data-size timing evidence. The pgai SQL trigger
+surface timing remains in `feasibility/results/` and should not be mixed into
+GPU-backed performance conclusions.
+
+The latest sink-mode follow-up is:
+
+```text
+motivation/results/gpu/pgvector_writeback_20260714.md
+motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
+figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png
+```
+
+Use this entry for no writeback / JSON text / pgvector `vector(384)` comparison
+in the same local GPU-backed Ray actor chain.

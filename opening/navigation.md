@@ -33,7 +33,7 @@ AGENTS.md
 | 历史 fake / CPU 结果 | `motivation/results/fake_cpu/`、`motivation/results/pg18_4_fake/` |
 | 可行性验证 | `feasibility/results/` |
 | 术语、实验讲解、学习版解释 | `learning/experiment_walkthrough.md` |
-| 图表文件 | `learning/figures/`、`opening/assets/` |
+| 图表文件 | `figures/` |
 | 外部系统和文献证据 | `research/` |
 | Snowflake / pgai / PostgresML 链路对比 | `research/existing_ai_operator_execution_chains.md` |
 
@@ -43,7 +43,7 @@ AGENTS.md
 |---|---|
 | 开题统一口径和页序 | `outline.md` |
 | 开题报告正文 | `report/opening_report.md` |
-| 开题 PPT 源稿 | `slides/opening_ppt.md` |
+| 开题 PPT 源稿 | `slides/opening_ppt.md`，当前内容和形式先作废，仅保留版式经验 |
 | PPT 制作规则 | `ppt_rules.md` |
 | 开题工作组织规则 | `work_rules.md` |
 | 飞书同步规则 | `feishu/README.md` |
@@ -81,7 +81,7 @@ AGENTS.md
 
 ### PPT 是现场讲解
 
-`slides/opening_ppt.md` 从报告中提炼，不承担报告的全部细节。PPT 每页只突出一个主结论，详细解释写到备注。
+下一版 `slides/opening_ppt.md` 应从用户确认后的报告中重新提炼，不承担报告的全部细节。PPT 每页只突出一个主结论，详细解释写到备注。当前旧版 PPT 内容和形式先作废，但标题区、正文安全区、图表区和页脚位置等版式经验可以保留。
 
 PPT 修改后要反查报告：
 
@@ -135,8 +135,8 @@ logs/project_log.md
 opening/ppt_rules.md
 opening/outline.md
 opening/report/opening_report.md
-opening/assets/
-learning/figures/
+figures/README.md
+figures/data/selected_motivation_figures.md
 ```
 
 做完后检查：
@@ -185,9 +185,10 @@ research/existing_ai_operator_execution_chains.md
 
 ```text
 opening/assets/README.md
-opening/assets/echarts_rules.md
+figures/AGENTS.md
+figures/audit/figure_plan.md
+figures/audit/experiment_charts_audit.md
 opening/ppt_rules.md
-learning/figures/AGENTS.md
 ```
 
 图表数据必须追溯到真实 CSV 或正式报告。

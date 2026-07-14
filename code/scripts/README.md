@@ -8,7 +8,15 @@
 code/scripts/postgres_ai_operator_profile.py
 ```
 
+pgai SQL trigger-surface profile entry:
+
+```text
+code/scripts/pgai_sql_operator_profile.py
+```
+
 它既是当前 Phase 1 的实验驱动脚本，也是后续拆分正式 worker 之前的最小端到端实现。当前没有另一份隐藏的连接代码。
+
+本目录只放实验主体、服务启动、数据采集和 profiling 入口。绘图、图表复现和素材筛选脚本统一放在 `figures/scripts/`。
 
 ## 流程与函数映射
 
@@ -53,7 +61,8 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
 - 原始数据：`feasibility/results/pg18_4_connection_smoke_256_rows.csv`
 - 设置、过程、表核对、严谨性与结论：
   `feasibility/results/pg18_4_connection_validation.md`
-- 数据库部署：`deploy/postgres18.4/README.md`
+- PostgreSQL 18.4 + pgvector 数据库部署：`deploy/postgres18.4/README.md`
+- pgai SQL 算子触发面预演：`deploy/pgai/README.md`
 
 当前结果只证明 PostgreSQL 18.4 同构链路连通，不是公司 PostgreSQL 18.3
 平台结果，也不是性能优化结论。
@@ -67,7 +76,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
 - `--embedding-endpoint-url`
 - `--embedding-model`
 - `--embedding-api-key`
-- `--writeback-mode json_text|pgvector`
+- `--writeback-mode none|json_text|pgvector`
 - `--write-batch-rows`
 - `--warmup-runs`
 - `--repeats`
@@ -139,3 +148,31 @@ $env:TORCH_HOME="D:\Code\ai-operator-execution-optimization\.cache\torch"
 该服务提供 OpenAI-compatible `/v1/embeddings` 接口，供
 `postgres_ai_operator_profile.py --model-backend http_openai` 调用。
 2026-07-12 的首轮 GPU-backed profile 中，该 endpoint 是用户手动启动的。
+
+## 2026-07-14 GPU key rerun
+
+Latest GPU-backed key rerun after pgai SQL trigger-surface validation:
+
+```text
+motivation/results/gpu/pgai_integrated_key_rerun_20260714.md
+motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
+```
+
+This rerun uses `local_embedding_server.py` on ports 8000 and 8001 with
+`--device cuda`. It keeps pgai SQL surface validation separate from the
+job-table GPU timing profile.
+
+## 2026-07-14 pgvector(384) writeback support
+
+`postgres_ai_operator_profile.py --setup --embedding-dim 384` now creates
+`document_embeddings.embedding_vector` as `vector(384)`. If an old
+`embedding_vector` column has a different dimension, the script drops and
+recreates that column only; it does not delete Docker volumes or the
+documents/job tables.
+
+Latest GPU-backed sink comparison:
+
+```text
+motivation/results/gpu/pgvector_writeback_20260714.md
+motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
+```

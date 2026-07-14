@@ -42,9 +42,9 @@
 | 材料 | 主文件 | 状态 |
 |---|---|---|
 | 开题报告 | `report/opening_report.md` | 初稿已补 |
-| 开题 PPT 源稿 | `slides/opening_ppt.md` | 16 页源稿已补 |
-| 开题 PPTX | `slides/opening_defense_20260712.pptx` | 已按模板生成，并已导入飞书幻灯片 |
-| 开题飞书 wiki 源稿 | `feishu/opening_report_wiki.md` | 已同步到飞书 |
+| 开题 PPT 源稿 | `slides/opening_ppt.md` | 当前内容和形式先作废，仅保留版式经验，下一版需重写 |
+| 开题 PPTX | `slides/opening_defense_20260712.pptx` | 旧版先作废，页面布局经验可参考，不再作为正式汇报稿 |
+| 开题飞书 wiki 源稿 | `feishu/opening_report_wiki.md` | 等用户过目本地报告后再同步 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
 | 文献精读清单 | `literature/reading_list.md` | 候选清单已补，待精读 |
@@ -63,9 +63,10 @@
 
 ## 下一步
 
-1. 检查 `slides/opening_defense_20260712.pptx` 和飞书幻灯片的人工放映效果，必要时微调版式和讲稿备注。
-2. 继续根据导师反馈和新实验同步调整 `report/opening_report.md`、`feishu/opening_report_wiki.md`、`feishu/motivation_feasibility_wiki.md`、`slides/opening_ppt.md` 和项目总纲。
-3. 后续补充更正式的 GPU-backed 图表和实验结果时，同步更新开题报告、飞书文档和 PPT。
+1. 先让用户过目 `report/opening_report.md`，确认报告方向和研究内容。
+2. 用户确认后，再同步 `feishu/opening_report_wiki.md` 和线上飞书文档。
+3. 基于确认后的报告和 `figures/` 正式图重做 PPT 内容；旧 PPT 只保留页面布局经验。
+4. 后续补充更正式的 GPU-backed 图表和实验结果时，同步更新开题报告、飞书文档和 PPT。
 4. 最后生成 DOCX。DOCX 必须使用学校 Word 模板，继承模板里的章节样式、字体、行间距、图表标注和参考文献格式。
 ## 飞书同步目标
 
@@ -75,7 +76,7 @@
 |---|---|---|
 | 开题报告与开题汇报 | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 承载开题报告正文，并同步开题汇报 PPT 的核心内容和最终口径 |
 | 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 承载动机实验、可行性实验、阶段画像和实验结论边界 |
-| 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 由 `slides/opening_defense_20260712.pptx` 导入生成 |
+| 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 旧版在线幻灯片，当前内容和形式先作废，后续需基于新版报告重做 |
 
 同步规则见 `feishu/README.md`。
 ## 可参考 skill
@@ -94,3 +95,13 @@ opening/navigation.md
 ```
 
 它说明需要项目内容、实验结果、文献、PPT 素材、飞书同步信息时分别去哪里找，也说明报告、PPT、飞书版之间如何保持同步。
+# 2026-07-14 Status Note
+
+`report/opening_report.md` now uses the PG18.4 pgai-integrated GPU-backed
+rerun figures from `figures/data/report_main/06_*`, `07_*`, and `08_*`.
+The Feishu/wiki and PPT materials still need a separate synchronization pass
+if the latest report body is accepted.
+
+The report also now includes the pgvector `vector(384)` sink comparison figure
+`figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png`.
+Feishu/wiki and PPT are still not synchronized after this update.

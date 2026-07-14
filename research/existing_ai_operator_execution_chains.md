@@ -17,7 +17,7 @@
 
 因此，本项目不要表述为“现有 AI 算子都用 Ray，所以我们优化 Ray”。更稳的表述是：
 
-> 现有系统已经证明数据库 AI 算子、外部 vectorizer worker、模型服务调用、batch processing 和写回是实际工程形态；本项目选择 Ray/Daft/Lance-like 外部链路作为可控实验平台，研究数据库 AI 算子触发后的 batch、partition、task/actor、模型服务路由、backpressure 和 writeback 优化。
+> 现有系统已经证明数据库 AI 算子、vectorizer worker、模型服务调用、batch processing 和写回是实际工程形态；本项目选择 Ray/Daft/Lance-like 系统机制作为可控实验平台，研究数据库驱动 AI workload 触发后的 batch、partition、task/actor、模型服务路由、backpressure 和 writeback 优化。
 
 ## 对 Snowflake 是否需要测性能
 
@@ -26,7 +26,7 @@
 原因：
 
 1. Snowflake Cortex AISQL 是托管闭源系统，内部执行器、模型服务队列、调度、写回路径不可见。
-2. 本项目目标是优化可控外部链路；Snowflake 测出来的端到端时间只能说明用户可见性能，不能拆分 `DB fetch -> batch -> scheduling -> model service -> writeback`。
+2. 本项目目标是优化可控的数据执行与存储过程；Snowflake 测出来的端到端时间只能说明用户可见性能，不能拆分 `DB fetch -> batch -> scheduling -> model service -> writeback`。
 3. 如果后续有 Snowflake 账号和预算，可以做“小规模用户可见参考实验”，例如同等语义的 `AI_EMBED` / `AI_COMPLETE` SQL 吞吐，但只能作为工业参照，不能作为严格 apples-to-apples baseline。
 
 更适合当前阶段的做法是：复刻 Snowflake 用户可见的算子语义，而不是复刻 Snowflake 闭源实现。
@@ -127,4 +127,3 @@ PostgreSQL fetch
 - pgvector README：`https://github.com/pgvector/pgvector`
 - Daft on Ray 文档：`https://docs.daft.ai/en/stable/distributed/ray/`
 - Ray Serve 文档：`https://docs.ray.io/en/latest/serve/index.html`
-

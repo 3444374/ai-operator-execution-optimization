@@ -37,7 +37,7 @@ PostgreSQL 18.3 internal validation platform / PostgreSQL 18.4 local rehearsal
 - AI 算子场景是主场景。
 - Ray/Daft/Lance 是候选外部执行系统和调优对象，不是预设最终产品路线。
 - Ray / 非 Ray 对比应作为 baseline 和消融，不应成为论文主问题本身。
-- GPU-backed model service 是主实验链路中的现实计算端点，应尽早进入端到端系统画像；GPU/数据库内模型执行迁移只保留必要 baseline，用来界定外部链路优化的适用边界，不要把主要时间投入 GPU 迁移、GPU kernel 或数据库内执行 baseline。
+- GPU-backed model service 是主实验链路中的现实计算端点，应尽早进入端到端系统画像；GPU/数据库内模型执行迁移只保留必要 baseline，用来界定数据执行与存储链路优化的适用边界，不要把主要时间投入 GPU 迁移、GPU kernel 或数据库内执行 baseline。
 - 真实 GPU-backed 链路上的大块消融优先于 CPU/fake 简化实验；CPU/fake 链路只作为脚本调试、计时边界验证和历史对照，不能作为真实瓶颈归因证据，也不能把 CPU-only 分阶段瓶颈写成 GPU-backed 链路瓶颈。
 - 本地 PostgreSQL 18.4 + pgvector 只作为 PostgreSQL 18.3 内部平台的同构预演环境，不得写成 PG18.3 结果。
 - 不把 microbenchmark 包装成完整论文结论。
@@ -55,8 +55,9 @@ PostgreSQL 18.3 internal validation platform / PostgreSQL 18.4 local rehearsal
 
 - `overview/`：项目总纲、当前路线、阶段计划。
 - `research/`：背景调研、文献和官方资料依据。
-- `motivation/`：AI 算子场景、端到端动机测试、系统画像、瓶颈定位和可优化点分析。
+- `motivation/`：AI 算子场景、端到端动机测试、系统画像、瓶颈定位和可优化点分析；回答为什么课题值得做，不承担完整研究实验规划。
 - `motivation/results/`：正式动机结果和系统画像结果。
+- `experiments/`：正式研究实验、优化方案验证、消融实验和小范围调优测试；回答三项研究内容的方法是否有效。
 - `feasibility/`：可行性 benchmark、组件级 microbenchmark、环境验证和连接验证。
 - `feasibility/results/`：fake/CPU 预研结果、PG18.4 连接验证、自动报告。
 - `code/`：可复用工程代码、脚本和测试。
@@ -122,9 +123,9 @@ PostgreSQL 18.3 internal validation platform / PostgreSQL 18.4 local rehearsal
 
 对外优先表述为：
 
-> 数据库内置 AI 算子的外部分布式数据处理执行链路优化。
+> 数据库驱动 AI 工作负载的分布式数据执行与存储协同优化。
 
-不要直接表述为“我要做 Daft/Ray/Lance”，避免显得脱离数据库落地。
+Daft、Ray、Lance 作为候选系统机制和验证平台出现，不要直接表述为“我要做 Daft/Ray/Lance”，避免显得脱离数据库落地；也不要把研究对象写成传统数据库 GPU 查询算子或模型 kernel 优化。
 
 ## 9. 更新检查
 

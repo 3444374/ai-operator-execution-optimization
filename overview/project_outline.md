@@ -1,69 +1,73 @@
 # 项目总纲
 
-生成日期：2026-07-10
+生成日期：2026-07-13
 
 ## 1. 课题定位
 
-当前课题不聚焦传统 GPU 查询算子，也不做模型 kernel 优化，而是聚焦：
+当前课题收敛为：
 
-> 面向数据库内置 AI 算子的分布式数据处理执行链路优化研究。
+> 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究。
 
-技术切入点：
+数据库 AI 算子在本项目中主要作为 workload 入口和验证场景；研究主体不是数据库内核 UDF、传统数据库 GPU 查询算子或模型 kernel，而是数据从数据库进入 Daft/Arrow 数据组织、Ray task/actor 执行、GPU-backed 模型服务，再到 Lance / pgvector / PostgreSQL sink 的端到端执行与存储协同过程。
 
-> 基于 Ray/Daft/Lance 类外部执行链路的数据库 AI 算子批处理系统调优。
+候选技术切入点是：
 
-数据库场景是落地入口；真正要沉淀的是 AI infra 能力，包括 distributed execution、object store、shuffle、Arrow/RecordBatch、AI data pipeline、批量推理前后处理等。
+> 面向数据库驱动 AI workload 的特征感知数据组织、并行执行与存储协同优化。
 
-当前主攻外部执行链路调优，不把“把 AI 算子搬到数据库内核或 GPU kernel 上执行”作为主要工作量。Snowflake Cortex AISQL、pgai vectorizer、pgvector、PostgresML、OceanBase/达梦类分布式数据库作为工业背景、场景依据和 baseline 对照；真正要研究的是数据库 AI 算子触发后，外部 worker / Ray / Daft / 模型服务 / 写回链路如何组织得更高效。
+Daft/Ray/Lance 是候选系统机制和可控验证平台，不是论文题目本身，也不是简单产品集成目标。
 
 ## 2. 目标链路
 
 ```text
-PostgreSQL / documents table / Parquet
-  -> Arrow RecordBatch
-  -> Daft / Ray batch execution
-  -> AI_EMBED(text) / chunk / preprocess
-  -> object transfer / fan-in / shuffle
-  -> PostgreSQL + pgvector 或 Lance
+PostgreSQL / documents table / SQL workflow
+  -> Arrow RecordBatch / Daft batch / partition
+  -> Ray task / actor / actor pool
+  -> GPU-backed AI_EMBED / AI_FILTER / AI_COMPLETE model service
+  -> object transfer / queue wait / fan-in / backpressure
+  -> Lance / pgvector / PostgreSQL sink
 ```
+
+当前本地 PostgreSQL 18.4 + pgvector 只作为 PostgreSQL 18.3 内部平台的同构预演环境。正式结论不能把 PG18.4 本地结果写成 PG18.3 内部平台结果。
 
 ## 3. 核心问题
 
 论文必须回答：
 
-> 数据库 AI 算子链路中哪里产生系统瓶颈？为什么会产生？优化哪一层？收益能否被测量和解释？
+> 数据库驱动 AI workload 的端到端执行成本如何拆分？哪些阶段产生可优化损耗？优化数据组织、并行执行、模型服务状态感知和写回协同后，收益能否被测量和解释？
 
 当前最有价值的问题是：
 
-> 数据库 AI 算子外部执行链路对 batch、partition、task/actor、object、fan-in、backpressure 和 writeback 粒度敏感，是否可以通过特征感知任务划分、并行度控制、对象合并、模型服务背压和批量写回降低端到端开销？
+> batch、partition、task/actor、object、endpoint routing、queue wait、fan-in、backpressure 和 writeback 等变量在真实 GPU-backed AI 数据执行链路中如何共同影响端到端性能，是否可以通过 workload 特征感知策略降低系统损耗？
 
 ## 4. 当前证据
 
-本地 fake/CPU 实验显示：
+当前证据分层如下：
 
-- Ray small task 不是当前最强瓶颈；
-- Arrow IPC 本身不是明显瓶颈；
-- fixed-size many-object fan-in 有明显放大；
-- Arrow RecordBatch `N upstream -> P downstream` 实验中，fine/coalesced 平均 fan-in 比约 `3.17x`。
+- `motivation/results/gpu/`：真实 GPU-backed E2E 主动机结果，优先级最高。
+- `motivation/results/pg18_4_fake/`：PG18.4 本地同构 fake-model 历史结果，只作为预演和历史信号。
+- `motivation/results/fake_cpu/`：fake/CPU 历史预研结果，只用于解释早期为什么关注 task/object/fan-in/backpressure 等变量。
+- `feasibility/results/`：组件级 benchmark、环境验证和连接验证，不能替代端到端性能结论。
 
-因此，当前不建议优先做 scheduler/runtime，也不建议做单纯 Arrow serialization。
+当前不能把 CPU/fake 阶段瓶颈直接写成 GPU-backed 链路瓶颈，也不能把连接验证写成性能收益。
 
 ## 5. 论文成立条件
 
 一个方向要作为硕士论文，至少需要满足：
 
-1. 有真实或可解释的数据库 AI 算子场景；
-2. 有清晰系统瓶颈；
-3. 有可控制的实现范围；
-4. 有可复现实验；
-5. 有明确 baseline；
-6. 有可解释的性能收益或边界结论；
-7. 不是已有系统功能的简单复现。
+1. 有真实或可解释的数据库驱动 AI workload 场景；
+2. 有生产式 GPU-backed 端到端系统画像；
+3. 有清晰、可拆分的阶段瓶颈；
+4. 有可控制的实现范围；
+5. 有可复现实验和明确 baseline；
+6. 有消融实验支撑优化贡献；
+7. 有可解释的性能收益或边界结论；
+8. 不是已有系统功能的简单复现。
 
 ## 6. 近期工作重点
 
-1. 搭建 fake `AI_EMBED(text)` 端到端动机测试。
-2. 验证 RecordBatch fan-in 现象是否迁移到批量 embedding / RAG 数据准备链路。
-3. 若成立，进入 PostgreSQL 18.3 内部验证平台或同构预演链路，真实采集数据库 AI 算子外部执行画像。
-4. 优先补外部链路 baseline：Python batched worker、Ray task、Ray actor、主控 fan-in 写回、多 worker 各自写回、Ray Serve / vLLM 或轻量模型服务队列。
+1. 补充 384 维 pgvector / Lance / PostgreSQL 写回对比，确认真实写回路径的成本边界。
+2. 在同一条 GPU-backed 链路上补多 endpoint、Ray Serve / vLLM 或轻量模型服务队列实验。
+3. 做大块消融：Python batched worker、Ray task、Ray actor、主控 fan-in 写回、多 worker 写回、bounded / unbounded in-flight。
+4. 将 `AI_EMBED`、`AI_FILTER/AI_CLASSIFY`、`AI_COMPLETE` 作为三类 workload，在同一套阶段计时框架下逐步验证。
 5. 将稳定代码迁入 `code/`，形成可复现实验工程。
+6. 正式图资产统一维护在 `figures/`，报告、PPT、learning、中期汇报和论文共用同一套图。

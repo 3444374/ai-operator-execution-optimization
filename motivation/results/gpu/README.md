@@ -42,3 +42,31 @@ sentence-transformers/all-MiniLM-L6-v2
 - 当前真实模型返回 384 维 embedding；`ai_embed_chain_breakdown_20260712` 使用 JSON text 写回，不是 384 维 pgvector 写回。
 - `model_service_s` 是请求耗时加和；阶段占比优先看 `model_request_wall_s`、`operator_wall_s` 和 `writeback_s`。
 - `multi_endpoint_ray_motivation_20260712` 是 Ray 价值的初步动机测试，不是最终 Ray Serve / vLLM / 多 GPU 结论。
+
+## 2026-07-14 pgai-integrated rerun
+
+```text
+pgai_integrated_key_rerun_20260714.md
+ai_embed_pgai_integrated_key_20260714.csv
+```
+
+This rerun uses PostgreSQL 18.4 local rehearsal plus GPU-backed local embedding
+endpoints on ports 8000 and 8001. It covers batch granularity, full-chain
+writeback timing, single versus dual local endpoints, and 4096-to-8192 row
+scaling after the pgai SQL trigger surface was validated.
+
+Boundary: the pgai SQL trigger surface itself remains a feasibility result; the
+GPU rerun uses the job-table profile path so the timing boundaries are visible.
+The writeback mode is JSON text for 384-dim embeddings, not pgvector vector(384).
+
+## 2026-07-14 pgvector(384) writeback comparison
+
+```text
+pgvector_writeback_20260714.md
+ai_embed_pgvector_writeback_20260714.csv
+```
+
+This test compares no writeback, JSON text writeback, and pgvector
+`vector(384)` writeback in the same PostgreSQL 18.4 local GPU-backed Ray actor
+chain. It verifies that `document_embeddings.embedding_vector` is `vector(384)`
+and that 4096 written vectors have `vector_dims = 384`.

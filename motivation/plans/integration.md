@@ -37,7 +37,7 @@
 
 第一阶段用 fake embedding 只用于调试脚本、验证计时边界和保留历史预研；后续必须接 PostgreSQL 18.3 真实平台或同构预演链路做验证。普通 PostgreSQL + pgvector 只能作为设备未到位或内部平台暂不可用时的接口替身，不能替代最终平台结论。
 
-当前计划不把“把 AI 算子搬到 GPU 或数据库内核里执行”作为主要工作量。GPU-backed model service / vLLM / Ray Serve 应作为生产式外部链路的现实计算端点优先进入端到端画像，用来建立“为什么外部链路值得优化”的主动机。主要实验时间优先投入外部 worker、Ray task/actor、模型服务队列、fan-in/writeback 和 backpressure 的链路调优。
+当前计划不把“把 AI 算子搬到 GPU 或数据库内核里执行”作为主要工作量。GPU-backed model service / vLLM / Ray Serve 应作为生产式数据执行链路的现实计算端点优先进入端到端画像，用来建立“为什么数据库驱动 AI workload 的数据执行与存储过程值得优化”的主动机。主要实验时间优先投入 worker、Ray task/actor、模型服务队列、fan-in/writeback 和 backpressure 的链路调优。
 
 实验应尽量靠近 Snowflake / pgai 这类工业系统的用户可见语义，但不复现它们的闭源内部实现。推荐做法是：
 
@@ -174,7 +174,7 @@ DB trigger/fetch
 | 主控进程 fan-in 后批量写回 | Ray worker 返回结果 -> 主控进程 `ray.get` 合并 -> 主控进程写回 PostgreSQL | fan-in 和批量 writeback 的清晰边界，适合做系统画像 |
 | 多 worker 各自写回 | worker 从任务表/队列取数据 -> 各自算 embedding -> 各自写回 PostgreSQL | 更接近 pgai vectorizer worker 等工业形态，测试连接并发、事务、失败重试和写回竞争 |
 
-如果时间有限，优先保证这两类外部链路 baseline 和一条 GPU-backed E2E 主动机链路，而不是扩展大量 GPU/数据库内执行 baseline。
+如果时间有限，优先保证这两类数据执行 baseline 和一条 GPU-backed E2E 主动机链路，而不是扩展大量 GPU/数据库内执行 baseline。
 
 ### 5.3 PostgreSQL 18.3 集成与画像
 

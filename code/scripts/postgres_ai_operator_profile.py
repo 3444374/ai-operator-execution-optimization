@@ -52,12 +52,8 @@ CREATE TABLE IF NOT EXISTS document_embeddings (
   tenant_id INTEGER NOT NULL,
   category TEXT NOT NULL,
   embedding_json TEXT NOT NULL,
-  embedding_vector vector(128),
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-ALTER TABLE document_embeddings
-ADD COLUMN IF NOT EXISTS embedding_vector vector(128);
 """
 
 
@@ -101,7 +97,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-inflight", type=int, default=8)
     parser.add_argument("--strategy", choices=["fine", "coalesced"], default="coalesced")
     parser.add_argument("--executor", choices=["ray_actor", "ray_task", "python"], default="ray_actor")
-    parser.add_argument("--writeback-mode", choices=["json_text", "pgvector"], default="json_text")
+    parser.add_argument("--writeback-mode", choices=["none", "json_text", "pgvector"], default="json_text")
     parser.add_argument("--write-batch-rows", type=int, default=0)
     parser.add_argument("--warmup-runs", type=int, default=0)
     parser.add_argument("--repeats", type=int, default=1)
@@ -156,10 +152,47 @@ def database_metadata(conn) -> dict[str, str]:
     }
 
 
-def setup_schema(conn) -> None:
+def embedding_vector_column_dim(conn) -> int | None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT format_type(a.atttypid, a.atttypmod)
+            FROM pg_attribute a
+            JOIN pg_class c ON c.oid = a.attrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = current_schema()
+              AND c.relname = 'document_embeddings'
+              AND a.attname = 'embedding_vector'
+              AND NOT a.attisdropped
+            """
+        )
+        row = cur.fetchone()
+    if not row:
+        return None
+    type_name = str(row[0])
+    if not type_name.startswith("vector(") or not type_name.endswith(")"):
+        return None
+    return int(type_name.removeprefix("vector(").removesuffix(")"))
+
+
+def ensure_embedding_vector_column(conn, embedding_dim: int) -> None:
+    if embedding_dim <= 0:
+        raise ValueError("--embedding-dim must be positive")
+    current_dim = embedding_vector_column_dim(conn)
+    if current_dim == embedding_dim:
+        return
+    with conn.cursor() as cur:
+        if current_dim is not None:
+            cur.execute("ALTER TABLE document_embeddings DROP COLUMN embedding_vector")
+        cur.execute(f"ALTER TABLE document_embeddings ADD COLUMN embedding_vector vector({embedding_dim})")
+    conn.commit()
+
+
+def setup_schema(conn, embedding_dim: int) -> None:
     with conn.cursor() as cur:
         cur.execute(SCHEMA_SQL)
     conn.commit()
+    ensure_embedding_vector_column(conn, embedding_dim)
 
 
 def count_documents(conn) -> int:
@@ -535,6 +568,8 @@ def batched_rows(rows: list[tuple], batch_rows: int) -> Iterable[list[tuple]]:
 
 
 def write_embeddings(conn, results: list[dict], writeback_mode: str, write_batch_rows: int) -> int:
+    if writeback_mode == "none":
+        return 0
     rows = []
     for result in results:
         vectors = result["embedding"]
@@ -675,16 +710,21 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "Missing --embedding-endpoint-url, --embedding-endpoint-urls, "
             "EMBEDDING_ENDPOINT_URL or EMBEDDING_ENDPOINT_URLS for http_openai backend."
         )
-    if args.writeback_mode == "pgvector" and args.model_backend == "http_openai" and args.embedding_dim != 128:
-        raise SystemExit("The current schema uses vector(128); use --writeback-mode json_text or a 128-dim model.")
-
     conn = connect(args.database_url)
     try:
-        db_metadata = database_metadata(conn)
         gpu_snapshot = gpu_metadata()
         if args.setup:
-            setup_schema(conn)
+            setup_schema(conn, args.embedding_dim)
             seed_documents(conn, args.seed_rows)
+        if args.writeback_mode == "pgvector":
+            current_dim = embedding_vector_column_dim(conn)
+            if current_dim != args.embedding_dim:
+                raise SystemExit(
+                    "document_embeddings.embedding_vector is "
+                    f"vector({current_dim}); rerun with --setup or choose --embedding-dim {current_dim}."
+                )
+        db_metadata = database_metadata(conn)
+        current_vector_dim = embedding_vector_column_dim(conn)
 
         job_id = create_job(conn)
         actors = []
@@ -811,6 +851,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "db_fetch_rows": args.db_fetch_rows,
             "ray_batch_rows": args.ray_batch_rows,
             "embedding_dim": args.embedding_dim,
+            "embedding_vector_dim": current_vector_dim if current_vector_dim is not None else "",
             "model_workers": args.model_workers,
             "max_inflight_limit": args.max_inflight,
             "writeback_mode": args.writeback_mode,

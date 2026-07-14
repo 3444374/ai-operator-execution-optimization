@@ -1,0 +1,35 @@
+name: ai-operator-pgai
+
+services:
+  db:
+    image: timescale/timescaledb-ha:pg17
+    container_name: ai-operator-pgai-db
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgai_data:/home/postgres/pgdata/data
+      - ./init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    command: ["-c", "ai.ollama_host=http://ollama:11434"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    shm_size: 1gb
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:0.31.2
+    container_name: ai-operator-pgai-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - pgai_ollama:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  pgai_data:
+  pgai_ollama:

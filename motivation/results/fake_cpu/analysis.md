@@ -4,6 +4,8 @@
 
 ## 1. 实验目的
 
+当前项目口径更新：本文件是 fake/CPU 历史预研分析，只解释早期为什么关注 task/object/fan-in、operator invocation、writeback 和 backpressure。正式主线已经收敛为“数据库驱动 AI workload 的分布式数据执行与存储协同优化”，真实瓶颈归因应优先引用 `motivation/results/gpu/` 下的 GPU-backed 结果。
+
 本目录中的实验不是为了证明最终论文方向已经成熟，而是做研究方向筛选和动机补强。当前要回答的问题是：
 
 > 数据库 AI 算子外部分布式执行链路中，性能问题是否只来自 RecordBatch/object fan-in，还是同时涉及 task 划分、operator invocation、模型服务队列和 backpressure？
@@ -385,7 +387,7 @@ Formal 均值：
 
 更稳妥的主线不是“为了使用 Ray/Daft/Lance 而证明它好”，而是：
 
-> 面向数据库内置 AI 算子的外部批处理执行系统，识别并优化 batch、partition、task/actor、object、fan-in、backpressure 和 writeback 等瓶颈。
+> 面向数据库驱动 AI workload 的分布式数据执行与存储过程，识别并优化 batch、partition、task/actor、object、fan-in、backpressure 和 writeback 等瓶颈。
 
 因此，当前可以把 Ray/Daft/Lance 类链路作为候选系统和主要调优对象；但不要把 Daft+Ray+Lance 产品化路线写成既定事实。Ray / 非 Ray 的对比应该作为 baseline 和消融，而不是论文主问题本身。
 
@@ -406,7 +408,7 @@ Formal 均值：
 | 多 worker 各自写回 | 是否更接近工业 vectorizer worker，数据库连接/事务是否成为瓶颈 | 待补 |
 | 任务表/队列式 vectorizer worker | 是否更接近 pgai / 工业 worker 形态 | 待补 |
 | 真实 GPU-backed embedding / Ray Serve / vLLM 服务 | 生产式链路中模型服务、AI 算子外部服务链路和 writeback 的阶段占比 | 下一组主动机实验 |
-| small-scale GPU-backed E2E profile / Ray Serve / vLLM 服务 | batch、in-flight、GPU 利用率、模型服务队列、writeback 是否改变瓶颈排序；外部链路是否是生产式场景中的主要损耗 | GPU 环境可用时作为主动机实验优先补，不作为 GPU kernel 主线 |
+| small-scale GPU-backed E2E profile / Ray Serve / vLLM 服务 | batch、in-flight、GPU 利用率、模型服务队列、writeback 是否改变瓶颈排序；数据执行与存储过程是否是生产式场景中的主要损耗 | GPU 环境可用时作为主动机实验优先补，不作为 GPU kernel 主线 |
 
 优先顺序：
 

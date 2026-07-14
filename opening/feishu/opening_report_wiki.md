@@ -1,5 +1,7 @@
 ﻿# 硕士生论文开题报告
 
+> 当前状态：本地开题报告正在调整，本文档暂不作为最新飞书同步源。待用户过目 `opening/report/opening_report.md` 后，再统一同步本文件和线上飞书文档。
+
 **题 目：** 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究
 
 | 项目 | 内容 |
@@ -102,52 +104,7 @@ AI workload 的执行瓶颈不只来自数据切分，也来自 GPU 推理服务
 
 本课题的总体框架如图 3-1 所示。数据库 AI workload 是场景入口，统一进入由 Daft/Arrow 数据组织、Ray 分布式执行、GPU 模型服务和 Lance / 数据库 sink 组成的可观测执行链路；研究内容一关注数据组织与批处理调度，研究内容二关注 Ray 并行调度与模型服务反压，研究内容三关注结果汇聚与持久化协同。三类 workload 用于验证策略边界，避免把方法只建立在单一 embedding 场景上。
 
-```mermaid
-flowchart LR
-  subgraph S[数据库驱动 AI workload]
-    S1[AI_EMBED / RAG ingestion]
-    S2[AI_FILTER / AI_CLASSIFY]
-    S3[AI_COMPLETE / 抽取与生成]
-  end
-
-  subgraph P[分布式 AI 数据执行链路]
-    P1[Database source / SQL workflow]
-    P2[Daft / Arrow batch 与 partition]
-    P3[Ray task / actor / object]
-    P4[GPU-backed model service]
-    P5[fan-in / result consolidation]
-    P6[Lance / pgvector / PostgreSQL sink]
-  end
-
-  subgraph R[研究内容]
-    R1[workload 感知数据组织与批处理调度]
-    R2[GPU 服务感知 Ray 调度与反压]
-    R3[AI 数据流汇聚与持久化协同]
-  end
-
-  subgraph E[评价与证据]
-    E1[阶段耗时 / rows/s / tokens/s]
-    E2[queue wait / bounded wait / GPU utilization]
-    E3[writeback time / fan-in time / 消融实验]
-  end
-
-  S1 --> P1
-  S2 --> P1
-  S3 --> P1
-  P1 --> P2 --> P3 --> P4 --> P5 --> P6
-  P2 --> R1
-  P3 --> R2
-  P4 --> R2
-  P5 --> R3
-  P6 --> R3
-  R1 --> R2
-  R2 --> R3
-  R1 --> E1
-  R1 --> E2
-  R2 --> E2
-  R3 --> E1
-  R3 --> E3
-```
+![图 3-1 课题总体研究框架](../../figures/architecture/system_architecture_ai_data_execution.png)
 
 图 3-1 课题总体研究框架。数据库 AI workload 作为入口，Daft/Arrow、Ray、GPU 模型服务和 Lance / 数据库 sink 共同构成研究对象；数据组织、服务感知调度和持久化协同分别构成三个研究内容，并通过对照实验和消融实验验证。
 
@@ -180,6 +137,10 @@ Database AI workload source
 4. 持久化写回是否会限制端到端收益。真实 GPU-backed 画像显示，在 16K 行 coalesced 执行过程中，external operator 阶段和 PostgreSQL writeback 都接近端到端时间的一半。后续如果只优化模型调用，收益可能被 Lance / pgvector / PostgreSQL sink 阶段限制。
 5. 如何从 embedding 场景扩展到更一般的 AI workload。`AI_EMBED` 容易形成 pgvector 写回闭环；`AI_COMPLETE` 会引入 token-aware batching、prefix-aware routing、模型服务队列和失败重试；`AI_FILTER/AI_CLASSIFY` 则需要 selectivity-aware 执行和 cascade 策略。三类 workload 对应不同的执行压力，用来验证方法是否只适用于单一 embedding 场景。
 
+三类 workload 的选择依据不是为了罗列更多应用，而是为了覆盖数据库 AI 算子中三种不同的系统压力。`AI_EMBED` 对应批量 embedding / RAG ingestion，外部依据来自 Snowflake `AI_EMBED`、pgvector 和 pgai vectorizer worker 形态，项目中也已经完成真实 GPU-backed `AI_EMBED` 链路画像，因此它适合作为第一阶段的真实端到端 baseline。`AI_FILTER/AI_CLASSIFY` 对应 AI predicate 和分类过滤，外部依据来自 Snowflake `AI_FILTER` / `AI_CLASSIFY` 等 AI SQL 函数；它的特点是输出小、模型调用次数多、选择率会影响下游数据量，适合验证 selectivity-aware 执行和模型调用次数控制。`AI_COMPLETE` / offline LLM 对应离线生成、抽取和评测，外部依据来自 Snowflake `AI_COMPLETE`、BigQuery `ML.GENERATE_TEXT`、Ray Data offline batch inference、Ray Serve dynamic batching 和 vLLM offline inference；它引入 token 长度、共享 prefix、队列等待和失败重试，适合验证更接近推理基础设施的 token-aware / prefix-aware 调度。三者共用同一条数据库读取、批处理组织、Ray 执行、模型服务调用和写回链路，但分别放大向量写回、选择率变化和 token / queue 三类压力。
+
+调优变量的选择也有对应依据。batch、partition、task/actor 和 object 粒度来自 Ray/Daft/Spark 等分布式执行系统的官方文档和性能调优经验；本项目 fake/CPU 三类 workload 预研在 `upstream=32, downstream=32` 时观察到 fine/coalesced e2e 比值约为 `4.01x`、`4.32x`、`4.37x`，说明这些变量对统一执行骨架有明显影响。endpoint routing 和 bounded in-flight 来自 Ray Serve dynamic batching / routing、vLLM offline inference 等模型服务机制；本项目 backpressure 模拟显示 `queue_limit=8` 在不提高 tokens/s 的情况下把平均 queue wait 从 `4768.50 ms` 降到 `114.41 ms`，说明无界提交会放大队列压力。writeback 和 fan-in 来自 pgai vectorizer worker、pgvector / Lance 存储形态以及当前 GPU-backed 链路画像；在 16K 行 `AI_EMBED` 场景中，operator 与 PostgreSQL JSON text writeback 都是大块成本，说明只优化模型调用并不能保证端到端收益。因此，本文调这些变量是由外部系统机制和本项目实验信号共同支撑，而不是凭经验任意选择。
+
 ### 4.2 可行性分析
 
 目前已完成本地 PostgreSQL 18.4 同构预演环境、PG18.4 + pgvector 连接验证、fake-model 画像、真实 GPU-backed embedding 端到端画像和双 endpoint Ray 动机测试。PG18.4 仅作为 PostgreSQL 18.3 内部平台的本地预演替身，相关结果用于验证实验方法和瓶颈形态，不代表 PostgreSQL 18.3 内部平台性能。
@@ -209,13 +170,7 @@ flowchart LR
 
 真实 GPU-backed `AI_EMBED` 实验首先说明，batch 粒度本身会显著影响端到端执行。表 4-2 中，1024 行 fine 策略发起 1024 次 endpoint 调用，coalesced 策略只发起 4 次调用；fine 的端到端耗时约为 coalesced 的 `13.4x`。这说明在真实 CUDA embedding endpoint 接入后，逐行调用不是合理 baseline，批处理执行是必须研究的对象。
 
-```mermaid
-xychart-beta
-  title "1024 行 GPU-backed AI_EMBED：fine 与 coalesced 端到端耗时"
-  x-axis ["coalesced", "fine"]
-  y-axis "e2e_s" 0 --> 12
-  bar [0.888, 11.925]
-```
+![图 4-2 逐行调用与 batch 调用的端到端对比](../../figures/data/report_main/03_invocation_granularity.png)
 
 图 4-2 逐行调用与 batch 调用的端到端对比。fine 策略将 endpoint 调用数从 4 次放大到 1024 次，端到端耗时约为 coalesced 的 `13.4x`，说明模型服务调用粒度是必须控制的一阶成本。
 
@@ -230,25 +185,13 @@ xychart-beta
 
 表 4-2 还说明，单 endpoint 下 Ray 并不天然优于 Python。4096 行 coalesced 场景中，Python、Ray task 和 Ray actor 的端到端时间都在 `3.29s-3.36s` 区间。因此，后续研究需要进一步分析 Ray 在多 endpoint、bounded in-flight、routing、actor pool 和 worker-side writeback 等条件下的适用范围。
 
-```mermaid
-xychart-beta
-  title "16384 行 Ray actor / coalesced 阶段耗时"
-  x-axis ["operator_wall", "writeback"]
-  y-axis "seconds" 0 --> 7
-  bar [6.473, 6.586]
-```
+![图 4-3 数据库到 GPU 再到写回的链路阶段时延](../../figures/data/report_main/02_gpu_stage_latency_stack.png)
 
-图 4-3 16K 行场景下 operator 与 writeback 的阶段对比。模型服务调用阶段和 PostgreSQL 写回阶段耗时接近，说明后续如果只优化模型调用，端到端收益可能被写回阶段限制。
+图 4-3 数据库到 GPU 再到写回的链路阶段时延。该图使用真实 GPU-backed CSV 的 formal repeats 平均值，以 4K / 16K 行、single endpoint / dual endpoint 场景为纵轴，并在每个场景内部用不同颜色堆叠 DB fetch、Arrow batch build、Ray submit / scheduling residual、GPU model request wall、fan-in 和 sink writeback。结果表明，当前主要成本集中在 GPU 请求墙钟时间和 PostgreSQL JSON text 写回；DB fetch、Arrow build 和 fan-in 已被计入，但在本轮实验中不是主导瓶颈。
 
 双 endpoint 实验进一步补充了 Ray 的使用动机。表 4-3 中，4096 行、16 个 coalesced batch 下，Python 顺序轮询两个 endpoint 的端到端均值为 `3.444s`，Ray task 和 Ray actor 分别为 `2.761s` 和 `2.780s`；Ray 主要降低 external operator wall time。16384 行 Ray actor 双 endpoint 的 operator wall time 也从单 endpoint 的 `6.473s` 降到 `4.628s`，但 writeback 仍约 `6.363s`，说明写回会限制端到端收益。
 
-```mermaid
-xychart-beta
-  title "4096 行双 endpoint：Python 与 Ray 的端到端耗时"
-  x-axis ["Python", "Ray task", "Ray actor"]
-  y-axis "e2e_s" 0 --> 3.6
-  bar [3.444, 2.761, 2.780]
-```
+![图 4-4 双 endpoint 场景下 Python 与 Ray 的端到端对比](../../figures/data/report_main/04_executor_endpoint_comparison.png)
 
 图 4-4 双 endpoint 场景下 Python 与 Ray 的端到端对比。Ray task / actor 可以通过并发 routing 降低 operator wall time，但端到端收益仍受 writeback 约束。
 
@@ -259,6 +202,12 @@ xychart-beta
 | 4096 | Ray actor | 2 | 2.780 | 1.188 | 1.565 | actor 与 task 接近，写回仍是大块成本 |
 | 16384 | Ray actor | 1 | 13.168 | 6.473 | 6.586 | 单 endpoint 下 operator 与写回接近 |
 | 16384 | Ray actor | 2 | 11.100 | 4.628 | 6.363 | operator 降低后，writeback 成为收益上限 |
+
+进一步将关键场景按 executor、endpoint 和写回阶段展开后，可以看到并发模型服务调用和 sink writeback 之间的收益边界。当前本地预演链路已经记录 `operator_wall_s`、`model_request_wall_s`、`fanin_s` 和 `writeback_s` 等字段；后续接入 Daft / Lance 后，将沿用同一类阶段边界继续记录 partition、shuffle、object transfer 和 sink 写入时间。
+
+![图 4-5 Ray actor 单 / 双 endpoint 扩展与写回约束](../../figures/data/report_main/05_actor_endpoint_scaling_writeback.png)
+
+图 4-5 Ray actor 单 / 双 endpoint 扩展与写回约束。该图比较 4K / 16K、single endpoint / dual endpoint 下的端到端耗时、operator wall time 和 writeback time。双 endpoint 可以降低 operator wall time，但 16K 场景中 writeback 仍保持在大块成本区间，说明只优化模型服务调用并不能保证端到端收益。
 
 历史 fake/CPU 预研主要用于说明为什么研究内容要覆盖 task/object 粒度、模型服务反压和三类 workload。表 4-4 汇总了这些结果。它们不能替代真实 GPU-backed 链路，但可以作为实验变量设计的依据。
 
@@ -275,7 +224,7 @@ flowchart TB
   G --> H
 ```
 
-图 4-5 fake/CPU 预研结果在课题中的作用。预研结果用于确定实验变量和对照组，正式结论仍需要在 GPU-backed 数据库驱动 AI workload 链路上验证。
+图 4-6 fake/CPU 预研结果在课题中的作用。预研结果用于确定实验变量和对照组，正式结论仍需要在 GPU-backed 数据库驱动 AI workload 链路上验证。
 
 | 实验 | 关键结果 | 对研究方案的含义 | 不能声称 |
 |---|---|---|---|
@@ -361,4 +310,12 @@ flowchart TB
 [16] 本项目实验报告. GPU-Backed AI_EMBED Chain Breakdown, 2026-07-12. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
 
 [17] 本项目实验报告. Multi-Endpoint Ray Motivation Test, 2026-07-12. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
+
+[18] 本项目实验设计与预研分析. AI workload scenarios and motivation tests. `motivation/plans/workloads.md`
+
+[19] 本项目实验报告. Fake/CPU motivation analysis. `motivation/results/fake_cpu/analysis.md`
+
+[20] Ray Documentation. Offline Batch Inference. https://docs.ray.io/en/latest/data/batch_inference.html
+
+[21] vLLM Documentation. Offline Inference Examples. https://docs.vllm.ai/en/latest/examples/offline_inference/basic.html
 

@@ -1,5 +1,48 @@
 # 开题材料 project log
 
+## 2026-07-13 项目级图资产目录迁移
+
+- 根据后续 learning、中期汇报和毕业论文都会复用图表的要求，将正式图资产从 `opening/assets/` 和 `learning/figures/` 迁移到根目录 `figures/`。
+- 新增 `figures/AGENTS.md`、`figures/README.md`、`figures/audit/figure_plan.md`、`figures/audit/experiment_charts_audit.md` 和 `figures/scripts/README.md`，明确项目级图资产库、正文主图、备份图、审计记录和绘图脚本的职责。
+- 当前正式主图位于 `figures/architecture/` 和 `figures/data/report_main/`；补充说明图位于 `figures/data/backup/`；学习讲解专用图位于 `figures/learning/`。
+- 同步更新 `opening/report/opening_report.md`、`opening/feishu/opening_report_wiki.md`、`learning/experiment_walkthrough.md`、`learning/README.md`、`opening/navigation.md`、`opening/assets/README.md`、`PROJECT_INDEX.md` 和根目录 `README.md` 中的图路径或入口说明。
+- 删除旧的 `opening/assets/charts/`、`opening/assets/figures/`、`learning/figures/` 以及旧 ECharts 生成脚本和重复系统架构图副本。后续如需重生成实验图，应使用 `figures/scripts/` 中的 Python 脚本和原始 CSV。
+
+## 2026-07-13 开题报告本地调整与旧 PPT 作废
+
+- 根据项目当前主线，将 `opening/report/opening_report.md` 中研究内容一从“数据组织与批处理执行调度”收束为“数据组织与批处理构造”，减少与研究内容二“GPU 推理服务状态感知的 Ray 并行调度与反压控制”的重叠。
+- 同步更新 `PROJECT_OUTLINE.md`、根目录 `README.md`、`PROJECT_INDEX.md`、`overview/current_direction_and_plan.md`、`opening/outline.md` 和图表选择说明中的研究内容名称。
+- 根据用户要求，当前 `opening/slides/opening_ppt.md` 和 `opening/slides/opening_defense_20260712.pptx` 的内容和表现形式先作废；保留学校模板中的标题区、正文安全区、图表区和页脚等页面布局经验。
+- 新增 `opening/slides/README.md` 记录 PPT 当前状态。`opening/ppt_rules.md` 保留版式规则，并明确旧版 PPT 不再作为正式汇报内容依据。
+- 本轮只调整本地开题报告和相关入口文件；飞书正文与线上文档等用户过目本地报告后再同步。
+
+## 2026-07-13 GPU-backed 动机实验图生成
+
+- 使用 `D:/Tools/echarts` 中的 ECharts + sharp 生成第一批开题实验图，脚本为 `opening/assets/generate_echarts_experiment_charts.js`。
+- 输出目录为 `opening/assets/charts/`，每张图同时生成 SVG 与 PNG，便于报告和 PPT 分别引用。
+- 当前生成三张图：fine vs coalesced 端到端耗时对比、16K 行阶段拆分、双 endpoint 下 Python / Ray task / Ray actor 对比。
+- 数据均来自 `motivation/results/gpu/` 的真实 GPU-backed CSV，排除 warm-up，仅使用 formal repeats 平均；PG18.4 连接验证、dry-run 和 smoke 结果不单独画图，后续保留为表格或文字说明。
+- 运行时 `sharp` 报告 fontconfig cache 不可写，但 SVG 和 PNG 均已生成；暂不修改系统级字体缓存配置。
+
+## 2026-07-13 系统架构图版式修订
+
+- 根据用户反馈修订 `opening/assets/figures/system_architecture_ai_data_execution.svg` 与 PNG 预览。
+- 主要调整：主链路箭头改为水平通道连接，取消斜向研究箭头；各阶段框内改用等宽小标签；标题居中；底部研究卡片增高，避免文字贴边或越界。
+- 根据二次反馈继续修订：将黄框“观测与策略层”的标签改为七个等宽等距标签，避免不明确的三段式间距；增大底部研究卡片编号与标题的间距，避免编号圆点与标题文字重叠。
+- 根据三次反馈修复主链路阶段编号位置：编号改为框内左上角编号槽，避免越出边框或遮挡 `GPU model service` 等较长标题；同时将黄色“观测与策略层”与下方四个执行阶段左右边界对齐，并调整下指箭头到对应阶段中心线。
+- 同步更新生成脚本 `opening/assets/generate_system_architecture_figure.py` 和质检记录 `opening/assets/figures/system_architecture_ai_data_execution_audit.md`。
+- 当前图稿用于人工确认系统架构图方向，尚未自动替换到开题报告正文或重新生成 PPTX。
+
+## 2026-07-13 系统架构图初稿
+
+- 使用 `figure-designer` 重新设计开题系统架构图，图类型定位为 Solution Overview / System Architecture。
+- 新增可复现生成脚本 `opening/assets/generate_system_architecture_figure.py`。
+- 生成 SVG 与 PNG：
+  - `opening/assets/figures/system_architecture_ai_data_execution.svg`
+  - `opening/assets/figures/system_architecture_ai_data_execution.png`
+- 新增质检记录 `opening/assets/figures/system_architecture_ai_data_execution_audit.md`，检查向量格式、字体、颜色、图注和无装饰性图表元素。
+- 当前版本为初稿，尚未替换进开题报告正文或重新生成 PPTX，先供人工查看和确认结构。
+
 ## 2026-07-13 开题报告主线调整
 
 - 根据用户确认，将开题报告题目调整为“面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究”。
@@ -182,3 +225,63 @@
 - 生成目录：`projects/opening_defense_20260712/`；最终交付文件：`opening/slides/opening_defense_20260712.pptx`。
 - 质量检查：模板填充容量检查 `ok=294 warn=0 error=0`；PPTX 读回验证 `ok=181 warn=0 error=0`；`nature-paper2ppt` 审查结果为 `high=0, medium=0, low=26`，剩余 low 均为模板近似对齐提示。
 - 已使用 user 身份将 PPTX 导入为飞书在线幻灯片：`https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg`，导入任务 `7661615330808482775` 返回 `job_status_label=success`。
+
+## 2026-07-13 开题报告飞书图文同步
+
+- 将 `opening/report/opening_report.md` 与 `opening/feishu/opening_report_wiki.md` 中的总体研究框架图和三张 GPU-backed 实验结果图，从 Mermaid 图替换为本地 PNG 图片引用。
+- 使用 user 身份覆盖写入开题飞书 wiki：`https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink`，正文同步后 revision 更新到 `32`；由于飞书 Markdown 不直接导入本地图片路径，返回 `partial_success` 和本地图片资源警告。
+- 随后使用 `docs +media-insert` 将 4 张 PNG 上传并插入对应图注前：`system_architecture_ai_data_execution.png`、`gpu_embed_fine_vs_coalesced_e2e_20260712.png`、`gpu_embed_16k_stage_breakdown_20260712.png`、`gpu_embed_multi_endpoint_operator_wall_20260712.png`。
+- 回读飞书文档确认目录完整，图 3-1、图 4-2、图 4-3、图 4-4 均已成为真实图片块，文档 revision 更新到 `41`；关键词检查未发现本地 `assets` 路径残留。
+- 更新 `opening/feishu/README.md`，记录本地 PNG 不能仅依赖 Markdown 覆盖导入，后续同步需配合 `docs +media-insert`。
+
+## 2026-07-13 链路阶段时延图修订
+
+- 根据用户反馈，将 `gpu_embed_stage_overview_20260712.svg` / `.png` 从按阶段分组的横向柱状图，改为“场景为纵轴、阶段为柱内颜色”的横向堆叠柱状图。
+- 新图以 4K / 16K、single endpoint / dual endpoint 四个场景为纵坐标，柱内堆叠 DB fetch、Arrow batch build、Ray submit / scheduling residual、GPU model request wall、fan-in 和 sink writeback，并在柱尾标注端到端总时延。
+- 调整纵坐标标签左对齐和绘图区起点，避免图形过度居中；保留小阶段色块但不强制标注数值，突出 GPU 请求墙钟时间和 PostgreSQL JSON text writeback 两个主阶段。
+- 同步更新 `opening/report/opening_report.md`、`opening/feishu/opening_report_wiki.md` 和 `opening/assets/charts/experiment_charts_audit.md` 中对图 4-5 的说明。
+- 重新覆盖写入开题飞书 wiki 并逐张上传图片块；回读确认图 4-5 已替换为新版横向堆叠柱状图，正文、图注和图中编码一致，文档 revision 更新到 `71`，未发现本地 `assets` 路径残留。
+
+## 2026-07-13 Python 实验图表生成
+
+- 根据用户要求，将真实 GPU-backed 实验数据图重新用 Python 生成，脚本放在 `opening/assets/charts/scripts/generate_gpu_experiment_charts.py`，输出目录为 `opening/assets/charts/python/`。
+- 新增五张候选正式图：调用粒度对比、single / dual endpoint 执行方式双面板对比、Ray actor 单 / 双 endpoint 扩展对比、链路阶段绝对时延、链路阶段占比。
+- 图表只使用 `motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv` 和 `motivation/results/gpu/ai_embed_multi_endpoint_20260712.csv` 的 formal repeats 平均，排除 warm-up，不混入 fake/CPU 或连接验证结果。
+- 已目检 PNG 输出，确认中文、坐标、图例和标签可读；其中执行方式对比图将 single endpoint 和 dual endpoint 放在同一图中，避免单独强调 Ray 更快而忽略适用条件。
+- 更新 `opening/assets/README.md`、`opening/assets/charts/scripts/README.md`、`opening/assets/charts/experiment_charts_audit.md` 和 `learning/README.md`。本批 Python 图暂未替换报告、飞书或 PPT 正式引用，后续替换时需同步图注、正文解释和讲稿备注。
+
+## 2026-07-13 全量有意义实验对比图
+
+- 根据用户要求，新增 `opening/assets/charts/scripts/generate_all_meaningful_experiment_charts.py`，把项目中对研究有解释价值的实验数据都生成候选图。
+- 输出目录为 `opening/assets/charts/all_meaningful/`，共生成 14 张 PNG / SVG 图，覆盖 CPU/GPU endpoint、PG18.4 fake-model、fake/CPU 历史预研和 feasibility 组件 benchmark。
+- 处理规则：带 `phase` 的实验只取 formal；无 `phase` 的历史实验排除 `repeat=0`；summary、smoke、dry-run 和连接验证数据不画正式性能图。
+- 抽查 CPU/GPU、writeback、backpressure 和 Ray small task 图，确认中文、坐标、图例和关键数值可读；Ray small task 图已改为 y 轴从 0 开始，避免夸大差异。
+- 更新 `opening/assets/README.md`、`opening/assets/charts/scripts/README.md` 和 `opening/assets/charts/experiment_charts_audit.md`，明确这些图是候选图集，报告正文仍应优先使用 GPU-backed 主证据。
+- 根据用户反馈，修正 `all_cpu_vs_gpu_endpoint_e2e_20260712` 右上角图例与最高柱标签的拥挤问题：将图例移到绘图区上方，并增加 y 轴顶部留白；重新生成全量图集并目检该图。
+## 2026-07-13 开题动机图表筛选
+
+- 根据用户要求，从已有系统架构图、真实 GPU-backed 实验图和全量候选实验图中筛选开题主线图组。
+- 新增 `opening/assets/charts/selected_motivation_figures.md`，记录主线图、备用图、不建议进入主线的图和推荐讲解顺序。
+- 当前主线建议为：系统架构图、真实 GPU-backed 链路阶段耗时、调用粒度对比、执行方式与模型端点数量对比、actor endpoint scaling / 写回约束。
+- 明确 fake/CPU、PG18.4 fake 和 feasibility 组件 benchmark 只作为附录、答辩备用或研究设计来源说明，不能替代真实 GPU-backed 主证据。
+- 根据用户补充要求，在 `opening/report/opening_report.md`、`opening/feishu/opening_report_wiki.md` 和 `opening/assets/charts/selected_motivation_figures.md` 中补充“三类 workload 为什么选”和“为什么调 batch / partition / task / actor / routing / backpressure / writeback”的依据说明，明确依据来自外部系统资料和项目实验信号，而不是主观选择。
+- 进一步将图表使用策略调整为 A/B/C 三层：A 层为报告和 PPT 正文主线图，B 层为支撑场景选择和变量选择的数据图，C 层为表格或文字即可的数据；明确 workload matrix、granularity attribution、backpressure、writeback batching 和 Ray / Arrow fan-in 属于值得关注的支撑性图。
+- 为方便查找，新增集中目录 `opening/assets/charts/selected/`，其中 `report_main/` 存放报告和 PPT 正文建议图，`ppt_backup/` 存放 PPT 备份和飞书补充图；同步将开题报告本地正文和飞书源稿的图片引用切换到 `selected/report_main/` 下的短文件名版本。
+- 根据用户要求，记录后续图表资产清理规则：最终只保留 `selected/`、生成脚本、审计记录、图表选择说明和系统架构图；`python/`、`all_meaningful/` 和旧 ECharts 根目录图在报告、PPT、飞书均完成路径切换后可以删除。
+# 2026-07-14 PG18.4 pgai-integrated GPU rerun figures and report update
+
+- Generated report-main figures from `motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv` with `figures/scripts/generate_pgai_integrated_gpu_rerun_charts.py`.
+- Added `06_gpu_pgai_rerun_granularity_20260714`, `07_gpu_pgai_rerun_stage_writeback_20260714`, and `08_gpu_pgai_rerun_endpoint_comparison_20260714` under `figures/data/report_main/`.
+- Updated `opening/report/opening_report.md` to cite the PG18.4 local rehearsal + CUDA endpoint rerun, replacing older 2026-07-12 GPU figures in the current report body.
+- Revised the endpoint-comparison figure wording so the dual-endpoint result is presented as absolute E2E time (`3.62s -> 2.86s`) and stage movement, not as a visually emphasized percentage claim.
+- Synchronized figure index/audit files. Boundary remains: local PostgreSQL 18.4 rehearsal, JSON text writeback, two local endpoint replicas on one RTX 5070, not PostgreSQL 18.3 or multi-GPU.
+# 2026-07-14 pgvector(384) writeback comparison
+
+- Completed the same-chain GPU-backed Ray actor writeback comparison for no writeback, JSON text, and pgvector `vector(384)`.
+- Output CSV and report:
+  `motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv` and
+  `motivation/results/gpu/pgvector_writeback_20260714.md`.
+- Generated figure:
+  `figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png`.
+- Updated `opening/report/opening_report.md` with the new figure, table, and boundary note. The result remains PG18.4 local rehearsal, not PostgreSQL 18.3 internal-platform performance.
+- Feishu/wiki and PPT were not synchronized in this pass.

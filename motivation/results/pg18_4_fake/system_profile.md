@@ -4,6 +4,8 @@
 
 ## 1. 实验定位
 
+当前项目口径更新：本文件是 PG18.4 本地同构 fake-model 历史画像，只用于预演阶段计时、写回边界和早期变量选择。正式主线已经收敛为“数据库驱动 AI workload 的分布式数据执行与存储协同优化”，真实瓶颈归因应优先引用 `motivation/results/gpu/` 下的 GPU-backed 结果。
+
 本文件记录 PG18.4 本地同构链路上的系统画像实验，用于测试系统瓶颈并寻找可优化点。
 
 它回答的问题是：
@@ -184,7 +186,7 @@ foreach ($executor in @('python','ray_actor')) {
 
 也就是说，用户偏好的“对系统做调优”是更匹配当前目标的主线。但这个“系统”不能现在就写死为 Daft+Ray+Lance 产品化适配，应该表述为：
 
-> 基于 Ray/Daft/Lance 类外部执行链路的数据库 AI 算子批处理系统。
+> 面向数据库驱动 AI workload 的分布式数据执行与存储协同系统。
 
 ## 9. 严谨性自检
 
@@ -209,5 +211,5 @@ foreach ($executor in @('python','ray_actor')) {
 1. 将写回从 `embedding_json TEXT` 扩展到 pgvector `vector(128)` 对照。
 2. 增加 `total_rows = 1024, 4096, 16384` 的缩放曲线，但 fine 组需要谨慎控制，避免 Windows sleep 粒度主导全部结论。
 3. 增加真实 CPU embedding 小模型或本地模型服务，验证 fake operator invocation 信号是否保留。
-4. 如果 GPU 环境可用，尽早补一组 small-scale GPU-backed E2E profile，复用相同阶段计时，重点看 batch size、actor 并行度、in-flight、queue wait、GPU 利用率和 writeback；这组实验用于校准外部链路画像，不把 GPU 迁移或 GPU kernel 优化作为主要实验线。
+4. 如果 GPU 环境可用，尽早补一组 small-scale GPU-backed E2E profile，复用相同阶段计时，重点看 batch size、actor 并行度、in-flight、queue wait、GPU 利用率和 writeback；这组实验用于校准数据执行与存储链路画像，不把 GPU 迁移或 GPU kernel 优化作为主要实验线。
 5. 最终在公司 PostgreSQL 18.3 内部验证平台复验。

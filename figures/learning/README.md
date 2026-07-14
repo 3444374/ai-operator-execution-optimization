@@ -1,6 +1,6 @@
 # Learning Figures
 
-本目录保存学习讲解文档引用的图表。
+本目录保存学习讲解文档引用的项目级图表。后续 learning、开题、中期汇报和毕业论文如需要复用这些图，应从根目录 `figures/` 引用，不再在 `learning/figures/` 维护单独副本。
 
 ## 当前图表
 
@@ -17,7 +17,7 @@
 GPU embedding 链路拆分图由下面脚本生成：
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\make_chain_breakdown_figures.py
+.conda\pg-ai-profile\python.exe figures\scripts\make_chain_breakdown_figures.py
 ```
 
 图表解释写在：

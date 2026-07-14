@@ -8,7 +8,7 @@
 |---|---|---|---|
 | 开题报告与开题汇报 | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 开题报告正文、开题 PPT 内容摘要、最终汇报口径 | `opening/feishu/opening_report_wiki.md`、`opening/report/`、`opening/slides/`、`opening/outline.md` |
 | 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 动机实验、可行性实验、阶段画像、实验结论边界 | `opening/feishu/motivation_feasibility_wiki.md`、`motivation/results/`、`feasibility/results/`、`learning/experiment_walkthrough.md` |
-| 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 开题汇报 PPT 在线版 | `opening/slides/opening_defense_20260712.pptx`、`opening/slides/opening_ppt.md` |
+| 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 旧版 PPT 在线版，当前内容和形式先作废，后续需基于新报告重做 | `opening/slides/README.md`、`opening/slides/opening_ppt.md` |
 
 ## 同步规则
 
@@ -24,6 +24,7 @@
 - 普通飞书文档 / wiki 文档：使用 `lark-doc`。
 - 如果飞书文档内嵌 Base / 多维表格，再切到 `lark-base`。
 - 如果后续需要直接生成或编辑飞书幻灯片，再使用 `lark-slides`。
+- `docs +update --doc-format markdown --command overwrite` 不会把本地 Markdown 图片路径自动上传为飞书图片；报告中引用 `opening/assets/` 下的 PNG 时，覆盖写入后需要继续用 `docs +media-insert --file ... --selection-with-ellipsis ...` 插入真实图片块。
 - 每次实际写入飞书后，在 `opening/logs/project_log.md` 记录同步时间、同步目标和本地来源文件。
 
 ## 实验内容记录标准

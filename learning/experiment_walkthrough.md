@@ -57,6 +57,7 @@
   - [13.5 对开题有什么用](#135-对开题有什么用)
   - [13.6 和三个场景的关系](#136-和三个场景的关系)
   - [13.7 Ray 的价值为什么还要继续测](#137-ray-的价值为什么还要继续测)
+- [14. pgai SQL 触发面冒烟验证：从 job table 模拟到真实 SQL surface](#14-pgai-sql-触发面冒烟验证从-job-table-模拟到真实-sql-surface)
 
 ## 0. 先建立全局图景
 
@@ -1245,9 +1246,9 @@ coalesced:
 - 这不是 PostgreSQL 18.3 内部平台结果。
 - 这不是 vLLM 或 Ray Serve 结果。
 - 当前 GPU utilization 只是 `nvidia-smi` 快照，不是连续 GPU profile。
-- 384 维真实 embedding 还没有写入 pgvector，因为当前表里的 vector 列是 `vector(128)`。
+- 当时 384 维真实 embedding 还没有写入 pgvector；2026-07-14 已补同链路 `vector(384)` 写回对比，见第 14.8 节。
 
-下一步最自然的实验是改出 384 维 pgvector 写回表，再比较 JSON text 和 pgvector 写回。
+下一步在当时是改出 384 维 pgvector 写回表，再比较 JSON text 和 pgvector 写回；这一步现在已经完成。
 
 ## 10. CPU/GPU 对比：这些时间到底包括什么
 
@@ -1255,8 +1256,8 @@ coalesced:
 
 学习图：
 
-- `learning/figures/cpu_gpu_coalesced_e2e_20260712.svg`
-- `learning/figures/fine_vs_coalesced_e2e_20260712.svg`
+- `../figures/learning/cpu_gpu_coalesced_e2e_20260712.svg`
+- `../figures/learning/fine_vs_coalesced_e2e_20260712.svg`
 
 这一节专门解释你问的那个问题：
 
@@ -1495,7 +1496,7 @@ GPU-backed model service 不等于自动变快
 
 - 还没有拆 endpoint 内部时间：tokenization、CPU 到 GPU tensor transfer、GPU forward、GPU 到 CPU、JSON serialization。
 - 还没有用 Ray Serve / vLLM 这种更接近生产的模型服务。
-- 还没有把 384 维真实 embedding 写进 pgvector，因为当前表是 `vector(128)`。
+- 当时还没有把 384 维真实 embedding 写进 pgvector；2026-07-14 已通过 `vector(384)` 写回对比补齐。
 - GPU utilization 只是 `nvidia-smi` 快照，不是连续 profile。
 
 ### 10.10 不能声称的结论
@@ -1657,26 +1658,26 @@ e2e_s 也可能约等于 1 秒多一点
 图放在：
 
 ```text
-learning/figures/
+figures/learning/
 ```
 
 这三张图各讲一个问题。图下面的文字只解释怎么看图，图本身只保留标题、坐标轴、图例和数值。
 
 **图 1：1024 行时，fine 和 coalesced 的端到端差异**
 
-![1024 rows: e2e time by invocation granularity](figures/gpu_embed_1024_granularity_e2e_20260712.svg)
+![1024 rows: e2e time by invocation granularity](../figures/learning/gpu_embed_1024_granularity_e2e_20260712.svg)
 
 这张图看横轴的两个柱子：`coalesced` 是 4 次模型 endpoint 调用，`fine` 是 1024 次模型 endpoint 调用。纵轴是端到端时间，单位是秒。它说明逐行调用真实 GPU embedding endpoint 会把整条链路显著拖慢。
 
 **图 2：4096 行 coalesced 下，不同 executor 的端到端时间**
 
-![4096 rows coalesced: e2e time by executor](figures/gpu_embed_4096_executor_e2e_20260712.svg)
+![4096 rows coalesced: e2e time by executor](../figures/learning/gpu_embed_4096_executor_e2e_20260712.svg)
 
 这张图比较 `python`、`ray_task`、`ray_actor`。三根柱子很接近，所以当前不能说 Ray 已经明显更快。更严谨的结论是：在单个本地 GPU endpoint、16 个 coalesced batch 的设置下，Ray 和 Python 端到端接近；Ray 的价值需要在多 endpoint、路由、反压、worker 写回等后续实验里验证。
 
 **图 3：16384 行时，AI operator 和 writeback 都已经很大**
 
-![16384 rows ray_actor coalesced: stage time](figures/gpu_embed_16384_stage_breakdown_20260712.svg)
+![16384 rows ray_actor coalesced: stage time](../figures/learning/gpu_embed_16384_stage_breakdown_20260712.svg)
 
 这张图里的 `AI operator` 不是 PostgreSQL 内部算子，也不是 GPU kernel。它指数据库外部的 AI 算子执行阶段：
 
@@ -1876,3 +1877,256 @@ Ray 主要降低了 AI operator 阶段
 
 > 单 endpoint 下 Ray 和 Python 接近，不能证明 Ray 已经有效；但双 endpoint 初步实验显示，Ray task/actor 能通过并发路由降低外部 AI operator 阶段耗时。这支持后续继续研究多模型服务副本、请求路由、反压和 worker 写回，但当前还不能声称 Ray 在所有场景下都更优。
 
+## 14. pgai SQL 触发面冒烟验证：从 job table 模拟到真实 SQL surface
+
+正式记录：
+
+```text
+feasibility/results/pgai_sql_smoke_20260714.md
+deploy/pgai/README.md
+```
+
+### 14.1 为什么要做
+
+前面的 PG18.4 画像脚本确实用了 PostgreSQL 读写数据，但 `AI_EMBED` 触发是
+`ai_operator_jobs` 表里的模拟任务。也就是说，它像这样：
+
+```text
+Python 脚本插入一条 job
+  -> Python/Ray 从 documents 读文本
+  -> 外部模型服务生成 embedding
+  -> Python 写回 document_embeddings
+```
+
+这能测外部执行链路，但还不是“在 SQL 里真实调用 AI 算子”。pgai 冒烟验证补的是
+触发面：
+
+```sql
+SELECT ai.ollama_embed('all-minilm', text)
+FROM pgai_documents;
+```
+
+它证明 PostgreSQL SQL surface 可以直接调用 embedding 函数，并把结果写入
+pgvector。
+
+### 14.2 数据放在哪里
+
+这次环境在 `deploy/pgai/`，和原来的 PostgreSQL 18.4 容器隔离。
+
+```text
+ai-operator-pgai-db       PostgreSQL 17.10 + ai + vector
+ai-operator-pgai-ollama   Ollama model service
+```
+
+`all-minilm` 模型不是放在项目 `.cache/` 里，而是放在 Docker named volume：
+
+```text
+ai-operator-pgai_pgai_ollama
+```
+
+如果 Docker Desktop 数据盘已经迁到 D 盘，那么模型物理上在 Docker 的 D 盘数据盘
+里；它不在 Git 工作区，也不会进入项目版本管理。
+
+### 14.3 这次验证了什么
+
+本地验证事实：
+
+| 项目 | 结果 |
+|---|---|
+| PostgreSQL | 17.10 |
+| pgai extension | `ai 0.11.2` |
+| pgvector extension | `vector 0.8.4` |
+| Ollama model | `all-minilm:latest`, 45 MB |
+| SQL output | 3 行 embedding，均为 384 维 |
+
+最小链路是：
+
+```text
+pgai_documents.text
+  -> SQL 调用 ai.ollama_embed('all-minilm', text)
+  -> Ollama 返回 embedding
+  -> PostgreSQL 写入 vector(384)
+```
+
+这说明“真实 SQL 触发 embedding”这个表面已经跑通。
+
+### 14.4 不能过度解释什么
+
+不能说：
+
+- 这是 PostgreSQL 18.4 结果，因为 pgai 容器跑的是 PostgreSQL 17.10。
+- 这是 PostgreSQL 18.3 内部平台结果。
+- 这是 GPU-backed 结果，因为当前 Ollama 日志显示 CPU inference。
+- 这是性能结论，因为只跑了 3 行 smoke data。
+
+可以说：
+
+> pgai 隔离环境已经证明 SQL 触发的 embedding 函数和 pgvector 写回能跑通。下一步可以把它作为真实 SQL surface baseline，和当前 `ai_operator_jobs` 模拟触发方式区分开。
+
+### 14.5 对后续代码有什么用
+
+后续可以给 `code/scripts/postgres_ai_operator_profile.py` 增加一个触发面参数：
+
+```text
+--operator-surface job_table|pgai_sql
+```
+
+其中：
+
+- `job_table`：保留当前模拟触发，用于外部 Ray/Python 链路画像；
+- `pgai_sql`：使用 `ai.ollama_embed(...)` 这类 SQL 函数，作为真实 SQL 触发面的 baseline。
+
+注意，`pgai_sql` 不一定是最终论文主线。它的作用是补齐“真实数据库 AI 算子触发”的
+验证面；真正的优化问题仍然是 batch、Ray task/actor、模型服务队列、backpressure、
+fan-in 和 writeback。
+
+### 14.6 2026-07-14 触发面验证补充
+
+补充记录：
+
+```text
+feasibility/results/trigger_surface_validation_20260714.md
+code/scripts/pgai_sql_operator_profile.py
+```
+
+这次依次做了三件事：
+
+1. 原 PG18.4 job-table 链路健康检查：256 行 fake embedding smoke 成功。
+2. pgai SQL 触发面 1024 行 profile：4 条 SQL batch，每条 256 行，写入
+   1024 条 `vector(384)`。
+3. 小规模触发面对比：`job_table` 和 `pgai_sql` 都能用 Ollama `all-minilm`
+   生成 1024 条 embedding。
+
+关键结果：
+
+| Trigger surface | Rows | Model | Writeback | e2e_s | rows/s |
+|---|---:|---|---|---:|---:|
+| `job_table` | 1024 | Ollama HTTP `/v1/embeddings` | JSON text | 7.805 | 131.197 |
+| `pgai_sql` | 1024 | SQL `ai.ollama_embed` | `vector(384)` | 40.964 | 24.998 |
+
+这张表不能用来声称 pgai SQL 更慢。原因是两个路径不等价：
+
+- `job_table` 跑在 PostgreSQL 18.4，写 JSON 文本。
+- `pgai_sql` 跑在 PostgreSQL 17.10，写 `vector(384)`。
+- `pgai_sql_operator_profile.py` 目前没有把 SQL embedding 和 pgvector writeback 分开计时。
+- 两组都只跑了 1 次 formal repeat。
+
+它能说明的是：
+
+> 现有模拟触发链路没有坏；真实 SQL 触发面也能跑 1024 行；后续如果要做正式比较，需要统一 PostgreSQL 版本、数据、模型服务、写回格式和重复次数。
+
+
+## 14.7 2026-07-14 pgai 集成后的 GPU-backed 关键复测
+
+正式记录：
+
+```text
+motivation/results/gpu/pgai_integrated_key_rerun_20260714.md
+motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
+```
+
+这次复测和前面的 pgai SQL 冒烟验证不是同一类结果。pgai SQL 冒烟验证证明：
+
+```text
+SQL 里可以调用 ai.ollama_embed(...)
+```
+
+GPU-backed 关键复测证明：
+
+```text
+PostgreSQL 18.4 本地预演
+  -> job-table 触发外部 AI_EMBED 链路
+  -> GPU embedding endpoint
+  -> JSON text 写回 PostgreSQL
+```
+
+这条链路里，模型 endpoint 明确返回 `device=cuda`，所以它可以放到
+`motivation/results/gpu/`。但它仍然不是 PostgreSQL 18.3 内部平台结果，也不是
+pgai SQL 性能结论。
+
+关键数字：
+
+| 问题 | 对照 | 结果 |
+|---|---|---|
+| batch 粒度 | 1024 行 coalesced vs fine | 0.550 s vs 20.614 s |
+| 写回影响 | 4096 行 no-writeback vs JSON writeback | 1.944 s vs 3.420 s |
+| 双 endpoint | Ray actor 1 endpoint vs 2 endpoints | 3.621 s vs 2.862 s |
+| 数据规模 | 4096 行 vs 8192 行 JSON writeback | 3.420 s vs 7.100 s |
+
+怎么读这些数字：
+
+- `model_request_wall_s` 表示外部模型请求在墙钟时间上的跨度。
+- `operator_wall_s` 表示 AI operator 阶段整体耗时。
+- `writeback_s` 表示把 embedding 写回 PostgreSQL 的耗时。
+- `e2e_s` 是从数据库读、模型调用到写回结束的端到端时间。
+
+这次最重要的观察是：
+
+> GPU 模型端点接入后，模型阶段变快，写回在 4096/8192 行时变成全链路里的大块时间。
+
+但不能过度解释：
+
+- 这不是多 GPU 结果；`8000` 和 `8001` 是同一张 RTX 5070 上的两个本地服务副本。
+- 这组关键复测本身不是 384 维 pgvector 写回结果；它先把 384 维 embedding 写成 JSON text。
+- 这不是最终优化收益，只是动机画像和关键复测。
+
+后续已补齐同一条 GPU-backed 链路上的三种落盘方式：
+
+```text
+no writeback
+JSON text writeback
+pgvector vector(384) writeback
+```
+
+## 14.8 2026-07-14 pgvector(384) 写回对比
+
+正式记录：
+
+```text
+motivation/results/gpu/pgvector_writeback_20260714.md
+motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
+figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png
+```
+
+这次实验只改变 `writeback_mode`，其他条件保持一致：
+
+```text
+PostgreSQL 18.4 本地预演
+  -> job-table 触发外部 AI_EMBED 链路
+  -> Ray actor
+  -> 1 个 CUDA embedding endpoint
+  -> 4096 行、16 个 coalesced batch
+  -> no writeback / JSON text / pgvector vector(384)
+```
+
+注意：这次没有切到 Python worker，三组都使用 `--executor ray_actor`。
+
+数据库核对也做了：
+
+```text
+document_embeddings.embedding_vector = vector(384)
+非空 embedding_vector 行数 = 4096
+min(vector_dims(embedding_vector)) = 384
+max(vector_dims(embedding_vector)) = 384
+```
+
+formal repeat 均值：
+
+| writeback_mode | e2e_s | model_request_wall_s | operator_wall_s | writeback_s | rows/s |
+|---|---:|---:|---:|---:|---:|
+| none | 1.635 | 1.518 | 1.609 | 0.000 | 2505.0 |
+| json_text | 3.198 | 1.516 | 1.603 | 1.567 | 1280.8 |
+| pgvector | 2.524 | 1.512 | 1.600 | 0.897 | 1623.2 |
+
+怎么读：
+
+- 三组的 `model_request_wall_s` 和 `operator_wall_s` 几乎不变，说明模型服务阶段不是差异来源。
+- JSON text 写回平均 `1.567 s`。
+- pgvector `vector(384)` 写回平均 `0.897 s`。
+- pgvector 写回比 JSON text 写回低，但它仍然是端到端时间里的可见成本。
+
+不能过度解释：
+
+- 这仍然是 PG18.4 本地预演，不是 PostgreSQL 18.3 内部平台结果。
+- 这不是 pgai SQL 性能结果；它用的是 job-table profile 链路，因为这个链路能拆开阶段时间。
+- 不能说 pgvector 在所有设置下都比 JSON text 快；这里只覆盖 4096 行、384 维、本地 PostgreSQL、单 endpoint、一个 write batch 设置。

@@ -11,6 +11,7 @@
 ## 边界
 
 - 不在 `code/` 堆临时 CSV、原始实验结果或一次性 notebook。
+- 绘图、图表复现和素材筛选脚本归 `figures/scripts/`；`code/scripts/` 只放实验主体、服务启动、数据采集和 profiling 入口。
 - 连接验证结果归 `feasibility/results/`。
 - 系统画像、瓶颈定位和动机结果归 `motivation/results/`。
 

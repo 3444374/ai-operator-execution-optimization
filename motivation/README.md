@@ -2,9 +2,11 @@
 
 本目录回答一个核心问题：
 
-> 在数据库 AI 算子触发后，外部服务链路是否产生足够严重、可分解、可优化的损耗。
+> 在数据库驱动 AI workload 触发后，数据执行与存储链路是否产生足够严重、可分解、可优化的损耗，从而说明这个课题值得做。
 
-当前主动机应来自生产式 GPU-backed E2E profile：数据库触发 AI 算子，外部 Ray/Daft/Lance-like 链路调用 GPU-backed 模型服务，结果写回 PostgreSQL / pgvector 或 Lance。CPU/fake 结果只作为历史预研、脚本调试和谨慎消融，不能直接外推为真实 GPU 链路瓶颈。
+当前主动机应来自生产式 GPU-backed E2E profile：数据库触发 AI workload，数据进入 Daft/Arrow、Ray task/actor、GPU-backed 模型服务和 PostgreSQL / pgvector / Lance sink。CPU/fake 结果只作为历史预研、脚本调试和谨慎消融，不能直接外推为真实 GPU 链路瓶颈。
+
+本目录不承担完整研究实验规划。后续真正围绕三项研究内容做优化、消融、小改动调优和结果记录时，使用根目录 `experiments/`。
 
 进入本目录前先读 `AGENTS.md`。正式结果优先读 `results/README.md`。
 
@@ -12,7 +14,7 @@
 
 | 路径 | 作用 |
 |---|---|
-| `plans/` | 场景、路线和实验设计 |
+| `plans/` | 动机测试相关的场景、路线和实验设计 |
 | `benchmarks/` | 动机实验脚本 |
 | `results/gpu/` | 真实 GPU-backed E2E 主动机结果，当前优先级最高 |
 | `results/pg18_4_fake/` | PG18.4 本地同构 fake-model 历史结果 |
@@ -20,9 +22,9 @@
 
 ## 阅读顺序
 
-1. `plans/integration.md`：看真实 AI-SQL-compatible 算子、外部 worker、GPU 模型服务和写回链路怎么组织。
+1. `plans/integration.md`：看真实 AI-SQL-compatible 算子、worker、GPU 模型服务和写回链路怎么组织，用于建立动机画像。
 2. `plans/workloads.md`：看 `AI_EMBED`、`AI_FILTER/AI_CLASSIFY`、`AI_COMPLETE` 三类 baseline 和后续 GPU 动机实验计划。
-3. `results/gpu/README.md`：真实 GPU-backed 主动机结果入口，优先读链路拆分和 multi-endpoint Ray 动机测试。
+3. `results/gpu/README.md`：真实 GPU-backed 主动机结果入口，优先读 pgai 集成后的关键复测和 pgvector(384) 写回对比。
 4. `results/pg18_4_fake/system_profile.md`：理解 PG18.4 本地同构 fake-model 链路中的早期系统信号。
 5. `results/fake_cpu/analysis.md`：只在追溯历史 fake/CPU 预研时阅读。
 
@@ -74,3 +76,4 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 - `results/README.md` 是否需要登记新结果；
 - 根 `README.md`、`PROJECT_INDEX.md` 是否需要同步阅读路径；
 - `learning/experiment_walkthrough.md` 是否需要补初学者讲解。
+- 如果实验已经从“证明值得做”进入“验证方法是否有效”，需要迁入或同步到 `experiments/`。
