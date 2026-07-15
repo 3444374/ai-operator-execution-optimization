@@ -7,6 +7,8 @@
 | 图 | 位置 | 类型 | 核心结论 | 当前状态 |
 |---|---|---|---|---|
 | 课题总体研究框架图 | 报告第 3 节、PPT 技术路线/研究内容页、learning 总览、中期和论文绪论 | solution overview / system architecture | 数据库驱动 AI workload 进入 Daft/Arrow、Ray、GPU model service 和 sink 后形成可观测、可消融的数据执行与存储协同链路 | 已维护于 `figures/architecture/` |
+| 研究方案图 | 报告第 4 节、PPT 研究方案页、论文方法章节开头 | research plan / method overview | 三类 AI workload 先做分阶段性能剖析，再通过计划层数据组织、运行层提交路由和服务端动态批处理形成三层上游执行策略，并用写回纳入端到端评价 | 已维护于 `figures/architecture/cross_layer_method_framework.*` |
+| 运行时策略闭环图 | 报告第 4 节、PPT 策略机制页、论文方法章节 | mechanism figure / running example | 用一个 `AI_EMBED` 查询解释观测信号、`K_max`、`routing policy`、服务端 `micro-batch` 和写回 guardrail 如何协同，不重切数据库侧已物化 batch | 已维护于 `figures/architecture/runtime_strategy_control_loop.*` |
 | 数据库到 GPU 再到写回的链路阶段时延图 | 报告第 4 节、PPT 可行性页、飞书实验依据、论文动机实验 | staged latency breakdown | 真实 GPU-backed 链路中，GPU request、fan-in 和 sink writeback 都会影响端到端时间 | 已维护于 `figures/data/report_main/02_gpu_stage_latency_stack.*` |
 | 调用粒度与 workload 场景对比图 | 报告第 4 节、PPT 动机页、答辩追问 | motivation evidence | fine/coalesced、batch、endpoint routing 和 writeback 对 AI workload 的端到端表现有实测影响 | 主图在 `figures/data/report_main/`，补充图在 `figures/data/backup/` |
 
@@ -25,4 +27,4 @@
 - 报告和 DOCX 优先使用 SVG，PPT 和飞书预览优先使用 PNG。
 - 实验结果图必须来自真实 CSV、明确的数据表或报告中已列出的正式均值。
 - 不用低清截图作为正式图。
-- 总体框架图和技术路线图应保持术语一致：少用口语化的“外部链路”，优先使用“执行过程”“执行路径”“阶段画像”“模型服务感知批处理执行”“写回协同”等正式表述。
+- 总体框架图和技术路线图应保持术语一致：少用口语化的“外部链路”，优先使用“执行过程”“执行路径”“分阶段性能剖析”“模型服务感知批处理执行”“写回瓶颈判定”等正式表述。

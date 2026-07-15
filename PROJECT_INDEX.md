@@ -1,3 +1,14 @@
+# Recent Figure Assets
+
+| File | Purpose | When to read/use |
+|---|---|---|
+| `figures/architecture/runtime_strategy_rule_table.png` / `.svg` | 信号触发候选策略规则表 | 与闭环图配套使用，说明观测信号、候选动作和保护约束；不作为已验证结论 |
+| `figures/architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时信号驱动的上游执行闭环图 | 当前首选策略机制图；用一个 AI_EMBED SQL 例子说明计划层 batch/partition、运行层 K_max/routing/backpressure、服务端 micro-batch 的分工；不重切数据库侧已物化批次 |
+| `figures/scripts/generate_runtime_strategy_control_loop.py` | 运行时策略闭环图生成脚本 | 重新生成策略机制图 PNG/SVG，并执行边框、箭头和禁用术语自检 |
+| `figures/audit/runtime_strategy_control_loop_audit.md` | 运行时策略闭环图审计记录 | 检查新策略机制图的角色、旧图关系、遮挡、箭头和禁用术语 |
+| `figures/audit/top_venue_strategy_figure_design_notes.md` | 顶会系统论文方法图设计备忘 | 重绘策略设计图前阅读，采用 control-loop + running example + compact rule table |
+| `figures/audit/strategy_figure_micro_design_points.md` | 策略图小机制设计点与论文下载清单 | 重绘策略图前拆分 batch/partition、反压、路由、写回约束和规则表等小图 |
+| `figures/audit/local_reference_figure_reading_notes.md` | 本地 PDF 图形阅读笔记 | 记录已下载论文中的机制图经验，并合并到运行时控制闭环图方案 |
 # PROJECT_INDEX.md
 
 本文件是项目索引，供 Codex 快速定位材料。先读 `AGENTS.md`，再按任务类型读本文件中的对应材料。
@@ -75,6 +86,9 @@
 | `opening/README.md` | 开题工作区入口 | 了解开题材料分布和同步规则 |
 | `opening/navigation.md` | 开题材料导航 | 不知道开题材料在哪时读 |
 | `opening/report/opening_report.md` | 开题报告正文 | 写报告、和导师沟通、定方向 |
+| `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级、本地 PDF 子集入口和引用边界 |
+| `opening/literature/gpu_scheduler_data_placement_supplement_20260715.md` | GPU 调度与数据放置补充调研 | 查看策略控制器设计的前沿系统依据、可借鉴思想和后续精读清单 |
+| `opening/literature/reference/README.md` | 本地已下载 PDF 子集索引 | 查看当前部分参考文献 PDF、页数、初步识别和用途 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |
 | `code/scripts/README.md` | 脚本详细说明 | 运行 PostgreSQL 画像、pgai SQL profile、本地 embedding server |
 | `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
@@ -113,10 +127,12 @@
 |---|---|
 | `research_design_catalog.md` | 课题研究方案候选目录：28 个候选方案的六维评估、分阶段路线图、风险分析和 Baseline 设计考量 |
 | `baseline_reference.md` | 实验 Baseline 参考矩阵：从 CCF-A 文献中提取的各方向最优 baseline 策略（GPU 调度/写回/数据组织/跨层决策）|
+| `strategy_design_literature_basis.md` | 策略设计思路的文献依据与边界：区分可借鉴思想、baseline/边界和本文自己的策略定义 |
+| `strategy_design_implementation_reference.md` | 策略设计与系统实现参考：把 Ray、vLLM/Ray Serve/Triton、GPU 数据放置和 DB AI 算子机制沉淀为三层策略、实验变量和实现优先级 |
 | `data_organization_batching.md` | RC1 实验计划：Grid search、workload 对比、selectivity-aware 策略、模型 batch scaling 前置实验 |
 | `service_scheduling_backpressure.md` | RC2 实验计划：K_max sweep、routing 策略、adaptive vs static K_max、vLLM baseline 前置实验 |
 | `sink_writeback_coordination.md` | RC3 实验计划：B 系列工程 baseline（UPSERT vs COPY 等）、三路写回架构对比、sink 对照 |
-| `cross_layer_killer_experiment.md` | 跨层联合优化实验计划（论文核心 claim）：BL1-BL6 Killer Experiment 矩阵、代价模型、消融瀑布、跨 workload 泛化 |
+| `cross_layer_killer_experiment.md` | 端到端效果评估增强实验计划：在上游阶段调优完成后，用 BL1-BL6、代价模型、消融瀑布和跨 workload 泛化分析阶段间耦合 |
 
 所有实验计划遵循从 vLLM/Orca/TurboVecDB/GaussML/FlexPushdownDB 五篇 CCF-A 论文提取的共同方法论：曲线 > 单点、先暴露瓶颈再优化、同硬件公平 baseline、消融拆开、诚实报告边界、统计严谨。
 
@@ -259,7 +275,7 @@ python feasibility/benchmarks/analyze_results.py \
 
 1. AI workload 感知的数据组织与批处理构造方法。
 2. GPU 推理服务状态感知的 Ray 并行调度与反压控制方法。
-3. AI workload 执行链路中的持久化边界分析与轻量写回优化（不作为独立方法贡献，为 RC1↔RC2 跨层协同提供边界确认）。
+3. AI workload 执行链路中的写回瓶颈判定与轻量写回优化（不作为独立方法贡献，用于判断上游调优收益是否被持久化阶段吞噬）。
 
 具体优化方向尚未最终锁定。当前必须围绕数据库驱动 AI 工作负载寻找真实瓶颈，通过动机测试、可行性测试和正式研究实验收敛方向。Object/fan-in/coalescing 是早期入口；task/actor 并行度、GPU 资源配比、模型服务路由与 backpressure、写回协同是正在验证的扩展轴。
 
@@ -284,7 +300,7 @@ python feasibility/benchmarks/analyze_results.py \
 
 1. P0：接入 vLLM / Ray Serve 替代手动 HTTP endpoint（GPU baseline 升级到 S 级）；完成 B 系列写回工程实验（COPY + unlogged staging + deferred HNSW index）。
 2. P1：各研究内容独立 grid search——RC1 的 `batch_size × partition_count`、RC2 的 `K_max × endpoint_count`、RC3 的三路写回架构对比。
-3. P2：Killer Experiment（BL1-BL6），验证独立最优组合 vs 跨层联合最优的核心假设。
+3. P2：端到端效果评估，逐步加入数据组织调优、模型服务调度调优和写回瓶颈判定；如阶段间耦合明显，再补充独立最优组合 vs 全链路配置的增强对照。
 4. 扩展到 `AI_FILTER/AI_CLASSIFY`（simulated）和 `AI_COMPLETE`（simulated），验证方法跨 workload 泛化。
 5. 后续进入 PostgreSQL 18.3 内部平台复测。
 

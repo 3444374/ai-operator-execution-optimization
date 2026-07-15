@@ -19,14 +19,21 @@ Solution Overview / System Architecture。
 - 将”观测与策略层”与下方四个执行阶段对齐，四根下指箭头落在对应阶段中心线。
 - 调整阶段编号位置，避免圆形编号越出边框或遮挡 `GPU model service` 等较长标题。
 
-## 本轮修改（2026-07-14 第二次，同步开题报告 §3.2 方向精炼）
+## 本轮修改（2026-07-15，同步三层策略设计）
 
-开题报告将 RC1 从”数据组织与批处理调度”精炼为”数据组织与批处理**构造**”（调度/反压移至 RC2），将 RC3 从”结果汇聚与持久化协同”精炼为”持久化**边界确认**与轻量优化”（不作为独立方法创新点）。架构图同步更新：
+开题报告将策略设计收敛为三层上游执行策略：计划层确定数据库侧数据批量与分区，运行层控制 Ray 提交门控、路由和反压，服务端利用请求队列形成动态 `micro-batch`。写回阶段用于判断上游调优收益是否被持久化成本吞噬，不写成当前独立主贡献。架构图同步更新：
 
-- RC1 标题：`数据组织与批处理调度` → `数据组织与批处理构造`；子项新增 `AI workload 特征感知`、`operator 粒度`、`object 合并与 fan-in 形态`。
-- RC2 子项：`bounded in-flight` → `bounded in-flight 与反压`，匹配报告 §3.2 新增的反压控制方法论。
-- RC3 标题：`结果汇聚与持久化协同` → `持久化边界确认与轻量优化`；子项改为 `writeback 瓶颈确认`、`driver / worker / queue 写回`、`Lance / pgvector / PostgreSQL`，反映边界确认定位。
-- 图注更新：明确说明 RC1↔RC2 跨层协同为核心方法贡献，RC3 为边界确认而非独立方法创新。
+- 主链路阶段标题尽量中文化，仅保留 `PostgreSQL`、`Daft + Arrow`、`Ray`、`GPU`、`Lance`、`pgvector` 等必要技术名。
+- 观测与策略层新增 `micro-batch`，并将 `stage time / queue wait` 等泛化标签改为中文指标。
+- 研究内容 2 明确包含 `K_max` 门控、`endpoint routing` 和服务端 dynamic `micro-batch`。
+- 研究内容 3 标题改为 `写回瓶颈判定与轻量优化`，子项改为 `writeback ratio 判定`、`driver / worker / queue 写回`、`Lance / pgvector / PostgreSQL`。
+- 图注更新：明确研究内容 1、2 分别关注计划层数据组织、运行层入口调度与服务端动态批处理；研究内容 3 用于判定写回是否吞噬上游收益。
+
+## 本轮修改（2026-07-15 第二次，修正颜色语义）
+
+- 底部三个研究内容卡片统一改为中性色，避免读者误以为它们和上方蓝/绿/橙/紫系统阶段存在一一颜色映射。
+- 研究内容 2 标题从 `GPU 服务感知 Ray 调度` 改为 `运行层调度与服务端批处理`，更准确表达当前方案横跨 Ray 入口调度、endpoint routing 和模型服务侧 `micro-batch`。
+- 保留上方系统阶段的颜色编码：蓝色表示数据层，绿色表示 Ray 执行层，橙色表示 GPU 模型服务，紫色表示结果存储。
 
 ## 质检结果
 
@@ -44,5 +51,5 @@ Solution Overview / System Architecture。
 ## 后续可改进
 
 - 用于最终 PPT 时，可根据模板版心微调画布比例，并把图注改为 PPT 页脚或讲稿备注。
-- 用于 Word 正式报告时，可优先插入 SVG，并在正文图题中解释 `Database source`、`Daft + Arrow`、`Ray execution`、`GPU model service` 和 `AI data sink` 的关系。
+- 用于 Word 正式报告时，可优先插入 SVG，并在正文图题中解释数据库入口、`Daft + Arrow` 数据层、`Ray` 执行层、`GPU` 模型服务和 AI 结果存储的关系。
 - 如果后续 Lance 实验结果成为重点，可将 `AI data sink` 模块拆分为 Lance 与 PostgreSQL / pgvector 两个并列落点。

@@ -25,6 +25,39 @@
 | 分布式 SQL 优化 | Spark SQL performance tuning docs | 官方文档 | 已整理入口 | 支撑 partition、shuffle coalescing、join strategy 是成熟问题 |
 | 数据库侧工业背景 | OceanBase Mercury / Bacchus 等论文 | 论文 | 待核验细节 | 作为分布式数据库、列式/向量化、写回和资源管理背景 |
 
+## GPU 调度与数据放置补充调研
+
+已新增补充调研文件：
+
+```text
+opening/literature/gpu_scheduler_data_placement_supplement_20260715.md
+```
+
+该文件用于回答策略控制器设计从哪些前沿系统思想中来，重点覆盖：
+
+- GPU / LLM 推理服务调度：continuous batching、iteration-level scheduling、SLO-aware scheduling、KV/prefix reuse。
+- 异构数据管线：Ray / Ray Data 中的 task、actor、partition-at-a-time 和 CPU/GPU pipeline。
+- GPU 数据库算子与数据放置：GPU-resident 结构、materialization、数据是否值得搬到 GPU。
+- 数据库 AI 算子：Cortex AISQL、GaussML、Galois、LEADS、NeurDB 等 AI-aware 查询执行背景。
+
+当前定位是“策略依据与后续精读清单”，不是最终综述；其中未下载或未逐篇核验的条目仍需标注为待核验。
+
+## 本地已下载 PDF 子集
+
+用户已将部分参考文献 PDF 下载到：
+
+```text
+opening/literature/reference/
+```
+
+该目录当前只是**部分文献子集**，用于精读、看论文机制图和核验引用细节；不能视为完整文献库。目录索引见：
+
+```text
+opening/literature/reference/README.md
+```
+
+后续继续下载 PDF 时，先追加登记到该 README，再决定是否补充精读笔记。
+
 ## 开题优先精读顺序
 
 1. Snowflake Cortex AISQL paper / docs：回答“为什么数据库 AI 算子是现实问题”。

@@ -74,7 +74,7 @@
 
 1. P0：接入 vLLM / Ray Serve（GPU baseline 升级到 S 级）；完成 B 系列写回工程实验（COPY + unlogged staging + deferred HNSW index，写回 baseline 升级到 A 级）。
 2. P1：各研究内容独立 grid search——RC1 的 `batch_size × partition_count`、RC2 的 `K_max × endpoint_count × routing`、RC3 的三路写回架构对比（driver fan-in / worker-direct / queue-worker）。
-3. P2：Killer Experiment（BL1-BL6），验证独立最优组合 vs 跨层联合最优的核心假设。
+3. P2：端到端效果评估，逐步加入数据组织调优、模型服务调度调优和写回瓶颈判定；如阶段间耦合明显，再补充独立最优组合 vs 全链路配置的增强对照。
 4. 扩展到 `AI_FILTER/AI_CLASSIFY`（simulated）和 `AI_COMPLETE`（simulated），验证方法跨 workload 泛化。
 5. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 

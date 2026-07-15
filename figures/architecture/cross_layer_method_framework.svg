@@ -1,66 +1,81 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="920" viewBox="0 0 1600 920">
-<rect width="1600" height="920" fill="#F8FAFC"/>
-<text x="64" y="58" font-family="Microsoft YaHei,Arial,sans-serif" font-size="28" font-weight="700" fill="#1F2937" text-anchor="start">跨层协同优化方法框架</text>
-<text x="66" y="92" font-family="Microsoft YaHei,Arial,sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="start">本课题的核心方法不是 RC1 或 RC2 孤立优化，而是二者之间的跨层协同决策——联合最优 vs 独立最优组合。</text>
-<rect x="200.0" y="108" width="1200" height="100" rx="12" fill="#F8FAFC" stroke="#D8DEE8" stroke-width="1"/>
-<text x="224.0" y="130" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="700" fill="#667085" text-anchor="start">Workload 入口</text>
-<rect x="262.0" y="144" width="120" height="24" rx="6" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
-<text x="272.0" y="161" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="700" fill="#2F6FEB" text-anchor="start">AI_EMBED</text>
-<text x="262.0" y="196" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="start">向量维度、batch 均衡、写回压力</text>
-<rect x="638.0" y="144" width="120" height="24" rx="6" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
-<text x="648.0" y="161" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="700" fill="#F97316" text-anchor="start">AI_FILTER / AI_CLASSIFY</text>
-<text x="638.0" y="196" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="start">selectivity 未知、调用次数多</text>
-<rect x="1014.0" y="144" width="120" height="24" rx="6" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
-<text x="1024.0" y="161" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="700" fill="#7C3AED" text-anchor="start">AI_COMPLETE</text>
-<text x="1014.0" y="196" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="start">token 长度不均、prefix 共享</text>
-<polygon points="800.0,220 792.0,208 808.0,208" fill="#D8DEE8"/>
-<rect x="160.0" y="236" width="1280" height="340" rx="14" fill="#F1F5F9" stroke="#D8DEE8" stroke-width="1"/>
-<rect x="184.0" y="244" width="220" height="26" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="194.0" y="263" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#1F2937" text-anchor="start">跨层协同优化（核心方法贡献）</text>
-<rect x="208.0" y="286" width="440" height="216" rx="12" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
-<circle cx="238.0" cy="314" r="16" fill="#2F6FEB"/>
-<text x="238.0" y="319" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
-<text x="264.0" y="316" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#2F6FEB" text-anchor="start">数据组织与批处理构造</text>
-<rect x="226.0" y="342" width="404" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="428.0" y="358.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">batch size / partition 数联合决策</text>
-<rect x="226.0" y="372" width="404" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="428.0" y="388.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">operator invocation 粒度控制</text>
-<rect x="226.0" y="402" width="404" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="428.0" y="418.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">object 合并与 fan-in 形态选择</text>
-<rect x="226.0" y="432" width="404" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="428.0" y="448.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">输出特征向量维度感知</text>
-<rect x="952.0" y="286" width="440" height="216" rx="12" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
-<circle cx="982.0" cy="314" r="16" fill="#F97316"/>
-<text x="982.0" y="319" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
-<text x="1008.0" y="316" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#F97316" text-anchor="start">GPU 服务感知调度与反压</text>
-<rect x="970.0" y="342" width="404" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="1172.0" y="358.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">endpoint 数量与 replica 状态路由</text>
-<rect x="970.0" y="372" width="404" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="1172.0" y="388.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">actor pool 大小与 bounded in-flight</text>
-<rect x="970.0" y="402" width="404" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="1172.0" y="418.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">queue wait 监控与 backlog 控制</text>
-<rect x="970.0" y="432" width="404" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="1172.0" y="448.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">token 长度 / prefix 感知分发</text>
-<line x1="648.0" y1="394.0" x2="952.0" y2="394.0" stroke="#D8DEE8" stroke-width="2"/>
-<polygon points="800.0,386.0 808.0,394.0 800.0,402.0 792.0,394.0" fill="#D6A000" stroke="#D6A000"/>
-<text x="800.0" y="366.0" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#2F6FEB" text-anchor="middle">batch / partition</text>
-<text x="800.0" y="382.0" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#F97316" text-anchor="middle">in-flight / routing</text>
-<text x="800.0" y="424.0" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="700" fill="#1F2937" text-anchor="middle">联合搜索 ≠ 独立最优组合</text>
-<rect x="208.0" y="524" width="1184" height="32" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="1392.0" y="552.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="middle">验证：BL3（独立最优组合）vs BL6（跨层联合最优）— 若 BL6 &amp;lt; BL3，则跨层协同效应成立</text>
-<rect x="510.0" y="596" width="580" height="110" rx="12" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
-<circle cx="540.0" cy="624" r="16" fill="#7C3AED"/>
-<text x="540.0" y="629" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
-<text x="566.0" y="626" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#7C3AED" text-anchor="start">结果写回：边界确认</text>
-<text x="970.0" y="624" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="start">非独立方法创新</text>
-<rect x="528.0" y="652" width="544" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="800.0" y="668.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">sink 对比（JSON text / pgvector / Lance）</text>
-<rect x="528.0" y="682" width="544" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="800.0" y="698.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">COPY + deferred index 工程最优 baseline</text>
-<rect x="528.0" y="712" width="544" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="800.0" y="728.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#667085" text-anchor="middle">确认写回不成为端到端瓶颈 → 课题聚焦 RC1↔RC2</text>
-<rect x="250.0" y="722" width="1100" height="44" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="1"/>
-<text x="1350.0" y="764.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#16A34A" text-anchor="middle">评价指标：端到端耗时 · rows/s · tokens/s · queue wait · model request wall · writeback ratio · GPU utilization</text>
-<text x="800.0" y="800" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#667085" text-anchor="middle">图注：跨层协同优化方法框架。RC1（数据组织与批处理构造）和 RC2（GPU 服务感知调度与反压）</text>
-<text x="800.0" y="820" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#667085" text-anchor="middle">通过 batch/partition ↔ in-flight/routing 的联合决策形成跨层协同，核心验证为联合最优 vs 独立最优组合的对照实验；RC3（结果写回）作为边界确认，确保课题聚焦于推理基础设施侧的优化。</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+<rect width="1600" height="1000" fill="#F8FAFC"/>
+<text x="64" y="58" font-family="Microsoft YaHei,Arial,sans-serif" font-size="28" font-weight="700" fill="#1F2937" text-anchor="start">研究方案：三层上游执行策略与端到端评价</text>
+<text x="66" y="92" font-family="Microsoft YaHei,Arial,sans-serif" font-size="16" font-weight="400" fill="#475467" text-anchor="start">计划层组织数据，运行层控制提交与路由，服务端形成动态 micro-batch；写回纳入端到端评价。</text>
+<rect x="190.0" y="108" width="1220" height="126" rx="12" fill="#F8FAFC" stroke="#D8DEE8" stroke-width="1"/>
+<text x="214.0" y="130" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="700" fill="#475467" text-anchor="start">三类数据库 AI workload</text>
+<rect x="233.0" y="146" width="354" height="68" rx="10" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
+<text x="251.0" y="174" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#2F6FEB" text-anchor="start">批量向量生成</text>
+<text x="569.0" y="175" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="end">AI_EMBED</text>
+<text x="251.0" y="198" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="start">向量维度、batch 均衡、写回压力</text>
+<rect x="623.0" y="146" width="354" height="68" rx="10" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
+<text x="641.0" y="174" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#F97316" text-anchor="start">AI 谓词过滤 / 分类</text>
+<text x="959.0" y="175" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="end">AI_FILTER / AI_CLASSIFY</text>
+<text x="641.0" y="198" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="start">selectivity 未知、调用次数多</text>
+<rect x="1013.0" y="146" width="354" height="68" rx="10" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
+<text x="1031.0" y="174" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#7C3AED" text-anchor="start">离线文本生成</text>
+<text x="1349.0" y="175" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="end">AI_COMPLETE</text>
+<text x="1031.0" y="198" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="start">token 长度不均、prefix 共享</text>
+<text x="800.0" y="224" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">共同进入同一执行链路，约束 batch、partition、K_max、routing、micro-batch 与写回占比</text>
+<polygon points="800.0,246 792.0,234 808.0,234" fill="#D8DEE8"/>
+<rect x="160.0" y="262" width="1280" height="340" rx="14" fill="#F1F5F9" stroke="#D8DEE8" stroke-width="1"/>
+<rect x="184.0" y="270" width="392" height="26" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="194.0" y="289" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#1F2937" text-anchor="start">研究方案主线：分阶段剖析 -&gt; 三层策略调优 -&gt; 端到端评价</text>
+<rect x="208.0" y="318" width="350" height="216" rx="12" fill="#FFFFFF" stroke="#64748B" stroke-width="2"/>
+<circle cx="238.0" cy="346" r="16" fill="#64748B"/>
+<text x="238.0" y="351" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="264.0" y="348" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#64748B" text-anchor="start">计划层：数据组织策略</text>
+<rect x="226.0" y="374" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="383.0" y="390.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">workload profile 与初始批量</text>
+<rect x="226.0" y="404" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="383.0" y="420.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">batch size / partition 数选择</text>
+<rect x="226.0" y="434" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="383.0" y="450.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">operator invocation 粒度控制</text>
+<rect x="226.0" y="464" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="383.0" y="480.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">object 合并与 fan-in 形态选择</text>
+<rect x="625.0" y="318" width="350" height="216" rx="12" fill="#FFFFFF" stroke="#64748B" stroke-width="2"/>
+<circle cx="655.0" cy="346" r="16" fill="#64748B"/>
+<text x="655.0" y="351" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="681.0" y="348" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#64748B" text-anchor="start">运行层：提交与路由</text>
+<rect x="643.0" y="374" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="800.0" y="390.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">K_max 门控与 backpressure</text>
+<rect x="643.0" y="404" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="800.0" y="420.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">endpoint routing 与 actor pool</text>
+<rect x="643.0" y="434" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="800.0" y="450.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">队列等待与 backlog 控制</text>
+<rect x="643.0" y="464" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="800.0" y="480.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">worker / actor 资源配置</text>
+<rect x="1042.0" y="318" width="350" height="216" rx="12" fill="#FFFFFF" stroke="#64748B" stroke-width="2"/>
+<circle cx="1072.0" cy="346" r="16" fill="#64748B"/>
+<text x="1072.0" y="351" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="1098.0" y="348" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#64748B" text-anchor="start">服务端：批处理形成</text>
+<rect x="1060.0" y="374" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="1217.0" y="390.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">服务端 micro-batch 队列</text>
+<rect x="1060.0" y="404" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="1217.0" y="420.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">等待时间 / batch 上限</text>
+<rect x="1060.0" y="434" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="1217.0" y="450.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">token / shape 感知合批</text>
+<rect x="1060.0" y="464" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="1217.0" y="480.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">token 长度 / prefix 感知分发</text>
+<line x1="570.0" y1="426.0" x2="613.0" y2="426.0" stroke="#94A3B8" stroke-width="2"/>
+<polygon points="613.0,426.0 603.0,420.0 603.0,432.0" fill="#94A3B8"/>
+<line x1="987.0" y1="426.0" x2="1030.0" y2="426.0" stroke="#94A3B8" stroke-width="2"/>
+<polygon points="1030.0,426.0 1020.0,420.0 1020.0,432.0" fill="#94A3B8"/>
+<rect x="208.0" y="556" width="1184" height="32" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="800.0" y="576.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="middle">端到端评价：加入写回后，耗时、吞吐、排队等待、GPU 利用率和写回占比整体改善</text>
+<rect x="510.0" y="622" width="580" height="156" rx="12" fill="#FFFFFF" stroke="#64748B" stroke-width="2"/>
+<circle cx="540.0" cy="650" r="16" fill="#64748B"/>
+<text x="540.0" y="655" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="566.0" y="652" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#64748B" text-anchor="start">写回约束：瓶颈判定</text>
+<text x="976.0" y="650" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="start">端到端 guardrail</text>
+<rect x="528.0" y="678" width="544" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="800.0" y="694.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">sink 对比（JSON text / pgvector / Lance）</text>
+<rect x="528.0" y="708" width="544" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="800.0" y="724.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">COPY + deferred index 工程最优 baseline</text>
+<rect x="528.0" y="738" width="544" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
+<text x="800.0" y="754.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">防止写回吞噬上游调度收益</text>
+<rect x="250.0" y="802" width="1100" height="44" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="1"/>
+<text x="800.0" y="828.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#16A34A" text-anchor="middle">端到端效果指标：耗时 · rows/s · tokens/s · queue wait · micro-batch · writeback ratio · GPU utilization</text>
+<text x="800.0" y="880" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#475467" text-anchor="middle">图注：研究方案图。先对三类数据库 AI 算子做分阶段性能剖析，再调优计划层数据组织、运行层提交路由和服务端动态批处理。</text>
+<text x="800.0" y="900" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#475467" text-anchor="middle">结果写回纳入端到端评价，用于判断上游调优收益是否被持久化阶段吞噬。</text>
 </svg>

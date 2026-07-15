@@ -6,8 +6,9 @@
 
 | 飞书文档 | 链接 | 承载内容 | 本地来源 |
 |---|---|---|---|
-| 开题报告与开题汇报 | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 开题报告正文、开题 PPT 内容摘要、最终汇报口径 | `opening/feishu/opening_report_wiki.md`、`opening/report/`、`opening/slides/`、`opening/outline.md` |
-| 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 动机实验、可行性实验、阶段画像、实验结论边界 | `opening/feishu/motivation_feasibility_wiki.md`、`motivation/results/`、`feasibility/results/`、`learning/experiment_walkthrough.md` |
+| 开题报告（新版，当前同步目标） | https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb | 开题报告正文、当前研究方案图和最终报告口径 | `opening/feishu/opening_report_wiki.md`、`opening/report/`、`figures/architecture/` |
+| 开题报告与开题汇报（旧版历史） | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 旧版历史参考，不再作为当前同步目标 | `opening/feishu/opening_report_wiki.md` 的历史版本 |
+| 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 动机实验、可行性实验、分阶段性能剖析、实验结论边界 | `opening/feishu/motivation_feasibility_wiki.md`、`motivation/results/`、`feasibility/results/`、`learning/experiment_walkthrough.md` |
 | 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 旧版 PPT 在线版，当前内容和形式先作废，后续需基于新报告重做 | `opening/slides/README.md`、`opening/slides/opening_ppt.md` |
 
 ## 同步规则
@@ -16,7 +17,7 @@
 - 同步前先检查本地报告、PPT、飞书版、实验报告口径是否一致。
 - 写入飞书前要区分“事实、推断、待验证、不能声称”。
 - 开题报告飞书文档中可以同步 PPT 大纲和关键页摘要，但正式 PPTX 仍由 `opening/slides/` 维护。
-- `opening_report_wiki.md` 是“开题报告与开题汇报”飞书 wiki 的主源稿；`motivation_feasibility_wiki.md` 是“动机测试与可行性测试”飞书 wiki 的主源稿；`progress_update.md` 是阶段进度同步稿。
+- `opening_report_wiki.md` 是新版开题报告飞书 docx 的主源稿；`motivation_feasibility_wiki.md` 是“动机测试与可行性测试”飞书 wiki 的主源稿；`progress_update.md` 是阶段进度同步稿。
 - 动机测试与可行性测试飞书文档只写真实实验和明确边界，不把聊天中的临时判断当作正式结论。
 
 ## 工具使用
@@ -24,7 +25,7 @@
 - 普通飞书文档 / wiki 文档：使用 `lark-doc`。
 - 如果飞书文档内嵌 Base / 多维表格，再切到 `lark-base`。
 - 如果后续需要直接生成或编辑飞书幻灯片，再使用 `lark-slides`。
-- `docs +update --doc-format markdown --command overwrite` 不会把本地 Markdown 图片路径自动上传为飞书图片；报告中引用 `opening/assets/` 下的 PNG 时，覆盖写入后需要继续用 `docs +media-insert --file ... --selection-with-ellipsis ...` 插入真实图片块。
+- `docs +update --doc-format markdown --command overwrite` 不会把本地 Markdown 图片路径自动上传为飞书图片；报告中引用本地 PNG 时，覆盖写入后需要继续用 `docs +media-insert --file ... --selection-with-ellipsis ...` 插入真实图片块。
 - 每次实际写入飞书后，在 `opening/logs/project_log.md` 记录同步时间、同步目标和本地来源文件。
 
 ## 实验内容记录标准

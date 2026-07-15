@@ -8,12 +8,12 @@ OUT_DIR = Path(__file__).resolve().parents[1] / "architecture"
 SVG_PATH = OUT_DIR / "cross_layer_method_framework.svg"
 PNG_PATH = OUT_DIR / "cross_layer_method_framework.png"
 
-W, H = 1600, 920
+W, H = 1600, 1000
 
 PAL = {
     "bg":        "#F8FAFC",
     "ink":       "#1F2937",
-    "muted":     "#667085",
+    "muted":     "#475467",
     "d1_fill":   "#E7F0FF",
     "d1_edge":   "#2F6FEB",
     "d2_fill":   "#FFF1E6",
@@ -28,6 +28,7 @@ PAL = {
     "card_bg":   "#FFFFFF",
     "panel_bg":  "#F1F5F9",
     "warn":      "#D6A000",
+    "neutral":   "#64748B",
 }
 
 
@@ -115,41 +116,47 @@ def draw_png():
     d = ImageDraw.Draw(img)
 
     # ── Title ──
-    d.text((64, 32), "跨层协同优化方法框架", font=F["title"], fill=PAL["ink"])
+    d.text((64, 32), "研究方案：三层上游执行策略与端到端评价", font=F["title"], fill=PAL["ink"])
     d.text((66, 70),
-           "本课题的核心方法不是 RC1 或 RC2 孤立优化，而是二者之间的跨层协同决策——联合最优 vs 独立最优组合。",
+           "计划层组织数据，运行层控制提交与路由，服务端形成动态 micro-batch；写回纳入端到端评价。",
            font=F["sub"], fill=PAL["muted"])
 
     # ═══ TOP: Workload Entry ═══
     wl_y = 108
-    wl_w, wl_h = 1200, 100
+    wl_w, wl_h = 1220, 126
     wl_x = (W - wl_w) / 2
     rrect(d, (wl_x, wl_y, wl_x + wl_w, wl_y + wl_h), "#F8FAFC", PAL["pill_edge"], r=12, w=1)
 
     # Section label
-    d.text((wl_x + 24, wl_y + 12), "Workload 入口", font=_font(13, True), fill=PAL["muted"])
+    d.text((wl_x + 24, wl_y + 12), "三类数据库 AI workload", font=_font(13, True), fill=PAL["muted"])
 
     # Workload characteristic row
     wl_items = [
-        ("AI_EMBED", "向量维度、batch 均衡、写回压力", PAL["d1_edge"]),
-        ("AI_FILTER / AI_CLASSIFY", "selectivity 未知、调用次数多", PAL["d2_edge"]),
-        ("AI_COMPLETE", "token 长度不均、prefix 共享", PAL["d3_edge"]),
+        ("批量向量生成", "AI_EMBED", "向量维度、batch 均衡、写回压力", PAL["d1_edge"]),
+        ("AI 谓词过滤 / 分类", "AI_FILTER / AI_CLASSIFY", "selectivity 未知、调用次数多", PAL["d2_edge"]),
+        ("离线文本生成", "AI_COMPLETE", "token 长度不均、prefix 共享", PAL["d3_edge"]),
     ]
     n_wl = len(wl_items)
-    wl_item_w = 340
+    wl_item_w = 354
+    wl_item_h = 68
     wl_gap = 36
     wl_total = n_wl * wl_item_w + (n_wl - 1) * wl_gap
     wl_start = wl_x + (wl_w - wl_total) / 2
 
-    for i, (label, desc, color) in enumerate(wl_items):
+    workload_boxes = []
+    for i, (title, op, desc, color) in enumerate(wl_items):
         ix = wl_start + i * (wl_item_w + wl_gap)
-        iy = wl_y + 34
-        # Small colored label pill
-        ltw, lth = txtsz(d, label, _font(13, True))
-        rrect(d, (ix + 8, iy, ix + 8 + ltw + 20, iy + lth + 10), PAL["card_bg"], color, r=6, w=2)
-        d.text((ix + 18, iy + 5), label, font=_font(13, True), fill=color)
-        # Description
-        d.text((ix + 8, iy + 36), desc, font=F["tag"], fill=PAL["muted"])
+        iy = wl_y + 38
+        workload_boxes.append((int(ix), int(iy), wl_item_w, wl_item_h, color))
+        rrect(d, (ix, iy, ix + wl_item_w, iy + wl_item_h), PAL["card_bg"], color, r=10, w=2)
+        d.text((ix + 18, iy + 12), title, font=_font(15, True), fill=color)
+        op_w, op_h = txtsz(d, op, F["tag"])
+        d.text((ix + wl_item_w - op_w - 18, iy + 14), op, font=F["tag"], fill=PAL["muted"])
+        d.text((ix + 18, iy + 42), desc, font=F["tag"], fill=PAL["ink"])
+
+    hint = "共同进入同一执行链路，约束 batch、partition、K_max、routing、micro-batch 与写回占比"
+    hint_w, hint_h = txtsz(d, hint, F["tag"])
+    d.text((W / 2 - hint_w / 2, wl_y + wl_h - 18), hint, font=F["tag"], fill=PAL["muted"])
 
     # Arrow down
     arrow_y = wl_y + wl_h
@@ -162,7 +169,7 @@ def draw_png():
     rrect(d, (mid_x, mid_y, mid_x + mid_w, mid_y + mid_h), PAL["panel_bg"], PAL["pill_edge"], r=14, w=1)
 
     # Section header
-    header_text = "跨层协同优化（核心方法贡献）"
+    header_text = "研究方案主线：分阶段剖析 -> 三层策略调优 -> 端到端评价"
     htw, hth = txtsz(d, header_text, _font(14, True))
     header_x = mid_x + 24
     header_y = mid_y + 8
@@ -170,88 +177,74 @@ def draw_png():
           PAL["card_bg"], PAL["pill_edge"], r=6, w=1)
     d.text((header_x + 10, header_y + 5), header_text, font=_font(14, True), fill=PAL["ink"])
 
-    # RC1 card (left)
-    rc_w, rc_h = 440, 216
+    # Three upstream strategy layers. Use neutral borders so colors do not imply
+    # a one-to-one mapping to the workload cards above.
+    rc_w, rc_h = 350, 216
     rc1_x = mid_x + 48
-    rc1_y = mid_y + 50
+    rc1_y = mid_y + 56
     draw_rc_card(d, rc1_x, rc1_y, rc_w, rc_h, 1,
-                 "数据组织与批处理构造",
-                 ["batch size / partition 数联合决策",
+                 "计划层：数据组织策略",
+                 ["workload profile 与初始批量",
+                  "batch size / partition 数选择",
                   "operator invocation 粒度控制",
-                  "object 合并与 fan-in 形态选择",
-                  "输出特征向量维度感知"],
-                 PAL["d1_edge"])
+                  "object 合并与 fan-in 形态选择"],
+                 PAL["neutral"])
 
-    # RC2 card (right)
-    rc2_x = mid_x + mid_w - rc_w - 48
-    rc2_y = mid_y + 50
+    rc2_x = mid_x + (mid_w - rc_w) / 2
+    rc2_y = rc1_y
     draw_rc_card(d, rc2_x, rc2_y, rc_w, rc_h, 2,
-                 "GPU 服务感知调度与反压",
-                 ["endpoint 数量与 replica 状态路由",
-                  "actor pool 大小与 bounded in-flight",
-                  "queue wait 监控与 backlog 控制",
+                 "运行层：提交与路由",
+                 ["K_max 门控与 backpressure",
+                  "endpoint routing 与 actor pool",
+                  "队列等待与 backlog 控制",
+                  "worker / actor 资源配置"],
+                 PAL["neutral"])
+
+    rc3_x = mid_x + mid_w - rc_w - 48
+    rc3_y = rc1_y
+    draw_rc_card(d, rc3_x, rc3_y, rc_w, rc_h, 3,
+                 "服务端：批处理形成",
+                 ["服务端 micro-batch 队列",
+                  "等待时间 / batch 上限",
+                  "token / shape 感知合批",
                   "token 长度 / prefix 感知分发"],
-                 PAL["d2_edge"])
+                 PAL["neutral"])
 
-    # ── Joint optimization indicator between RC1 and RC2 ──
-    jo_center_x = mid_x + mid_w / 2
-    jo_center_y = rc1_y + rc_h / 2
+    # Neutral connectors between the three strategy layers.
+    connector_y = rc1_y + rc_h / 2
+    for left_x, right_x in [(rc1_x + rc_w, rc2_x), (rc2_x + rc_w, rc3_x)]:
+        d.line((left_x + 12, connector_y, right_x - 12, connector_y), fill="#94A3B8", width=2)
+        d.polygon([(right_x - 12, connector_y), (right_x - 22, connector_y - 6), (right_x - 22, connector_y + 6)], fill="#94A3B8")
 
-    # Horizontal double-headed connection line between cards
-    lx1 = rc1_x + rc_w
-    lx2 = rc2_x
-    ly = jo_center_y
-    d.line((lx1, ly, lx2, ly), fill=PAL["pill_edge"], width=2)
-
-    # Small diamond at center
-    ds = 8
-    d.polygon([
-        (jo_center_x, jo_center_y - ds),
-        (jo_center_x + ds, jo_center_y),
-        (jo_center_x, jo_center_y + ds),
-        (jo_center_x - ds, jo_center_y),
-    ], fill=PAL["warn"], outline=PAL["warn"])
-
-    # Labels above and below the connection line
-    jo_label1 = "batch / partition"
-    jo_label2 = "in-flight / routing"
-    jo_label3 = "联合搜索 ≠ 独立最优组合"
-    l1w, l1h = txtsz(d, jo_label1, F["tag"])
-    l2w, l2h = txtsz(d, jo_label2, F["tag"])
-    l3w, l3h = txtsz(d, jo_label3, _font(13, True))
-    d.text((jo_center_x - l1w / 2, ly - 30), jo_label1, font=F["tag"], fill=PAL["d1_edge"])
-    d.text((jo_center_x - l2w / 2, ly - 14), jo_label2, font=F["tag"], fill=PAL["d2_edge"])
-    d.text((jo_center_x - l3w / 2, ly + 14), jo_label3, font=_font(13, True), fill=PAL["ink"])
-
-    # ── Killer experiment bar below the cards ──
+    # ── Whole-chain validation bar below the cards ──
     ke_y = rc1_y + rc_h + 22
     ke_w, ke_h = mid_w - 96, 32
     ke_x = mid_x + 48
     rrect(d, (ke_x, ke_y, ke_x + ke_w, ke_y + ke_h), PAL["card_bg"], PAL["pill_edge"], r=8, w=1)
-    ke_text = "验证：BL3（独立最优组合）vs BL6（跨层联合最优）——若 BL6 < BL3，则跨层协同效应成立"
+    ke_text = "端到端评价：加入写回后，耗时、吞吐、排队等待、GPU 利用率和写回占比整体改善"
     ktw, kth = txtsz(d, ke_text, F["tag"])
     d.text((ke_x + ke_w / 2 - ktw / 2, ke_y + ke_h / 2 - kth / 2 - 1),
               ke_text, font=F["tag"], fill=PAL["ink"])
 
-    # ═══ BOTTOM: RC3 + Evaluation ═══
+    # ═══ BOTTOM: writeback bottleneck test + Evaluation ═══
     bot_y = mid_y + mid_h + 20
 
-    # RC3 card
-    rc3_w, rc3_h = 580, 110
-    rc3_x = (W - rc3_w) / 2
-    draw_rc_card(d, rc3_x, bot_y, rc3_w, rc3_h, 3,
-                 "结果写回：边界确认",
+    # Writeback bottleneck card
+    wb_w, wb_h = 580, 156
+    wb_x = (W - wb_w) / 2
+    draw_rc_card(d, wb_x, bot_y, wb_w, wb_h, 4,
+                 "写回约束：瓶颈判定",
                  ["sink 对比（JSON text / pgvector / Lance）",
                   "COPY + deferred index 工程最优 baseline",
-                  "确认写回不成为端到端瓶颈 → 课题聚焦 RC1↔RC2"],
-                 PAL["d3_edge"], tag="非独立方法创新")
+                  "防止写回吞噬上游调度收益"],
+                 PAL["neutral"], tag="端到端 guardrail")
 
     # Evaluation metrics bar
-    eval_y = bot_y + rc3_h + 16
+    eval_y = bot_y + wb_h + 24
     eval_w, eval_h = 1100, 44
     eval_x = (W - eval_w) / 2
     rrect(d, (eval_x, eval_y, eval_x + eval_w, eval_y + eval_h), PAL["box_fill"], PAL["box_edge"], r=10, w=1)
-    eval_text = "评价指标：端到端耗时  ·  rows/s  ·  tokens/s  ·  queue wait  ·  model request wall  ·  writeback ratio  ·  GPU utilization"
+    eval_text = "端到端效果指标：耗时  ·  rows/s  ·  tokens/s  ·  queue wait  ·  micro-batch  ·  writeback ratio  ·  GPU utilization"
     etw, eth = txtsz(d, eval_text, F["tag"])
     d.text((eval_x + eval_w / 2 - etw / 2, eval_y + eval_h / 2 - eth / 2 - 1),
               eval_text, font=F["tag"], fill=PAL["box_edge"])
@@ -259,9 +252,8 @@ def draw_png():
     # ── Caption ──
     cap_y = eval_y + eval_h + 20
     cap_text = (
-        "图注：跨层协同优化方法框架。RC1（数据组织与批处理构造）和 RC2（GPU 服务感知调度与反压）"
-        "通过 batch/partition ↔ in-flight/routing 的联合决策形成跨层协同，核心验证为联合最优 vs 独立最优组合的对照实验；"
-        "RC3（结果写回）作为边界确认，确保课题聚焦于推理基础设施侧的优化。"
+        "图注：研究方案图。先对三类数据库 AI 算子做分阶段性能剖析，再调优计划层数据组织、运行层提交路由和服务端动态批处理，"
+        "结果写回纳入端到端评价，用于判断上游调优收益是否被持久化阶段吞噬。"
     )
     ctw, cth = txtsz(d, cap_text, F["cap"])
     # Wrap to fit
@@ -269,11 +261,10 @@ def draw_png():
     if ctw > max_cap_w:
         # Simple manual wrap
         line1 = (
-            "图注：跨层协同优化方法框架。RC1（数据组织与批处理构造）和 RC2（GPU 服务感知调度与反压）"
+            "图注：研究方案图。先对三类数据库 AI 算子做分阶段性能剖析，再调优计划层数据组织、运行层提交路由和服务端动态批处理，"
         )
         line2 = (
-            "通过 batch/partition ↔ in-flight/routing 的联合决策形成跨层协同，核心验证为联合最优 vs 独立最优组合的对照实验；"
-            "RC3（结果写回）作为边界确认，确保课题聚焦于推理基础设施侧的优化。"
+            "结果写回纳入端到端评价，用于判断上游调优收益是否被持久化阶段吞噬。"
         )
         l1w, l1h = txtsz(d, line1, F["cap"])
         l2w, l2h = txtsz(d, line2, F["cap"])
@@ -288,7 +279,9 @@ def draw_png():
         "mid_x": mid_x, "mid_w": mid_w, "mid_y": mid_y, "mid_h": mid_h,
         "rc1_x": rc1_x, "rc1_y": rc1_y, "rc_w": rc_w, "rc_h": rc_h,
         "rc2_x": rc2_x, "rc2_y": rc2_y,
-        "rc3_x": rc3_x, "rc3_y": bot_y, "rc3_w": rc3_w, "rc3_h": rc3_h,
+        "rc3_x": rc3_x, "rc3_y": rc3_y,
+        "wb_x": wb_x, "wb_y": bot_y, "wb_w": wb_w, "wb_h": wb_h,
+        "workload_boxes": workload_boxes,
         "bot_y": bot_y,
     }
 
@@ -318,32 +311,37 @@ def draw_svg():
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
         f'<rect width="{W}" height="{H}" fill="{PAL["bg"]}"/>',
-        svg_text(64, 58, "跨层协同优化方法框架", 28, "700"),
-        svg_text(66, 92, "本课题的核心方法不是 RC1 或 RC2 孤立优化，而是二者之间的跨层协同决策——联合最优 vs 独立最优组合。", 16, fill=PAL["muted"]),
+        svg_text(64, 58, "研究方案：三层上游执行策略与端到端评价", 28, "700"),
+        svg_text(66, 92, "计划层组织数据，运行层控制提交与路由，服务端形成动态 micro-batch；写回纳入端到端评价。", 16, fill=PAL["muted"]),
     ]
 
     # Workload entry
     wl_y = 108
-    wl_w, wl_h = 1200, 100
+    wl_w, wl_h = 1220, 126
     wl_x = (W - wl_w) / 2
     parts.append(svg_rect(wl_x, wl_y, wl_w, wl_h, "#F8FAFC", PAL["pill_edge"], r=12, sw=1))
-    parts.append(svg_text(wl_x + 24, wl_y + 22, "Workload 入口", 13, "700", PAL["muted"]))
+    parts.append(svg_text(wl_x + 24, wl_y + 22, "三类数据库 AI workload", 13, "700", PAL["muted"]))
 
     wl_items = [
-        ("AI_EMBED", "向量维度、batch 均衡、写回压力", PAL["d1_edge"]),
-        ("AI_FILTER / AI_CLASSIFY", "selectivity 未知、调用次数多", PAL["d2_edge"]),
-        ("AI_COMPLETE", "token 长度不均、prefix 共享", PAL["d3_edge"]),
+        ("批量向量生成", "AI_EMBED", "向量维度、batch 均衡、写回压力", PAL["d1_edge"]),
+        ("AI 谓词过滤 / 分类", "AI_FILTER / AI_CLASSIFY", "selectivity 未知、调用次数多", PAL["d2_edge"]),
+        ("离线文本生成", "AI_COMPLETE", "token 长度不均、prefix 共享", PAL["d3_edge"]),
     ]
-    wl_item_w = 340
+    wl_item_w = 354
+    wl_item_h = 68
     wl_gap = 36
     wl_total = 3 * wl_item_w + 2 * wl_gap
     wl_start = wl_x + (wl_w - wl_total) / 2
-    for i, (label, desc, color) in enumerate(wl_items):
+    for i, (title, op, desc, color) in enumerate(wl_items):
         ix = wl_start + i * (wl_item_w + wl_gap)
-        iy = wl_y + 36
-        parts.append(svg_rect(ix + 8, iy, 120, 24, PAL["card_bg"], color, r=6, sw=2))
-        parts.append(svg_text(ix + 18, iy + 17, label, 13, "700", color))
-        parts.append(svg_text(ix + 8, iy + 52, desc, 12, fill=PAL["muted"]))
+        iy = wl_y + 38
+        parts.append(svg_rect(ix, iy, wl_item_w, wl_item_h, PAL["card_bg"], color, r=10, sw=2))
+        parts.append(svg_text(ix + 18, iy + 28, title, 15, "700", color))
+        parts.append(svg_text(ix + wl_item_w - 18, iy + 29, op, 12, fill=PAL["muted"], anchor="end"))
+        parts.append(svg_text(ix + 18, iy + 52, desc, 12, fill=PAL["ink"]))
+    parts.append(svg_text(W / 2, wl_y + wl_h - 10,
+                          "共同进入同一执行链路，约束 batch、partition、K_max、routing、micro-batch 与写回占比",
+                          12, fill=PAL["muted"], anchor="middle"))
 
     # Arrow
     arrow_y = wl_y + wl_h
@@ -356,22 +354,27 @@ def draw_svg():
     parts.append(svg_rect(mid_x, mid_y, mid_w, mid_h, PAL["panel_bg"], PAL["pill_edge"], r=14, sw=1))
 
     # Section header
-    parts.append(svg_rect(mid_x + 24, mid_y + 8, 220, 26, PAL["card_bg"], PAL["pill_edge"], r=6, sw=1))
-    parts.append(svg_text(mid_x + 34, mid_y + 27, "跨层协同优化（核心方法贡献）", 14, "700", PAL["ink"]))
+    parts.append(svg_rect(mid_x + 24, mid_y + 8, 392, 26, PAL["card_bg"], PAL["pill_edge"], r=6, sw=1))
+    parts.append(svg_text(mid_x + 34, mid_y + 27, "研究方案主线：分阶段剖析 -> 三层策略调优 -> 端到端评价", 14, "700", PAL["ink"]))
 
-    # RC cards
-    rc_w, rc_h = 440, 216
+    # Strategy layer cards use the same neutral style. Colors above represent
+    # workload types, not direct bindings to these layers.
+    rc_w, rc_h = 350, 216
     rc1_x = mid_x + 48
-    rc1_y = mid_y + 50
-    rc2_x = mid_x + mid_w - rc_w - 48
+    rc1_y = mid_y + 56
+    rc2_x = mid_x + (mid_w - rc_w) / 2
+    rc3_x = mid_x + mid_w - rc_w - 48
 
     for rx, ry, num, title, items, edge in [
-        (rc1_x, rc1_y, 1, "数据组织与批处理构造",
-         ["batch size / partition 数联合决策", "operator invocation 粒度控制",
-          "object 合并与 fan-in 形态选择", "输出特征向量维度感知"], PAL["d1_edge"]),
-        (rc2_x, rc1_y, 2, "GPU 服务感知调度与反压",
-         ["endpoint 数量与 replica 状态路由", "actor pool 大小与 bounded in-flight",
-          "queue wait 监控与 backlog 控制", "token 长度 / prefix 感知分发"], PAL["d2_edge"]),
+        (rc1_x, rc1_y, 1, "计划层：数据组织策略",
+         ["workload profile 与初始批量", "batch size / partition 数选择",
+          "operator invocation 粒度控制", "object 合并与 fan-in 形态选择"], PAL["neutral"]),
+        (rc2_x, rc1_y, 2, "运行层：提交与路由",
+         ["K_max 门控与 backpressure", "endpoint routing 与 actor pool",
+          "队列等待与 backlog 控制", "worker / actor 资源配置"], PAL["neutral"]),
+        (rc3_x, rc1_y, 3, "服务端：批处理形成",
+         ["服务端 micro-batch 队列", "等待时间 / batch 上限",
+          "token / shape 感知合批", "token 长度 / prefix 感知分发"], PAL["neutral"]),
     ]:
         parts.append(svg_rect(rx, ry, rc_w, rc_h, PAL["card_bg"], edge, r=12))
         parts.append(f'<circle cx="{rx + 30}" cy="{ry + 28}" r="16" fill="{edge}"/>')
@@ -382,53 +385,50 @@ def draw_svg():
             parts.append(svg_pill(rx + 18, py, rc_w - 36, 24, item, 12))
             py += 30
 
-    # Joint optimization connector
-    jo_center_x = mid_x + mid_w / 2
-    jo_center_y = rc1_y + rc_h / 2
-    parts.append(f'<line x1="{rc1_x + rc_w}" y1="{jo_center_y}" x2="{rc2_x}" y2="{jo_center_y}" stroke="{PAL["pill_edge"]}" stroke-width="2"/>')
-    parts.append(f'<polygon points="{jo_center_x},{jo_center_y - 8} {jo_center_x + 8},{jo_center_y} {jo_center_x},{jo_center_y + 8} {jo_center_x - 8},{jo_center_y}" fill="{PAL["warn"]}" stroke="{PAL["warn"]}"/>')
-    parts.append(svg_text(jo_center_x, jo_center_y - 28, "batch / partition", 12, fill=PAL["d1_edge"], anchor="middle"))
-    parts.append(svg_text(jo_center_x, jo_center_y - 12, "in-flight / routing", 12, fill=PAL["d2_edge"], anchor="middle"))
-    parts.append(svg_text(jo_center_x, jo_center_y + 30, "联合搜索 ≠ 独立最优组合", 13, "700", PAL["ink"], "middle"))
+    # Neutral connectors between the three strategy layers.
+    connector_y = rc1_y + rc_h / 2
+    for left_x, right_x in [(rc1_x + rc_w, rc2_x), (rc2_x + rc_w, rc3_x)]:
+        parts.append(f'<line x1="{left_x + 12}" y1="{connector_y}" x2="{right_x - 12}" y2="{connector_y}" stroke="#94A3B8" stroke-width="2"/>')
+        parts.append(f'<polygon points="{right_x - 12},{connector_y} {right_x - 22},{connector_y - 6} {right_x - 22},{connector_y + 6}" fill="#94A3B8"/>')
 
-    # Killer experiment bar
+    # Whole-chain validation bar
     ke_y = rc1_y + rc_h + 22
     ke_w, ke_h = mid_w - 96, 32
     ke_x = mid_x + 48
     parts.append(svg_rect(ke_x, ke_y, ke_w, ke_h, PAL["card_bg"], PAL["pill_edge"], r=8, sw=1))
-    parts.append(svg_center(ke_x + ke_w / 2, ke_y + ke_h / 2 - 8, ke_w, ke_h,
-                            "验证：BL3（独立最优组合）vs BL6（跨层联合最优）— 若 BL6 &lt; BL3，则跨层协同效应成立",
+    parts.append(svg_center(ke_x, ke_y, ke_w, ke_h,
+                            "端到端评价：加入写回后，耗时、吞吐、排队等待、GPU 利用率和写回占比整体改善",
                             12, fill=PAL["ink"]))
 
-    # Bottom RC3 + Eval
+    # Bottom writeback bottleneck card + Eval
     bot_y = mid_y + mid_h + 20
-    rc3_w, rc3_h = 580, 110
-    rc3_x = (W - rc3_w) / 2
+    wb_w, wb_h = 580, 156
+    wb_x = (W - wb_w) / 2
 
-    parts.append(svg_rect(rc3_x, bot_y, rc3_w, rc3_h, PAL["card_bg"], PAL["d3_edge"], r=12))
-    parts.append(f'<circle cx="{rc3_x + 30}" cy="{bot_y + 28}" r="16" fill="{PAL["d3_edge"]}"/>')
-    parts.append(svg_text(rc3_x + 30, bot_y + 33, "3", 14, "700", "#FFFFFF", "middle"))
-    parts.append(svg_text(rc3_x + 56, bot_y + 30, "结果写回：边界确认", 18, "700", PAL["d3_edge"]))
+    parts.append(svg_rect(wb_x, bot_y, wb_w, wb_h, PAL["card_bg"], PAL["neutral"], r=12))
+    parts.append(f'<circle cx="{wb_x + 30}" cy="{bot_y + 28}" r="16" fill="{PAL["neutral"]}"/>')
+    parts.append(svg_text(wb_x + 30, bot_y + 33, "4", 14, "700", "#FFFFFF", "middle"))
+    parts.append(svg_text(wb_x + 56, bot_y + 30, "写回约束：瓶颈判定", 18, "700", PAL["neutral"]))
     # Tag
-    parts.append(svg_text(rc3_x + rc3_w - 120, bot_y + 28, "非独立方法创新", 12, fill=PAL["muted"]))
+    parts.append(svg_text(wb_x + wb_w - 114, bot_y + 28, "端到端 guardrail", 12, fill=PAL["muted"]))
     py = bot_y + 56
-    for item in ["sink 对比（JSON text / pgvector / Lance）", "COPY + deferred index 工程最优 baseline", "确认写回不成为端到端瓶颈 → 课题聚焦 RC1↔RC2"]:
-        parts.append(svg_pill(rc3_x + 18, py, rc3_w - 36, 24, item, 12))
+    for item in ["sink 对比（JSON text / pgvector / Lance）", "COPY + deferred index 工程最优 baseline", "防止写回吞噬上游调度收益"]:
+        parts.append(svg_pill(wb_x + 18, py, wb_w - 36, 24, item, 12))
         py += 30
 
     # Evaluation
-    eval_y = bot_y + rc3_h + 16
+    eval_y = bot_y + wb_h + 24
     eval_w, eval_h = 1100, 44
     eval_x = (W - eval_w) / 2
     parts.append(svg_rect(eval_x, eval_y, eval_w, eval_h, PAL["box_fill"], PAL["box_edge"], r=10, sw=1))
-    parts.append(svg_center(eval_x + eval_w / 2, eval_y + eval_h / 2 - 6, eval_w, eval_h,
-                            "评价指标：端到端耗时 · rows/s · tokens/s · queue wait · model request wall · writeback ratio · GPU utilization",
+    parts.append(svg_center(eval_x, eval_y, eval_w, eval_h,
+                            "端到端效果指标：耗时 · rows/s · tokens/s · queue wait · micro-batch · writeback ratio · GPU utilization",
                             12, fill=PAL["box_edge"]))
 
     # Caption (2 lines)
     cap_y = eval_y + eval_h + 20
-    l1 = "图注：跨层协同优化方法框架。RC1（数据组织与批处理构造）和 RC2（GPU 服务感知调度与反压）"
-    l2 = "通过 batch/partition ↔ in-flight/routing 的联合决策形成跨层协同，核心验证为联合最优 vs 独立最优组合的对照实验；RC3（结果写回）作为边界确认，确保课题聚焦于推理基础设施侧的优化。"
+    l1 = "图注：研究方案图。先对三类数据库 AI 算子做分阶段性能剖析，再调优计划层数据组织、运行层提交路由和服务端动态批处理。"
+    l2 = "结果写回纳入端到端评价，用于判断上游调优收益是否被持久化阶段吞噬。"
     parts.append(svg_text(W / 2, cap_y + 14, l1, 13, fill=PAL["muted"], anchor="middle"))
     parts.append(svg_text(W / 2, cap_y + 34, l2, 13, fill=PAL["muted"], anchor="middle"))
 
@@ -458,51 +458,31 @@ if __name__ == "__main__":
     rc2_x = int(params["rc2_x"])
     rc3_x = int(params["rc3_x"])
     rc3_y = int(params["rc3_y"])
-    rc3_w = params["rc3_w"]
-    rc3_h = params["rc3_h"]
+    wb_x = int(params["wb_x"])
+    wb_y = int(params["wb_y"])
+    wb_w = params["wb_w"]
+    wb_h = params["wb_h"]
+    workload_boxes = params["workload_boxes"]
 
-    print(f"  Layout: mid=({mid_x},{mid_y},{mid_w},{mid_h}) rc1=({rc1_x},{rc1_y}) rc2=({rc2_x},{rc1_y})")
+    print(f"  Layout: mid=({mid_x},{mid_y},{mid_w},{mid_h}) plan=({rc1_x},{rc1_y}) runtime=({rc2_x},{rc1_y}) service=({rc3_x},{rc3_y})")
 
-    # 1. RC1 card top-left: should have blue edge pixels
-    blue_count = 0
-    for y in range(rc1_y, rc1_y + 3):
-        for x in range(rc1_x, rc1_x + rc_w):
-            r, g, b = px[x, y]
-            if b > 200 and r < 100 and g < 180:
-                blue_count += 1
-    print(f"  RC1 blue edge px: {blue_count} {'PASS' if blue_count > 10 else 'FAIL'}")
-
-    # 2. RC2 card: should have orange edge pixels
-    orange_count = 0
-    for y in range(rc1_y, rc1_y + 3):
-        for x in range(rc2_x, rc2_x + rc_w):
-            r, g, b = px[x, y]
-            if r > 200 and g > 100 and g < 180 and b < 100:
-                orange_count += 1
-    print(f"  RC2 orange edge px: {orange_count} {'PASS' if orange_count > 10 else 'FAIL'}")
-
-    # 3. RC3 card: should have purple edge
-    purple_count = 0
-    for y in range(rc3_y, rc3_y + 3):
-        for x in range(rc3_x, rc3_x + rc3_w):
-            r, g, b = px[x, y]
-            if r > 100 and b > 200 and g < 120:
-                purple_count += 1
-    print(f"  RC3 purple edge px: {purple_count} {'PASS' if purple_count > 10 else 'FAIL'}")
-
-    # 4. Joint optimization diamond exists (yellow/warn pixels in center area)
-    jo_center_y = rc1_y + rc_h // 2
-    jo_center_x = mid_x + mid_w // 2
-    warn_count = 0
-    for y in range(jo_center_y - 15, jo_center_y + 15):
-        for x in range(jo_center_x - 15, jo_center_x + 15):
-            r, g, b = px[x, y]
-            if r > 200 and g > 150 and b < 50:
-                warn_count += 1
-    print(f"  Joint-opt diamond px: {warn_count} {'PASS' if warn_count > 5 else 'FAIL'}")
+    # 1. Three strategy cards and writeback guardrail should use neutral borders.
+    for name, rx, ry, rw, rh in [
+        ("Plan strategy", rc1_x, rc1_y, rc_w, rc_h),
+        ("Runtime strategy", rc2_x, rc1_y, rc_w, rc_h),
+        ("Service strategy", rc3_x, rc3_y, rc_w, rc_h),
+        ("Writeback guardrail", wb_x, wb_y, wb_w, wb_h),
+    ]:
+        neutral_count = 0
+        for y in range(ry, ry + 3):
+            for x in range(rx, rx + rw):
+                r, g, b = px[x, y]
+                if 70 < r < 130 and 90 < g < 150 and 120 < b < 180:
+                    neutral_count += 1
+        print(f"  {name} neutral edge px: {neutral_count} {'PASS' if neutral_count > 10 else 'FAIL'}")
 
     # 5. Green in evaluation bar
-    eval_y_area = params["bot_y"] + rc3_h + 16
+    eval_y_area = params["bot_y"] + wb_h + 16
     green_count = 0
     for y in range(eval_y_area, eval_y_area + 44):
         for x in range(250, W - 250):
@@ -511,8 +491,23 @@ if __name__ == "__main__":
                 green_count += 1
     print(f"  Eval green px: {green_count} {'PASS' if green_count > 10 else 'FAIL'}")
 
-    # 6. Bounds check: RC cards within mid panel
-    for name, rx, rw in [("RC1", rc1_x, rc_w), ("RC2", rc2_x, rc_w)]:
+    # 6. Workload cards: colored borders exist and stay inside the workload band
+    for idx, (wx, wy, ww, wh, color) in enumerate(workload_boxes, start=1):
+        border_count = 0
+        for y in range(wy, wy + wh):
+            for x in range(wx, wx + ww):
+                r, g, b = px[x, y]
+                if color == PAL["d1_edge"] and b > 180 and r < 120:
+                    border_count += 1
+                elif color == PAL["d2_edge"] and r > 180 and 70 < g < 180 and b < 120:
+                    border_count += 1
+                elif color == PAL["d3_edge"] and r > 90 and b > 180 and g < 130:
+                    border_count += 1
+        inside = wx > 0 and wy > 0 and wx + ww < W and wy + wh < H
+        print(f"  Workload card {idx}: border_px={border_count} bounds={'OK' if inside else 'OUT'} {'PASS' if border_count > 100 and inside else 'FAIL'}")
+
+    # 7. Bounds check: main method cards within middle panel
+    for name, rx, rw in [("Plan strategy", rc1_x, rc_w), ("Runtime strategy", rc2_x, rc_w), ("Service strategy", rc3_x, rc_w)]:
         left_ok = rx > mid_x
         right_ok = rx + rw < mid_x + mid_w
         print(f"  {name} bounds: left={'OK' if left_ok else 'OUT'}, right={'OK' if right_ok else 'OUT'} {'PASS' if left_ok and right_ok else 'FAIL'}")

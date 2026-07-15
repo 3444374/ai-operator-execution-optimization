@@ -612,7 +612,7 @@ Preemption 策略（简化版）：
 - COSTREAM (Heinrich et al., 2024)：GNN-based operator placement 代价模型，21× 中位加速
 - GRACEFUL (Wehrstein et al., 2025)：UDF 感知的 learned cost estimator，50× 加速
 
-**详见 §6 跨层联合优化**。这里只说明：A2.7 是 RC2 在跨层联合优化框架中的角色——GPU 调度参数不再独立设定，而是与 batch size、write batch size 联合优化。
+**详见 §6 端到端流程调优增强实验**。这里只说明：A2.7 是 RC2 在阶段间耦合分析中的可选增强角色——当阶段级调优后仍存在明显端到端瓶颈时，再把 GPU 调度参数与 batch size、write batch size 放入同一优化空间。
 
 | 维度 | 评分 | 说明 |
 |---|---|---|
@@ -620,10 +620,10 @@ Preemption 策略（简化版）：
 | Eng | 2/5 | 需要 grid search 数据 + 模型训练 + 在线决策接口 |
 | HW | 5/5 | 训练在 CPU |
 | OSS | 5/5 | XGBoost / PyTorch |
-| Nov | 5/5 | 跨层联合优化是论文核心 claim |
+| Nov | 4/5 | 可作为阶段间耦合明显时的增强贡献 |
 | Exp | 3/5 | 需要先完成 RC1 和 RC2 各自的消融，再验证联合优化的增量收益 |
 
-**定位**：**论文 §7 核心贡献**。KC (Killer Experiment) 的关键——Independent Best vs Joint Optimal。
+**定位**：**可选增强贡献**。在端到端流程调优完成后，用于分析 Independent Best 与端到端联合配置之间是否存在明显差异。
 
 ---
 
@@ -998,10 +998,10 @@ Claim: e2e_joint < e2e_independent
 | Eng | 3/5 | Grid search 自动化脚本，中等 |
 | HW | 5/5 | 36 个组合 × 3 repeats = ~108 次 E2E 运行 |
 | OSS | 5/5 | — |
-| Nov | 5/5 | **论文核心 claim**——跨层 joint optimization 优于 independent best |
+| Nov | 4/5 | 增强 claim：阶段间耦合明显时，端到端联合配置可能优于 independent best |
 | Exp | 4/5 | Grid search + BL1-BL6 对照矩阵 |
 
-**定位**：**§7 Killer Experiment 的核心**。这是证明"三个岛之间需要协同优化"的最直接实验。
+**定位**：**增强实验**。这是分析阶段间耦合是否存在的强对照，不作为当前开题主叙事的前置假设。
 
 ---
 
@@ -1117,7 +1117,7 @@ Batch 3:                                              [GPU exec][writeback]
 | **RC1** | A1.1（固定策略 Baseline）+ A1.2（Workload-Aware Partition）+ A1.3（Selectivity Cascade）或 A1.4（Prefix Grouping）| Baseline + 核心方法 |
 | **RC2** | A2.1（Bounded In-Flight）+ A2.2（Actor Pool + Routing）+ A2.3（自适应 In-Flight）| Baseline + 核心方法 |
 | **RC3** | A3.1（Driver Fan-In Baseline）+ A3.4（Staging + Deferred Index）+ A3.2（Worker-Direct Writeback）| Baseline + 核心方法 |
-| **Cross-Layer** | AX.1（Joint B_gpu↔B_write）+ AX.3（Pipeline Overlap）| **核心 claim** |
+| **End-to-End** | AX.1（Joint B_gpu↔B_write）+ AX.3（Pipeline Overlap）| 可选增强：阶段间耦合分析 |
 
 **可选增强**（如果时间和实验条件允许）：
 - A2.6（优先级调度）→ 与 A2.2 组合，增强 RC2
@@ -1211,7 +1211,7 @@ Phase 4（~ 4 周，2026-10）
 | **BL5** | Queue-Decoupled | 无优化 | 无优化 | Queue → worker 写回 | pgai (W4) | 解耦但无联合代价模型 |
 | **BL6 (Ours)** | Joint Optimal | Workload-aware partition (A1.2) | Adaptive in-flight + actor pool (A2.2+A2.3) | Worker-direct + B_write co-tuned (A3.2) | **本课题** | **联合最优** |
 
-**最低必跑**：BL1, BL2, BL3, BL6。BL6 < BL3 即为论文核心 claim 成立。
+**最低必跑**：BL1、BL2、BL4 和完整优化流程。BL3/BL6 可在阶段间耦合明显时加入，用于增强论证；不作为当前开题主线的必要条件。
 
 ---
 
@@ -1324,7 +1324,7 @@ Phase 4（~ 4 周，2026-10）
 
 | 方案 | Baseline 编号 | Baseline 描述 | 来源 | 为什么是公平对照 |
 |---|---|---|---|---|
-| AX.1 Joint B_gpu↔B_write | **BL1 + BL2 + BL3 + BL4** | 完整 Killer Experiment 矩阵 | 见 §9 | **论文核心 claim 的对照结构** |
+| AX.1 Joint B_gpu↔B_write | **BL1 + BL2 + BL3 + BL4** | 端到端流程调优增强矩阵 | 见 §9 | 阶段间耦合分析的强对照结构 |
 | AX.2 Learned E2E Cost Model | **AX.1 (Grid Search) + A1.2 (Heuristic)** | Grid search 的最优解 + Heuristic 规则表 | 本项目 AX.1 + A1.2 | Learned vs Exhaustive vs Heuristic 三路对比 |
 | AX.3 Pipeline Overlap | **BL4 (Naive Pipeline) + BL3 (Independent Best, Serial)** | Ray Data naive pipeline + Serial execution | Ray Data (arXiv 2025) + 本项目 BL3 | Pipeline vs Serial；需固定其他变量不变 |
 
@@ -1350,7 +1350,7 @@ BL3 (Independent Best)：
 
 BL6 (Joint Optimal = Ours)：
   全链路联合搜索得到的最优配置
-  → 必须 BL6 < BL3 才成立核心 claim
+  → 若 BL6 明显优于 BL3，可作为阶段间耦合的增强证据
 ```
 
 ### 10.3 Baseline 实现检查清单

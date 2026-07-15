@@ -76,20 +76,20 @@
 
 ---
 
-## 五、Killer Experiment 的 Baseline 矩阵
+## 五、端到端流程调优增强对照矩阵
 
-对应论文 §7.2 "独立最优 vs 联合最优"的完整对照表：
+该矩阵用于在阶段级调优完成后分析阶段间耦合；它是增强型对照，不作为当前开题主叙事的前置假设。
 
 | 编号 | 组名 | GPU 策略 | 写回策略 | 来源 | 代表什么 |
 |---|---|---|---|---|---|
 | **BL1** | GPU-Only Optimal | G1/G2 最优 B_gpu, W, endpoint | 默认 driver 写回（当前方式） | vLLM/Orca | GPU 岛最优，不管写回 |
 | **BL2** | Writeback-Only Optimal | 默认 coalesced batch | W1/W2 最优 mode, B_write, sink | TurboVecDB + COPY | 写回岛最优，不管 GPU |
-| **BL3** | Independent Best | BL1 的 GPU 配置 | BL2 的写回配置 | 组合 BL1+BL2 | **关键对照**：独立最优组合 vs 联合最优 |
+| **BL3** | Independent Best | BL1 的 GPU 配置 | BL2 的写回配置 | 组合 BL1+BL2 | 增强对照：检查阶段级最优拼装是否等于端到端最优 |
 | **BL4** | Naive Pipeline | 固定 B_gpu，流水线写回 | 固定 overlap | Ray Data (G4) | 只做 overlap，不做 joint optimization |
 | **BL5** | Queue-Decoupled | 任意 GPU 策略 | Queue → worker 写回 | pgai (W4) | 解耦但无代价模型 |
 | **BL6** | FlexPushdownDB-Style | 代价决策（compute/storage pushdown） | 代价决策（compute/storage pushdown） | FlexPushdownDB (X1) | 已有跨层决策模型，但不管 GPU batch |
 
-**最低必跑集合**（硕士论文现实约束）：BL1, BL2, BL3, BL4。其中 BL3 是证明核心 claim 的最关键对照。
+**最低必跑集合**（硕士论文现实约束）：BL1, BL2, BL4，加上完整优化流程。BL3 可在阶段间耦合明显时加入，用于增强论证。
 
 ---
 

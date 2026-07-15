@@ -34,6 +34,7 @@
 | `slides/` | PPT 源稿、讲稿备注、PPTX 输出 |
 | `feishu/` | 飞书进度汇报稿 |
 | `literature/` | 文献清单、精读笔记、CCF-A 优先候选 |
+| `literature/reference/` | 用户已下载的部分参考文献 PDF 子集，供精读、看图和引用核验使用 |
 | `assets/` | 图、SVG、表格、流程图、模板素材说明 |
 | `logs/` | 非实验类 project log |
 
@@ -44,10 +45,12 @@
 | 开题报告 | `report/opening_report.md` | 初稿已补 |
 | 开题 PPT 源稿 | `slides/opening_ppt.md` | 当前内容和形式先作废，仅保留版式经验，下一版需重写 |
 | 开题 PPTX | `slides/opening_defense_20260712.pptx` | 旧版先作废，页面布局经验可参考，不再作为正式汇报稿 |
-| 开题飞书 wiki 源稿 | `feishu/opening_report_wiki.md` | 等用户过目本地报告后再同步 |
+| 开题飞书源稿 | `feishu/opening_report_wiki.md` | 已用于同步新版飞书 docx |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
 | 文献精读清单 | `literature/reading_list.md` | 候选清单已补，待精读 |
+| GPU 调度与数据放置补充调研 | `literature/gpu_scheduler_data_placement_supplement_20260715.md` | 已补，作为策略控制器设计依据与后续精读清单 |
+| 本地 PDF 子集索引 | `literature/reference/README.md` | 已登记当前已下载的部分论文，非完整文献库 |
 | 答辩问答 | `qa_bank.md` | 已扩展 |
 | 材料同步日志 | `logs/project_log.md` | 初版已建 |
 
@@ -63,10 +66,9 @@
 
 ## 下一步
 
-1. 先让用户过目 `report/opening_report.md`，确认报告方向和研究内容。
-2. 用户确认后，再同步 `feishu/opening_report_wiki.md` 和线上飞书文档。
-3. 基于确认后的报告和 `figures/` 正式图重做 PPT 内容；旧 PPT 只保留页面布局经验。
-4. 后续补充更正式的 GPU-backed 图表和实验结果时，同步更新开题报告、飞书文档和 PPT。
+1. 继续以 `report/opening_report.md` 和 `feishu/opening_report_wiki.md` 作为本地源稿，修改后同步新版飞书 docx。
+2. 基于确认后的报告和 `figures/` 正式图重做 PPT 内容；旧 PPT 只保留页面布局经验。
+3. 后续补充更正式的 GPU-backed 图表和实验结果时，同步更新开题报告、飞书文档和 PPT。
 4. 最后生成 DOCX。DOCX 必须使用学校 Word 模板，继承模板里的章节样式、字体、行间距、图表标注和参考文献格式。
 ## 飞书同步目标
 
@@ -74,9 +76,9 @@
 
 | 飞书文档 | 链接 | 用途 |
 |---|---|---|
-| 开题报告（新版，已同步 2026-07-15） | https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb | 承载开题报告正文最新版（含三岛框架、Killer Experiment、pgvector 写回等更新） |
+| 开题报告（新版，当前同步目标） | https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb | 承载开题报告正文最新版，口径为三层上游执行策略、写回瓶颈判定和端到端评价 |
 | 开题报告与开题汇报（旧版，已过时） | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 旧版，保留作为历史参考 |
-| 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 承载动机实验、可行性实验、阶段画像和实验结论边界 |
+| 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 承载动机实验、可行性实验、分阶段性能剖析和实验结论边界 |
 | 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 旧版在线幻灯片，当前内容和形式先作废，后续需基于新版报告重做 |
 
 同步规则见 `feishu/README.md`。
@@ -101,8 +103,8 @@ opening/navigation.md
 开题报告已同步到飞书新文档：
 https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb
 
-同步内容包括：完整七章正文 + 6 张图（研究缺口图、系统架构图、
-粒度对比图、阶段时延图、endpoint 对比图、pgvector 写回对比图）。
+同步内容包括：完整七章正文、三层上游执行策略图、运行时策略闭环图，
+以及 GPU-backed 动机实验图（粒度对比、阶段时延、endpoint 对比、pgvector 写回对比）。
 旧版 wiki (GCxowlVJbinzgRkoHDmc06cSn9J) 保留作为历史参考，不再更新。
 
-PPT 和旧版飞书 wiki 源稿尚未同步，待用户确认报告内容后再处理。
+PPT 尚未按当前报告重做；旧版飞书 wiki 保留历史版本，不再作为当前开题报告同步面。

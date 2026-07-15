@@ -1,5 +1,38 @@
 # 开题材料 project log
 
+## 2026-07-15 开题报告移除 fake/CPU 主文证据
+
+- 根据当前已经完成 pgai SQL 触发面集成和真实 GPU-backed `AI_EMBED` 完整链路复测的事实，更新 `opening/report/opening_report.md` 和 `opening/feishu/opening_report_wiki.md`。
+- 删除 4.2 中历史 fake/CPU 预研图、表和相关表述，避免读者误解课题仍停留在 toy/fake benchmark 阶段。
+- 4.2 可行性证据现在只保留 PG18.4 + pgvector 环境、GPU-backed `AI_EMBED` 链路和双 endpoint Ray 动机测试；调优变量依据改为文献机制 + 当前真实 GPU-backed 复测。
+- 已覆盖同步新版开题报告飞书 docx，并重新插入 8 张正式 PNG；回读确认 revision 更新到 `72`，未检出 fake/CPU、图 4-7、表 4-4、Mermaid 旧图或本地 `figures/` 路径残留。
+
+## 2026-07-15 开题报告飞书新版 docx 同步
+
+- 使用 user 身份将 `opening/feishu/opening_report_wiki.md` 覆盖同步到新版开题报告飞书 docx：`https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb`。
+- 覆盖写入后飞书返回 `partial_success`，原因是 Markdown 中的本地图片路径不能直接导入为图片资源；随后逐张上传并插入 8 张 PNG：研究缺口图、总体研究框架图、三层上游执行策略图、运行时策略闭环图、粒度对比图、阶段时延图、endpoint 对比图、pgvector 写回对比图。
+- 回读线上文档确认 revision 更新到 `51`，关键图注附近为真实飞书图片 URL；关键词检查未发现本地 `figures/` 路径和旧的“三岛/Killer/联合最优/边界确认/阶段画像/Ours-v0”等表述残留。
+
+## 2026-07-15 策略设计与实现参考沉淀
+
+- 新增 `experiments/plans/strategy_design_implementation_reference.md`，作为后续实验设计和系统实现参考，汇总 Ray、vLLM/Ray Serve/Triton、GPU 数据放置和 DB AI 算子文献机制如何支持本课题三层策略。
+- 明确三层策略口径：计划层数据组织、运行层入口调度、服务端 dynamic / continuous micro-batching；该口径后续应同步到开题报告、PPT 和答辩讲解中。
+- 进一步补充“系统优化蓝图”和“机制到实现任务优先级”，把文献机制拆成 Workload Profiler、Plan-time Data Organizer、Ray Admission Controller、Endpoint Router、Service-side Micro-batcher 和 E2E Guardrail 六个可实现模块。
+- 已同步 `experiments/plans/README.md`、`experiments/plans/strategy_design_literature_basis.md` 和 `PROJECT_INDEX.md`。
+
+## 2026-07-15 GPU 调度与数据放置补充调研
+
+- 新增 `opening/literature/gpu_scheduler_data_placement_supplement_20260715.md`，用于说明策略控制器设计参考了 GPU / LLM 推理服务调度、Ray/Ray Data 异构数据管线、GPU 数据库算子与数据库 AI 算子等文献线索。
+- 该文件当前作为“设计依据与后续精读清单”，不替代逐篇精读笔记；未下载或未逐篇核验的条目仍按待核验处理。
+- 已同步 `opening/README.md`、`opening/literature/reading_list.md` 和 `PROJECT_INDEX.md` 入口。
+
+## 2026-07-15 策略设计重新评判与三层收窄
+
+- 将策略机制图从“全运行时控制器”收窄为 three-layer upstream execution strategy：计划层在执行前选择 `batch_size` / `partition_count` / `object_merge`，运行层调整 `K_max`、routing、backpressure，服务端用 dynamic / continuous batching 形成推理 `micro-batch`。
+- 当前不采用“运行时重切数据库侧已物化 RecordBatch”作为主方案；动态 batch 借鉴 vLLM / Ray Serve / Triton 思路，放在模型服务侧尚未执行的请求队列中。
+- 补充 Ray OSDI 2018 调度思想映射：task/actor、resource-aware scheduling、local/global scheduler、object store locality 和 actor pool 可迁移为 task 粒度、actor 池、资源约束、placement/locality、`K_max` 与 routing 等实验变量。
+- 已重新生成 `figures/architecture/runtime_strategy_control_loop.png` / `.svg`，并同步图表审计与策略设计文档。
+
 ## 2026-07-13 项目级图资产目录迁移
 
 - 根据后续 learning、中期汇报和毕业论文都会复用图表的要求，将正式图资产从 `opening/assets/` 和 `learning/figures/` 迁移到根目录 `figures/`。
@@ -285,3 +318,46 @@
   `figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png`.
 - Updated `opening/report/opening_report.md` with the new figure, table, and boundary note. The result remains PG18.4 local rehearsal, not PostgreSQL 18.3 internal-platform performance.
 - Feishu/wiki and PPT were not synchronized in this pass.
+
+# 2026-07-15 research plan figure for opening report
+
+- Refined `figures/architecture/cross_layer_method_framework.png` / `.svg` into a research-plan figure for Section 4.1.
+- Inserted the figure into `opening/report/opening_report.md` and local Feishu source `opening/feishu/opening_report_wiki.md` as Figure 4-1; renumbered subsequent Section 4 figures.
+- Updated the figure asset index and added an audit record. Online Feishu/wiki and PPT were not synchronized in this pass.
+
+# 2026-07-15 research-plan figure drawing rules
+
+- Synchronized the research-plan figure drawing cautions into `figures/AGENTS.md` and `opening/ppt_rules.md`.
+- The rules now require concrete workload cards, explicit upstream-tuning labels, full border/overflow checks, and no visible `RC/BL`, unexplained `vs`, or vague `边界确认` labels in formal figures.
+
+# 2026-07-15 opening report mainline adjusted to upstream tuning plus end-to-end evaluation
+
+- Adjusted the opening-report mainline from “independent best vs joint optimal” to “upstream execution-path tuning plus end-to-end evaluation”.
+- Updated the local report and Feishu source so the main route is now staged profiling, upstream execution-path tuning, writeback-inclusive full-chain validation, and multi-workload validation.
+- Kept independent-best vs end-to-end configuration as an optional enhanced contrast when later experiments show clear cross-stage coupling.
+
+# 2026-07-15 opening report architecture figures aligned with three-layer strategy
+
+- Regenerated the opening-report architecture figures:
+  `figures/architecture/system_architecture_ai_data_execution.*`,
+  `figures/architecture/cross_layer_method_framework.*`, and
+  `figures/architecture/runtime_strategy_control_loop.*`.
+- Updated `opening/report/opening_report.md` and `opening/feishu/opening_report_wiki.md`: Figure 4-1 now states the three-layer upstream execution strategy, and Figure 4-2 now uses the runtime control-loop figure instead of the previous Mermaid chain sketch.
+- The updated figures clarify that database-side batch/partition are primarily plan-time choices, while runtime optimization focuses on `K_max`, `routing policy`, backpressure, and service-side `micro-batch`; writeback remains an end-to-end guardrail and bottleneck test.
+
+# 2026-07-15 opening report figure color semantics corrected
+
+- Revised Figure 4-1 so the three-layer upstream strategy is drawn as three separate neutral cards: plan-time data organization, runtime admission/routing, and service-side batching.
+- Revised Figure 3-1 bottom research-content cards to use neutral borders, avoiding a misleading one-to-one color mapping with the system pipeline stages above.
+- Adjusted research content 2 wording to `运行层调度与服务端批处理`, matching the current plan that combines Ray-side admission/routing with model-service-side `micro-batch`.
+
+# 2026-07-15 opening report figure wording conservatism pass
+
+- Revised the research-gap figure so the bottom positioning matches the current plan: data organization, runtime scheduling plus service-side batching, and writeback bottleneck determination.
+- Revised the strategy rule table title to `信号触发的候选策略规则表`, making clear that table entries are candidate triggers for later experiments rather than proven rules.
+
+# 2026-07-15 opening report text aligned with revised strategy
+
+- Updated `opening/report/opening_report.md` and `opening/feishu/opening_report_wiki.md` so the prose matches the current figures.
+- The report now describes the method as plan-time data organization, runtime admission/routing, and service-side batching, with writeback used for bottleneck determination and end-to-end benefit checks.
+- Removed stale mainline wording around GPU-only scheduling, writeback as an independent contribution, and mandatory independent-best vs joint-optimal comparison.

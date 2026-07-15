@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120">
+<rect width="1800" height="1120" fill="#F8FAFC"/>
+<text x="64" y="66" font-family="Microsoft YaHei,Arial,sans-serif" font-size="30" font-weight="700" fill="#172033" text-anchor="start">优化策略设计：Ours-v0 规则表驱动上游执行策略</text>
+<text x="66" y="100" font-family="Microsoft YaHei,Arial,sans-serif" font-size="16" font-weight="400" fill="#334155" text-anchor="start">策略不是重新实现数据库优化器或推理引擎；它在已定位瓶颈之后，用 workload 特征和模型服务状态选择上游执行配置，并用端到端指标回填规则表。</text>
+<rect x="70" y="128" width="400" height="760" rx="16" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="94" y="172" font-family="Microsoft YaHei,Arial,sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="start">输入信号</text>
+<rect x="520" y="128" width="620" height="760" rx="16" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="544" y="172" font-family="Microsoft YaHei,Arial,sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="start">规则表选择器</text>
+<rect x="1190" y="128" width="540" height="760" rx="16" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1214" y="172" font-family="Microsoft YaHei,Arial,sans-serif" font-size="19" font-weight="700" fill="#172033" text-anchor="start">策略动作与配置</text>
+<rect x="100" y="188" width="340" height="142" rx="12" fill="#F2ECFF" stroke="#7C3AED" stroke-width="2"/>
+<text x="120" y="218" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#7C3AED" text-anchor="start">Workload 特征</text>
+<rect x="118" y="240" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="258.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">算子类型 / 行数</text>
+<rect x="118" y="274" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="292.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">token length / prefix</text>
+<rect x="118" y="308" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="326.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">selectivity / 输出大小</text>
+<rect x="100" y="360" width="340" height="142" rx="12" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="2"/>
+<text x="120" y="390" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#2F6FEB" text-anchor="start">数据组织信号</text>
+<rect x="118" y="412" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="430.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">batch / partition</text>
+<rect x="118" y="446" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="464.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">operator invocation</text>
+<rect x="118" y="480" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="498.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">object 数 / fan-in</text>
+<rect x="100" y="532" width="340" height="142" rx="12" fill="#FFF1E6" stroke="#F97316" stroke-width="2"/>
+<text x="120" y="562" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#F97316" text-anchor="start">模型服务状态</text>
+<rect x="118" y="584" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="602.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">queue wait / backlog</text>
+<rect x="118" y="618" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="636.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">endpoint load</text>
+<rect x="118" y="652" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="670.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">GPU utilization / P99</text>
+<rect x="100" y="704" width="340" height="120" rx="12" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
+<text x="120" y="734" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#16A34A" text-anchor="start">写回约束信号</text>
+<rect x="118" y="756" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="774.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">writeback ratio</text>
+<rect x="118" y="790" width="304" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="270.0" y="808.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">sink mode / write batch</text>
+<rect x="555" y="180" width="550" height="138" rx="12" fill="#FFF7D6" stroke="#B7791F" stroke-width="2"/>
+<text x="575" y="210" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#B7791F" text-anchor="start">规则来源</text>
+<rect x="573" y="232" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="250.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">文献机制：AI-aware / batching / backpressure</text>
+<rect x="573" y="266" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="284.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">本地画像：阶段耗时 / queue / writeback</text>
+<rect x="573" y="300" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="318.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">参数 sweep：静态最优与边界点</text>
+<rect x="555" y="350" width="550" height="150" rx="12" fill="#F2ECFF" stroke="#7C3AED" stroke-width="2"/>
+<text x="575" y="380" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#7C3AED" text-anchor="start">Workload 规则</text>
+<rect x="573" y="402" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="420.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">FILTER：优先看 selectivity 与 cascade</text>
+<rect x="573" y="436" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="454.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">COMPLETE：优先看 token / prefix 分组</text>
+<rect x="573" y="470" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="488.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">EMBED：优先看 batch 与输出写回量</text>
+<rect x="555" y="532" width="550" height="150" rx="12" fill="#FFF1E6" stroke="#F97316" stroke-width="2"/>
+<text x="575" y="562" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#F97316" text-anchor="start">服务状态规则</text>
+<rect x="573" y="584" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="602.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">queue wait 高：降低或自适应 in-flight</text>
+<rect x="573" y="618" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="636.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">GPU 利用率低：增大 batch 或并发</text>
+<rect x="573" y="652" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="670.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">endpoint 不均衡：改 routing / dispatch</text>
+<rect x="555" y="714" width="550" height="120" rx="12" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
+<text x="575" y="744" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#16A34A" text-anchor="start">写回保护规则</text>
+<rect x="573" y="766" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="784.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">writeback ratio 高：切换写回路径</text>
+<rect x="573" y="800" width="514" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="830.0" y="818.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">端到端无收益：回退上游配置</text>
+<rect x="1225" y="184" width="470" height="158" rx="12" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="2"/>
+<text x="1245" y="214" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#2F6FEB" text-anchor="start">数据组织配置</text>
+<rect x="1243" y="236" width="434" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1460.0" y="254.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">batch_size / partition_count</text>
+<rect x="1243" y="270" width="434" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1460.0" y="288.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">object_merge / fan-in shape</text>
+<rect x="1243" y="304" width="434" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1460.0" y="322.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">按 selectivity / prefix / output 重排</text>
+<rect x="1225" y="384" width="470" height="178" rx="12" fill="#FFF1E6" stroke="#F97316" stroke-width="2"/>
+<text x="1245" y="414" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#F97316" text-anchor="start">模型服务调度配置</text>
+<text x="1677" y="414" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="end">核心</text>
+<rect x="1243" y="436" width="434" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1460.0" y="454.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">actor_pool_size / K_max</text>
+<rect x="1243" y="470" width="434" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1460.0" y="488.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">routing_policy / dispatch_policy</text>
+<rect x="1243" y="504" width="434" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1460.0" y="522.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">bounded in-flight / adaptive backpressure</text>
+<rect x="1243" y="538" width="434" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1460.0" y="556.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">token-aware / prefix-aware dispatch</text>
+<rect x="1225" y="604" width="470" height="158" rx="12" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
+<text x="1245" y="634" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#16A34A" text-anchor="start">写回约束配置</text>
+<rect x="1243" y="656" width="434" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1460.0" y="674.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">COPY + deferred index baseline</text>
+<rect x="1243" y="690" width="434" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1460.0" y="708.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">driver / worker-direct / queue-worker</text>
+<rect x="1243" y="724" width="434" height="27" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1460.0" y="742.4" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">write_batch_rows / sink mode</text>
+<line x1="440" y1="259" x2="555" y2="419" stroke="#475569" stroke-width="3"/>
+<polygon points="555,419 542,411 542,427" fill="#475569"/>
+<line x1="440" y1="431" x2="555" y2="431" stroke="#475569" stroke-width="3"/>
+<polygon points="555,431 542,423 542,439" fill="#475569"/>
+<line x1="440" y1="603" x2="555" y2="607" stroke="#475569" stroke-width="3"/>
+<polygon points="555,607 542,599 542,615" fill="#475569"/>
+<line x1="440" y1="764" x2="555" y2="774" stroke="#475569" stroke-width="3"/>
+<polygon points="555,774 542,766 542,782" fill="#475569"/>
+<line x1="1105" y1="424" x2="1225" y2="263" stroke="#475569" stroke-width="3"/>
+<polygon points="1225,263 1212,255 1212,271" fill="#475569"/>
+<line x1="1105" y1="607" x2="1225" y2="473" stroke="#475569" stroke-width="3"/>
+<polygon points="1225,473 1212,465 1212,481" fill="#475569"/>
+<line x1="1105" y1="774" x2="1225" y2="683" stroke="#475569" stroke-width="3"/>
+<polygon points="1225,683 1212,675 1212,691" fill="#475569"/>
+<rect x="520" y="922" width="1210" height="88" rx="14" fill="#FFFFFF" stroke="#16A34A" stroke-width="2"/>
+<text x="548" y="960" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#16A34A" text-anchor="start">端到端验证与回填</text>
+<rect x="730" y="946" width="142" height="28" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="801.0" y="964.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">latency / rows/s</text>
+<rect x="888" y="946" width="142" height="28" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="959.0" y="964.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">queue wait / P99</text>
+<rect x="1046" y="946" width="142" height="28" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1117.0" y="964.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">model wall</text>
+<rect x="1204" y="946" width="142" height="28" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1275.0" y="964.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">writeback ratio</text>
+<rect x="1362" y="946" width="142" height="28" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="1433.0" y="964.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="middle">GPU utilization</text>
+<text x="548" y="992" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">验证通过：保留规则；验证失败：回退配置并进入下一轮参数 sweep。</text>
+<text x="92" y="1064" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">图注：Ours-v0 策略逻辑图。左侧输入来自前置阶段画像；中间规则表结合文献机制、本地画像和参数 sweep；右侧输出可执行配置，底部用包含写回的端到端指标回填规则。</text>
+</svg>

@@ -43,8 +43,10 @@ figures/data/report_main/
 
 | 文件 | 用途 |
 |---|---|
-| `architecture/system_architecture_ai_data_execution.png` / `.svg` | 课题总体研究框架，定义数据库 -> Daft/Arrow -> Ray -> GPU model service -> sink 的研究对象 |
-| `architecture/research_gap_three_islands.png` / `.svg` | 三岛研究缺口图，说明三个成熟方向（DB4AI、推理服务、数据存储）之间的空白和本课题定位 |
+| `architecture/system_architecture_ai_data_execution.png` / `.svg` | 课题总体研究框架，定义数据库 -> Daft/Arrow -> Ray -> GPU model service -> sink 的研究对象，并标出计划层、运行层、服务端动态批处理和写回判定位置 |
+| `architecture/research_gap_three_islands.png` / `.svg` | 研究缺口图，说明三个成熟方向（DB4AI、推理服务、数据存储）之间的空白和本课题定位 |
+| `architecture/cross_layer_method_framework.png` / `.svg` | 研究方案图，说明三类 AI workload、分阶段性能剖析、三层上游执行策略、结果写回瓶颈判定和端到端效果评估 |
+| `architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时策略闭环图，当前首选策略机制图；用一个 AI_EMBED SQL 例子说明计划层 batch/partition、运行层 K_max/routing/backpressure、服务端 micro-batch 和写回 guardrail 如何协同 |
 | `data/report_main/02_gpu_stage_latency_stack.png` / `.svg` | 真实 GPU-backed 链路阶段耗时，说明端到端成本可拆解、可观测 |
 | `data/report_main/03_invocation_granularity.png` / `.svg` | 调用粒度对比，说明 batch / invocation 粒度值得调 |
 | `data/report_main/04_executor_endpoint_comparison.png` / `.svg` | single / dual endpoint 下执行方式对比，说明 Ray 的价值依赖模型服务并行条件 |
@@ -151,3 +153,60 @@ figures/audit/pgvector_writeback_chart_audit_20260714.md
 This figure should be used when discussing whether JSON text writeback and
 pgvector `vector(384)` writeback have the same cost in the local GPU-backed
 chain.
+
+## 2026-07-15 strategy figure design notes
+
+Before redrawing the strategy-design figure, read:
+
+```text
+figures/audit/top_venue_strategy_figure_design_notes.md
+figures/audit/strategy_figure_micro_design_points.md
+figures/audit/local_reference_figure_reading_notes.md
+```
+
+This note extracts design patterns from top systems papers and recommends that
+the next strategy figure use a control-loop plus compact rule-table structure,
+rather than a three-column list of signals and actions.
+
+`strategy_figure_micro_design_points.md` further decomposes the strategy figure
+into smaller drawable mechanisms: workload-aware batch/partition selection,
+bounded in-flight control, endpoint routing, writeback guardrails, and the
+Trigger -> Action -> Guardrail rule table.
+
+`local_reference_figure_reading_notes.md` records figure-design lessons from
+the locally downloaded PDF subset under `opening/literature/reference/` and
+connects them to the current runtime control-loop figure.
+
+The generated control-loop figure is:
+
+```text
+figures/architecture/runtime_strategy_control_loop.png
+figures/architecture/runtime_strategy_control_loop.svg
+figures/architecture/runtime_strategy_rule_table.png
+figures/architecture/runtime_strategy_rule_table.svg
+figures/scripts/generate_runtime_strategy_control_loop.py
+figures/audit/runtime_strategy_control_loop_audit.md
+```
+
+`runtime_strategy_control_loop.*` and `runtime_strategy_rule_table.*` are used
+as a pair: the first figure explains the runtime feedback loop, and the second
+figure explains the compact observed-signal -> candidate-action -> guardrail
+table. The rule table records candidate logic to be validated, not final proven
+rules. Visible labels are mostly Chinese, with only necessary technical tokens
+such as `AI_EMBED`, `SQL`, `GPU`, `K_max`, `P99`, and `token` retained.
+
+## 2026-07-15 archived strategy iterations
+
+The following strategy-figure iterations are archived and should not be used as
+current opening-report or PPT figures:
+
+```text
+figures/archive/architecture/20260715_strategy_iterations/upstream_strategy_design.png
+figures/archive/architecture/20260715_strategy_iterations/upstream_strategy_design.svg
+figures/archive/architecture/20260715_strategy_iterations/optimization_strategy_logic.png
+figures/archive/architecture/20260715_strategy_iterations/optimization_strategy_logic.svg
+figures/archive/architecture/20260715_strategy_iterations/_font_test.png
+```
+
+Use `runtime_strategy_control_loop.*` and `runtime_strategy_rule_table.*`
+instead for the current strategy-design explanation.
