@@ -74,7 +74,8 @@
 
 | 飞书文档 | 链接 | 用途 |
 |---|---|---|
-| 开题报告与开题汇报 | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 承载开题报告正文，并同步开题汇报 PPT 的核心内容和最终口径 |
+| 开题报告（新版，已同步 2026-07-15） | https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb | 承载开题报告正文最新版（含三岛框架、Killer Experiment、pgvector 写回等更新） |
+| 开题报告与开题汇报（旧版，已过时） | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 旧版，保留作为历史参考 |
 | 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 承载动机实验、可行性实验、阶段画像和实验结论边界 |
 | 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 旧版在线幻灯片，当前内容和形式先作废，后续需基于新版报告重做 |
 
@@ -95,13 +96,13 @@ opening/navigation.md
 ```
 
 它说明需要项目内容、实验结果、文献、PPT 素材、飞书同步信息时分别去哪里找，也说明报告、PPT、飞书版之间如何保持同步。
-# 2026-07-14 Status Note
+# 2026-07-15 Status Note
 
-`report/opening_report.md` now uses the PG18.4 pgai-integrated GPU-backed
-rerun figures from `figures/data/report_main/06_*`, `07_*`, and `08_*`.
-The Feishu/wiki and PPT materials still need a separate synchronization pass
-if the latest report body is accepted.
+开题报告已同步到飞书新文档：
+https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb
 
-The report also now includes the pgvector `vector(384)` sink comparison figure
-`figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png`.
-Feishu/wiki and PPT are still not synchronized after this update.
+同步内容包括：完整七章正文 + 6 张图（研究缺口图、系统架构图、
+粒度对比图、阶段时延图、endpoint 对比图、pgvector 写回对比图）。
+旧版 wiki (GCxowlVJbinzgRkoHDmc06cSn9J) 保留作为历史参考，不再更新。
+
+PPT 和旧版飞书 wiki 源稿尚未同步，待用户确认报告内容后再处理。

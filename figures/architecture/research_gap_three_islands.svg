@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="800" viewBox="0 0 1600 800">
+<rect width="1600" height="800" fill="#F8FAFC"/>
+<text x="64" y="60" font-family="Microsoft YaHei,Arial,sans-serif" font-size="28" font-weight="700" fill="#1F2937" text-anchor="start">已有研究的三个方向与本课题定位</text>
+<text x="66" y="96" font-family="Microsoft YaHei,Arial,sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="start">数据库内置 AI 算子、分布式 AI 推理服务、AI 数据存储三个方向各自有大量 CCF-A 工作，但缺少跨方向的端到端协同优化。</text>
+<rect x="189.0" y="116" width="374" height="218" rx="14" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="2"/>
+<text x="376.0" y="151.3" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#2F6FEB" text-anchor="middle">方向一：数据库内置 AI 算子（DB4AI）</text>
+<rect x="211.0" y="172" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="376.0" y="189.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">GaussML (ICDE 2024)</text>
+<rect x="211.0" y="204" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="376.0" y="221.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">Smart (VLDB J. 2025)</text>
+<rect x="211.0" y="236" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="376.0" y="253.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">NeurDB (CIDR 2025)</text>
+<rect x="211.0" y="268" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="376.0" y="285.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">LEADS (VLDB 2024)</text>
+<rect x="613.0" y="116" width="374" height="218" rx="14" fill="#FFF1E6" stroke="#F97316" stroke-width="2"/>
+<text x="800.0" y="151.3" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#F97316" text-anchor="middle">方向二：分布式 AI 推理服务系统</text>
+<rect x="635.0" y="172" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="800.0" y="189.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">vLLM (SOSP 2023)</text>
+<rect x="635.0" y="204" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="800.0" y="221.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">Orca (OSDI 2022)</text>
+<rect x="635.0" y="236" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="800.0" y="253.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">Sarathi-Serve (OSDI 2024)</text>
+<rect x="635.0" y="268" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="800.0" y="285.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">Ray / Daft / Ray Data</text>
+<rect x="1037.0" y="116" width="374" height="218" rx="14" fill="#F2ECFF" stroke="#7C3AED" stroke-width="2"/>
+<text x="1224.0" y="151.3" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#7C3AED" text-anchor="middle">方向三：AI 数据存储与写回优化</text>
+<rect x="1059.0" y="172" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="1224.0" y="189.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">Lance (LanceDB 2025)</text>
+<rect x="1059.0" y="204" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="1224.0" y="221.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">TurboVecDB (PVLDB 2025)</text>
+<rect x="1059.0" y="236" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="1224.0" y="253.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">Delta Lake (PVLDB 2020)</text>
+<rect x="1059.0" y="268" width="330" height="26" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="1224.0" y="285.9" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#667085" text-anchor="middle">pgvector / Arrow Flight</text>
+<text x="376.0" y="354" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#B91C1C" text-anchor="middle">优化范围止于数据库进程边界</text>
+<text x="800.0" y="354" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#B91C1C" text-anchor="middle">数据来源与去向被抽象为输入/输出</text>
+<text x="1224.0" y="354" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#B91C1C" text-anchor="middle">优化范围止于存储层</text>
+<line x1="229.0" y1="384" x2="1371.0" y2="384" stroke="#D8DEE8" stroke-width="1"/>
+<text x="1030.0" y="402.55" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#B91C1C" text-anchor="middle">三个方向各自深入，缺少跨方向协同 —— 本课题填补此空白</text>
+<rect x="160.0" y="424" width="1280" height="260" rx="14" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
+<text x="800.0" y="457.95" font-family="Microsoft YaHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#16A34A" text-anchor="middle">本课题定位：方向一与方向二协同优化，方向三为结果写回</text>
+<rect x="270.0" y="458" width="718" height="180" rx="12" fill="#F1F5F9" stroke="#D8DEE8" stroke-width="2"/>
+<rect x="298.0" y="486" width="320" height="138" rx="10" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
+<circle cx="324.0" cy="508" r="14" fill="#2F6FEB"/>
+<text x="324.0" y="513" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="346.0" y="514" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#2F6FEB" text-anchor="start">数据组织与批处理构造</text>
+<rect x="312.0" y="534" width="292" height="20" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="458.0" y="547.85" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085" text-anchor="middle">AI workload 特征感知</text>
+<rect x="312.0" y="559" width="292" height="20" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="458.0" y="572.85" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085" text-anchor="middle">batch / partition / operator 粒度</text>
+<rect x="312.0" y="584" width="292" height="20" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="458.0" y="597.85" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085" text-anchor="middle">object 合并与 fan-in 形态</text>
+<rect x="640.0" y="486" width="320" height="138" rx="10" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
+<circle cx="666.0" cy="508" r="14" fill="#F97316"/>
+<text x="666.0" y="513" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="688.0" y="514" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#F97316" text-anchor="start">GPU 服务感知调度与反压</text>
+<rect x="654.0" y="534" width="292" height="20" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="800.0" y="547.85" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085" text-anchor="middle">endpoint / replica 状态路由</text>
+<rect x="654.0" y="559" width="292" height="20" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="800.0" y="572.85" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085" text-anchor="middle">actor pool 与 bounded in-flight</text>
+<rect x="654.0" y="584" width="292" height="20" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="800.0" y="597.85" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085" text-anchor="middle">queue wait 与 backlog 控制</text>
+<rect x="1010.0" y="486" width="320" height="138" rx="10" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
+<circle cx="1036.0" cy="508" r="14" fill="#7C3AED"/>
+<text x="1036.0" y="513" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="1058.0" y="514" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#7C3AED" text-anchor="start">结果写回优化</text>
+<rect x="1024.0" y="534" width="292" height="20" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="1170.0" y="547.85" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085" text-anchor="middle">fan-in 汇聚与批量写入</text>
+<rect x="1024.0" y="559" width="292" height="20" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="1170.0" y="572.85" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085" text-anchor="middle">driver / worker / queue 写回路径</text>
+<rect x="1024.0" y="584" width="292" height="20" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="2"/>
+<text x="1170.0" y="597.85" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#667085" text-anchor="middle">Lance / pgvector / PostgreSQL</text>
+<text x="298.0" y="474" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="start">跨层协同优化（核心方法贡献）</text>
+<text x="72" y="778" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#667085" text-anchor="start">图注：已有研究在 DB4AI、AI 推理服务和 AI 数据存储三个方向各自深入，但缺少将它们视为端到端可协同优化的完整链路的系统研究。本课题聚焦方向一（数据组织）与方向二（GPU 调度）的跨层协同优化。</text>
+</svg>

@@ -84,13 +84,13 @@
 <text x="800.0" y="627.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#1F2937" text-anchor="middle">统一观测指标：e2e_s   rows/s   tokens/s   operator_wall_s   queue_wait   fan-in   writeback_s</text>
 <rect x="96" y="714" width="410" height="208" rx="18" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
 <circle cx="134" cy="748" r="17" fill="#2F6FEB"/><text x="134" y="754" font-family="Microsoft YaHei, Arial, sans-serif" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
-<text x="174" y="759" font-family="Microsoft YaHei, Arial, sans-serif" font-size="21" font-weight="700" fill="#1F2937" text-anchor="start">数据组织与批处理调度</text>
+<text x="174" y="759" font-family="Microsoft YaHei, Arial, sans-serif" font-size="21" font-weight="700" fill="#1F2937" text-anchor="start">数据组织与批处理构造</text>
 <rect x="124" y="786" width="354" height="28" rx="10" fill="#F8FAFC" stroke="#E1E7EF" stroke-width="1"/>
-<text x="301.0" y="805.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">workload 特征</text>
+<text x="301.0" y="805.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">AI workload 特征感知</text>
 <rect x="124" y="824" width="354" height="28" rx="10" fill="#F8FAFC" stroke="#E1E7EF" stroke-width="1"/>
-<text x="301.0" y="843.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">batch 与 partition</text>
+<text x="301.0" y="843.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">batch / partition / operator 粒度</text>
 <rect x="124" y="862" width="354" height="28" rx="10" fill="#F8FAFC" stroke="#E1E7EF" stroke-width="1"/>
-<text x="301.0" y="881.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">RecordBatch 粒度</text>
+<text x="301.0" y="881.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">object 合并与 fan-in 形态</text>
 <rect x="595" y="714" width="410" height="208" rx="18" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
 <circle cx="633" cy="748" r="17" fill="#16A34A"/><text x="633" y="754" font-family="Microsoft YaHei, Arial, sans-serif" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
 <text x="673" y="759" font-family="Microsoft YaHei, Arial, sans-serif" font-size="21" font-weight="700" fill="#1F2937" text-anchor="start">GPU 服务感知 Ray 调度</text>
@@ -99,15 +99,15 @@
 <rect x="623" y="824" width="354" height="28" rx="10" fill="#F8FAFC" stroke="#E1E7EF" stroke-width="1"/>
 <text x="800.0" y="843.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">actor pool 与 routing</text>
 <rect x="623" y="862" width="354" height="28" rx="10" fill="#F8FAFC" stroke="#E1E7EF" stroke-width="1"/>
-<text x="800.0" y="881.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">bounded in-flight</text>
+<text x="800.0" y="881.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">bounded in-flight 与反压</text>
 <rect x="1094" y="714" width="410" height="208" rx="18" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
 <circle cx="1132" cy="748" r="17" fill="#7C3AED"/><text x="1132" y="754" font-family="Microsoft YaHei, Arial, sans-serif" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
-<text x="1172" y="759" font-family="Microsoft YaHei, Arial, sans-serif" font-size="21" font-weight="700" fill="#1F2937" text-anchor="start">结果汇聚与持久化协同</text>
+<text x="1172" y="759" font-family="Microsoft YaHei, Arial, sans-serif" font-size="21" font-weight="700" fill="#1F2937" text-anchor="start">持久化边界确认与轻量优化</text>
 <rect x="1122" y="786" width="354" height="28" rx="10" fill="#F8FAFC" stroke="#E1E7EF" stroke-width="1"/>
-<text x="1299.0" y="805.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">fan-in 位置</text>
+<text x="1299.0" y="805.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">writeback 瓶颈确认</text>
 <rect x="1122" y="824" width="354" height="28" rx="10" fill="#F8FAFC" stroke="#E1E7EF" stroke-width="1"/>
-<text x="1299.0" y="843.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">worker writeback</text>
+<text x="1299.0" y="843.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">driver / worker / queue 写回</text>
 <rect x="1122" y="862" width="354" height="28" rx="10" fill="#F8FAFC" stroke="#E1E7EF" stroke-width="1"/>
-<text x="1299.0" y="881.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">Lance 与 pgvector</text>
-<text x="72" y="952" font-family="Microsoft YaHei, Arial, sans-serif" font-size="13" font-weight="400" fill="#667085" text-anchor="start">图注：数据库驱动 AI workload 进入 Daft/Arrow、Ray、GPU 服务和 AI 数据 sink 后，三个研究内容分别对应编号 1、2、3。</text>
+<text x="1299.0" y="881.6" font-family="Microsoft YaHei, Arial, sans-serif" font-size="16" font-weight="400" fill="#667085" text-anchor="middle">Lance / pgvector / PostgreSQL</text>
+<text x="72" y="952" font-family="Microsoft YaHei, Arial, sans-serif" font-size="13" font-weight="400" fill="#667085" text-anchor="start">图注：研究内容 1、2 分别关注数据组织构造与 GPU 服务感知调度，二者跨层协同为本课题核心方法贡献；研究内容 3 关注持久化边界确认，不作为独立方法创新。</text>
 </svg>

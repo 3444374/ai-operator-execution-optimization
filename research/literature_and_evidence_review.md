@@ -501,3 +501,142 @@ workload：
 | Spark SQL tuning: https://spark.apache.org/docs/latest/sql-performance-tuning.html | partition、shuffle coalescing、join strategy 是成熟系统问题 |
 | Arrow Flight benchmark: https://arxiv.org/abs/2204.03032 | Arrow/Flight 高性能列式传输依据 |
 | Lance paper: https://arxiv.org/abs/2504.15247 | Lance 面向 AI/columnar workload 的存储依据 |
+
+## 10. 2026-07-15 数据库 AI 算子文献深度调研
+
+调研日期：2026-07-15
+触发：导师建议补充 Snowflake AI 算子 SIGMOD 论文，以及数据库 AI 算子相关文献
+方法：多源并行检索（WebSearch × 8 轮，覆盖 Snowflake/BigQuery/Oracle、SIGMOD/VLDB/ICDE/CIDR/OSDI/SOSP/NeurIPS）
+
+### 10.1 核心发现
+
+**"数据库 AI 算子"已经是一个有 CCF-A 论文支撑的工业+学术方向。** 但现有文献分布在三个相对独立的研究岛之间，缺少端到端的协同视角。
+
+```
+岛 1: 数据库内 AI                  岛 2: GPU 推理服务              岛 3: AI 数据存储
+Cortex AISQL (SIGMOD '26)       vLLM (SOSP '23 Best)           Lance (arXiv '25)
+NeurDB (CIDR '25)               Orca (OSDI '22)                pgvector
+GaussML (ICDE '24)              Ray Data (arXiv '25)           Parquet/Arrow
+LEADS/INDICES (VLDB '24)        SGLang (NeurIPS '24)          
+Smart (VLDB J '25)              DistServe (OSDI '24)
+Galois (SIGMOD '25)             DeepSeek-V3
+InferDB (VLDB '24)
+SmartLite (VLDB '24)
+        │                              │                              │
+        └──────────────────────────────┼──────────────────────────────┘
+                                       │
+                         本课题：数据库触发 → 数据组织 →
+                         分布式执行 → GPU 推理 → fan-in → 写回
+                         （三个岛之间的全链路协同优化）
+```
+
+**研究空白**：没有现有工作同时覆盖"数据库侧的数据出口与写回入口"、"分布式执行与调度"、"GPU 推理服务的动态状态"和"AI 数据存储格式"——更没有人研究这些环节之间的协同关系。
+
+### 10.2 李国良老师（清华大学）团队相关研究
+
+李国良（ACM Fellow, IEEE Fellow）团队在 Data+AI 方向有大量 CCF-A 论文：
+
+| 论文 | 出处 | 与本课题关系 |
+|---|---|---|
+| Guo, Li et al. **Smart: In-database query optimization on SQL with ML predicates.** | VLDB Journal 2025 | ML 谓词在 SQL 中的推理重写和成本最优执行——与"AI operator 执行 plan"直接对应。PostgreSQL 实现。最高 1000x 提升。 |
+| Li et al. **GaussML: An End-to-End In-database ML System.** | ICDE 2024 | 将 20+ ML 算子集成进 openGauss 查询引擎。比 MADlib 快 2-6x。代表"数据库内 ML"路线。 |
+| Pan, Li. **Database Perspective on LLM Inference Systems.** | VLDB 2025 Tutorial | 从 DB 视角审查 LLM 推理系统全栈。可作为"推理侧已被深入研究"的权威引用。 |
+| Li, Zhou, Zhao. **LLM for Data Management.** | VLDB 2024 Tutorial | RAG、向量数据库、Agent、微调——Data+AI 的上位综述。 |
+| Zhou, Li et al. **D-Bot: Database Diagnosis using LLMs.** | VLDB 2024 | LLM+数据库系统设计范式。展示"可控外部调用"的架构思路。 |
+| Li et al. **openGauss: An Autonomous Database System.** | VLDB 2021 | 学习型优化器、基数估计、连接顺序——DB4AI 路线的系统级工作。 |
+
+**关键区分**：李国良组的 GaussML 和 Smart 走的是"把 ML 能力嵌入数据库内核"（DB4AI），本课题走的是"数据库触发 → 外部执行链路 → 写回"（AI4DB 的外部执行变体）。两者形成对照而非重复——开题报告 §2.2 和 §2.4 中需明确这一边界。
+
+### 10.3 关键文献分档（按开题模板：40 篇总，15 精读）
+
+#### ★ 建议精读（15 篇，均为 CCF-A 或顶会）
+
+| # | 论文 | 出处 | 精读理由 |
+|---|---|---|---|
+| 1 | Aggarwal et al. **Cortex AISQL: A Production SQL Engine for Unstructured Data.** | SIGMOD Companion 2026 | 最直接产业对标。六大 AI SQL 算子、AI-aware 优化。 |
+| 2 | Guo, Li, Hu, Wang. **In-database query optimization on SQL with ML predicates.** | VLDB Journal 2025 | 李国良组。SQL+ML 谓词优化的学术前沿。PostgreSQL 实现。 |
+| 3 | Zhao, Cai, Ooi et al. **NeurDB: An AI-powered Autonomous Database.** | CIDR 2025 | AI×DB 深度融合的系统级蓝图。 |
+| 4 | Zeng, Xing, Cai, Chen, Ooi et al. **LEADS: In-Database Dynamic Model Slicing.** | VLDB 2024 | SQL-aware MoE。PostgreSQL 实现。 |
+| 5 | Li et al. **GaussML: An End-to-End In-database ML System.** | ICDE 2024 | 华为+清华。数据库内 ML 算子的最强工程实现。 |
+| 6 | Satriani, Papotti et al. **Galois: SQL Query Execution over LLMs.** | SIGMOD 2025 | LLM 作为存储层。挑战"算子下推最优"的传统认知。 |
+| 7 | Kwon, Li, Stoica et al. **vLLM: PagedAttention for LLM Serving.** | SOSP 2023 Best Paper | GPU 推理服务的核心机制（PagedAttention + continuous batching）。 |
+| 8 | Yu, Jeong et al. **Orca: Distributed Serving for Generative Models.** | OSDI 2022 | Iteration-level scheduling 开山之作。 |
+| 9 | Luan, Stoica, Wang et al. **The Streaming Batch Model for Heterogeneous Execution.** | arXiv:2501.12407 | Ray Data 异构批处理。Arrow→Ray→GPU 数据路径的理论基础。 |
+| 10 | Li, Zhou, Zhao. **LLM for Data Management.** | VLDB 2024 Tutorial | Data+AI 全貌。李国良组。 |
+| 11 | Pan, Li. **Database Perspective on LLM Inference Systems.** | VLDB 2025 Tutorial | 推理系统 DB 视角。李国良组。 |
+| 12 | Salazar-Díaz et al. **InferDB: In-Database ML Inference Using Indexes.** | VLDB 2024 | 轻量数据库内推理。延迟降 2-3 数量级。 |
+| 13 | Lin, Wu, Chen, Li et al. **SmartLite: DBMS-Based DNN Inference Serving.** | VLDB 2024 | DBMS 原生 NN 算子。边缘场景。 |
+| 14 | Pace, Jones, She et al. **Lance: Efficient Random Access in Columnar Storage.** | arXiv:2504.15247 | 面向 AI/ML 的列式存储格式。自适应编码。 |
+| 15 | Moritz, Nishihara, Stoica et al. **Ray: A Distributed Framework for Emerging AI Applications.** | OSDI 2018 | Ray 原始论文。分布式执行框架基础。 |
+
+#### ○ 补充引用（25 篇，构建 40 篇参考文献）
+
+**数据库 AI 算子（CCF-A）**
+
+| # | 论文 | 出处 |
+|---|---|---|
+| 16 | Wang, Xue et al. **AnDB: AI-Native Database for Universal Semantic Analysis.** | SIGMOD 2025 Demo |
+| 17 | Zhu, Wu, Ding, Zhou. **Learned Query Optimizer: What is New and What is Next.** | SIGMOD 2024 |
+| 18 | Kim, Ailamaki. **Trustworthy and Efficient LLMs Meet Databases.** | VLDB 2024 Tutorial |
+| 19 | Zhou, Li, Sun et al. **D-Bot: Database Diagnosis using LLMs.** | VLDB 2024 |
+| 20 | Qiao, Fan, Han et al. **Learning Database Optimization Techniques: Survey.** | Frontiers of CS, 2025 |
+| 21 | Heinrich, Luthra et al. **How Good are Learned Cost Models, Really?** | SIGMOD 2025 |
+
+**推理服务系统（CCF-A）**
+
+| # | 论文 | 出处 |
+|---|---|---|
+| 22 | Zheng et al. **SGLang: Efficient Execution of Structured LM Programs.** | NeurIPS 2024 |
+| 23 | Zhong et al. **DistServe: Disaggregating Prefill/Decode for LLM Serving.** | OSDI 2024 |
+| 24 | DeepSeek-AI. **DeepSeek-V3 Technical Report.** | arXiv:2412.19437 |
+
+**数据系统与存储**
+
+| # | 论文 | 出处 |
+|---|---|---|
+| 25 | Apache Arrow. **Arrow Flight: Fast Data Transport.** | arXiv:2204.03032 |
+| 26 | Daft Documentation. Distributed Execution / Partitioning / Shuffle. | docs.daft.ai |
+| 27 | Spark SQL Performance Tuning Guide. | spark.apache.org |
+
+**产业系统（非论文，需求证据）**
+
+| # | 系统 | 关键能力 |
+|---|---|---|
+| 28 | Snowflake Cortex AI Docs | `AI_EMBED`, `AI_FILTER`, `AI_CLASSIFY`, `AI_COMPLETE`, `AI_JOIN` |
+| 29 | BigQuery ML/AI Docs | `ML.GENERATE_TEXT`, `ML.GENERATE_EMBEDDING` |
+| 30 | Oracle AI Vector Search Docs | `VECTOR_EMBEDDING` |
+| 31 | Timescale pgai | PostgreSQL + vectorizer worker + embedding endpoint + 写回 |
+| 32 | PostgresML | PostgreSQL 内/近数据库 ML/AI |
+| 33 | pgvector | PostgreSQL 向量相似度检索 |
+| 34 | vLLM Documentation | PagedAttention, continuous batching, offline inference |
+| 35 | Ray Documentation | Core objects, Serve batching, Data overview |
+| 36 | LanceDB Documentation | Lance format, vector search |
+
+**本项目实验报告（自引）**
+
+| # | 报告 | 路径 |
+|---|---|---|
+| 37 | GPU-Backed AI_EMBED Chain Breakdown (7/12) | `motivation/results/gpu/` |
+| 38 | PGAI-Integrated GPU-Backed Key Rerun (7/14) | `motivation/results/gpu/` |
+| 39 | GPU-Backed pgvector(384) Writeback Test (7/14) | `motivation/results/gpu/` |
+| 40 | Fake/CPU Motivation Analysis + Workload Scenarios | `motivation/results/fake_cpu/`, `motivation/plans/` |
+
+### 10.4 Cortex AISQL (SIGMOD 2026) 详细摘要
+
+**六大 AI SQL 算子**：`AI_COMPLETE`, `AI_FILTER`, `AI_JOIN`, `AI_CLASSIFY`, `AI_AGG`, `AI_SUMMARIZE_AGG`
+
+**三项核心优化**：
+1. **AI-Aware Query Optimization** — 将 LLM 推理成本作为一阶优化目标。必要时将 AI 谓词上拉到 Join 后。一个案例中 LLM 调用从 11 万次降到 330 次（300x）。2-8x 加速。
+2. **Adaptive Model Cascades** — 小模型（Llama 3.1-8B）处理大部分行，仅不确定行升级到大模型（Llama 3.3-70B）。2-6x 加速，90-95% 质量。
+3. **Semantic Join Rewriting** — O(N×M) 语义 Join → 线性多标签分类。15-70x 加速。
+
+**生产数据（2025年7-9月）**：AI 算子主导查询成本；~40% 查询多表（消耗 >58% 时间）；85% 为 SELECT。
+
+### 10.5 对开题报告 §2 的更新计划
+
+需更新：
+1. §2.1 — 补充 Cortex AISQL 论文细节 + BigQuery/Oracle 最新能力
+2. §2.2 — 补充 GaussML 作为"数据库内 ML"对照路线
+3. §2.3 — 补充 vLLM、Ray Data Streaming Batch、Orca、Lance 论文
+4. §2.4 — 用新文献精准化三个研究岛之间的空白，引用李国良组 VLDB Tutorial
+5. 参考文献 — 从 23 条扩展到 40 条，标注 15 精读

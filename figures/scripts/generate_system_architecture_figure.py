@@ -186,16 +186,16 @@ def draw_png():
     # Research cards, no crossing arrows; badges link cards to stage boxes.
     ry, rw, rh = 714, 410, 208
     research = [
-        (96, "1", "数据组织与批处理调度", ["workload 特征", "batch 与 partition", "RecordBatch 粒度"], COLORS["data_edge"]),
-        (595, "2", "GPU 服务感知 Ray 调度", ["endpoint 状态", "actor pool 与 routing", "bounded in-flight"], COLORS["exec_edge"]),
-        (1094, "3", "结果汇聚与持久化协同", ["fan-in 位置", "worker writeback", "Lance 与 pgvector"], COLORS["sink_edge"]),
+        (96, "1", "数据组织与批处理构造", ["AI workload 特征感知", "batch / partition / operator 粒度", "object 合并与 fan-in 形态"], COLORS["data_edge"]),
+        (595, "2", "GPU 服务感知 Ray 调度", ["endpoint 状态", "actor pool 与 routing", "bounded in-flight 与反压"], COLORS["exec_edge"]),
+        (1094, "3", "持久化边界确认与轻量优化", ["writeback 瓶颈确认", "driver / worker / queue 写回", "Lance / pgvector / PostgreSQL"], COLORS["sink_edge"]),
     ]
     for x, badge, title, items, color in research:
         draw_research(draw, x, ry, rw, rh, badge, title, items, color)
 
     draw.text(
         (72, 952),
-        "图注：数据库驱动 AI workload 进入 Daft/Arrow、Ray、GPU 服务和 AI 数据 sink 后，三个研究内容分别对应编号 1、2、3。",
+        "图注：研究内容 1、2 分别关注数据组织构造与 GPU 服务感知调度，二者跨层协同为本课题核心方法贡献；研究内容 3 关注持久化边界确认，不作为独立方法创新。",
         font=F["small"],
         fill=COLORS["muted"],
     )
@@ -292,13 +292,13 @@ def draw_svg():
     parts.append(svg_center(160, 592, 1280, 60, "统一观测指标：e2e_s   rows/s   tokens/s   operator_wall_s   queue_wait   fan-in   writeback_s", 16))
 
     for x, badge, title, items, color in [
-        (96, "1", "数据组织与批处理调度", ["workload 特征", "batch 与 partition", "RecordBatch 粒度"], COLORS["data_edge"]),
-        (595, "2", "GPU 服务感知 Ray 调度", ["endpoint 状态", "actor pool 与 routing", "bounded in-flight"], COLORS["exec_edge"]),
-        (1094, "3", "结果汇聚与持久化协同", ["fan-in 位置", "worker writeback", "Lance 与 pgvector"], COLORS["sink_edge"]),
+        (96, "1", "数据组织与批处理构造", ["AI workload 特征感知", "batch / partition / operator 粒度", "object 合并与 fan-in 形态"], COLORS["data_edge"]),
+        (595, "2", "GPU 服务感知 Ray 调度", ["endpoint 状态", "actor pool 与 routing", "bounded in-flight 与反压"], COLORS["exec_edge"]),
+        (1094, "3", "持久化边界确认与轻量优化", ["writeback 瓶颈确认", "driver / worker / queue 写回", "Lance / pgvector / PostgreSQL"], COLORS["sink_edge"]),
     ]:
         parts.append(svg_research(x, 714, 410, 208, badge, title, items, color))
 
-    parts.append(svg_text(72, 952, "图注：数据库驱动 AI workload 进入 Daft/Arrow、Ray、GPU 服务和 AI 数据 sink 后，三个研究内容分别对应编号 1、2、3。", 13, fill=COLORS["muted"]))
+    parts.append(svg_text(72, 952, "图注：研究内容 1、2 分别关注数据组织构造与 GPU 服务感知调度，二者跨层协同为本课题核心方法贡献；研究内容 3 关注持久化边界确认，不作为独立方法创新。", 13, fill=COLORS["muted"]))
     parts.append("</svg>")
     SVG_PATH.write_text("\n".join(parts), encoding="utf-8")
 

@@ -20,7 +20,7 @@
 
 1. AI workload 感知的数据组织与批处理构造方法。
 2. GPU 推理服务状态感知的 Ray 并行调度与反压控制方法。
-3. 面向 AI 数据流的结果汇聚与 Lance / 数据库持久化协同方法。
+3. AI workload 执行链路中的持久化边界分析与轻量写回优化（不作为独立方法贡献，为 RC1↔RC2 跨层协同提供边界确认）。
 
 阶段划分、执行画像和瓶颈归因不是独立研究内容，而是动机测试、方案设计和评价依据。
 
@@ -72,12 +72,13 @@
 
 ## 近期优先级
 
-1. 补 384 维 pgvector 写回实验，比较 JSON text 与真实 vector 写回。
-2. 比较 driver fan-in 写回、Ray worker 写回、vectorizer-like queue worker 写回。
-3. 在真实 GPU-backed 链路中做 bounded / unbounded in-flight 对照。
-4. 扩展到 `AI_FILTER/AI_CLASSIFY`，验证 selectivity-aware predicate pipeline。
-5. 扩展到 `AI_COMPLETE`，验证 token-aware batching、prefix-aware routing 和 queue-aware backpressure。
-6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+1. P0：接入 vLLM / Ray Serve（GPU baseline 升级到 S 级）；完成 B 系列写回工程实验（COPY + unlogged staging + deferred HNSW index，写回 baseline 升级到 A 级）。
+2. P1：各研究内容独立 grid search——RC1 的 `batch_size × partition_count`、RC2 的 `K_max × endpoint_count × routing`、RC3 的三路写回架构对比（driver fan-in / worker-direct / queue-worker）。
+3. P2：Killer Experiment（BL1-BL6），验证独立最优组合 vs 跨层联合最优的核心假设。
+4. 扩展到 `AI_FILTER/AI_CLASSIFY`（simulated）和 `AI_COMPLETE`（simulated），验证方法跨 workload 泛化。
+5. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+
+详细实验计划见 `experiments/plans/` 下四个独立计划文件和 `experiments/plans/README.md`。
 
 ## 同步规则
 

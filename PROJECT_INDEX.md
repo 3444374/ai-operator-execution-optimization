@@ -107,7 +107,18 @@
 
 正式研究实验（方法有效性验证）：
 
-`experiments/plans/`（按研究内容组织），`experiments/results/`（优化和消融结果）。
+`experiments/plans/`
+
+| 文件 | 作用 |
+|---|---|
+| `research_design_catalog.md` | 课题研究方案候选目录：28 个候选方案的六维评估、分阶段路线图、风险分析和 Baseline 设计考量 |
+| `baseline_reference.md` | 实验 Baseline 参考矩阵：从 CCF-A 文献中提取的各方向最优 baseline 策略（GPU 调度/写回/数据组织/跨层决策）|
+| `data_organization_batching.md` | RC1 实验计划：Grid search、workload 对比、selectivity-aware 策略、模型 batch scaling 前置实验 |
+| `service_scheduling_backpressure.md` | RC2 实验计划：K_max sweep、routing 策略、adaptive vs static K_max、vLLM baseline 前置实验 |
+| `sink_writeback_coordination.md` | RC3 实验计划：B 系列工程 baseline（UPSERT vs COPY 等）、三路写回架构对比、sink 对照 |
+| `cross_layer_killer_experiment.md` | 跨层联合优化实验计划（论文核心 claim）：BL1-BL6 Killer Experiment 矩阵、代价模型、消融瀑布、跨 workload 泛化 |
+
+所有实验计划遵循从 vLLM/Orca/TurboVecDB/GaussML/FlexPushdownDB 五篇 CCF-A 论文提取的共同方法论：曲线 > 单点、先暴露瓶颈再优化、同硬件公平 baseline、消融拆开、诚实报告边界、统计严谨。
 
 ## 4. 实验代码在哪里
 
@@ -248,7 +259,7 @@ python feasibility/benchmarks/analyze_results.py \
 
 1. AI workload 感知的数据组织与批处理构造方法。
 2. GPU 推理服务状态感知的 Ray 并行调度与反压控制方法。
-3. 面向 AI 数据流的结果汇聚与 Lance / 数据库持久化协同方法。
+3. AI workload 执行链路中的持久化边界分析与轻量写回优化（不作为独立方法贡献，为 RC1↔RC2 跨层协同提供边界确认）。
 
 具体优化方向尚未最终锁定。当前必须围绕数据库驱动 AI 工作负载寻找真实瓶颈，通过动机测试、可行性测试和正式研究实验收敛方向。Object/fan-in/coalescing 是早期入口；task/actor 并行度、GPU 资源配比、模型服务路由与 backpressure、写回协同是正在验证的扩展轴。
 
@@ -271,12 +282,13 @@ python feasibility/benchmarks/analyze_results.py \
 
 下一步优先工作：
 
-1. 在真实 GPU-backed 链路中做 bounded/unbounded in-flight 对照。
-2. 比较 driver fan-in 写回、Ray worker 写回、vectorizer-like queue worker 写回。
-3. 扩展到 `AI_FILTER/AI_CLASSIFY`，验证 selectivity-aware predicate pipeline。
-4. 扩展到 `AI_COMPLETE`，验证 token-aware batching、prefix-aware routing 和 queue-aware backpressure。
+1. P0：接入 vLLM / Ray Serve 替代手动 HTTP endpoint（GPU baseline 升级到 S 级）；完成 B 系列写回工程实验（COPY + unlogged staging + deferred HNSW index）。
+2. P1：各研究内容独立 grid search——RC1 的 `batch_size × partition_count`、RC2 的 `K_max × endpoint_count`、RC3 的三路写回架构对比。
+3. P2：Killer Experiment（BL1-BL6），验证独立最优组合 vs 跨层联合最优的核心假设。
+4. 扩展到 `AI_FILTER/AI_CLASSIFY`（simulated）和 `AI_COMPLETE`（simulated），验证方法跨 workload 泛化。
 5. 后续进入 PostgreSQL 18.3 内部平台复测。
-6. 将优化方法和消融实验登记到 `experiments/`。
+
+详细实验计划见 `experiments/plans/` 下四个计划文件和 `experiments/plans/README.md` 的前置依赖关系图。
 
 需要回答：
 

@@ -47,6 +47,23 @@ figures/architecture/system_architecture_ai_data_execution.svg
 
 边界说明：这是研究对象图，不是实验结果图；它负责定义系统边界和后续图表的坐标系。
 
+### 图 A2：研究缺口与本课题定位
+
+![研究缺口图](../architecture/research_gap_three_islands.png)
+
+文件：
+
+```text
+figures/architecture/research_gap_three_islands.png
+figures/architecture/research_gap_three_islands.svg
+```
+
+讲解作用：说明已有研究的三个方向（DB4AI、AI 推理服务、AI 数据存储）各自有大量 CCF-A 工作但分别止于数据库进程边界、GPU 侧和存储层，缺少跨方向端到端协同。本课题聚焦方向一（数据组织）与方向二（GPU 调度）的跨层协同优化，方向三（持久化）作为边界确认。
+
+适合位置：报告 §2 结尾、PPT 文献综述页、飞书开题报告研究缺口。
+
+边界说明：这是研究缺口概念图，三个方向的代表性工作选取基于报告 §2 的实际引用，不覆盖所有相关工作。
+
 ### 图 B：真实 GPU-backed 链路阶段耗时
 
 ![GPU 链路阶段耗时](report_main/02_gpu_stage_latency_stack.png)
