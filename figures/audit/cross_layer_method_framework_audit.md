@@ -21,22 +21,19 @@ upstream gains.
 
 ## Design Decisions
 
-- Workload entry is shown as three equal-width cards:
-  `AI_EMBED`, `AI_FILTER / AI_CLASSIFY`, and `AI_COMPLETE`.
-- Each workload card uses three lines: scenario name, SQL operator name, and
+- Workload cards reordered: AI_COMPLETE first as primary scenario (purple),
+  AI_EMBED second as preliminary validation (blue), AI_FILTER third as extension (orange).
+- Each workload card uses three lines: scenario name, SQL operator name with role label, and
   the scheduling pressure introduced by that workload.
-- The middle relation is an explicit `三层上游执行策略` card: plan-time data
-  organization, runtime admission/routing, and service-side dynamic
-  `micro-batch`.
-- 2026-07-15 later revision: the three strategy layers are now drawn as three
-  separate neutral cards, not as two side cards plus a middle summary box. This
-  avoids implying that layer colors correspond to the workload colors above.
-- Dynamic batching is described as service-side `micro-batch`, not as recutting
-  materialized database-side batches.
-- The result-writeback section uses concrete labels: `瓶颈判定`, `sink 对比`,
-  `COPY + deferred index`, and `防止写回吞噬上游调度收益`.
-- Visible abbreviations such as `RC` / `BL`, the vague phrase `边界确认`, and an
-  unexplained `vs` comparison were removed from the figure.
+- The three strategy layers replaced by two strategy cards + one validation card:
+  1. 数据组织策略 (token-budget / length-aligned / prefix-aware / actor pool routing)
+  2. 调度与提交控制策略 (queue-adaptive flush / K_max 动态控制 / actor pool 分池路由 / 去中心化)
+  3. 端到端验证：耦合与写回 (independent vs joint / writeback check / end-to-end evaluation)
+- Removed "服务端：批处理形成" card (was describing vLLM internals, not our research).
+- Removed "三层" framing from title, subtitle, section header, and caption.
+- Removed "COPY + deferred index" specific method name → generic "工程最优写回方案 baseline".
+- Replaced "micro-batch" with "coupling gap" in evaluation metrics.
+- Updated caption to reflect current framing: two upstream strategies + end-to-end validation.
 
 ## Checks
 

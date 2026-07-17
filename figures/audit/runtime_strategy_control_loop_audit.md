@@ -23,6 +23,15 @@ figures/scripts/generate_runtime_strategy_control_loop.py
 
 2026-07-15 更新：`runtime_strategy_control_loop.*` 已补入开题报告 §4.2 作为图 4-2，用于替代原 Mermaid 链路示意，重点解释三层策略在一次数据库 AI 算子执行中的观测、动作和端到端反馈。
 
+2026-07-17 更新：同步课题方向重构。
+- 运行示例从 AI_EMBED 切换为 AI_COMPLETE。
+- 数据批次队列：观测/调节项从"行数/长度、批量/分区"改为"token 量/prefix、token-budget/分组"。
+- 提交门控：观测/调节项从"在途任务、并发上限"改为"模型服务队列深度、flush 时机/K_max"。
+- 决策行标签："计划层决策"→"数据组织决策"；"运行层决策"→"提交控制决策"；"服务端决策：micro-batch"→"GPU 侧观测：队列/饱和度"。
+- 策略控制器："计划层 + 运行层 + 服务端批处理"→"数据组织 + 调度提交控制"。
+- 图注更新：说明 vLLM 侧仅观测队列状态作为反馈信号，不修改其内部批处理机制。
+- 规则表动作列更新：token-budget batching、queue-adaptive flush、prefix-aware/length-aligned 分组。
+
 ## 设计依据
 
 依据：

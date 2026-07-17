@@ -3,7 +3,7 @@
 | File | Purpose | When to read/use |
 |---|---|---|
 | `figures/architecture/runtime_strategy_rule_table.png` / `.svg` | 信号触发候选策略规则表 | 与闭环图配套使用，说明观测信号、候选动作和保护约束；不作为已验证结论 |
-| `figures/architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时信号驱动的上游执行闭环图 | 当前首选策略机制图；用一个 AI_EMBED SQL 例子说明计划层 batch/partition、运行层 K_max/routing/backpressure、服务端 micro-batch 的分工；不重切数据库侧已物化批次 |
+| `figures/architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时信号驱动的上游执行闭环图 | 当前首选策略机制图；用一个 AI_COMPLETE SQL 例子说明数据组织（token-budget/length-align/prefix-aware）、提交控制（queue-adaptive flush/K_max/routing）、vLLM 部署平台（观测不修改）的分工；不重切数据库侧已物化批次 |
 | `figures/scripts/generate_runtime_strategy_control_loop.py` | 运行时策略闭环图生成脚本 | 重新生成策略机制图 PNG/SVG，并执行边框、箭头和禁用术语自检 |
 | `figures/audit/runtime_strategy_control_loop_audit.md` | 运行时策略闭环图审计记录 | 检查新策略机制图的角色、旧图关系、遮挡、箭头和禁用术语 |
 | `figures/audit/top_venue_strategy_figure_design_notes.md` | 顶会系统论文方法图设计备忘 | 重绘策略设计图前阅读，采用 control-loop + running example + compact rule table |
@@ -47,13 +47,18 @@
 | `PROJECT_INDEX.md` | 文件索引和阅读顺序 | 不知道材料在哪里时读 |
 | `PROJECT_OUTLINE.md` | 项目总纲：当前题目、研究内容、关键证据、近期优先级 | 快速了解最新进展 |
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
-| `overview/AGENTS.md` | 总览目录规则 | 修改总纲、当前计划时读 |
+| `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |
+| `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |
 | `overview/project_outline.md` | 项目总纲（旧版） | 已被根 `PROJECT_OUTLINE.md` 替代，仅作历史参考 |
 | `overview/current_direction_and_plan.md` | 阶段性技术路线和计划 | 了解阶段规划时读 |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
 | `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |
 | `research/literature_and_evidence_review.md` | 文献与官方资料依据 | 写调研、论文动机时读 |
 | `research/existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子与 AI 数据处理执行链路对比 | 比较外部系统路线时读 |
+| `research/knowledge_hub.md` | **知识库总汇**——按问题快速定位参考材料、已知结论和待研究缺口 | 开始设计、做决策前先读 |
+| `research/vllm_continuous_batching_reference.md` | vLLM Continuous Batching 机制详解（调度器、APC、metrics） | 设计上游动态 batching 策略时读 |
+| `research/ray_actor_dynamic_batching_reference.md` | Ray Serve 动态 batching + Ray Core actor 模式 | 设计 Ray actor 自适应提交架构时读 |
+| `research/inference_pipeline_interaction_literature.md` | 推理管线交互文献汇总 | 写相关工作、确认研究空白时读 |
 | `motivation/AGENTS.md` | 动机实验规则 | 搭建 AI 算子场景或端到端动机测试前读 |
 | `motivation/README.md` | 动机测试目录详细说明 | 了解 motivation/ 下有什么、怎么组织 |
 | `motivation/plans/workloads.md` | 三类 AI 算子场景、动机测试和 idea-evaluator 评估 | 比较候选场景、决定下一步测试时读 |
@@ -104,7 +109,7 @@
 
 主要内容：
 
-- 当前开题题目、三项研究内容；
+- 当前开题题目、研究内容（两项策略 + 多模态泛化验证 + 算子代价估计补充）；
 - 实验主线和当前最重要证据；
 - 近期优先级；
 - 双向同步规则。
@@ -126,13 +131,13 @@
 | 文件 | 作用 |
 |---|---|
 | `research_design_catalog.md` | 课题研究方案候选目录：28 个候选方案的六维评估、分阶段路线图、风险分析和 Baseline 设计考量 |
-| `baseline_reference.md` | 实验 Baseline 参考矩阵：从 CCF-A 文献中提取的各方向最优 baseline 策略（GPU 调度/写回/数据组织/跨层决策）|
+| `baseline_reference.md` | 实验 Baseline 参考矩阵：从 CCF-A 文献中提取的各方向最优 baseline 策略（GPU 调度/数据组织/提交控制）|
 | `strategy_design_literature_basis.md` | 策略设计思路的文献依据与边界：区分可借鉴思想、baseline/边界和本文自己的策略定义 |
-| `strategy_design_implementation_reference.md` | 策略设计与系统实现参考：把 Ray、vLLM/Ray Serve/Triton、GPU 数据放置和 DB AI 算子机制沉淀为三层策略、实验变量和实现优先级 |
-| `data_organization_batching.md` | RC1 实验计划：Grid search、workload 对比、selectivity-aware 策略、模型 batch scaling 前置实验 |
-| `service_scheduling_backpressure.md` | RC2 实验计划：K_max sweep、routing 策略、adaptive vs static K_max、vLLM baseline 前置实验 |
-| `sink_writeback_coordination.md` | RC3 实验计划：B 系列工程 baseline（UPSERT vs COPY 等）、三路写回架构对比、sink 对照 |
-| `cross_layer_killer_experiment.md` | 端到端效果评估增强实验计划：在上游阶段调优完成后，用 BL1-BL6、代价模型、消融瀑布和跨 workload 泛化分析阶段间耦合 |
+| `strategy_design_implementation_reference.md` | 策略设计与系统实现参考：把 Ray、vLLM、Daft、GPU 数据放置和 DB AI 算子机制沉淀为两项策略 + 端到端验证、实验变量和实现优先级（2026-07-17 已统一口径）|
+| `data_organization_batching.md` | 研究内容一实验计划：token-budget、length-aligned、prefix-aware grouping + Daft 引擎级参数 |
+| `service_scheduling_backpressure.md` | 研究内容二实验计划：queue-adaptive flush、actor pool 分池路由、K_max 动态控制 + Daft 引擎级参数 |
+| `sink_writeback_coordination.md` | 写回工程参考（不作为独立实验阶段）：COPY + deferred index baseline |
+| `cross_layer_killer_experiment.md` | 耦合验证实验计划：独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数的完整交互面）|
 
 所有实验计划遵循从 vLLM/Orca/TurboVecDB/GaussML/FlexPushdownDB 五篇 CCF-A 论文提取的共同方法论：曲线 > 单点、先暴露瓶颈再优化、同硬件公平 baseline、消融拆开、诚实报告边界、统计严谨。
 
@@ -271,13 +276,14 @@ python feasibility/benchmarks/analyze_results.py \
 
 > 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究。
 
-三项研究内容：
+两项策略设计 + 多模态泛化验证 + 算子代价估计补充（2026-07-17 更新，写回已降为实验设置）：
 
-1. AI workload 感知的数据组织与批处理构造方法。
-2. GPU 推理服务状态感知的 Ray 并行调度与反压控制方法。
-3. AI workload 执行链路中的写回瓶颈判定与轻量写回优化（不作为独立方法贡献，用于判断上游调优收益是否被持久化阶段吞噬）。
+1. **AI workload 感知的动态数据组织与批处理构造策略**（研究内容一）：对比 token-budget 与固定 batch_size 在吞吐和 P99 上的差异，利用异构 actor pool + Daft 引擎级参数实现。
+2. **调度与提交控制策略**（研究内容二）：利用 Ray actor 研究去中心化的调度与提交控制，候选策略包括 queue-adaptive flush、K_max 动态控制、actor pool 分池路由等。
+3. **多模态泛化验证**（正文实验）：在图像 workload 上使用同一套策略代码验证模态无关性。
+4. **算子代价估计**（补充讨论，不作为独立研究内容）。
 
-具体优化方向尚未最终锁定。当前必须围绕数据库驱动 AI 工作负载寻找真实瓶颈，通过动机测试、可行性测试和正式研究实验收敛方向。Object/fan-in/coalescing 是早期入口；task/actor 并行度、GPU 资源配比、模型服务路由与 backpressure、写回协同是正在验证的扩展轴。
+主场景：`AI_COMPLETE`（文本 LLM）+ `AI_EMBED/AI_CLASSIFY`（图像，多模态泛化验证）。vLLM 为部署平台 + baseline，Daft 为数据引擎，不修改其内部调度器。PG18.4 本地预演，后续进入 PG18.3 内部平台复测。
 
 当前不要优先做：
 
@@ -298,20 +304,14 @@ python feasibility/benchmarks/analyze_results.py \
 
 下一步优先工作：
 
-1. P0：接入 vLLM / Ray Serve 替代手动 HTTP endpoint（GPU baseline 升级到 S 级）；完成 B 系列写回工程实验（COPY + unlogged staging + deferred HNSW index）。
-2. P1：各研究内容独立 grid search——RC1 的 `batch_size × partition_count`、RC2 的 `K_max × endpoint_count`、RC3 的三路写回架构对比。
-3. P2：端到端效果评估，逐步加入数据组织调优、模型服务调度调优和写回瓶颈判定；如阶段间耦合明显，再补充独立最优组合 vs 全链路配置的增强对照。
-4. 扩展到 `AI_FILTER/AI_CLASSIFY`（simulated）和 `AI_COMPLETE`（simulated），验证方法跨 workload 泛化。
-5. 后续进入 PostgreSQL 18.3 内部平台复测。
+1. P0：接入 vLLM + Qwen2.5-1.5B（替代手动 HTTP endpoint），建立 continuous batching baseline；Daft 文本阶段直接接入。
+2. P1：研究内容一消融（token-budget vs 固定 batch_size、length-aligned vs prefix-aware vs random）+ Daft 引擎级参数；研究内容二消融（queue-adaptive flush vs 固定 K_max、actor pool 分池路由）+ Daft engine 参数。
+3. P2：耦合验证（独立最优拼接 vs 联合 grid search，含策略级 + 引擎级参数）；多模态泛化验证（图像 workload，同一套策略代码）。
+4. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
-详细实验计划见 `experiments/plans/` 下四个计划文件和 `experiments/plans/README.md` 的前置依赖关系图。
+**Scope 缩减触发条件**：Month 1 无 vLLM baseline → 多模态降 Discussion；文本 RC1+RC2 未完成不启动多模态 pipeline；VLM 生成实验始终 optional。
 
-需要回答：
-
-- 当前 PG18.4 + pgai GPU-backed 链路的瓶颈是否能迁移到 PostgreSQL 18.3 内部平台；
-- writeback 路径（driver fan-in、worker-side、queue worker）哪种在真实场景中最可行且有效；
-- 是否存在比 AI_EMBED 更贴合 AI infra / inference infra 的 AI 算子场景；
-- 最终优化方向应落在数据组织、调度反压、写回协同三层中的哪些组合。
+详细实验计划见 `experiments/plans/` 下各文件，以 `PROJECT_OUTLINE.md` §近期优先级为准。
 
 优先沟通问题：
 

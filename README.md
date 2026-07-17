@@ -4,7 +4,7 @@
 
 > 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究。
 
-当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本项目中主要作为 workload 入口和验证场景，研究主体是数据进入 Daft/Arrow 数据组织层、Ray task/actor 执行层、GPU-backed 模型服务和 Lance / pgvector / PostgreSQL sink 后的分布式执行与存储协同问题。
+当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本项目中主要作为 workload 入口和验证场景。主场景为 `AI_COMPLETE`（生成式 LLM 推理），经由 Daft/Arrow 数据组织、Ray 动态 batching（异构 actor pool）、GPU 推理引擎、最终写回数据库 sink。研究重点是上游 Ray 数据执行层的数据组织策略和调度提交控制。`AI_EMBED` 已完成真实 GPU-backed 预研验证，用于支撑实验框架可行性。
 
 后续真实端到端实验平台优先使用公司内部统一采用的 PostgreSQL 18.3；当前 PG18.4 本地同构预演只能作为平台暂不可用时的替身。
 
@@ -22,9 +22,13 @@
 │   ├── AGENTS.md
 │   ├── current_direction_and_plan.md
 │   └── project_outline.md
-├── research/                         # 背景调研、文献依据
+├── research/                         # 背景调研、文献依据（第一入口：knowledge_hub.md）
 │   ├── AGENTS.md
 │   ├── README.md
+│   ├── knowledge_hub.md
+│   ├── vllm_continuous_batching_reference.md
+│   ├── ray_actor_dynamic_batching_reference.md
+│   ├── inference_pipeline_interaction_literature.md
 │   ├── literature_and_evidence_review.md
 │   └── existing_ai_operator_execution_chains.md
 ├── motivation/                       # 动机场景、端到端测试
@@ -108,14 +112,14 @@
 
 ## 当前证据
 
-已有本地实验显示：
+已有 AI_EMBED 预研实验（手动 HTTP endpoint，非 vLLM）：
 
-- GPU-backed 真实 embedding 链路：1024 行下 fine/coalesced 端到端约 `13.4x`，16384 行下 operator 和 writeback 均为大块成本；
+- GPU-backed 真实 embedding 链路：1024 行下 fine/coalesced 端到端约 `13.4x`；
 - 双 endpoint 下 Ray task/actor 开始体现并发 routing 价值，但端到端收益仍受 writeback 约束；
-- pgvector(384) 写回：JSON text 与真实 vector 写回的成本对比已记录在 `motivation/results/gpu/pgvector_writeback_20260714.md`；
-- pgai-integrated GPU-backed rerun 进一步验证了 batch granularity、stage breakdown 和 endpoint comparison。
+- pgvector(384) 写回 0.897s vs JSON text 1.567s；
+- 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 中仅作历史参考。
 
-早期 CPU/fake 实验（Ray small task、object transfer、Arrow serialization、shuffle simulation 等）保留在 `feasibility/benchmarks/` 中作为历史组件参考，不代表真实 GPU-backed 数据库 AI 算子链路瓶颈。
+**下一步**：建立 vLLM + AI_COMPLETE 主实验平台。详见 `PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md`。
 
 当前更值得继续验证的候选优化对象是：
 
@@ -125,12 +129,12 @@
 
 ## 近期目标
 
-1. 补 384 维 pgvector 写回实验，比较 JSON text 与真实 vector 写回。
-2. 比较 driver fan-in 写回、Ray worker 写回、vectorizer-like queue worker 写回。
-3. 在真实 GPU-backed 链路中做 bounded/unbounded in-flight 对照。
-4. 扩展到 `AI_FILTER/AI_CLASSIFY`，验证 selectivity-aware predicate pipeline。
-5. 扩展到 `AI_COMPLETE`，验证 token-aware batching、prefix-aware routing 和 queue-aware backpressure。
-6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+1. P0：接入 vLLM + Qwen2.5-1.5B（替代手动 HTTP endpoint），建立 continuous batching baseline；Daft 文本阶段直接接入。
+2. P1：研究内容一消融（token-budget vs 固定 batch_size、分组策略对比）+ Daft 引擎级参数；研究内容二消融（queue-adaptive flush vs 固定 K_max、actor pool 分池路由）+ Daft engine 参数。
+3. P2：耦合验证（独立最优拼接 vs 联合 grid search）；多模态泛化验证（图像 workload，同一套策略代码）。
+4. 后续进入 PostgreSQL 18.3 内部平台复测。
+
+写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。算子代价估计为补充讨论，不新增实验。
 
 推荐运行命令：
 

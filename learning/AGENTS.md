@@ -29,7 +29,7 @@
 - 讲 GPU 时必须区分两件事：一是 GPU-backed model service 作为数据执行链路里的现实计算端点；二是“把数据库 AI 算子迁移到 GPU / 做 GPU kernel 优化”作为少量 baseline 或非主线。不能把“暂不优先做 GPU 迁移 baseline”讲成“本课题不在 GPU 背景下”。
 - 讲课题动机时，必须把生产式 GPU-backed E2E profile 作为第一层主动机：它回答“为什么要优化数据库驱动 AI workload 的数据执行与存储链路”。变量解释和消融也应优先来自同一条 GPU-backed 链路上的大块消融；CPU/fake、granularity、backpressure 历史实验只能作为预研背景和工具解释，不能作为真实 GPU 链路归因。
 - 对 `fan-in`、backpressure、in-flight、queue wait、token backlog、upsert 等流程词，要画出最小链路并说明上游、下游、队列、结果合并和写回对象。
-- 用户明确表示想使用 Ray 学 AI infra / inference infra 时，讲解应承认这个学习目标，同时区分“工程学习路线可以重点用 Ray”和“论文论证仍需要 Ray / 非 Ray baseline 与消融”。
+- 讲解 Ray 相关流程时必须区分 Ray 作为任务执行器和作为架构设计空间（actor 异构化、去中心化协调）的不同用法。
 - 当用户问“业界是不是也这么做”时，必须区分本项目本地实现、外部 worker / vectorizer 工程实践、数据库内扩展实践、应用层 ETL/服务实践，并给出权威来源或标注为合理推断。
 - 比喻只能辅助理解，结论必须回到真实实验事实。
 - 必要的实验结果如果用图更容易理解，应在学习材料中配图或规划配图，尤其是 CPU/GPU 对比、fine/coalesced 对比、阶段耗时占比、瓶颈迁移、in-flight / queue wait / writeback 等结果。画图前先写清楚这张图要证明的一句话、证据链和不能说明的结论；图中数值必须来自真实 CSV / 报告，不能手填或编造。学习用交互图可以使用 ECharts；按 Apache ECharts 文档，项目化引入时可 `import * as echarts from 'echarts'`，若按需引入则必须注册所需 chart/component，并显式引入 `CanvasRenderer` 或 `SVGRenderer`。论文或正式报告图优先用可复现脚本导出 SVG/PDF，遵循 `figure-designer` / `nature-figure` 的原则：核心结论优先、轴范围诚实、字体可读、色盲友好、无 chartjunk、caption 自包含。

@@ -1,6 +1,8 @@
 # AI infra 候选 AI 算子场景与动机测试
 
-生成日期：2026-07-10
+生成日期：2026-07-10（2026-07-16 补充 AI_COMPLETE 主线更新；2026-07-17 口径更新）
+
+> **2026-07-17 口径更新**：本文档为早期场景探索记录。当前方向已收敛：两项策略（数据组织 + 提交控制）+ 多模态泛化验证 + 算子代价估计补充。Daft 为数据引擎，文本阶段直接接入。主场景：AI_COMPLETE（文本 LLM）+ AI_EMBED/AI_CLASSIFY（图像，多模态泛化）。vLLM 为部署平台。写回已降为实验设置。最新方向、优先级和边界以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。本文档中的三场景分析（Embedding/Classify/LLM）作为历史场景探索保留，场景优先级已按 2026-07-16 更新调整。
 
 ## 1. 目的
 
@@ -466,26 +468,32 @@ backpressure 模拟结果显示：
 
 当前不建议在开题前直接只推进单一场景 C，因为场景 C 需要真实或足够严谨的 LLM 服务、
 token-aware batching、prefix/cache locality 和模型服务队列指标支撑；如果现在只用 fake object
-实验，会把最贴近 AI infra 的问题讲浅。更稳妥的推进顺序是：
+实验，会把 LLM 推理服务中与 token 长度、prefix 和队列相关的核心问题讲浅。
+
+**2026-07-16 更新**：上述判断的前提（"AI_COMPLETE 实验条件不具备"）已不再成立。当前已完成真实 GPU-backed AI_EMBED 预研验证链路，下一个 P0 任务是建立 vLLM + 小 LLM（Qwen2.5-1.5B 级，适配 RTX 5070 12GB VRAM）baseline。一旦 vLLM baseline 就绪，AI_COMPLETE 立即成为论文主体 workload。因此推进顺序调整为：
 
 ```text
-统一问题：数据库 AI 算子的特征感知并行执行与跨层调度
-  -> 场景 A / AI_EMBED 作为第一组数据库落地主动机 baseline
-  -> 场景 B / AI_FILTER-AI_CLASSIFY 作为 AI predicate / selectivity baseline
-  -> 场景 C / AI_COMPLETE 作为后续重点主线候选和 inference infra 压力 workload
+统一问题：数据库 AI 算子外部执行链路的上游动态 batching 与自适应提交优化
+  -> 预研验证：AI_EMBED 已跑通 GPU-backed 端到端链路 + 阶段计时框架
+  -> P0（前置）：建立 vLLM + 小 LLM baseline，替代手动 HTTP endpoint
+  -> 主实验（AI_COMPLETE）：上游动态 batching policy × Ray 自适应提交 × vLLM continuous batching
+  -> 扩展验证：AI_FILTER/AI_CLASSIFY 作为 simulated workload（selectivity-aware）
 ```
 
 原因：
 
-- 场景 A 最容易和数据库 AI 算子、pgvector、Lance 对齐，适合作为真实系统 baseline。
-- 场景 C 最贴近用户想学习的 inference infra，后续应尽量作为主线候选推进；但必须先补 token-aware / prefix-aware / queue-aware 实验，不能只用当前 fake object 实验支撑。
-- 场景 B 能补足 AI predicate、selectivity 和模型调用次数控制，但要防止课题滑向传统查询优化器。
-- 三者共享 batch / partition / task / actor / object / routing / backpressure / writeback 问题，适合服务于同一个系统方法。
+- AI_COMPLETE 最贴近用户想学习的 inference infra，引入 token 长度分布、shared prefix、TTFT/TPOT、generation straggler 等更丰富的交互变量。
+- 动态 batching policy（token-budget / length-align / prefix-aware）只有在 token 长度异质的 AI_COMPLETE 场景下才有充分的设计空间——AI_EMBED 的输出是固定维度向量，不需要 token-budget batching。
+- Ray actor 异构化 + 去中心化自适应提交的设计价值也只有在 AI_COMPLETE 的变长生成场景中才能充分体现。
+- AI_EMBED 已有的 GPU-backed 实验结果保留为预研验证证据，证明阶段计时方法和端到端实验框架可行。
+- AI_FILTER/AI_CLASSIFY 可作为 selectivity-aware 模拟扩展，但不作为主贡献场景。
 
-开题阶段的表述建议是：
+当前开题阶段的表述建议更新为：
 
-> 第一阶段以 `AI_EMBED` 建立真实数据库到 GPU-backed 模型服务再写回的端到端主动机；
-> 第二阶段把 `AI_COMPLETE` 提升为更贴近 AI infra 的重点 workload，用 token-aware batching、
-> prefix-aware routing、模型服务队列、GPU utilization 和失败重试等指标验证方法是否能覆盖
+> 预研阶段以 `AI_EMBED` 建立真实 GPU-backed 端到端链路和阶段计时框架；
+> 论文主体以 `AI_COMPLETE` 为核心场景，设计上游动态 batching policy（token-budget、
+> length-aligned、prefix-aware）和 Ray actor 自适应提交策略，验证上游数据组织与
+> vLLM 之间的联合调优验证；`AI_EMBED` 预研结果和
+> `AI_FILTER/AI_CLASSIFY` 模拟实验作为方法适用性讨论的辅助证据。
 > 更复杂的推理服务链路；`AI_FILTER/AI_CLASSIFY` 用于补足 AI predicate、selectivity 和
 > cascade 场景。

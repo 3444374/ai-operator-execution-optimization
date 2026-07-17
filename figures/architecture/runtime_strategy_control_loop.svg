@@ -1,83 +1,83 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="620" viewBox="0 0 1600 620">
 <rect width="1600" height="620" fill="#F8FAFC"/>
 <text x="48" y="60" font-family="Microsoft YaHei,Arial,sans-serif" font-size="28" font-weight="700" fill="#172033" text-anchor="start">运行时信号驱动的上游执行闭环</text>
-<text x="50" y="88" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">一个 AI_EMBED 查询贯穿数据批次、提交门控、模型服务队列、写回约束和端到端反馈。</text>
-<rect x="58" y="142" width="165" height="116" rx="9" fill="#F2ECFF" stroke="#7C3AED" stroke-width="2"/>
+<text x="50" y="88" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">一个 AI_COMPLETE 查询贯穿数据批次、提交门控、模型服务队列、写回约束和端到端反馈。</text>
+<rect x="58" y="142" width="175" height="116" rx="9" fill="#F2ECFF" stroke="#7C3AED" stroke-width="2"/>
 <text x="72" y="172" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#7C3AED" text-anchor="start">SQL 入口</text>
-<text x="72" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">SELECT AI_EMBED(text)</text>
-<text x="72" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">FROM documents</text>
-<rect x="278" y="142" width="165" height="116" rx="9" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="2"/>
+<text x="72" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">AI_COMPLETE(prompt)</text>
+<text x="72" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">FROM documents</text>
+<rect x="278" y="142" width="175" height="116" rx="9" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="2"/>
 <text x="292" y="172" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#2F6FEB" text-anchor="start">数据批次队列</text>
-<text x="292" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">观测量：行数/长度</text>
-<text x="292" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">调节项：批量/分区</text>
-<rect x="498" y="142" width="165" height="116" rx="9" fill="#FFF1E6" stroke="#F97316" stroke-width="2"/>
+<text x="292" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">观测：token 量/prefix</text>
+<text x="292" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">调节：token-budget/分组</text>
+<rect x="498" y="142" width="175" height="116" rx="9" fill="#FFF1E6" stroke="#F97316" stroke-width="2"/>
 <text x="512" y="172" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#F97316" text-anchor="start">提交门控</text>
-<text x="512" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">观测量：在途任务</text>
-<text x="512" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">调节项：并发上限</text>
-<rect x="718" y="142" width="165" height="116" rx="9" fill="#FFF1E6" stroke="#F97316" stroke-width="2"/>
+<text x="512" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">观测：模型服务队列深度</text>
+<text x="512" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">调节：flush 时机/K_max</text>
+<rect x="718" y="142" width="175" height="116" rx="9" fill="#FFF1E6" stroke="#F97316" stroke-width="2"/>
 <text x="732" y="172" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#F97316" text-anchor="start">模型服务队列</text>
-<text x="732" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">观测量：积压/等待</text>
-<text x="732" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">调节项：routing policy</text>
-<rect x="938" y="142" width="165" height="116" rx="9" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
+<text x="732" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">观测量：积压/等待</text>
+<text x="732" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">调节项：routing policy</text>
+<rect x="938" y="142" width="175" height="116" rx="9" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
 <text x="952" y="172" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#F97316" text-anchor="start">GPU 模型服务</text>
-<text x="952" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">观测量：模型耗时</text>
-<text x="952" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">判定项：是否饱和</text>
-<rect x="1158" y="142" width="165" height="116" rx="9" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
+<text x="952" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">观测量：模型耗时</text>
+<text x="952" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">判定项：是否饱和</text>
+<rect x="1158" y="142" width="175" height="116" rx="9" fill="#F0FDF4" stroke="#16A34A" stroke-width="2"/>
 <text x="1172" y="172" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#16A34A" text-anchor="start">结果与写回</text>
-<text x="1172" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">观测量：写回占比</text>
-<text x="1172" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">约束项：写回批量</text>
+<text x="1172" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">观测量：写回占比</text>
+<text x="1172" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">约束项：写回批量</text>
 <rect x="1378" y="142" width="178" height="116" rx="9" fill="#FFFFFF" stroke="#16A34A" stroke-width="2"/>
 <text x="1392" y="172" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#16A34A" text-anchor="start">端到端指标</text>
-<text x="1392" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">评价项：耗时/P99</text>
-<text x="1392" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="start">判定项：整体收益</text>
-<line x1="227" y1="200" x2="270" y2="200" stroke="#334155" stroke-width="3"/>
+<text x="1392" y="203" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">评价项：耗时/P99</text>
+<text x="1392" y="225" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">判定项：整体收益</text>
+<line x1="237" y1="200" x2="270" y2="200" stroke="#334155" stroke-width="3"/>
 <polygon points="270,200 262,195 262,205" fill="#334155"/>
-<line x1="447" y1="200" x2="490" y2="200" stroke="#334155" stroke-width="3"/>
+<line x1="457" y1="200" x2="490" y2="200" stroke="#334155" stroke-width="3"/>
 <polygon points="490,200 482,195 482,205" fill="#334155"/>
-<line x1="667" y1="200" x2="710" y2="200" stroke="#334155" stroke-width="3"/>
+<line x1="677" y1="200" x2="710" y2="200" stroke="#334155" stroke-width="3"/>
 <polygon points="710,200 702,195 702,205" fill="#334155"/>
-<line x1="887" y1="200" x2="930" y2="200" stroke="#334155" stroke-width="3"/>
+<line x1="897" y1="200" x2="930" y2="200" stroke="#334155" stroke-width="3"/>
 <polygon points="930,200 922,195 922,205" fill="#334155"/>
-<line x1="1107" y1="200" x2="1150" y2="200" stroke="#334155" stroke-width="3"/>
+<line x1="1117" y1="200" x2="1150" y2="200" stroke="#334155" stroke-width="3"/>
 <polygon points="1150,200 1142,195 1142,205" fill="#334155"/>
-<line x1="1327" y1="200" x2="1370" y2="200" stroke="#334155" stroke-width="3"/>
+<line x1="1337" y1="200" x2="1370" y2="200" stroke="#334155" stroke-width="3"/>
 <polygon points="1370,200 1362,195 1362,205" fill="#334155"/>
-<rect x="278" y="292" width="165" height="58" rx="7" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="1"/>
-<text x="288" y="314" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#2F6FEB" text-anchor="start">计划层决策</text>
-<text x="288" y="339" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033" text-anchor="start">批量 / 分区</text>
-<rect x="498" y="292" width="165" height="58" rx="7" fill="#FFF1E6" stroke="#F97316" stroke-width="1"/>
-<text x="508" y="314" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#F97316" text-anchor="start">运行层决策</text>
-<text x="508" y="339" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033" text-anchor="start">K_max</text>
-<rect x="718" y="292" width="165" height="58" rx="7" fill="#FFF1E6" stroke="#F97316" stroke-width="1"/>
-<text x="728" y="314" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#F97316" text-anchor="start">运行层决策</text>
-<text x="728" y="339" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033" text-anchor="start">routing policy</text>
-<rect x="938" y="292" width="165" height="58" rx="7" fill="#FFF1E6" stroke="#F97316" stroke-width="1"/>
-<text x="948" y="314" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#F97316" text-anchor="start">服务端决策</text>
-<text x="948" y="339" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033" text-anchor="start">micro-batch</text>
-<rect x="1158" y="292" width="165" height="58" rx="7" fill="#F0FDF4" stroke="#16A34A" stroke-width="1"/>
+<rect x="278" y="292" width="175" height="58" rx="7" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="1"/>
+<text x="288" y="314" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#2F6FEB" text-anchor="start">数据组织决策</text>
+<text x="288" y="339" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#172033" text-anchor="start">token-budget / 分组</text>
+<rect x="498" y="292" width="175" height="58" rx="7" fill="#FFF1E6" stroke="#F97316" stroke-width="1"/>
+<text x="508" y="314" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#F97316" text-anchor="start">提交控制决策</text>
+<text x="508" y="339" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#172033" text-anchor="start">queue-adaptive flush</text>
+<rect x="718" y="292" width="175" height="58" rx="7" fill="#FFF1E6" stroke="#F97316" stroke-width="1"/>
+<text x="728" y="314" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#F97316" text-anchor="start">提交控制决策</text>
+<text x="728" y="339" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#172033" text-anchor="start">K_max / routing</text>
+<rect x="938" y="292" width="175" height="58" rx="7" fill="#FFF1E6" stroke="#F97316" stroke-width="1"/>
+<text x="948" y="314" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#F97316" text-anchor="start">GPU 侧观测</text>
+<text x="948" y="339" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#172033" text-anchor="start">队列/饱和度</text>
+<rect x="1158" y="292" width="175" height="58" rx="7" fill="#F0FDF4" stroke="#16A34A" stroke-width="1"/>
 <text x="1168" y="314" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#16A34A" text-anchor="start">保护约束</text>
-<text x="1168" y="339" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#172033" text-anchor="start">写回占比</text>
+<text x="1168" y="339" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#172033" text-anchor="start">写回占比</text>
 <rect x="278" y="420" width="1052" height="72" rx="10" fill="#FFF7D6" stroke="#B7791F" stroke-width="2"/>
-<text x="804" y="449" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#B7791F" text-anchor="middle">策略控制器：计划层 + 运行层 + 服务端批处理</text>
-<text x="804" y="476" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#334155" text-anchor="middle">执行前定数据批次；运行中调门控/路由；服务端形成 micro-batch</text>
+<text x="804" y="449" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#B7791F" text-anchor="middle">策略控制器：数据组织 + 调度提交控制</text>
+<text x="804" y="476" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="middle">token-budget/分组定数据组织；queue-adaptive/K_max 调提交节奏；GPU 侧观测队列状态</text>
 <polyline points="1467,258 1467,456 1330,456" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
 
 <polygon points="1330,456 1338,451 1338,461" fill="#475569"/>
 <text x="1364" y="456" font-family="Microsoft YaHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#475569" text-anchor="start">反馈</text>
-<polyline points="361,420 361,362" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
+<polyline points="366,420 366,362" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
 
-<polygon points="361,362 356,370 366,370" fill="#475569"/>
-<polyline points="581,420 581,362" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
+<polygon points="366,362 361,370 371,370" fill="#475569"/>
+<polyline points="586,420 586,362" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
 
-<polygon points="581,362 576,370 586,370" fill="#475569"/>
-<polyline points="801,420 801,362" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
+<polygon points="586,362 581,370 591,370" fill="#475569"/>
+<polyline points="806,420 806,362" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
 
-<polygon points="801,362 796,370 806,370" fill="#475569"/>
-<polyline points="1021,420 1021,362" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
+<polygon points="806,362 801,370 811,370" fill="#475569"/>
+<polyline points="1026,420 1026,362" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
 
-<polygon points="1021,362 1016,370 1026,370" fill="#475569"/>
-<polyline points="1241,420 1241,362" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
+<polygon points="1026,362 1021,370 1031,370" fill="#475569"/>
+<polyline points="1246,420 1246,362" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="9 6"/>
 
-<polygon points="1241,362 1236,370 1246,370" fill="#475569"/>
-<text x="50" y="576" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">图注：不重切数据库侧已物化批次；动态 batch 位于模型服务侧，请求队列按等待时间、token/shape 预算形成推理 micro-batch。</text>
+<polygon points="1246,362 1241,370 1251,370" fill="#475569"/>
+<text x="50" y="576" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">图注：上游数据组织策略与调度提交控制策略构成执行闭环；vLLM 侧观测队列状态作为反馈信号，不修改其内部批处理机制。</text>
 </svg>

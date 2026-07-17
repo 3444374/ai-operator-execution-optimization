@@ -6,19 +6,19 @@
 
 | 文件 | 作用 |
 |---|---|
-| `research_design_catalog.md` | **课题研究方案候选目录**（2026-07-15）：RC1/RC2/RC3/跨层 共 28 个候选方案的六维评估矩阵、分阶段路线图、风险分析、Killer Experiment 矩阵和 Baseline 设计考量 |
-| `baseline_reference.md` | **实验 Baseline 参考矩阵**：从 CCF-A 文献中提取的各方向最优 baseline 策略（GPU 调度 / 写回 / 数据组织 / 跨层决策），用于实验设计时对照 |
+| `research_design_catalog.md` | **课题研究方案候选目录**（2026-07-15）：28 个候选方案的六维评估矩阵、分阶段路线图、风险分析、实验矩阵和 Baseline 设计考量 |
+| `baseline_reference.md` | **实验 Baseline 参考矩阵**：从 CCF-A 文献中提取的各方向最优 baseline 策略（GPU 调度 / 数据组织 / 提交控制），用于实验设计时对照 |
 | `strategy_design_literature_basis.md` | **策略设计思路的文献依据与边界**：区分可借鉴优化思想、baseline/边界和本文自己的策略定义，用于支撑策略设计图和方法口径 |
-| `strategy_design_implementation_reference.md` | **策略设计与系统实现参考**：把 Ray、vLLM/Ray Serve/Triton、GPU 数据放置和 DB AI 算子文献机制沉淀为三层策略、实验变量和实现优先级 |
+| `strategy_design_implementation_reference.md` | **策略设计与系统实现参考**：把 Ray、vLLM、Daft、GPU 数据放置和 DB AI 算子文献机制沉淀为两项策略 + 端到端验证、实验变量和实现优先级（2026-07-17 已统一口径）|
 
 ## 实验计划
 
 | 文件 | 对应研究内容 | 内容 |
 |---|---|---|
-| `data_organization_batching.md` | **RC1**：数据组织与批处理构造 | Grid search 建立静态最优 baseline、workload 对比、selectivity-aware 策略、模型 batch scaling 前置实验 |
-| `service_scheduling_backpressure.md` | **RC2**：GPU 推理服务感知调度与反压 | K_max sweep、routing 策略对比、adaptive vs static K_max、vLLM baseline 前置实验 |
-| `sink_writeback_coordination.md` | **RC3**：结果汇聚与持久化协同 | B 系列工程 baseline（UPSERT vs COPY、logged vs unlogged、online vs deferred index）、三路写回架构对比、sink 对照 |
-| `cross_layer_killer_experiment.md` | **端到端效果评估增强实验** | 在上游执行链路调优和写回瓶颈判定完成后，用 BL1-BL4、全链路配置、代价模型准确性评估、消融瀑布和跨 workload 泛化分析阶段间耦合 |
+| `data_organization_batching.md` | **研究内容一**：数据组织策略 | 静态 batch_size、token-budget、length-aligned、prefix-aware grouping 等候选方案 |
+| `service_scheduling_backpressure.md` | **研究内容二**：提交控制策略 | 固定 K_max、adaptive K_max、routing 策略、queue-adaptive flush、actor pool 分池路由等候选方案 |
+| `sink_writeback_coordination.md` | **写回工程参考**（不作为独立实验阶段） | COPY + deferred index baseline，仅在实验设置中说明 |
+| `cross_layer_killer_experiment.md` | **耦合验证** | 独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数）|
 
 ## 实验计划的共同评估标准（来自 CCF-A 论文）
 
@@ -34,19 +34,21 @@
 ## 实验前置依赖
 
 ```
-P0: vLLM 接入 + B 系列写回工程 baseline
+前置：vLLM + Qwen2.5-1.5B baseline 建立 + Daft 文本阶段接入
   ↓
-P1: RC1 Grid Search → RC2 K_max Sweep → RC3 三路架构对比
-  ↓                     ↓                     ↓
-  └─────────────────────┴─────────────────────┘
-                        ↓
-P2: 端到端效果评估；必要时补充 cross_layer_killer_experiment.md 的增强对照
+第一阶段：研究内容一 数据组织策略消融（token-budget + 分组策略 + Daft 引擎参数）
+  ↓
+第二阶段：研究内容二 提交控制策略消融（queue-adaptive flush + routing + Daft engine 参数）
+  ↓
+第三阶段：耦合验证（独立最优拼接 vs 联合 grid search，判定是否需要联合调优）
+  ↓
+第四阶段：多模态泛化验证（图像 workload，同一套策略代码）
 ```
 
-**在 P0 完成之前，所有 Grid Search 的结果都基于 suboptimal baseline，不能作为论文最终数据。**
+**在 vLLM baseline 建立之前，所有基于手动 HTTP endpoint 的实验结果都基于 suboptimal baseline，不能作为论文最终数据。**
 
 ## 设计规则
 
 设计实验 baseline 前，先查阅 `baseline_reference.md`——优先从已有 CCF-A 文献中提取最优策略作为对照，不凭空设计 strawman baseline。设计“本文策略”或更新策略设计图前，先查阅 `strategy_design_literature_basis.md`，区分哪些是可借鉴思想、哪些只是 baseline/边界、哪些才是本文自己的策略。实验设计方法论参照 AGENTS.md §6.5（文献优先设计规则）和 `research/README.md` §文献优先设计方法论。
 
-进入具体实现或实验矩阵设计时，再查阅 `strategy_design_implementation_reference.md`：该文件把三层策略拆成计划层、运行层和服务端 micro-batching，并列出每层的信号、变量、指标、baseline 和实现优先级。
+进入具体实现或实验矩阵设计时，再查阅 `strategy_design_implementation_reference.md`：该文件把两项策略拆成数据组织策略（研究内容一）、调度与提交控制策略（研究内容二），加上多模态泛化验证和算子代价估计补充，并列出每部分的信号、变量、指标、baseline 和实现优先级。

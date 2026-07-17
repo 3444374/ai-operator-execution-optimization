@@ -2,6 +2,8 @@
 
 生成日期：2026-07-09
 
+> **2026-07-17 口径更新**：本文档为早期文献审查记录。当前技术栈已更新：Daft 从候选引擎升级为正式数据引擎（文本阶段直接接入），Ray 作为架构设计空间，vLLM 作为部署平台。写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立研究方向。方向已从"Object Transfer/fan-in/coalescing"收敛为"上游调度策略（数据组织 + 提交控制）+ 多模态泛化验证"。最新方向、研究内容和实验优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。本文档中的文献依据（Ray/Daft/Arrow/Lance 等）仍可作为参考资料使用。
+
 ## 1. 结论先行
 
 当前方向不是拍脑袋。Ray object、task、object store、Daft partition/shuffle、join strategy、Arrow/Lance columnar data 这些点都有论文或官方文档依据。

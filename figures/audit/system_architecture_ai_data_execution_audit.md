@@ -35,6 +35,19 @@ Solution Overview / System Architecture。
 - 研究内容 2 标题从 `GPU 服务感知 Ray 调度` 改为 `运行层调度与服务端批处理`，更准确表达当前方案横跨 Ray 入口调度、endpoint routing 和模型服务侧 `micro-batch`。
 - 保留上方系统阶段的颜色编码：蓝色表示数据层，绿色表示 Ray 执行层，橙色表示 GPU 模型服务，紫色表示结果存储。
 
+## 本轮修改（2026-07-17，同步课题方向重构）
+
+课题方向明确收敛到上游调度优化（数据组织策略 + 调度与提交控制策略），主场景切换为 AI_COMPLETE，vLLM 为部署平台。同步更新：
+
+- 标题去除"协同"：`...数据执行与存储架构`。
+- GPU 模型服务阶段：子项从 `embedding / classify / LLM / micro-batch` 改为 `LLM 推理 / continuous batching / PagedAttention / prefix caching`，反映主场景 AI_COMPLETE。
+- 修复 GPU 模型服务与 Ray 执行层的编号重复 bug：阶段编号改为 1-2-3-4 顺序。
+- 观测层标签 `micro-batch` 改为 `服务队列`。
+- 研究内容一标题：`数据组织与批处理构造` → `数据组织策略`；子项改为 token-budget 动态批量 / length-aligned 分组 / prefix-aware 分组。
+- 研究内容二标题：`运行层调度与服务端批处理` → `运行层调度与提交控制策略`；子项改为 queue-adaptive flush / K_max 动态控制 / actor pool 分池路由。
+- 研究内容三标题：`写回瓶颈判定与轻量优化` → `写回瓶颈判定`（去掉"轻量优化"）。
+- 图注更新：去掉"计划层""服务端动态批处理"，使用当前策略术语。
+
 ## 质检结果
 
 - Vector format：通过。已生成 SVG，可用于报告和后续 Word/PPT 转写。

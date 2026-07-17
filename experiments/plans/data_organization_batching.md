@@ -1,27 +1,28 @@
-# RC1：AI Workload 感知的数据组织与批处理构造实验计划
+# 研究内容一：动态数据组织与批处理构造策略实验计划
 
-整理日期：2026-07-16（修正：2026-07-16，六项评估方法论修正）
+整理日期：2026-07-16
 对应研究内容：研究内容一
 方法候选编号：A1.1-A1.6（详见 `research_design_catalog.md` §3）
-评估方法论来源：vLLM (SOSP 2023)、Orca (OSDI 2022)、GaussML (ICDE 2024)、Cortex AISQL (SIGMOD 2026)
+
+> **2026-07-16 方向更新**：主场景从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理）。具体优化方法尚未锁定——动态 batching（token-budget / length-align / prefix-aware grouping）是当前重点探索方向，但静态 batch_size 参数穷举的结果仍作为 baseline 对照保留。以下内容中的实验骨架和参数矩阵为候选方案，最终消融设计将在 vLLM baseline 建立后根据实际数据确定。详细背景见 `research/knowledge_hub.md`。
 
 ---
 
 ## 0. 前置依赖（先读这个）
 
-**本计划中所有 Grid Search 和 workload 对比实验，必须在以下 P0 任务完成后才能产生论文可用的最终数据：**
+**本计划中所有实验必须在 vLLM + 小 LLM baseline 建立后才能产生论文可用的最终数据：**
 
 ```
-P0a: vLLM / Ray Serve 接入 → GPU baseline 升级到 S 级
-P0b: COPY + deferred index → 写回 baseline 升级到 A 级
-P0c: 模型 batch scaling 曲线（§4 前置实验）
+前置：vLLM + Qwen2.5-1.5B 级 LLM baseline 建立（替代手动 HTTP endpoint）
+前置：COPY + deferred index 写回 baseline 建立
+前置：模型 batch scaling 曲线（§4 前置实验）
 
-当前状态: GPU = 手动 HTTP endpoint（B 级）、写回 = execute_values() UPSERT（合理默认）
+当前状态: GPU = 手动 HTTP endpoint、写回 = execute_values() UPSERT（仅预研可用）
 ```
 
-**为什么**：在 suboptimal GPU/写回 baseline 上搜出来的"最优 batch_size"会因为 GPU 端或写回端的瓶颈位置不同而偏移。论文必须用 S 级 GPU + A 级写回上的 grid search 结果。
+**为什么**：在 suboptimal GPU/写回 baseline 上搜出来的"最优 batch_size"会因为 GPU 端或写回端的瓶颈位置不同而偏移。论文必须用 S 级 GPU + A 级写回上的 参数组合穷举 结果。
 
-**过渡期**：可以用当前 baseline 跑一遍 RC1 来验证脚本、确认趋势、调试阶段拆解——但最终数据必须来自 P0 完成后的重跑。
+**过渡期**：可以用当前 baseline 跑一遍 研究内容一 来验证脚本、确认趋势、调试阶段拆解——但最终数据必须来自 P0 完成后的重跑。
 
 ---
 
@@ -37,13 +38,13 @@ P0c: 模型 batch scaling 曲线（§4 前置实验）
 
 | 编号 | 假设 | 待检验 | 对应实验段 |
 |---|---|---|---|
-| H1.1 | 固定 batch=64 在所有 workload 和规模下已经接近最优 | 能否被推翻？| §6.1 grid search |
-| H1.2 | batch_size 的最优值与 partition_count 独立（无交互效应）| 能否被推翻？| §6.1 grid search |
+| H1.1 | 固定 batch=64 在所有 workload 和规模下已经接近最优 | 能否被推翻？| §6.1 参数组合穷举 |
+| H1.2 | batch_size 的最优值与 partition_count 独立（无交互效应）| 能否被推翻？| §6.1 参数组合穷举 |
 | H1.3 | 不同 workload 类型（EMBED/FILTER/COMPLETE）的最优 batch_size 相同 | 能否被推翻？| §6.2 workload 对比 |
 | H1.4 | selectivity 不应影响 batch 构造策略 | 能否被推翻？| §6.3 selectivity-aware |
 | H1.5 | 模型自身的 batch scaling 在 batch=64 时已达到吞吐平台期 | 能否被推翻？| §4 前置实验 |
 
-**最可能被推翻的假设决定 RC1 的核心贡献**：如果 H1.3（不同 workload 的最优 batch 相同）被推翻 → RC1 有独立贡献；如果 H1.3 成立但 H1.5 被推翻（模型在 >64 时继续 scaling）→ RC1 的贡献移到"模型 scaling 行为驱动 batch 选择"而非"workload 感知"。
+**最可能被推翻的假设决定 研究内容一 的核心贡献**：如果 H1.3（不同 workload 的最优 batch 相同）被推翻 → 研究内容一 有独立贡献；如果 H1.3 成立但 H1.5 被推翻（模型在 >64 时继续 scaling）→ 研究内容一 的贡献移到"模型 scaling 行为驱动 batch 选择"而非"workload 感知"。
 
 ---
 
@@ -68,7 +69,7 @@ P0c: 模型 batch scaling 曲线（§4 前置实验）
 
 ---
 
-## 4. 前置实验：模型 batch scaling 曲线（P0c，必须在 RC1 所有实验之前跑）
+## 4. 前置实验：模型 batch scaling 曲线（P0c，必须在 研究内容一 所有实验之前跑）
 
 ### 4.0 研究问题
 
@@ -98,10 +99,10 @@ H1.5：模型自身的 batch scaling 在 batch=64 时已达到吞吐平台期。
 
 - 一条 `batch_size → rows/s` 曲线（X=batch_size, Y=吞吐）
 - 标注吞吐平台期的起始 batch_size
-- 如果平台期在 batch=32：RC1 讨论区间应聚焦 8-128，256/512 只有验证价值
-- 如果平台期在 batch=256：RC1 有更大 tuning space，batch 选择对 GPU 利用率影响更大
+- 如果平台期在 batch=32：研究内容一 讨论区间应聚焦 8-128，256/512 只有验证价值
+- 如果平台期在 batch=256：研究内容一 有更大 tuning space，batch 选择对 GPU 利用率影响更大
 
-**这条曲线是 RC1 所有讨论的前提。画好了才能解释后续所有实验里 batch_size 的影响。**
+**这条曲线是 研究内容一 所有讨论的前提。画好了才能解释后续所有实验里 batch_size 的影响。**
 
 ---
 
@@ -116,7 +117,7 @@ H1.5：模型自身的 batch scaling 在 batch=64 时已达到吞吐平台期。
 
 ## 6. 实验矩阵
 
-### 6.1 Grid Search：建立静态最优 baseline
+### 6.1 参数组合穷举：建立静态最优 baseline
 
 **假设**：H1.1（固定 batch=64 已最优）、H1.2（batch_size 和 partition_count 独立）。
 
@@ -136,7 +137,7 @@ object_merge    ∈ {coalesce_output}  # 当前已知最优
   - Workload: AI_EMBED（真实）
 ```
 
-**输出**：联合最优的 `(batch_size*, partition_count*)` = RC1 的 A 级 baseline。同时检验 H1.2（是否存在交互效应——某些 batch_size 在特定 partition_count 下表现异常）。
+**输出**：联合最优的 `(batch_size*, partition_count*)` = 研究内容一 的 A 级 baseline。同时检验 H1.2（是否存在交互效应——某些 batch_size 在特定 partition_count 下表现异常）。
 
 ### 6.2 Workload 对比
 
@@ -144,14 +145,14 @@ object_merge    ∈ {coalesce_output}  # 当前已知最优
 
 | Workload | batch_size | partition_count | 数据规模 | 标注 |
 |---|---|---|---|---|
-| EMBED | grid search 最优 × 3 | grid search 最优 × 3 | 1024, 4096, 16384 | ✅ 真实 |
-| FILTER | selectivity ∈ {0.1, 0.5} × grid search | grid search 最优 | 4096, 16384 | ⚠️ 模拟 |
-| COMPLETE | text_length ∈ {short, long} × grid search | grid search 最优 | 1024, 4096 | ⚠️ 模拟 |
+| EMBED | 参数组合穷举 最优 × 3 | 参数组合穷举 最优 × 3 | 1024, 4096, 16384 | ✅ 真实 |
+| FILTER | selectivity ∈ {0.1, 0.5} × 参数组合穷举 | 参数组合穷举 最优 | 4096, 16384 | ⚠️ 模拟 |
+| COMPLETE | text_length ∈ {short, long} × 参数组合穷举 | 参数组合穷举 最优 | 1024, 4096 | ⚠️ 模拟 |
 
 每种组合 3 次重复，Ray 重启，warm-up 1 次不计入。
 
-**如果 H1.3 被推翻**（不同 workload 的最优 batch 不同）→ RC1 核心发现成立。
-**如果 H1.3 成立**（所有 workload 下 batch=64 都最优）→ RC1 的贡献变为"验证了固定策略的鲁棒性"，workload-aware 的增量价值需重新评估。
+**如果 H1.3 被推翻**（不同 workload 的最优 batch 不同）→ 研究内容一 核心发现成立。
+**如果 H1.3 成立**（所有 workload 下 batch=64 都最优）→ 研究内容一 的贡献变为"验证了固定策略的鲁棒性"，workload-aware 的增量价值需重新评估。
 
 ### 6.3 Selectivity-Aware 策略（当 FILTER 场景可用时）
 
@@ -186,7 +187,7 @@ object_merge    ∈ {coalesce_output}  # 当前已知最优
 
 | 消融项 | 做法 | 要检验什么 |
 |---|---|---|
-| 规则表 vs 固定策略 | A1.2 规则表 vs A1.1 grid search 最优固定值 | 规则表在 workload 变化时是否优于固定策略？ |
+| 规则表 vs 固定策略 | A1.2 规则表 vs A1.1 参数组合穷举 最优固定值 | 规则表在 workload 变化时是否优于固定策略？ |
 | 规则表 vs 随机 | A1.2 规则表 vs 随机选配置（5 次取中位数）| 排除"随便选也能中"——规则表必须好于随机 |
 
 ---
@@ -206,7 +207,7 @@ object_merge    ∈ {coalesce_output}  # 当前已知最优
 
 | 要求 | 做法 |
 |---|---|
-| **重复次数** | 每组配置 3 次（grid search）。核心发现（被推翻的假设）额外补到 5 次 |
+| **重复次数** | 每组配置 3 次（参数组合穷举）。核心发现（被推翻的假设）额外补到 5 次 |
 | **集中趋势** | 取**中位数**（不取平均值——系统实验的临时 outlier 会拉偏平均值）|
 | **离散度** | 报告 IQR（四分位距），5 次以上报告标准差 |
 | **Ray 状态重置** | 每次重复之间 `ray stop` → `ray start`，避免内存缓存/对象复用 |
@@ -233,7 +234,7 @@ object_merge    ∈ {coalesce_output}  # 当前已知最优
 - [ ] P0c: 模型 batch scaling 曲线（§4）完成
 - [ ] P0a: vLLM/Ray Serve 接入完成
 - [ ] P0b: COPY + deferred index 写回 baseline 确认
-- [ ] P1: Grid search（batch_size × partition_count）在 P0 完成后重跑，确立 `(batch_size*, partition_count*)`
+- [ ] P1: 参数组合穷举（batch_size × partition_count）在 P0 完成后重跑，确立 `(batch_size*, partition_count*)`
 - [ ] P1: 三 workload（EMBED + FILTER/sim + COMPLETE/sim）完成
 - [ ] P1: 阶段拆解数据可以画 Fig_RC1_2
 - [ ] P2: selectivity-aware 策略对照（当 FILTER workload 可用时）

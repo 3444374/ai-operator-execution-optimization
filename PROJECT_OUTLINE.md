@@ -8,19 +8,24 @@
 
 > 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究。
 
-项目总方向：
+**2026-07-16 方向重大更新**：主场景从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理），上游 batching 从静态固定 batch_size 转向探索按 token 量动态组织的方式，Ray 从 task executor 升级为架构设计空间（异构 actor pool + 去中心化自适应提交）。vLLM 定位为部署平台。Daft 确认为数据引擎，文本阶段直接接入，多模态阶段复用同一套 pipeline。详见 `PROJECT_LOG.md` 2026-07-16 条目。
 
-> 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究。
+**2026-07-17 更新**：与导师讨论后明确多模态实验进入正文（§5.3 策略泛化性验证），不是仅 Discussion。算子代价估计作为 §6.1 补充讨论。优化空间从纯策略层扩展为"策略级决策 + 引擎级参数"联合表征。Daft 从"后续切换"改为文本阶段直接接入。
 
-当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本项目中主要作为 workload 入口和验证场景，研究主体是数据进入 Daft/Arrow 数据组织层、Ray task/actor 执行层、GPU-backed 模型服务和 Lance / pgvector / PostgreSQL sink 后的分布式执行与存储协同问题。
+当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本文中作为 workload 入口，研究重点是上游 Ray 数据执行层的调度优化——探索数据组织策略和提交控制策略，利用 Ray actor 实现去中心化自适应提交。Daft 作为数据引擎，提供 Rust 执行内核、Arrow 零拷贝、Morsel 流式背压和 `@daft.cls` GPU UDF 接口。
 
 ## 研究内容
 
-当前开题报告采用三项研究内容：
+当前开题报告采用两项策略设计 + 多模态泛化验证 + 算子代价估计（补充）：
 
-1. AI workload 感知的数据组织与批处理构造方法。
-2. GPU 推理服务状态感知的 Ray 并行调度与反压控制方法。
-3. AI workload 执行链路中的持久化边界分析与轻量写回优化（不作为独立方法贡献，为 RC1↔RC2 跨层协同提供边界确认）。
+1. **AI workload 感知的动态数据组织与批处理构造策略**（研究内容一）：对比 token-budget batching 与固定 batch_size 在端到端吞吐和 P99 延迟上的差异，以及 length-aligned/prefix-aware 分组与随机分组的效果差异。利用 Ray actor 异构化实现。引擎级参数（Daft `into_batches`、`batch_size`、`repartition`）与策略级决策共同构成优化空间。
+2. **运行层调度与提交控制策略**（研究内容二）：利用 Ray actor 研究去中心化的调度与提交控制，候选策略包括 queue-adaptive flush、K_max 动态控制、actor pool 分池路由等。引擎级参数（Daft `max_concurrency`、`gpus` 分配）与策略级决策共同构成优化空间。
+3. **多模态泛化验证**（正文实验，§5.3）：在图像 workload 上使用同一套策略代码和配置逻辑，验证 token-budget → frame-budget、queue-adaptive flush → 完全复用的模态无关性。
+4. **算子代价估计**（补充讨论，§6.1，不作为独立研究内容）：基于实验阶段采集的 profile 数据，建立 AI 算子的端到端成本估计方法，辅助编排决策。
+
+写回使用 PostgreSQL + pgvector（COPY + deferred index baseline），不作为独立研究内容，仅在实验设置中说明。
+
+**主场景：AI_COMPLETE**（生成式 LLM 推理，文本）+ **AI_EMBED/AI_CLASSIFY**（图像，多模态泛化验证）。AI_EMBED 文本预研已完成（真实 GPU-backed 链路）。
 
 阶段划分、执行画像和瓶颈归因不是独立研究内容，而是动机测试、方案设计和评价依据。
 
@@ -72,13 +77,19 @@
 
 ## 近期优先级
 
-1. P0：接入 vLLM / Ray Serve（GPU baseline 升级到 S 级）；完成 B 系列写回工程实验（COPY + unlogged staging + deferred HNSW index，写回 baseline 升级到 A 级）。
-2. P1：各研究内容独立 grid search——RC1 的 `batch_size × partition_count`、RC2 的 `K_max × endpoint_count × routing`、RC3 的三路写回架构对比（driver fan-in / worker-direct / queue-worker）。
-3. P2：端到端效果评估，逐步加入数据组织调优、模型服务调度调优和写回瓶颈判定；如阶段间耦合明显，再补充独立最优组合 vs 全链路配置的增强对照。
-4. 扩展到 `AI_FILTER/AI_CLASSIFY`（simulated）和 `AI_COMPLETE`（simulated），验证方法跨 workload 泛化。
-5. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+1. **前置（必须最先完成）**：接入 vLLM + 小 LLM（Qwen2.5-1.5B 级，适配 RTX 5070 12GB VRAM）替代手动 HTTP endpoint，建立 continuous batching baseline；构造 AI_COMPLETE workload（三类 token 长度分布 + shared prefix 控制）。Daft 在文本阶段直接接入，替代裸 Arrow RecordBatch 构造。
+2. **核心实验（文本）**：研究内容一动态 batching 消融——静态固定 batch_size vs token-budget vs length-aligned vs prefix-aware grouping，同时探索 Daft `into_batches`、`batch_size`、`repartition` 等引擎级参数；研究内容二自适应提交消融——固定 K_max vs queue-adaptive flush vs actor pool 分池路由，同时探索 Daft `max_concurrency`、`gpus` 分配。
+3. **耦合验证**：独立最优（研究内容一最优 + 研究内容二最优）拼接 vs 联合 grid search（batching policy, submission policy, 引擎级参数）。如交互不显著，调整 claim 为"分层独立优化框架"。
+4. **多模态泛化验证（正文 §5.3）**：图像数据集（ImageNet/HuggingFace），CLIP embedding + 分类。同一套策略代码，`df["prompt"]` 换为 `df["image"]`，验证 token-budget → frame-budget、queue-adaptive flush 复用。VLM 生成实验（Qwen2.5-VL-3B）标记为 optional。
+5. **算子代价估计（§6.1 讨论，最低优先级）**：基于上述实验已采集的 profile 数据，不新增实验。仅当核心优化实验全部完成后才启动。
+6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
-详细实验计划见 `experiments/plans/` 下四个独立计划文件和 `experiments/plans/README.md`。
+写回使用 PostgreSQL + pgvector（COPY + deferred index baseline），不作为独立实验阶段。
+
+**Scope 缩减触发条件**：
+- Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion
+- 文本 RC1+RC2 消融未完成前，不启动 Daft 多模态 pipeline
+- VLM 生成实验始终标记为 optional
 
 ## 同步规则
 

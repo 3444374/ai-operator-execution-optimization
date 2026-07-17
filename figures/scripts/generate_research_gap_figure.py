@@ -132,7 +132,7 @@ def draw_png():
     d.text((64, 34), "已有研究的三个方向与本课题定位", font=F["title"], fill=PAL["ink"])
     d.text(
         (66, 74),
-        "数据库内置 AI 算子、分布式 AI 推理服务、AI 数据存储三个方向各自有大量 CCF-A 工作，但缺少跨方向的端到端协同优化。",
+        "数据库内置 AI 算子、分布式 AI 推理服务、AI 数据存储三个方向各自有大量 CCF-A 工作，但缺少跨方向的端到端链路研究。",
         font=F["sub"], fill=PAL["muted"],
     )
 
@@ -171,7 +171,7 @@ def draw_png():
     # ── Divider line ──
     div_y = note_y + 36
     d.line((start_x + 40, div_y, start_x + total_w - 40, div_y), fill=PAL["pill_edge"], width=1)
-    gap_label = "三个方向各自深入，缺少跨方向协同 —— 本课题填补此空白"
+    gap_label = "三个方向各自深入，缺少跨方向的端到端链路研究"
     lw, _ = txtsz(d, gap_label, F["note"])
     d.text(((W - lw) / 2, div_y + 8), gap_label, font=F["note"], fill=PAL["note"])
 
@@ -182,7 +182,7 @@ def draw_png():
     rrect(d, (tx, thesis_y, tx + tw, thesis_y + th), PAL["box_fill"], PAL["box_edge"])
 
     ctext(d, (tx, thesis_y + 12, tx + tw, thesis_y + 44),
-          "本课题定位：方向一与方向二协同优化，方向三用于写回瓶颈判定",
+          "本课题定位：方向一与方向二的上游调度优化，方向三用于写回瓶颈判定",
           F["d_title"], PAL["box_edge"])
 
     # ── Layout: shared panel (cards 1+2) + standalone card 3 ──
@@ -208,25 +208,25 @@ def draw_png():
     # Card 1
     c1x = panel_x + panel_pad
     draw_research_card(d, c1x, card_y, card_w, card_h, 1,
-                       "数据组织与批处理构造",
-                       ["AI workload 特征感知", "batch / partition / operator 粒度", "object 合并与 fan-in 形态"],
+                       "数据组织策略",
+                       ["token-budget 动态批量", "length-aligned 分组", "prefix-aware 分组"],
                        PAL["d1_edge"], "", "")
 
     # Card 2
     c2x = c1x + card_w + card_gap
     draw_research_card(d, c2x, card_y, card_w, card_h, 2,
-                       "运行层调度与服务端批处理",
-                       ["K_max 门控与 backpressure", "endpoint routing / actor pool", "服务端 micro-batch 形成"],
+                       "运行层调度与提交控制策略",
+                       ["queue-adaptive flush", "K_max 动态控制", "actor pool 分池路由"],
                        PAL["d2_edge"], "", "")
 
     # Card 3 standalone
     draw_research_card(d, card3_x, card_y, card3_w, card_h, 3,
                        "写回瓶颈判定",
-                       ["writeback ratio 判定", "driver / worker / queue 写回", "Lance / pgvector / PostgreSQL"],
+                       ["writeback ratio 判定", "sink 类型对比", "Lance / pgvector / PostgreSQL"],
                        PAL["d3_edge"], "", "")
 
     # Panel header — subtle label, no green border
-    header_text = "跨层协同优化（核心方法贡献）"
+    header_text = "上游调度策略（核心方法贡献）"
     htw, hth = txtsz(d, header_text, F["tag"])
     header_pill_x = panel_x + panel_pad
     header_pill_y = card_y - panel_pad + 2
@@ -237,8 +237,8 @@ def draw_png():
     # ── Caption ──
     d.text(
         (72, H - 34),
-        "图注：已有研究在 DB4AI、AI 推理服务和 AI 数据存储三个方向各自深入，但缺少将它们视为端到端可协同优化的完整链路的系统研究。"
-        "本课题聚焦方向一（数据组织）与方向二（执行调度/模型服务）的协同优化，方向三用于端到端收益判定。",
+        "图注：已有研究在 DB4AI、AI 推理服务和 AI 数据存储三个方向各自深入，但缺少将它们视为端到端可优化链路的系统研究。"
+        "本课题聚焦方向一（数据组织策略）与方向二（调度与提交控制策略）的上游调度优化，方向三用于写回瓶颈判定和端到端收益检查。",
         font=F["cap"], fill=PAL["muted"],
     )
 
@@ -276,7 +276,7 @@ def draw_svg():
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
         f'<rect width="{W}" height="{H}" fill="{PAL["bg"]}"/>',
         svg_text(64, 60, "已有研究的三个方向与本课题定位", 28, "700"),
-        svg_text(66, 96, "数据库内置 AI 算子、分布式 AI 推理服务、AI 数据存储三个方向各自有大量 CCF-A 工作，但缺少跨方向的端到端协同优化。", 16, fill=PAL["muted"]),
+        svg_text(66, 96, "数据库内置 AI 算子、分布式 AI 推理服务、AI 数据存储三个方向各自有大量 CCF-A 工作，但缺少跨方向的端到端链路研究。", 16, fill=PAL["muted"]),
     ]
 
     # Direction boxes
@@ -318,7 +318,7 @@ def draw_svg():
     # Divider
     div_y = note_y + 30
     parts.append(f'<line x1="{start_x + 40}" y1="{div_y}" x2="{start_x + total_w - 40}" y2="{div_y}" stroke="{PAL["pill_edge"]}" stroke-width="1"/>')
-    parts.append(svg_center(W/2, div_y + 4, 460, 20, "三个方向各自深入，缺少跨方向协同 —— 本课题填补此空白", 13, fill=PAL["note"]))
+    parts.append(svg_center(W/2, div_y + 4, 460, 20, "三个方向各自深入，缺少跨方向的端到端链路研究", 13, fill=PAL["note"]))
 
     # Thesis box
     thesis_y = div_y + 40
@@ -326,7 +326,7 @@ def draw_svg():
     tx = (W - tw) / 2
     parts.append(svg_rect(tx, thesis_y, tw, th, PAL["box_fill"], PAL["box_edge"]))
     parts.append(svg_center(tx, thesis_y + 12, tw, 32,
-                            "本课题定位：方向一与方向二协同优化，方向三用于写回瓶颈判定",
+                            "本课题定位：方向一与方向二的上游调度优化，方向三用于写回瓶颈判定",
                             17, "700", PAL["box_edge"]))
 
     # Layout: shared panel + standalone card
@@ -354,9 +354,9 @@ def draw_svg():
     parts.append(svg_rect(c1x, card_y, card_w, card_h, PAL["card_bg"], PAL["d1_edge"], r=10))
     parts.append(f'<circle cx="{c1x + 26}" cy="{card_y + 22}" r="14" fill="{PAL["d1_edge"]}"/>')
     parts.append(svg_text(c1x + 26, card_y + 27, "1", 13, "700", "#FFFFFF", "middle"))
-    parts.append(svg_text(c1x + 48, card_y + 28, "数据组织与批处理构造", 15, "700", PAL["d1_edge"]))
+    parts.append(svg_text(c1x + 48, card_y + 28, "数据组织策略", 15, "700", PAL["d1_edge"]))
     py = card_y + 48
-    for item in ["AI workload 特征感知", "batch / partition / operator 粒度", "object 合并与 fan-in 形态"]:
+    for item in ["token-budget 动态批量", "length-aligned 分组", "prefix-aware 分组"]:
         parts.append(svg_pill(c1x + 14, py, card_w - 28, 20, item, size=11))
         py += 25
 
@@ -365,9 +365,9 @@ def draw_svg():
     parts.append(svg_rect(c2x, card_y, card_w, card_h, PAL["card_bg"], PAL["d2_edge"], r=10))
     parts.append(f'<circle cx="{c2x + 26}" cy="{card_y + 22}" r="14" fill="{PAL["d2_edge"]}"/>')
     parts.append(svg_text(c2x + 26, card_y + 27, "2", 13, "700", "#FFFFFF", "middle"))
-    parts.append(svg_text(c2x + 48, card_y + 28, "运行层调度与服务端批处理", 15, "700", PAL["d2_edge"]))
+    parts.append(svg_text(c2x + 48, card_y + 28, "运行层调度与提交控制策略", 15, "700", PAL["d2_edge"]))
     py = card_y + 48
-    for item in ["K_max 门控与 backpressure", "endpoint routing / actor pool", "服务端 micro-batch 形成"]:
+    for item in ["queue-adaptive flush", "K_max 动态控制", "actor pool 分池路由"]:
         parts.append(svg_pill(c2x + 14, py, card_w - 28, 20, item, size=11))
         py += 25
 
@@ -377,19 +377,19 @@ def draw_svg():
     parts.append(svg_text(card3_x + 26, card_y + 27, "3", 13, "700", "#FFFFFF", "middle"))
     parts.append(svg_text(card3_x + 48, card_y + 28, "写回瓶颈判定", 15, "700", PAL["d3_edge"]))
     py = card_y + 48
-    for item in ["writeback ratio 判定", "driver / worker / queue 写回", "Lance / pgvector / PostgreSQL"]:
+    for item in ["writeback ratio 判定", "sink 类型对比", "Lance / pgvector / PostgreSQL"]:
         parts.append(svg_pill(card3_x + 14, py, card3_w - 28, 20, item, size=11))
         py += 25
 
     # Panel header — subtle label, no green
     parts.append(svg_text(panel_x + panel_pad, card_y - panel_pad + 16,
-                          "跨层协同优化（核心方法贡献）", 12, fill=PAL["ink"]))
+                          "上游调度策略（核心方法贡献）", 12, fill=PAL["ink"]))
 
     # Caption
     parts.append(svg_text(
         72, H - 22,
-        "图注：已有研究在 DB4AI、AI 推理服务和 AI 数据存储三个方向各自深入，但缺少将它们视为端到端可协同优化的完整链路的系统研究。"
-        "本课题聚焦方向一（数据组织）与方向二（执行调度/模型服务）的协同优化，方向三用于端到端收益判定。",
+        "图注：已有研究在 DB4AI、AI 推理服务和 AI 数据存储三个方向各自深入，但缺少将它们视为端到端可优化链路的系统研究。"
+        "本课题聚焦方向一（数据组织策略）与方向二（调度与提交控制策略）的上游调度优化，方向三用于写回瓶颈判定和端到端收益检查。",
         13, fill=PAL["muted"],
     ))
 

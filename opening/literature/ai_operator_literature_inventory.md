@@ -1,8 +1,9 @@
 # 数据库 AI 算子相关文献清单
 
 整理日期：2026-07-16（v3，扩充至 57 篇，新增写回/持久化方向 12 篇）
+2026-07-17 更新（v4）：新增 Daft+Ray 多模态 + 具身智能方向 8 篇，总计 65 篇
 用途：开题报告 §2 国内外研究现状、参考文献
-精读：19 篇 | 引用：57 篇
+精读：19 篇 | 引用：65 篇
 优先级：CCF-A > CCF-B > 顶会（CIDR/OSDI/SOSP/NeurIPS/ISCA/EuroSys）> 产业系统 > arXiv 预印本
 
 ---
@@ -124,6 +125,23 @@
 
 ### F. 本项目实验报告（自引，3 篇）
 
+### G. Daft+Ray 多模态引擎与具身智能（8 篇，2026-07-17 新增）
+
+本组文献用于支撑两个论点：(1) Daft+Ray 是具身智能多模态数据处理的事实标准平台之一；(2) Snowflake Cortex 已支持多模态 AI SQL 算子，数据库 AI 算子处理多模态数据是工业现实。
+
+| # | 论文/资料 | 出处 | CCF/来源 | 与本课题关系 |
+|---|---|---|---|---|
+| 58 | Chia, Jay et al. **Building Daft: Python + Rust = a better distributed query engine.** SciPy 2024 Talk. | SciPy 2024 | 会议 | Daft 三层架构（API→Plan→Execute），Arrow+Rust 核心理念 |
+| 59 | Luan, Mao, Wang et al. **The Streaming Batch Model for Efficient and Fault-Tolerant Heterogeneous Execution.** arXiv:2501.12407, 2025. | arXiv | 预印本 | Ray Data 的 CPU/GPU 异构执行模型，3-8× 吞吐；Daft 的直接竞品 |
+| 60 | Eventual Inc. **Flotilla: Simplifying Multimodal Data Processing at Scale.** Daft Blog, October 2025. | 官方博客 | 工业 | Daft 新分布式引擎架构：每节点一个 Swordfish Worker，Ray 降级为资源层 |
+| 61 | Eventual Inc. **GPU Inference with @daft.cls.** Daft Blog, 2025. | 官方博客 | 工业 | Stateful UDF + GPU 分配 + max_concurrency 机制；模型作为管线一等公民 |
+| 62 | Snowflake Inc. **Cortex AI Functions: Multimodal.** Snowflake Documentation, 2025. | 官方文档 | 工业 | AI_COMPLETE/AI_EMBED/AI_CLASSIFY 对图片/视频/音频的多模态支持，数据库 AI 算子多模态化证据 |
+| 63 | Alibaba Cloud. **EMR Serverless Daft 如何简化多模态数据处理：视频抽帧、清洗、标注全流程与具身智能实践.** 阿里云开发者社区, 2025. | 技术文章 | 工业 | 视频抽帧→VLM 推理→标注的完整管线；100+ 多模态算子；具身智能场景 |
+| 64 | IBM Research. **The Data Gap That's Holding Back Robotics.** IBM Think Blog, 2025. | 技术博客 | 工业 | 具身智能数据基础设施缺口——为什么需要更好的数据组织与调度 |
+| 65 | Tao et al. **HeteroHub: An Applicable Data Management Framework for Heterogeneous Multi-Embodied Agent System.** arXiv:2603.28010, 2025. | arXiv | 预印本 | 具身智能数据管理三层架构（Static Knowledge Hub + Training Data Fabric + Execution Stream），与数据库 AI 算子调度形成对照 |
+
+### F. 本项目实验报告（自引，3 篇）
+
 | # | 报告 | 路径 |
 |---|---|---|
 | 43 | GPU-Backed AI_EMBED Chain Breakdown + Multi-Endpoint Ray Test (2026-07-12) | `motivation/results/gpu/` |
@@ -139,10 +157,11 @@
 | CCF-A 会议/期刊 | 37 | SIGMOD×8, VLDB/PVLDB×14, ICDE×1, SOSP×1, OSDI×6, NeurIPS×2, EuroSys×1, ACM TOS×1, VLDB Journal×1, ISCA×1, FAST×2 |
 | 顶会（非 CCF 列表） | 1 | CIDR 2025 |
 | 综述 | 1 | Frontiers of CS |
-| 预印本/arXiv | 3 | DeepSeek-V3, Ray Data, Lance |
-| 工业论文/官方文档 | 8 | Arrow Flight, Daft, Spark, Snowflake, BigQuery, Oracle, pgai, PostgresML, pgvector, vLLM |
+| 预印本/arXiv | 5 | DeepSeek-V3, Ray Data×2（含 arXiv:2501.12407）, Lance, HeteroHub |
+| 工业论文/官方文档/技术博客 | 13 | Arrow Flight, Daft×3, Spark, Snowflake×2, BigQuery, Oracle, pgai, PostgresML, pgvector, vLLM, 阿里云 EMR Daft, IBM |
 | 自引 | 3 | 本项目 GPU-backed E2E 实验报告 |
-| **合计** | **57** | |
+| 会议 Talk | 1 | SciPy 2024 (Daft) |
+| **合计** | **65** | |
 
 ---
 

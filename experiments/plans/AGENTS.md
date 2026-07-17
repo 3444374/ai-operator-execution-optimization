@@ -1,6 +1,6 @@
 # experiments/plans/AGENTS.md
 
-本目录存放按三项研究内容组织的正式实验计划。规则继承 `experiments/AGENTS.md` 和根目录 `AGENTS.md`。
+本目录存放按两项策略设计 + 一项端到端验证组织的正式实验计划。规则继承 `experiments/AGENTS.md` 和根目录 `AGENTS.md`。
 
 ## 内容
 

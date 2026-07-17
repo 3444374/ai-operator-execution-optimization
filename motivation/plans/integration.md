@@ -1,10 +1,10 @@
 # AI 算子集成与测试方法
 
-生成日期：2026-07-10
+生成日期：2026-07-10（⚠ 最后更新于早期阶段，内容可能过时。当前方向以 `PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准）
 
 ## 1. 当前约束
 
-目前处于“设备未到位”阶段。
+设备状态：RTX 5070 (12GB VRAM) 已就绪，可运行 1-3B 级 LLM。
 
 根据沟通信息：
 
@@ -55,6 +55,19 @@ AI-SQL-compatible operator surface
 
 目标不是把所有 AI 计算塞进数据库内核，而是构建：
 
+```text
+PostgreSQL 18.3 documents 表
+  -> Daft DataFrame（数据引擎，文本 df["prompt"] / 图像 df["image"]）
+  -> Ray 动态 Batching（token-budget / length-align / prefix-aware）
+    + Ray actor 架构（异构 actor pool / queue-adaptive flush）
+  -> AI_COMPLETE（文本 LLM）/ AI_EMBED/AI_CLASSIFY（图像，多模态泛化）
+  -> vLLM Continuous Batching（部署平台，不修改）
+  -> 写回 PostgreSQL + pgvector
+```
+
+> **2026-07-17 更新**：上图已按当前口径更新。原始版本（见下）保留作为历史参考。
+
+原始版本（2026-07-10）：
 ```text
 PostgreSQL 18.3 documents 表
   -> 导出/读取为 Arrow RecordBatch

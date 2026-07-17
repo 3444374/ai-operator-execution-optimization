@@ -46,7 +46,7 @@ F = {
     "sub": _font(15),
     "panel": _font(18, True),
     "card": _font(15, True),
-    "body": _font(13),
+    "body": _font(12),
     "small": _font(11),
     "cap": _font(12),
 }
@@ -164,7 +164,7 @@ def svg_card(box, title, lines, edge, fill=PAL["card"]):
     parts = [svg_rect(x, y, w, h, fill, edge, r=9, sw=2), svg_text(x + 14, y + 30, title, 15, "700", edge)]
     yy = y + 61
     for line in lines:
-        parts.append(svg_text(x + 14, yy, line, 13, fill=PAL["muted"]))
+        parts.append(svg_text(x + 14, yy, line, 12, fill=PAL["muted"]))
         yy += 22
     return "\n".join(parts)
 
@@ -174,7 +174,7 @@ def svg_decision(box, title, value, edge, fill):
     return "\n".join([
         svg_rect(x, y, w, h, fill, edge, r=7, sw=1),
         svg_text(x + 10, y + 22, title, 11, fill=edge),
-        svg_text(x + 10, y + 47, value, 13),
+        svg_text(x + 10, y + 47, value, 12),
     ])
 
 
@@ -203,21 +203,21 @@ def draw_flow_png():
     img = Image.new("RGB", (w, h), PAL["bg"])
     d = ImageDraw.Draw(img)
     d.text((48, 28), "运行时信号驱动的上游执行闭环", font=F["title"], fill=PAL["ink"])
-    d.text((50, 66), "一个 AI_EMBED 查询贯穿数据批次、提交门控、模型服务队列、写回约束和端到端反馈。", font=F["sub"], fill=PAL["muted"])
+    d.text((50, 66), "一个 AI_COMPLETE 查询贯穿数据批次、提交门控、模型服务队列、写回约束和端到端反馈。", font=F["sub"], fill=PAL["muted"])
 
     boxes = {
-        "sql": (58, 142, 165, 116),
-        "batch": (278, 142, 165, 116),
-        "gate": (498, 142, 165, 116),
-        "endpoint": (718, 142, 165, 116),
-        "gpu": (938, 142, 165, 116),
-        "sink": (1158, 142, 165, 116),
+        "sql": (58, 142, 175, 116),
+        "batch": (278, 142, 175, 116),
+        "gate": (498, 142, 175, 116),
+        "endpoint": (718, 142, 175, 116),
+        "gpu": (938, 142, 175, 116),
+        "sink": (1158, 142, 175, 116),
         "metrics": (1378, 142, 178, 116),
     }
     specs = {
-        "sql": ("SQL 入口", ["SELECT AI_EMBED(text)", "FROM documents"], PAL["purple"], PAL["purple_fill"]),
-        "batch": ("数据批次队列", ["观测量：行数/长度", "调节项：批量/分区"], PAL["blue"], PAL["blue_fill"]),
-        "gate": ("提交门控", ["观测量：在途任务", "调节项：并发上限"], PAL["orange"], PAL["orange_fill"]),
+        "sql": ("SQL 入口", ["AI_COMPLETE(prompt)", "FROM documents"], PAL["purple"], PAL["purple_fill"]),
+        "batch": ("数据批次队列", ["观测：token 量/prefix", "调节：token-budget/分组"], PAL["blue"], PAL["blue_fill"]),
+        "gate": ("提交门控", ["观测：模型服务队列深度", "调节：flush 时机/K_max"], PAL["orange"], PAL["orange_fill"]),
         "endpoint": ("模型服务队列", ["观测量：积压/等待", "调节项：routing policy"], PAL["orange"], PAL["orange_fill"]),
         "gpu": ("GPU 模型服务", ["观测量：模型耗时", "判定项：是否饱和"], PAL["orange"], PAL["card"]),
         "sink": ("结果与写回", ["观测量：写回占比", "约束项：写回批量"], PAL["green"], PAL["green_fill"]),
@@ -237,22 +237,22 @@ def draw_flow_png():
         main_arrows.append((lx + lw + 4, ymid, rx - 8, ymid))
 
     decisions = {
-        "decision_batch": (278, 292, 165, 58),
-        "decision_gate": (498, 292, 165, 58),
-        "decision_routing": (718, 292, 165, 58),
-        "decision_microbatch": (938, 292, 165, 58),
-        "guard_sink": (1158, 292, 165, 58),
+        "decision_batch": (278, 292, 175, 58),
+        "decision_gate": (498, 292, 175, 58),
+        "decision_routing": (718, 292, 175, 58),
+        "decision_microbatch": (938, 292, 175, 58),
+        "guard_sink": (1158, 292, 175, 58),
     }
-    decision(d, decisions["decision_batch"], "计划层决策", "批量 / 分区", PAL["blue"], PAL["blue_fill"])
-    decision(d, decisions["decision_gate"], "运行层决策", "K_max", PAL["orange"], PAL["orange_fill"])
-    decision(d, decisions["decision_routing"], "运行层决策", "routing policy", PAL["orange"], PAL["orange_fill"])
-    decision(d, decisions["decision_microbatch"], "服务端决策", "micro-batch", PAL["orange"], PAL["orange_fill"])
+    decision(d, decisions["decision_batch"], "数据组织决策", "token-budget / 分组", PAL["blue"], PAL["blue_fill"])
+    decision(d, decisions["decision_gate"], "提交控制决策", "queue-adaptive flush", PAL["orange"], PAL["orange_fill"])
+    decision(d, decisions["decision_routing"], "提交控制决策", "K_max / routing", PAL["orange"], PAL["orange_fill"])
+    decision(d, decisions["decision_microbatch"], "GPU 侧观测", "队列/饱和度", PAL["orange"], PAL["orange_fill"])
     decision(d, decisions["guard_sink"], "保护约束", "写回占比", PAL["green"], PAL["green_fill"])
 
     selector = (278, 420, 1052, 72)
     rrect(d, (selector[0], selector[1], selector[0] + selector[2], selector[1] + selector[3]), PAL["yellow_fill"], PAL["yellow"], radius=10, width=2)
-    selector_title = "策略控制器：计划层 + 运行层 + 服务端批处理"
-    selector_sub = "执行前定数据批次；运行中调门控/路由；服务端形成 micro-batch"
+    selector_title = "策略控制器：数据组织 + 调度提交控制"
+    selector_sub = "token-budget/分组定数据组织；queue-adaptive/K_max 调提交节奏；GPU 侧观测队列状态"
     tw, _ = text_size(d, selector_title, F["card"])
     sw, _ = text_size(d, selector_sub, F["body"])
     d.text((selector[0] + (selector[2] - tw) / 2, selector[1] + 14), selector_title, font=F["card"], fill=PAL["yellow"])
@@ -261,9 +261,9 @@ def draw_flow_png():
     # Short, internal feedback/control arrows. No line runs along a panel boundary.
     dashed_arrow(d, [(1467, 258), (1467, 456), (1330, 456)])
     d.text((1364, 442), "反馈", font=F["small"], fill=PAL["dash"])
-    for x in [361, 581, 801, 1021, 1241]:
+    for x in [366, 586, 806, 1026, 1246]:
         dashed_arrow(d, [(x, 420), (x, 362)])
-    d.text((50, 562), "图注：不重切数据库侧已物化批次；动态 batch 位于模型服务侧，请求队列按等待时间、token/shape 预算形成推理 micro-batch。", font=F["cap"], fill=PAL["muted"])
+    d.text((50, 562), "图注：上游数据组织策略与调度提交控制策略构成执行闭环；vLLM 侧观测队列状态作为反馈信号，不修改其内部批处理机制。", font=F["cap"], fill=PAL["muted"])
 
     img.save(FLOW_PNG)
     return img, {**boxes, **decisions, "selector": selector}, main_arrows
@@ -275,15 +275,15 @@ def draw_flow_svg():
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
         f'<rect width="{w}" height="{h}" fill="{PAL["bg"]}"/>',
         svg_text(48, 60, "运行时信号驱动的上游执行闭环", 28, "700"),
-        svg_text(50, 88, "一个 AI_EMBED 查询贯穿数据批次、提交门控、模型服务队列、写回约束和端到端反馈。", 15, fill=PAL["muted"]),
+        svg_text(50, 88, "一个 AI_COMPLETE 查询贯穿数据批次、提交门控、模型服务队列、写回约束和端到端反馈。", 15, fill=PAL["muted"]),
     ]
     boxes = {
-        "sql": (58, 142, 165, 116, "SQL 入口", ["SELECT AI_EMBED(text)", "FROM documents"], PAL["purple"], PAL["purple_fill"]),
-        "batch": (278, 142, 165, 116, "数据批次队列", ["观测量：行数/长度", "调节项：批量/分区"], PAL["blue"], PAL["blue_fill"]),
-        "gate": (498, 142, 165, 116, "提交门控", ["观测量：在途任务", "调节项：并发上限"], PAL["orange"], PAL["orange_fill"]),
-        "endpoint": (718, 142, 165, 116, "模型服务队列", ["观测量：积压/等待", "调节项：routing policy"], PAL["orange"], PAL["orange_fill"]),
-        "gpu": (938, 142, 165, 116, "GPU 模型服务", ["观测量：模型耗时", "判定项：是否饱和"], PAL["orange"], PAL["card"]),
-        "sink": (1158, 142, 165, 116, "结果与写回", ["观测量：写回占比", "约束项：写回批量"], PAL["green"], PAL["green_fill"]),
+        "sql": (58, 142, 175, 116, "SQL 入口", ["AI_COMPLETE(prompt)", "FROM documents"], PAL["purple"], PAL["purple_fill"]),
+        "batch": (278, 142, 175, 116, "数据批次队列", ["观测：token 量/prefix", "调节：token-budget/分组"], PAL["blue"], PAL["blue_fill"]),
+        "gate": (498, 142, 175, 116, "提交门控", ["观测：模型服务队列深度", "调节：flush 时机/K_max"], PAL["orange"], PAL["orange_fill"]),
+        "endpoint": (718, 142, 175, 116, "模型服务队列", ["观测量：积压/等待", "调节项：routing policy"], PAL["orange"], PAL["orange_fill"]),
+        "gpu": (938, 142, 175, 116, "GPU 模型服务", ["观测量：模型耗时", "判定项：是否饱和"], PAL["orange"], PAL["card"]),
+        "sink": (1158, 142, 175, 116, "结果与写回", ["观测量：写回占比", "约束项：写回批量"], PAL["green"], PAL["green_fill"]),
         "metrics": (1378, 142, 178, 116, "端到端指标", ["评价项：耗时/P99", "判定项：整体收益"], PAL["green"], PAL["card"]),
     }
     for b in boxes.values():
@@ -294,29 +294,29 @@ def draw_flow_svg():
         rx, ry, rw, rh = boxes[right][:4]
         parts.append(svg_arrow(lx + lw + 4, ly + lh // 2, rx - 8, ry + rh // 2))
     for c in [
-        ((278, 292, 165, 58), "计划层决策", "批量 / 分区", PAL["blue"], PAL["blue_fill"]),
-        ((498, 292, 165, 58), "运行层决策", "K_max", PAL["orange"], PAL["orange_fill"]),
-        ((718, 292, 165, 58), "运行层决策", "routing policy", PAL["orange"], PAL["orange_fill"]),
-        ((938, 292, 165, 58), "服务端决策", "micro-batch", PAL["orange"], PAL["orange_fill"]),
-        ((1158, 292, 165, 58), "保护约束", "写回占比", PAL["green"], PAL["green_fill"]),
+        ((278, 292, 175, 58), "数据组织决策", "token-budget / 分组", PAL["blue"], PAL["blue_fill"]),
+        ((498, 292, 175, 58), "提交控制决策", "queue-adaptive flush", PAL["orange"], PAL["orange_fill"]),
+        ((718, 292, 175, 58), "提交控制决策", "K_max / routing", PAL["orange"], PAL["orange_fill"]),
+        ((938, 292, 175, 58), "GPU 侧观测", "队列/饱和度", PAL["orange"], PAL["orange_fill"]),
+        ((1158, 292, 175, 58), "保护约束", "写回占比", PAL["green"], PAL["green_fill"]),
     ]:
         box, title, value, edge, fill = c
         parts.append(svg_decision(box, title, value, edge, fill))
     selector = (278, 420, 1052, 72)
     parts.append(svg_rect(*selector, PAL["yellow_fill"], PAL["yellow"], r=10, sw=2))
-    parts.append(svg_text(804, 449, "策略控制器：计划层 + 运行层 + 服务端批处理", 15, "700", PAL["yellow"], "middle"))
-    parts.append(svg_text(804, 476, "执行前定数据批次；运行中调门控/路由；服务端形成 micro-batch", 13, fill=PAL["muted"], anchor="middle"))
+    parts.append(svg_text(804, 449, "策略控制器：数据组织 + 调度提交控制", 15, "700", PAL["yellow"], "middle"))
+    parts.append(svg_text(804, 476, "token-budget/分组定数据组织；queue-adaptive/K_max 调提交节奏；GPU 侧观测队列状态", 12, fill=PAL["muted"], anchor="middle"))
     parts.append(svg_polyline([(1467, 258), (1467, 456), (1330, 456)]))
     parts.append(svg_text(1364, 456, "反馈", 11, fill=PAL["dash"]))
-    for x in [361, 581, 801, 1021, 1241]:
+    for x in [366, 586, 806, 1026, 1246]:
         parts.append(svg_polyline([(x, 420), (x, 362)]))
-    parts.append(svg_text(50, 576, "图注：不重切数据库侧已物化批次；动态 batch 位于模型服务侧，请求队列按等待时间、token/shape 预算形成推理 micro-batch。", 12, fill=PAL["muted"]))
+    parts.append(svg_text(50, 576, "图注：上游数据组织策略与调度提交控制策略构成执行闭环；vLLM 侧观测队列状态作为反馈信号，不修改其内部批处理机制。", 12, fill=PAL["muted"]))
     parts.append("</svg>")
     FLOW_SVG.write_text("\n".join(parts), encoding="utf-8")
 
 
 def draw_table_png():
-    w, h = 1300, 520
+    w, h = 1300, 560
     img = Image.new("RGB", (w, h), PAL["bg"])
     d = ImageDraw.Draw(img)
     d.text((48, 32), "信号触发的候选策略规则表", font=F["title"], fill=PAL["ink"])
@@ -332,11 +332,11 @@ def draw_table_png():
         boxes[f"header_{i}"] = (cx, y, col_w[i], 48)
         cx += col_w[i] + 18
     rows = [
-        ("GPU 未饱和，调用次数多", "增大计划批量 / 合并小分区", "P99 不明显上升"),
-        ("模型服务队列积压高", "降低 K_max 或 least-queued routing", "吞吐不明显下降"),
+        ("GPU 未饱和，调用次数多", "切换 token-budget batching / 合并小批次", "P99 不明显上升"),
+        ("模型服务队列积压高", "queue-adaptive flush / 降低 K_max", "吞吐不明显下降"),
         ("写回占比高", "调整写回路径 / 工程 baseline", "端到端收益仍保留"),
         ("过滤场景：选择率低", "验证提前过滤 / 小批量", "质量指标不下降"),
-        ("生成场景：token 长尾明显", "验证 token-aware 分发", "长请求不阻塞短请求"),
+        ("生成场景：token 长尾明显", "验证 prefix-aware / length-aligned 分组", "长请求不阻塞短请求"),
     ]
     yy = y + 68
     for r, row in enumerate(rows):
@@ -348,13 +348,13 @@ def draw_table_png():
             boxes[f"row_{r}_{i}"] = (cx, yy, col_w[i], 44)
             cx += col_w[i] + 18
         yy += 56
-    d.text((72, 464), "图注：每条规则必须对应可观测信号、可执行配置和防止副作用的保护约束；本表是候选策略，不代表已证明结论。", font=F["cap"], fill=PAL["muted"])
+    d.text((72, 510), "图注：每条规则必须对应可观测信号、可执行配置和防止副作用的保护约束；本表是候选策略，不代表已证明结论。", font=F["cap"], fill=PAL["muted"])
     img.save(TABLE_PNG)
     return img, boxes
 
 
 def draw_table_svg():
-    w, h = 1300, 520
+    w, h = 1300, 560
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
         f'<rect width="{w}" height="{h}" fill="{PAL["bg"]}"/>',
@@ -370,11 +370,11 @@ def draw_table_svg():
         parts.append(svg_center(cx, y, col_w[i], 48, label, 15, "700", edge))
         cx += col_w[i] + 18
     rows = [
-        ("GPU 未饱和，调用次数多", "增大计划批量 / 合并小分区", "P99 不明显上升"),
-        ("模型服务队列积压高", "降低 K_max 或 least-queued routing", "吞吐不明显下降"),
+        ("GPU 未饱和，调用次数多", "切换 token-budget batching / 合并小批次", "P99 不明显上升"),
+        ("模型服务队列积压高", "queue-adaptive flush / 降低 K_max", "吞吐不明显下降"),
         ("写回占比高", "调整写回路径 / 工程 baseline", "端到端收益仍保留"),
         ("过滤场景：选择率低", "验证提前过滤 / 小批量", "质量指标不下降"),
-        ("生成场景：token 长尾明显", "验证 token-aware 分发", "长请求不阻塞短请求"),
+        ("生成场景：token 长尾明显", "验证 prefix-aware / length-aligned 分组", "长请求不阻塞短请求"),
     ]
     yy = y + 68
     for r, row in enumerate(rows):
@@ -385,7 +385,7 @@ def draw_table_svg():
             parts.append(svg_center(cx, yy, col_w[i], 44, txt, 13))
             cx += col_w[i] + 18
         yy += 56
-    parts.append(svg_text(72, 478, "图注：每条规则必须对应可观测信号、可执行配置和防止副作用的保护约束；本表是候选策略，不代表已证明结论。", 12, fill=PAL["muted"]))
+    parts.append(svg_text(72, 526, "图注：每条规则必须对应可观测信号、可执行配置和防止副作用的保护约束；本表是候选策略，不代表已证明结论。", 12, fill=PAL["muted"]))
     parts.append("</svg>")
     TABLE_SVG.write_text("\n".join(parts), encoding="utf-8")
 
@@ -419,7 +419,7 @@ if __name__ == "__main__":
         arrow_ok = 0 <= x1 <= 1600 and 0 <= x2 <= 1600 and 0 <= y1 <= 620 and 0 <= y2 <= 620
         print(f"  flow_arrow_{i}: {'PASS' if arrow_ok else 'FAIL'}")
         ok = arrow_ok and ok
-    ok = border_check(table_img, table_boxes, 1300, 520) and ok
+    ok = border_check(table_img, table_boxes, 1300, 560) and ok
     ok = check_forbidden(FLOW_SVG) and ok
     ok = check_forbidden(TABLE_SVG) and ok
     if not ok:

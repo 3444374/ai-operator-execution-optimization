@@ -6,8 +6,17 @@
 
 | 文件 | 作用 |
 |---|---|
-| `literature_and_evidence_review.md` | Ray / Daft / Lance / Snowflake / pgai 等方向的综合证据记录 |
+| **`knowledge_hub.md`** | **第一入口**——集思广益知识库，整合了 vLLM 机制、Ray 架构、57 篇文献全景（四岛地图）、三岛空白、设计原则、实验证据和知识缺口。做任何设计决策前先读 |
+| `literature_and_evidence_review.md` | Ray / Daft / Lance / Snowflake / pgai 等方向的早期综合证据记录 |
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子与 AI 数据处理系统的执行链路对比 |
+| `vllm_continuous_batching_reference.md` | vLLM Continuous Batching 完整技术手册（调度器内部、APC、metrics、chunked prefill、集成方式） |
+| `ray_actor_dynamic_batching_reference.md` | Ray Serve 动态 batching + Ray Core actor 模式完整技术手册（async loop、去中心化协调、PrefixCacheAffinityRouter） |
+| `inference_pipeline_interaction_literature.md` | 28 篇推理管线交互文献系统综述 + 空白确认 |
+
+**扩展文献**（不在本目录，由 knowledge_hub 索引）：
+- `opening/literature/ai_operator_literature_inventory.md` — 57 篇 CCF-A 文献清单
+- `opening/literature/gpu_scheduler_data_placement_supplement_20260715.md` — GPU 调度补充调研 + Ray 策略映射
+- `opening/literature/direction_assessment_20260715.md` — 方向评估 + 三岛模型 + 不能声称的结论
 
 ## 使用规则
 
@@ -64,11 +73,13 @@ X 属于哪个研究岛？可能需要查阅文献清单中的哪个组？
 
 | 设计决策 | 来源 |
 |---|---|
-| Continuous batching 思路 | vLLM (SOSP 2023) |
-| 代价驱动的跨层决策模型 | FlexPushdownDB (VLDB 2021) |
-| Worker-direct blind append | Delta Lake (VLDB 2020) |
-| 延迟建 HNSW 索引 | pgvector Issues + TurboVecDB (VLDB 2025) |
-| 本文新增：GPU batch × write batch joint optimization | 本文 |
+| Token-budget batching（按 token 预算而非固定行数） | vLLM `max_num_batched_tokens` (SOSP 2023) |
+| Length-aligned grouping（减少 straggler） | Sarathi-Serve chunked prefill (OSDI 2024) |
+| Prefix-aware grouping（利用 APC） | vLLM APC + Parrot semantic variable (OSDI 2024) |
+| Queue-adaptive flush（去中心化自适应提交） | Clockwork 确定性调度 (OSDI 2020) + Clipper AIMD (NSDI 2017) |
+| Actor 异构化 + 去中心化协调 | Ray OSDI 2018 actor 模型 |
+| COPY + deferred index 工程最优写回 | Delta Lake blind append (VLDB 2020) + TurboVecDB (VLDB 2025) |
+| 本文新增：上游数据组织策略 + Ray actor 自适应提交控制 | 本文 |
 
 ### 同理适用于实验 Baseline 选择
 

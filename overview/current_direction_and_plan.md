@@ -1,123 +1,97 @@
 # 当前方向与计划
 
-> **注意：本文件是 2026-07-10 的阶段性规划，大部分内容已被根目录 `PROJECT_OUTLINE.md` 取代。** 当前题目、研究内容、最新证据和近期优先级以 `PROJECT_OUTLINE.md` 为准。本文件保留用于记录早期技术路线演进，路径引用已更新为当前结构。
+生成日期：2026-07-17（最后更新：2026-07-17）
 
-生成日期：2026-07-10（最后路径校准：2026-07-14）
+> 本文档是项目方向的**快速参考卡片**。完整定义、依据和细节见 `PROJECT_OUTLINE.md`（项目总纲）、`AGENTS.md`（规则边界）、`research/knowledge_hub.md`（知识库）。本文档不替代上述文件，仅提供 TL;DR。
 
-## 1. 当前方向
+---
 
-推荐题目：
+## 1. 课题定位
 
-> 面向数据库内置 AI 算子的分布式数据处理执行链路优化研究。
+优化数据库 AI 算子外部执行链路的上游调度——数据如何组织为请求、以什么节奏发送、如何根据模型服务状态调节并发。
 
-候选技术副标题：
+**一句话**：数据库触发 AI workload 后，上游如何组织请求、以什么节奏发送，显著影响下游 continuous batching 的效率，且这种策略抽象不依赖数据模态。
 
-> 基于 Daft/Ray/Lance 的 Object Transfer、fan-in 与 Shuffle 优化。
+---
 
-候选升级表述：
-
-> 面向数据库 AI 算子的特征感知并行执行与跨层调度方法研究。
-
-该方向比传统数据库内核方向更贴近用户的 AI infra / inference infra 目标，也能通过数据库 AI 算子场景与达梦需求对齐。但具体优化点尚未最终确定，当前需要先围绕 AI 算子场景做场景发现、动机测试、可行性测试，再收敛到最终论文主线。Object/fan-in/coalescing 是已有实验证据支持的入口，不应成为整个课题的全部。
-
-## 2. 不能做成什么
-
-当前不把论文写成：
-
-- 跑通 Daft/Ray/Lance；
-- 改造整个 Ray；
-- 重写 Ray Core / Ray Data / Ray Serve 的完整调度器；
-- 传统数据库 GPU 查询算子优化；
-- 单纯模型推理 kernel 优化；
-- 单纯 Arrow 序列化优化；
-- 没有真实 workload 的 benchmark 堆砌。
-
-## 3. 当前系统链路
+## 2. 技术栈
 
 ```text
-PostgreSQL 18.3 documents table / parquet
-  -> Arrow RecordBatch
-  -> task partitioning / batch construction
-  -> Ray tasks / actors / object store
-  -> CPU preprocess / tokenizer
-  -> GPU or model-service AI operator
-  -> routing / batching / backpressure
-  -> fan-in / shuffle / writeback
-  -> pgvector / Lance / output table
+PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行）
+  → vLLM Continuous Batching（部署平台，不修改）→ PostgreSQL + pgvector（写回）
 ```
 
-## 4. 当前证据判断
+| 组件 | 角色 |
+|---|---|
+| Daft | 数据引擎（Rust + Arrow + @daft.cls GPU UDF），文本阶段直接接入 |
+| Ray | 架构设计空间（异构 actor pool + 去中心化协调） |
+| vLLM | 部署平台 + baseline（Continuous Batching + PagedAttention），不修改内部 |
+| PostgreSQL + pgvector | 数据源 + 写回 sink |
 
-已完成的可行性验证结果位于 `feasibility/results/`。
+---
 
-关键结论：
+## 3. 研究内容
 
-- Ray small task：暂不支持优先做 scheduler/runtime。
-- Arrow serialization：不是当前主瓶颈。
-- Ray many-object fan-in：object 数量增加会放大下游 fan-in。
-- Ray Arrow fan-out/fan-in：fine/coalesced 平均 fan-in 比约 `3.17x`。
-- fake `AI_EMBED(text)` 端到端链路：fine/coalesced 平均 fan-in 比约 `2.16x`，端到端耗时比约 `2.51x`。
+1. **研究内容一：数据组织策略** — token-budget batching、length-aligned/prefix-aware grouping + Daft 引擎级参数
+2. **研究内容二：调度与提交控制策略** — queue-adaptive flush、K_max 动态控制、actor pool 分池路由 + Daft 引擎级参数
+3. **多模态泛化验证**（正文 §5.3）— 图像 workload 上同一套策略代码，验证模态无关性
+4. **算子代价估计**（§6.1 补充讨论）— 基于已有 profile 数据，不新增实验
 
-阶段性判断：
+写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立研究内容。
 
-> 当前最值得继续验证的候选方向是数据库 AI 算子外部执行链路中的特征感知任务划分、并行度控制和跨层调度，而不是 runtime 重写。但现有证据仍偏 fake workload，只能证明 object/task 粒度敏感；是否能上升到资源调度、模型服务路由和 backpressure，需要新增实验验证。
+---
 
-真实形态验证判断：
+## 4. 主场景
 
-> 下一步不能只继续扩展 fake benchmark。必须在公司内部统一采用的 PostgreSQL 18.3 平台上，或在本地低端设备上预演同构链路，真实跑通数据库表/SQL 触发、AI 算子外部执行、Ray/Arrow 中间链路、模型服务或 fake/local 模型、fan-in/writeback 和指标采集。只有该链路中的画像数据才能回答真实数据库 AI 算子外部执行链路到底卡在哪里。
+| 场景 | 模态 | 状态 |
+|---|---|---|
+| AI_COMPLETE（生成式 LLM） | 文本 | 主场景 |
+| AI_EMBED / AI_CLASSIFY | 图像 | 多模态泛化验证（正文实验） |
 
-## 5. 当前端到端动机实验
+模型：Qwen2.5-1.5B（文本）、CLIP-ViT-B/32（图像 embedding）、Qwen2.5-VL-3B（图像分类，optional）。硬件：单 RTX 5070 12GB VRAM。
 
-已搭建 fake `AI_EMBED(text)` 端到端动机测试。
+---
 
-当前链路：
+## 5. 当前优先级
 
-```text
-generate documents
-  -> build Arrow RecordBatch
-  -> Ray fake embedding
-  -> fine vs coalesced object
-  -> fan-in
-  -> write output / CSV
-```
+1. **P0（当前）**：建立 vLLM + Qwen2.5-1.5B baseline，替代手动 HTTP endpoint
+2. **P1**：文本 RC1 消融 + RC2 消融 + Daft 引擎级参数 sweep
+3. **P2**：耦合验证（独立拼接 vs 联合 grid search）+ 多模态泛化验证
+4. **P3**：算子代价估计（基于已有数据，不新增实验）
 
-必须记录：
+**Scope 缩减触发条件**：Month 1 无 vLLM baseline → 多模态降 Discussion；文本 RC1+RC2 未完成不启动多模态 pipeline。
 
-- rows/s；
-- object_count；
-- average object size；
-- `ray.put` time；
-- fan-in time；
-- fake embedding time；
-- end-to-end time。
+---
 
-当前结果文件：
+## 6. 关键证据
 
-- `motivation/benchmarks/fake_embed_pipeline.py`
-- `feasibility/results/fake_ai_embed_pipeline.csv`
-- `feasibility/results/fake_ai_embed_outputs/`
+| 证据 | 来源 | 能说明什么 |
+|---|---|---|
+| AI_EMBED fine vs coalesced = 37.5× | GPU-backed 预研 CSV（2026-07-14） | batch 粒度是一阶变量 |
+| pgvector writeback 0.897s vs JSON 1.567s | GPU-backed 预研 CSV | pgvector 写回可行 |
+| 研究空白双重确认 | 多源检索（2026-07-16） | 无 CCF-A 论文研究上游 pipeline batching × downstream continuous batching 交互 |
 
-下一步应继续拆分 coalescing 收益来源：区分 object 数减少、Ray task 数减少、`ray.put` 次数减少、fan-in 依赖数减少和写回阶段变化。同时增加跨层调度实验轴：task vs actor、batch_size × concurrency、CPU preprocess worker 与 GPU/model actor 配比、模型服务队列长度、token backlog、backpressure。场景语义上，offline LLM 需要 token-aware / prefix-aware workload，AI_FILTER 需要 selectivity-aware workload，embedding/RAG 需要真实数据库写回 baseline。
+**尚未建立**：vLLM baseline、Daft pipeline、多模态实验。所有策略论证在当前阶段为机制论证，待 vLLM 实验验证。
 
-## 6. 后续阶段
+---
 
-如果 AI 算子场景和系统瓶颈继续成立：
+## 7. 完整文档入口
 
-1. 在低端设备上先搭 PostgreSQL 18.3 同构预演链路，必要时用普通 PostgreSQL + pgvector 作为接口替身；
-2. 把已有或开源 AI 算子迁移/等价封装为 PostgreSQL 18.3 可触发的 `AI_EMBED(text)` / batch function / 外部执行入口；
-3. 外部 worker 读取 documents 表，并转换为 Arrow RecordBatch；
-4. 通过 Ray task/actor 批量执行 fake、本地小模型或真实 embedding service；
-5. 记录 batch、task、ObjectRef、operator invocation、fan-in refs、queue wait、writeback 等指标；
-6. 写回 embeddings 表、pgvector/Lance 或普通 output table，并验证 vector search / downstream query 可用。
+| 想知道... | 读这个 |
+|---|---|
+| 完整研究内容定义、实验路线、近期优先级 | `PROJECT_OUTLINE.md` |
+| 项目规则、边界、不能写成什么 | `AGENTS.md` |
+| vLLM 机制 + Ray 架构 + 57 篇文献 + 策略设计 + 知识缺口 | `research/knowledge_hub.md` |
+| Daft 技术细节、多模态管线、具身智能连接 | `research/daft_ray_multimodal_reference.md` |
+| 实验计划与实现参考 | `experiments/plans/strategy_design_implementation_reference.md` |
+| 开题报告正文 | `opening/report/opening_report.md` |
 
-如果后续真实形态实验不再显示 object/fan-in 瓶颈，应回到 AI 算子链路重新定位瓶颈，不继续强行做 coalescing。
+---
 
-## 7. 四周计划
+## 8. 不能写成什么
 
-第 1 周：完成 fake `AI_EMBED(text)` pipeline、CSV 分析、收益来源拆分，并列出 2-3 个候选 AI 算子场景。
-
-第 2 周：修正候选场景动机测试：拆分 task/object/put/fan-in 收益来源；增加 task/actor/concurrency 对比；为 offline LLM 增加 token-aware / prefix-aware batching；为 AI_FILTER 增加 selectivity / cascade。
-
-第 3 周：围绕 PostgreSQL 18.3 内部验证平台设计并预演真实画像实验。低端设备阶段先用小规模 documents 表、小模型或 fake/local embedding 跑通 SQL/表触发、外部 worker、Ray/Arrow、AI 算子、fan-in/writeback；如果条件允许，再接本地小模型、vLLM 或 Ray Serve endpoint，并记录模型服务队列、token backlog、actor 利用率和 backpressure 指标。
-
-第 4 周：用 idea-evaluator 视角做 fatal-flaws audit，整理开题材料、实验设计、baseline、反证条件和论文贡献边界。当前不要把单个场景 C 写成唯一主线，也不要在没有跨层实验数据前把题目写成完整调度系统优化。
+- 改造 vLLM continuous batching、改造 Ray scheduler
+- Daft/Ray 单纯集成、传统 GPU 查询算子、模型 kernel 优化
+- 把引擎级参数调优写成策略贡献（需明确区分"引擎提供的"和"我们提出的"）
+- 把多模态泛化论证写成"已解决具身智能问题"
+- 把 PG18.4 本地预演写成 PG18.3 内部平台结论

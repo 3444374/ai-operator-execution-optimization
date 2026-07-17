@@ -1,21 +1,25 @@
-# RC3：结果汇聚与持久化协同实验计划
+# 写回工程参考
 
 整理日期：2026-07-16
-对应研究内容：研究内容三
+
+> **2026-07-17 口径更新**：写回已从独立实验阶段降为实验设置中的工程细节（PostgreSQL + pgvector + COPY + deferred index baseline）。不作为独立研究内容或实验阶段。本文保留原始设计推演作为工程参考。
+对应：端到端验证（不作为独立方法贡献）
 方法候选编号：A3.1-A3.7（详见 `research_design_catalog.md` §5）
-评估方法论来源：TurboVecDB (VLDB 2025)、FlexPushdownDB (VLDB 2021)、GaussML (ICDE 2024)
+
+> **2026-07-16 更新**：本验证实验不作为独立方法贡献。核心目标：采用工程最优写回方案作为 baseline，确认上游优化收益是否被持久化阶段吞噬。具体写回优化方法（worker-direct writeback 等）仅作为候选储备，当前大概率不做。以下内容中的 B 系列工程实验和三路架构对比保留为可选增强对照。详细背景见 `research/knowledge_hub.md`。
 
 ---
 
 ## 0. 前置依赖（先读这个）
 
-**本计划中 B 系列是 RC3 所有方法实验的前提。不跑 B 系列，所有架构对比使用的 baseline 都是 suboptimal。**
+**本实验应在研究内容一和研究内容二的最优配置确定后运行：**
 
 ```
-P0a: vLLM / Ray Serve 接入 → GPU baseline 升级到 S 级
-P0b: B 系列（UPSERT vs COPY, logged vs unlogged, online vs deferred index）
+前置：vLLM + 小 LLM baseline 建立
+前置：研究内容一 动态 batching 最优策略确定
+前置：研究内容二 自适应提交最优策略确定
 
-当前状态: 写回 = execute_values() UPSERT + logged table + online index（合理默认）
+当前状态: 写回 = execute_values() UPSERT + logged table + online index（仅预研可用）
 ```
 
 **为什么**：拿 "未优化的 driver UPSERT" 当 baseline 来证明 worker-direct 好——那是 strawman。Worker-direct 的公平对照是 **最优 driver-side 写回配置**（= A3.1 的工程最优版 = B 系列结果）。
@@ -40,7 +44,7 @@ P0b: B 系列（UPSERT vs COPY, logged vs unlogged, online vs deferred index）
 | H3.4 | driver fan-in 统一写回在所有场景下不劣于 worker-direct 写回 | 能否被推翻？| §5.1 三路对比 |
 | H3.5 | pgvector 是对所有写回场景最优的 sink | 能否被推翻？| §5.2 sink 对照 |
 
-**最可能被推翻的假设决定 RC3 的核心贡献**：如果 H3.1 被推翻（COPY >> UPSERT）→ B 系列本身就是有价值的 baseline 贡献；如果 H3.4 被推翻（worker-direct > driver）→ RC3 核心发现成立，但必须在最优 driver baseline 上证明。
+**最可能被推翻的假设决定 研究内容三 的核心贡献**：如果 H3.1 被推翻（COPY >> UPSERT）→ B 系列本身就是有价值的 baseline 贡献；如果 H3.4 被推翻（worker-direct > driver）→ 研究内容三 核心发现成立，但必须在最优 driver baseline 上证明。
 
 ---
 
@@ -71,7 +75,7 @@ P0b: B 系列（UPSERT vs COPY, logged vs unlogged, online vs deferred index）
 
 ## 4. 前置实验：B 系列——写回工程 baseline 确认（必须最先做）
 
-**这是整个 RC3 的前提。不跑 B 系列，所有 RC3 方法对比用的 baseline 都是 suboptimal。**
+**这是整个 研究内容三 的前提。不跑 B 系列，所有 研究内容三 方法对比用的 baseline 都是 suboptimal。**
 
 ### B1: UPSERT vs COPY
 
@@ -138,8 +142,8 @@ sink_type = pgvector(vector(384))
   - 数据规模: 16384 行
   - Workload: AI_EMBED
   - GPU: vLLM (S 级 baseline)
-  - batch_size: RC1 grid search 最优值
-  - K_max: RC2 grid search 最优值
+  - batch_size: 研究内容一 参数组合穷举 最优值
+  - K_max: 研究内容二 参数组合穷举 最优值
 ```
 
 **要推翻的假设**："driver fan-in 后统一写回是最自然的做法，worker-direct 不会更好。"
@@ -194,7 +198,7 @@ write_mode = {worker_direct, queue_worker}
 | 消融项 | 做法 | 期望发现 |
 |---|---|---|
 | 写回架构 vs 写回方法 | 同一 write_mode 下，UPSERT vs COPY | COPY 对所有架构都有收益，但不同架构的收益幅度不同 |
-| B_write 的独立贡献 | 固定 write_mode，B_write sweep | 存在最优点，过大/过小均退化 |
+| B_write 的独立贡献 | 固定 write_mode，B_write 扫描 | 存在最优点，过大/过小均退化 |
 | 写回架构 × B_write 交互 | write_mode × B_write 交叉 | worker_direct 的最优 B_write 可能与 driver_fanin 不同 |
 | Sink 格式的独立贡献 | 固定 write_mode + B_write*，换 sink | Lance 在小规模下可能不如 pgvector（无 DB 开销） |
 

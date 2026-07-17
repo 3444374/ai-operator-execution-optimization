@@ -130,10 +130,10 @@ def draw_png():
     img = Image.new("RGB", (W, H), COLORS["bg"])
     draw = ImageDraw.Draw(img)
 
-    draw.text((64, 42), "数据库驱动 AI workload 的分布式数据执行与存储协同架构", font=F["title"], fill=COLORS["ink"])
+    draw.text((64, 42), "数据库驱动 AI workload 的分布式数据执行与存储架构", font=F["title"], fill=COLORS["ink"])
     draw.text(
         (66, 88),
-        "数据库提供 workload 入口和结果落点，数据组织、Ray 执行、GPU 服务和 AI 数据 sink 共同决定端到端性能。",
+        "数据库为 AI workload 入口与结果落点，数据组织策略、Ray 调度提交控制、GPU 推理服务和结果写回共同决定端到端性能。",
         font=F["subtitle"],
         fill=COLORS["muted"],
     )
@@ -144,7 +144,7 @@ def draw_png():
     center_text(draw, (policy[0], policy[1] + 14, policy[2], policy[1] + 48), "观测与策略层", F["stage"])
     draw_policy_row(
         draw,
-        ["阶段耗时", "排队等待", "GPU 利用率", "写回耗时", "数据批量", "routing", "micro-batch"],
+        ["阶段耗时", "排队等待", "GPU 利用率", "写回耗时", "数据批量", "routing", "服务队列"],
         414,
         192,
         996,
@@ -158,7 +158,7 @@ def draw_png():
         ("数据库入口", ["PostgreSQL", "SQL workflow", "表数据与行集", "触发执行"], COLORS["db"], COLORS["db_edge"], ()),
         ("Daft + Arrow 数据层", ["RecordBatch", "数据批量", "partition", "shuffle"], COLORS["data"], COLORS["data_edge"], ("1",)),
         ("Ray 执行层", ["task", "actor pool", "object refs", "fan-in"], COLORS["exec"], COLORS["exec_edge"], ("2",)),
-        ("GPU 模型服务", ["embedding", "classify", "LLM", "micro-batch"], COLORS["model"], COLORS["model_edge"], ("2",)),
+        ("GPU 模型服务", ["LLM 推理", "continuous batching", "PagedAttention", "prefix caching"], COLORS["model"], COLORS["model_edge"], ("2",)),
         ("AI 结果存储", ["Lance", "pgvector", "PostgreSQL", "worker writeback"], COLORS["sink"], COLORS["sink_edge"], ("3",)),
     ]
     boxes = []
@@ -187,16 +187,16 @@ def draw_png():
     # Research cards, no crossing arrows; badges link cards to stage boxes.
     ry, rw, rh = 714, 410, 208
     research = [
-        (96, "1", "数据组织与批处理构造", ["AI workload 特征感知", "batch / partition / operator 粒度", "object 合并与 fan-in 形态"], COLORS["research_neutral"]),
-        (595, "2", "运行层调度与服务端批处理", ["K_max 门控与 backpressure", "endpoint routing / actor pool", "服务端 micro-batch 形成"], COLORS["research_neutral"]),
-        (1094, "3", "写回瓶颈判定与轻量优化", ["writeback ratio 判定", "driver / worker / queue 写回", "Lance / pgvector / PostgreSQL"], COLORS["research_neutral"]),
+        (96, "1", "数据组织策略", ["token-budget 动态批量", "length-aligned 分组", "prefix-aware 分组"], COLORS["research_neutral"]),
+        (595, "2", "运行层调度与提交控制策略", ["queue-adaptive flush", "K_max 动态控制", "actor pool 分池路由"], COLORS["research_neutral"]),
+        (1094, "3", "写回瓶颈判定", ["writeback ratio 判定", "sink 类型对比", "Lance / pgvector / PostgreSQL"], COLORS["research_neutral"]),
     ]
     for x, badge, title, items, color in research:
         draw_research(draw, x, ry, rw, rh, badge, title, items, color)
 
     draw.text(
         (72, 952),
-        "图注：研究内容 1、2 分别关注计划层数据组织、运行层入口调度与服务端动态批处理；研究内容 3 用于判定写回是否吞噬上游收益。",
+        "图注：研究内容一关注数据组织策略（token-budget、length-align、prefix-aware），研究内容二关注调度与提交控制策略（queue-adaptive flush、K_max 动态控制、actor pool 分池路由），端到端验证用于判定写回是否吞噬上游收益。",
         font=F["small"],
         fill=COLORS["muted"],
     )
@@ -264,12 +264,12 @@ def draw_svg():
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
         f'<rect width="{W}" height="{H}" fill="{COLORS["bg"]}"/>',
-        svg_text(64, 74, "数据库驱动 AI workload 的分布式数据执行与存储协同架构", 32, "700"),
-        svg_text(66, 112, "数据库提供 workload 入口和结果落点，数据组织、Ray 执行、GPU 服务和 AI 数据 sink 共同决定端到端性能。", 17, fill=COLORS["muted"]),
+        svg_text(64, 74, "数据库驱动 AI workload 的分布式数据执行与存储架构", 32, "700"),
+        svg_text(66, 112, "数据库为 AI workload 入口与结果落点，数据组织策略、Ray 调度提交控制、GPU 推理服务和结果写回共同决定端到端性能。", 17, fill=COLORS["muted"]),
         svg_rect(354, 132, 1116, 118, COLORS["policy"], COLORS["policy_edge"], 18, 2),
         svg_center(354, 146, 1116, 34, "观测与策略层", 21, "700"),
     ]
-    parts.append(svg_policy_row(["阶段耗时", "排队等待", "GPU 利用率", "写回耗时", "数据批量", "routing", "micro-batch"], 414, 192, 996, 32))
+    parts.append(svg_policy_row(["阶段耗时", "排队等待", "GPU 利用率", "写回耗时", "数据批量", "routing", "服务队列"], 414, 192, 996, 32))
 
     y, w, h = 318, 246, 226
     xs = [64, 354, 644, 934, 1224]
@@ -277,7 +277,7 @@ def draw_svg():
         ("数据库入口", ["PostgreSQL", "SQL workflow", "表数据与行集", "触发执行"], COLORS["db"], COLORS["db_edge"], ()),
         ("Daft + Arrow 数据层", ["RecordBatch", "数据批量", "partition", "shuffle"], COLORS["data"], COLORS["data_edge"], ("1",)),
         ("Ray 执行层", ["task", "actor pool", "object refs", "fan-in"], COLORS["exec"], COLORS["exec_edge"], ("2",)),
-        ("GPU 模型服务", ["embedding", "classify", "LLM", "micro-batch"], COLORS["model"], COLORS["model_edge"], ("2",)),
+        ("GPU 模型服务", ["LLM 推理", "continuous batching", "PagedAttention", "prefix caching"], COLORS["model"], COLORS["model_edge"], ("2",)),
         ("AI 结果存储", ["Lance", "pgvector", "PostgreSQL", "worker writeback"], COLORS["sink"], COLORS["sink_edge"], ("3",)),
     ]
     boxes = []
@@ -293,13 +293,13 @@ def draw_svg():
     parts.append(svg_center(160, 592, 1280, 60, "统一观测指标：e2e_s   rows/s   tokens/s   operator_wall_s   queue_wait   fan-in   writeback_s", 16))
 
     for x, badge, title, items, color in [
-        (96, "1", "数据组织与批处理构造", ["AI workload 特征感知", "batch / partition / operator 粒度", "object 合并与 fan-in 形态"], COLORS["research_neutral"]),
-        (595, "2", "运行层调度与服务端批处理", ["K_max 门控与 backpressure", "endpoint routing / actor pool", "服务端 micro-batch 形成"], COLORS["research_neutral"]),
-        (1094, "3", "写回瓶颈判定与轻量优化", ["writeback ratio 判定", "driver / worker / queue 写回", "Lance / pgvector / PostgreSQL"], COLORS["research_neutral"]),
+        (96, "1", "数据组织策略", ["token-budget 动态批量", "length-aligned 分组", "prefix-aware 分组"], COLORS["research_neutral"]),
+        (595, "2", "运行层调度与提交控制策略", ["queue-adaptive flush", "K_max 动态控制", "actor pool 分池路由"], COLORS["research_neutral"]),
+        (1094, "3", "写回瓶颈判定", ["writeback ratio 判定", "sink 类型对比", "Lance / pgvector / PostgreSQL"], COLORS["research_neutral"]),
     ]:
         parts.append(svg_research(x, 714, 410, 208, badge, title, items, color))
 
-    parts.append(svg_text(72, 952, "图注：研究内容 1、2 分别关注计划层数据组织、运行层入口调度与服务端动态批处理；研究内容 3 用于判定写回是否吞噬上游收益。", 13, fill=COLORS["muted"]))
+    parts.append(svg_text(72, 952, "图注：研究内容一关注数据组织策略（token-budget、length-align、prefix-aware），研究内容二关注调度与提交控制策略（queue-adaptive flush、K_max 动态控制、actor pool 分池路由），端到端验证用于判定写回是否吞噬上游收益。", 13, fill=COLORS["muted"]))
     parts.append("</svg>")
     SVG_PATH.write_text("\n".join(parts), encoding="utf-8")
 

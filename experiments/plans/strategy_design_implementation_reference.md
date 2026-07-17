@@ -1,54 +1,55 @@
 # 策略设计与系统实现参考
 
-整理日期：2026-07-15
+整理日期：2026-07-15（2026-07-17 更新：统一为两项策略 + 端到端验证口径，新增 Daft 引擎抽象层）
 
-用途：把 Ray、vLLM / Ray Serve / Triton、GPU 数据放置、数据库 AI 算子等文献和系统资料中的可借鉴机制，沉淀为本课题后续实验设计与原型实现的参考。本文不是最终方法章节，也不声称这些机制已经在本项目中全部实现。
+用途：把 Ray、vLLM / Ray Serve / Triton、GPU 数据放置、数据库 AI 算子、Daft 等文献和系统资料中的可借鉴机制，沉淀为本课题后续实验设计与原型实现的参考。本文不是最终方法章节，也不声称这些机制已经在本项目中全部实现。
 
 ## 1. 当前策略口径
 
-当前建议采用三层策略，而不是单一的 runtime controller：
+课题方向已于 2026-07-16 收敛为两项上游策略 + 一项端到端验证：
 
 ```text
-Three-layer upstream execution strategy
+研究内容一：数据组织策略
+  输入：行数估计、token 长度分布、prefix 结构、AI 算子类型
+  输出：batch 构造方式（token-budget / length-aligned / prefix-aware grouping）
+  实现载体：异构 Ray actor pool + 引擎无关的 DataOrganizer 抽象层
 
-计划层：数据库侧数据组织
-  输入：行数估计、文本长度分布、AI 算子类型、历史 profile / sweep
-  输出：batch_size, partition_count, object_merge, 初始资源配置
+研究内容二：调度与提交控制策略
+  输入：vLLM queue depth、in-flight count、GPU utilization、E2E metrics
+  输出：flush 时机（queue-adaptive）、K_max 动态范围、routing policy
+  实现载体：Ray actor 去中心化异步循环
 
-运行层：Ray / 服务入口调度
-  输入：queue wait, endpoint backlog, actor load, GPU utilization, E2E metrics
-  输出：K_max, routing policy, backpressure, actor pool / resource config
-
-服务端层：推理 micro-batching
-  输入：waiting requests, token/shape budget, wait timeout, compatibility key
-  输出：inference micro-batch
-
-Guardrail：P99、throughput、writeback ratio、质量指标
+端到端验证：写回瓶颈判定
+  输入：operator_wall_s、writeback_s、e2e_s
+  输出：写回占比是否吞噬上游收益的判定
+  工程 baseline：COPY + deferred index
 ```
 
 关键边界：
 
-- 不重切数据库侧已经物化或已经排队的 `RecordBatch`。
-- 动态 batch 放在模型服务侧尚未执行的请求队列中，不放在数据库侧已切分 batch 上。
-- 不声称发明 vLLM continuous batching、Ray scheduler 或 Triton dynamic batcher；本文借鉴这些机制，把它们放到数据库 AI 算子外部执行链路中协调验证。
+- vLLM 作为部署平台和强 baseline，不修改其内部 continuous batching 机制。GPU 侧仅观测 Prometheus metrics（`num_requests_running`、`num_requests_waiting`、`gpu_cache_usage_perc`）作为反馈信号。
+- 数据组织层的引擎选择（当前 Arrow RecordBatch，后续 Daft DataFrame）不影响策略层贡献。引擎切换通过 DataOrganizer 抽象接口隔离。
+- 两项策略分别独立搜索最优配置后拼接，再与联合 grid search 对比，判定耦合程度。
+- 不声称发明 vLLM continuous batching、Ray scheduler 或 Daft 执行引擎；本文贡献在策略选择和协调验证。
 
 ## 2. 文献与机制映射
 
-| 来源 | 机制 | 支持本课题的哪一层 | 可做成的实验变量 | 边界 |
+| 来源 | 机制 | 对应研究内容 | 可做成的实验变量 | 边界 |
 |---|---|---|---|---|
-| Ray OSDI 2018 | task / actor、dynamic task graph、distributed scheduler、object store、resource-aware scheduling | 计划层 + 运行层 | task granularity、actor pool size、resource requirement、placement/locality、object count、fan-in shape | 不改 Ray 内部 scheduler，只做应用层 admission/routing |
-| Ray Data / Ray Serve | `map_batches`、concurrency、dynamic request batching、routing、autoscaling | 三层都有接口参考 | batch size、concurrency、`max_batch_size`、wait timeout、replica count | 官方接口存在不等于本项目一定有收益，必须用 GPU-backed profile 验证 |
-| vLLM / Orca | continuous batching、iteration-level scheduling、吞吐-延迟曲线、SLO 约束 | 服务端层 | max tokens、request admission、TTFT/TPOT/P99、serving throughput | 作为强 baseline 或机制借鉴，不写成本文原创 |
-| Triton Inference Server | dynamic batcher、preferred batch size、queue delay | 服务端层 | max batch size、preferred batch size、max queue delay | 更适合模型服务 baseline，不直接解决数据库侧数据组织 |
-| Sarathi-Serve / DistServe / Mooncake / SGLang | phase splitting、KV/prefix reuse、SLO-aware routing | 服务端层 + 运行层 | token-aware routing、prefix-aware routing、long/short request isolation | 主要服务 `AI_COMPLETE`，对 `AI_EMBED` 只作为边界和扩展 |
-| GPU 数据库 / GPU-resident 结构 | 数据搬运、materialization、GPU 内存驻留、算子融合 | 计划层 | 是否搬到 GPU、批量大小、列式表示、object/materialization 数量 | 本课题不做传统 GPU 查询算子 kernel 优化 |
-| Cortex AISQL / GaussML / Galois / LEADS / NeurDB | AI 算子语义影响执行计划和代价估计 | 计划层 + 端到端评价 | 按 `AI_EMBED` / `AI_FILTER` / `AI_COMPLETE` 分 workload | 多数系统不暴露外部链路细节，不能过度类比 |
+| Ray OSDI 2018 | task / actor、dynamic task graph、distributed scheduler、object store、resource-aware scheduling | 研究内容一 + 研究内容二 | task granularity、actor pool size、resource requirement、placement/locality、object count、fan-in shape | 不改 Ray 内部 scheduler，只做应用层 admission/routing |
+| Ray Data / Ray Serve | `map_batches`、concurrency、dynamic request batching、routing、autoscaling | 研究内容一 + 研究内容二（接口参考） | batch size、concurrency、`max_batch_size`、wait timeout、replica count | 官方接口存在不等于本项目一定有收益，必须用 GPU-backed profile 验证 |
+| vLLM / Orca | continuous batching、iteration-level scheduling、吞吐-延迟曲线、SLO 约束 | 部署平台（不修改内部） | max tokens、request admission、TTFT/TPOT/P99、serving throughput | 作为强 baseline 或机制借鉴，不写成本文原创 |
+| Triton Inference Server | dynamic batcher、preferred batch size、queue delay | 部署平台参考 | max batch size、preferred batch size、max queue delay | 更适合模型服务 baseline，不直接解决数据库侧数据组织 |
+| Sarathi-Serve / DistServe / Mooncake / SGLang | phase splitting、KV/prefix reuse、SLO-aware routing | 研究内容二（prefix-aware routing 设计参考） | token-aware routing、prefix-aware routing、long/short request isolation | 主要服务 `AI_COMPLETE`，对 `AI_EMBED` 只作为边界和扩展 |
+| GPU 数据库 / GPU-resident 结构 | 数据搬运、materialization、GPU 内存驻留、算子融合 | 研究内容一 | 是否搬到 GPU、批量大小、列式表示、object/materialization 数量 | 本课题不做传统 GPU 查询算子 kernel 优化 |
+| Cortex AISQL / GaussML / Galois / LEADS / NeurDB | AI 算子语义影响执行计划和代价估计 | 研究内容一 + 端到端验证 | 按 `AI_EMBED` / `AI_FILTER` / `AI_COMPLETE` 分 workload | 多数系统不暴露外部链路细节，不能过度类比 |
+| Daft (Flotilla) / `@daft.cls` | Rust 执行引擎、Morsel 流式 Push 模型、Arrow 零拷贝、GPU Stateful UDF | 研究内容一（引擎层，通过 DataOrganizer 抽象隔离） | batch_size、concurrency、morsel size、GPU 分配策略 | Daft 不观测 vLLM 内部状态，不做 token-aware 调度；本文优化策略层而非引擎层 |
 
 ## 3. 可以落地的设计点
 
-### 3.1 计划层：workload-aware 数据组织
+### 3.1 研究内容一：数据组织策略（对应旧"计划层"）
 
-目标：在执行前选择合理的数据组织，避免过多小 task、小 object 和不合适的 GPU 请求粒度。
+目标：在执行前选择合理的数据组织方式（token-budget batching、length-aligned grouping、prefix-aware grouping），通过异构 Ray actor pool 实现，避免过多小 task、小 object 和不合适的 GPU 请求粒度。
 
 可观测信号：
 
@@ -71,9 +72,9 @@ Guardrail：P99、throughput、writeback ratio、质量指标
 - 一次执行中不重切已构造 batch；
 - 如果后续要研究 adaptive repartition，需要单独作为新机制证明开销收益，不放进当前主方案。
 
-### 3.2 运行层：服务入口 admission / routing / backpressure
+### 3.2 研究内容二：调度与提交控制策略（对应旧"运行层"）
 
-目标：控制数据库侧请求进入模型服务的节奏，避免 GPU 吃不满或 endpoint queue 被打爆。
+目标：每个 Ray actor 独立观测 vLLM 队列状态，自主决定 flush 时机、K_max 动态范围和 routing 目标，避免 GPU 吃不满或模型服务队列被打爆。
 
 可观测信号：
 
@@ -97,9 +98,9 @@ Guardrail：P99、throughput、writeback ratio、质量指标
 - 在应用层 driver / gateway / actor pool manager 中实现；
 - 只影响尚未提交或尚未执行的请求。
 
-### 3.3 服务端层：dynamic micro-batching
+### 3.3 vLLM 部署平台（对应旧"服务端层"，不修改内部）
 
-目标：借鉴 vLLM / Ray Serve / Triton，将短时间内到达且兼容的请求合成一次模型 forward，提高 GPU 利用率，同时控制 tail latency。
+目标：vLLM continuous batching 作为部署平台和强 baseline。上游策略的目标不是替代 vLLM 的调度器，而是给它构造最优的请求流（shape + rhythm）。GPU 侧仅观测 Prometheus metrics 作为反馈信号。
 
 可观测信号：
 
@@ -150,9 +151,9 @@ SQL AI operator
 
 用途：
 
-- 给计划层选择 `batch_size`、`partition_count`、`object_merge`；
-- 给运行层选择初始 `K_max` 和 routing；
-- 给服务端层选择 dynamic micro-batching 的 compatibility key。
+- 给研究内容一（数据组织）选择 batch 构造策略和 token budget；
+- 给研究内容二（调度提交）选择初始 `K_max` 和 routing；
+- 给 vLLM 部署平台提供请求 shape/rhythm 特征，辅助上游决策。
 
 最小实现：
 
@@ -161,15 +162,28 @@ SQL AI operator
 
 放弃条件：
 
-- 如果 workload profile 与最优配置相关性很弱，计划层退化为固定最优配置；不要强行做复杂 cost model。
+- 如果 workload profile 与最优配置相关性很弱，数据组织策略退化为固定最优配置；不要强行做复杂 cost model。
 
-### 4.2 Plan-time Data Organizer：先解决数据库侧数据组织
+### 4.2 Data Organizer：引擎无关的数据组织抽象
 
 借鉴来源：
 
 - Ray task 粒度和 object store 机制；
 - Ray Data / Daft 的 batch、partition、shuffle/coalescing 思想；
-- GPU 数据库工作中关于 materialization 和数据搬运的边界。
+- GPU 数据库工作中关于 materialization 和数据搬运的边界；
+- Daft 的 Morsel Push 模型和 `@daft.cls` GPU UDF 接口。
+
+引擎抽象设计：
+
+当前使用 Arrow RecordBatch 作为数据载体，但通过 `DataOrganizer` 抽象接口隔离引擎细节，后续切换至 Daft DataFrame 后端时只替换内部实现：
+
+```text
+DataOrganizer.organize(rows, strategy)
+  → 当前实现：ArrowOrganizer（RecordBatch 构造 + Ray actor 分发）
+  → 后续实现：DaftOrganizer（Daft DataFrame → morsel 流式 → @daft.cls GPU UDF）
+```
+
+策略层代码（token-budget 决策、queue-adaptive flush、routing）只依赖 `BatchRequest` 抽象，不感知底层引擎。
 
 系统设计：
 
@@ -253,7 +267,7 @@ if endpoint_backlog skew high:
 
 放弃条件：
 
-- 如果接入 vLLM / Ray Serve 后，外部 `K_max` 和 routing 的 E2E 差异小于 5%，则把运行层贡献降级为边界分析，不强行写成核心优化。
+- 如果接入 vLLM 后，外部 `K_max` 和 routing 的 E2E 差异小于 5%，则把研究内容二贡献降级为边界分析，不强行写成核心优化。
 
 ### 4.4 Endpoint Router：把 Ray resource/locality 思想迁移到服务选择
 
@@ -295,51 +309,26 @@ request
 
 - 如果 endpoint 同质且请求长度分布稳定，least-queued 可能已经足够；不需要过早实现复杂 router。
 
-### 4.5 Service-side Micro-batcher：把 vLLM/Ray Serve/Triton 思想放在正确位置
+### 4.5 vLLM Deployment Platform：作为强 baseline 和观测源
 
-借鉴来源：
+vLLM continuous batching 作为部署平台，不做修改。上游策略通过以下方式与 vLLM 交互：
 
-- vLLM continuous batching；
-- Orca iteration-level scheduling；
-- Ray Serve dynamic request batching；
-- Triton dynamic batcher。
+**观测（被动）**：Prometheus metrics endpoint
+- `vllm:num_requests_running` → 判断 GPU 是否接近 `max_num_seqs`
+- `vllm:num_requests_waiting` → 判断队列积压程度
+- `vllm:gpu_cache_usage_perc` → 判断 KV cache 压力
 
-系统设计：
-
-```text
-endpoint waiting queue
-  -> group by compatibility key
-  -> wait until:
-       max_batch_size reached
-       max_tokens / shape budget reached
-       batch_wait_timeout reached
-  -> model forward
-```
-
-优化目标：
-
-- 增加 GPU 每次 forward 的有效 batch；
-- 控制 queue wait 和 P99；
-- 避免把数据库侧 batch 重切误写成 dynamic batching。
-
-可调变量：
-
-- `max_batch_size`；
-- `max_tokens` / shape budget；
-- `batch_wait_timeout`；
-- compatibility key。
+**控制（上游主动）**：通过请求的 shape 和 rhythm 影响 vLLM 行为
+- token-budget batching → 影响 `max_num_batched_tokens` 约束的命中率
+- prefix-aware grouping → 提高 APC (Automatic Prefix Caching) 命中率
+- queue-adaptive flush → 影响 `num_running_seqs` 利用率
 
 实现建议：
+- P0：接入 vLLM + Qwen2.5-1.5B，记录 Prometheus metrics 和 TTFT/TPOT/吞吐
+- P1：对比 vLLM 默认行为 vs 上游策略介入后的端到端差异
+- 不做：修改 vLLM scheduler、自建 continuous batching、替换 vLLM 为自研推理引擎
 
-- 首选接入已有 vLLM / Ray Serve / Triton 作为强 baseline；
-- 如果自建 endpoint，只实现最小 queue + timeout + max_batch_size；
-- `AI_EMBED` 先按文本长度 bucket，`AI_COMPLETE` 再考虑 token/prefix。
-
-放弃条件：
-
-- 如果服务端 dynamic batching 已经把 GPU 利用率拉满，本文不再声称服务端层有原创贡献，而转向数据库侧数据组织和端到端协调。
-
-### 4.6 E2E Guardrail：防止局部优化吞掉端到端收益
+### 4.6 端到端验证：写回瓶颈判定与 Guardrail
 
 借鉴来源：
 
@@ -378,84 +367,95 @@ guardrail checker
 
 | 优先级 | 实现任务 | 借鉴机制 | 最小实现 | 验证问题 |
 |---|---|---|---|---|
-| P0 | 可观测模型服务 baseline | vLLM / Ray Serve / Triton dynamic batching | 记录 queue wait、micro-batch size、model time、GPU utilization | 服务端 batching 能吃掉多少 GPU 侧收益？ |
-| P0 | B 系列写回工程 baseline | PostgreSQL COPY、pgvector deferred index、TurboVecDB 写回思想 | COPY / unlogged staging / deferred index 对比当前 UPSERT | 写回是否仍会吞掉上游收益？ |
-| P1 | `K_max` admission gate | Ray task scheduling + serving admission control | `asyncio.Semaphore(K_max)` 或等价提交门控 | bounded in-flight 是否改善 P99 / throughput？ |
-| P1 | least-queued endpoint routing | Ray resource/load-aware scheduling | 每个 endpoint 维护 backlog，提交到最短队列 | routing 是否优于 round-robin？ |
-| P1 | 计划层 batch/partition sweep | Ray object/task 粒度、Ray Data batch、Daft partition | 固定候选集 sweep，记录 object/task/fan-in | 数据组织是否仍影响端到端？ |
-| P2 | workload-aware 配置表 | DB AI 算子代价感知、profile-guided selection | profile -> 推荐 batch/partition/K_max 初值 | workload-aware 是否优于固定最优？ |
-| P2 | backpressure rule table | serving SLO guardrail | queue wait / P99 超阈值时降 K_max 或暂停提交 | 规则是否能避免 tail latency 恶化？ |
-| P3 | token-aware / prefix-aware routing | SGLang / Mooncake / DistServe | 仅在 `AI_COMPLETE` 跑通后加入 token/prefix bucket | 长短请求混合时是否改善 P99？ |
+| P0 | vLLM + Qwen2.5-1.5B baseline 建立 | vLLM continuous batching + Prometheus metrics | 记录 queue depth、running reqs、KV cache usage、TTFT/TPOT/吞吐 | vLLM 在 RTX 5070 上的实际性能曲线？ |
+| P0 | 写回工程 baseline | PostgreSQL COPY、pgvector deferred index | COPY / unlogged staging / deferred index 对比当前 UPSERT | 写回是否吞噬上游收益？ |
+| P1 | 研究内容一消融：数据组织策略 | vLLM max_num_batched_tokens、Ray Serve batch_size_fn、Daft Morsel 流式 | token-budget vs length-align vs prefix-aware 消融 | 哪种数据组织策略最优？差距多大？ |
+| P1 | 研究内容二消融：调度与提交控制策略 | Clockwork 确定性调度、Clipper AIMD、Ray actor async loop | queue-adaptive flush vs 固定 K_max sweep | 自适应提交是否优于静态配置？ |
+| P1 | actor pool 分池路由 | Ray resource-aware scheduling、SGLang prefix-aware routing | 异构 actor pool：按 token 长度/prefix 分组 | 分池路由是否优于 uniform pool？ |
+| P2 | 耦合验证：独立拼接 vs 联合 grid search | — | RC1* + RC2* 拼接 vs joint grid search | 两项策略是否需要联合调优？ |
+| P3 | Daft 引擎切换（按需触发） | Daft Flotilla、@daft.cls GPU UDF | DataOrganizer 从 Arrow 实现切换到 Daft 实现 | 引擎切换后策略层结论是否一致？多模态扩展是否可行？ |
+| P3 | token-aware / prefix-aware routing | SGLang RadixAttention、Parrot Semantic Variable | 仅在 AI_COMPLETE 跑通后加入 | 长短请求混合时是否改善 P99？ |
 
 当前最小闭环不需要一次实现全部任务。建议先做：
 
 ```text
-P0 dynamic batching baseline
-  -> P1 K_max sweep
-  -> P1 routing comparison
-  -> P1 plan-time batch/partition sweep
-  -> P2 workload-aware rule table
+P0 vLLM baseline 建立 + 写回工程 baseline
+  → P1 研究内容一消融（数据组织策略：token-budget / length-align / prefix-aware）
+  → P1 研究内容二消融（调度与提交控制：queue-adaptive flush / K_max / routing）
+  → P2 耦合验证（独立拼接 vs 联合 grid search）
+  → P3 Daft 引擎切换（按需触发）
 ```
 
 ## 5. 后续实验设计建议
 
-### 5.1 最小可验证路径
+### 5.1 实验阶段（与 knowledge_hub.md §7.2 对齐）
 
-1. 固定数据库侧 `batch_size / partition_count`，接入模型服务 dynamic micro-batching baseline，观察端到端吞吐、P99 和 GPU utilization。
-2. 固定服务端 dynamic batching，扫描 `K_max` 和 routing，确认入口调度是否仍有额外收益。
-3. 固定最优 `K_max / routing`，扫描计划层 `batch_size / partition_count / object_merge`，确认数据库侧数据组织是否影响 Ray object、fan-in 和写回。
-4. 做组合策略消融：计划层 only、运行层 only、服务端 dynamic batching only、三层组合。
+| 阶段 | 内容 | 核心消融 |
+|---|---|---|
+| 前置 | vLLM + Qwen2.5-1.5B baseline | 替代手动 HTTP endpoint |
+| 第一阶段 | 研究内容一：数据组织策略消融 | 静态 batch_size vs token-budget vs length-align vs prefix-aware |
+| 第二阶段 | 研究内容二：调度与提交控制策略消融 | 固定 K_max vs queue-adaptive vs actor pool 分池 |
+| 第三阶段 | 耦合验证 | 独立最优拼接 vs 联合 grid search |
+| 第四阶段 | 写回瓶颈判定 | COPY + deferred index vs 其他 sink |
 
 ### 5.2 必须记录的指标
 
-| 层 | 指标 |
+| 研究内容 | 指标 |
 |---|---|
-| 计划层 | row count、text length distribution、RecordBatch count、Ray task count、object count、fan-in width |
-| 运行层 | in-flight count、queue wait、endpoint backlog、routing decision、actor utilization |
-| 服务端层 | micro-batch size、token/shape budget、batch wait time、GPU utilization、model time |
-| 端到端 | latency、throughput、P50/P95/P99、writeback ratio、failure/timeout |
+| 研究内容一（数据组织） | row count、token length distribution、RecordBatch count、object count、operator invocations、fan-in width |
+| 研究内容二（调度提交） | in-flight count、queue wait、vLLM num_requests_running/waiting、K_max 实际值、routing decision |
+| vLLM 部署平台（观测） | TTFT、TPOT、throughput、GPU utilization、KV cache usage、batch size per forward |
+| 写回 | writeback_s、writeback ratio、sink type |
+| 端到端 | e2e_s、rows/s、P50/P95/P99、failure/timeout |
 
 ### 5.3 Baseline 顺序
 
 | Baseline | 目的 |
 |---|---|
-| 固定 batch + 固定 routing + 无 dynamic batching | 合理默认链路，不作为 strawman |
-| 固定 batch + 服务端 dynamic batching | 检查 vLLM/Ray Serve/Triton 机制能吃掉多少收益 |
-| 固定 batch + dynamic batching + tuned `K_max` | 检查入口 admission 是否仍有价值 |
-| workload-aware batch + tuned admission + dynamic batching | 本文候选组合策略 |
-| 最优单层配置拼装 | 只在阶段间耦合明显时作为增强对照 |
+| 固定 batch_size + 无自适应提交 + vLLM 默认 | 合理默认链路，不作为 strawman |
+| 研究内容一 only（最优数据组织 + 无自适应提交） | 数据组织策略的独立贡献 |
+| 研究内容二 only（固定数据组织 + 最优调度提交） | 调度提交策略的独立贡献 |
+| RC1* + RC2* 拼接 | 两项策略独立最优的叠加效果 |
+| 联合 grid search | 判定耦合程度：联合显著优于拼接则需联合调优 |
 
 ## 6. 当前建议的实现结构
 
 ```text
-SQL / table scan
+PostgreSQL / table scan
   -> workload profiler
-      row count, text length, operator type
-  -> plan-time data organizer
-      batch_size, partition_count, object_merge
-  -> Ray task / actor submission gate
-      K_max, backpressure
-  -> endpoint router
-      least-queued / token-aware / prefix-aware
-  -> model service queue
-      dynamic micro-batching
+      row count, token length distribution, prefix structure, operator type
+  -> DataOrganizer (引擎抽象层)
+      当前：ArrowOrganizer → RecordBatch → Ray actor 分发
+      后续：DaftOrganizer → Daft DataFrame → morsel 流式 → @daft.cls GPU UDF
+  -> 研究内容一：数据组织策略
+      token-budget / length-aligned / prefix-aware grouping
+  -> 研究内容二：调度与提交控制策略
+      Ray actor async loop: queue-adaptive flush / K_max / routing
+  -> vLLM Continuous Batching (部署平台，不修改)
+      观测 Prometheus metrics 作为反馈信号
   -> GPU model forward
   -> fan-in / sink
-  -> PostgreSQL / Lance / pgvector writeback
+  -> PostgreSQL / pgvector writeback
+      COPY + deferred index (工程最优 baseline)
+  -> 端到端验证：写回瓶颈判定
   -> E2E metrics and guardrail
 ```
 
 实现优先级：
 
-1. P0：接入一个可观测的服务端 dynamic batching baseline，记录 micro-batch size 和 queue wait。
-2. P1：实现应用层 `K_max` 和 least-queued routing，验证和 dynamic batching 的互补性。
-3. P2：实现 workload-aware plan-time batch/partition 选择，并和固定最优配置比较。
-4. P3：如果 `AI_COMPLETE` 进入主线，再加入 token-aware / prefix-aware routing。
+1. P0：建立 vLLM + Qwen2.5-1.5B baseline，记录 Prometheus metrics 和 TTFT/TPOT/吞吐。
+2. P1：研究内容一消融（数据组织策略：token-budget / length-align / prefix-aware）。
+3. P1：研究内容二消融（调度与提交控制：queue-adaptive flush / K_max / actor pool 分池）。
+4. P2：耦合验证（RC1* + RC2* 拼接 vs 联合 grid search）。
+5. P3：Daft 引擎切换（按需触发，见 knowledge_hub.md §10.5.1 切换条件）。
 
 ## 7. 不能写成的内容
 
-- 不能写成本文提出 continuous batching。
-- 不能写成本文改造 Ray scheduler。
+- 不能写成本文提出 continuous batching 或改造 vLLM scheduler。
+- 不能写成本文改造 Ray scheduler 或重新设计 task/actor 模型。
+- 不能写成本文提出 Daft 执行引擎、Morsel 流式模型或 `@daft.cls` 机制——Daft 是引擎层工具，本文贡献在策略层。
 - 不能写成动态 batch 会重切数据库侧已物化 `RecordBatch`。
 - 不能只用文献证明本项目瓶颈；必须用本地 GPU-backed E2E profile 和消融实验验证。
 - 不能把 `AI_COMPLETE` 的 token/KV 策略直接套到 `AI_EMBED`，两者机制不同。
+- 不能声称"数据组织层已实现 Daft 后端"——当前仅实现 Arrow 后端，Daft 后端标记为后续工作。
+- 不能声称"本文方法在具身智能/多模态场景中有效"——只有在真实多模态 workload 上验证后才能说。

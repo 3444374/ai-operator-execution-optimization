@@ -1,29 +1,29 @@
-# 端到端效果评估增强实验计划
+# 耦合验证实验计划
 
 整理日期：2026-07-16
-对应研究内容：端到端效果评估；阶段间耦合增强对照
-方法候选编号：AX.1-AX.3（详见 `research_design_catalog.md` §6）
-评估方法论来源：vLLM (SOSP 2023)、Orca (OSDI 2022)、FlexPushdownDB (VLDB 2021)、TurboVecDB (VLDB 2025)、GaussML (ICDE 2024)
 
-> 当前定位说明（2026-07-15 调整）：本文件不再作为开题主叙事的“论文核心 claim”入口。当前主线是先对数据库 AI 算子做分阶段性能剖析，优化侧重点放在数据组织与模型服务调度，尤其是模型服务状态感知调度；结果写回纳入端到端评价，用于判断上游调优收益是否被持久化阶段吞噬。本文件保留为增强实验计划：当阶段级调优完成后，用更强的独立最优拼装、pipeline overlap 和全链路配置等对照，分析是否存在明显阶段间耦合。
+> **2026-07-17 口径更新**：本文中的"跨层""RC3"等旧术语已统一。当前耦合验证范围为研究内容一（数据组织策略）× 研究内容二（提交控制策略）× 引擎级参数（Daft `into_batches`/`batch_size`/`max_concurrency`）。写回已降为实验设置。最新定义以 `AGENTS.md` §1 和 `PROJECT_OUTLINE.md` 为准。
+对应：耦合验证——研究内容一和研究内容二的策略是否需要联合调优
+
+> **2026-07-16 更新**：本文件用于验证两项策略是否需要联合调优。实验设计：① 分别独立搜索两项策略的最优配置后拼接 ② 联合 grid search 对比。联合显著优于拼接则说明需要联合调优，两者接近则分层独立优化即可。无论哪种结果，课题的核心贡献（上游调度优化）不受影响。具体方法尚未锁定，以下 BL 矩阵、代价模型和消融瀑布为候选实验骨架。
 
 ---
 
 ## 0. 前置依赖（先读这个）
 
-**本增强实验应在阶段级调优完成后再跑。所有前置条件必须先满足：**
+**本实验应在研究内容一和研究内容二各自的最优策略确定后运行：**
 
 ```
-P0a: vLLM / Ray Serve 接入 → GPU 基线升级到 S 级
-P0b: B 系列写回工程实验完成 → 写回基线升级到 A 级
-P1a: RC1 Grid Search 完成 → 确定 BL1 的 B_gpu*, W*
-P1b: RC2 K_max Sweep 完成 → 确定 BL1 的 K_max*
-P1c: RC3 三路架构对比完成 → 确定 BL2 的 write_mode*, B_write*
+前置：vLLM + 小 LLM baseline 建立
+前置：研究内容一 动态 batching 最优策略确定
+前置：研究内容二 自适应提交最优策略确定
+```
+P1c: 研究内容三 三路架构对比完成 → 确定 BL2 的 write_mode*, B_write*
 
 当前状态: 以上全部待完成。当前所有实验数据均为过渡期数据，不能作为论文最终结果。
 ```
 
-**为什么这个顺序不能乱**：BL3（Independent Best）是 RC1、RC2、RC3 各维独立最优值的拼装。如果任何一个维度的 grid search 不充分，BL3 就不是真正的“阶段级最优拼装”，该对照就不能用来分析阶段间耦合。
+**为什么这个顺序不能乱**：BL3（Independent Best）是 研究内容一、二、三 各维独立最优值的拼装。如果任何一个维度的 参数组合穷举 不充分，BL3 就不是真正的”阶段级最优拼装”，该对照就不能用来分析阶段间耦合。
 
 ---
 
@@ -43,7 +43,7 @@ P1c: RC3 三路架构对比完成 → 确定 BL2 的 write_mode*, B_write*
 
 | 编号 | 假设 | 待检验 | 对应实验段 |
 |---|---|---|---|
-| **H_X.1** | BL3（Independent Best：RC1/RC2/RC3 独立最优拼装）和完整优化流程的端到端吞吐差异 < 10% | 若被推翻，可支持阶段间耦合论证 | §4.1 主实验 |
+| **H_X.1** | BL3（Independent Best：研究内容一/二/三 独立最优拼装）和完整优化流程的端到端吞吐差异 < 10% | 若被推翻，可支持阶段间耦合论证 | §4.1 主实验 |
 | H_X.2 | 写回瓶颈（B_write joint）的 joint 贡献 > GPU 调度（B_gpu joint）的 joint 贡献 | 基于动机发现（写回占 36-54%）| §5 消融瀑布 |
 | H_X.3 | 联合代价模型的 R² > 0.85（能够准确预测 T_e2e）| 待验证 | §4.3 代价模型 |
 | H_X.4 | 联合优化的收益在 ≥ 2/3 workload 类型上系统性地存在（非 EMBED 特例）| 待验证 | §6 跨 workload 泛化 |
@@ -74,17 +74,17 @@ T_e2e(B_gpu, B_write, W, mode, K_max) =
 
 ### 2.2 实现方式
 
-**Phase 2（规则法）**：基于 grid search + regression 建立 `T_gpu(B_gpu)` 和 `T_write(B_write)` 的拟合曲线，然后用简单的 grid search 在二维空间中找到联合最优点 `(B_gpu_joint*, B_write_joint*)`。
+**Phase 2（规则法）**：基于 参数组合穷举 + regression 建立 `T_gpu(B_gpu)` 和 `T_write(B_write)` 的拟合曲线，然后用简单的 参数组合穷举 在二维空间中找到联合最优点 `(B_gpu_joint*, B_write_joint*)`。
 
-**Phase 3（学习法，可选）**：用更复杂的模型（如 XGBoost 或小型 MLP）学习 `(B_gpu, B_write, W, mode, N, workload_type) → T_e2e` 的映射，替代 grid search 的穷举方式。这个不作为硕士论文必做，但如果规则法效果已经足够，可以讨论"学习法在什么情况下有价值"。
+**Phase 3（学习法，可选）**：用更复杂的模型（如 XGBoost 或小型 MLP）学习 `(B_gpu, B_write, W, mode, N, workload_type) → T_e2e` 的映射，替代 参数组合穷举 的穷举方式。这个不作为硕士论文必做，但如果规则法效果已经足够，可以讨论"学习法在什么情况下有价值"。
 
 ---
 
 ## 3. Baseline 对照
 
-| 编号 | RC1 配置 | RC2 配置 | RC3 配置 | 来源 | 代表什么 |
+| 编号 | 研究内容一 配置 | 研究内容二 配置 | 研究内容三 配置 | 来源 | 代表什么 |
 |---|---|---|---|---|---|
-| **BL1** | A1.1 coalesced batch（RC1 grid search 最优 B_gpu）| A2.3 自适应 K_max（tuned for GPU throughput）| A3.1 driver fan-in（默认写回）| vLLM/Orca 的最优 GPU 配置 + 不关心写回 | GPU 岛最优，不管写回 |
+| **BL1** | A1.1 coalesced batch（研究内容一 参数组合穷举 最优 B_gpu）| A2.3 自适应 K_max（tuned for GPU throughput）| A3.1 driver fan-in（默认写回）| vLLM/Orca 的最优 GPU 配置 + 不关心写回 | GPU 岛最优，不管写回 |
 | **BL2** | A1.1 coalesced batch（不做特殊优化）| A2.1 固定 K_max（不调优）| B 系列最优 COPY + deferred index + 最优 B_write | TurboVecDB + COPY 的组合 | 写回岛最优，不管 GPU |
 | **BL3** | BL1 的 B_gpu, W | BL1 的 K_max, routing | BL2 的 write_mode, B_write, sink | 组合 BL1 + BL2 | **关键对照**：独立最优组合 |
 | **BL4** | A1.1 coalesced batch | 固定 K_max | Pipeline overlap（边算边写，但 B_gpu / B_write 固定）| Ray Data streaming batch model (G4) | 只做 overlap，不做 joint optimization |
@@ -100,7 +100,7 @@ T_e2e(B_gpu, B_write, W, mode, K_max) =
 
 ```
 配置:
-  BL3: (B_gpu*, K_max*, B_write*, mode*)      ← 各维独立 grid search 最优
+  BL3: (B_gpu*, K_max*, B_write*, mode*)      ← 各维独立 参数组合穷举 最优
   BL4: (固定 B_gpu, 固定 K_max, pipeline)       ← 只有 overlap，不优化参数
   Ours: (B_gpu_joint, K_max_joint, B_write_joint, mode_joint)  ← 联合 cost model
 
@@ -145,10 +145,10 @@ Workload × 数据规模:
 |---|---|---|
 | B_gpu joint 的贡献 | Ours vs Ours 但 B_gpu 固定为 BL1 最优值 | B_gpu 的 joint 选择有独立贡献，但可能 < B_write joint |
 | B_write joint 的贡献 | Ours vs Ours 但 B_write 固定为 BL2 最优值 | B_write joint 贡献可能 > B_gpu joint（写回是主要瓶颈） |
-| K_max joint 的贡献 | Ours vs Ours 但 K_max 固定为 RC2 最优静态值 | K_max 的 joint 选择在 workload 变化时贡献更大 |
+| K_max joint 的贡献 | Ours vs Ours 但 K_max 固定为 研究内容二 最优静态值 | K_max 的 joint 选择在 workload 变化时贡献更大 |
 | mode joint 的贡献 | Ours vs Ours 但 write_mode 固定为 driver_fanin | mode 选择是离散的——在什么条件下 joint cost model 选择 worker_direct？ |
 | Pipeline overlap 的贡献 | Ours (serial) vs Ours (pipeline) vs BL4 (naive pipeline) | overlap 有帮助但不能替代 joint |
-| 代价模型的贡献 | Grid search 穷举最优 vs cost model 预测最优 | cost model 预测的最优是否接近 grid search 的全局最优点？ |
+| 代价模型的贡献 | 参数组合穷举 穷举最优 vs cost model 预测最优 | cost model 预测的最优是否接近 参数组合穷举 的全局最优点？ |
 
 **消融结果展示**：瀑布图（waterfall chart）——从 BL3 开始，逐步加入每个 joint 优化，展示累计收益。
 
@@ -217,7 +217,7 @@ Workload × 数据规模:
 | 代价模型 R² | > 0.85（否则 cost model 不够准） |
 | 跨 workload 泛化 | 至少 2/3 workload 上 Ours > BL3 |
 
-**如果 Δ < 10%**：重新检查 BL3 是否真正独立最优（可能 RC1/RC2/RC3 的 grid search 不够细）。如果确认是最优且 Δ < 10%，则不再主张“联合优化优于独立最优”，论文重点回到端到端执行流程的分阶段剖析、阶段级调优和工程化验证。
+**如果 Δ < 10%**：重新检查 BL3 是否真正独立最优（可能 研究内容一/二/三 的 参数组合穷举 不够细）。如果确认是最优且 Δ < 10%，则不再主张”联合优化优于独立最优”，论文重点回到端到端执行流程的分阶段剖析、阶段级调优和工程化验证。
 
 ---
 
@@ -247,7 +247,7 @@ Workload × 数据规模:
 
 ## 13. 运行检查清单
 
-- [ ] P0 (前置): RC1、RC2、RC3 各自的 grid search 完成，确立 BL1/BL2 的独立最优值
+- [ ] P0 (前置): 研究内容一、二、三 各自的 参数组合穷举 完成，确立 BL1/BL2 的独立最优值
 - [ ] P0 (前置): B 系列实验完成，确立 A 级写回 baseline
 - [ ] P0 (前置): vLLM 接入完成，确立 S 级 GPU baseline
 - [ ] P1: Killer Experiment 主矩阵（4.1）完成

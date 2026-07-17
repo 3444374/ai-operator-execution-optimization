@@ -2,6 +2,8 @@
 
 整理日期：2026-07-15
 
+> **2026-07-17 口径更新**：本文中的"计划层/运行层/服务端层""三层策略""RC3/研究内容三"等旧术语已统一为当前口径。最新研究内容定义（两项策略 + 多模态泛化验证 + 算子代价估计补充）、优先级和边界以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。写回已降为实验设置。本文保留原始设计推演过程作为历史参考，术语不匹配处以上述主文档为准。
+
 用途：在绘制策略设计图、撰写开题报告方法部分和设计正式实验前，先明确“哪些优化思想可以借鉴、哪些只适合作为边界或 baseline、本文自己的策略到底是什么”。
 
 本文件是策略口径源，不替代具体实验计划。具体变量、运行矩阵和结果记录仍以 `data_organization_batching.md`、`service_scheduling_backpressure.md`、`sink_writeback_coordination.md` 和 `baseline_reference.md` 为准。
@@ -66,7 +68,7 @@
 
 - vLLM/Orca 优化的是 GPU 推理引擎内部的 batching、memory 和 iteration-level scheduling。
 - 本课题的调度位置在数据库外部执行链路和模型服务入口之前。
-- 如果后续接入 vLLM 后外部 `K_max` 控制收益消失，不能强行说 RC2 独立贡献成立；应收窄为“外部调度与数据库数据组织/写回约束的协同”。
+- 如果后续接入 vLLM 后外部 `K_max` 控制收益消失，不能强行说研究内容二独立贡献成立；应收窄为“外部调度与数据库数据组织/写回约束的协同”。
 
 ### 2.3 分布式数据组织：从 Ray Data / Daft / Spark 借鉴
 
@@ -230,7 +232,7 @@ Devil's Advocate 最强反驳：
 
 | 反证条件 | 含义 | 调整 |
 |---|---|---|
-| vLLM/Ray Serve 接入后，外部 `K_max` / routing 对端到端差异 < 5% | 模型服务内部已消化大部分调度收益 | RC2 从独立调度贡献收窄为数据库侧数据组织与服务入口约束 |
+| vLLM/Ray Serve 接入后，外部 `K_max` / routing 对端到端差异 < 5% | 模型服务内部已消化大部分调度收益 | 研究内容二从独立调度贡献收窄为数据库侧数据组织与服务入口约束 |
 | COPY + deferred index 后 writeback ratio < 5% | 写回不是主要边界 | 写回保留为 baseline，不再强调 worker-direct |
 | Workload-aware batch/partition 与固定最优配置差异 < 5% | workload 特征未带来足够策略价值 | 收窄到单 workload 或转向更强特征，如 token/prefix/selectivity |
 | AI_FILTER/AI_COMPLETE 无法按时跑通 | 多 workload 泛化证据不足 | 论文主线以 AI_EMBED 为核心，FILTER/COMPLETE 降级为模拟或讨论 |
@@ -242,35 +244,62 @@ Devil's Advocate 最强反驳：
 
 实现与实验矩阵参考见 `strategy_design_implementation_reference.md`。本文件负责回答“为什么这些策略有文献依据、哪些不能过度声称”；实现参考文件负责回答“每层有哪些信号、变量、baseline 和指标”。
 
-### 7.1 重新评判结论：从 runtime controller 收窄为 three-layer strategy
+### 7.1 重新评判结论：从 static plan-time 到 dynamic upstream batching（2026-07-16 更新）
 
-根据 GPU 推理调度、Ray/Ray Data 异构数据管线、Triton/Ray Serve 动态 batching 和 GPU 数据库算子调研，当前策略设计需要收窄但不能一刀切：
+**方向更新**：2026-07-16 经讨论，主场景从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理），上游数据组织从静态固定 batch_size 转向动态 batching policy，Ray 从 task executor 升级为架构设计空间。
 
-- 不采用“运行时根据前几个 batch 的反馈动态重切数据库侧 RecordBatch”的表述。该机制实现复杂，已有文献依据不足，且重分批/重分区开销可能抵消收益。
-- `batch_size` / `partition_count` 属于计划层决策：在一次 SQL 进入外部执行链路前，基于表规模、文本长度分布、算子类型和历史 profile / 参数 sweep 结果选择。
-- `K_max`、`routing policy`、backpressure 属于运行层决策：在执行过程中根据 queue wait、endpoint backlog、GPU utilization 和 P99 变化调整尚未提交的请求。
-- 动态 batch 可以作为服务端 micro-batching 决策：在模型服务入口把多个尚未执行的请求按兼容性、token/shape 预算和等待时间合并成一次模型 forward。它不改变数据库侧已经构造的 RecordBatch，而是在 endpoint 内部或 endpoint 前的 admission queue 中形成推理 batch。
-- 写回不作为当前主优化器的一部分，而作为端到端 guardrail 和必要时的低开销配置项。
+核心变化：
 
-因此，推荐把方案写成：
+- **计划层不再是”选 batch_size”**，而是设计动态 batching policy：
+  - Token-budget batching：`max_tokens_per_submission`（借鉴 vLLM `max_num_batched_tokens`），按 token 预算累积行，不按固定行数
+  - Length-aligned grouping：相似 token 长度的行合并发送，减少 generation straggler
+  - Prefix-aware grouping：共享 system prompt 的行合并为一个请求，利用 vLLM APC（Automatic Prefix Caching）
+- **Ray actor 异构化**：不同 token 长度的行路由到不同配置的 actor（ShortTokenActor / LongTokenActor / PrefixAffinityActor），利用 actor 的 stateful + async loop 实现去中心化自适应提交
+- **每个 actor 自主决策 flush**：观测模型服务队列深度，queue 空时立刻提交（防止 GPU 饥饿）、queue 满时暂停积攒（防止堆积），不需要中央 scheduler
+- **K_max 变为动态**：不再固定上限，而是 queue-adaptive——vLLM `num_running_seqs` 低时增大提交速率，高时减小
+
+仍保留的三层结构：
 
 ```text
-Three-layer upstream execution strategy
+Three-layer upstream execution strategy（2026-07-16 更新）
 
-Plan-time data organization:
-  workload/profile -> batch_size, partition_count, object_merge
+Plan-time dynamic batching policy:
+  workload/token distribution/prefix share
+    -> batching policy type（token-budget / length-align / prefix-aware）
+    + actor pool config（actor types × counts × token budget per type）
+    + partition_count, object_merge
 
-Run-time service admission and routing:
-  queue/GPU/E2E signals -> K_max, routing policy, backpressure
+Run-time adaptive submission:
+  queue/GPU/E2E signals -> per-actor flush decision, routing, backpressure
+  每个 actor 独立运行 async loop，自主决定提交时机
+  K_max 由各 actor 的 queue-adaptive 行为自然形成，不设全局上限
 
-Service-side dynamic micro-batching:
-  waiting requests -> max_batch_size / max_tokens / wait_timeout / compatibility key
+Service-side continuous batching（vLLM 已提供）:
+  vLLM scheduler + PagedAttention + APC -> dynamic micro-batch
+  本文不修改 vLLM，但上游策略的目标是最大化 vLLM 的调度效率
 
 Guardrail:
-  P99, throughput, writeback ratio, quality
+  P99/TTFT/TPOT, throughput, writeback ratio, GPU utilization
 ```
 
-这个版本比“全运行时控制器”更稳，也保留了 vLLM / Ray Serve / Triton 这类系统中已经成熟的动态 batching 思想。
+与旧版的关键区别：
+
+| 维度 | 旧版（2026-07-15） | 新版（2026-07-16） |
+|---|---|---|
+| 主场景 | AI_EMBED | AI_COMPLETE（AI_EMBED 为预研验证） |
+| 计划层 | 静态选择 batch_size/partition_count | 动态 batching policy（token-budget/length-align/prefix-aware） |
+| Ray 角色 | task executor | 架构设计空间（异构 actor pool + 去中心化 + 自适应） |
+| K_max | 固定上限参数 | queue-adaptive 动态行为 |
+| 借鉴来源 | 一般性 Ray/Daft 调优 | vLLM continuous batching 原则 + Ray actor 模型 |
+| 交互变量 | batch_size × K_max | batching policy × queue-adaptive submission |
+| 模型服务 | 手动 HTTP endpoint | vLLM（部署平台 + baseline） |
+| RC3 | 研究内容三 | 端到端验证实验 |
+
+保守原则不变：
+
+- 不采用”运行时重切数据库侧已物化 RecordBatch”的方案
+- 动态 batching 发生在上游 Ray actor 的攒批阶段，不改变数据库侧已经构造的数据
+- vLLM 内部的 continuous batching 不修改，上游策略的目标是给它提供最优的请求流
 
 计划层的具体实现不是在运行中改 batch，而是：
 
@@ -282,20 +311,23 @@ Guardrail:
 
 因此，计划层更接近数据库系统中的 cost/profile-guided plan selection；运行层更接近推理服务中的 admission control 和 queue-aware routing；服务端 micro-batching 更接近 vLLM continuous batching、Ray Serve dynamic request batching 和 Triton dynamic batcher。三者分开写，避免把低成本调度说成高成本重分区。
 
-在开题和第一阶段实验中，建议采用以下保守版本：
+在开题和第一阶段实验中，建议采用以下策略口径：
 
 ```text
-Rule-table guided three-layer upstream execution strategy
+Ray actor-based dynamic upstream batching + vLLM continuous batching
 
-1. 前置：用阶段画像定位瓶颈，不把阶段画像当作策略本身。
-2. 计划层数据组织：在执行前按 workload、规模、文本长度分布和历史 profile 选择 batch / partition / object_merge。
-3. 运行层服务入口调度：按 queue wait、backlog、endpoint load 选择 K_max、actor pool、routing 和 backpressure。
-4. 服务端动态 micro-batching：在 endpoint 队列内按最大样本数、最大 token/shape 预算、短等待时间和兼容性 key 形成推理 batch。
-5. 写回：先建立 COPY + deferred index 与 driver/worker/queue 三路 baseline；只在 writeback ratio 高时调整写回路径。
-6. 验证：用包含写回的端到端指标判断策略是否保留；在线运行时不重切已物化 RecordBatch。动态 batch 只发生在模型服务侧尚未执行的请求队列中。
+1. 前置：用阶段画像定位瓶颈；建立 vLLM + 小 LLM baseline（Qwen2.5-1.5B 级）
+2. 计划层动态 batching policy：根据 token 长度分布、prefix share ratio 选择
+   batching policy 类型和 actor pool 配置（异构 actor × token budget × count）
+3. 运行层自适应提交：每个 Ray actor 独立观测模型服务队列深度，自主决定 flush
+   时机——queue 空时立刻提交，queue 满时积攒
+4. 服务端 continuous batching：vLLM 已提供，不修改；上游策略目标是最大化其效率
+5. 写回：使用 COPY + deferred index 工程最优 baseline
+6. 耦合验证：独立最优 batching policy + 独立最优 submission policy 
+   vs 联合 grid search (policy type, actor config, queue threshold)
 ```
 
-这一定义比“端到端联合优化器”更稳，也比“把各阶段分别调好”更有研究内容：它强调阶段画像之后的策略选择依据来自 workload 特征和模型服务状态，而不是人工逐项调参。
+这一定义比旧版”静态参数选择”更贴近 LLM 推理服务的实际需求：它强调上游 batching 策略可以探索按 token 量而非固定行数的动态组织方式，并利用 Ray actor 架构实现去中心化自适应提交。
 
 ---
 

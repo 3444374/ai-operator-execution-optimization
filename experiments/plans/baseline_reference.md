@@ -1,8 +1,12 @@
 # 实验 Baseline 参考矩阵
 
 整理日期：2026-07-16
+
+> **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
 用途：正式实验设计时，从 CCF-A 文献中提取 baseline 策略，避免使用 strawman 对照
 来源：`opening/literature/ai_operator_literature_inventory.md` v3（57 篇）
+
+> **2026-07-16 方向更新**：vLLM 已定位为部署平台（非竞争对手），其 continuous batching 是 S 级 baseline——课题研究上游调度优化，不修改 vLLM 内部。新增 baseline 候选：Ray 2.49+ PrefixCacheAffinityRouter、Ray Serve batch_size_fn 等。详细背景见 `research/knowledge_hub.md`。
 
 ---
 
@@ -51,7 +55,7 @@
 
 本项目目前使用 `psycopg2 execute_values()` 逐批 UPSERT。这不是最优工程实践（COPY 可快 10-50×）。
 
-**下一步**：**B 系列实验必须先做**——确认 COPY + unlogged table + 延迟建索引 是否为当前最优写回 baseline。如果 COPY 把写回从 1.5s 降到 0.3s，写回占比从 45% 降到 12%，则 RC3 的论证需要收紧——但这本身也是有价值的发现。
+**下一步**：**B 系列实验必须先做**——确认 COPY + unlogged table + 延迟建索引 是否为当前最优写回 baseline。如果 COPY 把写回从 1.5s 降到 0.3s，写回占比从 45% 降到 12%，则研究内容三的论证需要收紧——但这本身也是有价值的发现。
 
 ---
 

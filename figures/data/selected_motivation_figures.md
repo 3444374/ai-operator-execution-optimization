@@ -1,16 +1,18 @@
 # 开题动机图表选择说明
 
-本文档用于确定开题报告、飞书文档和开题 PPT 中优先使用哪些图来说明“为什么要做这个课题”。选择原则是：主线图必须能直接支撑课题动机，优先使用真实 GPU-backed 端到端实验；fake/CPU 和组件 benchmark 只作为备用解释，不放在主线里承担最终瓶颈结论。
+本文档用于确定开题报告、飞书文档和开题 PPT 中优先使用哪些图来说明”为什么要做这个课题”。选择原则是：主线图必须能直接支撑课题动机，优先使用真实 GPU-backed 端到端实验；fake/CPU 和组件 benchmark 只作为备用解释，不放在主线里承担最终瓶颈结论。
+
+> **2026-07-16 方向更新**：主场景已从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理）。AI_EMBED 预研图（A 层图 B-E）仍作为预研验证证据保留，但论文主体实验将在 vLLM + AI_COMPLETE 平台上进行。后续需补充 vLLM continuous batching 环境下的动态 batching 和自适应提交实验结果图。以下内容中三类 workload 的平等描述需按新优先级理解：AI_COMPLETE 为主线、AI_EMBED 为预研验证、AI_FILTER 为 simulated extension。
 
 ## 场景和调优变量的依据
 
 三类 workload 不是为了把题目铺大，而是用于覆盖数据库 AI 算子中三种不同的系统压力。
 
-| 场景 | 为什么选 | 依据类型 | 主要放大的系统压力 |
+| 场景 | 定位 | 为什么选 | 主要放大的系统压力 |
 |---|---|---|---|
-| `AI_EMBED` / RAG ingestion | 数据库落地最自然，能和 pgvector、Lance、向量写回形成闭环；项目已有真实 GPU-backed 链路画像 | Snowflake `AI_EMBED`、pgvector、pgai vectorizer worker；本项目 GPU-backed `AI_EMBED` 实验 | 向量输出、batch 调用、writeback、fan-in |
-| `AI_FILTER/AI_CLASSIFY` | 代表 AI predicate，输出小但模型调用多，选择率会影响下游数据量 | Snowflake `AI_FILTER` / `AI_CLASSIFY`；本项目 fake/CPU workload matrix | selectivity、模型调用次数、predicate ordering、cascade |
-| `AI_COMPLETE` / offline LLM | 更接近 inference infra，涉及 token 长度、共享 prefix、队列和失败重试 | Snowflake `AI_COMPLETE`、BigQuery `ML.GENERATE_TEXT`、Ray Data offline batch inference、Ray Serve dynamic batching、vLLM offline inference | token-aware batching、prefix-aware routing、queue wait、backpressure |
+| `AI_COMPLETE` / offline LLM | **主场景** | 最贴近 inference infra，涉及 token 长度分布、共享 prefix、TTFT/TPOT、generation straggler；Snowflake、BigQuery 均已支持 | token-aware batching、prefix-aware routing、queue wait、continuous batching 交互 |
+| `AI_EMBED` / RAG ingestion | **预研验证** | 已完成真实 GPU-backed 链路画像，证明阶段计时方法和实验框架可行 | 向量输出、batch 调用、writeback、fan-in |
+| `AI_FILTER/AI_CLASSIFY` | **Simulated extension** | 代表 AI predicate，输出小但模型调用多，选择率影响下游数据量 | selectivity、模型调用次数、cascade |
 
 需要调的变量也有对应支撑。batch、partition、task/actor 和 object 粒度来自 Ray、Daft、Spark 等分布式执行系统的公开文档；本项目 fake/CPU 三类 workload 预研在 `upstream=32, downstream=32` 时观察到 fine/coalesced e2e 比值约为 `4.01x`、`4.32x`、`4.37x`，说明这些变量对统一执行骨架有明显影响。endpoint routing 和 bounded in-flight 来自 Ray Serve / vLLM 等模型服务机制；backpressure 模拟显示 `queue_limit=8` 在不提高 tokens/s 的情况下把平均 queue wait 从 `4768.50 ms` 降到 `114.41 ms`。writeback 和 fan-in 来自 pgai vectorizer worker、pgvector / Lance 存储形态以及当前 GPU-backed 链路画像；16K 行 `AI_EMBED` 场景中 operator 与 PostgreSQL JSON text writeback 都是大块成本。因此，图表讲解时要明确：这些变量是由外部系统机制和项目实验信号共同筛选出来的，不是凭感觉挑选。
 
