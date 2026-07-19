@@ -2,6 +2,29 @@
 
 | File | Purpose | When to read/use |
 |---|---|---|
+| `figures/data/backup/b07_local_vllm_ray_throughput.png` / `.svg` | Local `AI_COMPLETE` Daft + Ray + vLLM throughput support figure | Learning and backup explanation of throughput across six fixed row-batch settings; not an optimized scheduling result |
+| `figures/data/backup/b08_local_vllm_ray_e2e_time.png` / `.svg` | Local `AI_COMPLETE` Daft + Ray + vLLM end-to-end time support figure | Learning and backup explanation of end-to-end time across six fixed row-batch settings |
+| `figures/data/backup/b09_local_vllm_ray_task_stage_timing.png` / `.svg` | Local `AI_COMPLETE` Ray task stage timing support figure | Learning and backup explanation of source, Daft organize, Ray submit, fan-in, and operator wall timings |
+| `figures/data/backup/b10_local_vllm_request_count_inflight.png` / `.svg` | Local `AI_COMPLETE` request-count and in-flight utilization support figure | Learning and backup explanation of how large fixed row batches reduce request count and can underfill the in-flight window |
+| `figures/data/backup/b11_local_vllm_token_tail_performance.png` / `.svg` | Local `AI_COMPLETE` token-tail performance support figure | Learning and backup explanation of why fixed row batches do not control token-tail cost or service-tail latency |
+| `figures/data/backup/b12_local_vllm_latency_probe_breakdown.png` / `.svg` | Local `AI_COMPLETE` vLLM latency metric probe support figure | Learning and backup explanation of client batch latency versus vLLM server-side latency metrics |
+| `figures/data/backup/b13_local_vllm_token_tail_penalty.png` / `.svg` | Local `AI_COMPLETE` token-tail penalty support figure | Explain the link between token P95 and model-service latency tail |
+| `figures/data/backup/b14_local_vllm_service_tail_gap.png` / `.svg` | Local `AI_COMPLETE` service-tail gap support figure | Explain P50-to-P95 latency widening for large fixed row batches |
+| `figures/data/backup/b15_local_vllm_token_budget_throughput.png` / `.svg` | Local `AI_COMPLETE` token-budget throughput support figure | Compare fixed-row and token-budget throughput under the same local vLLM setup |
+| `figures/data/backup/b16_local_vllm_token_budget_tail_queue.png` / `.svg` | Local `AI_COMPLETE` token-budget token-tail and queue support figure | Show token-budget controls token P95 and queue pressure; motivates K_max follow-up |
+| `figures/data/backup/b17_local_vllm_arrival_kmax_sweep.png` / `.svg` | Local `AI_COMPLETE` preliminary arrival-aware K_max support figure | Single-shape scheduling sweep with `token_budget=6144`; use as preliminary evidence only |
+| `figures/data/backup/b18_local_vllm_batch_kmax_e2e.png` / `.svg` | Local `AI_COMPLETE` batch policy x K_max end-to-end support figure | Show how fixed-row and token-budget shapes interact with K_max in end-to-end time |
+| `figures/data/backup/b19_local_vllm_batch_kmax_service_pressure.png` / `.svg` | Local `AI_COMPLETE` batch policy x K_max service-pressure support figure | Show vLLM queue time and batch service P95 rising when inflight submissions are too large |
+| `figures/data/backup/b20_local_vllm_batch_kmax_request_granularity.png` / `.svg` | Local `AI_COMPLETE` batch policy request-granularity support figure | Explain why K_max cannot help once upstream batch shape creates too few Ray submissions |
+| `figures/data/backup/b21_local_vllm_kmax_interference_small_job.png` / `.svg` | Local `AI_COMPLETE` shared-vLLM K_max interference support figure | Show unbounded background inflight harms foreground small-job latency on a shared vLLM endpoint |
+| `figures/data/backup/b22_local_vllm_length_prefix_tail.png` / `.svg` | Local `AI_COMPLETE` length/prefix data-organization tail figure | Compare token tail and service tail for fixed, token-budget, length-align, and prefix-aware policies |
+| `figures/data/backup/b23_local_vllm_length_prefix_signal.png` / `.svg` | Local `AI_COMPLETE` length/prefix organization-signal figure | Show prompt-token spread and prefix-group ratio; does not prove cache benefit |
+| `figures/data/backup/b24_local_vllm_interference_sweep_small_job.png` / `.svg` | Local `AI_COMPLETE` shared-vLLM foreground interference sweep figure | Show foreground E2E/service/queue impact under background K_max 8/16/unbounded/adaptive |
+| `figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.png` / `.svg` | Local `AI_COMPLETE` shared-vLLM bulk tradeoff sweep figure | Show bulk throughput plateau and service/queue pressure under larger background inflight |
+| `figures/scripts/generate_local_vllm_ray_baseline_charts.py` | Local vLLM Ray baseline chart generator | Regenerate `b07`-`b25` from the ShareGPT/BurstGPT baseline CSVs |
+| `figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md` | Local vLLM Ray baseline chart audit | Check data source, figure role, chart choice, visual QA, and conclusion boundary |
+| `learning/local_vllm_ray_baseline_walkthrough.md` | Local vLLM + Ray baseline learning walkthrough | Read when explaining what the fixed row-batch baseline does and does not prove |
+| `PROJECT_LOG_20260719_LOCAL_VLLM.md` | 2026-07-19 local vLLM experiment update log | Records the length/prefix ablation, shared-vLLM sweep, queue-adaptive first test, new CSVs, figures, and conclusion boundaries |
 | `figures/architecture/runtime_strategy_rule_table.png` / `.svg` | 信号触发候选策略规则表 | 与闭环图配套使用，说明观测信号、候选动作和保护约束；不作为已验证结论 |
 | `figures/architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时信号驱动的上游执行闭环图 | 当前首选策略机制图；用一个 AI_COMPLETE SQL 例子说明数据组织（token-budget/length-align/prefix-aware）、提交控制（queue-adaptive flush/K_max/routing）、vLLM 部署平台（观测不修改）的分工；不重切数据库侧已物化批次 |
 | `figures/scripts/generate_runtime_strategy_control_loop.py` | 运行时策略闭环图生成脚本 | 重新生成策略机制图 PNG/SVG，并执行边框、箭头和禁用术语自检 |
@@ -82,6 +105,20 @@
 | `feasibility/results/README.md` | 可行性结果索引 | 查看组件验证、连接验证、smoke 结果 |
 | `experiments/AGENTS.md` | 正式研究实验规则 | 设计优化实验、消融实验前读 |
 | `experiments/README.md` | 正式研究实验入口 | 了解三项研究内容的实验规划 |
+| `experiments/results/local_vllm_qwen15b_baseline/README.md` | 本地 vLLM Qwen2.5-1.5B `AI_COMPLETE` 静态行 batch baseline | 做 token-aware batching 和调度消融前，作为固定本地对照 |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_ray_static_batch_sweep_rerun_20260718.csv` | Local `AI_COMPLETE` ShareGPT/BurstGPT fixed row-batch rerun through Daft + Ray + vLLM | Baseline CSV for later data-organization and scheduling comparisons |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_ray_task_batch8_latency_metrics_20260718.csv` | Local `AI_COMPLETE` Daft + Ray + vLLM latency metric probe | Verifies batch token/latency and vLLM server-side metric collection |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_token_budget_vs_fixed_timeout300_20260719.csv` | Local `AI_COMPLETE` token-budget versus fixed-row matrix | First policy comparison for data-organization experiments; 512 rows, local vLLM, no writeback |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_arrival_kmax_token6144_20260719.csv` | Local `AI_COMPLETE` preliminary arrival-aware K_max sweep | Single request-shape scheduling sweep; superseded by the batch policy x K_max matrix for static baseline selection |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_batch_policy_kmax_matrix_20260719.csv` | Local `AI_COMPLETE` batch policy x K_max matrix | Coupled fixed-row/token-budget and admission-control experiment; main static scheduling baseline before queue-adaptive flush |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_small_20260719.csv` | Local `AI_COMPLETE` foreground small-job K_max interference result | Small-job solo/bounded-bulk/unbounded-bulk CSV for shared-vLLM admission-control motivation |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_bulk_20260719.csv` | Local `AI_COMPLETE` background bulk-job K_max interference result | Bulk-job bounded/unbounded CSV paired with the foreground interference result |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_length_prefix_ablation_20260719.csv` | Local `AI_COMPLETE` length-align and prefix-aware ablation | First data-organization ablation with token-tail, service-tail, prompt-token spread, and prefix-ratio metrics |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_sweep_small_20260719.csv` | Local `AI_COMPLETE` foreground small-job shared-vLLM sweep | Formal K_max/adaptive interference sweep for foreground latency and vLLM queue pressure |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_sweep_bulk_20260719.csv` | Local `AI_COMPLETE` background bulk-job shared-vLLM sweep | Paired bulk-job CSV for background throughput and service-pressure tradeoff |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_adaptive_tuned_small_20260719.csv` | Local `AI_COMPLETE` tuned adaptive foreground interference supplement | Shows adaptive downshift can trigger, but foreground latency remains worse than static K_max=8 |
+| `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_adaptive_tuned_bulk_20260719.csv` | Local `AI_COMPLETE` tuned adaptive bulk interference supplement | Paired bulk CSV recording adaptive downshifts, upshifts, and effective limit mean |
+| `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |
 | `learning/AGENTS.md` | 学习讲解规则 | 写学习材料前读 |
@@ -94,8 +131,24 @@
 | `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级、本地 PDF 子集入口和引用边界 |
 | `opening/literature/gpu_scheduler_data_placement_supplement_20260715.md` | GPU 调度与数据放置补充调研 | 查看策略控制器设计的前沿系统依据、可借鉴思想和后续精读清单 |
 | `opening/literature/reference/README.md` | 本地已下载 PDF 子集索引 | 查看当前部分参考文献 PDF、页数、初步识别和用途 |
+| `data/README.md` | 本地 workload 数据说明；raw payloads 被 git ignore | 查看 ShareGPT/BurstGPT 下载位置、用途和边界 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |
-| `code/scripts/README.md` | 脚本详细说明 | 运行 PostgreSQL 画像、pgai SQL profile、本地 embedding server |
+| `code/src/sources.py` | PostgreSQL data source 后端：psycopg/Arrow baseline、Daft SQL entry、`doc_id`/`arrival_time` source order | 切换或修改数据入口与读取顺序时读 |
+| `code/src/organizers.py` | ArrowOrganizer / DaftOrganizer 数据组织后端 | 接入或比较 Arrow 与 Daft 文本数据组织路径时读 |
+| `code/src/model_backends.py` | fake debug backend、vLLM-compatible HTTP embedding/completion backend、Ollama native completion backend | 修改模型服务接入、vLLM/Ollama endpoint 或 AI_COMPLETE backend 前读 |
+| `code/src/sinks.py` | `none/json_text/pgvector` embedding 写回与 completion JSON-text 写回 | 修改写回路径或后续接 Lance sink 前读 |
+| `code/src/metrics.py` | Stage timer、GPU snapshot 和 CSV metric helper | 修改 profiling 指标、CSV 输出或计时边界前读 |
+| `code/src/workloads.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
+| `code/scripts/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本 | 构造最终可比 `AI_COMPLETE` baseline workload 前运行 |
+| `code/tests/test_sources.py` | data source 查询构造和 source factory 单元测试 | 修改数据入口行为后运行 |
+| `code/tests/test_organizers.py` | 数据组织后端最小单元测试 | 修改 organizer 接口或 batch 行为后运行 |
+| `code/tests/test_model_backends.py` | 模型后端最小单元测试 | 修改 fake 或 compatible HTTP embedding backend 后运行 |
+| `code/tests/test_sinks.py` | 写回后端最小单元测试 | 修改 sink/writeback 行为后运行 |
+| `code/tests/test_workloads.py` | 内置 workload seed 单元测试 | 修改 smoke/dev workload 后运行 |
+| `code/tests/test_import_ai_complete_workload.py` | ShareGPT/BurstGPT importer 单元测试 | 修改 importer 或 trace 过滤逻辑后运行 |
+| `code/scripts/daft_text_organizer_smoke.py` | Daft/Arrow organizer smoke 入口 | 验证文本阶段 Daft 最小接入 |
+| `code/scripts/README.md` | 脚本详细说明 | 运行 PostgreSQL 画像、pgai SQL profile、本地 embedding server、Daft text organizer smoke |
+| `code_doc/superpowers/plans/` | Superpowers implementation plans for code work | 按 superpowers 工作流执行多步代码任务前读 |
 | `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |

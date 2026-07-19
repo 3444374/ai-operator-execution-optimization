@@ -25,6 +25,13 @@ tmp/
 *.tmp
 *.swp
 
+# Local dataset payloads. Keep dataset metadata/readmes tracked, not raw dumps.
+data/raw/**
+!data/
+!data/README.md
+!data/raw/
+!data/raw/README.md
+
 # Claude Code local config (not for repo)
 .claude/
 .agents/

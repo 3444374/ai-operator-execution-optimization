@@ -1,5 +1,17 @@
 # Learning Notes
 
+## 2026-07-18 local vLLM Ray baseline walkthrough
+
+New learning note:
+
+```text
+learning/local_vllm_ray_baseline_walkthrough.md
+```
+
+Read this when explaining the local `AI_COMPLETE`
+`PostgreSQL -> Daft -> Ray -> vLLM` fixed row-batch baseline charts and their
+boundaries.
+
 本目录用于把项目实验、代码和术语讲成学习材料。
 
 正式 CSV、严谨结果报告和论文式结论仍放在：

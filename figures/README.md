@@ -210,3 +210,87 @@ figures/archive/architecture/20260715_strategy_iterations/_font_test.png
 
 Use `runtime_strategy_control_loop.*` and `runtime_strategy_rule_table.*`
 instead for the current strategy-design explanation.
+
+## 2026-07-18 local vLLM Ray baseline support figures
+
+Latest learning-support figures generated from the local ShareGPT/BurstGPT
+`AI_COMPLETE` baseline:
+
+```text
+figures/data/backup/b07_local_vllm_ray_throughput.png
+figures/data/backup/b07_local_vllm_ray_throughput.svg
+figures/data/backup/b08_local_vllm_ray_e2e_time.png
+figures/data/backup/b08_local_vllm_ray_e2e_time.svg
+figures/data/backup/b09_local_vllm_ray_task_stage_timing.png
+figures/data/backup/b09_local_vllm_ray_task_stage_timing.svg
+figures/data/backup/b10_local_vllm_request_count_inflight.png
+figures/data/backup/b10_local_vllm_request_count_inflight.svg
+figures/data/backup/b11_local_vllm_token_tail_performance.png
+figures/data/backup/b11_local_vllm_token_tail_performance.svg
+figures/data/backup/b12_local_vllm_latency_probe_breakdown.png
+figures/data/backup/b12_local_vllm_latency_probe_breakdown.svg
+figures/data/backup/b13_local_vllm_token_tail_penalty.png
+figures/data/backup/b13_local_vllm_token_tail_penalty.svg
+figures/data/backup/b14_local_vllm_service_tail_gap.png
+figures/data/backup/b14_local_vllm_service_tail_gap.svg
+figures/data/backup/b15_local_vllm_token_budget_throughput.png
+figures/data/backup/b15_local_vllm_token_budget_throughput.svg
+figures/data/backup/b16_local_vllm_token_budget_tail_queue.png
+figures/data/backup/b16_local_vllm_token_budget_tail_queue.svg
+figures/data/backup/b17_local_vllm_arrival_kmax_sweep.png
+figures/data/backup/b17_local_vllm_arrival_kmax_sweep.svg
+figures/data/backup/b18_local_vllm_batch_kmax_e2e.png
+figures/data/backup/b18_local_vllm_batch_kmax_e2e.svg
+figures/data/backup/b19_local_vllm_batch_kmax_service_pressure.png
+figures/data/backup/b19_local_vllm_batch_kmax_service_pressure.svg
+figures/data/backup/b20_local_vllm_batch_kmax_request_granularity.png
+figures/data/backup/b20_local_vllm_batch_kmax_request_granularity.svg
+figures/data/backup/b21_local_vllm_kmax_interference_small_job.png
+figures/data/backup/b21_local_vllm_kmax_interference_small_job.svg
+figures/data/backup/b22_local_vllm_length_prefix_tail.png
+figures/data/backup/b22_local_vllm_length_prefix_tail.svg
+figures/data/backup/b23_local_vllm_length_prefix_signal.png
+figures/data/backup/b23_local_vllm_length_prefix_signal.svg
+figures/data/backup/b24_local_vllm_interference_sweep_small_job.png
+figures/data/backup/b24_local_vllm_interference_sweep_small_job.svg
+figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.png
+figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.svg
+figures/scripts/generate_local_vllm_ray_baseline_charts.py
+```
+
+Audit:
+
+```text
+figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md
+```
+
+These are backup and learning figures for the local
+`PostgreSQL -> Daft -> Ray -> vLLM` fixed row-batch baseline. Each figure has a
+single purpose: throughput, end-to-end time, Ray task stage timing, request
+in-flight utilization, token-tail performance, latency metric breakdown,
+token-tail penalty, service-tail gap, token-budget throughput comparison,
+token-budget tail/queue comparison, arrival-aware `K_max` sweep, or coupled
+batch-policy x `K_max` matrix analysis.
+They show batch-size overheads and why fixed row count is an imprecise proxy
+for model request cost. `b15` and `b16` split the first direct token-budget
+policy comparison into a throughput view and a token-tail/queue view. They are
+still local single-endpoint, no-writeback results; they motivate the next
+`K_max` and queue-adaptive experiments rather than proving the full optimized
+method. `b17` is a preliminary single-request-shape scheduling support figure.
+`b18`-`b20` are the corrected coupled scheduling figures: they vary fixed-row
+and token-budget batch shapes together with `K_max`, showing end-to-end
+plateaus, vLLM queue/service-tail pressure, and the request-granularity limit
+that makes very large fixed batches leave little room for admission control.
+`b21` is the first shared-service interference figure: a foreground small job
+shares the same vLLM endpoint with a background bulk job, showing that
+unbounded background inflight hurts foreground E2E, service P95, and queue
+stability compared with bounded `K_max=8`.
+`b22` and `b23` record the first length-align and prefix-aware data
+organization ablation. `b22` separates token tail from service tail; `b23`
+shows the organization signals. The current prefix-aware result only shows a
+small prefix-group-ratio change, not a proven KV-cache or APC benefit.
+`b24` and `b25` extend the shared-vLLM interference experiment into a formal
+sweep over background `K_max={8,16,unbounded}` plus a tuned queue-adaptive
+implementation test. In this run, `K_max=8` protects the foreground job better
+than larger background inflight. Tuned adaptive does downshift, but it is not
+yet better than static `K_max=8`.

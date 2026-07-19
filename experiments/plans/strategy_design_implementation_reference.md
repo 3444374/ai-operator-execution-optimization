@@ -28,7 +28,7 @@
 关键边界：
 
 - vLLM 作为部署平台和强 baseline，不修改其内部 continuous batching 机制。GPU 侧仅观测 Prometheus metrics（`num_requests_running`、`num_requests_waiting`、`gpu_cache_usage_perc`）作为反馈信号。
-- 数据组织层的引擎选择（当前 Arrow RecordBatch，后续 Daft DataFrame）不影响策略层贡献。引擎切换通过 DataOrganizer 抽象接口隔离。
+- 数据组织层的当前实现仍是 Arrow RecordBatch；按 2026-07-17 总纲，近期需要在文本阶段接入 Daft DataFrame，替代裸 Arrow RecordBatch 构造。引擎切换通过 DataOrganizer 抽象接口隔离，避免把策略层贡献绑定到具体引擎。
 - 两项策略分别独立搜索最优配置后拼接，再与联合 grid search 对比，判定耦合程度。
 - 不声称发明 vLLM continuous batching、Ray scheduler 或 Daft 执行引擎；本文贡献在策略选择和协调验证。
 
@@ -175,12 +175,12 @@ SQL AI operator
 
 引擎抽象设计：
 
-当前使用 Arrow RecordBatch 作为数据载体，但通过 `DataOrganizer` 抽象接口隔离引擎细节，后续切换至 Daft DataFrame 后端时只替换内部实现：
+当前代码仍使用 Arrow RecordBatch 作为数据载体，但通过 `DataOrganizer` 抽象接口隔离引擎细节；下一步应实现 Daft DataFrame 文本后端，替代裸 Arrow RecordBatch 构造，同时保留 ArrowOrganizer 作为对照/回退：
 
 ```text
 DataOrganizer.organize(rows, strategy)
   → 当前实现：ArrowOrganizer（RecordBatch 构造 + Ray actor 分发）
-  → 后续实现：DaftOrganizer（Daft DataFrame → morsel 流式 → @daft.cls GPU UDF）
+  → 近期目标：DaftOrganizer（Daft DataFrame → into_batches / repartition → Ray actor / @daft.cls GPU UDF）
 ```
 
 策略层代码（token-budget 决策、queue-adaptive flush、routing）只依赖 `BatchRequest` 抽象，不感知底层引擎。
@@ -373,7 +373,7 @@ guardrail checker
 | P1 | 研究内容二消融：调度与提交控制策略 | Clockwork 确定性调度、Clipper AIMD、Ray actor async loop | queue-adaptive flush vs 固定 K_max sweep | 自适应提交是否优于静态配置？ |
 | P1 | actor pool 分池路由 | Ray resource-aware scheduling、SGLang prefix-aware routing | 异构 actor pool：按 token 长度/prefix 分组 | 分池路由是否优于 uniform pool？ |
 | P2 | 耦合验证：独立拼接 vs 联合 grid search | — | RC1* + RC2* 拼接 vs joint grid search | 两项策略是否需要联合调优？ |
-| P3 | Daft 引擎切换（按需触发） | Daft Flotilla、@daft.cls GPU UDF | DataOrganizer 从 Arrow 实现切换到 Daft 实现 | 引擎切换后策略层结论是否一致？多模态扩展是否可行？ |
+| P0/P1 | Daft 文本后端接入 | Daft DataFrame、into_batches、repartition、@daft.cls GPU UDF | DataOrganizer 从 ArrowOrganizer 扩展为 DaftOrganizer；Arrow 后端保留为对照/回退 | 接入 Daft 后策略层结论是否一致？Daft 引擎级参数如何影响数据组织与提交控制？ |
 | P3 | token-aware / prefix-aware routing | SGLang RadixAttention、Parrot Semantic Variable | 仅在 AI_COMPLETE 跑通后加入 | 长短请求混合时是否改善 P99？ |
 
 当前最小闭环不需要一次实现全部任务。建议先做：
@@ -383,7 +383,7 @@ P0 vLLM baseline 建立 + 写回工程 baseline
   → P1 研究内容一消融（数据组织策略：token-budget / length-align / prefix-aware）
   → P1 研究内容二消融（调度与提交控制：queue-adaptive flush / K_max / routing）
   → P2 耦合验证（独立拼接 vs 联合 grid search）
-  → P3 Daft 引擎切换（按需触发）
+  → P0/P1 Daft 文本后端接入（与 vLLM baseline 和文本消融同步推进）
 ```
 
 ## 5. 后续实验设计建议
@@ -447,7 +447,7 @@ PostgreSQL / table scan
 2. P1：研究内容一消融（数据组织策略：token-budget / length-align / prefix-aware）。
 3. P1：研究内容二消融（调度与提交控制：queue-adaptive flush / K_max / actor pool 分池）。
 4. P2：耦合验证（RC1* + RC2* 拼接 vs 联合 grid search）。
-5. P3：Daft 引擎切换（按需触发，见 knowledge_hub.md §10.5.1 切换条件）。
+5. P0/P1：Daft 文本后端接入（见 knowledge_hub.md §10.5.1；当前 Arrow 后端仅表示实现状态，不代表路线仍延后）。
 
 ## 7. 不能写成的内容
 
@@ -457,5 +457,5 @@ PostgreSQL / table scan
 - 不能写成动态 batch 会重切数据库侧已物化 `RecordBatch`。
 - 不能只用文献证明本项目瓶颈；必须用本地 GPU-backed E2E profile 和消融实验验证。
 - 不能把 `AI_COMPLETE` 的 token/KV 策略直接套到 `AI_EMBED`，两者机制不同。
-- 不能声称"数据组织层已实现 Daft 后端"——当前仅实现 Arrow 后端，Daft 后端标记为后续工作。
+- 不能声称"数据组织层已实现 Daft 后端"——当前仅实现 Arrow 后端；Daft 后端是近期必须补齐的文本阶段实现目标，并应保留 Arrow 后端作为对照/回退。
 - 不能声称"本文方法在具身智能/多模态场景中有效"——只有在真实多模态 workload 上验证后才能说。

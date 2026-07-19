@@ -1,6 +1,9 @@
 numpy
-pyarrow
+pyarrow>=16,<25
 ray
 psycopg[binary]>=3.2
+daft
+sqlglot
+connectorx
 torch
 transformers

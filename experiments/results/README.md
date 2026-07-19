@@ -1,5 +1,11 @@
 # Research Experiment Results
 
+## Local Baselines
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `local_vllm_qwen15b_baseline/` | Local `AI_COMPLETE` baseline for `PostgreSQL -> Daft -> Ray -> vLLM Qwen2.5-1.5B`, including synthetic smoke, ShareGPT/BurstGPT fixed row-batch sweep CSVs, and a latency metric probe. | Local PG rehearsal, fixed row-batch baseline only; not a token-aware scheduling result and not a PostgreSQL 18.3 internal-platform result. |
+
 本目录保存正式研究实验结果和小范围优化测试记录。
 
 ## 当前状态

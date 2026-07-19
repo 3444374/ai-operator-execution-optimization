@@ -1,5 +1,280 @@
 # 项目日志
 
+## 2026-07-19 Shared-vLLM K_max interference experiment
+
+- Added `code/scripts/run_kmax_interference_experiment.py`, a wrapper around
+  `postgres_ai_operator_profile.py` that runs a foreground small job while a
+  background bulk job shares the same local vLLM endpoint.
+- Ran the first two-job `AI_COMPLETE` interference experiment:
+  `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_small_20260719.csv`
+  and
+  `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_bulk_20260719.csv`.
+  Foreground: 128 rows, fixed16, `K_max=8`, `completion_max_tokens=64`.
+  Background: 1024 rows observed in CSV, fixed16,
+  `completion_max_tokens=64`, comparing `K_max=8` versus unbounded
+  (`max_inflight=100000`). Both jobs share
+  `http://localhost:8000/v1/completions`.
+- Result: foreground small-job E2E averaged 4.923s solo, 6.535s during bounded
+  bulk, and 11.384s during unbounded bulk. Foreground service P95 rose from
+  2.580s under bounded bulk to 4.386s under unbounded bulk; vLLM queue mean
+  rose from 0.001s to 0.445s.
+- Interpretation boundary: this supports the K_max admission-control motivation
+  under a shared vLLM service. It does not imply K_max is necessary when every
+  job has an exclusive vLLM endpoint, and it is not yet a full fairness/SLO
+  sweep.
+- Added `figures/data/backup/b21_local_vllm_kmax_interference_small_job.*` and
+  updated the local baseline README, code script README, figure README, audit,
+  and `PROJECT_INDEX.md`.
+
+## 2026-07-19 Batch policy x K_max AI_COMPLETE scheduling matrix
+
+- Adjusted the scheduling baseline design after reviewing the role of `K_max`:
+  `K_max` is admission control over already-formed Ray submissions, so it must
+  be tested jointly with upstream batch shape rather than as a substitute for
+  batch construction.
+- Ran the local ShareGPT/BurstGPT `AI_COMPLETE` matrix:
+  `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_batch_policy_kmax_matrix_20260719.csv`.
+  Matrix: fixed rows `32/64/128`, token budgets `4096/6144/8192`, and
+  `K_max=2/4/8/16/unbounded`; 512 rows, `source_order=arrival_time`,
+  `ray_task`, Daft source/organizer, local vLLM Qwen2.5-1.5B,
+  `completion_max_tokens=16`, no writeback, warmup 1, formal repeats 3.
+  All 120 rows completed with `status=ok`.
+- Result boundary: too-small `K_max` increases Ray-side bounded wait and
+  end-to-end time; larger `K_max` mostly improves or plateaus E2E in this local
+  offline job, while raising vLLM queue/service-tail pressure at high inflight.
+  This matrix does not prove that `K_max` is required for end-to-end
+  improvement.
+- Batch shape remains necessary in the analysis: `fixed128` creates only 4
+  upstream requests, so `K_max>4` has little scheduling space, while token P95
+  remains about 26680. Token-budget settings bound token P95 but create more
+  requests, making admission control observable.
+- Added `figures/data/backup/b18_local_vllm_batch_kmax_e2e.*`,
+  `figures/data/backup/b19_local_vllm_batch_kmax_service_pressure.*`, and
+  `figures/data/backup/b20_local_vllm_batch_kmax_request_granularity.*`.
+  Updated the local baseline README, figure README, audit note, and
+  `PROJECT_INDEX.md`. The earlier
+  `sharegpt_burstgpt_arrival_kmax_token6144_20260719.csv` / `b17` run is now
+  documented as a preliminary single-shape K_max sweep.
+- Started and then stopped a heavier offline stress sweep after determining it
+  would still not establish the right motivation for `K_max`. The next
+  scheduling experiment should instead use a real admission-control objective:
+  multi-job or burst arrival workload, shared vLLM endpoint, SLO tail latency,
+  timeout rate, queue-length peak, and fairness.
+
+## 2026-07-19 Token-budget vs fixed-row AI_COMPLETE baseline
+
+- Added upstream `--batching-policy fixed_rows|token_budget` and
+  `--token-budget` support to `code/scripts/postgres_ai_operator_profile.py`
+  through `code/src/organizers.py`. Token-budget batching greedily groups rows
+  by estimated `prompt_tokens + completion_max_tokens` before Ray submission;
+  it does not modify Ray or vLLM internals.
+- Added CSV fields `batching_policy`, `token_budget`, and
+  `model_request_timeout_s`, plus organizer unit tests for token-budget batch
+  construction.
+- Ran the local ShareGPT/BurstGPT `AI_COMPLETE` policy matrix:
+  `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_token_budget_vs_fixed_timeout300_20260719.csv`.
+  Matrix: fixed rows `16/32/64/128` versus token budgets `4096/6144/8192`,
+  512 rows, `ray_task`, Daft source/organizer, local vLLM Qwen2.5-1.5B,
+  `max_inflight=8`, no writeback, warmup 1, formal repeats 3, request timeout
+  300s.
+- Result boundary: token-budget controls request token tail and queue pressure
+  (`4096/6144/8192` token P95 near budget, versus fixed 64/128 at 16377/26677),
+  but throughput is a tradeoff. `4096` is most queue-stable but slower;
+  `6144/8192` approach fixed 32/64 throughput while keeping token P95 much
+  lower than fixed 64/128. This supports dynamic batching motivation, not the
+  full method claim.
+- Added `figures/data/backup/b15_local_vllm_token_budget_throughput.*` and
+  `figures/data/backup/b16_local_vllm_token_budget_tail_queue.*`, then updated
+  the local baseline README, figure README, audit note, and script README.
+- Recorded the remaining local baseline follow-up list in
+  `experiments/results/local_vllm_qwen15b_baseline/README.md`: arrival-aware
+  `K_max` sweep next, queue-adaptive flush after that, length-align and
+  prefix-aware ablations later, and COPY + deferred-index writeback deferred.
+
+## 2026-07-19 PostgreSQL source-order mode for AI_COMPLETE profiles
+
+- Added `--source-order doc_id|arrival_time` to
+  `code/scripts/postgres_ai_operator_profile.py` and propagated the value into
+  CSV rows.
+- Updated `code/src/sources.py` so both `PostgresArrowSource` and
+  `DaftPostgresSource` share the same source-order semantics:
+  `doc_id` for offline throughput/data-organization scans, and
+  `arrival_time_s NULLS LAST, doc_id` for arrival-aware service scheduling
+  experiments.
+- Updated `code/tests/test_sources.py`, `code/scripts/README.md`,
+  `experiments/results/local_vllm_qwen15b_baseline/README.md`,
+  `figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md`,
+  `learning/local_vllm_ray_baseline_walkthrough.md`, and `PROJECT_INDEX.md`.
+- Boundary: existing 2026-07-18/2026-07-19 local baseline CSVs should be read
+  as `doc_id` offline-throughput runs. Future K_max, queue-adaptive flush, and
+  backpressure experiments should use `--source-order arrival_time` when the
+  claim depends on request arrival rhythm.
+
+## 2026-07-19 Local vLLM fixed-row baseline token-tail revision
+
+- Added the 2026-07-19 Ray task token-tail sweep CSV:
+  `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_ray_task_batch128_token_sweep_20260719.csv`.
+- Revised the baseline interpretation from a plain row-batch sweep to a
+  fixed-row proxy limitation test: larger row batches reduce request count, but
+  token P95 and service P95 grow sharply and local throughput plateaus around
+  16-32 rows and remains flat through the 64/128 stress points.
+- Updated `figures/scripts/generate_local_vllm_ray_baseline_charts.py` to add
+  `b11_local_vllm_token_tail_performance.*` and
+  `b13_local_vllm_token_tail_penalty.*` as the main token-tail motivation
+  figures, then added `b14_local_vllm_service_tail_gap.*` to isolate the
+  service P50-to-P95 tail gap.
+- Revised `b10` into `b10_local_vllm_request_count_inflight.*`, using two
+  aligned panels for model-service call count and in-flight utilization instead
+  of mixing both quantities on one axis.
+- Updated `experiments/results/local_vllm_qwen15b_baseline/README.md`,
+  `figures/README.md`, and
+  `figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md` with the
+  revised baseline question, command, result table, boundaries, and figure
+  roles.
+
+## 2026-07-18 Local vLLM Ray baseline figures and learning note
+
+- Added `figures/scripts/generate_local_vllm_ray_baseline_charts.py` to
+  regenerate backup figures from the ShareGPT/BurstGPT local
+  `AI_COMPLETE` baseline CSVs.
+- Generated separate single-purpose figures instead of a dashboard:
+  `b07_local_vllm_ray_throughput.*`, `b08_local_vllm_ray_e2e_time.*`,
+  `b09_local_vllm_ray_task_stage_timing.*`,
+  `b10_local_vllm_request_count_inflight.*`,
+  `b11_local_vllm_token_tail_performance.*`, and
+  `b12_local_vllm_latency_probe_breakdown.*`.
+- Added `figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md` and
+  `learning/local_vllm_ray_baseline_walkthrough.md`.
+- Boundary: these are local PG18.4 fixed row-batch baseline and metric
+  observability support figures. They are not token-aware batching,
+  queue-adaptive scheduling, writeback-inclusive, or PostgreSQL 18.3 internal
+  platform results.
+
+## 2026-07-18 AI_COMPLETE latency and vLLM metric probe
+
+- Added batch-level result statistics to `code/src/metrics.py` and
+  `code/scripts/postgres_ai_operator_profile.py`: batch row min/max/mean,
+  batch token min/max/mean, and batch service latency P50/P95/P99.
+- Added optional `--model-metrics-url` Prometheus scraping for vLLM run-level
+  delta metrics: prompt/generation token deltas, request success delta, mean
+  vLLM e2e/queue/inference/prefill/decode latency, and final running/waiting
+  request gauges.
+- Verified with
+  `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_ray_task_batch8_latency_metrics_20260718.csv`:
+  4 rows, 3 formal rows, all `status=ok`, all `vllm_metrics_status=ok`.
+- Boundary: this validates metric collection on a small local Daft + Ray +
+  vLLM probe. It is not a full optimized scheduling result.
+
+## 2026-07-18 ShareGPT/BurstGPT tokenizer-filtered Ray rerun
+
+- Updated `code/scripts/import_ai_complete_workload.py` so the imported
+  `sharegpt_burstgpt` workload can use the local Qwen2.5-1.5B-Instruct
+  tokenizer for `prompt_tokens` and filter rows by
+  `prompt_tokens + completion_max_tokens <= max_model_len`.
+- Re-imported 1024 `sharegpt_burstgpt` rows into the local PostgreSQL
+  rehearsal database with `max_model_len=2048` and `completion_max_tokens=16`.
+  Current prompt-token range is 1..1851.
+- Reran the local `AI_COMPLETE` baseline through
+  `PostgreSQL -> DaftPostgresSource -> DaftOrganizer -> Ray -> vLLM` for
+  `ray_task` and `ray_actor`, batch sizes 1/2/4/8/16/32. Results are recorded
+  in
+  `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_ray_static_batch_sweep_rerun_20260718.csv`.
+
+## 2026-07-18 Local vLLM Qwen static batch baseline
+
+- Established the first local `AI_COMPLETE` baseline for `PostgreSQL -> DaftPostgresSource -> DaftOrganizer -> vLLM-compatible completion backend -> no writeback`.
+- Used local `models/Qwen2.5-1.5B-Instruct` served by `vllm/vllm-openai:v0.25.1-cu129-ubuntu2404` as `qwen2.5-1.5b`.
+- Ran fixed row-batch sweep with `ray_batch_rows` in `1,2,4,8,16`, `total_rows=32`, `completion_max_tokens=8`, `executor=python`, `warmup_runs=1`, `repeats=3`.
+- Result CSV and report: `experiments/results/local_vllm_qwen15b_baseline/static_batch_sweep.csv` and `experiments/results/local_vllm_qwen15b_baseline/README.md`.
+- All 20 rows returned `status=ok`; formal rows only: mean throughput improved from 10.328 rows/s at batch size 1 to 91.976 rows/s at batch size 16.
+- Boundary: this is a local fixed row-batch baseline, not a token-aware scheduling result, not an optimal batch-size claim, and not a PostgreSQL 18.3 internal-platform result.
+
+## 2026-07-18 ShareGPT and BurstGPT raw workload downloads
+
+- Downloaded ShareGPT Vicuna unfiltered prompt data to `data/raw/sharegpt_vicuna/ShareGPT_V3_unfiltered_cleaned_split.json`; local check found 94,145 conversation records.
+- Downloaded BurstGPT trace data to `data/raw/burstgpt/BurstGPT_1.csv`; local check confirmed columns `Timestamp`, `Model`, `Request tokens`, `Response tokens`, `Total tokens`, and `Log Type`.
+- Added `data/README.md` to document raw data paths, intended use, and boundary.
+- Updated `.gitignore` so `data/raw/**` payloads are not tracked by git.
+- Boundary: this only establishes raw workload availability. Comparable baseline and optimized experiments should be generated from a normalized ShareGPT/BurstGPT workload table, not from the earlier synthetic seed rows.
+
+## 2026-07-18 ShareGPT/BurstGPT workload import path
+
+- Added `code/scripts/import_ai_complete_workload.py` to normalize ShareGPT prompts with BurstGPT timestamp/token metadata into the PostgreSQL `documents` table.
+- Extended `documents` with workload metadata columns: `workload_name`, `prompt_tokens`, `target_output_tokens`, `arrival_time_s`, `session_id`, and `prefix_key`.
+- Added `--source-workload-name` to `code/scripts/postgres_ai_operator_profile.py`, so different workloads can coexist in `documents` and profiling can select one explicitly.
+- Imported local `sharegpt_burstgpt` workload rows into PostgreSQL with `start_doc_id=1000000`, `rows=1024`, `prompt_tokens=8..1797`, `target_output_tokens=2..2048`, and categories covering short/medium/long x ChatGPT/GPT-4.
+- Verified a small `DaftPostgresSource -> DaftOrganizer -> Ray task -> vLLM` smoke under `tmp/sharegpt_burstgpt_daft_ray_vllm_smoke.csv` with `status=ok`, `total_rows=8`, `source_workload_name=sharegpt_burstgpt`.
+- Boundary: this validates the final workload import/read path. It is not yet the full baseline sweep or an optimized scheduling result.
+
+## 2026-07-18 vLLM local Qwen AI_COMPLETE smoke
+
+- Started `vllm/vllm-openai:v0.25.1-cu129-ubuntu2404` with local Hugging Face model files from `models/Qwen2.5-1.5B-Instruct`, avoiding runtime Hub downloads.
+- Required local Windows/WSL Docker settings for this machine: `VLLM_WSL2_ENABLE_PIN_MEMORY=1`, `VLLM_USE_V2_MODEL_RUNNER=0`, and `--enforce-eager`; the default vLLM V1/V2 runner path previously failed with `RuntimeError: UVA is not available`.
+- Verified OpenAI-compatible `/v1/models` returned `qwen2.5-1.5b`; verified `/v1/completions` with a minimal prompt.
+- Verified project E2E smoke under `tmp/vllm_local_qwen15b_ai_complete_smoke.csv`: `operator=ai_complete`, `data_source=daft_postgres`, `organizer=daft`, `model_backend=compatible_http`, `model_name=qwen2.5-1.5b`, `writeback_mode=json_text`, `total_rows=2`, `written_rows=2`, `status=ok`.
+- Ran the layer-2 structural matrix under `tmp/vllm_local_qwen15b_layer2_matrix.csv`: `data_source` (`arrow_postgres`, `daft_postgres`) x `organizer` (`arrow`, `daft`) x `executor` (`python`, `ray_task`, `ray_actor`) x `writeback_mode` (`none`, `json_text`). All 24 rows returned `status=ok`; all `json_text` rows wrote `written_rows=2`; all `none` rows wrote `written_rows=0`.
+- Boundary: this establishes the local vLLM + Qwen + Daft + PostgreSQL completion path. It is not yet a formal performance experiment or token-aware/prefix-aware batching result.
+
+## 2026-07-18 Ollama AI_COMPLETE backend
+
+- Added `ollama` as an `AI_COMPLETE` backend in `code/src/model_backends.py`, using Ollama native `/api/generate`.
+- Updated `code/scripts/postgres_ai_operator_profile.py` so `--operator ai_complete --model-backend ollama` defaults to `http://localhost:11434` when no completion endpoint URL is provided.
+- Verified local PG18.4 smoke with Docker Ollama `qwen2.5:1.5b`: `ollama_ai_complete_smoke` completed with `written_rows=2`; `ollama_daft_ai_complete_smoke` completed with `data_source=daft_postgres`, `organizer=daft`, and `written_rows=2`.
+- Ran the layer-3 structural matrix under `tmp/ollama_ai_complete_layer3_matrix.csv`: `data_source` (`arrow_postgres`, `daft_postgres`) x `organizer` (`arrow`, `daft`) x `executor` (`python`, `ray_task`, `ray_actor`) x `writeback_mode` (`none`, `json_text`). All 24 rows returned `status=ok`; all `json_text` rows wrote `written_rows=4`.
+- This is a local Ollama completion smoke. It does not replace the future vLLM-compatible `/v1/completions` path and is not a token-aware/prefix-aware batching result.
+
+## 2026-07-18 AI_COMPLETE runtime skeleton
+
+- Added `--operator ai_embed|ai_complete` to `code/scripts/postgres_ai_operator_profile.py`; default remains `ai_embed`.
+- Extended `code/src/model_backends.py` with fake and vLLM-compatible `/v1/completions` completion backends.
+- Extended `code/src/sinks.py` with `write_completions` and added `document_completions` to the local schema.
+- `AI_COMPLETE` supports `none/json_text` writeback. `pgvector` remains embedding-only and is rejected for `AI_COMPLETE`.
+- Added Ray worker `PYTHONPATH` runtime env so Ray task/actor workers can import `code/src` modules after the runtime split.
+- Verified PG18.4 local smoke under `tmp/postgres_ai_complete_fake_smoke.csv`: fake `AI_COMPLETE` completed with `total_rows=16`, JSON-text writeback completed with `written_rows=8`, and `ray_task` completed with `status=ok`. This is a local function smoke, not a vLLM performance result or token-aware batching conclusion. The Windows Ray run printed a raylet shutdown access-violation warning after producing the result row.
+
+## 2026-07-18 Runtime code boundary cleanup
+
+- Split reusable runtime helpers out of `code/scripts/postgres_ai_operator_profile.py`:
+  - `code/src/model_backends.py`: fake debug embedding backend and compatible HTTP embedding backend.
+  - `code/src/sinks.py`: existing `none/json_text/pgvector` PostgreSQL writeback.
+  - `code/src/metrics.py`: stage timer, GPU snapshot, and CSV append helper.
+- Kept `fake` only as an offline smoke/control backend. vLLM-compatible runs should use `--model-backend compatible_http`; `http_openai` remains accepted as a compatibility alias.
+- Added `code/tests/test_model_backends.py` and `code/tests/test_sinks.py`.
+- Updated `code/README.md`, `code/scripts/README.md`, and `PROJECT_INDEX.md` with the new code boundaries.
+
+## 2026-07-17 Daft PostgreSQL data entry implementation
+
+- Added `code/src/sources.py` with `PostgresArrowSource` and `DaftPostgresSource`, plus `code/tests/test_sources.py`.
+- Updated `code/scripts/postgres_ai_operator_profile.py` with `--data-source arrow_postgres|daft_postgres`; default remains `arrow_postgres`.
+- Kept writeback unchanged: `none/json_text/pgvector`. Lance remains a future optional sink and is not implemented in this step.
+- Added Daft SQL runtime dependencies `sqlglot` and `connectorx` to `code/requirements.txt`.
+- Verified local PG18.4 smoke under `tmp/postgres_daft_source_e2e.csv`: `source_arrow_smoke` and `source_daft_smoke` both completed with `total_rows=64` and `object_count=4`. This is a local smoke result, not a formal performance conclusion.
+
+## 2026-07-17 Superpowers implementation plan for Daft PostgreSQL data entry
+
+- **触发**：用户要求使用 `superpowers:brainstorming` / `superpowers:writing-plans` 构思后续代码，并明确当前写回按既有方案，Lance 仅作为后续可能方向。
+- **新增**：
+  - `code_doc/README.md`
+  - `code_doc/superpowers/README.md`
+  - `code_doc/superpowers/plans/README.md`
+  - `code_doc/superpowers/plans/2026-07-17-daft-postgres-entry-existing-writeback.md`
+- **范围**：计划聚焦 Daft 作为 PostgreSQL data entry；当前 writeback 保持 `none/json_text/pgvector`；Lance 仅作为 future optional sink，不进入本轮实现。
+
+## 2026-07-17 Daft 文本 DataOrganizer smoke 接入
+
+- **触发**：用户要求实际使用 Daft，并要求遵循 `karpathy-guidelines`、保证代码可维护性。
+- **实现**：
+  - 新增 `code/src/organizers.py`，实现 `ArrowOrganizer` 与 `DaftOrganizer`。两者接收 Arrow table，输出 downstream 可复用的 Arrow batch 列表和指标。
+  - 新增 `code/scripts/daft_text_organizer_smoke.py`，通过 `--organizer arrow|daft` 验证 `rows -> Arrow Table -> organizer -> batches`，并支持显式 `--runner ray` 检查 Daft `into_partitions`。
+  - 更新 `code/scripts/postgres_ai_operator_profile.py`：主链路的 `fetch_record_batch + split_batch` 已替换为 organizer 后端选择，新增 `--organizer arrow|daft`、`--organizer-partition-mode`、`--organizer-partitions`、`--daft-runner`。默认仍为 `arrow`，保留旧路径作为 baseline。
+  - 新增 `code/tests/test_organizers.py`，覆盖 Arrow 后端和 Daft native 后端的 batch 输出一致性。
+  - 更新 `code/requirements.txt`：新增 `daft`，并将 `pyarrow` 约束为 `>=16,<25`，匹配 Daft 0.7.20 的依赖边界。
+  - 更新 `code/README.md`、`code/scripts/README.md`、`PROJECT_INDEX.md`，登记新增入口和运行命令。
+- **本地验证**：
+  - NativeRunner：`--rows 256 --batch-size 64` 生成 4 个 64 行 batch。
+  - Ray runner：`--runner ray --rows 32 --batch-size 8 --partition-mode into_partitions --partitions 4` 生成 4 个 8 行 batch。
+- **边界**：主脚本已具备 Daft organizer 后端选择，但这仍不是正式性能实验；真实 PostgreSQL/vLLM/GPU-backed 结论需要后续 E2E 运行数据。
+
 ## 2026-07-17 多模态正文实验 + Daft 文本阶段直接接入 + 优化空间扩展
 
 - **触发**：与导师讨论后明确多模态实验进入正文（§5.3 策略泛化性验证），不是仅 Discussion；用户确认 Daft 从文本阶段直接接入（不再经过 Arrow 中间态）；用户明确"参数优化也可以作为贡献"。
