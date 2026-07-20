@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-生成日期：2026-07-17（最后更新：2026-07-17）
+生成日期：2026-07-17（最后更新：2026-07-20）
 
 > 本文档是项目方向的**快速参考卡片**。完整定义、依据和细节见 `PROJECT_OUTLINE.md`（项目总纲）、`AGENTS.md`（规则边界）、`research/knowledge_hub.md`（知识库）。本文档不替代上述文件，仅提供 TL;DR。
 
@@ -54,24 +54,46 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 
 ## 5. 当前优先级
 
-1. **P0（当前）**：建立 vLLM + Qwen2.5-1.5B baseline，替代手动 HTTP endpoint
-2. **P1**：文本 RC1 消融 + RC2 消融 + Daft 引擎级参数 sweep
-3. **P2**：耦合验证（独立拼接 vs 联合 grid search）+ 多模态泛化验证
-4. **P3**：算子代价估计（基于已有数据，不新增实验）
+**已完成**：
+- ✅ vLLM + Qwen2.5-1.5B baseline 建立（07-18）
+- ✅ Daft 文本阶段直接接入，链路跑通
+- ✅ Token-tail revision + Token-budget vs Fixed Row 对照
+- ✅ Shared-vLLM K_max 干扰实验（K_max 在共享 vLLM 下必要）
+- ✅ Queue-adaptive flush 首次实现与测试
 
-**Scope 缩减触发条件**：Month 1 无 vLLM baseline → 多模态降 Discussion；文本 RC1+RC2 未完成不启动多模态 pipeline。
+**当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
+1. **P0**：改进 queue-adaptive 控制器，在 shared-vLLM 下超越静态 K_max=8
+2. **P0**：两项策略联合消融——独立拼接 vs 联合 grid search
+3. **P1**：Prefix 受控 workload + scale 到 2048 行
+4. **P2**（触发：P0+P1 完成）：多模态泛化验证
+5. 算子代价估计（§6.1 讨论，最低优先级，基于已有数据）
+
+**Scope 缩减触发条件**：
+- Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（✅ 已建立，未触发）
+- 文本 RC1+RC2 消融未完成前，不启动 Daft 多模态 pipeline
+- VLM 生成实验始终标记为 optional
+- Adaptive 控制器 3 轮改进后不能超过 static K_max=8 → RC2 降级
 
 ---
 
 ## 6. 关键证据
 
+**AI_COMPLETE（主场景，07-18/19 本地 vLLM baseline）**：
+| 证据 | 能说明什么 |
+|---|---|
+| Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678 | 固定行数是计算量的弱代理 |
+| Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171 | token-budget 能有效约束 token tail |
+| Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3× | K_max 在共享 vLLM 下必要 |
+| Queue-adaptive flush 已实现但未超越静态 K_max=8 | RC2 当前最高风险 gap |
+
+**AI_EMBED（预研，已完成）**：
 | 证据 | 来源 | 能说明什么 |
 |---|---|---|
-| AI_EMBED fine vs coalesced = 37.5× | GPU-backed 预研 CSV（2026-07-14） | batch 粒度是一阶变量 |
+| fine vs coalesced = 37.5× | GPU-backed 预研 CSV（2026-07-14） | batch 粒度是一阶变量 |
 | pgvector writeback 0.897s vs JSON 1.567s | GPU-backed 预研 CSV | pgvector 写回可行 |
 | 研究空白双重确认 | 多源检索（2026-07-16） | 无 CCF-A 论文研究上游 pipeline batching × downstream continuous batching 交互 |
 
-**尚未建立**：vLLM baseline、Daft pipeline、多模态实验。所有策略论证在当前阶段为机制论证，待 vLLM 实验验证。
+**尚未建立**：联合消融（独立拼接 vs 联合 grid search）、多模态泛化验证、PG18.3 内部平台复测。
 
 ---
 
@@ -83,6 +105,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | 项目规则、边界、不能写成什么 | `AGENTS.md` |
 | vLLM 机制 + Ray 架构 + 57 篇文献 + 策略设计 + 知识缺口 | `research/knowledge_hub.md` |
 | Daft 技术细节、多模态管线、具身智能连接 | `research/daft_ray_multimodal_reference.md` |
+| 实验状态与缺口分析 | `experiments/plans/experiment_status_and_gaps.md` |
 | 实验计划与实现参考 | `experiments/plans/strategy_design_implementation_reference.md` |
 | 开题报告正文 | `opening/report/opening_report.md` |
 

@@ -426,7 +426,7 @@ Ray Actor 去中心化自适应提交
 **实验计划文件**：
 - `experiments/plans/strategy_design_literature_basis.md` — 策略口径与文献依据
 - `experiments/plans/strategy_design_implementation_reference.md` — 实现细节与模块拆解
-- `experiments/plans/research_design_catalog.md` — 方案目录与评分
+- `experiments/plans/archive/research_design_catalog.md` — 方案目录与评分（已归档，设计历史参考）
 - `experiments/plans/baseline_reference.md` — Baseline 矩阵
 - `experiments/plans/data_organization_batching.md` — 研究内容一实验计划
 - `experiments/plans/service_scheduling_backpressure.md` — 研究内容二实验计划

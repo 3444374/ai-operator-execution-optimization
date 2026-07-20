@@ -56,8 +56,7 @@ python feasibility/benchmarks/ray_arrow_fanout_fanin_benchmark.py \
 ```bash
 python feasibility/benchmarks/analyze_results.py \
   --results-dir feasibility/results \
-  --motivation-results-dir motivation/results \
-  --output feasibility/results/feasibility_report.md
+  --motivation-results-dir motivation/results
 ```
 
 ## 4. 读结果时看什么

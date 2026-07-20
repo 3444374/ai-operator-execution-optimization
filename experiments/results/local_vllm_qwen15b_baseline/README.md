@@ -745,44 +745,56 @@ figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.svg
 
 ## Remaining Formal Experiments
 
-Status after the 2026-07-19 shared-vLLM sweep and data-organization ablation:
+Status after 2026-07-20 audit (see `experiments/plans/experiment_status_and_gaps.md` for full analysis):
 
-- Completed in this directory: fixed-row token-tail sweep and the first
-  token-budget vs fixed-row comparison on the local ShareGPT/BurstGPT
-  `AI_COMPLETE` workload.
-- Completed in this directory: preliminary arrival-aware `K_max` sweep with
-  `token_budget=6144`, using `K_max={1,2,4,8,16,unbounded}`.
-- Completed in this directory: corrected `batch policy x K_max` matrix, using
-  fixed rows `{32,64,128}`, token budgets `{4096,6144,8192}`, and
-  `K_max={2,4,8,16,unbounded}`.
-- Completed in this directory: first shared-vLLM two-job interference test,
-  showing that unbounded bulk inflight harms foreground small-job latency and
-  vLLM queue stability.
-- Completed in this directory: formal shared-vLLM `K_max` sweep over
-  background policies `{8,16,unbounded,adaptive}`.
-- Completed in this directory: first implementation and test of
-  queue-adaptive flush. The permissive thresholds did not downshift; the tuned
-  thresholds did downshift but still did not beat static `K_max=8`, so the
-  policy needs controller refinement before any positive adaptive claim.
-- Completed in this directory: first length-align and prefix-aware data
-  organization ablation with local `batch_prompt_token_spread_mean` and
-  `prefix_group_ratio` metrics.
-- Pending next: refine queue-adaptive control in the shared-vLLM setup and
-  compare against static `K_max=8`.
-- Pending next: controlled prefix-share workload with prefix ratios
-  `{0,30,70,100}%` and vLLM APC/cache metrics if exposed.
-- Pending next: broaden shared-service scheduling by sweeping foreground size,
-  arrival offset, and token-budget background policy.
-- Deferred by current decision: COPY + deferred-index writeback baseline. It is
-  still documented in the plan files, but it is not the next experiment.
+### Completed
 
-Boundary: the completed runs support the claim that fixed row batch size is a
-weak proxy for model request cost and that token-budget batching can control
-token tails. The batch-policy x `K_max` matrix supports a weaker scheduling
-claim: request shape and admission window interact, and excess inflight can
-increase vLLM queue/service-tail pressure. The shared-vLLM sweep supports a
-stronger admission-control claim for concurrent jobs. It does not yet prove
-queue-adaptive scheduling or prefix-aware cache effectiveness.
+- fixed-row token-tail sweep (motivation: row count is weak proxy for model cost)
+- token-budget vs fixed-row comparison (strategy signal: token-budget bounds token tail)
+- arrival-aware K_max sweep + batch policy × K_max matrix
+- shared-vLLM two-job K_max interference (motivation: K_max guardrail necessary)
+- shared-vLLM K_max sweep with static and adaptive policies
+- queue-adaptive flush first implementation (downshift works, but doesn't beat static K_max=8)
+- length-align and prefix-aware ablation (preliminary signal, weak prefix ratio)
+
+### P0 — Highest Priority
+
+1. **Refine queue-adaptive controller** to beat static K_max=8 in shared-vLLM setup.
+   - Directions: progressive ramp-up, proportional control, per-request metrics check.
+   - **Abandon condition**: if 3 iterations fail to reach 90% of static K=8 performance
+     (foreground E2E ≤ 8s), downgrade RC2 claim to "K_max necessity proof + adaptive
+     as exploratory discussion."
+   - **追加指标**：inflight/queue 时间序列、K_max 时间序列、`tokens/s`、`service_p99`。
+
+2. **Joint strategy ablation**: best token-budget (currently 6144) + best K_max (currently 8)
+   independently optimized vs joint grid search. Answers "is layered independent optimization
+   sufficient?" — valid contribution either way.
+   - **追加指标**：`tokens/s`、`service_p99`。
+
+### P1 — After P0
+
+3. **Controlled prefix-share workload**: prefix ratio 0/30/70/100%, prefix+token6144 only.
+   Include vLLM APC/cache metrics if exposed. Only evaluate at ≥30% prefix ratio.
+   - **追加指标**：per-request e2e latency distribution。
+
+4. **Scale one experiment to 2048 rows**: verify trends hold beyond 512-row local rehearsal.
+
+### P2 — Trigger: P0+P1 complete
+
+5. **Multi-modal generalization**: CLIP embedding + ImageNet/HF subset, same strategy code.
+   Verify frame-budget ↔ token-budget analogy and queue-adaptive flush reuse.
+
+### Deferred
+
+- COPY + deferred-index writeback baseline (not an independent experiment phase)
+- Operator cost estimation (§6.1 discussion, based on already-collected profile data)
+
+### Metric Blind Spots (add to all subsequent experiments)
+
+- `tokens/s`: fairer AI_COMPLETE efficiency metric than `rows/s`
+- `service_p99`: systematic tail latency collection (currently only P95)
+- inflight/queue time series: critical for diagnosing adaptive controller behavior
+- per-request e2e latency distribution: critical for grouping strategy (length-align/prefix-aware) arguments
 
 ## Latency Metrics Probe
 

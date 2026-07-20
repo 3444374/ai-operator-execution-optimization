@@ -56,7 +56,7 @@ PostgreSQL 18.3
 
 | 目录 | 用途 |
 |---|---|
-| `overview/` | 项目总纲（`current_direction_and_plan.md` 已废弃，以 `PROJECT_OUTLINE.md` 为准） |
+| `overview/` | 项目总纲（`current_direction_and_plan.md` 为 TL;DR 快速参考卡片，以 `PROJECT_OUTLINE.md` 为权威总纲） |
 | `research/` | 背景调研、文献依据（第一入口：`knowledge_hub.md`） |
 | `motivation/` | 动机场景、端到端测试（脚本→`benchmarks/`，计划→`plans/`，结果→`results/`） |
 | `feasibility/` | 组件、环境、脚本可用性验证（不承担实验大纲职责） |

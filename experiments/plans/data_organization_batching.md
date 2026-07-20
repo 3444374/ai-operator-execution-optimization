@@ -2,7 +2,7 @@
 
 整理日期：2026-07-16
 对应研究内容：研究内容一
-方法候选编号：A1.1-A1.6（详见 `research_design_catalog.md` §3）
+方法候选编号：A1.1-A1.6（详见 `archive/research_design_catalog.md` §3，已归档）
 
 > **2026-07-16 方向更新**：主场景从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理）。具体优化方法尚未锁定——动态 batching（token-budget / length-align / prefix-aware grouping）是当前重点探索方向，但静态 batch_size 参数穷举的结果仍作为 baseline 对照保留。以下内容中的实验骨架和参数矩阵为候选方案，最终消融设计将在 vLLM baseline 建立后根据实际数据确定。详细背景见 `research/knowledge_hub.md`。
 

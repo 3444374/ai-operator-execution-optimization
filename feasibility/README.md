@@ -8,7 +8,7 @@
 
 当前可行性验证优先服务外部执行链路：Ray/Arrow/object/fan-in、外部 worker、writeback 和 backpressure。本目录不承载最终 GPU-backed 链路性能结论；它只负责证明组件、环境和脚本可用。GPU 可用性、驱动、模型服务 smoke test 可以放这里；真正的 GPU-backed 端到端系统画像应放到 `motivation/results/`。
 
-当前实验主线、动机测试结论和开题论证优先看 `motivation/README.md`、`motivation/plans/workloads.md`、`motivation/plans/integration.md` 和 `motivation/results/README.md`。不要再把本目录的 `guide.md` 当作全项目实验大纲。
+当前实验主线、动机测试结论和开题论证优先看 `motivation/README.md`、`motivation/plans/workloads.md`、`motivation/plans/integration.md` 和 `motivation/results/README.md`。
 
 进入本目录前先读 `AGENTS.md`。如果要运行组件 benchmark，优先读 `benchmarks/README.md`；如果要看结果，优先读 `results/README.md`。
 
@@ -18,8 +18,6 @@
 |---|---|
 | `AGENTS.md` | 本目录稳定规则和边界 |
 | `README.md` | 本目录动态入口和文件索引 |
-| `guide.md` | 早期组件可行性验证指南和判定标准；不再作为当前实验主线大纲 |
-| `analysis.md` | 前期可行性分析和阶段性判断 |
 | `benchmarks/` | Ray、Arrow、shuffle、fan-in 等组件级 benchmark 脚本 |
 | `benchmarks/README.md` | benchmark 运行命令和脚本说明 |
 | `results/` | 组件 benchmark、环境验证、连接验证和自动报告 |
@@ -53,18 +51,11 @@ PG18.4 连接验证：
 feasibility/results/pg18_4_connection_validation.md
 ```
 
-自动可行性报告：
-
-```text
-feasibility/results/feasibility_report.md
-```
-
 ## 运行示例
 
 ```bash
 python feasibility/benchmarks/analyze_results.py \
-  --results-dir feasibility/results \
-  --output feasibility/results/feasibility_report.md
+  --results-dir feasibility/results
 ```
 
 ## 更新要求

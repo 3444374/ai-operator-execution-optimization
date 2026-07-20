@@ -24,7 +24,8 @@
 | `figures/scripts/generate_local_vllm_ray_baseline_charts.py` | Local vLLM Ray baseline chart generator | Regenerate `b07`-`b25` from the ShareGPT/BurstGPT baseline CSVs |
 | `figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md` | Local vLLM Ray baseline chart audit | Check data source, figure role, chart choice, visual QA, and conclusion boundary |
 | `learning/local_vllm_ray_baseline_walkthrough.md` | Local vLLM + Ray baseline learning walkthrough | Read when explaining what the fixed row-batch baseline does and does not prove |
-| `PROJECT_LOG_20260719_LOCAL_VLLM.md` | 2026-07-19 local vLLM experiment update log | Records the length/prefix ablation, shared-vLLM sweep, queue-adaptive first test, new CSVs, figures, and conclusion boundaries |
+| `learning/archive/early_experiments_walkthrough.md` | 早期实验学习讲解（已归档） | pre-convergence 时期实验（组件可行性、fake/CPU、PG18.4 接入等）的历史参考 |
+| `learning/metric_selection_methodology.md` | AI_EMBED vs AI_COMPLETE 观察变量选择方法论 | 理解为什么从"阶段时延拆分"转向"多维分布表征" |
 | `figures/architecture/runtime_strategy_rule_table.png` / `.svg` | 信号触发候选策略规则表 | 与闭环图配套使用，说明观测信号、候选动作和保护约束；不作为已验证结论 |
 | `figures/architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时信号驱动的上游执行闭环图 | 当前首选策略机制图；用一个 AI_COMPLETE SQL 例子说明数据组织（token-budget/length-align/prefix-aware）、提交控制（queue-adaptive flush/K_max/routing）、vLLM 部署平台（观测不修改）的分工；不重切数据库侧已物化批次 |
 | `figures/scripts/generate_runtime_strategy_control_loop.py` | 运行时策略闭环图生成脚本 | 重新生成策略机制图 PNG/SVG，并执行边框、箭头和禁用术语自检 |
@@ -72,8 +73,6 @@
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |
-| `overview/project_outline.md` | 项目总纲（旧版） | 已被根 `PROJECT_OUTLINE.md` 替代，仅作历史参考 |
-| `overview/current_direction_and_plan.md` | 阶段性技术路线和计划 | 了解阶段规划时读 |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
 | `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |
 | `research/literature_and_evidence_review.md` | 文献与官方资料依据 | 写调研、论文动机时读 |
@@ -99,8 +98,6 @@
 | `motivation/results/pg18_4_fake/` | PG18.4 本地同构预演 | 只作为预演和历史信号，不代表真实 GPU-backed 结论 |
 | `feasibility/AGENTS.md` | 可行性验证规则 | 做组件 benchmark 或环境验证前读 |
 | `feasibility/README.md` | 可行性验证目录入口 | 了解 feasibility/ 下有什么、怎么组织 |
-| `feasibility/guide.md` | 早期组件可行性验证指南 | 不再作为当前实验主线大纲，仅作历史参考 |
-| `feasibility/analysis.md` | 前期可行性分析和阶段性判断 | 了解早期排除性结论 |
 | `feasibility/benchmarks/README.md` | benchmark 说明和运行命令 | 运行组件 benchmark |
 | `feasibility/results/README.md` | 可行性结果索引 | 查看组件验证、连接验证、smoke 结果 |
 | `experiments/AGENTS.md` | 正式研究实验规则 | 设计优化实验、消融实验前读 |
@@ -124,6 +121,7 @@
 | `learning/AGENTS.md` | 学习讲解规则 | 写学习材料前读 |
 | `learning/README.md` | 学习材料入口 | 了解实验 walkthrough 和术语讲解 |
 | `learning/experiment_walkthrough.md` | 按推进顺序讲解已完成实验 | 学习实验链路、参数和结果读法 |
+| `learning/metric_selection_methodology.md` | AI_EMBED vs AI_COMPLETE 观察变量选择方法论 | 理解为什么从"阶段时延拆分"转向"多维分布表征" |
 | `opening/AGENTS.md` | 开题工作规则 | 写开题报告、PPT、飞书材料前读 |
 | `opening/README.md` | 开题工作区入口 | 了解开题材料分布和同步规则 |
 | `opening/navigation.md` | 开题材料导航 | 不知道开题材料在哪时读 |
@@ -175,7 +173,7 @@
 
 可行性验证的参考（组件、环境、脚本可用性）：
 
-`feasibility/guide.md`（历史参考），`feasibility/analysis.md`（阶段性判断）。
+`feasibility/benchmarks/README.md`。
 
 正式研究实验（方法有效性验证）：
 
@@ -183,7 +181,7 @@
 
 | 文件 | 作用 |
 |---|---|
-| `research_design_catalog.md` | 课题研究方案候选目录：28 个候选方案的六维评估、分阶段路线图、风险分析和 Baseline 设计考量 |
+| `archive/research_design_catalog.md` | 课题研究方案候选目录（已归档）：28 个候选方案的六维评估，作为设计历史参考 |
 | `baseline_reference.md` | 实验 Baseline 参考矩阵：从 CCF-A 文献中提取的各方向最优 baseline 策略（GPU 调度/数据组织/提交控制）|
 | `strategy_design_literature_basis.md` | 策略设计思路的文献依据与边界：区分可借鉴思想、baseline/边界和本文自己的策略定义 |
 | `strategy_design_implementation_reference.md` | 策略设计与系统实现参考：把 Ray、vLLM、Daft、GPU 数据放置和 DB AI 算子机制沉淀为两项策略 + 端到端验证、实验变量和实现优先级（2026-07-17 已统一口径）|
@@ -191,6 +189,7 @@
 | `service_scheduling_backpressure.md` | 研究内容二实验计划：queue-adaptive flush、actor pool 分池路由、K_max 动态控制 + Daft 引擎级参数 |
 | `sink_writeback_coordination.md` | 写回工程参考（不作为独立实验阶段）：COPY + deferred index baseline |
 | `cross_layer_killer_experiment.md` | 耦合验证实验计划：独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数的完整交互面）|
+| `experiment_status_and_gaps.md` | **实验状态与缺口分析（2026-07-20）**：已完成/未完成实验表、证据链完整性、指标盲区、P0/P1/P2 路线图、审稿人视角风险。当前实验设计的第一参考。|
 
 所有实验计划遵循从 vLLM/Orca/TurboVecDB/GaussML/FlexPushdownDB 五篇 CCF-A 论文提取的共同方法论：曲线 > 单点、先暴露瓶颈再优化、同硬件公平 baseline、消融拆开、诚实报告边界、统计严谨。
 
@@ -245,8 +244,7 @@ python motivation/benchmarks/fake_embed_pipeline.py \
 
 ```bash
 python feasibility/benchmarks/analyze_results.py \
-  --results-dir feasibility/results \
-  --output feasibility/results/feasibility_report.md
+  --results-dir feasibility/results
 ```
 
 运行环境：
@@ -349,22 +347,22 @@ python feasibility/benchmarks/analyze_results.py \
 
 ## 8. 下一步优先工作
 
-已完成优先实验：
+**已完成**：
+- ✅ vLLM + Qwen2.5-1.5B baseline 建立（07-18）
+- ✅ Daft 文本阶段直接接入，链路跑通
+- ✅ Token-tail revision + Token-budget vs Fixed Row 对照
+- ✅ Shared-vLLM K_max 干扰实验
+- ✅ Queue-adaptive flush 首次实现与测试
 
-- GPU-backed 真实 embedding 链路拆分和阶段画像；
-- pgai-integrated GPU-backed rerun（granularity、stage breakdown、endpoint comparison）；
-- pgvector(384) 写回对比（no writeback / JSON text / vector）。
+**当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
+1. **P0**：改进 queue-adaptive 控制器 + 两项策略联合消融
+2. **P1**：Prefix 受控 workload + scale 到 2048 行
+3. **P2**（触发：P0+P1 完成）：多模态泛化验证
+4. 算子代价估计（§6.1 讨论，基于已有数据）
 
-下一步优先工作：
+**Scope 缩减触发条件**：Month 1 无 vLLM baseline → 多模态降 Discussion（✅ 已建立，未触发）；文本 RC1+RC2 未完成不启动多模态 pipeline；VLM 生成始终 optional；Adaptive 3 轮不能超 static K_max=8 → RC2 降级。
 
-1. P0：接入 vLLM + Qwen2.5-1.5B（替代手动 HTTP endpoint），建立 continuous batching baseline；Daft 文本阶段直接接入。
-2. P1：研究内容一消融（token-budget vs 固定 batch_size、length-aligned vs prefix-aware vs random）+ Daft 引擎级参数；研究内容二消融（queue-adaptive flush vs 固定 K_max、actor pool 分池路由）+ Daft engine 参数。
-3. P2：耦合验证（独立最优拼接 vs 联合 grid search，含策略级 + 引擎级参数）；多模态泛化验证（图像 workload，同一套策略代码）。
-4. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
-
-**Scope 缩减触发条件**：Month 1 无 vLLM baseline → 多模态降 Discussion；文本 RC1+RC2 未完成不启动多模态 pipeline；VLM 生成实验始终 optional。
-
-详细实验计划见 `experiments/plans/` 下各文件，以 `PROJECT_OUTLINE.md` §近期优先级为准。
+详细实验计划见 `experiments/plans/`，以 `PROJECT_OUTLINE.md` §近期优先级和 `experiments/plans/experiment_status_and_gaps.md` 为准。
 
 优先沟通问题：
 

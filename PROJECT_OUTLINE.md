@@ -41,7 +41,7 @@
 | `motivation/results/README.md` | 动机测试结果阅读顺序和结论边界 |
 | `motivation/results/gpu/README.md` | 真实 GPU-backed E2E 结果入口 |
 
-`feasibility/` 当前只作为组件、环境、脚本可用性的验证入口；`feasibility/guide.md` 不再承担项目实验大纲职责。
+`feasibility/` 当前只作为组件、环境、脚本可用性的验证入口。
 
 ## 实验结论写作标准
 
@@ -61,35 +61,55 @@
 
 正式论证优先引用：
 
-1. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
-   - 真实 GPU-backed embedding 链路拆分。
+1. `experiments/results/local_vllm_qwen15b_baseline/README.md`
+   - **2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 全系列**。
+   - Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678——证明固定行数是计算量的弱代理。
+   - Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171（vs fixed 64/128 的 16377/26677），吞吐接近。
+   - Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3×（4.9→11.4s）而 bulk 自身吞吐几乎不变——证明 K_max 在共享 vLLM 下必要。
+   - Queue-adaptive flush 已实现，但当前不如静态 K_max=8，需改进控制器。
+   - 边界：本地 rehearsal，不代表 PG18.3 内部平台结果。
+   - 状态与缺口审计：`experiments/plans/experiment_status_and_gaps.md`。
+2. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
+   - 真实 GPU-backed embedding 链路拆分（AI_EMBED 预研，已完成）。
    - 1024 行下 fine / coalesced 端到端约 `13.4x`。
    - 16384 行下 operator 和 writeback 均为大块成本。
-2. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
+3. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
    - 双 endpoint 下 Ray task / actor 开始体现并发 routing 价值。
    - 端到端收益仍受 writeback 约束。
-3. `motivation/results/pg18_4_fake/system_profile.md`
-   - PG18.4 本地同构 fake-model 历史画像。
-   - 只能作为预演和历史信号，不代表真实 GPU-backed 结论。
-4. `motivation/results/fake_cpu/analysis.md`
-   - fake/CPU 历史预研。
-   - 只用于解释早期为什么关注 task/object/invocation/fan-in/backpressure。
 
 ## 近期优先级
 
-1. **前置（必须最先完成）**：接入 vLLM + 小 LLM（Qwen2.5-1.5B 级，适配 RTX 5070 12GB VRAM）替代手动 HTTP endpoint，建立 continuous batching baseline；构造 AI_COMPLETE workload（三类 token 长度分布 + shared prefix 控制）。Daft 在文本阶段直接接入，替代裸 Arrow RecordBatch 构造。
-2. **核心实验（文本）**：研究内容一动态 batching 消融——静态固定 batch_size vs token-budget vs length-aligned vs prefix-aware grouping，同时探索 Daft `into_batches`、`batch_size`、`repartition` 等引擎级参数；研究内容二自适应提交消融——固定 K_max vs queue-adaptive flush vs actor pool 分池路由，同时探索 Daft `max_concurrency`、`gpus` 分配。
-3. **耦合验证**：独立最优（研究内容一最优 + 研究内容二最优）拼接 vs 联合 grid search（batching policy, submission policy, 引擎级参数）。如交互不显著，调整 claim 为"分层独立优化框架"。
-4. **多模态泛化验证（正文 §5.3）**：图像数据集（ImageNet/HuggingFace），CLIP embedding + 分类。同一套策略代码，`df["prompt"]` 换为 `df["image"]`，验证 token-budget → frame-budget、queue-adaptive flush 复用。VLM 生成实验（Qwen2.5-VL-3B）标记为 optional。
-5. **算子代价估计（§6.1 讨论，最低优先级）**：基于上述实验已采集的 profile 数据，不新增实验。仅当核心优化实验全部完成后才启动。
+**已完成**：
+- ✅ vLLM + Qwen2.5-1.5B baseline 建立（07-18）
+- ✅ Daft 文本阶段直接接入，`PostgreSQL → DaftPostgresSource → DaftOrganizer → Ray → vLLM` 链路跑通
+- ✅ 固定行 batch token-tail revision（动机证据：行数是计算量的弱代理）
+- ✅ Token-budget vs Fixed Row 对照（策略信号：token-budget 约束 token tail）
+- ✅ Shared-vLLM 2-job K_max 干扰实验（动机证据：K_max 在共享 vLLM 下必要）
+- ✅ Queue-adaptive flush 首次实现与测试（但未超越静态 K_max=8）
+- ✅ Length-align + Prefix-aware 初步 ablation
+
+**当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
+
+1. **P0（最高优先）**：改进 queue-adaptive 控制器，在 shared-vLLM 下超越静态 K_max=8。如 3 轮改进后仍不能超越，RC2 降级为"K_max admission control 必要性论证 + queue-adaptive 探索性讨论"。
+2. **P0（并列）**：两项策略联合消融——独立最优拼接 vs 联合 grid search。判定分层独立优化是否足够。
+3. **P1**：Prefix 受控 workload 实验（prefix ratio 0/30/70/100%）+ 至少一个实验 scale 到 2048 行。
+4. **P2（触发条件：P0+P1 完成）**：多模态泛化验证（CLIP embedding + ImageNet/HF subset）。
+5. 算子代价估计（§6.1 讨论，最低优先级）：基于已采集的 profile 数据，不新增实验。
 6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+
+**指标盲区**（需在后续实验中补齐）：
+- `tokens/s`：比 `rows/s` 更公平的 AI_COMPLETE 效率指标
+- `service_p99`：系统性采集 tail latency
+- inflight/queue 时间序列：诊断 adaptive 行为
+- per-request e2e latency 分布：支持分组策略论证
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index baseline），不作为独立实验阶段。
 
 **Scope 缩减触发条件**：
-- Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion
+- Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（✅ 已建立，未触发）
 - 文本 RC1+RC2 消融未完成前，不启动 Daft 多模态 pipeline
 - VLM 生成实验始终标记为 optional
+- Adaptive 控制器 3 轮改进后不能超过 static K_max=8 → RC2 降级
 
 ## 同步规则
 

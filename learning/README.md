@@ -1,5 +1,15 @@
 # Learning Notes
 
+## 2026-07-20 指标选择方法论
+
+New learning note:
+
+```text
+learning/metric_selection_methodology.md
+```
+
+解释为什么从 AI_EMBED 转向 AI_COMPLETE 后，实验观察变量需要从"阶段时延拆分"转向"请求形状 + 服务端压力 + 端到端分布"的四层变量体系。包含每个实验的最低推荐变量集和当前指标盲区。
+
 ## 2026-07-18 local vLLM Ray baseline walkthrough
 
 New learning note:

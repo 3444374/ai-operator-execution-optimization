@@ -9,8 +9,7 @@
 1. `AGENTS.md`：本目录长期规则。
 2. `README.md`：开题工作区总入口。
 3. `navigation.md`：查找材料和同步关系。
-4. `outline.md`：报告、PPT、飞书版共用内容骨架。
-5. 当前任务对应文件：报告、PPT、飞书、文献或素材。
+4. 当前任务对应文件：报告、PPT、飞书、文献或素材。
 
 如果需要项目整体背景，先回到根目录：
 
@@ -41,7 +40,7 @@ AGENTS.md
 
 | 需要的内容 | 优先读取 |
 |---|---|
-| 开题统一口径和页序 | `outline.md` |
+| 开题统一口径和页序 | `report/opening_report.md` |
 | 开题报告正文 | `report/opening_report.md` |
 | 开题 PPT 源稿 | `slides/opening_ppt.md`，当前内容和形式先作废，仅保留版式经验 |
 | PPT 制作规则 | `ppt_rules.md` |
@@ -99,7 +98,7 @@ PPT 修改后要反查报告：
 飞书同步前检查：
 
 - 题目是否和报告、PPT 一致。
-- 研究内容是否和 `outline.md` 一致。
+- 研究内容是否和 `report/opening_report.md` 一致。
 - 实验结论是否来自 `motivation/results/` 或 `feasibility/results/`。
 - 解释方式是否参考 `learning/experiment_walkthrough.md`。
 - 是否写清楚“能说明什么”和“不能说明什么”。
@@ -111,7 +110,6 @@ PPT 修改后要反查报告：
 读取：
 
 ```text
-opening/outline.md
 opening/report/opening_report.md
 overview/current_direction_and_plan.md
 research/
@@ -133,7 +131,6 @@ logs/project_log.md
 
 ```text
 opening/ppt_rules.md
-opening/outline.md
 opening/report/opening_report.md
 figures/README.md
 figures/data/selected_motivation_figures.md
@@ -154,7 +151,6 @@ qa_bank.md
 ```text
 opening/feishu/README.md
 opening/feishu/opening_report_wiki.md
-opening/outline.md
 opening/report/opening_report.md
 opening/slides/opening_ppt.md
 motivation/results/
@@ -198,7 +194,7 @@ opening/ppt_rules.md
 每次完成开题相关修改后，至少检查：
 
 - `opening/README.md` 是否需要更新入口或状态。
-- `opening/outline.md` 是否需要同步口径。
+- `opening/report/opening_report.md` 是否需要同步口径。
 - `opening/report/opening_report.md` 和 `opening/slides/opening_ppt.md` 是否互相一致。
 - `opening/feishu/` 是否需要同步。
 - `opening/literature/reading_list.md` 是否需要补文献或调整状态。

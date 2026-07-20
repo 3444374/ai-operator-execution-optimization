@@ -4,7 +4,7 @@
 
 > **2026-07-17 口径更新**：本文中的"运行层"等旧术语已统一为当前口径。最新研究内容定义、优先级和边界以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。写回已降为实验设置，不作为独立研究内容。
 对应研究内容：研究内容二
-方法候选编号：A2.1-A2.7（详见 `research_design_catalog.md` §4）
+方法候选编号：A2.1-A2.7（详见 `archive/research_design_catalog.md` §4，已归档）
 
 > **2026-07-16 方向更新**：具体优化方法尚未锁定。K_max 扫描、routing 策略对比、adaptive vs static K_max 均为有效的候选优化手段。去中心化自适应提交（queue-adaptive flush）和 actor pool 分池路由是当前重点探索方向，但不排除其他策略。以下内容中的实验骨架为候选方案，最终消融设计将在 vLLM baseline 建立后根据实际数据确定。详细背景见 `research/knowledge_hub.md`。
 

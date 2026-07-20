@@ -18,7 +18,7 @@
 2. `pgai_sql_smoke_20260714.md`：确认 pgai SQL embedding 触发面和 pgvector 写回可用。
 3. `pg18_4_connection_smoke_*.csv`、`pg18_4_script_dryrun.csv`：确认脚本和小规模 smoke run 可用。
 4. `ray_*`、`arrow_serialization.csv`、`shuffle_simulation.csv`：组件级 benchmark，只用于判断是否存在可观测系统信号。
-5. `feasibility_report.md`、`current_direction_analysis.md`：历史阶段分析，读作背景，不作为当前 GPU-backed 主链路结论。
+5. 组件级 benchmark（`ray_*`、`arrow_serialization.csv`、`shuffle_simulation.csv`）：只用于判断是否存在可观测系统信号，作为历史组件参考。
 
 如果后续新增 GPU 环境验证，建议命名为：
 
@@ -44,8 +44,6 @@ gpu_model_service_smoke.csv
 | `pg18_4_connection_smoke_256_rows.csv` | 首次 256 行 PG18.4 链路冒烟 CSV |
 | `pg18_4_connection_smoke_runs.csv` | PG18.4 连接冒烟补充运行 CSV |
 | `pg18_4_script_dryrun.csv` | 画像脚本 dry-run 展开验证 CSV |
-| `feasibility_report.md` | 自动生成的前期可行性实验分析 |
-| `current_direction_analysis.md` | 人工整理的当前方向分析 |
 
 PG18.4 系统画像与瓶颈定位实验已经移动到：
 
@@ -58,8 +56,7 @@ motivation/results/pg18_4_fake/system_profile.csv
 
 ```bash
 python feasibility/benchmarks/analyze_results.py \
-  --results-dir feasibility/results \
-  --output feasibility/results/feasibility_report.md
+  --results-dir feasibility/results
 ```
 
 ## Trigger Surface Validation Files

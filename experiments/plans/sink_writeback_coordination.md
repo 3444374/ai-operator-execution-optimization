@@ -4,7 +4,7 @@
 
 > **2026-07-17 口径更新**：写回已从独立实验阶段降为实验设置中的工程细节（PostgreSQL + pgvector + COPY + deferred index baseline）。不作为独立研究内容或实验阶段。本文保留原始设计推演作为工程参考。
 对应：端到端验证（不作为独立方法贡献）
-方法候选编号：A3.1-A3.7（详见 `research_design_catalog.md` §5）
+方法候选编号：A3.1-A3.7（详见 `archive/research_design_catalog.md` §5，已归档）
 
 > **2026-07-16 更新**：本验证实验不作为独立方法贡献。核心目标：采用工程最优写回方案作为 baseline，确认上游优化收益是否被持久化阶段吞噬。具体写回优化方法（worker-direct writeback 等）仅作为候选储备，当前大概率不做。以下内容中的 B 系列工程实验和三路架构对比保留为可选增强对照。详细背景见 `research/knowledge_hub.md`。
 

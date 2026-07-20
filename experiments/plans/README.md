@@ -6,10 +6,11 @@
 
 | 文件 | 作用 |
 |---|---|
-| `research_design_catalog.md` | **课题研究方案候选目录**（2026-07-15）：28 个候选方案的六维评估矩阵、分阶段路线图、风险分析、实验矩阵和 Baseline 设计考量 |
+| `archive/research_design_catalog.md` | **课题研究方案候选目录（已归档）**：28 个候选方案的六维评估矩阵，作为设计历史参考 |
 | `baseline_reference.md` | **实验 Baseline 参考矩阵**：从 CCF-A 文献中提取的各方向最优 baseline 策略（GPU 调度 / 数据组织 / 提交控制），用于实验设计时对照 |
 | `strategy_design_literature_basis.md` | **策略设计思路的文献依据与边界**：区分可借鉴优化思想、baseline/边界和本文自己的策略定义，用于支撑策略设计图和方法口径 |
 | `strategy_design_implementation_reference.md` | **策略设计与系统实现参考**：把 Ray、vLLM、Daft、GPU 数据放置和 DB AI 算子文献机制沉淀为两项策略 + 端到端验证、实验变量和实现优先级（2026-07-17 已统一口径）|
+| `experiment_status_and_gaps.md` | **实验状态与缺口分析**（2026-07-20）：已完成/未完成实验表、证据链完整性、指标盲区、P0/P1/P2 路线图、审稿人视角风险。**当前实验设计的第一参考。** |
 
 ## 实验计划
 

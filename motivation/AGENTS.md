@@ -35,12 +35,10 @@
 该实验支持继续观察 RecordBatch/object 粒度和 fan-in，但还不能单独锁定最终论文方向。
 
 动机测试正式结果位于：
-
-- `motivation/results/fake_ai_embed_pipeline.csv`
-- `motivation/results/ai_operator_scenario_motivation.csv`
-- `motivation/results/ai_operator_granularity_attribution.csv`
-- `motivation/results/ai_operator_backpressure.csv`
-- `motivation/results/motivation_test_results_analysis.md`
+- `motivation/results/gpu/`：真实 GPU-backed E2E 主动机结果
+- `motivation/results/cpu/`：CPU baseline 对照
+- `motivation/results/pg18_4_fake/`：PG18.4 同构预演
+- `motivation/results/fake_cpu/`：CPU/fake 历史预研
 
 ## 当前下一步
 
