@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="370" viewBox="0 0 920 370">
+<rect width="920" height="370" fill="#F8FAFC"/>
+<text x="111" y="28" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="26" font-weight="bold" fill="#172033" text-anchor="start">Prefix-aware: Group Shared Prefixes, Reuse KV-cache</text>
+<rect x="50" y="78" width="144" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<rect x="194" y="78" width="176" height="20" rx="4" ry="4" fill="#94A3B8"/>
+<text x="109" y="93" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">sys A</text>
+<text x="275" y="93" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">Q1</text>
+<rect x="50" y="103" width="144" height="20" rx="4" ry="4" fill="#F97316"/>
+<rect x="194" y="103" width="176" height="20" rx="4" ry="4" fill="#94A3B8"/>
+<text x="110" y="118" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">sys B</text>
+<text x="275" y="118" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">Q2</text>
+<rect x="50" y="128" width="144" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<rect x="194" y="128" width="176" height="20" rx="4" ry="4" fill="#94A3B8"/>
+<text x="109" y="143" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">sys A</text>
+<text x="275" y="143" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">Q3</text>
+<rect x="50" y="153" width="144" height="20" rx="4" ry="4" fill="#16A34A"/>
+<rect x="194" y="153" width="176" height="20" rx="4" ry="4" fill="#94A3B8"/>
+<text x="109" y="168" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">sys C</text>
+<text x="275" y="168" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">Q4</text>
+<rect x="50" y="178" width="144" height="20" rx="4" ry="4" fill="#F97316"/>
+<rect x="194" y="178" width="176" height="20" rx="4" ry="4" fill="#94A3B8"/>
+<text x="110" y="193" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">sys B</text>
+<text x="275" y="193" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">Q5</text>
+<rect x="50" y="203" width="144" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<rect x="194" y="203" width="176" height="20" rx="4" ry="4" fill="#94A3B8"/>
+<text x="109" y="218" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">sys A</text>
+<text x="275" y="218" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">Q6</text>
+<rect x="50" y="228" width="144" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<rect x="194" y="228" width="176" height="20" rx="4" ry="4" fill="#94A3B8"/>
+<text x="109" y="243" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">sys A</text>
+<text x="275" y="243" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">Q7</text>
+<rect x="50" y="253" width="144" height="20" rx="4" ry="4" fill="#F97316"/>
+<rect x="194" y="253" width="176" height="20" rx="4" ry="4" fill="#94A3B8"/>
+<text x="110" y="268" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">sys B</text>
+<text x="275" y="268" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">Q8</text>
+<text x="115" y="293" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="11" font-weight="normal" fill="#DC2626" text-anchor="start">Same prefix computed repeatedly  X</text>
+<line x1="394" y1="175" x2="424" y2="175" stroke="#334155" stroke-width="2"/><polygon points="424,175 414,169 414,181" fill="#334155"/>
+<rect x="445" y="78" width="380" height="72" rx="8" ry="8" fill="#E7F0FF" stroke="(47, 111, 235)" stroke-width="2"/>
+<rect x="447" y="80" width="6" height="68" rx="3" ry="3" fill="(47, 111, 235)"/>
+<text x="459" y="104" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="12" font-weight="bold" fill="(47, 111, 235)" text-anchor="start">sys A  (3 rows)</text>
+<text x="459" y="128" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="11" font-weight="normal" fill="#172033" text-anchor="start">Queries: Q1  Q3  Q6  Q7</text>
+<rect x="459" y="132" width="93" height="14" rx="3" ry="3" fill="#16A34A"/>
+<text x="465" y="144" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">KV-cache shared</text>
+<rect x="445" y="155" width="380" height="72" rx="8" ry="8" fill="#FFF1E6" stroke="(249, 115, 22)" stroke-width="2"/>
+<rect x="447" y="157" width="6" height="68" rx="3" ry="3" fill="(249, 115, 22)"/>
+<text x="459" y="181" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="12" font-weight="bold" fill="(249, 115, 22)" text-anchor="start">sys B  (2 rows)</text>
+<text x="459" y="205" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="11" font-weight="normal" fill="#172033" text-anchor="start">Queries: Q2  Q5  Q8</text>
+<rect x="459" y="209" width="93" height="14" rx="3" ry="3" fill="#16A34A"/>
+<text x="465" y="221" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">KV-cache shared</text>
+<rect x="445" y="232" width="380" height="72" rx="8" ry="8" fill="#F0FDF4" stroke="(22, 163, 74)" stroke-width="2"/>
+<rect x="447" y="234" width="6" height="68" rx="3" ry="3" fill="(22, 163, 74)"/>
+<text x="459" y="258" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="12" font-weight="bold" fill="(22, 163, 74)" text-anchor="start">sys C  (1 row)</text>
+<text x="459" y="282" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="11" font-weight="normal" fill="#172033" text-anchor="start">Queries: Q4</text>
+<rect x="459" y="286" width="93" height="14" rx="3" ry="3" fill="#16A34A"/>
+<text x="465" y="298" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">KV-cache shared</text>
+<text x="40" y="358" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="12" font-weight="normal" fill="#334155" text-anchor="start">Key: Same system prompt -&gt; single KV-cache computation in vLLM. Merge shared-prefix rows into one submission.</text>
+</svg>

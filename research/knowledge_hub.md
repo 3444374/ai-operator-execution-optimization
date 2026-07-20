@@ -13,6 +13,7 @@
 | vLLM continuous batching 怎么工作的？调度器内部是什么样？ | [§1 vLLM 机制](#1-vllm-机制详解) |
 | vLLM 暴露了什么信号？怎么抓 queue depth？ | [§1.2 vLLM 可观测性](#12-vllm-可观测性) |
 | vLLM APC 怎么利用？上游怎么 group 请求提高命中率？ | [§1.3 Prefix Caching](#13-vllm-prefix-caching) |
+| Chunked prefill 和上游策略的安全边界？分组策略怎么选？ | [§1.4 安全边界](#14-chunked-prefill-与上游策略的安全边界) / [§1.5 分组策略](#15-分组策略设计空间length-align-vs-bin-packing) |
 | Ray actor 怎么写 async loop？怎么去中心化？ | [§2.1 Ray Actor 模式](#21-ray-core-actor-模式) |
 | Ray Serve batch_size_fn 支持 token 吗？ | [§2.2 Ray Serve Batching](#22-ray-serve-动态-batching) |
 | Ray + vLLM 怎么集成？PrefixCacheAffinityRouter 是什么？ | [§2.3 Ray + vLLM](#23-ray--vllm-集成模式) |
@@ -66,6 +67,41 @@
 - 只有完整 block 可缓存，LRU 淘汰 + reference counting
 
 **上游如何利用**：共享 system prompt 的行合并为一个请求 → APC 命中率最大化；并发提交共享 prefix 的请求 → 多请求同时命中同一批 cached blocks。
+
+### 1.4 Chunked Prefill 与上游策略的安全边界
+
+**详细论述**：`experiments/plans/data_organization_batching.md` §2.5.7；vLLM deep-research 验证报告（2026-07-20）。
+
+**核心区分**（事实，来源：vLLM 官方文档 + SOSP'23 论文）：
+
+| 操作 | 机制 | 语义影响 |
+|---|---|---|
+| **vLLM `--enable-chunked-prefill`** | 同一请求内部，prefill token 分多个 chunk 与 decode 交错执行；KV cache 连续累积；完整注意力 | ✅ 数学等价（贪婪解码下输出一致） |
+| **手动拆分一份文档为多条请求** | 多条独立请求，KV cache 互不共享（默认），上下文隔离 | ❌ 语义断裂——后半段看不到前半段 |
+
+**对上游策略的约束**（推断）：
+- 上游 Daft/Ray 层的 token-budget 策略决定"多少行合并为一个 batch"——每行仍是独立完整的请求
+- **禁止**在 Ray actor 中自动拆分单行 prompt 内容为多条 vLLM 请求（即使该行 token 量超过 budget）
+- 超长单行的正确处理：预处理截断（truncate）、独占 batch、或从数据集中排除
+- 正确的批量模式：多条**互不相关的独立任务**合并为一个 batch 提交（等效于 vLLM 的批量请求列表）
+
+**与 prefix-aware grouping 的关系**：
+- prefix-aware 分组是将共享 system prompt 的独立请求合并提交以利用 APC —— 这是**正确的优化**（每行仍是独立任务）
+- 它不是"把一份文档拆成多段"——每行仍然是完整的独立请求，只是利用 APC 共享前缀计算
+- 与 chunked prefill 的关系：prefix-aware 操作在 request 粒度（哪些请求一起提交），chunked prefill 操作在 token 粒度（单个请求内部如何计算）——两者在不同层面，互补
+
+### 1.5 分组策略设计空间：Length-Align vs Bin-Packing
+
+**详细论述**：`experiments/plans/data_organization_batching.md` §2.5。
+
+两种 token-budget 驱动的分组策略（操作在"如何选择行放入同一 batch"，而非"如何切割行内文本"）：
+
+| 策略 | 机制 | 与 vLLM chunked prefill 的协同 |
+|---|---|---|
+| **A: Length-Align** | 相似 token 长度的行分入同一 batch | 长 batch 内无短 decode 可交错 → chunked prefill 优势减弱 |
+| **B: Bin-Packing** | 混合不同长度，使每个 batch 总 token 量均衡 | 天然混合 prefill+decode → chunked prefill 最优场景 |
+
+推荐主推 B（Bin-Packing），A 保留为消融对比（尤其在异构 actor pool 场景下）。详见 `data_organization_batching.md` §2.5.6。
 
 ---
 

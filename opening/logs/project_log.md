@@ -1,5 +1,13 @@
 # 开题材料 project log
 
+## 2026-07-20 飞书同步：新增 Daft 管线开销验证图
+
+- 在开题报告 §4.2 可行性分析中新增图 4-7（arrow_postgres vs daft_postgres 阶段耗时对比）及配套段落。
+- 论证目标：Daft 作为数据引擎不会引入可观测的数据管线开销（DB Read + Build/Organize < 0.1s），后续 AI_COMPLETE 及多模态泛化验证统一使用 Daft 具备可行性依据。
+- 本地来源：`opening/report/opening_report.md`（已同步修改），图源：`figures/data/report_main/b26_arrow_vs_daft_stage_breakdown.png`。
+- 飞书同步：使用 `str_replace`（markdown stdin 模式）在飞书 docx 中 §4.2 "Lance sink" 段落后插入新段落，随后通过 `block_move_after` 将 `docs +media-insert` 上传的图片移到图注之前。revision 更新到 214。
+- 工具教训：`--content ./file.md` 在 str_replace markdown 模式下被当作字面文本而非文件内容，需改走 stdin (`--content -`)。
+
 ## 2026-07-15 开题报告移除 fake/CPU 主文证据
 
 - 根据当前已经完成 pgai SQL 触发面集成和真实 GPU-backed `AI_EMBED` 完整链路复测的事实，更新 `opening/report/opening_report.md` 和 `opening/feishu/opening_report_wiki.md`。

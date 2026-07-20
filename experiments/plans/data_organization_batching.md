@@ -48,6 +48,91 @@
 
 ---
 
+## 2.5 分组策略设计空间：按相似度分还是按均衡分
+
+### 2.5.1 问题定义
+
+Token-budget 策略确定"每个 batch 放多少 token 总量"（batch 边界），但**不决定"哪些行放入同一个 batch"**（分组策略）。分组策略的选择直接影响：
+- 每个 batch 内的 prefill 时间同质性
+- vLLM chunked prefill 的 prefill-decode 交错效率
+- 异构 actor pool 的路由可行性
+- 与 prefix-aware grouping 的兼容性
+
+### 2.5.2 两种分组策略
+
+| 策略 | 机制 | 示例（token budget = 4096） |
+|---|---|---|
+| **A: Length-Align** | 按 token 长度相似度分组，短的和短的在一起，长的和长的在一起 | Batch 1: [50, 60, 45, 55, …] × 80 行 ≈ 4000 tok；Batch 2: [3500, 4000, 3800] ≈ 11300 tok（可能超过 budget，需单独处理） |
+| **B: Bin-Packing** | 混合不同长度，使每个 batch 的总 token 量尽量接近 budget | Batch 1: [50, 3500, 500] ≈ 4050 tok；Batch 2: [4000, 60] ≈ 4060 tok |
+
+**关键区分**（来源：2026-07-20 chunked prefill 交叉分析）：
+- **A 操作的是"batch 内的同质性"**——batch 之间差异大，batch 内部差异小
+- **B 操作的是"batch 间的均衡性"**——batch 之间差异小，batch 内部差异大
+
+### 2.5.3 两种策略在 vLLM Chunked Prefill 下的行为差异
+
+vLLM chunked prefill 的调度器采用 **decode-priority** 策略（事实，来源：vLLM 官方文档 v0.4.2+）：每轮迭代优先调度 decode 请求，剩余 token 预算分配给 prefill chunk。
+
+**方案 A（Length-Align）的行为**（推断）：
+- 短 batch：所有请求 prefill 快速完成 → 全部进入 decode → decode 阶段有多请求并发
+- 长 batch：所有请求 prefill 都很大 → prefill 被 chunked 分步执行 → **没有短 decode 请求可交错** → chunked prefill 的 "prefill-decode 混合" 优势减弱
+- 如果短 batch 和长 batch 到达 vLLM 的时间错开，内部队列只有同类请求 → 失去混合调度的多样性
+
+**方案 B（Bin-Packing）的行为**（推断）：
+- 每个 batch 天然混合长短请求 → 提交后，短请求第一个 chunk 就完成 prefill 进入 decode，长请求继续跨 chunk prefill
+- vLLM 调度器在后续 iteration 中：decode（来自短请求）+ prefill chunk（来自长请求）在同一 forward pass 中混跑
+- **这正好是 chunked prefill 设计的最优场景**：compute-bound prefill 与 memory-bound decode 交错
+
+### 2.5.4 两种策略的 Fatal Flaw
+
+| 策略 | Fatal Flaw | 触发条件 | 验证方式 |
+|---|---|---|---|
+| A: Length-Align | 数据单峰分布 → 退化为随机分组 | 数据集中 > 80% 行集中在同一 token 长度区间 | 实验前画 token 长度分布直方图，确认多峰或长尾 |
+| B: Bin-Packing | 极端 outlier 稀释优势 | 存在单行 token 量 > budget → 独占整个 batch，其他行与 length-align 无异 | 检查 P99/P50 token 比；如果 max > 2× budget，bin-packing 退化为 "outlier 独占 + 其余正常打包" |
+
+### 2.5.5 与异构 Actor Pool 和 Prefix-Aware Grouping 的交互
+
+| 交互对 | 兼容性 | 说明 |
+|---|---|---|
+| Length-Align × 异构 Actor Pool | ✅ **天然兼容** | 短 batch → 普通 actor，长 batch → 高容量 actor，路由清晰 |
+| Bin-Packing × 异构 Actor Pool | ❌ 冲突 | 所有 batch 特征相同，无法按特征分池——分池路由失去意义 |
+| Length-Align × Prefix-Aware | ✅ **可叠加** | 先按前缀分组（最大化 APC 命中率），再按长度子分组 |
+| Bin-Packing × Prefix-Aware | ⚠️ 冲突 | 为均衡 token 量可能拆散同前缀的行 → 降低 APC 命中率 |
+
+### 2.5.6 实验策略建议
+
+**主推方案 B（Bin-Packing）作为 RC1 主策略**（推断，待实验验证）：
+- 与 vLLM chunked prefill 的 prefill-decode 交错机制天然协同
+- 优化目标清晰："每个 batch 的 GPU 计算量均衡"
+- 文献依据：Orca 的 selective batching、vLLM 的 continuous batching 本质上都在混合不同长度的请求
+
+**方案 A（Length-Align）保留为消融对比**：
+- 在异构 actor pool 场景下（§5.3 或后续实验）：length-align + 分池路由 vs bin-packing + 统一路由
+- 在 prefix-aware 联合实验中：length-align + prefix-aware 两级分组 vs bin-packing-only
+
+**新增假设**：
+
+| 编号 | 假设 | 待检验 | 对应实验段 |
+|---|---|---|---|
+| H1.6 | Bin-packing 分组在统一 actor pool + vLLM chunked prefill 下的端到端吞吐优于 length-align 分组 | 能否被推翻？| §6.1 扩展 |
+
+### 2.5.7 语义安全边界：行内 prompt 不可拆分
+
+**红线**（事实，来源：2026-07-20 vLLM chunked prefill deep-research 验证）：
+> 将一份逻辑完整的 prompt 手动拆分成多条独立 vLLM 请求 → KV cache 隔离、上下文断裂、输出语义错误。vLLM 的 `--enable-chunked-prefill` 是引擎内部 token 级分片（数学等价），与手动 request 级拆分是完全不同的机制。
+
+**对本实验的约束**（推断）：
+- **每行数据 = 一个独立完整的 vLLM 请求**。Token-budget 策略决定的是 "多少行合并为一个 batch"，不是 "如何切割一行内的 prompt 文本"
+- 如果某单行的 prompt token 量超过模型 context window（如 Qwen2.5-1.5B 的 32K），**禁止在上游 Daft/Ray 层自动切分该行的 prompt 内容为多条请求**
+- 超长单行的处理方式：① 在数据准备阶段截断（truncate）到 context window 内；② 或将超长行标记为单独处理（独占一个 batch，不做拆分）；③ 或从数据集中排除
+
+**实验前检查清单**（添加到 §12）：
+- [ ] 确认数据集中每行的 prompt 是自包含的（self-contained），行间无语义依赖
+- [ ] 确认所有单行的 token 量 < 模型 context window（32K for Qwen2.5-1.5B）
+- [ ] 如果存在超长行：明确处理策略（truncate / 独占 batch / 排除），并记录在实验报告中
+
+---
+
 ## 3. 变量
 
 | 变量 | 含义 | 取值范围 |
@@ -58,6 +143,8 @@
 | `workload_type` | AI 算子类型 | {EMBED (真实), FILTER (模拟), COMPLETE (模拟)} |
 | `selectivity` (仅 FILTER) | 语义过滤的选择率 | {0.1, 0.3, 0.5, 0.8} |
 | `text_length` (仅 COMPLETE) | 平均 token 数 | {short <128, medium 128-512, long >512} |
+| `grouping_strategy` | 如何选择哪些行放入同一 batch | {random (baseline), length_align, bin_packing} |
+| `token_budget` (仅 grouping ≠ random) | 每个 batch 的目标 token 总量上限 | {1024, 2048, 4096, 8192}（根据模型 context window 调整）|
 
 **关于 FILTER/COMPLETE 的诚实标注**（参照 Orca 合成权重的做法）：
 
@@ -226,6 +313,8 @@ object_merge    ∈ {coalesce_output}  # 当前已知最优
 | workload 特征在运行前已知且不变 | 固定 1 种 workload，比较 "规则表选择" vs "固定 batch=64" | 差异 < 5% → 边界成立 |
 | 数据量 < 500 行 | 256 行规模下，比较 batch_size ∈ {8, 32, 64, 256} | 各配置 T_e2e 差异 < 10% → 边界成立 |
 | GPU 模型对所有 batch_size 吞吐几乎恒定 | 看 §4 前置实验的 batch scaling 曲线 | 如果平台期从 batch=8 开始 → batch_size 选择不重要 |
+| 数据集中存在超过 context window 的单行 | 检查 max(token_count) 是否 > 模型 context window（32K for Qwen2.5-1.5B）| 如有 → 预处理截断或排除；**禁止在 Ray 层自动拆分单行内容为多条请求**（会导致语义断裂，参见 §2.5.7） |
+| 分组策略与 chunked prefill 的交互 | length_align vs bin_packing 在 `--enable-chunked-prefill` on/off 下的对比（仅 V0；V1 强制开启）| bin_packing 在 chunked prefill on 时优势更大（prefill-decode 天然混合） |
 
 ---
 
@@ -241,3 +330,7 @@ object_merge    ∈ {coalesce_output}  # 当前已知最优
 - [ ] §11 的边界验证实验点完成
 - [ ] 所有结果 CSV 保存在 `experiments/results/rc1/`
 - [ ] 每个图标注：数据来源、排除 warm-up、硬件/模型/数据库版本、重复次数、取中位数还是平均值
+- [ ] **语义安全检查**（来自 §2.5.7）：每行 prompt 自包含、行间无语义依赖
+- [ ] **语义安全检查**：max(token_count) < 模型 context window，超长行的处理策略已明确
+- [ ] **分组策略检查**：数据集的 token 长度分布直方图已画出，确认分布特征（多峰/单峰/长尾）→ 据此决定 length_align 是否有区分度
+- [ ] **Chunked Prefill 状态**：确认实验使用的 vLLM 版本及 chunked prefill 是否开启，记录在 CSV 的 `server_version` 字段中

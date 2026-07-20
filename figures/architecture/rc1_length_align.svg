@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="340" viewBox="0 0 780 340">
+<rect width="780" height="340" fill="#F8FAFC"/>
+<text x="20" y="28" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="26" font-weight="bold" fill="#172033" text-anchor="start">Length-align: Sort by Token Length, Group Similar Rows</text>
+<rect x="89" y="263" width="18" height="12" rx="3" ry="3" fill="#94A3B8"/>
+<text x="90" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#334155" text-anchor="start">120</text>
+<rect x="116" y="176" width="18" height="99" rx="3" ry="3" fill="#94A3B8"/>
+<text x="117" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#334155" text-anchor="start">950</text>
+<rect x="143" y="239" width="18" height="36" rx="3" ry="3" fill="#94A3B8"/>
+<text x="144" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#334155" text-anchor="start">350</text>
+<rect x="170" y="200" width="18" height="75" rx="3" ry="3" fill="#94A3B8"/>
+<text x="171" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#334155" text-anchor="start">720</text>
+<rect x="197" y="257" width="18" height="18" rx="3" ry="3" fill="#94A3B8"/>
+<text x="198" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#334155" text-anchor="start">180</text>
+<rect x="224" y="183" width="18" height="92" rx="3" ry="3" fill="#94A3B8"/>
+<text x="225" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#334155" text-anchor="start">880</text>
+<rect x="251" y="231" width="18" height="44" rx="3" ry="3" fill="#94A3B8"/>
+<text x="252" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#334155" text-anchor="start">420</text>
+<rect x="278" y="210" width="18" height="65" rx="3" ry="3" fill="#94A3B8"/>
+<text x="279" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#334155" text-anchor="start">620</text>
+<rect x="305" y="246" width="18" height="29" rx="3" ry="3" fill="#94A3B8"/>
+<text x="306" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#334155" text-anchor="start">280</text>
+<rect x="332" y="194" width="18" height="81" rx="3" ry="3" fill="#94A3B8"/>
+<text x="333" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#334155" text-anchor="start">780</text>
+<line x1="364" y1="223" x2="393" y2="223" stroke="#334155" stroke-width="2"/><polygon points="393,223 383,217 383,229" fill="#334155"/>
+<rect x="409" y="263" width="18" height="12" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="410" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#2F6FEB" text-anchor="start">120</text>
+<rect x="436" y="257" width="18" height="18" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="437" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#2F6FEB" text-anchor="start">180</text>
+<rect x="463" y="246" width="18" height="29" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="464" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#2F6FEB" text-anchor="start">280</text>
+<rect x="490" y="239" width="18" height="36" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="491" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#2F6FEB" text-anchor="start">350</text>
+<rect x="517" y="231" width="18" height="44" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="518" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#2F6FEB" text-anchor="start">420</text>
+<rect x="544" y="210" width="18" height="65" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="545" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#2F6FEB" text-anchor="start">620</text>
+<rect x="571" y="200" width="18" height="75" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="572" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#2F6FEB" text-anchor="start">720</text>
+<rect x="598" y="194" width="18" height="81" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="599" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#2F6FEB" text-anchor="start">780</text>
+<rect x="625" y="183" width="18" height="92" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="626" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#2F6FEB" text-anchor="start">880</text>
+<rect x="652" y="176" width="18" height="99" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="653" y="288" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="9" font-weight="normal" fill="#2F6FEB" text-anchor="start">950</text>
+<line x1="409" y1="120" x2="490" y2="120" stroke="#16A34A" stroke-width="3"/>
+<text x="449" y="114" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="11" font-weight="bold" fill="#16A34A" text-anchor="middle">Short(fast)</text>
+<line x1="490" y1="120" x2="571" y2="120" stroke="#2F6FEB" stroke-width="3"/>
+<text x="530" y="114" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="11" font-weight="bold" fill="#2F6FEB" text-anchor="middle">Mid</text>
+<line x1="571" y1="120" x2="679" y2="120" stroke="#F97316" stroke-width="3"/>
+<text x="625" y="114" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="11" font-weight="bold" fill="#F97316" text-anchor="middle">Long(slow)</text>
+<text x="40" y="328" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="12" font-weight="normal" fill="#334155" text-anchor="start">Key: Sort by token length, then group. Each batch has similar computation, eliminating straggler delays.</text>
+</svg>

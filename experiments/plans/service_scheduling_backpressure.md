@@ -25,6 +25,26 @@
 
 **关键反证条件**（必须在 P0a 后检验）：如果 vLLM continuous batching 内部已将请求排队和 batch 做得很好，则外部 Ray 层的 K_max 控制价值可能有限 → 研究内容二 贡献重新定位为"外部调度 + 跨层协同"而非"独立 GPU 调度优化"。
 
+**两层调度关系：外部 Request 级（RC2）vs 内部 Token 级（vLLM chunked prefill）**（来源：2026-07-20 chunked prefill 交叉分析）：
+
+vLLM 的 `--enable-chunked-prefill` 和你的 queue-adaptive flush / K_max 控制操作在**不同层面**，功能互补而非冲突：
+
+| 层面 | 谁控制 | 粒度 | 做什么 |
+|---|---|---|---|
+| 外部 request 级 | Ray actor（你的 RC2 策略）| 请求 | 决定**何时**向 vLLM 提交下一个 batch、控制 in-flight 请求数 |
+| 内部 token 级 | vLLM scheduler（chunked prefill）| Token | 决定每个 forward pass 中 prefill chunk 和 decode 的配比 |
+
+**关键认知**（事实 + 推断）：
+- vLLM chunked prefill 的 **decode-priority 调度**确保 decode 不会被长 prefill 饥饿——这减少了外部 K_max 控制的部分必要性（vLLM 内部已经在做流控）
+- 但 vLLM 的调度器**不感知上游数据注入速率**——它只能对已提交的请求做调度，不能阻止上游过快提交导致 `num_requests_waiting` 堆积
+- 你的 queue-adaptive flush 在 **vLLM 队列堆积之前**做前置调节——这是 vLLM 内部调度器做不到的
+- **操作原则**（事实）：外部调度只改变"何时提交"和"提交多少"，不改变单个请求的内容完整性。每个 vLLM 请求必须包含完整、自包含的推理上下文
+
+**实验配置约束**：
+- 如果使用 vLLM ≥ 0.8.0（V1），chunked prefill 强制开启且不可关闭——实验中应固定此变量（不作为消融维度）
+- 如果使用 vLLM V0（< 0.8.0），建议固定 `--enable-chunked-prefill` 开启——因为这更接近生产环境且与你的 bin-packing 策略（RC1 §2.5）协同
+- 无论哪个版本，在 CSV 中记录 `vllm_version` 和 `chunked_prefill_enabled` 字段
+
 ---
 
 ## 1. 研究问题

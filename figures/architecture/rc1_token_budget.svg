@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="400" viewBox="0 0 1000 400">
+<rect width="1000" height="400" fill="#F8FAFC"/>
+<text x="237" y="28" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="26" font-weight="bold" fill="#172033" text-anchor="start">Token-budget: Count Tokens, Not Rows</text>
+<rect x="60" y="118" width="18" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="86" y="133" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">row1: 50 tk</text>
+<rect x="60" y="145" width="75" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="143" y="160" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">row2: 200 tk</text>
+<rect x="60" y="172" width="300" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="368" y="187" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">row3: 800 tk</text>
+<rect x="60" y="199" width="56" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="124" y="214" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">row4: 150 tk</text>
+<rect x="55" y="115" width="310" height="114" rx="8" ry="8" stroke="#DC2626" stroke-width="3"/>
+<text x="455" y="172" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="11" font-weight="normal" fill="#DC2626" text-anchor="start">Waits for longest row</text>
+<line x1="477" y1="179" x2="511" y2="179" stroke="#334155" stroke-width="2"/><polygon points="511,179 501,173 501,185" fill="#334155"/>
+<rect x="529" y="118" width="300" height="95" rx="6" ry="6" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="2"/>
+<rect x="539" y="126" width="16" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="545" y="141" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">row1(50)</text>
+<rect x="539" y="153" width="67" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="545" y="168" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">row2(200)</text>
+<rect x="539" y="180" width="16" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="545" y="195" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">row4(150)</text>
+<text x="758" y="233" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="11" font-weight="normal" fill="#16A34A" text-anchor="start">total 400, OK</text>
+<rect x="529" y="237" width="300" height="41" rx="6" ry="6" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="2"/>
+<rect x="539" y="245" width="270" height="20" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="545" y="260" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="start">row3(800)</text>
+<text x="735" y="298" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="11" font-weight="normal" fill="#F97316" text-anchor="start">800 &gt; limit, alone</text>
+<text x="40" y="388" font-family="Microsoft YaHei,SimHei,sans-serif" font-size="12" font-weight="normal" fill="#334155" text-anchor="start">Key: Replace fixed row count with token accumulation. Short rows pack more per batch; long rows get dedicated batches.</text>
+</svg>

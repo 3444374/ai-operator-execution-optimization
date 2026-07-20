@@ -237,6 +237,12 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 
 进一步将关键场景按 executor、endpoint 和写回阶段展开后，可以看到并发模型服务调用和 sink writeback 之间的收益边界。当前本地预演链路已经记录 `operator_wall_s`、`model_request_wall_s`、`fanin_s` 和 `writeback_s` 等字段；后续接入 Daft / Lance 后，将沿用同一类阶段边界继续记录 partition、shuffle、object transfer 和 Lance sink 写入时间。
 
+为验证 Daft 作为后续 AI_COMPLETE 及多模态实验的数据引擎不会引入额外管线开销，本项目对比了 AI_EMBED 阶段使用的手动 Arrow 管线（`arrow_postgres`：psycopg2 + Arrow RecordBatch）与 AI_COMPLETE 阶段使用的 Daft 管线（`daft_postgres`：`daft.read_sql` + Daft Organizer）的阶段耗时构成。如图 4-7 所示，两种数据路径下，DB Read 和 Build/Organize 的合计时间均小于 0.1 秒，Operator Wall（Ray 提交 + 模型推理）占据端到端时间的 95% 以上。Daft 路径的管线开销（0.091s）与手动 Arrow 路径（0.036s）处于同一数量级，差异来自 `daft.read_sql` 比 `psycopg2` 原始查询的常数级开销，在秒级推理时间面前可忽略。这一结果表明 Daft 作为数据引擎不会引入可观测的管线瓶颈，后续 AI_COMPLETE 及多模态泛化验证统一使用 Daft 具备可行性依据。
+
+![图 4-7 arrow_postgres 与 daft_postgres 阶段耗时对比](../../figures/data/report_main/b26_arrow_vs_daft_stage_breakdown.png)
+
+图 4-7 arrow_postgres（AI_EMBED coalesced，psycopg2 + 手动 Arrow RecordBatch）与 daft_postgres（AI_COMPLETE batch=8，daft.read_sql + Daft Organizer）的阶段耗时对比。两种路径下数据管线开销（DB Read + Build/Organize）均 < 0.1s，Operator Wall（Ray + 模型推理）占主导。注意两个 workload 不同（BGE embedding 5939 行 vs Qwen2.5-1.5B 512 行），推理时间不直接可比；本图仅对比管线开销。写回阶段已排除。数据来源：ai_embed_chain_breakdown_20260712.csv / sharegpt_burstgpt_ray_task_batch128_token_sweep_20260719.csv。
+
 综合上述结果，当前可行性结论有三点。第一，数据库驱动 AI workload 的端到端画像链路已在 `AI_EMBED` 预研中跑通，真实 GPU-backed 模型服务也能接入本地 PostgreSQL 同构预演环境。第二，已有实验显示 batch 粒度和 endpoint routing 都会影响端到端性能，支撑本文选择上游数据组织与提交策略作为优化对象；持久化写回成本也已在本地实验中量化。第三，论文主体实验将在 vLLM + `AI_COMPLETE` 平台上进行，`AI_EMBED` 预研仅支撑实验框架可行性。
 
 当前仍需补齐的关键环节：7 月下旬至 8 月上旬建立 vLLM + 小 LLM baseline，替代手动 HTTP endpoint；8 月至 9 月在 AI_COMPLETE 场景下完成动态 batching 和自适应提交消融；9 月至 10 月完成耦合验证和写回瓶颈判定。
