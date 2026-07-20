@@ -369,3 +369,16 @@
 - Updated `opening/report/opening_report.md` and `opening/feishu/opening_report_wiki.md` so the prose matches the current figures.
 - The report now describes the method as plan-time data organization, runtime admission/routing, and service-side batching, with writeback used for bottleneck determination and end-to-end benefit checks.
 - Removed stale mainline wording around GPU-only scheduling, writeback as an independent contribution, and mandatory independent-best vs joint-optimal comparison.
+## 2026-07-20 开题 PPT v5 数据组织机制图增量更新
+
+- 从 `opening/slides/opening_defense_20260720_v4.pptx` 拷贝生成 `opening/slides/opening_defense_20260720_v5.pptx`。
+- 按用户要求未重跑 `opening/slides/build_ppt.py`，仅使用 `python-pptx` 对 v5 做增量修改。
+- 在原第 14 页“研究内容一：按计算量组织数据，而非按行数”后插入三页机制图：token-budget、length-align、prefix-aware。
+- 将原第 14 页 prefix-aware 表述从“让 vLLM 复用 KV-cache”收紧为“为 vLLM prefix caching 创造命中条件，后续用 APC 命中率和端到端效果验证”，避免提前声称未验证收益。
+- 结构检查：v5 共 25 页；新增页 15-17；PPTX 几何检查未发现越界；当前环境缺少 `markitdown`、`soffice/libreoffice` 和 `pdftoppm`，未做真实渲染预览。
+- 根据 PPT 预览反馈，替换第 16 页 length-align 机制图为字体修正版；该修正版去掉标题中的中英粗体混排，改为纯中文机制标签。
+- 对 v5 执行整体结构与版式一致性检查，保持章节页 01/02/03/04 切换形式不变；仅修正新增第 15-17 页：文字从硬编码 `微软雅黑` 改回主题字体，机制图按原始比例等比居中，页码编号卡替换为与第 14/18 页一致的方形样式。
+- 按用户反馈继续增量修订 v5：调整封面标题、技术关键词和报告人信息的垂直层次；将目录与章节切换页统一为“目录页 + 当前章节高亮”形式，去除项目符号导致的目录数字字体问题；将研究内容一/二标题与正文改为更学术、机制导向的表述，分别对应“面向计算量的数据组织策略”和“面向服务状态的调度与提交控制策略”。
+- 按用户反馈修正 v5 的目录导航与底部注释条：纯目录页不再显示章节高亮竖线，章节目录页删除额外绘制的横线并保留模板横线层次；所有底部注释条统一贴近左下角，竖线与注释文字按视觉中心对齐，减少与正文内容重叠的风险。
+- 继续修正底部注释条的竖线/文字对齐：将所有底部注释的竖线与文字框设置为相同 top 和 height，文字框垂直居中，段前段后与行距归一化，避免不同颜色/不同字体注释在 PowerPoint 渲染时出现基线错位。
+- 按用户反馈新增 v5 第 22 页“后续工作：多模态泛化验证”，插入在“可行性与创新点”和“进度安排”之间。页面使用 `figures/ppt_cropped/b26_arrow_vs_daft_stage_breakdown.png`，说明 Daft 接入后的 DB 读取与组织开销仍小于 0.1s，从而支撑后续将同一套 Daft/Ray pipeline 从 prompt 列扩展到 image/frame 列；该页明确多模态是后续验证目标，不声称已经完成。

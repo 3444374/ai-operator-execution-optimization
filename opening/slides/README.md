@@ -20,3 +20,17 @@ opening/ppt_rules.md
 ```
 
 优先使用 `figures/architecture/` 和 `figures/data/report_main/` 中的正式图。PPT 生成后仍需用 WPS/PowerPoint 实际打开检查页面布局。
+## 2026-07-20 v5
+
+Current PPTX:
+
+```text
+opening/slides/opening_defense_20260720_v5.pptx
+```
+
+This version was copied from `opening_defense_20260720_v4.pptx` and edited
+incrementally with `python-pptx`; `build_ppt.py` was not rerun. Main incremental
+changes include the three data-organization mechanism slides, refined cover /
+TOC / bottom-note layout, conservative prefix-aware wording, and one added
+follow-up slide on multimodal generalization using the Daft stage-breakdown
+figure.

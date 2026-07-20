@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="460" viewBox="0 0 1120 460">
+<rect width="1120" height="460" fill="#F8FAFC"/>
+<text x="560" y="34" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="26" font-weight="bold" fill="#172033" text-anchor="middle">数据组织策略一：按 token 预算构造请求</text>
+<text x="560" y="60" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="normal" fill="#475569" text-anchor="middle">候选机制：先估计每行 token 成本，再按预算形成上游提交</text>
+<rect x="55" y="86" width="455" height="264" rx="10" ry="10" fill="#FEF2F2"/>
+<rect x="610" y="86" width="455" height="264" rx="10" ry="10" fill="#F0FDF4"/>
+<text x="78" y="124" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#172033" text-anchor="start">固定行数：batch_size = 4</text>
+<text x="633" y="124" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#172033" text-anchor="start">token-budget：max_tokens = 600</text>
+<rect x="82" y="142" width="398" height="170" rx="8" ry="8" fill="#FFFFFF" stroke="#DC2626" stroke-width="2"/>
+<rect x="98" y="155" width="134" height="25" rx="5" ry="5" fill="#DC2626"/>
+<text x="165" y="172" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">总量 1200 tokens</text>
+<text x="250" y="174" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#DC2626" text-anchor="start">行数固定，但计算量不可控</text>
+<text x="103" y="210" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">row1: 50</text>
+<rect x="205" y="196" width="14" height="16" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="103" y="236" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">row2: 200</text>
+<rect x="205" y="222" width="55" height="16" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="103" y="262" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">row3: 800</text>
+<rect x="205" y="248" width="220" height="16" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="103" y="288" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">row4: 150</text>
+<rect x="205" y="274" width="41" height="16" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="98" y="339" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#DC2626" text-anchor="start">问题：短行和长行被一次性合并，尾部成本由长行主导</text>
+<line x1="536" y1="208" x2="584" y2="208" stroke="#334155" stroke-width="3"/><polygon points="584,208 574,202 574,214" fill="#334155"/>
+<rect x="640" y="145" width="380" height="88" rx="8" ry="8" fill="#E7F0FF" stroke="#16A34A" stroke-width="2"/>
+<text x="658" y="174" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#16A34A" text-anchor="start">提交 A：400 tokens &lt;= 600</text>
+<rect x="658" y="185" width="54" height="22" rx="5" ry="5" fill="#2F6FEB"/>
+<text x="685" y="200" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">row1(50)</text>
+<rect x="722" y="185" width="54" height="22" rx="5" ry="5" fill="#2F6FEB"/>
+<text x="749" y="200" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">row2(200)</text>
+<rect x="786" y="185" width="54" height="22" rx="5" ry="5" fill="#2F6FEB"/>
+<text x="813" y="200" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">row4(150)</text>
+<text x="658" y="225" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#16A34A" text-anchor="start">短行合并，提高单次提交装载率</text>
+<rect x="640" y="252" width="380" height="66" rx="8" ry="8" fill="#FFF1E6" stroke="#F97316" stroke-width="2"/>
+<text x="658" y="281" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#F97316" text-anchor="start">提交 B：长行单独处理</text>
+<rect x="658" y="292" width="150" height="22" rx="5" ry="5" fill="#2F6FEB"/>
+<text x="733" y="307" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">row3(800)</text>
+<text x="825" y="311" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#F97316" text-anchor="start">超过预算时不再拖住短行</text>
+<text x="55" y="446" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#475569" text-anchor="start">图注建议：该图说明 token-budget batching 如何把固定行数提交改为计算量预算提交；收益仍需用 token tail、queue wait、tokens/s 和端到端延迟验证。</text>
+</svg>

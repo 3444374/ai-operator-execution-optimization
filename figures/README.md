@@ -15,6 +15,28 @@ and `05_actor_endpoint_scaling_writeback` figures are retained as historical
 motivation assets, but should not be the first citation for the latest local
 pgai-integrated GPU-backed rerun.
 
+# 2026-07-20 Data Organization Mechanism Figures
+
+Use these formal mechanism figures when explaining research content one
+(data-organization strategy design):
+
+```text
+figures/architecture/data_organization_token_budget_mechanism.png
+figures/architecture/data_organization_token_budget_mechanism.svg
+figures/architecture/data_organization_length_align_mechanism.png
+figures/architecture/data_organization_length_align_mechanism.svg
+figures/architecture/data_organization_prefix_aware_mechanism.png
+figures/architecture/data_organization_prefix_aware_mechanism.svg
+figures/scripts/generate_data_organization_strategy_mechanism.py
+figures/audit/data_organization_strategy_mechanism_audit.md
+```
+
+These figures replace the older `rc1_*` draft entry points for formal report,
+PPT, and later thesis use. They are mechanism diagrams, not experimental-result
+charts: token-budget, length-aligned, and prefix-aware grouping are presented
+as candidate request-shaping policies whose throughput, tail-latency, queue,
+and prefix-cache effects still require ablation evidence.
+
 # Project Figures
 
 做图、改图、迁移图或审查图表前，先读 `figures/AGENTS.md`。本文件只维护当前图资产入口、正式图清单和保留规则。

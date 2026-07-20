@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="380" viewBox="0 0 980 380">
+<rect width="980" height="380" fill="#F8FAFC"/>
+<text x="490" y="34" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="26" font-weight="bold" fill="#172033" text-anchor="middle">数据组织策略二：按 token 长度分组</text>
+<text x="490" y="60" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="normal" fill="#475569" text-anchor="middle">候选机制：先按 token 长度排序，再把相近计算量的行放入同一提交</text>
+<text x="85" y="111" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#172033" text-anchor="start">原始顺序：长短请求混杂</text>
+<text x="575" y="111" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#172033" text-anchor="start">排序分组：短中长请求分区</text>
+<rect x="85" y="264" width="22" height="16" rx="4" ry="4" fill="#94A3B8"/>
+<text x="83" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">120</text>
+<rect x="120" y="150" width="22" height="130" rx="4" ry="4" fill="#94A3B8"/>
+<text x="118" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">950</text>
+<rect x="155" y="233" width="22" height="47" rx="4" ry="4" fill="#94A3B8"/>
+<text x="153" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">350</text>
+<rect x="190" y="182" width="22" height="98" rx="4" ry="4" fill="#94A3B8"/>
+<text x="188" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">720</text>
+<rect x="225" y="256" width="22" height="24" rx="4" ry="4" fill="#94A3B8"/>
+<text x="223" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">180</text>
+<rect x="260" y="160" width="22" height="120" rx="4" ry="4" fill="#94A3B8"/>
+<text x="258" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">880</text>
+<rect x="295" y="223" width="22" height="57" rx="4" ry="4" fill="#94A3B8"/>
+<text x="293" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">420</text>
+<rect x="330" y="196" width="22" height="84" rx="4" ry="4" fill="#94A3B8"/>
+<text x="328" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">620</text>
+<rect x="365" y="242" width="22" height="38" rx="4" ry="4" fill="#94A3B8"/>
+<text x="363" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">280</text>
+<rect x="400" y="174" width="22" height="106" rx="4" ry="4" fill="#94A3B8"/>
+<text x="398" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">780</text>
+<text x="120" y="337" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#DC2626" text-anchor="start">风险：短请求等待长请求完成</text>
+<line x1="455" y1="202" x2="510" y2="202" stroke="#334155" stroke-width="3"/><polygon points="510,202 500,196 500,208" fill="#334155"/>
+<line x1="575" y1="130" x2="689" y2="130" stroke="#16A34A" stroke-width="4"/>
+<text x="632" y="123" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#16A34A" text-anchor="middle">短 token</text>
+<line x1="680" y1="130" x2="794" y2="130" stroke="#2F6FEB" stroke-width="4"/>
+<text x="737" y="123" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#2F6FEB" text-anchor="middle">中 token</text>
+<line x1="785" y1="130" x2="934" y2="130" stroke="#F97316" stroke-width="4"/>
+<text x="859" y="123" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#F97316" text-anchor="middle">长 token</text>
+<rect x="575" y="264" width="22" height="16" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="573" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">120</text>
+<rect x="610" y="256" width="22" height="24" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="608" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">180</text>
+<rect x="645" y="242" width="22" height="38" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="643" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">280</text>
+<rect x="680" y="233" width="22" height="47" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="678" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">350</text>
+<rect x="715" y="223" width="22" height="57" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="713" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">420</text>
+<rect x="750" y="196" width="22" height="84" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="748" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">620</text>
+<rect x="785" y="182" width="22" height="98" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="783" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">720</text>
+<rect x="820" y="174" width="22" height="106" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="818" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">780</text>
+<rect x="855" y="160" width="22" height="120" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="853" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">880</text>
+<rect x="890" y="150" width="22" height="130" rx="4" ry="4" fill="#2F6FEB"/>
+<text x="888" y="301" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">950</text>
+<text x="600" y="337" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#16A34A" text-anchor="start">目标：降低组内计算量方差</text>
+<text x="55" y="367" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#475569" text-anchor="start">图注建议：该图说明 length-aligned grouping 的候选机制；图中柱高代表 prompt token 数，分组收益需用服务尾延迟与 tokens/s 消融验证。</text>
+</svg>

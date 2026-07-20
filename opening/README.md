@@ -44,7 +44,7 @@
 |---|---|---|
 | 开题报告 | `report/opening_report.md` | 初稿已补 |
 | 开题 PPT 源稿 | `slides/opening_ppt.md` | 当前内容和形式先作废，仅保留版式经验，下一版需重写 |
-| 开题 PPTX | `slides/opening_defense_20260712.pptx` | 旧版先作废，页面布局经验可参考，不再作为正式汇报稿 |
+| 开题 PPTX | `slides/opening_defense_20260720_v5.pptx` | 当前 v5 增量版：基于 v4 拷贝，加入数据组织三张机制图页；未重跑全量生成脚本 |
 | 开题飞书源稿 | `feishu/opening_report_wiki.md` | 已用于同步新版飞书 docx |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |

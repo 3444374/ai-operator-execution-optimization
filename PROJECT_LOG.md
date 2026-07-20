@@ -646,3 +646,17 @@
 - 研究内容二统一表述为“运行层调度与服务端批处理协同方法”，覆盖 `K_max`、endpoint routing、actor pool、backpressure 和服务端 `micro-batch`。
 - 将方向三改为“写回瓶颈判定与端到端收益检查”，避免把写回写成当前独立主贡献。
 - 清理旧的“岛”“GPU 调度优化”“联合最优/Killer Experiment”等主叙事表述，保留其作为后续增强对照的可能性。
+## 2026-07-20 数据组织策略机制图正式化
+
+- 使用 `figure-designer` 和 `nature-figure` 的论文图规则审计新增的数据组织策略机制图，将 `rc1_*` 草图口径调整为正式可引用的 `data_organization_*_mechanism.*` 系列。
+- 新增三张 architecture 机制图：`data_organization_token_budget_mechanism.*`、`data_organization_length_align_mechanism.*`、`data_organization_prefix_aware_mechanism.*`，分别解释 token-budget batching、length-aligned grouping 和 prefix-aware grouping。
+- 重写 `figures/scripts/generate_data_organization_strategy_mechanism.py`，输出 PNG/SVG，并对正式 SVG 执行 `RC/BL` 等禁用可见术语检查。
+- 新增 `figures/audit/data_organization_strategy_mechanism_audit.md`，明确这些图是候选机制说明，不是实验结果图；prefix-aware 图仅声称创造 prefix locality，不提前声称 APC 收益。
+- 更新 `figures/README.md` 和 `PROJECT_INDEX.md` 的图资产入口，说明旧 `rc1_*` 文件不再作为正式报告/PPT/论文入口。
+- 根据 PPT 预览反馈修正 `data_organization_length_align_mechanism.*` 的标题字体混排问题，将含 `batch` 的粗体混排标签改为更稳定的纯中文机制标签，并同步替换 v5 PPT 中的对应图片。
+## 2026-07-20 开题 PPT v5 增量版
+
+- 新增 `opening/slides/opening_defense_20260720_v5.pptx`，由 v4 拷贝后增量修改生成，未重跑 `opening/slides/build_ppt.py`。
+- 在研究内容一后新增三页数据组织机制图（token-budget、length-align、prefix-aware），图源来自 `figures/architecture/data_organization_*_mechanism.png`。
+- 将原研究内容一中的 prefix-aware 表述收紧为候选验证口径，避免提前声称 KV-cache / APC 收益。
+- 更新 `opening/README.md`、`opening/slides/README.md`、`opening/logs/project_log.md` 和 `PROJECT_INDEX.md`。
