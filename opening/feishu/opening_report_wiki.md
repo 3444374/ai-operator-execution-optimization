@@ -1,6 +1,6 @@
 ﻿# 硕士生论文开题报告
 
-题目：面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究
+题目：数据库 AI 负载的执行优化与调度研究
 
 ## 1. 课题背景、目的和意义
 
@@ -8,7 +8,7 @@
 
 然而，这类 AI 操作和传统 SQL 算子（scan、filter、join、aggregate）有本质区别。传统算子在数据库执行器内部完成，数据不离开数据库进程；而 AI 算子的执行链路要长得多：表数据被组织为 batch 或 Arrow RecordBatch，经由外部数据处理层完成数据流组织，再调度 GPU-backed 模型服务执行推理，最后将 embedding、分类结果或生成文本写回数据库或外部存储。端到端性能不只由模型推理速度决定，也受数据组织方式、任务划分粒度、模型服务队列状态、结果汇聚和写回批量等因素影响。 Snowflake 的生产数据[1] 也印证了这一点：AI 算子主导查询成本，约 40% 的查询涉及多表操作且消耗超过 58% 的总执行时间。但 Snowflake 是闭源系统，其内部数据组织、批处理构造、模型服务交互和写回之间的阶段边界不可拆分，无法直接作为可观测、可消融的实验对象。
 
-本课题以 `AI_COMPLETE`（生成式 LLM 推理）为主场景，研究数据库 AI 算子外部执行链路中的上游调度优化问题。核心关注两个方面：一是数据组织策略，即如何将数据库中的行打包为发送给推理引擎的请求，探索按 token 量而非固定行数的动态组织方式，以及按 token 长度或 prefix 分组对推理效率的影响；二是提交控制策略，即利用 Ray actor 的异步能力，探索去中心化的自适应提交方式，使请求的发送节奏能够响应模型服务的实际队列状态，替代传统的固定并发上限或无界提交。在此基础上，通过对照实验验证两项策略是否需要联合调优。结果写回作为端到端评价的一部分：优先采用当前工程最优的写入方案作为 baseline；仅当写回占比持续过高、严重吞噬上游收益时，才考虑额外的写回优化。
+本课题以 `AI_COMPLETE`（生成式 LLM 推理）为主场景，研究数据库 AI 算子外部执行链路中的上游调度优化问题。核心关注两个方面：一是数据组织策略，即如何将数据库中的行打包为发送给推理引擎的请求，探索按 token 量而非固定行数的动态组织方式，以及按 token 长度或 prefix 分组对推理效率的影响；二是提交控制策略，即利用 Ray actor 的异步能力，探索去中心化的自适应提交方式，使请求的发送节奏能够响应模型服务的实际队列状态，替代传统的固定并发上限或无界提交。在此基础上，通过对照实验验证两项策略是否需要联合调优。结果写回作为端到端评价的一部分：优先采用 PostgreSQL + pgvector 的 COPY + deferred index 作为写入 baseline；仅当写回占比持续过高、严重吞噬上游收益时，才考虑额外的写回优化。
 
 课题的理论意义在于，将数据库 AI 算子外部执行链路中的上游调度作为独立的优化对象。现有工作中，推理引擎内部已有大量关于批处理调度和内存管理的优化工作，但数据从数据库表出发到进入推理引擎之前的这段链路（数据如何组织为请求、以什么节奏发送、如何根据模型服务状态调节并发）尚未被作为系统性的优化目标来对待。本课题在这段上游链路中探索数据组织策略和提交控制策略的设计空间，利用 Ray 的 actor 模型和异步能力实现可实验验证的调度方案。课题的应用意义在于，在真实 GPU-backed 环境中测量不同策略的端到端效果，为数据库 AI 算子的外部执行链路提供可落地的优化参考。
 
@@ -46,7 +46,11 @@ PostgreSQL 生态中，pgvector[4] 负责向量类型、索引和相似度检索
 
 **AI 数据存储与写回优化。** Lance[17]（LanceDB, 2025）提出面向 AI/ML 的列式存储格式，通过自适应结构编码在随机访问和全表扫描间取得平衡；ColStorEval[50]（PVLDB 2023）对 Parquet/ORC 等列式存储格式的写入性能进行了系统对比，为 AI 数据 sink 的格式选择提供了量化依据。Arrow Flight[18] 面向高性能列式数据传输。在向量数据库侧，如前所述的 Milvus[51]/Manu[52] 代表了专用向量存储的系统设计路线。在存储引擎层面，TurboVecDB[46]（PVLDB 2025）利用并行 I/O 和空间感知插入将 HNSW 索引构建时间减少 98.4%；Delta Lake[47]（PVLDB 2020）通过 optimistic concurrency 和盲追加实现了多 worker 并行写入，其盲追加模式是本课题 worker-direct writeback 架构的直接参考；FlexPushdownDB[48]（PVLDB 2021）提出了代价驱动的 compute-vs-storage pushdown 决策模型；WiscKey[49]（FAST 2016）通过 KV 分离避免了 compaction 对大 value 的重写开销。pgvector 和 Lance 分别代表"数据库内嵌向量存储"和"独立 AI 数据存储"两条技术路线。这些工作覆盖了存储引擎、写入路径和索引构建等关键环节，但研究范围止于存储层。数据在到达存储之前经历了怎样的数据组织、调度执行和推理过程，不在其优化目标之内；写回批量与上游 GPU 批处理之间的协同效应也未被系统考察。
 
-上述三个方向都有大量 CCF-A 论文，但优化目标并不相同：Ray/Daft 关注数据流组织和资源调度，vLLM/Orca 关注 GPU 侧的内存、队列和批处理效率，TurboVecDB/Delta Lake/Lance 关注存储格式、写入路径和索引构建效率。数据库驱动 AI workload 的执行链路同时经过这三个方向：数据从数据库表出发，经由 Arrow 批处理组织、Ray 调度执行、GPU 推理服务调用，最终写回 Lance、pgvector 或 PostgreSQL。现有研究通常没有把这条链路作为一个可观测、可拆分、可调优的整体来处理。本文重点研究方向一的数据组织策略与方向二的调度与提交控制策略，方向三用于写回瓶颈判定和端到端收益检查。
+上述三个方向都有大量 CCF-A 论文，但优化目标并不相同：Ray/Daft 关注数据流组织和资源调度，vLLM/Orca 关注 GPU 侧的内存、队列和批处理效率，TurboVecDB/Delta Lake/Lance 关注存储格式、写入路径和索引构建效率。数据库驱动 AI workload 的执行链路同时经过这三个方向：数据从数据库表出发，经由 Arrow 批处理组织、Ray 调度执行、GPU 推理服务调用，最终写回 Lance、pgvector 或 PostgreSQL。现有研究通常没有把这条链路作为一个可观测、可拆分、可调优的整体来处理。
+
+图 2-1 把这个格局画了出来。左边是三个已有方向及其代表系统——DB4AI（GaussML、Smart、NeurDB）、AI 推理服务（vLLM、Orca、Sarathi-Serve）和 AI 数据存储（Lance、TurboVecDB、Delta Lake）。每个方向内部都有成熟的 CCF-A 工作和明确的优化目标，但它们各自止于自己的边界：DB4AI 停在数据库进程内，推理服务停在 GPU 侧，存储层停在数据落盘之后。三个方向之间的两条连接带——数据库到推理引擎之间的"数据组织与调度执行"、推理引擎到存储之间的"结果汇聚与持久化写回"——缺少系统性的可观测、可拆分、可调优研究。
+
+本文重点研究方向一的数据组织策略与方向二的调度与提交控制策略，方向三用于写回瓶颈判定和端到端收益检查。
 
 ![图 2-1 已有研究的三个方向与本课题定位](../../figures/architecture/research_gap_three_islands.png)
 
@@ -83,11 +87,11 @@ PostgreSQL 生态中，pgvector[4] 负责向量类型、索引和相似度检索
 3. 设计并验证 Ray actor 去中心化自适应提交策略：每个 actor 独立观测模型服务队列深度，自主决定 flush 时机，K_max 由 queue-adaptive 行为自然形成。
 4. 通过耦合验证实验（独立最优拼接 vs 联合 grid search）判断上游 batching 策略和提交策略是否需要联合调优。
 5. 确认结果持久化在当前链路中的瓶颈位置，通过 sink 对比判断上游优化收益是否被持久化阶段吞噬。
-6. 以 `AI_EMBED` 预研结果支撑实验框架可行性，以 `AI_FILTER/AI_CLASSIFY` 作为 simulated extension 讨论 selectivity-aware 方向的适用性。
+6. 以 `AI_EMBED` 预研结果支撑实验框架可行性。通过多模态泛化验证（图像 workload：`AI_EMBED`/`AI_CLASSIFY`，CLIP/Qwen2.5-VL），检查数据组织策略和提交控制策略是否具有模态无关性——同一套 Daft/Ray 策略代码从 token 预算扩展到 image/frame 预算。
 
 ### 3.2 研究内容
 
-阶段划分、分阶段性能剖析和瓶颈归因用于支撑动机测试、方案设计和效果评价。围绕这些观测结果，本课题研究两项策略设计和一个端到端验证问题。主场景为 `AI_COMPLETE`（生成式 LLM 推理）；`AI_EMBED` 为预研验证场景（已完成真实 GPU-backed 端到端链路）；`AI_FILTER/AI_CLASSIFY` 为 simulated extension。
+阶段划分、分阶段性能剖析和瓶颈归因用于支撑动机测试、方案设计和效果评价。围绕这些观测结果，本课题研究两项策略设计、多模态泛化验证和算子代价估计补充讨论。主场景为 `AI_COMPLETE`（生成式 LLM 推理）；`AI_EMBED` 为预研验证场景（已完成真实 GPU-backed 端到端链路）；多模态泛化验证在图像 workload（`AI_EMBED`/`AI_CLASSIFY`，CLIP/Qwen2.5-VL）上复用同一套策略代码，验证策略的模态无关性。算子代价估计基于实验阶段采集的 profile 数据，建立 AI 算子的端到端成本估计方法，辅助编排决策，不作为独立研究内容。
 
 **优化层级聚焦**：本课题聚焦部署服务层（PagedAttention + In-Flight-Batching），不涉及模型结构（GQA/MQA）和计算内核（Flash-Attention）。vLLM 为部署平台，论文不修改其内部调度器，重点研究上游 Ray 数据执行层的数据组织策略和提交控制策略。
 
@@ -122,11 +126,11 @@ Ray actor 异构化是实现上述策略的关键机制：创建不同配置的 
 
 **端到端验证：AI 数据流结果持久化的瓶颈判定。**
 
-本部分不作为独立方法贡献，而是以瓶颈判定为目标：采用当前工程最优的写回方案作为 baseline，确认在加入上游优化后，写回是否严重限制端到端收益。比较不同 sink 类型（JSON text、pgvector 等）的写回成本。仅当写回占比持续过高时才考虑额外的写回优化，否则文档化并收尾。评价指标包括 writeback time、端到端耗时和写回占比变化。
+本部分不作为独立方法贡献，而是以瓶颈判定为目标：采用 PostgreSQL + pgvector 的 COPY + deferred index 作为写回 baseline，确认在加入上游优化后，写回是否严重限制端到端收益。比较不同 sink 类型（JSON text、pgvector 等）的写回成本。仅当写回占比持续过高时才考虑额外的写回优化，否则文档化并收尾。评价指标包括 writeback time、端到端耗时和写回占比变化。
 
 ### 3.3 总体研究框架
 
-本课题的总体框架如图 3-1 所示。数据库 AI workload 是场景入口，以 `AI_COMPLETE`（生成式 LLM）为主场景，经由 Daft/Arrow 数据组织后进入 Ray 动态 batching 层（token-budget / length-align / prefix-aware grouping），通过异构 Ray actor pool + 去中心化自适应提交，将请求送入 GPU 推理引擎，最终写回数据库 sink。研究内容一关注上游动态 batching 策略，研究内容二关注自适应提交控制，写回作为端到端瓶颈判定。
+图 3-1 给出了课题的总体研究框架，按数据流向从左到右组织。输入端是数据库 AI workload（以 `AI_COMPLETE` 为主场景），数据经过 Daft/Arrow 数据组织层进入 Ray 动态 batching 层。Ray 层是课题的核心优化区，包含两个研究内容：研究内容一关注数据组织策略——数据以什么粒度、按什么规则打包为请求（token-budget、length-align、prefix-aware grouping），通过异构 actor pool 实现；研究内容二关注提交控制策略——请求以什么节奏、在什么条件下发往推理引擎（queue-adaptive flush、K_max 动态控制、actor pool 分池路由）。之后请求进入 GPU 推理引擎（vLLM，课题不修改其内部机制），结果经 fan-in 汇聚后写回数据库 sink。最右侧的写回阶段作为端到端瓶颈判定，不独立构成研究内容；多模态泛化验证在图像 workload 上复用同一套策略代码，用于验证策略的模态无关性。
 
 ![图 3-1 课题总体研究框架](../../figures/architecture/system_architecture_ai_data_execution.png)
 
@@ -147,7 +151,7 @@ Database AI COMPLETE workload source (PostgreSQL)
      + Ray actor 架构（异构 actor pool / async loop / 去中心化协调）
   -> GPU 推理引擎
   -> fan-in / result consolidation
-  -> 工程最优写回
+  -> 写回（PostgreSQL + pgvector，COPY + deferred index）
 ```
 
 实验分为四个阶段：
@@ -170,7 +174,9 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 
 **第三阶段：耦合验证实验。** 分别独立搜索最优 batching policy（固定默认提交策略）和最优提交策略（固定默认 batching policy），得到独立最优配置后拼接，再对两类策略做联合 grid search。比较拼接后的端到端表现与联合搜索最优之间的差异。如果联合搜索显著优于独立拼接，则上游 batching 与下游 continuous batching 需要联合调优；如果两者接近，则分层独立优化已足够。
 
-**第四阶段：写回瓶颈判定。** 在最优上游配置下，对比不写回和不同 sink 类型（JSON text、pgvector 等）的端到端表现。如果写回占比在可接受范围内，文档化并收尾；仅当占比持续过高时才考虑额外的写回优化。
+**第四阶段：写回瓶颈判定。** 在最优上游配置下，对比不写回和不同 sink 类型（JSON text、pgvector 等）的端到端表现。如果写回占比在可接受范围内，文档化并收尾；仅当占比持续过高时才考虑额外的写回优化。写回使用 PostgreSQL + pgvector（COPY + deferred index baseline），不作为独立实验阶段。
+
+**多模态泛化验证。** 在文本 workload 消融完成后，将同一套 Daft/Ray 策略代码从 `df["prompt"]` 扩展到 `df["image"]`，在图像 workload（`AI_EMBED`/`AI_CLASSIFY`，CLIP/Qwen2.5-VL）上验证策略的模态无关性。验证 token 预算到 frame 预算的参数迁移是否直接可用，queue-adaptive flush 等提交控制策略是否完全复用。该验证作为正文实验，用于支撑"策略抽象不依赖数据模态"的结论。
 
 评价指标包括端到端耗时、tokens/s、TTFT、TPOT、P50/P99 latency、GPU utilization、模型服务队列深度、prefix cache hit rate、writeback time 和端到端吞吐。
 
@@ -179,9 +185,11 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 1. 上游动态 batching policy 如何影响 vLLM continuous batching 的调度效率。Token-budget batching 是否优于固定行数 batching？Length-aligned grouping 是否减少 straggler 延迟？Prefix-aware grouping 是否能显著提高 APC hit rate？
 2. Ray actor 去中心化自适应提交是否优于固定 K_max。Queue-adaptive flush 能否在保持吞吐的同时降低 P99 延迟？去中心化协调是否避免了中央 scheduler 的瓶颈？
 3. 上游 batching 和提交策略之间是否需要联合调优。独立最优拼接是否等于联合最优？如果两者接近，则分层独立优化即可。
-4. 持久化写回是否会限制上游收益。当前工程最优写回方法下，writeback 占比是否可控？
+4. 持久化写回是否会限制上游收益。COPY + deferred index 写回 baseline 下，writeback 占比是否可控？
 
 为验证全链路调优效果，本文采用逐步递进的对照实验：首先建立 GPU baseline；其次在默认提交策略下搜索最优动态 batching policy；再用最优 batching 搜索最优自适应提交策略；然后联合 grid search 与独立最优拼接对照，判定两项策略是否需要联合调优；最后加入写回检查端到端收益是否被持久化阶段吞噬。`AI_EMBED` 预研结果仅用于证明阶段计时方法和实验框架可行，不作为论文主体贡献证据。`AI_FILTER/AI_CLASSIFY` 作为 simulated extension 在 §6 Discussion 中讨论 selectivity-aware 方向的适用性。
+
+图 4-1 把这个研究方案按执行阶段展开。图的顶部是场景入口（AI_COMPLETE 主场景），中间是分阶段性能剖析——将整个链路拆为数据库读取、Daft/Arrow 数据组织、Ray 动态 batching、GPU 推理和写回，每个阶段标注了关键可观测指标。下半部分展示了两项策略的消融实验路线：数据组织策略（token-budget、length-align、prefix-aware）和提交控制策略（queue-adaptive flush、K_max 动态控制、actor pool 分池路由），以及耦合验证（独立拼接 vs 联合 grid search）和写回瓶颈判定。图的底部说明这条方案不只是罗列实验，而是按"定位瓶颈→设计策略→独立消融→耦合验证→端到端检查"的逻辑组织。
 
 ![图 4-1 研究方案：上游调度策略设计与端到端验证](../../figures/architecture/cross_layer_method_framework.png)
 
@@ -193,15 +201,19 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 
 ### 4.2 可行性分析
 
-**已完成预研（AI_EMBED 阶段）。** 目前已完成本地 PostgreSQL 18.4 同构预演环境、PG18.4 + pgvector 连接验证、pgai SQL trigger surface 冒烟验证、真实 GPU-backed embedding 端到端画像和双 endpoint Ray 动机测试。这些实验证明了阶段计时方法可行、数据库到 GPU 再到写回的端到端链路可观测、batch 粒度（fine vs coalesced，37.5× 差异）是一阶变量。但 AI_EMBED 仅作为预研验证；论文主体实验将在 vLLM + AI_COMPLETE 平台上进行。
+可行性分析分三层：先看策略机制是否闭合（图 4-2），再看已有预研证据（表 4-1 和图 4-3 至 4-6），最后确认 AI_COMPLETE 阶段的工程基础（图 4-7）。
 
-**下一步前置条件。** 论文主体实验的前置条件是建立 vLLM + 小 LLM baseline：部署 vLLM + Qwen2.5-1.5B-Instruct（适配 RTX 5070 12GB VRAM），替代手动 HTTP endpoint。构造 AI_COMPLETE workload（含三类 token 长度分布和 shared prefix ratio 控制）。此步骤完成后，AI_EMBED 的手动 endpoint 实验不再承担论文主证据角色。
+**策略机制的可行性：运行时信号驱动的闭环。** 图 4-2 以一次 `AI_COMPLETE` 查询为例，画出上游策略的执行闭环。这个闭环的关键在于：数据组织决策（token-budget、分组方式）在执行前确定，不依赖运行时反馈；提交控制决策（queue-adaptive flush、K_max、routing）在运行中根据 vLLM 队列状态自适应调节。GPU 侧只作为信号源——上游 actor 通过观测 `num_requests_running` 和 `num_requests_waiting` 来判断队列深浅，不修改 vLLM 内部的 continuous batching 逻辑。写回占比作为保护约束：如果上游调优后端到端收益被持久化阶段吞噬，说明需要关注写入侧，否则写回不是当前瓶颈。
 
-表 4-1 汇总了当前可行性证据的来源、作用和边界。本课题已经具备数据库读写、Arrow batch、Ray task/actor、GPU-backed endpoint 和写回阶段计时的基础；开题报告中的可行性结论以真实 GPU-backed 链路为主。
+这个闭环的可行性在于，它不需要侵入 vLLM 或 Ray 内部，只需要利用 Ray actor 的 stateful async loop 读取队列指标、做本地决策。每个 actor 独立运行这个闭环，不依赖中央协调器。
 
 ![图 4-2 运行时信号驱动的上游执行闭环](../../figures/architecture/runtime_strategy_control_loop.png)
 
 图 4-2 运行时信号驱动的上游执行闭环。以 AI_COMPLETE 查询为例，数据组织决策（token-budget / 分组）在执行前确定，提交控制决策（queue-adaptive flush / K_max / routing）在运行中根据 vLLM 队列状态自适应调节。GPU 侧仅观测队列状态作为反馈信号，不修改 vLLM 内部批处理机制。写回占比作为保护约束，用于判断上游调优是否真正改善全链路。
+
+**已有预研证据（AI_EMBED 阶段）。** 目前已完成的预研工作包括：本地 PostgreSQL 18.4 同构预演环境搭建、PG18.4 + pgvector 连接验证、pgai SQL trigger surface 冒烟验证、真实 GPU-backed embedding 端到端画像和双 endpoint Ray 动机测试。这些实验共同说明一件事：阶段计时方法可行，数据库到 GPU 再到写回的端到端链路可观测，batch 粒度是影响端到端性能的核心变量。
+
+表 4-1 汇总了当前可行性证据的来源、作用和边界。所有证据均来自真实 GPU-backed 链路，结论仅供可行性论证，不直接作为论文主体贡献。
 
 | 证据来源 | 已完成内容 | 支撑的可行性 | 边界 |
 |---|---|---|---|
@@ -209,47 +221,65 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 | GPU-backed `AI_EMBED` 画像 | PostgreSQL -> Arrow -> Ray/Python -> CUDA embedding endpoint -> writeback | 真实模型服务可接入端到端执行路径；7 月 14 日复测覆盖 batch、writeback、endpoint、规模和 pgvector(384) sink 对比 | PG18.4 本地预演，不代表 PostgreSQL 18.3 内部平台性能 |
 | 双 endpoint Ray 动机测试 | Ray actor 调用 `8000` / `8001` 两个本地 endpoint | 可验证并发 routing 对 operator wall time 的影响 | 两个 endpoint 在同一 GPU 上，不代表多 GPU 或 Ray Serve 结论 |
 
-**硬件边界说明。** 当前实验环境为单机单 GPU（NVIDIA GeForce RTX 5070, 12GB VRAM, 64GB RAM），这一约束对研究方案设计有以下影响：（1）无法运行 7B 以上大模型，AI_COMPLETE 场景需使用 1-3B 级 LLM（如 Qwen2.5-1.5B）；（2）多模型并行和跨 GPU actor pool 分池收益无法在此平台上验证：单 GPU 下所有请求最终共享同一物理设备，workload-aware 分池的价值主要通过 in-flight 上限差异和队列优先级体现，而非物理隔离；（3）多节点分布式调度（如两层 Engine + Cluster 架构）属于 §8 未来工作，不在本文实验范围内。以上约束不影响数据组织、in-flight 控制、routing 和耦合验证等核心方法的单机验证。
+**硬件边界说明。** 当前实验环境为单机单 GPU（NVIDIA GeForce RTX 5070, 12GB VRAM, 64GB RAM）。这一约束对研究方案的影响有三点：（1）AI_COMPLETE 场景使用 1-3B 级 LLM（如 Qwen2.5-1.5B），无法运行 7B 以上模型；（2）单 GPU 下所有请求共享同一物理设备，workload-aware 分池的价值通过 in-flight 上限差异和队列优先级体现，而非物理隔离；（3）多节点分布式调度（如两层 Engine + Cluster 架构）属于 §8 未来工作，不在本文实验范围内。以上约束不影响数据组织、in-flight 控制、routing 和耦合验证等核心方法的单机验证。
 
-真实 GPU-backed `AI_EMBED` 复测首先说明，batch 粒度本身会显著影响端到端执行。如图 4-3 所示，1024 行 fine 策略发起 1024 次 endpoint 调用，coalesced 策略只发起 4 次调用；在无写回条件下，fine 的端到端耗时约为 coalesced 的 `37.5x`。这说明在真实 CUDA embedding endpoint 接入后，逐行调用不是合理 baseline，批处理执行是必须研究的对象。注意：逐行调用（fine）和无界 in-flight 是诊断工具，用于理解瓶颈机制、回答"如果把批处理完全拿掉会怎样"，不作为论文方法对照的 baseline。论文动机展示使用 coalesced batch=64 + driver fan-in 作为合理默认配置，方法对照使用文献和工程最优 baseline（vLLM continuous batching、COPY + deferred index 等）。
+**实验证据一：Batch 粒度决定端到端性能的上限。** 图 4-3 汇总了不同行数、执行策略和写回模式下的端到端耗时分解。每个堆叠柱分三段：模型推理执行（model_service_s）、writeback 写回、以及其余阶段（DB 读取 + Arrow 构建 + 汇聚）。前三行为无写回对照组（writeback_mode=none），1024 行 fine 策略的推理执行阶段达到 20.6s——相比同样行数的 coalesced 策略，差异约 37.5 倍。这背后的原因很直接：fine 策略向 CUDA embedding endpoint 发起了 1024 次独立请求，每次请求的固定开销（HTTP 往返、CUDA kernel launch、GPU 上下文切换）被放大了 1024 次；coalesced 策略只发 4 次请求，每次携带 256 行，固定开销被摊销。
+
+这个对比的主要作用是诊断性的：它说明逐行调用不是合理的 baseline，批处理执行是必须研究的对象。在论文的方法对照中，不会把”去掉所有 batch”作为对比目标。动机展示使用 coalesced batch=64 + driver fan-in 作为合理默认配置，方法对照使用文献和工程最优 baseline（vLLM continuous batching、COPY + deferred index 等）。
+
+图 4-3 还透露出一个容易被忽视的事实：单 endpoint 下，Ray 并不天然优于 Python。4096 行 coalesced 场景中，Python + JSON 写回的端到端时间为 3.420s，Ray actor 单 endpoint 为 3.621s，两者几乎持平。Ray 的优势在于它提供了 actor pool、async loop 和队列观测能力这些机制，但不使用这些机制时，它不会自动产生加速效果。后续研究要分析的正是 Ray 在多 endpoint、bounded in-flight、routing 和 actor pool 等条件下的适用范围。
 
 ![图 4-3 端到端耗时分解——模型推理执行与写回堆叠](../../figures/data/report_main/10_e2e_operator_writeback_breakdown.png)
 
 图 4-3 端到端耗时按模型推理执行、writeback 写回和其余阶段（DB 读取 + Arrow + 汇聚）堆叠分解。fine 策略下推理执行阶段为 20.6s，约为 coalesced 的 37.5×；4096 行及以上 coalesced 配置中 writeback 成为可见成本（1.6–3.2s）；单 endpoint 下 Ray actor（3.62s）与 Python（3.42s）端到端接近。前三行为无写回对照组（writeback_mode=none）。数据来源：2026-07-14 GPU-backed AI_EMBED 复测 CSV，对数横轴。
 
-图 4-3 还说明，单 endpoint 下 Ray 并不天然优于 Python。4096 行 coalesced 场景中，Python + JSON 写回的端到端时间为 `3.420s`，Ray actor 单 endpoint 为 `3.621s`。因此，后续研究需要进一步分析 Ray 在多 endpoint、bounded in-flight、routing、actor pool 和 worker-side writeback 等条件下的适用范围，而不能把 Ray 简化为”默认更快”的执行方式。
+**实验证据二：当 GPU 模型调用变快后，writeback 成为可见成本。** 图 4-4 把一个 coalesced 配置下的端到端时间拆成六个阶段：DB fetch、Arrow build、GPU model request wall、fan-in、sink writeback 和 residual。这里的关键观察不是 writeback 占了多少秒，而是”GPU 模型调用被 batch 加速后，writeback 的相对占比上升了”。4096 行无写回时，GPU model request wall 是 1.51s；加入 JSON text 写回后，writeback 占 1.56s——已经和模型调用本身差不多了。8192 行时 writeback 进一步升到 3.16s。这说明如果只优化上游的 batching 和调度而不处理 writeback，端到端收益会被写回吃掉相当一部分。
+
+这个结论直接影响课题设计：写回不作为独立方法贡献，但作为端到端评价的检查点——如果最优上游配置下的 writeback 占比持续过高，就需要考虑额外的写回优化。
 
 ![图 4-4 数据库到 GPU 再到写回的链路阶段时延](../../figures/data/report_main/07_gpu_pgai_rerun_stage_writeback_20260714.png)
 
-图 4-4 数据库到 GPU 再到写回的链路阶段时延。该图使用 2026 年 7 月 14 日真实 GPU-backed CSV，以 4096 行无写回、4096 行 JSON 写回和 8192 行 JSON 写回为对照，并在每个场景内部堆叠 DB fetch、Arrow build、GPU model request wall、fan-in、sink writeback 和 residual。结果表明，GPU 模型调用变快后，PostgreSQL JSON text writeback 在 4096 行时占 `1.557s`，在 8192 行时占 `3.159s`，已经成为端到端时间中的大块成本。
+图 4-4 数据库到 GPU 再到写回的链路阶段时延。以 4096 行无写回、4096 行 JSON 写回和 8192 行 JSON 写回为对照，堆叠 DB fetch、Arrow build、GPU model request wall、fan-in、sink writeback 和 residual 六个阶段。GPU 模型调用变快后，PostgreSQL JSON text writeback 在 4096 行时占 1.557s，在 8192 行时占 3.159s，成为端到端时间中的大块成本。数据来源：2026-07-14 GPU-backed AI_EMBED 复测 CSV。
 
-双 endpoint 实验进一步补充了 Ray 的使用动机。如图 4-5 所示，4096 行、16 个 coalesced batch 下，Ray actor 单 endpoint 的端到端时间为 `3.621s`，双 endpoint 为 `2.862s`；`model_request_wall_s` 从 `1.933s` 降到 `1.204s`，`operator_wall_s` 从 `2.009s` 降到 `1.292s`。但 writeback 分别为 `1.585s` 和 `1.541s`，几乎不随 endpoint 数量下降，说明写回会限制端到端收益。
+**实验证据三：多 endpoint 降低模型调用时间，但 writeback 几乎不动。** 图 4-5 直接对比了 Ray actor 在单 endpoint 和双 endpoint 下的表现。4096 行、16 个 coalesced batch 条件下，双 endpoint 将 model_request_wall_s 从 1.933s 降到 1.204s（减少约 38%），operator_wall_s 从 2.009s 降到 1.292s。但 writeback 从 1.585s 降到 1.541s——只减少了不到 3%，基本没变。
+
+这个对比的意义不在于”双 endpoint 比单 endpoint 快”本身，而在于它暴露了收益边界：模型调用侧的优化可以降低 operator wall time，但写回时间独立于 endpoint 数量。当上游优化到一定程度后，写回会成为端到端收益的天花板。课题中的耦合验证实验（独立最优拼接 vs 联合 grid search）就是在问一个类似但更深入的问题：两项上游策略之间是否也存在这种边界效应。
 
 ![图 4-5 双 endpoint 场景下 Ray actor 的端到端对比](../../figures/data/report_main/08_gpu_pgai_rerun_endpoint_comparison_20260714.png)
 
 图 4-5 双 endpoint 场景下 Ray actor 的端到端对比。两个本地 CUDA endpoint 可以降低 model request wall time 和 operator wall time，但端到端收益仍受 writeback 约束。两个 endpoint 是同一张 RTX 5070 上的本地服务副本，不能写成多 GPU 结论。
 
-为了确认 JSON text 写回是否会误导对 sink 成本的判断，本项目进一步在同一条 GPU-backed Ray actor 链路中补充了 no writeback、JSON text 和 pgvector `vector(384)` 三种落盘方式的对比。实验使用 4096 行、16 个 coalesced batch、一个 CUDA embedding endpoint、`embedding_dim = 384` 和 `write_batch_rows = 512`，只改变 `writeback_mode`。pgvector 组运行后，数据库中 4096 行 `embedding_vector` 非空，`vector_dims(embedding_vector)` 的最小值和最大值均为 384。
+**实验证据四：pgvector 写回比 JSON text 快约 43%。** 图 4-6 在同一条链路中比较了三种落盘方式：不写回（none）、JSON text 写回和 pgvector `vector(384)` 写回。三组的 `model_request_wall_s` 均为 1.51-1.52s，`operator_wall_s` 均为约 1.60s——模型调用侧完全一致。差异全部来自 sink 阶段：JSON text 写回的 writeback_s 为 1.567s，pgvector 为 0.897s，减少了约 43%。这意味着选择什么格式落地，对端到端时间有直接且可量化的影响。
+
+实验使用 4096 行、16 个 coalesced batch、一个 CUDA embedding endpoint、`embedding_dim = 384`、`write_batch_rows = 512`，只改变 `writeback_mode`。pgvector 组运行后数据库中 4096 行 `embedding_vector` 非空，`vector_dims(embedding_vector)` 均为 384，确认数据正确写入。
+
+这个结果直接支持了课题中采用 PostgreSQL + pgvector 的 COPY + deferred index 作为写回 baseline 的决定：pgvector 格式在当前规模下已经比 JSON text 快 43%，是一个合理的工程优化起点。它不作为独立研究内容，但为端到端评价提供了写入侧的基准线。
 
 ![图 4-6 no writeback、JSON text 和 pgvector(384) 写回对比](../../figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png)
 
-图 4-6 no writeback、JSON text 和 pgvector(384) 写回对比。formal repeat 均值显示，no writeback 的端到端时间为 `1.635s`；JSON text 写回为 `3.198s`，其中 `writeback_s = 1.567s`；pgvector `vector(384)` 写回为 `2.524s`，其中 `writeback_s = 0.897s`。三组的 `model_request_wall_s` 均约为 `1.51-1.52s`，`operator_wall_s` 均约为 `1.60s`，说明差异主要来自 sink/writeback 阶段，而不是 GPU 模型请求阶段。
+图 4-6 no writeback、JSON text 和 pgvector(384) 写回对比。formal repeat 均值：no writeback 端到端 1.635s；JSON text 写回 3.198s（writeback_s = 1.567s）；pgvector `vector(384)` 写回 2.524s（writeback_s = 0.897s）。三组 model_request_wall_s 均为 1.51-1.52s，operator_wall_s 均为约 1.60s，差异全部来自 sink 阶段。数据来源：2026-07-14 pgvector writeback 实验 CSV。
 
-进一步将关键场景按 executor、endpoint 和写回阶段展开后，可以看到并发模型服务调用和 sink writeback 之间的收益边界。当前本地预演链路已经记录 `operator_wall_s`、`model_request_wall_s`、`fanin_s` 和 `writeback_s` 等字段；后续接入 Daft / Lance 后，将沿用同一类阶段边界继续记录 partition、shuffle、object transfer 和 Lance sink 写入时间。
+**工程可行性：Daft 管线不引入额外开销。** 图 4-7 回答了从 AI_EMBED 阶段的手动 Arrow 管线迁移到 AI_COMPLETE 阶段的 Daft 管线时的一个工程问题：Daft 的数据引擎本身会不会成为新的瓶颈？对比两条路径的阶段耗时：arrow_postgres（psycopg2 + 手动 Arrow RecordBatch，AI_EMBED coalesced，5939 行）的 DB Read + Build 合计 0.036s；daft_postgres（daft.read_sql + Daft Organizer，AI_COMPLETE batch=8，512 行）的 DB Read + Organize 合计 0.091s。两者的管线开销都在亚秒级，差异来自 `daft.read_sql` 比原始 `psycopg2` 查询多出的常数级开销（约 0.05s）。在两三秒级别的端到端推理时间面前，这个差异可以忽略。
 
-综合上述结果，当前可行性结论有三点。第一，数据库驱动 AI workload 的端到端画像链路已在 `AI_EMBED` 预研中跑通，真实 GPU-backed 模型服务也能接入本地 PostgreSQL 同构预演环境。第二，已有实验显示 batch 粒度和 endpoint routing 都会影响端到端性能，支撑本文选择上游数据组织与提交策略作为优化对象；持久化写回成本也已在本地实验中量化。第三，论文主体实验将在 vLLM + `AI_COMPLETE` 平台上进行，`AI_EMBED` 预研仅支撑实验框架可行性。
+需要注意，这张图只对比管线开销，不比较推理时间——两个 workload 完全不同（BGE embedding 5939 行 vs Qwen2.5-1.5B 生成 512 行），直接比 Operator Wall 没有意义。图的结论是：Daft 不会引入可观测的管线瓶颈，后续 AI_COMPLETE 及多模态泛化验证统一使用 Daft 具备工程可行性。
 
-当前仍需补齐的关键环节：7 月下旬至 8 月上旬建立 vLLM + 小 LLM baseline，替代手动 HTTP endpoint；8 月至 9 月在 AI_COMPLETE 场景下完成动态 batching 和自适应提交消融；9 月至 10 月完成耦合验证和写回瓶颈判定。
+![图 4-7 arrow_postgres 与 daft_postgres 阶段耗时对比](../../figures/data/report_main/b26_arrow_vs_daft_stage_breakdown.png)
+
+图 4-7 arrow_postgres（AI_EMBED coalesced，psycopg2 + 手动 Arrow RecordBatch）与 daft_postgres（AI_COMPLETE batch=8，daft.read_sql + Daft Organizer）的阶段耗时对比。两种路径下数据管线开销（DB Read + Build/Organize）均 < 0.1s，Operator Wall（Ray + 模型推理）占主导。两个 workload 不同（BGE embedding 5939 行 vs Qwen2.5-1.5B 512 行），推理时间不直接可比；本图仅对比管线开销。写回阶段已排除。数据来源：ai_embed_chain_breakdown_20260712.csv / sharegpt_burstgpt_ray_task_batch128_token_sweep_20260719.csv。
+
+综合四组实验证据（图 4-3 至 4-6）和工程验证（图 4-7），当前可行性结论有三点。第一，数据库驱动 AI workload 的端到端画像链路已在 AI_EMBED 预研中跑通，阶段计时方法和指标（operator_wall_s、model_request_wall_s、fanin_s、writeback_s）可复现。第二，batch 粒度是端到端性能的一阶变量（37.5× 差异），多 endpoint routing 可降低模型调用时间但 writeback 独立于此收益——数据组织和提交控制是当前应优先调优的上游阶段，writeback 作为端到端检查点。第三，论文主体实验将在 vLLM + AI_COMPLETE 平台上进行，AI_EMBED 预研仅支撑实验框架可行性，Daft 作为数据引擎不引入管线瓶颈。
+
+当前已完成的环节：vLLM + Qwen2.5-1.5B baseline 已建立（2026-07-18）；Daft 数据引擎已接入并验证管线开销（<0.1s）；token-tail revision 实验已完成。后续关键环节：8 月至 9 月在 AI_COMPLETE 场景下完成动态 batching 和自适应提交消融；9 月至 10 月完成耦合验证和写回瓶颈判定。
 
 ## 5. 进度安排
 
-2026 年 7 月：完成开题报告、文献清单和现有 GPU-backed `AI_EMBED` 预研实验整理；完成 384 维 pgvector 写回对比；启动 vLLM + 小 LLM（Qwen2.5-1.5B 级）部署和 AI_COMPLETE workload 构造。
+2026 年 7 月：完成开题报告和文献清单（✅）；建立 vLLM + Qwen2.5-1.5B baseline（✅）；Daft 数据引擎接入并验证管线开销（✅）；token-tail revision 实验（✅）。整理现有 GPU-backed `AI_EMBED` 预研实验和 pgvector 写回对比结果。
 
-2026 年 8 月：完成 GPU baseline 建立和第一阶段实验（研究内容一消融），同时完成工程最优写回 baseline。
+2026 年 8 月：完成第一阶段实验（研究内容一消融：Token-budget / Length-align / Prefix-aware vs 静态 baseline）。同时确认 COPY + deferred index 写回 baseline。
 
 2026 年 9 月：完成第二阶段（研究内容二：固定 K_max vs queue-adaptive flush vs actor pool 分池路由 消融）和第三阶段（耦合验证：独立最优拼接 vs 联合 grid search）。
 
-2026 年 10 月：完成第四阶段（写回瓶颈判定 + sink 对比）。若联合搜索显著优于独立拼接，补充联合调优的增强对照。`AI_FILTER/AI_CLASSIFY` selectivity-aware simulated extension 实验。
+2026 年 10 月：完成第四阶段（写回瓶颈判定 + sink 对比）。若联合搜索显著优于独立拼接，补充联合调优的增强对照。启动多模态泛化验证：在图像 workload（AI_EMBED/AI_CLASSIFY，CLIP/Qwen2.5-VL）上复用同一套策略代码。
 
 2026 年 11 月：整理统一方法，补齐 baseline、消融和反证实验；形成可复现实验脚本、结果 CSV、图表和阶段分析报告。
 
@@ -276,7 +306,7 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 
 1. AI workload 感知的上游动态数据组织与批处理构造策略。借鉴 vLLM continuous batching 的"按 token 预算而非固定请求数"原则，在 Ray 侧设计 token-budget batching、length-aligned grouping 和 prefix-aware grouping 三种动态 batching policy，利用 Ray actor 异构化实现，填补"上游数据管道 batching 策略如何影响下游 continuous batching 效率"这一研究空白。
 2. Ray actor 去中心化自适应提交策略。利用 Ray actor 的 stateful async loop 实现每个 actor 独立观测模型服务队列深度并自主决定 flush 时机，K_max 由 queue-adaptive 行为自然形成。通过耦合验证实验（独立最优拼接 vs 联合 grid search）判定两项策略是否需要联合调优。
-3. AI 数据流结果持久化的瓶颈判定。通过工程最优写回 baseline 和 sink 对比，确认上游优化收益是否被持久化阶段吞噬，为数据库 AI 算子的全链路优化提供写入侧边界条件。
+3. AI 数据流结果持久化的瓶颈判定。通过 COPY + deferred index 写回 baseline 和 sink 对比，确认上游优化收益是否被持久化阶段吞噬，为数据库 AI 算子的全链路优化提供写入侧边界条件。
 
 ## 7. 主要参考文献
 

@@ -6,7 +6,7 @@
 
 开题报告当前收敛后的正式题目：
 
-> 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究。
+> 数据库 AI 负载的执行优化与调度研究方向。
 
 **2026-07-16 方向重大更新**：主场景从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理），上游 batching 从静态固定 batch_size 转向探索按 token 量动态组织的方式，Ray 从 task executor 升级为架构设计空间（异构 actor pool + 去中心化自适应提交）。vLLM 定位为部署平台。Daft 确认为数据引擎，文本阶段直接接入，多模态阶段复用同一套 pipeline。详见 `PROJECT_LOG.md` 2026-07-16 条目。
 

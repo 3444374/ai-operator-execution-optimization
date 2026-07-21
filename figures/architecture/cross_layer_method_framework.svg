@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
-<rect width="1600" height="1000" fill="#F8FAFC"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="880" viewBox="0 0 1600 880">
+<rect width="1600" height="880" fill="#F8FAFC"/>
 <text x="64" y="58" font-family="Microsoft YaHei,Arial,sans-serif" font-size="28" font-weight="700" fill="#1F2937" text-anchor="start">研究方案：上游调度策略设计与端到端验证</text>
-<text x="66" y="92" font-family="Microsoft YaHei,Arial,sans-serif" font-size="16" font-weight="400" fill="#475467" text-anchor="start">数据组织策略与调度提交控制策略构成上游优化核心，端到端验证包含耦合实验与写回瓶颈判定。</text>
+<text x="66" y="92" font-family="Microsoft YaHei,Arial,sans-serif" font-size="16" font-weight="400" fill="#475467" text-anchor="start">数据组织策略与调度提交控制策略构成上游优化核心，多模态泛化验证其策略抽象性，耦合实验确认分层独立优化是否足够。</text>
 <rect x="190.0" y="108" width="1220" height="126" rx="12" fill="#F8FAFC" stroke="#D8DEE8" stroke-width="1"/>
 <text x="214.0" y="130" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="700" fill="#475467" text-anchor="start">三类数据库 AI workload</text>
 <rect x="233.0" y="146" width="354" height="68" rx="10" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
@@ -10,14 +10,14 @@
 <text x="251.0" y="198" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="start">token 长度不均、prefix 共享</text>
 <rect x="623.0" y="146" width="354" height="68" rx="10" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
 <text x="641.0" y="174" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#2F6FEB" text-anchor="start">批量向量生成</text>
-<text x="959.0" y="175" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="end">AI_EMBED（预研验证）</text>
+<text x="959.0" y="175" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="end">AI_EMBED（文本，预研验证）</text>
 <text x="641.0" y="198" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="start">向量维度、batch 均衡、写回压力</text>
 <rect x="1013.0" y="146" width="354" height="68" rx="10" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
-<text x="1031.0" y="174" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#F97316" text-anchor="start">AI 谓词过滤 / 分类</text>
-<text x="1349.0" y="175" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="end">AI_FILTER / AI_CLASSIFY（扩展）</text>
-<text x="1031.0" y="198" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="start">selectivity 未知、调用次数多</text>
+<text x="1031.0" y="174" font-family="Microsoft YaHei,Arial,sans-serif" font-size="15" font-weight="700" fill="#F97316" text-anchor="start">多模态图像理解</text>
+<text x="1349.0" y="175" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="end">AI_EMBED / AI_CLASSIFY（图像）</text>
+<text x="1031.0" y="198" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="start">CLIP/Qwen2.5-VL、frame-aware 分组</text>
 <text x="800.0" y="224" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">共同进入同一执行链路，上游数据组织与调度提交控制策略决定端到端性能。</text>
-<polygon points="800.0,246 792.0,234 808.0,234" fill="#D8DEE8"/>
+<line x1="800.0" y1="238" x2="800.0" y2="256" stroke="#334155" stroke-width="3"/><polygon points="800.0,256 792.0,242 808.0,242" fill="#334155"/>
 <rect x="160.0" y="262" width="1280" height="340" rx="14" fill="#F1F5F9" stroke="#D8DEE8" stroke-width="1"/>
 <rect x="184.0" y="270" width="392" height="26" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
 <text x="194.0" y="289" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#1F2937" text-anchor="start">研究方案主线：分阶段剖析 -&gt; 上游策略调优 -&gt; 端到端验证</text>
@@ -48,34 +48,25 @@
 <rect x="1042.0" y="318" width="350" height="216" rx="12" fill="#FFFFFF" stroke="#64748B" stroke-width="2"/>
 <circle cx="1072.0" cy="346" r="16" fill="#64748B"/>
 <text x="1072.0" y="351" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
-<text x="1098.0" y="348" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#64748B" text-anchor="start">端到端验证：耦合与写回</text>
+<text x="1098.0" y="348" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#64748B" text-anchor="start">多模态泛化验证</text>
 <rect x="1060.0" y="374" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="1217.0" y="390.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">独立最优拼接 vs 联合 grid search</text>
+<text x="1217.0" y="390.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">图像 workload（CLIP/Qwen2.5-VL）</text>
 <rect x="1060.0" y="404" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="1217.0" y="420.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">写回瓶颈判定与 sink 对比</text>
+<text x="1217.0" y="420.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">token-budget -&gt; frame-budget</text>
 <rect x="1060.0" y="434" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="1217.0" y="450.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">防止写回吞噬上游收益</text>
+<text x="1217.0" y="450.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">queue-adaptive 完全复用</text>
 <rect x="1060.0" y="464" width="314" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="1217.0" y="480.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">端到端效果评估</text>
+<text x="1217.0" y="480.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">同一套策略代码与配置逻辑</text>
 <line x1="570.0" y1="426.0" x2="613.0" y2="426.0" stroke="#94A3B8" stroke-width="2"/>
 <polygon points="613.0,426.0 603.0,420.0 603.0,432.0" fill="#94A3B8"/>
 <line x1="987.0" y1="426.0" x2="1030.0" y2="426.0" stroke="#94A3B8" stroke-width="2"/>
 <polygon points="1030.0,426.0 1020.0,420.0 1020.0,432.0" fill="#94A3B8"/>
 <rect x="208.0" y="556" width="1184" height="32" rx="8" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="800.0" y="576.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="middle">端到端验证：耦合实验（独立拼接 vs 联合 grid search）+ 写回瓶颈判定</text>
-<rect x="510.0" y="622" width="580" height="156" rx="12" fill="#FFFFFF" stroke="#64748B" stroke-width="2"/>
-<circle cx="540.0" cy="650" r="16" fill="#64748B"/>
-<text x="540.0" y="655" font-family="Microsoft YaHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
-<text x="566.0" y="652" font-family="Microsoft YaHei,Arial,sans-serif" font-size="18" font-weight="700" fill="#64748B" text-anchor="start">写回约束：瓶颈判定</text>
-<text x="976.0" y="650" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="start">端到端 guardrail</text>
-<rect x="528.0" y="678" width="544" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="800.0" y="694.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">sink 对比（JSON text / pgvector / Lance）</text>
-<rect x="528.0" y="708" width="544" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="800.0" y="724.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">工程最优写回方案 baseline</text>
-<rect x="528.0" y="738" width="544" height="24" rx="6" fill="#FFFFFF" stroke="#D8DEE8" stroke-width="1"/>
-<text x="800.0" y="754.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="middle">防止写回吞噬上游调度收益</text>
-<rect x="250.0" y="802" width="1100" height="44" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="1"/>
-<text x="800.0" y="828.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#16A34A" text-anchor="middle">端到端效果指标：耗时 · rows/s · tokens/s · queue wait · coupling gap · writeback ratio · GPU utilization</text>
-<text x="800.0" y="880" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#475467" text-anchor="middle">图注：研究方案图。以 AI_COMPLETE 为主场景，先做分阶段性能剖析，再通过数据组织策略与调度提交控制策略优化上游执行链路。</text>
-<text x="800.0" y="900" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#475467" text-anchor="middle">端到端验证包含耦合实验（独立拼接 vs 联合 grid search）与写回瓶颈判定，用于确认上游优化收益是否成立。</text>
+<text x="800.0" y="576.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#1F2937" text-anchor="middle">耦合实验：独立最优拼接 vs 联合 grid search —— 判定分层独立优化是否足够</text>
+<rect x="250.0" y="624" width="1100" height="44" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="1"/>
+<text x="800.0" y="650.2" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#16A34A" text-anchor="middle">端到端效果指标：耗时 · rows/s · tokens/s · queue wait · coupling gap · GPU util · MFU</text>
+<text x="262.0" y="692" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="start">写回：PostgreSQL + pgvector（COPY + deferred index baseline），仅作为端到端保护约束，不作为独立方法贡献。</text>
+<text x="262.0" y="712" font-family="Microsoft YaHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#475467" text-anchor="start">算子代价估计（补充讨论）：基于实验 profile 数据，建立 AI 算子端到端成本估计方法，辅助编排决策。</text>
+<text x="800.0" y="754" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#475467" text-anchor="middle">图注：研究方案图。以 AI_COMPLETE 为主场景，先做分阶段剖析，再通过数据组织策略与调度提交控制策略优化上游执行链路。</text>
+<text x="800.0" y="774" font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" font-weight="400" fill="#475467" text-anchor="middle">多模态泛化验证策略抽象性，耦合实验确认分层独立优化是否足够。写回作为 guardrail，算子代价估计为补充讨论。</text>
 </svg>

@@ -1,6 +1,6 @@
 # Ray Actor, Dynamic Batching & vLLM Integration Reference
 
-> 研究日期: 2026-07-16
+> 研究日期: 2026-07-16（初始）, 2026-07-21（Ray 机制更新 + 2025 新文献）
 > 用途: 为构建 vLLM 上游自适应提交系统 (adaptive submission system) 提供 Ray 技术栈参考
 > 来源: Ray 官方文档 (docs.ray.io)、Ray GitHub (ray-project/ray)、Anyscale 博客、学术论文
 
@@ -138,6 +138,61 @@ class MyDeployment:
 | `max_ongoing_requests` | 5 (Ray 2.32+) | 硬上限。应设为 target_ongoing_requests 的 1.2-1.5 倍 |
 
 来源: https://docs.ray.io/en/latest/serve/autoscaling-guide.html, https://docs.ray.io/en/latest/serve/api/doc/ray.serve.batch.html
+
+### 1.6 `max_queued_requests` — 准入控制（Admission Control）
+
+`max_queued_requests` 是 **[EXPERIMENTAL] per-deployment 配置**，限制每个 caller（HTTP proxy 或 `DeploymentHandle`）的请求排队数：
+
+| 行为 | 说明 |
+|---|---|
+| **默认值** | `-1`（无限制） |
+| **DeploymentHandle 超限** | 抛出 `BackPressureError` |
+| **HTTP 请求超限** | 返回 **503 Service Unavailable** |
+
+```python
+@serve.deployment(
+    max_queued_requests=100,  # 每 caller 最多排队 100 个请求
+)
+class MyDeployment:
+    ...
+```
+
+**注意**：设于 `@serve.deployment` 装饰器上，而非 `autoscaling_config` 内。已知问题（2024）：某些 proxy 模式下该配置可能不被正确应用（GitHub Issue #53794），需通过删除并重建 Serve Controller 来解决。
+
+### 1.7 Queue-Based Autoscaling（2025 新增）
+
+Ray 2.x 引入了基于外部消息队列深度的自动扩缩容（PRs #59430, #59548, #59351），适用于非 HTTP 的异步推理工作负载：
+
+**架构**：
+```
+Message Queue (Redis/RabbitMQ) ← QueueMonitor Actor → ServeController Autoscaler
+                                              ↓
+                              queue_based_autoscaling_policy()
+                              desired = ceil(queue_length / target_ongoing_requests)
+```
+
+**关键特性**：
+- **QueueMonitor Actor**：轻量（`num_cpus=0`）Ray actor，轮询 Redis (`LLEN`) 或 RabbitMQ (`messages_ready`) 获取待处理任务数
+- **容错**：查询失败时缓存最后一次已知队列长度
+- **混合扩缩容公式**（HTTP + 队列场景）：
+  ```
+  total_workload = queue_length + total_num_requests
+  desired_replicas = total_workload / target_ongoing_requests
+  ```
+- **自动策略切换**：启用 autoscaling 的 `TaskConsumer` deployment 自动使用基于队列的扩缩容
+
+**对本课题的意义**：这是 Ray 生态中最接近"队列自适应提交控制"的**在役机制**。但其决策变量是**池大小（replica 数）**而非**提交节奏（per-actor in-flight 上限和 flush 时机）**——两者正交。其 monitor→decision→execution 的闭环架构可参考。
+
+### 1.8 Custom Autoscaling Policies（Ray 2.51+, Nov 2025）
+
+Ray 2.51 发布了用户自定义扩缩容策略，允许开发者：
+
+- 通过 `record_autoscaling_stats()` 从 replica 发送自定义 metrics
+- 组合自定义 metrics、Prometheus 数据或外部触发器编写策略
+- 将策略作用于单个 deployment 或整个 application
+- 实现**计划扩缩容**、**GPU 利用率驱动扩缩容**和**跨 deployment 协调**（如 Huawei 的多阶段 LLM pipeline 基于端到端 latency SLA 联合扩缩容）
+
+**对本课题的意义**：这证明了 Ray 社区正在向"应用层自定义自适应策略"方向发展——我们的 queue-adaptive flush 和 K_max 动态控制在概念上与这一趋势一致，但作用于更细粒度（per-submission 而非 per-replica scaling）。
 
 ---
 
@@ -434,10 +489,71 @@ for item in data_stream:
 - `CoreWorkerDirectActorTaskSubmitter` 检查 max pending task 阈值
 - 队列满时返回错误而非无限排队
 
-**4. ConcurrencyCapBackpressurePolicy (Ray Data streaming executor):**
-- 基于输出队列增长速率的动态并发控制
-- 使用非对称 EWMA 计算 deadband
-- 队列增长 -> 降低 concurrency cap；队列缩短 -> 提升 concurrency cap
+**4. ConcurrencyCapBackpressurePolicy (Ray Data streaming executor) — ⚠️ 已废弃:**
+
+ConcurrencyCapBackpressurePolicy 曾是 Ray Data 最接近"自适应并发控制"的机制，使用以下组件动态调节 operator 并发上限：
+
+- **非对称 EWMA 队列水平跟踪**：维护每个 operator 的输出队列总字节数的平滑估计。"快升慢降"不对称设计——快速响应队列增长，缓慢恢复。
+- **偏差跟踪**：跟踪绝对残差 `EWMA(|q - level_prev|)` 作为 scale proxy。
+- **Deadband 控制器**：定义 `[level - K_DEV*dev, level + K_DEV*dev]`。队列超出上界 → **back off**（并发 × `BACKOFF_FACTOR`）。低于下界 → **ramp up**（增加并发）。界内 → **hold** 不变。
+- **Object Store 预算门控**：当可用 object store 预算比例超过阈值（默认 0.1）时跳过动态反压。
+
+**废弃原因**（直接来自 Ray 代码仓库）：
+- ~400 行复杂控制逻辑，多个需手工调整的常数
+- 行为难以理解和预测
+- 在实验中性能不如更简单的 `DownstreamCapacityBackpressurePolicy`
+
+**当前替代方案：`DownstreamCapacityBackpressurePolicy`**
+
+简单的下游容量反压，调优参数：
+- `RAY_DATA_DOWNSTREAM_CAPACITY_OBJECT_STORE_BUDGET_UTIL_THRESHOLD`
+- `RAY_DATA_DOWNSTREAM_CAPACITY_BACKPRESSURE_RATIO`
+
+**对本课题的关键启示**：不是"自适应控制"这条路走不通，而是 Ray Data 的通用数据处理场景（慢磁盘、慢网络、数据倾斜、CPU 争抢等多种瓶颈源）不适合做细粒度自适应。**我们的场景不同**：下游是行为可预测的 vLLM 推理服务，瓶颈单一（GPU 计算），信号清晰（Prometheus metrics），自适应策略的决策空间小得多。ConcurrencyCap 的 EWMA + deadband 控制结构值得我们参考，但需要大幅简化以避免相同的"过度复杂"陷阱。
+
+**5. `max_pending_calls` — Actor 级硬上限：**
+
+Ray actor 的内置参数，设置 pending（已提交但未开始执行）remote call 数量的硬上限：
+
+```python
+signal_actor = Semaphore.options(max_pending_calls=10).remote(value=0)
+
+# 前 10 个调用正常排队
+for i in range(10):
+    signal_actor.acquire.remote()  # OK
+
+# 第 11 个触发反压
+signal_actor.acquire.remote()      # Raises PendingCallsLimitExceeded
+```
+
+**对本课题的适用性**：硬上限 + 抛异常的模式过于粗暴，不适合我们的自适应调节需求。K_max 控制需要的是"观察队列深度 → 平滑调节提交速率"，而非"超过阈值就报错"。
+
+**6. `max_tasks_in_flight` + `should_add_input()` + `num_free_slots()` — 二元 slot 检查：**
+
+Ray Data 的 `ActorPoolMapOperator` 使用的反压模型：
+
+- **`max_tasks_in_flight`**（默认 `4`）：每个 actor 最多同时派发的 task 数
+- **`num_free_slots()`**：跨所有 actor 计算 `sum(max(0, max_tasks_in_flight - num_tasks_in_flight))`。若 `free_slots == 0`，operator 拒绝新输入
+- **`should_add_input()`**：只当 `num_free_slots() > 0` 时返回 `True`。streaming executor 在喂入新数据前检查此条件
+
+**关键设计决策**（PR #34254）：曾有一个内部 actor pool 队列，task 先入队再等待空闲 actor。但 **一旦 task 进入内部队列，就不再受反压控制**——小输入可能扩展为大输出，撑爆内存。PR #34254 移除了内部队列，确保 task 只在外部 streaming executor 队列中等待，始终受内存感知反压控制。
+
+**对本课题的适用性**：二元开关（有 slot / 无 slot）不是连续调节——我们需要的是"几个 slot 被占用 + 队列多深 → 该不该现在发下一个 batch"的**连续决策**。
+
+**7. `_actor_generator_backpressure_num_objects`（PR #63310）— Actor 级 streaming generator 反压：**
+
+与已有的 per-task `_generator_backpressure_num_objects` 不同，此参数作用于**整个 actor 级别**，支持 `max_concurrency > 1` 的 actor：
+
+```python
+@ray.remote(max_concurrency=2, _actor_generator_backpressure_num_objects=6)
+class A:
+    def gen(self, reporter, tag: str):
+        for i in range(5):
+            ray.get(reporter.report.remote(tag, i))
+            yield i
+```
+
+限制所有并发 task 的未读 yielded object 总数，防止生成速度快于消费速度时内存无限增长。
 
 ### 3.8 与 Autoscaler 和 GCS 的关系
 
@@ -791,6 +907,84 @@ Ray Data 中的 streaming batch model，是 batch 和 streaming 的混合模型:
 
 来源: https://arxiv.org/abs/2501.12407
 
+### 6.7 CONCUR: High-Throughput Agentic Batch Inference via Congestion-Based Concurrency Control (2025)
+
+**最直接相关的新论文。** 针对 LLM agent batch inference 场景，借鉴网络拥塞控制（AIMD: Additive Increase Multiplicative Decrease），将 GPU KV cache 作为共享资源，引入**缓存感知、反馈驱动的准入控制循环**。
+
+核心机制：
+- 识别"中间阶段颠簸"（middle-phase thrashing）：长生命周期 agent 累积 KV cache state，在内存耗尽前就造成严重吞吐退化
+- **AIMD-based 动态 agent 数控制**：根据 runtime cache 信号调节活跃 agent 数量
+- 与 vLLM 等 serving engine 兼容
+
+关键结果：Qwen3-32B 上吞吐提升 **4.09×**，DeepSeek-V3 上 **1.9×**。
+
+**与本课题的关系**：CONCUR 的 AIMD-based admission control 与我们计划的 queue-adaptive flush + K_max 动态控制高度重叠。差异在于 CONCUR 控制的是"活跃 agent 数"（更粗粒度），我们控制的是"per-actor in-flight 请求数"（更细粒度）。
+
+来源: https://huggingface.co/papers/2601.22705
+
+### 6.8 Scorpio: Serving the Right Requests at the Right Time for Heterogeneous SLOs in LLM Inference (2025)
+
+引入两种互补 guard 机制：
+- **TTFT Guard**：least-deadline-first 排队重排 + 拒绝无法达成的请求，处理异构 TTFT SLO
+- **TPOT Guard**：**VBS (Virtual Batch Size) Admission Control**——通过累加请求的 TRP (TPOT-relative Proportionality) 值投影实际系统负载，结合 **Credit-based Batching** 机制
+
+关键结果：goodput 提升 **14.4×**，SLO 遵守率提升 **46.5%**。
+
+**对本课题的参考**：VBS 的"虚拟负载投影"思想可迁移——我们不是按请求数而是按 token 量估算 batch 负载，本质上就是一种 VBS。
+
+来源: https://ar5iv.labs.arxiv.org/html/2505.23022
+
+### 6.9 SABER: Adaptive Request Scheduling for CodeLLM Serving with SLA Guarantees (2025)
+
+两阶段方法：
+- **Offline**：Profiling 不同 workload，用 Universal Scalability Law 拟合"生成速度 = f(并发请求数)"
+- **Online**：两层队列 + SLA 跟踪 + 准入控制——评估新请求是否会导致 in-execution 请求违反 SLA，只允许 feasible 的请求进入
+
+关键结果：goodput 提升 **26%**，延迟变异降低 **45%**，无需手动调参。
+
+**对本课题的参考**：SABER 的"预测 admission 是否会导致 SLA 违反"的前瞻性判断——我们的 K_max 控制也应具有前瞻性（不只反应当前队列，还要预测 vLLM 消化能力）。
+
+来源: https://ar5iv.labs.arxiv.org/html/2506.19677
+
+### 6.10 CoLoRA: A Collaborative Scheduling Framework for Multi-Tenant LoRA LLM Inference (2026)
+
+四个核心模块：
+1. **Adaptive Priority Scheduling (APS)**：融合排队时间、adapter 驻留状态和 SLA 紧急度
+2. **Adapter-Aware Scheduling (AAS)**：优先 SLA-critical 和频繁使用的 adapter
+3. **Load-Aware Batch Scheduling (LBS)**：结合实时 GPU 利用率和队列深度自适应形成 batch
+4. **Unified Scheduler (US)**：全局反馈循环
+
+关键结果：吞吐提升 **56.5%**，P95 延迟降低 **34%**。
+
+**对本课题的参考**：LBS 的"GPU 利用率 + 队列深度 → 自适应 batch"的融合决策，是我们 queue-adaptive flush 的重要参考。
+
+来源: https://ieeexplore.ieee.org/abstract/document/11420717
+
+### 6.11 BucketServe: Bucket-Based Dynamic Batching for Smart and Efficient LLM Inference Serving (2025)
+
+- 按序列长度将请求分组到 size-homogeneous buckets，最小化 padding 开销
+- **自适应 bucket split/merge**：根据 workload 分布动态调整
+- **动态 batch size 计算**：基于实时 GPU 内存约束和 bucket 边界
+- Priority-aware scheduling for SLO compliance
+
+关键结果：吞吐提升 **3.58×**（vs UELLM），SLO 约束下处理 **1.93× 更多请求**。
+
+**与本课题的关系**：BucketServe 的"按序列长度分组"思路与我们的 length-aligned grouping 高度一致——证明了按计算量相似度（而非请求数）分组是有效策略。
+
+来源: https://ar5iv.labs.arxiv.org/html/2507.17120
+
+### 6.12 ProServe: Unified Multi-Priority Request Scheduling for LLM Serving (2025)
+
+两层调度架构：
+- **SlideBatching（Engine 层）**：滑动边界机制动态适配 batch 形成，平衡延迟与优先级
+- **GoRouting（Service 层）**：Gain-oriented, capability-aware 跨分布式实例分发，预留容量给未来高优先级请求
+
+关键结果：system gain 提升 **35%**，SLO 达成率提升 **52%**。
+
+**对本课题的参考**：ProServe 的两层调度（Engine 层 + Service 层）与我们的"内部 vLLM（token 级）+ 外部 Ray（request 级）"两层架构同构——验证了分层调度的有效性。
+
+来源: https://arxiv.org/abs/2512.12928
+
 ---
 
 ## 附录: 参考 URL 清单
@@ -819,3 +1013,18 @@ Ray Data 中的 streaming batch model，是 batch 和 streaming 的混合模型:
 | Anyscale: Autoscaling & Custom Routing | https://www.anyscale.com/blog/ray-serve-autoscaling-async-inference-custom-routing |
 | Streaming Generator Backpressure (PR #40285) | https://github.com/ray-project/ray/pull/40285 |
 | Custom Batch Size Function (PR #59059) | https://github.com/ray-project/ray/pull/59059 |
+| Fix backpressure handling of queued actor pool tasks (PR #34254) | https://github.com/ray-project/ray/pull/34254 |
+| ConcurrencyCapBackpressurePolicy (PR #57996, deprecated) | https://github.com/ray-project/ray/pull/57996 |
+| Queue Monitor for Serve autoscaling (PR #59430) | https://github.com/ray-project/ray/pull/59430 |
+| Queue-based autoscaling policy (PR #59548) | https://github.com/ray-project/ray/pull/59548 |
+| Queue-based autoscaling integration (PR #59351) | https://github.com/ray-project/ray/pull/59351 |
+| Actor-level generator backpressure (PR #63310) | https://github.com/ray-project/ray/pull/63310 |
+| Ray Serve max_queued_requests issue (#53794) | https://github.com/ray-project/ray/issues/53794 |
+| CONCUR: Congestion-Based Concurrency Control (2025) | https://huggingface.co/papers/2601.22705 |
+| Scorpio: SLO-Oriented LLM Serving (2025) | https://ar5iv.labs.arxiv.org/html/2505.23022 |
+| SABER: SLA-Aware Adaptive Batching (2025) | https://ar5iv.labs.arxiv.org/html/2506.19677 |
+| CoLoRA: Collaborative LoRA Scheduling (2026) | https://ieeexplore.ieee.org/abstract/document/11420717 |
+| BucketServe: Bucket-Based Dynamic Batching (2025) | https://ar5iv.labs.arxiv.org/html/2507.17120 |
+| ProServe: Multi-Priority LLM Serving (2025) | https://arxiv.org/abs/2512.12928 |
+| Ray Core Limit Pending Tasks Pattern | https://docs.rayai.org.cn/en/latest/ray-core/patterns/limit-pending-tasks.html |
+| Ray Serve Autoscaling Guide (Advanced) | https://docs.rayai.org.cn/en/latest/serve/advanced-guides/advanced-autoscaling.html |

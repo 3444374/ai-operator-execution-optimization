@@ -1,5 +1,70 @@
 # 项目日志
 
+## 2026-07-21 开题报告图位优化与正文分析强化
+
+- **触发**：用户要求将图放到正文合适位置，在正文中提及并讲解分析每张图，报告可以比 PPT 图多、讲解更清晰。同时注意图文一致性。submission_control 的三张新图暂不写入报告。
+- **操作**：对 `opening/report/opening_report.md` 中所有 9 张图进行了系统性的图位优化和正文分析强化（详见上一版记录）。随后将更新后的报告覆盖同步到飞书 docx（revision 244），上传 9 张图后在 XML 层获取 block ID，逐张移动到对应图注段落之后（revision 263–271），使每张图紧跟在正文中对应的图注文字下方。
+- **飞书同步**：`https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb`，revision 271，文本+图片均已到位。图片位于对应图注之后（"图注文字 → 图片"顺序，可读）。
+- **更新文件**：`opening/report/opening_report.md`、`opening/feishu/opening_report_wiki.md`、`PROJECT_LOG.md`
+
+## 2026-07-21 开题报告飞书 docx 同步
+
+- **触发**：用户要求将开题报告最新修改同步到飞书，与答辩 PPT 内容一致。
+- **操作**：
+  - 将 `opening/report/opening_report.md` 的最新内容复制到本地源稿 `opening/feishu/opening_report_wiki.md`。
+  - 使用 `lark-cli docs +update --command overwrite`（user 身份）覆盖写入飞书 docx：`https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb`，飞书返回 `partial_success`（本地图片路径无法直接导入，预期行为），文档 revision 更新为 `221`。
+  - 逐一上传 9 张图到飞书 docx（research_gap_three_islands / system_architecture_ai_data_execution / cross_layer_method_framework / runtime_strategy_control_loop / 10_e2e_operator_writeback_breakdown / 07_gpu_pgai_rerun_stage_writeback_20260714 / 08_gpu_pgai_rerun_endpoint_comparison_20260714 / 09_gpu_pgvector_writeback_comparison_20260714 / b26_arrow_vs_daft_stage_breakdown），均带中文图注。
+- **本次同步的主要变更**（与旧版飞书内容相比）：
+  - 题目从"面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究"改为"数据库 AI 负载的执行优化与调度研究方向"。
+  - 写回 baseline 从"工程最优写入方案"统一改为"PostgreSQL + pgvector 的 COPY + deferred index"。
+  - 研究内容中增加"多模态泛化验证"（图像 workload：AI_EMBED/AI_CLASSIFY，CLIP/Qwen2.5-VL）和"算子代价估计"补充讨论。
+  - 研究方案新增"多模态泛化验证"实验段落，描述 token 预算到 frame 预算的参数迁移和 Daft pipeline 复用。
+  - 进度安排更新：7 月已完成的 4 项打 ✅（开题报告、vLLM baseline、Daft 接入、token-tail revision）；10 月新增多模态泛化验证启动。
+  - 新增 Daft vs Arrow 管线开销对比（图 4-7），支撑 Daft 作为后续 AI_COMPLETE 及多模态实验数据引擎的可行性。
+- **图与正文一致性**：已检查图 4-3～4-7 的图注与正文描述一致，图 4-7 为新图，正文已包含对应的 arrow_postgres vs daft_postgres 分析段落。
+- **未完成**：图片位于文档末尾，未移动到正文对应位置（与历史同步行为一致，受限于 markdown overwrite 不保留 block 级图片位置）。
+
+## 2026-07-21 Ray 队列自适应提交机制调研与文献补充
+
+- **触发**：用户提问"Ray 是否有现成的队列自适应提交机制，还是需要自己实现"。
+- **调研方法**：WebSearch（Ray 官方文档、GitHub PR/issues）+ 学术文献搜索（2025-2026 LLM serving 论文）。
+- **核心结论**：
+  1. **Ray 无现成的 queue-adaptive flush 或 K_max 动态控制 API**——这些是课题需自建的核心贡献。
+  2. Ray 提供丰富的 building blocks（`ray.wait()` 手动反压、`max_concurrency`、`max_tasks_in_flight` + `should_add_input()`、Serve queue-based autoscaling）。
+  3. Ray Data 曾有一个几乎就是"自适应并发控制"的 `ConcurrencyCapBackpressurePolicy`（EWMA + deadband），但**已被废弃**——~400 行控制逻辑，性能反而不如简单方案。这是重要的 cautionary tale：我们的自适应策略必须保持简单。
+  4. 发现 6 篇 2025-2026 年新论文与本课题直接相关——最相关的是 CONCUR（AIMD-based agent-level admission control, 4.09× throughput）和 BucketServe（按序列长度分组，3.58×，与我们的 length-aligned grouping 同构）。
+- **更新文件**：
+  - `research/ray_actor_dynamic_batching_reference.md`：
+    - 新增 §1.6 `max_queued_requests` 准入控制
+    - 新增 §1.7 Queue-Based Autoscaling（PRs #59430, #59548, #59351）
+    - 新增 §1.8 Custom Autoscaling Policies（Ray 2.51+）
+    - §3.7 大幅扩展：ConcurrencyCapBackpressurePolicy 废弃详情（EWMA/deadband/废弃原因）→ DownstreamCapacityBackpressurePolicy 替代方案 → `max_pending_calls` → `max_tasks_in_flight` + `should_add_input()` + `num_free_slots()` → `_actor_generator_backpressure_num_objects`
+    - 新增 §6.7 CONCUR (2025)、§6.8 Scorpio (2025)、§6.9 SABER (2025)、§6.10 CoLoRA (2026)、§6.11 BucketServe (2025)、§6.12 ProServe (2025)
+    - 附录 URL 清单扩充 15 条
+  - `research/knowledge_hub.md`：
+    - 新增 §5.5 从 6 篇新论文提取的设计原则
+    - 新增 §5.6 Ray 现存机制的能力边界（building blocks vs 需自建）
+    - §8 知识缺口新增 3 项（CONCUR 迁移可行性、USL 建模、ConcurrencyCap 教训）
+    - §9 文件清单新增本次更新条目
+- **对课题方向的影响**：无需改变方向——确认了"Ray 不提供现成机制，需要自己实现"的判断是正确的。新增文献进一步验证了 adaptive admission control + length-aligned grouping 两条线的研究活跃度。CONCUR 是最需要优先精读的论文。
+
+## 2026-07-21 课题名称更新 + 实践计划表审查
+
+- **触发**：用户审查实践计划表，要求将课题名称从"面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究"改为更精简的表述。
+- **题目变更**：新题目为 **"数据库 AI 负载的执行优化与调度研究方向"**。
+- **实践计划表发现**：四个阶段内容中存在多处与当前方向不一致的措辞：Phase Ⅱ "三项研究内容"应改为"两项"（写回已降为实验设置）、Phase Ⅱ "提交控制策略"应补全为"调度与提交控制策略"、Phase Ⅲ workload 列表（embedding 批量写入 / AI predicate 过滤与分类 / 离线 LLM 生成与抽取）需替换为当前主线（AI_COMPLETE 文本主场景 + AI_EMBED/AI_CLASSIFY 图像多模态泛化验证）、vLLM 不再是可选项。
+- **更新文件**（题目替换）：
+  - `AGENTS.md` §1
+  - `README.md`
+  - `PROJECT_OUTLINE.md`
+  - `PROJECT_INDEX.md`
+  - `opening/report/opening_report.md`
+  - `opening/feishu/opening_report_wiki.md`
+  - `opening/slides/opening_ppt.md`
+  - `opening/practice_plan.md`
+  - `research/literature_and_evidence_review.md`
+- **未更新**：`PROJECT_LOG.md` 和 `opening/logs/project_log.md` 中历史条目保留旧题目（历史记录不应修改）。
+
 ## 2026-07-20 实验状态全面审计与缺口分析
 
 - **触发**：用户要求对当前实验进展做系统性评估，回答"现在的实验能说明什么、还需要做什么"。

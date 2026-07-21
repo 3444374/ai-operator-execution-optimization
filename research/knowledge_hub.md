@@ -354,6 +354,57 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 | data locality | 减少小 object 和跨 worker fan-in（需本地实验验证） |
 | actor for stateful service | actor 表示 endpoint，维护 buffer + 队列 + 观测 |
 
+### 5.5 从 2025 年 LLM Serving 新文献提取（2026-07-21 新增）
+
+以下 6 篇 2025-2026 年论文为项目文献搜索发现的新增来源，与 RC1（数据组织）和 RC2（提交控制）直接相关。详细内容见 `research/ray_actor_dynamic_batching_reference.md` §6.7-§6.12。
+
+**从 CONCUR (2025) 提取**：
+- **AIMD 可迁移到 request 级**：CONCUR 控制的是"活跃 agent 数"（粗粒度），我们可以把 AIMD 用到更细的 per-actor in-flight 请求数控制
+- **KV cache 作为共享资源信号**：不只是队列深度，KV cache 使用率也应作为 K_max 调节的输入信号
+- **Middle-phase thrashing**：长期运行的推理 session 在内存耗尽前就会出现吞吐退化——我们的 K_max 控制应有前馈能力，不只被动反应
+
+**从 Scorpio (2025) 提取**：
+- **VBS (Virtual Batch Size) Admission Control**：用 token 量（而非请求数）投影系统负载——我们的 token-budget batching 本质上就是 VBS 的一种实现
+- **Credit-based Batching**：按 SLO 松紧分配 batching 机会——可迁移到我们的异构 workload 场景（不同优先级的 SQL 查询）
+
+**从 SABER (2025) 提取**：
+- **前瞻性准入判断**：不只检查当前队列，还要预测"如果现在提交，会不会导致 in-execution 请求违反 SLA"——我们的 K_max 调节应具有预测性
+- **Universal Scalability Law 建模**：`生成速度 = f(并发请求数)`——可用 vLLM 的 profiling 数据拟合此函数，作为 K_max 调节的理论上界
+
+**从 CoLoRA (2026) 提取**：
+- **Load-Aware Batch Scheduling**：实时 GPU 利用率 + 队列深度 + adapter 状态 → 自适应 batch 形成——三维信号融合是我们的 queue-adaptive flush 的参考架构
+- **Unified Scheduler 的全局反馈循环**：决策模块 + 执行模块 + 指标采集模块形成闭环
+
+**从 BucketServe (2025) 提取**：
+- **按序列长度分组降低 padding 开销**：与我们的 length-aligned grouping 思路一致——验证了"按计算量相似度分组"的有效性
+- **自适应 bucket split/merge**：当 workload 分布变化时动态调整分组边界——可迁移到我们的 token-budget 分组边界的自适应调节
+
+**从 ProServe (2025) 提取**：
+- **两层调度架构验证**：SlideBatching（Engine 层 token 级）+ GoRouting（Service 层 request 级）——与我们的"内部 vLLM + 外部 Ray"两层架构同构，证明分层调度在该场景下是合理设计
+- **Gain-oriented dispatching**：不仅看当前负载，还要预估未来收益——actor pool 分池路由可参考此思想
+
+### 5.6 Ray 现存机制的能力边界（2026-07-21 新增）
+
+经过对 Ray Core/Data/Serve 各层机制的详细审查，确认以下边界（详见 `research/ray_actor_dynamic_batching_reference.md` §3.7）：
+
+**Ray 提供的 building blocks（可直接使用）**：
+| 机制 | 类型 | 适用性 |
+|---|---|---|
+| `ray.wait()` 手动反压 | 应用层循环 | **RC2 K_max 控制的基础实现模式** |
+| `max_concurrency` | Actor 配置 | 控制单 actor 并发上限 |
+| `max_tasks_in_flight` + `should_add_input()` | 二元 slot 检查 | 可作为底层执行机制，但需包装为连续决策 |
+| Queue-based autoscaling (Serve) | 池大小自适应 | 架构参考（monitor→decision→execution 闭环）|
+
+**Ray 明确不提供的（需自建）**：
+| 能力 | Ray 现状 | 我们的 gap |
+|---|---|---|
+| K_max 动态调节 | 所有限制都是静态的 | 从 vLLM metrics → EWMA 平滑 → AIMD 调节 |
+| 队列深度感知 flush | `should_add_input` 是二元开关 | 连续队列深度 → flush 时机决策 |
+| Token-budget 准入控制 | 无 | token 量估算 → 准入判断 |
+| 多维信号融合决策 | Serve autoscaler 只看队列长度 | vLLM waiting + running + KV cache → 融合决策 |
+
+**重要警示**：Ray Data 的 `ConcurrencyCapBackpressurePolicy`（EWMA + deadband 自适应并发控制）已被废弃——原因是用 ~400 行复杂控制逻辑实现的策略，性能反而不如简单方案。这对我们的设计有直接含义：**自适应策略必须保持简单，避免陷入参数调优的泥潭**。
+
 ---
 
 ## 6. 本项目已有实验证据
@@ -430,16 +481,24 @@ Ray Actor 去中心化自适应提交
 | vLLM + Qwen2.5-1.5B 在 RTX 5070 上的实际 TTFT/TPOT/吞吐曲线 | **P0** |
 | AI_COMPLETE workload 具体构造参数（token 分布、prefix ratio） | **P0** |
 | token-budget 的最优范围（2048/4096/8192） | P1 |
-| Ray actor queue-adaptive flush 的实际效果 | P1 |
+| Ray actor queue-adaptive flush 的实际效果（本地 vLLM 实验中发现 adaptive < static，需进一步分析——见 `PROJECT_LOG.md` 2026-07-20） | P1 |
 | prefix-aware grouping 在真实 APC 下的命中率 | P1 |
 | 单 GPU 下异构 actor pool 是否有意义 | P1 |
 | batch_size × K_max 之外的交互通道 | P2 |
 | 多模态 workload 的"token 等效量"定义（frame-budget / duration-budget） | P2 |
 | VLM 推理在 RTX 5070 12GB 上的实际显存和吞吐（Qwen2.5-VL 系列） | P2 |
+| **2026-07-21 新增/更新**： | |
+| CONCUR (2025) AIMD-based admission control 的算法细节与迁移可行性 | **P1** |
+| SABER Universal Scalability Law 建模在本课题 vLLM 场景下的拟合效果 | P2 |
+| Ray ConcurrencyCapBackpressurePolicy 废弃的教训如何转化为我们的设计约束 | P1 |
 
 ---
 
 ## 9. 文件清单
+
+**2026-07-21 更新**：
+- `research/ray_actor_dynamic_batching_reference.md` — 新增 §1.6-§1.8（Ray Serve 准入控制与队列自适应）、§3.7 大幅扩展（7 种反压机制详述 + ConcurrencyCap 废弃分析）、§6.7-§6.12（6 篇 2025-2026 新论文）
+- `research/knowledge_hub.md` — 新增 §5.5（6 篇新论文设计原则提取）、§5.6（Ray 现存机制能力边界）、§8 知识缺口更新
 
 **2026-07-17 新增**：
 - `research/knowledge_hub.md` — 本文件，新增 §10

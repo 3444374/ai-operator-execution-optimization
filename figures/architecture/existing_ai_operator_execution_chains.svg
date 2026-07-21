@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 410" width="1300" height="410">
+<style>
+  text { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; }
+  .title { font-size: 22px; font-weight: bold; fill: #1E293B; }
+  .subtitle { font-size: 10px; fill: #94A3B8; }
+  .stage-title { font-size: 14px; font-weight: bold; }
+  .stage-detail { font-size: 11px; fill: #1E293B; }
+  .anno { font-size: 12px; }
+  .sys-label { font-size: 14px; font-weight: bold; }
+  .sys-detail { font-size: 11px; fill: #1E40AF; }
+  .gap-title { font-size: 13px; font-weight: bold; fill: #DC2626; }
+  .gap-text { font-size: 11px; fill: #1E293B; }
+  .source { font-size: 9px; fill: #94A3B8; }
+</style>
+<rect width="1300" height="410" fill="white"/>
+<text x="650" y="43" text-anchor="middle" class="title">④ 结果写回</text>
+<text x="650" y="65" text-anchor="middle" class="subtitle">从数据读取到模型推理之间，存在一个"决策环节"——本课题称为上游调度</text>
+<line x1="635" y1="95" x2="635" y2="220" stroke="#DC2626" stroke-width="2" stroke-dasharray="8,5"/>
+<text x="583" y="91" class="anno" fill="#2563EB">上游</text>
+<text x="647" y="91" class="anno" fill="#EA580C">下游</text>
+<rect x="40" y="110" width="237" height="95" rx="8" fill="white" stroke="#475569" stroke-width="2"/>
+<text x="158" y="136" text-anchor="middle" class="stage-title" fill="#475569">① AI SQL 查询</text>
+<line x1="52" y1="144" x2="265" y2="144" stroke="#E2E8F0" stroke-width="1"/>
+<text x="158" y="166" text-anchor="middle" class="stage-detail">AI_COMPLETE · AI_EMBED 等算子</text>
+<text x="158" y="182" text-anchor="middle" class="stage-detail">进入查询计划</text>
+<text x="158" y="198" text-anchor="middle" class="stage-detail">表数据读取，准备发送</text>
+<defs><marker id="arrow0" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#94A3B8"/></marker></defs>
+<line x1="283" y1="157" x2="331" y2="157" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow0)"/>
+<rect x="337" y="110" width="237" height="95" rx="8" fill="white" stroke="#2563EB" stroke-width="2"/>
+<text x="455" y="136" text-anchor="middle" class="stage-title" fill="#2563EB">② 中间件 / 队列</text>
+<line x1="349" y1="144" x2="562" y2="144" stroke="#E2E8F0" stroke-width="1"/>
+<text x="455" y="166" text-anchor="middle" class="stage-detail">pgai: Python Worker 轮询</text>
+<text x="455" y="182" text-anchor="middle" class="stage-detail">BigQuery: Dremel 编排</text>
+<text x="455" y="198" text-anchor="middle" class="stage-detail">OceanBase: 内置 HTTP</text>
+<defs><marker id="arrow1" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#94A3B8"/></marker></defs>
+<line x1="580" y1="157" x2="689" y2="157" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow1)"/>
+<rect x="695" y="110" width="237" height="95" rx="8" fill="white" stroke="#EA580C" stroke-width="2"/>
+<text x="813" y="136" text-anchor="middle" class="stage-title" fill="#EA580C">③ 外部模型服务调用</text>
+<line x1="707" y1="144" x2="920" y2="144" stroke="#E2E8F0" stroke-width="1"/>
+<text x="813" y="166" text-anchor="middle" class="stage-detail">Vertex AI · OpenAI · DeepSeek</text>
+<text x="813" y="182" text-anchor="middle" class="stage-detail">阿里云 DashScope</text>
+<text x="813" y="198" text-anchor="middle" class="stage-detail">vLLM / ONNX Runtime</text>
+<defs><marker id="arrow2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#94A3B8"/></marker></defs>
+<line x1="938" y1="157" x2="986" y2="157" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow2)"/>
+<rect x="992" y="110" width="237" height="95" rx="8" fill="white" stroke="#475569" stroke-width="2"/>
+<text x="1110" y="136" text-anchor="middle" class="stage-title" fill="#475569">④ 结果写回</text>
+<line x1="1004" y1="144" x2="1217" y2="144" stroke="#E2E8F0" stroke-width="1"/>
+<text x="1110" y="166" text-anchor="middle" class="stage-detail">JSON 解析 → 数据库列</text>
+<text x="1110" y="182" text-anchor="middle" class="stage-detail">COPY / INSERT 写回</text>
+<text x="1110" y="198" text-anchor="middle" class="stage-detail">向量索引（可选）</text>
+<text x="40" y="245" class="sys-label" fill="#2563EB">pgai:</text>
+<text x="88" y="245" class="sys-detail">触发器→队列→外部 Python Worker 轮询→OpenAI/Voyage API→COPY 写回</text>
+<text x="40" y="265" class="sys-label" fill="#1E40AF">BigQuery:</text>
+<text x="110" y="265" class="sys-detail">Dremel 数据 Workers → 推理 Workers 攒批(默认128行)→Vertex AI(Gemini) API→JSON 解析→结果集</text>
+<text x="40" y="285" class="sys-label" fill="#1E40AF">OceanBase:</text>
+<text x="122" y="285" class="sys-detail">OBServer 端点查找→构造 JSON→HTTPS POST→阿里云/DeepSeek/OpenAI→JSON 解析→结果列</text>
+<rect x="34" y="307" width="1232" height="42" rx="8" fill="#FEF2F2" stroke="#DC2626" stroke-width="2"/>
+<text x="50" y="333" class="gap-title">共性</text>
+<text x="50" y="333" class="gap-text" dx="40">三种系统的"决策环节"中，batch 粒度、提交节奏、并发控制——均由各厂商内部实现，不是独立的系统优化目标。本课题把这个环节称为上游调度：数据组织策略 + 提交控制策略。</text>
+<text x="44" y="359" class="source">来源：pgai GitHub 源码（2026.2 归档）· BigQuery ML.GENERATE_TEXT 官方文档 · OceanBase DBMS_AI_SERVICE 4.3.3+ 文档</text>
+</svg>

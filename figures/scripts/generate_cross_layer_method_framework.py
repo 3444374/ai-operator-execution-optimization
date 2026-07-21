@@ -8,7 +8,7 @@ OUT_DIR = Path(__file__).resolve().parents[1] / "architecture"
 SVG_PATH = OUT_DIR / "cross_layer_method_framework.svg"
 PNG_PATH = OUT_DIR / "cross_layer_method_framework.png"
 
-W, H = 1600, 1000
+W, H = 1600, 880
 
 PAL = {
     "bg":        "#F8FAFC",
@@ -43,6 +43,10 @@ def _font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     return ImageFont.load_default()
 
 
+def rgb(hex_color: str) -> tuple[int, int, int]:
+    return tuple(int(hex_color[i : i + 2], 16) for i in (1, 3, 5))
+
+
 F = {
     "title":   _font(28, True),
     "sub":     _font(16),
@@ -70,6 +74,13 @@ def ctext(draw, box, text, fnt, fill=PAL["ink"]):
 
 def rrect(draw, box, fill, edge, r=14, w=2):
     draw.rounded_rectangle(box, radius=r, fill=fill, outline=edge, width=w)
+
+
+def arrow_png(draw, x1, y1, x2, y2, color=None, width=3):
+    color = color or rgb(PAL["muted"])
+    draw.line((x1, y1, x2, y2), fill=color, width=width)
+    direction = 1 if y2 >= y1 else -1
+    draw.polygon([(x2, y2), (x2 - 8, y2 - direction * 14), (x2 + 8, y2 - direction * 14)], fill=color)
 
 
 def pill(draw, x, y, w, h, text, fnt=None):
@@ -118,7 +129,7 @@ def draw_png():
     # ── Title ──
     d.text((64, 32), "研究方案：上游调度策略设计与端到端验证", font=F["title"], fill=PAL["ink"])
     d.text((66, 70),
-           "数据组织策略与调度提交控制策略构成上游优化核心，端到端验证包含耦合实验与写回瓶颈判定。",
+           "数据组织策略与调度提交控制策略构成上游优化核心，多模态泛化验证其策略抽象性，耦合实验确认分层独立优化是否足够。",
            font=F["sub"], fill=PAL["muted"])
 
     # ═══ TOP: Workload Entry ═══
@@ -133,8 +144,8 @@ def draw_png():
     # Workload characteristic row
     wl_items = [
         ("离线文本生成", "AI_COMPLETE（主场景）", "token 长度不均、prefix 共享", PAL["d3_edge"]),
-        ("批量向量生成", "AI_EMBED（预研验证）", "向量维度、batch 均衡、写回压力", PAL["d1_edge"]),
-        ("AI 谓词过滤 / 分类", "AI_FILTER / AI_CLASSIFY（扩展）", "selectivity 未知、调用次数多", PAL["d2_edge"]),
+        ("批量向量生成", "AI_EMBED（文本，预研验证）", "向量维度、batch 均衡、写回压力", PAL["d1_edge"]),
+        ("多模态图像理解", "AI_EMBED / AI_CLASSIFY（图像）", "CLIP/Qwen2.5-VL、frame-aware 分组", PAL["d2_edge"]),
     ]
     n_wl = len(wl_items)
     wl_item_w = 354
@@ -158,13 +169,12 @@ def draw_png():
     hint_w, hint_h = txtsz(d, hint, F["tag"])
     d.text((W / 2 - hint_w / 2, wl_y + wl_h - 18), hint, font=F["tag"], fill=PAL["muted"])
 
-    # Arrow down
-    arrow_y = wl_y + wl_h
-    d.polygon([(W/2, arrow_y + 12), (W/2 - 8, arrow_y), (W/2 + 8, arrow_y)], fill=PAL["pill_edge"])
-
     # ═══ MIDDLE: Cross-Layer Coordination ═══
-    mid_y = arrow_y + 28
+    mid_y = wl_y + wl_h + 28
     mid_w, mid_h = 1280, 340
+
+    arrow_png(d, W/2, wl_y + wl_h + 4, W/2, mid_y - 6)
+
     mid_x = (W - mid_w) / 2
     rrect(d, (mid_x, mid_y, mid_x + mid_w, mid_y + mid_h), PAL["panel_bg"], PAL["pill_edge"], r=14, w=1)
 
@@ -203,11 +213,11 @@ def draw_png():
     rc3_x = mid_x + mid_w - rc_w - 48
     rc3_y = rc1_y
     draw_rc_card(d, rc3_x, rc3_y, rc_w, rc_h, 3,
-                 "端到端验证：耦合与写回",
-                 ["独立最优拼接 vs 联合 grid search",
-                  "写回瓶颈判定与 sink 对比",
-                  "防止写回吞噬上游收益",
-                  "端到端效果评估"],
+                 "多模态泛化验证",
+                 ["图像 workload（CLIP/Qwen2.5-VL）",
+                  "token-budget -> frame-budget",
+                  "queue-adaptive 完全复用",
+                  "同一套策略代码与配置逻辑"],
                  PAL["neutral"])
 
     # Neutral connectors between the three strategy layers.
@@ -221,50 +231,44 @@ def draw_png():
     ke_w, ke_h = mid_w - 96, 32
     ke_x = mid_x + 48
     rrect(d, (ke_x, ke_y, ke_x + ke_w, ke_y + ke_h), PAL["card_bg"], PAL["pill_edge"], r=8, w=1)
-    ke_text = "端到端验证：耦合实验（独立拼接 vs 联合 grid search）+ 写回瓶颈判定"
+    ke_text = "耦合实验：独立最优拼接 vs 联合 grid search —— 判定分层独立优化是否足够"
     ktw, kth = txtsz(d, ke_text, F["tag"])
     d.text((ke_x + ke_w / 2 - ktw / 2, ke_y + ke_h / 2 - kth / 2 - 1),
               ke_text, font=F["tag"], fill=PAL["ink"])
 
-    # ═══ BOTTOM: writeback bottleneck test + Evaluation ═══
-    bot_y = mid_y + mid_h + 20
-
-    # Writeback bottleneck card
-    wb_w, wb_h = 580, 156
-    wb_x = (W - wb_w) / 2
-    draw_rc_card(d, wb_x, bot_y, wb_w, wb_h, 4,
-                 "写回约束：瓶颈判定",
-                 ["sink 对比（JSON text / pgvector / Lance）",
-                  "工程最优写回方案 baseline",
-                  "防止写回吞噬上游调度收益"],
-                 PAL["neutral"], tag="端到端 guardrail")
+    # ═══ BOTTOM: Evaluation bar + guardrail notes ═══
+    bot_y = mid_y + mid_h + 22
 
     # Evaluation metrics bar
-    eval_y = bot_y + wb_h + 24
     eval_w, eval_h = 1100, 44
     eval_x = (W - eval_w) / 2
-    rrect(d, (eval_x, eval_y, eval_x + eval_w, eval_y + eval_h), PAL["box_fill"], PAL["box_edge"], r=10, w=1)
-    eval_text = "端到端效果指标：耗时  ·  rows/s  ·  tokens/s  ·  queue wait  ·  coupling gap  ·  writeback ratio  ·  GPU utilization"
+    rrect(d, (eval_x, bot_y, eval_x + eval_w, bot_y + eval_h), PAL["box_fill"], PAL["box_edge"], r=10, w=1)
+    eval_text = "端到端效果指标：耗时  ·  rows/s  ·  tokens/s  ·  queue wait  ·  coupling gap  ·  GPU util  ·  MFU"
     etw, eth = txtsz(d, eval_text, F["tag"])
-    d.text((eval_x + eval_w / 2 - etw / 2, eval_y + eval_h / 2 - eth / 2 - 1),
+    d.text((eval_x + eval_w / 2 - etw / 2, bot_y + eval_h / 2 - eth / 2 - 1),
               eval_text, font=F["tag"], fill=PAL["box_edge"])
 
+    # Guardrail notes: writeback + cost estimation (small text, one line each)
+    note_y = bot_y + eval_h + 12
+    guardrail = "写回：PostgreSQL + pgvector（COPY + deferred index baseline），仅作为端到端保护约束，不作为独立方法贡献。"
+    cost_note = "算子代价估计（补充讨论）：基于实验 profile 数据，建立 AI 算子端到端成本估计方法，辅助编排决策。"
+    d.text((eval_x + 12, note_y), guardrail, font=F["tag"], fill=PAL["muted"])
+    d.text((eval_x + 12, note_y + 20), cost_note, font=F["tag"], fill=PAL["muted"])
+
     # ── Caption ──
-    cap_y = eval_y + eval_h + 20
+    cap_y = note_y + 50
     cap_text = (
-        "图注：研究方案图。先对三类数据库 AI 算子做分阶段性能剖析，再调优计划层数据组织、运行层提交路由和服务端动态批处理，"
-        "结果写回纳入端到端评价，用于判断上游调优收益是否被持久化阶段吞噬。"
+        "图注：研究方案图。以 AI_COMPLETE 为主场景，先做分阶段性能剖析，再通过数据组织策略与调度提交控制策略优化上游执行链路，"
+        "多模态泛化验证策略抽象性，耦合实验确认分层独立优化是否足够。写回作为 guardrail 纳入端到端评价，算子代价估计为补充讨论。"
     )
     ctw, cth = txtsz(d, cap_text, F["cap"])
-    # Wrap to fit
     max_cap_w = W - 144
     if ctw > max_cap_w:
-        # Simple manual wrap
         line1 = (
-            "图注：研究方案图。以 AI_COMPLETE 为主场景，先做分阶段性能剖析，再通过数据组织策略与调度提交控制策略优化上游执行链路，"
+            "图注：研究方案图。以 AI_COMPLETE 为主场景，先做分阶段剖析，再通过数据组织策略与调度提交控制策略优化上游执行链路，"
         )
         line2 = (
-            "端到端验证包含耦合实验（独立拼接 vs 联合 grid search）与写回瓶颈判定，用于确认上游优化收益是否成立。"
+            "多模态泛化验证策略抽象性，耦合实验确认分层独立优化是否足够。写回作为 guardrail，算子代价估计为补充讨论。"
         )
         l1w, l1h = txtsz(d, line1, F["cap"])
         l2w, l2h = txtsz(d, line2, F["cap"])
@@ -280,9 +284,7 @@ def draw_png():
         "rc1_x": rc1_x, "rc1_y": rc1_y, "rc_w": rc_w, "rc_h": rc_h,
         "rc2_x": rc2_x, "rc2_y": rc2_y,
         "rc3_x": rc3_x, "rc3_y": rc3_y,
-        "wb_x": wb_x, "wb_y": bot_y, "wb_w": wb_w, "wb_h": wb_h,
         "workload_boxes": workload_boxes,
-        "bot_y": bot_y,
     }
 
 
@@ -307,12 +309,19 @@ def svg_pill(x, y, w, h, text, size=14):
             svg_center(x, y, w, h, text, size, fill=PAL["muted"]))
 
 
+def svg_arrow_down(cx, y1, y2, color="#334155", sw=3):
+    return (
+        f'<line x1="{cx}" y1="{y1}" x2="{cx}" y2="{y2}" stroke="{color}" stroke-width="{sw}"/>'
+        f'<polygon points="{cx},{y2} {cx - 8},{y2 - 14} {cx + 8},{y2 - 14}" fill="{color}"/>'
+    )
+
+
 def draw_svg():
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
         f'<rect width="{W}" height="{H}" fill="{PAL["bg"]}"/>',
         svg_text(64, 58, "研究方案：上游调度策略设计与端到端验证", 28, "700"),
-        svg_text(66, 92, "数据组织策略与调度提交控制策略构成上游优化核心，端到端验证包含耦合实验与写回瓶颈判定。", 16, fill=PAL["muted"]),
+        svg_text(66, 92, "数据组织策略与调度提交控制策略构成上游优化核心，多模态泛化验证其策略抽象性，耦合实验确认分层独立优化是否足够。", 16, fill=PAL["muted"]),
     ]
 
     # Workload entry
@@ -324,8 +333,8 @@ def draw_svg():
 
     wl_items = [
         ("离线文本生成", "AI_COMPLETE（主场景）", "token 长度不均、prefix 共享", PAL["d3_edge"]),
-        ("批量向量生成", "AI_EMBED（预研验证）", "向量维度、batch 均衡、写回压力", PAL["d1_edge"]),
-        ("AI 谓词过滤 / 分类", "AI_FILTER / AI_CLASSIFY（扩展）", "selectivity 未知、调用次数多", PAL["d2_edge"]),
+        ("批量向量生成", "AI_EMBED（文本，预研验证）", "向量维度、batch 均衡、写回压力", PAL["d1_edge"]),
+        ("多模态图像理解", "AI_EMBED / AI_CLASSIFY（图像）", "CLIP/Qwen2.5-VL、frame-aware 分组", PAL["d2_edge"]),
     ]
     wl_item_w = 354
     wl_item_h = 68
@@ -343,13 +352,11 @@ def draw_svg():
                           "共同进入同一执行链路，上游数据组织与调度提交控制策略决定端到端性能。",
                           12, fill=PAL["muted"], anchor="middle"))
 
-    # Arrow
-    arrow_y = wl_y + wl_h
-    parts.append(f'<polygon points="{W/2},{arrow_y + 12} {W/2 - 8},{arrow_y} {W/2 + 8},{arrow_y}" fill="{PAL["pill_edge"]}"/>')
-
     # Middle cross-layer
-    mid_y = arrow_y + 28
+    mid_y = wl_y + wl_h + 28
     mid_w, mid_h = 1280, 340
+
+    parts.append(svg_arrow_down(W/2, wl_y + wl_h + 4, mid_y - 6))
     mid_x = (W - mid_w) / 2
     parts.append(svg_rect(mid_x, mid_y, mid_w, mid_h, PAL["panel_bg"], PAL["pill_edge"], r=14, sw=1))
 
@@ -372,9 +379,9 @@ def draw_svg():
         (rc2_x, rc1_y, 2, "调度与提交控制策略",
          ["queue-adaptive flush", "K_max 动态控制",
           "actor pool 分池路由", "去中心化自适应提交"], PAL["neutral"]),
-        (rc3_x, rc1_y, 3, "端到端验证：耦合与写回",
-         ["独立最优拼接 vs 联合 grid search", "写回瓶颈判定与 sink 对比",
-          "防止写回吞噬上游收益", "端到端效果评估"], PAL["neutral"]),
+        (rc3_x, rc1_y, 3, "多模态泛化验证",
+         ["图像 workload（CLIP/Qwen2.5-VL）", "token-budget -> frame-budget",
+          "queue-adaptive 完全复用", "同一套策略代码与配置逻辑"], PAL["neutral"]),
     ]:
         parts.append(svg_rect(rx, ry, rc_w, rc_h, PAL["card_bg"], edge, r=12))
         parts.append(f'<circle cx="{rx + 30}" cy="{ry + 28}" r="16" fill="{edge}"/>')
@@ -397,38 +404,30 @@ def draw_svg():
     ke_x = mid_x + 48
     parts.append(svg_rect(ke_x, ke_y, ke_w, ke_h, PAL["card_bg"], PAL["pill_edge"], r=8, sw=1))
     parts.append(svg_center(ke_x, ke_y, ke_w, ke_h,
-                            "端到端验证：耦合实验（独立拼接 vs 联合 grid search）+ 写回瓶颈判定",
+                            "耦合实验：独立最优拼接 vs 联合 grid search —— 判定分层独立优化是否足够",
                             12, fill=PAL["ink"]))
 
-    # Bottom writeback bottleneck card + Eval
-    bot_y = mid_y + mid_h + 20
-    wb_w, wb_h = 580, 156
-    wb_x = (W - wb_w) / 2
-
-    parts.append(svg_rect(wb_x, bot_y, wb_w, wb_h, PAL["card_bg"], PAL["neutral"], r=12))
-    parts.append(f'<circle cx="{wb_x + 30}" cy="{bot_y + 28}" r="16" fill="{PAL["neutral"]}"/>')
-    parts.append(svg_text(wb_x + 30, bot_y + 33, "4", 14, "700", "#FFFFFF", "middle"))
-    parts.append(svg_text(wb_x + 56, bot_y + 30, "写回约束：瓶颈判定", 18, "700", PAL["neutral"]))
-    # Tag
-    parts.append(svg_text(wb_x + wb_w - 114, bot_y + 28, "端到端 guardrail", 12, fill=PAL["muted"]))
-    py = bot_y + 56
-    for item in ["sink 对比（JSON text / pgvector / Lance）", "工程最优写回方案 baseline", "防止写回吞噬上游调度收益"]:
-        parts.append(svg_pill(wb_x + 18, py, wb_w - 36, 24, item, 12))
-        py += 30
-
-    # Evaluation
-    eval_y = bot_y + wb_h + 24
+    # Bottom: Evaluation bar + guardrail notes
+    bot_y = mid_y + mid_h + 22
     eval_w, eval_h = 1100, 44
     eval_x = (W - eval_w) / 2
-    parts.append(svg_rect(eval_x, eval_y, eval_w, eval_h, PAL["box_fill"], PAL["box_edge"], r=10, sw=1))
-    parts.append(svg_center(eval_x, eval_y, eval_w, eval_h,
-                            "端到端效果指标：耗时 · rows/s · tokens/s · queue wait · coupling gap · writeback ratio · GPU utilization",
+    parts.append(svg_rect(eval_x, bot_y, eval_w, eval_h, PAL["box_fill"], PAL["box_edge"], r=10, sw=1))
+    parts.append(svg_center(eval_x, bot_y, eval_w, eval_h,
+                            "端到端效果指标：耗时 · rows/s · tokens/s · queue wait · coupling gap · GPU util · MFU",
                             12, fill=PAL["box_edge"]))
 
-    # Caption (2 lines)
-    cap_y = eval_y + eval_h + 20
-    l1 = "图注：研究方案图。以 AI_COMPLETE 为主场景，先做分阶段性能剖析，再通过数据组织策略与调度提交控制策略优化上游执行链路。"
-    l2 = "端到端验证包含耦合实验（独立拼接 vs 联合 grid search）与写回瓶颈判定，用于确认上游优化收益是否成立。"
+    note_y = bot_y + eval_h + 12
+    parts.append(svg_text(eval_x + 12, note_y + 12,
+                          "写回：PostgreSQL + pgvector（COPY + deferred index baseline），仅作为端到端保护约束，不作为独立方法贡献。",
+                          12, fill=PAL["muted"]))
+    parts.append(svg_text(eval_x + 12, note_y + 32,
+                          "算子代价估计（补充讨论）：基于实验 profile 数据，建立 AI 算子端到端成本估计方法，辅助编排决策。",
+                          12, fill=PAL["muted"]))
+
+    # Caption
+    cap_y = note_y + 60
+    l1 = "图注：研究方案图。以 AI_COMPLETE 为主场景，先做分阶段剖析，再通过数据组织策略与调度提交控制策略优化上游执行链路。"
+    l2 = "多模态泛化验证策略抽象性，耦合实验确认分层独立优化是否足够。写回作为 guardrail，算子代价估计为补充讨论。"
     parts.append(svg_text(W / 2, cap_y + 14, l1, 13, fill=PAL["muted"], anchor="middle"))
     parts.append(svg_text(W / 2, cap_y + 34, l2, 13, fill=PAL["muted"], anchor="middle"))
 
@@ -458,20 +457,15 @@ if __name__ == "__main__":
     rc2_x = int(params["rc2_x"])
     rc3_x = int(params["rc3_x"])
     rc3_y = int(params["rc3_y"])
-    wb_x = int(params["wb_x"])
-    wb_y = int(params["wb_y"])
-    wb_w = params["wb_w"]
-    wb_h = params["wb_h"]
     workload_boxes = params["workload_boxes"]
 
     print(f"  Layout: mid=({mid_x},{mid_y},{mid_w},{mid_h}) plan=({rc1_x},{rc1_y}) runtime=({rc2_x},{rc1_y}) service=({rc3_x},{rc3_y})")
 
-    # 1. Three strategy cards and writeback guardrail should use neutral borders.
+    # 1. Three strategy cards should use neutral borders.
     for name, rx, ry, rw, rh in [
         ("Plan strategy", rc1_x, rc1_y, rc_w, rc_h),
         ("Runtime strategy", rc2_x, rc1_y, rc_w, rc_h),
         ("Service strategy", rc3_x, rc3_y, rc_w, rc_h),
-        ("Writeback guardrail", wb_x, wb_y, wb_w, wb_h),
     ]:
         neutral_count = 0
         for y in range(ry, ry + 3):
@@ -482,9 +476,8 @@ if __name__ == "__main__":
         print(f"  {name} neutral edge px: {neutral_count} {'PASS' if neutral_count > 10 else 'FAIL'}")
 
     # 5. Green in evaluation bar
-    eval_y_area = params["bot_y"] + wb_h + 16
     green_count = 0
-    for y in range(eval_y_area, eval_y_area + 44):
+    for y in range(720, 770):
         for x in range(250, W - 250):
             r, g, b = px[x, y]
             if g > 100 and r < 150 and b < 150:

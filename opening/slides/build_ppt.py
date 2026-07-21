@@ -609,10 +609,10 @@ def build(prs):
         ("第一阶段 8月", "数据组织消融\nToken-budget\nLength-align\nPrefix-aware"),
         ("第二阶段 9月", "提交控制消融\nQueue-adaptive\nK_max动态\nPool路由"),
         ("第三阶段 9-10月", "耦合验证\n独立拼接 vs\n联合grid search"),
-        ("第四阶段 10月", "写回判定\nSink对比\n保护约束"),
+        ("补充阶段 10月", "多模态泛化验证\n写回 guardrail\n算子代价估计"),
     ], conclusion="前置条件已完成，后续四阶段每阶段有明确验证目标和反证条件。")
     add_notes(s,
-        "实验分四阶段。前置已全部完成。后续按数据组织→提交控制→耦合验证→写回判定顺序推进，每阶段有明确对照和反证。",
+        "实验分四阶段。前置已全部完成。后续按数据组织→提交控制→耦合验证顺序推进。多模态泛化验证为正文实验(§5.3)，写回作为 guardrail，算子代价估计为补充讨论。每阶段有明确对照和反证。",
         "前置完成证明方案可执行。如被问'4个月能否完成'：前置已满足，每阶段实验规模可控，脚本已模板化。")
     set_slide_number(s, n)
 
@@ -646,12 +646,12 @@ def build(prs):
         ["2026.07  开题报告 ✅ | vLLM baseline建立 ✅ | Daft接入 ✅ | token-tail revision ✅",
          "2026.08  研究内容一消融：Token-budget / Length-align / Prefix-aware vs 静态baseline",
          "2026.09  研究内容二消融：Queue-adaptive / K_max动态 / Pool路由 vs 固定K_max + 耦合验证启动",
-         "2026.10  写回瓶颈判定 + sink对比",
+         "2026.10  多模态泛化验证 + 写回 guardrail + 算子代价估计（补充讨论）",
          "2026.11  整理统一方法，补齐消融与反证实验，形成可复现脚本和完整CSV",
          "2026.12+ 论文实验、图表、正文撰写、答辩材料准备"],
-        conclusion="按基线→消融→耦合验证→写回判定顺序推进，每阶段保留可反证条件，不朝预设结论单向跑。")
+        conclusion="按基线→消融→耦合验证顺序推进，多模态泛化验证+写回 guardrail 收尾，每阶段保留可反证条件。")
     add_notes(s,
-        "进度从7月到12月。7月前置已完成。8-9月是核心实验窗口。10月写回。最后两个月整理写论文。每阶段有可反证条件。",
+        "进度从7月到12月。7月前置已完成。8-9月是核心实验窗口。10月多模态泛化验证。最后两个月整理写论文。每阶段有可反证条件。",
         "关键路径是8-9月消融实验——论文主体证据来源。如学校进度节点不同可按学院模板调整。")
     set_slide_number(s, n)
 
@@ -660,7 +660,7 @@ def build(prs):
     s = layout_text_only(prs, "", "总结",
         ["场景真实：数据库已是AI workload入口（Snowflake/BigQuery/Oracle），AI算子外部执行链路需要独立优化",
          "证据初步成立：GPU-backed预研显示batch粒度37.5×差异 + writeback成本量化 + vLLM baseline三项核心发现",
-         "后续聚焦：数据组织策略（token-budget/length-align/prefix-aware）+ 提交控制策略（queue-adaptive flush/pool路由）→ 耦合实验 → 写回判定",
+         "后续聚焦：数据组织策略（token-budget/length-align/prefix-aware）+ 提交控制策略（queue-adaptive flush/pool路由）→ 耦合实验 → 多模态泛化验证",
          "边界清楚：不修改vLLM内部 · 不改造Ray核心 · 不做GPU kernel优化 · 不把CPU/fake当最终结论"],
         conclusion="题目有真实场景支撑，初步证据链成立，后续路线可执行且边界明确——恳请各位老师批评指正。")
     add_notes(s,
