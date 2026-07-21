@@ -13,13 +13,13 @@
 页面要点：
 
 - 学生、导师、专业方向、日期待补
-- 关键词：数据库驱动 AI workload、Daft/Arrow batch、GPU-backed model service、Ray task/actor、Lance / pgvector sink
+- 关键词：数据库 AI 负载、Daft/Arrow batch、GPU-backed model service、Ray task/actor、Lance / pgvector sink
 
 备注：
 
 ```text
 汇报讲稿：
-本课题关注数据库驱动 AI workload 进入分布式数据执行系统后的性能问题。研究对象不是单个模型 kernel，也不是完整改造 Ray，而是数据组织、Ray 调度、GPU 模型服务和结果持久化之间的协同。
+本课题关注数据库 AI 负载 进入分布式数据执行系统后的性能问题。研究对象不是单个模型 kernel，也不是完整改造 Ray，而是数据组织、Ray 调度、GPU 模型服务和结果持久化之间的协同。
 
 答辩备注：
 如果被问题目是否太大，回答时强调会固定 Database source、Daft/Arrow batch、Ray task/actor、GPU endpoint、fan-in 和 Lance / pgvector / PostgreSQL sink 这条可控执行路径，再逐步做消融。
@@ -47,7 +47,7 @@ Snowflake 等系统只作为工业背景，不声称它们使用 Ray，也不复
 
 ## 3. 问题定义
 
-主结论：本课题研究数据库驱动 AI workload 的分布式数据执行与存储链路，不研究数据库 GPU kernel 或单个模型优化。
+主结论：本课题研究数据库 AI 负载 的分布式数据执行与存储链路，不研究数据库 GPU kernel 或单个模型优化。
 
 页面要点：
 
@@ -71,7 +71,7 @@ Database AI workload source
 我把研究对象收敛为这条执行路径：数据库表或 SQL 工作流提供 AI workload，Daft/Arrow 组织 batch，Ray 调度执行，GPU endpoint 完成推理，最后写入 Lance、pgvector 或 PostgreSQL。这里的核心问题是如何定位和优化各阶段的系统成本。
 
 答辩备注：
-不能把题目解释成“优化 Ray”。Ray 是执行调度机制之一，真正问题是数据库驱动 AI workload 的数据组织、服务状态感知调度和持久化协同。
+不能把题目解释成“优化 Ray”。Ray 是执行调度机制之一，真正问题是数据库 AI 负载 的数据组织、服务状态感知调度和持久化协同。
 ```
 
 ## 4. 相关系统
@@ -366,7 +366,7 @@ Embedding 是第一组真实闭环，不是最终唯一场景。后续 AI_COMPLE
 
 ```text
 汇报讲稿：
-最后总结为三点：第一，数据库驱动 AI workload 带来了新的分布式数据执行问题；第二，真实 GPU-backed 画像已经显示 batch 和写回是大块成本；第三，后续会围绕数据组织、模型服务感知调度和持久化协同做可验证优化。
+最后总结为三点：第一，数据库 AI 负载 带来了新的分布式数据执行问题；第二，真实 GPU-backed 画像已经显示 batch 和写回是大块成本；第三，后续会围绕数据组织、模型服务感知调度和持久化协同做可验证优化。
 
 答辩备注：
 回答问题时优先回到阶段画像和不能声称的边界。

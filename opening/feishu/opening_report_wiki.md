@@ -46,7 +46,7 @@ PostgreSQL 生态中，pgvector[4] 负责向量类型、索引和相似度检索
 
 **AI 数据存储与写回优化。** Lance[17]（LanceDB, 2025）提出面向 AI/ML 的列式存储格式，通过自适应结构编码在随机访问和全表扫描间取得平衡；ColStorEval[50]（PVLDB 2023）对 Parquet/ORC 等列式存储格式的写入性能进行了系统对比，为 AI 数据 sink 的格式选择提供了量化依据。Arrow Flight[18] 面向高性能列式数据传输。在向量数据库侧，如前所述的 Milvus[51]/Manu[52] 代表了专用向量存储的系统设计路线。在存储引擎层面，TurboVecDB[46]（PVLDB 2025）利用并行 I/O 和空间感知插入将 HNSW 索引构建时间减少 98.4%；Delta Lake[47]（PVLDB 2020）通过 optimistic concurrency 和盲追加实现了多 worker 并行写入，其盲追加模式是本课题 worker-direct writeback 架构的直接参考；FlexPushdownDB[48]（PVLDB 2021）提出了代价驱动的 compute-vs-storage pushdown 决策模型；WiscKey[49]（FAST 2016）通过 KV 分离避免了 compaction 对大 value 的重写开销。pgvector 和 Lance 分别代表"数据库内嵌向量存储"和"独立 AI 数据存储"两条技术路线。这些工作覆盖了存储引擎、写入路径和索引构建等关键环节，但研究范围止于存储层。数据在到达存储之前经历了怎样的数据组织、调度执行和推理过程，不在其优化目标之内；写回批量与上游 GPU 批处理之间的协同效应也未被系统考察。
 
-上述三个方向都有大量 CCF-A 论文，但优化目标并不相同：Ray/Daft 关注数据流组织和资源调度，vLLM/Orca 关注 GPU 侧的内存、队列和批处理效率，TurboVecDB/Delta Lake/Lance 关注存储格式、写入路径和索引构建效率。数据库驱动 AI workload 的执行链路同时经过这三个方向：数据从数据库表出发，经由 Arrow 批处理组织、Ray 调度执行、GPU 推理服务调用，最终写回 Lance、pgvector 或 PostgreSQL。现有研究通常没有把这条链路作为一个可观测、可拆分、可调优的整体来处理。
+上述三个方向都有大量 CCF-A 论文，但优化目标并不相同：Ray/Daft 关注数据流组织和资源调度，vLLM/Orca 关注 GPU 侧的内存、队列和批处理效率，TurboVecDB/Delta Lake/Lance 关注存储格式、写入路径和索引构建效率。数据库 AI 负载 的执行链路同时经过这三个方向：数据从数据库表出发，经由 Arrow 批处理组织、Ray 调度执行、GPU 推理服务调用，最终写回 Lance、pgvector 或 PostgreSQL。现有研究通常没有把这条链路作为一个可观测、可拆分、可调优的整体来处理。
 
 图 2-1 把这个格局画了出来。左边是三个已有方向及其代表系统——DB4AI（GaussML、Smart、NeurDB）、AI 推理服务（vLLM、Orca、Sarathi-Serve）和 AI 数据存储（Lance、TurboVecDB、Delta Lake）。每个方向内部都有成熟的 CCF-A 工作和明确的优化目标，但它们各自止于自己的边界：DB4AI 停在数据库进程内，推理服务停在 GPU 侧，存储层停在数据落盘之后。三个方向之间的两条连接带——数据库到推理引擎之间的"数据组织与调度执行"、推理引擎到存储之间的"结果汇聚与持久化写回"——缺少系统性的可观测、可拆分、可调优研究。
 
@@ -78,7 +78,7 @@ PostgreSQL 生态中，pgvector[4] 负责向量类型、索引和相似度检索
 
 ### 3.1 研究目标
 
-本课题的总体目标是：面向数据库驱动 AI workload，以 `AI_COMPLETE`（生成式 LLM 推理）为主场景，构建基于 Daft/Ray 的端到端实验链路。优化侧重点放在上游执行链路：探索数据组织策略（按 token 量而非固定行数的动态组织方式、按 token 长度或 prefix 分组）和提交控制策略（Ray actor 去中心化自适应提交），并通过对照实验验证两项策略是否需要联合调优。结果写回纳入端到端效果评价，用于判断上游优化收益是否被持久化阶段吞噬。
+本课题的总体目标是：面向数据库 AI 负载，以 `AI_COMPLETE`（生成式 LLM 推理）为主场景，构建基于 Daft/Ray 的端到端实验链路。优化侧重点放在上游执行链路：探索数据组织策略（按 token 量而非固定行数的动态组织方式、按 token 长度或 prefix 分组）和提交控制策略（Ray actor 去中心化自适应提交），并通过对照实验验证两项策略是否需要联合调优。结果写回纳入端到端效果评价，用于判断上游优化收益是否被持久化阶段吞噬。
 
 具体目标包括：
 
@@ -97,7 +97,7 @@ PostgreSQL 生态中，pgvector[4] 负责向量类型、索引和相似度检索
 
 **研究内容一：AI workload 感知的动态数据组织与批处理构造策略。**
 
-数据库驱动 AI workload 进入分布式数据执行系统时，传统的做法是按固定行数（如 batch_size=64）将数据库行打包为请求发送给推理引擎。但在 `AI_COMPLETE` 场景下，各行 token 长度差异可能很大（从 50 到 2000 tokens），固定行数的 batch 意味着各请求的 token 总量不可预测，有的 batch 严重欠载、有的 batch 超出推理引擎的 token 上限。此外，共享 system prompt 的请求如果随机分散到不同 batch，推理引擎的 prefix caching 无法发挥作用。
+数据库 AI 负载 进入分布式数据执行系统时，传统的做法是按固定行数（如 batch_size=64）将数据库行打包为请求发送给推理引擎。但在 `AI_COMPLETE` 场景下，各行 token 长度差异可能很大（从 50 到 2000 tokens），固定行数的 batch 意味着各请求的 token 总量不可预测，有的 batch 严重欠载、有的 batch 超出推理引擎的 token 上限。此外，共享 system prompt 的请求如果随机分散到不同 batch，推理引擎的 prefix caching 无法发挥作用。
 
 本课题在上游 Ray 侧探索动态的数据组织策略：
 
@@ -267,7 +267,7 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 
 图 4-7 arrow_postgres（AI_EMBED coalesced，psycopg2 + 手动 Arrow RecordBatch）与 daft_postgres（AI_COMPLETE batch=8，daft.read_sql + Daft Organizer）的阶段耗时对比。两种路径下数据管线开销（DB Read + Build/Organize）均 < 0.1s，Operator Wall（Ray + 模型推理）占主导。两个 workload 不同（BGE embedding 5939 行 vs Qwen2.5-1.5B 512 行），推理时间不直接可比；本图仅对比管线开销。写回阶段已排除。数据来源：ai_embed_chain_breakdown_20260712.csv / sharegpt_burstgpt_ray_task_batch128_token_sweep_20260719.csv。
 
-综合四组实验证据（图 4-3 至 4-6）和工程验证（图 4-7），当前可行性结论有三点。第一，数据库驱动 AI workload 的端到端画像链路已在 AI_EMBED 预研中跑通，阶段计时方法和指标（operator_wall_s、model_request_wall_s、fanin_s、writeback_s）可复现。第二，batch 粒度是端到端性能的一阶变量（37.5× 差异），多 endpoint routing 可降低模型调用时间但 writeback 独立于此收益——数据组织和提交控制是当前应优先调优的上游阶段，writeback 作为端到端检查点。第三，论文主体实验将在 vLLM + AI_COMPLETE 平台上进行，AI_EMBED 预研仅支撑实验框架可行性，Daft 作为数据引擎不引入管线瓶颈。
+综合四组实验证据（图 4-3 至 4-6）和工程验证（图 4-7），当前可行性结论有三点。第一，数据库 AI 负载 的端到端画像链路已在 AI_EMBED 预研中跑通，阶段计时方法和指标（operator_wall_s、model_request_wall_s、fanin_s、writeback_s）可复现。第二，batch 粒度是端到端性能的一阶变量（37.5× 差异），多 endpoint routing 可降低模型调用时间但 writeback 独立于此收益——数据组织和提交控制是当前应优先调优的上游阶段，writeback 作为端到端检查点。第三，论文主体实验将在 vLLM + AI_COMPLETE 平台上进行，AI_EMBED 预研仅支撑实验框架可行性，Daft 作为数据引擎不引入管线瓶颈。
 
 当前已完成的环节：vLLM + Qwen2.5-1.5B baseline 已建立（2026-07-18）；Daft 数据引擎已接入并验证管线开销（<0.1s）；token-tail revision 实验已完成。后续关键环节：8 月至 9 月在 AI_COMPLETE 场景下完成动态 batching 和自适应提交消融；9 月至 10 月完成耦合验证和写回瓶颈判定。
 

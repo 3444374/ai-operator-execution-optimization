@@ -1,4 +1,4 @@
-# 数据库驱动 AI 工作负载执行与存储协同优化工作区
+# 数据库 AI 负载执行与存储协同优化工作区
 
 本工作区用于组织硕士论文 / 达梦实习课题材料。当前开题正式题目是：
 
@@ -123,7 +123,7 @@
 
 当前更值得继续验证的候选优化对象是：
 
-> 数据库驱动 AI 工作负载进入 Daft/Arrow 数据组织层、Ray task/actor 执行层、GPU-backed 模型服务和 Lance / pgvector / PostgreSQL sink 后的分布式执行与存储协同问题。
+> 数据库 AI 负载进入 Daft/Arrow 数据组织层、Ray task/actor 执行层、GPU-backed 模型服务和 Lance / pgvector / PostgreSQL sink 后的分布式执行与存储协同问题。
 
 正式论证优先引用 `motivation/results/gpu/` 下的 GPU-backed 结果，PG18.4 / fake / CPU 结果只能作为预研背景和工具解释。
 

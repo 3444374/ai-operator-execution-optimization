@@ -21,7 +21,7 @@
    用来回答“为什么要做这个课题”。本项目中通常是三类 AI workload、调用粒度、模型服务队列、writeback 等动机信号。
 
 2. Solution Overview / 系统架构图  
-   用来回答“研究对象是什么、系统边界在哪里、方法作用在哪些环节”。本项目中的核心图是数据库驱动 AI workload 进入 Daft/Arrow、Ray、GPU model service、sink 的执行与存储协同架构。
+   用来回答“研究对象是什么、系统边界在哪里、方法作用在哪些环节”。本项目中的核心图是数据库 AI 负载 进入 Daft/Arrow、Ray、GPU model service、sink 的执行与存储协同架构。
 
 3. Experimental Results / 实验结果图  
    用来回答“数据证明了什么”。必须来自真实 CSV、结果报告或明确统计过程，不能凭印象画。

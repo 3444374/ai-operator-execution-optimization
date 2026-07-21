@@ -2,7 +2,7 @@
 
 本目录回答一个核心问题：
 
-> 在数据库驱动 AI workload 触发后，数据执行与存储链路是否产生足够严重、可分解、可优化的损耗，从而说明这个课题值得做。
+> 在数据库 AI 负载 触发后，数据执行与存储链路是否产生足够严重、可分解、可优化的损耗，从而说明这个课题值得做。
 
 当前主动机应来自生产式 GPU-backed E2E profile：数据库触发 AI workload，数据进入 Daft/Arrow、Ray task/actor、GPU-backed 模型服务和 PostgreSQL / pgvector / Lance sink。CPU/fake 结果只作为历史预研、脚本调试和谨慎消融，不能直接外推为真实 GPU 链路瓶颈。
 

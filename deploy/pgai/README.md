@@ -26,7 +26,7 @@ SQL surface 迁移或等价接入 PostgreSQL 18.4 / PostgreSQL 18.3 平台。
 - 本环境基于 `timescale/timescaledb-ha:pg17`，不是 PostgreSQL 18.4。
 - 它只能证明 pgai SQL 触发面和 Ollama embedding 调用可用，不能作为 PG18.4
   或 PG18.3 性能结果。
-- 它不是论文主线本身；主线仍是数据库驱动 AI workload 背后的 batch、Ray
+- 它不是论文主线本身；主线仍是数据库 AI 负载 背后的 batch、Ray
   task/actor、模型服务队列、fan-in、backpressure 和 writeback 调优。
 - pgai 仓库页面显示该项目已在 2026-05-27 归档；后续用于正式实验前，需要把
   兼容性和维护状态写进风险说明。

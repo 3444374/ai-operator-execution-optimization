@@ -37,7 +37,7 @@
 
 第一阶段用 fake embedding 只用于调试脚本、验证计时边界和保留历史预研；后续必须接 PostgreSQL 18.3 真实平台或同构预演链路做验证。普通 PostgreSQL + pgvector 只能作为设备未到位或内部平台暂不可用时的接口替身，不能替代最终平台结论。
 
-当前计划不把“把 AI 算子搬到 GPU 或数据库内核里执行”作为主要工作量。GPU-backed model service / vLLM / Ray Serve 应作为生产式数据执行链路的现实计算端点优先进入端到端画像，用来建立“为什么数据库驱动 AI workload 的数据执行与存储过程值得优化”的主动机。主要实验时间优先投入 worker、Ray task/actor、模型服务队列、fan-in/writeback 和 backpressure 的链路调优。
+当前计划不把“把 AI 算子搬到 GPU 或数据库内核里执行”作为主要工作量。GPU-backed model service / vLLM / Ray Serve 应作为生产式数据执行链路的现实计算端点优先进入端到端画像，用来建立“为什么数据库 AI 负载 的数据执行与存储过程值得优化”的主动机。主要实验时间优先投入 worker、Ray task/actor、模型服务队列、fan-in/writeback 和 backpressure 的链路调优。
 
 实验应尽量靠近 Snowflake / pgai 这类工业系统的用户可见语义，但不复现它们的闭源内部实现。推荐做法是：
 
@@ -257,7 +257,7 @@ SELECT ai_embed_batch('documents', 'text', 'document_embeddings');
 
 目标：
 
-> 证明这是数据库驱动 AI workload 的分布式数据执行链路，而不只是离线脚本；如果 GPU 环境可用，进一步证明生产式 GPU-backed 链路中数据组织、Ray 执行、模型服务和写回是否存在可分解的主要损耗。
+> 证明这是数据库 AI 负载 的分布式数据执行链路，而不只是离线脚本；如果 GPU 环境可用，进一步证明生产式 GPU-backed 链路中数据组织、Ray 执行、模型服务和写回是否存在可分解的主要损耗。
 
 链路：
 

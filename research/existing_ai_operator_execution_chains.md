@@ -17,7 +17,7 @@
 
 因此，本项目不要表述为“现有 AI 算子都用 Ray，所以我们优化 Ray”。更稳的表述是：
 
-> 现有系统已经证明数据库 AI 算子、vectorizer worker、模型服务调用、batch processing 和写回是实际工程形态；本项目选择 Ray/Daft/Lance-like 系统机制作为可控实验平台，研究数据库驱动 AI workload 触发后的 batch、partition、task/actor、模型服务路由、backpressure 和 writeback 优化。
+> 现有系统已经证明数据库 AI 算子、vectorizer worker、模型服务调用、batch processing 和写回是实际工程形态；本项目选择 Ray/Daft/Lance-like 系统机制作为可控实验平台，研究数据库 AI 负载 触发后的 batch、partition、task/actor、模型服务路由、backpressure 和 writeback 优化。
 
 ## 对 Snowflake 是否需要测性能
 

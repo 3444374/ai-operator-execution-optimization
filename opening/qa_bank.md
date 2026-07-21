@@ -4,7 +4,7 @@
 
 答法：
 
-> 题目涉及数据库、Daft/Ray/Lance、GPU 模型服务和写回，但研究对象不是数据库 AI 算子本身，而是数据库驱动 AI workload 的分布式数据执行与存储链路。具体实验会先固定 Database source、Daft/Arrow batch、Ray task/actor、GPU endpoint、fan-in 和 Lance / pgvector / PostgreSQL sink 这条可观测路径，再逐步做消融，不会同时改造数据库内核和模型 kernel。
+> 题目涉及数据库、Daft/Ray/Lance、GPU 模型服务和写回，但研究对象不是数据库 AI 算子本身，而是数据库 AI 负载 的分布式数据执行与存储链路。具体实验会先固定 Database source、Daft/Arrow batch、Ray task/actor、GPU endpoint、fan-in 和 Lance / pgvector / PostgreSQL sink 这条可观测路径，再逐步做消融，不会同时改造数据库内核和模型 kernel。
 
 ## 为什么不是只做 Ray？
 
@@ -64,4 +64,4 @@
 
 答法：
 
-> 传统查询优化主要围绕 scan、join、filter、aggregate 等数据库内部算子。本课题关注的是数据库驱动 AI workload 进入外部分布式数据执行系统后的过程，核心成本包括 Daft/Arrow batch、GPU endpoint、Ray task/actor、queue wait、fan-in 和 Lance / 数据库写回。AI_FILTER 的 selectivity 可能会借鉴查询优化思想，但研究边界仍是 AI 数据执行与存储协同优化。
+> 传统查询优化主要围绕 scan、join、filter、aggregate 等数据库内部算子。本课题关注的是数据库 AI 负载 进入外部分布式数据执行系统后的过程，核心成本包括 Daft/Arrow batch、GPU endpoint、Ray task/actor、queue wait、fan-in 和 Lance / 数据库写回。AI_FILTER 的 selectivity 可能会借鉴查询优化思想，但研究边界仍是 AI 数据执行与存储协同优化。

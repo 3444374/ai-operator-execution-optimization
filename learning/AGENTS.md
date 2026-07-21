@@ -27,7 +27,7 @@
 - 讲 Ray 相关流程时必须区分四件事：提交任务得到 `ObjectRef`、worker 执行计算、`ray.get` 取回结果、数据库 writeback 写回结果；不能把 `ray.get` 直接说成写数据库。
 - 讲 embedding 时必须说明计算是在数据库外部的 Python/Ray worker 里完成，除非明确讨论数据库内置模型或 UDF 实现。
 - 讲 GPU 时必须区分两件事：一是 GPU-backed model service 作为数据执行链路里的现实计算端点；二是“把数据库 AI 算子迁移到 GPU / 做 GPU kernel 优化”作为少量 baseline 或非主线。不能把“暂不优先做 GPU 迁移 baseline”讲成“本课题不在 GPU 背景下”。
-- 讲课题动机时，必须把生产式 GPU-backed E2E profile 作为第一层主动机：它回答“为什么要优化数据库驱动 AI workload 的数据执行与存储链路”。变量解释和消融也应优先来自同一条 GPU-backed 链路上的大块消融；CPU/fake、granularity、backpressure 历史实验只能作为预研背景和工具解释，不能作为真实 GPU 链路归因。
+- 讲课题动机时，必须把生产式 GPU-backed E2E profile 作为第一层主动机：它回答“为什么要优化数据库 AI 负载 的数据执行与存储链路”。变量解释和消融也应优先来自同一条 GPU-backed 链路上的大块消融；CPU/fake、granularity、backpressure 历史实验只能作为预研背景和工具解释，不能作为真实 GPU 链路归因。
 - 对 `fan-in`、backpressure、in-flight、queue wait、token backlog、upsert 等流程词，要画出最小链路并说明上游、下游、队列、结果合并和写回对象。
 - 讲解 Ray 相关流程时必须区分 Ray 作为任务执行器和作为架构设计空间（actor 异构化、去中心化协调）的不同用法。
 - 当用户问“业界是不是也这么做”时，必须区分本项目本地实现、外部 worker / vectorizer 工程实践、数据库内扩展实践、应用层 ETL/服务实践，并给出权威来源或标注为合理推断。

@@ -58,7 +58,7 @@ Solution Overview / System Architecture。
 - Label spacing：通过。观测层标签等距排列，研究卡片编号与标题分离。
 - Badge placement：通过。阶段编号位于框内，不越出边框，也不遮挡主标题文字。
 - Colour-blind safety：基本通过。使用蓝、绿、橙、紫和灰，并通过位置、标题和编号双重编码。
-- Self-contained caption：通过。图注说明研究对象是数据库驱动 AI workload 进入外部数据执行与存储链路后的系统结构。
+- Self-contained caption：通过。图注说明研究对象是数据库 AI 负载 进入外部数据执行与存储链路后的系统结构。
 - Chartjunk：通过。无 3D、阴影、装饰性渐变和无意义背景元素。
 
 ## 后续可改进
