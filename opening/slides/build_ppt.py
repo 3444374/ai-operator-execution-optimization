@@ -204,7 +204,7 @@ def layout_cover(prs):
         if ph.placeholder_format.idx == 0:
             ph.text = ""
             r = ph.text_frame.paragraphs[0].add_run()
-            r.text = "面向数据库驱动AI工作负载的\n分布式数据执行与存储协同优化研究"
+            r.text = "数据库 AI 负载的\n执行优化与调度研究"
             r.font.size = Pt(28)
             r.font.bold = True
             r.font.color.rgb = C_TITLE
@@ -437,7 +437,7 @@ def build(prs):
     n += 1
     s = layout_cover(prs)
     add_notes(s,
-        "各位老师好，我汇报的题目是'面向数据库驱动AI工作负载的分布式数据执行与存储协同优化研究'。本课题关注数据库成为AI工作负载入口后，数据从数据库表出发经分布式数据处理、GPU推理再写回存储这条端到端链路中的上游调度优化问题。",
+        "各位老师好，我汇报的题目是'数据库 AI 负载的执行优化与调度研究'。本课题关注数据库成为AI工作负载入口后，数据从数据库表出发经分布式数据处理、GPU推理再写回存储这条端到端链路中的上游调度优化问题。",
         "如被问题目是否太大：研究对象是固定执行路径 PostgreSQL→Daft/Arrow→Ray→vLLM→写回，在可控链路上做上游调度策略消融研究。不修改vLLM内部、不改造Ray核心、不做GPU kernel优化。")
     set_slide_number(s, n)
 
