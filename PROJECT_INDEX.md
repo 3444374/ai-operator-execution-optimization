@@ -27,6 +27,11 @@
 | `figures/architecture/data_organization_prefix_aware_mechanism.png` / `.svg` | 数据组织策略机制图：prefix-aware grouping | Formal mechanism figure for grouping shared system prompts; prefix-cache benefit still requires vLLM metric validation |
 | `figures/scripts/generate_data_organization_strategy_mechanism.py` | 数据组织策略机制图生成脚本 | Regenerate the three formal mechanism figures and scan for forbidden visible tokens |
 | `figures/audit/data_organization_strategy_mechanism_audit.md` | 数据组织策略机制图审计记录 | Read before citing the mechanism figures in report/PPT/thesis material |
+| `figures/architecture/submission_control_queue_adaptive_mechanism.png` / `.svg` | 提交控制策略机制图：队列自适应提交 | Formal mechanism figure for converting fixed flush into queue-state feedback; validate with queue wait, P95/P99, tokens/s, and E2E time |
+| `figures/architecture/submission_control_kmax_admission_mechanism.png` / `.svg` | 提交控制策略机制图：在途上限准入控制 | Formal mechanism figure for bounding in-flight requests at the service entrance; validate with K_max sweep and foreground/background interference |
+| `figures/architecture/submission_control_pool_routing_mechanism.png` / `.svg` | 提交控制策略机制图：分池路由 | Formal mechanism figure for binding submission parameters to request shape and actor-pool choice |
+| `figures/scripts/generate_submission_control_mechanisms.py` | 提交控制策略机制图生成脚本 | Regenerate the three formal mechanism figures and scan for forbidden visible tokens |
+| `figures/audit/submission_control_strategy_mechanism_audit.md` | 提交控制策略机制图审计记录 | Read before citing the submission-control mechanism figures in report/PPT/thesis material |
 | `figures/scripts/generate_local_vllm_ray_baseline_charts.py` | Local vLLM Ray baseline chart generator | Regenerate `b07`-`b25` from the ShareGPT/BurstGPT baseline CSVs |
 | `figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md` | Local vLLM Ray baseline chart audit | Check data source, figure role, chart choice, visual QA, and conclusion boundary |
 | `learning/local_vllm_ray_baseline_walkthrough.md` | Local vLLM + Ray baseline learning walkthrough | Read when explaining what the fixed row-batch baseline does and does not prove |

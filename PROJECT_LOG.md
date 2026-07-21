@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-07-21 Token 元数据来源与技术细节记录规范
+
+- **触发**：导师追问 token-aware batching 中“每行 token 怎么获取、怎么用于分组”，用户要求把这类技术细节记录到合适文档，并明确后续代码完成时同步记录实现细节。
+- **决策**：不新建单独技术细节文档；当前内容归入既有实验计划和实现参考，避免入口分散。
+  - `experiments/plans/data_organization_batching.md` 记录每行 `prompt_tokens` 的来源、tokenizer 一致性要求、`prompt_tokens + completion_max_tokens` 组批公式、超长行边界和实验必须记录字段。
+  - `experiments/plans/strategy_design_implementation_reference.md` 记录 Workload Profiler / DataOrganizer / `BatchRequest` 需要携带的 token 元数据，以及 CSV/审计指标口径。
+- **后续规则**：以后完成涉及调度策略、workload 导入、DataOrganizer、CSV 字段或 vLLM 指标采集的代码时，同步检查上述两个文档；若新增字段、公式、fallback 或边界条件，必须在对应文档和具体结果 README 中记录。
+
 ## 2026-07-21 开题报告图位优化与正文分析强化
 
 - **触发**：用户要求将图放到正文合适位置，在正文中提及并讲解分析每张图，报告可以比 PPT 图多、讲解更清晰。同时注意图文一致性。submission_control 的三张新图暂不写入报告。
@@ -725,3 +733,25 @@
 - 在研究内容一后新增三页数据组织机制图（token-budget、length-align、prefix-aware），图源来自 `figures/architecture/data_organization_*_mechanism.png`。
 - 将原研究内容一中的 prefix-aware 表述收紧为候选验证口径，避免提前声称 KV-cache / APC 收益。
 - 更新 `opening/README.md`、`opening/slides/README.md`、`opening/logs/project_log.md` 和 `PROJECT_INDEX.md`。
+
+## 2026-07-21 提交控制策略机制图正式化
+
+- 重写 `figures/scripts/generate_submission_control_mechanisms.py`，修复原脚本编码损坏问题，并统一生成三张提交控制策略机制图的 PNG/SVG。
+- 更新 `submission_control_queue_adaptive_mechanism.*`、`submission_control_kmax_admission_mechanism.*` 和 `submission_control_pool_routing_mechanism.*`，将叙事收敛为“提交时机、提交数量、提交去向”三类上游提交控制决策。
+- 图中统一使用保守表述：只说明候选机制和验证指标，不把当前设计写成已验证性能结论，也不暗示修改 vLLM 内部调度、Ray 调度器或数据库优化器。
+- 新增 `figures/audit/submission_control_strategy_mechanism_audit.md`，记录图的角色、证据边界、验证指标和 QA 检查。
+- 更新 `figures/README.md` 和 `PROJECT_INDEX.md`，将 submission-control 机制图纳入正式图资产入口。
+
+## 2026-07-22 提交控制策略机制图重绘修正
+
+- 根据图面反馈重绘 `submission_control_queue_adaptive_mechanism.*`、`submission_control_kmax_admission_mechanism.*` 和 `submission_control_pool_routing_mechanism.*`，将大面积红绿对照块改为白底卡片式机制图，降低草图感。
+- 修复 K_max 图中请求槽位越出 vLLM 服务入口框的问题：所有槽位改为在父框内部按宽度居中计算。
+- 修正分池路由图箭头语义：箭头从“请求形态判别”组件边界出发，并分别落到短请求池、长请求池、前缀相似池的左边界。
+- 重新运行 SVG 坐标越界检查、PNG 非背景边界检查和 SVG 禁用词/乱码扫描，结果均通过。
+- 更新 `figures/audit/submission_control_strategy_mechanism_audit.md` 记录本次 redesign QA。
+
+## 2026-07-22 图表箭头边界 QA 规则补充
+
+- 根据 submission-control 机制图反馈，在 `figures/AGENTS.md` 新增箭头方向与边界检查规则。
+- 后续所有机制图、架构图、流程图除画布越界外，必须检查箭头是否从源组件边界出发、是否指向目标组件边界、方向语义是否一致，以及是否穿过无关卡片或文字。
+- 同步更新 `figures/audit/submission_control_strategy_mechanism_audit.md`，将箭头边界关系纳入本组图的 QA 记录。

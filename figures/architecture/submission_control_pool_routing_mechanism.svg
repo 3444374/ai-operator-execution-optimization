@@ -1,63 +1,64 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1150" height="530" viewBox="0 0 1150 530">
-<rect width="1150" height="530" fill="#F8FAFC"/>
-<text x="575" y="40" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="26" font-weight="bold" fill="#172033" text-anchor="middle">提交控制策略三：Actor Pool 分池路由</text>
-<text x="575" y="61" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="normal" fill="#475569" text-anchor="middle">候选机制：按请求特征分类，路由到异构 actor pool，各池独立调度</text>
-<rect x="45" y="80" width="495" height="358" rx="10" ry="10" fill="#FEF2F2"/>
-<rect x="610" y="80" width="495" height="358" rx="10" ry="10" fill="#F0FDF4"/>
-<text x="67" y="114" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#172033" text-anchor="start">单一同构 Pool：请求混在一起</text>
-<text x="632" y="114" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#172033" text-anchor="start">异构 Actor Pool：按特征分池</text>
-<rect x="80" y="135" width="48" height="20" rx="5" ry="5" fill="#2F6FEB"/>
-<text x="104" y="161" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">短</text>
-<rect x="138" y="135" width="48" height="20" rx="5" ry="5" fill="#F97316"/>
-<text x="162" y="161" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">长</text>
-<rect x="196" y="135" width="48" height="20" rx="5" ry="5" fill="#7C3AED"/>
-<text x="220" y="161" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">sysA</text>
-<rect x="80" y="163" width="48" height="20" rx="5" ry="5" fill="#2F6FEB"/>
-<text x="104" y="189" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">短</text>
-<rect x="138" y="163" width="48" height="20" rx="5" ry="5" fill="#F97316"/>
-<text x="162" y="189" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">长</text>
-<rect x="196" y="163" width="48" height="20" rx="5" ry="5" fill="#7C3AED"/>
-<text x="220" y="189" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">sysA</text>
-<rect x="80" y="191" width="48" height="20" rx="5" ry="5" fill="#2F6FEB"/>
-<text x="104" y="217" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">短</text>
-<rect x="138" y="191" width="48" height="20" rx="5" ry="5" fill="#F97316"/>
-<text x="162" y="217" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">长</text>
-<rect x="196" y="191" width="48" height="20" rx="5" ry="5" fill="#16A34A"/>
-<text x="220" y="217" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">sysB</text>
-<line x1="254" y1="175" x2="289" y2="175" stroke="#334155" stroke-width="3"/><polygon points="289,175 279,169 279,181" fill="#334155"/>
-<rect x="294" y="135" width="226" height="125" rx="8" ry="8" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/>
-<text x="407" y="166" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#475569" text-anchor="middle">同构 Actor Pool</text>
-<text x="308" y="192" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">所有请求同一策略：</text>
-<text x="308" y="212" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">• 相同 K_max</text>
-<text x="308" y="230" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">• 相同 flush 节奏</text>
-<text x="308" y="248" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#DC2626" text-anchor="start">→ 短请求被长请求拖累</text>
-<text x="73" y="343" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#DC2626" text-anchor="start">问题：不同特征请求共享同一策略，无法差异化优化</text>
-<text x="73" y="369" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#DC2626" text-anchor="start">短请求等长 batch；共享 prefix 丢失缓存命中机会</text>
-<line x1="555" y1="234" x2="585" y2="234" stroke="#334155" stroke-width="3"/><polygon points="585,234 575,228 575,240" fill="#334155"/>
-<rect x="630" y="133" width="175" height="85" rx="8" ry="8" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
-<text x="717" y="164" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#2F6FEB" text-anchor="middle">请求分类器</text>
-<text x="644" y="188" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">按 token 量 + prefix 分组</text>
-<text x="644" y="208" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">→ 路由到对应 actor pool</text>
-<line x1="809" y1="156" x2="831" y2="150" stroke="#2F6FEB" stroke-width="3"/><polygon points="831,150 821,144 821,156" fill="#2F6FEB"/>
-<line x1="809" y1="246" x2="831" y2="240" stroke="#F97316" stroke-width="3"/><polygon points="831,240 821,234 821,246" fill="#F97316"/>
-<line x1="809" y1="336" x2="831" y2="330" stroke="#7C3AED" stroke-width="3"/><polygon points="831,330 821,324 821,336" fill="#7C3AED"/>
-<rect x="835" y="138" width="248" height="84" rx="8" ry="8" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
-<rect x="840" y="143" width="5" height="74" rx="3" ry="3" fill="#2F6FEB"/>
-<text x="857" y="166" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#2F6FEB" text-anchor="start">快速 Pool</text>
-<text x="857" y="188" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">短 token 请求</text>
-<text x="857" y="208" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">K_max 较大 · flush 节奏快</text>
-<rect x="835" y="228" width="248" height="84" rx="8" ry="8" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
-<rect x="840" y="233" width="5" height="74" rx="3" ry="3" fill="#F97316"/>
-<text x="857" y="256" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#F97316" text-anchor="start">慢速 Pool</text>
-<text x="857" y="278" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">长 token 请求</text>
-<text x="857" y="298" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#F97316" text-anchor="start">K_max 较小 · flush 节奏慢</text>
-<rect x="835" y="318" width="248" height="84" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
-<rect x="840" y="323" width="5" height="74" rx="3" ry="3" fill="#7C3AED"/>
-<text x="857" y="346" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#7C3AED" text-anchor="start">亲和 Pool</text>
-<text x="857" y="368" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">共享 prefix 请求</text>
-<text x="857" y="388" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#7C3AED" text-anchor="start">按前缀聚合提交 · 利用 KV-cache</text>
-<text x="638" y="429" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#16A34A" text-anchor="start">效果：不同特征匹配不同策略，去中心化协调</text>
-<text x="638" y="451" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#16A34A" text-anchor="start">→ 短请求低延迟 + 长请求高吞吐 + 缓存高命中</text>
-<text x="45" y="490" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#475569" text-anchor="start">图注建议：该图说明 actor pool 分池路由的核心概念——将请求按特征分流到异构 pool 以匹配差异化策略；截至当前，该方案为设计提案，尚无实验数据支撑。</text>
-<text x="45" y="510" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#475569" text-anchor="start">当前状态：方案设计阶段，尚未进入实验验证。实验将在前两个提交控制机制收敛后启动。</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="520" viewBox="0 0 1180 520">
+<rect width="1180" height="520" fill="#FFFFFF"/>
+<text x="590.0" y="44" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="27" font-weight="700" fill="#172033" text-anchor="middle">提交控制策略三：分池路由</text>
+<text x="590.0" y="68" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#536276" text-anchor="middle">提交去向：按请求形态选择 actor pool 与提交参数</text>
+<rect x="48" y="94" width="514" height="336" rx="10" ry="10" fill="#F8FAFC" stroke="#D9E0EA" stroke-width="1"/>
+<rect x="68" y="114" width="5" height="296" rx="2" ry="2" fill="#94A3B8"/>
+<text x="86" y="133" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#172033" text-anchor="start">单一入口：不同请求混在一起</text>
+<rect x="618" y="94" width="514" height="336" rx="10" ry="10" fill="#F8FAFC" stroke="#D9E0EA" stroke-width="1"/>
+<rect x="638" y="114" width="5" height="296" rx="2" ry="2" fill="#2F6FEB"/>
+<text x="656" y="133" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#172033" text-anchor="start">分池入口：按形态选择策略</text>
+<line x1="580" y1="264" x2="600" y2="264" stroke="#334155" stroke-width="3"/><polygon points="600,264 589,258 589,270" fill="#334155"/>
+<rect x="322" y="144" width="200" height="132" rx="8" ry="8" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/>
+<text x="340" y="176" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#94A3B8" text-anchor="start">同构 Actor Pool</text>
+<text x="342" y="200" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#172033" text-anchor="start">所有请求共用参数</text>
+<text x="342" y="224" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#172033" text-anchor="start">K_max / flush 均相同</text>
+<text x="342" y="250" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#DC2626" text-anchor="start">短长请求相互影响</text>
+<line x1="270" y1="196" x2="322" y2="196" stroke="#334155" stroke-width="3"/><polygon points="322,196 311,190 311,202" fill="#334155"/>
+<text x="92" y="375" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#DC2626" text-anchor="start">风险：一种策略同时服务低延迟、长尾吞吐和前缀局部性需求</text>
+<rect x="654" y="170" width="158" height="116" rx="8" ry="8" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
+<text x="672" y="202" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#2F6FEB" text-anchor="start">请求形态判别</text>
+<text x="674" y="224" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#172033" text-anchor="start">token 量 / prefix</text>
+<text x="674" y="248" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#172033" text-anchor="start">到达压力 / 任务类型</text>
+<text x="662" y="465" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#16A34A" text-anchor="start">验证：分组尾延迟、队列均衡、prefix locality 与吞吐</text>
+<text x="48" y="501" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#536276" text-anchor="start">图注建议：分池路由把“发给谁”纳入提交控制；箭头表示从形态判别器到目标 pool 的明确路由关系。</text>
+<rect x="92" y="154" width="48" height="24" rx="5" ry="5" fill="#2F6FEB"/>
+<text x="116.0" y="170" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">短</text>
+<rect x="154" y="154" width="48" height="24" rx="5" ry="5" fill="#D97706"/>
+<text x="178.0" y="170" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">长</text>
+<rect x="216" y="154" width="48" height="24" rx="5" ry="5" fill="#6D5BD0"/>
+<text x="240.0" y="170" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">sysA</text>
+<rect x="92" y="188" width="48" height="24" rx="5" ry="5" fill="#2F6FEB"/>
+<text x="116.0" y="204" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">短</text>
+<rect x="154" y="188" width="48" height="24" rx="5" ry="5" fill="#D97706"/>
+<text x="178.0" y="204" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">长</text>
+<rect x="216" y="188" width="48" height="24" rx="5" ry="5" fill="#6D5BD0"/>
+<text x="240.0" y="204" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">sysA</text>
+<rect x="92" y="222" width="48" height="24" rx="5" ry="5" fill="#2F6FEB"/>
+<text x="116.0" y="238" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">短</text>
+<rect x="154" y="222" width="48" height="24" rx="5" ry="5" fill="#D97706"/>
+<text x="178.0" y="238" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">长</text>
+<rect x="216" y="222" width="48" height="24" rx="5" ry="5" fill="#16A34A"/>
+<text x="240.0" y="238" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">sysB</text>
+<rect x="880" y="130" width="222" height="78" rx="8" ry="8" fill="#FFFFFF" stroke="#D9E0EA" stroke-width="1"/>
+<rect x="890" y="142" width="5" height="54" rx="3" ry="3" fill="#2F6FEB"/>
+<text x="902" y="162" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#2F6FEB" text-anchor="start">短请求池</text>
+<text x="902" y="180" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#172033" text-anchor="start">低延迟优先</text>
+<text x="902" y="202" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#2F6FEB" text-anchor="start">较大 K_max，快速 flush</text>
+<rect x="880" y="236" width="222" height="78" rx="8" ry="8" fill="#FFFFFF" stroke="#D9E0EA" stroke-width="1"/>
+<rect x="890" y="248" width="5" height="54" rx="3" ry="3" fill="#D97706"/>
+<text x="902" y="268" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#D97706" text-anchor="start">长请求池</text>
+<text x="902" y="286" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#172033" text-anchor="start">吞吐优先</text>
+<text x="902" y="308" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#D97706" text-anchor="start">较小 K_max，控制尾部</text>
+<rect x="880" y="342" width="222" height="78" rx="8" ry="8" fill="#FFFFFF" stroke="#D9E0EA" stroke-width="1"/>
+<rect x="890" y="354" width="5" height="54" rx="3" ry="3" fill="#6D5BD0"/>
+<text x="902" y="374" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#6D5BD0" text-anchor="start">前缀相似池</text>
+<text x="902" y="392" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#172033" text-anchor="start">共享 system prompt</text>
+<text x="902" y="414" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#6D5BD0" text-anchor="start">集中提交，观察缓存命中</text>
+<line x1="812" y1="228" x2="842" y2="228" stroke="#64748B" stroke-width="2"/>
+<line x1="842" y1="169" x2="842" y2="381" stroke="#64748B" stroke-width="2"/>
+<rect x="839" y="225" width="6" height="6" rx="2" ry="2" fill="#64748B"/>
+<line x1="842" y1="169" x2="880" y2="169" stroke="#64748B" stroke-width="2"/><polygon points="880,169 869,163 869,175" fill="#64748B"/>
+<line x1="842" y1="275" x2="880" y2="275" stroke="#64748B" stroke-width="2"/><polygon points="880,275 869,269 869,281" fill="#64748B"/>
+<line x1="842" y1="381" x2="880" y2="381" stroke="#64748B" stroke-width="2"/><polygon points="880,381 869,375 869,387" fill="#64748B"/>
 </svg>

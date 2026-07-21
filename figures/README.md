@@ -37,6 +37,28 @@ charts: token-budget, length-aligned, and prefix-aware grouping are presented
 as candidate request-shaping policies whose throughput, tail-latency, queue,
 and prefix-cache effects still require ablation evidence.
 
+# 2026-07-21 Submission Control Mechanism Figures
+
+Use these formal mechanism figures when explaining research content two
+(scheduling and submission-control strategy design):
+
+```text
+figures/architecture/submission_control_queue_adaptive_mechanism.png
+figures/architecture/submission_control_queue_adaptive_mechanism.svg
+figures/architecture/submission_control_kmax_admission_mechanism.png
+figures/architecture/submission_control_kmax_admission_mechanism.svg
+figures/architecture/submission_control_pool_routing_mechanism.png
+figures/architecture/submission_control_pool_routing_mechanism.svg
+figures/scripts/generate_submission_control_mechanisms.py
+figures/audit/submission_control_strategy_mechanism_audit.md
+```
+
+The set is organized as three upstream submission decisions: when to flush,
+how many requests may remain in flight, and where each request is routed. These
+figures are mechanism diagrams, not experimental-result charts. They should be
+cited with validation metrics such as queue wait, P95/P99 latency, tokens/s,
+foreground/background interference, queue balance, and prefix locality.
+
 # Project Figures
 
 做图、改图、迁移图或审查图表前，先读 `figures/AGENTS.md`。本文件只维护当前图资产入口、正式图清单和保留规则。

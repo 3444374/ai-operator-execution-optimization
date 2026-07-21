@@ -1,60 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1150" height="470" viewBox="0 0 1150 470">
-<rect width="1150" height="470" fill="#F8FAFC"/>
-<text x="575" y="40" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="26" font-weight="bold" fill="#172033" text-anchor="middle">提交控制策略一：K_max 准入控制</text>
-<text x="575" y="61" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="normal" fill="#475569" text-anchor="middle">候选机制：限制同时在飞请求数上界，防止单任务独占模型服务资源</text>
-<rect x="45" y="80" width="495" height="298" rx="10" ry="10" fill="#FEF2F2"/>
-<rect x="610" y="80" width="495" height="298" rx="10" ry="10" fill="#F0FDF4"/>
-<text x="67" y="114" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#172033" text-anchor="start">无准入控制：所有请求同时进入</text>
-<text x="632" y="114" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="16" font-weight="bold" fill="#172033" text-anchor="start">K_max = 4 准入控制：槽位轮转</text>
-<rect x="73" y="128" width="140" height="62" rx="8" ry="8" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
-<text x="143" y="158" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#2F6FEB" text-anchor="middle">Ray Actor</text>
-<text x="88" y="178" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">生成 16 请求</text>
-<text x="88" y="194" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#172033" text-anchor="start">全部立即发送</text>
-<line x1="219" y1="159" x2="265" y2="159" stroke="#334155" stroke-width="3"/><polygon points="265,159 255,153 255,165" fill="#334155"/>
-<rect x="271" y="128" width="247" height="140" rx="8" ry="8" fill="#FFFFFF" stroke="#DC2626" stroke-width="2"/>
-<text x="394" y="158" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#DC2626" text-anchor="middle">vLLM 模型服务</text>
-<rect x="285" y="168" width="20" height="20" rx="4" ry="4" fill="#DC2626"/>
-<rect x="311" y="168" width="20" height="20" rx="4" ry="4" fill="#DC2626"/>
-<rect x="337" y="168" width="20" height="20" rx="4" ry="4" fill="#DC2626"/>
-<rect x="363" y="168" width="20" height="20" rx="4" ry="4" fill="#DC2626"/>
-<rect x="389" y="168" width="20" height="20" rx="4" ry="4" fill="#DC2626"/>
-<rect x="415" y="168" width="20" height="20" rx="4" ry="4" fill="#DC2626"/>
-<rect x="441" y="168" width="20" height="20" rx="4" ry="4" fill="#DC2626"/>
-<rect x="467" y="168" width="20" height="20" rx="4" ry="4" fill="#DC2626"/>
-<text x="285" y="208" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#DC2626" text-anchor="start">in-flight 满载 (8/8)</text>
-<rect x="285" y="212" width="20" height="16" rx="4" ry="4" fill="#F97316"/>
-<rect x="311" y="212" width="20" height="16" rx="4" ry="4" fill="#F97316"/>
-<rect x="337" y="212" width="20" height="16" rx="4" ry="4" fill="#F97316"/>
-<rect x="363" y="212" width="20" height="16" rx="4" ry="4" fill="#F97316"/>
-<rect x="389" y="212" width="20" height="16" rx="4" ry="4" fill="#F97316"/>
-<text x="285" y="248" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#F97316" text-anchor="start">队列积压 5+</text>
-<text x="73" y="333" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#DC2626" text-anchor="start">问题：in-flight 窗口被单任务填满，其他任务饥饿</text>
-<text x="73" y="355" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#DC2626" text-anchor="start">无上界 → 尾部膨胀，共享场景下公平性丧失</text>
-<line x1="555" y1="234" x2="585" y2="234" stroke="#334155" stroke-width="3"/><polygon points="585,234 575,228 575,240" fill="#334155"/>
-<rect x="630" y="128" width="142" height="62" rx="8" ry="8" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
-<text x="701" y="158" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#2F6FEB" text-anchor="middle">Ray Actor</text>
-<rect x="644" y="164" width="114" height="20" rx="4" ry="4" fill="#2F6FEB"/>
-<text x="701" y="180" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">max_inflight = 4</text>
-<line x1="778" y1="159" x2="818" y2="159" stroke="#334155" stroke-width="3"/><polygon points="818,159 808,153 808,165" fill="#334155"/>
-<rect x="824" y="128" width="259" height="160" rx="8" ry="8" fill="#FFFFFF" stroke="#16A34A" stroke-width="2"/>
-<text x="953" y="158" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#16A34A" text-anchor="middle">vLLM 模型服务</text>
-<rect x="889" y="164" width="128" height="22" rx="5" ry="5" fill="#16A34A"/>
-<text x="953" y="181" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#FFFFFF" text-anchor="middle">K_max = 4  准入门控</text>
-<rect x="852" y="200" width="20" height="20" rx="4" ry="4" fill="#16A34A"/>
-<rect x="878" y="200" width="20" height="20" rx="4" ry="4" fill="#16A34A"/>
-<rect x="904" y="200" width="20" height="20" rx="4" ry="4" fill="#16A34A"/>
-<rect x="930" y="200" width="20" height="20" rx="4" ry="4" fill="#16A34A"/>
-<rect x="956" y="200" width="20" height="20" rx="4" ry="4" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1"/>
-<rect x="982" y="200" width="20" height="20" rx="4" ry="4" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1"/>
-<rect x="1008" y="200" width="20" height="20" rx="4" ry="4" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1"/>
-<rect x="1034" y="200" width="20" height="20" rx="4" ry="4" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1"/>
-<text x="838" y="240" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#16A34A" text-anchor="start">4 在飞 + 4 空闲</text>
-<rect x="870" y="244" width="20" height="14" rx="4" ry="4" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="1"/>
-<rect x="896" y="244" width="20" height="14" rx="4" ry="4" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="1"/>
-<rect x="922" y="244" width="20" height="14" rx="4" ry="4" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="1"/>
-<rect x="948" y="244" width="20" height="14" rx="4" ry="4" fill="#E7F0FF" stroke="#2F6FEB" stroke-width="1"/>
-<text x="838" y="276" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="normal" fill="#2F6FEB" text-anchor="start">剩余请求排队轮转</text>
-<text x="638" y="333" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#16A34A" text-anchor="start">效果：预留槽位 → 多任务不饥饿</text>
-<text x="638" y="355" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="normal" fill="#16A34A" text-anchor="start">上界约束使尾部可控；K_max 与 batch 形状需耦合配置</text>
-<text x="45" y="450" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="normal" fill="#475569" text-anchor="start">图注建议：该图说明 K_max 如何通过限制同时在飞请求数来控制单任务的资源占用；最优 K_max 与 batch 形状耦合，需通过 b18/b24 消融实验确定。</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="500" viewBox="0 0 1180 500">
+<rect width="1180" height="500" fill="#FFFFFF"/>
+<text x="590.0" y="44" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="27" font-weight="700" fill="#172033" text-anchor="middle">提交控制策略二：在途上限准入控制</text>
+<text x="590.0" y="68" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="400" fill="#536276" text-anchor="middle">提交数量：用 K_max 限制同时在途请求数</text>
+<rect x="48" y="94" width="514" height="320" rx="10" ry="10" fill="#F8FAFC" stroke="#D9E0EA" stroke-width="1"/>
+<rect x="68" y="114" width="5" height="280" rx="2" ry="2" fill="#94A3B8"/>
+<text x="86" y="133" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#172033" text-anchor="start">无准入上限：请求一次性涌入</text>
+<rect x="618" y="94" width="514" height="320" rx="10" ry="10" fill="#F8FAFC" stroke="#D9E0EA" stroke-width="1"/>
+<rect x="638" y="114" width="5" height="280" rx="2" ry="2" fill="#2F6FEB"/>
+<text x="656" y="133" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="17" font-weight="700" fill="#172033" text-anchor="start">有界准入：按槽位轮转提交</text>
+<line x1="580" y1="254" x2="600" y2="254" stroke="#334155" stroke-width="3"/><polygon points="600,254 589,248 589,260" fill="#334155"/>
+<rect x="92" y="166" width="148" height="69" rx="8" ry="8" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
+<text x="110" y="198" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#2F6FEB" text-anchor="start">Ray actor</text>
+<text x="110" y="217" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#172033" text-anchor="start">生成 16 个请求</text>
+<rect x="318" y="142" width="204" height="158" rx="8" ry="8" fill="#FFFFFF" stroke="#DC2626" stroke-width="2"/>
+<text x="336" y="174" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#DC2626" text-anchor="start">vLLM 服务入口</text>
+<rect x="323.5" y="190" width="18" height="18" rx="4" ry="4" fill="#DC2626"/>
+<rect x="348.5" y="190" width="18" height="18" rx="4" ry="4" fill="#DC2626"/>
+<rect x="373.5" y="190" width="18" height="18" rx="4" ry="4" fill="#DC2626"/>
+<rect x="398.5" y="190" width="18" height="18" rx="4" ry="4" fill="#DC2626"/>
+<rect x="423.5" y="190" width="18" height="18" rx="4" ry="4" fill="#DC2626"/>
+<rect x="448.5" y="190" width="18" height="18" rx="4" ry="4" fill="#DC2626"/>
+<rect x="473.5" y="190" width="18" height="18" rx="4" ry="4" fill="#DC2626"/>
+<rect x="498.5" y="190" width="18" height="18" rx="4" ry="4" fill="#DC2626"/>
+<text x="338" y="238" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#DC2626" text-anchor="start">in-flight 被填满</text>
+<rect x="337.5" y="252" width="18" height="14" rx="4" ry="4" fill="#D97706"/>
+<rect x="362.5" y="252" width="18" height="14" rx="4" ry="4" fill="#D97706"/>
+<rect x="387.5" y="252" width="18" height="14" rx="4" ry="4" fill="#D97706"/>
+<rect x="412.5" y="252" width="18" height="14" rx="4" ry="4" fill="#D97706"/>
+<rect x="437.5" y="252" width="18" height="14" rx="4" ry="4" fill="#D97706"/>
+<rect x="462.5" y="252" width="18" height="14" rx="4" ry="4" fill="#D97706"/>
+<text x="338" y="292" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#D97706" text-anchor="start">等待队列继续增长</text>
+<line x1="240" y1="202" x2="318" y2="202" stroke="#334155" stroke-width="3"/><polygon points="318,202 307,196 307,208" fill="#334155"/>
+<text x="92" y="357" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#DC2626" text-anchor="start">风险：后台批量请求占满服务入口，前台小任务排队不可控</text>
+<rect x="662" y="166" width="150" height="69" rx="8" ry="8" fill="#FFFFFF" stroke="#2F6FEB" stroke-width="2"/>
+<text x="680" y="198" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#2F6FEB" text-anchor="start">Ray actor</text>
+<rect x="680" y="204" width="112" height="24" rx="5" ry="5" fill="#2F6FEB"/>
+<text x="736.0" y="220" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">max_inflight = K</text>
+<rect x="886" y="136" width="216" height="174" rx="8" ry="8" fill="#FFFFFF" stroke="#16A34A" stroke-width="2"/>
+<text x="904" y="168" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="14" font-weight="700" fill="#16A34A" text-anchor="start">vLLM 服务入口</text>
+<rect x="928" y="178" width="132" height="24" rx="5" ry="5" fill="#16A34A"/>
+<text x="994.0" y="194" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle">K_max 准入门控</text>
+<rect x="894.0" y="224" width="18" height="18" rx="4" ry="4" fill="#16A34A"/>
+<rect x="920.0" y="224" width="18" height="18" rx="4" ry="4" fill="#16A34A"/>
+<rect x="946.0" y="224" width="18" height="18" rx="4" ry="4" fill="#16A34A"/>
+<rect x="972.0" y="224" width="18" height="18" rx="4" ry="4" fill="#16A34A"/>
+<rect x="998.0" y="224" width="18" height="18" rx="4" ry="4" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1"/>
+<rect x="1024.0" y="224" width="18" height="18" rx="4" ry="4" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1"/>
+<rect x="1050.0" y="224" width="18" height="18" rx="4" ry="4" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1"/>
+<rect x="1076.0" y="224" width="18" height="18" rx="4" ry="4" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1"/>
+<text x="914" y="270" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="10" font-weight="400" fill="#16A34A" text-anchor="start">只允许 K 个请求在途</text>
+<rect x="932.0" y="282" width="18" height="14" rx="4" ry="4" fill="#EAF2FF" stroke="#94A3B8" stroke-width="1"/>
+<rect x="958.0" y="282" width="18" height="14" rx="4" ry="4" fill="#EAF2FF" stroke="#94A3B8" stroke-width="1"/>
+<rect x="984.0" y="282" width="18" height="14" rx="4" ry="4" fill="#EAF2FF" stroke="#94A3B8" stroke-width="1"/>
+<rect x="1010.0" y="282" width="18" height="14" rx="4" ry="4" fill="#EAF2FF" stroke="#94A3B8" stroke-width="1"/>
+<line x1="812" y1="202" x2="886" y2="202" stroke="#334155" stroke-width="3"/><polygon points="886,202 875,196 875,208" fill="#334155"/>
+<text x="662" y="357" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="11" font-weight="400" fill="#16A34A" text-anchor="start">验证：K_max sweep、前后台干扰、吞吐与尾延迟折中</text>
+<text x="48" y="471" font-family="Microsoft YaHei,SimHei,Arial,sans-serif" font-size="12" font-weight="400" fill="#536276" text-anchor="start">图注建议：在途上限准入控制把提交控制从“发完即算”改为有界窗口；K_max 需与上游 batch 形态联合消融。</text>
 </svg>
