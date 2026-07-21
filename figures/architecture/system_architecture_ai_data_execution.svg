@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
 <rect width="1600" height="1000" fill="#F8FAFC"/>
-<text x="64" y="74" font-family="Microsoft YaHei, Arial, sans-serif" font-size="32" font-weight="700" fill="#1F2937" text-anchor="start">数据库驱动 AI workload 的分布式数据执行与存储架构</text>
+<text x="64" y="74" font-family="Microsoft YaHei, Arial, sans-serif" font-size="32" font-weight="700" fill="#1F2937" text-anchor="start">数据库 AI 负载的执行优化与调度——系统架构</text>
 <text x="66" y="112" font-family="Microsoft YaHei, Arial, sans-serif" font-size="17" font-weight="400" fill="#667085" text-anchor="start">数据库为 AI workload 入口与结果落点，数据组织策略、Ray 调度提交控制、GPU 推理服务和结果写回共同决定端到端性能。</text>
 <rect x="354" y="132" width="1116" height="118" rx="18" fill="#FFF8D9" stroke="#D6A000" stroke-width="2"/>
 <text x="912.0" y="170.35" font-family="Microsoft YaHei, Arial, sans-serif" font-size="21" font-weight="700" fill="#1F2937" text-anchor="middle">观测与策略层</text>

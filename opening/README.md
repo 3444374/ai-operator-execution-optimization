@@ -20,7 +20,7 @@
 
 一句话口径：
 
-> 本课题关注数据库驱动 AI workload 的分布式数据执行与存储协同优化，重点研究 Database source、Daft / Arrow batch、Ray task / actor、GPU 模型服务、fan-in、Lance / pgvector / PostgreSQL sink 等阶段的瓶颈定位与协同优化。
+> 本课题关注数据库 AI 负载的执行优化与调度，重点研究 Database source、Daft / Arrow batch、Ray task / actor、GPU 模型服务、fan-in、Lance / pgvector / PostgreSQL sink 等阶段的瓶颈定位与协同优化。
 
 ## 目录结构
 

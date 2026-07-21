@@ -130,7 +130,7 @@ def draw_png():
     img = Image.new("RGB", (W, H), COLORS["bg"])
     draw = ImageDraw.Draw(img)
 
-    draw.text((64, 42), "数据库驱动 AI workload 的分布式数据执行与存储架构", font=F["title"], fill=COLORS["ink"])
+    draw.text((64, 42), "数据库 AI 负载的执行优化与调度——系统架构", font=F["title"], fill=COLORS["ink"])
     draw.text(
         (66, 88),
         "数据库为 AI workload 入口与结果落点，数据组织策略、Ray 调度提交控制、GPU 推理服务和结果写回共同决定端到端性能。",
@@ -264,7 +264,7 @@ def draw_svg():
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
         f'<rect width="{W}" height="{H}" fill="{COLORS["bg"]}"/>',
-        svg_text(64, 74, "数据库驱动 AI workload 的分布式数据执行与存储架构", 32, "700"),
+        svg_text(64, 74, "数据库 AI 负载的执行优化与调度——系统架构", 32, "700"),
         svg_text(66, 112, "数据库为 AI workload 入口与结果落点，数据组织策略、Ray 调度提交控制、GPU 推理服务和结果写回共同决定端到端性能。", 17, fill=COLORS["muted"]),
         svg_rect(354, 132, 1116, 118, COLORS["policy"], COLORS["policy_edge"], 18, 2),
         svg_center(354, 146, 1116, 34, "观测与策略层", 21, "700"),

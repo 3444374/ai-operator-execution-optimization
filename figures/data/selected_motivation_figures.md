@@ -43,7 +43,7 @@ figures/architecture/system_architecture_ai_data_execution.png
 figures/architecture/system_architecture_ai_data_execution.svg
 ```
 
-讲解作用：先说明本课题研究的不是单个数据库算子、GPU kernel 或单纯 Ray 调度器，而是数据库驱动 AI workload 进入 Daft/Arrow、Ray、GPU 模型服务和 Lance / 数据库 sink 后形成的分布式数据执行与存储协同过程。
+讲解作用：先说明本课题研究的不是单个数据库算子、GPU kernel 或单纯 Ray 调度器，而是数据库 AI 负载进入 Daft/Arrow、Ray、GPU 模型服务和 Lance / 数据库 sink 后形成的执行优化与调度过程。
 
 适合位置：报告第 3 章总体框架、PPT 研究对象页、飞书开题报告研究内容前。
 
@@ -234,7 +234,7 @@ figures/data/backup/b06_stage_share.svg
 
 ## 推荐讲解顺序
 
-1. 先用系统架构图定义研究对象：数据库驱动 AI workload 的分布式数据执行与存储协同。
+1. 先用系统架构图定义研究对象：数据库 AI 负载的执行优化与调度。
 2. 用真实 GPU-backed 阶段耗时图说明端到端链路存在可观、可拆解、可观测的系统成本。
 3. 用调用粒度图说明数据组织和 batch 策略会显著影响端到端耗时。
 4. 用执行方式与端点对比图说明调度策略需要感知模型服务端点和并行条件，不能孤立讨论 Ray。

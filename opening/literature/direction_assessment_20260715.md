@@ -43,7 +43,7 @@ Galois (SIGMOD '25)
 
 ### 2.1 当前课题定位
 
-> 面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究
+> 数据库 AI 负载的执行优化与调度研究
 
 核心链路：数据库 → Arrow RecordBatch → Ray task/actor → GPU model service → fan-in → pgvector/Lance writeback
 

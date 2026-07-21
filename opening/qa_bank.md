@@ -10,7 +10,7 @@
 
 答法：
 
-> Ray 是可控执行机制，不是唯一研究对象。现有实验显示单 endpoint 下 Ray 不一定明显优于 Python，只有多 endpoint、路由、反压和 worker 写回等场景下才可能体现价值。因此本课题更准确地说是数据库驱动 AI workload 的分布式数据执行与存储协同优化，其中 Ray 主要承担执行调度和服务状态感知并行控制。
+> Ray 是可控执行机制，不是唯一研究对象。现有实验显示单 endpoint 下 Ray 不一定明显优于 Python，只有多 endpoint、路由、反压和 worker 写回等场景下才可能体现价值。因此本课题更准确地说是数据库 AI 负载的执行优化与调度研究，其中 Ray 主要承担执行调度和服务状态感知并行控制。
 
 ## 和 Snowflake / pgai / PostgresML 有什么关系？
 
