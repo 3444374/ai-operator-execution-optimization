@@ -145,6 +145,10 @@ SQL AI operator
       operator_type: AI_EMBED / AI_FILTER / AI_COMPLETE
       row_count_estimate
       text_length_histogram
+      prompt_tokens: target-model tokenizer count per row
+      token_count_source: model_tokenizer / trace_metadata / char_proxy
+      tokenizer_name_or_path
+      tokenizer_add_special_tokens
       output_shape: embedding_dim / selectivity / token_bound
       sink_type: PostgreSQL / pgvector / Lance
 ```
@@ -157,8 +161,11 @@ SQL AI operator
 
 最小实现：
 
-- 先只采样 `row_count`、文本长度 P50/P95、算子类型；
-- 后续再加 token 估计、selectivity 估计和 prefix/cache 信息。
+- 对 `AI_COMPLETE`，必须优先计算并保存目标模型 tokenizer 下的 `prompt_tokens`。当前实现路径是在 workload 导入阶段用 Hugging Face `AutoTokenizer` 计算，写入 PostgreSQL `documents.prompt_tokens`，再由 Daft/Arrow table 传给 `DataOrganizer`。
+- `prompt_tokens` 的来源必须可追溯：记录 `tokenizer_name_or_path`、`tokenizer_add_special_tokens`、`token_count_source`、`max_model_len` 和 `completion_max_tokens`。只有 `token_count_source=model_tokenizer` 的结果可以支撑正式 token-aware 策略结论。
+- token-budget batching 的单行估计代价为 `prompt_tokens + completion_max_tokens`；该公式属于策略层输入，不改变每行 prompt 的语义边界，也不把单行 prompt 拆成多条请求。
+- 如果暂时没有 tokenizer，只能用 trace token 或字符长度作为 fallback，并在实验报告中标注为诊断/预研，不作为正式结论。
+- 后续再加 selectivity 估计和 prefix/cache 信息。
 
 放弃条件：
 
@@ -184,6 +191,8 @@ DataOrganizer.organize(rows, strategy)
 ```
 
 策略层代码（token-budget 决策、queue-adaptive flush、routing）只依赖 `BatchRequest` 抽象，不感知底层引擎。
+
+`BatchRequest` 至少应携带以下与 token-aware 组织有关的元数据：`row_count`、`prompt_tokens_sum`、`prompt_tokens_min/p50/p95/max`、`estimated_total_tokens`、`completion_max_tokens`、`token_count_source`、`prefix_key`（如可用）。这些字段用于策略选择、CSV 记录和事后审计；不应由下游 vLLM 响应反推后再补写为执行前决策依据。
 
 系统设计：
 
@@ -402,7 +411,7 @@ P0 vLLM baseline 建立 + 写回工程 baseline
 
 | 研究内容 | 指标 |
 |---|---|
-| 研究内容一（数据组织） | row count、token length distribution、RecordBatch count、object count、operator invocations、fan-in width |
+| 研究内容一（数据组织） | row count、token length distribution、tokenizer_name_or_path、token_count_source、completion_max_tokens、batch token distribution、RecordBatch count、object count、operator invocations、fan-in width |
 | 研究内容二（调度提交） | in-flight count、queue wait、vLLM num_requests_running/waiting、K_max 实际值、routing decision |
 | vLLM 部署平台（观测） | TTFT、TPOT、throughput、GPU utilization、KV cache usage、batch size per forward |
 | 写回 | writeback_s、writeback ratio、sink type |
