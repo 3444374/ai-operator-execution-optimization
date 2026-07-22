@@ -154,12 +154,13 @@ PostgreSQL 18.3
 
 以下**永远不进入知识库**：代码文件、CSV 原始数据、`AGENTS.md`/`README.md` 规则文件、沟通记录（`notes/`）、`PROJECT_LOG.md`。
 
-### 11.5 Claude Code 行为规则
+### 11.5 触发提醒的时机（Claude Code / Codex 通用）
 
-当用户在做以下工作时，**主动提醒运行同步**：
-- 完成一篇论文精读笔记的撰写
+以下任一操作完成后，**检查是否有知识文件变更，如有则提醒运行 `sync-wiki.sh`**：
+
+- 完成一篇论文精读笔记
 - 更新了 `research/knowledge_hub.md`
 - 新增或大幅修改了 `experiments/plans/` 下的实验计划
-- 在项目中新增了知识目录
+- 在项目中新增了知识目录或文件（如多模态参考、算子代价估计笔记等）
 
-提醒方式：在任务结束时说"知识文件有更新，需要运行 `sync-wiki.sh` 同步到 Obsidian 吗？"
+提醒方式："知识文件有更新，需要运行 `sync-wiki.sh` 同步到 Obsidian 吗？"
