@@ -118,7 +118,8 @@ PostgreSQL 18.3
 
 项目有平级 Obsidian LLM Wiki 知识库（`../ai-operator-wiki/`）。项目是知识唯一来源，知识库是编译查询界面。
 
-**触发条件**——以下操作完成后，提醒用户同步：
-- 完成论文精读笔记、更新 `research/knowledge_hub.md`、新增/修改实验计划、新建知识目录或文件
+**触发条件**（满足任一即提醒）：
+- 用户在对话中说"记住""记下来""同步到知识库""加到 wiki"等——**立即执行同步**
+- 会话中**任何知识文件被创建或修改**（`research/`、`opening/literature/`、`experiments/plans/` 下的 `.md`，或用户指定的新知识路径）——**会话结束前提醒**
 
-**操作指南**——当用户确认同步时，读取 `research/knowledge_sync_guide.md` 获取完整步骤。
+**操作指南**——执行同步时读取 `research/knowledge_sync_guide.md`。
