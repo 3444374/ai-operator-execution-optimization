@@ -11,19 +11,20 @@
 cd ../ai-operator-wiki && bash sync-wiki.sh
 ```
 
-脚本采用**增量覆盖**（只做 `cp`，不做 `rm -rf`）：
-- 新增和修改的文件 → 项目版本覆盖
-- 从项目删除的文件 → wiki 中保留（手动清理）
+行为：
+- 新增和修改的文件 → 项目版本覆盖 wiki
+- wiki 独有的文件 → 保留不动
+- 项目已删除的文件 → wiki 中保留（手动清理过期文件）
 - `wiki/moc/` 和 `my-notes/` → 永不触碰
 
 同步完成后提醒用户：打开 Obsidian → `Cmd+P` → "Karpathy LLM Wiki: Ingest from folder" → 选 `raw/`。
 
-## 编辑边界（重要）
+## 编辑规则
 
-- `raw/` → 项目镜像，**在项目中编辑**，不要直接在 wiki 中改。如果想标注，写到 `wiki/moc/` 或 `my-notes/`
-- `wiki/moc/` → 用户自由编辑，`reviewed: true` 防止插件覆盖
+- `raw/` `experiments/plans/` → 在**项目**中编辑，同步覆盖到 wiki。在 Obsidian 里发现要改的内容，回到项目中改源文件
+- `wiki/moc/` → 直接在 Obsidian 中改，`reviewed: true` 防插件覆盖
 - `wiki/entities/` `wiki/concepts/` → 插件自动生成，不要手动改
-- `my-notes/` → 用户自由编辑，永不触碰
+- `my-notes/` → 直接在 Obsidian 中改，永不触碰
 
 ---
 
