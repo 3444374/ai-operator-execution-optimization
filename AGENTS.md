@@ -114,53 +114,11 @@ PostgreSQL 18.3
 
 **禁止在 commit message 中添加 Co-Authored-By 或任何形式的 AI 署名。** 所有 commit 的用户署名只能是项目开发者本人。
 
-## 11. Obsidian 知识库同步规则
+## 11. 知识库同步
 
-项目在桌面有一个平级的 Obsidian LLM Wiki 知识库（`../ai-operator-wiki/`），用于个人文献精读、知识编译和概念查询。项目仓库是知识的**唯一来源**，知识库是**编译后的查询界面**。
+项目有平级 Obsidian LLM Wiki 知识库（`../ai-operator-wiki/`）。项目是知识唯一来源，知识库是编译查询界面。
 
-### 11.1 同步机制
+**触发条件**——以下操作完成后，提醒用户同步：
+- 完成论文精读笔记、更新 `research/knowledge_hub.md`、新增/修改实验计划、新建知识目录或文件
 
-- 同步脚本：`../ai-operator-wiki/sync-wiki.sh`
-- 机制：先清空目标目录，再从项目拷贝（新增、修改、删除全部自动处理）
-- 运行时机：完成阶段性知识工作后（读完论文、写完实验计划、更新了 knowledge_hub），运行 `cd ../ai-operator-wiki && ./sync-wiki.sh`
-- 运行后：在 Obsidian 中 `Cmd+P` → "Karpathy LLM Wiki: Ingest from folder" → 选 `raw/` → 插件增量更新 wiki/
-
-### 11.2 自动同步范围
-
-以下目录使用通配符，**新增文件自动发现，无需手动配置**：
-
-| 项目路径 | → | Wiki 路径 |
-|---|---|---|
-| `research/*.md` | → | `raw/references/`（注：`literature_and_evidence_review.md` 和 `existing_ai_operator_execution_chains.md` 自动路由到 `raw/analysis/`） |
-| `opening/literature/reading_notes/*.md` | → | `raw/papers/` |
-| `opening/literature/reference/*.pdf` | → | `raw/papers/`（PDF gitignored，仅本地） |
-| `experiments/plans/*.md` | → | `experiments/plans/` |
-
-### 11.3 手动映射范围
-
-以下路径需要**在 `sync-wiki.sh` 中显式声明**。新增文件或目录时，在对应区块加一行 `cp`：
-
-| 项目路径 | → | Wiki 路径 |
-|---|---|---|
-| `opening/literature/` 顶层 `.md` 文件 | → | `raw/analysis/` 或 `raw/inventory/` |
-
-**新增知识目录时**（如 `research/算子代价估计/`）：
-1. 在 `sync-wiki.sh` 的对应区块加：`cp "$PROJECT/research/算子代价估计/"*.md raw/references/`
-2. 如果该目录内容属于"分析"类而非"参考"类，目标改为 `raw/analysis/`
-3. 在 `PROJECT_LOG.md` 中记录新增的同步路径
-4. `git commit` 更新后的 `sync-wiki.sh`
-
-### 11.4 不同步的内容
-
-以下**永远不进入知识库**：代码文件、CSV 原始数据、`AGENTS.md`/`README.md` 规则文件、沟通记录（`notes/`）、`PROJECT_LOG.md`。
-
-### 11.5 触发提醒的时机（Claude Code / Codex 通用）
-
-以下任一操作完成后，**检查是否有知识文件变更，如有则提醒运行 `sync-wiki.sh`**：
-
-- 完成一篇论文精读笔记
-- 更新了 `research/knowledge_hub.md`
-- 新增或大幅修改了 `experiments/plans/` 下的实验计划
-- 在项目中新增了知识目录或文件（如多模态参考、算子代价估计笔记等）
-
-提醒方式："知识文件有更新，需要运行 `sync-wiki.sh` 同步到 Obsidian 吗？"
+**操作指南**——当用户确认同步时，读取 `research/knowledge_sync_guide.md` 获取完整步骤。
