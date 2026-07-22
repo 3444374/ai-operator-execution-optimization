@@ -1,5 +1,19 @@
 # 项目日志
 
+## 2026-07-22 文献精读笔记批量完成（12 篇新增）
+
+- **触发**：用户要求对 `opening/literature/reference/` 中的文献按 `tpl-文献精读-深度版.md` 模板做精读。
+- **操作**：使用 12 个并行 Agent 同时阅读 PDF 并生成精读笔记，每篇严格遵循四层模板（基本信息 → 论文结构分析 → 批判性评估 → 与课题连接）。
+- **新增笔记**：
+  - DB4AI 组：`neurdb_cidr2025.md`、`leads_pvldb2024.md`、`inferdb_pvldb2024.md`、`smartlite_pvldb2024.md`
+  - AI 推理服务组：`vllm_sosp2023.md`、`orca_osdi2022.md`、`sarathi_serve_osdi2024.md`、`serverlessllm_osdi2024.md`
+  - 综述组：`llm4dm_pvldb2024.md`、`db_perspective_llm_pvldb2025.md`
+  - 基础设施组：`ray_osdi2018.md`
+  - 持久化组：`diskann_neurips2019.md`
+- **总计**：`reading_notes/` 目录现有 16 篇精读笔记（4 篇旧 + 12 篇新）+ 2 模板，覆盖 `ai_operator_literature_inventory.md` 中 15 篇建议精读的全部文献 + DiskANN 补充精读。
+- **已知问题**：`reference/diskann_neurips2019.pdf` 文件实际内容为凝聚态物理论文（arXiv ID 被重新分配），需重新下载正确 PDF。
+- **更新文件**：`reading_notes/*.md`（16 篇精读笔记）、`reading_list.md`、`reference/README.md`、`PROJECT_LOG.md`
+
 ## 2026-07-21 Token 元数据来源与技术细节记录规范
 
 - **触发**：导师追问 token-aware batching 中“每行 token 怎么获取、怎么用于分组”，用户要求把这类技术细节记录到合适文档，并明确后续代码完成时同步记录实现细节。

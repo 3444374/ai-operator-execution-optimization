@@ -11,9 +11,9 @@
 
 | 类别 | 文献 / 资料 | 来源级别 | 状态 | 开题中用途 |
 |---|---|---|---|---|
-| AI SQL 工业系统 | Snowflake Cortex AISQL paper / docs | 论文 + 官方文档 | 待核验细节 | 证明 AI SQL 算子是现实需求 |
+| AI SQL 工业系统 | Snowflake Cortex AISQL paper / docs | 论文 + 官方文档 | ✅ 已精读（2026-07-15） | 证明 AI SQL 算子是现实需求 |
 | AI SQL 工业系统 | Snowflake Cortex AI Functions docs | 官方文档 | 已整理入口 | 支撑 `AI_EMBED`、`AI_FILTER`、`AI_COMPLETE` 场景 |
-| 分布式 AI 执行 | Ray paper | 系统论文 | 待精读 | 支撑 Ray 作为分布式 AI 执行框架 |
+| 分布式 AI 执行 | Ray paper | 系统论文 | ✅ 已精读（2026-07-22） | 支撑 Ray 作为分布式 AI 执行框架 |
 | Ray Core | Ray objects / task anti-pattern / scheduling docs | 官方文档 | 已整理入口 | 支撑 task、object、ObjectRef、资源调度机制 |
 | Ray Data / Serve | `map_batches`、dynamic batching、routing、autoscaling docs | 官方文档 | 已整理入口 | 支撑 batch、routing、backpressure 实验接口 |
 | Daft | Daft on Ray、partitioning、shuffle、join strategy docs | 官方文档 | 已整理入口 | 支撑 partition、shuffle、`M × N` object slots 风险 |
@@ -24,6 +24,32 @@
 | PostgreSQL AI 生态 | PostgresML README | 工程资料 | 已整理入口 | 作为近数据库 / 数据库内模型执行对照路线 |
 | 分布式 SQL 优化 | Spark SQL performance tuning docs | 官方文档 | 已整理入口 | 支撑 partition、shuffle coalescing、join strategy 是成熟问题 |
 | 数据库侧工业背景 | OceanBase Mercury / Bacchus 等论文 | 论文 | 待核验细节 | 作为分布式数据库、列式/向量化、写回和资源管理背景 |
+
+## 精读笔记索引（2026-07-22 更新）
+
+16 篇精读笔记已全部完成，覆盖 `ai_operator_literature_inventory.md` 建议精读的 15 篇 + DiskANN 补充精读。所有笔记位于 `opening/literature/reading_notes/`。
+
+| # | 笔记文件 | 论文 | 出处 | 完成日期 |
+|---|---------|------|------|----------|
+| 1 | `cortex_aisql_sigmod2026.md` | Cortex AISQL | SIGMOD 2026 | 2026-07-15 |
+| 2 | `smart_vldb_journal_2025.md` | Smart | VLDB Journal 2025 | 2026-07-15 |
+| 3 | `gaussml_icde2024.md` | GaussML | ICDE 2024 | 2026-07-15 |
+| 4 | `galois_sigmod2025.md` | Galois | SIGMOD 2025 | 2026-07-22 |
+| 5 | `neurdb_cidr2025.md` | NeurDB | CIDR 2025 | 2026-07-22 |
+| 6 | `leads_pvldb2024.md` | LEADS | PVLDB 2024 | 2026-07-22 |
+| 7 | `inferdb_pvldb2024.md` | InferDB | PVLDB 2024 | 2026-07-22 |
+| 8 | `smartlite_pvldb2024.md` | SmartLite | PVLDB 2024 | 2026-07-22 |
+| 9 | `vllm_sosp2023.md` | vLLM | SOSP 2023 | 2026-07-22 |
+| 10 | `orca_osdi2022.md` | Orca | OSDI 2022 | 2026-07-22 |
+| 11 | `sarathi_serve_osdi2024.md` | Sarathi-Serve | OSDI 2024 | 2026-07-22 |
+| 12 | `serverlessllm_osdi2024.md` | ServerlessLLM | OSDI 2024 | 2026-07-22 |
+| 13 | `llm4dm_pvldb2024.md` | LLM for Data Management | PVLDB 2024 | 2026-07-22 |
+| 14 | `db_perspective_llm_pvldb2025.md` | DB Perspective on LLM Inference | PVLDB 2025 | 2026-07-22 |
+| 15 | `ray_osdi2018.md` | Ray | OSDI 2018 | 2026-07-22 |
+| 16 | `diskann_neurips2019.md` | DiskANN | NeurIPS 2019 | 2026-07-22 |
+
+精读笔记模板：`tpl-文献精读-深度版.md`（四层：基本信息 → 论文结构分析 → 批判性评估 → 与课题连接）
+泛读笔记模板：`tpl-文献泛读.md`
 
 ## GPU 调度与数据放置补充调研
 

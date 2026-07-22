@@ -43,5 +43,6 @@ data/raw/**
 skills-lock.json
 # CSV and Markdown summaries are tracked; Arrow payload dumps are reproducible outputs.
 *.arrow
+*.pdf
 validation/results/fake_ai_embed_outputs/
 validation/results/fake_ai_embed_outputs_smoke/

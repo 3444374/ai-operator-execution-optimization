@@ -1,6 +1,6 @@
 # Local Reference PDF Subset
 
-整理日期：2026-07-15
+整理日期：2026-07-15 / 更新：2026-07-22
 
 本目录保存用户已下载到本地的**部分参考文献 PDF**。它不是完整文献库；完整候选文献仍以 `opening/literature/ai_operator_literature_inventory.md` 为准。本目录的作用是支持后续精读、看论文机制图、提取图形设计范式和核验引用细节。
 
@@ -22,6 +22,26 @@
 | `p4213-li.pdf` | LLM for Data Management | 4 | VLDB tutorial；研究版图和系统分层参考 |
 | `p4813-zeng.pdf` | Powering In-Database Dynamic Model Slicing for Structured Data Analytics | 14 | LEADS；学习 in-database inference workflow 和 UDF 执行拆解 |
 | `p5504-li.pdf` | Database Perspective on LLM Inference Systems | 4 | LLM inference stack；用于定位推理系统问题层次 |
+
+## 2026-07-22 新增文件
+
+| 文件 | 初步识别 | 页数 | 主要用途 | 精读笔记 |
+|---|---|---|---|---|
+| `diskann_neurips2019.pdf` | ✅ DiskANN: Fast Accurate Billion-point Nearest Neighbor Search on a Single Node（2026-07-22 重新下载，已修复） | 18 | 向量检索 / SSD 索引 | `diskann_neurips2019.md` |
+| `inferdb_pvldb17.pdf` | InferDB: In-Database ML Inference Using Indexes | 12 | DB4AI 对照路线——索引替代推理 | `inferdb_pvldb2024.md` |
+| `orca_osdi2022.pdf` | Orca: A Distributed Serving System for Transformer-Based Generative Models | 15 | LLM 推理服务——iteration-level scheduling | `orca_osdi2022.md` |
+| `p278-wu.pdf` | SmartLite: A DBMS-Based Serving System for DNN Inference | 14 | DB4AI 对照路线——边缘 in-DBMS 推理 | `smartlite_pvldb2024.md` |
+| `p4710-do.pdf` | Turbocharging Vector Databases Using Modern SSDs | ? | 向量数据库 SSD 优化 | — |
+| `2304.05028v1.pdf` | An Empirical Evaluation of Columnar Storage Formats | ? | 列式存储格式评估 | — |
+| `2511.07663.pdf` | Cortex AISQL（与已下载 arXiv 版本内容相同） | 19 | DB4AI 产业系统 | 已有 `cortex_aisql_sigmod2026.md` |
+| `3650203.3663329.pdf` | AIDB: A Sparsely Materialized Database for Queries using ML | ? | 稀疏物化 + ML 查询 | — |
+| `VLDBJ25-InDBML25.pdf` | Smart: In-Database Query Optimization on SQL with ML Predicates | ? | DB4AI ML 谓词优化 | 已有 `smart_vldb_journal_2025.md` |
+
+> **注意**：完整参考资料索引已迁移至 `REFERENCE_INDEX.md`（52 篇已下载 PDF + 13 篇未下载 + 40+ 系统文档）。本 README 不再作为唯一索引入口。
+
+## 精读笔记索引
+
+全部 16 篇精读笔记位于 `opening/literature/reading_notes/`，详见 `reading_list.md`。本目录中文档与精读笔记的对应关系见上表"精读笔记"列。
 
 ## 使用规则
 
