@@ -8,20 +8,25 @@
 ## 执行同步
 
 ```bash
+# 项目 → wiki（正常同步）
 cd ../ai-operator-wiki && bash sync-wiki.sh
+
+# wiki → 项目（在 Obsidian 里改了 raw/ 文件后，推回项目）
+cd ../ai-operator-wiki && bash sync-wiki.sh --back raw/papers/文件名.md
 ```
 
-行为：
-- 新增和修改的文件 → 项目版本覆盖 wiki
-- wiki 独有的文件 → 保留不动
-- 项目已删除的文件 → wiki 中保留（手动清理过期文件）
-- `wiki/moc/` 和 `my-notes/` → 永不触碰
+正常同步：新增/修改 → 项目覆盖 wiki。wiki 独有文件保留。
 
-同步完成后提醒用户：打开 Obsidian → `Cmd+P` → "Karpathy LLM Wiki: Ingest from folder" → 选 `raw/`。
+反向同步：在 Obsidian 里编辑了 raw/ 文件 → `--back` 推回项目的对应位置。这样下次正常同步时，项目版本已包含你的修改，不会被覆盖。
+
+典型流程：
+1. 在 Obsidian 里读论文笔记，顺手修改
+2. `./sync-wiki.sh --back raw/papers/cortex_aisql_sigmod2026.md`
+3. 修改已保存到项目 → 下次 `./sync-wiki.sh` 不会覆盖你的修改
 
 ## 编辑规则
 
-- `raw/` `experiments/plans/` → 在**项目**中编辑，同步覆盖到 wiki。在 Obsidian 里发现要改的内容，回到项目中改源文件
+- `raw/` `experiments/plans/` → 主要在**项目**中编辑。如果在 Obsidian 里改了，用 `--back` 推回项目
 - `wiki/moc/` → 直接在 Obsidian 中改，`reviewed: true` 防插件覆盖
 - `wiki/entities/` `wiki/concepts/` → 插件自动生成，不要手动改
 - `my-notes/` → 直接在 Obsidian 中改，永不触碰
