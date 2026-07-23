@@ -22,7 +22,7 @@ read_date: 2026-07-22
 |------|------|
 | **论文** | James Pan, Guoliang Li. *Database Perspective on LLM Inference Systems.* PVLDB, 18(12): 5504-5507, 2025. doi:10.14778/3750601.3750703 |
 | **来源级别** | PVLDB 2025 Tutorial 论文（CCF-A 会议附属期刊，Tsinghua University） |
-| **链接** | DOI:10.14778/3750601.3750703 / 本地 PDF：`opening/literature/reference/p5504-li.pdf` |
+| **链接** | DOI:10.14778/3750601.3750703 / 本地 PDF：`opening/literature/reference/db_perspective_llm_pvldb2025.pdf` |
 | **阅读日期** | 2026-07-22 |
 | **状态** | 精读完成 |
 | **相关论文组** | LLM Inference Systems / DB4AI / 推理调度 |

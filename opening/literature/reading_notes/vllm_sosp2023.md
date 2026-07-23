@@ -23,7 +23,7 @@ read_date: 2026-07-22
 |------|------|
 | **论文** | Kwon, Li, Zhuang, Sheng, Zheng, Yu, Gonzalez, Zhang, Stoica. *Efficient Memory Management for Large Language Model Serving with PagedAttention.* SOSP 2023, pp. 611-626. DOI:10.1145/3600006.3613165 |
 | **来源级别** | CCF-A 会议论文（SOSP，操作系统顶会）+ Best Paper Award（UC Berkeley + Stanford + UC San Diego） |
-| **链接** | DOI:10.1145/3600006.3613165 / 本地 PDF：`opening/literature/reference/3600006.3613165.pdf` / 代码：https://github.com/vllm-project/vllm |
+| **链接** | DOI:10.1145/3600006.3613165 / 本地 PDF：`opening/literature/reference/vllm_sosp2023.pdf` / 代码：https://github.com/vllm-project/vllm |
 | **阅读日期** | 2026-07-22 |
 | **状态** | 精读完成 |
 | **相关论文组** | LLM 推理服务 / GPU 内存管理 / KV cache |
@@ -251,3 +251,59 @@ flowchart TB
 - [[smart_vldb_journal_2025]] — 已精读，ML 谓词优化
 - [[gaussml_icde2024]] — 已精读，数据库内置 ML 算子
 - [[文献地图]] — 文献全景
+
+---
+
+## ▎图复审补充（2026-07-23，读图能力补遗）
+
+> **配图**（论文原图，pypdfium2 渲染自一手 PDF；本环境无可靠视觉读图，以下数值以你的肉眼核对为准）：
+>
+> ![图 12 · 吞吐-负载膝点曲线（normalized latency vs req/s，6 面板）](figs/vllm_fig12.png)
+
+> 说明：本节用 PDF 渲染（pypdfium2）+ 视觉分析对论文关键图重新核读，只补充原笔记未充分展开的可读量化细节，不重写已有结论。数值若未另注，均为从图轴上读出的**近似值**。证据层级逐条标注：事实(from 图) / 推断 / 待确认。
+
+### 图 1 · GPU 内存构成（左：weights/activations/KV cache；右：KV cache 随请求数增长）
+
+- **已有笔记处理**：第三层 §1 假设 2 与第四层已引用"权重 ~65% / KV cache ~30%"。
+- **本次读图新发现**：
+  - 左图（事实 from 图）：A100 40GB 上 OPT-13B 内存构成可读为——模型权重 ~65%（静态）、KV cache ~30%（动态）、activations 很小一块（临时中间张量）、其余为 free。原笔记把"activations"与"free"合并表述，图上它们是两段不同区域。
+  - 右图（待确认）：画的是 KV cache 占用随请求数的增长曲线——现有系统（FT/Orca）呈锯齿状剧烈波动，vLLM 平滑增长。右图坐标轴数值视觉读图不可靠，仅确认定性趋势。
+- **对本课题含义**（推断）：左图量化了"上游调度能影响的物理资源只有那 ~30% KV cache 区间"——权重固定不可压缩。这界定了上游 flush 能感知的物理量边界，也提示上游优化空间远小于 vLLM 内部那 2–4× 的量级。
+
+### 图 2 · KV cache 有效利用率（按浪费类型分层的柱图）★
+
+- **已有笔记处理**：关键数字表与第二层 §2 引用汇总数 96.3%（vLLM）vs 20.4–38.2%，但当作单一"利用率"处理。
+- **本次读图新发现**（事实 from 图）——该图按**浪费类型分层**，远比汇总数丰富：
+  - Orca (Max)：token states 20.4% + Reservation 13.3% + Internal frag **57.3%** + External frag/Other 8.9%
+  - Orca (Pow2)：26.8% + 17.9% + 13.6% + External frag/Other **41.6%**
+  - Orca (Oracle)：38.2% + 25.2% + 0% + External frag/Other **36.6%**
+  - vLLM：**96.3%** token states + 0% reservation + 0% internal frag + ~3.7% external frag/other
+  - 结构性新发现：连续分配有两种**不同主导失败模式**——Orca(Max) 以 internal fragmentation（按 max-len 预留）为主 57.3%；Orca(Pow2)/Oracle 以 external fragmentation 为主 41.6%/36.6%；而 "Reservation"（为未来 token 预留）这一开销在所有 Orca 变体都存在（13.3–25.2%），在 vLLM 中降为 0。
+- **对本课题含义**（推断）：vLLM 已把 KV cache 利用率压到 ~96%、reservation 与 internal frag 都归零——意味着上游 queue-adaptive flush **不应再去感知 KV cache 剩余块**（vLLM 满载时本就接近零空闲，是该信号的饱和区而非可调区），而应感知**延迟/吞吐饱和**信号（见图 12 的 knee）。这是对 RC2 负结果（10.2s vs 静态 K_max=8 的 7.3s，~40% 更差）的一个候选解释方向：flush 触发条件可能错盯了在 vLLM 中常态高位的信号。
+- **轻微勘误**（事实 from 图）：原笔记关键数字写作 "96.3% (vLLM) vs 20.4%-38.2% (Orca/FT)"——Fig 2 实际只含 Orca(Max/Pow2/Oracle) 与 vLLM 四根柱，**不含 FasterTransformer**；20.4% 与 38.2% 分别对应 Orca(Max) 与 Orca(Oracle) 的 token states 占比，不是 FT。
+
+### 图 12 · normalized latency vs 请求率（req/s）的"膝点"曲线 ★★★（原笔记完全未讨论）
+
+- **已有笔记处理**：未讨论本图；关键数字表只引用了汇总吞吐倍数（2–4× / 最高 22×）。第二层 §3 仅在 setup 表提到"req/s 扫描"。
+- **本次读图新发现**（事实 from 图：轴范围/曲线趋势；膝点位置：推断/近似读数）——6 个面板（2 行 × 3 列），y 轴 normalized latency（s/token）0.0–1.0：
+  - (a) OPT-13B ShareGPT：x 0–2 req/s，vLLM 膝点 ~1.5 req/s；平坦区 ~0.1 s/token，膝点后 ~0.3 s/token
+  - (b) OPT-66B ShareGPT：x 0–1 req/s，膝点 ~0.8 req/s；膝点后 ~0.4 s/token
+  - (c) OPT-175B ShareGPT：x 0–2.5 req/s，膝点 ~2.0 req/s；膝点后 ~0.4 s/token
+  - (d) OPT-13B Alpaca：x 0–30 req/s，膝点 ~20 req/s；膝点后 ~0.3 s/token
+  - (e) OPT-66B Alpaca：x 0–20 req/s，膝点 ~15 req/s；膝点后 ~0.4 s/token
+  - (f) OPT-175B Alpaca：x 0–20 req/s，膝点 ~15 req/s；膝点后 ~0.4 s/token
+  - 跨面板规律（事实）：平坦区 latency 一致 ~0.1 s/token；膝点后统一跳到 0.3–0.4 s/token（约 3–4× 恶化）；膝点位置随模型/GPU/序列长度分布大幅漂移（ShareGPT 长序列→膝点 0.8–2 req/s；Alpaca 短序列→膝点 15–20 req/s）。
+- **对本课题含义**（推断，核心）：**膝点正是我们的 queue-adaptive flush 应当退避的那个工作点**——vLLM 的 FCFS+preemption 在膝点之前把延迟压得很平，越过膝点延迟立刻 3–4× 恶化。对 RC2 负结果（~40% 更差）最直接的读法是二选一：要么 flush 在平坦区过早触发（损失吞吐无延迟收益），要么阈值 K_max=8 与目标模型实测膝点不匹配。膝点随配置漂移（13B ShareGPT ~1.5 req/s，66B ShareGPT 仅 ~0.8 req/s）→ **flush 触发阈值不能硬编码 K_max，必须在线估计**（如以 normalized latency 一阶导、或 vLLM Prometheus running-requests 接近膝点为信号）。这给"为什么静态 K_max=8 反而优于 queue-adaptive flush"提供了机制层面的解释方向。
+- **证据层级**：轴范围与 3–4× 恶化倍数为 事实(from 图)；具体膝点 req/s 为近似读数（推断）；膝点由 KV 预算决定、随配置漂移为 推断。
+
+### 图 13 · 同时批处理请求数（OPT-13B, ShareGPT）
+
+- **已有笔记处理**：关键数字表引用 vLLM 30.42 / Orca(Oracle) 13.62 / Orca(Max) 7.00。
+- **本次读图新发现**（事实 from 图）：本图条件为 ShareGPT **2 req/s**（caption 注明与 Alpaca 30 req/s 对照）；y 轴 0–35；原笔记遗漏的 **Orca(Pow2) = 9.81**。完整四柱：7.00 / 9.81 / 13.62 / 30.42。
+- **对本课题含义**（推断）：相同 offered load（2 req/s）下 vLLM 同时多跑 ~2.2× 于 Oracle 的请求——这是上游 token-budget 组织必须持续喂满、但不得越过膝点的"并发预算"量级参考。
+
+### 图 16 · shared-prefix 翻译 workload（LLaMA-13B, WMT16）
+
+- **已有笔记处理**：关键数字表引用 1.67×（1-shot）/ 3.58×（5-shot），但未描述图结构。
+- **本次读图新发现**（事实 from 图）：两个面板 (a) 1-shot、(b) 5-shot；y 轴 normalized latency 0.0–1.0，x 轴请求率 0–~45 req/s；只画 vLLM 与 Orca(Oracle) 两条；vLLM 在两面板都把低延迟维持到更高请求率（~45 vs Oracle ~40 req/s）。倍数 1.67×/3.58× 来自论文正文（同延迟下吞吐比），**非直接从图轴读出**。
+- **对本课题含义**（推断）：这是"shared-prefix KV 复用带来真实吞吐增益"的直接图证——支撑我们 prefix-aware batch construction（把同前缀行凑到同一 batch / 路由到已缓存该前缀的 actor）。注意增益依赖 shot 数（5-shot 3.58× > 1-shot 1.67×），所以 prefix-aware 策略的收益上界由数据本身的前缀重叠度决定；DB 离线 AI workload 若前缀重叠低（如每行独立 prompt），此路收益会显著缩水。

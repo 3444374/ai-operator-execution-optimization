@@ -21,7 +21,7 @@ read_date: 2026-07-22
 |------|------|
 | **论文** | Lingze Zeng, Naili Xing, Shaofeng Cai, Gang Chen, Beng Chin Ooi, Jian Pei, Yuncheng Wu. *Powering In-Database Dynamic Model Slicing for Structured Data Analytics.* PVLDB, 17(13): 4813-4826, 2024. DOI:10.14778/3704965.3704985 |
 | **来源级别** | CCF-A 会议论文（NUS + Zhejiang Univ. + Duke Univ. + Renmin Univ. of China） |
-| **链接** | DOI:10.14778/3704965.3704985 / 本地 PDF：`opening/literature/reference/p4813-zeng.pdf` / 代码：https://github.com/NLGithubWP/indices |
+| **链接** | DOI:10.14778/3704965.3704985 / 本地 PDF：`opening/literature/reference/leads_pvldb2024.pdf` / 代码：https://github.com/NLGithubWP/indices |
 | **阅读日期** | 2026-07-22 |
 | **状态** | 精读完成 |
 | **相关论文组** | DB4AI（数据库 AI 算子）；In-Database ML |

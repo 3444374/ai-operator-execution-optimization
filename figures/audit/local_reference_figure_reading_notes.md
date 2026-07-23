@@ -12,9 +12,9 @@
 
 | 组别 | 本地 PDF | 关注点 |
 |---|---|---|
-| 异构执行与推理服务 | `2501.12407v5.pdf`, `3600006.3613165.pdf`, `osdi24-agrawal.pdf` | pipeline/timeline、系统总览、阶段拆分、吞吐-延迟权衡 |
-| 分布式执行与 DB AI 优化 | `osdi18-moritz.pdf`, `gaussmlicde.pdf`, `3725411.pdf` | code example -> task graph、SQL running example、logical/physical plan 变体 |
-| 存储与 DB AI 架构 | `2504.15247v1.pdf`, `p4813-zeng.pdf`, `p29-zhao.pdf` | 存储布局对比、UDF/模型切片 workflow、AI database 系统边界 |
+| 异构执行与推理服务 | `ray_data_streaming_batch_2025.pdf`, `vllm_sosp2023.pdf`, `sarathi_serve_osdi2024.pdf` | pipeline/timeline、系统总览、阶段拆分、吞吐-延迟权衡 |
+| 分布式执行与 DB AI 优化 | `ray_osdi2018.pdf`, `gaussml_icde2024.pdf`, `galois_sigmod2025.pdf` | code example -> task graph、SQL running example、logical/physical plan 变体 |
+| 存储与 DB AI 架构 | `lance_2025.pdf`, `leads_pvldb2024.pdf`, `neurdb_cidr2025.pdf` | 存储布局对比、UDF/模型切片 workflow、AI database 系统边界 |
 
 ---
 

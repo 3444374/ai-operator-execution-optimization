@@ -190,3 +190,57 @@ flowchart LR
 - [[gaussml_icde2024]] — 同方向另一篇精读
 - [[smart_vldb_journal_2025]] — 同方向另一篇精读
 - [[direction_assessment_20260715]] — 方向评估
+
+---
+
+## ▎图复审补充（2026-07-23，读图能力补遗）
+
+> **配图**（论文原图，下载自 arXiv 2511.07663 资产；本地 PDF 为纯图像，这些是干净裁切图）：
+>
+> ![图 1 · Cortex Platform 架构（Inference Engines + Scheduler + API Service）](figs/cortex_fig1.png)
+>
+> ![图 7 · Plan A vs Plan B 执行计划（110,000 → 330 LLM 调用）](figs/cortex_fig7.png)
+
+> 复审动机：初版基于纯文本阅读完成，对 Figure 1（架构）和 Figure 7（执行计划）未做逐图核对。此次用 PDF 读图能力重审，重点检查"内部执行 vs 外部执行"的定位是否被论文图表真正支撑。结论：**初版对 Cortex 执行位置的"内部/外部"二分过于粗糙，需修正**。以下每条只列初版未写明的新点。
+>
+> **来源说明（严谨性）**：本地 PDF `cortex_aisql_sigmod2026.pdf` 为**纯图像 PDF，无文本层**（pdftotext 提取 0 字符）。本节引用的 §2/§5.1 正文已用 **arXiv HTML 版（ar5iv 2511.07663）逐句核验**，与原文一致（"multi-tenant service"、"an engine manages... the inference stack (e.g., vLLM)"、"automatically scales engines up or down"、"forward it to a partner endpoint"、Plan A 110,000→Plan B 330 的 300× 改进均核实无误）。图本身的视觉细节仍以图像为准。
+
+### **图 1 · Snowflake architecture with the Cortex Platform（系统架构图，§2 Architecture）**
+
+- **已有处理**：初版把 Cortex 归为"内部执行/DB4AI 路线"，第四层反复用"内部 vs 你要做的外部"做互补定位；假设 2 写"模型服务在 Snowflake 内部，延迟低且稳定"。
+- **读图新发现**：
+  - **事实(from 图 1 + §2 正文)**：Cortex Platform 是一个**独立的多租户服务**（原文 "a multi-tenant service"），由三组件构成：(a) Inference Engines、(b) Scheduler、(c) API Service。数据通路为 **Query Processing / Cloud Services 层 → API Service → Scheduler → Inference Engine**（Inference Engine 是独立服务，在 Snowflake 管理的 GPU 上跑 vLLM），或 → 合作方 endpoint。caption 原文："The Cortex Platform adds Inference Engines, Scheduler, and API Service components to support both interactive and batch AISQL workloads."
+  - **事实(from §2 正文)**：因此推理**不是 SQL 引擎进程内 UDF**，而是跨服务边界调用——这本身就是一种"数据出 SQL 执行器、经调度层到推理服务"的外部执行形态，只是被 Snowflake **垂直整合、单厂商托管**。
+  - **事实(from §2 正文)**：Scheduler 的职责是**请求级路由**（把请求分配到已驻留该模型的 engine）与 engine 弹性扩缩容（"automatically scales engines up or down"）；它**不**做行级/批级的"按 token 预算组织数据"。
+  - **事实(from §2 正文)**：推理 batching 被明确**下放给 engine 内部的 vLLM**（"An engine manages ... the inference stack (e.g., vLLM)"），上游（数据库侧）不做 token-budget / length-aware 的批构造。
+  - **事实(from §2 正文，修正初版假设 2)**：并非所有调用都走内部模型服务——"The Cortex Platform determines whether to execute it using one of its Inference Engines **or forward it to a partner endpoint**. Requests for GPT models ... are routed to OpenAI's endpoints." 初版"所有 AI 推理调用走 Snowflake 内部模型服务"与原文不符，宜修正为：open-weight 模型走内部 Inference Engine，闭源模型走合作方 endpoint。
+- **对课题含义**：
+  - **推断**：初版"Cortex=内部 / 本课题=外部"的二分**不够精确**，答辩易被质疑。更稳的措辞——两者**都属于"数据离开 SQL 执行器、经调度到达推理服务"的形态**；真正差异在：(i) Cortex 是垂直整合的单厂商托管栈（DB+Scheduler+Engine 同厂商），本课题是异构开放栈（PostgreSQL + Ray/Daft + vLLM）；(ii) Cortex 的调度作用在**请求→engine 路由**层级，本课题的调度作用在**行→batch 组织 + 提交并发控制**层级，二者不重替。
+  - **推断**：这反而**加强**本课题切入点——Cortex 把批内 batching 完全委托给 vLLM、不在上游研究 token-budget/length-align，正是"上游数据组织策略"空白的产业证据；可把 Cortex Scheduler 作为"产业界只做到请求级路由"的对照。
+- **证据层级**：图 1 + §2 正文 = 论文一手陈述（事实）；"Cortex 不做上游批构造" = 由"batching 下放给 vLLM"推出的合理推断；与本课题的互补关系 = 推断。
+
+### **图 7 · 不同执行计划 Plan A vs Plan B（§5.1 AI-aware Optimization）**
+
+- **已有处理**：初版记录了 ~300× 谓词上拉案例与"AI 感知优化器 2-8×"，并把"查询计划确定后执行过程无动态调整"列为假设 3。
+- **读图新发现**：
+  - **事实(from 图 7 + §5.1 正文)**：Figure 7 是**查询计划树对比图**（节点标注输出基数，Plan A 110,000 次 LLM 调用 → Plan B 330 次）；其目标函数被一句话点破——"simply optimizing **the total number of AI inference calls**"，即代价作用在**调用基数/计划层级**，完全不触及"每次调用内部如何装填行"。
+  - **事实(from §5.1 正文，修正初版假设 3)**：初版"计划一旦确定不变"**被高估**——§5.1 明确存在**运行期谓词重排**："runtime statistics are collected on the cost and selectivity of predicates ... used to determine at runtime whether a different predicate evaluation order is more effective"，并称正考虑更动态的优化技术。
+  - **事实(from §5.1 正文)**：110,000 → 330 来自"谓词上拉到 Join 之上 + 重排 + 先用结构化列缩小输入"，与 batch 内 token 组织无关。
+- **对课题含义**：
+  - **推断**：Figure 7 精确划定了 Cortex 优化的作用面——**计划/基数层**（多少次调用、何时调用），与本课题**批内数据组织层**（一次调用如何装填行）正交。开题报告可用此图佐证"Cortex 的 AI-aware 优化不覆盖上游 batch 构造"。
+  - **推断**：Cortex 的"运行期谓词重排"是 query-plan 级自适应；本课题的"queue-adaptive flush / K_max 动态控制"是 submission-concurrency 级自适应——层级不同，可在"自适应作用粒度"维度做对照表。
+- **证据层级**：图 7 + §5.1 正文 = 论文一手陈述（事实）；作用面正交 = 推断；假设 3 需放宽 = 由原文运行期重排语句支持的事实修正。
+
+### **图 2–6 · 生产 AISQL workload 画像（§4，语句类型/表数/成本分布）**
+
+- **已有处理**：初版只引用了"~40% 多表""AI 算子主导成本"两个数字。
+- **读图新发现**：
+  - **事实(from 图)**：这组图实际提供四个切面——按语句类型的 workload 占比（Fig 2）、按表数量的执行时间分布（Fig 3，"多表查询占总执行时间 **58%+**"）、按语句类型的成本占比（Fig 4）、AISQL 查询用表数分布（Fig 5）。初版只用了其中一两个数。
+- **对课题含义**：
+  - **推断**：若开题需要"AI 算子是产业真实成本主导"的图表证据，这组图比单句文字更硬，且与本课题动机章节直接对接；但因数据来自 Snowflake 生产云数仓（垂直整合栈），引用时必须保留"不直接外推到 PostgreSQL+Ray 异构链路"的边界声明（与初版第四层"不能声称"一致）。
+- **证据层级**：图本身 = 论文一手生产数据（事实）；可否外推到本课题场景 = 待确认/不能声称。
+
+### 复审修正项汇总（供笔记维护）
+1. **假设 2**（§第一层/§批判性评估）"所有调用走内部服务" → 修正为"open-weight 走内部 Inference Engine，闭源走合作方 endpoint"。
+2. **假设 3**"计划确定后无动态调整" → 放宽为"计划级有运行期谓词重排，但无 submission/并发级动态控制"。
+3. **第四层"互补定位"措辞**：从"内部 vs 外部"收紧为"垂直整合托管栈 + 请求级路由  vs  异构开放栈 + 行/batch 级组织与提交控制"——定位更精确，且把 Cortex 架构图（Fig 1）作为"产业界已做到请求级路由、未覆盖批内组织"的对照证据。

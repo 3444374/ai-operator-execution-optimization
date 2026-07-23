@@ -358,10 +358,10 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 以下 6 篇 2025-2026 年论文为项目文献搜索发现的新增来源，与 RC1（数据组织）和 RC2（提交控制）直接相关。详细内容见 `research/ray_actor_dynamic_batching_reference.md` §6.7-§6.12。
 
-**从 CONCUR (2025) 提取**：
-- **AIMD 可迁移到 request 级**：CONCUR 控制的是"活跃 agent 数"（粗粒度），我们可以把 AIMD 用到更细的 per-actor in-flight 请求数控制
-- **KV cache 作为共享资源信号**：不只是队列深度，KV cache 使用率也应作为 K_max 调节的输入信号
-- **Middle-phase thrashing**：长期运行的推理 session 在内存耗尽前就会出现吞吐退化——我们的 K_max 控制应有前馈能力，不只被动反应
+**从 CONCUR (2025) 提取**（精读见 `opening/literature/reading_notes/concur_2025.md`）：
+- **AIMD 可迁移到 request 级**：CONCUR 控制的是"活跃 agent 数"（粗粒度），我们可以把 AIMD 用到更细的 per-actor in-flight 请求数控制。**校正**：CONCUR **不使用 EWMA**——用瞬时 KV 使用率/命中率 + 宽死区（U_low=0.2 / U_high=0.5）+ 非对称 AIMD（α=2 增 / β=0.5 减）+ 双信号（proactive U_t + reactive H_t）
+- **KV cache 作为共享资源信号**：不只是队列深度，KV cache 使用率/命中率也应作为 K_max 调节的输入信号（**CONCUR 是 KV cache 信号的正确来源，CoLoRA 不是**）
+- **Middle-phase thrashing**：长期运行的推理 session 在内存耗尽前就会出现吞吐退化。**待确认**：CONCUR workload 是 agentic ReAct 多步 agent；本课题 DB operator 多为无状态单轮，middle-phase thrashing 前提可能不成立——KV cache 信号价值需在单轮场景重新验证
 
 **从 Scorpio (2025) 提取**：
 - **VBS (Virtual Batch Size) Admission Control**：用 token 量（而非请求数）投影系统负载——我们的 token-budget batching 本质上就是 VBS 的一种实现
@@ -369,11 +369,11 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 **从 SABER (2025) 提取**：
 - **前瞻性准入判断**：不只检查当前队列，还要预测"如果现在提交，会不会导致 in-execution 请求违反 SLA"——我们的 K_max 调节应具有预测性
-- **Universal Scalability Law 建模**：`生成速度 = f(并发请求数)`——可用 vLLM 的 profiling 数据拟合此函数，作为 K_max 调节的理论上界
+- **Universal Scalability Law 建模**：`生成速度 = f(并发请求数)`——可用 vLLM 的 profiling 数据拟合此函数。**校正（见 `saber_2025.md`）**：SABER 用 USL 做 per-request 准入预测，**不直接推导聚合 K_max**；K_max = √((1−α)/β) 上界是本课题扩展。USL 单瓶颈假设与 vLLM 双瓶颈（算力 + KV cache 非连续 preempt）存在张力，迁移前需做 out-of-sample 残差审计
 
-**从 CoLoRA (2026) 提取**：
-- **Load-Aware Batch Scheduling**：实时 GPU 利用率 + 队列深度 + adapter 状态 → 自适应 batch 形成——三维信号融合是我们的 queue-adaptive flush 的参考架构
-- **Unified Scheduler 的全局反馈循环**：决策模块 + 执行模块 + 指标采集模块形成闭环
+**从 CoLoRA (2026, ASP-DAC, CCF-C) 提取**（精读见 `opening/literature/reading_notes/colora_2026.md`）：
+- **校正**：CoLoRA 是**多租户 LoRA** 场景调度，APS 三信号 = 排队延迟 + adapter 驻留 + SLA 紧急度（**不含 KV cache**）；LBS 实为 load + queue 两信号。本课题 flush 的"三维信号"其**信号集**应归因于 CONCUR（KV cache）+ vLLM Prometheus（running/waiting）；CoLoRA 仅贡献多信号融合的闭环**架构模式**（CCF-C，非承重证据，数字为 "up to" best-case）
+- **Unified Scheduler 的全局反馈循环**：monitor → prioritize → place → batch → feedback 闭环——可作为 RC2 控制器架构骨架
 
 **从 BucketServe (2025) 提取**：
 - **按序列长度分组降低 padding 开销**：与我们的 length-aligned grouping 思路一致——验证了"按计算量相似度分组"的有效性

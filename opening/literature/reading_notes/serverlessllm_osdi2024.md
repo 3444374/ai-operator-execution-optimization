@@ -22,7 +22,7 @@ read_date: 2026-07-22
 |------|------|
 | **论文** | Yao Fu, Leyang Xue, Yeqi Huang, Andrei-Octavian Brabete, Dmitrii Ustiugov, Yuvraj Patel, Luo Mai. *ServerlessLLM: Low-Latency Serverless Inference for Large Language Models.* OSDI 2024. |
 | **来源级别** | CCF-A 会议论文（University of Edinburgh + NTU Singapore） |
-| **链接** | https://www.usenix.org/conference/osdi24/presentation/fu / 代码：https://github.com/ServerlessLLM/ServerlessLLM / 本地 PDF：`opening/literature/reference/osdi24-fu.pdf` |
+| **链接** | https://www.usenix.org/conference/osdi24/presentation/fu / 代码：https://github.com/ServerlessLLM/ServerlessLLM / 本地 PDF：`opening/literature/reference/serverlessllm_osdi2024.pdf` |
 | **阅读日期** | 2026-07-22 |
 | **状态** | 精读完成 |
 | **相关论文组** | LLM 推理服务 / Serverless 系统 / GPU 资源调度 |

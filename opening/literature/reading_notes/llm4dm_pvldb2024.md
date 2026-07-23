@@ -22,7 +22,7 @@ read_date: 2026-07-22
 |------|------|
 | **论文** | Guoliang Li, Xuanhe Zhou, Xinyang Zhao. *LLM for Data Management.* PVLDB, 17(12): 4213-4216, 2024. DOI:10.14778/3685800.3685838 |
 | **来源级别** | CCF-A 会议 Tutorial（VLDB 2024，清华大学） |
-| **链接** | DOI:10.14778/3685800.3685838 / 本地 PDF：`opening/literature/reference/p4213-li.pdf` / Artifacts: https://github.com/code4DB/LLM4DB |
+| **链接** | DOI:10.14778/3685800.3685838 / 本地 PDF：`opening/literature/reference/llm4dm_pvldb2024.pdf` / Artifacts: https://github.com/code4DB/LLM4DB |
 | **阅读日期** | 2026-07-22 |
 | **状态** | 精读完成 |
 | **相关论文组** | LLM4DB（LLM 用于数据库管理） |

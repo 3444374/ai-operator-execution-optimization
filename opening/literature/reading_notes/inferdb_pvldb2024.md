@@ -21,7 +21,7 @@ read_date: 2026-07-22
 |------|------|
 | **论文** | Ricardo Salazar-Díaz, Boris Glavic, Tilmann Rabl. *InferDB: In-Database Machine Learning Inference Using Indexes.* PVLDB, 17(8): 1830-1842, 2024. DOI:10.14778/3659437.3659441 |
 | **来源级别** | CCF-A 期刊论文（Hasso Plattner Institute + University of Illinois Chicago + University of Potsdam） |
-| **链接** | DOI:10.14778/3659437.3659441 / 本地 PDF：`opening/literature/reference/inferdb_pvldb17.pdf` / 代码：https://github.com/hpides/inferdb |
+| **链接** | DOI:10.14778/3659437.3659441 / 本地 PDF：`opening/literature/reference/inferdb_pvldb2024.pdf` / 代码：https://github.com/hpides/inferdb |
 | **阅读日期** | 2026-07-22 |
 | **状态** | 精读完成 |
 | **相关论文组** | DB4AI（数据库内置 ML 推理）、ML 推理优化 |

@@ -22,7 +22,7 @@ read_date: 2026-07-22
 |------|------|
 | **论文** | Agrawal, Kedia, Panwar, Mohan, Kwatra, Gulavani, Tumanov, Ramjee. *Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve.* OSDI 2024. |
 | **来源级别** | CCF-A 会议论文（Georgia Tech + Microsoft Research India） |
-| **链接** | https://www.usenix.org/conference/osdi24/presentation/agrawal / 代码：https://github.com/microsoft/sarathi-serve / 本地 PDF：`opening/literature/reference/osdi24-agrawal.pdf` |
+| **链接** | https://www.usenix.org/conference/osdi24/presentation/agrawal / 代码：https://github.com/microsoft/sarathi-serve / 本地 PDF：`opening/literature/reference/sarathi_serve_osdi2024.pdf` |
 | **阅读日期** | 2026-07-22 |
 | **状态** | 精读完成 |
 | **相关论文组** | LLM 推理服务调度 / vLLM 生态 / Prefill-Decode 干扰 |
@@ -230,3 +230,70 @@ flowchart TB
 - [[cortex_aisql_sigmod2026]] — 产业 DB4AI 代表
 - [[smart_vldb_journal_2025]] — ML 谓词优化
 - [[文献地图]] — 文献全景
+
+---
+
+## ▎图复审补充（2026-07-23，读图能力补遗）
+
+> **配图**（论文原图，pypdfium2 渲染自一手 PDF；本环境无可靠视觉读图，以下数值以你的肉眼核对为准）：
+>
+> ![图 4 · prefill/decode 线性层耗时（1 decode ≈ 128 prefill token）](figs/sarathi_fig4.png)
+>
+> ![图 9 · 混合 batch 的增量 TBT 代价（Decode+Full Prefill vs Decode+Chunked Prefill）](figs/sarathi_fig9.png)
+
+**方法学说明**：通用视觉模型对本 PDF 的图注识别存在系统性偏差（曾把 Mistral-7B 误判为 LLaMA-2-70B、把曲线外推为"batch size 16 饱和"等原图未出现的数字），故以下所有量化数字均以 **PDF 文本层逐字 caption、正文与脚注**为权威来源，视觉仅用于确认轴标签与曲线形态。仅记录原笔记未 capture 或低估、且对本课题载荷性（load-bearing）强的量化细节。
+
+### 图 4 · Mistral-7B 上 prefill 与 decode 的线性层计算耗时
+
+- **已有处理**：原笔记 §方法拆解-1 引用此图支持"prefill 在 512 tokens 饱和 GPU"。该引用与论文 §4.1 正文表述一致。
+- **读图新发现**：图 4 实际配置为 **Mistral-7B 单卡 A100，prompt length 1024**（事实，from caption）。caption 中最载荷性的一句被原笔记漏掉：**"the cost of linear operation for 1 decode token is nearly same as 128 prefill tokens"**（事实，from caption）——这是 decode memory-bound 最直接的量化：1 个 decode token 的线性层耗时 ≈ 128 个 prefill token。正文另给出"linear operators 贡献 >80% 总时间，即使在高 sequence length 仍如此"（事实）。
+- **对课题含义**：1:128 比率为 **token-budget 分组**提供量化锚点（推断）——decode-heavy batch 每多 1 个 decode token 就空出约 128 个 prefill-token 的计算密度。token-budget 策略若让 batch 中 prefill/decode token 数维持 ~128:1 量级，就能在不显著抬升 TBT 的前提下填满 memory-bound 空隙。**不能声称**此数字直接适用于 Yi/Qwen + 不同 TP，需重新 profiling（待确认）。
+- **证据层级**：事实（caption 原文）+ 推断（与 token-budget 的量化对应）。
+
+### 图 5 + 图 6 · LLaMA2-70B 线性层的算术强度与执行时间
+
+- **已有处理**：原笔记 §方法拆解-4 提到"balanced 区间（图 5）"；§关键数字表第 8 行提到"128 decode tokens 的 batch 仍有显著空闲计算"。
+- **读图新发现**：
+  - 图 5（**LLaMA2-70B，4×A100，TP-4**）明确标注三个区域（事实，from caption + 视觉确认）：**"Memory Bound Region - Low MFU"**（左，decode 所在）、**"Balanced - Sarathi-Serve"**（中）、**"Compute Bound Region - Low MBU"**（右，prefill 所在）。Y 轴 **Arithmetic Intensity (FLOPs/bytes)** 0–~1400；X 轴 **Number of Tokens** 0–2000。原笔记只说"balanced 区间"，未点出三区划法与轴语义。
+  - 图 6（**LLaMA2-70B，TP-2 与 TP-4**）caption：**"execution time is largely stagnant in the 128-512 tokens range, especially for higher tensor parallel degrees. Once tokens cross a critical threshold, the operation becomes compute bound and runtime increases linearly"**（事实）。
+  - **脚注 2（原笔记完全漏掉）**：**"Theoretically, we expect operators to become compute-bound at 200 tokens on A100 GPUs, however, in practice it happens at 500-600 tokens for higher tensor parallel dimensions due to fixed overheads"**（事实）。
+- **对课题含义**：两张图共同给出 **token-budget 下限的工程依据**（推断）——目标应让每批 ≥512 tokens（高 TP 偏向 500–600）以退出 memory-bound 平台；低于阈值时再加 token 不增执行时间（plateau），纯属浪费 HBM 带宽。三区划法可作为实验报告描述"为什么 token-budget 有效"的可视化框架（推断）。
+- **证据层级**：事实（caption + 脚注）+ 推断（token-budget 下限对应）。
+
+### 图 7 + 图 9 · 四调度器时间线 + 混合 batch 的增量代价
+
+- **已有处理**：原笔记 §与课题连接-1 引用了 §4.2 的 stall-free 概念。
+- **读图新发现**：
+  - 图 7 把 **vLLM / Orca / FasterTransformer / Sarathi-Serve** 四调度器并排画在同一时间线上（事实，视觉 + 正文确认），每个 batch 条标注 **"TBT without prefill interference"** 与 **"TBT with prefill interference"** 两段，直接可视化 prefill 干扰的 TBT 税。Sarathi-Serve 把请求 C 的 prefill 拆成 **C_p1、C_p2** 跨两轮（视觉确认）——这就是 chunked-prefill 的内部节奏。
+  - 图 9（caption，已用 pdftotext 核验）对比两种合并方案：**(i) Decode + Full Prefill**（Orca 式：整个 prefill 与 ongoing decode 在同一 iteration 执行）vs **(ii) Decode + Chunked Prefill**（Sarathi-Serve：prefill 按 fixed token budget 分块后再合并）。caption 结论：Sarathi-Serve "processes prefill tokens with much lower impact on the latency of decodes"，且 "the relative impact of Sarathi-Serve on latency reduces with higher decode batch size and context lengths"（事实，from caption）。**⚠️ 校正**：早期版本曾误引 "up to 28.3× TBT blowup vs decode-only batch"——该数字与该句在论文正文/caption 中**均不存在**（pdftotext 全文检索 "28.3"/"dramatic"/"decode-only" 零命中），系视觉读图 + 模型幻觉，已删除。图 9 为定性对比，无可引用的精确倍数。
+- **对课题含义**：
+  - **机理上直接解释 RC2 queue-adaptive flush 负结果（E2E 10.2s vs static 7.3s，~1.4× 退化）**（推断）：上游 flush 本质是**请求粒度的 naive coalescing**，对应图 9 中 Sarathi-Serve 所对照的 "Decode + Full Prefill" 方案——该方案被论文定性为对 ongoing decode 延迟有显著更高影响。Sarathi-Serve 之所以不爆 TBT，是靠**引擎内部 chunking 保护**（图 7 的 C_p1/C_p2）；本课题明确**不修改 vLLM**，上游 flush 没有这层引擎内保护，因此方向上会复现同一 TBT 放大机理。**注意**：论文未给出可引用的精确倍数（28.3× 已证伪），我们的 1.4× E2E 退化是本地实验事实，与机理方向一致但量级不可外推到 Sarathi 的配置。
+  - 图 7 的 C_p1/C_p2 节奏提示（推断 + 待确认）：上游 flush 不应也无法对齐 chunk 粒度（引擎内部事）；提交控制应停留在**请求粒度**的 K_max/并发控制。RC2 失败的一个待验证假设是 flush 频率与 vLLM 内部 prefill-prioritizing admission 节奏冲突（待确认，需 profile vLLM 内部队列）。
+- **证据层级**：事实（图 9 caption 的两方案定性对比 + "much lower impact" + 边界句；图 7 的 C_p1/C_p2，from caption/正文）+ 推断（与 RC2 负结果的机理对应）+ 待确认（flush-引擎节奏冲突）。**"28.3×" 已证伪删除**。
+
+### 图 12 · vLLM vs Sarathi-Serve 的吞吐-延迟 Pareto
+
+- **已有处理**：原笔记 §关键数字表与 §与课题连接提到 3.5×/1.65× capacity。
+- **读图新发现**：图 12（Mistral-7B + Yi-34B，openchat_sharegpt4）比较 **vLLM-32 / vLLM-64 / vLLM-128**（三种 max batch size）与 **SS-512 / SS-2048**（两种 token budget）；X 轴 P99 TBT SLO(s)，Y 轴 Max Capacity（事实，from caption + 视觉确认）。正文给出原笔记漏掉的载荷性负结果：**"the capacity of vLLM remains largely identical for all the three batch size settings … even though PagedAttention enables large batch sizes with efficient memory management — in practical situations with latency constraints, vLLM cannot leverage the large batch size due to the steep latency-throughput tradeoff made by its prefill-prioritizing scheduler"**（事实）。Pareto 数字精确化：SS-512 在 **100ms P99 TBT、Mistral-7B** 下容量 3.5× vLLM；SS-2048 在 **1s P99 TBT、Yi-34B** 下 1.65× vLLM（事实）。
+- **对课题含义**（推断）：**"vLLM 三种 batch size 容量几乎相同"是对我们课题最关键的警示**——上游单纯"把更多请求塞给 vLLM"不提升吞吐，prefill-prioritizing 调度器会自己把有效 batch 压回 stall-free 水平。因此 token-budget 分组的目标不是"最大化 vLLM batch size"，而是"让每个到达 vLLM 的 batch 落在 balanced 算术强度区间"（与图 5 呼应）。baseline 设计中声称"优于直接全发 vLLM"时，可引用此图说明 vLLM 默认调度在 SLO 下的利用率天花板，而非简单批"vLLM 慢"。
+- **证据层级**：事实（batch-size 不变性、3.5×/1.65×）+ 推断（上游 batch 目标重定义）。
+
+### Table 4 · 消融的 TTFT/TBT 互补性（补数字）
+
+原笔记 §与课题连接-1 引用 §5.4.2 消融但未给数字。补全（事实，from Table 4，Yi-34B 2×A100 token budget 1024，128 请求）：
+
+| 配置 | P50 TTFT (s) · sharegpt4 | P99 TBT (s) · sharegpt4 | P50 TTFT (s) · arxiv | P99 TBT (s) · arxiv |
+|---|---|---|---|---|
+| hybrid-batching-only | 0.53 | 0.68 | 3.78 | 1.38 |
+| chunked-prefills-only | 1.04 | 0.17 | 5.38 | 0.20 |
+| Sarathi-Serve (combined) | 0.76 | 0.14 | 3.90 | 0.17 |
+
+规律：**chunked-prefills-only 把 P99 TBT 从 0.68→0.17（sharegpt4）但把 P50 TTFT 从 0.53→1.04**；hybrid-batching-only 相反（TTFT 好但 TBT 差）。两项技术作用于不同指标，combined 取两者之长。
+
+- **对课题含义**（推断）：这正是 RC1（数据组织）/RC2（提交控制）应复制的消融模式——预期两项策略分别主控不同指标，独立最优 ≠ 联合最优，支撑 PROJECT_OUTLINE 规划的"独立搜索后拼接 vs 联合 grid search"方法论。
+- **证据层级**：事实（Table 4）+ 推断（消融模板复用）。
+
+### 两处轻微引用偏差（提示性）
+
+1. 原笔记 §方法拆解-1 将"prefill 在 512 tokens 饱和"标注为图 4——这与论文 §4.1 正文表述一致（正文确有此句），但更完整的 512 来源还包括**图 6 的 128–512 plateau** 与**脚注 2 的 200（理论）/ 500–600（TP）**。建议补注脚注 2 的量化区分，避免把 512 当成所有配置的统一阈值。
+2. 原笔记 §关键数字表第 8 行"128 decode tokens 的 batch 仍有显著空闲计算"标注为图 5。该表述更精确的来源是**图 6 的 128–512 stagnant 平台**；图 5 的主题是三区算术强度 region 划分。两者相关但侧重不同，建议区分引用。

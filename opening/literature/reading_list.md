@@ -25,9 +25,9 @@
 | 分布式 SQL 优化 | Spark SQL performance tuning docs | 官方文档 | 已整理入口 | 支撑 partition、shuffle coalescing、join strategy 是成熟问题 |
 | 数据库侧工业背景 | OceanBase Mercury / Bacchus 等论文 | 论文 | 待核验细节 | 作为分布式数据库、列式/向量化、写回和资源管理背景 |
 
-## 精读笔记索引（2026-07-22 更新）
+## 精读笔记索引（2026-07-23 更新）
 
-16 篇精读笔记已全部完成，覆盖 `ai_operator_literature_inventory.md` 建议精读的 15 篇 + DiskANN 补充精读。所有笔记位于 `opening/literature/reading_notes/`。
+**33 篇精读笔记已完成**：原 16 篇（inventory 建议精读 15 篇 + DiskANN）+ 2026-07-23 新增 17 篇（由 codex 与 Claude Code 两环境协同完成：P0 自适应控制 / P1 策略实现 / P2 背景对照 + Mooncake + 补齐 Multi-Bin/Lance/Milvus + Ray Data 引擎基础）。所有笔记位于 `opening/literature/reading_notes/`，已同步至知识库 `raw/papers/`。
 
 | # | 笔记文件 | 论文 | 出处 | 完成日期 |
 |---|---------|------|------|----------|
@@ -47,6 +47,37 @@
 | 14 | `db_perspective_llm_pvldb2025.md` | DB Perspective on LLM Inference | PVLDB 2025 | 2026-07-22 |
 | 15 | `ray_osdi2018.md` | Ray | OSDI 2018 | 2026-07-22 |
 | 16 | `diskann_neurips2019.md` | DiskANN | NeurIPS 2019 | 2026-07-22 |
+| — | **2026-07-23 新增（P0 自适应控制 / RC2）** | | | |
+| 17 | `clipper_nsdi2017.md` | Clipper — AIMD 自适应 batching | NSDI 2017 | 2026-07-23 |
+| 18 | `concur_2025.md` | CONCUR — agent 级主动准入控制（AIMD，非 EWMA） | arXiv 2026 | 2026-07-23 |
+| 19 | `colora_2026.md` | CoLoRA — 多租户 LoRA 协同调度 | ASP-DAC 2026 | 2026-07-23 |
+| 20 | `saber_2025.md` | SABER — USL 估计 + SLA-aware 准入 | arXiv 2025 | 2026-07-23 |
+| — | **2026-07-23 新增（P1 策略设计与工程实现 / RC1+RC2）** | | | |
+| 21 | `scorpio_llm_serving_2025.md` | Scorpio — SLO 异构 + token 级延迟建模 | arXiv 2025 | 2026-07-23 |
+| 22 | `bucketserve_2025.md` | BucketServe — sequence-length 分桶 batching | arXiv 2025 | 2026-07-23 |
+| 23 | `sglang_neurips2024.md` | SGLang — RadixAttention prefix 复用 | NeurIPS 2024 | 2026-07-23 |
+| 24 | `splitwise_isca2024.md` | Splitwise — prefill/decode 分池 | ISCA 2024 | 2026-07-23 |
+| — | **2026-07-23 新增（P2 背景与对照）** | | | |
+| 25 | `proserve_2025.md` | ProServe — 多优先级请求调度 | arXiv 2026 | 2026-07-23 |
+| 26 | `distserve_osdi2024.md` | DistServe — prefill/decode disaggregation（goodput） | OSDI 2024 | 2026-07-23 |
+| 27 | `flashattention_neurips2022.md` | FlashAttention — IO-aware attention 原语 | NeurIPS 2022 | 2026-07-23 |
+| 28 | `flexgen_icml2023.md` | FlexGen — 离线高吞吐 offloading 推理 | ICML 2023 | 2026-07-23 |
+| 29 | `mooncake_acmtos2025.md` | Mooncake — KVCache-centric 分离架构 | ACM TOS 2025 | 2026-07-23 |
+| — | **2026-07-23 补充（RC1 理论 / 数据引擎 / 写回）** | | | |
+| 30 | `multibin_batching_2024.md` | Multi-Bin Batching — length-align 装箱理论（order-statistics） | arXiv 2024 | 2026-07-23 |
+| 31 | `lance_2025.md` | Lance — 列式 AI 存储格式（Daft 底层） | arXiv 2025 | 2026-07-23 |
+| 32 | `milvus_sigmod2021.md` | Milvus — 向量库写回/索引（pgvector 工程对照） | SIGMOD 2021 | 2026-07-23 |
+| — | **2026-07-23 补（引擎基础）** | | | |
+| 33 | `ray_data_streaming_batch_2025.md` | Ray Data: Streaming Batch Model — 异构执行引擎（Daft 对照，RC1/RC2 引擎层） | arXiv 2025 | 2026-07-23 |
+
+> **2026-07-23 精读勘误（重要，两环境协同修正）**：精读代理据论文原文修正了多处早期误述——
+> (1) **SABER** 确实**使用 USL**（§IV.B Step 2 明写 "select the USL with the best R²"，Fig 7 对比三变体）作为估计机制，SLA-aware 是其系统目的，二者是机制与目的关系，非二选一；
+> (2) **CONCUR** 用 **AIMD**（非 EWMA），双信号 U_t/H_t + 0.3 死区；
+> (3) **DistServe** 全文用 simple FCFS 调度，**无** "AFGM attention-focused fairness" 与 "prediction-based prefill-decode pairing"；
+> (4) **ProServe** 真实主题是**多优先级请求调度**（TDG 收益 + SlideBatching + GoRouting），非"预测式 PD 分离调度"——PD 分离仅是其部署模式之一。
+> 笔记均按论文真实内容撰写。
+
+> **命名说明**：CoLoRA 笔记文件名为 `colora_2026.md`（codex 命名），对应 PDF 为 `colora_aspdac2026.pdf`；Clipper 笔记 `clipper_nsdi2017.md` ↔ PDF `clipper_nsdi2017.pdf`。
 
 精读笔记模板：`tpl-文献精读-深度版.md`（四层：基本信息 → 论文结构分析 → 批判性评估 → 与课题连接）
 泛读笔记模板：`tpl-文献泛读.md`

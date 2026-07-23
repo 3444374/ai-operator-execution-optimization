@@ -21,7 +21,7 @@ read_date: 2026-07-22
 |------|------|
 | **论文** | Satriani, Veltri, Santoro, Rosato, Varriale, Papotti. *Logical and Physical Optimizations for SQL Query Execution over Large Language Models.* SIGMOD 2025. DOI:10.1145/3725411 |
 | **来源级别** | CCF-A 会议论文（University of Basilicata + EURECOM） |
-| **链接** | DOI:10.1145/3725411 / 本地 PDF：`raw/papers/3725411.pdf` / 代码：https://github.com/dbunibas/galois |
+| **链接** | DOI:10.1145/3725411 / 本地 PDF：`raw/papers/galois_sigmod2025.pdf` / 代码：https://github.com/dbunibas/galois |
 | **阅读日期** | 2026-07-22 |
 | **状态** | 精读完成 |
 | **相关论文组** | DB4AI（数据库 AI 算子） |
@@ -201,3 +201,51 @@ flowchart LR
 - [[gaussml_icde2024]] — 同方向更早代表
 - [[smart_vldb_journal_2025]] — 同方向 ML 谓词优化
 - [[文献地图]] — 文献全景
+
+---
+
+## ▎图复审补充（2026-07-23，读图能力补遗）
+
+> **配图**（论文原图，pypdfium2 渲染自一手 PDF；本环境无可靠视觉读图，以下数值以你的肉眼核对为准）：
+>
+> ![图 3 · Table-Scan vs Key-Scan 执行模型（无请求队列/batch 构造器/并发限制）](figs/galois_fig3.png)
+
+**复审动机**：原笔记的方法拆解（§2）用 mermaid 流程图复述了 Galois 的优化逻辑，但**未按论文图号引用任何 figure**。本节通过直接读图（Fig 1/2/3/5/7-11），补回对课题定位 load-bearing 的图级证据，重点回答：Galois 是否做请求 batching / 跨查询组织 / 并发控制？答案是**否**——这恰好框出本课题的空白。
+
+**图 1（p3）· NL/SQL/Galois 三种查询方法对比（概念图，非架构图）**
+- **已有处理**：原笔记 §1 已说明 Galois 与 NL/SQL 的质量对比关系。
+- **读图新发现**：（事实·from 图）Fig 1 把 Galois 画成一个**橙色黑盒**，只标注 "SQL → Galois → Prompt → LLM → Result"，**没有展示任何内部组件**（无 middleware、无 query executor、无 request pool、无 storage-layer 接口）。三种方法都是**单条 Prompt → 单次 LLM 调用 → 单个结果**的顺序流，图中不存在并行箭头、批处理标签或多行数据结构。（推断）这意味着 Fig 1 的定位是"质量对比的概念示意"，不是系统架构图——Galois 论文从头到尾**没有给出系统架构图**，这与 Cortex AISQL 等工业系统形成鲜明对照。
+- **对课题含义**：可在开题报告中明确——Galois 的图级表达止于"单查询-单提示"，没有可被引用的执行链路架构；本课题的架构图填补的是"数据出库→组织→批量提交→写回"这一 Galois 未覆盖的链路表达空白。
+- **证据层级**：事实（图本身可视内容）/ 推断（无架构图的整体判断）。
+
+**图 2（p5）· 4 个逻辑计划（n1/p1/s1/c1，按谓词下推策略区分）**
+- **已有处理**：原笔记 §2 第 1 点已描述三种下推策略（无/单/全），mermaid 图体现了计划选择逻辑。
+- **读图新发现**：（事实·from 图）Fig 2 的 4 棵计划树都是**单查询的二元树**（scan → filter），根节点是单一查询输出。四种计划的区别仅在 `LLMScan` vs `Filter-LLMScan`（带条件下推）以及 post-filter 的有无；**没有任何跨查询、跨算子、跨行的组织结构**。（推断）Galois 的"优化"完全发生在**单查询的逻辑计划层**——选哪条计划、推哪个谓词——这正是 §4.4 中本课题"跨查询/跨算子上游组织"定位的反面坐标。
+- **对课题含义**：Fig 2 可作为开题 §2 中"Galois = 单查询内逻辑优化"的图级证据。本课题的 token-budget/length-align/prefix-aware 是在 Galois 不触及的"多行如何打包成一个模型服务请求"层操作，二者**层次互补，不竞争**。
+- **证据层级**：事实（图示计划树结构）/ 推断（层次互补判断）。
+
+**图 3（p5）· Table-Scan (c1') 与 Key-Scan (c1'') 两个物理算子【最 load-bearing】**
+- **已有处理**：原笔记 §2 第 2 点描述了 Table-Scan / Key-Scan 的语义，并称"Key-Scan 的第二步可并行化"。但**未引用 Fig 3 本身**。
+- **读图新发现**：
+  1. （事实·from 图）**Fig 3 中两个物理算子都没有任何请求队列、batch 构造器、并发限制器、actor pool 或多 LLM 调用在途的视觉元素**。Table-Scan 画成单次 "populate the table" 提示 → LLM 返回多行；Key-Scan 画成两阶段（阶段 1 取 keys，阶段 2 按 key 取 values）。
+  2. （事实·from 图）**Fig 3 中 Key-Scan 阶段 2 用顺序箭头 1→2→3→4 画**，图本身**不展示并行**。
+  3. （事实·from 论文文本 p10/p16）原文明确写"the operations in the second loop (lines 18-22) are parallelized"和"once the keys are obtained, the remaining values of the tuples can be retrieved in parallel"——所以原笔记"第二步可并行化"的判断**文本正确**。
+  4. （推断·关键）并行性是算法**属性**（各 key 的取值调用彼此无上下文依赖，所以*可以*并行），**不是 Galois 实现或测量过的机制**。论文没有给出并行执行实验、没有并发度控制、没有 K_max、没有 queue-adaptive flush。Galois 止步于"这些调用理论上独立"，而**本课题回答的正是"如何调度这些独立调用"**。
+- **对课题含义**：（1）Fig 3 是本课题 vs Galois 定位最有力的一张图——它把 Galois 的执行模型固定在"迭代式独立单提示"，与本课题"跨行组织 + 提交控制"形成直接对照。（2）可在开题报告中写：Galois 识别了 LLM 调用的独立性但**未提供提交控制层**；本课题在该层引入 queue-adaptive flush 与 K_max 动态控制。（3）**温和勘误原笔记 §4.2**：原笔记写"Key-Scan 的分解思路可以借鉴到你的 batch construction"——读图后修正：Key-Scan 的 key→value 分解服务于**推理质量**（CoT 式分步推理），**不是**服务于按 token 预算打包请求的吞吐目标；两者目标函数不同，借鉴价值宜表述为"分解思想"而非"batch 构造直接借鉴"。
+- **证据层级**：事实（图示 + 文本原文）/ 推断（互补定位、勘误判断）。
+
+**图 5（p9）· Table Prompt 语法模板 + Table-Scan 算法伪码**
+- **已有处理**：原笔记未单独引用 Fig 5。
+- **读图新发现**：（事实·from 图）Fig 5 的提示模板要求 LLM"populate the table with actual values"，**单次提示可返回多行**（"at each iteration multiple tuples could be extracted"）；算法用 `noNewTuples` 作停止条件的迭代循环。（推断·关键）这是**响应侧多行抽取**，不是**请求侧行间打包**：由 LLM 决定每次返回多少行，而非由客户端按 token 预算/长度/prefix 把多行逻辑请求组织成一个 batch。本课题的 token-budget 组织作用在**请求形成**侧，Galois 从不触及请求形成——它只调一个语义完整的 "scan this table" 提示。
+- **对课题含义**：Fig 5 从请求格式层面证实 Galois 与本课题**作用层不同**：Galois 的"多行"是 LLM 自主返回的结果，本课题的"多行"是客户端按计算量预算主动组织的请求。开题报告可借此区分"响应侧多元组"与"请求侧多行打包"。
+- **证据层级**：事实（提示模板原文）/ 推断（层差异判断）。
+
+**图 7-11（p18-21）· 全部为质量/成本/阈值实验图**
+- **已有处理**：原笔记 §3 实验拆解覆盖了质量与成本维度。
+- **读图新发现**：（事实·from 图）Fig 7（按 logprob 阈值的 precision/recall）、Fig 8（质量 vs 查询复杂度）、Fig 9（token 成本 vs 复杂度）、Fig 10（τ 阈值选择）、Fig 11（AVG-Score vs 最优计划）——**5 张实验图全部围绕质量、token 成本、阈值校准**，**没有一张测量吞吐（rows/s、tokens/s）、尾延迟、在途并发数、队列行为或 batching 收益**。（推断）这证实 Galois 把 LLM 视为"质量-成本权衡的黑盒"，**完全不是作为需要被调度的服务**——本课题关注的 service_p99、inflight 时间序列、queue-adaptive 行为在 Galois 的实验空间里不存在。
+- **对课题含义**：开题 §3 评价指标对比中可明确：Galois 的指标体系（F1-Cell / AVG-Score / #Tokens）属于"质量-成本"平面，本课题的指标体系（tokens/s / service_p99 / inflight）属于"吞吐-尾延迟"平面——**两套指标不重叠**，再次印证层次互补而非竞争。
+- **证据层级**：事实（5 张图的主题）/ 推断（指标体系不相交）。
+
+### 图复审一句话结论
+
+读图后，Galois 与本课题的关系可精确表述为：**Galois 在单查询内做逻辑/物理计划选择（Fig 2/3/4），把每次 LLM 调用视为独立顺序提示（Fig 1/3/5），从未触及跨查询/跨算子的请求组织、并发控制或提交调度（Fig 7-11 无任何吞吐/并发实验）**。本课题填补的正是 Galois 执行模型之下、模型服务之上的**提交控制与数据组织层**——二者层次互补，不构成竞争关系。原笔记的判断方向正确，本节补充的是**图级证据**与**对 Key-Scan 并行性、batch 借鉴两处措辞的温和修正**。

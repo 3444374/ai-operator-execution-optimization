@@ -21,7 +21,7 @@ read_date: 2026-07-15
 |------|------|
 | **论文** | Li, Sun, Li, Wang, Nie, Xu. *GaussML: An End-to-End In-database Machine Learning System.* ICDE 2024. |
 | **来源级别** | CCF-A 会议论文（华为 + 清华大学） |
-| **链接** | 本地 PDF：`raw/papers/PDFs/gaussmlicde.pdf` |
+| **链接** | 本地 PDF：`raw/papers/PDFs/gaussml_icde2024.pdf` |
 | **阅读日期** | 2026-07-15 |
 | **状态** | 精读完成 |
 | **相关论文组** | DB4AI（数据库 AI 算子） |

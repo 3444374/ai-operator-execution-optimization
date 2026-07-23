@@ -254,3 +254,79 @@ flowchart TB
 - [[galois_sigmod2025]] — 同为"LLM + 数据系统"方向的精读
 - [[cortex_aisql_sigmod2026]] — DB4AI 产业代表
 - [[文献地图]] — 文献全景
+
+---
+
+## ▎图复审补充（2026-07-23，读图能力补遗）
+
+> **配图**（论文原图，pypdfium2 渲染自一手 PDF；本环境无可靠视觉读图，以下数值以你的肉眼核对为准）：
+>
+> ![图 11 · 同构 trace 下 ORCA vs FasterTransformer（迭代级增益在齐质化时收窄）](figs/orca_fig11.png)
+
+本节是用 PDF 读图能力对原笔记图级别证据的补遗。原笔记以文字论证为主，明确编号引用了 Fig 1/7/10，但未充分挖掘 Fig 3/4/5/11 的图级证据；Fig 10 的收益基准也需修正性补充。以下逐图列出"读图新发现"，仅包含原笔记未提到的新点。
+
+### **图 3 · 同输入长度、不同输出长度下的 "extra computation imposed by scheduling" 可视化**（§2，p5）
+
+- **已有处理**：原笔记在"问题拆解""可引用观点"中准确描述了 request-level 调度导致的"扣押"概念，但从未编号引用 Fig 3。
+- **读图新发现**：
+  - 精确 caption（事实 from 图）："An illustration for a case where the requests have the **same input length** but some requests finish earlier than others. Shaded tokens represent input tokens. **'-' denotes inputs and outputs of extra computation imposed by the scheduling.**"
+  - x1（"I think"）与 x2（"I love"）**输入长度相同**（各 2 个 shaded input token），但**输出长度不同**：x1 生成 4 个 token（this/is/great/`<EOS>`），x2 仅 1 个（`<EOS>`）。x2 在 iter 2 即完成，但 batch 仍跑到 iter 4，x2 的格子在 iter 3/4 显示为 "-"（事实 from 图）。
+  - 关键区分（事实 from 图）：Fig 3 的"扣押"来源是**输出长度差异**，不是输入长度差异——两个请求输入完全对齐，仍出现 waste。
+- **对课题含义**：
+  - 推断：上游 input-side 的 token-budget / length-align 是**必要但不充分**——即使输入完全对齐，输出长度方差（生成式 LLM 不可预测）仍是 batch 内残余 waste 的来源，只能由服务端 iteration-level scheduling 吸收。
+  - 这精确划定了**上游优化的能力边界**，直接呼应我们 RC2 queue-adaptive flush 的负结果（E2E 10.2s vs static 7.3s）：上游 flush 节奏无法消除由输出方差驱动的 intra-batch waste，那部分是 vLLM continuous batching 的职责。上游应在**输入侧**组织数据，把"能预判的方差"（input token 量、prefix）提前对齐，而非试图控制不可预判的输出节奏。
+- **证据层级**：图 3 为论文原图；输出/输入长度差异为事实；对 RC2 边界的解释为合理推断（待实验数据进一步验证）。
+
+### **图 4 · 系统总览：虚线 = 每 iteration 交互的视觉编码**（§3，p6）
+
+- **已有处理**：原笔记用 Mermaid 重画了架构图并文字描述了 iteration-level scheduling 流程，但未引用 Fig 4 的视觉编码。
+- **读图新发现**：
+  - 图例明确（事实 from 图）："**interactions represented as dotted lines indicate that the interaction takes place at every iteration of the execution engine**"——Scheduler ↔ Request Pool ↔ Engine 的 ①②③④ 四条交互是**每 iteration 发生**的，不是每 batch。
+  - Request Pool 中显式画出每请求的 per-iteration token（x1: x11,x12,x13,x14；x3: x31,x32；x4: x41,x42,x43），shaded = 客户端输入，unshaded = ORCA 已生成——Request Pool 在**每个 iteration boundary** 都会被读写（事实 from 图）。
+- **对课题含义**：
+  - 推断：服务端能接受新请求的"tick"是 **iteration boundary**（每次 forward pass 结束），而非 batch boundary。这定义了我们上游 flush 的天然对齐粒度——**queue-adaptive flush 的 cadence 应与 iteration 节拍对齐**，而非按固定时间窗或固定行数触发。这是 RC2 flush 策略设计一个被忽略的约束：flush 频率快于 iteration 节拍是无效的（服务端在下个 iteration boundary 前不会取新请求）。
+- **证据层级**：图 4 编码与 caption 为事实；flush-iteration 对齐为合理推断。
+
+### **图 5 · Selective batching 的具体张量形状：token-total 维度的图级先例**（§3，p7）
+
+- **已有处理**：原笔记文字描述了 selective batching（non-Attention flatten / Attention split），但未引用 Fig 5 的具体形状。
+- **读图新发现**：
+  - QKV Linear 输出形状为 **[7, 3H]**（事实 from 图）——"7" 是 4 个请求（x1,x2,x3,x4）当前 iteration 的 **token 总数**（2+3+1+1），不是请求数 4。Split 后按请求拆成 [2,3H]/[3,3H]/[1,3H]/[1,3H]，各自做 Attn 得到 [1,H]，再 Merge 回统一 tensor。
+  - caption（事实 from 图）："An illustration of ORCA execution engine running a Transformer layer on a batch of requests with selective batching. We only depict the QKV Linear, Attention, and Attention Out Linear operations for simplicity."
+- **对课题含义**：
+  - 事实：GPU 共享 parameter read 的维度是 **token 总量**（7），不是请求数（4）。这是论文级、图级的 token-budget 直接先例——**batch 的"大小"应以 token 总量计量**。
+  - 推断：这为研究内容一（数据组织策略）中"按 token-budget 而非固定行数组织 batch"提供了来自下游服务端内部机制的最强支撑——下游 flatten 维度就是 token-total，上游按 token-total 组织数据等于与下游的物理维度对齐。
+- **证据层级**：图 5 形状与 caption 为事实；与 token-budget 的连接为合理推断。
+
+### **图 10 · 吞吐-延迟曲线：典型 gap 约 1.5–2x，36.9x 是特定 SLO 点**（§6.2，p12）
+
+- **已有处理**：原笔记"关键数字"表准确引用了 36.9x 及其条件（median normalized latency = 190ms = orca(128) 执行时间的 2x），并在"可引用观点 §6.2"引用了 Fig 10（max_bs 抬升时 ORCA 延迟基本不涨）。但未说明 Fig 10 曲线本身的典型 gap 量级。
+- **读图新发现**：
+  - Fig 10 子图（101B/175B/341B）在**相同 normalized latency** 下 orca(32) vs ft(8,8) 的吞吐 gap 约 **1.5–2x**（近似读数，待确认）：例如 175B 子图在 100 ms/token 处 orca(32)≈5.5 req/s、ft(8,8)≈3.5 req/s；在 200 ms/token 处 orca(32)≈6 req/s、ft(8,8)≈4 req/s。
+  - 36.9x 出现在 §6.2 正文（p13），对照基准是 **ft(1,1)（无 batching）在 190ms SLO 下的 0.185 req/s**，不是 ft(8,8)（事实 from 正文）。Fig 10 本身不画 orca(128)（图中只到 orca(32)）；190ms 目标来自 Fig 9c 的 engine-only 执行时间。即：**36.9x 是"动态调度 vs 无 batching"的差距，不是"动态调度 vs 合理静态 batching"的差距**。
+  - orca 曲线随 max_bs（1→8→16→32）抬升而**延迟基本不涨**（曲线在 y 轴方向贴近），ft 曲线随 max_bs 抬升延迟有所上升（事实 from 图）。
+- **对课题含义**：
+  - 推断（修正性）：引用 Orca 收益时应区分"对无 batching 基准（ft(1,1)）的 36.9x"与"对合理静态 batching（ft(8,8)）的 ~1.5–2x"。后者才是评估"上游组织还能再加多少"的合理基准——**如果上游数据组织能把 ~1.5–2x 的残余 gap 再压一部分，那就是上游优化的边际贡献空间**。
+  - 待确认：orca 延迟随 max_bs"基本不涨"是 iteration-level scheduling 的直接红利；与 K_max 动态控制的相关性——上游 K_max 上限受服务端"延迟不涨"区间的约束，不应超过该区间。
+- **证据层级**：36.9x 对照基准（ft(1,1)）为事实；曲线 gap ~1.5–2x 为近似读数（待确认）；基准选择的修正建议为推断。
+
+### **图 11 · 同质请求下 gap 收窄至约 1.25–1.5x——上游数据组织的图级证据**（§6.2，p13）
+
+- **已有处理**：原笔记"实验拆解"表提到"homogeneous vs heterogeneous request trace"，但**未引用 Fig 11，更未连接到课题的核心论点**。这是原笔记最大的图级遗漏。
+- **读图新发现**：
+  - Fig 11 caption（事实 from 图）："Median end-to-end latency and throughput, using the 175B model with traces composed of **homogeneous requests**. We do not normalize the latency since all requests have the same characteristic." 两个子图分别是 (#input, #gen) = (32, 1) 与 (256, 256) 的**完全同质** trace。
+  - 同质负载下 ORCA vs ft(8,8) 的吞吐 gap **收窄到 ~1.25–1.5x（子图 b，256,256）/ ~1.5–2x（子图 a，32,1）**（近似读数，待确认）——**显著小于 Fig 10 异质负载下的 gap**。
+  - 正文（事实 from p13）："Still, ORCA outperforms FasterTransformer (max_bs=8) except for the case using a max batch size of 1, where ORCA degenerates into a simple pipeline… that does not perform batching."——即 max_bs=1 时 ORCA 退化、无 batching 红利。
+- **对课题含义**（**本图与课题相关性最高**）：
+  - 推断：iteration-level scheduling 的收益**主要来自吸收请求异质性**（输出长度方差、phase 混合）。当请求已同质，服务端调度的边际收益大幅下降——**这正是上游数据组织（length-align / token-budget 分组）创造价值的地方**：上游把异质数据组织得更同质，等于把"需要服务端调度吸收的方差"提前在上游消除。
+  - 推断（与 RC2 负结果的连接）：Fig 11 提供了一个可能的解释方向——**如果上游已经做了较好的 token-budget / length-align 组织（使到达 vLLM 的请求相对同质），那么服务端 iteration-level scheduling 的可用余量已经不大**，再叠加上游 queue-adaptive flush 的边际收益会更小。这与 RC2 E2E 负结果（10.2s vs 7.3s）一致：flush 节奏优化在已经较同质的负载上难以体现。**待实验验证**：用异质化程度可控的 trace 重跑 RC2，预期异质越强、flush 收益越显——这是直接的后续实验设计输入。
+  - 可引用措辞（推断级）：Orca Fig 11 表明，同质请求负载下服务端 iteration-level 调度的吞吐红利从异质负载的数倍收窄至约 1.25–1.5 倍；这从下游侧证明请求同质性是 continuous batching 效率的决定性因素之一，构成本课题"在上游按计算量组织数据以提升下游 batching 效率"的直接动机。
+- **证据层级**：Fig 11 caption 与同质条件为事实；gap 收窄至 ~1.25–1.5x 为近似读数（待确认）；与上游数据组织 / RC2 负结果的连接为**合理推断**，其中"异质 trace 重跑 RC2"为待验证实验设计。
+
+### 跨图小结（仅新点）
+
+1. **上游优化的能力边界**（Fig 3）：输入侧对齐是必要不充分；输出方差是服务端职责。RC2 负结果有了机制级解释。
+2. **flush 对齐粒度**（Fig 4）：服务端取新请求的 tick 是 iteration boundary，不是 batch boundary——上游 flush 不应快于 iteration 节拍。
+3. **token-total 是下游物理维度**（Fig 5）：上游 token-budget 直接与下游 flatten 维度对齐，是最强图级先例。
+4. **收益基准修正**（Fig 10）：36.9x 是 vs ft(1,1)（无 batching）；对合理静态 batching（ft(8,8)）的 gap 约 1.5–2x，这才是评估上游边际贡献的基准。
+5. **同质性是杠杆**（Fig 11）：异质→gap 大；同质→gap 收窄。上游数据组织的价值 = 提前消除服务端需要吸收的方差——这是原笔记遗漏的、与课题最直接相关的图级证据，并为 RC2 负结果提供了一致性解释与后续实验方向。

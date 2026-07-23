@@ -468,3 +468,296 @@ PostgreSQL / table scan
 - 不能把 `AI_COMPLETE` 的 token/KV 策略直接套到 `AI_EMBED`，两者机制不同。
 - 不能声称"数据组织层已实现 Daft 后端"——当前仅实现 Arrow 后端；Daft 后端是近期必须补齐的文本阶段实现目标，并应保留 Arrow 后端作为对照/回退。
 - 不能声称"本文方法在具身智能/多模态场景中有效"——只有在真实多模态 workload 上验证后才能说。
+
+---
+
+## 8. 目标代码架构与模块接口规范
+
+> 整理日期：2026-07-23
+> 来源：全维度综合评估（Wiki 知识库 + 16 篇精读论文 + 现有代码审计）
+
+以下架构基于现有 6 模块（`sources.py` / `organizers.py` / `model_backends.py` / `sinks.py` / `metrics.py` / `workloads.py`），新增 4 个核心模块。每个模块的设计决策标注文献来源，遵循 `research/README.md` §文献优先设计方法论。
+
+### 8.1 目标模块全景
+
+```text
+code/src/
+├── sources.py          # 数据源（已有，不变）
+├── organizers.py       # + bin_packing policy, + frame_budget（扩展）
+├── model_backends.py   # + CLIPEmbeddingActor, + VLMCompletionActor（扩展）
+├── sinks.py            # 写回（已有，不变）
+├── metrics.py          # + tokens/s, + inflight 时间序列, + K_max 时间序列（扩展）
+│
+├── admission.py        # 【新增】K_max admission controller
+├── routing.py          # 【新增】算子类型感知路由器
+├── request_pool.py     # 【新增】跨查询请求池
+└── pipeline.py         # 【新增】端到端 pipeline 编排
+```
+
+### 8.2 admission.py — K_max Admission Controller
+
+**设计来源**：
+
+| 设计决策 | 文献/系统来源 |
+|---|---|
+| AIMD（加性增/乘性减）控制律 | Clipper (NSDI 2017) §4.3.1 — AIMD **思想**来源（原文 +1 增 / ×0.9 减）；具体 α/β 参数参考 CONCUR (2025) §4.3 Eq1（α=2 增 / β=0.5 减） |
+| EWMA 平滑 vLLM metrics | **本课题工程综合（非单篇来源）**：精读确认 CONCUR (2025) **不使用 EWMA**（用瞬时 KV 使用率/命中率 + 宽死区 0.2–0.5 + 双信号）；EWMA 平滑技术本身来自 Ray ConcurrencyCapBackpressurePolicy（已废弃）。"EWMA 平滑 + AIMD" 的组合是本课题综合，可作为方法贡献点表述（详见 `clipper_nsdi2017.md` / `concur_2025.md`） |
+| 前瞻性准入判断（不只检查当前 queue） | SABER (2025) — Universal Scalability Law 拟合 `生成速度 = f(并发数)`，预测"提交后是否会违反 SLA"。**注意**：SABER 用 USL 做 per-request 准入预测，**不推导聚合 K_max**；K_max = √((1−α)/β) 上界推导是本课题扩展（见 `saber_2025.md` 第四层） |
+| 多信号感知（running + waiting + KV cache） | running/waiting ← vLLM Prometheus（`num_requests_running`/`num_requests_waiting`）；KV cache ← **CONCUR (2025)**；多信号融合闭环**架构** ← CoLoRA (2026, ASP-DAC, **CCF-C**)。**注意**：CoLoRA 实际三信号是排队延迟 + adapter 驻留 + SLA 紧急度（多租户 LoRA），**不含 KV cache**（见 `colora_2026.md` 第四层校正） |
+| 保持简单（<100 行）| Ray ConcurrencyCapBackpressurePolicy 废弃教训 — ~400 行复杂控制逻辑反而不如简单方案 |
+
+**接口规范**：
+
+```python
+# admission.py
+
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
+
+@dataclass(frozen=True)
+class AdmissionConfig:
+    """AIMD + EWMA admission controller configuration."""
+    min_inflight: int = 4
+    max_inflight: int = 64
+    ewma_alpha: float = 0.3          # EWMA 平滑系数（通用信号平滑技术；CONCUR 不用 EWMA，此值为工程取值）
+    aimd_add_step: int = 2            # 加性增步长（AIMD 思想 ← Clipper NSDI'17 §4.3.1；+2 参考 CONCUR §4.3 α=2）
+    aimd_mult_factor: float = 0.5     # 乘性减因子（参考 CONCUR §4.3 β=0.5；Clipper 原文为 ×0.9 / 10% backoff）
+    queue_threshold: int = 10         # vllm:num_requests_waiting > this → decrease
+    kv_cache_threshold: float = 0.85  # vllm:gpu_cache_usage_perc > this → decrease
+    check_interval_s: float = 0.1     # 最小检查间隔，避免过度轮询
+
+class AdmissionController(ABC):
+    """Abstract admission controller for K_max regulation."""
+
+    @abstractmethod
+    async def should_submit(self, metrics: VLLMMetrics) -> bool: ...
+    @abstractmethod
+    def current_limit(self) -> int: ...
+
+class StaticAdmissionController(AdmissionController):
+    """Fixed K_max baseline. 不做自适应，仅作为对照."""
+
+class AIMDAdmissionController(AdmissionController):
+    """加性增/乘性减控制器。
+    
+    每 check_interval_s 检查 vLLM Prometheus metrics:
+      - running < max_num_seqs * 0.5 AND waiting == 0 → K_max += aimd_add_step
+      - waiting > queue_threshold OR kv_cache > kv_cache_threshold → K_max *= aimd_mult_factor
+      - 否则不变
+    K_max 使用 EWMA 平滑（alpha=0.3），避免瞬时 spike 导致过度反应.
+    """
+
+def scrape_and_decide(metrics_url: str, config: AdmissionConfig) -> int:
+    """抓 Prometheus metrics → 决策 → 返回新 K_max."""
+```
+
+**最小实现约束**：
+- 第一版 <100 行（不含 dataclass 和 abstract 定义）
+- 仅依赖 `metrics.py` 中的 `scrape_prometheus_metrics()` 和 `vllm_metric_delta_stats()`
+- 不使用 Ray 内置反压机制（`max_concurrency`、`should_add_input`），因为在 vLLM 场景下需要的是连续值决策而非二元开关
+
+### 8.3 routing.py — 算子类型感知路由器
+
+**设计来源**：
+
+| 设计决策 | 文献/系统来源 |
+|---|---|
+| 按算子类型路由到不同 endpoint | Actor pool 分池路由（本课题方案设计） |
+| Least-queued 路由 | Ray resource-aware scheduling (OSDI 2018) — local scheduler 优先思想 |
+| Prefix-aware 路由 | SGLang RadixAttention (NeurIPS 2024) — 按 prefix hash 路由到亲和 replica |
+| Token-aware 路由 | Parrot Semantic Variable (OSDI 2024) — 跨请求 prompt 共享 |
+| 多模态 endpoint 异构 | Snowflake Cortex AISQL (SIGMOD 2026) — 工业多模态 AI SQL 算子需求证据 |
+
+**接口规范**：
+
+```python
+# routing.py
+
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass(frozen=True)
+class RouteRequest:
+    """Router 输入：一个待路由的 batch."""
+    operator_type: Literal["ai_complete", "ai_embed", "ai_classify"]
+    batch_tokens: int        # 用于 token-aware 路由
+    prefix_key: str | None   # 用于 prefix-aware 路由
+
+@dataclass(frozen=True)
+class RouteDecision:
+    """Router 输出：路由目标."""
+    endpoint_url: str
+    model_name: str
+    backend_type: Literal["vllm", "clip", "vlm"]
+
+@dataclass(frozen=True)
+class EndpointState:
+    """单个 endpoint 的实时状态."""
+    url: str
+    operator_types: list[str]        # 该 endpoint 可服务的算子类型
+    num_requests_running: int
+    num_requests_waiting: int
+    kv_cache_usage_perc: float
+    model_name: str
+
+class OperatorAwareRouter:
+    """按算子类型 + 队列状态选择目标 endpoint.
+
+    决策优先级:
+      1. 过滤 operator_type 匹配的 endpoint
+      2. 在其中选 num_requests_waiting 最小的
+      3. 如 prefix_key 非空 → 优先路由到已有该 prefix cache 的 endpoint
+         (来源: SGLang RadixAttention, NeurIPS 2024)
+    """
+
+    def __init__(self, endpoints: list[str], operator_map: dict[str, list[str]]): ...
+    def route(self, request: RouteRequest,
+              endpoint_states: dict[str, EndpointState]) -> RouteDecision: ...
+    def update_states(self, metrics_by_endpoint: dict[str, dict]) -> None: ...
+```
+
+**最小实现约束**：
+- P0：RoundRobinRouter + LeastQueuedRouter（不依赖 prefix/token 信息）
+- P1：OperatorAwareRouter（按算子类型过滤 endpoint）
+- P2：PrefixAwareRouter（按 prefix hash 路由）
+
+### 8.4 request_pool.py — 跨查询请求池
+
+**设计来源**：
+
+| 设计决策 | 文献/系统来源 |
+|---|---|
+| 按 operator_type 分 bucket | 本课题方案设计 — 同类合并、异类分池 |
+| 按 token/frame budget 合并提交 | vLLM `max_num_batched_tokens` (SOSP 2023) — token-budget batching 思想 |
+| 异步 enqueue + 定时/阈值 flush | Ray Serve `batch_wait_timeout_s` (Ray 官方文档) — 攒批超时机制 |
+| CLIP 无 continuous batching → 必须显式合并 | CLIP/OpenAI embedding API 工程事实 — 多模态场景的强制需求 |
+
+**接口规范**：
+
+```python
+# request_pool.py
+
+from dataclasses import dataclass, field
+import pyarrow as pa
+from typing import Literal
+
+@dataclass(frozen=True)
+class PoolBatch:
+    """池中取出的就绪 batch."""
+    operator_type: str
+    table: pa.Table
+    token_count: int
+    row_count: int
+    enqueue_time_s: float
+
+@dataclass
+class PoolStats:
+    total_enqueued: int = 0
+    total_flushed: int = 0
+    merge_ratio: float = 0.0   # flushed_rows / enqueued_rows（合并效率）
+    buckets: dict = field(default_factory=dict)
+
+class GlobalRequestPool:
+    """跨查询异步请求池.
+
+    不同 SQL 查询的 AI 算子请求通过 enqueue() 进入池中，按 operator_type
+    自动分 bucket。flush_ready() 按 token/frame budget 合并同 bucket 的
+    请求为 PoolBatch，提交给下游 model_backend。
+
+    纯文本场景（vLLM 有 continuous batching）：
+      - 此池可选的——vLLM 内部自动合并请求
+    多模态场景（CLIP 无 continuous batching）：
+      - 此池必须的——不做显式合并则 GPU 利用率低
+    """
+
+    def __init__(self, budget_strategy: BudgetStrategy): ...
+
+    async def enqueue(self, operator_type: str, batch: pa.Table,
+                      arrival_time: float) -> None:
+        """接收来自不同 SQL 查询的请求 batch."""
+        ...
+
+    async def flush_ready(self) -> list[PoolBatch]:
+        """按 budget 策略合并各 bucket 的就绪请求并返回."""
+        ...
+
+    def pool_stats(self) -> PoolStats:
+        """返回各 bucket 积压量、合并效率等统计."""
+        ...
+```
+
+**最小实现约束**：
+- 使用 `asyncio.Queue` 按 `operator_type` 分桶
+- Token-budget 合并复用 `organizers.py` 中的 `_token_budget_batches()`
+- 多模态扩展：`token_budget` → `frame_budget` 仅替换计数函数，合并逻辑不变
+
+### 8.5 pipeline.py — 端到端 Pipeline 编排
+
+**设计来源**：
+
+| 设计决策 | 文献/系统来源 |
+|---|---|
+| 单一入口覆盖文本+图像 | Daft DataFrame 统一 API（`df["prompt"]` / `df["image"]`） |
+| 阶段拆分计时（DB fetch → organize → request wall → writeback） | 本项目 AI_EMBED 预研方法论（`motivation/results/gpu/`） |
+| 策略层不依赖引擎层 | DataOrganizer 抽象接口 — 策略代码只依赖 BatchRequest 元数据 |
+
+**接口规范**：
+
+```python
+# pipeline.py
+
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass(frozen=True)
+class PipelineConfig:
+    """组合所有子模块的配置，单入口启动."""
+    source: SourceConfig
+    organizer: OrganizerConfig
+    admission: AdmissionConfig | None   # None → 不限制 inflight
+    router_config: RouterConfig | None  # None → 直接使用默认 endpoint
+    backend: BackendConfig
+    sink: SinkConfig
+    metrics: MetricsConfig
+
+def run_text_pipeline(config: PipelineConfig) -> PipelineResult:
+    """AI_COMPLETE 文本 pipeline.
+
+    PostgreSQL → DaftPostgresSource → Organizer
+      → [RequestPool] → Admission → Router → vLLM completions
+      → Sink (none/pgvector)
+    """
+    ...
+
+def run_image_pipeline(config: PipelineConfig) -> PipelineResult:
+    """多模态 pipeline（AI_EMBED/AI_CLASSIFY 图像）.
+
+    复用 run_text_pipeline 的同一套策略代码。
+    仅替换:
+      - 数据列: df["prompt"] → df["image"]
+      - 后端: vLLM completions → CLIP embeddings / Qwen2.5-VL
+      - 预算单位: token_budget → frame_budget
+    """
+    ...
+```
+
+### 8.6 新增模块的文献来源汇总
+
+| 模块 | 核心机制 | 主要文献依据 |
+|---|---|---|
+| `admission.py` | AIMD + EWMA 自适应 K_max | Clipper (NSDI'17), CONCUR (2025), SABER (2025), CoLoRA (2026) |
+| `routing.py` | 算子类型 + 队列状态感知路由 | SGLang (NeurIPS'24), Parrot (OSDI'24), Ray (OSDI'18), Cortex AISQL (SIGMOD'26) |
+| `request_pool.py` | 跨查询按预算合并 | vLLM (SOSP'23), Ray Serve batching, CLIP 工程约束 |
+| `pipeline.py` | 模态无关的统一编排 | Daft DataFrame API, 本项目 AI_EMBED 预研 |
+
+### 8.7 实现优先级
+
+| 优先级 | 模块 | 触发条件 | 阻塞项 |
+|---|---|---|---|
+| **P0** | `admission.py`（AIMD + EWMA） | 立即 | 无 — 用已有 vLLM Prometheus 数据即可开发测试 |
+| **P0** | `metrics.py` 扩展（tokens/s + 时间序列） | 立即 | 无 — 已有 CSV 可直接计算 |
+| **P1** | `organizers.py` 扩展（bin-packing） | P0 完成后 | 需先确定 bin-packing 在 chunked prefill 下的行为假设 |
+| **P1** | `request_pool.py`（最小实现） | P0 完成后 | 多模态实验的前置依赖 |
+| **P1** | `model_backends.py` 扩展（CLIP） | P0 完成后 | 需 CLIP 模型 + GPU 显存验证 |
+| **P2** | `routing.py`（OperatorAware） | 多 endpoint 环境就绪后 | 需至少 2 个异构 endpoint |
+| **P2** | `pipeline.py` | 以上模块稳定后 | 不阻塞实验——脚本可直接调用各模块 |

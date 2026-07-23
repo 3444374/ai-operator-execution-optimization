@@ -24,7 +24,7 @@ read_date: 2026-07-22
 |------|------|
 | **论文** | Zhanhao Zhao, Shaofeng Cai, Haotian Gao, Hexiang Pan, Siqi Xiang, Naili Xing, Gang Chen, Beng Chin Ooi, Yanyan Shen, Yuncheng Wu, Meihui Zhang. *NeurDB: On the Design and Implementation of an AI-powered Autonomous Database.* CIDR 2025. |
 | **来源级别** | CIDR（Conference on Innovative Data Systems Research）— 数据库领域顶级系统会议，16 页上限的 vision/position paper 传统，非传统 CCF-A 长文，但社区影响力极高 |
-| **链接** | https://github.com/neurdb/neurdb / 本地 PDF：`opening/literature/reference/p29-zhao.pdf` |
+| **链接** | https://github.com/neurdb/neurdb / 本地 PDF：`opening/literature/reference/neurdb_cidr2025.pdf` |
 | **阅读日期** | 2026-07-22 |
 | **状态** | 精读完成 |
 | **相关论文组** | DB4AI（数据库 AI 算子）/ AI-in-DB（AI 内置于数据库）/ Autonomous DBMS |
@@ -264,3 +264,42 @@ flowchart TB
 - [[galois_sigmod2025]] — DB4AI 另一分支（LLM as storage）
 - [[smart_vldb_journal_2025]] — DB4AI ML 谓词优化
 - [[文献地图]] — 文献全景
+
+---
+
+## ▎图复审补充（2026-07-23，读图能力补遗）
+
+> **配图**（论文原图，pypdfium2 渲染自一手 PDF；本环境无可靠视觉读图，以下数值以你的肉眼核对为准）：
+>
+> ![图 2 · NeurDB AI Engine（Handlers 在外部 Node，Dispatcher 经 TCP 流投递）](figs/neurdb_fig2.png)
+
+复审范围：PDF `opening/literature/reference/neurdb_cidr2025.pdf` 共 8 页，渲染第 2-5 页核对图 1-3（图 6-8 为实验数值图，笔记已覆盖关键数字，不在本复审重点）。目标：找出对"数据库 AI 算子外部执行链路"课题承载性强、但笔记遗漏或低估的读图细节。仅记新增点。
+
+### 图 1 · NeurDB 系统架构总图（高层简化图）
+
+- **已有处理**：笔记 §2 的 mermaid 已描绘 AI Engine 内含 Task Manager / Runtime / Model Buffer；一句话核心结论与 §4 多处以"AI 嵌入内核"定位。
+- **读图新发现**：图 1 把 "Runtime" 画在 "AI Engine" 框内（与 Task Manager、Model Buffer 并列），视觉上暗示"推理在库内执行"。但这是**高层简化**——必须对照图 2 才能确定推理的物理位置。图 1 单独看会高估"库内执行"的程度。（事实，from 图 1 与图 2 对照）
+- **对课题含义**：定位 NeurDB 推理的**物理执行边界**时不要引用图 1，只引用图 2。图 1 仅可用来说明**控制平面归属**（Task Manager / Model Manager 在 DB 内）。
+
+### 图 2 · AI Engine 详细架构（最关键；笔记高层框架低估了它）
+
+- **已有处理**：笔记 §2 方法拆解第 2 点已写出"Dispatcher 通过 TCP socket 直连外部节点的 AI Runtime"和"参数可在任务运行中动态更新"。细节层面未漏，但高层定位没有用上这个细节。
+- **读图新发现**（均为事实，from 图 2 标题、正文 §4.1）：
+  1. 图 2 标题旁原文：图展示的是"main components and the communicative flow with **connected external nodes** serving distributed AI tasks"；正文："A dispatcher connects to multiple AI runtimes at **external nodes**." → NeurDB 的训练 / 推理 / 微调 Handler（CPU/GPU 执行）运行在 **Node 1..N 外部节点**上，数据由库内 Dispatcher 经 **TCP streaming** 流向这些外部 Runtime。**NeurDB 的 AI 执行运行时本身也是"外部"的**——"数据不出库"并不成立。
+  2. "Data Pipelines"框含 Valid / Test / Loader：Dispatcher 在发送前做的是 **per-task 预处理 / 特征工程**，**不是**按 token 预算或长度相似度组织请求。
+  3. 每个 AI task 各起一个 **独立 Dispatcher**，各自连到若干 Node；图中**没有"共享模型服务 + 统一请求队列 + 连续批处理"的概念**。架构是 task-driven，不是 service-driven。
+  4. "self-driving dispatcher"动态更新的参数是：send/receive buffer 初始大小、**每次传输的 batch 数**（streaming 参数），以及 **training batch size**（模型参数）。**不涉及**：每请求行数按 token 预算组织、inflight 对模型服务容量的自适应、队列深度感知的提交控制。
+- **对课题含义（本复审最重要的一点）**：笔记多处（一句话核心结论、"数据不出库"、§4 可论文化措辞"将 AI 推理置于数据库内核"）把 NeurDB 定位为"AI inside DB / 数据不出库"，与本课题"AI outside DB"构成**二元对立**。图 2 表明该二元框架过粗：**NeurDB 与本课题都把 AI 执行运行时放在数据库进程之外**。真正的差异轴有三个——(a) **控制平面位置**：NeurDB 在内核（Task Manager / Dispatcher / Model Manager），本课题在 Ray actor pool；(b) **请求组织层**：NeurDB 按 task 直连节点、按 streaming batch 传输，本课题按 token / frame 预算组织请求送共享 vLLM；(c) **提交控制层**：NeurDB 调 streaming 参数，本课题调 inflight / K_max 对共享模型服务容量。因此本课题与 NeurDB **不在"库内 vs 库外"轴上竞争，而在"控制平面 + 请求组织 + 提交控制"层上互补**：NeurDB 解决轻量 ML 的 per-task 流式调优，本课题解决共享模型服务（vLLM）下多并发请求的自适应组织与提交——后者 NeurDB 完全没有建模。（推断，基于图中无共享模型服务/队列概念）
+- **建议订正**：§4 "可论文化的措辞"中"将 AI 推理置于数据库内核"宜改为"将 AI **控制平面**（Task Manager / Dispatcher / Model Manager）嵌入数据库内核，而推理**执行运行时**仍运行在外部节点、经 TCP streaming 连接"。这样既忠于图 2，也使本课题差异化更精确。
+
+### 图 3 · Model Manager 增量更新
+
+- **已有处理**：笔记 §2 第 3 点已准确覆盖分层存储 + 增量更新 + 共享冻结层，并标注"如图 3 所示"。
+- **读图新发现**（事实，from 图 3 schema）：图 3 同时画出两层——左侧 Model View（逻辑）：Model 1 (V1)=L1..Ln、Model 1 (V2)=L1..Lm、Model 2 (V1)；右侧 Model Table（物理）：`MID, LID, Timestamp, Data`（权重 W11、W12…）。新增层只在表里追加 `(MID, LID, t, weights)` 行，新版本由"冻结前层 + 新末层"组合组装。
+- **对课题含义**：这是模型存储 / 版本管理，与本研究（请求组织 + 提交控制）**正交**。唯一可借鉴点：NeurDB 把"模型"当作一等数据库关系管理（Model Table / View 对偶 Data Table / View）——外部执行链路没有这个条件，也不追求它。无需对标。
+
+### 轻度订正提示（非硬伤）
+
+- 笔记一句话核心结论（line 34）"显著优于'PostgreSQL + 外部 AI runtime'的叠加方案"：这是论文 claim 的忠实转述，无误；但若据此推断"NeurDB = 不用外部 runtime"则与图 2 的 "external nodes" + TCP streaming 矛盾。引用此句时建议补一句：论文比较的是**控制平面集成度与传输协议效率**，而非"数据是否物理出库"。
+- 笔记 §4 不足→机会表"数据在库内流转——NeurDB 认为'数据不出库'是优势"：与图 2 不一致，宜订正为"控制平面在库内、执行运行时在外部节点、经 TCP streaming 连接"。
+- 实验侧补充（事实，from §5.1.2）：PostgreSQL+P baseline 也用 streaming data loader（window=80 batches × 4096 records）；NeurDB 与 baseline **都**用批式/流式加载、**都**把执行放到外部 runtime。这进一步印证"内外"不是真正的区分轴。

@@ -60,7 +60,7 @@
 
 - **作者**：Amey Agrawal, Nitin Kedia, Ashish Panwar, Jayashree Mohan, Nipun Kwatra, Bhargav Gulavani, Alexey Tumanov, Ramachandran Ramjee（Microsoft Research India / Georgia Tech）
 - **会议**：USENIX OSDI 2024
-- **论文**：https://www.usenix.org/system/files/osdi24-agrawal.pdf
+- **论文**：https://www.usenix.org/system/files/sarathi_serve_osdi2024.pdf
 - **代码**：https://github.com/microsoft/sarathi-serve
 
 **核心机制**：Sarathi-Serve 识别了 LLM 推理的根本吞吐-延迟矛盾：prefill（输入处理）是 compute-bound 的，decode（token 生成）是 memory-bound 的。两种调度器都存在缺陷 —— prefill 优先（vLLM）导致 decode stall 数秒，decode 优先（FasterTransformer）导致 GPU 空转。Sarathi-Serve 引入：chunked-prefills（将 prefill 切分为近等大小的 chunk 分散到多个 iteration）和 stall-free scheduling（新请求可以在不暂停 decode 的情况下加入 batch）。
@@ -91,7 +91,7 @@
 
 - **作者**：Yinmin Zhong, Shengyu Liu, Junda Chen, Jianbo Hu, Yibo Zhu, Xuanzhe Liu, Xin Jin, Hao Zhang（Peking University / UC Berkeley / USC）
 - **会议**：USENIX OSDI 2024
-- **论文**：https://www.usenix.org/system/files/osdi24-zhong-yinmin.pdf
+- **论文**：https://www.usenix.org/system/files/distserve_osdi2024.pdf
 
 **核心机制**：DistServe 将 prefill 和 decode 阶段完全分派到不同的 GPU 实例上，消除它们之间的干扰。关键洞察：prefill 是 compute-bound（大 batch 不提升效率，一旦 GPU 饱和），decode 是 memory-bandwidth-bound（大 batch 显著提升 GPU 利用率）。因此 prefill 不需要大 batch，decode 需要大 batch。Placement searching algorithm 为每个阶段自动选择最优的模型并行策略。实现 4.4-4.9x 性能提升（保证 SLO 的前提下）。
 

@@ -1,5 +1,66 @@
 # 项目日志
 
+## 2026-07-23（第四次）PDF 全量规范化改名 + 误下载/重复清理 + 精读推荐 15 篇
+
+- **触发**：用户要求精读下一批论文前，先把 `reference/` 下 69 个混乱命名的 PDF（arXiv 号、`pxxxx-author`、`osdi24-xxx`、中文标题混存）统一改名，并清理误下载/重复。
+- **改名规范**：全部统一为 `短名_会议年份.pdf`，与 `opening/literature/reading_notes/` 精读笔记一一对应（如 `vllm_sosp2023.pdf` ↔ `vllm_sosp2023.md`）。15 个 git 跟踪文件用 `git mv` 暂存为 rename（保留历史），其余本地 `mv`。
+- **清理误下载 3 篇**（arXiv ID 被重新分配导致内容错位）：`diskann_neurips2019.pdf`（实为凝聚态物理）、`milvus_sigmod2021.pdf`（实为 IR 词典翻译）、`dostoevsky_sigmod2018.pdf`（实为代数几何）。真 DiskANN/真 Milvus 已重新获取；Dostoevsky 暂不补（写回 LSM 背景，优先级低）。
+- **清理重复 2 篇**：FlashAttention、FlexGen 各保留正式会议命名副本（NeurIPS/ICML），删除 arXiv 号重复副本。
+- **补齐 3 篇**：真 Milvus（SIGMOD 2021, DOI:10.1145/3448016.3457550）、Clipper（NSDI 2017）、CoLoRA（ASP-DAC 2026, DOI:10.1109/ASP-DAC66049.2026.11420717）。
+- **CoLoRA 撞名警示**：arXiv 上至少 4 个"CoLoRA/CoLoRa"不同领域论文（CNN-PEFT / PDE-降阶 / LoRa-无线网络 / 多租户 LLM 调度）。正确那篇仅 IEEE 付费墙可得（无 arXiv），已通过完整标题命中获取 `colora_aspdac2026.pdf`；三次 arXiv 搜索均命中撞名论文。
+- **索引同步**：`REFERENCE_INDEX.md` 重写（67 篇按 7 类重组、计数 52→67、未下载清单修正、新增规范化记录附录）；`reference/README.md` 计数修正；全项目 `.md` 中旧 PDF 文件名引用经 sed 批量替换为新名（仅替换 `.pdf` 后缀的文件引用，纯 arXiv/DOI 文献引用不动）。
+- **库现状**：67 个 PDF，全部规范命名，无错误/重复。
+- **精读推荐**：用户要求按"全部未读"假设推荐 15 篇，应用 T1(综述)→T2(最近前人工作)→T3(核心技术) 排序；判断不可外包的 ⭐8 篇需用户亲自精读（Cortex AISQL、Galois、Ray Data Streaming Batch、vLLM、DB Perspective、Splitwise、Clipper、SGLang），其余交 agents 批量精读。
+- **更新文件**：`opening/literature/reference/*.pdf`（改名）、`REFERENCE_INDEX.md`（重写）、`reference/README.md`、`PROJECT_LOG.md`、以及含旧文件名引用的若干 `.md`。
+
+## 2026-07-23（第三次）编码规范与代码架构文档落地
+
+- **触发**：用户确认综合评估与项目已有记录一致，要求将新增内容写入对应文档，并重申"设计优先使用知识库和精读论文中的知识"。
+- **更新文件**：
+  - `experiments/plans/strategy_design_implementation_reference.md` — 新增 §8 "目标代码架构与模块接口规范"，定义 4 个新模块（admission/routing/request_pool/pipeline）的接口规范、文献来源、实现优先级。每个设计决策标注文献出处（Clipper NSDI'17、CONCUR 2025、SABER 2025、CoLoRA 2026、SGLang NeurIPS'24、Parrot OSDI'24 等）。
+  - `code/AGENTS.md` — 新增"编码规范"节，6 条规则：① 保持简单 <100 行（Ray ConcurrencyCap 废弃教训）；② 每行=独立完整请求（vLLM chunked prefill 语义安全）；③ 策略层不依赖引擎层（DataOrganizer 抽象）；④ 多模态复用文本代码路径；⑤ 文献优先——新机制从精读笔记提取；⑥ 新实验指标完整性（tokens/s + service_p99 + 时间序列）。每条规则标注文献来源。
+- **设计原则重申**：所有机制设计、策略选择、基线对比，优先从项目 57 篇 CCF-A 文献 + 16 篇精读笔记中提取设计模式和候选方案，不凭空设计。方法论见 `research/README.md` §文献优先设计方法论 和 Wiki `设计方法论` MOC。
+
+## 2026-07-23（第二次）全维度综合评估：Wiki 知识库 + 文献精读 + 代码架构 + 后续路线图
+
+- **触发**：用户要求结合 Wiki 知识库（206 实体、4 MOC）、16 篇精读论文笔记、项目代码和实验状态，做全维度综合评估。
+- **方法**：使用 idea-evaluator（五维打分）、nature-reviewer 视角、deep-research 文献验证、karpathy-guidelines 严谨性控制。
+- **五维得分**：Higher=7, Faster=6, Stronger=5, Cheaper=6, Broader=7。Faster 和 Stronger 为当前瓶颈维度，需要 adaptive 控制器数据和 scale-out 验证来提升。
+- **代码架构评估**：现有 6 模块（sources/organizers/model_backends/sinks/metrics/workloads）分离清晰，策略-引擎抽象合理。缺少 3 个核心模块：admission.py、routing.py、request_pool.py。pipeline.py 编排层缺失。`model_backends.py` 用 urllib 手工 HTTP 请求，无重试/连接池/streaming。bin-packing 分组策略未实现。无 CLIP/VLM backend。
+- **目标架构**：8 模块（+ admission / routing / request_pool / pipeline），接口规范已定义。admission 使用 AIMD + EWMA + per-submission check，request_pool 按 operator_type 分 bucket。
+- **代码实现注意事项**：(1) 保持简单 <100 行（Ray ConcurrencyCapBackpressurePolicy 废弃教训）；(2) 每行=独立完整请求（语义安全红线）；(3) 策略层不依赖引擎层（DataOrganizer 抽象）；(4) 多模态复用 token-budget 代码路径；(5) 文献优先——新机制从精读笔记提取；(6) 所有新实验包含 tokens/s + service_p99 + inflight 时间序列。
+- **最短路径（6-8 周）**：Week 1-2 P0 修复 → Week 3-4 P1 补齐 → Week 5-6 多模态前置 + 代码补全 → Week 7-8 多模态实验 + 论文写作。
+- **后备路径（adaptive 失败时）**：RC2 降级为"K_max 必要性论证 + 跨查询请求路由（方法补充）+ queue-adaptive 探索（Discussion）"。
+- **风险最高项**：Adaptive 3 轮后仍不如 static（概率 40%）。后备路径已准备。
+- **认知债务**：6 篇 2025-2026 新论文未精读、baseline_reference 20 个 baseline 仅 <5 运行、设计决策日志为空、Daft 引擎参数未探索、开题报告与实验状态不同步。
+- **关键结论**：(1) 课题定位成立（四岛空白双重确认 + 57 篇 CCF-A 文献支撑）；(2) 最高优先级只有让 adaptive 工作，不成功则 4 周后切换后备路径；(3) 跨查询请求池 + 算子路由是多模态前置依赖，不是 afterthought；(4) 文献基础扎实但未充分利用，投稿前需补齐新论文精读笔记和精确的 Related Work 区分度论证。
+- **文件**：`experiments/plans/experiment_status_and_gaps.md` §6（已有审计，可考虑补充代码架构部分）
+
+## 2026-07-23 完整问题审计：P0/P1/P2 分级 + 认知债务清单
+
+- **触发**：用户要求对项目当前状态做系统性审计，识别除"ML as Native Operator"叙事定位之外的全部问题。讨论中使用了 idea-evaluator（五维评分 + fatal-flaws audit + paradigm-shift probe）、nature-reviewer（三审稿人模拟）、deep-research、karpathy-guidelines 和 brainstorming 六种技能交叉评估。
+- **"ML as Native Operator"叙事问题**：搁置至后续阶段。用户的三区别框架（语义感知查询重写 / 跨查询 continuous batching / 两层嵌套代价模型）是有价值的分析工具，但当前项目未实现区别 1（DB 内核改动），所有优化在 Ray 中间层。当前阶段聚焦外部执行链路优化，不涉及数据库内核。
+- **跨查询 batching 澄清**：vLLM 内部做 continuous batching（隐式），但 Ray 层无显式的"跨查询请求融合"机制。Shared-vLLM K_max Interference 是两 job 共享同一 endpoint（跨查询共享服务），不是跨查询主动合并请求。如论文需 claim 此能力，需实现全局请求池 + 按算子类型/prefix hash 维度合并。
+- **多模态场景下的跨查询 batching（2026-07-23 补充）**：纯文本场景下 vLLM 的 continuous batching 掩盖了"无跨查询请求池"的 gap——所有请求走同一 vLLM endpoint，vLLM 内部自动合并。但在多模态场景下，CLIP embedding 没有 continuous batching，不同查询的 AI_EMBED 请求必须显式合并才能保证 GPU 利用率。跨查询请求池 + 算子类型感知路由是多模态实验的工程前置条件，不是可选的。如果 RC2 adaptive 在 P0 阶段降级，跨查询合并可作为 RC2 的方法补充贡献。
+- **核心发现（P0 阻塞级）**：
+  1. RC2 核心策略为负结果：queue-adaptive flush 的 foreground E2E=10.2s vs static K_max=8 的 7.3s（~40% 差距）。放弃条件：3 轮改进后仍不达 static 的 90% → RC2 降级为"K_max 必要性论证 + adaptive 探索性讨论"。
+  2. 两项策略联合消融（独立拼接 vs 联合 grid search）完全没有数据——AGENTS.md §1 写死的核心验证实验。
+  3. `tokens/s` 指标缺失——`rows/s` 在 AI_COMPLETE 场景下是有偏指标（每行 token 量可差 13.9×）。此外 `service_p99`、inflight/queue 时间序列、per-request e2e latency 分布均缺失。
+- **P1 严重级**：
+  4. Prefix-aware 在自然 workload 上信号太弱（6.4% prefix ratio），受控 workload（0/30/70/100%）未做。
+  5. Length-align + fixed rows 是负结果（token P95=33407），正确组合（length-align + token-budget）未做正式对照。
+  6. 所有实验 512 行规模，无 scale-out 验证（2048 行）。
+  7. Token-budget tradeoff 未系统表征（token tail vs HTTP call count）。
+- **P2 方法论/设计问题**：
+  8. Daft 引擎级参数实验空间为零——"策略级 + 引擎级"优化空间仅覆盖了策略级。
+  9. 离线扫表（doc_id 序）与 arrival-aware 实验间存在叙事断层。
+  10. Baseline 矩阵（baseline_reference.md 20 个 baseline）大量未实际运行。
+  11. 无多 endpoint/多 GPU 实验。
+  12. 跨查询 batching 是隐含效果而非显式策略（见上）。
+- **认知债务**：文档承诺 vs 实际交付存在系统性差距——baseline 矩阵、引擎级参数表征、实验五阶段计划、actor pool 分池路由均存在文档写了但实验未做的情况。投稿前必须清理。
+- **最短可交付路径**：第 1 周修 adaptive 控制器（≥90% static 或立即降级）+ 联合消融 + 补齐 `tokens/s`/`service_p99`；第 2 周后 prefix 受控 workload + 2048 行 scale-out。
+- **更新文件**：`experiments/plans/experiment_status_and_gaps.md`（新增 §6 完整问题审计，含 P0/P1/P2 分级 + 认知债务清单）、`PROJECT_LOG.md`
+
 ## 2026-07-22 文献精读笔记批量完成（12 篇新增）
 
 - **触发**：用户要求对 `opening/literature/reference/` 中的文献按 `tpl-文献精读-深度版.md` 模板做精读。
@@ -11,7 +72,7 @@
   - 基础设施组：`ray_osdi2018.md`
   - 持久化组：`diskann_neurips2019.md`
 - **总计**：`reading_notes/` 目录现有 16 篇精读笔记（4 篇旧 + 12 篇新）+ 2 模板，覆盖 `ai_operator_literature_inventory.md` 中 15 篇建议精读的全部文献 + DiskANN 补充精读。
-- **已知问题**：`reference/diskann_neurips2019.pdf` 文件实际内容为凝聚态物理论文（arXiv ID 被重新分配），需重新下载正确 PDF。
+- **已知问题（2026-07-23 已解决）**：原 `reference/diskann_neurips2019.pdf` 内容为凝聚态物理论文（arXiv ID 被重新分配）——当日已用真 DiskANN（arXiv:1811.01324）替换并清理误下载，详见 PROJECT_LOG 第四次条目。
 - **更新文件**：`reading_notes/*.md`（16 篇精读笔记）、`reading_list.md`、`reference/README.md`、`PROJECT_LOG.md`
 
 ## 2026-07-21 Token 元数据来源与技术细节记录规范
@@ -769,3 +830,19 @@
 - 根据 submission-control 机制图反馈，在 `figures/AGENTS.md` 新增箭头方向与边界检查规则。
 - 后续所有机制图、架构图、流程图除画布越界外，必须检查箭头是否从源组件边界出发、是否指向目标组件边界、方向语义是否一致，以及是否穿过无关卡片或文字。
 - 同步更新 `figures/audit/submission_control_strategy_mechanism_audit.md`，将箭头边界关系纳入本组图的 QA 记录。
+
+## 2026-07-23 P1/P2 文献精读批量完成（8 篇）+ 知识库同步
+
+- 按用户给定的 P0/P1/P2 优先级清单，完成 **P1 四篇 + P2 四篇**深度精读（沿用 `tpl-文献精读-深度版` 四层模板），连同此前完成的 P0 四篇（Clipper / CONCUR / CoLoRA / SABER），精读笔记总数由 16 增至 **28 篇**。
+- 新增笔记（`opening/literature/reading_notes/`）：
+  - P1：`scorpio_llm_serving_2025`、`bucketserve_2025`、`sglang_neurips2024`、`splitwise_isca2024`
+  - P2：`proserve_2025`、`distserve_osdi2024`、`flashattention_neurips2022`（自读全文）、`flexgen_icml2023`（自读全文）
+- 全部笔记已两次同步至知识库 `../ai-operator-wiki/raw/papers/`（每完成四篇同步一次）。
+- FlashAttention、FlexGen 两篇 PDF 此前未下载，本次补下到 `opening/literature/reference/`（arXiv 2205.14135 / 2303.06865，已校验 `%PDF` + `%%EOF`）。
+- **精读勘误（重要，已写入 `reading_list.md`）**：原始任务描述两处与论文实际内容不符，精读代理据原文修正——(1) DistServe 全文用 simple FCFS，**无** AFGM fairness 与 prediction-based pairing（已 pdftotext 全文核实，§4.3 原文）；(2) ProServe 真实主题是**多优先级请求调度**（TDG + SlideBatching + GoRouting），**非** "预测式 prefill/decode 分离调度"。笔记均按论文真实内容撰写。
+- **对课题的含义（策略补强方向，详见各笔记第四层）**：
+  - RC2 自适应控制器形成三候选对比：Clipper AIMD（整体 batch size）/ Scorpio TRP+Credit（per-request 频率）/ CONCUR EWMA；Scorpio 的解析 ITL 模型同时是研究内容四（算子代价估计）的直接模板。
+  - RC1 数据组织：BucketServe 的 padding 形式化（Eq.2/3）+ length 分桶、SGLang RadixAttention（Theorem 3.1 DFS 最优排序）+ 与 vLLM APC 互补、Splitwise/DistServe 的 Lm 饱和阈值（512 token 饱和 A100）共同支撑 token-budget / length-align / prefix-aware 分组。
+  - 背景与对照：FlashAttention 提供理解 vLLM 内部 memory-bound 行为的底层理论链（→ Sarathi-Serve → 本课题 token-budget），并把 database join 与 GPU attention 并列于 IO-aware 谱系；FlexGen 作为"离线吞吐优先"对照锚点，明确本课题 online serving 定位。
+- 更新 `opening/literature/reading_list.md` 精读笔记索引（16→28，新增 P0/P1/P2 三组 + 勘误说明）。
+- 环境备注：本环境 Read 工具无法渲染 PDF（缺 pdftoppm），精读改用 `pdftotext`（xpdf 4.06）提取全文；已确认 `reference/` 与 `reading_notes/` 无 `.txt` 中间文件残留。
