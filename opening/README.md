@@ -29,12 +29,11 @@
 | `AGENTS.md` | 本目录长期规则 |
 | `work_rules.md` | 开题工作的任务组织和目标管理规则 |
 | `ppt_rules.md` | 开题 PPT 制作规则 |
-| `outline.md` | 开题报告、PPT、飞书汇报的统一内容骨架 |
 | `report/` | 开题报告正文与 Word 版本材料 |
 | `slides/` | PPT 源稿、讲稿备注、PPTX 输出 |
 | `feishu/` | 飞书进度汇报稿 |
-| `literature/` | 文献清单、精读笔记、CCF-A 优先候选 |
-| `literature/reference/` | 用户已下载的部分参考文献 PDF 子集，供精读、看图和引用核验使用 |
+| `literature/` | 开题文献精读清单（`reading_list.md`）+ 开题精读 Top 15 拷贝（`top15_reading_notes/`）；单篇精读笔记与 PDF 全集已迁至 `research/reading_notes/` 与 `research/reference/` |
+| `literature/top15_reading_notes/` | 开题要求精读的 Top 15 篇笔记拷贝（自包含快照，含 figs）；权威版在 `research/reading_notes/` |
 | `assets/` | 图、SVG、表格、流程图、模板素材说明 |
 | `logs/` | 非实验类 project log |
 
@@ -48,9 +47,10 @@
 | 开题飞书源稿 | `feishu/opening_report_wiki.md` | 已用于同步新版飞书 docx |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
-| 文献精读清单 | `literature/reading_list.md` | 候选清单已补，待精读 |
-| GPU 调度与数据放置补充调研 | `literature/gpu_scheduler_data_placement_supplement_20260715.md` | 已补，作为策略控制器设计依据与后续精读清单 |
-| 本地 PDF 子集索引 | `literature/reference/README.md` | 已登记当前已下载的部分论文，非完整文献库 |
+| 文献精读清单 | `literature/reading_list.md` | 候选清单已补，待精读（笔记全集在 `research/reading_notes/`） |
+| 开题精读 Top 15 拷贝 | `literature/top15_reading_notes/` | 开题要求精读的 15 篇笔记自包含快照 |
+| GPU 调度与数据放置补充调研 | `research/gpu_scheduler_data_placement_supplement_20260715.md` | 已补，作为策略控制器设计依据与后续精读清单 |
+| 本地 PDF 子集索引 | `research/reference/README.md` | 已登记当前已下载的部分论文，非完整文献库 |
 | 答辩问答 | `qa_bank.md` | 已扩展 |
 | 材料同步日志 | `logs/project_log.md` | 初版已建 |
 

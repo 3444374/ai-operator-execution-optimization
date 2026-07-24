@@ -5,6 +5,7 @@
 ## 子目录
 
 - `gpu/`：生产式 GPU-backed E2E 主动机结果。
+- `cpu/`：CPU baseline 对照。
 - `pg18_4_fake/`：PG18.4 本地同构 fake-model 历史结果。
 - `fake_cpu/`：fake/CPU 历史预研结果。
 

@@ -4,6 +4,8 @@
 
 用途：把 Ray、vLLM / Ray Serve / Triton、GPU 数据放置、数据库 AI 算子、Daft 等文献和系统资料中的可借鉴机制，沉淀为本课题后续实验设计与原型实现的参考。本文不是最终方法章节，也不声称这些机制已经在本项目中全部实现。
 
+> **与 `strategy_design_literature_basis.md` 的分工（2026-07-24）**：本文是**工程映射**——信号→变量→指标→§8 目标代码架构→实现优先级（写代码/设计实验变量时查）；`literature_basis` 是**边界论证**——为什么、不能声称什么、fatal flaws（答辩/写论文时查）。两者用途不同，不合并不替换，见 `README.md` §二。
+
 ## 1. 当前策略口径
 
 课题方向已于 2026-07-16 收敛为两项上游策略 + 一项端到端验证：
@@ -474,7 +476,7 @@ PostgreSQL / table scan
 ## 8. 目标代码架构与模块接口规范
 
 > 整理日期：2026-07-23
-> 来源：全维度综合评估（Wiki 知识库 + 16 篇精读论文 + 现有代码审计）
+> 来源：全维度综合评估（Wiki 知识库 + 33 篇精读论文 + 现有代码审计）
 
 以下架构基于现有 6 模块（`sources.py` / `organizers.py` / `model_backends.py` / `sinks.py` / `metrics.py` / `workloads.py`），新增 4 个核心模块。每个模块的设计决策标注文献来源，遵循 `research/README.md` §文献优先设计方法论。
 
@@ -555,6 +557,13 @@ def scrape_and_decide(metrics_url: str, config: AdmissionConfig) -> int:
 - 第一版 <100 行（不含 dataclass 和 abstract 定义）
 - 仅依赖 `metrics.py` 中的 `scrape_prometheus_metrics()` 和 `vllm_metric_delta_stats()`
 - 不使用 Ray 内置反压机制（`max_concurrency`、`should_add_input`），因为在 vLLM 场景下需要的是连续值决策而非二元开关
+
+**实现注意事项（2026-07-24，对照当前 `postgres_ai_operator_profile.py:512` 双态实现）**：
+
+- **EWMA 默认关闭**：上文 EWMA 平滑来源是已废弃的 Ray ConcurrencyCapBackpressurePolicy，而最相关的 CONCUR 不用 EWMA（瞬时值 + 宽死区 0.2–0.5）。AIMD 实现里建议默认走 CONCUR 风格，EWMA 作为可关闭选项，数据证明需要时再开（code/AGENTS.md §1"先用简单规则、数据证明再加复杂度"）。
+- **AIMD 作对照，不设默认**：当前是双态 bang-bang，AIMD 应作为对照选项加入，数据证明优于双态后再换。
+- **抓取节流**：当前每次提交同步 `scrape_prometheus_metrics`（timeout 1s）+ `sleep(poll_interval)`，紧密循环里会引入控制延迟、扭曲 K_max 真实效果；建议后台线程刷新快照、控制器读最新快照、去掉强制 sleep。
+- **flush 与 K_max 口径**：当前代码只有 K_max adaptive，无独立 flush（攒批等待时机）逻辑；文档若提"queue-adaptive flush"，需注明 flush 尚未独立实现，或改名"adaptive K_max"对齐代码现状。
 
 ### 8.3 routing.py — 算子类型感知路由器
 

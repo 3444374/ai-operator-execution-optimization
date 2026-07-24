@@ -1,4 +1,4 @@
-# 数据库 AI 负载执行与存储协同优化工作区
+# 数据库 AI 负载执行优化与调度研究工作区
 
 本工作区用于组织硕士论文 / 达梦实习课题材料。当前开题正式题目是：
 
@@ -20,17 +20,22 @@
 ├── README.md                         # 本文件
 ├── overview/                         # 项目总览、当前路线
 │   ├── AGENTS.md
-│   ├── current_direction_and_plan.md
-│   └── project_outline.md
+│   ├── README.md
+│   └── current_direction_and_plan.md
 ├── research/                         # 背景调研、文献依据（第一入口：knowledge_hub.md）
 │   ├── AGENTS.md
 │   ├── README.md
 │   ├── knowledge_hub.md
 │   ├── vllm_continuous_batching_reference.md
 │   ├── ray_actor_dynamic_batching_reference.md
+│   ├── daft_ray_multimodal_reference.md
 │   ├── inference_pipeline_interaction_literature.md
 │   ├── literature_and_evidence_review.md
-│   └── existing_ai_operator_execution_chains.md
+│   ├── existing_ai_operator_execution_chains.md
+│   ├── ai_operator_literature_inventory.md   # 66 篇文献清单
+│   ├── top15_ranked_papers.md                # 项目最相关 Top 15 排序
+│   ├── reading_notes/                        # 单篇精读笔记（33 篇）+ figs/
+│   └── reference/                            # 已下载参考文献 PDF（67 个）+ 索引
 ├── motivation/                       # 动机场景、端到端测试
 │   ├── AGENTS.md
 │   ├── README.md
@@ -52,20 +57,12 @@
 ├── feasibility/                      # 可行性验证（组件、环境、脚本）
 │   ├── AGENTS.md
 │   ├── README.md
-│   ├── guide.md
-│   ├── analysis.md
-│   ├── benchmarks/
-│   │   ├── README.md
-│   │   ├── common.py
-│   │   ├── analyze_results.py
-│   │   ├── ray_many_objects_benchmark.py
-│   │   ├── ray_arrow_fanout_fanin_benchmark.py
-│   │   └── ...（含早期排除性实验脚本）
-│   └── results/
+│   ├── benchmarks/                   # 组件级 microbenchmark 脚本
+│   └── results/                      # 连接验证、smoke、dry-run CSV
 │       ├── README.md
-│       ├── feasibility_report.md
-│       ├── current_direction_analysis.md
-│       └── ...（连接验证、smoke、dry-run CSV）
+│       ├── pg18_4_connection_validation.md
+│       ├── pgai_sql_smoke_20260714.md
+│       └── trigger_surface_validation_20260714.md
 ├── experiments/                      # 正式研究实验（方法有效性验证）
 │   ├── AGENTS.md
 │   ├── README.md
@@ -80,6 +77,8 @@
 │   │   ├── pgai_sql_operator_profile.py
 │   │   └── local_embedding_server.py
 │   └── requirements.txt
+├── code_doc/                         # 自动生成的代码文档（辅助）
+├── data/                             # 本地 workload 数据（raw 被 git ignore）
 ├── deploy/                           # Docker 部署配置
 │   ├── pgai/
 │   └── postgres18.4/
@@ -99,11 +98,10 @@
 ├── opening/                          # 开题材料
 │   ├── AGENTS.md
 │   ├── README.md
-│   ├── outline.md
 │   ├── report/opening_report.md
 │   ├── slides/
 │   ├── feishu/
-│   └── literature/
+│   └── literature/                   # reading_list.md + top15_reading_notes/（精读全集在 research/）
 ├── projects/                         # PPT 项目工程文件
 └── notes/                            # 沟通记录、待确认问题
     ├── AGENTS.md
@@ -112,14 +110,14 @@
 
 ## 当前证据
 
-已有 AI_EMBED 预研实验（手动 HTTP endpoint，非 vLLM）：
+正式论证优先引用（详见 `PROJECT_OUTLINE.md` §当前最重要证据）：
 
-- GPU-backed 真实 embedding 链路：1024 行下 fine/coalesced 端到端约 `13.4x`；
-- 双 endpoint 下 Ray task/actor 开始体现并发 routing 价值，但端到端收益仍受 writeback 约束；
-- pgvector(384) 写回 0.897s vs JSON text 1.567s；
-- 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 中仅作历史参考。
+- ✅ **vLLM + Qwen2.5-1.5B AI_COMPLETE baseline**（2026-07-18/19 已建立）：固定行 batch=8 时 token 跨度 13.9×；token-budget vs 固定行对照；shared-vLLM K_max 干扰（bulk unbounded 时前景 E2E 恶化 2.3×）。详见 `experiments/results/local_vllm_qwen15b_baseline/`。
+- ✅ **AI_EMBED 真实 GPU-backed 预研**（已完成）：1024 行下 fine/coalesced 端到端约 `13.4x`；双 endpoint 下 Ray task/actor 体现并发 routing 价值，端到端收益仍受 writeback 约束。详见 `motivation/results/gpu/`。
+- pgvector(384) 写回 0.897s vs JSON text 1.567s。
+- 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 与 `motivation/results/fake_cpu/` 仅作历史参考。
 
-**下一步**：建立 vLLM + AI_COMPLETE 主实验平台。详见 `PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md`。
+**下一步**：改进 queue-adaptive 控制器（在 shared-vLLM 下超越静态 K_max=8）+ 两项策略联合消融。详见 `PROJECT_OUTLINE.md` §近期优先级 和 `experiments/plans/experiment_status_and_gaps.md`。
 
 当前更值得继续验证的候选优化对象是：
 
@@ -129,24 +127,16 @@
 
 ## 近期目标
 
-1. P0：接入 vLLM + Qwen2.5-1.5B（替代手动 HTTP endpoint），建立 continuous batching baseline；Daft 文本阶段直接接入。
-2. P1：研究内容一消融（token-budget vs 固定 batch_size、分组策略对比）+ Daft 引擎级参数；研究内容二消融（queue-adaptive flush vs 固定 K_max、actor pool 分池路由）+ Daft engine 参数。
-3. P2：耦合验证（独立最优拼接 vs 联合 grid search）；多模态泛化验证（图像 workload，同一套策略代码）。
-4. 后续进入 PostgreSQL 18.3 内部平台复测。
+vLLM baseline 与 Daft 文本阶段接入已完成（见上"当前证据"）。当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 
-写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。算子代价估计为补充讨论，不新增实验。
+1. **P0**：改进 queue-adaptive 控制器，在 shared-vLLM 下超越静态 K_max=8（3 轮改进未超越则研究内容二降级）；两项策略联合消融（独立最优拼接 vs 联合 grid search，判定分层独立优化是否足够）。
+2. **P1**：Prefix 受控 workload（prefix ratio 0/30/70/100%）+ 至少一个实验 scale 到 2048 行；研究内容一/二完整消融 + Daft 引擎级参数。
+3. **P2（P0+P1 完成后）**：多模态泛化验证（CLIP embedding，同一套策略代码）；算子代价估计（补充讨论，不新增实验）。
+4. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
-推荐运行命令：
+写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。
 
-```bash
-python motivation/benchmarks/fake_embed_pipeline.py \
-  --upstream 8 32 \
-  --downstream 8 32 \
-  --total-rows 65536 \
-  --embedding-dim 128 \
-  --repeats 3 \
-  --output motivation/results/fake_cpu/fake_embed_pipeline.csv
-```
+当前主实验入口在 `code/scripts/`（vLLM / K_max / token-budget 等运行脚本）和 `experiments/results/local_vllm_qwen15b_baseline/`；早期 fake/CPU 管道 `motivation/benchmarks/fake_embed_pipeline.py` 仅作历史参考，不再是主运行命令。具体脚本与参数见 `code/scripts/README.md` 和 `experiments/plans/`。
 
 动机测试正式结果和分析优先看：
 

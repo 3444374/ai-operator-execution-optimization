@@ -6,6 +6,8 @@
 
 用途：在绘制策略设计图、撰写开题报告方法部分和设计正式实验前，先明确“哪些优化思想可以借鉴、哪些只适合作为边界或 baseline、本文自己的策略到底是什么”。
 
+> **与 `strategy_design_implementation_reference.md` 的分工（2026-07-24）**：本文是**边界论证**——为什么这样设计、不能过度声称什么、fatal flaws、可借鉴 vs baseline vs 本文策略；`implementation_reference` 是**工程映射**——信号→变量→指标→§8 目标代码架构→实现优先级。两者用途不同（答辩/写论文 vs 写代码），不合并不替换，见 `README.md` §二。
+
 本文件是策略口径源，不替代具体实验计划。具体变量、运行矩阵和结果记录仍以 `data_organization_batching.md`、`service_scheduling_backpressure.md`、`sink_writeback_coordination.md` 和 `baseline_reference.md` 为准。
 
 ---
@@ -123,6 +125,17 @@
 | pgai vectorizer | 外部 worker + 队列 + 写回架构参考 | 本文依赖 pgai 作为长期核心系统 |
 | Delta Lake / TurboVecDB | worker-direct、blind append、写回/索引构建边界 | 本文主要贡献是存储引擎或向量索引优化 |
 | FlexPushdownDB / AIDB | 跨层决策思想和增强对照 | 把“独立最优拼装 vs 联合最优”写成当前开题主线必须证明的核心 claim |
+
+### 3.1 借鉴论文的适用边界（fatal flaws，2026-07-24 补充）
+
+以下 fatal flaw 已在精读笔记确认，借鉴对应论文机制时需显式避开：
+
+| 论文 | 不适用之处 | 出处 |
+|---|---|---|
+| Clipper (NSDI 2017) | delayed batching 假设 Poisson 到达；数据库批量 AI 算子是 burst 到达，等待收益曲线需重测 | `research/reading_notes/clipper_nsdi2017.md` §4.3.2 |
+| CONCUR (2025) | “中段抖动”前提依赖 ReAct 多步 agent；本课题 DB AI 算子多为无状态单轮，前提可能不成立 | `concur_2025.md`；`research/knowledge_hub.md:364` |
+| BucketServe (2025) | 并发上限只在 prefill 侧（静态输入）成立；decode 侧输出不可预测，用 continuous batching 规避 | `bucketserve_2025.md:122,132` |
+| vLLM continuous batching | 可能已消化外部 K_max 大部分收益（H2.4 反证） | `service_scheduling_backpressure.md` §9 |
 
 ---
 

@@ -5,7 +5,7 @@
 当前已放入本项目工作区的模板文件包括：
 
 - `opening/templates/硕士生开题报告模板0604.docx`
-- `opening/templates/opening_ppt_template_version_v6_long_notes_source_checked.pptx`
+- `opening/templates/模板.pptx`
 
 本次已使用 `硕士生开题报告模板0604.docx` 抽取开题报告章节结构，并据此重排开题飞书 wiki。若后续还需要使用 CCF 目录、旧版开题材料或其他外部模板，需先将对应文件复制到本目录，或由用户授权访问外部路径。
 

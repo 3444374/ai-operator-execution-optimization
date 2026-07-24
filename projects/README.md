@@ -28,7 +28,7 @@ projects/opening_defense_20260712/
 
 ## 与正式材料的关系
 
-- 正式 PPTX 放在 `opening/slides/opening_defense_20260712.pptx`。
+- 正式 PPTX 旧版曾放在 `opening/slides/opening_defense_20260712.pptx`（已被 `opening_defense_20260720_v5.pptx` 取代）。
 - 正式图资产放在 `figures/`。
 - 本目录的工具链用于生成和验证，不是最终交付目录。
 

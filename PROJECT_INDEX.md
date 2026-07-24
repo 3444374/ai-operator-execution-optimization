@@ -137,9 +137,14 @@
 | `opening/README.md` | 开题工作区入口 | 了解开题材料分布和同步规则 |
 | `opening/navigation.md` | 开题材料导航 | 不知道开题材料在哪时读 |
 | `opening/report/opening_report.md` | 开题报告正文 | 写报告、和导师沟通、定方向 |
-| `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级、本地 PDF 子集入口和引用边界 |
-| `opening/literature/gpu_scheduler_data_placement_supplement_20260715.md` | GPU 调度与数据放置补充调研 | 查看策略控制器设计的前沿系统依据、可借鉴思想和后续精读清单 |
-| `opening/literature/reference/README.md` | 本地已下载 PDF 子集索引 | 查看当前部分参考文献 PDF、页数、初步识别和用途 |
+| `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级和引用边界 |
+| `opening/literature/top15_reading_notes/` | 开题精读 Top 15 拷贝 | 开题答辩用 15 篇精读笔记自包含快照，权威版在 `research/reading_notes/` |
+| `research/reading_notes/` | 精读笔记权威库（33 篇 + `figs/` + 模板） | 所有精读笔记单一来源；`README.md` 说明 provenance 链路（inventory 66 → 精读 33 → Top 15）；权威版，Top 15 快照在 `opening/literature/top15_reading_notes/` |
+| `research/reference/` | 已下载参考文献 PDF 子集 | 查看论文 PDF、页数和初步识别（索引 `research/reference/README.md`） |
+| `research/ai_operator_literature_inventory.md` | 66 篇 CCF-A 文献清单 | 查看文献全貌、分组和候选 |
+| `research/top15_ranked_papers.md` | 项目最相关 Top 15 排序 | 查看对课题贡献度最高的 15 篇及四维评估 |
+| `research/gpu_scheduler_data_placement_supplement_20260715.md` | GPU 调度与数据放置补充调研 | 查看策略控制器设计的前沿系统依据、可借鉴思想和后续精读清单 |
+| `research/reference/README.md` | 本地已下载 PDF 子集索引 | 查看当前部分参考文献 PDF、页数、初步识别和用途 |
 | `data/README.md` | 本地 workload 数据说明；raw payloads 被 git ignore | 查看 ShareGPT/BurstGPT 下载位置、用途和边界 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |
 | `code/src/sources.py` | PostgreSQL data source 后端：psycopg/Arrow baseline、Daft SQL entry、`doc_id`/`arrival_time` source order | 切换或修改数据入口与读取顺序时读 |
@@ -363,7 +368,7 @@ python feasibility/benchmarks/analyze_results.py \
 - ✅ Daft 文本阶段直接接入，链路跑通
 - ✅ Token-tail revision + Token-budget vs Fixed Row 对照
 - ✅ Shared-vLLM K_max 干扰实验
-- ✅ Queue-adaptive flush 首次实现与测试
+- ✅ Queue-adaptive flush 首次实现与测试（⚠️ adaptive 当前不如静态 K_max=8，foreground E2E 10.2s vs 7.3s，见 experiment_status_and_gaps.md P0-1）
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 1. **P0**：改进 queue-adaptive 控制器 + 两项策略联合消融
@@ -371,7 +376,7 @@ python feasibility/benchmarks/analyze_results.py \
 3. **P2**（触发：P0+P1 完成）：多模态泛化验证
 4. 算子代价估计（§6.1 讨论，基于已有数据）
 
-**Scope 缩减触发条件**：Month 1 无 vLLM baseline → 多模态降 Discussion（✅ 已建立，未触发）；文本 RC1+RC2 未完成不启动多模态 pipeline；VLM 生成始终 optional；Adaptive 3 轮不能超 static K_max=8 → RC2 降级。
+**Scope 缩减触发条件**：Month 1 无 vLLM baseline → 多模态降 Discussion（✅ 已建立，未触发）；研究内容一+二的消融实验未完成不启动多模态 pipeline；VLM 生成始终 optional；Adaptive 3 轮不能超 static K_max=8 → 研究内容二降级。
 
 详细实验计划见 `experiments/plans/`，以 `PROJECT_OUTLINE.md` §近期优先级和 `experiments/plans/experiment_status_and_gaps.md` 为准。
 

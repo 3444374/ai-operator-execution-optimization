@@ -50,7 +50,7 @@ AGENTS.md
 | 飞书进度汇报 | `feishu/progress_update.md` |
 | 文献清单和精读笔记 | `literature/reading_list.md` |
 | 答辩问答 | `qa_bank.md` |
-| 图表和素材规则 | `assets/README.md`、`assets/echarts_rules.md` |
+| 图表和素材规则 | `assets/README.md` |
 | 模板来源和外部文件记录 | `templates/README.md` |
 | 非实验类修改日志 | `logs/project_log.md` |
 

@@ -4,7 +4,7 @@
 
 > **2026-07-17 口径更新**：本文中的"三层策略""RC3"等旧术语已统一。最新研究内容定义（两项策略 + 多模态泛化验证 + 算子代价估计补充）和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。本文保留原始方案评估矩阵作为设计历史参考。
 用途：为三个研究内容和跨层协同优化提供可供选择的方案目录，支撑后续实验设计和代码实现决策
-方法：基于 57 篇文献（`opening/literature/ai_operator_literature_inventory.md`）和 2026 年 7 月前沿检索，结合 idea-evaluator 五维评分、deep-research 证据纪律和 vibe-research-workflow 工程可行性约束
+方法：基于 57 篇文献（`research/ai_operator_literature_inventory.md`）和 2026 年 7 月前沿检索，结合 idea-evaluator 五维评分、deep-research 证据纪律和 vibe-research-workflow 工程可行性约束
 
 ---
 

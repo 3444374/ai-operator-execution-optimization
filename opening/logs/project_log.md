@@ -1,5 +1,11 @@
 # 开题材料 project log
 
+## 2026-07-24 文献精读语料迁出 opening/，opening 仅留开题精读清单 + Top15 拷贝
+
+- 文献精读笔记（44 篇）、PDF（69 个）、清单与评估从 `opening/literature/` 迁至 `research/`（项目级文献目录）。理由：opening 是阶段性开题工作区，不该承载项目级长期文献资产；opening 自己的 README/navigation 也指向 research/ 查文献。
+- `opening/literature/` 现仅保留：`reading_list.md`（开题精读优先级）+ `top15_reading_notes/`（开题要求精读的 15 篇笔记拷贝 + figs，自包含快照；权威版在 `research/reading_notes/`）。
+- 索引/链接同步：`opening/README.md`、`opening/AGENTS.md`、`opening/navigation.md` 的 `literature/` 描述已更新；完整变更清单见根 `PROJECT_LOG.md` 2026-07-24 条目。
+
 ## 2026-07-20 飞书同步：新增 Daft 管线开销验证图
 
 - 在开题报告 §4.2 可行性分析中新增图 4-7（arrow_postgres vs daft_postgres 阶段耗时对比）及配套段落。
@@ -30,7 +36,7 @@
 
 ## 2026-07-15 GPU 调度与数据放置补充调研
 
-- 新增 `opening/literature/gpu_scheduler_data_placement_supplement_20260715.md`，用于说明策略控制器设计参考了 GPU / LLM 推理服务调度、Ray/Ray Data 异构数据管线、GPU 数据库算子与数据库 AI 算子等文献线索。
+- 新增 `research/gpu_scheduler_data_placement_supplement_20260715.md`，用于说明策略控制器设计参考了 GPU / LLM 推理服务调度、Ray/Ray Data 异构数据管线、GPU 数据库算子与数据库 AI 算子等文献线索。
 - 该文件当前作为“设计依据与后续精读清单”，不替代逐篇精读笔记；未下载或未逐篇核验的条目仍按待核验处理。
 - 已同步 `opening/README.md`、`opening/literature/reading_list.md` 和 `PROJECT_INDEX.md` 入口。
 

@@ -920,7 +920,7 @@ Ray Data 中的 streaming batch model，是 batch 和 streaming 的混合模型:
 
 **与本课题的关系**：CONCUR 的 AIMD-based admission control 与我们计划的 queue-adaptive flush + K_max 动态控制高度重叠。差异在于 CONCUR 控制的是"活跃 agent 数"（更粗粒度），我们控制的是"per-actor in-flight 请求数"（更细粒度）。
 
-> **精读校正（2026-07-23，见 `opening/literature/reading_notes/concur_2025.md`）**：CONCUR 全文**不使用 EWMA**——用瞬时 KV 使用率/命中率 + 宽死区（U_low=0.2 / U_high=0.5）+ 非对称 AIMD（α=2 增 / β=0.5 减）+ 双信号（proactive U_t + reactive H_t），4.09× 在 Qwen3-32B + SGLang（非 vLLM）取得。论文为 arXiv 预印本（未经评审），workload 是 agentic ReAct 多步 agent——middle-phase thrashing 前提在本课题无状态单轮 DB operator 场景可能不成立。本文件早期将"EWMA 来源 CONCUR"的表述已更正（EWMA 实来自 Ray ConcurrencyCapBackpressurePolicy）。
+> **精读校正（2026-07-23，见 `research/reading_notes/concur_2025.md`）**：CONCUR 全文**不使用 EWMA**——用瞬时 KV 使用率/命中率 + 宽死区（U_low=0.2 / U_high=0.5）+ 非对称 AIMD（α=2 增 / β=0.5 减）+ 双信号（proactive U_t + reactive H_t），4.09× 在 Qwen3-32B + SGLang（非 vLLM）取得。论文为 arXiv 预印本（未经评审），workload 是 agentic ReAct 多步 agent——middle-phase thrashing 前提在本课题无状态单轮 DB operator 场景可能不成立。本文件早期将"EWMA 来源 CONCUR"的表述已更正（EWMA 实来自 Ray ConcurrencyCapBackpressurePolicy）。
 
 来源: https://huggingface.co/papers/2601.22705
 
@@ -946,7 +946,7 @@ Ray Data 中的 streaming batch model，是 batch 和 streaming 的混合模型:
 
 **对本课题的参考**：SABER 的"预测 admission 是否会导致 SLA 违反"的前瞻性判断——我们的 K_max 控制也应具有前瞻性（不只反应当前队列，还要预测 vLLM 消化能力）。
 
-> **精读校正（2026-07-23，见 `opening/literature/reading_notes/saber_2025.md`）**：SABER **不推导聚合 K_max**——batch_size 设大，USL 仅作 per-request 准入预测器；K_max = √((1−α)/β) 上界推导是本课题的扩展。USL 单瓶颈 + 平滑退化假设与 vLLM 连续批处理的非连续 KV-cache preempt 退化曲线不匹配（双瓶颈：算力 + KV 内存）；R²=0.99 为 in-sample，迁移到本课题 RTX 5070 + Qwen2.5-1.5B 前需 out-of-sample 残差审计。
+> **精读校正（2026-07-23，见 `research/reading_notes/saber_2025.md`）**：SABER **不推导聚合 K_max**——batch_size 设大，USL 仅作 per-request 准入预测器；K_max = √((1−α)/β) 上界推导是本课题的扩展。USL 单瓶颈 + 平滑退化假设与 vLLM 连续批处理的非连续 KV-cache preempt 退化曲线不匹配（双瓶颈：算力 + KV 内存）；R²=0.99 为 in-sample，迁移到本课题 RTX 5070 + Qwen2.5-1.5B 前需 out-of-sample 残差审计。
 
 来源: https://ar5iv.labs.arxiv.org/html/2506.19677
 
@@ -962,7 +962,7 @@ Ray Data 中的 streaming batch model，是 batch 和 streaming 的混合模型:
 
 **对本课题的参考**：LBS 的"GPU 利用率 + 队列深度 → 自适应 batch"的融合决策，是我们 queue-adaptive flush 的重要参考。
 
-> **精读校正（2026-07-23，见 `opening/literature/reading_notes/colora_2026.md`）**：CoLoRA 是**多租户 LoRA** 调度（ASP-DAC 2026, **CCF-C**，非承重证据）。APS 三信号 = 排队延迟 + adapter 驻留 + SLA 紧急度（**不含 KV cache**）；LBS 实为 load + queue 两信号。本课题 flush 的 KV cache 信号应归因于 CONCUR、running/waiting 归因于 vLLM Prometheus；CoLoRA 仅贡献多信号融合闭环**架构模式**。数字为 "up to" best-case（基于会议幻灯片，非 proceedings 全文）。
+> **精读校正（2026-07-23，见 `research/reading_notes/colora_2026.md`）**：CoLoRA 是**多租户 LoRA** 调度（ASP-DAC 2026, **CCF-C**，非承重证据）。APS 三信号 = 排队延迟 + adapter 驻留 + SLA 紧急度（**不含 KV cache**）；LBS 实为 load + queue 两信号。本课题 flush 的 KV cache 信号应归因于 CONCUR、running/waiting 归因于 vLLM Prometheus；CoLoRA 仅贡献多信号融合闭环**架构模式**。数字为 "up to" best-case（基于会议幻灯片，非 proceedings 全文）。
 
 来源: https://ieeexplore.ieee.org/abstract/document/11420717
 

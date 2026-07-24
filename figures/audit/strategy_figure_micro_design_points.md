@@ -353,7 +353,7 @@ queue-worker -> COPY/sink
 - P0 是画下一版策略图前最值得先看的。
 - P1 用于补机制细节和实验图表达。
 - P2 主要作为边界和路线对照，防止把本课题画成 DB4AI 内部优化。
-- 如果下载 PDF，优先把 P0/P1 放到 `opening/literature/` 或后续统一的论文目录，并在文献清单里登记来源。
+- 如果下载 PDF，优先把 P0/P1 放到 `research/reference/`，并在 `research/ai_operator_literature_inventory.md` 登记来源。
 
 ---
 

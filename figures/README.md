@@ -218,7 +218,7 @@ bounded in-flight control, endpoint routing, writeback guardrails, and the
 Trigger -> Action -> Guardrail rule table.
 
 `local_reference_figure_reading_notes.md` records figure-design lessons from
-the locally downloaded PDF subset under `opening/literature/reference/` and
+the locally downloaded PDF subset under `research/reference/` and
 connects them to the current runtime control-loop figure.
 
 The generated control-loop figure is:

@@ -6,17 +6,20 @@
 
 | 文件 | 作用 |
 |---|---|
-| **`knowledge_hub.md`** | **第一入口**——集思广益知识库，整合了 vLLM 机制、Ray 架构、57 篇文献全景（四岛地图）、三岛空白、设计原则、实验证据和知识缺口。做任何设计决策前先读 |
+| **`knowledge_hub.md`** | **第一入口**——集思广益知识库，整合了 vLLM 机制、Ray 架构、66 篇文献全景（四岛地图）、三岛空白、设计原则、实验证据和知识缺口。做任何设计决策前先读 |
 | `literature_and_evidence_review.md` | Ray / Daft / Lance / Snowflake / pgai 等方向的早期综合证据记录 |
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子与 AI 数据处理系统的执行链路对比 |
 | `vllm_continuous_batching_reference.md` | vLLM Continuous Batching 完整技术手册（调度器内部、APC、metrics、chunked prefill、集成方式） |
 | `ray_actor_dynamic_batching_reference.md` | Ray Serve 动态 batching + Ray Core actor 模式完整技术手册（async loop、去中心化协调、PrefixCacheAffinityRouter） |
 | `inference_pipeline_interaction_literature.md` | 28 篇推理管线交互文献系统综述 + 空白确认 |
 
-**扩展文献**（不在本目录，由 knowledge_hub 索引）：
-- `opening/literature/ai_operator_literature_inventory.md` — 57 篇 CCF-A 文献清单
-- `opening/literature/gpu_scheduler_data_placement_supplement_20260715.md` — GPU 调度补充调研 + Ray 策略映射
-- `opening/literature/direction_assessment_20260715.md` — 方向评估 + 三岛模型 + 不能声称的结论
+**文献清单、精读笔记与方向评估**（本目录内）：
+- `ai_operator_literature_inventory.md` — 65 篇 CCF-A 文献清单
+- `top15_ranked_papers.md` — 项目最相关 Top 15 排序 + 四维评估
+- `gpu_scheduler_data_placement_supplement_20260715.md` — GPU 调度补充调研 + Ray 策略映射
+- `direction_assessment_20260715.md` — 方向评估 + 三岛模型 + 不能声称的结论
+- `reading_notes/` — 单篇精读笔记（按论文组织，33+ 篇）+ 配图 `reading_notes/figs/`
+- `reference/` — 已下载参考文献 PDF 子集 + 索引（`reference/README.md`、`reference/REFERENCE_INDEX.md`）
 
 ## 使用规则
 
@@ -31,7 +34,7 @@
 
 ### 为什么需要这个方法
 
-- 你已有一个 57 篇 CCF-A/顶会的文献清单（`opening/literature/ai_operator_literature_inventory.md`）
+- 你已有一个 65 篇 CCF-A/顶会的文献清单（`research/ai_operator_literature_inventory.md`）
 - 四个研究岛（DB AI 算子、GPU 推理服务、分布式数据管线、结果持久化）各自有几十篇 CCF-A 论文
 - 凭空设计的系统/算法很可能和已有顶会工作的思路重复，或漏掉已知最优 practice
 - Reviewer 会问"你的 baseline 是什么？为什么比 X 论文的方案更好？"

@@ -18,7 +18,7 @@
 | Ray Data / Serve | `map_batches`、dynamic batching、routing、autoscaling docs | 官方文档 | 已整理入口 | 支撑 batch、routing、backpressure 实验接口 |
 | Daft | Daft on Ray、partitioning、shuffle、join strategy docs | 官方文档 | 已整理入口 | 支撑 partition、shuffle、`M × N` object slots 风险 |
 | 列式传输 | Arrow Flight benchmark paper | 论文 | 待精读 | 支撑 Arrow/Flight 在跨系统数据传输中的背景 |
-| AI 数据存储 | Lance paper | 论文 | 待精读 | 支撑 Lance 作为 AI / columnar 数据存储参考 |
+| AI 数据存储 | Lance paper | 论文 | ✅ 已精读（2026-07-23） | 支撑 Lance 作为 AI / columnar 数据存储参考 |
 | PostgreSQL AI 生态 | pgai README | 工程资料 | 已整理入口 | 支撑外部 vectorizer worker + 写回形态 |
 | PostgreSQL AI 生态 | pgvector README | 工程资料 | 已整理入口 | 支撑 PostgreSQL 向量写回和检索 baseline |
 | PostgreSQL AI 生态 | PostgresML README | 工程资料 | 已整理入口 | 作为近数据库 / 数据库内模型执行对照路线 |
@@ -27,7 +27,9 @@
 
 ## 精读笔记索引（2026-07-23 更新）
 
-**33 篇精读笔记已完成**：原 16 篇（inventory 建议精读 15 篇 + DiskANN）+ 2026-07-23 新增 17 篇（由 codex 与 Claude Code 两环境协同完成：P0 自适应控制 / P1 策略实现 / P2 背景对照 + Mooncake + 补齐 Multi-Bin/Lance/Milvus + Ray Data 引擎基础）。所有笔记位于 `opening/literature/reading_notes/`，已同步至知识库 `raw/papers/`。
+**33 篇精读笔记已完成**：原 16 篇（inventory 建议精读 15 篇 + DiskANN）+ 2026-07-23 新增 17 篇（由 codex 与 Claude Code 两环境协同完成：P0 自适应控制 / P1 策略实现 / P2 背景对照 + Mooncake + 补齐 Multi-Bin/Lance/Milvus + Ray Data 引擎基础）。所有笔记位于 `research/reading_notes/`，已同步至知识库 `raw/papers/`。
+
+> **开题精读 Top 15**：开题要求精读的 15 篇（见 `research/top15_ranked_papers.md`）已拷贝至 `opening/literature/top15_reading_notes/`，作为开题自包含快照；权威版仍在 `research/reading_notes/`，笔记更新后需重新拷贝。
 
 | # | 笔记文件 | 论文 | 出处 | 完成日期 |
 |---|---------|------|------|----------|
@@ -87,7 +89,7 @@
 已新增补充调研文件：
 
 ```text
-opening/literature/gpu_scheduler_data_placement_supplement_20260715.md
+research/gpu_scheduler_data_placement_supplement_20260715.md
 ```
 
 该文件用于回答策略控制器设计从哪些前沿系统思想中来，重点覆盖：
@@ -104,13 +106,13 @@ opening/literature/gpu_scheduler_data_placement_supplement_20260715.md
 用户已将部分参考文献 PDF 下载到：
 
 ```text
-opening/literature/reference/
+research/reference/
 ```
 
 该目录当前只是**部分文献子集**，用于精读、看论文机制图和核验引用细节；不能视为完整文献库。目录索引见：
 
 ```text
-opening/literature/reference/README.md
+research/reference/README.md
 ```
 
 后续继续下载 PDF 时，先追加登记到该 README，再决定是否补充精读笔记。

@@ -250,9 +250,9 @@ operator_wall_s
 
 下面两张图分别画两个现象。图只负责呈现实验数值，解释放在正文里。
 
-![CPU/GPU coalesced e2e comparison](figures/cpu_gpu_coalesced_e2e_20260712.svg)
+![CPU/GPU coalesced e2e comparison](../figures/learning/cpu_gpu_coalesced_e2e_20260712.svg)
 
-![Fine vs coalesced e2e comparison](figures/fine_vs_coalesced_e2e_20260712.svg)
+![Fine vs coalesced e2e comparison](../figures/learning/fine_vs_coalesced_e2e_20260712.svg)
 
 几个变量先解释清楚：
 

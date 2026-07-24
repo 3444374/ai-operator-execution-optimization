@@ -41,12 +41,12 @@ PostgreSQL 18.3
 
 ## 3. 当前证据与下一步
 
-已有实验：GPU-backed AI_EMBED 预研链路（37.5× fine vs coalesced、pgvector writeback 0.897s vs JSON 1.567s）。详细数据见 `motivation/results/gpu/`。CPU/fake 实验仅历史参考。
+已有实验：GPU-backed AI_EMBED 预研链路（fine vs coalesced：operator/推理执行阶段约 37.5×、端到端约 13.4×；pgvector writeback 0.897s vs JSON 1.567s）+ vLLM + Qwen2.5-1.5B AI_COMPLETE baseline（已建立，详见 `experiments/results/local_vllm_qwen15b_baseline/`）。详细数据见 `motivation/results/gpu/`。CPU/fake 实验仅历史参考。
 
-下一步优先级：① 建立 vLLM + Qwen2.5-1.5B baseline → ② Daft 集成 + 数据组织策略 + 提交控制策略消融（文本）→ ③ 耦合验证（独立拼接 vs 联合 grid search）→ ④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 算子代价估计（基于已有数据）。写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。详见 `PROJECT_OUTLINE.md` §近期优先级。
+当前缺口（vLLM baseline、Daft 文本接入、token-budget / K_max / queue-adaptive 初版均已完成，不再列为下一步）：① 改进 queue-adaptive 控制器，在 shared-vLLM 下超越静态 K_max=8 → ② 两项策略联合消融（独立拼接 vs 联合 grid search）→ ③ 多模态泛化验证（图像，同一套策略代码）→ ④ 算子代价估计（基于已有数据）。写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。详见 `PROJECT_OUTLINE.md` §近期优先级。
 
 **Scope 缩减触发条件（2026-07-17 约定）**：
-- Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion
+- Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（✅ baseline 已建立，未触发）
 - 文本 RC1+RC2 消融未完成前，不启动 Daft 多模态 pipeline
 - VLM 生成实验（AI_COMPLETE 多模态版）始终标记为 optional
 
@@ -60,8 +60,12 @@ PostgreSQL 18.3
 | `feasibility/` | 组件、环境、脚本可用性验证（不承担实验大纲职责） |
 | `experiments/` | 正式研究实验（方法有效性验证） |
 | `code/` | 可复用工程代码 |
+| `code_doc/` | 自动生成的代码文档（辅助参考，不承担规则职责） |
+| `data/` | 本地 workload 数据（raw 负载被 git ignore） |
+| `deploy/` | Docker 部署配置（pgai、postgres18.4 本地预演实例） |
 | `figures/` | 图资产（架构图、实验图、绘图脚本、审计） |
 | `opening/` | 开题报告、PPT、飞书、文献 |
+| `projects/` | PPT 自动生成工程（旧版，已作废；仅保留工具链经验） |
 | `learning/` | 学习讲解材料 |
 | `notes/` | 沟通记录、待确认问题 |
 
@@ -120,6 +124,6 @@ PostgreSQL 18.3
 
 **触发条件**（满足任一即提醒）：
 - 用户在对话中说"记住""记下来""同步到知识库""加到 wiki"等——**立即执行同步**
-- 会话中**任何知识文件被创建或修改**（`research/`、`opening/literature/`、`experiments/plans/` 下的 `.md`，或用户指定的新知识路径）——**会话结束前提醒**
+- 会话中**任何知识文件被创建或修改**（`research/`（含 `reading_notes/`、`reference/`）、`opening/literature/`（精读清单与 Top15 拷贝）、`experiments/plans/` 下的 `.md`，或用户指定的新知识路径）——**会话结束前提醒**
 
 **操作指南**——执行同步时读取 `research/knowledge_sync_guide.md`。

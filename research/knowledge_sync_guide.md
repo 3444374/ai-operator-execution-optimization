@@ -38,19 +38,19 @@ cd ../ai-operator-wiki && bash sync-wiki.sh --back raw/papers/文件名.md
 | 项目路径 | → | Wiki 路径 |
 |---|---|---|
 | `research/*.md` | → | `raw/references/` |
-| `opening/literature/reading_notes/*.md` | → | `raw/papers/` |
-| `opening/literature/reference/*.pdf` | → | `raw/papers/` |
+| `research/reading_notes/*.md` | → | `raw/papers/` |
+| `research/reference/*.pdf` | → | `raw/papers/` |
 | `experiments/plans/*.md` | → | `experiments/plans/` |
 
 特殊路由：`literature_and_evidence_review.md` 和 `existing_ai_operator_execution_chains.md` 在脚本中自动从 `raw/references/` 移到 `raw/analysis/`。
 
-## 手动映射（opening/literature/ 顶层文件）
+## 手动映射（research/ 评估/清单 + opening/reading_list）
 
 | 项目路径 | → | Wiki 路径 |
 |---|---|---|
-| `opening/literature/direction_assessment_20260715.md` | → | `raw/analysis/` |
-| `opening/literature/gpu_scheduler_data_placement_supplement_20260715.md` | → | `raw/analysis/` |
-| `opening/literature/ai_operator_literature_inventory.md` | → | `raw/inventory/` |
+| `research/direction_assessment_20260715.md` | → | `raw/analysis/` |
+| `research/gpu_scheduler_data_placement_supplement_20260715.md` | → | `raw/analysis/` |
+| `research/ai_operator_literature_inventory.md` | → | `raw/inventory/` |
 | `opening/literature/reading_list.md` | → | `raw/inventory/` |
 
 ---
@@ -84,7 +84,7 @@ cd ../ai-operator-wiki && bash sync-wiki.sh --back raw/papers/文件名.md
 
 **显式触发**：用户在对话中说"记住""记下来""同步到知识库""加到 wiki"等表达——**立即执行同步**，不要等到会话结束。
 
-**隐式触发**：会话中任何知识文件（`research/`、`opening/literature/`、`experiments/plans/` 下的 `.md`，或用户指定的新路径）被创建或修改——**会话结束前提醒一次**。
+**隐式触发**：会话中任何知识文件（`research/`（含 `reading_notes/`、`reference/`）、`opening/literature/`（精读清单与 Top15 拷贝）、`experiments/plans/` 下的 `.md`，或用户指定的新路径）被创建或修改——**会话结束前提醒一次**。
 
 触发不依赖文件名或内容类型——只要知识目录下有变更，或者用户表达了记住意愿，就是触发条件。
 

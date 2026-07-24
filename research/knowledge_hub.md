@@ -2,7 +2,7 @@
 
 生成日期：2026-07-16（2026-07-17 更新：新增 §10 Daft+Ray 多模态与具身智能）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
-涵盖：vLLM 机制 + Ray 架构 + 57 篇文献（四个研究岛）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
+涵盖：vLLM 机制 + Ray 架构 + 66 篇文献（四个研究岛）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
 ---
 
@@ -148,7 +148,7 @@ class AdaptiveSubmitActor:
 
 ## 3. 文献全景地图
 
-涵盖 57 篇论文 + 产业系统，分为四个研究岛。完整清单见 `opening/literature/ai_operator_literature_inventory.md`。
+涵盖 65 篇论文 + 产业系统，分为四个研究岛。完整清单见 `research/ai_operator_literature_inventory.md`。
 
 ### 3.1 岛一：数据库 AI 算子与 DB4AI
 
@@ -216,7 +216,7 @@ class AdaptiveSubmitActor:
 | **Arrow DataFusion** | SIGMOD 2024 | Arrow-native 查询引擎 |
 | **Arrow Flight** | arXiv 2022 | 高性能列式数据传输 |
 
-**Ray 调度思想到策略变量的映射**（来自 `opening/literature/gpu_scheduler_data_placement_supplement_20260715.md`）：
+**Ray 调度思想到策略变量的映射**（来自 `research/gpu_scheduler_data_placement_supplement_20260715.md`）：
 
 | Ray 机制 | 可迁移策略 | 不可过度声称 |
 |---|---|---|
@@ -358,7 +358,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 以下 6 篇 2025-2026 年论文为项目文献搜索发现的新增来源，与 RC1（数据组织）和 RC2（提交控制）直接相关。详细内容见 `research/ray_actor_dynamic_batching_reference.md` §6.7-§6.12。
 
-**从 CONCUR (2025) 提取**（精读见 `opening/literature/reading_notes/concur_2025.md`）：
+**从 CONCUR (2025) 提取**（精读见 `research/reading_notes/concur_2025.md`）：
 - **AIMD 可迁移到 request 级**：CONCUR 控制的是"活跃 agent 数"（粗粒度），我们可以把 AIMD 用到更细的 per-actor in-flight 请求数控制。**校正**：CONCUR **不使用 EWMA**——用瞬时 KV 使用率/命中率 + 宽死区（U_low=0.2 / U_high=0.5）+ 非对称 AIMD（α=2 增 / β=0.5 减）+ 双信号（proactive U_t + reactive H_t）
 - **KV cache 作为共享资源信号**：不只是队列深度，KV cache 使用率/命中率也应作为 K_max 调节的输入信号（**CONCUR 是 KV cache 信号的正确来源，CoLoRA 不是**）
 - **Middle-phase thrashing**：长期运行的推理 session 在内存耗尽前就会出现吞吐退化。**待确认**：CONCUR workload 是 agentic ReAct 多步 agent；本课题 DB operator 多为无状态单轮，middle-phase thrashing 前提可能不成立——KV cache 信号价值需在单轮场景重新验证
@@ -371,7 +371,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **前瞻性准入判断**：不只检查当前队列，还要预测"如果现在提交，会不会导致 in-execution 请求违反 SLA"——我们的 K_max 调节应具有预测性
 - **Universal Scalability Law 建模**：`生成速度 = f(并发请求数)`——可用 vLLM 的 profiling 数据拟合此函数。**校正（见 `saber_2025.md`）**：SABER 用 USL 做 per-request 准入预测，**不直接推导聚合 K_max**；K_max = √((1−α)/β) 上界是本课题扩展。USL 单瓶颈假设与 vLLM 双瓶颈（算力 + KV cache 非连续 preempt）存在张力，迁移前需做 out-of-sample 残差审计
 
-**从 CoLoRA (2026, ASP-DAC, CCF-C) 提取**（精读见 `opening/literature/reading_notes/colora_2026.md`）：
+**从 CoLoRA (2026, ASP-DAC, CCF-C) 提取**（精读见 `research/reading_notes/colora_2026.md`）：
 - **校正**：CoLoRA 是**多租户 LoRA** 场景调度，APS 三信号 = 排队延迟 + adapter 驻留 + SLA 紧急度（**不含 KV cache**）；LBS 实为 load + queue 两信号。本课题 flush 的"三维信号"其**信号集**应归因于 CONCUR（KV cache）+ vLLM Prometheus（running/waiting）；CoLoRA 仅贡献多信号融合的闭环**架构模式**（CCF-C，非承重证据，数字为 "up to" best-case）
 - **Unified Scheduler 的全局反馈循环**：monitor → prioritize → place → batch → feedback 闭环——可作为 RC2 控制器架构骨架
 
@@ -513,9 +513,9 @@ Ray Actor 去中心化自适应提交
 **已有文献与设计文件**：
 - `research/literature_and_evidence_review.md` — Ray/Daft/Lance/Snowflake 综合证据
 - `research/existing_ai_operator_execution_chains.md` — 现有 AI 算子执行链路对比
-- `opening/literature/ai_operator_literature_inventory.md` — 57 篇 CCF-A 文献清单
-- `opening/literature/gpu_scheduler_data_placement_supplement_20260715.md` — GPU 调度补充调研 + Ray 思想映射
-- `opening/literature/direction_assessment_20260715.md` — 方向评估 + 三岛模型 + 不能声称的结论
+- `research/ai_operator_literature_inventory.md` — 65 篇 CCF-A 文献清单
+- `research/gpu_scheduler_data_placement_supplement_20260715.md` — GPU 调度补充调研 + Ray 思想映射
+- `research/direction_assessment_20260715.md` — 方向评估 + 三岛模型 + 不能声称的结论
 - `opening/literature/reading_list.md` — 精读/泛读文献清单
 
 **实验计划文件**：

@@ -24,15 +24,13 @@
 
 ## 当前状态
 
-已搭建 fake `AI_EMBED(text)` 端到端链路：
+真实 GPU-backed E2E 主动机已完成（`motivation/results/gpu/`），已说明"为什么值得做"：
 
-1. 生成 documents 数据；
-2. 构造 Arrow RecordBatch；
-3. Ray 执行 fake embedding；
-4. 对比 fine object 与 coalesced object；
-5. 输出 CSV 和瓶颈分析。
+- AI_EMBED 真实链路：1024 行下 fine/coalesced 端到端约 `13.4x`；16384 行下 operator 与 writeback 均为大块成本（`ai_embed_chain_breakdown_20260712.md`）。
+- 双 endpoint 下 Ray task/actor 体现并发 routing 价值，端到端收益仍受 writeback 约束（`multi_endpoint_ray_motivation_20260712.md`）。
+- 方向已收敛（2026-07-16）到上游调度优化：数据组织 + 提交控制（详见根 `AGENTS.md` §1、`PROJECT_OUTLINE.md`）。
 
-该实验支持继续观察 RecordBatch/object 粒度和 fan-in，但还不能单独锁定最终论文方向。
+早期 fake `AI_EMBED(text)` 链路（`motivation/results/fake_cpu/`）仅作历史预研参考，不再是当前动机依据。
 
 动机测试正式结果位于：
 - `motivation/results/gpu/`：真实 GPU-backed E2E 主动机结果
@@ -42,9 +40,8 @@
 
 ## 当前下一步
 
-1. 拆分 fake `AI_EMBED(text)` 结果中的收益来源：object 数、task 数、`ray.put` 次数、fan-in 依赖数、写回阶段。
-2. 并行调研和比较更贴近 AI infra / inference infra 的 AI 算子场景，例如批量 embedding / RAG 准备、chunk + embedding + vector write、批量 rerank / classify、离线推理前后处理、数据库外部 AI UDF 执行。
-3. 对候选场景使用 `idea-evaluator` 思路做 fatal-flaws audit 和五维贡献评估；对方向不清晰的问题使用 `deep-research` scoping / Socratic 思路先澄清研究问题和证据标准。
-4. 下一轮动机测试优先拆分 task 数、object 数、`ray.put` 次数和 fan-in 依赖数；随后做 task/actor/concurrency 实验、token-aware / prefix-aware offline LLM fake workload、selectivity-aware AI_FILTER fake workload，以及 producer-consumer / backpressure 实验。
-5. 设计 PostgreSQL 18.3 真实画像实验，确认数据库触发、外部 worker、AI 算子执行、Ray/Arrow 中间链路、fan-in/writeback 和 backpressure 指标如何采集。
-6. 只有当场景动机、系统瓶颈和 PostgreSQL 18.3 画像数据同时对齐时，才把某个优化点写成最终主线。
+主动机已完成，"为什么值得做"已回答。方法有效性验证转入 `experiments/`（见 `experiments/plans/experiment_status_and_gaps.md`）。motivation 侧仅按需补充：
+
+1. 若 `experiments/` 需要新的 GPU-backed 动机信号（如新场景瓶颈画像），在 `motivation/results/gpu/` 补充。
+2. 进入 PostgreSQL 18.3 内部平台后，补充真实平台画像，确认数据库触发→外部 worker→AI 算子→Ray/Arrow→fan-in/writeback/backpressure 指标如何采集。
+3. 不再围绕 fake/CPU 链路或"方向未定"展开新动机实验。

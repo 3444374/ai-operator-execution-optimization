@@ -70,9 +70,9 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 
 **Scope 缩减触发条件**：
 - Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（✅ 已建立，未触发）
-- 文本 RC1+RC2 消融未完成前，不启动 Daft 多模态 pipeline
+- 研究内容一+二的消融实验未完成前，不启动 Daft 多模态 pipeline
 - VLM 生成实验始终标记为 optional
-- Adaptive 控制器 3 轮改进后不能超过 static K_max=8 → RC2 降级
+- Adaptive 控制器 3 轮改进后不能超过 static K_max=8 → 研究内容二降级
 
 ---
 
@@ -84,12 +84,12 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678 | 固定行数是计算量的弱代理 |
 | Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171 | token-budget 能有效约束 token tail |
 | Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3× | K_max 在共享 vLLM 下必要 |
-| Queue-adaptive flush 已实现但未超越静态 K_max=8 | RC2 当前最高风险 gap |
+| Queue-adaptive flush 已实现但未超越静态 K_max=8 | 研究内容二当前最高风险 gap |
 
 **AI_EMBED（预研，已完成）**：
 | 证据 | 来源 | 能说明什么 |
 |---|---|---|
-| fine vs coalesced = 37.5× | GPU-backed 预研 CSV（2026-07-14） | batch 粒度是一阶变量 |
+| fine vs coalesced（operator 阶段 37.5× / 端到端 13.4×） | GPU-backed 预研 CSV（2026-07-12/14） | batch 粒度是一阶变量 |
 | pgvector writeback 0.897s vs JSON 1.567s | GPU-backed 预研 CSV | pgvector 写回可行 |
 | 研究空白双重确认 | 多源检索（2026-07-16） | 无 CCF-A 论文研究上游 pipeline batching × downstream continuous batching 交互 |
 
@@ -103,7 +103,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 |---|---|
 | 完整研究内容定义、实验路线、近期优先级 | `PROJECT_OUTLINE.md` |
 | 项目规则、边界、不能写成什么 | `AGENTS.md` |
-| vLLM 机制 + Ray 架构 + 57 篇文献 + 策略设计 + 知识缺口 | `research/knowledge_hub.md` |
+| vLLM 机制 + Ray 架构 + 66 篇文献 + 策略设计 + 知识缺口 | `research/knowledge_hub.md` |
 | Daft 技术细节、多模态管线、具身智能连接 | `research/daft_ray_multimodal_reference.md` |
 | 实验状态与缺口分析 | `experiments/plans/experiment_status_and_gaps.md` |
 | 实验计划与实现参考 | `experiments/plans/strategy_design_implementation_reference.md` |

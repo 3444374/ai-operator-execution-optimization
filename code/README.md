@@ -140,8 +140,8 @@ PostgreSQL documents/job table
 数据库、扩展和向量查询已经验证；WSL `.venv` 已安装 Ray、PyArrow、NumPy
 和 psycopg，并完成 256 行 PostgreSQL -> Arrow -> Ray actor -> fake embedding
 -> PostgreSQL 写回冒烟运行。CSV 位于
-`feasibility/results/postgres_ai_operator_profile.csv`，完整记录见
-`feasibility/results/postgres18_local_environment_validation.md`。
+`feasibility/results/pg18_4_connection_smoke_256_rows.csv`（及 `pg18_4_connection_smoke_runs.csv`），完整记录见
+`feasibility/results/pg18_4_connection_validation.md`。
 脚本内部连接、读取、Ray 执行和写回函数的对应关系见 `scripts/README.md`。
 
 最小 dry-run：
@@ -166,7 +166,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
   --max-inflight 8 \
   --strategy coalesced \
   --organizer arrow \
-  --output feasibility/results/postgres_ai_operator_profile.csv
+  --output feasibility/results/pg18_4_connection_smoke_256_rows.csv
 ```
 
 Daft organizer dry-run:
