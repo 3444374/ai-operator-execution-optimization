@@ -12,6 +12,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.scheduling.adaptive_admission import AimdAdmissionController  # noqa: E402
 from src.scheduling.admission import DynamicAdmissionGate  # noqa: E402
 from src.scheduling.models import (  # noqa: E402
+    AdmissionObservation,
     BatchRequest,
     CollectedSubmission,
     EndpointSnapshot,
@@ -61,6 +62,9 @@ class CachedObservationProviderTests(unittest.TestCase):
         self.assertTrue(first.fresh)
         self.assertFalse(cached.fresh)
         self.assertTrue(refreshed.fresh)
+        self.assertEqual(first.sample_age_s, 0.0)
+        self.assertAlmostEqual(cached.sample_age_s, 0.1)
+        self.assertEqual(refreshed.sample_age_s, 0.0)
         self.assertEqual(cached.inflight, 3)
         self.assertEqual(cached.waiting, 0)
 
@@ -76,6 +80,27 @@ class CachedObservationProviderTests(unittest.TestCase):
 
 
 class NonBlockingObservationProviderTests(unittest.TestCase):
+    def test_provider_reports_sample_age(self) -> None:
+        clock = FakeClock(10.0)
+        provider = NonBlockingMetricsObservationProvider(
+            lambda: ServiceMetricsSnapshot(4, 0, 0.25),
+            poll_interval_s=60.0,
+            stale_after_s=0.5,
+            clock=clock,
+        )
+        self.addCleanup(provider.close)
+        self.assertTrue(provider.wait_until_sampled(timeout_s=1.0))
+
+        clock.current = 10.25
+        current = provider.latest(inflight=2)
+        clock.current = 10.75
+        stale = provider.latest(inflight=2)
+
+        self.assertTrue(current.fresh)
+        self.assertEqual(current.sample_age_s, 0.25)
+        self.assertFalse(stale.fresh)
+        self.assertEqual(stale.sample_age_s, 0.75)
+
     def test_latest_never_waits_for_blocked_sampler(self) -> None:
         sampler_entered = threading.Event()
         release_sampler = threading.Event()
@@ -165,6 +190,20 @@ class NonBlockingObservationProviderTests(unittest.TestCase):
         self.assertFalse(provider.is_running)
 
 
+class AdmissionObservationTests(unittest.TestCase):
+    def test_sample_age_must_be_non_negative(self) -> None:
+        with self.assertRaisesRegex(ValueError, "sample_age_s"):
+            AdmissionObservation(
+                observed_at_s=1.0,
+                fresh=True,
+                inflight=0,
+                running=0,
+                waiting=0,
+                kv_usage=0.0,
+                sample_age_s=-0.1,
+            )
+
+
 class DynamicAdmissionGateTests(unittest.TestCase):
     def test_gate_updates_window_and_records_typed_trace(self) -> None:
         snapshots = iter(
@@ -197,6 +236,7 @@ class DynamicAdmissionGateTests(unittest.TestCase):
         self.assertEqual([item.controller_action for item in traces], ["increase", "decrease"])
         self.assertEqual([item.inflight for item in traces], [3, 5])
         self.assertEqual(traces[1].waiting, 2)
+        self.assertEqual([item.sample_age_s for item in traces], [0.0, 0.0])
 
     def test_gate_does_not_reapply_controller_to_cached_observation(self) -> None:
         clock = FakeClock(1.0)

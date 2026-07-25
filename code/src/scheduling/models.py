@@ -90,10 +90,15 @@ class AdmissionObservation:
     running: int | None
     waiting: int | None
     kv_usage: float | None
+    sample_age_s: float | None = None
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.observed_at_s) or self.observed_at_s < 0:
             raise ValueError("observed_at_s must be finite and non-negative")
+        if self.sample_age_s is not None and (
+            not math.isfinite(self.sample_age_s) or self.sample_age_s < 0
+        ):
+            raise ValueError("sample_age_s must be finite and non-negative when present")
         if self.inflight < 0:
             raise ValueError("inflight must be non-negative")
         if (

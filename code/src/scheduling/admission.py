@@ -10,13 +10,18 @@ from .models import (
     AdmissionObservation,
     WindowDecision,
 )
-from .observations import AdmissionTraceEvent, CachedMetricsObservationProvider
+from .observations import AdmissionTraceEvent
 
 
 class WindowController(Protocol):
     current_window: int
 
     def update(self, observation: AdmissionObservation) -> WindowDecision:
+        ...
+
+
+class ObservationProvider(Protocol):
+    def latest(self, inflight: int) -> AdmissionObservation:
         ...
 
 
@@ -42,7 +47,7 @@ class DynamicAdmissionGate:
     def __init__(
         self,
         controller: WindowController,
-        observation_provider: CachedMetricsObservationProvider,
+        observation_provider: ObservationProvider,
         *,
         trace_sink: Callable[[AdmissionTraceEvent], None] | None = None,
     ):
@@ -73,6 +78,7 @@ class DynamicAdmissionGate:
                     controller_action=window_decision.action,
                     reason=window_decision.reason,
                     allowed=allowed,
+                    sample_age_s=observation.sample_age_s,
                 )
             )
         return AdmissionDecision(

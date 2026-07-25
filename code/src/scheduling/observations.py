@@ -41,6 +41,7 @@ class AdmissionTraceEvent:
     controller_action: str
     reason: str
     allowed: bool
+    sample_age_s: float | None = None
 
 
 class CachedMetricsObservationProvider:
@@ -76,6 +77,11 @@ class CachedMetricsObservationProvider:
             running=snapshot.running if snapshot is not None else None,
             waiting=snapshot.waiting if snapshot is not None else None,
             kv_usage=snapshot.kv_usage if snapshot is not None else None,
+            sample_age_s=(
+                now - self._last_sample_s
+                if self._last_sample_s is not None
+                else None
+            ),
         )
 
 
@@ -143,6 +149,11 @@ class NonBlockingMetricsObservationProvider:
             running=snapshot.running if snapshot is not None else None,
             waiting=snapshot.waiting if snapshot is not None else None,
             kv_usage=snapshot.kv_usage if snapshot is not None else None,
+            sample_age_s=(
+                now - sampled_at_s
+                if sampled_at_s is not None
+                else None
+            ),
         )
 
     def close(self) -> None:
