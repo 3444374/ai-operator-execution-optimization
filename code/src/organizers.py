@@ -14,12 +14,20 @@ from typing import Literal
 
 import pyarrow as pa
 
+from .packing import PackItem, best_fit_decreasing, summarize_packing
+from .request_costs import (
+    OutputCostMode,
+    output_cost_source,
+    resolve_output_tokens,
+)
+
 
 PartitionMode = Literal["none", "into_partitions", "repartition"]
 DaftRunner = Literal["native", "ray"]
 BatchingPolicy = Literal[
     "fixed_rows",
     "token_budget",
+    "best_fit_token_budget",
     "length_align_fixed_rows",
     "length_align_token_budget",
     "prefix_aware_fixed_rows",
@@ -37,12 +45,15 @@ class OrganizerConfig:
     batching_policy: BatchingPolicy = "fixed_rows"
     token_budget: int = 0
     completion_max_tokens: int = 0
+    output_cost_mode: OutputCostMode = "fixed_output_cap"
 
 
 @dataclass(frozen=True)
 class OrganizedBatches:
     batches: list[pa.Table]
     metrics: dict[str, object]
+    batch_cost_units: tuple[int, ...] = ()
+    batch_row_counts: tuple[int, ...] = ()
 
 
 def configure_daft_runner(runner: DaftRunner) -> None:
@@ -80,6 +91,13 @@ class ArrowOrganizer:
         batches = organize_arrow_table(table, self.config)
         elapsed_s = time.perf_counter() - start_s
         partition_effective = self.config.partition_mode == "none"
+        strategy_metrics, batch_cost_units, batch_row_counts = (
+            organization_strategy_metrics(
+                batches,
+                self.config,
+                packing_scope="organizer_input",
+            )
+        )
         return OrganizedBatches(
             batches=batches,
             metrics={
@@ -92,8 +110,10 @@ class ArrowOrganizer:
                 "organizer_plan_s": round(elapsed_s, 6),
                 "organizer_collect_s": 0.0,
                 "warnings": "",
-                **organization_strategy_metrics(batches, self.config.batching_policy),
+                **strategy_metrics,
             },
+            batch_cost_units=batch_cost_units,
+            batch_row_counts=batch_row_counts,
         )
 
 
@@ -128,15 +148,41 @@ class DaftOrganizer:
         warnings_seen.extend(str(item.message) for item in caught)
 
         collect_start = time.perf_counter()
+        packing_scope = "organizer_input"
         if self.config.batching_policy == "fixed_rows":
             batches = list(df.to_arrow_iter())
+        elif self.config.batching_policy == "best_fit_token_budget":
+            arrow_tables = list(df.to_arrow_iter())
+            combined = (
+                pa.concat_tables(
+                    [
+                        item
+                        if isinstance(item, pa.Table)
+                        else pa.Table.from_batches([item])
+                        for item in arrow_tables
+                    ]
+                )
+                if arrow_tables
+                else table.slice(0, 0)
+            )
+            batches = organize_arrow_table(combined, self.config)
         else:
             batches = []
-            for arrow_table in df.to_arrow_iter():
+            arrow_tables = list(df.to_arrow_iter())
+            if len(arrow_tables) > 1:
+                packing_scope = "partition_local"
+            for arrow_table in arrow_tables:
                 batches.extend(organize_arrow_table(arrow_table, self.config))
         collect_s = time.perf_counter() - collect_start
 
         partition_effective = self.config.partition_mode == "none" or self.config.runner == "ray"
+        strategy_metrics, batch_cost_units, batch_row_counts = (
+            organization_strategy_metrics(
+                batches,
+                self.config,
+                packing_scope=packing_scope,
+            )
+        )
         return OrganizedBatches(
             batches=batches,
             metrics={
@@ -149,8 +195,10 @@ class DaftOrganizer:
                 "organizer_plan_s": round(plan_s, 6),
                 "organizer_collect_s": round(collect_s, 6),
                 "warnings": " | ".join(warnings_seen),
-                **organization_strategy_metrics(batches, self.config.batching_policy),
+                **strategy_metrics,
             },
+            batch_cost_units=batch_cost_units,
+            batch_row_counts=batch_row_counts,
         )
 
     def _apply_partition_mode(self, df):
@@ -173,6 +221,7 @@ def _validate_batching_policy(config: OrganizerConfig) -> None:
     if config.batching_policy not in (
         "fixed_rows",
         "token_budget",
+        "best_fit_token_budget",
         "length_align_fixed_rows",
         "length_align_token_budget",
         "prefix_aware_fixed_rows",
@@ -184,7 +233,12 @@ def _validate_batching_policy(config: OrganizerConfig) -> None:
 
 
 def _uses_token_budget(policy: BatchingPolicy) -> bool:
-    return policy in ("token_budget", "length_align_token_budget", "prefix_aware_token_budget")
+    return policy in (
+        "token_budget",
+        "best_fit_token_budget",
+        "length_align_token_budget",
+        "prefix_aware_token_budget",
+    )
 
 
 def _base_policy(policy: BatchingPolicy) -> Literal["fixed_rows", "token_budget"]:
@@ -227,21 +281,53 @@ def _safe_int(value: object) -> int:
         return 0
 
 
-def _row_token_cost(table: pa.Table, row_index: int, completion_max_tokens: int) -> int:
+def _row_token_cost(
+    table: pa.Table,
+    row_index: int,
+    config: OrganizerConfig,
+) -> int:
     if "prompt_tokens" not in table.column_names:
-        return max(1, completion_max_tokens)
-    value = table.column("prompt_tokens")[row_index].as_py()
-    prompt_tokens = int(value) if value is not None else 0
-    return max(1, prompt_tokens + max(0, completion_max_tokens))
+        if _uses_token_budget(config.batching_policy):
+            raise ValueError(
+                "prompt_tokens column is required for token batching"
+            )
+        prompt_tokens = 0
+    else:
+        value = table.column("prompt_tokens")[row_index].as_py()
+        if (
+            not isinstance(value, int)
+            or isinstance(value, bool)
+            or value < 0
+        ):
+            raise ValueError(
+                "prompt_tokens must contain non-negative integers"
+            )
+        prompt_tokens = value
+    target_value = (
+        table.column("target_output_tokens")[row_index].as_py()
+        if "target_output_tokens" in table.column_names
+        else None
+    )
+    return prompt_tokens + resolve_output_tokens(
+        config.output_cost_mode,
+        completion_max_tokens=config.completion_max_tokens,
+        target_output_tokens=target_value,
+    )
 
 
-def _token_budget_batches(table: pa.Table, token_budget: int, completion_max_tokens: int) -> list[pa.Table]:
+def _token_budget_batches(
+    table: pa.Table,
+    config: OrganizerConfig,
+) -> list[pa.Table]:
     batches: list[pa.Table] = []
     start = 0
     current_tokens = 0
     for row_index in range(table.num_rows):
-        row_tokens = _row_token_cost(table, row_index, completion_max_tokens)
-        if row_index > start and current_tokens + row_tokens > token_budget:
+        row_tokens = _row_token_cost(table, row_index, config)
+        if (
+            row_index > start
+            and current_tokens + row_tokens > config.token_budget
+        ):
             batches.append(table.slice(start, row_index - start))
             start = row_index
             current_tokens = 0
@@ -251,14 +337,53 @@ def _token_budget_batches(table: pa.Table, token_budget: int, completion_max_tok
     return batches
 
 
+def _best_fit_batches(
+    table: pa.Table,
+    config: OrganizerConfig,
+) -> list[pa.Table]:
+    items = [
+        PackItem(
+            row_index=index,
+            stable_id=(
+                str(table.column("doc_id")[index].as_py())
+                if "doc_id" in table.column_names
+                else str(index)
+            ),
+            cost_units=_row_token_cost(table, index, config),
+        )
+        for index in range(table.num_rows)
+    ]
+    groups = best_fit_decreasing(
+        items,
+        capacity=config.token_budget,
+        max_rows=config.batch_size,
+    )
+    return [
+        table.take(pa.array(group, type=pa.int64()))
+        for group in groups
+    ]
+
+
 def organize_arrow_table(table: pa.Table, config: OrganizerConfig) -> list[pa.Table]:
+    if config.batching_policy == "best_fit_token_budget":
+        return _best_fit_batches(table, config)
     table = _sort_table_for_policy(table, config.batching_policy)
     if _base_policy(config.batching_policy) == "fixed_rows":
         return [table.slice(offset, config.batch_size) for offset in range(0, table.num_rows, config.batch_size)]
-    return _token_budget_batches(table, config.token_budget, config.completion_max_tokens)
+    return _token_budget_batches(table, config)
 
 
-def organization_strategy_metrics(batches: list[pa.Table], policy: BatchingPolicy) -> dict[str, float | str]:
+def organization_strategy_metrics(
+    batches: list[pa.Table],
+    config: OrganizerConfig,
+    *,
+    packing_scope: str,
+) -> tuple[
+    dict[str, float | int | str],
+    tuple[int, ...],
+    tuple[int, ...],
+]:
+    policy = config.batching_policy
     token_spreads = []
     prefix_majority_rows = 0
     prefix_rows = 0
@@ -273,7 +398,21 @@ def organization_strategy_metrics(batches: list[pa.Table], policy: BatchingPolic
                 counts[prefix] = counts.get(prefix, 0) + 1
             prefix_majority_rows += max(counts.values()) if counts else 0
             prefix_rows += len(prefixes)
-    return {
+    batch_cost_units = tuple(
+        sum(
+            _row_token_cost(batch, index, config)
+            for index in range(batch.num_rows)
+        )
+        for batch in batches
+    )
+    batch_row_counts = tuple(batch.num_rows for batch in batches)
+    capacity = config.token_budget if _uses_token_budget(policy) else 0
+    packing = summarize_packing(
+        batch_cost_units,
+        batch_row_counts,
+        capacity=capacity,
+    )
+    metrics: dict[str, float | int | str] = {
         "organization_policy_family": (
             "length_align"
             if policy in ("length_align_fixed_rows", "length_align_token_budget")
@@ -283,7 +422,34 @@ def organization_strategy_metrics(batches: list[pa.Table], policy: BatchingPolic
         ),
         "batch_prompt_token_spread_mean": round(sum(token_spreads) / len(token_spreads), 3) if token_spreads else 0.0,
         "prefix_group_ratio": round(prefix_majority_rows / prefix_rows, 6) if prefix_rows else 0.0,
+        "output_cost_mode": config.output_cost_mode,
+        "output_cost_source": output_cost_source(config.output_cost_mode),
+        "packing_cost_unit": "tokens",
+        "packing_algorithm": (
+            "best_fit_decreasing"
+            if policy == "best_fit_token_budget"
+            else "fixed_rows"
+            if policy == "fixed_rows"
+            else "sequential"
+        ),
+        "packing_scope": packing_scope,
+        "packing_budget_utilization_mean": round(
+            packing.utilization_mean,
+            6,
+        ),
+        "packing_budget_utilization_p95": round(
+            packing.utilization_p95,
+            6,
+        ),
+        "packing_oversized_rows": packing.oversized_rows,
+        "packing_input_rows": packing.input_rows,
+        "packing_batch_count": packing.batch_count,
+        "batch_estimated_cost_units_p50": packing.cost_units_p50,
+        "batch_estimated_cost_units_p95": packing.cost_units_p95,
+        "batch_estimated_cost_units_p99": packing.cost_units_p99,
+        "batch_estimated_cost_units_max": packing.cost_units_max,
     }
+    return metrics, batch_cost_units, batch_row_counts
 
 
 def batch_metrics(batches: list[pa.Table]) -> dict[str, float | int]:

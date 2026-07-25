@@ -23,6 +23,24 @@ def sample_table(row_count: int = 10) -> pa.Table:
     )
 
 
+def output_aware_table() -> pa.Table:
+    return pa.table(
+        {
+            "doc_id": [10, 11, 12, 13, 14],
+            "prompt": ["a", "b", "c", "d", "e"],
+            "prompt_tokens": [6, 5, 4, 3, 2],
+            "target_output_tokens": [0, 0, 0, 0, 0],
+        }
+    )
+
+
+def memberships(result) -> list[list[int]]:
+    return [
+        batch.column("doc_id").to_pylist()
+        for batch in result.batches
+    ]
+
+
 class OrganizerTests(unittest.TestCase):
     def test_arrow_organizer_splits_batches(self) -> None:
         organizer = make_organizer("arrow", OrganizerConfig(batch_size=4))
@@ -113,6 +131,100 @@ class OrganizerTests(unittest.TestCase):
         self.assertEqual(result.batches[1].column("prefix_key").to_pylist(), ["b", "b"])
         self.assertEqual(result.metrics["organization_policy_family"], "prefix_aware")
         self.assertEqual(result.metrics["prefix_group_ratio"], 1.0)
+
+    def test_arrow_best_fit_uses_shared_deterministic_membership(self) -> None:
+        result = make_organizer(
+            "arrow",
+            OrganizerConfig(
+                batch_size=3,
+                batching_policy="best_fit_token_budget",
+                token_budget=10,
+                output_cost_mode="prompt_only",
+            ),
+        ).organize(output_aware_table())
+
+        self.assertEqual(memberships(result), [[10, 12], [11, 13, 14]])
+        self.assertEqual(
+            result.metrics["packing_algorithm"],
+            "best_fit_decreasing",
+        )
+        self.assertEqual(result.metrics["packing_scope"], "organizer_input")
+        self.assertEqual(result.metrics["packing_cost_unit"], "tokens")
+        self.assertEqual(result.metrics["packing_input_rows"], 5)
+        self.assertEqual(result.metrics["packing_batch_count"], 2)
+
+    def test_arrow_and_daft_best_fit_membership_is_identical(self) -> None:
+        config = OrganizerConfig(
+            batch_size=3,
+            runner="native",
+            batching_policy="best_fit_token_budget",
+            token_budget=10,
+            output_cost_mode="prompt_only",
+        )
+
+        arrow = make_organizer("arrow", config).organize(
+            output_aware_table()
+        )
+        daft = make_organizer("daft", config).organize(
+            output_aware_table()
+        )
+
+        self.assertEqual(memberships(arrow), memberships(daft))
+        self.assertEqual(arrow.batch_cost_units, daft.batch_cost_units)
+
+    def test_trace_cost_changes_membership_without_changing_cap(self) -> None:
+        table = pa.table(
+            {
+                "doc_id": [1, 2, 3],
+                "prompt": ["a", "b", "c"],
+                "prompt_tokens": [2, 2, 2],
+                "target_output_tokens": [8, 0, 0],
+            }
+        )
+        config = OrganizerConfig(
+            batch_size=3,
+            batching_policy="best_fit_token_budget",
+            token_budget=10,
+            completion_max_tokens=16,
+            output_cost_mode="trace_target_output",
+        )
+
+        result = make_organizer("arrow", config).organize(table)
+
+        self.assertEqual(memberships(result), [[1], [2, 3]])
+        self.assertEqual(config.completion_max_tokens, 16)
+        self.assertEqual(
+            result.metrics["output_cost_source"],
+            "burstgpt_unpaired_trace_metadata",
+        )
+
+    def test_trace_cost_requires_valid_prompt_and_target_tokens(self) -> None:
+        invalid_tables = [
+            pa.table(
+                {
+                    "doc_id": [1],
+                    "prompt_tokens": [-1],
+                    "target_output_tokens": [1],
+                }
+            ),
+            pa.table(
+                {
+                    "doc_id": [1],
+                    "prompt_tokens": [1],
+                }
+            ),
+        ]
+        config = OrganizerConfig(
+            batch_size=2,
+            batching_policy="best_fit_token_budget",
+            token_budget=10,
+            output_cost_mode="trace_target_output",
+        )
+
+        for table in invalid_tables:
+            with self.subTest(columns=table.column_names):
+                with self.assertRaises(ValueError):
+                    make_organizer("arrow", config).organize(table)
 
 
 if __name__ == "__main__":
