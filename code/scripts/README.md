@@ -203,6 +203,11 @@ policy and is rejected with `--arrival-replay`, because replay must preserve
 arrival order. `--output-cost-mode` controls only organization and scheduling
 cost estimates; it never changes the backend `--completion-max-tokens` cap:
 
+All token-budget policies enforce both `--token-budget` and
+`--ray-batch-rows`. The latter is a hard per-submission row cap for sequential
+and best-fit packing, so algorithm comparisons do not silently change maximum
+request fan-out.
+
 - `prompt_only` uses zero estimated output tokens
   (`output_cost_source=configured_zero`);
 - `fixed_output_cap` uses the configured completion cap for every row

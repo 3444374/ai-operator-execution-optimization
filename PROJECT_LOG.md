@@ -1250,3 +1250,16 @@
   全部固定为同一批 512 个 doc、相同 source order/fetch size/model/generation cap/
   token budget/max rows/K_max/writeback，仅改变 packing algorithm 与 output-cost
   mode，并逐 repeat 审计 `(doc_id, prompt_tokens)` 集合完全一致。
+
+## 2026-07-26 Output-aware BFD 512 行预实验约束缺口
+
+- 64 行真实链路门禁验证了 request/submission/resource trace、vLLM FLOP
+  counter、功耗与 MFU 字段能够落盘；该规模只作基础设施检查，不作性能结论。
+- 首次 512 行矩阵在第 22/24 轮停止。审计发现 sequential token-budget
+  只应用 token 容量，而 BFD 同时应用 token 容量与 `ray_batch_rows=16`，
+  导致前者单 submission 达 71--94 行，比较混入了不一致的行数上限；失败轮次还
+  触发 180 秒 HTTP timeout。该批数据保留为 incident 证据，不进入正式结论。
+- 按 TDD 为 sequential token-budget 补齐与 BFD、arrival replay 一致的
+  `ray_batch_rows` 硬上限。新增回归测试先复现 `[5]` 与 `[2,2,1]` 的不一致，
+  修复后 organizer、profiler scheduling、真实 Daft-to-Ray contract 与全量
+  224 tests 均通过。正式矩阵必须从干净 vLLM 服务重新运行。

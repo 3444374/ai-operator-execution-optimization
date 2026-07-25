@@ -90,6 +90,44 @@ class OrganizerTests(unittest.TestCase):
         self.assertEqual([batch.num_rows for batch in result.batches], [2, 1, 1])
         self.assertEqual(batch_metrics(result.batches)["output_rows"], 4)
 
+    def test_sequential_token_budget_honors_same_row_cap_as_best_fit(self) -> None:
+        table = pa.table(
+            {
+                "doc_id": [1, 2, 3, 4, 5],
+                "prompt": ["a", "b", "c", "d", "e"],
+                "prompt_tokens": [1, 1, 1, 1, 1],
+            }
+        )
+        common = {
+            "batch_size": 2,
+            "token_budget": 100,
+            "output_cost_mode": "prompt_only",
+        }
+
+        sequential = make_organizer(
+            "arrow",
+            OrganizerConfig(
+                batching_policy="token_budget",
+                **common,
+            ),
+        ).organize(table)
+        best_fit = make_organizer(
+            "arrow",
+            OrganizerConfig(
+                batching_policy="best_fit_token_budget",
+                **common,
+            ),
+        ).organize(table)
+
+        self.assertEqual(
+            [batch.num_rows for batch in sequential.batches],
+            [2, 2, 1],
+        )
+        self.assertEqual(
+            [batch.num_rows for batch in best_fit.batches],
+            [2, 2, 1],
+        )
+
     def test_token_budget_requires_positive_budget(self) -> None:
         with self.assertRaisesRegex(ValueError, "token_budget must be positive"):
             make_organizer("arrow", OrganizerConfig(batch_size=4, batching_policy="token_budget"))

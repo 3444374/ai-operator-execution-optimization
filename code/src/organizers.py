@@ -326,7 +326,10 @@ def _token_budget_batches(
         row_tokens = _row_token_cost(table, row_index, config)
         if (
             row_index > start
-            and current_tokens + row_tokens > config.token_budget
+            and (
+                row_index - start >= config.batch_size
+                or current_tokens + row_tokens > config.token_budget
+            )
         ):
             batches.append(table.slice(start, row_index - start))
             start = row_index
