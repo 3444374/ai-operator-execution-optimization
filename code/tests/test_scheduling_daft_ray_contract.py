@@ -14,12 +14,11 @@ from src.organizers import DaftOrganizer, OrganizerConfig  # noqa: E402
 from src.scheduling.admission import StaticAdmissionController  # noqa: E402
 from src.scheduling.models import (  # noqa: E402
     BatchRequest,
-    CollectedSubmission,
     EndpointSnapshot,
     PayloadEnvelope,
-    SubmissionCompletion,
     TopologySnapshot,
 )
+from src.scheduling.ray_adapter import RaySubmissionAdapter  # noqa: E402
 from src.scheduling.routing import RoundRobinEndpointRouter  # noqa: E402
 from src.scheduling.scheduler import SynchronousScheduler  # noqa: E402
 
@@ -51,33 +50,6 @@ class DaftRayContractTests(unittest.TestCase):
                 "rows": payload.num_rows,
                 "endpoint_id": endpoint_id,
             }
-
-        class RayTaskAdapter:
-            def submit(self, envelope, endpoint_id):
-                return execute.remote(envelope.payload, endpoint_id)
-
-            def wait_one(self, pending):
-                import time
-
-                refs = [handle for handle, _ in pending]
-                wait_start = time.perf_counter()
-                ready, _ = ray.wait(refs, num_returns=1)
-                wait_s = time.perf_counter() - wait_start
-                handle = ready[0]
-                envelope = next(item for item_handle, item in pending if item_handle == handle)
-                result_start = time.perf_counter()
-                result = ray.get(handle)
-                result_s = time.perf_counter() - result_start
-                return CollectedSubmission(
-                    handle=handle,
-                    completion=SubmissionCompletion(
-                        request_id=envelope.request.request_id,
-                        status="completed",
-                        result=result,
-                    ),
-                    wait_s=wait_s,
-                    result_s=result_s,
-                )
 
         envelopes = [
             PayloadEnvelope(
@@ -119,7 +91,10 @@ class DaftRayContractTests(unittest.TestCase):
             result = SynchronousScheduler(
                 StaticAdmissionController(2),
                 RoundRobinEndpointRouter(),
-                RayTaskAdapter(),
+                RaySubmissionAdapter(
+                    ray,
+                    {"e1": lambda payload: execute.remote(payload, "e1")},
+                ),
                 "default",
             ).run(envelopes, topology)
         finally:

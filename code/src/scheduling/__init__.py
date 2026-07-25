@@ -11,6 +11,7 @@ from .models import (
     SubmissionCompletion,
     TopologySnapshot,
 )
+from .ray_adapter import RaySubmissionAdapter
 from .routing import RoundRobinEndpointRouter
 from .scheduler import SchedulerResult, SubmissionAdapter, SynchronousScheduler
 from .topology import healthy_endpoints
@@ -21,6 +22,7 @@ __all__ = [
     "CollectedSubmission",
     "EndpointSnapshot",
     "PayloadEnvelope",
+    "RaySubmissionAdapter",
     "RoutingDecision",
     "RoundRobinEndpointRouter",
     "SchedulerResult",
