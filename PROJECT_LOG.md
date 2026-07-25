@@ -1310,3 +1310,17 @@
   即使 classic BFD 整体负向，仍可在 row-cap-aware 混合策略中复用经独立对照有效的
   cost 降序、确定性 tie-break、共享硬约束、oversized 单例和 packing diagnostics；
   只有 placement objective 等造成退化的部分被排除。
+
+## 2026-07-26 Row-cap-aware packing 与非阻塞观测实施计划
+
+- 用户确认机制级设计并要求继续，新增
+  `code_doc/superpowers/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md`。
+- 计划分为 observation age/schema、typed adaptive 非阻塞生产接线、纯
+  row-cap-first packing、Arrow/Daft 共享 organizer 接线、全量回归、真实 64 行门禁
+  和 512→1024 筛选确认七个任务；所有生产行为严格先 RED 后 GREEN。
+- 主比较固定 output cost，并以 sequential、classic BFD、BFD-inspired
+  row-cap-aware 三组完成最小机制消融；未配对 BurstGPT target-output 只保留为
+  secondary sensitivity，不再作为主配置。
+- 512 行先单次筛选，只有同时通过 correctness/MFU 门禁且未出现无补偿的显著性能
+  退化的候选才运行三次重复；1024 只验证 512 胜出配置，不重新调参。若无候选胜出，
+  直接保留 sequential 并停止，不为使用复杂技术而继续扩展。

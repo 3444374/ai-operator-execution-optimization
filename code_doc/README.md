@@ -20,3 +20,6 @@ Current output-aware BFD implementation plan:
 
 Current row-cap-aware packing and non-blocking observation design:
 `superpowers/specs/2026-07-26-row-cap-aware-packing-and-observation-design.md`.
+
+Current row-cap-aware packing and non-blocking observation implementation plan:
+`superpowers/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md`.
