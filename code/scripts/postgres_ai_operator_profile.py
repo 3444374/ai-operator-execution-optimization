@@ -65,6 +65,7 @@ from src.scheduling.batching import (
     SystemReplayClock,
 )
 from src.scheduling.flush import FixedTimeoutFlush, ImmediateFlush, QueueAdaptiveFlush
+from src.scheduling.lifecycle import RequestLifecycleSeed
 from src.scheduling.models import (
     BatchRequest,
     EndpointSnapshot,
@@ -607,12 +608,18 @@ def _arrival_replay_envelopes(
     operator: str,
     service_observation,
     trace_sink,
+    lifecycle_seed_sink=None,
 ) -> Iterable[PayloadEnvelope]:
     completion_max_tokens = (
         args.completion_max_tokens if operator == "ai_complete" else 0
     )
 
+    first_source_arrival_s: float | None = None
+    replay_start_epoch_s: float | None = None
+    arrival_time_scale = getattr(args, "arrival_time_scale", 1.0)
+
     def rows() -> Iterable[RowArrival]:
+        nonlocal first_source_arrival_s
         previous_arrival_s: float | None = None
         for table in tables:
             for arrival in _row_arrivals(table, completion_max_tokens):
@@ -624,6 +631,8 @@ def _arrival_replay_envelopes(
                         "arrival_time_s values must be non-decreasing across fetch chunks"
                     )
                 previous_arrival_s = arrival.arrival_s
+                if first_source_arrival_s is None:
+                    first_source_arrival_s = arrival.arrival_s
                 yield arrival
 
     policies = {
@@ -670,6 +679,35 @@ def _arrival_replay_envelopes(
             job_id=str(job_id),
             operator=operator,
         )
+        if lifecycle_seed_sink is not None:
+            if replay_start_epoch_s is None or first_source_arrival_s is None:
+                raise RuntimeError("replay epoch origin is not initialized")
+            epoch_clock = (
+                getattr(args, "_replay_epoch_clock", None) or time.time
+            )
+            flush_epoch_s = epoch_clock()
+            seeds = [
+                RequestLifecycleSeed(
+                    request_id=f"{job_id}:row:{row.row_id}",
+                    submission_id=envelope.request.request_id,
+                    doc_id=row.row_id,
+                    prompt_tokens=row.prompt_tokens,
+                    estimated_output_tokens=row.estimated_output_tokens,
+                    prefix_key=row.prefix_key,
+                    arrival_epoch_s=(
+                        replay_start_epoch_s
+                        + (row.arrival_s - first_source_arrival_s)
+                        * arrival_time_scale
+                    ),
+                    flush_epoch_s=flush_epoch_s,
+                )
+                for row in pending.rows
+            ]
+            for seed in seeds:
+                if callable(lifecycle_seed_sink):
+                    lifecycle_seed_sink(seed)
+                else:
+                    lifecycle_seed_sink.append(seed)
         batch_index += 1
         return envelope
 
@@ -689,10 +727,13 @@ def _arrival_replay_envelopes(
         close_batch=close_batch,
         service_observation=observe,
         clock=getattr(args, "_replay_clock", None) or SystemReplayClock(),
-        arrival_time_scale=getattr(args, "arrival_time_scale", 1.0),
+        arrival_time_scale=arrival_time_scale,
     )
 
     def replay() -> Iterable[PayloadEnvelope]:
+        nonlocal replay_start_epoch_s
+        epoch_clock = getattr(args, "_replay_epoch_clock", None) or time.time
+        replay_start_epoch_s = epoch_clock()
         try:
             yield from batcher
         finally:

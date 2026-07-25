@@ -24,6 +24,12 @@ from .flush import (
     ImmediateFlush,
     QueueAdaptiveFlush,
 )
+from .lifecycle import (
+    RequestLifecycleSeed,
+    RequestTraceRow,
+    SubmissionServiceTiming,
+    build_request_trace_rows,
+)
 from .models import (
     AdmissionDecision,
     AdmissionObservation,
@@ -106,6 +112,8 @@ __all__ = [
     "ReplayClock",
     "ReplayServiceObservation",
     "QueueAdaptiveFlush",
+    "RequestLifecycleSeed",
+    "RequestTraceRow",
     "RoutingDecision",
     "RoundRobinEndpointRouter",
     "RowArrival",
@@ -116,6 +124,7 @@ __all__ = [
     "SubmissionAdapter",
     "SubmissionCompletion",
     "SubmissionLifecycleEvent",
+    "SubmissionServiceTiming",
     "SynchronousScheduler",
     "SystemReplayClock",
     "TopologySnapshot",
@@ -124,5 +133,6 @@ __all__ = [
     "WindowDecision",
     "WindowController",
     "healthy_endpoints",
+    "build_request_trace_rows",
     "slo_constrained_reward",
 ]

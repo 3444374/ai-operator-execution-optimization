@@ -477,6 +477,65 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [6, 6, 12],
         )
 
+    def test_arrival_replay_emits_one_lifecycle_seed_per_complete_row(self) -> None:
+        args = SimpleNamespace(
+            ray_batch_rows=8,
+            batching_policy="fixed_rows",
+            token_budget=0,
+            flush_policy="fixed_timeout",
+            flush_timeout_ms=25.0,
+            flush_max_wait_ms=50.0,
+            max_inflight=8,
+            arrival_time_scale=0.001,
+            completion_max_tokens=4,
+            _replay_clock=_DeterministicReplayClock(),
+            _replay_epoch_clock=iter([1_000.0, 1_000.025]).__next__,
+        )
+        table = pa.table(
+            {
+                "doc_id": [1, 2],
+                "prompt_tokens": [10, 20],
+                "arrival_time_s": [5.0, 15.0],
+                "prefix_key": ["p", "p"],
+            }
+        )
+        seeds = []
+
+        envelopes = list(
+            profile._arrival_replay_envelopes(
+                [table],
+                args,
+                job_id="job",
+                operator="ai_complete",
+                service_observation=lambda: ReplayServiceObservation(
+                    fresh=False,
+                    running=None,
+                    waiting=None,
+                    kv_usage=None,
+                ),
+                trace_sink=[],
+                lifecycle_seed_sink=seeds,
+            )
+        )
+
+        self.assertEqual(len(envelopes), 1)
+        self.assertEqual(
+            [seed.request_id for seed in seeds],
+            ["job:row:1", "job:row:2"],
+        )
+        self.assertEqual(
+            {seed.submission_id for seed in seeds},
+            {"job:batch:0"},
+        )
+        self.assertEqual(
+            [seed.arrival_epoch_s for seed in seeds],
+            [1_000.0, 1_000.01],
+        )
+        self.assertEqual(
+            [seed.flush_epoch_s for seed in seeds],
+            [1_000.025, 1_000.025],
+        )
+
     def test_queue_adaptive_uses_max_inflight_for_pressure_window(self) -> None:
         args = SimpleNamespace(
             ray_batch_rows=8,
