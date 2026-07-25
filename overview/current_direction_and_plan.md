@@ -84,7 +84,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678 | 固定行数是计算量的弱代理 |
 | Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171 | token-budget 能有效约束 token tail |
 | Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3× | K_max 在共享 vLLM 下必要 |
-| Queue-adaptive flush 已实现但未超越静态 K_max=8 | 研究内容二当前最高风险 gap |
+| Queue-adaptive flush 已完成加速到达真实筛选但平均 batch rows=1、tokens/s 低于 immediate 0.966% | 研究内容二当前最高风险 gap；下一版先通过 batch formation + P99 门禁 |
 
 **AI_EMBED（预研，已完成）**：
 | 证据 | 来源 | 能说明什么 |

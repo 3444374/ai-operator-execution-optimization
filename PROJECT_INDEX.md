@@ -126,6 +126,13 @@
 | `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_sweep_bulk_20260719.csv` | Local `AI_COMPLETE` background bulk-job shared-vLLM sweep | Paired bulk-job CSV for background throughput and service-pressure tradeoff |
 | `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_adaptive_tuned_small_20260719.csv` | Local `AI_COMPLETE` tuned adaptive foreground interference supplement | Shows adaptive downshift can trigger, but foreground latency remains worse than static K_max=8 |
 | `experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_adaptive_tuned_bulk_20260719.csv` | Local `AI_COMPLETE` tuned adaptive bulk interference supplement | Paired bulk CSV recording adaptive downshifts, upshifts, and effective limit mean |
+| `experiments/results/accelerated_arrival_flush_20260725/README.md` | 真实单 GPU 加速到达 flush 策略实验报告 | immediate / fixed-timeout / queue-adaptive 的设置、统计、负结果边界与下一步 |
+| `experiments/results/accelerated_arrival_flush_20260725/manifest.json` | 加速到达实验复现清单 | 代码提交、镜像、版本、硬件、参数、门禁和中途服务恢复记录 |
+| `experiments/results/accelerated_arrival_flush_20260725/formal_runs.csv` | 512 条 workload 的原始运行级结果 | 每策略 1 次预热 + 5 次正式重复，真实 PostgreSQL/pgvector/vLLM 版本 |
+| `experiments/results/accelerated_arrival_flush_20260725/formal_run_metrics.csv` | 绘图友好的正式逐运行指标 | 15 条正式运行，含 observed tokens/s |
+| `experiments/results/accelerated_arrival_flush_20260725/formal_metric_summary.csv` | 正式运行统计汇总 | 均值、样本标准差、95% t 置信区间、最小值和最大值 |
+| `experiments/results/accelerated_arrival_flush_20260725/formal_*_trace.csv` | flush、submission 与 resource 原始轨迹族 | 保留逐重复身份，可用于后续时序图与 batch formation 图 |
+| `experiments/results/accelerated_arrival_flush_20260725/scale_probe_runs.csv` | 1024 条同到达密度规模探针 | 每策略单次真实运行，用于判断扩大行数能否改变 batch formation |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |

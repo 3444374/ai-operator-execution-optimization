@@ -1,0 +1,4 @@
+﻿"flush_policy","submissions","documents","batch_rows_mean","batch_rows_p50","batch_rows_p95","batch_rows_max","batch_service_s_p95","batch_service_s_p99","server_version","pgvector_version"
+"immediate","2560","2560","1","1","1","1","0.266715","0.283557","18.4 (Debian 18.4-1.pgdg12+1)","0.8.2"
+"fixed_timeout","2330","2560","1.098712","1","2","5","0.267862","0.283501","18.4 (Debian 18.4-1.pgdg12+1)","0.8.2"
+"queue_adaptive","2560","2560","1","1","1","1","0.272967","0.295664","18.4 (Debian 18.4-1.pgdg12+1)","0.8.2"

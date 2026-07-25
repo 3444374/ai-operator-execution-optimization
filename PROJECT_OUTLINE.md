@@ -66,7 +66,10 @@
    - Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678——证明固定行数是计算量的弱代理。
    - Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171（vs fixed 64/128 的 16377/26677），吞吐接近。
    - Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3×（4.9→11.4s）而 bulk 自身吞吐几乎不变——证明 K_max 在共享 vLLM 下必要。
-   - Queue-adaptive flush 已实现，但当前不如静态 K_max=8，需改进控制器。
+   - Queue-adaptive flush 已完成真实加速到达筛选：当前规则平均 batch rows=1，
+     tokens/s 比 immediate 低 0.966%；fixed timeout 减少 8.984% submissions
+     但吞吐只提高 0.185%，置信区间重叠。下一版必须先通过 batch formation
+     与 P99 门禁，详见 `experiments/results/accelerated_arrival_flush_20260725/`。
    - 边界：本地 rehearsal，不代表 PG18.3 内部平台结果。
    - 状态与缺口审计：`experiments/plans/experiment_status_and_gaps.md`。
 2. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`

@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "experiment_name": "accelerated_arrival_flush_20260725",
+  "date": "2026-07-25",
+  "research_scope": "single-GPU arrival-paced flush-policy screening",
+  "code": {
+    "branch": "feat/runtime-scheduling-foundation",
+    "commit_before_experiment": "851031f1d481b5c44938e397086788394f481273",
+    "framework_path": "PostgreSQL -> Daft -> Arrow -> Ray task -> vLLM"
+  },
+  "software": {
+    "python": "3.10.20",
+    "daft": "0.7.20",
+    "ray": "2.56.0",
+    "pyarrow": "24.0.0",
+    "psycopg": "3.3.4",
+    "vllm": "0.25.1",
+    "vllm_image": "vllm/vllm-openai:v0.25.1-cu129-ubuntu2404",
+    "postgres_image": "ai-operator-postgres:18.4-pgvector0.8.2",
+    "server_version": "18.4 (Debian 18.4-1.pgdg12+1)",
+    "pgvector_version": "0.8.2"
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "gpu_count": 1,
+    "gpu_memory_mib": 12227,
+    "driver_version": "576.88"
+  },
+  "workload": {
+    "name": "sharegpt_burstgpt",
+    "rows": 512,
+    "source_order": "arrival_time",
+    "arrival_replay": true,
+    "arrival_time_scale": 0.0005,
+    "unscaled_first_512_span_s": 39757,
+    "scaled_first_512_span_s": 19.8785,
+    "model": "qwen2.5-1.5b",
+    "completion_max_tokens": 16
+  },
+  "common_parameters": {
+    "data_source": "daft_postgres",
+    "executor": "ray_task",
+    "model_backend": "compatible_http",
+    "batching_policy": "token_budget",
+    "token_budget": 6144,
+    "scheduling_policy": "static",
+    "max_inflight": 8,
+    "flush_timeout_ms": 25,
+    "flush_max_wait_ms": 50,
+    "writeback_mode": "none",
+    "warmup_runs": 1,
+    "formal_repeats": 5
+  },
+  "policies": [
+    "immediate",
+    "fixed_timeout",
+    "queue_adaptive"
+  ],
+  "quality_gates": {
+    "real_components_only": true,
+    "gate_rows_per_policy": 64,
+    "gate_status": "passed",
+    "formal_run_rows": 18,
+    "formal_status_ok_rows": 18,
+    "formal_rows_used_for_statistics": 15,
+    "per_repeat_document_coverage": "512 unique document IDs exactly once",
+    "required_traces": [
+      "flush",
+      "submission",
+      "resource"
+    ]
+  },
+  "scale_probe": {
+    "purpose": "diagnose whether increasing row count alone creates adaptive batches",
+    "rows": 1024,
+    "arrival_time_scale": 0.0005,
+    "warmup_runs": 0,
+    "formal_repeats": 1,
+    "status": "passed",
+    "interpretation": "screening only; policy order was not randomized",
+    "queue_adaptive_batch_rows_mean": 1.0,
+    "decision": "do not spend a 2048-row run before fixing window selection and event-time catch-up"
+  },
+  "incident": {
+    "policy": "queue_adaptive",
+    "phase": "first warmup attempt",
+    "symptom": "seven vLLM requests remained running after a 180-second client timeout",
+    "data_included": false,
+    "recovery": "restart only the experimental vLLM container, wait for health=200 and running=waiting=0, then rerun the complete policy group",
+    "limitation": "policy order was not randomized and the service restart occurred only before the successful queue_adaptive group"
+  },
+  "claim_boundary": [
+    "This is an accelerated controlled arrival workload, not a literal production-rate replay.",
+    "Submission latency is batch-level; per-request end-to-end latency was not captured.",
+    "The experiment screens flush policies on one GPU and does not establish multi-GPU behavior.",
+    "Overlapping confidence intervals and non-randomized policy order preclude a significance claim."
+  ]
+}

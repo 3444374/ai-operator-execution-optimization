@@ -155,6 +155,10 @@ result.
 - `--repeats`
 - `--experiment-id`
 
+运行级 CSV 现在直接记录 `tokens_per_s`，计算口径为 vLLM Prometheus 的
+`(prompt_tokens_delta + generation_tokens_delta) / e2e_s`。该字段是服务端
+实际 token 增量，不是 organizer 的 token cost 估计。
+
 `--source-order doc_id` is the offline throughput mode: PostgreSQL already
 contains the workload rows, and the profile scans them in stable document-id
 order before Daft organization. `--source-order arrival_time` reads rows by

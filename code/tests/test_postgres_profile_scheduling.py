@@ -228,6 +228,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 phase="formal",
                 repeat_index=2,
                 job_id=9,
+                server_version="18.4",
+                pgvector_version="0.8.2",
                 controller_name="aimd",
                 trace_events=events,
             )
@@ -239,6 +241,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(rows[1]["elapsed_s"], 0.5)
         self.assertEqual(rows[1]["k_max"], 4)
         self.assertEqual(rows[1]["controller_action"], "decrease")
+        self.assertEqual(rows[1]["server_version"], "18.4")
+        self.assertEqual(rows[1]["pgvector_version"], "0.8.2")
 
     def test_build_routing_config_resolves_endpoint_assignments(self) -> None:
         config = profile._build_routing_config(
@@ -764,6 +768,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 phase="formal",
                 repeat_index=2,
                 job_id=9,
+                server_version="18.4",
+                pgvector_version="0.8.2",
                 flush_policy="fixed_timeout",
                 flush_timeout_ms=25.0,
                 flush_max_wait_ms=50.0,
@@ -782,6 +788,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "phase",
                     "repeat_index",
                     "job_id",
+                    "server_version",
+                    "pgvector_version",
                     "flush_policy",
                     "flush_timeout_ms",
                     "flush_max_wait_ms",
@@ -806,6 +814,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     phase="formal",
                     repeat_index=2,
                     job_id=9,
+                    server_version="18.4",
+                    pgvector_version="0.8.2",
                     flush_policy="fixed_timeout",
                     flush_timeout_ms=25.0,
                     flush_max_wait_ms=50.0,
@@ -829,6 +839,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 phase="formal",
                 repeat_index=2,
                 job_id=9,
+                server_version="18.4",
+                pgvector_version="0.8.2",
                 results=[
                     {
                         "doc_id": [11, 12],
@@ -848,6 +860,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 phase="formal",
                 repeat_index=2,
                 job_id=9,
+                server_version="18.4",
+                pgvector_version="0.8.2",
                 samples=[
                     {
                         "sample_index": 0,
@@ -864,11 +878,22 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
             self.assertEqual(submission[0]["doc_ids"], "11;12")
             self.assertEqual(submission[0]["job_id"], "9")
+            self.assertEqual(submission[0]["server_version"], "18.4")
+            self.assertEqual(submission[0]["pgvector_version"], "0.8.2")
             self.assertEqual(resource[0]["gpu_utilization_pct"], "50")
             self.assertEqual(resource[0]["repeat_index"], "2")
         finally:
             submission_output.unlink(missing_ok=True)
             resource_output.unlink(missing_ok=True)
+
+    def test_vllm_tokens_per_second_uses_observed_prometheus_deltas(self) -> None:
+        stats = {
+            "vllm_prompt_tokens_delta": 900,
+            "vllm_generation_tokens_delta": 100,
+        }
+
+        self.assertEqual(profile._vllm_tokens_per_second(stats, 4.0), 250.0)
+        self.assertEqual(profile._vllm_tokens_per_second(stats, 0.0), 0.0)
 
 
 class _DeterministicReplayClock:

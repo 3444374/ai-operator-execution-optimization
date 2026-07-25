@@ -1037,3 +1037,22 @@
 - 新增 immediate、fixed-timeout、queue-adaptive 三类独立 flush policy，覆盖 budget、低负载、拥塞、missing/stale metrics 和 hard max-wait。
 - fatal-flaw audit：现有 `source_order=arrival_time` 只排序不按时间 replay，不能产生真实 pending-wait/flush 证据；正式 flush 实验前必须增加 Ray pending queue 与 arrival-paced enqueue。
 - 加入上述变更后的新鲜全量回归：122 tests、0 failures，包含真实单节点 Ray task/actor 与分池 actor contract。仍未产生 GPU 性能结果，未合并 `main`。
+
+## 2026-07-25 加速到达 flush 策略真实单 GPU 实验
+
+- 新增 arrival time scale、完整 flush/submission/resource trace，并在真实
+  `PostgreSQL -> Daft -> Arrow -> Ray task -> vLLM` 链路完成三策略门禁。
+- 正式矩阵共 18 次运行：immediate、fixed timeout、queue adaptive 各 1 次
+  预热 + 5 次正式重复；每次 512 个文档均 exactly-once，未使用 fake。
+- fixed timeout 相对 immediate 减少 8.984% submissions，但 tokens/s 仅提高
+  0.185%，95% CI 重叠；当前 queue adaptive 没有形成多行 batch，tokens/s
+  低 0.966%，不能声称动态策略有效。
+- 第一次 queue-adaptive 预热触发 vLLM 请求超时和 7 个遗留 running 请求；
+  失败数据未进入 CSV。仅重启实验 vLLM 容器并等待空闲后完整重跑，限制已写入
+  manifest 和结果报告。
+- profiler 新增直接输出 `tokens_per_s`，使用 vLLM 实际 token 增量；结果目录为
+  `experiments/results/accelerated_arrival_flush_20260725/`。分支继续隔离，
+  尚未合并 `main`。
+- 后续 1024 条同密度单次探针中，queue adaptive 仍为 1024 submissions、
+  平均 batch rows=1；扩大行数没有修复 batch formation，因此暂不直接运行
+  2048 条正式重复，先修正 adaptive 窗口和事件时间处理。

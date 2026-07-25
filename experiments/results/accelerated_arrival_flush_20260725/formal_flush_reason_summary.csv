@@ -1,0 +1,5 @@
+﻿"flush_policy","reason","count","ratio","server_version","pgvector_version"
+"immediate","immediate","2560","1","18.4 (Debian 18.4-1.pgdg12+1)","0.8.2"
+"fixed_timeout","fixed_timeout","2330","1","18.4 (Debian 18.4-1.pgdg12+1)","0.8.2"
+"queue_adaptive","service_underloaded","596","0.232812","18.4 (Debian 18.4-1.pgdg12+1)","0.8.2"
+"queue_adaptive","hard_max_wait","1964","0.767188","18.4 (Debian 18.4-1.pgdg12+1)","0.8.2"

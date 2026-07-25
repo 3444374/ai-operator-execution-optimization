@@ -241,6 +241,12 @@ CONCUR-AIMD 首选理由：无 EWMA 契合 `code/AGENTS.md` "保持简单"（Ray
 
 #### P0-3：关键指标 `tokens/s` 缺失，`rows/s` 在 AI_COMPLETE 场景下是有偏指标
 
+**2026-07-25 状态更新：本轮新增实验已修复。** profiler 现在直接输出
+`tokens_per_s`；加速到达 flush 实验对已经完成的 15 条正式运行使用 vLLM
+Prometheus 的实际 `prompt_tokens_delta + generation_tokens_delta` 事后无损补算，
+结果见 `experiments/results/accelerated_arrival_flush_20260725/`。旧实验仍需在
+跨 workload 比较前补算，不能把本项标记为全历史数据已修复。
+
 **事实**：所有实验使用 `rows/s` 作为主吞吐指标，但同一 workload 中每行 token 量可差 13.9×（batch=8 时 token 跨度从几十到几千）。Token-budget=4096 的 rows/s（301）低于 fixed 32（325），但如果计算 `tokens/s`，4096 可能持平甚至更高。
 
 **影响**：无法公平比较不同策略的效率。token-budget 策略的核心 tradeoff（更多小请求 vs 更少大请求）在 `rows/s` 指标下被扭曲。
@@ -251,6 +257,19 @@ CONCUR-AIMD 首选理由：无 EWMA 契合 `code/AGENTS.md` "保持简单"（Ray
 - per-request e2e latency 分布：对 length-align/prefix-aware 分组策略论证至关重要
 
 **量化方法**：`tokens/s = SUM(prompt_tokens + completion_tokens) / operator_wall_s`。对于使用同一 tokenizer 的 workload，`prompt_tokens` 列已存在；可累计每行的 `prompt_tokens + completion_max_tokens` 作为计算量 proxy。
+
+#### 2026-07-25 加速到达 flush 策略筛选结果
+
+**事实（真实单 GPU E2E）**：在 ShareGPT/BurstGPT 前 512 条、
+arrival scale `0.0005`、token budget 6144、静态 `K_max=8` 下，每策略 1 次
+预热 + 5 次正式重复。fixed timeout 相对 immediate 将 submission 减少
+8.984%，但 tokens/s 仅提高 0.185%，置信区间重叠。当前 queue-adaptive
+平均 batch rows 为 1.0，tokens/s 低 0.966%，没有形成有效 coalescing。
+
+**设计判定**：当前 queue-adaptive 版本不进入联合搜索。下一轮必须先在 64 条
+真实门禁中同时满足 exactly-once、平均 batch rows > 1 和 service P99
+guardrail，再运行 512 条矩阵。完整证据、故障恢复记录和 claim boundary 见
+`experiments/results/accelerated_arrival_flush_20260725/README.md`。
 
 ### 6.2 P1 严重级：需补实验，但不会动摇论文根基
 

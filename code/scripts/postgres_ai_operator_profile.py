@@ -894,6 +894,8 @@ def _write_control_trace(
     phase: str,
     repeat_index: int,
     job_id: int,
+    server_version: str,
+    pgvector_version: str,
     controller_name: str,
     trace_events: list,
 ) -> None:
@@ -909,6 +911,8 @@ def _write_control_trace(
                 "phase": phase,
                 "repeat_index": repeat_index,
                 "job_id": job_id,
+                "server_version": server_version,
+                "pgvector_version": pgvector_version,
                 "controller": controller_name,
                 "trace_index": trace_index,
                 "elapsed_s": event.observed_at_s - first_observed_at_s,
@@ -932,6 +936,8 @@ def _write_flush_trace(
     phase: str,
     repeat_index: int,
     job_id: int,
+    server_version: str,
+    pgvector_version: str,
     flush_policy: str,
     flush_timeout_ms: float,
     flush_max_wait_ms: float,
@@ -947,6 +953,8 @@ def _write_flush_trace(
                 "phase": phase,
                 "repeat_index": repeat_index,
                 "job_id": job_id,
+                "server_version": server_version,
+                "pgvector_version": pgvector_version,
                 "flush_policy": flush_policy,
                 "flush_timeout_ms": flush_timeout_ms,
                 "flush_max_wait_ms": flush_max_wait_ms,
@@ -969,6 +977,8 @@ def _write_submission_trace(
     phase: str,
     repeat_index: int,
     job_id: int,
+    server_version: str,
+    pgvector_version: str,
     results: list[dict],
 ) -> None:
     for submission_index, result in enumerate(results):
@@ -980,6 +990,8 @@ def _write_submission_trace(
                 "phase": phase,
                 "repeat_index": repeat_index,
                 "job_id": job_id,
+                "server_version": server_version,
+                "pgvector_version": pgvector_version,
                 "submission_index": submission_index,
                 "doc_ids": ";".join(str(item) for item in result.get("doc_id", [])),
                 "rows": result.get("rows", 0),
@@ -1000,6 +1012,8 @@ def _write_resource_trace(
     phase: str,
     repeat_index: int,
     job_id: int,
+    server_version: str,
+    pgvector_version: str,
     samples: list[dict],
 ) -> None:
     for sample in samples:
@@ -1011,6 +1025,8 @@ def _write_resource_trace(
                 "phase": phase,
                 "repeat_index": repeat_index,
                 "job_id": job_id,
+                "server_version": server_version,
+                "pgvector_version": pgvector_version,
                 **sample,
             },
         )
@@ -1593,6 +1609,17 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
         raise SystemExit("--flush-max-wait-ms must be finite and positive")
 
 
+def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
+    """Return observed vLLM token throughput for one end-to-end run."""
+    if e2e_s <= 0:
+        return 0.0
+    observed_tokens = (
+        float(vllm_stats["vllm_prompt_tokens_delta"])
+        + float(vllm_stats["vllm_generation_tokens_delta"])
+    )
+    return observed_tokens / e2e_s
+
+
 def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     _validate_arrival_replay_args(args)
     endpoint_urls = completion_endpoint_urls(args) if args.operator == "ai_complete" else embedding_endpoint_urls(args)
@@ -2074,6 +2101,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 phase=phase,
                 repeat_index=repeat_index,
                 job_id=job_id,
+                server_version=db_metadata["server_version"],
+                pgvector_version=db_metadata["pgvector_version"],
                 results=operator_results,
             )
         resource_trace_path = args.resource_trace_output or ""
@@ -2084,6 +2113,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 phase=phase,
                 repeat_index=repeat_index,
                 job_id=job_id,
+                server_version=db_metadata["server_version"],
+                pgvector_version=db_metadata["pgvector_version"],
                 samples=resource_samples,
             )
 
@@ -2103,6 +2134,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 phase=phase,
                 repeat_index=repeat_index,
                 job_id=job_id,
+                server_version=db_metadata["server_version"],
+                pgvector_version=db_metadata["pgvector_version"],
                 flush_policy=args.flush_policy,
                 flush_timeout_ms=args.flush_timeout_ms,
                 flush_max_wait_ms=args.flush_max_wait_ms,
@@ -2141,6 +2174,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 phase=phase,
                 repeat_index=repeat_index,
                 job_id=job_id,
+                server_version=db_metadata["server_version"],
+                pgvector_version=db_metadata["pgvector_version"],
                 controller_name=adaptive_config["controller_name"],
                 trace_events=trace_events,
             )
@@ -2293,6 +2328,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "writeback_s": round(writeback_s, 6),
             "e2e_s": round(e2e_s, 6),
             "rows_per_s": round(processed_rows / e2e_s, 3) if e2e_s else 0.0,
+            "tokens_per_s": round(_vllm_tokens_per_second(vllm_stats, e2e_s), 3),
         }
     finally:
         if resource_sampler is not None and resource_sampler.is_running:

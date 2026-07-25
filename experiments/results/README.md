@@ -5,6 +5,7 @@
 | Directory | Content | Boundary |
 |---|---|---|
 | `local_vllm_qwen15b_baseline/` | Local `AI_COMPLETE` baseline for `PostgreSQL -> Daft -> Ray -> vLLM Qwen2.5-1.5B`, including synthetic smoke, ShareGPT/BurstGPT fixed row-batch sweep CSVs, and a latency metric probe. | Local PG rehearsal, fixed row-batch baseline only; not a token-aware scheduling result and not a PostgreSQL 18.3 internal-platform result. |
+| `accelerated_arrival_flush_20260725/` | Real single-GPU accelerated-arrival comparison of immediate, fixed-timeout, and queue-adaptive flush, with run, submission, flush, and resource traces. | Controlled accelerated replay on one RTX 5070. Fixed timeout reduced submissions but did not yield a statistically separable throughput gain; the current queue-adaptive rule formed no multi-row batches. |
 
 本目录保存正式研究实验结果和小范围优化测试记录。
 

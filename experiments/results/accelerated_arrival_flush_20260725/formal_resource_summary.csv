@@ -1,0 +1,4 @@
+﻿"flush_policy","gpu_util_mean_pct","gpu_util_peak_pct","memory_peak_mib","running_peak","waiting_peak","kv_peak","server_version","pgvector_version"
+"immediate","67.631","92","11446","8","0","0.0270205833267106","18.4 (Debian 18.4-1.pgdg12+1)","0.8.2"
+"fixed_timeout","67.317","93","11555","13","0","0.0254311372486689","18.4 (Debian 18.4-1.pgdg12+1)","0.8.2"
+"queue_adaptive","66.247","93","11378","8","0","0.0257490264642772","18.4 (Debian 18.4-1.pgdg12+1)","0.8.2"
