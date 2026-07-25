@@ -48,6 +48,13 @@ from src.model_backends import (
     ollama_complete_batch,
 )
 from src.organizers import OrganizerConfig, configure_daft_runner, make_organizer
+from src.scheduling.models import (
+    BatchRequest,
+    EndpointSnapshot,
+    PayloadEnvelope,
+    TopologySnapshot,
+)
+from src.scheduling.scheduler import SchedulerResult
 from src.sinks import write_completions, write_embeddings
 from src.sources import SourceConfig, make_source
 from src.workloads import WORKLOAD_NAMES, generate_document_rows
@@ -358,6 +365,89 @@ def finish_job(conn, job_id: int) -> None:
             (job_id,),
         )
     conn.commit()
+
+
+def _batch_envelopes(
+    batches: Iterable[pa.RecordBatch | pa.Table],
+    job_id: str,
+    operator: str,
+    completion_max_tokens: int,
+) -> list[PayloadEnvelope]:
+    envelopes = []
+    for index, batch in enumerate(batches):
+        request_id = f"{job_id}:batch:{index}"
+        prompt_tokens = 0
+        if "prompt_tokens" in batch.column_names:
+            prompt_tokens = sum(
+                int(value.as_py() or 0) for value in batch.column("prompt_tokens")
+            )
+        prefix_key = ""
+        if "prefix_key" in batch.column_names and batch.num_rows:
+            prefix_values = {
+                str(value.as_py() or "") for value in batch.column("prefix_key")
+            }
+            if len(prefix_values) == 1:
+                prefix_key = prefix_values.pop()
+        arrival_times = []
+        if "arrival_time_s" in batch.column_names:
+            arrival_times = [
+                float(value.as_py())
+                for value in batch.column("arrival_time_s")
+                if value.as_py() is not None
+            ]
+        oldest_arrival_s = min(arrival_times, default=0.0)
+        request = BatchRequest(
+            request_id=request_id,
+            job_id=job_id,
+            operator=operator,
+            row_count=batch.num_rows,
+            prompt_tokens=prompt_tokens,
+            estimated_output_tokens=max(0, completion_max_tokens) * batch.num_rows,
+            prefix_key=prefix_key,
+            first_arrival_s=oldest_arrival_s,
+            oldest_arrival_s=oldest_arrival_s,
+            payload_id=request_id,
+        )
+        envelopes.append(PayloadEnvelope(request=request, payload=batch))
+    return envelopes
+
+
+def _endpoint_topology(
+    endpoint_ids: list[str],
+    endpoint_urls: list[str],
+) -> TopologySnapshot:
+    if len(endpoint_ids) != len(endpoint_urls):
+        raise ValueError("endpoint_ids and endpoint_urls must have the same length")
+    observed_at_s = time.monotonic()
+    endpoints = tuple(
+        EndpointSnapshot(
+            endpoint_id=endpoint_id,
+            url=endpoint_url,
+            pool_id="default",
+            gpu_id="0",
+            healthy=True,
+            running=0,
+            waiting=0,
+            kv_usage=None,
+            observed_at_s=observed_at_s,
+        )
+        for endpoint_id, endpoint_url in zip(endpoint_ids, endpoint_urls)
+    )
+    return TopologySnapshot(endpoints=endpoints, observed_at_s=observed_at_s)
+
+
+def _scheduler_metrics(result: SchedulerResult) -> dict:
+    return {
+        "operator_invocations": result.operator_invocations,
+        "max_inflight": result.max_inflight_seen,
+        "bounded_wait_s": result.bounded_wait_s,
+        "avg_bounded_wait_s": result.avg_bounded_wait_s,
+        "fanin_s": result.fanin_s,
+        "submit_s": result.submit_s,
+        "adaptive_downshifts": 0,
+        "adaptive_upshifts": 0,
+        "adaptive_limit_mean": result.applied_limit,
+    }
 
 
 def submit_with_backpressure(
