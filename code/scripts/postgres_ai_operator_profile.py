@@ -502,7 +502,7 @@ def _batch_envelopes(
 
 
 def _row_arrivals(
-    table: pa.Table,
+    table: pa.Table | pa.RecordBatch,
     completion_max_tokens: int,
 ) -> list[RowArrival]:
     if "arrival_time_s" not in table.column_names:
@@ -559,11 +559,18 @@ def _arrow_envelope(
 ) -> PayloadEnvelope:
     payloads = [row.payload_ref for row in pending.rows]
     if not all(
-        isinstance(payload, pa.Table) and payload.num_rows == 1
+        isinstance(payload, (pa.Table, pa.RecordBatch)) and payload.num_rows == 1
         for payload in payloads
     ):
-        raise ValueError("each replay payload_ref must be a one-row Arrow table")
-    payload = pa.concat_tables(payloads)
+        raise ValueError("each replay payload_ref must be a one-row Arrow payload")
+    payload = pa.concat_tables(
+        [
+            item
+            if isinstance(item, pa.Table)
+            else pa.Table.from_batches([item])
+            for item in payloads
+        ]
+    )
     prefix_values = {row.prefix_key for row in pending.rows}
     prefix_key = prefix_values.pop() if len(prefix_values) == 1 else ""
     request_id = f"{job_id}:batch:{batch_index}"
@@ -585,7 +592,7 @@ def _arrow_envelope(
 
 
 def _arrival_replay_envelopes(
-    tables: Iterable[pa.Table],
+    tables: Iterable[pa.Table | pa.RecordBatch],
     args: argparse.Namespace,
     job_id: str,
     operator: str,

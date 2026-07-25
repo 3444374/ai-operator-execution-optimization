@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 import pyarrow as pa
 
@@ -25,6 +26,119 @@ from src.scheduling.scheduler import SynchronousScheduler  # noqa: E402
 
 
 class DaftRayContractTests(unittest.TestCase):
+    def test_arrival_replay_executes_exactly_once_through_task_and_actor(self) -> None:
+        import ray
+
+        table = pa.table(
+            {
+                "doc_id": [1, 2, 3, 4],
+                "prompt_tokens": [10, 10, 10, 10],
+                "arrival_time_s": [0.0, 0.0, 0.020, 0.100],
+                "prefix_key": ["shared", "shared", "shared", "other"],
+            }
+        )
+        daft_tables = DaftOrganizer(
+            OrganizerConfig(batch_size=4, runner="native")
+        ).organize(table).batches
+        replay_args = SimpleNamespace(
+            batching_policy="fixed_rows",
+            completion_max_tokens=0,
+            flush_max_wait_ms=50.0,
+            flush_policy="fixed_timeout",
+            flush_timeout_ms=60.0,
+            ray_batch_rows=4,
+            strategy="coalesced",
+            token_budget=0,
+        )
+
+        @ray.remote
+        def execute_task(
+            payload,
+            endpoint_url,
+            model_name,
+            api_key,
+            timeout_s,
+            completion_max_tokens,
+        ):
+            del endpoint_url, model_name, api_key, timeout_s, completion_max_tokens
+            return {
+                "doc_ids": payload.column("doc_id").to_pylist(),
+                "executor": "task",
+            }
+
+        @ray.remote
+        class ExecuteActor:
+            def execute_batch(self, payload):
+                return {
+                    "doc_ids": payload.column("doc_id").to_pylist(),
+                    "executor": "actor",
+                }
+
+        def replay(trace):
+            return profile._arrival_replay_envelopes(
+                daft_tables,
+                replay_args,
+                job_id="arrival-contract",
+                operator="ai_complete",
+                service_observation=lambda: None,
+                trace_sink=trace,
+            )
+
+        ray.init(ignore_reinit_error=True, num_cpus=2)
+        try:
+            task_trace = []
+            task_results, task_metrics = profile.submit_ray_tasks(
+                ray_module=ray,
+                remote_embed=execute_task,
+                batches=[],
+                max_inflight=2,
+                operator="ai_complete",
+                embedding_dim=0,
+                model_backend="vllm",
+                endpoint_urls=["contract://local"],
+                model_name="contract-only",
+                api_key=None,
+                timeout_s=1.0,
+                completion_max_tokens=0,
+                replay_envelopes=replay(task_trace),
+            )
+
+            actor_trace = []
+            actor_results, actor_metrics = profile.submit_with_backpressure(
+                ray_module=ray,
+                actors=[ExecuteActor.remote()],
+                batches=[],
+                max_inflight=2,
+                method_name="execute_batch",
+                replay_envelopes=replay(actor_trace),
+            )
+        finally:
+            ray.shutdown()
+
+        expected_groups = [[1, 2, 3], [4]]
+        self.assertEqual(
+            [item["doc_ids"] for item in task_results],
+            expected_groups,
+        )
+        self.assertEqual(
+            [item["doc_ids"] for item in actor_results],
+            expected_groups,
+        )
+        self.assertEqual(task_metrics["operator_invocations"], 2)
+        self.assertEqual(actor_metrics["operator_invocations"], 2)
+        self.assertEqual(
+            sorted(doc_id for item in task_results for doc_id in item["doc_ids"]),
+            [1, 2, 3, 4],
+        )
+        self.assertEqual(
+            sorted(doc_id for item in actor_results for doc_id in item["doc_ids"]),
+            [1, 2, 3, 4],
+        )
+        self.assertGreaterEqual(task_trace[-1].elapsed_s, 0.075)
+        self.assertLess(task_trace[-1].elapsed_s, 5.0)
+        self.assertGreaterEqual(actor_trace[-1].elapsed_s, 0.075)
+        self.assertLess(actor_trace[-1].elapsed_s, 5.0)
+
     def test_daft_arrow_batches_execute_through_ray_adapter(self) -> None:
         import ray
 
