@@ -94,13 +94,13 @@ class NonBlockingMetricsObservationProvider:
         poll_interval_s: float = 0.25,
         stale_after_s: float = 0.5,
         clock: Callable[[], float] = time.monotonic,
-        close_timeout_s: float = 1.1,
+        close_timeout_s: float | None = None,
     ):
         if poll_interval_s <= 0:
             raise ValueError("poll_interval_s must be positive")
         if stale_after_s < 0:
             raise ValueError("stale_after_s must be non-negative")
-        if close_timeout_s < 0:
+        if close_timeout_s is not None and close_timeout_s < 0:
             raise ValueError("close_timeout_s must be non-negative")
         self.sampler = sampler
         self.poll_interval_s = poll_interval_s

@@ -519,6 +519,29 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(default_row["flush_timeout_ms"], 25.0)
         self.assertEqual(default_row["flush_max_wait_ms"], 50.0)
         self.assertEqual(default_row["flush_trace_output"], "")
+        self.assertEqual(default_row["flush_trace_path"], "")
+
+        implicit_trace_args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_task",
+                "--data-source",
+                "daft_postgres",
+                "--source-order",
+                "arrival_time",
+                "--arrival-replay",
+            ]
+        )
+        implicit_trace_row = profile.run_once(implicit_trace_args, "formal", 1)
+
+        self.assertEqual(implicit_trace_row["flush_trace_output"], "")
+        self.assertEqual(
+            implicit_trace_row["flush_trace_path"],
+            str(
+                Path("feasibility/results/postgres_ai_operator_profile_flush_trace.csv")
+            ),
+        )
 
         replay_args = profile.parse_args(
             [

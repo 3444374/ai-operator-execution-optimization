@@ -1601,7 +1601,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "flush_timeout_ms": args.flush_timeout_ms,
             "flush_max_wait_ms": args.flush_max_wait_ms,
             "flush_trace_output": args.flush_trace_output or "",
-            "flush_trace_path": args.flush_trace_output or "",
+            "flush_trace_path": (
+                args.flush_trace_output
+                or str(
+                    Path(args.output).with_name(
+                        f"{Path(args.output).stem}_flush_trace.csv"
+                    )
+                )
+                if args.arrival_replay
+                else ""
+            ),
             "flush_trace_events": 0,
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,

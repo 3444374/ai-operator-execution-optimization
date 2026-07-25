@@ -138,6 +138,32 @@ class NonBlockingObservationProviderTests(unittest.TestCase):
 
         self.assertFalse(provider.is_running)
 
+    def test_default_close_waits_for_inflight_sample(self) -> None:
+        sampler_entered = threading.Event()
+        release_sampler = threading.Event()
+        close_finished = threading.Event()
+
+        def blocked_sample():
+            sampler_entered.set()
+            release_sampler.wait()
+            return ServiceMetricsSnapshot(1, 0, 0.1)
+
+        provider = NonBlockingMetricsObservationProvider(
+            blocked_sample,
+            poll_interval_s=10.0,
+        )
+        self.assertTrue(sampler_entered.wait(timeout=1.0))
+        closer = threading.Thread(
+            target=lambda: (provider.close(), close_finished.set()),
+            daemon=True,
+        )
+        closer.start()
+
+        self.assertFalse(close_finished.wait(timeout=1.2))
+        release_sampler.set()
+        self.assertTrue(close_finished.wait(timeout=1.0))
+        self.assertFalse(provider.is_running)
+
 
 class DynamicAdmissionGateTests(unittest.TestCase):
     def test_gate_updates_window_and_records_typed_trace(self) -> None:
