@@ -1,5 +1,10 @@
 """Composable scheduling policies for database AI operator execution."""
 
+from .adaptive_admission import (
+    AimdAdmissionController,
+    AimdConfig,
+    EwmaAimdAdmissionController,
+)
 from .admission import StaticAdmissionController
 from .models import (
     AdmissionDecision,
@@ -22,10 +27,13 @@ from .topology import healthy_endpoints
 __all__ = [
     "AdmissionDecision",
     "AdmissionObservation",
+    "AimdAdmissionController",
+    "AimdConfig",
     "BatchRequest",
     "CollectedSubmission",
     "ControlDiagnostics",
     "EndpointSnapshot",
+    "EwmaAimdAdmissionController",
     "PayloadEnvelope",
     "RaySubmissionAdapter",
     "RoutingDecision",

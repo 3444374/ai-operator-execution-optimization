@@ -13,6 +13,11 @@ from src.scheduling.models import (  # noqa: E402
     ControlDiagnostics,
     WindowDecision,
 )
+from src.scheduling.adaptive_admission import (  # noqa: E402
+    AimdAdmissionController,
+    AimdConfig,
+    EwmaAimdAdmissionController,
+)
 
 
 class AdaptiveAdmissionModelTests(unittest.TestCase):
@@ -68,6 +73,128 @@ class AdaptiveAdmissionModelTests(unittest.TestCase):
             WindowDecision(0, "hold", "reason")
         with self.assertRaisesRegex(ValueError, "action and reason"):
             WindowDecision(1, "", "reason")
+
+
+def observation(
+    *,
+    observed_at_s: float = 1.0,
+    fresh: bool = True,
+    inflight: int = 0,
+    running: int | None = 10,
+    waiting: int | None = 0,
+    kv_usage: float | None = 0.2,
+) -> AdmissionObservation:
+    return AdmissionObservation(
+        observed_at_s,
+        fresh,
+        inflight,
+        running,
+        waiting,
+        kv_usage,
+    )
+
+
+class AimdAdmissionControllerTests(unittest.TestCase):
+    def test_low_load_additively_increases_and_respects_maximum(self) -> None:
+        controller = AimdAdmissionController(
+            AimdConfig(min_window=4, max_window=8),
+            initial_window=6,
+        )
+
+        first = controller.update(observation())
+        second = controller.update(observation(observed_at_s=2.0))
+
+        self.assertEqual(first.window, 8)
+        self.assertEqual(first.action, "increase")
+        self.assertEqual(second.window, 8)
+        self.assertEqual(second.action, "hold")
+        self.assertEqual(second.reason, "at_maximum")
+
+    def test_queue_or_kv_congestion_multiplicatively_decreases(self) -> None:
+        queue_controller = AimdAdmissionController(initial_window=15)
+        kv_controller = AimdAdmissionController(initial_window=5)
+
+        queue_decision = queue_controller.update(observation(waiting=1))
+        kv_decision = kv_controller.update(observation(kv_usage=0.9))
+
+        self.assertEqual(queue_decision.window, 7)
+        self.assertEqual(queue_decision.reason, "queue_congestion")
+        self.assertEqual(kv_decision.window, 4)
+        self.assertEqual(kv_decision.reason, "kv_congestion")
+
+    def test_deadband_missing_and_stale_observations_hold(self) -> None:
+        controller = AimdAdmissionController(initial_window=8)
+
+        deadband = controller.update(observation(kv_usage=0.7))
+        missing = controller.update(
+            observation(observed_at_s=2.0, waiting=None)
+        )
+        stale = controller.update(
+            observation(observed_at_s=3.0, fresh=False, waiting=2)
+        )
+
+        self.assertEqual(
+            [(item.window, item.action) for item in (deadband, missing, stale)],
+            [(8, "hold"), (8, "hold"), (8, "hold")],
+        )
+        self.assertEqual(missing.reason, "missing_metrics")
+        self.assertEqual(stale.reason, "stale_observation")
+
+    def test_configuration_rejects_invalid_bounds_and_factors(self) -> None:
+        with self.assertRaisesRegex(ValueError, "window bounds"):
+            AimdConfig(min_window=8, max_window=4)
+        with self.assertRaisesRegex(ValueError, "multiplicative_decrease"):
+            AimdConfig(multiplicative_decrease=1.0)
+
+
+class EwmaAimdAdmissionControllerTests(unittest.TestCase):
+    def test_ewma_smooths_each_fresh_sample_once(self) -> None:
+        controller = EwmaAimdAdmissionController(
+            AimdConfig(min_window=4, max_window=16),
+            initial_window=8,
+            alpha=0.5,
+            smoothed_waiting_threshold=0.5,
+        )
+
+        low = controller.update(observation(waiting=0))
+        congested = controller.update(
+            observation(observed_at_s=2.0, waiting=1)
+        )
+
+        self.assertEqual(low.window, 10)
+        self.assertEqual(congested.window, 5)
+        self.assertEqual(congested.action, "decrease")
+        self.assertEqual(congested.diagnostics.smoothed_waiting, 0.5)
+
+    def test_stale_sample_does_not_change_ewma_state(self) -> None:
+        controller = EwmaAimdAdmissionController(initial_window=8, alpha=0.5)
+        controller.update(observation(waiting=0, running=10, kv_usage=0.2))
+
+        stale = controller.update(
+            observation(
+                observed_at_s=2.0,
+                fresh=False,
+                waiting=10,
+                running=100,
+                kv_usage=1.0,
+            )
+        )
+        fresh = controller.update(
+            observation(
+                observed_at_s=3.0,
+                waiting=0,
+                running=10,
+                kv_usage=0.2,
+            )
+        )
+
+        self.assertEqual(stale.reason, "stale_observation")
+        self.assertEqual(fresh.diagnostics.smoothed_waiting, 0.0)
+        self.assertEqual(fresh.diagnostics.smoothed_running, 10.0)
+
+    def test_ewma_rejects_invalid_alpha(self) -> None:
+        with self.assertRaisesRegex(ValueError, "alpha"):
+            EwmaAimdAdmissionController(alpha=0.0)
 
 
 if __name__ == "__main__":
