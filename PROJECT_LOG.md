@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-07-26 Row-cap-aware packing 与非阻塞 adaptive 观测门禁
+
+- **代码**：typed adaptive admission 的指标抓取从提交决策线程移到既有后台采样器，增加 `sample_age_s` 观测/控制轨迹字段和异常路径关闭测试；新增 BFD-inspired row-cap-first 纯装箱函数，Arrow 与 Daft 复用同一 membership 实现，顺序 token-budget 仍为默认。
+- **验证**：完整测试 235/235 通过；真实 Daft→Ray task/actor 合约连续 3 轮、共 12/12 通过；64 行真实 PostgreSQL→Daft→Ray→vLLM 门禁最终 6/6 runs、384/384 requests、0 incident，行数/token 约束、外键、资源轨迹、FLOP 增量和 MFU 全部通过。
+- **环境根因**：vLLM 0.25.1 未开启 `--enable-mfu-metrics` 时仍暴露零值 FLOP counter。首次门禁因此被判无效并废弃；保留旧容器为 `ai-operator-vllm-qwen-pre-mfu-20260726`，等价重建当前服务并只增加 MFU 开关，单请求确认 counter 增长后重跑。
+- **边界**：64 行仅是基础设施正确性证据；单次 formal 数据不用于策略性能排序。下一步按预注册规则做 512 行 row cap × token budget × algorithm 筛选，未通过者不进入 1024。
+
 ## 2026-07-26 Output-aware BFD 真实 512/1024 规模验证
 
 - 修复后 64 行门禁完成 12/12 runs；512 行六单元矩阵完成 24/24 runs、

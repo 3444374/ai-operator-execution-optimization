@@ -4,6 +4,7 @@
 
 | File | Purpose | When to read/use |
 |---|---|---|
+| `experiments/results/row_cap_aware_packing_gate_20260726/README.md` | Row-cap-aware packing 64-row real gate | Audit sequential/classic-BFD/row-cap-first correctness, request/resource traces, and MFU prerequisites before 512 screening |
 | `experiments/results/output_aware_bfd_gate_v2_20260726/README.md` | Output-aware BFD 64-row real gate | Audit unified token/row constraints and GPU/power/energy/MFU availability |
 | `experiments/results/output_aware_bfd_gate_20260726/README.md` | Superseded pre-fix 64-row gate | Preserve infrastructure evidence while excluding uncontrolled algorithm comparisons |
 | `experiments/results/output_aware_bfd_512_20260726/README.md` | Superseded 512-row failure audit | Understand the row-cap mismatch, timeout, and why old data is excluded |

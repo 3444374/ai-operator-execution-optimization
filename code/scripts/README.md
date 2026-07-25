@@ -244,7 +244,11 @@ scenarios.
 MFU is an explicitly labelled estimate, not a renamed GPU-utilization value.
 It is left empty unless `--gpu-peak-tflops` and the matching
 `--mfu-precision` are configured. The preferred numerator is the delta of
-vLLM's `estimated_flops_per_gpu_total` counter. Older vLLM versions may fall
+vLLM's `estimated_flops_per_gpu_total` counter. On vLLM 0.25.1 the service
+must be started with `--enable-mfu-metrics`: the counter name can exist while
+remaining permanently zero when the flag is absent, so a preflight must
+verify a positive single-request delta rather than only metric presence.
+Older vLLM versions may fall
 back to `--model-flops-per-token` multiplied by observed prompt+generation
 tokens. The time basis is `operator_wall_s`; output rows retain the selected
 method, status, and all inputs for audit. The fallback scalar FLOP/token

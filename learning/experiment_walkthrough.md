@@ -989,3 +989,24 @@ formal repeat 均值：
 - 这仍然是 PG18.4 本地预演，不是 PostgreSQL 18.3 内部平台结果。
 - 这不是 pgai SQL 性能结果；它用的是 job-table profile 链路，因为这个链路能拆开阶段时间。
 - 不能说 pgvector 在所有设置下都比 JSON text 快；这里只覆盖 4096 行、384 维、本地 PostgreSQL、单 endpoint、一个 write batch 设置。
+## 2026-07-26：为什么 row-cap-aware 不是“默认更强”
+
+这次新增的策略解决的是经典 BFD 在同时存在 token budget 和每批最大行数时的一个具体风险。经典 BFD 每次优先选择 token 剩余最小的可行批次；row-cap-aware 仍按成本递减处理请求，但放置时先填充更接近行数上限的批次，再比较 token 剩余。
+
+纯函数反例 `[1, 1, 2, 3, 3, 8]`、token budget 10、每批最多 3 行中：
+
+```text
+classic BFD   -> 3 batches
+row-cap-first -> 2 batches
+```
+
+这只证明新规则能避免一种碎片化，不证明它对所有真实 workload 都更快。真实 64 行门禁中，三种策略都通过正确性、逐请求 E2E、GPU/能耗和 MFU 审计，但 classic BFD 与 row-cap-aware 都形成 5 个 submissions，顺序策略形成 4 个。由于每种策略只有一次 formal 运行，这些数字只能说明链路可运行，不能作为性能排序。
+
+另外，vLLM 0.25.1 的 `estimated_flops_per_gpu_total` 指标名称即使未启用统计也可能存在且保持为 0。正式实验前必须：
+
+1. 用 `--enable-mfu-metrics` 启动 vLLM；
+2. 发送一个真实请求；
+3. 确认 FLOP counter 前后差值大于 0；
+4. 只在 `mfu_status=ok` 时使用 MFU。
+
+因此下一步不是直接宣布 row-cap-aware 生效，而是在 512 行上固定请求集合和提交控制，搜索 row cap、token budget 和算法；只有跨重复实验同时守住吞吐并改善尾延迟、能耗或 MFU 的机制，才进入 1024 行确认。

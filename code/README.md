@@ -19,7 +19,7 @@ code/
 │   ├── sources.py                        ← PostgreSQL/Daft 数据入口后端
 │   ├── organizers.py                     ← ArrowOrganizer / DaftOrganizer 数据组织后端
 │   ├── request_costs.py                   ← 严格的输出成本模式与来源标签
-│   ├── packing.py                         ← 与模态无关的确定性 BFD
+│   ├── packing.py                         ← 与模态无关的确定性 BFD 与 row-cap-first 候选
 │   ├── model_backends.py                 ← fake / compatible HTTP embedding and completion backend
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
@@ -72,7 +72,8 @@ now lives under `code/src/`:
 - `sources.py`: PostgreSQL/Daft data entry.
 - `organizers.py`: Arrow/Daft batch organization.
 - `request_costs.py`: strict, shared output-cost modes and provenance.
-- `packing.py`: deterministic, modality-neutral scalar-capacity BFD.
+- `packing.py`: deterministic, modality-neutral classic BFD and a
+  row-cap-first placement candidate sharing the same validation and ordering.
 - `model_backends.py`: `fake` debug backend, `compatible_http` embedding/completion backend, and Ollama native completion backend.
 - `sinks.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
 - `metrics.py`: timers, GPU/memory/power sampling, energy/MFU estimates, and
@@ -124,13 +125,21 @@ actor execution:
 ```
 
 Typed AIMD, optional EWMA-AIMD, and PID controllers can now drive the same Ray
-task/actor scheduler. Their service observations are cached (default 250 ms),
-stale samples do not update controller state, and every decision can be
-written to a control-trace CSV. The legacy `queue_adaptive` branch remains an
+task/actor scheduler. Service metrics are sampled by a background provider, so
+network scrapes never run on the admission-decision path. Stale samples do not
+update controller state; every decision can be written to a control-trace CSV
+with the exact sample age. The legacy `queue_adaptive` branch remains an
 explicit baseline. UCB has a tested finite-action policy and SLO-aware reward,
 but is not exposed in the profiler until epoch-level request metrics are
 available. None of these code tests is evidence of a throughput or latency
 improvement.
+
+Data organization exposes `token_budget` (sequential),
+`best_fit_token_budget` (classic BFD), and
+`row_cap_aware_token_budget` (decreasing order with row-cap-first placement).
+All three enforce the same token and row constraints, and Arrow/Daft call the
+same pure packing functions. Sequential remains the default until repeated
+GPU experiments show that another mechanism generalizes.
 
 Pool and endpoint routing support request-cost pools, least-queued selection,
 deterministic prefix affinity, health fallback, and explicit per-endpoint pool
