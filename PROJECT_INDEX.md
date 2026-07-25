@@ -134,6 +134,7 @@
 | `experiments/results/accelerated_arrival_flush_20260725/formal_*_trace.csv` | flush、submission 与 resource 原始轨迹族 | 保留逐重复身份，可用于后续时序图与 batch formation 图 |
 | `experiments/results/accelerated_arrival_flush_20260725/scale_probe_runs.csv` | 1024 条同到达密度规模探针 | 每策略单次真实运行，用于判断扩大行数能否改变 batch formation |
 | `code_doc/superpowers/specs/2026-07-25-adaptive-flush-window-design.md` | Adaptive flush 双窗口改进设计 | fixed-timeout fallback、事件时间 catch-up、trace 与真实 GPU 门禁 |
+| `code_doc/superpowers/plans/2026-07-25-adaptive-flush-window-implementation.md` | Adaptive flush 双窗口实施计划 | TDD 窗口选择、event-time replay、profiler trace 与真实单 GPU 分级门禁 |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |

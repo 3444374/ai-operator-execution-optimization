@@ -1068,3 +1068,11 @@
   `code_doc/superpowers/specs/2026-07-25-adaptive-flush-window-design.md`，
   明确事件时间 catch-up、exactly-once、trace schema、64/1024/2048 分级门禁和
   claim boundary。本步骤只固化设计，尚未修改 adaptive flush 行为。
+
+## 2026-07-25 Adaptive flush 双窗口实施计划
+
+- 用户审阅并确认双窗口设计后，新增
+  `code_doc/superpowers/plans/2026-07-25-adaptive-flush-window-implementation.md`。
+- 计划分为显式窗口选择、event-time catch-up、profiler/trace 接线和真实单 GPU
+  分级门禁四项；每项严格 RED→GREEN，64/1024 门禁失败即停止，不直接消耗
+  2048 正式实验时间。
