@@ -10,6 +10,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
+from scripts import postgres_ai_operator_profile as profile  # noqa: E402
 from src.organizers import DaftOrganizer, OrganizerConfig  # noqa: E402
 from src.scheduling.admission import StaticAdmissionController  # noqa: E402
 from src.scheduling.models import (  # noqa: E402
@@ -105,6 +106,71 @@ class DaftRayContractTests(unittest.TestCase):
             [item.result["endpoint_id"] for item in result.completions],
             ["e1", "e1"],
         )
+
+    def test_daft_batches_execute_through_profiler_task_and_actor_paths(self) -> None:
+        import ray
+
+        table = pa.table(
+            {
+                "doc_id": [1, 2, 3, 4],
+                "prompt_tokens": [10, 20, 30, 40],
+            }
+        )
+        batches = DaftOrganizer(
+            OrganizerConfig(batch_size=2, runner="native")
+        ).organize(table).batches
+
+        @ray.remote
+        def execute_task(payload, embedding_dim):
+            return {"rows": payload.num_rows, "embedding_dim": embedding_dim}
+
+        @ray.remote
+        class ExecuteActor:
+            def execute_batch(self, payload):
+                return {"rows": payload.num_rows, "executor": "actor"}
+
+        ray.init(ignore_reinit_error=True, num_cpus=1)
+        try:
+            task_results, task_metrics = profile.submit_ray_tasks(
+                ray_module=ray,
+                remote_embed=execute_task,
+                batches=batches,
+                max_inflight=2,
+                operator="ai_embed",
+                embedding_dim=16,
+                model_backend="fake",
+                endpoint_urls=[],
+                model_name="unused",
+                api_key=None,
+                timeout_s=1.0,
+                completion_max_tokens=0,
+            )
+            actor_results, actor_metrics = profile.submit_with_backpressure(
+                ray_module=ray,
+                actors=[ExecuteActor.remote()],
+                batches=batches,
+                max_inflight=2,
+                method_name="execute_batch",
+            )
+        finally:
+            ray.shutdown()
+
+        self.assertEqual(
+            task_results,
+            [
+                {"rows": 2, "embedding_dim": 16},
+                {"rows": 2, "embedding_dim": 16},
+            ],
+        )
+        self.assertEqual(
+            actor_results,
+            [
+                {"rows": 2, "executor": "actor"},
+                {"rows": 2, "executor": "actor"},
+            ],
+        )
+        self.assertEqual(task_metrics["operator_invocations"], 2)
+        self.assertEqual(actor_metrics["operator_invocations"], 2)
 
 
 if __name__ == "__main__":
