@@ -1,5 +1,6 @@
 """Composable scheduling policies for database AI operator execution."""
 
+from .batching import PendingBatch, PendingBatchBuilder, RowArrival
 from .adaptive_admission import (
     AimdAdmissionController,
     AimdConfig,
@@ -80,6 +81,8 @@ __all__ = [
     "PoolRoutingDecision",
     "PidAdmissionController",
     "PidConfig",
+    "PendingBatch",
+    "PendingBatchBuilder",
     "RaySubmissionAdapter",
     "LeastQueuedEndpointRouter",
     "PrefixAffinityEndpointRouter",
@@ -87,6 +90,7 @@ __all__ = [
     "QueueAdaptiveFlush",
     "RoutingDecision",
     "RoundRobinEndpointRouter",
+    "RowArrival",
     "SchedulerResult",
     "ServiceMetricsSnapshot",
     "StaticAdmissionController",
