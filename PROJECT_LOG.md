@@ -960,4 +960,10 @@
 - 新增 4 个测试模块：schema 3 tests、policy 6 tests、scheduler 2 tests、真实 Daft→Arrow→单节点 Ray task contract 1 test。
 - 项目 `.conda/pg-ai-profile` 环境全量验证：11 个测试模块、54 tests、0 failures；`compileall`、public import smoke 和策略层 engine-import 扫描通过。
 - 当前完成的是 typed foundation 与真实 Daft/Ray contract，不是性能实验：尚未替换生产 Ray 提交循环，未实现 queue-adaptive flush/AIMD/PID/EWMA/UCB，也没有新增 vLLM 吞吐或延迟结论。
+
+## 2026-07-25 Static Ray task/actor 接线实施计划
+
+- 新增 `code_doc/superpowers/plans/2026-07-25-ray-static-wiring-implementation.md`，第二阶段只把 typed scheduler 接入 profiler 的静态 Ray task/actor 路径。
+- 先扩展 typed collection timing 与通用 Ray adapter，再分别验证 task/actor 行为和原 CSV metric keys 等价。
+- 旧 adaptive 分支原样隔离保留；本阶段不同时改变控制算法，避免把重构影响与策略收益混淆。
 - 用户要求代码、测试和单 GPU 实验全部跑通并产出数据后再合并 `main`；开发使用项目内 `.worktrees/scheduling-foundation` 隔离 worktree，根 `.gitignore` 增加 `.worktrees/`。
