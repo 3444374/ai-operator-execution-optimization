@@ -91,7 +91,6 @@ from src.scheduling.models import (
 )
 from src.scheduling.ray_adapter import RaySubmissionAdapter
 from src.scheduling.observations import (
-    CachedMetricsObservationProvider,
     NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
@@ -1082,9 +1081,11 @@ def _build_adaptive_config(
         )
     else:
         raise ValueError(f"unsupported typed adaptive policy: {scheduling_policy}")
-    provider = CachedMetricsObservationProvider(
+    provider = NonBlockingMetricsObservationProvider(
         lambda: _service_metrics_snapshot(metrics_url),
-        min_sample_interval_s=sample_interval_s,
+        poll_interval_s=sample_interval_s,
+        stale_after_s=max(0.5, sample_interval_s * 2),
+        close_timeout_s=2.0,
     )
     gate = DynamicAdmissionGate(
         controller,
@@ -1093,6 +1094,7 @@ def _build_adaptive_config(
     )
     return {
         "admission_gate": gate,
+        "observation_provider": provider,
         "trace_events": trace_events,
         "controller_name": scheduling_policy,
         "min_window": min_window,
@@ -1193,6 +1195,11 @@ def _write_control_trace(
                 "running": event.running if event.running is not None else "",
                 "waiting": event.waiting if event.waiting is not None else "",
                 "kv_usage": event.kv_usage if event.kv_usage is not None else "",
+                "sample_age_s": (
+                    event.sample_age_s
+                    if event.sample_age_s is not None
+                    else ""
+                ),
                 "controller_action": event.controller_action,
                 "reason": event.reason,
                 "allowed": event.allowed,
@@ -2359,6 +2366,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     if args.operator == "ai_complete" and args.writeback_mode == "pgvector":
         raise SystemExit("AI_COMPLETE does not support --writeback-mode pgvector.")
     resource_sampler = None
+    adaptive_observation_provider = None
     conn = connect(args.database_url)
     try:
         gpu_snapshot = gpu_metadata()
@@ -2536,6 +2544,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     pid_integral_gain=args.pid_integral_gain,
                     pid_derivative_gain=args.pid_derivative_gain,
                 )
+                adaptive_observation_provider = adaptive_config[
+                    "observation_provider"
+                ]
             except ValueError as exc:
                 raise SystemExit(str(exc)) from exc
 
@@ -3127,6 +3138,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     finally:
         if resource_sampler is not None and resource_sampler.is_running:
             resource_sampler.close()
+        if adaptive_observation_provider is not None:
+            adaptive_observation_provider.close()
         conn.close()
 
 

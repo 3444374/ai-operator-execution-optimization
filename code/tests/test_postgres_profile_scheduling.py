@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import csv
 import sys
+import threading
+import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pyarrow as pa
 
@@ -23,6 +25,7 @@ from src.scheduling.models import (  # noqa: E402
 from src.scheduling.observations import (  # noqa: E402
     AdmissionTraceEvent,
     CachedMetricsObservationProvider,
+    NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
 from src.scheduling.batching import (  # noqa: E402
@@ -229,12 +232,207 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             pid_integral_gain=0.1,
             pid_derivative_gain=0.05,
         )
+        try:
+            self.assertIs(config["trace_events"], traces)
+            self.assertEqual(config["admission_gate"].limit, 4)
+            self.assertEqual(config["controller_name"], "aimd")
+            self.assertEqual(config["min_window"], 4)
+            self.assertEqual(config["max_window"], 16)
+        finally:
+            provider = config.get("observation_provider")
+            if provider is not None:
+                provider.close()
 
-        self.assertIs(config["trace_events"], traces)
-        self.assertEqual(config["admission_gate"].limit, 4)
-        self.assertEqual(config["controller_name"], "aimd")
-        self.assertEqual(config["min_window"], 4)
-        self.assertEqual(config["max_window"], 16)
+    def test_typed_adaptive_config_uses_nonblocking_provider(self) -> None:
+        config = profile._build_adaptive_config(
+            scheduling_policy="aimd",
+            metrics_url="http://metrics",
+            trace_events=[],
+            min_window=4,
+            max_window=16,
+            initial_window=4,
+            sample_interval_s=0.25,
+            ewma_alpha=0.5,
+            pid_proportional_gain=1.0,
+            pid_integral_gain=0.0,
+            pid_derivative_gain=0.0,
+        )
+        try:
+            self.assertIsInstance(
+                config["observation_provider"],
+                NonBlockingMetricsObservationProvider,
+            )
+        finally:
+            provider = config.get("observation_provider")
+            if provider is not None:
+                provider.close()
+
+    def test_typed_adaptive_decision_does_not_wait_for_metrics_scrape(self) -> None:
+        sampler_entered = threading.Event()
+        release_sampler = threading.Event()
+
+        def blocked_snapshot(_metrics_url):
+            sampler_entered.set()
+            release_sampler.wait()
+            return ServiceMetricsSnapshot(4, 0, 0.25)
+
+        with patch.object(
+            profile,
+            "_service_metrics_snapshot",
+            side_effect=blocked_snapshot,
+        ):
+            config = profile._build_adaptive_config(
+                scheduling_policy="aimd",
+                metrics_url="http://metrics",
+                trace_events=[],
+                min_window=4,
+                max_window=16,
+                initial_window=4,
+                sample_interval_s=0.25,
+                ewma_alpha=0.5,
+                pid_proportional_gain=1.0,
+                pid_integral_gain=0.0,
+                pid_derivative_gain=0.0,
+            )
+            try:
+                self.assertTrue(sampler_entered.wait(timeout=1.0))
+                started_at = time.perf_counter()
+                decision = config["admission_gate"].decide(0)
+                elapsed_s = time.perf_counter() - started_at
+
+                self.assertLess(elapsed_s, 0.05)
+                self.assertEqual(decision.limit, 4)
+            finally:
+                release_sampler.set()
+                provider = config.get("observation_provider")
+                if provider is not None:
+                    provider.close()
+
+    def test_run_once_closes_adaptive_provider_when_submission_fails(self) -> None:
+        args = profile.parse_args(
+            [
+                "--database-url",
+                "postgresql://unused",
+                "--executor",
+                "ray_task",
+                "--scheduling-policy",
+                "aimd",
+                "--model-metrics-url",
+                "http://metrics",
+                "--total-rows",
+                "1",
+            ]
+        )
+        table = pa.table({"doc_id": [1], "prompt": ["hello"]})
+        connection = Mock()
+        provider = SimpleNamespace(close=Mock())
+        adaptive_config = {
+            "admission_gate": object(),
+            "observation_provider": provider,
+            "trace_events": [],
+        }
+        source = SimpleNamespace(
+            fetch=Mock(
+                return_value=SimpleNamespace(
+                    table=table,
+                    metrics={"db_fetch_s": 0.0, "arrow_build_s": 0.0},
+                )
+            )
+        )
+        organizer = SimpleNamespace(
+            organize=Mock(
+                return_value=SimpleNamespace(
+                    batches=[table],
+                    batch_cost_units=(),
+                    batch_row_counts=(),
+                    metrics={
+                        "packing_scope": "organizer_input",
+                        "organizer_from_arrow_s": 0.0,
+                        "organizer_plan_s": 0.0,
+                        "organizer_collect_s": 0.0,
+                        "organization_policy_family": "fixed_rows",
+                        "batch_prompt_token_spread_mean": 0.0,
+                        "prefix_group_ratio": 0.0,
+                        "partition_effective": "true",
+                        "warnings": "",
+                    },
+                )
+            )
+        )
+        ray_module = SimpleNamespace(init=Mock(), remote=Mock(return_value=object()))
+
+        with (
+            patch.object(profile, "connect", return_value=connection),
+            patch.object(profile, "gpu_metadata", return_value={}),
+            patch.object(
+                profile,
+                "database_metadata",
+                return_value={"server_version": "18.4", "pgvector_version": "0.8.2"},
+            ),
+            patch.object(
+                profile,
+                "embedding_vector_column_dim",
+                return_value=args.embedding_dim,
+            ),
+            patch.object(profile, "create_job", return_value=1),
+            patch.object(profile, "require_ray", return_value=ray_module),
+            patch.object(profile, "scrape_prometheus_metrics", return_value={}),
+            patch.object(profile, "make_source", return_value=source),
+            patch.object(profile, "make_organizer", return_value=organizer),
+            patch.object(
+                profile,
+                "_build_adaptive_config",
+                return_value=adaptive_config,
+            ),
+            patch.object(
+                profile,
+                "submit_ray_tasks",
+                side_effect=RuntimeError("submission failed"),
+            ),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "submission failed"):
+                profile.run_once(args, "formal", 1)
+
+        provider.close.assert_called_once_with()
+        connection.close.assert_called_once_with()
+
+    def test_static_run_never_builds_adaptive_provider(self) -> None:
+        args = profile.parse_args(
+            [
+                "--database-url",
+                "postgresql://unused",
+                "--executor",
+                "python",
+                "--total-rows",
+                "1",
+            ]
+        )
+        connection = Mock()
+        source = SimpleNamespace(fetch=Mock(side_effect=RuntimeError("source failed")))
+
+        with (
+            patch.object(profile, "connect", return_value=connection),
+            patch.object(profile, "gpu_metadata", return_value={}),
+            patch.object(
+                profile,
+                "database_metadata",
+                return_value={"server_version": "18.4", "pgvector_version": "0.8.2"},
+            ),
+            patch.object(
+                profile,
+                "embedding_vector_column_dim",
+                return_value=args.embedding_dim,
+            ),
+            patch.object(profile, "create_job", return_value=1),
+            patch.object(profile, "scrape_prometheus_metrics", return_value={}),
+            patch.object(profile, "make_source", return_value=source),
+            patch.object(profile, "_build_adaptive_config") as build_adaptive,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "source failed"):
+                profile.run_once(args, "formal", 1)
+
+        build_adaptive.assert_not_called()
+        connection.close.assert_called_once_with()
 
     def test_build_adaptive_config_requires_metrics_url(self) -> None:
         with self.assertRaisesRegex(ValueError, "metrics URL"):
@@ -265,6 +463,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 controller_action="increase",
                 reason="low_load",
                 allowed=True,
+                sample_age_s=0.1,
             ),
             AdmissionTraceEvent(
                 observed_at_s=10.5,
@@ -277,6 +476,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 controller_action="decrease",
                 reason="queue_congestion",
                 allowed=False,
+                sample_age_s=None,
             ),
         ]
         output = Path("control_trace.csv")
@@ -305,6 +505,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(rows[1]["elapsed_s"], 0.5)
         self.assertEqual(rows[1]["k_max"], 4)
         self.assertEqual(rows[1]["controller_action"], "decrease")
+        self.assertEqual(rows[0]["sample_age_s"], 0.1)
+        self.assertEqual(rows[1]["sample_age_s"], "")
         self.assertEqual(rows[1]["server_version"], "18.4")
         self.assertEqual(rows[1]["pgvector_version"], "0.8.2")
 
