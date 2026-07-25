@@ -31,6 +31,7 @@ from src.metrics import (
     append_metrics,
     batch_result_stats,
     gpu_metadata,
+    percentile,
     scrape_prometheus_metrics,
     vllm_metric_delta_stats,
 )
@@ -48,6 +49,7 @@ from src.model_backends import (
     normalize_completion_backend,
     normalize_embedding_backend,
     ollama_complete_batch,
+    text_token_count,
 )
 from src.organizers import OrganizerConfig, configure_daft_runner, make_organizer
 from src.scheduling.adaptive_admission import (
@@ -65,11 +67,18 @@ from src.scheduling.batching import (
     SystemReplayClock,
 )
 from src.scheduling.flush import FixedTimeoutFlush, ImmediateFlush, QueueAdaptiveFlush
-from src.scheduling.lifecycle import RequestLifecycleSeed
+from src.scheduling.lifecycle import (
+    MonotonicEpochClock,
+    RequestLifecycleSeed,
+    RequestTraceRow,
+    SubmissionServiceTiming,
+    build_request_trace_rows,
+)
 from src.scheduling.models import (
     BatchRequest,
     EndpointSnapshot,
     PayloadEnvelope,
+    SubmissionLifecycleEvent,
     TopologySnapshot,
 )
 from src.scheduling.ray_adapter import RaySubmissionAdapter
@@ -284,6 +293,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--submission-trace-output", default=None)
     parser.add_argument("--resource-trace-output", default=None)
+    parser.add_argument("--request-trace-output", default=None)
+    parser.add_argument("--request-slo-ms", type=float, default=0.0)
+    parser.add_argument("--scenario-id", default="manual")
+    parser.add_argument("--random-seed", type=int, default=0)
     parser.add_argument("--strategy", choices=["fine", "coalesced"], default="coalesced")
     parser.add_argument("--organizer", choices=["arrow", "daft"], default="arrow")
     parser.add_argument(
@@ -609,6 +622,7 @@ def _arrival_replay_envelopes(
     service_observation,
     trace_sink,
     lifecycle_seed_sink=None,
+    epoch_clock=None,
 ) -> Iterable[PayloadEnvelope]:
     completion_max_tokens = (
         args.completion_max_tokens if operator == "ai_complete" else 0
@@ -617,6 +631,8 @@ def _arrival_replay_envelopes(
     first_source_arrival_s: float | None = None
     replay_start_epoch_s: float | None = None
     arrival_time_scale = getattr(args, "arrival_time_scale", 1.0)
+    replay_clock = getattr(args, "_replay_clock", None) or SystemReplayClock()
+    lifecycle_epoch_clock = epoch_clock or MonotonicEpochClock()
 
     def rows() -> Iterable[RowArrival]:
         nonlocal first_source_arrival_s
@@ -682,10 +698,7 @@ def _arrival_replay_envelopes(
         if lifecycle_seed_sink is not None:
             if replay_start_epoch_s is None or first_source_arrival_s is None:
                 raise RuntimeError("replay epoch origin is not initialized")
-            epoch_clock = (
-                getattr(args, "_replay_epoch_clock", None) or time.time
-            )
-            flush_epoch_s = epoch_clock()
+            flush_epoch_s = lifecycle_epoch_clock()
             seeds = [
                 RequestLifecycleSeed(
                     request_id=f"{job_id}:row:{row.row_id}",
@@ -726,14 +739,13 @@ def _arrival_replay_envelopes(
         flush_policy=flush_policy,
         close_batch=close_batch,
         service_observation=observe,
-        clock=getattr(args, "_replay_clock", None) or SystemReplayClock(),
+        clock=replay_clock,
         arrival_time_scale=arrival_time_scale,
     )
 
     def replay() -> Iterable[PayloadEnvelope]:
         nonlocal replay_start_epoch_s
-        epoch_clock = getattr(args, "_replay_epoch_clock", None) or time.time
-        replay_start_epoch_s = epoch_clock()
+        replay_start_epoch_s = lifecycle_epoch_clock()
         try:
             yield from batcher
         finally:
@@ -1050,6 +1062,171 @@ def _write_submission_trace(
         )
 
 
+def _write_request_trace(
+    output_path: Path,
+    *,
+    experiment_id: str,
+    phase: str,
+    repeat_index: int,
+    scenario_id: str,
+    random_seed: int,
+    job_id: int,
+    server_version: str,
+    pgvector_version: str,
+    rows: list[RequestTraceRow] | tuple[RequestTraceRow, ...],
+) -> None:
+    for request_index, row in enumerate(rows):
+        append_metrics(
+            output_path,
+            {
+                "schema_version": 1,
+                "experiment_id": experiment_id,
+                "phase": phase,
+                "repeat_index": repeat_index,
+                "scenario_id": scenario_id,
+                "random_seed": random_seed,
+                "job_id": job_id,
+                "server_version": server_version,
+                "pgvector_version": pgvector_version,
+                "request_index": request_index,
+                "request_id": row.request_id,
+                "submission_id": row.submission_id,
+                "doc_id": row.doc_id,
+                "pool_id": row.pool_id,
+                "endpoint_id": row.endpoint_id,
+                "gpu_id": row.gpu_id,
+                "prompt_tokens": row.prompt_tokens,
+                "estimated_output_tokens": row.estimated_output_tokens,
+                "client_estimated_output_tokens": (
+                    row.client_estimated_output_tokens
+                    if row.client_estimated_output_tokens is not None
+                    else ""
+                ),
+                "actual_output_tokens": (
+                    row.actual_output_tokens
+                    if row.actual_output_tokens is not None
+                    else ""
+                ),
+                "output_token_source": row.output_token_source,
+                "total_tokens": (
+                    row.total_tokens if row.total_tokens is not None else ""
+                ),
+                "prefix_key": row.prefix_key,
+                "status": row.status,
+                "error_type": row.error_type,
+                "arrival_epoch_s": row.arrival_epoch_s,
+                "flush_epoch_s": row.flush_epoch_s,
+                "submit_epoch_s": row.submit_epoch_s,
+                "service_start_epoch_s": (
+                    row.service_start_epoch_s
+                    if row.service_start_epoch_s is not None
+                    else ""
+                ),
+                "completion_epoch_s": row.completion_epoch_s,
+                "buffer_s": row.buffer_s,
+                "submit_to_service_s": (
+                    row.submit_to_service_s
+                    if row.submit_to_service_s is not None
+                    else ""
+                ),
+                "service_s": row.service_s if row.service_s is not None else "",
+                "service_clock_domain": row.service_clock_domain,
+                "e2e_s": row.e2e_s,
+                "latency_granularity": row.latency_granularity,
+                "slo_target_s": (
+                    row.slo_target_s if row.slo_target_s is not None else ""
+                ),
+                "slo_met": row.slo_met if row.slo_met is not None else "",
+            },
+        )
+
+
+def _build_profiler_request_rows(
+    seeds: list[RequestLifecycleSeed],
+    submission_events: list[SubmissionLifecycleEvent],
+    results: list[dict],
+    *,
+    operator: str,
+    slo_target_s: float | None,
+) -> tuple[RequestTraceRow, ...]:
+    if len(results) != len(submission_events):
+        raise ValueError(
+            "operator results and submission lifecycle events must align"
+        )
+
+    service_by_submission_id = {}
+    client_estimated_output_tokens_by_doc_id = {}
+    for event, result in zip(submission_events, results):
+        if event.status == "failed":
+            service_by_submission_id[event.submission_id] = (
+                SubmissionServiceTiming(event.submission_id, None, None)
+            )
+            continue
+        if not isinstance(result, dict):
+            raise ValueError("completed submission result must be a mapping")
+        service_by_submission_id[event.submission_id] = SubmissionServiceTiming(
+            event.submission_id,
+            float(result["service_start_epoch_s"]),
+            float(result["service_end_epoch_s"]),
+        )
+        doc_ids = [str(value) for value in result.get("doc_id", [])]
+        if operator == "ai_complete":
+            outputs = result.get("output_text", [])
+            if len(outputs) != len(doc_ids):
+                raise ValueError(
+                    "backend output count must match doc_id count"
+                )
+            output_counts = [
+                text_token_count(str(output)) if str(output).strip() else 0
+                for output in outputs
+            ]
+        else:
+            output_counts = [0] * len(doc_ids)
+        for doc_id, output_count in zip(doc_ids, output_counts):
+            if doc_id in client_estimated_output_tokens_by_doc_id:
+                raise ValueError(f"duplicate backend doc_id: {doc_id}")
+            client_estimated_output_tokens_by_doc_id[doc_id] = output_count
+
+    return build_request_trace_rows(
+        seeds,
+        submission_events,
+        service_by_submission_id,
+        client_estimated_output_tokens_by_doc_id,
+        {},
+        slo_target_s=slo_target_s,
+    )
+
+
+def _request_trace_metrics(
+    rows: tuple[RequestTraceRow, ...] | list[RequestTraceRow],
+    *,
+    e2e_s: float,
+) -> dict[str, float | str]:
+    successful_e2e = [
+        row.e2e_s for row in rows if row.status == "completed"
+    ]
+    slo_enabled = any(row.slo_target_s is not None for row in rows)
+    slo_met_count = sum(row.slo_met is True for row in rows)
+    violation_ratio = (
+        sum(row.slo_met is not True for row in rows) / len(rows)
+        if rows and slo_enabled
+        else 0.0
+    )
+    granularities = {row.latency_granularity for row in rows}
+    if len(granularities) > 1:
+        raise ValueError("request trace contains mixed latency granularities")
+    return {
+        "request_e2e_s_p50": percentile(successful_e2e, 50),
+        "request_e2e_s_p95": percentile(successful_e2e, 95),
+        "request_e2e_s_p99": percentile(successful_e2e, 99),
+        "request_slo_violation_ratio": violation_ratio,
+        "request_slo_goodput_per_s": (
+            slo_met_count / e2e_s if slo_enabled and e2e_s > 0 else 0.0
+        ),
+        "latency_granularity": next(iter(granularities), ""),
+    }
+
+
 def _write_resource_trace(
     output_path: Path,
     *,
@@ -1106,6 +1283,8 @@ def _run_static_scheduler(
     submitters: dict,
     max_inflight: int,
     routing_config: dict | None = None,
+    submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
+    epoch_clock=None,
 ) -> tuple[list[dict], dict]:
     return _run_scheduler(
         ray_module,
@@ -1114,6 +1293,8 @@ def _run_static_scheduler(
         submitters,
         StaticAdmissionController(max_inflight),
         routing_config,
+        submission_lifecycle_sink,
+        epoch_clock,
     )
 
 
@@ -1124,6 +1305,8 @@ def _run_scheduler(
     submitters: dict,
     admission,
     routing_config: dict | None = None,
+    submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
+    epoch_clock=None,
 ) -> tuple[list[dict], dict]:
     routing_config = routing_config or {}
     scheduler = SynchronousScheduler(
@@ -1132,8 +1315,11 @@ def _run_scheduler(
         adapter=RaySubmissionAdapter(ray_module, submitters),
         pool_id="default",
         pool_router=routing_config.get("pool_router"),
+        epoch_clock=epoch_clock or time.time,
     )
     result = scheduler.run(envelopes, topology)
+    if submission_lifecycle_sink is not None:
+        submission_lifecycle_sink.extend(result.submission_events)
     return [completion.result for completion in result.completions], _scheduler_metrics(result)
 
 
@@ -1144,6 +1330,8 @@ def _run_dynamic_scheduler(
     submitters: dict,
     adaptive_config: dict,
     routing_config: dict | None = None,
+    submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
+    epoch_clock=None,
 ) -> tuple[list[dict], dict]:
     trace_events = adaptive_config["trace_events"]
     trace_start = len(trace_events)
@@ -1154,6 +1342,8 @@ def _run_dynamic_scheduler(
         submitters,
         adaptive_config["admission_gate"],
         routing_config,
+        submission_lifecycle_sink,
+        epoch_clock,
     )
     new_events = trace_events[trace_start:]
     metrics["adaptive_downshifts"] = sum(
@@ -1179,11 +1369,15 @@ def submit_with_backpressure(
     adaptive_config: dict | None = None,
     routing_config: dict | None = None,
     replay_envelopes: Iterable[PayloadEnvelope] | None = None,
+    submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
+    epoch_clock=None,
 ) -> tuple[list[dict], dict]:
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
     )
     if adaptive_config is not None and not typed_adaptive:
+        if submission_lifecycle_sink is not None:
+            raise ValueError("request tracing requires the typed scheduler")
         replay_batches = (
             (envelope.payload for envelope in replay_envelopes)
             if replay_envelopes is not None
@@ -1238,6 +1432,8 @@ def submit_with_backpressure(
             submitters,
             adaptive_config,
             routing_config,
+            submission_lifecycle_sink,
+            epoch_clock,
         )
     return _run_static_scheduler(
         ray_module,
@@ -1246,6 +1442,8 @@ def submit_with_backpressure(
         submitters,
         max_inflight,
         routing_config,
+        submission_lifecycle_sink,
+        epoch_clock,
     )
 
 
@@ -1330,11 +1528,15 @@ def submit_ray_tasks(
     adaptive_config: dict | None = None,
     routing_config: dict | None = None,
     replay_envelopes: Iterable[PayloadEnvelope] | None = None,
+    submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
+    epoch_clock=None,
 ) -> tuple[list[dict], dict]:
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
     )
     if adaptive_config is not None and not typed_adaptive:
+        if submission_lifecycle_sink is not None:
+            raise ValueError("request tracing requires the typed scheduler")
         replay_batches = (
             (envelope.payload for envelope in replay_envelopes)
             if replay_envelopes is not None
@@ -1421,6 +1623,8 @@ def submit_ray_tasks(
             submitters,
             adaptive_config,
             routing_config,
+            submission_lifecycle_sink,
+            epoch_clock,
         )
     return _run_static_scheduler(
         ray_module,
@@ -1429,6 +1633,8 @@ def submit_ray_tasks(
         submitters,
         max_inflight,
         routing_config,
+        submission_lifecycle_sink,
+        epoch_clock,
     )
 
 
@@ -1669,6 +1875,23 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
         )
 
 
+def _validate_request_trace_args(args: argparse.Namespace) -> None:
+    if (
+        isinstance(args.request_slo_ms, bool)
+        or not math.isfinite(args.request_slo_ms)
+        or args.request_slo_ms < 0
+    ):
+        raise SystemExit("--request-slo-ms must be non-negative")
+    if not args.scenario_id or not args.scenario_id.strip():
+        raise SystemExit("--scenario-id must be non-empty")
+    if not args.request_trace_output:
+        return
+    if not args.arrival_replay:
+        raise SystemExit("request tracing requires --arrival-replay")
+    if args.scheduling_policy == "queue_adaptive":
+        raise SystemExit("request tracing requires the typed scheduler")
+
+
 def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
     """Return observed vLLM token throughput for one end-to-end run."""
     if e2e_s <= 0:
@@ -1681,6 +1904,7 @@ def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
 
 
 def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
+    _validate_request_trace_args(args)
     _validate_arrival_replay_args(args)
     endpoint_urls = completion_endpoint_urls(args) if args.operator == "ai_complete" else embedding_endpoint_urls(args)
     endpoint_url_label = ";".join(endpoint_urls)
@@ -1736,6 +1960,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "experiment_id": args.experiment_id,
             "phase": phase,
             "repeat_index": repeat_index,
+            "scenario_id": args.scenario_id,
+            "random_seed": args.random_seed,
             "database_trigger": "job_table",
             "operator": args.operator,
             "seed_workload": args.seed_workload,
@@ -1805,6 +2031,17 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "submission_trace_events": 0,
             "resource_trace_path": args.resource_trace_output or "",
             "resource_trace_events": 0,
+            "request_trace_path": args.request_trace_output or "",
+            "request_trace_events": 0,
+            "request_e2e_s_p50": 0.0,
+            "request_e2e_s_p95": 0.0,
+            "request_e2e_s_p99": 0.0,
+            "request_slo_target_ms": args.request_slo_ms,
+            "request_slo_violation_ratio": 0.0,
+            "request_slo_goodput_per_s": 0.0,
+            "latency_granularity": (
+                "submission" if args.request_trace_output else ""
+            ),
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
         }
@@ -1893,6 +2130,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         arrow_build_s = 0.0
         db_fetch_s = 0.0
         operator_results = []
+        request_lifecycle_seeds: list[RequestLifecycleSeed] = []
+        submission_lifecycle_events: list[SubmissionLifecycleEvent] = []
+        request_trace_rows: tuple[RequestTraceRow, ...] = ()
+        lifecycle_epoch_clock = (
+            MonotonicEpochClock() if args.request_trace_output else None
+        )
         submit_metrics = {
             "operator_invocations": 0,
             "max_inflight": 0,
@@ -1996,6 +2239,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     adaptive_config,
                     routing_config,
                     replay_envelopes=replay_envelopes,
+                    submission_lifecycle_sink=(
+                        submission_lifecycle_events
+                        if args.request_trace_output
+                        else None
+                    ),
+                    epoch_clock=lifecycle_epoch_clock,
                 )
             if args.executor == "ray_task":
                 return submit_ray_tasks(
@@ -2014,6 +2263,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     adaptive_config,
                     routing_config,
                     replay_envelopes=replay_envelopes,
+                    submission_lifecycle_sink=(
+                        submission_lifecycle_events
+                        if args.request_trace_output
+                        else None
+                    ),
+                    epoch_clock=lifecycle_epoch_clock,
                 )
             if replay_envelopes is not None:
                 raise RuntimeError("arrival replay requires a Ray executor")
@@ -2128,6 +2383,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     operator=args.operator,
                     service_observation=service_observation,
                     trace_sink=flush_trace_events,
+                    lifecycle_seed_sink=(
+                        request_lifecycle_seeds
+                        if args.request_trace_output
+                        else None
+                    ),
+                    epoch_clock=lifecycle_epoch_clock,
                 )
                 operator_timer = StageTimer.start("operator_wall")
                 results, metrics = submit_operator_batches(
@@ -2147,6 +2408,32 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     submit_metrics[key] = max(submit_metrics[key], metrics[key])
                 else:
                     submit_metrics[key] += metrics[key]
+
+        request_trace_path = args.request_trace_output or ""
+        if request_trace_path:
+            request_trace_rows = _build_profiler_request_rows(
+                request_lifecycle_seeds,
+                submission_lifecycle_events,
+                operator_results,
+                operator=args.operator,
+                slo_target_s=(
+                    args.request_slo_ms / 1000.0
+                    if args.request_slo_ms > 0
+                    else None
+                ),
+            )
+            _write_request_trace(
+                Path(request_trace_path),
+                experiment_id=args.experiment_id,
+                phase=phase,
+                repeat_index=repeat_index,
+                scenario_id=args.scenario_id,
+                random_seed=args.random_seed,
+                job_id=job_id,
+                server_version=db_metadata["server_version"],
+                pgvector_version=db_metadata["pgvector_version"],
+                rows=request_trace_rows,
+            )
 
         resource_samples = []
         if resource_sampler is not None:
@@ -2254,6 +2541,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         writeback_s = write_timer.stop()
         finish_job(conn, job_id)
         e2e_s = e2e_timer.stop()
+        request_metrics = _request_trace_metrics(
+            request_trace_rows,
+            e2e_s=e2e_s,
+        )
         service_s = sum(float(result["service_s"]) for result in operator_results)
         request_wall_s = model_request_wall_time(operator_results)
         token_count = sum(int(result["token_count"]) for result in operator_results)
@@ -2265,6 +2556,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "experiment_id": args.experiment_id,
             "phase": phase,
             "repeat_index": repeat_index,
+            "scenario_id": args.scenario_id,
+            "random_seed": args.random_seed,
             **db_metadata,
             **gpu_snapshot,
             "database_trigger": "job_table",
@@ -2337,6 +2630,25 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "submission_trace_events": len(operator_results),
             "resource_trace_path": resource_trace_path,
             "resource_trace_events": len(resource_samples),
+            "request_trace_path": request_trace_path,
+            "request_trace_events": len(request_trace_rows),
+            "request_e2e_s_p50": round(
+                float(request_metrics["request_e2e_s_p50"]), 6
+            ),
+            "request_e2e_s_p95": round(
+                float(request_metrics["request_e2e_s_p95"]), 6
+            ),
+            "request_e2e_s_p99": round(
+                float(request_metrics["request_e2e_s_p99"]), 6
+            ),
+            "request_slo_target_ms": args.request_slo_ms,
+            "request_slo_violation_ratio": round(
+                float(request_metrics["request_slo_violation_ratio"]), 6
+            ),
+            "request_slo_goodput_per_s": round(
+                float(request_metrics["request_slo_goodput_per_s"]), 6
+            ),
+            "latency_granularity": request_metrics["latency_granularity"],
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
             "object_count": object_count,

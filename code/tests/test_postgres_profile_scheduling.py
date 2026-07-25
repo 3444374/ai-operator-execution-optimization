@@ -16,7 +16,10 @@ if str(CODE_ROOT) not in sys.path:
 from scripts import postgres_ai_operator_profile as profile  # noqa: E402
 from src.scheduling.adaptive_admission import AimdAdmissionController  # noqa: E402
 from src.scheduling.admission import DynamicAdmissionGate  # noqa: E402
-from src.scheduling.models import SubmissionCompletion  # noqa: E402
+from src.scheduling.models import (  # noqa: E402
+    SubmissionCompletion,
+    SubmissionLifecycleEvent,
+)
 from src.scheduling.observations import (  # noqa: E402
     AdmissionTraceEvent,
     CachedMetricsObservationProvider,
@@ -25,6 +28,10 @@ from src.scheduling.observations import (  # noqa: E402
 from src.scheduling.batching import (  # noqa: E402
     FlushTraceEvent,
     ReplayServiceObservation,
+)
+from src.scheduling.lifecycle import (  # noqa: E402
+    RequestLifecycleSeed,
+    RequestTraceRow,
 )
 from src.scheduling.routing import (  # noqa: E402
     LeastQueuedEndpointRouter,
@@ -478,6 +485,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
 
     def test_arrival_replay_emits_one_lifecycle_seed_per_complete_row(self) -> None:
+        replay_clock = _DeterministicReplayClock()
         args = SimpleNamespace(
             ray_batch_rows=8,
             batching_policy="fixed_rows",
@@ -488,8 +496,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             max_inflight=8,
             arrival_time_scale=0.001,
             completion_max_tokens=4,
-            _replay_clock=_DeterministicReplayClock(),
-            _replay_epoch_clock=iter([1_000.0, 1_000.025]).__next__,
+            _replay_clock=replay_clock,
         )
         table = pa.table(
             {
@@ -515,6 +522,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 ),
                 trace_sink=[],
                 lifecycle_seed_sink=seeds,
+                epoch_clock=lambda: 1_000.0
+                + (replay_clock.now() - 100.0),
             )
         )
 
@@ -533,7 +542,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
         self.assertEqual(
             [seed.flush_epoch_s for seed in seeds],
-            [1_000.025, 1_000.025],
+            [1_000.01, 1_000.01],
         )
 
     def test_queue_adaptive_uses_max_inflight_for_pressure_window(self) -> None:
@@ -682,6 +691,71 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             replay_row["arrival_replay_preload"],
             "bounded_requested_workload",
         )
+
+    def test_request_trace_cli_requires_supported_replay_path(self) -> None:
+        invalid_cases = [
+            (
+                [
+                    "--dry-run",
+                    "--request-trace-output",
+                    "tmp/requests.csv",
+                ],
+                "request tracing requires --arrival-replay",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--request-trace-output",
+                    "tmp/requests.csv",
+                    "--scheduling-policy",
+                    "queue_adaptive",
+                ],
+                "request tracing requires the typed scheduler",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--request-slo-ms",
+                    "-1",
+                ],
+                "request-slo-ms must be non-negative",
+            ),
+        ]
+
+        for argv, message in invalid_cases:
+            with self.subTest(argv=argv):
+                with self.assertRaisesRegex(SystemExit, message):
+                    profile.run_once(profile.parse_args(argv), "formal", 1)
+
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--arrival-replay",
+                "--data-source",
+                "daft_postgres",
+                "--source-order",
+                "arrival_time",
+                "--request-trace-output",
+                "tmp/requests.csv",
+                "--request-slo-ms",
+                "250",
+                "--scenario-id",
+                "fixed-timeout",
+                "--random-seed",
+                "7",
+            ]
+        )
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["request_trace_path"], "tmp/requests.csv")
+        self.assertEqual(row["request_slo_target_ms"], 250.0)
+        self.assertEqual(row["scenario_id"], "fixed-timeout")
+        self.assertEqual(row["random_seed"], 7)
 
     def test_replay_validation_rejects_invalid_formal_paths(self) -> None:
         invalid_cases = [
@@ -865,17 +939,23 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             ["ray://task/0"],
         )
 
+        lifecycle_events = []
         results, metrics = profile._run_scheduler(
             _ImmediateRay,
             envelopes(),
             topology,
             {"endpoint-0": lambda payload: remote.remote(payload)},
             profile.StaticAdmissionController(1),
+            submission_lifecycle_sink=lifecycle_events,
         )
 
         self.assertEqual(consumed, ["started"])
         self.assertEqual(results, [{"call_index": 0}])
         self.assertEqual(metrics["operator_invocations"], 1)
+        self.assertEqual(
+            [event.submission_id for event in lifecycle_events],
+            ["job:batch:0"],
+        )
 
     def test_flush_trace_writer_emits_all_fields_and_propagates_errors(self) -> None:
         events = [
@@ -1023,6 +1103,211 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         finally:
             submission_output.unlink(missing_ok=True)
             resource_output.unlink(missing_ok=True)
+
+    def test_request_trace_writer_emits_versioned_plot_ready_rows(self) -> None:
+        test_tmp_root = CODE_ROOT.parent / "tmp"
+        test_tmp_root.mkdir(exist_ok=True)
+        output = test_tmp_root / "request_trace_test.csv"
+        output.unlink(missing_ok=True)
+        rows = [
+            RequestTraceRow(
+                request_id="job:row:11",
+                submission_id="job:batch:0",
+                doc_id="11",
+                pool_id="default",
+                endpoint_id="task-0",
+                gpu_id="0",
+                prompt_tokens=10,
+                estimated_output_tokens=4,
+                client_estimated_output_tokens=2,
+                actual_output_tokens=None,
+                output_token_source="submission_aggregate_unavailable",
+                total_tokens=None,
+                prefix_key="shared",
+                status="completed",
+                error_type="",
+                arrival_epoch_s=100.0,
+                flush_epoch_s=100.025,
+                submit_epoch_s=100.030,
+                service_start_epoch_s=100.040,
+                completion_epoch_s=100.300,
+                buffer_s=0.025,
+                submit_to_service_s=0.010,
+                service_s=0.250,
+                e2e_s=0.300,
+                latency_granularity="submission",
+                slo_target_s=0.250,
+                slo_met=False,
+            ),
+            RequestTraceRow(
+                request_id="job:row:12",
+                submission_id="job:batch:0",
+                doc_id="12",
+                pool_id="default",
+                endpoint_id="task-0",
+                gpu_id="0",
+                prompt_tokens=20,
+                estimated_output_tokens=4,
+                client_estimated_output_tokens=1,
+                actual_output_tokens=None,
+                output_token_source="submission_aggregate_unavailable",
+                total_tokens=None,
+                prefix_key="shared",
+                status="completed",
+                error_type="",
+                arrival_epoch_s=100.010,
+                flush_epoch_s=100.025,
+                submit_epoch_s=100.030,
+                service_start_epoch_s=100.040,
+                completion_epoch_s=100.300,
+                buffer_s=0.015,
+                submit_to_service_s=0.010,
+                service_s=0.250,
+                e2e_s=0.290,
+                latency_granularity="submission",
+                slo_target_s=0.250,
+                slo_met=False,
+            ),
+        ]
+        expected_columns = [
+            "schema_version",
+            "experiment_id",
+            "phase",
+            "repeat_index",
+            "scenario_id",
+            "random_seed",
+            "job_id",
+            "server_version",
+            "pgvector_version",
+            "request_index",
+            "request_id",
+            "submission_id",
+            "doc_id",
+            "pool_id",
+            "endpoint_id",
+            "gpu_id",
+            "prompt_tokens",
+            "estimated_output_tokens",
+            "client_estimated_output_tokens",
+            "actual_output_tokens",
+            "output_token_source",
+            "total_tokens",
+            "prefix_key",
+            "status",
+            "error_type",
+            "arrival_epoch_s",
+            "flush_epoch_s",
+            "submit_epoch_s",
+            "service_start_epoch_s",
+            "completion_epoch_s",
+            "buffer_s",
+            "submit_to_service_s",
+            "service_s",
+            "service_clock_domain",
+            "e2e_s",
+            "latency_granularity",
+            "slo_target_s",
+            "slo_met",
+        ]
+
+        try:
+            profile._write_request_trace(
+                output,
+                experiment_id="experiment",
+                phase="formal",
+                repeat_index=2,
+                scenario_id="fixed-timeout",
+                random_seed=7,
+                job_id=9,
+                server_version="18.4",
+                pgvector_version="0.8.2",
+                rows=rows,
+            )
+            with output.open(newline="", encoding="utf-8") as handle:
+                reader = csv.DictReader(handle)
+                written = list(reader)
+                self.assertEqual(reader.fieldnames, expected_columns)
+
+            self.assertEqual(len(written), 2)
+            self.assertEqual(written[0]["schema_version"], "1")
+            self.assertEqual(written[0]["scenario_id"], "fixed-timeout")
+            self.assertEqual(written[0]["server_version"], "18.4")
+            self.assertEqual(written[0]["actual_output_tokens"], "")
+            self.assertEqual(written[1]["e2e_s"], "0.29")
+        finally:
+            output.unlink(missing_ok=True)
+
+    def test_profiler_builds_request_rows_without_splitting_aggregate_usage(
+        self,
+    ) -> None:
+        seeds = [
+            RequestLifecycleSeed(
+                "job:row:11",
+                "job:batch:0",
+                "11",
+                10,
+                4,
+                "shared",
+                100.0,
+                100.025,
+            ),
+            RequestLifecycleSeed(
+                "job:row:12",
+                "job:batch:0",
+                "12",
+                20,
+                4,
+                "shared",
+                100.010,
+                100.025,
+            ),
+        ]
+        events = [
+            SubmissionLifecycleEvent(
+                "job:batch:0",
+                "default",
+                "task-0",
+                "0",
+                100.030,
+                100.300,
+                "completed",
+            )
+        ]
+        results = [
+            {
+                "doc_id": [11, 12],
+                "output_text": ["one two", ""],
+                "output_token_count": 2,
+                "service_start_epoch_s": 100.040,
+                "service_end_epoch_s": 100.290,
+            }
+        ]
+
+        rows = profile._build_profiler_request_rows(
+            seeds,
+            events,
+            results,
+            operator="ai_complete",
+            slo_target_s=0.250,
+        )
+
+        self.assertEqual(
+            [row.client_estimated_output_tokens for row in rows],
+            [2, 0],
+        )
+        self.assertEqual([row.actual_output_tokens for row in rows], [None, None])
+        self.assertEqual(
+            {row.output_token_source for row in rows},
+            {"submission_aggregate_unavailable"},
+        )
+
+        metrics = profile._request_trace_metrics(rows, e2e_s=0.5)
+        self.assertAlmostEqual(metrics["request_e2e_s_p50"], 0.29)
+        self.assertAlmostEqual(metrics["request_e2e_s_p95"], 0.30)
+        self.assertAlmostEqual(metrics["request_e2e_s_p99"], 0.30)
+        self.assertEqual(metrics["request_slo_violation_ratio"], 1.0)
+        self.assertEqual(metrics["request_slo_goodput_per_s"], 0.0)
+        self.assertEqual(metrics["latency_granularity"], "submission")
 
     def test_vllm_tokens_per_second_uses_observed_prometheus_deltas(self) -> None:
         stats = {

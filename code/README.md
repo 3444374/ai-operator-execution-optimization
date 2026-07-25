@@ -86,6 +86,9 @@ through `--completion-endpoint-url`. For local Ollama smoke runs, use
 static admission, round-robin routing, a deterministic policy-composition
 scheduler, and the Ray submission adapter. Policy modules do not import Daft,
 Arrow, Ray, or HTTP; the adapter receives the active Ray module explicitly.
+The lifecycle module joins complete-row replay seeds, immutable submission
+events, backend service timestamps, and explicitly sourced token counts into
+exactly-once request trace rows.
 
 The formal framework remains:
 
@@ -131,6 +134,14 @@ preserves subsequent gaps with a monotonic clock, builds complete-row pending
 batches, and writes a separate flush trace. Batching decides which rows belong
 together, flush decides when a partial batch closes, and admission limits how
 many closed batches may be in flight.
+
+Optional request tracing records one client-observed row per prompt with
+submission-granularity completion timing and SLO metrics. Epoch timestamps are
+derived from a single wall-clock anchor plus monotonic elapsed time. Aggregate
+endpoint token usage is not divided across prompts; per-request actual output
+tokens remain unavailable unless a backend supplies genuine per-request usage.
+Backend service epochs are marked as a separate clock domain; cross-domain
+submit-to-service time remains empty when the clocks cannot be ordered.
 
 The real contract test covers Daft `RecordBatch`/Arrow conversion and local Ray
 task/actor exactly-once execution. It is integration evidence only. GPU

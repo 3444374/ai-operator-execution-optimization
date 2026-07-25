@@ -9,6 +9,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.scheduling.lifecycle import (  # noqa: E402
+    MonotonicEpochClock,
     RequestLifecycleSeed,
     SubmissionServiceTiming,
     build_request_trace_rows,
@@ -57,6 +58,25 @@ def service_timing(
 
 
 class RequestLifecycleTests(unittest.TestCase):
+    def test_monotonic_epoch_clock_ignores_later_wall_clock_adjustments(
+        self,
+    ) -> None:
+        monotonic_values = iter([10.0, 10.1, 10.2])
+        wall_clock_calls = []
+
+        def wall_clock() -> float:
+            wall_clock_calls.append(True)
+            return 1_000.0
+
+        clock = MonotonicEpochClock(
+            monotonic_clock=lambda: next(monotonic_values),
+            epoch_clock=wall_clock,
+        )
+
+        self.assertAlmostEqual(clock(), 1_000.1)
+        self.assertAlmostEqual(clock(), 1_000.2)
+        self.assertEqual(len(wall_clock_calls), 1)
+
     def test_join_preserves_arrival_and_shared_submission_timing(self) -> None:
         rows = build_request_trace_rows(
             seeds=[
@@ -147,17 +167,42 @@ class RequestLifecycleTests(unittest.TestCase):
             )
 
     def test_join_rejects_invalid_timestamp_order(self) -> None:
+        event = SubmissionLifecycleEvent(
+            submission_id="job:batch:0",
+            pool_id="default",
+            endpoint_id="task-0",
+            gpu_id="0",
+            submit_epoch_s=100.020,
+            completion_epoch_s=100.300,
+            status="completed",
+        )
         with self.assertRaisesRegex(ValueError, "timestamp order"):
             build_request_trace_rows(
                 seeds=[seed("job:row:1", "1", 100.000)],
-                submission_events=[completed_event()],
+                submission_events=[event],
                 service_by_submission_id={
-                    "job:batch:0": service_timing(100.020, 100.290)
+                    "job:batch:0": service_timing(100.040, 100.290)
                 },
                 client_estimated_output_tokens_by_doc_id={"1": 2},
                 actual_output_tokens_by_doc_id={},
                 slo_target_s=None,
             )
+
+    def test_backend_clock_skew_does_not_fabricate_submit_to_service(self) -> None:
+        row = build_request_trace_rows(
+            seeds=[seed("job:row:1", "1", 100.000)],
+            submission_events=[completed_event()],
+            service_by_submission_id={
+                "job:batch:0": service_timing(99.900, 100.200)
+            },
+            client_estimated_output_tokens_by_doc_id={"1": 2},
+            actual_output_tokens_by_doc_id={},
+            slo_target_s=None,
+        )[0]
+
+        self.assertIsNone(row.submit_to_service_s)
+        self.assertAlmostEqual(row.service_s, 0.300)
+        self.assertEqual(row.service_clock_domain, "backend")
 
     def test_failed_submission_has_no_fabricated_service_timing(self) -> None:
         event = SubmissionLifecycleEvent(

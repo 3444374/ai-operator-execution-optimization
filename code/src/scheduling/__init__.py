@@ -25,6 +25,7 @@ from .flush import (
     QueueAdaptiveFlush,
 )
 from .lifecycle import (
+    MonotonicEpochClock,
     RequestLifecycleSeed,
     RequestTraceRow,
     SubmissionServiceTiming,
@@ -107,6 +108,7 @@ __all__ = [
     "PendingBatchBuilder",
     "RaySubmissionAdapter",
     "LeastQueuedEndpointRouter",
+    "MonotonicEpochClock",
     "PrefixAffinityEndpointRouter",
     "RequestPoolRouter",
     "ReplayClock",

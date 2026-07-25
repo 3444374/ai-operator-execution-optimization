@@ -1132,3 +1132,11 @@
 - compatible endpoint 仅提供 submission aggregate usage，因此逐请求
   `actual_output_tokens` 允许为空；客户端输出 token 估算使用独立字段和来源
   标签，不拆分 aggregate usage，不把估算值冒充服务端实际值。
+- 完成 request lifecycle profiler 接线：新增 request CSV、client E2E
+  P50/P95/P99、SLO violation/goodput、scenario/seed 字段，并保持既有 Ray
+  submit API 的两值返回契约。
+- Daft→Arrow→Ray task/actor 四行合同验证 request/submission exactly-once 映射。
+  调试中发现直接混用多次 `time.time()` 会因 wall-clock 微调产生亚毫秒倒序，
+  改为共享 monotonic-backed epoch clock；backend service epoch 单独标记为
+  `service_clock_domain=backend`，跨时钟域无法可靠排序时不生成
+  `submit_to_service_s`。

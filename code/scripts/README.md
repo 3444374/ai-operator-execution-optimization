@@ -116,6 +116,10 @@ result.
 - `--flush-trace-output`
 - `--submission-trace-output`
 - `--resource-trace-output`
+- `--request-trace-output`
+- `--request-slo-ms`
+- `--scenario-id`
+- `--random-seed`
 - `--batching-policy fixed_rows|token_budget|length_align_fixed_rows|length_align_token_budget|prefix_aware_fixed_rows|prefix_aware_token_budget`
 - `--token-budget`
 - `--scheduling-policy static|queue_adaptive|aimd|ewma_aimd|pid`
@@ -195,6 +199,24 @@ document identity, token counts, and service timestamps. The second samples
 GPU utilization/memory and vLLM running/waiting/KV signals every 250 ms without
 blocking the submission loop.
 
+`--request-trace-output` additionally writes one row per complete input prompt.
+It currently requires arrival replay and the typed static/AIMD/EWMA/PID
+scheduler. Each row records arrival, flush, submit, service, completion, client
+E2E, endpoint/GPU identity, and optional SLO status. A multi-prompt endpoint
+response exposes only submission-level completion timing, so these rows use
+`latency_granularity=submission`; they are client-observed per-prompt E2E
+values, not vLLM internal per-sequence completion timestamps.
+Client lifecycle timestamps share one stable clock. Backend service epochs use
+`service_clock_domain=backend`; when backend/client clocks cannot be ordered
+reliably, `submit_to_service_s` is left empty instead of inventing queue time.
+
+The compatible endpoint exposes aggregate submission token usage. It is never
+split into fabricated per-request values: `actual_output_tokens` remains empty,
+while `client_estimated_output_tokens` records the explicitly labelled
+whitespace-token estimate and `output_token_source` records the limitation.
+Replay timestamps use one epoch anchor plus monotonic elapsed time, so wall
+clock adjustments cannot invert arrival and flush ordering.
+
 Single-GPU smoke configuration:
 
 ```powershell
@@ -256,8 +278,9 @@ require a Ray executor and `--model-metrics-url`. Sampling is cached and does
 not sleep in the submission loop. If `--control-trace-output` is omitted, the
 trace is written beside the main CSV with `_control_trace.csv` appended to the
 stem. UCB is not a CLI choice yet: its policy/reward core is tested, but formal
-online use requires epoch-level request metrics and a static-K8 reward
-baseline first.
+online use still requires reward-epoch aggregation and a static-K8 reward
+baseline. The request E2E/SLO trace needed for that aggregation is now
+available.
 
 Actor pools and task endpoints share the same routing configuration. Pool and
 GPU lists contain one value per actor/endpoint. `request_cost` routing requires

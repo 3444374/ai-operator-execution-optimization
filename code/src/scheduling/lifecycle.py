@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass
-from typing import Literal, Mapping, Sequence
+from typing import Callable, Literal, Mapping, Sequence
 
 from .models import SubmissionLifecycleEvent
 
@@ -14,6 +15,25 @@ OutputTokenSource = Literal[
     "submission_aggregate_unavailable",
     "endpoint_request",
 ]
+
+
+class MonotonicEpochClock:
+    """Expose epoch-shaped timestamps without rereading an adjustable clock."""
+
+    def __init__(
+        self,
+        *,
+        monotonic_clock: Callable[[], float] = time.perf_counter,
+        epoch_clock: Callable[[], float] = time.time,
+    ) -> None:
+        self._monotonic_clock = monotonic_clock
+        self._monotonic_origin_s = monotonic_clock()
+        self._epoch_origin_s = epoch_clock()
+
+    def __call__(self) -> float:
+        return self._epoch_origin_s + (
+            self._monotonic_clock() - self._monotonic_origin_s
+        )
 
 
 @dataclass(frozen=True)
@@ -89,6 +109,7 @@ class RequestTraceRow:
     latency_granularity: Literal["submission", "request"]
     slo_target_s: float | None
     slo_met: bool | None
+    service_clock_domain: Literal["backend"] = "backend"
 
 
 def build_request_trace_rows(
@@ -164,13 +185,21 @@ def build_request_trace_rows(
                 ("arrival_epoch_s", item.arrival_epoch_s),
                 ("flush_epoch_s", item.flush_epoch_s),
                 ("submit_epoch_s", event.submit_epoch_s),
-                ("service_start_epoch_s", service.service_start_epoch_s),
-                ("service_end_epoch_s", service.service_end_epoch_s),
                 ("completion_epoch_s", event.completion_epoch_s),
             )
-            submit_to_service_s = _duration(
-                event.submit_epoch_s,
-                service.service_start_epoch_s,
+            service_within_client_interval = (
+                service.service_start_epoch_s
+                >= event.submit_epoch_s - _TIME_TOLERANCE_S
+                and service.service_end_epoch_s
+                <= event.completion_epoch_s + _TIME_TOLERANCE_S
+            )
+            submit_to_service_s = (
+                _duration(
+                    event.submit_epoch_s,
+                    service.service_start_epoch_s,
+                )
+                if service_within_client_interval
+                else None
             )
             service_s = _duration(
                 service.service_start_epoch_s,

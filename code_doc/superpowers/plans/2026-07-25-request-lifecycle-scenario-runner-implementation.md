@@ -260,11 +260,12 @@ class RequestTraceRow:
     arrival_epoch_s: float
     flush_epoch_s: float
     submit_epoch_s: float
-    service_start_epoch_s: float
+    service_start_epoch_s: float | None
     completion_epoch_s: float
     buffer_s: float
-    submit_to_service_s: float
-    service_s: float
+    submit_to_service_s: float | None
+    service_s: float | None
+    service_clock_domain: Literal["backend"]
     e2e_s: float
     latency_granularity: Literal["submission", "request"]
     slo_target_s: float | None
@@ -604,7 +605,8 @@ estimated_output_tokens, client_estimated_output_tokens, actual_output_tokens,
 output_token_source, total_tokens, prefix_key, status, error_type,
 arrival_epoch_s, flush_epoch_s, submit_epoch_s,
 service_start_epoch_s, completion_epoch_s, buffer_s, submit_to_service_s,
-service_s, e2e_s, latency_granularity, slo_target_s, slo_met
+service_s, service_clock_domain, e2e_s, latency_granularity, slo_target_s,
+slo_met
 ```
 
 Assert versions, scenario identity, and numeric values survive CSV round-trip.

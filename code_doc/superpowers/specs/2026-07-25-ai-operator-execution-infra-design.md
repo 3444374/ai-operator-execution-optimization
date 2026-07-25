@@ -113,7 +113,7 @@ flush_epoch_s
 submit_epoch_s
 service_start_epoch_s
 completion_epoch_s
-buffer_s / submit_to_service_s / service_s / e2e_s
+buffer_s / submit_to_service_s / service_s / service_clock_domain / e2e_s
 latency_granularity
 slo_target_s / slo_met
 ```
@@ -139,6 +139,11 @@ token。`actual_output_tokens` 因此允许为空；客户端对输出文本的�
 `client_estimated_output_tokens`，并用 `output_token_source` 标记
 `submission_aggregate_unavailable` 或未来真实的 `endpoint_request`。不得把
 空格切词或客户端 tokenizer 估算冒充 endpoint 实际 usage。
+
+arrival、flush、submit 和 completion 属于 client clock domain，必须共享一个
+monotonic-backed epoch clock。backend service start/end 只保证其内部有序，并
+写入 `service_clock_domain=backend`。若 backend/client epoch 无法可靠排序，
+`submit_to_service_s` 留空；不得用任意容差或截断伪造跨时钟域排队时间。
 
 ### 5.2 时间基准
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -14,6 +15,7 @@ if str(CODE_ROOT) not in sys.path:
 from scripts import postgres_ai_operator_profile as profile  # noqa: E402
 from src.organizers import DaftOrganizer, OrganizerConfig  # noqa: E402
 from src.scheduling.admission import StaticAdmissionController  # noqa: E402
+from src.scheduling.lifecycle import MonotonicEpochClock  # noqa: E402
 from src.scheduling.models import (  # noqa: E402
     BatchRequest,
     EndpointSnapshot,
@@ -62,20 +64,30 @@ class DaftRayContractTests(unittest.TestCase):
             completion_max_tokens,
         ):
             del endpoint_url, model_name, api_key, timeout_s, completion_max_tokens
+            service_start_epoch_s = time.time()
+            doc_ids = payload.column("doc_id").to_pylist()
             return {
-                "doc_ids": payload.column("doc_id").to_pylist(),
+                "doc_id": doc_ids,
+                "output_text": [f"task-{doc_id}" for doc_id in doc_ids],
+                "service_start_epoch_s": service_start_epoch_s,
+                "service_end_epoch_s": time.time(),
                 "executor": "task",
             }
 
         @ray.remote
         class ExecuteActor:
             def execute_batch(self, payload):
+                service_start_epoch_s = time.time()
+                doc_ids = payload.column("doc_id").to_pylist()
                 return {
-                    "doc_ids": payload.column("doc_id").to_pylist(),
+                    "doc_id": doc_ids,
+                    "output_text": [f"actor-{doc_id}" for doc_id in doc_ids],
+                    "service_start_epoch_s": service_start_epoch_s,
+                    "service_end_epoch_s": time.time(),
                     "executor": "actor",
                 }
 
-        def replay(trace):
+        def replay(trace, lifecycle_seeds, epoch_clock):
             return profile._arrival_replay_envelopes(
                 daft_tables,
                 replay_args,
@@ -83,11 +95,16 @@ class DaftRayContractTests(unittest.TestCase):
                 operator="ai_complete",
                 service_observation=lambda: None,
                 trace_sink=trace,
+                lifecycle_seed_sink=lifecycle_seeds,
+                epoch_clock=epoch_clock,
             )
 
         ray.init(ignore_reinit_error=True, num_cpus=2)
         try:
             task_trace = []
+            task_seeds = []
+            task_submission_events = []
+            task_epoch_clock = MonotonicEpochClock()
             task_results, task_metrics = profile.submit_ray_tasks(
                 ray_module=ray,
                 remote_embed=execute_task,
@@ -101,40 +118,96 @@ class DaftRayContractTests(unittest.TestCase):
                 api_key=None,
                 timeout_s=1.0,
                 completion_max_tokens=0,
-                replay_envelopes=replay(task_trace),
+                replay_envelopes=replay(
+                    task_trace,
+                    task_seeds,
+                    task_epoch_clock,
+                ),
+                submission_lifecycle_sink=task_submission_events,
+                epoch_clock=task_epoch_clock,
             )
 
             actor_trace = []
+            actor_seeds = []
+            actor_submission_events = []
+            actor_epoch_clock = MonotonicEpochClock()
             actor_results, actor_metrics = profile.submit_with_backpressure(
                 ray_module=ray,
                 actors=[ExecuteActor.remote()],
                 batches=[],
                 max_inflight=2,
                 method_name="execute_batch",
-                replay_envelopes=replay(actor_trace),
+                replay_envelopes=replay(
+                    actor_trace,
+                    actor_seeds,
+                    actor_epoch_clock,
+                ),
+                submission_lifecycle_sink=actor_submission_events,
+                epoch_clock=actor_epoch_clock,
             )
         finally:
             ray.shutdown()
 
         expected_groups = [[1, 2, 3], [4]]
         self.assertEqual(
-            [item["doc_ids"] for item in task_results],
+            [item["doc_id"] for item in task_results],
             expected_groups,
         )
         self.assertEqual(
-            [item["doc_ids"] for item in actor_results],
+            [item["doc_id"] for item in actor_results],
             expected_groups,
         )
         self.assertEqual(task_metrics["operator_invocations"], 2)
         self.assertEqual(actor_metrics["operator_invocations"], 2)
         self.assertEqual(
-            sorted(doc_id for item in task_results for doc_id in item["doc_ids"]),
+            sorted(doc_id for item in task_results for doc_id in item["doc_id"]),
             [1, 2, 3, 4],
         )
         self.assertEqual(
-            sorted(doc_id for item in actor_results for doc_id in item["doc_ids"]),
+            sorted(doc_id for item in actor_results for doc_id in item["doc_id"]),
             [1, 2, 3, 4],
         )
+        task_request_rows = profile._build_profiler_request_rows(
+            task_seeds,
+            task_submission_events,
+            task_results,
+            operator="ai_complete",
+            slo_target_s=None,
+        )
+        actor_request_rows = profile._build_profiler_request_rows(
+            actor_seeds,
+            actor_submission_events,
+            actor_results,
+            operator="ai_complete",
+            slo_target_s=None,
+        )
+        for request_rows, submission_events in (
+            (task_request_rows, task_submission_events),
+            (actor_request_rows, actor_submission_events),
+        ):
+            self.assertEqual(len(request_rows), 4)
+            self.assertEqual(
+                len({row.request_id for row in request_rows}),
+                4,
+            )
+            self.assertEqual(
+                {row.doc_id for row in request_rows},
+                {"1", "2", "3", "4"},
+            )
+            self.assertTrue(
+                {row.submission_id for row in request_rows}.issubset(
+                    {event.submission_id for event in submission_events}
+                )
+            )
+            self.assertTrue(
+                all(row.e2e_s >= 0 for row in request_rows)
+            )
+            self.assertTrue(
+                all(
+                    row.latency_granularity == "submission"
+                    for row in request_rows
+                )
+            )
         self.assertGreaterEqual(task_trace[-1].elapsed_s, 0.075)
         self.assertLess(task_trace[-1].elapsed_s, 5.0)
         self.assertGreaterEqual(actor_trace[-1].elapsed_s, 0.075)
