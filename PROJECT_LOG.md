@@ -927,3 +927,10 @@
 - 处理（合并进现有 README，不新建文件）：在 `top15_reading_notes/README.md` 加"来源与选取链路（provenance）"段，显式写出三步链路：候选池 `ai_operator_literature_inventory.md`（66 篇，v5）→ `top15_ranked_papers.md` 学术排名选前 15 → `research/reading_notes/`（33 篇精读含此 15）权威版 / 本目录为快照拷贝。
 - 文档链路现状：`reading_list.md` → 指向 `top15_ranked_papers.md` + 本目录；`top15_ranked_papers.md` → 标候选池；本 README → 完整 provenance。
 - 用户进一步指出"`research/reading_notes/`（Top 15 的权威来源库）本身无 README"：新建 `research/reading_notes/README.md`，说明本目录作用（33 篇精读笔记 + `figs/` + 模板）、provenance 链路（inventory 66 → 精读 33 → Top 15 → 开题快照）、与 top15 快照及 wiki 的关系、配图与编辑规则；同步更新 `PROJECT_INDEX.md` 该目录条目。
+
+## 2026-07-25 RC2 adaptive admission controller 设计确认
+
+- 对现有 shared-vLLM 结果复核：静态 `K_max=8` foreground mean E2E 为 `6.602s`，现有两档 adaptive 为 `10.214s`；当前只能证明 admission guardrail 必要，不能证明 adaptive 优于静态策略。
+- 确认采用“先可观测、再改控制律”的最小方案：控制器与 Prometheus/Ray/Daft 解耦，移除热路径 `sleep`，增加 K_max/inflight/queue/KV 时序记录，再实现无 EWMA 的死区非对称 AIMD。
+- 新增 `code_doc/superpowers/plans/2026-07-25-adaptive-admission-controller-design.md`，明确范围、架构、异常语义、固定输出混淆变量实验、成功/放弃条件、TDD 与正式 GPU 验证边界。
+- 本次只落盘已批准设计，尚未修改生产代码或产生新实验结果。
