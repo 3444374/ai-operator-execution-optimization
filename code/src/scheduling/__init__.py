@@ -24,6 +24,12 @@ from .ray_adapter import RaySubmissionAdapter
 from .routing import RoundRobinEndpointRouter
 from .scheduler import SchedulerResult, SubmissionAdapter, SynchronousScheduler
 from .topology import healthy_endpoints
+from .ucb_admission import (
+    SloRewardInput,
+    UcbAdmissionController,
+    UcbConfig,
+    slo_constrained_reward,
+)
 
 __all__ = [
     "AdmissionDecision",
@@ -43,10 +49,14 @@ __all__ = [
     "RoundRobinEndpointRouter",
     "SchedulerResult",
     "StaticAdmissionController",
+    "SloRewardInput",
     "SubmissionAdapter",
     "SubmissionCompletion",
     "SynchronousScheduler",
     "TopologySnapshot",
+    "UcbAdmissionController",
+    "UcbConfig",
     "WindowDecision",
     "healthy_endpoints",
+    "slo_constrained_reward",
 ]

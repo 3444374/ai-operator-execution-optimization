@@ -22,6 +22,12 @@ from src.scheduling.pid_admission import (  # noqa: E402
     PidAdmissionController,
     PidConfig,
 )
+from src.scheduling.ucb_admission import (  # noqa: E402
+    SloRewardInput,
+    UcbAdmissionController,
+    UcbConfig,
+    slo_constrained_reward,
+)
 
 
 class AdaptiveAdmissionModelTests(unittest.TestCase):
@@ -274,6 +280,65 @@ class PidAdmissionControllerTests(unittest.TestCase):
     def test_pid_configuration_rejects_invalid_bounds(self) -> None:
         with self.assertRaisesRegex(ValueError, "window bounds"):
             PidConfig(min_window=8, max_window=4)
+
+
+class UcbAdmissionControllerTests(unittest.TestCase):
+    def test_ucb_visits_each_arm_before_exploitation(self) -> None:
+        controller = UcbAdmissionController(UcbConfig(arms=(4, 8, 16)))
+
+        selected = []
+        for reward in (0.5, 1.5, 0.75):
+            decision = controller.select()
+            selected.append(decision.window)
+            self.assertEqual(decision.action, "explore")
+            controller.update_reward(decision.window, reward)
+
+        exploitation = controller.select()
+
+        self.assertEqual(selected, [4, 8, 16])
+        self.assertEqual(exploitation.window, 8)
+        self.assertEqual(exploitation.action, "exploit")
+        self.assertEqual(exploitation.diagnostics.selected_arm, 8)
+
+    def test_reward_update_changes_selected_arm_only(self) -> None:
+        controller = UcbAdmissionController()
+        selected = controller.select()
+
+        with self.assertRaisesRegex(ValueError, "selected arm"):
+            controller.update_reward(8, 1.0)
+        controller.update_reward(selected.window, 1.0)
+
+        self.assertEqual(
+            controller.arm_statistics(),
+            ((4, 1, 1.0), (8, 0, 0.0), (16, 0, 0.0)),
+        )
+
+    def test_ucb_tie_breaks_by_smallest_window(self) -> None:
+        controller = UcbAdmissionController()
+        for _ in range(3):
+            decision = controller.select()
+            controller.update_reward(decision.window, 1.0)
+
+        self.assertEqual(controller.select().window, 4)
+
+    def test_slo_reward_penalizes_tail_violation(self) -> None:
+        within_slo = slo_constrained_reward(
+            SloRewardInput(120.0, 100.0, 0.9, 1.0)
+        )
+        violated = slo_constrained_reward(
+            SloRewardInput(120.0, 100.0, 2.0, 1.0)
+        )
+
+        self.assertAlmostEqual(within_slo, 1.2)
+        self.assertAlmostEqual(violated, 0.3)
+
+    def test_ucb_rejects_invalid_configuration_and_reward(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unique positive"):
+            UcbConfig(arms=(4, 4))
+        controller = UcbAdmissionController()
+        selected = controller.select()
+        with self.assertRaisesRegex(ValueError, "finite and non-negative"):
+            controller.update_reward(selected.window, float("nan"))
 
 
 if __name__ == "__main__":
