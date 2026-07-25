@@ -83,8 +83,9 @@ through `--completion-endpoint-url`. For local Ollama smoke runs, use
 ## Scheduling foundation
 
 `code/src/scheduling/` contains immutable request metadata, endpoint topology,
-static admission, round-robin routing, and a deterministic policy-composition
-scheduler. Policy modules do not import Daft, Arrow, Ray, or HTTP.
+static admission, round-robin routing, a deterministic policy-composition
+scheduler, and the Ray submission adapter. Policy modules do not import Daft,
+Arrow, Ray, or HTTP; the adapter receives the active Ray module explicitly.
 
 The formal framework remains:
 
@@ -92,21 +93,24 @@ The formal framework remains:
 PostgreSQL -> Daft -> Arrow payload boundary -> Ray task/actor -> endpoint
 ```
 
-The synchronous adapter used in unit tests is not a formal execution path.
-The Daft-to-Ray contract test uses a real `DaftOrganizer`, Arrow batches, and
-a local single-node Ray task:
+The synchronous fake adapter used in unit tests is not a formal execution path.
+The profiler's static `ray_task` and `ray_actor` paths now delegate to the
+typed scheduler through `RaySubmissionAdapter`. The Daft-to-Ray contract tests
+use a real `DaftOrganizer`, Arrow batches, and local single-node Ray task and
+actor execution:
 
 ```powershell
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
 .conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
+.conda\pg-ai-profile\python.exe code\tests\test_ray_adapter.py
+.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
 ```
 
-This foundation does not yet replace the production Ray submission loop and
-does not implement queue-adaptive flush or adaptive admission. Those behaviors
-must be added through later focused plans after the typed core is wired into
-the Ray task and actor paths.
+The legacy `queue_adaptive` branch remains isolated until it is replaced by
+the typed adaptive-controller implementation. Static-path wiring alone is not
+evidence of a throughput or latency improvement.
 
 ## AI_COMPLETE workload import
 

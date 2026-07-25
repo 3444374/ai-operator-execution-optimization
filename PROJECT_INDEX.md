@@ -164,7 +164,9 @@
 | `code/tests/test_scheduling_models.py` | scheduling request/endpoint/topology schema 单元测试 | 修改 typed scheduling metadata 前运行 |
 | `code/tests/test_scheduling_policies.py` | static admission 与 round-robin routing 单元测试 | 修改 admission/routing baseline 前运行 |
 | `code/tests/test_scheduler.py` | bounded-inflight 与 exactly-once deterministic scheduler 测试 | 修改 scheduler orchestration 前运行 |
-| `code/tests/test_scheduling_daft_ray_contract.py` | 真实 DaftOrganizer→Arrow batch→单节点 Ray task contract smoke | 修改 Daft/Ray adapter boundary 前运行 |
+| `code/tests/test_ray_adapter.py` | 通用 Ray submission adapter 的 request identity 与 endpoint 映射测试 | 修改 Ray adapter 前运行 |
+| `code/tests/test_postgres_profile_scheduling.py` | profiler 静态 Ray task/actor 接线、路由与旧指标兼容测试 | 修改 profiler 提交路径前运行 |
+| `code/tests/test_scheduling_daft_ray_contract.py` | 真实 DaftOrganizer→Arrow batch→单节点 Ray task/actor contract smoke | 修改 Daft/Ray adapter boundary 前运行 |
 | `code/scripts/daft_text_organizer_smoke.py` | Daft/Arrow organizer smoke 入口 | 验证文本阶段 Daft 最小接入 |
 | `code/scripts/README.md` | 脚本详细说明 | 运行 PostgreSQL 画像、pgai SQL profile、本地 embedding server、Daft text organizer smoke |
 | `code_doc/superpowers/plans/` | Superpowers implementation plans for code work | 按 superpowers 工作流执行多步代码任务前读 |

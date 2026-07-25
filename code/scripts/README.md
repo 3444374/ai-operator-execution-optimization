@@ -36,8 +36,9 @@ code/scripts/run_kmax_interference_experiment.py
 PostgreSQL documents/job table
   -> DataSource (arrow_postgres or daft_postgres)
   -> ArrowOrganizer / DaftOrganizer
-  -> model backend (fake, compatible_http, or ollama)
-  -> submit_with_backpressure
+  -> typed BatchRequest + endpoint topology
+  -> SynchronousScheduler + RaySubmissionAdapter
+  -> Ray task/actor -> model backend (fake, compatible_http, or ollama)
   -> sink.write / finish_job
   -> metrics append
 ```
@@ -51,7 +52,7 @@ PostgreSQL documents/job table
 | 数据读取 | `PostgresArrowSource` / `DaftPostgresSource` | 从 PG 基线路径或 Daft SQL 入口读取并返回 Arrow Table |
 | 批划分 | `ArrowOrganizer` / `DaftOrganizer` | 按策略决定 actor 输入粒度；Daft 后端通过 `code/src/organizers.py` 接入 |
 | AI 算子 | `FakeEmbeddingActor` / `CompatibleHTTPEmbeddingActor` / `FakeCompletionActor` / `CompatibleHTTPCompletionActor` / `OllamaCompletionActor` | `fake` 只用于离线 smoke 和控制变量；`compatible_http` 用于 vLLM-compatible embedding 或 completion endpoint；`ollama` 用于本地 Ollama `/api/generate` completion smoke |
-| 并发与反压 | `submit_with_backpressure` | 控制 in-flight、等待和 fan-in |
+| 并发与反压 | `submit_ray_tasks` / `submit_with_backpressure` → `SynchronousScheduler` | 静态 task/actor 路径统一执行 K_max、路由、等待和 fan-in；旧 queue-adaptive 分支暂时隔离保留 |
 | 数据写回 | `code/src/sinks.py::write_embeddings` / `write_completions` | embedding 支持 `none`、JSON 文本和 pgvector；completion 支持 `none` 和 JSON 文本 |
 | 指标输出 | `code/src/metrics.py::append_metrics` | 追加写入实验 CSV |
 
@@ -167,7 +168,9 @@ sort by `prefix_key`, then `prompt_tokens`. CSV rows record
 still requires APC/cache metrics or a controlled prefix-share workload.
 
 `--scheduling-policy static` uses the configured `--max-inflight` as a fixed
-admission window. `--scheduling-policy queue_adaptive` polls the vLLM metrics
+admission window through the typed scheduler and Ray adapter for both task and
+actor execution. `--scheduling-policy queue_adaptive` currently follows the
+isolated legacy branch and polls the vLLM metrics
 endpoint and switches between `--adaptive-min-inflight` and
 `--adaptive-max-inflight` according to queue/running/KV thresholds. CSV rows
 record `adaptive_downshifts`, `adaptive_upshifts`, and

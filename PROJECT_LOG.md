@@ -967,3 +967,11 @@
 - 先扩展 typed collection timing 与通用 Ray adapter，再分别验证 task/actor 行为和原 CSV metric keys 等价。
 - 旧 adaptive 分支原样隔离保留；本阶段不同时改变控制算法，避免把重构影响与策略收益混淆。
 - 用户要求代码、测试和单 GPU 实验全部跑通并产出数据后再合并 `main`；开发使用项目内 `.worktrees/scheduling-foundation` 隔离 worktree，根 `.gitignore` 增加 `.worktrees/`。
+
+## 2026-07-25 Static Ray task/actor 正式接线完成
+
+- `postgres_ai_operator_profile.py` 的静态 `ray_task` 与 `ray_actor` 路径已统一委托给 typed `SynchronousScheduler` 和 `RaySubmissionAdapter`；旧 `queue_adaptive` 循环被隔离保留，尚未宣称控制算法改进。
+- Arrow batch 在进入 Ray 前转换为 `BatchRequest` 元数据，但 payload 保持原 Arrow 对象；endpoint/actor 显式进入 `TopologySnapshot`，当前单卡实验统一标记 `gpu_id=0`。
+- 保持既有 profiler 指标键：`operator_invocations`、`max_inflight`、bounded wait、fan-in、submit timing 与 adaptive 兼容字段。
+- 项目 `.conda/pg-ai-profile` 环境验证：全量 15 个测试模块、70 tests、0 failures；真实 Daft→Arrow→单节点 Ray task/actor 契约均通过，`compileall`、public import 与策略层 engine-import 扫描通过。
+- 该结果只证明静态执行接线和行为契约，不是 GPU 性能收益。queue-adaptive flush、AIMD/PID/EWMA/UCB、分池动态路由、联合搜索和正式单 GPU 数据仍待实现；完成前不合并 `main`。

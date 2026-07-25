@@ -118,17 +118,18 @@ DaftOrganizer
 adapter。这样做的目的不是更换技术栈，而是避免 AIMD、PID、flush、routing
 代码和 Daft/Ray API 混在同一大脚本中。
 
-当前第一阶段已经能验证：
+当前静态接线阶段已经能验证：
 
 - request、endpoint 和 topology 元数据有稳定类型；
 - static K_max 不会让 in-flight 超过配置上限；
 - round-robin 会跳过不健康 endpoint；
 - deterministic test 中每个 batch 恰好完成或失败一次；
-- Daft 生成的 Arrow batch 可以穿过同一接口进入真实单节点 Ray task。
+- Daft 生成的 Arrow batch 可以通过 profiler 的正式静态入口进入真实单节点
+  Ray task 与 Ray actor；
+- 静态 task/actor 共用同一个 typed scheduler，并保持既有 CSV timing 字段。
 
 当前仍不能说明：
 
-- 新框架已经替换 `postgres_ai_operator_profile.py` 的生产提交循环；
 - queue-adaptive flush、AIMD、PID、EWMA 或 UCB 已经实现；
 - 这些接口带来了吞吐或尾延迟收益；
 - 单节点 contract smoke 等价于真实 vLLM 性能实验。
