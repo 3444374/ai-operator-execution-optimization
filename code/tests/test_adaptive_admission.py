@@ -18,6 +18,10 @@ from src.scheduling.adaptive_admission import (  # noqa: E402
     AimdConfig,
     EwmaAimdAdmissionController,
 )
+from src.scheduling.pid_admission import (  # noqa: E402
+    PidAdmissionController,
+    PidConfig,
+)
 
 
 class AdaptiveAdmissionModelTests(unittest.TestCase):
@@ -195,6 +199,81 @@ class EwmaAimdAdmissionControllerTests(unittest.TestCase):
     def test_ewma_rejects_invalid_alpha(self) -> None:
         with self.assertRaisesRegex(ValueError, "alpha"):
             EwmaAimdAdmissionController(alpha=0.0)
+
+
+class PidAdmissionControllerTests(unittest.TestCase):
+    def test_queue_above_target_decreases_window(self) -> None:
+        controller = PidAdmissionController(initial_window=8)
+
+        decision = controller.update(observation(waiting=5))
+
+        self.assertEqual(decision.window, 6)
+        self.assertEqual(decision.action, "decrease")
+        self.assertEqual(decision.diagnostics.error, -4.0)
+
+    def test_queue_at_target_holds_window(self) -> None:
+        decision = PidAdmissionController(initial_window=8).update(
+            observation(waiting=1)
+        )
+
+        self.assertEqual(decision.window, 8)
+        self.assertEqual(decision.action, "hold")
+
+    def test_repeated_low_queue_increases_window_deterministically(self) -> None:
+        controller = PidAdmissionController(initial_window=8)
+
+        first = controller.update(observation(observed_at_s=1.0, waiting=0))
+        second = controller.update(observation(observed_at_s=2.0, waiting=0))
+
+        self.assertEqual(first.window, 8)
+        self.assertEqual(second.window, 9)
+        self.assertEqual(second.action, "increase")
+
+    def test_integral_is_clamped_to_prevent_windup(self) -> None:
+        controller = PidAdmissionController(
+            PidConfig(
+                min_window=2,
+                max_window=16,
+                proportional_gain=0.0,
+                integral_gain=1.0,
+                derivative_gain=0.0,
+                integral_limit=2.0,
+            ),
+            initial_window=8,
+        )
+
+        decision = None
+        for timestamp in range(1, 20):
+            decision = controller.update(
+                observation(observed_at_s=float(timestamp), waiting=0)
+            )
+
+        self.assertIsNotNone(decision)
+        self.assertEqual(decision.window, 16)
+        self.assertEqual(decision.diagnostics.integral_error, 2.0)
+
+    def test_missing_stale_and_non_monotonic_samples_hold(self) -> None:
+        controller = PidAdmissionController(initial_window=8)
+        controller.update(observation(observed_at_s=2.0, waiting=1))
+
+        missing = controller.update(
+            observation(observed_at_s=3.0, waiting=None)
+        )
+        stale = controller.update(
+            observation(observed_at_s=4.0, fresh=False, waiting=10)
+        )
+        non_monotonic = controller.update(
+            observation(observed_at_s=1.0, waiting=10)
+        )
+
+        self.assertEqual(missing.reason, "missing_queue_metric")
+        self.assertEqual(stale.reason, "stale_observation")
+        self.assertEqual(non_monotonic.reason, "non_monotonic_observation")
+        self.assertTrue(all(item.window == 8 for item in (missing, stale, non_monotonic)))
+
+    def test_pid_configuration_rejects_invalid_bounds(self) -> None:
+        with self.assertRaisesRegex(ValueError, "window bounds"):
+            PidConfig(min_window=8, max_window=4)
 
 
 if __name__ == "__main__":

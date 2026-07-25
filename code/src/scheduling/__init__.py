@@ -19,6 +19,7 @@ from .models import (
     TopologySnapshot,
     WindowDecision,
 )
+from .pid_admission import PidAdmissionController, PidConfig
 from .ray_adapter import RaySubmissionAdapter
 from .routing import RoundRobinEndpointRouter
 from .scheduler import SchedulerResult, SubmissionAdapter, SynchronousScheduler
@@ -35,6 +36,8 @@ __all__ = [
     "EndpointSnapshot",
     "EwmaAimdAdmissionController",
     "PayloadEnvelope",
+    "PidAdmissionController",
+    "PidConfig",
     "RaySubmissionAdapter",
     "RoutingDecision",
     "RoundRobinEndpointRouter",
