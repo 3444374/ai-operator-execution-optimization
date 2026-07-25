@@ -951,3 +951,4 @@
 - 计划规定逐行为 RED/GREEN、项目 `.conda/pg-ai-profile` 测试环境、完整 test suite、compile/import 检查和分任务提交。
 - 用户进一步确认所有后续设计与计划必须位于 Daft + Ray 框架内。总设计和实施计划已补充正式链路 `PostgreSQL -> Daft -> Arrow payload boundary -> Ray task/actor -> endpoint`；纯策略模块保持引擎无关仅为可测试性，fake/synchronous adapter 只用于测试。
 - 第一阶段新增 Daft organizer -> Arrow payload -> Ray local-mode task contract smoke；该 smoke 未通过前不进入 adaptive 策略实现。
+- 用户要求代码、测试和单 GPU 实验全部跑通并产出数据后再合并 `main`；开发使用项目内 `.worktrees/scheduling-foundation` 隔离 worktree，根 `.gitignore` 增加 `.worktrees/`。
