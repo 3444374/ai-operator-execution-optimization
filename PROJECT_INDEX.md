@@ -133,6 +133,11 @@
 | `experiments/results/accelerated_arrival_flush_20260725/formal_metric_summary.csv` | 正式运行统计汇总 | 均值、样本标准差、95% t 置信区间、最小值和最大值 |
 | `experiments/results/accelerated_arrival_flush_20260725/formal_*_trace.csv` | flush、submission 与 resource 原始轨迹族 | 保留逐重复身份，可用于后续时序图与 batch formation 图 |
 | `experiments/results/accelerated_arrival_flush_20260725/scale_probe_runs.csv` | 1024 条同到达密度规模探针 | 每策略单次真实运行，用于判断扩大行数能否改变 batch formation |
+| `experiments/results/adaptive_flush_window_20260725/README.md` | 双窗口 adaptive flush 改进实验报告 | 64/1024 门禁、512 行重复统计、正向候选证据与 claim boundary |
+| `experiments/results/adaptive_flush_window_20260725/manifest.json` | 双窗口实验复现清单 | 代码提交、真实组件版本、硬件、参数、门禁和限制 |
+| `experiments/results/adaptive_flush_window_20260725/formal_512_runs.csv` | 双窗口正式逐运行结果 | 每策略 1 次预热 + 5 次正式重复，保留全面 profiler 指标 |
+| `experiments/results/adaptive_flush_window_20260725/formal_512_metric_summary.csv` | 双窗口正式统计汇总 | E2E、rows/s、tokens/s、submissions、batch rows 与 service P99 的均值、标准差和 95% CI |
+| `experiments/results/adaptive_flush_window_20260725/*_trace.csv` | 双窗口 flush、submission 与 resource 轨迹 | schema 2 窗口字段、exactly-once 文档覆盖与绘图时序 |
 | `code_doc/superpowers/specs/2026-07-25-adaptive-flush-window-design.md` | Adaptive flush 双窗口改进设计 | fixed-timeout fallback、事件时间 catch-up、trace 与真实 GPU 门禁 |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-flush-window-implementation.md` | Adaptive flush 双窗口实施计划 | TDD 窗口选择、event-time replay、profiler trace 与真实单 GPU 分级门禁 |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |

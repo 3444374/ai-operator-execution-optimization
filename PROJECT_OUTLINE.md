@@ -66,10 +66,12 @@
    - Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678——证明固定行数是计算量的弱代理。
    - Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171（vs fixed 64/128 的 16377/26677），吞吐接近。
    - Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3×（4.9→11.4s）而 bulk 自身吞吐几乎不变——证明 K_max 在共享 vLLM 下必要。
-   - Queue-adaptive flush 已完成真实加速到达筛选：当前规则平均 batch rows=1，
-     tokens/s 比 immediate 低 0.966%；fixed timeout 减少 8.984% submissions
-     但吞吐只提高 0.185%，置信区间重叠。下一版必须先通过 batch formation
-     与 P99 门禁，详见 `experiments/results/accelerated_arrival_flush_20260725/`。
+   - Queue-adaptive flush 首版筛选为负；双窗口 + event-time catch-up 修正后，
+     512 行 5 次重复中相对新版 fixed timeout：tokens/s +3.671%、
+     submissions -23.500%、平均 batch rows +30.732%、batch service P99
+     -8.010%。这是单 GPU 加速重放下的正向候选证据，仍需随机化、变长输出、
+     per-request P99 与 held-out 复验，详见
+     `experiments/results/adaptive_flush_window_20260725/`。
    - 边界：本地 rehearsal，不代表 PG18.3 内部平台结果。
    - 状态与缺口审计：`experiments/plans/experiment_status_and_gaps.md`。
 2. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
@@ -88,12 +90,12 @@
 - ✅ 固定行 batch token-tail revision（动机证据：行数是计算量的弱代理）
 - ✅ Token-budget vs Fixed Row 对照（策略信号：token-budget 约束 token tail）
 - ✅ Shared-vLLM 2-job K_max 干扰实验（动机证据：K_max 在共享 vLLM 下必要）
-- ✅ Queue-adaptive flush 首次实现与测试（但未超越静态 K_max=8）
+- ✅ Queue-adaptive flush 双窗口修正通过单 GPU 64/1024 门禁与 512 行重复筛选
 - ✅ Length-align + Prefix-aware 初步 ablation
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P0（最高优先）**：改进 queue-adaptive 控制器，在 shared-vLLM 下超越静态 K_max=8。如 3 轮改进后仍不能超越，RC2 降级为"K_max admission control 必要性论证 + queue-adaptive 探索性讨论"。
+1. **P0（最高优先）**：随机化复验 queue-adaptive 正向候选结果，补变长输出、per-request E2E P99 和 2048 行 held-out；尚未完成前不写成最终结论。
 2. **P0（并列）**：两项策略联合消融——独立最优拼接 vs 联合 grid search。判定分层独立优化是否足够。
 3. **P1**：Prefix 受控 workload 实验（prefix ratio 0/30/70/100%）+ 至少一个实验 scale 到 2048 行。
 4. **P2（触发条件：P0+P1 完成）**：多模态泛化验证（CLIP embedding + ImageNet/HF subset）。

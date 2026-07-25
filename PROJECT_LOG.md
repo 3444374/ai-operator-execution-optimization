@@ -1076,3 +1076,24 @@
 - 计划分为显式窗口选择、event-time catch-up、profiler/trace 接线和真实单 GPU
   分级门禁四项；每项严格 RED→GREEN，64/1024 门禁失败即停止，不直接消耗
   2048 正式实验时间。
+
+## 2026-07-25 Adaptive flush 双窗口实现与真实单 GPU 复验
+
+- 实现显式 `FlushWindow`，queue-adaptive 在低负载/缺失指标时使用 25 ms
+  fallback，在 waiting/KV/running 压力下使用 50 ms；running 阈值绑定本次
+  `max_inflight`，窗口在 pending batch 打开时只选择一次。
+- arrival replay 改为 event-time catch-up：下游 Ray 背压后，deadline 前已经
+  到达的完整行仍进入当前 batch；`SystemReplayClock` 对系统提前醒来循环等待。
+- flush trace 升级到 schema 2，新增 `selected_wait_s` 和 `window_reason`。
+  全量回归 172 tests 通过，包含 3 条真实 Daft→Arrow→Ray task/actor 契约，
+  `compileall` 通过。
+- 64 行门禁和 1024 行行为探针均通过 exactly-once、batch formation、tokens/s
+  与 service P99 guardrail；未使用 fake backend。
+- 512 行正式重复共 18 次运行（每策略 1 次预热 + 5 次正式）。adaptive 相对
+  新版 fixed timeout：observed tokens/s +3.671%、submissions -23.500%、
+  平均 batch rows +30.732%、batch service P99 -8.010%；每轮 512 个文档
+  exactly-once。
+- 该结果是单 GPU、加速到达、固定 16-token 输出、固定策略组顺序下的正向候选
+  证据；尚缺逐 repeat 随机化、变长输出、per-request E2E P99 和 2048 行
+  held-out，不合并 `main`。结果见
+  `experiments/results/adaptive_flush_window_20260725/`。

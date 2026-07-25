@@ -1,0 +1,37 @@
+2026-07-25 21:49:50,786	INFO worker.py:2024 -- Started a local Ray instance.
+[33m(raylet)[0m Stack (most recent call first):
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line 627 in job_logging_config
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line 2789 in disconnect
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line 2114 in shutdown
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line 1170 in wrapper
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\client_mode_hook.py", line 110 in wrapper
+[33m(raylet)[0m   File Windows fatal exception: access violation"D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py"
+[33m(raylet)[0m 
+[33m(raylet)[0m Windows fatal exception: Stack (most recent call first):
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line access violation627 in 
+[33m(raylet)[0m 
+[33m(raylet)[0m job_logging_config
+[33m(raylet)[0m   File "  File D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py, line ""D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line , line 6272789627 in job_logging_config in  in disconnect
+[33m(raylet)[0m   File job_logging_config
+[33m(raylet)[0m   File ""D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py"
+[33m(raylet)[0m D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line 2789  File  in disconnect
+[33m(raylet)[0m   File ""D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py"D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py, line 2114 in , line shutdown
+[33m(raylet)[0m   File ""2114, line 2789 in disconnect
+[33m(raylet)[0m D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py"  File ", line  in shutdown
+[33m(raylet)[0m 1170  File D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py"D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py in ", line 2114 in "wrapper, line 1170shutdown
+[33m(raylet)[0m 
+[33m(raylet)[0m  in wrapper
+[33m(raylet)[0m   File   File   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\client_mode_hook.py", line "110 in wrapper
+[33m(raylet)[0m "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\client_mode_hook.py", line 110 in wrapper
+[33m(raylet)[0m D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line 1170 in wrapper
+2026-07-25 21:50:17,639	INFO worker.py:1847 -- Calling ray.init() again after it has already been called.
+2026-07-25 21:50:41,107	INFO worker.py:1847 -- Calling ray.init() again after it has already been called.
+2026-07-25 21:51:04,604	INFO worker.py:1847 -- Calling ray.init() again after it has already been called.
+2026-07-25 21:51:27,970	INFO worker.py:1847 -- Calling ray.init() again after it has already been called.
+2026-07-25 21:51:51,386	INFO worker.py:1847 -- Calling ray.init() again after it has already been called.
+[33m(raylet)[0m Stack (most recent call first):[32m [repeated 6x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line 627 in job_logging_config[32m [repeated 4x across cluster][0m
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line 2789 in disconnect[32m [repeated 4x across cluster][0m
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line 2114 in shutdown[32m [repeated 4x across cluster][0m
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\worker.py", line 1170 in wrapper[32m [repeated 4x across cluster][0m
+[33m(raylet)[0m   File "D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\lib\site-packages\ray\_private\client_mode_hook.py", line 110 in wrapper[32m [repeated 5x across cluster][0m

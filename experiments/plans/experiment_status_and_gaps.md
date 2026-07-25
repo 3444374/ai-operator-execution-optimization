@@ -271,6 +271,20 @@ arrival scale `0.0005`、token budget 6144、静态 `K_max=8` 下，每策略 1 
 guardrail，再运行 512 条矩阵。完整证据、故障恢复记录和 claim boundary 见
 `experiments/results/accelerated_arrival_flush_20260725/README.md`。
 
+#### 2026-07-25 双窗口 adaptive flush 改进结果
+
+**事实（真实单 GPU E2E）**：修正低负载 fallback、`K_max` 压力阈值和
+event-time catch-up 后，64 行与 1024 行门禁均通过。512 行、每策略 1 次预热 +
+5 次正式重复中，adaptive 相对新版 fixed timeout 的 observed tokens/s 提升
+3.671%，submissions 减少 23.500%，平均 batch rows 提升 30.732%，batch
+service P99 均值降低 8.010%。每轮 512 个文档 exactly-once。
+
+**设计判定**：queue-adaptive flush 已从“不能形成 batch”推进为正向候选策略，
+可以进入随机化复验和 batching × submission 联合搜索候选池。仍不能标记为最终
+验证完成：当前策略按组运行而非逐 repeat 随机化，生成上限固定为 16 tokens，
+尚缺 per-request E2E P99、变长输出和 2048 行 held-out。完整结果见
+`experiments/results/adaptive_flush_window_20260725/README.md`。
+
 ### 6.2 P1 严重级：需补实验，但不会动摇论文根基
 
 #### P1-1：Prefix-aware 在自然 workload 上信号太弱（6.4%），未做受控实验
