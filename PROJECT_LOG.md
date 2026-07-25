@@ -1,5 +1,32 @@
 # 项目日志
 
+## 2026-07-26 Output-aware BFD 真实 512/1024 规模验证
+
+- 修复后 64 行门禁完成 12/12 runs；512 行六单元矩阵完成 24/24 runs、
+  0 incident，18 个 formal run 共 9,216/9,216 request successes。1024 行
+  三场景确认完成 12/12 runs、0 incident，9 个 formal run 也有 9,216 条
+  逐请求记录。
+- 正式服务为 vLLM 0.25.1 + Qwen2.5-1.5B BF16，禁用 prefix cache 并开启
+  MFU counter。MFU 分母使用 NVIDIA 官方 RTX Blackwell 表中的 RTX 5070
+  密集 BF16 Tensor、FP32 accumulate 61.7 TFLOP/s，不使用 988 AI TOPS。
+- 512 行中，BFD trace 相对同成本 sequential trace：rows/s +12.019%、
+  request P95 -11.203%、energy -18.639%、MFU +13.906%；但相对 strongest
+  practical baseline `seq_fixed` 仅 rows/s +1.384% 且 energy +2.474%。
+- 1024 行没有复现：BFD trace 相对 seq trace rows/s -5.156%、request P95
+  +4.318%、energy +6.801%、MFU -5.130%；相对 seq fixed rows/s -14.293%。
+  BFD submission 数为 87，seq trace 为 77，budget utilization 0.782 vs
+  0.884。当前证据否定“经典 BFD 全规模更强”，支持 row-cap-aware 联合搜索。
+- 报告与原始数据位于 `experiments/results/output_aware_bfd_*_20260726/`。
+  分支继续隔离，未合并 `main`，本轮不自动同步 Wiki。
+- 绘图汇总默认指标从 33 项扩展到 63 项，补齐 rows/s、SLO、stage time、
+  submission/batch shape 和 vLLM latency；旧 CSV 缺失的新字段以 `n=0`
+  输出，不破坏历史结果读取。512/1024 `summary_long.csv` 已重新生成。
+- 最终回归在真实 arrival-replay→Ray contract 中复现 3.6ms 的时钟域竞态：
+  理想 replay deadline 偶尔晚于实际 epoch-shaped flush，导致 trace 中 submit
+  看似早于 flush。修复后以实际观测 flush 为边界，将超前的 intended arrival
+  clamp 到该边界；不放宽 lifecycle 校验。54 项调度测试通过，真实
+  Daft→Ray contract 连续 3 轮共 12 次通过。离线 512/1024 结果不受影响。
+
 ## 2026-07-26 Output-aware BFD、离线逐请求 E2E 与资源效率指标
 
 - **数据组织**：新增严格的输出成本模式和确定性 best-fit-decreasing

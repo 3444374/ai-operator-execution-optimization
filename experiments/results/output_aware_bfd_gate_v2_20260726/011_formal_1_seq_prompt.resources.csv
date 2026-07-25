@@ -1,0 +1,11 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,output_aware_bfd_gate_v2_20260726,formal,1,876,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,0,1785003959.0681205,snapshot,NVIDIA GeForce RTX 5070,9,10278,12227,44.82,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,formal,1,876,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,1,1785003959.4047344,snapshot,NVIDIA GeForce RTX 5070,8,10290,12227,44.69,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,formal,1,876,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,2,1785003959.7316737,snapshot,NVIDIA GeForce RTX 5070,8,10290,12227,44.69,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,formal,1,876,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,3,1785003960.054939,snapshot,NVIDIA GeForce RTX 5070,8,10297,12227,44.53,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,formal,1,876,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,4,1785003960.378856,snapshot,NVIDIA GeForce RTX 5070,8,10290,12227,44.49,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,formal,1,876,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,5,1785003960.7032359,snapshot,NVIDIA GeForce RTX 5070,8,10290,12227,44.49,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,formal,1,876,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,6,1785003961.0388184,snapshot,NVIDIA GeForce RTX 5070,8,10297,12227,44.48,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,formal,1,876,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,7,1785003961.379271,snapshot,NVIDIA GeForce RTX 5070,8,10291,12227,44.41,ok,16,0,0.00429150441071291
+1,output_aware_bfd_gate_v2_20260726,formal,1,876,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,8,1785003961.7135088,snapshot,NVIDIA GeForce RTX 5070,8,10301,12227,44.41,ok,33,31,0.035365175236430124
+1,output_aware_bfd_gate_v2_20260726,formal,1,876,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,9,1785003962.0549212,snapshot,NVIDIA GeForce RTX 5070,8,10301,12227,83.62,ok,64,0,0.05578955733926727

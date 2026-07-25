@@ -72,6 +72,11 @@
      -8.010%。这是单 GPU 加速重放下的正向候选证据，仍需随机化、变长输出、
      per-request P99 与 held-out 复验，详见
      `experiments/results/adaptive_flush_window_20260725/`。
+   - Output-aware deterministic BFD 已完成真实单 GPU 64→512→1024 分级验证。
+     512 行 trace-metadata 成本模式相对同成本 sequential 吞吐 +12.019%，
+     但 1024 行反转为 -5.156%，并产生更多 submission、较高能耗和较低 MFU。
+     因此经典 BFD 仅保留为条件性候选；下一版必须联合搜索 row cap、token
+     budget 与 packing objective，不能把 512 单点写成普遍收益。
    - 边界：本地 rehearsal，不代表 PG18.3 内部平台结果。
    - 状态与缺口审计：`experiments/plans/experiment_status_and_gaps.md`。
 2. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
@@ -92,11 +97,15 @@
 - ✅ Shared-vLLM 2-job K_max 干扰实验（动机证据：K_max 在共享 vLLM 下必要）
 - ✅ Queue-adaptive flush 双窗口修正通过单 GPU 64/1024 门禁与 512 行重复筛选
 - ✅ Length-align + Prefix-aware 初步 ablation
+- ✅ Output-aware cost + deterministic BFD 基础设施、GPU/功耗/能耗/MFU 指标与
+  512/1024 规模边界验证
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
 1. **P0（最高优先）**：随机化复验 queue-adaptive 正向候选结果，补变长输出、per-request E2E P99 和 2048 行 held-out；尚未完成前不写成最终结论。
-2. **P0（并列）**：两项策略联合消融——独立最优拼接 vs 联合 grid search。判定分层独立优化是否足够。
+2. **P0（并列）**：两项策略联合消融——先搜索 row cap × token budget ×
+   packing objective，再与提交控制做独立最优拼接 vs 联合 grid search。
+   当前经典 BFD 在 1024 行负向，不能直接作为数据组织最终方案。
 3. **P1**：Prefix 受控 workload 实验（prefix ratio 0/30/70/100%）+ 至少一个实验 scale 到 2048 行。
 4. **P2（触发条件：P0+P1 完成）**：多模态泛化验证（CLIP embedding + ImageNet/HF subset）。
 5. 算子代价估计（§6.1 讨论，最低优先级）：基于已采集的 profile 数据，不新增实验。

@@ -1,5 +1,19 @@
 # Recent Figure Assets
 
+## Output-aware Packing Evidence (2026-07-26)
+
+| File | Purpose | When to read/use |
+|---|---|---|
+| `experiments/results/output_aware_bfd_gate_v2_20260726/README.md` | Output-aware BFD 64-row real gate | Audit unified token/row constraints and GPU/power/energy/MFU availability |
+| `experiments/results/output_aware_bfd_gate_20260726/README.md` | Superseded pre-fix 64-row gate | Preserve infrastructure evidence while excluding uncontrolled algorithm comparisons |
+| `experiments/results/output_aware_bfd_512_20260726/README.md` | Superseded 512-row failure audit | Understand the row-cap mismatch, timeout, and why old data is excluded |
+| `experiments/results/output_aware_bfd_512_v2_20260726/README.md` | Corrected six-cell 512-row report | Review three-repeat candidate evidence and claim boundaries |
+| `experiments/results/output_aware_bfd_512_v2_20260726/runs.csv` | Corrected 512-row run metrics | Plot request E2E, packing, GPU, power, energy, vLLM pressure, and MFU |
+| `experiments/results/output_aware_bfd_512_v2_20260726/summary_long.csv` | Corrected 512-row plot-ready summary | Compare six scenarios with mean, sample standard deviation, and range |
+| `experiments/results/output_aware_bfd_1024_20260726/README.md` | 1024-row held-out confirmation | Review the negative scale result and row-cap fragmentation boundary |
+| `experiments/results/output_aware_bfd_1024_20260726/runs.csv` | 1024-row run metrics | Audit nine formal runs and 9,216 request lifecycle rows |
+| `experiments/results/output_aware_bfd_1024_20260726/summary_long.csv` | 1024-row plot-ready summary | Plot throughput, E2E, energy, GPU, vLLM pressure, and MFU |
+
 | File | Purpose | When to read/use |
 |---|---|---|
 | `figures/data/backup/b07_local_vllm_ray_throughput.png` / `.svg` | Local `AI_COMPLETE` Daft + Ray + vLLM throughput support figure | Learning and backup explanation of throughput across six fixed row-batch settings; not an optimized scheduling result |

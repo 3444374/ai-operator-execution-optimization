@@ -60,10 +60,13 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - ✅ Token-tail revision + Token-budget vs Fixed Row 对照
 - ✅ Shared-vLLM K_max 干扰实验（K_max 在共享 vLLM 下必要）
 - ✅ Queue-adaptive flush 首次实现与测试
+- ✅ Output-aware cost、deterministic BFD 与 GPU/功耗/能耗/MFU 观测链路；
+  512 行正向候选但 1024 行负向，已确认经典 BFD 不是无条件最优
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 1. **P0**：改进 queue-adaptive 控制器，在 shared-vLLM 下超越静态 K_max=8
-2. **P0**：两项策略联合消融——独立拼接 vs 联合 grid search
+2. **P0**：先做 row cap × token budget × packing objective 搜索，再完成
+   batching 与提交控制的独立拼接 vs 联合 grid search
 3. **P1**：Prefix 受控 workload + scale 到 2048 行
 4. **P2**（触发：P0+P1 完成）：多模态泛化验证
 5. 算子代价估计（§6.1 讨论，最低优先级，基于已有数据）
@@ -85,6 +88,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171 | token-budget 能有效约束 token tail |
 | Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3× | K_max 在共享 vLLM 下必要 |
 | Queue-adaptive flush 已完成加速到达真实筛选但平均 batch rows=1、tokens/s 低于 immediate 0.966% | 研究内容二当前最高风险 gap；下一版先通过 batch formation + P99 门禁 |
+| Output-aware BFD：512 行相对同成本 sequential +12.019%，1024 行反转为 -5.156% | 数据组织收益依赖规模与 row cap；经典 BFD 只能作候选，需联合搜索 |
 
 **AI_EMBED（预研，已完成）**：
 | 证据 | 来源 | 能说明什么 |

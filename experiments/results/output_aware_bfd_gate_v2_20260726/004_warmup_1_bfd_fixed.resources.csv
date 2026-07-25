@@ -1,0 +1,12 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,0,1785003869.973565,snapshot,NVIDIA GeForce RTX 5070,3,10276,12227,42.92,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,1,1785003870.3142245,snapshot,NVIDIA GeForce RTX 5070,7,10276,12227,43.16,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,2,1785003870.6363971,snapshot,NVIDIA GeForce RTX 5070,7,10280,12227,43.16,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,3,1785003870.9594245,snapshot,NVIDIA GeForce RTX 5070,7,10280,12227,43.60,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,4,1785003871.3032181,snapshot,NVIDIA GeForce RTX 5070,9,10273,12227,43.94,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,5,1785003871.6278439,snapshot,NVIDIA GeForce RTX 5070,9,10273,12227,43.94,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,6,1785003871.9553204,snapshot,NVIDIA GeForce RTX 5070,9,10280,12227,44.12,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,7,1785003872.2998672,snapshot,NVIDIA GeForce RTX 5070,9,10279,12227,44.05,ok,0,0,0.0
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,8,1785003872.640074,snapshot,NVIDIA GeForce RTX 5070,9,10286,12227,44.05,ok,4,3,0.020503854406739297
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,9,1785003872.957078,snapshot,NVIDIA GeForce RTX 5070,9,10286,12227,60.81,ok,64,0,0.05332591591830249
+1,output_aware_bfd_gate_v2_20260726,warmup,1,869,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,10,1785003873.2845023,snapshot,NVIDIA GeForce RTX 5070,98,10287,12227,119.13,ok,0,0,0.0
