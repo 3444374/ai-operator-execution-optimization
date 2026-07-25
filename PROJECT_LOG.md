@@ -950,5 +950,6 @@
 - 第一阶段严格收敛为 typed request/topology schemas、静态 admission、round-robin routing 和 deterministic synchronous scheduler；先验证 exactly-once 与 bounded-inflight 不变量，不在同一变更中接入动态 flush、PID/EWMA/UCB 或生产 Ray 路径。
 - 计划规定逐行为 RED/GREEN、项目 `.conda/pg-ai-profile` 测试环境、完整 test suite、compile/import 检查和分任务提交。
 - 用户进一步确认所有后续设计与计划必须位于 Daft + Ray 框架内。总设计和实施计划已补充正式链路 `PostgreSQL -> Daft -> Arrow payload boundary -> Ray task/actor -> endpoint`；纯策略模块保持引擎无关仅为可测试性，fake/synchronous adapter 只用于测试。
-- 第一阶段新增 Daft organizer -> Arrow payload -> Ray local-mode task contract smoke；该 smoke 未通过前不进入 adaptive 策略实现。
+- 第一阶段新增 Daft organizer -> Arrow payload -> 单节点 Ray task contract smoke；该 smoke 未通过前不进入 adaptive 策略实现。
+- 执行 contract smoke 时确认当前 Ray 已移除 `local_mode=True`；测试改为 `ray.init(num_cpus=1)` 的本机单节点 Ray task，仍使用真实 Ray runtime，不以 mock 替代。
 - 用户要求代码、测试和单 GPU 实验全部跑通并产出数据后再合并 `main`；开发使用项目内 `.worktrees/scheduling-foundation` 隔离 worktree，根 `.gitignore` 增加 `.worktrees/`。

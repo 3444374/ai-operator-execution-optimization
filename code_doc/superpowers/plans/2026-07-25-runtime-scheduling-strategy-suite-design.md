@@ -379,7 +379,7 @@ dependency is required initially.
 ### 7.3 Integration tests
 
 - deterministic fake endpoint with controllable latency and failures;
-- Daft organizer -> Arrow payload -> Ray adapter contract smoke;
+- Daft organizer -> Arrow payload -> single-node Ray adapter contract smoke;
 - Ray task adapter smoke;
 - Ray actor adapter smoke;
 - CLI configuration and dry-run;

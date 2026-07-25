@@ -935,7 +935,7 @@ class DaftRayContractTests(unittest.TestCase):
             1.0,
         )
 
-        ray.init(ignore_reinit_error=True, local_mode=True)
+        ray.init(ignore_reinit_error=True, num_cpus=1)
         try:
             result = SynchronousScheduler(
                 StaticAdmissionController(2),
