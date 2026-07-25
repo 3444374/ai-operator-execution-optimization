@@ -13,6 +13,9 @@
   不代表原始生产到达率、多 GPU scaling 或内部 PostgreSQL 18.3 平台。
 - **新增文件**：
   `code_doc/superpowers/specs/2026-07-25-accelerated-arrival-replay-design.md`。
+- **实施计划**：
+  `code_doc/superpowers/plans/2026-07-25-accelerated-arrival-replay-implementation.md`，
+  分为回放时钟缩放、profiler/trace 接线、真实门禁与正式矩阵三项。
 
 ## 2026-07-25 Arrival replay 与独立 flush 运行链路完成
 

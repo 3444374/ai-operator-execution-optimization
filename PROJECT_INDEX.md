@@ -180,6 +180,7 @@
 | `code_doc/superpowers/plans/2026-07-25-ray-static-wiring-implementation.md` | typed scheduler 接入生产 static Ray task/actor 路径的 TDD 计划 | 重构 profiler Ray 提交循环前读 |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-controller-family-implementation.md` | AIMD、EWMA-AIMD、PID、UCB 控制器族及 Ray 接入的 TDD 计划 | 实现或审查动态 admission controller 前读 |
 | `code_doc/superpowers/plans/2026-07-25-arrival-replay-flush-runtime-implementation.md` | arrival replay、pending batch 与独立 flush runtime 的 TDD 计划 | 运行 queue-adaptive flush 单 GPU 实验前读 |
+| `code_doc/superpowers/plans/2026-07-25-accelerated-arrival-replay-implementation.md` | arrival time scale 的 TDD 接线、真实门禁与正式单 GPU flush 矩阵 | 执行加速回放正式实验前读 |
 | `code_doc/superpowers/specs/2026-07-25-accelerated-arrival-replay-design.md` | BurstGPT accelerated replay 的缩放语义、验证要求与单 GPU 正式实验矩阵 | 实现时间缩放参数或解释加速回放结果前读 |
 | `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
