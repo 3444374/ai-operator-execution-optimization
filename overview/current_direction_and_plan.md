@@ -122,3 +122,14 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - 把引擎级参数调优写成策略贡献（需明确区分"引擎提供的"和"我们提出的"）
 - 把多模态泛化论证写成"已解决具身智能问题"
 - 把 PG18.4 本地预演写成 PG18.3 内部平台结论
+
+---
+
+## 2026-07-26 状态更新
+
+- Row-cap-first 已完成无 prefix cache 的 512 行重复和 1024 行 held-out。
+- 1024 行 tokens/s 约提高 0.82%，但 10 秒 SLO violation 从 50.39%
+  升到 88.67%，因此 sequential token-budget 继续作为默认。
+- 当前最优先工作仍是随机化复验 queue-adaptive、完成 batching ×
+  submission control 联合消融；多模态、UCB 端到端和多 GPU 实测尚未完成。
+- Infra 代码与证据边界见 `code/INFRA_STATUS.md`。

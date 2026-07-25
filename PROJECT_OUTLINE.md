@@ -99,23 +99,30 @@
 - ✅ Length-align + Prefix-aware 初步 ablation
 - ✅ Output-aware cost + deterministic BFD 基础设施、GPU/功耗/能耗/MFU 指标与
   512/1024 规模边界验证
+- ✅ Row-cap-first 机制级消融与 prefix-cache-corrected 512/1024 验证：
+  1024 行吞吐约 +1%，但 10 秒 SLO violation 从 50.39% 升到 88.67%，
+  因此 sequential token-budget 保持默认
+- ✅ 实验运行器支持可审计 resume、失败场景剪枝和 service metadata
+  一致性校验
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
 1. **P0（最高优先）**：随机化复验 queue-adaptive 正向候选结果，补变长输出、per-request E2E P99 和 2048 行 held-out；尚未完成前不写成最终结论。
-2. **P0（并列）**：两项策略联合消融——先搜索 row cap × token budget ×
-   packing objective，再与提交控制做独立最优拼接 vs 联合 grid search。
-   当前经典 BFD 在 1024 行负向，不能直接作为数据组织最终方案。
+2. **P0（并列）**：两项策略联合消融——数据组织侧已完成
+   row cap × token budget × packing objective 的首轮机制筛选，并排除完整
+   BFD/row-cap-first 作为默认；下一步以 sequential token-budget 为 baseline，
+   与提交控制做独立最优拼接 vs SLO-constrained 联合 grid search。
 3. **P1**：Prefix 受控 workload 实验（prefix ratio 0/30/70/100%）+ 至少一个实验 scale 到 2048 行。
 4. **P2（触发条件：P0+P1 完成）**：多模态泛化验证（CLIP embedding + ImageNet/HF subset）。
 5. 算子代价估计（§6.1 讨论，最低优先级）：基于已采集的 profile 数据，不新增实验。
 6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
-**指标盲区**（需在后续实验中补齐）：
-- `tokens/s`：比 `rows/s` 更公平的 AI_COMPLETE 效率指标
-- `service_p99`：系统性采集 tail latency
-- inflight/queue 时间序列：诊断 adaptive 行为
-- per-request e2e latency 分布：支持分组策略论证
+**指标状态**：
+- 新实验已经系统采集 `tokens/s`、request P50/P95/P99、SLO
+  violation/goodput、GPU/功耗/能耗、vLLM pressure、FLOP/MFU；
+- typed adaptive 已有 inflight/queue/control trace 与 sample age；
+- 旧实验历史数据仍存在指标缺口，不能与新口径直接拼接；
+- per-request actual output tokens 仍需后端提供真实逐请求 usage。
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index baseline），不作为独立实验阶段。
 

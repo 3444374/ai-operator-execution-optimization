@@ -1331,3 +1331,26 @@
 - 512 行先单次筛选，只有同时通过 correctness/MFU 门禁且未出现无补偿的显著性能
   退化的候选才运行三次重复；1024 只验证 512 胜出配置，不重新调参。若无候选胜出，
   直接保留 sequential 并停止，不为使用复杂技术而继续扩展。
+
+## 2026-07-26 Row-cap-aware 真实结果与 Infra 状态闭环
+
+- 完成非阻塞 typed-adaptive metrics provider、sample-age control trace、
+  row-cap-first packing、Arrow/Daft 共享接线以及 64 行真实门禁。
+- vLLM 0.25.1 的 FLOP counter 必须显式启用 `--enable-mfu-metrics`；
+  仅看到 metric 名称不足以证明 MFU 有效。本轮通过真实请求验证正 FLOP delta。
+- 初始 512 筛选发现 prefix cache 实际开启，导致重复 prompt 的场景顺序依赖和
+  180 秒超时。污染数据保留作 incident 审计，不进入性能结论；服务按相同配置
+  重建并增加 `--no-enable-prefix-caching`。
+- 无 prefix cache 的 512 行三次重复中，row-cap-first 相对 sequential：
+  tokens/s +0.68%、request P95 -0.55%、energy/1k tokens -2.81%、
+  MFU +1.62%，因此进入 1024 held-out。
+- 1024 行三次重复中，row-cap-first tokens/s +0.82%，但 10 秒 SLO
+  violation 从 50.39% 上升到 88.67%，SLO goodput 从 37.66 降到
+  8.67 req/s。Sequential token-budget 保持默认，classic BFD 不采用，
+  row-cap-first 仅保留为研究消融点。
+- 场景运行器新增 TDD 覆盖的安全 resume、recovered incident、显式失败场景
+  pruning，以及进入 manifest/resume 校验的 `service_metadata`。
+- 新增 `code/INFRA_STATUS.md`，统一说明 batching、flush/admission、
+  actor pool/endpoint routing、观测与实验基础设施的当前流程、完成度和后续
+  实施顺序。
+- 所有改动继续位于隔离特性分支，尚未合并 `main`；本次未自动同步 Wiki。

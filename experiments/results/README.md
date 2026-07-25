@@ -2,6 +2,15 @@
 
 ## Output-aware Packing (2026-07-26)
 
+### Current mechanism decision
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `row_cap_aware_packing_512_20260726/` | Prefix-cache-audited 512-row row-cap/token-budget/packing screening plus three-repeat confirmation. | Row-cap-first has a small 512-row signal; cache-enabled exploratory runs are retained only as invalid-ordering audit evidence. |
+| `row_cap_aware_packing_1024_20260726/` | Held-out 1024-row sequential/classic-BFD/row-cap-first comparison with request SLO, energy, and MFU. | Negative default-adoption result: about 1% throughput gain caused SLO violation to rise from 50.39% to 88.67%; sequential remains default. |
+
+### Earlier gates and superseded runs
+
 | Directory | Content | Boundary |
 |---|---|---|
 | `row_cap_aware_packing_gate_20260726/` | 64-row real PostgreSQL→Daft→Ray→vLLM gate for sequential, classic BFD, and BFD-inspired row-cap-first placement. | Infrastructure validation only; 6/6 runs and all request/resource/MFU invariants pass, but one formal repeat cannot support performance ranking. |

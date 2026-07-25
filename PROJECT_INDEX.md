@@ -4,6 +4,11 @@
 
 | File | Purpose | When to read/use |
 |---|---|---|
+| `code/INFRA_STATUS.md` | Current Daft+Ray AI-operator infra flow, implementation completeness, evidence boundaries, and prioritized remaining work | Use for a single implementation-status handoff before reading detailed plans |
+| `experiments/results/row_cap_aware_packing_512_20260726/README.md` | Prefix-cache-corrected 512-row screening and repeated confirmation | Review why sequential remains default and how cache-enabled data was excluded |
+| `experiments/results/row_cap_aware_packing_512_20260726/nocache_repeats/summary_long.csv` | Plot-ready 512-row repeated metrics | Plot throughput, request tails/SLO, packing, energy, vLLM pressure, and MFU |
+| `experiments/results/row_cap_aware_packing_1024_20260726/README.md` | Held-out 1024-row mechanism decision | Review the SLO-goodput regression that blocks row-cap-first default adoption |
+| `experiments/results/row_cap_aware_packing_1024_20260726/summary_long.csv` | Plot-ready 1024-row repeated metrics | Plot scale confirmation and mechanism trade-offs |
 | `experiments/results/row_cap_aware_packing_gate_20260726/README.md` | Row-cap-aware packing 64-row real gate | Audit sequential/classic-BFD/row-cap-first correctness, request/resource traces, and MFU prerequisites before 512 screening |
 | `experiments/results/output_aware_bfd_gate_v2_20260726/README.md` | Output-aware BFD 64-row real gate | Audit unified token/row constraints and GPU/power/energy/MFU availability |
 | `experiments/results/output_aware_bfd_gate_20260726/README.md` | Superseded pre-fix 64-row gate | Preserve infrastructure evidence while excluding uncontrolled algorithm comparisons |

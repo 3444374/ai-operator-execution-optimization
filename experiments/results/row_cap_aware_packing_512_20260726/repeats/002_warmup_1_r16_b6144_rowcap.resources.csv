@@ -1,0 +1,17 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,0,1785012338.454589,snapshot,NVIDIA GeForce RTX 5070,6,11625,12227,43.13,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,1,1785012338.7735777,snapshot,NVIDIA GeForce RTX 5070,6,11624,12227,43.11,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,2,1785012339.116016,snapshot,NVIDIA GeForce RTX 5070,6,11624,12227,43.11,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,3,1785012339.4418838,snapshot,NVIDIA GeForce RTX 5070,6,11624,12227,43.13,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,4,1785012339.7905223,snapshot,NVIDIA GeForce RTX 5070,6,11628,12227,43.14,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,5,1785012340.1335707,snapshot,NVIDIA GeForce RTX 5070,6,11628,12227,43.14,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,6,1785012340.4748669,snapshot,NVIDIA GeForce RTX 5070,6,11628,12227,43.12,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,7,1785012340.812306,snapshot,NVIDIA GeForce RTX 5070,6,11630,12227,43.26,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,8,1785012341.1547942,snapshot,NVIDIA GeForce RTX 5070,6,11681,12227,43.26,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,9,1785012341.4983902,snapshot,NVIDIA GeForce RTX 5070,6,11681,12227,43.33,ok,31,0,0.1514742112373838
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,10,1785012341.832133,snapshot,NVIDIA GeForce RTX 5070,6,11683,12227,65.04,ok,88,0,0.09584359850592072
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,11,1785012342.1772475,snapshot,NVIDIA GeForce RTX 5070,95,11685,12227,111.28,ok,128,0,0.05491536199634428
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,12,1785012342.5208046,snapshot,NVIDIA GeForce RTX 5070,95,11674,12227,111.28,ok,111,0,0.020265437495032956
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,13,1785012342.8647678,snapshot,NVIDIA GeForce RTX 5070,95,11677,12227,147.13,ok,128,0,0.014066597790669988
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,14,1785012343.1967938,snapshot,NVIDIA GeForce RTX 5070,95,11677,12227,145.66,ok,55,0,0.005642533577048359
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,981,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,15,1785012343.541281,snapshot,NVIDIA GeForce RTX 5070,95,11636,12227,145.66,ok,0,0,0.0

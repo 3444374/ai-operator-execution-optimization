@@ -1010,3 +1010,36 @@ row-cap-first -> 2 batches
 4. 只在 `mfu_status=ok` 时使用 MFU。
 
 因此下一步不是直接宣布 row-cap-aware 生效，而是在 512 行上固定请求集合和提交控制，搜索 row cap、token budget 和算法；只有跨重复实验同时守住吞吐并改善尾延迟、能耗或 MFU 的机制，才进入 1024 行确认。
+
+### 512/1024 验证后的结论
+
+关闭 prefix cache 后，512 行三次重复里 row-cap-first 相对 sequential 的
+tokens/s 提高 0.68%，能耗/千 token 降低 2.81%，因此进入 1024 行 held-out。
+但 1024 行虽然 tokens/s 仍提高 0.82%，10 秒 SLO violation 却从 50.39%
+升到 88.67%。原因是平均吞吐不能表示完成时间分布：decreasing-order 把相似
+长请求集中后，更多请求越过了 SLO 边界。
+
+所以正确的工程决策是：
+
+- sequential token-budget 保持默认；
+- classic BFD 不采用；
+- row-cap-first 保留为消融候选，不默认启用；
+- 后续联合搜索先检查 correctness、P99 和 SLO goodput，再比较 tokens/s、
+  energy 和 MFU。
+
+### 为什么 manifest 必须记录服务配置
+
+本轮第一次 512 筛选实际启用了 prefix cache，相同 prompt 的重复顺序因此影响
+缓存命中，甚至出现相同策略一轮约 6 秒、另一轮 180 秒超时。场景运行器现在把
+`service_metadata` 写入 manifest，并在 `--resume` 时检查一致性。建议至少记录：
+
+```json
+{
+  "vllm_version": "0.25.1",
+  "prefix_caching": false,
+  "mfu_metrics": true
+}
+```
+
+续跑会跳过已有成功项、保留 recovered incident；若明确剪枝失败场景，也会写入
+`skipped_runs`，不会伪造成功 CSV。

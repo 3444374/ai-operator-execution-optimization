@@ -1,0 +1,21 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,0,1785012351.2692647,snapshot,NVIDIA GeForce RTX 5070,6,11614,12227,43.15,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,1,1785012351.5871153,snapshot,NVIDIA GeForce RTX 5070,6,11614,12227,43.15,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,2,1785012351.9298477,snapshot,NVIDIA GeForce RTX 5070,6,11614,12227,43.26,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,3,1785012352.2585356,snapshot,NVIDIA GeForce RTX 5070,6,11614,12227,43.32,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,4,1785012352.585554,snapshot,NVIDIA GeForce RTX 5070,6,11614,12227,43.32,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,5,1785012352.9322093,snapshot,NVIDIA GeForce RTX 5070,6,11614,12227,43.25,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,6,1785012353.254312,snapshot,NVIDIA GeForce RTX 5070,6,11614,12227,43.16,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,7,1785012353.582265,snapshot,NVIDIA GeForce RTX 5070,6,11614,12227,43.16,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,8,1785012353.9280949,snapshot,NVIDIA GeForce RTX 5070,6,11614,12227,43.16,ok,0,0,0.0
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,9,1785012354.246557,snapshot,NVIDIA GeForce RTX 5070,68,11614,12227,58.06,ok,204,0,0.14988476515934201
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,10,1785012354.591321,snapshot,NVIDIA GeForce RTX 5070,68,11614,12227,58.06,ok,217,0,0.17849479456409445
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,11,1785012354.9137554,snapshot,NVIDIA GeForce RTX 5070,68,11614,12227,84.13,ok,184,0,0.14869268060081064
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,12,1785012355.2624865,snapshot,NVIDIA GeForce RTX 5070,98,11614,12227,107.97,ok,152,0,0.14662640069935629
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,13,1785012355.6023552,snapshot,NVIDIA GeForce RTX 5070,98,11614,12227,107.97,ok,256,0,0.14193753476913296
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,14,1785012355.9453342,snapshot,NVIDIA GeForce RTX 5070,98,11614,12227,108.69,ok,256,0,0.14448064849399989
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,15,1785012356.2657404,snapshot,NVIDIA GeForce RTX 5070,98,11614,12227,90.97,ok,256,0,0.14622903917984587
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,16,1785012356.5911376,snapshot,NVIDIA GeForce RTX 5070,98,11614,12227,90.97,ok,224,0,0.10792338869903839
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,17,1785012356.9341087,snapshot,NVIDIA GeForce RTX 5070,98,11614,12227,75.75,ok,230,0,0.11587061908924745
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,18,1785012357.2641957,snapshot,NVIDIA GeForce RTX 5070,98,11614,12227,79.83,ok,230,0,0.12016212349996025
+1,row_cap_aware_packing_512_repeat_20260726,warmup,1,982,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,19,1785012357.6070747,snapshot,NVIDIA GeForce RTX 5070,98,11614,12227,79.83,ok,0,0,0.0
