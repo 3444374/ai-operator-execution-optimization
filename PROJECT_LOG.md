@@ -1056,3 +1056,15 @@
 - 后续 1024 条同密度单次探针中，queue adaptive 仍为 1024 submissions、
   平均 batch rows=1；扩大行数没有修复 batch formation，因此暂不直接运行
   2048 条正式重复，先修正 adaptive 窗口和事件时间处理。
+
+## 2026-07-25 Adaptive flush 双窗口改进设计
+
+- 根因复核确认：硬编码 `low_load_running=64` 与 `K_max=8` 不匹配，250 ms
+  采样慢于 25–50 ms flush horizon，低负载立即 flush 放弃 fixed-timeout
+  合并机会，且下游背压后 runtime 会在吸收 deadline 前到达行之前先超时关闭。
+- 用户确认吞吐优先、P99 guardrail 的双窗口方向：低负载/缺失指标退化为 25 ms
+  fixed baseline，服务压力下扩展到 50 ms；窗口在 batch 打开时选择并保持不变。
+- 新增
+  `code_doc/superpowers/specs/2026-07-25-adaptive-flush-window-design.md`，
+  明确事件时间 catch-up、exactly-once、trace schema、64/1024/2048 分级门禁和
+  claim boundary。本步骤只固化设计，尚未修改 adaptive flush 行为。

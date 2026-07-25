@@ -8,3 +8,6 @@ experiment results, or opening-report materials.
 | Path | Purpose |
 |---|---|
 | `superpowers/` | Superpowers-generated specs and implementation plans for code work |
+
+Current adaptive flush redesign:
+`superpowers/specs/2026-07-25-adaptive-flush-window-design.md`.
