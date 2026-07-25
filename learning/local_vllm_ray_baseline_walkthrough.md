@@ -127,9 +127,14 @@ adapter。这样做的目的不是更换技术栈，而是避免 AIMD、PID、fl
 - Daft 生成的 Arrow batch 可以通过 profiler 的正式静态入口进入真实单节点
   Ray task 与 Ray actor；
 - 静态 task/actor 共用同一个 typed scheduler，并保持既有 CSV timing 字段。
+- AIMD、EWMA-AIMD、PID 可通过同一个 scheduler 动态改变 K_max；采样缓存、
+  stale hold 和 control trace 已有确定性测试；
+- UCB 的有限动作选择与 SLO reward 已完成纯策略测试，但尚未接入正式 epoch
+  执行，因此不能写成“UCB 实验已完成”。
 
 当前仍不能说明：
 
-- queue-adaptive flush、AIMD、PID、EWMA 或 UCB 已经实现；
+- 独立 queue-adaptive flush 已经实现；
+- AIMD、PID、EWMA 或 UCB 已经在真实 vLLM 上优于静态 K=8；
 - 这些接口带来了吞吐或尾延迟收益；
 - 单节点 contract smoke 等价于真实 vLLM 性能实验。

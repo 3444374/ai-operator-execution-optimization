@@ -110,13 +110,19 @@ result.
 - `--source-order doc_id|arrival_time`
 - `--batching-policy fixed_rows|token_budget|length_align_fixed_rows|length_align_token_budget|prefix_aware_fixed_rows|prefix_aware_token_budget`
 - `--token-budget`
-- `--scheduling-policy static|queue_adaptive`
+- `--scheduling-policy static|queue_adaptive|aimd|ewma_aimd|pid`
 - `--adaptive-min-inflight`
 - `--adaptive-max-inflight`
 - `--adaptive-queue-threshold`
 - `--adaptive-running-threshold`
 - `--adaptive-kv-threshold`
 - `--adaptive-poll-interval-s`
+- `--controller-min-window` / `--controller-max-window`
+- `--controller-initial-window`
+- `--adaptive-sample-interval-s`
+- `--ewma-alpha`
+- `--pid-proportional-gain` / `--pid-integral-gain` / `--pid-derivative-gain`
+- `--control-trace-output`
 - `--operator ai_embed|ai_complete`
 - `--organizer arrow|daft`
 - `--organizer-partition-mode none|into_partitions|repartition`
@@ -175,6 +181,14 @@ endpoint and switches between `--adaptive-min-inflight` and
 `--adaptive-max-inflight` according to queue/running/KV thresholds. CSV rows
 record `adaptive_downshifts`, `adaptive_upshifts`, and
 `adaptive_limit_mean`.
+
+`aimd`, `ewma_aimd`, and `pid` use the typed dynamic admission gate. They
+require a Ray executor and `--model-metrics-url`. Sampling is cached and does
+not sleep in the submission loop. If `--control-trace-output` is omitted, the
+trace is written beside the main CSV with `_control_trace.csv` appended to the
+stem. UCB is not a CLI choice yet: its policy/reward core is tested, but formal
+online use requires epoch-level request metrics and a static-K8 reward
+baseline first.
 
 `run_kmax_interference_experiment.py` is a small orchestration wrapper around
 `postgres_ai_operator_profile.py`. It starts a background bulk `AI_COMPLETE`

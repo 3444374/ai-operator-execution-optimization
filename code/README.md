@@ -104,13 +104,20 @@ actor execution:
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
 .conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
 .conda\pg-ai-profile\python.exe code\tests\test_ray_adapter.py
+.conda\pg-ai-profile\python.exe code\tests\test_adaptive_admission.py
+.conda\pg-ai-profile\python.exe code\tests\test_dynamic_admission.py
 .conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
 ```
 
-The legacy `queue_adaptive` branch remains isolated until it is replaced by
-the typed adaptive-controller implementation. Static-path wiring alone is not
-evidence of a throughput or latency improvement.
+Typed AIMD, optional EWMA-AIMD, and PID controllers can now drive the same Ray
+task/actor scheduler. Their service observations are cached (default 250 ms),
+stale samples do not update controller state, and every decision can be
+written to a control-trace CSV. The legacy `queue_adaptive` branch remains an
+explicit baseline. UCB has a tested finite-action policy and SLO-aware reward,
+but is not exposed in the profiler until epoch-level request metrics are
+available. None of these code tests is evidence of a throughput or latency
+improvement.
 
 ## AI_COMPLETE workload import
 

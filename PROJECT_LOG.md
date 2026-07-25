@@ -940,7 +940,7 @@
 - 用户将实现范围扩展为完整运行层策略套件：独立 queue-adaptive flush、actor pool 分池与动态路由、多 endpoint/未来多 GPU 拓扑、PID/EWMA/UCB 控制器，以及 batching × submission 联合搜索。
 - 硬件边界确认：当前仅一张 RTX 5070 12GB。代码保留多 GPU endpoint topology 扩展，但当前正式实验只形成单 GPU 证据；同 GPU 多 endpoint 不用于声称多 GPU 扩展收益。
 - 学习型控制器首版选择有限动作空间 UCB，不提前实现需要大量训练数据的监督式代价模型。
-- 新增 `code_doc/superpowers/plans/2026-07-25-runtime-scheduling-strategy-suite-design.md`：采用分层策略接口，将 batching、flush、admission、pool routing、endpoint routing、topology、scheduler 和 search 解耦；明确失败/回退语义、TDD/不变量/集成测试、隔离消融、12 点 reduced joint grid、2048 行 held-out evaluation 和统计规则。
+- 新增 `code_doc/superpowers/plans/2026-07-25-runtime-scheduling-strategy-suite-design.md`：采用分层策略接口，将 batching、flush、admission、pool routing、endpoint routing、topology、scheduler 和 search 解耦；明确失败/回退语义、TDD/不变量/集成测试、9 点核心联合矩阵、12 点含 flush 扩展矩阵、2048 行 held-out evaluation 和统计规则。
 - 指标扩展为 `runs.csv`、`submissions.csv`、`requests.csv`、`control_trace.csv`、`resource_trace.csv` 与 `manifest.json`，区分 batch-level submission 与 row/model-sequence 粒度，并覆盖 tokens/s、全阶段 latency、tail、SLO、公平性、控制器轨迹、路由、endpoint/GPU 资源和 instrumentation overhead，为后续批量绘图保留原始数据。
 - 原 `adaptive-admission-controller-design.md` 保留为 AIMD 子模块细化设计；本次仍仅完成总体设计，未修改生产代码或产生新 GPU 结果。
 
@@ -983,3 +983,12 @@
 - 旧 two-level adaptive 暂时保留为显式 baseline；新控制器完成单元/契约测试后再进入单 GPU 正式对照，仍不合并 `main`。
 - 复核 `experiments/plans/` 后补齐执行约束：正式 adaptive 对比前先做固定 64 与 EOS-permissive 256 output cap 混淆变量检查；优先无 EWMA AIMD，EWMA/PID/UCB 为后续对照；正式记录 tokens/s、service P99 与 inflight/queue/K_max 时序，并沿用三轮改进放弃条件。
 - 联合搜索口径纠正为两层：先完成状态审计要求的 token_budget `{4096,6144,8192}` × K_max `{4,8,16}` 共 9 点核心实验，再做包含三种 flush 的 12 点扩展网格；UCB 单独报告，不替代独立拼接 vs joint grid。
+
+## 2026-07-25 Adaptive controller core 与 profiler 接入
+
+- 新增 typed `AdmissionObservation`、`WindowDecision` 与 diagnostics；实现无平滑 AIMD、可选 EWMA-AIMD、bounded PID、有限动作 UCB1 和 SLO-constrained reward。
+- 新增 250ms 默认缓存 observation provider、stale/missing hold、无 sleep 的 dynamic admission gate 与逐决策 trace；动态降窗时 scheduler 的 bounded-inflight 不变量已有确定性测试。
+- profiler CLI 新增 `aimd|ewma_aimd|pid`，在整个 run/多 DB fetch chunk 间保持控制器状态，并统一走 Daft→Arrow→Ray task/actor 路径；control trace 记录 inflight、K_max、running、waiting、KV、action、reason 与 allowed。
+- legacy `queue_adaptive` 继续隔离作为对照。UCB 只完成策略/reward core，尚未在缺少 epoch 指标时暴露为 CLI，避免伪集成。
+- 项目 `.conda/pg-ai-profile` 全量回归：105 tests、0 failures，包含真实 Daft→Arrow→单节点 Ray task/actor 契约；compileall、public import 和策略层 engine-import 扫描通过。CLI AIMD dry-run 通过。
+- 尚无新增 GPU 性能数据，不能声称 adaptive 优于静态 K=8；正式对比前仍须完成 output-length 混淆变量检查。分支继续隔离，不合并 `main`。
