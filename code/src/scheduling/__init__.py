@@ -35,6 +35,7 @@ from .models import (
     PoolRoutingDecision,
     RoutingDecision,
     SubmissionCompletion,
+    SubmissionLifecycleEvent,
     TopologySnapshot,
     WindowDecision,
 )
@@ -114,6 +115,7 @@ __all__ = [
     "SloRewardInput",
     "SubmissionAdapter",
     "SubmissionCompletion",
+    "SubmissionLifecycleEvent",
     "SynchronousScheduler",
     "SystemReplayClock",
     "TopologySnapshot",

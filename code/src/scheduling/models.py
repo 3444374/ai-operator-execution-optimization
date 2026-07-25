@@ -167,6 +167,31 @@ class SubmissionCompletion:
 
 
 @dataclass(frozen=True)
+class SubmissionLifecycleEvent:
+    submission_id: str
+    pool_id: str
+    endpoint_id: str
+    gpu_id: str
+    submit_epoch_s: float
+    completion_epoch_s: float
+    status: Literal["completed", "failed"]
+    error: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.submission_id or not self.pool_id or not self.endpoint_id:
+            raise ValueError(
+                "submission_id, pool_id, and endpoint_id must be non-empty"
+            )
+        if (
+            not math.isfinite(self.submit_epoch_s)
+            or not math.isfinite(self.completion_epoch_s)
+            or self.submit_epoch_s < 0
+            or self.completion_epoch_s < self.submit_epoch_s
+        ):
+            raise ValueError("submission lifecycle timestamps are invalid")
+
+
+@dataclass(frozen=True)
 class CollectedSubmission:
     handle: object
     completion: SubmissionCompletion

@@ -5,7 +5,7 @@ from __future__ import annotations
 import statistics
 import time
 from dataclasses import dataclass
-from typing import Iterable, Protocol
+from typing import Callable, Iterable, Protocol
 
 from .models import (
     AdmissionDecision,
@@ -15,6 +15,7 @@ from .models import (
     PoolRoutingDecision,
     RoutingDecision,
     SubmissionCompletion,
+    SubmissionLifecycleEvent,
     TopologySnapshot,
 )
 
@@ -66,6 +67,7 @@ class SchedulerResult:
     avg_bounded_wait_s: float
     fanin_s: float
     submit_s: float
+    submission_events: tuple[SubmissionLifecycleEvent, ...] = ()
 
 
 class SynchronousScheduler:
@@ -77,12 +79,14 @@ class SynchronousScheduler:
         pool_id: str,
         *,
         pool_router: PoolRouter | None = None,
+        epoch_clock: Callable[[], float] = time.time,
     ):
         self.admission = admission
         self.router = router
         self.adapter = adapter
         self.pool_id = pool_id
         self.pool_router = pool_router
+        self.epoch_clock = epoch_clock
 
     def run(
         self,
@@ -91,7 +95,12 @@ class SynchronousScheduler:
     ) -> SchedulerResult:
         pending: list[tuple[object, PayloadEnvelope]] = []
         completions: list[SubmissionCompletion] = []
+        submission_events: list[SubmissionLifecycleEvent] = []
+        submission_context: dict[str, tuple[str, str, str, float]] = {}
         submission_order: dict[str, int] = {}
+        endpoints_by_id = {
+            endpoint.endpoint_id: endpoint for endpoint in topology.endpoints
+        }
         max_inflight_seen = 0
         bounded_wait_samples: list[float] = []
         fanin_s = 0.0
@@ -103,7 +112,12 @@ class SynchronousScheduler:
                 raise ValueError(f"duplicate request_id: {request_id}")
             submission_order[request_id] = len(submission_order)
             while not self.admission.decide(len(pending)).allowed:
-                collected = self._collect_one(pending, completions)
+                collected = self._collect_one(
+                    pending,
+                    completions,
+                    submission_events,
+                    submission_context,
+                )
                 bounded_wait_samples.append(collected.wait_s)
                 fanin_s += collected.result_s
             pool_id = (
@@ -112,14 +126,28 @@ class SynchronousScheduler:
                 else self.pool_id
             )
             route = self.router.route(envelope.request, topology, pool_id)
+            endpoint = endpoints_by_id.get(route.endpoint_id)
+            if endpoint is None:
+                raise RuntimeError("router selected an endpoint outside the topology")
             submit_start = time.perf_counter()
             handle = self.adapter.submit(envelope, route.endpoint_id)
             submit_s += time.perf_counter() - submit_start
+            submission_context[request_id] = (
+                pool_id,
+                route.endpoint_id,
+                endpoint.gpu_id,
+                self.epoch_clock(),
+            )
             pending.append((handle, envelope))
             max_inflight_seen = max(max_inflight_seen, len(pending))
 
         while pending:
-            collected = self._collect_one(pending, completions)
+            collected = self._collect_one(
+                pending,
+                completions,
+                submission_events,
+                submission_context,
+            )
             fanin_s += collected.result_s
 
         return SchedulerResult(
@@ -127,6 +155,12 @@ class SynchronousScheduler:
                 sorted(
                     completions,
                     key=lambda completion: submission_order[completion.request_id],
+                )
+            ),
+            submission_events=tuple(
+                sorted(
+                    submission_events,
+                    key=lambda event: submission_order[event.submission_id],
                 )
             ),
             operator_invocations=len(completions),
@@ -144,8 +178,11 @@ class SynchronousScheduler:
         self,
         pending: list[tuple[object, PayloadEnvelope]],
         completions: list[SubmissionCompletion],
+        submission_events: list[SubmissionLifecycleEvent],
+        submission_context: dict[str, tuple[str, str, str, float]],
     ) -> CollectedSubmission:
         collected = self.adapter.wait_one(pending)
+        completion_epoch_s = self.epoch_clock()
         matching = [
             index for index, (item, _) in enumerate(pending) if item == collected.handle
         ]
@@ -155,4 +192,20 @@ class SynchronousScheduler:
         if collected.completion.request_id != pending_envelope.request.request_id:
             raise RuntimeError("completion request_id does not match pending request")
         completions.append(collected.completion)
+        request_id = collected.completion.request_id
+        pool_id, endpoint_id, gpu_id, submit_epoch_s = submission_context.pop(
+            request_id
+        )
+        submission_events.append(
+            SubmissionLifecycleEvent(
+                submission_id=request_id,
+                pool_id=pool_id,
+                endpoint_id=endpoint_id,
+                gpu_id=gpu_id,
+                submit_epoch_s=submit_epoch_s,
+                completion_epoch_s=completion_epoch_s,
+                status=collected.completion.status,
+                error=collected.completion.error,
+            )
+        )
         return collected

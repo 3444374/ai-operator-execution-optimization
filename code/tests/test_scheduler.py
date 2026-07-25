@@ -82,6 +82,29 @@ class FakeSubmissionAdapter:
         )
 
 
+class FailingAdapter(FakeSubmissionAdapter):
+    def wait_one(self, pending):
+        handle, pending_envelope = pending[0]
+        return CollectedSubmission(
+            handle=handle,
+            completion=SubmissionCompletion(
+                request_id=pending_envelope.request.request_id,
+                status="failed",
+                error="synthetic failure",
+            ),
+            wait_s=0.0,
+            result_s=0.0,
+        )
+
+
+class SequenceClock:
+    def __init__(self, values: list[float]) -> None:
+        self._values = iter(values)
+
+    def __call__(self) -> float:
+        return next(self._values)
+
+
 class SchedulerTests(unittest.TestCase):
     def test_scheduler_completes_each_request_once_with_bounded_inflight(self) -> None:
         adapter = FakeSubmissionAdapter()
@@ -109,20 +132,6 @@ class SchedulerTests(unittest.TestCase):
         )
 
     def test_scheduler_preserves_failed_completion_without_retry(self) -> None:
-        class FailingAdapter(FakeSubmissionAdapter):
-            def wait_one(self, pending):
-                handle, pending_envelope = pending[0]
-                return CollectedSubmission(
-                    handle=handle,
-                    completion=SubmissionCompletion(
-                        request_id=pending_envelope.request.request_id,
-                        status="failed",
-                        error="synthetic failure",
-                    ),
-                    wait_s=0.0,
-                    result_s=0.0,
-                )
-
         scheduler = SynchronousScheduler(
             StaticAdmissionController(1),
             RoundRobinEndpointRouter(),
@@ -134,6 +143,57 @@ class SchedulerTests(unittest.TestCase):
 
         self.assertEqual(result.completions[0].status, "failed")
         self.assertEqual(result.completions[0].error, "synthetic failure")
+
+    def test_scheduler_records_submission_lifecycle_in_source_order(self) -> None:
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=2),
+            router=RoundRobinEndpointRouter(),
+            adapter=adapter,
+            pool_id="default",
+            epoch_clock=SequenceClock([10.0, 11.0, 20.0, 21.0]),
+        )
+
+        result = scheduler.run([envelope(0), envelope(1)], topology())
+
+        self.assertEqual(
+            [event.submission_id for event in result.submission_events],
+            ["r0", "r1"],
+        )
+        self.assertEqual(
+            [
+                (
+                    event.pool_id,
+                    event.endpoint_id,
+                    event.gpu_id,
+                    event.submit_epoch_s,
+                    event.completion_epoch_s,
+                    event.status,
+                )
+                for event in result.submission_events
+            ],
+            [
+                ("default", "e1", "0", 10.0, 20.0, "completed"),
+                ("default", "e2", "0", 11.0, 21.0, "completed"),
+            ],
+        )
+
+    def test_scheduler_records_failed_submission_without_retry(self) -> None:
+        scheduler = SynchronousScheduler(
+            StaticAdmissionController(1),
+            RoundRobinEndpointRouter(),
+            FailingAdapter(),
+            "default",
+            epoch_clock=SequenceClock([10.0, 20.0]),
+        )
+
+        result = scheduler.run([envelope(0)], topology())
+
+        self.assertEqual(result.submission_events[0].status, "failed")
+        self.assertEqual(
+            result.submission_events[0].error,
+            "synthetic failure",
+        )
 
     def test_scheduler_normalizes_out_of_order_fanin_to_submission_order(self) -> None:
         class ReverseCompletionAdapter(FakeSubmissionAdapter):
