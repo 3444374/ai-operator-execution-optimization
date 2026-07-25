@@ -7,7 +7,7 @@ import time
 from dataclasses import dataclass
 from typing import Callable, Generic, Iterable, Iterator, Protocol, TypeVar
 
-from .flush import FlushDecision, FlushObservation
+from .flush import FlushObservation, FlushWindow
 
 
 def _is_non_negative_int(value: object) -> bool:
@@ -172,10 +172,12 @@ class FlushTraceEvent:
     oldest_age_s: float
     action: str
     reason: str
+    selected_wait_s: float = 0.0
+    window_reason: str = ""
 
 
 class _FlushPolicy(Protocol):
-    def decide(self, observation: FlushObservation) -> FlushDecision:
+    def select_window(self, observation: FlushObservation) -> FlushWindow:
         ...
 
 
@@ -231,104 +233,84 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
         if not isinstance(builder, PendingBatchBuilder):
             raise ValueError("builder_factory must return PendingBatchBuilder")
 
-        pending_rows = 0
-        pending_tokens = 0
-        pending_oldest_deadline_s = 0.0
-        budget_reached = False
+        while next_row is not None:
+            now_s = self._clock.now()
+            if next_deadline_s > now_s:
+                self._clock.wait_until(next_deadline_s)
 
-        while next_row is not None or pending_rows:
-            if pending_rows:
-                service = self._service_observation()
-                now_s = self._clock.now()
-                policy_deadline = self._policy_deadline(
-                    pending_oldest_deadline_s
-                )
-                if (
-                    policy_deadline is not None
-                    and now_s >= policy_deadline[0]
-                ):
-                    decision = FlushDecision(
-                        True,
-                        "flush",
-                        policy_deadline[1],
-                        now_s - pending_oldest_deadline_s,
-                    )
-                else:
-                    decision = self._flush_policy.decide(
-                        FlushObservation(
-                            now_s=now_s,
-                            oldest_arrival_s=pending_oldest_deadline_s,
-                            pending_rows=pending_rows,
-                            pending_cost=pending_tokens,
-                            budget_reached=budget_reached,
-                            metrics_fresh=service.fresh,
-                            running=service.running,
-                            waiting=service.waiting,
-                            kv_usage=service.kv_usage,
-                        )
-                    )
-                self._record_trace(
-                    replay_start_s,
-                    now_s,
-                    pending_rows,
-                    pending_tokens,
-                    pending_oldest_deadline_s,
-                    decision.action,
-                    decision.reason,
-                )
-                if decision.flush:
-                    closed = builder.close()
-                    pending_rows = 0
-                    pending_tokens = 0
-                    budget_reached = False
-                    yield self._close_batch(closed)
-                    continue
-
+            pending_oldest_deadline_s = next_deadline_s
+            pending_rows = 1
+            pending_tokens = next_row.estimated_total_tokens
+            budget_reached = builder.add(next_row)
+            following = self._next_validated(
+                source,
+                previous_arrival_s=previous_arrival_s,
+            )
+            if following is None:
+                next_row = None
             else:
-                now_s = self._clock.now()
-                policy_deadline = None
+                previous_arrival_s = following.arrival_s
+                next_row = following
+                next_deadline_s = replay_start_s + (
+                    following.arrival_s - origin_arrival_s
+                ) * self._arrival_time_scale
 
-            if next_row is None:
-                self._record_trace(
-                    replay_start_s,
-                    now_s,
-                    pending_rows,
-                    pending_tokens,
-                    pending_oldest_deadline_s,
-                    "flush",
-                    "end_of_input",
+            service = self._service_observation()
+            now_s = self._clock.now()
+            window = self._flush_policy.select_window(
+                FlushObservation(
+                    now_s=now_s,
+                    oldest_arrival_s=pending_oldest_deadline_s,
+                    pending_rows=pending_rows,
+                    pending_cost=pending_tokens,
+                    budget_reached=budget_reached,
+                    metrics_fresh=service.fresh,
+                    running=service.running,
+                    waiting=service.waiting,
+                    kv_usage=service.kv_usage,
                 )
-                closed = builder.close()
-                pending_rows = 0
-                pending_tokens = 0
-                budget_reached = False
-                yield self._close_batch(closed)
-                continue
+            )
+            selected_deadline_s = (
+                pending_oldest_deadline_s + window.wait_s
+            )
+            self._record_trace(
+                replay_start_s,
+                now_s,
+                pending_rows,
+                pending_tokens,
+                pending_oldest_deadline_s,
+                "wait" if window.wait_s > 0 and not budget_reached else "flush",
+                (
+                    f"{window.reason}_wait"
+                    if window.wait_s > 0 and not budget_reached
+                    else "budget_reached"
+                    if budget_reached
+                    else window.reason
+                ),
+                selected_wait_s=window.wait_s,
+                window_reason=window.reason,
+            )
 
-            if next_deadline_s <= now_s:
+            flush_reason = window.reason
+            while not budget_reached and window.wait_s > 0:
+                if next_row is None:
+                    flush_reason = "end_of_input"
+                    break
                 if builder.would_exceed_token_budget(next_row):
-                    self._record_trace(
-                        replay_start_s,
-                        now_s,
-                        pending_rows,
-                        pending_tokens,
-                        pending_oldest_deadline_s,
-                        "flush",
-                        "token_budget_membership",
-                    )
-                    closed = builder.close()
-                    pending_rows = 0
-                    pending_tokens = 0
-                    budget_reached = False
-                    yield self._close_batch(closed)
-                    continue
+                    flush_reason = "token_budget_membership"
+                    break
+                if next_deadline_s > selected_deadline_s:
+                    now_s = self._clock.now()
+                    if selected_deadline_s > now_s:
+                        self._clock.wait_until(selected_deadline_s)
+                    break
 
-                if pending_rows == 0:
-                    pending_oldest_deadline_s = next_deadline_s
+                now_s = self._clock.now()
+                if next_deadline_s > now_s:
+                    self._clock.wait_until(next_deadline_s)
                 pending_rows += 1
                 pending_tokens += next_row.estimated_total_tokens
                 budget_reached = builder.add(next_row)
-
                 following = self._next_validated(
                     source,
                     previous_arrival_s=previous_arrival_s,
@@ -341,17 +323,22 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                     next_deadline_s = replay_start_s + (
                         following.arrival_s - origin_arrival_s
                     ) * self._arrival_time_scale
-                continue
 
-            wake_deadline_s = next_deadline_s
-            if policy_deadline is not None:
-                policy_deadline_s = policy_deadline[0]
-                if (
-                    now_s < policy_deadline_s <= wake_deadline_s
-                ):
-                    wake_deadline_s = policy_deadline_s
-            if wake_deadline_s > now_s:
-                self._clock.wait_until(wake_deadline_s)
+            if budget_reached:
+                flush_reason = "budget_reached"
+            now_s = self._clock.now()
+            self._record_trace(
+                replay_start_s,
+                now_s,
+                pending_rows,
+                pending_tokens,
+                pending_oldest_deadline_s,
+                "flush",
+                flush_reason,
+                selected_wait_s=window.wait_s,
+                window_reason=window.reason,
+            )
+            yield self._close_batch(builder.close())
 
     @staticmethod
     def _next_validated(
@@ -381,20 +368,6 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
             raise ValueError("rows must contain RowArrival values")
         return row
 
-    def _policy_deadline(
-        self,
-        oldest_deadline_s: float,
-    ) -> tuple[float, str] | None:
-        deadline_fields = (
-            ("timeout_s", "fixed_timeout"),
-            ("max_wait_s", "hard_max_wait"),
-        )
-        for attribute, reason in deadline_fields:
-            wait_s = getattr(self._flush_policy, attribute, None)
-            if isinstance(wait_s, (int, float)) and not isinstance(wait_s, bool):
-                return oldest_deadline_s + float(wait_s), reason
-        return None
-
     def _record_trace(
         self,
         replay_start_s: float,
@@ -404,6 +377,9 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
         oldest_deadline_s: float,
         action: str,
         reason: str,
+        *,
+        selected_wait_s: float,
+        window_reason: str,
     ) -> None:
         self._trace.append(
             FlushTraceEvent(
@@ -413,5 +389,7 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                 oldest_age_s=now_s - oldest_deadline_s,
                 action=action,
                 reason=reason,
+                selected_wait_s=selected_wait_s,
+                window_reason=window_reason,
             )
         )

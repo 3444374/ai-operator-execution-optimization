@@ -151,15 +151,19 @@ class ArrivalReplayBatcherTests(unittest.TestCase):
             ["fixed_timeout", "end_of_input"],
         )
 
-    def test_queue_congestion_flushes_at_hard_maximum(self) -> None:
+    def test_queue_pressure_selects_maximum_window(self) -> None:
         clock = FakeReplayClock()
         batcher = replay(
             [row("r1", arrival_s=2.0), row("r2", arrival_s=3.0)],
             clock,
-            flush_policy=QueueAdaptiveFlush(max_wait_s=0.5),
+            flush_policy=QueueAdaptiveFlush(
+                min_wait_s=0.25,
+                max_wait_s=0.5,
+                pressure_running=8,
+            ),
             service_observation=lambda: ReplayServiceObservation(
                 fresh=True,
-                running=64,
+                running=8,
                 waiting=4,
                 kv_usage=0.95,
             ),
@@ -168,11 +172,11 @@ class ArrivalReplayBatcherTests(unittest.TestCase):
         self.assertEqual(list(batcher), [("r1",), ("r2",)])
         self.assertEqual(clock.waited_until, [100.5, 101.0])
         self.assertIn(
-            "hard_max_wait",
+            "queue_pressure",
             [event.reason for event in batcher.trace],
         )
 
-    def test_time_advanced_during_service_observation_cannot_merge_later_row(
+    def test_row_before_selected_deadline_joins_after_observation_delay(
         self,
     ) -> None:
         policies = [
@@ -202,7 +206,88 @@ class ArrivalReplayBatcherTests(unittest.TestCase):
                     service_observation=advancing_observation,
                 )
 
-                self.assertEqual(list(batcher), [("r1",), ("r2",)])
+                self.assertEqual(list(batcher), [("r1", "r2")])
+
+    def test_due_before_selected_deadline_joins_after_downstream_delay(
+        self,
+    ) -> None:
+        clock = FakeReplayClock()
+        closed = 0
+
+        def delayed_close(batch: object) -> tuple[str, ...]:
+            nonlocal closed
+            closed += 1
+            if closed == 1:
+                clock.advance(0.2)
+            return tuple(item.row_id for item in batch.rows)
+
+        batcher = replay(
+            [
+                row("first", arrival_s=0.0),
+                row("second", arrival_s=1.0),
+                row("third", arrival_s=1.02),
+                row("after", arrival_s=1.06),
+            ],
+            clock,
+            flush_policy=FixedTimeoutFlush(0.05),
+            close_batch=delayed_close,
+        )
+
+        self.assertEqual(
+            list(batcher),
+            [("first",), ("second", "third"), ("after",)],
+        )
+
+    def test_adaptive_window_is_selected_once_per_pending_batch(self) -> None:
+        clock = FakeReplayClock()
+        observations = iter(
+            [
+                ReplayServiceObservation(True, 8, 1, 0.2),
+                ReplayServiceObservation(True, 0, 0, 0.0),
+            ]
+        )
+        batcher = replay(
+            [
+                row("r1", arrival_s=0.0),
+                row("r2", arrival_s=0.04),
+            ],
+            clock,
+            flush_policy=QueueAdaptiveFlush(
+                min_wait_s=0.025,
+                max_wait_s=0.05,
+                pressure_running=8,
+            ),
+            service_observation=lambda: next(observations),
+        )
+
+        self.assertEqual(list(batcher), [("r1", "r2")])
+        selected = [
+            event
+            for event in batcher.trace
+            if event.window_reason == "queue_pressure"
+        ]
+        self.assertTrue(selected)
+        self.assertTrue(all(event.selected_wait_s == 0.05 for event in selected))
+
+    def test_low_load_base_window_excludes_row_after_25ms(self) -> None:
+        clock = FakeReplayClock()
+        batcher = replay(
+            [
+                row("r1", arrival_s=0.0),
+                row("r2", arrival_s=0.03),
+            ],
+            clock,
+            flush_policy=QueueAdaptiveFlush(
+                min_wait_s=0.025,
+                max_wait_s=0.05,
+                pressure_running=8,
+            ),
+            service_observation=lambda: ReplayServiceObservation(
+                True, 0, 0, 0.0
+            ),
+        )
+
+        self.assertEqual(list(batcher), [("r1",), ("r2",)])
 
     def test_nonbinary_hard_deadline_flushes_before_later_arrival(self) -> None:
         policies = [
@@ -233,7 +318,7 @@ class ArrivalReplayBatcherTests(unittest.TestCase):
                 self.assertEqual(clock.now(), 100.1)
                 self.assertEqual(list(iterator), [("r2",)])
 
-    def test_missing_or_stale_metrics_reach_replay_hard_maximum(self) -> None:
+    def test_missing_or_stale_metrics_use_fixed_fallback_window(self) -> None:
         observations = [
             ReplayServiceObservation(
                 fresh=True,
@@ -257,15 +342,19 @@ class ArrivalReplayBatcherTests(unittest.TestCase):
                         row("r2", arrival_s=1.0),
                     ],
                     clock,
-                    flush_policy=QueueAdaptiveFlush(max_wait_s=0.1),
+                    flush_policy=QueueAdaptiveFlush(
+                        min_wait_s=0.025,
+                        max_wait_s=0.1,
+                        pressure_running=8,
+                    ),
                     service_observation=lambda: service,
                 )
 
                 iterator = iter(batcher)
                 self.assertEqual(next(iterator), ("r1",))
-                self.assertEqual(clock.waited_until, [100.1])
+                self.assertEqual(clock.waited_until, [100.025])
                 self.assertIn(
-                    "hard_max_wait",
+                    "fixed_fallback",
                     [event.reason for event in batcher.trace],
                 )
                 self.assertEqual(list(iterator), [("r2",)])
