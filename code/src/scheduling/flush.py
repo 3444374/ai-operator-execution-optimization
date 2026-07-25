@@ -55,7 +55,22 @@ class FlushDecision:
     pending_age_s: float
 
 
+@dataclass(frozen=True)
+class FlushWindow:
+    wait_s: float
+    reason: str
+
+    def __post_init__(self) -> None:
+        if self.wait_s < 0:
+            raise ValueError("wait_s must be non-negative")
+        if not self.reason:
+            raise ValueError("reason must be non-empty")
+
+
 class ImmediateFlush:
+    def select_window(self, observation: FlushObservation) -> FlushWindow:
+        return FlushWindow(0.0, "immediate")
+
     def decide(self, observation: FlushObservation) -> FlushDecision:
         return FlushDecision(True, "flush", "immediate", observation.age_s)
 
@@ -65,6 +80,9 @@ class FixedTimeoutFlush:
         if timeout_s < 0:
             raise ValueError("timeout_s must be non-negative")
         self.timeout_s = timeout_s
+
+    def select_window(self, observation: FlushObservation) -> FlushWindow:
+        return FlushWindow(self.timeout_s, "fixed_timeout")
 
     def decide(self, observation: FlushObservation) -> FlushDecision:
         if observation.budget_reached:
@@ -84,43 +102,47 @@ class QueueAdaptiveFlush:
     def __init__(
         self,
         *,
+        min_wait_s: float = 0.025,
         max_wait_s: float = 0.050,
-        low_load_running: int = 64,
+        pressure_running: int = 8,
         congestion_kv_usage: float = 0.85,
     ):
-        if max_wait_s <= 0:
-            raise ValueError("max_wait_s must be positive")
-        if low_load_running <= 0:
-            raise ValueError("low_load_running must be positive")
+        if min_wait_s <= 0:
+            raise ValueError("min_wait_s must be positive")
+        if max_wait_s < min_wait_s:
+            raise ValueError("max_wait_s must be at least min_wait_s")
+        if pressure_running <= 0:
+            raise ValueError("pressure_running must be positive")
         if not 0.0 <= congestion_kv_usage <= 1.0:
             raise ValueError("congestion_kv_usage must be between 0 and 1")
+        self.min_wait_s = min_wait_s
         self.max_wait_s = max_wait_s
-        self.low_load_running = low_load_running
+        self.pressure_running = pressure_running
         self.congestion_kv_usage = congestion_kv_usage
+
+    def select_window(self, observation: FlushObservation) -> FlushWindow:
+        if not observation.metrics_fresh:
+            return FlushWindow(self.min_wait_s, "fixed_fallback")
+        if not observation.has_service_metrics:
+            return FlushWindow(self.min_wait_s, "fixed_fallback")
+        if observation.waiting > 0:
+            return FlushWindow(self.max_wait_s, "queue_pressure")
+        if observation.kv_usage >= self.congestion_kv_usage:
+            return FlushWindow(self.max_wait_s, "kv_pressure")
+        if observation.running >= self.pressure_running:
+            return FlushWindow(self.max_wait_s, "running_pressure")
+        return FlushWindow(self.min_wait_s, "underloaded_base_window")
 
     def decide(self, observation: FlushObservation) -> FlushDecision:
         if observation.budget_reached:
             return self._flush("budget_reached", observation)
-        if observation.age_s >= self.max_wait_s:
-            return self._flush("hard_max_wait", observation)
-        if not observation.metrics_fresh:
-            return self._wait("stale_metrics_wait", observation)
-        if not observation.has_service_metrics:
-            return self._wait("missing_metrics_wait", observation)
-
-        congested = (
-            observation.waiting > 0
-            or observation.kv_usage >= self.congestion_kv_usage
+        window = self.select_window(observation)
+        if observation.age_s >= window.wait_s:
+            return self._flush(window.reason, observation)
+        return self._wait(
+            f"{window.reason}_wait",
+            observation,
         )
-        if congested:
-            return self._wait("service_congested", observation)
-        underloaded = (
-            observation.waiting == 0
-            and observation.running < self.low_load_running
-        )
-        if underloaded:
-            return self._flush("service_underloaded", observation)
-        return self._wait("service_deadband_wait", observation)
 
     @staticmethod
     def _flush(

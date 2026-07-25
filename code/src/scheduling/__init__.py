@@ -20,6 +20,7 @@ from .flush import (
     FixedTimeoutFlush,
     FlushDecision,
     FlushObservation,
+    FlushWindow,
     ImmediateFlush,
     QueueAdaptiveFlush,
 )
@@ -87,6 +88,7 @@ __all__ = [
     "FixedTimeoutFlush",
     "FlushDecision",
     "FlushObservation",
+    "FlushWindow",
     "FlushTraceEvent",
     "ImmediateFlush",
     "PayloadEnvelope",
