@@ -1097,3 +1097,22 @@
   证据；尚缺逐 repeat 随机化、变长输出、per-request E2E P99 和 2048 行
   held-out，不合并 `main`。结果见
   `experiments/results/adaptive_flush_window_20260725/`。
+
+## 2026-07-25 实验基础设施与后续优化路线确认
+
+- 复核总体计划、当前代码和项目文献后，确认 request lifecycle trace、随机化
+  scenario runner、`target_output_tokens` 成本利用、Best-Fit bin-packing、
+  UCB profiler 接线、联合搜索、actor-local async queue、多模态和代价估计仍是
+  主要缺口。
+- 用户要求先把 infra 搭稳，使后续多模态和代价估计容易接入；同时明确不需要为
+  尚无真实调用方的功能提前创建空接口。
+- 新增
+  `code_doc/superpowers/specs/2026-07-25-ai-operator-execution-infra-design.md`：
+  将总体定位调整为数据库 AI 算子外部执行 infra，分为数据进入与组织、运行时
+  控制、Ray 执行、模型服务边界、可观测性与实验控制；定义
+  request/submission/run 三层 schema、客户端可观测单 prompt E2E、seeded
+  随机化 runner、output-aware BFD、控制器与联合搜索、actor runtime，以及
+  多模态/代价估计/`@daft.cls` 的触发边界。
+- 总体范围拆为四个独立子项目，第一项为 request lifecycle 与 scenario runner；
+  每项单独设计、TDD、真实 Daft→Ray→vLLM 验证，不在同一提交同时改变计时、
+  batch membership 和 admission control law。

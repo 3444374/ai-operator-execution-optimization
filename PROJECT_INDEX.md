@@ -139,6 +139,7 @@
 | `experiments/results/adaptive_flush_window_20260725/formal_512_metric_summary.csv` | 双窗口正式统计汇总 | E2E、rows/s、tokens/s、submissions、batch rows 与 service P99 的均值、标准差和 95% CI |
 | `experiments/results/adaptive_flush_window_20260725/*_trace.csv` | 双窗口 flush、submission 与 resource 轨迹 | schema 2 窗口字段、exactly-once 文档覆盖与绘图时序 |
 | `code_doc/superpowers/specs/2026-07-25-adaptive-flush-window-design.md` | Adaptive flush 双窗口改进设计 | fixed-timeout fallback、事件时间 catch-up、trace 与真实 GPU 门禁 |
+| `code_doc/superpowers/specs/2026-07-25-ai-operator-execution-infra-design.md` | AI 算子外部执行 infra 总体设计 | 数据进入与组织、运行时控制、Ray 执行、可观测性、策略搜索及后续多模态/代价估计边界 |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-flush-window-implementation.md` | Adaptive flush 双窗口实施计划 | TDD 窗口选择、event-time replay、profiler trace 与真实单 GPU 分级门禁 |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
