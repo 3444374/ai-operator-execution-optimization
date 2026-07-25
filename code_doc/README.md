@@ -11,3 +11,6 @@ experiment results, or opening-report materials.
 
 Current adaptive flush redesign:
 `superpowers/specs/2026-07-25-adaptive-flush-window-design.md`.
+
+Current output-cost and offline packing design:
+`superpowers/specs/2026-07-26-output-aware-bfd-design.md`.

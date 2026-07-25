@@ -6,4 +6,8 @@ Local planning artifacts produced through the Superpowers workflow for code chan
 
 | Path | Purpose |
 |---|---|
-| `plans/` | Design specifications and implementation plans written before code changes |
+| `specs/` | Approved behavioral designs written before implementation planning |
+| `plans/` | Detailed TDD implementation plans written after design review |
+
+Current design:
+`specs/2026-07-26-output-aware-bfd-design.md`.

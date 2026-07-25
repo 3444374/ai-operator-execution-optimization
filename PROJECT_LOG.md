@@ -1175,3 +1175,27 @@
   性能显著优于 fixed；1 秒 SLO 两者 violation ratio 均为 1.0。
 - 结果位于 `experiments/results/request_lifecycle_gate_20260725/`；分支继续隔离，
   未合并 `main`，本次不自动同步 Wiki。
+
+## 2026-07-26 输出成本与确定性 BFD 设计
+
+- 用户确认下一阶段先完善 output-aware cost 与离线 Best-Fit Decreasing
+  packing；global BFD 只用于完整可见的离线 organizer input，arrival replay
+  保持到达顺序并仅复用成本计算。
+- 新增
+  `code_doc/superpowers/specs/2026-07-26-output-aware-bfd-design.md`，规定两个小型
+  engine-independent core、Arrow/Daft 单一 BFD 实现、exactly-once/oversized
+  不变量、packing scope 指标以及 64→512→1024→2048 分级门禁。
+- 提交前 fatal-flaw 自检确认：当前 importer 将 ShareGPT prompt 与独立
+  BurstGPT trace 逐行配对，因此 `target_output_tokens` 只能标记为
+  `burstgpt_unpaired_trace_metadata`。它可用于成本敏感性和装箱验证，但不能称为
+  当前 Qwen prompt 的真实输出 oracle，也不能单独支撑输出预测或 GPU 工作量匹配
+  结论。
+- 真正的离线 oracle 需要同 prompt、同模型、同 tokenizer、同生成参数和同停止条件
+  的校准输出，并在不相交的 evaluation run 中回放；标签存在前不创建空接口。
+- 根据用户后续会替换 prompt、模型和多模态输入的要求，BFD core 改用中性的
+  `cost_units`/`capacity` 边界，不读取 prompt、tokenizer、模型 ID 或图像字段；
+  当前仅实现真实文本 adapter，未来新增真实模态 adapter 而不重写 packing、Ray
+  调度、lifecycle 和 scenario runner。多资源约束出现时新增真实算法，不把不可比
+  单位强行压成伪标量。
+- 本次仅固化设计与索引，尚未编写实施计划、生产代码或新增性能实验，分支继续隔离，
+  不合并 `main`，不自动同步 Wiki。
