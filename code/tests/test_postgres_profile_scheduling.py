@@ -477,6 +477,46 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [6, 6, 12],
         )
 
+    def test_queue_adaptive_uses_max_inflight_for_pressure_window(self) -> None:
+        args = SimpleNamespace(
+            ray_batch_rows=8,
+            batching_policy="fixed_rows",
+            token_budget=0,
+            flush_policy="queue_adaptive",
+            flush_timeout_ms=25.0,
+            flush_max_wait_ms=50.0,
+            max_inflight=4,
+            _replay_clock=_DeterministicReplayClock(),
+        )
+        table = pa.table(
+            {
+                "doc_id": [1, 2],
+                "prompt_tokens": [1, 1],
+                "arrival_time_s": [0.0, 0.04],
+            }
+        )
+
+        envelopes = list(
+            profile._arrival_replay_envelopes(
+                [table],
+                args,
+                job_id="job",
+                operator="ai_embed",
+                service_observation=lambda: ReplayServiceObservation(
+                    fresh=True,
+                    running=4,
+                    waiting=0,
+                    kv_usage=0.0,
+                ),
+                trace_sink=[],
+            )
+        )
+
+        self.assertEqual(
+            [envelope.payload.column("doc_id").to_pylist() for envelope in envelopes],
+            [[1, 2]],
+        )
+
     def test_nonadaptive_flush_never_reads_service_metrics(self) -> None:
         class BlockingMetricsMustNotRun:
             def latest(self, inflight):
@@ -655,6 +695,38 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "daft_postgres",
                     "--source-order",
                     "arrival_time",
+                    "--flush-policy",
+                    "queue_adaptive",
+                    "--flush-timeout-ms",
+                    "50",
+                    "--flush-max-wait-ms",
+                    "25",
+                ],
+                "flush-max-wait-ms >= --flush-timeout-ms",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--flush-policy",
+                    "queue_adaptive",
+                    "--flush-timeout-ms",
+                    "0",
+                ],
+                "queue-adaptive flush requires --flush-timeout-ms > 0",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
                     "--batching-policy",
                     "length_align_fixed_rows",
                 ],
@@ -755,6 +827,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 oldest_age_s=0.025,
                 action="flush",
                 reason="fixed_timeout",
+                selected_wait_s=0.025,
+                window_reason="fixed_timeout",
             )
         ]
         test_tmp_root = CODE_ROOT.parent / "tmp"
@@ -801,11 +875,16 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "oldest_age_s",
                     "action",
                     "reason",
+                    "selected_wait_s",
+                    "window_reason",
                 },
             )
             self.assertEqual(rows[0]["pending_rows"], "2")
+            self.assertEqual(rows[0]["schema_version"], "2")
             self.assertEqual(rows[0]["reason"], "fixed_timeout")
             self.assertEqual(rows[0]["arrival_time_scale"], "0.0005")
+            self.assertEqual(rows[0]["selected_wait_s"], "0.025")
+            self.assertEqual(rows[0]["window_reason"], "fixed_timeout")
 
             with self.assertRaises(OSError):
                 profile._write_flush_trace(

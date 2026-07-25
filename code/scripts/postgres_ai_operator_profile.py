@@ -632,7 +632,9 @@ def _arrival_replay_envelopes(
             timeout_s=args.flush_timeout_ms / 1000.0
         ),
         "queue_adaptive": lambda: QueueAdaptiveFlush(
-            max_wait_s=args.flush_max_wait_ms / 1000.0
+            min_wait_s=args.flush_timeout_ms / 1000.0,
+            max_wait_s=args.flush_max_wait_ms / 1000.0,
+            pressure_running=args.max_inflight,
         ),
     }
     try:
@@ -948,7 +950,7 @@ def _write_flush_trace(
         append_metrics(
             output_path,
             {
-                "schema_version": 1,
+                "schema_version": 2,
                 "experiment_id": experiment_id,
                 "phase": phase,
                 "repeat_index": repeat_index,
@@ -966,6 +968,8 @@ def _write_flush_trace(
                 "oldest_age_s": event.oldest_age_s,
                 "action": event.action,
                 "reason": event.reason,
+                "selected_wait_s": event.selected_wait_s,
+                "window_reason": event.window_reason,
             },
         )
 
@@ -1607,6 +1611,21 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
         or args.flush_max_wait_ms <= 0
     ):
         raise SystemExit("--flush-max-wait-ms must be finite and positive")
+    if (
+        args.flush_policy == "queue_adaptive"
+        and args.flush_timeout_ms <= 0
+    ):
+        raise SystemExit(
+            "queue-adaptive flush requires --flush-timeout-ms > 0"
+        )
+    if (
+        args.flush_policy == "queue_adaptive"
+        and args.flush_max_wait_ms < args.flush_timeout_ms
+    ):
+        raise SystemExit(
+            "queue-adaptive flush requires "
+            "--flush-max-wait-ms >= --flush-timeout-ms"
+        )
 
 
 def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:

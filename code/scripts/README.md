@@ -159,6 +159,12 @@ result.
 `(prompt_tokens_delta + generation_tokens_delta) / e2e_s`。该字段是服务端
 实际 token 增量，不是 organizer 的 token cost 估计。
 
+`queue_adaptive` flush 使用双窗口：`--flush-timeout-ms` 是低负载和指标
+缺失时的 fixed-timeout fallback，`--flush-max-wait-ms` 是 waiting、KV 或
+running 压力下的扩展窗口。running 压力阈值使用本次运行的
+`--max-inflight`，不使用独立硬编码常量。窗口在 pending batch 打开时选择
+一次，并写入 flush trace 的 `selected_wait_s` 和 `window_reason`。
+
 `--source-order doc_id` is the offline throughput mode: PostgreSQL already
 contains the workload rows, and the profile scans them in stable document-id
 order before Daft organization. `--source-order arrival_time` reads rows by
