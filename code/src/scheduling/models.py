@@ -94,3 +94,15 @@ class SubmissionCompletion:
     status: Literal["completed", "failed"]
     result: object | None = None
     error: str = ""
+
+
+@dataclass(frozen=True)
+class CollectedSubmission:
+    handle: object
+    completion: SubmissionCompletion
+    wait_s: float
+    result_s: float
+
+    def __post_init__(self) -> None:
+        if self.wait_s < 0 or self.result_s < 0:
+            raise ValueError("collection timings must be non-negative")

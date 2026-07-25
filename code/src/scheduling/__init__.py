@@ -4,6 +4,7 @@ from .admission import StaticAdmissionController
 from .models import (
     AdmissionDecision,
     BatchRequest,
+    CollectedSubmission,
     EndpointSnapshot,
     PayloadEnvelope,
     RoutingDecision,
@@ -17,6 +18,7 @@ from .topology import healthy_endpoints
 __all__ = [
     "AdmissionDecision",
     "BatchRequest",
+    "CollectedSubmission",
     "EndpointSnapshot",
     "PayloadEnvelope",
     "RoutingDecision",

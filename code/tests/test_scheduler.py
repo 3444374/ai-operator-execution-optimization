@@ -11,6 +11,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.scheduling.admission import StaticAdmissionController  # noqa: E402
 from src.scheduling.models import (  # noqa: E402
     BatchRequest,
+    CollectedSubmission,
     EndpointSnapshot,
     PayloadEnvelope,
     SubmissionCompletion,
@@ -63,14 +64,18 @@ class FakeSubmissionAdapter:
         self.submitted.append(handle)
         return handle
 
-    def wait_one(self, pending: list[tuple[object, PayloadEnvelope]]) -> tuple[object, SubmissionCompletion]:
+    def wait_one(self, pending: list[tuple[object, PayloadEnvelope]]) -> CollectedSubmission:
         handle, pending_envelope = pending[0]
-        completion = SubmissionCompletion(
-            request_id=pending_envelope.request.request_id,
-            status="completed",
-            result=pending_envelope.payload,
+        return CollectedSubmission(
+            handle=handle,
+            completion=SubmissionCompletion(
+                request_id=pending_envelope.request.request_id,
+                status="completed",
+                result=pending_envelope.payload,
+            ),
+            wait_s=0.1,
+            result_s=0.05,
         )
-        return handle, completion
 
 
 class SchedulerTests(unittest.TestCase):
@@ -87,7 +92,13 @@ class SchedulerTests(unittest.TestCase):
 
         self.assertEqual([item.request_id for item in result.completions], ["r0", "r1", "r2", "r3", "r4"])
         self.assertEqual(len(set(item.request_id for item in result.completions)), 5)
+        self.assertEqual(result.operator_invocations, 5)
         self.assertEqual(result.max_inflight_seen, 2)
+        self.assertEqual(result.applied_limit, 2)
+        self.assertAlmostEqual(result.bounded_wait_s, 0.3)
+        self.assertAlmostEqual(result.avg_bounded_wait_s, 0.1)
+        self.assertAlmostEqual(result.fanin_s, 0.25)
+        self.assertGreaterEqual(result.submit_s, 0.0)
         self.assertEqual(
             adapter.submitted,
             [("r0", "e1"), ("r1", "e2"), ("r2", "e1"), ("r3", "e2"), ("r4", "e1")],
@@ -97,10 +108,15 @@ class SchedulerTests(unittest.TestCase):
         class FailingAdapter(FakeSubmissionAdapter):
             def wait_one(self, pending):
                 handle, pending_envelope = pending[0]
-                return handle, SubmissionCompletion(
-                    request_id=pending_envelope.request.request_id,
-                    status="failed",
-                    error="synthetic failure",
+                return CollectedSubmission(
+                    handle=handle,
+                    completion=SubmissionCompletion(
+                        request_id=pending_envelope.request.request_id,
+                        status="failed",
+                        error="synthetic failure",
+                    ),
+                    wait_s=0.0,
+                    result_s=0.0,
                 )
 
         scheduler = SynchronousScheduler(
@@ -114,6 +130,27 @@ class SchedulerTests(unittest.TestCase):
 
         self.assertEqual(result.completions[0].status, "failed")
         self.assertEqual(result.completions[0].error, "synthetic failure")
+
+    def test_scheduler_rejects_completion_for_different_request(self) -> None:
+        class WrongCompletionAdapter(FakeSubmissionAdapter):
+            def wait_one(self, pending):
+                collected = super().wait_one(pending)
+                return CollectedSubmission(
+                    collected.handle,
+                    SubmissionCompletion("wrong", "completed"),
+                    collected.wait_s,
+                    collected.result_s,
+                )
+
+        scheduler = SynchronousScheduler(
+            StaticAdmissionController(1),
+            RoundRobinEndpointRouter(),
+            WrongCompletionAdapter(),
+            "default",
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "completion request_id"):
+            scheduler.run([envelope(0)], topology())
 
 
 if __name__ == "__main__":
