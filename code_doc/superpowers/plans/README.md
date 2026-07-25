@@ -11,3 +11,4 @@ These files are process artifacts. They do not replace `PROJECT_OUTLINE.md`,
 |---|---|
 | `2026-07-17-daft-postgres-entry-existing-writeback.md` | Daft PostgreSQL entry and existing writeback implementation plan |
 | `2026-07-25-adaptive-admission-controller-design.md` | Approved RC2 adaptive admission controller and experiment design |
+| `2026-07-25-runtime-scheduling-strategy-suite-design.md` | Full flush/admission/routing/topology/search/metrics strategy-suite design |

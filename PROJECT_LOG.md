@@ -934,3 +934,12 @@
 - 确认采用“先可观测、再改控制律”的最小方案：控制器与 Prometheus/Ray/Daft 解耦，移除热路径 `sleep`，增加 K_max/inflight/queue/KV 时序记录，再实现无 EWMA 的死区非对称 AIMD。
 - 新增 `code_doc/superpowers/plans/2026-07-25-adaptive-admission-controller-design.md`，明确范围、架构、异常语义、固定输出混淆变量实验、成功/放弃条件、TDD 与正式 GPU 验证边界。
 - 本次只落盘已批准设计，尚未修改生产代码或产生新实验结果。
+
+## 2026-07-25 运行层策略套件总体设计确认
+
+- 用户将实现范围扩展为完整运行层策略套件：独立 queue-adaptive flush、actor pool 分池与动态路由、多 endpoint/未来多 GPU 拓扑、PID/EWMA/UCB 控制器，以及 batching × submission 联合搜索。
+- 硬件边界确认：当前仅一张 RTX 5070 12GB。代码保留多 GPU endpoint topology 扩展，但当前正式实验只形成单 GPU 证据；同 GPU 多 endpoint 不用于声称多 GPU 扩展收益。
+- 学习型控制器首版选择有限动作空间 UCB，不提前实现需要大量训练数据的监督式代价模型。
+- 新增 `code_doc/superpowers/plans/2026-07-25-runtime-scheduling-strategy-suite-design.md`：采用分层策略接口，将 batching、flush、admission、pool routing、endpoint routing、topology、scheduler 和 search 解耦；明确失败/回退语义、TDD/不变量/集成测试、隔离消融、12 点 reduced joint grid、2048 行 held-out evaluation 和统计规则。
+- 指标扩展为 `runs.csv`、`submissions.csv`、`requests.csv`、`control_trace.csv`、`resource_trace.csv` 与 `manifest.json`，区分 batch-level submission 与 row/model-sequence 粒度，并覆盖 tokens/s、全阶段 latency、tail、SLO、公平性、控制器轨迹、路由、endpoint/GPU 资源和 instrumentation overhead，为后续批量绘图保留原始数据。
+- 原 `adaptive-admission-controller-design.md` 保留为 AIMD 子模块细化设计；本次仍仅完成总体设计，未修改生产代码或产生新 GPU 结果。

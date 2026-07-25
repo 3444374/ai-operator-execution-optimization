@@ -164,6 +164,7 @@
 | `code/scripts/README.md` | 脚本详细说明 | 运行 PostgreSQL 画像、pgai SQL profile、本地 embedding server、Daft text organizer smoke |
 | `code_doc/superpowers/plans/` | Superpowers implementation plans for code work | 按 superpowers 工作流执行多步代码任务前读 |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-admission-controller-design.md` | RC2 adaptive admission controller 与 shared-vLLM 实验设计 | 实现 AIMD 控制器、时序指标或重跑干扰实验前读 |
+| `code_doc/superpowers/plans/2026-07-25-runtime-scheduling-strategy-suite-design.md` | 动态 batching、flush、控制器族、actor pool、endpoint routing、联合搜索和指标总设计 | 实现完整运行层策略框架与单 GPU 对照实验前读 |
 | `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
