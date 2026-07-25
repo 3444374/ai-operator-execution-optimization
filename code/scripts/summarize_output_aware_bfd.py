@@ -12,15 +12,37 @@ from typing import Iterable, Sequence
 
 
 DEFAULT_METRICS = (
+    "rows_per_s",
     "tokens_per_s",
     "e2e_s",
     "request_e2e_s_p50",
     "request_e2e_s_p95",
     "request_e2e_s_p99",
-    "batch_service_s_p99",
+    "request_slo_violation_ratio",
+    "request_slo_goodput_per_s",
+    "model_service_s",
+    "model_request_wall_s",
+    "operator_wall_s",
+    "submit_s",
+    "bounded_wait_s",
+    "fanin_s",
+    "object_count",
     "operator_invocations",
+    "packing_batch_count",
+    "batch_service_s_p50",
+    "batch_service_s_p95",
+    "batch_service_s_p99",
+    "batch_rows_min",
+    "batch_rows_max",
+    "batch_rows_mean",
+    "batch_tokens_min",
+    "batch_tokens_max",
+    "batch_tokens_mean",
+    "batch_tokens_p50",
+    "batch_tokens_p95",
     "packing_budget_utilization_mean",
     "packing_budget_utilization_p95",
+    "packing_oversized_rows",
     "batch_estimated_cost_units_p95",
     "gpu_utilization_pct_mean",
     "gpu_utilization_pct_p50",
@@ -35,6 +57,14 @@ DEFAULT_METRICS = (
     "gpu_power_w_max",
     "gpu_energy_j",
     "energy_j_per_1k_observed_tokens",
+    "vllm_prompt_tokens_delta",
+    "vllm_generation_tokens_delta",
+    "vllm_request_success_delta",
+    "vllm_e2e_request_latency_mean_s",
+    "vllm_request_queue_time_mean_s",
+    "vllm_request_inference_time_mean_s",
+    "vllm_request_prefill_time_mean_s",
+    "vllm_request_decode_time_mean_s",
     "vllm_running_mean",
     "vllm_running_p95",
     "vllm_running_max",
@@ -130,7 +160,7 @@ def summarize_rows(
 def _read_runs(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
-        required = {"status", "phase", "scenario_id", *DEFAULT_METRICS}
+        required = {"status", "phase", "scenario_id"}
         missing = required - set(reader.fieldnames or ())
         if missing:
             raise ValueError(

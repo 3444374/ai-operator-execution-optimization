@@ -534,7 +534,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
         self.assertTrue(trace_events)
 
-    def test_replay_flush_epoch_cannot_precede_a_pending_row_arrival(
+    def test_replay_timestamps_clamp_intended_arrival_to_observed_flush(
         self,
     ) -> None:
         args = SimpleNamespace(
@@ -575,8 +575,12 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
 
         self.assertEqual(
+            [item.arrival_epoch_s for item in lifecycle_seeds],
+            [100.0, 100.005],
+        )
+        self.assertEqual(
             [item.flush_epoch_s for item in lifecycle_seeds],
-            [100.01, 100.01],
+            [100.005, 100.005],
         )
 
     def test_token_budget_membership_survives_arrow_assembly(self) -> None:

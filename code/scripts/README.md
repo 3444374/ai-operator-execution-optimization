@@ -259,10 +259,11 @@ After repeated runs, generate plot-ready long-form statistics with:
   --output experiments\results\<experiment>\summary.csv
 ```
 
-The summary includes throughput, E2E/tail latency, packing, GPU/memory,
-vLLM pressure, energy, and MFU metrics. It excludes warm-ups and failed runs
-and reports `n`, mean, sample standard deviation, P50, min, and max per
-scenario.
+The summary includes row/token throughput, E2E/tail/SLO metrics, stage times,
+batch and packing shape, GPU/memory, vLLM pressure/latency, energy, and MFU.
+It excludes warm-ups and failed runs and reports `n`, mean, sample standard
+deviation, P50, min, and max per scenario. Older CSVs remain readable: metrics
+that were not recorded are emitted with `n=0` instead of rejecting the file.
 
 `--request-trace-output` additionally writes one row per complete input prompt
 on typed static/AIMD/EWMA/PID Ray paths. Arrival replay rows use

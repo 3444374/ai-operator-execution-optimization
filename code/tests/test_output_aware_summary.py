@@ -14,6 +14,34 @@ from scripts import summarize_output_aware_bfd as summary  # noqa: E402
 
 
 class OutputAwareSummaryTests(unittest.TestCase):
+    def test_default_metrics_cover_performance_slo_packing_and_resources(
+        self,
+    ) -> None:
+        required = {
+            "rows_per_s",
+            "tokens_per_s",
+            "e2e_s",
+            "request_e2e_s_p95",
+            "request_slo_violation_ratio",
+            "request_slo_goodput_per_s",
+            "operator_invocations",
+            "packing_batch_count",
+            "packing_budget_utilization_mean",
+            "batch_rows_mean",
+            "batch_tokens_p95",
+            "gpu_utilization_pct_mean",
+            "gpu_memory_used_mib_max",
+            "gpu_power_w_mean",
+            "gpu_energy_j",
+            "energy_j_per_1k_observed_tokens",
+            "vllm_running_mean",
+            "vllm_waiting_mean",
+            "vllm_kv_cache_usage_mean",
+            "mfu_estimate",
+        }
+
+        self.assertTrue(required.issubset(summary.DEFAULT_METRICS))
+
     def test_summarize_rows_uses_only_successful_formal_runs(self) -> None:
         rows = [
             {
