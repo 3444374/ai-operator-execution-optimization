@@ -26,6 +26,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.metrics import (
+    PeriodicSampler,
     StageTimer,
     append_metrics,
     batch_result_stats,
@@ -280,6 +281,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Optional arrival replay flush-trace CSV path.",
     )
+    parser.add_argument("--submission-trace-output", default=None)
+    parser.add_argument("--resource-trace-output", default=None)
     parser.add_argument("--strategy", choices=["fine", "coalesced"], default="coalesced")
     parser.add_argument("--organizer", choices=["arrow", "daft"], default="arrow")
     parser.add_argument(
@@ -959,6 +962,82 @@ def _write_flush_trace(
         )
 
 
+def _write_submission_trace(
+    output_path: Path,
+    *,
+    experiment_id: str,
+    phase: str,
+    repeat_index: int,
+    job_id: int,
+    results: list[dict],
+) -> None:
+    for submission_index, result in enumerate(results):
+        append_metrics(
+            output_path,
+            {
+                "schema_version": 1,
+                "experiment_id": experiment_id,
+                "phase": phase,
+                "repeat_index": repeat_index,
+                "job_id": job_id,
+                "submission_index": submission_index,
+                "doc_ids": ";".join(str(item) for item in result.get("doc_id", [])),
+                "rows": result.get("rows", 0),
+                "token_count": result.get("token_count", 0),
+                "input_token_count": result.get("input_token_count", 0),
+                "output_token_count": result.get("output_token_count", 0),
+                "service_s": result.get("service_s", 0.0),
+                "service_start_epoch_s": result.get("service_start_epoch_s", 0.0),
+                "service_end_epoch_s": result.get("service_end_epoch_s", 0.0),
+            },
+        )
+
+
+def _write_resource_trace(
+    output_path: Path,
+    *,
+    experiment_id: str,
+    phase: str,
+    repeat_index: int,
+    job_id: int,
+    samples: list[dict],
+) -> None:
+    for sample in samples:
+        append_metrics(
+            output_path,
+            {
+                "schema_version": 1,
+                "experiment_id": experiment_id,
+                "phase": phase,
+                "repeat_index": repeat_index,
+                "job_id": job_id,
+                **sample,
+            },
+        )
+
+
+def _resource_snapshot(metrics_url: str | None) -> dict[str, object]:
+    gpu = gpu_metadata()
+    metrics = (
+        scrape_prometheus_metrics(metrics_url, timeout_s=0.5)
+        if metrics_url
+        else {}
+    )
+    return {
+        **gpu,
+        "vllm_metrics_status": "ok" if metrics else "unavailable",
+        "vllm_num_requests_running": int(
+            metrics.get("vllm:num_requests_running", 0.0)
+        ),
+        "vllm_num_requests_waiting": int(
+            metrics.get("vllm:num_requests_waiting", 0.0)
+        ),
+        "vllm_kv_cache_usage_perc": metrics.get(
+            "vllm:kv_cache_usage_perc", 0.0
+        ),
+    }
+
+
 def _run_static_scheduler(
     ray_module,
     envelopes: Iterable[PayloadEnvelope],
@@ -1635,6 +1714,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 else ""
             ),
             "flush_trace_events": 0,
+            "submission_trace_path": args.submission_trace_output or "",
+            "submission_trace_events": 0,
+            "resource_trace_path": args.resource_trace_output or "",
+            "resource_trace_events": 0,
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
         }
@@ -1646,6 +1729,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         )
     if args.operator == "ai_complete" and args.writeback_mode == "pgvector":
         raise SystemExit("AI_COMPLETE does not support --writeback-mode pgvector.")
+    resource_sampler = None
     conn = connect(args.database_url)
     try:
         gpu_snapshot = gpu_metadata()
@@ -1736,6 +1820,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
 
         operator_wall_s = 0.0
         vllm_metrics_before = scrape_prometheus_metrics(args.model_metrics_url) if args.model_metrics_url else {}
+        if args.resource_trace_output:
+            resource_sampler = PeriodicSampler(
+                lambda: _resource_snapshot(args.model_metrics_url),
+                interval_s=0.25,
+            )
         if args.data_source == "daft_postgres" or args.organizer == "daft":
             configure_daft_runner(args.daft_runner)
         source = make_source(args.data_source)
@@ -1972,6 +2061,32 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 else:
                     submit_metrics[key] += metrics[key]
 
+        resource_samples = []
+        if resource_sampler is not None:
+            resource_sampler.close()
+            resource_samples = list(resource_sampler.samples)
+
+        submission_trace_path = args.submission_trace_output or ""
+        if submission_trace_path:
+            _write_submission_trace(
+                Path(submission_trace_path),
+                experiment_id=args.experiment_id,
+                phase=phase,
+                repeat_index=repeat_index,
+                job_id=job_id,
+                results=operator_results,
+            )
+        resource_trace_path = args.resource_trace_output or ""
+        if resource_trace_path:
+            _write_resource_trace(
+                Path(resource_trace_path),
+                experiment_id=args.experiment_id,
+                phase=phase,
+                repeat_index=repeat_index,
+                job_id=job_id,
+                samples=resource_samples,
+            )
+
         flush_trace_path = ""
         if args.arrival_replay:
             flush_trace_path = args.flush_trace_output
@@ -2123,6 +2238,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "flush_trace_output": args.flush_trace_output or "",
             "flush_trace_path": flush_trace_path,
             "flush_trace_events": len(flush_trace_events),
+            "submission_trace_path": submission_trace_path,
+            "submission_trace_events": len(operator_results),
+            "resource_trace_path": resource_trace_path,
+            "resource_trace_events": len(resource_samples),
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
             "object_count": object_count,
@@ -2176,6 +2295,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "rows_per_s": round(processed_rows / e2e_s, 3) if e2e_s else 0.0,
         }
     finally:
+        if resource_sampler is not None and resource_sampler.is_running:
+            resource_sampler.close()
         conn.close()
 
 

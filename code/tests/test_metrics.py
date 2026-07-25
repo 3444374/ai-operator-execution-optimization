@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import threading
 import unittest
 from pathlib import Path
 
@@ -8,10 +9,34 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.metrics import batch_result_stats, parse_prometheus_metrics, vllm_metric_delta_stats  # noqa: E402
+from src.metrics import (  # noqa: E402
+    PeriodicSampler,
+    batch_result_stats,
+    parse_prometheus_metrics,
+    vllm_metric_delta_stats,
+)
 
 
 class MetricsTests(unittest.TestCase):
+    def test_periodic_sampler_collects_and_stops(self) -> None:
+        sampled_twice = threading.Event()
+        calls = 0
+
+        def sample() -> dict[str, int]:
+            nonlocal calls
+            calls += 1
+            if calls >= 2:
+                sampled_twice.set()
+            return {"value": calls}
+
+        sampler = PeriodicSampler(sample, interval_s=0.01)
+        self.assertTrue(sampled_twice.wait(timeout=1.0))
+        sampler.close()
+        count_after_close = calls
+        self.assertGreaterEqual(len(sampler.samples), 2)
+        self.assertEqual(sampler.samples[0]["sample_index"], 0)
+        self.assertEqual(sampler.samples[-1]["value"], count_after_close)
+        self.assertFalse(sampler.is_running)
     def test_batch_result_stats_summarizes_latency_and_tokens(self) -> None:
         stats = batch_result_stats(
             [

@@ -114,6 +114,8 @@ result.
 - `--flush-timeout-ms`
 - `--flush-max-wait-ms`
 - `--flush-trace-output`
+- `--submission-trace-output`
+- `--resource-trace-output`
 - `--batching-policy fixed_rows|token_budget|length_align_fixed_rows|length_align_token_budget|prefix_aware_fixed_rows|prefix_aware_token_budget`
 - `--token-budget`
 - `--scheduling-policy static|queue_adaptive|aimd|ewma_aimd|pid`
@@ -176,6 +178,12 @@ If `--flush-trace-output` is omitted, replay writes
 `<output-stem>_flush_trace.csv` beside the main CSV. Queue-adaptive replay reads
 vLLM metrics through a background sampler so metric I/O cannot block the hard
 maximum wait.
+
+Formal runs should also set `--submission-trace-output` and
+`--resource-trace-output`. The first records one row per closed batch with
+document identity, token counts, and service timestamps. The second samples
+GPU utilization/memory and vLLM running/waiting/KV signals every 250 ms without
+blocking the submission loop.
 
 Single-GPU smoke configuration:
 

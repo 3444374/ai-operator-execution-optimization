@@ -815,6 +815,61 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         finally:
             output.unlink(missing_ok=True)
 
+    def test_submission_and_resource_trace_writers_preserve_run_identity(self) -> None:
+        test_tmp_root = CODE_ROOT.parent / "tmp"
+        test_tmp_root.mkdir(exist_ok=True)
+        submission_output = test_tmp_root / "submission_trace_test.csv"
+        resource_output = test_tmp_root / "resource_trace_test.csv"
+        submission_output.unlink(missing_ok=True)
+        resource_output.unlink(missing_ok=True)
+        try:
+            profile._write_submission_trace(
+                submission_output,
+                experiment_id="experiment",
+                phase="formal",
+                repeat_index=2,
+                job_id=9,
+                results=[
+                    {
+                        "doc_id": [11, 12],
+                        "rows": 2,
+                        "token_count": 30,
+                        "input_token_count": 20,
+                        "output_token_count": 10,
+                        "service_s": 0.2,
+                        "service_start_epoch_s": 100.0,
+                        "service_end_epoch_s": 100.2,
+                    }
+                ],
+            )
+            profile._write_resource_trace(
+                resource_output,
+                experiment_id="experiment",
+                phase="formal",
+                repeat_index=2,
+                job_id=9,
+                samples=[
+                    {
+                        "sample_index": 0,
+                        "sample_epoch_s": 100.1,
+                        "gpu_utilization_pct": "50",
+                        "vllm_num_requests_running": 2,
+                    }
+                ],
+            )
+            with submission_output.open(newline="", encoding="utf-8") as handle:
+                submission = list(csv.DictReader(handle))
+            with resource_output.open(newline="", encoding="utf-8") as handle:
+                resource = list(csv.DictReader(handle))
+
+            self.assertEqual(submission[0]["doc_ids"], "11;12")
+            self.assertEqual(submission[0]["job_id"], "9")
+            self.assertEqual(resource[0]["gpu_utilization_pct"], "50")
+            self.assertEqual(resource[0]["repeat_index"], "2")
+        finally:
+            submission_output.unlink(missing_ok=True)
+            resource_output.unlink(missing_ok=True)
+
 
 class _DeterministicReplayClock:
     def __init__(self, now_s: float = 100.0) -> None:
