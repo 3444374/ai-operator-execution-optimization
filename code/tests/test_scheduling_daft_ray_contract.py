@@ -126,8 +126,15 @@ class DaftRayContractTests(unittest.TestCase):
 
         @ray.remote
         class ExecuteActor:
+            def __init__(self, label):
+                self.label = label
+
             def execute_batch(self, payload):
-                return {"rows": payload.num_rows, "executor": "actor"}
+                return {
+                    "rows": payload.num_rows,
+                    "executor": "actor",
+                    "pool": self.label,
+                }
 
         ray.init(ignore_reinit_error=True, num_cpus=1)
         try:
@@ -147,10 +154,21 @@ class DaftRayContractTests(unittest.TestCase):
             )
             actor_results, actor_metrics = profile.submit_with_backpressure(
                 ray_module=ray,
-                actors=[ExecuteActor.remote()],
+                actors=[
+                    ExecuteActor.remote("short"),
+                    ExecuteActor.remote("long"),
+                ],
                 batches=batches,
                 max_inflight=2,
                 method_name="execute_batch",
+                routing_config=profile._build_routing_config(
+                    endpoint_count=2,
+                    endpoint_routing="least_queued",
+                    pool_routing="request_cost",
+                    pool_ids_text="short,long",
+                    gpu_ids_text="0,0",
+                    long_request_tokens=50,
+                ),
             )
         finally:
             ray.shutdown()
@@ -165,8 +183,8 @@ class DaftRayContractTests(unittest.TestCase):
         self.assertEqual(
             actor_results,
             [
-                {"rows": 2, "executor": "actor"},
-                {"rows": 2, "executor": "actor"},
+                {"rows": 2, "executor": "actor", "pool": "short"},
+                {"rows": 2, "executor": "actor", "pool": "long"},
             ],
         )
         self.assertEqual(task_metrics["operator_invocations"], 2)

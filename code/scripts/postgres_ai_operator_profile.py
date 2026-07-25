@@ -66,7 +66,12 @@ from src.scheduling.observations import (
     ServiceMetricsSnapshot,
 )
 from src.scheduling.pid_admission import PidAdmissionController, PidConfig
-from src.scheduling.routing import RoundRobinEndpointRouter
+from src.scheduling.routing import (
+    LeastQueuedEndpointRouter,
+    PrefixAffinityEndpointRouter,
+    RequestPoolRouter,
+    RoundRobinEndpointRouter,
+)
 from src.scheduling.scheduler import SchedulerResult, SynchronousScheduler
 from src.sinks import write_completions, write_embeddings
 from src.sources import SourceConfig, make_source
@@ -191,6 +196,32 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-metrics-url", default=os.environ.get("MODEL_METRICS_URL"))
     parser.add_argument("--model-workers", type=int, default=2)
     parser.add_argument("--max-inflight", type=int, default=8)
+    parser.add_argument(
+        "--endpoint-routing",
+        choices=["round_robin", "least_queued", "prefix_affinity"],
+        default="round_robin",
+    )
+    parser.add_argument(
+        "--pool-routing",
+        choices=["none", "request_cost"],
+        default="none",
+    )
+    parser.add_argument(
+        "--endpoint-pool-ids",
+        default=None,
+        help="Comma-separated pool ID per Ray actor or task endpoint.",
+    )
+    parser.add_argument(
+        "--endpoint-gpu-ids",
+        default=None,
+        help="Comma-separated GPU ID per Ray actor or task endpoint.",
+    )
+    parser.add_argument(
+        "--long-request-token-threshold",
+        type=int,
+        default=0,
+        help="Resolved tuning-workload P75 token cost; required by request_cost pool routing.",
+    )
     parser.add_argument(
         "--scheduling-policy",
         choices=["static", "queue_adaptive", "aimd", "ewma_aimd", "pid"],
@@ -445,23 +476,37 @@ def _batch_envelopes(
 def _endpoint_topology(
     endpoint_ids: list[str],
     endpoint_urls: list[str],
+    *,
+    pool_ids: list[str] | None = None,
+    gpu_ids: list[str] | None = None,
 ) -> TopologySnapshot:
     if len(endpoint_ids) != len(endpoint_urls):
         raise ValueError("endpoint_ids and endpoint_urls must have the same length")
+    resolved_pool_ids = pool_ids or ["default"] * len(endpoint_ids)
+    resolved_gpu_ids = gpu_ids or ["0"] * len(endpoint_ids)
+    if len(resolved_pool_ids) != len(endpoint_ids):
+        raise ValueError("pool_ids and endpoint_ids must have the same length")
+    if len(resolved_gpu_ids) != len(endpoint_ids):
+        raise ValueError("gpu_ids and endpoint_ids must have the same length")
     observed_at_s = time.monotonic()
     endpoints = tuple(
         EndpointSnapshot(
             endpoint_id=endpoint_id,
             url=endpoint_url,
-            pool_id="default",
-            gpu_id="0",
+            pool_id=pool_id,
+            gpu_id=gpu_id,
             healthy=True,
             running=0,
             waiting=0,
             kv_usage=None,
             observed_at_s=observed_at_s,
         )
-        for endpoint_id, endpoint_url in zip(endpoint_ids, endpoint_urls)
+        for endpoint_id, endpoint_url, pool_id, gpu_id in zip(
+            endpoint_ids,
+            endpoint_urls,
+            resolved_pool_ids,
+            resolved_gpu_ids,
+        )
     )
     return TopologySnapshot(endpoints=endpoints, observed_at_s=observed_at_s)
 
@@ -554,6 +599,64 @@ def _build_adaptive_config(
     }
 
 
+def _build_routing_config(
+    *,
+    endpoint_count: int,
+    endpoint_routing: str,
+    pool_routing: str,
+    pool_ids_text: str | None,
+    gpu_ids_text: str | None,
+    long_request_tokens: int,
+) -> dict:
+    if endpoint_count <= 0:
+        raise ValueError("endpoint_count must be positive")
+
+    def assignments(
+        text: str | None,
+        default: str,
+        label: str,
+    ) -> list[str]:
+        values = (
+            [value.strip() for value in text.split(",") if value.strip()]
+            if text
+            else [default] * endpoint_count
+        )
+        if len(values) != endpoint_count:
+            raise ValueError(
+                f"{label} count must equal endpoint/actor count {endpoint_count}"
+            )
+        return values
+
+    endpoint_routers = {
+        "round_robin": RoundRobinEndpointRouter,
+        "least_queued": LeastQueuedEndpointRouter,
+        "prefix_affinity": PrefixAffinityEndpointRouter,
+    }
+    if endpoint_routing not in endpoint_routers:
+        raise ValueError(f"unsupported endpoint routing: {endpoint_routing}")
+    pool_ids = assignments(pool_ids_text, "default", "pool IDs")
+    gpu_ids = assignments(gpu_ids_text, "0", "GPU IDs")
+    if pool_routing == "none":
+        if any(pool_id != "default" for pool_id in pool_ids):
+            raise ValueError(
+                "non-default pool IDs require request_cost pool routing"
+            )
+        pool_router = None
+    elif pool_routing == "request_cost":
+        pool_router = RequestPoolRouter(long_request_tokens)
+    else:
+        raise ValueError(f"unsupported pool routing: {pool_routing}")
+    return {
+        "endpoint_router": endpoint_routers[endpoint_routing](),
+        "pool_router": pool_router,
+        "pool_ids": pool_ids,
+        "gpu_ids": gpu_ids,
+        "endpoint_routing": endpoint_routing,
+        "pool_routing": pool_routing,
+        "long_request_tokens": long_request_tokens,
+    }
+
+
 def _write_control_trace(
     output_path: Path,
     *,
@@ -598,6 +701,7 @@ def _run_static_scheduler(
     topology: TopologySnapshot,
     submitters: dict,
     max_inflight: int,
+    routing_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
     return _run_scheduler(
         ray_module,
@@ -605,6 +709,7 @@ def _run_static_scheduler(
         topology,
         submitters,
         StaticAdmissionController(max_inflight),
+        routing_config,
     )
 
 
@@ -614,12 +719,15 @@ def _run_scheduler(
     topology: TopologySnapshot,
     submitters: dict,
     admission,
+    routing_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
+    routing_config = routing_config or {}
     scheduler = SynchronousScheduler(
         admission=admission,
-        router=RoundRobinEndpointRouter(),
+        router=routing_config.get("endpoint_router", RoundRobinEndpointRouter()),
         adapter=RaySubmissionAdapter(ray_module, submitters),
         pool_id="default",
+        pool_router=routing_config.get("pool_router"),
     )
     result = scheduler.run(envelopes, topology)
     return [completion.result for completion in result.completions], _scheduler_metrics(result)
@@ -631,6 +739,7 @@ def _run_dynamic_scheduler(
     topology: TopologySnapshot,
     submitters: dict,
     adaptive_config: dict,
+    routing_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
     trace_events = adaptive_config["trace_events"]
     trace_start = len(trace_events)
@@ -640,6 +749,7 @@ def _run_dynamic_scheduler(
         topology,
         submitters,
         adaptive_config["admission_gate"],
+        routing_config,
     )
     new_events = trace_events[trace_start:]
     metrics["adaptive_downshifts"] = sum(
@@ -663,6 +773,7 @@ def submit_with_backpressure(
     max_inflight: int,
     method_name: str,
     adaptive_config: dict | None = None,
+    routing_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
@@ -690,6 +801,12 @@ def submit_with_backpressure(
     topology = _endpoint_topology(
         endpoint_ids,
         [f"ray://actor/{index}" for index in range(len(actors))],
+        pool_ids=(
+            routing_config.get("pool_ids") if routing_config is not None else None
+        ),
+        gpu_ids=(
+            routing_config.get("gpu_ids") if routing_config is not None else None
+        ),
     )
     submitters = {
         endpoint_id: (
@@ -706,9 +823,15 @@ def submit_with_backpressure(
             topology,
             submitters,
             adaptive_config,
+            routing_config,
         )
     return _run_static_scheduler(
-        ray_module, envelopes, topology, submitters, max_inflight
+        ray_module,
+        envelopes,
+        topology,
+        submitters,
+        max_inflight,
+        routing_config,
     )
 
 
@@ -791,6 +914,7 @@ def submit_ray_tasks(
     timeout_s: float,
     completion_max_tokens: int,
     adaptive_config: dict | None = None,
+    routing_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
@@ -853,7 +977,16 @@ def submit_ray_tasks(
                         completion_max_tokens,
                     )
                 )
-    topology = _endpoint_topology(endpoint_ids, endpoint_urls_for_topology)
+    topology = _endpoint_topology(
+        endpoint_ids,
+        endpoint_urls_for_topology,
+        pool_ids=(
+            routing_config.get("pool_ids") if routing_config is not None else None
+        ),
+        gpu_ids=(
+            routing_config.get("gpu_ids") if routing_config is not None else None
+        ),
+    )
     if typed_adaptive:
         return _run_dynamic_scheduler(
             ray_module,
@@ -861,9 +994,15 @@ def submit_ray_tasks(
             topology,
             submitters,
             adaptive_config,
+            routing_config,
         )
     return _run_static_scheduler(
-        ray_module, envelopes, topology, submitters, max_inflight
+        ray_module,
+        envelopes,
+        topology,
+        submitters,
+        max_inflight,
+        routing_config,
     )
 
 
@@ -1078,6 +1217,31 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             raise SystemExit("typed adaptive scheduling requires a Ray executor")
         if not args.model_metrics_url:
             raise SystemExit("typed adaptive scheduling requires --model-metrics-url")
+    if args.executor == "python" and (
+        args.endpoint_routing != "round_robin"
+        or args.pool_routing != "none"
+        or args.endpoint_pool_ids
+        or args.endpoint_gpu_ids
+    ):
+        raise SystemExit("endpoint and pool routing require a Ray executor")
+    routing_endpoint_count = (
+        args.model_workers
+        if args.executor == "ray_actor"
+        else (1 if model_backend == "fake" else max(1, len(endpoint_urls)))
+    )
+    routing_config = None
+    if args.executor in {"ray_actor", "ray_task"}:
+        try:
+            routing_config = _build_routing_config(
+                endpoint_count=routing_endpoint_count,
+                endpoint_routing=args.endpoint_routing,
+                pool_routing=args.pool_routing,
+                pool_ids_text=args.endpoint_pool_ids,
+                gpu_ids_text=args.endpoint_gpu_ids,
+                long_request_tokens=args.long_request_token_threshold,
+            )
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
     if args.dry_run:
         return {
             "status": "dry_run",
@@ -1108,6 +1272,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
             "model_workers": args.model_workers,
             "max_inflight_limit": args.max_inflight,
+            "endpoint_routing": args.endpoint_routing,
+            "pool_routing": args.pool_routing,
+            "endpoint_pool_ids": args.endpoint_pool_ids or "",
+            "endpoint_gpu_ids": args.endpoint_gpu_ids or "",
+            "long_request_token_threshold": args.long_request_token_threshold,
             "scheduling_policy": args.scheduling_policy,
             "adaptive_min_inflight": args.adaptive_min_inflight,
             "adaptive_max_inflight": args.adaptive_max_inflight,
@@ -1336,7 +1505,13 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             if args.executor == "ray_actor":
                 method_name = "complete" if args.operator == "ai_complete" else "embed"
                 results, metrics = submit_with_backpressure(
-                    ray_module, actors, ray_batches, args.max_inflight, method_name, adaptive_config
+                    ray_module,
+                    actors,
+                    ray_batches,
+                    args.max_inflight,
+                    method_name,
+                    adaptive_config,
+                    routing_config,
                 )
             elif args.executor == "ray_task":
                 results, metrics = submit_ray_tasks(
@@ -1353,6 +1528,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     request_timeout_s,
                     args.completion_max_tokens,
                     adaptive_config,
+                    routing_config,
                 )
             else:
                 if model_backend == "fake":
@@ -1473,6 +1649,15 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
             "model_workers": args.model_workers,
             "max_inflight_limit": args.max_inflight,
+            "endpoint_routing": args.endpoint_routing,
+            "pool_routing": args.pool_routing,
+            "endpoint_pool_ids": ";".join(routing_config["pool_ids"])
+            if routing_config
+            else "",
+            "endpoint_gpu_ids": ";".join(routing_config["gpu_ids"])
+            if routing_config
+            else "",
+            "long_request_token_threshold": args.long_request_token_threshold,
             "scheduling_policy": args.scheduling_policy,
             "adaptive_min_inflight": args.adaptive_min_inflight if args.scheduling_policy == "queue_adaptive" else 0,
             "adaptive_max_inflight": args.adaptive_max_inflight if args.scheduling_policy == "queue_adaptive" else 0,

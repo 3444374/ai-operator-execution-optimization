@@ -20,6 +20,10 @@ from src.scheduling.observations import (  # noqa: E402
     CachedMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
+from src.scheduling.routing import (  # noqa: E402
+    LeastQueuedEndpointRouter,
+    RequestPoolRouter,
+)
 from src.scheduling.scheduler import SchedulerResult  # noqa: E402
 
 
@@ -70,6 +74,19 @@ class SchedulingProfileHelperTests(unittest.TestCase):
     def test_endpoint_topology_rejects_mismatched_inputs(self) -> None:
         with self.assertRaisesRegex(ValueError, "same length"):
             profile._endpoint_topology(["endpoint-0"], [])
+
+    def test_endpoint_topology_preserves_pool_and_gpu_assignments(self) -> None:
+        topology = profile._endpoint_topology(
+            ["endpoint-0", "endpoint-1"],
+            ["http://one", "http://two"],
+            pool_ids=["short", "long"],
+            gpu_ids=["0", "1"],
+        )
+
+        self.assertEqual(
+            [(item.pool_id, item.gpu_id) for item in topology.endpoints],
+            [("short", "0"), ("long", "1")],
+        )
 
     def test_scheduler_metrics_preserve_existing_profiler_schema(self) -> None:
         result = SchedulerResult(
@@ -217,6 +234,34 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(rows[1]["k_max"], 4)
         self.assertEqual(rows[1]["controller_action"], "decrease")
 
+    def test_build_routing_config_resolves_endpoint_assignments(self) -> None:
+        config = profile._build_routing_config(
+            endpoint_count=3,
+            endpoint_routing="least_queued",
+            pool_routing="request_cost",
+            pool_ids_text="short,long,prefix",
+            gpu_ids_text="0,0,1",
+            long_request_tokens=1024,
+        )
+
+        self.assertIsInstance(
+            config["endpoint_router"], LeastQueuedEndpointRouter
+        )
+        self.assertIsInstance(config["pool_router"], RequestPoolRouter)
+        self.assertEqual(config["pool_ids"], ["short", "long", "prefix"])
+        self.assertEqual(config["gpu_ids"], ["0", "0", "1"])
+
+    def test_build_routing_config_rejects_assignment_count_mismatch(self) -> None:
+        with self.assertRaisesRegex(ValueError, "pool IDs"):
+            profile._build_routing_config(
+                endpoint_count=2,
+                endpoint_routing="round_robin",
+                pool_routing="none",
+                pool_ids_text="short",
+                gpu_ids_text=None,
+                long_request_tokens=1024,
+            )
+
 
 class _ImmediateRef:
     def __init__(self, result: object):
@@ -357,7 +402,7 @@ class StaticActorSchedulingTests(unittest.TestCase):
             pa.table({"doc_id": [3], "prompt_tokens": [30]}),
         ]
 
-    def _submit(self, actors, adaptive_config=None):
+    def _submit(self, actors, adaptive_config=None, routing_config=None):
         return profile.submit_with_backpressure(
             ray_module=_ImmediateRay,
             actors=actors,
@@ -365,6 +410,7 @@ class StaticActorSchedulingTests(unittest.TestCase):
             max_inflight=2,
             method_name="execute_batch",
             adaptive_config=adaptive_config,
+            routing_config=routing_config,
         )
 
     def test_static_actor_path_delegates_to_shared_scheduler(self) -> None:
@@ -429,6 +475,28 @@ class StaticActorSchedulingTests(unittest.TestCase):
         self.assertEqual(len(results), 3)
         self.assertGreater(metrics["adaptive_downshifts"], 0)
         self.assertGreaterEqual(len(traces), 3)
+
+    def test_actor_pool_routes_short_and_long_requests_to_partitioned_actors(self) -> None:
+        actors = [_RecordingActor(), _RecordingActor()]
+
+        self._submit(
+            actors,
+            routing_config={
+                "pool_ids": ["short", "long"],
+                "gpu_ids": ["0", "0"],
+                "endpoint_router": LeastQueuedEndpointRouter(),
+                "pool_router": RequestPoolRouter(long_request_tokens=25),
+            },
+        )
+
+        self.assertEqual(
+            [call[0] for call in actors[0].execute_batch.calls],
+            [self.batches[0], self.batches[1]],
+        )
+        self.assertEqual(
+            [call[0] for call in actors[1].execute_batch.calls],
+            [self.batches[2]],
+        )
 
 
 if __name__ == "__main__":
