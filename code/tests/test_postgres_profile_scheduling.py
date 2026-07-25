@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import csv
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pyarrow as pa
@@ -19,6 +21,10 @@ from src.scheduling.observations import (  # noqa: E402
     AdmissionTraceEvent,
     CachedMetricsObservationProvider,
     ServiceMetricsSnapshot,
+)
+from src.scheduling.batching import (  # noqa: E402
+    FlushTraceEvent,
+    ReplayServiceObservation,
 )
 from src.scheduling.routing import (  # noqa: E402
     LeastQueuedEndpointRouter,
@@ -262,6 +268,471 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 long_request_tokens=1024,
             )
 
+    def test_row_arrivals_preserve_complete_arrow_rows_and_metadata(self) -> None:
+        table = pa.table(
+            {
+                "doc_id": pa.array([11, 12], type=pa.int64()),
+                "tenant_id": pa.array([3, 4], type=pa.int32()),
+                "text": ["alpha", "beta"],
+                "prompt_tokens": pa.array([7, 9], type=pa.int32()),
+                "prefix_key": ["shared", "other"],
+                "arrival_time_s": pa.array([2.5, 2.75], type=pa.float64()),
+            }
+        )
+
+        arrivals = profile._row_arrivals(table, completion_max_tokens=5)
+
+        self.assertEqual(
+            [
+                (
+                    item.row_id,
+                    item.arrival_s,
+                    item.prompt_tokens,
+                    item.estimated_output_tokens,
+                    item.prefix_key,
+                )
+                for item in arrivals
+            ],
+            [
+                ("11", 2.5, 7, 5, "shared"),
+                ("12", 2.75, 9, 5, "other"),
+            ],
+        )
+        for index, arrival in enumerate(arrivals):
+            self.assertIsInstance(arrival.payload_ref, pa.Table)
+            self.assertEqual(arrival.payload_ref.schema, table.schema)
+            self.assertEqual(
+                arrival.payload_ref.to_pylist(),
+                table.slice(index, 1).to_pylist(),
+            )
+            self.assertEqual(
+                arrival.payload_ref.column("doc_id").chunk(0).buffers()[1].address,
+                table.column("doc_id").chunk(0).buffers()[1].address,
+            )
+
+    def test_arrow_envelope_reconstructs_schema_order_and_values_exactly_once(
+        self,
+    ) -> None:
+        table = pa.table(
+            {
+                "doc_id": pa.array([11, 12], type=pa.int64()),
+                "text": ["alpha", "beta"],
+                "prompt_tokens": pa.array([7, 9], type=pa.int32()),
+                "prefix_key": ["shared", "shared"],
+                "arrival_time_s": pa.array([2.5, 2.75], type=pa.float64()),
+            }
+        )
+        arrivals = profile._row_arrivals(table, completion_max_tokens=5)
+        builder = profile.PendingBatchBuilder(max_rows=2, token_budget=0)
+        for arrival in arrivals:
+            builder.add(arrival)
+
+        envelope = profile._arrow_envelope(
+            builder.close(),
+            batch_index=4,
+            job_id="job-7",
+            operator="ai_complete",
+        )
+
+        self.assertEqual(envelope.payload.schema, table.schema)
+        self.assertEqual(envelope.payload.column_names, table.column_names)
+        self.assertEqual(envelope.payload.to_pylist(), table.to_pylist())
+        self.assertEqual(envelope.payload.num_rows, table.num_rows)
+        self.assertEqual(envelope.request.request_id, "job-7:batch:4")
+        self.assertEqual(envelope.request.row_count, 2)
+        self.assertEqual(envelope.request.prompt_tokens, 16)
+        self.assertEqual(envelope.request.estimated_output_tokens, 10)
+        self.assertEqual(envelope.request.prefix_key, "shared")
+        self.assertEqual(envelope.request.first_arrival_s, 2.5)
+        self.assertEqual(envelope.request.oldest_arrival_s, 2.5)
+
+    def test_row_arrivals_reject_invalid_and_decreasing_arrival_values(self) -> None:
+        invalid_columns = [
+            pa.array([None], type=pa.float64()),
+            pa.array([-0.1], type=pa.float64()),
+            pa.array([True], type=pa.bool_()),
+            pa.array([float("nan")], type=pa.float64()),
+            pa.array([float("inf")], type=pa.float64()),
+        ]
+        for arrival_column in invalid_columns:
+            with self.subTest(arrival=arrival_column.to_pylist()):
+                table = pa.table(
+                    {
+                        "doc_id": [1],
+                        "prompt_tokens": [1],
+                        "arrival_time_s": arrival_column,
+                    }
+                )
+                with self.assertRaisesRegex(ValueError, "arrival_time_s"):
+                    profile._row_arrivals(table, completion_max_tokens=0)
+
+        decreasing = pa.table(
+            {
+                "doc_id": [1, 2],
+                "prompt_tokens": [1, 1],
+                "arrival_time_s": [2.0, 1.0],
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "non-decreasing"):
+            profile._row_arrivals(decreasing, completion_max_tokens=0)
+
+    def test_multiple_arrow_chunks_share_one_arrival_replay_origin(self) -> None:
+        clock = _DeterministicReplayClock(now_s=100.0)
+        args = SimpleNamespace(
+            ray_batch_rows=8,
+            batching_policy="fixed_rows",
+            token_budget=0,
+            flush_policy="fixed_timeout",
+            flush_timeout_ms=1000.0,
+            flush_max_wait_ms=2000.0,
+            _replay_clock=clock,
+        )
+        tables = [
+            pa.table(
+                {
+                    "doc_id": [1],
+                    "prompt_tokens": [2],
+                    "arrival_time_s": [10.0],
+                }
+            ),
+            pa.table(
+                {
+                    "doc_id": [2],
+                    "prompt_tokens": [3],
+                    "arrival_time_s": [10.25],
+                }
+            ),
+        ]
+        trace_events = []
+
+        envelopes = list(
+            profile._arrival_replay_envelopes(
+                tables,
+                args,
+                job_id="job",
+                operator="ai_embed",
+                service_observation=lambda: ReplayServiceObservation(
+                    fresh=True,
+                    running=0,
+                    waiting=0,
+                    kv_usage=0.0,
+                ),
+                trace_sink=trace_events,
+            )
+        )
+
+        self.assertEqual(clock.waited_until, [100.25])
+        self.assertEqual(len(envelopes), 1)
+        self.assertEqual(
+            envelopes[0].payload.column("doc_id").to_pylist(),
+            [1, 2],
+        )
+        self.assertTrue(trace_events)
+
+    def test_token_budget_membership_survives_arrow_assembly(self) -> None:
+        args = SimpleNamespace(
+            ray_batch_rows=8,
+            batching_policy="token_budget",
+            token_budget=10,
+            flush_policy="fixed_timeout",
+            flush_timeout_ms=1000.0,
+            flush_max_wait_ms=2000.0,
+            _replay_clock=_DeterministicReplayClock(),
+        )
+        table = pa.table(
+            {
+                "doc_id": [1, 2, 3],
+                "text": ["one", "two", "oversized"],
+                "prompt_tokens": [6, 6, 12],
+                "arrival_time_s": [0.0, 0.0, 0.0],
+            }
+        )
+
+        envelopes = list(
+            profile._arrival_replay_envelopes(
+                [table],
+                args,
+                job_id="job",
+                operator="ai_embed",
+                service_observation=lambda: ReplayServiceObservation(
+                    fresh=True,
+                    running=0,
+                    waiting=0,
+                    kv_usage=0.0,
+                ),
+                trace_sink=[],
+            )
+        )
+
+        self.assertEqual(
+            [envelope.payload.column("doc_id").to_pylist() for envelope in envelopes],
+            [[1], [2], [3]],
+        )
+        self.assertEqual(
+            [envelope.request.prompt_tokens for envelope in envelopes],
+            [6, 6, 12],
+        )
+
+    def test_dry_run_records_default_and_explicit_replay_configuration(self) -> None:
+        default_args = profile.parse_args(["--dry-run"])
+        default_row = profile.run_once(default_args, "formal", 1)
+
+        self.assertFalse(default_row["arrival_replay"])
+        self.assertEqual(default_row["flush_policy"], "immediate")
+        self.assertEqual(default_row["flush_timeout_ms"], 25.0)
+        self.assertEqual(default_row["flush_max_wait_ms"], 50.0)
+        self.assertEqual(default_row["flush_trace_output"], "")
+
+        replay_args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_task",
+                "--data-source",
+                "daft_postgres",
+                "--source-order",
+                "arrival_time",
+                "--arrival-replay",
+                "--flush-policy",
+                "fixed_timeout",
+                "--flush-timeout-ms",
+                "12.5",
+                "--flush-max-wait-ms",
+                "30",
+                "--flush-trace-output",
+                "trace.csv",
+            ]
+        )
+        replay_row = profile.run_once(replay_args, "formal", 1)
+
+        self.assertTrue(replay_row["arrival_replay"])
+        self.assertEqual(replay_row["flush_policy"], "fixed_timeout")
+        self.assertEqual(replay_row["flush_timeout_ms"], 12.5)
+        self.assertEqual(replay_row["flush_max_wait_ms"], 30.0)
+        self.assertEqual(replay_row["flush_trace_output"], "trace.csv")
+        self.assertEqual(
+            replay_row["arrival_replay_preload"],
+            "bounded_requested_workload",
+        )
+
+    def test_replay_validation_rejects_invalid_formal_paths(self) -> None:
+        invalid_cases = [
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "doc_id",
+                ],
+                "source-order arrival_time",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "arrow_postgres",
+                    "--source-order",
+                    "arrival_time",
+                ],
+                "data-source daft_postgres",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--executor",
+                    "python",
+                ],
+                "Ray executor",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--flush-timeout-ms",
+                    "-1",
+                ],
+                "flush-timeout-ms",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--flush-max-wait-ms",
+                    "0",
+                ],
+                "flush-max-wait-ms",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--batching-policy",
+                    "length_align_fixed_rows",
+                ],
+                "offline reordering",
+            ),
+        ]
+        for argv, message in invalid_cases:
+            with self.subTest(argv=argv):
+                with self.assertRaisesRegex(SystemExit, message):
+                    profile.run_once(profile.parse_args(argv), "formal", 1)
+
+    def test_replay_disabled_retains_batch_envelope_behavior(self) -> None:
+        args = profile.parse_args(["--dry-run"])
+        batch = pa.table(
+            {
+                "doc_id": [1],
+                "prompt_tokens": [3],
+                "arrival_time_s": [1.0],
+            }
+        )
+
+        envelopes = profile._batch_envelopes(
+            [batch],
+            job_id="job",
+            operator="ai_embed",
+            completion_max_tokens=0,
+        )
+
+        self.assertFalse(args.arrival_replay)
+        self.assertEqual(len(envelopes), 1)
+        self.assertIs(envelopes[0].payload, batch)
+        self.assertEqual(envelopes[0].request.request_id, "job:batch:0")
+
+    def test_run_scheduler_consumes_a_single_pass_lazy_iterable(self) -> None:
+        batch = pa.table({"doc_id": [1], "prompt_tokens": [3]})
+        envelope = profile._batch_envelopes(
+            [batch],
+            job_id="job",
+            operator="ai_embed",
+            completion_max_tokens=0,
+        )[0]
+        consumed = []
+
+        def envelopes():
+            consumed.append("started")
+            yield envelope
+
+        remote = _RecordingRemote()
+        topology = profile._endpoint_topology(
+            ["endpoint-0"],
+            ["ray://task/0"],
+        )
+
+        results, metrics = profile._run_scheduler(
+            _ImmediateRay,
+            envelopes(),
+            topology,
+            {"endpoint-0": lambda payload: remote.remote(payload)},
+            profile.StaticAdmissionController(1),
+        )
+
+        self.assertEqual(consumed, ["started"])
+        self.assertEqual(results, [{"call_index": 0}])
+        self.assertEqual(metrics["operator_invocations"], 1)
+
+    def test_flush_trace_writer_emits_all_fields_and_propagates_errors(self) -> None:
+        events = [
+            FlushTraceEvent(
+                elapsed_s=0.125,
+                pending_rows=2,
+                pending_tokens=17,
+                oldest_age_s=0.025,
+                action="flush",
+                reason="fixed_timeout",
+            )
+        ]
+        test_tmp_root = CODE_ROOT.parent / "tmp"
+        test_tmp_root.mkdir(exist_ok=True)
+        output = test_tmp_root / "task3_flush_trace_test.csv"
+        output.unlink(missing_ok=True)
+        try:
+            profile._write_flush_trace(
+                output,
+                experiment_id="experiment",
+                phase="formal",
+                repeat_index=2,
+                job_id=9,
+                flush_policy="fixed_timeout",
+                flush_timeout_ms=25.0,
+                flush_max_wait_ms=50.0,
+                trace_events=events,
+            )
+            with output.open(newline="", encoding="utf-8") as handle:
+                rows = list(csv.DictReader(handle))
+
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(
+                set(rows[0]),
+                {
+                    "schema_version",
+                    "experiment_id",
+                    "phase",
+                    "repeat_index",
+                    "job_id",
+                    "flush_policy",
+                    "flush_timeout_ms",
+                    "flush_max_wait_ms",
+                    "trace_index",
+                    "elapsed_s",
+                    "pending_rows",
+                    "pending_tokens",
+                    "oldest_age_s",
+                    "action",
+                    "reason",
+                },
+            )
+            self.assertEqual(rows[0]["pending_rows"], "2")
+            self.assertEqual(rows[0]["reason"], "fixed_timeout")
+
+            with self.assertRaises(OSError):
+                profile._write_flush_trace(
+                    test_tmp_root,
+                    experiment_id="experiment",
+                    phase="formal",
+                    repeat_index=2,
+                    job_id=9,
+                    flush_policy="fixed_timeout",
+                    flush_timeout_ms=25.0,
+                    flush_max_wait_ms=50.0,
+                    trace_events=events,
+                )
+        finally:
+            output.unlink(missing_ok=True)
+
+
+class _DeterministicReplayClock:
+    def __init__(self, now_s: float = 100.0) -> None:
+        self.current_s = now_s
+        self.waited_until = []
+
+    def now(self) -> float:
+        return self.current_s
+
+    def wait_until(self, deadline_s: float) -> None:
+        self.waited_until.append(deadline_s)
+        self.current_s = deadline_s
+
 
 class _ImmediateRef:
     def __init__(self, result: object):
@@ -387,6 +858,41 @@ class StaticTaskSchedulingTests(unittest.TestCase):
         self.assertGreater(metrics["adaptive_upshifts"], 0)
         self.assertEqual(metrics["adaptive_downshifts"], 0)
         self.assertGreaterEqual(metrics["adaptive_limit_mean"], 4)
+
+    def test_prebuilt_replay_envelopes_feed_existing_scheduler_lazily(self) -> None:
+        remote = _RecordingRemote()
+        consumed = []
+        envelope = profile._batch_envelopes(
+            [self.batches[0]],
+            job_id="replay",
+            operator="ai_embed",
+            completion_max_tokens=0,
+        )[0]
+
+        def replay_envelopes():
+            consumed.append("started")
+            yield envelope
+
+        results, metrics = profile.submit_ray_tasks(
+            ray_module=_ImmediateRay,
+            remote_embed=remote,
+            batches=[],
+            max_inflight=2,
+            operator="ai_embed",
+            embedding_dim=16,
+            model_backend="fake",
+            endpoint_urls=[],
+            model_name="model",
+            api_key=None,
+            timeout_s=5.0,
+            completion_max_tokens=8,
+            replay_envelopes=replay_envelopes(),
+        )
+
+        self.assertEqual(consumed, ["started"])
+        self.assertEqual(results, [{"call_index": 0}])
+        self.assertEqual(metrics["operator_invocations"], 1)
+        self.assertIs(remote.calls[0][0], envelope.payload)
 
 
 class _RecordingActor:

@@ -1,6 +1,15 @@
 """Composable scheduling policies for database AI operator execution."""
 
-from .batching import PendingBatch, PendingBatchBuilder, RowArrival
+from .batching import (
+    ArrivalReplayBatcher,
+    FlushTraceEvent,
+    PendingBatch,
+    PendingBatchBuilder,
+    ReplayClock,
+    ReplayServiceObservation,
+    RowArrival,
+    SystemReplayClock,
+)
 from .adaptive_admission import (
     AimdAdmissionController,
     AimdConfig,
@@ -62,6 +71,7 @@ __all__ = [
     "AdmissionObservation",
     "AdmissionPolicy",
     "AdmissionTraceEvent",
+    "ArrivalReplayBatcher",
     "AimdAdmissionController",
     "AimdConfig",
     "BatchRequest",
@@ -75,6 +85,7 @@ __all__ = [
     "FixedTimeoutFlush",
     "FlushDecision",
     "FlushObservation",
+    "FlushTraceEvent",
     "ImmediateFlush",
     "PayloadEnvelope",
     "PoolRouter",
@@ -87,6 +98,8 @@ __all__ = [
     "LeastQueuedEndpointRouter",
     "PrefixAffinityEndpointRouter",
     "RequestPoolRouter",
+    "ReplayClock",
+    "ReplayServiceObservation",
     "QueueAdaptiveFlush",
     "RoutingDecision",
     "RoundRobinEndpointRouter",
@@ -98,6 +111,7 @@ __all__ = [
     "SubmissionAdapter",
     "SubmissionCompletion",
     "SynchronousScheduler",
+    "SystemReplayClock",
     "TopologySnapshot",
     "UcbAdmissionController",
     "UcbConfig",

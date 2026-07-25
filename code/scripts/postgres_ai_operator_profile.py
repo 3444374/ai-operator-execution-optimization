@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import statistics
 import sys
@@ -54,6 +55,15 @@ from src.scheduling.adaptive_admission import (
     EwmaAimdAdmissionController,
 )
 from src.scheduling.admission import DynamicAdmissionGate, StaticAdmissionController
+from src.scheduling.batching import (
+    ArrivalReplayBatcher,
+    PendingBatch,
+    PendingBatchBuilder,
+    ReplayServiceObservation,
+    RowArrival,
+    SystemReplayClock,
+)
+from src.scheduling.flush import FixedTimeoutFlush, ImmediateFlush, QueueAdaptiveFlush
 from src.scheduling.models import (
     BatchRequest,
     EndpointSnapshot,
@@ -125,7 +135,7 @@ CREATE TABLE IF NOT EXISTS document_completions (
 """
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Profile PostgreSQL-triggered AI_EMBED external execution with Ray and Arrow."
     )
@@ -246,6 +256,23 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional typed adaptive control-trace CSV path.",
     )
+    parser.add_argument(
+        "--arrival-replay",
+        action="store_true",
+        help="Replay source arrival_time_s values before Ray submission.",
+    )
+    parser.add_argument(
+        "--flush-policy",
+        choices=["immediate", "fixed_timeout", "queue_adaptive"],
+        default="immediate",
+    )
+    parser.add_argument("--flush-timeout-ms", type=float, default=25.0)
+    parser.add_argument("--flush-max-wait-ms", type=float, default=50.0)
+    parser.add_argument(
+        "--flush-trace-output",
+        default=None,
+        help="Optional arrival replay flush-trace CSV path.",
+    )
     parser.add_argument("--strategy", choices=["fine", "coalesced"], default="coalesced")
     parser.add_argument("--organizer", choices=["arrow", "daft"], default="arrow")
     parser.add_argument(
@@ -263,7 +290,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--experiment-id", default="manual")
     parser.add_argument("--output", default="feasibility/results/postgres_ai_operator_profile.csv")
     parser.add_argument("--dry-run", action="store_true", help="Validate configuration without connecting to DB.")
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def embedding_endpoint_urls(args: argparse.Namespace) -> list[str]:
@@ -471,6 +498,184 @@ def _batch_envelopes(
         )
         envelopes.append(PayloadEnvelope(request=request, payload=batch))
     return envelopes
+
+
+def _row_arrivals(
+    table: pa.Table,
+    completion_max_tokens: int,
+) -> list[RowArrival]:
+    if "arrival_time_s" not in table.column_names:
+        raise ValueError("arrival_time_s column is required for arrival replay")
+    previous_arrival_s: float | None = None
+    arrivals = []
+    for index in range(table.num_rows):
+        arrival_value = table.column("arrival_time_s")[index].as_py()
+        if (
+            not isinstance(arrival_value, (int, float))
+            or isinstance(arrival_value, bool)
+            or not math.isfinite(arrival_value)
+            or arrival_value < 0
+        ):
+            raise ValueError(
+                "arrival_time_s must be present, finite, and non-negative"
+            )
+        arrival_s = float(arrival_value)
+        if previous_arrival_s is not None and arrival_s < previous_arrival_s:
+            raise ValueError("arrival_time_s values must be non-decreasing")
+        previous_arrival_s = arrival_s
+
+        prompt_tokens = 0
+        if "prompt_tokens" in table.column_names:
+            prompt_value = table.column("prompt_tokens")[index].as_py()
+            prompt_tokens = int(prompt_value or 0)
+        prefix_key = ""
+        if "prefix_key" in table.column_names:
+            prefix_value = table.column("prefix_key")[index].as_py()
+            prefix_key = str(prefix_value or "")
+        row_value = (
+            table.column("doc_id")[index].as_py()
+            if "doc_id" in table.column_names
+            else index
+        )
+        arrivals.append(
+            RowArrival(
+                row_id=str(row_value),
+                arrival_s=arrival_s,
+                prompt_tokens=prompt_tokens,
+                estimated_output_tokens=max(0, completion_max_tokens),
+                prefix_key=prefix_key,
+                payload_ref=table.slice(index, 1),
+            )
+        )
+    return arrivals
+
+
+def _arrow_envelope(
+    pending: PendingBatch,
+    batch_index: int,
+    job_id: str,
+    operator: str,
+) -> PayloadEnvelope:
+    payloads = [row.payload_ref for row in pending.rows]
+    if not all(
+        isinstance(payload, pa.Table) and payload.num_rows == 1
+        for payload in payloads
+    ):
+        raise ValueError("each replay payload_ref must be a one-row Arrow table")
+    payload = pa.concat_tables(payloads)
+    prefix_values = {row.prefix_key for row in pending.rows}
+    prefix_key = prefix_values.pop() if len(prefix_values) == 1 else ""
+    request_id = f"{job_id}:batch:{batch_index}"
+    return PayloadEnvelope(
+        request=BatchRequest(
+            request_id=request_id,
+            job_id=job_id,
+            operator=operator,
+            row_count=pending.row_count,
+            prompt_tokens=pending.prompt_tokens,
+            estimated_output_tokens=pending.estimated_output_tokens,
+            prefix_key=prefix_key,
+            first_arrival_s=pending.rows[0].arrival_s,
+            oldest_arrival_s=pending.oldest_arrival_s,
+            payload_id=request_id,
+        ),
+        payload=payload,
+    )
+
+
+def _arrival_replay_envelopes(
+    tables: Iterable[pa.Table],
+    args: argparse.Namespace,
+    job_id: str,
+    operator: str,
+    service_observation,
+    trace_sink,
+) -> Iterable[PayloadEnvelope]:
+    completion_max_tokens = (
+        args.completion_max_tokens if operator == "ai_complete" else 0
+    )
+
+    def rows() -> Iterable[RowArrival]:
+        previous_arrival_s: float | None = None
+        for table in tables:
+            for arrival in _row_arrivals(table, completion_max_tokens):
+                if (
+                    previous_arrival_s is not None
+                    and arrival.arrival_s < previous_arrival_s
+                ):
+                    raise ValueError(
+                        "arrival_time_s values must be non-decreasing across fetch chunks"
+                    )
+                previous_arrival_s = arrival.arrival_s
+                yield arrival
+
+    policies = {
+        "immediate": lambda: ImmediateFlush(),
+        "fixed_timeout": lambda: FixedTimeoutFlush(
+            timeout_s=args.flush_timeout_ms / 1000.0
+        ),
+        "queue_adaptive": lambda: QueueAdaptiveFlush(
+            max_wait_s=args.flush_max_wait_ms / 1000.0
+        ),
+    }
+    try:
+        flush_policy = policies[args.flush_policy]()
+    except KeyError as exc:
+        raise ValueError(f"unsupported flush policy: {args.flush_policy}") from exc
+
+    def observe() -> ReplayServiceObservation:
+        if hasattr(service_observation, "latest"):
+            observation = service_observation.latest(0)
+            return ReplayServiceObservation(
+                fresh=observation.fresh,
+                running=observation.running,
+                waiting=observation.waiting,
+                kv_usage=observation.kv_usage,
+            )
+        return service_observation()
+
+    batch_index = 0
+
+    def close_batch(pending: PendingBatch) -> PayloadEnvelope:
+        nonlocal batch_index
+        envelope = _arrow_envelope(
+            pending,
+            batch_index=batch_index,
+            job_id=str(job_id),
+            operator=operator,
+        )
+        batch_index += 1
+        return envelope
+
+    token_budget = args.token_budget if args.batching_policy == "token_budget" else 0
+    max_rows = (
+        1
+        if getattr(args, "strategy", "coalesced") == "fine"
+        else args.ray_batch_rows
+    )
+    batcher = ArrivalReplayBatcher(
+        rows=rows(),
+        builder_factory=lambda: PendingBatchBuilder(
+            max_rows=max_rows,
+            token_budget=token_budget,
+        ),
+        flush_policy=flush_policy,
+        close_batch=close_batch,
+        service_observation=observe,
+        clock=getattr(args, "_replay_clock", None) or SystemReplayClock(),
+    )
+
+    def replay() -> Iterable[PayloadEnvelope]:
+        try:
+            yield from batcher
+        finally:
+            for event in batcher.trace:
+                if callable(trace_sink):
+                    trace_sink(event)
+                else:
+                    trace_sink.append(event)
+
+    return replay()
 
 
 def _endpoint_topology(
@@ -695,9 +900,44 @@ def _write_control_trace(
         )
 
 
+def _write_flush_trace(
+    output_path: Path,
+    *,
+    experiment_id: str,
+    phase: str,
+    repeat_index: int,
+    job_id: int,
+    flush_policy: str,
+    flush_timeout_ms: float,
+    flush_max_wait_ms: float,
+    trace_events: list,
+) -> None:
+    for trace_index, event in enumerate(trace_events):
+        append_metrics(
+            output_path,
+            {
+                "schema_version": 1,
+                "experiment_id": experiment_id,
+                "phase": phase,
+                "repeat_index": repeat_index,
+                "job_id": job_id,
+                "flush_policy": flush_policy,
+                "flush_timeout_ms": flush_timeout_ms,
+                "flush_max_wait_ms": flush_max_wait_ms,
+                "trace_index": trace_index,
+                "elapsed_s": event.elapsed_s,
+                "pending_rows": event.pending_rows,
+                "pending_tokens": event.pending_tokens,
+                "oldest_age_s": event.oldest_age_s,
+                "action": event.action,
+                "reason": event.reason,
+            },
+        )
+
+
 def _run_static_scheduler(
     ray_module,
-    envelopes: list[PayloadEnvelope],
+    envelopes: Iterable[PayloadEnvelope],
     topology: TopologySnapshot,
     submitters: dict,
     max_inflight: int,
@@ -715,7 +955,7 @@ def _run_static_scheduler(
 
 def _run_scheduler(
     ray_module,
-    envelopes: list[PayloadEnvelope],
+    envelopes: Iterable[PayloadEnvelope],
     topology: TopologySnapshot,
     submitters: dict,
     admission,
@@ -735,7 +975,7 @@ def _run_scheduler(
 
 def _run_dynamic_scheduler(
     ray_module,
-    envelopes: list[PayloadEnvelope],
+    envelopes: Iterable[PayloadEnvelope],
     topology: TopologySnapshot,
     submitters: dict,
     adaptive_config: dict,
@@ -774,15 +1014,21 @@ def submit_with_backpressure(
     method_name: str,
     adaptive_config: dict | None = None,
     routing_config: dict | None = None,
+    replay_envelopes: Iterable[PayloadEnvelope] | None = None,
 ) -> tuple[list[dict], dict]:
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
     )
     if adaptive_config is not None and not typed_adaptive:
+        replay_batches = (
+            (envelope.payload for envelope in replay_envelopes)
+            if replay_envelopes is not None
+            else batches
+        )
         return _submit_with_backpressure_legacy_adaptive(
             ray_module,
             actors,
-            batches,
+            replay_batches,
             max_inflight,
             method_name,
             adaptive_config,
@@ -791,11 +1037,15 @@ def submit_with_backpressure(
         raise ValueError("actors must not be empty")
 
     operator = "ai_complete" if "complete" in method_name else "ai_embed"
-    envelopes = _batch_envelopes(
-        batches,
-        job_id="ray-actor",
-        operator=operator,
-        completion_max_tokens=0,
+    envelopes = (
+        replay_envelopes
+        if replay_envelopes is not None
+        else _batch_envelopes(
+            batches,
+            job_id="ray-actor",
+            operator=operator,
+            completion_max_tokens=0,
+        )
     )
     endpoint_ids = [f"actor-{index}" for index in range(len(actors))]
     topology = _endpoint_topology(
@@ -915,15 +1165,21 @@ def submit_ray_tasks(
     completion_max_tokens: int,
     adaptive_config: dict | None = None,
     routing_config: dict | None = None,
+    replay_envelopes: Iterable[PayloadEnvelope] | None = None,
 ) -> tuple[list[dict], dict]:
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
     )
     if adaptive_config is not None and not typed_adaptive:
+        replay_batches = (
+            (envelope.payload for envelope in replay_envelopes)
+            if replay_envelopes is not None
+            else batches
+        )
         return _submit_ray_tasks_legacy_adaptive(
             ray_module,
             remote_embed,
-            batches,
+            replay_batches,
             max_inflight,
             operator,
             embedding_dim,
@@ -936,11 +1192,17 @@ def submit_ray_tasks(
             adaptive_config,
         )
 
-    envelopes = _batch_envelopes(
-        batches,
-        job_id="ray-task",
-        operator=operator,
-        completion_max_tokens=completion_max_tokens if operator == "ai_complete" else 0,
+    envelopes = (
+        replay_envelopes
+        if replay_envelopes is not None
+        else _batch_envelopes(
+            batches,
+            job_id="ray-task",
+            operator=operator,
+            completion_max_tokens=completion_max_tokens
+            if operator == "ai_complete"
+            else 0,
+        )
     )
     if model_backend == "fake":
         endpoint_ids = ["task-0"]
@@ -1193,7 +1455,37 @@ def submit_python_compatible_http_batches(
     }
 
 
+def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
+    if not args.arrival_replay:
+        return
+    if args.data_source != "daft_postgres":
+        raise SystemExit("arrival replay requires --data-source daft_postgres")
+    if args.source_order != "arrival_time":
+        raise SystemExit("arrival replay requires --source-order arrival_time")
+    if args.executor not in {"ray_actor", "ray_task"}:
+        raise SystemExit("arrival replay requires a Ray executor")
+    if args.batching_policy not in {"fixed_rows", "token_budget"}:
+        raise SystemExit(
+            "arrival replay rejects offline reordering batching policies"
+        )
+    if not args.dry_run and args.model_backend == "fake":
+        raise SystemExit("arrival replay formal runs require a real model backend")
+    if (
+        isinstance(args.flush_timeout_ms, bool)
+        or not math.isfinite(args.flush_timeout_ms)
+        or args.flush_timeout_ms < 0
+    ):
+        raise SystemExit("--flush-timeout-ms must be finite and non-negative")
+    if (
+        isinstance(args.flush_max_wait_ms, bool)
+        or not math.isfinite(args.flush_max_wait_ms)
+        or args.flush_max_wait_ms <= 0
+    ):
+        raise SystemExit("--flush-max-wait-ms must be finite and positive")
+
+
 def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
+    _validate_arrival_replay_args(args)
     endpoint_urls = completion_endpoint_urls(args) if args.operator == "ai_complete" else embedding_endpoint_urls(args)
     endpoint_url_label = ";".join(endpoint_urls)
     if args.operator == "ai_embed" and args.model_backend == "ollama":
@@ -1293,6 +1585,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ),
             "adaptive_sample_interval_s": args.adaptive_sample_interval_s,
             "control_trace_output": args.control_trace_output or "",
+            "arrival_replay": args.arrival_replay,
+            "arrival_replay_preload": (
+                "bounded_requested_workload" if args.arrival_replay else ""
+            ),
+            "flush_policy": args.flush_policy,
+            "flush_timeout_ms": args.flush_timeout_ms,
+            "flush_max_wait_ms": args.flush_max_wait_ms,
+            "flush_trace_output": args.flush_trace_output or "",
+            "flush_trace_path": "",
+            "flush_trace_events": 0,
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
         }
@@ -1406,7 +1708,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             token_budget=args.token_budget,
             completion_max_tokens=args.completion_max_tokens if args.operator == "ai_complete" else 0,
         )
-        organizer = make_organizer(args.organizer, organizer_config)
+        organizer = (
+            None
+            if args.arrival_replay
+            else make_organizer(args.organizer, organizer_config)
+        )
         organizer_metrics = {
             "organizer_from_arrow_s": 0.0,
             "organizer_plan_s": 0.0,
@@ -1456,7 +1762,65 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 )
             except ValueError as exc:
                 raise SystemExit(str(exc)) from exc
+
+        def submit_operator_batches(
+            batches: Iterable[pa.RecordBatch | pa.Table],
+            replay_envelopes: Iterable[PayloadEnvelope] | None = None,
+        ) -> tuple[list[dict], dict]:
+            if args.executor == "ray_actor":
+                method_name = (
+                    "complete" if args.operator == "ai_complete" else "embed"
+                )
+                return submit_with_backpressure(
+                    ray_module,
+                    actors,
+                    batches,
+                    args.max_inflight,
+                    method_name,
+                    adaptive_config,
+                    routing_config,
+                    replay_envelopes=replay_envelopes,
+                )
+            if args.executor == "ray_task":
+                return submit_ray_tasks(
+                    ray_module,
+                    remote_embed,
+                    batches,
+                    args.max_inflight,
+                    args.operator,
+                    args.embedding_dim,
+                    model_backend,
+                    endpoint_urls,
+                    model_name,
+                    api_key,
+                    request_timeout_s,
+                    args.completion_max_tokens,
+                    adaptive_config,
+                    routing_config,
+                    replay_envelopes=replay_envelopes,
+                )
+            if replay_envelopes is not None:
+                raise RuntimeError("arrival replay requires a Ray executor")
+            if model_backend == "fake":
+                if args.operator == "ai_complete":
+                    return submit_python_completion_batches(
+                        batches, args.completion_max_tokens
+                    )
+                return submit_python_batches(batches, args.embedding_dim)
+            return submit_python_compatible_http_batches(
+                batches,
+                args.operator,
+                endpoint_urls,
+                model_name,
+                api_key,
+                request_timeout_s,
+                args.completion_max_tokens,
+                model_backend,
+            )
+
         organizer_warnings = []
+        replay_tables: list[pa.Table] = []
+        flush_trace_events = []
         offset = 0
         while processed_rows < args.total_rows:
             source_config = SourceConfig(
@@ -1479,6 +1843,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             remaining = args.total_rows - processed_rows
             if table.num_rows > remaining:
                 table = table.slice(0, remaining)
+            if args.arrival_replay:
+                replay_tables.append(table)
+                processed_rows += table.num_rows
+                continue
+            if organizer is None:
+                raise RuntimeError("non-replay execution requires an organizer")
             organized = organizer.organize(table)
             ray_batches = organized.batches
             organizer_metrics["organizer_from_arrow_s"] += float(organized.metrics["organizer_from_arrow_s"])
@@ -1502,51 +1872,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 organizer_warnings.append(str(organized.metrics["warnings"]))
             object_count += len(ray_batches)
             operator_timer = StageTimer.start("operator_wall")
-            if args.executor == "ray_actor":
-                method_name = "complete" if args.operator == "ai_complete" else "embed"
-                results, metrics = submit_with_backpressure(
-                    ray_module,
-                    actors,
-                    ray_batches,
-                    args.max_inflight,
-                    method_name,
-                    adaptive_config,
-                    routing_config,
-                )
-            elif args.executor == "ray_task":
-                results, metrics = submit_ray_tasks(
-                    ray_module,
-                    remote_embed,
-                    ray_batches,
-                    args.max_inflight,
-                    args.operator,
-                    args.embedding_dim,
-                    model_backend,
-                    endpoint_urls,
-                    model_name,
-                    api_key,
-                    request_timeout_s,
-                    args.completion_max_tokens,
-                    adaptive_config,
-                    routing_config,
-                )
-            else:
-                if model_backend == "fake":
-                    if args.operator == "ai_complete":
-                        results, metrics = submit_python_completion_batches(ray_batches, args.completion_max_tokens)
-                    else:
-                        results, metrics = submit_python_batches(ray_batches, args.embedding_dim)
-                else:
-                    results, metrics = submit_python_compatible_http_batches(
-                        ray_batches,
-                        args.operator,
-                        endpoint_urls,
-                        model_name,
-                        api_key,
-                        request_timeout_s,
-                        args.completion_max_tokens,
-                        model_backend,
-                    )
+            results, metrics = submit_operator_batches(ray_batches)
             operator_wall_s += operator_timer.stop()
             operator_results.extend(results)
             for key in submit_metrics:
@@ -1557,6 +1883,61 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 else:
                     submit_metrics[key] += metrics[key]
             processed_rows += table.num_rows
+
+        if args.arrival_replay:
+            flush_observation_provider = CachedMetricsObservationProvider(
+                (
+                    lambda: _service_metrics_snapshot(args.model_metrics_url)
+                    if args.model_metrics_url
+                    else None
+                ),
+                min_sample_interval_s=0.25,
+            )
+            replay_envelopes = _arrival_replay_envelopes(
+                replay_tables,
+                args,
+                job_id=str(job_id),
+                operator=args.operator,
+                service_observation=flush_observation_provider,
+                trace_sink=flush_trace_events,
+            )
+            operator_timer = StageTimer.start("operator_wall")
+            results, metrics = submit_operator_batches(
+                (),
+                replay_envelopes=replay_envelopes,
+            )
+            operator_wall_s += operator_timer.stop()
+            operator_results.extend(results)
+            object_count = metrics["operator_invocations"]
+            for key in submit_metrics:
+                if key == "max_inflight":
+                    submit_metrics[key] = max(submit_metrics[key], metrics[key])
+                elif key == "adaptive_limit_mean":
+                    submit_metrics[key] = max(submit_metrics[key], metrics[key])
+                else:
+                    submit_metrics[key] += metrics[key]
+
+        flush_trace_path = ""
+        if args.arrival_replay:
+            flush_trace_path = args.flush_trace_output
+            if not flush_trace_path:
+                main_output = Path(args.output)
+                flush_trace_path = str(
+                    main_output.with_name(
+                        f"{main_output.stem}_flush_trace.csv"
+                    )
+                )
+            _write_flush_trace(
+                Path(flush_trace_path),
+                experiment_id=args.experiment_id,
+                phase=phase,
+                repeat_index=repeat_index,
+                job_id=job_id,
+                flush_policy=args.flush_policy,
+                flush_timeout_ms=args.flush_timeout_ms,
+                flush_max_wait_ms=args.flush_max_wait_ms,
+                trace_events=flush_trace_events,
+            )
 
         control_trace_path = ""
         if (
@@ -1675,6 +2056,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "adaptive_limit_mean": round(float(submit_metrics["adaptive_limit_mean"]), 3),
             "control_trace_path": control_trace_path,
             "control_trace_events": len(control_trace_events),
+            "arrival_replay": args.arrival_replay,
+            "arrival_replay_preload": (
+                "bounded_requested_workload" if args.arrival_replay else ""
+            ),
+            "flush_policy": args.flush_policy,
+            "flush_timeout_ms": args.flush_timeout_ms,
+            "flush_max_wait_ms": args.flush_max_wait_ms,
+            "flush_trace_output": args.flush_trace_output or "",
+            "flush_trace_path": flush_trace_path,
+            "flush_trace_events": len(flush_trace_events),
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
             "object_count": object_count,
