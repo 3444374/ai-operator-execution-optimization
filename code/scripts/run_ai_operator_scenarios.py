@@ -54,6 +54,8 @@ class RunnerOptions:
     health_url: str
     metrics_url: str
     idle_timeout_s: float
+    resume: bool = False
+    skip_failed_scenarios: bool = False
 
 
 @dataclass(frozen=True)
@@ -66,6 +68,7 @@ class ScenarioDefinition:
 class ScenarioExperimentConfig:
     experiment_id: str
     seed: int
+    service_metadata: tuple[tuple[str, object], ...]
     warmup_runs_per_scenario: int
     formal_repeats: int
     common_args: tuple[str, ...]
@@ -83,6 +86,19 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
     parser.add_argument("--health-url", required=True)
     parser.add_argument("--metrics-url", required=True)
     parser.add_argument("--idle-timeout-s", type=float, default=60.0)
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume a matching manifest and skip verified completed runs.",
+    )
+    parser.add_argument(
+        "--skip-failed-scenarios",
+        action="store_true",
+        help=(
+            "With --resume, prune every remaining run belonging to an "
+            "unrecovered failed scenario."
+        ),
+    )
     args = parser.parse_args(argv)
     if not math.isfinite(args.idle_timeout_s) or args.idle_timeout_s <= 0:
         parser.error("--idle-timeout-s must be finite and positive")
@@ -94,6 +110,8 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
         health_url=args.health_url,
         metrics_url=args.metrics_url,
         idle_timeout_s=args.idle_timeout_s,
+        resume=args.resume,
+        skip_failed_scenarios=args.skip_failed_scenarios,
     )
 
 
@@ -103,6 +121,8 @@ def run_experiment(
     idle_gate: Callable[[str, str, float], None] | None = None,
 ) -> int:
     config = _load_config(options.config_path)
+    if options.skip_failed_scenarios and not options.resume:
+        raise ValueError("--skip-failed-scenarios requires --resume")
     schedule = build_scenario_schedule(
         [item.scenario_id for item in config.scenarios],
         config.warmup_runs_per_scenario,
@@ -115,7 +135,7 @@ def run_experiment(
     options.output_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = options.output_dir / "manifest.json"
     runs_path = options.output_dir / "runs.csv"
-    manifest = {
+    expected_manifest = {
         "schema_version": 1,
         "experiment_id": config.experiment_id,
         "seed": config.seed,
@@ -123,13 +143,55 @@ def run_experiment(
         "redacted_config": _redacted_config(config),
         "schedule": [asdict(item) for item in schedule],
         "completed_runs": [],
+        "skipped_runs": [],
         "incidents": [],
         "status": "running",
     }
+    if options.resume:
+        manifest = _load_resume_manifest(
+            manifest_path,
+            runs_path,
+            expected_manifest,
+        )
+        manifest["status"] = "running"
+    else:
+        manifest = expected_manifest
     _write_json_atomic(manifest_path, manifest)
     resolved_idle_gate = idle_gate or wait_for_idle
+    completed_keys = {
+        _run_key_from_mapping(item)
+        for item in manifest["completed_runs"]
+    }
+    skipped_keys = {
+        _run_key_from_mapping(item)
+        for item in manifest["skipped_runs"]
+    }
+    pruned_scenario_ids = set()
+    if options.skip_failed_scenarios:
+        pruned_scenario_ids = {
+            str(item["scenario_id"])
+            for item in manifest["incidents"]
+            if not item.get("recovered", False)
+        }
+        for incident in manifest["incidents"]:
+            if str(incident.get("scenario_id")) in pruned_scenario_ids:
+                incident["pruned"] = True
 
     for scheduled in schedule:
+        run_key = _scheduled_run_key(scheduled)
+        if run_key in completed_keys:
+            continue
+        if scheduled.scenario_id in pruned_scenario_ids:
+            if run_key not in skipped_keys:
+                manifest["skipped_runs"].append(
+                    {
+                        **asdict(scheduled),
+                        "reason": "scenario_pruned_after_failure",
+                    }
+                )
+                skipped_keys.add(run_key)
+                _write_json_atomic(manifest_path, manifest)
+            continue
         definition = definitions[scheduled.scenario_id]
         run_stem = (
             f"{scheduled.order_index:03d}_"
@@ -157,6 +219,7 @@ def run_experiment(
                     "exit_code": None,
                     "reason": f"idle_gate:{type(exc).__name__}:{exc}",
                     "command": _redact_argument_list(command),
+                    "recovered": False,
                 }
             )
             manifest["status"] = "failed"
@@ -195,18 +258,94 @@ def run_experiment(
         }
         if failure_reason:
             manifest["incidents"].append(
-                {**run_record, "reason": failure_reason}
+                {
+                    **run_record,
+                    "reason": failure_reason,
+                    "recovered": False,
+                }
             )
             manifest["status"] = "failed"
             _write_json_atomic(manifest_path, manifest)
             return 1
 
         manifest["completed_runs"].append(run_record)
+        completed_keys.add(run_key)
+        for incident in manifest["incidents"]:
+            if _run_key_from_mapping(incident) == run_key:
+                incident["recovered"] = True
         _write_json_atomic(manifest_path, manifest)
 
-    manifest["status"] = "completed"
+    manifest["status"] = (
+        "completed_with_pruned_scenarios"
+        if manifest["skipped_runs"]
+        else "completed"
+    )
     _write_json_atomic(manifest_path, manifest)
     return 0
+
+
+def _load_resume_manifest(
+    manifest_path: Path,
+    runs_path: Path,
+    expected: dict,
+) -> dict:
+    if not manifest_path.exists():
+        raise ValueError("--resume requires an existing manifest.json")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for field in (
+        "schema_version",
+        "experiment_id",
+        "seed",
+        "redacted_config",
+        "schedule",
+    ):
+        if manifest.get(field) != expected[field]:
+            raise ValueError(
+                f"resume manifest does not match current {field}"
+            )
+    completed = manifest.get("completed_runs")
+    incidents = manifest.get("incidents")
+    if not isinstance(completed, list) or not isinstance(incidents, list):
+        raise ValueError("resume manifest has invalid run records")
+    manifest.setdefault("skipped_runs", [])
+    if not isinstance(manifest["skipped_runs"], list):
+        raise ValueError("resume manifest has invalid skipped run records")
+    completed_keys = {_run_key_from_mapping(item) for item in completed}
+    csv_keys = {
+        (
+            row.get("scenario_id"),
+            row.get("phase"),
+            int(row.get("repeat_index", "-1")),
+        )
+        for row in _read_csv_rows(runs_path)
+        if row.get("experiment_id") == expected["experiment_id"]
+    }
+    if not completed_keys.issubset(csv_keys):
+        raise ValueError(
+            "resume manifest completed runs are missing from runs.csv"
+        )
+    return manifest
+
+
+def _scheduled_run_key(
+    scheduled: ScheduledScenarioRun,
+) -> tuple[str, str, int]:
+    return (
+        scheduled.scenario_id,
+        scheduled.phase,
+        scheduled.repeat_index,
+    )
+
+
+def _run_key_from_mapping(item: dict) -> tuple[str, str, int]:
+    try:
+        return (
+            str(item["scenario_id"]),
+            str(item["phase"]),
+            int(item["repeat_index"]),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("manifest contains an invalid run identity") from exc
 
 
 def wait_for_idle(
@@ -249,6 +388,9 @@ def _load_config(path: Path) -> ScenarioExperimentConfig:
     if not isinstance(experiment_id, str) or not experiment_id.strip():
         raise ValueError("experiment_id must be non-empty")
     seed = decoded.get("seed")
+    service_metadata = _validate_service_metadata(
+        decoded.get("service_metadata", {})
+    )
     warmups = decoded.get("warmup_runs_per_scenario")
     repeats = decoded.get("formal_repeats")
     if not isinstance(seed, int) or isinstance(seed, bool):
@@ -291,6 +433,7 @@ def _load_config(path: Path) -> ScenarioExperimentConfig:
     return ScenarioExperimentConfig(
         experiment_id=experiment_id,
         seed=seed,
+        service_metadata=service_metadata,
         warmup_runs_per_scenario=warmups,
         formal_repeats=repeats,
         common_args=common_args,
@@ -308,6 +451,26 @@ def _validate_argument_list(values, label: str) -> tuple[str, ...]:
         if flag in _RUNNER_OWNED_FLAGS:
             raise ValueError(f"{label} contains runner-owned flag {flag}")
     return tuple(values)
+
+
+def _validate_service_metadata(
+    value: object,
+) -> tuple[tuple[str, object], ...]:
+    if not isinstance(value, dict):
+        raise ValueError("service_metadata must be an object")
+    validated = []
+    for key, item in value.items():
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError("service_metadata keys must be non-empty strings")
+        if not isinstance(item, (str, int, float, bool)) and item is not None:
+            raise ValueError("service_metadata values must be JSON scalars")
+        if (
+            isinstance(item, float)
+            and not math.isfinite(item)
+        ):
+            raise ValueError("service_metadata numbers must be finite")
+        validated.append((key, item))
+    return tuple(sorted(validated))
 
 
 def _build_profiler_command(
@@ -378,6 +541,9 @@ def _redacted_config(config: ScenarioExperimentConfig) -> dict:
     return {
         "experiment_id": config.experiment_id,
         "seed": config.seed,
+        "service_metadata": _redact_service_metadata(
+            config.service_metadata
+        ),
         "warmup_runs_per_scenario": config.warmup_runs_per_scenario,
         "formal_repeats": config.formal_repeats,
         "common_args": _redact_argument_list(list(config.common_args)),
@@ -388,6 +554,20 @@ def _redacted_config(config: ScenarioExperimentConfig) -> dict:
             }
             for item in config.scenarios
         ],
+    }
+
+
+def _redact_service_metadata(
+    values: tuple[tuple[str, object], ...],
+) -> dict[str, object]:
+    sensitive_markers = ("api_key", "api-key", "auth", "secret", "password")
+    return {
+        key: (
+            "***"
+            if any(marker in key.lower() for marker in sensitive_markers)
+            else value
+        )
+        for key, value in values
     }
 
 

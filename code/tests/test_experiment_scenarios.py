@@ -158,6 +158,14 @@ class ScenarioRunnerTests(unittest.TestCase):
             self.assertNotIn("top-secret", serialized)
             self.assertNotIn("postgres:secret@", serialized)
             self.assertIn("***", serialized)
+            self.assertEqual(
+                manifest["redacted_config"]["service_metadata"],
+                {
+                    "vllm_version": "0.25.1",
+                    "prefix_caching": False,
+                    "mfu_metrics": True,
+                },
+            )
             self.assertTrue((output_dir / "runs.csv").exists())
 
     def test_runner_stops_after_first_subprocess_failure(self) -> None:
@@ -210,6 +218,138 @@ class ScenarioRunnerTests(unittest.TestCase):
             )
             self.assertEqual(manifest["incidents"][0]["exit_code"], 3)
 
+    def test_runner_resume_skips_completed_runs_and_recovers_failure(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            profiler = self._write_fake_profiler(root)
+            scenario_ids = ["fixed", "adaptive", "pid"]
+            seed = 11
+            schedule = build_scenario_schedule(
+                scenario_ids,
+                warmup_runs_per_scenario=0,
+                formal_repeats=1,
+                seed=seed,
+            )
+            failed = schedule[1]
+            (root / "fail_scenario.txt").write_text(
+                failed.scenario_id,
+                encoding="utf-8",
+            )
+            config = self._write_config(
+                root,
+                scenario_ids=scenario_ids,
+                formal_repeats=1,
+                seed=seed,
+                warmups=0,
+            )
+            output_dir = root / "output"
+            base_options = dict(
+                config_path=config,
+                profiler_path=profiler,
+                python_executable=Path(sys.executable),
+                output_dir=output_dir,
+                health_url="http://health",
+                metrics_url="http://metrics",
+                idle_timeout_s=1.0,
+            )
+
+            first_exit = run_experiment(
+                RunnerOptions(**base_options),
+                idle_gate=lambda _health, _metrics, _timeout: None,
+            )
+            (root / "fail_scenario.txt").unlink()
+            resumed_idle_checks = []
+            resumed_exit = run_experiment(
+                RunnerOptions(**base_options, resume=True),
+                idle_gate=lambda health, metrics, timeout: (
+                    resumed_idle_checks.append((health, metrics, timeout))
+                ),
+            )
+
+            manifest = json.loads(
+                (output_dir / "manifest.json").read_text(encoding="utf-8")
+            )
+            rows = (output_dir / "runs.csv").read_text(
+                encoding="utf-8"
+            ).splitlines()
+            self.assertEqual(first_exit, 1)
+            self.assertEqual(resumed_exit, 0)
+            self.assertEqual(len(resumed_idle_checks), 2)
+            self.assertEqual(len(rows), 4)
+            self.assertEqual(len(manifest["completed_runs"]), 3)
+            self.assertEqual(manifest["status"], "completed")
+            self.assertEqual(len(manifest["incidents"]), 1)
+            self.assertTrue(manifest["incidents"][0]["recovered"])
+
+    def test_runner_resume_can_prune_failed_scenario(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            profiler = self._write_fake_profiler(root)
+            scenario_ids = ["fixed", "adaptive", "pid"]
+            seed = 11
+            schedule = build_scenario_schedule(
+                scenario_ids,
+                warmup_runs_per_scenario=0,
+                formal_repeats=2,
+                seed=seed,
+            )
+            failed_scenario = schedule[1].scenario_id
+            (root / "fail_scenario.txt").write_text(
+                failed_scenario,
+                encoding="utf-8",
+            )
+            config = self._write_config(
+                root,
+                scenario_ids=scenario_ids,
+                formal_repeats=2,
+                seed=seed,
+                warmups=0,
+            )
+            output_dir = root / "output"
+            base_options = dict(
+                config_path=config,
+                profiler_path=profiler,
+                python_executable=Path(sys.executable),
+                output_dir=output_dir,
+                health_url="http://health",
+                metrics_url="http://metrics",
+                idle_timeout_s=1.0,
+            )
+
+            first_exit = run_experiment(
+                RunnerOptions(**base_options),
+                idle_gate=lambda _health, _metrics, _timeout: None,
+            )
+            resumed_exit = run_experiment(
+                RunnerOptions(
+                    **base_options,
+                    resume=True,
+                    skip_failed_scenarios=True,
+                ),
+                idle_gate=lambda _health, _metrics, _timeout: None,
+            )
+
+            manifest = json.loads(
+                (output_dir / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(first_exit, 1)
+            self.assertEqual(resumed_exit, 0)
+            self.assertEqual(
+                manifest["status"],
+                "completed_with_pruned_scenarios",
+            )
+            self.assertTrue(manifest["incidents"][0]["pruned"])
+            self.assertEqual(
+                {
+                    item["scenario_id"]
+                    for item in manifest["skipped_runs"]
+                },
+                {failed_scenario},
+            )
+            self.assertEqual(len(manifest["skipped_runs"]), 2)
+
     @staticmethod
     def _write_config(
         root: Path,
@@ -223,6 +363,11 @@ class ScenarioRunnerTests(unittest.TestCase):
             "schema_version": 1,
             "experiment_id": "runner-test",
             "seed": seed,
+            "service_metadata": {
+                "vllm_version": "0.25.1",
+                "prefix_caching": False,
+                "mfu_metrics": True,
+            },
             "warmup_runs_per_scenario": warmups,
             "formal_repeats": formal_repeats,
             "common_args": [

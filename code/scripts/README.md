@@ -300,11 +300,22 @@ the model health endpoint to return HTTP 200 and the vLLM running/waiting
 gauges to both equal zero. It stops at the first failed process or missing run
 CSV row, and atomically updates `manifest.json` after every completed run.
 
+`--resume` verifies that the config, seed, schedule, manifest, and successful
+CSV rows still agree before skipping completed runs. A recovered failure remains
+in the incident history. `--skip-failed-scenarios` is available only with
+`--resume`; it records every omitted schedule item instead of fabricating a
+successful CSV row.
+
 The JSON configuration contains shared profiler arguments and scenario-specific
 arguments. Output paths and run identity are owned by the runner and cannot be
 overridden by the configuration. Persisted commands redact API credentials,
 authentication tokens, secrets, passwords, and database URL passwords while
 retaining performance controls such as token budgets.
+
+Optional top-level `service_metadata` contains JSON scalar values such as the
+vLLM version, prefix-cache state, and MFU-metrics state. It is persisted in the
+redacted manifest and therefore participates in resume compatibility checks.
+Secret-like metadata keys are redacted.
 
 ```powershell
 .conda\pg-ai-profile\python.exe code\scripts\run_ai_operator_scenarios.py `
