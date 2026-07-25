@@ -5,7 +5,7 @@ from .adaptive_admission import (
     AimdConfig,
     EwmaAimdAdmissionController,
 )
-from .admission import StaticAdmissionController
+from .admission import DynamicAdmissionGate, StaticAdmissionController, WindowController
 from .models import (
     AdmissionDecision,
     AdmissionObservation,
@@ -20,9 +20,19 @@ from .models import (
     WindowDecision,
 )
 from .pid_admission import PidAdmissionController, PidConfig
+from .observations import (
+    AdmissionTraceEvent,
+    CachedMetricsObservationProvider,
+    ServiceMetricsSnapshot,
+)
 from .ray_adapter import RaySubmissionAdapter
 from .routing import RoundRobinEndpointRouter
-from .scheduler import SchedulerResult, SubmissionAdapter, SynchronousScheduler
+from .scheduler import (
+    AdmissionPolicy,
+    SchedulerResult,
+    SubmissionAdapter,
+    SynchronousScheduler,
+)
 from .topology import healthy_endpoints
 from .ucb_admission import (
     SloRewardInput,
@@ -34,11 +44,15 @@ from .ucb_admission import (
 __all__ = [
     "AdmissionDecision",
     "AdmissionObservation",
+    "AdmissionPolicy",
+    "AdmissionTraceEvent",
     "AimdAdmissionController",
     "AimdConfig",
     "BatchRequest",
     "CollectedSubmission",
     "ControlDiagnostics",
+    "CachedMetricsObservationProvider",
+    "DynamicAdmissionGate",
     "EndpointSnapshot",
     "EwmaAimdAdmissionController",
     "PayloadEnvelope",
@@ -48,6 +62,7 @@ __all__ = [
     "RoutingDecision",
     "RoundRobinEndpointRouter",
     "SchedulerResult",
+    "ServiceMetricsSnapshot",
     "StaticAdmissionController",
     "SloRewardInput",
     "SubmissionAdapter",
@@ -57,6 +72,7 @@ __all__ = [
     "UcbAdmissionController",
     "UcbConfig",
     "WindowDecision",
+    "WindowController",
     "healthy_endpoints",
     "slo_constrained_reward",
 ]

@@ -7,8 +7,13 @@ import time
 from dataclasses import dataclass
 from typing import Iterable, Protocol
 
-from .admission import StaticAdmissionController
-from .models import CollectedSubmission, PayloadEnvelope, SubmissionCompletion, TopologySnapshot
+from .models import (
+    AdmissionDecision,
+    CollectedSubmission,
+    PayloadEnvelope,
+    SubmissionCompletion,
+    TopologySnapshot,
+)
 from .routing import RoundRobinEndpointRouter
 
 
@@ -20,6 +25,13 @@ class SubmissionAdapter(Protocol):
         self,
         pending: list[tuple[object, PayloadEnvelope]],
     ) -> CollectedSubmission:
+        ...
+
+
+class AdmissionPolicy(Protocol):
+    limit: int
+
+    def decide(self, inflight: int) -> AdmissionDecision:
         ...
 
 
@@ -38,7 +50,7 @@ class SchedulerResult:
 class SynchronousScheduler:
     def __init__(
         self,
-        admission: StaticAdmissionController,
+        admission: AdmissionPolicy,
         router: RoundRobinEndpointRouter,
         adapter: SubmissionAdapter,
         pool_id: str,
