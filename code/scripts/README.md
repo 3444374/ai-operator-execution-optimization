@@ -120,8 +120,11 @@ result.
 - `--request-slo-ms`
 - `--scenario-id`
 - `--random-seed`
-- `--batching-policy fixed_rows|token_budget|length_align_fixed_rows|length_align_token_budget|prefix_aware_fixed_rows|prefix_aware_token_budget`
+- `--batching-policy fixed_rows|token_budget|best_fit_token_budget|length_align_fixed_rows|length_align_token_budget|prefix_aware_fixed_rows|prefix_aware_token_budget`
 - `--token-budget`
+- `--output-cost-mode prompt_only|fixed_output_cap|trace_target_output`
+- `--cost-model-id`
+- `--cost-tokenizer-id`
 - `--scheduling-policy static|queue_adaptive|aimd|ewma_aimd|pid`
 - `--adaptive-min-inflight`
 - `--adaptive-max-inflight`
@@ -189,6 +192,26 @@ The three runtime decisions are separate:
 2. `--flush-policy` determines when a pending partial batch closes.
 3. `--scheduling-policy` and its K_max/controller options govern closed-batch
    admission.
+
+`best_fit_token_budget` applies deterministic best-fit-decreasing packing to
+complete rows visible to one organizer call. It is an offline organization
+policy and is rejected with `--arrival-replay`, because replay must preserve
+arrival order. `--output-cost-mode` controls only organization and scheduling
+cost estimates; it never changes the backend `--completion-max-tokens` cap:
+
+- `prompt_only` uses zero estimated output tokens
+  (`output_cost_source=configured_zero`);
+- `fixed_output_cap` uses the configured completion cap for every row
+  (`output_cost_source=backend_completion_cap`);
+- `trace_target_output` reads each row's `target_output_tokens`
+  (`output_cost_source=burstgpt_unpaired_trace_metadata`).
+
+The current trace targets are unpaired BurstGPT metadata, not oracle output
+lengths for the configured prompt/model. Formal outputs therefore also record
+`cost_model_id`, `cost_tokenizer_id`, `packing_scope`, the explicit packing
+algorithm, budget utilization, oversized rows, and batch cost-unit
+percentiles. A global-BFD claim is valid only when the full compared workload
+is visible in one organizer call and `packing_scope=organizer_input`.
 
 If `--flush-trace-output` is omitted, replay writes
 `<output-stem>_flush_trace.csv` beside the main CSV. Queue-adaptive replay reads

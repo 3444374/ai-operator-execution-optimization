@@ -52,6 +52,12 @@ from src.model_backends import (
     text_token_count,
 )
 from src.organizers import OrganizerConfig, configure_daft_runner, make_organizer
+from src.packing import summarize_packing
+from src.request_costs import (
+    OutputCostMode,
+    output_cost_source,
+    resolve_output_tokens,
+)
 from src.scheduling.adaptive_admission import (
     AimdAdmissionController,
     AimdConfig,
@@ -180,6 +186,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=[
             "fixed_rows",
             "token_budget",
+            "best_fit_token_budget",
             "length_align_fixed_rows",
             "length_align_token_budget",
             "prefix_aware_fixed_rows",
@@ -215,6 +222,26 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--completion-api-key", default=os.environ.get("COMPLETION_API_KEY"))
     parser.add_argument("--completion-request-timeout-s", type=float, default=120.0)
     parser.add_argument("--completion-max-tokens", type=int, default=128)
+    parser.add_argument(
+        "--output-cost-mode",
+        choices=[
+            "prompt_only",
+            "fixed_output_cap",
+            "trace_target_output",
+        ],
+        default="fixed_output_cap",
+        help="Output-token estimate used only for organization and scheduling cost.",
+    )
+    parser.add_argument(
+        "--cost-model-id",
+        default="",
+        help="Model identifier used to produce or calibrate the cost estimate.",
+    )
+    parser.add_argument(
+        "--cost-tokenizer-id",
+        default="",
+        help="Tokenizer identifier used to produce prompt/output cost units.",
+    )
     parser.add_argument("--model-metrics-url", default=os.environ.get("MODEL_METRICS_URL"))
     parser.add_argument("--model-workers", type=int, default=2)
     parser.add_argument("--max-inflight", type=int, default=8)
@@ -490,6 +517,7 @@ def _batch_envelopes(
     job_id: str,
     operator: str,
     completion_max_tokens: int,
+    output_cost_mode: OutputCostMode = "fixed_output_cap",
 ) -> list[PayloadEnvelope]:
     envelopes = []
     for index, batch in enumerate(batches):
@@ -520,7 +548,15 @@ def _batch_envelopes(
             operator=operator,
             row_count=batch.num_rows,
             prompt_tokens=prompt_tokens,
-            estimated_output_tokens=max(0, completion_max_tokens) * batch.num_rows,
+            estimated_output_tokens=sum(
+                _row_output_tokens(
+                    batch,
+                    row_index,
+                    output_cost_mode=output_cost_mode,
+                    completion_max_tokens=completion_max_tokens,
+                )
+                for row_index in range(batch.num_rows)
+            ),
             prefix_key=prefix_key,
             first_arrival_s=oldest_arrival_s,
             oldest_arrival_s=oldest_arrival_s,
@@ -530,9 +566,63 @@ def _batch_envelopes(
     return envelopes
 
 
+def _row_output_tokens(
+    table: pa.Table | pa.RecordBatch,
+    row_index: int,
+    *,
+    output_cost_mode: OutputCostMode,
+    completion_max_tokens: int,
+) -> int:
+    target_value = (
+        table.column("target_output_tokens")[row_index].as_py()
+        if "target_output_tokens" in table.column_names
+        else None
+    )
+    return resolve_output_tokens(
+        output_cost_mode,
+        completion_max_tokens=completion_max_tokens,
+        target_output_tokens=target_value,
+    )
+
+
+def _packing_run_metrics(
+    batch_cost_units: list[int],
+    batch_row_counts: list[int],
+    *,
+    capacity: int,
+    packing_scope: str,
+    packing_algorithm: str,
+) -> dict[str, float | int | str]:
+    summary = summarize_packing(
+        batch_cost_units,
+        batch_row_counts,
+        capacity=capacity,
+    )
+    return {
+        "packing_algorithm": packing_algorithm,
+        "packing_scope": packing_scope,
+        "packing_budget_utilization_mean": round(
+            summary.utilization_mean,
+            6,
+        ),
+        "packing_budget_utilization_p95": round(
+            summary.utilization_p95,
+            6,
+        ),
+        "packing_oversized_rows": summary.oversized_rows,
+        "packing_input_rows": summary.input_rows,
+        "packing_batch_count": summary.batch_count,
+        "batch_estimated_cost_units_p50": summary.cost_units_p50,
+        "batch_estimated_cost_units_p95": summary.cost_units_p95,
+        "batch_estimated_cost_units_p99": summary.cost_units_p99,
+        "batch_estimated_cost_units_max": summary.cost_units_max,
+    }
+
+
 def _row_arrivals(
     table: pa.Table | pa.RecordBatch,
     completion_max_tokens: int,
+    output_cost_mode: OutputCostMode = "fixed_output_cap",
 ) -> list[RowArrival]:
     if "arrival_time_s" not in table.column_names:
         raise ValueError("arrival_time_s column is required for arrival replay")
@@ -572,7 +662,12 @@ def _row_arrivals(
                 row_id=str(row_value),
                 arrival_s=arrival_s,
                 prompt_tokens=prompt_tokens,
-                estimated_output_tokens=max(0, completion_max_tokens),
+                estimated_output_tokens=_row_output_tokens(
+                    table,
+                    index,
+                    output_cost_mode=output_cost_mode,
+                    completion_max_tokens=completion_max_tokens,
+                ),
                 prefix_key=prefix_key,
                 payload_ref=table.slice(index, 1),
             )
@@ -628,6 +723,7 @@ def _arrival_replay_envelopes(
     service_observation,
     trace_sink,
     lifecycle_seed_sink=None,
+    packing_sink=None,
     epoch_clock=None,
 ) -> Iterable[PayloadEnvelope]:
     completion_max_tokens = (
@@ -644,7 +740,15 @@ def _arrival_replay_envelopes(
         nonlocal first_source_arrival_s
         previous_arrival_s: float | None = None
         for table in tables:
-            for arrival in _row_arrivals(table, completion_max_tokens):
+            for arrival in _row_arrivals(
+                table,
+                completion_max_tokens,
+                output_cost_mode=getattr(
+                    args,
+                    "output_cost_mode",
+                    "fixed_output_cap",
+                ),
+            ):
                 if (
                     previous_arrival_s is not None
                     and arrival.arrival_s < previous_arrival_s
@@ -695,6 +799,10 @@ def _arrival_replay_envelopes(
 
     def close_batch(pending: PendingBatch) -> PayloadEnvelope:
         nonlocal batch_index
+        if packing_sink is not None:
+            packing_sink.append(
+                (pending.estimated_total_tokens, pending.row_count)
+            )
         envelope = _arrow_envelope(
             pending,
             batch_index=batch_index,
@@ -1378,6 +1486,8 @@ def submit_with_backpressure(
     replay_envelopes: Iterable[PayloadEnvelope] | None = None,
     submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
     epoch_clock=None,
+    output_cost_mode: OutputCostMode = "fixed_output_cap",
+    completion_max_tokens: int = 0,
 ) -> tuple[list[dict], dict]:
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
@@ -1409,7 +1519,12 @@ def submit_with_backpressure(
             batches,
             job_id="ray-actor",
             operator=operator,
-            completion_max_tokens=0,
+            completion_max_tokens=(
+                completion_max_tokens
+                if operator == "ai_complete"
+                else 0
+            ),
+            output_cost_mode=output_cost_mode,
         )
     )
     endpoint_ids = [f"actor-{index}" for index in range(len(actors))]
@@ -1537,6 +1652,7 @@ def submit_ray_tasks(
     replay_envelopes: Iterable[PayloadEnvelope] | None = None,
     submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
     epoch_clock=None,
+    output_cost_mode: OutputCostMode = "fixed_output_cap",
 ) -> tuple[list[dict], dict]:
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
@@ -1575,6 +1691,7 @@ def submit_ray_tasks(
             completion_max_tokens=completion_max_tokens
             if operator == "ai_complete"
             else 0,
+            output_cost_mode=output_cost_mode,
         )
     )
     if model_backend == "fake":
@@ -1848,6 +1965,10 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
     if args.executor not in {"ray_actor", "ray_task"}:
         raise SystemExit("arrival replay requires a Ray executor")
     if args.batching_policy not in {"fixed_rows", "token_budget"}:
+        if args.batching_policy == "best_fit_token_budget":
+            raise SystemExit(
+                "arrival replay does not support best_fit_token_budget"
+            )
         raise SystemExit(
             "arrival replay rejects offline reordering batching policies"
         )
@@ -1962,6 +2083,30 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         except ValueError as exc:
             raise SystemExit(str(exc)) from exc
     if args.dry_run:
+        dry_packing_algorithm = (
+            "sequential_pending"
+            if args.arrival_replay
+            else "best_fit_decreasing"
+            if args.batching_policy == "best_fit_token_budget"
+            else "fixed_rows"
+            if args.batching_policy == "fixed_rows"
+            else "sequential"
+        )
+        dry_packing_metrics = _packing_run_metrics(
+            [],
+            [],
+            capacity=(
+                args.token_budget
+                if args.batching_policy.endswith("token_budget")
+                else 0
+            ),
+            packing_scope=(
+                "arrival_order"
+                if args.arrival_replay
+                else "organizer_input"
+            ),
+            packing_algorithm=dry_packing_algorithm,
+        )
         return {
             "status": "dry_run",
             "experiment_id": args.experiment_id,
@@ -1991,6 +2136,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "batching_policy": args.batching_policy,
             "token_budget": args.token_budget,
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
+            "output_cost_mode": args.output_cost_mode,
+            "output_cost_source": output_cost_source(args.output_cost_mode),
+            "packing_cost_unit": "tokens",
+            "cost_model_id": args.cost_model_id,
+            "cost_tokenizer_id": args.cost_tokenizer_id,
+            **dry_packing_metrics,
             "model_workers": args.model_workers,
             "max_inflight_limit": args.max_inflight,
             "endpoint_routing": args.endpoint_routing,
@@ -2140,6 +2291,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         request_lifecycle_seeds: list[RequestLifecycleSeed] = []
         submission_lifecycle_events: list[SubmissionLifecycleEvent] = []
         request_trace_rows: tuple[RequestTraceRow, ...] = ()
+        packing_batch_cost_units: list[int] = []
+        packing_batch_row_counts: list[int] = []
+        organizer_calls = 0
+        organizer_packing_scopes: list[str] = []
+        replay_packing: list[tuple[int, int]] = []
         lifecycle_epoch_clock = (
             MonotonicEpochClock() if args.request_trace_output else None
         )
@@ -2173,6 +2329,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             batching_policy=args.batching_policy,
             token_budget=args.token_budget,
             completion_max_tokens=args.completion_max_tokens if args.operator == "ai_complete" else 0,
+            output_cost_mode=args.output_cost_mode,
         )
         organizer = (
             None
@@ -2252,6 +2409,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         else None
                     ),
                     epoch_clock=lifecycle_epoch_clock,
+                    output_cost_mode=args.output_cost_mode,
+                    completion_max_tokens=args.completion_max_tokens,
                 )
             if args.executor == "ray_task":
                 return submit_ray_tasks(
@@ -2276,6 +2435,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         else None
                     ),
                     epoch_clock=lifecycle_epoch_clock,
+                    output_cost_mode=args.output_cost_mode,
                 )
             if replay_envelopes is not None:
                 raise RuntimeError("arrival replay requires a Ray executor")
@@ -2328,7 +2488,13 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             if organizer is None:
                 raise RuntimeError("non-replay execution requires an organizer")
             organized = organizer.organize(table)
+            organizer_calls += 1
             ray_batches = organized.batches
+            packing_batch_cost_units.extend(organized.batch_cost_units)
+            packing_batch_row_counts.extend(organized.batch_row_counts)
+            organizer_packing_scopes.append(
+                str(organized.metrics.get("packing_scope", "organizer_input"))
+            )
             organizer_metrics["organizer_from_arrow_s"] += float(organized.metrics["organizer_from_arrow_s"])
             organizer_metrics["organizer_plan_s"] += float(organized.metrics["organizer_plan_s"])
             organizer_metrics["organizer_collect_s"] += float(organized.metrics["organizer_collect_s"])
@@ -2395,6 +2561,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         if args.request_trace_output
                         else None
                     ),
+                    packing_sink=replay_packing,
                     epoch_clock=lifecycle_epoch_clock,
                 )
                 operator_timer = StageTimer.start("operator_wall")
@@ -2557,6 +2724,41 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         token_count = sum(int(result["token_count"]) for result in operator_results)
         batch_stats = batch_result_stats(operator_results)
         vllm_stats = vllm_metric_delta_stats(vllm_metrics_before, vllm_metrics_after)
+        if args.arrival_replay:
+            packing_batch_cost_units = [
+                cost for cost, _ in replay_packing
+            ]
+            packing_batch_row_counts = [
+                row_count for _, row_count in replay_packing
+            ]
+            packing_scope = "arrival_order"
+            packing_algorithm = "sequential_pending"
+        else:
+            packing_scope = (
+                "fetch_chunk_local"
+                if organizer_calls > 1
+                else "partition_local"
+                if "partition_local" in organizer_packing_scopes
+                else "organizer_input"
+            )
+            packing_algorithm = (
+                "best_fit_decreasing"
+                if args.batching_policy == "best_fit_token_budget"
+                else "fixed_rows"
+                if args.batching_policy == "fixed_rows"
+                else "sequential"
+            )
+        packing_metrics = _packing_run_metrics(
+            packing_batch_cost_units,
+            packing_batch_row_counts,
+            capacity=(
+                args.token_budget
+                if args.batching_policy.endswith("token_budget")
+                else 0
+            ),
+            packing_scope=packing_scope,
+            packing_algorithm=packing_algorithm,
+        )
 
         return {
             "status": "ok",
@@ -2594,6 +2796,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "embedding_dim": args.embedding_dim,
             "embedding_vector_dim": current_vector_dim if current_vector_dim is not None else "",
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
+            "output_cost_mode": args.output_cost_mode,
+            "output_cost_source": output_cost_source(args.output_cost_mode),
+            "packing_cost_unit": "tokens",
+            "cost_model_id": args.cost_model_id,
+            "cost_tokenizer_id": args.cost_tokenizer_id,
+            **packing_metrics,
             "model_workers": args.model_workers,
             "max_inflight_limit": args.max_inflight,
             "endpoint_routing": args.endpoint_routing,

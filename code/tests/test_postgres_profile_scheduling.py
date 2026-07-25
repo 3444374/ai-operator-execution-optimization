@@ -70,6 +70,27 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(envelope.request.first_arrival_s, 1.5)
         self.assertEqual(envelope.request.oldest_arrival_s, 1.5)
 
+    def test_batch_envelopes_use_trace_target_output_cost_without_changing_cap(
+        self,
+    ) -> None:
+        batch = pa.table(
+            {
+                "doc_id": [1, 2],
+                "prompt_tokens": [10, 20],
+                "target_output_tokens": [7, 3],
+            }
+        )
+
+        envelopes = profile._batch_envelopes(
+            [batch],
+            job_id="job-1",
+            operator="ai_complete",
+            completion_max_tokens=16,
+            output_cost_mode="trace_target_output",
+        )
+
+        self.assertEqual(envelopes[0].request.estimated_output_tokens, 10)
+
     def test_endpoint_topology_pairs_ids_and_urls_in_default_pool(self) -> None:
         topology = profile._endpoint_topology(
             endpoint_ids=["endpoint-0", "endpoint-1"],
@@ -321,6 +342,43 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 table.column("doc_id").chunk(0).buffers()[1].address,
             )
 
+    def test_row_arrivals_use_trace_target_output_cost(self) -> None:
+        table = pa.table(
+            {
+                "doc_id": [11, 12],
+                "prompt_tokens": [7, 9],
+                "target_output_tokens": [6, 2],
+                "arrival_time_s": [2.5, 2.75],
+            }
+        )
+
+        arrivals = profile._row_arrivals(
+            table,
+            completion_max_tokens=16,
+            output_cost_mode="trace_target_output",
+        )
+
+        self.assertEqual(
+            [item.estimated_output_tokens for item in arrivals],
+            [6, 2],
+        )
+
+    def test_trace_output_cost_requires_target_column(self) -> None:
+        table = pa.table(
+            {
+                "doc_id": [11],
+                "prompt_tokens": [7],
+                "arrival_time_s": [2.5],
+            }
+        )
+
+        with self.assertRaisesRegex(ValueError, "target_output_tokens"):
+            profile._row_arrivals(
+                table,
+                completion_max_tokens=16,
+                output_cost_mode="trace_target_output",
+            )
+
     def test_arrow_envelope_reconstructs_schema_order_and_values_exactly_once(
         self,
     ) -> None:
@@ -458,6 +516,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "arrival_time_s": [0.0, 0.0, 0.0],
             }
         )
+        packing = []
 
         envelopes = list(
             profile._arrival_replay_envelopes(
@@ -472,6 +531,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     kv_usage=0.0,
                 ),
                 trace_sink=[],
+                packing_sink=packing,
             )
         )
 
@@ -483,6 +543,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [envelope.request.prompt_tokens for envelope in envelopes],
             [6, 6, 12],
         )
+        self.assertEqual(packing, [(6, 1), (6, 1), (12, 1)])
 
     def test_arrival_replay_emits_one_lifecycle_seed_per_complete_row(self) -> None:
         replay_clock = _DeterministicReplayClock()
@@ -692,6 +753,55 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "bounded_requested_workload",
         )
 
+    def test_dry_run_records_output_cost_provenance(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--output-cost-mode",
+                "trace_target_output",
+                "--cost-model-id",
+                "qwen-test",
+                "--cost-tokenizer-id",
+                "qwen-tokenizer-test",
+            ]
+        )
+
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["output_cost_mode"], "trace_target_output")
+        self.assertEqual(
+            row["output_cost_source"],
+            "burstgpt_unpaired_trace_metadata",
+        )
+        self.assertEqual(row["cost_model_id"], "qwen-test")
+        self.assertEqual(row["cost_tokenizer_id"], "qwen-tokenizer-test")
+        self.assertEqual(row["packing_cost_unit"], "tokens")
+        self.assertEqual(row["packing_algorithm"], "fixed_rows")
+        self.assertEqual(row["packing_scope"], "organizer_input")
+        self.assertEqual(row["packing_input_rows"], 0)
+        self.assertEqual(row["packing_batch_count"], 0)
+
+    def test_packing_run_metrics_aggregate_exact_batch_costs(self) -> None:
+        metrics = profile._packing_run_metrics(
+            batch_cost_units=[8, 12],
+            batch_row_counts=[2, 1],
+            capacity=10,
+            packing_scope="fetch_chunk_local",
+            packing_algorithm="best_fit_decreasing",
+        )
+
+        self.assertEqual(metrics["packing_algorithm"], "best_fit_decreasing")
+        self.assertEqual(metrics["packing_scope"], "fetch_chunk_local")
+        self.assertEqual(metrics["packing_budget_utilization_mean"], 0.8)
+        self.assertEqual(metrics["packing_budget_utilization_p95"], 0.8)
+        self.assertEqual(metrics["packing_oversized_rows"], 1)
+        self.assertEqual(metrics["packing_input_rows"], 3)
+        self.assertEqual(metrics["packing_batch_count"], 2)
+        self.assertEqual(metrics["batch_estimated_cost_units_p50"], 8.0)
+        self.assertEqual(metrics["batch_estimated_cost_units_p95"], 12.0)
+        self.assertEqual(metrics["batch_estimated_cost_units_p99"], 12.0)
+        self.assertEqual(metrics["batch_estimated_cost_units_max"], 12)
+
     def test_request_trace_cli_requires_supported_replay_path(self) -> None:
         invalid_cases = [
             (
@@ -896,6 +1006,21 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "length_align_fixed_rows",
                 ],
                 "offline reordering",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--batching-policy",
+                    "best_fit_token_budget",
+                    "--token-budget",
+                    "10",
+                ],
+                "does not support best_fit_token_budget",
             ),
             (
                 [
