@@ -757,6 +757,38 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(row["scenario_id"], "fixed-timeout")
         self.assertEqual(row["random_seed"], 7)
 
+    def test_single_run_mode_selects_exact_phase_and_repeat(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--run-phase",
+                "formal",
+                "--run-repeat-index",
+                "4",
+            ]
+        )
+
+        self.assertEqual(
+            list(profile.iter_requested_runs(args)),
+            [("formal", 4)],
+        )
+
+        invalid_argv = [
+            ["--dry-run", "--run-phase", "formal"],
+            ["--dry-run", "--run-repeat-index", "1"],
+            [
+                "--dry-run",
+                "--run-phase",
+                "formal",
+                "--run-repeat-index",
+                "0",
+            ],
+        ]
+        for argv in invalid_argv:
+            with self.subTest(argv=argv):
+                with self.assertRaisesRegex(SystemExit, "single-run"):
+                    list(profile.iter_requested_runs(profile.parse_args(argv)))
+
     def test_replay_validation_rejects_invalid_formal_paths(self) -> None:
         invalid_cases = [
             (

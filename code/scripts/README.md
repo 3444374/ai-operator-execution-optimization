@@ -157,6 +157,8 @@ result.
 - `--write-batch-rows`
 - `--warmup-runs`
 - `--repeats`
+- `--run-phase warmup|formal`
+- `--run-repeat-index`
 - `--experiment-id`
 
 运行级 CSV 现在直接记录 `tokens_per_s`，计算口径为 vLLM Prometheus 的
@@ -216,6 +218,32 @@ while `client_estimated_output_tokens` records the explicitly labelled
 whitespace-token estimate and `output_token_source` records the limitation.
 Replay timestamps use one epoch anchor plus monotonic elapsed time, so wall
 clock adjustments cannot invert arrival and flush ordering.
+
+## Seeded scenario runner
+
+`run_ai_operator_scenarios.py` executes each profiler run in a separate
+process. Warm-ups preserve configuration order; formal scenarios are shuffled
+once per repeat with the recorded seed. Before every run, the runner requires
+the model health endpoint to return HTTP 200 and the vLLM running/waiting
+gauges to both equal zero. It stops at the first failed process or missing run
+CSV row, and atomically updates `manifest.json` after every completed run.
+
+The JSON configuration contains shared profiler arguments and scenario-specific
+arguments. Output paths and run identity are owned by the runner and cannot be
+overridden by the configuration. Persisted commands redact API credentials,
+authentication tokens, secrets, passwords, and database URL passwords while
+retaining performance controls such as token budgets.
+
+```powershell
+.conda\pg-ai-profile\python.exe code\scripts\run_ai_operator_scenarios.py `
+  --config experiments\results\request_lifecycle_gate_20260725\scenario_config.json `
+  --profiler code\scripts\postgres_ai_operator_profile.py `
+  --python-executable .conda\pg-ai-profile\python.exe `
+  --output-dir experiments\results\request_lifecycle_gate_20260725 `
+  --health-url http://localhost:8000/health `
+  --metrics-url http://localhost:8000/metrics `
+  --idle-timeout-s 60
+```
 
 Single-GPU smoke configuration:
 

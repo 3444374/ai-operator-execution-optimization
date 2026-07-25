@@ -1140,3 +1140,17 @@
   改为共享 monotonic-backed epoch clock；backend service epoch 单独标记为
   `service_clock_domain=backend`，跨时钟域无法可靠排序时不生成
   `submit_to_service_s`。
+
+## 2026-07-25 Seeded 场景运行器
+
+- 新增纯函数场景调度模块：warm-up 保持配置顺序，formal 每轮使用记录的 seed
+  独立洗牌，输出连续 `order_index`，便于复现实验顺序。
+- profiler 新增单次运行身份参数 `--run-phase` 与
+  `--run-repeat-index`；场景运行器逐次启动独立 profiler 进程，并在每次运行前
+  检查 vLLM health、running 与 waiting 空闲状态。
+- runner 在非零退出或缺少预期 run CSV 行时立即停止并记录 incident；每次成功后
+  原子更新 manifest。持久化命令与配置会脱敏 API key、认证 token、secret、
+  password 和数据库 URL 密码，但保留 token budget 等实验控制量。
+- 当前仅完成运行器代码与单元测试，真实 64 行
+  PostgreSQL→Daft→Arrow→Ray→vLLM 门禁仍待执行；尚未产生新的性能结论，也未合并
+  `main`。

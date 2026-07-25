@@ -311,6 +311,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--write-batch-rows", type=int, default=0)
     parser.add_argument("--warmup-runs", type=int, default=0)
     parser.add_argument("--repeats", type=int, default=1)
+    parser.add_argument(
+        "--run-phase",
+        choices=["warmup", "formal"],
+        default=None,
+    )
+    parser.add_argument("--run-repeat-index", type=int, default=None)
     parser.add_argument("--experiment-id", default="manual")
     parser.add_argument("--output", default="feasibility/results/postgres_ai_operator_profile.csv")
     parser.add_argument("--dry-run", action="store_true", help="Validate configuration without connecting to DB.")
@@ -2715,9 +2721,28 @@ def iter_run_phases(warmup_runs: int, repeats: int) -> Iterable[tuple[str, int]]
         yield "formal", repeat_index
 
 
+def iter_requested_runs(
+    args: argparse.Namespace,
+) -> Iterable[tuple[str, int]]:
+    supplied = (
+        args.run_phase is not None,
+        args.run_repeat_index is not None,
+    )
+    if supplied[0] != supplied[1]:
+        raise SystemExit(
+            "single-run mode requires --run-phase and --run-repeat-index"
+        )
+    if supplied[0]:
+        if args.run_repeat_index < 1:
+            raise SystemExit("single-run repeat index must be positive")
+        yield args.run_phase, args.run_repeat_index
+        return
+    yield from iter_run_phases(args.warmup_runs, args.repeats)
+
+
 def main() -> None:
     args = parse_args()
-    for phase, repeat_index in iter_run_phases(args.warmup_runs, args.repeats):
+    for phase, repeat_index in iter_requested_runs(args):
         row = run_once(args, phase, repeat_index)
         append_metrics(Path(args.output), row)
         print(json.dumps(row, ensure_ascii=False, indent=2))

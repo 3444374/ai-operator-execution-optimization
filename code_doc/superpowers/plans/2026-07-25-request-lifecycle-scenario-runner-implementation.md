@@ -901,9 +901,11 @@ equivalent when single-run arguments are absent.
 9. write manifest atomically after every completed scheduled run.
 
 Before persisting commands or configuration, redact values associated with
-`--completion-api-key`, `--embedding-api-key`, and any future argument whose
-normalized name contains `token`, `secret`, or `password`. Database URLs are
-stored only after their password component is replaced with `***`.
+credential-bearing flags whose normalized names contain `api-key`,
+`auth-token`, `secret`, or `password`. Do not redact experimental controls such
+as `--token-budget` or `--completion-max-tokens`, because the manifest must
+remain reproducible. Database URLs are stored only after their password
+component is replaced with `***`.
 
 CLI:
 
