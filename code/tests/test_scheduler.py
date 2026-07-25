@@ -135,6 +135,35 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(result.completions[0].status, "failed")
         self.assertEqual(result.completions[0].error, "synthetic failure")
 
+    def test_scheduler_normalizes_out_of_order_fanin_to_submission_order(self) -> None:
+        class ReverseCompletionAdapter(FakeSubmissionAdapter):
+            def wait_one(self, pending):
+                handle, pending_envelope = pending[-1]
+                return CollectedSubmission(
+                    handle=handle,
+                    completion=SubmissionCompletion(
+                        request_id=pending_envelope.request.request_id,
+                        status="completed",
+                        result=pending_envelope.payload,
+                    ),
+                    wait_s=0.0,
+                    result_s=0.0,
+                )
+
+        scheduler = SynchronousScheduler(
+            StaticAdmissionController(3),
+            RoundRobinEndpointRouter(),
+            ReverseCompletionAdapter(),
+            "default",
+        )
+
+        result = scheduler.run([envelope(index) for index in range(3)], topology())
+
+        self.assertEqual(
+            [item.request_id for item in result.completions],
+            ["r0", "r1", "r2"],
+        )
+
     def test_scheduler_rejects_completion_for_different_request(self) -> None:
         class WrongCompletionAdapter(FakeSubmissionAdapter):
             def wait_one(self, pending):

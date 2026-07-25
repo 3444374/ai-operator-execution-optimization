@@ -41,6 +41,7 @@ from .pid_admission import PidAdmissionController, PidConfig
 from .observations import (
     AdmissionTraceEvent,
     CachedMetricsObservationProvider,
+    NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
 from .ray_adapter import RaySubmissionAdapter
@@ -78,6 +79,7 @@ __all__ = [
     "CollectedSubmission",
     "ControlDiagnostics",
     "CachedMetricsObservationProvider",
+    "NonBlockingMetricsObservationProvider",
     "DynamicAdmissionGate",
     "EndpointSnapshot",
     "EndpointRouter",

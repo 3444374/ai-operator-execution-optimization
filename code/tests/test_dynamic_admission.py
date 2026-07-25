@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import threading
 import unittest
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from src.scheduling.models import (  # noqa: E402
 )
 from src.scheduling.observations import (  # noqa: E402
     CachedMetricsObservationProvider,
+    NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
 from src.scheduling.routing import RoundRobinEndpointRouter  # noqa: E402
@@ -71,6 +73,70 @@ class CachedObservationProviderTests(unittest.TestCase):
         self.assertIsNone(observation.running)
         self.assertIsNone(observation.waiting)
         self.assertIsNone(observation.kv_usage)
+
+
+class NonBlockingObservationProviderTests(unittest.TestCase):
+    def test_latest_never_waits_for_blocked_sampler(self) -> None:
+        sampler_entered = threading.Event()
+        release_sampler = threading.Event()
+
+        def blocked_sample():
+            sampler_entered.set()
+            release_sampler.wait(timeout=1.0)
+            return ServiceMetricsSnapshot(running=3, waiting=0, kv_usage=0.1)
+
+        provider = NonBlockingMetricsObservationProvider(
+            blocked_sample,
+            poll_interval_s=10.0,
+        )
+        self.addCleanup(provider.close)
+        self.assertTrue(sampler_entered.wait(timeout=1.0))
+
+        observation = provider.latest(inflight=0)
+
+        self.assertFalse(observation.fresh)
+        self.assertIsNone(observation.running)
+        release_sampler.set()
+
+    def test_completed_background_sample_becomes_stale_without_resampling_inline(self) -> None:
+        clock = FakeClock(10.0)
+        sampled = threading.Event()
+
+        def sample():
+            sampled.set()
+            return ServiceMetricsSnapshot(running=4, waiting=1, kv_usage=0.25)
+
+        provider = NonBlockingMetricsObservationProvider(
+            sample,
+            poll_interval_s=10.0,
+            stale_after_s=0.5,
+            clock=clock,
+        )
+        self.addCleanup(provider.close)
+        self.assertTrue(sampled.wait(timeout=1.0))
+        provider.wait_until_sampled(timeout_s=1.0)
+
+        current = provider.latest(inflight=2)
+        clock.current = 10.6
+        stale = provider.latest(inflight=3)
+
+        self.assertTrue(current.fresh)
+        self.assertEqual(current.waiting, 1)
+        self.assertFalse(stale.fresh)
+        self.assertEqual(stale.waiting, 1)
+        self.assertEqual(stale.inflight, 3)
+
+    def test_close_stops_background_sampler(self) -> None:
+        sampled = threading.Event()
+        provider = NonBlockingMetricsObservationProvider(
+            lambda: sampled.set() or ServiceMetricsSnapshot(1, 0, 0.1),
+            poll_interval_s=10.0,
+        )
+        self.assertTrue(sampled.wait(timeout=1.0))
+
+        provider.close()
+
+        self.assertFalse(provider.is_running)
 
 
 class DynamicAdmissionGateTests(unittest.TestCase):

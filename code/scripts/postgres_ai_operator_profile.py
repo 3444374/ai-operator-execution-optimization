@@ -73,6 +73,7 @@ from src.scheduling.models import (
 from src.scheduling.ray_adapter import RaySubmissionAdapter
 from src.scheduling.observations import (
     CachedMetricsObservationProvider,
+    NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
 from src.scheduling.pid_admission import PidAdmissionController, PidConfig
@@ -624,6 +625,13 @@ def _arrival_replay_envelopes(
         raise ValueError(f"unsupported flush policy: {args.flush_policy}") from exc
 
     def observe() -> ReplayServiceObservation:
+        if args.flush_policy != "queue_adaptive":
+            return ReplayServiceObservation(
+                fresh=False,
+                running=None,
+                waiting=None,
+                kv_usage=None,
+            )
         if hasattr(service_observation, "latest"):
             observation = service_observation.latest(0)
             return ReplayServiceObservation(
@@ -1593,7 +1601,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "flush_timeout_ms": args.flush_timeout_ms,
             "flush_max_wait_ms": args.flush_max_wait_ms,
             "flush_trace_output": args.flush_trace_output or "",
-            "flush_trace_path": "",
+            "flush_trace_path": args.flush_trace_output or "",
             "flush_trace_events": 0,
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
@@ -1885,28 +1893,43 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             processed_rows += table.num_rows
 
         if args.arrival_replay:
-            flush_observation_provider = CachedMetricsObservationProvider(
-                (
-                    lambda: _service_metrics_snapshot(args.model_metrics_url)
-                    if args.model_metrics_url
-                    else None
-                ),
-                min_sample_interval_s=0.25,
+            flush_observation_provider = None
+            if args.flush_policy == "queue_adaptive":
+                flush_observation_provider = NonBlockingMetricsObservationProvider(
+                    lambda: (
+                        _service_metrics_snapshot(args.model_metrics_url)
+                        if args.model_metrics_url
+                        else None
+                    ),
+                    poll_interval_s=0.25,
+                    stale_after_s=0.5,
+                )
+            service_observation = flush_observation_provider or (
+                lambda: ReplayServiceObservation(
+                    fresh=False,
+                    running=None,
+                    waiting=None,
+                    kv_usage=None,
+                )
             )
-            replay_envelopes = _arrival_replay_envelopes(
-                replay_tables,
-                args,
-                job_id=str(job_id),
-                operator=args.operator,
-                service_observation=flush_observation_provider,
-                trace_sink=flush_trace_events,
-            )
-            operator_timer = StageTimer.start("operator_wall")
-            results, metrics = submit_operator_batches(
-                (),
-                replay_envelopes=replay_envelopes,
-            )
-            operator_wall_s += operator_timer.stop()
+            try:
+                replay_envelopes = _arrival_replay_envelopes(
+                    replay_tables,
+                    args,
+                    job_id=str(job_id),
+                    operator=args.operator,
+                    service_observation=service_observation,
+                    trace_sink=flush_trace_events,
+                )
+                operator_timer = StageTimer.start("operator_wall")
+                results, metrics = submit_operator_batches(
+                    (),
+                    replay_envelopes=replay_envelopes,
+                )
+                operator_wall_s += operator_timer.stop()
+            finally:
+                if flush_observation_provider is not None:
+                    flush_observation_provider.close()
             operator_results.extend(results)
             object_count = metrics["operator_invocations"]
             for key in submit_metrics:

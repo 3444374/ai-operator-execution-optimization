@@ -473,6 +473,43 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [6, 6, 12],
         )
 
+    def test_nonadaptive_flush_never_reads_service_metrics(self) -> None:
+        class BlockingMetricsMustNotRun:
+            def latest(self, inflight):
+                raise AssertionError("non-adaptive flush must not read metrics")
+
+        for flush_policy in ("immediate", "fixed_timeout"):
+            with self.subTest(flush_policy=flush_policy):
+                args = SimpleNamespace(
+                    ray_batch_rows=2,
+                    batching_policy="fixed_rows",
+                    token_budget=0,
+                    flush_policy=flush_policy,
+                    flush_timeout_ms=25.0,
+                    flush_max_wait_ms=50.0,
+                    _replay_clock=_DeterministicReplayClock(),
+                )
+                table = pa.table(
+                    {
+                        "doc_id": [1],
+                        "prompt_tokens": [1],
+                        "arrival_time_s": [0.0],
+                    }
+                )
+
+                envelopes = list(
+                    profile._arrival_replay_envelopes(
+                        [table],
+                        args,
+                        job_id="job",
+                        operator="ai_embed",
+                        service_observation=BlockingMetricsMustNotRun(),
+                        trace_sink=[],
+                    )
+                )
+
+                self.assertEqual(len(envelopes), 1)
+
     def test_dry_run_records_default_and_explicit_replay_configuration(self) -> None:
         default_args = profile.parse_args(["--dry-run"])
         default_row = profile.run_once(default_args, "formal", 1)
@@ -510,6 +547,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(replay_row["flush_timeout_ms"], 12.5)
         self.assertEqual(replay_row["flush_max_wait_ms"], 30.0)
         self.assertEqual(replay_row["flush_trace_output"], "trace.csv")
+        self.assertEqual(replay_row["flush_trace_path"], "trace.csv")
         self.assertEqual(
             replay_row["arrival_replay_preload"],
             "bounded_requested_workload",
@@ -894,6 +932,44 @@ class StaticTaskSchedulingTests(unittest.TestCase):
         self.assertEqual(metrics["operator_invocations"], 1)
         self.assertIs(remote.calls[0][0], envelope.payload)
 
+    def test_replay_envelopes_cover_typed_and_legacy_task_paths(self) -> None:
+        envelope = profile._batch_envelopes(
+            [self.batches[0]],
+            job_id="replay",
+            operator="ai_embed",
+            completion_max_tokens=0,
+        )[0]
+        for policy in ("typed", "legacy"):
+            with self.subTest(policy=policy):
+                remote = _RecordingRemote()
+                if policy == "typed":
+                    traces = []
+                    adaptive_config = {
+                        "admission_gate": DynamicAdmissionGate(
+                            AimdAdmissionController(initial_window=4),
+                            CachedMetricsObservationProvider(
+                                lambda: ServiceMetricsSnapshot(10, 0, 0.2),
+                                min_sample_interval_s=0.0,
+                            ),
+                            trace_sink=traces.append,
+                        ),
+                        "trace_events": traces,
+                    }
+                else:
+                    adaptive_config = {}
+
+                results, metrics = self._submit(
+                    remote,
+                    adaptive_config=adaptive_config,
+                    model_backend="compatible_http",
+                    endpoint_urls=["http://local-test-endpoint"],
+                    replay_envelopes=iter([envelope]),
+                )
+
+                self.assertEqual(len(results), 1)
+                self.assertEqual(metrics["operator_invocations"], 1)
+                self.assertIs(remote.calls[0][0], envelope.payload)
+
 
 class _RecordingActor:
     def __init__(self):
@@ -908,7 +984,13 @@ class StaticActorSchedulingTests(unittest.TestCase):
             pa.table({"doc_id": [3], "prompt_tokens": [30]}),
         ]
 
-    def _submit(self, actors, adaptive_config=None, routing_config=None):
+    def _submit(
+        self,
+        actors,
+        adaptive_config=None,
+        routing_config=None,
+        replay_envelopes=None,
+    ):
         return profile.submit_with_backpressure(
             ray_module=_ImmediateRay,
             actors=actors,
@@ -917,6 +999,7 @@ class StaticActorSchedulingTests(unittest.TestCase):
             method_name="execute_batch",
             adaptive_config=adaptive_config,
             routing_config=routing_config,
+            replay_envelopes=replay_envelopes,
         )
 
     def test_static_actor_path_delegates_to_shared_scheduler(self) -> None:
@@ -981,6 +1064,47 @@ class StaticActorSchedulingTests(unittest.TestCase):
         self.assertEqual(len(results), 3)
         self.assertGreater(metrics["adaptive_downshifts"], 0)
         self.assertGreaterEqual(len(traces), 3)
+
+    def test_replay_envelopes_cover_static_typed_and_legacy_actor_paths(self) -> None:
+        envelope = profile._batch_envelopes(
+            [self.batches[0]],
+            job_id="replay",
+            operator="ai_embed",
+            completion_max_tokens=0,
+        )[0]
+        for policy in ("static", "typed", "legacy"):
+            with self.subTest(policy=policy):
+                actors = [_RecordingActor()]
+                if policy == "typed":
+                    traces = []
+                    adaptive_config = {
+                        "admission_gate": DynamicAdmissionGate(
+                            AimdAdmissionController(initial_window=4),
+                            CachedMetricsObservationProvider(
+                                lambda: ServiceMetricsSnapshot(10, 0, 0.2),
+                                min_sample_interval_s=0.0,
+                            ),
+                            trace_sink=traces.append,
+                        ),
+                        "trace_events": traces,
+                    }
+                elif policy == "legacy":
+                    adaptive_config = {}
+                else:
+                    adaptive_config = None
+
+                results, metrics = self._submit(
+                    actors,
+                    adaptive_config=adaptive_config,
+                    replay_envelopes=iter([envelope]),
+                )
+
+                self.assertEqual(len(results), 1)
+                self.assertEqual(metrics["operator_invocations"], 1)
+                self.assertIs(
+                    actors[0].execute_batch.calls[0][0],
+                    envelope.payload,
+                )
 
     def test_actor_pool_routes_short_and_long_requests_to_partitioned_actors(self) -> None:
         actors = [_RecordingActor(), _RecordingActor()]

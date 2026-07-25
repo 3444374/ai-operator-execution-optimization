@@ -91,12 +91,17 @@ class SynchronousScheduler:
     ) -> SchedulerResult:
         pending: list[tuple[object, PayloadEnvelope]] = []
         completions: list[SubmissionCompletion] = []
+        submission_order: dict[str, int] = {}
         max_inflight_seen = 0
         bounded_wait_samples: list[float] = []
         fanin_s = 0.0
         submit_s = 0.0
 
         for envelope in envelopes:
+            request_id = envelope.request.request_id
+            if request_id in submission_order:
+                raise ValueError(f"duplicate request_id: {request_id}")
+            submission_order[request_id] = len(submission_order)
             while not self.admission.decide(len(pending)).allowed:
                 collected = self._collect_one(pending, completions)
                 bounded_wait_samples.append(collected.wait_s)
@@ -118,7 +123,12 @@ class SynchronousScheduler:
             fanin_s += collected.result_s
 
         return SchedulerResult(
-            completions=tuple(completions),
+            completions=tuple(
+                sorted(
+                    completions,
+                    key=lambda completion: submission_order[completion.request_id],
+                )
+            ),
             operator_invocations=len(completions),
             max_inflight_seen=max_inflight_seen,
             applied_limit=self.admission.limit,
