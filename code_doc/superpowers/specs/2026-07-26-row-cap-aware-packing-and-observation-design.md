@@ -11,15 +11,16 @@ attributable:
    submission path;
 2. packing must optimize under both the token budget and the row cap that the
    runtime actually enforces;
-3. classic Best-Fit Decreasing (BFD) remains an experimental baseline and is
-   not retained as the default unless real single-GPU results beat the simpler
-   sequential baseline.
+3. classic Best-Fit Decreasing (BFD) remains an experimental baseline, while
+   individually useful BFD mechanisms may be retained in a hybrid strategy
+   even when the complete classic algorithm is not the winner.
 
 This phase succeeds when focused and full tests pass, a real 64-row
 PostgreSQL→Daft→Ray→vLLM gate produces valid lifecycle/resource/MFU evidence,
 and the 512-row comparison identifies at least one candidate worth confirming
-on the held-out 1024-row scale. A strategy that loses to sequential packing is
-reported and removed from the recommended path.
+on the held-out 1024-row scale. Selection is mechanism-level rather than
+name-level: a losing complete algorithm does not invalidate an independently
+useful ordering rule, constraint, or deterministic tie-break.
 
 ## 2. Scope
 
@@ -54,12 +55,13 @@ bounded-lookahead streaming have different semantics.
 
 ## 3. Alternatives
 
-### 3.1 Recommended: row-cap-first best fit
+### 3.1 Recommended: BFD-inspired row-cap-first best fit
 
-Build batches deterministically while enforcing both hard constraints. Select
-the feasible open batch that first minimizes the number of remaining row
-slots, then minimizes remaining token capacity, with stable batch-index
-tie-breaking.
+Reuse BFD's offline decreasing-cost order and deterministic tie-breaking, but
+replace classic BFD's token-residual-only placement objective. Build batches
+while enforcing both hard constraints. Select the feasible open batch that
+first minimizes the number of remaining row slots, then minimizes remaining
+token capacity, with stable batch-index tie-breaking.
 
 This directly addresses the observed 1024-row failure: classic BFD achieved
 high token-budget utilization but created 87 submissions under a 16-row cap,
@@ -86,13 +88,15 @@ Rejected for the first version because the weights introduce another search
 space and make the mechanism harder to interpret. It is only justified if the
 lexicographic rule produces a clear but inadequate trade-off.
 
-### 3.3 Remove BFD immediately
+### 3.3 Remove all BFD-derived mechanisms immediately
 
 Use sequential token-budget batching only.
 
 Rejected as the experiment design because the 512-row run showed a positive
 signal. Classic BFD should remain as a controlled baseline long enough to
-locate its boundary, but it has no privileged place in the final system.
+locate its boundary. Its decreasing order, validation rules, stable tie-break,
+and packing diagnostics remain reusable design points, but none has a
+privileged place in the final system without an attributable ablation.
 
 ## 4. Architecture
 
@@ -123,7 +127,7 @@ input. Add a sibling pure function rather than changing classic BFD:
 row_cap_aware_best_fit(items, capacity, max_rows) -> list[list[int]]
 ```
 
-Both algorithms share the same validation and oversized-row semantics:
+All packing candidates share the same validation and oversized-row semantics:
 
 - every input row appears exactly once;
 - no batch exceeds `max_rows`;
@@ -137,7 +141,8 @@ Daft call the same packing function; no policy code imports Daft or Ray.
 ### 4.3 Strategy selection
 
 There is no permanent “advanced” default in this phase. The default remains
-the current sequential token-budget behavior. Experiment results decide:
+the current sequential token-budget behavior. Experiment results select
+mechanisms, not algorithm labels:
 
 - row-cap-aware beats sequential at 512 and does not reverse at 1024:
   retain as the leading candidate;
@@ -145,9 +150,12 @@ the current sequential token-budget behavior. Experiment results decide:
   retain only as a conditional policy with a documented boundary;
 - it loses at 512:
   stop and keep sequential;
-- classic BFD loses:
-  keep its code only as a small reproducible baseline, not in the recommended
-  runtime configuration.
+- classic BFD loses but the BFD-inspired row-cap-aware variant wins:
+  retain only the decreasing order, deterministic tie-break, shared
+  constraints, and row-cap-aware placement used by the winning hybrid;
+- both classic BFD and the hybrid lose:
+  keep the shared correctness/diagnostic utilities and the classic algorithm
+  only as a small reproducible baseline.
 
 ## 5. Experiment Design
 
@@ -171,7 +179,7 @@ Use the same 512 documents and three formal repeats for:
 
 - sequential fixed-output cost;
 - classic BFD fixed-output cost;
-- row-cap-aware fixed-output cost.
+- BFD-inspired row-cap-aware fixed-output cost.
 
 The unpaired BurstGPT target-output metadata is excluded from the primary
 comparison. It may remain a sensitivity-only secondary group.
@@ -205,6 +213,14 @@ Primary selection metrics:
 Packing utilization and GPU utilization are diagnostic metrics, not standalone
 success criteria.
 
+The three primary groups provide a minimal component ablation:
+
+- sequential vs classic BFD measures the complete classic mechanism;
+- classic BFD vs BFD-inspired row-cap-aware measures the placement objective
+  while keeping decreasing order and deterministic behavior;
+- sequential vs BFD-inspired row-cap-aware measures the resulting hybrid
+  system effect.
+
 ## 6. Error and Evidence Semantics
 
 - Missing/stale adaptive observations hold the current window.
@@ -215,8 +231,9 @@ success criteria.
   `operator_wall_s`; it is not kernel-profiler MFU.
 - An algorithm is never called “better” from GPU utilization or packing
   utilization alone.
-- Negative BFD results are retained as boundary evidence and do not require
-  further optimization.
+- Negative classic-BFD results are retained as boundary evidence and do not
+  require further optimization; independently successful BFD-derived
+  mechanisms may still be used in the hybrid.
 
 ## 7. Testing
 
@@ -245,4 +262,3 @@ All production behavior follows RED→GREEN:
   implemented;
 - every new formal CSV records the algorithm, token budget, row cap, cost
   source, model/tokenizer IDs, FLOP source, MFU method, and hardware identity.
-

@@ -1306,3 +1306,7 @@
 - 正式主比较使用同一模型、文档、固定 output cost、K_max 和测量配置，classic BFD
   与未配对 BurstGPT trace 只作 secondary sensitivity；每轮继续强制真实 vLLM
   FLOP delta、MFU、能耗、逐请求 E2E、submission 数和 exactly-once 审计。
+- 用户进一步澄清 BFD 不应按“整体采用/整体删除”二选一。设计调整为机制级消融：
+  即使 classic BFD 整体负向，仍可在 row-cap-aware 混合策略中复用经独立对照有效的
+  cost 降序、确定性 tie-break、共享硬约束、oversized 单例和 packing diagnostics；
+  只有 placement objective 等造成退化的部分被排除。
