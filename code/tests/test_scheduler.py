@@ -17,7 +17,11 @@ from src.scheduling.models import (  # noqa: E402
     SubmissionCompletion,
     TopologySnapshot,
 )
-from src.scheduling.routing import RoundRobinEndpointRouter  # noqa: E402
+from src.scheduling.routing import (  # noqa: E402
+    LeastQueuedEndpointRouter,
+    RequestPoolRouter,
+    RoundRobinEndpointRouter,
+)
 from src.scheduling.scheduler import SynchronousScheduler  # noqa: E402
 
 
@@ -151,6 +155,83 @@ class SchedulerTests(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "completion request_id"):
             scheduler.run([envelope(0)], topology())
+
+    def test_scheduler_composes_request_pool_and_endpoint_routing(self) -> None:
+        adapter = FakeSubmissionAdapter()
+        dynamic_topology = TopologySnapshot(
+            (
+                EndpointSnapshot("prefix-1", "ray://prefix", "prefix", "0", True, 0, 0, None, 1.0),
+                EndpointSnapshot("long-1", "ray://long", "long", "0", True, 0, 0, None, 1.0),
+                EndpointSnapshot("short-2", "ray://short-2", "short", "0", True, 1, 0, None, 1.0),
+                EndpointSnapshot("short-1", "ray://short-1", "short", "0", True, 0, 0, None, 1.0),
+            ),
+            1.0,
+        )
+        requests = [
+            PayloadEnvelope(
+                BatchRequest(
+                    "prefix-request",
+                    "j1",
+                    "ai_complete",
+                    1,
+                    200,
+                    10,
+                    "shared",
+                    0.0,
+                    0.0,
+                    "prefix-payload",
+                ),
+                "prefix",
+            ),
+            PayloadEnvelope(
+                BatchRequest(
+                    "long-request",
+                    "j1",
+                    "ai_complete",
+                    1,
+                    100,
+                    10,
+                    "",
+                    0.0,
+                    0.0,
+                    "long-payload",
+                ),
+                "long",
+            ),
+            PayloadEnvelope(
+                BatchRequest(
+                    "short-request",
+                    "j1",
+                    "ai_complete",
+                    1,
+                    10,
+                    5,
+                    "",
+                    0.0,
+                    0.0,
+                    "short-payload",
+                ),
+                "short",
+            ),
+        ]
+        scheduler = SynchronousScheduler(
+            StaticAdmissionController(3),
+            LeastQueuedEndpointRouter(),
+            adapter,
+            "short",
+            pool_router=RequestPoolRouter(long_request_tokens=100),
+        )
+
+        scheduler.run(requests, dynamic_topology)
+
+        self.assertEqual(
+            adapter.submitted,
+            [
+                ("prefix-request", "prefix-1"),
+                ("long-request", "long-1"),
+                ("short-request", "short-1"),
+            ],
+        )
 
 
 if __name__ == "__main__":

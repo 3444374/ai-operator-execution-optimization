@@ -9,12 +9,14 @@ from typing import Iterable, Protocol
 
 from .models import (
     AdmissionDecision,
+    BatchRequest,
     CollectedSubmission,
     PayloadEnvelope,
+    PoolRoutingDecision,
+    RoutingDecision,
     SubmissionCompletion,
     TopologySnapshot,
 )
-from .routing import RoundRobinEndpointRouter
 
 
 class SubmissionAdapter(Protocol):
@@ -35,6 +37,25 @@ class AdmissionPolicy(Protocol):
         ...
 
 
+class PoolRouter(Protocol):
+    def route(
+        self,
+        request: BatchRequest,
+        topology: TopologySnapshot,
+    ) -> PoolRoutingDecision:
+        ...
+
+
+class EndpointRouter(Protocol):
+    def route(
+        self,
+        request: BatchRequest,
+        topology: TopologySnapshot,
+        pool_id: str,
+    ) -> RoutingDecision:
+        ...
+
+
 @dataclass(frozen=True)
 class SchedulerResult:
     completions: tuple[SubmissionCompletion, ...]
@@ -51,14 +72,17 @@ class SynchronousScheduler:
     def __init__(
         self,
         admission: AdmissionPolicy,
-        router: RoundRobinEndpointRouter,
+        router: EndpointRouter,
         adapter: SubmissionAdapter,
         pool_id: str,
+        *,
+        pool_router: PoolRouter | None = None,
     ):
         self.admission = admission
         self.router = router
         self.adapter = adapter
         self.pool_id = pool_id
+        self.pool_router = pool_router
 
     def run(
         self,
@@ -77,7 +101,12 @@ class SynchronousScheduler:
                 collected = self._collect_one(pending, completions)
                 bounded_wait_samples.append(collected.wait_s)
                 fanin_s += collected.result_s
-            route = self.router.route(envelope.request, topology, self.pool_id)
+            pool_id = (
+                self.pool_router.route(envelope.request, topology).pool_id
+                if self.pool_router is not None
+                else self.pool_id
+            )
+            route = self.router.route(envelope.request, topology, pool_id)
             submit_start = time.perf_counter()
             handle = self.adapter.submit(envelope, route.endpoint_id)
             submit_s += time.perf_counter() - submit_start

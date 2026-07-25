@@ -14,6 +14,7 @@ from .models import (
     ControlDiagnostics,
     EndpointSnapshot,
     PayloadEnvelope,
+    PoolRoutingDecision,
     RoutingDecision,
     SubmissionCompletion,
     TopologySnapshot,
@@ -26,9 +27,16 @@ from .observations import (
     ServiceMetricsSnapshot,
 )
 from .ray_adapter import RaySubmissionAdapter
-from .routing import RoundRobinEndpointRouter
+from .routing import (
+    LeastQueuedEndpointRouter,
+    PrefixAffinityEndpointRouter,
+    RequestPoolRouter,
+    RoundRobinEndpointRouter,
+)
 from .scheduler import (
     AdmissionPolicy,
+    EndpointRouter,
+    PoolRouter,
     SchedulerResult,
     SubmissionAdapter,
     SynchronousScheduler,
@@ -54,11 +62,17 @@ __all__ = [
     "CachedMetricsObservationProvider",
     "DynamicAdmissionGate",
     "EndpointSnapshot",
+    "EndpointRouter",
     "EwmaAimdAdmissionController",
     "PayloadEnvelope",
+    "PoolRouter",
+    "PoolRoutingDecision",
     "PidAdmissionController",
     "PidConfig",
     "RaySubmissionAdapter",
+    "LeastQueuedEndpointRouter",
+    "PrefixAffinityEndpointRouter",
+    "RequestPoolRouter",
     "RoutingDecision",
     "RoundRobinEndpointRouter",
     "SchedulerResult",

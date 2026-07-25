@@ -149,6 +149,16 @@ class RoutingDecision:
 
 
 @dataclass(frozen=True)
+class PoolRoutingDecision:
+    pool_id: str
+    reason: str
+
+    def __post_init__(self) -> None:
+        if not self.pool_id or not self.reason:
+            raise ValueError("pool_id and reason must be non-empty")
+
+
+@dataclass(frozen=True)
 class SubmissionCompletion:
     request_id: str
     status: Literal["completed", "failed"]
