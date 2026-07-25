@@ -200,5 +200,68 @@ class StaticTaskSchedulingTests(unittest.TestCase):
         run.assert_not_called()
 
 
+class _RecordingActor:
+    def __init__(self):
+        self.execute_batch = _RecordingRemote()
+
+
+class StaticActorSchedulingTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.batches = [
+            pa.table({"doc_id": [1], "prompt_tokens": [10]}),
+            pa.table({"doc_id": [2], "prompt_tokens": [20]}),
+            pa.table({"doc_id": [3], "prompt_tokens": [30]}),
+        ]
+
+    def _submit(self, actors, adaptive_config=None):
+        return profile.submit_with_backpressure(
+            ray_module=_ImmediateRay,
+            actors=actors,
+            batches=self.batches,
+            max_inflight=2,
+            method_name="execute_batch",
+            adaptive_config=adaptive_config,
+        )
+
+    def test_static_actor_path_delegates_to_shared_scheduler(self) -> None:
+        actors = [_RecordingActor()]
+        expected = ([{"ok": True}], {"operator_invocations": 1})
+
+        with patch.object(profile, "_run_static_scheduler", return_value=expected) as run:
+            actual = self._submit(actors)
+
+        self.assertEqual(actual, expected)
+        run.assert_called_once()
+
+    def test_actor_submitters_round_robin_across_actor_pool(self) -> None:
+        actors = [_RecordingActor(), _RecordingActor()]
+
+        results, metrics = self._submit(actors)
+
+        self.assertEqual(
+            [call[0] for call in actors[0].execute_batch.calls],
+            [self.batches[0], self.batches[2]],
+        )
+        self.assertEqual(
+            [call[0] for call in actors[1].execute_batch.calls],
+            [self.batches[1]],
+        )
+        self.assertEqual(len(results), 3)
+        self.assertEqual(metrics["operator_invocations"], 3)
+        self.assertEqual(metrics["max_inflight"], 2)
+
+    def test_static_actor_path_requires_at_least_one_actor(self) -> None:
+        with self.assertRaisesRegex(ValueError, "actors must not be empty"):
+            self._submit([])
+
+    def test_adaptive_actor_path_remains_isolated_from_static_scheduler(self) -> None:
+        actors = [_RecordingActor()]
+
+        with patch.object(profile, "_run_static_scheduler") as run:
+            self._submit(actors, adaptive_config={})
+
+        run.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

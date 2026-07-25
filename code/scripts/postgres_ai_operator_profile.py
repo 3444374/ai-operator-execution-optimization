@@ -478,6 +478,55 @@ def submit_with_backpressure(
     method_name: str,
     adaptive_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
+    if adaptive_config is not None:
+        return _submit_with_backpressure_legacy_adaptive(
+            ray_module,
+            actors,
+            batches,
+            max_inflight,
+            method_name,
+            adaptive_config,
+        )
+    if not actors:
+        raise ValueError("actors must not be empty")
+
+    operator = "ai_complete" if "complete" in method_name else "ai_embed"
+    envelopes = _batch_envelopes(
+        batches,
+        job_id="ray-actor",
+        operator=operator,
+        completion_max_tokens=0,
+    )
+    endpoint_ids = [f"actor-{index}" for index in range(len(actors))]
+    topology = _endpoint_topology(
+        endpoint_ids,
+        [f"ray://actor/{index}" for index in range(len(actors))],
+    )
+    submitters = {
+        endpoint_id: (
+            lambda payload, actor_handle=actor: getattr(
+                actor_handle, method_name
+            ).remote(payload)
+        )
+        for endpoint_id, actor in zip(endpoint_ids, actors)
+    }
+    return _run_static_scheduler(
+        ray_module,
+        envelopes,
+        topology,
+        submitters,
+        max_inflight,
+    )
+
+
+def _submit_with_backpressure_legacy_adaptive(
+    ray_module,
+    actors: list,
+    batches: Iterable[pa.RecordBatch | pa.Table],
+    max_inflight: int,
+    method_name: str,
+    adaptive_config: dict | None = None,
+) -> tuple[list[dict], dict]:
     pending = []
     results = []
     submit_count = 0
