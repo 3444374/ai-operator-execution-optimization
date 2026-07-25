@@ -1,5 +1,19 @@
 # 项目日志
 
+## 2026-07-25 加速 arrival replay 正式实验设计
+
+- **问题**：BurstGPT 官方时间戳单位是秒；当前 1024 行覆盖 52,184 秒，
+  前 512 行覆盖 39,757 秒，直接按原速回放不适合本地单 GPU 重复实验。
+- **设计**：新增显式 `arrival_time_scale`，只缩放首行归零后的回放时钟偏移，
+  不修改数据库原始时间戳，不缩放 flush timeout/hard max，并把比例写入所有
+  运行与 manifest 产物。
+- **矩阵**：64 行 × 0.0001 做一次快速产物门禁；随后 512 行 × 0.0005，
+  immediate/fixed-timeout/queue-adaptive 各 1 warm-up + 5 正式重复。
+- **边界**：结果属于单 GPU、受控加速的 BurstGPT-derived workload 对比，
+  不代表原始生产到达率、多 GPU scaling 或内部 PostgreSQL 18.3 平台。
+- **新增文件**：
+  `code_doc/superpowers/specs/2026-07-25-accelerated-arrival-replay-design.md`。
+
 ## 2026-07-25 Arrival replay 与独立 flush 运行链路完成
 
 - **实现**：新增完整行粒度 pending batch builder、单调时钟 arrival replay、
