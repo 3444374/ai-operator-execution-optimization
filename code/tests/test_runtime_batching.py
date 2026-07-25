@@ -150,6 +150,104 @@ class ArrivalReplayBatcherTests(unittest.TestCase):
             [event.reason for event in batcher.trace],
         )
 
+    def test_time_advanced_during_service_observation_cannot_merge_later_row(
+        self,
+    ) -> None:
+        policies = [
+            FixedTimeoutFlush(timeout_s=0.1),
+            QueueAdaptiveFlush(max_wait_s=0.1),
+        ]
+        for policy in policies:
+            with self.subTest(policy=type(policy).__name__):
+                clock = FakeReplayClock()
+
+                def advancing_observation() -> ReplayServiceObservation:
+                    clock.advance(0.11)
+                    return ReplayServiceObservation(
+                        fresh=True,
+                        running=64,
+                        waiting=4,
+                        kv_usage=0.95,
+                    )
+
+                batcher = replay(
+                    [
+                        row("r1", arrival_s=0.0),
+                        row("r2", arrival_s=0.05),
+                    ],
+                    clock,
+                    flush_policy=policy,
+                    service_observation=advancing_observation,
+                )
+
+                self.assertEqual(list(batcher), [("r1",), ("r2",)])
+
+    def test_nonbinary_hard_deadline_flushes_before_later_arrival(self) -> None:
+        policies = [
+            FixedTimeoutFlush(timeout_s=0.1),
+            QueueAdaptiveFlush(max_wait_s=0.1),
+        ]
+        for policy in policies:
+            with self.subTest(policy=type(policy).__name__):
+                clock = FakeReplayClock(now_s=100.0)
+                batcher = replay(
+                    [
+                        row("r1", arrival_s=0.0),
+                        row("r2", arrival_s=1.0),
+                    ],
+                    clock,
+                    flush_policy=policy,
+                    service_observation=lambda: ReplayServiceObservation(
+                        fresh=True,
+                        running=64,
+                        waiting=4,
+                        kv_usage=0.95,
+                    ),
+                )
+
+                iterator = iter(batcher)
+                self.assertEqual(next(iterator), ("r1",))
+                self.assertEqual(clock.waited_until, [100.1])
+                self.assertEqual(clock.now(), 100.1)
+                self.assertEqual(list(iterator), [("r2",)])
+
+    def test_missing_or_stale_metrics_reach_replay_hard_maximum(self) -> None:
+        observations = [
+            ReplayServiceObservation(
+                fresh=True,
+                running=64,
+                waiting=None,
+                kv_usage=0.5,
+            ),
+            ReplayServiceObservation(
+                fresh=False,
+                running=64,
+                waiting=0,
+                kv_usage=0.5,
+            ),
+        ]
+        for service in observations:
+            with self.subTest(service=service):
+                clock = FakeReplayClock(now_s=100.0)
+                batcher = replay(
+                    [
+                        row("r1", arrival_s=0.0),
+                        row("r2", arrival_s=1.0),
+                    ],
+                    clock,
+                    flush_policy=QueueAdaptiveFlush(max_wait_s=0.1),
+                    service_observation=lambda: service,
+                )
+
+                iterator = iter(batcher)
+                self.assertEqual(next(iterator), ("r1",))
+                self.assertEqual(clock.waited_until, [100.1])
+                self.assertIn(
+                    "hard_max_wait",
+                    [event.reason for event in batcher.trace],
+                )
+                self.assertEqual(list(iterator), [("r2",)])
+
     def test_rows_due_during_downstream_block_are_caught_up_without_waits(
         self,
     ) -> None:
@@ -269,6 +367,14 @@ class ArrivalReplayBatcherTests(unittest.TestCase):
         self.assertEqual(consumed, [])
         self.assertEqual(list(batcher), [("r1",)])
         self.assertEqual(consumed, ["started"])
+
+    def test_empty_input_produces_no_batches_or_waits(self) -> None:
+        clock = FakeReplayClock()
+        batcher = replay([], clock)
+
+        self.assertEqual(list(batcher), [])
+        self.assertEqual(clock.waited_until, [])
+        self.assertEqual(batcher.trace, ())
 
 
 class PendingBatchBuilderTests(unittest.TestCase):

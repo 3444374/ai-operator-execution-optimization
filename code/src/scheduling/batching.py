@@ -228,23 +228,36 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
         budget_reached = False
 
         while next_row is not None or pending_rows:
-            now_s = self._clock.now()
-
             if pending_rows:
                 service = self._service_observation()
-                decision = self._flush_policy.decide(
-                    FlushObservation(
-                        now_s=now_s,
-                        oldest_arrival_s=pending_oldest_deadline_s,
-                        pending_rows=pending_rows,
-                        pending_cost=pending_tokens,
-                        budget_reached=budget_reached,
-                        metrics_fresh=service.fresh,
-                        running=service.running,
-                        waiting=service.waiting,
-                        kv_usage=service.kv_usage,
-                    )
+                now_s = self._clock.now()
+                policy_deadline = self._policy_deadline(
+                    pending_oldest_deadline_s
                 )
+                if (
+                    policy_deadline is not None
+                    and now_s >= policy_deadline[0]
+                ):
+                    decision = FlushDecision(
+                        True,
+                        "flush",
+                        policy_deadline[1],
+                        now_s - pending_oldest_deadline_s,
+                    )
+                else:
+                    decision = self._flush_policy.decide(
+                        FlushObservation(
+                            now_s=now_s,
+                            oldest_arrival_s=pending_oldest_deadline_s,
+                            pending_rows=pending_rows,
+                            pending_cost=pending_tokens,
+                            budget_reached=budget_reached,
+                            metrics_fresh=service.fresh,
+                            running=service.running,
+                            waiting=service.waiting,
+                            kv_usage=service.kv_usage,
+                        )
+                    )
                 self._record_trace(
                     replay_start_s,
                     now_s,
@@ -261,6 +274,10 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                     budget_reached = False
                     yield self._close_batch(closed)
                     continue
+
+            else:
+                now_s = self._clock.now()
+                policy_deadline = None
 
             if next_row is None:
                 self._record_trace(
@@ -279,7 +296,6 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                 yield self._close_batch(closed)
                 continue
 
-            now_s = self._clock.now()
             if next_deadline_s <= now_s:
                 if builder.would_exceed_token_budget(next_row):
                     self._record_trace(
@@ -319,13 +335,10 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                 continue
 
             wake_deadline_s = next_deadline_s
-            if pending_rows:
-                policy_deadline_s = self._policy_deadline(
-                    pending_oldest_deadline_s
-                )
+            if policy_deadline is not None:
+                policy_deadline_s = policy_deadline[0]
                 if (
-                    policy_deadline_s is not None
-                    and now_s < policy_deadline_s < wake_deadline_s
+                    now_s < policy_deadline_s <= wake_deadline_s
                 ):
                     wake_deadline_s = policy_deadline_s
             if wake_deadline_s > now_s:
@@ -359,11 +372,18 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
             raise ValueError("rows must contain RowArrival values")
         return row
 
-    def _policy_deadline(self, oldest_deadline_s: float) -> float | None:
-        for attribute in ("timeout_s", "max_wait_s"):
+    def _policy_deadline(
+        self,
+        oldest_deadline_s: float,
+    ) -> tuple[float, str] | None:
+        deadline_fields = (
+            ("timeout_s", "fixed_timeout"),
+            ("max_wait_s", "hard_max_wait"),
+        )
+        for attribute, reason in deadline_fields:
             wait_s = getattr(self._flush_policy, attribute, None)
             if isinstance(wait_s, (int, float)) and not isinstance(wait_s, bool):
-                return oldest_deadline_s + float(wait_s)
+                return oldest_deadline_s + float(wait_s), reason
         return None
 
     def _record_trace(
