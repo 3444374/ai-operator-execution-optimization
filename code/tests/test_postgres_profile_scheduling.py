@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import pyarrow as pa
 
@@ -96,6 +97,107 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(metrics["adaptive_downshifts"], 0)
         self.assertEqual(metrics["adaptive_upshifts"], 0)
         self.assertEqual(metrics["adaptive_limit_mean"], 4)
+
+
+class _ImmediateRef:
+    def __init__(self, result: object):
+        self.result = result
+
+
+class _ImmediateRay:
+    @staticmethod
+    def wait(handles, num_returns):
+        return handles[:num_returns], handles[num_returns:]
+
+    @staticmethod
+    def get(handle):
+        if isinstance(handle, list):
+            return [item.result for item in handle]
+        return handle.result
+
+
+class _RecordingRemote:
+    def __init__(self):
+        self.calls = []
+
+    def remote(self, *args):
+        self.calls.append(args)
+        return _ImmediateRef({"call_index": len(self.calls) - 1})
+
+
+class StaticTaskSchedulingTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.batches = [
+            pa.table({"doc_id": [1], "prompt_tokens": [10]}),
+            pa.table({"doc_id": [2], "prompt_tokens": [20]}),
+        ]
+
+    def _submit(self, remote, **overrides):
+        arguments = {
+            "ray_module": _ImmediateRay,
+            "remote_embed": remote,
+            "batches": self.batches,
+            "max_inflight": 2,
+            "operator": "ai_embed",
+            "embedding_dim": 16,
+            "model_backend": "fake",
+            "endpoint_urls": [],
+            "model_name": "model",
+            "api_key": None,
+            "timeout_s": 5.0,
+            "completion_max_tokens": 8,
+            "adaptive_config": None,
+        }
+        arguments.update(overrides)
+        return profile.submit_ray_tasks(**arguments)
+
+    def test_static_task_path_delegates_to_shared_scheduler(self) -> None:
+        remote = _RecordingRemote()
+        expected = ([{"ok": True}], {"operator_invocations": 1})
+
+        with patch.object(profile, "_run_static_scheduler", return_value=expected) as run:
+            actual = self._submit(remote)
+
+        self.assertEqual(actual, expected)
+        run.assert_called_once()
+
+    def test_fake_task_submitter_preserves_operator_arguments(self) -> None:
+        remote = _RecordingRemote()
+
+        results, metrics = self._submit(remote)
+
+        self.assertEqual(results, [{"call_index": 0}, {"call_index": 1}])
+        self.assertEqual(
+            [(call[0], call[1]) for call in remote.calls],
+            [(self.batches[0], 16), (self.batches[1], 16)],
+        )
+        self.assertEqual(metrics["operator_invocations"], 2)
+        self.assertEqual(metrics["max_inflight"], 2)
+        self.assertEqual(metrics["adaptive_downshifts"], 0)
+
+    def test_http_task_submitters_route_across_endpoint_urls(self) -> None:
+        remote = _RecordingRemote()
+
+        self._submit(
+            remote,
+            model_backend="compatible_http",
+            endpoint_urls=["http://one", "http://two"],
+        )
+
+        self.assertEqual(
+            [call[1] for call in remote.calls],
+            ["http://one", "http://two"],
+        )
+        self.assertTrue(all(call[2:] == ("model", None, 5.0) for call in remote.calls))
+
+    def test_adaptive_task_path_remains_isolated_from_static_scheduler(self) -> None:
+        remote = _RecordingRemote()
+        adaptive_config = {}
+
+        with patch.object(profile, "_run_static_scheduler") as run:
+            self._submit(remote, adaptive_config=adaptive_config)
+
+        run.assert_not_called()
 
 
 if __name__ == "__main__":

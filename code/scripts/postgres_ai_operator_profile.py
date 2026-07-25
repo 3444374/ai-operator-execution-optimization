@@ -48,13 +48,16 @@ from src.model_backends import (
     ollama_complete_batch,
 )
 from src.organizers import OrganizerConfig, configure_daft_runner, make_organizer
+from src.scheduling.admission import StaticAdmissionController
 from src.scheduling.models import (
     BatchRequest,
     EndpointSnapshot,
     PayloadEnvelope,
     TopologySnapshot,
 )
-from src.scheduling.scheduler import SchedulerResult
+from src.scheduling.ray_adapter import RaySubmissionAdapter
+from src.scheduling.routing import RoundRobinEndpointRouter
+from src.scheduling.scheduler import SchedulerResult, SynchronousScheduler
 from src.sinks import write_completions, write_embeddings
 from src.sources import SourceConfig, make_source
 from src.workloads import WORKLOAD_NAMES, generate_document_rows
@@ -450,6 +453,23 @@ def _scheduler_metrics(result: SchedulerResult) -> dict:
     }
 
 
+def _run_static_scheduler(
+    ray_module,
+    envelopes: list[PayloadEnvelope],
+    topology: TopologySnapshot,
+    submitters: dict,
+    max_inflight: int,
+) -> tuple[list[dict], dict]:
+    scheduler = SynchronousScheduler(
+        admission=StaticAdmissionController(max_inflight),
+        router=RoundRobinEndpointRouter(),
+        adapter=RaySubmissionAdapter(ray_module, submitters),
+        pool_id="default",
+    )
+    result = scheduler.run(envelopes, topology)
+    return [completion.result for completion in result.completions], _scheduler_metrics(result)
+
+
 def submit_with_backpressure(
     ray_module,
     actors: list,
@@ -516,6 +536,89 @@ def submit_with_backpressure(
 
 
 def submit_ray_tasks(
+    ray_module,
+    remote_embed,
+    batches: Iterable[pa.RecordBatch | pa.Table],
+    max_inflight: int,
+    operator: str,
+    embedding_dim: int,
+    model_backend: str,
+    endpoint_urls: list[str],
+    model_name: str,
+    api_key: str | None,
+    timeout_s: float,
+    completion_max_tokens: int,
+    adaptive_config: dict | None = None,
+) -> tuple[list[dict], dict]:
+    if adaptive_config is not None:
+        return _submit_ray_tasks_legacy_adaptive(
+            ray_module,
+            remote_embed,
+            batches,
+            max_inflight,
+            operator,
+            embedding_dim,
+            model_backend,
+            endpoint_urls,
+            model_name,
+            api_key,
+            timeout_s,
+            completion_max_tokens,
+            adaptive_config,
+        )
+
+    envelopes = _batch_envelopes(
+        batches,
+        job_id="ray-task",
+        operator=operator,
+        completion_max_tokens=completion_max_tokens if operator == "ai_complete" else 0,
+    )
+    if model_backend == "fake":
+        endpoint_ids = ["task-0"]
+        endpoint_urls_for_topology = ["ray://task/fake"]
+        if operator == "ai_embed":
+            submitters = {
+                "task-0": lambda payload: remote_embed.remote(payload, embedding_dim)
+            }
+        else:
+            submitters = {
+                "task-0": lambda payload: remote_embed.remote(payload, completion_max_tokens)
+            }
+    else:
+        if not endpoint_urls:
+            raise ValueError("endpoint_urls must not be empty for an HTTP model backend")
+        endpoint_ids = [f"task-{index}" for index in range(len(endpoint_urls))]
+        endpoint_urls_for_topology = endpoint_urls
+        submitters = {}
+        for endpoint_id, endpoint_url in zip(endpoint_ids, endpoint_urls):
+            if operator == "ai_embed":
+                submitters[endpoint_id] = (
+                    lambda payload, url=endpoint_url: remote_embed.remote(
+                        payload, url, model_name, api_key, timeout_s
+                    )
+                )
+            else:
+                submitters[endpoint_id] = (
+                    lambda payload, url=endpoint_url: remote_embed.remote(
+                        payload,
+                        url,
+                        model_name,
+                        api_key,
+                        timeout_s,
+                        completion_max_tokens,
+                    )
+                )
+    topology = _endpoint_topology(endpoint_ids, endpoint_urls_for_topology)
+    return _run_static_scheduler(
+        ray_module,
+        envelopes,
+        topology,
+        submitters,
+        max_inflight,
+    )
+
+
+def _submit_ray_tasks_legacy_adaptive(
     ray_module,
     remote_embed,
     batches: Iterable[pa.RecordBatch | pa.Table],
