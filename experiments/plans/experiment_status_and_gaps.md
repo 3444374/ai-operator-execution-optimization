@@ -27,7 +27,7 @@ Date: 2026-07-20（最后更新：2026-07-26，新增提交控制与联合实验
 | Batch Policy × K_max 矩阵 | ✅ 07-19 | K_max 和 batch shape 耦合：fixed128 只有 4 个请求，K_max>4 无调度空间 | 仍是单 job 离线场景 |
 | Shared-vLLM K_max 干扰（2-job）| ✅ 07-19 | **K_max 在共享 vLLM 下必要**：bulk unbounded 时 foreground E2E 恶化 2.3×（4.9→11.4s），bulk 自身吞吐几乎不变 | 只有 2 个 job；只有一种 foreground size |
 | Shared-vLLM K_max Sweep + Adaptive | ✅ 07-19 | K_max=8 是最佳静态 guardrail；adaptive 触发了 downshift（102 次/run）| **❌ adaptive 不如 static K=8**（foreground E2E 10.2s vs 7.3s） |
-| **改进 adaptive flush** | ✅ 07-26 | 相对 fixed-25 有稳定收益；自然 EOS n=5 tokens/s +30.09% | 未优于 fixed-50；跨 arrival-rate 泛化未验证 |
+| **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 三组随机化：fixed-50/adaptive 相对 fixed-25 均约 +32% tokens/s | adaptive vs fixed-50 -0.10% ± 4.13%；跨 arrival-rate 泛化未验证 |
 | **多 job/多 foreground size 扩展** | ❌ 未做 | — | 不同 foreground size、arrival offset、background policy 下的公平性 |
 
 **RC2 当前状态**：✅ static K8 guardrail 与 50ms pressure-window
@@ -425,10 +425,9 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 ### 剩余关键缺口
 
-1. 自然 EOS 下 fixed-25/fixed-50/adaptive 三组正式随机化重复；
-2. 改变 arrival rate，验证最佳静态窗口是否变化以及 adaptive 能否自动跟随；
-3. 2048 请求 held-out；
-4. prefix 受控 workload、多模态复用、多 endpoint/多 GPU。
+1. 改变 arrival rate，验证最佳静态窗口是否变化以及 adaptive 能否自动跟随；
+2. 2048 请求 held-out；
+3. prefix 受控 workload、多模态复用、多 endpoint/多 GPU。
 
 原始数据与七步解释见：
 

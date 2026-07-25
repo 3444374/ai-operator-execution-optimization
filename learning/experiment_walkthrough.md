@@ -1059,9 +1059,11 @@ flush 决定未满 batch 最多等多久，`K_max` 决定已经关闭的 batch �
 - request P99 降低 27.38%；
 - submissions 减少 30.50%。
 
-但 flush trace 显示 adaptive 大部分时间都因服务压力选择 50ms。单次 fixed
-50ms 探针与 adaptive 几乎相同。这说明“adaptive 标签”本身不是收益来源；
-更可能的原因是 50ms 给了上游更多合并完整请求的时间。
+但 flush trace 显示 adaptive 大部分时间都因服务压力选择 50ms。随后自然 EOS
+三组随机化复验中，fixed-50 与 adaptive 相对 fixed-25 tokens/s 分别提高
+32.23% 和 32.09%；adaptive 相对 fixed-50 为 -0.10% ± 4.13%，不可分辨，
+而 fixed-50 提交次数更少。这说明“adaptive 标签”本身不是收益来源；主要原因
+是 50ms 给了上游更多合并完整请求的时间。
 
 随后在固定 16-token cap 的 18 单元联合筛选与 n=3 候选重复中：
 

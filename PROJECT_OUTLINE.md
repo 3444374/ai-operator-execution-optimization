@@ -66,11 +66,12 @@
    - Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678——证明固定行数是计算量的弱代理。
    - Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171（vs fixed 64/128 的 16377/26677），吞吐接近。
    - Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3×（4.9→11.4s）而 bulk 自身吞吐几乎不变——证明 K_max 在共享 vLLM 下必要。
-   - Queue-adaptive flush 已完成自然 EOS 随机化复验：相对 fixed-25
-     tokens/s `+30.09% ± 2.66%`、E2E `-23.05% ± 1.60%`，但 fixed-50
-     机制探针与其相当。固定 16-token cap 的候选重复中，adaptive 相对
-     fixed-50 为 `-0.75% ± 0.97%`，因此当前证据只支持更长 coalescing
-     window，不支持动态策略优于最佳静态窗口。详见
+   - Queue-adaptive flush 已完成自然 EOS 三组随机化复验：fixed-50 与
+     adaptive 相对 fixed-25 tokens/s 分别 `+32.23% ± 3.90%` 与
+     `+32.09% ± 6.22%`；adaptive 相对 fixed-50
+     `-0.10% ± 4.13%`。固定 16-token cap 的候选重复同样未显示 adaptive
+     增量，因此当前证据只支持更长 coalescing window，不支持动态策略优于
+     最佳静态窗口。详见
      `experiments/results/adaptive_flush_randomized_20260726/`。
    - Output-aware deterministic BFD 已完成真实单 GPU 64→512→1024 分级验证。
      512 行 trace-metadata 成本模式相对同成本 sequential 吞吐 +12.019%，
@@ -111,9 +112,8 @@
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P0（最高优先）**：自然 EOS 下随机化复验 fixed-25 / fixed-50 /
-   adaptive，并改变 arrival rate；只有 adaptive 能跨负载接近各自最佳静态
-   窗口时才晋级。
+1. **P0（最高优先）**：改变 arrival rate；只有 adaptive 能跨负载接近各自
+   最佳静态窗口时才晋级。
 2. **P1**：Prefix 受控 workload（prefix ratio 0/30/70/100%）+ 至少一个
    自然 EOS/提交策略实验 scale 到 2048 行。
 4. **P2（触发条件：P0+P1 完成）**：多模态泛化验证（CLIP embedding + ImageNet/HF subset）。

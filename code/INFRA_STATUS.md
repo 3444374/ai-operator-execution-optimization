@@ -166,8 +166,9 @@ PostgreSQL
 
 ### 已闭环：提交控制与局部联合实验
 
-- 自然 EOS 的 512 行正式重复中，queue-adaptive 相对 fixed-25
-  tokens/s `+30.09% ± 2.66%`，但单次 fixed-50 机制探针与其相当。
+- 自然 EOS 三组随机化重复中，fixed-50 与 queue-adaptive 相对 fixed-25
+  tokens/s 分别 `+32.23% ± 3.90%` 与 `+32.09% ± 6.22%`；adaptive
+  相对 fixed-50 为 `-0.10% ± 4.13%`，没有可分辨增量。
 - 固定 16-token cap 的 18 单元联合筛选中，K16 虽然吞吐最高，但所有配置均
   违反 1% SLO guardrail。
 - 候选重复中，独立拼接相对 fixed-25 tokens/s
@@ -183,10 +184,9 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 
 ### 第一优先：跨负载确认提交策略边界
 
-1. 在自然 EOS workload 上随机化重复 fixed-25 / fixed-50 / adaptive；
-2. 改变 arrival rate，检查最佳静态窗口是否随负载变化；
-3. 只有 adaptive 能跨负载接近各自最佳静态窗口时，才保留其默认资格；
-4. 然后用 2048 行 held-out 验证，不继续堆叠 PID/UCB 复杂度。
+1. 改变 arrival rate，检查最佳静态窗口是否随负载变化；
+2. 只有 adaptive 能跨负载接近各自最佳静态窗口时，才保留其默认资格；
+3. 然后用 2048 行 held-out 验证，不继续堆叠 PID/UCB 复杂度。
 
 ### 第三优先：受控 prefix 与多臂老虎机
 

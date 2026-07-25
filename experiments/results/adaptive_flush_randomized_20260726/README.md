@@ -90,6 +90,26 @@ fixed 为 3.842 req/s。
 |---|---:|---:|---:|---:|
 | fixed 50ms | 102.228 | 2250.139 | 80.804 | 137 |
 
+### 自然 EOS 三组随机化复验
+
+为消除单次机制探针的不确定性，又对 fixed-25、fixed-50 和 adaptive 各运行
+1 次 warm-up + 3 次 formal，三轮 formal 内随机化顺序。均值 ± 95% t
+置信区间半宽：
+
+| 策略 | E2E (s) | tokens/s | request P99 (s) | submissions | energy/1k tokens (J) | MFU |
+|---|---:|---:|---:|---:|---:|---:|
+| fixed 25ms | 136.197 ± 3.821 | 1684.102 ± 41.345 | 114.515 ± 4.287 | 200.0 | 71.779 ± 0.795 | 0.08364 ± 0.00209 |
+| fixed 50ms | 102.562 ± 0.843 | 2226.656 ± 17.551 | 80.988 ± 0.306 | 137.0 | 58.731 ± 0.057 | 0.11081 ± 0.00085 |
+| queue adaptive | 102.699 ± 5.058 | 2224.464 ± 103.053 | 80.916 ± 4.850 | 139.3 | 59.234 ± 1.521 | 0.11070 ± 0.00504 |
+
+配对相对变化：
+
+| 对比 | tokens/s | E2E | request P99 | submissions |
+|---|---:|---:|---:|---:|
+| fixed-50 vs fixed-25 | +32.23% ± 3.90% | -24.69% ± 2.72% | -29.27% ± 2.70% | -31.50% |
+| adaptive vs fixed-25 | +32.09% ± 6.22% | -24.59% ± 4.78% | -29.32% ± 5.90% | -30.33% |
+| adaptive vs fixed-50 | -0.10% ± 4.13% | +0.13% ± 4.72% | -0.09% ± 5.62% | +1.70% ± 1.05% |
+
 ## 5. 结果解释
 
 **事实**：queue-adaptive 相对 fixed-25ms 在全部 5 个 repeat 中同时提高
@@ -101,8 +121,8 @@ tokens/s、降低 E2E 和 P99，并减少 30.5% submissions。
 **推断**：本 workload 的主要收益来自压力期扩大 coalescing window，而不是
 复杂的逐次动态切换。当前两档 adaptive 更像自动选择 50ms 的保护逻辑。
 
-**待确认**：fixed-50ms 尚只有一次机制探针；若要声称 adaptive 与最佳静态窗口
-等价或更差，需要随机化重复 fixed-25 / fixed-50 / adaptive 三组。
+**事实**：自然 EOS 三组随机化复验中，adaptive 与 fixed-50 的 tokens/s、
+E2E、P99、能耗和 MFU 均不可分辨；fixed-50 的 submission 数更少且实现更简单。
 
 **不能声称**：
 
@@ -119,6 +139,7 @@ tokens/s、降低 E2E 和 P99，并减少 30.5% submissions。
 - 50ms pressure-window coalescing 在变长输出下具有稳定正向证据；
 - 当前 queue-adaptive 实现可以自动进入该窗口，但尚未证明动态性优于最佳静态
   timeout；
+- 当前单 GPU、当前 arrival rate 的默认在线候选收敛为 fixed 50ms；
 - 因此论文贡献应表述为“服务压力感知的等待窗口选择及其适用边界”，不能只用
   adaptive 标签包装更长 timeout。
 
@@ -129,11 +150,9 @@ tokens/s、降低 E2E 和 P99，并减少 30.5% submissions。
 
 1. token budget × Kmax × flush 联合筛选及固定 16-token cap 的候选重复已经
    完成，详见 `../joint_batching_submission_512_20260726/README.md`；
-2. 在相同 8192/K8 下，adaptive 相对 fixed-50 tokens/s
-   `-0.75% ± 0.97%`，没有可分辨增量，因此当前 workload 采用简单 fixed
-   50ms；
-3. 下一步在本目录的自然 EOS workload 上正式随机化重复 fixed-25 /
-   fixed-50 / adaptive，并改变 arrival rate；
+2. 自然 EOS 与固定 16-token cap 两种 workload 均未显示 adaptive 相对
+   fixed-50 的增量，因此当前 workload 采用简单 fixed 50ms；
+3. 下一步改变 arrival rate，检查最佳静态窗口是否变化；
 4. 只有跨负载结果支持 adaptive 后，才进入 2048 行 held-out。
 
 ## 数据入口
@@ -144,3 +163,5 @@ tokens/s、降低 E2E 和 P99，并减少 30.5% submissions。
 - `chatml_flush_gate_deterministic/`：64 请求 temperature=0 策略门禁；
 - `chatml_flush_formal_512/`：512 请求随机化正式重复及 `summary_long.csv`；
 - `chatml_fixed50_probe/`：单次 fixed-50ms 机制探针。
+- `chatml_three_way_512/`：自然 EOS fixed-25 / fixed-50 / adaptive
+  三组随机化重复及 `summary_long.csv`。

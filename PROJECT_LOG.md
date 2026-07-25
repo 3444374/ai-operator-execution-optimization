@@ -1378,3 +1378,18 @@
   `experiments/results/adaptive_flush_randomized_20260726/` 与
   `experiments/results/joint_batching_submission_512_20260726/`。仍未合并
   `main`，也未自动同步 Wiki。
+
+## 2026-07-26 自然 EOS Fixed-25 / Fixed-50 / Adaptive 三组复验
+
+- 在相同 512-request ChatML 自然 EOS workload 上，对 fixed-25、fixed-50、
+  queue-adaptive 各运行 1 warm-up + 3 formal，formal 顺序按 repeat 随机化；
+  12/12 成功、0 incident、逐请求 actual output/finish 与 MFU 审计通过。
+- fixed-50 相对 fixed-25：tokens/s `+32.23% ± 3.90%`、E2E
+  `-24.69% ± 2.72%`、request P99 `-29.27% ± 2.70%`、submissions
+  `-31.50%`。
+- adaptive 相对 fixed-25：tokens/s `+32.09% ± 6.22%`；adaptive 相对
+  fixed-50：tokens/s `-0.10% ± 4.13%`、E2E `+0.13% ± 4.72%`，
+  没有可分辨增量，且 submissions 平均多 1.70%。
+- 当前单 GPU、当前 arrival rate 的在线候选正式收敛为 fixed-50；
+  adaptive 仅保留为跨 arrival-rate 自动选择候选。下一步不继续增加控制器
+  复杂度，先验证负载变化时最佳静态窗口是否改变。
