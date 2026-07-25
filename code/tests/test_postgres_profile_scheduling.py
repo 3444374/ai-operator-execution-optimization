@@ -12,7 +12,13 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts import postgres_ai_operator_profile as profile  # noqa: E402
+from src.scheduling.adaptive_admission import AimdAdmissionController  # noqa: E402
+from src.scheduling.admission import DynamicAdmissionGate  # noqa: E402
 from src.scheduling.models import SubmissionCompletion  # noqa: E402
+from src.scheduling.observations import (  # noqa: E402
+    CachedMetricsObservationProvider,
+    ServiceMetricsSnapshot,
+)
 from src.scheduling.scheduler import SchedulerResult  # noqa: E402
 
 
@@ -199,6 +205,31 @@ class StaticTaskSchedulingTests(unittest.TestCase):
 
         run.assert_not_called()
 
+    def test_typed_adaptive_task_path_uses_dynamic_gate_without_legacy_loop(self) -> None:
+        remote = _RecordingRemote()
+        traces = []
+        gate = DynamicAdmissionGate(
+            AimdAdmissionController(initial_window=4),
+            CachedMetricsObservationProvider(
+                lambda: ServiceMetricsSnapshot(10, 0, 0.2),
+                min_sample_interval_s=0.0,
+            ),
+            trace_sink=traces.append,
+        )
+
+        results, metrics = self._submit(
+            remote,
+            adaptive_config={
+                "admission_gate": gate,
+                "trace_events": traces,
+            },
+        )
+
+        self.assertEqual(len(results), 2)
+        self.assertGreater(metrics["adaptive_upshifts"], 0)
+        self.assertEqual(metrics["adaptive_downshifts"], 0)
+        self.assertGreaterEqual(metrics["adaptive_limit_mean"], 4)
+
 
 class _RecordingActor:
     def __init__(self):
@@ -261,6 +292,30 @@ class StaticActorSchedulingTests(unittest.TestCase):
             self._submit(actors, adaptive_config={})
 
         run.assert_not_called()
+
+    def test_typed_adaptive_actor_path_uses_dynamic_gate(self) -> None:
+        actors = [_RecordingActor()]
+        traces = []
+        gate = DynamicAdmissionGate(
+            AimdAdmissionController(initial_window=8),
+            CachedMetricsObservationProvider(
+                lambda: ServiceMetricsSnapshot(10, 2, 0.2),
+                min_sample_interval_s=0.0,
+            ),
+            trace_sink=traces.append,
+        )
+
+        results, metrics = self._submit(
+            actors,
+            adaptive_config={
+                "admission_gate": gate,
+                "trace_events": traces,
+            },
+        )
+
+        self.assertEqual(len(results), 3)
+        self.assertGreater(metrics["adaptive_downshifts"], 0)
+        self.assertGreaterEqual(len(traces), 3)
 
 
 if __name__ == "__main__":

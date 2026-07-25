@@ -460,14 +460,61 @@ def _run_static_scheduler(
     submitters: dict,
     max_inflight: int,
 ) -> tuple[list[dict], dict]:
+    return _run_scheduler(
+        ray_module,
+        envelopes,
+        topology,
+        submitters,
+        StaticAdmissionController(max_inflight),
+    )
+
+
+def _run_scheduler(
+    ray_module,
+    envelopes: list[PayloadEnvelope],
+    topology: TopologySnapshot,
+    submitters: dict,
+    admission,
+) -> tuple[list[dict], dict]:
     scheduler = SynchronousScheduler(
-        admission=StaticAdmissionController(max_inflight),
+        admission=admission,
         router=RoundRobinEndpointRouter(),
         adapter=RaySubmissionAdapter(ray_module, submitters),
         pool_id="default",
     )
     result = scheduler.run(envelopes, topology)
     return [completion.result for completion in result.completions], _scheduler_metrics(result)
+
+
+def _run_dynamic_scheduler(
+    ray_module,
+    envelopes: list[PayloadEnvelope],
+    topology: TopologySnapshot,
+    submitters: dict,
+    adaptive_config: dict,
+) -> tuple[list[dict], dict]:
+    trace_events = adaptive_config["trace_events"]
+    trace_start = len(trace_events)
+    results, metrics = _run_scheduler(
+        ray_module,
+        envelopes,
+        topology,
+        submitters,
+        adaptive_config["admission_gate"],
+    )
+    new_events = trace_events[trace_start:]
+    metrics["adaptive_downshifts"] = sum(
+        event.controller_action == "decrease" for event in new_events
+    )
+    metrics["adaptive_upshifts"] = sum(
+        event.controller_action == "increase" for event in new_events
+    )
+    metrics["adaptive_limit_mean"] = (
+        statistics.mean(event.window for event in new_events)
+        if new_events
+        else adaptive_config["admission_gate"].limit
+    )
+    return results, metrics
 
 
 def submit_with_backpressure(
@@ -478,7 +525,10 @@ def submit_with_backpressure(
     method_name: str,
     adaptive_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
-    if adaptive_config is not None:
+    typed_adaptive = (
+        adaptive_config is not None and "admission_gate" in adaptive_config
+    )
+    if adaptive_config is not None and not typed_adaptive:
         return _submit_with_backpressure_legacy_adaptive(
             ray_module,
             actors,
@@ -510,12 +560,16 @@ def submit_with_backpressure(
         )
         for endpoint_id, actor in zip(endpoint_ids, actors)
     }
+    if typed_adaptive:
+        return _run_dynamic_scheduler(
+            ray_module,
+            envelopes,
+            topology,
+            submitters,
+            adaptive_config,
+        )
     return _run_static_scheduler(
-        ray_module,
-        envelopes,
-        topology,
-        submitters,
-        max_inflight,
+        ray_module, envelopes, topology, submitters, max_inflight
     )
 
 
@@ -599,7 +653,10 @@ def submit_ray_tasks(
     completion_max_tokens: int,
     adaptive_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
-    if adaptive_config is not None:
+    typed_adaptive = (
+        adaptive_config is not None and "admission_gate" in adaptive_config
+    )
+    if adaptive_config is not None and not typed_adaptive:
         return _submit_ray_tasks_legacy_adaptive(
             ray_module,
             remote_embed,
@@ -658,12 +715,16 @@ def submit_ray_tasks(
                     )
                 )
     topology = _endpoint_topology(endpoint_ids, endpoint_urls_for_topology)
+    if typed_adaptive:
+        return _run_dynamic_scheduler(
+            ray_module,
+            envelopes,
+            topology,
+            submitters,
+            adaptive_config,
+        )
     return _run_static_scheduler(
-        ray_module,
-        envelopes,
-        topology,
-        submitters,
-        max_inflight,
+        ray_module, envelopes, topology, submitters, max_inflight
     )
 
 
