@@ -105,7 +105,8 @@ experiment_id / phase / repeat_index / scenario_id / random_seed
 server_version / pgvector_version
 job_id / request_id / submission_id / doc_id
 pool_id / endpoint_id / gpu_id
-prompt_tokens / estimated_output_tokens / actual_output_tokens / total_tokens
+prompt_tokens / estimated_output_tokens / client_estimated_output_tokens
+actual_output_tokens / output_token_source / total_tokens
 prefix_key / status / error_type
 arrival_epoch_s
 flush_epoch_s
@@ -132,6 +133,12 @@ e2e_s = completion_epoch_s - arrival_epoch_s
 该值是客户端可观测的逐行完成延迟，但不是 vLLM 内部单 sequence 精确完成时刻。
 报告必须保留这一限制。以后若真实 backend 暴露 per-sequence timing，再新增
 `latency_granularity=request`，不改变旧字段语义。
+
+当前 endpoint 的 usage 也是 submission aggregate，不能拆成逐请求实际输出
+token。`actual_output_tokens` 因此允许为空；客户端对输出文本的估算单独写入
+`client_estimated_output_tokens`，并用 `output_token_source` 标记
+`submission_aggregate_unavailable` 或未来真实的 `endpoint_request`。不得把
+空格切词或客户端 tokenizer 估算冒充 endpoint 实际 usage。
 
 ### 5.2 时间基准
 

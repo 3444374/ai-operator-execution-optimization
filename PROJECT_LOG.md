@@ -1116,3 +1116,19 @@
 - 总体范围拆为四个独立子项目，第一项为 request lifecycle 与 scenario runner；
   每项单独设计、TDD、真实 Daft→Ray→vLLM 验证，不在同一提交同时改变计时、
   batch membership 和 admission control law。
+
+## 2026-07-25 AI 算子执行 infra 第一阶段实施计划
+
+- 用户确认按代码主要缺口和文献候选技术依次完善；先实施 request lifecycle 与
+  seeded scenario runner，再进入 output-aware packing、控制器/联合搜索和 actor
+  runtime。
+- 新增
+  `code_doc/superpowers/plans/2026-07-25-request-lifecycle-scenario-runner-implementation.md`，
+  按 submission lifecycle → row seed/join → profiler request CSV/SLO → seeded
+  runner → 真实 64 行门禁拆为五个可独立审查的 TDD 任务。
+- 第一阶段明确不改变 batch membership、flush window、admission law 或 routing
+  决策；batch endpoint 的逐行 E2E 标记为 `latency_granularity=submission`，
+  不冒充 vLLM 内部单 sequence 完成时刻。
+- compatible endpoint 仅提供 submission aggregate usage，因此逐请求
+  `actual_output_tokens` 允许为空；客户端输出 token 估算使用独立字段和来源
+  标签，不拆分 aggregate usage，不把估算值冒充服务端实际值。
