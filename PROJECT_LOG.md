@@ -943,3 +943,11 @@
 - 新增 `code_doc/superpowers/plans/2026-07-25-runtime-scheduling-strategy-suite-design.md`：采用分层策略接口，将 batching、flush、admission、pool routing、endpoint routing、topology、scheduler 和 search 解耦；明确失败/回退语义、TDD/不变量/集成测试、隔离消融、12 点 reduced joint grid、2048 行 held-out evaluation 和统计规则。
 - 指标扩展为 `runs.csv`、`submissions.csv`、`requests.csv`、`control_trace.csv`、`resource_trace.csv` 与 `manifest.json`，区分 batch-level submission 与 row/model-sequence 粒度，并覆盖 tokens/s、全阶段 latency、tail、SLO、公平性、控制器轨迹、路由、endpoint/GPU 资源和 instrumentation overhead，为后续批量绘图保留原始数据。
 - 原 `adaptive-admission-controller-design.md` 保留为 AIMD 子模块细化设计；本次仍仅完成总体设计，未修改生产代码或产生新 GPU 结果。
+
+## 2026-07-25 运行层策略套件第一阶段实施计划
+
+- 总体设计经用户审阅确认后，新增 `code_doc/superpowers/plans/2026-07-25-scheduling-foundation-implementation.md`。
+- 第一阶段严格收敛为 typed request/topology schemas、静态 admission、round-robin routing 和 deterministic synchronous scheduler；先验证 exactly-once 与 bounded-inflight 不变量，不在同一变更中接入动态 flush、PID/EWMA/UCB 或生产 Ray 路径。
+- 计划规定逐行为 RED/GREEN、项目 `.conda/pg-ai-profile` 测试环境、完整 test suite、compile/import 检查和分任务提交。
+- 用户进一步确认所有后续设计与计划必须位于 Daft + Ray 框架内。总设计和实施计划已补充正式链路 `PostgreSQL -> Daft -> Arrow payload boundary -> Ray task/actor -> endpoint`；纯策略模块保持引擎无关仅为可测试性，fake/synchronous adapter 只用于测试。
+- 第一阶段新增 Daft organizer -> Arrow payload -> Ray local-mode task contract smoke；该 smoke 未通过前不进入 adaptive 策略实现。

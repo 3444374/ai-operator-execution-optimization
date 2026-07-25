@@ -20,6 +20,16 @@ The suite optimizes how database rows are organized and submitted to model
 services. It does not modify vLLM internals, the Ray scheduler, model kernels,
 or database query operators.
 
+The formal execution framework is fixed:
+
+```text
+PostgreSQL -> Daft -> Arrow payload boundary -> Ray task/actor -> endpoint
+```
+
+Daft is the production data engine and Ray is the production distributed
+execution framework. Pure-Python or fake adapters exist only for deterministic
+tests and are not method baselines or formal experiment paths.
+
 The existing
 `2026-07-25-adaptive-admission-controller-design.md` remains the detailed
 design for the AIMD admission slice. This document defines the larger system
@@ -48,6 +58,9 @@ scalability.
 - Strategies have one decision responsibility and communicate through typed
   dataclasses or protocols.
 - Strategy code is independent of Daft, Arrow, Ray, and HTTP.
+- Engine adapters bind the pure strategy core to Daft-produced Arrow payloads
+  and Ray task/actor execution; no second production execution framework is
+  introduced.
 - The scheduler owns orchestration but no policy algorithm.
 - Static and simple policies remain first-class baselines.
 - Complex policies are enabled explicitly and may be rejected by experiments.
@@ -112,6 +125,10 @@ complete-row payload:
 It contains no Daft dataframe, Arrow table, Ray object reference, endpoint
 client, or controller state. A scheduler-owned `PayloadEnvelope` associates
 the metadata with the engine payload; policies receive only the metadata.
+
+In production, that opaque payload is an Arrow table emitted by the Daft
+organizer. The payload type is hidden from policies but remains zero-copy
+compatible with the existing Daft/Ray boundary.
 
 ### 5.2 `batching.py`
 
@@ -265,6 +282,16 @@ The scheduler owns one event loop:
 
 The scheduler contains no AIMD, PID, EWMA, UCB, or routing formula.
 
+The scheduler runs in the Ray-facing execution layer. A deterministic
+synchronous adapter is permitted only in tests. Production adapters are:
+
+- Ray task adapter for the existing task baseline;
+- stateful Ray actor adapter for endpoint pools and adaptive scheduling.
+
+The actor adapter is the primary method path. It owns endpoint-local queue
+state and asynchronous submission but delegates policy decisions to the typed
+strategy interfaces.
+
 ### 5.8 `search.py`
 
 Search code generates configurations and aggregates results:
@@ -352,15 +379,17 @@ dependency is required initially.
 ### 7.3 Integration tests
 
 - deterministic fake endpoint with controllable latency and failures;
-- Ray adapter smoke;
+- Daft organizer -> Arrow payload -> Ray adapter contract smoke;
+- Ray task adapter smoke;
+- Ray actor adapter smoke;
 - CLI configuration and dry-run;
 - one real local vLLM endpoint;
 - two local endpoint processes on one GPU only when memory permits.
 
 ### 7.4 Completion gates
 
-- **Code complete**: focused and full test suites pass, schemas validate, and
-  dry-run commands succeed.
+- **Code complete**: focused and full test suites pass, schemas validate,
+  Daft-to-Ray contract smoke passes, and dry-run commands succeed.
 - **Single-GPU experiment complete**: formal result tables and raw traces exist
   with reproducible commands.
 - **Multi-GPU validation pending**: topology/routing code passes tests, but no
@@ -552,7 +581,8 @@ The artifacts must support, without rerunning:
 The work is divided into independently reviewable subprojects:
 
 1. typed request, observation, topology, and metrics schemas;
-2. scheduler extraction with static/immediate/round-robin behavior parity;
+2. scheduler extraction with static/immediate/round-robin behavior parity,
+   first through the Ray task baseline and then the Ray actor method path;
 3. batch builders and independent flush policies;
 4. admission controller family;
 5. actor pools and endpoint routing;
