@@ -8,7 +8,12 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.packing import PackItem, best_fit_decreasing, summarize_packing
+from src.packing import (
+    PackItem,
+    best_fit_decreasing,
+    row_cap_aware_best_fit_decreasing,
+    summarize_packing,
+)
 
 
 def items(costs: list[int]) -> list[PackItem]:
@@ -19,6 +24,71 @@ def items(costs: list[int]) -> list[PackItem]:
 
 
 class PackingTests(unittest.TestCase):
+    def test_row_cap_first_avoids_classic_bfd_fragmentation(self) -> None:
+        source = items([1, 1, 2, 3, 3, 8])
+
+        self.assertEqual(
+            best_fit_decreasing(source, capacity=10, max_rows=3),
+            ((5, 2), (3, 4, 0), (1,)),
+        )
+        self.assertEqual(
+            row_cap_aware_best_fit_decreasing(
+                source,
+                capacity=10,
+                max_rows=3,
+            ),
+            ((5, 0, 1), (3, 4, 2)),
+        )
+
+    def test_row_cap_aware_packing_preserves_shared_invariants(self) -> None:
+        tied = [
+            PackItem(2, "b", 5),
+            PackItem(0, "a", 5),
+            PackItem(1, "a", 5),
+        ]
+        for _ in range(5):
+            self.assertEqual(
+                row_cap_aware_best_fit_decreasing(
+                    tied,
+                    capacity=10,
+                    max_rows=2,
+                ),
+                ((0, 1), (2,)),
+            )
+
+        packed = row_cap_aware_best_fit_decreasing(
+            items([12, 4, 3, 2]),
+            capacity=10,
+            max_rows=2,
+        )
+        self.assertEqual(packed, ((0,), (1, 2), (3,)))
+        self.assertEqual(
+            sorted(index for group in packed for index in group),
+            [0, 1, 2, 3],
+        )
+        self.assertEqual(
+            row_cap_aware_best_fit_decreasing(
+                [],
+                capacity=10,
+                max_rows=2,
+            ),
+            (),
+        )
+        with self.assertRaisesRegex(ValueError, "duplicate row_index"):
+            row_cap_aware_best_fit_decreasing(
+                [PackItem(0, "a", 1), PackItem(0, "b", 1)],
+                capacity=10,
+                max_rows=2,
+            )
+        for capacity, max_rows in ((0, 1), (1, 0), (-1, 1)):
+            with self.subTest(capacity=capacity, max_rows=max_rows):
+                with self.assertRaises(ValueError):
+                    row_cap_aware_best_fit_decreasing(
+                        [],
+                        capacity=capacity,
+                        max_rows=max_rows,
+                    )
+
     def test_canonical_best_fit_decreasing_membership(self) -> None:
         packed = best_fit_decreasing(
             items([6, 5, 4, 3, 2]),

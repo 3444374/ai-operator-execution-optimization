@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -47,11 +48,12 @@ class _OpenBatch:
     total_cost_units: int
 
 
-def best_fit_decreasing(
+def _pack_decreasing(
     items: Sequence[PackItem],
     *,
     capacity: int,
     max_rows: int,
+    priority: Callable[[_OpenBatch, PackItem, int, int], tuple[int, ...]],
 ) -> tuple[tuple[int, ...], ...]:
     resolved_capacity = _positive_int(capacity, "capacity")
     resolved_max_rows = _positive_int(max_rows, "max_rows")
@@ -79,11 +81,11 @@ def best_fit_decreasing(
         if eligible:
             selected = min(
                 eligible,
-                key=lambda batch: (
-                    resolved_capacity
-                    - batch.total_cost_units
-                    - item.cost_units,
-                    batch.creation_index,
+                key=lambda batch: priority(
+                    batch,
+                    item,
+                    resolved_capacity,
+                    resolved_max_rows,
                 ),
             )
             selected.row_indexes.append(item.row_index)
@@ -97,6 +99,43 @@ def best_fit_decreasing(
             )
         )
     return tuple(tuple(batch.row_indexes) for batch in batches)
+
+
+def best_fit_decreasing(
+    items: Sequence[PackItem],
+    *,
+    capacity: int,
+    max_rows: int,
+) -> tuple[tuple[int, ...], ...]:
+    return _pack_decreasing(
+        items,
+        capacity=capacity,
+        max_rows=max_rows,
+        priority=lambda batch, item, resolved_capacity, _max_rows: (
+            resolved_capacity - batch.total_cost_units - item.cost_units,
+            batch.creation_index,
+        ),
+    )
+
+
+def row_cap_aware_best_fit_decreasing(
+    items: Sequence[PackItem],
+    *,
+    capacity: int,
+    max_rows: int,
+) -> tuple[tuple[int, ...], ...]:
+    """Pack decreasing costs while filling scarce row slots first."""
+
+    return _pack_decreasing(
+        items,
+        capacity=capacity,
+        max_rows=max_rows,
+        priority=lambda batch, item, resolved_capacity, resolved_max_rows: (
+            resolved_max_rows - len(batch.row_indexes) - 1,
+            resolved_capacity - batch.total_cost_units - item.cost_units,
+            batch.creation_index,
+        ),
+    )
 
 
 def _percentile(values: list[float], percentile: float) -> float:
