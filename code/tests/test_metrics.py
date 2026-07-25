@@ -80,6 +80,7 @@ vllm:e2e_request_latency_seconds_sum{model_name="qwen2.5-1.5b"} 2.0
 vllm:request_queue_time_seconds_count{model_name="qwen2.5-1.5b"} 4
 vllm:request_queue_time_seconds_sum{model_name="qwen2.5-1.5b"} 0.2
 vllm:num_requests_waiting{model_name="qwen2.5-1.5b"} 0
+vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 1000000000000
 """
         )
         after = parse_prometheus_metrics(
@@ -92,6 +93,7 @@ vllm:e2e_request_latency_seconds_sum{model_name="qwen2.5-1.5b"} 5.0
 vllm:request_queue_time_seconds_count{model_name="qwen2.5-1.5b"} 8
 vllm:request_queue_time_seconds_sum{model_name="qwen2.5-1.5b"} 0.6
 vllm:num_requests_waiting{model_name="qwen2.5-1.5b"} 1
+vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 4000000000000
 """
         )
 
@@ -101,6 +103,10 @@ vllm:num_requests_waiting{model_name="qwen2.5-1.5b"} 1
         self.assertEqual(stats["vllm_prompt_tokens_delta"], 80)
         self.assertEqual(stats["vllm_generation_tokens_delta"], 32)
         self.assertEqual(stats["vllm_request_success_delta"], 4)
+        self.assertEqual(
+            stats["vllm_estimated_flops_per_gpu_delta"],
+            3_000_000_000_000.0,
+        )
         self.assertAlmostEqual(stats["vllm_e2e_request_latency_mean_s"], 0.75)
         self.assertAlmostEqual(stats["vllm_request_queue_time_mean_s"], 0.1)
         self.assertEqual(stats["vllm_num_requests_waiting_after"], 1)
@@ -183,6 +189,7 @@ vllm:num_requests_waiting{model_name="qwen2.5-1.5b"} 1
 
     def test_mfu_requires_explicit_reproducible_inputs(self) -> None:
         stats = estimate_mfu(
+            estimated_flops=0.0,
             observed_tokens=1000,
             operator_wall_s=2.0,
             model_flops_per_token=2_000_000_000.0,
@@ -200,6 +207,7 @@ vllm:num_requests_waiting{model_name="qwen2.5-1.5b"} 1
         self.assertEqual(stats["mfu_precision"], "bf16")
 
         missing = estimate_mfu(
+            estimated_flops=0.0,
             observed_tokens=1000,
             operator_wall_s=2.0,
             model_flops_per_token=0.0,
@@ -211,6 +219,23 @@ vllm:num_requests_waiting{model_name="qwen2.5-1.5b"} 1
             "unavailable:missing_model_flops_per_token",
         )
         self.assertEqual(missing["mfu_estimate"], "")
+
+    def test_mfu_prefers_vllm_estimated_flops_counter(self) -> None:
+        stats = estimate_mfu(
+            estimated_flops=50_000_000_000_000.0,
+            observed_tokens=1000,
+            operator_wall_s=2.0,
+            model_flops_per_token=0.0,
+            gpu_peak_tflops=100.0,
+            precision="bf16",
+        )
+
+        self.assertEqual(stats["mfu_status"], "ok")
+        self.assertEqual(stats["mfu_estimate"], 0.25)
+        self.assertEqual(
+            stats["mfu_estimation_method"],
+            "vllm_estimated_flops_per_gpu_delta",
+        )
 
     def test_gpu_metadata_collects_power_when_supported(self) -> None:
         with patch("src.metrics.subprocess.run") as run:

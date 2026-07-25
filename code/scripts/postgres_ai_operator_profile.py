@@ -2236,6 +2236,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             observed_tokens=0,
         )
         dry_mfu_metrics = estimate_mfu(
+            estimated_flops=0.0,
             observed_tokens=0,
             operator_wall_s=0.0,
             model_flops_per_token=args.model_flops_per_token,
@@ -2907,6 +2908,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             observed_tokens=observed_tokens,
         )
         mfu_metrics = estimate_mfu(
+            estimated_flops=float(
+                vllm_stats["vllm_estimated_flops_per_gpu_delta"]
+            ),
             observed_tokens=observed_tokens,
             operator_wall_s=operator_wall_s,
             model_flops_per_token=args.model_flops_per_token,
@@ -3077,6 +3081,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "vllm_prompt_tokens_delta": vllm_stats["vllm_prompt_tokens_delta"],
             "vllm_generation_tokens_delta": vllm_stats["vllm_generation_tokens_delta"],
             "vllm_request_success_delta": vllm_stats["vllm_request_success_delta"],
+            "vllm_estimated_flops_per_gpu_delta": vllm_stats[
+                "vllm_estimated_flops_per_gpu_delta"
+            ],
             "vllm_e2e_request_latency_mean_s": round(float(vllm_stats["vllm_e2e_request_latency_mean_s"]), 6),
             "vllm_request_queue_time_mean_s": round(float(vllm_stats["vllm_request_queue_time_mean_s"]), 6),
             "vllm_request_inference_time_mean_s": round(

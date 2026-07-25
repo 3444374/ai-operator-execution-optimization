@@ -14,7 +14,9 @@
   不复用。
 - **资源效率**：正式 run row 新增 GPU 利用率、显存、vLLM 压力、功率、
   积分能耗和每千 observed token 能耗。MFU 仅在显式提供 reviewed
-  FLOPs/token、对应精度的 GPU 峰值时输出，保留估计方法与时间口径；
+  GPU 峰值与精度时输出；优先使用 vLLM
+  `estimated_flops_per_gpu_total` 增量，旧版服务才回退到显式
+  FLOPs/token，保留估计方法与时间口径；
   GPU utilization 不冒充 MFU。
 - **实验规模**：64 行仅作真实组件门禁；六组策略使用同一 512 文档、
   1 次 warm-up + 3 次正式重复；512 审计通过后，仅对选中的 baseline 与

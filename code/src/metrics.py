@@ -258,13 +258,18 @@ def resource_sample_stats(
 
 def estimate_mfu(
     *,
+    estimated_flops: float,
     observed_tokens: int,
     operator_wall_s: float,
     model_flops_per_token: float,
     gpu_peak_tflops: float,
     precision: str,
 ) -> dict[str, float | str]:
-    method = "configured_flops_per_observed_token"
+    method = (
+        "vllm_estimated_flops_per_gpu_delta"
+        if estimated_flops > 0
+        else "configured_flops_per_observed_token"
+    )
     time_basis = "operator_wall_s"
     common: dict[str, float | str] = {
         "mfu_estimation_method": method,
@@ -274,6 +279,7 @@ def estimate_mfu(
         "mfu_precision": precision,
     }
     inputs = {
+        "estimated_flops": estimated_flops,
         "observed_tokens": observed_tokens,
         "operator_wall_s": operator_wall_s,
         "model_flops_per_token": model_flops_per_token,
@@ -284,7 +290,7 @@ def estimate_mfu(
             raise ValueError(f"{name} must be numeric")
         if not math.isfinite(float(value)) or value < 0:
             raise ValueError(f"{name} must be finite and non-negative")
-    if model_flops_per_token == 0:
+    if estimated_flops == 0 and model_flops_per_token == 0:
         return {
             **common,
             "mfu_status": "unavailable:missing_model_flops_per_token",
@@ -302,16 +308,19 @@ def estimate_mfu(
             "mfu_status": "unavailable:zero_operator_wall_s",
             "mfu_estimate": "",
         }
-    if observed_tokens == 0:
+    if estimated_flops == 0 and observed_tokens == 0:
         return {
             **common,
             "mfu_status": "unavailable:zero_observed_tokens",
             "mfu_estimate": "",
         }
-    estimate = (
-        observed_tokens
-        * model_flops_per_token
-        / (operator_wall_s * gpu_peak_tflops * 1e12)
+    numerator_flops = (
+        estimated_flops
+        if estimated_flops > 0
+        else observed_tokens * model_flops_per_token
+    )
+    estimate = numerator_flops / (
+        operator_wall_s * gpu_peak_tflops * 1e12
     )
     return {
         **common,
@@ -364,11 +373,17 @@ def vllm_metric_delta_stats(before: dict[str, float], after: dict[str, float]) -
     prompt_tokens = _metric_delta(before, after, "vllm:prompt_tokens_total")
     generation_tokens = _metric_delta(before, after, "vllm:generation_tokens_total")
     request_success = _metric_delta(before, after, "vllm:request_success_total")
+    estimated_flops = _metric_delta(
+        before,
+        after,
+        "vllm:estimated_flops_per_gpu_total",
+    )
     return {
         "vllm_metrics_status": status,
         "vllm_prompt_tokens_delta": int(prompt_tokens),
         "vllm_generation_tokens_delta": int(generation_tokens),
         "vllm_request_success_delta": int(request_success),
+        "vllm_estimated_flops_per_gpu_delta": estimated_flops,
         "vllm_e2e_request_latency_mean_s": _mean_delta(before, after, "vllm:e2e_request_latency_seconds"),
         "vllm_request_queue_time_mean_s": _mean_delta(before, after, "vllm:request_queue_time_seconds"),
         "vllm_request_inference_time_mean_s": _mean_delta(before, after, "vllm:request_inference_time_seconds"),
