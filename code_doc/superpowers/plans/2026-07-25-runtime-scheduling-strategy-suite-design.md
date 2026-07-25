@@ -402,7 +402,8 @@ dependency is required initially.
 - ShareGPT/BurstGPT workload;
 - arrival-time order for scheduling experiments;
 - identical data read, model, writeback, and warm-up paths;
-- one warm-up plus at least five formal repeats;
+- one warm-up plus three tuning repeats; promote primary/final comparisons to
+  at least five formal repeats;
 - interleaved or seeded randomized scenario order;
 - actual model, database, pgvector, Ray, Daft, GPU, and Git versions recorded.
 
@@ -438,19 +439,22 @@ resource contention only.
 
 ### 8.3 Independent versus joint optimization
 
-The tuning workload uses 512 rows. It selects:
+The required core comparison follows
+`experiments/plans/experiment_status_and_gaps.md` P0-2:
 
-- the top two batching configurations;
-- the top two admission configurations;
-- all three flush policies.
+```text
+token_budget in {4096, 6144, 8192}
+K_max       in {4, 8, 16}
+```
 
-The reduced joint grid therefore contains `2 x 2 x 3 = 12` configurations.
+This is a `3 x 3 = 9` point grid on the 512-row ShareGPT/BurstGPT tuning
+workload. Compare the direct composition of independently selected optima with
+the joint-grid optimum.
 
-Compare:
-
-- direct composition of independently selected optima;
-- reduced joint-grid optimum;
-- UCB online selection.
+Only after that required comparison is complete, run the extended strategy
+suite grid using the top two batching configurations, top two admission
+configurations, and all three flush policies (`2 x 2 x 3 = 12`). UCB online
+selection is reported separately rather than substituted for either grid.
 
 Final comparison uses a separate 2048-row evaluation workload. Selection and
 evaluation results are stored separately.

@@ -12,6 +12,15 @@ window decisions. They perform no network calls, sleeps, Ray calls, or file
 I/O. A later Ray-facing observation provider supplies cached vLLM metrics and
 records every decision. Static admission remains the control baseline.
 
+**Experiment-plan sources:** This implementation is subordinate to
+`experiments/plans/experiment_status_and_gaps.md` P0-1,
+`service_scheduling_backpressure.md` §0.5/§5.3,
+`strategy_design_implementation_reference.md` §8.2, and
+`baseline_reference.md`. In particular, unsmoothed CONCUR-style AIMD is tried
+before EWMA/PID/UCB; EWMA remains optional because the related Ray policy was
+deprecated; fixed K=8, the legacy two-level policy, and Clipper-style AIMD are
+retained as baselines.
+
 ## Constraints
 
 - Keep each policy module focused and near or below 200 lines.
@@ -21,6 +30,15 @@ records every decision. Static admission remains the control baseline.
 - The first UCB implementation uses a finite action set and deterministic
   tie-breaking.
 - No GPU performance claim follows from controller unit tests.
+- Before the formal adaptive comparison, run the fixed-cap versus
+  EOS-permissive output-length confounder check and record actual completion
+  tokens. Controller coding may proceed in parallel, but this experiment gate
+  cannot be skipped.
+- Formal adaptive runs must record tokens/s, service P99, and inflight,
+  vLLM-queue, and K_max time series.
+- Apply the existing stop rule after three evidence-bearing controller
+  iterations: if foreground E2E remains above 8 seconds or background
+  throughput falls below 90% of static K=8, downgrade the adaptive claim.
 
 ## Task 1: Typed observations and decisions
 

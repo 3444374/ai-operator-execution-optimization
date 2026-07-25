@@ -981,3 +981,5 @@
 - 新增 `code_doc/superpowers/plans/2026-07-25-adaptive-controller-family-implementation.md`，按 typed observation/decision → AIMD/EWMA → PID → UCB → Ray scheduler 接入的顺序实施。
 - 控制器保持引擎无关，不执行网络、sleep、Ray 或文件 I/O；缺失/陈旧指标统一 hold，静态策略不读取 adaptive metrics。
 - 旧 two-level adaptive 暂时保留为显式 baseline；新控制器完成单元/契约测试后再进入单 GPU 正式对照，仍不合并 `main`。
+- 复核 `experiments/plans/` 后补齐执行约束：正式 adaptive 对比前先做固定 64 与 EOS-permissive 256 output cap 混淆变量检查；优先无 EWMA AIMD，EWMA/PID/UCB 为后续对照；正式记录 tokens/s、service P99 与 inflight/queue/K_max 时序，并沿用三轮改进放弃条件。
+- 联合搜索口径纠正为两层：先完成状态审计要求的 token_budget `{4096,6144,8192}` × K_max `{4,8,16}` 共 9 点核心实验，再做包含三种 flush 的 12 点扩展网格；UCB 单独报告，不替代独立拼接 vs joint grid。
