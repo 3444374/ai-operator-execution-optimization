@@ -263,6 +263,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Replay source arrival_time_s values before Ray submission.",
     )
     parser.add_argument(
+        "--arrival-time-scale",
+        type=float,
+        default=1.0,
+        help="Positive multiplier applied to normalized arrival replay offsets.",
+    )
+    parser.add_argument(
         "--flush-policy",
         choices=["immediate", "fixed_timeout", "queue_adaptive"],
         default="immediate",
@@ -678,6 +684,7 @@ def _arrival_replay_envelopes(
         close_batch=close_batch,
         service_observation=observe,
         clock=getattr(args, "_replay_clock", None) or SystemReplayClock(),
+        arrival_time_scale=getattr(args, "arrival_time_scale", 1.0),
     )
 
     def replay() -> Iterable[PayloadEnvelope]:
@@ -925,6 +932,7 @@ def _write_flush_trace(
     flush_policy: str,
     flush_timeout_ms: float,
     flush_max_wait_ms: float,
+    arrival_time_scale: float,
     trace_events: list,
 ) -> None:
     for trace_index, event in enumerate(trace_events):
@@ -939,6 +947,7 @@ def _write_flush_trace(
                 "flush_policy": flush_policy,
                 "flush_timeout_ms": flush_timeout_ms,
                 "flush_max_wait_ms": flush_max_wait_ms,
+                "arrival_time_scale": arrival_time_scale,
                 "trace_index": trace_index,
                 "elapsed_s": event.elapsed_s,
                 "pending_rows": event.pending_rows,
@@ -1473,6 +1482,12 @@ def submit_python_compatible_http_batches(
 def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
     if not args.arrival_replay:
         return
+    if (
+        isinstance(args.arrival_time_scale, bool)
+        or not math.isfinite(args.arrival_time_scale)
+        or args.arrival_time_scale <= 0
+    ):
+        raise SystemExit("--arrival-time-scale must be finite and positive")
     if args.data_source != "daft_postgres":
         raise SystemExit("arrival replay requires --data-source daft_postgres")
     if args.source_order != "arrival_time":
@@ -1601,6 +1616,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "adaptive_sample_interval_s": args.adaptive_sample_interval_s,
             "control_trace_output": args.control_trace_output or "",
             "arrival_replay": args.arrival_replay,
+            "arrival_time_scale": args.arrival_time_scale,
             "arrival_replay_preload": (
                 "bounded_requested_workload" if args.arrival_replay else ""
             ),
@@ -1975,6 +1991,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 flush_policy=args.flush_policy,
                 flush_timeout_ms=args.flush_timeout_ms,
                 flush_max_wait_ms=args.flush_max_wait_ms,
+                arrival_time_scale=args.arrival_time_scale,
                 trace_events=flush_trace_events,
             )
 
@@ -2096,6 +2113,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "control_trace_path": control_trace_path,
             "control_trace_events": len(control_trace_events),
             "arrival_replay": args.arrival_replay,
+            "arrival_time_scale": args.arrival_time_scale,
             "arrival_replay_preload": (
                 "bounded_requested_workload" if args.arrival_replay else ""
             ),

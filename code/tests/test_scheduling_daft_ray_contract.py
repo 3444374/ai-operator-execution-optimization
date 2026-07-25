@@ -33,7 +33,7 @@ class DaftRayContractTests(unittest.TestCase):
             {
                 "doc_id": [1, 2, 3, 4],
                 "prompt_tokens": [10, 10, 10, 10],
-                "arrival_time_s": [0.0, 0.0, 0.020, 0.100],
+                "arrival_time_s": [0.0, 0.0, 20.0, 100.0],
                 "prefix_key": ["shared", "shared", "shared", "other"],
             }
         )
@@ -42,6 +42,7 @@ class DaftRayContractTests(unittest.TestCase):
         ).organize(table).batches
         replay_args = SimpleNamespace(
             batching_policy="fixed_rows",
+            arrival_time_scale=0.001,
             completion_max_tokens=0,
             flush_max_wait_ms=50.0,
             flush_policy="fixed_timeout",

@@ -109,6 +109,7 @@ result.
 - `--data-source arrow_postgres|daft_postgres`
 - `--source-order doc_id|arrival_time`
 - `--arrival-replay`
+- `--arrival-time-scale`
 - `--flush-policy immediate|fixed_timeout|queue_adaptive`
 - `--flush-timeout-ms`
 - `--flush-max-wait-ms`
@@ -160,6 +161,9 @@ K_max experiments may use the sorted stream, while online flush experiments
 must also pass `--arrival-replay`. Replay requires `daft_postgres` and a Ray
 task/actor executor, preserves the observed inter-arrival gaps on a monotonic
 clock, and rejects missing or decreasing arrival values.
+`--arrival-time-scale` multiplies normalized replay offsets while leaving raw
+database timestamps and flush timeouts unchanged. It defaults to `1.0`; values
+below one are controlled trace acceleration and are recorded in every run.
 
 The three runtime decisions are separate:
 
@@ -179,6 +183,7 @@ Single-GPU smoke configuration:
 .conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --data-source daft_postgres --source-order arrival_time --arrival-replay `
+  --arrival-time-scale 0.0005 `
   --executor ray_actor --operator ai_complete `
   --model-backend compatible_http `
   --completion-endpoint-url http://localhost:8000/v1/completions `

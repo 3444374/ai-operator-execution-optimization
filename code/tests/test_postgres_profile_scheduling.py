@@ -515,6 +515,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         default_row = profile.run_once(default_args, "formal", 1)
 
         self.assertFalse(default_row["arrival_replay"])
+        self.assertEqual(default_row["arrival_time_scale"], 1.0)
         self.assertEqual(default_row["flush_policy"], "immediate")
         self.assertEqual(default_row["flush_timeout_ms"], 25.0)
         self.assertEqual(default_row["flush_max_wait_ms"], 50.0)
@@ -553,6 +554,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "--source-order",
                 "arrival_time",
                 "--arrival-replay",
+                "--arrival-time-scale",
+                "0.0005",
                 "--flush-policy",
                 "fixed_timeout",
                 "--flush-timeout-ms",
@@ -566,6 +569,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         replay_row = profile.run_once(replay_args, "formal", 1)
 
         self.assertTrue(replay_row["arrival_replay"])
+        self.assertEqual(replay_row["arrival_time_scale"], 0.0005)
         self.assertEqual(replay_row["flush_policy"], "fixed_timeout")
         self.assertEqual(replay_row["flush_timeout_ms"], 12.5)
         self.assertEqual(replay_row["flush_max_wait_ms"], 30.0)
@@ -652,6 +656,32 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 ],
                 "offline reordering",
             ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--arrival-time-scale",
+                    "0",
+                ],
+                "arrival-time-scale",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--arrival-time-scale",
+                    "nan",
+                ],
+                "arrival-time-scale",
+            ),
         ]
         for argv, message in invalid_cases:
             with self.subTest(argv=argv):
@@ -737,6 +767,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 flush_policy="fixed_timeout",
                 flush_timeout_ms=25.0,
                 flush_max_wait_ms=50.0,
+                arrival_time_scale=0.0005,
                 trace_events=events,
             )
             with output.open(newline="", encoding="utf-8") as handle:
@@ -754,6 +785,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "flush_policy",
                     "flush_timeout_ms",
                     "flush_max_wait_ms",
+                    "arrival_time_scale",
                     "trace_index",
                     "elapsed_s",
                     "pending_rows",
@@ -765,6 +797,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             )
             self.assertEqual(rows[0]["pending_rows"], "2")
             self.assertEqual(rows[0]["reason"], "fixed_timeout")
+            self.assertEqual(rows[0]["arrival_time_scale"], "0.0005")
 
             with self.assertRaises(OSError):
                 profile._write_flush_trace(
@@ -776,6 +809,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     flush_policy="fixed_timeout",
                     flush_timeout_ms=25.0,
                     flush_max_wait_ms=50.0,
+                    arrival_time_scale=0.0005,
                     trace_events=events,
                 )
         finally:
