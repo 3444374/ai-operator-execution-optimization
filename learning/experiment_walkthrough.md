@@ -1043,3 +1043,42 @@ tokens/s 提高 0.68%，能耗/千 token 降低 2.81%，因此进入 1024 行 he
 
 续跑会跳过已有成功项、保留 recovered incident；若明确剪枝失败场景，也会写入
 `skipped_runs`，不会伪造成功 CSV。
+
+## 2026-07-26：动态 flush 为什么不一定比最佳静态窗口强
+
+这里的一个“请求”仍是一条完整 prompt。batching 决定哪些完整请求一起提交，
+flush 决定未满 batch 最多等多久，`K_max` 决定已经关闭的 batch 最多允许多少
+个同时在途。这三件事不能混为一谈。
+
+在 ChatML 包装、最大 512 output tokens 的自然 EOS workload 中，64 个门禁请求
+有 48 个以 `stop` 结束、16 个达到 `length` 上限。512 请求、每策略 5 次正式
+重复中，queue-adaptive 相对 fixed 25ms：
+
+- tokens/s 提高 30.09%；
+- E2E 降低 23.05%；
+- request P99 降低 27.38%；
+- submissions 减少 30.50%。
+
+但 flush trace 显示 adaptive 大部分时间都因服务压力选择 50ms。单次 fixed
+50ms 探针与 adaptive 几乎相同。这说明“adaptive 标签”本身不是收益来源；
+更可能的原因是 50ms 给了上游更多合并完整请求的时间。
+
+随后在固定 16-token cap 的 18 单元联合筛选与 n=3 候选重复中：
+
+- `K_max=16` 吞吐最高，但所有配置均超过 1% SLO violation 门槛；
+- 独立拼接 6144/K8/adaptive 相对 fixed-25 提高 4.76% tokens/s；
+- 联合候选 8192/K8/adaptive 相对独立拼接为 -0.26% ± 2.07%，不可分辨；
+- 同一 8192/K8 下 adaptive 相对 fixed-50 为 -0.75% ± 0.97%，同样不可分辨，
+  且 fixed-50 submissions 更少。
+
+所以当前正确结论是：
+
+- static K8 是安全 admission guardrail；
+- 当前 accelerated-replay workload 可直接使用简单 fixed 50ms；
+- adaptive 的价值要在 arrival rate 改变、最佳静态窗口随负载变化时再验证；
+- 本地单 GPU 上，batching 与提交控制分别搜索后拼接已足够，联合搜索没有显示
+  出需要在线联合控制器的证据。
+
+逐请求真实 output token 与 finish reason 现在来自 vLLM 每个 choice 的 token
+IDs，不再把 submission aggregate usage 平均分摊。generic compatible endpoint
+默认不请求这个 vLLM 扩展，因此缺失时仍保持为空，而不是伪造数据。

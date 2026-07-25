@@ -43,7 +43,14 @@ PostgreSQL 18.3
 
 已有实验：GPU-backed AI_EMBED 预研链路（fine vs coalesced：operator/推理执行阶段约 37.5×、端到端约 13.4×；pgvector writeback 0.897s vs JSON 1.567s）+ vLLM + Qwen2.5-1.5B AI_COMPLETE baseline（已建立，详见 `experiments/results/local_vllm_qwen15b_baseline/`）。详细数据见 `motivation/results/gpu/`。CPU/fake 实验仅历史参考。
 
-当前缺口（vLLM baseline、Daft 文本接入、token-budget / K_max / queue-adaptive 初版均已完成，不再列为下一步）：① 改进 queue-adaptive 控制器，在 shared-vLLM 下超越静态 K_max=8 → ② 两项策略联合消融（独立拼接 vs 联合 grid search）→ ③ 多模态泛化验证（图像，同一套策略代码）→ ④ 算子代价估计（基于已有数据）。写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。详见 `PROJECT_OUTLINE.md` §近期优先级。
+当前缺口（vLLM baseline、Daft 文本接入、token-budget / K_max、queue-adaptive
+随机化复验及本地单 GPU 联合消融均已完成）：① 在自然 EOS 和不同 arrival
+rate 下复验 fixed-25 / fixed-50 / adaptive，并做 2048 held-out → ② prefix
+受控 workload → ③ 多模态泛化验证（图像，同一套策略代码）→ ④ 算子代价估计
+（基于已有数据）。当前证据支持 sequential token-budget + static K8 的分层
+优化；联合候选未显著优于独立拼接，adaptive 未显著优于 fixed-50。写回使用
+PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。详见
+`PROJECT_OUTLINE.md` §近期优先级。
 
 **Scope 缩减触发条件（2026-07-17 约定）**：
 - Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（✅ baseline 已建立，未触发）

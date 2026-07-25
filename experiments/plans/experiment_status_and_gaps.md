@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-23，新增 §6 完整问题审计）
+Date: 2026-07-20（最后更新：2026-07-26，新增提交控制与联合实验闭环）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -27,18 +27,21 @@ Date: 2026-07-20（最后更新：2026-07-23，新增 §6 完整问题审计）
 | Batch Policy × K_max 矩阵 | ✅ 07-19 | K_max 和 batch shape 耦合：fixed128 只有 4 个请求，K_max>4 无调度空间 | 仍是单 job 离线场景 |
 | Shared-vLLM K_max 干扰（2-job）| ✅ 07-19 | **K_max 在共享 vLLM 下必要**：bulk unbounded 时 foreground E2E 恶化 2.3×（4.9→11.4s），bulk 自身吞吐几乎不变 | 只有 2 个 job；只有一种 foreground size |
 | Shared-vLLM K_max Sweep + Adaptive | ✅ 07-19 | K_max=8 是最佳静态 guardrail；adaptive 触发了 downshift（102 次/run）| **❌ adaptive 不如 static K=8**（foreground E2E 10.2s vs 7.3s） |
-| **改进 adaptive 控制器** | ❌ 未做 | — | 渐进 ramp-up、比例控制、per-request 检查 |
+| **改进 adaptive flush** | ✅ 07-26 | 相对 fixed-25 有稳定收益；自然 EOS n=5 tokens/s +30.09% | 未优于 fixed-50；跨 arrival-rate 泛化未验证 |
 | **多 job/多 foreground size 扩展** | ❌ 未做 | — | 不同 foreground size、arrival offset、background policy 下的公平性 |
 
-**RC2 当前状态**：✅ 动机成立（shared-vLLM interference 是关键证据）。❌ 核心策略未验证——queue-adaptive flush 已实现但效果不如静态 K_max=8。这是当前最高风险的 gap。
+**RC2 当前状态**：✅ static K8 guardrail 与 50ms pressure-window
+coalescing 均有真实证据。⚠️ 当前 queue-adaptive 未证明优于最佳静态 50ms，
+因此动态性仍是跨负载待验证项，而不是默认结论。
 
 ### 1.3 耦合验证
 
 | 实验 | 状态 | 证明了什么 |
 |---|---|---|
-| **独立最优拼接 vs 联合 grid search** | ❌ 未做 | — |
+| **独立最优拼接 vs 联合 grid search** | ✅ 07-26 | 18 单元筛选 + 4 候选重复；联合相对独立 -0.26% ± 2.07%，不可分辨 |
 
-**状态**：完全没有实验。这是 AGENTS.md §1 写死的核心实验——"分别独立搜索最优配置后拼接，再与联合 grid search 对比"。无论结果如何（联合显著优于拼接 / 两者接近），都不改变课题的核心贡献。
+**状态**：本地单 GPU 已完成。当前证据支持分层独立优化，不支持增加联合在线
+控制器；多模型、多 GPU 与跨 arrival-rate 的外推仍未验证。
 
 ### 1.4 多模态泛化验证
 
@@ -66,11 +69,15 @@ Date: 2026-07-20（最后更新：2026-07-23，新增 §6 完整问题审计）
    └── "Length-align 配合 token-budget 有效"（仅 ablation，无正式对照）
 
 ❌ 未证明（关键缺口）：
-   ├── "Queue-adaptive flush 优于静态 K_max"（当前反了）
-   ├── "两项策略独立优化 ≈ 联合优化"（或 "联合显著优于独立"）
+   ├── "Queue-adaptive flush 优于最佳静态 timeout"（未证明）
    ├── "Prefix-aware 在受控 prefix 比例下有效"（当前 prefix ratio 6.4%）
    └── "策略代码对多模态 workload 可复用"（未启动）
 ```
+
+新增的部分证据：
+
+- queue-adaptive 相对 fixed-25 有稳定收益，但 fixed-50 与其不可分辨；
+- 当前单 GPU 下独立拼接与联合候选不可分辨，分层优化足够。
 
 ---
 
@@ -395,3 +402,35 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 原始数据和七步解释见
 `experiments/results/request_lifecycle_gate_20260725/README.md`。
+
+## 9. 2026-07-26 提交控制与联合实验闭环
+
+### 已补齐
+
+- vLLM 每个 choice 的真实 output-token count 与 finish reason；
+- ChatML 自然 EOS 门禁，以及不截断 prompt 的 context-safe 数据源过滤；
+- 512 请求 fixed-25 vs queue-adaptive 随机化 n=5；
+- token budget `{4096,6144,8192}` × K_max `{4,8,16}` ×
+  fixed/adaptive 的 18 单元 SLO-constrained 筛选；
+- 独立拼接、联合候选、fixed-25 baseline、fixed-50 机制对照各 n=3。
+
+### 当前结论
+
+- K16 吞吐最高，但所有单元均超过 1% SLO violation 门槛；
+- 独立拼接相对 fixed-25 tokens/s `+4.76% ± 2.29%`；
+- 联合候选相对独立拼接 `-0.26% ± 2.07%`，没有可分辨增量；
+- 相同 8192/K8 下 adaptive 相对 fixed-50 `-0.75% ± 0.97%`；
+- 当前默认应保持 sequential token-budget + static K8，并在本 workload 使用
+  简单 fixed-50；adaptive 只保留为跨 arrival-rate 候选。
+
+### 剩余关键缺口
+
+1. 自然 EOS 下 fixed-25/fixed-50/adaptive 三组正式随机化重复；
+2. 改变 arrival rate，验证最佳静态窗口是否变化以及 adaptive 能否自动跟随；
+3. 2048 请求 held-out；
+4. prefix 受控 workload、多模态复用、多 endpoint/多 GPU。
+
+原始数据与七步解释见：
+
+- `experiments/results/adaptive_flush_randomized_20260726/README.md`
+- `experiments/results/joint_batching_submission_512_20260726/README.md`

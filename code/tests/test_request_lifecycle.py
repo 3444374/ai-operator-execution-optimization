@@ -181,12 +181,14 @@ class RequestLifecycleTests(unittest.TestCase):
             service_by_submission_id={"job:batch:0": service_timing()},
             client_estimated_output_tokens_by_doc_id={"1": 2},
             actual_output_tokens_by_doc_id={"1": 3},
+            finish_reason_by_doc_id={"1": "stop"},
             slo_target_s=None,
         )[0]
 
         self.assertEqual(row.actual_output_tokens, 3)
         self.assertEqual(row.total_tokens, 13)
         self.assertEqual(row.output_token_source, "endpoint_request")
+        self.assertEqual(row.finish_reason, "stop")
         self.assertIsNone(row.slo_met)
 
     def test_join_rejects_duplicate_or_incomplete_identity_maps(self) -> None:

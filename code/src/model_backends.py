@@ -9,7 +9,9 @@ whole pipeline around a single provider.
 from __future__ import annotations
 
 import json
+import math
 import time
+from dataclasses import dataclass
 from typing import Literal
 from urllib import error, request
 
@@ -19,6 +21,32 @@ import pyarrow as pa
 
 EmbeddingBackendName = Literal["fake", "compatible_http", "http_openai"]
 CompletionBackendName = Literal["fake", "compatible_http", "http_openai", "ollama"]
+CompletionPromptFormat = Literal["raw", "chatml"]
+
+
+@dataclass(frozen=True)
+class CompletionEndpointResult:
+    outputs: list[str]
+    total_tokens: int | None
+    output_token_counts: list[int | None]
+    finish_reasons: list[str | None]
+
+
+def format_completion_prompts(
+    prompts: list[str],
+    prompt_format: CompletionPromptFormat,
+) -> list[str]:
+    if prompt_format == "raw":
+        return prompts
+    if prompt_format == "chatml":
+        return [
+            (
+                f"<|im_start|>user\n{prompt}<|im_end|>\n"
+                "<|im_start|>assistant\n"
+            )
+            for prompt in prompts
+        ]
+    raise ValueError(f"Unknown completion prompt format: {prompt_format}")
 
 
 def normalize_embedding_backend(name: EmbeddingBackendName) -> Literal["fake", "compatible_http"]:
@@ -75,8 +103,23 @@ def call_compatible_completion_endpoint(
     api_key: str | None,
     timeout_s: float,
     max_tokens: int,
-) -> tuple[list[str], int | None]:
-    payload = json.dumps({"model": model_name, "prompt": prompts, "max_tokens": max_tokens}).encode("utf-8")
+    *,
+    return_token_ids: bool = False,
+    prompt_format: CompletionPromptFormat = "raw",
+    temperature: float | None = None,
+) -> CompletionEndpointResult:
+    request_body = {
+        "model": model_name,
+        "prompt": format_completion_prompts(prompts, prompt_format),
+        "max_tokens": max_tokens,
+    }
+    if return_token_ids:
+        request_body["return_token_ids"] = True
+    if temperature is not None:
+        if not math.isfinite(temperature) or temperature < 0:
+            raise ValueError("temperature must be finite and non-negative")
+        request_body["temperature"] = temperature
+    payload = json.dumps(request_body).encode("utf-8")
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
@@ -89,14 +132,31 @@ def call_compatible_completion_endpoint(
     decoded = json.loads(body.decode("utf-8"))
     choices = sorted(decoded["choices"], key=lambda item: item.get("index", 0))
     outputs = []
+    output_token_counts = []
+    finish_reasons = []
     for choice in choices:
         if "text" in choice:
             outputs.append(str(choice["text"]))
         else:
             outputs.append(str(choice.get("message", {}).get("content", "")))
+        token_ids = choice.get("token_ids")
+        output_token_counts.append(
+            len(token_ids) if isinstance(token_ids, list) else None
+        )
+        finish_reason = choice.get("finish_reason")
+        finish_reasons.append(
+            str(finish_reason) if finish_reason is not None else None
+        )
     usage = decoded.get("usage") or {}
     total_tokens = usage.get("total_tokens")
-    return outputs, int(total_tokens) if total_tokens is not None else None
+    return CompletionEndpointResult(
+        outputs=outputs,
+        total_tokens=(
+            int(total_tokens) if total_tokens is not None else None
+        ),
+        output_token_counts=output_token_counts,
+        finish_reasons=finish_reasons,
+    )
 
 
 def ollama_generate_url(endpoint_url: str) -> str:
@@ -260,28 +320,49 @@ class FakeCompletionActor:
 
 
 class CompatibleHTTPCompletionActor:
-    def __init__(self, endpoint_url: str, model_name: str, api_key: str | None, timeout_s: float, max_tokens: int):
+    def __init__(
+        self,
+        endpoint_url: str,
+        model_name: str,
+        api_key: str | None,
+        timeout_s: float,
+        max_tokens: int,
+        return_token_ids: bool = False,
+        prompt_format: CompletionPromptFormat = "raw",
+        temperature: float | None = None,
+    ):
         self.endpoint_url = endpoint_url
         self.model_name = model_name
         self.api_key = api_key
         self.timeout_s = timeout_s
         self.max_tokens = max_tokens
+        self.return_token_ids = return_token_ids
+        self.prompt_format = prompt_format
+        self.temperature = temperature
 
     def complete(self, batch: pa.RecordBatch | pa.Table) -> dict:
         service_start = time.perf_counter()
         service_start_epoch = time.time()
         prompts = batch.column("text").to_pylist()
-        outputs, endpoint_tokens = call_compatible_completion_endpoint(
+        endpoint_result = call_compatible_completion_endpoint(
             self.endpoint_url,
             self.model_name,
             prompts,
             self.api_key,
             self.timeout_s,
             self.max_tokens,
+            return_token_ids=self.return_token_ids,
+            prompt_format=self.prompt_format,
+            temperature=self.temperature,
         )
+        outputs = endpoint_result.outputs
         input_token_count = sum(text_token_count(prompt) for prompt in prompts)
         output_token_count = sum(text_token_count(output) for output in outputs)
-        token_count = endpoint_tokens if endpoint_tokens is not None else input_token_count + output_token_count
+        token_count = (
+            endpoint_result.total_tokens
+            if endpoint_result.total_tokens is not None
+            else input_token_count + output_token_count
+        )
         service_s = time.perf_counter() - service_start
         service_end_epoch = time.time()
         return {
@@ -289,6 +370,8 @@ class CompatibleHTTPCompletionActor:
             "tenant_id": batch.column("tenant_id").to_pylist(),
             "category": batch.column("category").to_pylist(),
             "output_text": outputs,
+            "output_token_counts": endpoint_result.output_token_counts,
+            "finish_reasons": endpoint_result.finish_reasons,
             "rows": batch.num_rows,
             "input_token_count": input_token_count,
             "output_token_count": output_token_count,
@@ -352,8 +435,20 @@ def compatible_http_complete_batch(
     api_key: str | None,
     timeout_s: float,
     max_tokens: int,
+    return_token_ids: bool = False,
+    prompt_format: CompletionPromptFormat = "raw",
+    temperature: float | None = None,
 ) -> dict:
-    return CompatibleHTTPCompletionActor(endpoint_url, model_name, api_key, timeout_s, max_tokens).complete(batch)
+    return CompatibleHTTPCompletionActor(
+        endpoint_url,
+        model_name,
+        api_key,
+        timeout_s,
+        max_tokens,
+        return_token_ids,
+        prompt_format,
+        temperature,
+    ).complete(batch)
 
 
 def ollama_complete_batch(

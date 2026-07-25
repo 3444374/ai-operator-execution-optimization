@@ -1354,3 +1354,27 @@
   actor pool/endpoint routing、观测与实验基础设施的当前流程、完成度和后续
   实施顺序。
 - 所有改动继续位于隔离特性分支，尚未合并 `main`；本次未自动同步 Wiki。
+
+## 2026-07-26 变长输出观测、Adaptive Flush 与联合实验闭环
+
+- Compatible vLLM completion 路径新增显式 token-ID opt-in、per-request
+  actual output tokens、finish reason、ChatML prompt envelope、temperature
+  与 context-safe source filter；generic compatible endpoint 默认行为不变。
+- 自然 EOS 门禁确认 64 请求中 48 个 `stop`、16 个 `length`。512 请求、
+  每策略 5 次随机化正式重复中，queue-adaptive 相对 fixed-25：
+  tokens/s `+30.09% ± 2.66%`、E2E `-23.05% ± 1.60%`、request P99
+  `-27.38% ± 1.87%`。单次 fixed-50 探针与 adaptive 相当，因此不声称
+  动态性优于最佳静态窗口。
+- 完成 18 单元 token budget × K_max × flush 真实筛选，所有 K16 配置均因
+  1.76%–3.13% SLO violation 被 guardrail 排除。
+- 完成 4 候选、每项 1 warm-up + 3 formal 的随机化重复。独立拼接相对
+  fixed-25 tokens/s `+4.76% ± 2.29%`；联合候选相对独立拼接
+  `-0.26% ± 2.07%`；adaptive 8192/K8 相对 fixed-50
+  `-0.75% ± 0.97%`。
+- 设计决策：本地单 GPU 当前采用 sequential token-budget + static K8 的
+  分层优化；当前 accelerated-replay workload 使用 fixed-50。联合搜索保留为
+  验证工具，adaptive 保留为跨 arrival-rate 候选，不增加联合在线控制器。
+- 新结果位于
+  `experiments/results/adaptive_flush_randomized_20260726/` 与
+  `experiments/results/joint_batching_submission_512_20260726/`。仍未合并
+  `main`，也未自动同步 Wiki。

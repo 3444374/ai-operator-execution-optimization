@@ -1068,6 +1068,108 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(row["packing_input_rows"], 0)
         self.assertEqual(row["packing_batch_count"], 0)
 
+    def test_dry_run_records_exact_completion_observation_opt_in(
+        self,
+    ) -> None:
+        default_row = profile.run_once(
+            profile.parse_args(["--dry-run"]),
+            "formal",
+            1,
+        )
+        enabled_row = profile.run_once(
+            profile.parse_args(
+                [
+                    "--dry-run",
+                    "--operator",
+                    "ai_complete",
+                    "--model-backend",
+                    "compatible_http",
+                    "--completion-return-token-ids",
+                ]
+            ),
+            "formal",
+            1,
+        )
+
+        self.assertFalse(default_row["completion_return_token_ids"])
+        self.assertTrue(enabled_row["completion_return_token_ids"])
+        self.assertEqual(default_row["completion_prompt_format"], "raw")
+        self.assertEqual(default_row["completion_temperature"], "")
+        self.assertEqual(default_row["source_max_prompt_tokens"], "")
+        self.assertEqual(
+            default_row["request_actual_output_tokens_observed"],
+            0,
+        )
+        self.assertEqual(default_row["request_finish_reason_observed"], 0)
+
+        chatml_row = profile.run_once(
+            profile.parse_args(
+                [
+                    "--dry-run",
+                    "--operator",
+                    "ai_complete",
+                    "--model-backend",
+                    "compatible_http",
+                    "--completion-prompt-format",
+                    "chatml",
+                    "--completion-temperature",
+                    "0",
+                ]
+            ),
+            "formal",
+            1,
+        )
+        self.assertEqual(chatml_row["completion_prompt_format"], "chatml")
+        self.assertEqual(chatml_row["completion_temperature"], 0.0)
+
+        filtered_row = profile.run_once(
+            profile.parse_args(
+                [
+                    "--dry-run",
+                    "--source-max-prompt-tokens",
+                    "1500",
+                ]
+            ),
+            "formal",
+            1,
+        )
+        self.assertEqual(filtered_row["source_max_prompt_tokens"], 1500)
+
+    def test_dry_run_rejects_invalid_completion_observation_inputs(
+        self,
+    ) -> None:
+        invalid_argv = (
+            ["--dry-run", "--completion-temperature", "-0.1"],
+            ["--dry-run", "--completion-temperature", "nan"],
+            ["--dry-run", "--source-max-prompt-tokens", "0"],
+            [
+                "--dry-run",
+                "--operator",
+                "ai_complete",
+                "--model-backend",
+                "ollama",
+                "--completion-return-token-ids",
+            ],
+            [
+                "--dry-run",
+                "--operator",
+                "ai_complete",
+                "--model-backend",
+                "fake",
+                "--completion-prompt-format",
+                "chatml",
+            ],
+        )
+
+        for argv in invalid_argv:
+            with self.subTest(argv=argv):
+                with self.assertRaises(SystemExit):
+                    profile.run_once(
+                        profile.parse_args(argv),
+                        "formal",
+                        1,
+                    )
+
     def test_dry_run_records_resource_and_mfu_provenance(self) -> None:
         args = profile.parse_args(
             [
@@ -1734,6 +1836,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "actual_output_tokens",
             "output_token_source",
             "total_tokens",
+            "finish_reason",
             "prefix_key",
             "status",
             "error_type",
@@ -1772,7 +1875,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 self.assertEqual(reader.fieldnames, expected_columns)
 
             self.assertEqual(len(written), 2)
-            self.assertEqual(written[0]["schema_version"], "2")
+            self.assertEqual(written[0]["schema_version"], "3")
             self.assertEqual(
                 written[0]["request_time_origin"],
                 "replayed_arrival",
@@ -1827,6 +1930,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "doc_id": [11, 12],
                 "output_text": ["one two", ""],
                 "output_token_count": 2,
+                "output_token_counts": [2, 0],
+                "finish_reasons": ["stop", "length"],
                 "service_start_epoch_s": 100.040,
                 "service_end_epoch_s": 100.290,
             }
@@ -1844,10 +1949,14 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [row.client_estimated_output_tokens for row in rows],
             [2, 0],
         )
-        self.assertEqual([row.actual_output_tokens for row in rows], [None, None])
+        self.assertEqual([row.actual_output_tokens for row in rows], [2, 0])
+        self.assertEqual(
+            [row.finish_reason for row in rows],
+            ["stop", "length"],
+        )
         self.assertEqual(
             {row.output_token_source for row in rows},
-            {"submission_aggregate_unavailable"},
+            {"endpoint_request"},
         )
 
         metrics = profile._request_trace_metrics(rows, e2e_s=0.5)
@@ -1857,6 +1966,11 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(metrics["request_slo_violation_ratio"], 1.0)
         self.assertEqual(metrics["request_slo_goodput_per_s"], 0.0)
         self.assertEqual(metrics["latency_granularity"], "submission")
+        self.assertEqual(metrics["request_actual_output_tokens_observed"], 2)
+        self.assertEqual(metrics["request_actual_output_tokens_p50"], 0)
+        self.assertEqual(metrics["request_finish_reason_observed"], 2)
+        self.assertEqual(metrics["request_finish_reason_stop_ratio"], 0.5)
+        self.assertEqual(metrics["request_finish_reason_length_ratio"], 0.5)
 
     def test_vllm_tokens_per_second_uses_observed_prometheus_deltas(self) -> None:
         stats = {
@@ -1971,6 +2085,22 @@ class StaticTaskSchedulingTests(unittest.TestCase):
             ["http://one", "http://two"],
         )
         self.assertTrue(all(call[2:] == ("model", None, 5.0) for call in remote.calls))
+
+    def test_vllm_task_submitter_requests_per_choice_token_ids(self) -> None:
+        remote = _RecordingRemote()
+
+        self._submit(
+            remote,
+            operator="ai_complete",
+            model_backend="compatible_http",
+            endpoint_urls=["http://one"],
+            completion_return_token_ids=True,
+        )
+
+        self.assertTrue(all(call[-3] is True for call in remote.calls))
+        self.assertTrue(all(call[-2] == "raw" for call in remote.calls))
+        self.assertTrue(all(call[-1] is None for call in remote.calls))
+        self.assertTrue(all(len(call) == 9 for call in remote.calls))
 
     def test_adaptive_task_path_remains_isolated_from_static_scheduler(self) -> None:
         remote = _RecordingRemote()

@@ -1,5 +1,11 @@
 # Learning Notes
 
+## 2026-07-26 动态 flush 与联合搜索结论
+
+`learning/experiment_walkthrough.md` 新增 2026-07-26 章节，解释为什么
+queue-adaptive 可以优于 25ms baseline，却未必优于最佳静态 50ms；同时说明
+独立拼接与联合搜索在当前单 GPU 实验中为何不可分辨。
+
 ## 2026-07-20 指标选择方法论
 
 New learning note:

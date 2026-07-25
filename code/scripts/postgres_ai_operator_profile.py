@@ -177,6 +177,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--data-source", choices=["arrow_postgres", "daft_postgres"], default="arrow_postgres")
     parser.add_argument("--source-workload-name", default=None)
     parser.add_argument(
+        "--source-max-prompt-tokens",
+        type=int,
+        default=None,
+        help=(
+            "Exclude, rather than truncate, rows whose recorded prompt "
+            "tokens exceed this context-safety threshold."
+        ),
+    )
+    parser.add_argument(
         "--source-order",
         choices=["doc_id", "arrival_time"],
         default="doc_id",
@@ -229,6 +238,32 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--completion-api-key", default=os.environ.get("COMPLETION_API_KEY"))
     parser.add_argument("--completion-request-timeout-s", type=float, default=120.0)
     parser.add_argument("--completion-max-tokens", type=int, default=128)
+    parser.add_argument(
+        "--completion-return-token-ids",
+        action="store_true",
+        help=(
+            "Request vLLM per-choice token IDs for exact output-token and "
+            "finish-reason tracing. Disabled for generic compatible servers."
+        ),
+    )
+    parser.add_argument(
+        "--completion-prompt-format",
+        choices=["raw", "chatml"],
+        default="raw",
+        help=(
+            "Prompt envelope sent to compatible completion endpoints. "
+            "chatml preserves row content and adds user/assistant delimiters."
+        ),
+    )
+    parser.add_argument(
+        "--completion-temperature",
+        type=float,
+        default=None,
+        help=(
+            "Optional sampling temperature. Use 0 for deterministic "
+            "cross-policy comparisons."
+        ),
+    )
     parser.add_argument(
         "--output-cost-mode",
         choices=[
@@ -1309,7 +1344,7 @@ def _write_request_trace(
         append_metrics(
             output_path,
             {
-                "schema_version": 2,
+                "schema_version": 3,
                 "experiment_id": experiment_id,
                 "phase": phase,
                 "repeat_index": repeat_index,
@@ -1341,6 +1376,7 @@ def _write_request_trace(
                 "total_tokens": (
                     row.total_tokens if row.total_tokens is not None else ""
                 ),
+                "finish_reason": row.finish_reason or "",
                 "prefix_key": row.prefix_key,
                 "status": row.status,
                 "error_type": row.error_type,
@@ -1387,6 +1423,8 @@ def _build_profiler_request_rows(
 
     service_by_submission_id = {}
     client_estimated_output_tokens_by_doc_id = {}
+    actual_output_tokens_by_doc_id = {}
+    finish_reason_by_doc_id = {}
     for event, result in zip(submission_events, results):
         if event.status == "failed":
             service_by_submission_id[event.submission_id] = (
@@ -1411,19 +1449,38 @@ def _build_profiler_request_rows(
                 text_token_count(str(output)) if str(output).strip() else 0
                 for output in outputs
             ]
+            actual_output_counts = result.get("output_token_counts", [])
+            if actual_output_counts and len(actual_output_counts) != len(doc_ids):
+                raise ValueError(
+                    "backend output token count must match doc_id count"
+                )
+            finish_reasons = result.get("finish_reasons", [])
+            if finish_reasons and len(finish_reasons) != len(doc_ids):
+                raise ValueError(
+                    "backend finish reason count must match doc_id count"
+                )
         else:
             output_counts = [0] * len(doc_ids)
+            actual_output_counts = []
+            finish_reasons = []
         for doc_id, output_count in zip(doc_ids, output_counts):
             if doc_id in client_estimated_output_tokens_by_doc_id:
                 raise ValueError(f"duplicate backend doc_id: {doc_id}")
             client_estimated_output_tokens_by_doc_id[doc_id] = output_count
+        for doc_id, output_count in zip(doc_ids, actual_output_counts):
+            if output_count is not None:
+                actual_output_tokens_by_doc_id[doc_id] = int(output_count)
+        for doc_id, finish_reason in zip(doc_ids, finish_reasons):
+            if finish_reason is not None:
+                finish_reason_by_doc_id[doc_id] = str(finish_reason)
 
     return build_request_trace_rows(
         seeds,
         submission_events,
         service_by_submission_id,
         client_estimated_output_tokens_by_doc_id,
-        {},
+        actual_output_tokens_by_doc_id,
+        finish_reason_by_doc_id=finish_reason_by_doc_id,
         slo_target_s=slo_target_s,
     )
 
@@ -1436,6 +1493,15 @@ def _request_trace_metrics(
     successful_e2e = [
         row.e2e_s for row in rows if row.status == "completed"
     ]
+    actual_output_tokens = [
+        row.actual_output_tokens
+        for row in rows
+        if row.actual_output_tokens is not None
+    ]
+    finish_reasons = [
+        row.finish_reason for row in rows if row.finish_reason is not None
+    ]
+    finish_reason_count = len(finish_reasons)
     slo_enabled = any(row.slo_target_s is not None for row in rows)
     slo_met_count = sum(row.slo_met is True for row in rows)
     violation_ratio = (
@@ -1453,6 +1519,32 @@ def _request_trace_metrics(
         "request_slo_violation_ratio": violation_ratio,
         "request_slo_goodput_per_s": (
             slo_met_count / e2e_s if slo_enabled and e2e_s > 0 else 0.0
+        ),
+        "request_actual_output_tokens_observed": len(actual_output_tokens),
+        "request_actual_output_tokens_p50": percentile(
+            actual_output_tokens,
+            50,
+        ),
+        "request_actual_output_tokens_p95": percentile(
+            actual_output_tokens,
+            95,
+        ),
+        "request_actual_output_tokens_p99": percentile(
+            actual_output_tokens,
+            99,
+        ),
+        "request_finish_reason_observed": finish_reason_count,
+        "request_finish_reason_stop_ratio": (
+            sum(reason == "stop" for reason in finish_reasons)
+            / finish_reason_count
+            if finish_reason_count
+            else 0.0
+        ),
+        "request_finish_reason_length_ratio": (
+            sum(reason == "length" for reason in finish_reasons)
+            / finish_reason_count
+            if finish_reason_count
+            else 0.0
         ),
         "latency_granularity": next(iter(granularities), ""),
     }
@@ -1769,6 +1861,9 @@ def submit_ray_tasks(
     submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
     epoch_clock=None,
     output_cost_mode: OutputCostMode = "fixed_output_cap",
+    completion_return_token_ids: bool = False,
+    completion_prompt_format: str = "raw",
+    completion_temperature: float | None = None,
 ) -> tuple[list[dict], dict]:
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
@@ -1795,6 +1890,9 @@ def submit_ray_tasks(
             timeout_s,
             completion_max_tokens,
             adaptive_config,
+            completion_return_token_ids,
+            completion_prompt_format,
+            completion_temperature,
         )
 
     envelopes = (
@@ -1832,6 +1930,27 @@ def submit_ray_tasks(
                 submitters[endpoint_id] = (
                     lambda payload, url=endpoint_url: remote_embed.remote(
                         payload, url, model_name, api_key, timeout_s
+                    )
+                )
+            elif (
+                model_backend != "ollama"
+                and (
+                    completion_return_token_ids
+                    or completion_prompt_format != "raw"
+                    or completion_temperature is not None
+                )
+            ):
+                submitters[endpoint_id] = (
+                    lambda payload, url=endpoint_url: remote_embed.remote(
+                        payload,
+                        url,
+                        model_name,
+                        api_key,
+                        timeout_s,
+                        completion_max_tokens,
+                        completion_return_token_ids,
+                        completion_prompt_format,
+                        completion_temperature,
                     )
                 )
             else:
@@ -1892,6 +2011,9 @@ def _submit_ray_tasks_legacy_adaptive(
     timeout_s: float,
     completion_max_tokens: int,
     adaptive_config: dict | None = None,
+    completion_return_token_ids: bool = False,
+    completion_prompt_format: str = "raw",
+    completion_temperature: float | None = None,
 ) -> tuple[list[dict], dict]:
     pending = []
     results = []
@@ -1935,6 +2057,27 @@ def _submit_ray_tasks_legacy_adaptive(
             submit_timer = StageTimer.start("submit")
             if operator == "ai_embed":
                 pending.append(remote_embed.remote(batch, endpoint_url, model_name, api_key, timeout_s))
+            elif (
+                model_backend != "ollama"
+                and (
+                    completion_return_token_ids
+                    or completion_prompt_format != "raw"
+                    or completion_temperature is not None
+                )
+            ):
+                pending.append(
+                    remote_embed.remote(
+                        batch,
+                        endpoint_url,
+                        model_name,
+                        api_key,
+                        timeout_s,
+                        completion_max_tokens,
+                        completion_return_token_ids,
+                        completion_prompt_format,
+                        completion_temperature,
+                    )
+                )
             else:
                 pending.append(
                     remote_embed.remote(batch, endpoint_url, model_name, api_key, timeout_s, completion_max_tokens)
@@ -2036,6 +2179,9 @@ def submit_python_compatible_http_batches(
     timeout_s: float,
     completion_max_tokens: int,
     model_backend: str,
+    completion_return_token_ids: bool = False,
+    completion_prompt_format: str = "raw",
+    completion_temperature: float | None = None,
 ) -> tuple[list[dict], dict]:
     results = []
     invocation_count = 0
@@ -2049,7 +2195,17 @@ def submit_python_compatible_http_batches(
             )
         else:
             results.append(
-                compatible_http_complete_batch(batch, endpoint_url, model_name, api_key, timeout_s, completion_max_tokens)
+                compatible_http_complete_batch(
+                    batch,
+                    endpoint_url,
+                    model_name,
+                    api_key,
+                    timeout_s,
+                    completion_max_tokens,
+                    completion_return_token_ids,
+                    completion_prompt_format,
+                    completion_temperature,
+                )
             )
         invocation_count += 1
     return results, {
@@ -2167,6 +2323,38 @@ def _validate_resource_efficiency_args(args: argparse.Namespace) -> None:
         )
 
 
+def _validate_completion_observation_args(args: argparse.Namespace) -> None:
+    if (
+        args.completion_temperature is not None
+        and (
+            isinstance(args.completion_temperature, bool)
+            or not math.isfinite(args.completion_temperature)
+            or args.completion_temperature < 0
+        )
+    ):
+        raise SystemExit(
+            "--completion-temperature must be finite and non-negative"
+        )
+    if (
+        args.source_max_prompt_tokens is not None
+        and args.source_max_prompt_tokens <= 0
+    ):
+        raise SystemExit("--source-max-prompt-tokens must be positive")
+    uses_compatible_completion_options = (
+        args.completion_return_token_ids
+        or args.completion_prompt_format != "raw"
+        or args.completion_temperature is not None
+    )
+    if uses_compatible_completion_options and (
+        args.operator != "ai_complete"
+        or args.model_backend not in {"compatible_http", "http_openai"}
+    ):
+        raise SystemExit(
+            "completion token IDs, prompt format, and temperature require "
+            "--operator ai_complete with a compatible HTTP backend"
+        )
+
+
 def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
     """Return observed vLLM token throughput for one end-to-end run."""
     if e2e_s <= 0:
@@ -2182,6 +2370,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     _validate_request_trace_args(args)
     _validate_arrival_replay_args(args)
     _validate_resource_efficiency_args(args)
+    _validate_completion_observation_args(args)
     endpoint_urls = completion_endpoint_urls(args) if args.operator == "ai_complete" else embedding_endpoint_urls(args)
     endpoint_url_label = ";".join(endpoint_urls)
     if args.operator == "ai_embed" and args.model_backend == "ollama":
@@ -2278,6 +2467,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "data_source": args.data_source,
             "source_workload_name": args.source_workload_name or "",
             "source_order": args.source_order,
+            "source_max_prompt_tokens": (
+                args.source_max_prompt_tokens
+                if args.source_max_prompt_tokens is not None
+                else ""
+            ),
             "organizer": args.organizer,
             "organizer_partition_mode": args.organizer_partition_mode,
             "organizer_partitions": args.organizer_partitions,
@@ -2292,6 +2486,13 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "batching_policy": args.batching_policy,
             "token_budget": args.token_budget,
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
+            "completion_return_token_ids": args.completion_return_token_ids,
+            "completion_prompt_format": args.completion_prompt_format,
+            "completion_temperature": (
+                args.completion_temperature
+                if args.completion_temperature is not None
+                else ""
+            ),
             "output_cost_mode": args.output_cost_mode,
             "output_cost_source": output_cost_source(args.output_cost_mode),
             "packing_cost_unit": "tokens",
@@ -2356,6 +2557,13 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "request_slo_target_ms": args.request_slo_ms,
             "request_slo_violation_ratio": 0.0,
             "request_slo_goodput_per_s": 0.0,
+            "request_actual_output_tokens_observed": 0,
+            "request_actual_output_tokens_p50": 0.0,
+            "request_actual_output_tokens_p95": 0.0,
+            "request_actual_output_tokens_p99": 0.0,
+            "request_finish_reason_observed": 0,
+            "request_finish_reason_stop_ratio": 0.0,
+            "request_finish_reason_length_ratio": 0.0,
             "latency_granularity": (
                 "submission" if args.request_trace_output else ""
             ),
@@ -2413,6 +2621,24 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                             api_key,
                             request_timeout_s,
                             args.completion_max_tokens,
+                            *(
+                                [
+                                    args.completion_return_token_ids,
+                                    args.completion_prompt_format,
+                                    args.completion_temperature,
+                                ]
+                                if (
+                                    model_backend == "compatible_http"
+                                    and (
+                                        args.completion_return_token_ids
+                                        or args.completion_prompt_format
+                                        != "raw"
+                                        or args.completion_temperature
+                                        is not None
+                                    )
+                                )
+                                else []
+                            ),
                         )
                         for index in range(args.model_workers)
                     ]
@@ -2605,6 +2831,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     ),
                     epoch_clock=lifecycle_epoch_clock,
                     output_cost_mode=args.output_cost_mode,
+                    completion_return_token_ids=(
+                        args.completion_return_token_ids
+                    ),
+                    completion_prompt_format=args.completion_prompt_format,
+                    completion_temperature=args.completion_temperature,
                 )
             if replay_envelopes is not None:
                 raise RuntimeError("arrival replay requires a Ray executor")
@@ -2623,6 +2854,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 request_timeout_s,
                 args.completion_max_tokens,
                 model_backend,
+                args.completion_return_token_ids,
+                args.completion_prompt_format,
+                args.completion_temperature,
             )
 
         organizer_warnings = []
@@ -2635,6 +2869,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 offset=offset,
                 workload_name=args.source_workload_name,
                 order=args.source_order,
+                max_prompt_tokens=args.source_max_prompt_tokens,
             )
             if args.data_source == "arrow_postgres":
                 source_batch = source.fetch(conn, source_config)
@@ -2991,6 +3226,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "data_source": args.data_source,
             "source_workload_name": args.source_workload_name or "",
             "source_order": args.source_order,
+            "source_max_prompt_tokens": (
+                args.source_max_prompt_tokens
+                if args.source_max_prompt_tokens is not None
+                else ""
+            ),
             "organizer": args.organizer,
             "organizer_partition_mode": args.organizer_partition_mode,
             "organizer_partitions": args.organizer_partitions,
@@ -3009,6 +3249,13 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "embedding_dim": args.embedding_dim,
             "embedding_vector_dim": current_vector_dim if current_vector_dim is not None else "",
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
+            "completion_return_token_ids": args.completion_return_token_ids,
+            "completion_prompt_format": args.completion_prompt_format,
+            "completion_temperature": (
+                args.completion_temperature
+                if args.completion_temperature is not None
+                else ""
+            ),
             "output_cost_mode": args.output_cost_mode,
             "output_cost_source": output_cost_source(args.output_cost_mode),
             "packing_cost_unit": "tokens",
@@ -3078,6 +3325,32 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ),
             "request_slo_goodput_per_s": round(
                 float(request_metrics["request_slo_goodput_per_s"]), 6
+            ),
+            "request_actual_output_tokens_observed": int(
+                request_metrics["request_actual_output_tokens_observed"]
+            ),
+            "request_actual_output_tokens_p50": round(
+                float(request_metrics["request_actual_output_tokens_p50"]),
+                6,
+            ),
+            "request_actual_output_tokens_p95": round(
+                float(request_metrics["request_actual_output_tokens_p95"]),
+                6,
+            ),
+            "request_actual_output_tokens_p99": round(
+                float(request_metrics["request_actual_output_tokens_p99"]),
+                6,
+            ),
+            "request_finish_reason_observed": int(
+                request_metrics["request_finish_reason_observed"]
+            ),
+            "request_finish_reason_stop_ratio": round(
+                float(request_metrics["request_finish_reason_stop_ratio"]),
+                6,
+            ),
+            "request_finish_reason_length_ratio": round(
+                float(request_metrics["request_finish_reason_length_ratio"]),
+                6,
             ),
             "latency_granularity": request_metrics["latency_granularity"],
             "writeback_mode": args.writeback_mode,

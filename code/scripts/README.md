@@ -108,6 +108,7 @@ result.
 - `--executor python|ray_task|ray_actor`
 - `--data-source arrow_postgres|daft_postgres`
 - `--source-order doc_id|arrival_time`
+- `--source-max-prompt-tokens`
 - `--arrival-replay`
 - `--arrival-time-scale`
 - `--flush-policy immediate|fixed_timeout|queue_adaptive`
@@ -159,6 +160,9 @@ result.
 - `--completion-model`
 - `--completion-api-key`
 - `--completion-max-tokens`
+- `--completion-return-token-ids`
+- `--completion-prompt-format raw|chatml`
+- `--completion-temperature`
 - `--model-metrics-url`
 - `--writeback-mode none|json_text|pgvector`
 - `--write-batch-rows`
@@ -278,16 +282,19 @@ submit, service, completion, client E2E, endpoint/GPU identity, and optional
 SLO status. A multi-prompt endpoint response exposes only submission-level
 completion timing, so these rows use `latency_granularity=submission`; they
 are client-observed per-prompt E2E values, not vLLM internal per-sequence
-completion timestamps. Request trace schema version 2 records the time origin
-explicitly so offline and replay latency distributions cannot be conflated.
+completion timestamps. Request trace schema version 3 records the time origin
+and finish reason explicitly so offline and replay latency distributions
+cannot be conflated.
 Client lifecycle timestamps share one stable clock. Backend service epochs use
 `service_clock_domain=backend`; when backend/client clocks cannot be ordered
 reliably, `submit_to_service_s` is left empty instead of inventing queue time.
 
-The compatible endpoint exposes aggregate submission token usage. It is never
-split into fabricated per-request values: `actual_output_tokens` remains empty,
-while `client_estimated_output_tokens` records the explicitly labelled
-whitespace-token estimate and `output_token_source` records the limitation.
+Aggregate compatible-endpoint token usage is never split into fabricated
+per-request values. For vLLM, `--completion-return-token-ids` opts into genuine
+per-choice token IDs and finish reasons; generic compatible endpoints keep the
+extension disabled. `client_estimated_output_tokens` remains an explicitly
+labelled whitespace-token estimate, while `actual_output_tokens` is populated
+only when the backend supplies per-choice token IDs.
 Replay timestamps use one epoch anchor plus monotonic elapsed time, so wall
 clock adjustments cannot invert arrival and flush ordering.
 

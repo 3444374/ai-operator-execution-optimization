@@ -26,6 +26,25 @@ class SourceTests(unittest.TestCase):
         self.assertIn("WHERE workload_name = %s", sql)
         self.assertEqual(params, ("sharegpt_burstgpt", 128, 256))
 
+    def test_postgres_documents_query_can_filter_prompt_length(self) -> None:
+        sql, params = postgres_documents_query(
+            SourceConfig(
+                limit=128,
+                offset=256,
+                workload_name="sharegpt_burstgpt",
+                max_prompt_tokens=1500,
+            )
+        )
+
+        self.assertIn(
+            "WHERE workload_name = %s AND prompt_tokens <= %s",
+            sql,
+        )
+        self.assertEqual(
+            params,
+            ("sharegpt_burstgpt", 1500, 128, 256),
+        )
+
     def test_postgres_documents_query_can_order_by_arrival_time(self) -> None:
         sql, params = postgres_documents_query(SourceConfig(limit=128, offset=256, order="arrival_time"))
 
@@ -35,6 +54,16 @@ class SourceTests(unittest.TestCase):
     def test_postgres_documents_query_rejects_unknown_order(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown source order"):
             postgres_documents_query(SourceConfig(limit=128, offset=256, order="bad"))
+
+    def test_source_config_rejects_non_positive_prompt_limit(self) -> None:
+        with self.assertRaisesRegex(ValueError, "max_prompt_tokens"):
+            postgres_documents_query(
+                SourceConfig(
+                    limit=128,
+                    offset=0,
+                    max_prompt_tokens=0,
+                )
+            )
 
 
 class FakeCursor:
@@ -104,6 +133,22 @@ class DaftSqlTests(unittest.TestCase):
 
         self.assertIn("WHERE workload_name = 'sharegpt_burstgpt'", sql)
         self.assertIn("LIMIT 32 OFFSET 64", sql)
+
+    def test_daft_sql_query_can_filter_prompt_length(self) -> None:
+        sql = daft_sql_query(
+            SourceConfig(
+                limit=32,
+                offset=64,
+                workload_name="sharegpt_burstgpt",
+                max_prompt_tokens=1500,
+            )
+        )
+
+        self.assertIn(
+            "WHERE workload_name = 'sharegpt_burstgpt' "
+            "AND prompt_tokens <= 1500",
+            sql,
+        )
 
     def test_daft_sql_query_can_order_by_arrival_time(self) -> None:
         sql = daft_sql_query(SourceConfig(limit=32, offset=64, order="arrival_time"))

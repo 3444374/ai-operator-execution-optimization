@@ -90,8 +90,9 @@ PostgreSQL
 ### 证据边界
 
 - 静态 `K_max=8` 的必要性已有 shared-vLLM 干扰证据。
-- Queue-adaptive flush 已有单 GPU 正向候选，但尚缺随机化、变长输出和 2048
-  held-out，不能写成最终优于 static。
+- Queue-adaptive flush 已完成随机化变长输出与固定 16-token 候选重复：它稳定
+  优于 fixed-25，但尚未优于 fixed-50，因此不能写成动态策略优于最佳静态窗口。
+  2048 held-out 与跨 arrival-rate 泛化仍未完成。
 - AIMD/EWMA/PID 已完成代码与单元/集成契约，尚没有充分真实 GPU 对照。
 - UCB 多臂老虎机已有有限 action set 与 SLO reward 的纯控制器代码，但尚未
   接入 profiler。原因是缺少稳定的 epoch-level reward/归因边界；现在接入会把
@@ -121,6 +122,11 @@ PostgreSQL
 - CSV 同时记录 PostgreSQL/pgvector 版本、tokens/s、request P50/P95/P99、
   SLO、GPU utilization/memory/power/energy、energy/1k tokens、vLLM
   running/waiting/KV、FLOP delta 与 MFU。
+- vLLM-compatible completion 可选请求逐 choice token IDs，并记录真实
+  per-request output tokens 与 finish reason；generic compatible server 默认
+  不发送该扩展字段。
+- completion prompt envelope、temperature 与数据源最大 prompt-token
+  过滤均为显式配置；超长行只排除，不截断或拆分 prompt。
 - request、submission、flush、control、resource trace 分文件保存。
 - seeded/interleaved scenario schedule、每次运行前 idle gate、命令脱敏和
   atomic manifest。
@@ -148,38 +154,39 @@ PostgreSQL
 | Length/prefix grouping | 中高 | 初步 ablation | 受控 workload 未完成 |
 | BFD/row-cap-first | 高 | 512 + 1024 | 负向边界明确，不默认启用 |
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
-| Queue-adaptive flush | 高 | 单 GPU 候选 | 最终复验未完成 |
+| Queue-adaptive flush | 高 | 512 行变长输出 n=5 + 联合候选 n=3 | 优于 fixed-25；未优于 fixed-50 |
 | AIMD/EWMA/PID | 高（代码） | 缺正式 GPU 矩阵 | 不能声称有效 |
 | UCB bandit | 中（纯控制器） | 无端到端实验 | 尚未接入执行路径 |
 | Actor pool / endpoint routing | 高（接口/契约） | 单 GPU 为主 | 多 GPU 验证未完成 |
-| 联合 batching × submission 搜索 | 低（实验） | 无完整矩阵 | 核心缺口 |
+| 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |
 | 多模态复用 | 低 | 未启动 | 文本主线完成后进行 |
 | 算子代价估计 | 低 | 已有 profile 数据 | 二次分析未完成 |
 
 ## 7. 后续设计与实施顺序
 
-### 第一优先：完成提交控制结论
+### 已闭环：提交控制与局部联合实验
 
-1. 使用自然 EOS 的变长输出，保留固定 16-token 输出作对照；
-2. 随机化 immediate/fixed/adaptive 的场景顺序；
-3. 在 512 行运行至少 5 次正式重复；
-4. gate 同时要求 exactly-once、request P99、SLO goodput、tokens/s、
-   control/resource trace；
-5. 候选通过后原样扩展到 2048 行。
+- 自然 EOS 的 512 行正式重复中，queue-adaptive 相对 fixed-25
+  tokens/s `+30.09% ± 2.66%`，但单次 fixed-50 机制探针与其相当。
+- 固定 16-token cap 的 18 单元联合筛选中，K16 虽然吞吐最高，但所有配置均
+  违反 1% SLO guardrail。
+- 候选重复中，独立拼接相对 fixed-25 tokens/s
+  `+4.76% ± 2.29%`；联合候选相对独立拼接
+  `-0.26% ± 2.07%`，没有可分辨增量。
+- 相同 8192/K8 下 adaptive 相对 fixed-50 tokens/s
+  `-0.75% ± 0.97%`。当前 workload 的主要收益来自 50ms coalescing
+  window，而不是动态切换本身。
 
-若三轮真实改进仍不能接近或超过 static `K_max=8`，研究内容收敛为：
-“静态 admission guardrail 的必要性 + adaptive 的失败边界”，不继续堆控制器。
+因此本地单 GPU 当前采用分层设计即可：sequential token-budget →
+static K8 guardrail → workload-specific flush window。联合搜索保留为验证工具，
+不引入联合在线控制器。
 
-### 第二优先：两项策略联合实验
+### 第一优先：跨负载确认提交策略边界
 
-Sequential token-budget 作为 batching baseline，不再把完整 BFD 当默认候选。
-先分别搜索：
-
-- token budget `{4096,6144,8192}` × row cap `{16,32,64}`；
-- static K_max `{4,8,16}` 与通过门禁的 flush policy。
-
-然后比较“独立最优拼接”与局部联合搜索。目标函数必须是 SLO-constrained：
-先满足 correctness/P99/SLO goodput guardrail，再比较 tokens/s、energy 和 MFU。
+1. 在自然 EOS workload 上随机化重复 fixed-25 / fixed-50 / adaptive；
+2. 改变 arrival rate，检查最佳静态窗口是否随负载变化；
+3. 只有 adaptive 能跨负载接近各自最佳静态窗口时，才保留其默认资格；
+4. 然后用 2048 行 held-out 验证，不继续堆叠 PID/UCB 复杂度。
 
 ### 第三优先：受控 prefix 与多臂老虎机
 
@@ -203,7 +210,8 @@ Sequential token-budget 作为 batching baseline，不再把完整 BFD 当默认
 - 执行：Ray task/actor 按实验目的选择，不把其差异包装成贡献；
 - batching：sequential token-budget；
 - admission：static `K_max=8`；
-- flush：离线实验 immediate；在线候选必须单独声明 arrival replay；
+- flush：离线实验 immediate；当前 accelerated-replay workload 使用 fixed
+  50ms；跨负载默认值仍待验证，在线实验必须单独声明 arrival replay；
 - routing：单 endpoint 使用 round-robin；多 endpoint 实验前不启用复杂池路由；
 - vLLM 重复 prompt 对比：明确记录 prefix cache；本轮公平比较使用 disabled；
 - 任何策略晋级必须同时通过 SLO goodput，而不是只看平均吞吐或 MFU。

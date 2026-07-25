@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-生成日期：2026-07-17（最后更新：2026-07-20）
+生成日期：2026-07-17（最后更新：2026-07-26）
 
 > 本文档是项目方向的**快速参考卡片**。完整定义、依据和细节见 `PROJECT_OUTLINE.md`（项目总纲）、`AGENTS.md`（规则边界）、`research/knowledge_hub.md`（知识库）。本文档不替代上述文件，仅提供 TL;DR。
 
@@ -62,12 +62,15 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - ✅ Queue-adaptive flush 首次实现与测试
 - ✅ Output-aware cost、deterministic BFD 与 GPU/功耗/能耗/MFU 观测链路；
   512 行正向候选但 1024 行负向，已确认经典 BFD 不是无条件最优
+- ✅ Queue-adaptive 变长输出随机化复验：优于 fixed-25，但未证明优于
+  fixed-50
+- ✅ Batching × submission 18 单元筛选与候选重复：独立拼接和联合候选
+  不可分辨，当前采用分层优化
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P0**：改进 queue-adaptive 控制器，在 shared-vLLM 下超越静态 K_max=8
-2. **P0**：先做 row cap × token budget × packing objective 搜索，再完成
-   batching 与提交控制的独立拼接 vs 联合 grid search
-3. **P1**：Prefix 受控 workload + scale 到 2048 行
+1. **P0**：自然 EOS 下复验 fixed-25 / fixed-50 / adaptive，并改变 arrival
+   rate；只有跨负载接近各自最佳静态窗口时才晋级 adaptive
+2. **P1**：Prefix 受控 workload + 至少一个自然 EOS 实验 scale 到 2048 行
 4. **P2**（触发：P0+P1 完成）：多模态泛化验证
 5. 算子代价估计（§6.1 讨论，最低优先级，基于已有数据）
 
@@ -87,8 +90,9 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678 | 固定行数是计算量的弱代理 |
 | Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171 | token-budget 能有效约束 token tail |
 | Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3× | K_max 在共享 vLLM 下必要 |
-| Queue-adaptive flush 已完成加速到达真实筛选但平均 batch rows=1、tokens/s 低于 immediate 0.966% | 研究内容二当前最高风险 gap；下一版先通过 batch formation + P99 门禁 |
+| Queue-adaptive 变长输出 n=5：相对 fixed-25 tokens/s +30.09%，但 fixed-50 探针与其相当 | 收益主要来自更长 coalescing window；尚未证明动态性优于最佳静态窗口 |
 | Output-aware BFD：512 行相对同成本 sequential +12.019%，1024 行反转为 -5.156% | 数据组织收益依赖规模与 row cap；经典 BFD 只能作候选，需联合搜索 |
+| 联合候选相对独立拼接 tokens/s -0.26% ± 2.07% | 当前单 GPU 下分层独立优化已足够，没有联合在线控制器的证据 |
 
 **AI_EMBED（预研，已完成）**：
 | 证据 | 来源 | 能说明什么 |
@@ -97,7 +101,8 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | pgvector writeback 0.897s vs JSON 1.567s | GPU-backed 预研 CSV | pgvector 写回可行 |
 | 研究空白双重确认 | 多源检索（2026-07-16） | 无 CCF-A 论文研究上游 pipeline batching × downstream continuous batching 交互 |
 
-**尚未建立**：联合消融（独立拼接 vs 联合 grid search）、多模态泛化验证、PG18.3 内部平台复测。
+**尚未建立**：跨 arrival-rate 的最佳 flush 泛化、2048 自然 EOS held-out、
+多模态泛化验证、PG18.3 内部平台复测。
 
 ---
 
@@ -130,6 +135,9 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - Row-cap-first 已完成无 prefix cache 的 512 行重复和 1024 行 held-out。
 - 1024 行 tokens/s 约提高 0.82%，但 10 秒 SLO violation 从 50.39%
   升到 88.67%，因此 sequential token-budget 继续作为默认。
-- 当前最优先工作仍是随机化复验 queue-adaptive、完成 batching ×
-  submission control 联合消融；多模态、UCB 端到端和多 GPU 实测尚未完成。
+- queue-adaptive 随机化变长输出复验与 batching × submission 联合消融均已
+  完成。前者优于 fixed-25 但未优于 fixed-50；后者未显示联合搜索相对独立
+  拼接的可分辨增量。
+- 当前最优先工作转为自然 EOS 下 fixed-25/fixed-50/adaptive 跨 arrival-rate
+  复验与 2048 held-out；多模态、UCB 端到端和多 GPU 实测尚未完成。
 - Infra 代码与证据边界见 `code/INFRA_STATUS.md`。

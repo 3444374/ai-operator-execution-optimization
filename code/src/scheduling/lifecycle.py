@@ -121,6 +121,7 @@ class RequestTraceRow:
     slo_target_s: float | None
     slo_met: bool | None
     service_clock_domain: Literal["backend"] = "backend"
+    finish_reason: str | None = None
 
 
 def build_request_trace_rows(
@@ -130,6 +131,7 @@ def build_request_trace_rows(
     client_estimated_output_tokens_by_doc_id: Mapping[str, int],
     actual_output_tokens_by_doc_id: Mapping[str, int],
     *,
+    finish_reason_by_doc_id: Mapping[str, str] | None = None,
     slo_target_s: float | None,
 ) -> tuple[RequestTraceRow, ...]:
     """Join row, submission, service, and token facts without inventing data."""
@@ -167,8 +169,13 @@ def build_request_trace_rows(
         raise ValueError(
             "client-estimated output token keys do not match successful requests"
         )
+    finish_reasons = finish_reason_by_doc_id or {}
     if not set(actual_output_tokens_by_doc_id).issubset(successful_doc_ids):
         raise ValueError("actual output token keys contain unknown requests")
+    if not set(finish_reasons).issubset(successful_doc_ids):
+        raise ValueError("finish reason keys contain unknown requests")
+    if any(not isinstance(value, str) or not value for value in finish_reasons.values()):
+        raise ValueError("finish reasons must be non-empty strings")
     _validate_token_map(
         client_estimated_output_tokens_by_doc_id,
         "client-estimated output tokens",
@@ -183,6 +190,7 @@ def build_request_trace_rows(
             client_estimated_output_tokens_by_doc_id.get(item.doc_id)
         )
         actual_output_tokens = actual_output_tokens_by_doc_id.get(item.doc_id)
+        finish_reason = finish_reasons.get(item.doc_id)
 
         if event.status == "completed":
             if (
@@ -262,6 +270,7 @@ def build_request_trace_rows(
                 actual_output_tokens=actual_output_tokens,
                 output_token_source=output_token_source,
                 total_tokens=total_tokens,
+                finish_reason=finish_reason,
                 prefix_key=item.prefix_key,
                 status=event.status,
                 error_type=event.error,

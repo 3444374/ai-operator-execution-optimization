@@ -19,6 +19,7 @@ class SourceConfig:
     offset: int
     workload_name: str | None = None
     order: SourceOrder = "doc_id"
+    max_prompt_tokens: int | None = None
 
 
 @dataclass(frozen=True)
@@ -34,6 +35,11 @@ def _validate_config(config: SourceConfig) -> None:
         raise ValueError("offset must be non-negative")
     if config.order not in ("doc_id", "arrival_time"):
         raise ValueError(f"unknown source order: {config.order}")
+    if (
+        config.max_prompt_tokens is not None
+        and config.max_prompt_tokens <= 0
+    ):
+        raise ValueError("max_prompt_tokens must be positive when present")
 
 
 def _order_by_sql(order: SourceOrder) -> str:
@@ -42,15 +48,22 @@ def _order_by_sql(order: SourceOrder) -> str:
     return "arrival_time_s NULLS LAST, doc_id"
 
 
-def postgres_documents_query(config: SourceConfig) -> tuple[str, tuple[int, int]]:
+def postgres_documents_query(
+    config: SourceConfig,
+) -> tuple[str, tuple[object, ...]]:
     _validate_config(config)
-    where_sql = ""
-    params: tuple[object, ...]
+    conditions = []
+    filter_params: list[object] = []
     if config.workload_name:
-        where_sql = "WHERE workload_name = %s"
-        params = (config.workload_name, config.limit, config.offset)
-    else:
-        params = (config.limit, config.offset)
+        conditions.append("workload_name = %s")
+        filter_params.append(config.workload_name)
+    if config.max_prompt_tokens is not None:
+        conditions.append("prompt_tokens <= %s")
+        filter_params.append(config.max_prompt_tokens)
+    where_sql = (
+        f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    )
+    params = (*filter_params, config.limit, config.offset)
     return (
         f"""
         SELECT
@@ -108,10 +121,17 @@ class PostgresArrowSource:
 
 def daft_sql_query(config: SourceConfig) -> str:
     _validate_config(config)
-    where_sql = ""
+    conditions = []
     if config.workload_name:
         workload_name = config.workload_name.replace("'", "''")
-        where_sql = f"WHERE workload_name = '{workload_name}' "
+        conditions.append(f"workload_name = '{workload_name}'")
+    if config.max_prompt_tokens is not None:
+        conditions.append(
+            f"prompt_tokens <= {config.max_prompt_tokens}"
+        )
+    where_sql = (
+        f"WHERE {' AND '.join(conditions)} " if conditions else ""
+    )
     return (
         "SELECT doc_id, tenant_id, category, text, workload_name, prompt_tokens, "
         "target_output_tokens, arrival_time_s, session_id, prefix_key "

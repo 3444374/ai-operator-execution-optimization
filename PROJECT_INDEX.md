@@ -5,6 +5,11 @@
 | File | Purpose | When to read/use |
 |---|---|---|
 | `code/INFRA_STATUS.md` | Current Daft+Ray AI-operator infra flow, implementation completeness, evidence boundaries, and prioritized remaining work | Use for a single implementation-status handoff before reading detailed plans |
+| `experiments/results/adaptive_flush_randomized_20260726/README.md` | Natural-EOS randomized flush comparison with exact output-token and finish-reason observation | Review why adaptive beats fixed-25 but is not proven better than fixed-50 |
+| `experiments/results/adaptive_flush_randomized_20260726/chatml_flush_formal_512/summary_long.csv` | Plot-ready n=5 variable-output flush metrics | Plot E2E, request tails, SLO, submissions, energy, GPU, and MFU |
+| `experiments/results/joint_batching_submission_512_20260726/README.md` | SLO-constrained 18-cell batching × submission search and repeated candidate validation | Review independent splice vs joint search and the fixed-50 mechanism decision |
+| `experiments/results/joint_batching_submission_512_20260726/screen/summary_long.csv` | Plot-ready 18-cell screen | Plot token budget, K_max, flush, SLO, throughput, energy, and MFU |
+| `experiments/results/joint_batching_submission_512_20260726/candidate_repeat/summary_long.csv` | Plot-ready repeated independent/joint/mechanism comparison | Plot n=3 candidate means, variability, and policy boundaries |
 | `experiments/results/row_cap_aware_packing_512_20260726/README.md` | Prefix-cache-corrected 512-row screening and repeated confirmation | Review why sequential remains default and how cache-enabled data was excluded |
 | `experiments/results/row_cap_aware_packing_512_20260726/nocache_repeats/summary_long.csv` | Plot-ready 512-row repeated metrics | Plot throughput, request tails/SLO, packing, energy, vLLM pressure, and MFU |
 | `experiments/results/row_cap_aware_packing_1024_20260726/README.md` | Held-out 1024-row mechanism decision | Review the SLO-goodput regression that blocks row-cap-first default adoption |

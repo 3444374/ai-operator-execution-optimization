@@ -159,12 +159,14 @@ many closed batches may be in flight.
 Optional request tracing records one client-observed row per prompt with
 submission-granularity completion timing and SLO metrics. Epoch timestamps are
 derived from a single wall-clock anchor plus monotonic elapsed time. Aggregate
-endpoint token usage is not divided across prompts; per-request actual output
-tokens remain unavailable unless a backend supplies genuine per-request usage.
+endpoint token usage is never divided across prompts. For vLLM, the explicit
+`--completion-return-token-ids` opt-in records genuine per-choice output-token
+counts and finish reasons; generic compatible endpoints keep the extension
+disabled and those fields remain unavailable.
 Backend service epochs are marked as a separate clock domain; cross-domain
 submit-to-service time remains empty when the clocks cannot be ordered.
-Submission trace schema 2 includes the explicit `submission_id` used by request
-rows, so consumers do not need to reconstruct the join key from row position.
+Request trace schema 3 retains the explicit `submission_id` join key and adds
+`finish_reason`; consumers do not reconstruct identity from row position.
 
 `code/src/experiment_scenarios.py` and
 `code/scripts/run_ai_operator_scenarios.py` provide deterministic formal-run
