@@ -297,9 +297,16 @@ def _ordered_times(*values: tuple[str, float]) -> None:
     for name, value in values:
         if not math.isfinite(value) or value < 0:
             raise ValueError(f"{name} must be finite and non-negative")
-    for (_, previous), (_, current) in zip(values, values[1:]):
+    for (previous_name, previous), (current_name, current) in zip(
+        values,
+        values[1:],
+    ):
         if current < previous - _TIME_TOLERANCE_S:
-            raise ValueError("lifecycle timestamp order is invalid")
+            raise ValueError(
+                "lifecycle timestamp order is invalid: "
+                f"{current_name}={current} precedes "
+                f"{previous_name}={previous}"
+            )
 
 
 def _require_unique(values, label: str) -> None:

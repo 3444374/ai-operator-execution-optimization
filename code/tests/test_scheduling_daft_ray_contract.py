@@ -28,6 +28,138 @@ from src.scheduling.scheduler import SynchronousScheduler  # noqa: E402
 
 
 class DaftRayContractTests(unittest.TestCase):
+    def test_output_aware_bfd_executes_through_task_and_actor(self) -> None:
+        import ray
+
+        table = pa.table(
+            {
+                "doc_id": [1, 2, 3, 4, 5],
+                "prompt_tokens": [6, 5, 4, 3, 2],
+                "target_output_tokens": [0, 0, 0, 0, 0],
+                "prefix_key": ["", "", "", "", ""],
+            }
+        )
+        organized = DaftOrganizer(
+            OrganizerConfig(
+                batch_size=3,
+                runner="native",
+                batching_policy="best_fit_token_budget",
+                token_budget=10,
+                output_cost_mode="prompt_only",
+            )
+        ).organize(table)
+        job_start_epoch_s = time.time() - 1.0
+        ready_epoch_s = time.time()
+        envelopes, seeds = profile._offline_batch_envelopes(
+            organized.batches,
+            job_id="bfd-contract",
+            operator="ai_complete",
+            completion_max_tokens=8,
+            output_cost_mode="prompt_only",
+            batch_index_start=0,
+            job_start_epoch_s=job_start_epoch_s,
+            ready_epoch_s=ready_epoch_s,
+        )
+
+        @ray.remote
+        def execute_task(
+            payload,
+            endpoint_url,
+            model_name,
+            api_key,
+            timeout_s,
+            completion_max_tokens,
+        ):
+            del endpoint_url, model_name, api_key, timeout_s
+            service_start_epoch_s = time.time()
+            doc_ids = payload.column("doc_id").to_pylist()
+            return {
+                "doc_id": doc_ids,
+                "output_text": [
+                    f"task-{doc_id}" for doc_id in doc_ids
+                ],
+                "service_start_epoch_s": service_start_epoch_s,
+                "service_end_epoch_s": time.time(),
+                "completion_max_tokens": completion_max_tokens,
+            }
+
+        @ray.remote
+        class ExecuteActor:
+            def execute_batch(self, payload):
+                service_start_epoch_s = time.time()
+                doc_ids = payload.column("doc_id").to_pylist()
+                return {
+                    "doc_id": doc_ids,
+                    "output_text": [
+                        f"actor-{doc_id}" for doc_id in doc_ids
+                    ],
+                    "service_start_epoch_s": service_start_epoch_s,
+                    "service_end_epoch_s": time.time(),
+                }
+
+        ray.init(ignore_reinit_error=True, num_cpus=2)
+        try:
+            task_events = []
+            task_results, _ = profile.submit_ray_tasks(
+                ray_module=ray,
+                remote_embed=execute_task,
+                batches=[],
+                max_inflight=2,
+                operator="ai_complete",
+                embedding_dim=0,
+                model_backend="vllm",
+                endpoint_urls=["contract://local"],
+                model_name="contract-only",
+                api_key=None,
+                timeout_s=1.0,
+                completion_max_tokens=8,
+                replay_envelopes=envelopes,
+                submission_lifecycle_sink=task_events,
+            )
+            actor_events = []
+            actor_results, _ = profile.submit_with_backpressure(
+                ray_module=ray,
+                actors=[ExecuteActor.remote()],
+                batches=[],
+                max_inflight=2,
+                method_name="execute_batch",
+                replay_envelopes=envelopes,
+                submission_lifecycle_sink=actor_events,
+            )
+        finally:
+            ray.shutdown()
+
+        task_groups = [item["doc_id"] for item in task_results]
+        actor_groups = [item["doc_id"] for item in actor_results]
+        self.assertEqual(task_groups, [[1, 3], [2, 4, 5]])
+        self.assertEqual(actor_groups, task_groups)
+        self.assertEqual(
+            sorted(doc_id for group in task_groups for doc_id in group),
+            [1, 2, 3, 4, 5],
+        )
+        task_request_rows = profile._build_profiler_request_rows(
+            seeds,
+            task_events,
+            task_results,
+            operator="ai_complete",
+            slo_target_s=None,
+        )
+        actor_request_rows = profile._build_profiler_request_rows(
+            seeds,
+            actor_events,
+            actor_results,
+            operator="ai_complete",
+            slo_target_s=None,
+        )
+        for rows in (task_request_rows, actor_request_rows):
+            self.assertEqual(len(rows), 5)
+            self.assertTrue(
+                all(
+                    row.request_time_origin == "offline_job_start"
+                    for row in rows
+                )
+            )
+
     def test_arrival_replay_executes_exactly_once_through_task_and_actor(self) -> None:
         import ray
 

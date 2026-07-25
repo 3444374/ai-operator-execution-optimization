@@ -12,11 +12,14 @@ code/
 │   ├── postgres_ai_operator_profile.py   ← PostgreSQL AI 算子链路画像（Ray actor + GPU endpoint + writeback）
 │   ├── pgai_sql_operator_profile.py      ← pgai SQL 触发面画像（ai.ollama_embed via pgai 扩展）
 │   ├── local_embedding_server.py         ← 本地 OpenAI 兼容 embedding 服务（Ollama）
-│   └── daft_text_organizer_smoke.py      ← Daft 文本 DataFrame / into_batches / Ray runner smoke
+│   ├── daft_text_organizer_smoke.py      ← Daft 文本 DataFrame / into_batches / Ray runner smoke
+│   └── summarize_output_aware_bfd.py     ← BFD 正式重复实验的长表统计汇总
 ├── configs/                              ← 后续工程配置文件（当前为空）
 ├── src/
 │   ├── sources.py                        ← PostgreSQL/Daft 数据入口后端
 │   ├── organizers.py                     ← ArrowOrganizer / DaftOrganizer 数据组织后端
+│   ├── request_costs.py                   ← 严格的输出成本模式与来源标签
+│   ├── packing.py                         ← 与模态无关的确定性 BFD
 │   ├── model_backends.py                 ← fake / compatible HTTP embedding and completion backend
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
@@ -25,6 +28,9 @@ code/
 ├── tests/
 │   ├── test_sources.py                   ← 数据入口后端最小单元测试
 │   ├── test_organizers.py                ← 数据组织后端最小单元测试
+│   ├── test_request_costs.py              ← 输出成本语义测试
+│   ├── test_packing.py                    ← BFD membership/指标测试
+│   ├── test_output_aware_summary.py       ← 正式结果长表汇总测试
 │   ├── test_model_backends.py            ← 模型后端最小单元测试
 │   ├── test_sinks.py                     ← 写回后端最小单元测试
 │   ├── test_workloads.py                 ← 内置 workload seed 单元测试
@@ -65,9 +71,12 @@ now lives under `code/src/`:
 
 - `sources.py`: PostgreSQL/Daft data entry.
 - `organizers.py`: Arrow/Daft batch organization.
+- `request_costs.py`: strict, shared output-cost modes and provenance.
+- `packing.py`: deterministic, modality-neutral scalar-capacity BFD.
 - `model_backends.py`: `fake` debug backend, `compatible_http` embedding/completion backend, and Ollama native completion backend.
 - `sinks.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
-- `metrics.py`: timers, GPU snapshot, and CSV append helper.
+- `metrics.py`: timers, GPU/memory/power sampling, energy/MFU estimates, and
+  CSV append helpers.
 - `workloads.py`: small built-in seed workloads for smoke/dev only.
 - `scheduling/`: engine-independent scheduling metadata and policies. The
   formal payload/execution path remains Daft -> Arrow -> Ray.

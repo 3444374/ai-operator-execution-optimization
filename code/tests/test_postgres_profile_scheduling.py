@@ -534,6 +534,51 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
         self.assertTrue(trace_events)
 
+    def test_replay_flush_epoch_cannot_precede_a_pending_row_arrival(
+        self,
+    ) -> None:
+        args = SimpleNamespace(
+            ray_batch_rows=2,
+            batching_policy="fixed_rows",
+            token_budget=0,
+            flush_policy="fixed_timeout",
+            flush_timeout_ms=1000.0,
+            flush_max_wait_ms=2000.0,
+            _replay_clock=_DeterministicReplayClock(now_s=0.0),
+        )
+        table = pa.table(
+            {
+                "doc_id": [1, 2],
+                "prompt_tokens": [2, 3],
+                "arrival_time_s": [0.0, 0.01],
+            }
+        )
+        lifecycle_seeds = []
+        epoch_values = iter([100.0, 100.005])
+
+        list(
+            profile._arrival_replay_envelopes(
+                [table],
+                args,
+                job_id="job",
+                operator="ai_embed",
+                service_observation=lambda: ReplayServiceObservation(
+                    fresh=True,
+                    running=0,
+                    waiting=0,
+                    kv_usage=0.0,
+                ),
+                trace_sink=[],
+                lifecycle_seed_sink=lifecycle_seeds,
+                epoch_clock=lambda: next(epoch_values),
+            )
+        )
+
+        self.assertEqual(
+            [item.flush_epoch_s for item in lifecycle_seeds],
+            [100.01, 100.01],
+        )
+
     def test_token_budget_membership_survives_arrow_assembly(self) -> None:
         args = SimpleNamespace(
             ray_batch_rows=8,
@@ -816,6 +861,48 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(row["packing_scope"], "organizer_input")
         self.assertEqual(row["packing_input_rows"], 0)
         self.assertEqual(row["packing_batch_count"], 0)
+
+    def test_dry_run_records_resource_and_mfu_provenance(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--resource-sample-interval-s",
+                "0.5",
+                "--model-flops-per-token",
+                "3000000000",
+                "--gpu-peak-tflops",
+                "100",
+                "--mfu-precision",
+                "bf16",
+            ]
+        )
+
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["resource_sample_interval_s"], 0.5)
+        self.assertEqual(row["resource_metrics_status"], "unavailable")
+        self.assertEqual(row["gpu_utilization_pct_mean"], "")
+        self.assertEqual(row["gpu_energy_j"], "")
+        self.assertEqual(row["model_flops_per_token"], 3_000_000_000.0)
+        self.assertEqual(row["gpu_peak_tflops"], 100.0)
+        self.assertEqual(row["mfu_precision"], "bf16")
+        self.assertEqual(row["mfu_estimate"], "")
+        self.assertEqual(
+            row["mfu_estimation_method"],
+            "configured_flops_per_observed_token",
+        )
+
+    def test_resource_sample_interval_must_be_positive(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--resource-sample-interval-s",
+                "0",
+            ]
+        )
+
+        with self.assertRaisesRegex(SystemExit, "resource-sample-interval-s"):
+            profile.run_once(args, "formal", 1)
 
     def test_packing_run_metrics_aggregate_exact_batch_costs(self) -> None:
         metrics = profile._packing_run_metrics(

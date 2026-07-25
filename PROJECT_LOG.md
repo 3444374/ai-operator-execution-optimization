@@ -1,5 +1,30 @@
 # 项目日志
 
+## 2026-07-26 Output-aware BFD、离线逐请求 E2E 与资源效率指标
+
+- **数据组织**：新增严格的输出成本模式和确定性 best-fit-decreasing
+  装箱；Arrow 与 Daft 共用同一 membership 逻辑，保持每行是一条完整请求，
+  并显式记录 packing algorithm/scope、预算利用率、超预算行和成本分位数。
+- **成本边界**：`trace_target_output` 明确标记为未配对的 BurstGPT trace
+  metadata，不声称是当前 Qwen prompt/model 的 oracle；后端
+  `completion_max_tokens` 不受成本估计模式影响。
+- **逐请求时延**：request trace schema 升至 v2，区分
+  `replayed_arrival` 与 `offline_job_start`；离线 BFD 现在可记录每个 prompt
+  从作业开始（含读取与组织）到完成的 E2E，跨 fetch chunk 的 submission ID
+  不复用。
+- **资源效率**：正式 run row 新增 GPU 利用率、显存、vLLM 压力、功率、
+  积分能耗和每千 observed token 能耗。MFU 仅在显式提供 reviewed
+  FLOPs/token、对应精度的 GPU 峰值时输出，保留估计方法与时间口径；
+  GPU utilization 不冒充 MFU。
+- **实验规模**：64 行仅作真实组件门禁；六组策略使用同一 512 文档、
+  1 次 warm-up + 3 次正式重复；512 审计通过后，仅对选中的 baseline 与
+  adaptive 配置做 1024 行、3 次正式复验，不混算不同规模的 effect size。
+- **新增入口**：`code/scripts/summarize_output_aware_bfd.py` 输出
+  scenario/metric 长表统计，覆盖吞吐、E2E/tail、packing、GPU、能耗与 MFU。
+- **验证边界**：当前完成的是单元与真实本地 Daft→Ray task/actor contract；
+  GPU-backed PostgreSQL+Daft+Ray+vLLM 的 64/512/1024 数据尚待运行，暂不形成
+  性能优越性结论。
+
 ## 2026-07-25 加速 arrival replay 正式实验设计
 
 - **问题**：BurstGPT 官方时间戳单位是秒；当前 1024 行覆盖 52,184 秒，

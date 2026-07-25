@@ -116,6 +116,10 @@ result.
 - `--flush-trace-output`
 - `--submission-trace-output`
 - `--resource-trace-output`
+- `--resource-sample-interval-s`
+- `--model-flops-per-token`
+- `--gpu-peak-tflops`
+- `--mfu-precision`
 - `--request-trace-output`
 - `--request-slo-ms`
 - `--scenario-id`
@@ -224,6 +228,35 @@ an explicit `submission_id`, document identity, token counts, and service
 timestamps (schema 2). The second samples
 GPU utilization/memory and vLLM running/waiting/KV signals every 250 ms without
 blocking the submission loop.
+
+The main run row aggregates the resource trace into GPU utilization
+mean/P50/P95/max, low-utilization time ratio, memory mean/max, vLLM
+running/waiting/KV distributions, and (when `nvidia-smi` exposes
+`power.draw`) power, integrated energy, and energy per 1,000 observed tokens.
+`--resource-sample-interval-s` must remain identical across compared
+scenarios.
+
+MFU is an explicitly labelled estimate, not a renamed GPU-utilization value.
+It is left empty unless both `--model-flops-per-token` and
+`--gpu-peak-tflops` are provided together with the matching
+`--mfu-precision`. The numerator uses observed vLLM prompt+generation tokens,
+and the time basis is `operator_wall_s`; output rows retain all inputs and the
+method/status fields for audit. Because one scalar FLOP/token estimate
+approximates prefill and decode jointly, formal reports must describe it as
+estimated MFU.
+
+After repeated runs, generate plot-ready long-form statistics with:
+
+```powershell
+.conda\pg-ai-profile\python.exe code\scripts\summarize_output_aware_bfd.py `
+  --runs experiments\results\<experiment>\runs.csv `
+  --output experiments\results\<experiment>\summary.csv
+```
+
+The summary includes throughput, E2E/tail latency, packing, GPU/memory,
+vLLM pressure, energy, and MFU metrics. It excludes warm-ups and failed runs
+and reports `n`, mean, sample standard deviation, P50, min, and max per
+scenario.
 
 `--request-trace-output` additionally writes one row per complete input prompt
 on typed static/AIMD/EWMA/PID Ray paths. Arrival replay rows use

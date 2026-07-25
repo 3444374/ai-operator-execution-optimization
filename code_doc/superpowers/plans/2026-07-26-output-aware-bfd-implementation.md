@@ -21,7 +21,10 @@
 - Every production behavior change follows RED → GREEN.
 - Unit tests may use synthetic tables. GPU evidence must use the real local PostgreSQL, Daft, Ray, and vLLM components.
 - Every generated CSV contains actual `server_version` and `pgvector_version`.
-- Run the 64-row gate before the 512-row matrix. Do not run 1024 or 2048 in this implementation plan.
+- Run the 64-row gate before the 512-row matrix. After the 512 matrix passes
+  its integrity audit, rerun only the selected baseline and selected adaptive
+  configuration at 1024 rows for three formal repeats. Do not run 2048 in
+  this implementation plan.
 - The 64-row gate is infrastructure-only. Every performance comparison uses
   the same 512 source documents, source order, fetch size, model, generation
   cap, token budget, row cap, K_max, and writeback setting across all six
@@ -1327,6 +1330,47 @@ scenario_id,metric,n,mean,sample_std,p50,min,max
   `packing_budget_utilization_p95`,
   `batch_estimated_cost_units_p95`.
 
+The formal run row and summary also include resource-efficiency evidence:
+
+```text
+gpu_utilization_pct_mean
+gpu_utilization_pct_p50
+gpu_utilization_pct_p95
+gpu_utilization_pct_max
+gpu_utilization_below_10pct_ratio
+gpu_memory_used_mib_mean
+gpu_memory_used_mib_max
+gpu_memory_utilization_pct_mean
+gpu_memory_utilization_pct_max
+gpu_power_w_mean
+gpu_power_w_max
+gpu_energy_j
+energy_j_per_1k_observed_tokens
+vllm_running_mean
+vllm_running_p95
+vllm_running_max
+vllm_waiting_mean
+vllm_waiting_p95
+vllm_waiting_max
+vllm_kv_cache_usage_mean
+vllm_kv_cache_usage_p95
+vllm_kv_cache_usage_max
+mfu_estimate
+mfu_status
+mfu_estimation_method
+mfu_time_basis
+model_flops_per_token
+gpu_peak_tflops
+mfu_precision
+```
+
+MFU is emitted only when the run explicitly supplies a reviewed
+`model_flops_per_token` estimate and the GPU peak throughput for the recorded
+precision. It is computed from observed vLLM prompt+generation tokens over
+`operator_wall_s`. Missing inputs produce an empty estimate and an explicit
+status; GPU utilization is never relabelled as MFU. Power/energy fields follow
+the same rule when the device does not expose `power.draw`.
+
 - [ ] **Step 1: Write the failing real framework contract**
 
 Add a contract using `DaftOrganizer` with:
@@ -1606,11 +1650,12 @@ git commit -m "test: validate output-aware BFD contracts"
 
 ---
 
-### Task 7: Real 64-Row Gate and Seeded 512-Row Matrix
+### Task 7: Real 64-Row Gate, Seeded 512-Row Matrix, and 1024 Confirmation
 
 **Files:**
 - Create: `experiments/results/output_aware_bfd_20260726/gate_config.json`
 - Create: `experiments/results/output_aware_bfd_20260726/formal_512_config.json`
+- Create: `experiments/results/output_aware_bfd_20260726/confirm_1024_config.json`
 - Create: `experiments/results/output_aware_bfd_20260726/manifest*.json`
 - Create: `experiments/results/output_aware_bfd_20260726/*.csv`
 - Create: `experiments/results/output_aware_bfd_20260726/README.md`
@@ -1794,6 +1839,28 @@ The README must contain:
 5. facts, inferences, unresolved questions, and prohibited claims;
 6. meaning for data organization and future multimodal/model replacement;
 7. the exact gate for a later 1024 confirmation.
+
+- [ ] **Step 7: Run the selected 1024-row confirmation**
+
+After the 512 audit selects one baseline and one adaptive configuration,
+create `confirm_1024_config.json` with the same model, tokenizer, prompts,
+generation cap, token budget, sampling interval, GPU, and all non-policy
+settings. Change only:
+
+```json
+{
+  "experiment_id": "output_aware_bfd_1024_20260726",
+  "total_rows": 1024,
+  "db_fetch_rows": 1024,
+  "warmup_runs": 1,
+  "repeats": 3
+}
+```
+
+Run only those two selected configurations. Verify exactly 1024 identical
+document IDs per scenario and three successful formal repeats. Report this as
+scale confirmation; do not mix 1024 rows with the 512-row six-cell effect-size
+calculation.
 
 Do not say BFD or output-aware estimation is better unless all three repeated
 runs and the reported metrics support that statement. Do not call

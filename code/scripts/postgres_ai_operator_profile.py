@@ -30,8 +30,10 @@ from src.metrics import (
     StageTimer,
     append_metrics,
     batch_result_stats,
+    estimate_mfu,
     gpu_metadata,
     percentile,
+    resource_sample_stats,
     scrape_prometheus_metrics,
     vllm_metric_delta_stats,
 )
@@ -320,6 +322,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--submission-trace-output", default=None)
     parser.add_argument("--resource-trace-output", default=None)
+    parser.add_argument("--resource-sample-interval-s", type=float, default=0.25)
+    parser.add_argument(
+        "--model-flops-per-token",
+        type=float,
+        default=0.0,
+        help="Reviewed model FLOP estimate per observed token; zero disables MFU.",
+    )
+    parser.add_argument(
+        "--gpu-peak-tflops",
+        type=float,
+        default=0.0,
+        help="Peak TFLOP/s for the recorded GPU and --mfu-precision.",
+    )
+    parser.add_argument(
+        "--mfu-precision",
+        default="",
+        help="Precision label matching --gpu-peak-tflops, for example bf16.",
+    )
     parser.add_argument("--request-trace-output", default=None)
     parser.add_argument("--request-slo-ms", type=float, default=0.0)
     parser.add_argument("--scenario-id", default="manual")
@@ -877,7 +897,16 @@ def _arrival_replay_envelopes(
         if lifecycle_seed_sink is not None:
             if replay_start_epoch_s is None or first_source_arrival_s is None:
                 raise RuntimeError("replay epoch origin is not initialized")
-            flush_epoch_s = lifecycle_epoch_clock()
+            arrival_epochs = [
+                replay_start_epoch_s
+                + (row.arrival_s - first_source_arrival_s)
+                * arrival_time_scale
+                for row in pending.rows
+            ]
+            flush_epoch_s = max(
+                lifecycle_epoch_clock(),
+                max(arrival_epochs),
+            )
             seeds = [
                 RequestLifecycleSeed(
                     request_id=f"{job_id}:row:{row.row_id}",
@@ -886,15 +915,14 @@ def _arrival_replay_envelopes(
                     prompt_tokens=row.prompt_tokens,
                     estimated_output_tokens=row.estimated_output_tokens,
                     prefix_key=row.prefix_key,
-                    arrival_epoch_s=(
-                        replay_start_epoch_s
-                        + (row.arrival_s - first_source_arrival_s)
-                        * arrival_time_scale
-                    ),
+                    arrival_epoch_s=arrival_epoch_s,
                     flush_epoch_s=flush_epoch_s,
                     request_time_origin="replayed_arrival",
                 )
-                for row in pending.rows
+                for row, arrival_epoch_s in zip(
+                    pending.rows,
+                    arrival_epochs,
+                )
             ]
             for seed in seeds:
                 if callable(lifecycle_seed_sink):
@@ -2087,6 +2115,34 @@ def _validate_request_trace_args(args: argparse.Namespace) -> None:
         raise SystemExit("request tracing requires the typed scheduler")
 
 
+def _validate_resource_efficiency_args(args: argparse.Namespace) -> None:
+    if (
+        isinstance(args.resource_sample_interval_s, bool)
+        or not math.isfinite(args.resource_sample_interval_s)
+        or args.resource_sample_interval_s <= 0
+    ):
+        raise SystemExit(
+            "--resource-sample-interval-s must be finite and positive"
+        )
+    for name, value in (
+        ("model-flops-per-token", args.model_flops_per_token),
+        ("gpu-peak-tflops", args.gpu_peak_tflops),
+    ):
+        if (
+            isinstance(value, bool)
+            or not math.isfinite(value)
+            or value < 0
+        ):
+            raise SystemExit(f"--{name} must be finite and non-negative")
+    if (
+        args.model_flops_per_token > 0
+        or args.gpu_peak_tflops > 0
+    ) and not args.mfu_precision.strip():
+        raise SystemExit(
+            "--mfu-precision is required when MFU inputs are configured"
+        )
+
+
 def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
     """Return observed vLLM token throughput for one end-to-end run."""
     if e2e_s <= 0:
@@ -2101,6 +2157,7 @@ def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
 def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     _validate_request_trace_args(args)
     _validate_arrival_replay_args(args)
+    _validate_resource_efficiency_args(args)
     endpoint_urls = completion_endpoint_urls(args) if args.operator == "ai_complete" else embedding_endpoint_urls(args)
     endpoint_url_label = ";".join(endpoint_urls)
     if args.operator == "ai_embed" and args.model_backend == "ollama":
@@ -2173,6 +2230,17 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 else "organizer_input"
             ),
             packing_algorithm=dry_packing_algorithm,
+        )
+        dry_resource_metrics = resource_sample_stats(
+            [],
+            observed_tokens=0,
+        )
+        dry_mfu_metrics = estimate_mfu(
+            observed_tokens=0,
+            operator_wall_s=0.0,
+            model_flops_per_token=args.model_flops_per_token,
+            gpu_peak_tflops=args.gpu_peak_tflops,
+            precision=args.mfu_precision,
         )
         return {
             "status": "dry_run",
@@ -2256,6 +2324,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "submission_trace_events": 0,
             "resource_trace_path": args.resource_trace_output or "",
             "resource_trace_events": 0,
+            "resource_sample_interval_s": args.resource_sample_interval_s,
+            **dry_resource_metrics,
+            **dry_mfu_metrics,
             "request_trace_path": args.request_trace_output or "",
             "request_trace_events": 0,
             "request_e2e_s_p50": 0.0,
@@ -2389,7 +2460,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         if args.resource_trace_output:
             resource_sampler = PeriodicSampler(
                 lambda: _resource_snapshot(args.model_metrics_url),
-                interval_s=0.25,
+                interval_s=args.resource_sample_interval_s,
             )
         if args.data_source == "daft_postgres" or args.organizer == "daft":
             configure_daft_runner(args.daft_runner)
@@ -2827,6 +2898,21 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         token_count = sum(int(result["token_count"]) for result in operator_results)
         batch_stats = batch_result_stats(operator_results)
         vllm_stats = vllm_metric_delta_stats(vllm_metrics_before, vllm_metrics_after)
+        observed_tokens = (
+            int(vllm_stats["vllm_prompt_tokens_delta"])
+            + int(vllm_stats["vllm_generation_tokens_delta"])
+        )
+        resource_metrics = resource_sample_stats(
+            resource_samples,
+            observed_tokens=observed_tokens,
+        )
+        mfu_metrics = estimate_mfu(
+            observed_tokens=observed_tokens,
+            operator_wall_s=operator_wall_s,
+            model_flops_per_token=args.model_flops_per_token,
+            gpu_peak_tflops=args.gpu_peak_tflops,
+            precision=args.mfu_precision,
+        )
         if args.arrival_replay:
             packing_batch_cost_units = [
                 cost for cost, _ in replay_packing
@@ -2948,6 +3034,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "submission_trace_events": len(operator_results),
             "resource_trace_path": resource_trace_path,
             "resource_trace_events": len(resource_samples),
+            "resource_sample_interval_s": args.resource_sample_interval_s,
+            **resource_metrics,
+            **mfu_metrics,
             "request_trace_path": request_trace_path,
             "request_trace_events": len(request_trace_rows),
             "request_e2e_s_p50": round(
