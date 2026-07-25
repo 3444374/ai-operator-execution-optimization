@@ -1,5 +1,6 @@
 """Composable scheduling policies for database AI operator execution."""
 
+from .admission import StaticAdmissionController
 from .models import (
     AdmissionDecision,
     BatchRequest,
@@ -19,6 +20,7 @@ __all__ = [
     "PayloadEnvelope",
     "RoutingDecision",
     "RoundRobinEndpointRouter",
+    "StaticAdmissionController",
     "SubmissionCompletion",
     "TopologySnapshot",
     "healthy_endpoints",

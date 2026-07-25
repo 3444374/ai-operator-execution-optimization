@@ -8,6 +8,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
+from src.scheduling.admission import StaticAdmissionController  # noqa: E402
 from src.scheduling.models import BatchRequest, EndpointSnapshot, TopologySnapshot  # noqa: E402
 from src.scheduling.routing import RoundRobinEndpointRouter  # noqa: E402
 from src.scheduling.topology import healthy_endpoints  # noqa: E402
@@ -59,6 +60,25 @@ class SchedulingPolicyTests(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "no healthy endpoint"):
             RoundRobinEndpointRouter().route(request(), topology, "default")
+
+    def test_static_admission_allows_below_limit(self) -> None:
+        controller = StaticAdmissionController(limit=2)
+
+        decision = controller.decide(inflight=1)
+
+        self.assertTrue(decision.allowed)
+        self.assertEqual(decision.limit, 2)
+        self.assertEqual(decision.reason, "below_static_limit")
+
+    def test_static_admission_blocks_at_limit(self) -> None:
+        decision = StaticAdmissionController(limit=2).decide(inflight=2)
+
+        self.assertFalse(decision.allowed)
+        self.assertEqual(decision.reason, "at_static_limit")
+
+    def test_static_admission_rejects_non_positive_limit(self) -> None:
+        with self.assertRaisesRegex(ValueError, "limit must be positive"):
+            StaticAdmissionController(limit=0)
 
 
 if __name__ == "__main__":
