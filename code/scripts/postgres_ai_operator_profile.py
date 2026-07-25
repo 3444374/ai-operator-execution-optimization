@@ -1048,7 +1048,7 @@ def _write_submission_trace(
         append_metrics(
             output_path,
             {
-                "schema_version": 1,
+                "schema_version": 2,
                 "experiment_id": experiment_id,
                 "phase": phase,
                 "repeat_index": repeat_index,
@@ -1056,6 +1056,7 @@ def _write_submission_trace(
                 "server_version": server_version,
                 "pgvector_version": pgvector_version,
                 "submission_index": submission_index,
+                "submission_id": f"{job_id}:batch:{submission_index}",
                 "doc_ids": ";".join(str(item) for item in result.get("doc_id", [])),
                 "rows": result.get("rows", 0),
                 "token_count": result.get("token_count", 0),

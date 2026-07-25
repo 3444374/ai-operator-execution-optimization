@@ -197,7 +197,8 @@ maximum wait.
 
 Formal runs should also set `--submission-trace-output` and
 `--resource-trace-output`. The first records one row per closed batch with
-document identity, token counts, and service timestamps. The second samples
+an explicit `submission_id`, document identity, token counts, and service
+timestamps (schema 2). The second samples
 GPU utilization/memory and vLLM running/waiting/KV signals every 250 ms without
 blocking the submission loop.
 

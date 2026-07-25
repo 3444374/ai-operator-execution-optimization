@@ -1127,6 +1127,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 resource = list(csv.DictReader(handle))
 
             self.assertEqual(submission[0]["doc_ids"], "11;12")
+            self.assertEqual(submission[0]["schema_version"], "2")
+            self.assertEqual(submission[0]["submission_id"], "9:batch:0")
             self.assertEqual(submission[0]["job_id"], "9")
             self.assertEqual(submission[0]["server_version"], "18.4")
             self.assertEqual(submission[0]["pgvector_version"], "0.8.2")

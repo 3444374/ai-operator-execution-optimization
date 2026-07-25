@@ -376,3 +376,22 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 - `figures/README.md`（如有新增图）
 - `learning/local_vllm_ray_baseline_walkthrough.md`（如实验结果影响讲解）
 - 本文件 §6 完整问题审计（标记已修复的问题）
+
+## 8. 2026-07-25 Request lifecycle 基础设施门禁
+
+**已补齐的观测缺口**：
+
+- 真实 64-prompt `PostgreSQL -> Daft -> Arrow -> Ray task -> vLLM` 路径已输出
+  client-observed request E2E P50/P95/P99、SLO violation/goodput、request 与
+  submission 显式外键；
+- seeded runner 已验证固定 seed 顺序、运行前空闲门禁、失败即停、incident
+  审计、凭据脱敏和原子 manifest；
+- request、submission、flush、resource 和 run CSV 均带 PostgreSQL/pgvector
+  版本，最终 exactly-once 与分位数重算通过。
+
+**边界**：该门禁只有 fixed/adaptive 各一次，且规模为 64，不替代多轮正式对比；
+1 秒 SLO 是 instrumentation 阈值而非业务 SLO；submission endpoint 内的 prompt
+共享 completion timestamp，仍不是 vLLM 内部逐 sequence 完成时间。
+
+原始数据和七步解释见
+`experiments/results/request_lifecycle_gate_20260725/README.md`。

@@ -142,6 +142,14 @@ endpoint token usage is not divided across prompts; per-request actual output
 tokens remain unavailable unless a backend supplies genuine per-request usage.
 Backend service epochs are marked as a separate clock domain; cross-domain
 submit-to-service time remains empty when the clocks cannot be ordered.
+Submission trace schema 2 includes the explicit `submission_id` used by request
+rows, so consumers do not need to reconstruct the join key from row position.
+
+`code/src/experiment_scenarios.py` and
+`code/scripts/run_ai_operator_scenarios.py` provide deterministic formal-run
+interleaving, per-run service-idle gates, failure incidents, redacted commands,
+and an atomically updated manifest. Each profiler subprocess uses explicit
+phase/repeat identity and writes isolated request/submission/time-series files.
 
 The real contract test covers Daft `RecordBatch`/Arrow conversion and local Ray
 task/actor exactly-once execution. It is integration evidence only. GPU

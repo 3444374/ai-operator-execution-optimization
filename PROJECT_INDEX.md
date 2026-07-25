@@ -138,6 +138,11 @@
 | `experiments/results/adaptive_flush_window_20260725/formal_512_runs.csv` | 双窗口正式逐运行结果 | 每策略 1 次预热 + 5 次正式重复，保留全面 profiler 指标 |
 | `experiments/results/adaptive_flush_window_20260725/formal_512_metric_summary.csv` | 双窗口正式统计汇总 | E2E、rows/s、tokens/s、submissions、batch rows 与 service P99 的均值、标准差和 95% CI |
 | `experiments/results/adaptive_flush_window_20260725/*_trace.csv` | 双窗口 flush、submission 与 resource 轨迹 | schema 2 窗口字段、exactly-once 文档覆盖与绘图时序 |
+| `experiments/results/request_lifecycle_gate_20260725/README.md` | 真实 64-prompt request lifecycle 基础设施门禁报告 | 逐请求 E2E/SLO、显式 submission 外键、seeded runner 审计与结论边界 |
+| `experiments/results/request_lifecycle_gate_20260725/manifest.json` | seeded 门禁调度与完成清单 | 脱敏配置、随机顺序、逐运行命令、完成状态与 incident |
+| `experiments/results/request_lifecycle_gate_20260725/runs.csv` | fixed/adaptive 真实运行级门禁数据 | vLLM token/success delta、request 分位数、SLO、batch 与资源指标 |
+| `experiments/results/request_lifecycle_gate_20260725/*.requests.csv` | 每个场景 64 行逐请求 lifecycle | arrival/flush/submit/completion、E2E、SLO 和 request→submission 外键 |
+| `experiments/results/request_lifecycle_gate_20260725/*.submissions.csv` | schema 2 submission trace | 显式 submission ID、doc coverage、token 与 backend service timing |
 | `code_doc/superpowers/specs/2026-07-25-adaptive-flush-window-design.md` | Adaptive flush 双窗口改进设计 | fixed-timeout fallback、事件时间 catch-up、trace 与真实 GPU 门禁 |
 | `code_doc/superpowers/specs/2026-07-25-ai-operator-execution-infra-design.md` | AI 算子外部执行 infra 总体设计 | 数据进入与组织、运行时控制、Ray 执行、可观测性、策略搜索及后续多模态/代价估计边界 |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-flush-window-implementation.md` | Adaptive flush 双窗口实施计划 | TDD 窗口选择、event-time replay、profiler trace 与真实单 GPU 分级门禁 |

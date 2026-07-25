@@ -1154,3 +1154,24 @@
 - 当前仅完成运行器代码与单元测试，真实 64 行
   PostgreSQL→Daft→Arrow→Ray→vLLM 门禁仍待执行；尚未产生新的性能结论，也未合并
   `main`。
+
+## 2026-07-25 Request lifecycle 真实单 GPU 门禁
+
+- 全量回归 191 tests 通过，包含 3 条真实本地 Daft→Arrow→Ray task/actor
+  contract；`compileall` 与 diff check 通过后才启动真实门禁。
+- 本机环境为 PostgreSQL 18.4、pgvector 0.8.2、vLLM 0.25.1、
+  Qwen2.5-1.5B 和 RTX 5070 12GB；使用 64 个 ShareGPT/BurstGPT prompt，
+  fixed timeout 与 queue-adaptive 各运行一次，未使用 fake backend。
+- 首次 preflight 因错误参数名 `--model-request-timeout-s` 被 runner 以 exit
+  code 2 阻断，未发送模型请求；incident 证据保留。修正为
+  `--completion-request-timeout-s` 后继续。
+- 首轮数据审计发现 legacy submission trace 没有显式 `submission_id`。按 TDD
+  升级为 schema 2 后重新生成最终数据；两场景均为 64 request rows、64 唯一
+  request/doc IDs、vLLM success delta=64，request→submission 外键、时间顺序、
+  分位数重算、版本字段和最终 service idle 全部通过。
+- 最终单次数据：fixed/adaptive request E2E P99 为 2.473097/2.351755s，
+  observed tokens/s 为 2972.920/3073.893，submissions 为 22/19。该 64 行、
+  每策略一次且 fixed 先运行的门禁只证明基础设施正确，不能声称 adaptive
+  性能显著优于 fixed；1 秒 SLO 两者 violation ratio 均为 1.0。
+- 结果位于 `experiments/results/request_lifecycle_gate_20260725/`；分支继续隔离，
+  未合并 `main`，本次不自动同步 Wiki。

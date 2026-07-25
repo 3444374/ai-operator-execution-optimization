@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "experiment_id": "request_lifecycle_gate_20260725",
+  "seed": 20260725,
+  "warmup_runs_per_scenario": 0,
+  "formal_repeats": 1,
+  "common_args": [
+    "--database-url",
+    "postgresql://postgres:postgres@localhost:5432/ai_operator",
+    "--total-rows",
+    "64",
+    "--db-fetch-rows",
+    "64",
+    "--ray-batch-rows",
+    "512",
+    "--operator",
+    "ai_complete",
+    "--executor",
+    "ray_task",
+    "--model-backend",
+    "compatible_http",
+    "--completion-endpoint-url",
+    "http://localhost:8000/v1/completions",
+    "--completion-model",
+    "qwen2.5-1.5b",
+    "--completion-max-tokens",
+    "16",
+    "--model-metrics-url",
+    "http://localhost:8000/metrics",
+    "--completion-request-timeout-s",
+    "180",
+    "--source-workload-name",
+    "sharegpt_burstgpt",
+    "--source-order",
+    "arrival_time",
+    "--arrival-replay",
+    "--arrival-time-scale",
+    "0.0001",
+    "--data-source",
+    "daft_postgres",
+    "--organizer",
+    "arrow",
+    "--batching-policy",
+    "token_budget",
+    "--token-budget",
+    "6144",
+    "--scheduling-policy",
+    "static",
+    "--max-inflight",
+    "8",
+    "--flush-timeout-ms",
+    "25",
+    "--flush-max-wait-ms",
+    "50",
+    "--writeback-mode",
+    "none",
+    "--request-slo-ms",
+    "1000"
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "fixed_timeout",
+      "args": [
+        "--flush-policy",
+        "fixed_timeout"
+      ]
+    },
+    {
+      "scenario_id": "queue_adaptive",
+      "args": [
+        "--flush-policy",
+        "queue_adaptive"
+      ]
+    }
+  ]
+}

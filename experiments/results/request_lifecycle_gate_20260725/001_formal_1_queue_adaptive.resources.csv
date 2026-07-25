@@ -1,0 +1,12 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,0,1784993588.1805112,snapshot,NVIDIA GeForce RTX 5070,3,10819,12227,ok,0,0,0.0
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,1,1784993588.5196881,snapshot,NVIDIA GeForce RTX 5070,3,10819,12227,ok,0,0,0.0
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,2,1784993588.8596826,snapshot,NVIDIA GeForce RTX 5070,3,10819,12227,ok,0,0,0.0
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,3,1784993589.1811948,snapshot,NVIDIA GeForce RTX 5070,3,10819,12227,ok,0,0,0.0
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,4,1784993589.5059514,snapshot,NVIDIA GeForce RTX 5070,3,10819,12227,ok,0,0,0.0
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,5,1784993589.8511353,snapshot,NVIDIA GeForce RTX 5070,3,10819,12227,ok,0,0,0.0
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,6,1784993590.1865005,snapshot,NVIDIA GeForce RTX 5070,3,10819,12227,ok,0,0,0.0
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,7,1784993590.5335994,snapshot,NVIDIA GeForce RTX 5070,3,10819,12227,ok,0,0,0.0
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,8,1784993590.87397,snapshot,NVIDIA GeForce RTX 5070,3,10819,12227,ok,24,0,0.007549868870698528
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,9,1784993591.2137792,snapshot,NVIDIA GeForce RTX 5070,62,10818,12227,ok,22,0,0.029563697051577575
+1,request_lifecycle_gate_20260725,formal,1,830,18.4 (Debian 18.4-1.pgdg12+1),0.8.2,10,1784993591.55131,snapshot,NVIDIA GeForce RTX 5070,62,10818,12227,ok,13,0,0.0065167289199713485
