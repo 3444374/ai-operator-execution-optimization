@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-07-25 Arrival replay 与独立 flush 运行链路完成
+
+- **实现**：新增完整行粒度 pending batch builder、单调时钟 arrival replay、
+  immediate/fixed-timeout/queue-adaptive flush 组合，以及独立 flush trace。
+  batching、flush、admission 三层职责分离，策略层不依赖 Daft、Arrow、Ray
+  或 HTTP。
+- **生产接线**：`postgres_ai_operator_profile.py` 新增 `--arrival-replay`、
+  flush 策略/超时/hard-max/trace 参数；仅显式开启时改变旧离线吞吐路径。
+  queue-adaptive 指标由后台采样，回放循环不执行网络 I/O，正常关闭等待采样
+  生命周期结束。
+- **真实契约**：使用真实 Daft 和本地 Ray task/actor 验证
+  `0,0,20,100 ms` 到达序列、固定超时边界、每行恰好一次和确定性 fan-in。
+  测试发现并修复 Daft `RecordBatch` 与只接受 `Table` 的适配缺陷。
+- **验证**：完整代码测试 161/161 通过；真实契约连续运行 3 轮通过；compileall
+  与 diff check 通过。该证据属于单元/集成契约，不能作为 GPU 性能结论。
+- **下一步门禁**：单 GPU 上以真实 PostgreSQL + Daft + Ray + vLLM，固定
+  token budget 6144、静态 K_max=8，对 immediate/fixed-timeout/
+  queue-adaptive 各做 1 warm-up + 1 smoke；全部运行、请求、flush、control、
+  resource 和 manifest 产物非空后再进入正式重复。
+
 ## 2026-07-24 Top 15 精读按学术标准重排（Orca/DistServe 进，SABER/Multi-Bin 出）+ Clockwork 补入 inventory
 
 - **触发**：用户质疑 Orca（continuous batching / iteration-level scheduling 开山、开题正文"vLLM/Orca"并称 5 次、8 个实验计划引用）竟不在精读 Top 15。核查发现 Orca 已精读，只是被旧"对本项目贡献度"标准以"vLLM 覆盖其机制"为由排到 #16——与项目把它当一等文献引用自相矛盾。

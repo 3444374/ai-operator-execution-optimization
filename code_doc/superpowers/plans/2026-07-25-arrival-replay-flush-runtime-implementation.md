@@ -20,6 +20,12 @@ with replay without duplicating admission or routing logic.
 **Tech Stack:** Python 3.11, dataclasses, monotonic time, PyArrow, Daft, Ray,
 `unittest`.
 
+**Execution status (2026-07-25):** Tasks 1-5 are implemented on
+`feat/runtime-scheduling-foundation`. The final contract uses real Daft and
+local Ray task/actor execution; the complete suite passes 161/161. GPU
+performance smoke and formal repetitions remain gated on the real PostgreSQL
+and vLLM services and are intentionally not marked as results here.
+
 ## Global Constraints
 
 - Formal execution remains PostgreSQL -> Daft -> Arrow -> Ray task/actor ->
@@ -37,6 +43,10 @@ with replay without duplicating admission or routing logic.
   missing, stale, or congested.
 - Existing offline throughput paths remain unchanged unless
   `--arrival-replay` is explicitly enabled.
+- Prefer real components throughout verification. Deterministic clock fixtures
+  are allowed for event-loop unit tests, but integration tests use real Daft,
+  Arrow, and local Ray, while GPU smoke/formal runs use the real PostgreSQL and
+  vLLM backend rather than the profiler's fake model backend.
 - Do not claim a GPU performance improvement from unit or contract tests.
 - Do not merge to `main` until formal single-GPU results and artifacts exist.
 

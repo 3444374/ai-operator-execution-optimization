@@ -153,7 +153,7 @@
 | `code/src/sinks.py` | `none/json_text/pgvector` embedding 写回与 completion JSON-text 写回 | 修改写回路径或后续接 Lance sink 前读 |
 | `code/src/metrics.py` | Stage timer、GPU snapshot 和 CSV metric helper | 修改 profiling 指标、CSV 输出或计时边界前读 |
 | `code/src/workloads.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
-| `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core：request/topology、静态 admission、round-robin routing、deterministic scheduler | 实现或审查 flush、adaptive controller、actor pool 与 endpoint routing 前读 |
+| `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core：pending batch、arrival replay、flush、动态 admission、actor pool/endpoint routing、deterministic scheduler | 实现或审查运行时策略前读 |
 | `code/scripts/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本 | 构造最终可比 `AI_COMPLETE` baseline workload 前运行 |
 | `code/tests/test_sources.py` | data source 查询构造和 source factory 单元测试 | 修改数据入口行为后运行 |
 | `code/tests/test_organizers.py` | 数据组织后端最小单元测试 | 修改 organizer 接口或 batch 行为后运行 |
@@ -167,9 +167,10 @@
 | `code/tests/test_adaptive_admission.py` | AIMD、EWMA-AIMD、PID、UCB 控制律、边界与 reward 单元测试 | 修改动态 admission controller 前运行 |
 | `code/tests/test_dynamic_admission.py` | 缓存采样、stale hold、typed trace 与动态降窗调度不变量测试 | 修改 observation provider 或 dynamic gate 前运行 |
 | `code/tests/test_flush_policies.py` | immediate、fixed-timeout、queue-adaptive flush 与 hard max-wait 单元测试 | 修改独立 flush policy 前运行 |
+| `code/tests/test_runtime_batching.py` | pending batch、token membership、单调 arrival replay 与 flush deadline 单元测试 | 修改回放事件循环或 batch builder 前运行 |
 | `code/tests/test_ray_adapter.py` | 通用 Ray submission adapter 的 request identity 与 endpoint 映射测试 | 修改 Ray adapter 前运行 |
 | `code/tests/test_postgres_profile_scheduling.py` | profiler 静态 Ray task/actor 接线、路由与旧指标兼容测试 | 修改 profiler 提交路径前运行 |
-| `code/tests/test_scheduling_daft_ray_contract.py` | 真实 DaftOrganizer→Arrow batch→单节点 Ray task/actor contract smoke | 修改 Daft/Ray adapter boundary 前运行 |
+| `code/tests/test_scheduling_daft_ray_contract.py` | 真实 DaftOrganizer→Arrow RecordBatch→arrival replay→单节点 Ray task/actor exactly-once contract | 修改 Daft/Ray/replay adapter boundary 前运行 |
 | `code/scripts/daft_text_organizer_smoke.py` | Daft/Arrow organizer smoke 入口 | 验证文本阶段 Daft 最小接入 |
 | `code/scripts/README.md` | 脚本详细说明 | 运行 PostgreSQL 画像、pgai SQL profile、本地 embedding server、Daft text organizer smoke |
 | `code_doc/superpowers/plans/` | Superpowers implementation plans for code work | 按 superpowers 工作流执行多步代码任务前读 |

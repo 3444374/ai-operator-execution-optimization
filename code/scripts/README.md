@@ -108,6 +108,11 @@ result.
 - `--executor python|ray_task|ray_actor`
 - `--data-source arrow_postgres|daft_postgres`
 - `--source-order doc_id|arrival_time`
+- `--arrival-replay`
+- `--flush-policy immediate|fixed_timeout|queue_adaptive`
+- `--flush-timeout-ms`
+- `--flush-max-wait-ms`
+- `--flush-trace-output`
 - `--batching-policy fixed_rows|token_budget|length_align_fixed_rows|length_align_token_budget|prefix_aware_fixed_rows|prefix_aware_token_budget`
 - `--token-budget`
 - `--scheduling-policy static|queue_adaptive|aimd|ewma_aimd|pid`
@@ -149,10 +154,47 @@ result.
 
 `--source-order doc_id` is the offline throughput mode: PostgreSQL already
 contains the workload rows, and the profile scans them in stable document-id
-order before Daft organization. `--source-order arrival_time` is the
-arrival-aware service mode: rows are read by `arrival_time_s NULLS LAST, doc_id`
-before Daft organization and Ray submission, which is the right setup for
-K_max, queue-adaptive flush, and backpressure experiments.
+order before Daft organization. `--source-order arrival_time` reads rows by
+`arrival_time_s NULLS LAST, doc_id`, but sorting alone is not arrival replay.
+K_max experiments may use the sorted stream, while online flush experiments
+must also pass `--arrival-replay`. Replay requires `daft_postgres` and a Ray
+task/actor executor, preserves the observed inter-arrival gaps on a monotonic
+clock, and rejects missing or decreasing arrival values.
+
+The three runtime decisions are separate:
+
+1. `--batching-policy` and `--token-budget` determine batch membership.
+2. `--flush-policy` determines when a pending partial batch closes.
+3. `--scheduling-policy` and its K_max/controller options govern closed-batch
+   admission.
+
+If `--flush-trace-output` is omitted, replay writes
+`<output-stem>_flush_trace.csv` beside the main CSV. Queue-adaptive replay reads
+vLLM metrics through a background sampler so metric I/O cannot block the hard
+maximum wait.
+
+Single-GPU smoke configuration:
+
+```powershell
+.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+  --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
+  --data-source daft_postgres --source-order arrival_time --arrival-replay `
+  --executor ray_actor --operator ai_complete `
+  --model-backend compatible_http `
+  --completion-endpoint-url http://localhost:8000/v1/completions `
+  --model-metrics-url http://localhost:8000/metrics `
+  --batching-policy token_budget --token-budget 6144 `
+  --scheduling-policy static --max-inflight 8 `
+  --flush-policy fixed_timeout --flush-timeout-ms 25 `
+  --warmup-runs 1 --repeats 1 `
+  --output experiments\results\arrival_replay_smoke\runs.csv
+```
+
+Run the same smoke once for `immediate`, `fixed_timeout`, and
+`queue_adaptive`. Do not start formal repeats unless the run CSV,
+request/submission trace, flush trace, control/resource time series, and
+manifest are all non-empty. Contract tests and dry-runs do not satisfy this
+gate.
 
 `--batching-policy fixed_rows` preserves the original row-count batching path.
 `--batching-policy token_budget --token-budget N` greedily forms upstream

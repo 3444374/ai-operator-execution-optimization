@@ -126,6 +126,25 @@ CONCUR-AIMD 首选理由：无 EWMA 契合 `code/AGENTS.md` "保持简单"（Ray
 
 ### P0：修 RC2 核心 claim（最高优先，1-2 周）
 
+#### Arrival replay 单 GPU smoke 门禁（2026-07-25）
+
+正式 flush 对比前先固定 `token_budget=6144`、静态 `K_max=8`，分别运行
+`immediate`、`fixed_timeout`、`queue_adaptive`。每个策略执行 1 次 warm-up
+和 1 次 smoke，链路必须是 PostgreSQL → Daft → Arrow → Ray task/actor →
+真实 vLLM；不得用 fake backend 形成新结论。
+
+只有以下产物均非空时才进入正式重复：
+
+- 主运行 CSV（含 server/pgvector 版本、tokens/s、service p99）；
+- per-request/submission 明细；
+- flush trace 与 admission/control trace；
+- GPU、vLLM queue/running/KV 时间序列；
+- 保存完整命令、版本、workload、endpoint 和随机种子的 manifest。
+
+`--source-order arrival_time` 只负责排序；必须同时使用
+`--arrival-replay` 才能称为在线 flush 实验。本地 Daft/Ray contract 只证明
+执行语义，不是性能证据。
+
 **目标**：让 queue-adaptive flush 在同一 shared-vLLM setup 下超越静态 K_max=8。
 
 **前置（2026-07-24 补充）**：变长 output 重验。当前实验 `--completion-max-tokens 64` 固定 output，消除了自回归"输出长度不可预测"特性（adaptive 的物理前提，见 `service_scheduling_backpressure.md` §0.5）。在改控制器前，先用变长 output（让模型按 EOS 自然早停）重跑 adaptive vs static K_max=8，排除这个混淆变量；保留固定 output 组作对照（隔离 prefill 异质性）。CSV 记录每请求实际 `completion_tokens`。详见 P0-1 的"混淆变量排查"段与假设 H。

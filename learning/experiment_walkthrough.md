@@ -11,6 +11,25 @@
 
 > **2026-07-20 拆分说明**：pre-convergence 时期的早期实验讲解（组件可行性验证、fake/CPU 动机测试、PG18.4 接入、pgvector scaling 等）已归档至 `learning/archive/early_experiments_walkthrough.md`。本文档只保留 GPU-backed 真实 embedding 画像及之后的内容（§9 起），对应项目当前 AI_COMPLETE + vLLM + Daft 主线。
 
+## Arrival replay 运行契约（不是性能实验）
+
+2026-07-25 已打通真实 `DaftOrganizer -> Arrow RecordBatch -> arrival replay
+-> local Ray task/actor` 契约。四行到达偏移为 `0、0、20、100 ms`，固定
+`60 ms` flush 时，task 与 actor 均形成 `[1,2,3]`、`[4]` 两个提交批次，
+每行恰好执行一次，回收结果保持提交顺序。
+
+这项验证只回答代码语义是否成立：
+
+- `arrival_time` 排序不等于按时间回放，在线 flush 必须显式开启
+  `--arrival-replay`；
+- batching 决定成员，flush 决定关闭时刻，admission 决定已关闭批次的
+  在途数量；
+- Daft 实际返回的 `RecordBatch` 能在 Arrow 边界规范化后进入同一套 Ray
+  task/actor 调度器。
+
+它没有连接 vLLM GPU 服务，因此不能用于声称吞吐或延迟提升。性能结论必须
+来自真实 PostgreSQL、真实 vLLM 和完整 trace/manifest 的单 GPU 实验。
+
 ## 目录
 
 ## 9. GPU-backed 真实 embedding 画像：把真实模型服务接进链路

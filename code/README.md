@@ -123,10 +123,18 @@ improvement.
 Pool and endpoint routing support request-cost pools, least-queued selection,
 deterministic prefix affinity, health fallback, and explicit per-endpoint pool
 and GPU identifiers. The independent flush policy core supports immediate,
-fixed-timeout, and queue-adaptive decisions with a hard maximum wait. Flush is
-not yet a formal runtime path: `arrival_time` currently sorts rows but does not
-replay their timing, so a Ray pending-queue/arrival-replay adapter is still
-required before flush performance experiments.
+fixed-timeout, and queue-adaptive decisions with a hard maximum wait.
+`--source-order arrival_time` only defines source order; it does not reproduce
+arrival gaps. Online flush experiments must additionally enable
+`--arrival-replay`. The replay path normalizes the first arrival to zero,
+preserves subsequent gaps with a monotonic clock, builds complete-row pending
+batches, and writes a separate flush trace. Batching decides which rows belong
+together, flush decides when a partial batch closes, and admission limits how
+many closed batches may be in flight.
+
+The real contract test covers Daft `RecordBatch`/Arrow conversion and local Ray
+task/actor exactly-once execution. It is integration evidence only. GPU
+performance claims require the real PostgreSQL source and vLLM endpoint.
 
 ## AI_COMPLETE workload import
 
