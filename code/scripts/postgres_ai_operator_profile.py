@@ -518,10 +518,11 @@ def _batch_envelopes(
     operator: str,
     completion_max_tokens: int,
     output_cost_mode: OutputCostMode = "fixed_output_cap",
+    batch_index_start: int = 0,
 ) -> list[PayloadEnvelope]:
     envelopes = []
     for index, batch in enumerate(batches):
-        request_id = f"{job_id}:batch:{index}"
+        request_id = f"{job_id}:batch:{batch_index_start + index}"
         prompt_tokens = 0
         if "prompt_tokens" in batch.column_names:
             prompt_tokens = sum(
@@ -564,6 +565,70 @@ def _batch_envelopes(
         )
         envelopes.append(PayloadEnvelope(request=request, payload=batch))
     return envelopes
+
+
+def _offline_batch_envelopes(
+    batches: Iterable[pa.Table | pa.RecordBatch],
+    *,
+    job_id: str,
+    operator: str,
+    completion_max_tokens: int,
+    output_cost_mode: OutputCostMode,
+    batch_index_start: int,
+    job_start_epoch_s: float,
+    ready_epoch_s: float,
+) -> tuple[list[PayloadEnvelope], list[RequestLifecycleSeed]]:
+    materialized_batches = list(batches)
+    envelopes = _batch_envelopes(
+        materialized_batches,
+        job_id=job_id,
+        operator=operator,
+        completion_max_tokens=completion_max_tokens,
+        output_cost_mode=output_cost_mode,
+        batch_index_start=batch_index_start,
+    )
+    seeds = []
+    for batch, envelope in zip(materialized_batches, envelopes):
+        if "doc_id" not in batch.column_names:
+            raise ValueError("doc_id column is required for request tracing")
+        for row_index in range(batch.num_rows):
+            doc_value = batch.column("doc_id")[row_index].as_py()
+            if doc_value is None:
+                raise ValueError(
+                    "doc_id must be non-null for request tracing"
+                )
+            prompt_tokens = (
+                int(
+                    batch.column("prompt_tokens")[row_index].as_py()
+                    or 0
+                )
+                if "prompt_tokens" in batch.column_names
+                else 0
+            )
+            prefix_key = (
+                str(batch.column("prefix_key")[row_index].as_py() or "")
+                if "prefix_key" in batch.column_names
+                else ""
+            )
+            seeds.append(
+                RequestLifecycleSeed(
+                    request_id=f"{job_id}:row:{doc_value}",
+                    submission_id=envelope.request.request_id,
+                    doc_id=str(doc_value),
+                    prompt_tokens=prompt_tokens,
+                    estimated_output_tokens=_row_output_tokens(
+                        batch,
+                        row_index,
+                        output_cost_mode=output_cost_mode,
+                        completion_max_tokens=completion_max_tokens,
+                    ),
+                    prefix_key=prefix_key,
+                    arrival_epoch_s=job_start_epoch_s,
+                    flush_epoch_s=ready_epoch_s,
+                    request_time_origin="offline_job_start",
+                )
+            )
+    return envelopes, seeds
 
 
 def _row_output_tokens(
@@ -827,6 +892,7 @@ def _arrival_replay_envelopes(
                         * arrival_time_scale
                     ),
                     flush_epoch_s=flush_epoch_s,
+                    request_time_origin="replayed_arrival",
                 )
                 for row in pending.rows
             ]
@@ -1194,7 +1260,7 @@ def _write_request_trace(
         append_metrics(
             output_path,
             {
-                "schema_version": 1,
+                "schema_version": 2,
                 "experiment_id": experiment_id,
                 "phase": phase,
                 "repeat_index": repeat_index,
@@ -1247,6 +1313,7 @@ def _write_request_trace(
                 "service_s": row.service_s if row.service_s is not None else "",
                 "service_clock_domain": row.service_clock_domain,
                 "e2e_s": row.e2e_s,
+                "request_time_origin": row.request_time_origin,
                 "latency_granularity": row.latency_granularity,
                 "slo_target_s": (
                     row.slo_target_s if row.slo_target_s is not None else ""
@@ -2014,8 +2081,8 @@ def _validate_request_trace_args(args: argparse.Namespace) -> None:
         raise SystemExit("--scenario-id must be non-empty")
     if not args.request_trace_output:
         return
-    if not args.arrival_replay:
-        raise SystemExit("request tracing requires --arrival-replay")
+    if args.executor not in {"ray_actor", "ray_task"}:
+        raise SystemExit("request tracing requires a Ray executor")
     if args.scheduling_policy == "queue_adaptive":
         raise SystemExit("request tracing requires the typed scheduler")
 
@@ -2299,6 +2366,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         lifecycle_epoch_clock = (
             MonotonicEpochClock() if args.request_trace_output else None
         )
+        offline_job_start_epoch_s = (
+            lifecycle_epoch_clock()
+            if lifecycle_epoch_clock is not None and not args.arrival_replay
+            else None
+        )
+        offline_batch_index = 0
         submit_metrics = {
             "operator_invocations": 0,
             "max_inflight": 0,
@@ -2515,8 +2588,38 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             if organized.metrics["warnings"]:
                 organizer_warnings.append(str(organized.metrics["warnings"]))
             object_count += len(ray_batches)
+            offline_envelopes = None
+            if args.request_trace_output:
+                if (
+                    lifecycle_epoch_clock is None
+                    or offline_job_start_epoch_s is None
+                ):
+                    raise RuntimeError(
+                        "offline lifecycle clock is not initialized"
+                    )
+                offline_envelopes, offline_seeds = (
+                    _offline_batch_envelopes(
+                        ray_batches,
+                        job_id=str(job_id),
+                        operator=args.operator,
+                        completion_max_tokens=(
+                            args.completion_max_tokens
+                            if args.operator == "ai_complete"
+                            else 0
+                        ),
+                        output_cost_mode=args.output_cost_mode,
+                        batch_index_start=offline_batch_index,
+                        job_start_epoch_s=offline_job_start_epoch_s,
+                        ready_epoch_s=lifecycle_epoch_clock(),
+                    )
+                )
+                request_lifecycle_seeds.extend(offline_seeds)
+                offline_batch_index += len(offline_envelopes)
             operator_timer = StageTimer.start("operator_wall")
-            results, metrics = submit_operator_batches(ray_batches)
+            results, metrics = submit_operator_batches(
+                ray_batches,
+                replay_envelopes=offline_envelopes,
+            )
             operator_wall_s += operator_timer.stop()
             operator_results.extend(results)
             for key in submit_metrics:

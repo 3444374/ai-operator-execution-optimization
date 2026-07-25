@@ -91,6 +91,42 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertEqual(envelopes[0].request.estimated_output_tokens, 10)
 
+    def test_offline_batch_envelopes_seed_every_row_from_job_start(self) -> None:
+        table = pa.table(
+            {
+                "doc_id": [1, 2],
+                "prompt_tokens": [6, 4],
+                "target_output_tokens": [3, 2],
+                "prefix_key": ["p", "p"],
+            }
+        )
+
+        envelopes, seeds = profile._offline_batch_envelopes(
+            [table],
+            job_id="job",
+            operator="ai_complete",
+            completion_max_tokens=16,
+            output_cost_mode="trace_target_output",
+            batch_index_start=7,
+            job_start_epoch_s=100.0,
+            ready_epoch_s=101.0,
+        )
+
+        self.assertEqual(envelopes[0].request.request_id, "job:batch:7")
+        self.assertEqual([item.doc_id for item in seeds], ["1", "2"])
+        self.assertEqual(
+            [item.estimated_output_tokens for item in seeds],
+            [3, 2],
+        )
+        self.assertTrue(all(item.arrival_epoch_s == 100.0 for item in seeds))
+        self.assertTrue(all(item.flush_epoch_s == 101.0 for item in seeds))
+        self.assertTrue(
+            all(
+                item.request_time_origin == "offline_job_start"
+                for item in seeds
+            )
+        )
+
     def test_endpoint_topology_pairs_ids_and_urls_in_default_pool(self) -> None:
         topology = profile._endpoint_topology(
             endpoint_ids=["endpoint-0", "endpoint-1"],
@@ -802,15 +838,17 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(metrics["batch_estimated_cost_units_p99"], 12.0)
         self.assertEqual(metrics["batch_estimated_cost_units_max"], 12)
 
-    def test_request_trace_cli_requires_supported_replay_path(self) -> None:
+    def test_request_trace_cli_requires_supported_typed_ray_path(self) -> None:
         invalid_cases = [
             (
                 [
                     "--dry-run",
                     "--request-trace-output",
                     "tmp/requests.csv",
+                    "--executor",
+                    "python",
                 ],
-                "request tracing requires --arrival-replay",
+                "request tracing requires a Ray executor",
             ),
             (
                 [
@@ -866,6 +904,20 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(row["request_slo_target_ms"], 250.0)
         self.assertEqual(row["scenario_id"], "fixed-timeout")
         self.assertEqual(row["random_seed"], 7)
+
+        offline_args = profile.parse_args(
+            [
+                "--dry-run",
+                "--request-trace-output",
+                "tmp/offline-requests.csv",
+            ]
+        )
+        offline_row = profile.run_once(offline_args, "formal", 1)
+
+        self.assertEqual(
+            offline_row["request_trace_path"],
+            "tmp/offline-requests.csv",
+        )
 
     def test_single_run_mode_selects_exact_phase_and_repeat(self) -> None:
         args = profile.parse_args(
@@ -1294,6 +1346,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 submit_to_service_s=0.010,
                 service_s=0.250,
                 e2e_s=0.300,
+                request_time_origin="replayed_arrival",
                 latency_granularity="submission",
                 slo_target_s=0.250,
                 slo_met=False,
@@ -1323,6 +1376,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 submit_to_service_s=0.010,
                 service_s=0.250,
                 e2e_s=0.290,
+                request_time_origin="replayed_arrival",
                 latency_granularity="submission",
                 slo_target_s=0.250,
                 slo_met=False,
@@ -1364,6 +1418,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "service_s",
             "service_clock_domain",
             "e2e_s",
+            "request_time_origin",
             "latency_granularity",
             "slo_target_s",
             "slo_met",
@@ -1388,7 +1443,11 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 self.assertEqual(reader.fieldnames, expected_columns)
 
             self.assertEqual(len(written), 2)
-            self.assertEqual(written[0]["schema_version"], "1")
+            self.assertEqual(written[0]["schema_version"], "2")
+            self.assertEqual(
+                written[0]["request_time_origin"],
+                "replayed_arrival",
+            )
             self.assertEqual(written[0]["scenario_id"], "fixed-timeout")
             self.assertEqual(written[0]["server_version"], "18.4")
             self.assertEqual(written[0]["actual_output_tokens"], "")
@@ -1409,6 +1468,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "shared",
                 100.0,
                 100.025,
+                "replayed_arrival",
             ),
             RequestLifecycleSeed(
                 "job:row:12",
@@ -1419,6 +1479,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "shared",
                 100.010,
                 100.025,
+                "replayed_arrival",
             ),
         ]
         events = [

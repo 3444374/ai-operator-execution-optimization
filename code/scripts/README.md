@@ -225,13 +225,17 @@ timestamps (schema 2). The second samples
 GPU utilization/memory and vLLM running/waiting/KV signals every 250 ms without
 blocking the submission loop.
 
-`--request-trace-output` additionally writes one row per complete input prompt.
-It currently requires arrival replay and the typed static/AIMD/EWMA/PID
-scheduler. Each row records arrival, flush, submit, service, completion, client
-E2E, endpoint/GPU identity, and optional SLO status. A multi-prompt endpoint
-response exposes only submission-level completion timing, so these rows use
-`latency_granularity=submission`; they are client-observed per-prompt E2E
-values, not vLLM internal per-sequence completion timestamps.
+`--request-trace-output` additionally writes one row per complete input prompt
+on typed static/AIMD/EWMA/PID Ray paths. Arrival replay rows use
+`request_time_origin=replayed_arrival`; offline organization rows use one
+`offline_job_start` origin so their E2E includes source fetch, organization,
+submission, and model completion. Each row records buffer/organization,
+submit, service, completion, client E2E, endpoint/GPU identity, and optional
+SLO status. A multi-prompt endpoint response exposes only submission-level
+completion timing, so these rows use `latency_granularity=submission`; they
+are client-observed per-prompt E2E values, not vLLM internal per-sequence
+completion timestamps. Request trace schema version 2 records the time origin
+explicitly so offline and replay latency distributions cannot be conflated.
 Client lifecycle timestamps share one stable clock. Backend service epochs use
 `service_clock_domain=backend`; when backend/client clocks cannot be ordered
 reliably, `submit_to_service_s` is left empty instead of inventing queue time.

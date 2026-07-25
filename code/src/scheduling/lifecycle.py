@@ -15,6 +15,10 @@ OutputTokenSource = Literal[
     "submission_aggregate_unavailable",
     "endpoint_request",
 ]
+RequestTimeOrigin = Literal[
+    "replayed_arrival",
+    "offline_job_start",
+]
 
 
 class MonotonicEpochClock:
@@ -46,6 +50,7 @@ class RequestLifecycleSeed:
     prefix_key: str
     arrival_epoch_s: float
     flush_epoch_s: float
+    request_time_origin: RequestTimeOrigin
 
     def __post_init__(self) -> None:
         if not self.request_id or not self.submission_id or not self.doc_id:
@@ -54,6 +59,11 @@ class RequestLifecycleSeed:
             )
         if self.prompt_tokens < 0 or self.estimated_output_tokens < 0:
             raise ValueError("token counts must be non-negative")
+        if self.request_time_origin not in {
+            "replayed_arrival",
+            "offline_job_start",
+        }:
+            raise ValueError("unknown request_time_origin")
         _ordered_times(
             ("arrival_epoch_s", self.arrival_epoch_s),
             ("flush_epoch_s", self.flush_epoch_s),
@@ -106,6 +116,7 @@ class RequestTraceRow:
     submit_to_service_s: float | None
     service_s: float | None
     e2e_s: float
+    request_time_origin: RequestTimeOrigin
     latency_granularity: Literal["submission", "request"]
     slo_target_s: float | None
     slo_met: bool | None
@@ -266,6 +277,7 @@ def build_request_trace_rows(
                 submit_to_service_s=submit_to_service_s,
                 service_s=service_s,
                 e2e_s=e2e_s,
+                request_time_origin=item.request_time_origin,
                 latency_granularity="submission",
                 slo_target_s=slo_target_s,
                 slo_met=slo_met,

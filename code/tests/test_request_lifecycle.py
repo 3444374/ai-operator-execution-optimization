@@ -31,6 +31,7 @@ def seed(
         prefix_key="p",
         arrival_epoch_s=arrival_epoch_s,
         flush_epoch_s=100.025,
+        request_time_origin="replayed_arrival",
     )
 
 
@@ -115,6 +116,63 @@ class RequestLifecycleTests(unittest.TestCase):
         self.assertTrue(
             all(row.latency_granularity == "submission" for row in rows)
         )
+        self.assertTrue(
+            all(row.request_time_origin == "replayed_arrival" for row in rows)
+        )
+
+    def test_request_trace_preserves_offline_time_origin(self) -> None:
+        offline_seed = RequestLifecycleSeed(
+            request_id="job:row:1",
+            submission_id="job:batch:0",
+            doc_id="1",
+            prompt_tokens=4,
+            estimated_output_tokens=2,
+            prefix_key="",
+            arrival_epoch_s=100.0,
+            flush_epoch_s=101.0,
+            request_time_origin="offline_job_start",
+        )
+        rows = build_request_trace_rows(
+            [offline_seed],
+            [
+                SubmissionLifecycleEvent(
+                    submission_id="job:batch:0",
+                    pool_id="default",
+                    endpoint_id="task-0",
+                    gpu_id="0",
+                    submit_epoch_s=101.1,
+                    completion_epoch_s=102.0,
+                    status="completed",
+                )
+            ],
+            {
+                "job:batch:0": SubmissionServiceTiming(
+                    submission_id="job:batch:0",
+                    service_start_epoch_s=101.2,
+                    service_end_epoch_s=101.9,
+                )
+            },
+            {"1": 1},
+            {},
+            slo_target_s=None,
+        )
+
+        self.assertEqual(rows[0].request_time_origin, "offline_job_start")
+        self.assertEqual(rows[0].e2e_s, 2.0)
+
+    def test_request_lifecycle_seed_rejects_unknown_time_origin(self) -> None:
+        with self.assertRaisesRegex(ValueError, "request_time_origin"):
+            RequestLifecycleSeed(
+                request_id="job:row:1",
+                submission_id="job:batch:0",
+                doc_id="1",
+                prompt_tokens=4,
+                estimated_output_tokens=2,
+                prefix_key="",
+                arrival_epoch_s=100.0,
+                flush_epoch_s=101.0,
+                request_time_origin="unknown",
+            )
 
     def test_join_uses_only_genuine_per_request_actual_tokens(self) -> None:
         row = build_request_trace_rows(
