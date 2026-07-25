@@ -9,6 +9,8 @@ from .models import (
     SubmissionCompletion,
     TopologySnapshot,
 )
+from .routing import RoundRobinEndpointRouter
+from .topology import healthy_endpoints
 
 __all__ = [
     "AdmissionDecision",
@@ -16,6 +18,8 @@ __all__ = [
     "EndpointSnapshot",
     "PayloadEnvelope",
     "RoutingDecision",
+    "RoundRobinEndpointRouter",
     "SubmissionCompletion",
     "TopologySnapshot",
+    "healthy_endpoints",
 ]
