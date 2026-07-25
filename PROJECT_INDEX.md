@@ -148,6 +148,7 @@
 | `code_doc/superpowers/specs/2026-07-26-output-aware-bfd-design.md` | 输出成本与离线 BFD 设计 | 共享成本语义、确定性 BFD、global/local scope、trace 元数据证据边界与真实组件门禁 |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-flush-window-implementation.md` | Adaptive flush 双窗口实施计划 | TDD 窗口选择、event-time replay、profiler trace 与真实单 GPU 分级门禁 |
 | `code_doc/superpowers/plans/2026-07-25-request-lifecycle-scenario-runner-implementation.md` | AI 算子执行 infra 第一阶段实施计划 | request lifecycle、单 prompt E2E/SLO、seeded scenario runner 与真实 64 行门禁 |
+| `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md` | 输出成本与确定性 BFD 实施计划 | 共享成本、通用 cost_units BFD、Arrow/Daft 接入、离线 lifecycle、真实 64→512 单 GPU 门禁 |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |

@@ -11,3 +11,6 @@ Local planning artifacts produced through the Superpowers workflow for code chan
 
 Current design:
 `specs/2026-07-26-output-aware-bfd-design.md`.
+
+Current implementation plan:
+`plans/2026-07-26-output-aware-bfd-implementation.md`.

@@ -14,3 +14,6 @@ Current adaptive flush redesign:
 
 Current output-cost and offline packing design:
 `superpowers/specs/2026-07-26-output-aware-bfd-design.md`.
+
+Current output-aware BFD implementation plan:
+`superpowers/plans/2026-07-26-output-aware-bfd-implementation.md`.

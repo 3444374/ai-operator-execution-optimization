@@ -1197,5 +1197,29 @@
   当前仅实现真实文本 adapter，未来新增真实模态 adapter 而不重写 packing、Ray
   调度、lifecycle 和 scenario runner。多资源约束出现时新增真实算法，不把不可比
   单位强行压成伪标量。
+- 实施计划映射时发现现有 request lifecycle 只覆盖 arrival replay，而 global BFD
+  必须走离线 organizer。设计补充 `request_time_origin`：replay 保持
+  `replayed_arrival`；离线 sequential/BFD 统一以 `offline_job_start` 为
+  `arrival_epoch_s`、organized batch ready 为 `flush_epoch_s`。该补充只完善观测，
+  不改变 batch membership、Ray 调度或模型请求。
 - 本次仅固化设计与索引，尚未编写实施计划、生产代码或新增性能实验，分支继续隔离，
   不合并 `main`，不自动同步 Wiki。
+
+## 2026-07-26 输出成本与确定性 BFD 实施计划
+
+- 用户审阅设计并要求开始实施后，新增
+  `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md`。
+- 计划按共享 output cost、纯 `cost_units` BFD、Arrow/Daft 单实现、
+  profiler/replay 接线、离线 request lifecycle、真实 Daft-Ray contract、
+  64 行门禁与 512 行六单元矩阵七个任务执行；每个行为变更严格 RED→GREEN 并独立
+  提交。
+- 64 行真实 PostgreSQL→Daft→Ray→vLLM 门禁失败即停止，不直接消耗 512/1024/2048
+  实验时间；本阶段最高只运行 512 行三次正式重复，1024/2048 留给重复证据通过后的
+  独立确认阶段。
+- 计划继续保持单 GPU、分支隔离、禁止 fake 正式数据、禁止把未配对 BurstGPT target
+  称为 oracle，并要求记录模型/tokenizer/cost source、global/local packing scope、
+  packing utilization、逐请求 E2E 和 service P99。
+- 用户要求测试规模尽量一致：64 行仅作 infra 门禁，不进入性能比较；正式六单元矩阵
+  全部固定为同一批 512 个 doc、相同 source order/fetch size/model/generation cap/
+  token budget/max rows/K_max/writeback，仅改变 packing algorithm 与 output-cost
+  mode，并逐 repeat 审计 `(doc_id, prompt_tokens)` 集合完全一致。

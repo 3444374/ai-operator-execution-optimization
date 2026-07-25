@@ -269,6 +269,10 @@ packing_budget_utilization_p95
 packing_oversized_rows
 packing_input_rows
 packing_batch_count
+batch_estimated_cost_units_p50
+batch_estimated_cost_units_p95
+batch_estimated_cost_units_p99
+batch_estimated_cost_units_max
 ```
 
 Allowed scope labels:
@@ -309,7 +313,10 @@ not merely the backend currently serving the request.
   sequential policy.
 - Existing fixed-row policies retain membership behavior.
 - Backend generation, scheduler, routing, flush, writeback, and request
-  lifecycle semantics remain unchanged.
+  execution semantics remain unchanged.
+- Existing arrival-replay lifecycle semantics remain unchanged. Offline
+  organizer runs gain an explicit lifecycle origin solely to make their
+  per-request metrics observable.
 
 ## 7. Observability
 
@@ -326,9 +333,21 @@ with:
 - `target_output_tokens`, which is unpaired BurstGPT metadata in the current
   workload.
 
+Every request trace also records `request_time_origin`:
+
+| Value | `arrival_epoch_s` meaning | `flush_epoch_s` meaning |
+|---|---|---|
+| `replayed_arrival` | scaled source arrival in the replay timeline | pending batch close time |
+| `offline_job_start` | one shared job-start epoch before source fetch | organized batch ready time |
+
+This makes offline sequential and BFD request E2E comparable from the same
+job boundary. Reports must not compare either value with a trace that uses a
+different time origin without stating the mismatch.
+
 Packing evaluation additionally reports:
 
-- batch estimated-token P50/P95/P99/max;
+- batch estimated-cost-unit P50/P95/P99/max, interpreted using
+  `packing_cost_unit`;
 - budget utilization mean/P95;
 - submission count;
 - oversized row count;
@@ -373,6 +392,7 @@ Daft -> Arrow -> Ray task/actor contract. Assert:
 - every source document is executed exactly once;
 - no document content changes;
 - request and submission IDs remain joinable;
+- offline request traces use `request_time_origin=offline_job_start`;
 - batch limits and oversized behavior match the pure packer.
 
 Fake backends remain limited to unit/contract behavior; GPU results use the
@@ -411,6 +431,9 @@ as an oracle for realized Qwen output.
    Run without retuning and only after the 1024 gate passes.
 
 The 64-row gate is infrastructure validation, not performance evidence.
+Within each performance scale, every policy cell uses the identical document
+set and all non-treatment controls. Results from different row counts are not
+combined into one policy delta.
 
 ### 9.3 Comparison matrix
 
