@@ -151,8 +151,7 @@ class SystemReplayClock:
         return time.monotonic()
 
     def wait_until(self, deadline_s: float) -> None:
-        delay_s = deadline_s - self.now()
-        if delay_s > 0:
+        while (delay_s := deadline_s - self.now()) > 0:
             time.sleep(delay_s)
 
 

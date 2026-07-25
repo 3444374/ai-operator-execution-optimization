@@ -4,6 +4,7 @@ import math
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
@@ -14,6 +15,7 @@ from src.scheduling.batching import (  # noqa: E402
     PendingBatchBuilder,
     ReplayServiceObservation,
     RowArrival,
+    SystemReplayClock,
 )
 from src.scheduling.flush import (  # noqa: E402
     FixedTimeoutFlush,
@@ -103,6 +105,33 @@ def unsafe_arrival(value: object = 1.0, *, missing: bool = False) -> RowArrival:
     object.__setattr__(item, "prefix_key", "")
     object.__setattr__(item, "payload_ref", object())
     return item
+
+
+class SystemReplayClockTests(unittest.TestCase):
+    def test_wait_until_retries_when_system_sleep_returns_early(self) -> None:
+        timeline = {"now_s": 100.0}
+        sleep_calls: list[float] = []
+
+        def monotonic() -> float:
+            return timeline["now_s"]
+
+        def sleep(delay_s: float) -> None:
+            sleep_calls.append(delay_s)
+            if len(sleep_calls) == 1:
+                timeline["now_s"] += delay_s / 2
+            else:
+                timeline["now_s"] += delay_s
+
+        with (
+            patch("src.scheduling.batching.time.monotonic", side_effect=monotonic),
+            patch("src.scheduling.batching.time.sleep", side_effect=sleep),
+        ):
+            clock = SystemReplayClock()
+            clock.wait_until(101.0)
+            observed_now_s = clock.now()
+
+        self.assertGreaterEqual(observed_now_s, 101.0)
+        self.assertEqual(len(sleep_calls), 2)
 
 
 class ArrivalReplayBatcherTests(unittest.TestCase):
