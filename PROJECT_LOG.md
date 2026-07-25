@@ -1290,3 +1290,19 @@
   `ray_batch_rows` 硬上限。新增回归测试先复现 `[5]` 与 `[2,2,1]` 的不一致，
   修复后 organizer、profiler scheduling、真实 Daft-to-Ray contract 与全量
   224 tests 均通过。正式矩阵必须从干净 vLLM 服务重新运行。
+
+## 2026-07-26 Row-cap-aware packing 与非阻塞观测设计
+
+- 用户确认继续优化，但明确 BFD 如果造成性能下降可以不使用；候选技术不要求全部
+  进入最终系统。
+- 新增
+  `code_doc/superpowers/specs/2026-07-26-row-cap-aware-packing-and-observation-design.md`，
+  将 classic BFD 固定为实验 baseline，默认继续使用 sequential token-budget，
+  只有真实单 GPU 512 行筛选与 held-out 1024 行确认均支持时才提升新策略。
+- 下一阶段只包含两个可独立验证的改动：把 AIMD/EWMA-AIMD/PID 正式路径接到已有
+  非阻塞 metrics provider；新增同时尊重 row cap 与 token budget 的确定性
+  row-cap-first best-fit 候选。Daft 流式化、多 endpoint、UCB、prefix 和多模态拆为
+  后续独立阶段，避免一次改动引入不可归因的性能变化。
+- 正式主比较使用同一模型、文档、固定 output cost、K_max 和测量配置，classic BFD
+  与未配对 BurstGPT trace 只作 secondary sensitivity；每轮继续强制真实 vLLM
+  FLOP delta、MFU、能耗、逐请求 E2E、submission 数和 exactly-once 审计。

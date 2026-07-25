@@ -160,6 +160,7 @@
 | `code_doc/superpowers/specs/2026-07-25-adaptive-flush-window-design.md` | Adaptive flush 双窗口改进设计 | fixed-timeout fallback、事件时间 catch-up、trace 与真实 GPU 门禁 |
 | `code_doc/superpowers/specs/2026-07-25-ai-operator-execution-infra-design.md` | AI 算子外部执行 infra 总体设计 | 数据进入与组织、运行时控制、Ray 执行、可观测性、策略搜索及后续多模态/代价估计边界 |
 | `code_doc/superpowers/specs/2026-07-26-output-aware-bfd-design.md` | 输出成本与离线 BFD 设计 | 共享成本语义、确定性 BFD、global/local scope、trace 元数据证据边界与真实组件门禁 |
+| `code_doc/superpowers/specs/2026-07-26-row-cap-aware-packing-and-observation-design.md` | Row-cap-aware packing 与非阻塞观测设计 | 将 BFD 降为候选对照，修复 adaptive 观测阻塞风险，并以真实 64→512→1024 门禁选择策略 |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-flush-window-implementation.md` | Adaptive flush 双窗口实施计划 | TDD 窗口选择、event-time replay、profiler trace 与真实单 GPU 分级门禁 |
 | `code_doc/superpowers/plans/2026-07-25-request-lifecycle-scenario-runner-implementation.md` | AI 算子执行 infra 第一阶段实施计划 | request lifecycle、单 prompt E2E/SLO、seeded scenario runner 与真实 64 行门禁 |
 | `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md` | 输出成本与确定性 BFD 实施计划 | 共享成本、通用 cost_units BFD、Arrow/Daft 接入、离线 lifecycle、真实 64→512 单 GPU 门禁 |
@@ -230,6 +231,7 @@
 | `code_doc/superpowers/plans/2026-07-25-accelerated-arrival-replay-implementation.md` | arrival time scale 的 TDD 接线、真实门禁与正式单 GPU flush 矩阵 | 执行加速回放正式实验前读 |
 | `code_doc/superpowers/specs/2026-07-25-accelerated-arrival-replay-design.md` | BurstGPT accelerated replay 的缩放语义、验证要求与单 GPU 正式实验矩阵 | 实现时间缩放参数或解释加速回放结果前读 |
 | `code_doc/superpowers/specs/2026-07-26-output-aware-bfd-design.md` | output-aware BFD、成本来源、全局/局部范围与可比性设计 | 实现或解释动态 batch 装箱策略前读 |
+| `code_doc/superpowers/specs/2026-07-26-row-cap-aware-packing-and-observation-design.md` | row cap、token budget、packing 与 adaptive 非阻塞观测的候选选择设计 | 继续数据组织与提交控制联合优化前读 |
 | `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md` | BFD、离线逐请求 E2E、资源效率指标与 64/512/1024 实验实施计划 | 继续当前数据组织策略主线前读 |
 | `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
