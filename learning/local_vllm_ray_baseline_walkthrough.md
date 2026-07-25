@@ -99,3 +99,36 @@ figures/data/backup/b12_local_vllm_latency_probe_breakdown.svg
 - latency probe 后续应增加更多 repeat 或 per-request trace，再用于严肃的 P95/P99 分析。
 
 这样 baseline、token-aware 数据组织、queue-adaptive 调度之间可以在同一套视觉语言下对比，避免每次实验换一种图导致结论不可比。
+
+## 7. 运行层策略框架第一阶段代码怎么理解
+
+2026-07-25 新增的 `code/src/scheduling/` 不是另一条 Python-only 执行链路，
+而是 Daft 与 Ray 之间的 typed 策略核心：
+
+```text
+DaftOrganizer
+  -> Arrow batch（真实 payload）
+  -> BatchRequest（策略只读元数据）
+  -> static admission + round-robin routing
+  -> Ray task（真实执行框架）
+```
+
+`BatchRequest` 不直接依赖 Daft、Arrow 或 Ray，因此控制策略可以用确定性单元
+测试验证。实际 payload 仍由 Daft 形成，并通过 `PayloadEnvelope` 交给 Ray
+adapter。这样做的目的不是更换技术栈，而是避免 AIMD、PID、flush、routing
+代码和 Daft/Ray API 混在同一大脚本中。
+
+当前第一阶段已经能验证：
+
+- request、endpoint 和 topology 元数据有稳定类型；
+- static K_max 不会让 in-flight 超过配置上限；
+- round-robin 会跳过不健康 endpoint；
+- deterministic test 中每个 batch 恰好完成或失败一次；
+- Daft 生成的 Arrow batch 可以穿过同一接口进入真实单节点 Ray task。
+
+当前仍不能说明：
+
+- 新框架已经替换 `postgres_ai_operator_profile.py` 的生产提交循环；
+- queue-adaptive flush、AIMD、PID、EWMA 或 UCB 已经实现；
+- 这些接口带来了吞吐或尾延迟收益；
+- 单节点 contract smoke 等价于真实 vLLM 性能实验。

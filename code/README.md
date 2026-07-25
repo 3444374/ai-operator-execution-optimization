@@ -20,7 +20,8 @@ code/
 │   ├── model_backends.py                 ← fake / compatible HTTP embedding and completion backend
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
-│   └── workloads.py                      ← 内置 synthetic / controlled workload seed
+│   ├── workloads.py                      ← 内置 synthetic / controlled workload seed
+│   └── scheduling/                       ← typed scheduling core、topology、static admission/routing
 ├── tests/
 │   ├── test_sources.py                   ← 数据入口后端最小单元测试
 │   ├── test_organizers.py                ← 数据组织后端最小单元测试
@@ -68,6 +69,8 @@ now lives under `code/src/`:
 - `sinks.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
 - `metrics.py`: timers, GPU snapshot, and CSV append helper.
 - `workloads.py`: small built-in seed workloads for smoke/dev only.
+- `scheduling/`: engine-independent scheduling metadata and policies. The
+  formal payload/execution path remains Daft -> Arrow -> Ray.
 
 `fake` is retained only as a local control backend for offline smoke tests and
 pipeline debugging. It is not a model-service result source. For vLLM-compatible
@@ -76,6 +79,34 @@ name is accepted only as a compatibility alias. `AI_COMPLETE` is selected with
 `--operator ai_complete` and expects a vLLM-compatible `/v1/completions` URL
 through `--completion-endpoint-url`. For local Ollama smoke runs, use
 `--model-backend ollama --completion-endpoint-url http://localhost:11434`.
+
+## Scheduling foundation
+
+`code/src/scheduling/` contains immutable request metadata, endpoint topology,
+static admission, round-robin routing, and a deterministic policy-composition
+scheduler. Policy modules do not import Daft, Arrow, Ray, or HTTP.
+
+The formal framework remains:
+
+```text
+PostgreSQL -> Daft -> Arrow payload boundary -> Ray task/actor -> endpoint
+```
+
+The synchronous adapter used in unit tests is not a formal execution path.
+The Daft-to-Ray contract test uses a real `DaftOrganizer`, Arrow batches, and
+a local single-node Ray task:
+
+```powershell
+.conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py
+.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
+.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
+.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
+```
+
+This foundation does not yet replace the production Ray submission loop and
+does not implement queue-adaptive flush or adaptive admission. Those behaviors
+must be added through later focused plans after the typed core is wired into
+the Ray task and actor paths.
 
 ## AI_COMPLETE workload import
 

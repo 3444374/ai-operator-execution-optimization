@@ -952,4 +952,12 @@
 - 用户进一步确认所有后续设计与计划必须位于 Daft + Ray 框架内。总设计和实施计划已补充正式链路 `PostgreSQL -> Daft -> Arrow payload boundary -> Ray task/actor -> endpoint`；纯策略模块保持引擎无关仅为可测试性，fake/synchronous adapter 只用于测试。
 - 第一阶段新增 Daft organizer -> Arrow payload -> 单节点 Ray task contract smoke；该 smoke 未通过前不进入 adaptive 策略实现。
 - 执行 contract smoke 时确认当前 Ray 已移除 `local_mode=True`；测试改为 `ray.init(num_cpus=1)` 的本机单节点 Ray task，仍使用真实 Ray runtime，不以 mock 替代。
+
+## 2026-07-25 Scheduling foundation 第一阶段实现与验证
+
+- 在隔离分支 `feat/runtime-scheduling-foundation` 新增 `code/src/scheduling/`：不可变 `BatchRequest`/endpoint/topology schema、静态 K_max admission、健康 endpoint 过滤、deterministic round-robin 和 synchronous policy-composition scheduler。
+- 策略包依赖扫描无 `daft`/`pyarrow`/`ray` import；正式 framework contract 仍为 `PostgreSQL -> Daft -> Arrow payload -> Ray task/actor -> endpoint`。
+- 新增 4 个测试模块：schema 3 tests、policy 6 tests、scheduler 2 tests、真实 Daft→Arrow→单节点 Ray task contract 1 test。
+- 项目 `.conda/pg-ai-profile` 环境全量验证：11 个测试模块、54 tests、0 failures；`compileall`、public import smoke 和策略层 engine-import 扫描通过。
+- 当前完成的是 typed foundation 与真实 Daft/Ray contract，不是性能实验：尚未替换生产 Ray 提交循环，未实现 queue-adaptive flush/AIMD/PID/EWMA/UCB，也没有新增 vLLM 吞吐或延迟结论。
 - 用户要求代码、测试和单 GPU 实验全部跑通并产出数据后再合并 `main`；开发使用项目内 `.worktrees/scheduling-foundation` 隔离 worktree，根 `.gitignore` 增加 `.worktrees/`。
