@@ -9,12 +9,18 @@ from __future__ import annotations
 
 import time
 import warnings
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 
 import pyarrow as pa
 
-from .packing import PackItem, best_fit_decreasing, summarize_packing
+from .packing import (
+    PackItem,
+    best_fit_decreasing,
+    row_cap_aware_best_fit_decreasing,
+    summarize_packing,
+)
 from .request_costs import (
     OutputCostMode,
     output_cost_source,
@@ -28,6 +34,7 @@ BatchingPolicy = Literal[
     "fixed_rows",
     "token_budget",
     "best_fit_token_budget",
+    "row_cap_aware_token_budget",
     "length_align_fixed_rows",
     "length_align_token_budget",
     "prefix_aware_fixed_rows",
@@ -151,7 +158,10 @@ class DaftOrganizer:
         packing_scope = "organizer_input"
         if self.config.batching_policy == "fixed_rows":
             batches = list(df.to_arrow_iter())
-        elif self.config.batching_policy == "best_fit_token_budget":
+        elif self.config.batching_policy in (
+            "best_fit_token_budget",
+            "row_cap_aware_token_budget",
+        ):
             arrow_tables = list(df.to_arrow_iter())
             combined = (
                 pa.concat_tables(
@@ -222,6 +232,7 @@ def _validate_batching_policy(config: OrganizerConfig) -> None:
         "fixed_rows",
         "token_budget",
         "best_fit_token_budget",
+        "row_cap_aware_token_budget",
         "length_align_fixed_rows",
         "length_align_token_budget",
         "prefix_aware_fixed_rows",
@@ -236,6 +247,7 @@ def _uses_token_budget(policy: BatchingPolicy) -> bool:
     return policy in (
         "token_budget",
         "best_fit_token_budget",
+        "row_cap_aware_token_budget",
         "length_align_token_budget",
         "prefix_aware_token_budget",
     )
@@ -340,9 +352,10 @@ def _token_budget_batches(
     return batches
 
 
-def _best_fit_batches(
+def _packing_batches(
     table: pa.Table,
     config: OrganizerConfig,
+    algorithm: Callable[..., tuple[tuple[int, ...], ...]],
 ) -> list[pa.Table]:
     items = [
         PackItem(
@@ -356,7 +369,7 @@ def _best_fit_batches(
         )
         for index in range(table.num_rows)
     ]
-    groups = best_fit_decreasing(
+    groups = algorithm(
         items,
         capacity=config.token_budget,
         max_rows=config.batch_size,
@@ -369,11 +382,27 @@ def _best_fit_batches(
 
 def organize_arrow_table(table: pa.Table, config: OrganizerConfig) -> list[pa.Table]:
     if config.batching_policy == "best_fit_token_budget":
-        return _best_fit_batches(table, config)
+        return _packing_batches(table, config, best_fit_decreasing)
+    if config.batching_policy == "row_cap_aware_token_budget":
+        return _packing_batches(
+            table,
+            config,
+            row_cap_aware_best_fit_decreasing,
+        )
     table = _sort_table_for_policy(table, config.batching_policy)
     if _base_policy(config.batching_policy) == "fixed_rows":
         return [table.slice(offset, config.batch_size) for offset in range(0, table.num_rows, config.batch_size)]
     return _token_budget_batches(table, config)
+
+
+def packing_algorithm_name(policy: BatchingPolicy) -> str:
+    if policy == "best_fit_token_budget":
+        return "best_fit_decreasing"
+    if policy == "row_cap_aware_token_budget":
+        return "row_cap_aware_best_fit_decreasing"
+    if policy == "fixed_rows":
+        return "fixed_rows"
+    return "sequential"
 
 
 def organization_strategy_metrics(
@@ -428,13 +457,7 @@ def organization_strategy_metrics(
         "output_cost_mode": config.output_cost_mode,
         "output_cost_source": output_cost_source(config.output_cost_mode),
         "packing_cost_unit": "tokens",
-        "packing_algorithm": (
-            "best_fit_decreasing"
-            if policy == "best_fit_token_budget"
-            else "fixed_rows"
-            if policy == "fixed_rows"
-            else "sequential"
-        ),
+        "packing_algorithm": packing_algorithm_name(policy),
         "packing_scope": packing_scope,
         "packing_budget_utilization_mean": round(
             packing.utilization_mean,

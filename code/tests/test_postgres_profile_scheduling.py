@@ -1098,6 +1098,27 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "configured_flops_per_observed_token",
         )
 
+    def test_dry_run_reports_row_cap_aware_packing_algorithm(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--batching-policy",
+                "row_cap_aware_token_budget",
+                "--token-budget",
+                "10",
+                "--ray-batch-rows",
+                "3",
+            ]
+        )
+
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(
+            row["packing_algorithm"],
+            "row_cap_aware_best_fit_decreasing",
+        )
+        self.assertEqual(row["packing_scope"], "organizer_input")
+
     def test_resource_sample_interval_must_be_positive(self) -> None:
         args = profile.parse_args(
             [
@@ -1366,6 +1387,21 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "10",
                 ],
                 "does not support best_fit_token_budget",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--batching-policy",
+                    "row_cap_aware_token_budget",
+                    "--token-budget",
+                    "10",
+                ],
+                "does not support row_cap_aware_token_budget",
             ),
             (
                 [

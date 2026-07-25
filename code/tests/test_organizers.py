@@ -34,6 +34,16 @@ def output_aware_table() -> pa.Table:
     )
 
 
+def row_cap_fragmentation_table() -> pa.Table:
+    return pa.table(
+        {
+            "doc_id": list(range(6)),
+            "prompt": [f"prompt {index}" for index in range(6)],
+            "prompt_tokens": [1, 1, 2, 3, 3, 8],
+        }
+    )
+
+
 def memberships(result) -> list[list[int]]:
     return [
         batch.column("doc_id").to_pylist()
@@ -209,6 +219,35 @@ class OrganizerTests(unittest.TestCase):
 
         self.assertEqual(memberships(arrow), memberships(daft))
         self.assertEqual(arrow.batch_cost_units, daft.batch_cost_units)
+
+    def test_arrow_and_daft_row_cap_aware_membership_is_identical(self) -> None:
+        config = OrganizerConfig(
+            batch_size=3,
+            runner="native",
+            batching_policy="row_cap_aware_token_budget",
+            token_budget=10,
+            output_cost_mode="prompt_only",
+        )
+
+        for organizer_name in ("arrow", "daft"):
+            with self.subTest(organizer=organizer_name):
+                result = make_organizer(
+                    organizer_name,
+                    config,
+                ).organize(row_cap_fragmentation_table())
+
+                self.assertEqual(
+                    memberships(result),
+                    [[5, 0, 1], [3, 4, 2]],
+                )
+                self.assertEqual(
+                    result.metrics["packing_algorithm"],
+                    "row_cap_aware_best_fit_decreasing",
+                )
+                self.assertEqual(
+                    result.metrics["packing_scope"],
+                    "organizer_input",
+                )
 
     def test_trace_cost_changes_membership_without_changing_cap(self) -> None:
         table = pa.table(

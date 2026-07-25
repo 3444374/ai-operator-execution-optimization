@@ -53,7 +53,12 @@ from src.model_backends import (
     ollama_complete_batch,
     text_token_count,
 )
-from src.organizers import OrganizerConfig, configure_daft_runner, make_organizer
+from src.organizers import (
+    OrganizerConfig,
+    configure_daft_runner,
+    make_organizer,
+    packing_algorithm_name,
+)
 from src.packing import summarize_packing
 from src.request_costs import (
     OutputCostMode,
@@ -188,6 +193,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "fixed_rows",
             "token_budget",
             "best_fit_token_budget",
+            "row_cap_aware_token_budget",
             "length_align_fixed_rows",
             "length_align_token_budget",
             "prefix_aware_fixed_rows",
@@ -2075,9 +2081,12 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
     if args.executor not in {"ray_actor", "ray_task"}:
         raise SystemExit("arrival replay requires a Ray executor")
     if args.batching_policy not in {"fixed_rows", "token_budget"}:
-        if args.batching_policy == "best_fit_token_budget":
+        if args.batching_policy in {
+            "best_fit_token_budget",
+            "row_cap_aware_token_budget",
+        }:
             raise SystemExit(
-                "arrival replay does not support best_fit_token_budget"
+                f"arrival replay does not support {args.batching_policy}"
             )
         raise SystemExit(
             "arrival replay rejects offline reordering batching policies"
@@ -2225,11 +2234,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         dry_packing_algorithm = (
             "sequential_pending"
             if args.arrival_replay
-            else "best_fit_decreasing"
-            if args.batching_policy == "best_fit_token_budget"
-            else "fixed_rows"
-            if args.batching_policy == "fixed_rows"
-            else "sequential"
+            else packing_algorithm_name(args.batching_policy)
         )
         dry_packing_metrics = _packing_run_metrics(
             [],
@@ -2953,12 +2958,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if "partition_local" in organizer_packing_scopes
                 else "organizer_input"
             )
-            packing_algorithm = (
-                "best_fit_decreasing"
-                if args.batching_policy == "best_fit_token_budget"
-                else "fixed_rows"
-                if args.batching_policy == "fixed_rows"
-                else "sequential"
+            packing_algorithm = packing_algorithm_name(
+                args.batching_policy
             )
         packing_metrics = _packing_run_metrics(
             packing_batch_cost_units,
