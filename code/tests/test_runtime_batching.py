@@ -68,6 +68,7 @@ def replay(
     flush_policy: object | None = None,
     close_batch: object | None = None,
     service_observation: object | None = None,
+    arrival_time_scale: float = 1.0,
 ) -> ArrivalReplayBatcher:
     return ArrivalReplayBatcher(
         rows=rows,
@@ -88,6 +89,7 @@ def replay(
             )
         ),
         clock=clock,
+        arrival_time_scale=arrival_time_scale,
     )
 
 
@@ -104,6 +106,26 @@ def unsafe_arrival(value: object = 1.0, *, missing: bool = False) -> RowArrival:
 
 
 class ArrivalReplayBatcherTests(unittest.TestCase):
+    def test_arrival_time_scale_compresses_only_replay_offsets(self) -> None:
+        clock = FakeReplayClock()
+        batcher = replay(
+            [row("r1", arrival_s=7.0), row("r2", arrival_s=107.0)],
+            clock,
+            arrival_time_scale=0.001,
+        )
+
+        self.assertEqual(list(batcher), [("r1", "r2")])
+        self.assertEqual(clock.waited_until, [100.1])
+
+    def test_arrival_time_scale_must_be_finite_and_positive(self) -> None:
+        for scale in (0.0, -1.0, math.nan, math.inf):
+            with self.subTest(scale=scale):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "arrival_time_scale must be finite and positive",
+                ):
+                    replay([], FakeReplayClock(), arrival_time_scale=scale)
+
     def test_first_arrival_is_normalized_and_later_gap_is_preserved(self) -> None:
         clock = FakeReplayClock()
         batcher = replay(

@@ -193,13 +193,22 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
         close_batch: Callable[[PendingBatch], ReplayResult],
         service_observation: Callable[[], ReplayServiceObservation],
         clock: ReplayClock,
+        arrival_time_scale: float = 1.0,
     ) -> None:
+        if (
+            not isinstance(arrival_time_scale, (int, float))
+            or isinstance(arrival_time_scale, bool)
+            or not math.isfinite(arrival_time_scale)
+            or arrival_time_scale <= 0
+        ):
+            raise ValueError("arrival_time_scale must be finite and positive")
         self._rows = rows
         self._builder_factory = builder_factory
         self._flush_policy = flush_policy
         self._close_batch = close_batch
         self._service_observation = service_observation
         self._clock = clock
+        self._arrival_time_scale = float(arrival_time_scale)
         self._trace: list[FlushTraceEvent] = []
 
     @property
@@ -331,7 +340,7 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                     next_row = following
                     next_deadline_s = replay_start_s + (
                         following.arrival_s - origin_arrival_s
-                    )
+                    ) * self._arrival_time_scale
                 continue
 
             wake_deadline_s = next_deadline_s
