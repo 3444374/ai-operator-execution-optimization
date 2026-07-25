@@ -975,3 +975,9 @@
 - 保持既有 profiler 指标键：`operator_invocations`、`max_inflight`、bounded wait、fan-in、submit timing 与 adaptive 兼容字段。
 - 项目 `.conda/pg-ai-profile` 环境验证：全量 15 个测试模块、70 tests、0 failures；真实 Daft→Arrow→单节点 Ray task/actor 契约均通过，`compileall`、public import 与策略层 engine-import 扫描通过。
 - 该结果只证明静态执行接线和行为契约，不是 GPU 性能收益。queue-adaptive flush、AIMD/PID/EWMA/UCB、分池动态路由、联合搜索和正式单 GPU 数据仍待实现；完成前不合并 `main`。
+
+## 2026-07-25 Adaptive controller family 实施计划
+
+- 新增 `code_doc/superpowers/plans/2026-07-25-adaptive-controller-family-implementation.md`，按 typed observation/decision → AIMD/EWMA → PID → UCB → Ray scheduler 接入的顺序实施。
+- 控制器保持引擎无关，不执行网络、sleep、Ray 或文件 I/O；缺失/陈旧指标统一 hold，静态策略不读取 adaptive metrics。
+- 旧 two-level adaptive 暂时保留为显式 baseline；新控制器完成单元/契约测试后再进入单 GPU 正式对照，仍不合并 `main`。
