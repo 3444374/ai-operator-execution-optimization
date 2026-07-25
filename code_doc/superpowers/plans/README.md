@@ -14,3 +14,4 @@ These files are process artifacts. They do not replace `PROJECT_OUTLINE.md`,
 | `2026-07-25-runtime-scheduling-strategy-suite-design.md` | Full flush/admission/routing/topology/search/metrics strategy-suite design |
 | `2026-07-25-scheduling-foundation-implementation.md` | TDD plan for typed scheduling schemas, topology, static admission/routing, and deterministic scheduler |
 | `2026-07-25-ray-static-wiring-implementation.md` | TDD plan for production static Ray task/actor delegation through the typed scheduling core |
+| `2026-07-25-arrival-replay-flush-runtime-implementation.md` | TDD plan for monotonic arrival replay, pending batch construction, and real flush-policy runtime wiring |
