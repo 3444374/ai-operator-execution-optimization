@@ -48,7 +48,12 @@ from src.model_backends import (
     ollama_complete_batch,
 )
 from src.organizers import OrganizerConfig, configure_daft_runner, make_organizer
-from src.scheduling.admission import StaticAdmissionController
+from src.scheduling.adaptive_admission import (
+    AimdAdmissionController,
+    AimdConfig,
+    EwmaAimdAdmissionController,
+)
+from src.scheduling.admission import DynamicAdmissionGate, StaticAdmissionController
 from src.scheduling.models import (
     BatchRequest,
     EndpointSnapshot,
@@ -56,6 +61,11 @@ from src.scheduling.models import (
     TopologySnapshot,
 )
 from src.scheduling.ray_adapter import RaySubmissionAdapter
+from src.scheduling.observations import (
+    CachedMetricsObservationProvider,
+    ServiceMetricsSnapshot,
+)
+from src.scheduling.pid_admission import PidAdmissionController, PidConfig
 from src.scheduling.routing import RoundRobinEndpointRouter
 from src.scheduling.scheduler import SchedulerResult, SynchronousScheduler
 from src.sinks import write_completions, write_embeddings
@@ -181,13 +191,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-metrics-url", default=os.environ.get("MODEL_METRICS_URL"))
     parser.add_argument("--model-workers", type=int, default=2)
     parser.add_argument("--max-inflight", type=int, default=8)
-    parser.add_argument("--scheduling-policy", choices=["static", "queue_adaptive"], default="static")
+    parser.add_argument(
+        "--scheduling-policy",
+        choices=["static", "queue_adaptive", "aimd", "ewma_aimd", "pid"],
+        default="static",
+    )
     parser.add_argument("--adaptive-min-inflight", type=int, default=2)
     parser.add_argument("--adaptive-max-inflight", type=int, default=16)
     parser.add_argument("--adaptive-queue-threshold", type=int, default=0)
     parser.add_argument("--adaptive-running-threshold", type=int, default=128)
     parser.add_argument("--adaptive-kv-threshold", type=float, default=0.85)
     parser.add_argument("--adaptive-poll-interval-s", type=float, default=0.05)
+    parser.add_argument("--controller-min-window", type=int, default=None)
+    parser.add_argument("--controller-max-window", type=int, default=16)
+    parser.add_argument("--controller-initial-window", type=int, default=None)
+    parser.add_argument("--adaptive-sample-interval-s", type=float, default=0.25)
+    parser.add_argument("--ewma-alpha", type=float, default=0.3)
+    parser.add_argument("--pid-proportional-gain", type=float, default=0.5)
+    parser.add_argument("--pid-integral-gain", type=float, default=0.1)
+    parser.add_argument("--pid-derivative-gain", type=float, default=0.05)
+    parser.add_argument(
+        "--control-trace-output",
+        default=None,
+        help="Optional typed adaptive control-trace CSV path.",
+    )
     parser.add_argument("--strategy", choices=["fine", "coalesced"], default="coalesced")
     parser.add_argument("--organizer", choices=["arrow", "daft"], default="arrow")
     parser.add_argument(
@@ -451,6 +478,118 @@ def _scheduler_metrics(result: SchedulerResult) -> dict:
         "adaptive_upshifts": 0,
         "adaptive_limit_mean": result.applied_limit,
     }
+
+
+def _service_metrics_snapshot(
+    metrics_url: str,
+) -> ServiceMetricsSnapshot | None:
+    metrics = scrape_prometheus_metrics(metrics_url, timeout_s=1.0)
+    if not metrics:
+        return None
+
+    def optional_int(name: str) -> int | None:
+        return int(metrics[name]) if name in metrics else None
+
+    return ServiceMetricsSnapshot(
+        running=optional_int("vllm:num_requests_running"),
+        waiting=optional_int("vllm:num_requests_waiting"),
+        kv_usage=metrics.get("vllm:kv_cache_usage_perc"),
+    )
+
+
+def _build_adaptive_config(
+    *,
+    scheduling_policy: str,
+    metrics_url: str | None,
+    trace_events: list,
+    min_window: int,
+    max_window: int,
+    initial_window: int,
+    sample_interval_s: float,
+    ewma_alpha: float,
+    pid_proportional_gain: float,
+    pid_integral_gain: float,
+    pid_derivative_gain: float,
+) -> dict:
+    if not metrics_url:
+        raise ValueError("adaptive scheduling requires a model metrics URL")
+    if scheduling_policy in {"aimd", "ewma_aimd"}:
+        config = AimdConfig(min_window=min_window, max_window=max_window)
+        if scheduling_policy == "aimd":
+            controller = AimdAdmissionController(config, initial_window)
+        else:
+            controller = EwmaAimdAdmissionController(
+                config,
+                initial_window,
+                alpha=ewma_alpha,
+            )
+    elif scheduling_policy == "pid":
+        controller = PidAdmissionController(
+            PidConfig(
+                min_window=min_window,
+                max_window=max_window,
+                proportional_gain=pid_proportional_gain,
+                integral_gain=pid_integral_gain,
+                derivative_gain=pid_derivative_gain,
+            ),
+            initial_window,
+        )
+    else:
+        raise ValueError(f"unsupported typed adaptive policy: {scheduling_policy}")
+    provider = CachedMetricsObservationProvider(
+        lambda: _service_metrics_snapshot(metrics_url),
+        min_sample_interval_s=sample_interval_s,
+    )
+    gate = DynamicAdmissionGate(
+        controller,
+        provider,
+        trace_sink=trace_events.append,
+    )
+    return {
+        "admission_gate": gate,
+        "trace_events": trace_events,
+        "controller_name": scheduling_policy,
+        "min_window": min_window,
+        "max_window": max_window,
+    }
+
+
+def _write_control_trace(
+    output_path: Path,
+    *,
+    experiment_id: str,
+    phase: str,
+    repeat_index: int,
+    job_id: int,
+    controller_name: str,
+    trace_events: list,
+) -> None:
+    first_observed_at_s = (
+        trace_events[0].observed_at_s if trace_events else 0.0
+    )
+    for trace_index, event in enumerate(trace_events):
+        append_metrics(
+            output_path,
+            {
+                "schema_version": 1,
+                "experiment_id": experiment_id,
+                "phase": phase,
+                "repeat_index": repeat_index,
+                "job_id": job_id,
+                "controller": controller_name,
+                "trace_index": trace_index,
+                "elapsed_s": event.observed_at_s - first_observed_at_s,
+                "fresh": event.fresh,
+                "inflight": event.inflight,
+                "k_max": event.window,
+                "running": event.running if event.running is not None else "",
+                "waiting": event.waiting if event.waiting is not None else "",
+                "kv_usage": event.kv_usage if event.kv_usage is not None else "",
+                "controller_action": event.controller_action,
+                "reason": event.reason,
+                "allowed": event.allowed,
+            },
+        )
 
 
 def _run_static_scheduler(
@@ -933,6 +1072,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     request_timeout_s = (
         args.completion_request_timeout_s if args.operator == "ai_complete" else args.embedding_request_timeout_s
     )
+    typed_adaptive_policies = {"aimd", "ewma_aimd", "pid"}
+    if args.scheduling_policy in typed_adaptive_policies:
+        if args.executor not in {"ray_actor", "ray_task"}:
+            raise SystemExit("typed adaptive scheduling requires a Ray executor")
+        if not args.model_metrics_url:
+            raise SystemExit("typed adaptive scheduling requires --model-metrics-url")
     if args.dry_run:
         return {
             "status": "dry_run",
@@ -966,6 +1111,19 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "scheduling_policy": args.scheduling_policy,
             "adaptive_min_inflight": args.adaptive_min_inflight,
             "adaptive_max_inflight": args.adaptive_max_inflight,
+            "controller_min_window": args.controller_min_window
+            if args.controller_min_window is not None
+            else (2 if args.scheduling_policy == "pid" else 4),
+            "controller_max_window": args.controller_max_window,
+            "controller_initial_window": args.controller_initial_window
+            if args.controller_initial_window is not None
+            else (
+                args.controller_min_window
+                if args.controller_min_window is not None
+                else (2 if args.scheduling_policy == "pid" else 4)
+            ),
+            "adaptive_sample_interval_s": args.adaptive_sample_interval_s,
+            "control_trace_output": args.control_trace_output or "",
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
         }
@@ -1090,6 +1248,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "prefix_group_ratio": 0.0,
         }
         adaptive_config = None
+        control_trace_events = []
         if args.scheduling_policy == "queue_adaptive":
             adaptive_config = {
                 "metrics_url": args.model_metrics_url,
@@ -1100,6 +1259,34 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 "kv_threshold": args.adaptive_kv_threshold,
                 "poll_interval_s": args.adaptive_poll_interval_s,
             }
+        elif args.scheduling_policy in typed_adaptive_policies:
+            default_min_window = 2 if args.scheduling_policy == "pid" else 4
+            min_window = (
+                args.controller_min_window
+                if args.controller_min_window is not None
+                else default_min_window
+            )
+            initial_window = (
+                args.controller_initial_window
+                if args.controller_initial_window is not None
+                else min_window
+            )
+            try:
+                adaptive_config = _build_adaptive_config(
+                    scheduling_policy=args.scheduling_policy,
+                    metrics_url=args.model_metrics_url,
+                    trace_events=control_trace_events,
+                    min_window=min_window,
+                    max_window=args.controller_max_window,
+                    initial_window=initial_window,
+                    sample_interval_s=args.adaptive_sample_interval_s,
+                    ewma_alpha=args.ewma_alpha,
+                    pid_proportional_gain=args.pid_proportional_gain,
+                    pid_integral_gain=args.pid_integral_gain,
+                    pid_derivative_gain=args.pid_derivative_gain,
+                )
+            except ValueError as exc:
+                raise SystemExit(str(exc)) from exc
         organizer_warnings = []
         offset = 0
         while processed_rows < args.total_rows:
@@ -1195,6 +1382,41 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     submit_metrics[key] += metrics[key]
             processed_rows += table.num_rows
 
+        control_trace_path = ""
+        if (
+            adaptive_config is not None
+            and "admission_gate" in adaptive_config
+        ):
+            trace_events = adaptive_config["trace_events"]
+            submit_metrics["adaptive_downshifts"] = sum(
+                event.controller_action == "decrease" for event in trace_events
+            )
+            submit_metrics["adaptive_upshifts"] = sum(
+                event.controller_action == "increase" for event in trace_events
+            )
+            submit_metrics["adaptive_limit_mean"] = (
+                statistics.mean(event.window for event in trace_events)
+                if trace_events
+                else adaptive_config["admission_gate"].limit
+            )
+            control_trace_path = args.control_trace_output
+            if not control_trace_path:
+                main_output = Path(args.output)
+                control_trace_path = str(
+                    main_output.with_name(
+                        f"{main_output.stem}_control_trace.csv"
+                    )
+                )
+            _write_control_trace(
+                Path(control_trace_path),
+                experiment_id=args.experiment_id,
+                phase=phase,
+                repeat_index=repeat_index,
+                job_id=job_id,
+                controller_name=adaptive_config["controller_name"],
+                trace_events=trace_events,
+            )
+
         vllm_metrics_after = scrape_prometheus_metrics(args.model_metrics_url) if args.model_metrics_url else {}
         write_timer = StageTimer.start("writeback")
         if args.operator == "ai_complete":
@@ -1254,9 +1476,20 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "scheduling_policy": args.scheduling_policy,
             "adaptive_min_inflight": args.adaptive_min_inflight if args.scheduling_policy == "queue_adaptive" else 0,
             "adaptive_max_inflight": args.adaptive_max_inflight if args.scheduling_policy == "queue_adaptive" else 0,
+            "controller_min_window": adaptive_config.get("min_window", 0)
+            if adaptive_config
+            else 0,
+            "controller_max_window": adaptive_config.get("max_window", 0)
+            if adaptive_config
+            else 0,
+            "adaptive_sample_interval_s": args.adaptive_sample_interval_s
+            if args.scheduling_policy in typed_adaptive_policies
+            else 0,
             "adaptive_downshifts": int(submit_metrics["adaptive_downshifts"]),
             "adaptive_upshifts": int(submit_metrics["adaptive_upshifts"]),
             "adaptive_limit_mean": round(float(submit_metrics["adaptive_limit_mean"]), 3),
+            "control_trace_path": control_trace_path,
+            "control_trace_events": len(control_trace_events),
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
             "object_count": object_count,

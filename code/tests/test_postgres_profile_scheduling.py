@@ -16,6 +16,7 @@ from src.scheduling.adaptive_admission import AimdAdmissionController  # noqa: E
 from src.scheduling.admission import DynamicAdmissionGate  # noqa: E402
 from src.scheduling.models import SubmissionCompletion  # noqa: E402
 from src.scheduling.observations import (  # noqa: E402
+    AdmissionTraceEvent,
     CachedMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
@@ -103,6 +104,118 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(metrics["adaptive_downshifts"], 0)
         self.assertEqual(metrics["adaptive_upshifts"], 0)
         self.assertEqual(metrics["adaptive_limit_mean"], 4)
+
+    def test_service_metrics_snapshot_maps_available_vllm_gauges(self) -> None:
+        with patch.object(
+            profile,
+            "scrape_prometheus_metrics",
+            return_value={
+                "vllm:num_requests_running": 12.0,
+                "vllm:num_requests_waiting": 3.0,
+                "vllm:kv_cache_usage_perc": 0.7,
+            },
+        ):
+            snapshot = profile._service_metrics_snapshot("http://metrics")
+
+        self.assertEqual(snapshot.running, 12)
+        self.assertEqual(snapshot.waiting, 3)
+        self.assertEqual(snapshot.kv_usage, 0.7)
+
+    def test_service_metrics_snapshot_returns_none_on_missing_scrape(self) -> None:
+        with patch.object(profile, "scrape_prometheus_metrics", return_value={}):
+            self.assertIsNone(
+                profile._service_metrics_snapshot("http://metrics")
+            )
+
+    def test_build_adaptive_config_preserves_controller_across_submissions(self) -> None:
+        traces = []
+        config = profile._build_adaptive_config(
+            scheduling_policy="aimd",
+            metrics_url="http://metrics",
+            trace_events=traces,
+            min_window=4,
+            max_window=16,
+            initial_window=4,
+            sample_interval_s=0.25,
+            ewma_alpha=0.3,
+            pid_proportional_gain=0.5,
+            pid_integral_gain=0.1,
+            pid_derivative_gain=0.05,
+        )
+
+        self.assertIs(config["trace_events"], traces)
+        self.assertEqual(config["admission_gate"].limit, 4)
+        self.assertEqual(config["controller_name"], "aimd")
+        self.assertEqual(config["min_window"], 4)
+        self.assertEqual(config["max_window"], 16)
+
+    def test_build_adaptive_config_requires_metrics_url(self) -> None:
+        with self.assertRaisesRegex(ValueError, "metrics URL"):
+            profile._build_adaptive_config(
+                scheduling_policy="pid",
+                metrics_url=None,
+                trace_events=[],
+                min_window=2,
+                max_window=16,
+                initial_window=2,
+                sample_interval_s=0.25,
+                ewma_alpha=0.3,
+                pid_proportional_gain=0.5,
+                pid_integral_gain=0.1,
+                pid_derivative_gain=0.05,
+            )
+
+    def test_write_control_trace_emits_plot_ready_rows(self) -> None:
+        events = [
+            AdmissionTraceEvent(
+                observed_at_s=10.0,
+                fresh=True,
+                inflight=3,
+                window=6,
+                running=10,
+                waiting=0,
+                kv_usage=0.2,
+                controller_action="increase",
+                reason="low_load",
+                allowed=True,
+            ),
+            AdmissionTraceEvent(
+                observed_at_s=10.5,
+                fresh=True,
+                inflight=6,
+                window=4,
+                running=12,
+                waiting=2,
+                kv_usage=0.7,
+                controller_action="decrease",
+                reason="queue_congestion",
+                allowed=False,
+            ),
+        ]
+        output = Path("control_trace.csv")
+        captured_rows = []
+        with patch.object(
+            profile,
+            "append_metrics",
+            side_effect=lambda path, row: captured_rows.append((path, row)),
+        ):
+            profile._write_control_trace(
+                output,
+                experiment_id="experiment",
+                phase="formal",
+                repeat_index=2,
+                job_id=9,
+                controller_name="aimd",
+                trace_events=events,
+            )
+
+        self.assertEqual(len(captured_rows), 2)
+        self.assertTrue(all(path == output for path, _ in captured_rows))
+        rows = [row for _, row in captured_rows]
+        self.assertEqual(rows[0]["elapsed_s"], 0.0)
+        self.assertEqual(rows[1]["elapsed_s"], 0.5)
+        self.assertEqual(rows[1]["k_max"], 4)
+        self.assertEqual(rows[1]["controller_action"], "decrease")
 
 
 class _ImmediateRef:
