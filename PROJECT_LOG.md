@@ -990,5 +990,13 @@
 - 新增 250ms 默认缓存 observation provider、stale/missing hold、无 sleep 的 dynamic admission gate 与逐决策 trace；动态降窗时 scheduler 的 bounded-inflight 不变量已有确定性测试。
 - profiler CLI 新增 `aimd|ewma_aimd|pid`，在整个 run/多 DB fetch chunk 间保持控制器状态，并统一走 Daft→Arrow→Ray task/actor 路径；control trace 记录 inflight、K_max、running、waiting、KV、action、reason 与 allowed。
 - legacy `queue_adaptive` 继续隔离作为对照。UCB 只完成策略/reward core，尚未在缺少 epoch 指标时暴露为 CLI，避免伪集成。
-- 项目 `.conda/pg-ai-profile` 全量回归：105 tests、0 failures，包含真实 Daft→Arrow→单节点 Ray task/actor 契约；compileall、public import 和策略层 engine-import 扫描通过。CLI AIMD dry-run 通过。
+- 当阶段项目 `.conda/pg-ai-profile` 全量回归为 105 tests、0 failures，包含真实 Daft→Arrow→单节点 Ray task/actor 契约；compileall、public import 和策略层 engine-import 扫描通过。CLI AIMD dry-run 通过。
 - 尚无新增 GPU 性能数据，不能声称 adaptive 优于静态 K=8；正式对比前仍须完成 output-length 混淆变量检查。分支继续隔离，不合并 `main`。
+
+## 2026-07-25 Actor pool、endpoint topology 与独立 flush core
+
+- 新增 request-cost pool router、least-queued endpoint router、确定性 rendezvous prefix affinity 与 unhealthy least-queued fallback；scheduler 可组合 pool/endpoint 两级路由。
+- profiler 可记录并使用每个 Ray actor/task endpoint 的 pool ID 与 GPU ID；真实 Daft→Arrow→Ray actor 契约验证短/长 batch 进入不同逻辑 actor pool。当前两池仍共享 RTX 5070，只是行为证据。
+- 新增 immediate、fixed-timeout、queue-adaptive 三类独立 flush policy，覆盖 budget、低负载、拥塞、missing/stale metrics 和 hard max-wait。
+- fatal-flaw audit：现有 `source_order=arrival_time` 只排序不按时间 replay，不能产生真实 pending-wait/flush 证据；正式 flush 实验前必须增加 Ray pending queue 与 arrival-paced enqueue。
+- 加入上述变更后的新鲜全量回归：122 tests、0 failures，包含真实单节点 Ray task/actor 与分池 actor contract。仍未产生 GPU 性能结果，未合并 `main`。

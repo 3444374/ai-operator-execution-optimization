@@ -106,6 +106,7 @@ actor execution:
 .conda\pg-ai-profile\python.exe code\tests\test_ray_adapter.py
 .conda\pg-ai-profile\python.exe code\tests\test_adaptive_admission.py
 .conda\pg-ai-profile\python.exe code\tests\test_dynamic_admission.py
+.conda\pg-ai-profile\python.exe code\tests\test_flush_policies.py
 .conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
 ```
@@ -118,6 +119,14 @@ explicit baseline. UCB has a tested finite-action policy and SLO-aware reward,
 but is not exposed in the profiler until epoch-level request metrics are
 available. None of these code tests is evidence of a throughput or latency
 improvement.
+
+Pool and endpoint routing support request-cost pools, least-queued selection,
+deterministic prefix affinity, health fallback, and explicit per-endpoint pool
+and GPU identifiers. The independent flush policy core supports immediate,
+fixed-timeout, and queue-adaptive decisions with a hard maximum wait. Flush is
+not yet a formal runtime path: `arrival_time` currently sorts rows but does not
+replay their timing, so a Ray pending-queue/arrival-replay adapter is still
+required before flush performance experiments.
 
 ## AI_COMPLETE workload import
 

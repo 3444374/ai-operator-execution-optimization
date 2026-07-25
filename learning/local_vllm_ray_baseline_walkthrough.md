@@ -131,6 +131,10 @@ adapter。这样做的目的不是更换技术栈，而是避免 AIMD、PID、fl
   stale hold 和 control trace 已有确定性测试；
 - UCB 的有限动作选择与 SLO reward 已完成纯策略测试，但尚未接入正式 epoch
   执行，因此不能写成“UCB 实验已完成”。
+- request-cost actor pool、least-queued、prefix-affinity 和 GPU/endpoint
+  topology 已进入真实 Ray actor contract；当前单 GPU 只验证行为，不证明扩展收益。
+- independent flush 的三种决策策略已完成单元测试，但 arrival-time 目前只是排序，
+  还没有真实 replay/pending queue，因此不能写成“flush 运行实验已完成”。
 
 当前仍不能说明：
 

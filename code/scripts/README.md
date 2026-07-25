@@ -123,6 +123,10 @@ result.
 - `--ewma-alpha`
 - `--pid-proportional-gain` / `--pid-integral-gain` / `--pid-derivative-gain`
 - `--control-trace-output`
+- `--endpoint-routing round_robin|least_queued|prefix_affinity`
+- `--pool-routing none|request_cost`
+- `--endpoint-pool-ids` / `--endpoint-gpu-ids`
+- `--long-request-token-threshold`
 - `--operator ai_embed|ai_complete`
 - `--organizer arrow|daft`
 - `--organizer-partition-mode none|into_partitions|repartition`
@@ -189,6 +193,12 @@ trace is written beside the main CSV with `_control_trace.csv` appended to the
 stem. UCB is not a CLI choice yet: its policy/reward core is tested, but formal
 online use requires epoch-level request metrics and a static-K8 reward
 baseline first.
+
+Actor pools and task endpoints share the same routing configuration. Pool and
+GPU lists contain one value per actor/endpoint. `request_cost` routing requires
+an explicitly resolved long-request threshold (the tuning-workload P75), which
+is stored in the run CSV. Multiple logical endpoints on GPU `0` validate
+routing behavior only, not multi-GPU scaling.
 
 `run_kmax_interference_experiment.py` is a small orchestration wrapper around
 `postgres_ai_operator_profile.py`. It starts a background bulk `AI_COMPLETE`
