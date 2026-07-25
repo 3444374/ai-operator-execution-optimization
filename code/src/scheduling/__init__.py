@@ -3,13 +3,16 @@
 from .admission import StaticAdmissionController
 from .models import (
     AdmissionDecision,
+    AdmissionObservation,
     BatchRequest,
     CollectedSubmission,
+    ControlDiagnostics,
     EndpointSnapshot,
     PayloadEnvelope,
     RoutingDecision,
     SubmissionCompletion,
     TopologySnapshot,
+    WindowDecision,
 )
 from .ray_adapter import RaySubmissionAdapter
 from .routing import RoundRobinEndpointRouter
@@ -18,8 +21,10 @@ from .topology import healthy_endpoints
 
 __all__ = [
     "AdmissionDecision",
+    "AdmissionObservation",
     "BatchRequest",
     "CollectedSubmission",
+    "ControlDiagnostics",
     "EndpointSnapshot",
     "PayloadEnvelope",
     "RaySubmissionAdapter",
@@ -31,5 +36,6 @@ __all__ = [
     "SubmissionCompletion",
     "SynchronousScheduler",
     "TopologySnapshot",
+    "WindowDecision",
     "healthy_endpoints",
 ]

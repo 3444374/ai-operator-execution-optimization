@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import math
+from dataclasses import dataclass, field
 from typing import Literal
 
 
@@ -79,6 +80,65 @@ class AdmissionDecision:
     limit: int
     action: str
     reason: str
+
+
+@dataclass(frozen=True)
+class AdmissionObservation:
+    observed_at_s: float
+    fresh: bool
+    inflight: int
+    running: int | None
+    waiting: int | None
+    kv_usage: float | None
+
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.observed_at_s) or self.observed_at_s < 0:
+            raise ValueError("observed_at_s must be finite and non-negative")
+        if self.inflight < 0:
+            raise ValueError("inflight must be non-negative")
+        if (
+            self.running is not None
+            and self.running < 0
+            or self.waiting is not None
+            and self.waiting < 0
+        ):
+            raise ValueError("running and waiting must be non-negative when present")
+        if self.kv_usage is not None and not 0.0 <= self.kv_usage <= 1.0:
+            raise ValueError("kv_usage must be between 0 and 1 when present")
+
+    @property
+    def has_service_metrics(self) -> bool:
+        return (
+            self.running is not None
+            and self.waiting is not None
+            and self.kv_usage is not None
+        )
+
+
+@dataclass(frozen=True)
+class ControlDiagnostics:
+    smoothed_running: float | None = None
+    smoothed_waiting: float | None = None
+    smoothed_kv_usage: float | None = None
+    error: float | None = None
+    integral_error: float | None = None
+    derivative_error: float | None = None
+    selected_arm: int | None = None
+    arm_scores: tuple[tuple[int, float], ...] = ()
+
+
+@dataclass(frozen=True)
+class WindowDecision:
+    window: int
+    action: str
+    reason: str
+    diagnostics: ControlDiagnostics = field(default_factory=ControlDiagnostics)
+
+    def __post_init__(self) -> None:
+        if self.window <= 0:
+            raise ValueError("window must be positive")
+        if not self.action or not self.reason:
+            raise ValueError("action and reason must be non-empty")
 
 
 @dataclass(frozen=True)
