@@ -53,7 +53,7 @@ from .observations import (
     NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
-from .ray_adapter import RaySubmissionAdapter
+from .ray_adapter import ActorWorkerPoolSubmitter, RaySubmissionAdapter
 from .routing import (
     LeastQueuedEndpointRouter,
     PrefixAffinityEndpointRouter,
@@ -82,6 +82,7 @@ __all__ = [
     "AdmissionPolicy",
     "AdmissionTraceEvent",
     "ArrivalReplayBatcher",
+    "ActorWorkerPoolSubmitter",
     "AimdAdmissionController",
     "AimdConfig",
     "BatchRequest",

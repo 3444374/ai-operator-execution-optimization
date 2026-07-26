@@ -8,6 +8,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
+from src.scheduling import ActorWorkerPoolSubmitter  # noqa: E402
 from src.scheduling.models import BatchRequest, PayloadEnvelope  # noqa: E402
 from src.scheduling.ray_adapter import RaySubmissionAdapter  # noqa: E402
 
@@ -27,6 +28,20 @@ class FakeRay:
         return ref.value
 
 
+class RecordingRemoteMethod:
+    def __init__(self):
+        self.payloads = []
+
+    def remote(self, payload):
+        self.payloads.append(payload)
+        return FakeRef(payload)
+
+
+class RecordingActor:
+    def __init__(self):
+        self.complete = RecordingRemoteMethod()
+
+
 def envelope() -> PayloadEnvelope:
     return PayloadEnvelope(
         BatchRequest("r1", "j1", "ai_complete", 1, 2, 3, "", 0.0, 0.0, "p1"),
@@ -35,6 +50,27 @@ def envelope() -> PayloadEnvelope:
 
 
 class RaySubmissionAdapterTests(unittest.TestCase):
+    def test_actor_worker_pool_rotates_inside_one_endpoint(self) -> None:
+        actors = [RecordingActor(), RecordingActor()]
+        submitter = ActorWorkerPoolSubmitter(actors, "complete")
+
+        submitter("a")
+        submitter("b")
+        submitter("c")
+
+        self.assertEqual(actors[0].complete.payloads, ["a", "c"])
+        self.assertEqual(actors[1].complete.payloads, ["b"])
+        self.assertEqual(submitter.worker_count, 2)
+        self.assertEqual(submitter.submission_counts, (2, 1))
+
+    def test_actor_worker_pool_rejects_empty_workers(self) -> None:
+        with self.assertRaisesRegex(ValueError, "actors must not be empty"):
+            ActorWorkerPoolSubmitter([], "complete")
+
+    def test_actor_worker_pool_rejects_empty_method_name(self) -> None:
+        with self.assertRaisesRegex(ValueError, "method_name must not be empty"):
+            ActorWorkerPoolSubmitter([RecordingActor()], "")
+
     def test_submit_and_collect_preserve_request_identity(self) -> None:
         adapter = RaySubmissionAdapter(
             FakeRay,

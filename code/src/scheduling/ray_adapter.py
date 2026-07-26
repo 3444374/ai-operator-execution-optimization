@@ -3,9 +3,35 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 
 from .models import CollectedSubmission, PayloadEnvelope, SubmissionCompletion
+
+
+class ActorWorkerPoolSubmitter:
+    def __init__(self, actors: Sequence[object], method_name: str):
+        if not actors:
+            raise ValueError("actors must not be empty")
+        if not method_name:
+            raise ValueError("method_name must not be empty")
+        self._actors = tuple(actors)
+        self._method_name = method_name
+        self._next_index = 0
+        self._submission_counts = [0] * len(self._actors)
+
+    @property
+    def worker_count(self) -> int:
+        return len(self._actors)
+
+    @property
+    def submission_counts(self) -> tuple[int, ...]:
+        return tuple(self._submission_counts)
+
+    def __call__(self, payload: object) -> object:
+        index = self._next_index
+        self._next_index = (index + 1) % len(self._actors)
+        self._submission_counts[index] += 1
+        return getattr(self._actors[index], self._method_name).remote(payload)
 
 
 class RaySubmissionAdapter:
