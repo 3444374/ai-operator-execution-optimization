@@ -2,7 +2,7 @@
 
 ## 统一入口
 
-先读 [`EXPERIMENT_EVIDENCE_REGISTRY.md`](EXPERIMENT_EVIDENCE_REGISTRY.md)。该台账覆盖本目录全部 19 个结果目录，并区分“设计预留、功能测试、真实链路门禁、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
+先读 [`EXPERIMENT_EVIDENCE_REGISTRY.md`](EXPERIMENT_EVIDENCE_REGISTRY.md)。该台账覆盖本目录全部 20 个结果目录，并区分“设计预留、功能测试、真实链路门禁、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 
 ## Output-aware Packing (2026-07-26)
 
@@ -28,6 +28,7 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
+| `adaptive_admission_controller_20260726/` | Real 64-request gate, randomized 512-request static/AIMD/EWMA/PID matrix, and AIMD-vs-static-K16 mechanism control. | Dynamic controllers beat K=8 by converging near K=16, but AIMD is indistinguishable from static K=16; shared-service protection remains unverified. |
 | `vllm_cuda_graph_512_20260726/` | Matched eager/CUDA-Graph 64-request gates plus one warm-up and three formal 512-request repeats per arm, with full prompt/output/request/resource/MFU tracing. | CUDA Graph is the current local steady-state baseline: E2E -71.76% and observed tokens/s +254.05% versus eager; this is deployment tuning, not an upstream scheduling contribution. |
 | `adaptive_flush_cross_rate_20260726/` | Real 512-request fixed-25/fixed-50/adaptive screens at about 51.4 and 12.85 req/s replay intensity. | Fixed-50 remains best or equivalent across the tested range; adaptive does not justify default complexity. |
 | `text_heldout_2048_20260726/` | Natural-EOS 2048-request held-out fixed-50/adaptive comparison with exact request and MFU audits. | Fixed-50 keeps a 1.75% throughput and 2.61% P99 advantage in the single screen; sustained backlog still amplifies tail latency. |

@@ -1568,3 +1568,28 @@
   补登记修复前 `output_aware_bfd_gate_20260726/`。
 - 本次没有改变任何实验数字或机制结论，因此不改研究计划和论文结论；只收口
   可追溯性、入口和结论边界。
+
+## 2026-07-26 Adaptive admission 真实 GPU 矩阵
+
+- 在现有 CUDA Graph vLLM 0.25.1/Qwen2.5-1.5B、RTX 5070 单 GPU 链路上，
+  完成 64 请求 static K8/AIMD/EWMA-AIMD/PID 门禁，以及 512 请求每策略
+  1 warm-up + 3 formal 的随机交错矩阵。
+- 12 个四策略 formal runs 共 6,144/6,144 请求 completed；prompt tokens
+  均为 63,970，vLLM success delta 均为 512，201 列 schema、request/control/
+  resource/MFU/energy 证据完整。
+- AIMD/EWMA-AIMD/PID 相对 static K8 的 E2E 分别 -32.04%/-31.94%/
+  -30.32%，tokens/s 分别 +46.26%/+46.21%/+42.43%；但三个控制器平均
+  admission limit 均为 15.78–15.93，暴露缺失 static K16 机制 control。
+- 追加随机交错 AIMD vs static K16，各 1 warm-up + 3 formal。AIMD 相对
+  static K16：E2E +0.66%、tokens/s -0.69%、request P99 -0.07%、goodput
+  -0.66%、energy/1k tokens +0.37%、MFU -0.13%，均不可分辨。
+- 当前结论是动态控制器相对 K8 的收益来自更高并发上限，不是反馈控制增量。
+  单作业稳态优先简单静态窗口；shared-vLLM 仍以 K8 为 guardrail，后续如继续
+  adaptive，只做 foreground/background 保护验证，不在稳态单作业上调 PID。
+- 三组 runner 共 28/28 runs、0 incident。多轮 Windows Ray shutdown stderr
+  保留非致命 access violation 文本，但两侧均出现，profiler exit=0、manifest、
+  exactly-once 请求和数据库完成状态均通过。结果见
+  `experiments/results/adaptive_admission_controller_20260726/`。
+- 合并前完整测试在项目 Python 3.10 实验环境暴露错误清理路径直接调用
+  Python 3.11 `BaseException.add_note()` 的兼容性缺口；增加 3.10 fallback，
+  保持原始异常和 `__notes__` 语义。沙箱外完整 `code/tests` 为 311 passed。

@@ -73,6 +73,10 @@
      增量，因此当前证据只支持更长 coalescing window，不支持动态策略优于
      最佳静态窗口。详见
      `experiments/results/adaptive_flush_randomized_20260726/`。
+   - AIMD、EWMA-AIMD、PID 已完成单作业 512 请求真实矩阵。三者相对
+     static K=8 的 E2E 降低约 30–32%，但平均窗口均接近 16；追加的随机交错
+     AIMD vs static K=16 对照显示 E2E +0.66%、tokens/s -0.69%，没有动态
+     反馈增量。该结果不覆盖 shared-vLLM foreground/background 保护。
    - Output-aware deterministic BFD 已完成真实单 GPU 64→512→1024 分级验证。
      512 行 trace-metadata 成本模式相对同成本 sequential 吞吐 +12.019%，
      但 1024 行反转为 -5.156%，并产生更多 submission、较高能耗和较低 MFU。
@@ -121,6 +125,8 @@
   CUDA Graph 的 E2E 均值 79.85s（-71.76%）、observed tokens/s
   2875.68（+254.05%）、MFU 14.51%（eager 4.02%）。该结果用于选定后续
   本地 steady-state baseline，不作为上游调度贡献
+- ✅ AIMD/EWMA-AIMD/PID 单作业 GPU 矩阵与 static K=16 机制对照：
+  控制器相对 K=8 的收益来自升至 K≈16；AIMD 未优于同上限静态策略
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
@@ -133,6 +139,8 @@
    契约已完成，不能把单卡逻辑池写成多 GPU 性能证据。
 5. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
 6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+7. Adaptive K_max 仍需 shared-vLLM foreground/background 复验；当前单作业
+   结果不能证明动态控制能同时保护前台尾延迟和后台吞吐。
 
 **指标状态**：
 - 新实验已经系统采集 `tokens/s`、request P50/P95/P99、SLO

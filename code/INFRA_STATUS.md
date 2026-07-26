@@ -6,7 +6,7 @@
 边界，以及下一步还需要实现和验证的内容。研究方向仍是数据库 AI 算子外部执行
 链路，不修改 vLLM 内部。
 
-全部机制、代码测试和 19 个正式结果目录的逐项对应见
+全部机制、代码测试和 20 个正式结果目录的逐项对应见
 `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`。该台账明确区分代码完成、
 真实链路门禁和性能证据。
 
@@ -97,7 +97,10 @@ PostgreSQL
 - Queue-adaptive flush 已完成随机化变长输出、跨 arrival-rate 和 2048
   held-out：它稳定优于 fixed-25，但未优于 fixed-50，因此不能写成动态策略
   优于最佳静态窗口。当前默认采用 fixed 50ms。
-- AIMD/EWMA/PID 已完成代码与单元/集成契约，尚没有充分真实 GPU 对照。
+- AIMD/EWMA/PID 已完成代码、单元/集成契约和单作业 512 请求真实 GPU
+  矩阵。三者都把窗口升到接近 16；AIMD 与 static K=16 的随机交错机制对照
+  不可分辨，因此当前没有动态反馈本身的增量证据。Shared-vLLM 双作业保护
+  仍未复验。
 - UCB 多臂老虎机已有有限 action set 与 SLO reward 的纯控制器代码，但尚未
   接入 profiler。原因是缺少稳定的 epoch-level reward/归因边界；现在接入会把
   跨 epoch 的请求完成错误归因给当前 arm。
@@ -212,7 +215,7 @@ PostgreSQL
 | BFD/row-cap-first | 高 | 512 + 1024 | 负向边界明确，不默认启用 |
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
 | Queue-adaptive flush | 高 | 512 变长重复 + 跨 rate + 2048 held-out | 优于 fixed-25；未优于 fixed-50 |
-| AIMD/EWMA/PID | 高（代码） | 缺正式 GPU 矩阵 | 不能声称有效 |
+| AIMD/EWMA/PID | 高（代码） | 单作业 512 矩阵 + AIMD/static K16 对照 | 未优于同上限静态策略；shared-vLLM 待验证 |
 | UCB bandit | 中（纯控制器） | 无端到端实验 | 尚未接入执行路径 |
 | Actor pool / endpoint routing | 高（接口/契约） | 单 GPU 为主 | 多 GPU 验证未完成 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |

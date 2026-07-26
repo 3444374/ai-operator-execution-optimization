@@ -6,7 +6,7 @@
 
 文本主线的正式研究实验已经开展：数据组织、K_max/flush 提交控制、联合搜索、prefix-aware、BFD/row-cap、CUDA Graph baseline 和算子代价估计均已有不同等级的证据。统一完成度、全部结果目录和结论边界见 [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
 
-当前尚未完成的主要验证是 AIMD/EWMA/PID 正式 GPU 矩阵、UCB 的 epoch reward 正确归因与端到端接入、真实多 endpoint/多 GPU 调度、Ray/vLLM 容量分层调优、prefix cache 开启后的独立消融，以及图像 workload 多模态泛化。GPU-backed `AI_EMBED` 动机证据仍放在 `motivation/results/gpu/`，不与方法实验混放。
+当前尚未完成的主要验证是 adaptive K_max 的 shared-vLLM 双作业复验、UCB 的 epoch reward 正确归因与端到端接入、真实多 endpoint/多 GPU 调度、Ray/vLLM 容量分层调优、prefix cache 开启后的独立消融，以及图像 workload 多模态泛化。AIMD/EWMA/PID 的单作业 GPU 矩阵已完成，但没有优于同上限 static K=16。GPU-backed `AI_EMBED` 动机证据仍放在 `motivation/results/gpu/`，不与方法实验混放。
 
 ## 目录分工
 

@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-26，新增提交控制与联合实验闭环）
+Date: 2026-07-20（最后更新：2026-07-26，新增 adaptive admission GPU 矩阵）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -27,12 +27,15 @@ Date: 2026-07-20（最后更新：2026-07-26，新增提交控制与联合实验
 | Batch Policy × K_max 矩阵 | ✅ 07-19 | K_max 和 batch shape 耦合：fixed128 只有 4 个请求，K_max>4 无调度空间 | 仍是单 job 离线场景 |
 | Shared-vLLM K_max 干扰（2-job）| ✅ 07-19 | **K_max 在共享 vLLM 下必要**：bulk unbounded 时 foreground E2E 恶化 2.3×（4.9→11.4s），bulk 自身吞吐几乎不变 | 只有 2 个 job；只有一种 foreground size |
 | Shared-vLLM K_max Sweep + Adaptive | ✅ 07-19 | K_max=8 是最佳静态 guardrail；adaptive 触发了 downshift（102 次/run）| **❌ adaptive 不如 static K=8**（foreground E2E 10.2s vs 7.3s） |
+| AIMD/EWMA-AIMD/PID 单作业 GPU 矩阵 | ✅ 07-26 | 三者相对 static K=8 快约 30–32% E2E，但都把窗口升到 K≈16 | AIMD 与 static K=16 不可分辨；未证明反馈控制增量，也未复验 shared-vLLM 前台保护 |
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
 | **多 job/多 foreground size 扩展** | ❌ 未做 | — | 不同 foreground size、arrival offset、background policy 下的公平性 |
 
 **RC2 当前状态**：✅ static K8 guardrail 与 fixed 50ms coalescing 均有真实
 证据。跨 arrival-rate 和 2048 held-out 未显示 queue-adaptive 增量，因此当前
-单 GPU 默认采用 fixed 50ms；adaptive 保留为配置变化后的候选，不再继续堆叠复杂度。
+单 GPU 默认采用 fixed 50ms。单作业 AIMD/EWMA/PID 矩阵同样表明复杂控制器
+未优于同上限 static K=16；adaptive 只保留给 shared-service/阶段变化复验，
+不继续在当前稳态 workload 上调 PID 参数。
 
 ### 1.3 耦合验证
 
@@ -79,6 +82,8 @@ grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。它仍不�
 新增的部分证据：
 
 - queue-adaptive 相对 fixed-25 有稳定收益，但 fixed-50 与其不可分辨；
+- AIMD/EWMA/PID 相对 static K=8 的收益来自把窗口升至约 16；AIMD 与
+  static K=16 不可分辨，尚无动态反馈增量证据；
 - 当前单 GPU 下独立拼接与联合候选不可分辨，分层优化足够。
 
 ---
@@ -166,6 +171,12 @@ CONCUR-AIMD 首选理由：无 EWMA 契合 `code/AGENTS.md` "保持简单"（Ray
 **放弃条件**：如果 3 轮改进后 adaptive 仍不能达到静态 K=8 的 90% 性能（foreground E2E ≤ 8s），RC2 降级为"K_max admission control 必要性论证 + queue-adaptive 作为 Discussion 探索方向"。
 
 **同时追加指标**：inflight/queue 时间序列、K_max 时间序列、`tokens/s`。
+
+**2026-07-26 执行结果**：变长输出、完整 control/request/resource trace 和
+单作业 GPU 矩阵已完成。AIMD、EWMA-AIMD、PID 都迅速升到 K≈16；追加
+static K=16 机制 control 后，AIMD 的 E2E +0.66%、tokens/s -0.69%，差异
+不可分辨。下一轮若继续，只做 shared-vLLM foreground/background 的
+static K=8/static K=16/AIMD 对照；不在当前稳态单作业上继续调参。
 
 ### P0（并列）：两项策略联合消融（1 周）
 
