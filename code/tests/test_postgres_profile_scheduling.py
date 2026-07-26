@@ -1064,10 +1064,25 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(events[1][0], "preflight")
         self.assertEqual(
             events[1][2],
-            profile.RESULT_SCHEMA_PREFLIGHT_FIELDS,
+            profile.FORMAL_RESULT_FIELDS,
         )
-        self.assertEqual(events[1][3], {"allow_additional_fields": True})
+        self.assertEqual(events[1][3], {})
         self.assertEqual(events[2], ("run_once", False, "formal", 1))
+
+    def test_formal_result_schema_rejects_missing_non_ray_field(self) -> None:
+        row = {field: "" for field in profile.FORMAL_RESULT_FIELDS}
+        del row["server_version"]
+
+        with self.assertRaisesRegex(RuntimeError, "formal result schema drift"):
+            profile._validated_formal_result_row(row)
+
+    def test_formal_result_schema_rejects_reordered_non_ray_field(self) -> None:
+        fields = list(profile.FORMAL_RESULT_FIELDS)
+        fields[0], fields[1] = fields[1], fields[0]
+        row = {field: "" for field in fields}
+
+        with self.assertRaisesRegex(RuntimeError, "formal result schema drift"):
+            profile._validated_formal_result_row(row)
 
     def test_static_run_never_builds_adaptive_provider(self) -> None:
         args = profile.parse_args(
