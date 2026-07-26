@@ -79,6 +79,12 @@ single-GPU adaptive-controller experiments.
 
 ## 5. Routing Design
 
+Before routing, the execution adapter must distinguish a vLLM service endpoint
+from the Ray actor workers that submit to it. One endpoint may own multiple
+actors, but those actors must not appear as separate `EndpointSnapshot`
+instances. The endpoint-local actor pool is specified in
+`2026-07-26-ray-vllm-execution-tuning-design.md`.
+
 ### 5.1 Tie-fair least-queued
 
 `LeastQueuedEndpointRouter` continues to minimize observed
@@ -253,3 +259,12 @@ The future multi-GPU experiment remains explicitly listed in
 `code/INFRA_STATUS.md` until real independent endpoints have completed the
 matrix above. A future agent must not close that item from unit tests or the
 logical dual-endpoint gate.
+
+Execution order is:
+
+```text
+single-endpoint vLLM/Ray tuning
+-> endpoint-local actor pool boundary
+-> logical dual-endpoint contract gate
+-> real multi-GPU routing experiment
+```

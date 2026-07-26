@@ -1428,3 +1428,24 @@
   vLLM 的双逻辑 endpoint 仅验证路由、trace、exactly-once 和客户端开销，未来在
   独立 GPU endpoint 上完成吞吐、尾延迟、MFU、公平性与故障迁移矩阵后才能晋级策略。
 - 本次仅固化设计与交接边界，尚未修改生产路由代码或运行新的性能实验。
+
+## 2026-07-26 Ray 与 vLLM 执行层调优设计
+
+- 用户确认把尚未系统使用的 Ray 参数优化加入主线，并要求继续审计其余可优化点。
+  现有 2048 held-out 正式配置为 `ray_task`、Daft native、无 partition；
+  Ray submit 约 1.54s、fan-in 约 0.17s，而 E2E 约 456.55s，因此不优先做
+  object-store、显式 `ray.put` 或 fan-in 微优化。
+- 只读审计当前 vLLM 0.25.1 容器确认服务使用 `--enforce-eager`、
+  `--gpu-memory-utilization 0.75`、`--enable-mfu-metrics` 和
+  `--no-enable-prefix-caching`，且没有显式记录/设置
+  `max_num_batched_tokens` 与 `max_num_seqs`。当前服务配置适合作为 eager
+  baseline，但不是唯一稳态性能 baseline。
+- 代码审查进一步发现 Ray actor 数量当前被直接建模为 endpoint 数量，
+  混淆了“独立 vLLM/GPU 服务容量”和“客户端 actor worker”。新增
+  `code_doc/superpowers/specs/2026-07-26-ray-vllm-execution-tuning-design.md`，
+  要求一个 endpoint 可拥有多个 actor worker，endpoint routing 与 endpoint-local
+  worker selection 分层。
+- 新设计按 CUDA Graph 门禁、Ray task/actor 有效并发、vLLM scheduling capacity、
+  prefix-cache 机制和未来多 endpoint/multi-GPU 的顺序执行；Daft Ray runner
+  sweep 仅在数据组织超过 E2E 5% 或多模态预处理到来时触发。
+- 本次仍只更新设计与交接规则，尚未重启服务、修改生产代码或新增性能结论。

@@ -29,3 +29,6 @@ Current single-GPU text evidence-closure implementation plan:
 
 Current multi-endpoint routing readiness design:
 `superpowers/specs/2026-07-26-multi-endpoint-routing-readiness-design.md`.
+
+Current Ray and vLLM execution-layer tuning design:
+`superpowers/specs/2026-07-26-ray-vllm-execution-tuning-design.md`.
