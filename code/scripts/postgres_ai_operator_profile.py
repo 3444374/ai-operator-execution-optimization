@@ -286,6 +286,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--model-metrics-url", default=os.environ.get("MODEL_METRICS_URL"))
     parser.add_argument("--model-workers", type=int, default=2)
+    parser.add_argument("--actor-workers-per-endpoint", type=int, default=0)
+    parser.add_argument("--ray-actor-max-concurrency", type=int, default=1)
+    parser.add_argument("--ray-worker-num-cpus", type=float, default=0.25)
     parser.add_argument("--max-inflight", type=int, default=8)
     parser.add_argument(
         "--endpoint-routing",
@@ -424,6 +427,35 @@ def completion_endpoint_urls(args: argparse.Namespace) -> list[str]:
     if args.completion_endpoint_url:
         return [args.completion_endpoint_url]
     return []
+
+
+def _resolve_actor_workers_per_endpoint(
+    args: argparse.Namespace,
+    endpoint_count: int,
+) -> int:
+    if endpoint_count <= 0:
+        raise SystemExit("endpoint_count must be positive")
+    if args.actor_workers_per_endpoint < 0:
+        raise SystemExit("--actor-workers-per-endpoint must be non-negative")
+    if args.actor_workers_per_endpoint:
+        return args.actor_workers_per_endpoint
+    if endpoint_count > 1:
+        raise SystemExit(
+            "multi-endpoint ray_actor requires --actor-workers-per-endpoint"
+        )
+    if args.model_workers <= 0:
+        raise SystemExit("--model-workers must be positive")
+    return args.model_workers
+
+
+def _validate_ray_actor_resources(args: argparse.Namespace) -> None:
+    if args.ray_actor_max_concurrency <= 0:
+        raise SystemExit("--ray-actor-max-concurrency must be positive")
+    if (
+        not math.isfinite(args.ray_worker_num_cpus)
+        or args.ray_worker_num_cpus <= 0
+    ):
+        raise SystemExit("--ray-worker-num-cpus must be finite and positive")
 
 
 def require_psycopg():
@@ -2367,6 +2399,8 @@ def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
 
 
 def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
+    if args.executor == "ray_actor":
+        _validate_ray_actor_resources(args)
     _validate_request_trace_args(args)
     _validate_arrival_replay_args(args)
     _validate_resource_efficiency_args(args)
@@ -2383,6 +2417,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     if args.operator == "ai_complete" and model_backend == "ollama" and not endpoint_urls:
         endpoint_urls = ["http://localhost:11434"]
         endpoint_url_label = ";".join(endpoint_urls)
+    if args.executor == "ray_actor":
+        endpoint_count = (
+            1 if model_backend == "fake" else max(1, len(endpoint_urls))
+        )
+        _resolve_actor_workers_per_endpoint(args, endpoint_count)
     model_name = args.completion_model if args.operator == "ai_complete" else args.embedding_model
     api_key = args.completion_api_key if args.operator == "ai_complete" else args.embedding_api_key
     request_timeout_s = (

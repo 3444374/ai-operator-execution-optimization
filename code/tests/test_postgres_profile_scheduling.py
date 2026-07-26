@@ -44,6 +44,49 @@ from src.scheduling.scheduler import SchedulerResult  # noqa: E402
 
 
 class SchedulingProfileHelperTests(unittest.TestCase):
+    def test_ray_worker_cli_defaults_are_explicit(self) -> None:
+        args = profile.parse_args([])
+
+        self.assertEqual(args.actor_workers_per_endpoint, 0)
+        self.assertEqual(args.ray_actor_max_concurrency, 1)
+        self.assertEqual(args.ray_worker_num_cpus, 0.25)
+
+    def test_single_endpoint_legacy_workers_remain_compatible(self) -> None:
+        args = profile.parse_args(["--model-workers", "4"])
+
+        self.assertEqual(
+            profile._resolve_actor_workers_per_endpoint(args, 1),
+            4,
+        )
+
+    def test_multi_endpoint_actor_requires_explicit_workers(self) -> None:
+        args = profile.parse_args(["--executor", "ray_actor"])
+
+        with self.assertRaisesRegex(
+            SystemExit,
+            "actor-workers-per-endpoint",
+        ):
+            profile._resolve_actor_workers_per_endpoint(args, 2)
+
+    def test_invalid_ray_actor_resources_fail_before_initialization(self) -> None:
+        invalid_options = [
+            ("--ray-actor-max-concurrency", "0"),
+            ("--ray-worker-num-cpus", "nan"),
+        ]
+
+        for option, value in invalid_options:
+            with self.subTest(option=option, value=value):
+                args = profile.parse_args([option, value])
+                with (
+                    patch.object(profile, "connect") as connect,
+                    patch.object(profile, "require_ray") as require_ray,
+                ):
+                    with self.assertRaises(SystemExit):
+                        profile.run_once(args, "formal", 1)
+
+                connect.assert_not_called()
+                require_ray.assert_not_called()
+
     def test_batch_envelopes_preserve_arrow_payload_and_compute_cost(self) -> None:
         batch = pa.table(
             {
