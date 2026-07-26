@@ -3776,10 +3776,17 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             try:
                 fail_job(conn, job_id)
             except BaseException as fail_error:
-                original_error.add_note(
+                note = (
                     "Failed to mark ai_operator_job "
                     f"{job_id} failed: {fail_error!r}"
                 )
+                if hasattr(original_error, "add_note"):
+                    original_error.add_note(note)
+                else:
+                    original_error.__notes__ = [
+                        *getattr(original_error, "__notes__", ()),
+                        note,
+                    ]
         raise
     finally:
         if resource_sampler is not None and resource_sampler.is_running:
