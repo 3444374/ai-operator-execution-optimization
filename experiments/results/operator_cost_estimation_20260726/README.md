@@ -1,5 +1,22 @@
 # AI 算子端到端代价估计（2026-07-26）
 
+## 复现入口
+
+单个 grouped held-out split 使用：
+
+```powershell
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
+  code\scripts\estimate_operator_cost.py `
+  --input-csv <合并后的真实 runs.csv> `
+  --output experiments\results\operator_cost_estimation_20260726\e2e_cost_model.json `
+  --target e2e_s `
+  --test-fraction 0.25 `
+  --seed 20260726 `
+  --alpha 1.0
+```
+
+五个 seed 的 JSON 是独立重复执行得到的稳健性审计。输入只能使用真实 profile CSV；合并和过滤后必须保持 283 行、70 个配置组，并由脚本按配置组切分，不能先按行随机切分。
+
 ## 目标
 
 基于已经采集的真实 profile 数据，验证仅使用执行前可知特征能否估计

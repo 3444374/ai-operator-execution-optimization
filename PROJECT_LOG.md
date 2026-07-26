@@ -1551,3 +1551,20 @@
 - 后续本地 Ray task/actor 与 capacity 调优采用 CUDA Graph 作为部署 baseline；
   该提升属于 vLLM 配置选择，不作为论文上游调度策略贡献。结果与绘图数据见
   `experiments/results/vllm_cuda_graph_512_20260726/`。
+
+## 2026-07-26 实验与机制证据文档收口
+
+- 审计 `experiments/results/` 全部 19 个一级结果目录，确认每个目录均有
+  `README.md`，并新增 `EXPERIMENT_EVIDENCE_REGISTRY.md` 作为统一入口。
+- 台账逐项映射 fixed/token-budget/length/prefix/BFD/row-cap、K_max、adaptive
+  flush、AIMD/EWMA/PID、UCB、多 endpoint routing、联合搜索、CUDA Graph、
+  代价估计和多模态预留，明确区分设计、功能测试、真实门禁、GPU 筛选和重复/
+  留出证据。
+- 明确 UCB 目前只有纯控制器和 SLO reward 测试，未接入 profiler，也没有端到端
+  GPU 结果；AIMD/EWMA/PID 同样不能由代码测试推出性能有效。真实多 endpoint/
+  多 GPU、公平性和故障迁移仍待后续硬件验证。
+- 修复 `output_aware_bfd_512_20260726/README.md` 等历史报告的编码和信息缺口，
+  补充统一复现命令、原始证据路径、incident、排除理由和后继结果；根结果索引
+  补登记修复前 `output_aware_bfd_gate_20260726/`。
+- 本次没有改变任何实验数字或机制结论，因此不改研究计划和论文结论；只收口
+  可追溯性、入口和结论边界。

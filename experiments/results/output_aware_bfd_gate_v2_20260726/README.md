@@ -1,5 +1,20 @@
 # Output-aware BFD 64-row Infrastructure Gate
 
+## 复现入口
+
+```powershell
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
+  code\scripts\run_ai_operator_scenarios.py `
+  --config experiments\results\output_aware_bfd_gate_v2_20260726\scenario_config.json `
+  --profiler code\scripts\postgres_ai_operator_profile.py `
+  --python-executable D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
+  --output-dir experiments\results\output_aware_bfd_gate_v2_20260726 `
+  --health-url http://localhost:8000/health `
+  --metrics-url http://localhost:8000/metrics
+```
+
+`manifest.json` 保存 12 条展开后的精确命令和完成状态；`runs.csv` 以及逐轮 request/submission/flush/control/resource CSV 是原始证据。复现前应确认 health、metrics、模型、prefix-cache 和 eager/CUDA-Graph 配置与 manifest 一致。
+
 ## 实验设置与问题
 
 本门禁只验证修复后的统一约束和观测链路，不用于比较策略性能。真实链路为
@@ -25,4 +40,3 @@ K_max=8、输出上限 16 tokens。每场景 1 次 warm-up + 1 次 formal。
 门禁证明基础设施可以进入 512 行正式重复。64 行运行太短，GPU 采样波动大，
 不能据此声称任一 packing 策略更快。复现入口见 `scenario_config.json`，
 原始结果见 `runs.csv`、`manifest.json` 及逐 run trace。
-

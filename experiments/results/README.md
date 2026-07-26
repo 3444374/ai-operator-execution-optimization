@@ -1,5 +1,9 @@
 # Research Experiment Results
 
+## 统一入口
+
+先读 [`EXPERIMENT_EVIDENCE_REGISTRY.md`](EXPERIMENT_EVIDENCE_REGISTRY.md)。该台账覆盖本目录全部 19 个结果目录，并区分“设计预留、功能测试、真实链路门禁、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
+
 ## Output-aware Packing (2026-07-26)
 
 ### Current mechanism decision
@@ -14,6 +18,7 @@
 | Directory | Content | Boundary |
 |---|---|---|
 | `row_cap_aware_packing_gate_20260726/` | 64-row real PostgreSQL→Daft→Ray→vLLM gate for sequential, classic BFD, and BFD-inspired row-cap-first placement. | Infrastructure validation only; 6/6 runs and all request/resource/MFU invariants pass, but one formal repeat cannot support performance ranking. |
+| `output_aware_bfd_gate_20260726/` | Superseded pre-fix 64-row output-aware BFD gate. | Lifecycle/resource evidence remains auditable, but sequential and BFD row caps were not matched; excluded from algorithm comparisons. |
 | `output_aware_bfd_gate_v2_20260726/` | 64-row real-component gate for output-cost modes, sequential/BFD packing, request/resource traces, power, energy, and MFU. | Infrastructure validation only; all token-budget policies share token and row caps. |
 | `output_aware_bfd_512_v2_20260726/` | Six-cell 512-row sequential/BFD × output-cost comparison, with 18 formal runs and plot-ready summaries. | BFD trace is a positive candidate at 512 rows, but n=3 and trace metadata is not a paired output oracle. |
 | `output_aware_bfd_1024_20260726/` | Held-out 1024-row confirmation against same-cost sequential and strongest practical baseline. | Negative scale confirmation: current BFD does not generalize; row-cap-aware joint tuning is required. |

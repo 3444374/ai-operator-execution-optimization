@@ -4,7 +4,9 @@
 
 ## 当前状态
 
-正式研究实验尚未全面开始。当前已有 GPU-backed `AI_EMBED` 链路画像属于动机证据，仍放在 `motivation/results/gpu/`。后续在 vLLM + Daft + Ray 链路上做数据组织策略消融、提交控制策略消融、耦合验证、多模态泛化验证等方法验证时，应逐步登记到本目录。
+文本主线的正式研究实验已经开展：数据组织、K_max/flush 提交控制、联合搜索、prefix-aware、BFD/row-cap、CUDA Graph baseline 和算子代价估计均已有不同等级的证据。统一完成度、全部结果目录和结论边界见 [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
+
+当前尚未完成的主要验证是 AIMD/EWMA/PID 正式 GPU 矩阵、UCB 的 epoch reward 正确归因与端到端接入、真实多 endpoint/多 GPU 调度、Ray/vLLM 容量分层调优、prefix cache 开启后的独立消融，以及图像 workload 多模态泛化。GPU-backed `AI_EMBED` 动机证据仍放在 `motivation/results/gpu/`，不与方法实验混放。
 
 ## 目录分工
 
@@ -20,7 +22,7 @@
 | 研究内容一：数据组织策略 | batch 构造方式（按计算量 vs 按行数）、分组策略如何影响端到端性能 | token-budget vs 固定 batch_size、length-aligned vs prefix-aware vs random、Daft into_batches/repartition/batch_size 参数 sweep |
 | 研究内容二：调度与提交控制策略 | Ray actor 自适应提交、routing、K_max 动态控制如何影响 queue wait 和 GPU utilization | queue-adaptive flush vs 固定 K_max、actor pool 分池 routing、Daft max_concurrency/gpus 参数 sweep |
 | 多模态泛化验证 | 文本上的策略在图像 workload 上是否一致有效 | 同一套策略代码，文本 df[“prompt”] → 图像 df[“image”]，token-budget → frame-budget |
-| 算子代价估计（补充） | profile-driven 成本预测是否可用 | 基于已有实验数据的二次分析，MAPE < 20%，不新增实验 |
+| 算子代价估计（补充） | profile-driven 成本预测是否可用 | 基于已有实验数据做 grouped held-out 二次分析；报告 MAE/MAPE/RMSE/R²，不预设 MAPE 必须低于 20% |
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index baseline），不作为独立实验阶段。
 
