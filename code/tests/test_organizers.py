@@ -175,10 +175,54 @@ class OrganizerTests(unittest.TestCase):
         )
         result = organizer.organize(table)
 
-        self.assertEqual(result.batches[0].column("prefix_key").to_pylist(), ["a", "a"])
-        self.assertEqual(result.batches[1].column("prefix_key").to_pylist(), ["b", "b"])
+        self.assertEqual(result.batches[0].column("prefix_key").to_pylist(), ["b", "b"])
+        self.assertEqual(result.batches[1].column("prefix_key").to_pylist(), ["a", "a"])
         self.assertEqual(result.metrics["organization_policy_family"], "prefix_aware")
         self.assertEqual(result.metrics["prefix_group_ratio"], 1.0)
+
+    def test_prefix_aware_preserves_order_when_all_prefixes_are_unique(self) -> None:
+        table = pa.table(
+            {
+                "doc_id": [1, 2, 3, 4],
+                "prompt_tokens": [40, 10, 30, 20],
+                "prefix_key": ["d", "a", "c", "b"],
+            }
+        )
+
+        result = make_organizer(
+            "arrow",
+            OrganizerConfig(
+                batch_size=4,
+                batching_policy="prefix_aware_fixed_rows",
+            ),
+        ).organize(table)
+
+        self.assertEqual(
+            result.batches[0].column("doc_id").to_pylist(),
+            [1, 2, 3, 4],
+        )
+
+    def test_prefix_aware_groups_only_reused_prefix_and_preserves_group_order(self) -> None:
+        table = pa.table(
+            {
+                "doc_id": [1, 2, 3, 4, 5],
+                "prompt_tokens": [30, 50, 10, 40, 20],
+                "prefix_key": ["unique-a", "shared", "unique-b", "shared", "shared"],
+            }
+        )
+
+        result = make_organizer(
+            "arrow",
+            OrganizerConfig(
+                batch_size=5,
+                batching_policy="prefix_aware_fixed_rows",
+            ),
+        ).organize(table)
+
+        self.assertEqual(
+            result.batches[0].column("doc_id").to_pylist(),
+            [1, 2, 4, 5, 3],
+        )
 
     def test_arrow_best_fit_uses_shared_deterministic_membership(self) -> None:
         result = make_organizer(

@@ -274,14 +274,24 @@ def _sort_table_for_policy(table: pa.Table, policy: BatchingPolicy) -> pa.Table:
     if policy in ("prefix_aware_fixed_rows", "prefix_aware_token_budget"):
         if "prefix_key" not in table.column_names:
             return table
-        order = sorted(
-            range(table.num_rows),
-            key=lambda index: (
-                str(table.column("prefix_key")[index].as_py() or ""),
-                _safe_int(table.column("prompt_tokens")[index].as_py()) if "prompt_tokens" in table.column_names else 0,
-                _safe_int(table.column("doc_id")[index].as_py()) if "doc_id" in table.column_names else index,
-            ),
-        )
+        prefixes = [
+            str(table.column("prefix_key")[index].as_py() or "")
+            for index in range(table.num_rows)
+        ]
+        groups: dict[str, list[int]] = {}
+        for index, value in enumerate(prefixes):
+            if value:
+                groups.setdefault(value, []).append(index)
+        order = []
+        emitted: set[str] = set()
+        for index, value in enumerate(prefixes):
+            if not value or len(groups.get(value, ())) <= 1:
+                order.append(index)
+                continue
+            if value in emitted:
+                continue
+            order.extend(groups[value])
+            emitted.add(value)
         return table.take(pa.array(order, type=pa.int64()))
     return table
 

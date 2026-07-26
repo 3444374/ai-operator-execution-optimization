@@ -625,3 +625,16 @@ Latest GPU-backed sink comparison:
 motivation/results/gpu/pgvector_writeback_20260714.md
 motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
 ```
+
+## 2026-07-26 Workload materialization and cost estimation
+
+`import_ai_complete_workload.py` can use a live vLLM-compatible `/tokenize`
+endpoint when a local tokenizer checkout is unavailable. Controlled-prefix
+materialization clones complete rows, chooses an exact nested subset
+deterministically, preserves the original prompt suffix, and fails rather than
+truncating a row that exceeds the model context.
+
+`estimate_operator_cost.py` fits a grouped held-out cost model from one or more
+profile CSVs. It uses only pre-execution features and writes the feature schema,
+split groups, coefficients, normalization values, and regression metrics to
+JSON.

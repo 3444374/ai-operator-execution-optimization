@@ -7,10 +7,12 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import sys
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
+from urllib import request
 
 import psycopg
 
@@ -88,11 +90,39 @@ def parse_args() -> argparse.Namespace:
         help="Optional local tokenizer path used to store and filter model-specific prompt token counts.",
     )
     parser.add_argument(
+        "--tokenizer-endpoint-url",
+        help="Optional vLLM-compatible /tokenize endpoint used for model-specific prompt token counts.",
+    )
+    parser.add_argument(
+        "--tokenizer-model",
+        help="Model name sent to --tokenizer-endpoint-url.",
+    )
+    parser.add_argument("--tokenizer-timeout-s", type=float, default=10.0)
+    parser.add_argument(
         "--max-model-len",
         type=int,
         help="Drop prompts whose tokenizer count plus completion tokens exceeds this limit.",
     )
     parser.add_argument("--completion-max-tokens", type=int, default=16)
+    parser.add_argument(
+        "--controlled-prefix-source-workload",
+        help="Clone an existing database workload and add a deterministic shared prefix.",
+    )
+    parser.add_argument("--controlled-prefix-ratio", type=float)
+    parser.add_argument(
+        "--controlled-prefix-source-max-prompt-tokens",
+        type=int,
+        default=1400,
+    )
+    parser.add_argument(
+        "--controlled-prefix-text",
+        default=(
+            "You are processing database AI operator requests. Follow the requested "
+            "output format exactly, preserve identifiers, avoid unsupported claims, "
+            "and return only the requested answer. Apply these instructions to the "
+            "independent user request below."
+        ),
+    )
     parser.add_argument("--reset-documents", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
@@ -142,6 +172,43 @@ def load_prompt_token_counter(tokenizer_path: str) -> Callable[[str], int]:
 
     def count_tokens(text: str) -> int:
         return len(tokenizer.encode(text, add_special_tokens=False))
+
+    return count_tokens
+
+
+def load_http_prompt_token_counter(
+    endpoint_url: str,
+    model: str,
+    *,
+    timeout_s: float = 10.0,
+    open_request: Callable = request.urlopen,
+) -> Callable[[str], int]:
+    """Build a prompt counter backed by a vLLM-compatible /tokenize endpoint."""
+    if not endpoint_url:
+        raise ValueError("tokenizer endpoint URL must be non-empty")
+    if not model:
+        raise ValueError("tokenizer model must be non-empty")
+    if not math.isfinite(timeout_s) or timeout_s <= 0:
+        raise ValueError("tokenizer timeout must be positive")
+
+    def count_tokens(text: str) -> int:
+        body = json.dumps({"model": model, "prompt": text}).encode("utf-8")
+        http_request = request.Request(
+            endpoint_url,
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with open_request(http_request, timeout=timeout_s) as response:
+            decoded = json.loads(response.read().decode("utf-8"))
+        count = decoded.get("count")
+        if (
+            not isinstance(count, int)
+            or isinstance(count, bool)
+            or count < 0
+        ):
+            raise ValueError("tokenizer response count must be a non-negative integer")
+        return count
 
     return count_tokens
 
@@ -237,6 +304,69 @@ def build_workload_rows(
     return rows
 
 
+def apply_controlled_prefix(
+    rows: list[WorkloadRow],
+    *,
+    ratio: float,
+    common_prefix: str,
+    workload_name: str,
+    start_doc_id: int,
+    prompt_token_counter: Callable[[str], int],
+    max_prompt_tokens: int,
+) -> list[WorkloadRow]:
+    """Materialize an exact, deterministic subset with one shared prefix."""
+    if not math.isfinite(ratio) or not 0.0 <= ratio <= 1.0:
+        raise ValueError("controlled prefix ratio must be between 0 and 1")
+    if not common_prefix.strip():
+        raise ValueError("controlled prefix text must be non-empty")
+    if max_prompt_tokens <= 0:
+        raise ValueError("max_prompt_tokens must be positive")
+    selected_count = math.floor(len(rows) * ratio + 0.5)
+    ranked_indices = sorted(
+        range(len(rows)),
+        key=lambda index: (
+            hashlib.sha1(
+                f"{rows[index].session_id}:{rows[index].doc_id}".encode("utf-8")
+            ).digest(),
+            index,
+        ),
+    )
+    selected = set(ranked_indices[:selected_count])
+    shared_key = f"controlled:{prefix_key(common_prefix)}"
+    materialized = []
+    for index, row in enumerate(rows):
+        text = row.text
+        prompt_tokens = row.prompt_tokens
+        row_prefix_key = row.prefix_key
+        if prompt_tokens > max_prompt_tokens:
+            raise ValueError(
+                "source row exceeds max_prompt_tokens: "
+                f"session_id={row.session_id}, tokens={prompt_tokens}, "
+                f"max_prompt_tokens={max_prompt_tokens}"
+            )
+        if index in selected:
+            text = f"{common_prefix.strip()}\n\n{text}"
+            prompt_tokens = prompt_token_counter(text)
+            if prompt_tokens > max_prompt_tokens:
+                raise ValueError(
+                    "controlled prefix row exceeds max_prompt_tokens: "
+                    f"session_id={row.session_id}, tokens={prompt_tokens}, "
+                    f"max_prompt_tokens={max_prompt_tokens}"
+                )
+            row_prefix_key = shared_key
+        materialized.append(
+            replace(
+                row,
+                doc_id=start_doc_id + index,
+                text=text,
+                workload_name=workload_name,
+                prompt_tokens=prompt_tokens,
+                prefix_key=row_prefix_key,
+            )
+        )
+    return materialized
+
+
 def stable_tenant_id(session_id: str) -> int:
     digest = hashlib.sha1(session_id.encode("utf-8")).digest()
     return int.from_bytes(digest[:2], "big") % 16
@@ -248,6 +378,37 @@ def setup_documents(conn) -> None:
         for sql in DOCUMENTS_ALTER_SQL:
             cur.execute(sql)
     conn.commit()
+
+
+def load_existing_workload_rows(
+    conn,
+    workload_name: str,
+    max_rows: int,
+    max_prompt_tokens: int,
+) -> list[WorkloadRow]:
+    if max_rows <= 0:
+        raise ValueError("--max-rows must be positive")
+    if max_prompt_tokens <= 0:
+        raise ValueError(
+            "--controlled-prefix-source-max-prompt-tokens must be positive"
+        )
+    sql = """
+        SELECT doc_id, tenant_id, category, text, workload_name, prompt_tokens,
+               target_output_tokens, arrival_time_s, session_id, prefix_key
+        FROM documents
+        WHERE workload_name = %s
+          AND prompt_tokens <= %s
+        ORDER BY arrival_time_s, doc_id
+        LIMIT %s
+    """
+    with conn.cursor() as cur:
+        cur.execute(sql, (workload_name, max_prompt_tokens, max_rows))
+        records = cur.fetchall()
+    if len(records) != max_rows:
+        raise ValueError(
+            f"source workload returned {len(records)} rows; expected {max_rows}"
+        )
+    return [WorkloadRow(*record) for record in records]
 
 
 def reset_documents(conn) -> None:
@@ -316,11 +477,72 @@ def summarize(rows: list[WorkloadRow]) -> dict[str, object]:
 
 def main() -> None:
     args = parse_args()
-    if args.max_model_len is not None and args.tokenizer_path is None:
-        raise ValueError("--max-model-len requires --tokenizer-path")
+    if args.tokenizer_path and args.tokenizer_endpoint_url:
+        raise ValueError(
+            "--tokenizer-path and --tokenizer-endpoint-url are mutually exclusive"
+        )
+    if args.max_model_len is not None and not (
+        args.tokenizer_path or args.tokenizer_endpoint_url
+    ):
+        raise ValueError(
+            "--max-model-len requires --tokenizer-path or --tokenizer-endpoint-url"
+        )
+    if args.tokenizer_endpoint_url and not args.tokenizer_model:
+        raise ValueError("--tokenizer-endpoint-url requires --tokenizer-model")
     if args.completion_max_tokens < 0:
         raise ValueError("--completion-max-tokens must be non-negative")
-    token_counter = load_prompt_token_counter(args.tokenizer_path) if args.tokenizer_path else None
+    if args.tokenizer_path:
+        token_counter = load_prompt_token_counter(args.tokenizer_path)
+    elif args.tokenizer_endpoint_url:
+        token_counter = load_http_prompt_token_counter(
+            args.tokenizer_endpoint_url,
+            args.tokenizer_model,
+            timeout_s=args.tokenizer_timeout_s,
+        )
+    else:
+        token_counter = None
+    if args.controlled_prefix_source_workload:
+        if args.controlled_prefix_ratio is None:
+            raise ValueError(
+                "--controlled-prefix-source-workload requires "
+                "--controlled-prefix-ratio"
+            )
+        if token_counter is None or args.max_model_len is None:
+            raise ValueError(
+                "controlled prefix materialization requires a tokenizer and "
+                "--max-model-len"
+            )
+        max_prompt_tokens = args.max_model_len - args.completion_max_tokens
+        with psycopg.connect(args.database_url) as conn:
+            setup_documents(conn)
+            base_rows = load_existing_workload_rows(
+                conn,
+                args.controlled_prefix_source_workload,
+                args.max_rows,
+                args.controlled_prefix_source_max_prompt_tokens,
+            )
+            rows = apply_controlled_prefix(
+                base_rows,
+                ratio=args.controlled_prefix_ratio,
+                common_prefix=args.controlled_prefix_text,
+                workload_name=args.workload_name,
+                start_doc_id=args.start_doc_id,
+                prompt_token_counter=token_counter,
+                max_prompt_tokens=max_prompt_tokens,
+            )
+            summary = summarize(rows)
+            if args.dry_run:
+                print(
+                    json.dumps(
+                        {"status": "dry_run", **summary},
+                        ensure_ascii=False,
+                        indent=2,
+                    )
+                )
+                return
+            insert_rows(conn, rows, args.batch_rows)
+        print(json.dumps({"status": "ok", **summary}, ensure_ascii=False, indent=2))
+        return
     prompts = load_sharegpt_prompts(Path(args.sharegpt_json), args.max_prompt_chars)
     traces = load_burstgpt_trace(Path(args.burstgpt_csv), args.max_request_tokens)
     rows = build_workload_rows(

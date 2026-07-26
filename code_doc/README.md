@@ -23,3 +23,6 @@ Current row-cap-aware packing and non-blocking observation design:
 
 Current row-cap-aware packing and non-blocking observation implementation plan:
 `superpowers/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md`.
+
+Current single-GPU text evidence-closure implementation plan:
+`superpowers/plans/2026-07-26-single-gpu-text-closure-implementation.md`.

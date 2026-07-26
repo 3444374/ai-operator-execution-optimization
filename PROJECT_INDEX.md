@@ -11,6 +11,10 @@
 | `experiments/results/joint_batching_submission_512_20260726/README.md` | SLO-constrained 18-cell batching × submission search and repeated candidate validation | Review independent splice vs joint search and the fixed-50 mechanism decision |
 | `experiments/results/joint_batching_submission_512_20260726/screen/summary_long.csv` | Plot-ready 18-cell screen | Plot token budget, K_max, flush, SLO, throughput, energy, and MFU |
 | `experiments/results/joint_batching_submission_512_20260726/candidate_repeat/summary_long.csv` | Plot-ready repeated independent/joint/mechanism comparison | Plot n=3 candidate means, variability, and policy boundaries |
+| `experiments/results/adaptive_flush_cross_rate_20260726/README.md` | Fixed-25/fixed-50/adaptive cross-arrival-rate real GPU screen | Review why adaptive is not the current default |
+| `experiments/results/text_heldout_2048_20260726/README.md` | Natural-EOS 2048-request held-out validation | Review scale behavior, exact request audit, and tail-latency growth |
+| `experiments/results/prefix_aware_batching_20260726/README.md` | Controlled prefix-ratio workload and prefix-aware code/experiment audit | Review cache-off mechanism boundary and organizer fixes |
+| `experiments/results/operator_cost_estimation_20260726/README.md` | Grouped held-out operator E2E cost estimation | Review feature leakage boundary and five-split robustness |
 | `experiments/results/row_cap_aware_packing_512_20260726/README.md` | Prefix-cache-corrected 512-row screening and repeated confirmation | Review why sequential remains default and how cache-enabled data was excluded |
 | `experiments/results/row_cap_aware_packing_512_20260726/nocache_repeats/summary_long.csv` | Plot-ready 512-row repeated metrics | Plot throughput, request tails/SLO, packing, energy, vLLM pressure, and MFU |
 | `experiments/results/row_cap_aware_packing_1024_20260726/README.md` | Held-out 1024-row mechanism decision | Review the SLO-goodput regression that blocks row-cap-first default adoption |
@@ -177,6 +181,9 @@
 | `code_doc/superpowers/plans/2026-07-25-request-lifecycle-scenario-runner-implementation.md` | AI 算子执行 infra 第一阶段实施计划 | request lifecycle、单 prompt E2E/SLO、seeded scenario runner 与真实 64 行门禁 |
 | `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md` | 输出成本与确定性 BFD 实施计划 | 共享成本、通用 cost_units BFD、Arrow/Daft 接入、离线 lifecycle、真实 64→512 单 GPU 门禁 |
 | `code_doc/superpowers/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md` | Row-cap-aware packing 与非阻塞观测实施计划 | TDD 接线、BFD 机制级消融、真实 64 行门禁、512 筛选与 1024 held-out 确认 |
+| `code_doc/superpowers/plans/2026-07-26-single-gpu-text-closure-implementation.md` | Single-GPU text evidence closure plan | Execute cross-rate, 2048 held-out, controlled prefix, and cost-estimation tasks |
+| `code/src/cost_estimation.py` | Engine-independent grouped split, ridge cost model, and regression metrics | Build offline operator-cost estimates without post-execution feature leakage |
+| `code/scripts/estimate_operator_cost.py` | Reproducible profile-CSV cost-estimation CLI | Generate model schema, coefficients, splits, and held-out metrics |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |

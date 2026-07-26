@@ -15,7 +15,7 @@ Date: 2026-07-20（最后更新：2026-07-26，新增提交控制与联合实验
 | Token-tail 修订版（batch 1~128, 512 行）| ✅ 07-19 | **固定行 batch 是计算量的弱代理**：batch=8 时 token 跨度 13.9×；batch=128 时 token P95=26678 | — |
 | Token-budget vs Fixed Row（timeout=300）| ✅ 07-19 | **Token-budget 能约束 token tail**：6144/8192 吞吐接近 fixed 32/64，token P95 大幅降低 | 4096 吞吐更低（tradeoff）；未证明在所有场景下优于 fixed |
 | Length-align + Prefix-aware ablation | ✅ 07-19 | length+fixed 是负结果（token P95=33407）；prefix+token6144 吞吐最高（339 rows/s）但 prefix ratio 仅 6.4% | length-align 需配 token-budget；prefix 信号太弱 |
-| **Prefix 受控 workload 实验** | ❌ 未做 | — | prefix ratio=0/30/70/100% 下的 prefix-aware 有效性 |
+| **Prefix 受控 workload 实验** | ✅ 07-26 | 0/30/70/100% cache-off screen；修复唯一 prefix 重排与隐式 length-align 耦合 | prefix cache 开启后的命中收益仍未验证 |
 
 **RC1 当前状态**：✅ 动机成立，策略机制已验证。⚠️ 但不是"全面胜利"——token-budget 控制 token tail 的代价是更多 HTTP 调用，这个 tradeoff 本身是论文的讨论点。
 
@@ -27,12 +27,12 @@ Date: 2026-07-20（最后更新：2026-07-26，新增提交控制与联合实验
 | Batch Policy × K_max 矩阵 | ✅ 07-19 | K_max 和 batch shape 耦合：fixed128 只有 4 个请求，K_max>4 无调度空间 | 仍是单 job 离线场景 |
 | Shared-vLLM K_max 干扰（2-job）| ✅ 07-19 | **K_max 在共享 vLLM 下必要**：bulk unbounded 时 foreground E2E 恶化 2.3×（4.9→11.4s），bulk 自身吞吐几乎不变 | 只有 2 个 job；只有一种 foreground size |
 | Shared-vLLM K_max Sweep + Adaptive | ✅ 07-19 | K_max=8 是最佳静态 guardrail；adaptive 触发了 downshift（102 次/run）| **❌ adaptive 不如 static K=8**（foreground E2E 10.2s vs 7.3s） |
-| **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 三组随机化：fixed-50/adaptive 相对 fixed-25 均约 +32% tokens/s | adaptive vs fixed-50 -0.10% ± 4.13%；跨 arrival-rate 泛化未验证 |
+| **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
 | **多 job/多 foreground size 扩展** | ❌ 未做 | — | 不同 foreground size、arrival offset、background policy 下的公平性 |
 
-**RC2 当前状态**：✅ static K8 guardrail 与 50ms pressure-window
-coalescing 均有真实证据。⚠️ 当前 queue-adaptive 未证明优于最佳静态 50ms，
-因此动态性仍是跨负载待验证项，而不是默认结论。
+**RC2 当前状态**：✅ static K8 guardrail 与 fixed 50ms coalescing 均有真实
+证据。跨 arrival-rate 和 2048 held-out 未显示 queue-adaptive 增量，因此当前
+单 GPU 默认采用 fixed 50ms；adaptive 保留为配置变化后的候选，不再继续堆叠复杂度。
 
 ### 1.3 耦合验证
 
@@ -51,7 +51,9 @@ coalescing 均有真实证据。⚠️ 当前 queue-adaptive 未证明优于最�
 
 ### 1.5 算子代价估计 & 写回
 
-均已降级（不作为独立研究内容），不在当前实验计划中。
+算子代价估计已完成补充性二次分析：283 条真实 profile、70 个配置组，五个
+grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。它仍不作为
+独立研究内容；写回继续使用 PostgreSQL + pgvector 工程 baseline。
 
 ---
 
@@ -70,7 +72,7 @@ coalescing 均有真实证据。⚠️ 当前 queue-adaptive 未证明优于最�
 
 ❌ 未证明（关键缺口）：
    ├── "Queue-adaptive flush 优于最佳静态 timeout"（未证明）
-   ├── "Prefix-aware 在受控 prefix 比例下有效"（当前 prefix ratio 6.4%）
+   ├── "Prefix-aware 在 cache-off 受控 prefix 比例下有效"（未证明）
    └── "策略代码对多模态 workload 可复用"（未启动）
 ```
 
@@ -176,11 +178,11 @@ CONCUR-AIMD 首选理由：无 EWMA 契合 `code/AGENTS.md` "保持简单"（Ray
 
 **同时追加指标**：`tokens/s`、`service_p99`。
 
-### P1：Prefix 受控实验 + 规模扩展（1-2 周）
+### P1：Prefix cache 机制确认 + 显式联合消融
 
-**目标**：
-1. 在 prefix ratio ≥ 30% 的条件下评估 prefix-aware 有效性
-2. 至少一个实验 scale 到 2048 行验证趋势
+受控 prefix 0/30/70/100% 和 2048 请求扩展已经完成。下一步只在单独启用
+prefix cache 并能记录命中证据时重验 prefix-aware；length-align 与 prefix
+grouping 必须作为两个独立因素做显式联合消融。
 
 **设计**：
 - 构造 prefix ratio = 0/30/70/100% 的受控 workload

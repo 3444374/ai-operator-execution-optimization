@@ -109,15 +109,25 @@
   与上下文安全过滤
 - ✅ Batching × submission 18 单元筛选与 4 候选重复：SLO-constrained
   联合候选相对独立拼接 `-0.26% ± 2.07%`，当前采用分层优化
+- ✅ 跨 arrival-rate 真实筛选：约 51.4/25.7/12.85 req/s 三档均未出现
+  fixed-25 反超；adaptive 相对 fixed-50 无增量，当前默认 fixed 50ms
+- ✅ 2048 请求自然 EOS 留出：4096/4096 对照请求 exactly-once；fixed-50
+  相对 adaptive tokens/s +1.75%、request P99 -2.61%
+- ✅ Prefix 受控 workload 0/30/70/100% 与真实 vLLM 筛选；修复唯一 prefix
+  哈希重排和隐式 length-align 耦合。prefix cache 关闭时无稳定收益
+- ✅ 算子 E2E 代价估计：283 条真实 profile、70 个配置组；五个 grouped
+  held-out seed 平均 MAE 11.68s、MAPE 50.60%、R² 0.776
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P0（最高优先）**：改变 arrival rate；只有 adaptive 能跨负载接近各自
-   最佳静态窗口时才晋级。
-2. **P1**：Prefix 受控 workload（prefix ratio 0/30/70/100%）+ 至少一个
-   自然 EOS/提交策略实验 scale 到 2048 行。
-4. **P2（触发条件：P0+P1 完成）**：多模态泛化验证（CLIP embedding + ImageNet/HF subset）。
-5. 算子代价估计（§6.1 讨论，最低优先级）：基于已采集的 profile 数据，不新增实验。
+1. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
+   证据，不能用当前 cache-off 数据推断缓存收益。
+2. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
+3. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
+   ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
+4. 多 endpoint / 多 GPU 真实验证仍受当前单 GPU 硬件范围限制；接口与 fallback
+   契约已完成，不能把单卡逻辑池写成多 GPU 性能证据。
+5. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
 6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
 **指标状态**：

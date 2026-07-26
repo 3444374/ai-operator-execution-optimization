@@ -1393,3 +1393,24 @@
 - 当前单 GPU、当前 arrival rate 的在线候选正式收敛为 fixed-50；
   adaptive 仅保留为跨 arrival-rate 自动选择候选。下一步不继续增加控制器
   复杂度，先验证负载变化时最佳静态窗口是否改变。
+
+## 2026-07-26 单 GPU 文本主线证据闭环
+
+- 完成约 51.4/12.85 req/s 两档新增回放强度的 fixed-25/fixed-50/adaptive
+  真实筛选；6/6 场景、3072/3072 请求、0 incident。两档 fixed-50 相对
+  fixed-25 tokens/s 分别 +22.50%/+25.80%，adaptive 相对 fixed-50
+  -0.61%/-1.32%，未显示跨负载动态切换价值。
+- 新增 vLLM `/tokenize` workload 入口，不依赖本机 tokenizer 缓存；从原始
+  ShareGPT/BurstGPT 生成 2048 条上下文安全独立请求，未截断或复制。
+- 完成 2048 自然 EOS 留出：fixed-50 相对 adaptive tokens/s +1.75%、
+  E2E -1.81%、P99 -2.61%；4096/4096 请求完成、0 incident。相对 512 锚点
+  吞吐下降约 10%，持续积压仍放大尾延迟。
+- 构造 0/30/70/100% 受控 prefix workload。真实筛选暴露并修复唯一 prefix
+  哈希重排、prefix grouping 隐式叠加 length-align 两个语义问题；最终
+  prefix-only 策略在 cache-off 下无稳定收益，sequential token-budget 保持默认。
+- 新增无执行后特征泄漏的 E2E 代价估计：283 行真实 profile、70 个配置组。
+  五个 grouped held-out seed 的 ridge 平均 MAE 11.68s、MAPE 50.60%、
+  RMSE 25.89s、R² 0.776；MAPE 对小目标敏感，只作为粗粒度编排提示。
+- 当前单 GPU 文本默认收敛为 sequential token-budget + static K_max=8 +
+  fixed 50ms。adaptive、prefix-aware、BFD 均保留为有显式触发门槛的候选。
+  分支继续隔离，未合并 `main`，未自动同步 Wiki。

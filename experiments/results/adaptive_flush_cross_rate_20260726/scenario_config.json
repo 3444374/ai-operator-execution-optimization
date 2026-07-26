@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "experiment_id": "adaptive_flush_cross_rate_screen_512_20260726",
+  "seed": 20260729,
+  "service_metadata": {
+    "vllm_version": "0.25.1",
+    "prompt_format": "chatml",
+    "return_token_ids": true,
+    "temperature": 0.0,
+    "prefix_caching": false,
+    "mfu_metrics": true
+  },
+  "warmup_runs_per_scenario": 0,
+  "formal_repeats": 1,
+  "common_args": [
+    "--database-url",
+    "postgresql://postgres:postgres@localhost:5432/ai_operator",
+    "--total-rows",
+    "512",
+    "--db-fetch-rows",
+    "512",
+    "--source-max-prompt-tokens",
+    "1500",
+    "--operator",
+    "ai_complete",
+    "--executor",
+    "ray_task",
+    "--model-backend",
+    "compatible_http",
+    "--completion-endpoint-url",
+    "http://localhost:8000/v1/completions",
+    "--completion-model",
+    "qwen2.5-1.5b",
+    "--completion-max-tokens",
+    "512",
+    "--completion-return-token-ids",
+    "--completion-prompt-format",
+    "chatml",
+    "--completion-temperature",
+    "0",
+    "--completion-request-timeout-s",
+    "300",
+    "--model-metrics-url",
+    "http://localhost:8000/metrics",
+    "--source-workload-name",
+    "sharegpt_burstgpt",
+    "--source-order",
+    "arrival_time",
+    "--data-source",
+    "daft_postgres",
+    "--organizer",
+    "daft",
+    "--organizer-partition-mode",
+    "none",
+    "--daft-runner",
+    "native",
+    "--ray-batch-rows",
+    "64",
+    "--batching-policy",
+    "token_budget",
+    "--token-budget",
+    "6144",
+    "--cost-model-id",
+    "qwen2.5-1.5b",
+    "--cost-tokenizer-id",
+    "qwen2.5-1.5b",
+    "--output-cost-mode",
+    "fixed_output_cap",
+    "--scheduling-policy",
+    "static",
+    "--max-inflight",
+    "8",
+    "--model-workers",
+    "2",
+    "--arrival-replay",
+    "--flush-timeout-ms",
+    "25",
+    "--flush-max-wait-ms",
+    "50",
+    "--writeback-mode",
+    "none",
+    "--request-slo-ms",
+    "180000",
+    "--resource-sample-interval-s",
+    "0.25",
+    "--gpu-peak-tflops",
+    "61.7",
+    "--mfu-precision",
+    "bf16_dense_fp32_accumulate"
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "fast_fixed_25ms",
+      "args": [
+        "--arrival-time-scale",
+        "0.00025",
+        "--flush-policy",
+        "fixed_timeout"
+      ]
+    },
+    {
+      "scenario_id": "fast_fixed_50ms",
+      "args": [
+        "--arrival-time-scale",
+        "0.00025",
+        "--flush-policy",
+        "fixed_timeout",
+        "--flush-timeout-ms",
+        "50"
+      ]
+    },
+    {
+      "scenario_id": "fast_adaptive_25_50ms",
+      "args": [
+        "--arrival-time-scale",
+        "0.00025",
+        "--flush-policy",
+        "queue_adaptive"
+      ]
+    },
+    {
+      "scenario_id": "slow_fixed_25ms",
+      "args": [
+        "--arrival-time-scale",
+        "0.001",
+        "--flush-policy",
+        "fixed_timeout"
+      ]
+    },
+    {
+      "scenario_id": "slow_fixed_50ms",
+      "args": [
+        "--arrival-time-scale",
+        "0.001",
+        "--flush-policy",
+        "fixed_timeout",
+        "--flush-timeout-ms",
+        "50"
+      ]
+    },
+    {
+      "scenario_id": "slow_adaptive_25_50ms",
+      "args": [
+        "--arrival-time-scale",
+        "0.001",
+        "--flush-policy",
+        "queue_adaptive"
+      ]
+    }
+  ]
+}
