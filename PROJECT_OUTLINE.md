@@ -117,6 +117,10 @@
   哈希重排和隐式 length-align 耦合。prefix cache 关闭时无稳定收益
 - ✅ 算子 E2E 代价估计：283 条真实 profile、70 个配置组；五个 grouped
   held-out seed 平均 MAE 11.68s、MAPE 50.60%、R² 0.776
+- ✅ vLLM eager vs CUDA Graph 同配置对照：512 请求、每侧 3 次 formal；
+  CUDA Graph 的 E2E 均值 79.85s（-71.76%）、observed tokens/s
+  2875.68（+254.05%）、MFU 14.51%（eager 4.02%）。该结果用于选定后续
+  本地 steady-state baseline，不作为上游调度贡献
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 

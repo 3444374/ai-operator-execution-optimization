@@ -23,7 +23,7 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
-| `vllm_cuda_graph_512_20260726/` | Real eager-service 64-request gate plus one warm-up and three formal 512-request baseline repeats with full prompt/output/request/resource/MFU tracing. | Eager baseline is complete after a recovered schema-preflight incident; retain the Ray shutdown stderr concern and do not make an eager-versus-graph claim until the graph arm is captured. |
+| `vllm_cuda_graph_512_20260726/` | Matched eager/CUDA-Graph 64-request gates plus one warm-up and three formal 512-request repeats per arm, with full prompt/output/request/resource/MFU tracing. | CUDA Graph is the current local steady-state baseline: E2E -71.76% and observed tokens/s +254.05% versus eager; this is deployment tuning, not an upstream scheduling contribution. |
 | `adaptive_flush_cross_rate_20260726/` | Real 512-request fixed-25/fixed-50/adaptive screens at about 51.4 and 12.85 req/s replay intensity. | Fixed-50 remains best or equivalent across the tested range; adaptive does not justify default complexity. |
 | `text_heldout_2048_20260726/` | Natural-EOS 2048-request held-out fixed-50/adaptive comparison with exact request and MFU audits. | Fixed-50 keeps a 1.75% throughput and 2.61% P99 advantage in the single screen; sustained backlog still amplifies tail latency. |
 | `prefix_aware_batching_20260726/` | Controlled 0/30/70/100% shared-prefix workloads, code-semantic audits, and real vLLM screens. | With prefix cache disabled, prefix-only grouping has no stable benefit; sequential token-budget remains default. |

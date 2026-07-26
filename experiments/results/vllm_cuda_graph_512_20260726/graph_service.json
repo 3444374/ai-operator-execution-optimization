@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "container_name": "ai-operator-vllm-qwen-eager-backup",
-  "created_at": "2026-07-25T20:50:36.902502352Z",
-  "started_at": "2026-07-25T20:50:36.987377636Z",
+  "container_name": "ai-operator-vllm-qwen",
+  "created_at": "2026-07-26T11:39:28.495984990Z",
+  "started_at": "2026-07-26T11:39:28.606747095Z",
   "image": "vllm/vllm-openai:v0.25.1-cu129-ubuntu2404",
   "command": [
     "--model",
@@ -15,7 +15,6 @@
     "2048",
     "--gpu-memory-utilization",
     "0.75",
-    "--enforce-eager",
     "--enable-mfu-metrics",
     "--no-enable-prefix-caching"
   ],
@@ -28,5 +27,6 @@
       "read_write": false,
       "propagation": "rprivate"
     }
-  ]
+  ],
+  "startup_evidence": "graph_startup_evidence.json"
 }

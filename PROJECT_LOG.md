@@ -1521,3 +1521,33 @@
 - vLLM 容器切换采用停止并重命名 eager 容器的可恢复方式；不会删除原容器，
   不把编译/graph capture 启动成本混入 steady-state E2E。
 - 本次仅编写计划，尚未执行生产代码改动或重启 vLLM。
+
+## 2026-07-26 vLLM CUDA Graph 真实对照
+
+- 保留式停止并重命名 eager 容器为
+  `ai-operator-vllm-qwen-eager-backup`，使用同一 vLLM 0.25.1 镜像、
+  同一只读 Qwen2.5-1.5B 挂载和 0.75 GPU memory utilization 启动
+  CUDA Graph 服务；唯一执行变量为移除 `--enforce-eager`。
+- 64-request graph gate 通过：64/64 请求 exactly-once，201 字段 formal
+  schema、request/output/finish、resource/MFU/energy 和数据库 job 审计完整，
+  0 incident。
+- 完成 graph 1 warm-up + 3 formal 的 512-request 实验。三轮 formal
+  相对 eager 均值：E2E 282.76s → 79.85s（-71.76%），observed tokens/s
+  812.23 → 2875.68（+254.05%），request P99 259.82s → 57.63s
+  （-77.82%），MFU 4.02% → 14.51%，每千 observed tokens 能耗
+  99.95J → 55.52J（-44.46%）。
+- 两侧每轮 prompt tokens=63,970、packing/submission=137，且相同 512 个
+  doc ID 顺序；实际 generation tokens 相差约 0.57%，因此吞吐按各轮实际
+  observed tokens 计算，不声称逐 token 输出完全相同。
+- `graph_startup_evidence.json` 保存带 Docker 时间戳的启动证据：Created
+  到 application startup complete 为 148.512s，模型加载 23.139s、
+  compile 13.51s、graph capture 4s、engine init 72.26s；启动成本不计入
+  steady-state E2E。两侧 service 记录均为可机器读取的单对象 JSON。
+- Windows Ray shutdown stderr 在 eager formal 3 以及 graph warm-up、
+  formal 1、formal 2 中出现非致命 `access violation` 文本，但对应
+  profiler exit=0，manifest、vLLM success delta、exactly-once trace 和
+  数据库 finished 状态均完整。该问题保留为两侧共有的独立 infra 缺陷，
+  不能称任一侧日志完全干净。
+- 后续本地 Ray task/actor 与 capacity 调优采用 CUDA Graph 作为部署 baseline；
+  该提升属于 vLLM 配置选择，不作为论文上游调度策略贡献。结果与绘图数据见
+  `experiments/results/vllm_cuda_graph_512_20260726/`。

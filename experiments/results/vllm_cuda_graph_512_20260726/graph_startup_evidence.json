@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "source": "docker logs --timestamps ai-operator-vllm-qwen",
+  "container_created_at": "2026-07-26T11:39:28.495984990Z",
+  "application_startup_complete_at": "2026-07-26T11:41:57.007955345Z",
+  "created_to_application_startup_s": 148.511970355,
+  "model_loading_s": 23.13891,
+  "model_memory_gib": 2.98,
+  "torch_compile_s": 13.51,
+  "available_kv_cache_gib": 4.8,
+  "kv_cache_tokens": 179776,
+  "max_concurrency_at_2048_tokens": 87.78,
+  "graph_capture_s": 4.0,
+  "graph_pool_gib": 0.48,
+  "engine_initialization_s": 72.26,
+  "raw_log_lines": [
+    "2026-07-26T11:40:42.194996049Z (EngineCore pid=91) INFO 07-26 11:40:42 [gpu_model_runner.py:5306] Model loading took 2.98 GiB memory and 23.138910 seconds",
+    "2026-07-26T11:40:56.038666099Z (EngineCore pid=91) INFO 07-26 11:40:56 [monitor.py:53] torch.compile took 13.51 s in total",
+    "2026-07-26T11:41:49.811515122Z (EngineCore pid=91) INFO 07-26 11:41:49 [gpu_worker.py:538] Available KV cache memory: 4.8 GiB",
+    "2026-07-26T11:41:49.812223013Z (EngineCore pid=91) INFO 07-26 11:41:49 [kv_cache_utils.py:2146] GPU KV cache size: 179,776 tokens",
+    "2026-07-26T11:41:49.812235788Z (EngineCore pid=91) INFO 07-26 11:41:49 [kv_cache_utils.py:2147] Maximum concurrency for 2,048 tokens per request: 87.78x",
+    "2026-07-26T11:41:54.015296570Z (EngineCore pid=91) INFO 07-26 11:41:54 [gpu_model_runner.py:6707] Graph capturing finished in 4 secs, took 0.48 GiB",
+    "2026-07-26T11:41:54.459478703Z (EngineCore pid=91) INFO 07-26 11:41:54 [core.py:337] init engine (profile, create kv cache, warmup model) took 72.26 s (compilation: 13.51 s)",
+    "2026-07-26T11:41:57.007955345Z (APIServer pid=1) INFO: Application startup complete."
+  ]
+}

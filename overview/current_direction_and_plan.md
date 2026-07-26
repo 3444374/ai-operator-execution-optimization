@@ -72,6 +72,9 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
   修复 organizer 的重排和策略耦合问题
 - ✅ 算子代价估计初版：283 条 profile、70 个配置组，五切分平均
   MAE 11.68s、MAPE 50.60%、R² 0.776
+- ✅ vLLM CUDA Graph 部署基线：同一 512-request workload、每侧 3 次
+  formal，相对 eager 的 E2E -71.76%、observed tokens/s +254.05%、
+  MFU 4.02% → 14.51%；后续本地稳态调度实验采用 graph 服务
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 1. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
@@ -98,6 +101,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | 自然 EOS 三组随机化复验：fixed-50 与 adaptive 相对 fixed-25 tokens/s 分别 +32.23% 与 +32.09%；adaptive vs fixed-50 -0.10% ± 4.13% | 收益来自更长 coalescing window；当前采用更简单的 fixed-50 |
 | Output-aware BFD：512 行相对同成本 sequential +12.019%，1024 行反转为 -5.156% | 数据组织收益依赖规模与 row cap；经典 BFD 只能作候选，需联合搜索 |
 | 联合候选相对独立拼接 tokens/s -0.26% ± 2.07% | 当前单 GPU 下分层独立优化已足够，没有联合在线控制器的证据 |
+| vLLM CUDA Graph 相对 eager：E2E -71.76%、tokens/s +254.05%、request P99 -77.82% | 部署执行模式是一阶 baseline 变量；属于环境调优，不是上游调度贡献 |
 
 **AI_EMBED（预研，已完成）**：
 | 证据 | 来源 | 能说明什么 |
