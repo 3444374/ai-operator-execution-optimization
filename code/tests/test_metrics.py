@@ -19,6 +19,7 @@ from src.metrics import (  # noqa: E402
     estimate_mfu,
     gpu_metadata,
     parse_prometheus_metrics,
+    preflight_metrics_schema,
     resource_sample_stats,
     vllm_metric_delta_stats,
 )
@@ -70,6 +71,29 @@ class MetricsTests(unittest.TestCase):
             append_metrics(path, {"status": "ok", "rows": 2})
 
         self.assertEqual(path.read_text(encoding="utf-8"), original)
+
+    def test_preflight_metrics_schema_rejects_without_writing(self) -> None:
+        path = self._metrics_path("metrics_preflight_incompatible.csv")
+        path.write_text("status,legacy_field\nok,1\n", encoding="utf-8")
+        original = path.read_text(encoding="utf-8")
+
+        with self.assertRaisesRegex(ValueError, "CSV schema mismatch"):
+            preflight_metrics_schema(path, ["status", "rows"])
+
+        self.assertEqual(path.read_text(encoding="utf-8"), original)
+
+    def test_preflight_accepts_formal_schema_containing_dry_run_keys(self) -> None:
+        path = self._metrics_path("metrics_preflight_formal_schema.csv")
+        path.write_text(
+            "status,job_id,rows\nok,1,2\n",
+            encoding="utf-8",
+        )
+
+        preflight_metrics_schema(
+            path,
+            ["status", "rows"],
+            allow_additional_fields=True,
+        )
 
     def test_periodic_sampler_collects_and_stops(self) -> None:
         sampled_twice = threading.Event()

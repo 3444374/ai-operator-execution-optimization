@@ -53,7 +53,12 @@ from .observations import (
     NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
-from .ray_adapter import ActorWorkerPoolSubmitter, RaySubmissionAdapter
+from .ray_adapter import (
+    ActorSubmissionState,
+    ActorWorkerPoolSubmitter,
+    RaySubmissionAdapter,
+    RoundRobinSubmitter,
+)
 from .ray_runtime import RayWorkerOptions
 from .routing import (
     LeastQueuedEndpointRouter,
@@ -84,6 +89,7 @@ __all__ = [
     "AdmissionTraceEvent",
     "ArrivalReplayBatcher",
     "ActorWorkerPoolSubmitter",
+    "ActorSubmissionState",
     "AimdAdmissionController",
     "AimdConfig",
     "BatchRequest",
@@ -109,6 +115,7 @@ __all__ = [
     "PendingBatch",
     "PendingBatchBuilder",
     "RaySubmissionAdapter",
+    "RoundRobinSubmitter",
     "RayWorkerOptions",
     "LeastQueuedEndpointRouter",
     "MonotonicEpochClock",

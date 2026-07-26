@@ -14,6 +14,12 @@
 错误列。多 GPU 性能仍须用独立 GPU endpoint 验证，当前契约测试不构成多 GPU
 性能证据。
 
+轮转状态的生命周期必须与实验 run 一致，而不是与单次数据库 fetch chunk 一致。
+因此 endpoint 内 actor worker 与 legacy endpoint 轮转都只在 run 初始化时创建；
+每个 chunk 只上报自己的提交增量。job 一旦创建，后续 Ray 初始化、提交或写回异常
+都会尽力写入 `failed` 终态，同时保留原异常。主 CSV 的旧 schema 也会在数据库和
+GPU 工作前被拒绝；K_max runner 使用新的 `20260726` 默认文件，历史结果保持只读。
+
 ## 2026-07-26 动态 flush 与联合搜索结论
 
 `learning/experiment_walkthrough.md` 新增 2026-07-26 章节，解释为什么

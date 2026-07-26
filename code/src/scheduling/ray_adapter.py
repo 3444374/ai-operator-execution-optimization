@@ -34,6 +34,38 @@ class ActorWorkerPoolSubmitter:
         return getattr(self._actors[index], self._method_name).remote(payload)
 
 
+class RoundRobinSubmitter:
+    """Persist round-robin position across independent submission calls."""
+
+    def __init__(self, submitters: Sequence[Callable[[object], object]]):
+        if not submitters:
+            raise ValueError("submitters must not be empty")
+        self._submitters = tuple(submitters)
+        self._next_index = 0
+
+    def __call__(self, payload: object) -> object:
+        index = self._next_index
+        self._next_index = (index + 1) % len(self._submitters)
+        return self._submitters[index](payload)
+
+
+class ActorSubmissionState:
+    """Actor submitters whose endpoint-local and legacy positions span a run."""
+
+    def __init__(
+        self,
+        actor_pools: Mapping[str, Sequence[object]],
+        method_name: str,
+    ):
+        self.pool_submitters = {
+            endpoint_id: ActorWorkerPoolSubmitter(actors, method_name)
+            for endpoint_id, actors in actor_pools.items()
+        }
+        self.legacy_endpoint_submitter = RoundRobinSubmitter(
+            list(self.pool_submitters.values())
+        )
+
+
 class RaySubmissionAdapter:
     def __init__(
         self,

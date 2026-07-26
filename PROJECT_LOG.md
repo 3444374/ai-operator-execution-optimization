@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-07-26 Ray 执行基础整分支审查修复
+
+- Ray actor 正式运行现在只构造一次 endpoint-local worker submitter 与 legacy
+  endpoint round-robin 状态；跨 PostgreSQL fetch chunk 不再从首个 worker 或首个
+  endpoint 重新开始。逐 worker 提交计数按单次 chunk 返回 delta，避免汇总时重复
+  累加历史计数。
+- 非 fake compatible HTTP backend 的 endpoint URL 校验提前到 dry-run、数据库连接
+  和 Ray 初始化之前；Ollama completion 继续保留默认 `http://localhost:11434`。
+- job 创建后的任意异常会先回滚失败事务，再将 job 标记为 `failed` 并写
+  `finished_at`；状态更新失败只附注到原异常，不替换原始失败。
+- 主 CSV 在任何非 dry-run 执行前用 dry-run 字段做 schema 预检；正式追加仍要求
+  header 精确一致。K_max interference runner 默认写入新的 `20260726` 文件名，
+  历史 `20260719` 结果未删除、未覆盖。
+- 本次是执行正确性与失败可观测性修复，不新增或修改实验性能结论。
+
 ## 2026-07-26 Ray 执行契约结果 schema
 
 - `postgres_ai_operator_profile.py` 的 dry-run 与真实 run row 新增

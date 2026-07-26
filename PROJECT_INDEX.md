@@ -241,6 +241,7 @@
 | `code/tests/test_ray_adapter.py` | 通用 Ray submission adapter 的 request identity 与 endpoint 映射测试 | 修改 Ray adapter 前运行 |
 | `code/tests/test_postgres_profile_scheduling.py` | profiler 静态 Ray task/actor 接线、路由与旧指标兼容测试 | 修改 profiler 提交路径前运行 |
 | `code/tests/test_metrics.py` | 资源/MFU 汇总与 CSV header/schema-safe append 测试 | 修改指标输出或追加契约前运行 |
+| `code/tests/test_kmax_interference_script.py` | shared-vLLM K_max runner 默认输出 schema 版本测试 | 修改干扰实验默认输出路径前运行 |
 | `code/tests/test_scheduling_daft_ray_contract.py` | 真实 DaftOrganizer→Arrow RecordBatch→arrival replay→单节点 Ray task/actor exactly-once contract | 修改 Daft/Ray/replay adapter boundary 前运行 |
 | `code/tests/test_request_lifecycle.py` | request/submission exactly-once join、时钟域与 SLO 语义测试 | 修改逐请求 lifecycle schema 或计时边界前运行 |
 | `code/tests/test_experiment_scenarios.py` | seeded schedule、runner 脱敏、失败即停与 manifest 测试 | 修改场景运行器或实验顺序前运行 |

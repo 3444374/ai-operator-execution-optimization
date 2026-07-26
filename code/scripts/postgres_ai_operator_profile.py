@@ -33,6 +33,7 @@ from src.metrics import (
     estimate_mfu,
     gpu_metadata,
     percentile,
+    preflight_metrics_schema,
     resource_sample_stats,
     scrape_prometheus_metrics,
     vllm_metric_delta_stats,
@@ -94,7 +95,10 @@ from src.scheduling.models import (
     SubmissionLifecycleEvent,
     TopologySnapshot,
 )
-from src.scheduling.ray_adapter import ActorWorkerPoolSubmitter, RaySubmissionAdapter
+from src.scheduling.ray_adapter import (
+    ActorSubmissionState,
+    RaySubmissionAdapter,
+)
 from src.scheduling.ray_runtime import RayWorkerOptions
 from src.scheduling.observations import (
     NonBlockingMetricsObservationProvider,
@@ -287,7 +291,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--model-metrics-url", default=os.environ.get("MODEL_METRICS_URL"))
     parser.add_argument("--model-workers", type=int, default=2)
-    parser.add_argument("--actor-workers-per-endpoint", type=int, default=0)
+    parser.add_argument(
+        "--actor-workers-per-endpoint",
+        type=int,
+        default=0,
+        help="Number of Ray HTTP client actor workers per service endpoint.",
+    )
     parser.add_argument("--ray-actor-max-concurrency", type=int, default=1)
     parser.add_argument("--ray-worker-num-cpus", type=float, default=0.25)
     parser.add_argument("--max-inflight", type=int, default=8)
@@ -304,12 +313,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--endpoint-pool-ids",
         default=None,
-        help="Comma-separated pool ID per Ray actor or task endpoint.",
+        help="Comma-separated pool ID per service endpoint.",
     )
     parser.add_argument(
         "--endpoint-gpu-ids",
         default=None,
-        help="Comma-separated GPU ID per Ray actor or task endpoint.",
+        help="Comma-separated GPU ID per service endpoint.",
     )
     parser.add_argument(
         "--long-request-token-threshold",
@@ -487,18 +496,6 @@ def _remote_task(ray_module, task_fn, worker_options):
     return ray_module.remote(task_fn).options(
         **worker_options.task_options()
     )
-
-
-def _remote_worker_definition(
-    ray_module,
-    target,
-    worker_options,
-    *,
-    is_actor: bool,
-):
-    if is_actor:
-        return _remote_actor_class(ray_module, target, worker_options)
-    return _remote_task(ray_module, target, worker_options)
 
 
 def require_psycopg():
@@ -679,6 +676,16 @@ def finish_job(conn, job_id: int) -> None:
     with conn.cursor() as cur:
         cur.execute(
             "UPDATE ai_operator_jobs SET status = 'finished', finished_at = CURRENT_TIMESTAMP WHERE job_id = %s",
+            (job_id,),
+        )
+    conn.commit()
+
+
+def fail_job(conn, job_id: int) -> None:
+    conn.rollback()
+    with conn.cursor() as cur:
+        cur.execute(
+            "UPDATE ai_operator_jobs SET status = 'failed', finished_at = CURRENT_TIMESTAMP WHERE job_id = %s",
             (job_id,),
         )
     conn.commit()
@@ -1810,6 +1817,7 @@ def submit_with_backpressure(
     output_cost_mode: OutputCostMode = "fixed_output_cap",
     completion_max_tokens: int = 0,
     actors: Sequence[object] | None = None,
+    submission_state: ActorSubmissionState | None = None,
 ) -> tuple[list[dict], dict]:
     if actor_pools is None:
         if actors is None:
@@ -1833,9 +1841,16 @@ def submit_with_backpressure(
         )
 
     endpoint_ids = list(actor_pools)
-    pool_submitters = {
-        endpoint_id: ActorWorkerPoolSubmitter(endpoint_actors, method_name)
-        for endpoint_id, endpoint_actors in actor_pools.items()
+    state = submission_state or ActorSubmissionState(actor_pools, method_name)
+    pool_submitters = state.pool_submitters
+    if set(pool_submitters) != set(actor_pools):
+        raise ValueError(
+            "submission_state and actor_pools must have identical "
+            "service endpoint IDs"
+        )
+    counts_before = {
+        endpoint_id: submitter.submission_counts
+        for endpoint_id, submitter in pool_submitters.items()
     }
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
@@ -1850,7 +1865,7 @@ def submit_with_backpressure(
         )
         results, metrics = _submit_with_backpressure_legacy_adaptive(
             ray_module,
-            list(pool_submitters.values()),
+            state.legacy_endpoint_submitter,
             replay_batches,
             max_inflight,
             adaptive_config,
@@ -1920,9 +1935,12 @@ def submit_with_backpressure(
                 for submitter in pool_submitters.values()
             ),
             "actor_worker_submission_counts": ";".join(
-                str(count)
-                for submitter in pool_submitters.values()
-                for count in submitter.submission_counts
+                str(after - before)
+                for endpoint_id, submitter in pool_submitters.items()
+                for before, after in zip(
+                    counts_before[endpoint_id],
+                    submitter.submission_counts,
+                )
             ),
         }
     )
@@ -1931,7 +1949,7 @@ def submit_with_backpressure(
 
 def _submit_with_backpressure_legacy_adaptive(
     ray_module,
-    endpoint_submitters: Sequence[Callable[[object], object]],
+    endpoint_submitter: Callable[[object], object],
     batches: Iterable[pa.RecordBatch | pa.Table],
     max_inflight: int,
     adaptive_config: dict | None = None,
@@ -1966,9 +1984,6 @@ def _submit_with_backpressure_legacy_adaptive(
             adaptive_upshifts += 1 if decision == "up" else 0
             adaptive_limit_sum += current_limit
             adaptive_limit_samples += 1
-        endpoint_submitter = endpoint_submitters[
-            submit_count % len(endpoint_submitters)
-        ]
         submit_timer = StageTimer.start("submit")
         ref = endpoint_submitter(batch)
         submit_s += submit_timer.stop()
@@ -2548,6 +2563,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     if args.operator == "ai_complete" and model_backend == "ollama" and not endpoint_urls:
         endpoint_urls = ["http://localhost:11434"]
         endpoint_url_label = ";".join(endpoint_urls)
+    if model_backend in {"compatible_http", "ollama"} and not endpoint_urls:
+        raise SystemExit(
+            "Missing endpoint URL. Use embedding endpoint args for ai_embed "
+            "or completion endpoint args for ai_complete."
+        )
     actor_workers_per_endpoint = 0
     if args.executor == "ray_actor":
         actor_endpoint_count = (
@@ -2758,15 +2778,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         }
     if not args.database_url:
         raise SystemExit("Missing --database-url or DATABASE_URL.")
-    if model_backend in {"compatible_http", "ollama"} and not endpoint_urls:
-        raise SystemExit(
-            "Missing endpoint URL. Use embedding endpoint args for ai_embed or completion endpoint args for ai_complete."
-        )
     if args.operator == "ai_complete" and args.writeback_mode == "pgvector":
         raise SystemExit("AI_COMPLETE does not support --writeback-mode pgvector.")
     resource_sampler = None
     adaptive_observation_provider = None
     conn = connect(args.database_url)
+    job_id = None
     try:
         gpu_snapshot = gpu_metadata()
         if args.setup:
@@ -2806,11 +2823,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     )
                 }
                 if args.operator == "ai_complete" and model_backend == "fake":
-                    RayCompletionActor = _remote_worker_definition(
+                    RayCompletionActor = _remote_actor_class(
                         ray_module,
                         FakeCompletionActor,
                         worker_options,
-                        is_actor=True,
                     )
                     actor_pools = {
                         endpoint_id: [
@@ -2857,11 +2873,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                             for _ in range(actor_workers_per_endpoint)
                         ]
                 elif model_backend == "fake":
-                    RayEmbeddingActor = _remote_worker_definition(
+                    RayEmbeddingActor = _remote_actor_class(
                         ray_module,
                         FakeEmbeddingActor,
                         worker_options,
-                        is_actor=True,
                     )
                     actor_pools = {
                         endpoint_id: [
@@ -2890,11 +2905,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     }
             else:
                 if args.operator == "ai_complete" and model_backend == "fake":
-                    remote_embed = _remote_worker_definition(
+                    remote_embed = _remote_task(
                         ray_module,
                         fake_complete_batch,
                         worker_options,
-                        is_actor=False,
                     )
                 elif args.operator == "ai_complete" and model_backend == "ollama":
                     remote_embed = _remote_task(
@@ -2909,11 +2923,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         worker_options,
                     )
                 elif model_backend == "fake":
-                    remote_embed = _remote_worker_definition(
+                    remote_embed = _remote_task(
                         ray_module,
                         fake_embed_batch,
                         worker_options,
-                        is_actor=False,
                     )
                 else:
                     remote_embed = _remote_task(
@@ -2922,6 +2935,14 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         worker_options,
                     )
 
+        actor_submission_state = (
+            ActorSubmissionState(
+                actor_pools,
+                "complete" if args.operator == "ai_complete" else "embed",
+            )
+            if args.executor == "ray_actor"
+            else None
+        )
         e2e_timer = StageTimer.start("e2e")
         processed_rows = 0
         object_count = 0
@@ -3064,6 +3085,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     epoch_clock=lifecycle_epoch_clock,
                     output_cost_mode=args.output_cost_mode,
                     completion_max_tokens=args.completion_max_tokens,
+                    submission_state=actor_submission_state,
                 )
             if args.executor == "ray_task":
                 return submit_ray_tasks(
@@ -3668,6 +3690,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "rows_per_s": round(processed_rows / e2e_s, 3) if e2e_s else 0.0,
             "tokens_per_s": round(_vllm_tokens_per_second(vllm_stats, e2e_s), 3),
         }
+    except BaseException as original_error:
+        if job_id is not None:
+            try:
+                fail_job(conn, job_id)
+            except BaseException as fail_error:
+                original_error.add_note(
+                    "Failed to mark ai_operator_job "
+                    f"{job_id} failed: {fail_error!r}"
+                )
+        raise
     finally:
         if resource_sampler is not None and resource_sampler.is_running:
             resource_sampler.close()
@@ -3704,7 +3736,17 @@ def iter_requested_runs(
 
 def main() -> None:
     args = parse_args()
-    for phase, repeat_index in iter_requested_runs(args):
+    requested_runs = list(iter_requested_runs(args))
+    if requested_runs and not args.dry_run:
+        phase, repeat_index = requested_runs[0]
+        dry_args = argparse.Namespace(**{**vars(args), "dry_run": True})
+        dry_row = run_once(dry_args, phase, repeat_index)
+        preflight_metrics_schema(
+            Path(args.output),
+            dry_row.keys(),
+            allow_additional_fields=True,
+        )
+    for phase, repeat_index in requested_runs:
         row = run_once(args, phase, repeat_index)
         append_metrics(Path(args.output), row)
         print(json.dumps(row, ensure_ascii=False, indent=2))

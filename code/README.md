@@ -34,6 +34,7 @@ code/
 │   ├── test_request_costs.py              ← 输出成本语义测试
 │   ├── test_packing.py                    ← BFD membership/指标测试
 │   ├── test_output_aware_summary.py       ← 正式结果长表汇总测试
+│   ├── test_kmax_interference_script.py  ← K_max runner 默认输出 schema 版本测试
 │   ├── test_model_backends.py            ← 模型后端最小单元测试
 │   ├── test_sinks.py                     ← 写回后端最小单元测试
 │   ├── test_workloads.py                 ← 内置 workload seed 单元测试
@@ -80,8 +81,10 @@ now lives under `code/src/`:
 - `model_backends.py`: `fake` debug backend, `compatible_http` embedding/completion backend, and Ollama native completion backend.
 - `sinks.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
 - `metrics.py`: timers, GPU/memory/power sampling, energy/MFU estimates, and
-  schema-safe CSV append helpers. Empty files receive a header; non-empty files
-  reject rows whose ordered keys do not exactly match the existing header.
+  schema-safe CSV preflight/append helpers. Formal runs preflight the main
+  output against dry-run keys before database or GPU work. Empty files receive
+  a header; non-empty files reject appended rows whose ordered keys do not
+  exactly match the existing header.
 - `workloads.py`: small built-in seed workloads for smoke/dev only.
 - `scheduling/`: engine-independent scheduling metadata and policies. The
   formal payload/execution path remains Daft -> Arrow -> Ray.
@@ -139,6 +142,11 @@ constraint is not applicable to a task. Internally the task worker options
 still use their safe task definition. Fake Ray task/actor definitions receive
 the same CPU, zero-GPU, and retry/restart options as other Ray workers; this
 does not make the fake backend an HTTP or performance path.
+Endpoint-local worker rotation and the legacy endpoint round-robin submitter
+are created once per run, so fetch chunks do not reset either position.
+Per-worker metrics remain chunk-local deltas for correct run-level merging.
+Jobs created before Ray initialization or submission failures are marked
+`failed` without masking the original exception.
 
 ```powershell
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py

@@ -48,13 +48,13 @@ PostgreSQL documents/job table
 | 数据库连接 | `connect` | 使用 psycopg 和 `--database-url` 建立连接 |
 | 平台识别 | `database_metadata` | 读取真实 PG 和 pgvector 版本并写入 CSV |
 | 建表 | `setup_schema` / `SCHEMA_SQL` | 创建 documents、jobs、embeddings、completions 表 |
-| 任务触发替身 | `create_job` | 用 job table 模拟数据库 AI 算子触发 |
+| 任务触发替身 | `create_job` / `finish_job` / `fail_job` | 用 job table 模拟数据库 AI 算子触发，并记录成功或失败终态 |
 | 数据读取 | `PostgresArrowSource` / `DaftPostgresSource` | 从 PG 基线路径或 Daft SQL 入口读取并返回 Arrow Table |
 | 批划分 | `ArrowOrganizer` / `DaftOrganizer` | 按策略决定 actor 输入粒度；Daft 后端通过 `code/src/organizers.py` 接入 |
 | AI 算子 | `FakeEmbeddingActor` / `CompatibleHTTPEmbeddingActor` / `FakeCompletionActor` / `CompatibleHTTPCompletionActor` / `OllamaCompletionActor` | `fake` 只用于离线 smoke 和控制变量；`compatible_http` 用于 vLLM-compatible embedding 或 completion endpoint；`ollama` 用于本地 Ollama `/api/generate` completion smoke |
 | 并发与反压 | `submit_ray_tasks` / `submit_with_backpressure` → `SynchronousScheduler` | 静态 task/actor 路径统一执行 K_max、路由、等待和 fan-in；旧 queue-adaptive 分支暂时隔离保留 |
 | 数据写回 | `code/src/sinks.py::write_embeddings` / `write_completions` | embedding 支持 `none`、JSON 文本和 pgvector；completion 支持 `none` 和 JSON 文本 |
-| 指标输出 | `code/src/metrics.py::append_metrics` | 空文件写 header；非空 CSV 仅在已有 header 与当前 row keys 精确一致时追加 |
+| 指标输出 | `code/src/metrics.py::preflight_metrics_schema` / `append_metrics` | 正式工作前用 dry-run keys 拒绝旧 schema；追加时要求已有 header 与当前 row keys 精确一致 |
 
 ## 当前本地运行
 

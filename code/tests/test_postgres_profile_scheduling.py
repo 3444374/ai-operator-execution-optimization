@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import csv
+import io
 import sys
 import threading
 import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pyarrow as pa
 
@@ -148,16 +149,28 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             with self.subTest(target=target.__name__):
                 ray = _RecordingRay()
 
-                remote = profile._remote_worker_definition(
-                    ray,
-                    target,
-                    options,
-                    is_actor=is_actor,
+                helper = (
+                    profile._remote_actor_class
+                    if is_actor
+                    else profile._remote_task
                 )
+                remote = helper(ray, target, options)
 
                 self.assertEqual(remote.options_calls[0][option_name], expected)
                 self.assertEqual(remote.options_calls[0]["num_cpus"], 0.25)
                 self.assertEqual(remote.options_calls[0]["num_gpus"], 0)
+
+        self.assertFalse(hasattr(profile, "_remote_worker_definition"))
+
+    def test_endpoint_help_describes_service_endpoints(self) -> None:
+        output = io.StringIO()
+        with patch.object(sys, "argv", ["profile", "--help"]):
+            with patch("sys.stdout", output):
+                with self.assertRaises(SystemExit):
+                    profile.parse_args()
+
+        help_text = " ".join(output.getvalue().split())
+        self.assertIn("per service endpoint", help_text)
 
     def test_submit_metrics_merge_aggregates_chunks_and_missing_fields(self) -> None:
         aggregate = {
@@ -291,6 +304,22 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(row["ray_worker_num_gpus"], 0)
         self.assertEqual(row["actor_worker_count"], 0)
         self.assertEqual(row["actor_worker_submission_counts"], "")
+
+    def test_compatible_http_requires_endpoint_before_dry_or_real_work(self) -> None:
+        for dry_run in (False, True):
+            argv = ["--model-backend", "http_openai"]
+            if dry_run:
+                argv.append("--dry-run")
+            args = profile.parse_args(argv)
+            with (
+                patch.object(profile, "connect") as connect,
+                patch.object(profile, "require_ray") as require_ray,
+            ):
+                with self.assertRaisesRegex(SystemExit, "Missing endpoint URL"):
+                    profile.run_once(args, "formal", 1)
+
+            connect.assert_not_called()
+            require_ray.assert_not_called()
 
     def test_real_python_row_records_non_applicable_ray_contract(self) -> None:
         args = profile.parse_args(
@@ -912,6 +941,129 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         provider.close.assert_called_once_with()
         connection.close.assert_called_once_with()
+
+    def test_fail_job_rolls_back_before_marking_failed(self) -> None:
+        connection = MagicMock()
+        cursor = connection.cursor.return_value.__enter__.return_value
+
+        profile.fail_job(connection, 7)
+
+        connection.rollback.assert_called_once_with()
+        cursor.execute.assert_called_once()
+        self.assertIn("status = 'failed'", cursor.execute.call_args.args[0])
+        connection.commit.assert_called_once_with()
+
+    def test_run_once_marks_created_job_failed_and_preserves_base_exception(self) -> None:
+        args = profile.parse_args(
+            [
+                "--database-url",
+                "postgresql://unused",
+                "--executor",
+                "ray_task",
+            ]
+        )
+        connection = Mock()
+        original = KeyboardInterrupt("ray initialization interrupted")
+
+        with (
+            patch.object(profile, "connect", return_value=connection),
+            patch.object(profile, "gpu_metadata", return_value={}),
+            patch.object(
+                profile,
+                "database_metadata",
+                return_value={"server_version": "18.4", "pgvector_version": "0.8.2"},
+            ),
+            patch.object(
+                profile,
+                "embedding_vector_column_dim",
+                return_value=args.embedding_dim,
+            ),
+            patch.object(profile, "create_job", return_value=17),
+            patch.object(profile, "require_ray", side_effect=original),
+            patch.object(profile, "fail_job") as fail_job,
+        ):
+            with self.assertRaises(KeyboardInterrupt) as raised:
+                profile.run_once(args, "formal", 1)
+
+        self.assertIs(raised.exception, original)
+        fail_job.assert_called_once_with(connection, 17)
+
+    def test_fail_job_error_is_not_allowed_to_mask_original_error(self) -> None:
+        args = profile.parse_args(
+            [
+                "--database-url",
+                "postgresql://unused",
+                "--executor",
+                "ray_task",
+            ]
+        )
+        connection = Mock()
+        original = RuntimeError("ray initialization failed")
+
+        with (
+            patch.object(profile, "connect", return_value=connection),
+            patch.object(profile, "gpu_metadata", return_value={}),
+            patch.object(
+                profile,
+                "database_metadata",
+                return_value={"server_version": "18.4", "pgvector_version": "0.8.2"},
+            ),
+            patch.object(
+                profile,
+                "embedding_vector_column_dim",
+                return_value=args.embedding_dim,
+            ),
+            patch.object(profile, "create_job", return_value=17),
+            patch.object(profile, "require_ray", side_effect=original),
+            patch.object(
+                profile,
+                "fail_job",
+                side_effect=OSError("database unavailable"),
+            ),
+        ):
+            with self.assertRaises(RuntimeError) as raised:
+                profile.run_once(args, "formal", 1)
+
+        self.assertIs(raised.exception, original)
+        self.assertTrue(
+            any("database unavailable" in note for note in raised.exception.__notes__)
+        )
+
+    def test_main_preflights_output_before_formal_run(self) -> None:
+        args = profile.parse_args(["--database-url", "postgresql://unused"])
+        events = []
+
+        def run_once(run_args, phase, repeat_index):
+            events.append(
+                ("run_once", run_args.dry_run, phase, repeat_index)
+            )
+            return {"status": "dry_run" if run_args.dry_run else "ok"}
+
+        def preflight(path, keys, **options):
+            events.append(("preflight", path, tuple(keys), options))
+
+        with (
+            patch.object(profile, "parse_args", return_value=args),
+            patch.object(
+                profile,
+                "iter_requested_runs",
+                return_value=iter([("formal", 1)]),
+            ),
+            patch.object(profile, "run_once", side_effect=run_once),
+            patch.object(
+                profile,
+                "preflight_metrics_schema",
+                side_effect=preflight,
+            ),
+            patch.object(profile, "append_metrics"),
+            patch("builtins.print"),
+        ):
+            profile.main()
+
+        self.assertEqual(events[0], ("run_once", True, "formal", 1))
+        self.assertEqual(events[1][0], "preflight")
+        self.assertEqual(events[1][3], {"allow_additional_fields": True})
+        self.assertEqual(events[2], ("run_once", False, "formal", 1))
 
     def test_static_run_never_builds_adaptive_provider(self) -> None:
         args = profile.parse_args(
@@ -1601,6 +1753,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "ai_complete",
                     "--model-backend",
                     "compatible_http",
+                    "--completion-endpoint-url",
+                    "http://localhost/v1/completions",
                     "--completion-return-token-ids",
                 ]
             ),
@@ -1627,6 +1781,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "ai_complete",
                     "--model-backend",
                     "compatible_http",
+                    "--completion-endpoint-url",
+                    "http://localhost/v1/completions",
                     "--completion-prompt-format",
                     "chatml",
                     "--completion-temperature",
@@ -2915,6 +3071,72 @@ class StaticActorSchedulingTests(unittest.TestCase):
         self.assertEqual(
             metrics["actor_worker_submission_counts"],
             "2;2;2;2",
+        )
+
+    def test_actor_submission_state_persists_across_fetch_chunks(self) -> None:
+        actors = [_RecordingActor() for _ in range(4)]
+        actor_pools = {
+            "endpoint-0": actors[:2],
+            "endpoint-1": actors[2:],
+        }
+        endpoint_urls = {
+            endpoint_id: f"http://local/{endpoint_id}"
+            for endpoint_id in actor_pools
+        }
+        state = profile.ActorSubmissionState(actor_pools, "execute_batch")
+        routing_config = {
+            "endpoint_router": profile.RoundRobinEndpointRouter(),
+        }
+        per_chunk_counts = []
+
+        for batch in self.batches[:2] * 2:
+            _, metrics = profile.submit_with_backpressure(
+                ray_module=_ImmediateRay,
+                actor_pools=actor_pools,
+                endpoint_urls=endpoint_urls,
+                batches=[batch],
+                max_inflight=1,
+                method_name="execute_batch",
+                routing_config=routing_config,
+                submission_state=state,
+            )
+            per_chunk_counts.append(metrics["actor_worker_submission_counts"])
+
+        self.assertEqual(
+            [len(actor.execute_batch.calls) for actor in actors],
+            [1, 1, 1, 1],
+        )
+        self.assertEqual(
+            per_chunk_counts,
+            ["1;0;0;0", "0;0;1;0", "0;1;0;0", "0;0;0;1"],
+        )
+
+    def test_legacy_endpoint_rotation_persists_across_calls(self) -> None:
+        actors = [_RecordingActor() for _ in range(4)]
+        actor_pools = {
+            "endpoint-0": actors[:2],
+            "endpoint-1": actors[2:],
+        }
+        state = profile.ActorSubmissionState(actor_pools, "execute_batch")
+
+        for batch in self.batches[:2] * 2:
+            profile.submit_with_backpressure(
+                ray_module=_ImmediateRay,
+                actor_pools=actor_pools,
+                endpoint_urls={
+                    endpoint_id: f"http://local/{endpoint_id}"
+                    for endpoint_id in actor_pools
+                },
+                batches=[batch],
+                max_inflight=1,
+                method_name="execute_batch",
+                adaptive_config={},
+                submission_state=state,
+            )
+
+        self.assertEqual(
+            [len(actor.execute_batch.calls) for actor in actors],
+            [1, 1, 1, 1],
         )
 
     def test_replay_envelopes_cover_static_typed_and_legacy_actor_paths(self) -> None:

@@ -78,18 +78,34 @@ class PeriodicSampler:
             self._stop.wait(self._interval_s)
 
 
-def append_metrics(path: Path, row: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = list(row.keys())
+def preflight_metrics_schema(
+    path: Path,
+    fieldnames,
+    *,
+    allow_additional_fields: bool = False,
+) -> None:
+    expected = list(fieldnames)
     has_content = path.exists() and path.stat().st_size > 0
     if has_content:
         with path.open(newline="", encoding="utf-8") as existing:
             header = next(csv.reader(existing), [])
-        if header != fieldnames:
+        matches = (
+            set(expected).issubset(header)
+            if allow_additional_fields
+            else header == expected
+        )
+        if not matches:
             raise ValueError(
                 "CSV schema mismatch: "
-                f"existing header {header!r} != row keys {fieldnames!r}"
+                f"existing header {header!r} != row keys {expected!r}"
             )
+
+
+def append_metrics(path: Path, row: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = list(row.keys())
+    preflight_metrics_schema(path, fieldnames)
+    has_content = path.exists() and path.stat().st_size > 0
     with path.open("a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         if not has_content:

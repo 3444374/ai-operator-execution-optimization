@@ -45,8 +45,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--adaptive-running-threshold", type=int, default=160)
     parser.add_argument("--adaptive-queue-threshold", type=int, default=0)
     parser.add_argument("--adaptive-kv-threshold", type=float, default=0.85)
-    parser.add_argument("--small-output", default=str(RESULT_DIR / "sharegpt_burstgpt_kmax_interference_small_20260719.csv"))
-    parser.add_argument("--bulk-output", default=str(RESULT_DIR / "sharegpt_burstgpt_kmax_interference_bulk_20260719.csv"))
+    parser.add_argument("--small-output", default=str(RESULT_DIR / "sharegpt_burstgpt_kmax_interference_small_20260726.csv"))
+    parser.add_argument("--bulk-output", default=str(RESULT_DIR / "sharegpt_burstgpt_kmax_interference_bulk_20260726.csv"))
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
 
