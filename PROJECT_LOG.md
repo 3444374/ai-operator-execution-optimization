@@ -1414,3 +1414,17 @@
 - 当前单 GPU 文本默认收敛为 sequential token-budget + static K_max=8 +
   fixed 50ms。adaptive、prefix-aware、BFD 均保留为有显式触发门槛的候选。
   分支继续隔离，未合并 `main`，未自动同步 Wiki。
+
+## 2026-07-26 多 endpoint 路由就绪设计
+
+- 用户确认未来会提供真实多 GPU 环境；当前不通过同一张 GPU 上的双 vLLM
+  进程模拟多 GPU 性能，也不把两个逻辑 endpoint 指向同一服务的结果写成扩展性证据。
+- 代码审查发现 `LeastQueuedEndpointRouter` 在多个 endpoint 的
+  `running + waiting` 相同时固定选择 endpoint ID 最小者，可能使新鲜拓扑的初始
+  burst 偏向单端点。该发现属于静态代码证据，当前单 endpoint 正式结果不能量化其影响。
+- 新增
+  `code_doc/superpowers/specs/2026-07-26-multi-endpoint-routing-readiness-design.md`：
+  设计 tie-fair least-queued 和独立的 least-estimated-work 候选；当前用真实
+  vLLM 的双逻辑 endpoint 仅验证路由、trace、exactly-once 和客户端开销，未来在
+  独立 GPU endpoint 上完成吞吐、尾延迟、MFU、公平性与故障迁移矩阵后才能晋级策略。
+- 本次仅固化设计与交接边界，尚未修改生产路由代码或运行新的性能实验。

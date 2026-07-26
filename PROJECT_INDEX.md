@@ -177,6 +177,7 @@
 | `code_doc/superpowers/specs/2026-07-25-ai-operator-execution-infra-design.md` | AI 算子外部执行 infra 总体设计 | 数据进入与组织、运行时控制、Ray 执行、可观测性、策略搜索及后续多模态/代价估计边界 |
 | `code_doc/superpowers/specs/2026-07-26-output-aware-bfd-design.md` | 输出成本与离线 BFD 设计 | 共享成本语义、确定性 BFD、global/local scope、trace 元数据证据边界与真实组件门禁 |
 | `code_doc/superpowers/specs/2026-07-26-row-cap-aware-packing-and-observation-design.md` | Row-cap-aware packing 与非阻塞观测设计 | 将 BFD 降为候选对照，修复 adaptive 观测阻塞风险，并以真实 64→512→1024 门禁选择策略 |
+| `code_doc/superpowers/specs/2026-07-26-multi-endpoint-routing-readiness-design.md` | 多 endpoint 路由就绪设计 | 修复 equal-load 偏置、增加 estimated-work 候选，并明确逻辑双 endpoint 与未来真实多 GPU 的证据边界 |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-flush-window-implementation.md` | Adaptive flush 双窗口实施计划 | TDD 窗口选择、event-time replay、profiler trace 与真实单 GPU 分级门禁 |
 | `code_doc/superpowers/plans/2026-07-25-request-lifecycle-scenario-runner-implementation.md` | AI 算子执行 infra 第一阶段实施计划 | request lifecycle、单 prompt E2E/SLO、seeded scenario runner 与真实 64 行门禁 |
 | `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md` | 输出成本与确定性 BFD 实施计划 | 共享成本、通用 cost_units BFD、Arrow/Daft 接入、离线 lifecycle、真实 64→512 单 GPU 门禁 |

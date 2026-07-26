@@ -26,3 +26,6 @@ Current row-cap-aware packing and non-blocking observation implementation plan:
 
 Current single-GPU text evidence-closure implementation plan:
 `superpowers/plans/2026-07-26-single-gpu-text-closure-implementation.md`.
+
+Current multi-endpoint routing readiness design:
+`superpowers/specs/2026-07-26-multi-endpoint-routing-readiness-design.md`.
