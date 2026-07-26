@@ -1,0 +1,2 @@
+["--model","/models/qwen","--served-model-name","qwen2.5-1.5b","--dtype","auto","--max-model-len","2048","--gpu-memory-utilization","0.75","--enforce-eager","--enable-mfu-metrics","--no-enable-prefix-caching"]
+[{"Type":"bind","Source":"D:\\Code\\ai-operator-execution-optimization\\models\\Qwen2.5-1.5B-Instruct","Destination":"/models/qwen","Mode":"ro","RW":false,"Propagation":"rprivate"}] "vllm/vllm-openai:v0.25.1-cu129-ubuntu2404"

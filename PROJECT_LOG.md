@@ -1,5 +1,29 @@
 # 项目日志
 
+## 2026-07-26 Eager vLLM baseline captured after recovered preflight incident
+
+- Recorded the exact running vLLM 0.25.1 eager service and added complete,
+  validated 64/512 scenario configs for real ShareGPT/BurstGPT compatible-HTTP
+  execution with ChatML, temperature 0, 512 output cap, token budget 6144,
+  static K=8, fixed 50 ms flush, MFU/resource tracing, and no writeback.
+- The 64-request gate completed with zero incidents and passed exact request,
+  output-token, finish-reason, FLOP, MFU, energy, resource, database job, and
+  CSV schema audits.
+- The 512 warm-up completed, after which the first formal invocation failed
+  before job creation because the new process's base preflight row keys did not
+  match the fully expanded `runs.csv` header. After the stable-field preflight
+  fix and an independent resume audit, `--resume` skipped the warm-up,
+  completed all three formal repeats, and marked the retained incident
+  recovered.
+- The three formal repeats each contain 512 completed unique requests/docs,
+  positive token/FLOP deltas, valid MFU/energy/resource traces, and finished
+  database jobs. Mean E2E is 282.756 s, observed throughput 812.234 tokens/s,
+  MFU 0.04025, and GPU energy 22.851 kJ.
+- Boundary: this establishes only the eager baseline. The recovered preflight
+  incident, overwritten original retry stderr path, and one formal-3 Ray
+  shutdown access-violation stack fragment remain documented concerns; no
+  eager-versus-CUDA-graph conclusion is made.
+
 ## 2026-07-26 Ray 执行基础整分支审查修复
 
 - Ray actor 正式运行现在只构造一次 endpoint-local worker submitter 与 legacy
