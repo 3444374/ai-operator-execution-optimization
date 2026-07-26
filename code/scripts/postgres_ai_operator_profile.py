@@ -461,6 +461,22 @@ def _validate_ray_worker_resources(args: argparse.Namespace) -> None:
         raise SystemExit("--ray-actor-max-concurrency must be positive")
 
 
+def _ray_worker_options(
+    args: argparse.Namespace,
+) -> RayWorkerOptions | None:
+    if args.executor not in {"ray_actor", "ray_task"}:
+        return None
+    _validate_ray_worker_resources(args)
+    return RayWorkerOptions(
+        num_cpus=args.ray_worker_num_cpus,
+        actor_max_concurrency=(
+            args.ray_actor_max_concurrency
+            if args.executor == "ray_actor"
+            else 1
+        ),
+    )
+
+
 def _remote_actor_class(ray_module, actor_cls, worker_options):
     return ray_module.remote(actor_cls).options(
         **worker_options.actor_options()
@@ -2455,7 +2471,7 @@ def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
 
 
 def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
-    _validate_ray_worker_resources(args)
+    worker_options = _ray_worker_options(args)
     _validate_request_trace_args(args)
     _validate_arrival_replay_args(args)
     _validate_resource_efficiency_args(args)
@@ -2706,10 +2722,6 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         if args.executor in {"ray_actor", "ray_task"}:
             ray_module = require_ray()
             ray_module.init(ignore_reinit_error=True, runtime_env=ray_runtime_env())
-            worker_options = RayWorkerOptions(
-                num_cpus=args.ray_worker_num_cpus,
-                actor_max_concurrency=args.ray_actor_max_concurrency,
-            )
             if args.executor == "ray_actor":
                 actor_endpoint_urls = {
                     f"endpoint-{index}": endpoint_url

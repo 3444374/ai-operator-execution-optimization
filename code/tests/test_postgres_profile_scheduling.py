@@ -60,6 +60,43 @@ class _RecordingRay:
 
 
 class SchedulingProfileHelperTests(unittest.TestCase):
+    def test_ray_task_worker_options_ignore_actor_only_concurrency(self) -> None:
+        args = profile.parse_args(
+            [
+                "--executor",
+                "ray_task",
+                "--ray-actor-max-concurrency",
+                "0",
+                "--ray-worker-num-cpus",
+                "0.5",
+            ]
+        )
+
+        options = profile._ray_worker_options(args)
+
+        self.assertEqual(options.actor_max_concurrency, 1)
+        self.assertEqual(
+            options.task_options(),
+            {"num_cpus": 0.5, "num_gpus": 0, "max_retries": 0},
+        )
+
+    def test_ray_actor_worker_options_preserve_configured_concurrency(self) -> None:
+        args = profile.parse_args(
+            [
+                "--executor",
+                "ray_actor",
+                "--ray-actor-max-concurrency",
+                "4",
+                "--ray-worker-num-cpus",
+                "0.5",
+            ]
+        )
+
+        options = profile._ray_worker_options(args)
+
+        self.assertEqual(options.actor_max_concurrency, 4)
+        self.assertEqual(options.num_cpus, 0.5)
+
     def test_http_actor_definition_receives_safe_ray_options(self) -> None:
         ray = _RecordingRay()
         options = RayWorkerOptions(0.25, actor_max_concurrency=4)
