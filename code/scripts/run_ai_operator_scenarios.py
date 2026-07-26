@@ -389,7 +389,7 @@ def _load_config(path: Path) -> ScenarioExperimentConfig:
     if not isinstance(experiment_id, str) or not experiment_id.strip():
         raise ValueError("experiment_id must be non-empty")
     seed = decoded.get("seed")
-    service_metadata = _validate_service_metadata(
+    service_metadata = _normalize_service_metadata(
         decoded.get("service_metadata", {})
     )
     if decoded.get("require_complete_service_metadata") is True:
@@ -456,7 +456,7 @@ def _validate_argument_list(values, label: str) -> tuple[str, ...]:
     return tuple(values)
 
 
-def _validate_service_metadata(
+def _normalize_service_metadata(
     value: object,
 ) -> tuple[tuple[str, object], ...]:
     if not isinstance(value, dict):

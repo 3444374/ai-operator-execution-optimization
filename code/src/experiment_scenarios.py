@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import random
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -27,12 +28,28 @@ def validate_service_metadata(metadata: Mapping[str, object]) -> None:
         raise ValueError(
             "service_metadata missing required keys: " + ", ".join(missing)
         )
-    utilization = float(metadata["gpu_memory_utilization"])
-    if not 0.0 < utilization <= 1.0:
-        raise ValueError("gpu_memory_utilization must be in (0, 1]")
+    utilization = metadata["gpu_memory_utilization"]
+    if (
+        isinstance(utilization, bool)
+        or not isinstance(utilization, (int, float))
+        or not math.isfinite(utilization)
+        or not 0.0 < utilization <= 1.0
+    ):
+        raise ValueError(
+            "gpu_memory_utilization must be a finite number in (0, 1]"
+        )
     for key in ("max_num_batched_tokens", "max_num_seqs"):
-        if metadata[key] != "unknown" and int(metadata[key]) <= 0:
-            raise ValueError(f"{key} must be positive or 'unknown'")
+        capacity = metadata[key]
+        if isinstance(capacity, str) and capacity == "unknown":
+            continue
+        if (
+            isinstance(capacity, bool)
+            or not isinstance(capacity, int)
+            or capacity <= 0
+        ):
+            raise ValueError(
+                f"{key} must be a positive integer or 'unknown'"
+            )
 
 
 @dataclass(frozen=True)

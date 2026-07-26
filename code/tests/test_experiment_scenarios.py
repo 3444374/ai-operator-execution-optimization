@@ -21,8 +21,9 @@ from scripts.run_ai_operator_scenarios import (  # noqa: E402
 
 
 class ExperimentScenarioTests(unittest.TestCase):
-    def test_service_metadata_requires_execution_parameters(self) -> None:
-        metadata = {
+    @staticmethod
+    def _complete_service_metadata() -> dict[str, object]:
+        return {
             "vllm_version": "0.25.1",
             "enforce_eager": False,
             "compilation_mode": "default",
@@ -34,66 +35,63 @@ class ExperimentScenarioTests(unittest.TestCase):
             "mfu_metrics": True,
         }
 
-        validate_service_metadata(metadata)
+    def test_service_metadata_requires_execution_parameters(self) -> None:
+        validate_service_metadata(self._complete_service_metadata())
 
-    def test_service_metadata_rejects_missing_capacity(self) -> None:
-        with self.assertRaisesRegex(ValueError, "max_num_batched_tokens"):
-            validate_service_metadata({"vllm_version": "0.25.1"})
+    def test_service_metadata_rejects_each_missing_required_key(self) -> None:
+        for key in self._complete_service_metadata():
+            with self.subTest(key=key):
+                metadata = self._complete_service_metadata()
+                del metadata[key]
+
+                with self.assertRaisesRegex(ValueError, key):
+                    validate_service_metadata(metadata)
 
     def test_service_metadata_accepts_unknown_capacity(self) -> None:
-        metadata = {
-            "vllm_version": "0.25.1",
-            "enforce_eager": False,
-            "compilation_mode": "default",
-            "chunked_prefill": True,
-            "max_num_batched_tokens": "unknown",
-            "max_num_seqs": "unknown",
-            "gpu_memory_utilization": 0.75,
-            "prefix_caching": False,
-            "mfu_metrics": True,
-        }
+        metadata = self._complete_service_metadata()
+        metadata["max_num_batched_tokens"] = "unknown"
+        metadata["max_num_seqs"] = "unknown"
 
         validate_service_metadata(metadata)
 
     def test_service_metadata_rejects_invalid_capacity(self) -> None:
         for key in ("max_num_batched_tokens", "max_num_seqs"):
-            with self.subTest(key=key):
-                metadata = {
-                    "vllm_version": "0.25.1",
-                    "enforce_eager": False,
-                    "compilation_mode": "default",
-                    "chunked_prefill": True,
-                    "max_num_batched_tokens": 4096,
-                    "max_num_seqs": 64,
-                    "gpu_memory_utilization": 0.75,
-                    "prefix_caching": False,
-                    "mfu_metrics": True,
-                }
-                metadata[key] = 0
+            for invalid in (0, -1, True, False, 1.0, None, "4096"):
+                with self.subTest(key=key, invalid=invalid):
+                    metadata = self._complete_service_metadata()
+                    metadata[key] = invalid
 
-                with self.assertRaisesRegex(ValueError, key):
-                    validate_service_metadata(metadata)
+                    with self.assertRaisesRegex(ValueError, key):
+                        validate_service_metadata(metadata)
 
     def test_service_metadata_rejects_invalid_utilization(self) -> None:
-        for utilization in (0.0, 1.01):
+        for utilization in (
+            0,
+            -0.1,
+            1.01,
+            True,
+            False,
+            None,
+            float("nan"),
+            float("inf"),
+            float("-inf"),
+            "0.75",
+        ):
             with self.subTest(utilization=utilization):
-                metadata = {
-                    "vllm_version": "0.25.1",
-                    "enforce_eager": False,
-                    "compilation_mode": "default",
-                    "chunked_prefill": True,
-                    "max_num_batched_tokens": 4096,
-                    "max_num_seqs": 64,
-                    "gpu_memory_utilization": utilization,
-                    "prefix_caching": False,
-                    "mfu_metrics": True,
-                }
+                metadata = self._complete_service_metadata()
+                metadata["gpu_memory_utilization"] = utilization
 
                 with self.assertRaisesRegex(
                     ValueError,
                     "gpu_memory_utilization",
                 ):
                     validate_service_metadata(metadata)
+
+    def test_service_metadata_accepts_utilization_upper_boundary(self) -> None:
+        metadata = self._complete_service_metadata()
+        metadata["gpu_memory_utilization"] = 1.0
+
+        validate_service_metadata(metadata)
 
     def test_schedule_is_reproducible_and_interleaves_formal_scenarios(
         self,
