@@ -212,6 +212,34 @@ K_max = K_max*（从 5.1 取最优值）
 
 **期望发现**：adaptive 在均匀场景 ≈ static，在突发/混合场景 > static。
 
+### 5.4 Whole-submission barrier vs continuous replenishment
+
+本实验不修改 vLLM continuous batching，只改变 Ray 上游释放 credit 和补充请求
+的粒度。
+
+```text
+策略:
+  - whole_submission: 整个 Ray submission 返回后释放 admission credit
+  - request_replenishment: 任一请求完成后释放自身 credit 并立即补位
+  - token_credit_replenishment: 在上一项基础上限制 active estimated token work
+
+控制变量:
+  - 同一 Daft source batch
+  - 同一 workload / arrival replay
+  - 同一 vLLM 配置、静态 K_max 和 flush timeout
+  - 同一 request identity、重试和失败语义
+```
+
+先用固定最佳 timeout 隔离补位机制；只有补位相对 whole-submission barrier 有
+可辨认收益后，才加入 adaptive flush。
+
+**要推翻的假设**：“vLLM 内部已有 continuous batching，因此上游 submission
+完成粒度不会限制持续供给。”
+
+**必须记录**：request/submission 首末完成时间、submission 内 completion span、
+credit idle ratio、refill 次数和间隔、active request/token work、vLLM
+running/waiting/KV、observed tokens/s、SLO goodput 和 request P99。
+
 ---
 
 ## 6. 指标
@@ -224,6 +252,8 @@ K_max = K_max*（从 5.1 取最优值）
 | **吞吐 (rows/s)** | `total_rows / T_e2e` | vLLM 的 requests/second |
 | **GPU 空闲率** | `1 - (GPU_busy_time / T_e2e)`（近似）| vLLM 的 GPU utilization |
 | **queue_depth** | 每个 endpoint 前等待的 task 数 | Orca 的 batch queue 分析 |
+| **补位效率** | credit idle ratio、refill interval、completion span | Orca/vLLM continuous batching 的上游迁移验证 |
+| **有效吞吐** | observed tokens/s、SLO goodput | vLLM/Clipper 的吞吐—SLO评估范式 |
 
 **关键**：不报"adaptive 比 static 好 X%"，而是画 **"延迟-吞吐曲线"**——在不同吞吐水平下 P99 延迟如何变化。这是 vLLM/Orca 的标准做法。
 

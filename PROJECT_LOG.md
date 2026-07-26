@@ -1618,3 +1618,22 @@
   foreground size、arrival offset 和 job 数量，而不继续稳态 PID/AIMD 调参。
 - 结果与绘图 CSV 位于
   `experiments/results/shared_vllm_adaptive_admission_20260726/`。
+
+## 2026-07-26：补充文献驱动优化指南与上游持续补位缺口
+
+- 新增 `experiments/plans/literature_driven_pipeline_optimization_guide.md`，
+  统一记录三层 batch 边界、Orca/vLLM continuous batching 与 Ray 上游
+  whole-submission barrier 的区别、request-level continuous replenishment、
+  SLO-aware EWMA flush、文献机制卡、假设迁移、fatal-flaw audit、候选池和
+  晋级/放弃条件。
+- 校正完成度口径：当前 25/50ms `QueueAdaptiveFlush` 是已接入真实链路的
+  two-level baseline，不是 Clipper/Clockwork/CONCUR 等文献机制的完整复现；
+  vLLM 内部已有 continuous batching，不代表 Ray 上游已经按逐请求完成补位。
+- 更新 `AGENTS.md`、`README.md`、`PROJECT_OUTLINE.md`、
+  `overview/current_direction_and_plan.md`、`code/INFRA_STATUS.md`、
+  `experiments/plans/README.md`、`experiment_status_and_gaps.md`、
+  `service_scheduling_backpressure.md`、`research/knowledge_hub.md` 和
+  `PROJECT_INDEX.md` 的缺口、实验入口和导航。
+- 修正两处过时状态：根 README 不再把已经完成的 adaptive/联合实验写成下一步；
+  缺口表不再把跨 arrival-rate 和 2048 held-out 写成未完成。
+- 本轮仅更新设计与状态文档，没有修改代码或生成新的性能结论。

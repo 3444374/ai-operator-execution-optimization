@@ -81,11 +81,18 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
   MFU 4.02% → 14.51%；后续本地稳态调度实验采用 graph 服务
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
-2. **P2**（文本门禁已完成）：多模态泛化验证
-3. 多 endpoint / 多 GPU 在具备硬件后做真实验证
-4. 代价模型增加独立时间段/新 workload 校准和预测区间
-5. Shared-vLLM 扩展不同 foreground size、arrival offset 和多 job 数量
+1. **P1**：Ray 上游 request-level continuous replenishment；当前仍可能受
+   whole-submission completion barrier 限制
+2. **P1**：SLO-aware EWMA flush；当前 25/50ms two-level 只作为 baseline
+3. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
+4. **P2**（文本门禁已完成）：多模态泛化验证
+5. 多 endpoint / 多 GPU 在具备硬件后做真实验证
+6. 代价模型增加独立时间段/新 workload 校准和预测区间
+7. Shared-vLLM 扩展不同 foreground size、arrival offset 和多 job 数量
+
+继续从文献提取机制时，统一按
+`experiments/plans/literature_driven_pipeline_optimization_guide.md` 的机制卡、
+假设迁移、fatal-flaw audit 和最小隔离实验流程执行。
 
 **Scope 缩减触发条件**：
 - Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（✅ 已建立，未触发）

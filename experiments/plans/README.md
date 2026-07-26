@@ -24,8 +24,11 @@
 | `baseline_reference.md` | 选 baseline 时查 | 从 CCF-A 文献提取的各方向最优 baseline（G/W/D/X 系列），避免 strawman 对照 |
 | `strategy_design_literature_basis.md` | 写论文 / 答辩 / reviewer 防御时查 | **为什么这样设计 + 不能过度声称什么**：可借鉴思想 vs baseline/边界 vs 本文策略定义、fatal flaws、§3.1 借鉴论文适用边界 |
 | `strategy_design_implementation_reference.md` | 写代码 / 设计实验变量时查 | **怎么实现**：信号→变量→指标→baseline→§8 目标代码架构→实现优先级 |
+| `literature_driven_pipeline_optimization_guide.md` | 继续从文献寻找优化点时查 | **怎么发现下一项机制**：三层 batch 边界、Orca 式上游持续补位、完整 adaptive flush 缺口、机制卡模板、fatal-flaw audit、候选池与晋级/放弃条件 |
 
-> **两个 strategy_design 的区别**（名字接近但分工不同）：`literature_basis` 是**边界论证**（为什么、不能声称什么），`implementation_reference` 是**工程映射**（怎么实现）。两者有部分重叠（都讲 vLLM/Orca/Sarathi 借鉴）但服务不同场景，不合并不替换。"先试哪个机制"的跨论文优先级不单列文档，并入 `experiment_status_and_gaps.md` §4「候选机制优先级」。
+> **文档分工**：`literature_basis` 是论文边界论证，`implementation_reference`
+> 是已有工程映射，`literature_driven_pipeline_optimization_guide` 是今后重复使用的
+> 机制发现与筛选流程。具体完成度仍以 `experiment_status_and_gaps.md` 为准。
 
 ## 三、状态审计
 
@@ -69,5 +72,5 @@
 
 ## 文档维护纪律（2026-07-24）
 
-1. **默认并入现有文档，不新建。** plans/ 里已存在的文档是某类内容的自然归属——"机制优先级"进 `experiment_status_and_gaps.md` §4，不另建索引；策略边界进 `strategy_design_literature_basis.md`；实现映射进 `strategy_design_implementation_reference.md`。深度内容进 `research/reading_notes/` 或对应 `*_reference.md`。**只有当某类内容在所有现有文档中都找不到自然归属时才新建文件，且必须在 `PROJECT_LOG.md` 说明为什么现有文档都不合适。**
+1. **默认并入现有文档，不新建。** plans/ 里已存在的文档是某类内容的自然归属——实验完成度进 `experiment_status_and_gaps.md`，策略边界进 `strategy_design_literature_basis.md`，已有实现映射进 `strategy_design_implementation_reference.md`，可重复使用的跨论文机制发现流程统一进 `literature_driven_pipeline_optimization_guide.md`。深度内容进 `research/reading_notes/` 或对应 `*_reference.md`。**只有当某类内容在所有现有文档中都找不到自然归属时才新建文件，且必须在 `PROJECT_LOG.md` 说明为什么现有文档都不合适。**
 2. **计划文档只保留待做内容。** 实验一旦完成（结果已记入 `experiments/results/` + `experiment_status_and_gaps.md`），其设计/变量/矩阵从对应计划文档（`data_organization_batching.md`、`service_scheduling_backpressure.md` 等）删除——计划文档只回答"接下来做什么"，不积累已完成实验的存量。**前提**：完成实验的 results 报告必须自包含该实验的设计；否则删除前先把设计迁移到 results。

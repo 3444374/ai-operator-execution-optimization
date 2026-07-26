@@ -135,17 +135,26 @@
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
+1. **P1**：上游 request-level continuous replenishment。vLLM 内部已有
+   continuous batching，但 Ray 当前主要按整个 submission 返回释放 credit，
+   尚未验证逐请求完成补位能否减少 HOL、提高 SLO goodput。
+2. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；
+   下一版需显式使用 oldest-request slack、token backlog、arrival/service-rate
+   EWMA、hard deadline 与滞回，并对比最佳静态窗口。
+3. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
    证据，不能用当前 cache-off 数据推断缓存收益。
-2. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
-3. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
+4. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
+5. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
    ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
-4. 多 endpoint / 多 GPU 真实验证仍受当前单 GPU 硬件范围限制；接口与 fallback
+6. 多 endpoint / 多 GPU 真实验证仍受当前单 GPU 硬件范围限制；接口与 fallback
    契约已完成，不能把单卡逻辑池写成多 GPU 性能证据。
-5. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
-6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
-7. Shared-vLLM 仍需扩展不同 foreground size、arrival offset 和多 job 数量；
+7. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
+8. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+9. Shared-vLLM 仍需扩展不同 foreground size、arrival offset 和多 job 数量；
    当前只完成一个 128/512 双作业规模，不能外推多租户公平性。
+
+文献机制的发现、迁移审计和晋级/放弃条件统一见
+`experiments/plans/literature_driven_pipeline_optimization_guide.md`。
 
 **指标状态**：
 - 新实验已经系统采集 `tokens/s`、request P50/P95/P99、SLO

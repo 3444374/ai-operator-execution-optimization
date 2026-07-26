@@ -117,7 +117,11 @@
 - pgvector(384) 写回 0.897s vs JSON text 1.567s。
 - 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 与 `motivation/results/fake_cpu/` 仅作历史参考。
 
-**下一步**：改进 queue-adaptive 控制器（在 shared-vLLM 下超越静态 K_max=8）+ 两项策略联合消融。详见 `PROJECT_OUTLINE.md` §近期优先级 和 `experiments/plans/experiment_status_and_gaps.md`。
+**下一步**：补齐 Ray 上游 request-level continuous replenishment，并把当前
+two-level queue-adaptive baseline 推进为 SLO-aware EWMA flush；随后再做
+prefix cache-on、多模态和真实多 endpoint 验证。详见 `PROJECT_OUTLINE.md`
+§近期优先级、`experiments/plans/experiment_status_and_gaps.md` 和
+`experiments/plans/literature_driven_pipeline_optimization_guide.md`。
 
 当前更值得继续验证的候选优化对象是：
 
@@ -129,10 +133,15 @@
 
 vLLM baseline 与 Daft 文本阶段接入已完成（见上"当前证据"）。当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 
-1. **P0**：改进 queue-adaptive 控制器，在 shared-vLLM 下超越静态 K_max=8（3 轮改进未超越则研究内容二降级）；两项策略联合消融（独立最优拼接 vs 联合 grid search，判定分层独立优化是否足够）。
-2. **P1**：Prefix 受控 workload（prefix ratio 0/30/70/100%）+ 至少一个实验 scale 到 2048 行；研究内容一/二完整消融 + Daft 引擎级参数。
-3. **P2（P0+P1 完成后）**：多模态泛化验证（CLIP embedding，同一套策略代码）；算子代价估计（补充讨论，不新增实验）。
-4. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+1. **P1**：whole-submission barrier vs request-level continuous
+   replenishment，验证逐请求完成释放 credit 是否更充分利用 vLLM continuous
+   batching。
+2. **P1**：SLO-aware EWMA flush vs 最佳静态 timeout vs 当前 two-level
+   baseline；不再把两档阈值版本标成完整 adaptive 方法。
+3. **P1**：Prefix cache-on 与 length-align 显式消融；扩展 shared-vLLM
+   foreground size、arrival offset 和 job 数量。
+4. **P2**：多模态泛化验证、真实多 endpoint/多 GPU、代价模型独立校准。
+5. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。
 

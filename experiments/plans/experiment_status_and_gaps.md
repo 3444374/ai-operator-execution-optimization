@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-26，新增 adaptive admission GPU 矩阵）
+Date: 2026-07-20（最后更新：2026-07-26，补充文献驱动执行链缺口）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -30,6 +30,8 @@ Date: 2026-07-20（最后更新：2026-07-26，新增 adaptive admission GPU 矩
 | AIMD/EWMA-AIMD/PID 单作业 GPU 矩阵 | ✅ 07-26 | 三者相对 static K=8 快约 30–32% E2E，但都把窗口升到 K≈16 | AIMD 与 static K=16 不可分辨；未证明反馈控制增量，也未复验 shared-vLLM 前台保护 |
 | Shared-vLLM typed AIMD + adaptive flush | ✅ 07-26 | static K8 保护前台；K16 提升后台吞吐。AIMD 三轮 0 decrease、窗口均值 15.953；adaptive flush 约 89.4% 选择 50ms | 只有 128/512 双作业规模；flush 分支为连续时间块，不是完整随机化 2×2 |
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
+| **Request-level continuous replenishment** | ❌ 未做 | vLLM 内部已有 continuous batching | Ray 上游仍按 submission 回收，尚未证明逐请求完成补位能减少 HOL 或提高 SLO goodput |
+| **SLO-aware EWMA flush** | ❌ 未做 | 当前 two-level queue-adaptive 只作为真实链路 baseline | 尚未使用 oldest-request slack、服务速率、token backlog、EWMA/滞回形成完整控制律 |
 | **多 job/多 foreground size 扩展** | ❌ 未做 | — | 不同 foreground size、arrival offset、background policy 下的公平性 |
 
 **RC2 当前状态**：✅ static K8 guardrail 与 fixed 50ms coalescing 均有真实
@@ -76,6 +78,8 @@ grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。它仍不�
 
 ❌ 未证明（关键缺口）：
    ├── "Queue-adaptive flush 优于最佳静态 timeout"（未证明）
+   ├── "上游 request-level continuous replenishment 能放大 vLLM continuous batching 收益"（未实现）
+   ├── "SLO-aware 动态 flush 优于最佳静态窗口"（未实现）
    ├── "Prefix-aware 在 cache-off 受控 prefix 比例下有效"（未证明）
    └── "策略代码对多模态 workload 可复用"（未启动）
 ```
@@ -441,11 +445,48 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 ### 剩余关键缺口
 
-1. 改变 arrival rate，验证最佳静态窗口是否变化以及 adaptive 能否自动跟随；
-2. 2048 请求 held-out；
-3. prefix 受控 workload、多模态复用、多 endpoint/多 GPU。
+1. 上游 request-level continuous replenishment 与 whole-submission barrier 对照；
+2. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
+3. prefix cache-on、多模态复用、多 endpoint/多 GPU；
+4. shared-vLLM 的多 foreground size、arrival offset 和多 job 公平性。
 
 原始数据与七步解释见：
 
 - `experiments/results/adaptive_flush_randomized_20260726/README.md`
 - `experiments/results/joint_batching_submission_512_20260726/README.md`
+
+## 10. 2026-07-26 文献驱动执行链缺口重审
+
+### 10.1 关键边界校正
+
+- Orca/vLLM 的 iteration-level/continuous batching 位于模型服务内部：完成请求
+  会被移出执行集合，waiting 请求可在后续迭代中进入；
+- 当前 Daft/Ray 上游没有修改 vLLM，但 submission 仍可能形成整批完成屏障；
+- 因此“vLLM 已有 continuous batching”和“上游已能逐请求持续补位”不是同一件事；
+- 当前两档 `QueueAdaptiveFlush` 已完成代码和实验，但只是 baseline，不能标成
+  Clipper/Clockwork/CONCUR 等文献机制的完整落地。
+
+### 10.2 新增代码缺口
+
+| 缺口 | 当前状态 | 最小闭环 |
+|---|---|---|
+| Request-level completion/credit release | lifecycle 有 request trace，但 admission 主要按 submission 回收 | 任一请求完成释放自身 credit，保持 exactly-once |
+| Continuous replenishment | vLLM 内部具备；上游未显式实现 | whole-submission vs request-credit 对照 |
+| Token-work admission | 以 submission/request 上限为主 | active request cap + active estimated token-work cap |
+| SLO-aware adaptive flush | two-level 25/50ms baseline | oldest age/slack + fill + EWMA service/arrival + hard deadline |
+| Completion-span/HOL 观测 | 有 request/submission join key | 记录同 submission 首末完成跨度和 credit idle |
+| Endpoint-local controller | topology/接口具备 | 两个真实 endpoint 后验证独立状态与回退 |
+
+### 10.3 推荐顺序与成功标准
+
+1. 先补 request-level completion/replenishment，不同时修改 flush 控制律；
+2. 用最佳静态 K/timeout 比较 whole-submission 与 request-credit；
+3. 再实现 SLO-aware EWMA flush，比较 fixed-best、two-level 和 EWMA；
+4. 只在两项独立收益成立后做小规模联合矩阵；
+5. UCB 必须等 epoch reward 能按产生请求的 arm 正确归因后再接入。
+
+晋级要求是相对最佳静态基线改善 observed tokens/s 或 SLO goodput，且 request
+P99、failure、exactly-once 不退化。否则记录负结果，不增加控制复杂度。
+
+完整机制卡、文献映射、fatal-flaw audit 和候选池见
+`literature_driven_pipeline_optimization_guide.md`。

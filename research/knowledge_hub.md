@@ -331,12 +331,19 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **Continuous batching 是下游给定机制**，上游目标不是替代它，而是给它最优的请求流
 - **按 token 预算而非请求数做 batch**：借鉴 `max_num_batched_tokens`，上游也应以 token budget 分组
 - **并发提交优于一次大 batch**：vLLM 推荐并发提交独立请求，不手动合并——验证了多 actor 独立提交架构
+- **完成即补位不应被上游整批屏障抵消**：Orca/vLLM 在服务内部按迭代移除完成
+  请求并接纳 waiting 请求；本项目可迁移为 Ray 上游 request-level credit
+  release/continuous replenishment，但不能写成修改或重新发明 continuous batching
 
 ### 5.2 从 Clockwork/Nexus/Clipper 提取
 
 - **确定性调度优于乐观并发**：Clockwork 的弃用线程池思路 → 上游应主动控制而非被动等待
 - **Batch size 是一等调度维度**：Nexus 的 batch-aware scheduling → 上游 token-budget 不只是"参数调优"
-- **AIMD 自适应**：Clipper 的加性增/乘性减 → queue-adaptive flush 的调节策略参考
+- **AIMD 与 delayed batching 要分开映射**：Clipper 的 AIMD 直接控制 batch
+  上限，delayed batching 控制等待；本项目可借鉴 SLO guardrail、等待聚合和
+  per-replica 控制，但当前 two-level flush 不是 Clipper 算法复现
+- **Deadline/slack 是 flush 的硬约束候选**：从 Clockwork 的 deadline 思想迁移
+  oldest-request slack；自回归服务时间不可完全预测，因此必须有静态回退
 
 ### 5.3 从 Cortex AISQL/GaussML/Smart 提取
 
@@ -482,6 +489,8 @@ Ray Actor 去中心化自适应提交
 | AI_COMPLETE workload 具体构造参数（token 分布、prefix ratio） | **P0** |
 | token-budget 的最优范围（2048/4096/8192） | P1 |
 | Ray actor queue-adaptive flush 的实际效果（本地 vLLM 实验中发现 adaptive < static，需进一步分析——见 `PROJECT_LOG.md` 2026-07-20） | P1 |
+| Ray 上游 whole-submission barrier 是否限制 vLLM continuous batching 的持续供给；request-level replenishment 是否改善 HOL/SLO goodput | **P1** |
+| SLO-aware EWMA flush（oldest slack + token backlog + arrival/service rate）能否优于最佳静态窗口 | **P1** |
 | prefix-aware grouping 在真实 APC 下的命中率 | P1 |
 | 单 GPU 下异构 actor pool 是否有意义 | P1 |
 | batch_size × K_max 之外的交互通道 | P2 |
@@ -491,6 +500,9 @@ Ray Actor 去中心化自适应提交
 | CONCUR (2025) AIMD-based admission control 的算法细节与迁移可行性 | **P1** |
 | SABER Universal Scalability Law 建模在本课题 vLLM 场景下的拟合效果 | P2 |
 | Ray ConcurrencyCapBackpressurePolicy 废弃的教训如何转化为我们的设计约束 | P1 |
+
+候选机制的统一发现流程、来源标签、机制卡、fatal-flaw audit、最小实验和放弃
+条件见 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
 
 ---
 

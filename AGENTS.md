@@ -45,12 +45,15 @@ PostgreSQL 18.3
 
 当前缺口（vLLM baseline、Daft 文本接入、token-budget / K_max、flush
 跨负载与 2048 留出、本地单 GPU 联合消融、受控 prefix cache-off 实验和
-算子代价估计初版均已完成）：① prefix cache 开启后的独立机制验证与
-length-align 显式联合消融 → ② 多模态泛化验证（图像，同一套策略代码）→
-③ 多 endpoint / 多 GPU 在具备硬件后做真实验证 → ④ 代价模型增加独立时间段
-或新 workload 校准。当前证据支持 sequential token-budget + static K8 +
-fixed 50ms；联合候选未显著优于独立拼接，adaptive 未显著优于 fixed-50，
-prefix-only 在 cache-off 下无稳定收益。写回使用 PostgreSQL + pgvector
+算子代价估计初版均已完成）：① Ray 上游 request-level continuous
+replenishment，消除 whole-submission completion barrier → ② oldest-request
+slack、token backlog 与 arrival/service EWMA 驱动的完整 adaptive flush →
+③ prefix cache 开启后的独立机制验证与 length-align 显式联合消融 →
+④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 多 endpoint / 多 GPU 在具备
+硬件后做真实验证 → ⑥ 代价模型增加独立时间段或新 workload 校准。当前证据
+支持 sequential token-budget + static K8 + fixed 50ms；联合候选未显著优于
+独立拼接，当前 two-level adaptive 未显著优于 fixed-50，prefix-only 在
+cache-off 下无稳定收益。写回使用 PostgreSQL + pgvector
 （COPY + deferred index），不作为独立实验阶段。详见 `PROJECT_OUTLINE.md`
 §近期优先级。
 

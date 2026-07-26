@@ -128,6 +128,7 @@
 | `research/existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子与 AI 数据处理执行链路对比 | 比较外部系统路线时读 |
 | `research/knowledge_hub.md` | **知识库总汇**——按问题快速定位参考材料、已知结论和待研究缺口 | 开始设计、做决策前先读 |
 | `research/vllm_continuous_batching_reference.md` | vLLM Continuous Batching 机制详解（调度器、APC、metrics） | 设计上游动态 batching 策略时读 |
+| `experiments/plans/literature_driven_pipeline_optimization_guide.md` | 文献驱动的执行链优化指南 | 继续寻找优化点、审计三层 batch/Orca 式补位、设计完整 adaptive flush 或设置候选晋级/放弃条件时读 |
 | `research/ray_actor_dynamic_batching_reference.md` | Ray Serve 动态 batching + Ray Core actor 模式 | 设计 Ray actor 自适应提交架构时读 |
 | `research/inference_pipeline_interaction_literature.md` | 推理管线交互文献汇总 | 写相关工作、确认研究空白时读 |
 | `motivation/AGENTS.md` | 动机实验规则 | 搭建 AI 算子场景或端到端动机测试前读 |
