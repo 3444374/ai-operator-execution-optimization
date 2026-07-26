@@ -17,7 +17,7 @@ import statistics
 import sys
 import time
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Mapping, Sequence
 
 import pyarrow as pa
 
@@ -94,7 +94,7 @@ from src.scheduling.models import (
     SubmissionLifecycleEvent,
     TopologySnapshot,
 )
-from src.scheduling.ray_adapter import RaySubmissionAdapter
+from src.scheduling.ray_adapter import ActorWorkerPoolSubmitter, RaySubmissionAdapter
 from src.scheduling.observations import (
     NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
@@ -1719,10 +1719,11 @@ def _run_dynamic_scheduler(
 
 def submit_with_backpressure(
     ray_module,
-    actors: list,
-    batches: Iterable[pa.RecordBatch | pa.Table],
-    max_inflight: int,
-    method_name: str,
+    actor_pools: Mapping[str, Sequence[object]] | None = None,
+    endpoint_urls: Mapping[str, str] | None = None,
+    batches: Iterable[pa.RecordBatch | pa.Table] = (),
+    max_inflight: int = 1,
+    method_name: str = "",
     adaptive_config: dict | None = None,
     routing_config: dict | None = None,
     replay_envelopes: Iterable[PayloadEnvelope] | None = None,
@@ -1730,7 +1731,24 @@ def submit_with_backpressure(
     epoch_clock=None,
     output_cost_mode: OutputCostMode = "fixed_output_cap",
     completion_max_tokens: int = 0,
+    actors: Sequence[object] | None = None,
 ) -> tuple[list[dict], dict]:
+    if actor_pools is None:
+        if actors is None:
+            raise ValueError("actor_pools must not be empty")
+        actor_pools = {
+            f"actor-{index}": [actor]
+            for index, actor in enumerate(actors)
+        }
+        endpoint_urls = {
+            endpoint_id: f"ray://actor/{index}"
+            for index, endpoint_id in enumerate(actor_pools)
+        }
+    if not actor_pools:
+        raise ValueError("actors must not be empty")
+    if endpoint_urls is None:
+        raise ValueError("endpoint_urls must not be empty")
+
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
     )
@@ -1744,15 +1762,16 @@ def submit_with_backpressure(
         )
         return _submit_with_backpressure_legacy_adaptive(
             ray_module,
-            actors,
+            [
+                actor
+                for endpoint_actors in actor_pools.values()
+                for actor in endpoint_actors
+            ],
             replay_batches,
             max_inflight,
             method_name,
             adaptive_config,
         )
-    if not actors:
-        raise ValueError("actors must not be empty")
-
     operator = "ai_complete" if "complete" in method_name else "ai_embed"
     envelopes = (
         replay_envelopes
@@ -1769,10 +1788,10 @@ def submit_with_backpressure(
             output_cost_mode=output_cost_mode,
         )
     )
-    endpoint_ids = [f"actor-{index}" for index in range(len(actors))]
+    endpoint_ids = list(actor_pools)
     topology = _endpoint_topology(
         endpoint_ids,
-        [f"ray://actor/{index}" for index in range(len(actors))],
+        [endpoint_urls[item] for item in endpoint_ids],
         pool_ids=(
             routing_config.get("pool_ids") if routing_config is not None else None
         ),
@@ -1780,16 +1799,16 @@ def submit_with_backpressure(
             routing_config.get("gpu_ids") if routing_config is not None else None
         ),
     )
+    pool_submitters = {
+        endpoint_id: ActorWorkerPoolSubmitter(endpoint_actors, method_name)
+        for endpoint_id, endpoint_actors in actor_pools.items()
+    }
     submitters = {
-        endpoint_id: (
-            lambda payload, actor_handle=actor: getattr(
-                actor_handle, method_name
-            ).remote(payload)
-        )
-        for endpoint_id, actor in zip(endpoint_ids, actors)
+        endpoint_id: submitter
+        for endpoint_id, submitter in pool_submitters.items()
     }
     if typed_adaptive:
-        return _run_dynamic_scheduler(
+        results, metrics = _run_dynamic_scheduler(
             ray_module,
             envelopes,
             topology,
@@ -1799,16 +1818,32 @@ def submit_with_backpressure(
             submission_lifecycle_sink,
             epoch_clock,
         )
-    return _run_static_scheduler(
-        ray_module,
-        envelopes,
-        topology,
-        submitters,
-        max_inflight,
-        routing_config,
-        submission_lifecycle_sink,
-        epoch_clock,
+    else:
+        results, metrics = _run_static_scheduler(
+            ray_module,
+            envelopes,
+            topology,
+            submitters,
+            max_inflight,
+            routing_config,
+            submission_lifecycle_sink,
+            epoch_clock,
+        )
+    metrics.update(
+        {
+            "endpoint_count": len(endpoint_ids),
+            "actor_worker_count": sum(
+                submitter.worker_count
+                for submitter in pool_submitters.values()
+            ),
+            "actor_worker_submission_counts": ";".join(
+                str(count)
+                for submitter in pool_submitters.values()
+                for count in submitter.submission_counts
+            ),
+        }
     )
+    return results, metrics
 
 
 def _submit_with_backpressure_legacy_adaptive(
@@ -2418,11 +2453,15 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     if args.operator == "ai_complete" and model_backend == "ollama" and not endpoint_urls:
         endpoint_urls = ["http://localhost:11434"]
         endpoint_url_label = ";".join(endpoint_urls)
+    actor_workers_per_endpoint = 0
     if args.executor == "ray_actor":
-        endpoint_count = (
+        actor_endpoint_count = (
             1 if model_backend == "fake" else max(1, len(endpoint_urls))
         )
-        _resolve_actor_workers_per_endpoint(args, endpoint_count)
+        actor_workers_per_endpoint = _resolve_actor_workers_per_endpoint(
+            args,
+            actor_endpoint_count,
+        )
     model_name = args.completion_model if args.operator == "ai_complete" else args.embedding_model
     api_key = args.completion_api_key if args.operator == "ai_complete" else args.embedding_api_key
     request_timeout_s = (
@@ -2442,7 +2481,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     ):
         raise SystemExit("endpoint and pool routing require a Ray executor")
     routing_endpoint_count = (
-        args.model_workers
+        actor_endpoint_count
         if args.executor == "ray_actor"
         else (1 if model_backend == "fake" else max(1, len(endpoint_urls)))
     )
@@ -2641,61 +2680,87 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         operator_sql_name = "AI_COMPLETE" if args.operator == "ai_complete" else "AI_EMBED"
         output_table = "document_completions" if args.operator == "ai_complete" else "document_embeddings"
         job_id = create_job(conn, operator_sql_name, output_table)
-        actors = []
+        actor_pools: dict[str, list[object]] = {}
+        actor_endpoint_urls: dict[str, str] = {}
         ray_module = None
         remote_embed = None
         if args.executor in {"ray_actor", "ray_task"}:
             ray_module = require_ray()
             ray_module.init(ignore_reinit_error=True, runtime_env=ray_runtime_env())
             if args.executor == "ray_actor":
+                actor_endpoint_urls = {
+                    f"endpoint-{index}": endpoint_url
+                    for index, endpoint_url in enumerate(
+                        ["ray://actor/fake"]
+                        if model_backend == "fake"
+                        else endpoint_urls
+                    )
+                }
                 if args.operator == "ai_complete" and model_backend == "fake":
                     RayCompletionActor = ray_module.remote(FakeCompletionActor)
-                    actors = [RayCompletionActor.remote(args.completion_max_tokens) for _ in range(args.model_workers)]
+                    actor_pools = {
+                        endpoint_id: [
+                            RayCompletionActor.remote(args.completion_max_tokens)
+                            for _ in range(actor_workers_per_endpoint)
+                        ]
+                        for endpoint_id in actor_endpoint_urls
+                    }
                 elif args.operator == "ai_complete":
                     actor_cls = OllamaCompletionActor if model_backend == "ollama" else CompatibleHTTPCompletionActor
                     RayCompletionActor = ray_module.remote(actor_cls)
-                    actors = [
-                        RayCompletionActor.remote(
-                            endpoint_urls[index % len(endpoint_urls)],
-                            model_name,
-                            api_key,
-                            request_timeout_s,
-                            args.completion_max_tokens,
-                            *(
-                                [
-                                    args.completion_return_token_ids,
-                                    args.completion_prompt_format,
-                                    args.completion_temperature,
-                                ]
-                                if (
-                                    model_backend == "compatible_http"
-                                    and (
-                                        args.completion_return_token_ids
-                                        or args.completion_prompt_format
-                                        != "raw"
-                                        or args.completion_temperature
-                                        is not None
+                    actor_pools = {}
+                    for endpoint_id, endpoint_url in actor_endpoint_urls.items():
+                        actor_pools[endpoint_id] = [
+                            RayCompletionActor.remote(
+                                endpoint_url,
+                                model_name,
+                                api_key,
+                                request_timeout_s,
+                                args.completion_max_tokens,
+                                *(
+                                    [
+                                        args.completion_return_token_ids,
+                                        args.completion_prompt_format,
+                                        args.completion_temperature,
+                                    ]
+                                    if (
+                                        model_backend == "compatible_http"
+                                        and (
+                                            args.completion_return_token_ids
+                                            or args.completion_prompt_format
+                                            != "raw"
+                                            or args.completion_temperature
+                                            is not None
+                                        )
                                     )
-                                )
-                                else []
-                            ),
-                        )
-                        for index in range(args.model_workers)
-                    ]
+                                    else []
+                                ),
+                            )
+                            for _ in range(actor_workers_per_endpoint)
+                        ]
                 elif model_backend == "fake":
                     RayEmbeddingActor = ray_module.remote(FakeEmbeddingActor)
-                    actors = [RayEmbeddingActor.remote(args.embedding_dim) for _ in range(args.model_workers)]
+                    actor_pools = {
+                        endpoint_id: [
+                            RayEmbeddingActor.remote(args.embedding_dim)
+                            for _ in range(actor_workers_per_endpoint)
+                        ]
+                        for endpoint_id in actor_endpoint_urls
+                    }
                 else:
                     RayEmbeddingActor = ray_module.remote(CompatibleHTTPEmbeddingActor)
-                    actors = [
-                        RayEmbeddingActor.remote(
-                            endpoint_urls[index % len(endpoint_urls)],
-                            model_name,
-                            api_key,
-                            request_timeout_s,
-                        )
-                        for index in range(args.model_workers)
-                    ]
+                    actor_pools = {
+                        endpoint_id: [
+                            RayEmbeddingActor.remote(
+                                endpoint_url,
+                                model_name,
+                                api_key,
+                                request_timeout_s,
+                            )
+                            for _ in range(actor_workers_per_endpoint)
+                        ]
+                        for endpoint_id, endpoint_url in actor_endpoint_urls.items()
+                    }
             else:
                 if args.operator == "ai_complete" and model_backend == "fake":
                     remote_embed = ray_module.remote(fake_complete_batch)
@@ -2830,13 +2895,14 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     "complete" if args.operator == "ai_complete" else "embed"
                 )
                 return submit_with_backpressure(
-                    ray_module,
-                    actors,
-                    batches,
-                    args.max_inflight,
-                    method_name,
-                    adaptive_config,
-                    routing_config,
+                    ray_module=ray_module,
+                    actor_pools=actor_pools,
+                    endpoint_urls=actor_endpoint_urls,
+                    batches=batches,
+                    max_inflight=args.max_inflight,
+                    method_name=method_name,
+                    adaptive_config=adaptive_config,
+                    routing_config=routing_config,
                     replay_envelopes=replay_envelopes,
                     submission_lifecycle_sink=(
                         submission_lifecycle_events

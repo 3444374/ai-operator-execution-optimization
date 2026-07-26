@@ -2307,9 +2307,17 @@ class StaticActorSchedulingTests(unittest.TestCase):
         routing_config=None,
         replay_envelopes=None,
     ):
+        actor_pools = {
+            f"endpoint-{index}": [actor]
+            for index, actor in enumerate(actors)
+        }
         return profile.submit_with_backpressure(
             ray_module=_ImmediateRay,
-            actors=actors,
+            actor_pools=actor_pools,
+            endpoint_urls={
+                endpoint_id: f"http://local/{endpoint_id}"
+                for endpoint_id in actor_pools
+            },
             batches=self.batches,
             max_inflight=2,
             method_name="execute_batch",
@@ -2328,10 +2336,21 @@ class StaticActorSchedulingTests(unittest.TestCase):
         self.assertEqual(actual, expected)
         run.assert_called_once()
 
-    def test_actor_submitters_round_robin_across_actor_pool(self) -> None:
+    def test_two_actor_workers_remain_one_service_endpoint(self) -> None:
         actors = [_RecordingActor(), _RecordingActor()]
+        actor_pools = {"endpoint-0": actors}
+        endpoint_urls = {
+            "endpoint-0": "http://localhost:8000/v1/completions",
+        }
 
-        results, metrics = self._submit(actors)
+        results, metrics = profile.submit_with_backpressure(
+            ray_module=_ImmediateRay,
+            actor_pools=actor_pools,
+            endpoint_urls=endpoint_urls,
+            batches=self.batches,
+            max_inflight=2,
+            method_name="execute_batch",
+        )
 
         self.assertEqual(
             [call[0] for call in actors[0].execute_batch.calls],
@@ -2342,8 +2361,9 @@ class StaticActorSchedulingTests(unittest.TestCase):
             [self.batches[1]],
         )
         self.assertEqual(len(results), 3)
-        self.assertEqual(metrics["operator_invocations"], 3)
-        self.assertEqual(metrics["max_inflight"], 2)
+        self.assertEqual(metrics["endpoint_count"], 1)
+        self.assertEqual(metrics["actor_worker_count"], 2)
+        self.assertEqual(metrics["actor_worker_submission_counts"], "2;1")
 
     def test_static_actor_path_requires_at_least_one_actor(self) -> None:
         with self.assertRaisesRegex(ValueError, "actors must not be empty"):
