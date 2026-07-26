@@ -40,10 +40,64 @@ from src.scheduling.routing import (  # noqa: E402
     LeastQueuedEndpointRouter,
     RequestPoolRouter,
 )
+from src.scheduling.ray_runtime import RayWorkerOptions  # noqa: E402
 from src.scheduling.scheduler import SchedulerResult  # noqa: E402
 
 
+class _RecordingRemoteDefinition:
+    def __init__(self) -> None:
+        self.options_calls = []
+
+    def options(self, **options):
+        self.options_calls.append(options)
+        return self
+
+
+class _RecordingRay:
+    @staticmethod
+    def remote(_target):
+        return _RecordingRemoteDefinition()
+
+
 class SchedulingProfileHelperTests(unittest.TestCase):
+    def test_http_actor_definition_receives_safe_ray_options(self) -> None:
+        ray = _RecordingRay()
+        options = RayWorkerOptions(0.25, actor_max_concurrency=4)
+
+        remote_cls = profile._remote_actor_class(
+            ray,
+            profile.CompatibleHTTPCompletionActor,
+            options,
+        )
+
+        self.assertEqual(
+            remote_cls.options_calls,
+            [
+                {
+                    "num_cpus": 0.25,
+                    "num_gpus": 0,
+                    "max_concurrency": 4,
+                    "max_restarts": 0,
+                    "max_task_retries": 0,
+                }
+            ],
+        )
+
+    def test_http_task_definition_disables_retry(self) -> None:
+        ray = _RecordingRay()
+        options = RayWorkerOptions(0.25)
+
+        remote_fn = profile._remote_task(
+            ray,
+            profile.compatible_http_complete_batch,
+            options,
+        )
+
+        self.assertEqual(
+            remote_fn.options_calls,
+            [{"num_cpus": 0.25, "num_gpus": 0, "max_retries": 0}],
+        )
+
     def test_ray_worker_cli_defaults_are_explicit(self) -> None:
         args = profile.parse_args([])
 

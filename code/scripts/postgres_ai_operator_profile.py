@@ -95,6 +95,7 @@ from src.scheduling.models import (
     TopologySnapshot,
 )
 from src.scheduling.ray_adapter import ActorWorkerPoolSubmitter, RaySubmissionAdapter
+from src.scheduling.ray_runtime import RayWorkerOptions
 from src.scheduling.observations import (
     NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
@@ -458,6 +459,18 @@ def _validate_ray_worker_resources(args: argparse.Namespace) -> None:
         raise SystemExit("--ray-worker-num-cpus must be finite and positive")
     if args.executor == "ray_actor" and args.ray_actor_max_concurrency <= 0:
         raise SystemExit("--ray-actor-max-concurrency must be positive")
+
+
+def _remote_actor_class(ray_module, actor_cls, worker_options):
+    return ray_module.remote(actor_cls).options(
+        **worker_options.actor_options()
+    )
+
+
+def _remote_task(ray_module, task_fn, worker_options):
+    return ray_module.remote(task_fn).options(
+        **worker_options.task_options()
+    )
 
 
 def require_psycopg():
@@ -2693,6 +2706,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         if args.executor in {"ray_actor", "ray_task"}:
             ray_module = require_ray()
             ray_module.init(ignore_reinit_error=True, runtime_env=ray_runtime_env())
+            worker_options = RayWorkerOptions(
+                num_cpus=args.ray_worker_num_cpus,
+                actor_max_concurrency=args.ray_actor_max_concurrency,
+            )
             if args.executor == "ray_actor":
                 actor_endpoint_urls = {
                     f"endpoint-{index}": endpoint_url
@@ -2713,7 +2730,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     }
                 elif args.operator == "ai_complete":
                     actor_cls = OllamaCompletionActor if model_backend == "ollama" else CompatibleHTTPCompletionActor
-                    RayCompletionActor = ray_module.remote(actor_cls)
+                    RayCompletionActor = _remote_actor_class(
+                        ray_module,
+                        actor_cls,
+                        worker_options,
+                    )
                     actor_pools = {}
                     for endpoint_id, endpoint_url in actor_endpoint_urls.items():
                         actor_pools[endpoint_id] = [
@@ -2754,7 +2775,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         for endpoint_id in actor_endpoint_urls
                     }
                 else:
-                    RayEmbeddingActor = ray_module.remote(CompatibleHTTPEmbeddingActor)
+                    RayEmbeddingActor = _remote_actor_class(
+                        ray_module,
+                        CompatibleHTTPEmbeddingActor,
+                        worker_options,
+                    )
                     actor_pools = {
                         endpoint_id: [
                             RayEmbeddingActor.remote(
@@ -2771,13 +2796,25 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.operator == "ai_complete" and model_backend == "fake":
                     remote_embed = ray_module.remote(fake_complete_batch)
                 elif args.operator == "ai_complete" and model_backend == "ollama":
-                    remote_embed = ray_module.remote(ollama_complete_batch)
+                    remote_embed = _remote_task(
+                        ray_module,
+                        ollama_complete_batch,
+                        worker_options,
+                    )
                 elif args.operator == "ai_complete":
-                    remote_embed = ray_module.remote(compatible_http_complete_batch)
+                    remote_embed = _remote_task(
+                        ray_module,
+                        compatible_http_complete_batch,
+                        worker_options,
+                    )
                 elif model_backend == "fake":
                     remote_embed = ray_module.remote(fake_embed_batch)
                 else:
-                    remote_embed = ray_module.remote(compatible_http_embed_batch)
+                    remote_embed = _remote_task(
+                        ray_module,
+                        compatible_http_embed_batch,
+                        worker_options,
+                    )
 
         e2e_timer = StageTimer.start("e2e")
         processed_rows = 0
