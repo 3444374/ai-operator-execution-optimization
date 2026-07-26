@@ -87,6 +87,40 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 connect.assert_not_called()
                 require_ray.assert_not_called()
 
+    def test_invalid_ray_task_cpu_fails_before_initialization(self) -> None:
+        for value in ("0", "nan"):
+            with self.subTest(value=value):
+                args = profile.parse_args(
+                    [
+                        "--executor",
+                        "ray_task",
+                        "--ray-worker-num-cpus",
+                        value,
+                        "--database-url",
+                        "postgresql://unused",
+                    ]
+                )
+                with (
+                    patch.object(
+                        profile,
+                        "connect",
+                        side_effect=AssertionError("connect called"),
+                    ) as connect,
+                    patch.object(
+                        profile,
+                        "require_ray",
+                        side_effect=AssertionError("require_ray called"),
+                    ) as require_ray,
+                ):
+                    with self.assertRaisesRegex(
+                        SystemExit,
+                        "ray-worker-num-cpus",
+                    ):
+                        profile.run_once(args, "formal", 1)
+
+                connect.assert_not_called()
+                require_ray.assert_not_called()
+
     def test_batch_envelopes_preserve_arrow_payload_and_compute_cost(self) -> None:
         batch = pa.table(
             {

@@ -448,14 +448,16 @@ def _resolve_actor_workers_per_endpoint(
     return args.model_workers
 
 
-def _validate_ray_actor_resources(args: argparse.Namespace) -> None:
-    if args.ray_actor_max_concurrency <= 0:
-        raise SystemExit("--ray-actor-max-concurrency must be positive")
+def _validate_ray_worker_resources(args: argparse.Namespace) -> None:
+    if args.executor not in {"ray_actor", "ray_task"}:
+        return
     if (
         not math.isfinite(args.ray_worker_num_cpus)
         or args.ray_worker_num_cpus <= 0
     ):
         raise SystemExit("--ray-worker-num-cpus must be finite and positive")
+    if args.executor == "ray_actor" and args.ray_actor_max_concurrency <= 0:
+        raise SystemExit("--ray-actor-max-concurrency must be positive")
 
 
 def require_psycopg():
@@ -2399,8 +2401,7 @@ def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
 
 
 def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
-    if args.executor == "ray_actor":
-        _validate_ray_actor_resources(args)
+    _validate_ray_worker_resources(args)
     _validate_request_trace_args(args)
     _validate_arrival_replay_args(args)
     _validate_resource_efficiency_args(args)
