@@ -54,6 +54,7 @@ from .observations import (
     ServiceMetricsSnapshot,
 )
 from .ray_adapter import ActorWorkerPoolSubmitter, RaySubmissionAdapter
+from .ray_runtime import RayWorkerOptions
 from .routing import (
     LeastQueuedEndpointRouter,
     PrefixAffinityEndpointRouter,
@@ -108,6 +109,7 @@ __all__ = [
     "PendingBatch",
     "PendingBatchBuilder",
     "RaySubmissionAdapter",
+    "RayWorkerOptions",
     "LeastQueuedEndpointRouter",
     "MonotonicEpochClock",
     "PrefixAffinityEndpointRouter",
