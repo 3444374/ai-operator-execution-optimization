@@ -147,6 +147,45 @@ PostgreSQL
 
 ## 6. 研究内容完成度
 
+### 本轮新增的可复用基础设施
+
+1. **模型一致的 workload 计数入口**：workload importer 可调用当前 vLLM 的
+   `/tokenize`，按实际模型 tokenizer 记录 `prompt_tokens`。模型上下文门禁采用
+   “完整行保留或排除”，不通过截断、拆分或复制 prompt 凑实验规模。更换模型时
+   只需切换 tokenizer endpoint/model name，不需要改 organizer 或 scheduler。
+2. **受控 prefix workload 构造器**：从同一批基础行按稳定哈希选择精确且嵌套的
+   0/30/70/100% 子集，只在完整原 prompt 前增加公共指令；session、arrival、
+   tenant、目标输出元数据保持不变。每条变换后的 prompt 重新计数并通过上下文
+   门禁，原 workload 不被原地修改。
+3. **职责单一的 prefix organizer**：仅聚合真实重复的非空 `prefix_key`；
+   唯一 prefix 和重复组内部均保持原始相对顺序。Length alignment 继续由
+   `length_align_*` 独立策略承担，避免一个策略名隐式叠加两个机制。实现先建立
+   prefix→row positions 映射，组织复杂度为 O(n)，不为每个 prefix 重扫输入。
+4. **无执行后泄漏的代价估计边界**：离线 estimator 只读取提交前可知的行数、
+   prompt token、输出上限、token budget、batch 统计、K_max、flush 和 arrival
+   配置。实际输出 token、实测 E2E/service、vLLM、能耗和 MFU 只作为目标或评估
+   证据，不进入特征。相同配置的重复运行按组切分，避免 train/test 泄漏。
+
+### 按研究内容划分的当前状态
+
+- **研究内容一——数据组织**：主机制和工程链路已经闭环。Sequential
+  token-budget 是当前默认；fixed rows、length-align、prefix-aware、classic
+  BFD、row-cap-first 都有可运行实现和对照入口。BFD/row-cap-first 已有负向规模
+  边界，prefix-only 在 cache-off 下无稳定收益。尚未完成的是 prefix cache-on
+  机制门禁、length-align×prefix 的显式联合消融，以及图像 frame/pixel cost
+  adapter 的多模态复用验证。
+- **研究内容二——调度与提交控制**：static K_max、arrival replay、flush、
+  非阻塞 service observation、typed controller、pool/endpoint routing 和
+  lifecycle trace 已形成完整流程。当前证据选择 static `K_max=8` + fixed
+  50ms；queue-adaptive、AIMD/EWMA/PID 和 UCB 均未获得默认资格。尚未完成的是
+  UCB 的 epoch reward 正确归因，以及真实多 endpoint/多 GPU 公平性和故障迁移。
+- **两项策略联合关系**：18 单元筛选与候选重复已经完成；当前单 GPU 上联合候选
+  未显著优于独立拼接，因此保留分层配置与联合搜索工具，不增加联合在线控制器。
+- **多模态泛化验证**：策略接口和中性 `cost_units` 边界已具备，但真实图像
+  source/cost adapter、CLIP/Qwen-VL workload 和 GPU 结果尚未完成。
+- **算子代价估计（补充）**：初版实现与 grouped held-out 评估已完成，可提供
+  粗粒度编排提示；独立时间段/新 workload 校准、预测区间和跨模型迁移仍未完成。
+
 | 部分 | 代码完成度 | 真实证据 | 当前判断 |
 |---|---|---|---|
 | 数据读取与 Daft/Ray 主链路 | 高 | 64/512/1024 真实链路 | 已完成基础设施 |
