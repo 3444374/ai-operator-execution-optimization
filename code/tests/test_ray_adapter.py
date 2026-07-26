@@ -8,7 +8,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.scheduling import ActorWorkerPoolSubmitter  # noqa: E402
+from src.scheduling import ActorSubmissionState, ActorWorkerPoolSubmitter  # noqa: E402
 from src.scheduling.models import BatchRequest, PayloadEnvelope  # noqa: E402
 from src.scheduling.ray_adapter import RaySubmissionAdapter  # noqa: E402
 
@@ -70,6 +70,23 @@ class RaySubmissionAdapterTests(unittest.TestCase):
     def test_actor_worker_pool_rejects_empty_method_name(self) -> None:
         with self.assertRaisesRegex(ValueError, "method_name must not be empty"):
             ActorWorkerPoolSubmitter([RecordingActor()], "")
+
+    def test_actor_submission_state_rejects_different_workers(self) -> None:
+        actors = [RecordingActor(), RecordingActor()]
+        state = ActorSubmissionState({"endpoint-0": actors}, "complete")
+
+        with self.assertRaisesRegex(ValueError, "same actor workers"):
+            state.validate(
+                {"endpoint-0": [actors[0], RecordingActor()]},
+                "complete",
+            )
+
+    def test_actor_submission_state_rejects_different_method(self) -> None:
+        actor = RecordingActor()
+        state = ActorSubmissionState({"endpoint-0": [actor]}, "complete")
+
+        with self.assertRaisesRegex(ValueError, "same method_name"):
+            state.validate({"endpoint-0": [actor]}, "embed")
 
     def test_submit_and_collect_preserve_request_identity(self) -> None:
         adapter = RaySubmissionAdapter(

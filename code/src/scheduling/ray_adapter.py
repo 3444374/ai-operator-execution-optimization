@@ -57,13 +57,40 @@ class ActorSubmissionState:
         actor_pools: Mapping[str, Sequence[object]],
         method_name: str,
     ):
+        self._actor_pools = {
+            endpoint_id: tuple(actors)
+            for endpoint_id, actors in actor_pools.items()
+        }
+        self._method_name = method_name
         self.pool_submitters = {
             endpoint_id: ActorWorkerPoolSubmitter(actors, method_name)
-            for endpoint_id, actors in actor_pools.items()
+            for endpoint_id, actors in self._actor_pools.items()
         }
         self.legacy_endpoint_submitter = RoundRobinSubmitter(
             list(self.pool_submitters.values())
         )
+
+    def validate(
+        self,
+        actor_pools: Mapping[str, Sequence[object]],
+        method_name: str,
+    ) -> None:
+        if method_name != self._method_name:
+            raise ValueError("submission_state must use the same method_name")
+        if set(actor_pools) != set(self._actor_pools):
+            raise ValueError(
+                "submission_state and actor_pools must have identical "
+                "service endpoint IDs"
+            )
+        for endpoint_id, expected in self._actor_pools.items():
+            actual = tuple(actor_pools[endpoint_id])
+            if len(actual) != len(expected) or any(
+                current is not original
+                for current, original in zip(actual, expected)
+            ):
+                raise ValueError(
+                    "submission_state must use the same actor workers"
+                )
 
 
 class RaySubmissionAdapter:

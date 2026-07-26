@@ -1842,12 +1842,8 @@ def submit_with_backpressure(
 
     endpoint_ids = list(actor_pools)
     state = submission_state or ActorSubmissionState(actor_pools, method_name)
+    state.validate(actor_pools, method_name)
     pool_submitters = state.pool_submitters
-    if set(pool_submitters) != set(actor_pools):
-        raise ValueError(
-            "submission_state and actor_pools must have identical "
-            "service endpoint IDs"
-        )
     counts_before = {
         endpoint_id: submitter.submission_counts
         for endpoint_id, submitter in pool_submitters.items()
