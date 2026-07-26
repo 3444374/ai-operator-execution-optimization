@@ -41,6 +41,7 @@ data/raw/**
 .codex/
 .claude/
 .agents/
+.superpowers/
 skills-lock.json
 # CSV and Markdown summaries are tracked; Arrow payload dumps are reproducible outputs.
 *.arrow
