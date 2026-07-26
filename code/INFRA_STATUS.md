@@ -108,12 +108,22 @@ PostgreSQL
 - Prefix affinity 使用 rendezvous hashing；无 prefix 时回退 least-queued。
 - CLI 支持多个 endpoint URL、pool ID 和 GPU ID。
 - Ray task 与 actor 走同一 typed scheduler。
+- service endpoint 与 Ray actor worker 是两个维度：前者是独立 HTTP 服务地址，
+  后者是面向该地址的 Ray 客户端 actor。配置并发上界为
+  `endpoint_count × actor_workers_per_endpoint × ray_actor_max_concurrency`。
+- HTTP worker 只向 Ray 申请 CPU，`ray_worker_num_gpus=0`；GPU 归外部模型服务。
+  正式 completion 的 task retry、actor restart 和 actor task retry 均保持禁用。
+- 正式/dry-run CSV 已记录 Ray 版本、解析后的 worker/resource 配置、endpoint 数、
+  actor worker 数和逐 worker 提交计数；Python executor 的 `ray_version` 为空，
+  actor concurrency/CPU 使用明确的非适用哨兵 0/0.0。Ray task 无 actor worker，
+  记录 task 的实际 CPU 配额，并保留解析后的 concurrency 占位值 1。
 
 ### 尚未完成的验证
 
 当前正式结果均在一张 GPU 上。多 endpoint/多 GPU 的接口和策略代码存在，
 但异构显存容量、跨 GPU 负载、故障迁移和真实吞吐公平性尚未实测，因此不能声称
-多 GPU 调度已经完成。
+多 GPU 调度已经完成。多 GPU 性能验证必须部署独立 GPU-backed service endpoint，
+不能把同一服务上的多个 actor worker 当作多 GPU。
 
 ## 5. 观测与实验运行基础设施
 
@@ -240,7 +250,8 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 
 ### 后续：多 GPU、多模态与代价估计
 
-- 多 GPU：先做同构双 endpoint，再做异构池；验证健康回退、队列均衡和公平性。
+- 多 GPU：先部署同构、各自独立占用 GPU 的双 service endpoint，再做异构池；
+  验证健康回退、队列均衡和公平性。
 - 多模态：增加 image source/cost adapter，把 token cost 替换为 frame/pixel
   cost，复用 organizer、scheduler、routing 和 tracing。
 - 代价估计：当前 grouped held-out 五切分平均 MAE 11.68s、MAPE 50.60%、

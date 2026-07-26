@@ -115,6 +115,27 @@ typed scheduler through `RaySubmissionAdapter`. The Daft-to-Ray contract tests
 use a real `DaftOrganizer`, Arrow batches, and local single-node Ray task and
 actor execution:
 
+A model-service endpoint is not a Ray actor worker. One endpoint is an
+independently addressed HTTP service; `--actor-workers-per-endpoint` creates
+that many Ray HTTP client actors for each endpoint. The configured upper bound
+on simultaneous actor method execution is:
+
+```text
+effective actor concurrency =
+  endpoint_count * actor_workers_per_endpoint * ray_actor_max_concurrency
+```
+
+These HTTP client workers reserve CPU but explicitly reserve `0` Ray GPUs,
+because the external model-service endpoint owns the GPU. Ray task retries,
+actor restarts, and actor task retries remain disabled for formal completion
+accounting. The profiler CSV records the Ray version, resolved worker/resource
+settings, service endpoint count, actor worker count, and per-worker submission
+counts. Python executor rows leave `ray_version` empty and use the explicit
+non-applicable sentinels `ray_actor_max_concurrency=0` and
+`ray_worker_num_cpus=0.0`. Ray task rows record their effective
+`RayWorkerOptions`: no actor workers and an actor-concurrency placeholder of
+`1`, alongside the configured task CPU reservation.
+
 ```powershell
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py

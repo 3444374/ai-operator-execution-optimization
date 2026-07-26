@@ -1,5 +1,17 @@
 # Learning Notes
 
+## 2026-07-26 Ray endpoint 与 actor worker 执行契约
+
+一个 service endpoint 是独立的 HTTP 模型服务地址；一个 Ray actor worker 是向该
+地址发送请求的客户端执行单元，两者不能混为一谈。配置并发上界是
+`endpoint 数 × 每 endpoint 的 actor worker 数 × 每 actor 最大并发`。HTTP worker
+不承载模型，因此 Ray GPU 配额为 0；GPU 由外部 vLLM endpoint 持有。正式完成请求
+禁用 Ray 自动重试，避免完成结果被静默重复。CSV 现在显式记录这些配置、拓扑和
+逐 worker 提交计数。Python 路径没有 Ray worker，因此 concurrency/CPU 用 0/0.0
+表示“不适用”；Ray task 没有 actor worker，但记录实际 task CPU，并把解析后的
+concurrency 占位值记为 1。多 GPU 性能仍须用独立 GPU endpoint 验证，当前契约测试
+不构成多 GPU 性能证据。
+
 ## 2026-07-26 动态 flush 与联合搜索结论
 
 `learning/experiment_walkthrough.md` 新增 2026-07-26 章节，解释为什么

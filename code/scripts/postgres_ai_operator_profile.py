@@ -509,6 +509,21 @@ def require_ray():
     return ray
 
 
+def _sum_semicolon_counts(current: str, addition: str) -> str:
+    if not current:
+        return addition
+    if not addition:
+        return current
+    current_counts = [int(value) for value in current.split(";")]
+    addition_counts = [int(value) for value in addition.split(";")]
+    if len(current_counts) != len(addition_counts):
+        raise ValueError("actor worker submission count widths must match")
+    return ";".join(
+        str(left + right)
+        for left, right in zip(current_counts, addition_counts)
+    )
+
+
 def ray_runtime_env() -> dict[str, dict[str, str]]:
     pythonpath = str(CODE_ROOT)
     existing_pythonpath = os.environ.get("PYTHONPATH")
@@ -2472,6 +2487,17 @@ def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
 
 def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     worker_options = _ray_worker_options(args)
+    ray_actor_max_concurrency = (
+        worker_options.actor_max_concurrency
+        if worker_options is not None
+        else 0
+    )
+    ray_worker_num_cpus = (
+        worker_options.num_cpus
+        if worker_options is not None
+        else 0.0
+    )
+    ray_worker_num_gpus = 0
     _validate_request_trace_args(args)
     _validate_arrival_replay_args(args)
     _validate_resource_efficiency_args(args)
@@ -2614,6 +2640,18 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "cost_tokenizer_id": args.cost_tokenizer_id,
             **dry_packing_metrics,
             "model_workers": args.model_workers,
+            "ray_version": "",
+            "actor_workers_per_endpoint": actor_workers_per_endpoint,
+            "ray_actor_max_concurrency": ray_actor_max_concurrency,
+            "ray_worker_num_cpus": ray_worker_num_cpus,
+            "ray_worker_num_gpus": ray_worker_num_gpus,
+            "endpoint_count": routing_endpoint_count,
+            "actor_worker_count": (
+                routing_endpoint_count * actor_workers_per_endpoint
+                if args.executor == "ray_actor"
+                else 0
+            ),
+            "actor_worker_submission_counts": "",
             "max_inflight_limit": args.max_inflight,
             "endpoint_routing": args.endpoint_routing,
             "pool_routing": args.pool_routing,
@@ -2718,9 +2756,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         actor_pools: dict[str, list[object]] = {}
         actor_endpoint_urls: dict[str, str] = {}
         ray_module = None
+        ray_version = ""
         remote_embed = None
         if args.executor in {"ray_actor", "ray_task"}:
             ray_module = require_ray()
+            ray_version = str(getattr(ray_module, "__version__", ""))
             ray_module.init(ignore_reinit_error=True, runtime_env=ray_runtime_env())
             if args.executor == "ray_actor":
                 actor_endpoint_urls = {
@@ -2861,6 +2901,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "adaptive_downshifts": 0,
             "adaptive_upshifts": 0,
             "adaptive_limit_mean": 0.0,
+            "endpoint_count": 0,
+            "actor_worker_count": 0,
+            "actor_worker_submission_counts": "",
         }
 
         operator_wall_s = 0.0
@@ -3117,8 +3160,20 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             for key in submit_metrics:
                 if key == "max_inflight":
                     submit_metrics[key] = max(submit_metrics[key], metrics[key])
-                elif key in {"adaptive_limit_mean"}:
-                    submit_metrics[key] = max(submit_metrics[key], metrics[key])
+                elif key in {
+                    "adaptive_limit_mean",
+                    "endpoint_count",
+                    "actor_worker_count",
+                }:
+                    submit_metrics[key] = max(
+                        submit_metrics[key],
+                        metrics.get(key, 0),
+                    )
+                elif key == "actor_worker_submission_counts":
+                    submit_metrics[key] = _sum_semicolon_counts(
+                        submit_metrics[key],
+                        metrics.get(key, ""),
+                    )
                 else:
                     submit_metrics[key] += metrics[key]
             processed_rows += table.num_rows
@@ -3173,8 +3228,20 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             for key in submit_metrics:
                 if key == "max_inflight":
                     submit_metrics[key] = max(submit_metrics[key], metrics[key])
-                elif key == "adaptive_limit_mean":
-                    submit_metrics[key] = max(submit_metrics[key], metrics[key])
+                elif key in {
+                    "adaptive_limit_mean",
+                    "endpoint_count",
+                    "actor_worker_count",
+                }:
+                    submit_metrics[key] = max(
+                        submit_metrics[key],
+                        metrics.get(key, 0),
+                    )
+                elif key == "actor_worker_submission_counts":
+                    submit_metrics[key] = _sum_semicolon_counts(
+                        submit_metrics[key],
+                        metrics.get(key, ""),
+                    )
                 else:
                     submit_metrics[key] += metrics[key]
 
@@ -3424,6 +3491,19 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "cost_tokenizer_id": args.cost_tokenizer_id,
             **packing_metrics,
             "model_workers": args.model_workers,
+            "ray_version": ray_version,
+            "actor_workers_per_endpoint": actor_workers_per_endpoint,
+            "ray_actor_max_concurrency": ray_actor_max_concurrency,
+            "ray_worker_num_cpus": ray_worker_num_cpus,
+            "ray_worker_num_gpus": ray_worker_num_gpus,
+            "endpoint_count": max(
+                routing_endpoint_count,
+                int(submit_metrics["endpoint_count"]),
+            ),
+            "actor_worker_count": int(submit_metrics["actor_worker_count"]),
+            "actor_worker_submission_counts": submit_metrics[
+                "actor_worker_submission_counts"
+            ],
             "max_inflight_limit": args.max_inflight,
             "endpoint_routing": args.endpoint_routing,
             "pool_routing": args.pool_routing,

@@ -406,6 +406,30 @@ an explicitly resolved long-request threshold (the tuning-workload P75), which
 is stored in the run CSV. Multiple logical endpoints on GPU `0` validate
 routing behavior only, not multi-GPU scaling.
 
+The service endpoint and Ray actor worker counts are separate. Each HTTP
+endpoint may have multiple client actors, so the configured actor concurrency
+ceiling is:
+
+```text
+endpoint_count * actor_workers_per_endpoint * ray_actor_max_concurrency
+```
+
+HTTP client actors/tasks use `ray_worker_num_cpus` and always record
+`ray_worker_num_gpus=0`; GPU ownership stays with the external vLLM service.
+Formal completion retries remain disabled (`max_retries=0`,
+`max_restarts=0`, and `max_task_retries=0`) so a completed request is not
+silently duplicated. Main CSV rows record `ray_version`,
+`actor_workers_per_endpoint`, `ray_actor_max_concurrency`,
+`ray_worker_num_cpus`, `ray_worker_num_gpus`, `endpoint_count`,
+`actor_worker_count`, and semicolon-separated
+`actor_worker_submission_counts`. Python executor rows use an empty
+`ray_version`, `ray_actor_max_concurrency=0`, and
+`ray_worker_num_cpus=0.0` as explicit non-applicable sentinels. Ray task rows
+have no actor workers, record effective task-worker CPU, and keep the resolved
+`RayWorkerOptions` concurrency placeholder at `1`. Multi-GPU performance
+testing remains pending and must use independent GPU-backed service endpoints
+rather than multiple logical URLs or actors aimed at one endpoint.
+
 `run_kmax_interference_experiment.py` is a small orchestration wrapper around
 `postgres_ai_operator_profile.py`. It starts a background bulk `AI_COMPLETE`
 job and then starts a foreground small job against the same vLLM endpoint. Use

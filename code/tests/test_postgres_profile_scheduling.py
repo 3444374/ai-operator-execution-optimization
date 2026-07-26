@@ -142,6 +142,262 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(args.ray_actor_max_concurrency, 1)
         self.assertEqual(args.ray_worker_num_cpus, 0.25)
 
+    def test_dry_run_records_ray_execution_contract(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_actor",
+                "--actor-workers-per-endpoint",
+                "4",
+                "--ray-actor-max-concurrency",
+                "2",
+                "--ray-worker-num-cpus",
+                "0.25",
+            ]
+        )
+
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["ray_version"], "")
+        self.assertEqual(row["actor_workers_per_endpoint"], 4)
+        self.assertEqual(row["ray_actor_max_concurrency"], 2)
+        self.assertEqual(row["ray_worker_num_cpus"], 0.25)
+        self.assertEqual(row["ray_worker_num_gpus"], 0)
+        self.assertEqual(row["endpoint_count"], 1)
+        self.assertEqual(row["actor_worker_count"], 4)
+        self.assertEqual(row["actor_worker_submission_counts"], "")
+
+    def test_python_dry_run_records_non_applicable_ray_contract(self) -> None:
+        args = profile.parse_args(["--dry-run", "--executor", "python"])
+
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["ray_version"], "")
+        self.assertEqual(row["actor_workers_per_endpoint"], 0)
+        self.assertEqual(row["ray_actor_max_concurrency"], 0)
+        self.assertEqual(row["ray_worker_num_cpus"], 0.0)
+        self.assertEqual(row["ray_worker_num_gpus"], 0)
+        self.assertEqual(row["actor_worker_count"], 0)
+        self.assertEqual(row["actor_worker_submission_counts"], "")
+
+    def test_ray_task_dry_run_records_effective_task_worker_contract(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_task",
+                "--ray-actor-max-concurrency",
+                "7",
+                "--ray-worker-num-cpus",
+                "0.5",
+            ]
+        )
+
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["ray_version"], "")
+        self.assertEqual(row["actor_workers_per_endpoint"], 0)
+        self.assertEqual(row["ray_actor_max_concurrency"], 1)
+        self.assertEqual(row["ray_worker_num_cpus"], 0.5)
+        self.assertEqual(row["ray_worker_num_gpus"], 0)
+        self.assertEqual(row["actor_worker_count"], 0)
+        self.assertEqual(row["actor_worker_submission_counts"], "")
+
+    def test_real_python_row_records_non_applicable_ray_contract(self) -> None:
+        args = profile.parse_args(
+            [
+                "--database-url",
+                "postgresql://unused",
+                "--executor",
+                "python",
+                "--total-rows",
+                "1",
+                "--writeback-mode",
+                "none",
+            ]
+        )
+        table = pa.table(
+            {
+                "doc_id": [1],
+                "tenant_id": [1],
+                "category": ["test"],
+                "text": ["hello"],
+            }
+        )
+        connection = Mock()
+        source = SimpleNamespace(
+            fetch=Mock(
+                return_value=SimpleNamespace(
+                    table=table,
+                    metrics={"db_fetch_s": 0.0, "arrow_build_s": 0.0},
+                )
+            )
+        )
+        organizer = SimpleNamespace(
+            organize=Mock(
+                return_value=SimpleNamespace(
+                    batches=[table],
+                    batch_cost_units=(1,),
+                    batch_row_counts=(1,),
+                    metrics={
+                        "packing_scope": "organizer_input",
+                        "organizer_from_arrow_s": 0.0,
+                        "organizer_plan_s": 0.0,
+                        "organizer_collect_s": 0.0,
+                        "organization_policy_family": "fixed_rows",
+                        "batch_prompt_token_spread_mean": 0.0,
+                        "prefix_group_ratio": 0.0,
+                        "partition_effective": "true",
+                        "warnings": "",
+                    },
+                )
+            )
+        )
+
+        with (
+            patch.object(profile, "connect", return_value=connection),
+            patch.object(profile, "gpu_metadata", return_value={}),
+            patch.object(
+                profile,
+                "database_metadata",
+                return_value={"server_version": "18.4", "pgvector_version": "0.8.2"},
+            ),
+            patch.object(
+                profile,
+                "embedding_vector_column_dim",
+                return_value=args.embedding_dim,
+            ),
+            patch.object(profile, "create_job", return_value=1),
+            patch.object(profile, "finish_job"),
+            patch.object(profile, "make_source", return_value=source),
+            patch.object(profile, "make_organizer", return_value=organizer),
+            patch.object(profile, "write_embeddings", return_value=0),
+        ):
+            row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["ray_version"], "")
+        self.assertEqual(row["actor_workers_per_endpoint"], 0)
+        self.assertEqual(row["ray_actor_max_concurrency"], 0)
+        self.assertEqual(row["ray_worker_num_cpus"], 0.0)
+        self.assertEqual(row["ray_worker_num_gpus"], 0)
+        self.assertEqual(row["actor_worker_count"], 0)
+        self.assertEqual(row["actor_worker_submission_counts"], "")
+
+    def test_real_ray_actor_row_records_resolved_execution_contract(self) -> None:
+        args = profile.parse_args(
+            [
+                "--database-url",
+                "postgresql://unused",
+                "--executor",
+                "ray_actor",
+                "--actor-workers-per-endpoint",
+                "2",
+                "--ray-actor-max-concurrency",
+                "3",
+                "--ray-worker-num-cpus",
+                "0.5",
+                "--total-rows",
+                "1",
+                "--writeback-mode",
+                "none",
+            ]
+        )
+        table = pa.table({"doc_id": [1], "prompt": ["hello"]})
+        connection = Mock()
+        source = SimpleNamespace(
+            fetch=Mock(
+                return_value=SimpleNamespace(
+                    table=table,
+                    metrics={"db_fetch_s": 0.0, "arrow_build_s": 0.0},
+                )
+            )
+        )
+        organizer = SimpleNamespace(
+            organize=Mock(
+                return_value=SimpleNamespace(
+                    batches=[table],
+                    batch_cost_units=(1,),
+                    batch_row_counts=(1,),
+                    metrics={
+                        "packing_scope": "organizer_input",
+                        "organizer_from_arrow_s": 0.0,
+                        "organizer_plan_s": 0.0,
+                        "organizer_collect_s": 0.0,
+                        "organization_policy_family": "fixed_rows",
+                        "batch_prompt_token_spread_mean": 0.0,
+                        "prefix_group_ratio": 0.0,
+                        "partition_effective": "true",
+                        "warnings": "",
+                    },
+                )
+            )
+        )
+
+        class RemoteDefinition:
+            @staticmethod
+            def remote(*_args):
+                return object()
+
+        ray_module = SimpleNamespace(
+            __version__="2.test",
+            init=Mock(),
+            remote=Mock(return_value=RemoteDefinition()),
+        )
+        submission_metrics = {
+            "operator_invocations": 1,
+            "max_inflight": 1,
+            "bounded_wait_s": 0.0,
+            "avg_bounded_wait_s": 0.0,
+            "fanin_s": 0.0,
+            "submit_s": 0.0,
+            "adaptive_downshifts": 0,
+            "adaptive_upshifts": 0,
+            "adaptive_limit_mean": 1.0,
+            "endpoint_count": 1,
+            "actor_worker_count": 2,
+            "actor_worker_submission_counts": "1;0",
+        }
+
+        with (
+            patch.object(profile, "connect", return_value=connection),
+            patch.object(profile, "gpu_metadata", return_value={}),
+            patch.object(
+                profile,
+                "database_metadata",
+                return_value={"server_version": "18.4", "pgvector_version": "0.8.2"},
+            ),
+            patch.object(
+                profile,
+                "embedding_vector_column_dim",
+                return_value=args.embedding_dim,
+            ),
+            patch.object(profile, "create_job", return_value=1),
+            patch.object(profile, "finish_job"),
+            patch.object(profile, "require_ray", return_value=ray_module),
+            patch.object(profile, "make_source", return_value=source),
+            patch.object(profile, "make_organizer", return_value=organizer),
+            patch.object(
+                profile,
+                "submit_with_backpressure",
+                return_value=(
+                    [{"rows": 1, "token_count": 1, "service_s": 0.0}],
+                    submission_metrics,
+                ),
+            ),
+            patch.object(profile, "write_embeddings", return_value=0),
+        ):
+            row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["ray_version"], "2.test")
+        self.assertEqual(row["actor_workers_per_endpoint"], 2)
+        self.assertEqual(row["ray_actor_max_concurrency"], 3)
+        self.assertEqual(row["ray_worker_num_cpus"], 0.5)
+        self.assertEqual(row["ray_worker_num_gpus"], 0)
+        self.assertEqual(row["endpoint_count"], 1)
+        self.assertEqual(row["actor_worker_count"], 2)
+        self.assertEqual(row["actor_worker_submission_counts"], "1;0")
+
     def test_single_endpoint_legacy_workers_remain_compatible(self) -> None:
         args = profile.parse_args(["--model-workers", "4"])
 

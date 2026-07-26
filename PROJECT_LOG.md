@@ -1,5 +1,19 @@
 # 项目日志
 
+## 2026-07-26 Ray 执行契约结果 schema
+
+- `postgres_ai_operator_profile.py` 的 dry-run 与真实 run row 新增
+  `ray_version`、每 endpoint actor worker 数、actor 最大并发、Ray CPU/GPU
+  资源、service endpoint 数、actor worker 总数和逐 worker 提交计数。
+- 真实 Ray 版本仅在 Ray 可用后读取；Python executor 行保持空值。HTTP worker
+  固定记录 Ray GPU 配额 0，正式 completion 的 task/actor 自动重试继续禁用。
+- 后续回归补齐 Python executor 的非适用哨兵：actor concurrency/CPU 为 0/0.0，
+  避免访问可选 `RayWorkerOptions`；Ray task 仍记录实际 CPU 与解析占位并发 1。
+- 文档明确 service endpoint 不等于 actor worker，并给出
+  `endpoint × workers/endpoint × actor max concurrency` 的配置并发上界。
+  多 GPU 性能仍待独立 GPU-backed endpoint 验证，本次只建立执行与观测契约，
+  不新增实验性能结论。
+
 ## 2026-07-26 Row-cap-aware packing 与非阻塞 adaptive 观测门禁
 
 - **代码**：typed adaptive admission 的指标抓取从提交决策线程移到既有后台采样器，增加 `sample_age_s` 观测/控制轨迹字段和异常路径关闭测试；新增 BFD-inspired row-cap-first 纯装箱函数，Arrow 与 Daft 复用同一 membership 实现，顺序 token-budget 仍为默认。
