@@ -23,6 +23,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.experiment_scenarios import (  # noqa: E402
     ScheduledScenarioRun,
     build_scenario_schedule,
+    validate_service_metadata,
 )
 from src.metrics import parse_prometheus_metrics  # noqa: E402
 
@@ -391,6 +392,8 @@ def _load_config(path: Path) -> ScenarioExperimentConfig:
     service_metadata = _validate_service_metadata(
         decoded.get("service_metadata", {})
     )
+    if decoded.get("require_complete_service_metadata") is True:
+        validate_service_metadata(dict(service_metadata))
     warmups = decoded.get("warmup_runs_per_scenario")
     repeats = decoded.get("formal_repeats")
     if not isinstance(seed, int) or isinstance(seed, bool):

@@ -3,8 +3,36 @@
 from __future__ import annotations
 
 import random
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Literal, Sequence
+
+
+REQUIRED_SERVICE_METADATA = (
+    "vllm_version",
+    "enforce_eager",
+    "compilation_mode",
+    "chunked_prefill",
+    "max_num_batched_tokens",
+    "max_num_seqs",
+    "gpu_memory_utilization",
+    "prefix_caching",
+    "mfu_metrics",
+)
+
+
+def validate_service_metadata(metadata: Mapping[str, object]) -> None:
+    missing = [key for key in REQUIRED_SERVICE_METADATA if key not in metadata]
+    if missing:
+        raise ValueError(
+            "service_metadata missing required keys: " + ", ".join(missing)
+        )
+    utilization = float(metadata["gpu_memory_utilization"])
+    if not 0.0 < utilization <= 1.0:
+        raise ValueError("gpu_memory_utilization must be in (0, 1]")
+    for key in ("max_num_batched_tokens", "max_num_seqs"):
+        if metadata[key] != "unknown" and int(metadata[key]) <= 0:
+            raise ValueError(f"{key} must be positive or 'unknown'")
 
 
 @dataclass(frozen=True)

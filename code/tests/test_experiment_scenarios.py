@@ -10,7 +10,10 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.experiment_scenarios import build_scenario_schedule  # noqa: E402
+from src.experiment_scenarios import (  # noqa: E402
+    build_scenario_schedule,
+    validate_service_metadata,
+)
 from scripts.run_ai_operator_scenarios import (  # noqa: E402
     RunnerOptions,
     run_experiment,
@@ -18,6 +21,80 @@ from scripts.run_ai_operator_scenarios import (  # noqa: E402
 
 
 class ExperimentScenarioTests(unittest.TestCase):
+    def test_service_metadata_requires_execution_parameters(self) -> None:
+        metadata = {
+            "vllm_version": "0.25.1",
+            "enforce_eager": False,
+            "compilation_mode": "default",
+            "chunked_prefill": True,
+            "max_num_batched_tokens": 4096,
+            "max_num_seqs": 64,
+            "gpu_memory_utilization": 0.75,
+            "prefix_caching": False,
+            "mfu_metrics": True,
+        }
+
+        validate_service_metadata(metadata)
+
+    def test_service_metadata_rejects_missing_capacity(self) -> None:
+        with self.assertRaisesRegex(ValueError, "max_num_batched_tokens"):
+            validate_service_metadata({"vllm_version": "0.25.1"})
+
+    def test_service_metadata_accepts_unknown_capacity(self) -> None:
+        metadata = {
+            "vllm_version": "0.25.1",
+            "enforce_eager": False,
+            "compilation_mode": "default",
+            "chunked_prefill": True,
+            "max_num_batched_tokens": "unknown",
+            "max_num_seqs": "unknown",
+            "gpu_memory_utilization": 0.75,
+            "prefix_caching": False,
+            "mfu_metrics": True,
+        }
+
+        validate_service_metadata(metadata)
+
+    def test_service_metadata_rejects_invalid_capacity(self) -> None:
+        for key in ("max_num_batched_tokens", "max_num_seqs"):
+            with self.subTest(key=key):
+                metadata = {
+                    "vllm_version": "0.25.1",
+                    "enforce_eager": False,
+                    "compilation_mode": "default",
+                    "chunked_prefill": True,
+                    "max_num_batched_tokens": 4096,
+                    "max_num_seqs": 64,
+                    "gpu_memory_utilization": 0.75,
+                    "prefix_caching": False,
+                    "mfu_metrics": True,
+                }
+                metadata[key] = 0
+
+                with self.assertRaisesRegex(ValueError, key):
+                    validate_service_metadata(metadata)
+
+    def test_service_metadata_rejects_invalid_utilization(self) -> None:
+        for utilization in (0.0, 1.01):
+            with self.subTest(utilization=utilization):
+                metadata = {
+                    "vllm_version": "0.25.1",
+                    "enforce_eager": False,
+                    "compilation_mode": "default",
+                    "chunked_prefill": True,
+                    "max_num_batched_tokens": 4096,
+                    "max_num_seqs": 64,
+                    "gpu_memory_utilization": utilization,
+                    "prefix_caching": False,
+                    "mfu_metrics": True,
+                }
+
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "gpu_memory_utilization",
+                ):
+                    validate_service_metadata(metadata)
+
     def test_schedule_is_reproducible_and_interleaves_formal_scenarios(
         self,
     ) -> None:
@@ -97,6 +174,44 @@ class ExperimentScenarioTests(unittest.TestCase):
 
 
 class ScenarioRunnerTests(unittest.TestCase):
+    def test_runner_validates_opted_in_metadata_before_external_work(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            profiler = self._write_fake_profiler(root)
+            config = self._write_config(
+                root,
+                scenario_ids=["fixed"],
+                formal_repeats=1,
+                seed=7,
+                require_complete_service_metadata=True,
+            )
+            output_dir = root / "output"
+            idle_checks = []
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "max_num_batched_tokens",
+            ):
+                run_experiment(
+                    RunnerOptions(
+                        config_path=config,
+                        profiler_path=profiler,
+                        python_executable=Path(sys.executable),
+                        output_dir=output_dir,
+                        health_url="http://health",
+                        metrics_url="http://metrics",
+                        idle_timeout_s=1.0,
+                    ),
+                    idle_gate=lambda health, metrics, timeout: (
+                        idle_checks.append((health, metrics, timeout))
+                    ),
+                )
+
+            self.assertEqual(idle_checks, [])
+            self.assertFalse(output_dir.exists())
+
     def test_runner_invokes_reproducible_schedule_and_writes_manifest(
         self,
     ) -> None:
@@ -358,6 +473,7 @@ class ScenarioRunnerTests(unittest.TestCase):
         formal_repeats: int,
         seed: int,
         warmups: int = 1,
+        require_complete_service_metadata: bool = False,
     ) -> Path:
         config = {
             "schema_version": 1,
@@ -384,6 +500,8 @@ class ScenarioRunnerTests(unittest.TestCase):
                 for scenario_id in scenario_ids
             ],
         }
+        if require_complete_service_metadata:
+            config["require_complete_service_metadata"] = True
         path = root / "config.json"
         path.write_text(json.dumps(config), encoding="utf-8")
         return path
