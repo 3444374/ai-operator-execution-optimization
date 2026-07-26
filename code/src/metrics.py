@@ -80,10 +80,19 @@ class PeriodicSampler:
 
 def append_metrics(path: Path, row: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    exists = path.exists()
+    fieldnames = list(row.keys())
+    has_content = path.exists() and path.stat().st_size > 0
+    if has_content:
+        with path.open(newline="", encoding="utf-8") as existing:
+            header = next(csv.reader(existing), [])
+        if header != fieldnames:
+            raise ValueError(
+                "CSV schema mismatch: "
+                f"existing header {header!r} != row keys {fieldnames!r}"
+            )
     with path.open("a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(row.keys()))
-        if not exists:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if not has_content:
             writer.writeheader()
         writer.writerow(row)
 

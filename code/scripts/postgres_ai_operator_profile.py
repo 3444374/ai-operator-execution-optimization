@@ -489,6 +489,18 @@ def _remote_task(ray_module, task_fn, worker_options):
     )
 
 
+def _remote_worker_definition(
+    ray_module,
+    target,
+    worker_options,
+    *,
+    is_actor: bool,
+):
+    if is_actor:
+        return _remote_actor_class(ray_module, target, worker_options)
+    return _remote_task(ray_module, target, worker_options)
+
+
 def require_psycopg():
     try:
         import psycopg
@@ -522,6 +534,28 @@ def _sum_semicolon_counts(current: str, addition: str) -> str:
         str(left + right)
         for left, right in zip(current_counts, addition_counts)
     )
+
+
+def _merge_submit_metrics(
+    aggregate: dict,
+    addition: Mapping[str, object],
+) -> None:
+    maximum_fields = {
+        "max_inflight",
+        "adaptive_limit_mean",
+        "endpoint_count",
+        "actor_worker_count",
+    }
+    for key in aggregate:
+        if key == "actor_worker_submission_counts":
+            aggregate[key] = _sum_semicolon_counts(
+                str(aggregate[key]),
+                str(addition.get(key, "")),
+            )
+        elif key in maximum_fields:
+            aggregate[key] = max(aggregate[key], addition.get(key, 0))
+        else:
+            aggregate[key] += addition.get(key, 0)
 
 
 def ray_runtime_env() -> dict[str, dict[str, str]]:
@@ -2487,9 +2521,9 @@ def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
 
 def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     worker_options = _ray_worker_options(args)
-    ray_actor_max_concurrency = (
+    reported_ray_actor_max_concurrency = (
         worker_options.actor_max_concurrency
-        if worker_options is not None
+        if args.executor == "ray_actor" and worker_options is not None
         else 0
     )
     ray_worker_num_cpus = (
@@ -2642,7 +2676,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "model_workers": args.model_workers,
             "ray_version": "",
             "actor_workers_per_endpoint": actor_workers_per_endpoint,
-            "ray_actor_max_concurrency": ray_actor_max_concurrency,
+            "ray_actor_max_concurrency": reported_ray_actor_max_concurrency,
             "ray_worker_num_cpus": ray_worker_num_cpus,
             "ray_worker_num_gpus": ray_worker_num_gpus,
             "endpoint_count": routing_endpoint_count,
@@ -2772,7 +2806,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     )
                 }
                 if args.operator == "ai_complete" and model_backend == "fake":
-                    RayCompletionActor = ray_module.remote(FakeCompletionActor)
+                    RayCompletionActor = _remote_worker_definition(
+                        ray_module,
+                        FakeCompletionActor,
+                        worker_options,
+                        is_actor=True,
+                    )
                     actor_pools = {
                         endpoint_id: [
                             RayCompletionActor.remote(args.completion_max_tokens)
@@ -2818,7 +2857,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                             for _ in range(actor_workers_per_endpoint)
                         ]
                 elif model_backend == "fake":
-                    RayEmbeddingActor = ray_module.remote(FakeEmbeddingActor)
+                    RayEmbeddingActor = _remote_worker_definition(
+                        ray_module,
+                        FakeEmbeddingActor,
+                        worker_options,
+                        is_actor=True,
+                    )
                     actor_pools = {
                         endpoint_id: [
                             RayEmbeddingActor.remote(args.embedding_dim)
@@ -2846,7 +2890,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     }
             else:
                 if args.operator == "ai_complete" and model_backend == "fake":
-                    remote_embed = ray_module.remote(fake_complete_batch)
+                    remote_embed = _remote_worker_definition(
+                        ray_module,
+                        fake_complete_batch,
+                        worker_options,
+                        is_actor=False,
+                    )
                 elif args.operator == "ai_complete" and model_backend == "ollama":
                     remote_embed = _remote_task(
                         ray_module,
@@ -2860,7 +2909,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         worker_options,
                     )
                 elif model_backend == "fake":
-                    remote_embed = ray_module.remote(fake_embed_batch)
+                    remote_embed = _remote_worker_definition(
+                        ray_module,
+                        fake_embed_batch,
+                        worker_options,
+                        is_actor=False,
+                    )
                 else:
                     remote_embed = _remote_task(
                         ray_module,
@@ -3157,25 +3211,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             )
             operator_wall_s += operator_timer.stop()
             operator_results.extend(results)
-            for key in submit_metrics:
-                if key == "max_inflight":
-                    submit_metrics[key] = max(submit_metrics[key], metrics[key])
-                elif key in {
-                    "adaptive_limit_mean",
-                    "endpoint_count",
-                    "actor_worker_count",
-                }:
-                    submit_metrics[key] = max(
-                        submit_metrics[key],
-                        metrics.get(key, 0),
-                    )
-                elif key == "actor_worker_submission_counts":
-                    submit_metrics[key] = _sum_semicolon_counts(
-                        submit_metrics[key],
-                        metrics.get(key, ""),
-                    )
-                else:
-                    submit_metrics[key] += metrics[key]
+            _merge_submit_metrics(submit_metrics, metrics)
             processed_rows += table.num_rows
 
         if args.arrival_replay:
@@ -3225,25 +3261,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     flush_observation_provider.close()
             operator_results.extend(results)
             object_count = metrics["operator_invocations"]
-            for key in submit_metrics:
-                if key == "max_inflight":
-                    submit_metrics[key] = max(submit_metrics[key], metrics[key])
-                elif key in {
-                    "adaptive_limit_mean",
-                    "endpoint_count",
-                    "actor_worker_count",
-                }:
-                    submit_metrics[key] = max(
-                        submit_metrics[key],
-                        metrics.get(key, 0),
-                    )
-                elif key == "actor_worker_submission_counts":
-                    submit_metrics[key] = _sum_semicolon_counts(
-                        submit_metrics[key],
-                        metrics.get(key, ""),
-                    )
-                else:
-                    submit_metrics[key] += metrics[key]
+            _merge_submit_metrics(submit_metrics, metrics)
 
         request_trace_path = args.request_trace_output or ""
         if request_trace_path:
@@ -3493,7 +3511,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "model_workers": args.model_workers,
             "ray_version": ray_version,
             "actor_workers_per_endpoint": actor_workers_per_endpoint,
-            "ray_actor_max_concurrency": ray_actor_max_concurrency,
+            "ray_actor_max_concurrency": reported_ray_actor_max_concurrency,
             "ray_worker_num_cpus": ray_worker_num_cpus,
             "ray_worker_num_gpus": ray_worker_num_gpus,
             "endpoint_count": max(

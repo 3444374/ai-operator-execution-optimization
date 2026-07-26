@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import sys
 import threading
 import unittest
@@ -13,6 +14,7 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.metrics import (  # noqa: E402
     PeriodicSampler,
+    append_metrics,
     batch_result_stats,
     estimate_mfu,
     gpu_metadata,
@@ -23,6 +25,52 @@ from src.metrics import (  # noqa: E402
 
 
 class MetricsTests(unittest.TestCase):
+    def _metrics_path(self, name: str) -> Path:
+        path = CODE_ROOT.parent / ".test-tmp" / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.unlink(missing_ok=True)
+        self.addCleanup(path.unlink, missing_ok=True)
+        return path
+
+    def test_append_metrics_writes_header_for_existing_empty_file(self) -> None:
+        path = self._metrics_path("metrics_existing_empty.csv")
+        path.touch()
+
+        append_metrics(path, {"status": "ok", "rows": 1})
+
+        with path.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(rows, [{"status": "ok", "rows": "1"}])
+
+    def test_append_metrics_appends_when_schema_matches_exactly(self) -> None:
+        path = self._metrics_path("metrics_matching_schema.csv")
+
+        append_metrics(path, {"status": "ok", "rows": 1})
+        append_metrics(path, {"status": "ok", "rows": 2})
+
+        with path.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(
+            rows,
+            [
+                {"status": "ok", "rows": "1"},
+                {"status": "ok", "rows": "2"},
+            ],
+        )
+
+    def test_append_metrics_rejects_existing_incompatible_schema(self) -> None:
+        path = self._metrics_path("metrics_incompatible_schema.csv")
+        path.write_text("status,legacy_field\nok,1\n", encoding="utf-8")
+        original = path.read_text(encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "CSV schema mismatch",
+        ):
+            append_metrics(path, {"status": "ok", "rows": 2})
+
+        self.assertEqual(path.read_text(encoding="utf-8"), original)
+
     def test_periodic_sampler_collects_and_stops(self) -> None:
         sampled_twice = threading.Event()
         calls = 0

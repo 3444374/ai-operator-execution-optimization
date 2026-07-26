@@ -116,7 +116,11 @@ PostgreSQL
 - 正式/dry-run CSV 已记录 Ray 版本、解析后的 worker/resource 配置、endpoint 数、
   actor worker 数和逐 worker 提交计数；Python executor 的 `ray_version` 为空，
   actor concurrency/CPU 使用明确的非适用哨兵 0/0.0。Ray task 无 actor worker，
-  记录 task 的实际 CPU 配额，并保留解析后的 concurrency 占位值 1。
+  记录 task 的实际 CPU 配额，actor-only concurrency 字段同样记 0。
+- fake Ray task/actor 也应用相同的 CPU、零 GPU 与禁重试/重启 options；它仍只是
+  debug backend，不是 HTTP 模型服务或性能证据。
+- CSV 追加会校验既有 header 与当前 row keys 精确一致；空文件写 header，旧 schema
+  不一致时在写入前明确失败，避免列静默错位。
 
 ### 尚未完成的验证
 

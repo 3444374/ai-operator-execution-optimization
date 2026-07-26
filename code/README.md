@@ -80,7 +80,8 @@ now lives under `code/src/`:
 - `model_backends.py`: `fake` debug backend, `compatible_http` embedding/completion backend, and Ollama native completion backend.
 - `sinks.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
 - `metrics.py`: timers, GPU/memory/power sampling, energy/MFU estimates, and
-  CSV append helpers.
+  schema-safe CSV append helpers. Empty files receive a header; non-empty files
+  reject rows whose ordered keys do not exactly match the existing header.
 - `workloads.py`: small built-in seed workloads for smoke/dev only.
 - `scheduling/`: engine-independent scheduling metadata and policies. The
   formal payload/execution path remains Daft -> Arrow -> Ray.
@@ -133,8 +134,11 @@ settings, service endpoint count, actor worker count, and per-worker submission
 counts. Python executor rows leave `ray_version` empty and use the explicit
 non-applicable sentinels `ray_actor_max_concurrency=0` and
 `ray_worker_num_cpus=0.0`. Ray task rows record their effective
-`RayWorkerOptions`: no actor workers and an actor-concurrency placeholder of
-`1`, alongside the configured task CPU reservation.
+CPU reservation but use `ray_actor_max_concurrency=0`, because an actor-only
+constraint is not applicable to a task. Internally the task worker options
+still use their safe task definition. Fake Ray task/actor definitions receive
+the same CPU, zero-GPU, and retry/restart options as other Ray workers; this
+does not make the fake backend an HTTP or performance path.
 
 ```powershell
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py

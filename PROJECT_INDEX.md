@@ -215,7 +215,7 @@
 | `code/src/packing.py` | 与模态无关的确定性 BFD 标量容量装箱与指标 | 修改离线 batch membership、超预算行处理或 packing 指标前读 |
 | `code/src/model_backends.py` | fake debug backend、vLLM-compatible HTTP embedding/completion backend、Ollama native completion backend | 修改模型服务接入、vLLM/Ollama endpoint 或 AI_COMPLETE backend 前读 |
 | `code/src/sinks.py` | `none/json_text/pgvector` embedding 写回与 completion JSON-text 写回 | 修改写回路径或后续接 Lance sink 前读 |
-| `code/src/metrics.py` | Stage timer、GPU/显存/功率时序汇总、能耗、MFU 估计和 CSV metric helper | 修改 profiling 指标、资源效率、CSV 输出或计时边界前读 |
+| `code/src/metrics.py` | Stage timer、GPU/显存/功率时序汇总、能耗、MFU 估计和严格 header 契约的 CSV append helper | 修改 profiling 指标、资源效率、CSV 输出或计时边界前读 |
 | `code/src/workloads.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
 | `code/src/experiment_scenarios.py` | 可复现的 warm-up / formal 场景交错顺序生成器 | 修改实验随机化与运行顺序前读 |
 | `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core：pending batch、arrival replay、flush、动态 admission、actor pool/endpoint routing、deterministic scheduler | 实现或审查运行时策略前读 |
@@ -240,6 +240,7 @@
 | `code/tests/test_runtime_batching.py` | pending batch、token membership、单调 arrival replay 与 flush deadline 单元测试 | 修改回放事件循环或 batch builder 前运行 |
 | `code/tests/test_ray_adapter.py` | 通用 Ray submission adapter 的 request identity 与 endpoint 映射测试 | 修改 Ray adapter 前运行 |
 | `code/tests/test_postgres_profile_scheduling.py` | profiler 静态 Ray task/actor 接线、路由与旧指标兼容测试 | 修改 profiler 提交路径前运行 |
+| `code/tests/test_metrics.py` | 资源/MFU 汇总与 CSV header/schema-safe append 测试 | 修改指标输出或追加契约前运行 |
 | `code/tests/test_scheduling_daft_ray_contract.py` | 真实 DaftOrganizer→Arrow RecordBatch→arrival replay→单节点 Ray task/actor exactly-once contract | 修改 Daft/Ray/replay adapter boundary 前运行 |
 | `code/tests/test_request_lifecycle.py` | request/submission exactly-once join、时钟域与 SLO 语义测试 | 修改逐请求 lifecycle schema 或计时边界前运行 |
 | `code/tests/test_experiment_scenarios.py` | seeded schedule、runner 脱敏、失败即停与 manifest 测试 | 修改场景运行器或实验顺序前运行 |

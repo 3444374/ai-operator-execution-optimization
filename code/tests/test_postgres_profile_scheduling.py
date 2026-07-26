@@ -135,6 +135,94 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [{"num_cpus": 0.25, "num_gpus": 0, "max_retries": 0}],
         )
 
+    def test_fake_ray_definitions_receive_the_same_worker_options(self) -> None:
+        options = RayWorkerOptions(0.25, actor_max_concurrency=3)
+        cases = [
+            (profile.FakeEmbeddingActor, True, "max_concurrency", 3),
+            (profile.FakeCompletionActor, True, "max_concurrency", 3),
+            (profile.fake_embed_batch, False, "max_retries", 0),
+            (profile.fake_complete_batch, False, "max_retries", 0),
+        ]
+
+        for target, is_actor, option_name, expected in cases:
+            with self.subTest(target=target.__name__):
+                ray = _RecordingRay()
+
+                remote = profile._remote_worker_definition(
+                    ray,
+                    target,
+                    options,
+                    is_actor=is_actor,
+                )
+
+                self.assertEqual(remote.options_calls[0][option_name], expected)
+                self.assertEqual(remote.options_calls[0]["num_cpus"], 0.25)
+                self.assertEqual(remote.options_calls[0]["num_gpus"], 0)
+
+    def test_submit_metrics_merge_aggregates_chunks_and_missing_fields(self) -> None:
+        aggregate = {
+            "operator_invocations": 0,
+            "max_inflight": 0,
+            "submit_s": 0.0,
+            "adaptive_limit_mean": 0.0,
+            "endpoint_count": 0,
+            "actor_worker_count": 0,
+            "actor_worker_submission_counts": "",
+        }
+
+        profile._merge_submit_metrics(
+            aggregate,
+            {
+                "operator_invocations": 1,
+                "max_inflight": 2,
+                "submit_s": 0.1,
+                "adaptive_limit_mean": 2.0,
+                "endpoint_count": 1,
+                "actor_worker_count": 2,
+                "actor_worker_submission_counts": "1;0",
+            },
+        )
+        profile._merge_submit_metrics(
+            aggregate,
+            {
+                "operator_invocations": 2,
+                "max_inflight": 1,
+                "submit_s": 0.2,
+                "adaptive_limit_mean": 1.0,
+                "endpoint_count": 1,
+                "actor_worker_count": 2,
+                "actor_worker_submission_counts": "0;2",
+            },
+        )
+        profile._merge_submit_metrics(
+            aggregate,
+            {
+                "operator_invocations": 1,
+                "max_inflight": 1,
+                "submit_s": 0.3,
+            },
+        )
+
+        self.assertEqual(aggregate["operator_invocations"], 4)
+        self.assertEqual(aggregate["max_inflight"], 2)
+        self.assertAlmostEqual(aggregate["submit_s"], 0.6)
+        self.assertEqual(aggregate["adaptive_limit_mean"], 2.0)
+        self.assertEqual(aggregate["endpoint_count"], 1)
+        self.assertEqual(aggregate["actor_worker_count"], 2)
+        self.assertEqual(aggregate["actor_worker_submission_counts"], "1;2")
+
+    def test_submit_metrics_merge_rejects_worker_count_width_change(self) -> None:
+        aggregate = {"actor_worker_submission_counts": "1;0"}
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "submission count widths",
+        ):
+            profile._merge_submit_metrics(
+                aggregate,
+                {"actor_worker_submission_counts": "1"},
+            )
+
     def test_ray_worker_cli_defaults_are_explicit(self) -> None:
         args = profile.parse_args([])
 
@@ -198,7 +286,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertEqual(row["ray_version"], "")
         self.assertEqual(row["actor_workers_per_endpoint"], 0)
-        self.assertEqual(row["ray_actor_max_concurrency"], 1)
+        self.assertEqual(row["ray_actor_max_concurrency"], 0)
         self.assertEqual(row["ray_worker_num_cpus"], 0.5)
         self.assertEqual(row["ray_worker_num_gpus"], 0)
         self.assertEqual(row["actor_worker_count"], 0)
@@ -335,8 +423,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
 
         class RemoteDefinition:
-            @staticmethod
-            def remote(*_args):
+            def options(self, **_options):
+                return self
+
+            def remote(self, *_args):
                 return object()
 
         ray_module = SimpleNamespace(
@@ -783,7 +873,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 )
             )
         )
-        ray_module = SimpleNamespace(init=Mock(), remote=Mock(return_value=object()))
+        ray_module = SimpleNamespace(
+            init=Mock(),
+            remote=Mock(return_value=_RecordingRemoteDefinition()),
+        )
 
         with (
             patch.object(profile, "connect", return_value=connection),

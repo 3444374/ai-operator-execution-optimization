@@ -54,7 +54,7 @@ PostgreSQL documents/job table
 | AI 算子 | `FakeEmbeddingActor` / `CompatibleHTTPEmbeddingActor` / `FakeCompletionActor` / `CompatibleHTTPCompletionActor` / `OllamaCompletionActor` | `fake` 只用于离线 smoke 和控制变量；`compatible_http` 用于 vLLM-compatible embedding 或 completion endpoint；`ollama` 用于本地 Ollama `/api/generate` completion smoke |
 | 并发与反压 | `submit_ray_tasks` / `submit_with_backpressure` → `SynchronousScheduler` | 静态 task/actor 路径统一执行 K_max、路由、等待和 fan-in；旧 queue-adaptive 分支暂时隔离保留 |
 | 数据写回 | `code/src/sinks.py::write_embeddings` / `write_completions` | embedding 支持 `none`、JSON 文本和 pgvector；completion 支持 `none` 和 JSON 文本 |
-| 指标输出 | `code/src/metrics.py::append_metrics` | 追加写入实验 CSV |
+| 指标输出 | `code/src/metrics.py::append_metrics` | 空文件写 header；非空 CSV 仅在已有 header 与当前 row keys 精确一致时追加 |
 
 ## 当前本地运行
 
@@ -425,10 +425,19 @@ silently duplicated. Main CSV rows record `ray_version`,
 `actor_worker_submission_counts`. Python executor rows use an empty
 `ray_version`, `ray_actor_max_concurrency=0`, and
 `ray_worker_num_cpus=0.0` as explicit non-applicable sentinels. Ray task rows
-have no actor workers, record effective task-worker CPU, and keep the resolved
-`RayWorkerOptions` concurrency placeholder at `1`. Multi-GPU performance
-testing remains pending and must use independent GPU-backed service endpoints
-rather than multiple logical URLs or actors aimed at one endpoint.
+have no actor workers, record effective task-worker CPU, and also use
+`ray_actor_max_concurrency=0` because that field describes actors only.
+Internally, task definitions still resolve safe `RayWorkerOptions`. Fake Ray
+task/actor definitions now receive the same CPU, zero-GPU, and disabled-retry
+options, but remain debug backends rather than HTTP workers. Multi-GPU
+performance testing remains pending and must use independent GPU-backed
+service endpoints rather than multiple logical URLs or actors aimed at one
+endpoint.
+
+`append_metrics` writes a header for a new or empty CSV. Before appending to a
+non-empty CSV it reads the existing header and requires an exact ordered match
+with the current row keys. A stale/legacy schema raises `ValueError` before any
+bytes are appended; use a new output file or explicitly migrate the old CSV.
 
 `run_kmax_interference_experiment.py` is a small orchestration wrapper around
 `postgres_ai_operator_profile.py`. It starts a background bulk `AI_COMPLETE`

@@ -8,7 +8,13 @@
 - 真实 Ray 版本仅在 Ray 可用后读取；Python executor 行保持空值。HTTP worker
   固定记录 Ray GPU 配额 0，正式 completion 的 task/actor 自动重试继续禁用。
 - 后续回归补齐 Python executor 的非适用哨兵：actor concurrency/CPU 为 0/0.0，
-  避免访问可选 `RayWorkerOptions`；Ray task 仍记录实际 CPU 与解析占位并发 1。
+  避免访问可选 `RayWorkerOptions`；Ray task 记录实际 CPU，但对外 actor-only
+  concurrency 字段也为 0。
+- review 修复让 fake Ray task/actor 统一应用 CPU、零 GPU、禁重试/重启 options；
+  两处 submit metrics 合并循环抽为同一 helper，覆盖多 chunk 逐 worker 计数累加、
+  缺字段兼容与 worker 宽度不一致拒绝。
+- `append_metrics` 现在为新/空 CSV 写 header，并在非空 CSV 的既有 header 与 row
+  keys 不精确一致时于追加前抛出 `ValueError`，防止 schema 演进造成静默列错位。
 - 文档明确 service endpoint 不等于 actor worker，并给出
   `endpoint × workers/endpoint × actor max concurrency` 的配置并发上界。
   多 GPU 性能仍待独立 GPU-backed endpoint 验证，本次只建立执行与观测契约，

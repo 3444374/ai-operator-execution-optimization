@@ -8,9 +8,11 @@
 不承载模型，因此 Ray GPU 配额为 0；GPU 由外部 vLLM endpoint 持有。正式完成请求
 禁用 Ray 自动重试，避免完成结果被静默重复。CSV 现在显式记录这些配置、拓扑和
 逐 worker 提交计数。Python 路径没有 Ray worker，因此 concurrency/CPU 用 0/0.0
-表示“不适用”；Ray task 没有 actor worker，但记录实际 task CPU，并把解析后的
-concurrency 占位值记为 1。多 GPU 性能仍须用独立 GPU endpoint 验证，当前契约测试
-不构成多 GPU 性能证据。
+表示“不适用”；Ray task 没有 actor worker，因此 actor concurrency 也记 0，但仍
+记录实际 task CPU。fake Ray worker 同样接受 CPU、零 GPU 和禁重试配置，只用于
+调试。CSV 追加前会核对已有 header，旧 schema 不匹配会拒绝写入而不是把数据写到
+错误列。多 GPU 性能仍须用独立 GPU endpoint 验证，当前契约测试不构成多 GPU
+性能证据。
 
 ## 2026-07-26 动态 flush 与联合搜索结论
 
