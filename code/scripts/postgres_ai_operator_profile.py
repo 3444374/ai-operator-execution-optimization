@@ -164,6 +164,18 @@ CREATE TABLE IF NOT EXISTS document_completions (
 """
 
 
+RESULT_SCHEMA_PREFLIGHT_FIELDS = (
+    "ray_version",
+    "actor_workers_per_endpoint",
+    "ray_actor_max_concurrency",
+    "ray_worker_num_cpus",
+    "ray_worker_num_gpus",
+    "endpoint_count",
+    "actor_worker_count",
+    "actor_worker_submission_counts",
+)
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Profile PostgreSQL-triggered AI_EMBED external execution with Ray and Arrow."
@@ -3736,10 +3748,10 @@ def main() -> None:
     if requested_runs and not args.dry_run:
         phase, repeat_index = requested_runs[0]
         dry_args = argparse.Namespace(**{**vars(args), "dry_run": True})
-        dry_row = run_once(dry_args, phase, repeat_index)
+        run_once(dry_args, phase, repeat_index)
         preflight_metrics_schema(
             Path(args.output),
-            dry_row.keys(),
+            RESULT_SCHEMA_PREFLIGHT_FIELDS,
             allow_additional_fields=True,
         )
     for phase, repeat_index in requested_runs:

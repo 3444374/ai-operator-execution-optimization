@@ -1062,6 +1062,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertEqual(events[0], ("run_once", True, "formal", 1))
         self.assertEqual(events[1][0], "preflight")
+        self.assertEqual(
+            events[1][2],
+            profile.RESULT_SCHEMA_PREFLIGHT_FIELDS,
+        )
         self.assertEqual(events[1][3], {"allow_additional_fields": True})
         self.assertEqual(events[2], ("run_once", False, "formal", 1))
 
