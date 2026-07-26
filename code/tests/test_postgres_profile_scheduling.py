@@ -2366,8 +2366,33 @@ class StaticActorSchedulingTests(unittest.TestCase):
         self.assertEqual(metrics["actor_worker_submission_counts"], "2;1")
 
     def test_static_actor_path_requires_at_least_one_actor(self) -> None:
-        with self.assertRaisesRegex(ValueError, "actors must not be empty"):
+        with self.assertRaisesRegex(ValueError, "actor_pools must not be empty"):
             self._submit([])
+
+    def test_actor_pool_and_endpoint_url_keys_must_match(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError,
+            "identical service endpoint IDs",
+        ):
+            profile.submit_with_backpressure(
+                ray_module=_ImmediateRay,
+                actor_pools={"endpoint-0": [_RecordingActor()]},
+                endpoint_urls={"endpoint-1": "http://local/endpoint-1"},
+                batches=self.batches,
+                max_inflight=2,
+                method_name="execute_batch",
+            )
+
+    def test_actor_path_requires_endpoint_urls(self) -> None:
+        with self.assertRaisesRegex(ValueError, "endpoint_urls must not be empty"):
+            profile.submit_with_backpressure(
+                ray_module=_ImmediateRay,
+                actor_pools={"endpoint-0": [_RecordingActor()]},
+                endpoint_urls={},
+                batches=self.batches,
+                max_inflight=2,
+                method_name="execute_batch",
+            )
 
     def test_adaptive_actor_path_remains_isolated_from_static_scheduler(self) -> None:
         actors = [_RecordingActor()]
@@ -2400,6 +2425,57 @@ class StaticActorSchedulingTests(unittest.TestCase):
         self.assertEqual(len(results), 3)
         self.assertGreater(metrics["adaptive_downshifts"], 0)
         self.assertGreaterEqual(len(traces), 3)
+        self.assertEqual(metrics["endpoint_count"], 1)
+        self.assertEqual(metrics["actor_worker_count"], 1)
+        self.assertEqual(metrics["actor_worker_submission_counts"], "3")
+
+    def test_legacy_actor_path_round_robins_endpoints_and_local_workers(self) -> None:
+        actors = [_RecordingActor() for _ in range(4)]
+        actor_pools = {
+            "endpoint-0": actors[:2],
+            "endpoint-1": actors[2:],
+        }
+        batches = [
+            pa.table({"doc_id": [index], "prompt_tokens": [index * 10]})
+            for index in range(1, 9)
+        ]
+
+        results, metrics = profile.submit_with_backpressure(
+            ray_module=_ImmediateRay,
+            actor_pools=actor_pools,
+            endpoint_urls={
+                "endpoint-0": "http://local/endpoint-0",
+                "endpoint-1": "http://local/endpoint-1",
+            },
+            batches=batches,
+            max_inflight=2,
+            method_name="execute_batch",
+            adaptive_config={},
+        )
+
+        self.assertEqual(
+            [call[0] for call in actors[0].execute_batch.calls],
+            [batches[0], batches[4]],
+        )
+        self.assertEqual(
+            [call[0] for call in actors[1].execute_batch.calls],
+            [batches[2], batches[6]],
+        )
+        self.assertEqual(
+            [call[0] for call in actors[2].execute_batch.calls],
+            [batches[1], batches[5]],
+        )
+        self.assertEqual(
+            [call[0] for call in actors[3].execute_batch.calls],
+            [batches[3], batches[7]],
+        )
+        self.assertEqual(len(results), 8)
+        self.assertEqual(metrics["endpoint_count"], 2)
+        self.assertEqual(metrics["actor_worker_count"], 4)
+        self.assertEqual(
+            metrics["actor_worker_submission_counts"],
+            "2;2;2;2",
+        )
 
     def test_replay_envelopes_cover_static_typed_and_legacy_actor_paths(self) -> None:
         envelope = profile._batch_envelopes(

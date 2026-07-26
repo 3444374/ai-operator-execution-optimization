@@ -17,7 +17,7 @@ import statistics
 import sys
 import time
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Callable, Iterable, Mapping, Sequence
 
 import pyarrow as pa
 
@@ -1201,7 +1201,7 @@ def _build_routing_config(
         )
         if len(values) != endpoint_count:
             raise ValueError(
-                f"{label} count must equal endpoint/actor count {endpoint_count}"
+                f"{label} count must equal service endpoint count {endpoint_count}"
             )
         return values
 
@@ -1745,10 +1745,20 @@ def submit_with_backpressure(
             for index, endpoint_id in enumerate(actor_pools)
         }
     if not actor_pools:
-        raise ValueError("actors must not be empty")
-    if endpoint_urls is None:
+        raise ValueError("actor_pools must not be empty")
+    if not endpoint_urls:
         raise ValueError("endpoint_urls must not be empty")
+    if set(actor_pools) != set(endpoint_urls):
+        raise ValueError(
+            "actor_pools and endpoint_urls must have identical "
+            "service endpoint IDs"
+        )
 
+    endpoint_ids = list(actor_pools)
+    pool_submitters = {
+        endpoint_id: ActorWorkerPoolSubmitter(endpoint_actors, method_name)
+        for endpoint_id, endpoint_actors in actor_pools.items()
+    }
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
     )
@@ -1760,75 +1770,70 @@ def submit_with_backpressure(
             if replay_envelopes is not None
             else batches
         )
-        return _submit_with_backpressure_legacy_adaptive(
+        results, metrics = _submit_with_backpressure_legacy_adaptive(
             ray_module,
-            [
-                actor
-                for endpoint_actors in actor_pools.values()
-                for actor in endpoint_actors
-            ],
+            list(pool_submitters.values()),
             replay_batches,
             max_inflight,
-            method_name,
             adaptive_config,
-        )
-    operator = "ai_complete" if "complete" in method_name else "ai_embed"
-    envelopes = (
-        replay_envelopes
-        if replay_envelopes is not None
-        else _batch_envelopes(
-            batches,
-            job_id="ray-actor",
-            operator=operator,
-            completion_max_tokens=(
-                completion_max_tokens
-                if operator == "ai_complete"
-                else 0
-            ),
-            output_cost_mode=output_cost_mode,
-        )
-    )
-    endpoint_ids = list(actor_pools)
-    topology = _endpoint_topology(
-        endpoint_ids,
-        [endpoint_urls[item] for item in endpoint_ids],
-        pool_ids=(
-            routing_config.get("pool_ids") if routing_config is not None else None
-        ),
-        gpu_ids=(
-            routing_config.get("gpu_ids") if routing_config is not None else None
-        ),
-    )
-    pool_submitters = {
-        endpoint_id: ActorWorkerPoolSubmitter(endpoint_actors, method_name)
-        for endpoint_id, endpoint_actors in actor_pools.items()
-    }
-    submitters = {
-        endpoint_id: submitter
-        for endpoint_id, submitter in pool_submitters.items()
-    }
-    if typed_adaptive:
-        results, metrics = _run_dynamic_scheduler(
-            ray_module,
-            envelopes,
-            topology,
-            submitters,
-            adaptive_config,
-            routing_config,
-            submission_lifecycle_sink,
-            epoch_clock,
         )
     else:
-        results, metrics = _run_static_scheduler(
-            ray_module,
-            envelopes,
-            topology,
-            submitters,
-            max_inflight,
-            routing_config,
-            submission_lifecycle_sink,
-            epoch_clock,
+        operator = "ai_complete" if "complete" in method_name else "ai_embed"
+        envelopes = (
+            replay_envelopes
+            if replay_envelopes is not None
+            else _batch_envelopes(
+                batches,
+                job_id="ray-actor",
+                operator=operator,
+                completion_max_tokens=(
+                    completion_max_tokens
+                    if operator == "ai_complete"
+                    else 0
+                ),
+                output_cost_mode=output_cost_mode,
+            )
         )
+        topology = _endpoint_topology(
+            endpoint_ids,
+            [endpoint_urls[item] for item in endpoint_ids],
+            pool_ids=(
+                routing_config.get("pool_ids")
+                if routing_config is not None
+                else None
+            ),
+            gpu_ids=(
+                routing_config.get("gpu_ids")
+                if routing_config is not None
+                else None
+            ),
+        )
+        submitters = {
+            endpoint_id: submitter
+            for endpoint_id, submitter in pool_submitters.items()
+        }
+        if typed_adaptive:
+            results, metrics = _run_dynamic_scheduler(
+                ray_module,
+                envelopes,
+                topology,
+                submitters,
+                adaptive_config,
+                routing_config,
+                submission_lifecycle_sink,
+                epoch_clock,
+            )
+        else:
+            results, metrics = _run_static_scheduler(
+                ray_module,
+                envelopes,
+                topology,
+                submitters,
+                max_inflight,
+                routing_config,
+                submission_lifecycle_sink,
+                epoch_clock,
+            )
     metrics.update(
         {
             "endpoint_count": len(endpoint_ids),
@@ -1848,10 +1853,9 @@ def submit_with_backpressure(
 
 def _submit_with_backpressure_legacy_adaptive(
     ray_module,
-    actors: list,
+    endpoint_submitters: Sequence[Callable[[object], object]],
     batches: Iterable[pa.RecordBatch | pa.Table],
     max_inflight: int,
-    method_name: str,
     adaptive_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
     pending = []
@@ -1884,9 +1888,11 @@ def _submit_with_backpressure_legacy_adaptive(
             adaptive_upshifts += 1 if decision == "up" else 0
             adaptive_limit_sum += current_limit
             adaptive_limit_samples += 1
-        actor = actors[submit_count % len(actors)]
+        endpoint_submitter = endpoint_submitters[
+            submit_count % len(endpoint_submitters)
+        ]
         submit_timer = StageTimer.start("submit")
-        ref = getattr(actor, method_name).remote(batch)
+        ref = endpoint_submitter(batch)
         submit_s += submit_timer.stop()
         pending.append(ref)
         submit_count += 1
