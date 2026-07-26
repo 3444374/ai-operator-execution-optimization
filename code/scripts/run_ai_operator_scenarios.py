@@ -234,8 +234,20 @@ def run_experiment(
             capture_output=True,
             text=True,
         )
-        stdout_path = options.output_dir / f"{run_stem}.stdout.log"
-        stderr_path = options.output_dir / f"{run_stem}.stderr.log"
+        prior_attempts = sum(
+            1
+            for incident in manifest["incidents"]
+            if _run_key_from_mapping(incident) == run_key
+        )
+        attempt_suffix = (
+            "" if prior_attempts == 0 else f".attempt-{prior_attempts + 1}"
+        )
+        stdout_path = (
+            options.output_dir / f"{run_stem}{attempt_suffix}.stdout.log"
+        )
+        stderr_path = (
+            options.output_dir / f"{run_stem}{attempt_suffix}.stderr.log"
+        )
         stdout_path.write_text(completed.stdout, encoding="utf-8")
         stderr_path.write_text(completed.stderr, encoding="utf-8")
 

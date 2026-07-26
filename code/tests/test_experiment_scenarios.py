@@ -372,6 +372,13 @@ class ScenarioRunnerTests(unittest.TestCase):
                 RunnerOptions(**base_options),
                 idle_gate=lambda _health, _metrics, _timeout: None,
             )
+            failed_manifest = json.loads(
+                (output_dir / "manifest.json").read_text(encoding="utf-8")
+            )
+            failed_stderr_path = Path(
+                failed_manifest["incidents"][0]["stderr_path"]
+            )
+            failed_stderr = failed_stderr_path.read_text(encoding="utf-8")
             (root / "fail_scenario.txt").unlink()
             resumed_idle_checks = []
             resumed_exit = run_experiment(
@@ -395,6 +402,19 @@ class ScenarioRunnerTests(unittest.TestCase):
             self.assertEqual(manifest["status"], "completed")
             self.assertEqual(len(manifest["incidents"]), 1)
             self.assertTrue(manifest["incidents"][0]["recovered"])
+            self.assertEqual(
+                failed_stderr_path.read_text(encoding="utf-8"),
+                failed_stderr,
+            )
+            recovered_run = next(
+                item
+                for item in manifest["completed_runs"]
+                if item["scenario_id"] == failed.scenario_id
+            )
+            self.assertNotEqual(
+                recovered_run["stderr_path"],
+                str(failed_stderr_path),
+            )
 
     def test_runner_resume_can_prune_failed_scenario(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -512,6 +532,7 @@ class ScenarioRunnerTests(unittest.TestCase):
                 [
                     "import argparse",
                     "import csv",
+                    "import sys",
                     "from pathlib import Path",
                     "parser = argparse.ArgumentParser(add_help=False)",
                     "parser.add_argument('--output', required=True)",
@@ -523,6 +544,7 @@ class ScenarioRunnerTests(unittest.TestCase):
                     "args, _ = parser.parse_known_args()",
                     "fail_path = Path(__file__).with_name('fail_scenario.txt')",
                     "if fail_path.exists() and fail_path.read_text(encoding='utf-8').strip() == args.scenario_id:",
+                    "    print('intentional failure', file=sys.stderr)",
                     "    raise SystemExit(3)",
                     "output = Path(args.output)",
                     "output.parent.mkdir(parents=True, exist_ok=True)",
