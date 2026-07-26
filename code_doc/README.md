@@ -32,3 +32,9 @@ Current multi-endpoint routing readiness design:
 
 Current Ray and vLLM execution-layer tuning design:
 `superpowers/specs/2026-07-26-ray-vllm-execution-tuning-design.md`.
+
+Current Ray execution-foundation implementation plan:
+`superpowers/plans/2026-07-26-ray-execution-foundation-implementation.md`.
+
+Current vLLM and Ray tuning experiment plan:
+`superpowers/plans/2026-07-26-vllm-ray-tuning-experiments.md`.

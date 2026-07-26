@@ -184,6 +184,8 @@
 | `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md` | 输出成本与确定性 BFD 实施计划 | 共享成本、通用 cost_units BFD、Arrow/Daft 接入、离线 lifecycle、真实 64→512 单 GPU 门禁 |
 | `code_doc/superpowers/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md` | Row-cap-aware packing 与非阻塞观测实施计划 | TDD 接线、BFD 机制级消融、真实 64 行门禁、512 筛选与 1024 held-out 确认 |
 | `code_doc/superpowers/plans/2026-07-26-single-gpu-text-closure-implementation.md` | Single-GPU text evidence closure plan | Execute cross-rate, 2048 held-out, controlled prefix, and cost-estimation tasks |
+| `code_doc/superpowers/plans/2026-07-26-ray-execution-foundation-implementation.md` | Ray 执行基础实施计划 | TDD 解耦 endpoint/actor worker，接入 CPU/并发/零 GPU/零重试资源契约并完成全量验证 |
+| `code_doc/superpowers/plans/2026-07-26-vllm-ray-tuning-experiments.md` | vLLM 与 Ray 调优实验计划 | 分阶段完成 CUDA Graph、task/actor、vLLM capacity 真实单 GPU 门禁与重复实验 |
 | `code/src/cost_estimation.py` | Engine-independent grouped split, ridge cost model, and regression metrics | Build offline operator-cost estimates without post-execution feature leakage |
 | `code/scripts/estimate_operator_cost.py` | Reproducible profile-CSV cost-estimation CLI | Generate model schema, coefficients, splits, and held-out metrics |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |

@@ -1449,3 +1449,16 @@
   prefix-cache 机制和未来多 endpoint/multi-GPU 的顺序执行；Daft Ray runner
   sweep 仅在数据组织超过 E2E 5% 或多模态预处理到来时触发。
 - 本次仍只更新设计与交接规则，尚未重启服务、修改生产代码或新增性能结论。
+
+## 2026-07-26 Ray 执行基础与 vLLM 调优实施计划
+
+- 用户审阅通过 Ray/vLLM 执行层设计后，新增两份相互独立、顺序执行的计划：
+  `code_doc/superpowers/plans/2026-07-26-ray-execution-foundation-implementation.md`
+  负责 endpoint-local actor pool、Ray CPU/并发/零 GPU/零自动重试契约和结果字段；
+  `code_doc/superpowers/plans/2026-07-26-vllm-ray-tuning-experiments.md`
+  负责真实 CUDA Graph、Ray task/actor 与 vLLM capacity 门禁和重复实验。
+- 代码计划含六个独立 RED→GREEN 任务；实验计划固定同一 512-request workload，
+  每一层只晋级上一层胜出配置，并要求 64-request correctness/MFU 门禁先通过。
+- vLLM 容器切换采用停止并重命名 eager 容器的可恢复方式；不会删除原容器，
+  不把编译/graph capture 启动成本混入 steady-state E2E。
+- 本次仅编写计划，尚未执行生产代码改动或重启 vLLM。
