@@ -28,14 +28,15 @@ Date: 2026-07-20（最后更新：2026-07-26，新增 adaptive admission GPU 矩
 | Shared-vLLM K_max 干扰（2-job）| ✅ 07-19 | **K_max 在共享 vLLM 下必要**：bulk unbounded 时 foreground E2E 恶化 2.3×（4.9→11.4s），bulk 自身吞吐几乎不变 | 只有 2 个 job；只有一种 foreground size |
 | Shared-vLLM K_max Sweep + Adaptive | ✅ 07-19 | K_max=8 是最佳静态 guardrail；adaptive 触发了 downshift（102 次/run）| **❌ adaptive 不如 static K=8**（foreground E2E 10.2s vs 7.3s） |
 | AIMD/EWMA-AIMD/PID 单作业 GPU 矩阵 | ✅ 07-26 | 三者相对 static K=8 快约 30–32% E2E，但都把窗口升到 K≈16 | AIMD 与 static K=16 不可分辨；未证明反馈控制增量，也未复验 shared-vLLM 前台保护 |
+| Shared-vLLM typed AIMD + adaptive flush | ✅ 07-26 | static K8 保护前台；K16 提升后台吞吐。AIMD 三轮 0 decrease、窗口均值 15.953；adaptive flush 约 89.4% 选择 50ms | 只有 128/512 双作业规模；flush 分支为连续时间块，不是完整随机化 2×2 |
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
 | **多 job/多 foreground size 扩展** | ❌ 未做 | — | 不同 foreground size、arrival offset、background policy 下的公平性 |
 
 **RC2 当前状态**：✅ static K8 guardrail 与 fixed 50ms coalescing 均有真实
-证据。跨 arrival-rate 和 2048 held-out 未显示 queue-adaptive 增量，因此当前
-单 GPU 默认采用 fixed 50ms。单作业 AIMD/EWMA/PID 矩阵同样表明复杂控制器
-未优于同上限 static K=16；adaptive 只保留给 shared-service/阶段变化复验，
-不继续在当前稳态 workload 上调 PID 参数。
+证据。跨 arrival-rate、2048 held-out 和 shared-vLLM 双作业均未显示
+queue-adaptive 稳定增量，因此当前单 GPU 默认采用 static K8 + fixed 50ms。
+单作业与 shared-vLLM 复验均表明 AIMD 未优于同上限 static K=16；不继续在
+当前稳态 workload 上调 PID 参数。
 
 ### 1.3 耦合验证
 
@@ -175,8 +176,10 @@ CONCUR-AIMD 首选理由：无 EWMA 契合 `code/AGENTS.md` "保持简单"（Ray
 **2026-07-26 执行结果**：变长输出、完整 control/request/resource trace 和
 单作业 GPU 矩阵已完成。AIMD、EWMA-AIMD、PID 都迅速升到 K≈16；追加
 static K=16 机制 control 后，AIMD 的 E2E +0.66%、tokens/s -0.69%，差异
-不可分辨。下一轮若继续，只做 shared-vLLM foreground/background 的
-static K=8/static K=16/AIMD 对照；不在当前稳态单作业上继续调参。
+不可分辨。shared-vLLM foreground/background 的 static K8/static K16/AIMD
+三次重复已完成：AIMD 0 次 decrease、窗口均值 15.953，相对 K16 的前台 E2E
++1.22%、P99 +1.98%、后台真实 tokens/s -1.45%。追加 adaptive flush 后四项
+变化仍小于 0.3%；当前收敛为 static K8 + fixed 50ms。
 
 ### P0（并列）：两项策略联合消融（1 周）
 

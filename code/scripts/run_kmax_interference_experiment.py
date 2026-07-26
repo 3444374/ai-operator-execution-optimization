@@ -10,6 +10,7 @@ bounded versus unbounded in-flight submission window.
 from __future__ import annotations
 
 import argparse
+import random
 import subprocess
 import sys
 import time
@@ -28,12 +29,32 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metrics-url", default="http://localhost:8000/metrics")
     parser.add_argument("--model", default="qwen2.5-1.5b")
     parser.add_argument("--repeats", type=int, default=3)
+    parser.add_argument("--random-seed", type=int, default=20260804)
     parser.add_argument("--ramp-up-s", type=float, default=1.5)
     parser.add_argument("--request-timeout-s", type=float, default=300.0)
     parser.add_argument("--foreground-rows", type=int, default=128)
     parser.add_argument("--background-rows", type=int, default=1024)
     parser.add_argument("--ray-batch-rows", type=int, default=16)
     parser.add_argument("--completion-max-tokens", type=int, default=64)
+    parser.add_argument("--source-max-prompt-tokens", type=int, default=1500)
+    parser.add_argument(
+        "--batching-policy",
+        choices=["fixed_rows", "token_budget"],
+        default="token_budget",
+    )
+    parser.add_argument("--token-budget", type=int, default=6144)
+    parser.add_argument("--arrival-time-scale", type=float, default=0.0005)
+    parser.add_argument(
+        "--flush-policy",
+        choices=["fixed_timeout", "queue_adaptive"],
+        default="fixed_timeout",
+    )
+    parser.add_argument("--flush-timeout-ms", type=float, default=50.0)
+    parser.add_argument("--flush-max-wait-ms", type=float, default=50.0)
+    parser.add_argument("--request-slo-ms", type=float, default=180000.0)
+    parser.add_argument("--gpu-peak-tflops", type=float, default=61.7)
+    parser.add_argument("--model-workers", type=int, default=2)
+    parser.add_argument("--ray-worker-num-cpus", type=float, default=0.25)
     parser.add_argument(
         "--background-static-kmax",
         default="8,16,unbounded",
@@ -45,6 +66,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--adaptive-running-threshold", type=int, default=160)
     parser.add_argument("--adaptive-queue-threshold", type=int, default=0)
     parser.add_argument("--adaptive-kv-threshold", type=float, default=0.85)
+    parser.add_argument("--include-aimd", action="store_true")
+    parser.add_argument("--controller-min-window", type=int, default=4)
+    parser.add_argument("--controller-max-window", type=int, default=16)
+    parser.add_argument("--controller-initial-window", type=int, default=8)
+    parser.add_argument(
+        "--trace-dir",
+        default=None,
+        help="Optional directory for per-process request, submission, resource, flush, and control traces.",
+    )
     parser.add_argument("--small-output", default=str(RESULT_DIR / "sharegpt_burstgpt_kmax_interference_small_20260726.csv"))
     parser.add_argument("--bulk-output", default=str(RESULT_DIR / "sharegpt_burstgpt_kmax_interference_bulk_20260726.csv"))
     parser.add_argument("--overwrite", action="store_true")
@@ -67,7 +97,7 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
         "--ray-batch-rows",
         str(ray_batch_rows),
         "--batching-policy",
-        "fixed_rows",
+        args.batching_policy,
         "--operator",
         "ai_complete",
         "--executor",
@@ -80,10 +110,17 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
         args.model,
         "--completion-max-tokens",
         str(completion_max_tokens),
+        "--completion-return-token-ids",
+        "--completion-prompt-format",
+        "chatml",
+        "--completion-temperature",
+        "0",
         "--completion-request-timeout-s",
         str(args.request_timeout_s),
         "--model-metrics-url",
         args.metrics_url,
+        "--source-max-prompt-tokens",
+        str(args.source_max_prompt_tokens),
         "--data-source",
         "daft_postgres",
         "--source-workload-name",
@@ -100,13 +137,51 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
         "1",
         "--max-inflight",
         str(max_inflight),
+        "--model-workers",
+        str(args.model_workers),
+        "--ray-worker-num-cpus",
+        str(args.ray_worker_num_cpus),
+        "--arrival-replay",
+        "--arrival-time-scale",
+        str(args.arrival_time_scale),
+        "--flush-policy",
+        args.flush_policy,
+        "--flush-timeout-ms",
+        str(args.flush_timeout_ms),
+        "--flush-max-wait-ms",
+        str(args.flush_max_wait_ms),
+        "--request-slo-ms",
+        str(args.request_slo_ms),
+        "--resource-sample-interval-s",
+        "0.25",
+        "--gpu-peak-tflops",
+        str(args.gpu_peak_tflops),
+        "--mfu-precision",
+        "bf16_dense_fp32_accumulate",
         "--scheduling-policy",
         scheduling_policy,
+        "--random-seed",
+        str(args.random_seed),
+        "--scenario-id",
+        experiment_id,
         "--experiment-id",
         experiment_id,
         "--output",
         output,
     ]
+    if args.batching_policy == "token_budget":
+        command.extend(
+            [
+                "--token-budget",
+                str(args.token_budget),
+                "--cost-model-id",
+                args.model,
+                "--cost-tokenizer-id",
+                args.model,
+                "--output-cost-mode",
+                "fixed_output_cap",
+            ]
+        )
     if scheduling_policy == "queue_adaptive":
         command.extend(
             [
@@ -122,6 +197,38 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
                 str(args.adaptive_kv_threshold),
             ]
         )
+    elif scheduling_policy == "aimd":
+        command.extend(
+            [
+                "--controller-min-window",
+                str(args.controller_min_window),
+                "--controller-max-window",
+                str(args.controller_max_window),
+                "--controller-initial-window",
+                str(args.controller_initial_window),
+            ]
+        )
+    if args.trace_dir:
+        trace_stem = Path(args.trace_dir) / experiment_id
+        command.extend(
+            [
+                "--request-trace-output",
+                str(trace_stem.with_suffix(".requests.csv")),
+                "--submission-trace-output",
+                str(trace_stem.with_suffix(".submissions.csv")),
+                "--resource-trace-output",
+                str(trace_stem.with_suffix(".resources.csv")),
+                "--flush-trace-output",
+                str(trace_stem.with_suffix(".flush.csv")),
+            ]
+        )
+        if scheduling_policy == "aimd":
+            command.extend(
+                [
+                    "--control-trace-output",
+                    str(trace_stem.with_suffix(".control.csv")),
+                ]
+            )
     return command
 
 
@@ -145,15 +252,35 @@ def run_checked(cmd: list[str]) -> None:
         raise SystemExit(f"Command failed with exit code {completed.returncode}: {' '.join(cmd)}")
 
 
+def build_scenarios(args: argparse.Namespace) -> list[tuple[int, str, str]]:
+    scenarios = [(bulk_k, label, "static") for bulk_k, label in parse_kmax_values(args.background_static_kmax)]
+    if args.include_adaptive:
+        scenarios.append((args.adaptive_max_inflight, "bulk_adaptive", "queue_adaptive"))
+    if args.include_aimd:
+        scenarios.append((args.controller_max_window, "bulk_aimd", "aimd"))
+    return scenarios
+
+
+def scenarios_for_repeat(args: argparse.Namespace, repeat: int) -> list[tuple[int, str, str]]:
+    scenarios = build_scenarios(args)
+    random.Random(args.random_seed + repeat).shuffle(scenarios)
+    return scenarios
+
+
 def main() -> None:
     args = parse_args()
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
+    Path(args.small_output).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.bulk_output).parent.mkdir(parents=True, exist_ok=True)
+    if args.trace_dir:
+        Path(args.trace_dir).mkdir(parents=True, exist_ok=True)
     if args.overwrite:
         for path in [Path(args.small_output), Path(args.bulk_output)]:
             if path.exists():
                 path.unlink()
 
-    # Foreground-only baseline: tells us the small job's unloaded latency.
+    # Each repeat starts with its unloaded foreground baseline, then runs one
+    # deterministically shuffled copy of every shared-service scenario.
     for repeat in range(1, args.repeats + 1):
         run_checked(
             profile_command(
@@ -166,13 +293,7 @@ def main() -> None:
                 completion_max_tokens=args.completion_max_tokens,
             )
         )
-
-    scenarios = [(bulk_k, label, "static") for bulk_k, label in parse_kmax_values(args.background_static_kmax)]
-    if args.include_adaptive:
-        scenarios.append((args.adaptive_max_inflight, "bulk_adaptive", "queue_adaptive"))
-
-    for bulk_k, label, scheduling_policy in scenarios:
-        for repeat in range(1, args.repeats + 1):
+        for bulk_k, label, scheduling_policy in scenarios_for_repeat(args, repeat):
             bulk_cmd = profile_command(
                 args,
                 experiment_id=f"interference_{label}_background_r{repeat}",

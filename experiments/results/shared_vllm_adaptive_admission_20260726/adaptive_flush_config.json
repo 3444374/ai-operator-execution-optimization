@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "experiment_id": "shared_vllm_admission_adaptive_flush_20260726",
+  "random_seed": 20260805,
+  "runner": "code/scripts/run_kmax_interference_experiment.py",
+  "common": {
+    "foreground_rows": 128,
+    "background_rows": 512,
+    "ray_batch_rows": 64,
+    "batching_policy": "token_budget",
+    "token_budget": 6144,
+    "completion_max_tokens": 512,
+    "arrival_time_scale": 0.0005,
+    "flush_policy": "queue_adaptive",
+    "flush_timeout_ms": 25,
+    "flush_max_wait_ms": 50,
+    "formal_repeats": 3,
+    "ramp_up_s": 1.5
+  },
+  "background_scenarios": [
+    {
+      "scenario": "k8",
+      "scheduling_policy": "static",
+      "max_inflight": 8
+    },
+    {
+      "scenario": "aimd",
+      "scheduling_policy": "aimd",
+      "controller_min_window": 4,
+      "controller_max_window": 16,
+      "controller_initial_window": 8
+    }
+  ],
+  "gate": {
+    "foreground_rows": 32,
+    "background_rows": 128,
+    "repeats": 1,
+    "status": "passed"
+  },
+  "comparison_boundary": "The fixed-50 and adaptive-flush branches are consecutive time blocks, not a fully randomized 2x2 factorial. Only large effects should be interpreted as mechanism evidence."
+}

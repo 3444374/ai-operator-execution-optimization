@@ -94,13 +94,12 @@ PostgreSQL
 ### 证据边界
 
 - 静态 `K_max=8` 的必要性已有 shared-vLLM 干扰证据。
-- Queue-adaptive flush 已完成随机化变长输出、跨 arrival-rate 和 2048
-  held-out：它稳定优于 fixed-25，但未优于 fixed-50，因此不能写成动态策略
-  优于最佳静态窗口。当前默认采用 fixed 50ms。
+- Queue-adaptive flush 已完成随机化变长输出、跨 arrival-rate、2048 held-out
+  和 shared-vLLM 双作业：它稳定优于 fixed-25，但未优于 fixed-50；共享压力
+  下约 89.4% 决策选择 50ms。当前默认采用 fixed 50ms。
 - AIMD/EWMA/PID 已完成代码、单元/集成契约和单作业 512 请求真实 GPU
-  矩阵。三者都把窗口升到接近 16；AIMD 与 static K=16 的随机交错机制对照
-  不可分辨，因此当前没有动态反馈本身的增量证据。Shared-vLLM 双作业保护
-  仍未复验。
+  矩阵。AIMD 又完成 shared-vLLM 128/512 双作业重复：0 次 decrease、窗口
+  均值 15.953，相对 static K16 前台和吞吐均略差。当前没有动态反馈增量证据。
 - UCB 多臂老虎机已有有限 action set 与 SLO reward 的纯控制器代码，但尚未
   接入 profiler。原因是缺少稳定的 epoch-level reward/归因边界；现在接入会把
   跨 epoch 的请求完成错误归因给当前 arm。
@@ -214,8 +213,8 @@ PostgreSQL
 | Length/prefix grouping | 高（代码） | 0/30/70/100% 受控 cache-off screen | prefix-only 无稳定收益；默认关闭 |
 | BFD/row-cap-first | 高 | 512 + 1024 | 负向边界明确，不默认启用 |
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
-| Queue-adaptive flush | 高 | 512 变长重复 + 跨 rate + 2048 held-out | 优于 fixed-25；未优于 fixed-50 |
-| AIMD/EWMA/PID | 高（代码） | 单作业 512 矩阵 + AIMD/static K16 对照 | 未优于同上限静态策略；shared-vLLM 待验证 |
+| Queue-adaptive flush | 高 | 512 变长重复 + 跨 rate + 2048 held-out + shared-vLLM | 优于 fixed-25；未优于 fixed-50 |
+| AIMD/EWMA/PID | 高（代码） | 单作业矩阵 + static K16 control + shared-vLLM 双作业 | AIMD 饱和至 K16，未保护前台；不默认启用 |
 | UCB bandit | 中（纯控制器） | 无端到端实验 | 尚未接入执行路径 |
 | Actor pool / endpoint routing | 高（接口/契约） | 单 GPU 为主 | 多 GPU 验证未完成 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |

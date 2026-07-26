@@ -59,11 +59,15 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - ✅ Daft 文本阶段直接接入，链路跑通
 - ✅ Token-tail revision + Token-budget vs Fixed Row 对照
 - ✅ Shared-vLLM K_max 干扰实验（K_max 在共享 vLLM 下必要）
+- ✅ Shared-vLLM 128/512 typed AIMD 正式复验：AIMD 0 次 decrease、窗口
+  均值 15.953，未优于 static K16；static K8 继续作为前台保护 guardrail
 - ✅ Queue-adaptive flush 首次实现与测试
 - ✅ Output-aware cost、deterministic BFD 与 GPU/功耗/能耗/MFU 观测链路；
   512 行正向候选但 1024 行负向，已确认经典 BFD 不是无条件最优
 - ✅ Queue-adaptive 自然 EOS 三组随机化复验：fixed-50 与 adaptive 均显著
   优于 fixed-25，二者不可分辨；当前采用更简单的 fixed-50
+- ✅ Shared-vLLM adaptive flush 补充：约 89.4% 决策选择 50ms，AIMD 下
+  与 fixed-50 四项差异均小于 0.3%，无稳定增量
 - ✅ Batching × submission 18 单元筛选与候选重复：独立拼接和联合候选
   不可分辨，当前采用分层优化
 - ✅ 跨 arrival-rate 与 2048 自然 EOS held-out：fixed-50 保持当前默认，
@@ -81,6 +85,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 2. **P2**（文本门禁已完成）：多模态泛化验证
 3. 多 endpoint / 多 GPU 在具备硬件后做真实验证
 4. 代价模型增加独立时间段/新 workload 校准和预测区间
+5. Shared-vLLM 扩展不同 foreground size、arrival offset 和多 job 数量
 
 **Scope 缩减触发条件**：
 - Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（✅ 已建立，未触发）
@@ -98,6 +103,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678 | 固定行数是计算量的弱代理 |
 | Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171 | token-budget 能有效约束 token tail |
 | Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3× | K_max 在共享 vLLM 下必要 |
+| Shared-vLLM 128/512 重复：AIMD 0 decrease、均值 K=15.953；相对 K16 前台 E2E +1.22%、后台 tokens/s -1.45% | 当前 AIMD 观测不到软拥塞，static K8 + fixed-50 保持默认 |
 | 自然 EOS 三组随机化复验：fixed-50 与 adaptive 相对 fixed-25 tokens/s 分别 +32.23% 与 +32.09%；adaptive vs fixed-50 -0.10% ± 4.13% | 收益来自更长 coalescing window；当前采用更简单的 fixed-50 |
 | Output-aware BFD：512 行相对同成本 sequential +12.019%，1024 行反转为 -5.156% | 数据组织收益依赖规模与 row cap；经典 BFD 只能作候选，需联合搜索 |
 | 联合候选相对独立拼接 tokens/s -0.26% ± 2.07% | 当前单 GPU 下分层独立优化已足够，没有联合在线控制器的证据 |

@@ -1593,3 +1593,28 @@
 - 合并前完整测试在项目 Python 3.10 实验环境暴露错误清理路径直接调用
   Python 3.11 `BaseException.add_note()` 的兼容性缺口；增加 3.10 fallback，
   保持原始异常和 `__notes__` 语义。沙箱外完整 `code/tests` 为 311 passed。
+
+## 2026-07-26 Shared-vLLM adaptive admission 与 flush 复验
+
+- 扩展 `run_kmax_interference_experiment.py`：typed AIMD、真实 token IDs、
+  request/submission/resource/flush/control trace、token-budget、MFU 参数、
+  deterministic per-repeat shuffle 和 fixed/adaptive flush 均可配置。
+- 实验后审计发现子 profiler 未继承外层 seed/scenario ID；本轮仍可由唯一
+  experiment_id 和显式顺序完整还原。runner 已补齐字段转发，防止后续主 CSV
+  继续记录默认 `random_seed=0`、`scenario_id=manual`。
+- static K8/static K16/AIMD 在前台 128、后台 512、同一 vLLM endpoint 上各
+  完成 3 次正式重复；21/21 进程成功，6144/6144 请求 exactly-once，0 失败。
+- static K8 前台 E2E/P99 为 40.214/23.003s；static K16 为
+  55.743/38.307s，后台真实 tokens/s 从 2596.6 升到 3603.1，确认共享服务的
+  吞吐—前台尾延迟 tradeoff。
+- AIMD 三轮共 774 个 control event，只有 12 increase、0 decrease，窗口均值
+  15.953；相对 K16 前台 E2E +1.22%、P99 +1.98%、后台 tokens/s -1.45%，
+  没有反馈控制增量。
+- 追加 queue-adaptive flush 25–50ms 的 K8/AIMD 分支：15/15 进程成功，
+  4224/4224 请求 exactly-once。2948 条 flush 决策中 2636 条选择 50ms；
+  AIMD 下相对 fixed-50 四项差异均小于 0.3%，K8 下约 1–3% 延迟改善伴随
+  约 1% 吞吐损失。由于为连续时间分块，不能声称 adaptive flush 胜出。
+- 当前 shared single-endpoint 默认收敛为 static K8 + fixed 50ms；后续扩展
+  foreground size、arrival offset 和 job 数量，而不继续稳态 PID/AIMD 调参。
+- 结果与绘图 CSV 位于
+  `experiments/results/shared_vllm_adaptive_admission_20260726/`。

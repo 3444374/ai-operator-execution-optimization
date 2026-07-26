@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "experiment_id": "shared_vllm_adaptive_admission_20260726",
+  "random_seed": 20260804,
+  "runner": "code/scripts/run_kmax_interference_experiment.py",
+  "common": {
+    "database_url": "postgresql://postgres:postgres@localhost:5432/ai_operator",
+    "endpoint_url": "http://localhost:8000/v1/completions",
+    "metrics_url": "http://localhost:8000/metrics",
+    "model": "qwen2.5-1.5b",
+    "foreground_rows": 128,
+    "background_rows": 512,
+    "ray_batch_rows": 64,
+    "batching_policy": "token_budget",
+    "token_budget": 6144,
+    "completion_max_tokens": 512,
+    "completion_return_token_ids": true,
+    "completion_prompt_format": "chatml",
+    "completion_temperature": 0,
+    "source_max_prompt_tokens": 1500,
+    "arrival_replay": true,
+    "arrival_time_scale": 0.0005,
+    "flush_policy": "fixed_timeout",
+    "flush_timeout_ms": 50,
+    "foreground_max_inflight": 8,
+    "ramp_up_s": 1.5,
+    "formal_repeats": 3,
+    "gpu_peak_tflops": 61.7,
+    "mfu_precision": "bf16_dense_fp32_accumulate"
+  },
+  "background_scenarios": [
+    {
+      "scenario": "k8",
+      "scheduling_policy": "static",
+      "max_inflight": 8
+    },
+    {
+      "scenario": "k16",
+      "scheduling_policy": "static",
+      "max_inflight": 16
+    },
+    {
+      "scenario": "aimd",
+      "scheduling_policy": "aimd",
+      "controller_min_window": 4,
+      "controller_max_window": 16,
+      "controller_initial_window": 8
+    }
+  ],
+  "execution_order": {
+    "rule": "Each repeat runs one foreground-only baseline, then a deterministic shuffle of all three shared-service scenarios.",
+    "repeat_1": ["k16", "k8", "aimd"],
+    "repeat_2": ["k8", "aimd", "k16"],
+    "repeat_3": ["aimd", "k16", "k8"]
+  },
+  "gate": {
+    "foreground_rows": 32,
+    "background_rows": 128,
+    "repeats": 1,
+    "status": "passed"
+  }
+}

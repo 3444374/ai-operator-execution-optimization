@@ -444,8 +444,10 @@ bytes are appended; use a new output file or explicitly migrate the old CSV.
 job and then starts a foreground small job against the same vLLM endpoint. Use
 it when testing the admission-control motivation for `K_max`: bounded
 background inflight versus unbounded background inflight under shared service.
-It supports static background `K_max` sweeps and an optional first
-`queue_adaptive` scenario. Its default outputs are:
+It supports static background `K_max` sweeps, the legacy `queue_adaptive`
+admission baseline, typed AIMD, deterministic per-repeat scenario shuffling,
+independent request/submission/resource/flush/control traces, and selectable
+fixed or queue-adaptive flush. Its default outputs are:
 
 ```text
 experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interference_small_20260726.csv
