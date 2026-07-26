@@ -89,11 +89,13 @@ def preflight_metrics_schema(
     if has_content:
         with path.open(newline="", encoding="utf-8") as existing:
             header = next(csv.reader(existing), [])
-        matches = (
-            set(expected).issubset(header)
-            if allow_additional_fields
-            else header == expected
-        )
+        if allow_additional_fields:
+            expected_set = set(expected)
+            matches = [
+                field for field in header if field in expected_set
+            ] == expected
+        else:
+            matches = header == expected
         if not matches:
             raise ValueError(
                 "CSV schema mismatch: "

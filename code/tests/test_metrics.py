@@ -95,6 +95,20 @@ class MetricsTests(unittest.TestCase):
             allow_additional_fields=True,
         )
 
+    def test_preflight_rejects_dry_run_keys_in_a_different_order(self) -> None:
+        path = self._metrics_path("metrics_preflight_wrong_order.csv")
+        path.write_text(
+            "rows,job_id,status\n2,1,ok\n",
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(ValueError, "CSV schema mismatch"):
+            preflight_metrics_schema(
+                path,
+                ["status", "rows"],
+                allow_additional_fields=True,
+            )
+
     def test_periodic_sampler_collects_and_stops(self) -> None:
         sampled_twice = threading.Event()
         calls = 0
