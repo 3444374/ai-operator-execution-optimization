@@ -340,6 +340,13 @@ vLLM EngineCore 初始化失败:`RuntimeError: FlashInfer requires GPUs with sm7
 ### 12.5 选型一句话
 AutoDL 租卡跑 pip 装的 vllm,**避开 50xx/6000D/6000 Blackwell**,选 4090 / 3090 / A100。Blackwell 留给本机 Docker 环境。
 
+### 12.6 最终确认(2026-07-27,干净 uv 环境复现)
+新建干净 conda env `vllm-bw`,`uv pip install vllm==0.25.1` 让 vllm 自洽拉栈(torch 2.11.0+cu130 + flashinfer 0.6.13 + quack,clean),仍然同一报错。精确定位:
+- flashinfer `jit/core.py:check_cuda_arch()` 读 `current_compilation_context.TARGET_CUDA_ARCHS`;
+- flashinfer 的设备能力探测**自己**输出 `Failed to get device capability: SM 12.x requires CUDA >= 12.9` → `TARGET_CUDA_ARCHS = set()`(空)→ check raise sm75;
+- 加 `LD_LIBRARY_PATH` 优先 cu13、设 `FLASHINFER_DISABLE_VERSION_CHECK=1`、换 `VLLM_ATTENTION_BACKEND=TORCH_SDPA`、`--enforce-eager` **都不能绕过**(check 在 flashinfer 模块初始化时无条件触发)。
+- 结论:**flashinfer 0.6.x 的 PyPI wheel 没给 sm120 编译/探测,不是环境问题,无法靠配置修**。要么源码编译 flashinfer for sm120(本项目决定不走),要么用官方 Docker 镜像(AutoDL 无 docker/apptainer),要么换非 Blackwell 卡。
+
 ---
 
 ## 附:本地驱动远端的 SSH helper(参考)
