@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-07-27 Blackwell sm120 兼容性注记 + 换卡 4090 决策
+
+- 在 2× RTX 6000D(sm120 Blackwell)上耗半天确认:**AutoDL 上 pip 装的 vLLM 跑不了
+  Blackwell**——flashinfer 0.6.13 sm120 CC 检测 bug + CUDA 12/13 库混 + quack/cutlass
+  API 不匹配,连环失败;7+ 种 workaround(LD_LIBRARY_PATH、FLASHINFER_DISABLE_VERSION_CHECK、
+  TORCH_SDPA、enforce-eager、升 vllm 0.26.0、升 quack 0.6.1、cu13 优先)均不够。本机能跑
+  是靠官方 Docker 镜像里专门 build 过的栈。
+- `deploy/autodl/README.md` 新增 §12 完整记录此结论与所有试过的 workaround(备查,避免重复);
+  §10 踩坑表 + §11 平台边界同步改为"非 Blackwell"口径。
+- 决策:退 6000D,换 **2× RTX 4090(sm89)** 继续。vllm 0.25.1 在 sm89 上标准 pip 安装即可,
+  和本机版本可比。
+- 待办(换卡后):起双 endpoint → 多 endpoint 路由实验;按用户要求加大测试强度,扫多套
+  调度策略(动态、论文设计、假设设计),CSV 留全指标(tokens/s、service_p99、inflight
+  trace、per-request latency)供画图,数据落 experiments/results/。
+
 ## 2026-07-27 部署文档补全:data/README 数据集规格 + AutoDL 踩坑表补齐
 
 - `data/README.md` 重写 Sources 小节为"Sources (exact)":修正 BurstGPT 来源为 **v2.0 release
