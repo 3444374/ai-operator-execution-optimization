@@ -308,7 +308,7 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 - **Python 环境**:miniconda3,Python 3.12.3。
 - **vLLM**:0.25.1(pip 安装,torch 2.11.0 manylinux)。本机为 0.25.1 Docker(cu129)。CUDA patch 不同,vLLM 版本对齐。
 - **PostgreSQL**:16 + pgvector(apt 装于 AutoDL)。本机为 18.4 Docker;公司平台为 18.3。三者不等同。
-- **GPU 架构**:云上非 Blackwell(如 sm89)≠ 本机 RTX 5070(sm120 Blackwell)。吞吐绝对值不可直接横比,用相对趋势(单 vs 双 endpoint)。
+- **GPU 架构与可比性**:云上非 Blackwell(如 4090 sm89)≠ 本机 RTX 5070(sm120)。**软件栈版本可比,硬件不可比**——单请求延迟、kernel 吞吐、batch 扩展曲线、显存带宽、双卡扩展效率都受架构影响。正式 baseline / 消融 / 优化方案**全部在同一台 2×4090 上重跑**;本机 5070 只用于开发与功能验证,**不拿 5070 结果和 4090 结果直接算优化比例**。研究变量(batch / task-actor 粒度 / in-flight / endpoint routing / fan-in / writeback)与 GPU 架构正交,实验结论仍成立。
 - 每条 CSV 记录 `server_version` 与 `pgvector_version`(项目硬性规则,见根 `AGENTS.md` §5)。
 
 ---
@@ -340,12 +340,16 @@ vLLM EngineCore 初始化失败:`RuntimeError: FlashInfer requires GPUs with sm7
 ### 12.5 选型一句话
 AutoDL 租卡跑 pip 装的 vllm,**避开 50xx/6000D/6000 Blackwell**,选 4090 / 3090 / A100。Blackwell 留给本机 Docker 环境。
 
-### 12.6 最终确认(2026-07-27,干净 uv 环境复现)
-新建干净 conda env `vllm-bw`,`uv pip install vllm==0.25.1` 让 vllm 自洽拉栈(torch 2.11.0+cu130 + flashinfer 0.6.13 + quack,clean),仍然同一报错。精确定位:
-- flashinfer `jit/core.py:check_cuda_arch()` 读 `current_compilation_context.TARGET_CUDA_ARCHS`;
-- flashinfer 的设备能力探测**自己**输出 `Failed to get device capability: SM 12.x requires CUDA >= 12.9` → `TARGET_CUDA_ARCHS = set()`(空)→ check raise sm75;
-- 加 `LD_LIBRARY_PATH` 优先 cu13、设 `FLASHINFER_DISABLE_VERSION_CHECK=1`、换 `VLLM_ATTENTION_BACKEND=TORCH_SDPA`、`--enforce-eager` **都不能绕过**(check 在 flashinfer 模块初始化时无条件触发)。
-- 结论:**flashinfer 0.6.x 的 PyPI wheel 没给 sm120 编译/探测,不是环境问题,无法靠配置修**。要么源码编译 flashinfer for sm120(本项目决定不走),要么用官方 Docker 镜像(AutoDL 无 docker/apptainer),要么换非 Blackwell 卡。
+### 12.6 最终确认(2026-07-27,干净 uv 环境 + 分层诊断)
+新建干净 conda env `vllm-bw`,`uv pip install vllm==0.25.1` 自洽拉栈(torch 2.11.0+cu130 + flashinfer 0.6.13 + quack),仍同一报错。**分层诊断**定位失败层:
+- **GPU 层**:`torch.cuda.get_device_capability()` → `(12,0)` ✅,识别正确。
+- **PyTorch 层**:`torch.cuda.get_arch_list()` → `['sm_75','sm_80','sm_86','sm_90','sm_100','sm_120']` ✅;`_get_cuda_arch_flags()` → `-gencode=arch=compute_120,code=sm_120` ✅。PyTorch 2.11.0+cu130 正确认识并为 sm120 编译。
+- **FlashInfer 层**:`current_compilation_context.TARGET_CUDA_ARCHS = set()`(空)——flashinfer 0.6.13 自己的 arch 探测输出 `Failed to get device capability: SM 12.x requires CUDA >= 12.9`,没把 sm120 填进去 → `jit/core.py:check_cuda_arch()` raise `FlashInfer requires GPUs with sm75 or higher`。
+- 即:**失败具体在 FlashInfer 0.6.13 的 arch 探测/CompilationContext,不是 GPU、也不是 PyTorch**。`LD_LIBRARY_PATH` 优先 cu13、`FLASHINFER_DISABLE_VERSION_CHECK=1`、`VLLM_ATTENTION_BACKEND=TORCH_SDPA`、`--enforce-eager` 都绕不过(check 在 flashinfer 初始化时无条件触发)。monkeypatch `check_cuda_arch` 成空函数能跳过前置检查,但不能保证后续 sm_120a/sm_120f 编译参数、JIT 内核、数值正确性与正式请求时不崩——不作为正式环境。
+
+**证据支持的结论(只写到此处)**:在本 AutoDL 实例的标准 pip 环境里,vLLM 0.25.1 + PyTorch 2.11.0+cu130 + FlashInfer 0.6.13 这个组合无法完成 sm120 架构检测,服务起不来。**这不等于"FlashInfer 整体不支持 sm120"或"Blackwell 跑不了 vLLM"**——更新版 FlashInfer 已含 SM120 目标,公开 issue(vllm#48898)用几乎相同组合能进入更深阶段;只是本实例 + 这组固定版本不行。
+
+**工程决策(止损)**:平台无 docker/apptainer,项目约束不源码编译、不改依赖源码、固定 vLLM 0.25.1 → 此路线不可用,换非 Blackwell 卡(4090/3090/A100)。这是基于时间成本和实验可复现性的止损决定,**不是对 Blackwell 支持能力的普遍结论**。
 
 ---
 

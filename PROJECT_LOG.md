@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-07-27 修正 Blackwell 章节过度结论 + 实验可比性纪律
+
+- 修正 `deploy/autodl/README.md` §12.6 的过度表述:之前写"flashinfer 0.6.x 的 PyPI wheel
+  没给 sm120 编译"超出了证据。分层诊断显示 GPU(torch.cuda.get_device_capability=(12,0))
+  和 PyTorch(get_arch_list 含 sm_120、_get_cuda_arch_flags 生成 compute_120/sm_120)
+  都正确认识 sm120,失败具体在 **FlashInfer 0.6.13 自己的 arch 探测**
+  (TARGET_CUDA_ARCHS=set())。改为只声明"本 AutoDL 实例 + vLLM 0.25.1 + torch 2.11+cu130
+  + flashinfer 0.6.13 这组固定版本的标准 pip 环境无法完成 sm120 架构检测",并明确"不等于
+  FlashInfer/Blackwell 整体不支持",换 4090 是工程止损决定、不是普遍结论。
+- 补 §11 实验可比性纪律:4090(sm89)vs 本机 5070(sm120)硬件不可比,正式 baseline/消融
+  全在同一台 2×4090 重跑,本机只做功能验证,不跨硬件算优化比例。研究变量与 GPU 架构正交。
+
 ## 2026-07-27 Blackwell sm120 兼容性注记 + 换卡 4090 决策
 
 - 在 2× RTX 6000D(sm120 Blackwell)上耗半天确认:**AutoDL 上 pip 装的 vLLM 跑不了
