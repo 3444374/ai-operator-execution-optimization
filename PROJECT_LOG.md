@@ -1637,3 +1637,44 @@
 - 修正两处过时状态：根 README 不再把已经完成的 adaptive/联合实验写成下一步；
   缺口表不再把跨 arrival-rate 和 2048 held-out 写成未完成。
 - 本轮仅更新设计与状态文档，没有修改代码或生成新的性能结论。
+
+## 2026-07-27 Shared-vLLM 多任务实验审查与文档补全
+
+- 对 07-26 shared-vLLM typed AIMD + adaptive flush 实验（128 前台 / 512 后台）
+  做完整审查，补全此前在 `experiment_status_and_gaps.md` 中遗漏的关键诊断：
+  AIMD 三轮 0 次 decrease 的根因是 vLLM `waiting` 始终为 0——请求在 Ray 侧排队
+  形成"软拥塞"，而 AIMD 的拥塞信号（waiting > 0 / KV usage 高）完全盲视。
+  前台已慢 38.9%，控制器观测不到任何异常。
+- 更新 `experiment_status_and_gaps.md`：
+  - §1.2 表：Shared-vLLM 07-19 行标注为"已被 07-26 取代"；07-26 行补全
+    根因诊断与剩余缺口；
+  - §1.2 RC2 当前状态：增加信号盲区诊断；
+  - §6.1 P0-1：从旧 07-19 数据重写为"已从负结果推进为信号盲区诊断"，
+    补全单作业 + shared-vLLM 两组 07-26 证据与演进判断；
+  - §9：补齐单作业 admission 矩阵与 shared-vLLM 实验条目、当前结论与缺口；
+  - §10.2：新增信号盲区诊断补充，将 request-level replenishment 优先级从
+    "工程改进"提升为"可能解锁动态控制价值的必要前置"。
+- 更新 `PROJECT_OUTLINE.md` §当前最重要证据：shared-vLLM 条目从旧 07-19
+  数据（2.3×）替换为 07-26 复验数据与诊断。
+- 本轮仅修订文档状态与诊断，没有修改代码或生成新性能数据。
+
+## 2026-07-27 算子代价估计用途评审与文档补全
+
+- 评审算子代价估计（283 条 profile、70 配置组、5-seed grouped held-out）
+  的当前结论与后续方向，明确两个预期用途：
+  1. **数据库优化编排**（主要）：为查询优化器提供 AI 算子代价估计，
+     辅助执行计划选择与资源分配。当前 R² 0.776、MAE 11.68s，排序能力
+     大概率可支撑编排决策，但尚未显式计算排序指标；
+  2. **提交策略辅助**（探索性）：作为 vLLM Prometheus 信号的补充，提供
+     pending batch 粗粒度工作量预估，但不能替代 Orca 式持续供给和反馈
+     驱动的提交机制。
+- 更新 `experiments/results/operator_cost_estimation_20260726/README.md`：
+  - §目标：新增两个预期用途的明确定义；
+  - 新增"待补充：排序能力分析"节：列出 Spearman、pairwise accuracy、
+    Top-K precision 三项排序指标及其对编排/提交策略的具体意义；
+  - 新增"后续工作"节：排序指标补充、提交策略集成预研（轻/中/重分档）、
+    独立 workload 留出、预测区间。
+- 更新 `experiment_status_and_gaps.md` §1.5：从一句话状态扩展为双用途
+  定位 + 四个当前缺口（排序能力未评估、提交集成未验证、无外推验证、
+  无预测区间）。
+- 本轮仅修订文档，没有修改代码。

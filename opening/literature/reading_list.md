@@ -71,6 +71,16 @@
 | 32 | `milvus_sigmod2021.md` | Milvus — 向量库写回/索引（pgvector 工程对照） | SIGMOD 2021 | 2026-07-23 |
 | — | **2026-07-23 补（引擎基础）** | | | |
 | 33 | `ray_data_streaming_batch_2025.md` | Ray Data: Streaming Batch Model — 异构执行引擎（Daft 对照，RC1/RC2 引擎层） | arXiv 2025 | 2026-07-23 |
+| — | **2026-07-27 新增（算子代价估计文献）** | | | |
+| 34 | `learned_cost_models_sigmod2025.md` | Heinrich et al. — How Good are Learned Cost Models, Really? Insights from Query Optimization Tasks | SIGMOD 2025 | ✅ 已精读（2026-07-27） |
+| 35 | `concerto_cost_estimation_arxiv2024.md` | CONCERTO — Complex Query Execution Mechanism-Aware Learned Cost Estimation | arXiv 2024.12 | ✅ 已精读（2026-07-27） |
+| 36 | `graceful_udf_cost_icde2025.md` | GRACEFUL — A Learned Cost Estimator For UDFs | ICDE 2025 | ✅ 已精读（2026-07-27） |
+| 37 | `costream_icde2024.md` | COSTREAM — Learned Cost Models for Operator Placement in Edge-Cloud Environments | ICDE 2024 | ✅ 已精读（2026-07-27） |
+| 38 | `redefining_cost_estimation_arxiv2025.md` | Pathak & Mankodi — Redefining Cost Estimation in Database Systems | arXiv 2025 | ✅ 已精读（2026-07-27） |
+| — | **2026-07-27 新增（提交策略场景）** | | | |
+| 39 | `sfs_latency_routing_arxiv2026.md` | SFS — Latency-Aware LLM Query Routing for Dynamic Workloads（Serving Framework Simulation TTFT 估计器） | arXiv 2026 | ✅ 已精读（2026-07-27） |
+| 40 | — | SPOS — Structure Prediction and Opportunity-Cost Scheduler for LLM Inference | Pattern Recognition 2026 | 🔴 待下载（付费墙） |
+| 41 | — | ELTO — Energy-Latency Trade-off Optimization for ML Inference with Dynamic Batching | IEEE NCA 2025 | 🔴 待下载（IEEE 付费墙） |
 
 > **2026-07-23 精读勘误（重要，两环境协同修正）**：精读代理据论文原文修正了多处早期误述——
 > (1) **SABER** 确实**使用 USL**（§IV.B Step 2 明写 "select the USL with the best R²"，Fig 7 对比三变体）作为估计机制，SLA-aware 是其系统目的，二者是机制与目的关系，非二选一；

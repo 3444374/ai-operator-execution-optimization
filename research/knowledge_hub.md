@@ -276,7 +276,26 @@ class AdaptiveSubmitActor:
 | 预印本/arXiv | 3 | DeepSeek-V3, Ray Data, Lance |
 | 工业论文/官方文档 | 8 | Arrow Flight, Daft, Spark, Snowflake, BigQuery, Oracle, pgai, PostgresML, pgvector, vLLM |
 | 自引 | 3 | 本项目 GPU-backed E2E |
-| **合计** | **57** | |
+| **合计** | **65** | |
+
+### 3.8 学习型代价估计与查询优化（2026-07-27 新增）
+
+算子代价估计（研究内容四/§6.1）的方法根基，以下 8 篇覆盖从传统 learned cost model 到 UDF 感知、算子放置、推理延迟预测的全谱系：
+
+| 论文 | 出处 | 核心内容 | 与项目代价估计的关系 |
+|---|---|---|---|
+| **Heinrich et al. — How Good are Learned Cost Models, Really?** | SIGMOD 2025 | 7 个 SOTA LCM vs PostgreSQL 传统代价模型；精度高但计划选择未必更好；**排序>精度**；建议 hybrid 架构 | **直接方法论支撑**：排序指标（Spearman/pairwise/Top-K）的理论依据；hybrid = 传统公式 + learned correction |
+| **CONCERTO (Zhang et al.)** | arXiv 2024.12 | DAG + GAT + TCN 三阶段架构：每算子独立资源代价 → GAT 捕获并行资源竞争 → TCN 聚合代价向量 | 多 endpoint 场景的 DAG 建模方案备选 |
+| **GRACEFUL (Wehrstein et al.)** | ICDE 2025 | UDF 感知 GNN 代价估计；CFG + 查询计划联合图 → GNN + MLP 预测 runtime；zero-shot 泛化到新 UDF | 项目文档标注为 closest analog to AI-operator-aware cost estimation |
+| **COSTREAM (Heinrich et al.)** | ICDE 2024 | GNN 算子放置代价模型；zero-shot 泛化到未见查询/硬件；median 21× speedup | 多 GPU/多 endpoint 场景下算子放置优化的方法参考 |
+| **Neo** | SIGMOD 2019 | 经典 learned query optimizer（端到端） | 学习型优化器奠基工作，代价估计是其子模块 |
+| **Pathak & Mankodi — Redefining Cost Estimation** | arXiv 2025 | 三类特征（标量/结构/语义）+ XGBoost → MSE 0.3002；树集成在低数据量下优于深度学习 | 特征工程方法参考，印证 Ridge 在 283 行上的选择合理 |
+| **Learned Query Optimizer (Zhu et al.)** | SIGMOD 2024 | 学习型优化器综述 | 未下载（ACM 付费墙），作为领域全景引用 |
+| **Learning Database Optimization (Qiao et al.)** | FCS 2025 | 数据库优化技术综述 | 已下载，作为领域全景引用 |
+
+**关键 insight**：以上文献反复出现两个模式——(a) hybrid 架构（传统公式 + learned correction）比纯 learned 更稳健；(b) 不确定性门控（低置信度回退到保守估计）。这两个模式直接指导项目的代价估计设计方向。
+
+**文献优先设计原则**（见 §5.3）：AI 算子不能按普通 UDF 估算——selectivity、token length、model cost 会改变执行决策。Cortex AISQL 的 `C_op(n) = n × c_model + α` 是显式的线性公式参考。
 
 ---
 
@@ -411,6 +430,148 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 | 多维信号融合决策 | Serve autoscaler 只看队列长度 | vLLM waiting + running + KV cache → 融合决策 |
 
 **重要警示**：Ray Data 的 `ConcurrencyCapBackpressurePolicy`（EWMA + deadband 自适应并发控制）已被废弃——原因是用 ~400 行复杂控制逻辑实现的策略，性能反而不如简单方案。这对我们的设计有直接含义：**自适应策略必须保持简单，避免陷入参数调优的泥潭**。
+
+### 5.7 从代价估计与提交策略新文献提取的设计模式（2026-07-27 新增）
+
+以下从 6 篇新精读论文（Heinrich SIGMOD 2025、CONCERTO、GRACEFUL、COSTREAM、Pathak & Mankodi、SFS）中提取可迁移的技术与设计思路，按适用场景分为代价估计（RC4）和提交策略（RC2）两组。每条标注来源论文、可行性评估、与当前方案的 gap。
+
+#### 5.7.1 代价估计（RC4）设计模式
+
+**模式 1：Hybrid 架构（传统公式 + Learned Correction）**
+- **来源**：Heinrich R4（"Don't Throw Expert Knowledge Away"）+ DACE/QPP-Net 的 PostgreSQL cost 特征实验 + Pathak & Mankodi 的 XGBoost on EXPLAIN features
+- **含义**：不纯用 learned model 从零学起——先用一个简单的物理公式给出 base estimate（如 `E2E_base = total_prompt_tokens / estimated_throughput + overhead`），再用 Ridge/LightGBM 学残差 `Δ = E2E_actual - E2E_base`
+- **为什么有效**：传统公式捕获了一阶效应（计算量与延迟的线性关系），learned model 只需学非线性偏差、资源竞争效应和噪声——相当于是"用小模型修正大公式的误差"，而非"用小模型从头拟合复杂的 E2E 函数"
+- **落地难度**：🟢 低——加一个 `E2E_base` 特征列到当前 15 特征中即可实验
+- **预期效果**：可能降低跨 seed MAPE 波动（当前 30-90%），提升 R²
+- **gap**：需确定 `E2E_base` 的最优公式形式（可用 Ridge 的 coefficients 做特征重要性分析反推）
+
+**模式 2：排序优先评估（Ranking-First Evaluation）**
+- **来源**：Heinrich R2 + §4 Definition 3-4（Selected Runtime、Surpassed Plans、Spearman ρ）
+- **含义**：对编排决策来说，代价模型的**排序能力**比**点估计精度**更重要。评估代价模型时，应报告 Spearman 秩相关系数、pairwise accuracy（随机抽两个配置，模型正确排序的比例）、Top-K precision（模型能否选出真正最快的 K 个配置）
+- **为什么有效**：Heinrich 实验证明 Q-Error 最优的 LCM 在 Join Ordering 上反而最差——因为忽视了排序。本项目 70 个配置组的场景是"从候选配置中选最优"，与 Heinrich 的"从候选计划中选最优"完全同构
+- **落地难度**：🟢 低——已计划补充，论文提供了完整的方法论依据
+- **gap**：`estimate_operator_cost.py` 需增加 Spearman/pairwise/Top-K 输出
+
+**模式 3：多粒度模型组合（Multi-Granularity Meta-Learner）**
+- **来源**：Microsoft Meta-Ensemble Patent + Heinrich R1（DB-agnostic > DB-specific）
+- **含义**：不只训练一个全局 Ridge——训练四个模型：(a) 每个 workload 的局部模型（精度最高，覆盖窄），(b) 每个模型 size 的模型，(c) 全局模型（全覆盖，精度低），(d) meta-learner 加权组合
+- **为什么有效**：70 个配置组天然形成层级结构（按 workload × 模型 × batching strategy）——局部模型在熟悉配置上精度高，全局模型兜底。Microsoft patent 的 FastTreeRegression meta-learner 提供了具体的组合方式
+- **落地难度**：🟡 中——需 283 行中的每个子集足够大才能训练局部模型；当前某些配置组只有 2-3 行，不足以训练 per-workload 模型
+- **gap**：需要更多 profile 数据覆盖低频配置组，或使用 hierarchical Bayesian shrinkage（小样本时向全局模型收缩）
+
+**模式 4：不确定性门控（Uncertainty Gating）**
+- **来源**：Microsoft Patent + Heinrich R3 + OCACO（多个来源一致推荐）
+- **含义**：代价模型不仅输出点估计，也输出预测区间或置信度。当置信度低时回退到保守估计（如 P95 上界），避免因过度乐观的估计选到慢得多的计划
+- **为什么有效**：Heinrich 发现 LCM 的最大问题是"偶然的大误差导致选错计划"——如果模型知道"这个估计我不太确定"，至少可以保守决策
+- **落地难度**：🟡 中——Ridge 本身不输出不确定性；可用 bootstrap residual 估计（训练集上残差的经验分布作为预测区间）、或换为 Bayesian Ridge / Gaussian Process
+- **gap**：当前只输出点估计，无预测区间
+
+**模式 5：解耦三阶段建模（Per-Component → Competition → Aggregation）**
+- **来源**：CONCERTO（OCP → GAT → TCN）
+- **含义**：不直接预测 e2e_s，而是：(Stage 1) 分别估计 DB fetch time、vLLM prefill time、vLLM decode time、writeback time；(Stage 2) 建模并发时的资源竞争（如 shared vLLM 的 KV cache 争用）；(Stage 3) 聚合为 e2e_s
+- **为什么有效**：各阶段受不同因素影响（DB fetch 受 row count 影响，prefill 受 prompt token 影响，decode 受 output length 影响），分开建模更精确；并发竞争可以显式校准
+- **落地难度**：🔴 中-高——当前 profile CSV 只有 e2e_s 和 model_service_s，无 per-stage breakdown。需要修改 profiler 在 CSV 中拆分阶段耗时
+- **gap**：需 `postgres_ai_operator_profile.py` 增加 per-stage timing
+
+**模式 6：Transferable Features（可迁移特征）**
+- **来源**：COSTREAM + Zero-Shot (Hilprecht)
+- **含义**：所有特征必须是物理量（token count、row count、timeout ms、K_max），**不能**编码特定 workload 名、模型名、硬件型号。这样模型可以 zero-shot 泛化到新模型/新 workload
+- **为什么有效**：COSTREAM 在 unseen hardware 上 Q-Error 几乎无退化（1.37 → 1.59）；当前 15 个特征已经基本是 transferable 的（无 workload 名、无模型名），但 `flush_is_adaptive`/`flush_is_immediate` 是策略特定的
+- **落地难度**：🟢 低——当前已基本满足，后续新特征需保持此原则
+- **gap**：验证当前 Ridge 在跨模型（如 Qwen2.5-1.5B → 更大模型）上的泛化能力
+
+**模式 7：多代价指标联合输出**
+- **来源**：COSTREAM（同时预测 throughput、E2E latency、per-operator latency、backpressure、OOM）
+- **含义**：不只输出 e2e_s——同时输出 tokens/s、service_p99、OOM/timeout 概率。编排决策需要多维信息：一个配置可能 e2e 快但 token/s 低（模型效率差），或者 e2e 快但 P99 高（tail latency 差）
+- **落地难度**：🟡 中——多输出 Ridge 可以直接做（多个独立 Ridge，共享特征），不需要改模型架构
+- **gap**：`estimate_operator_cost.py` 当前只支持单一 target
+
+**模式 8：训练数据多样化**
+- **来源**：Heinrich R3（Training Data Diversification）
+- **含义**：当前 profile 数据全来自 `status=ok` 的成功运行——模型从未见过"差配置"。应该在后续 profile 中有意加入一些"已知慢"的配置变体（如 K_max 极低导致 queue 积压、batch size 极大导致 OOM 边缘），让模型学习"坏配置长什么样"
+- **为什么有效**：Heinrich 证明在 access path selection 中，加入多样化训练数据（强制执行 IndexScan + SeqScan 两条路径）后 LCM 首次超越 PostgreSQL
+- **落地难度**：🟡 中——需要额外运行慢配置（耗时），但不需要很多（Heinrich 只用 500 条多样化数据做 fine-tune）
+- **gap**：当前 profile pipeline 只采集"合理"配置，未系统收集边界/劣化配置
+
+**模式 9：简单模型优先（Simple Models First）**
+- **来源**：Heinrich R1（FlatVector 经常排名前三）+ Pathak & Mankodi（XGBoost > LSTM in low-data）
+- **含义**：在 283 行数据上，Ridge/LightGBM/XGBoost 足够了——不要过早升级到 GNN/Transformer。特征工程和数据质量比模型架构重要
+- **落地难度**：🟢 低——当前 Ridge 符合此原则，保持不变即可。后续数据量增长到万级后可考虑 LightGBM
+- **gap**：无
+
+#### 5.7.2 提交策略（RC2）设计模式
+
+**模式 10：SFS What-If 预演（Serving Framework Simulation）**
+- **来源**：SFS（Patel et al. 2026, §4）
+- **含义**：在每次 flush 决策时，用确定性模拟器预测"如果现在提交这个 pending batch，每个请求的 TTFT 是多少"。具体步骤：(1) 获取 vLLM 当前的 workload snapshot（running requests 的 prefill/decode token composition），(2) 将 pending batch 的请求加入模拟，(3) 确定性模拟后续 token batch 直到每个请求生成第一个 decode token，(4) 只提交 TTFT 预测在 SLO 内的请求
+- **为什么有效**：SFS 的 TTFT MAPE <5%，sub-millisecond 开销——证明了这种"轻量模拟"对在线决策是可行的。相比当前 queue-adaptive flush 的"看 queue depth 做二元决策"，what-if 预演可以做细粒度的 per-request 准入
+- **落地难度**：🔴 中-高——需要 (a) 实现 SFS 的 token-batch simulator（Python 代码，~200 行），(b) 为本地 Qwen2.5-1.5B 校准 4 个 β 参数，(c) 从 vLLM Prometheus 获取实时 workload snapshot
+- **gap**：当前无 token-batch 模拟器；vLLM Prometheus 的 `vllm:running_requests` 和 `vllm:waiting_requests` 可能不够细粒度
+
+**模式 11：LPS Queueing Model 指导 K_max 选择**
+- **来源**：SFS §4.2（Average-case estimator）+ LPS (Limited Processor Sharing) model
+- **含义**：公式 `W_avg = (λ/μ)^k / (μ - λ)` 给出了"给定到达率 λ、服务率 μ、并发槽位 k 下的平均等待时间"。这可以作为 K_max 选择的**解析指导**——不必纯靠实验暴力搜索 K_max
+- **为什么有效**：SFS 实验显示 LPS 模型与实测 Qwen3-0.6B 等待时间高度吻合（k ≈ 25）。项目的 K=8 baseline 和 AIMD 的"漂到 K=16"可以用此公式解释：λ/μ 比率决定了什么 K 值刚好平衡队列增长
+- **落地难度**：🟡 中——需要从 profile 数据估计 μ（vLLM 的请求服务率，约为 tokens/s / avg_tokens_per_request），λ 从 arrival replay 参数获取
+- **gap**：当前 K_max 选择纯实验驱动，无解析公式辅助
+
+**模式 12：Token-Batch 处理时间线性回归**
+- **来源**：SFS §4.1（eq. 9，4-parameter linear regression for token-batch time）
+- **含义**：不模拟低层 GPU kernel——用 4 个参数的线性回归直接从 token batch composition 预测 batch 处理时间：`T = β0 + β1·Σtok + β2·Σ(c·tok) + β3·Σ(tok·c + tok²)`。校准只需离线跑一批 token batch 并记录 composition→time 映射
+- **为什么有效**：`dense computation ∝ tokens`（β1）、`attention ∝ context·decode_tokens`（β2）、`prefill attention ∝ prefill_chunk·context + prefill²`（β3）——每一项都有清晰的物理意义
+- **落地难度**：🟡 中——需从 vLLM 获取 per-iteration token batch composition（可能需要改 vLLM 的 logging/metrics），或从 Prometheus 间接推断
+- **gap**：当前 vLLM Prometheus 指标无 per-iteration batch composition 信息
+
+**模式 13：轻/中/重 Workload 分类**
+- **来源**：SPOS + Heinrich R3 + 项目已有计划
+- **含义**：不求精确预测 E2E 秒数，而是将 pending batch 分为"轻（E2E < 10s）/ 中（10-60s）/ 重（> 60s）"三档。提交策略根据档位做粗粒度决策——轻 batch 可以激进提交（低风险），重 batch 需要等待更多请求合并（摊销 overhead）
+- **为什么有效**：SPOS 证明"结构预测"比"精确长度预测"更稳健——类比到本课题，"batch 轻/中/重"比"batch E2E = 42.3s"更可靠
+- **落地难度**：🟢 低——当前 Ridge 可能已有足够排序能力做分档（MAE 11.68s vs E2E 范围 ~5-300s），只需定义档位阈值并验证同档内真实 E2E 方差是否显著小于全局
+- **gap**：需在 profile 数据上验证分档效果
+
+#### 5.7.3 跨场景通用模式
+
+**模式 14：Probe Execution 数据收集策略**
+- **来源**：CONCERTO §III（Runtime Tracker: probe execution mode）
+- **含义**：不需要跑完整查询来收集特征——只跑"前几个 chunk"即可推断完整执行的 pipeline 结构和算子特征。本课题的类比：profile 阶段可能不需要完整的 10,000 请求 E2E——前 1,000 请求的 metrics 模式可能已经足够预测整体行为
+- **落地难度**：🟡 中——需实验验证"partial execution 特征 vs full execution 代价"的相关性
+- **gap**：当前 profile 全部是完整 E2E 运行
+
+#### 5.7.4 模式优先级矩阵
+
+```
+                    落地难度 →
+收益 ↓          低（1-2轮可做）        中（需改动 pipeline）     高（需新基础设施）
+高              模式1 Hybrid架构        模式5 解耦三阶段          模式10 SFS预演
+                模式2 排序优先评估      模式4 不确定性门控
+                模式9 简单模型优先
+中              模式6 Transferable      模式3 多粒度模型          模式12 Batch时间回归
+                模式13 轻/中/重分类     模式7 多指标输出
+                                       模式8 数据多样化
+                                       模式11 LPS模型
+                                       模式14 Probe Execution
+```
+
+**建议落地顺序**：
+1. **第一批**（RC4 短期）：模式 1 Hybrid + 模式 2 排序指标 + 模式 9 保持简单
+2. **第二批**（RC4 中期）：模式 4 不确定性门控 + 模式 7 多指标输出 + 模式 8 数据多样化
+3. **第三批**（RC2 探索）：模式 13 轻/中/重分类 + 模式 11 LPS K_max 选择
+4. **第四批**（RC2 深度）：模式 10 SFS what-if 预演 + 模式 12 token-batch 回归
+5. **远期**（多 endpoint 后）：模式 5 解耦三阶段 + 模式 3 多粒度模型
+
+### 5.8 已有模式与本课题现有工作的映射
+
+| 文献模式 | 本课题已有对应 | 成熟度 |
+|---------|-------------|--------|
+| Transferable features (COSTREAM) | 15 特征全是物理量（无 workload/模型名编码） | ✅ 已满足 |
+| 简单模型优先 (Heinrich R1) | Ridge 161 行 | ✅ 已满足 |
+| Grouped hold-out (Heinrich) | 按配置组 SHA-256 split（非按行） | ✅ 已满足 |
+| Hybrid 架构 (Heinrich R4) | **缺失** `E2E_base` 公式特征 | 🔴 待补充 |
+| 排序指标 (Heinrich R2) | 只报告 MAE/RMSE/R²/MAPE | 🔴 待补充 |
+| 多代价指标 (COSTREAM) | 只预测 `e2e_s` | 🟡 待补充 |
+| 不确定性输出 (多来源) | 只输出点估计 | 🟡 待补充 |
+| SFS 预演 (SFS) | queue-adaptive flush 看 queue depth | 🟡 可替代 |
+| LPS K_max 选择 (SFS) | 纯实验暴力搜索 | 🟡 可补充 |
 
 ---
 

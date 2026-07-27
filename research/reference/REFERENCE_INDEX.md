@@ -57,6 +57,7 @@
 | CoLoRA: A Collaborative Scheduling Framework for Multi-Tenant LoRA LLM Inference | `colora_aspdac2026.pdf` | ASP-DAC 2026, DOI:10.1109/ASP-DAC66049.2026.11420717 |
 | ProServe: Unified Multi-Priority Request Scheduling for LLM Serving | `proserve_2025.pdf` | arXiv:2512.12928, 2026 |
 | Load-Aware Prefill Deflection for Disaggregated LLM Serving | `load_aware_prefill_2026.pdf` | arXiv:2607.02043, 2026 |
+| SFS: Beyond Accuracy and Cost — Latency-Aware LLM Query Routing for Dynamic Workloads | `latency_aware_llm_routing_arxiv2026.pdf` | arXiv:2607.18253, 2026 |
 
 ### 1.4 分布式框架与数据引擎
 
@@ -97,6 +98,10 @@
 | Neo: A Learned Query Optimizer | `neo_learned_optimizer_sigmod2019.pdf` | SIGMOD 2019 |
 | How Good are Learned Cost Models, Really? | `learned_cost_models_sigmod2025.pdf` | SIGMOD 2025, arXiv:2502.01229 |
 | Learning Database Optimization Techniques: State-of-the-Art and Prospects | `learning_db_optimization_fcs2025.pdf` | FCS 2025, DOI:10.1007/s11704-025-41116-7 |
+| CONCERTO: Complex Query Execution Mechanism-Aware Learned Cost Estimation | `concerto_cost_estimation_arxiv2024.pdf` | arXiv:2412.00749, Dec 2024 |
+| GRACEFUL: A Learned Cost Estimator For UDFs | `graceful_udf_cost_icde2025.pdf` | ICDE 2025, arXiv:2503.23863 |
+| COSTREAM: Learned Cost Models for Operator Placement in Edge-Cloud Environments | `costream_icde2024.pdf` | ICDE 2024, arXiv:2403.08444 |
+| Redefining Cost Estimation in Database Systems: The Role of Execution Plan Features and Machine Learning | `redefining_cost_estimation_arxiv2025.pdf` | arXiv:2510.05612, 2025 |
 | RTIndeX: Hardware-Accelerated GPU Raytracing for Database Indexing | `rtindex_2023.pdf` | arXiv:2303.01139, 2023 |
 | A Study of GPU/CPU Performance Characteristics for Database Analytics | `gpu_cpu_db_analytics_pvldb2020.pdf` | PVLDB Vol.13, 2020, arXiv:2003.01178 |
 
@@ -222,7 +227,7 @@
 
 | 类别 | 数量 |
 |------|------|
-| ✅ 已下载 PDF 论文 | **67** |
+| ✅ 已下载 PDF 论文 | **72** |
 | ❌ 未下载（需机构访问/手动获取） | **2** |
 | 📄 网页文档/系统参考 | **40+** |
 

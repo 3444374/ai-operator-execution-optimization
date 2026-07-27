@@ -23,6 +23,18 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 AI_COMPLETE 算子的端到端时间。该模型用于后续编排决策的补充信息，不作为
 独立研究贡献，也不声称带来调度加速。
 
+**两个预期用途**：
+
+1. **数据库优化编排**（主要用途）。为查询优化器提供 AI 算子代价估计，
+   辅助选择执行计划：这个 AI_COMPLETE 调用大概需要多少时间？两个
+   候选计划的代价排序是否正确？是否需要分配更多并行资源？
+
+2. **提交策略辅助**（探索性用途）。如果排序能力足够强，可在提交侧提供
+   粗粒度工作量预估——pending batch 预计计算量是轻还是重？当前 inflight
+   的总估计 token-work 是否过高？作为对 vLLM Prometheus 信号（
+   running/waiting/KV）的补充，但不能替代文献中的 Orca 式持续供给和
+   vLLM 反馈驱动提交机制。
+
 ## 数据与特征
 
 输入为 `experiments/results/` 下 29 个 `runs.csv`：
@@ -99,5 +111,97 @@ arrival replay 等执行前配置签名定义。同一配置的 warm-up/formal/r
 - `e2e_cost_model.json`：主切分完整特征 schema、系数、均值/尺度和指标；
 - `e2e_cost_model_seed_*.json`：五个稳健性切分。
 
-后续若用于在线编排，应先增加独立时间段/新 workload 留出，并输出预测区间或
-保守上界，而不是只返回点估计。
+## 待补充：排序能力分析
+
+当前评估使用 MAE/RMSE/R²/MAPE 等回归指标，回答的是"预测值离真实值
+差多少秒"。但对编排和提交策略来说，更关键的指标是**排序质量**——模型
+能否正确区分"便宜配置"和"昂贵配置"：
+
+| 指标 | 含义 | 对编排的意义 | 对提交策略的意义 |
+|---|---|---|---|
+| Spearman 秩相关系数 | 预测排名与真实排名的相关性 | 优化器选择 A 还是 B 的正确率 | 判断 pending batch 是"轻"是"重"的可靠性 |
+| Pairwise accuracy | 随机抽两个配置，模型正确排序的比例 | 两计划对比的置信度 | inflight estimate vs 新请求的轻重判断 |
+| Top-K precision | 预测最便宜的 K 个中，实际最便宜的比例 | 优化器挑最优候选的命中率 | 选择"安全提交窗口"的准确性 |
+
+R² 0.776 暗示排序能力大概率不错（回归好通常排序也好），但不能替代
+显式计算。需要补充计算后更新本节。
+
+## 后续工作
+
+以下按优先级排列，每项标注对应的文献设计模式（详见
+`research/knowledge_hub.md` §5.7-§5.8）。完整的 14 个设计模式总览
+和优先级矩阵见该文档。
+
+### 第一批（短期，1-2 轮即可落地）
+
+1. **补充排序指标**（模式 2：排序优先评估 | Heinrich SIGMOD 2025 R2）。
+   在 `estimate_operator_cost.py` 中增加 Spearman 秩相关系数、
+   pairwise accuracy、Top-K precision 输出。这是 Heinrich 论文的
+   核心论点——对编排决策来说排序比点估计精度重要。已有最强文献支撑。
+
+2. **Hybrid 架构实验**（模式 1：传统公式 + Learned Correction |
+   Heinrich R4, Pathak & Mankodi）。
+   增加一个 `E2E_base` 特征列：`E2E_base = total_prompt_tokens /
+   estimated_throughput + fixed_overhead`，作为第 16 个特征输入
+   Ridge。预期效果：降低跨 seed MAPE 波动（当前 30-90%），改善 R²。
+   本质是让 Ridge 学"传统公式无法解释的偏差"而非从头学整个 E2E 函数。
+
+3. **轻/中/重分档验证**（模式 13：Workload 分类 | SPOS, Heinrich R3）。
+   用已有 283 行 profile 评估：按预测 E2E 将配置分为轻/中/重三档，
+   同档内真实 E2E 方差是否显著小于全局？这决定了代价估计能否作为
+   提交侧的粗粒度 workload 分类器（不追求精确点估计，而是可靠的
+   档位判断）。
+
+### 第二批（中期，需改动 profile pipeline）
+
+4. **预测区间**（模式 4：不确定性门控 | Microsoft Patent, Heinrich R3）。
+   编排决策不应只靠点估计，需要输出保守上界或预测区间。可用
+   bootstrap residual 估计（训练集残差经验分布作为预测区间）实现。
+
+5. **多代价指标联合输出**（模式 7：多指标输出 | COSTREAM）。
+   同时预测 `tokens/s` 和 `service_p99`（当前只预测 `e2e_s`）。
+   实现方式：多个独立 Ridge 共享 15 特征，不改模型架构。
+
+6. **训练数据多样化**（模式 8：数据多样化 | Heinrich R3）。
+   后续 profile 中有意加入"已知慢"的配置变体（K_max 极低、
+   batch size 极大等），让模型学习边界和劣化配置的代价特征。
+   Heinrich 用 500 条多样化数据 fine-tune 后 LCM 首次超越 PG。
+
+7. **独立 workload/时间段留出验证**（模式 6：Transferable Features |
+   COSTREAM）。用新模型或新 workload 做外推验证，评估排序退化程度。
+   当前特征已是 transferable 的（物理量），理论上可泛化——需实验确认。
+
+### 第三批（远期，多 endpoint/多 GPU 后）
+
+8. **解耦三阶段建模**（模式 5：Per-Component 建模 | CONCERTO）。
+   分别估计 DB fetch、vLLM prefill/decode、writeback 时间后进行
+   聚合。需要 `postgres_ai_operator_profile.py` 增加 per-stage
+   timing 列。
+
+9. **多粒度模型组合**（模式 3：Meta-Learner | Microsoft Patent）。
+   训练 per-workload 局部模型 + 全局模型 + meta-learner 加权。
+   当前 283 行不足以训练可靠的局部模型（某些配置组仅 2-3 行），
+   需更多 profile 数据积累后才值得做。
+
+### 不纳入短期计划
+
+- **SFS What-If 预演**和 **LPS K_max 选择**（模式 10/11）属于
+  提交策略（RC2）范畴，不是代价估计（RC4）的直接工作。列入
+  `experiments/plans/experiment_status_and_gaps.md` 的 RC2 缺口。
+- **GNN/Transformer 升级**：6 篇文献一致确认简单模型（Ridge/
+  XGBoost）在小数据上足够——当前 283 行远未达到需要 GNN 的规模。
+
+### 文献支撑索引
+
+| 后续工作项 | 对应文献模式 | 核心论文 |
+|-----------|------------|---------|
+| 排序指标补充 | 模式 2 | Heinrich SIGMOD 2025 |
+| Hybrid 架构 | 模式 1 | Heinrich R4, Pathak & Mankodi |
+| 轻/中/重分档 | 模式 13 | SPOS, Heinrich R3 |
+| 预测区间 | 模式 4 | Microsoft Patent, Heinrich R3 |
+| 多指标输出 | 模式 7 | COSTREAM ICDE 2024 |
+| 数据多样化 | 模式 8 | Heinrich R3 |
+| 跨 workload 留出 | 模式 6 | COSTREAM |
+| 解耦三阶段 | 模式 5 | CONCERTO |
+| 多粒度模型 | 模式 3 | Microsoft Patent |
+| 简单模型优先 | 模式 9 | Heinrich R1, Pathak & Mankodi |
