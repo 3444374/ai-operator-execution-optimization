@@ -1766,3 +1766,12 @@
 - **本轮修改代码与配置，未生成新性能数据；实验未运行**（本机此 shell
   无 vLLM/GPU/PG 环境）。运行与结论回写（PROJECT_OUTLINE §证据、
   experiment_status_and_gaps、本日志）待 GPU 环境就绪后进行。
+
+## 2026-07-27 修正 AutoDL 部署指南（PG18.4 + lsb_release + uv/venv）
+
+- 在 2× RTX 4090（sm89，Driver 595.58.03 / CUDA 13.2）实例上实测后，纠正 `deploy/autodl/README.md` 几处：
+  1. **PG 版本 16 → 18.4**（§6/§11）：与本机 baseline 18.4 Docker 对齐；原 PG16 是保守默认。
+  2. **`$(lsb_release -cs)` → 硬编码 `jammy`**（§6/§10）：最小镜像 lsb_release 未装/不在 PATH 时该变量为空，repo 行变成 `apt -pgdg` 报 "does not have a Release file"（实测踩到）。
+  3. **新增 §4.3.1 uv + 独立 venv**：4090 实测 `uv pip install vllm==0.25.1` 约 5 分钟（plain pip 30+ 分钟）；vllm 装独立 venv（`/root/autodl-tmp/venvs/vllm-4090`）与 driver 的 base 隔离，避免 vllm 的 torch 2.11.0 覆盖镜像 base 的 torch 2.12.1+cu130；缓存放数据盘。
+- 验证：4090 上 `vllm 0.25.1 / torch 2.11.0+cu130 / flashinfer 0.6.13 / capability (8,9) / 2 GPU` 全部正常（sm89 不触发 §12 的 Blackwell sm120 flashinfer bug）。
+- 本轮仅修订部署文档，未改代码、未生成性能数据。

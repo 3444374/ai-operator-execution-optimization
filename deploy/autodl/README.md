@@ -109,6 +109,13 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple \
   numpy "pyarrow>=16,<25" ray "psycopg[binary]>=3.2" daft sqlglot connectorx transformers
 ```
 
+### 4.3.1 推荐 uv + 独立 venv(2026-07-27 4090 实测)
+上面 §4.3 把 vllm 装进 base,可行但有两个更优做法(本节实测):
+- **用 uv 替代 pip**:`pip install -U uv` 后 `uv pip install vllm==0.25.1`,解析+并行下载比 plain pip 快一个量级(4090 上约 5 分钟 vs pip 30+ 分钟)。
+- **vllm 装独立 venv,不进 base**:base 留给 driver(ray/daft/psycopg/transformers + 镜像自带 torch);vllm 单独放 `/root/autodl-tmp/venvs/vllm-4090`,两者 torch 互不污染(镜像 base 自带 torch 2.12.1+cu130,vllm 0.25.1 要 torch 2.11.0,分开避免覆盖)。`vllm serve` 用 venv 的 python 启动。
+- **缓存必须放数据盘**:`export UV_CACHE_DIR=/root/autodl-tmp/uv-cache HF_HOME=/root/autodl-tmp/huggingface`,否则 30G 系统盘易满。
+- **Python 环境**:`python -m venv /root/autodl-tmp/venvs/vllm-4090`(用 venv,不要 `conda create`,conda solver 在这套频道下会卡 repodata)。
+
 ### 4.4 pip 必须用国内镜像,但**不要**走 network_turbo
 - AutoDL 官方说明:`/etc/network_turbo` 只加速 github/huggingface,**pip 源保持默认/用常规镜像**——不要给 pip 设 `https_proxy=172.20.0.113:12798`。
 - 直连 PyPI 极慢(~200 kB/s),所以用**清华镜像** `-i https://pypi.tuna.tsinghua.edu.cn/simple`(实测稳定 ~1 MB/s)。
@@ -175,21 +182,21 @@ install -d /usr/share/postgresql-common/pgdg
 curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
   -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
 echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
-  https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+  https://apt.postgresql.org/pub/repos/apt jammy-pgdg main" \
   > /etc/apt/sources.list.d/pgdg.list
 apt-get update
-apt-get install -y postgresql-16 postgresql-16-pgvector
+apt-get install -y postgresql-18 postgresql-18-pgvector
 ```
 起服务 + 建库:
 ```bash
-pg_ctlcluster 16 main start 2>/dev/null || service postgresql start
+pg_ctlcluster 18 main start 2>/dev/null || service postgresql start
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
 sudo -u postgres psql -c "CREATE DATABASE ai_operator;"
 sudo -u postgres psql -d ai_operator -c "CREATE EXTENSION IF NOT EXISTS vector;"
 ```
 连接串:`postgresql://postgres:postgres@localhost:5432/ai_operator`。
 
-**版本边界**:云上 PG16 ≠ 本机 PG18.4 Docker ≠ 公司 PG18.3 平台。CSV 记 `server_version`,报告标注。
+**版本边界**:云上 **PG 18.4(apt)≈ 本机 PG 18.4(Docker)**(对齐,仅安装方式不同);公司平台为 18.3,二者不等同。CSV 记 `server_version`,报告标注。(2026-07-27 由 PG16 改为 PG18.4,与本地 baseline 对齐;原 PG16 是保守默认,已废弃。)
 
 ---
 
@@ -296,6 +303,7 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 | HF CLI 改名 | `huggingface-cli download` 只打印 help 不下载 | huggingface_hub 1.x CLI 是 `hf`;或直接用 Python `snapshot_download` |
 | 下载带宽竞争 | pip + wget 同时跑,单跑 10 MB/s → 双跑降到 300 kB/s | 大文件串行(先 pip 后模型,或反之) |
 | `rm -rf` 删项目目录 | 连带删掉 gitignored 的 `data/raw/`(并行操作者正在下载) | rm -rf 前先检查 gitignored 目录;多会话/多人先分工 |
+| `$(lsb_release -cs)` 为空 | repo 行变 `apt -pgdg`,报 "does not have a Release file" | 硬编码 `jammy`(Ubuntu 22.04);别依赖 lsb_release 已装/在 PATH |
 | **Blackwell(sm120)卡** | flashinfer `sm75` 报错 + CUDA12/13 库混 + quack/cutlass API 不匹配,连环失败 | **换非 Blackwell 卡(4090/A100/3090)或用官方 Docker**;详见 §12 |
 
 ---
@@ -307,7 +315,7 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 - **平台**:AutoDL 云服务器,2× GPU(**非 Blackwell**,如 RTX 4090 sm89;**不要用 50xx/6000D 等 sm120 卡,见 §12**),Ubuntu 22.04。
 - **Python 环境**:miniconda3,Python 3.12.3。
 - **vLLM**:0.25.1(pip 安装,torch 2.11.0 manylinux)。本机为 0.25.1 Docker(cu129)。CUDA patch 不同,vLLM 版本对齐。
-- **PostgreSQL**:16 + pgvector(apt 装于 AutoDL)。本机为 18.4 Docker;公司平台为 18.3。三者不等同。
+- **PostgreSQL**:18.4 + pgvector(apt 装于 AutoDL),**与本机 18.4 Docker 对齐**;公司平台为 18.3,二者不等同。
 - **GPU 架构与可比性**:云上非 Blackwell(如 4090 sm89)≠ 本机 RTX 5070(sm120)。**软件栈版本可比,硬件不可比**——单请求延迟、kernel 吞吐、batch 扩展曲线、显存带宽、双卡扩展效率都受架构影响。正式 baseline / 消融 / 优化方案**全部在同一台 2×4090 上重跑**;本机 5070 只用于开发与功能验证,**不拿 5070 结果和 4090 结果直接算优化比例**。研究变量(batch / task-actor 粒度 / in-flight / endpoint routing / fan-in / writeback)与 GPU 架构正交,实验结论仍成立。
 - 每条 CSV 记录 `server_version` 与 `pgvector_version`(项目硬性规则,见根 `AGENTS.md` §5)。
 
