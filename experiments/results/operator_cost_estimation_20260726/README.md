@@ -129,7 +129,7 @@ R² 0.776 暗示排序能力大概率不错（回归好通常排序也好），�
 ## 后续工作
 
 以下按优先级排列，每项标注对应的文献设计模式（详见
-`research/knowledge_hub.md` §5.7-§5.8）。完整的 14 个设计模式总览
+`research/knowledge_hub.md` §5.7-§5.9）。完整的 15 个设计模式总览
 和优先级矩阵见该文档。
 
 ### 第一批（短期，1-2 轮即可落地）
@@ -146,7 +146,17 @@ R² 0.776 暗示排序能力大概率不错（回归好通常排序也好），�
    Ridge。预期效果：降低跨 seed MAPE 波动（当前 30-90%），改善 R²。
    本质是让 Ridge 学"传统公式无法解释的偏差"而非从头学整个 E2E 函数。
 
-3. **轻/中/重分档验证**（模式 13：Workload 分类 | SPOS, Heinrich R3）。
+3. **Output-Length 预测器**（模式 15：Output-Length Predictor |
+   SFS §3.4, GRACEFUL §IV.C）。
+   当前 Ridge 以 `completion_max_tokens`（用户设定的输出上限）作为
+   特征——但实际 E2E 高度依赖于真实输出 token 数（自然 EOS 位置），
+   而非上限。SFS 证明用 LightGBM 从 prompt 特征预测实际输出长度是
+   可行的（MAPE <5% on output length）。实现方式：离线训练一个
+   LightGBM（输入 prompt 特征→输出实际 output tokens），推理时作为
+   第 17 个特征输入 Ridge。已有 283 行 profile 包含每行的实际输出
+   token 数作为 ground truth，无需重新 profile。
+
+4. **轻/中/重分档验证**（模式 13：Workload 分类 | SPOS, Heinrich R3）。
    用已有 283 行 profile 评估：按预测 E2E 将配置分为轻/中/重三档，
    同档内真实 E2E 方差是否显著小于全局？这决定了代价估计能否作为
    提交侧的粗粒度 workload 分类器（不追求精确点估计，而是可靠的
@@ -154,42 +164,67 @@ R² 0.776 暗示排序能力大概率不错（回归好通常排序也好），�
 
 ### 第二批（中期，需改动 profile pipeline）
 
-4. **预测区间**（模式 4：不确定性门控 | Microsoft Patent, Heinrich R3）。
+5. **预测区间**（模式 4：不确定性门控 | Microsoft Patent, Heinrich R3）。
    编排决策不应只靠点估计，需要输出保守上界或预测区间。可用
    bootstrap residual 估计（训练集残差经验分布作为预测区间）实现。
 
-5. **多代价指标联合输出**（模式 7：多指标输出 | COSTREAM）。
+6. **多代价指标联合输出**（模式 7：多指标输出 | COSTREAM）。
    同时预测 `tokens/s` 和 `service_p99`（当前只预测 `e2e_s`）。
    实现方式：多个独立 Ridge 共享 15 特征，不改模型架构。
 
-6. **训练数据多样化**（模式 8：数据多样化 | Heinrich R3）。
+7. **训练数据多样化**（模式 8：数据多样化 | Heinrich R3）。
    后续 profile 中有意加入"已知慢"的配置变体（K_max 极低、
    batch size 极大等），让模型学习边界和劣化配置的代价特征。
    Heinrich 用 500 条多样化数据 fine-tune 后 LCM 首次超越 PG。
 
-7. **独立 workload/时间段留出验证**（模式 6：Transferable Features |
+8. **独立 workload/时间段留出验证**（模式 6：Transferable Features |
    COSTREAM）。用新模型或新 workload 做外推验证，评估排序退化程度。
    当前特征已是 transferable 的（物理量），理论上可泛化——需实验确认。
 
 ### 第三批（远期，多 endpoint/多 GPU 后）
 
-8. **解耦三阶段建模**（模式 5：Per-Component 建模 | CONCERTO）。
+9. **解耦三阶段建模**（模式 5：Per-Component 建模 | CONCERTO）。
    分别估计 DB fetch、vLLM prefill/decode、writeback 时间后进行
    聚合。需要 `postgres_ai_operator_profile.py` 增加 per-stage
    timing 列。
 
-9. **多粒度模型组合**（模式 3：Meta-Learner | Microsoft Patent）。
-   训练 per-workload 局部模型 + 全局模型 + meta-learner 加权。
-   当前 283 行不足以训练可靠的局部模型（某些配置组仅 2-3 行），
-   需更多 profile 数据积累后才值得做。
+10. **多粒度模型组合**（模式 3：Meta-Learner | Microsoft Patent）。
+    训练 per-workload 局部模型 + 全局模型 + meta-learner 加权。
+    当前 283 行不足以训练可靠的局部模型（某些配置组仅 2-3 行），
+    需更多 profile 数据积累后才值得做。
+
+11. **Probe Execution 数据收集**（模式 14：Probe Execution |
+    CONCERTO §III）。验证"部分执行特征 vs 完整 E2E 代价"的相关性
+    ——即是否能从前 N 个请求的 metrics 模式推断完整运行的 E2E 行为。
+    如果成立，profile 阶段可以用更少的请求量（如 200 行替代完整
+    512/2048 行）快速收集训练数据。需实验确认"partial trace"与
+    "full run"的排序一致性。
 
 ### 不纳入短期计划
 
 - **SFS What-If 预演**和 **LPS K_max 选择**（模式 10/11）属于
   提交策略（RC2）范畴，不是代价估计（RC4）的直接工作。列入
   `experiments/plans/experiment_status_and_gaps.md` 的 RC2 缺口。
+- **Token-Batch 处理时间回归**（模式 12）依赖 per-iteration vLLM
+  batch composition 信号，当前 vLLM Prometheus 粒度不足以支持，列入
+  RC2 远期探索。
 - **GNN/Transformer 升级**：6 篇文献一致确认简单模型（Ridge/
   XGBoost）在小数据上足够——当前 283 行远未达到需要 GNN 的规模。
+
+### 关于"已排除"技术的说明
+
+以下技术曾在实验中未表现出优于当前 baselines 的结果，但代码和实验
+记录均已保留，**不视为永久排除**。当前结论受限于单 GPU、单 workload
+shape、稳态到达等测试条件——在不同硬件/负载/多租户场景下可能重新体现
+出价值：
+
+| 技术 | 当前结论 | 保留位置 | 重新激活条件 |
+|------|---------|---------|------------|
+| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量（vLLM waiting=0，AIMD 盲视 Ray 侧软拥塞） | `code/src/adaptive_admission.py` | 解决软拥塞信号盲区后（逐请求 completion time 观测） |
+| Two-level queue-adaptive flush | 相对 fixed-50ms 无稳定增量（89.4% 时间选 50ms） | `code/src/queue_adaptive_flush.py` | 多 workload shape / 变长输出 / 多租户到达下重新评估 |
+| GNN/Transformer 升级 | 283 行数据远未达到需要 GNN 的规模 | 未实现（仅保留设计文档） | profile 数据增长到千级/万级行后 |
+
+以上技术的代码路径和实验 CSV 均保持可用，后续重新激活时改动量较小。
 
 ### 文献支撑索引
 
@@ -197,6 +232,7 @@ R² 0.776 暗示排序能力大概率不错（回归好通常排序也好），�
 |-----------|------------|---------|
 | 排序指标补充 | 模式 2 | Heinrich SIGMOD 2025 |
 | Hybrid 架构 | 模式 1 | Heinrich R4, Pathak & Mankodi |
+| Output-Length 预测器 | 模式 15 | SFS §3.4, GRACEFUL §IV.C |
 | 轻/中/重分档 | 模式 13 | SPOS, Heinrich R3 |
 | 预测区间 | 模式 4 | Microsoft Patent, Heinrich R3 |
 | 多指标输出 | 模式 7 | COSTREAM ICDE 2024 |
@@ -204,4 +240,5 @@ R² 0.776 暗示排序能力大概率不错（回归好通常排序也好），�
 | 跨 workload 留出 | 模式 6 | COSTREAM |
 | 解耦三阶段 | 模式 5 | CONCERTO |
 | 多粒度模型 | 模式 3 | Microsoft Patent |
+| Probe Execution | 模式 14 | CONCERTO §III |
 | 简单模型优先 | 模式 9 | Heinrich R1, Pathak & Mankodi |

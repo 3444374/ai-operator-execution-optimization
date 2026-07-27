@@ -667,3 +667,40 @@ vs E2E 范围 ~5-300s）。需做的只是定义档位阈值并验证
 - **SFS 的 accuracy-cost-latency 路由框架**：SFS 论文做 multi-model
   routing（"选哪个模型实例"），项目是 single-model admission control
   （"什么时候提交给同一个 vLLM"），决策框架不同
+
+### 跨 RC4→RC2 的辅助技术
+
+以下技术主要属于代价估计（RC4）范畴，但对提交策略（RC2）有直接辅助
+价值，在对应 README 中有详细方案：
+
+- **Output-Length 预测器**（模式 15 | `operator_cost_estimation_20260726/README.md` 第一批 #3）：
+  用 LightGBM 从 prompt 特征预测实际输出 token 数，替代 `completion_max_tokens`
+  作为 Ridge 特征。对 RC2 的价值：更准确的实际计算量估计 → 更好的
+  per-request 工作量预估 → SLO-aware flush 和 token-work admission 的
+  输入质量提升。
+- **Probe Execution**（模式 14 | `operator_cost_estimation_20260726/README.md` 第三批 #11）：
+  验证 partial execution → full E2E 的相关性，加速 profile 数据收集。
+  对 RC2 的价值：更快的 (λ, μ) 参数校准，减少 LPS K_max 选择和新
+  workload 接入的 profile 成本。
+
+---
+
+## 12. 关于"已排除"技术的状态说明（2026-07-27 审计）
+
+以下技术在 07-26 实验中未表现出优于当前 baselines 的结果，但代码和
+实验记录均已保留，**不视为永久排除**。当前结论受限于单 GPU（RTX 5070）、
+Qwen2.5-1.5B、512 行稳态 workload 等测试条件——在不同硬件/模型/负载
+/多租户场景下可能重新体现出价值：
+
+| 技术 | 当前结论 | 保留位置 | 重新激活条件 |
+|------|---------|---------|------------|
+| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量；shared-vLLM 下 vLLM waiting=0，AIMD 盲视 Ray 侧软拥塞 | `code/src/adaptive_admission.py` | 解决软拥塞信号盲区后（逐请求 completion time 观测→可能解锁动态控制价值，见 §10.3 诊断） |
+| Two-level queue-adaptive flush | 相对 fixed-50ms 无稳定增量（89.4% 时间选 50ms，行为接近 fixed-50） | `code/src/queue_adaptive_flush.py` | 多 workload shape、变长输出、多租户到达模式下重新评估 |
+| GNN/Transformer 代价模型 | 283 行数据远未达到需要 GNN 的规模（Heinrich R1 + Pathak & Mankodi 一致结论） | 未实现（仅保留设计文档） | profile 数据增长到千级/万级行后 |
+
+**重要**：上述技术不是"被否定"，而是"在已测试条件下未优于更简单的
+baseline"。代码实现均保持可用状态，后续重新激活时改动量预计较小（主要
+是接入新观测信号或切换 workload 配置）。特别是 AIMD 自适应准入——
+§10.2 的诊断指出信号盲区是根因而非控制器参数问题，一旦
+request-level completion replenishment 提供了逐请求完成时间信号，
+动态控制的价值可能需要重新评估。

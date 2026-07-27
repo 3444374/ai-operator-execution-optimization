@@ -499,6 +499,13 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **落地难度**：🟢 低——当前 Ridge 符合此原则，保持不变即可。后续数据量增长到万级后可考虑 LightGBM
 - **gap**：无
 
+**模式 15：Output-Length 预测替代 Completion 上限**
+- **来源**：SFS §3.4（output-length predictor: LightGBM on prompt features）+ GRACEFUL §IV.C（自然 EOS 概率 ≈ 分支命中率类比）
+- **含义**：当前 Ridge 以 `completion_max_tokens`（用户设定的输出上限）作为特征——但实际 E2E 时间高度依赖于真实输出 token 数（自然 EOS 位置），而非上限。SFS 证明用一个轻量 LightGBM 从 prompt 特征预测实际输出长度是可行的。GRACEFUL 的类比：用 DB 基数估计器预测"UDF 走哪个分支"→ 本课题可用 output-length predictor 预测"请求以自然 EOS 结束还是在 max_tokens 处截断"
+- **为什么有效**：当前 283 行 profile 中许多请求的自然 EOS 远小于 `completion_max_tokens`——用上限代理高估了实际计算量。如果 Ridge 能同时看到"上限"和"预测实际输出"，排序能力可能显著改善。实现简单：离线训练一个 LightGBM（输入 prompt 特征→输出实际 output tokens），推理时作为第 16 个特征输入 Ridge
+- **落地难度**：🟢 低——已有 283 行 profile 中包含每行的实际 output token 数（可作为 ground truth），prompt 特征也已存在。只需增加一个 LightGBM 子模型 + 一个特征列
+- **gap**：当前 `completion_max_tokens` 的唯一替代；无实际输出长度的执行前估计
+
 #### 5.7.2 提交策略（RC2）设计模式
 
 **模式 10：SFS What-If 预演（Serving Framework Simulation）**
@@ -553,11 +560,11 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 ```
 
 **建议落地顺序**：
-1. **第一批**（RC4 短期）：模式 1 Hybrid + 模式 2 排序指标 + 模式 9 保持简单
+1. **第一批**（RC4 短期）：模式 1 Hybrid + 模式 2 排序指标 + 模式 15 Output-length predictor + 模式 9 保持简单
 2. **第二批**（RC4 中期）：模式 4 不确定性门控 + 模式 7 多指标输出 + 模式 8 数据多样化
 3. **第三批**（RC2 探索）：模式 13 轻/中/重分类 + 模式 11 LPS K_max 选择
 4. **第四批**（RC2 深度）：模式 10 SFS what-if 预演 + 模式 12 token-batch 回归
-5. **远期**（多 endpoint 后）：模式 5 解耦三阶段 + 模式 3 多粒度模型
+5. **远期**（多 endpoint 后）：模式 5 解耦三阶段 + 模式 3 多粒度模型 + 模式 14 Probe Execution
 
 ### 5.8 已有模式与本课题现有工作的映射
 
@@ -572,6 +579,22 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 | 不确定性输出 (多来源) | 只输出点估计 | 🟡 待补充 |
 | SFS 预演 (SFS) | queue-adaptive flush 看 queue depth | 🟡 可替代 |
 | LPS K_max 选择 (SFS) | 纯实验暴力搜索 | 🟡 可补充 |
+| Output-length predictor (SFS + GRACEFUL) | 只用 `completion_max_tokens` 作为上限代理，无实际输出长度预测 | 🟡 待补充 |
+| 结构特征：batch grouping 关系 (Pathak & Mankodi) | 15 特征中无 batch 间分组结构（length-align 的分组大小分布、prefix key 聚类效果） | 🟡 待补充 |
+| 语义特征：token 分布特征 (Pathak & Mankodi) | 无 workload token 分布的 skewness、output length 分布等统计特征 | 🟡 待补充 |
+| Probe Execution (CONCERTO) | 当前 profile 全部是完整 E2E 运行，无 partial-execution 特征推断 | 🟡 远期探索 |
+
+### 5.9 关于"已排除"技术的说明（2026-07-27 审计）
+
+以下技术曾在实验中未表现出优于当前 baselines 的结果，但代码和实验记录均已保留，**不视为永久排除**。当前结论受限于单 GPU、单 workload shape、稳态到达等测试条件——在不同硬件/负载/多租户场景下可能重新体现出价值：
+
+| 技术 | 当前结论 | 保留位置 | 重新激活条件 |
+|------|---------|---------|------------|
+| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量（07-26 shared-vLLM 实验：vLLM waiting=0，AIMD 盲视 Ray 侧软拥塞） | `code/src/adaptive_admission.py` | 解决软拥塞信号盲区后（如逐请求 completion time 观测） |
+| Two-level queue-adaptive flush | 相对 fixed-50ms 无稳定增量（89.4% 时间选 50ms，行为接近 fixed-50） | `code/src/queue_adaptive_flush.py` | 多 workload shape / 变长输出 / 多租户到达下重新评估 |
+| GNN/Transformer 升级 | 283 行数据远未达到需要 GNN 的规模（Heinrich R1 + Pathak & Mankodi 一致结论） | 未实现（仅保留设计文档） | profile 数据增长到千级/万级行后 |
+
+以上技术的代码路径和实验 CSV 均保持可用状态，后续重新激活时改动量预计较小（主要是接入新观测信号或切换 workload 配置）。
 
 ---
 
