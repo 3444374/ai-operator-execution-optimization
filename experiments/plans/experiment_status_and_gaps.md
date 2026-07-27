@@ -536,6 +536,29 @@ P99、failure、exactly-once 不退化。否则记录负结果，不增加控制
 完整机制卡、文献映射、fatal-flaw audit 和候选池见
 `literature_driven_pipeline_optimization_guide.md`。
 
+### 10.4 RC2 核心瓶颈：vLLM 内部状态不可观测（2026-07-27 集中梳理）
+
+**问题**：07-26 shared-vLLM 实验中 AIMD 0 次 decrease，根因是 vLLM
+Prometheus `waiting` 始终为 0——请求在 Ray 侧排队，尚未进入 vLLM waiting
+队列。不修改 vLLM 的前提下（AGENTS.md §1 架构约束），无法直接获取：
+
+- per-iteration token batch composition（每次 forward pass 的 prefill/decode token 组成）
+- per-request in-flight progress（请求 X 当前生成了多少 decode token、还剩多少）
+- waiting queue 内部状态（每个等待请求的 prompt length、到达顺序）
+
+**三条绕行路线**（均不修改 vLLM）：
+
+| 路线 | 核心思路 | 落地成本 | 精度 | 已文档化 |
+|---|---|---|---|---|
+| **1. 模拟替代观测** | SFS 确定性 token-batch 模拟器重建 vLLM 内部调度过程。利用"我们提交了什么 + 已完成哪些请求"两个已知信息 + 离线校准的 β 参数，模拟每个 token batch 的组成，预测 TTFT | 中（~200 行 Python + 离线 β 校准） | 高（TTFT MAPE <5%） | 模式 10 / §11 方案 A |
+| **2. 解析建模替代观测** | LPS + USL：把 vLLM 当做黑盒 queueing system。λ（到达率）已知、μ（服务率）从 Prometheus counter 差分可得 → LPS 给等待时间、USL 给吞吐退化曲线和峰值并发 | 低（所有信号已有，无需新基础设施） | 中（平均行为，无 per-request 分布） | 模式 11+16 / §11 方案 B+E |
+| **3. 客户端推断替代观测** | 用自己的 request lifecycle trace（submit time + completion time）做 EWMA：推断服务速率 `tokens/s`、推断 oldest slack = SLO − oldest age、推断 token backlog = inflight 未完成 token 量 → 作为"软拥塞"代理信号 | 低（trace 已有，~50 行 EWMA 状态） | 中（间接推断，滞后于真实状态 1-2 个请求完成周期） | §10.2 缺口表 + §10.3 推荐顺序 |
+
+**路线之间的关系**：
+- 路线 2 和 3 共享同一套外部信号（Prometheus + lifecycle trace），可以**同时启用**——路线 2 给 K_max 解析上界，路线 3 给 flush timeout 动态调节
+- 路线 1 可以**叠加**在 2+3 之上：当 2+3 的解析推断显示"当前 K 接近饱和"时，用 1 做精确的 per-request TTFT 预测来决定哪些请求立即提交、哪些等待
+- 推荐**渐进式推进**：先路线 3（零新依赖）→ 再路线 2（验证 K=8 解析依据）→ 最后路线 1（需要模拟器基础设施）
+
 ## 11. 2026-07-27 提交策略（RC2）文献驱动备选方案
 
 以下从新精读的 SFS (arXiv 2026) 及其他 5 篇代价估计论文中提取的
