@@ -24,7 +24,7 @@
 | 镜像版本 | **PyTorch 2.8.0 / Python 3.12 / Ubuntu 22.04 / CUDA 12.8** | 见 §4 版本兼容性 |
 | 数据盘 | 默认(`/root/autodl-tmp`,50GB+) | 模型+数据落这里,跨开关机保留 |
 | 文件存储 `autodl-fs` | **不开** | 付费跨实例持久化;模型重下比买存储划算 |
-| 学术资源加速 | 默认开 | `/etc/network_turbo`(见 §5) |
+| 学术资源加速 | **非自动**,每个 shell 会话需 `source /etc/network_turbo` | 加速 github/huggingface(代理 `172.20.0.113:12798`);不 source 则三源全慢(见 §5) |
 
 **开机顺序(省钱)**:先「无卡模式开机」(仅 CPU,约 ¥0.1/h)→ 下模型、装依赖、配环境 → 关机 → 「正常开机」(GPU 模式)→ 跑实验 → 跑完立刻关机。多卡按量计费烧钱快,纯 CPU 的 setup 阶段不要用 GPU 模式。
 
@@ -93,8 +93,9 @@ cd ai-operator
 
 ### 4.2 关键版本交互:vllm 0.25.1 会升级 torch
 镜像自带 `torch 2.8.0+cu128`。但 **vllm 0.25.1 要求 torch 2.11.0**,`pip install vllm==0.25.1` 会:
-- 下载 torch-2.11.0-cp312 manylinux wheel(~1GB,内含 CUDA runtime),**覆盖**镜像的 2.8.0+cu128;
-- 新 torch 跑在宿主 driver(本次为 595.71.05,R595 分支)上,向下兼容,正常工作。
+- 下载 torch-2.11.0-cp312 manylinux wheel(slim,**不含** CUDA)并拖一组 **CUDA 13.x** 的 `nvidia-*-cu13` pip wheel(nvidia-cublas 423MB、nvidia-cufft 205MB、nvidia-cusolver 118MB、nvidia-curand 57MB …合计 ~2GB),**覆盖**镜像的 torch 2.8.0+cu128 与 CUDA 12.8 libs;
+- 新 torch + CUDA 13 runtime 跑在宿主 driver(本次为 595.71.05,R595 分支)上,向下兼容,正常工作;
+- ⚠️ 实际下载量 **~2.5GB**(vllm 250MB + torch + CUDA13 libs),清华源 ~1.2 MB/s 下需 **30+ 分钟**,留足时间,别误以为卡死。
 
 这是允许的:本机 Docker 用的是 cu129 torch(为 RTX 5070 Blackwell),云上 pip 装的是标准 manylinux torch——**CUDA patch 不同,但 vLLM 行为按版本(0.25.1)对齐**。报告里标注这一差异即可(见 §11)。
 
@@ -291,6 +292,10 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 | pip 走 turbo | 违反 AutoDL 说明 | pip 不设 turbo 代理,只改 `-i` 镜像 |
 | tar 上传代码 | 不可复现、缺文件、缺同步 | **git clone from GitHub** |
 | vllm 不 pin 版本 | 装到 0.26.x 与本机不可比 | `vllm==0.25.1` |
+| torch 2.11 拖 CUDA13 libs(~2GB) | `pip install vllm` 极慢、像卡死 | 非坑,是版本链必然;留 30+ min,清华源串行下 |
+| HF CLI 改名 | `huggingface-cli download` 只打印 help 不下载 | huggingface_hub 1.x CLI 是 `hf`;或直接用 Python `snapshot_download` |
+| 下载带宽竞争 | pip + wget 同时跑,单跑 10 MB/s → 双跑降到 300 kB/s | 大文件串行(先 pip 后模型,或反之) |
+| `rm -rf` 删项目目录 | 连带删掉 gitignored 的 `data/raw/`(并行操作者正在下载) | rm -rf 前先检查 gitignored 目录;多会话/多人先分工 |
 
 ---
 

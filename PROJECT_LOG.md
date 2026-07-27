@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-07-27 部署文档补全:data/README 数据集规格 + AutoDL 踩坑表补齐
+
+- `data/README.md` 重写 Sources 小节为"Sources (exact)":修正 BurstGPT 来源为 **v2.0 release
+  asset**(`https://github.com/HPMLL/BurstGPT/releases/download/v2.0/BurstGPT_1.csv`,
+  非仓库 `data/` 树)与大小(52,283,111 字节);给出 ShareGPT/BurstGPT 直链 URL 表;
+  新增"Fetch on a fresh environment"小节,写明 raw 被 gitignore、每个环境都要重下,
+  并给出 `network_turbo + HF_HUB_DISABLE_XET` 的 wget 命令(指向 deploy/autodl/README.md)。
+- `deploy/autodl/README.md` 补三处:§1 把"学术加速默认开"改为"非自动,每次 source";
+  §4.2 补 torch 2.11.0 slim wheel 拖 CUDA13 nvidia libs(~2GB)、总下载 ~2.5GB / 30+ min
+  的说明(避免误判卡死);§10 踩坑表补 4 行(torch→CUDA13、HF CLI 改名、下载带宽竞争、
+  `rm -f` 删 gitignored data/raw 的协调教训)。
+- 同步提交 GitHub(本次 push)。
+
 ## 2026-07-27 AutoDL 云部署指南沉淀
 
 - 新增 `deploy/autodl/README.md`：把 2026-07-27 部署 AutoDL（2× RTX 6000D）的全流程
