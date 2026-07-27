@@ -110,7 +110,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678 | 固定行数是计算量的弱代理 |
 | Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171 | token-budget 能有效约束 token tail |
 | Shared-vLLM K_max 干扰：bulk unbounded 时 foreground E2E 恶化 2.3× | K_max 在共享 vLLM 下必要 |
-| Shared-vLLM 128/512 重复：AIMD 0 decrease、均值 K=15.953；相对 K16 前台 E2E +1.22%、后台 tokens/s -1.45% | 当前 AIMD 观测不到软拥塞，static K8 + fixed-50 保持默认 |
+| Shared-vLLM 128/512 重复：AIMD 0 decrease、均值 K=15.953；相对 K16 前台 E2E +1.22%、后台 tokens/s -1.45% | 当前 AIMD 盯 vLLM waiting 但信号不反映 Ray 侧积压，static K8 + fixed-50 保持默认 |
 | 自然 EOS 三组随机化复验：fixed-50 与 adaptive 相对 fixed-25 tokens/s 分别 +32.23% 与 +32.09%；adaptive vs fixed-50 -0.10% ± 4.13% | 收益来自更长 coalescing window；当前采用更简单的 fixed-50 |
 | Output-aware BFD：512 行相对同成本 sequential +12.019%，1024 行反转为 -5.156% | 数据组织收益依赖规模与 row cap；经典 BFD 只能作候选，需联合搜索 |
 | 联合候选相对独立拼接 tokens/s -0.26% ± 2.07% | 当前单 GPU 下分层独立优化已足够，没有联合在线控制器的证据 |

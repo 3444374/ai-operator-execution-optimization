@@ -65,7 +65,7 @@
    - **2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 全系列**。
    - Token-tail revision：固定行 batch=8 时 token 跨度 13.9×，batch=128 时 token P95=26678——证明固定行数是计算量的弱代理。
    - Token-budget vs Fixed Row：token_budget=6144/8192 约束 token P95 至 ~6141/8171（vs fixed 64/128 的 16377/26677），吞吐接近。
-   - Shared-vLLM K_max 干扰（07-26 复验）：static K=8 相对 K=16 将前台 E2E 降低 27.9%、P99 降低 40.0%（后台吞吐代价 27.9%）——证明 K_max 在共享 vLLM 下是必要的 guardrail。AIMD 三轮 0 次 decrease（窗口均值 15.953），与 static K=16 不可分辨。根因：vLLM waiting=0 但前台已慢 38.9%——AIMD 对 Ray 侧软拥塞盲视。
+   - Shared-vLLM K_max 干扰（07-26 复验）：static K=8 相对 K=16 将前台 E2E 降低 27.9%、P99 降低 40.0%（后台吞吐代价 27.9%）——证明 K_max 在共享 vLLM 下是必要的 guardrail。AIMD 三轮 0 次 decrease（窗口均值 15.953），与 static K=16 不可分辨。根因：vLLM waiting=0 但前台已慢 38.9%——AIMD 盯 vLLM waiting 做决策，但请求在 Ray 侧排队、waiting 始终为 0。
    - Queue-adaptive flush 已完成自然 EOS 三组随机化复验：fixed-50 与
      adaptive 相对 fixed-25 tokens/s 分别 `+32.23% ± 3.90%` 与
      `+32.09% ± 6.22%`；adaptive 相对 fixed-50

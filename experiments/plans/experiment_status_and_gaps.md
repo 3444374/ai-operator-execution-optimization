@@ -28,7 +28,7 @@ Date: 2026-07-20（最后更新：2026-07-26，补充文献驱动执行链缺口
 | Shared-vLLM K_max 干扰（2-job）| ✅ 07-19 | **K_max 在共享 vLLM 下必要**：bulk unbounded 时 foreground E2E 恶化 2.3×（4.9→11.4s），bulk 自身吞吐几乎不变 | 早期预研；已被 07-26 typed AIMD + 机制 control 复验取代 |
 | Shared-vLLM K_max Sweep + Adaptive | ✅ 07-19 | K_max=8 是最佳静态 guardrail；adaptive 触发了 downshift（102 次/run）| **❌ adaptive 不如 static K=8**（foreground E2E 10.2s vs 7.3s）；早期 adaptive 实现已被 07-26 版本取代 |
 | AIMD/EWMA-AIMD/PID 单作业 GPU 矩阵 | ✅ 07-26 | 三者相对 static K=8 快约 30–32% E2E，但都把窗口升到 K≈16 | AIMD 与 static K=16 不可分辨；未证明反馈控制增量，也未复验 shared-vLLM 前台保护 |
-| Shared-vLLM typed AIMD + adaptive flush | ✅ 07-26 | **static K8 保护前台**（E2E -27.9%、P99 -40.0% vs K16）；AIMD 0 decrease、窗口均值 15.953，与 K16 不可分辨。**根因诊断**：vLLM waiting=0 但前台已慢 38.9%——AIMD 对 Ray 侧软拥塞盲视 | 只有 128/512 双作业；flush 分支不是完整 2×2 随机化；多 foreground size/arrival offset/>2 job 均未测试 |
+| Shared-vLLM typed AIMD + adaptive flush | ✅ 07-26 | **static K8 保护前台**（E2E -27.9%、P99 -40.0% vs K16）；AIMD 0 decrease、窗口均值 15.953，与 K16 不可分辨。**根因诊断**：vLLM waiting=0 但前台已慢 38.9%——AIMD 盯着 vLLM waiting 做决策，但请求在 Ray actor 侧排队、waiting 始终为 0 | 只有 128/512 双作业；flush 分支不是完整 2×2 随机化；多 foreground size/arrival offset/>2 job 均未测试 |
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
 | **Request-level continuous replenishment** | ❌ 未做 | vLLM 内部已有 continuous batching | Ray 上游仍按 submission 回收，尚未证明逐请求完成补位能减少 HOL 或提高 SLO goodput |
 | **SLO-aware EWMA flush** | ❌ 未做 | 当前 two-level queue-adaptive 只作为真实链路 baseline | 尚未使用 oldest-request slack、服务速率、token backlog、EWMA/滞回形成完整控制律 |
@@ -39,7 +39,7 @@ Date: 2026-07-20（最后更新：2026-07-26，补充文献驱动执行链缺口
 queue-adaptive 稳定增量，因此当前单 GPU 默认采用 static K8 + fixed 50ms。
 单作业与 shared-vLLM 复验均表明 AIMD 未优于同上限 static K=16，且根因不
 是控制器参数问题——shared-vLLM 实验中 vLLM waiting 始终为 0（请求在 Ray
-侧排队），AIMD 的拥塞信号（waiting > 0 / KV usage 高）完全盲视"软拥塞"。
+侧排队），AIMD 看的拥塞信号（vLLM waiting > 0 / KV usage 高）不反映 Ray 侧积压——形成"软拥塞"，即请求在 Ray actor 侧排队但 vLLM waiting 仍显示空闲。
 不继续在当前稳态 workload 上调 PID 参数；动态控制在负载阶段变化/多租户/
 多 GPU 场景下仍是开放问题。
 
@@ -262,7 +262,7 @@ grouping 必须作为两个独立因素做显式联合消融。
 
 ### 6.1 P0 阻塞级：不解决无法写论文
 
-#### P0-1：RC2 核心策略——动态控制未证明优于最佳静态（已从"负结果"推进为"信号盲区诊断"）
+#### P0-1：RC2 核心策略——动态控制未证明优于最佳静态（已从"负结果"推进为"信号选择诊断"）
 
 **07-19 初始发现**：Shared-vLLM interference 实验：adaptive tuned 的 foreground E2E=10.2s，静态 K_max=8 的 foreground E2E=7.3s。Adaptive 触发了 102 次 downshift，控制器在运作，但效果比简单静态 guardrail 差 ~40%。
 
@@ -270,11 +270,11 @@ grouping 必须作为两个独立因素做显式联合消融。
 
 - **单作业**：AIMD/EWMA-AIMD/PID 全部迅速升到 K≈16；加入 static K=16 机制对照后，AIMD 的 E2E +0.66%、tokens/s -0.69%，差异不可分辨。三者相对 static K=8 的 ~30% E2E 改善来自"更高并发"而非"动态反馈"。
 - **Shared-vLLM 前台/后台（128/512）**：static K=8 将前台 E2E 降低 27.9%、P99 降低 40.0%（相对 K=16），确认 guardrail 价值。但 AIMD 三轮 **0 次 decrease**、774 次决策仅 12 次 increase，窗口从 8 快速升至 16 后不变（均值 15.953）。相对 K=16 前台 E2E +1.22%、P99 +1.98%、后台 tokens/s -1.45%。Adaptive flush 追加后四项变化 <0.3%。
-- **根因诊断**：AIMD 的拥塞信号（vLLM waiting > 0 / KV usage 高）在 shared-vLLM 场景下完全盲视——前台延迟已恶化 38.9%，但 vLLM `waiting` 始终为 0（请求在 Ray 侧排队，尚未进入 vLLM waiting 队列）。控制器观测不到"软拥塞"，自然不会降载。这不是控制器参数问题，是**观测信号的表达能力不足**。
+- **根因诊断**：AIMD 的拥塞信号（vLLM waiting > 0 / KV usage 高）在 shared-vLLM 场景下完全看不到（vLLM waiting=0 但请求已在 Ray 侧积压）——前台延迟已恶化 38.9%，但 vLLM `waiting` 始终为 0（请求在 Ray 侧排队，尚未进入 vLLM waiting 队列）。控制器观测不到"软拥塞"，自然不会降载。这不是控制器参数问题，是**观测信号的表达能力不足**。
 
 **影响**：研究内容二可以 claim "K_max admission control 在共享 vLLM 下是必要的 guardrail"（✅ 强证据），但不能 claim "自适应提交控制是有效的"。当前默认使用 static K=8 + fixed 50ms。
 
-**演进判断**：变长 output（自然 EOS 上限 512）已纳入 07-26 实验，排除了固定 output 混淆变量。不再继续在稳态 workload 上调 AIMD/EWMA/PID 参数。若继续动态控制方向，必须解决信号盲区——候选路径包括逐请求完成时间（request-level replenishment 的副产品）或端到端 SLO slack 作为反馈信号。
+**演进判断**：变长 output（自然 EOS 上限 512）已纳入 07-26 实验，排除了固定 output 混淆变量。不再继续在稳态 workload 上调 AIMD/EWMA/PID 参数。若继续动态控制方向，必须改用反映 Ray 侧积压的信号——候选路径包括逐请求完成时间（request-level replenishment 的副产品）或端到端 SLO slack 作为反馈信号。
 
 **放弃条件**（已触发，但结论从"负结果"变为"边界条件"）：动态控制器在稳态 workload 的三种独立实现均未优于最佳静态上限。论文可诚实 framing 为"在稳态 workload 下简单静态 guardrail 足够；负载阶段变化/多租户/多 GPU 下的动态控制仍是开放问题"，而非回避或强行包装为正面结果。
 
@@ -482,8 +482,8 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 2. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
 3. prefix cache-on、多模态复用、多 endpoint/多 GPU；
 4. shared-vLLM 的多 foreground size、arrival offset 和多 job 公平性；
-5. 动态控制的软拥塞信号问题——逐请求完成时间或端到端 SLO slack 可能填补
-   当前 vLLM Prometheus 信号盲区，但尚未验证。
+5. 动态控制的信号选择问题——逐请求完成时间或端到端 SLO slack 可能替代
+   当前 vLLM waiting 信号（不反映 Ray 侧积压），但尚未验证。
 
 原始数据与七步解释见：
 
@@ -514,11 +514,11 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 | Completion-span/HOL 观测 | 有 request/submission join key | 记录同 submission 首末完成跨度和 credit idle |
 | Endpoint-local controller | topology/接口具备 | 两个真实 endpoint 后验证独立状态与回退 |
 
-**2026-07-27 shared-vLLM 信号盲区诊断补充**：shared-vLLM 实验中 AIMD 0 次
+**2026-07-27 shared-vLLM 信号选择诊断补充**：shared-vLLM 实验中 AIMD 0 次
 decrease 的根因不是控制器参数问题，而是 vLLM Prometheus `waiting` 始终为 0
 （请求在 Ray 侧排队，尚未进入 vLLM waiting 队列），当前观测信号无法识别
 "软拥塞"。Completion-span/HOL 观测和 request-level replenishment 的副产品——
-逐请求完成时间——可能提供当前缺失的软拥塞信号，使动态控制真正有价值。这
+逐请求完成时间——可作为反映 Ray 侧积压的信号，使动态控制真正有价值。这
 将 request-level replenishment 的优先级从"工程改进"提升为"可能解锁动态控制
 价值的必要前置"。
 
@@ -536,28 +536,32 @@ P99、failure、exactly-once 不退化。否则记录负结果，不增加控制
 完整机制卡、文献映射、fatal-flaw audit 和候选池见
 `literature_driven_pipeline_optimization_guide.md`。
 
-### 10.4 RC2 核心瓶颈：vLLM 内部状态不可观测（2026-07-27 集中梳理）
+### 10.4 RC2 核心瓶颈：AIMD 选错了观测信号（2026-07-27 集中梳理）
 
-**问题**：07-26 shared-vLLM 实验中 AIMD 0 次 decrease，根因是 vLLM
-Prometheus `waiting` 始终为 0——请求在 Ray 侧排队，尚未进入 vLLM waiting
-队列。不修改 vLLM 的前提下（AGENTS.md §1 架构约束），无法直接获取：
+**问题**：07-26 shared-vLLM 实验中 AIMD 0 次 decrease，根因是 AIMD 盯着
+vLLM Prometheus `vllm:num_requests_waiting` 做决策——但请求在 Ray actor
+侧排队，尚未进入 vLLM waiting queue，该信号始终为 0。vLLM 本身暴露了
+完整的 Prometheus 指标（`num_requests_running`、`gpu_cache_usage_perc`、
+`generation_tokens_total` 等），不需要修改即可获取。问题不在"拿不到信号"，而
+在 **AIMD 选了不反映 Ray 侧排队状态的信号**。
 
-- per-iteration token batch composition（每次 forward pass 的 prefill/decode token 组成）
-- per-request in-flight progress（请求 X 当前生成了多少 decode token、还剩多少）
-- waiting queue 内部状态（每个等待请求的 prompt length、到达顺序）
+真正需要但 vLLM 不暴露的细粒度信息（无论是否修改 vLLM 都拿不到）：
 
-**三条绕行路线**（均不修改 vLLM）：
+- per-iteration token batch composition（每次 forward pass 的具体 prefill/decode token 组成）
+- per-request in-flight progress（请求 X 当前已生成多少 decode token）
 
-| 路线 | 核心思路 | 落地成本 | 精度 | 已文档化 |
+**三种使用已有 vLLM Prometheus 信号做提交决策的方式**（均不需要修改 vLLM）：
+
+| 方式 | 核心思路 | 落地成本 | 精度 | 已文档化 |
 |---|---|---|---|---|
-| **1. 模拟替代观测** | SFS 确定性 token-batch 模拟器重建 vLLM 内部调度过程。利用"我们提交了什么 + 已完成哪些请求"两个已知信息 + 离线校准的 β 参数，模拟每个 token batch 的组成，预测 TTFT | 中（~200 行 Python + 离线 β 校准） | 高（TTFT MAPE <5%） | 模式 10 / §11 方案 A |
-| **2. 解析建模替代观测** | LPS + USL：把 vLLM 当做黑盒 queueing system。λ（到达率）已知、μ（服务率）从 Prometheus counter 差分可得 → LPS 给等待时间、USL 给吞吐退化曲线和峰值并发 | 低（所有信号已有，无需新基础设施） | 中（平均行为，无 per-request 分布） | 模式 11+16 / §11 方案 B+E |
-| **3. 客户端推断替代观测** | 用自己的 request lifecycle trace（submit time + completion time）做 EWMA：推断服务速率 `tokens/s`、推断 oldest slack = SLO − oldest age、推断 token backlog = inflight 未完成 token 量 → 作为"软拥塞"代理信号 | 低（trace 已有，~50 行 EWMA 状态） | 中（间接推断，滞后于真实状态 1-2 个请求完成周期） | §10.2 缺口表 + §10.3 推荐顺序 |
+| **1. 模拟器模拟 vLLM 内部调度** | SFS 确定性 token-batch 模拟器重建 vLLM 内部调度过程。利用"我们提交了什么 + vLLM Prometheus running count + 离线校准的 β 参数"，模拟每个 token batch 的组成，预测 TTFT | 中（~200 行 Python + 离线 β 校准） | 高（TTFT MAPE <5%） | 模式 10 / §11 方案 A |
+| **2. 解析模型估计系统能力** | LPS + USL：Prometheus `generation_tokens_total` 差分 → μ（服务率），arrival config → λ（到达率）。LPS 给等待时间、USL 给吞吐退化曲线和峰值并发 | 低（所有信号已有，无需新基础设施） | 中（平均行为，无 per-request 分布） | 模式 11+16 / §11 方案 B+E |
+| **3. 客户端推断积压状态** | 用自己的 request lifecycle trace（submit + completion time）+ vLLM Prometheus gauge 做 EWMA：推断当前服务速率、oldest request slack、inflight token backlog——这些 Ray 侧信号才真正反映"软拥塞" | 低（trace + Prometheus 已有，~50 行 EWMA 状态） | 中（间接推断，滞后 1-2 个请求完成周期） | §10.2 缺口表 + §10.3 推荐顺序 |
 
-**路线之间的关系**：
-- 路线 2 和 3 共享同一套外部信号（Prometheus + lifecycle trace），可以**同时启用**——路线 2 给 K_max 解析上界，路线 3 给 flush timeout 动态调节
-- 路线 1 可以**叠加**在 2+3 之上：当 2+3 的解析推断显示"当前 K 接近饱和"时，用 1 做精确的 per-request TTFT 预测来决定哪些请求立即提交、哪些等待
-- 推荐**渐进式推进**：先路线 3（零新依赖）→ 再路线 2（验证 K=8 解析依据）→ 最后路线 1（需要模拟器基础设施）
+**三种方式之间的关系**：
+- 方式 2 和 3 共享同一套外部信号（Prometheus + lifecycle trace），可以**同时启用**——方式 2 给 K_max 解析上界，方式 3 给 flush timeout 动态调节
+- 方式 1 可以**叠加**在 2+3 之上：当 2+3 的解析推断显示"当前接近饱和"时，用 1 做精确的 per-request TTFT 预测来决定哪些请求立即提交、哪些等待
+- 推荐**渐进式推进**：先方式 3（零新依赖）→ 再方式 2（验证 K=8 解析依据）→ 最后方式 1（需要模拟器基础设施）
 
 ## 11. 2026-07-27 提交策略（RC2）文献驱动备选方案
 
@@ -760,7 +764,7 @@ Credit-based admission 退化为 FIFO，与当前方案等价——不值得额�
 |--------------|------------|---------|
 | request-level continuous replenishment | 方案 D（分档提交）+ 方案 G（Credit-Based） | 分档/credit 决定"哪些请求可以立即补位" |
 | SLO-aware EWMA flush | 方案 A（SFS 预演）+ 方案 F（Deadband） | Deadband 消振 + SFS 提供 per-request TTFT |
-| 软拥塞信号盲区 | 方案 A + C + 方案 F | 双信号架构的第二信号可选逐请求完成时间 |
+| 软拥塞（Ray 侧积压 vLLM 不可见） | 方案 A + C + 方案 F | 双信号架构的第二信号可选逐请求完成时间 |
 | K_max 选择 | 方案 B（LPS）+ 方案 E（USL） | LPS 等待时间 + USL 吞吐退化，联合推导 |
 
 ### 不纳入 RC2 的方案
@@ -797,13 +801,13 @@ Qwen2.5-1.5B、512 行稳态 workload 等测试条件——在不同硬件/模�
 
 | 技术 | 当前结论 | 保留位置 | 重新激活条件 |
 |------|---------|---------|------------|
-| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量；shared-vLLM 下 vLLM waiting=0，AIMD 盲视 Ray 侧软拥塞 | `code/src/adaptive_admission.py` | 解决软拥塞信号盲区后（逐请求 completion time 观测→可能解锁动态控制价值，见 §10.3 诊断） |
+| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量；shared-vLLM 下 vLLM waiting=0，AIMD 看的信号不反映 Ray 侧积压 | `code/src/adaptive_admission.py` | 改用反映 Ray 侧积压的信号后（逐请求 completion time 观测→可能解锁动态控制价值，见 §10.3 诊断） |
 | Two-level queue-adaptive flush | 相对 fixed-50ms 无稳定增量（89.4% 时间选 50ms，行为接近 fixed-50） | `code/src/queue_adaptive_flush.py` | 多 workload shape、变长输出、多租户到达模式下重新评估 |
 | GNN/Transformer 代价模型 | 283 行数据远未达到需要 GNN 的规模（Heinrich R1 + Pathak & Mankodi 一致结论） | 未实现（仅保留设计文档） | profile 数据增长到千级/万级行后 |
 
 **重要**：上述技术不是"被否定"，而是"在已测试条件下未优于更简单的
 baseline"。代码实现均保持可用状态，后续重新激活时改动量预计较小（主要
 是接入新观测信号或切换 workload 配置）。特别是 AIMD 自适应准入——
-§10.2 的诊断指出信号盲区是根因而非控制器参数问题，一旦
+§10.2 的诊断指出选错信号是根因而非控制器参数问题，一旦
 request-level completion replenishment 提供了逐请求完成时间信号，
 动态控制的价值可能需要重新评估。

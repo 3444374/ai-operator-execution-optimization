@@ -1643,7 +1643,7 @@
 - 对 07-26 shared-vLLM typed AIMD + adaptive flush 实验（128 前台 / 512 后台）
   做完整审查，补全此前在 `experiment_status_and_gaps.md` 中遗漏的关键诊断：
   AIMD 三轮 0 次 decrease 的根因是 vLLM `waiting` 始终为 0——请求在 Ray 侧排队
-  形成"软拥塞"，而 AIMD 的拥塞信号（waiting > 0 / KV usage 高）完全盲视。
+  形成"软拥塞"（请求在 Ray 侧排队但 vLLM waiting=0），而 AIMD 盯的拥塞信号（waiting > 0 / KV usage 高）不反映此状态。
   前台已慢 38.9%，控制器观测不到任何异常。
 - 更新 `experiment_status_and_gaps.md`：
   - §1.2 表：Shared-vLLM 07-19 行标注为"已被 07-26 取代"；07-26 行补全

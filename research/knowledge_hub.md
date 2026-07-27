@@ -616,7 +616,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 | 技术 | 当前结论 | 保留位置 | 重新激活条件 |
 |------|---------|---------|------------|
-| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量（07-26 shared-vLLM 实验：vLLM waiting=0，AIMD 盲视 Ray 侧软拥塞） | `code/src/adaptive_admission.py` | 解决软拥塞信号盲区后（如逐请求 completion time 观测） |
+| AIMD/EWMA-AIMD/PID 自适应准入 | 相对 static K=16 无增量（07-26 shared-vLLM 实验：vLLM waiting=0，AIMD 盯 vLLM waiting 做决策（请求在 Ray 侧排队、waiting 始终为 0） | `code/src/adaptive_admission.py` | 改用反映 Ray 侧积压的信号后（如逐请求 completion time 观测） |
 | Two-level queue-adaptive flush | 相对 fixed-50ms 无稳定增量（89.4% 时间选 50ms，行为接近 fixed-50） | `code/src/queue_adaptive_flush.py` | 多 workload shape / 变长输出 / 多租户到达下重新评估 |
 | GNN/Transformer 升级 | 283 行数据远未达到需要 GNN 的规模（Heinrich R1 + Pathak & Mankodi 一致结论） | 未实现（仅保留设计文档） | profile 数据增长到千级/万级行后 |
 
