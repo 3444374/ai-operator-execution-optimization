@@ -536,6 +536,27 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **落地难度**：🟢 低——当前 Ridge 可能已有足够排序能力做分档（MAE 11.68s vs E2E 范围 ~5-300s），只需定义档位阈值并验证同档内真实 E2E 方差是否显著小于全局
 - **gap**：需在 profile 数据上验证分档效果
 
+**模式 16：USL 并发-吞吐估计（Universal Scalability Law）**
+- **来源**：SABER (arXiv 2025, §IV.B Step 2) — USL 拟合 LLM 推理 per-request 速度退化曲线，R²=0.99
+- **含义**：USL `σ(N) = λN / (1 + σ(N-1) + κN(N-1))` 从约 1000 个 (并发, 吞吐) 采样点拟合出完整的并发-吞吐退化曲线。峰值并发 `N* = √((1-σ)/κ)` 给出了"再多发也没用"的解析上界。与模式 11（LPS 等待时间估计）互补：LPS 建模等待时间随并发的变化，USL 建模吞吐随并发的退化——两者共同提供 K_max 选择的完整解析依据
+- **为什么有效**：SABER 实验证明 USL 在 LLM 推理场景下拟合优度远超线性/Logistic 回归（R²=0.99 vs 0.97/0.91）。~1000 个采样点足以稳定估计 σ/κ。当前项目 K=8 是暴力扫参得来——如果 USL 拟合后 N* ≈ 8，经验值有理论支撑；如果偏差大，说明 vLLM 的 KV cache 抢占退化机制不服从 USL 的平滑退化假设——两种结果都有论文价值
+- **落地难度**：🟡 中——需离线跑一次 concurrency sweep（K=1,2,4,8,16,32,64）采集 (L, throughput) 数据点，scipy curve_fit 即可。约一天工作量，不依赖在线信号
+- **gap**：当前 K_max 选择纯实验暴力搜索；USL 在 vLLM continuous batching + KV cache 抢占下的适用性未经检验
+
+**模式 17：双信号 Deadband 控制架构**
+- **来源**：CONCUR (arXiv 2026, §4.3 Eq 1) — proactive（U_t KV cache 使用率）+ reactive（H_t 命中率）双信号，deadband 宽度 0.3
+- **含义**：不用单一信号驱动自适应决策——使用两个独立信号（proactive 预警 + reactive 确认），仅在两者同时越界且变化幅度超出 deadband 时才触发动作。核心价值在于**防止控制器振荡**——单信号 + 无 deadband 会对瞬时噪声过敏，导致频繁 upshift/downshift
+- **为什么直接回应项目已知问题**：项目 07-19 early adaptive 实验触发 102 次 downshift/run——正是单信号（queue depth）+ 无 deadband 的典型振荡症状。当前 queue-adaptive flush 也是看 queue depth 一个信号做 25ms/50ms 二元决策。双信号架构下可以是 (queue_depth, oldest_request_age) 或 (token_backlog, arrival/service_ratio)——两个信号同时"说该发了"才缩减 timeout，且变化量不够 deadband 就不动作
+- **落地难度**：🟡 中——控制架构改动 ~50 行，需选定第二信号并调 deadband 参数（CONCUR 的经验值 0.3 可作为起点）
+- **gap**：当前所有自适应控制器（AIMD/PID/EWMA/queue-adaptive flush）均使用单一信号 + 无 deadband，振荡问题在 07-19 实验中已暴露但未被架构层面解决
+
+**模式 18：Credit-Based Admission（按 SLO 紧松度差异化准入）**
+- **来源**：SCORPIO (arXiv 2025, §3.4) — TRP (Token Rate Proportional) credit accumulation + VBS (Virtual Batch Size) admission
+- **含义**：不设全局 K_max——每个请求按自己的 SLO 紧松度获得不同的 credit 累积速率 TRP(r) = min S_TP / S_TP(r)（SLO 越紧 credit 越快），credit ≥ 1.0 时准入。这等价于"按 SLO 紧迫度加权的自适应并发控制"：紧 SLO 的请求更快被放行（不被大 batch 拖累），松 SLO 的请求在 credit 慢速积累中自然合并（摊销 overhead）。准入判据：VBS = Σ TRP(r)，EstimatedTPOT(VBS) ≤ min S_TP 才放行
+- **为什么与现有模式不同**：模式 10（SFS what-if）和 11（LPS）都是从系统能力出发判断"能发多少"——这是 supply-side 视角。Credit-based admission 从请求的 SLO 需求出发判断"该不该发"——这是 demand-side 视角，且天然实现了请求间的公平性（不是 FIFO，不是 shortest-job-first，而是 deadline-aware proportional fairness）
+- **落地难度**：🟡 中——需为每个请求定义 SLO target 和 TRP 速率。在当前批量离线场景（SLO 同质、无 per-request deadline）下退化为均匀 credit 累积（= FIFO）；只有当存在 SLO 异构性时（如混合 workload、多模态请求混跑、在线+离线混合）才体现区分度
+- **gap**：当前 K_max 为全局固定值，不区分请求紧迫度；无 per-request deadline 的 tracking 基础设施
+
 #### 5.7.3 跨场景通用模式
 
 **模式 14：Probe Execution 数据收集策略**
@@ -551,19 +572,21 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 收益 ↓          低（1-2轮可做）        中（需改动 pipeline）     高（需新基础设施）
 高              模式1 Hybrid架构        模式5 解耦三阶段          模式10 SFS预演
                 模式2 排序优先评估      模式4 不确定性门控
-                模式9 简单模型优先
+                模式9 简单模型优先      模式17 双信号Deadband
+                模式15 Output-Length
 中              模式6 Transferable      模式3 多粒度模型          模式12 Batch时间回归
                 模式13 轻/中/重分类     模式7 多指标输出
-                                       模式8 数据多样化
+                模式18 Credit-Based     模式8 数据多样化
                                        模式11 LPS模型
                                        模式14 Probe Execution
+                                       模式16 USL估计
 ```
 
 **建议落地顺序**：
 1. **第一批**（RC4 短期）：模式 1 Hybrid + 模式 2 排序指标 + 模式 15 Output-length predictor + 模式 9 保持简单
 2. **第二批**（RC4 中期）：模式 4 不确定性门控 + 模式 7 多指标输出 + 模式 8 数据多样化
-3. **第三批**（RC2 探索）：模式 13 轻/中/重分类 + 模式 11 LPS K_max 选择
-4. **第四批**（RC2 深度）：模式 10 SFS what-if 预演 + 模式 12 token-batch 回归
+3. **第三批**（RC2 探索）：模式 13 轻/中/重分类 + 模式 11 LPS K_max 选择 + 模式 16 USL 并发估计 + 模式 17 双信号 Deadband
+4. **第四批**（RC2 深度）：模式 10 SFS what-if 预演 + 模式 12 token-batch 回归 + 模式 18 Credit-Based Admission
 5. **远期**（多 endpoint 后）：模式 5 解耦三阶段 + 模式 3 多粒度模型 + 模式 14 Probe Execution
 
 ### 5.8 已有模式与本课题现有工作的映射
@@ -583,6 +606,9 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 | 结构特征：batch grouping 关系 (Pathak & Mankodi) | 15 特征中无 batch 间分组结构（length-align 的分组大小分布、prefix key 聚类效果） | 🟡 待补充 |
 | 语义特征：token 分布特征 (Pathak & Mankodi) | 无 workload token 分布的 skewness、output length 分布等统计特征 | 🟡 待补充 |
 | Probe Execution (CONCERTO) | 当前 profile 全部是完整 E2E 运行，无 partial-execution 特征推断 | 🟡 远期探索 |
+| USL 并发估计 (SABER) | K_max 选择纯实验暴力搜索，无解析并发-吞吐退化曲线 | 🟡 待补充 |
+| 双信号 Deadband (CONCUR) | 所有自适应控制器使用单一信号 + 无 deadband，振荡问题已在 07-19 暴露 | 🟡 待补充 |
+| Credit-Based Admission (SCORPIO) | K_max 为全局固定值，不区分请求 SLO 紧松度 | 🟡 远期（需 SLO 异构场景） |
 
 ### 5.9 关于"已排除"技术的说明（2026-07-27 审计）
 

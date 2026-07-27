@@ -636,29 +636,109 @@ attention ∝ prefill_chunk·context + prefill²）
 **落地难度**：低——当前 Ridge 可能已有足够排序能力做分档（MAE 11.68s
 vs E2E 范围 ~5-300s）。需做的只是定义档位阈值并验证
 
+### 方案 E：USL 并发-吞吐估计（模式 16）
+
+**来源**：SABER (arXiv 2025, §IV.B) — USL 拟合 LLM 推理 per-request
+速度退化曲线，R²=0.99
+
+**核心思路**：USL `σ(N) = λN / (1 + σ(N-1) + κN(N-1))` 从 concurrency
+sweep 数据（K=1,2,4,8,16,32,64）拟合出完整并发-吞吐退化曲线。峰值并发
+`N* = √((1-σ)/κ)` 给出"再多发也没用"的解析上界。
+
+**与当前方案的关系**：
+- 当前：K=8 来自实验暴力搜索（"对比 K=8/16/32 选最好的"）
+- 升级后：USL 给出解析 K_max 上界，与经验值互相校验——一致则经验值
+  有理论支撑，不一致则说明 vLLM KV cache 抢占机制不服从 USL 平滑退化
+  假设（同样有论文价值）
+- 与方案 B（LPS）互补：LPS 建模等待时间随并发变化，USL 建模吞吐随
+  并发退化——两者共同提供 K_max 的完整解析依据
+
+**预期效果**：为 K_max 选择提供理论支撑，减少对暴力扫参的依赖
+
+**风险评估**：USL 假设平滑二次退化（σ(N-1) 争用项 + κN(N-1) 一致性项），
+vLLM 的 KV cache 抢占是不连续的阶跃退化——USL 可能只在"内存未耗尽"
+区间拟合良好。SABER 代码未开源（仅方法论可迁移），~1000 采样点需在
+本地重新采集
+
+### 方案 F：双信号 Deadband 控制架构（模式 17）
+
+**来源**：CONCUR (arXiv 2026, §4.3) — proactive + reactive 双信号 +
+deadband 宽度 0.3
+
+**核心思路**：不用单一信号驱动自适应——用两个独立信号（如 proactive
+预警信号 + reactive 确认信号），仅在两者同时越界且变化幅度超出 deadband
+时才触发动作。核心价值在于防止控制器振荡。
+
+**与当前方案的关系**：
+- 当前：queue-adaptive flush 看 queue depth 一个信号 → 25ms/50ms 二元；
+  AIMD 控制器用单一信号 → 102 次 downshift/run 振荡（07-19 实验）
+- 升级后：双信号（如 queue_depth + oldest_request_age 或 token_backlog
+  + arrival/service_ratio）+ deadband（如 30%）——两个信号同时"说该
+  发了"才改 timeout，变化量不够 deadband 不动作
+
+**预期效果**：消除或大幅减少控制器振荡，使自适应 flush 在稳态 workload
+下行为接近最优静态（fixed-50），在负载变化时及时切换
+
+**风险评估**：需选定第二信号并调 deadband 参数。CONCUR 的双信号
+（U_t KV cache 使用率 + H_t 命中率）是针对 agentic KV cache 抖动的，
+数据库 AI 算子的"第二信号"需要独立选择。如果所选信号对不独立
+（高度相关），退化为单信号 + 死区——仍有改善但不如双信号
+
+### 方案 G：Credit-Based Admission（模式 18）
+
+**来源**：SCORPIO (arXiv 2025, §3.4) — TRP credit accumulation +
+VBS admission control
+
+**核心思路**：不设全局 K_max——每个请求按 SLO 紧松度获得不同 credit
+累积速率 TRP(r) = min S_TP / S_TP(r)，credit ≥ 1.0 时准入。紧 SLO
+请求更快被放行（不被大 batch 拖累），松 SLO 请求在 credit 慢速累积中
+自然合并（摊销 overhead）。
+
+**与当前方案的关系**：
+- 当前：K_max 是全局固定值，所有请求不分紧迫度按 FIFO 顺序提交
+- 升级后：per-request deadline tracking + credit accumulation →
+  "该不该发"由请求的 SLO 紧迫度决定而非全局 K_max
+
+**预期效果**：在 SLO 异构场景下（混合 workload、多模态请求混跑、
+在线+离线混合）提升 SLO goodput
+
+**风险评估**：当前批量离线场景 SLO 同质 → credit 退化为均匀累积 = FIFO，
+不体现区分度。只有在 SLO 异构性存在时才发挥价值——可能需要等到多模态
+或多 job 场景。需增加 per-request deadline tracking 基础设施
+
+**放弃条件**：如果未来 workload 始终保持 SLO 同质（纯离线批处理），
+Credit-based admission 退化为 FIFO，与当前方案等价——不值得额外复杂度
+
 ### 提交策略备选方案优先级
 
 ```
 落地难度 →        低              中              高
 收益 ↓
 高               方案D 分档提交   方案A SFS预演
+                方案F Deadband
 中               方案B LPS模型    方案C Batch回归
+                方案E USL估计
+低               方案G Credit-Based（需 SLO 异构场景）
 ```
 
 **建议推进顺序**：
 1. **先做方案 D**（最低风险，已有 Ridge 模型）：验证 Ridge 的分档能力
-2. **再做方案 B**（解析指导，不需改 pipeline）：用 LPS 公式审计当前 K=8 选择
-3. **最后做方案 A**（需要 SFS 模拟器 + Prometheus 接入）：在前两项确认
+2. **再做方案 B + E**（解析指导，不需改 pipeline）：LPS + USL 联合审计
+   当前 K=8 选择
+3. **再做方案 F**（控制架构升级，改动 ~50 行）：双信号 deadband 架构
+   解决振荡问题
+4. **最后做方案 A**（需要 SFS 模拟器 + Prometheus 接入）：在前几项确认
    有效后再投入
+5. **方案 G 待 SLO 异构场景出现后启动**
 
 ### 与现有 RC2 缺口的整合
 
 | 现有缺口 (§9) | 新增文献方案 | 整合方式 |
 |--------------|------------|---------|
-| request-level continuous replenishment | 方案 D（分档提交） | 分档决定"哪些请求可以立即补位" |
-| SLO-aware EWMA flush | 方案 A（SFS 预演） | SFS 提供 per-request TTFT → EWMA flush 基于 SLO slack 而非 queue depth |
-| 软拥塞信号盲区 | 方案 A + C | SFS 模拟器可检测 Ray 侧软拥塞（即使 vLLM waiting=0） |
-| K_max 选择 | 方案 B（LPS 模型） | LPS 解析公式替代纯实验暴力搜索 |
+| request-level continuous replenishment | 方案 D（分档提交）+ 方案 G（Credit-Based） | 分档/credit 决定"哪些请求可以立即补位" |
+| SLO-aware EWMA flush | 方案 A（SFS 预演）+ 方案 F（Deadband） | Deadband 消振 + SFS 提供 per-request TTFT |
+| 软拥塞信号盲区 | 方案 A + C + 方案 F | 双信号架构的第二信号可选逐请求完成时间 |
+| K_max 选择 | 方案 B（LPS）+ 方案 E（USL） | LPS 等待时间 + USL 吞吐退化，联合推导 |
 
 ### 不纳入 RC2 的方案
 
