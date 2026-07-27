@@ -14,6 +14,8 @@ from .adaptive_admission import (
     AimdAdmissionController,
     AimdConfig,
     EwmaAimdAdmissionController,
+    HolAgeAimdAdmissionController,
+    HolAgeAimdConfig,
 )
 from .admission import DynamicAdmissionGate, StaticAdmissionController, WindowController
 from .flush import (
@@ -106,6 +108,8 @@ __all__ = [
     "FlushObservation",
     "FlushWindow",
     "FlushTraceEvent",
+    "HolAgeAimdAdmissionController",
+    "HolAgeAimdConfig",
     "ImmediateFlush",
     "PayloadEnvelope",
     "PoolRouter",

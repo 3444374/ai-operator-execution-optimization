@@ -774,6 +774,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             pid_proportional_gain=0.5,
             pid_integral_gain=0.1,
             pid_derivative_gain=0.05,
+            hol_age_congestion_s=2.0,
+            hol_age_low_load_s=0.5,
         )
         try:
             self.assertIs(config["trace_events"], traces)
@@ -799,6 +801,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             pid_proportional_gain=1.0,
             pid_integral_gain=0.0,
             pid_derivative_gain=0.0,
+            hol_age_congestion_s=2.0,
+            hol_age_low_load_s=0.5,
         )
         try:
             self.assertIsInstance(
@@ -836,6 +840,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 pid_proportional_gain=1.0,
                 pid_integral_gain=0.0,
                 pid_derivative_gain=0.0,
+                hol_age_congestion_s=2.0,
+                hol_age_low_load_s=0.5,
             )
             try:
                 self.assertTrue(sampler_entered.wait(timeout=1.0))
@@ -1136,6 +1142,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 pid_proportional_gain=0.5,
                 pid_integral_gain=0.1,
                 pid_derivative_gain=0.05,
+                hol_age_congestion_s=2.0,
+                hol_age_low_load_s=0.5,
             )
 
     def test_write_control_trace_emits_plot_ready_rows(self) -> None:

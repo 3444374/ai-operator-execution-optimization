@@ -70,6 +70,8 @@ from src.scheduling.adaptive_admission import (
     AimdAdmissionController,
     AimdConfig,
     EwmaAimdAdmissionController,
+    HolAgeAimdAdmissionController,
+    HolAgeAimdConfig,
 )
 from src.scheduling.admission import DynamicAdmissionGate, StaticAdmissionController
 from src.scheduling.batching import (
@@ -413,7 +415,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--scheduling-policy",
-        choices=["static", "queue_adaptive", "aimd", "ewma_aimd", "pid"],
+        choices=["static", "queue_adaptive", "aimd", "ewma_aimd", "pid", "aimd_hol"],
         default="static",
     )
     parser.add_argument("--adaptive-min-inflight", type=int, default=2)
@@ -430,6 +432,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--pid-proportional-gain", type=float, default=0.5)
     parser.add_argument("--pid-integral-gain", type=float, default=0.1)
     parser.add_argument("--pid-derivative-gain", type=float, default=0.05)
+    parser.add_argument(
+        "--hol-age-congestion-s",
+        type=float,
+        default=2.0,
+        help="aimd_hol multiplicative-decrease threshold on Ray-side head-of-line age (s).",
+    )
+    parser.add_argument(
+        "--hol-age-low-load-s",
+        type=float,
+        default=0.5,
+        help="aimd_hol additive-increase threshold on Ray-side head-of-line age (s).",
+    )
     parser.add_argument(
         "--control-trace-output",
         default=None,
@@ -1300,9 +1314,14 @@ def _build_adaptive_config(
     pid_proportional_gain: float,
     pid_integral_gain: float,
     pid_derivative_gain: float,
+    hol_age_congestion_s: float,
+    hol_age_low_load_s: float,
 ) -> dict:
-    if not metrics_url:
-        raise ValueError("adaptive scheduling requires a model metrics URL")
+    # aimd_hol keys on Ray-side head-of-line age and ignores service metrics,
+    # so it (alone) can run without a model metrics URL; the service-metric
+    # controllers (aimd/ewma_aimd/pid) still require one.
+    if scheduling_policy != "aimd_hol" and not metrics_url:
+        raise ValueError("service-metric adaptive scheduling requires a model metrics URL")
     if scheduling_policy in {"aimd", "ewma_aimd"}:
         config = AimdConfig(min_window=min_window, max_window=max_window)
         if scheduling_policy == "aimd":
@@ -1324,10 +1343,25 @@ def _build_adaptive_config(
             ),
             initial_window,
         )
+    elif scheduling_policy == "aimd_hol":
+        controller = HolAgeAimdAdmissionController(
+            HolAgeAimdConfig(
+                min_window=min_window,
+                max_window=max_window,
+                congestion_hol_age_s=hol_age_congestion_s,
+                low_load_hol_age_s=hol_age_low_load_s,
+            ),
+            initial_window,
+        )
     else:
         raise ValueError(f"unsupported typed adaptive policy: {scheduling_policy}")
+    sampler = (
+        (lambda: _service_metrics_snapshot(metrics_url))
+        if metrics_url
+        else (lambda: None)
+    )
     provider = NonBlockingMetricsObservationProvider(
-        lambda: _service_metrics_snapshot(metrics_url),
+        sampler,
         poll_interval_s=sample_interval_s,
         stale_after_s=max(0.5, sample_interval_s * 2),
         close_timeout_s=2.0,
@@ -2663,12 +2697,15 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     request_timeout_s = (
         args.completion_request_timeout_s if args.operator == "ai_complete" else args.embedding_request_timeout_s
     )
-    typed_adaptive_policies = {"aimd", "ewma_aimd", "pid"}
+    typed_adaptive_policies = {"aimd", "ewma_aimd", "pid", "aimd_hol"}
     if args.scheduling_policy in typed_adaptive_policies:
         if args.executor not in {"ray_actor", "ray_task"}:
             raise SystemExit("typed adaptive scheduling requires a Ray executor")
-        if not args.model_metrics_url:
-            raise SystemExit("typed adaptive scheduling requires --model-metrics-url")
+        if args.scheduling_policy != "aimd_hol" and not args.model_metrics_url:
+            raise SystemExit(
+                "typed adaptive scheduling requires --model-metrics-url "
+                "(aimd_hol keys on Ray-side head-of-line age and does not)"
+            )
     if args.executor == "python" and (
         args.endpoint_routing != "round_robin"
         or args.pool_routing != "none"
@@ -3133,6 +3170,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     pid_proportional_gain=args.pid_proportional_gain,
                     pid_integral_gain=args.pid_integral_gain,
                     pid_derivative_gain=args.pid_derivative_gain,
+                    hol_age_congestion_s=args.hol_age_congestion_s,
+                    hol_age_low_load_s=args.hol_age_low_load_s,
                 )
                 adaptive_observation_provider = adaptive_config[
                     "observation_provider"

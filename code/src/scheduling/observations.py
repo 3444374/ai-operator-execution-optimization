@@ -42,6 +42,7 @@ class AdmissionTraceEvent:
     reason: str
     allowed: bool
     sample_age_s: float | None = None
+    hol_age_s: float | None = None
 
 
 class CachedMetricsObservationProvider:
@@ -60,7 +61,9 @@ class CachedMetricsObservationProvider:
         self._last_sample_s: float | None = None
         self._cached: ServiceMetricsSnapshot | None = None
 
-    def latest(self, inflight: int) -> AdmissionObservation:
+    def latest(
+        self, inflight: int, *, hol_age_s: float | None = None
+    ) -> AdmissionObservation:
         now = self.clock()
         sample_due = (
             self._last_sample_s is None
@@ -82,6 +85,7 @@ class CachedMetricsObservationProvider:
                 if self._last_sample_s is not None
                 else None
             ),
+            hol_age_s=hol_age_s,
         )
 
 
@@ -132,7 +136,9 @@ class NonBlockingMetricsObservationProvider:
     def wait_until_sampled(self, timeout_s: float | None = None) -> bool:
         return self._sampled.wait(timeout=timeout_s)
 
-    def latest(self, inflight: int) -> AdmissionObservation:
+    def latest(
+        self, inflight: int, *, hol_age_s: float | None = None
+    ) -> AdmissionObservation:
         now = self.clock()
         with self._lock:
             snapshot = self._snapshot
@@ -154,6 +160,7 @@ class NonBlockingMetricsObservationProvider:
                 if sampled_at_s is not None
                 else None
             ),
+            hol_age_s=hol_age_s,
         )
 
     def close(self) -> None:

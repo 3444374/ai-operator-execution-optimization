@@ -92,6 +92,47 @@ class KmaxInterferenceScriptTests(unittest.TestCase):
         request_trace = command[command.index("--request-trace-output") + 1]
         self.assertTrue(request_trace.endswith("interference_bulk_aimd_background_r1.requests.csv"))
 
+    def test_aimd_hol_scenario_and_command_emit_hol_age_thresholds(self) -> None:
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_kmax_interference_experiment",
+                "--background-static-kmax",
+                "",
+                "--include-aimd-hol",
+                "--trace-dir",
+                "tmp/shared-vllm-traces-hol",
+                "--hol-age-congestion-s",
+                "1.5",
+                "--hol-age-low-load-s",
+                "0.3",
+            ],
+        ):
+            args = experiment.parse_args()
+
+        self.assertEqual(
+            experiment.build_scenarios(args),
+            [(16, "bulk_aimd_hol", "aimd_hol")],
+        )
+
+        command = experiment.profile_command(
+            args,
+            experiment_id="interference_bulk_aimd_hol_background_r1",
+            total_rows=512,
+            ray_batch_rows=64,
+            max_inflight=16,
+            output="tmp/background.csv",
+            completion_max_tokens=512,
+            scheduling_policy="aimd_hol",
+        )
+
+        self.assertEqual(command[command.index("--scheduling-policy") + 1], "aimd_hol")
+        self.assertEqual(command[command.index("--controller-max-window") + 1], "16")
+        self.assertEqual(command[command.index("--hol-age-congestion-s") + 1], "1.5")
+        self.assertEqual(command[command.index("--hol-age-low-load-s") + 1], "0.3")
+        self.assertIn("--control-trace-output", command)
+
     def test_scenario_order_is_deterministic_and_interleaved_by_repeat(self) -> None:
         with patch.object(
             sys,

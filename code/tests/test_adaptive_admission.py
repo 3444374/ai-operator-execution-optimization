@@ -17,6 +17,8 @@ from src.scheduling.adaptive_admission import (  # noqa: E402
     AimdAdmissionController,
     AimdConfig,
     EwmaAimdAdmissionController,
+    HolAgeAimdAdmissionController,
+    HolAgeAimdConfig,
 )
 from src.scheduling.pid_admission import (  # noqa: E402
     PidAdmissionController,
@@ -65,6 +67,14 @@ class AdaptiveAdmissionModelTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "kv_usage"):
             AdmissionObservation(1.0, True, 0, 0, 0, 1.1)
 
+    def test_observation_accepts_and_rejects_hol_age(self) -> None:
+        valid = AdmissionObservation(
+            1.0, True, 0, 0, 0, 0.0, hol_age_s=1.5
+        )
+        self.assertEqual(valid.hol_age_s, 1.5)
+        with self.assertRaisesRegex(ValueError, "hol_age_s"):
+            AdmissionObservation(1.0, True, 0, 0, 0, 0.0, hol_age_s=-0.1)
+
     def test_window_decision_carries_typed_diagnostics(self) -> None:
         diagnostics = ControlDiagnostics(
             smoothed_waiting=0.5,
@@ -93,6 +103,7 @@ def observation(
     running: int | None = 10,
     waiting: int | None = 0,
     kv_usage: float | None = 0.2,
+    hol_age_s: float | None = None,
 ) -> AdmissionObservation:
     return AdmissionObservation(
         observed_at_s,
@@ -101,6 +112,7 @@ def observation(
         running,
         waiting,
         kv_usage,
+        hol_age_s=hol_age_s,
     )
 
 
@@ -205,6 +217,49 @@ class EwmaAimdAdmissionControllerTests(unittest.TestCase):
     def test_ewma_rejects_invalid_alpha(self) -> None:
         with self.assertRaisesRegex(ValueError, "alpha"):
             EwmaAimdAdmissionController(alpha=0.0)
+
+
+class HolAgeAimdAdmissionControllerTests(unittest.TestCase):
+    def test_low_hol_age_additively_increases(self) -> None:
+        controller = HolAgeAimdAdmissionController(
+            HolAgeAimdConfig(min_window=4, max_window=8),
+            initial_window=4,
+        )
+
+        decision = controller.update(observation(hol_age_s=0.2))
+
+        self.assertEqual(decision.window, 6)
+        self.assertEqual(decision.action, "increase")
+        self.assertEqual(decision.reason, "hol_age_low_load")
+
+    def test_congested_hol_age_multiplicatively_decreases(self) -> None:
+        controller = HolAgeAimdAdmissionController(
+            HolAgeAimdConfig(min_window=2, max_window=16),
+            initial_window=6,
+        )
+
+        decision = controller.update(observation(hol_age_s=2.5))
+
+        self.assertEqual(decision.window, 3)
+        self.assertEqual(decision.action, "decrease")
+        self.assertEqual(decision.reason, "hol_age_congestion")
+
+    def test_deadband_and_missing_hol_age_hold(self) -> None:
+        controller = HolAgeAimdAdmissionController(initial_window=8)
+
+        deadband = controller.update(observation(hol_age_s=1.0))
+        missing = controller.update(observation(hol_age_s=None))
+
+        self.assertEqual(
+            [(item.window, item.action) for item in (deadband, missing)],
+            [(8, "hold"), (8, "hold")],
+        )
+        self.assertEqual(deadband.reason, "deadband")
+        self.assertEqual(missing.reason, "missing_hol_age")
+
+    def test_config_rejects_invalid_thresholds(self) -> None:
+        with self.assertRaisesRegex(ValueError, "HOL-age thresholds"):
+            HolAgeAimdConfig(low_load_hol_age_s=3.0, congestion_hol_age_s=2.0)
 
 
 class PidAdmissionControllerTests(unittest.TestCase):

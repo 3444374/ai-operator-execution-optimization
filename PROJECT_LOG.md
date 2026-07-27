@@ -1678,3 +1678,33 @@
   定位 + 四个当前缺口（排序能力未评估、提交集成未验证、无外推验证、
   无预测区间）。
 - 本轮仅修订文档，没有修改代码。
+
+## 2026-07-27 新增 aimd_hol 控制器与 HOL-age 诊断实验（代码+配置，未运行）
+
+- 实现「诊断优先」方案的两块代码改动，直接回应信号盲区诊断（控制器
+  读 vLLM waiting 恒为 0，看不见 Ray 侧排队；credit 按 submission 整体回收）：
+  1. **HOL-age 信号**：`AdmissionObservation`/`AdmissionTraceEvent` 新增
+     `hol_age_s` 字段（非 service metric，来自 scheduler）；`scheduler.run`
+     计算 Ray 侧排头请求年龄 `now - min(submit_epoch_s)`，经
+     `ObservationProvider.latest`/`DynamicAdmissionGate.decide`（新增可选
+     `hol_age_s` 形参，默认 None，向后兼容）透传到控制器；`aimd_hol` 不依赖
+     service metrics，故 profiler 不再强制其 `--model-metrics-url`（sampler
+     条件化、service metrics 可缺省），支持切换非 vLLM / 无 `/metrics` 引擎。
+  2. **`HolAgeAimdAdmissionController`**（`adaptive_admission.py`）：AIMD
+     键控 HOL-age 而非 vLLM waiting，完全不读 service metrics；profiler
+     新增 `aimd_hol` 策略与 `--hol-age-congestion-s`/`--hol-age-low-load-s`；
+     `run_kmax_interference_experiment.py` 加 `--include-aimd-hol` arm。
+- request-level replenishment 走配置（`--ray-batch-rows 1`），未改
+  `_collect_one`/`wait_one` 协议，不触发 `latency_granularity=submission`
+  等契约改动；保持引擎无关纯函数层不变。
+- 测试：新增 HolAgeAimd 行为、HOL-age 透传、aimd_hol arm 用例；同步更新
+  `test_postgres_profile_scheduling` 的 `_build_adaptive_config` 调用与
+  `test_kmax_interference_script` 的 arm；可运行测试全绿（6 个模块因
+  pyarrow/psycopg 缺失在此 shell 无法 import，属环境限制非回归）。
+- 新增 `experiments/results/hol_age_diagnostic_512_20260727/`
+  （scenario_config.json + README）：6 arm × 3 formal，预注册判据为
+  "新 arm 相对同上限 static K=16 在 SLO-goodput 提升 >5% 且超 95% 区间，
+  同时 SLO violation < 1%"；满足则转正面方法贡献，否则落回刻画型 framing。
+- **本轮修改代码与配置，未生成新性能数据；实验未运行**（本机此 shell
+  无 vLLM/GPU/PG 环境）。运行与结论回写（PROJECT_OUTLINE §证据、
+  experiment_status_and_gaps、本日志）待 GPU 环境就绪后进行。

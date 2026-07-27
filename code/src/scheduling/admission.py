@@ -21,7 +21,9 @@ class WindowController(Protocol):
 
 
 class ObservationProvider(Protocol):
-    def latest(self, inflight: int) -> AdmissionObservation:
+    def latest(
+        self, inflight: int, *, hol_age_s: float | None = None
+    ) -> AdmissionObservation:
         ...
 
 
@@ -31,7 +33,9 @@ class StaticAdmissionController:
             raise ValueError("limit must be positive")
         self.limit = limit
 
-    def decide(self, inflight: int) -> AdmissionDecision:
+    def decide(
+        self, inflight: int, *, hol_age_s: float | None = None
+    ) -> AdmissionDecision:
         if inflight < 0:
             raise ValueError("inflight must be non-negative")
         allowed = inflight < self.limit
@@ -58,10 +62,12 @@ class DynamicAdmissionGate:
         self.trace_sink = trace_sink
         self.limit = controller.current_window
 
-    def decide(self, inflight: int) -> AdmissionDecision:
+    def decide(
+        self, inflight: int, *, hol_age_s: float | None = None
+    ) -> AdmissionDecision:
         if inflight < 0:
             raise ValueError("inflight must be non-negative")
-        observation = self.observation_provider.latest(inflight)
+        observation = self.observation_provider.latest(inflight, hol_age_s=hol_age_s)
         window_decision = self.controller.update(observation)
         self.limit = window_decision.window
         allowed = inflight < self.limit
@@ -79,6 +85,7 @@ class DynamicAdmissionGate:
                     reason=window_decision.reason,
                     allowed=allowed,
                     sample_age_s=observation.sample_age_s,
+                    hol_age_s=observation.hol_age_s,
                 )
             )
         return AdmissionDecision(

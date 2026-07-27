@@ -161,3 +161,74 @@ class EwmaAimdAdmissionController(AimdAdmissionController):
             smoothed_waiting=self._waiting,
             smoothed_kv_usage=self._kv_usage,
         )
+
+
+@dataclass(frozen=True)
+class HolAgeAimdConfig:
+    min_window: int = 4
+    max_window: int = 16
+    additive_increase: int = 2
+    multiplicative_decrease: float = 0.5
+    congestion_hol_age_s: float = 2.0
+    low_load_hol_age_s: float = 0.5
+
+    def __post_init__(self) -> None:
+        if self.min_window <= 0 or self.max_window < self.min_window:
+            raise ValueError("window bounds must satisfy 0 < min_window <= max_window")
+        if self.additive_increase <= 0:
+            raise ValueError("additive_increase must be positive")
+        if not 0.0 < self.multiplicative_decrease < 1.0:
+            raise ValueError("multiplicative_decrease must be between 0 and 1")
+        if not 0.0 <= self.low_load_hol_age_s < self.congestion_hol_age_s:
+            raise ValueError("HOL-age thresholds must define a valid deadband")
+
+
+class HolAgeAimdAdmissionController:
+    """AIMD keyed on Ray-side head-of-line age rather than vLLM queue depth.
+
+    The service-metric controllers (AIMD/EWMA/PID) read
+    ``vllm:num_requests_waiting``, which stays at 0 when requests queue on the
+    Ray side, so they never decrease and saturate to ``max_window``. Head-of-line
+    age (the wait of the oldest in-flight submission) is observable directly
+    from the scheduler and tracks the latency pain the foreground SLO cares
+    about. This controller ignores service metrics entirely: it is the bounded
+    test of whether "seeing Ray-side congestion" unlocks dynamic value.
+    """
+
+    def __init__(
+        self,
+        config: HolAgeAimdConfig | None = None,
+        initial_window: int | None = None,
+    ):
+        self.config = config or HolAgeAimdConfig()
+        initial = self.config.min_window if initial_window is None else initial_window
+        if not self.config.min_window <= initial <= self.config.max_window:
+            raise ValueError("initial_window must be within configured bounds")
+        self.current_window = initial
+
+    def update(self, observation: AdmissionObservation) -> WindowDecision:
+        hol_age_s = observation.hol_age_s
+        if hol_age_s is None:
+            return self._hold("missing_hol_age")
+        if hol_age_s >= self.config.congestion_hol_age_s:
+            updated = max(
+                self.config.min_window,
+                int(self.current_window * self.config.multiplicative_decrease),
+            )
+            if updated == self.current_window:
+                return self._hold("at_minimum")
+            self.current_window = updated
+            return WindowDecision(updated, "decrease", "hol_age_congestion")
+        if hol_age_s <= self.config.low_load_hol_age_s:
+            updated = min(
+                self.config.max_window,
+                self.current_window + self.config.additive_increase,
+            )
+            if updated == self.current_window:
+                return self._hold("at_maximum")
+            self.current_window = updated
+            return WindowDecision(updated, "increase", "hol_age_low_load")
+        return self._hold("deadband")
+
+    def _hold(self, reason: str) -> WindowDecision:
+        return WindowDecision(self.current_window, "hold", reason, ControlDiagnostics())

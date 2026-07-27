@@ -67,9 +67,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--adaptive-queue-threshold", type=int, default=0)
     parser.add_argument("--adaptive-kv-threshold", type=float, default=0.85)
     parser.add_argument("--include-aimd", action="store_true")
+    parser.add_argument("--include-aimd-hol", action="store_true")
     parser.add_argument("--controller-min-window", type=int, default=4)
     parser.add_argument("--controller-max-window", type=int, default=16)
     parser.add_argument("--controller-initial-window", type=int, default=8)
+    parser.add_argument(
+        "--hol-age-congestion-s",
+        type=float,
+        default=2.0,
+        help="aimd_hol multiplicative-decrease threshold on Ray-side head-of-line age (s).",
+    )
+    parser.add_argument(
+        "--hol-age-low-load-s",
+        type=float,
+        default=0.5,
+        help="aimd_hol additive-increase threshold on Ray-side head-of-line age (s).",
+    )
     parser.add_argument(
         "--trace-dir",
         default=None,
@@ -197,7 +210,7 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
                 str(args.adaptive_kv_threshold),
             ]
         )
-    elif scheduling_policy == "aimd":
+    elif scheduling_policy in {"aimd", "aimd_hol"}:
         command.extend(
             [
                 "--controller-min-window",
@@ -208,6 +221,15 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
                 str(args.controller_initial_window),
             ]
         )
+        if scheduling_policy == "aimd_hol":
+            command.extend(
+                [
+                    "--hol-age-congestion-s",
+                    str(args.hol_age_congestion_s),
+                    "--hol-age-low-load-s",
+                    str(args.hol_age_low_load_s),
+                ]
+            )
     if args.trace_dir:
         trace_stem = Path(args.trace_dir) / experiment_id
         command.extend(
@@ -222,7 +244,7 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
                 str(trace_stem.with_suffix(".flush.csv")),
             ]
         )
-        if scheduling_policy == "aimd":
+        if scheduling_policy in {"aimd", "aimd_hol"}:
             command.extend(
                 [
                     "--control-trace-output",
@@ -258,6 +280,8 @@ def build_scenarios(args: argparse.Namespace) -> list[tuple[int, str, str]]:
         scenarios.append((args.adaptive_max_inflight, "bulk_adaptive", "queue_adaptive"))
     if args.include_aimd:
         scenarios.append((args.controller_max_window, "bulk_aimd", "aimd"))
+    if args.include_aimd_hol:
+        scenarios.append((args.controller_max_window, "bulk_aimd_hol", "aimd_hol"))
     return scenarios
 
 

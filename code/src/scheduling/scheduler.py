@@ -34,7 +34,9 @@ class SubmissionAdapter(Protocol):
 class AdmissionPolicy(Protocol):
     limit: int
 
-    def decide(self, inflight: int) -> AdmissionDecision:
+    def decide(
+        self, inflight: int, *, hol_age_s: float | None = None
+    ) -> AdmissionDecision:
         ...
 
 
@@ -111,7 +113,12 @@ class SynchronousScheduler:
             if request_id in submission_order:
                 raise ValueError(f"duplicate request_id: {request_id}")
             submission_order[request_id] = len(submission_order)
-            while not self.admission.decide(len(pending)).allowed:
+            while True:
+                hol_age_s = self._head_of_line_age_s(submission_context)
+                if self.admission.decide(
+                    len(pending), hol_age_s=hol_age_s
+                ).allowed:
+                    break
                 collected = self._collect_one(
                     pending,
                     completions,
@@ -173,6 +180,24 @@ class SynchronousScheduler:
             fanin_s=fanin_s,
             submit_s=submit_s,
         )
+
+    def _head_of_line_age_s(
+        self,
+        submission_context: dict[str, tuple[str, str, str, float]],
+    ) -> float:
+        # The age of the oldest in-flight submission = how long the head of the
+        # Ray-side queue has been waiting. submission_context only holds entries
+        # for currently-pending submissions (added on submit, removed on collect),
+        # so its minimum submit timestamp is the head. This is the Ray-side
+        # congestion signal the service-metric controllers cannot see.
+        if not submission_context:
+            return 0.0
+        now = self.epoch_clock()
+        oldest_submit_s = min(
+            submit_epoch_s
+            for _pool_id, _endpoint_id, _gpu_id, submit_epoch_s in submission_context.values()
+        )
+        return max(0.0, now - oldest_submit_s)
 
     def _collect_one(
         self,

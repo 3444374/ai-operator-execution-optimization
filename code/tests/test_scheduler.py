@@ -151,7 +151,7 @@ class SchedulerTests(unittest.TestCase):
             router=RoundRobinEndpointRouter(),
             adapter=adapter,
             pool_id="default",
-            epoch_clock=SequenceClock([10.0, 11.0, 20.0, 21.0]),
+            epoch_clock=SequenceClock([10.0, 10.5, 11.0, 20.0, 21.0]),
         )
 
         result = scheduler.run([envelope(0), envelope(1)], topology())
