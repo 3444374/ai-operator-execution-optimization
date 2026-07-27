@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-07-27 AutoDL 云部署指南沉淀
+
+- 新增 `deploy/autodl/README.md`：把 2026-07-27 部署 AutoDL（2× RTX 6000D）的全流程
+  经验沉淀为可复用 runbook，覆盖实例选型、连接驱动、GitHub 克隆、Python 依赖与版本
+  兼容性、模型下载、PostgreSQL+pgvector、workload 数据、vLLM endpoint、实验运行与
+  操作坑汇总（10 条踩坑表）+ 平台边界声明。
+- 两项强约束（用户要求）：① 代码必须从 GitHub 克隆
+  （`https://github.com/3444374/ai-operator-execution-optimization.git`），不再上传本地
+  tar 拷贝——便于维护改动与文档同步；② 版本须与项目兼容、不冲突——vllm pin 0.25.1
+  （与本机 Docker `vllm/vllm-openai:v0.25.1` 对齐），其依赖 torch 2.11.0 会覆盖镜像的
+  torch 2.8.0+cu128（CUDA patch 不同，但 vLLM 版本对齐，报告标注差异）。
+- 同步更新 `deploy/README.md`、`deploy/AGENTS.md`（扩大 deploy/ 范围以容纳云部署指南，
+  修订"GPU 服务不放这里"为"单服务不放 / 完整云栈放 autodl/"）、`PROJECT_INDEX.md`。
+- 关键经验：AutoDL `/etc/network_turbo` 是 HF/github 加速前置（不开则 modelscope /
+  hf-mirror / HF 直连三源全慢或 stall）；HF 大文件需 `HF_HUB_DISABLE_XET=1`（否则
+  cas-server 401）；长任务用 nohup 后台 + 短连接轮询（不用 exec 长连，避免 paramiko
+  超时砍断与 stdout.read 卡死）；`pkill -f` 禁匹配自身命令行（自杀 3 次的教训）。
+
 ## 2026-07-26 Eager vLLM baseline captured after recovered preflight incident
 
 - Recorded the exact running vLLM 0.25.1 eager service and added complete,

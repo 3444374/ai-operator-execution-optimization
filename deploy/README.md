@@ -1,6 +1,6 @@
 # deploy/
 
-本目录存放数据库和 AI 算子服务的 Docker Compose 部署配置。环境启动后，连接验证和 smoke test 结果记录在 `feasibility/results/`。
+本目录存放部署配置与指南。`pgai/`、`postgres18.4/` 是本机 Docker Compose 部署；`autodl/` 是 AutoDL 云服务器（2× GPU + vLLM + PostgreSQL + Ray/Daft 完整栈）的部署 runbook。环境启动后，连接验证和 smoke test 结果记录在 `feasibility/results/`。
 
 ## 子目录
 
@@ -8,6 +8,7 @@
 |---|---|---|
 | `pgai/` | PostgreSQL + pgai AI 算子集成环境 | PostgreSQL、pgai 扩展、pgvector |
 | `postgres18.4/` | PostgreSQL 18.4 本地同构预演 | PostgreSQL 18.4、pgvector |
+| `autodl/` | AutoDL 云服务器部署指南（runbook） | 2× GPU、vLLM、PostgreSQL16+pgvector、Ray/Daft |
 
 ## 使用
 
