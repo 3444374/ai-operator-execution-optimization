@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-07-29 Checkpoint B：complete-row service quantum 实现启动
+
+- 新增纯策略 `slice_service_quanta`：按目标 token work 顺序累积完整行，
+  超预算单行独占一个 quantum 并显式标记，禁止把单行 prompt 拆成多个请求。
+- 该层只定义 planning batch 内的 HTTP/Ray completion 与 credit 释放边界，
+  不依赖 Arrow、Daft、Ray 或 vLLM；5 项确定性/边界测试已通过。后续任务再将
+  同一 helper 接入 offline 与 arrival replay，避免两套 membership 语义漂移。
+
 ## 2026-07-29 Checkpoint A：runner 可靠性与扩展饱和曲线
 
 - 新增 output-directory 原子租约：runner 启动时记录 host、PID、进程启动身份、

@@ -48,6 +48,7 @@ from .models import (
     TopologySnapshot,
     WindowDecision,
 )
+from .organization import ServiceQuantumSlice, slice_service_quanta
 from .pid_admission import PidAdmissionController, PidConfig
 from .observations import (
     AdmissionTraceEvent,
@@ -153,6 +154,7 @@ __all__ = [
     "RowArrival",
     "SchedulerResult",
     "ServiceMetricsSnapshot",
+    "ServiceQuantumSlice",
     "ServiceQuantumTokenBudgetController",
     "StaticAdmissionController",
     "StaticTokenBudgetController",
@@ -172,5 +174,6 @@ __all__ = [
     "WindowController",
     "healthy_endpoints",
     "build_request_trace_rows",
+    "slice_service_quanta",
     "slo_constrained_reward",
 ]

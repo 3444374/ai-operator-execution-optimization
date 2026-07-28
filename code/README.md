@@ -35,7 +35,7 @@ code/
 │   ├── profile_*.py                      ← 旧导入路径的薄兼容模块
 │   ├── workloads.py                      ← 内置 synthetic / controlled workload seed
 │   └── scheduling/
-│       ├── organization/                 ← static/dynamic upstream token-budget policy
+│       ├── organization/                 ← token-budget policy + complete-row service-quantum slicer
 │       ├── submission_control/           ← request/work admission and shared fair credit
 │       ├── endpoint_routing/             ← round-robin/queue/work/prefix routing
 │       ├── runtime/                      ← Ray adapters and cached service observations
