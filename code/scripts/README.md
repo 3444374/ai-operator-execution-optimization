@@ -66,6 +66,7 @@ PostgreSQL documents/job table
 | 数据写回 | `code/src/sinks.py::write_embeddings` / `write_completions` | embedding 支持 `none`、JSON 文本和 pgvector；completion 支持 `none` 和 JSON 文本 |
 | 指标输出 | `code/src/metrics.py::preflight_metrics_schema` / `append_metrics` | 正式工作前用 dry-run keys 拒绝旧 schema；追加时要求已有 header 与当前 row keys 精确一致 |
 | 场景单写者 | `code/src/runner_lease.py::acquire_runner_lease` | 原子占用输出目录，校验 owner、进程启动身份与 config fingerprint，显式记录 stale recovery |
+| completion 粒度 | `profiling.replay::_service_quantum_envelopes` | 在 planning batch 内按预测 work 切完整行，分别生成 HTTP/Ray completion 与 credit 释放单元；不拆单行 prompt |
 
 ## 当前本地运行
 
@@ -78,6 +79,13 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
   --strategy coalesced \
   --output feasibility/results/pg18_4_connection_smoke_256_rows.csv
 ```
+
+`--submission-granularity service_quantum --service-quantum-tokens N` 同时
+适用于 offline 与 arrival replay。planning batch 仍由 token-budget、
+length-align 等组织策略决定；service quantum 只改变下游完成与补位粒度。
+汇总 CSV 分开记录 organization batch 和 service quantum 的 count/rows/work，
+submission trace schema 4 记录两级 ID、oversized 标记、credit-held 与
+Ray-to-service 时间，避免把“更小 completion 单元”误写成“更好的数据组织”。
 
 ## 结果位置
 

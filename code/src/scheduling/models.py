@@ -22,6 +22,9 @@ class BatchRequest:
     first_arrival_s: float
     oldest_arrival_s: float
     payload_id: str
+    planning_batch_id: str = ""
+    service_quantum_index: int = -1
+    service_quantum_oversized: bool = False
 
     def __post_init__(self) -> None:
         if self.row_count <= 0:
@@ -206,6 +209,9 @@ class SubmissionLifecycleEvent:
     completion_epoch_s: float
     status: Literal["completed", "failed"]
     error: str = ""
+    planning_batch_id: str = ""
+    service_quantum_index: int = -1
+    service_quantum_oversized: bool = False
 
     def __post_init__(self) -> None:
         if not self.submission_id or not self.pool_id or not self.endpoint_id:

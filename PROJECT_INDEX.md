@@ -249,7 +249,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/profiling/` | profiler 应用子包：CLI/config、正式 schema/trace、replay 和 Ray 接线；根级 `profile_*.py` 仅保留兼容导入 | 修改画像应用参数、运行接线或结果契约前读 |
 | `code/src/profiling/traces.py` | profiler control/flush/submission/request/resource 的版本化 CSV 序列化 | 修改 trace schema、生命周期标识或 endpoint/GPU 归因前读 |
 | `code/src/profiling/cli.py` / `config.py` / `schema.py` | profiler 参数面、CLI/env 解析与正式汇总 schema 的独立边界 | 修改运行参数、环境切换优先级或 runs.csv 字段前读 |
-| `code/src/profiling/replay.py` | Arrow batch/request envelope、arrival replay 与 lifecycle seed 组装 | 修改 token-budget 关批、request 粒度补位或 replay 时间语义前读 |
+| `code/src/profiling/replay.py` | Arrow planning-batch/request/service-quantum envelope、arrival replay 与 lifecycle seed 组装 | 修改 token-budget 关批、complete-row quantum、request 粒度补位或 replay 时间语义前读 |
 | `code/src/profiling/ray.py` | Ray task/actor submitter、typed scheduler、credit 释放与 fan-in 接线 | 修改 actor pool、request-level replenishment 或 Ray 资源语义前读 |
 | `code/src/packing.py` | 与模态无关的确定性 BFD 标量容量装箱与指标 | 修改离线 batch membership、超预算行处理或 packing 指标前读 |
 | `code/src/model_backends.py` | fake debug backend、vLLM-compatible HTTP embedding/completion backend、Ollama native completion backend | 修改模型服务接入、vLLM/Ollama endpoint 或 AI_COMPLETE backend 前读 |

@@ -360,6 +360,82 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(args.ray_actor_max_concurrency, 1)
         self.assertEqual(args.ray_worker_num_cpus, 0.25)
 
+    def test_service_quantum_cli_is_explicit_and_positive(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--submission-granularity",
+                "service_quantum",
+                "--service-quantum-tokens",
+                "4096",
+            ]
+        )
+
+        self.assertEqual(args.submission_granularity, "service_quantum")
+        self.assertEqual(args.service_quantum_tokens, 4096)
+        row = profile.run_once(args, "formal", 1)
+        self.assertEqual(row["service_quantum_tokens"], 4096)
+
+    def test_service_quantum_cli_rejects_missing_or_inapplicable_target(
+        self,
+    ) -> None:
+        invalid_cases = [
+            (
+                [
+                    "--dry-run",
+                    "--submission-granularity",
+                    "service_quantum",
+                ],
+                "service-quantum-tokens must be positive",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--submission-granularity",
+                    "batch",
+                    "--service-quantum-tokens",
+                    "4096",
+                ],
+                "service-quantum-tokens requires service_quantum",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--executor",
+                    "ray_task",
+                    "--submission-granularity",
+                    "request",
+                    "--service-quantum-tokens",
+                    "4096",
+                ],
+                "service-quantum-tokens requires service_quantum",
+            ),
+        ]
+        for argv, message in invalid_cases:
+            with self.subTest(argv=argv):
+                with self.assertRaisesRegex(SystemExit, message):
+                    profile.run_once(profile.parse_args(argv), "formal", 1)
+
+    def test_service_quantum_summary_separates_work_rows_and_oversized_rows(
+        self,
+    ) -> None:
+        metrics = profile._service_quantum_run_metrics(
+            [(10, 2, False), (7, 1, False), (20, 1, True)],
+            target_tokens=10,
+        )
+
+        self.assertEqual(metrics["service_quantum_tokens"], 10)
+        self.assertEqual(metrics["service_quantum_count"], 3)
+        self.assertAlmostEqual(metrics["service_quantum_rows_mean"], 4 / 3, places=6)
+        self.assertAlmostEqual(metrics["service_quantum_work_mean"], 37 / 3, places=6)
+        self.assertEqual(metrics["service_quantum_work_p95"], 20)
+        self.assertEqual(metrics["service_quantum_oversized_rows"], 1)
+
     def test_dry_run_records_ray_execution_contract(self) -> None:
         args = profile.parse_args(
             [
@@ -840,6 +916,50 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 for item in seeds
             )
         )
+
+    def test_offline_service_quanta_preserve_planning_batch_membership(
+        self,
+    ) -> None:
+        table = pa.table(
+            {
+                "doc_id": [1, 2, 3],
+                "prompt_tokens": [6, 4, 7],
+                "prefix_key": ["p", "p", "p"],
+            }
+        )
+        planning = []
+        quanta = []
+
+        envelopes, seeds = profile._offline_batch_envelopes(
+            [table],
+            job_id="job",
+            operator="ai_embed",
+            completion_max_tokens=0,
+            output_cost_mode="fixed_output_cap",
+            batch_index_start=2,
+            job_start_epoch_s=100.0,
+            ready_epoch_s=101.0,
+            submission_granularity="service_quantum",
+            service_quantum_tokens=10,
+            planning_sink=planning,
+            quantum_sink=quanta,
+        )
+
+        self.assertEqual(
+            [item.request.request_id for item in envelopes],
+            ["job:batch:2:quantum:0", "job:batch:2:quantum:1"],
+        )
+        self.assertEqual(
+            [item.request.planning_batch_id for item in envelopes],
+            ["job:batch:2", "job:batch:2"],
+        )
+        self.assertEqual([item.request.row_count for item in envelopes], [2, 1])
+        self.assertEqual(
+            [item.submission_id for item in seeds],
+            ["job:batch:2:quantum:0"] * 2 + ["job:batch:2:quantum:1"],
+        )
+        self.assertEqual(planning, [(17, 3)])
+        self.assertEqual(quanta, [(10, 2, False), (7, 1, False)])
 
     def test_endpoint_topology_pairs_ids_and_urls_in_default_pool(self) -> None:
         topology = profile_ray._endpoint_topology(
@@ -1913,6 +2033,72 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
         self.assertEqual(packing, [(30, 2)])
 
+    def test_service_quantum_granularity_expands_replay_batch_without_row_split(
+        self,
+    ) -> None:
+        args = SimpleNamespace(
+            ray_batch_rows=8,
+            batching_policy="fixed_rows",
+            token_budget=0,
+            flush_policy="fixed_timeout",
+            flush_timeout_ms=25.0,
+            flush_max_wait_ms=50.0,
+            max_inflight=8,
+            arrival_time_scale=0.001,
+            submission_granularity="service_quantum",
+            service_quantum_tokens=10,
+            completion_max_tokens=0,
+            output_cost_mode="fixed_output_cap",
+            _replay_clock=_DeterministicReplayClock(),
+        )
+        table = pa.table(
+            {
+                "doc_id": [1, 2, 3],
+                "prompt_tokens": [6, 4, 7],
+                "arrival_time_s": [5.0, 10.0, 15.0],
+                "prefix_key": ["p", "p", "p"],
+            }
+        )
+        seeds = []
+        planning = []
+        quanta = []
+
+        envelopes = list(
+            profile._arrival_replay_envelopes(
+                [table],
+                args,
+                job_id="job",
+                operator="ai_embed",
+                service_observation=lambda: ReplayServiceObservation(
+                    fresh=False,
+                    running=None,
+                    waiting=None,
+                    kv_usage=None,
+                ),
+                trace_sink=[],
+                lifecycle_seed_sink=seeds,
+                packing_sink=planning,
+                quantum_sink=quanta,
+                epoch_clock=lambda: 1_000.0,
+            )
+        )
+
+        self.assertEqual(
+            [item.request.request_id for item in envelopes],
+            ["job:batch:0:quantum:0", "job:batch:0:quantum:1"],
+        )
+        self.assertEqual(
+            [item.payload.column("doc_id").to_pylist() for item in envelopes],
+            [[1, 2], [3]],
+        )
+        self.assertEqual(
+            [item.submission_id for item in seeds],
+            ["job:batch:0:quantum:0"] * 2 + ["job:batch:0:quantum:1"],
+        )
+        self.assertEqual({item.latency_granularity for item in seeds}, {"submission"})
+        self.assertEqual(planning, [(17, 3)])
+        self.assertEqual(quanta, [(10, 2, False), (7, 1, False)])
+
     def test_queue_adaptive_uses_max_inflight_for_pressure_window(self) -> None:
         args = SimpleNamespace(
             ray_batch_rows=8,
@@ -2881,6 +3067,9 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         submit_epoch_s=99.9,
                         completion_epoch_s=100.2,
                         status="completed",
+                        planning_batch_id="9:batch:0",
+                        service_quantum_index=1,
+                        service_quantum_oversized=False,
                     )
                 ],
             )
@@ -2907,8 +3096,13 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 resource = list(csv.DictReader(handle))
 
             self.assertEqual(submission[0]["doc_ids"], "11;12")
-            self.assertEqual(submission[0]["schema_version"], "3")
+            self.assertEqual(submission[0]["schema_version"], "4")
             self.assertEqual(submission[0]["submission_id"], "9:request:11")
+            self.assertEqual(submission[0]["planning_batch_id"], "9:batch:0")
+            self.assertEqual(submission[0]["service_quantum_index"], "1")
+            self.assertEqual(submission[0]["service_quantum_oversized"], "False")
+            self.assertAlmostEqual(float(submission[0]["credit_held_s"]), 0.3)
+            self.assertAlmostEqual(float(submission[0]["ray_to_service_s"]), 0.1)
             self.assertEqual(submission[0]["endpoint_id"], "endpoint-1")
             self.assertEqual(submission[0]["gpu_id"], "1")
             self.assertEqual(submission[0]["job_id"], "9")

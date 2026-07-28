@@ -430,6 +430,13 @@ class SynchronousScheduler:
                 completion_epoch_s=completion_epoch_s,
                 status=collected.completion.status,
                 error=collected.completion.error,
+                planning_batch_id=pending_envelope.request.planning_batch_id,
+                service_quantum_index=(
+                    pending_envelope.request.service_quantum_index
+                ),
+                service_quantum_oversized=(
+                    pending_envelope.request.service_quantum_oversized
+                ),
             )
         )
         return collected

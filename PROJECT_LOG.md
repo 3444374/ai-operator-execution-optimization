@@ -7,6 +7,13 @@
 - 该层只定义 planning batch 内的 HTTP/Ray completion 与 credit 释放边界，
   不依赖 Arrow、Daft、Ray 或 vLLM；5 项确定性/边界测试已通过。后续任务再将
   同一 helper 接入 offline 与 arrival replay，避免两套 membership 语义漂移。
+- offline 与 arrival replay 现已共用同一 Arrow expansion helper；CLI 增加
+  `service_quantum` 粒度和显式正数 token target，planning batch index 不随
+  quantum 展开而漂移，请求 lifecycle 精确映射到所属 quantum。
+- 正式汇总分别记录 quantum count/rows/work/P95/oversized rows，submission
+  trace 升级到 schema 4 并记录两级 identity、credit-held 与 Ray-to-service
+  时间。136 项相关模型、回放、CLI、schema、trace 和 scheduler 测试通过；
+  尚未形成远端性能结论。
 
 ## 2026-07-29 Checkpoint A：runner 可靠性与扩展饱和曲线
 

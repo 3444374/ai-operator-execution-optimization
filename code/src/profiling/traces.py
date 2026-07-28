@@ -142,7 +142,7 @@ def write_submission_trace(
         append_metrics(
             output_path,
             {
-                "schema_version": 3,
+                "schema_version": 4,
                 "experiment_id": experiment_id,
                 "phase": phase,
                 "repeat_index": repeat_index,
@@ -155,12 +155,35 @@ def write_submission_trace(
                     if event is not None
                     else f"{job_id}:batch:{submission_index}"
                 ),
+                "planning_batch_id": (
+                    event.planning_batch_id if event is not None else ""
+                ),
+                "service_quantum_index": (
+                    event.service_quantum_index if event is not None else -1
+                ),
+                "service_quantum_oversized": (
+                    event.service_quantum_oversized if event is not None else False
+                ),
                 "pool_id": event.pool_id if event is not None else "",
                 "endpoint_id": event.endpoint_id if event is not None else "",
                 "gpu_id": event.gpu_id if event is not None else "",
                 "status": event.status if event is not None else "",
                 "error": (
                     (event.error or "") if event is not None else ""
+                ),
+                "credit_held_s": (
+                    event.completion_epoch_s - event.submit_epoch_s
+                    if event is not None
+                    else 0.0
+                ),
+                "ray_to_service_s": (
+                    max(
+                        0.0,
+                        float(result.get("service_start_epoch_s", 0.0))
+                        - event.submit_epoch_s,
+                    )
+                    if event is not None
+                    else 0.0
                 ),
                 "doc_ids": ";".join(
                     str(item) for item in result.get("doc_id", [])

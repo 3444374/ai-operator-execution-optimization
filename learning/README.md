@@ -1,5 +1,24 @@
 # Learning Notes
 
+## 2026-07-29 planning batch 与 service quantum 为什么要分开
+
+planning batch 回答“上游先把哪些完整行组织在一起”，由 token budget、
+length align 等策略决定。service quantum 回答“这些行分成几个 HTTP/Ray
+完成事件发送，每次完成后释放多少 active-work credit”。两者过去重合时，
+一次多 prompt 请求必须等待批内最慢行完成，整批 credit 才释放，容易形成批内
+HOL、波次执行和补位空洞。
+
+现在 `service_quantum` 模式只在行与行之间切分，不会拆开一行 prompt：
+例如预测 work 为 `[6, 4, 7]`、目标为 `10` 时，同一个 planning batch 会变成
+`[6, 4]` 和 `[7]` 两个 completion 单元。前者完成即可独立释放 10 个 work
+credit，后者无需等待整批。超过目标的单行仍保持完整、独占一个 quantum，并
+标记 oversized。
+
+因此读实验时要同时看两组指标：organization batch 的行数/work 描述数据组织，
+service quantum 的行数/work 描述完成与补位粒度。只有在 planning batch、
+active-work 上限和 actor slots 相同的对照中，才能把性能差异归因给 quantum；
+当前代码与测试只证明语义和 trace 正确，尚未证明远端吞吐一定提升。
+
 ## 2026-07-28 双 4090 7B replenish 配置诊断
 
 本轮现场数据中的 `replenish_static_k8_2gpu` 不是 request-level

@@ -271,8 +271,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--arrival-time-scale", type=float, default=1.0)
     parser.add_argument(
         "--submission-granularity",
-        choices=["batch", "request"],
+        choices=["batch", "request", "service_quantum"],
         default="batch",
+    )
+    parser.add_argument(
+        "--service-quantum-tokens",
+        type=int,
+        default=0,
+        help=(
+            "Predicted prompt+output work per complete-row service quantum; "
+            "only valid with --submission-granularity service_quantum."
+        ),
     )
     parser.add_argument(
         "--flush-policy",

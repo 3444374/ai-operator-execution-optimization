@@ -454,6 +454,31 @@ def _packing_run_metrics(
     }
 
 
+def _service_quantum_run_metrics(
+    quanta: Sequence[tuple[int, int, bool]],
+    *,
+    target_tokens: int,
+) -> dict[str, float | int]:
+    work = [item[0] for item in quanta]
+    rows = [item[1] for item in quanta]
+    return {
+        "service_quantum_tokens": target_tokens,
+        "service_quantum_count": len(quanta),
+        "service_quantum_rows_mean": round(
+            sum(rows) / len(rows) if rows else 0.0,
+            6,
+        ),
+        "service_quantum_work_mean": round(
+            sum(work) / len(work) if work else 0.0,
+            6,
+        ),
+        "service_quantum_work_p95": percentile(work, 95),
+        "service_quantum_oversized_rows": sum(
+            row_count
+            for _, row_count, oversized in quanta
+            if oversized
+        ),
+    }
 
 
 def _service_metrics_snapshot(
@@ -897,6 +922,15 @@ def submit_python_compatible_http_batches(
 
 
 def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
+    if args.submission_granularity == "service_quantum":
+        if args.service_quantum_tokens <= 0:
+            raise SystemExit(
+                "--service-quantum-tokens must be positive for service_quantum"
+            )
+    elif args.service_quantum_tokens != 0:
+        raise SystemExit(
+            "--service-quantum-tokens requires service_quantum granularity"
+        )
     if args.submission_granularity == "request" and not args.arrival_replay:
         raise SystemExit(
             "--submission-granularity request requires --arrival-replay"
@@ -1264,6 +1298,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ),
             packing_algorithm=dry_packing_algorithm,
         )
+        dry_service_quantum_metrics = _service_quantum_run_metrics(
+            [],
+            target_tokens=args.service_quantum_tokens,
+        )
         dry_resource_metrics = resource_sample_stats(
             [],
             observed_tokens=0,
@@ -1331,6 +1369,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "cost_model_id": args.cost_model_id,
             "cost_tokenizer_id": args.cost_tokenizer_id,
             **dry_packing_metrics,
+            **dry_service_quantum_metrics,
             "model_workers": args.model_workers,
             "ray_version": "",
             "actor_workers_per_endpoint": actor_workers_per_endpoint,
@@ -1627,6 +1666,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         organizer_calls = 0
         organizer_packing_scopes: list[str] = []
         replay_packing: list[tuple[int, int]] = []
+        service_quanta: list[tuple[int, int, bool]] = []
         lifecycle_epoch_clock = (
             MonotonicEpochClock() if args.request_trace_output else None
         )
@@ -1892,8 +1932,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 organizer_warnings.append(str(organized.metrics["warnings"]))
             object_count += len(ray_batches)
             offline_envelopes = None
-            if args.request_trace_output:
-                if (
+            if (
+                args.request_trace_output
+                or args.submission_granularity == "service_quantum"
+            ):
+                if args.request_trace_output and (
                     lifecycle_epoch_clock is None
                     or offline_job_start_epoch_s is None
                 ):
@@ -1912,12 +1955,22 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         ),
                         output_cost_mode=args.output_cost_mode,
                         batch_index_start=offline_batch_index,
-                        job_start_epoch_s=offline_job_start_epoch_s,
-                        ready_epoch_s=lifecycle_epoch_clock(),
+                        job_start_epoch_s=offline_job_start_epoch_s or 0.0,
+                        ready_epoch_s=(
+                            lifecycle_epoch_clock()
+                            if lifecycle_epoch_clock is not None
+                            else 0.0
+                        ),
+                        submission_granularity=args.submission_granularity,
+                        service_quantum_tokens=args.service_quantum_tokens,
+                        quantum_sink=service_quanta,
                     )
                 )
-                request_lifecycle_seeds.extend(offline_seeds)
-                offline_batch_index += len(offline_envelopes)
+                if args.request_trace_output:
+                    request_lifecycle_seeds.extend(offline_seeds)
+                if args.submission_granularity == "service_quantum":
+                    object_count += len(offline_envelopes) - len(ray_batches)
+                offline_batch_index += len(ray_batches)
             operator_timer = StageTimer.start("operator_wall")
             results, metrics = submit_operator_batches(
                 ray_batches,
@@ -1970,6 +2023,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         else None
                     ),
                     packing_sink=replay_packing,
+                    quantum_sink=service_quanta,
                     epoch_clock=lifecycle_epoch_clock,
                 )
                 operator_timer = StageTimer.start("operator_wall")
@@ -2181,6 +2235,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             packing_scope=packing_scope,
             packing_algorithm=packing_algorithm,
         )
+        service_quantum_metrics = _service_quantum_run_metrics(
+            service_quanta,
+            target_tokens=args.service_quantum_tokens,
+        )
 
         return _validated_formal_result_row({
             "status": "ok",
@@ -2244,6 +2302,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "cost_model_id": args.cost_model_id,
             "cost_tokenizer_id": args.cost_tokenizer_id,
             **packing_metrics,
+            **service_quantum_metrics,
             "model_workers": args.model_workers,
             "ray_version": ray_version,
             "actor_workers_per_endpoint": actor_workers_per_endpoint,

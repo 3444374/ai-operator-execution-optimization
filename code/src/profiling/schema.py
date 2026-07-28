@@ -26,6 +26,9 @@ FORMAL_RESULT_FIELDS = tuple(
     organization_batch_count organization_batch_rows_mean
     organization_batch_rows_max organization_batch_cost_units_mean
     organization_batch_cost_units_p95 organization_row_cap_hit_ratio
+    service_quantum_tokens service_quantum_count service_quantum_rows_mean
+    service_quantum_work_mean service_quantum_work_p95
+    service_quantum_oversized_rows
     model_workers ray_version actor_workers_per_endpoint
     ray_actor_max_concurrency
     ray_worker_num_cpus ray_worker_num_gpus endpoint_count actor_worker_count

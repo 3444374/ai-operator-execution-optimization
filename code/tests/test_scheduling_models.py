@@ -52,6 +52,29 @@ class SchedulingModelTests(unittest.TestCase):
         self.assertEqual(request.estimated_total_tokens, 16)
         self.assertIs(envelope.payload, payload)
 
+    def test_batch_request_preserves_planning_and_service_quantum_identity(
+        self,
+    ) -> None:
+        request = BatchRequest(
+            request_id="job:batch:3:quantum:1",
+            job_id="job",
+            operator="ai_complete",
+            row_count=2,
+            prompt_tokens=10,
+            estimated_output_tokens=6,
+            prefix_key="prefix",
+            first_arrival_s=2.0,
+            oldest_arrival_s=2.0,
+            payload_id="job:batch:3:quantum:1",
+            planning_batch_id="job:batch:3",
+            service_quantum_index=1,
+            service_quantum_oversized=True,
+        )
+
+        self.assertEqual(request.planning_batch_id, "job:batch:3")
+        self.assertEqual(request.service_quantum_index, 1)
+        self.assertTrue(request.service_quantum_oversized)
+
     def test_topology_snapshot_rejects_duplicate_endpoint_ids(self) -> None:
         endpoint = EndpointSnapshot(
             endpoint_id="e1",

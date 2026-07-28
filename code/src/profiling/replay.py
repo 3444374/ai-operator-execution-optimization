@@ -20,6 +20,7 @@ from ..scheduling.batching import (
 from ..scheduling.flush import FixedTimeoutFlush, ImmediateFlush, QueueAdaptiveFlush
 from ..scheduling.lifecycle import MonotonicEpochClock, RequestLifecycleSeed
 from ..scheduling.models import BatchRequest, PayloadEnvelope
+from ..scheduling.organization.service_quantum import slice_service_quanta
 from ..scheduling.organization.token_budget import (
     ServiceQuantumTokenBudgetController,
     StaticTokenBudgetController,
@@ -36,27 +37,53 @@ def _batch_envelopes(
     envelopes = []
     for index, batch in enumerate(batches):
         request_id = f"{job_id}:batch:{batch_index_start + index}"
-        prompt_tokens = 0
-        if "prompt_tokens" in batch.column_names:
-            prompt_tokens = sum(
-                int(value.as_py() or 0) for value in batch.column("prompt_tokens")
+        envelopes.append(
+            _batch_envelope(
+                batch,
+                request_id=request_id,
+                job_id=job_id,
+                operator=operator,
+                completion_max_tokens=completion_max_tokens,
+                output_cost_mode=output_cost_mode,
+                planning_batch_id=request_id,
             )
-        prefix_key = ""
-        if "prefix_key" in batch.column_names and batch.num_rows:
-            prefix_values = {
-                str(value.as_py() or "") for value in batch.column("prefix_key")
-            }
-            if len(prefix_values) == 1:
-                prefix_key = prefix_values.pop()
-        arrival_times = []
-        if "arrival_time_s" in batch.column_names:
-            arrival_times = [
-                float(value.as_py())
-                for value in batch.column("arrival_time_s")
-                if value.as_py() is not None
-            ]
-        oldest_arrival_s = min(arrival_times, default=0.0)
-        request = BatchRequest(
+        )
+    return envelopes
+
+
+def _batch_envelope(
+    batch: pa.RecordBatch | pa.Table,
+    *,
+    request_id: str,
+    job_id: str,
+    operator: str,
+    completion_max_tokens: int,
+    output_cost_mode: OutputCostMode,
+    planning_batch_id: str,
+    service_quantum_index: int = -1,
+    service_quantum_oversized: bool = False,
+) -> PayloadEnvelope:
+    prompt_tokens = sum(
+        _row_prompt_tokens(batch, row_index)
+        for row_index in range(batch.num_rows)
+    )
+    prefix_key = ""
+    if "prefix_key" in batch.column_names and batch.num_rows:
+        prefix_values = {
+            str(value.as_py() or "") for value in batch.column("prefix_key")
+        }
+        if len(prefix_values) == 1:
+            prefix_key = prefix_values.pop()
+    arrival_times = []
+    if "arrival_time_s" in batch.column_names:
+        arrival_times = [
+            float(value.as_py())
+            for value in batch.column("arrival_time_s")
+            if value.as_py() is not None
+        ]
+    oldest_arrival_s = min(arrival_times, default=0.0)
+    return PayloadEnvelope(
+        request=BatchRequest(
             request_id=request_id,
             job_id=job_id,
             operator=operator,
@@ -75,9 +102,55 @@ def _batch_envelopes(
             first_arrival_s=oldest_arrival_s,
             oldest_arrival_s=oldest_arrival_s,
             payload_id=request_id,
+            planning_batch_id=planning_batch_id,
+            service_quantum_index=service_quantum_index,
+            service_quantum_oversized=service_quantum_oversized,
+        ),
+        payload=batch,
+    )
+
+
+def _service_quantum_envelopes(
+    batch: pa.RecordBatch | pa.Table,
+    *,
+    planning_batch_id: str,
+    job_id: str,
+    operator: str,
+    completion_max_tokens: int,
+    output_cost_mode: OutputCostMode,
+    target_tokens: int,
+) -> tuple[PayloadEnvelope, ...]:
+    """Slice a planning batch between rows, never within a model request."""
+
+    row_costs = [
+        _row_prompt_tokens(batch, row_index)
+        + _row_output_tokens(
+            batch,
+            row_index,
+            output_cost_mode=output_cost_mode,
+            completion_max_tokens=completion_max_tokens,
         )
-        envelopes.append(PayloadEnvelope(request=request, payload=batch))
-    return envelopes
+        for row_index in range(batch.num_rows)
+    ]
+    envelopes = []
+    for quantum_index, quantum in enumerate(
+        slice_service_quanta(row_costs, target_tokens)
+    ):
+        request_id = f"{planning_batch_id}:quantum:{quantum_index}"
+        envelopes.append(
+            _batch_envelope(
+                batch.slice(quantum.start, quantum.row_count),
+                request_id=request_id,
+                job_id=job_id,
+                operator=operator,
+                completion_max_tokens=completion_max_tokens,
+                output_cost_mode=output_cost_mode,
+                planning_batch_id=planning_batch_id,
+                service_quantum_index=quantum_index,
+                service_quantum_oversized=quantum.oversized,
+            )
+        )
+    return tuple(envelopes)
 
 
 def _offline_batch_envelopes(
@@ -90,21 +163,72 @@ def _offline_batch_envelopes(
     batch_index_start: int,
     job_start_epoch_s: float,
     ready_epoch_s: float,
+    submission_granularity: str = "batch",
+    service_quantum_tokens: int = 0,
+    planning_sink=None,
+    quantum_sink=None,
 ) -> tuple[list[PayloadEnvelope], list[RequestLifecycleSeed]]:
     materialized_batches = list(batches)
-    envelopes = _batch_envelopes(
-        materialized_batches,
-        job_id=job_id,
-        operator=operator,
-        completion_max_tokens=completion_max_tokens,
-        output_cost_mode=output_cost_mode,
-        batch_index_start=batch_index_start,
-    )
+    envelopes = []
     seeds = []
-    for batch, envelope in zip(materialized_batches, envelopes):
+    for batch_offset, batch in enumerate(materialized_batches):
+        planning_batch_id = f"{job_id}:batch:{batch_index_start + batch_offset}"
+        planning_work = sum(
+            _row_prompt_tokens(batch, row_index)
+            + _row_output_tokens(
+                batch,
+                row_index,
+                output_cost_mode=output_cost_mode,
+                completion_max_tokens=completion_max_tokens,
+            )
+            for row_index in range(batch.num_rows)
+        )
+        if planning_sink is not None:
+            planning_sink.append((planning_work, batch.num_rows))
+        if submission_granularity == "service_quantum":
+            batch_envelopes = _service_quantum_envelopes(
+                batch,
+                planning_batch_id=planning_batch_id,
+                job_id=job_id,
+                operator=operator,
+                completion_max_tokens=completion_max_tokens,
+                output_cost_mode=output_cost_mode,
+                target_tokens=service_quantum_tokens,
+            )
+        elif submission_granularity == "batch":
+            batch_envelopes = (
+                _batch_envelope(
+                    batch,
+                    request_id=planning_batch_id,
+                    job_id=job_id,
+                    operator=operator,
+                    completion_max_tokens=completion_max_tokens,
+                    output_cost_mode=output_cost_mode,
+                    planning_batch_id=planning_batch_id,
+                ),
+            )
+        else:
+            raise ValueError(
+                "offline envelope expansion supports batch or service_quantum"
+            )
+        envelopes.extend(batch_envelopes)
+        if quantum_sink is not None and submission_granularity == "service_quantum":
+            quantum_sink.extend(
+                (
+                    envelope.request.estimated_total_tokens,
+                    envelope.request.row_count,
+                    envelope.request.service_quantum_oversized,
+                )
+                for envelope in batch_envelopes
+            )
+        submission_ids = [
+            envelope.request.request_id
+            for envelope in batch_envelopes
+            for _ in range(envelope.request.row_count)
+        ]
         if "doc_id" not in batch.column_names:
             raise ValueError("doc_id column is required for request tracing")
-        for row_index in range(batch.num_rows):
+        for row_index, submission_id in enumerate(submission_ids):
             doc_value = batch.column("doc_id")[row_index].as_py()
             if doc_value is None:
                 raise ValueError(
@@ -126,7 +250,7 @@ def _offline_batch_envelopes(
             seeds.append(
                 RequestLifecycleSeed(
                     request_id=f"{job_id}:row:{doc_value}",
-                    submission_id=envelope.request.request_id,
+                    submission_id=submission_id,
                     doc_id=str(doc_value),
                     prompt_tokens=prompt_tokens,
                     estimated_output_tokens=_row_output_tokens(
@@ -142,6 +266,15 @@ def _offline_batch_envelopes(
                 )
             )
     return envelopes, seeds
+
+
+def _row_prompt_tokens(
+    table: pa.Table | pa.RecordBatch,
+    row_index: int,
+) -> int:
+    if "prompt_tokens" not in table.column_names:
+        return 0
+    return int(table.column("prompt_tokens")[row_index].as_py() or 0)
 
 
 def _row_output_tokens(
@@ -253,6 +386,7 @@ def _arrow_envelope(
             first_arrival_s=pending.rows[0].arrival_s,
             oldest_arrival_s=pending.oldest_arrival_s,
             payload_id=request_id,
+            planning_batch_id=request_id,
         ),
         payload=payload,
     )
@@ -263,6 +397,7 @@ def _request_envelopes(
     *,
     job_id: str,
     operator: str,
+    planning_batch_id: str,
 ) -> tuple[PayloadEnvelope, ...]:
     envelopes = []
     for row in pending.rows:
@@ -280,6 +415,7 @@ def _request_envelopes(
                     first_arrival_s=row.arrival_s,
                     oldest_arrival_s=row.arrival_s,
                     payload_id=request_id,
+                    planning_batch_id=planning_batch_id,
                 ),
                 payload=row.payload_ref,
             )
@@ -296,6 +432,7 @@ def _arrival_replay_envelopes(
     trace_sink,
     lifecycle_seed_sink=None,
     packing_sink=None,
+    quantum_sink=None,
     epoch_clock=None,
 ) -> Iterable[PayloadEnvelope]:
     completion_max_tokens = (
@@ -391,15 +528,43 @@ def _arrival_replay_envelopes(
             job_id=str(job_id),
             operator=operator,
         )
-        closed_envelopes = (
-            _request_envelopes(
+        if submission_granularity == "request":
+            closed_envelopes = _request_envelopes(
                 pending,
                 job_id=str(job_id),
                 operator=operator,
+                planning_batch_id=envelope.request.request_id,
             )
-            if submission_granularity == "request"
-            else (envelope,)
-        )
+        elif submission_granularity == "service_quantum":
+            closed_envelopes = _service_quantum_envelopes(
+                envelope.payload,
+                planning_batch_id=envelope.request.request_id,
+                job_id=str(job_id),
+                operator=operator,
+                completion_max_tokens=completion_max_tokens,
+                output_cost_mode=getattr(
+                    args,
+                    "output_cost_mode",
+                    "fixed_output_cap",
+                ),
+                target_tokens=args.service_quantum_tokens,
+            )
+            if quantum_sink is not None:
+                quantum_sink.extend(
+                    (
+                        item.request.estimated_total_tokens,
+                        item.request.row_count,
+                        item.request.service_quantum_oversized,
+                    )
+                    for item in closed_envelopes
+                )
+        else:
+            closed_envelopes = (envelope,)
+        row_submission_ids = [
+            item.request.request_id
+            for item in closed_envelopes
+            for _ in range(item.request.row_count)
+        ]
         if lifecycle_seed_sink is not None:
             if replay_start_epoch_s is None or first_source_arrival_s is None:
                 raise RuntimeError("replay epoch origin is not initialized")
@@ -424,11 +589,7 @@ def _arrival_replay_envelopes(
             seeds = [
                 RequestLifecycleSeed(
                     request_id=f"{job_id}:row:{row.row_id}",
-                    submission_id=(
-                        f"{job_id}:request:{row.row_id}"
-                        if submission_granularity == "request"
-                        else envelope.request.request_id
-                    ),
+                    submission_id=submission_id,
                     doc_id=row.row_id,
                     prompt_tokens=row.prompt_tokens,
                     estimated_output_tokens=row.estimated_output_tokens,
@@ -442,9 +603,10 @@ def _arrival_replay_envelopes(
                         else "submission"
                     ),
                 )
-                for row, arrival_epoch_s in zip(
+                for row, arrival_epoch_s, submission_id in zip(
                     pending.rows,
                     arrival_epochs,
+                    row_submission_ids,
                 )
             ]
             for seed in seeds:
