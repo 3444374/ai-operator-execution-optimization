@@ -317,6 +317,88 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 
 ---
 
+## 10.5 重启后恢复全流程(每次开机必做)
+
+AutoDL 按量计费实例关机后**系统盘保留、/root/autodl-tmp 保留**。重开后只需重启服务，**不需要重新 pip install 或下载模型**。
+
+### 10.5.1 一步恢复(推荐)
+
+```bash
+# 1) 启动 PG
+pg_ctlcluster 18 main start 2>/dev/null || service postgresql start
+# 验证
+pg_isready
+
+# 2) 启动双 vLLM endpoint(已在 repo 内)
+bash /root/autodl-tmp/ai-operator/deploy/autodl/start_endpoints.sh
+```
+
+`start_endpoints.sh` 做的事：激活 `/root/autodl-tmp/venvs/vllm-4090` venv → `pkill` 旧进程 → 分别在 GPU0:8000 和 GPU1:8001 启动 vLLM → 轮询 `/health` 直到就绪 → smoke test → 打印 GPU 进程。
+
+### 10.5.2 手动逐步(调试用)
+
+```bash
+# PG
+pg_ctlcluster 18 main start
+pg_isready
+
+# vLLM(需 venv,不在 base conda!)
+source /root/autodl-tmp/venvs/vllm-4090/bin/activate
+export PATH="/root/autodl-tmp/venvs/vllm-4090/lib/python3.12/site-packages/nvidia/cuda_nvcc/bin:$PATH"
+
+CUDA_VISIBLE_DEVICES=0 nohup python -m vllm.entrypoints.openai.api_server \
+  --model /root/autodl-tmp/models/Qwen2.5-1.5B-Instruct \
+  --served-model-name qwen2.5-1.5b --dtype auto \
+  --max-model-len 2048 --gpu-memory-utilization 0.9 \
+  --no-enable-prefix-caching --enable-mfu-metrics \
+  --port 8000 --host 127.0.0.1 \
+  </dev/null >/root/autodl-tmp/vllm_logs/ep_8000.log 2>&1 &
+
+CUDA_VISIBLE_DEVICES=1 nohup python -m vllm.entrypoints.openai.api_server \
+  --model /root/autodl-tmp/models/Qwen2.5-1.5B-Instruct \
+  --served-model-name qwen2.5-1.5b --dtype auto \
+  --max-model-len 2048 --gpu-memory-utilization 0.9 \
+  --no-enable-prefix-caching --enable-mfu-metrics \
+  --port 8001 --host 127.0.0.1 \
+  </dev/null >/root/autodl-tmp/vllm_logs/ep_8001.log 2>&1 &
+
+# 轮询就绪(首次启动需 5-12 分钟,flashinfer JIT 编译)
+curl -sf http://127.0.0.1:8000/health && echo "8000 OK"
+curl -sf http://127.0.0.1:8001/health && echo "8001 OK"
+```
+
+### 10.5.3 代码同步
+
+```bash
+source /etc/network_turbo >/dev/null 2>&1   # 加速 github
+cd /root/autodl-tmp/ai-operator && git pull
+```
+
+### 10.5.4 环境速查
+
+| 组件 | 位置 | 验证 |
+|------|------|------|
+| PG 18.4 | apt, cluster 18/main | `pg_isready` |
+| vLLM venv | `/root/autodl-tmp/venvs/vllm-4090` | `source .../bin/activate && python -c "import vllm; print(vllm.__version__)"` → 0.25.1 |
+| base conda | `/root/miniconda3` | `source .../profile.d/conda.sh && conda activate base && python` → pyarrow/daft/ray/psycopg 全可用 |
+| 模型 | `/root/autodl-tmp/models/Qwen2.5-1.5B-Instruct` | `model.safetensors` 非零(~3GB) |
+| 数据集 | `data/raw/sharegpt_vicuna/` + `data/raw/burstgpt/` | ShareGPT ~642MB, BurstGPT ~50MB |
+| PG 数据 | `ai_operator` 库 | `PGPASSWORD=postgres psql -h localhost -U postgres -d ai_operator -c "SELECT count(*) FROM documents"` |
+
+### 10.5.5 实验运行环境
+
+实验脚本用 **base conda**(不是 vLLM venv):
+
+```bash
+source /root/miniconda3/etc/profile.d/conda.sh && conda activate base
+cd /root/autodl-tmp/ai-operator
+python code/scripts/run_ai_operator_scenarios.py ... --python-executable /root/miniconda3/bin/python ...
+```
+
+关键：`--python-executable` 必须指向 base conda 的 python(有 pyarrow/daft/ray)，**不能**指向 vLLM venv 的 python(只有 vllm)。
+
+---
+
 ## 11. 平台边界声明(写进结果报告)
 
 云上实验结果必须标注,不可与本机结论混同:
