@@ -637,8 +637,10 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 8. `dual_gpu_slo_ewma_flush.example.json`：固定 request-level、65K
    per-endpoint active work 和 1×256 actor pool，在高压与临界到达率分别比较
    fixed-50ms、旧 two-level queue-adaptive 和 SLO-aware EWMA。新控制器只改变
-   上游关批时间：用 arrival/service EWMA 估计 fill/service time，以 oldest
-   request slack 作为硬期限，反馈缺失或过期时回退到 fixed-50ms。
+   上游关批时间：用 arrival/global-service EWMA 的负载比在 25–50ms 间插值，
+   以 oldest request slack 作为硬期限，反馈缺失或过期时回退到 fixed-50ms。
+   当前 trace 标定显示 `0.002` 的 p50 offered/service ratio 仍约为 2.9，
+   因此临界负载改用 `0.006`；该值是本 workload/双 endpoint 的实验点。
 9. `dual_gpu_submission_policy.example.json`：在已标定 token budget 和
    active-work 配额上，逐项消融 least-work routing、service-quantum 动态预算
    和 queue-adaptive flush；最后的 combined arm 只检查交互，不替代单项结论。

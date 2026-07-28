@@ -313,6 +313,11 @@ class ExperimentScenarioTests(unittest.TestCase):
             for scenario in slo_ewma.scenarios:
                 self.assertIn("--arrival-time-scale", scenario.args)
                 self.assertIn("--flush-policy", scenario.args)
+                scale_index = scenario.args.index("--arrival-time-scale")
+                self.assertEqual(
+                    scenario.args[scale_index + 1],
+                    "0.006" if scenario.scenario_id.startswith("near_") else "0.001",
+                )
                 if scenario.scenario_id.endswith("slo_ewma"):
                     self.assertIn("slo_ewma", scenario.args)
                     self.assertIn("--flush-ewma-alpha", scenario.args)

@@ -6,9 +6,9 @@
 
 Replace the current two-level `queue_adaptive` baseline with one small,
 auditable candidate that has an actual decision opportunity under burst/gap
-load. The controller must use oldest-request slack, token fill time and
-arrival/service EWMA, retain a fixed-50ms fallback and hard deadline, and keep
-request-level completion as the credit boundary.
+load. The controller must use oldest-request slack and arrival/service EWMA,
+retain a fixed-50ms fallback and hard deadline, and keep request-level
+completion as the credit boundary.
 
 This plan follows the negative saturated-work results:
 
@@ -44,7 +44,7 @@ Add tests for:
 2. budget reached selects zero wait;
 3. exhausted SLO slack selects zero wait;
 4. an idle service selects the minimum wait;
-5. a busy service selects EWMA-estimated fill time, bounded by min/max;
+5. a busy service interpolates the min/max window from EWMA load ratio;
 6. small target changes inside the deadband hold the previous window;
 7. replay passes token budget and arrival/service rates into the policy and
    records the selected reason.
@@ -67,7 +67,7 @@ budget full              -> 0ms
 stale/missing feedback   -> fixed max wait
 predicted SLO slack <= 0 -> 0ms
 service idle             -> min wait
-service busy             -> clamp(predicted fill time, min, max)
+service busy             -> interpolate arrival/aggregate-service load ratio
 small target movement    -> previous window (deadband)
 ```
 
@@ -106,7 +106,7 @@ Use request granularity, active work 65,536/endpoint and 1×256 actors. Compare
 fixed 50ms, current two-level queue baseline and SLO-EWMA at:
 
 - high-rate replay (`arrival_time_scale=0.001`);
-- near-capacity burst/gap replay (`arrival_time_scale=0.002`).
+- near-capacity burst/gap replay (`arrival_time_scale=0.006`).
 
 Run a 128-row correctness/trace gate first, then one warm-up plus three formal
 repeats per arm. Require exactly-once rows, no worker failures, fresh trace
@@ -141,3 +141,10 @@ provider-lifecycle condition still created a live metrics provider only for
 sites and adds a regression test. These two pre-fix gates are wiring evidence,
 not performance evidence; a post-fix gate must show positive service-rate rows
 and non-fallback controller reasons before the formal matrix starts.
+
+The post-fix gate then showed that full-budget fill time still collapsed to
+50ms: the 32K budget required 1.54s/2.78s at the high/near p50 arrival rates,
+far outside a 25–50ms control window. The busy rule was therefore revised to
+interpolate on global-arrival / aggregate-service EWMA around ratio 1.0. The
+same trace showed that scale 0.002 remained overloaded (p50 ratio about 2.9),
+so the near-capacity arm was moved to 0.006 before formal execution.

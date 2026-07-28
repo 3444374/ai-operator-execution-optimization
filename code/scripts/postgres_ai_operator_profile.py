@@ -2114,6 +2114,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     packing_sink=replay_packing,
                     quantum_sink=service_quanta,
                     epoch_clock=lifecycle_epoch_clock,
+                    service_endpoint_count=len(endpoint_urls),
                 )
                 operator_timer = StageTimer.start("operator_wall")
                 results, metrics = submit_operator_batches(

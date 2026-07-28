@@ -5,7 +5,7 @@
 - 根据 fixed-50 与旧 two-level adaptive 在单 job 饱和稳态下几乎无差异的结果，
   将下一轮问题改为“控制器是否能在存在关批决策空间的临界负载改善 SLO-goodput
   或尾延迟”，而不是继续增加饱和 offered work。
-- 新增独立 `SloAwareEwmaFlush`：用到达/服务 token rate EWMA 估计剩余
+- 新增独立 `SloAwareEwmaFlush` 初版：用到达/服务 token rate EWMA 估计剩余
   token-budget fill time 与当前 pending service time，以 oldest request SLO
   slack 限制最长等待，以 deadband 抑制窗口振荡；service feedback 缺失或过期
   时回退到 fixed maximum window。策略保持纯模块，不导入 Ray、Daft、Arrow
@@ -27,6 +27,16 @@
   与 replay observation 同时调用，并增加 `slo_ewma=true/fixed=false` 回归测试。
   旧 gate 仅作为 wiring failure 证据，不进入性能比较；修复后必须重跑反馈 gate，
   确认出现正 service-rate 与非 fallback reason 才允许启动 formal。
+- 修复后的 512 行 gate 出现 382/532 个正 service-rate event，并进入
+  `busy_fill_ewma`，证明闭环接线生效；但 high/near 平均窗口仍分别为
+  49.75/49.82ms。trace 显示填满 32K planning budget 的 p50 预测时间为
+  1.54s/2.78s，远大于 25–50ms 控制时标，因此 full-budget fill-time 规则在
+  此配置下必然退化为 fixed-50，未启动无意义的 24-run formal。
+- 将 busy signal 改为 `global arrival EWMA / (per-endpoint service EWMA ×
+  endpoint count)`：ratio≤0.9 取 25ms，ratio≥1.1 取 50ms，中间线性插值并
+  保留 deadband/SLO hard limit。原 `0.002` arm 的 p50 ratio 仍约 2.9，
+  不是真正临界负载；按同一 trace 预注册 `0.006` 作为近容量点。修订后需再次
+  gate，确认窗口不再退化后才允许 formal。
 
 ## 2026-07-29 complete-row service quantum 负结果与机制边界
 

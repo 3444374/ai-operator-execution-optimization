@@ -139,7 +139,7 @@
     {
       "scenario_id": "near_fixed50",
       "args": [
-        "--arrival-time-scale", "0.002",
+        "--arrival-time-scale", "0.006",
         "--flush-policy", "fixed_timeout",
         "--flush-timeout-ms", "50",
         "--flush-max-wait-ms", "50"
@@ -148,7 +148,7 @@
     {
       "scenario_id": "near_queue25_50",
       "args": [
-        "--arrival-time-scale", "0.002",
+        "--arrival-time-scale", "0.006",
         "--flush-policy", "queue_adaptive",
         "--flush-timeout-ms", "25",
         "--flush-max-wait-ms", "50"
@@ -157,7 +157,7 @@
     {
       "scenario_id": "near_slo_ewma",
       "args": [
-        "--arrival-time-scale", "0.002",
+        "--arrival-time-scale", "0.006",
         "--flush-policy", "slo_ewma",
         "--flush-timeout-ms", "25",
         "--flush-max-wait-ms", "50",

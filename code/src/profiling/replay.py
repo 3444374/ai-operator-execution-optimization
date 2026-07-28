@@ -447,6 +447,7 @@ def _arrival_replay_envelopes(
     packing_sink=None,
     quantum_sink=None,
     epoch_clock=None,
+    service_endpoint_count: int = 1,
 ) -> Iterable[PayloadEnvelope]:
     completion_max_tokens = (
         args.completion_max_tokens if operator == "ai_complete" else 0
@@ -499,6 +500,7 @@ def _arrival_replay_envelopes(
             request_slo_s=args.request_slo_ms / 1000.0,
             ewma_alpha=args.flush_ewma_alpha,
             deadband_ratio=args.flush_deadband_ratio,
+            endpoint_count=service_endpoint_count,
         ),
     }
     try:

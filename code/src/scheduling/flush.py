@@ -199,6 +199,55 @@ def _require_finite_range(
         raise ValueError(f"{name} must be in {bracket}{lower}{ceiling}")
 
 
+def _ewma(previous: float | None, sample: float, alpha: float) -> float:
+    return sample if previous is None else alpha * sample + (1 - alpha) * previous
+
+
+def _load_window(
+    min_wait_s: float,
+    max_wait_s: float,
+    load_ratio: float,
+    transition_ratio: float,
+) -> float:
+    if transition_ratio == 0:
+        fraction = float(load_ratio >= 1)
+    else:
+        fraction = min(
+            1.0,
+            max(
+                0.0,
+                (load_ratio - (1 - transition_ratio))
+                / (2 * transition_ratio),
+            ),
+        )
+    return min_wait_s + (max_wait_s - min_wait_s) * fraction
+
+
+def _validate_slo_flush_config(
+    min_wait_s: float,
+    max_wait_s: float,
+    request_slo_s: float,
+    ewma_alpha: float,
+    deadband_ratio: float,
+    endpoint_count: int,
+) -> None:
+    _require_finite_range("min_wait_s", min_wait_s, lower=0)
+    _require_finite_range("max_wait_s", max_wait_s, lower=0)
+    _require_finite_range("request_slo_s", request_slo_s, lower=0)
+    _require_finite_range("ewma_alpha", ewma_alpha, lower=0, upper=1)
+    _require_finite_range(
+        "deadband_ratio", deadband_ratio, lower=0, upper=1, lower_inclusive=True
+    )
+    if max_wait_s < min_wait_s:
+        raise ValueError("max_wait_s must be finite and at least min_wait_s")
+    if (
+        not isinstance(endpoint_count, int)
+        or isinstance(endpoint_count, bool)
+        or endpoint_count <= 0
+    ):
+        raise ValueError("endpoint_count must be a positive integer")
+
+
 class SloAwareEwmaFlush:
     """Control upstream batching delay from EWMA fill time and SLO slack.
 
@@ -214,27 +263,22 @@ class SloAwareEwmaFlush:
         request_slo_s: float,
         ewma_alpha: float = 0.3,
         deadband_ratio: float = 0.1,
+        endpoint_count: int = 1,
     ) -> None:
-        _require_finite_range("min_wait_s", min_wait_s, lower=0)
-        _require_finite_range("max_wait_s", max_wait_s, lower=0)
-        _require_finite_range("request_slo_s", request_slo_s, lower=0)
-        _require_finite_range(
-            "ewma_alpha", ewma_alpha, lower=0, upper=1
-        )
-        _require_finite_range(
-            "deadband_ratio",
+        _validate_slo_flush_config(
+            min_wait_s,
+            max_wait_s,
+            request_slo_s,
+            ewma_alpha,
             deadband_ratio,
-            lower=0,
-            upper=1,
-            lower_inclusive=True,
+            endpoint_count,
         )
-        if max_wait_s < min_wait_s:
-            raise ValueError("max_wait_s must be finite and at least min_wait_s")
         self.min_wait_s = min_wait_s
         self.max_wait_s = max_wait_s
         self.request_slo_s = request_slo_s
         self.ewma_alpha = ewma_alpha
         self.deadband_ratio = deadband_ratio
+        self.endpoint_count = endpoint_count
         self._arrival_rate: float | None = None
         self._service_rate: float | None = None
         self._last_wait_s: float | None = None
@@ -242,17 +286,25 @@ class SloAwareEwmaFlush:
     def select_window(self, observation: FlushObservation) -> FlushWindow:
         if observation.budget_reached:
             return FlushWindow(0.0, "budget_reached")
-        if not self._feedback_available(observation):
+        if not (
+            observation.metrics_fresh
+            and observation.has_service_metrics
+            and (observation.arrival_rate_tokens_s or 0) > 0
+            and (observation.service_rate_tokens_s_per_endpoint or 0) > 0
+        ):
             return FlushWindow(self.max_wait_s, "fixed_fallback")
-        self._arrival_rate = self._ewma(
+        self._arrival_rate = _ewma(
             self._arrival_rate,
             observation.arrival_rate_tokens_s,
+            self.ewma_alpha,
         )
-        self._service_rate = self._ewma(
+        self._service_rate = _ewma(
             self._service_rate,
             observation.service_rate_tokens_s_per_endpoint,
+            self.ewma_alpha,
         )
-        service_s = observation.pending_cost / self._service_rate
+        aggregate_service_rate = self._service_rate * self.endpoint_count
+        service_s = observation.pending_cost / aggregate_service_rate
         oldest_age_limit_s = self.request_slo_s - service_s
         if observation.age_s >= oldest_age_limit_s:
             self._last_wait_s = 0.0
@@ -262,14 +314,17 @@ class SloAwareEwmaFlush:
             target_s = min(self.min_wait_s, hard_wait_s)
             reason = "service_idle"
         else:
-            remaining = max(0, observation.token_budget - observation.pending_cost)
-            fill_s = (
-                remaining / self._arrival_rate
-                if observation.token_budget > 0
-                else self.max_wait_s
+            load_ratio = self._arrival_rate / aggregate_service_rate
+            target_s = min(
+                hard_wait_s,
+                _load_window(
+                    self.min_wait_s,
+                    self.max_wait_s,
+                    load_ratio,
+                    self.deadband_ratio,
+                ),
             )
-            target_s = min(hard_wait_s, max(self.min_wait_s, fill_s))
-            reason = "busy_fill_ewma"
+            reason = "busy_load_ewma"
         deadband_s = (self.max_wait_s - self.min_wait_s) * self.deadband_ratio
         if (
             self._last_wait_s is not None
@@ -290,17 +345,3 @@ class SloAwareEwmaFlush:
             window.reason if flush else f"{window.reason}_wait",
             observation.age_s,
         )
-
-    def _feedback_available(self, observation: FlushObservation) -> bool:
-        return (
-            observation.metrics_fresh
-            and observation.has_service_metrics
-            and (observation.arrival_rate_tokens_s or 0) > 0
-            and (observation.service_rate_tokens_s_per_endpoint or 0) > 0
-        )
-
-    def _ewma(self, previous: float | None, sample: float | None) -> float:
-        assert sample is not None
-        if previous is None:
-            return sample
-        return self.ewma_alpha * sample + (1 - self.ewma_alpha) * previous
