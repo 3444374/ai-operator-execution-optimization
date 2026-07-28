@@ -8,6 +8,7 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
+| `dual_gpu_actor_pool_shape_20260729/` | Fixed-work, fixed-slot and fixed-Ray-CPU 1×256/2×128/4×64 actor-pool comparison. | Multi-actor shapes gain at most 2.00%, below the preregistered 5% promotion threshold; retain 1×256 for the current single-job homogeneous endpoints. |
 | `dual_gpu_active_work_saturation_20260729/` | Dual-4090 eight-point request-level active-work saturation curve with three formal repeats per cap. | 65,536 is the preregistered smallest saturation point; above it throughput plateaus while P99/SLO worsen. |
 | `dual_gpu_active_work_curve_20260728/` | Earlier five-point active-work curve used to discover that the original upper bound was still rising. | Superseded for capacity selection by the 2026-07-29 extension; retains diagnostic and reproducibility value. |
 | `dual_gpu_request_replay_20260728/` | Whole-submission barrier versus request-level replenishment under K-count controls. | K48 matches batch K16 at nominal matched work; K64 mixes in about 33% more offered work. |

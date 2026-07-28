@@ -6,7 +6,7 @@
 
 文本主线的正式研究实验已经开展：数据组织、K_max/flush 提交控制、联合搜索、prefix-aware、BFD/row-cap、CUDA Graph baseline 和算子代价估计均已有不同等级的证据。统一完成度、全部结果目录和结论边界见 [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
 
-Adaptive K_max 的 shared-vLLM 双作业复验已经完成：static K8 保护前台，AIMD 无 decrease 并饱和至 K≈16，未优于 static K16；追加 adaptive-flush 分支同样没有稳定增量。双 4090 request-level active-work 已扩展到 16K–131K 并按预注册规则选择每 endpoint 65,536；有界 Actor Pool 三形状 gate 已通过，正式重复运行中。当前尚未完成的主要验证是 complete-row service quantum、多 job 共享 endpoint 的 request/work credit 与公平队列、UCB 的 epoch reward 正确归因与端到端接入、路由/故障迁移、prefix cache 开启后的独立消融，以及图像 workload 多模态泛化。GPU-backed `AI_EMBED` 动机证据仍放在 `motivation/results/gpu/`，不与方法实验混放。
+Adaptive K_max 的 shared-vLLM 双作业复验已经完成：static K8 保护前台，AIMD 无 decrease 并饱和至 K≈16，未优于 static K16；追加 adaptive-flush 分支同样没有稳定增量。双 4090 request-level active-work 已扩展到 16K–131K 并按预注册规则选择每 endpoint 65,536；固定资源的有界 Actor Pool 三形状重复已完成，多 actor 未过 5% 晋升门槛，当前保留 1×256。complete-row service quantum 正式重复正在运行。当前尚未完成的主要验证还有多 job 共享 endpoint 的 request/work credit 与公平队列、UCB 的 epoch reward 正确归因与端到端接入、路由/故障迁移、prefix cache 开启后的独立消融，以及图像 workload 多模态泛化。GPU-backed `AI_EMBED` 动机证据仍放在 `motivation/results/gpu/`，不与方法实验混放。
 
 ## 目录分工
 

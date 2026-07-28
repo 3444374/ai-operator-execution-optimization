@@ -1,0 +1,4 @@
+scenario_id,actor_workers_per_endpoint,ray_actor_max_concurrency,ray_cpu_per_actor,slots_per_endpoint,tokens_per_s_mean,tokens_per_s_sd,tokens_per_s_cv_pct,throughput_delta_vs_1x_pct,mfu_pct_mean,request_p95_s_mean,request_p99_s_mean,p99_delta_vs_1x_pct,slo_violation_pct_mean,slo_goodput_per_s_mean,e2e_s_mean,bounded_wait_s_mean,slot_held_utilization_mean,ray_to_service_ms_mean,credit_held_s_mean,promotion_decision
+pool_1x256,1,256,0.5,256,7983.892,19.938,0.250,0.000,35.022,17.203,36.760,0.000,2.214,23.496,85.235,27.932,0.417878,4.027,8.526,baseline_selected
+pool_2x128,2,128,0.25,256,8143.762,78.131,0.959,2.002,35.029,17.179,36.819,0.161,2.279,23.955,83.550,27.789,0.418047,24.281,8.526,not_promoted
+pool_4x64,4,64,0.125,256,8043.819,75.085,0.933,0.751,35.049,17.153,36.700,-0.163,2.132,23.704,84.561,27.742,0.418061,10.362,8.519,not_promoted

@@ -85,18 +85,19 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - ✅ 双 4090 active-work 扩展饱和曲线：八档各三次 formal；65K 达到最大
   吞吐 97.80%，下一档仅 +0.92%，98K→131K 吞吐持平而 P99 约 40s；
   按预注册规则选择 `ACTIVE_WORK_PER_ENDPOINT=65536`
+- ✅ 固定资源 Actor Pool：1×256/2×128/4×64 在相同 65K work、256 slots
+  和 0.5 CPU/endpoint 下完成重复；多 actor 最高仅 +2.00%，未过 5% 门槛，
+  保留 1×256
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P1（运行中）**：固定 65K active work、256 slots 与 0.5 Ray
-   CPU/endpoint，比较 1×256/2×128/4×64 Actor Pool
-2. **P1**：固定最佳 pool、planning budget 与 active work，比较
+1. **P1（运行中）**：固定 1×256 pool、planning budget 与 active work，比较
    whole-batch、service quantum 512/1024/2048/4096 和 request diagnostic
-3. **P1**：SLO-aware EWMA flush；当前 25/50ms two-level 只作为 baseline
-4. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
-5. **P2**（文本门禁已完成）：多模态泛化验证
-6. 在当前 2×4090 上完成多 endpoint / 多 GPU 重复 formal 验证
-7. 代价模型增加独立时间段/新 workload 校准和预测区间
-8. **P1**：Shared-vLLM 扩展 1/2/4 job；共享 endpoint 的 request/work
+2. **P1**：SLO-aware EWMA flush；当前 25/50ms two-level 只作为 baseline
+3. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
+4. **P2**（文本门禁已完成）：多模态泛化验证
+5. 在当前 2×4090 上完成多 endpoint / 多 GPU 重复 formal 验证
+6. 代价模型增加独立时间段/新 workload 校准和预测区间
+7. **P1**：Shared-vLLM 扩展 1/2/4 job；共享 endpoint 的 request/work
    credit 与 work-conserving 公平队列代码已完成，尚待远端门禁和正式数据
 
 继续从文献提取机制时，统一按

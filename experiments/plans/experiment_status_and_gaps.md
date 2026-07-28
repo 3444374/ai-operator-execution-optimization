@@ -484,11 +484,12 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
    的不公平对照；
 2. 07-29 八档 request-level active-work 扩展曲线已完成，按预注册规则选择
    65,536；
-3. 正在该饱和点固定每 endpoint 256 actor slots，比较
-   1×256/2×128/4×64。16-slot 草案按当前 332 work/request 与
+3. 已在该饱和点固定每 endpoint 256 actor slots，完成
+   1×256/2×128/4×64 三次重复。16-slot 草案按当前 332 work/request 与
    1337 work/organization-batch 估算会严重欠载，已在启动前否决；三个
-   arm 的每 endpoint Ray CPU reservation 同时固定为 0.5；
-4. 固定最佳 pool、planning budget 和 active work，比较 whole batch、
+   arm 的每 endpoint Ray CPU reservation 同时固定为 0.5。2×128/4×64
+   相对 1×256 仅 +2.00%/+0.75%，未过 5% 门槛，保留 1×256；
+4. 正在固定 1×256 pool、planning budget 和 active work，比较 whole batch、
    complete-row service quantum 512/1024/2048/4096 与 request diagnostic。
    8192 大于当前组织批次最大 work≈5892，会退化为 batch control，故删除；
 5. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
@@ -521,9 +522,9 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 |---|---|---|
 | Request-level completion/credit release | 已实现并完成双 4090 重复 | 固定 active work 后继续验证 exactly-once 与逐请求释放 |
 | Continuous replenishment | 上游已实现；K-count 双卡对照未隔离独立收益 | 固定 active work 的 whole-submission vs request-credit 对照 |
-| Token-work admission | 已实现；五档曲线完成，八档扩展曲线运行中 | 按预注册饱和规则选择固定 work，不提前指定最高已测点 |
-| Complete-row service quantum | offline/replay、trace 与 credit 语义已实现 | 固定 planning/work/pool 比 batch、512/1024/2048/4096/request |
-| Bounded Ray actor pool | 固定 slots、worker routing 与失败清理已实现 | 每 endpoint 256 slots 下比 1×256/2×128/4×64 |
+| Token-work admission | 已实现；八档扩展曲线完成并选定 65,536 | 后续策略固定该 work，不再靠增加 offered load 获得表面收益 |
+| Complete-row service quantum | offline/replay、trace 与 credit 语义已实现，64 行 gate 通过 | 正在固定 planning/work/pool 比 batch、512/1024/2048/4096/request |
+| Bounded Ray actor pool | 固定 slots、worker routing 与失败清理已实现并完成正式重复 | 多 actor 未过 5% 晋升门槛；当前保留 1×256，多 job 分池另行验证 |
 | SLO-aware adaptive flush | two-level 25/50ms baseline | oldest age/slack + fill + EWMA service/arrival + hard deadline |
 | Completion-span/HOL 观测 | 有 request/submission join key | 记录同 submission 首末完成跨度和 credit idle |
 | Endpoint-local controller | topology/接口具备 | 两个真实 endpoint 后验证独立状态与回退 |

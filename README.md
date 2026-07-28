@@ -124,13 +124,17 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
   formal；65K 已达到最大吞吐的 97.80%，下一档只增 0.92%，98K→131K
   完全持平而 P99 约升至 40s。按预注册规则选择 65,536。
   详见 `experiments/results/dual_gpu_active_work_saturation_20260729/`。
+- ✅ **固定资源 Ray actor-pool 形状对照**（2026-07-29）：在相同 65K
+  active work、256 slots 和 0.5 Ray CPU/endpoint 下，2×128/4×64 相对
+  1×256 仅 +2.00%/+0.75%，未达到 5% 晋升门槛；保留最简单的 1×256。
+  详见 `experiments/results/dual_gpu_actor_pool_shape_20260729/`。
 - pgvector(384) 写回 0.897s vs JSON text 1.567s。
 - 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 与 `motivation/results/fake_cpu/` 仅作历史参考。
 
-**下一步**：active-work 已标定为每 endpoint 65,536；固定该 work、256 actor
-slots 和 0.5 Ray CPU/endpoint，依次比较 1×256/2×128/4×64 pool shape，
-再比较 whole-batch、complete-row service quantum 512/1024/2048/4096 与
-request diagnostic。随后把 two-level queue-adaptive baseline 推进为
+**下一步**：active-work 已标定为每 endpoint 65,536，Actor Pool 已保留
+1×256；正在固定该 work、256 actor slots 和 0.5 Ray CPU/endpoint，比较
+whole-batch、complete-row service quantum 512/1024/2048/4096 与 request
+diagnostic。随后把 two-level queue-adaptive baseline 推进为
 SLO-aware EWMA flush，再做 prefix cache-on、多模态和多 job formal 验证。
 详见 `PROJECT_OUTLINE.md`
 §近期优先级、`experiments/plans/experiment_status_and_gaps.md` 和
@@ -146,9 +150,9 @@ SLO-aware EWMA flush，再做 prefix cache-on、多模态和多 job formal 验�
 
 vLLM baseline 与 Daft 文本阶段接入已完成（见上"当前证据"）。当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 
-1. **P1**：固定 `max_active_work_per_endpoint=65536` 和每 endpoint
-   256 actor slots，完成 Actor Pool 形状与 complete-row service quantum
-   隔离对照。
+1. **P1（运行中）**：Actor Pool 形状对照已保留 1×256；固定
+   `max_active_work_per_endpoint=65536` 和每 endpoint 256 actor slots，
+   完成 complete-row service quantum 隔离对照。
 2. **P1**：SLO-aware EWMA flush vs 最佳静态 timeout vs 当前 two-level
    baseline；不再把两档阈值版本标成完整 adaptive 方法。
 3. **P1**：Prefix cache-on 与 length-align 显式消融；扩展 shared-vLLM

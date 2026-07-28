@@ -140,21 +140,22 @@
   65K 达到最大均值 97.80% 且下一档只增 0.92%；98K→131K 吞吐持平，
   P99 约 40s。按预注册规则选择 65,536，后续策略不再靠继续增大 offered
   work 获取表面收益
+- ✅ 双 4090 固定资源 Actor Pool 形状对照：12/12 run 成功；固定
+  65,536 work、256 slots 和 0.5 Ray CPU/endpoint 后，2×128/4×64 相对
+  1×256 吞吐仅 +2.00%/+0.75%，MFU 与尾延迟基本重合，未达到 5% 晋升
+  门槛；当前保留 1×256
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1（运行中）**：固定每 endpoint active work 65,536、256 个 Ray actor
-   slots 和 0.5 Ray CPU reservation；64 行三形状 gate 已通过，正式比较
-   request-level 的 1×256/2×128/4×64 pool 形状。
-2. **P1（代码完成，待上一阶段）**：固定最佳 pool、planning budget 和
+1. **P1（运行中）**：固定已选 1×256 pool、planning budget 和
    active work，比较 whole batch、fixed service quantum
    512/1024/2048/4096 与 one-row request diagnostic。
    原 16-slot 草案因可见 work 明显低于饱和区已在运行前否决；8192 quantum
    因大于当前组织批次最大 work、会退化为 batch control 而删除。
-3. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；
+2. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；
    下一版需显式使用 oldest-request slack、token backlog、arrival/service-rate
    EWMA、hard deadline 与滞回，并对比最佳静态窗口。
-4. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
+3. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
    证据，不能用当前 cache-off 数据推断缓存收益。
 5. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
 6. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +

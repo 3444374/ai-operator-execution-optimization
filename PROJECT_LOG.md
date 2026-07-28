@@ -1,5 +1,27 @@
 # 项目日志
 
+## 2026-07-29 双 GPU Ray actor-pool 形状负结果
+
+- 在已标定的每 endpoint 65,536 active work 下，固定 256 actor slots 和
+  0.5 Ray CPU/endpoint，完成 1×256/2×128/4×64 三形状 64 行 gate 与
+  12/12 正式 runs；0 incident、worker failure 为 0。
+- 1×256/2×128/4×64 的 formal 吞吐均值为 7983.9/8143.8/8043.8
+  tokens/s，相对 baseline 为 0%/+2.00%/+0.75%；MFU 均约 35.0%，P99
+  均约 36.7–36.8s，credit-held 与 slot utilization 几乎重合。
+- 多 actor 未达到预注册的 5% 吞吐/SLO goodput 晋升门槛；2×128 的
+  Ray→service 均值还从 4.0ms 增至 24.3ms。因此当前同构、单 job 场景保留
+  最简单的 1×256，不启动 least-active-work worker routing。
+- 该结果只否定“增加 actor 数本身可提速”，不否定 Ray stateful admission、
+  多 job 隔离、异构分池、故障迁移的后续价值。完整结果归档到
+  `experiments/results/dual_gpu_actor_pool_shape_20260729/`。
+- 随后的 complete-row service-quantum 64 行 gate 6/6 通过：所有场景
+  64 行 exactly-once、无失败；512/1024 token 分别形成 64/48 个完整行
+  quantum，oversized 单行未被拆分。正式 24-run 矩阵已启动。
+- 正式矩阵第一次启动在 argparse 阶段因漏传 runner 的 profiler、Python、
+  health 和 metrics 参数立即退出，未创建结果目录或占用 GPU；失败日志保留。
+  随后按 `deploy/autodl/README.md` 的完整命令重新启动。该事故再次说明新会话
+  必须复制 runbook 的完整 runner 参数，不能只传 config/output。
+
 ## 2026-07-29 Checkpoint B：complete-row service quantum 实现启动
 
 - 新增纯策略 `slice_service_quanta`：按目标 token work 顺序累积完整行，
