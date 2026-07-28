@@ -148,3 +148,11 @@ far outside a 25–50ms control window. The busy rule was therefore revised to
 interpolate on global-arrival / aggregate-service EWMA around ratio 1.0. The
 same trace showed that scale 0.002 remained overloaded (p50 ratio about 2.9),
 so the near-capacity arm was moved to 0.006 before formal execution.
+
+The second load-ratio gate exposed another identifiability issue: achieved
+service throughput falls with offered load in a burst/gap run, so it is not an
+independent capacity estimate. The high/near p50 online ratios remained
+3.68/2.52. The third revision therefore floors each endpoint's service EWMA
+with the independently measured saturated capacity (4,000 tokens/s/endpoint
+for this model/GPU setup). The calibrated value is explicit in CLI, CSV and the
+scenario template and must be remeasured when hardware or model changes.

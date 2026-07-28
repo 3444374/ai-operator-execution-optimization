@@ -48,7 +48,8 @@ FORMAL_RESULT_FIELDS = tuple(
     control_trace_events arrival_replay arrival_time_scale arrival_replay_preload
     submission_granularity
     flush_policy flush_timeout_ms flush_max_wait_ms flush_ewma_alpha
-    flush_deadband_ratio flush_trace_output
+    flush_deadband_ratio flush_service_capacity_tokens_s_per_endpoint
+    flush_trace_output
     flush_trace_path flush_trace_events submission_trace_path
     submission_trace_events resource_trace_path resource_trace_events
     resource_sample_interval_s resource_metrics_status gpu_utilization_pct_mean

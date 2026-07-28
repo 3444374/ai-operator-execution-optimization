@@ -281,6 +281,25 @@ class FlushPolicyTests(unittest.TestCase):
 
         self.assertEqual((window.wait_s, window.reason), (0.025, "busy_load_ewma"))
 
+    def test_slo_ewma_uses_calibrated_capacity_floor_for_load(self) -> None:
+        policy = SloAwareEwmaFlush(
+            min_wait_s=0.025,
+            max_wait_s=0.050,
+            request_slo_s=1.0,
+            endpoint_count=2,
+            service_capacity_tokens_s_per_endpoint=4_000.0,
+        )
+
+        window = policy.select_window(
+            observation(
+                running=4,
+                arrival_rate_tokens_s=4_000.0,
+                service_rate_tokens_s_per_endpoint=500.0,
+            )
+        )
+
+        self.assertEqual((window.wait_s, window.reason), (0.025, "busy_load_ewma"))
+
     def test_slo_ewma_deadband_holds_small_window_change(self) -> None:
         policy = SloAwareEwmaFlush(
             min_wait_s=0.025,

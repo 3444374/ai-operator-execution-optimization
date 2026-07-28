@@ -230,6 +230,7 @@ def _validate_slo_flush_config(
     ewma_alpha: float,
     deadband_ratio: float,
     endpoint_count: int,
+    service_capacity_tokens_s_per_endpoint: float | None,
 ) -> None:
     _require_finite_range("min_wait_s", min_wait_s, lower=0)
     _require_finite_range("max_wait_s", max_wait_s, lower=0)
@@ -246,6 +247,12 @@ def _validate_slo_flush_config(
         or endpoint_count <= 0
     ):
         raise ValueError("endpoint_count must be a positive integer")
+    if service_capacity_tokens_s_per_endpoint is not None:
+        _require_finite_range(
+            "service_capacity_tokens_s_per_endpoint",
+            service_capacity_tokens_s_per_endpoint,
+            lower=0,
+        )
 
 
 class SloAwareEwmaFlush:
@@ -264,6 +271,7 @@ class SloAwareEwmaFlush:
         ewma_alpha: float = 0.3,
         deadband_ratio: float = 0.1,
         endpoint_count: int = 1,
+        service_capacity_tokens_s_per_endpoint: float | None = None,
     ) -> None:
         _validate_slo_flush_config(
             min_wait_s,
@@ -272,6 +280,7 @@ class SloAwareEwmaFlush:
             ewma_alpha,
             deadband_ratio,
             endpoint_count,
+            service_capacity_tokens_s_per_endpoint,
         )
         self.min_wait_s = min_wait_s
         self.max_wait_s = max_wait_s
@@ -279,6 +288,7 @@ class SloAwareEwmaFlush:
         self.ewma_alpha = ewma_alpha
         self.deadband_ratio = deadband_ratio
         self.endpoint_count = endpoint_count
+        self._capacity_floor = service_capacity_tokens_s_per_endpoint
         self._arrival_rate: float | None = None
         self._service_rate: float | None = None
         self._last_wait_s: float | None = None
@@ -303,7 +313,8 @@ class SloAwareEwmaFlush:
             observation.service_rate_tokens_s_per_endpoint,
             self.ewma_alpha,
         )
-        aggregate_service_rate = self._service_rate * self.endpoint_count
+        effective_service_rate = max(self._service_rate, self._capacity_floor or 0)
+        aggregate_service_rate = effective_service_rate * self.endpoint_count
         service_s = observation.pending_cost / aggregate_service_rate
         oldest_age_limit_s = self.request_slo_s - service_s
         if observation.age_s >= oldest_age_limit_s:

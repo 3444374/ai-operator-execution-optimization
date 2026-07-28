@@ -1092,6 +1092,24 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
         raise SystemExit("--flush-deadband-ratio must be in [0, 1]")
     if args.flush_policy == "slo_ewma" and args.request_slo_ms <= 0:
         raise SystemExit("slo-ewma flush requires --request-slo-ms > 0")
+    if (
+        not math.isfinite(
+            args.flush_service_capacity_tokens_s_per_endpoint
+        )
+        or args.flush_service_capacity_tokens_s_per_endpoint < 0
+    ):
+        raise SystemExit(
+            "--flush-service-capacity-tokens-s-per-endpoint must be "
+            "finite and non-negative"
+        )
+    if (
+        args.flush_policy == "slo_ewma"
+        and args.flush_service_capacity_tokens_s_per_endpoint <= 0
+    ):
+        raise SystemExit(
+            "slo-ewma flush requires calibrated "
+            "--flush-service-capacity-tokens-s-per-endpoint > 0"
+        )
 
 
 def _validate_request_trace_args(args: argparse.Namespace) -> None:
@@ -1516,6 +1534,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "flush_max_wait_ms": args.flush_max_wait_ms,
             "flush_ewma_alpha": args.flush_ewma_alpha,
             "flush_deadband_ratio": args.flush_deadband_ratio,
+            "flush_service_capacity_tokens_s_per_endpoint": (
+                args.flush_service_capacity_tokens_s_per_endpoint
+            ),
             "flush_trace_output": args.flush_trace_output or "",
             "flush_trace_path": (
                 args.flush_trace_output
@@ -2472,6 +2493,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "flush_max_wait_ms": args.flush_max_wait_ms,
             "flush_ewma_alpha": args.flush_ewma_alpha,
             "flush_deadband_ratio": args.flush_deadband_ratio,
+            "flush_service_capacity_tokens_s_per_endpoint": (
+                args.flush_service_capacity_tokens_s_per_endpoint
+            ),
             "flush_trace_output": args.flush_trace_output or "",
             "flush_trace_path": flush_trace_path,
             "flush_trace_events": len(flush_trace_events),

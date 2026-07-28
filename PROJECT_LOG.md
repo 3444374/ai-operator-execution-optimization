@@ -37,6 +37,13 @@
   保留 deadband/SLO hard limit。原 `0.002` arm 的 p50 ratio 仍约 2.9，
   不是真正临界负载；按同一 trace 预注册 `0.006` 作为近容量点。修订后需再次
   gate，确认窗口不再退化后才允许 formal。
+- 第二版 512 行 gate 的 high/near p50 ratio 为 3.68/2.52，near 仍有 738/770
+  个有效 event 落在 ratio>1.1。根因是 underloaded/bursty 时 observed service
+  throughput 随 offered load 下降，不能作为 GPU service capacity；继续放大
+  arrival scale 会形成自指控制。第三版引入前序饱和曲线标定的 4,000
+  tokens/s/endpoint 容量下界，load denominator 取
+  `max(service EWMA, calibrated capacity) × endpoint_count`。该参数进入 CLI、
+  正式 CSV 和模板，且 `slo_ewma` 正式运行强制要求正校准值。
 
 ## 2026-07-29 complete-row service quantum 负结果与机制边界
 

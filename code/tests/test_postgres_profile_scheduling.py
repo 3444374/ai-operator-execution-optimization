@@ -2857,6 +2857,21 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "daft_postgres",
                     "--source-order",
                     "arrival_time",
+                    "--flush-policy",
+                    "slo_ewma",
+                    "--request-slo-ms",
+                    "30000",
+                ],
+                "requires calibrated",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
                     "--flush-ewma-alpha",
                     "0",
                 ],
@@ -3994,6 +4009,8 @@ class StaticActorSchedulingTests(unittest.TestCase):
                 "0.4",
                 "--flush-deadband-ratio",
                 "0.2",
+                "--flush-service-capacity-tokens-s-per-endpoint",
+                "4000",
                 "--request-slo-ms",
                 "30000",
             ]
@@ -4002,6 +4019,10 @@ class StaticActorSchedulingTests(unittest.TestCase):
         self.assertEqual(args.flush_policy, "slo_ewma")
         self.assertEqual(args.flush_ewma_alpha, 0.4)
         self.assertEqual(args.flush_deadband_ratio, 0.2)
+        self.assertEqual(
+            args.flush_service_capacity_tokens_s_per_endpoint,
+            4000.0,
+        )
 
     def test_slo_ewma_requires_live_replay_feedback(self) -> None:
         self.assertTrue(

@@ -299,6 +299,10 @@ class ExperimentScenarioTests(unittest.TestCase):
                 / "dual_gpu_slo_ewma_flush.example.json"
             )
             self.assertIn("request", slo_ewma.common_args)
+            self.assertIn(
+                "--flush-service-capacity-tokens-s-per-endpoint",
+                slo_ewma.common_args,
+            )
             self.assertEqual(
                 [item.scenario_id for item in slo_ewma.scenarios],
                 [

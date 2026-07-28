@@ -501,6 +501,14 @@ def _arrival_replay_envelopes(
             ewma_alpha=args.flush_ewma_alpha,
             deadband_ratio=args.flush_deadband_ratio,
             endpoint_count=service_endpoint_count,
+            service_capacity_tokens_s_per_endpoint=(
+                getattr(
+                    args,
+                    "flush_service_capacity_tokens_s_per_endpoint",
+                    0,
+                )
+                or None
+            ),
         ),
     }
     try:

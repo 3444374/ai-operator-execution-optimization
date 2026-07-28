@@ -99,6 +99,8 @@
     "none",
     "--request-slo-ms",
     "30000",
+    "--flush-service-capacity-tokens-s-per-endpoint",
+    "4000",
     "--resource-sample-interval-s",
     "0.25",
     "--gpu-peak-tflops",
