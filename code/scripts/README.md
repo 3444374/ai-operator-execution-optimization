@@ -67,6 +67,7 @@ PostgreSQL documents/job table
 | 指标输出 | `code/src/metrics.py::preflight_metrics_schema` / `append_metrics` | 正式工作前用 dry-run keys 拒绝旧 schema；追加时要求已有 header 与当前 row keys 精确一致 |
 | 场景单写者 | `code/src/runner_lease.py::acquire_runner_lease` | 原子占用输出目录，校验 owner、进程启动身份与 config fingerprint，显式记录 stale recovery |
 | completion 粒度 | `profiling.replay::_service_quantum_envelopes` | 在 planning batch 内按预测 work 切完整行，分别生成 HTTP/Ray completion 与 credit 释放单元；不拆单行 prompt |
+| actor worker pool | `ActorWorkerPoolSubmitter` / `RaySubmissionAdapter` | 每个 endpoint 显式限制 worker slots，按 round-robin 或 least-active-work 分配，completion/failure 后由 canonical handle 精确释放 |
 
 ## 当前本地运行
 
@@ -86,6 +87,14 @@ length-align 等组织策略决定；service quantum 只改变下游完成与补
 汇总 CSV 分开记录 organization batch 和 service quantum 的 count/rows/work，
 submission trace schema 4 记录两级 ID、oversized 标记、credit-held 与
 Ray-to-service 时间，避免把“更小 completion 单元”误写成“更好的数据组织”。
+
+`--actor-workers-per-endpoint W --ray-actor-max-concurrency C` 的物理上限是
+每 endpoint `W × C` 个 driver-owned slots；即使 `--max-inflight` 更大，
+effective endpoint admission 也不会越过该上限。使用
+`--actor-worker-routing least_active_work` 时，只在仍有空 slot 的 worker 中按
+active work、running 数和稳定 worker index 选择。汇总里的
+`actor_worker_slot_held_utilization` 包含 Ray/HTTP 等待时间，不是 GPU compute
+utilization；submission trace 另记 worker ID/index/PID 供归因。
 
 ## 结果位置
 

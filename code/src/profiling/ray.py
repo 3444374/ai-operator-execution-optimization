@@ -401,7 +401,17 @@ def _submit_with_backpressure_legacy_adaptive(
             ready, pending = ray_module.wait(pending, num_returns=1)
             queue_wait_samples.append(wait_timer.stop())
             fanin_timer = StageTimer.start("ray_get")
-            results.extend(ray_module.get(ready))
+            try:
+                results.extend(ray_module.get(ready))
+            except Exception:
+                for handle in ready:
+                    if hasattr(endpoint_submitter, "complete"):
+                        endpoint_submitter.complete(handle, failed=True)
+                raise
+            else:
+                for handle in ready:
+                    if hasattr(endpoint_submitter, "complete"):
+                        endpoint_submitter.complete(handle, failed=False)
             fanin_s += fanin_timer.stop()
             current_limit, decision = adaptive_inflight_limit(max_inflight, adaptive_config)
             adaptive_downshifts += 1 if decision == "down" else 0
@@ -418,7 +428,17 @@ def _submit_with_backpressure_legacy_adaptive(
     while pending:
         ready, pending = ray_module.wait(pending, num_returns=1)
         fanin_timer = StageTimer.start("ray_get")
-        results.extend(ray_module.get(ready))
+        try:
+            results.extend(ray_module.get(ready))
+        except Exception:
+            for handle in ready:
+                if hasattr(endpoint_submitter, "complete"):
+                    endpoint_submitter.complete(handle, failed=True)
+            raise
+        else:
+            for handle in ready:
+                if hasattr(endpoint_submitter, "complete"):
+                    endpoint_submitter.complete(handle, failed=False)
         fanin_s += fanin_timer.stop()
 
     return results, {

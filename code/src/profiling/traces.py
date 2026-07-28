@@ -164,6 +164,15 @@ def write_submission_trace(
                 "service_quantum_oversized": (
                     event.service_quantum_oversized if event is not None else False
                 ),
+                "actor_worker_id": (
+                    event.actor_worker_id if event is not None else ""
+                ),
+                "actor_worker_index": (
+                    event.actor_worker_index if event is not None else -1
+                ),
+                "actor_worker_pid": (
+                    event.actor_worker_pid if event is not None else 0
+                ),
                 "pool_id": event.pool_id if event is not None else "",
                 "endpoint_id": event.endpoint_id if event is not None else "",
                 "gpu_id": event.gpu_id if event is not None else "",

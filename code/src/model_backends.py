@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import time
 from dataclasses import dataclass
 from typing import Literal
@@ -233,6 +234,7 @@ class FakeEmbeddingActor:
             "service_s": service_s,
             "service_start_epoch_s": service_start_epoch,
             "service_end_epoch_s": service_end_epoch,
+            "actor_worker_pid": os.getpid(),
         }
 
 
@@ -269,6 +271,7 @@ class CompatibleHTTPEmbeddingActor:
             "service_s": service_s,
             "service_start_epoch_s": service_start_epoch,
             "service_end_epoch_s": service_end_epoch,
+            "actor_worker_pid": os.getpid(),
         }
 
 
@@ -316,6 +319,7 @@ class FakeCompletionActor:
             "service_s": service_s,
             "service_start_epoch_s": service_start_epoch,
             "service_end_epoch_s": service_end_epoch,
+            "actor_worker_pid": os.getpid(),
         }
 
 
@@ -379,6 +383,7 @@ class CompatibleHTTPCompletionActor:
             "service_s": service_s,
             "service_start_epoch_s": service_start_epoch,
             "service_end_epoch_s": service_end_epoch,
+            "actor_worker_pid": os.getpid(),
         }
 
 
@@ -417,6 +422,7 @@ class OllamaCompletionActor:
             "service_s": service_s,
             "service_start_epoch_s": service_start_epoch,
             "service_end_epoch_s": service_end_epoch,
+            "actor_worker_pid": os.getpid(),
         }
 
 

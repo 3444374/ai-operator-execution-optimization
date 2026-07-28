@@ -79,6 +79,68 @@ class RaySubmissionAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "method_name must not be empty"):
             ActorWorkerPoolSubmitter([RecordingActor()], "")
 
+    def test_actor_worker_pool_enforces_slot_capacity_until_completion(
+        self,
+    ) -> None:
+        submitter = ActorWorkerPoolSubmitter(
+            [RecordingActor()],
+            "complete",
+            endpoint_id="endpoint-0",
+            max_concurrency_per_worker=2,
+            routing_policy="round_robin",
+        )
+
+        first = submitter.submit("first", estimated_work=10)
+        second = submitter.submit("second", estimated_work=20)
+        with self.assertRaisesRegex(RuntimeError, "capacity exhausted"):
+            submitter.submit("third", estimated_work=5)
+
+        submitter.complete(first, failed=False)
+        third = submitter.submit("third", estimated_work=5)
+        self.assertEqual(submitter.assignment(second).worker_index, 0)
+        self.assertEqual(submitter.assignment(third).worker_index, 0)
+        self.assertEqual(submitter.snapshots()[0].running, 2)
+
+    def test_actor_worker_pool_least_active_work_reuses_freed_worker(
+        self,
+    ) -> None:
+        submitter = ActorWorkerPoolSubmitter(
+            [RecordingActor(), RecordingActor()],
+            "complete",
+            endpoint_id="endpoint-0",
+            max_concurrency_per_worker=2,
+            routing_policy="least_active_work",
+        )
+
+        first = submitter.submit("large", estimated_work=100)
+        second = submitter.submit("small", estimated_work=10)
+        submitter.complete(second, failed=False)
+        third = submitter.submit("next", estimated_work=5)
+
+        self.assertEqual(submitter.assignment(first).worker_index, 0)
+        self.assertEqual(submitter.assignment(third).worker_index, 1)
+        snapshots = submitter.snapshots()
+        self.assertEqual([item.max_running for item in snapshots], [1, 1])
+        self.assertEqual([item.submitted for item in snapshots], [1, 2])
+
+    def test_actor_worker_snapshot_records_slot_held_time(self) -> None:
+        clock_values = iter([10.0, 12.5])
+        submitter = ActorWorkerPoolSubmitter(
+            [RecordingActor()],
+            "complete",
+            endpoint_id="endpoint-0",
+            max_concurrency_per_worker=1,
+            routing_policy="round_robin",
+            clock=lambda: next(clock_values),
+        )
+
+        handle = submitter.submit("work", estimated_work=7)
+        submitter.complete(handle, failed=False)
+
+        snapshot = submitter.snapshots()[0]
+        self.assertEqual(snapshot.max_active_work, 7)
+        self.assertEqual(snapshot.slot_held_s, 2.5)
+
     def test_actor_submission_state_rejects_different_workers(self) -> None:
         actors = [RecordingActor(), RecordingActor()]
         state = ActorSubmissionState({"endpoint-0": actors}, "complete")
@@ -110,6 +172,8 @@ class RaySubmissionAdapterTests(unittest.TestCase):
         self.assertEqual(collected.completion.result, {"payload": "payload"})
         self.assertGreaterEqual(collected.wait_s, 0.0)
         self.assertGreaterEqual(collected.result_s, 0.0)
+        self.assertEqual(collected.actor_worker_id, "")
+        self.assertEqual(collected.actor_worker_pid, 0)
 
     def test_collect_returns_canonical_pending_handle(self) -> None:
         pending_handle = EqualButDistinctRef("result")
@@ -150,6 +214,75 @@ class RaySubmissionAdapterTests(unittest.TestCase):
             "RuntimeError: worker crashed",
             collected.completion.error,
         )
+
+    def test_adapter_releases_canonical_worker_assignment_after_equal_ready_ref(
+        self,
+    ) -> None:
+        class EqualRefRemoteMethod:
+            def remote(self, payload):
+                return EqualButDistinctRef(payload)
+
+        actor = RecordingActor()
+        actor.complete = EqualRefRemoteMethod()
+        submitter = ActorWorkerPoolSubmitter(
+            [actor],
+            "complete",
+            endpoint_id="endpoint-0",
+            max_concurrency_per_worker=1,
+            routing_policy="round_robin",
+        )
+        adapter = RaySubmissionAdapter(
+            type(
+                "CopyingRay",
+                (),
+                {
+                    "wait": staticmethod(
+                        lambda refs, num_returns: (
+                            [EqualButDistinctRef(refs[0].value)],
+                            [],
+                        )
+                    ),
+                    "get": staticmethod(lambda ref: ref.value),
+                },
+            ),
+            {"e1": submitter},
+        )
+        item = envelope()
+
+        handle = adapter.submit(item, "e1")
+        collected = adapter.wait_one([(handle, item)])
+
+        self.assertIs(collected.handle, handle)
+        self.assertEqual(submitter.snapshots()[0].running, 0)
+        self.assertEqual(submitter.snapshots()[0].completed, 1)
+        self.assertEqual(collected.actor_worker_id, "endpoint-0:worker:0")
+        self.assertEqual(collected.actor_worker_index, 0)
+
+    def test_adapter_releases_failed_worker_assignment_once(self) -> None:
+        class FailingRay(FakeRay):
+            @staticmethod
+            def get(_ref):
+                raise RuntimeError("worker crashed")
+
+        submitter = ActorWorkerPoolSubmitter(
+            [RecordingActor()],
+            "complete",
+            endpoint_id="endpoint-0",
+            max_concurrency_per_worker=1,
+            routing_policy="round_robin",
+        )
+        adapter = RaySubmissionAdapter(FailingRay, {"e1": submitter})
+        item = envelope()
+        handle = adapter.submit(item, "e1")
+
+        collected = adapter.wait_one([(handle, item)])
+
+        self.assertEqual(collected.completion.status, "failed")
+        snapshot = submitter.snapshots()[0]
+        self.assertEqual(snapshot.running, 0)
+        self.assertEqual(snapshot.failed, 1)
+        with self.assertRaisesRegex(RuntimeError, "unknown.*assignment"):
+            submitter.complete(handle, failed=True)
 
     def test_submit_rejects_unknown_endpoint(self) -> None:
         adapter = RaySubmissionAdapter(FakeRay, {})

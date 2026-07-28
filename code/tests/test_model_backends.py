@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -167,6 +168,7 @@ class ModelBackendTests(unittest.TestCase):
         self.assertEqual(result["rows"], 2)
         self.assertEqual(result["embedding"].shape, (2, 4))
         self.assertGreater(result["token_count"], 0)
+        self.assertEqual(result["actor_worker_pid"], os.getpid())
 
     def test_model_request_wall_time_uses_epoch_bounds(self) -> None:
         wall_s = model_request_wall_time(
@@ -190,6 +192,7 @@ class ModelBackendTests(unittest.TestCase):
         self.assertEqual(len(result["output_text"]), 2)
         self.assertEqual(result["output_token_count"], 6)
         self.assertGreater(result["input_token_count"], 0)
+        self.assertEqual(result["actor_worker_pid"], os.getpid())
 
     def test_completion_backend_alias_maps_to_compatible_http(self) -> None:
         self.assertEqual(normalize_completion_backend("http_openai"), "compatible_http")

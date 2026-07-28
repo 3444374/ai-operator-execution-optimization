@@ -212,6 +212,9 @@ class SubmissionLifecycleEvent:
     planning_batch_id: str = ""
     service_quantum_index: int = -1
     service_quantum_oversized: bool = False
+    actor_worker_id: str = ""
+    actor_worker_index: int = -1
+    actor_worker_pid: int = 0
 
     def __post_init__(self) -> None:
         if not self.submission_id or not self.pool_id or not self.endpoint_id:
@@ -233,6 +236,9 @@ class CollectedSubmission:
     completion: SubmissionCompletion
     wait_s: float
     result_s: float
+    actor_worker_id: str = ""
+    actor_worker_index: int = -1
+    actor_worker_pid: int = 0
 
     def __post_init__(self) -> None:
         if self.wait_s < 0 or self.result_s < 0:

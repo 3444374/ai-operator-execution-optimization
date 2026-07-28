@@ -14,6 +14,14 @@
   trace 升级到 schema 4 并记录两级 identity、credit-held 与 Ray-to-service
   时间。136 项相关模型、回放、CLI、schema、trace 和 scheduler 测试通过；
   尚未形成远端性能结论。
+- Ray actor pool 现在显式维护每 worker running/active-work/完成/失败/峰值和
+  slot-held 时间；round-robin 与 least-active-work 只从有空 slot 的 worker
+  中选择，Ray 成功或失败都由 canonical handle 精确释放一次。
+- effective per-endpoint admission 被 `worker 数 × actor concurrency` 物理
+  slots 截断；正式 CSV 记录 routing、slots、逐 worker 峰值/失败和 slot-held
+  utilization，submission trace 记录 worker ID/index/PID。相关 actor-pool、
+  legacy cleanup、backend PID、CLI/capacity、schema 与 scheduler 定向测试通过；
+  远端需在固定总 slots 下比较 1×16/2×8/4×4 后才能判断 actor 形状收益。
 
 ## 2026-07-29 Checkpoint A：runner 可靠性与扩展饱和曲线
 

@@ -58,7 +58,9 @@ from .observations import (
 )
 from .ray_adapter import (
     ActorSubmissionState,
+    ActorWorkerAssignment,
     ActorWorkerPoolSubmitter,
+    ActorWorkerSnapshot,
     RaySubmissionAdapter,
     RoundRobinSubmitter,
 )
@@ -106,6 +108,8 @@ __all__ = [
     "ArrivalReplayBatcher",
     "ArrivalRateEwma",
     "ActorWorkerPoolSubmitter",
+    "ActorWorkerAssignment",
+    "ActorWorkerSnapshot",
     "ActorSubmissionState",
     "AimdAdmissionController",
     "AimdConfig",

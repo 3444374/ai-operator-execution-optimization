@@ -32,7 +32,10 @@ FORMAL_RESULT_FIELDS = tuple(
     model_workers ray_version actor_workers_per_endpoint
     ray_actor_max_concurrency
     ray_worker_num_cpus ray_worker_num_gpus endpoint_count actor_worker_count
-    actor_worker_submission_counts max_inflight_limit admission_scope
+    actor_worker_submission_counts actor_worker_routing
+    actor_pool_slots_per_endpoint actor_worker_max_running
+    actor_worker_max_active_work actor_worker_failures
+    actor_worker_slot_held_utilization max_inflight_limit admission_scope
     per_endpoint_inflight_limit max_active_work_per_endpoint
     max_active_work_per_endpoint_seen shared_credit_coordinator_name
     shared_credit_request_limit shared_credit_work_limit shared_credit_quantum

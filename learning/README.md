@@ -19,6 +19,17 @@ service quantum 的行数/work 描述完成与补位粒度。只有在 planning 
 active-work 上限和 actor slots 相同的对照中，才能把性能差异归因给 quantum；
 当前代码与测试只证明语义和 trace 正确，尚未证明远端吞吐一定提升。
 
+Ray actor pool 的另一个独立问题是“有多少客户端 worker、每个 worker 同时持有
+多少请求”。现在每个 endpoint 的真实上限是 `worker 数 × 每 worker slots`，
+调度器不会因为 `max_inflight` 写得更大就越过该物理上限。比较 1×16、2×8、
+4×4 时总 slots 都是 16，因此不会把“偷偷增加 offered load”误判为更多 actor
+带来的收益。least-active-work 只改变这 16 个 slots 如何分到 worker。
+
+这里的 slot-held 时间从 Ray 提交持续到结果完成，包含 Ray、HTTP 和模型服务
+等待；它不是 GPU kernel 利用率。GPU 是否填满仍要看 vLLM queue/running、
+GPU utilization、MFU 和 tokens/s。只有总 slots、active-work、service quantum
+和 workload 都相同，actor pool 形状对照才有可解释性。
+
 ## 2026-07-28 双 4090 7B replenish 配置诊断
 
 本轮现场数据中的 `replenish_static_k8_2gpu` 不是 request-level

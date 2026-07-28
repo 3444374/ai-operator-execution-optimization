@@ -262,7 +262,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/scheduling/organization/service_quantum.py` | 将 planning batch 按预测 work 切成不拆单行的有界 service-completion 单元 | 修改 HTTP/Ray completion 粒度、whole-submission HOL 或 quantum 超预算语义前读 |
 | `code/src/scheduling/submission_control/` | static/adaptive admission、active-work 与多 job shared fair credit | 修改提交反压、公平性或 endpoint capacity 语义前读 |
 | `code/src/scheduling/endpoint_routing/` | round-robin、least-queued、least-work、prefix-affinity 路由 | 修改多 endpoint 选择策略前读 |
-| `code/src/scheduling/runtime/` | Ray submit adapter、worker contract、metrics observation cache 与 named credit actor | 修改 Ray/服务观测接线前读 |
+| `code/src/scheduling/runtime/` | 有界 Ray actor worker pool、submit/complete adapter、worker contract、metrics observation cache 与 named credit actor | 修改 Ray worker slots、worker routing、completion cleanup 或服务观测接线前读 |
 | `code/scripts/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本 | 构造最终可比 `AI_COMPLETE` baseline workload 前运行 |
 | `code/scripts/run_ai_operator_scenarios.py` | 带空闲门禁、失败审计和原子 manifest 的 seeded 场景运行器 | 执行随机化策略对比或真实基础设施门禁前运行 |
 | `code/tests/test_runner_lease.py` | runner 活跃 owner、stale recovery、fingerprint 与租约释放测试 | 修改场景 runner 恢复或单写者边界后运行 |

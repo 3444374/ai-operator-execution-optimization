@@ -437,6 +437,9 @@ class SynchronousScheduler:
                 service_quantum_oversized=(
                     pending_envelope.request.service_quantum_oversized
                 ),
+                actor_worker_id=collected.actor_worker_id,
+                actor_worker_index=collected.actor_worker_index,
+                actor_worker_pid=collected.actor_worker_pid,
             )
         )
         return collected

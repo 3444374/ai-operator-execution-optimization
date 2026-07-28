@@ -481,6 +481,49 @@ def _service_quantum_run_metrics(
     }
 
 
+def _actor_worker_run_metrics(
+    submission_state: ActorSubmissionState | None,
+    *,
+    routing_policy: str,
+    slots_per_endpoint: int,
+    operator_wall_s: float,
+) -> dict[str, float | int | str]:
+    snapshots = (
+        tuple(
+            snapshot
+            for submitter in submission_state.pool_submitters.values()
+            for snapshot in submitter.snapshots()
+        )
+        if submission_state is not None
+        else ()
+    )
+    total_slots = (
+        slots_per_endpoint * len(submission_state.pool_submitters)
+        if submission_state
+        else 0
+    )
+    utilization = (
+        sum(snapshot.slot_held_s for snapshot in snapshots)
+        / (operator_wall_s * total_slots)
+        if operator_wall_s > 0 and total_slots > 0
+        else 0.0
+    )
+    return {
+        "actor_worker_routing": routing_policy,
+        "actor_pool_slots_per_endpoint": slots_per_endpoint,
+        "actor_worker_max_running": ";".join(
+            str(snapshot.max_running) for snapshot in snapshots
+        ),
+        "actor_worker_max_active_work": ";".join(
+            str(snapshot.max_active_work) for snapshot in snapshots
+        ),
+        "actor_worker_failures": ";".join(
+            str(snapshot.failed) for snapshot in snapshots
+        ),
+        "actor_worker_slot_held_utilization": round(utilization, 6),
+    }
+
+
 def _service_metrics_snapshot(
     metrics_urls: Sequence[str],
 ) -> ServiceMetricsSnapshot | None:
@@ -1169,6 +1212,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             args,
             actor_endpoint_count,
         )
+    actor_pool_slots_per_endpoint = (
+        actor_workers_per_endpoint * reported_ray_actor_max_concurrency
+        if args.executor == "ray_actor"
+        else 0
+    )
     model_name = args.completion_model if args.operator == "ai_complete" else args.embedding_model
     api_key = args.completion_api_key if args.operator == "ai_complete" else args.embedding_api_key
     request_timeout_s = (
@@ -1230,9 +1278,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "active-work admission currently supports "
             "--scheduling-policy static only"
         )
-    per_endpoint_inflight_limit = (
+    configured_per_endpoint_limit = (
         args.max_inflight if args.admission_scope == "per_endpoint" else None
     )
+    per_endpoint_inflight_limit = configured_per_endpoint_limit
+    if args.executor == "ray_actor":
+        per_endpoint_inflight_limit = (
+            min(configured_per_endpoint_limit, actor_pool_slots_per_endpoint)
+            if configured_per_endpoint_limit is not None
+            else actor_pool_slots_per_endpoint
+        )
     per_endpoint_work_limit = (
         args.max_active_work_per_endpoint
         if args.max_active_work_per_endpoint > 0
@@ -1271,8 +1326,14 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "job_weight": args.shared_credit_job_weight,
         }
     effective_global_inflight_limit = (
-        args.max_inflight * routing_endpoint_count
-        if per_endpoint_inflight_limit is not None
+        per_endpoint_inflight_limit * routing_endpoint_count
+        if args.admission_scope == "per_endpoint"
+        and per_endpoint_inflight_limit is not None
+        else min(
+            args.max_inflight,
+            actor_pool_slots_per_endpoint * routing_endpoint_count,
+        )
+        if args.executor == "ray_actor"
         else args.max_inflight
     )
     sampled_gpu_ids = routing_config["gpu_ids"] if routing_config else None
@@ -1301,6 +1362,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         dry_service_quantum_metrics = _service_quantum_run_metrics(
             [],
             target_tokens=args.service_quantum_tokens,
+        )
+        dry_actor_worker_metrics = _actor_worker_run_metrics(
+            None,
+            routing_policy=(
+                args.actor_worker_routing
+                if args.executor == "ray_actor"
+                else ""
+            ),
+            slots_per_endpoint=actor_pool_slots_per_endpoint,
+            operator_wall_s=0.0,
         )
         dry_resource_metrics = resource_sample_stats(
             [],
@@ -1383,6 +1454,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 else 0
             ),
             "actor_worker_submission_counts": "",
+            **dry_actor_worker_metrics,
             "max_inflight_limit": args.max_inflight,
             "admission_scope": args.admission_scope,
             "per_endpoint_inflight_limit": per_endpoint_inflight_limit or 0,
@@ -1648,6 +1720,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ActorSubmissionState(
                 actor_pools,
                 "complete" if args.operator == "ai_complete" else "embed",
+                max_concurrency_per_worker=(
+                    reported_ray_actor_max_concurrency
+                ),
+                routing_policy=args.actor_worker_routing,
             )
             if args.executor == "ray_actor"
             else None
@@ -2239,6 +2315,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             service_quanta,
             target_tokens=args.service_quantum_tokens,
         )
+        actor_worker_metrics = _actor_worker_run_metrics(
+            actor_submission_state,
+            routing_policy=(
+                args.actor_worker_routing
+                if args.executor == "ray_actor"
+                else ""
+            ),
+            slots_per_endpoint=actor_pool_slots_per_endpoint,
+            operator_wall_s=operator_wall_s,
+        )
 
         return _validated_formal_result_row({
             "status": "ok",
@@ -2317,6 +2403,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "actor_worker_submission_counts": submit_metrics[
                 "actor_worker_submission_counts"
             ],
+            **actor_worker_metrics,
             "max_inflight_limit": args.max_inflight,
             "admission_scope": args.admission_scope,
             "per_endpoint_inflight_limit": per_endpoint_inflight_limit or 0,

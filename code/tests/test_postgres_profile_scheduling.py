@@ -359,6 +359,33 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(args.actor_workers_per_endpoint, 0)
         self.assertEqual(args.ray_actor_max_concurrency, 1)
         self.assertEqual(args.ray_worker_num_cpus, 0.25)
+        self.assertEqual(args.actor_worker_routing, "round_robin")
+
+    def test_actor_pool_slots_bound_effective_endpoint_admission(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_actor",
+                "--actor-workers-per-endpoint",
+                "2",
+                "--ray-actor-max-concurrency",
+                "4",
+                "--actor-worker-routing",
+                "least_active_work",
+                "--admission-scope",
+                "per_endpoint",
+                "--max-inflight",
+                "32",
+            ]
+        )
+
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["actor_worker_routing"], "least_active_work")
+        self.assertEqual(row["actor_pool_slots_per_endpoint"], 8)
+        self.assertEqual(row["per_endpoint_inflight_limit"], 8)
+        self.assertEqual(row["effective_global_inflight_limit"], 8)
 
     def test_service_quantum_cli_is_explicit_and_positive(self) -> None:
         args = profile.parse_args(
@@ -478,6 +505,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "ray_actor",
                 "--actor-workers-per-endpoint",
                 "1",
+                "--ray-actor-max-concurrency",
+                "16",
                 "--max-inflight",
                 "16",
                 "--admission-scope",
@@ -3070,6 +3099,9 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         planning_batch_id="9:batch:0",
                         service_quantum_index=1,
                         service_quantum_oversized=False,
+                        actor_worker_id="endpoint-1:worker:3",
+                        actor_worker_index=3,
+                        actor_worker_pid=4321,
                     )
                 ],
             )
@@ -3103,6 +3135,12 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             self.assertEqual(submission[0]["service_quantum_oversized"], "False")
             self.assertAlmostEqual(float(submission[0]["credit_held_s"]), 0.3)
             self.assertAlmostEqual(float(submission[0]["ray_to_service_s"]), 0.1)
+            self.assertEqual(
+                submission[0]["actor_worker_id"],
+                "endpoint-1:worker:3",
+            )
+            self.assertEqual(submission[0]["actor_worker_index"], "3")
+            self.assertEqual(submission[0]["actor_worker_pid"], "4321")
             self.assertEqual(submission[0]["endpoint_id"], "endpoint-1")
             self.assertEqual(submission[0]["gpu_id"], "1")
             self.assertEqual(submission[0]["job_id"], "9")

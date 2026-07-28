@@ -147,6 +147,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Number of Ray HTTP client actors per service endpoint.",
     )
     parser.add_argument("--ray-actor-max-concurrency", type=int, default=1)
+    parser.add_argument(
+        "--actor-worker-routing",
+        choices=["round_robin", "least_active_work"],
+        default="round_robin",
+    )
     parser.add_argument("--ray-worker-num-cpus", type=float, default=0.25)
     parser.add_argument("--max-inflight", type=int, default=8)
     parser.add_argument(
