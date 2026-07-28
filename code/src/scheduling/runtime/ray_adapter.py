@@ -129,15 +129,24 @@ class RaySubmissionAdapter:
         # remove the wrong submission.
         handle, matched_envelope = matches[0]
         result_start = time.perf_counter()
-        result = self.ray_module.get(ready_handle)
-        result_s = time.perf_counter() - result_start
-        return CollectedSubmission(
-            handle,
-            SubmissionCompletion(
+        try:
+            result = self.ray_module.get(ready_handle)
+        except Exception as exc:
+            completion = SubmissionCompletion(
+                matched_envelope.request.request_id,
+                "failed",
+                error=f"{type(exc).__name__}: {exc}",
+            )
+        else:
+            completion = SubmissionCompletion(
                 matched_envelope.request.request_id,
                 "completed",
                 result=result,
-            ),
+            )
+        result_s = time.perf_counter() - result_start
+        return CollectedSubmission(
+            handle,
+            completion,
             wait_s,
             result_s,
         )

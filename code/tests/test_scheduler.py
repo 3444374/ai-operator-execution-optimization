@@ -242,6 +242,35 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(shared.attempts, 2)
         self.assertEqual(shared.released, [("j1", "r0")])
 
+    def test_failed_completion_releases_shared_credit_once(self) -> None:
+        class RecordingSharedCredit:
+            def __init__(self) -> None:
+                self.acquired: list[tuple[str, str]] = []
+                self.released: list[tuple[str, str]] = []
+
+            def try_acquire(self, *, request_id, job_id, **_kwargs):
+                self.acquired.append((job_id, request_id))
+                return True
+
+            def release(self, request_id, *, job_id):
+                self.released.append((job_id, request_id))
+
+        shared = RecordingSharedCredit()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=1),
+            router=RoundRobinEndpointRouter(),
+            adapter=FailingAdapter(),
+            pool_id="default",
+            shared_credit=shared,
+        )
+
+        result = scheduler.run([envelope(0)], topology())
+
+        self.assertEqual(shared.acquired, [("j1", "r0")])
+        self.assertEqual(shared.released, [("j1", "r0")])
+        self.assertEqual(result.completions[0].status, "failed")
+        self.assertEqual(result.submission_events[0].status, "failed")
+
     def test_scheduler_fails_when_initial_admission_cannot_progress(self) -> None:
         class AlwaysDenyAdmission:
             limit = 1

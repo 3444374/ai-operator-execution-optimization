@@ -130,6 +130,27 @@ class RaySubmissionAdapterTests(unittest.TestCase):
         self.assertIs(collected.handle, pending_handle)
         self.assertEqual(collected.completion.result, "result")
 
+    def test_collect_converts_ray_get_error_to_failed_completion(self) -> None:
+        class FailingRay(FakeRay):
+            @staticmethod
+            def get(_ref):
+                raise RuntimeError("worker crashed")
+
+        item = envelope()
+        handle = FakeRef(None)
+
+        collected = RaySubmissionAdapter(FailingRay, {}).wait_one(
+            [(handle, item)]
+        )
+
+        self.assertIs(collected.handle, handle)
+        self.assertEqual(collected.completion.request_id, "r1")
+        self.assertEqual(collected.completion.status, "failed")
+        self.assertIn(
+            "RuntimeError: worker crashed",
+            collected.completion.error,
+        )
+
     def test_submit_rejects_unknown_endpoint(self) -> None:
         adapter = RaySubmissionAdapter(FakeRay, {})
 
