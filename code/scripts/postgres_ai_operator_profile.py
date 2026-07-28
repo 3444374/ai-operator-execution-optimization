@@ -9,6 +9,7 @@ not conflate the two environments.
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import os
@@ -121,7 +122,6 @@ from src.scheduling.ray_adapter import (
     ActorSubmissionState,
     RaySubmissionAdapter,
 )
-from src.scheduling.ray_runtime import RayWorkerOptions
 from src.scheduling.observations import (
     CachedMetricsObservationProvider,
     NonBlockingMetricsObservationProvider,
@@ -137,7 +137,7 @@ from src.scheduling.routing import (
 from src.scheduling.scheduler import SchedulerResult, SynchronousScheduler
 from src.sinks import write_completions, write_embeddings
 from src.sources import SourceConfig, make_source
-from src.workloads import WORKLOAD_NAMES, generate_document_rows
+from src.workloads import generate_document_rows
 
 
 SCHEMA_SQL = """
