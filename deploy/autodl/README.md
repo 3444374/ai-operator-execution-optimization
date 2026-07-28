@@ -724,6 +724,8 @@ K32/K48/K64 是围绕当前约 3 行/batch 的 gate 展开；若正式 batch mea
 | 非交互 SSH 无 python | `python: command not found` | `bash -lc` 或 source conda |
 | paramiko 长连下载/安装 | 超时砍断、`stdout.read()` 卡死 | nohup 后台 + 短连接轮询(bgexec 模式) |
 | `pkill -f <自身模式>` | exit 127 自杀 | `kill <pid>` / `pgrep -x` / `pgrep -P` |
+| 用 `pgrep -af <runner 参数>` 做启动门禁 | 会匹配包含该文本的当前 SSH/bash 包装命令，误判已有 runner | 只枚举 Python：`ps -C python -C python3 -o args= \| grep '[r]un_ai_operator_scenarios.py'` |
+| 把 `nohup ... &` 接在一长串 `&&` 后 | `&` 可能后台化整个 AND-list，只返回包装 shell PID；前置失败也可能被表面成功掩盖 | 前置检查用 `set -euo pipefail` 独立执行；`nohup` 单独一条命令，下一行立即保存 `runner_pid=$!` |
 | Windows Git Bash MSYS | 远端路径变 `C:\Program Files\Git\...` | `export MSYS_NO_PATHCONV=1` |
 | pip 直连 PyPI | ~200 kB/s | 清华镜像 `-i ...tsinghua...` |
 | pip 走 turbo | 违反 AutoDL 说明 | pip 不设 turbo 代理,只改 `-i` 镜像 |

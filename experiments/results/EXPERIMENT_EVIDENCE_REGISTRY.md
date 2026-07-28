@@ -26,24 +26,25 @@
 | Prefix-aware | batching 实现与语义测试 | `prefix_aware_batching_20260726/` | cache-off 的 0/30/70/100% 受控筛选无稳定收益；默认关闭，启用 prefix cache 后才值得重测。 |
 | BFD、output-aware、row-cap-first | batching 与 cost-mode tests | output-aware BFD、row-cap-aware packing 全系列 | 512 行有局部信号，1024 行未泛化且 SLO 明显恶化；不采用为默认，只保留可复用设计点。 |
 | Arrival replay 与 request lifecycle | lifecycle、runner 和 trace tests | `request_lifecycle_gate_20260725/` 及 flush 系列 | exactly-once、request→submission、arrival/flush/complete 时间链已闭环。 |
-| Per-endpoint active-work admission | active-work credit、least-work/least-queued routing 与 profiler tests | `dual_gpu_active_work_curve_20260728/` | 双 4090、五档 work、每档三次 formal。16K→65K 吞吐仍上升但边际递减；49K 是当前吞吐—P99/SLO 拐点候选，65K 只是扫描边界的最高已测吞吐，不能称为容量最优。 |
+| Per-endpoint active-work admission | active-work credit、least-work/least-queued routing 与 profiler tests | `dual_gpu_active_work_saturation_20260729/` | 双 4090 八档、每档三次 formal。65K 达到最大吞吐 97.80%，下一档仅 +0.92%；按预注册规则选为最小饱和点。98K→131K 吞吐持平且 P99/SLO 更差。 |
 | Request-level continuous replenishment | request 粒度 replay、逐请求 credit release、Ray adapter 与 trace tests | `dual_gpu_request_replay_20260728/` | 双 4090 三次重复已跑通。等名义工作量的 request K48 与 batch K16 吞吐不可分辨；K64 吞吐最高但 offered work 高约 33%，且 P99 更差。机制可用，但独立性能增量尚未证明。 |
 | Static K_max | admission 与 profiler tests | local baseline 干扰实验、joint search | shared-vLLM 下 `K_max=8` 有必要性证据；当前静态安全基线。 |
 | Immediate/fixed/adaptive flush | scheduler、flush policy 与 trace tests | accelerated/window/randomized/cross-rate/2048/joint/shared-vLLM | Adaptive 稳定优于 fixed-25，但未优于 fixed-50；shared-vLLM 下约 89.4% 决策选择 50ms，也没有稳定增量。当前默认 fixed 50ms。 |
 | AIMD、EWMA、PID admission | `code/src/scheduling/adaptive_admission.py`、`pid_admission.py` 及测试 | `adaptive_admission_controller_20260726/`、`shared_vllm_adaptive_admission_20260726/` | 单作业与 shared-vLLM 双作业重复均完成。AIMD 在共享服务中 0 次 decrease、窗口均值 15.953；相对 static K16 前台与吞吐均略差，当前没有动态反馈增量证据。 |
 | UCB 多臂老虎机 | `code/src/scheduling/ucb_admission.py`、`code/tests/test_adaptive_admission.py` | 无端到端结果 | 有有限 K_max action set、探索/利用和 SLO reward 的纯控制器测试；尚未接入 profiler。必须先封闭 epoch 内请求完成与 reward 归因，避免把跨 epoch completion 记到错误 arm。 |
-| Actor pool 分池与 endpoint routing | `code/src/scheduling/routing.py`、`topology.py`、`ray_adapter.py` 及契约测试 | 双 GPU request replay 与 active-work 系列 | 两个 endpoint 的独立 worker、per-endpoint credit 和请求分配已真实运行；least-work 独立收益、公平性和故障迁移未验证。 |
+| Actor pool 分池与 endpoint routing | `code/src/scheduling/runtime/ray_adapter.py`、profiler/trace 与契约测试 | active-work 系列 + 64 行三形状 gate | 有界 worker slots、worker ID/PID、失败清理和固定 CPU/slot 契约已在双 GPU gate 通过；1×256/2×128/4×64 正式重复运行中。 |
 | Batching × submission 联合搜索 | scenario runner 与汇总工具 | `joint_batching_submission_512_20260726/` | 18 单元筛选和候选重复完成；当前单 GPU 下联合候选未显著优于独立拼接。 |
 | vLLM CUDA Graph | 服务配置与相同 profiler 路径 | `vllm_cuda_graph_512_20260726/` | 重复真实对照显著优于 eager；作为本地部署 baseline，不作为上游调度研究贡献。 |
 | 算子代价估计 | `code/src/cost_estimation.py`、`code/scripts/estimate_operator_cost.py` 及测试 | `operator_cost_estimation_20260726/` | 283 行、70 配置组、五个 grouped held-out split；可作粗粒度提示，不能作严格 SLO 预测。 |
 | 多模态 cost adapter | 中性 `cost_units`/策略接口 | 无图像 workload 结果 | 基础抽象已留出，真实 image source、frame/patch cost、CLIP/Qwen-VL 链路尚未完成。 |
-| 多 endpoint/多 GPU 调度 | endpoint/pool 配置与 routing contract | `dual_gpu_request_replay_20260728/`、`dual_gpu_active_work_curve_20260728/` | 真实双 4090 容量与 admission 语义证据已建立；尚不能声称 1/2/4 job 公平性、路由增量或故障迁移有效。 |
-| Ray task/actor 与 vLLM capacity 调优 | 执行接口、参数字段和实验设计 | CUDA Graph、双 GPU request replay 与 active-work 曲线 | 已固定并记录 vLLM 8192 batched-token/256 seq capacity；49K 为上游 work 拐点候选，仍需与 token-budget、membership 和机制对照分层验证。 |
+| 多 endpoint/多 GPU 调度 | endpoint/pool 配置与 routing contract | request replay、active-work saturation 与 Actor Pool gate | 真实双 4090 容量、admission 与 worker identity 证据已建立；尚不能声称 1/2/4 job 公平性、路由增量或故障迁移有效。 |
+| Ray task/actor 与 vLLM capacity 调优 | 执行接口、参数字段和实验设计 | CUDA Graph、双 GPU request replay 与 active-work saturation | 已固定 vLLM 8192 batched-token/256 seq capacity，并标定上游 65K work 饱和点；Actor Pool/service quantum 继续分层验证。 |
 
 ## 3. 全部正式结果目录
 
 | 结果目录 | 角色 | 当前状态或结论 |
 |---|---|---|
+| `dual_gpu_active_work_saturation_20260729/` | 八档 request-level per-endpoint active-work 扩展饱和曲线 | 32/32 成功；65K 是预注册最小饱和点，98K/131K 不再增加吞吐且尾延迟更差。 |
 | `dual_gpu_active_work_curve_20260728/` | request-level per-endpoint predicted-token work 容量曲线 | 真实双 4090、五档各三次 formal。吞吐 CV 均低于 1%；49K 为当前 knee candidate，65K 为最高已测吞吐边界，尚未找到吞吐下降点。 |
 | `dual_gpu_request_replay_20260728/` | 双 endpoint whole-submission barrier 与 request-level continuous replenishment 对照 | 真实双 4090、每臂三次 formal。global K32≈per-endpoint K16；work-matched request K48≈batch K16。K64 是最高已测吞吐点，但没有隔离 offered-work 增量，不能称为最优或机制胜出。 |
 | `shared_vllm_adaptive_admission_20260726/` | Shared-vLLM 前台/后台 static K8、static K16、AIMD 及 adaptive-flush 对照 | 真实单 GPU 三次重复；K8 保护前台，K16 提升后台吞吐。AIMD 饱和至 K16 且无 decrease；adaptive flush 大部分选择 50ms，均无稳定增量。 |
@@ -115,9 +116,9 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 
 1. Shared-vLLM 不同 foreground size、arrival offset 和 job 数量下的 static K8 边界与公平性；当前只完成一个 128/512 双作业规模。
 2. UCB profiler 集成前的封闭 epoch/reward 归因设计与测试，随后才可做 GPU 对照。
-3. 固定 49K 主点与 65K 高负载敏感性点，完成 batch barrier 与 request
-   replenishment 的 matched-active-work 因果对照。
-4. 真实多 endpoint/多 GPU 的容量、公平性、路由与故障迁移。
+3. 固定已标定的 65K work，完成 Actor Pool shape 与 complete-row service
+   quantum 的重复因果对照。
+4. 真实多 endpoint/多 GPU 的多 job 公平性、路由与故障迁移。
 5. Ray task/actor 有效并发和 vLLM scheduling capacity 的分层调优。
 6. Prefix cache 开启后的 prefix-aware 独立消融。
 7. 图像 workload 的多模态泛化验证。

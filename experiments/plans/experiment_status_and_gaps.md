@@ -32,7 +32,7 @@ Date: 2026-07-20（最后更新：2026-07-29，补充扩展饱和曲线与 Ray a
 | Shared-vLLM typed AIMD + adaptive flush | ✅ 07-26 | **static K8 保护前台**（E2E -27.9%、P99 -40.0% vs K16）；AIMD 0 decrease、窗口均值 15.953，与 K16 不可分辨。**根因诊断**：vLLM waiting=0 但前台已慢 38.9%——AIMD 盯着 vLLM waiting 做决策，但请求在 Ray actor 侧排队、waiting 始终为 0 | 只有 128/512 双作业；flush 分支不是完整 2×2 随机化；多 foreground size/arrival offset/>2 job 均未测试 |
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
 | **Request-level continuous replenishment** | ⚠️ 双卡重复已完成 | global K32≈per-endpoint K16，确认 K 语义；work-matched request K48≈batch K16；request K64 为最高已测吞吐 | K64 同时增加约 33% offered work 且 P99 更差，尚未隔离补位机制的独立吞吐/SLO 收益；需固定 active work 复验 |
-| **Per-endpoint active-work capacity** | 🔄 07-29 扩展曲线运行中 | 07-28 五档各三次 formal 已完成；07-29 正扫描 16K–131K 八档，并使用 runner lease 保证单写者 | 按最大安全吞吐 97% + 下一档增益 <3% 选最小饱和点；不存在则报告 `saturation_not_reached` |
+| **Per-endpoint active-work capacity** | ✅ 07-29 扩展曲线完成 | 双 4090 八档各三次 formal；32/32 成功，65K 达最大吞吐 97.80%，下一档 +0.92% | 按预注册规则选择 65,536；98K→131K 吞吐持平而 P99/SLO 更差 |
 | **SLO-aware EWMA flush** | ❌ 未做 | 当前 two-level queue-adaptive 只作为真实链路 baseline | 尚未使用 oldest-request slack、服务速率、token backlog、EWMA/滞回形成完整控制律 |
 | **多 job/多 foreground size 扩展** | ⏳ 代码完成，GPU 未测 | job-local K 不构成共享 endpoint 的全局保护 | 1/2/4 job、不同 mix/offset；shared request/work credit 与公平队列待远端门禁和正式验证 |
 
@@ -482,10 +482,9 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 1. 用相同 per-GPU K 完成单/双 endpoint 容量曲线，替代历史 global K 同值
    的不公平对照；
-2. 07-29 正运行 16K/24K/32K/49K/65K/82K/98K/131K request-level
-   active-work 扩展曲线；先按预注册规则选出最小饱和点，不再提前把 49K 或
-   65K 写成正式控制点；
-3. 在选定饱和点固定每 endpoint 256 actor slots，比较
+2. 07-29 八档 request-level active-work 扩展曲线已完成，按预注册规则选择
+   65,536；
+3. 正在该饱和点固定每 endpoint 256 actor slots，比较
    1×256/2×128/4×64。16-slot 草案按当前 332 work/request 与
    1337 work/organization-batch 估算会严重欠载，已在启动前否决；三个
    arm 的每 endpoint Ray CPU reservation 同时固定为 0.5；

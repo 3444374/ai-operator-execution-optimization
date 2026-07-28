@@ -136,18 +136,19 @@
   per-endpoint K16 等价；等名义 offered work 的 request K48 与 batch K16
   吞吐持平。request K64 为最高已测吞吐点，但同时增加约 33% offered work
   且 P99 更差，不能归因为补位机制胜出或称为容量最优
+- ✅ 双 4090 request-level active-work 八档扩展曲线：32/32 run 成功，
+  65K 达到最大均值 97.80% 且下一档只增 0.92%；98K→131K 吞吐持平，
+  P99 约 40s。按预注册规则选择 65,536，后续策略不再靠继续增大 offered
+  work 获取表面收益
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1（运行中）**：request-level per-endpoint active-work 扩展为
-   16K/24K/32K/49K/65K/82K/98K/131K 双卡重复。按“达到最大安全吞吐 97%
-   且下一安全档增益 <3%”选择最小饱和点；若不存在则报告
-   `saturation_not_reached`。旧 49K/65K 只保留为五档曲线的 knee/最高已测
-   边界，不提前覆盖本轮选择。
-2. **P1（代码完成，待远端门禁）**：在选定 active work 下固定每 endpoint
-   256 个 Ray actor slots，先比较 request-level 的 1×256/2×128/4×64 pool
-   形状；再固定最佳 pool、planning budget 和 active work，比较 whole batch、
-   fixed service quantum 512/1024/2048/4096 与 one-row request diagnostic。
+1. **P1（运行中）**：固定每 endpoint active work 65,536、256 个 Ray actor
+   slots 和 0.5 Ray CPU reservation；64 行三形状 gate 已通过，正式比较
+   request-level 的 1×256/2×128/4×64 pool 形状。
+2. **P1（代码完成，待上一阶段）**：固定最佳 pool、planning budget 和
+   active work，比较 whole batch、fixed service quantum
+   512/1024/2048/4096 与 one-row request diagnostic。
    原 16-slot 草案因可见 work 明显低于饱和区已在运行前否决；8192 quantum
    因大于当前组织批次最大 work、会退化为 batch control 而删除。
 3. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；

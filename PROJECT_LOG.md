@@ -37,6 +37,11 @@
 - 本地完整回归 400 项通过，Ruff 与 `git diff --check` 通过；模板契约测试
   强制 pool 每端点总 slots=256，并保证 quantum arms 只改变 completion
   粒度/target，不改变 active-work 参考。
+- 远端首次 gate 启动尝试未产生 Python runner/manifest/log：宽泛 `pgrep`
+  匹配到当前 bash 包装命令，且把 `nohup ... &` 接在长 `&&` 链后只返回了包装
+  shell PID。审计确认零结果污染后，改为只枚举 Python runner、前置检查独立
+  `set -euo pipefail`、单独后台化 nohup 并立即保存 `$!`，随后 gate 正常完成。
+  该坑已补入 AutoDL runbook。
 
 ## 2026-07-29 Checkpoint A：runner 可靠性与扩展饱和曲线
 
@@ -51,9 +56,16 @@
   （16K/24K/32K/49K/65K/82K/98K/131K），预注册选择规则为首个达到最大
   已测吞吐 97% 且下一安全档增益低于 3% 的最小档；若未出现该点则报告
   `saturation_not_reached`，高负载 OOM/超时必须保留 incident。
-- AutoDL runbook、代码目录说明和项目索引已同步单写者检查与恢复方式。
-  Checkpoint A 仍需通过本地全量回归、远端 64 行 gate 和正式曲线后才能形成
-  性能结论。
+- Checkpoint A 远端 64 行 gate 与正式曲线均完成：32/32 run 成功、每档
+  3 formal、0 incident、lease 正常释放，request/submission exactly-once、
+  resource/MFU 均为 `ok`。
+- 65K formal 均值 8030 tokens/s，达到全曲线最大均值 97.80%，下一档
+  82K 只增 0.92%；98K 与 131K 分别 8211.094/8210.874 tokens/s，完全
+  持平，而 P99 从 65K 的 36.78s 升至约 40.05s。按预注册规则选择
+  `ACTIVE_WORK_PER_ENDPOINT=65536`。
+- 结果归档到 `experiments/results/dual_gpu_active_work_saturation_20260729/`。
+  它证明当前链路已进入平台，后续策略固定 65K，不再以增加 offered work
+  作为表面优化。
 
 ## 2026-07-29 饱和 Ray 执行基础实施计划
 

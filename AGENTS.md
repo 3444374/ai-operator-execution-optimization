@@ -45,15 +45,15 @@ PostgreSQL 18.3
 
 当前缺口（vLLM baseline、Daft 文本接入、token-budget / K_max、flush
 跨负载与 2048 留出、本地单 GPU 联合消融、受控 prefix cache-off 实验、
-算子代价估计初版和 request-level credit-release 双卡重复均已完成）：
-① active-work 五档双卡重复已完成：49,152 是当前拐点候选，65,536 是扫描
-边界的最高已测吞吐、不是容量最优；下一步固定 49K 主点与 65K 敏感性点隔离
-continuous replenishment 与 batch barrier，当前 K-count 的 work-matched K48
-与 batch K16 吞吐持平 → ② oldest-request slack、token backlog
+算子代价估计初版、request-level credit-release 双卡重复和 active-work 八档
+扩展曲线均已完成）：① 按预注册规则选择每 endpoint 65,536 active work；
+固定 256 actor slots 与 0.5 Ray CPU/endpoint，先完成 1×256/2×128/4×64
+Actor Pool，再比较 whole-batch、complete-row service quantum
+512/1024/2048/4096 与 request diagnostic → ② oldest-request slack、token backlog
 与 arrival/service EWMA 驱动的完整 adaptive flush →
 ③ prefix cache 开启后的独立机制验证与 length-align 显式联合消融 →
-④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 当前 2×4090 上完成多 endpoint /
-多 GPU formal 验证 → ⑥ 代价模型增加独立时间段或新 workload 校准。当前证据
+④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 当前 2×4090 上完成多 job
+公平性、路由与故障迁移 → ⑥ 代价模型增加独立时间段或新 workload 校准。当前证据
 支持 sequential token-budget + static K8 + fixed 50ms；联合候选未显著优于
 独立拼接，当前 two-level adaptive 未显著优于 fixed-50，prefix-only 在
 cache-off 下无稳定收益。写回使用 PostgreSQL + pgvector

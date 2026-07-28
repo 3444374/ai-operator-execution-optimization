@@ -165,10 +165,11 @@ Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
 
 ### 尚未完成的验证
 
-双 GPU per-endpoint K 功能门禁已经在独立 GPU-backed endpoint 上完成，但新
-active-work、least-work、动态预算和 shared-credit 策略尚未形成正式性能证据；
-异构显存容量、故障迁移和多 job 公平性也仍待实测，因此不能声称多 GPU 调度已经
-完成。多个 Ray actor worker 仍不能被当作多个 GPU endpoint。
+双 GPU per-endpoint K 功能门禁和 16K–131K active-work 扩展曲线已经完成；
+65,536 是当前模型/workload 的预注册最小饱和点。Actor Pool 三形状 64 行 gate
+已通过，正式重复运行中；least-work、动态预算、shared-credit、异构显存容量、
+故障迁移和多 job 公平性仍待实测，因此不能声称多 GPU 调度已经完成。多个 Ray
+actor worker 仍不能被当作多个 GPU endpoint。
 
 ## 5. 观测与实验运行基础设施
 
@@ -288,8 +289,8 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 
 ### 下一优先：饱和后 Actor Pool/持续补位、完整 flush 与缓存机制
 
-1. 完成 16K–131K active-work 扩展曲线，按预注册规则选择最小饱和点；
-2. 在该点固定每 endpoint 256 slots，比 1×256/2×128/4×64 actor pool；
+1. 已完成 16K–131K active-work 扩展曲线，选择 65,536；
+2. 正在该点固定每 endpoint 256 slots，比 1×256/2×128/4×64 actor pool；
 3. 固定最佳 pool 与相同 planning/work，比较 whole-batch、
    service-quantum 512/1024/2048/4096 和 request diagnostic；
 4. 再实现 oldest-request slack、token backlog 与 arrival/service EWMA 驱动的
