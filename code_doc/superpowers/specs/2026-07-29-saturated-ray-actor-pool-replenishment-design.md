@@ -411,9 +411,13 @@ Experiments run in this order:
 1. **Reliability gate**: lease collision, crash cleanup, error accounting, and
    trace completeness.
 2. **Active-work curve**: find or explicitly fail to find saturation.
-3. **Total actor-slot capacity**: determine a sufficient fixed number of visible
-   HTTP call slots.
-4. **Pool shape**: compare 1x16, 2x8, and 4x4 at fixed total slots and work.
+3. **Total actor-slot capacity**: retain 256 visible HTTP call slots per
+   endpoint from the request-level saturation baseline. The original 16-slot
+   draft was rejected before launch: at about 332 work/request or 1337
+   work/organization-batch it exposes only about 5.3K/21K work, below the
+   65K–131K saturation range.
+4. **Pool shape**: compare 1x256, 2x128, and 4x64 at fixed total slots, fixed
+   0.5 Ray CPU reservation per endpoint, and fixed active work.
 5. **Service quantum**: compare whole planning batch, fixed quantum sizes, and
    one-row diagnostic at the selected saturation work.
 6. **Worker routing**: round-robin versus least-active-work.
