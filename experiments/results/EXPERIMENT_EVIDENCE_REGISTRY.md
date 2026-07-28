@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-更新日期：2026-07-26
+更新日期：2026-07-28
 
 本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
 
@@ -26,6 +26,7 @@
 | Prefix-aware | batching 实现与语义测试 | `prefix_aware_batching_20260726/` | cache-off 的 0/30/70/100% 受控筛选无稳定收益；默认关闭，启用 prefix cache 后才值得重测。 |
 | BFD、output-aware、row-cap-first | batching 与 cost-mode tests | output-aware BFD、row-cap-aware packing 全系列 | 512 行有局部信号，1024 行未泛化且 SLO 明显恶化；不采用为默认，只保留可复用设计点。 |
 | Arrival replay 与 request lifecycle | lifecycle、runner 和 trace tests | `request_lifecycle_gate_20260725/` 及 flush 系列 | exactly-once、request→submission、arrival/flush/complete 时间链已闭环。 |
+| Request-level continuous replenishment | request 粒度 replay、逐请求 credit release、Ray adapter 与 trace tests | `dual_gpu_request_replay_20260728/` | 双 4090 三次重复已跑通。等名义工作量的 request K48 与 batch K16 吞吐不可分辨；K64 吞吐最高但 offered work 高约 33%，且 P99 更差。机制可用，但独立性能增量尚未证明。 |
 | Static K_max | admission 与 profiler tests | local baseline 干扰实验、joint search | shared-vLLM 下 `K_max=8` 有必要性证据；当前静态安全基线。 |
 | Immediate/fixed/adaptive flush | scheduler、flush policy 与 trace tests | accelerated/window/randomized/cross-rate/2048/joint/shared-vLLM | Adaptive 稳定优于 fixed-25，但未优于 fixed-50；shared-vLLM 下约 89.4% 决策选择 50ms，也没有稳定增量。当前默认 fixed 50ms。 |
 | AIMD、EWMA、PID admission | `code/src/scheduling/adaptive_admission.py`、`pid_admission.py` 及测试 | `adaptive_admission_controller_20260726/`、`shared_vllm_adaptive_admission_20260726/` | 单作业与 shared-vLLM 双作业重复均完成。AIMD 在共享服务中 0 次 decrease、窗口均值 15.953；相对 static K16 前台与吞吐均略差，当前没有动态反馈增量证据。 |
@@ -42,6 +43,7 @@
 
 | 结果目录 | 角色 | 当前状态或结论 |
 |---|---|---|
+| `dual_gpu_request_replay_20260728/` | 双 endpoint whole-submission barrier 与 request-level continuous replenishment 对照 | 真实双 4090、每臂三次 formal。global K32≈per-endpoint K16；work-matched request K48≈batch K16。K64 是最高已测吞吐点，但没有隔离 offered-work 增量，不能称为最优或机制胜出。 |
 | `shared_vllm_adaptive_admission_20260726/` | Shared-vLLM 前台/后台 static K8、static K16、AIMD 及 adaptive-flush 对照 | 真实单 GPU 三次重复；K8 保护前台，K16 提升后台吞吐。AIMD 饱和至 K16 且无 decrease；adaptive flush 大部分选择 50ms，均无稳定增量。 |
 | `adaptive_admission_controller_20260726/` | Static K=8、AIMD、EWMA-AIMD、PID 矩阵及 AIMD vs static K=16 机制对照 | 真实单 GPU 重复；动态策略相对 K=8 的收益来自升至 K≈16，未优于同上限静态策略。 |
 | `accelerated_arrival_flush_20260725/` | Immediate/fixed/adaptive flush 首轮真实对照 | 真实 GPU 筛选；旧 adaptive 未形成多行 batch。 |
@@ -64,7 +66,7 @@
 | `text_heldout_2048_20260726/` | Flush 策略留出规模验证 | Fixed-50 吞吐与 P99 均略优于 adaptive；持续积压放大尾延迟。 |
 | `vllm_cuda_graph_512_20260726/` | Eager 与 CUDA Graph 部署对照 | CUDA Graph 为当前本地 steady-state baseline。 |
 
-20 个目录均有各自的 `README.md`。失败、被替代或门禁目录仍保留，是为了记录事故和排除理由，不应从台账中删除。
+台账中已登记的正式目录均有各自的 `README.md`。失败、被替代或门禁目录仍保留，是为了记录事故和排除理由，不应从台账中删除。尚未形成独立报告的原始运行目录不计入该句。
 
 ## 4. 统一复现入口
 
@@ -111,8 +113,10 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 
 1. Shared-vLLM 不同 foreground size、arrival offset 和 job 数量下的 static K8 边界与公平性；当前只完成一个 128/512 双作业规模。
 2. UCB profiler 集成前的封闭 epoch/reward 归因设计与测试，随后才可做 GPU 对照。
-3. 真实多 endpoint/多 GPU 的容量、公平性、路由与故障迁移。
-4. Ray task/actor 有效并发和 vLLM scheduling capacity 的分层调优。
-5. Prefix cache 开启后的 prefix-aware 独立消融。
-6. 图像 workload 的多模态泛化验证。
-7. 代价估计的独立时间段、新 workload、跨模型校准和预测区间。
+3. request-level active-work 容量曲线，以及固定 active work 下 batch barrier
+   与 request replenishment 的因果对照。
+4. 真实多 endpoint/多 GPU 的容量、公平性、路由与故障迁移。
+5. Ray task/actor 有效并发和 vLLM scheduling capacity 的分层调优。
+6. Prefix cache 开启后的 prefix-aware 独立消融。
+7. 图像 workload 的多模态泛化验证。
+8. 代价估计的独立时间段、新 workload、跨模型校准和预测区间。

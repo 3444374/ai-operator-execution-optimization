@@ -1,0 +1,6 @@
+scenario_id,submission_granularity,admission_scope,k_limit,formal_repeats,tokens_per_s_mean,mfu_pct_mean,e2e_s_mean,request_p95_s_mean,request_p99_s_mean,bounded_wait_s_mean,predicted_tokens_per_admission_unit,rows_per_admission_unit,nominal_predicted_work_per_endpoint,max_active_work_per_endpoint_seen_mean,vllm_running_mean,interpretation
+batch_static_global_k32,batch,global,32,3,4234.767,18.404,81.300,25.600,26.355,40.481,1106.892,2.976744,17710.272,33865.3,55.68,dual_endpoint_semantic_control
+batch_static_per_endpoint_k16,batch,per_endpoint,16,3,4247.970,18.375,80.969,25.516,26.738,40.491,1106.892,2.976744,17710.272,34360.0,56.14,work_matched_batch_control
+request_static_per_endpoint_k32,request,per_endpoint,32,3,3534.549,15.207,97.292,39.978,42.288,55.336,371.847,1.000000,11899.104,18608.3,42.93,underfilled_request_control
+request_static_per_endpoint_k48,request,per_endpoint,48,3,4248.015,18.434,80.953,25.708,31.672,37.886,371.847,1.000000,17848.656,23662.3,54.78,closest_work_matched_request_control
+request_static_per_endpoint_k64,request,per_endpoint,64,3,4768.036,20.542,72.151,23.931,33.154,29.063,371.847,1.000000,23798.208,30145.3,66.12,best_tested_request_k_not_capacity_optimum

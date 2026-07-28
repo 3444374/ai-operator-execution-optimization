@@ -132,6 +132,10 @@
 - ✅ Shared-vLLM 128/512 前台/后台 K8/K16/AIMD 三次重复与 adaptive-flush
   补充：K8 保护前台；AIMD 饱和至 K16 且没有 decrease；adaptive flush
   约 89.4% 决策选择 50ms，当前默认保持 static K8 + fixed 50ms
+- ✅ 双 4090 request-level replenishment 三次重复：global K32 与
+  per-endpoint K16 等价；等名义 offered work 的 request K48 与 batch K16
+  吞吐持平。request K64 为最高已测吞吐点，但同时增加约 33% offered work
+  且 P99 更差，不能归因为补位机制胜出或称为容量最优
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
@@ -142,10 +146,11 @@
    诊断证据，不作为预算越大越优或 32768 为甜点的结论。第一版动态预算只在
    变负载 challenge 中依据 arrival/service rate 验证；pending work 与 SLO
    slack 保留为后续增量，避免首版控制律过度耦合。
-2. **P1**：修正并重复验证上游 request-level continuous replenishment。
-   逐请求完成释放 credit 的代码与本地 Ray 合约已完成；此前 7B 双卡 warm-up
-   误用单行 batch，不能作为策略证据。下一步保留 packing 边界，按等价请求负载
-   比较 batch K32 与 request K64/K96，并验证持久 Ray actor 路径。
+2. **P1**：在固定 active work 下隔离 request-level continuous
+   replenishment。双卡重复已确认逐请求补位链路可运行，但 work-matched
+   request K48 与 batch K16 吞吐不可分辨；K64 的 +12.24% 吞吐同时伴随约
+   33% offered-work 增量。下一步先标定 active-work 饱和区，再固定
+   `max_active_work_per_endpoint`、组织边界和服务容量做因果对照。
 3. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；
    下一版需显式使用 oldest-request slack、token backlog、arrival/service-rate
    EWMA、hard deadline 与滞回，并对比最佳静态窗口。

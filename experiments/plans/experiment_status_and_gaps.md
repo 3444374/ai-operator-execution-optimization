@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-28，补充 token-budget 容量曲线与多 job 共享调度）
+Date: 2026-07-20（最后更新：2026-07-28，补充双 GPU request-level replenishment 结果审计）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -31,7 +31,7 @@ Date: 2026-07-20（最后更新：2026-07-28，补充 token-budget 容量曲线�
 | AIMD/EWMA-AIMD/PID 单作业 GPU 矩阵 | ✅ 07-26 | 三者相对 static K=8 快约 30–32% E2E，但都把窗口升到 K≈16 | AIMD 与 static K=16 不可分辨；未证明反馈控制增量，也未复验 shared-vLLM 前台保护 |
 | Shared-vLLM typed AIMD + adaptive flush | ✅ 07-26 | **static K8 保护前台**（E2E -27.9%、P99 -40.0% vs K16）；AIMD 0 decrease、窗口均值 15.953，与 K16 不可分辨。**根因诊断**：vLLM waiting=0 但前台已慢 38.9%——AIMD 盯着 vLLM waiting 做决策，但请求在 Ray actor 侧排队、waiting 始终为 0 | 只有 128/512 双作业；flush 分支不是完整 2×2 随机化；多 foreground size/arrival offset/>2 job 均未测试 |
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
-| **Request-level continuous replenishment** | ❌ 未做 | vLLM 内部已有 continuous batching | Ray 上游仍按 submission 回收，尚未证明逐请求完成补位能减少 HOL 或提高 SLO goodput |
+| **Request-level continuous replenishment** | ⚠️ 双卡重复已完成 | global K32≈per-endpoint K16，确认 K 语义；work-matched request K48≈batch K16；request K64 为最高已测吞吐 | K64 同时增加约 33% offered work 且 P99 更差，尚未隔离补位机制的独立吞吐/SLO 收益；需固定 active work 复验 |
 | **SLO-aware EWMA flush** | ❌ 未做 | 当前 two-level queue-adaptive 只作为真实链路 baseline | 尚未使用 oldest-request slack、服务速率、token backlog、EWMA/滞回形成完整控制律 |
 | **多 job/多 foreground size 扩展** | ⏳ 代码完成，GPU 未测 | job-local K 不构成共享 endpoint 的全局保护 | 1/2/4 job、不同 mix/offset；shared request/work credit 与公平队列待远端门禁和正式验证 |
 
@@ -101,7 +101,7 @@ grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。定位为�
 
 ❌ 未证明（关键缺口）：
    ├── "Queue-adaptive flush 优于最佳静态 timeout"（未证明）
-   ├── "上游 request-level continuous replenishment 能放大 vLLM continuous batching 收益"（代码已实现，双卡等价负载验证待完成）
+   ├── "上游 request-level continuous replenishment 能放大 vLLM continuous batching 收益"（双卡链路已跑通，但 work-matched K48 与 batch K16 吞吐不可分辨）
    ├── "SLO-aware 动态 flush 优于最佳静态窗口"（未实现）
    ├── "Prefix-aware 在 cache-off 受控 prefix 比例下有效"（未证明）
    └── "策略代码对多模态 workload 可复用"（未启动）
@@ -486,8 +486,9 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
    最后以 `BEST_TESTED_TOKEN_BUDGET`、相同 work 和 256 row cap 隔离复验
    membership 策略。已完成的 1024–32768 曲线同时改变 offered request
    concurrency，只作诊断；
-3. 按 batch control 的实际 `organization_batch_rows_mean` 对齐 request
-   credit，重复
+3. 双卡 K-count 对照已完成：request K48 与 batch K16 的名义 offered work
+   基本对齐且吞吐持平；下一轮改为固定
+   `max_active_work_per_endpoint`，将 request 数上限设为非约束值，直接比较
    request-level continuous replenishment 与 whole-submission barrier；
 4. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
 5. prefix cache-on、多模态复用，以及 shared-vLLM 的 1/2/4 job、workload
@@ -517,9 +518,9 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 | 缺口 | 当前状态 | 最小闭环 |
 |---|---|---|
-| Request-level completion/credit release | lifecycle 有 request trace，但 admission 主要按 submission 回收 | 任一请求完成释放自身 credit，保持 exactly-once |
-| Continuous replenishment | vLLM 内部具备；上游未显式实现 | whole-submission vs request-credit 对照 |
-| Token-work admission | 以 submission/request 上限为主 | active request cap + active estimated token-work cap |
+| Request-level completion/credit release | 已实现并完成双 4090 重复 | 固定 active work 后继续验证 exactly-once 与逐请求释放 |
+| Continuous replenishment | 上游已实现；K-count 双卡对照未隔离独立收益 | 固定 active work 的 whole-submission vs request-credit 对照 |
+| Token-work admission | 已实现 per-endpoint active-work credit，GPU 容量曲线待跑 | 标定 active estimated token-work cap，再作为公平对照条件 |
 | SLO-aware adaptive flush | two-level 25/50ms baseline | oldest age/slack + fill + EWMA service/arrival + hard deadline |
 | Completion-span/HOL 观测 | 有 request/submission join key | 记录同 submission 首末完成跨度和 credit idle |
 | Endpoint-local controller | topology/接口具备 | 两个真实 endpoint 后验证独立状态与回退 |
@@ -534,8 +535,8 @@ decrease 的根因不是控制器参数问题，而是 vLLM Prometheus `waiting`
 
 ### 10.3 推荐顺序与成功标准
 
-1. 先补 request-level completion/replenishment，不同时修改 flush 控制律；
-2. 用最佳静态 K/timeout 比较 whole-submission 与 request-credit；
+1. 先标定 request-level per-endpoint active-work 容量曲线；
+2. 固定 active work 与最佳静态 timeout 比较 whole-submission 与 request-credit；
 3. 再实现 SLO-aware EWMA flush，比较 fixed-best、two-level 和 EWMA；
 4. 只在两项独立收益成立后做小规模联合矩阵；
 5. UCB 必须等 epoch reward 能按产生请求的 arm 正确归因后再接入。

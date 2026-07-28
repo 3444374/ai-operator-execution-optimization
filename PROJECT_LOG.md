@@ -1,5 +1,38 @@
 # 项目日志
 
+## 2026-07-28 双 GPU request-level replenishment 正式结果审计
+
+- 登记远端 2× RTX 4090 Phase 3：5 个场景各 1 warm-up + 3 formal，
+  15/15 formal 成功。global K32 与 per-endpoint K16 吞吐仅差 0.31%，
+  确认双 endpoint admission 语义。
+- 从 request trace 按 `prompt + estimated output` 重算 admission unit：
+  batch 平均 1106.892 token/slot，request 平均 371.847 token/slot。
+  因此 request K48 才与 batch K16 基本 work-matched；两者吞吐分别
+  4248.01 与 4247.97 tokens/s，未隔离出 continuous replenishment 增量。
+- request K64 达 4768.04 tokens/s（相对 batch K16 +12.24%），但名义
+  offered work 同时高约 33.3%，且 request P99 高约 24%。结论收缩为
+  `BEST_TESTED_REQUEST_K`，不能称为容量最优或补位机制胜出。
+- 新增 `experiments/results/dual_gpu_request_replay_20260728/`，保存远端
+  `runs.csv`、`manifest.json`、七步结果报告与可绘图汇总；下一轮固定
+  per-endpoint active work，使用 30 s SLO 并显式记录 vLLM capacity。
+- 同步更新根 `AGENTS.md`、`README.md`、`PROJECT_OUTLINE.md`、快速参考卡、
+  实验状态审计、证据台账与项目索引，避免继续把 K64 写成已证明的机制最优。
+- 远端 Phase 3 后 endpoint 自动恢复失败：第一层原因是 vLLM Python 虚拟环境
+  未进入 PATH，FlashInfer JIT 找不到 `ninja`；补 PATH 后进一步确认 pip
+  nvcc 13.2 与 CUDA 13.0 headers 不兼容。现成
+  `/usr/local/cuda-13.0` 编译器+headers 最小 CCCL 编译已通过。
+- `start_endpoints.sh` 显式暴露 `$VLLM_VENV/bin`；runtime env 示例固定
+  `CUDA_HOME=/usr/local/cuda-13.0` 与对应 `CUDA_NVCC_BIN`。AutoDL runbook
+  新增启动前检查、8192/256 capacity、LF 行尾、PID 安全停止、健康门禁与
+  最短故障诊断表，供后续实验复用。
+- 匹配组合重启成功：两个 Qwen2.5-7B endpoint 均 health/models 通过，每卡
+  一个服务进程，命令显式包含 `max-num-batched-tokens=8192` 与
+  `max-num-seqs=256`。64 行 active-work gate 完成，0 failure/incident，
+  64 request/64 submission、endpoint 32/32，resource/MFU 均为 `ok`。
+- 已直接启动 `dual_gpu_active_work_curve`：5 档 per-endpoint predicted work
+  ×（1 warm-up + 3 formal）= 20 runs；启动检查时 manifest 为 running、
+  0 failed/incident，两张 GPU 均 100%。
+
 ## 2026-07-28 双 GPU 容量曲线远端审计与修正设计
 
 - 只读核验远端 Phase 1 的 24 次运行：32768 arm 仍为最高吞吐，但

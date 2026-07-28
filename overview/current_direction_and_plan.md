@@ -79,13 +79,16 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - ✅ vLLM CUDA Graph 部署基线：同一 512-request workload、每侧 3 次
   formal，相对 eager 的 E2E -71.76%、observed tokens/s +254.05%、
   MFU 4.02% → 14.51%；后续本地稳态调度实验采用 graph 服务
+- ✅ 双 4090 request-level replenishment 重复：等名义 offered work 的
+  request K48 与 batch K16 吞吐持平；K64 最高但 work 增加约 33% 且 P99
+  更差，尚未证明补位机制的独立增量
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P1**：先画 1024–32768 静态 token-budget 容量曲线，再在最佳预算上
-   比较 membership；动态预算放到阶段变化 workload 中验证
-2. **P1**：修正配置后重复验证 Ray 上游 request-level continuous
-   replenishment；代码已支持逐请求 credit release，但 7B 双卡首轮 warm-up
-   实际运行成单行 batch，尚无有效性能结论
+1. **P1**：先用 request-level submission 标定 per-endpoint active-work
+   饱和区，再固定 work 扫 token budget 和 membership
+2. **P1**：固定 active work、组织边界与服务容量，复验 Ray 上游
+   request-level continuous replenishment；当前 K 计数实验已跑通，但
+   work-matched 对照无吞吐增量
 3. **P1**：SLO-aware EWMA flush；当前 25/50ms two-level 只作为 baseline
 4. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
 5. **P2**（文本门禁已完成）：多模态泛化验证

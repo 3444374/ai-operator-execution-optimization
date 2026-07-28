@@ -22,7 +22,10 @@ bash deploy/autodl/start_endpoints.sh /root/autodl-tmp/ai-operator-runtime.env
 `HF_HUB_DISABLE_XET=1`，不依赖当前 shell 或操作者记得学术加速。
 `start_endpoints.sh` 不再写死 1.5B/7B、GPU 数、端口或 context length，也不会
 使用宽泛的 `pkill -f`。它只会在明确设置 `STOP_MANAGED_ENDPOINTS=1` 时，根据
-自身 PID 文件停止之前由同一脚本启动的 endpoint。
+自身 PID 文件停止之前由同一脚本启动的 endpoint。脚本会把
+`$VLLM_VENV/bin` 加入 `PATH`，使 FlashInfer JIT 能找到同一环境里的
+`ninja`；`CUDA_HOME` 与 `CUDA_NVCC_BIN` 仍必须在 runtime env 中明确指向
+同一套 CUDA toolkit。
 
 模型和已导入数据库的 workload 可分别通过 `COMPLETION_MODEL` 与
 `SOURCE_WORKLOAD_NAME` 切换，不修改代码。新的原始数据格式仍需先转换为
@@ -90,6 +93,16 @@ export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'
 - 按精确 PID:`kill <pid>`;
 - 按进程名精确匹配:`kill $(pgrep -x wget)`;
 - 按父 PID 取子:`kill $(pgrep -P <launcher_pid>)`。
+
+`pgrep -af <长命令模式>` 做“是否已有 runner”检查也可能匹配当前 shell，尤其
+当同一条 shell 命令后半段包含待启动的完整 runner 命令时。优先限定进程名：
+
+```bash
+ps -C python -C python3 -o pid=,args= |
+  grep 'run_ai_operator_scenarios.py'
+```
+
+正式启动还必须用“输出目录不存在”作为第二道幂等门禁。
 
 ---
 
@@ -281,6 +294,110 @@ bash deploy/autodl/start_endpoints.sh /root/autodl-tmp/ai-operator-runtime.env
 异构(1.5B + 7B)留作后续"异构 actor pool"实验，不与同构扩展实验混算。
 
 验证:`curl http://127.0.0.1:8000/v1/completions ...`、`nvidia-smi` 看两个 vLLM 分别占 GPU 0/1。
+
+### 8.1 启动前检查清单（2×4090 + vLLM 0.25.1）
+
+正式实验前逐项检查，不要只看到 GPU 显存占用就认为服务已经可用：
+
+1. **编译器与 headers 必须来自同一 CUDA toolkit**。本实例已验证的组合是：
+
+   ```bash
+   CUDA_HOME=/usr/local/cuda-13.0
+   CUDA_NVCC_BIN=/usr/local/cuda-13.0/bin
+   ```
+
+   `nvidia-cuda-nvcc==13.2.86` 安装在 Python 环境的 `nvidia/cu13/bin`
+   中，但该共享目录里的 `cuda.h` 与 Torch 均为 CUDA 13.0。用 13.2 nvcc
+   编译 13.0 headers 会报
+   `CUDA compiler and CUDA toolkit headers are incompatible`。不要因为路径名
+   都含 `cu13` 就认为 minor version 一致。
+
+2. **vLLM 虚拟环境工具必须在 PATH 中**。启动脚本应满足：
+
+   ```bash
+   export PATH="$VLLM_VENV/bin:$PATH"
+   command -v ninja
+   ```
+
+   只调用 `$VLLM_VENV/bin/python` 不会自动把 `ninja` 暴露给子进程；
+   FlashInfer JIT 会在 warm-up 阶段因 `No such file or directory: 'ninja'`
+   失败。
+
+3. **正式 capacity 必须显式固定，且 manifest 与进程命令一致**：
+
+   ```bash
+   VLLM_MAX_NUM_BATCHED_TOKENS=8192
+   VLLM_MAX_NUM_SEQS=256
+   VLLM_EXTRA_ARGS="--no-enable-prefix-caching --enable-mfu-metrics \
+   --max-num-batched-tokens 8192 --max-num-seqs 256"
+   ```
+
+   `unknown` 不能进入正式实验。上游 token budget、active-work credit 与
+   vLLM `max_num_batched_tokens` 是三个不同层次的参数，不可互相代替。
+
+4. **从 Windows 临时同步 shell 脚本时必须转换为 LF**。出现
+   `set: pipefail\r: invalid option name` 说明上传的是 CRLF；优先从 Git
+   checkout/pull，临时传输必须显式做 CRLF→LF，再运行：
+
+   ```bash
+   bash -n deploy/autodl/start_endpoints.sh
+   ```
+
+5. **只停止脚本自己管理的 PID**。需要替换 endpoint 时设置
+   `STOP_MANAGED_ENDPOINTS=1`；脚本会核对 PID 命令包含 vLLM server 和目标
+   port。不要使用宽泛 `pkill -f`，也不要覆盖仍存活但身份不匹配的 PID。
+
+6. **两张卡首次 JIT/图编译会持续数分钟**。后台启动并短轮询：
+
+   ```bash
+   nohup env STOP_MANAGED_ENDPOINTS=1 \
+     bash deploy/autodl/start_endpoints.sh \
+       /root/autodl-tmp/ai-operator-runtime.env \
+     </dev/null >/root/autodl-tmp/vllm_restart.log 2>&1 &
+
+   tail -f /root/autodl-tmp/vllm_restart.log
+   ```
+
+   不要在编译期间重复启动第二组 endpoint；两个 endpoint 可并行启动，但它们
+   共享 FlashInfer cache lock。
+
+### 8.2 启动成功门禁
+
+只有同时满足以下条件，才允许启动正式 scenario runner：
+
+```bash
+# 1) 两个 health endpoint 均成功
+for p in 8000 8001; do
+  curl -sf "http://127.0.0.1:$p/health" >/dev/null || exit 1
+done
+
+# 2) 进程命令包含固定 capacity
+ps -eo pid,args | grep '[v]llm.entrypoints.openai.api_server'
+
+# 3) 两张 GPU 各有一个服务进程
+nvidia-smi --query-compute-apps=pid,gpu_uuid,used_memory --format=csv,noheader
+
+# 4) 模型与 metrics 可读
+curl -sf http://127.0.0.1:8000/v1/models
+curl -sf http://127.0.0.1:8001/v1/models
+curl -sf http://127.0.0.1:8000/metrics | grep -m1 '^vllm:'
+curl -sf http://127.0.0.1:8001/metrics | grep -m1 '^vllm:'
+```
+
+随后先跑一个小规模门禁，核对 exactly-once、两 endpoint 分流、resource/MFU
+trace 与 service metadata，再启动多小时正式实验。GPU 显存已分配但
+`/health` 不通只表示模型加载/编译中或已失败，不是成功状态。
+
+### 8.3 常见失败的最短诊断路径
+
+| 现象 | 首查 | 处理 |
+|---|---|---|
+| `ninja` 不存在 | `command -v ninja`、`echo "$PATH"` | 把 `$VLLM_VENV/bin` 加入 PATH，不要另装一套环境 |
+| CUDA compiler/header incompatible | `nvcc --version`、`grep CUDA_VERSION "$CUDA_HOME/include/cuda.h"` | 编译器和 headers 统一指向 `/usr/local/cuda-13.0` |
+| `pipefail\r` | `file start_endpoints.sh`、`bash -n` | 转换为 LF，避免从 Windows 原样覆盖 Linux 脚本 |
+| 显存占用但 health 失败 | endpoint log 的第一处 root cause | 不重复启动；先处理 JIT/模型初始化错误 |
+| 端口健康但配置不明 | `ps -eo pid,args` | 确认模型、context、prefix cache、8192/256 capacity 与 manifest 一致 |
+| 启动器长时间不返回 | 检查后台 stdin/stdout | 使用 `nohup ... </dev/null >log 2>&1 &` 后短轮询 |
 
 ---
 

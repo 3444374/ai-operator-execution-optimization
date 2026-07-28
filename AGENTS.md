@@ -45,9 +45,10 @@ PostgreSQL 18.3
 
 当前缺口（vLLM baseline、Daft 文本接入、token-budget / K_max、flush
 跨负载与 2048 留出、本地单 GPU 联合消融、受控 prefix cache-off 实验、
-算子代价估计初版和 request-level credit-release 代码均已完成）：
-① 在 2×4090 上按等价 offered load 正确重复验证 request-level continuous
-replenishment 与持久 Ray actor 路径 → ② oldest-request slack、token backlog
+算子代价估计初版和 request-level credit-release 双卡重复均已完成）：
+① 先标定 request-level per-endpoint active-work 饱和区，再固定 work 隔离
+continuous replenishment 与 batch barrier；当前 work-matched K48 与 batch K16
+吞吐持平，K64 的吞吐增量混入更高 offered work → ② oldest-request slack、token backlog
 与 arrival/service EWMA 驱动的完整 adaptive flush →
 ③ prefix cache 开启后的独立机制验证与 length-align 显式联合消融 →
 ④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 当前 2×4090 上完成多 endpoint /
