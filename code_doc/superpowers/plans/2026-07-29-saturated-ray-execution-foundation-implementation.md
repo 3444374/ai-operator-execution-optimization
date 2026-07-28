@@ -897,14 +897,14 @@ Expected: focused tests pass and legacy callable submitters remain compatible.
 - Modify: the scheduling walkthrough selected by `learning/README.md`
 
 **Interfaces:**
-- Pool-shape arms: `1x16`, `2x8`, `4x4`, fixed 16 slots per endpoint.
+- Pool-shape arms: `1x256`, `2x128`, `4x64`, fixed 256 slots per endpoint.
 - Quantum arms: whole planning batch, fixed candidates, one-row diagnostic.
 - Uses new output directories; never resumes the contaminated fixed-work curve.
 
 - [ ] **Step 1: Add failing committed-template tests**
 
 Load both new JSON files. Assert
-`workers * actor_max_concurrency == 16` for every pool arm. Assert quantum arms
+`workers * actor_max_concurrency == 256` for every pool arm. Assert quantum arms
 keep the same active-work reference and change only submission
 granularity/target.
 
@@ -914,19 +914,29 @@ Expected: both template files are absent.
 
 - [ ] **Step 3: Create isolated templates**
 
-The pool template uses saturated batch baseline, round-robin, and fixed slots.
+The pool template uses the saturated request baseline, round-robin, and fixed
+slots. The original 16-slot draft was rejected before execution: current
+evidence has about 332 work units per request and 1337 per organization batch,
+so 16 slots would cap visible work at roughly 5.3K or 21K per endpoint, below
+the active-work saturation range. Keeping 256 slots preserves the Checkpoint A
+load envelope while changing only actor topology.
+
 The quantum template uses the selected pool/work/planning budget and arms:
 
 ```text
 batch
+service_quantum_512
+service_quantum_1024
 service_quantum_2048
 service_quantum_4096
-service_quantum_8192
 request_diagnostic
 ```
 
-Remove a quantum larger than the selected planning budget before formal launch
-and record why; never silently convert it into the control.
+The 8192 draft arm is removed because Checkpoint A reports organization-batch
+cost p95 about 3366 and maximum 5892: 8192 would not split any observed batch
+and would silently duplicate the batch control. Remove any remaining quantum
+larger than the selected planning budget or observed maximum before formal
+launch and record why; never silently convert it into the control.
 
 - [ ] **Step 4: Run full local verification**
 

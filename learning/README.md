@@ -21,14 +21,23 @@ active-work 上限和 actor slots 相同的对照中，才能把性能差异归�
 
 Ray actor pool 的另一个独立问题是“有多少客户端 worker、每个 worker 同时持有
 多少请求”。现在每个 endpoint 的真实上限是 `worker 数 × 每 worker slots`，
-调度器不会因为 `max_inflight` 写得更大就越过该物理上限。比较 1×16、2×8、
-4×4 时总 slots 都是 16，因此不会把“偷偷增加 offered load”误判为更多 actor
-带来的收益。least-active-work 只改变这 16 个 slots 如何分到 worker。
+调度器不会因为 `max_inflight` 写得更大就越过该物理上限。最初拟比较
+1×16、2×8、4×4，但远端当前分布显示单请求平均约 332 work、组织批次平均约
+1337 work；16 slot 只能暴露约 5.3K 或 21K work，远低于正在标定的饱和区。
+因此正式对照改为 1×256、2×128、4×64：每 endpoint 总 slots 都是 256，
+既保持 Checkpoint A 的饱和负载能力，又不会把“偷偷增加 offered load”误判为
+更多 actor 带来的收益。least-active-work 只改变这些固定 slots 如何分到 worker。
 
 这里的 slot-held 时间从 Ray 提交持续到结果完成，包含 Ray、HTTP 和模型服务
 等待；它不是 GPU kernel 利用率。GPU 是否填满仍要看 vLLM queue/running、
 GPU utilization、MFU 和 tokens/s。只有总 slots、active-work、service quantum
 和 workload 都相同，actor pool 形状对照才有可解释性。
+
+service quantum 候选也不能只按好看的 2 的幂机械选择。当前 planning batch
+预测 work 的 P50≈1105、P95≈3366、最大≈5892，所以 8192 不会切开任何观测
+批次，与 whole-batch control 等价。正式候选使用 512/1024/2048/4096：
+512/1024 测试更积极的持续补位，2048/4096 测试只切长尾批次的较低开销方案；
+每个候选仍受同一 active-work credit 和 256 actor slots 约束。
 
 ## 2026-07-28 双 4090 7B replenish 配置诊断
 

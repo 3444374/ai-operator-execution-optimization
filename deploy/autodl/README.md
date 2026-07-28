@@ -598,7 +598,7 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 
 ### 9.1 双 GPU 分阶段诊断模板
 
-六个模板按因果问题分阶段运行，不能合成一个大矩阵：
+八个模板按因果问题分阶段运行，不能合成一个大矩阵：
 
 1. `dual_gpu_capacity_scaling.example.json`：相同 per-GPU K 下比较单/双
    endpoint，只回答硬件扩展效率，不作为上游策略容量标定。
@@ -621,7 +621,15 @@ python code/scripts/postgres_ai_operator_profile.py ... \
    length-align 的数据组织差异。
 5. `dual_gpu_request_replay.example.json`：恢复相同 arrival replay/flush，
    比较 whole-submission barrier 与真正的 request-level replenishment。
-6. `dual_gpu_submission_policy.example.json`：在已标定 token budget 和
+6. `dual_gpu_actor_pool_shape.example.json`：沿用 request-level 饱和点，
+   固定每 endpoint 256 个可见 actor slots，比较 1×256、2×128、4×64。
+   16-slot 草案已在启动前否决：按当前约 332 work/request 或
+   1337 work/organization batch，它无法维持已测饱和区，会混入 offered-load。
+7. `dual_gpu_service_quantum.example.json`：固定上一步最佳 pool、active work
+   和 planning budget，比较 whole batch、512/1024/2048/4096 complete-row
+   quantum 与 request diagnostic。当前组织批次 P95≈3366、max≈5892，因此
+   8192 不会发生切分，禁止把它作为一个伪独立 arm。
+8. `dual_gpu_submission_policy.example.json`：在已标定 token budget 和
    active-work 配额上，逐项消融 least-work routing、service-quantum 动态预算
    和 queue-adaptive flush；最后的 combined arm 只检查交互，不替代单项结论。
 
@@ -645,7 +653,7 @@ python code/scripts/run_ai_operator_scenarios.py \
 
 完成硬件 scaling 后，只替换 `--config` 和 `--output-dir`，依次运行
 active-work-curve、token-budget-curve、data-organization、request-replay 与
-submission-policy 模板。active-work 曲线完成后，token-budget 模板直接使用
+actor-pool-shape、service-quantum、submission-policy 模板。active-work 曲线完成后，token-budget 模板直接使用
 已标定的 49K 主点与 65K 敏感性点；固定 offered work 的预算曲线完成后，再把
 49K 主点在 SLO/P99 约束下选出的值写入 `BEST_TOKEN_BUDGET`。预算扫描期间
 active-work 配额必须不小于同场景单 batch 预算，否则会混入 oversized
@@ -655,6 +663,23 @@ admission 语义。每轮都必须等待 runner manifest 为 `complete`，不要
 动态预算只在 `TOKEN_BUDGET_CANDIDATES` 的静态已测动作中移动。这里的 token
 budget 是 Ray 上游关批边界，active-work 是 endpoint admission credit，
 二者都不是 vLLM 的 `max_num_batched_tokens`。三者必须分别记录和消融。
+
+Actor Pool 与 service-quantum 两个模板还需要以下运行时变量。pool shape
+正式结果出来前，不要启动 quantum 矩阵：
+
+```bash
+export ACTIVE_WORK_PER_ENDPOINT=<checkpoint_a_selected_work>
+# 由 pool shape 的正式重复选择；三组合法值分别为 1/256、2/128、4/64
+export ACTOR_WORKERS_PER_ENDPOINT=<selected_workers>
+export RAY_ACTOR_MAX_CONCURRENCY=<selected_concurrency>
+```
+
+先按本 runbook 的 gate 规则，从 pool 模板机械缩为 64 行且保留全部三个 pool
+shape；通过后运行 pool formal。再从 quantum 模板机械缩为 64 行，至少保留
+planning-batch、一个 fixed quantum 和 request diagnostic，核对 request/
+submission/resource trace、worker ID/index/PID、每 endpoint 256 slots、
+exactly-once、零 failure 和 lease cleanup。两个正式矩阵使用不同的全新输出目录，
+串行运行，禁止在同一目录 resume 另一份配置。
 
 已完成的 1024–32768 曲线只能记作 offered-load 诊断：固定的是每 endpoint
 四个 batch，而平均每 batch 行数约从 2.3 增至 64，所以可供给的 request

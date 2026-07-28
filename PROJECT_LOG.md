@@ -21,7 +21,20 @@
   slots 截断；正式 CSV 记录 routing、slots、逐 worker 峰值/失败和 slot-held
   utilization，submission trace 记录 worker ID/index/PID。相关 actor-pool、
   legacy cleanup、backend PID、CLI/capacity、schema 与 scheduler 定向测试通过；
-  远端需在固定总 slots 下比较 1×16/2×8/4×4 后才能判断 actor 形状收益。
+  尚未形成远端性能结论。
+- 执行前 fatal-flaw audit 否决了原定 16-slot 对照：当前远端已观测到单请求
+  平均约 332 work、组织批次平均约 1337 work，16 slot 只能暴露约 5.3K/21K
+  work，低于 65K–131K 饱和扫描范围，会再次把 offered load 差异误写成策略
+  收益。Actor Pool 模板改为固定每 endpoint 256 slot 的
+  1×256/2×128/4×64，并沿用 request-level 饱和基线。
+- 新增 `dual_gpu_actor_pool_shape.example.json` 和
+  `dual_gpu_service_quantum.example.json`。后者按实测组织批次
+  P95≈3366、max≈5892 选择 512/1024/2048/4096；删除 8192，因为它不会
+  切分当前任何批次，只会静默复制 batch control。两份模板都固定 planning
+  budget、active work 和总 slots，先做 64 行门禁再顺序运行正式矩阵。
+- 本地完整回归 400 项通过，Ruff 与 `git diff --check` 通过；模板契约测试
+  强制 pool 每端点总 slots=256，并保证 quantum arms 只改变 completion
+  粒度/target，不改变 active-work 参考。
 
 ## 2026-07-29 Checkpoint A：runner 可靠性与扩展饱和曲线
 
@@ -52,8 +65,9 @@
   `PermissionError`，两者均为环境入口问题而非代码断言失败。临时测试目录已清理。
 - 第一远端检查点只包含 output-directory 原子租约、Ray 失败 completion
   清理和 16K–131K active-work 饱和曲线；第二检查点再验证 fixed service
-  quantum 与固定总 slots 的 1×16/2×8/4×4 actor pool，避免把可靠性、
-  offered load 和策略机制混在同一轮改动。
+  quantum 与固定总 slots 的 actor pool，避免把可靠性、offered load 和
+  策略机制混在同一轮改动。原计划的 16 slot 在正式启动前已由实测 work
+  分布审计否决，第二检查点改为每 endpoint 固定 256 slot。
 - endpoint-local async dispatcher 按批准设计继续保留，但只有 driver-owned
   有界 actor pool 通过 trace 与性能门禁后才进入下一份实施计划；这不是删减
   Ray 方向，而是防止一次性大改无法定位收益或退化原因。

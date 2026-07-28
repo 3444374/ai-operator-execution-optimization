@@ -83,6 +83,8 @@ class ExperimentScenarioTests(unittest.TestCase):
             "TOKEN_BUDGET": "8192",
             "BEST_TOKEN_BUDGET": "8192",
             "ACTIVE_WORK_PER_ENDPOINT": "65536",
+            "ACTOR_WORKERS_PER_ENDPOINT": "2",
+            "RAY_ACTOR_MAX_CONCURRENCY": "128",
             "CAPACITY_PROBE_TOKEN_BUDGET": "32768",
             "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
             "VLLM_MAX_NUM_SEQS": "256",
@@ -96,6 +98,8 @@ class ExperimentScenarioTests(unittest.TestCase):
             "dual_gpu_data_organization.example.json": 4,
             "dual_gpu_request_replay.example.json": 5,
             "dual_gpu_active_work_curve.example.json": 8,
+            "dual_gpu_actor_pool_shape.example.json": 3,
+            "dual_gpu_service_quantum.example.json": 6,
         }
 
         with patch.dict(os.environ, env, clear=True):
@@ -176,6 +180,103 @@ class ExperimentScenarioTests(unittest.TestCase):
                     "work98304",
                     "work131072",
                 ],
+            )
+
+            actor_pool = _load_config(
+                CODE_ROOT.parent
+                / "deploy"
+                / "autodl"
+                / "dual_gpu_actor_pool_shape.example.json"
+            )
+            self.assertIn("request", actor_pool.common_args)
+            self.assertIn("round_robin", actor_pool.common_args)
+            self.assertEqual(
+                [item.scenario_id for item in actor_pool.scenarios],
+                ["pool_1x256", "pool_2x128", "pool_4x64"],
+            )
+            for scenario in actor_pool.scenarios:
+                workers_index = scenario.args.index(
+                    "--actor-workers-per-endpoint"
+                )
+                concurrency_index = scenario.args.index(
+                    "--ray-actor-max-concurrency"
+                )
+                workers = int(scenario.args[workers_index + 1])
+                concurrency = int(scenario.args[concurrency_index + 1])
+                self.assertEqual(workers * concurrency, 256)
+
+            service_quantum = _load_config(
+                CODE_ROOT.parent
+                / "deploy"
+                / "autodl"
+                / "dual_gpu_service_quantum.example.json"
+            )
+            work_index = service_quantum.common_args.index(
+                "--max-active-work-per-endpoint"
+            )
+            workers_index = service_quantum.common_args.index(
+                "--actor-workers-per-endpoint"
+            )
+            concurrency_index = service_quantum.common_args.index(
+                "--ray-actor-max-concurrency"
+            )
+            self.assertEqual(
+                int(service_quantum.common_args[work_index + 1]),
+                65536,
+            )
+            self.assertEqual(
+                int(service_quantum.common_args[workers_index + 1])
+                * int(service_quantum.common_args[concurrency_index + 1]),
+                256,
+            )
+            self.assertEqual(
+                [item.scenario_id for item in service_quantum.scenarios],
+                [
+                    "planning_batch",
+                    "service_quantum_512",
+                    "service_quantum_1024",
+                    "service_quantum_2048",
+                    "service_quantum_4096",
+                    "request_diagnostic",
+                ],
+            )
+            expected_args = {
+                "planning_batch": ["--submission-granularity", "batch"],
+                "service_quantum_512": [
+                    "--submission-granularity",
+                    "service_quantum",
+                    "--service-quantum-tokens",
+                    "512",
+                ],
+                "service_quantum_1024": [
+                    "--submission-granularity",
+                    "service_quantum",
+                    "--service-quantum-tokens",
+                    "1024",
+                ],
+                "service_quantum_2048": [
+                    "--submission-granularity",
+                    "service_quantum",
+                    "--service-quantum-tokens",
+                    "2048",
+                ],
+                "service_quantum_4096": [
+                    "--submission-granularity",
+                    "service_quantum",
+                    "--service-quantum-tokens",
+                    "4096",
+                ],
+                "request_diagnostic": [
+                    "--submission-granularity",
+                    "request",
+                ],
+            }
+            self.assertEqual(
+                {
+                    item.scenario_id: list(item.args)
+                    for item in service_quantum.scenarios
+                },
+                expected_args,
             )
 
     def test_wait_for_idle_reports_metrics_fetch_failure(self) -> None:

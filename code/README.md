@@ -194,6 +194,20 @@ Per-worker metrics remain chunk-local deltas for correct run-level merging.
 Jobs created before Ray initialization or submission failures are marked
 `failed` without masking the original exception.
 
+The bounded actor submitter owns explicit per-worker slots and supports stable
+round-robin or least-active-work assignment. A canonical Ray handle releases
+the selected worker exactly once after either success or failure. Summary rows
+record configured/effective slots, per-worker peaks/failures and slot-held
+utilization; submission trace schema 4 records planning-batch, service-quantum,
+worker identity, credit-held and Ray-to-service timing. Slot-held utilization
+includes queue, HTTP and service time and must not be interpreted as GPU
+compute utilization.
+
+`submission_granularity=service_quantum` uses the same complete-row slicer in
+offline and arrival-replay paths. It preserves planning-batch identity while
+allowing smaller HTTP/Ray completions to release active-work credit
+independently; an oversized row remains intact and is explicitly marked.
+
 ```powershell
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py

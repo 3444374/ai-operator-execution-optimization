@@ -139,23 +139,17 @@
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1**：request-level per-endpoint active-work 五档双卡重复已完成：
-   49,152 是当前吞吐—P99/SLO 拐点候选，65,536 是扫描边界的最高已测吞吐，
-   尚未证明为容量最优。下一步关闭 arrival replay：49K 主点扫描
-   `{8192,16384,32768,49152}`，65K 敏感性点扫描
-   `{8192,16384,32768,49152,65536}`。预算不得超过对应 active-work 上限，
-   避免 oversized admission 破坏固定-work 语义；随后用 49K 主点在
-   SLO/P99 约束下选出的最佳已测预算，在固定 work 与预算下隔离比较
-   membership。已完成的 1024–32768 曲线随 batch 行数
-   增加而同步增加 request offered load，只保留为“服务仍可被更高并发填充”的
-   诊断证据，不作为预算越大越优或 32768 为甜点的结论。第一版动态预算只在
-   变负载 challenge 中依据 arrival/service rate 验证；pending work 与 SLO
-   slack 保留为后续增量，避免首版控制律过度耦合。
-2. **P1**：在固定 active work 下隔离 request-level continuous
-   replenishment。双卡重复已确认逐请求补位链路可运行，但 work-matched
-   request K48 与 batch K16 吞吐不可分辨；K64 的 +12.24% 吞吐同时伴随约
-   33% offered-work 增量。下一步在 49K 主点与 65K 高负载敏感性点固定
-   `max_active_work_per_endpoint`、组织边界和服务容量做因果对照。
+1. **P1（运行中）**：request-level per-endpoint active-work 扩展为
+   16K/24K/32K/49K/65K/82K/98K/131K 双卡重复。按“达到最大安全吞吐 97%
+   且下一安全档增益 <3%”选择最小饱和点；若不存在则报告
+   `saturation_not_reached`。旧 49K/65K 只保留为五档曲线的 knee/最高已测
+   边界，不提前覆盖本轮选择。
+2. **P1（代码完成，待远端门禁）**：在选定 active work 下固定每 endpoint
+   256 个 Ray actor slots，先比较 request-level 的 1×256/2×128/4×64 pool
+   形状；再固定最佳 pool、planning budget 和 active work，比较 whole batch、
+   fixed service quantum 512/1024/2048/4096 与 one-row request diagnostic。
+   原 16-slot 草案因可见 work 明显低于饱和区已在运行前否决；8192 quantum
+   因大于当前组织批次最大 work、会退化为 batch control 而删除。
 3. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；
    下一版需显式使用 oldest-request slack、token backlog、arrival/service-rate
    EWMA、hard deadline 与滞回，并对比最佳静态窗口。

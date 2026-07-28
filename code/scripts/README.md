@@ -96,6 +96,17 @@ active work、running 数和稳定 worker index 选择。汇总里的
 `actor_worker_slot_held_utilization` 包含 Ray/HTTP 等待时间，不是 GPU compute
 utilization；submission trace 另记 worker ID/index/PID 供归因。
 
+双 GPU 饱和后门禁使用两份隔离模板：
+
+- `deploy/autodl/dual_gpu_actor_pool_shape.example.json` 固定每 endpoint
+  256 slots，比 1×256/2×128/4×64；
+- `deploy/autodl/dual_gpu_service_quantum.example.json` 固定所选 pool、active
+  work 与 planning budget，比 batch、512/1024/2048/4096 quantum 和 request
+  diagnostic。
+
+不能把 actor 总 slots 随 arm 改变。当前 8192 quantum 大于已观测组织批次
+最大 work（约 5892），不会切分任何批次，故不进入正式矩阵。
+
 ## 结果位置
 
 - 原始数据：`feasibility/results/pg18_4_connection_smoke_256_rows.csv`

@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-07-28
+日期：2026-07-29
 
 本文说明当前 Daft + Ray 上游执行基础设施已经完成什么、实际执行流程、研究证据
 边界，以及下一步还需要实现和验证的内容。研究方向仍是数据库 AI 算子外部执行
@@ -126,10 +126,11 @@ Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
   `ray_batch_rows=1` 且仍为 batch granularity，不能作为该机制性能证据。
   下一步必须保留 packing row cap/token budget，并按等价请求负载比较 batch K
   与 request K。
-- service-quantum budget、active-work credit、least-work routing 和 shared
-  multi-job credit 目前只有代码/契约证据，没有 GPU 性能证据。正式顺序是先做
-  静态 token-budget 曲线，再标定 active-work，最后逐项消融；不能先跑组合策略
-  再把收益归因给其中任一机制。
+- complete-row service quantum 已接入 offline/arrival replay：planning batch
+  只定义组织边界，quantum 独立定义 HTTP/Ray completion 与 credit 释放边界，
+  单行 prompt 永不拆分。active-work、service quantum、least-work routing 和
+  shared multi-job credit 仍缺 GPU 性能证据；正式顺序是先标定 active-work，
+  再固定总 actor slots 比较 pool 形状和 quantum，不能先跑组合策略再归因。
 
 ## 4. Actor pool、endpoint 与 GPU 扩展
 
@@ -154,6 +155,13 @@ Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
   debug backend，不是 HTTP 模型服务或性能证据。
 - CSV 追加会校验既有 header 与当前 row keys 精确一致；空文件写 header，旧 schema
   不一致时在写入前明确失败，避免列静默错位。
+- `ActorWorkerPoolSubmitter` 显式维护每 worker running/active-work/峰值/失败和
+  slot-held 时间；round-robin/least-active-work 都只从有空 slot 的 worker
+  选择，成功与失败都由 canonical handle 精确释放一次。
+- effective per-endpoint admission 不超过
+  `actor_workers_per_endpoint × ray_actor_max_concurrency`。正式 trace 记录
+  worker ID/index/PID、planning/quantum identity、credit-held 和
+  Ray-to-service delay；slot-held utilization 不是 GPU utilization。
 
 ### 尚未完成的验证
 
@@ -242,10 +250,10 @@ active-work、least-work、动态预算和 shared-credit 策略尚未形成正�
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
 | Queue-adaptive flush | 高 | 512 变长重复 + 跨 rate + 2048 held-out + shared-vLLM | 优于 fixed-25；未优于 fixed-50 |
 | SLO-aware EWMA flush | 低（未实现） | 无 | 当前 two-level 仅为 baseline |
-| Request-level continuous replenishment | 低（未实现） | vLLM 内部机制证据，不是上游性能证据 | Ray submission barrier 尚未消除 |
+| Request-level continuous replenishment | 高（代码） | 双 GPU K 对照，但 offered work 未完全匹配 | 逐请求释放已实现；需在饱和 active work 下复验 |
 | AIMD/EWMA/PID | 高（代码） | 单作业矩阵 + static K16 control + shared-vLLM 双作业 | AIMD 饱和至 K16，未保护前台；不默认启用 |
 | UCB bandit | 中（纯控制器） | 无端到端实验 | 尚未接入执行路径 |
-| Actor pool / endpoint routing | 高（接口/契约） | 单 GPU 为主 | 多 GPU 验证未完成 |
+| Actor pool / endpoint routing | 高（有界 slots/trace） | 双 GPU endpoint 基线；pool shape 待测 | 固定 256 slots 后比较 1×256/2×128/4×64 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |
 | 多模态复用 | 低 | 未启动 | 文本主线完成后进行 |
 | 算子代价估计 | 中 | 283 行、70 配置组、五个 held-out split | 粗粒度可用；不能作严格 SLO 预测 |
@@ -278,14 +286,16 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 3. prefix ratio `0/30/70/100%` cache-off 实验未显示 prefix-only 收益，
    并修复唯一 prefix 重排和隐式 length-align 耦合。
 
-### 下一优先：持续补位验证、完整 flush 控制与缓存机制
+### 下一优先：饱和后 Actor Pool/持续补位、完整 flush 与缓存机制
 
-1. 用修正后的配置重复比较 whole-submission 与 request-level continuous
-   replenishment，并优先验证持久 Ray actor 路径；
-2. 再实现 oldest-request slack、token backlog 与 arrival/service EWMA 驱动的
+1. 完成 16K–131K active-work 扩展曲线，按预注册规则选择最小饱和点；
+2. 在该点固定每 endpoint 256 slots，比 1×256/2×128/4×64 actor pool；
+3. 固定最佳 pool 与相同 planning/work，比较 whole-batch、
+   service-quantum 512/1024/2048/4096 和 request diagnostic；
+4. 再实现 oldest-request slack、token backlog 与 arrival/service EWMA 驱动的
    SLO-aware flush；
-3. Prefix-aware 只有在单独启用 prefix cache、记录命中证据后才重新评估；
-4. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
+5. Prefix-aware 只有在单独启用 prefix cache、记录命中证据后才重新评估；
+6. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
    K=8 safety fallback。
 
 完整顺序与放弃条件见
