@@ -84,12 +84,8 @@ from src.profile_schema import (
 )
 from src.profile_replay import (
     _arrival_replay_envelopes,
-    _arrow_envelope,
     _batch_envelopes,
     _offline_batch_envelopes,
-    _request_envelopes,
-    _row_arrivals,
-    _row_output_tokens,
 )
 from src.request_costs import (
     OutputCostMode,

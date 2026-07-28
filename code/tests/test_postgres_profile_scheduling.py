@@ -17,6 +17,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts import postgres_ai_operator_profile as profile  # noqa: E402
+from src import profile_replay  # noqa: E402
 from src.scheduling.adaptive_admission import AimdAdmissionController  # noqa: E402
 from src.scheduling.admission import DynamicAdmissionGate  # noqa: E402
 from src.scheduling.models import (  # noqa: E402
@@ -1374,7 +1375,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             }
         )
 
-        arrivals = profile._row_arrivals(table, completion_max_tokens=5)
+        arrivals = profile_replay._row_arrivals(
+            table,
+            completion_max_tokens=5,
+        )
 
         self.assertEqual(
             [
@@ -1414,7 +1418,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             }
         )
 
-        arrivals = profile._row_arrivals(
+        arrivals = profile_replay._row_arrivals(
             table,
             completion_max_tokens=16,
             output_cost_mode="trace_target_output",
@@ -1435,7 +1439,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(ValueError, "target_output_tokens"):
-            profile._row_arrivals(
+            profile_replay._row_arrivals(
                 table,
                 completion_max_tokens=16,
                 output_cost_mode="trace_target_output",
@@ -1453,7 +1457,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "arrival_time_s": pa.array([2.5, 2.75], type=pa.float64()),
             }
         )
-        arrivals = profile._row_arrivals(table, completion_max_tokens=5)
+        arrivals = profile_replay._row_arrivals(
+            table,
+            completion_max_tokens=5,
+        )
         builder = PendingBatchBuilder(max_rows=2, token_budget=0)
         for arrival in arrivals:
             builder.add(arrival)
@@ -1495,7 +1502,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     }
                 )
                 with self.assertRaisesRegex(ValueError, "arrival_time_s"):
-                    profile._row_arrivals(table, completion_max_tokens=0)
+                    profile_replay._row_arrivals(
+                        table,
+                        completion_max_tokens=0,
+                    )
 
         decreasing = pa.table(
             {
@@ -1505,7 +1515,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             }
         )
         with self.assertRaisesRegex(ValueError, "non-decreasing"):
-            profile._row_arrivals(decreasing, completion_max_tokens=0)
+            profile_replay._row_arrivals(
+                decreasing,
+                completion_max_tokens=0,
+            )
 
     def test_multiple_arrow_chunks_share_one_arrival_replay_origin(self) -> None:
         clock = _DeterministicReplayClock(now_s=100.0)
