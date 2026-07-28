@@ -33,6 +33,10 @@ Current multi-endpoint routing readiness design:
 Current Ray and vLLM execution-layer tuning design:
 `superpowers/specs/2026-07-26-ray-vllm-execution-tuning-design.md`.
 
+Current saturated active-work, service-quantum, and Ray actor-pool replenishment
+design:
+`superpowers/specs/2026-07-29-saturated-ray-actor-pool-replenishment-design.md`.
+
 Current Ray execution-foundation implementation plan:
 `superpowers/plans/2026-07-26-ray-execution-foundation-implementation.md`.
 

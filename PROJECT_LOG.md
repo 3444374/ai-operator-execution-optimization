@@ -1,5 +1,33 @@
 # 项目日志
 
+## 2026-07-29 饱和 active-work 与 Ray actor-pool 补位设计
+
+- 审阅现有双 GPU active-work、request replenishment 和固定-work
+  token-budget 证据后，明确把“填满 GPU”与“饱和后策略优化”拆成两个实验阶段：
+  先扩展 65K/82K/98K/131K per-endpoint predicted-token work 曲线并按
+  97% 最大吞吐与相邻增益低于 3% 的预注册规则选饱和点；未达到则明确报告，
+  不把最高已测点改名为容量上限。
+- 新增
+  `code_doc/superpowers/specs/2026-07-29-saturated-ray-actor-pool-replenishment-design.md`。
+  设计保留 planning batch 做 token-budget/length-align/prefix-aware 组织，
+  另引入不拆单行的固定 service quantum 作为 HTTP/Ray 完成与 credit 释放单元，
+  用 completion-driven replenishment 消除 whole-submission HOL、波次执行和
+  credit 空转。
+- 将 Ray actor pool 提升为独立策略维度：每 endpoint 设置有界 dispatcher，
+  显式维护 pending queue、active-work credit、worker slots、service EWMA 与
+  completion loop；在固定总 slots 下比较 1×16、2×8、4×4，避免把 actor
+  数量增加带来的 offered-load 增加误判为调度算法收益。Ray worker 继续
+  `num_gpus=0`，不把上游 actor 调度表述成 GPU kernel 调度。
+- 固定-work 曲线中发生重复 runner 事故：错误进程名检查漏掉原 runner 后，
+  第二个 `--resume` 同时写同一 CSV/manifest，破坏单写者行数不变量并产生
+  21/36 `missing_expected_csv_row`。设计新增 output-directory 原子租约、
+  PID/启动身份/config fingerprint 校验和显式 stale recovery；受影响结果只作
+  诊断证据，在修复前禁止再次 resume 同一目录。
+- 实施顺序固定为可靠性与 trace → active-work 饱和 → 固定总 actor slots →
+  actor pool 形状 → service quantum → least-active-work worker 路由 →
+  endpoint-local 补位 → 单项有效后再组合。若饱和后策略无稳定收益，则登记
+  负结果并保留简单 baseline，不再用“喂得更多”充当策略贡献。
+
 ## 2026-07-29 AutoDL 新对话零探索入口
 
 - 将 `deploy/autodl/README.md` 固定为 AutoDL 单一 runbook，并在顶部新增
