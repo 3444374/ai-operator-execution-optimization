@@ -112,6 +112,9 @@ boundaries.
   scheduler 使用对象身份删除，避免“值相等的重复 handle”误删提交。
 - control trace 必须写入控制器实际读取的 `hol_age_s`；request 粒度的 submission
   trace 必须沿用真实 lifecycle ID，并记录 endpoint/GPU，不能伪装成 batch ID。
+- 显式 CLI 配置应优先于环境默认值。否则 shell 中残留的
+  `COMPLETION_ENDPOINT_URLS` 会压过本次 `--completion-endpoint-url`，让看似单
+  endpoint 的测试实际解析为双 endpoint。
 - 当前 HOL 信号实际是“最老 in-flight submission 的年龄”，包含正常模型服务时间，
   不是纯 Ray 排队时间。因此 7B 单请求服务约 4–5 秒时，3 秒 congestion threshold
   会把正常服务误判为拥塞；它只能作为诊断候选，后续应改为 oldest-request slack、

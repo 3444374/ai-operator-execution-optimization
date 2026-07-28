@@ -14,6 +14,8 @@
   ID，并补 pool、endpoint、GPU、status、error，避免 request 粒度实验被伪 batch ID
   误导。
 - K_max runner 增加多 endpoint/metrics URL 清洗、数量一致性与正 K 值校验。
+- 修复 profiler 配置优先级：显式单/多 endpoint 与 metrics CLI 参数优先于环境变量；
+  未传 CLI 时才读取 plural/single env，避免旧的双 endpoint env 静默覆盖当前命令。
 
 ## 2026-07-28 双 4090 配置审计、MFU 口径与 AutoDL 配置化
 

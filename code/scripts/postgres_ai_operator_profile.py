@@ -324,19 +324,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--embedding-dim", type=int, default=128)
     parser.add_argument("--model-backend", choices=["fake", "compatible_http", "http_openai", "ollama"], default="fake")
-    parser.add_argument("--embedding-endpoint-url", default=os.environ.get("EMBEDDING_ENDPOINT_URL"))
+    parser.add_argument("--embedding-endpoint-url")
     parser.add_argument(
         "--embedding-endpoint-urls",
-        default=os.environ.get("EMBEDDING_ENDPOINT_URLS"),
+        default=None,
         help="Comma-separated OpenAI-compatible embedding endpoint URLs for round-robin routing.",
     )
     parser.add_argument("--embedding-model", default=os.environ.get("EMBEDDING_MODEL", "local-embedding"))
     parser.add_argument("--embedding-api-key", default=os.environ.get("EMBEDDING_API_KEY"))
     parser.add_argument("--embedding-request-timeout-s", type=float, default=120.0)
-    parser.add_argument("--completion-endpoint-url", default=os.environ.get("COMPLETION_ENDPOINT_URL"))
+    parser.add_argument("--completion-endpoint-url")
     parser.add_argument(
         "--completion-endpoint-urls",
-        default=os.environ.get("COMPLETION_ENDPOINT_URLS"),
+        default=None,
         help="Comma-separated OpenAI-compatible completion endpoint URLs for round-robin routing.",
     )
     parser.add_argument("--completion-model", default=os.environ.get("COMPLETION_MODEL", "local-completion"))
@@ -389,10 +389,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="",
         help="Tokenizer identifier used to produce prompt/output cost units.",
     )
-    parser.add_argument("--model-metrics-url", default=os.environ.get("MODEL_METRICS_URL"))
+    parser.add_argument("--model-metrics-url")
     parser.add_argument(
         "--model-metrics-urls",
-        default=os.environ.get("MODEL_METRICS_URLS"),
+        default=None,
         help=(
             "Comma-separated Prometheus endpoints. Counters and request "
             "gauges are summed; KV-cache usage uses the maximum."
@@ -553,33 +553,52 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def embedding_endpoint_urls(args: argparse.Namespace) -> list[str]:
-    if args.embedding_endpoint_urls:
-        return [url.strip() for url in args.embedding_endpoint_urls.split(",") if url.strip()]
-    if args.embedding_endpoint_url:
-        return [args.embedding_endpoint_url]
-    return []
+    return _configured_urls(
+        plural_cli=args.embedding_endpoint_urls,
+        single_cli=args.embedding_endpoint_url,
+        plural_env=os.environ.get("EMBEDDING_ENDPOINT_URLS"),
+        single_env=os.environ.get("EMBEDDING_ENDPOINT_URL"),
+    )
 
 
 def completion_endpoint_urls(args: argparse.Namespace) -> list[str]:
-    if args.completion_endpoint_urls:
-        return [url.strip() for url in args.completion_endpoint_urls.split(",") if url.strip()]
-    if args.completion_endpoint_url:
-        return [args.completion_endpoint_url]
-    return []
+    return _configured_urls(
+        plural_cli=args.completion_endpoint_urls,
+        single_cli=args.completion_endpoint_url,
+        plural_env=os.environ.get("COMPLETION_ENDPOINT_URLS"),
+        single_env=os.environ.get("COMPLETION_ENDPOINT_URL"),
+    )
 
 
 def model_metrics_urls(args: argparse.Namespace) -> list[str]:
-    metrics_urls_text = getattr(args, "model_metrics_urls", None)
-    if metrics_urls_text:
-        return [
-            url.strip()
-            for url in metrics_urls_text.split(",")
-            if url.strip()
-        ]
-    metrics_url = getattr(args, "model_metrics_url", None)
-    if metrics_url:
-        return [metrics_url]
-    return []
+    return _configured_urls(
+        plural_cli=getattr(args, "model_metrics_urls", None),
+        single_cli=getattr(args, "model_metrics_url", None),
+        plural_env=os.environ.get("MODEL_METRICS_URLS"),
+        single_env=os.environ.get("MODEL_METRICS_URL"),
+    )
+
+
+def _configured_urls(
+    *,
+    plural_cli: str | None,
+    single_cli: str | None,
+    plural_env: str | None,
+    single_env: str | None,
+) -> list[str]:
+    """Resolve explicit CLI values before plural/single environment defaults."""
+
+    if plural_cli is not None:
+        text = plural_cli
+    elif single_cli is not None:
+        text = single_cli
+    elif plural_env is not None:
+        text = plural_env
+    elif single_env is not None:
+        text = single_env
+    else:
+        return []
+    return [value.strip() for value in text.split(",") if value.strip()]
 
 
 def _resolve_actor_workers_per_endpoint(

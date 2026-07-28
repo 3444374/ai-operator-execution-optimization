@@ -172,6 +172,59 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         help_text = " ".join(output.getvalue().split())
         self.assertIn("per service endpoint", help_text)
 
+    def test_explicit_single_endpoint_overrides_plural_environment(self) -> None:
+        with patch.dict(
+            profile.os.environ,
+            {
+                "COMPLETION_ENDPOINT_URLS": (
+                    "http://gpu0/v1/completions,"
+                    "http://gpu1/v1/completions"
+                ),
+                "MODEL_METRICS_URLS": (
+                    "http://gpu0/metrics,http://gpu1/metrics"
+                ),
+            },
+            clear=False,
+        ):
+            args = profile.parse_args(
+                [
+                    "--completion-endpoint-url",
+                    "http://single/v1/completions",
+                    "--model-metrics-url",
+                    "http://single/metrics",
+                ]
+            )
+
+            self.assertEqual(
+                profile.completion_endpoint_urls(args),
+                ["http://single/v1/completions"],
+            )
+            self.assertEqual(
+                profile.model_metrics_urls(args),
+                ["http://single/metrics"],
+            )
+
+    def test_plural_environment_is_used_when_cli_is_absent(self) -> None:
+        with patch.dict(
+            profile.os.environ,
+            {
+                "COMPLETION_ENDPOINT_URLS": (
+                    " http://gpu0/v1/completions ,"
+                    " http://gpu1/v1/completions "
+                )
+            },
+            clear=False,
+        ):
+            args = profile.parse_args([])
+
+            self.assertEqual(
+                profile.completion_endpoint_urls(args),
+                [
+                    "http://gpu0/v1/completions",
+                    "http://gpu1/v1/completions",
+                ],
+            )
+
     def test_submit_metrics_merge_aggregates_chunks_and_missing_fields(self) -> None:
         aggregate = {
             "operator_invocations": 0,
