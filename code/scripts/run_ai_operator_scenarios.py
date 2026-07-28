@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import os
@@ -27,6 +28,7 @@ from src.experiment_scenarios import (  # noqa: E402
     validate_service_metadata,
 )
 from src.metrics import parse_prometheus_metrics  # noqa: E402
+from src.runner_lease import acquire_runner_lease  # noqa: E402
 
 
 _SCENARIO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
@@ -59,6 +61,7 @@ class RunnerOptions:
     idle_timeout_s: float
     resume: bool = False
     skip_failed_scenarios: bool = False
+    recover_stale_lease: bool = False
 
 
 @dataclass(frozen=True)
@@ -106,6 +109,14 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
             "unrecovered failed scenario."
         ),
     )
+    parser.add_argument(
+        "--recover-stale-lease",
+        action="store_true",
+        help=(
+            "With --resume, replace an inspected stale output-directory "
+            "runner lease."
+        ),
+    )
     args = parser.parse_args(argv)
     if not math.isfinite(args.idle_timeout_s) or args.idle_timeout_s <= 0:
         parser.error("--idle-timeout-s must be finite and positive")
@@ -114,6 +125,8 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
     )
     if not metrics_urls:
         parser.error("--metrics-urls must contain at least one non-empty URL")
+    if args.recover_stale_lease and not args.resume:
+        parser.error("--recover-stale-lease requires --resume")
     return RunnerOptions(
         config_path=args.config,
         profiler_path=args.profiler,
@@ -124,6 +137,7 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
         idle_timeout_s=args.idle_timeout_s,
         resume=args.resume,
         skip_failed_scenarios=args.skip_failed_scenarios,
+        recover_stale_lease=args.recover_stale_lease,
     )
 
 
@@ -137,16 +151,42 @@ def run_experiment(
     config = _load_config(options.config_path)
     if options.skip_failed_scenarios and not options.resume:
         raise ValueError("--skip-failed-scenarios requires --resume")
+    if options.recover_stale_lease and not options.resume:
+        raise ValueError("--recover-stale-lease requires --resume")
     schedule = build_scenario_schedule(
         [item.scenario_id for item in config.scenarios],
         config.warmup_runs_per_scenario,
         config.formal_repeats,
         config.seed,
     )
+    fingerprint = _config_fingerprint(config, schedule)
+    repository_commit = _repository_commit()
+    with acquire_runner_lease(
+        options.output_dir,
+        config_fingerprint=fingerprint,
+        repository_commit=repository_commit,
+        recover_stale=options.recover_stale_lease,
+    ) as lease:
+        return _run_experiment_locked(
+            options,
+            config=config,
+            schedule=schedule,
+            recovered_owner=lease.recovered_owner,
+            idle_gate=idle_gate,
+        )
+
+
+def _run_experiment_locked(
+    options: RunnerOptions,
+    *,
+    config: ScenarioExperimentConfig,
+    schedule: tuple[ScheduledScenarioRun, ...],
+    recovered_owner: dict[str, object] | None,
+    idle_gate: Callable[[str, tuple[str, ...], float], None] | None,
+) -> int:
     definitions = {
         item.scenario_id: item for item in config.scenarios
     }
-    options.output_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = options.output_dir / "manifest.json"
     runs_path = options.output_dir / "runs.csv"
     expected_manifest = {
@@ -170,6 +210,18 @@ def run_experiment(
         manifest["status"] = "running"
     else:
         manifest = expected_manifest
+    if recovered_owner is not None:
+        manifest["incidents"].append(
+            {
+                "scenario_id": "_runner",
+                "phase": "control",
+                "repeat_index": -1,
+                "exit_code": None,
+                "reason": "stale_runner_lease_recovered",
+                "recovered_owner": recovered_owner,
+                "recovered": True,
+            }
+        )
     _write_json_atomic(manifest_path, manifest)
     resolved_idle_gate = idle_gate or wait_for_idle
     completed_keys = {
@@ -351,6 +403,39 @@ def _load_resume_manifest(
             "resume manifest completed runs are missing from runs.csv"
         )
     return manifest
+
+
+def _config_fingerprint(
+    config: ScenarioExperimentConfig,
+    schedule: tuple[ScheduledScenarioRun, ...],
+) -> str:
+    payload = {
+        "experiment_id": config.experiment_id,
+        "seed": config.seed,
+        "redacted_config": _redacted_config(config),
+        "schedule": [asdict(item) for item in schedule],
+    }
+    return hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _repository_commit() -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=CODE_ROOT.parent,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    commit = completed.stdout.strip()
+    if not commit:
+        raise RuntimeError("git rev-parse HEAD returned an empty commit")
+    return commit
 
 
 def _scheduled_run_key(

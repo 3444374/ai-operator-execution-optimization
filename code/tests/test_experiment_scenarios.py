@@ -4,6 +4,7 @@ import sys
 import json
 import os
 import unittest
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
@@ -376,6 +377,62 @@ class ExperimentScenarioTests(unittest.TestCase):
 
 
 class ScenarioRunnerTests(unittest.TestCase):
+    def test_parse_recover_stale_lease_requires_resume(self) -> None:
+        common = [
+            "--config",
+            "config.json",
+            "--profiler",
+            "profile.py",
+            "--python-executable",
+            sys.executable,
+            "--output-dir",
+            "output",
+            "--health-url",
+            "http://health",
+            "--metrics-urls",
+            "http://metrics",
+            "--recover-stale-lease",
+        ]
+
+        with patch("sys.stderr", new=StringIO()) as stderr:
+            with self.assertRaises(SystemExit):
+                parse_args(common)
+            self.assertIn("requires --resume", stderr.getvalue())
+
+        options = parse_args([*common, "--resume"])
+        self.assertTrue(options.recover_stale_lease)
+
+    def test_runner_holds_lease_during_profiler_and_releases_after(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            output_dir = root / "output"
+
+            exit_code = run_experiment(
+                RunnerOptions(
+                    config_path=self._write_config(
+                        root,
+                        scenario_ids=["fixed"],
+                        formal_repeats=1,
+                        seed=7,
+                    ),
+                    profiler_path=self._write_fake_profiler(
+                        root,
+                        require_runner_lease=True,
+                    ),
+                    python_executable=Path(sys.executable),
+                    output_dir=output_dir,
+                    health_url="http://health",
+                    metrics_urls=("http://metrics",),
+                    idle_timeout_s=1.0,
+                ),
+                idle_gate=lambda _health, _metrics, _timeout: None,
+            )
+
+            self.assertEqual(exit_code, 0)
+            self.assertFalse(
+                (output_dir / ".runner-lease.json").exists()
+            )
+
     def test_config_expands_explicit_environment_references(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -783,8 +840,22 @@ class ScenarioRunnerTests(unittest.TestCase):
         return path
 
     @staticmethod
-    def _write_fake_profiler(root: Path) -> Path:
+    def _write_fake_profiler(
+        root: Path,
+        *,
+        require_runner_lease: bool = False,
+    ) -> Path:
         path = root / "fake_profiler.py"
+        lease_check = (
+            [
+                "lease = output.parent / '.runner-lease.json'",
+                "if not lease.exists():",
+                "    print('runner lease missing', file=sys.stderr)",
+                "    raise SystemExit(4)",
+            ]
+            if require_runner_lease
+            else []
+        )
         path.write_text(
             "\n".join(
                 [
@@ -805,6 +876,7 @@ class ScenarioRunnerTests(unittest.TestCase):
                     "    print('intentional failure', file=sys.stderr)",
                     "    raise SystemExit(3)",
                     "output = Path(args.output)",
+                    *lease_check,
                     "output.parent.mkdir(parents=True, exist_ok=True)",
                     "exists = output.exists()",
                     "row = {",
