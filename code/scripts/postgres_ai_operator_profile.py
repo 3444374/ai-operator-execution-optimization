@@ -103,6 +103,7 @@ from src.scheduling.ray_adapter import (
 )
 from src.scheduling.ray_runtime import RayWorkerOptions
 from src.scheduling.observations import (
+    CachedMetricsObservationProvider,
     NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
@@ -192,6 +193,7 @@ FORMAL_RESULT_FIELDS = tuple(
     controller_min_window controller_max_window adaptive_sample_interval_s
     adaptive_downshifts adaptive_upshifts adaptive_limit_mean control_trace_path
     control_trace_events arrival_replay arrival_time_scale arrival_replay_preload
+    submission_granularity
     flush_policy flush_timeout_ms flush_max_wait_ms flush_trace_output
     flush_trace_path flush_trace_events submission_trace_path
     submission_trace_events resource_trace_path resource_trace_events
@@ -467,6 +469,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=float,
         default=1.0,
         help="Positive multiplier applied to normalized arrival replay offsets.",
+    )
+    parser.add_argument(
+        "--submission-granularity",
+        choices=["batch", "request"],
+        default="batch",
+        help=(
+            "Submit each closed replay group as one multi-row HTTP call, or "
+            "expand it into complete one-row requests for continuous replenishment."
+        ),
     )
     parser.add_argument(
         "--flush-policy",
@@ -1080,6 +1091,35 @@ def _arrow_envelope(
     )
 
 
+def _request_envelopes(
+    pending: PendingBatch,
+    *,
+    job_id: str,
+    operator: str,
+) -> tuple[PayloadEnvelope, ...]:
+    envelopes = []
+    for row in pending.rows:
+        request_id = f"{job_id}:request:{row.row_id}"
+        envelopes.append(
+            PayloadEnvelope(
+                request=BatchRequest(
+                    request_id=request_id,
+                    job_id=job_id,
+                    operator=operator,
+                    row_count=1,
+                    prompt_tokens=row.prompt_tokens,
+                    estimated_output_tokens=row.estimated_output_tokens,
+                    prefix_key=row.prefix_key,
+                    first_arrival_s=row.arrival_s,
+                    oldest_arrival_s=row.arrival_s,
+                    payload_id=request_id,
+                ),
+                payload=row.payload_ref,
+            )
+        )
+    return tuple(envelopes)
+
+
 def _arrival_replay_envelopes(
     tables: Iterable[pa.Table | pa.RecordBatch],
     args: argparse.Namespace,
@@ -1162,7 +1202,9 @@ def _arrival_replay_envelopes(
 
     batch_index = 0
 
-    def close_batch(pending: PendingBatch) -> PayloadEnvelope:
+    submission_granularity = getattr(args, "submission_granularity", "batch")
+
+    def close_batch(pending: PendingBatch) -> tuple[PayloadEnvelope, ...]:
         nonlocal batch_index
         if packing_sink is not None:
             packing_sink.append(
@@ -1173,6 +1215,15 @@ def _arrival_replay_envelopes(
             batch_index=batch_index,
             job_id=str(job_id),
             operator=operator,
+        )
+        closed_envelopes = (
+            _request_envelopes(
+                pending,
+                job_id=str(job_id),
+                operator=operator,
+            )
+            if submission_granularity == "request"
+            else (envelope,)
         )
         if lifecycle_seed_sink is not None:
             if replay_start_epoch_s is None or first_source_arrival_s is None:
@@ -1198,7 +1249,11 @@ def _arrival_replay_envelopes(
             seeds = [
                 RequestLifecycleSeed(
                     request_id=f"{job_id}:row:{row.row_id}",
-                    submission_id=envelope.request.request_id,
+                    submission_id=(
+                        f"{job_id}:request:{row.row_id}"
+                        if submission_granularity == "request"
+                        else envelope.request.request_id
+                    ),
                     doc_id=row.row_id,
                     prompt_tokens=row.prompt_tokens,
                     estimated_output_tokens=row.estimated_output_tokens,
@@ -1206,6 +1261,11 @@ def _arrival_replay_envelopes(
                     arrival_epoch_s=arrival_epoch_s,
                     flush_epoch_s=flush_epoch_s,
                     request_time_origin="replayed_arrival",
+                    latency_granularity=(
+                        "request"
+                        if submission_granularity == "request"
+                        else "submission"
+                    ),
                 )
                 for row, arrival_epoch_s in zip(
                     pending.rows,
@@ -1218,7 +1278,7 @@ def _arrival_replay_envelopes(
                 else:
                     lifecycle_seed_sink.append(seed)
         batch_index += 1
-        return envelope
+        return closed_envelopes
 
     token_budget = args.token_budget if args.batching_policy == "token_budget" else 0
     max_rows = (
@@ -1243,7 +1303,8 @@ def _arrival_replay_envelopes(
         nonlocal replay_start_epoch_s
         replay_start_epoch_s = lifecycle_epoch_clock()
         try:
-            yield from batcher
+            for closed_envelopes in batcher:
+                yield from closed_envelopes
         finally:
             for event in batcher.trace:
                 if callable(trace_sink):
@@ -1404,12 +1465,18 @@ def _build_adaptive_config(
         if metrics_urls
         else (lambda: None)
     )
-    provider = NonBlockingMetricsObservationProvider(
-        sampler,
-        poll_interval_s=sample_interval_s,
-        stale_after_s=max(0.5, sample_interval_s * 2),
-        close_timeout_s=2.0,
-    )
+    if scheduling_policy == "aimd_hol":
+        provider = CachedMetricsObservationProvider(
+            sampler,
+            min_sample_interval_s=sample_interval_s,
+        )
+    else:
+        provider = NonBlockingMetricsObservationProvider(
+            sampler,
+            poll_interval_s=sample_interval_s,
+            stale_after_s=max(0.5, sample_interval_s * 2),
+            close_timeout_s=2.0,
+        )
     gate = DynamicAdmissionGate(
         controller,
         provider,
@@ -2549,6 +2616,10 @@ def submit_python_compatible_http_batches(
 
 
 def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
+    if args.submission_granularity == "request" and not args.arrival_replay:
+        raise SystemExit(
+            "--submission-granularity request requires --arrival-replay"
+        )
     if not args.arrival_replay:
         return
     if (
@@ -2896,6 +2967,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "arrival_replay_preload": (
                 "bounded_requested_workload" if args.arrival_replay else ""
             ),
+            "submission_granularity": args.submission_granularity,
             "flush_policy": args.flush_policy,
             "flush_timeout_ms": args.flush_timeout_ms,
             "flush_max_wait_ms": args.flush_max_wait_ms,
@@ -2934,7 +3006,15 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "request_finish_reason_stop_ratio": 0.0,
             "request_finish_reason_length_ratio": 0.0,
             "latency_granularity": (
-                "submission" if args.request_trace_output else ""
+                "request"
+                if (
+                    args.request_trace_output
+                    and args.arrival_replay
+                    and args.submission_granularity == "request"
+                )
+                else "submission"
+                if args.request_trace_output
+                else ""
             ),
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
@@ -3745,6 +3825,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "arrival_replay_preload": (
                 "bounded_requested_workload" if args.arrival_replay else ""
             ),
+            "submission_granularity": args.submission_granularity,
             "flush_policy": args.flush_policy,
             "flush_timeout_ms": args.flush_timeout_ms,
             "flush_max_wait_ms": args.flush_max_wait_ms,

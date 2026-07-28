@@ -192,10 +192,18 @@ arrival gaps. Online flush experiments must additionally enable
 preserves subsequent gaps with a monotonic clock, builds complete-row pending
 batches, and writes a separate flush trace. Batching decides which rows belong
 together, flush decides when a partial batch closes, and admission limits how
-many closed batches may be in flight.
+many submissions may be in flight. The default
+`--submission-granularity batch` preserves the historical multi-row HTTP call.
+`--submission-granularity request` keeps the same organization and flush
+boundaries but expands each closed group into complete one-row HTTP requests,
+so every completed request immediately releases one admission slot and the
+scheduler can continuously replenish vLLM. In request mode, `max_inflight`
+counts requests rather than multi-row batches; results from the two modes must
+not be compared as if the same numeric K represented the same offered load.
 
 Optional request tracing records one client-observed row per prompt with
-submission-granularity completion timing and SLO metrics. Epoch timestamps are
+explicit request- or submission-granularity completion timing and SLO metrics.
+Epoch timestamps are
 derived from a single wall-clock anchor plus monotonic elapsed time. Aggregate
 endpoint token usage is never divided across prompts. For vLLM, the explicit
 `--completion-return-token-ids` opt-in records genuine per-choice output-token
@@ -205,6 +213,14 @@ Backend service epochs are marked as a separate clock domain; cross-domain
 submit-to-service time remains empty when the clocks cannot be ordered.
 Request trace schema 3 retains the explicit `submission_id` join key and adds
 `finish_reason`; consumers do not reconstruct identity from row position.
+
+Typed adaptive controllers consume each asynchronous vLLM metrics sample at
+most once. A still-recent cached sample remains visible for diagnostics but is
+marked non-fresh after its first decision, preventing AIMD/EWMA/PID from
+reapplying one scrape at scheduler-loop speed. The HOL-age controller uses the
+configured sample interval as its control clock; its current signal is still
+the age of the oldest in-flight submission and should not be described as pure
+pre-submit queueing delay.
 
 `code/src/experiment_scenarios.py` and
 `code/scripts/run_ai_operator_scenarios.py` provide deterministic formal-run

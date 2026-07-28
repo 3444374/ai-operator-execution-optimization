@@ -88,6 +88,9 @@ class CachedMetricsObservationProvider:
             hol_age_s=hol_age_s,
         )
 
+    def close(self) -> None:
+        """Match the observation-provider lifecycle without owning resources."""
+
 
 class NonBlockingMetricsObservationProvider:
     """Sample service metrics off the policy-decision path.
@@ -122,6 +125,8 @@ class NonBlockingMetricsObservationProvider:
         self._sampled = threading.Event()
         self._snapshot: ServiceMetricsSnapshot | None = None
         self._sampled_at_s: float | None = None
+        self._sample_generation = 0
+        self._last_delivered_generation = 0
         self._thread = threading.Thread(
             target=self._sample_loop,
             name="service-metrics-sampler",
@@ -143,11 +148,15 @@ class NonBlockingMetricsObservationProvider:
         with self._lock:
             snapshot = self._snapshot
             sampled_at_s = self._sampled_at_s
-        fresh = (
-            snapshot is not None
-            and sampled_at_s is not None
-            and now - sampled_at_s <= self.stale_after_s
-        )
+            sample_generation = self._sample_generation
+            fresh = (
+                snapshot is not None
+                and sampled_at_s is not None
+                and now - sampled_at_s <= self.stale_after_s
+                and sample_generation != self._last_delivered_generation
+            )
+            if fresh:
+                self._last_delivered_generation = sample_generation
         return AdmissionObservation(
             observed_at_s=now,
             fresh=fresh,
@@ -177,6 +186,7 @@ class NonBlockingMetricsObservationProvider:
             with self._lock:
                 self._snapshot = snapshot
                 self._sampled_at_s = sampled_at_s
+                self._sample_generation += 1
             self._sampled.set()
             if self._stop.wait(self.poll_interval_s):
                 return

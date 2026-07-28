@@ -51,6 +51,7 @@ class RequestLifecycleSeed:
     arrival_epoch_s: float
     flush_epoch_s: float
     request_time_origin: RequestTimeOrigin
+    latency_granularity: Literal["submission", "request"] = "submission"
 
     def __post_init__(self) -> None:
         if not self.request_id or not self.submission_id or not self.doc_id:
@@ -64,6 +65,8 @@ class RequestLifecycleSeed:
             "offline_job_start",
         }:
             raise ValueError("unknown request_time_origin")
+        if self.latency_granularity not in {"submission", "request"}:
+            raise ValueError("unknown latency_granularity")
         _ordered_times(
             ("arrival_epoch_s", self.arrival_epoch_s),
             ("flush_epoch_s", self.flush_epoch_s),
@@ -181,7 +184,6 @@ def build_request_trace_rows(
         "client-estimated output tokens",
     )
     _validate_token_map(actual_output_tokens_by_doc_id, "actual output tokens")
-
     rows = []
     for item in seeds:
         event = events_by_id[item.submission_id]
@@ -287,7 +289,7 @@ def build_request_trace_rows(
                 service_s=service_s,
                 e2e_s=e2e_s,
                 request_time_origin=item.request_time_origin,
-                latency_granularity="submission",
+                latency_granularity=item.latency_granularity,
                 slo_target_s=slo_target_s,
                 slo_met=slo_met,
             )

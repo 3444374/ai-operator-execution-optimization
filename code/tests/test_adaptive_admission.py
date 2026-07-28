@@ -257,6 +257,21 @@ class HolAgeAimdAdmissionControllerTests(unittest.TestCase):
         self.assertEqual(deadband.reason, "deadband")
         self.assertEqual(missing.reason, "missing_hol_age")
 
+    def test_stale_observation_does_not_reapply_hol_decision(self) -> None:
+        controller = HolAgeAimdAdmissionController(
+            HolAgeAimdConfig(min_window=4, max_window=12),
+            initial_window=4,
+        )
+
+        first = controller.update(observation(hol_age_s=0.2))
+        repeated = controller.update(
+            observation(fresh=False, hol_age_s=0.2)
+        )
+
+        self.assertEqual(first.window, 6)
+        self.assertEqual(repeated.window, 6)
+        self.assertEqual(repeated.reason, "stale_observation")
+
     def test_config_rejects_invalid_thresholds(self) -> None:
         with self.assertRaisesRegex(ValueError, "HOL-age thresholds"):
             HolAgeAimdConfig(low_load_hol_age_s=3.0, congestion_hol_age_s=2.0)

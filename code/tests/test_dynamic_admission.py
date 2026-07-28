@@ -105,6 +105,26 @@ class NonBlockingObservationProviderTests(unittest.TestCase):
         self.assertFalse(stale.fresh)
         self.assertEqual(stale.sample_age_s, 0.75)
 
+    def test_each_background_sample_is_fresh_only_once(self) -> None:
+        clock = FakeClock(10.0)
+        provider = NonBlockingMetricsObservationProvider(
+            lambda: ServiceMetricsSnapshot(4, 0, 0.25),
+            poll_interval_s=60.0,
+            stale_after_s=1.0,
+            clock=clock,
+        )
+        self.addCleanup(provider.close)
+        self.assertTrue(provider.wait_until_sampled(timeout_s=1.0))
+
+        first = provider.latest(inflight=2)
+        clock.current = 10.1
+        repeated = provider.latest(inflight=3)
+
+        self.assertTrue(first.fresh)
+        self.assertFalse(repeated.fresh)
+        self.assertAlmostEqual(repeated.sample_age_s, 0.1)
+        self.assertEqual(repeated.waiting, 0)
+
     def test_latest_never_waits_for_blocked_sampler(self) -> None:
         sampler_entered = threading.Event()
         release_sampler = threading.Event()

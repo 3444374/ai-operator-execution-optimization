@@ -207,6 +207,8 @@ class HolAgeAimdAdmissionController:
         self.current_window = initial
 
     def update(self, observation: AdmissionObservation) -> WindowDecision:
+        if not observation.fresh:
+            return self._hold("stale_observation")
         hol_age_s = observation.hol_age_s
         if hol_age_s is None:
             return self._hold("missing_hol_age")

@@ -158,6 +158,8 @@ class RequestLifecycleTests(unittest.TestCase):
         )
 
         self.assertEqual(rows[0].request_time_origin, "offline_job_start")
+        self.assertEqual(rows[0].latency_granularity, "submission")
+
         self.assertEqual(rows[0].e2e_s, 2.0)
 
     def test_request_lifecycle_seed_rejects_unknown_time_origin(self) -> None:

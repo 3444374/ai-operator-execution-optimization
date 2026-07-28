@@ -7,13 +7,28 @@
 的双 endpoint 诊断，首先应检查全局 K=32，而不能直接复用 K=16。一个
 submission 还可能包含多行 prompt；只有整批 HTTP 响应完成后，该 submission
 才释放 admission slot，这与真正的 request-level continuous replenishment
-仍有区别。
+仍有区别。现在 arrival replay 可显式选择
+`--submission-granularity request`：token-budget 与 flush 仍决定完整请求的
+组织边界，但关批后每行作为一个完整 HTTP 请求提交，任一请求完成都会立即释放
+一个 slot 并持续补位。该模式下 K 表示“请求数”，默认 batch 模式下 K 表示
+“多行 submission 数”，两种模式不能只按相同 K 数值直接比较。
 
 `least_queued` 现在把调度器已提交但尚未完成的 endpoint-local submission
 计入负载，不再对静态全零拓扑反复选择第一个 endpoint。双 endpoint 采集应使用
 `--model-metrics-urls` 传入两个 vLLM Prometheus 地址，否则单地址 counters
 只能代表一个 endpoint。GPU 利用率取所有可见 GPU 的均值，显存和功耗取系统
 总量；这些口径用于解释双卡系统，不应和旧的“仅第一张 GPU”记录直接混算。
+
+动态控制器的 `fresh` 现在表示“新采样且尚未被控制决策消费”，而不只是
+“采样尚未超时”。同一个 Prometheus 快照不会在调度器高速循环中重复触发
+AIMD/EWMA/PID 更新；HOL-age AIMD 也按配置的采样周期更新。需要注意，现有
+HOL-age 仍是最老 in-flight submission 的年龄，不等同于纯粹的提交前排队时间。
+
+同日双 4090 单次诊断中，请求级 K=64 为约 15.20 rows/s、6784 tokens/s，
+K=128 为约 13.89 rows/s、6217 tokens/s，均未超过此前 batch 级 K=32 的
+约 18.71 rows/s、8317 tokens/s。这只能作为调参信号：独立 HTTP/Ray task
+开销和过高并发可能抵消持续补位收益；在完成重复、交错的 K 扫描前，不能声称
+请求级模式提升或降低了总体性能。
 
 ## 2026-07-26 Ray endpoint 与 actor worker 执行契约
 

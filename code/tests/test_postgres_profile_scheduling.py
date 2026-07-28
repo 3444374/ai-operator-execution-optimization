@@ -839,6 +839,28 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             if provider is not None:
                 provider.close()
 
+    def test_hol_adaptive_config_uses_interval_clocked_provider(self) -> None:
+        config = profile._build_adaptive_config(
+            scheduling_policy="aimd_hol",
+            metrics_urls=[],
+            trace_events=[],
+            min_window=4,
+            max_window=16,
+            initial_window=4,
+            sample_interval_s=0.25,
+            ewma_alpha=0.5,
+            pid_proportional_gain=1.0,
+            pid_integral_gain=0.0,
+            pid_derivative_gain=0.0,
+            hol_age_congestion_s=2.0,
+            hol_age_low_load_s=0.5,
+        )
+
+        self.assertIsInstance(
+            config["observation_provider"],
+            CachedMetricsObservationProvider,
+        )
+
     def test_typed_adaptive_decision_does_not_wait_for_metrics_scrape(self) -> None:
         sampler_entered = threading.Event()
         release_sampler = threading.Event()
@@ -1626,6 +1648,75 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [1_000.01, 1_000.01],
         )
 
+    def test_request_granularity_expands_closed_batch_into_complete_requests(
+        self,
+    ) -> None:
+        args = SimpleNamespace(
+            ray_batch_rows=8,
+            batching_policy="fixed_rows",
+            token_budget=0,
+            flush_policy="fixed_timeout",
+            flush_timeout_ms=25.0,
+            flush_max_wait_ms=50.0,
+            max_inflight=8,
+            arrival_time_scale=0.001,
+            submission_granularity="request",
+            _replay_clock=_DeterministicReplayClock(),
+        )
+        table = pa.table(
+            {
+                "doc_id": [1, 2],
+                "text": ["one", "two"],
+                "prompt_tokens": [10, 20],
+                "arrival_time_s": [5.0, 15.0],
+                "prefix_key": ["p", "p"],
+            }
+        )
+        seeds = []
+        packing = []
+
+        envelopes = list(
+            profile._arrival_replay_envelopes(
+                [table],
+                args,
+                job_id="job",
+                operator="ai_embed",
+                service_observation=lambda: ReplayServiceObservation(
+                    fresh=False,
+                    running=None,
+                    waiting=None,
+                    kv_usage=None,
+                ),
+                trace_sink=[],
+                lifecycle_seed_sink=seeds,
+                packing_sink=packing,
+                epoch_clock=lambda: 1_000.0,
+            )
+        )
+
+        self.assertEqual(len(envelopes), 2)
+        self.assertEqual(
+            [item.payload.column("doc_id").to_pylist() for item in envelopes],
+            [[1], [2]],
+        )
+        self.assertEqual(
+            [item.request.request_id for item in envelopes],
+            ["job:request:1", "job:request:2"],
+        )
+        self.assertEqual(
+            [item.request.row_count for item in envelopes],
+            [1, 1],
+        )
+        self.assertEqual(
+            [item.submission_id for item in seeds],
+            ["job:request:1", "job:request:2"],
+        )
+        self.assertEqual(
+            {item.latency_granularity for item in seeds},
+            {"request"},
+        )
+        self.assertEqual(packing, [(30, 2)])
+
     def test_queue_adaptive_uses_max_inflight_for_pressure_window(self) -> None:
         args = SimpleNamespace(
             ray_batch_rows=8,
@@ -1708,6 +1799,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         default_row = profile.run_once(default_args, "formal", 1)
 
         self.assertFalse(default_row["arrival_replay"])
+        self.assertEqual(default_row["submission_granularity"], "batch")
         self.assertEqual(default_row["arrival_time_scale"], 1.0)
         self.assertEqual(default_row["flush_policy"], "immediate")
         self.assertEqual(default_row["flush_timeout_ms"], 25.0)
@@ -1747,6 +1839,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "--source-order",
                 "arrival_time",
                 "--arrival-replay",
+                "--submission-granularity",
+                "request",
                 "--arrival-time-scale",
                 "0.0005",
                 "--flush-policy",
@@ -1762,6 +1856,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         replay_row = profile.run_once(replay_args, "formal", 1)
 
         self.assertTrue(replay_row["arrival_replay"])
+        self.assertEqual(replay_row["submission_granularity"], "request")
         self.assertEqual(replay_row["arrival_time_scale"], 0.0005)
         self.assertEqual(replay_row["flush_policy"], "fixed_timeout")
         self.assertEqual(replay_row["flush_timeout_ms"], 12.5)
@@ -1993,6 +2088,14 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
     def test_request_trace_cli_requires_supported_typed_ray_path(self) -> None:
         invalid_cases = [
+            (
+                [
+                    "--dry-run",
+                    "--submission-granularity",
+                    "request",
+                ],
+                "requires --arrival-replay",
+            ),
             (
                 [
                     "--dry-run",
