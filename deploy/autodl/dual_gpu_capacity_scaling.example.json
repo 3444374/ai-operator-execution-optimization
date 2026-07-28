@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "experiment_id": "dual_gpu_request_replay",
-  "seed": 20260808,
+  "experiment_id": "dual_gpu_capacity_scaling",
+  "seed": 20260728,
   "service_metadata": {
     "vllm_version": "0.25.1",
     "enforce_eager": false,
@@ -29,6 +29,12 @@
     "ai_complete",
     "--executor",
     "ray_actor",
+    "--actor-workers-per-endpoint",
+    "1",
+    "--ray-actor-max-concurrency",
+    "64",
+    "--ray-worker-num-cpus",
+    "0.5",
     "--model-backend",
     "compatible_http",
     "--completion-endpoint-urls",
@@ -46,6 +52,8 @@
     "300",
     "--model-metrics-urls",
     "${MODEL_METRICS_URLS}",
+    "--endpoint-gpu-ids",
+    "0,1",
     "--source-workload-name",
     "${SOURCE_WORKLOAD_NAME}",
     "--source-order",
@@ -70,12 +78,6 @@
     "${COMPLETION_MODEL}",
     "--cost-tokenizer-id",
     "${COMPLETION_MODEL}",
-    "--actor-workers-per-endpoint",
-    "1",
-    "--ray-actor-max-concurrency",
-    "64",
-    "--ray-worker-num-cpus",
-    "0.5",
     "--arrival-replay",
     "--arrival-time-scale",
     "0.001",
@@ -85,6 +87,10 @@
     "50",
     "--flush-max-wait-ms",
     "50",
+    "--submission-granularity",
+    "batch",
+    "--scheduling-policy",
+    "static",
     "--endpoint-routing",
     "least_queued",
     "--writeback-mode",
@@ -100,25 +106,47 @@
   ],
   "scenarios": [
     {
-      "scenario_id": "batch_static_global_k32",
+      "scenario_id": "single_gpu_per_k8",
       "args": [
-        "--submission-granularity",
-        "batch",
-        "--scheduling-policy",
-        "static",
+        "--completion-endpoint-urls",
+        "${SINGLE_COMPLETION_ENDPOINT_URL}",
+        "--model-metrics-urls",
+        "${SINGLE_MODEL_METRICS_URL}",
+        "--endpoint-gpu-ids",
+        "${SINGLE_ENDPOINT_GPU_ID}",
         "--admission-scope",
         "global",
         "--max-inflight",
-        "32"
+        "8"
       ]
     },
     {
-      "scenario_id": "batch_static_per_endpoint_k16",
+      "scenario_id": "dual_gpu_per_k8",
       "args": [
-        "--submission-granularity",
-        "batch",
-        "--scheduling-policy",
-        "static",
+        "--admission-scope",
+        "per_endpoint",
+        "--max-inflight",
+        "8"
+      ]
+    },
+    {
+      "scenario_id": "single_gpu_per_k16",
+      "args": [
+        "--completion-endpoint-urls",
+        "${SINGLE_COMPLETION_ENDPOINT_URL}",
+        "--model-metrics-urls",
+        "${SINGLE_MODEL_METRICS_URL}",
+        "--endpoint-gpu-ids",
+        "${SINGLE_ENDPOINT_GPU_ID}",
+        "--admission-scope",
+        "global",
+        "--max-inflight",
+        "16"
+      ]
+    },
+    {
+      "scenario_id": "dual_gpu_per_k16",
+      "args": [
         "--admission-scope",
         "per_endpoint",
         "--max-inflight",
@@ -126,42 +154,27 @@
       ]
     },
     {
-      "scenario_id": "request_static_per_endpoint_k32",
+      "scenario_id": "single_gpu_per_k24",
       "args": [
-        "--submission-granularity",
-        "request",
-        "--scheduling-policy",
-        "static",
+        "--completion-endpoint-urls",
+        "${SINGLE_COMPLETION_ENDPOINT_URL}",
+        "--model-metrics-urls",
+        "${SINGLE_MODEL_METRICS_URL}",
+        "--endpoint-gpu-ids",
+        "${SINGLE_ENDPOINT_GPU_ID}",
         "--admission-scope",
-        "per_endpoint",
+        "global",
         "--max-inflight",
-        "32"
+        "24"
       ]
     },
     {
-      "scenario_id": "request_static_per_endpoint_k48",
+      "scenario_id": "dual_gpu_per_k24",
       "args": [
-        "--submission-granularity",
-        "request",
-        "--scheduling-policy",
-        "static",
         "--admission-scope",
         "per_endpoint",
         "--max-inflight",
-        "48"
-      ]
-    },
-    {
-      "scenario_id": "request_static_per_endpoint_k64",
-      "args": [
-        "--submission-granularity",
-        "request",
-        "--scheduling-policy",
-        "static",
-        "--admission-scope",
-        "per_endpoint",
-        "--max-inflight",
-        "64"
+        "24"
       ]
     }
   ]

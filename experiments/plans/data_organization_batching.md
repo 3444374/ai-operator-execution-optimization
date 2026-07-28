@@ -17,7 +17,8 @@
 前置：COPY + deferred index 写回 baseline 建立
 前置：模型 batch scaling 曲线（§4 前置实验）
 
-当前状态: GPU = 手动 HTTP endpoint、写回 = execute_values() UPSERT（仅预研可用）
+当前状态：vLLM baseline、Daft 文本链路和 COPY/pgvector 工程 baseline 已建立；
+双 GPU 7B 的隔离式数据组织复验待执行。
 ```
 
 **为什么**：在 suboptimal GPU/写回 baseline 上搜出来的"最优 batch_size"会因为 GPU 端或写回端的瓶颈位置不同而偏移。论文必须用 S 级 GPU + A 级写回上的 参数组合穷举 结果。
@@ -240,6 +241,30 @@ H1.5：模型自身的 batch scaling 在 batch=64 时已达到吞吐平台期。
 ---
 
 ## 6. 实验矩阵
+
+### 6.0 7B 双 GPU 复验隔离规则（2026-07-28）
+
+旧双卡配置同时启用了 accelerated arrival replay、50ms flush 和 token-budget。
+现场 1024 行 gate 的 packing budget utilization 仅约 13.5%，平均每批约 3 行：
+大多数 batch 在达到 token budget 前已被 timeout 关闭。该配置只能研究在线
+arrival/flush，不足以判断 token-budget 或 length-align 本身是否有效。
+
+复验必须先使用 `source_order=doc_id`、关闭 arrival replay，令完整 organizer
+输入可见，固定 static per-endpoint K 和 endpoint routing，仅改变 batch
+membership。第一轮矩阵固定为：
+
+```text
+fixed_rows_8
+sequential_token_budget ∈ {4096, 8192}
+row_cap_aware_token_budget = 8192
+length_align_token_budget = 8192
+```
+
+必须先检查 `packing_budget_utilization_mean`、`batch_rows_mean` 和
+`batch_estimated_cost_units_p95`。如果 token-budget 场景利用率仍低于 50%，
+不进入策略胜负解释，先诊断 row cap、oversized rows 或 organizer visibility。
+只有离线组织阶段出现可辨认的 batch-shape 差异后，才把候选带回 arrival replay
+验证在线泛化；不能同时调 flush timeout 来“帮助”某个组织策略。
 
 ### 6.1 参数组合穷举：建立静态最优 baseline
 

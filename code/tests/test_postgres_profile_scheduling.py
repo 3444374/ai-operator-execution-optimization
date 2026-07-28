@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+import os
 import sys
 import threading
 import time
@@ -17,6 +18,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts import postgres_ai_operator_profile as profile  # noqa: E402
+from scripts.run_ai_operator_scenarios import _load_config  # noqa: E402
 from src import profile_ray, profile_replay  # noqa: E402
 from src.scheduling.adaptive_admission import AimdAdmissionController  # noqa: E402
 from src.scheduling.admission import DynamicAdmissionGate  # noqa: E402
@@ -63,6 +65,57 @@ class _RecordingRay:
 
 
 class SchedulingProfileHelperTests(unittest.TestCase):
+    def test_committed_dual_gpu_scenarios_pass_profiler_dry_validation(
+        self,
+    ) -> None:
+        env = {
+            "DATABASE_URL": "postgresql://example",
+            "COMPLETION_ENDPOINT_URLS": (
+                "http://gpu0/v1/completions,http://gpu1/v1/completions"
+            ),
+            "MODEL_METRICS_URLS": (
+                "http://gpu0/metrics,http://gpu1/metrics"
+            ),
+            "SINGLE_COMPLETION_ENDPOINT_URL": "http://gpu0/v1/completions",
+            "SINGLE_MODEL_METRICS_URL": "http://gpu0/metrics",
+            "SINGLE_ENDPOINT_GPU_ID": "0",
+            "SOURCE_WORKLOAD_NAME": "sharegpt_burstgpt",
+            "SOURCE_MAX_PROMPT_TOKENS": "1500",
+            "COMPLETION_MODEL": "qwen2.5-7b",
+            "COMPLETION_MAX_TOKENS": "256",
+            "COMPLETION_PROMPT_FORMAT": "chatml",
+            "TOKEN_BUDGET": "8192",
+            "GPU_PEAK_TFLOPS": "165",
+            "MFU_PRECISION": "bf16_dense_fp32_accumulate",
+        }
+        templates = (
+            "dual_gpu_capacity_scaling.example.json",
+            "dual_gpu_data_organization.example.json",
+            "dual_gpu_request_replay.example.json",
+        )
+
+        with patch.dict(os.environ, env, clear=True):
+            for filename in templates:
+                config = _load_config(
+                    CODE_ROOT.parent / "deploy" / "autodl" / filename
+                )
+                for scenario in config.scenarios:
+                    with self.subTest(
+                        filename=filename,
+                        scenario=scenario.scenario_id,
+                    ):
+                        args = profile.parse_args(
+                            [
+                                *config.common_args,
+                                *scenario.args,
+                                "--scenario-id",
+                                scenario.scenario_id,
+                                "--dry-run",
+                            ]
+                        )
+                        row = profile.run_once(args, "formal", 1)
+                        self.assertEqual(row["status"], "dry_run")
+
     def test_ray_task_worker_options_ignore_actor_only_concurrency(self) -> None:
         args = profile.parse_args(
             [

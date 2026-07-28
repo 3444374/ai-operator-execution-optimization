@@ -18,7 +18,9 @@
 前置：vLLM + Qwen2.5-1.5B 级 LLM baseline 建立（替代手动 HTTP endpoint）
 前置：研究内容一 动态 batching 策略消融完成
 
-当前状态: GPU = 手动 HTTP endpoint（仅预研可用）
+当前状态：vLLM baseline 与真实双 endpoint 已建立；global/per-endpoint static
+admission 已实现，双 GPU 公平扩展、request-level 补位和 endpoint-local 动态
+反馈仍需正式重复。
 ```
 
 **为什么**：在手动 HTTP endpoint 上做 K_max 扫描，搜出来的"最优 K_max"可能只是因为 endpoint 的队列处理能力不同。vLLM continuous batching 改变了 GPU 侧的请求处理模式，K_max 的最优值和时间分布都会变化。
@@ -147,6 +149,32 @@ vLLM 的 `--enable-chunked-prefill` 和你的 queue-adaptive flush / K_max 控�
 ---
 
 ## 5. 实验矩阵
+
+### 5.0 多 endpoint 公平性与执行顺序（2026-07-28）
+
+`K_max` 必须显式注明 scope。历史 `global K=16` 在两个 endpoint 间共享，不能
+与单 endpoint K16 直接比较。容量曲线使用相同 **per-GPU K**：
+
+```text
+single endpoint: global K ∈ {8, 16, 24}
+dual endpoint:   per-endpoint K ∈ {8, 16, 24}
+```
+
+每个点 1 次 warm-up + 3 次随机交错 formal repeat。单 endpoint control 只采样
+其实际 GPU，双 endpoint 记录两端 metrics。报告 dual/single scaling 时按同一
+per-GPU K 配对，同时展示 P99、tokens/s、MFU、能耗和 endpoint submission 分布。
+
+执行顺序固定为：
+
+1. 容量曲线确定每卡静态甜点，禁止先调 AIMD；
+2. 离线数据组织隔离实验，避免 flush 抢先关闭 batch；
+3. 用 batch control 的实际 `batch_rows_mean` 换算 request credit，比较
+   whole-submission 与 request-level replenishment；
+4. 只有静态 request-level 路径成立后，才设计 endpoint-local adaptive。
+
+当前 AIMD/HOL 不进入正式矩阵：vLLM waiting 近零，看不到 Ray 侧 backlog；
+HOL-age 又包含正常 4–5 秒服务时间，3 秒阈值会把正常服务误判为拥塞。继续扫
+AIMD 参数不能修复观测信号错位。
 
 ### 5.1 K_max 扫描（Bounded vs Unbounded—验证 backpressure 价值）
 

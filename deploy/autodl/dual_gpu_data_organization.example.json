@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "experiment_id": "dual_gpu_request_replay",
-  "seed": 20260808,
+  "experiment_id": "dual_gpu_data_organization",
+  "seed": 20260729,
   "service_metadata": {
     "vllm_version": "0.25.1",
     "enforce_eager": false,
@@ -20,15 +20,21 @@
     "--database-url",
     "${DATABASE_URL}",
     "--total-rows",
-    "1024",
+    "512",
     "--db-fetch-rows",
-    "1024",
+    "512",
     "--source-max-prompt-tokens",
     "${SOURCE_MAX_PROMPT_TOKENS}",
     "--operator",
     "ai_complete",
     "--executor",
     "ray_actor",
+    "--actor-workers-per-endpoint",
+    "1",
+    "--ray-actor-max-concurrency",
+    "64",
+    "--ray-worker-num-cpus",
+    "0.5",
     "--model-backend",
     "compatible_http",
     "--completion-endpoint-urls",
@@ -46,10 +52,12 @@
     "300",
     "--model-metrics-urls",
     "${MODEL_METRICS_URLS}",
+    "--endpoint-gpu-ids",
+    "0,1",
     "--source-workload-name",
     "${SOURCE_WORKLOAD_NAME}",
     "--source-order",
-    "arrival_time",
+    "doc_id",
     "--data-source",
     "daft_postgres",
     "--organizer",
@@ -58,10 +66,6 @@
     "none",
     "--daft-runner",
     "native",
-    "--batching-policy",
-    "token_budget",
-    "--token-budget",
-    "${TOKEN_BUDGET}",
     "--ray-batch-rows",
     "64",
     "--output-cost-mode",
@@ -70,21 +74,14 @@
     "${COMPLETION_MODEL}",
     "--cost-tokenizer-id",
     "${COMPLETION_MODEL}",
-    "--actor-workers-per-endpoint",
-    "1",
-    "--ray-actor-max-concurrency",
-    "64",
-    "--ray-worker-num-cpus",
-    "0.5",
-    "--arrival-replay",
-    "--arrival-time-scale",
-    "0.001",
-    "--flush-policy",
-    "fixed_timeout",
-    "--flush-timeout-ms",
-    "50",
-    "--flush-max-wait-ms",
-    "50",
+    "--submission-granularity",
+    "batch",
+    "--scheduling-policy",
+    "static",
+    "--admission-scope",
+    "per_endpoint",
+    "--max-inflight",
+    "4",
     "--endpoint-routing",
     "least_queued",
     "--writeback-mode",
@@ -100,68 +97,48 @@
   ],
   "scenarios": [
     {
-      "scenario_id": "batch_static_global_k32",
+      "scenario_id": "fixed_rows_8",
       "args": [
-        "--submission-granularity",
-        "batch",
-        "--scheduling-policy",
-        "static",
-        "--admission-scope",
-        "global",
-        "--max-inflight",
-        "32"
+        "--batching-policy",
+        "fixed_rows",
+        "--ray-batch-rows",
+        "8"
       ]
     },
     {
-      "scenario_id": "batch_static_per_endpoint_k16",
+      "scenario_id": "sequential_tb4096",
       "args": [
-        "--submission-granularity",
-        "batch",
-        "--scheduling-policy",
-        "static",
-        "--admission-scope",
-        "per_endpoint",
-        "--max-inflight",
-        "16"
+        "--batching-policy",
+        "token_budget",
+        "--token-budget",
+        "4096"
       ]
     },
     {
-      "scenario_id": "request_static_per_endpoint_k32",
+      "scenario_id": "sequential_tb8192",
       "args": [
-        "--submission-granularity",
-        "request",
-        "--scheduling-policy",
-        "static",
-        "--admission-scope",
-        "per_endpoint",
-        "--max-inflight",
-        "32"
+        "--batching-policy",
+        "token_budget",
+        "--token-budget",
+        "8192"
       ]
     },
     {
-      "scenario_id": "request_static_per_endpoint_k48",
+      "scenario_id": "row_cap_aware_tb8192",
       "args": [
-        "--submission-granularity",
-        "request",
-        "--scheduling-policy",
-        "static",
-        "--admission-scope",
-        "per_endpoint",
-        "--max-inflight",
-        "48"
+        "--batching-policy",
+        "row_cap_aware_token_budget",
+        "--token-budget",
+        "8192"
       ]
     },
     {
-      "scenario_id": "request_static_per_endpoint_k64",
+      "scenario_id": "length_align_tb8192",
       "args": [
-        "--submission-granularity",
-        "request",
-        "--scheduling-policy",
-        "static",
-        "--admission-scope",
-        "per_endpoint",
-        "--max-inflight",
-        "64"
+        "--batching-policy",
+        "length_align_token_budget",
+        "--token-budget",
+        "8192"
       ]
     }
   ]

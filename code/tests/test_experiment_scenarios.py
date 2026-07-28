@@ -62,6 +62,47 @@ class ExperimentScenarioTests(unittest.TestCase):
                 ]
             )
 
+    def test_committed_dual_gpu_templates_expand_and_validate(self) -> None:
+        env = {
+            "DATABASE_URL": "postgresql://example",
+            "COMPLETION_ENDPOINT_URLS": (
+                "http://gpu0/v1/completions,http://gpu1/v1/completions"
+            ),
+            "MODEL_METRICS_URLS": (
+                "http://gpu0/metrics,http://gpu1/metrics"
+            ),
+            "SINGLE_COMPLETION_ENDPOINT_URL": "http://gpu0/v1/completions",
+            "SINGLE_MODEL_METRICS_URL": "http://gpu0/metrics",
+            "SINGLE_ENDPOINT_GPU_ID": "0",
+            "SOURCE_WORKLOAD_NAME": "sharegpt_burstgpt",
+            "SOURCE_MAX_PROMPT_TOKENS": "1500",
+            "COMPLETION_MODEL": "qwen2.5-7b",
+            "COMPLETION_MAX_TOKENS": "256",
+            "COMPLETION_PROMPT_FORMAT": "chatml",
+            "TOKEN_BUDGET": "8192",
+            "GPU_PEAK_TFLOPS": "165",
+            "MFU_PRECISION": "bf16_dense_fp32_accumulate",
+        }
+        templates = {
+            "dual_gpu_capacity_scaling.example.json": 6,
+            "dual_gpu_data_organization.example.json": 5,
+            "dual_gpu_request_replay.example.json": 5,
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            for filename, expected_scenarios in templates.items():
+                with self.subTest(filename=filename):
+                    config = _load_config(
+                        CODE_ROOT.parent
+                        / "deploy"
+                        / "autodl"
+                        / filename
+                    )
+                    self.assertEqual(
+                        len(config.scenarios),
+                        expected_scenarios,
+                    )
+
     def test_wait_for_idle_reports_metrics_fetch_failure(self) -> None:
         health_response = MagicMock()
         health_response.__enter__.return_value.status = 200

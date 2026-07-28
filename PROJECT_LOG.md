@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-07-28 双 GPU 策略与实验矩阵解耦
+
+- 已验证审计分支 `7137b3d` 以 fast-forward 合并并推送到 `main`；后续未验证
+  的实验设计继续留在 `codex/architecture-deployment-audit`。
+- 定位优化不明显的主要实验混淆：旧双卡配置同时启用 accelerated arrival
+  replay、50ms flush 与 token-budget；1024 行 gate 的 packing budget
+  utilization 仅约 13.5%、平均约 3 行/batch，说明多数 batch 被 timeout 提前
+  关闭，不能据此判断 token-budget/length-align 本身无效。
+- 新增 capacity scaling、offline data organization 两个 AutoDL 模板，并修订
+  request replay 模板。执行顺序固定为容量曲线 → 组织隔离 → 按实际
+  `batch_rows_mean` 对齐 request credit 的持续补位；AIMD/HOL 暂停参数扫描，
+  直到有能观察 Ray backlog/oldest-request slack 的 endpoint-local 信号。
+
 ## 2026-07-28 双 endpoint admission 语义与 GPU 采样修正
 
 - static typed scheduler 新增独立 endpoint credit：`per_endpoint K` 同时施加每个

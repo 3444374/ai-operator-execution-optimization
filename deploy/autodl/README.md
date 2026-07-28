@@ -313,30 +313,50 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 ```
 对比 `operator_wall_s` / `e2e_s` / `rows/s`,回答"独立 GPU 上多 endpoint 路由是否有收益"。
 
-### 9.1 request-level replay 的可复现实验模板
+### 9.1 双 GPU 分阶段诊断模板
 
-`deploy/autodl/dual_gpu_request_replay.example.json` 是可提交的场景模板。
-其中 `${DATABASE_URL}`、`${COMPLETION_MODEL}`、`${COMPLETION_ENDPOINT_URLS}`
-和 `${MODEL_METRICS_URLS}` 在 runner 读取时从环境展开；缺失变量会在启动任何
-外部工作前报错。
+三个模板必须按顺序运行，不能合成一个大矩阵：
+
+1. `dual_gpu_capacity_scaling.example.json`：相同 per-GPU K 下比较单/双
+   endpoint，回答硬件扩展与容量甜点，不测试新 batching 策略。
+2. `dual_gpu_data_organization.example.json`：关闭 arrival replay，避免 50ms
+   flush 在 token budget 生效前关批；回答 fixed rows、sequential
+   token-budget、row-cap-aware 和 length-align 的数据组织差异。
+3. `dual_gpu_request_replay.example.json`：恢复相同 arrival replay/flush，
+   比较 whole-submission barrier 与真正的 request-level replenishment。
+
+`${DATABASE_URL}`、`${COMPLETION_MODEL}`、endpoint/metrics URL 等变量在 runner
+读取时从环境展开；缺失变量会在启动任何外部工作前报错。容量模板的单 GPU
+control 还要求 `SINGLE_COMPLETION_ENDPOINT_URL`、`SINGLE_MODEL_METRICS_URL`
+和 `SINGLE_ENDPOINT_GPU_ID`，从而只采样实际工作的 GPU。
 
 ```bash
 set -a
 source /root/autodl-tmp/ai-operator-runtime.env
 set +a
 python code/scripts/run_ai_operator_scenarios.py \
-  --config deploy/autodl/dual_gpu_request_replay.example.json \
+  --config deploy/autodl/dual_gpu_capacity_scaling.example.json \
   --profiler code/scripts/postgres_ai_operator_profile.py \
   --python-executable /root/autodl-tmp/venvs/vllm-4090/bin/python \
-  --output-dir experiments/results/dual_gpu_request_replay \
+  --output-dir experiments/results/dual_gpu_capacity_scaling \
   --health-url http://127.0.0.1:8000/health \
   --metrics-urls "$MODEL_METRICS_URLS"
 ```
 
-模板保留 `ray_batch_rows=64` 和 `token_budget=8192` 作为组织边界，只有
+完成后只替换 `--config` 和 `--output-dir`，依次运行 data-organization 与
+request-replay 模板。每轮都必须等待 runner manifest 为 `complete`，不要手工
+拼接失败重跑的 CSV。
+
+request-replay 模板保留 `ray_batch_rows=64` 和 `token_budget=8192` 作为组织边界，只有
 `submission_granularity=request` 的场景才在关批后展开为单请求。不要用
 `ray_batch_rows=1` 伪装 request-level replenishment；那会在组织阶段直接把
 每个 packing group 截成一行，并不能验证“批组织 + 请求级持续补位”机制。
+
+request K 不能与 batch K 按相同数值比较。先读取 batch control 的
+`batch_rows_mean`，令候选中心约为
+`request_K_per_endpoint = batch_K_per_endpoint × batch_rows_mean`。模板中的
+K32/K48/K64 是围绕当前约 3 行/batch 的 gate 展开；若正式 batch mean 明显变化，
+必须先修改 request K 再运行，而不是事后挑最好看的点。
 
 ---
 

@@ -478,12 +478,15 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 ### 剩余关键缺口
 
-1. 修正配置后重复 request-level continuous replenishment 与
-   whole-submission barrier 对照，并增加持久 Ray actor 执行路径；
-2. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
-3. prefix cache-on、多模态复用、多 endpoint/多 GPU；
-4. shared-vLLM 的多 foreground size、arrival offset 和多 job 公平性；
-5. 动态控制的信号选择问题——逐请求完成时间或端到端 SLO slack 可能替代
+1. 用相同 per-GPU K 完成单/双 endpoint 容量曲线，替代历史 global K 同值
+   的不公平对照；
+2. 关闭 arrival replay，隔离复验 token-budget/length-align 等数据组织策略；
+3. 按 batch control 的实际 `batch_rows_mean` 对齐 request credit，重复
+   request-level continuous replenishment 与 whole-submission barrier；
+4. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
+5. prefix cache-on、多模态复用和 shared-vLLM 的多 foreground size、
+   arrival offset、多 job 公平性；
+6. 动态控制的信号选择问题——逐请求完成时间或端到端 SLO slack 可能替代
    当前 vLLM waiting 信号（不反映 Ray 侧积压），但尚未验证。
 
 原始数据与七步解释见：

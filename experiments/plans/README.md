@@ -17,6 +17,11 @@
 | `cross_layer_killer_experiment.md` | **耦合验证** | 独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数）|
 | `sink_writeback_coordination.md` | **写回工程参考**（已降级为实验设置，不作为独立实验阶段） | COPY + deferred index baseline，仅在实验设置中说明 |
 
+双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
+相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭
+arrival replay 隔离数据组织，最后回到 arrival replay 检验 request-level
+持续补位。不能用同一个大矩阵同时搜索三层参数。
+
 ## 二、设计参考
 
 | 文件 | 用途 | 回答什么 |
