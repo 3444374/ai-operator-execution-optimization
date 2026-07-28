@@ -91,7 +91,7 @@ class ExperimentScenarioTests(unittest.TestCase):
         }
         templates = {
             "dual_gpu_capacity_scaling.example.json": 6,
-            "dual_gpu_token_budget_curve.example.json": 6,
+            "dual_gpu_token_budget_curve.example.json": 9,
             "dual_gpu_data_organization.example.json": 4,
             "dual_gpu_request_replay.example.json": 5,
             "dual_gpu_active_work_curve.example.json": 5,
@@ -130,24 +130,36 @@ class ExperimentScenarioTests(unittest.TestCase):
             self.assertEqual(
                 [item.scenario_id for item in capacity.scenarios],
                 [
-                    "tb8192",
-                    "tb16384",
-                    "tb24576",
-                    "tb32768",
-                    "tb49152",
-                    "tb65536",
+                    "work49152_tb8192",
+                    "work49152_tb16384",
+                    "work49152_tb32768",
+                    "work49152_tb49152",
+                    "work65536_tb8192",
+                    "work65536_tb16384",
+                    "work65536_tb32768",
+                    "work65536_tb49152",
+                    "work65536_tb65536",
                 ],
             )
             self.assertIn("256", capacity.common_args)
-            self.assertIn("65536", capacity.common_args)
+            self.assertIn("2048", capacity.common_args)
+            self.assertNotIn("--arrival-replay", capacity.common_args)
+            for scenario in capacity.scenarios:
+                work_index = scenario.args.index(
+                    "--max-active-work-per-endpoint"
+                )
+                budget_index = scenario.args.index("--token-budget")
+                active_work = int(scenario.args[work_index + 1])
+                token_budget = int(scenario.args[budget_index + 1])
+                self.assertLessEqual(token_budget, active_work)
 
-            active_work = _load_config(
+            active_work_curve = _load_config(
                 CODE_ROOT.parent
                 / "deploy"
                 / "autodl"
                 / "dual_gpu_active_work_curve.example.json"
             )
-            self.assertIn("request", active_work.common_args)
+            self.assertIn("request", active_work_curve.common_args)
 
     def test_wait_for_idle_reports_metrics_fetch_failure(self) -> None:
         health_response = MagicMock()

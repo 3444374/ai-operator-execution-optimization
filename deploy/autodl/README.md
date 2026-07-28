@@ -439,9 +439,11 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 2. `dual_gpu_active_work_curve.example.json`：以 request-level submission
    直接扫描每 endpoint 的预测 active-token 配额。组织预算是固定的非处理变量；
    先标定 `ACTIVE_WORK_PER_ENDPOINT`，不要把 32768 当作跨模型常数。
-3. `dual_gpu_token_budget_curve.example.json`：关闭 arrival replay，在固定
-   active work 下扫描 8192–65536。它回答等量 offered work 下组织/提交形状
-   是否有收益，而不是继续用更大的 batch 暗中增加并发。
+3. `dual_gpu_token_budget_curve.example.json`：关闭 arrival replay，49K
+   主点扫描 8/16/32/49K，65K 敏感性点扫描 8/16/32/49/65K，共 9 个场景。
+   每个预算都不超过对应 active-work 上限，避免 oversized admission 破坏
+   固定-work 语义。它回答等量 offered work 下组织/提交形状是否有收益，
+   而不是继续用更大的 batch 暗中增加并发。
 4. `dual_gpu_data_organization.example.json`：使用上一步的最佳已测预算并继续
    关闭 arrival replay，避免 50ms flush 在 token budget 生效前关批；在相同
    active work 下回答 fixed rows、sequential token-budget、row-cap-aware 和
@@ -472,11 +474,12 @@ python code/scripts/run_ai_operator_scenarios.py \
 
 完成硬件 scaling 后，只替换 `--config` 和 `--output-dir`，依次运行
 active-work-curve、token-budget-curve、data-organization、request-replay 与
-submission-policy 模板。active-work 曲线完成后先把选出的配额写入仓库外
-runtime env 的 `ACTIVE_WORK_PER_ENDPOINT`；固定 offered work 的预算曲线完成
-后再写入 `BEST_TOKEN_BUDGET`。预算扫描期间 active-work 配额必须不小于最大
-单 batch 预算，否则会混入 oversized admission 语义。每轮都必须等待 runner
-manifest 为 `complete`，不要手工拼接失败重跑的 CSV。
+submission-policy 模板。active-work 曲线完成后，token-budget 模板直接使用
+已标定的 49K 主点与 65K 敏感性点；固定 offered work 的预算曲线完成后，再把
+49K 主点在 SLO/P99 约束下选出的值写入 `BEST_TOKEN_BUDGET`。预算扫描期间
+active-work 配额必须不小于同场景单 batch 预算，否则会混入 oversized
+admission 语义。每轮都必须等待 runner manifest 为 `complete`，不要手工拼接
+失败重跑的 CSV。
 
 动态预算只在 `TOKEN_BUDGET_CANDIDATES` 的静态已测动作中移动。这里的 token
 budget 是 Ray 上游关批边界，active-work 是 endpoint admission credit，

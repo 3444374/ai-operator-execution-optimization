@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-07-29 固定 active-work 的 token-budget 曲线启动口径
+
+- 消除 `PROJECT_OUTLINE.md` 与
+  `experiments/plans/experiment_status_and_gaps.md` §10.3 的执行顺序冲突：
+  双 GPU 下一轮先关闭 arrival replay 扫 token budget，再以最佳已测预算隔离
+  whole-submission 与 request-credit；不直接进入 submission-policy 联合消融。
+- 复核发现 `49K active work × 65K token budget` 会触发 oversized admission，
+  破坏固定-work 语义。正式矩阵改为 49K 主点的
+  8/16/32/49K 与 65K 敏感性点的 8/16/32/49/65K，共 9 个场景、每场景
+  1 warm-up + 3 formal。
+- `deploy/autodl/dual_gpu_token_budget_curve.example.json` 直接承载上述
+  9 场景，并将工作量统一为 2048 行；不新增重复配置入口。
+- 晋级标准保持为：相对重复波动改善 observed tokens/s 或 SLO goodput，且
+  request P99、failure 与 exactly-once 不退化。49K 用于选择
+  `BEST_TESTED_TOKEN_BUDGET`，65K 只报告高负载敏感性。
+
 ## 2026-07-28 双 GPU active-work 容量曲线完成与 worktree 收口
 
 - 远端 detached worktree `44087ae` 完成

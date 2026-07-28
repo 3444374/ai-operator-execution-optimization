@@ -20,9 +20,9 @@
     "--database-url",
     "${DATABASE_URL}",
     "--total-rows",
-    "1024",
+    "2048",
     "--db-fetch-rows",
-    "1024",
+    "2048",
     "--source-max-prompt-tokens",
     "${SOURCE_MAX_PROMPT_TOKENS}",
     "--operator",
@@ -82,8 +82,6 @@
     "per_endpoint",
     "--max-inflight",
     "64",
-    "--max-active-work-per-endpoint",
-    "${ACTIVE_WORK_PER_ENDPOINT}",
     "--endpoint-routing",
     "least_queued",
     "--writeback-mode",
@@ -101,28 +99,85 @@
   ],
   "scenarios": [
     {
-      "scenario_id": "tb8192",
-      "args": ["--token-budget", "8192"]
+      "scenario_id": "work49152_tb8192",
+      "args": [
+        "--max-active-work-per-endpoint",
+        "49152",
+        "--token-budget",
+        "8192"
+      ]
     },
     {
-      "scenario_id": "tb16384",
-      "args": ["--token-budget", "16384"]
+      "scenario_id": "work49152_tb16384",
+      "args": [
+        "--max-active-work-per-endpoint",
+        "49152",
+        "--token-budget",
+        "16384"
+      ]
     },
     {
-      "scenario_id": "tb24576",
-      "args": ["--token-budget", "24576"]
+      "scenario_id": "work49152_tb32768",
+      "args": [
+        "--max-active-work-per-endpoint",
+        "49152",
+        "--token-budget",
+        "32768"
+      ]
     },
     {
-      "scenario_id": "tb32768",
-      "args": ["--token-budget", "32768"]
+      "scenario_id": "work49152_tb49152",
+      "args": [
+        "--max-active-work-per-endpoint",
+        "49152",
+        "--token-budget",
+        "49152"
+      ]
     },
     {
-      "scenario_id": "tb49152",
-      "args": ["--token-budget", "49152"]
+      "scenario_id": "work65536_tb8192",
+      "args": [
+        "--max-active-work-per-endpoint",
+        "65536",
+        "--token-budget",
+        "8192"
+      ]
     },
     {
-      "scenario_id": "tb65536",
-      "args": ["--token-budget", "65536"]
+      "scenario_id": "work65536_tb16384",
+      "args": [
+        "--max-active-work-per-endpoint",
+        "65536",
+        "--token-budget",
+        "16384"
+      ]
+    },
+    {
+      "scenario_id": "work65536_tb32768",
+      "args": [
+        "--max-active-work-per-endpoint",
+        "65536",
+        "--token-budget",
+        "32768"
+      ]
+    },
+    {
+      "scenario_id": "work65536_tb49152",
+      "args": [
+        "--max-active-work-per-endpoint",
+        "65536",
+        "--token-budget",
+        "49152"
+      ]
+    },
+    {
+      "scenario_id": "work65536_tb65536",
+      "args": [
+        "--max-active-work-per-endpoint",
+        "65536",
+        "--token-budget",
+        "65536"
+      ]
     }
   ]
 }

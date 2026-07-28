@@ -482,10 +482,13 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 1. 用相同 per-GPU K 完成单/双 endpoint 容量曲线，替代历史 global K 同值
    的不公平对照；
-2. request-level per-endpoint active-work 扫描已完成；下一步以 49K 主点、
-   65K 高负载敏感性点关闭 arrival replay，在固定 active work 下完成
-   8192–65536 token-budget 曲线，
-   最后以 `BEST_TESTED_TOKEN_BUDGET`、相同 work 和 256 row cap 隔离复验
+2. request-level per-endpoint active-work 扫描已完成；下一步关闭 arrival
+   replay，以 49K 主点扫描 `{8192,16384,32768,49152}`，以 65K 高负载
+   敏感性点扫描 `{8192,16384,32768,49152,65536}`，共 9 个场景，每场景
+   1 次 warm-up + 3 次 formal。每个 token budget 都不超过对应 active-work
+   上限，避免 oversized admission 使“固定 work”失效。以 49K 主点在
+   SLO/P99 不退化约束下选出 `BEST_TESTED_TOKEN_BUDGET`，65K 只用于检验
+   高负载敏感性；最后以该预算、相同 work 和 256 row cap 隔离复验
    membership 策略。已完成的 1024–32768 曲线同时改变 offered request
    concurrency，只作诊断；
 3. 双卡 K-count 对照已完成：request K48 与 batch K16 的名义 offered work
@@ -537,9 +540,11 @@ decrease 的根因不是控制器参数问题，而是 vLLM Prometheus `waiting`
 
 ### 10.3 推荐顺序与成功标准
 
-1. 在已标定的 49K 主点与 65K 敏感性点，固定 active work 与最佳静态
-   timeout 比较 whole-submission 与 request-credit；
-2. 固定相同 work 扫 token budget 与 membership，隔离数据组织收益；
+1. 关闭 arrival replay，在 49K 主点与 65K 敏感性点固定 active work，
+   先完成不含 oversized admission 的 token-budget 曲线；
+2. 用 49K 主点在 SLO/P99 约束下选出的最佳已测预算，固定 work、预算、
+   256 row cap 与最佳静态 timeout，比较 whole-submission 与
+   request-credit；65K 只作高负载敏感性复验；
 3. 再实现 SLO-aware EWMA flush，比较 fixed-best、two-level 和 EWMA；
 4. 只在两项独立收益成立后做小规模联合矩阵；
 5. UCB 必须等 epoch reward 能按产生请求的 arm 正确归因后再接入。

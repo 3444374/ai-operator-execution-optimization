@@ -22,6 +22,13 @@
 arrival replay 隔离数据组织，最后回到 arrival replay 检验 request-level
 持续补位。不能用同一个大矩阵同时搜索三层参数。
 
+当前双 GPU 下一轮的唯一顺序是：以 49K 为主点、65K 为高负载敏感性点，
+先运行固定 active-work 的 token-budget 曲线，再用 49K 主点在 SLO/P99
+约束下选出的最佳已测预算隔离比较 whole-submission 与 request-credit。
+任何预算均不得高于同场景 active-work 上限，避免 oversized admission
+破坏公平对照。具体矩阵和晋级条件以 `experiment_status_and_gaps.md`
+§剩余关键缺口与 §10.3 为准。
+
 ## 二、设计参考
 
 | 文件 | 用途 | 回答什么 |
