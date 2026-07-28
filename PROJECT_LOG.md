@@ -15,6 +15,15 @@
 - 晋级标准保持为：相对重复波动改善 observed tokens/s 或 SLO goodput，且
   request P99、failure 与 exactly-once 不退化。49K 用于选择
   `BEST_TESTED_TOKEN_BUDGET`，65K 只报告高负载敏感性。
+- 远端 64 行 gate 首次被 PostgreSQL 5432 未启动正确拦截；按 AutoDL
+  重启 runbook 恢复 PostgreSQL 18.4 + pgvector 0.8.5，并确认
+  `sharegpt_burstgpt` 2048 行后使用 runner `--resume` 成功。manifest 保留原
+  incident 且标记 `recovered=true`，没有删除失败证据。
+- 同步修正 AutoDL 重启恢复段：PG/workload 验证必须先于 runner，endpoint
+  启动必须显式传 runtime env；`start_endpoints.sh` 使用受管 PID 文件而非
+  宽泛 `pkill -f`。正式 9 场景 ×（1 warm-up + 3 formal）任务已从远端
+  `main@2158afd` 启动，输出到
+  `experiments/results/dual_gpu_token_budget_curve_20260729/`。
 
 ## 2026-07-28 双 GPU active-work 容量曲线完成与 worktree 收口
 

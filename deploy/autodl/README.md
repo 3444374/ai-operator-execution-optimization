@@ -544,14 +544,26 @@ AutoDL 按量计费实例关机后**系统盘保留、/root/autodl-tmp 保留**�
 ```bash
 # 1) 启动 PG
 pg_ctlcluster 18 main start 2>/dev/null || service postgresql start
-# 验证
-pg_isready
+# 验证服务与正式 workload；两项均通过后才能启动实验 runner
+pg_isready -h 127.0.0.1 -p 5432
+PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d ai_operator \
+  -c "SELECT workload_name, count(*) FROM documents GROUP BY workload_name"
 
-# 2) 启动双 vLLM endpoint(已在 repo 内)
-bash /root/autodl-tmp/ai-operator/deploy/autodl/start_endpoints.sh
+# 2) 按仓库外 runtime env 启动双 vLLM endpoint
+bash /root/autodl-tmp/ai-operator/deploy/autodl/start_endpoints.sh \
+  /root/autodl-tmp/ai-operator-runtime.env
 ```
 
-`start_endpoints.sh` 做的事：激活 `/root/autodl-tmp/venvs/vllm-4090` venv → `pkill` 旧进程 → 分别在 GPU0:8000 和 GPU1:8001 启动 vLLM → 轮询 `/health` 直到就绪 → smoke test → 打印 GPU 进程。
+`start_endpoints.sh` 做的事：加载 runtime env → 把对应 vLLM venv 与 CUDA
+toolkit 加入环境 → 分别在配置的 GPU/端口启动 vLLM → 轮询 `/health` 直到
+就绪 → 检查 models → 打印 GPU 进程。脚本不使用宽泛的 `pkill -f`；只有
+`STOP_MANAGED_ENDPOINTS=1` 时才根据自身 PID 文件精确停止受管 endpoint。
+
+实例重启后 PostgreSQL 可能留下 stale PID file；`pg_ctlcluster` 会清理并恢复
+服务。不能只检查 vLLM `/health`：正式 gate 还必须连接
+`DATABASE_URL`、核对 `SOURCE_WORKLOAD_NAME` 行数。若 gate 因依赖服务未启动而
+失败，修复服务后使用 runner `--resume`，保留原 incident 并标记 recovered，
+不要删除输出目录伪装成首次成功。
 
 ### 10.5.2 手动逐步(调试用)
 
