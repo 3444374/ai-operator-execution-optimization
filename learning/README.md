@@ -47,6 +47,13 @@ K=32 对单卡 K=16 约为 1.57×；这说明共享 K 确实压低同 K 对照�
 没有扩展。距离 2× 的剩余差距还混有请求形状、HTTP/Ray 开销、负载平衡和模型
 服务效率，必须由新的交错重复实验分解。
 
+同日修改后的 1024 行单次 gate 中，双 endpoint
+`per_endpoint K=16` 实际达到 scheduler-wide max inflight 32、约
+4302 tokens/s、12.82 rows/s，修正口径 MFU 约 0.183。它相对旧
+`global K=16` 的 2992 tokens/s 高约 43.8%，与旧 `global K=32` 的
+4251 tokens/s 接近（约 +1.2%）。这验证了新 credit 语义能够恢复同等 offered
+load，但只是单次 warm-up 级机制 gate，不是可以报告为正式提升比例的重复实验。
+
 `least_queued` 现在把调度器已提交但尚未完成的 endpoint-local submission
 计入负载，不再对静态全零拓扑反复选择第一个 endpoint。双 endpoint 采集应使用
 `--model-metrics-urls` 传入两个 vLLM Prometheus 地址，否则单地址 counters

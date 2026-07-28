@@ -14,6 +14,13 @@
 - 旧数据按近似相同 per-GPU credit 重算，双卡 global K16 / 单卡 K8 约 1.74×，
   双卡 global K32 / 单卡 K16 约 1.57×；共享 K 是同 K 对照低扩展的重要原因，但
   不能写成“双卡扩展比只有 1.0”或“vLLM 无法跨独立请求 continuous batch”。
+- 远端 1024 行单次机制 gate：双 endpoint per-endpoint K16 的实际 max inflight
+  为 32，约 4302 tokens/s、12.82 rows/s、修正 MFU 0.183；相对旧 global K16
+  的 2992 tokens/s 高约 43.8%，并与旧 global K32 的 4251 tokens/s 接近。该结果
+  只验证 credit 语义与 offered-load 恢复，仍需随机交错的 3 次 formal repeat 才能
+  作为正式性能结论。
+- 远端 Ruff 通过；全量 346 个测试通过，其中包含 5 条真实 Daft→Ray task/actor
+  contract。
 
 ## 2026-07-28 近两日代码审计与 profiler trace 边界拆分
 
