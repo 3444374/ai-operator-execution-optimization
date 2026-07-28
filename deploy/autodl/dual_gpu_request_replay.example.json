@@ -100,36 +100,55 @@
   ],
   "scenarios": [
     {
-      "scenario_id": "batch_static_k32",
+      "scenario_id": "batch_static_global_k32",
       "args": [
         "--submission-granularity",
         "batch",
         "--scheduling-policy",
         "static",
+        "--admission-scope",
+        "global",
         "--max-inflight",
         "32"
       ]
     },
     {
-      "scenario_id": "request_static_k64",
+      "scenario_id": "batch_static_per_endpoint_k16",
       "args": [
         "--submission-granularity",
-        "request",
+        "batch",
         "--scheduling-policy",
         "static",
+        "--admission-scope",
+        "per_endpoint",
         "--max-inflight",
-        "64"
+        "16"
       ]
     },
     {
-      "scenario_id": "request_static_k96",
+      "scenario_id": "request_static_per_endpoint_k32",
       "args": [
         "--submission-granularity",
         "request",
         "--scheduling-policy",
         "static",
+        "--admission-scope",
+        "per_endpoint",
         "--max-inflight",
-        "96"
+        "32"
+      ]
+    },
+    {
+      "scenario_id": "request_static_per_endpoint_k48",
+      "args": [
+        "--submission-granularity",
+        "request",
+        "--scheduling-policy",
+        "static",
+        "--admission-scope",
+        "per_endpoint",
+        "--max-inflight",
+        "48"
       ]
     }
   ]

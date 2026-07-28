@@ -34,11 +34,26 @@ submission 还可能包含多行 prompt；只有整批 HTTP 响应完成后，�
 一个 slot 并持续补位。该模式下 K 表示“请求数”，默认 batch 模式下 K 表示
 “多行 submission 数”，两种模式不能只按相同 K 数值直接比较。
 
+现在 static 路径可显式选择
+`--admission-scope per_endpoint --max-inflight 16`。在两个 endpoint 上，它表示
+每个 endpoint 各有 16 个 credit，同时保留 32 的 scheduler-wide 安全上限；
+旧的 `global K=32` 与新的 `per-endpoint K=16` 因而可以做机制对照。自适应控制器
+仍只有一个全局窗口，当前拒绝 per-endpoint 标签，避免产生名义上“每卡自适应”、
+实际上仍共享窗口的伪实验。
+
+旧数据也不能只用“双卡 K=16 / 单卡 K=16”得出扩展比约 1.1。按近似相同
+per-GPU credit 比较，双卡 global K=16 对单卡 K=8 约为 1.74×，双卡 global
+K=32 对单卡 K=16 约为 1.57×；这说明共享 K 确实压低同 K 对照，但双卡并非完全
+没有扩展。距离 2× 的剩余差距还混有请求形状、HTTP/Ray 开销、负载平衡和模型
+服务效率，必须由新的交错重复实验分解。
+
 `least_queued` 现在把调度器已提交但尚未完成的 endpoint-local submission
 计入负载，不再对静态全零拓扑反复选择第一个 endpoint。双 endpoint 采集应使用
 `--model-metrics-urls` 传入两个 vLLM Prometheus 地址，否则单地址 counters
-只能代表一个 endpoint。GPU 利用率取所有可见 GPU 的均值，显存和功耗取系统
-总量；这些口径用于解释双卡系统，不应和旧的“仅第一张 GPU”记录直接混算。
+只能代表一个 endpoint。GPU 利用率、显存和功耗现在按 `endpoint_gpu_ids` 指定
+的服务卡采样。旧的单 endpoint 对照如果在双卡主机上平均了“一张忙卡 + 一张
+空闲卡”，约 47% 的系统均值不能解释成活动 GPU 只有 47% utilization，也不能
+据此声称 utilization 与 MFU 方向相反。
 
 动态控制器的 `fresh` 现在表示“新采样且尚未被控制决策消费”，而不只是
 “采样尚未超时”。同一个 Prometheus 快照不会在调度器高速循环中重复触发

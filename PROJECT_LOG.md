@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-07-28 双 endpoint admission 语义与 GPU 采样修正
+
+- static typed scheduler 新增独立 endpoint credit：`per_endpoint K` 同时施加每个
+  endpoint 的硬上限与 `K × endpoint_count` 的全局安全上限；历史 global K 语义保持
+  默认。自适应控制器仍为全局窗口，当前明确拒绝 per-endpoint scope，避免错误标注。
+- profiler 正式 CSV 增加 admission scope、per-endpoint limit 和 effective global
+  limit；AutoDL 双卡模板同时保留 global K32 control、per-endpoint K16 batch，以及
+  per-endpoint K32/K48 request-level 场景。
+- `nvidia-smi` 采样按 endpoint GPU ID 过滤，避免双卡主机上的单 endpoint control
+  把空闲卡纳入 utilization 平均。旧单卡约 47% 的主机均值不能用于推断活动卡 SM
+  利用率，更不能单独支撑“GPU util 与 MFU 反向”的结论。
+- 旧数据按近似相同 per-GPU credit 重算，双卡 global K16 / 单卡 K8 约 1.74×，
+  双卡 global K32 / 单卡 K16 约 1.57×；共享 K 是同 K 对照低扩展的重要原因，但
+  不能写成“双卡扩展比只有 1.0”或“vLLM 无法跨独立请求 continuous batch”。
+
 ## 2026-07-28 近两日代码审计与 profiler trace 边界拆分
 
 - 按 7 月 27–28 日提交链审查 profiler、typed scheduler、Ray adapter、场景 runner、

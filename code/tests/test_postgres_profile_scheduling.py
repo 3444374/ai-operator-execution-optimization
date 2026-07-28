@@ -324,6 +324,55 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(row["actor_worker_count"], 4)
         self.assertEqual(row["actor_worker_submission_counts"], "")
 
+    def test_per_endpoint_admission_scales_global_credit_by_endpoint_count(
+        self,
+    ) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--operator",
+                "ai_complete",
+                "--model-backend",
+                "compatible_http",
+                "--completion-endpoint-urls",
+                "http://gpu0/v1,http://gpu1/v1",
+                "--executor",
+                "ray_actor",
+                "--actor-workers-per-endpoint",
+                "1",
+                "--max-inflight",
+                "16",
+                "--admission-scope",
+                "per_endpoint",
+            ]
+        )
+
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["endpoint_count"], 2)
+        self.assertEqual(row["max_inflight_limit"], 16)
+        self.assertEqual(row["admission_scope"], "per_endpoint")
+        self.assertEqual(row["per_endpoint_inflight_limit"], 16)
+        self.assertEqual(row["effective_global_inflight_limit"], 32)
+
+    def test_per_endpoint_admission_rejects_global_adaptive_controller(
+        self,
+    ) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_task",
+                "--admission-scope",
+                "per_endpoint",
+                "--scheduling-policy",
+                "aimd_hol",
+            ]
+        )
+
+        with self.assertRaisesRegex(SystemExit, "static only"):
+            profile.run_once(args, "formal", 1)
+
     def test_python_dry_run_records_non_applicable_ray_contract(self) -> None:
         args = profile.parse_args(["--dry-run", "--executor", "python"])
 
@@ -771,7 +820,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             submit_s=0.05,
         )
 
-        metrics = profile._scheduler_metrics(result)
+        metrics = profile_ray._scheduler_metrics(result)
 
         self.assertEqual(
             set(metrics),

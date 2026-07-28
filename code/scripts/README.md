@@ -201,6 +201,15 @@ The three runtime decisions are separate:
 3. `--scheduling-policy` and its K_max/controller options govern closed-batch
    admission.
 
+`--admission-scope global` preserves the historical meaning: one K_max is
+shared by every endpoint. For a static multi-endpoint run,
+`--admission-scope per_endpoint --max-inflight K` gives each endpoint an
+independent K-credit cap and sets the scheduler-wide safety ceiling to
+`K * endpoint_count`. The CSV records the configured K, per-endpoint cap, and
+effective global ceiling separately. Per-endpoint scope is intentionally not
+accepted for adaptive controllers yet: those controllers still maintain one
+global window, so labelling them per-endpoint would be false.
+
 `best_fit_token_budget` applies deterministic best-fit-decreasing packing to
 complete rows visible to one organizer call. It is an offline organization
 policy and is rejected with `--arrival-replay`, because replay must preserve
@@ -244,6 +253,9 @@ running/waiting/KV distributions, and (when `nvidia-smi` exposes
 `power.draw`) power, integrated energy, and energy per 1,000 observed tokens.
 `--resource-sample-interval-s` must remain identical across compared
 scenarios.
+For Ray endpoint experiments, `--endpoint-gpu-ids` also scopes `nvidia-smi`
+sampling to the GPUs serving those endpoints. This prevents a single-endpoint
+control on a multi-GPU host from averaging in an idle, out-of-scope device.
 
 MFU is an explicitly labelled estimate, not a renamed GPU-utilization value.
 It is left empty unless `--gpu-peak-tflops` and the matching
