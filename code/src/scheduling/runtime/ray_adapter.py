@@ -305,12 +305,31 @@ class RaySubmissionAdapter:
         return submitter(envelope.payload)
 
     def wait_one(self, pending) -> CollectedSubmission:
+        collected = self._wait_one(pending, timeout_s=None)
+        if collected is None:
+            raise RuntimeError("blocking Ray wait returned no completion")
+        return collected
+
+    def poll_one(self, pending) -> CollectedSubmission | None:
+        return self._wait_one(pending, timeout_s=0.0)
+
+    def _wait_one(
+        self,
+        pending,
+        *,
+        timeout_s: float | None,
+    ) -> CollectedSubmission | None:
         wait_start = time.perf_counter()
+        wait_kwargs = {"num_returns": 1}
+        if timeout_s is not None:
+            wait_kwargs["timeout"] = timeout_s
         ready, _ = self.ray_module.wait(
             [handle for handle, _ in pending],
-            num_returns=1,
+            **wait_kwargs,
         )
         wait_s = time.perf_counter() - wait_start
+        if not ready:
+            return None
         ready_handle = ready[0]
         matches = [
             (item, envelope)

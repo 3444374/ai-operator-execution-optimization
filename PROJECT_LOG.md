@@ -44,6 +44,25 @@
   tokens/s/endpoint 容量下界，load denominator 取
   `max(service EWMA, calibrated capacity) × endpoint_count`。该参数进入 CLI、
   正式 CSV 和模板，且 `slo_ewma` 正式运行强制要求正校准值。
+- 第三版 512 行双 SLO arm gate 完成 2/2、0 incident、512 request/512
+  submission exactly-once、0 worker failure。high 的 selected wait
+  mean/P50 为 46.86/50ms，near 为 37.29/29.03ms，证明独立容量分母终于产生
+  负载区分；但 near request E2E P95 异常达到 223.21s，接近 replay 总时长，
+  因此仍禁止启动 formal。
+- request trace 反向审计确认了更基础的执行缺陷：早期 HTTP 请求的 backend
+  service 已在约 1–5s 内结束，但 scheduler completion/credit 被延迟到约
+  239s。`SynchronousScheduler` 在 `for envelope in arrival_replay_generator`
+  上等待下一次到达，只有 admission 满或输入耗尽才调用 `ray.wait`；低负载
+  arrival gap 因而阻塞已完成 ObjectRef 的回收、service feedback 和 request
+  lifecycle 时间戳。这会把“更多 offered load 才更快”人为放大，也使旧的
+  near-load SLO 数据失真。
+- 修复采用文献笔记中的 Ray 有界队列 + completion polling 模式：1-slot
+  producer 只负责按到达顺序生成 envelope，主 scheduler 在输入队列暂无新
+  arrival 时每 1ms 非阻塞 `ray.wait(timeout=0)`；有新 arrival 时优先提交，
+  达到 admission/active-work 上限时仍阻塞回收。Ray submit、credit、routing
+  和 lifecycle 状态仍全部在主线程更新。最小回归测试先复现失败再通过；本地
+  412 tests 通过。修复后的远端 replay gate 通过前，不使用第三版 gate 的
+  SLO/P99 作为策略性能结论。
 
 ## 2026-07-29 complete-row service quantum 负结果与机制边界
 

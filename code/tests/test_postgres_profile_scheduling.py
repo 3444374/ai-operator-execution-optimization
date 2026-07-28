@@ -3464,7 +3464,8 @@ class _ImmediateRef:
 
 class _ImmediateRay:
     @staticmethod
-    def wait(handles, num_returns):
+    def wait(handles, num_returns, timeout=None):
+        del timeout
         return handles[:num_returns], handles[num_returns:]
 
     @staticmethod

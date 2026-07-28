@@ -175,6 +175,32 @@ class RaySubmissionAdapterTests(unittest.TestCase):
         self.assertEqual(collected.actor_worker_id, "")
         self.assertEqual(collected.actor_worker_pid, 0)
 
+    def test_poll_one_returns_only_ready_ray_completion(self) -> None:
+        class PollingRay:
+            ready = False
+
+            @classmethod
+            def wait(cls, refs, num_returns, timeout=None):
+                self.assertEqual(timeout, 0.0)
+                if not cls.ready:
+                    return [], refs
+                return refs[:num_returns], refs[num_returns:]
+
+            @staticmethod
+            def get(ref):
+                return ref.value
+
+        item = envelope()
+        handle = FakeRef("done")
+        adapter = RaySubmissionAdapter(PollingRay, {})
+
+        self.assertIsNone(adapter.poll_one([(handle, item)]))
+        PollingRay.ready = True
+        collected = adapter.poll_one([(handle, item)])
+
+        self.assertIsNotNone(collected)
+        self.assertEqual(collected.completion.result, "done")
+
     def test_collect_returns_canonical_pending_handle(self) -> None:
         pending_handle = EqualButDistinctRef("result")
 

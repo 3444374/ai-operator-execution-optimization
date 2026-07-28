@@ -149,6 +149,13 @@ data-organization policies, request/work admission, shared multi-job credit,
 endpoint routing, a deterministic policy-composition scheduler, and Ray runtime
 adapters. Policy modules do not import Daft, Arrow, Ray, or HTTP; only runtime
 adapters receive the active Ray module explicitly.
+Arrival replay is produced through a one-element bounded queue so waiting for
+the next source arrival cannot block Ray completion collection. The scheduler
+keeps submit/routing/credit/lifecycle state on its main thread: it prioritizes
+an already-ready arrival, polls `ray.wait(timeout=0)` during arrival gaps, and
+uses blocking collection only when admission or active-work capacity is full.
+This preserves offered-load saturation while releasing request-level credit
+and recording completion timestamps promptly under sparse or bursty replay.
 The lifecycle module joins complete-row replay seeds, immutable submission
 events, backend service timestamps, and explicitly sourced token counts into
 exactly-once request trace rows.

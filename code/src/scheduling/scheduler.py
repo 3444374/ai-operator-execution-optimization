@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import statistics
+import threading
 import time
 from dataclasses import dataclass, replace
-from typing import Callable, Iterable, Protocol
+from queue import Empty, Full, Queue
+from typing import Callable, Iterable, Iterator, Protocol
 
 from .models import (
     AdmissionDecision,
@@ -28,6 +30,12 @@ class SubmissionAdapter(Protocol):
         self,
         pending: list[tuple[object, PayloadEnvelope]],
     ) -> CollectedSubmission:
+        ...
+
+    def poll_one(
+        self,
+        pending: list[tuple[object, PayloadEnvelope]],
+    ) -> CollectedSubmission | None:
         ...
 
 
@@ -89,6 +97,74 @@ class SchedulerResult:
     submission_events: tuple[SubmissionLifecycleEvent, ...] = ()
 
 
+@dataclass(frozen=True)
+class _SourceFailure:
+    error: BaseException
+
+
+class _ConcurrentEnvelopeSource:
+    """Expose a blocking input iterator without blocking completion polling."""
+
+    _END = object()
+    _POLL = object()
+
+    def __init__(
+        self,
+        envelopes: Iterable[PayloadEnvelope],
+        *,
+        poll_interval_s: float,
+    ) -> None:
+        self._queue: Queue[object] = Queue(maxsize=1)
+        self._cancelled = threading.Event()
+        self._poll_interval_s = poll_interval_s
+        self._thread = threading.Thread(
+            target=self._produce,
+            args=(envelopes,),
+            daemon=True,
+            name="scheduler-envelope-source",
+        )
+        self._thread.start()
+
+    def __iter__(self) -> Iterator[object]:
+        try:
+            while True:
+                try:
+                    item = self._queue.get(timeout=self._poll_interval_s)
+                except Empty:
+                    yield self._POLL
+                    continue
+                if item is self._END:
+                    return
+                if isinstance(item, _SourceFailure):
+                    raise item.error
+                yield item
+        finally:
+            self.close()
+
+    def close(self) -> None:
+        self._cancelled.set()
+        self._thread.join(timeout=0.1)
+
+    def _produce(self, envelopes: Iterable[PayloadEnvelope]) -> None:
+        try:
+            for envelope in envelopes:
+                if not self._put(envelope):
+                    return
+        except BaseException as exc:
+            self._put(_SourceFailure(exc))
+        finally:
+            self._put(self._END)
+
+    def _put(self, item: object) -> bool:
+        while not self._cancelled.is_set():
+            try:
+                self._queue.put(item, timeout=0.01)
+                return True
+            except Full:
+                continue
+        return False
+
+
 class SynchronousScheduler:
     def __init__(
         self,
@@ -147,7 +223,28 @@ class SynchronousScheduler:
         fanin_s = 0.0
         submit_s = 0.0
 
-        for envelope in envelopes:
+        source = _ConcurrentEnvelopeSource(
+            envelopes,
+            poll_interval_s=self.shared_credit_poll_s,
+        )
+        for source_item in source:
+            if source_item is _ConcurrentEnvelopeSource._POLL:
+                collected = self._poll_one(
+                    pending,
+                    completions,
+                    submission_events,
+                    submission_context,
+                )
+                if collected is not None:
+                    bounded_wait_samples.append(collected.wait_s)
+                    fanin_s += collected.result_s
+                continue
+            if not isinstance(source_item, PayloadEnvelope):
+                raise ValueError(
+                    "envelopes must contain PayloadEnvelope values"
+                )
+            envelope = source_item
+
             request_id = envelope.request.request_id
             if request_id in submission_order:
                 raise ValueError(f"duplicate request_id: {request_id}")
@@ -397,6 +494,22 @@ class SynchronousScheduler:
         submission_context: dict[str, tuple[str, str, str, float, int]],
     ) -> CollectedSubmission:
         collected = self.adapter.wait_one(pending)
+        return self._record_collected(
+            collected,
+            pending,
+            completions,
+            submission_events,
+            submission_context,
+        )
+
+    def _record_collected(
+        self,
+        collected: CollectedSubmission,
+        pending: list[tuple[object, PayloadEnvelope]],
+        completions: list[SubmissionCompletion],
+        submission_events: list[SubmissionLifecycleEvent],
+        submission_context: dict[str, tuple[str, str, str, float, int]],
+    ) -> CollectedSubmission:
         completion_epoch_s = self.epoch_clock()
         matching = [
             index for index, (item, _) in enumerate(pending) if item is collected.handle
@@ -443,3 +556,26 @@ class SynchronousScheduler:
             )
         )
         return collected
+
+    def _poll_one(
+        self,
+        pending: list[tuple[object, PayloadEnvelope]],
+        completions: list[SubmissionCompletion],
+        submission_events: list[SubmissionLifecycleEvent],
+        submission_context: dict[str, tuple[str, str, str, float, int]],
+    ) -> CollectedSubmission | None:
+        if not pending:
+            return None
+        poll_one = getattr(self.adapter, "poll_one", None)
+        if not callable(poll_one):
+            return None
+        collected = poll_one(pending)
+        if collected is None:
+            return None
+        return self._record_collected(
+            collected,
+            pending,
+            completions,
+            submission_events,
+            submission_context,
+        )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import threading
 import unittest
 from pathlib import Path
 
@@ -108,6 +109,51 @@ class SequenceClock:
 
 
 class SchedulerTests(unittest.TestCase):
+    def test_collects_ready_completion_while_source_waits_for_next_arrival(
+        self,
+    ) -> None:
+        class PollingAdapter(FakeSubmissionAdapter):
+            def __init__(self) -> None:
+                super().__init__()
+                self.first_collected = threading.Event()
+
+            def poll_one(self, pending):
+                if not pending:
+                    return None
+                collected = super().wait_one(pending)
+                self.first_collected.set()
+                return collected
+
+            def wait_one(self, pending):
+                collected = super().wait_one(pending)
+                self.first_collected.set()
+                return collected
+
+        adapter = PollingAdapter()
+        collected_before_second_arrival = []
+
+        def delayed_envelopes():
+            yield envelope(0)
+            collected_before_second_arrival.append(
+                adapter.first_collected.wait(timeout=0.1)
+            )
+            yield envelope(1)
+
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=8),
+            router=RoundRobinEndpointRouter(),
+            adapter=adapter,
+            pool_id="default",
+        )
+
+        result = scheduler.run(delayed_envelopes(), topology())
+
+        self.assertEqual(collected_before_second_arrival, [True])
+        self.assertEqual(
+            [item.request_id for item in result.completions],
+            ["r0", "r1"],
+        )
+
     def test_per_endpoint_limit_prevents_one_endpoint_from_consuming_global_k(
         self,
     ) -> None:

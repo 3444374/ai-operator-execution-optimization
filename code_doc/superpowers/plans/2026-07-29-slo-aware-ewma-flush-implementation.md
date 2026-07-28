@@ -156,3 +156,15 @@ independent capacity estimate. The high/near p50 online ratios remained
 with the independently measured saturated capacity (4,000 tokens/s/endpoint
 for this model/GPU setup). The calibrated value is explicit in CLI, CSV and the
 scenario template and must be remeasured when hardware or model changes.
+
+The calibrated-capacity gate finally separated the selected windows
+(high mean/P50 46.86/50ms; near 37.29/29.03ms), but exposed an execution-loop
+bug before formal promotion. Under sparse replay, the synchronous scheduler
+blocked inside the input generator until the next arrival and did not poll
+already-complete Ray ObjectRefs. Backend service ended in seconds while
+completion timestamps and credits remained held for almost the full 239s
+replay. The implementation now decouples arrival production through a
+one-element bounded queue and polls Ray completions whenever no arrival is
+ready. A regression test requires completion collection before the next
+delayed envelope. The formal matrix remains blocked until a remote gate proves
+that request E2E follows backend completion rather than replay duration.
