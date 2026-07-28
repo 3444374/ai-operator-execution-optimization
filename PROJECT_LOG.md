@@ -63,6 +63,21 @@
   和 lifecycle 状态仍全部在主线程更新。最小回归测试先复现失败再通过；本地
   412 tests 通过。修复后的远端 replay gate 通过前，不使用第三版 gate 的
   SLO/P99 作为策略性能结论。
+- 修复后同配置 512 行回归 gate 完成 2/2、0 incident、租约释放、两场景均
+  512 unique request/512 submission、0 worker failure。high/near backend
+  结束到 scheduler completion 的 P95 分别为 4.0/4.0ms，修复前分别为
+  31.20/217.36s；near request E2E P95 从 223.21s 降至 4.86s，SLO violation
+  从 40.43% 降至 0。high request E2E P95 同样从 35.82s 降至 7.72s。
+- 回归 gate 的 e2e/tokens-per-s 基本不变（high 48.48→48.54s，
+  near 245.11→245.25s），证明本次修复没有把 arrival-limited 总时长包装为
+  吞吐收益；它修复的是 request lifecycle、credit 周转和反馈时效。near
+  `max_active_work_per_endpoint_seen` 从伪占用的 65,532 降至 11,224，
+  `max_inflight_seen` 从 372 降至 50，直接证明旧“大 credit 才快”现象中包含
+  已完成 ObjectRef 未回收造成的虚假在途工作。
+- 修复后 high/near selected wait mean/P50 为 46.73/50ms 与
+  37.49/35.29ms，控制器仍能区分负载而未退化。该回归 gate 只证明执行与测量
+  正确，不证明 SLO-EWMA 优于 fixed/queue；正式六场景 1 warmup + 3 repeats
+  方可用于策略比较。
 
 ## 2026-07-29 complete-row service quantum 负结果与机制边界
 

@@ -168,3 +168,12 @@ one-element bounded queue and polls Ray completions whenever no arrival is
 ready. A regression test requires completion collection before the next
 delayed envelope. The formal matrix remains blocked until a remote gate proves
 that request E2E follows backend completion rather than replay duration.
+
+The post-fix 512-row gate passed: high/near completion-lag P95 is 4ms in both
+arms versus 31.20s/217.36s before the fix. Near request E2E P95 is 4.86s
+instead of 223.21s, with zero SLO violations; high P95 is 7.72s instead of
+35.82s. Total replay runtime and tokens/s stayed effectively unchanged, so
+these are lifecycle and credit-turnover corrections rather than claimed
+throughput gains. Near max active work fell from the stale-credit value 65,532
+to 11,224. The selected windows remain load-sensitive (high mean/P50
+46.73/50ms; near 37.49/35.29ms), so the six-arm formal matrix is now allowed.
