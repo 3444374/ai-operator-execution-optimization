@@ -1,5 +1,22 @@
 # 项目日志
 
+## 2026-07-29 Checkpoint A：runner 可靠性与扩展饱和曲线
+
+- 新增 output-directory 原子租约：runner 启动时记录 host、PID、进程启动身份、
+  config fingerprint 与代码提交；活跃 owner 拒绝第二写者，只有
+  `--resume --recover-stale-lease` 才能显式接管已确认死亡的 owner，并把恢复
+  事件保留到 manifest。对应实现提交为 `e03480c`。
+- Ray adapter 现在把 `ray.get` 异常转换为失败 completion 交回 typed
+  scheduler，保证 worker/HTTP 失败时共享 active-work credit 只释放一次，
+  不再因异常逃逸永久占用配额。对应实现提交为 `f7443b2`。
+- 双 GPU active-work 模板从 5 档扩展为 8 档
+  （16K/24K/32K/49K/65K/82K/98K/131K），预注册选择规则为首个达到最大
+  已测吞吐 97% 且下一安全档增益低于 3% 的最小档；若未出现该点则报告
+  `saturation_not_reached`，高负载 OOM/超时必须保留 incident。
+- AutoDL runbook、代码目录说明和项目索引已同步单写者检查与恢复方式。
+  Checkpoint A 仍需通过本地全量回归、远端 64 行 gate 和正式曲线后才能形成
+  性能结论。
+
 ## 2026-07-29 饱和 Ray 执行基础实施计划
 
 - 已批准

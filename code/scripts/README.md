@@ -26,6 +26,16 @@ Shared-vLLM K_max interference runner:
 code/scripts/run_kmax_interference_experiment.py
 ```
 
+Seeded scenario runner:
+
+```text
+code/scripts/run_ai_operator_scenarios.py
+```
+
+该 runner 在输出目录持有 `.runner-lease.json` 原子租约，禁止两个进程同时写
+同一 manifest/CSV。中断恢复必须复用原配置和输出目录；只有确认旧 owner
+已经消失后，才可同时传 `--resume --recover-stale-lease`。不要手工删除租约。
+
 它既是当前 Phase 1 的实验驱动脚本，也是后续拆分正式 worker 之前的最小端到端实现。当前没有另一份隐藏的连接代码。
 
 本目录只放实验主体、服务启动、数据采集和 profiling 入口。绘图、图表复现和素材筛选脚本统一放在 `figures/scripts/`。
@@ -55,6 +65,7 @@ PostgreSQL documents/job table
 | 并发与反压 | `submit_ray_tasks` / `submit_with_backpressure` → `SynchronousScheduler` | 静态 task/actor 路径统一执行 K_max、路由、等待和 fan-in；旧 queue-adaptive 分支暂时隔离保留 |
 | 数据写回 | `code/src/sinks.py::write_embeddings` / `write_completions` | embedding 支持 `none`、JSON 文本和 pgvector；completion 支持 `none` 和 JSON 文本 |
 | 指标输出 | `code/src/metrics.py::preflight_metrics_schema` / `append_metrics` | 正式工作前用 dry-run keys 拒绝旧 schema；追加时要求已有 header 与当前 row keys 精确一致 |
+| 场景单写者 | `code/src/runner_lease.py::acquire_runner_lease` | 原子占用输出目录，校验 owner、进程启动身份与 config fingerprint，显式记录 stale recovery |
 
 ## 当前本地运行
 

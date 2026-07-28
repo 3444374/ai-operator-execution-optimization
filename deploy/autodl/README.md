@@ -67,6 +67,11 @@ cd /root/autodl-tmp/ai-operator
 ps -C python -C python3 -o pid=,etime=,args= |
   grep '[r]un_ai_operator_scenarios.py' || true
 
+# 若准备恢复已有输出，再检查目录级租约；不能只凭 ps 结果判断可恢复
+OUTPUT_DIR=experiments/results/<existing_run_id>
+test ! -e "$OUTPUT_DIR/.runner-lease.json" ||
+  cat "$OUTPUT_DIR/.runner-lease.json"
+
 # 2) 同步代码。未跟踪 experiments/results/ 属于实验数据，不得 git clean
 git status --short --branch
 source /etc/network_turbo >/dev/null 2>&1
@@ -151,8 +156,17 @@ nohup /root/miniconda3/bin/python \
 
 启动后用短连接检查 runner、`manifest.json`、`runs.csv` 和 GPU。只有
 manifest 原子记录首个成功 run、无 incident 且 GPU 工作，才算启动完成。
-中断恢复必须追加 `--resume` 并复用原 config/output；runner 会保留 incident
-并标记 recovered。不要手工拼接 CSV，也不要删除失败证据。
+runner 会在输出目录中原子创建 `.runner-lease.json`，其中记录 host、PID、
+进程启动身份、config fingerprint 和代码提交；同一输出目录只允许一个写者。
+
+中断恢复必须复用原 config/output，并先同时检查精确脚本进程和租约：
+
+- 有精确 runner 进程或租约 owner 仍存活时，禁止启动第二个 runner。
+- 无进程但租约仍在时，先审计租约字段与 manifest。确认是同一配置、同一输出
+  且旧 owner 已消失后，才允许使用 `--resume --recover-stale-lease`。
+- 不要手工删除租约、拼接 CSV 或删除失败证据；显式恢复会把 stale-lease
+  事件写入 manifest incident，并标记 recovered。
+- 正常结束或受控失败会释放租约；进程被强制终止时故意保留租约作为事故证据。
 
 ## runtime env 与脚本速查（不是完整开机流程）
 
@@ -590,7 +604,12 @@ python code/scripts/postgres_ai_operator_profile.py ... \
    endpoint，只回答硬件扩展效率，不作为上游策略容量标定。
 2. `dual_gpu_active_work_curve.example.json`：以 request-level submission
    直接扫描每 endpoint 的预测 active-token 配额。组织预算是固定的非处理变量；
-   先标定 `ACTIVE_WORK_PER_ENDPOINT`，不要把 32768 当作跨模型常数。
+   模板覆盖 16K、24K、32K、49K、65K、82K、98K、131K，每档 1 次 warm-up
+   加 3 次 formal。先标定 `ACTIVE_WORK_PER_ENDPOINT`，不要把 32768 当作跨模型
+   常数。高负载档一旦 OOM、超时或失败，保留 incident 并停止继续增压。
+   在所有安全档位中选择首个达到最大已测吞吐 97%、且下一个安全档增益低于
+   3% 的最小配额；若不存在，结论必须写 `saturation_not_reached`，不能把最高
+   已测点改名为饱和点。
 3. `dual_gpu_token_budget_curve.example.json`：关闭 arrival replay，49K
    主点扫描 8/16/32/49K，65K 敏感性点扫描 8/16/32/49/65K，共 9 个场景。
    每个预算都不超过对应 active-work 上限，避免 oversized admission 破坏

@@ -23,6 +23,7 @@ code/
 │   ├── organizers.py                     ← ArrowOrganizer / DaftOrganizer 数据组织后端
 │   ├── request_costs.py                   ← 严格的输出成本模式与来源标签
 │   ├── packing.py                         ← 与模态无关的确定性 BFD 与 row-cap-first 候选
+│   ├── runner_lease.py                    ← 场景输出目录的原子单写者租约与显式 stale recovery
 │   ├── model_backends.py                 ← fake / compatible HTTP embedding and completion backend
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
@@ -49,6 +50,7 @@ code/
 │   ├── test_token_budget_controller.py   ← 动态预算安全动作与 EWMA 测试
 │   ├── test_shared_credit.py              ← 多 job shared-credit 纯策略测试
 │   ├── test_shared_credit_ray.py          ← named Ray actor ownership 测试
+│   ├── test_runner_lease.py               ← runner 活跃 owner、stale recovery 与 fingerprint 门禁
 │   ├── test_model_backends.py            ← 模型后端最小单元测试
 │   ├── test_sinks.py                     ← 写回后端最小单元测试
 │   ├── test_workloads.py                 ← 内置 workload seed 单元测试

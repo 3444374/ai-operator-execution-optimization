@@ -130,6 +130,18 @@
     {
       "scenario_id": "work65536",
       "args": ["--max-active-work-per-endpoint", "65536"]
+    },
+    {
+      "scenario_id": "work81920",
+      "args": ["--max-active-work-per-endpoint", "81920"]
+    },
+    {
+      "scenario_id": "work98304",
+      "args": ["--max-active-work-per-endpoint", "98304"]
+    },
+    {
+      "scenario_id": "work131072",
+      "args": ["--max-active-work-per-endpoint", "131072"]
     }
   ]
 }

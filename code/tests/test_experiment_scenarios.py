@@ -95,7 +95,7 @@ class ExperimentScenarioTests(unittest.TestCase):
             "dual_gpu_token_budget_curve.example.json": 9,
             "dual_gpu_data_organization.example.json": 4,
             "dual_gpu_request_replay.example.json": 5,
-            "dual_gpu_active_work_curve.example.json": 5,
+            "dual_gpu_active_work_curve.example.json": 8,
         }
 
         with patch.dict(os.environ, env, clear=True):
@@ -161,6 +161,22 @@ class ExperimentScenarioTests(unittest.TestCase):
                 / "dual_gpu_active_work_curve.example.json"
             )
             self.assertIn("request", active_work_curve.common_args)
+            self.assertEqual(
+                [
+                    item.scenario_id
+                    for item in active_work_curve.scenarios
+                ],
+                [
+                    "work16384",
+                    "work24576",
+                    "work32768",
+                    "work49152",
+                    "work65536",
+                    "work81920",
+                    "work98304",
+                    "work131072",
+                ],
+            )
 
     def test_wait_for_idle_reports_metrics_fetch_failure(self) -> None:
         health_response = MagicMock()
