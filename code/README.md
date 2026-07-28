@@ -254,7 +254,11 @@ GPU experiments show that another mechanism generalizes.
 Pool and endpoint routing support request-cost pools, least-queued selection,
 deterministic prefix affinity, health fallback, and explicit per-endpoint pool
 and GPU identifiers. The independent flush policy core supports immediate,
-fixed-timeout, and queue-adaptive decisions with a hard maximum wait.
+fixed-timeout, queue-adaptive, and SLO-aware EWMA decisions with a hard maximum
+wait. `slo_ewma` estimates the remaining token-budget fill time from arrival
+EWMA, subtracts estimated service time and oldest-request age from the request
+SLO, applies a deadband, and falls back to the configured maximum fixed window
+when service feedback is absent or stale.
 Least-queued routing includes scheduler-local in-flight submissions instead of
 reusing the profiler's static startup snapshot. Multi-endpoint vLLM runs should
 pass every Prometheus endpoint through `--model-metrics-urls`; counters and

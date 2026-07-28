@@ -225,6 +225,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code_doc/superpowers/plans/2026-07-26-vllm-ray-tuning-experiments.md` | vLLM 与 Ray 调优实验计划 | 分阶段完成 CUDA Graph、task/actor、vLLM capacity 真实单 GPU 门禁与重复实验 |
 | `code_doc/superpowers/plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md` | 双 GPU 实验正确性实施计划 | TDD 修复服务元数据、组织/提交指标、共享 Ray cluster 契约与 AutoDL 分阶段模板 |
 | `code_doc/superpowers/plans/2026-07-29-saturated-ray-execution-foundation-implementation.md` | 饱和 Ray 执行基础实施计划 | TDD 实现 runner 独占、Ray 失败清理、扩展 active-work 曲线、固定 service quantum 与有界可观测 actor pool，再分两次远端 gate 验证 |
+| `code_doc/superpowers/plans/2026-07-29-slo-aware-ewma-flush-implementation.md` | SLO-aware EWMA flush 实施计划 | TDD 实现 oldest-slack、arrival/service EWMA、deadband 与 stale fallback，并在高压/临界双 GPU 负载下做固定资源消融 |
 | `code/src/cost_estimation.py` | Engine-independent grouped split, ridge cost model, and regression metrics | Build offline operator-cost estimates without post-execution feature leakage |
 | `code/scripts/estimate_operator_cost.py` | Reproducible profile-CSV cost-estimation CLI | Generate model schema, coefficients, splits, and held-out metrics |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
@@ -325,6 +326,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_active_work_curve.example.json` | 第一优先级的 request-level per-endpoint active-token credit 容量曲线 | 先标定模型/负载相关的 offered-work 饱和区，避免按 batch K 暗中改变 request 并发 |
 | `deploy/autodl/dual_gpu_actor_pool_shape.example.json` | 固定每 endpoint 256 个可见 slot 的 1×256/2×128/4×64 Ray actor 拓扑对照 | 在 active-work 饱和点比较 actor pool 形状，不改变 offered-load 上限 |
 | `deploy/autodl/dual_gpu_service_quantum.example.json` | 固定 planning budget、active work 和 actor slots 的 batch/512/1024/2048/4096/request 完成粒度对照 | 量化批内 HOL、credit-held 空转与 completion-driven replenishment |
+| `deploy/autodl/dual_gpu_slo_ewma_flush.example.json` | 高压/临界到达率下 fixed、queue-adaptive 与 SLO-aware EWMA flush 对照 | 在固定 request-level、65K active work 和 1×256 actor pool 下验证动态关批是否改善吞吐、SLO-goodput或尾延迟 |
 | `deploy/autodl/dual_gpu_submission_policy.example.json` | active-work、least-work routing、动态 token budget 与 adaptive flush 的可组合消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |

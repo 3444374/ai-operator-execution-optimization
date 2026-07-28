@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-07-29 SLO-aware EWMA flush 实现与双负载门禁
+
+- 根据 fixed-50 与旧 two-level adaptive 在单 job 饱和稳态下几乎无差异的结果，
+  将下一轮问题改为“控制器是否能在存在关批决策空间的临界负载改善 SLO-goodput
+  或尾延迟”，而不是继续增加饱和 offered work。
+- 新增独立 `SloAwareEwmaFlush`：用到达/服务 token rate EWMA 估计剩余
+  token-budget fill time 与当前 pending service time，以 oldest request SLO
+  slack 限制最长等待，以 deadband 抑制窗口振荡；service feedback 缺失或过期
+  时回退到 fixed maximum window。策略保持纯模块，不导入 Ray、Daft、Arrow
+  或 HTTP，也不修改 vLLM。
+- profiler 增加 `slo_ewma`、EWMA alpha/deadband CLI 与正式 CSV 字段；arrival
+  replay 将 token budget、arrival rate 和 per-endpoint service rate显式传给
+  flush observation，现有 flush trace 保留选择窗口、理由和原始反馈。
+- 新增 `dual_gpu_slo_ewma_flush.example.json`，固定 request-level、
+  65,536 work/endpoint、1×256 actor pool，交叉比较 0.001 高压与 0.002
+  临界 arrival scale 下的 fixed-50、queue-25/50 与 SLO-EWMA-25/50。
+  先执行 128 行六场景门禁，正式结果完成前不声称性能提升。
+
 ## 2026-07-29 complete-row service quantum 负结果与机制边界
 
 - 双 GPU 正式矩阵 24/24 runs 完成、0 incident、租约正常释放；固定

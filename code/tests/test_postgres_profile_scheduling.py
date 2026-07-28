@@ -2832,7 +2832,48 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "--flush-timeout-ms",
                     "0",
                 ],
-                "queue-adaptive flush requires --flush-timeout-ms > 0",
+                "adaptive flush requires --flush-timeout-ms > 0",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--flush-policy",
+                    "slo_ewma",
+                    "--request-slo-ms",
+                    "0",
+                ],
+                "slo-ewma flush requires --request-slo-ms > 0",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--flush-ewma-alpha",
+                    "0",
+                ],
+                "flush-ewma-alpha",
+            ),
+            (
+                [
+                    "--dry-run",
+                    "--arrival-replay",
+                    "--data-source",
+                    "daft_postgres",
+                    "--source-order",
+                    "arrival_time",
+                    "--flush-deadband-ratio",
+                    "1.1",
+                ],
+                "flush-deadband-ratio",
             ),
             (
                 [
@@ -3942,6 +3983,25 @@ class StaticActorSchedulingTests(unittest.TestCase):
             [call[0] for call in actors[1].execute_batch.calls],
             [self.batches[2]],
         )
+
+    def test_slo_ewma_flush_cli_records_controller_parameters(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--flush-policy",
+                "slo_ewma",
+                "--flush-ewma-alpha",
+                "0.4",
+                "--flush-deadband-ratio",
+                "0.2",
+                "--request-slo-ms",
+                "30000",
+            ]
+        )
+
+        self.assertEqual(args.flush_policy, "slo_ewma")
+        self.assertEqual(args.flush_ewma_alpha, 0.4)
+        self.assertEqual(args.flush_deadband_ratio, 0.2)
 
 
 if __name__ == "__main__":

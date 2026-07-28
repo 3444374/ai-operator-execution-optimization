@@ -13,6 +13,7 @@ from src.scheduling.flush import (  # noqa: E402
     FlushObservation,
     ImmediateFlush,
     QueueAdaptiveFlush,
+    SloAwareEwmaFlush,
 )
 
 
@@ -25,17 +26,26 @@ def observation(
     running: int | None = 10,
     waiting: int | None = 0,
     kv_usage: float | None = 0.2,
+    pending_cost: int = 100,
+    token_budget: int = 1000,
+    arrival_rate_tokens_s: float | None = 10_000.0,
+    service_rate_tokens_s_per_endpoint: float | None = 2_000.0,
 ) -> FlushObservation:
     return FlushObservation(
         now_s=now_s,
         oldest_arrival_s=oldest_arrival_s,
         pending_rows=2,
-        pending_cost=100,
+        pending_cost=pending_cost,
         budget_reached=budget_reached,
         metrics_fresh=fresh,
         running=running,
         waiting=waiting,
         kv_usage=kv_usage,
+        token_budget=token_budget,
+        arrival_rate_tokens_s=arrival_rate_tokens_s,
+        service_rate_tokens_s_per_endpoint=(
+            service_rate_tokens_s_per_endpoint
+        ),
     )
 
 
@@ -166,6 +176,119 @@ class FlushPolicyTests(unittest.TestCase):
     def test_flush_observation_rejects_negative_age(self) -> None:
         with self.assertRaisesRegex(ValueError, "oldest_arrival_s"):
             observation(now_s=0.5, oldest_arrival_s=1.0)
+
+    def test_slo_ewma_uses_fixed_max_fallback_for_missing_feedback(self) -> None:
+        policy = SloAwareEwmaFlush(
+            min_wait_s=0.025,
+            max_wait_s=0.050,
+            request_slo_s=1.0,
+        )
+
+        stale = policy.select_window(observation(fresh=False))
+        missing = policy.select_window(
+            observation(arrival_rate_tokens_s=None)
+        )
+
+        self.assertEqual((stale.wait_s, stale.reason), (0.050, "fixed_fallback"))
+        self.assertEqual(missing.reason, "fixed_fallback")
+
+    def test_slo_ewma_flushes_at_budget_or_exhausted_slack(self) -> None:
+        policy = SloAwareEwmaFlush(
+            min_wait_s=0.025,
+            max_wait_s=0.050,
+            request_slo_s=0.1,
+        )
+
+        budget = policy.select_window(observation(budget_reached=True))
+        deadline = policy.select_window(
+            observation(
+                now_s=1.08,
+                oldest_arrival_s=1.0,
+                pending_cost=100,
+                service_rate_tokens_s_per_endpoint=1_000.0,
+            )
+        )
+
+        self.assertEqual((budget.wait_s, budget.reason), (0.0, "budget_reached"))
+        self.assertEqual((deadline.wait_s, deadline.reason), (0.0, "slo_deadline"))
+
+    def test_slo_ewma_converts_remaining_slack_to_oldest_age_limit(self) -> None:
+        policy = SloAwareEwmaFlush(
+            min_wait_s=0.025,
+            max_wait_s=0.050,
+            request_slo_s=0.1,
+        )
+
+        window = policy.select_window(
+            observation(
+                now_s=1.04,
+                oldest_arrival_s=1.0,
+                pending_cost=20,
+                token_budget=520,
+                arrival_rate_tokens_s=10_000.0,
+                service_rate_tokens_s_per_endpoint=1_000.0,
+                running=4,
+            )
+        )
+
+        self.assertEqual(window.wait_s, 0.050)
+        self.assertEqual(window.reason, "busy_fill_ewma")
+
+    def test_slo_ewma_uses_idle_minimum_and_busy_fill_time(self) -> None:
+        idle_policy = SloAwareEwmaFlush(
+            min_wait_s=0.025,
+            max_wait_s=0.050,
+            request_slo_s=1.0,
+        )
+        busy_policy = SloAwareEwmaFlush(
+            min_wait_s=0.025,
+            max_wait_s=0.050,
+            request_slo_s=1.0,
+        )
+
+        idle = idle_policy.select_window(observation(running=0))
+        busy = busy_policy.select_window(
+            observation(
+                running=4,
+                pending_cost=500,
+                token_budget=1000,
+                arrival_rate_tokens_s=12_500.0,
+            )
+        )
+
+        self.assertEqual((idle.wait_s, idle.reason), (0.025, "service_idle"))
+        self.assertAlmostEqual(busy.wait_s, 0.040)
+        self.assertEqual(busy.reason, "busy_fill_ewma")
+
+    def test_slo_ewma_deadband_holds_small_window_change(self) -> None:
+        policy = SloAwareEwmaFlush(
+            min_wait_s=0.025,
+            max_wait_s=0.050,
+            request_slo_s=1.0,
+            ewma_alpha=1.0,
+            deadband_ratio=0.2,
+        )
+
+        first = policy.select_window(
+            observation(
+                running=4,
+                pending_cost=500,
+                token_budget=1000,
+                arrival_rate_tokens_s=12_500.0,
+            )
+        )
+        second = policy.select_window(
+            observation(
+                running=4,
+                pending_cost=500,
+                token_budget=1000,
+                arrival_rate_tokens_s=12_000.0,
+            )
+        )
+
+        self.assertAlmostEqual(first.wait_s, 0.040)
+        self.assertAlmostEqual(second.wait_s, first.wait_s)
+        self.assertEqual(second.reason, "busy_fill_ewma_hysteresis")
 
 
 if __name__ == "__main__":

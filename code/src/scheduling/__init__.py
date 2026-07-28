@@ -25,6 +25,7 @@ from .flush import (
     FlushWindow,
     ImmediateFlush,
     QueueAdaptiveFlush,
+    SloAwareEwmaFlush,
 )
 from .lifecycle import (
     MonotonicEpochClock,
@@ -151,6 +152,7 @@ __all__ = [
     "ReplayClock",
     "ReplayServiceObservation",
     "QueueAdaptiveFlush",
+    "SloAwareEwmaFlush",
     "RequestLifecycleSeed",
     "RequestTraceRow",
     "RoutingDecision",

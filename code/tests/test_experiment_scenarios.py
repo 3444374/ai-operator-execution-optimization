@@ -101,6 +101,7 @@ class ExperimentScenarioTests(unittest.TestCase):
             "dual_gpu_active_work_curve.example.json": 8,
             "dual_gpu_actor_pool_shape.example.json": 3,
             "dual_gpu_service_quantum.example.json": 6,
+            "dual_gpu_slo_ewma_flush.example.json": 6,
         }
 
         with patch.dict(os.environ, env, clear=True):
@@ -290,6 +291,32 @@ class ExperimentScenarioTests(unittest.TestCase):
                 },
                 expected_args,
             )
+
+            slo_ewma = _load_config(
+                CODE_ROOT.parent
+                / "deploy"
+                / "autodl"
+                / "dual_gpu_slo_ewma_flush.example.json"
+            )
+            self.assertIn("request", slo_ewma.common_args)
+            self.assertEqual(
+                [item.scenario_id for item in slo_ewma.scenarios],
+                [
+                    "high_fixed50",
+                    "high_queue25_50",
+                    "high_slo_ewma",
+                    "near_fixed50",
+                    "near_queue25_50",
+                    "near_slo_ewma",
+                ],
+            )
+            for scenario in slo_ewma.scenarios:
+                self.assertIn("--arrival-time-scale", scenario.args)
+                self.assertIn("--flush-policy", scenario.args)
+                if scenario.scenario_id.endswith("slo_ewma"):
+                    self.assertIn("slo_ewma", scenario.args)
+                    self.assertIn("--flush-ewma-alpha", scenario.args)
+                    self.assertIn("--flush-deadband-ratio", scenario.args)
 
     def test_wait_for_idle_reports_metrics_fetch_failure(self) -> None:
         health_response = MagicMock()

@@ -634,7 +634,12 @@ python code/scripts/postgres_ai_operator_profile.py ... \
    和 planning budget，比较 whole batch、512/1024/2048/4096 complete-row
    quantum 与 request diagnostic。当前组织批次 P95≈3366、max≈5892，因此
    8192 不会发生切分，禁止把它作为一个伪独立 arm。
-8. `dual_gpu_submission_policy.example.json`：在已标定 token budget 和
+8. `dual_gpu_slo_ewma_flush.example.json`：固定 request-level、65K
+   per-endpoint active work 和 1×256 actor pool，在高压与临界到达率分别比较
+   fixed-50ms、旧 two-level queue-adaptive 和 SLO-aware EWMA。新控制器只改变
+   上游关批时间：用 arrival/service EWMA 估计 fill/service time，以 oldest
+   request slack 作为硬期限，反馈缺失或过期时回退到 fixed-50ms。
+9. `dual_gpu_submission_policy.example.json`：在已标定 token budget 和
    active-work 配额上，逐项消融 least-work routing、service-quantum 动态预算
    和 queue-adaptive flush；最后的 combined arm 只检查交互，不替代单项结论。
 
@@ -687,6 +692,15 @@ planning-batch、一个 fixed quantum 和 request diagnostic，核对 request/
 submission/resource trace、worker ID/index/PID、每 endpoint 256 slots、
 exactly-once、零 failure 和 lease cleanup。两个正式矩阵使用不同的全新输出目录，
 串行运行，禁止在同一目录 resume 另一份配置。
+
+SLO-aware EWMA flush 必须在 quantum 矩阵确认 request-level 路径可靠后运行。
+先从正式模板机械缩为 128 行、每场景 0 warmup + 1 repeat，并保留六个场景；
+门禁必须核对 `flush_trace` 中 fixed/queue/SLO 三类 reason、arrival/service
+rate、selected wait、oldest age 均可解释，且 request/submission/resource
+trace exactly-once、零 failure、租约释放。正式矩阵再使用全新输出目录执行
+1 warmup + 3 repeats。高压与临界负载必须分别比较，不能只用饱和场景推断动态
+控制有效；若新策略吞吐/SLO-goodput 未提升至少 5% 且 P99 没有独立改善，则不
+晋升为默认策略。
 
 Pool-shape 模板还固定每 endpoint 的 Ray CPU reservation 为 0.5：
 1×0.5、2×0.25、4×0.125。该值是 Ray placement/resource 契约，不等同于操作

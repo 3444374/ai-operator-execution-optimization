@@ -1063,21 +1063,34 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
         or args.flush_max_wait_ms <= 0
     ):
         raise SystemExit("--flush-max-wait-ms must be finite and positive")
+    adaptive_flush_policies = {"queue_adaptive", "slo_ewma"}
     if (
-        args.flush_policy == "queue_adaptive"
+        args.flush_policy in adaptive_flush_policies
         and args.flush_timeout_ms <= 0
     ):
         raise SystemExit(
-            "queue-adaptive flush requires --flush-timeout-ms > 0"
+            "adaptive flush requires --flush-timeout-ms > 0"
         )
     if (
-        args.flush_policy == "queue_adaptive"
+        args.flush_policy in adaptive_flush_policies
         and args.flush_max_wait_ms < args.flush_timeout_ms
     ):
         raise SystemExit(
-            "queue-adaptive flush requires "
+            "adaptive flush requires "
             "--flush-max-wait-ms >= --flush-timeout-ms"
         )
+    if (
+        not math.isfinite(args.flush_ewma_alpha)
+        or not 0 < args.flush_ewma_alpha <= 1
+    ):
+        raise SystemExit("--flush-ewma-alpha must be in (0, 1]")
+    if (
+        not math.isfinite(args.flush_deadband_ratio)
+        or not 0 <= args.flush_deadband_ratio <= 1
+    ):
+        raise SystemExit("--flush-deadband-ratio must be in [0, 1]")
+    if args.flush_policy == "slo_ewma" and args.request_slo_ms <= 0:
+        raise SystemExit("slo-ewma flush requires --request-slo-ms > 0")
 
 
 def _validate_request_trace_args(args: argparse.Namespace) -> None:
@@ -1500,6 +1513,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "flush_policy": args.flush_policy,
             "flush_timeout_ms": args.flush_timeout_ms,
             "flush_max_wait_ms": args.flush_max_wait_ms,
+            "flush_ewma_alpha": args.flush_ewma_alpha,
+            "flush_deadband_ratio": args.flush_deadband_ratio,
             "flush_trace_output": args.flush_trace_output or "",
             "flush_trace_path": (
                 args.flush_trace_output
@@ -2456,6 +2471,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "flush_policy": args.flush_policy,
             "flush_timeout_ms": args.flush_timeout_ms,
             "flush_max_wait_ms": args.flush_max_wait_ms,
+            "flush_ewma_alpha": args.flush_ewma_alpha,
+            "flush_deadband_ratio": args.flush_deadband_ratio,
             "flush_trace_output": args.flush_trace_output or "",
             "flush_trace_path": flush_trace_path,
             "flush_trace_events": len(flush_trace_events),

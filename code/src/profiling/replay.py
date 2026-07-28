@@ -17,7 +17,12 @@ from ..scheduling.batching import (
     RowArrival,
     SystemReplayClock,
 )
-from ..scheduling.flush import FixedTimeoutFlush, ImmediateFlush, QueueAdaptiveFlush
+from ..scheduling.flush import (
+    FixedTimeoutFlush,
+    ImmediateFlush,
+    QueueAdaptiveFlush,
+    SloAwareEwmaFlush,
+)
 from ..scheduling.lifecycle import MonotonicEpochClock, RequestLifecycleSeed
 from ..scheduling.models import BatchRequest, PayloadEnvelope
 from ..scheduling.organization.service_quantum import slice_service_quanta
@@ -480,6 +485,13 @@ def _arrival_replay_envelopes(
             max_wait_s=args.flush_max_wait_ms / 1000.0,
             pressure_running=args.max_inflight,
         ),
+        "slo_ewma": lambda: SloAwareEwmaFlush(
+            min_wait_s=args.flush_timeout_ms / 1000.0,
+            max_wait_s=args.flush_max_wait_ms / 1000.0,
+            request_slo_s=args.request_slo_ms / 1000.0,
+            ewma_alpha=args.flush_ewma_alpha,
+            deadband_ratio=args.flush_deadband_ratio,
+        ),
     }
     try:
         flush_policy = policies[args.flush_policy]()
@@ -488,7 +500,7 @@ def _arrival_replay_envelopes(
 
     def observe() -> ReplayServiceObservation:
         needs_feedback = (
-            args.flush_policy == "queue_adaptive"
+            args.flush_policy in {"queue_adaptive", "slo_ewma"}
             or getattr(args, "token_budget_policy", "static")
             == "service_quantum"
         )

@@ -290,11 +290,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--flush-policy",
-        choices=["immediate", "fixed_timeout", "queue_adaptive"],
+        choices=[
+            "immediate",
+            "fixed_timeout",
+            "queue_adaptive",
+            "slo_ewma",
+        ],
         default="immediate",
     )
     parser.add_argument("--flush-timeout-ms", type=float, default=25.0)
     parser.add_argument("--flush-max-wait-ms", type=float, default=50.0)
+    parser.add_argument("--flush-ewma-alpha", type=float, default=0.3)
+    parser.add_argument("--flush-deadband-ratio", type=float, default=0.1)
     parser.add_argument("--flush-trace-output")
     parser.add_argument("--submission-trace-output")
     parser.add_argument("--resource-trace-output")

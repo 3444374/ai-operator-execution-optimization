@@ -324,6 +324,11 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                     running=service.running,
                     waiting=service.waiting,
                     kv_usage=service.kv_usage,
+                    token_budget=builder.token_budget,
+                    arrival_rate_tokens_s=arrival_rate,
+                    service_rate_tokens_s_per_endpoint=(
+                        service.service_rate_tokens_s_per_endpoint
+                    ),
                 )
             )
             selected_deadline_s = (

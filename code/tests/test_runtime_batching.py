@@ -21,6 +21,7 @@ from src.scheduling.flush import (  # noqa: E402
     FixedTimeoutFlush,
     ImmediateFlush,
     QueueAdaptiveFlush,
+    SloAwareEwmaFlush,
 )
 from src.scheduling.token_budget import (  # noqa: E402
     ServiceQuantumTokenBudgetController,
@@ -435,6 +436,40 @@ class ArrivalReplayBatcherTests(unittest.TestCase):
                     [event.reason for event in batcher.trace],
                 )
                 self.assertEqual(list(iterator), [("r2",)])
+
+    def test_slo_ewma_receives_rates_and_token_budget(self) -> None:
+        clock = FakeReplayClock(now_s=100.0)
+        batcher = replay(
+            [
+                row("r1", arrival_s=0.0, prompt_tokens=100),
+                row("r2", arrival_s=0.04, prompt_tokens=100),
+            ],
+            clock,
+            token_budget=1000,
+            flush_policy=SloAwareEwmaFlush(
+                min_wait_s=0.025,
+                max_wait_s=0.050,
+                request_slo_s=1.0,
+                ewma_alpha=1.0,
+            ),
+            service_observation=lambda: ReplayServiceObservation(
+                fresh=True,
+                running=4,
+                waiting=0,
+                kv_usage=0.2,
+                service_rate_tokens_s_per_endpoint=2_000.0,
+            ),
+        )
+
+        self.assertEqual(list(batcher), [("r1", "r2")])
+        initial = batcher.trace[0]
+        self.assertEqual(initial.selected_wait_s, 0.050)
+        self.assertEqual(initial.window_reason, "fixed_fallback")
+        self.assertIsNone(initial.arrival_rate_tokens_s)
+        self.assertEqual(
+            initial.service_rate_tokens_s_per_endpoint,
+            2_000.0,
+        )
 
     def test_rows_due_during_downstream_block_are_caught_up_without_waits(
         self,
