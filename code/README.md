@@ -30,6 +30,7 @@ code/
 │   ├── profile_config.py                 ← CLI > env 配置解析与 Ray worker 配置
 │   ├── profile_schema.py                 ← 正式汇总 CSV 的稳定字段契约
 │   ├── profile_replay.py                 ← Arrow envelope、arrival replay 与生命周期种子
+│   ├── profile_ray.py                    ← Ray task/actor 提交、typed scheduler 与 credit/fan-in
 │   ├── profile_traces.py                 ← profiler trace 的版本化 CSV 序列化边界
 │   ├── workloads.py                      ← 内置 synthetic / controlled workload seed
 │   └── scheduling/                       ← typed scheduling core、topology、static admission/routing
@@ -113,6 +114,9 @@ now lives under `code/src/`:
 - `profile_replay.py`: offline/replayed Arrow envelope construction,
   token-budget row grouping, batch/request submission expansion, and request
   lifecycle seed assembly. It does not submit Ray work or call model services.
+- `profile_ray.py`: Ray task/actor submitters, endpoint topology, typed
+  scheduler wiring, credit release/fan-in, and the explicitly retained legacy
+  adaptive baselines. It does not parse CLI arguments or write trace CSVs.
 - `workloads.py`: small built-in seed workloads for smoke/dev only.
 - `scheduling/`: engine-independent scheduling metadata and policies. The
   formal payload/execution path remains Daft -> Arrow -> Ray.

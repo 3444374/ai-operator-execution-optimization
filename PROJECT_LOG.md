@@ -23,6 +23,9 @@
   汇总字段契约；主脚本降到约 3340 行，仍保留数据库与单次 run 编排。
 - 新增 `profile_replay.py`，集中 offline/replayed Arrow envelope、token-budget 关批、
   batch/request 粒度展开与生命周期种子；主脚本进一步降到约 2885 行。
+- 新增 `profile_ray.py`，集中 endpoint topology、Ray task/actor submitter、typed
+  scheduler、credit/fan-in 与保留的 legacy adaptive baseline；主脚本降到约 2268 行，
+  只保留数据库、model backend 创建、单次 run 阶段编排和最终汇总。
 
 ## 2026-07-28 双 4090 配置审计、MFU 口径与 AutoDL 配置化
 
