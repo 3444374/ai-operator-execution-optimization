@@ -21,6 +21,8 @@
 - 继续拆分主 profiler：新增 `profile_cli.py`、`profile_config.py` 与
   `profile_schema.py`，分别承载 argparse 参数面、CLI/env/Ray worker 配置解析和正式
   汇总字段契约；主脚本降到约 3340 行，仍保留数据库与单次 run 编排。
+- 新增 `profile_replay.py`，集中 offline/replayed Arrow envelope、token-budget 关批、
+  batch/request 粒度展开与生命周期种子；主脚本进一步降到约 2885 行。
 
 ## 2026-07-28 双 4090 配置审计、MFU 口径与 AutoDL 配置化
 

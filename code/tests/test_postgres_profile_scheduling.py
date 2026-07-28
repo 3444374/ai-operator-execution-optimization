@@ -31,6 +31,7 @@ from src.scheduling.observations import (  # noqa: E402
 )
 from src.scheduling.batching import (  # noqa: E402
     FlushTraceEvent,
+    PendingBatchBuilder,
     ReplayServiceObservation,
 )
 from src.scheduling.lifecycle import (  # noqa: E402
@@ -1453,7 +1454,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             }
         )
         arrivals = profile._row_arrivals(table, completion_max_tokens=5)
-        builder = profile.PendingBatchBuilder(max_rows=2, token_budget=0)
+        builder = PendingBatchBuilder(max_rows=2, token_budget=0)
         for arrival in arrivals:
             builder.add(arrival)
 
