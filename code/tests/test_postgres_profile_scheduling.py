@@ -4003,6 +4003,24 @@ class StaticActorSchedulingTests(unittest.TestCase):
         self.assertEqual(args.flush_ewma_alpha, 0.4)
         self.assertEqual(args.flush_deadband_ratio, 0.2)
 
+    def test_slo_ewma_requires_live_replay_feedback(self) -> None:
+        self.assertTrue(
+            profile._requires_replay_feedback(
+                SimpleNamespace(
+                    flush_policy="slo_ewma",
+                    token_budget_policy="static",
+                )
+            )
+        )
+        self.assertFalse(
+            profile._requires_replay_feedback(
+                SimpleNamespace(
+                    flush_policy="fixed_timeout",
+                    token_budget_policy="static",
+                )
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

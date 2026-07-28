@@ -17,6 +17,16 @@
   65,536 work/endpoint、1×256 actor pool，交叉比较 0.001 高压与 0.002
   临界 arrival scale 下的 fixed-50、queue-25/50 与 SLO-EWMA-25/50。
   先执行 128 行六场景门禁，正式结果完成前不声称性能提升。
+- 首轮远端 128 行六场景 gate 与追加 512 行双 SLO arm 均 0 incident、
+  exactly-once、租约正常释放，但所有 SLO-EWMA flush event 都是
+  `fixed_fallback`，service-rate 字段为空。审计确认不是 GPU 或 metrics
+  endpoint 故障，而是 profiler 创建后台 metrics provider 的条件仍只包含
+  `queue_adaptive/service_quantum`，遗漏新 `slo_ewma`；replay 内部虽请求反馈，
+  实际收到的却始终是空 observation。
+- 将“是否需要 replay live feedback”收敛为一个共享谓词，由 provider 生命周期
+  与 replay observation 同时调用，并增加 `slo_ewma=true/fixed=false` 回归测试。
+  旧 gate 仅作为 wiring failure 证据，不进入性能比较；修复后必须重跑反馈 gate，
+  确认出现正 service-rate 与非 fallback reason 才允许启动 formal。
 
 ## 2026-07-29 complete-row service quantum 负结果与机制边界
 

@@ -84,6 +84,7 @@ from src.profile_schema import (
 from src.profile_replay import (
     _arrival_replay_envelopes,
     _offline_batch_envelopes,
+    _requires_replay_feedback,
 )
 from src.profile_ray import (
     submit_ray_tasks,
@@ -2074,10 +2075,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
 
         if args.arrival_replay:
             flush_observation_provider = None
-            if (
-                args.flush_policy == "queue_adaptive"
-                or args.token_budget_policy == "service_quantum"
-            ):
+            if _requires_replay_feedback(args):
                 if not resolved_metrics_urls and not args.dry_run:
                     raise SystemExit(
                         "feedback-driven flush or token budget requires "

@@ -31,6 +31,14 @@ from ..scheduling.organization.token_budget import (
     StaticTokenBudgetController,
 )
 
+
+def _requires_replay_feedback(args) -> bool:
+    return (
+        args.flush_policy in {"queue_adaptive", "slo_ewma"}
+        or getattr(args, "token_budget_policy", "static") == "service_quantum"
+    )
+
+
 def _batch_envelopes(
     batches: Iterable[pa.RecordBatch | pa.Table],
     job_id: str,
@@ -499,12 +507,7 @@ def _arrival_replay_envelopes(
         raise ValueError(f"unsupported flush policy: {args.flush_policy}") from exc
 
     def observe() -> ReplayServiceObservation:
-        needs_feedback = (
-            args.flush_policy in {"queue_adaptive", "slo_ewma"}
-            or getattr(args, "token_budget_policy", "static")
-            == "service_quantum"
-        )
-        if not needs_feedback:
+        if not _requires_replay_feedback(args):
             return ReplayServiceObservation(
                 fresh=False,
                 running=None,

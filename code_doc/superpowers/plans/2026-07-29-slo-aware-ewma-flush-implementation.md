@@ -130,3 +130,14 @@ Update code/runbook/result ledgers, commit without AI attribution, push `main`,
 safely synchronize the idle remote checkout while preserving untracked traces,
 then execute the gate and formal matrix. Archive compact result files and keep
 large traces on the server.
+
+## Execution note: feedback-provider gate
+
+The first 128-row gate and a 512-row feedback gate exposed a wiring omission:
+the replay layer recognized `slo_ewma` as feedback-driven, but the profiler
+provider-lifecycle condition still created a live metrics provider only for
+`queue_adaptive` or dynamic token budget. Every new-policy event therefore used
+`fixed_fallback`. The fix uses one shared feedback predicate for both call
+sites and adds a regression test. These two pre-fix gates are wiring evidence,
+not performance evidence; a post-fix gate must show positive service-rate rows
+and non-fallback controller reasons before the formal matrix starts.
