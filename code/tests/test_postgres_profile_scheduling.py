@@ -1465,7 +1465,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         for arrival in arrivals:
             builder.add(arrival)
 
-        envelope = profile._arrow_envelope(
+        envelope = profile_replay._arrow_envelope(
             builder.close(),
             batch_index=4,
             job_id="job-7",
