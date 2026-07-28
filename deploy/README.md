@@ -25,9 +25,13 @@ docker compose up -d
 每个子目录有独立的 `AGENTS.md`（规则）、`README.md`（详细说明）和 `compose.yaml`。
 AutoDL 使用 `autodl.env.example`、`download_model.sh` 和
 `start_endpoints.sh`，不使用 Docker Compose。
-双 GPU 正式诊断按 capacity scaling → offline data organization →
-request-level replay 三个模板顺序执行，避免把 endpoint 容量、flush 和 batch
-membership 混在同一对照中。
+
+AutoDL 新对话的唯一入口是 `autodl/README.md` 顶部“新对话 / 新 agent 的
+唯一操作入口”。其中分别给出全新实例环境准备、每次开机恢复、64 行 gate、
+正式后台启动与 `--resume` 恢复流程。具体实验顺序以
+`../PROJECT_OUTLINE.md` 和
+`../experiments/plans/experiment_status_and_gaps.md` 为准，不从旧聊天推断，
+也不把多个因果问题合成一个大矩阵。
 
 ## 与其他目录的关系
 

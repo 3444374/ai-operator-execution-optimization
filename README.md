@@ -8,6 +8,12 @@
 
 后续真实端到端实验平台优先使用公司内部统一采用的 PostgreSQL 18.3；当前 PG18.4 本地同构预演只能作为平台暂不可用时的替身。
 
+AutoDL 双 GPU 远端实验的新对话入口固定为：
+`PROJECT_INDEX.md`“要在 AutoDL 远端继续实验” →
+`deploy/autodl/README.md`“新对话 / 新 agent 的唯一操作入口”。全新实例环境
+准备、每次开机恢复、服务门禁、64 行 gate、正式后台运行和 `--resume`
+恢复均以该 runbook 为单一来源，不从历史聊天重新推断。
+
 ## 目录结构
 
 ```text

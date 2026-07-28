@@ -4,9 +4,161 @@
 
 指南面向"从零起一台 AutoDL 实例到跑通首个多 endpoint 实验"。所有命令均为 Linux bash(远端)。
 
-## 快速入口：不要靠新 session 回忆部署参数
+## 新对话 / 新 agent 的唯一操作入口
 
-部署参数已从脚本中抽出。新环境先复制一份运行配置到仓库外，再按同一配置下载和启动：
+本文件是 AutoDL 环境准备、开机恢复、实验启动和故障恢复的单一 runbook。
+新对话不要先搜索历史聊天或重新猜测安装路径，按以下顺序读取：
+
+1. 根 `AGENTS.md`：项目边界与实验规则；
+2. 根 `PROJECT_OUTLINE.md` 和
+   `experiments/plans/experiment_status_and_gaps.md`：当前唯一实验顺序；
+3. 本节：判断是“全新实例准备”还是“已配置实例开机恢复”；
+4. 本文件对应的详细章节；实验参数只从 `deploy/autodl/*.example.json`
+   模板读取。
+
+| 当前状态 | 直接执行 |
+|---|---|
+| 全新 AutoDL 实例，尚无代码/环境/模型/数据库 | 下方“全新实例从零准备”，细节依次看 §1、§3–§8 |
+| 已配置实例重新开机，服务均停止 | 下方“开机后完整恢复流程” |
+| 服务已运行，只需继续实验 | 从“实验 gate 与正式启动”开始，先检查现存 runner |
+| runner 中断或依赖服务短暂失败 | 修复依赖后使用同配置、同输出目录加 `--resume`；禁止删目录重跑 |
+
+### 固定路径与职责
+
+| 项目 | 当前约定路径 | 说明 |
+|---|---|---|
+| Git 仓库 | `/root/autodl-tmp/ai-operator` | 只从 GitHub `main` 同步；保留未跟踪实验结果 |
+| runtime env | `/root/autodl-tmp/ai-operator-runtime.env` | 仓库外保存模型、端口、CUDA、容量和 workload 参数 |
+| driver Python | `/root/miniconda3/bin/python` | 运行 Ray/Daft/profiler/scenario runner |
+| vLLM Python | `/root/autodl-tmp/venvs/vllm-4090/bin/python` | 只运行 vLLM endpoint |
+| 模型 | `/root/autodl-tmp/models/<model>` | 由 runtime env 的 `MODEL_PATH` 指向 |
+| vLLM 日志 | `/root/autodl-tmp/vllm_logs/` | 每个端口有 log/PID 文件 |
+| 编排日志 | `/root/autodl-tmp/logs/` | endpoint 启动、gate、formal runner 日志 |
+| 临时 gate 配置 | `/root/autodl-tmp/gates/` | 仓库外机械缩小正式模板，不作为正式结果 |
+| 正式结果 | 仓库内 `experiments/results/<unique_run_id>/` | 输出目录必须在启动前不存在 |
+
+### 全新实例从零准备
+
+以下步骤只做一次；纯下载/安装优先在无卡模式完成：
+
+1. 按 §1 选择 CUDA 13.0 镜像和非 Blackwell 双卡，确认宿主驱动 ≥580。
+2. 按 §3 从 GitHub 克隆到固定仓库路径，不能上传本地 tar 包替代 Git。
+3. 按 §4 安装 driver 依赖；vLLM 0.25.1 使用独立 venv，缓存放数据盘。
+4. 复制 `autodl.env.example` 到仓库外 runtime env，逐项填写模型、CUDA、
+   GPU/端口、vLLM capacity、数据库、workload、SLO 与 MFU 峰值口径。
+5. 按 §5 通过 `download_model.sh` 下载模型，并检查关键文件非空。
+6. 按 §6 安装/初始化 PostgreSQL 18 + pgvector，创建 `ai_operator` 数据库。
+7. 按 §7 导入 ShareGPT/BurstGPT workload，核对目标
+   `workload_name` 的行数、prompt token 上限和模型 context 契约。
+8. 执行下方“开机后完整恢复流程”，再做 64 行真实 GPU gate。
+
+环境准备完成的判据不是“命令执行过”，而是上述固定路径存在，driver/vLLM
+两个 Python 环境版本可查询，数据库中的目标 workload 行数正确，两个 endpoint
+健康，64 行 gate 的 manifest、CSV 和 traces 完整。
+
+### 开机后完整恢复流程
+
+每次 AutoDL 重新开机都按此顺序执行，不要只启动 vLLM：
+
+```bash
+cd /root/autodl-tmp/ai-operator
+
+# 1) 先确认没有实验 runner；有 runner 时停止，不得同步代码或重复启动
+ps -C python -C python3 -o pid=,etime=,args= |
+  grep '[r]un_ai_operator_scenarios.py' || true
+
+# 2) 同步代码。未跟踪 experiments/results/ 属于实验数据，不得 git clean
+git status --short --branch
+source /etc/network_turbo >/dev/null 2>&1
+git fetch origin main
+git merge --ff-only origin/main
+
+# 3) 先恢复 PostgreSQL，再核对版本、扩展和正式 workload
+pg_ctlcluster 18 main start 2>/dev/null || service postgresql start
+pg_isready -h 127.0.0.1 -p 5432
+PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d ai_operator \
+  -c "SELECT extversion FROM pg_extension WHERE extname='vector'"
+PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d ai_operator \
+  -c "SELECT workload_name, count(*) FROM documents GROUP BY workload_name"
+
+# 4) 核对仓库外 runtime env 和关键路径
+test -f /root/autodl-tmp/ai-operator-runtime.env
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+set +a
+test -x "$VLLM_VENV/bin/python"
+test -d "$MODEL_PATH"
+test -d "$CUDA_HOME"
+printf 'model=%s gpus=%s ports=%s workload=%s\n' \
+  "$COMPLETION_MODEL" "$GPU_IDS" "$PORTS" "$SOURCE_WORKLOAD_NAME"
+
+# 5) 启动受管 endpoint；脚本自行轮询 health/models
+bash deploy/autodl/start_endpoints.sh \
+  /root/autodl-tmp/ai-operator-runtime.env
+
+# 6) 独立复核两个 endpoint、真实参数和每卡进程
+curl -fsS http://127.0.0.1:8000/health
+curl -fsS http://127.0.0.1:8001/health
+curl -fsS http://127.0.0.1:8000/v1/models
+curl -fsS http://127.0.0.1:8001/v1/models
+ps -C python -C python3 -o pid=,etime=,args=
+nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total \
+  --format=csv,noheader
+```
+
+非交互 agent 不要让首次 JIT 长时间占住 SSH channel。把第 5 步用
+`nohup ... </dev/null >唯一日志 2>&1 &` 后台启动，再用短连接轮询日志与
+`/health`。启动命令中必须能看到与 runtime env 一致的
+`--max-num-batched-tokens`、`--max-num-seqs`、prefix-cache 和 MFU flags。
+
+### 实验 gate 与正式启动
+
+1. 从 `experiment_status_and_gaps.md` 选当前实验，只使用对应已提交模板。
+2. gate 配置放 `/root/autodl-tmp/gates/`，只机械修改
+   `experiment_id`、`total_rows/db_fetch_rows=64`、`warmup=0`、
+   `formal=1` 和保留一个场景；其他参数必须与正式模板相同。
+3. gate 通过条件：manifest=`completed`、runs status=`ok`、64 个唯一请求
+   exactly-once、request/submission/resource traces 非空、两 endpoint 都有
+   submission、`resource_metrics_status=mfu_status=ok`、0 failure。
+4. 正式启动前再次检查没有 runner，且正式输出目录和日志均不存在。
+
+```bash
+cd /root/autodl-tmp/ai-operator
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+set +a
+
+CONFIG=deploy/autodl/<current_template>.example.json
+OUTPUT_DIR=experiments/results/<unique_run_id>
+RUN_LOG=/root/autodl-tmp/logs/<unique_run_id>.log
+
+ps -C python -C python3 -o args= |
+  grep '[r]un_ai_operator_scenarios.py' && exit 1 || true
+test ! -e "$OUTPUT_DIR"
+test ! -e "$RUN_LOG"
+
+nohup /root/miniconda3/bin/python \
+  code/scripts/run_ai_operator_scenarios.py \
+  --config "$CONFIG" \
+  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --python-executable /root/miniconda3/bin/python \
+  --output-dir "$OUTPUT_DIR" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --idle-timeout-s 120 \
+  </dev/null >"$RUN_LOG" 2>&1 &
+```
+
+启动后用短连接检查 runner、`manifest.json`、`runs.csv` 和 GPU。只有
+manifest 原子记录首个成功 run、无 incident 且 GPU 工作，才算启动完成。
+中断恢复必须追加 `--resume` 并复用原 config/output；runner 会保留 incident
+并标记 recovered。不要手工拼接 CSV，也不要删除失败证据。
+
+## runtime env 与脚本速查（不是完整开机流程）
+
+本节只说明如何把部署参数交给脚本；每次开机仍必须执行上方完整恢复流程，
+不能跳过 PostgreSQL/workload 和 runner 门禁。新环境先复制一份运行配置到
+仓库外，再按同一配置下载和启动：
 
 ```bash
 cd /root/autodl-tmp/ai-operator

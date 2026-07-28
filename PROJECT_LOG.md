@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-07-29 AutoDL 新对话零探索入口
+
+- 将 `deploy/autodl/README.md` 固定为 AutoDL 单一 runbook，并在顶部新增
+  新对话判定表、固定路径表、全新实例从零准备、每次开机完整恢复、64 行
+  gate、正式后台启动与 `--resume` 恢复流程。
+- 根 `PROJECT_INDEX.md` 新增“要在 AutoDL 远端继续实验”的强制阅读顺序：
+  项目规则 → 权威总纲 → 当前实验状态 → 部署规则 → AutoDL runbook →
+  已提交配置模板。后续 agent 不再从聊天记录猜测 Python/CUDA/模型/PG/日志
+  路径。
+- 根 `README.md` 与 `deploy/README.md` 增加一级路由；详细安装和故障知识仍只
+  保留在 `deploy/autodl/README.md`，不新建重复 runbook，避免两份流程漂移。
+- 开机恢复顺序固化为：runner/Git 状态 → PostgreSQL + workload →
+  runtime env → 双 vLLM endpoint → health/models/进程/GPU → gate →
+  formal。明确禁止 `git clean` 未跟踪结果、删除失败证据或绕过 gate。
+
 ## 2026-07-29 固定 active-work 的 token-budget 曲线启动口径
 
 - 消除 `PROJECT_OUTLINE.md` 与

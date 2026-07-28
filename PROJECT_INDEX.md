@@ -109,6 +109,21 @@
 5. `motivation/results/README.md`：动机测试正式结果阅读顺序和结论边界。
 6. `motivation/results/gpu/README.md`：真实 GPU-backed E2E 结果入口。
 
+### 要在 AutoDL 远端继续实验
+
+1. `AGENTS.md`：项目边界、实验规则与 Git 约束。
+2. `PROJECT_OUTLINE.md`：权威近期优先级。
+3. `experiments/plans/experiment_status_and_gaps.md`：当前唯一实验矩阵、
+   baseline、成功标准和剩余缺口。
+4. `deploy/AGENTS.md`：部署目录边界。
+5. `deploy/autodl/README.md` 顶部“新对话 / 新 agent 的唯一操作入口”：
+   全新实例准备、开机恢复、服务门禁、gate、正式启动与恢复命令。
+6. `deploy/autodl/*.example.json`：实际实验配置；不得从聊天记录手工重建参数。
+
+新对话完成以上读取后直接按 runbook 做只读状态检查；不要重新探索 Python、
+CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时，才进入
+`deploy/autodl/README.md` 对应详细故障章节。
+
 ### 要写调研/和导师沟通
 
 1. `AGENTS.md`：沟通边界和不能声称什么。
@@ -126,6 +141,7 @@
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |
+| `deploy/autodl/README.md` | AutoDL 单一 runbook：环境准备、开机恢复、gate、正式实验和中断恢复 | 新对话接手远端实验时按顶部唯一入口直接操作 |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
 | `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |
 | `research/literature_and_evidence_review.md` | 文献与官方资料依据 | 写调研、论文动机时读 |
