@@ -17,5 +17,10 @@ Current designs:
   active-work calibration, service quanta, bounded Ray actor pools, and
   endpoint-local completion replenishment.
 
-Current implementation plan:
-`plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md`.
+Current implementation plans:
+
+- `plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md`:
+  completed dual-GPU correctness foundation.
+- `plans/2026-07-29-saturated-ray-execution-foundation-implementation.md`:
+  runner exclusivity, failure-safe Ray fan-in, saturation calibration, fixed
+  service quanta, and a bounded observable actor pool.

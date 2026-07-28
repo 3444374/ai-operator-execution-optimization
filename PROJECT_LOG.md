@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-07-29 饱和 Ray 执行基础实施计划
+
+- 已批准
+  `code_doc/superpowers/specs/2026-07-29-saturated-ray-actor-pool-replenishment-design.md`
+  后，新增对应 TDD 实施计划
+  `code_doc/superpowers/plans/2026-07-29-saturated-ray-execution-foundation-implementation.md`。
+- 本地执行前基线使用项目 `.conda/pg-ai-profile` 环境在沙箱外完整通过
+  `376` 项测试；系统 Anaconda 缺少 `psycopg`，沙箱内
+  `TemporaryDirectory` 的 Windows DACL 会导致 7 项 runner 测试报
+  `PermissionError`，两者均为环境入口问题而非代码断言失败。临时测试目录已清理。
+- 第一远端检查点只包含 output-directory 原子租约、Ray 失败 completion
+  清理和 16K–131K active-work 饱和曲线；第二检查点再验证 fixed service
+  quantum 与固定总 slots 的 1×16/2×8/4×4 actor pool，避免把可靠性、
+  offered load 和策略机制混在同一轮改动。
+- endpoint-local async dispatcher 按批准设计继续保留，但只有 driver-owned
+  有界 actor pool 通过 trace 与性能门禁后才进入下一份实施计划；这不是删减
+  Ray 方向，而是防止一次性大改无法定位收益或退化原因。
+
 ## 2026-07-29 饱和 active-work 与 Ray actor-pool 补位设计
 
 - 审阅现有双 GPU active-work、request replenishment 和固定-work

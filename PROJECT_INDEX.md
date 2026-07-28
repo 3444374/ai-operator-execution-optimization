@@ -218,6 +218,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code_doc/superpowers/plans/2026-07-26-ray-execution-foundation-implementation.md` | Ray 执行基础实施计划 | TDD 解耦 endpoint/actor worker，接入 CPU/并发/零 GPU/零重试资源契约并完成全量验证 |
 | `code_doc/superpowers/plans/2026-07-26-vllm-ray-tuning-experiments.md` | vLLM 与 Ray 调优实验计划 | 分阶段完成 CUDA Graph、task/actor、vLLM capacity 真实单 GPU 门禁与重复实验 |
 | `code_doc/superpowers/plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md` | 双 GPU 实验正确性实施计划 | TDD 修复服务元数据、组织/提交指标、共享 Ray cluster 契约与 AutoDL 分阶段模板 |
+| `code_doc/superpowers/plans/2026-07-29-saturated-ray-execution-foundation-implementation.md` | 饱和 Ray 执行基础实施计划 | TDD 实现 runner 独占、Ray 失败清理、扩展 active-work 曲线、固定 service quantum 与有界可观测 actor pool，再分两次远端 gate 验证 |
 | `code/src/cost_estimation.py` | Engine-independent grouped split, ridge cost model, and regression metrics | Build offline operator-cost estimates without post-execution feature leakage |
 | `code/scripts/estimate_operator_cost.py` | Reproducible profile-CSV cost-estimation CLI | Generate model schema, coefficients, splits, and held-out metrics |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
