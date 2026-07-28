@@ -7,6 +7,7 @@ plan; they are hypotheses to test, not universal constants.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from .models import (
@@ -179,7 +180,13 @@ class HolAgeAimdConfig:
             raise ValueError("additive_increase must be positive")
         if not 0.0 < self.multiplicative_decrease < 1.0:
             raise ValueError("multiplicative_decrease must be between 0 and 1")
-        if not 0.0 <= self.low_load_hol_age_s < self.congestion_hol_age_s:
+        if (
+            not math.isfinite(self.low_load_hol_age_s)
+            or not math.isfinite(self.congestion_hol_age_s)
+            or not 0.0
+            <= self.low_load_hol_age_s
+            < self.congestion_hol_age_s
+        ):
             raise ValueError("HOL-age thresholds must define a valid deadband")
 
 
@@ -189,10 +196,11 @@ class HolAgeAimdAdmissionController:
     The service-metric controllers (AIMD/EWMA/PID) read
     ``vllm:num_requests_waiting``, which stays at 0 when requests queue on the
     Ray side, so they never decrease and saturate to ``max_window``. Head-of-line
-    age (the wait of the oldest in-flight submission) is observable directly
-    from the scheduler and tracks the latency pain the foreground SLO cares
-    about. This controller ignores service metrics entirely: it is the bounded
-    test of whether "seeing Ray-side congestion" unlocks dynamic value.
+    age (the age of the oldest in-flight submission) is observable directly
+    from the scheduler. It includes normal model service time and therefore is
+    not a pure Ray queue-delay signal. This controller is a diagnostic
+    candidate whose thresholds must be calibrated against normal service
+    latency; it does not by itself establish a production congestion signal.
     """
 
     def __init__(

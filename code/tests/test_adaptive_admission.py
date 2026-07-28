@@ -273,8 +273,25 @@ class HolAgeAimdAdmissionControllerTests(unittest.TestCase):
         self.assertEqual(repeated.reason, "stale_observation")
 
     def test_config_rejects_invalid_thresholds(self) -> None:
-        with self.assertRaisesRegex(ValueError, "HOL-age thresholds"):
-            HolAgeAimdConfig(low_load_hol_age_s=3.0, congestion_hol_age_s=2.0)
+        invalid_pairs = [
+            (3.0, 2.0),
+            (float("inf"), float("inf")),
+            (0.5, float("inf")),
+            (float("nan"), 2.0),
+        ]
+        for low_load, congestion in invalid_pairs:
+            with self.subTest(
+                low_load=low_load,
+                congestion=congestion,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "HOL-age thresholds",
+                ):
+                    HolAgeAimdConfig(
+                        low_load_hol_age_s=low_load,
+                        congestion_hol_age_s=congestion,
+                    )
 
 
 class PidAdmissionControllerTests(unittest.TestCase):

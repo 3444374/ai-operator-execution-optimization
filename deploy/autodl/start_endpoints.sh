@@ -61,14 +61,23 @@ stop_managed_endpoint() {
   if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
     local command
     command=$(tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null || true)
-    if [[ "$command" == *"vllm.entrypoints.openai.api_server"* ]]; then
+    if [[
+      "$command" == *"vllm.entrypoints.openai.api_server"*
+      && "$command" == *"--port $port"*
+    ]]; then
       kill "$pid"
       for _ in $(seq 1 30); do
         kill -0 "$pid" 2>/dev/null || break
         sleep 1
       done
+      if kill -0 "$pid" 2>/dev/null; then
+        echo "managed endpoint PID $pid did not stop within 30 seconds" >&2
+        exit 2
+      fi
     else
-      echo "refusing to stop PID $pid: it is not a managed vLLM server" >&2
+      echo \
+        "refusing to stop PID $pid: command does not match vLLM port $port" \
+        >&2
       exit 2
     fi
   fi

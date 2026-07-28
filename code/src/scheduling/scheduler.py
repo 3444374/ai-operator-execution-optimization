@@ -203,11 +203,9 @@ class SynchronousScheduler:
         self,
         submission_context: dict[str, tuple[str, str, str, float]],
     ) -> float:
-        # The age of the oldest in-flight submission = how long the head of the
-        # Ray-side queue has been waiting. submission_context only holds entries
-        # for currently-pending submissions (added on submit, removed on collect),
-        # so its minimum submit timestamp is the head. This is the Ray-side
-        # congestion signal the service-metric controllers cannot see.
+        # This is the age of the oldest in-flight submission, including both
+        # Ray-side waiting and normal endpoint service time. It is directly
+        # observable but must not be interpreted as pure queue delay.
         if not submission_context:
             return 0.0
         now = self.epoch_clock()
