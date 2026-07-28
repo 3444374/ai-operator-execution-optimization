@@ -107,12 +107,14 @@ class SynchronousScheduler:
         bounded_wait_samples: list[float] = []
         fanin_s = 0.0
         submit_s = 0.0
+        _MAX_ADMISSION_WAIT_LOOPS = 10_000
 
         for envelope in envelopes:
             request_id = envelope.request.request_id
             if request_id in submission_order:
                 raise ValueError(f"duplicate request_id: {request_id}")
             submission_order[request_id] = len(submission_order)
+            _admission_loops = 0
             while True:
                 hol_age_s = self._head_of_line_age_s(submission_context)
                 if self.admission.decide(
@@ -127,6 +129,12 @@ class SynchronousScheduler:
                 )
                 bounded_wait_samples.append(collected.wait_s)
                 fanin_s += collected.result_s
+                _admission_loops += 1
+                if _admission_loops >= _MAX_ADMISSION_WAIT_LOOPS:
+                    raise RuntimeError(
+                        f"admission denied {_admission_loops} consecutive times "
+                        f"with {len(pending)} inflight — likely a dead scheduler"
+                    )
             pool_id = (
                 self.pool_router.route(
                     envelope.request,
@@ -248,7 +256,7 @@ class SynchronousScheduler:
         collected = self.adapter.wait_one(pending)
         completion_epoch_s = self.epoch_clock()
         matching = [
-            index for index, (item, _) in enumerate(pending) if item == collected.handle
+            index for index, (item, _) in enumerate(pending) if item is collected.handle
         ]
         if len(matching) != 1:
             raise RuntimeError("adapter returned an unknown or duplicate pending handle")

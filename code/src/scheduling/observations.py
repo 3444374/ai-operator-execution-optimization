@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import time
 import threading
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 
 from .models import AdmissionObservation
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -181,6 +184,10 @@ class NonBlockingMetricsObservationProvider:
             try:
                 snapshot = self.sampler()
             except Exception:
+                _logger.warning(
+                    "metrics sampler failed in background thread",
+                    exc_info=True,
+                )
                 snapshot = None
             sampled_at_s = self.clock()
             with self._lock:

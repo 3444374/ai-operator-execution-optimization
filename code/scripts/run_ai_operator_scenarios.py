@@ -53,7 +53,7 @@ class RunnerOptions:
     python_executable: Path
     output_dir: Path
     health_url: str
-    metrics_url: str
+    metrics_urls: tuple[str, ...]
     idle_timeout_s: float
     resume: bool = False
     skip_failed_scenarios: bool = False
@@ -85,7 +85,11 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
     parser.add_argument("--python-executable", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--health-url", required=True)
-    parser.add_argument("--metrics-url", required=True)
+    parser.add_argument(
+        "--metrics-urls",
+        required=True,
+        help="Comma-separated metrics URLs for all vLLM instances.",
+    )
     parser.add_argument("--idle-timeout-s", type=float, default=60.0)
     parser.add_argument(
         "--resume",
@@ -109,7 +113,9 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
         python_executable=args.python_executable,
         output_dir=args.output_dir,
         health_url=args.health_url,
-        metrics_url=args.metrics_url,
+        metrics_urls=tuple(
+            url.strip() for url in args.metrics_urls.split(",") if url.strip()
+        ),
         idle_timeout_s=args.idle_timeout_s,
         resume=args.resume,
         skip_failed_scenarios=args.skip_failed_scenarios,
@@ -210,7 +216,7 @@ def run_experiment(
         try:
             resolved_idle_gate(
                 options.health_url,
-                options.metrics_url,
+                options.metrics_urls,
                 options.idle_timeout_s,
             )
         except Exception as exc:
@@ -363,7 +369,7 @@ def _run_key_from_mapping(item: dict) -> tuple[str, str, int]:
 
 def wait_for_idle(
     health_url: str,
-    metrics_url: str,
+    metrics_urls: tuple[str, ...],
     timeout_s: float,
 ) -> None:
     deadline_s = time.monotonic() + timeout_s
@@ -377,16 +383,22 @@ def wait_for_idle(
             last_reason = f"health:{type(exc).__name__}"
         if healthy:
             try:
-                with request.urlopen(metrics_url, timeout=2.0) as response:
-                    metrics = parse_prometheus_metrics(
-                        response.read().decode("utf-8", errors="replace")
-                    )
+                all_idle = True
+                for metrics_url in metrics_urls:
+                    with request.urlopen(metrics_url, timeout=2.0) as response:
+                        metrics = parse_prometheus_metrics(
+                            response.read().decode("utf-8", errors="replace")
+                        )
+                    running = metrics.get("vllm:num_requests_running")
+                    waiting = metrics.get("vllm:num_requests_waiting")
+                    if running != 0 or waiting != 0:
+                        all_idle = False
+                        last_reason = f"busy_at_{metrics_url}"
+                        break
             except (OSError, error.URLError) as exc:
-                metrics = {}
+                all_idle = False
                 last_reason = f"metrics:{type(exc).__name__}"
-            running = metrics.get("vllm:num_requests_running")
-            waiting = metrics.get("vllm:num_requests_waiting")
-            if running == 0 and waiting == 0:
+            if all_idle:
                 return
             last_reason = f"running={running}, waiting={waiting}"
         time.sleep(0.25)

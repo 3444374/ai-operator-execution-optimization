@@ -26,7 +26,23 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run K_max shared-service interference experiment.")
     parser.add_argument("--database-url", default="postgresql://postgres:postgres@localhost:5432/ai_operator")
     parser.add_argument("--endpoint-url", default="http://localhost:8000/v1/completions")
+    parser.add_argument(
+        "--endpoint-urls",
+        default=None,
+        help="Comma-separated completion endpoint URLs (multi-GPU). Overrides --endpoint-url when set.",
+    )
     parser.add_argument("--metrics-url", default="http://localhost:8000/metrics")
+    parser.add_argument(
+        "--metrics-urls",
+        default=None,
+        help="Comma-separated metrics URLs (multi-GPU). Overrides --metrics-url when set.",
+    )
+    parser.add_argument("--endpoint-gpu-ids", default=None)
+    parser.add_argument(
+        "--endpoint-routing",
+        choices=["round_robin", "least_queued"],
+        default="round_robin",
+    )
     parser.add_argument("--model", default="qwen2.5-1.5b")
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--random-seed", type=int, default=20260804)
@@ -97,6 +113,16 @@ def parse_args() -> argparse.Namespace:
 def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows: int, ray_batch_rows: int,
                     max_inflight: int, output: str, completion_max_tokens: int,
                     scheduling_policy: str = "static") -> list[str]:
+    endpoint_url_arg = (
+        args.endpoint_urls.split(",")
+        if args.endpoint_urls
+        else [args.endpoint_url]
+    )
+    metrics_url_arg = (
+        args.metrics_urls.split(",")
+        if args.metrics_urls
+        else [args.metrics_url]
+    )
     command = [
         sys.executable,
         str(PROFILE_SCRIPT),
@@ -117,8 +143,8 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
         "ray_task",
         "--model-backend",
         "compatible_http",
-        "--completion-endpoint-url",
-        args.endpoint_url,
+        "--completion-endpoint-urls",
+        ",".join(endpoint_url_arg),
         "--completion-model",
         args.model,
         "--completion-max-tokens",
@@ -130,8 +156,8 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
         "0",
         "--completion-request-timeout-s",
         str(args.request_timeout_s),
-        "--model-metrics-url",
-        args.metrics_url,
+        "--model-metrics-urls",
+        ",".join(metrics_url_arg),
         "--source-max-prompt-tokens",
         str(args.source_max_prompt_tokens),
         "--data-source",
@@ -182,6 +208,15 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
         "--output",
         output,
     ]
+    if len(endpoint_url_arg) > 1:
+        command.extend(
+            [
+                "--endpoint-routing",
+                args.endpoint_routing,
+                "--endpoint-gpu-ids",
+                args.endpoint_gpu_ids or ",".join(str(i) for i in range(len(endpoint_url_arg))),
+            ]
+        )
     if args.batching_policy == "token_budget":
         command.extend(
             [
