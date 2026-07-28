@@ -130,6 +130,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--ray-worker-num-cpus", type=float, default=0.25)
     parser.add_argument("--max-inflight", type=int, default=8)
     parser.add_argument(
+        "--admission-scope",
+        choices=["global", "per_endpoint"],
+        default="global",
+        help=(
+            "Interpret --max-inflight as one global limit or as an independent "
+            "limit for each model endpoint."
+        ),
+    )
+    parser.add_argument(
         "--endpoint-routing",
         choices=["round_robin", "least_queued", "prefix_affinity"],
         default="round_robin",

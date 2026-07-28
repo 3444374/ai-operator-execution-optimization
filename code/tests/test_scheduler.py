@@ -15,6 +15,7 @@ from src.scheduling.models import (  # noqa: E402
     CollectedSubmission,
     EndpointSnapshot,
     PayloadEnvelope,
+    RoutingDecision,
     SubmissionCompletion,
     TopologySnapshot,
 )
@@ -107,6 +108,49 @@ class SequenceClock:
 
 
 class SchedulerTests(unittest.TestCase):
+    def test_per_endpoint_limit_prevents_one_endpoint_from_consuming_global_k(
+        self,
+    ) -> None:
+        class FirstHealthyRouter:
+            def route(self, request, topology, pool_id):
+                del request
+                endpoint = next(
+                    item
+                    for item in topology.endpoints
+                    if item.healthy and item.pool_id == pool_id
+                )
+                return RoutingDecision(endpoint.endpoint_id, pool_id, "first")
+
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=4),
+            router=FirstHealthyRouter(),
+            adapter=adapter,
+            pool_id="default",
+            per_endpoint_limit=2,
+        )
+
+        result = scheduler.run(
+            [envelope(index) for index in range(6)],
+            topology(),
+        )
+
+        self.assertEqual(result.max_inflight_seen, 4)
+        self.assertEqual(
+            adapter.submitted[:4],
+            [("r0", "e1"), ("r1", "e1"), ("r2", "e2"), ("r3", "e2")],
+        )
+
+    def test_per_endpoint_limit_must_be_positive(self) -> None:
+        with self.assertRaisesRegex(ValueError, "must be positive"):
+            SynchronousScheduler(
+                admission=StaticAdmissionController(limit=2),
+                router=RoundRobinEndpointRouter(),
+                adapter=FakeSubmissionAdapter(),
+                pool_id="default",
+                per_endpoint_limit=0,
+            )
+
     def test_scheduler_fails_when_initial_admission_cannot_progress(self) -> None:
         class AlwaysDenyAdmission:
             limit = 1

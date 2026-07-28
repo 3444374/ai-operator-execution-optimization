@@ -23,7 +23,8 @@ FORMAL_RESULT_FIELDS = tuple(
     batch_estimated_cost_units_p99 batch_estimated_cost_units_max model_workers
     ray_version actor_workers_per_endpoint ray_actor_max_concurrency
     ray_worker_num_cpus ray_worker_num_gpus endpoint_count actor_worker_count
-    actor_worker_submission_counts max_inflight_limit endpoint_routing
+    actor_worker_submission_counts max_inflight_limit admission_scope
+    per_endpoint_inflight_limit effective_global_inflight_limit endpoint_routing
     pool_routing endpoint_pool_ids endpoint_gpu_ids long_request_token_threshold
     scheduling_policy adaptive_min_inflight adaptive_max_inflight
     controller_min_window controller_max_window adaptive_sample_interval_s

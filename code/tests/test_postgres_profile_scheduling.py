@@ -17,7 +17,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts import postgres_ai_operator_profile as profile  # noqa: E402
-from src import profile_replay  # noqa: E402
+from src import profile_ray, profile_replay  # noqa: E402
 from src.scheduling.adaptive_admission import AimdAdmissionController  # noqa: E402
 from src.scheduling.admission import DynamicAdmissionGate  # noqa: E402
 from src.scheduling.models import (  # noqa: E402
@@ -652,7 +652,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             }
         )
 
-        envelopes = profile._batch_envelopes(
+        envelopes = profile_replay._batch_envelopes(
             [batch],
             job_id="job-1",
             operator="ai_complete",
@@ -682,7 +682,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             }
         )
 
-        envelopes = profile._batch_envelopes(
+        envelopes = profile_replay._batch_envelopes(
             [batch],
             job_id="job-1",
             operator="ai_complete",
@@ -729,7 +729,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
 
     def test_endpoint_topology_pairs_ids_and_urls_in_default_pool(self) -> None:
-        topology = profile._endpoint_topology(
+        topology = profile_ray._endpoint_topology(
             endpoint_ids=["endpoint-0", "endpoint-1"],
             endpoint_urls=["http://one", "http://two"],
         )
@@ -744,10 +744,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
     def test_endpoint_topology_rejects_mismatched_inputs(self) -> None:
         with self.assertRaisesRegex(ValueError, "same length"):
-            profile._endpoint_topology(["endpoint-0"], [])
+            profile_ray._endpoint_topology(["endpoint-0"], [])
 
     def test_endpoint_topology_preserves_pool_and_gpu_assignments(self) -> None:
-        topology = profile._endpoint_topology(
+        topology = profile_ray._endpoint_topology(
             ["endpoint-0", "endpoint-1"],
             ["http://one", "http://two"],
             pool_ids=["short", "long"],
@@ -2469,7 +2469,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             }
         )
 
-        envelopes = profile._batch_envelopes(
+        envelopes = profile_replay._batch_envelopes(
             [batch],
             job_id="job",
             operator="ai_embed",
@@ -2483,7 +2483,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
     def test_run_scheduler_consumes_a_single_pass_lazy_iterable(self) -> None:
         batch = pa.table({"doc_id": [1], "prompt_tokens": [3]})
-        envelope = profile._batch_envelopes(
+        envelope = profile_replay._batch_envelopes(
             [batch],
             job_id="job",
             operator="ai_embed",
@@ -2496,18 +2496,18 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             yield envelope
 
         remote = _RecordingRemote()
-        topology = profile._endpoint_topology(
+        topology = profile_ray._endpoint_topology(
             ["endpoint-0"],
             ["ray://task/0"],
         )
 
         lifecycle_events = []
-        results, metrics = profile._run_scheduler(
+        results, metrics = profile_ray._run_scheduler(
             _ImmediateRay,
             envelopes(),
             topology,
             {"endpoint-0": lambda payload: remote.remote(payload)},
-            profile.StaticAdmissionController(1),
+            profile_ray.StaticAdmissionController(1),
             submission_lifecycle_sink=lifecycle_events,
         )
 
@@ -2986,7 +2986,11 @@ class StaticTaskSchedulingTests(unittest.TestCase):
         remote = _RecordingRemote()
         expected = ([{"ok": True}], {"operator_invocations": 1})
 
-        with patch.object(profile, "_run_static_scheduler", return_value=expected) as run:
+        with patch.object(
+            profile_ray,
+            "_run_static_scheduler",
+            return_value=expected,
+        ) as run:
             actual = self._submit(remote)
 
         self.assertEqual(actual, expected)
@@ -3041,7 +3045,7 @@ class StaticTaskSchedulingTests(unittest.TestCase):
         remote = _RecordingRemote()
         adaptive_config = {}
 
-        with patch.object(profile, "_run_static_scheduler") as run:
+        with patch.object(profile_ray, "_run_static_scheduler") as run:
             self._submit(remote, adaptive_config=adaptive_config)
 
         run.assert_not_called()
@@ -3074,7 +3078,7 @@ class StaticTaskSchedulingTests(unittest.TestCase):
     def test_prebuilt_replay_envelopes_feed_existing_scheduler_lazily(self) -> None:
         remote = _RecordingRemote()
         consumed = []
-        envelope = profile._batch_envelopes(
+        envelope = profile_replay._batch_envelopes(
             [self.batches[0]],
             job_id="replay",
             operator="ai_embed",
@@ -3107,7 +3111,7 @@ class StaticTaskSchedulingTests(unittest.TestCase):
         self.assertIs(remote.calls[0][0], envelope.payload)
 
     def test_replay_envelopes_cover_typed_and_legacy_task_paths(self) -> None:
-        envelope = profile._batch_envelopes(
+        envelope = profile_replay._batch_envelopes(
             [self.batches[0]],
             job_id="replay",
             operator="ai_embed",
@@ -3188,7 +3192,11 @@ class StaticActorSchedulingTests(unittest.TestCase):
         actors = [_RecordingActor()]
         expected = ([{"ok": True}], {"operator_invocations": 1})
 
-        with patch.object(profile, "_run_static_scheduler", return_value=expected) as run:
+        with patch.object(
+            profile_ray,
+            "_run_static_scheduler",
+            return_value=expected,
+        ) as run:
             actual = self._submit(actors)
 
         self.assertEqual(actual, expected)
@@ -3255,7 +3263,7 @@ class StaticActorSchedulingTests(unittest.TestCase):
     def test_adaptive_actor_path_remains_isolated_from_static_scheduler(self) -> None:
         actors = [_RecordingActor()]
 
-        with patch.object(profile, "_run_static_scheduler") as run:
+        with patch.object(profile_ray, "_run_static_scheduler") as run:
             self._submit(actors, adaptive_config={})
 
         run.assert_not_called()
@@ -3402,7 +3410,7 @@ class StaticActorSchedulingTests(unittest.TestCase):
         )
 
     def test_replay_envelopes_cover_static_typed_and_legacy_actor_paths(self) -> None:
-        envelope = profile._batch_envelopes(
+        envelope = profile_replay._batch_envelopes(
             [self.batches[0]],
             job_id="replay",
             operator="ai_embed",

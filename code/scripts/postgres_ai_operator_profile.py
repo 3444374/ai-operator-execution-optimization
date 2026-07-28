@@ -15,9 +15,8 @@ import math
 import os
 import statistics
 import sys
-import time
 from pathlib import Path
-from typing import Callable, Iterable, Mapping, Sequence
+from typing import Iterable, Mapping, Sequence
 
 import pyarrow as pa
 
@@ -84,23 +83,13 @@ from src.profile_schema import (
 )
 from src.profile_replay import (
     _arrival_replay_envelopes,
-    _batch_envelopes,
     _offline_batch_envelopes,
 )
 from src.profile_ray import (
-    _endpoint_topology,
-    _run_dynamic_scheduler,
-    _run_scheduler,
-    _run_static_scheduler,
-    _scheduler_metrics,
-    _submit_ray_tasks_legacy_adaptive,
-    _submit_with_backpressure_legacy_adaptive,
-    adaptive_inflight_limit,
     submit_ray_tasks,
     submit_with_backpressure,
 )
 from src.request_costs import (
-    OutputCostMode,
     output_cost_source,
 )
 from src.scheduling.adaptive_admission import (
@@ -748,8 +737,11 @@ def _request_trace_metrics(
     }
 
 
-def _resource_snapshot(metrics_urls: Sequence[str]) -> dict[str, object]:
-    gpu = gpu_metadata()
+def _resource_snapshot(
+    metrics_urls: Sequence[str],
+    gpu_ids: Sequence[str] | None = None,
+) -> dict[str, object]:
+    gpu = gpu_metadata(gpu_ids)
     metrics = _scrape_model_metrics(metrics_urls, timeout_s=0.5)
     return {
         **gpu,
@@ -1091,6 +1083,25 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             )
         except ValueError as exc:
             raise SystemExit(str(exc)) from exc
+    if args.max_inflight <= 0:
+        raise SystemExit("--max-inflight must be positive")
+    if args.admission_scope == "per_endpoint":
+        if args.executor not in {"ray_actor", "ray_task"}:
+            raise SystemExit("per-endpoint admission requires a Ray executor")
+        if args.scheduling_policy != "static":
+            raise SystemExit(
+                "per-endpoint admission currently supports --scheduling-policy "
+                "static only"
+            )
+    per_endpoint_inflight_limit = (
+        args.max_inflight if args.admission_scope == "per_endpoint" else None
+    )
+    effective_global_inflight_limit = (
+        args.max_inflight * routing_endpoint_count
+        if per_endpoint_inflight_limit is not None
+        else args.max_inflight
+    )
+    sampled_gpu_ids = routing_config["gpu_ids"] if routing_config else None
     if args.dry_run:
         dry_packing_algorithm = (
             "sequential_pending"
@@ -1185,6 +1196,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ),
             "actor_worker_submission_counts": "",
             "max_inflight_limit": args.max_inflight,
+            "admission_scope": args.admission_scope,
+            "per_endpoint_inflight_limit": per_endpoint_inflight_limit or 0,
+            "effective_global_inflight_limit": effective_global_inflight_limit,
             "endpoint_routing": args.endpoint_routing,
             "pool_routing": args.pool_routing,
             "endpoint_pool_ids": args.endpoint_pool_ids or "",
@@ -1272,7 +1286,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     conn = connect(args.database_url)
     job_id = None
     try:
-        gpu_snapshot = {**GPU_METADATA_DEFAULTS, **gpu_metadata()}
+        gpu_snapshot = {
+            **GPU_METADATA_DEFAULTS,
+            **gpu_metadata(sampled_gpu_ids),
+        }
         if args.setup:
             setup_schema(conn, args.embedding_dim)
             if args.reset_documents:
@@ -1472,7 +1489,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         vllm_metrics_before = _scrape_model_metrics(resolved_metrics_urls)
         if args.resource_trace_output:
             resource_sampler = PeriodicSampler(
-                lambda: _resource_snapshot(resolved_metrics_urls),
+                lambda: _resource_snapshot(
+                    resolved_metrics_urls,
+                    sampled_gpu_ids,
+                ),
                 interval_s=args.resource_sample_interval_s,
             )
         if args.data_source == "daft_postgres" or args.organizer == "daft":
@@ -1565,7 +1585,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     actor_pools=actor_pools,
                     endpoint_urls=actor_endpoint_urls,
                     batches=batches,
-                    max_inflight=args.max_inflight,
+                    max_inflight=effective_global_inflight_limit,
                     method_name=method_name,
                     adaptive_config=adaptive_config,
                     routing_config=routing_config,
@@ -1582,13 +1602,14 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     output_cost_mode=args.output_cost_mode,
                     completion_max_tokens=args.completion_max_tokens,
                     submission_state=actor_submission_state,
+                    per_endpoint_limit=per_endpoint_inflight_limit,
                 )
             if args.executor == "ray_task":
                 return submit_ray_tasks(
                     ray_module,
                     remote_embed,
                     batches,
-                    args.max_inflight,
+                    effective_global_inflight_limit,
                     args.operator,
                     args.embedding_dim,
                     model_backend,
@@ -1609,6 +1630,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         else None
                     ),
                     epoch_clock=lifecycle_epoch_clock,
+                    per_endpoint_limit=per_endpoint_inflight_limit,
                     output_cost_mode=args.output_cost_mode,
                     completion_return_token_ids=(
                         args.completion_return_token_ids
@@ -2049,6 +2071,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 "actor_worker_submission_counts"
             ],
             "max_inflight_limit": args.max_inflight,
+            "admission_scope": args.admission_scope,
+            "per_endpoint_inflight_limit": per_endpoint_inflight_limit or 0,
+            "effective_global_inflight_limit": effective_global_inflight_limit,
             "endpoint_routing": args.endpoint_routing,
             "pool_routing": args.pool_routing,
             "endpoint_pool_ids": ";".join(routing_config["pool_ids"])

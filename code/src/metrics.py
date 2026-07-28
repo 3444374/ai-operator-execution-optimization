@@ -8,7 +8,7 @@ import statistics
 import subprocess
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from urllib import error, request
@@ -441,14 +441,17 @@ def vllm_metric_delta_stats(before: dict[str, float], after: dict[str, float]) -
     }
 
 
-def gpu_metadata() -> dict[str, str]:
+def gpu_metadata(gpu_ids: Sequence[str] | None = None) -> dict[str, str]:
+    command = [
+        "nvidia-smi",
+        "--query-gpu=name,utilization.gpu,memory.used,memory.total,power.draw",
+        "--format=csv,noheader,nounits",
+    ]
+    if gpu_ids:
+        command.insert(1, f"--id={','.join(gpu_ids)}")
     try:
         completed = subprocess.run(
-            [
-                "nvidia-smi",
-                "--query-gpu=name,utilization.gpu,memory.used,memory.total,power.draw",
-                "--format=csv,noheader,nounits",
-            ],
+            command,
             check=True,
             capture_output=True,
             text=True,

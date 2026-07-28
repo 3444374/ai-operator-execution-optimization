@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import statistics
 import time
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 
 import pyarrow as pa
 
@@ -85,6 +85,7 @@ def _run_static_scheduler(
     routing_config: dict | None = None,
     submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
     epoch_clock=None,
+    per_endpoint_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
     return _run_scheduler(
         ray_module,
@@ -95,6 +96,7 @@ def _run_static_scheduler(
         routing_config,
         submission_lifecycle_sink,
         epoch_clock,
+        per_endpoint_limit,
     )
 
 
@@ -107,6 +109,7 @@ def _run_scheduler(
     routing_config: dict | None = None,
     submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
     epoch_clock=None,
+    per_endpoint_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
     routing_config = routing_config or {}
     scheduler = SynchronousScheduler(
@@ -116,6 +119,7 @@ def _run_scheduler(
         pool_id="default",
         pool_router=routing_config.get("pool_router"),
         epoch_clock=epoch_clock or time.time,
+        per_endpoint_limit=per_endpoint_limit,
     )
     result = scheduler.run(envelopes, topology)
     if submission_lifecycle_sink is not None:
@@ -176,6 +180,7 @@ def submit_with_backpressure(
     completion_max_tokens: int = 0,
     actors: Sequence[object] | None = None,
     submission_state: ActorSubmissionState | None = None,
+    per_endpoint_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
     if actor_pools is None:
         if actors is None:
@@ -260,6 +265,10 @@ def submit_with_backpressure(
             for endpoint_id, submitter in pool_submitters.items()
         }
         if typed_adaptive:
+            if per_endpoint_limit is not None:
+                raise ValueError(
+                    "per-endpoint admission currently supports static scheduling only"
+                )
             results, metrics = _run_dynamic_scheduler(
                 ray_module,
                 envelopes,
@@ -280,6 +289,7 @@ def submit_with_backpressure(
                 routing_config,
                 submission_lifecycle_sink,
                 epoch_clock,
+                per_endpoint_limit,
             )
     metrics.update(
         {
@@ -386,6 +396,7 @@ def submit_ray_tasks(
     completion_return_token_ids: bool = False,
     completion_prompt_format: str = "raw",
     completion_temperature: float | None = None,
+    per_endpoint_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
     typed_adaptive = (
         adaptive_config is not None and "admission_gate" in adaptive_config
@@ -497,6 +508,10 @@ def submit_ray_tasks(
         ),
     )
     if typed_adaptive:
+        if per_endpoint_limit is not None:
+            raise ValueError(
+                "per-endpoint admission currently supports static scheduling only"
+            )
         return _run_dynamic_scheduler(
             ray_module,
             envelopes,
@@ -516,6 +531,7 @@ def submit_ray_tasks(
         routing_config,
         submission_lifecycle_sink,
         epoch_clock,
+        per_endpoint_limit,
     )
 
 

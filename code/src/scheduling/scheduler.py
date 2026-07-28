@@ -82,13 +82,17 @@ class SynchronousScheduler:
         *,
         pool_router: PoolRouter | None = None,
         epoch_clock: Callable[[], float] = time.time,
+        per_endpoint_limit: int | None = None,
     ):
+        if per_endpoint_limit is not None and per_endpoint_limit <= 0:
+            raise ValueError("per_endpoint_limit must be positive")
         self.admission = admission
         self.router = router
         self.adapter = adapter
         self.pool_id = pool_id
         self.pool_router = pool_router
         self.epoch_clock = epoch_clock
+        self.per_endpoint_limit = per_endpoint_limit
 
     def run(
         self,
@@ -115,14 +119,23 @@ class SynchronousScheduler:
             submission_order[request_id] = len(submission_order)
             while True:
                 hol_age_s = self._head_of_line_age_s(submission_context)
-                if self.admission.decide(
+                globally_allowed = self.admission.decide(
                     len(pending), hol_age_s=hol_age_s
-                ).allowed:
+                ).allowed
+                capacity_topology = self._topology_with_local_inflight(
+                    topology,
+                    submission_context,
+                    per_endpoint_limit=self.per_endpoint_limit,
+                )
+                if globally_allowed and any(
+                    endpoint.healthy for endpoint in capacity_topology.endpoints
+                ):
                     break
                 if not pending:
                     raise RuntimeError(
-                        "admission denied with no in-flight submission to "
-                        "collect; the controller cannot make progress"
+                        "admission denied or no endpoint has capacity with no "
+                        "in-flight submission to collect; the scheduler cannot "
+                        "make progress"
                     )
                 collected = self._collect_one(
                     pending,
@@ -138,6 +151,7 @@ class SynchronousScheduler:
                     self._topology_with_local_inflight(
                         topology,
                         submission_context,
+                        per_endpoint_limit=self.per_endpoint_limit,
                     ),
                 ).pool_id
                 if self.pool_router is not None
@@ -148,6 +162,7 @@ class SynchronousScheduler:
                 self._topology_with_local_inflight(
                     topology,
                     submission_context,
+                    per_endpoint_limit=self.per_endpoint_limit,
                 ),
                 pool_id,
             )
@@ -219,6 +234,8 @@ class SynchronousScheduler:
     def _topology_with_local_inflight(
         topology: TopologySnapshot,
         submission_context: dict[str, tuple[str, str, str, float]],
+        *,
+        per_endpoint_limit: int | None = None,
     ) -> TopologySnapshot:
         inflight_by_endpoint: dict[str, int] = {}
         for _pool_id, endpoint_id, _gpu_id, _submit_epoch_s in (
@@ -232,6 +249,14 @@ class SynchronousScheduler:
             endpoints=tuple(
                 replace(
                     endpoint,
+                    healthy=(
+                        endpoint.healthy
+                        and (
+                            per_endpoint_limit is None
+                            or inflight_by_endpoint.get(endpoint.endpoint_id, 0)
+                            < per_endpoint_limit
+                        )
+                    ),
                     running=(
                         endpoint.running
                         + inflight_by_endpoint.get(endpoint.endpoint_id, 0)
