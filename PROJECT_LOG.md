@@ -18,6 +18,9 @@
   未传 CLI 时才读取 plural/single env，避免旧的双 endpoint env 静默覆盖当前命令。
 - 收紧 AutoDL managed endpoint 停止契约：PID 命令必须同时匹配 vLLM server 与目标
   port；TERM 后 30 秒仍存活则保留 PID 管理信息并失败，不再继续启动重叠服务。
+- 继续拆分主 profiler：新增 `profile_cli.py`、`profile_config.py` 与
+  `profile_schema.py`，分别承载 argparse 参数面、CLI/env/Ray worker 配置解析和正式
+  汇总字段契约；主脚本降到约 3340 行，仍保留数据库与单次 run 编排。
 
 ## 2026-07-28 双 4090 配置审计、MFU 口径与 AutoDL 配置化
 

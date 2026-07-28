@@ -26,6 +26,9 @@ code/
 │   ├── model_backends.py                 ← fake / compatible HTTP embedding and completion backend
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
+│   ├── profile_cli.py                    ← profiler argparse 参数面
+│   ├── profile_config.py                 ← CLI > env 配置解析与 Ray worker 配置
+│   ├── profile_schema.py                 ← 正式汇总 CSV 的稳定字段契约
 │   ├── profile_traces.py                 ← profiler trace 的版本化 CSV 序列化边界
 │   ├── workloads.py                      ← 内置 synthetic / controlled workload seed
 │   └── scheduling/                       ← typed scheduling core、topology、static admission/routing
@@ -98,6 +101,14 @@ now lives under `code/src/`:
   submission schema 3 uses scheduler lifecycle IDs and records pool,
   endpoint, GPU, status, and error instead of synthesizing batch IDs for
   request-granularity runs.
+- `profile_cli.py`: the profiler command-line surface only; it does not start
+  Ray, connect to PostgreSQL, or inspect the environment beyond argument
+  defaults.
+- `profile_config.py`: post-parse endpoint/metrics precedence and Ray worker
+  resource resolution. Explicit CLI values win over plural/single environment
+  defaults.
+- `profile_schema.py`: the ordered formal summary-row contract and schema-drift
+  guard, separate from runtime orchestration.
 - `workloads.py`: small built-in seed workloads for smoke/dev only.
 - `scheduling/`: engine-independent scheduling metadata and policies. The
   formal payload/execution path remains Daft -> Arrow -> Ray.
