@@ -275,6 +275,8 @@ class KmaxInterferenceScriptTests(unittest.TestCase):
                 "32768",
                 "--shared-credit-quantum",
                 "2048",
+                "--ray-address",
+                "auto",
             ],
         ):
             args = experiment.parse_args()
@@ -302,6 +304,33 @@ class KmaxInterferenceScriptTests(unittest.TestCase):
             command[command.index("--shared-credit-job-weight") + 1],
             "3",
         )
+        self.assertEqual(
+            command[command.index("--ray-address") + 1],
+            "auto",
+        )
+
+    def test_shared_credit_command_requires_ray_address(self) -> None:
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_kmax_interference_experiment",
+                "--shared-credit-coordinator-name",
+                "interference-credits",
+            ],
+        ):
+            args = experiment.parse_args()
+
+        with self.assertRaisesRegex(ValueError, "Ray address"):
+            experiment.profile_command(
+                args,
+                experiment_id="shared_foreground",
+                total_rows=128,
+                ray_batch_rows=64,
+                max_inflight=64,
+                output="tmp/foreground.csv",
+                completion_max_tokens=256,
+            )
 
 
 if __name__ == "__main__":

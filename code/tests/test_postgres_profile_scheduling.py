@@ -87,6 +87,11 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "COMPLETION_PROMPT_FORMAT": "chatml",
             "TOKEN_BUDGET": "8192",
             "BEST_TOKEN_BUDGET": "8192",
+            "ACTIVE_WORK_PER_ENDPOINT": "65536",
+            "CAPACITY_PROBE_TOKEN_BUDGET": "32768",
+            "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
+            "VLLM_MAX_NUM_SEQS": "256",
+            "REQUEST_SLO_MS": "30000",
             "GPU_PEAK_TFLOPS": "165",
             "MFU_PRECISION": "bf16_dense_fp32_accumulate",
         }
@@ -95,6 +100,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "dual_gpu_token_budget_curve.example.json",
             "dual_gpu_data_organization.example.json",
             "dual_gpu_request_replay.example.json",
+            "dual_gpu_active_work_curve.example.json",
         )
 
         with patch.dict(os.environ, env, clear=True):
@@ -419,6 +425,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "--dry-run",
                 "--executor",
                 "ray_task",
+                "--ray-address",
+                "auto",
                 "--admission-scope",
                 "per_endpoint",
                 "--scheduling-policy",
@@ -2093,6 +2101,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "--dry-run",
                 "--executor",
                 "ray_task",
+                "--ray-address",
+                "auto",
                 "--admission-scope",
                 "per_endpoint",
                 "--max-inflight",
@@ -2125,6 +2135,29 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(shared_row["shared_credit_work_limit"], 32768)
         self.assertEqual(shared_row["shared_credit_quantum"], 2048)
         self.assertEqual(shared_row["shared_credit_job_weight"], 2)
+
+    def test_shared_credit_requires_explicit_ray_cluster_address(
+        self,
+    ) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_task",
+                "--shared-credit-coordinator-name",
+                "test-credits",
+                "--shared-credit-request-limit",
+                "64",
+                "--shared-credit-work-limit",
+                "32768",
+                "--shared-credit-quantum",
+                "2048",
+            ]
+        )
+
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaisesRegex(SystemExit, "Ray address"):
+                profile.run_once(args, "formal", 1)
 
     def test_dry_run_records_output_cost_provenance(self) -> None:
         args = profile.parse_args(
@@ -2328,6 +2361,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             batch_cost_units=[8, 12],
             batch_row_counts=[2, 1],
             capacity=10,
+            row_cap=2,
             packing_scope="fetch_chunk_local",
             packing_algorithm="best_fit_decreasing",
         )
@@ -2343,6 +2377,31 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(metrics["batch_estimated_cost_units_p95"], 12.0)
         self.assertEqual(metrics["batch_estimated_cost_units_p99"], 12.0)
         self.assertEqual(metrics["batch_estimated_cost_units_max"], 12)
+        self.assertEqual(metrics["organization_batch_count"], 2)
+        self.assertEqual(metrics["organization_batch_rows_mean"], 1.5)
+        self.assertEqual(metrics["organization_batch_rows_max"], 2)
+        self.assertEqual(metrics["organization_batch_cost_units_mean"], 10.0)
+        self.assertEqual(metrics["organization_batch_cost_units_p95"], 12.0)
+        self.assertEqual(metrics["organization_row_cap_hit_ratio"], 0.5)
+
+    def test_request_submission_metrics_preserve_organization_shape(
+        self,
+    ) -> None:
+        metrics = profile._packing_run_metrics(
+            batch_cost_units=[30],
+            batch_row_counts=[2],
+            capacity=0,
+            row_cap=8,
+            packing_scope="arrival_order",
+            packing_algorithm="sequential_pending",
+        )
+
+        self.assertEqual(metrics["organization_batch_count"], 1)
+        self.assertEqual(metrics["organization_batch_rows_mean"], 2.0)
+        self.assertEqual(metrics["organization_batch_rows_max"], 2)
+        self.assertEqual(metrics["organization_batch_cost_units_mean"], 30.0)
+        self.assertEqual(metrics["organization_batch_cost_units_p95"], 30.0)
+        self.assertEqual(metrics["organization_row_cap_hit_ratio"], 0.0)
 
     def test_request_trace_cli_requires_supported_typed_ray_path(self) -> None:
         invalid_cases = [

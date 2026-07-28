@@ -315,22 +315,22 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 
 ### 9.1 双 GPU 分阶段诊断模板
 
-六个模板必须按顺序运行，不能合成一个大矩阵：
+六个模板按因果问题分阶段运行，不能合成一个大矩阵：
 
 1. `dual_gpu_capacity_scaling.example.json`：相同 per-GPU K 下比较单/双
-   endpoint，回答硬件扩展与容量甜点，不测试新 batching 策略。
-2. `dual_gpu_token_budget_curve.example.json`：关闭 arrival replay，在
-   1024–32768 范围画容量曲线，验证 token budget 不是越大越好并选出
-   `BEST_TOKEN_BUDGET`。
-3. `dual_gpu_data_organization.example.json`：使用上一步的最佳预算并继续关闭
-   arrival replay，避免 50ms
-   flush 在 token budget 生效前关批；回答 fixed rows、sequential
-   token-budget、row-cap-aware 和 length-align 的数据组织差异。
-4. `dual_gpu_request_replay.example.json`：恢复相同 arrival replay/flush，
+   endpoint，只回答硬件扩展效率，不作为上游策略容量标定。
+2. `dual_gpu_active_work_curve.example.json`：以 request-level submission
+   直接扫描每 endpoint 的预测 active-token 配额。组织预算是固定的非处理变量；
+   先标定 `ACTIVE_WORK_PER_ENDPOINT`，不要把 32768 当作跨模型常数。
+3. `dual_gpu_token_budget_curve.example.json`：关闭 arrival replay，在固定
+   active work 下扫描 8192–65536。它回答等量 offered work 下组织/提交形状
+   是否有收益，而不是继续用更大的 batch 暗中增加并发。
+4. `dual_gpu_data_organization.example.json`：使用上一步的最佳已测预算并继续
+   关闭 arrival replay，避免 50ms flush 在 token budget 生效前关批；在相同
+   active work 下回答 fixed rows、sequential token-budget、row-cap-aware 和
+   length-align 的数据组织差异。
+5. `dual_gpu_request_replay.example.json`：恢复相同 arrival replay/flush，
    比较 whole-submission barrier 与真正的 request-level replenishment。
-5. `dual_gpu_active_work_curve.example.json`：保持 request-level
-   replenishment 和 fixed 50ms，扫描每 endpoint 的预测 active-token
-   配额。先标定 `ACTIVE_WORK_PER_ENDPOINT`，不要把 32768 当作跨模型常数。
 6. `dual_gpu_submission_policy.example.json`：在已标定 token budget 和
    active-work 配额上，逐项消融 least-work routing、service-quantum 动态预算
    和 queue-adaptive flush；最后的 combined arm 只检查交互，不替代单项结论。
@@ -353,16 +353,27 @@ python code/scripts/run_ai_operator_scenarios.py \
   --metrics-urls "$MODEL_METRICS_URLS"
 ```
 
-完成后只替换 `--config` 和 `--output-dir`，依次运行 token-budget-curve、
-data-organization、request-replay、active-work-curve 与 submission-policy
-模板。预算容量曲线完成后先把选出的预算写入仓库外 runtime env 的
-`BEST_TOKEN_BUDGET`；active-work 曲线完成后再写入
-`ACTIVE_WORK_PER_ENDPOINT`。每轮都必须等待 runner manifest 为 `complete`，
-不要手工拼接失败重跑的 CSV。
+完成硬件 scaling 后，只替换 `--config` 和 `--output-dir`，依次运行
+active-work-curve、token-budget-curve、data-organization、request-replay 与
+submission-policy 模板。active-work 曲线完成后先把选出的配额写入仓库外
+runtime env 的 `ACTIVE_WORK_PER_ENDPOINT`；固定 offered work 的预算曲线完成
+后再写入 `BEST_TOKEN_BUDGET`。预算扫描期间 active-work 配额必须不小于最大
+单 batch 预算，否则会混入 oversized admission 语义。每轮都必须等待 runner
+manifest 为 `complete`，不要手工拼接失败重跑的 CSV。
 
 动态预算只在 `TOKEN_BUDGET_CANDIDATES` 的静态已测动作中移动。这里的 token
 budget 是 Ray 上游关批边界，active-work 是 endpoint admission credit，
 二者都不是 vLLM 的 `max_num_batched_tokens`。三者必须分别记录和消融。
+
+已完成的 1024–32768 曲线只能记作 offered-load 诊断：固定的是每 endpoint
+四个 batch，而平均每 batch 行数约从 2.3 增至 64，所以可供给的 request
+envelope 约从每 endpoint 9 增至 256，vLLM mean running requests 也约从
+15.5 增至 310.7。它证明服务仍能被更多并发填充，不能证明 token budget 本身
+越大越优。32768 应写作 `BEST_TESTED_TOKEN_BUDGET`，不是容量甜点。
+
+所有正式模板必须从运行环境读取与真实启动参数一致的
+`VLLM_MAX_NUM_BATCHED_TOKENS`、`VLLM_MAX_NUM_SEQS` 和
+`REQUEST_SLO_MS`；`unknown` 会在任何外部工作启动前被拒绝。
 
 `dual_gpu_submission_policy` 的前五个场景是单因素或逐层增量对照；只有相应
 单项在 tokens/s 或 SLO-goodput 上超过重复波动且不恶化 p99，才允许把它保留在

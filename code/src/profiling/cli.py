@@ -177,6 +177,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "zero disables the work cap."
         ),
     )
+    parser.add_argument(
+        "--ray-address",
+        default=None,
+        help=(
+            "Explicit Ray cluster address. Required for shared-credit "
+            "coordination; RAY_ADDRESS may supply the same value."
+        ),
+    )
     parser.add_argument("--shared-credit-coordinator-name", default="")
     parser.add_argument(
         "--shared-credit-namespace",

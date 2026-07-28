@@ -22,8 +22,12 @@ FORMAL_RESULT_FIELDS = tuple(
     packing_budget_utilization_mean packing_budget_utilization_p95
     packing_oversized_rows packing_input_rows packing_batch_count
     batch_estimated_cost_units_p50 batch_estimated_cost_units_p95
-    batch_estimated_cost_units_p99 batch_estimated_cost_units_max model_workers
-    ray_version actor_workers_per_endpoint ray_actor_max_concurrency
+    batch_estimated_cost_units_p99 batch_estimated_cost_units_max
+    organization_batch_count organization_batch_rows_mean
+    organization_batch_rows_max organization_batch_cost_units_mean
+    organization_batch_cost_units_p95 organization_row_cap_hit_ratio
+    model_workers ray_version actor_workers_per_endpoint
+    ray_actor_max_concurrency
     ray_worker_num_cpus ray_worker_num_gpus endpoint_count actor_worker_count
     actor_worker_submission_counts max_inflight_limit admission_scope
     per_endpoint_inflight_limit max_active_work_per_endpoint

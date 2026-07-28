@@ -393,6 +393,7 @@ def _packing_run_metrics(
     batch_row_counts: list[int],
     *,
     capacity: int,
+    row_cap: int,
     packing_scope: str,
     packing_algorithm: str,
 ) -> dict[str, float | int | str]:
@@ -419,6 +420,37 @@ def _packing_run_metrics(
         "batch_estimated_cost_units_p95": summary.cost_units_p95,
         "batch_estimated_cost_units_p99": summary.cost_units_p99,
         "batch_estimated_cost_units_max": summary.cost_units_max,
+        "organization_batch_count": len(batch_row_counts),
+        "organization_batch_rows_mean": round(
+            (
+                sum(batch_row_counts) / len(batch_row_counts)
+                if batch_row_counts
+                else 0.0
+            ),
+            6,
+        ),
+        "organization_batch_rows_max": max(batch_row_counts, default=0),
+        "organization_batch_cost_units_mean": round(
+            (
+                sum(batch_cost_units) / len(batch_cost_units)
+                if batch_cost_units
+                else 0.0
+            ),
+            6,
+        ),
+        "organization_batch_cost_units_p95": percentile(
+            batch_cost_units,
+            95,
+        ),
+        "organization_row_cap_hit_ratio": round(
+            (
+                sum(rows >= row_cap for rows in batch_row_counts)
+                / len(batch_row_counts)
+                if row_cap > 0 and batch_row_counts
+                else 0.0
+            ),
+            6,
+        ),
     }
 
 
@@ -1173,7 +1205,13 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         else None
     )
     shared_credit_config = None
+    ray_address = args.ray_address or os.environ.get("RAY_ADDRESS")
     if args.shared_credit_coordinator_name:
+        if not ray_address:
+            raise SystemExit(
+                "shared credit requires an explicit Ray address via "
+                "--ray-address or RAY_ADDRESS"
+            )
         if args.executor not in {"ray_actor", "ray_task"}:
             raise SystemExit("shared credit requires a Ray executor")
         if args.scheduling_policy != "static":
@@ -1218,6 +1256,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.batching_policy.endswith("token_budget")
                 else 0
             ),
+            row_cap=args.ray_batch_rows,
             packing_scope=(
                 "arrival_order"
                 if args.arrival_replay
@@ -1437,7 +1476,13 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         if args.executor in {"ray_actor", "ray_task"}:
             ray_module = require_ray()
             ray_version = str(getattr(ray_module, "__version__", ""))
-            ray_module.init(ignore_reinit_error=True, runtime_env=ray_runtime_env())
+            ray_init_options = {
+                "ignore_reinit_error": True,
+                "runtime_env": ray_runtime_env(),
+            }
+            if ray_address:
+                ray_init_options["address"] = ray_address
+            ray_module.init(**ray_init_options)
             if args.executor == "ray_actor":
                 actor_endpoint_urls = {
                     f"endpoint-{index}": endpoint_url
@@ -2132,6 +2177,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.batching_policy.endswith("token_budget")
                 else 0
             ),
+            row_cap=args.ray_batch_rows,
             packing_scope=packing_scope,
             packing_algorithm=packing_algorithm,
         )

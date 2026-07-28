@@ -135,10 +135,13 @@
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1**：先完成 1024–32768 静态 token-budget 容量曲线，证明预算并非越大
-   越好并标定甜点；再在最佳预算上隔离比较 membership 策略。第一版动态预算
-   只在变负载 challenge 中依据 arrival/service rate 验证；pending work 与
-   SLO slack 保留为后续增量，避免首版控制律过度耦合。
+1. **P1**：先用 request-level submission 标定 per-endpoint active work
+   饱和区，再在固定 active work 下扫描 8192–65536 token budget，最后在固定
+   work 与预算下隔离比较 membership。已完成的 1024–32768 曲线随 batch 行数
+   增加而同步增加 request offered load，只保留为“服务仍可被更高并发填充”的
+   诊断证据，不作为预算越大越优或 32768 为甜点的结论。第一版动态预算只在
+   变负载 challenge 中依据 arrival/service rate 验证；pending work 与 SLO
+   slack 保留为后续增量，避免首版控制律过度耦合。
 2. **P1**：修正并重复验证上游 request-level continuous replenishment。
    逐请求完成释放 credit 的代码与本地 Ray 合约已完成；此前 7B 双卡 warm-up
    误用单行 batch，不能作为策略证据。下一步保留 packing 边界，按等价请求负载

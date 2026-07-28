@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-07-28 双 GPU 容量曲线远端审计与修正设计
+
+- 只读核验远端 Phase 1 的 24 次运行：32768 arm 仍为最高吞吐，但
+  `batch_rows_mean=64` 已命中 `ray_batch_rows=64`，平均组织成本约 21.5k
+  tokens、预算利用率约 72.6%；因此只能标为当前扫描范围内最佳，尚未找到容量
+  甜点。
+- request trace 明确为 submission 粒度；同一 64 行 submission 内共享完成时间，
+  不能用当前 P99 声称真实逐请求 completion span/HOL。
+- Phase 2 已完成但 sequential 为 8 个 batch（4/4 endpoint），row-cap-aware 与
+  length-align 为 9 个 batch（4/5 endpoint）；后续解释必须拆出 batch-count 与
+  endpoint work imbalance。
+- 新增
+  `code_doc/superpowers/specs/2026-07-28-dual-gpu-experiment-correctness-design.md`，
+  设计 required service metadata 门禁、组织/提交双层指标、扩展容量模板和共享
+  Ray address 契约；正式代码与远端 worktree smoke 待设计确认后实施。
+- 设计已获确认；新增
+  `code_doc/superpowers/plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md`，
+  按服务元数据 → 指标语义 → 共享 Ray cluster → 配置与文档 → 本地/远端
+  worktree 验证五个独立 TDD 任务执行。
+
 ## 2026-07-28 双 GPU 策略与实验矩阵解耦
 
 - 已验证审计分支 `7137b3d` 以 fast-forward 合并并推送到 `main`；后续未验证
@@ -1895,3 +1915,40 @@
   work，再逐项消融动态预算、least-work 与 adaptive flush。
 - 当前只有本地代码/契约测试，尚未生成新的 GPU 性能结论；合并 main 前仍需
   远端独立 worktree 全量测试和 Ray smoke。
+
+## 2026-07-28 双 GPU 实验因果口径复审
+
+- Phase 1 的 `K=4` 实际约束的是每 endpoint 的 batch 数，而不是 request 数或
+  token work。随 token budget 增大，平均每 batch 行数约从 2.3 增至 64，
+  可供给的 request envelope 约从每 endpoint 9 增至 256；vLLM mean running
+  requests 同时约从 15.5 增至 310.7。因此当前吞吐上升主要证明“增加 offered
+  load 可继续填充服务”，不能单独归因于 token-budget 数据组织更优。
+- 用户确认重排正式实验：先以 request-level submission 标定 per-endpoint
+  active-work 容量，再在固定 active work 下扫描 token budget，随后在固定预算和
+  work 下比较 membership；之后才比较 replenishment、动态 workload 和多 job
+  公平性。
+- 已完成的 token-budget 与数据组织结果保留为诊断证据。前者存在 offered-load
+  混淆，后者同时改变 batch count 与 endpoint 4/4、4/5 奇偶分配，均不提升为
+  单因素因果结论。
+- 设计仍不修改 vLLM/Ray 内部调度器；优化价值转向达到饱和所需的最小上游 work、
+  SLO/突发条件下的有界排队，以及共享服务下的公平隔离，而非在单 job 稳态下追求
+  无上限增大 batch。
+
+## 2026-07-28 双 GPU 实验正确性实现
+
+- 正式 service metadata 现在拒绝 `unknown`/非正整数容量、空版本/编译模式和
+  非布尔执行开关；scenario loader 支持从环境展开 metadata 并将完整引用恢复为
+  JSON 标量，确保校验的是实际数值而不是占位字符串。
+- profiler 新增 `organization_batch_count`、行数/成本分布和 row-cap hit ratio，
+  与 Ray 实际 `batch_rows_*` 分开；request-level submission 不再把预展开组织
+  形状覆盖为单行提交形状。
+- shared credit 启用时强制要求 `--ray-address` 或 `RAY_ADDRESS`；多 job runner
+  将同一地址转发给所有 profiler 子进程，防止 named actor 分裂到隐式本地集群。
+- AutoDL 模板改为 active-work-first：request-level active-work curve 先标定
+  offered work；8192–65536 token-budget 与 membership 模板随后固定
+  `ACTIVE_WORK_PER_ENDPOINT`。所有六个模板均读取具体 vLLM capacity metadata，
+  正式 SLO 改由运行环境显式提供。
+- 本地 TDD 覆盖了元数据拒绝、组织/提交双层指标、共享 Ray 地址门禁和模板展开。
+  完整测试 374 项通过，6 个 AutoDL JSON 均可解析且无 `unknown`，`compileall`
+  与 `git diff --check` 通过。本地环境未安装 Ruff，留给远端独立 worktree
+  补跑；尚未启动任何正式 GPU 矩阵。

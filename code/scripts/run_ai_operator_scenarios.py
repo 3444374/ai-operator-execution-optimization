@@ -527,6 +527,18 @@ def _normalize_service_metadata(
     for key, item in value.items():
         if not isinstance(key, str) or not key.strip():
             raise ValueError("service_metadata keys must be non-empty strings")
+        if isinstance(item, str):
+            expanded = _expand_environment_references(
+                item,
+                f"service_metadata.{key}",
+            )
+            if _ENV_REFERENCE_PATTERN.fullmatch(item):
+                try:
+                    item = json.loads(expanded)
+                except json.JSONDecodeError:
+                    item = expanded
+            else:
+                item = expanded
         if not isinstance(item, (str, int, float, bool)) and item is not None:
             raise ValueError("service_metadata values must be JSON scalars")
         if (

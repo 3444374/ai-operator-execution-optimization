@@ -167,12 +167,13 @@ per-GPU K 配对，同时展示 P99、tokens/s、MFU、能耗和 endpoint submis
 
 执行顺序固定为：
 
-1. 容量曲线确定每卡静态甜点，禁止先调 AIMD；
-2. 离线数据组织隔离实验，避免 flush 抢先关闭 batch；
-3. 用 batch control 的实际 `batch_rows_mean` 换算 request credit，比较
+1. 在 request-level 路径扫描 per-endpoint active-token credit，直接标定
+   offered work 饱和区，禁止先调 AIMD；
+2. 固定 active work 后扫描 token budget，再做离线 membership 隔离实验，
+   避免预算增大同时增加 request concurrency，也避免 flush 抢先关闭 batch；
+3. 用 `organization_batch_rows_mean` 换算 request credit，比较
    whole-submission 与 request-level replenishment；
-4. 在 request-level 路径扫描 per-endpoint active-token credit，避免把异长请求
-   都计为一个 K；
+4. 在突发、异长和 SLO-sensitive workload 下验证 adaptive 控制；
 5. 固定已标定 credit 后分别消融 least-work routing、service-quantum budget
    和 adaptive flush；单项成立后才运行联合候选；
 6. 单作业门禁通过后再运行共享 endpoint 的多 job 公平调度。

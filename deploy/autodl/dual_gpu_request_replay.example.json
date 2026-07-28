@@ -7,8 +7,8 @@
     "enforce_eager": false,
     "compilation_mode": "default",
     "chunked_prefill": true,
-    "max_num_batched_tokens": "unknown",
-    "max_num_seqs": "unknown",
+    "max_num_batched_tokens": "${VLLM_MAX_NUM_BATCHED_TOKENS}",
+    "max_num_seqs": "${VLLM_MAX_NUM_SEQS}",
     "gpu_memory_utilization": 0.9,
     "prefix_caching": false,
     "mfu_metrics": true

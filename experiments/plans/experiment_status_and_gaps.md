@@ -481,9 +481,13 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 1. 用相同 per-GPU K 完成单/双 endpoint 容量曲线，替代历史 global K 同值
    的不公平对照；
-2. 关闭 arrival replay，先完成 1024–32768 token-budget 容量曲线，再以
-   `BEST_TOKEN_BUDGET` 隔离复验 membership 策略；
-3. 按 batch control 的实际 `batch_rows_mean` 对齐 request credit，重复
+2. 先用 request-level submission 扫描 per-endpoint active work；再关闭
+   arrival replay，在固定 active work 下完成 8192–65536 token-budget 曲线，
+   最后以 `BEST_TESTED_TOKEN_BUDGET`、相同 work 和 256 row cap 隔离复验
+   membership 策略。已完成的 1024–32768 曲线同时改变 offered request
+   concurrency，只作诊断；
+3. 按 batch control 的实际 `organization_batch_rows_mean` 对齐 request
+   credit，重复
    request-level continuous replenishment 与 whole-submission barrier；
 4. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
 5. prefix cache-on、多模态复用，以及 shared-vLLM 的 1/2/4 job、workload

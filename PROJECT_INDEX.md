@@ -188,6 +188,7 @@
 | `code_doc/superpowers/specs/2026-07-26-row-cap-aware-packing-and-observation-design.md` | Row-cap-aware packing 与非阻塞观测设计 | 将 BFD 降为候选对照，修复 adaptive 观测阻塞风险，并以真实 64→512→1024 门禁选择策略 |
 | `code_doc/superpowers/specs/2026-07-26-multi-endpoint-routing-readiness-design.md` | 多 endpoint 路由就绪设计 | 修复 equal-load 偏置、增加 estimated-work 候选，并明确逻辑双 endpoint 与未来真实多 GPU 的证据边界 |
 | `code_doc/superpowers/specs/2026-07-26-ray-vllm-execution-tuning-design.md` | Ray 与 vLLM 执行层调优设计 | CUDA Graph、task/actor 并发、服务容量、endpoint-local actor pool 和 prefix-cache 分阶段真实门禁 |
+| `code_doc/superpowers/specs/2026-07-28-dual-gpu-experiment-correctness-design.md` | 双 GPU 实验正确性与共享调度设计 | 修复 token-budget/row-cap 混淆、组织/提交指标语义和多 job 共享 Ray cluster 门禁 |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-flush-window-implementation.md` | Adaptive flush 双窗口实施计划 | TDD 窗口选择、event-time replay、profiler trace 与真实单 GPU 分级门禁 |
 | `code_doc/superpowers/plans/2026-07-25-request-lifecycle-scenario-runner-implementation.md` | AI 算子执行 infra 第一阶段实施计划 | request lifecycle、单 prompt E2E/SLO、seeded scenario runner 与真实 64 行门禁 |
 | `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md` | 输出成本与确定性 BFD 实施计划 | 共享成本、通用 cost_units BFD、Arrow/Daft 接入、离线 lifecycle、真实 64→512 单 GPU 门禁 |
@@ -195,6 +196,7 @@
 | `code_doc/superpowers/plans/2026-07-26-single-gpu-text-closure-implementation.md` | Single-GPU text evidence closure plan | Execute cross-rate, 2048 held-out, controlled prefix, and cost-estimation tasks |
 | `code_doc/superpowers/plans/2026-07-26-ray-execution-foundation-implementation.md` | Ray 执行基础实施计划 | TDD 解耦 endpoint/actor worker，接入 CPU/并发/零 GPU/零重试资源契约并完成全量验证 |
 | `code_doc/superpowers/plans/2026-07-26-vllm-ray-tuning-experiments.md` | vLLM 与 Ray 调优实验计划 | 分阶段完成 CUDA Graph、task/actor、vLLM capacity 真实单 GPU 门禁与重复实验 |
+| `code_doc/superpowers/plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md` | 双 GPU 实验正确性实施计划 | TDD 修复服务元数据、组织/提交指标、共享 Ray cluster 契约与 AutoDL 分阶段模板 |
 | `code/src/cost_estimation.py` | Engine-independent grouped split, ridge cost model, and regression metrics | Build offline operator-cost estimates without post-execution feature leakage |
 | `code/scripts/estimate_operator_cost.py` | Reproducible profile-CSV cost-estimation CLI | Generate model schema, coefficients, splits, and held-out metrics |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
@@ -286,10 +288,10 @@
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
 | `deploy/autodl/` | AutoDL 云服务器 runbook、环境模板、模型下载/endpoint 启动脚本与双 GPU 场景模板 | 2× GPU 云上复现：配置化 vLLM 多 endpoint + PG18.4 + Ray/Daft |
 | `deploy/autodl/dual_gpu_capacity_scaling.example.json` | 单/双 endpoint 相同 per-GPU K 的容量扩展模板 | 先确定双 GPU 公平 scaling 与每卡静态甜点 |
-| `deploy/autodl/dual_gpu_token_budget_curve.example.json` | 关闭 arrival replay 的 1024–32768 token-budget 容量曲线 | 证明预算不是越大越好并标定最佳静态预算 |
-| `deploy/autodl/dual_gpu_data_organization.example.json` | 固定最佳预算、关闭 arrival replay 的双 GPU 数据组织隔离模板 | 复验 sequential、row-cap-aware 与 length-align，避免预算大小和 flush 混淆 |
+| `deploy/autodl/dual_gpu_token_budget_curve.example.json` | 固定 per-endpoint active work、关闭 arrival replay 的 8192–65536 token-budget 曲线 | 在等量 offered work 下标定最佳已测组织预算并审计 row cap |
+| `deploy/autodl/dual_gpu_data_organization.example.json` | 固定 active work 与最佳已测预算、关闭 arrival replay 的双 GPU 数据组织隔离模板 | 复验 sequential、row-cap-aware 与 length-align，避免预算大小、offered load 和 flush 混淆 |
 | `deploy/autodl/dual_gpu_request_replay.example.json` | batch barrier 与 request-level replenishment 模板 | 容量与组织阶段完成后运行，并按实际 batch rows 对齐 request K |
-| `deploy/autodl/dual_gpu_active_work_curve.example.json` | request-level 下的 per-endpoint active-token credit 容量曲线 | 标定模型/负载相关的 active-work 甜点，避免按请求数误配异长工作 |
+| `deploy/autodl/dual_gpu_active_work_curve.example.json` | 第一优先级的 request-level per-endpoint active-token credit 容量曲线 | 先标定模型/负载相关的 offered-work 饱和区，避免按 batch K 暗中改变 request 并发 |
 | `deploy/autodl/dual_gpu_submission_policy.example.json` | active-work、least-work routing、动态 token budget 与 adaptive flush 的可组合消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |

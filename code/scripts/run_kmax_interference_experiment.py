@@ -10,6 +10,7 @@ bounded versus unbounded in-flight submission window.
 from __future__ import annotations
 
 import argparse
+import os
 import random
 import subprocess
 import sys
@@ -53,6 +54,7 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--max-active-work-per-endpoint", type=int, default=0)
+    parser.add_argument("--ray-address", default=None)
     parser.add_argument("--shared-credit-coordinator-name", default="")
     parser.add_argument("--shared-credit-request-limit", type=int, default=0)
     parser.add_argument("--shared-credit-work-limit", type=int, default=0)
@@ -141,6 +143,12 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
     if len(metrics_url_arg) != len(endpoint_url_arg):
         raise ValueError(
             "metrics URL count must equal completion endpoint URL count"
+        )
+    ray_address = args.ray_address or os.environ.get("RAY_ADDRESS")
+    if args.shared_credit_coordinator_name and not ray_address:
+        raise ValueError(
+            "shared credit requires an explicit Ray address via "
+            "--ray-address or RAY_ADDRESS"
         )
     command = [
         sys.executable,
@@ -243,6 +251,8 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
     if args.shared_credit_coordinator_name:
         command.extend(
             [
+                "--ray-address",
+                ray_address,
                 "--shared-credit-coordinator-name",
                 args.shared_credit_coordinator_name,
                 "--shared-credit-request-limit",

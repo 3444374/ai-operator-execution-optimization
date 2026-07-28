@@ -28,6 +28,22 @@ def validate_service_metadata(metadata: Mapping[str, object]) -> None:
         raise ValueError(
             "service_metadata missing required keys: " + ", ".join(missing)
         )
+    for key in ("vllm_version", "compilation_mode"):
+        value = metadata[key]
+        if (
+            not isinstance(value, str)
+            or not value.strip()
+            or value.strip().lower() == "unknown"
+        ):
+            raise ValueError(f"{key} must be a concrete non-empty string")
+    for key in (
+        "enforce_eager",
+        "chunked_prefill",
+        "prefix_caching",
+        "mfu_metrics",
+    ):
+        if not isinstance(metadata[key], bool):
+            raise ValueError(f"{key} must be a boolean")
     utilization = metadata["gpu_memory_utilization"]
     if (
         isinstance(utilization, bool)
@@ -40,16 +56,12 @@ def validate_service_metadata(metadata: Mapping[str, object]) -> None:
         )
     for key in ("max_num_batched_tokens", "max_num_seqs"):
         capacity = metadata[key]
-        if isinstance(capacity, str) and capacity == "unknown":
-            continue
         if (
             isinstance(capacity, bool)
             or not isinstance(capacity, int)
             or capacity <= 0
         ):
-            raise ValueError(
-                f"{key} must be a positive integer or 'unknown'"
-            )
+            raise ValueError(f"{key} must be a positive integer")
 
 
 @dataclass(frozen=True)

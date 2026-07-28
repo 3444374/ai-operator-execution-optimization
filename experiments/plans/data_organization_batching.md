@@ -249,12 +249,13 @@ H1.5：模型自身的 batch scaling 在 batch=64 时已达到吞吐平台期。
 大多数 batch 在达到 token budget 前已被 timeout 关闭。该配置只能研究在线
 arrival/flush，不足以判断 token-budget 或 length-align 本身是否有效。
 
-复验必须先使用 `source_order=doc_id`、关闭 arrival replay，令完整 organizer
-输入可见，固定 static per-endpoint K 和 endpoint routing，仅改变 batch
-membership。第一轮先画 token-budget 容量曲线：
+复验前先以 request-level submission 标定 per-endpoint active work 饱和区。
+随后使用 `source_order=doc_id`、关闭 arrival replay，令完整 organizer 输入
+可见，固定 active work、较高的 static per-endpoint K 和 endpoint routing，
+仅改变 token budget：
 
 ```text
-sequential_token_budget ∈ {1024, 2048, 4096, 8192, 16384, 32768}
+sequential_token_budget ∈ {8192, 16384, 24576, 32768, 49152, 65536}
 ```
 
 这条曲线要验证的不是“更大的 budget 能装更多行”这一恒真命题，而是吞吐是否
@@ -262,20 +263,22 @@ sequential_token_budget ∈ {1024, 2048, 4096, 8192, 16384, 32768}
 可选请求不足；budget 太大时，兼容 HTTP 的列表响应形成更粗的完成屏障，
 短请求要等同 submission 中最长请求返回，补位变慢，P99、completion span 和
 job 间干扰可能上升。因此预期 `tokens/s` 随 budget 先升后平台或下降，而不是
-单调上升；如果一直单调上升到 32768，说明搜索上界还没覆盖甜点，不能声称
-8192 最优。
+单调上升；如果一直单调上升到 65536，说明搜索上界还没覆盖平台，不能声称
+任何较小预算最优。
 
 容量曲线必须先检查：
 
-- `packing_budget_utilization_mean`、`batch_rows_mean`、batch 数和 HTTP 调用数；
+- `packing_budget_utilization_mean`、`organization_batch_rows_mean`、
+  `organization_row_cap_hit_ratio`、submission batch 数和 HTTP 调用数；
 - observed tokens/s、rows/s、request/service P95/P99；
 - submission completion span、补位间隔和 credit idle ratio；
 - 每 endpoint running/waiting、GPU/MFU 与端点流量分布。
 
-容量曲线确定 `BEST_TOKEN_BUDGET` 后，第二轮才在同一预算上比较
+固定 work 的曲线确定 `BEST_TESTED_TOKEN_BUDGET` 后，第二轮才在同一预算和
+active work 上比较
 `fixed_rows_8`、sequential、row-cap-aware 和 length-align，避免把预算大小与
 membership 算法混成一个因素。如果利用率低于 50%，不进入策略胜负解释，先
-诊断 row cap、oversized rows 或 organizer visibility。只有离线组织阶段出现
+诊断 256 row cap、oversized rows 或 organizer visibility。只有离线组织阶段出现
 可辨认的 batch-shape 差异后，才把候选带回 arrival replay 验证在线泛化；
 不能同时调 flush timeout 来“帮助”某个组织策略。
 

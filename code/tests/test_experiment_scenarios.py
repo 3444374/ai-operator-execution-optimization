@@ -81,6 +81,11 @@ class ExperimentScenarioTests(unittest.TestCase):
             "COMPLETION_PROMPT_FORMAT": "chatml",
             "TOKEN_BUDGET": "8192",
             "BEST_TOKEN_BUDGET": "8192",
+            "ACTIVE_WORK_PER_ENDPOINT": "65536",
+            "CAPACITY_PROBE_TOKEN_BUDGET": "32768",
+            "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
+            "VLLM_MAX_NUM_SEQS": "256",
+            "REQUEST_SLO_MS": "30000",
             "GPU_PEAK_TFLOPS": "165",
             "MFU_PRECISION": "bf16_dense_fp32_accumulate",
         }
@@ -89,6 +94,7 @@ class ExperimentScenarioTests(unittest.TestCase):
             "dual_gpu_token_budget_curve.example.json": 6,
             "dual_gpu_data_organization.example.json": 4,
             "dual_gpu_request_replay.example.json": 5,
+            "dual_gpu_active_work_curve.example.json": 5,
         }
 
         with patch.dict(os.environ, env, clear=True):
@@ -104,6 +110,44 @@ class ExperimentScenarioTests(unittest.TestCase):
                         len(config.scenarios),
                         expected_scenarios,
                     )
+                    self.assertEqual(
+                        dict(config.service_metadata)[
+                            "max_num_batched_tokens"
+                        ],
+                        8192,
+                    )
+                    self.assertEqual(
+                        dict(config.service_metadata)["max_num_seqs"],
+                        256,
+                    )
+
+            capacity = _load_config(
+                CODE_ROOT.parent
+                / "deploy"
+                / "autodl"
+                / "dual_gpu_token_budget_curve.example.json"
+            )
+            self.assertEqual(
+                [item.scenario_id for item in capacity.scenarios],
+                [
+                    "tb8192",
+                    "tb16384",
+                    "tb24576",
+                    "tb32768",
+                    "tb49152",
+                    "tb65536",
+                ],
+            )
+            self.assertIn("256", capacity.common_args)
+            self.assertIn("65536", capacity.common_args)
+
+            active_work = _load_config(
+                CODE_ROOT.parent
+                / "deploy"
+                / "autodl"
+                / "dual_gpu_active_work_curve.example.json"
+            )
+            self.assertIn("request", active_work.common_args)
 
     def test_wait_for_idle_reports_metrics_fetch_failure(self) -> None:
         health_response = MagicMock()
@@ -169,12 +213,38 @@ class ExperimentScenarioTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, key):
                     validate_service_metadata(metadata)
 
-    def test_service_metadata_accepts_unknown_capacity(self) -> None:
-        metadata = self._complete_service_metadata()
-        metadata["max_num_batched_tokens"] = "unknown"
-        metadata["max_num_seqs"] = "unknown"
+    def test_service_metadata_rejects_unknown_capacity(self) -> None:
+        for key in ("max_num_batched_tokens", "max_num_seqs"):
+            with self.subTest(key=key):
+                metadata = self._complete_service_metadata()
+                metadata[key] = "unknown"
 
-        validate_service_metadata(metadata)
+                with self.assertRaisesRegex(ValueError, key):
+                    validate_service_metadata(metadata)
+
+    def test_service_metadata_rejects_empty_required_strings(self) -> None:
+        for key in ("vllm_version", "compilation_mode"):
+            for invalid in ("", " ", "unknown"):
+                with self.subTest(key=key, invalid=invalid):
+                    metadata = self._complete_service_metadata()
+                    metadata[key] = invalid
+
+                    with self.assertRaisesRegex(ValueError, key):
+                        validate_service_metadata(metadata)
+
+    def test_service_metadata_rejects_non_boolean_flags(self) -> None:
+        for key in (
+            "enforce_eager",
+            "chunked_prefill",
+            "prefix_caching",
+            "mfu_metrics",
+        ):
+            with self.subTest(key=key):
+                metadata = self._complete_service_metadata()
+                metadata[key] = "unknown"
+
+                with self.assertRaisesRegex(ValueError, key):
+                    validate_service_metadata(metadata)
 
     def test_service_metadata_rejects_invalid_capacity(self) -> None:
         for key in ("max_num_batched_tokens", "max_num_seqs"):
