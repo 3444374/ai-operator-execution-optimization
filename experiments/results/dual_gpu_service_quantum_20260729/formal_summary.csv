@@ -1,0 +1,7 @@
+scenario_id,submission_granularity,service_quantum_tokens,submissions_mean,rows_per_submission_mean,tokens_per_s_mean,tokens_per_s_sd,tokens_per_s_cv_pct,throughput_delta_vs_batch_pct,mfu_pct_mean,request_p50_s_mean,request_p95_s_mean,request_p99_s_mean,p99_delta_vs_batch_pct,slo_violation_pct_mean,slo_goodput_per_s_mean,e2e_s_mean,bounded_wait_s_mean,credit_held_s_mean,credit_held_s_p95,ray_to_service_ms_mean,gpu_energy_j_mean,promotion_decision
+planning_batch,batch,0,570,3.592982,7989.036,112.491,1.408,0.000,34.635,11.092,17.814,36.683,0.000,2.148,23.540,85.140,33.860,10.171,31.474,25.771,60717.934,control
+service_quantum_512,service_quantum,512,2048,1.000000,7986.763,12.697,0.159,-0.028,35.010,10.896,17.217,36.992,0.843,2.279,23.491,85.195,27.832,8.529,11.508,4.069,60345.124,not_promoted
+service_quantum_1024,service_quantum,1024,1067,1.919400,7997.900,85.211,1.065,0.111,34.628,11.208,17.659,36.612,-0.193,2.230,23.554,85.017,32.689,9.170,26.169,17.113,60437.029,not_promoted
+service_quantum_2048,service_quantum,2048,703,2.913229,7999.004,103.488,1.294,0.125,34.596,11.240,17.694,36.673,-0.026,2.197,23.557,85.039,33.579,9.812,29.663,24.646,60621.789,not_promoted
+service_quantum_4096,service_quantum,4096,584,3.506849,8031.880,108.136,1.346,0.536,34.700,11.161,17.668,36.914,0.629,2.100,23.686,84.660,33.732,10.123,30.865,33.384,60424.740,not_promoted
+request_diagnostic,request,0,2048,1.000000,8129.175,66.101,0.813,1.754,34.990,10.876,17.246,36.948,0.722,2.230,23.934,83.665,28.009,8.534,11.575,23.522,59125.244,diagnostic_default_for_precise_credit

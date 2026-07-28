@@ -168,7 +168,9 @@ Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
 双 GPU per-endpoint K 功能门禁和 16K–131K active-work 扩展曲线已经完成；
 65,536 是当前模型/workload 的预注册最小饱和点。Actor Pool 三形状 gate 与
 正式重复均已完成；固定 work/slots/CPU 后，多 actor 未达到 5% 晋升门槛，
-当前保留 1×256。complete-row service quantum 正式重复运行中；
+当前保留 1×256。complete-row service quantum 正式重复也已完成：细粒度
+把 credit-held 降约 16%，但稳态吞吐增益不足 5%，固定 quantum 不晋升；
+request-level completion 保留作后续动态/多 job 精确控制基础。
 least-work、动态预算、shared-credit、异构显存容量、故障迁移和多 job 公平性
 仍待实测，因此不能声称多 GPU 调度已经完成。多个 Ray actor worker 仍不能被
 当作多个 GPU endpoint。

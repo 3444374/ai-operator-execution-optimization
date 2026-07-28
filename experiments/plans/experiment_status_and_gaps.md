@@ -489,9 +489,10 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
    1337 work/organization-batch 估算会严重欠载，已在启动前否决；三个
    arm 的每 endpoint Ray CPU reservation 同时固定为 0.5。2×128/4×64
    相对 1×256 仅 +2.00%/+0.75%，未过 5% 门槛，保留 1×256；
-4. 正在固定 1×256 pool、planning budget 和 active work，比较 whole batch、
+4. 已固定 1×256 pool、planning budget 和 active work，完成 whole batch、
    complete-row service quantum 512/1024/2048/4096 与 request diagnostic。
-   8192 大于当前组织批次最大 work≈5892，会退化为 batch control，故删除；
+   512/request 将 credit-held 降约 16%，但吞吐相对 batch 最高仅 +1.75%，
+   固定 quantum 不晋升；8192 因会退化为 batch control 未运行；
 5. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
 6. prefix cache-on、多模态复用，以及 shared-vLLM 的 1/2/4 job、workload
    mix、arrival offset 和共享 endpoint credit/fairness；
@@ -523,7 +524,7 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 | Request-level completion/credit release | 已实现并完成双 4090 重复 | 固定 active work 后继续验证 exactly-once 与逐请求释放 |
 | Continuous replenishment | 上游已实现；K-count 双卡对照未隔离独立收益 | 固定 active work 的 whole-submission vs request-credit 对照 |
 | Token-work admission | 已实现；八档扩展曲线完成并选定 65,536 | 后续策略固定该 work，不再靠增加 offered load 获得表面收益 |
-| Complete-row service quantum | offline/replay、trace 与 credit 语义已实现，64 行 gate 通过 | 正在固定 planning/work/pool 比 batch、512/1024/2048/4096/request |
+| Complete-row service quantum | gate 与 24-run 正式重复完成 | credit-held 降约 16% 但吞吐增益不足 5%；不晋升固定 quantum，request 保留作精确控制基础 |
 | Bounded Ray actor pool | 固定 slots、worker routing 与失败清理已实现并完成正式重复 | 多 actor 未过 5% 晋升门槛；当前保留 1×256，多 job 分池另行验证 |
 | SLO-aware adaptive flush | two-level 25/50ms baseline | oldest age/slack + fill + EWMA service/arrival + hard deadline |
 | Completion-span/HOL 观测 | 有 request/submission join key | 记录同 submission 首末完成跨度和 credit idle |

@@ -46,10 +46,10 @@ PostgreSQL 18.3
 当前缺口（vLLM baseline、Daft 文本接入、token-budget / K_max、flush
 跨负载与 2048 留出、本地单 GPU 联合消融、受控 prefix cache-off 实验、
 算子代价估计初版、request-level credit-release 双卡重复、active-work 八档
-扩展曲线和固定资源的 Actor Pool 形状对照均已完成）：① 已按预注册规则选择
-每 endpoint 65,536 active work；1×256/2×128/4×64 中多 actor 未达到 5%
-晋升门槛，保留 1×256，正在比较 whole-batch、complete-row service quantum
-512/1024/2048/4096 与 request diagnostic → ② oldest-request slack、token backlog
+扩展曲线、固定资源 Actor Pool 和 complete-row service quantum 对照均已完成）：
+① 已按预注册规则选择每 endpoint 65,536 active work；多 actor 与固定 quantum
+均未达到 5% 晋升门槛，保留 `request + 1×256`，其价值是精确 completion/
+credit 语义而非显著稳态提速 → ② oldest-request slack、token backlog
 与 arrival/service EWMA 驱动的完整 adaptive flush →
 ③ prefix cache 开启后的独立机制验证与 length-align 显式联合消融 →
 ④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 当前 2×4090 上完成多 job

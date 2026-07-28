@@ -144,18 +144,17 @@
   65,536 work、256 slots 和 0.5 Ray CPU/endpoint 后，2×128/4×64 相对
   1×256 吞吐仅 +2.00%/+0.75%，MFU 与尾延迟基本重合，未达到 5% 晋升
   门槛；当前保留 1×256
+- ✅ 双 4090 complete-row service quantum：24/24 run 成功；固定饱和
+  work 后，512/1024/2048/4096 quantum 相对 batch 吞吐变化仅
+  -0.03%/+0.11%/+0.12%/+0.54%，request 为 +1.75%。512/request 把
+  credit-held 降约 16%，但未提高稳态 GPU 吞吐，固定 quantum 不晋升
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1（运行中）**：固定已选 1×256 pool、planning budget 和
-   active work，比较 whole batch、fixed service quantum
-   512/1024/2048/4096 与 one-row request diagnostic。
-   原 16-slot 草案因可见 work 明显低于饱和区已在运行前否决；8192 quantum
-   因大于当前组织批次最大 work、会退化为 batch control 而删除。
-2. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；
+1. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；
    下一版需显式使用 oldest-request slack、token backlog、arrival/service-rate
    EWMA、hard deadline 与滞回，并对比最佳静态窗口。
-3. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
+2. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
    证据，不能用当前 cache-off 数据推断缓存收益。
 5. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
 6. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +

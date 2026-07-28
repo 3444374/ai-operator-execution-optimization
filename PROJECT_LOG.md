@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-07-29 complete-row service quantum 负结果与机制边界
+
+- 双 GPU 正式矩阵 24/24 runs 完成、0 incident、租约正常释放；固定
+  65,536 active work、1×256 actor pool、32,768 planning budget 和
+  0.5 Ray CPU/endpoint，只改变 batch/quantum/request completion 粒度。
+- 512/1024/2048/4096 quantum 相对 planning batch 的 formal 吞吐变化为
+  -0.03%/+0.11%/+0.12%/+0.54%，request diagnostic 为 +1.75%；均未达到
+  预注册 5% 吞吐或 SLO goodput 晋升门槛，MFU 和 P99 也基本重合。
+- 机制修复有效但不是当前吞吐瓶颈：512/request 把平均 credit-held 从
+  10.171s 降至约 8.53s、bounded wait 从 33.86s 降至约 28s；然而每 endpoint
+  已有 65K active work，vLLM iteration-level batching 始终有足够请求，
+  提前释放 credit 没有增加 GPU 可执行工作。
+- 不晋升固定 service quantum 为默认性能策略。request-level 路径保留为
+  精确 completion/credit、真实 request latency 和后续多 job 公平控制基础；
+  该选择不包装成显著吞吐贡献。下一轮转向有 burst/gap、foreground/
+  background 和不同 SLO 的动态负载，验证 SLO-aware EWMA flush。
+- 完整结果归档到
+  `experiments/results/dual_gpu_service_quantum_20260729/`；大体积 trace
+  继续保留在远端。
+
 ## 2026-07-29 双 GPU Ray actor-pool 形状负结果
 
 - 在已标定的每 endpoint 65,536 active work 下，固定 256 actor slots 和

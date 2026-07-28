@@ -154,6 +154,11 @@ nohup /root/miniconda3/bin/python \
   </dev/null >"$RUN_LOG" 2>&1 &
 ```
 
+`run_ai_operator_scenarios.py` 不是只传 `--config/--output-dir` 就能运行的
+包装器。`--profiler`、`--python-executable`、`--health-url` 和
+`--metrics-urls` 都是必填项；漏掉时会在 argparse 阶段立即退出，不会创建
+manifest 或占用 GPU。新会话必须复制上面的完整命令，不能凭记忆缩写。
+
 启动后用短连接检查 runner、`manifest.json`、`runs.csv` 和 GPU。只有
 manifest 原子记录首个成功 run、无 incident 且 GPU 工作，才算启动完成。
 runner 会在输出目录中原子创建 `.runner-lease.json`，其中记录 host、PID、

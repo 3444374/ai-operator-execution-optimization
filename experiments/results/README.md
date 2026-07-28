@@ -8,6 +8,7 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
+| `dual_gpu_service_quantum_20260729/` | Fixed-work batch/512/1024/2048/4096/request completion-granularity comparison. | Fine granularity reduces credit-held by about 16% but changes throughput by at most +1.75%; no fixed quantum meets the promotion gate. |
 | `dual_gpu_actor_pool_shape_20260729/` | Fixed-work, fixed-slot and fixed-Ray-CPU 1×256/2×128/4×64 actor-pool comparison. | Multi-actor shapes gain at most 2.00%, below the preregistered 5% promotion threshold; retain 1×256 for the current single-job homogeneous endpoints. |
 | `dual_gpu_active_work_saturation_20260729/` | Dual-4090 eight-point request-level active-work saturation curve with three formal repeats per cap. | 65,536 is the preregistered smallest saturation point; above it throughput plateaus while P99/SLO worsen. |
 | `dual_gpu_active_work_curve_20260728/` | Earlier five-point active-work curve used to discover that the original upper bound was still rising. | Superseded for capacity selection by the 2026-07-29 extension; retains diagnostic and reproducibility value. |
