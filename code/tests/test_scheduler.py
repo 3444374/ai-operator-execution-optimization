@@ -322,6 +322,27 @@ class SchedulerTests(unittest.TestCase):
             ],
         )
 
+    def test_least_queued_tracks_scheduler_local_inflight(self) -> None:
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            StaticAdmissionController(4),
+            LeastQueuedEndpointRouter(),
+            adapter,
+            "default",
+        )
+
+        scheduler.run([envelope(index) for index in range(4)], topology())
+
+        self.assertEqual(
+            adapter.submitted,
+            [
+                ("r0", "e1"),
+                ("r1", "e2"),
+                ("r2", "e1"),
+                ("r3", "e2"),
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

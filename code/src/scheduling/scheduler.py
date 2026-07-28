@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import statistics
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable, Iterable, Protocol
 
 from .models import (
@@ -128,11 +128,24 @@ class SynchronousScheduler:
                 bounded_wait_samples.append(collected.wait_s)
                 fanin_s += collected.result_s
             pool_id = (
-                self.pool_router.route(envelope.request, topology).pool_id
+                self.pool_router.route(
+                    envelope.request,
+                    self._topology_with_local_inflight(
+                        topology,
+                        submission_context,
+                    ),
+                ).pool_id
                 if self.pool_router is not None
                 else self.pool_id
             )
-            route = self.router.route(envelope.request, topology, pool_id)
+            route = self.router.route(
+                envelope.request,
+                self._topology_with_local_inflight(
+                    topology,
+                    submission_context,
+                ),
+                pool_id,
+            )
             endpoint = endpoints_by_id.get(route.endpoint_id)
             if endpoint is None:
                 raise RuntimeError("router selected an endpoint outside the topology")
@@ -198,6 +211,32 @@ class SynchronousScheduler:
             for _pool_id, _endpoint_id, _gpu_id, submit_epoch_s in submission_context.values()
         )
         return max(0.0, now - oldest_submit_s)
+
+    @staticmethod
+    def _topology_with_local_inflight(
+        topology: TopologySnapshot,
+        submission_context: dict[str, tuple[str, str, str, float]],
+    ) -> TopologySnapshot:
+        inflight_by_endpoint: dict[str, int] = {}
+        for _pool_id, endpoint_id, _gpu_id, _submit_epoch_s in (
+            submission_context.values()
+        ):
+            inflight_by_endpoint[endpoint_id] = (
+                inflight_by_endpoint.get(endpoint_id, 0) + 1
+            )
+        return replace(
+            topology,
+            endpoints=tuple(
+                replace(
+                    endpoint,
+                    running=(
+                        endpoint.running
+                        + inflight_by_endpoint.get(endpoint.endpoint_id, 0)
+                    ),
+                )
+                for endpoint in topology.endpoints
+            ),
+        )
 
     def _collect_one(
         self,

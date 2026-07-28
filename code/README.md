@@ -181,6 +181,11 @@ Pool and endpoint routing support request-cost pools, least-queued selection,
 deterministic prefix affinity, health fallback, and explicit per-endpoint pool
 and GPU identifiers. The independent flush policy core supports immediate,
 fixed-timeout, and queue-adaptive decisions with a hard maximum wait.
+Least-queued routing includes scheduler-local in-flight submissions instead of
+reusing the profiler's static startup snapshot. Multi-endpoint vLLM runs should
+pass every Prometheus endpoint through `--model-metrics-urls`; counters and
+request gauges are aggregated across endpoints, while KV-cache pressure uses
+the maximum endpoint value. GPU snapshots aggregate all visible devices.
 `--source-order arrival_time` only defines source order; it does not reproduce
 arrival gaps. Online flush experiments must additionally enable
 `--arrival-replay`. The replay path normalizes the first arrival to zero,

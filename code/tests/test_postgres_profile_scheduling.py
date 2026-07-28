@@ -748,7 +748,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "vllm:kv_cache_usage_perc": 0.7,
             },
         ):
-            snapshot = profile._service_metrics_snapshot("http://metrics")
+            snapshot = profile._service_metrics_snapshot(["http://metrics"])
 
         self.assertEqual(snapshot.running, 12)
         self.assertEqual(snapshot.waiting, 3)
@@ -757,14 +757,39 @@ class SchedulingProfileHelperTests(unittest.TestCase):
     def test_service_metrics_snapshot_returns_none_on_missing_scrape(self) -> None:
         with patch.object(profile, "scrape_prometheus_metrics", return_value={}):
             self.assertIsNone(
-                profile._service_metrics_snapshot("http://metrics")
+                profile._service_metrics_snapshot(["http://metrics"])
             )
+
+    def test_multi_endpoint_metrics_sum_counters_and_max_kv_usage(self) -> None:
+        with patch.object(
+            profile,
+            "scrape_prometheus_metrics",
+            side_effect=[
+                {
+                    "vllm:prompt_tokens_total": 100.0,
+                    "vllm:num_requests_running": 3.0,
+                    "vllm:kv_cache_usage_perc": 0.4,
+                },
+                {
+                    "vllm:prompt_tokens_total": 80.0,
+                    "vllm:num_requests_running": 2.0,
+                    "vllm:kv_cache_usage_perc": 0.7,
+                },
+            ],
+        ):
+            metrics = profile._scrape_model_metrics(
+                ["http://metrics-0", "http://metrics-1"]
+            )
+
+        self.assertEqual(metrics["vllm:prompt_tokens_total"], 180.0)
+        self.assertEqual(metrics["vllm:num_requests_running"], 5.0)
+        self.assertEqual(metrics["vllm:kv_cache_usage_perc"], 0.7)
 
     def test_build_adaptive_config_preserves_controller_across_submissions(self) -> None:
         traces = []
         config = profile._build_adaptive_config(
             scheduling_policy="aimd",
-            metrics_url="http://metrics",
+            metrics_urls=["http://metrics"],
             trace_events=traces,
             min_window=4,
             max_window=16,
@@ -791,7 +816,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
     def test_typed_adaptive_config_uses_nonblocking_provider(self) -> None:
         config = profile._build_adaptive_config(
             scheduling_policy="aimd",
-            metrics_url="http://metrics",
+            metrics_urls=["http://metrics"],
             trace_events=[],
             min_window=4,
             max_window=16,
@@ -830,7 +855,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         ):
             config = profile._build_adaptive_config(
                 scheduling_policy="aimd",
-                metrics_url="http://metrics",
+                metrics_urls=["http://metrics"],
                 trace_events=[],
                 min_window=4,
                 max_window=16,
@@ -1132,7 +1157,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "metrics URL"):
             profile._build_adaptive_config(
                 scheduling_policy="pid",
-                metrics_url=None,
+                metrics_urls=[],
                 trace_events=[],
                 min_window=2,
                 max_window=16,
@@ -1222,6 +1247,18 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertIsInstance(config["pool_router"], RequestPoolRouter)
         self.assertEqual(config["pool_ids"], ["short", "long", "prefix"])
         self.assertEqual(config["gpu_ids"], ["0", "0", "1"])
+
+    def test_build_routing_config_defaults_gpu_ids_by_endpoint(self) -> None:
+        config = profile._build_routing_config(
+            endpoint_count=2,
+            endpoint_routing="round_robin",
+            pool_routing="none",
+            pool_ids_text=None,
+            gpu_ids_text=None,
+            long_request_tokens=0,
+        )
+
+        self.assertEqual(config["gpu_ids"], ["0", "1"])
 
     def test_build_routing_config_rejects_assignment_count_mismatch(self) -> None:
         with self.assertRaisesRegex(ValueError, "pool IDs"):

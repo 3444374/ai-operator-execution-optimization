@@ -377,6 +377,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Tokenizer identifier used to produce prompt/output cost units.",
     )
     parser.add_argument("--model-metrics-url", default=os.environ.get("MODEL_METRICS_URL"))
+    parser.add_argument(
+        "--model-metrics-urls",
+        default=os.environ.get("MODEL_METRICS_URLS"),
+        help=(
+            "Comma-separated Prometheus endpoints. Counters and request "
+            "gauges are summed; KV-cache usage uses the maximum."
+        ),
+    )
     parser.add_argument("--model-workers", type=int, default=2)
     parser.add_argument(
         "--actor-workers-per-endpoint",
@@ -535,6 +543,20 @@ def completion_endpoint_urls(args: argparse.Namespace) -> list[str]:
         return [url.strip() for url in args.completion_endpoint_urls.split(",") if url.strip()]
     if args.completion_endpoint_url:
         return [args.completion_endpoint_url]
+    return []
+
+
+def model_metrics_urls(args: argparse.Namespace) -> list[str]:
+    metrics_urls_text = getattr(args, "model_metrics_urls", None)
+    if metrics_urls_text:
+        return [
+            url.strip()
+            for url in metrics_urls_text.split(",")
+            if url.strip()
+        ]
+    metrics_url = getattr(args, "model_metrics_url", None)
+    if metrics_url:
+        return [metrics_url]
     return []
 
 
@@ -1285,9 +1307,9 @@ def _scheduler_metrics(result: SchedulerResult) -> dict:
 
 
 def _service_metrics_snapshot(
-    metrics_url: str,
+    metrics_urls: Sequence[str],
 ) -> ServiceMetricsSnapshot | None:
-    metrics = scrape_prometheus_metrics(metrics_url, timeout_s=1.0)
+    metrics = _scrape_model_metrics(metrics_urls, timeout_s=1.0)
     if not metrics:
         return None
 
@@ -1301,10 +1323,32 @@ def _service_metrics_snapshot(
     )
 
 
+def _scrape_model_metrics(
+    metrics_urls: Sequence[str],
+    *,
+    timeout_s: float = 5.0,
+) -> dict[str, float]:
+    snapshots = [
+        scrape_prometheus_metrics(url, timeout_s=timeout_s)
+        for url in metrics_urls
+    ]
+    if not snapshots or any(not snapshot for snapshot in snapshots):
+        return {}
+    names = {name for snapshot in snapshots for name in snapshot}
+    return {
+        name: (
+            max(snapshot.get(name, 0.0) for snapshot in snapshots)
+            if name == "vllm:kv_cache_usage_perc"
+            else sum(snapshot.get(name, 0.0) for snapshot in snapshots)
+        )
+        for name in names
+    }
+
+
 def _build_adaptive_config(
     *,
     scheduling_policy: str,
-    metrics_url: str | None,
+    metrics_urls: Sequence[str],
     trace_events: list,
     min_window: int,
     max_window: int,
@@ -1320,7 +1364,7 @@ def _build_adaptive_config(
     # aimd_hol keys on Ray-side head-of-line age and ignores service metrics,
     # so it (alone) can run without a model metrics URL; the service-metric
     # controllers (aimd/ewma_aimd/pid) still require one.
-    if scheduling_policy != "aimd_hol" and not metrics_url:
+    if scheduling_policy != "aimd_hol" and not metrics_urls:
         raise ValueError("service-metric adaptive scheduling requires a model metrics URL")
     if scheduling_policy in {"aimd", "ewma_aimd"}:
         config = AimdConfig(min_window=min_window, max_window=max_window)
@@ -1356,8 +1400,8 @@ def _build_adaptive_config(
     else:
         raise ValueError(f"unsupported typed adaptive policy: {scheduling_policy}")
     sampler = (
-        (lambda: _service_metrics_snapshot(metrics_url))
-        if metrics_url
+        (lambda: _service_metrics_snapshot(metrics_urls))
+        if metrics_urls
         else (lambda: None)
     )
     provider = NonBlockingMetricsObservationProvider(
@@ -1417,7 +1461,11 @@ def _build_routing_config(
     if endpoint_routing not in endpoint_routers:
         raise ValueError(f"unsupported endpoint routing: {endpoint_routing}")
     pool_ids = assignments(pool_ids_text, "default", "pool IDs")
-    gpu_ids = assignments(gpu_ids_text, "0", "GPU IDs")
+    gpu_ids = (
+        assignments(gpu_ids_text, "0", "GPU IDs")
+        if gpu_ids_text
+        else [str(index) for index in range(endpoint_count)]
+    )
     if pool_routing == "none":
         if any(pool_id != "default" for pool_id in pool_ids):
             raise ValueError(
@@ -1815,13 +1863,9 @@ def _write_resource_trace(
         )
 
 
-def _resource_snapshot(metrics_url: str | None) -> dict[str, object]:
+def _resource_snapshot(metrics_urls: Sequence[str]) -> dict[str, object]:
     gpu = gpu_metadata()
-    metrics = (
-        scrape_prometheus_metrics(metrics_url, timeout_s=0.5)
-        if metrics_url
-        else {}
-    )
+    metrics = _scrape_model_metrics(metrics_urls, timeout_s=0.5)
     return {
         **gpu,
         "vllm_metrics_status": "ok" if metrics else "unavailable",
@@ -2668,6 +2712,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     _validate_completion_observation_args(args)
     endpoint_urls = completion_endpoint_urls(args) if args.operator == "ai_complete" else embedding_endpoint_urls(args)
     endpoint_url_label = ";".join(endpoint_urls)
+    resolved_metrics_urls = model_metrics_urls(args)
     if args.operator == "ai_embed" and args.model_backend == "ollama":
         raise SystemExit("Ollama backend is only supported for --operator ai_complete.")
     model_backend = (
@@ -2701,9 +2746,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     if args.scheduling_policy in typed_adaptive_policies:
         if args.executor not in {"ray_actor", "ray_task"}:
             raise SystemExit("typed adaptive scheduling requires a Ray executor")
-        if args.scheduling_policy != "aimd_hol" and not args.model_metrics_url:
+        if args.scheduling_policy != "aimd_hol" and not resolved_metrics_urls:
             raise SystemExit(
-                "typed adaptive scheduling requires --model-metrics-url "
+                "typed adaptive scheduling requires model metrics URL(s) "
                 "(aimd_hol keys on Ray-side head-of-line age and does not)"
             )
     if args.executor == "python" and (
@@ -3100,10 +3145,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         }
 
         operator_wall_s = 0.0
-        vllm_metrics_before = scrape_prometheus_metrics(args.model_metrics_url) if args.model_metrics_url else {}
+        vllm_metrics_before = _scrape_model_metrics(resolved_metrics_urls)
         if args.resource_trace_output:
             resource_sampler = PeriodicSampler(
-                lambda: _resource_snapshot(args.model_metrics_url),
+                lambda: _resource_snapshot(resolved_metrics_urls),
                 interval_s=args.resource_sample_interval_s,
             )
         if args.data_source == "daft_postgres" or args.organizer == "daft":
@@ -3137,7 +3182,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         control_trace_events = []
         if args.scheduling_policy == "queue_adaptive":
             adaptive_config = {
-                "metrics_url": args.model_metrics_url,
+                "metrics_url": (
+                    resolved_metrics_urls[0]
+                    if resolved_metrics_urls
+                    else None
+                ),
                 "min_inflight": args.adaptive_min_inflight,
                 "max_inflight": args.adaptive_max_inflight,
                 "queue_threshold": args.adaptive_queue_threshold,
@@ -3160,7 +3209,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             try:
                 adaptive_config = _build_adaptive_config(
                     scheduling_policy=args.scheduling_policy,
-                    metrics_url=args.model_metrics_url,
+                    metrics_urls=resolved_metrics_urls,
                     trace_events=control_trace_events,
                     min_window=min_window,
                     max_window=args.controller_max_window,
@@ -3361,8 +3410,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             if args.flush_policy == "queue_adaptive":
                 flush_observation_provider = NonBlockingMetricsObservationProvider(
                     lambda: (
-                        _service_metrics_snapshot(args.model_metrics_url)
-                        if args.model_metrics_url
+                        _service_metrics_snapshot(resolved_metrics_urls)
+                        if resolved_metrics_urls
                         else None
                     ),
                     poll_interval_s=0.25,
@@ -3523,7 +3572,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 trace_events=trace_events,
             )
 
-        vllm_metrics_after = scrape_prometheus_metrics(args.model_metrics_url) if args.model_metrics_url else {}
+        vllm_metrics_after = _scrape_model_metrics(resolved_metrics_urls)
         write_timer = StageTimer.start("writeback")
         if args.operator == "ai_complete":
             written_rows = write_completions(conn, operator_results, args.writeback_mode, args.write_batch_rows)

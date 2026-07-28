@@ -444,9 +444,9 @@ def gpu_metadata() -> dict[str, str]:
             "gpu_memory_total_mib": "",
             "gpu_power_w": "",
         }
-    first_line = completed.stdout.strip().splitlines()[0] if completed.stdout.strip() else ""
-    parts = [part.strip() for part in first_line.split(",")]
-    if len(parts) != 5:
+    lines = completed.stdout.strip().splitlines()
+    rows = [[part.strip() for part in line.split(",")] for line in lines]
+    if not rows or any(len(parts) != 5 for parts in rows):
         return {
             "gpu_metrics_status": "unavailable:unexpected_nvidia_smi_output",
             "gpu_name": "",
@@ -455,19 +455,42 @@ def gpu_metadata() -> dict[str, str]:
             "gpu_memory_total_mib": "",
             "gpu_power_w": "",
         }
-    power_value = parts[4]
-    if power_value.lower() in {
+    unsupported_power = {
         "n/a",
         "[n/a]",
         "not supported",
         "[not supported]",
-    }:
-        power_value = ""
+    }
+    power_values = [
+        float(parts[4])
+        for parts in rows
+        if parts[4].lower() not in unsupported_power
+    ]
+    if len(rows) == 1:
+        parts = rows[0]
+        return {
+            "gpu_metrics_status": "snapshot",
+            "gpu_name": parts[0],
+            "gpu_utilization_pct": parts[1],
+            "gpu_memory_used_mib": parts[2],
+            "gpu_memory_total_mib": parts[3],
+            "gpu_power_w": (
+                parts[4]
+                if parts[4].lower() not in unsupported_power
+                else ""
+            ),
+        }
     return {
         "gpu_metrics_status": "snapshot",
-        "gpu_name": parts[0],
-        "gpu_utilization_pct": parts[1],
-        "gpu_memory_used_mib": parts[2],
-        "gpu_memory_total_mib": parts[3],
-        "gpu_power_w": power_value,
+        "gpu_name": ";".join(parts[0] for parts in rows),
+        "gpu_utilization_pct": str(
+            sum(float(parts[1]) for parts in rows) / len(rows)
+        ),
+        "gpu_memory_used_mib": str(
+            sum(float(parts[2]) for parts in rows)
+        ),
+        "gpu_memory_total_mib": str(
+            sum(float(parts[3]) for parts in rows)
+        ),
+        "gpu_power_w": str(sum(power_values)) if power_values else "",
     }

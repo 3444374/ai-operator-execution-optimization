@@ -350,6 +350,23 @@ vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 4000000000000
         self.assertEqual(snapshot["gpu_metrics_status"], "snapshot")
         self.assertEqual(snapshot["gpu_power_w"], "")
 
+    def test_gpu_metadata_aggregates_all_visible_gpus(self) -> None:
+        with patch("src.metrics.subprocess.run") as run:
+            run.return_value = SimpleNamespace(
+                stdout=(
+                    "NVIDIA Test, 80, 1000, 8000, 120\n"
+                    "NVIDIA Test, 60, 2000, 8000, 100\n"
+                )
+            )
+
+            snapshot = gpu_metadata()
+
+        self.assertEqual(snapshot["gpu_name"], "NVIDIA Test;NVIDIA Test")
+        self.assertEqual(snapshot["gpu_utilization_pct"], "70.0")
+        self.assertEqual(snapshot["gpu_memory_used_mib"], "3000.0")
+        self.assertEqual(snapshot["gpu_memory_total_mib"], "16000.0")
+        self.assertEqual(snapshot["gpu_power_w"], "220.0")
+
 
 if __name__ == "__main__":
     unittest.main()

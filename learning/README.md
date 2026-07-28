@@ -1,5 +1,20 @@
 # Learning Notes
 
+## 2026-07-28 双 endpoint 指标与并发语义
+
+多 endpoint 实验里的 `max_inflight` 是整个调度器的 submission 上限，不是
+每个 endpoint 各自的上限。因此，单 endpoint 的 K=16 若要做保持“每卡 K=16”
+的双 endpoint 诊断，首先应检查全局 K=32，而不能直接复用 K=16。一个
+submission 还可能包含多行 prompt；只有整批 HTTP 响应完成后，该 submission
+才释放 admission slot，这与真正的 request-level continuous replenishment
+仍有区别。
+
+`least_queued` 现在把调度器已提交但尚未完成的 endpoint-local submission
+计入负载，不再对静态全零拓扑反复选择第一个 endpoint。双 endpoint 采集应使用
+`--model-metrics-urls` 传入两个 vLLM Prometheus 地址，否则单地址 counters
+只能代表一个 endpoint。GPU 利用率取所有可见 GPU 的均值，显存和功耗取系统
+总量；这些口径用于解释双卡系统，不应和旧的“仅第一张 GPU”记录直接混算。
+
 ## 2026-07-26 Ray endpoint 与 actor worker 执行契约
 
 一个 service endpoint 是独立的 HTTP 模型服务地址；一个 Ray actor worker 是向该
