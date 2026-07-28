@@ -72,8 +72,6 @@
     "${COMPLETION_MODEL}",
     "--cost-tokenizer-id",
     "${COMPLETION_MODEL}",
-    "--ray-worker-num-cpus",
-    "0.5",
     "--arrival-replay",
     "--arrival-time-scale",
     "0.001",
@@ -117,7 +115,9 @@
         "--actor-workers-per-endpoint",
         "1",
         "--ray-actor-max-concurrency",
-        "256"
+        "256",
+        "--ray-worker-num-cpus",
+        "0.5"
       ]
     },
     {
@@ -126,7 +126,9 @@
         "--actor-workers-per-endpoint",
         "2",
         "--ray-actor-max-concurrency",
-        "128"
+        "128",
+        "--ray-worker-num-cpus",
+        "0.25"
       ]
     },
     {
@@ -135,7 +137,9 @@
         "--actor-workers-per-endpoint",
         "4",
         "--ray-actor-max-concurrency",
-        "64"
+        "64",
+        "--ray-worker-num-cpus",
+        "0.125"
       ]
     }
   ]

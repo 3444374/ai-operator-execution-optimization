@@ -487,7 +487,8 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
    65K 写成正式控制点；
 3. 在选定饱和点固定每 endpoint 256 actor slots，比较
    1×256/2×128/4×64。16-slot 草案按当前 332 work/request 与
-   1337 work/organization-batch 估算会严重欠载，已在启动前否决；
+   1337 work/organization-batch 估算会严重欠载，已在启动前否决；三个
+   arm 的每 endpoint Ray CPU reservation 同时固定为 0.5；
 4. 固定最佳 pool、planning budget 和 active work，比较 whole batch、
    complete-row service quantum 512/1024/2048/4096 与 request diagnostic。
    8192 大于当前组织批次最大 work≈5892，会退化为 batch control，故删除；

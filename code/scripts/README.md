@@ -99,7 +99,7 @@ utilization；submission trace 另记 worker ID/index/PID 供归因。
 双 GPU 饱和后门禁使用两份隔离模板：
 
 - `deploy/autodl/dual_gpu_actor_pool_shape.example.json` 固定每 endpoint
-  256 slots，比 1×256/2×128/4×64；
+  256 slots 和 0.5 Ray CPU reservation，比 1×256/2×128/4×64；
 - `deploy/autodl/dual_gpu_service_quantum.example.json` 固定所选 pool、active
   work 与 planning budget，比 batch、512/1024/2048/4096 quantum 和 request
   diagnostic。

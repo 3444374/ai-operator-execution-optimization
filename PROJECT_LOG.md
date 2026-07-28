@@ -26,7 +26,9 @@
   平均约 332 work、组织批次平均约 1337 work，16 slot 只能暴露约 5.3K/21K
   work，低于 65K–131K 饱和扫描范围，会再次把 offered load 差异误写成策略
   收益。Actor Pool 模板改为固定每 endpoint 256 slot 的
-  1×256/2×128/4×64，并沿用 request-level 饱和基线。
+  1×256/2×128/4×64，并沿用 request-level 饱和基线；每 endpoint 的 Ray
+  CPU reservation 同时固定为 0.5（每 actor 0.5/0.25/0.125），避免拓扑
+  对照混入总 CPU 资源变化。
 - 新增 `dual_gpu_actor_pool_shape.example.json` 和
   `dual_gpu_service_quantum.example.json`。后者按实测组织批次
   P95≈3366、max≈5892 选择 512/1024/2048/4096；删除 8192，因为它不会

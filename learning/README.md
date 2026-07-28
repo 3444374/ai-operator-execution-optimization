@@ -26,7 +26,9 @@ Ray actor pool 的另一个独立问题是“有多少客户端 worker、每个 
 1337 work；16 slot 只能暴露约 5.3K 或 21K work，远低于正在标定的饱和区。
 因此正式对照改为 1×256、2×128、4×64：每 endpoint 总 slots 都是 256，
 既保持 Checkpoint A 的饱和负载能力，又不会把“偷偷增加 offered load”误判为
-更多 actor 带来的收益。least-active-work 只改变这些固定 slots 如何分到 worker。
+更多 actor 带来的收益。每 endpoint 的 Ray CPU reservation 也固定为 0.5，
+每 actor 分别使用 0.5/0.25/0.125，避免 actor 数增加时同时增加 placement
+资源。least-active-work 只改变这些固定 slots 如何分到 worker。
 
 这里的 slot-held 时间从 Ray 提交持续到结果完成，包含 Ray、HTTP 和模型服务
 等待；它不是 GPU kernel 利用率。GPU 是否填满仍要看 vLLM queue/running、

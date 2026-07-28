@@ -898,6 +898,8 @@ Expected: focused tests pass and legacy callable submitters remain compatible.
 
 **Interfaces:**
 - Pool-shape arms: `1x256`, `2x128`, `4x64`, fixed 256 slots per endpoint.
+- Pool-shape arms also keep total Ray CPU reservation fixed at 0.5 per
+  endpoint: 0.5/0.25/0.125 CPU per actor respectively.
 - Quantum arms: whole planning batch, fixed candidates, one-row diagnostic.
 - Uses new output directories; never resumes the contaminated fixed-work curve.
 

@@ -85,6 +85,7 @@ class ExperimentScenarioTests(unittest.TestCase):
             "ACTIVE_WORK_PER_ENDPOINT": "65536",
             "ACTOR_WORKERS_PER_ENDPOINT": "2",
             "RAY_ACTOR_MAX_CONCURRENCY": "128",
+            "RAY_WORKER_NUM_CPUS": "0.25",
             "CAPACITY_PROBE_TOKEN_BUDGET": "32768",
             "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
             "VLLM_MAX_NUM_SEQS": "256",
@@ -201,9 +202,12 @@ class ExperimentScenarioTests(unittest.TestCase):
                 concurrency_index = scenario.args.index(
                     "--ray-actor-max-concurrency"
                 )
+                cpu_index = scenario.args.index("--ray-worker-num-cpus")
                 workers = int(scenario.args[workers_index + 1])
                 concurrency = int(scenario.args[concurrency_index + 1])
+                worker_cpus = float(scenario.args[cpu_index + 1])
                 self.assertEqual(workers * concurrency, 256)
+                self.assertEqual(workers * worker_cpus, 0.5)
 
             service_quantum = _load_config(
                 CODE_ROOT.parent
@@ -220,6 +224,9 @@ class ExperimentScenarioTests(unittest.TestCase):
             concurrency_index = service_quantum.common_args.index(
                 "--ray-actor-max-concurrency"
             )
+            cpu_index = service_quantum.common_args.index(
+                "--ray-worker-num-cpus"
+            )
             self.assertEqual(
                 int(service_quantum.common_args[work_index + 1]),
                 65536,
@@ -228,6 +235,11 @@ class ExperimentScenarioTests(unittest.TestCase):
                 int(service_quantum.common_args[workers_index + 1])
                 * int(service_quantum.common_args[concurrency_index + 1]),
                 256,
+            )
+            self.assertEqual(
+                int(service_quantum.common_args[workers_index + 1])
+                * float(service_quantum.common_args[cpu_index + 1]),
+                0.5,
             )
             self.assertEqual(
                 [item.scenario_id for item in service_quantum.scenarios],

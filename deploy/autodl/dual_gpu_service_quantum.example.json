@@ -77,7 +77,7 @@
     "--ray-actor-max-concurrency",
     "${RAY_ACTOR_MAX_CONCURRENCY}",
     "--ray-worker-num-cpus",
-    "0.5",
+    "${RAY_WORKER_NUM_CPUS}",
     "--arrival-replay",
     "--arrival-time-scale",
     "0.001",

@@ -672,6 +672,8 @@ export ACTIVE_WORK_PER_ENDPOINT=<checkpoint_a_selected_work>
 # 由 pool shape 的正式重复选择；三组合法值分别为 1/256、2/128、4/64
 export ACTOR_WORKERS_PER_ENDPOINT=<selected_workers>
 export RAY_ACTOR_MAX_CONCURRENCY=<selected_concurrency>
+# 与所选 pool arm 一致：1/2/4 workers 对应 0.5/0.25/0.125
+export RAY_WORKER_NUM_CPUS=<selected_per_actor_cpu>
 ```
 
 先按本 runbook 的 gate 规则，从 pool 模板机械缩为 64 行且保留全部三个 pool
@@ -680,6 +682,11 @@ planning-batch、一个 fixed quantum 和 request diagnostic，核对 request/
 submission/resource trace、worker ID/index/PID、每 endpoint 256 slots、
 exactly-once、零 failure 和 lease cleanup。两个正式矩阵使用不同的全新输出目录，
 串行运行，禁止在同一目录 resume 另一份配置。
+
+Pool-shape 模板还固定每 endpoint 的 Ray CPU reservation 为 0.5：
+1×0.5、2×0.25、4×0.125。该值是 Ray placement/resource 契约，不等同于操作
+系统 CPU 利用率；若任一 arm 因集群最小 fractional resource 限制无法创建，
+gate 直接失败并记录 incident，不能只为该 arm 临时增加总 CPU 配额。
 
 已完成的 1024–32768 曲线只能记作 offered-load 诊断：固定的是每 endpoint
 四个 batch，而平均每 batch 行数约从 2.3 增至 64，所以可供给的 request
