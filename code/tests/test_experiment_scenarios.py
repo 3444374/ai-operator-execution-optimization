@@ -6,7 +6,7 @@ import os
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
@@ -19,7 +19,9 @@ from src.experiment_scenarios import (  # noqa: E402
 from scripts.run_ai_operator_scenarios import (  # noqa: E402
     RunnerOptions,
     _load_config,
+    parse_args,
     run_experiment,
+    wait_for_idle,
 )
 
 
@@ -40,6 +42,80 @@ class ExperimentScenarioTests(unittest.TestCase):
 
     def test_service_metadata_requires_execution_parameters(self) -> None:
         validate_service_metadata(self._complete_service_metadata())
+
+    def test_parse_args_rejects_empty_metrics_url_list(self) -> None:
+        with self.assertRaises(SystemExit):
+            parse_args(
+                [
+                    "--config",
+                    "config.json",
+                    "--profiler",
+                    "profiler.py",
+                    "--python-executable",
+                    sys.executable,
+                    "--output-dir",
+                    "output",
+                    "--health-url",
+                    "http://health",
+                    "--metrics-urls",
+                    " , ",
+                ]
+            )
+
+    def test_wait_for_idle_reports_metrics_fetch_failure(self) -> None:
+        health_response = MagicMock()
+        health_response.__enter__.return_value.status = 200
+        health_response.__exit__.return_value = False
+        with (
+            patch(
+                "scripts.run_ai_operator_scenarios.request.urlopen",
+                side_effect=[health_response, OSError("metrics unavailable")],
+            ),
+            patch(
+                "scripts.run_ai_operator_scenarios.time.monotonic",
+                side_effect=[0.0, 0.0, 2.0],
+            ),
+            patch("scripts.run_ai_operator_scenarios.time.sleep"),
+        ):
+            with self.assertRaisesRegex(
+                TimeoutError,
+                "metrics_at_http://metrics:OSError",
+            ):
+                wait_for_idle(
+                    "http://health",
+                    ("http://metrics",),
+                    timeout_s=1.0,
+                )
+
+    def test_wait_for_idle_requires_both_idle_metrics(self) -> None:
+        health_response = MagicMock()
+        health_response.__enter__.return_value.status = 200
+        health_response.__exit__.return_value = False
+        metrics_response = MagicMock()
+        metrics_response.__enter__.return_value.read.return_value = (
+            b"vllm:num_requests_running 0\n"
+        )
+        metrics_response.__exit__.return_value = False
+        with (
+            patch(
+                "scripts.run_ai_operator_scenarios.request.urlopen",
+                side_effect=[health_response, metrics_response],
+            ),
+            patch(
+                "scripts.run_ai_operator_scenarios.time.monotonic",
+                side_effect=[0.0, 0.0, 2.0],
+            ),
+            patch("scripts.run_ai_operator_scenarios.time.sleep"),
+        ):
+            with self.assertRaisesRegex(
+                TimeoutError,
+                "missing_idle_metrics_at_http://metrics",
+            ):
+                wait_for_idle(
+                    "http://health",
+                    ("http://metrics",),
+                    timeout_s=1.0,
+                )
 
     def test_service_metadata_rejects_each_missing_required_key(self) -> None:
         for key in self._complete_service_metadata():

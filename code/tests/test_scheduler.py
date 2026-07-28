@@ -10,6 +10,7 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.scheduling.admission import StaticAdmissionController  # noqa: E402
 from src.scheduling.models import (  # noqa: E402
+    AdmissionDecision,
     BatchRequest,
     CollectedSubmission,
     EndpointSnapshot,
@@ -106,6 +107,37 @@ class SequenceClock:
 
 
 class SchedulerTests(unittest.TestCase):
+    def test_scheduler_fails_when_initial_admission_cannot_progress(self) -> None:
+        class AlwaysDenyAdmission:
+            limit = 1
+
+            def decide(
+                self,
+                inflight: int,
+                *,
+                hol_age_s: float | None = None,
+            ) -> AdmissionDecision:
+                del inflight, hol_age_s
+                return AdmissionDecision(
+                    False,
+                    self.limit,
+                    "hold",
+                    "synthetic",
+                )
+
+        scheduler = SynchronousScheduler(
+            AlwaysDenyAdmission(),
+            RoundRobinEndpointRouter(),
+            FakeSubmissionAdapter(),
+            "default",
+        )
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "no in-flight submission",
+        ):
+            scheduler.run([envelope(0)], topology())
+
     def test_scheduler_completes_each_request_once_with_bounded_inflight(self) -> None:
         adapter = FakeSubmissionAdapter()
         scheduler = SynchronousScheduler(

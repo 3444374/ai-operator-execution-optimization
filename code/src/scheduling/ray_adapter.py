@@ -115,16 +115,29 @@ class RaySubmissionAdapter:
             num_returns=1,
         )
         wait_s = time.perf_counter() - wait_start
-        handle = ready[0]
-        matches = [envelope for item, envelope in pending if item == handle]
+        ready_handle = ready[0]
+        matches = [
+            (item, envelope)
+            for item, envelope in pending
+            if item == ready_handle
+        ]
         if len(matches) != 1:
             raise RuntimeError("Ray returned an unknown or duplicate pending handle")
+        # Return the canonical object stored in ``pending``. Ray normally
+        # returns the same ObjectRef instance, but the scheduler deliberately
+        # uses identity matching so equal-valued duplicate handles cannot
+        # remove the wrong submission.
+        handle, matched_envelope = matches[0]
         result_start = time.perf_counter()
-        result = self.ray_module.get(handle)
+        result = self.ray_module.get(ready_handle)
         result_s = time.perf_counter() - result_start
         return CollectedSubmission(
             handle,
-            SubmissionCompletion(matches[0].request.request_id, "completed", result=result),
+            SubmissionCompletion(
+                matched_envelope.request.request_id,
+                "completed",
+                result=result,
+            ),
             wait_s,
             result_s,
         )

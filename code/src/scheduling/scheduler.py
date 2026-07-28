@@ -107,20 +107,23 @@ class SynchronousScheduler:
         bounded_wait_samples: list[float] = []
         fanin_s = 0.0
         submit_s = 0.0
-        _MAX_ADMISSION_WAIT_LOOPS = 10_000
 
         for envelope in envelopes:
             request_id = envelope.request.request_id
             if request_id in submission_order:
                 raise ValueError(f"duplicate request_id: {request_id}")
             submission_order[request_id] = len(submission_order)
-            _admission_loops = 0
             while True:
                 hol_age_s = self._head_of_line_age_s(submission_context)
                 if self.admission.decide(
                     len(pending), hol_age_s=hol_age_s
                 ).allowed:
                     break
+                if not pending:
+                    raise RuntimeError(
+                        "admission denied with no in-flight submission to "
+                        "collect; the controller cannot make progress"
+                    )
                 collected = self._collect_one(
                     pending,
                     completions,
@@ -129,12 +132,6 @@ class SynchronousScheduler:
                 )
                 bounded_wait_samples.append(collected.wait_s)
                 fanin_s += collected.result_s
-                _admission_loops += 1
-                if _admission_loops >= _MAX_ADMISSION_WAIT_LOOPS:
-                    raise RuntimeError(
-                        f"admission denied {_admission_loops} consecutive times "
-                        f"with {len(pending)} inflight — likely a dead scheduler"
-                    )
             pool_id = (
                 self.pool_router.route(
                     envelope.request,

@@ -101,6 +101,22 @@ boundaries.
 
 本目录用于把项目实验、代码和术语讲成学习材料。
 
+## 2026-07-28 最近提交审计：trace 与调度进展保证
+
+- token budget 决定“一个组织批次最多容纳多少 token”，`ray_batch_rows`
+  仍是独立的行数上限；显式配置为 1 时，每批只有一行并不是 token budget 太小。
+- admission controller 拒绝请求时，只有存在 in-flight submission 才能通过
+  fan-in 释放 credit。零在途仍拒绝属于控制器无法推进，应立即报错，不能对空列表
+  调用 `ray.wait`。
+- Ray 返回的 ready handle 先按相等语义定位，再转换成 pending 列表中的规范对象；
+  scheduler 使用对象身份删除，避免“值相等的重复 handle”误删提交。
+- control trace 必须写入控制器实际读取的 `hol_age_s`；request 粒度的 submission
+  trace 必须沿用真实 lifecycle ID，并记录 endpoint/GPU，不能伪装成 batch ID。
+- 当前 HOL 信号实际是“最老 in-flight submission 的年龄”，包含正常模型服务时间，
+  不是纯 Ray 排队时间。因此 7B 单请求服务约 4–5 秒时，3 秒 congestion threshold
+  会把正常服务误判为拥塞；它只能作为诊断候选，后续应改为 oldest-request slack、
+  token backlog 与 arrival/service EWMA 的联合信号。
+
 正式 CSV、严谨结果报告和论文式结论仍放在：
 
 ```text

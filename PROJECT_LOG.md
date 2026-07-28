@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-07-28 近两日代码审计与 profiler trace 边界拆分
+
+- 按 7 月 27–28 日提交链审查 profiler、typed scheduler、Ray adapter、场景 runner、
+  K_max runner、指标与部署脚本；保留已确认的项目进度与实验结论，不把旧 warm-up
+  重新解释为 request-level 证据。
+- 修复场景 runner idle gate：空 metrics URL、缺失 running/waiting gauge 或抓取异常
+  均不能被判为 idle，且错误原因不再引用未赋值局部变量。
+- 修复 scheduler 零在途拒绝准入时的空 fan-in；Ray adapter 将 ready ref 规范化为
+  pending 中的原对象，保持 identity 删除契约。
+- 将五类 trace CSV 序列化从主 profiler 拆到 `code/src/profile_traces.py`。control
+  schema 2 补写实际 `hol_age_s`；submission schema 3 使用真实 request/batch lifecycle
+  ID，并补 pool、endpoint、GPU、status、error，避免 request 粒度实验被伪 batch ID
+  误导。
+- K_max runner 增加多 endpoint/metrics URL 清洗、数量一致性与正 K 值校验。
+
 ## 2026-07-28 双 4090 配置审计、MFU 口径与 AutoDL 配置化
 
 - 现场确认 7B `replenish` warm-up 误用了 `ray_batch_rows=1` 且仍为

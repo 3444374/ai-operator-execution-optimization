@@ -13,6 +13,47 @@ from scripts import run_kmax_interference_experiment as experiment  # noqa: E402
 
 
 class KmaxInterferenceScriptTests(unittest.TestCase):
+    def test_multi_endpoint_urls_are_trimmed_and_cardinality_checked(self) -> None:
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_kmax_interference_experiment",
+                "--endpoint-urls",
+                " http://gpu0/v1/completions , http://gpu1/v1/completions ",
+                "--metrics-urls",
+                " http://gpu0/metrics , http://gpu1/metrics ",
+            ],
+        ):
+            args = experiment.parse_args()
+
+        command = experiment.profile_command(
+            args,
+            experiment_id="dual",
+            total_rows=1,
+            ray_batch_rows=1,
+            max_inflight=1,
+            output="output.csv",
+            completion_max_tokens=1,
+        )
+
+        self.assertEqual(
+            command[command.index("--completion-endpoint-urls") + 1],
+            "http://gpu0/v1/completions,http://gpu1/v1/completions",
+        )
+
+        args.metrics_urls = "http://gpu0/metrics"
+        with self.assertRaisesRegex(ValueError, "count must equal"):
+            experiment.profile_command(
+                args,
+                experiment_id="invalid",
+                total_rows=1,
+                ray_batch_rows=1,
+                max_inflight=1,
+                output="output.csv",
+                completion_max_tokens=1,
+            )
+
     def test_default_outputs_use_new_schema_version_without_overwriting_history(
         self,
     ) -> None:

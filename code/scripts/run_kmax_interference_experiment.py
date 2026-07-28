@@ -113,16 +113,18 @@ def parse_args() -> argparse.Namespace:
 def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows: int, ray_batch_rows: int,
                     max_inflight: int, output: str, completion_max_tokens: int,
                     scheduling_policy: str = "static") -> list[str]:
-    endpoint_url_arg = (
-        args.endpoint_urls.split(",")
-        if args.endpoint_urls
-        else [args.endpoint_url]
+    endpoint_url_arg = _split_urls(
+        args.endpoint_urls or args.endpoint_url,
+        "endpoint URLs",
     )
-    metrics_url_arg = (
-        args.metrics_urls.split(",")
-        if args.metrics_urls
-        else [args.metrics_url]
+    metrics_url_arg = _split_urls(
+        args.metrics_urls or args.metrics_url,
+        "metrics URLs",
     )
+    if len(metrics_url_arg) != len(endpoint_url_arg):
+        raise ValueError(
+            "metrics URL count must equal completion endpoint URL count"
+        )
     command = [
         sys.executable,
         str(PROFILE_SCRIPT),
@@ -289,6 +291,13 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
     return command
 
 
+def _split_urls(text: str, label: str) -> list[str]:
+    values = [value.strip() for value in text.split(",") if value.strip()]
+    if not values:
+        raise ValueError(f"{label} must contain at least one non-empty URL")
+    return values
+
+
 def parse_kmax_values(text: str) -> list[tuple[int, str]]:
     values = []
     for item in text.split(","):
@@ -299,6 +308,8 @@ def parse_kmax_values(text: str) -> list[tuple[int, str]]:
             values.append((100000, "bulk_unbounded"))
         else:
             value = int(cleaned)
+            if value <= 0:
+                raise ValueError("K_max values must be positive")
             values.append((value, f"bulk_k{value}"))
     return values
 
@@ -317,6 +328,8 @@ def build_scenarios(args: argparse.Namespace) -> list[tuple[int, str, str]]:
         scenarios.append((args.controller_max_window, "bulk_aimd", "aimd"))
     if args.include_aimd_hol:
         scenarios.append((args.controller_max_window, "bulk_aimd_hol", "aimd_hol"))
+    if not scenarios:
+        raise ValueError("at least one interference scenario is required")
     return scenarios
 
 

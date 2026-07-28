@@ -109,15 +109,18 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
     args = parser.parse_args(argv)
     if not math.isfinite(args.idle_timeout_s) or args.idle_timeout_s <= 0:
         parser.error("--idle-timeout-s must be finite and positive")
+    metrics_urls = tuple(
+        url.strip() for url in args.metrics_urls.split(",") if url.strip()
+    )
+    if not metrics_urls:
+        parser.error("--metrics-urls must contain at least one non-empty URL")
     return RunnerOptions(
         config_path=args.config,
         profiler_path=args.profiler,
         python_executable=args.python_executable,
         output_dir=args.output_dir,
         health_url=args.health_url,
-        metrics_urls=tuple(
-            url.strip() for url in args.metrics_urls.split(",") if url.strip()
-        ),
+        metrics_urls=metrics_urls,
         idle_timeout_s=args.idle_timeout_s,
         resume=args.resume,
         skip_failed_scenarios=args.skip_failed_scenarios,
@@ -127,8 +130,10 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
 def run_experiment(
     options: RunnerOptions,
     *,
-    idle_gate: Callable[[str, str, float], None] | None = None,
+    idle_gate: Callable[[str, tuple[str, ...], float], None] | None = None,
 ) -> int:
+    if not options.metrics_urls:
+        raise ValueError("at least one model metrics URL is required")
     config = _load_config(options.config_path)
     if options.skip_failed_scenarios and not options.resume:
         raise ValueError("--skip-failed-scenarios requires --resume")
@@ -384,25 +389,34 @@ def wait_for_idle(
             healthy = False
             last_reason = f"health:{type(exc).__name__}"
         if healthy:
-            try:
-                all_idle = True
-                for metrics_url in metrics_urls:
+            all_idle = True
+            for metrics_url in metrics_urls:
+                try:
                     with request.urlopen(metrics_url, timeout=2.0) as response:
                         metrics = parse_prometheus_metrics(
                             response.read().decode("utf-8", errors="replace")
                         )
                     running = metrics.get("vllm:num_requests_running")
                     waiting = metrics.get("vllm:num_requests_waiting")
+                    if running is None or waiting is None:
+                        all_idle = False
+                        last_reason = f"missing_idle_metrics_at_{metrics_url}"
+                        break
                     if running != 0 or waiting != 0:
                         all_idle = False
-                        last_reason = f"busy_at_{metrics_url}"
+                        last_reason = (
+                            f"busy_at_{metrics_url}:"
+                            f"running={running},waiting={waiting}"
+                        )
                         break
-            except (OSError, error.URLError) as exc:
-                all_idle = False
-                last_reason = f"metrics:{type(exc).__name__}"
+                except (OSError, error.URLError) as exc:
+                    all_idle = False
+                    last_reason = (
+                        f"metrics_at_{metrics_url}:{type(exc).__name__}"
+                    )
+                    break
             if all_idle:
                 return
-            last_reason = f"running={running}, waiting={waiting}"
         time.sleep(0.25)
     raise TimeoutError(f"model service did not become idle: {last_reason}")
 

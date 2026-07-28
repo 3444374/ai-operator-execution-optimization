@@ -18,6 +18,14 @@ class FakeRef:
         self.value = value
 
 
+class EqualButDistinctRef(FakeRef):
+    def __eq__(self, other):
+        return (
+            isinstance(other, EqualButDistinctRef)
+            and self.value == other.value
+        )
+
+
 class FakeRay:
     @staticmethod
     def wait(refs, num_returns):
@@ -102,6 +110,25 @@ class RaySubmissionAdapterTests(unittest.TestCase):
         self.assertEqual(collected.completion.result, {"payload": "payload"})
         self.assertGreaterEqual(collected.wait_s, 0.0)
         self.assertGreaterEqual(collected.result_s, 0.0)
+
+    def test_collect_returns_canonical_pending_handle(self) -> None:
+        pending_handle = EqualButDistinctRef("result")
+
+        class CopyingRay:
+            @staticmethod
+            def wait(refs, num_returns):
+                del num_returns
+                return [EqualButDistinctRef(refs[0].value)], []
+
+            @staticmethod
+            def get(ref):
+                return ref.value
+
+        adapter = RaySubmissionAdapter(CopyingRay, {})
+        collected = adapter.wait_one([(pending_handle, envelope())])
+
+        self.assertIs(collected.handle, pending_handle)
+        self.assertEqual(collected.completion.result, "result")
 
     def test_submit_rejects_unknown_endpoint(self) -> None:
         adapter = RaySubmissionAdapter(FakeRay, {})

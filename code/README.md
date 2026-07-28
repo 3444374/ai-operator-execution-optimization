@@ -26,6 +26,7 @@ code/
 │   ├── model_backends.py                 ← fake / compatible HTTP embedding and completion backend
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
+│   ├── profile_traces.py                 ← profiler trace 的版本化 CSV 序列化边界
 │   ├── workloads.py                      ← 内置 synthetic / controlled workload seed
 │   └── scheduling/                       ← typed scheduling core、topology、static admission/routing
 ├── tests/
@@ -51,7 +52,7 @@ ruff check code
 ```
 
 `pyproject.toml` 先启用仓库现状能够全量通过的 correctness lint。完整 import
-排序和 `ruff format` 将与 4000 行 profiler 的后续模块拆分一起推进，避免在
+排序和 `ruff format` 将与 profiler 的后续模块拆分一起推进，避免在
 机制修复提交中混入大面积无语义格式 diff。新代码仍按 100 列、4 空格缩进和
 双引号格式编写。
 
@@ -92,6 +93,11 @@ now lives under `code/src/`:
   output against dry-run keys before database or GPU work. Empty files receive
   a header; non-empty files reject appended rows whose ordered keys do not
   exactly match the existing header.
+- `profile_traces.py`: versioned control/flush/submission/request/resource CSV
+  serializers. Control schema 2 records the actual `hol_age_s` input;
+  submission schema 3 uses scheduler lifecycle IDs and records pool,
+  endpoint, GPU, status, and error instead of synthesizing batch IDs for
+  request-granularity runs.
 - `workloads.py`: small built-in seed workloads for smoke/dev only.
 - `scheduling/`: engine-independent scheduling metadata and policies. The
   formal payload/execution path remains Daft -> Arrow -> Ray.

@@ -1219,6 +1219,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 reason="low_load",
                 allowed=True,
                 sample_age_s=0.1,
+                hol_age_s=0.25,
             ),
             AdmissionTraceEvent(
                 observed_at_s=10.5,
@@ -1236,9 +1237,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         ]
         output = Path("control_trace.csv")
         captured_rows = []
-        with patch.object(
-            profile,
-            "append_metrics",
+        with patch(
+            "src.profile_traces.append_metrics",
             side_effect=lambda path, row: captured_rows.append((path, row)),
         ):
             profile._write_control_trace(
@@ -1262,6 +1262,9 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(rows[1]["controller_action"], "decrease")
         self.assertEqual(rows[0]["sample_age_s"], 0.1)
         self.assertEqual(rows[1]["sample_age_s"], "")
+        self.assertEqual(rows[0]["hol_age_s"], 0.25)
+        self.assertEqual(rows[1]["hol_age_s"], "")
+        self.assertEqual(rows[0]["schema_version"], 2)
         self.assertEqual(rows[1]["server_version"], "18.4")
         self.assertEqual(rows[1]["pgvector_version"], "0.8.2")
 
@@ -2563,6 +2566,17 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         "service_end_epoch_s": 100.2,
                     }
                 ],
+                submission_events=[
+                    SubmissionLifecycleEvent(
+                        submission_id="9:request:11",
+                        pool_id="default",
+                        endpoint_id="endpoint-1",
+                        gpu_id="1",
+                        submit_epoch_s=99.9,
+                        completion_epoch_s=100.2,
+                        status="completed",
+                    )
+                ],
             )
             profile._write_resource_trace(
                 resource_output,
@@ -2587,8 +2601,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 resource = list(csv.DictReader(handle))
 
             self.assertEqual(submission[0]["doc_ids"], "11;12")
-            self.assertEqual(submission[0]["schema_version"], "2")
-            self.assertEqual(submission[0]["submission_id"], "9:batch:0")
+            self.assertEqual(submission[0]["schema_version"], "3")
+            self.assertEqual(submission[0]["submission_id"], "9:request:11")
+            self.assertEqual(submission[0]["endpoint_id"], "endpoint-1")
+            self.assertEqual(submission[0]["gpu_id"], "1")
             self.assertEqual(submission[0]["job_id"], "9")
             self.assertEqual(submission[0]["server_version"], "18.4")
             self.assertEqual(submission[0]["pgvector_version"], "0.8.2")

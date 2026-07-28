@@ -62,6 +62,13 @@ from src.organizers import (
     packing_algorithm_name,
 )
 from src.packing import summarize_packing
+from src.profile_traces import (
+    write_control_trace as _write_control_trace,
+    write_flush_trace as _write_flush_trace,
+    write_request_trace as _write_request_trace,
+    write_resource_trace as _write_resource_trace,
+    write_submission_trace as _write_submission_trace,
+)
 from src.request_costs import (
     OutputCostMode,
     output_cost_source,
@@ -1544,213 +1551,6 @@ def _build_routing_config(
     }
 
 
-def _write_control_trace(
-    output_path: Path,
-    *,
-    experiment_id: str,
-    phase: str,
-    repeat_index: int,
-    job_id: int,
-    server_version: str,
-    pgvector_version: str,
-    controller_name: str,
-    trace_events: list,
-) -> None:
-    first_observed_at_s = (
-        trace_events[0].observed_at_s if trace_events else 0.0
-    )
-    for trace_index, event in enumerate(trace_events):
-        append_metrics(
-            output_path,
-            {
-                "schema_version": 1,
-                "experiment_id": experiment_id,
-                "phase": phase,
-                "repeat_index": repeat_index,
-                "job_id": job_id,
-                "server_version": server_version,
-                "pgvector_version": pgvector_version,
-                "controller": controller_name,
-                "trace_index": trace_index,
-                "elapsed_s": event.observed_at_s - first_observed_at_s,
-                "fresh": event.fresh,
-                "inflight": event.inflight,
-                "k_max": event.window,
-                "running": event.running if event.running is not None else "",
-                "waiting": event.waiting if event.waiting is not None else "",
-                "kv_usage": event.kv_usage if event.kv_usage is not None else "",
-                "sample_age_s": (
-                    event.sample_age_s
-                    if event.sample_age_s is not None
-                    else ""
-                ),
-                "controller_action": event.controller_action,
-                "reason": event.reason,
-                "allowed": event.allowed,
-            },
-        )
-
-
-def _write_flush_trace(
-    output_path: Path,
-    *,
-    experiment_id: str,
-    phase: str,
-    repeat_index: int,
-    job_id: int,
-    server_version: str,
-    pgvector_version: str,
-    flush_policy: str,
-    flush_timeout_ms: float,
-    flush_max_wait_ms: float,
-    arrival_time_scale: float,
-    trace_events: list,
-) -> None:
-    for trace_index, event in enumerate(trace_events):
-        append_metrics(
-            output_path,
-            {
-                "schema_version": 2,
-                "experiment_id": experiment_id,
-                "phase": phase,
-                "repeat_index": repeat_index,
-                "job_id": job_id,
-                "server_version": server_version,
-                "pgvector_version": pgvector_version,
-                "flush_policy": flush_policy,
-                "flush_timeout_ms": flush_timeout_ms,
-                "flush_max_wait_ms": flush_max_wait_ms,
-                "arrival_time_scale": arrival_time_scale,
-                "trace_index": trace_index,
-                "elapsed_s": event.elapsed_s,
-                "pending_rows": event.pending_rows,
-                "pending_tokens": event.pending_tokens,
-                "oldest_age_s": event.oldest_age_s,
-                "action": event.action,
-                "reason": event.reason,
-                "selected_wait_s": event.selected_wait_s,
-                "window_reason": event.window_reason,
-            },
-        )
-
-
-def _write_submission_trace(
-    output_path: Path,
-    *,
-    experiment_id: str,
-    phase: str,
-    repeat_index: int,
-    job_id: int,
-    server_version: str,
-    pgvector_version: str,
-    results: list[dict],
-) -> None:
-    for submission_index, result in enumerate(results):
-        append_metrics(
-            output_path,
-            {
-                "schema_version": 2,
-                "experiment_id": experiment_id,
-                "phase": phase,
-                "repeat_index": repeat_index,
-                "job_id": job_id,
-                "server_version": server_version,
-                "pgvector_version": pgvector_version,
-                "submission_index": submission_index,
-                "submission_id": f"{job_id}:batch:{submission_index}",
-                "doc_ids": ";".join(str(item) for item in result.get("doc_id", [])),
-                "rows": result.get("rows", 0),
-                "token_count": result.get("token_count", 0),
-                "input_token_count": result.get("input_token_count", 0),
-                "output_token_count": result.get("output_token_count", 0),
-                "service_s": result.get("service_s", 0.0),
-                "service_start_epoch_s": result.get("service_start_epoch_s", 0.0),
-                "service_end_epoch_s": result.get("service_end_epoch_s", 0.0),
-            },
-        )
-
-
-def _write_request_trace(
-    output_path: Path,
-    *,
-    experiment_id: str,
-    phase: str,
-    repeat_index: int,
-    scenario_id: str,
-    random_seed: int,
-    job_id: int,
-    server_version: str,
-    pgvector_version: str,
-    rows: list[RequestTraceRow] | tuple[RequestTraceRow, ...],
-) -> None:
-    for request_index, row in enumerate(rows):
-        append_metrics(
-            output_path,
-            {
-                "schema_version": 3,
-                "experiment_id": experiment_id,
-                "phase": phase,
-                "repeat_index": repeat_index,
-                "scenario_id": scenario_id,
-                "random_seed": random_seed,
-                "job_id": job_id,
-                "server_version": server_version,
-                "pgvector_version": pgvector_version,
-                "request_index": request_index,
-                "request_id": row.request_id,
-                "submission_id": row.submission_id,
-                "doc_id": row.doc_id,
-                "pool_id": row.pool_id,
-                "endpoint_id": row.endpoint_id,
-                "gpu_id": row.gpu_id,
-                "prompt_tokens": row.prompt_tokens,
-                "estimated_output_tokens": row.estimated_output_tokens,
-                "client_estimated_output_tokens": (
-                    row.client_estimated_output_tokens
-                    if row.client_estimated_output_tokens is not None
-                    else ""
-                ),
-                "actual_output_tokens": (
-                    row.actual_output_tokens
-                    if row.actual_output_tokens is not None
-                    else ""
-                ),
-                "output_token_source": row.output_token_source,
-                "total_tokens": (
-                    row.total_tokens if row.total_tokens is not None else ""
-                ),
-                "finish_reason": row.finish_reason or "",
-                "prefix_key": row.prefix_key,
-                "status": row.status,
-                "error_type": row.error_type,
-                "arrival_epoch_s": row.arrival_epoch_s,
-                "flush_epoch_s": row.flush_epoch_s,
-                "submit_epoch_s": row.submit_epoch_s,
-                "service_start_epoch_s": (
-                    row.service_start_epoch_s
-                    if row.service_start_epoch_s is not None
-                    else ""
-                ),
-                "completion_epoch_s": row.completion_epoch_s,
-                "buffer_s": row.buffer_s,
-                "submit_to_service_s": (
-                    row.submit_to_service_s
-                    if row.submit_to_service_s is not None
-                    else ""
-                ),
-                "service_s": row.service_s if row.service_s is not None else "",
-                "service_clock_domain": row.service_clock_domain,
-                "e2e_s": row.e2e_s,
-                "request_time_origin": row.request_time_origin,
-                "latency_granularity": row.latency_granularity,
-                "slo_target_s": (
-                    row.slo_target_s if row.slo_target_s is not None else ""
-                ),
-                "slo_met": row.slo_met if row.slo_met is not None else "",
-            },
-        )
-
-
 def _build_profiler_request_rows(
     seeds: list[RequestLifecycleSeed],
     submission_events: list[SubmissionLifecycleEvent],
@@ -1891,33 +1691,6 @@ def _request_trace_metrics(
         ),
         "latency_granularity": next(iter(granularities), ""),
     }
-
-
-def _write_resource_trace(
-    output_path: Path,
-    *,
-    experiment_id: str,
-    phase: str,
-    repeat_index: int,
-    job_id: int,
-    server_version: str,
-    pgvector_version: str,
-    samples: list[dict],
-) -> None:
-    for sample in samples:
-        append_metrics(
-            output_path,
-            {
-                "schema_version": 1,
-                "experiment_id": experiment_id,
-                "phase": phase,
-                "repeat_index": repeat_index,
-                "job_id": job_id,
-                "server_version": server_version,
-                "pgvector_version": pgvector_version,
-                **sample,
-            },
-        )
 
 
 def _resource_snapshot(metrics_urls: Sequence[str]) -> dict[str, object]:
@@ -3318,7 +3091,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     replay_envelopes=replay_envelopes,
                     submission_lifecycle_sink=(
                         submission_lifecycle_events
-                        if args.request_trace_output
+                        if (
+                            args.request_trace_output
+                            or args.submission_trace_output
+                        )
                         else None
                     ),
                     epoch_clock=lifecycle_epoch_clock,
@@ -3345,7 +3121,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     replay_envelopes=replay_envelopes,
                     submission_lifecycle_sink=(
                         submission_lifecycle_events
-                        if args.request_trace_output
+                        if (
+                            args.request_trace_output
+                            or args.submission_trace_output
+                        )
                         else None
                     ),
                     epoch_clock=lifecycle_epoch_clock,
@@ -3566,6 +3345,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 server_version=db_metadata["server_version"],
                 pgvector_version=db_metadata["pgvector_version"],
                 results=operator_results,
+                submission_events=(
+                    submission_lifecycle_events
+                    if submission_lifecycle_events
+                    else None
+                ),
             )
         resource_trace_path = args.resource_trace_output or ""
         if resource_trace_path:
