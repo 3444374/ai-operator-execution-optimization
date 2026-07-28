@@ -8,7 +8,7 @@
 |---|---|---|
 | `pgai/` | PostgreSQL + pgai AI 算子集成环境 | PostgreSQL、pgai 扩展、pgvector |
 | `postgres18.4/` | PostgreSQL 18.4 本地同构预演 | PostgreSQL 18.4、pgvector |
-| `autodl/` | AutoDL 云服务器部署指南（runbook） | 2× GPU、vLLM、PostgreSQL16+pgvector、Ray/Daft |
+| `autodl/` | AutoDL 云服务器部署指南与配置化脚本 | 2× GPU、vLLM、PostgreSQL18.4+pgvector、Ray/Daft |
 
 ## 使用
 
@@ -23,6 +23,8 @@ docker compose up -d
 ```
 
 每个子目录有独立的 `AGENTS.md`（规则）、`README.md`（详细说明）和 `compose.yaml`。
+AutoDL 使用 `autodl.env.example`、`download_model.sh` 和
+`start_endpoints.sh`，不使用 Docker Compose。
 
 ## 与其他目录的关系
 

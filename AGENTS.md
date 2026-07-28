@@ -44,13 +44,14 @@ PostgreSQL 18.3
 已有实验：GPU-backed AI_EMBED 预研链路（fine vs coalesced：operator/推理执行阶段约 37.5×、端到端约 13.4×；pgvector writeback 0.897s vs JSON 1.567s）+ vLLM + Qwen2.5-1.5B AI_COMPLETE baseline（已建立，详见 `experiments/results/local_vllm_qwen15b_baseline/`）。详细数据见 `motivation/results/gpu/`。CPU/fake 实验仅历史参考。
 
 当前缺口（vLLM baseline、Daft 文本接入、token-budget / K_max、flush
-跨负载与 2048 留出、本地单 GPU 联合消融、受控 prefix cache-off 实验和
-算子代价估计初版均已完成）：① Ray 上游 request-level continuous
-replenishment，消除 whole-submission completion barrier → ② oldest-request
-slack、token backlog 与 arrival/service EWMA 驱动的完整 adaptive flush →
+跨负载与 2048 留出、本地单 GPU 联合消融、受控 prefix cache-off 实验、
+算子代价估计初版和 request-level credit-release 代码均已完成）：
+① 在 2×4090 上按等价 offered load 正确重复验证 request-level continuous
+replenishment 与持久 Ray actor 路径 → ② oldest-request slack、token backlog
+与 arrival/service EWMA 驱动的完整 adaptive flush →
 ③ prefix cache 开启后的独立机制验证与 length-align 显式联合消融 →
-④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 多 endpoint / 多 GPU 在具备
-硬件后做真实验证 → ⑥ 代价模型增加独立时间段或新 workload 校准。当前证据
+④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 当前 2×4090 上完成多 endpoint /
+多 GPU formal 验证 → ⑥ 代价模型增加独立时间段或新 workload 校准。当前证据
 支持 sequential token-budget + static K8 + fixed 50ms；联合候选未显著优于
 独立拼接，当前 two-level adaptive 未显著优于 fixed-50，prefix-only 在
 cache-off 下无稳定收益。写回使用 PostgreSQL + pgvector

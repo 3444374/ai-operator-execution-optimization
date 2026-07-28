@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import math
+import os
 import re
 import subprocess
 import sys
@@ -29,6 +30,7 @@ from src.metrics import parse_prometheus_metrics  # noqa: E402
 
 
 _SCENARIO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
+_ENV_REFERENCE_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 _RUNNER_OWNED_FLAGS = {
     "--control-trace-output",
     "--experiment-id",
@@ -473,11 +475,33 @@ def _validate_argument_list(values, label: str) -> tuple[str, ...]:
         not isinstance(value, str) for value in values
     ):
         raise ValueError(f"{label} must be a list of strings")
-    for value in values:
+    expanded = tuple(
+        _expand_environment_references(value, label) for value in values
+    )
+    for value in expanded:
         flag = value.split("=", 1)[0]
         if flag in _RUNNER_OWNED_FLAGS:
             raise ValueError(f"{label} contains runner-owned flag {flag}")
-    return tuple(values)
+    return expanded
+
+
+def _expand_environment_references(value: str, label: str) -> str:
+    missing = sorted(
+        {
+            name
+            for name in _ENV_REFERENCE_PATTERN.findall(value)
+            if name not in os.environ
+        }
+    )
+    if missing:
+        raise ValueError(
+            f"{label} references unset environment variable(s): "
+            + ", ".join(missing)
+        )
+    return _ENV_REFERENCE_PATTERN.sub(
+        lambda match: os.environ[match.group(1)],
+        value,
+    )
 
 
 def _normalize_service_metadata(

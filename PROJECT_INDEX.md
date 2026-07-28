@@ -272,7 +272,7 @@
 | `code_doc/superpowers/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md` | 非阻塞 adaptive 观测、row-cap-first packing 与真实 GPU 策略筛选计划 | 执行当前数据组织优化和机制选择前读 |
 | `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
-| `deploy/autodl/` | AutoDL 云服务器部署指南（runbook） | 2× GPU 云上复现：vLLM 多 endpoint + PG16 + Ray/Daft |
+| `deploy/autodl/` | AutoDL 云服务器 runbook、环境模板、模型下载/endpoint 启动脚本与双 GPU 场景模板 | 2× GPU 云上复现：配置化 vLLM 多 endpoint + PG18.4 + Ray/Daft |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |
 
@@ -327,6 +327,8 @@
 |---|---|
 | `README.md` | benchmark 说明和运行命令 |
 | `requirements.txt` | Python 依赖：Ray、NumPy、PyArrow |
+| `code/requirements-dev.txt` | 固定 Ruff 版本的开发检查依赖 |
+| `pyproject.toml` | Python 3.12 代码风格与 correctness lint 基线 |
 | `common.py` | CSV 输出、表格打印、依赖检查等公共函数 |
 | `ray_many_objects_benchmark.py` | 固定总数据量下 Ray many-object fan-in |
 | `ray_arrow_fanout_fanin_benchmark.py` | Arrow RecordBatch 版 Ray `N upstream -> P downstream` fan-out/fan-in |

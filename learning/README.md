@@ -1,5 +1,26 @@
 # Learning Notes
 
+## 2026-07-28 双 4090 7B replenish 配置诊断
+
+本轮现场数据中的 `replenish_static_k8_2gpu` 不是 request-level
+replenishment：命令设置了 `ray_batch_rows=1`，但结果字段仍是
+`submission_granularity=batch`。因此 1024 行被组织成 1024 个单行 batch，
+`token_budget=8192` 没有机会装入多行。K=8 又只允许全局 8 个单行请求，
+而 batch K=32 平均每批约 3 行，两个 K 不代表相同 offered load。
+
+正确实验应保留合理的 row cap 与 token budget，让它们记录 packing/flush
+边界，再用 `submission_granularity=request` 展开完整行请求。request K 应按
+请求数与 batch baseline 的实际行数匹配，先比较 K64/K96，而不是直接复用
+batch K8。当前 7B warm-up 只能用于定位配置问题，不能作为 replenish 策略优劣证据。
+
+HOL-age 的 3 秒拥塞阈值也低于本轮约 4–5 秒的正常 batch 服务时间，因此会把
+正常执行年龄当成拥塞并把窗口压向下限。需要先用静态配置校准正常服务时间，再
+决定阈值或更换为不混淆 service age 与 queue delay 的信号。
+
+vLLM 的 `estimated_flops_per_gpu_total` 是 per-GPU counter。多 endpoint 采集时，
+工作量 counters 仍求和，KV 压力取最大值，但 per-GPU FLOPs 必须在 endpoint
+之间取均值后再除以单卡峰值；相加会把双卡 MFU 高估约两倍。
+
 ## 2026-07-28 双 endpoint 指标与并发语义
 
 多 endpoint 实验里的 `max_inflight` 是整个调度器的 submission 上限，不是

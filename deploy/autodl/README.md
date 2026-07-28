@@ -4,6 +4,31 @@
 
 指南面向"从零起一台 AutoDL 实例到跑通首个多 endpoint 实验"。所有命令均为 Linux bash(远端)。
 
+## 快速入口：不要靠新 session 回忆部署参数
+
+部署参数已从脚本中抽出。新环境先复制一份运行配置到仓库外，再按同一配置下载和启动：
+
+```bash
+cd /root/autodl-tmp/ai-operator
+cp deploy/autodl/autodl.env.example /root/autodl-tmp/ai-operator-runtime.env
+# 切模型：MODEL_ID / MODEL_DIR / MODEL_PATH / COMPLETION_MODEL / token 上限；
+# 切数据集：SOURCE_WORKLOAD_NAME；切 GPU/端口：GPU_IDS / PORTS / 峰值口径。
+
+bash deploy/autodl/download_model.sh /root/autodl-tmp/ai-operator-runtime.env
+bash deploy/autodl/start_endpoints.sh /root/autodl-tmp/ai-operator-runtime.env
+```
+
+`download_model.sh` 每次都会显式加载 `/etc/network_turbo` 并设置
+`HF_HUB_DISABLE_XET=1`，不依赖当前 shell 或操作者记得学术加速。
+`start_endpoints.sh` 不再写死 1.5B/7B、GPU 数、端口或 context length，也不会
+使用宽泛的 `pkill -f`。它只会在明确设置 `STOP_MANAGED_ENDPOINTS=1` 时，根据
+自身 PID 文件停止之前由同一脚本启动的 endpoint。
+
+模型和已导入数据库的 workload 可分别通过 `COMPLETION_MODEL` 与
+`SOURCE_WORKLOAD_NAME` 切换，不修改代码。新的原始数据格式仍需先转换为
+`documents` 的统一字段契约；当前自带 importer 只直接识别 ShareGPT +
+BurstGPT，不能把“运行时可切 workload”误写成“任意 raw schema 零适配”。
+
 ---
 
 ## 0. 适用范围与边界
@@ -140,7 +165,9 @@ python -c "import vllm,ray,daft,torch; print(vllm.__version__, ray.__version__, 
 
 ## 5. 模型下载
 
-目标:`Qwen/Qwen2.5-1.5B-Instruct` → `/root/autodl-tmp/models/Qwen2.5-1.5B-Instruct/`(safetensors ~3.09GB)。
+模型由 `MODEL_ID` 与 `MODEL_DIR` 决定。1.5B、7B 或后续模型都走同一下载脚本，
+不修改 Python 或 shell 源码；换模型后只需同步修改 `COMPLETION_MODEL` 和
+实验配置中的 context/token 上限。
 
 ### 5.1 必开加速 + 禁 Xet
 ```bash
@@ -148,6 +175,15 @@ source /etc/network_turbo >/dev/null 2>&1   # 代理 172.20.0.113:12798,仅 gith
 export HF_HUB_DISABLE_XET=1                  # 否则走 cas-server.xethub.hf.co 报 401
 ```
 不开 `network_turbo` 时 HF 直连/`hf-mirror.com`/modelscope 全部极慢(8 kB/s ~ 700 kB/s 且会 stall)——这是本次最大的坑。
+
+推荐直接运行：
+
+```bash
+bash deploy/autodl/download_model.sh /root/autodl-tmp/ai-operator-runtime.env
+```
+
+脚本把上述两项前置条件固化为可执行检查；后面的 wget/Python API 命令仅作为
+故障排查或手工备选。
 
 ### 5.2 推荐:wget 直连 HF(走 turbo 代理)
 ```bash
@@ -234,30 +270,15 @@ cp /tmp/BurstGPT/data/BurstGPT_1.csv data/raw/burstgpt/ 2>/dev/null || find /tmp
 
 ## 8. 启动 vLLM endpoint(里程碑:不依赖 PG)
 
-每张卡一个 endpoint,用 `CUDA_VISIBLE_DEVICES` 钉死。脚本(建议存为项目内 `code/scripts/autodl_start_endpoints.sh`):
+每张卡一个 endpoint,用 `CUDA_VISIBLE_DEVICES` 钉死。统一入口：
+
 ```bash
-#!/usr/bin/env bash
-set -u
-source /root/miniconda3/etc/profile.d/conda.sh && conda activate base
-MODEL=/root/autodl-tmp/models/Qwen2.5-1.5B-Instruct
-start_ep() {
-  CUDA_VISIBLE_DEVICES=$1 nohup python -m vllm.entrypoints.openai.api_server \
-    --model "$MODEL" --served-model-name qwen2.5-1.5b --dtype auto \
-    --max-model-len 2048 --gpu-memory-utilization 0.9 \
-    --port $2 --host 127.0.0.1 \
-    </dev/null >/root/autodl-tmp/vllm_ep_$2.log 2>&1 &
-}
-pkill -f "vllm.entrypoints" 2>/dev/null; sleep 2   # 这条由脚本文件执行,cmdline 不含该模式,不自匹配
-start_ep 0 8000
-start_ep 1 8001
-for p in 8000 8001; do
-  for i in $(seq 1 120); do
-    curl -sf "http://127.0.0.1:$p/health" >/dev/null && { echo "$p ready"; break; }
-    sleep 3
-  done
-done
+bash deploy/autodl/start_endpoints.sh /root/autodl-tmp/ai-operator-runtime.env
 ```
-homogeneous(两卡都 serve `qwen2.5-1.5b`)即可与本机单 endpoint baseline 可比。异构(1.5B + 7B)留作后续"异构 actor pool"实验。
+
+同构实验让所有 GPU 使用同一个 `MODEL_PATH` 与 `COMPLETION_MODEL`。若要更换
+模型、GPU 数或端口，只编辑运行配置，不修改 `start_endpoints.sh`。
+异构(1.5B + 7B)留作后续"异构 actor pool"实验，不与同构扩展实验混算。
 
 验证:`curl http://127.0.0.1:8000/v1/completions ...`、`nvidia-smi` 看两个 vLLM 分别占 GPU 0/1。
 
@@ -291,6 +312,31 @@ python code/scripts/postgres_ai_operator_profile.py ... \
   --output experiments/results/cloud_autodl/dual_endpoint.csv
 ```
 对比 `operator_wall_s` / `e2e_s` / `rows/s`,回答"独立 GPU 上多 endpoint 路由是否有收益"。
+
+### 9.1 request-level replay 的可复现实验模板
+
+`deploy/autodl/dual_gpu_request_replay.example.json` 是可提交的场景模板。
+其中 `${DATABASE_URL}`、`${COMPLETION_MODEL}`、`${COMPLETION_ENDPOINT_URLS}`
+和 `${MODEL_METRICS_URLS}` 在 runner 读取时从环境展开；缺失变量会在启动任何
+外部工作前报错。
+
+```bash
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+set +a
+python code/scripts/run_ai_operator_scenarios.py \
+  --config deploy/autodl/dual_gpu_request_replay.example.json \
+  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --python-executable /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  --output-dir experiments/results/dual_gpu_request_replay \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS"
+```
+
+模板保留 `ray_batch_rows=64` 和 `token_budget=8192` 作为组织边界，只有
+`submission_granularity=request` 的场景才在关批后展开为单请求。不要用
+`ray_batch_rows=1` 伪装 request-level replenishment；那会在组织阶段直接把
+每个 packing group 截成一行，并不能验证“批组织 + 请求级持续补位”机制。
 
 ---
 

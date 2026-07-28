@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-07-28 双 4090 配置审计、MFU 口径与 AutoDL 配置化
+
+- 现场确认 7B `replenish` warm-up 误用了 `ray_batch_rows=1` 且仍为
+  `submission_granularity=batch`；该结果只证明单行 Ray task 路径开销，不能用于
+  判断 request-level continuous replenishment。新增远端可复用场景模板，保留
+  token-budget/row-cap 组织边界并显式比较 request K64/K96。
+- 修正多 endpoint MFU 聚合：工作量 counters 求和、KV usage 取最大值，但 vLLM
+  明确标记为 per-GPU 的 FLOPs counter 在 endpoint 间取均值；旧双 endpoint MFU
+  值因此属于高估口径，不直接与修正后数据混算。
+- `aimd_hol` 不再因同时提供 metrics URL 而在 admission 决策线程同步抓取网络指标；
+  新增 request replay 经真实本地 Ray task 单行、exactly-once 合约测试。
+- AutoDL 新增统一 env 示例、强制启用学术加速的模型下载脚本、无宽泛 `pkill` 的
+  配置化多 endpoint 启动脚本。模型、路径、GPU、端口、context 和 endpoint URL
+  均从配置切换，不修改源码。场景 runner 支持严格 `${ENV_NAME}` 展开，缺失变量
+  在外部工作前失败。
+- 新增根 `pyproject.toml` 与固定 Ruff 开发依赖；先启用全仓可通过的
+  correctness lint，避免把 4000 行 profiler 的纯格式重排混进性能机制修复。
+
 ## 2026-07-27 修正 Blackwell 章节过度结论 + 实验可比性纪律
 
 - 修正 `deploy/autodl/README.md` §12.6 的过度表述:之前写"flashinfer 0.6.x 的 PyPI wheel

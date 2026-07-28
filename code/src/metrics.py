@@ -383,6 +383,25 @@ def scrape_prometheus_metrics(url: str, timeout_s: float = 5.0) -> dict[str, flo
     return parse_prometheus_metrics(body.decode("utf-8", errors="replace"))
 
 
+def aggregate_model_metric_snapshots(
+    snapshots: list[dict[str, float]],
+) -> dict[str, float]:
+    """Aggregate independent model-service metrics without losing units."""
+    if not snapshots or any(not snapshot for snapshot in snapshots):
+        return {}
+    names = {name for snapshot in snapshots for name in snapshot}
+    aggregated = {}
+    for name in names:
+        values = [snapshot.get(name, 0.0) for snapshot in snapshots]
+        if name == "vllm:kv_cache_usage_perc":
+            aggregated[name] = max(values)
+        elif name == "vllm:estimated_flops_per_gpu_total":
+            aggregated[name] = statistics.mean(values)
+        else:
+            aggregated[name] = sum(values)
+    return aggregated
+
+
 def _metric_delta(before: dict[str, float], after: dict[str, float], name: str) -> float:
     return max(0.0, after.get(name, 0.0) - before.get(name, 0.0))
 

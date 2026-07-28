@@ -117,9 +117,10 @@
 - pgvector(384) 写回 0.897s vs JSON text 1.567s。
 - 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 与 `motivation/results/fake_cpu/` 仅作历史参考。
 
-**下一步**：补齐 Ray 上游 request-level continuous replenishment，并把当前
-two-level queue-adaptive baseline 推进为 SLO-aware EWMA flush；随后再做
-prefix cache-on、多模态和真实多 endpoint 验证。详见 `PROJECT_OUTLINE.md`
+**下一步**：用等价 offered load 在 2×4090 上重复验证已实现的 Ray 上游
+request-level continuous replenishment，并把当前 two-level queue-adaptive
+baseline 推进为 SLO-aware EWMA flush；随后再做 prefix cache-on、多模态和
+多 endpoint formal 验证。详见 `PROJECT_OUTLINE.md`
 §近期优先级、`experiments/plans/experiment_status_and_gaps.md` 和
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
 

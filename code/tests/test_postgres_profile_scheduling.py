@@ -760,7 +760,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 profile._service_metrics_snapshot(["http://metrics"])
             )
 
-    def test_multi_endpoint_metrics_sum_counters_and_max_kv_usage(self) -> None:
+    def test_multi_endpoint_metrics_use_per_gpu_flops_mean(self) -> None:
         with patch.object(
             profile,
             "scrape_prometheus_metrics",
@@ -769,11 +769,13 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "vllm:prompt_tokens_total": 100.0,
                     "vllm:num_requests_running": 3.0,
                     "vllm:kv_cache_usage_perc": 0.4,
+                    "vllm:estimated_flops_per_gpu_total": 60.0,
                 },
                 {
                     "vllm:prompt_tokens_total": 80.0,
                     "vllm:num_requests_running": 2.0,
                     "vllm:kv_cache_usage_perc": 0.7,
+                    "vllm:estimated_flops_per_gpu_total": 40.0,
                 },
             ],
         ):
@@ -784,6 +786,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(metrics["vllm:prompt_tokens_total"], 180.0)
         self.assertEqual(metrics["vllm:num_requests_running"], 5.0)
         self.assertEqual(metrics["vllm:kv_cache_usage_perc"], 0.7)
+        self.assertEqual(
+            metrics["vllm:estimated_flops_per_gpu_total"],
+            50.0,
+        )
 
     def test_build_adaptive_config_preserves_controller_across_submissions(self) -> None:
         traces = []
@@ -840,21 +846,27 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 provider.close()
 
     def test_hol_adaptive_config_uses_interval_clocked_provider(self) -> None:
-        config = profile._build_adaptive_config(
-            scheduling_policy="aimd_hol",
-            metrics_urls=[],
-            trace_events=[],
-            min_window=4,
-            max_window=16,
-            initial_window=4,
-            sample_interval_s=0.25,
-            ewma_alpha=0.5,
-            pid_proportional_gain=1.0,
-            pid_integral_gain=0.0,
-            pid_derivative_gain=0.0,
-            hol_age_congestion_s=2.0,
-            hol_age_low_load_s=0.5,
-        )
+        with patch.object(
+            profile,
+            "_service_metrics_snapshot",
+            side_effect=AssertionError("HOL must not scrape service metrics"),
+        ):
+            config = profile._build_adaptive_config(
+                scheduling_policy="aimd_hol",
+                metrics_urls=["http://metrics"],
+                trace_events=[],
+                min_window=4,
+                max_window=16,
+                initial_window=4,
+                sample_interval_s=0.25,
+                ewma_alpha=0.5,
+                pid_proportional_gain=1.0,
+                pid_integral_gain=0.0,
+                pid_derivative_gain=0.0,
+                hol_age_congestion_s=2.0,
+                hol_age_low_load_s=0.5,
+            )
+            config["admission_gate"].decide(0, hol_age_s=0.0)
 
         self.assertIsInstance(
             config["observation_provider"],

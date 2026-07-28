@@ -14,6 +14,7 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.metrics import (  # noqa: E402
     PeriodicSampler,
+    aggregate_model_metric_snapshots,
     append_metrics,
     batch_result_stats,
     estimate_mfu,
@@ -196,6 +197,32 @@ vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 4000000000000
         self.assertAlmostEqual(stats["vllm_e2e_request_latency_mean_s"], 0.75)
         self.assertAlmostEqual(stats["vllm_request_queue_time_mean_s"], 0.1)
         self.assertEqual(stats["vllm_num_requests_waiting_after"], 1)
+
+    def test_multi_endpoint_aggregation_preserves_metric_units(self) -> None:
+        metrics = aggregate_model_metric_snapshots(
+            [
+                {
+                    "vllm:prompt_tokens_total": 100.0,
+                    "vllm:num_requests_running": 3.0,
+                    "vllm:kv_cache_usage_perc": 0.4,
+                    "vllm:estimated_flops_per_gpu_total": 60.0,
+                },
+                {
+                    "vllm:prompt_tokens_total": 80.0,
+                    "vllm:num_requests_running": 2.0,
+                    "vllm:kv_cache_usage_perc": 0.7,
+                    "vllm:estimated_flops_per_gpu_total": 40.0,
+                },
+            ]
+        )
+
+        self.assertEqual(metrics["vllm:prompt_tokens_total"], 180.0)
+        self.assertEqual(metrics["vllm:num_requests_running"], 5.0)
+        self.assertEqual(metrics["vllm:kv_cache_usage_perc"], 0.7)
+        self.assertEqual(
+            metrics["vllm:estimated_flops_per_gpu_total"],
+            50.0,
+        )
 
     def test_vllm_metric_delta_stats_marks_missing_snapshots(self) -> None:
         stats = vllm_metric_delta_stats({}, {})

@@ -46,7 +46,14 @@ code/
 
 ```bash
 pip install -r code/requirements.txt
+pip install -r code/requirements-dev.txt
+ruff check code
 ```
+
+`pyproject.toml` 先启用仓库现状能够全量通过的 correctness lint。完整 import
+排序和 `ruff format` 将与 4000 行 profiler 的后续模块拆分一起推进，避免在
+机制修复提交中混入大面积无语义格式 diff。新代码仍按 100 列、4 空格缩进和
+双引号格式编写。
 
 ## PostgreSQL data source backends
 
@@ -225,7 +232,10 @@ pre-submit queueing delay.
 `code/src/experiment_scenarios.py` and
 `code/scripts/run_ai_operator_scenarios.py` provide deterministic formal-run
 interleaving, per-run service-idle gates, failure incidents, redacted commands,
-and an atomically updated manifest. Each profiler subprocess uses explicit
+and an atomically updated manifest. Scenario argument strings may reference
+explicit `${ENV_NAME}` values; an unset variable fails before health checks or
+profiler subprocesses, so model, endpoint, database, and dataset-facing config
+can change without editing Python. Each profiler subprocess uses explicit
 phase/repeat identity and writes isolated request/submission/time-series files.
 
 The real contract test covers Daft `RecordBatch`/Arrow conversion and local Ray

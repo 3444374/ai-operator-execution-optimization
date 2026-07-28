@@ -28,6 +28,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.metrics import (
     PeriodicSampler,
     StageTimer,
+    aggregate_model_metric_snapshots,
     append_metrics,
     batch_result_stats,
     estimate_mfu,
@@ -255,7 +256,10 @@ def _validated_formal_result_row(row: dict) -> dict:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Profile PostgreSQL-triggered AI_EMBED external execution with Ray and Arrow."
+        description=(
+            "Profile PostgreSQL-triggered AI operator execution through "
+            "Daft, Ray, and an external model service."
+        )
     )
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
     parser.add_argument("--setup", action="store_true", help="Create required tables before running.")
@@ -1393,17 +1397,7 @@ def _scrape_model_metrics(
         scrape_prometheus_metrics(url, timeout_s=timeout_s)
         for url in metrics_urls
     ]
-    if not snapshots or any(not snapshot for snapshot in snapshots):
-        return {}
-    names = {name for snapshot in snapshots for name in snapshot}
-    return {
-        name: (
-            max(snapshot.get(name, 0.0) for snapshot in snapshots)
-            if name == "vllm:kv_cache_usage_perc"
-            else sum(snapshot.get(name, 0.0) for snapshot in snapshots)
-        )
-        for name in names
-    }
+    return aggregate_model_metric_snapshots(snapshots)
 
 
 def _build_adaptive_config(
@@ -1460,17 +1454,13 @@ def _build_adaptive_config(
         )
     else:
         raise ValueError(f"unsupported typed adaptive policy: {scheduling_policy}")
-    sampler = (
-        (lambda: _service_metrics_snapshot(metrics_urls))
-        if metrics_urls
-        else (lambda: None)
-    )
     if scheduling_policy == "aimd_hol":
         provider = CachedMetricsObservationProvider(
-            sampler,
+            lambda: None,
             min_sample_interval_s=sample_interval_s,
         )
     else:
+        sampler = lambda: _service_metrics_snapshot(metrics_urls)
         provider = NonBlockingMetricsObservationProvider(
             sampler,
             poll_interval_s=sample_interval_s,

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import sys
 import json
+import os
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
@@ -16,6 +18,7 @@ from src.experiment_scenarios import (  # noqa: E402
 )
 from scripts.run_ai_operator_scenarios import (  # noqa: E402
     RunnerOptions,
+    _load_config,
     run_experiment,
 )
 
@@ -172,6 +175,60 @@ class ExperimentScenarioTests(unittest.TestCase):
 
 
 class ScenarioRunnerTests(unittest.TestCase):
+    def test_config_expands_explicit_environment_references(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = self._write_config(
+                root,
+                scenario_ids=["fixed"],
+                formal_repeats=1,
+                seed=7,
+            )
+            decoded = json.loads(config_path.read_text(encoding="utf-8"))
+            decoded["common_args"] = [
+                "--completion-model",
+                "${TEST_COMPLETION_MODEL}",
+            ]
+            config_path.write_text(
+                json.dumps(decoded),
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {"TEST_COMPLETION_MODEL": "qwen-test"},
+                clear=False,
+            ):
+                config = _load_config(config_path)
+
+            self.assertEqual(
+                config.common_args,
+                ("--completion-model", "qwen-test"),
+            )
+
+    def test_config_rejects_unset_environment_reference(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = self._write_config(
+                root,
+                scenario_ids=["fixed"],
+                formal_repeats=1,
+                seed=7,
+            )
+            decoded = json.loads(config_path.read_text(encoding="utf-8"))
+            decoded["common_args"] = ["--completion-model", "${MISSING_MODEL}"]
+            config_path.write_text(
+                json.dumps(decoded),
+                encoding="utf-8",
+            )
+
+            with patch.dict(os.environ, {}, clear=True):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "MISSING_MODEL",
+                ):
+                    _load_config(config_path)
+
     def test_runner_validates_opted_in_metadata_before_external_work(
         self,
     ) -> None:
@@ -199,7 +256,7 @@ class ScenarioRunnerTests(unittest.TestCase):
                         python_executable=Path(sys.executable),
                         output_dir=output_dir,
                         health_url="http://health",
-                        metrics_url="http://metrics",
+                        metrics_urls=("http://metrics",),
                         idle_timeout_s=1.0,
                     ),
                     idle_gate=lambda health, metrics, timeout: (
@@ -232,7 +289,7 @@ class ScenarioRunnerTests(unittest.TestCase):
                     python_executable=Path(sys.executable),
                     output_dir=output_dir,
                     health_url="http://health",
-                    metrics_url="http://metrics",
+                    metrics_urls=("http://metrics",),
                     idle_timeout_s=1.0,
                 ),
                 idle_gate=lambda health, metrics, timeout: idle_checks.append(
@@ -313,7 +370,7 @@ class ScenarioRunnerTests(unittest.TestCase):
                     python_executable=Path(sys.executable),
                     output_dir=output_dir,
                     health_url="http://health",
-                    metrics_url="http://metrics",
+                    metrics_urls=("http://metrics",),
                     idle_timeout_s=1.0,
                 ),
                 idle_gate=lambda _health, _metrics, _timeout: None,
@@ -364,7 +421,7 @@ class ScenarioRunnerTests(unittest.TestCase):
                 python_executable=Path(sys.executable),
                 output_dir=output_dir,
                 health_url="http://health",
-                metrics_url="http://metrics",
+                metrics_urls=("http://metrics",),
                 idle_timeout_s=1.0,
             )
 
@@ -447,7 +504,7 @@ class ScenarioRunnerTests(unittest.TestCase):
                 python_executable=Path(sys.executable),
                 output_dir=output_dir,
                 health_url="http://health",
-                metrics_url="http://metrics",
+                metrics_urls=("http://metrics",),
                 idle_timeout_s=1.0,
             )
 

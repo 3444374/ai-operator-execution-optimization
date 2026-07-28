@@ -100,7 +100,7 @@ grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。定位为�
 
 ❌ 未证明（关键缺口）：
    ├── "Queue-adaptive flush 优于最佳静态 timeout"（未证明）
-   ├── "上游 request-level continuous replenishment 能放大 vLLM continuous batching 收益"（未实现）
+   ├── "上游 request-level continuous replenishment 能放大 vLLM continuous batching 收益"（代码已实现，双卡等价负载验证待完成）
    ├── "SLO-aware 动态 flush 优于最佳静态窗口"（未实现）
    ├── "Prefix-aware 在 cache-off 受控 prefix 比例下有效"（未证明）
    └── "策略代码对多模态 workload 可复用"（未启动）
@@ -478,7 +478,8 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 ### 剩余关键缺口
 
-1. 上游 request-level continuous replenishment 与 whole-submission barrier 对照；
+1. 修正配置后重复 request-level continuous replenishment 与
+   whole-submission barrier 对照，并增加持久 Ray actor 执行路径；
 2. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
 3. prefix cache-on、多模态复用、多 endpoint/多 GPU；
 4. shared-vLLM 的多 foreground size、arrival offset 和多 job 公平性；

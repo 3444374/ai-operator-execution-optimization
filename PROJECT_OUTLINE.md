@@ -135,9 +135,10 @@
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1**：上游 request-level continuous replenishment。vLLM 内部已有
-   continuous batching，但 Ray 当前主要按整个 submission 返回释放 credit，
-   尚未验证逐请求完成补位能否减少 HOL、提高 SLO goodput。
+1. **P1**：修正并重复验证上游 request-level continuous replenishment。
+   逐请求完成释放 credit 的代码与本地 Ray 合约已完成；此前 7B 双卡 warm-up
+   误用单行 batch，不能作为策略证据。下一步保留 packing 边界，按等价请求负载
+   比较 batch K32 与 request K64/K96，并验证持久 Ray actor 路径。
 2. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；
    下一版需显式使用 oldest-request slack、token backlog、arrival/service-rate
    EWMA、hard deadline 与滞回，并对比最佳静态窗口。
@@ -146,8 +147,8 @@
 4. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
 5. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
    ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
-6. 多 endpoint / 多 GPU 真实验证仍受当前单 GPU 硬件范围限制；接口与 fallback
-   契约已完成，不能把单卡逻辑池写成多 GPU 性能证据。
+6. 多 endpoint / 多 GPU 已在 2×4090 上开始真实 warm-up；当前仅确认双 endpoint
+   可运行和配置问题，尚无重复 formal 性能结论。
 7. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
 8. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 9. Shared-vLLM 仍需扩展不同 foreground size、arrival offset 和多 job 数量；
@@ -193,4 +194,3 @@ PROJECT_LOG.md
 ```text
 opening/logs/project_log.md
 ```
-
