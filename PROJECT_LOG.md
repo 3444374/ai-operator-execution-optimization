@@ -1952,3 +1952,13 @@
   完整测试 374 项通过，6 个 AutoDL JSON 均可解析且无 `unknown`，`compileall`
   与 `git diff --check` 通过。本地环境未安装 Ruff，留给远端独立 worktree
   补跑；尚未启动任何正式 GPU 矩阵。
+- 分支提交 `5961457774c0419019695ed5a89eb63550eb9823` 已推送，并在远端
+  `/root/autodl-tmp/worktrees/dual-gpu-correctness-5961457` detached worktree
+  复验：完整 374 tests 通过，主 checkout 的未跟踪实验结果未修改。
+- 远端显式地址 smoke 使用独立 Ray head `172.17.0.4:6399` 和三个独立 Python
+  进程：job-a/job-b 成功获取两份 named credit，job-c 在共享容量已满时被拒绝，
+  证明跨进程复用同一 actor。测试集群已停止，两套 vLLM 服务 PID 350094/350096
+  保持运行。
+- 本地和远端环境均未预装 Ruff；远端临时安装因包镜像缺失、官方 PyPI 超时未
+  完成，残留下载进程已清理。该环境限制不记作 Ruff 通过；以 374 tests、
+  `compileall`、JSON 解析和 `git diff --check` 作为本次已完成门禁。
