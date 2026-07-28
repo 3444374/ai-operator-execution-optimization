@@ -82,11 +82,13 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - ✅ 双 4090 request-level replenishment 重复：等名义 offered work 的
   request K48 与 batch K16 吞吐持平；K64 最高但 work 增加约 33% 且 P99
   更差，尚未证明补位机制的独立增量
+- ✅ 双 4090 active-work 容量曲线：16K→65K 吞吐仍上升但边际递减；
+  49K 是当前 knee candidate，65K 是最高已测吞吐边界而非容量最优
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P1**：先用 request-level submission 标定 per-endpoint active-work
-   饱和区，再固定 work 扫 token budget 和 membership
-2. **P1**：固定 active work、组织边界与服务容量，复验 Ray 上游
+1. **P1**：active-work 五档双卡曲线已完成；以 49K 拐点候选为主、
+   65K 高负载点为敏感性对照，固定 work 扫 token budget 和 membership
+2. **P1**：在上述固定 active work、组织边界与服务容量下，复验 Ray 上游
    request-level continuous replenishment；当前 K 计数实验已跑通，但
    work-matched 对照无吞吐增量
 3. **P1**：SLO-aware EWMA flush；当前 25/50ms two-level 只作为 baseline

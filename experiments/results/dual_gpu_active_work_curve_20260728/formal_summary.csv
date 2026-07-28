@@ -1,0 +1,6 @@
+scenario_id,max_active_work_per_endpoint,formal_repeats,tokens_per_s_mean,tokens_per_s_sd,mfu_pct_mean,e2e_s_mean,request_p50_s_mean,request_p95_s_mean,request_p99_s_mean,slo_violation_ratio_mean,slo_goodput_per_s_mean,bounded_wait_s_mean,gpu_utilization_pct_mean,vllm_running_mean,vllm_waiting_mean,kv_cache_usage_mean,energy_j_per_1k_tokens_mean,interpretation
+work16384,16384,3,4888.155,10.700,21.030,139.105,31.277,66.794,68.664,0.5212,7.050,93.224,91.41,61.88,0.000,0.0820,137.92,underfilled
+work24576,24576,3,6076.188,53.465,26.122,111.975,21.314,41.872,42.796,0.3330,12.200,66.371,89.81,84.31,0.000,0.1107,115.33,rising_capacity
+work32768,32768,3,6836.846,43.880,29.554,99.506,15.130,30.233,33.244,0.0921,18.687,52.090,88.92,104.05,0.000,0.1355,105.28,lowest_tested_p99
+work49152,49152,3,7702.785,48.383,33.189,88.341,11.405,20.571,34.985,0.0189,22.746,38.986,87.30,141.37,0.000,0.1827,91.75,knee_candidate
+work65536,65536,3,8128.664,76.044,35.156,83.784,10.752,16.958,36.632,0.0215,23.920,27.756,86.79,171.72,0.000,0.2222,85.94,best_tested_throughput_scan_boundary

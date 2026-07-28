@@ -28,6 +28,7 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
+| `dual_gpu_active_work_curve_20260728/` | Dual-4090 request-level per-endpoint active-work curve over 16,384–65,536 predicted tokens. | Throughput still rises at 65K but marginal gain has fallen to 5.5%; 49K is the current knee candidate and 65K is only the best tested boundary. |
 | `dual_gpu_request_replay_20260728/` | Dual-4090 batch-barrier/request-level replenishment comparison with three formal repeats per arm and admission-work audit. | K48 is the work-matched request control and matches batch K16 throughput; K64 is the best tested request K but carries about 33% more offered work and has worse P99, so it is not an isolated replenishment win or a capacity optimum. |
 | `shared_vllm_adaptive_admission_20260726/` | Real shared-endpoint foreground/background K8/K16/AIMD repeats plus adaptive-flush follow-up, with exact request-token accounting. | Static K8 protects foreground tails; AIMD saturates near K16 with zero decreases and provides no feedback gain. Adaptive flush behaves mostly like fixed-50 and has no stable increment. |
 | `adaptive_admission_controller_20260726/` | Real 64-request gate, randomized 512-request static/AIMD/EWMA/PID matrix, and AIMD-vs-static-K16 mechanism control. | Dynamic controllers beat K=8 by converging near K=16, but AIMD is indistinguishable from static K=16; shared-service protection remains unverified. |

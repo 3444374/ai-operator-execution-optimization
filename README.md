@@ -114,12 +114,16 @@
 
 - ✅ **vLLM + Qwen2.5-1.5B AI_COMPLETE baseline**（2026-07-18/19 已建立）：固定行 batch=8 时 token 跨度 13.9×；token-budget vs 固定行对照；shared-vLLM K_max 干扰（bulk unbounded 时前景 E2E 恶化 2.3×）。详见 `experiments/results/local_vllm_qwen15b_baseline/`。
 - ✅ **AI_EMBED 真实 GPU-backed 预研**（已完成）：1024 行下 fine/coalesced 端到端约 `13.4x`；双 endpoint 下 Ray task/actor 体现并发 routing 价值，端到端收益仍受 writeback 约束。详见 `motivation/results/gpu/`。
+- ✅ **双 4090 active-work 容量曲线**（2026-07-28）：五档各三次 formal，
+  49K 是当前吞吐—尾延迟拐点候选，65K 是最高已测吞吐边界而非容量最优。
+  详见 `experiments/results/dual_gpu_active_work_curve_20260728/`。
 - pgvector(384) 写回 0.897s vs JSON text 1.567s。
 - 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 与 `motivation/results/fake_cpu/` 仅作历史参考。
 
-**下一步**：先标定 request-level per-endpoint active-work 饱和区，再固定
-active work 隔离验证 Ray 上游 continuous replenishment；当前 work-matched
-K48 与 batch K16 吞吐持平，K64 的增量混入更高 offered work。随后把
+**下一步**：request-level active-work 双卡曲线已完成；49,152 是当前
+吞吐—P99/SLO 拐点候选，65,536 只是扫描边界的最高已测吞吐。下一步固定
+49K 主点与 65K 高负载敏感性点，隔离验证 Ray 上游 continuous
+replenishment；当前 K-count 的 work-matched K48 与 batch K16 吞吐持平。随后把
 two-level queue-adaptive baseline 推进为 SLO-aware EWMA flush，再做 prefix cache-on、多模态和
 多 endpoint formal 验证。详见 `PROJECT_OUTLINE.md`
 §近期优先级、`experiments/plans/experiment_status_and_gaps.md` 和
@@ -135,9 +139,9 @@ two-level queue-adaptive baseline 推进为 SLO-aware EWMA flush，再做 prefix
 
 vLLM baseline 与 Daft 文本阶段接入已完成（见上"当前证据"）。当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 
-1. **P1**：request-level active-work 容量曲线；随后在固定
-   `max_active_work_per_endpoint` 下比较 whole-submission barrier 与
-   request-level continuous replenishment。
+1. **P1**：在 active-work 曲线给出的 49K 主点与 65K 敏感性点固定
+   `max_active_work_per_endpoint`，比较 whole-submission barrier 与
+   request-level continuous replenishment；65K 不作为已证明最优值。
 2. **P1**：SLO-aware EWMA flush vs 最佳静态 timeout vs 当前 two-level
    baseline；不再把两档阈值版本标成完整 adaptive 方法。
 3. **P1**：Prefix cache-on 与 length-align 显式消融；扩展 shared-vLLM

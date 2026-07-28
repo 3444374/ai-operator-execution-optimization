@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-28，补充双 GPU request-level replenishment 结果审计）
+Date: 2026-07-20（最后更新：2026-07-28，补充双 GPU active-work 容量曲线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -32,6 +32,7 @@ Date: 2026-07-20（最后更新：2026-07-28，补充双 GPU request-level reple
 | Shared-vLLM typed AIMD + adaptive flush | ✅ 07-26 | **static K8 保护前台**（E2E -27.9%、P99 -40.0% vs K16）；AIMD 0 decrease、窗口均值 15.953，与 K16 不可分辨。**根因诊断**：vLLM waiting=0 但前台已慢 38.9%——AIMD 盯着 vLLM waiting 做决策，但请求在 Ray actor 侧排队、waiting 始终为 0 | 只有 128/512 双作业；flush 分支不是完整 2×2 随机化；多 foreground size/arrival offset/>2 job 均未测试 |
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
 | **Request-level continuous replenishment** | ⚠️ 双卡重复已完成 | global K32≈per-endpoint K16，确认 K 语义；work-matched request K48≈batch K16；request K64 为最高已测吞吐 | K64 同时增加约 33% offered work 且 P99 更差，尚未隔离补位机制的独立吞吐/SLO 收益；需固定 active work 复验 |
+| **Per-endpoint active-work capacity** | ✅ 07-28 | 双 4090 五档各三次 formal；16K→65K tps 仍上升，最后一档边际增益降至 5.5%；49K 的 SLO violation 最低，65K 吞吐最高 | 49K 是当前 knee candidate，65K 是扫描边界而非容量最优；后续在两点做 matched-work 机制对照 |
 | **SLO-aware EWMA flush** | ❌ 未做 | 当前 two-level queue-adaptive 只作为真实链路 baseline | 尚未使用 oldest-request slack、服务速率、token backlog、EWMA/滞回形成完整控制律 |
 | **多 job/多 foreground size 扩展** | ⏳ 代码完成，GPU 未测 | job-local K 不构成共享 endpoint 的全局保护 | 1/2/4 job、不同 mix/offset；shared request/work credit 与公平队列待远端门禁和正式验证 |
 
@@ -481,8 +482,9 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 1. 用相同 per-GPU K 完成单/双 endpoint 容量曲线，替代历史 global K 同值
    的不公平对照；
-2. 先用 request-level submission 扫描 per-endpoint active work；再关闭
-   arrival replay，在固定 active work 下完成 8192–65536 token-budget 曲线，
+2. request-level per-endpoint active-work 扫描已完成；下一步以 49K 主点、
+   65K 高负载敏感性点关闭 arrival replay，在固定 active work 下完成
+   8192–65536 token-budget 曲线，
    最后以 `BEST_TESTED_TOKEN_BUDGET`、相同 work 和 256 row cap 隔离复验
    membership 策略。已完成的 1024–32768 曲线同时改变 offered request
    concurrency，只作诊断；
@@ -520,7 +522,7 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 |---|---|---|
 | Request-level completion/credit release | 已实现并完成双 4090 重复 | 固定 active work 后继续验证 exactly-once 与逐请求释放 |
 | Continuous replenishment | 上游已实现；K-count 双卡对照未隔离独立收益 | 固定 active work 的 whole-submission vs request-credit 对照 |
-| Token-work admission | 已实现 per-endpoint active-work credit，GPU 容量曲线待跑 | 标定 active estimated token-work cap，再作为公平对照条件 |
+| Token-work admission | 已实现并完成双 4090 五档容量曲线 | 以 49K knee candidate 为主、65K 为敏感性点，固定 work 做公平对照 |
 | SLO-aware adaptive flush | two-level 25/50ms baseline | oldest age/slack + fill + EWMA service/arrival + hard deadline |
 | Completion-span/HOL 观测 | 有 request/submission join key | 记录同 submission 首末完成跨度和 credit idle |
 | Endpoint-local controller | topology/接口具备 | 两个真实 endpoint 后验证独立状态与回退 |
@@ -535,8 +537,9 @@ decrease 的根因不是控制器参数问题，而是 vLLM Prometheus `waiting`
 
 ### 10.3 推荐顺序与成功标准
 
-1. 先标定 request-level per-endpoint active-work 容量曲线；
-2. 固定 active work 与最佳静态 timeout 比较 whole-submission 与 request-credit；
+1. 在已标定的 49K 主点与 65K 敏感性点，固定 active work 与最佳静态
+   timeout 比较 whole-submission 与 request-credit；
+2. 固定相同 work 扫 token budget 与 membership，隔离数据组织收益；
 3. 再实现 SLO-aware EWMA flush，比较 fixed-best、two-level 和 EWMA；
 4. 只在两项独立收益成立后做小规模联合矩阵；
 5. UCB 必须等 epoch reward 能按产生请求的 arm 正确归因后再接入。

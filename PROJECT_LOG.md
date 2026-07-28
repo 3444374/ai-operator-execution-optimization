@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-07-28 双 GPU active-work 容量曲线完成与 worktree 收口
+
+- 远端 detached worktree `44087ae` 完成
+  `dual_gpu_active_work_curve`：5 个 per-endpoint predicted-token work 档位，
+  每档 1 warm-up + 3 formal，共 20/20 成功、0 skipped、0 incident。
+- 16K→65K 的 formal 吞吐均值为 4888、6076、6837、7703、8129 tokens/s，
+  MFU 为 21.03%→35.16%；每档吞吐 CV 仅 0.22%–0.94%。
+- 49K→65K 增加 33.3% active-work credit，只取得约 5.5% 吞吐增量，
+  P99 从 34.99s 增至 36.63s；49K 的 30s SLO violation 最低（1.89%）。
+  因此登记 49K 为 `KNEE_CANDIDATE`，65K 仅为
+  `BEST_TESTED_THROUGHPUT_CAP`，不声称容量最优。
+- 新增 `experiments/results/dual_gpu_active_work_curve_20260728/`，归档
+  manifest、逐次汇总、plot-ready formal summary 与七步结果报告；33 MB 原始
+  request/submission/flush/resource traces 继续保留在远端，不直接纳入 Git。
+- 同步更新证据台账、项目索引、实验状态、总纲和快速参考。下一步固定 49K 主点
+  与 65K 高负载敏感性点，对 batch barrier/request replenishment 及数据组织做
+  matched-work 对照。
+- 远端 `main` 已快进至 `8376999`；合并前服务器本地启动脚本的等价顺序调整
+  保存在 `stash@{0}`，未覆盖实验结果。实验运行期间 worktree 与 main 相互
+  隔离，main 更新未干扰本轮 20 次运行。
+
 ## 2026-07-28 双 GPU request-level replenishment 正式结果审计
 
 - 登记远端 2× RTX 4090 Phase 3：5 个场景各 1 warm-up + 3 formal，

@@ -139,9 +139,11 @@
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1**：先用 request-level submission 标定 per-endpoint active work
-   饱和区，再在固定 active work 下扫描 8192–65536 token budget，最后在固定
-   work 与预算下隔离比较 membership。已完成的 1024–32768 曲线随 batch 行数
+1. **P1**：request-level per-endpoint active-work 五档双卡重复已完成：
+   49,152 是当前吞吐—P99/SLO 拐点候选，65,536 是扫描边界的最高已测吞吐，
+   尚未证明为容量最优。下一步以 49K 为主点、65K 为敏感性点，在固定 active
+   work 下扫描 8192–65536 token budget，最后在固定 work 与预算下隔离比较
+   membership。已完成的 1024–32768 曲线随 batch 行数
    增加而同步增加 request offered load，只保留为“服务仍可被更高并发填充”的
    诊断证据，不作为预算越大越优或 32768 为甜点的结论。第一版动态预算只在
    变负载 challenge 中依据 arrival/service rate 验证；pending work 与 SLO
@@ -149,7 +151,7 @@
 2. **P1**：在固定 active work 下隔离 request-level continuous
    replenishment。双卡重复已确认逐请求补位链路可运行，但 work-matched
    request K48 与 batch K16 吞吐不可分辨；K64 的 +12.24% 吞吐同时伴随约
-   33% offered-work 增量。下一步先标定 active-work 饱和区，再固定
+   33% offered-work 增量。下一步在 49K 主点与 65K 高负载敏感性点固定
    `max_active_work_per_endpoint`、组织边界和服务容量做因果对照。
 3. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；
    下一版需显式使用 oldest-request slack、token backlog、arrival/service-rate
@@ -159,8 +161,9 @@
 5. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
 6. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
    ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
-7. 多 endpoint / 多 GPU 已在 2×4090 上开始真实 warm-up；当前仅确认双 endpoint
-   可运行和配置问题，尚无重复 formal 性能结论。
+7. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay 与 active-work
+   重复 formal；容量与机制证据已建立，1/2/4 job 公平性、路由策略和故障迁移
+   仍待验证。
 8. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
 9. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 10. **P1**：Shared-vLLM 扩展 1/2/4 job、不同 workload mix 和 arrival offset；
