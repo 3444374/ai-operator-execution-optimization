@@ -20,6 +20,19 @@
 
 ## 一、GPU 调度侧 Baseline
 
+正式端到端实验同时保留两类参照，不能混称为“baseline”：
+
+- **direct-vLLM service-only capacity** 是物理上界参照。使用相同模型、请求
+  trace、输出设置和 endpoint 数，绕过 PostgreSQL/Daft/Ray 测服务可实现容量；
+  上游 infra 的目标是逼近而不是超过它。
+- **naive DB→Daft→Ray→vLLM** 是必须显著击败的工程 baseline，例如固定行数、
+  job-local/global K、无 workload-aware organization。正式策略还必须对比经
+  静态 sweep 得到的最佳强 baseline，不能只赢单行串行 strawman。
+
+报告 `capacity_efficiency = pipeline_tokens_s / direct_service_tokens_s`，并在
+相同 P99/SLO guardrail 下比较 goodput；若 direct 上界未测，不能用 MFU 单独
+声称“GPU 已压满”或“仍有 70% 优化空间”。
+
 | 编号 | Baseline 名称 | 来源 | CCF | 策略要点 | 实验配置 |
 |---|---|---|---|---|---|
 | **G1** | Continuous Batching | vLLM (Kwon et al., SOSP 2023) | A | Iteration-level 动态组 batch；PagedAttention 内存管理 | 用 vLLM / Ray Serve 替代手动 HTTP endpoint；记录到达率→batch→完成的 latency 分布 |

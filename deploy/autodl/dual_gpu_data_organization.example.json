@@ -106,39 +106,30 @@
       ]
     },
     {
-      "scenario_id": "sequential_tb4096",
+      "scenario_id": "sequential_best_tb",
       "args": [
         "--batching-policy",
         "token_budget",
         "--token-budget",
-        "4096"
+        "${BEST_TOKEN_BUDGET}"
       ]
     },
     {
-      "scenario_id": "sequential_tb8192",
-      "args": [
-        "--batching-policy",
-        "token_budget",
-        "--token-budget",
-        "8192"
-      ]
-    },
-    {
-      "scenario_id": "row_cap_aware_tb8192",
+      "scenario_id": "row_cap_aware_best_tb",
       "args": [
         "--batching-policy",
         "row_cap_aware_token_budget",
         "--token-budget",
-        "8192"
+        "${BEST_TOKEN_BUDGET}"
       ]
     },
     {
-      "scenario_id": "length_align_tb8192",
+      "scenario_id": "length_align_best_tb",
       "args": [
         "--batching-policy",
         "length_align_token_budget",
         "--token-budget",
-        "8192"
+        "${BEST_TOKEN_BUDGET}"
       ]
     }
   ]

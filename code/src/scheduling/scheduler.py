@@ -59,6 +59,22 @@ class EndpointRouter(Protocol):
         ...
 
 
+class SharedCreditPolicy(Protocol):
+    def try_acquire(
+        self,
+        *,
+        request_id: str,
+        job_id: str,
+        endpoint_id: str,
+        estimated_work: int,
+        weight: int = 1,
+    ) -> bool:
+        ...
+
+    def release(self, request_id: str, *, job_id: str) -> None:
+        ...
+
+
 @dataclass(frozen=True)
 class SchedulerResult:
     completions: tuple[SubmissionCompletion, ...]
@@ -69,6 +85,7 @@ class SchedulerResult:
     avg_bounded_wait_s: float
     fanin_s: float
     submit_s: float
+    max_active_work_per_endpoint_seen: int = 0
     submission_events: tuple[SubmissionLifecycleEvent, ...] = ()
 
 
@@ -83,9 +100,19 @@ class SynchronousScheduler:
         pool_router: PoolRouter | None = None,
         epoch_clock: Callable[[], float] = time.time,
         per_endpoint_limit: int | None = None,
+        per_endpoint_work_limit: int | None = None,
+        shared_credit: SharedCreditPolicy | None = None,
+        shared_credit_poll_s: float = 0.001,
+        job_weight: int = 1,
     ):
         if per_endpoint_limit is not None and per_endpoint_limit <= 0:
             raise ValueError("per_endpoint_limit must be positive")
+        if per_endpoint_work_limit is not None and per_endpoint_work_limit <= 0:
+            raise ValueError("per_endpoint_work_limit must be positive")
+        if shared_credit_poll_s <= 0:
+            raise ValueError("shared_credit_poll_s must be positive")
+        if job_weight <= 0:
+            raise ValueError("job_weight must be positive")
         self.admission = admission
         self.router = router
         self.adapter = adapter
@@ -93,6 +120,10 @@ class SynchronousScheduler:
         self.pool_router = pool_router
         self.epoch_clock = epoch_clock
         self.per_endpoint_limit = per_endpoint_limit
+        self.per_endpoint_work_limit = per_endpoint_work_limit
+        self.shared_credit = shared_credit
+        self.shared_credit_poll_s = shared_credit_poll_s
+        self.job_weight = job_weight
 
     def run(
         self,
@@ -102,12 +133,16 @@ class SynchronousScheduler:
         pending: list[tuple[object, PayloadEnvelope]] = []
         completions: list[SubmissionCompletion] = []
         submission_events: list[SubmissionLifecycleEvent] = []
-        submission_context: dict[str, tuple[str, str, str, float]] = {}
+        submission_context: dict[
+            str,
+            tuple[str, str, str, float, int],
+        ] = {}
         submission_order: dict[str, int] = {}
         endpoints_by_id = {
             endpoint.endpoint_id: endpoint for endpoint in topology.endpoints
         }
         max_inflight_seen = 0
+        max_active_work_per_endpoint_seen = 0
         bounded_wait_samples: list[float] = []
         fanin_s = 0.0
         submit_s = 0.0
@@ -126,6 +161,8 @@ class SynchronousScheduler:
                     topology,
                     submission_context,
                     per_endpoint_limit=self.per_endpoint_limit,
+                    per_endpoint_work_limit=self.per_endpoint_work_limit,
+                    request_work=envelope.request.estimated_total_tokens,
                 )
                 if globally_allowed and any(
                     endpoint.healthy for endpoint in capacity_topology.endpoints
@@ -152,6 +189,8 @@ class SynchronousScheduler:
                         topology,
                         submission_context,
                         per_endpoint_limit=self.per_endpoint_limit,
+                        per_endpoint_work_limit=self.per_endpoint_work_limit,
+                        request_work=envelope.request.estimated_total_tokens,
                     ),
                 ).pool_id
                 if self.pool_router is not None
@@ -163,23 +202,61 @@ class SynchronousScheduler:
                     topology,
                     submission_context,
                     per_endpoint_limit=self.per_endpoint_limit,
+                    per_endpoint_work_limit=self.per_endpoint_work_limit,
+                    request_work=envelope.request.estimated_total_tokens,
                 ),
                 pool_id,
             )
             endpoint = endpoints_by_id.get(route.endpoint_id)
             if endpoint is None:
                 raise RuntimeError("router selected an endpoint outside the topology")
+            while self.shared_credit is not None and not (
+                self.shared_credit.try_acquire(
+                    request_id=request_id,
+                    job_id=envelope.request.job_id,
+                    endpoint_id=route.endpoint_id,
+                    estimated_work=max(
+                        1,
+                        envelope.request.estimated_total_tokens,
+                    ),
+                    weight=self.job_weight,
+                )
+            ):
+                if pending:
+                    collected = self._collect_one(
+                        pending,
+                        completions,
+                        submission_events,
+                        submission_context,
+                    )
+                    bounded_wait_samples.append(collected.wait_s)
+                    fanin_s += collected.result_s
+                else:
+                    time.sleep(self.shared_credit_poll_s)
             submit_start = time.perf_counter()
-            handle = self.adapter.submit(envelope, route.endpoint_id)
+            try:
+                handle = self.adapter.submit(envelope, route.endpoint_id)
+            except Exception:
+                if self.shared_credit is not None:
+                    self.shared_credit.release(
+                        request_id,
+                        job_id=envelope.request.job_id,
+                    )
+                raise
             submit_s += time.perf_counter() - submit_start
             submission_context[request_id] = (
                 pool_id,
                 route.endpoint_id,
                 endpoint.gpu_id,
                 self.epoch_clock(),
+                envelope.request.estimated_total_tokens,
             )
             pending.append((handle, envelope))
             max_inflight_seen = max(max_inflight_seen, len(pending))
+            max_active_work_per_endpoint_seen = max(
+                max_active_work_per_endpoint_seen,
+                self._max_endpoint_active_work(submission_context),
+            )
 
         while pending:
             collected = self._collect_one(
@@ -212,11 +289,14 @@ class SynchronousScheduler:
             ),
             fanin_s=fanin_s,
             submit_s=submit_s,
+            max_active_work_per_endpoint_seen=(
+                max_active_work_per_endpoint_seen
+            ),
         )
 
     def _head_of_line_age_s(
         self,
-        submission_context: dict[str, tuple[str, str, str, float]],
+        submission_context: dict[str, tuple[str, str, str, float, int]],
     ) -> float:
         # This is the age of the oldest in-flight submission, including both
         # Ray-side waiting and normal endpoint service time. It is directly
@@ -226,23 +306,35 @@ class SynchronousScheduler:
         now = self.epoch_clock()
         oldest_submit_s = min(
             submit_epoch_s
-            for _pool_id, _endpoint_id, _gpu_id, submit_epoch_s in submission_context.values()
+            for (
+                _pool_id,
+                _endpoint_id,
+                _gpu_id,
+                submit_epoch_s,
+                _work,
+            ) in submission_context.values()
         )
         return max(0.0, now - oldest_submit_s)
 
     @staticmethod
     def _topology_with_local_inflight(
         topology: TopologySnapshot,
-        submission_context: dict[str, tuple[str, str, str, float]],
+        submission_context: dict[str, tuple[str, str, str, float, int]],
         *,
         per_endpoint_limit: int | None = None,
+        per_endpoint_work_limit: int | None = None,
+        request_work: int = 0,
     ) -> TopologySnapshot:
         inflight_by_endpoint: dict[str, int] = {}
-        for _pool_id, endpoint_id, _gpu_id, _submit_epoch_s in (
+        work_by_endpoint: dict[str, int] = {}
+        for _pool_id, endpoint_id, _gpu_id, _submit_epoch_s, work in (
             submission_context.values()
         ):
             inflight_by_endpoint[endpoint_id] = (
                 inflight_by_endpoint.get(endpoint_id, 0) + 1
+            )
+            work_by_endpoint[endpoint_id] = (
+                work_by_endpoint.get(endpoint_id, 0) + work
             )
         return replace(
             topology,
@@ -256,22 +348,53 @@ class SynchronousScheduler:
                             or inflight_by_endpoint.get(endpoint.endpoint_id, 0)
                             < per_endpoint_limit
                         )
+                        and (
+                            per_endpoint_work_limit is None
+                            or (
+                                endpoint.estimated_active_work
+                                + work_by_endpoint.get(endpoint.endpoint_id, 0)
+                                == 0
+                            )
+                            or (
+                                endpoint.estimated_active_work
+                                + work_by_endpoint.get(endpoint.endpoint_id, 0)
+                                + request_work
+                                <= per_endpoint_work_limit
+                            )
+                        )
                     ),
                     running=(
                         endpoint.running
                         + inflight_by_endpoint.get(endpoint.endpoint_id, 0)
+                    ),
+                    estimated_active_work=(
+                        endpoint.estimated_active_work
+                        + work_by_endpoint.get(endpoint.endpoint_id, 0)
                     ),
                 )
                 for endpoint in topology.endpoints
             ),
         )
 
+    @staticmethod
+    def _max_endpoint_active_work(
+        submission_context: dict[str, tuple[str, str, str, float, int]],
+    ) -> int:
+        work_by_endpoint: dict[str, int] = {}
+        for _pool_id, endpoint_id, _gpu_id, _submit_s, work in (
+            submission_context.values()
+        ):
+            work_by_endpoint[endpoint_id] = (
+                work_by_endpoint.get(endpoint_id, 0) + work
+            )
+        return max(work_by_endpoint.values(), default=0)
+
     def _collect_one(
         self,
         pending: list[tuple[object, PayloadEnvelope]],
         completions: list[SubmissionCompletion],
         submission_events: list[SubmissionLifecycleEvent],
-        submission_context: dict[str, tuple[str, str, str, float]],
+        submission_context: dict[str, tuple[str, str, str, float, int]],
     ) -> CollectedSubmission:
         collected = self.adapter.wait_one(pending)
         completion_epoch_s = self.epoch_clock()
@@ -285,9 +408,18 @@ class SynchronousScheduler:
             raise RuntimeError("completion request_id does not match pending request")
         completions.append(collected.completion)
         request_id = collected.completion.request_id
-        pool_id, endpoint_id, gpu_id, submit_epoch_s = submission_context.pop(
-            request_id
-        )
+        (
+            pool_id,
+            endpoint_id,
+            gpu_id,
+            submit_epoch_s,
+            _work,
+        ) = submission_context.pop(request_id)
+        if self.shared_credit is not None:
+            self.shared_credit.release(
+                request_id,
+                job_id=pending_envelope.request.job_id,
+            )
         submission_events.append(
             SubmissionLifecycleEvent(
                 submission_id=request_id,

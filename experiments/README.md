@@ -6,7 +6,7 @@
 
 文本主线的正式研究实验已经开展：数据组织、K_max/flush 提交控制、联合搜索、prefix-aware、BFD/row-cap、CUDA Graph baseline 和算子代价估计均已有不同等级的证据。统一完成度、全部结果目录和结论边界见 [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
 
-Adaptive K_max 的 shared-vLLM 双作业复验已经完成：static K8 保护前台，AIMD 无 decrease 并饱和至 K≈16，未优于 static K16；追加 adaptive-flush 分支同样没有稳定增量。当前尚未完成的主要验证是多 job/多 foreground size 的 guardrail 边界、UCB 的 epoch reward 正确归因与端到端接入、真实多 endpoint/多 GPU 调度、Ray/vLLM 容量分层调优、prefix cache 开启后的独立消融，以及图像 workload 多模态泛化。GPU-backed `AI_EMBED` 动机证据仍放在 `motivation/results/gpu/`，不与方法实验混放。
+Adaptive K_max 的 shared-vLLM 双作业复验已经完成：static K8 保护前台，AIMD 无 decrease 并饱和至 K≈16，未优于 static K16；追加 adaptive-flush 分支同样没有稳定增量。当前尚未完成的主要验证是 1024–32768 token-budget 容量曲线、多 job 共享 endpoint 的 request/work credit 与公平队列、UCB 的 epoch reward 正确归因与端到端接入、真实多 endpoint/多 GPU 调度、Ray/vLLM 容量分层调优、prefix cache 开启后的独立消融，以及图像 workload 多模态泛化。GPU-backed `AI_EMBED` 动机证据仍放在 `motivation/results/gpu/`，不与方法实验混放。
 
 ## 目录分工
 

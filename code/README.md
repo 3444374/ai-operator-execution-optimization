@@ -26,14 +26,19 @@ code/
 │   ├── model_backends.py                 ← fake / compatible HTTP embedding and completion backend
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
-│   ├── profile_cli.py                    ← profiler argparse 参数面
-│   ├── profile_config.py                 ← CLI > env 配置解析与 Ray worker 配置
-│   ├── profile_schema.py                 ← 正式汇总 CSV 的稳定字段契约
-│   ├── profile_replay.py                 ← Arrow envelope、arrival replay 与生命周期种子
-│   ├── profile_ray.py                    ← Ray task/actor 提交、typed scheduler 与 credit/fan-in
-│   ├── profile_traces.py                 ← profiler trace 的版本化 CSV 序列化边界
+│   ├── profiling/
+│   │   ├── cli.py/config.py              ← profiler 参数面与环境解析
+│   │   ├── schema.py/traces.py           ← 正式汇总/trace CSV 契约
+│   │   ├── replay.py                     ← Arrow envelope、arrival replay 与生命周期种子
+│   │   └── ray.py                        ← Ray 提交、typed scheduler 与 credit/fan-in
+│   ├── profile_*.py                      ← 旧导入路径的薄兼容模块
 │   ├── workloads.py                      ← 内置 synthetic / controlled workload seed
-│   └── scheduling/                       ← typed scheduling core、topology、static admission/routing
+│   └── scheduling/
+│       ├── organization/                 ← static/dynamic upstream token-budget policy
+│       ├── submission_control/           ← request/work admission and shared fair credit
+│       ├── endpoint_routing/             ← round-robin/queue/work/prefix routing
+│       ├── runtime/                      ← Ray adapters and cached service observations
+│       └── models.py/scheduler.py/...    ← shared typed core and compatibility imports
 ├── tests/
 │   ├── test_sources.py                   ← 数据入口后端最小单元测试
 │   ├── test_organizers.py                ← 数据组织后端最小单元测试
@@ -41,6 +46,9 @@ code/
 │   ├── test_packing.py                    ← BFD membership/指标测试
 │   ├── test_output_aware_summary.py       ← 正式结果长表汇总测试
 │   ├── test_kmax_interference_script.py  ← K_max runner 默认输出 schema 版本测试
+│   ├── test_token_budget_controller.py   ← 动态预算安全动作与 EWMA 测试
+│   ├── test_shared_credit.py              ← 多 job shared-credit 纯策略测试
+│   ├── test_shared_credit_ray.py          ← named Ray actor ownership 测试
 │   ├── test_model_backends.py            ← 模型后端最小单元测试
 │   ├── test_sinks.py                     ← 写回后端最小单元测试
 │   ├── test_workloads.py                 ← 内置 workload seed 单元测试
@@ -98,28 +106,31 @@ now lives under `code/src/`:
   output against dry-run keys before database or GPU work. Empty files receive
   a header; non-empty files reject appended rows whose ordered keys do not
   exactly match the existing header.
-- `profile_traces.py`: versioned control/flush/submission/request/resource CSV
+- `profiling/traces.py`: versioned control/flush/submission/request/resource CSV
   serializers. Control schema 2 records the actual `hol_age_s` input;
   submission schema 3 uses scheduler lifecycle IDs and records pool,
   endpoint, GPU, status, and error instead of synthesizing batch IDs for
   request-granularity runs.
-- `profile_cli.py`: the profiler command-line surface only; it does not start
+- `profiling/cli.py`: the profiler command-line surface only; it does not start
   Ray, connect to PostgreSQL, or inspect the environment beyond argument
   defaults.
-- `profile_config.py`: post-parse endpoint/metrics precedence and Ray worker
+- `profiling/config.py`: post-parse endpoint/metrics precedence and Ray worker
   resource resolution. Explicit CLI values win over plural/single environment
   defaults.
-- `profile_schema.py`: the ordered formal summary-row contract and schema-drift
+- `profiling/schema.py`: the ordered formal summary-row contract and schema-drift
   guard, separate from runtime orchestration.
-- `profile_replay.py`: offline/replayed Arrow envelope construction,
+- `profiling/replay.py`: offline/replayed Arrow envelope construction,
   token-budget row grouping, batch/request submission expansion, and request
   lifecycle seed assembly. It does not submit Ray work or call model services.
-- `profile_ray.py`: Ray task/actor submitters, endpoint topology, typed
+- `profiling/ray.py`: Ray task/actor submitters, endpoint topology, typed
   scheduler wiring, credit release/fan-in, and the explicitly retained legacy
   adaptive baselines. It does not parse CLI arguments or write trace CSVs.
 - `workloads.py`: small built-in seed workloads for smoke/dev only.
-- `scheduling/`: engine-independent scheduling metadata and policies. The
-  formal payload/execution path remains Daft -> Arrow -> Ray.
+- `scheduling/`: engine-independent typed core split by decision boundary:
+  `organization/`, `submission_control/`, `endpoint_routing/`, and `runtime/`.
+  Thin modules at the old root import paths preserve existing callers while new
+  code imports the owning subpackage. The formal payload/execution path remains
+  Daft -> Arrow -> Ray.
 
 `fake` is retained only as a local control backend for offline smoke tests and
 pipeline debugging. It is not a model-service result source. For vLLM-compatible
@@ -132,9 +143,10 @@ through `--completion-endpoint-url`. For local Ollama smoke runs, use
 ## Scheduling foundation
 
 `code/src/scheduling/` contains immutable request metadata, endpoint topology,
-static admission, round-robin routing, a deterministic policy-composition
-scheduler, and the Ray submission adapter. Policy modules do not import Daft,
-Arrow, Ray, or HTTP; the adapter receives the active Ray module explicitly.
+data-organization policies, request/work admission, shared multi-job credit,
+endpoint routing, a deterministic policy-composition scheduler, and Ray runtime
+adapters. Policy modules do not import Daft, Arrow, Ray, or HTTP; only runtime
+adapters receive the active Ray module explicitly.
 The lifecycle module joins complete-row replay seeds, immutable submission
 events, backend service timestamps, and explicitly sourced token counts into
 exactly-once request trace rows.
@@ -190,6 +202,9 @@ Jobs created before Ray initialization or submission failures are marked
 .conda\pg-ai-profile\python.exe code\tests\test_flush_policies.py
 .conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
 .conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\test_token_budget_controller.py
+.conda\pg-ai-profile\python.exe code\tests\test_shared_credit.py
+.conda\pg-ai-profile\python.exe code\tests\test_shared_credit_ray.py
 ```
 
 Typed AIMD, optional EWMA-AIMD, and PID controllers can now drive the same Ray
@@ -201,6 +216,17 @@ explicit baseline. UCB has a tested finite-action policy and SLO-aware reward,
 but is not exposed in the profiler until epoch-level request metrics are
 available. None of these code tests is evidence of a throughput or latency
 improvement.
+
+Static token budget remains the default. The optional `service_quantum`
+controller chooses only from an offline-calibrated action set and changes by at
+most one step per closed batch using arrival/service-rate feedback. Endpoint
+admission can additionally bound estimated prompt+output active work, so
+different batch sizes and request lengths do not consume identical credits.
+Least-work routing uses predicted outstanding work rather than request count.
+For concurrent database jobs, an optional named Ray actor owns shared
+per-endpoint request/work credits and applies deficit-round-robin fairness with
+work-conserving borrowing. These mechanisms are implemented and unit-tested but
+remain GPU-unvalidated until the staged dual-GPU matrices complete.
 
 Data organization exposes `token_budget` (sequential),
 `best_fit_token_budget` (classic BFD), and

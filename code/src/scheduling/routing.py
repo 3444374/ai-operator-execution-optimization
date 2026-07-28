@@ -1,158 +1,17 @@
-"""Endpoint routing policies."""
+"""Compatibility imports for endpoint-routing policies."""
 
-from __future__ import annotations
-
-import hashlib
-
-from .models import (
-    BatchRequest,
-    PoolRoutingDecision,
-    RoutingDecision,
-    TopologySnapshot,
+from .endpoint_routing.policies import (
+    LeastQueuedEndpointRouter,
+    LeastWorkEndpointRouter,
+    PrefixAffinityEndpointRouter,
+    RequestPoolRouter,
+    RoundRobinEndpointRouter,
 )
-from .topology import healthy_endpoints
 
-
-class RoundRobinEndpointRouter:
-    def __init__(self) -> None:
-        self._next_index_by_pool: dict[str, int] = {}
-
-    def route(
-        self,
-        request: BatchRequest,
-        topology: TopologySnapshot,
-        pool_id: str,
-    ) -> RoutingDecision:
-        del request
-        candidates = healthy_endpoints(topology, pool_id)
-        if not candidates:
-            raise RuntimeError(f"no healthy endpoint in pool {pool_id}")
-        index = self._next_index_by_pool.get(pool_id, 0)
-        endpoint = candidates[index % len(candidates)]
-        self._next_index_by_pool[pool_id] = (index + 1) % len(candidates)
-        return RoutingDecision(endpoint.endpoint_id, pool_id, "round_robin")
-
-
-class LeastQueuedEndpointRouter:
-    def route(
-        self,
-        request: BatchRequest,
-        topology: TopologySnapshot,
-        pool_id: str,
-    ) -> RoutingDecision:
-        del request
-        candidates = healthy_endpoints(topology, pool_id)
-        if not candidates:
-            raise RuntimeError(f"no healthy endpoint in pool {pool_id}")
-        endpoint = min(
-            candidates,
-            key=lambda item: (item.running + item.waiting, item.endpoint_id),
-        )
-        return RoutingDecision(endpoint.endpoint_id, pool_id, "least_queued")
-
-
-class RequestPoolRouter:
-    def __init__(
-        self,
-        long_request_tokens: int,
-        *,
-        prefix_pool_id: str = "prefix",
-        long_pool_id: str = "long",
-        short_pool_id: str = "short",
-    ):
-        if long_request_tokens <= 0:
-            raise ValueError("long_request_tokens must be positive")
-        self.long_request_tokens = long_request_tokens
-        self.prefix_pool_id = prefix_pool_id
-        self.long_pool_id = long_pool_id
-        self.short_pool_id = short_pool_id
-
-    def route(
-        self,
-        request: BatchRequest,
-        topology: TopologySnapshot,
-    ) -> PoolRoutingDecision:
-        available = {
-            endpoint.pool_id
-            for endpoint in topology.endpoints
-            if endpoint.healthy
-        }
-        if not available:
-            raise RuntimeError("no healthy endpoint in any pool")
-
-        if request.prefix_key:
-            desired_pool = self.prefix_pool_id
-            desired_reason = "prefix_request"
-        elif request.estimated_total_tokens >= self.long_request_tokens:
-            desired_pool = self.long_pool_id
-            desired_reason = "long_request"
-        else:
-            desired_pool = self.short_pool_id
-            desired_reason = "short_request"
-        if desired_pool in available:
-            return PoolRoutingDecision(desired_pool, desired_reason)
-
-        fallback_order = (
-            self.short_pool_id,
-            self.long_pool_id,
-            self.prefix_pool_id,
-        )
-        fallback = next(
-            (pool_id for pool_id in fallback_order if pool_id in available),
-            sorted(available)[0],
-        )
-        return PoolRoutingDecision(fallback, "fallback_available_pool")
-
-
-class PrefixAffinityEndpointRouter:
-    def __init__(self) -> None:
-        self._least_queued = LeastQueuedEndpointRouter()
-
-    def route(
-        self,
-        request: BatchRequest,
-        topology: TopologySnapshot,
-        pool_id: str,
-    ) -> RoutingDecision:
-        if not request.prefix_key:
-            fallback = self._least_queued.route(request, topology, pool_id)
-            return RoutingDecision(
-                fallback.endpoint_id,
-                pool_id,
-                "missing_prefix_least_queued_fallback",
-            )
-
-        pool_endpoints = tuple(
-            endpoint
-            for endpoint in topology.endpoints
-            if endpoint.pool_id == pool_id
-        )
-        healthy = tuple(endpoint for endpoint in pool_endpoints if endpoint.healthy)
-        if not healthy:
-            raise RuntimeError(f"no healthy endpoint in pool {pool_id}")
-        affinity_endpoint = max(
-            pool_endpoints,
-            key=lambda endpoint: self._rendezvous_score(
-                request.prefix_key,
-                endpoint.endpoint_id,
-            ),
-        )
-        if affinity_endpoint.healthy:
-            return RoutingDecision(
-                affinity_endpoint.endpoint_id,
-                pool_id,
-                "prefix_affinity",
-            )
-        fallback = self._least_queued.route(request, topology, pool_id)
-        return RoutingDecision(
-            fallback.endpoint_id,
-            pool_id,
-            "prefix_unhealthy_least_queued_fallback",
-        )
-
-    @staticmethod
-    def _rendezvous_score(prefix_key: str, endpoint_id: str) -> int:
-        digest = hashlib.sha256(
-            f"{prefix_key}\0{endpoint_id}".encode("utf-8")
-        ).digest()
-        return int.from_bytes(digest, byteorder="big", signed=False)
+__all__ = [
+    "LeastQueuedEndpointRouter",
+    "LeastWorkEndpointRouter",
+    "PrefixAffinityEndpointRouter",
+    "RequestPoolRouter",
+    "RoundRobinEndpointRouter",
+]

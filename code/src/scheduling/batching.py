@@ -8,6 +8,11 @@ from dataclasses import dataclass
 from typing import Callable, Generic, Iterable, Iterator, Protocol, TypeVar
 
 from .flush import FlushObservation, FlushWindow
+from .token_budget import (
+    ArrivalRateEwma,
+    TokenBudgetDecision,
+    TokenBudgetObservation,
+)
 
 
 def _is_non_negative_int(value: object) -> bool:
@@ -80,6 +85,18 @@ class PendingBatchBuilder:
         self._prompt_tokens = 0
         self._estimated_output_tokens = 0
         self._capacity_reached = False
+
+    @property
+    def token_budget(self) -> int:
+        return self._token_budget
+
+    def set_token_budget(self, token_budget: int) -> None:
+        """Set the next batch budget before its first row is admitted."""
+        if self._rows:
+            raise RuntimeError("token budget cannot change inside an open batch")
+        if not _is_non_negative_int(token_budget):
+            raise ValueError("token_budget must be a non-negative integer")
+        self._token_budget = token_budget
 
     def would_exceed_token_budget(self, row: RowArrival) -> bool:
         """Report whether a later complete row requires a new token batch."""
@@ -161,6 +178,7 @@ class ReplayServiceObservation:
     running: int | None
     waiting: int | None
     kv_usage: float | None
+    service_rate_tokens_s_per_endpoint: float | None = None
 
 
 @dataclass(frozen=True)
@@ -173,10 +191,22 @@ class FlushTraceEvent:
     reason: str
     selected_wait_s: float = 0.0
     window_reason: str = ""
+    selected_token_budget: int = 0
+    token_budget_reason: str = ""
+    arrival_rate_tokens_s: float | None = None
+    service_rate_tokens_s_per_endpoint: float | None = None
 
 
 class _FlushPolicy(Protocol):
     def select_window(self, observation: FlushObservation) -> FlushWindow:
+        ...
+
+
+class _TokenBudgetPolicy(Protocol):
+    def select(
+        self,
+        observation: TokenBudgetObservation,
+    ) -> TokenBudgetDecision:
         ...
 
 
@@ -195,6 +225,8 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
         service_observation: Callable[[], ReplayServiceObservation],
         clock: ReplayClock,
         arrival_time_scale: float = 1.0,
+        token_budget_policy: _TokenBudgetPolicy | None = None,
+        arrival_rate_ewma_alpha: float = 0.3,
     ) -> None:
         if (
             not isinstance(arrival_time_scale, (int, float))
@@ -210,6 +242,8 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
         self._service_observation = service_observation
         self._clock = clock
         self._arrival_time_scale = float(arrival_time_scale)
+        self._token_budget_policy = token_budget_policy
+        self._arrival_rate = ArrivalRateEwma(arrival_rate_ewma_alpha)
         self._trace: list[FlushTraceEvent] = []
 
     @property
@@ -237,6 +271,30 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
             if next_deadline_s > now_s:
                 self._clock.wait_until(next_deadline_s)
 
+            service = self._service_observation()
+            arrival_rate = self._arrival_rate.observe(
+                arrival_s=next_row.arrival_s,
+                tokens=next_row.estimated_total_tokens,
+                time_scale=self._arrival_time_scale,
+            )
+            budget_decision = (
+                self._token_budget_policy.select(
+                    TokenBudgetObservation(
+                        arrival_rate_tokens_s=arrival_rate,
+                        service_rate_tokens_s_per_endpoint=(
+                            service.service_rate_tokens_s_per_endpoint
+                        ),
+                    )
+                )
+                if self._token_budget_policy is not None
+                else TokenBudgetDecision(
+                    builder.token_budget,
+                    "builder_static",
+                )
+            )
+            if builder.token_budget > 0:
+                builder.set_token_budget(budget_decision.token_budget)
+
             pending_oldest_deadline_s = next_deadline_s
             pending_rows = 1
             pending_tokens = next_row.estimated_total_tokens
@@ -254,7 +312,6 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                     following.arrival_s - origin_arrival_s
                 ) * self._arrival_time_scale
 
-            service = self._service_observation()
             now_s = self._clock.now()
             window = self._flush_policy.select_window(
                 FlushObservation(
@@ -288,6 +345,11 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                 ),
                 selected_wait_s=window.wait_s,
                 window_reason=window.reason,
+                budget_decision=budget_decision,
+                arrival_rate_tokens_s=arrival_rate,
+                service_rate_tokens_s_per_endpoint=(
+                    service.service_rate_tokens_s_per_endpoint
+                ),
             )
 
             flush_reason = window.reason
@@ -309,6 +371,11 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                     self._clock.wait_until(next_deadline_s)
                 pending_rows += 1
                 pending_tokens += next_row.estimated_total_tokens
+                self._arrival_rate.observe(
+                    arrival_s=next_row.arrival_s,
+                    tokens=next_row.estimated_total_tokens,
+                    time_scale=self._arrival_time_scale,
+                )
                 budget_reached = builder.add(next_row)
                 following = self._next_validated(
                     source,
@@ -336,6 +403,11 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                 flush_reason,
                 selected_wait_s=window.wait_s,
                 window_reason=window.reason,
+                budget_decision=budget_decision,
+                arrival_rate_tokens_s=arrival_rate,
+                service_rate_tokens_s_per_endpoint=(
+                    service.service_rate_tokens_s_per_endpoint
+                ),
             )
             yield self._close_batch(builder.close())
 
@@ -379,6 +451,9 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
         *,
         selected_wait_s: float,
         window_reason: str,
+        budget_decision: TokenBudgetDecision,
+        arrival_rate_tokens_s: float | None,
+        service_rate_tokens_s_per_endpoint: float | None,
     ) -> None:
         self._trace.append(
             FlushTraceEvent(
@@ -390,5 +465,11 @@ class ArrivalReplayBatcher(Generic[ReplayResult]):
                 reason=reason,
                 selected_wait_s=selected_wait_s,
                 window_reason=window_reason,
+                selected_token_budget=budget_decision.token_budget,
+                token_budget_reason=budget_decision.reason,
+                arrival_rate_tokens_s=arrival_rate_tokens_s,
+                service_rate_tokens_s_per_endpoint=(
+                    service_rate_tokens_s_per_endpoint
+                ),
             )
         )

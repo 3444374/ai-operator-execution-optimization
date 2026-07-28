@@ -221,17 +221,22 @@
 | `code/src/sources.py` | PostgreSQL data source 后端：psycopg/Arrow baseline、Daft SQL entry、`doc_id`/`arrival_time` source order | 切换或修改数据入口与读取顺序时读 |
 | `code/src/organizers.py` | ArrowOrganizer / DaftOrganizer 数据组织后端 | 接入或比较 Arrow 与 Daft 文本数据组织路径时读 |
 | `code/src/request_costs.py` | 与引擎无关的 prompt/output 成本模式解析 | 修改 prompt-only、固定输出上限或 trace 输出成本语义前读 |
-| `code/src/profile_traces.py` | profiler control/flush/submission/request/resource 的版本化 CSV 序列化 | 修改 trace schema、生命周期标识或 endpoint/GPU 归因前读 |
-| `code/src/profile_cli.py` / `profile_config.py` / `profile_schema.py` | profiler 参数面、CLI/env 解析与正式汇总 schema 的独立边界 | 修改运行参数、环境切换优先级或 runs.csv 字段前读 |
-| `code/src/profile_replay.py` | Arrow batch/request envelope、arrival replay 与 lifecycle seed 组装 | 修改 token-budget 关批、request 粒度补位或 replay 时间语义前读 |
-| `code/src/profile_ray.py` | Ray task/actor submitter、typed scheduler、credit 释放与 fan-in 接线 | 修改 actor pool、request-level replenishment 或 Ray 资源语义前读 |
+| `code/src/profiling/` | profiler 应用子包：CLI/config、正式 schema/trace、replay 和 Ray 接线；根级 `profile_*.py` 仅保留兼容导入 | 修改画像应用参数、运行接线或结果契约前读 |
+| `code/src/profiling/traces.py` | profiler control/flush/submission/request/resource 的版本化 CSV 序列化 | 修改 trace schema、生命周期标识或 endpoint/GPU 归因前读 |
+| `code/src/profiling/cli.py` / `config.py` / `schema.py` | profiler 参数面、CLI/env 解析与正式汇总 schema 的独立边界 | 修改运行参数、环境切换优先级或 runs.csv 字段前读 |
+| `code/src/profiling/replay.py` | Arrow batch/request envelope、arrival replay 与 lifecycle seed 组装 | 修改 token-budget 关批、request 粒度补位或 replay 时间语义前读 |
+| `code/src/profiling/ray.py` | Ray task/actor submitter、typed scheduler、credit 释放与 fan-in 接线 | 修改 actor pool、request-level replenishment 或 Ray 资源语义前读 |
 | `code/src/packing.py` | 与模态无关的确定性 BFD 标量容量装箱与指标 | 修改离线 batch membership、超预算行处理或 packing 指标前读 |
 | `code/src/model_backends.py` | fake debug backend、vLLM-compatible HTTP embedding/completion backend、Ollama native completion backend | 修改模型服务接入、vLLM/Ollama endpoint 或 AI_COMPLETE backend 前读 |
 | `code/src/sinks.py` | `none/json_text/pgvector` embedding 写回与 completion JSON-text 写回 | 修改写回路径或后续接 Lance sink 前读 |
 | `code/src/metrics.py` | Stage timer、GPU/显存/功率时序汇总、能耗、MFU 估计和严格 header 契约的 CSV append helper | 修改 profiling 指标、资源效率、CSV 输出或计时边界前读 |
 | `code/src/workloads.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
 | `code/src/experiment_scenarios.py` | 可复现的 warm-up / formal 场景交错顺序生成器 | 修改实验随机化与运行顺序前读 |
-| `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core：pending batch、arrival replay、flush、动态 admission、actor pool/endpoint routing、deterministic scheduler | 实现或审查运行时策略前读 |
+| `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core；按 `organization/`、`submission_control/`、`endpoint_routing/`、`runtime/` 分包，根级旧模块仅作兼容导入 | 实现或审查运行时策略前读 |
+| `code/src/scheduling/organization/` | 上游 static/service-quantum token-budget 决策 | 修改数据组织预算控制或动态安全动作集前读 |
+| `code/src/scheduling/submission_control/` | static/adaptive admission、active-work 与多 job shared fair credit | 修改提交反压、公平性或 endpoint capacity 语义前读 |
+| `code/src/scheduling/endpoint_routing/` | round-robin、least-queued、least-work、prefix-affinity 路由 | 修改多 endpoint 选择策略前读 |
+| `code/src/scheduling/runtime/` | Ray submit adapter、worker contract、metrics observation cache 与 named credit actor | 修改 Ray/服务观测接线前读 |
 | `code/scripts/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本 | 构造最终可比 `AI_COMPLETE` baseline workload 前运行 |
 | `code/scripts/run_ai_operator_scenarios.py` | 带空闲门禁、失败审计和原子 manifest 的 seeded 场景运行器 | 执行随机化策略对比或真实基础设施门禁前运行 |
 | `code/scripts/summarize_output_aware_bfd.py` | output-aware BFD 重复实验的长表统计汇总 | 汇总吞吐、E2E、packing、GPU、能耗与 MFU 正式结果时运行 |
@@ -243,6 +248,9 @@
 | `code/tests/test_model_backends.py` | 模型后端最小单元测试 | 修改 fake 或 compatible HTTP embedding backend 后运行 |
 | `code/tests/test_sinks.py` | 写回后端最小单元测试 | 修改 sink/writeback 行为后运行 |
 | `code/tests/test_workloads.py` | 内置 workload seed 单元测试 | 修改 smoke/dev workload 后运行 |
+| `code/tests/test_token_budget_controller.py` | static/service-quantum budget 与 arrival EWMA 契约测试 | 修改动态预算选择规则后运行 |
+| `code/tests/test_shared_credit.py` | 多 job endpoint credit、借用、公平轮转与 ID 隔离测试 | 修改共享 admission 纯策略后运行 |
+| `code/tests/test_shared_credit_ray.py` | named Ray actor 复用与配置一致性边界测试 | 修改共享 credit 的 Ray ownership 接线后运行 |
 | `code/tests/test_import_ai_complete_workload.py` | ShareGPT/BurstGPT importer 单元测试 | 修改 importer 或 trace 过滤逻辑后运行 |
 | `code/tests/test_scheduling_models.py` | scheduling request/endpoint/topology schema 单元测试 | 修改 typed scheduling metadata 前运行 |
 | `code/tests/test_scheduling_policies.py` | static admission 与 round-robin routing 单元测试 | 修改 admission/routing baseline 前运行 |
@@ -278,8 +286,11 @@
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
 | `deploy/autodl/` | AutoDL 云服务器 runbook、环境模板、模型下载/endpoint 启动脚本与双 GPU 场景模板 | 2× GPU 云上复现：配置化 vLLM 多 endpoint + PG18.4 + Ray/Daft |
 | `deploy/autodl/dual_gpu_capacity_scaling.example.json` | 单/双 endpoint 相同 per-GPU K 的容量扩展模板 | 先确定双 GPU 公平 scaling 与每卡静态甜点 |
-| `deploy/autodl/dual_gpu_data_organization.example.json` | 关闭 arrival replay 的双 GPU 数据组织隔离模板 | 复验 token-budget、row-cap-aware 与 length-align，避免 flush 混淆 |
+| `deploy/autodl/dual_gpu_token_budget_curve.example.json` | 关闭 arrival replay 的 1024–32768 token-budget 容量曲线 | 证明预算不是越大越好并标定最佳静态预算 |
+| `deploy/autodl/dual_gpu_data_organization.example.json` | 固定最佳预算、关闭 arrival replay 的双 GPU 数据组织隔离模板 | 复验 sequential、row-cap-aware 与 length-align，避免预算大小和 flush 混淆 |
 | `deploy/autodl/dual_gpu_request_replay.example.json` | batch barrier 与 request-level replenishment 模板 | 容量与组织阶段完成后运行，并按实际 batch rows 对齐 request K |
+| `deploy/autodl/dual_gpu_active_work_curve.example.json` | request-level 下的 per-endpoint active-token credit 容量曲线 | 标定模型/负载相关的 active-work 甜点，避免按请求数误配异长工作 |
+| `deploy/autodl/dual_gpu_submission_policy.example.json` | active-work、least-work routing、动态 token budget 与 adaptive flush 的可组合消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |
 

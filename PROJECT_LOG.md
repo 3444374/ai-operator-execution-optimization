@@ -1855,3 +1855,43 @@
   3. **新增 §4.3.1 uv + 独立 venv**：4090 实测 `uv pip install vllm==0.25.1` 约 5 分钟（plain pip 30+ 分钟）；vllm 装独立 venv（`/root/autodl-tmp/venvs/vllm-4090`）与 driver 的 base 隔离，避免 vllm 的 torch 2.11.0 覆盖镜像 base 的 torch 2.12.1+cu130；缓存放数据盘。
 - 验证：4090 上 `vllm 0.25.1 / torch 2.11.0+cu130 / flashinfer 0.6.13 / capability (8,9) / 2 GPU` 全部正常（sm89 不触发 §12 的 Blackwell sm120 flashinfer bug）。
 - 本轮仅修订部署文档，未改代码、未生成性能数据。
+
+## 2026-07-28 Token-budget 容量曲线与多 job 共享调度实现
+
+- 新增 `deploy/autodl/dual_gpu_token_budget_curve.example.json`，在关闭
+  arrival replay/flush 混淆的条件下正式扫描
+  `{1024,2048,4096,8192,16384,32768}`；预注册“小预算固定开销高、大预算
+  completion barrier/HOL 加重”的非单调假设，不再把 8192 当先验最优值。
+- 数据组织模板改为读取 `BEST_TOKEN_BUDGET`，容量曲线标定预算后才比较
+  sequential、row-cap-aware 和 length-align，分离预算大小与 membership
+  算法两个因素。
+- 明确动态 token budget 只能在静态容量曲线标定的安全动作集中，依据 pending
+  work、arrival/service-rate EWMA 和 oldest slack 调整；不得把上游组织预算、
+  active-work admission 与 vLLM 内部 `max_num_batched_tokens` 混为一谈。
+- 将多 job 从远期附加场景提升为正式调度问题：job-local K 的总和不能保护共享
+  endpoint；候选架构为 shared endpoint-local request/work credit +
+  deficit/weighted fair queue，并以 solo-normalized slowdown、饥饿、P99、
+  SLO goodput 和 normalized-work fairness 评估。
+- 修正 shared-vLLM 实验脚本的双 GPU 默认语义：static admission 默认改为
+  per-endpoint、routing 默认 `least_queued`；对仍是 global-only 的 adaptive
+  策略显式拒绝 per-endpoint 配置，防止再次产生不可比结果。
+- 实现 static/service-quantum token-budget 控制器：动态策略只从静态曲线
+  标定的安全候选中选择，按 arrival/service-rate 量子逐批至多移动一档，
+  metrics 缺失时 hold；flush trace 记录实际 budget、理由和反馈速率。
+- 实现 per-endpoint active-work admission 和 least-work routing，按
+  `prompt + estimated output` 预测工作量记账，避免长短请求或不同 batch
+  都消耗一个等价 K credit。
+- 实现多 job shared endpoint credit：Ray named actor 持有 request/work
+  容量，纯策略层使用带权 deficit round robin 和 work-conserving borrowing；
+  配额键使用 `(job_id, request_id)`，避免不同作业重复 batch ID 串扰。
+- 将 scheduling 代码按 `organization/`、`submission_control/`、
+  `endpoint_routing/`、`runtime/` 分包；旧根级模块保留薄兼容导入，避免部署
+  脚本和已有测试发生一次性迁移。
+- 将平铺的 `profile_*.py` 实现收拢到 `code/src/profiling/`，按
+  CLI/config、schema/traces、replay、Ray runtime 分文件；根级同名模块只保留
+  兼容导入，使通用 source/organizer/backend/sink 与画像应用边界分离。
+- 新增 `dual_gpu_active_work_curve.example.json` 和
+  `dual_gpu_submission_policy.example.json`，要求先标定静态预算和 active
+  work，再逐项消融动态预算、least-work 与 adaptive flush。
+- 当前只有本地代码/契约测试，尚未生成新的 GPU 性能结论；合并 main 前仍需
+  远端独立 worktree 全量测试和 Ray smoke。

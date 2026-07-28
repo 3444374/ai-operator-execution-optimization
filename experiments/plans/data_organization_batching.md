@@ -251,20 +251,59 @@ arrival/flush，不足以判断 token-budget 或 length-align 本身是否有效
 
 复验必须先使用 `source_order=doc_id`、关闭 arrival replay，令完整 organizer
 输入可见，固定 static per-endpoint K 和 endpoint routing，仅改变 batch
-membership。第一轮矩阵固定为：
+membership。第一轮先画 token-budget 容量曲线：
 
 ```text
-fixed_rows_8
-sequential_token_budget ∈ {4096, 8192}
-row_cap_aware_token_budget = 8192
-length_align_token_budget = 8192
+sequential_token_budget ∈ {1024, 2048, 4096, 8192, 16384, 32768}
 ```
 
-必须先检查 `packing_budget_utilization_mean`、`batch_rows_mean` 和
-`batch_estimated_cost_units_p95`。如果 token-budget 场景利用率仍低于 50%，
-不进入策略胜负解释，先诊断 row cap、oversized rows 或 organizer visibility。
-只有离线组织阶段出现可辨认的 batch-shape 差异后，才把候选带回 arrival replay
-验证在线泛化；不能同时调 flush timeout 来“帮助”某个组织策略。
+这条曲线要验证的不是“更大的 budget 能装更多行”这一恒真命题，而是吞吐是否
+存在甜点。budget 太小时，HTTP/Ray 调用数和固定开销增加，单次提交给 vLLM 的
+可选请求不足；budget 太大时，兼容 HTTP 的列表响应形成更粗的完成屏障，
+短请求要等同 submission 中最长请求返回，补位变慢，P99、completion span 和
+job 间干扰可能上升。因此预期 `tokens/s` 随 budget 先升后平台或下降，而不是
+单调上升；如果一直单调上升到 32768，说明搜索上界还没覆盖甜点，不能声称
+8192 最优。
+
+容量曲线必须先检查：
+
+- `packing_budget_utilization_mean`、`batch_rows_mean`、batch 数和 HTTP 调用数；
+- observed tokens/s、rows/s、request/service P95/P99；
+- submission completion span、补位间隔和 credit idle ratio；
+- 每 endpoint running/waiting、GPU/MFU 与端点流量分布。
+
+容量曲线确定 `BEST_TOKEN_BUDGET` 后，第二轮才在同一预算上比较
+`fixed_rows_8`、sequential、row-cap-aware 和 length-align，避免把预算大小与
+membership 算法混成一个因素。如果利用率低于 50%，不进入策略胜负解释，先
+诊断 row cap、oversized rows 或 organizer visibility。只有离线组织阶段出现
+可辨认的 batch-shape 差异后，才把候选带回 arrival replay 验证在线泛化；
+不能同时调 flush timeout 来“帮助”某个组织策略。
+
+### 6.0.1 动态 token budget 的晋级实验
+
+动态 budget 不是直接把 vLLM `running` 或 GPU utilization 映射成一个更大的
+数。上游组织预算、上游 active-work admission 和 vLLM 内部
+`max_num_batched_tokens` 是三个不同控制量。第一版动态组织只允许使用：
+
+```text
+pending predicted work
+arrival-rate EWMA
+endpoint completion/service-rate EWMA
+oldest-request slack
+```
+
+控制动作是在已经由静态容量曲线标定的 `{B_min, B_mid, B_max}` 中选择下一批
+的目标预算，并受 hard max-wait 约束。正式挑战 workload 分三段
+`short-heavy → long-heavy → mixed/burst`。比较：
+
+1. 每段分别使用其静态最优预算（oracle 上界，不可在线实现）；
+2. 全程使用训练 workload 的最佳单一静态预算（强 baseline）；
+3. 动态预算；
+4. 动态预算去掉 service-rate feedback 的消融。
+
+动态策略只有在 held-out 顺序或到达率下接近 oracle、显著优于最佳单一静态值，
+并且 P99/饥饿 guardrail 不退化时才晋级。稳态单一 workload 下收敛到静态值是
+合理结果，不应为制造收益而持续振荡。
 
 ### 6.1 参数组合穷举：建立静态最优 baseline
 

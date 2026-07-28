@@ -12,6 +12,7 @@ from src.scheduling.admission import StaticAdmissionController  # noqa: E402
 from src.scheduling.models import BatchRequest, EndpointSnapshot, TopologySnapshot  # noqa: E402
 from src.scheduling.routing import (  # noqa: E402
     LeastQueuedEndpointRouter,
+    LeastWorkEndpointRouter,
     PrefixAffinityEndpointRouter,
     RequestPoolRouter,
     RoundRobinEndpointRouter,
@@ -46,6 +47,8 @@ def endpoint(
     pool_id: str = "default",
     running: int = 0,
     waiting: int = 0,
+    active_work: int = 0,
+    service_rate: float | None = None,
 ) -> EndpointSnapshot:
     return EndpointSnapshot(
         endpoint_id,
@@ -57,6 +60,8 @@ def endpoint(
         waiting,
         0.0,
         1.0,
+        active_work,
+        service_rate,
     )
 
 
@@ -124,6 +129,24 @@ class SchedulingPolicyTests(unittest.TestCase):
 
         self.assertEqual(decision.endpoint_id, "e1")
         self.assertEqual(decision.reason, "least_queued")
+
+    def test_least_work_uses_predicted_drain_time(self) -> None:
+        topology = TopologySnapshot(
+            (
+                endpoint("fast", active_work=4000, service_rate=4000.0),
+                endpoint("slow", active_work=1000, service_rate=500.0),
+            ),
+            1.0,
+        )
+
+        decision = LeastWorkEndpointRouter().route(
+            request(prompt_tokens=1000, output_tokens=0),
+            topology,
+            "default",
+        )
+
+        self.assertEqual(decision.endpoint_id, "fast")
+        self.assertEqual(decision.reason, "least_work")
 
     def test_request_pool_router_applies_prefix_long_short_precedence(self) -> None:
         topology = TopologySnapshot(

@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-26，补充文献驱动执行链缺口）
+Date: 2026-07-20（最后更新：2026-07-28，补充 token-budget 容量曲线与多 job 共享调度）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -14,6 +14,7 @@ Date: 2026-07-20（最后更新：2026-07-26，补充文献驱动执行链缺口
 | ShareGPT/BurstGPT Ray 静态 batch sweep | ✅ 07-18 | Ray task > Ray actor；batch=16 时 ~260 rows/s | 离线扫表（doc_id 序），不反映在线到达 |
 | Token-tail 修订版（batch 1~128, 512 行）| ✅ 07-19 | **固定行 batch 是计算量的弱代理**：batch=8 时 token 跨度 13.9×；batch=128 时 token P95=26678 | — |
 | Token-budget vs Fixed Row（timeout=300）| ✅ 07-19 | **Token-budget 能约束 token tail**：6144/8192 吞吐接近 fixed 32/64，token P95 大幅降低 | 4096 吞吐更低（tradeoff）；未证明在所有场景下优于 fixed |
+| **Token-budget 1024–32768 容量曲线** | ⏳ 配置完成 | — | 预算甜点、过大预算的 completion barrier/HOL 代价、动态预算动作集 |
 | Length-align + Prefix-aware ablation | ✅ 07-19 | length+fixed 是负结果（token P95=33407）；prefix+token6144 吞吐最高（339 rows/s）但 prefix ratio 仅 6.4% | length-align 需配 token-budget；prefix 信号太弱 |
 | **Prefix 受控 workload 实验** | ✅ 07-26 | 0/30/70/100% cache-off screen；修复唯一 prefix 重排与隐式 length-align 耦合 | prefix cache 开启后的命中收益仍未验证 |
 
@@ -32,7 +33,7 @@ Date: 2026-07-20（最后更新：2026-07-26，补充文献驱动执行链缺口
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
 | **Request-level continuous replenishment** | ❌ 未做 | vLLM 内部已有 continuous batching | Ray 上游仍按 submission 回收，尚未证明逐请求完成补位能减少 HOL 或提高 SLO goodput |
 | **SLO-aware EWMA flush** | ❌ 未做 | 当前 two-level queue-adaptive 只作为真实链路 baseline | 尚未使用 oldest-request slack、服务速率、token backlog、EWMA/滞回形成完整控制律 |
-| **多 job/多 foreground size 扩展** | ❌ 未做 | — | 不同 foreground size、arrival offset、background policy 下的公平性 |
+| **多 job/多 foreground size 扩展** | ⏳ 代码完成，GPU 未测 | job-local K 不构成共享 endpoint 的全局保护 | 1/2/4 job、不同 mix/offset；shared request/work credit 与公平队列待远端门禁和正式验证 |
 
 **RC2 当前状态**：✅ static K8 guardrail 与 fixed 50ms coalescing 均有真实
 证据。跨 arrival-rate、2048 held-out 和 shared-vLLM 双作业均未显示
@@ -480,12 +481,13 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 
 1. 用相同 per-GPU K 完成单/双 endpoint 容量曲线，替代历史 global K 同值
    的不公平对照；
-2. 关闭 arrival replay，隔离复验 token-budget/length-align 等数据组织策略；
+2. 关闭 arrival replay，先完成 1024–32768 token-budget 容量曲线，再以
+   `BEST_TOKEN_BUDGET` 隔离复验 membership 策略；
 3. 按 batch control 的实际 `batch_rows_mean` 对齐 request credit，重复
    request-level continuous replenishment 与 whole-submission barrier；
 4. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
-5. prefix cache-on、多模态复用和 shared-vLLM 的多 foreground size、
-   arrival offset、多 job 公平性；
+5. prefix cache-on、多模态复用，以及 shared-vLLM 的 1/2/4 job、workload
+   mix、arrival offset 和共享 endpoint credit/fairness；
 6. 动态控制的信号选择问题——逐请求完成时间或端到端 SLO slack 可能替代
    当前 vLLM waiting 信号（不反映 Ray 侧积压），但尚未验证。
 

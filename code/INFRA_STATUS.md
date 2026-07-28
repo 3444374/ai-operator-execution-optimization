@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-07-26
+日期：2026-07-28
 
 本文说明当前 Daft + Ray 上游执行基础设施已经完成什么、实际执行流程、研究证据
 边界，以及下一步还需要实现和验证的内容。研究方向仍是数据库 AI 算子外部执行
@@ -83,6 +83,15 @@ PostgreSQL
   组织边界，关批后每个完整行请求独立提交，任一完成即释放一个 admission credit。
 - Scheduler 组合顺序固定：admission → pool routing → endpoint routing →
   Ray submit → bounded collection。
+- 静态或 service-quantum token budget；动态策略只在静态容量曲线标定的离散
+  候选中逐步移动，并在 metrics 缺失时保持当前安全值。
+- per-endpoint active-work credit：按 prompt + 预测 output token 记账，
+  与 request-count K 独立开关。
+- least-work endpoint routing：优先预测 drain/active work 较小的 endpoint，
+  与 least-queued 保持独立消融入口。
+- 多 job shared credit：Ray named actor 统一持有 endpoint request/work
+  capacity，使用带权 deficit round robin 和空闲容量借用；联合
+  `(job_id, request_id)` 防止不同作业的 batch ID 冲突。
 
 ### 当前流程
 
@@ -110,13 +119,17 @@ Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
 - UCB 多臂老虎机已有有限 action set 与 SLO reward 的纯控制器代码，但尚未
   接入 profiler。原因是缺少稳定的 epoch-level reward/归因边界；现在接入会把
   跨 epoch 的请求完成错误归因给当前 arm。
-- 当前 queue-adaptive 是 25/50ms 两档、瞬时 running/waiting/KV 阈值 baseline；
-  尚未实现 oldest-request SLO slack、token backlog、arrival/service-rate EWMA
-  和滞回控制。
+- 当前 queue-adaptive 仍是 25/50ms 两档、瞬时 running/waiting/KV 阈值
+  baseline；动态 token-budget 已使用 arrival/service-rate EWMA，但 flush
+  尚未加入 oldest-request SLO slack、token backlog EWMA 和滞回控制。
 - 逐请求完成释放 credit 和持续补位已实现；此前 7B 云端 warm-up 误用
   `ray_batch_rows=1` 且仍为 batch granularity，不能作为该机制性能证据。
   下一步必须保留 packing row cap/token budget，并按等价请求负载比较 batch K
   与 request K。
+- service-quantum budget、active-work credit、least-work routing 和 shared
+  multi-job credit 目前只有代码/契约证据，没有 GPU 性能证据。正式顺序是先做
+  静态 token-budget 曲线，再标定 active-work，最后逐项消融；不能先跑组合策略
+  再把收益归因给其中任一机制。
 
 ## 4. Actor pool、endpoint 与 GPU 扩展
 
@@ -144,10 +157,10 @@ Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
 
 ### 尚未完成的验证
 
-当前正式结果均在一张 GPU 上。多 endpoint/多 GPU 的接口和策略代码存在，
-但异构显存容量、跨 GPU 负载、故障迁移和真实吞吐公平性尚未实测，因此不能声称
-多 GPU 调度已经完成。多 GPU 性能验证必须部署独立 GPU-backed service endpoint，
-不能把同一服务上的多个 actor worker 当作多 GPU。
+双 GPU per-endpoint K 功能门禁已经在独立 GPU-backed endpoint 上完成，但新
+active-work、least-work、动态预算和 shared-credit 策略尚未形成正式性能证据；
+异构显存容量、故障迁移和多 job 公平性也仍待实测，因此不能声称多 GPU 调度已经
+完成。多个 Ray actor worker 仍不能被当作多个 GPU endpoint。
 
 ## 5. 观测与实验运行基础设施
 

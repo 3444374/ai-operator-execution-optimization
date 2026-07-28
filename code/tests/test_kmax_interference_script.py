@@ -13,6 +13,59 @@ from scripts import run_kmax_interference_experiment as experiment  # noqa: E402
 
 
 class KmaxInterferenceScriptTests(unittest.TestCase):
+    def test_static_multi_gpu_defaults_to_endpoint_local_capacity(self) -> None:
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_kmax_interference_experiment",
+                "--endpoint-urls",
+                "http://gpu0/v1/completions,http://gpu1/v1/completions",
+                "--metrics-urls",
+                "http://gpu0/metrics,http://gpu1/metrics",
+            ],
+        ):
+            args = experiment.parse_args()
+
+        command = experiment.profile_command(
+            args,
+            experiment_id="static_dual",
+            total_rows=1,
+            ray_batch_rows=1,
+            max_inflight=16,
+            output="output.csv",
+            completion_max_tokens=1,
+        )
+
+        self.assertEqual(args.endpoint_routing, "least_queued")
+        self.assertEqual(
+            command[command.index("--admission-scope") + 1],
+            "per_endpoint",
+        )
+
+    def test_global_only_controller_rejects_endpoint_local_scope(self) -> None:
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_kmax_interference_experiment",
+                "--include-aimd",
+            ],
+        ):
+            args = experiment.parse_args()
+
+        with self.assertRaisesRegex(ValueError, "requires --admission-scope global"):
+            experiment.profile_command(
+                args,
+                experiment_id="invalid_aimd",
+                total_rows=1,
+                ray_batch_rows=1,
+                max_inflight=16,
+                output="output.csv",
+                completion_max_tokens=1,
+                scheduling_policy="aimd",
+            )
+
     def test_multi_endpoint_urls_are_trimmed_and_cardinality_checked(self) -> None:
         with patch.object(
             sys,
@@ -72,6 +125,8 @@ class KmaxInterferenceScriptTests(unittest.TestCase):
                 "--background-static-kmax",
                 "8,16",
                 "--include-aimd",
+                "--admission-scope",
+                "global",
             ],
         ):
             args = experiment.parse_args()
@@ -99,6 +154,8 @@ class KmaxInterferenceScriptTests(unittest.TestCase):
                 "25",
                 "--flush-max-wait-ms",
                 "50",
+                "--admission-scope",
+                "global",
             ],
         ):
             args = experiment.parse_args()
@@ -142,6 +199,8 @@ class KmaxInterferenceScriptTests(unittest.TestCase):
                 "--background-static-kmax",
                 "",
                 "--include-aimd-hol",
+                "--admission-scope",
+                "global",
                 "--trace-dir",
                 "tmp/shared-vllm-traces-hol",
                 "--hol-age-congestion-s",
@@ -183,6 +242,8 @@ class KmaxInterferenceScriptTests(unittest.TestCase):
                 "--background-static-kmax",
                 "8,16",
                 "--include-aimd",
+                "--admission-scope",
+                "global",
                 "--random-seed",
                 "20260804",
             ],
@@ -197,6 +258,50 @@ class KmaxInterferenceScriptTests(unittest.TestCase):
         self.assertCountEqual(first, experiment.build_scenarios(args))
         self.assertCountEqual(second, experiment.build_scenarios(args))
         self.assertNotEqual(first, second)
+
+    def test_shared_credit_command_emits_work_limit_and_job_weight(self) -> None:
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_kmax_interference_experiment",
+                "--max-active-work-per-endpoint",
+                "32768",
+                "--shared-credit-coordinator-name",
+                "interference-credits",
+                "--shared-credit-request-limit",
+                "64",
+                "--shared-credit-work-limit",
+                "32768",
+                "--shared-credit-quantum",
+                "2048",
+            ],
+        ):
+            args = experiment.parse_args()
+
+        command = experiment.profile_command(
+            args,
+            experiment_id="shared_foreground",
+            total_rows=128,
+            ray_batch_rows=64,
+            max_inflight=64,
+            output="tmp/foreground.csv",
+            completion_max_tokens=256,
+            shared_credit_job_weight=3,
+        )
+
+        self.assertEqual(
+            command[command.index("--max-active-work-per-endpoint") + 1],
+            "32768",
+        )
+        self.assertEqual(
+            command[command.index("--shared-credit-coordinator-name") + 1],
+            "interference-credits",
+        )
+        self.assertEqual(
+            command[command.index("--shared-credit-job-weight") + 1],
+            "3",
+        )
 
 
 if __name__ == "__main__":

@@ -80,7 +80,8 @@ Daft batch
 
 1. **身份保持**：`request_id`、`submission_id` 和结果行 exactly-once；
 2. **完成粒度明确**：至少能够按单请求完成释放 credit，不依赖整批返回；
-3. **有界供给**：同时限制 request 数和估计 token work，不能把队列搬进 vLLM；
+3. **有界供给**：同时限制 request 数和估计 active service work，不能把队列
+   搬进 vLLM；这里的 active-work credit 不等于组织阶段的 token budget；
 4. **Daft/Ray 解耦**：Daft batch 继续作为数据粒度，不充当模型完成屏障；
 5. **故障语义**：失败请求只释放自身 credit，重试策略仍显式关闭或受控；
 6. **可观测**：记录 pending、active request、active token work、refill 次数、
@@ -309,6 +310,33 @@ UCB/学习型控制器必须先解决：
 | Least-work/token-aware routing | 可获得每 endpoint backlog 与完成速率 |
 | Heterogeneous actor pools | 多模型、异构 GPU 或可重复的服务能力差异 |
 | Failure-aware migration | 多 endpoint 且有受控故障注入 |
+
+### 6.2.1 多 job 共享服务必须使用服务级协调
+
+多个数据库 AI 算子进程各自维护 `K_max` 时，每个局部控制器都可能认为自己未
+超载，但它们的窗口之和会共同淹没同一 vLLM endpoint。仅靠
+`least_queued` 也无法保证 job 公平性，因为它只选择 endpoint，不决定不同 job
+谁先获得下一份容量。
+
+正式候选采用两级、work-conserving 的协调方式：
+
+```text
+job-local organizer
+  预测每个 request/micro-submission 的 service work
+        ↓
+shared endpoint-local admission coordinator
+  per-endpoint request cap + active-work cap
+  per-job deficit/weighted fair queue
+  空闲份额可借用，出现竞争时恢复权重
+        ↓
+independent vLLM endpoints
+```
+
+第一版不把“公平”定义成各 job 原始 tokens/s 相等；不同 prompt/output 长度的
+token 计算代价不同。主指标应包含 solo-normalized slowdown、每 job JCT/P99、
+总 observed tokens/s、SLO goodput、饥饿时间，以及基于预测 service work 的
+Jain fairness。静态 GPU/job 分区是隔离 baseline，但不能作为默认策略，因为
+单 job 空闲时会浪费容量。
 
 ### 6.3 暂不优先
 

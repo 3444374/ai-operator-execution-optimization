@@ -53,6 +53,8 @@ class EndpointSnapshot:
     waiting: int
     kv_usage: float | None
     observed_at_s: float
+    estimated_active_work: int = 0
+    service_rate_tokens_s: float | None = None
 
     def __post_init__(self) -> None:
         if not self.endpoint_id or not self.url or not self.pool_id:
@@ -61,6 +63,15 @@ class EndpointSnapshot:
             raise ValueError("running and waiting must be non-negative")
         if self.kv_usage is not None and not 0.0 <= self.kv_usage <= 1.0:
             raise ValueError("kv_usage must be between 0 and 1")
+        if self.estimated_active_work < 0:
+            raise ValueError("estimated_active_work must be non-negative")
+        if self.service_rate_tokens_s is not None and (
+            not math.isfinite(self.service_rate_tokens_s)
+            or self.service_rate_tokens_s <= 0
+        ):
+            raise ValueError(
+                "service_rate_tokens_s must be finite and positive when present"
+            )
 
 
 @dataclass(frozen=True)
@@ -90,6 +101,7 @@ class AdmissionObservation:
     running: int | None
     waiting: int | None
     kv_usage: float | None
+    service_rate_tokens_s_per_endpoint: float | None = None
     sample_age_s: float | None = None
     hol_age_s: float | None = None
 
@@ -115,6 +127,14 @@ class AdmissionObservation:
             raise ValueError("running and waiting must be non-negative when present")
         if self.kv_usage is not None and not 0.0 <= self.kv_usage <= 1.0:
             raise ValueError("kv_usage must be between 0 and 1 when present")
+        if self.service_rate_tokens_s_per_endpoint is not None and (
+            not math.isfinite(self.service_rate_tokens_s_per_endpoint)
+            or self.service_rate_tokens_s_per_endpoint < 0
+        ):
+            raise ValueError(
+                "service_rate_tokens_s_per_endpoint must be finite and "
+                "non-negative when present"
+            )
 
     @property
     def has_service_metrics(self) -> bool:

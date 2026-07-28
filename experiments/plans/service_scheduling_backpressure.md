@@ -19,8 +19,9 @@
 前置：研究内容一 动态 batching 策略消融完成
 
 当前状态：vLLM baseline 与真实双 endpoint 已建立；global/per-endpoint static
-admission 已实现，双 GPU 公平扩展、request-level 补位和 endpoint-local 动态
-反馈仍需正式重复。
+admission、request-level 补位、active-work credit、least-work routing 和
+shared multi-job credit 已实现。后四项及 service-quantum 动态预算仍需正式
+GPU 重复，代码完成不等于策略有效。
 ```
 
 **为什么**：在手动 HTTP endpoint 上做 K_max 扫描，搜出来的"最优 K_max"可能只是因为 endpoint 的队列处理能力不同。vLLM continuous batching 改变了 GPU 侧的请求处理模式，K_max 的最优值和时间分布都会变化。
@@ -101,7 +102,7 @@ vLLM 的 `--enable-chunked-prefill` 和你的 queue-adaptive flush / K_max 控�
 |---|---|---|
 | `K_max` | 最大 in-flight Ray task/actor 数 | {1, 2, 4, 8, 16, 32, ∞ (Ray 默认)} |
 | `endpoint_count` | GPU 模型服务进程数 | {1, 2, 4} |
-| `routing_strategy` | task 到 endpoint 的路由策略 | {round_robin, least_queued, random} |
+| `routing_strategy` | task 到 endpoint 的路由策略 | {round_robin, least_queued, least_work, prefix_affinity} |
 | `backpressure_mode` | 反压策略 | {none (Ray 默认), static_K, adaptive_K} |
 | `workload_type` | AI 算子类型 | {EMBED (真实), FILTER (模拟), COMPLETE (模拟)} |
 
@@ -170,7 +171,11 @@ per-GPU K 配对，同时展示 P99、tokens/s、MFU、能耗和 endpoint submis
 2. 离线数据组织隔离实验，避免 flush 抢先关闭 batch；
 3. 用 batch control 的实际 `batch_rows_mean` 换算 request credit，比较
    whole-submission 与 request-level replenishment；
-4. 只有静态 request-level 路径成立后，才设计 endpoint-local adaptive。
+4. 在 request-level 路径扫描 per-endpoint active-token credit，避免把异长请求
+   都计为一个 K；
+5. 固定已标定 credit 后分别消融 least-work routing、service-quantum budget
+   和 adaptive flush；单项成立后才运行联合候选；
+6. 单作业门禁通过后再运行共享 endpoint 的多 job 公平调度。
 
 当前 AIMD/HOL 不进入正式矩阵：vLLM waiting 近零，看不到 Ray 侧 backlog；
 HOL-age 又包含正常 4–5 秒服务时间，3 秒阈值会把正常服务误判为拥塞。继续扫
@@ -268,6 +273,43 @@ K_max = K_max*（从 5.1 取最优值）
 credit idle ratio、refill 次数和间隔、active request/token work、vLLM
 running/waiting/KV、observed tokens/s、SLO goodput 和 request P99。
 
+### 5.5 多 job 共享 endpoint：局部 K 不构成全局保护
+
+数据库同时执行多个 AI 算子时，每个 job 启动一个独立 scheduler 的现有方式
+存在结构性缺口：两个 `per_endpoint K=16` 的 job 会在同一 endpoint 上形成
+最多 32 份局部在途预算，第三个 job 加入后继续线性膨胀。因此，多 job 优化的
+控制点必须高于 job-local scheduler，是所有 job 共用的 endpoint-local
+admission coordinator。
+
+第一轮矩阵：
+
+```text
+job count       ∈ {1, 2, 4}
+workload mix    ∈ {short+short, short+long, burst+bulk}
+policy          ∈ {
+  independent_local_K,
+  static_endpoint_partition,
+  shared_request_cap,
+  shared_request_and_work_credit,
+  shared_work_credit_plus_weighted_fair_queue
+}
+arrival offset  ∈ {0 s, staggered}
+```
+
+每个 job 必须先单独运行，得到 solo JCT、P99 和 service rate；共享结果报告
+`slowdown_j = JCT_shared_j / JCT_solo_j`。除总吞吐外，至少报告最大 slowdown、
+P95/P99、饥饿时间、SLO goodput 和基于 normalized service 的 Jain fairness。
+
+要推翻的假设：
+
+1. “每个 job 各自设 K 就足够保护共享 vLLM”；
+2. “总 tokens/s 高就代表多 job 调度好”；
+3. “把两个 GPU 静态各分一个 job 总是最优”。
+
+晋级条件：共享 work-credit + 公平队列相对 `independent_local_K` 明显降低最大
+slowdown/饥饿，相对静态分区保持更高总 goodput，并且单 job 时能够借用全部
+空闲容量。
+
 ---
 
 ## 6. 指标
@@ -284,6 +326,20 @@ running/waiting/KV、observed tokens/s、SLO goodput 和 request P99。
 | **有效吞吐** | observed tokens/s、SLO goodput | vLLM/Clipper 的吞吐—SLO评估范式 |
 
 **关键**：不报"adaptive 比 static 好 X%"，而是画 **"延迟-吞吐曲线"**——在不同吞吐水平下 P99 延迟如何变化。这是 vLLM/Orca 的标准做法。
+
+MFU 只作为机制诊断，不作为控制器 reward 或“是否压满 GPU”的唯一判据。
+prefill 主要受计算吞吐限制，decode 常受 HBM 带宽和 KV-cache 读写限制；decode
+已经达到服务容量上界时，MFU 仍可能远低于 100%。反过来，扩大 prefill、
+padding 或无效计算可以抬高 MFU，却未必增加有用 output tokens/s。正式报告
+必须同时给出：
+
+- observed prompt/output tokens/s 与 request goodput；
+- 相同模型/workload 的 direct-vLLM service-only capacity ceiling；
+- `capacity_efficiency = pipeline_tokens_s / direct_service_tokens_s`；
+- MFU、GPU utilization、KV/cache 与 P99，作为解释容量损失发生在哪一层的证据。
+
+infra 的目标是明显优于 naive DB→Daft→Ray baseline，并逼近 direct-vLLM
+service-only 上界；不能要求上游链路超过同 workload 的服务物理上界。
 
 ---
 

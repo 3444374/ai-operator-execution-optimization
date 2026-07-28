@@ -41,8 +41,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--endpoint-routing",
         choices=["round_robin", "least_queued"],
-        default="round_robin",
+        default="least_queued",
     )
+    parser.add_argument(
+        "--admission-scope",
+        choices=["global", "per_endpoint"],
+        default="per_endpoint",
+        help=(
+            "Static K semantics. per_endpoint is required for fair multi-GPU "
+            "capacity; adaptive controllers remain global-only."
+        ),
+    )
+    parser.add_argument("--max-active-work-per-endpoint", type=int, default=0)
+    parser.add_argument("--shared-credit-coordinator-name", default="")
+    parser.add_argument("--shared-credit-request-limit", type=int, default=0)
+    parser.add_argument("--shared-credit-work-limit", type=int, default=0)
+    parser.add_argument("--shared-credit-quantum", type=int, default=0)
+    parser.add_argument("--background-job-weight", type=int, default=1)
+    parser.add_argument("--foreground-job-weight", type=int, default=1)
     parser.add_argument("--model", default="qwen2.5-1.5b")
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--random-seed", type=int, default=20260804)
@@ -112,7 +128,8 @@ def parse_args() -> argparse.Namespace:
 
 def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows: int, ray_batch_rows: int,
                     max_inflight: int, output: str, completion_max_tokens: int,
-                    scheduling_policy: str = "static") -> list[str]:
+                    scheduling_policy: str = "static",
+                    shared_credit_job_weight: int | None = None) -> list[str]:
     endpoint_url_arg = _split_urls(
         args.endpoint_urls or args.endpoint_url,
         "endpoint URLs",
@@ -178,6 +195,10 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
         "1",
         "--max-inflight",
         str(max_inflight),
+        "--admission-scope",
+        args.admission_scope,
+        "--max-active-work-per-endpoint",
+        str(args.max_active_work_per_endpoint),
         "--model-workers",
         str(args.model_workers),
         "--ray-worker-num-cpus",
@@ -219,6 +240,25 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
                 args.endpoint_gpu_ids or ",".join(str(i) for i in range(len(endpoint_url_arg))),
             ]
         )
+    if args.shared_credit_coordinator_name:
+        command.extend(
+            [
+                "--shared-credit-coordinator-name",
+                args.shared_credit_coordinator_name,
+                "--shared-credit-request-limit",
+                str(args.shared_credit_request_limit),
+                "--shared-credit-work-limit",
+                str(args.shared_credit_work_limit),
+                "--shared-credit-quantum",
+                str(args.shared_credit_quantum),
+                "--shared-credit-job-weight",
+                str(
+                    shared_credit_job_weight
+                    if shared_credit_job_weight is not None
+                    else 1
+                ),
+            ]
+        )
     if args.batching_policy == "token_budget":
         command.extend(
             [
@@ -233,6 +273,11 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
             ]
         )
     if scheduling_policy == "queue_adaptive":
+        if args.admission_scope != "global":
+            raise ValueError(
+                "queue_adaptive requires --admission-scope global; use static "
+                "per-endpoint controls for the multi-GPU fairness experiment"
+            )
         command.extend(
             [
                 "--adaptive-min-inflight",
@@ -248,6 +293,10 @@ def profile_command(args: argparse.Namespace, *, experiment_id: str, total_rows:
             ]
         )
     elif scheduling_policy in {"aimd", "aimd_hol"}:
+        if args.admission_scope != "global":
+            raise ValueError(
+                f"{scheduling_policy} requires --admission-scope global"
+            )
         command.extend(
             [
                 "--controller-min-window",
@@ -363,6 +412,7 @@ def main() -> None:
                 max_inflight=min(8, args.adaptive_max_inflight),
                 output=args.small_output,
                 completion_max_tokens=args.completion_max_tokens,
+                shared_credit_job_weight=args.foreground_job_weight,
             )
         )
         for bulk_k, label, scheduling_policy in scenarios_for_repeat(args, repeat):
@@ -375,6 +425,7 @@ def main() -> None:
                 output=args.bulk_output,
                 completion_max_tokens=args.completion_max_tokens,
                 scheduling_policy=scheduling_policy,
+                shared_credit_job_weight=args.background_job_weight,
             )
             small_cmd = profile_command(
                 args,
@@ -384,6 +435,7 @@ def main() -> None:
                 max_inflight=min(8, args.adaptive_max_inflight),
                 output=args.small_output,
                 completion_max_tokens=args.completion_max_tokens,
+                shared_credit_job_weight=args.foreground_job_weight,
             )
             bulk = subprocess.Popen(bulk_cmd, cwd=ROOT)
             time.sleep(args.ramp_up_s)

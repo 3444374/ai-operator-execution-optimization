@@ -19,7 +19,8 @@ if str(CODE_ROOT) not in sys.path:
 
 from scripts import postgres_ai_operator_profile as profile  # noqa: E402
 from scripts.run_ai_operator_scenarios import _load_config  # noqa: E402
-from src import profile_ray, profile_replay  # noqa: E402
+from src.profiling import ray as profile_ray  # noqa: E402
+from src.profiling import replay as profile_replay  # noqa: E402
 from src.scheduling.adaptive_admission import AimdAdmissionController  # noqa: E402
 from src.scheduling.admission import DynamicAdmissionGate  # noqa: E402
 from src.scheduling.models import (  # noqa: E402
@@ -85,11 +86,13 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "COMPLETION_MAX_TOKENS": "256",
             "COMPLETION_PROMPT_FORMAT": "chatml",
             "TOKEN_BUDGET": "8192",
+            "BEST_TOKEN_BUDGET": "8192",
             "GPU_PEAK_TFLOPS": "165",
             "MFU_PRECISION": "bf16_dense_fp32_accumulate",
         }
         templates = (
             "dual_gpu_capacity_scaling.example.json",
+            "dual_gpu_token_budget_curve.example.json",
             "dual_gpu_data_organization.example.json",
             "dual_gpu_request_replay.example.json",
         )
@@ -880,6 +883,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             {
                 "operator_invocations",
                 "max_inflight",
+                "max_active_work_per_endpoint_seen",
                 "bounded_wait_s",
                 "avg_bounded_wait_s",
                 "fanin_s",
@@ -1395,7 +1399,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         output = Path("control_trace.csv")
         captured_rows = []
         with patch(
-            "src.profile_traces.append_metrics",
+            "src.profiling.traces.append_metrics",
             side_effect=lambda path, row: captured_rows.append((path, row)),
         ):
             profile._write_control_trace(
@@ -1990,6 +1994,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(default_row["flush_max_wait_ms"], 50.0)
         self.assertEqual(default_row["flush_trace_output"], "")
         self.assertEqual(default_row["flush_trace_path"], "")
+        self.assertEqual(default_row["token_budget_policy"], "static")
 
         implicit_trace_args = profile.parse_args(
             [
@@ -2051,6 +2056,75 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             replay_row["arrival_replay_preload"],
             "bounded_requested_workload",
         )
+
+        dynamic_args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_task",
+                "--data-source",
+                "daft_postgres",
+                "--source-order",
+                "arrival_time",
+                "--arrival-replay",
+                "--batching-policy",
+                "token_budget",
+                "--token-budget",
+                "4096",
+                "--token-budget-policy",
+                "service_quantum",
+                "--token-budget-candidates",
+                "2048,4096,8192",
+            ]
+        )
+        dynamic_row = profile.run_once(dynamic_args, "formal", 1)
+
+        self.assertEqual(
+            dynamic_row["token_budget_policy"],
+            "service_quantum",
+        )
+        self.assertEqual(
+            dynamic_row["token_budget_candidates"],
+            "2048,4096,8192",
+        )
+
+        shared_args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_task",
+                "--admission-scope",
+                "per_endpoint",
+                "--max-inflight",
+                "64",
+                "--max-active-work-per-endpoint",
+                "32768",
+                "--endpoint-routing",
+                "least_work",
+                "--shared-credit-coordinator-name",
+                "test-credits",
+                "--shared-credit-request-limit",
+                "64",
+                "--shared-credit-work-limit",
+                "32768",
+                "--shared-credit-quantum",
+                "2048",
+                "--shared-credit-job-weight",
+                "2",
+            ]
+        )
+        shared_row = profile.run_once(shared_args, "formal", 1)
+
+        self.assertEqual(shared_row["max_active_work_per_endpoint"], 32768)
+        self.assertEqual(shared_row["endpoint_routing"], "least_work")
+        self.assertEqual(
+            shared_row["shared_credit_coordinator_name"],
+            "test-credits",
+        )
+        self.assertEqual(shared_row["shared_credit_request_limit"], 64)
+        self.assertEqual(shared_row["shared_credit_work_limit"], 32768)
+        self.assertEqual(shared_row["shared_credit_quantum"], 2048)
+        self.assertEqual(shared_row["shared_credit_job_weight"], 2)
 
     def test_dry_run_records_output_cost_provenance(self) -> None:
         args = profile.parse_args(
@@ -2680,10 +2754,14 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "reason",
                     "selected_wait_s",
                     "window_reason",
+                    "selected_token_budget",
+                    "token_budget_reason",
+                    "arrival_rate_tokens_s",
+                    "service_rate_tokens_s_per_endpoint",
                 },
             )
             self.assertEqual(rows[0]["pending_rows"], "2")
-            self.assertEqual(rows[0]["schema_version"], "2")
+            self.assertEqual(rows[0]["schema_version"], "3")
             self.assertEqual(rows[0]["reason"], "fixed_timeout")
             self.assertEqual(rows[0]["arrival_time_scale"], "0.0005")
             self.assertEqual(rows[0]["selected_wait_s"], "0.025")

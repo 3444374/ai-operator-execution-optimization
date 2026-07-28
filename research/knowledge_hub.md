@@ -348,7 +348,10 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 ### 5.1 从 vLLM/Orca/Sarathi 提取
 
 - **Continuous batching 是下游给定机制**，上游目标不是替代它，而是给它最优的请求流
-- **按 token 预算而非请求数做 batch**：借鉴 `max_num_batched_tokens`，上游也应以 token budget 分组
+- **按预测工作量而非仅按请求数组织 batch**：上游 token budget 是数据组织和
+  submission 形状控制量；vLLM `max_num_batched_tokens` 是引擎内部单轮调度
+  上限。两者可以共享“按工作量控制”的思想，但语义、时间尺度和最优值不同，
+  不能把上游预算写成 vLLM 参数的直接迁移
 - **并发提交优于一次大 batch**：vLLM 推荐并发提交独立请求，不手动合并——验证了多 actor 独立提交架构
 - **完成即补位不应被上游整批屏障抵消**：Orca/vLLM 在服务内部按迭代移除完成
   请求并接纳 waiting 请求；本项目可迁移为 Ray 上游 request-level credit
@@ -390,7 +393,10 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **Middle-phase thrashing**：长期运行的推理 session 在内存耗尽前就会出现吞吐退化。**待确认**：CONCUR workload 是 agentic ReAct 多步 agent；本课题 DB operator 多为无状态单轮，middle-phase thrashing 前提可能不成立——KV cache 信号价值需在单轮场景重新验证
 
 **从 Scorpio (2025) 提取**：
-- **VBS (Virtual Batch Size) Admission Control**：用 token 量（而非请求数）投影系统负载——我们的 token-budget batching 本质上就是 VBS 的一种实现
+- **VBS (Virtual Batch Size) Admission Control**：SCORPIO 用按 SLO 紧迫度
+  加权的 active request 数投影运行负载。它可启发 active-work admission，
+  但上游 token-budget batching 控制的是尚未提交行的 membership，不是 VBS
+  的实现
 - **Credit-based Batching**：按 SLO 松紧分配 batching 机会——可迁移到我们的异构 workload 场景（不同优先级的 SQL 查询）
 
 **从 SABER (2025) 提取**：
@@ -408,6 +414,19 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 **从 ProServe (2025) 提取**：
 - **两层调度架构验证**：SlideBatching（Engine 层 token 级）+ GoRouting（Service 层 request 级）——与我们的"内部 vLLM + 外部 Ray"两层架构同构，证明分层调度在该场景下是合理设计
 - **Gain-oriented dispatching**：不仅看当前负载，还要预估未来收益——actor pool 分池路由可参考此思想
+
+**本项目新增迁移候选（2026-07-28）**：
+- **Service-quantum adaptive budget**：先用静态
+  `{1024,2048,4096,8192,16384,32768}` 容量曲线标定组织预算甜点。第一版只按
+  arrival/service-rate EWMA 在少量离散预算中逐档选择；pending work 和 oldest
+  slack 作为后续独立增量，不在首版混入。这里迁移的是 Clipper delayed
+  batching、DistServe workload profiling 与 ProServe latency estimation 的
+  设计模式；不是 Sarathi engine-internal iteration token budget 的复现
+- **Shared endpoint-local work credit**：多个数据库 AI job 不能各自独立持有
+  完整 per-endpoint K。候选服务级协调器对每 endpoint 同时维护 request cap 和
+  predicted active-work cap，并以 deficit/weighted fair queue 在 job 间分配
+  credit；空闲 job 的份额允许被借用。该机制优先解决共享服务的隔离、饥饿与
+  work conservation，再叠加动态 flush
 
 ### 5.6 Ray 现存机制的能力边界（2026-07-21 新增）
 

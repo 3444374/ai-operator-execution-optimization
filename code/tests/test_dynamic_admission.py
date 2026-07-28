@@ -82,6 +82,40 @@ class CachedObservationProviderTests(unittest.TestCase):
         self.assertIsNone(observation.waiting)
         self.assertIsNone(observation.kv_usage)
 
+    def test_provider_derives_per_endpoint_service_rate_from_counters(self) -> None:
+        clock = FakeClock(1.0)
+        snapshots = iter(
+            [
+                ServiceMetricsSnapshot(
+                    running=2,
+                    waiting=0,
+                    kv_usage=0.1,
+                    completed_tokens_total=1000.0,
+                    endpoint_count=2,
+                ),
+                ServiceMetricsSnapshot(
+                    running=2,
+                    waiting=0,
+                    kv_usage=0.1,
+                    completed_tokens_total=2200.0,
+                    endpoint_count=2,
+                ),
+            ]
+        )
+        provider = CachedMetricsObservationProvider(
+            lambda: next(snapshots),
+            min_sample_interval_s=0.25,
+            rate_ewma_alpha=1.0,
+            clock=clock,
+        )
+
+        first = provider.latest(inflight=1)
+        clock.current = 1.5
+        second = provider.latest(inflight=1)
+
+        self.assertIsNone(first.service_rate_tokens_s_per_endpoint)
+        self.assertEqual(second.service_rate_tokens_s_per_endpoint, 1200.0)
+
 
 class NonBlockingObservationProviderTests(unittest.TestCase):
     def test_provider_reports_sample_age(self) -> None:

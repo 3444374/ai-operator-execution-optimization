@@ -64,6 +64,7 @@ from .ray_adapter import (
 from .ray_runtime import RayWorkerOptions
 from .routing import (
     LeastQueuedEndpointRouter,
+    LeastWorkEndpointRouter,
     PrefixAffinityEndpointRouter,
     RequestPoolRouter,
     RoundRobinEndpointRouter,
@@ -76,7 +77,19 @@ from .scheduler import (
     SubmissionAdapter,
     SynchronousScheduler,
 )
+from .shared_credit import (
+    CreditLease,
+    EndpointCreditSnapshot,
+    FairEndpointCreditCoordinator,
+)
 from .topology import healthy_endpoints
+from .token_budget import (
+    ArrivalRateEwma,
+    ServiceQuantumTokenBudgetController,
+    StaticTokenBudgetController,
+    TokenBudgetDecision,
+    TokenBudgetObservation,
+)
 from .ucb_admission import (
     SloRewardInput,
     UcbAdmissionController,
@@ -90,6 +103,7 @@ __all__ = [
     "AdmissionPolicy",
     "AdmissionTraceEvent",
     "ArrivalReplayBatcher",
+    "ArrivalRateEwma",
     "ActorWorkerPoolSubmitter",
     "ActorSubmissionState",
     "AimdAdmissionController",
@@ -97,13 +111,16 @@ __all__ = [
     "BatchRequest",
     "CollectedSubmission",
     "ControlDiagnostics",
+    "CreditLease",
     "CachedMetricsObservationProvider",
     "NonBlockingMetricsObservationProvider",
     "DynamicAdmissionGate",
     "EndpointSnapshot",
     "EndpointRouter",
+    "EndpointCreditSnapshot",
     "EwmaAimdAdmissionController",
     "FixedTimeoutFlush",
+    "FairEndpointCreditCoordinator",
     "FlushDecision",
     "FlushObservation",
     "FlushWindow",
@@ -122,6 +139,7 @@ __all__ = [
     "RoundRobinSubmitter",
     "RayWorkerOptions",
     "LeastQueuedEndpointRouter",
+    "LeastWorkEndpointRouter",
     "MonotonicEpochClock",
     "PrefixAffinityEndpointRouter",
     "RequestPoolRouter",
@@ -135,7 +153,9 @@ __all__ = [
     "RowArrival",
     "SchedulerResult",
     "ServiceMetricsSnapshot",
+    "ServiceQuantumTokenBudgetController",
     "StaticAdmissionController",
+    "StaticTokenBudgetController",
     "SloRewardInput",
     "SubmissionAdapter",
     "SubmissionCompletion",
@@ -144,6 +164,8 @@ __all__ = [
     "SynchronousScheduler",
     "SystemReplayClock",
     "TopologySnapshot",
+    "TokenBudgetDecision",
+    "TokenBudgetObservation",
     "UcbAdmissionController",
     "UcbConfig",
     "WindowDecision",

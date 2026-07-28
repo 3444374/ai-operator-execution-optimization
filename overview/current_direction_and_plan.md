@@ -81,15 +81,18 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
   MFU 4.02% → 14.51%；后续本地稳态调度实验采用 graph 服务
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P1**：修正配置后重复验证 Ray 上游 request-level continuous
+1. **P1**：先画 1024–32768 静态 token-budget 容量曲线，再在最佳预算上
+   比较 membership；动态预算放到阶段变化 workload 中验证
+2. **P1**：修正配置后重复验证 Ray 上游 request-level continuous
    replenishment；代码已支持逐请求 credit release，但 7B 双卡首轮 warm-up
    实际运行成单行 batch，尚无有效性能结论
-2. **P1**：SLO-aware EWMA flush；当前 25/50ms two-level 只作为 baseline
-3. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
-4. **P2**（文本门禁已完成）：多模态泛化验证
-5. 在当前 2×4090 上完成多 endpoint / 多 GPU 重复 formal 验证
-6. 代价模型增加独立时间段/新 workload 校准和预测区间
-7. Shared-vLLM 扩展不同 foreground size、arrival offset 和多 job 数量
+3. **P1**：SLO-aware EWMA flush；当前 25/50ms two-level 只作为 baseline
+4. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
+5. **P2**（文本门禁已完成）：多模态泛化验证
+6. 在当前 2×4090 上完成多 endpoint / 多 GPU 重复 formal 验证
+7. 代价模型增加独立时间段/新 workload 校准和预测区间
+8. **P1**：Shared-vLLM 扩展 1/2/4 job；共享 endpoint 的 request/work
+   credit 与 work-conserving 公平队列代码已完成，尚待远端门禁和正式数据
 
 继续从文献提取机制时，统一按
 `experiments/plans/literature_driven_pipeline_optimization_guide.md` 的机制卡、

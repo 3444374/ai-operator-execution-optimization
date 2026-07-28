@@ -80,12 +80,14 @@ class ExperimentScenarioTests(unittest.TestCase):
             "COMPLETION_MAX_TOKENS": "256",
             "COMPLETION_PROMPT_FORMAT": "chatml",
             "TOKEN_BUDGET": "8192",
+            "BEST_TOKEN_BUDGET": "8192",
             "GPU_PEAK_TFLOPS": "165",
             "MFU_PRECISION": "bf16_dense_fp32_accumulate",
         }
         templates = {
             "dual_gpu_capacity_scaling.example.json": 6,
-            "dual_gpu_data_organization.example.json": 5,
+            "dual_gpu_token_budget_curve.example.json": 6,
+            "dual_gpu_data_organization.example.json": 4,
             "dual_gpu_request_replay.example.json": 5,
         }
 

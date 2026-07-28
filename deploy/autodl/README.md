@@ -315,15 +315,25 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 
 ### 9.1 双 GPU 分阶段诊断模板
 
-三个模板必须按顺序运行，不能合成一个大矩阵：
+六个模板必须按顺序运行，不能合成一个大矩阵：
 
 1. `dual_gpu_capacity_scaling.example.json`：相同 per-GPU K 下比较单/双
    endpoint，回答硬件扩展与容量甜点，不测试新 batching 策略。
-2. `dual_gpu_data_organization.example.json`：关闭 arrival replay，避免 50ms
+2. `dual_gpu_token_budget_curve.example.json`：关闭 arrival replay，在
+   1024–32768 范围画容量曲线，验证 token budget 不是越大越好并选出
+   `BEST_TOKEN_BUDGET`。
+3. `dual_gpu_data_organization.example.json`：使用上一步的最佳预算并继续关闭
+   arrival replay，避免 50ms
    flush 在 token budget 生效前关批；回答 fixed rows、sequential
    token-budget、row-cap-aware 和 length-align 的数据组织差异。
-3. `dual_gpu_request_replay.example.json`：恢复相同 arrival replay/flush，
+4. `dual_gpu_request_replay.example.json`：恢复相同 arrival replay/flush，
    比较 whole-submission barrier 与真正的 request-level replenishment。
+5. `dual_gpu_active_work_curve.example.json`：保持 request-level
+   replenishment 和 fixed 50ms，扫描每 endpoint 的预测 active-token
+   配额。先标定 `ACTIVE_WORK_PER_ENDPOINT`，不要把 32768 当作跨模型常数。
+6. `dual_gpu_submission_policy.example.json`：在已标定 token budget 和
+   active-work 配额上，逐项消融 least-work routing、service-quantum 动态预算
+   和 queue-adaptive flush；最后的 combined arm 只检查交互，不替代单项结论。
 
 `${DATABASE_URL}`、`${COMPLETION_MODEL}`、endpoint/metrics URL 等变量在 runner
 读取时从环境展开；缺失变量会在启动任何外部工作前报错。容量模板的单 GPU
@@ -343,9 +353,20 @@ python code/scripts/run_ai_operator_scenarios.py \
   --metrics-urls "$MODEL_METRICS_URLS"
 ```
 
-完成后只替换 `--config` 和 `--output-dir`，依次运行 data-organization 与
-request-replay 模板。每轮都必须等待 runner manifest 为 `complete`，不要手工
-拼接失败重跑的 CSV。
+完成后只替换 `--config` 和 `--output-dir`，依次运行 token-budget-curve、
+data-organization、request-replay、active-work-curve 与 submission-policy
+模板。预算容量曲线完成后先把选出的预算写入仓库外 runtime env 的
+`BEST_TOKEN_BUDGET`；active-work 曲线完成后再写入
+`ACTIVE_WORK_PER_ENDPOINT`。每轮都必须等待 runner manifest 为 `complete`，
+不要手工拼接失败重跑的 CSV。
+
+动态预算只在 `TOKEN_BUDGET_CANDIDATES` 的静态已测动作中移动。这里的 token
+budget 是 Ray 上游关批边界，active-work 是 endpoint admission credit，
+二者都不是 vLLM 的 `max_num_batched_tokens`。三者必须分别记录和消融。
+
+`dual_gpu_submission_policy` 的前五个场景是单因素或逐层增量对照；只有相应
+单项在 tokens/s 或 SLO-goodput 上超过重复波动且不恶化 p99，才允许把它保留在
+combined candidate。不能因为 combined 最好就倒推每个组成策略都有效。
 
 request-replay 模板保留 `ray_batch_rows=64` 和 `token_budget=8192` 作为组织边界，只有
 `submission_granularity=request` 的场景才在关批后展开为单请求。不要用

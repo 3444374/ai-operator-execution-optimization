@@ -123,6 +123,7 @@ from src.scheduling.observations import (
 from src.scheduling.pid_admission import PidAdmissionController, PidConfig
 from src.scheduling.routing import (
     LeastQueuedEndpointRouter,
+    LeastWorkEndpointRouter,
     PrefixAffinityEndpointRouter,
     RequestPoolRouter,
     RoundRobinEndpointRouter,
@@ -233,6 +234,7 @@ def _merge_submit_metrics(
 ) -> None:
     maximum_fields = {
         "max_inflight",
+        "max_active_work_per_endpoint_seen",
         "adaptive_limit_mean",
         "endpoint_count",
         "actor_worker_count",
@@ -436,6 +438,16 @@ def _service_metrics_snapshot(
         running=optional_int("vllm:num_requests_running"),
         waiting=optional_int("vllm:num_requests_waiting"),
         kv_usage=metrics.get("vllm:kv_cache_usage_perc"),
+        completed_tokens_total=(
+            metrics.get("vllm:prompt_tokens_total", 0.0)
+            + metrics.get("vllm:generation_tokens_total", 0.0)
+            if (
+                "vllm:prompt_tokens_total" in metrics
+                or "vllm:generation_tokens_total" in metrics
+            )
+            else None
+        ),
+        endpoint_count=len(metrics_urls),
     )
 
 
@@ -564,6 +576,7 @@ def _build_routing_config(
     endpoint_routers = {
         "round_robin": RoundRobinEndpointRouter,
         "least_queued": LeastQueuedEndpointRouter,
+        "least_work": LeastWorkEndpointRouter,
         "prefix_affinity": PrefixAffinityEndpointRouter,
     }
     if endpoint_routing not in endpoint_routers:
@@ -857,6 +870,10 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
             "--submission-granularity request requires --arrival-replay"
         )
     if not args.arrival_replay:
+        if args.token_budget_policy != "static":
+            raise SystemExit(
+                "dynamic token-budget policy requires --arrival-replay"
+            )
         return
     if (
         isinstance(args.arrival_time_scale, bool)
@@ -881,6 +898,48 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
         raise SystemExit(
             "arrival replay rejects offline reordering batching policies"
         )
+    if (
+        args.token_budget_policy != "static"
+        and args.batching_policy != "token_budget"
+    ):
+        raise SystemExit(
+            "dynamic token-budget policy requires "
+            "--batching-policy token_budget"
+        )
+    if args.token_budget_policy == "service_quantum":
+        try:
+            candidates = tuple(
+                int(value.strip())
+                for value in args.token_budget_candidates.split(",")
+                if value.strip()
+            )
+        except ValueError as exc:
+            raise SystemExit(
+                "--token-budget-candidates must be comma-separated integers"
+            ) from exc
+        if (
+            not candidates
+            or any(candidate <= 0 for candidate in candidates)
+            or args.token_budget not in candidates
+        ):
+            raise SystemExit(
+                "--token-budget-candidates must contain positive values and "
+                "include --token-budget as the fallback"
+            )
+        if (
+            not math.isfinite(args.token_budget_target_service_ms)
+            or args.token_budget_target_service_ms <= 0
+        ):
+            raise SystemExit(
+                "--token-budget-target-service-ms must be finite and positive"
+            )
+        if (
+            not math.isfinite(args.token_budget_arrival_ewma_alpha)
+            or not 0 < args.token_budget_arrival_ewma_alpha <= 1
+        ):
+            raise SystemExit(
+                "--token-budget-arrival-ewma-alpha must be in (0, 1]"
+            )
     if not args.dry_run and args.model_backend == "fake":
         raise SystemExit("arrival replay formal runs require a real model backend")
     if (
@@ -1093,9 +1152,52 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 "per-endpoint admission currently supports --scheduling-policy "
                 "static only"
             )
+    if args.max_active_work_per_endpoint < 0:
+        raise SystemExit(
+            "--max-active-work-per-endpoint must be non-negative"
+        )
+    if (
+        args.max_active_work_per_endpoint > 0
+        and args.scheduling_policy != "static"
+    ):
+        raise SystemExit(
+            "active-work admission currently supports "
+            "--scheduling-policy static only"
+        )
     per_endpoint_inflight_limit = (
         args.max_inflight if args.admission_scope == "per_endpoint" else None
     )
+    per_endpoint_work_limit = (
+        args.max_active_work_per_endpoint
+        if args.max_active_work_per_endpoint > 0
+        else None
+    )
+    shared_credit_config = None
+    if args.shared_credit_coordinator_name:
+        if args.executor not in {"ray_actor", "ray_task"}:
+            raise SystemExit("shared credit requires a Ray executor")
+        if args.scheduling_policy != "static":
+            raise SystemExit(
+                "shared credit currently requires static job-local scheduling"
+            )
+        if (
+            args.shared_credit_request_limit <= 0
+            or args.shared_credit_work_limit <= 0
+            or args.shared_credit_quantum <= 0
+            or args.shared_credit_job_weight <= 0
+        ):
+            raise SystemExit(
+                "shared credit request/work limits, quantum, and job weight "
+                "must be positive"
+            )
+        shared_credit_config = {
+            "name": args.shared_credit_coordinator_name,
+            "namespace": args.shared_credit_namespace,
+            "request_limit": args.shared_credit_request_limit,
+            "work_limit": args.shared_credit_work_limit,
+            "quantum": args.shared_credit_quantum,
+            "job_weight": args.shared_credit_job_weight,
+        }
     effective_global_inflight_limit = (
         args.max_inflight * routing_endpoint_count
         if per_endpoint_inflight_limit is not None
@@ -1168,6 +1270,14 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "ray_batch_rows": args.ray_batch_rows,
             "batching_policy": args.batching_policy,
             "token_budget": args.token_budget,
+            "token_budget_policy": args.token_budget_policy,
+            "token_budget_candidates": args.token_budget_candidates,
+            "token_budget_target_service_ms": (
+                args.token_budget_target_service_ms
+            ),
+            "token_budget_arrival_ewma_alpha": (
+                args.token_budget_arrival_ewma_alpha
+            ),
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
             "completion_return_token_ids": args.completion_return_token_ids,
             "completion_prompt_format": args.completion_prompt_format,
@@ -1198,6 +1308,17 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "max_inflight_limit": args.max_inflight,
             "admission_scope": args.admission_scope,
             "per_endpoint_inflight_limit": per_endpoint_inflight_limit or 0,
+            "max_active_work_per_endpoint": per_endpoint_work_limit or 0,
+            "max_active_work_per_endpoint_seen": 0,
+            "shared_credit_coordinator_name": (
+                args.shared_credit_coordinator_name
+            ),
+            "shared_credit_request_limit": (
+                args.shared_credit_request_limit
+            ),
+            "shared_credit_work_limit": args.shared_credit_work_limit,
+            "shared_credit_quantum": args.shared_credit_quantum,
+            "shared_credit_job_weight": args.shared_credit_job_weight,
             "effective_global_inflight_limit": effective_global_inflight_limit,
             "endpoint_routing": args.endpoint_routing,
             "pool_routing": args.pool_routing,
@@ -1483,6 +1604,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "endpoint_count": 0,
             "actor_worker_count": 0,
             "actor_worker_submission_counts": "",
+            "max_active_work_per_endpoint_seen": 0,
         }
 
         operator_wall_s = 0.0
@@ -1603,6 +1725,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     completion_max_tokens=args.completion_max_tokens,
                     submission_state=actor_submission_state,
                     per_endpoint_limit=per_endpoint_inflight_limit,
+                    per_endpoint_work_limit=per_endpoint_work_limit,
+                    shared_credit_config=shared_credit_config,
                 )
             if args.executor == "ray_task":
                 return submit_ray_tasks(
@@ -1631,6 +1755,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     ),
                     epoch_clock=lifecycle_epoch_clock,
                     per_endpoint_limit=per_endpoint_inflight_limit,
+                    per_endpoint_work_limit=per_endpoint_work_limit,
+                    shared_credit_config=shared_credit_config,
                     output_cost_mode=args.output_cost_mode,
                     completion_return_token_ids=(
                         args.completion_return_token_ids
@@ -1759,7 +1885,15 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
 
         if args.arrival_replay:
             flush_observation_provider = None
-            if args.flush_policy == "queue_adaptive":
+            if (
+                args.flush_policy == "queue_adaptive"
+                or args.token_budget_policy == "service_quantum"
+            ):
+                if not resolved_metrics_urls and not args.dry_run:
+                    raise SystemExit(
+                        "feedback-driven flush or token budget requires "
+                        "--model-metrics-url(s)"
+                    )
                 flush_observation_provider = NonBlockingMetricsObservationProvider(
                     lambda: (
                         _service_metrics_snapshot(resolved_metrics_urls)
@@ -2040,6 +2174,14 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "ray_batch_rows": args.ray_batch_rows,
             "batching_policy": args.batching_policy,
             "token_budget": args.token_budget,
+            "token_budget_policy": args.token_budget_policy,
+            "token_budget_candidates": args.token_budget_candidates,
+            "token_budget_target_service_ms": (
+                args.token_budget_target_service_ms
+            ),
+            "token_budget_arrival_ewma_alpha": (
+                args.token_budget_arrival_ewma_alpha
+            ),
             "embedding_dim": args.embedding_dim,
             "embedding_vector_dim": current_vector_dim if current_vector_dim is not None else "",
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
@@ -2073,6 +2215,19 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "max_inflight_limit": args.max_inflight,
             "admission_scope": args.admission_scope,
             "per_endpoint_inflight_limit": per_endpoint_inflight_limit or 0,
+            "max_active_work_per_endpoint": per_endpoint_work_limit or 0,
+            "max_active_work_per_endpoint_seen": int(
+                submit_metrics["max_active_work_per_endpoint_seen"]
+            ),
+            "shared_credit_coordinator_name": (
+                args.shared_credit_coordinator_name
+            ),
+            "shared_credit_request_limit": (
+                args.shared_credit_request_limit
+            ),
+            "shared_credit_work_limit": args.shared_credit_work_limit,
+            "shared_credit_quantum": args.shared_credit_quantum,
+            "shared_credit_job_weight": args.shared_credit_job_weight,
             "effective_global_inflight_limit": effective_global_inflight_limit,
             "endpoint_routing": args.endpoint_routing,
             "pool_routing": args.pool_routing,

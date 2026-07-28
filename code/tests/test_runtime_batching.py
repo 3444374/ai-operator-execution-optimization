@@ -22,6 +22,9 @@ from src.scheduling.flush import (  # noqa: E402
     ImmediateFlush,
     QueueAdaptiveFlush,
 )
+from src.scheduling.token_budget import (  # noqa: E402
+    ServiceQuantumTokenBudgetController,
+)
 
 
 def row(
@@ -71,6 +74,7 @@ def replay(
     close_batch: object | None = None,
     service_observation: object | None = None,
     arrival_time_scale: float = 1.0,
+    token_budget_policy: object | None = None,
 ) -> ArrivalReplayBatcher:
     return ArrivalReplayBatcher(
         rows=rows,
@@ -92,6 +96,7 @@ def replay(
         ),
         clock=clock,
         arrival_time_scale=arrival_time_scale,
+        token_budget_policy=token_budget_policy,
     )
 
 
@@ -297,6 +302,49 @@ class ArrivalReplayBatcherTests(unittest.TestCase):
         ]
         self.assertTrue(selected)
         self.assertTrue(all(event.selected_wait_s == 0.05 for event in selected))
+
+    def test_dynamic_token_budget_is_selected_once_per_open_batch(self) -> None:
+        clock = FakeReplayClock()
+        controller = ServiceQuantumTokenBudgetController(
+            (1024, 2048, 4096),
+            fallback_budget=2048,
+            target_service_s=1.0,
+            max_fill_wait_s=1.0,
+        )
+        batcher = replay(
+            [
+                row("r1", arrival_s=0.0, prompt_tokens=1024),
+                row("r2", arrival_s=0.5, prompt_tokens=1024),
+                row("r3", arrival_s=1.0, prompt_tokens=1024),
+            ],
+            clock,
+            token_budget=2048,
+            flush_policy=FixedTimeoutFlush(0.1),
+            token_budget_policy=controller,
+            service_observation=lambda: ReplayServiceObservation(
+                True,
+                1,
+                0,
+                0.1,
+                service_rate_tokens_s_per_endpoint=4096.0,
+            ),
+        )
+
+        self.assertEqual(
+            list(batcher),
+            [("r1",), ("r2",), ("r3",)],
+        )
+        flush_events = [
+            event for event in batcher.trace if event.action == "flush"
+        ]
+        self.assertEqual(
+            [event.selected_token_budget for event in flush_events],
+            [2048, 4096, 2048],
+        )
+        self.assertEqual(
+            flush_events[1].token_budget_reason,
+            "increase_one_step",
+        )
 
     def test_low_load_base_window_excludes_row_after_25ms(self) -> None:
         clock = FakeReplayClock()

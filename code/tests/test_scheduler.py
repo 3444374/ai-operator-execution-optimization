@@ -151,6 +151,97 @@ class SchedulerTests(unittest.TestCase):
                 per_endpoint_limit=0,
             )
 
+    def test_active_work_cap_releases_credit_on_each_completion(self) -> None:
+        class FirstHealthyRouter:
+            def route(self, request, topology, pool_id):
+                del request
+                endpoint = next(
+                    item
+                    for item in topology.endpoints
+                    if item.healthy and item.pool_id == pool_id
+                )
+                return RoutingDecision(endpoint.endpoint_id, pool_id, "first")
+
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=8),
+            router=FirstHealthyRouter(),
+            adapter=adapter,
+            pool_id="default",
+            per_endpoint_work_limit=20,
+        )
+
+        result = scheduler.run(
+            [envelope(index) for index in range(5)],
+            topology(),
+        )
+
+        self.assertEqual(result.max_inflight_seen, 2)
+        self.assertEqual(result.max_active_work_per_endpoint_seen, 15)
+        self.assertEqual(
+            adapter.submitted[:3],
+            [("r0", "e1"), ("r1", "e2"), ("r2", "e1")],
+        )
+
+    def test_observed_endpoint_work_counts_toward_work_cap(self) -> None:
+        observed = TopologySnapshot(
+            (
+                EndpointSnapshot(
+                    "e1",
+                    "http://localhost/e1",
+                    "default",
+                    "0",
+                    True,
+                    0,
+                    0,
+                    0.0,
+                    1.0,
+                    estimated_active_work=18,
+                ),
+            ),
+            1.0,
+        )
+
+        capped = SynchronousScheduler._topology_with_local_inflight(
+            observed,
+            {},
+            per_endpoint_work_limit=20,
+            request_work=5,
+        )
+
+        self.assertFalse(capped.endpoints[0].healthy)
+        self.assertEqual(capped.endpoints[0].estimated_active_work, 18)
+
+    def test_shared_credit_is_acquired_before_submit_and_released_after(self) -> None:
+        class DelayedSharedCredit:
+            def __init__(self) -> None:
+                self.attempts = 0
+                self.released: list[tuple[str, str]] = []
+
+            def try_acquire(self, **_kwargs):
+                self.attempts += 1
+                return self.attempts >= 2
+
+            def release(self, request_id, *, job_id):
+                self.released.append((job_id, request_id))
+
+        shared = DelayedSharedCredit()
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=1),
+            router=RoundRobinEndpointRouter(),
+            adapter=adapter,
+            pool_id="default",
+            shared_credit=shared,
+            shared_credit_poll_s=0.0001,
+        )
+
+        result = scheduler.run([envelope(0)], topology())
+
+        self.assertEqual(result.operator_invocations, 1)
+        self.assertEqual(shared.attempts, 2)
+        self.assertEqual(shared.released, [("j1", "r0")])
+
     def test_scheduler_fails_when_initial_admission_cannot_progress(self) -> None:
         class AlwaysDenyAdmission:
             limit = 1
