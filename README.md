@@ -38,9 +38,9 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
 │   ├── inference_pipeline_interaction_literature.md
 │   ├── literature_and_evidence_review.md
 │   ├── existing_ai_operator_execution_chains.md
-│   ├── ai_operator_literature_inventory.md   # 66 篇文献清单
+│   ├── ai_operator_literature_inventory.md   # Top 15 + 核心补充 + 题录勘误
 │   ├── top15_ranked_papers.md                # 项目最相关 Top 15 排序
-│   ├── reading_notes/                        # 单篇精读笔记（33 篇）+ figs/
+│   ├── reading_notes/                        # 单篇精读笔记（49 篇）+ 模板
 │   └── reference/                            # 已下载参考文献 PDF（67 个）+ 索引
 ├── motivation/                       # 动机场景、端到端测试
 │   ├── AGENTS.md

@@ -476,7 +476,7 @@ PostgreSQL / table scan
 ## 8. 目标代码架构与模块接口规范
 
 > 整理日期：2026-07-23
-> 来源：全维度综合评估（Wiki 知识库 + 33 篇精读论文 + 现有代码审计）
+> 来源：全维度综合评估（分级文献基线 + 49 篇精读论文 + 现有代码审计）
 
 以下架构基于现有 6 模块（`sources.py` / `organizers.py` / `model_backends.py` / `sinks.py` / `metrics.py` / `workloads.py`），新增 4 个核心模块。每个模块的设计决策标注文献来源，遵循 `research/README.md` §文献优先设计方法论。
 

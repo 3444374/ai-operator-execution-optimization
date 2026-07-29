@@ -63,7 +63,7 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 
 ### 1.5 算子代价估计 & 写回
 
-算子代价估计已完成补充性二次分析：283 条真实 profile、70 个配置组，五个
+算子代价估计已完成初版二次分析：283 条真实 profile、70 个配置组，五个
 grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。定位为补充
 讨论，不作为独立研究内容；写回继续使用 PostgreSQL + pgvector 工程 baseline。
 

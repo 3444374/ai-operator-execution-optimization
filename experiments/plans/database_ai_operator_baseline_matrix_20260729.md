@@ -50,10 +50,17 @@ OceanBase B1 的 formal 前置门禁：
 | F2 | Daft `prompt()` + Ray Runner | Daft 官方分布式 AI Function |
 | F3 | Ray Data HTTP Processor | Ray 官方外部 HTTP batch inference |
 | F4 | 本项目 Daft+Ray token-work/refill | proposed runtime |
-| F5 | LOTUS `sem_map` | 语义算子系统扩展，非首轮必跑 |
+| F5 | LOTUS semantic operator | PVLDB 正式数据库 AI 系统 baseline，非首轮 runtime ceiling 必跑 |
+| F6 | Palimpzest declarative pipeline | CIDR 官方系统 baseline，非首轮 runtime ceiling 必跑 |
 
-F0–F4 必测。F5 只有在关闭 cache、cascade/helper model，固定一行一次调用，
-且 messages/input/output token 与其他 arm 等价后才进入 formal。
+F0–F4 必测。F5/F6 只有在关闭 cache、cascade/helper model 和计划级 work
+reduction，固定一行一次调用，且 messages/input/output token 与其他 arm 等价后
+才进入“相同 work 的 runtime formal”。若保留系统自身优化，则另列为
+system-level quality/cost baseline，同时报告调用数和质量，不能与 F0–F4 只比
+wall time。
+
+SemBench（PVLDB 2026）不作为一个可执行 arm，而作为扩展 workload、质量/成本/
+内存/失败指标和五次重复协议的依据。
 
 第一轮只测固定 manifest 的 operator-only；随后 F1–F4 接回相同 PostgreSQL
 读取与写回，形成 database-e2e 对照。
@@ -162,7 +169,7 @@ time-to-ceiling/ramp-regret 至少改善 10%，只声称压力效率或瞬态改
 6. 各 arm 独立 calibration；
 7. 小作业瞬态 formal；
 8. 2,048 held-out formal；
-9. 七步结构分析后再决定 LOTUS 和多 job 扩展。
+9. 七步结构分析后再决定 LOTUS/Palimpzest system-level baseline 和多 job 扩展。
 
 远端遵循 `deploy/autodl/README.md`：先检查 runner/lease/endpoint/git，使用
 全新输出目录，gate 未通过禁止 formal，保留失败证据和所有未跟踪结果。

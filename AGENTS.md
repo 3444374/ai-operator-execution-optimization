@@ -10,12 +10,12 @@
 
 **方向已收敛，策略候选池开放**：经过 2026-07-16 的讨论与文献收集，优化方向已明确收敛到上游调度（数据组织 + 提交控制），但具体策略不提前锁定——动态 batching（token-budget/length-align/prefix-aware）、K_max 自适应、queue-adaptive flush、actor pool 分池路由等均为候选方案，最终采用哪些由后续实验数据决定。新增候选策略应记入 `research/knowledge_hub.md` §5 供以后参考。
 
-**两项策略设计 + 多模态泛化验证 + 算子代价估计（补充）**：
+**两项策略设计 + 多模态泛化验证 + 算子代价估计（共同使能组件）**：
 
 1. **研究内容一：数据组织策略**。探索按计算量（token 量/frame 量）而非固定行数的动态组织方式，以及按计算量相似度分组对推理效率的影响。利用异构 actor pool 实现。引擎级参数（Daft `into_batches`、`batch_size`、`repartition`）与策略级决策（token-budget、length-align、prefix-aware）共同构成数据组织优化空间。
-2. **研究内容二：调度与提交控制策略**。利用 Ray actor 的 stateful + async 能力，研究去中心化的调度与提交控制。候选策略包括 queue-adaptive flush、K_max 动态控制、actor pool 分池路由等。引擎级参数（Daft `max_concurrency`、`gpus` 分配）与策略级决策共同构成提交控制优化空间。
+2. **研究内容二：调度与提交控制策略**。利用 Ray actor 的 stateful + async 能力，研究固定资源下的最小饱和 active work、request-level replenishment、endpoint-shared request/work credit、work-conserving idle borrowing 和多 job fair queue。固定静态 credit 是强 baseline；动态候选只有显著优于同上限静态策略才晋级。
 3. **多模态泛化验证**（正文实验，验证策略抽象不依赖数据模态）。在图像 workload（AI_EMBED/AI_CLASSIFY，CLIP/Qwen2.5-VL）上使用同一套策略代码和配置逻辑，验证 token-budget → frame-budget、queue-adaptive flush → 完全复用的模态无关性。
-4. **算子代价估计**（补充讨论，不作为独立研究内容）。基于实验阶段采集的 profile 数据，建立 AI 算子的端到端成本估计方法，辅助编排决策。
+4. **算子代价估计**（共同使能组件，不作为独立研究内容）。首版采用简单解析模型 + profile 校准 + residual correction，预测 prompt/output work、operator service time、JCT、remaining work 和 SLO slack，服务于 active-work/K 初始化、数据组织、endpoint 路由和提交策略；评价误差、配置 ranking、决策 regret 和预测区间。
 
 写回使用 PostgreSQL + pgvector，COPY + deferred index 为工程 baseline。不作为独立研究内容，仅在实验设置中说明。
 

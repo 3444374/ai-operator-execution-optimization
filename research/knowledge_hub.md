@@ -2,7 +2,7 @@
 
 生成日期：2026-07-16（2026-07-17 更新：新增 §10 Daft+Ray 多模态与具身智能）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
-涵盖：vLLM 机制 + Ray 架构 + 66 篇文献（四个研究岛）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
+涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
 ---
 
@@ -278,9 +278,9 @@ class AdaptiveSubmitActor:
 | 自引 | 3 | 本项目 GPU-backed E2E |
 | **合计** | **65** | |
 
-### 3.8 学习型代价估计与查询优化（2026-07-27 新增）
+### 3.8 算子代价估计与查询优化（2026-07-29 升级）
 
-算子代价估计（研究内容四/§6.1）的方法根基，以下 8 篇覆盖从传统 learned cost model 到 UDF 感知、算子放置、推理延迟预测的全谱系：
+算子代价估计不再只作为附录中的孤立预测任务，而是数据组织与调度提交控制共同依赖的重要组件；它仍不单独扩张成第三项研究内容。以下论文覆盖传统 learned cost model、UDF 感知、算子放置、semantic operator 优化和推理延迟预测：
 
 | 论文 | 出处 | 核心内容 | 与项目代价估计的关系 |
 |---|---|---|---|
@@ -288,14 +288,17 @@ class AdaptiveSubmitActor:
 | **CONCERTO (Zhang et al.)** | arXiv 2024.12 | DAG + GAT + TCN 三阶段架构：每算子独立资源代价 → GAT 捕获并行资源竞争 → TCN 聚合代价向量 | 多 endpoint 场景的 DAG 建模方案备选 |
 | **GRACEFUL (Wehrstein et al.)** | ICDE 2025 | UDF 感知 GNN 代价估计；CFG + 查询计划联合图 → GNN + MLP 预测 runtime；zero-shot 泛化到新 UDF | 项目文档标注为 closest analog to AI-operator-aware cost estimation |
 | **COSTREAM (Heinrich et al.)** | ICDE 2024 | GNN 算子放置代价模型；zero-shot 泛化到未见查询/硬件；median 21× speedup | 多 GPU/多 endpoint 场景下算子放置优化的方法参考 |
+| **Abacus (Russo et al.)** | PVLDB 2026 | 在 quality/cost/latency 多目标与约束下搜索 semantic operator 的 Pareto 计划 | 连接 AI 算子 work 估计、profile 复用和计划/配置选择 |
+| **LOTUS (Patel et al.)** | PVLDB 2025 | 在准确率约束下选择代理模型、cascade、join/ranking 算法 | 证明“减少无效 work”和“相同 work 执行更快”必须分开评价 |
+| **Palimpzest (Liu et al.)** | CIDR 2025（非 CCF-A） | 用 sentinel plans 采样 time/cost/quality，选择 Pareto 物理计划 | 小样本 profile 与多目标选择的补充来源 |
 | **Neo** | SIGMOD 2019 | 经典 learned query optimizer（端到端） | 学习型优化器奠基工作，代价估计是其子模块 |
 | **Pathak & Mankodi — Redefining Cost Estimation** | arXiv 2025 | 三类特征（标量/结构/语义）+ XGBoost → MSE 0.3002；树集成在低数据量下优于深度学习 | 特征工程方法参考，印证 Ridge 在 283 行上的选择合理 |
 | **Learned Query Optimizer (Zhu et al.)** | SIGMOD 2024 | 学习型优化器综述 | 未下载（ACM 付费墙），作为领域全景引用 |
 | **Learning Database Optimization (Qiao et al.)** | FCS 2025 | 数据库优化技术综述 | 已下载，作为领域全景引用 |
 
-**关键 insight**：以上文献反复出现两个模式——(a) hybrid 架构（传统公式 + learned correction）比纯 learned 更稳健；(b) 不确定性门控（低置信度回退到保守估计）。这两个模式直接指导项目的代价估计设计方向。
+**关键 insight**：以上文献反复出现三个模式——(a) 简单解析/传统公式提供一阶估计；(b) profile 或 learned component 只修正残差并提供不确定性；(c) 模型是否有用最终由 plan/config ranking 与 regret 决定，而不是只看 MAPE。
 
-**文献优先设计原则**（见 §5.3）：AI 算子不能按普通 UDF 估算——selectivity、token length、model cost 会改变执行决策。Cortex AISQL 的 `C_op(n) = n × c_model + α` 是显式的线性公式参考。
+**首版边界**：继续采用“简单解析模型 + profile 校准 + residual correction”，不直接实现复杂 learned optimizer。预测对象覆盖 prompt/output token work、operator service time、JCT、remaining work 和 SLO slack；决策对象覆盖 active-work/K 初始化、数据组织、endpoint 路由和提交策略。
 
 ---
 
@@ -319,10 +322,16 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
                     （三个岛连接处的上游执行链路优化）
 ```
 
-### 4.2 空白双重确认
+### 4.2 空白口径复审
 
-1. **2026-07-16 多源检索**（WebSearch × 8）：无 CCF-A 论文直接研究 pipeline batching × continuous batching 交互
-2. **2026-07-16 系统性收集**（16 轮检索，28 篇论文）：空白确认
+2026-07-16 的检索没有发现直接研究“数据库/数据引擎上游组织与 vLLM continuous batching 协同”的正式论文；2026-07-29 补入 LOTUS、Palimpzest、SemBench、VTC、Llumnix、Abacus 等工作后，必须把空白收窄：
+
+1. LOTUS、Palimpzest、Abacus 已覆盖 semantic operator 的质量/成本/调用数优化；
+2. VTC、Llumnix、FairServe、DLPM 已覆盖 serving 内部或服务层的公平和动态调度；
+3. Ray Data/Daft 已提供批数据执行和官方 LLM 接口；
+4. 仍缺少的是：在不修改 vLLM 的条件下，数据库 AI operator 的上游运行时如何用统一 work 估计协调数据组织、最小饱和压力、request-level replenishment 和多 job shared credit，并在同模型、同 work、同硬件的官方系统 baseline 上验证。
+
+因此不能再使用“没有任何已有工作研究”之类绝对表述。
 
 ### 4.3 最接近的已有工作（需在论文中区分）
 
@@ -333,6 +342,10 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 | HedraRAG (SOSP 2025) | RAG 中 CPU/GPU 协调 | 仅 RAG，非通用 AI SQL |
 | Parrot (OSDI 2024) | Semantic variable prompt 共享 | 仅 GPU 侧，不涉及上游 |
 | Clipper (NSDI 2017) | AIMD 自适应 batching | 不涉及 LLM、token、continuous batching |
+| VTC (OSDI 2024) | token-cost 公平、work-conserving service counter | 位于 serving scheduler 内，不含数据库数据组织和 Daft/Ray runtime |
+| Llumnix (OSDI 2024) | 多实例动态调度与 KV live migration | 依赖 serving 内部迁移，不覆盖固定 endpoint 的上游 shared credit |
+| LOTUS / Palimpzest / Abacus | semantic operator 的质量、成本和物理计划优化 | 不研究固定模型服务下的最小饱和 active work 和 request-level refill |
+| SemBench (PVLDB 2026) | 多系统、多模态 semantic query benchmark | 提供 workload/指标，不提出上游调度算法 |
 
 ### 4.4 不能声称的结论
 
@@ -340,6 +353,7 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 2. 不能说"外部执行一定优于数据库内 ML"——取决于场景
 3. 不能说"Ray/Daft/Lance 是数据库 AI 算子的标准方案"——Snowflake 和 GaussML 用不同技术栈
 4. 合理表述："在数据库触发 AI workload 后经由外部系统执行并写回的场景中，上游数据组织、调度提交与下游 continuous batching 之间的交互优化尚缺乏系统研究"
+5. 不能说“上游调度会加速 GPU 单次推理”；它能改善的是达到容量上限所需的压力、瞬态 ramp、可控排队、多 job 公平和端到端 JCT
 
 ---
 
@@ -450,9 +464,9 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 **重要警示**：Ray Data 的 `ConcurrencyCapBackpressurePolicy`（EWMA + deadband 自适应并发控制）已被废弃——原因是用 ~400 行复杂控制逻辑实现的策略，性能反而不如简单方案。这对我们的设计有直接含义：**自适应策略必须保持简单，避免陷入参数调优的泥潭**。
 
-### 5.7 从代价估计与提交策略新文献提取的设计模式（2026-07-27 新增）
+### 5.7 从代价估计与提交策略文献提取的设计模式（2026-07-29 更新）
 
-以下从 6 篇新精读论文（Heinrich SIGMOD 2025、CONCERTO、GRACEFUL、COSTREAM、Pathak & Mankodi、SFS）中提取可迁移的技术与设计思路，按适用场景分为代价估计（RC4）和提交策略（RC2）两组。每条标注来源论文、可行性评估、与当前方案的 gap。
+以下从 Heinrich、CONCERTO、GRACEFUL、COSTREAM、Abacus、LOTUS、Palimpzest、VTC、Llumnix 与 SFS 中提取可迁移的技术与设计思路。代价估计是两项研究内容的公共组件，提交策略是研究内容二；内部旧代号只用于历史实验追踪。
 
 #### 5.7.1 代价估计（RC4）设计模式
 
@@ -702,11 +716,14 @@ Ray Actor 去中心化自适应提交
 
 ### 7.3 Baseline 分级
 
-| 级别 | 定义 | 示例 |
+| 层级 | 定义 | 示例 |
 |---|---|---|
-| S 级 | 文献/工业最优 | vLLM continuous batching、COPY + deferred index |
-| A 级 | 有工程常识的合理默认 | coalesced batch=64 + driver fan-in |
-| 诊断工具 | 仅用于理解瓶颈 | 逐行调用（fine）、无界 in-flight |
+| 服务上界 | 同模型、同请求、同 endpoint 的直接 serving capacity | vLLM Bench |
+| 无 Daft/Ray 强上游 | 受控并发且独立 calibration 的最小客户端/数据库路径 | bounded HTTP、现有数据库 AI_COMPLETE |
+| 官方 runtime | 现有框架的官方 AI/HTTP 执行路径 | Daft Native/Ray `prompt()`、Ray Data HTTP Processor |
+| 数据库 AI 系统 | 具有 semantic operator/plan optimization 的官方实现 | LOTUS、Palimpzest；SemBench 提供 workload/指标 |
+| 本项目策略 | 同 work 下的数据组织、refill、shared credit 与 cost-guided 决策 | static、token-work、fair queue |
+| 诊断工具 | 只用于暴露瓶颈，不能作为论文主 baseline | 逐行串行、无界 in-flight |
 
 ---
 
@@ -912,9 +929,9 @@ actor pool 分池路由          morsel size（间接）
 | P0 | 分组策略对比 | random vs length-align vs prefix-aware | 相似计算量的请求放一起是否减少 straggler？ |
 | P0 | 提交节奏对比 | 固定 K_max vs queue-adaptive flush | 自适应提交是否有收益？ |
 | P1 | Daft 引擎参数 | into_batches × @daft.cls batch_size | 分区粒度与 GPU UDF batch size 如何匹配？ |
-| P1 | 耦合验证 | RC1*+RC2* 拼接 vs joint grid search | 联合调优是否必要？ |
+| P1 | 耦合验证 | 数据组织最优 + 提交控制最优 vs joint grid search | 联合调优是否必要？ |
 | P2 | 多模态泛化 | 文本 token-budget vs 图像 frame-budget | 策略抽象的模态无关性是否成立？ |
-| P2 | 算子代价估计 | 预测成本 vs 实际成本（MAPE < 20%） | profile-driven 成本预测是否可用？ |
+| P1 | 算子代价估计 | 解析模型 + profile + residual；误差、ranking、regret、预测区间 | 预测是否能正确初始化容量并选择组织/路由/提交策略？ |
 
 **Scope 缩减触发条件**：
 - Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion

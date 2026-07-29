@@ -1,101 +1,105 @@
-# 项目最相关 Top 15 论文（按学术标准重排）
+# 项目最相关 Top 15 论文
 
-整理日期：2026-07-24（按学术研究标准重排；原"对本项目贡献度"排序见 git 历史）
-候选池：`ai_operator_literature_inventory.md`（66 篇，含 Clockwork）
+更新日期：2026-07-29
+选择目标：以正式、可核验的 CCF-A research paper 构成开题核心文献；高度相关但非 CCF-A 的系统、预印本、Tutorial、Companion、Demo 放入“核心补充文献”。
 
-## 排名标准
+## 选择与核验规则
 
-按**学术研究标准**从 66 篇中选前 15：
+1. 先核验正式题录、轨道、卷期、页码和 DOI，再讨论排名。
+2. CCF-A 正式 research paper 优先；CIDR、MLSys、arXiv 不写成 CCF-A。
+3. Companion、Demo、Tutorial 即使依附 CCF-A 会议/期刊，也不计入本 Top 15。
+4. 排名体现本课题的证据结构，不表示论文绝对质量。
+5. 每篇必须同时有权威精读笔记和本地可解析 PDF。
 
-- **基础工作**：课题立足的基石（开山论文、部署平台/框架的直系前身）；
-- **核心技术**：直接支撑某项策略机制（token-budget / length-align / prefix-aware / queue-adaptive flush / K_max / actor pool 路由）；
-- **相关工作**：定位与"空白"论证必引。
+## Top 15（15/15 为严格 CCF-A 正式研究论文）
 
-优先级：**CCF-A > 顶会 > arXiv**；某核心策略若**无 CCF-A 来源**，允许一篇极重要 arXiv 破例入选。正好 15 篇。
+### 一、AI 算子与数据库系统（3 篇）
 
-> **与旧版差异**：Orca、DistServe 进；SABER、Multi-Bin 出（移至"值得注意"）。CCF-A/顶会 12 篇 + 重要 arXiv 3 篇（旧版 10+5）。核心理由：开山基础论文即使被后继实现也该占席位，不应以"机制被覆盖"为由排除。
+| # | 论文 | 正式出处 | 项目角色 | 笔记 / PDF |
+|---|---|---|---|---|
+| 1 | **LOTUS**: Semantic Operators and Their Optimization | PVLDB 18(11), 2025；DOI 10.14778/3749646.3749685 | 声明式 semantic operators、准确率约束、调用数/质量/成本优化；官方数据库 AI 系统 baseline | `lotus_pvldb2025.md` / `lotus_pvldb2025.pdf` |
+| 2 | **Galois**: Logical and Physical Optimizations for SQL over LLMs | SIGMOD 2025；DOI 10.1145/3725411 | LLM 专用逻辑/物理算子与质量感知 SQL 优化 | `galois_sigmod2025.md` / `galois_sigmod2025.pdf` |
+| 3 | **GaussML**: An End-to-End In-Database Machine Learning System | ICDE 2024；DOI 10.1109/ICDE60146.2024.00391 | 数据库原生 AI/ML 算子、ML-aware cardinality/cost estimator 对照 | `gaussml_icde2024.md` / `gaussml_icde2024.pdf` |
 
----
+### 二、LLM 推理与公平调度（7 篇）
 
-## Top 15
+| # | 论文 | 正式出处 | 项目角色 | 笔记 / PDF |
+|---|---|---|---|---|
+| 4 | **vLLM**: PagedAttention | SOSP 2023 | 部署平台与下游 capacity ceiling | `vllm_sosp2023.md` / `vllm_sosp2023.pdf` |
+| 5 | **Orca**: Iteration-level Scheduling | OSDI 2022 | continuous batching 的基础机制与下游执行边界 | `orca_osdi2022.md` / `orca_osdi2022.pdf` |
+| 6 | **Sarathi-Serve**: Chunked Prefill | OSDI 2024 | token-budget、prefill/decode 干扰与 serving capacity | `sarathi_serve_osdi2024.md` / `sarathi_serve_osdi2024.pdf` |
+| 7 | **SGLang**: Structured LM Programs | NeurIPS 2024 | prefix/cache-aware 调度与结构化程序执行 | `sglang_neurips2024.md` / `sglang_neurips2024.pdf` |
+| 8 | **VTC**: Fairness in Serving LLMs | OSDI 2024 | endpoint-shared service counter、公平性和 work-conserving borrowing | `vtc_osdi2024.md` / `vtc_osdi2024.pdf` |
+| 9 | **Llumnix**: Dynamic Scheduling | OSDI 2024 | 多实例虚拟 usage、在线负载纠偏与优先级隔离 | `llumnix_osdi2024.md` / `llumnix_osdi2024.pdf` |
+| 10 | **DistServe**: Prefill-Decode Disaggregation | OSDI 2024 | goodput、阶段干扰、capacity planning | `distserve_osdi2024.md` / `distserve_osdi2024.pdf` |
 
-### 一、基础工作（4 篇）
+### 三、Ray 分布式执行（1 篇）
 
-| # | 论文 | 出处 | CCF | 入选理由 | 笔记 |
-|---|---|---|---|---|---|
-| 1 | **vLLM**: PagedAttention + continuous batching | SOSP 2023 · Best Paper | A | 部署平台，所有实验其上运行；PagedAttention 内存模型是 prefix-aware 策略的作用面前提 | `vllm_sosp2023.md` |
-| 2 | **Orca**: iteration-level scheduling | OSDI 2022 | A | continuous batching / 迭代级调度**开山**；vLLM 直系前身；开题正文"vLLM/Orca"并称 5 次，必引 | `orca_osdi2022.md` |
-| 3 | **Ray**: 分布式 AI 框架 | OSDI 2018 | A | actor 模型（stateful+async）+ object store 是 RC2 所有策略的载体 | `ray_osdi2018.md` |
-| 4 | **Clipper**: AIMD 自适应 batching | NSDI 2017 | A | RC2 queue-adaptive flush 的**方法论奠基**（additive increase / multiplicative decrease 控制律） | `clipper_nsdi2017.md` |
+| # | 论文 | 正式出处 | 项目角色 | 笔记 / PDF |
+|---|---|---|---|---|
+| 11 | **Ray**: A Distributed Framework for Emerging AI Applications | OSDI 2018 | stateful actor、async task、分布式资源调度的架构载体 | `ray_osdi2018.md` / `ray_osdi2018.pdf` |
 
-### 二、核心技术（7 篇）
+### 四、算子代价估计（4 篇）
 
-| # | 论文 | 出处 | CCF | 支撑策略 | 笔记 |
-|---|---|---|---|---|---|
-| 5 | **Sarathi-Serve**: chunked prefill | OSDI 2024 | A | RC1 token-budget（为什么必须控制每 batch 的 token 量） | `sarathi_serve_osdi2024.md` |
-| 6 | **SGLang**: RadixAttention | NeurIPS 2024 | A | RC1 prefix-aware（radix tree 管理 KV cache 复用） | `sglang_neurips2024.md` |
-| 7 | **DistServe**: prefill-decode 分离 + goodput | OSDI 2024 | A | RC2 阶段干扰/K_max 概念基础；goodput 吞吐-延迟评估范式 | `distserve_osdi2024.md` |
-| 8 | **Splitwise**: phase splitting | ISCA 2024 | A | RC2 actor pool 分池路由（prefill/decode 异构） | `splitwise_isca2024.md` |
-| 9 | **CONCUR**: agent AIMD + KV 双信号 | arXiv 2026 | 预印本 | RC2 控制器**直接机制来源**（AIMD+死区+KV 信号；无 CCF-A 替代） | `concur_2025.md` |
-| 10 | **Ray Data Streaming Batch** | arXiv 2025 | 预印本 | Daft+Ray 引擎执行模型（streaming batch / partition-at-a-time；无 CCF-A 替代） | `ray_data_streaming_batch_2025.md` |
-| 11 | **BucketServe**: sequence-length 分桶 | arXiv 2025 | 预印本 | RC1 length-align（无 CCF-A 替代） | `bucketserve_2025.md` |
+| # | 论文 | 正式出处 | 项目角色 | 笔记 / PDF |
+|---|---|---|---|---|
+| 12 | **How Good Are Learned Cost Models, Really?** | SIGMOD 2025 | 代价模型必须按 plan-selection/ranking 任务评估，不能只看预测误差 | `learned_cost_models_sigmod2025.md` / `learned_cost_models_sigmod2025.pdf` |
+| 13 | **GRACEFUL**: A Learned Cost Estimator for UDFs | ICDE 2025；DOI 10.1109/ICDE65448.2025.00185 | UDF/AI 算子服务时间估计与执行位置决策 | `graceful_udf_cost_icde2025.md` / `graceful_udf_cost_icde2025.pdf` |
+| 14 | **COSTREAM**: Learned Cost Models for Operator Placement | ICDE 2024；DOI 10.1109/ICDE60146.2024.00015 | 跨资源环境的 operator placement 与 zero-shot cost features | `costream_icde2024.md` / `costream_icde2024.pdf` |
+| 15 | **Abacus**: A Cost-Based Optimizer for Semantic Operator Systems | PVLDB 19(5), 2026；DOI 10.14778/3796195.3796215 | semantic operator 多目标代价估计、Pareto 计划选择与 profile 复用 | `abacus_pvldb2026.md` / `abacus_pvldb2026.pdf` |
 
-### 三、相关工作（4 篇）
+## 结构覆盖
 
-| # | 论文 | 出处 | CCF | 定位作用 | 笔记 |
-|---|---|---|---|---|---|
-| 12 | **Cortex AISQL** | SIGMOD 2026 | A | DB4AI 工业锚点；其 batching 下放给 vLLM、上游不做 token 组织——本项目"空白"论证支点 | `cortex_aisql_sigmod2026.md` |
-| 13 | **NeurDB** | CIDR 2025 | 顶会 | "AI inside DB" 路线最强 vision paper，必须正面回应 | `neurdb_cidr2025.md` |
-| 14 | **Galois**: LLM as storage | SIGMOD 2025 | A | DB4AI 多样性；划定本项目"LLM as compute"分支对照 | `galois_sigmod2025.md` |
-| 15 | **Database Perspective on LLM Inference** | PVLDB 2025 | A | 定位综述框架 + 文献追溯入口 | `db_perspective_llm_pvldb2025.md` |
+| 研究问题 | 核心证据 |
+|---|---|
+| 固定资源下，怎样用更少的上游压力尽快达到下游 capacity ceiling？ | vLLM、Orca、Sarathi-Serve、DistServe、Ray |
+| 怎样组织数据库 AI 数据并避免无效模型调用？ | LOTUS、Galois、GaussML |
+| 多 job 共享同一 vLLM 时怎样公平且 work-conserving？ | VTC、Llumnix、Ray |
+| 怎样把 work/service/JCT 估计用于配置、路由和提交决策？ | Learned Cost Models、GRACEFUL、COSTREAM、Abacus |
 
----
+本项目不把上述四行改写成四个独立贡献。开题仍保留“数据组织策略”和“调度与提交控制策略”两项研究内容；代价估计是贯穿二者的使能组件，多模态是泛化验证。
 
-## 覆盖度
+## 核心补充文献
 
-| 策略 | 论文支撑 | 覆盖度 |
-|---|---|---|
-| Token-budget | Sarathi-Serve, vLLM | 🟢 充分 |
-| Length-align | BucketServe | 🟡 仅 arXiv，无 CCF-A |
-| Prefix-aware | SGLang | 🟢 充分 |
-| Queue-adaptive flush | Clipper, CONCUR | 🟢 充分 |
-| K_max 动态控制 | DistServe, CONCUR, Clipper | 🟢 充分 |
-| Actor pool 分池路由 | Splitwise, Ray | 🟢 充分 |
-| 多模态泛化 | — | 🔴 15 篇中无多模态特定论文 |
+| 文献 | 核验状态 | 保留角色 | 不进 Top 15 的原因 |
+|---|---|---|---|
+| Database Perspective on LLM Inference Systems | PVLDB 2025 Tutorial | 推理系统地图与开放问题 | Tutorial，不是 research paper |
+| Palimpzest | CIDR 2025 | 声明式计划搜索、时间/成本/质量 profile；官方系统 baseline | CIDR 非 CCF-A |
+| SemBench | PVLDB 19(8), 2026 | semantic query engine benchmark、workload 与指标 | benchmark 依据，方法 Top 15 席位优先给直接算法来源 |
+| FairServe | arXiv 2024 | 多应用 weighted service 与 interaction-aware throttling | 预印本 |
+| DLPM / D2LPM | arXiv 2025 | prefix-locality 与 deficit fairness | 预印本 |
+| Autellix | arXiv 2025 | program/job-level attained service | 预印本 |
+| Chiron | arXiv 2025 | 分层 backpressure 与 autoscaling | 预印本；autoscaling 超出固定双 GPU边界 |
+| Clipper | NSDI 2017 | AIMD batching 历史来源 | 现有 fixed/adaptive 实验已显示控制器不优于同上限静态策略 |
+| Splitwise | ISCA 2024 | prefill/decode 分池 | 与当前不修改 vLLM 的边界较远 |
+| NeurDB | CIDR 2025 | AI-native database vision | CIDR 非 CCF-A |
+| Cortex AISQL | SIGMOD Companion/industry material（按实际轨道引用） | 工业 AI SQL 需求证据 | 不把 Companion/工业材料写成正式 CCF-A research paper |
+| CONCUR、SABER、BucketServe、Ray Data Streaming Batch | arXiv | 候选控制/数据引擎机制 | 预印本 |
 
-## 证据层级
+## 代价估计在项目中的定位
 
-| 层级 | 篇数 | 论文 |
-|---|---|---|
-| CCF-A 会议/期刊 | 11 | vLLM, Orca, Ray, Clipper, Sarathi-Serve, SGLang, DistServe, Splitwise, Cortex, Galois, DB Perspective |
-| 顶会（非 CCF） | 1 | NeurDB (CIDR) |
-| arXiv 预印本 | 3 | CONCUR, Ray Data Streaming, BucketServe |
+算子代价估计从“补充讨论”提升为两项方法共同依赖的重要组件，但不独立扩展成第三项研究内容。首版采用：
 
----
+```text
+简单解析模型
+  + 少量真实 profile 校准
+  + 运行 trace 的 residual correction
+```
 
-## 不在 Top 15 但值得注意
+它服务于：
 
-| 论文 | 不入选原因 | 何时可能需要 |
-|---|---|---|
-| **SABER** (arXiv 2025) | USL 理论框架——K_max 的数学支撑，但 AIMD 已由 Clipper+CONCUR 覆盖；按 CCF-A 优先让位 DistServe | 需 USL 建模 / 在线 K_max 理论时 |
-| **Multi-Bin Batching** (arXiv 2024) | length-align 数学理论；length-align 已由 BucketServe 工程代表 | 需 length-align 桶边界理论优化时 |
-| **ServerlessLLM** (OSDI 2024) | 模型加载优化，与上游调度正交 | cold start 场景 |
-| **Parrot** (OSDI 2024) | 语义变量 prefix 共享；prefix 已由 SGLang 覆盖 | 跨应用 prefix 抽象 |
-| **Mooncake** (ACM TOS 2025) | KVCache 分离架构 | KVCache 跨请求共享架构 |
-| **Scorpio** (arXiv 2025) | per-token 延迟建模，被 CONCUR+SABER 覆盖 | 精细 per-token 延迟 |
-| **ProServe** (arXiv 2026) | 多优先级调度 | 引入请求优先级 |
-| **Clockwork** (OSDI 2020) | 确定性/可预测推理调度——queue-adaptive flush 的调度思想来源之一（knowledge_hub §5.2 引），但 AIMD 角度已被 Clipper/CONCUR 覆盖 | 需确定性调度论证时 |
-| **FlashAttention** (NeurIPS 2022) | kernel 级，与"上游调度"定位不匹配 | 解释 vLLM 底层机制 |
-| Lance / Smart / LEADS / InferDB / DiskANN / Milvus | 存储或 DB4AI 方向，与上游调度核心正交 | 写回 / DB4AI 相关工作补全 |
+- 预测 prompt/output token work；
+- 估计 operator service time 与 job completion time；
+- 初始化不同 GPU、模型和 workload 的 active-work/K 上限；
+- 选择数据组织、endpoint 路由和提交策略；
+- 多 job 下估计 remaining work 与 SLO slack；
+- 用真实 usage、completion trace 在线或跨轮次校正误差。
 
----
+评价除 MAE/MAPE 外，还必须报告配置排序正确率、JCT/throughput regret、held-out workload 泛化和预测区间覆盖，避免“误差更小但选错执行方案”。
 
-## 后续行动项
+## 一致性状态
 
-- ✅ Top 15 精读笔记均已完成，位于 `research/reading_notes/`；开题自包含拷贝在 `opening/literature/top15_reading_notes/`。
-- **多模态覆盖缺口**：15 篇中无多模态特定论文。Daft `@daft.cls` GPU UDF 官方文档 + Snowflake Cortex Multimodal 文档需作为补充。
-- **Clockwork**：已补入 `ai_operator_literature_inventory.md`（66 篇）；原文 PDF 待放入 `research/reference/clockwork_osdi2020.pdf` 后登记 REFERENCE_INDEX 并补全精确题录。
-
----
-
-*排名标准：学术研究（基础工作 / 核心技术 / 相关工作）+ CCF-A 优先 + 极重要 arXiv 破例。非单纯"论文质量"排名，而是"对本课题的学术支撑度"——基础开山论文即使被后继实现也占席位。*
+- Top 15：15/15 严格 CCF-A 正式 research paper。
+- Top 15：15/15 已有权威精读笔记。
+- Top 15：15/15 已有本地可解析 PDF。
+- Tutorial、CIDR、arXiv 和 Companion 已从 Top 15 中移出并保留为核心补充。

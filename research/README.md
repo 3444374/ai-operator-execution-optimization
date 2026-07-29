@@ -1,115 +1,68 @@
 # Research Directory
 
-本目录保存背景调研、论文、官方文档和外部系统证据。这里的材料用于支撑开题、方向判断和实验设计，不存放原始实验 CSV。
+本目录维护数据库 AI 算子、LLM serving、Ray/数据引擎、算子代价估计与写回相关的一手论文、官方资料和精读笔记。
 
 ## 重点入口
 
-| 文件 | 作用 |
+| 文件 | 用途 |
 |---|---|
-| **`knowledge_hub.md`** | **第一入口**——集思广益知识库，整合了 vLLM 机制、Ray 架构、66 篇文献全景（四岛地图）、三岛空白、设计原则、实验证据和知识缺口。做任何设计决策前先读 |
-| `literature_and_evidence_review.md` | Ray / Daft / Lance / Snowflake / pgai 等方向的早期综合证据记录 |
-| `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子与 AI 数据处理系统的执行链路对比 |
-| `vllm_continuous_batching_reference.md` | vLLM Continuous Batching 完整技术手册（调度器内部、APC、metrics、chunked prefill、集成方式） |
-| `ray_actor_dynamic_batching_reference.md` | Ray Serve 动态 batching + Ray Core actor 模式完整技术手册（async loop、去中心化协调、PrefixCacheAffinityRouter） |
-| `inference_pipeline_interaction_literature.md` | 28 篇推理管线交互文献系统综述 + 空白确认 |
+| `knowledge_hub.md` | 项目知识总汇：机制、文献地图、研究空白、设计模式和实验边界 |
+| `top15_ranked_papers.md` | 当前开题 Top 15；15/15 为严格 CCF-A 正式 research paper |
+| `ai_operator_literature_inventory.md` | Top 15、核心补充、题录勘误、baseline 与代价估计文献清单 |
+| `inference_pipeline_interaction_literature.md` | 上游数据管线、continuous batching、semantic operator、公平调度和代价估计交互综述 |
+| `reading_notes/` | 49 篇权威精读笔记及模板 |
+| `reference/REFERENCE_INDEX.md` | 当前工作区 21 份可解析 PDF 的权威题录和用途 |
+| `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子执行链路对比 |
+| `vllm_continuous_batching_reference.md` | vLLM continuous batching、KV/cache、metrics 和集成边界 |
+| `ray_actor_dynamic_batching_reference.md` | Ray actor/Serve 动态 batching 与路由机制 |
 
-**文献清单、精读笔记与方向评估**（本目录内）：
-- `ai_operator_literature_inventory.md` — 65 篇 CCF-A 文献清单
-- `top15_ranked_papers.md` — 项目最相关 Top 15 排序 + 四维评估
-- `gpu_scheduler_data_placement_supplement_20260715.md` — GPU 调度补充调研 + Ray 策略映射
-- `direction_assessment_20260715.md` — 方向评估 + 三岛模型 + 不能声称的结论
-- `reading_notes/` — 单篇精读笔记（按论文组织，33+ 篇）+ 配图 `reading_notes/figs/`
-- `reference/` — 已下载参考文献 PDF 子集 + 索引（`reference/README.md`、`reference/REFERENCE_INDEX.md`）
+## 文献分级
 
-## 使用规则
+1. **Top 15**：CCF-A 正式 research paper，必须有全文精读和本地 PDF。
+2. **核心补充**：高度相关的 CIDR、MLSys、Tutorial、Companion、benchmark 或 arXiv；精确标注轨道，不冒充 CCF-A。
+3. **工程资料**：官方文档、源码和产品资料，只证明接口/工业需求，不证明学术新颖性。
+4. **项目证据**：真实实验 CSV/报告，用于验证本地因果，不由论文结论替代。
 
-- 优先引用官方文档、论文、源码 README 和本项目真实实验结果。
-- 外部系统只作为背景、对照路线和实验设计参考；不能把闭源系统的内部实现当成已知事实。
-- Snowflake 这类托管闭源系统不作为本地必测 baseline，除非后续有账号、预算和明确的用户可见 SQL benchmark 目标。
-- pgai / PostgresML / pgvector 可以作为 PostgreSQL 生态路线参考，但是否纳入实验要看它能否回答本项目的链路瓶颈问题。
+当前 Top 15 结构：
 
-## 文献优先设计方法论（Literature-First Design）
+- AI 算子与数据库系统：LOTUS、Galois、GaussML；
+- LLM 推理与公平调度：vLLM、Orca、Sarathi-Serve、SGLang、VTC、Llumnix、DistServe；
+- Ray：Ray OSDI 2018；
+- 算子代价估计：Learned Cost Models、GRACEFUL、COSTREAM、Abacus。
 
-当用户询问"怎么设计 X 系统""怎么构建 Y 算法""怎么设计 Z 实验/流程"时，遵循以下方法。核心原则：**从已有顶会文献中提取设计模式和策略思路，不凭空设计，不凭工程常识拍板。**
+## 文献优先设计方法
 
-### 为什么需要这个方法
+1. 明确当前问题属于数据组织、serving capacity、公平调度、代价估计还是写回。
+2. 从 Top 15 和核心补充中提取机制、假设和实验 baseline。
+3. 做迁移审计：本项目不修改 vLLM，固定双 GPU，不把 autoscaling、KV migration 或 kernel 优化当可直接实现机制。
+4. 先定义强 baseline、同条件契约和晋级门槛，再实现候选。
+5. 用真实实验决定晋级；负结果停止参数挖掘并收窄设计空间。
 
-- 你已有一个 65 篇 CCF-A/顶会的文献清单（`research/ai_operator_literature_inventory.md`）
-- 四个研究岛（DB AI 算子、GPU 推理服务、分布式数据管线、结果持久化）各自有几十篇 CCF-A 论文
-- 凭空设计的系统/算法很可能和已有顶会工作的思路重复，或漏掉已知最优 practice
-- Reviewer 会问"你的 baseline 是什么？为什么比 X 论文的方案更好？"
+## 算子代价估计定位
 
-### 四步执行流程
+代价估计是数据组织与提交控制的共同使能组件，不独立扩张为第三项研究内容。首版：
 
-**Step 1：定位问题方向**
+```text
+简单解析模型 + profile 校准 + residual correction
+```
 
-X 属于哪个研究岛？可能需要查阅文献清单中的哪个组？
+预测 prompt/output work、service time、JCT、remaining work 和 SLO slack，用于 active-work/K、组织、路由和提交选择。除 MAE/MAPE/R² 外，必须报告配置 ranking、决策 regret 与 prediction interval。
 
-| 研究岛 | 文献清单对应组 | 代表论文 |
-|---|---|---|
-| 数据库 AI 算子 | 第一组 + A 组 | Cortex AISQL, GaussML, Smart, Galois, NeurDB |
-| GPU 推理服务 | 第三组 + B 组 | vLLM, Orca, Sarathi-Serve, ServerlessLLM, SGLang |
-| 分布式数据管线 | 第五组 + C 组 | Ray, Ray Data, Daft, Spark, Arrow Flight |
-| 结果持久化与写回 | 第六组 + E 组 | TurboVecDB, Delta Lake, FlexPushdownDB, WiscKey, DiskANN |
+## Baseline 规则
 
-**Step 2：从文献提取候选方案**
+- direct vLLM 是 serving ceiling，不是竞争系统。
+- 无 Daft/Ray 强客户端用于隔离上游框架成本。
+- Daft Native/Ray 和 Ray Data 是官方 runtime baseline。
+- LOTUS/Palimpzest 是数据库 AI 系统 baseline；SemBench 提供 workload 和多维指标。
+- VTC 是多 job service-counter 算法 baseline；Llumnix是动态负载表征参考。
+- 每个 arm 独立 calibration；不要求无限调优，但必须合理强并进入平台期。
 
-- **精读组论文的核心技术/架构** → 作为首选设计参考（这些是你已经确认过的）
-- **补充组论文的关键机制** → 作为对照或变体（这些是已筛选的高相关论文）
-- **产业系统的工程实践** → 作为可行性参考（这些证明方案在工程上是可行的）
+完整 baseline 矩阵见 `../experiments/plans/baseline_reference.md`。
 
-**Step 3：对比与差异化**
+## 维护规则
 
-对每个候选方案回答三个问题：
-1. 它的适用场景是什么？
-2. 它的边界/不足是什么？（这通常是你的机会点）
-3. 你的场景和它的场景有什么不同？
-
-示例：
-> vLLM 的 continuous batching 优化了 GPU 侧的 request-to-batch 调度，但它的输入是抽象的 request queue，不感知输入数据来自数据库表、输出需要写回数据库。我们借鉴 vLLM 的 batching 思路，但在 batch 构造时加入了 writeback-aware 的约束。
-
-> TurboVecDB 通过 io_uring 和空间感知插入将 pgvector 索引构建时间减少了 98.4%，但它假设数据已经在数据库侧就绪。我们在此之上研究 GPU worker 产生的向量如何以最优批量和时序写入。
-
-**Step 4：提出综合方案**
-
-标注每个设计决策的来源：
-
-| 设计决策 | 来源 |
-|---|---|
-| Token-budget batching（按 token 预算而非固定行数） | vLLM `max_num_batched_tokens` (SOSP 2023) |
-| Length-aligned grouping（减少 straggler） | Sarathi-Serve chunked prefill (OSDI 2024) |
-| Prefix-aware grouping（利用 APC） | vLLM APC + Parrot semantic variable (OSDI 2024) |
-| Queue-adaptive flush（去中心化自适应提交） | Clockwork 确定性调度 (OSDI 2020) + Clipper AIMD (NSDI 2017) |
-| Actor 异构化 + 去中心化协调 | Ray OSDI 2018 actor 模型 |
-| COPY + deferred index 工程最优写回 | Delta Lake blind append (VLDB 2020) + TurboVecDB (VLDB 2025) |
-| 本文新增：上游数据组织策略 + Ray actor 自适应提交控制 | 本文 |
-
-### 同理适用于实验 Baseline 选择
-
-设计实验对照时，**优先从文献提取最优 baseline**，不使用 strawman。
-
-- GPU 调度 baseline → vLLM / Orca / Sarathi-Serve（G1-G6）
-- 写回 baseline → TurboVecDB + COPY 延迟建索引（W1-W7）
-- 跨层 baseline → FlexPushdownDB / AIDB / Deferred View Maintenance（X1-X3）
-
-完整 baseline 矩阵见 `experiments/plans/baseline_reference.md`。
-
-### 示例：正确 vs 错误的做法
-
-**❌ 错误做法（凭空设计）**：
-> "我们设计了一个 GPU batch 调度器，根据 batch size 动态调整 worker 数量..."
-
-这不是新东西。vLLM (SOSP 2023) 已经在做 continuous batching。你的设计应该写明"vLLM 提供了 iteration-level continuous batching，但它的 request queue 不感知数据来自数据库表。我们在此之上加入了 database-fetch-aware batch construction..."
-
-**✅ 正确做法（文献优先）**：
-> "vLLM (Kwon et al., SOSP 2023) 的 PagedAttention 和 continuous batching 将 GPU 内存利用率提升到 >96%，Orca (Yu et al., OSDI 2022) 的 iteration-level scheduling 将吞吐提升了最高 36.9×。但这些系统的优化范围止于 GPU 侧——它们不感知数据来自数据库表、计算结果需要写回 pgvector/Lance。我们借鉴 vLLM 的 batching 机制，但将 batch 构造策略扩展为 writeback-aware：GPU batch size 的选择不仅考虑 GPU utilization，还考虑下游写回的最优批量..."
-
-### 执行检查清单
-
-设计任何新系统/算法/实验方案时：
-- [ ] 是否先查阅了文献清单中对应研究方向组的论文？
-- [ ] 是否从至少 2 篇 CCF-A 论文中提取了候选方案？
-- [ ] 是否写清楚了本文方案与已有方案的差异？
-- [ ] 是否标注了每个关键设计决策的来源？
-- [ ] Baseline 是否来自文献而非凭空选择？
+- 新增文献先核验正式题录与轨道，再下载、精读和分类。
+- 不根据摘要直接重排 Top 15。
+- 新增/删除笔记或 PDF 时同步 `REFERENCE_INDEX.md`、`PROJECT_INDEX.md` 和 `PROJECT_LOG.md`。
+- 结论标明来源：论文、官方文档、源码、本地实验、合理推断或待确认。
 

@@ -1,5 +1,17 @@
 # 开题材料 project log
 
+## 2026-07-29 文献基线升级与研究问题收敛
+
+- 开题 Top 15 重排为 15/15 严格 CCF-A 正式 research paper；PVLDB Tutorial、
+  CIDR、Companion 和 arXiv 移入核心补充。
+- 新增 VTC、Llumnix、LOTUS、Palimpzest、Abacus、SemBench、FairServe、
+  DLPM、Autellix、Chiron 十篇权威精读；Top 15 PDF 与笔记均 15/15 齐全。
+- 开题仍保留两项研究内容：数据组织；调度与提交控制。代价估计从补充讨论
+  提升为共同使能组件，多模态仍为泛化验证。
+- 研究问题收敛为最小饱和压力/瞬态 ramp、相同 work 数据组织、多 job
+  shared-credit/fairness；同步改写报告和 PPT 源稿。
+- 未同步 Wiki。
+
 ## 2026-07-24 文献精读语料迁出 opening/，opening 仅留开题精读清单 + Top15 拷贝
 
 - 文献精读笔记（44 篇）、PDF（69 个）、清单与评估从 `opening/literature/` 迁至 `research/`（项目级文献目录）。理由：opening 是阶段性开题工作区，不该承载项目级长期文献资产；opening 自己的 README/navigation 也指向 research/ 查文献。

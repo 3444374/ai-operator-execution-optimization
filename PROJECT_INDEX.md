@@ -254,13 +254,14 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/navigation.md` | 开题材料导航 | 不知道开题材料在哪时读 |
 | `opening/report/opening_report.md` | 开题报告正文 | 写报告、和导师沟通、定方向 |
 | `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级和引用边界 |
-| `opening/literature/top15_reading_notes/` | 开题精读 Top 15 拷贝 | 开题答辩用 15 篇精读笔记自包含快照，权威版在 `research/reading_notes/` |
-| `research/reading_notes/` | 精读笔记权威库（33 篇 + `figs/` + 模板） | 所有精读笔记单一来源；`README.md` 说明 provenance 链路（inventory 66 → 精读 33 → Top 15）；权威版，Top 15 快照在 `opening/literature/top15_reading_notes/` |
-| `research/reference/` | 已下载参考文献 PDF 子集 | 查看论文 PDF、页数和初步识别（索引 `research/reference/README.md`） |
-| `research/ai_operator_literature_inventory.md` | 66 篇 CCF-A 文献清单 | 查看文献全貌、分组和候选 |
-| `research/top15_ranked_papers.md` | 项目最相关 Top 15 排序 | 查看对课题贡献度最高的 15 篇及四维评估 |
+| `opening/literature/top15_reading_notes/` | 开题精读 Top 15 拷贝 | 15/15 严格 CCF-A 正式 research paper 的自包含快照，权威版在 `research/reading_notes/` |
+| `research/reading_notes/` | 精读笔记权威库（49 篇 + 模板） | 所有精读笔记单一来源；新增 VTC、Llumnix、LOTUS、Palimpzest、Abacus、SemBench、FairServe、DLPM、Autellix、Chiron |
+| `research/reference/` | 当前可解析参考 PDF（21 份） | Top 15 PDF 15/15 齐全；题录和版本索引见 `research/reference/REFERENCE_INDEX.md` |
+| `research/ai_operator_literature_inventory.md` | 文献分级清单 | 查看 Top 15、核心补充、题录勘误、baseline 与代价估计关系 |
+| `research/top15_ranked_papers.md` | 开题 Top 15 | 15/15 CCF-A 正式论文；按 AI 算子、LLM 调度、Ray、代价估计组织 |
 | `research/gpu_scheduler_data_placement_supplement_20260715.md` | GPU 调度与数据放置补充调研 | 查看策略控制器设计的前沿系统依据、可借鉴思想和后续精读清单 |
-| `research/reference/README.md` | 本地已下载 PDF 子集索引 | 查看当前部分参考文献 PDF、页数、初步识别和用途 |
+| `research/reference/README.md` | 本地 PDF 状态 | 查看 21 份实体 PDF、Top 15 完整性和维护规则 |
+| `research/reference/REFERENCE_INDEX.md` | 权威题录索引 | 查看 DOI、正式轨道、核心补充级别和工程资料入口 |
 | `data/README.md` | 本地 workload 数据说明；raw payloads 被 git ignore | 查看 ShareGPT/BurstGPT 下载位置、用途和边界 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |
 | `code/src/sources.py` | PostgreSQL data source 后端：psycopg/Arrow baseline、Daft SQL entry、`doc_id`/`arrival_time` source order | 切换或修改数据入口与读取顺序时读 |
@@ -358,7 +359,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 
 主要内容：
 
-- 当前开题题目、研究内容（两项策略 + 多模态泛化验证 + 算子代价估计补充）；
+- 当前开题题目、研究内容（两项策略 + 多模态泛化验证 + 算子代价估计共同使能组件）；
 - 实验主线和当前最重要证据；
 - 近期优先级；
 - 双向同步规则。
@@ -527,12 +528,12 @@ python feasibility/benchmarks/analyze_results.py \
 
 > 数据库 AI 负载的执行优化与调度研究方向。
 
-两项策略设计 + 多模态泛化验证 + 算子代价估计补充（2026-07-17 更新，写回已降为实验设置）：
+两项策略设计 + 多模态泛化验证 + 算子代价估计共同使能组件（2026-07-29 更新，写回为实验设置）：
 
 1. **AI workload 感知的动态数据组织与批处理构造策略**（研究内容一）：对比 token-budget 与固定 batch_size 在吞吐和 P99 上的差异，利用异构 actor pool + Daft 引擎级参数实现。
 2. **调度与提交控制策略**（研究内容二）：利用 Ray actor 研究去中心化的调度与提交控制，候选策略包括 queue-adaptive flush、K_max 动态控制、actor pool 分池路由等。
 3. **多模态泛化验证**（正文实验）：在图像 workload 上使用同一套策略代码验证模态无关性。
-4. **算子代价估计**（补充讨论，不作为独立研究内容）。
+4. **算子代价估计**（贯穿两项策略的重要组件，不作为独立研究内容）。
 
 主场景：`AI_COMPLETE`（文本 LLM）+ `AI_EMBED/AI_CLASSIFY`（图像，多模态泛化验证）。vLLM 为部署平台 + baseline，Daft 为数据引擎，不修改其内部调度器。PG18.4 本地预演，后续进入 PG18.3 内部平台复测。
 

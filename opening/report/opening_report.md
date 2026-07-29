@@ -72,26 +72,27 @@ PostgreSQL 生态中，pgvector[4] 负责向量类型、索引和相似度检索
 
 综合以上分析，本课题的核心研究空白在于：面向数据库 AI workload 的数据组织与运行层调度/模型服务批处理之间缺少可观测、可拆分、可调优的上游执行链路研究，持久化写回需要纳入端到端效果评价。现有工作无论是 Ray/Daft 的数据流组织、vLLM/Orca 的 GPU 内部调度，还是 DB4AI 路线的数据库内 ML，都没有系统考察"数据库表数据如何被组织为 batch、如何根据模型服务状态调节提交与反压、以及这些上游决策在加入写回后是否仍然改善端到端效果"。
 
-因此，本课题的研究问题是：在数据库驱动 `AI_COMPLETE` workload 从表数据出发、经由 Arrow/Daft 数据组织、Ray 动态 batching 和自适应提交、GPU 推理并最终写回的链路中，上游数据组织策略和提交控制策略如何设计与验证，尚未被系统研究。
+因此，本课题的研究问题不是“能否让 GPU 超过自身推理上限”，而是：在数据库驱动 `AI_COMPLETE` workload 从表数据出发、经由 Arrow/Daft 数据组织、Ray 调度提交、GPU 推理并最终写回的链路中，怎样以更小且可控的在途 work 快速达到下游服务容量，怎样组织相同 work，以及多 job 共享同一模型服务时怎样实现 work-conserving 的隔离与公平。现有 semantic operator、LLM serving 和数据引擎文献分别覆盖了相邻部分，但尚未系统覆盖这一上游组合问题。
 
 ## 3. 研究目标与研究内容
 
 ### 3.1 研究目标
 
-本课题的总体目标是：面向数据库 AI 负载，以 `AI_COMPLETE`（生成式 LLM 推理）为主场景，构建基于 Daft/Ray 的端到端实验链路。优化侧重点放在上游执行链路：探索数据组织策略（按 token 量而非固定行数的动态组织方式、按 token 长度或 prefix 分组）和提交控制策略（Ray actor 去中心化自适应提交），并通过对照实验验证两项策略是否需要联合调优。结果写回纳入端到端效果评价，用于判断上游优化收益是否被持久化阶段吞噬。
+本课题的总体目标是：面向数据库 AI 负载，以 `AI_COMPLETE`（生成式 LLM 推理）为主场景，构建基于 Daft/Ray 的端到端实验链路。优化侧重点放在上游执行链路：先测得固定硬件、模型和 workload 下的下游 serving ceiling 与最小饱和 active work，再研究数据组织策略和 Ray 调度提交策略能否以更小压力、更低瞬态损失和更可控的多 job 排队逼近该上限。结果写回纳入端到端效果评价。
 
 具体目标包括：
 
-1. 建立 vLLM + 小 LLM（适配 RTX 5070 12GB VRAM）作为 GPU baseline，替代手动 HTTP endpoint，在真实 continuous batching 环境下进行所有后续实验。
-2. 设计并验证上游动态 batching policy：token-budget batching（按 token 预算累积行而非固定行数）、length-aligned grouping（减少 straggler）、prefix-aware grouping（利用 vLLM APC），利用 Ray 异构 actor pool 实现。
-3. 设计并验证 Ray actor 去中心化自适应提交策略：每个 actor 独立观测模型服务队列深度，自主决定 flush 时机，K_max 由 queue-adaptive 行为自然形成。
-4. 通过耦合验证实验（独立最优拼接 vs 联合 grid search）判断上游 batching 策略和提交策略是否需要联合调优。
-5. 确认结果持久化在当前链路中的瓶颈位置，通过 sink 对比判断上游优化收益是否被持久化阶段吞噬。
-6. 以 `AI_EMBED` 预研结果支撑实验框架可行性。通过多模态泛化验证（图像 workload：`AI_EMBED`/`AI_CLASSIFY`，CLIP/Qwen2.5-VL），检查数据组织策略和提交控制策略是否具有模态无关性——同一套 Daft/Ray 策略代码从 token 预算扩展到 image/frame 预算。
+1. 建立 direct vLLM、无 Daft/Ray 强客户端、Daft/Ray 官方 runtime 和数据库 AI 算子系统四层 baseline；所有 arm 使用同模型、同请求 manifest、同 endpoint 和独立 calibration。
+2. 回答“饱和效率”问题：测量 `minimum_saturating_active_work`、`time_to_95pct_ceiling` 和 ramp regret，判断上游是否能用更少的在途 work 更快达到 serving ceiling。
+3. 设计并验证动态数据组织：token-budget、length-aligned、prefix-aware 及 semantic operator 减少无效调用的边界；相同 work 的执行加速与减少 work 的系统优化分开报告。
+4. 设计并验证 Ray actor 调度提交：request-level replenishment、endpoint-shared request/work credit、idle borrowing 和多 job fair queue；固定静态上限是强 baseline，自适应策略必须显著超过同上限静态策略才晋级。
+5. 建立简单解析模型 + profile 校准 + residual correction 的算子代价估计，预测 token work、service time、JCT、remaining work 和 SLO slack，服务于 active-work/K 初始化、数据组织、路由和提交决策。
+6. 通过耦合验证判断数据组织和提交策略是否需要联合调优，并确认写回是否吞噬上游收益。
+7. 以 `AI_EMBED` 预研支撑实验框架可行性，并在图像 `AI_EMBED`/`AI_CLASSIFY` workload 上复用同一套 work/credit 抽象做多模态泛化验证。
 
 ### 3.2 研究内容
 
-阶段划分、分阶段性能剖析和瓶颈归因用于支撑动机测试、方案设计和效果评价。围绕这些观测结果，本课题研究两项策略设计、多模态泛化验证和算子代价估计补充讨论。主场景为 `AI_COMPLETE`（生成式 LLM 推理）；`AI_EMBED` 为预研验证场景（已完成真实 GPU-backed 端到端链路）；多模态泛化验证在图像 workload（`AI_EMBED`/`AI_CLASSIFY`，CLIP/Qwen2.5-VL）上复用同一套策略代码，验证策略的模态无关性。算子代价估计基于实验阶段采集的 profile 数据，建立 AI 算子的端到端成本估计方法，辅助编排决策，不作为独立研究内容。
+阶段划分、性能剖析和瓶颈归因用于支撑动机测试、方案设计和效果评价。课题仍保持两项策略设计，不重拆为三个独立贡献：研究内容一是数据组织，研究内容二是调度与提交控制；多模态是泛化验证。算子代价估计从“补充讨论”提升为贯穿两项策略的重要使能组件，但不单独扩张为第三项研究内容。
 
 **优化层级聚焦**：本课题聚焦部署服务层（PagedAttention + In-Flight-Batching），不涉及模型结构（GQA/MQA）和计算内核（Flash-Attention）。vLLM 为部署平台，论文不修改其内部调度器，重点研究上游 Ray 数据执行层的数据组织策略和提交控制策略。
 
@@ -111,11 +112,15 @@ Ray actor 异构化是实现上述策略的关键机制：创建不同配置的 
 
 **研究内容二：运行层调度与提交控制策略。**
 
-传统方式中，上游 Ray worker/actor 按固定并发度（K_max）提交请求，要么无界提交导致模型服务队列堆积，要么保守限制导致 GPU 饥饿。本课题利用 Ray actor 的 stateful + async 能力，研究运行层的调度与提交控制：探索去中心化的自适应提交方式（每个 actor 独立观测模型服务队列深度，自主决定 flush 时机），以及 K_max 动态控制、actor pool 分池路由等候选策略。这些策略的目标是使请求的发送节奏能够响应模型服务的实际队列状态，替代传统的固定并发上限或无界提交。
+传统方式中，上游按请求数或批次数控制并发，但不同请求承载的 token work 不同；无界提交会把不可控排队推入 vLLM，过小静态上限又会使 GPU ramp 缓慢。课题利用 Ray actor 的 stateful + async 能力，研究 request-level continuous replenishment、endpoint-shared request/work credit、work-conserving idle borrowing 和多 job fair queue。actor 负责持有 job 状态、累计已服务 work 和异步完成事件，Ray cluster 负责资源与 actor 生命周期，vLLM 仍只负责下游推理。
+
+当前实验已表明，单 job 饱和后继续增大 active work 不再提高吞吐；固定 25–50ms 范围内的 queue/SLO-adaptive flush、固定 service quantum 和 actor pool 形状也未达到预注册的 5% 晋级门槛。因此研究内容二不再预设“动态控制器一定优于静态策略”。单 job 首先比较最小饱和压力和瞬态 ramp；多 job 再比较共享 credit、公平性、JCT 和尾延迟。只有在相同 capacity 与 SLO guardrail 下显著超过独立标定的静态强 baseline，动态策略才作为最终方案。
 
 研究内容一和研究内容二的策略各自通过消融实验独立验证。在此基础上，分别独立搜索两项策略的最优配置后拼接，再与联合 grid search 对比：如果联合显著优于拼接，说明两项策略需要联合调优；如果两者接近，则分层独立优化即可。无论哪种结果，课题的核心贡献（上游调度策略的设计与验证）不受影响。
 
-评价时比较固定 K_max、无界提交（unbounded in-flight）、queue-adaptive flush 和 actor pool 分池路由等方案。指标包括端到端耗时、P50/P99 latency、tokens/s、模型服务队列深度、GPU utilization 和 queue wait。消融实验分别固定 submission policy 类型、queue depth 阈值和 actor 异构配置，用于判断收益来源。
+评价时比较 direct serving ceiling、固定 request/work credit、无界提交、request-level replenishment、共享 credit/fair queue 和必要的自适应候选。指标包括 JCT、P50/P95/P99、goodput/SLO、tokens/s、capacity efficiency、minimum saturating active work、time-to-ceiling、ramp regret、每 job slowdown/Jain fairness、vLLM running/waiting/KV 和 Ray actor/queue trace。
+
+**跨两项策略的代价估计。** 首版用静态可解析特征估计 prompt/output work 与一阶 service time，以少量真实 profile 校准不同 GPU、模型和 workload，再用运行 trace 的 actual usage/completion residual 跨轮次修正。它为 active-work/K 初始化、组织/路由/提交选择和多 job remaining work/SLO slack 提供输入。评价除 MAE/MAPE/R² 外，还报告配置 ranking、选定策略相对 oracle 的 JCT/throughput regret 和预测区间覆盖，避免“预测更准但决策更差”。
 
 耦合验证实验设计如下：
 1. 独立搜索最优 batching policy（固定默认 submission policy）
@@ -130,7 +135,7 @@ Ray actor 异构化是实现上述策略的关键机制：创建不同配置的 
 
 ### 3.3 总体研究框架
 
-图 3-1 给出了课题的总体研究框架，按数据流向从左到右组织。输入端是数据库 AI workload（以 `AI_COMPLETE` 为主场景），数据经过 Daft/Arrow 数据组织层进入 Ray 动态 batching 层。Ray 层是课题的核心优化区，包含两个研究内容：研究内容一关注数据组织策略——数据以什么粒度、按什么规则打包为请求（token-budget、length-align、prefix-aware grouping），通过异构 actor pool 实现；研究内容二关注提交控制策略——请求以什么节奏、在什么条件下发往推理引擎（queue-adaptive flush、K_max 动态控制、actor pool 分池路由）。之后请求进入 GPU 推理引擎（vLLM，课题不修改其内部机制），结果经 fan-in 汇聚后写回数据库 sink。最右侧的写回阶段作为端到端瓶颈判定，不独立构成研究内容；多模态泛化验证在图像 workload 上复用同一套策略代码，用于验证策略的模态无关性。
+图 3-1 给出了课题的总体研究框架，按数据流向从左到右组织。输入端是数据库 AI workload（以 `AI_COMPLETE` 为主场景），数据经过 Daft/Arrow 数据组织层进入 Ray actor 调度层。Ray 层包含两个研究内容：研究内容一决定数据以何种 token/frame work 粒度和分组规则组织；研究内容二决定何时提交、向哪个 endpoint 提交，以及多 job 如何共享 request/work credit。代价估计位于两项内容之间，为 active-work/K 初始化、组织、路由和 remaining-work/SLO 判断提供共同输入。请求随后进入 vLLM；课题不修改其内部 continuous batching。写回作为端到端瓶颈判定，多模态验证复用同一套 work/credit 抽象。
 
 ![图 3-1 课题总体研究框架](../../figures/architecture/system_architecture_ai_data_execution.png)
 
@@ -166,11 +171,14 @@ Database AI COMPLETE workload source (PostgreSQL)
 
 Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / prefix 亲和 actor），行级路由按 token 长度和 prefix hash 分配到对应 actor 类型。
 
-**第二阶段（研究内容二）：自适应提交策略消融。** 固定第一阶段筛选出的最优 batching policy，比较四种方案：
-- 固定并发上限 baseline（K_max = 8/16/32）
-- 无界提交（不做任何并发控制）
-- 队列感知自适应 flush：每个 actor 独立观测 vLLM 的 `num_requests_running` 和 `num_requests_waiting`。队列空时立刻提交，哪怕 buffer 未满；队列接近 `max_num_seqs` 时暂停积攒
-- Actor pool 分池路由：不同 token 类型走不同提交策略
+**第二阶段（研究内容二）：饱和效率与提交策略消融。** 固定第一阶段筛选出的组织策略，先独立标定 direct vLLM ceiling 和达到 95% ceiling 的最小 active work，再比较：
+- 固定 request/work credit 强 baseline；
+- 无界提交，作为排队位置和尾延迟的诊断对照；
+- request-level continuous replenishment；
+- endpoint-shared request/work credit 与 work-conserving borrowing；
+- 多 job fair queue，以及有文献依据且通过最小门禁的自适应候选。
+
+固定 25–50ms 的 queue/SLO-adaptive flush 已在当前硬件上未通过 5% 晋级门槛，不继续围绕 alpha/deadband 做参数挖掘。actor pool 只有在固定总资源、总 credit 和 endpoint 拓扑后仍有稳定增益，才作为策略贡献。
 
 **第三阶段：耦合验证实验。** 分别独立搜索最优 batching policy（固定默认提交策略）和最优提交策略（固定默认 batching policy），得到独立最优配置后拼接，再对两类策略做联合 grid search。比较拼接后的端到端表现与联合搜索最优之间的差异。如果联合搜索显著优于独立拼接，则上游 batching 与下游 continuous batching 需要联合调优；如果两者接近，则分层独立优化已足够。
 
@@ -182,10 +190,11 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 
 拟解决的关键技术问题包括：
 
-1. 上游动态 batching policy 如何影响 vLLM continuous batching 的调度效率。Token-budget batching 是否优于固定行数 batching？Length-aligned grouping 是否减少 straggler 延迟？Prefix-aware grouping 是否能显著提高 APC hit rate？
-2. Ray actor 去中心化自适应提交是否优于固定 K_max。Queue-adaptive flush 能否在保持吞吐的同时降低 P99 延迟？去中心化协调是否避免了中央 scheduler 的瓶颈？
-3. 上游 batching 和提交策略之间是否需要联合调优。独立最优拼接是否等于联合最优？如果两者接近，则分层独立优化即可。
-4. 持久化写回是否会限制上游收益。COPY + deferred index 写回 baseline 下，writeback 占比是否可控？
+1. 固定 GPU、模型和 workload 下，最小饱和 active work 是多少；Ray request-level replenishment 能否缩短 time-to-ceiling、降低 ramp regret，或用更小压力达到相同吞吐？
+2. 在总 token work、输出和下游 capacity 相同的条件下，token-budget、length-align、prefix-aware 怎样影响 JCT、尾延迟、cache 命中和 active-work 波动？
+3. 多 job 共享同一 vLLM 时，endpoint-shared work credit、idle borrowing 和 fair queue 能否在不牺牲 work-conserving throughput 的前提下改善每 job JCT、P99 和公平性？
+4. 简单解析模型 + profile + residual 能否正确排序 active-work、组织、路由和提交候选，并在新 workload/硬件上控制决策 regret？
+5. 数据组织与提交策略是否需要联合调优；写回是否会限制其端到端收益？
 
 为验证全链路调优效果，本文采用逐步递进的对照实验：首先建立 GPU baseline；其次在默认提交策略下搜索最优动态 batching policy；再用最优 batching 搜索最优自适应提交策略；然后联合 grid search 与独立最优拼接对照，判定两项策略是否需要联合调优；最后加入写回检查端到端收益是否被持久化阶段吞噬。`AI_EMBED` 预研结果仅用于证明阶段计时方法和实验框架可行，不作为论文主体贡献证据。`AI_FILTER/AI_CLASSIFY` 作为 simulated extension 在 §6 Discussion 中讨论 selectivity-aware 方向的适用性。
 
@@ -289,24 +298,24 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 
 预期形成以下成果：
 
-1. 一个基于 vLLM + Ray 的数据库驱动 AI_COMPLETE 端到端实验链路，支持 PostgreSQL 表读取、Daft/Arrow batch、Ray 动态 batching（异构 actor pool + 去中心化自适应提交）、vLLM continuous batching 和写回阶段计时。
+1. 一个基于 vLLM + Ray 的数据库驱动 AI_COMPLETE 端到端实验链路，支持 PostgreSQL 表读取、Daft/Arrow 组织、Ray request/work credit 与多 job actor 调度、vLLM continuous batching 和写回阶段计时。
 2. 一组以 `AI_COMPLETE` 为主、`AI_EMBED` 为预研验证的可复现实验 workload。
-3. 一套上游动态 batching policy 设计方法（token-budget / length-align / prefix-aware grouping）和 Ray actor 自适应提交策略（queue-adaptive flush），以及耦合验证实验框架。
+3. 一套上游动态组织方法、最小饱和 active-work 标定方法、Ray actor shared-credit/fair-queue 策略，以及简单解析 + profile + residual 的代价估计和耦合验证框架。
 4. 实验报告、开题 PPT、论文图表和硕士论文正文。
 
 预期关键技术指标包括：
 
 1. 阶段计时完整性：实验结果至少覆盖 DB fetch、Arrow build、Ray actor flush decision、模型服务队列深度、model request wall、TTFT/TPOT、fan-in 和 writeback 等字段。
 2. 可复现性：每组正式实验保留运行命令、参数、CSV 输出、warm-up / formal repeat 标记和结果解释。
-3. 对照完整性：至少比较静态固定 batch_size vs token-budget vs length-aligned vs prefix-aware grouping；固定 K_max vs queue-adaptive flush vs actor pool 分池路由。
+3. 对照完整性：至少比较 direct vLLM、无 Daft/Ray 强上游、Daft/Ray 官方 runtime、数据库 AI 算子系统和本项目策略；策略内比较固定行/固定 credit、token-work、request refill 与 shared-credit/fair queue。
 4. 边界清晰性：实验结论明确区分 PG18.4 本地预演（AI_EMBED 预研）和 AI_COMPLETE + vLLM 主实验平台。
 5. 统计严谨性：每组正式实验至少 3 次重复（核心发现额外补到 5 次），取中位数且报告 IQR 或标准差；每次重复间重启 Ray 并重建数据库表；warm-up run 不计入结果；数据生成固定随机种子确保不同配置跑同一批数据。
 
 预期创新点包括：
 
 1. AI workload 感知的上游动态数据组织与批处理构造策略。借鉴 vLLM continuous batching 的"按 token 预算而非固定请求数"原则，在 Ray 侧设计 token-budget batching、length-aligned grouping 和 prefix-aware grouping 三种动态 batching policy，利用 Ray actor 异构化实现，填补"上游数据管道 batching 策略如何影响下游 continuous batching 效率"这一研究空白。
-2. Ray actor 去中心化自适应提交策略。利用 Ray actor 的 stateful async loop 实现每个 actor 独立观测模型服务队列深度并自主决定 flush 时机，K_max 由 queue-adaptive 行为自然形成。通过耦合验证实验（独立最优拼接 vs 联合 grid search）判定两项策略是否需要联合调优。
-3. AI 数据流结果持久化的瓶颈判定。通过 COPY + deferred index 写回 baseline 和 sink 对比，确认上游优化收益是否被持久化阶段吞噬，为数据库 AI 算子的全链路优化提供写入侧边界条件。
+2. 面向饱和效率和多 job 的 Ray actor 调度提交策略。以 request/work credit 表示真实在途计算量，通过异步完成事件连续补位，在 endpoint 级共享上限内实现 idle borrowing 和公平队列；评价目标从“单点吞吐最大”扩展到最小饱和压力、瞬态 ramp、每 job JCT/P99 和公平性。
+3. 面向执行决策的轻量算子代价估计。用解析模型、少量 profile 与 residual correction 预测 work/service/JCT，辅助 active-work/K、数据组织、路由和提交选择；它贯穿两项策略但不单独构成第三项研究内容。写回仅作为端到端边界检查。
 
 ## 7. 主要参考文献
 
@@ -437,3 +446,21 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 [63] Deepak Narayanan, Aaron Harlap, Amar Phanishayee, Vivek Seshadri, Nikhil R. Devanur, Gregory R. Ganger, Phillip B. Gibbons, Matei Zaharia. PipeDream: Generalized Pipeline Parallelism for DNN Training. In: Proceedings of the 27th ACM Symposium on Operating Systems Principles (SOSP), Huntsville, Canada, 2019: 1-15.
 
 [64] Lianmin Zheng, Zhuohan Li, Hao Zhang, Yonghao Zhuang, Zhifeng Chen, Yanping Huang, et al. Alpa: Automating Inter- and Intra-Operator Parallelism for Distributed Deep Learning. In: Proceedings of the 16th USENIX Symposium on Operating Systems Design and Implementation (OSDI), Carlsbad, CA, USA, 2022: 559-578.
+
+[65] Ying Sheng, Shiyi Cao, Dacheng Li, Banghua Zhu, Zhuohan Li, Danyang Zhuo, Joseph E. Gonzalez, and Ion Stoica. Fairness in Serving Large Language Models. In: Proceedings of the 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI), 2024.
+
+[66] Biao Sun, Ziming Huang, Hanyu Zhao, Wencong Xiao, Xinyi Zhang, Yong Li, and Wei Lin. Llumnix: Dynamic Scheduling for Large Language Model Serving. In: Proceedings of the 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI), 2024.
+
+[67] Liana Patel, Siddharth Jha, Melissa Pan, Harshit Gupta, Parth Asawa, Carlos Guestrin, and Matei Zaharia. Semantic Operators and Their Optimization: Enabling LLM-Based Data Processing with Accuracy Guarantees in LOTUS. Proceedings of the VLDB Endowment, 18(11):4171-4184, 2025. DOI:10.14778/3749646.3749685.
+
+[68] Matthew Russo, Sivaprasad Sudhir, Gerardo Vitagliano, Chunwei Liu, Tim Kraska, Samuel Madden, and Michael Cafarella. Abacus: A Cost-Based Optimizer for Semantic Operator Systems. Proceedings of the VLDB Endowment, 19(5):1060-1073, 2026. DOI:10.14778/3796195.3796215.
+
+[69] Roman Heinrich, Manisha Luthra, Johannes Wehrstein, Harald Kornmayer, and Carsten Binnig. How Good are Learned Cost Models, Really? Insights from Query Optimization Tasks. Proceedings of the ACM on Management of Data, 3(3), Article 172, 2025.
+
+[70] Johannes Wehrstein, Tiemo Bang, Roman Heinrich, and Carsten Binnig. GRACEFUL: A Learned Cost Estimator for UDFs. In: Proceedings of the 41st IEEE International Conference on Data Engineering (ICDE), 2025:2450-2463. DOI:10.1109/ICDE65448.2025.00185.
+
+[71] Roman Heinrich, Carsten Binnig, Harald Kornmayer, and Manisha Luthra. COSTREAM: Learned Cost Models for Operator Placement in Edge-Cloud Environments. In: Proceedings of the 40th IEEE International Conference on Data Engineering (ICDE), 2024:96-109. DOI:10.1109/ICDE60146.2024.00015.
+
+[72] Chunwei Liu, Matthew Russo, Michael Cafarella, Lei Cao, Peter Baile Chen, Zui Chen, Michael Franklin, Tim Kraska, Samuel Madden, Rana Shahout, and Gerardo Vitagliano. Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing. In: Proceedings of the Conference on Innovative Data Systems Research (CIDR), 2025. (非 CCF-A)
+
+[73] Jiale Lao, et al. SemBench: A Benchmark for Semantic Query Processing Engines. Proceedings of the VLDB Endowment, 19(8):1754-1767, 2026. DOI:10.14778/3811243.3811249.

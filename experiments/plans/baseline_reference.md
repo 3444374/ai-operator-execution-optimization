@@ -1,10 +1,10 @@
 # 实验 Baseline 参考矩阵
 
-整理日期：2026-07-16
+整理日期：2026-07-16；文献与官方 baseline 复审：2026-07-29
 
 > **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
-用途：正式实验设计时，从 CCF-A 文献中提取 baseline 策略，避免使用 strawman 对照
-来源：`research/ai_operator_literature_inventory.md` v4（65 篇）
+用途：正式实验设计时，从正式论文、官方系统和可审计工程默认中提取 baseline，避免使用 strawman 对照
+来源：`research/ai_operator_literature_inventory.md` 与 `research/top15_ranked_papers.md`
 
 > **2026-07-16 方向更新**：vLLM 已定位为部署平台（非竞争对手），其 continuous batching 是 S 级 baseline——课题研究上游调度优化，不修改 vLLM 内部。新增 baseline 候选：Ray 2.49+ PrefixCacheAffinityRouter、Ray Serve batch_size_fn 等。详细背景见 `research/knowledge_hub.md`。
 
@@ -57,11 +57,14 @@ endpoint 和独立 calibration。详细预注册见
 
 ### 当前状态
 
-本项目目前使用**手动启动的 HTTP endpoint**（`local_embedding_server.py`，单/双进程各占端口）。这是"可控的最小 GPU 服务"，适合做消融，但非社区标准 baseline。
+当前已使用真实双 4090 vLLM endpoint，并建立 vLLM Bench、bounded HTTP、
+Daft `prompt()` Native/Ray 和 Ray Data HTTP Processor 的同 manifest 功能/计数
+门禁。下一步只做必要的独立 calibration，找到合理强且进入平台期的配置；不把
+每个 baseline 调成无限参数搜索，也不把未到 ceiling 的默认点当最终结果。
 
-**后续计划**：
-- 优先接入 vLLM offline inference 或 Ray Serve 作为 G1/G2 baseline
-- 若工程条件暂不具备，论文 §8 必须写"当前 GPU baseline 是简化的；vLLM continuous batching 可能进一步缩小 GPU 侧的独立优化空间"
+多 job 侧增加 VTC（OSDI 2024）作为算法基线：token-cost service counter、
+work-conserving borrowing 和每 job service/JCT/fairness。Llumnix（OSDI 2024）
+作为多实例 virtual usage 与在线纠偏参考，不要求实现 KV live migration。
 
 ---
 
@@ -91,8 +94,10 @@ endpoint 和独立 calibration。详细预注册见
 |---|---|---|---|---|---|
 | **D1** | Fixed Partition + Fixed Batch | Daft 官方文档 + Spark SQL Tuning Guide | 官方文档 | 固定 partition 数 + 固定 batch size；不做 workload 感知 | 当前已部分覆盖（coalesced vs fine） |
 | **D2** | Pre-Shuffle Merge | Daft Shuffle 文档 | 官方文档 | 先合并 input partitions 降低 slot count，再进行 shuffle | Daft 层的 object coalescing baseline |
-| **D3** | AI 感知查询优化（谓词上拉 + 模型级联） | Cortex AISQL (Aggarwal et al., SIGMOD 2026) | **A** | LLM 成本作为一阶优化目标；必要时将昂贵 AI 谓词上拉到 Join 后 | 数据组织层面的 selectivity-aware 策略参考 |
+| **D3** | Semantic Operator Optimization | LOTUS (Patel et al., PVLDB 2025) | **A** | 准确率约束下选择代理模型、cascade、join/ranking 算法 | 数据库 AI 系统 baseline；冻结模型调用 work 后再与运行时策略比较 |
 | **D4** | ML 谓词推理重写 | Smart (Guo et al., VLDB Journal 2025) | **A** | 推理重写、渐进式推理、成本最优物理优化 | AI_FILTER/AI_CLASSIFY 场景的 selectivity-aware 策略参考 |
+| **D5** | Declarative Plan Search | Palimpzest (Liu et al., CIDR 2025) | 非 CCF-A | 用样本估计 time/cost/quality 并选择 Pareto 计划 | 官方系统 baseline；不把单线程默认当强 serving baseline |
+| **D6** | Semantic Query Benchmark | SemBench (Lao et al., PVLDB 2026) | **A** | 55 queries、文本/图像/音频、质量/时间/成本/内存/扩展性 | workload 和评价协议依据，不是调度算法 |
 
 ---
 
@@ -103,6 +108,8 @@ endpoint 和独立 calibration。详细预注册见
 | **X1** | 代价驱动的 Compute-vs-Storage Pushdown | FlexPushdownDB (Yang et al., PVLDB 2021) | **A** | 基于代价的 push-to-storage vs pull-to-compute 决策模型 | 只覆盖 compute↔storage 维度，不覆盖 GPU batch↔write batch 的 joint decision |
 | **X2** | 稀疏物化（Sparse Materialization） | AIDB (Jin et al., SIGMOD 2024) | **A** | 不是所有 ML 推理结果都物化到数据库；350× 成本降低 | 从"是否写回"角度，不涉及"写回批量和 GPU 批量的 joint optimization" |
 | **X3** | 延迟视图维护 | Deferred View Maintenance (Colby et al., SIGMOD 1996) | **A** | 攒批 → 批量维护物化视图，减少事务开销 | 经典理论，但不涉及 GPU 推理侧 |
+| **X4** | Semantic Operator Pareto Optimization | Abacus (Russo et al., PVLDB 2026) | **A** | profile + MAB/Pareto 搜索 quality/cost/latency 计划 | 优化调用/实现选择；本项目只迁移 profile 与 ranking 方法 |
+| **X5** | UDF/Placement Cost Estimation | GRACEFUL (ICDE 2025) + COSTREAM (ICDE 2024) | **A** | 估计 UDF runtime 与异构 operator placement | 本项目首版为解析模型 + profile + residual，不直接采用复杂 GNN |
 
 ---
 
@@ -132,3 +139,6 @@ endpoint 和独立 calibration。详细预注册见
 - [ ] 跨层对照是否包含了 FlexPushdownDB 或 AIDB 的决策模型？
 - [ ] 每个 baseline 是否标注了来源论文/系统？
 - [ ] 是否避免了"常识级 strawman"作为唯一 baseline？
+- [ ] 数据库 AI 系统 baseline 是否覆盖 LOTUS/Palimpzest，评价协议是否参考 SemBench？
+- [ ] 多 job 是否包含 VTC/shared-credit，并同时报告聚合吞吐、每 job JCT/P99、Jain fairness 和 idle borrowing？
+- [ ] 代价估计是否用 ranking/regret 验证了决策价值，而不只报告 MAPE？

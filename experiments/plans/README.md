@@ -1,5 +1,18 @@
 # Research Experiment Plans
 
+## 2026-07-29 baseline 文献升级
+
+- serving ceiling：vLLM Bench；
+- 无 Daft/Ray 强上游：现有数据库 AI 算子 + bounded HTTP；
+- 官方 runtime：Daft `prompt()` Native/Ray + Ray Data HTTP Processor；
+- 数据库 AI 系统：LOTUS、Palimpzest；SemBench 提供 workload/指标；
+- 多 job：VTC service counter + endpoint-shared request/work credit，Llumnix作为
+  virtual usage/动态纠偏参考；
+- 代价估计：Learned Cost Models、GRACEFUL、COSTREAM、Abacus。
+
+每个 arm 独立 calibration；不要求无限调优，但必须达到合理强配置并进入平台期。
+相同 work 的 runtime 比较与减少调用/换模型的 system-level 比较分开。
+
 本目录保存正式研究实验计划、设计参考与状态审计，不保存原始结果。文档按性质分三类：
 
 - **实验计划**（按研究内容）：跑实验时看——变量、假设、矩阵。
@@ -86,7 +99,7 @@ arrival replay 隔离数据组织，最后回到 arrival replay 检验 request-l
 
 设计实验 baseline 前，先查阅 `baseline_reference.md`——优先从已有 CCF-A 文献中提取最优策略作为对照，不凭空设计 strawman baseline。设计“本文策略”或更新策略设计图前，先查阅 `strategy_design_literature_basis.md`，区分哪些是可借鉴思想、哪些只是 baseline/边界、哪些才是本文自己的策略。实验设计方法论参照 AGENTS.md §6.5（文献优先设计规则）和 `research/README.md` §文献优先设计方法论。
 
-进入具体实现或实验矩阵设计时，再查阅 `strategy_design_implementation_reference.md`：该文件把两项策略拆成数据组织策略（研究内容一）、调度与提交控制策略（研究内容二），加上多模态泛化验证和算子代价估计补充，并列出每部分的信号、变量、指标、baseline 和实现优先级。
+进入具体实现或实验矩阵设计时，再查阅 `strategy_design_implementation_reference.md`：该文件把两项策略拆成数据组织策略（研究内容一）、调度与提交控制策略（研究内容二），加上多模态泛化验证和贯穿两项策略的算子代价估计，并列出每部分的信号、变量、指标、baseline 和实现优先级。
 
 ## 文档维护纪律（2026-07-24）
 

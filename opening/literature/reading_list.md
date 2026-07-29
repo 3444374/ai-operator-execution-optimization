@@ -1,165 +1,128 @@
 # 文献精读清单
 
+更新日期：2026-07-29
+
 ## 选择原则
 
-- 优先选择 CCF-A 会议/期刊和权威系统论文。
-- 其次选择与 Ray、Daft、Lance、Arrow、Snowflake AISQL、pgai、PostgresML、pgvector 直接相关的官方文档或源码 README。
-- 精读文献不只记录标题，要能说明论文解决的问题、核心方法、与本课题的关系和不足。
-- 未核验资料只能标注为“待核验”，不能写入正式开题报告的确定性结论。
+- Top 15 优先选择 CCF-A 正式 research paper。
+- Companion、Demo、Tutorial、CIDR、MLSys、arXiv 单独标注，不借所属会议/期刊抬高等级。
+- 先核验作者、标题、年份、轨道、卷期和 DOI，再进入 Top 15。
+- 精读必须覆盖问题、方法、baseline/workload/指标、假设与局限，以及与本项目的可迁移关系。
+- 不根据摘要直接调整 Top 15。
 
-## 当前核心候选
+## 当前统计
 
-| 类别 | 文献 / 资料 | 来源级别 | 状态 | 开题中用途 |
-|---|---|---|---|---|
-| AI SQL 工业系统 | Snowflake Cortex AISQL paper / docs | 论文 + 官方文档 | ✅ 已精读（2026-07-15） | 证明 AI SQL 算子是现实需求 |
-| AI SQL 工业系统 | Snowflake Cortex AI Functions docs | 官方文档 | 已整理入口 | 支撑 `AI_EMBED`、`AI_FILTER`、`AI_COMPLETE` 场景 |
-| 分布式 AI 执行 | Ray paper | 系统论文 | ✅ 已精读（2026-07-22） | 支撑 Ray 作为分布式 AI 执行框架 |
-| Ray Core | Ray objects / task anti-pattern / scheduling docs | 官方文档 | 已整理入口 | 支撑 task、object、ObjectRef、资源调度机制 |
-| Ray Data / Serve | `map_batches`、dynamic batching、routing、autoscaling docs | 官方文档 | 已整理入口 | 支撑 batch、routing、backpressure 实验接口 |
-| Daft | Daft on Ray、partitioning、shuffle、join strategy docs | 官方文档 | 已整理入口 | 支撑 partition、shuffle、`M × N` object slots 风险 |
-| 列式传输 | Arrow Flight benchmark paper | 论文 | 待精读 | 支撑 Arrow/Flight 在跨系统数据传输中的背景 |
-| AI 数据存储 | Lance paper | 论文 | ✅ 已精读（2026-07-23） | 支撑 Lance 作为 AI / columnar 数据存储参考 |
-| PostgreSQL AI 生态 | pgai README | 工程资料 | 已整理入口 | 支撑外部 vectorizer worker + 写回形态 |
-| PostgreSQL AI 生态 | pgvector README | 工程资料 | 已整理入口 | 支撑 PostgreSQL 向量写回和检索 baseline |
-| PostgreSQL AI 生态 | PostgresML README | 工程资料 | 已整理入口 | 作为近数据库 / 数据库内模型执行对照路线 |
-| 分布式 SQL 优化 | Spark SQL performance tuning docs | 官方文档 | 已整理入口 | 支撑 partition、shuffle coalescing、join strategy 是成熟问题 |
-| 数据库侧工业背景 | OceanBase Mercury / Bacchus 等论文 | 论文 | 待核验细节 | 作为分布式数据库、列式/向量化、写回和资源管理背景 |
+- `research/reading_notes/` 现有 **49 篇权威精读笔记**（不含 README 和两个模板）。
+- 旧文档“33 篇已完成”已经过时；原编号到 41 还混入了两篇未下载条目，也不能作为实体笔记数。
+- 当前 Top 15 为 15/15 严格 CCF-A 正式论文，快照在 `top15_reading_notes/`。
+- `research/reference/` 当前有 21 份可解析 PDF；Top 15 的 15 份全部齐全。
 
-## 精读笔记索引（2026-07-23 更新）
+## Top 15 精读顺序
 
-**33 篇精读笔记已完成**：原 16 篇（inventory 建议精读 15 篇 + DiskANN）+ 2026-07-23 新增 17 篇（由 codex 与 Claude Code 两环境协同完成：P0 自适应控制 / P1 策略实现 / P2 背景对照 + Mooncake + 补齐 Multi-Bin/Lance/Milvus + Ray Data 引擎基础）。所有笔记位于 `research/reading_notes/`，已同步至知识库 `raw/papers/`。
+| 类别 | 论文 | 笔记 |
+|---|---|---|
+| AI 算子 | LOTUS | `lotus_pvldb2025.md` |
+| AI 算子 | Galois | `galois_sigmod2025.md` |
+| AI 算子 | GaussML | `gaussml_icde2024.md` |
+| Serving | vLLM | `vllm_sosp2023.md` |
+| Serving | Orca | `orca_osdi2022.md` |
+| Serving | Sarathi-Serve | `sarathi_serve_osdi2024.md` |
+| Serving | SGLang | `sglang_neurips2024.md` |
+| 公平调度 | VTC | `vtc_osdi2024.md` |
+| 动态调度 | Llumnix | `llumnix_osdi2024.md` |
+| Serving | DistServe | `distserve_osdi2024.md` |
+| Ray | Ray | `ray_osdi2018.md` |
+| 代价估计 | How Good Are Learned Cost Models, Really? | `learned_cost_models_sigmod2025.md` |
+| 代价估计 | GRACEFUL | `graceful_udf_cost_icde2025.md` |
+| 代价估计 | COSTREAM | `costream_icde2024.md` |
+| 代价优化 | Abacus | `abacus_pvldb2026.md` |
 
-> **开题精读 Top 15**：开题要求精读的 15 篇（见 `research/top15_ranked_papers.md`）已拷贝至 `opening/literature/top15_reading_notes/`，作为开题自包含快照；权威版仍在 `research/reading_notes/`，笔记更新后需重新拷贝。
+## 核心补充精读
 
-| # | 笔记文件 | 论文 | 出处 | 完成日期 |
-|---|---------|------|------|----------|
-| 1 | `cortex_aisql_sigmod2026.md` | Cortex AISQL | SIGMOD 2026 | 2026-07-15 |
-| 2 | `smart_vldb_journal_2025.md` | Smart | VLDB Journal 2025 | 2026-07-15 |
-| 3 | `gaussml_icde2024.md` | GaussML | ICDE 2024 | 2026-07-15 |
-| 4 | `galois_sigmod2025.md` | Galois | SIGMOD 2025 | 2026-07-22 |
-| 5 | `neurdb_cidr2025.md` | NeurDB | CIDR 2025 | 2026-07-22 |
-| 6 | `leads_pvldb2024.md` | LEADS | PVLDB 2024 | 2026-07-22 |
-| 7 | `inferdb_pvldb2024.md` | InferDB | PVLDB 2024 | 2026-07-22 |
-| 8 | `smartlite_pvldb2024.md` | SmartLite | PVLDB 2024 | 2026-07-22 |
-| 9 | `vllm_sosp2023.md` | vLLM | SOSP 2023 | 2026-07-22 |
-| 10 | `orca_osdi2022.md` | Orca | OSDI 2022 | 2026-07-22 |
-| 11 | `sarathi_serve_osdi2024.md` | Sarathi-Serve | OSDI 2024 | 2026-07-22 |
-| 12 | `serverlessllm_osdi2024.md` | ServerlessLLM | OSDI 2024 | 2026-07-22 |
-| 13 | `llm4dm_pvldb2024.md` | LLM for Data Management | PVLDB 2024 | 2026-07-22 |
-| 14 | `db_perspective_llm_pvldb2025.md` | DB Perspective on LLM Inference | PVLDB 2025 | 2026-07-22 |
-| 15 | `ray_osdi2018.md` | Ray | OSDI 2018 | 2026-07-22 |
-| 16 | `diskann_neurips2019.md` | DiskANN | NeurIPS 2019 | 2026-07-22 |
-| — | **2026-07-23 新增（P0 自适应控制 / RC2）** | | | |
-| 17 | `clipper_nsdi2017.md` | Clipper — AIMD 自适应 batching | NSDI 2017 | 2026-07-23 |
-| 18 | `concur_2025.md` | CONCUR — agent 级主动准入控制（AIMD，非 EWMA） | arXiv 2026 | 2026-07-23 |
-| 19 | `colora_2026.md` | CoLoRA — 多租户 LoRA 协同调度 | ASP-DAC 2026 | 2026-07-23 |
-| 20 | `saber_2025.md` | SABER — USL 估计 + SLA-aware 准入 | arXiv 2025 | 2026-07-23 |
-| — | **2026-07-23 新增（P1 策略设计与工程实现 / RC1+RC2）** | | | |
-| 21 | `scorpio_llm_serving_2025.md` | Scorpio — SLO 异构 + token 级延迟建模 | arXiv 2025 | 2026-07-23 |
-| 22 | `bucketserve_2025.md` | BucketServe — sequence-length 分桶 batching | arXiv 2025 | 2026-07-23 |
-| 23 | `sglang_neurips2024.md` | SGLang — RadixAttention prefix 复用 | NeurIPS 2024 | 2026-07-23 |
-| 24 | `splitwise_isca2024.md` | Splitwise — prefill/decode 分池 | ISCA 2024 | 2026-07-23 |
-| — | **2026-07-23 新增（P2 背景与对照）** | | | |
-| 25 | `proserve_2025.md` | ProServe — 多优先级请求调度 | arXiv 2026 | 2026-07-23 |
-| 26 | `distserve_osdi2024.md` | DistServe — prefill/decode disaggregation（goodput） | OSDI 2024 | 2026-07-23 |
-| 27 | `flashattention_neurips2022.md` | FlashAttention — IO-aware attention 原语 | NeurIPS 2022 | 2026-07-23 |
-| 28 | `flexgen_icml2023.md` | FlexGen — 离线高吞吐 offloading 推理 | ICML 2023 | 2026-07-23 |
-| 29 | `mooncake_acmtos2025.md` | Mooncake — KVCache-centric 分离架构 | ACM TOS 2025 | 2026-07-23 |
-| — | **2026-07-23 补充（RC1 理论 / 数据引擎 / 写回）** | | | |
-| 30 | `multibin_batching_2024.md` | Multi-Bin Batching — length-align 装箱理论（order-statistics） | arXiv 2024 | 2026-07-23 |
-| 31 | `lance_2025.md` | Lance — 列式 AI 存储格式（Daft 底层） | arXiv 2025 | 2026-07-23 |
-| 32 | `milvus_sigmod2021.md` | Milvus — 向量库写回/索引（pgvector 工程对照） | SIGMOD 2021 | 2026-07-23 |
-| — | **2026-07-23 补（引擎基础）** | | | |
-| 33 | `ray_data_streaming_batch_2025.md` | Ray Data: Streaming Batch Model — 异构执行引擎（Daft 对照，RC1/RC2 引擎层） | arXiv 2025 | 2026-07-23 |
-| — | **2026-07-27 新增（算子代价估计文献）** | | | |
-| 34 | `learned_cost_models_sigmod2025.md` | Heinrich et al. — How Good are Learned Cost Models, Really? Insights from Query Optimization Tasks | SIGMOD 2025 | ✅ 已精读（2026-07-27） |
-| 35 | `concerto_cost_estimation_arxiv2024.md` | CONCERTO — Complex Query Execution Mechanism-Aware Learned Cost Estimation | arXiv 2024.12 | ✅ 已精读（2026-07-27） |
-| 36 | `graceful_udf_cost_icde2025.md` | GRACEFUL — A Learned Cost Estimator For UDFs | ICDE 2025 | ✅ 已精读（2026-07-27） |
-| 37 | `costream_icde2024.md` | COSTREAM — Learned Cost Models for Operator Placement in Edge-Cloud Environments | ICDE 2024 | ✅ 已精读（2026-07-27） |
-| 38 | `redefining_cost_estimation_arxiv2025.md` | Pathak & Mankodi — Redefining Cost Estimation in Database Systems | arXiv 2025 | ✅ 已精读（2026-07-27） |
-| — | **2026-07-27 新增（提交策略场景）** | | | |
-| 39 | `sfs_latency_routing_arxiv2026.md` | SFS — Latency-Aware LLM Query Routing for Dynamic Workloads（Serving Framework Simulation TTFT 估计器） | arXiv 2026 | ✅ 已精读（2026-07-27） |
-| 40 | — | SPOS — Structure Prediction and Opportunity-Cost Scheduler for LLM Inference | Pattern Recognition 2026 | 🔴 待下载（付费墙） |
-| 41 | — | ELTO — Energy-Latency Trade-off Optimization for ML Inference with Dynamic Batching | IEEE NCA 2025 | 🔴 待下载（IEEE 付费墙） |
+### 数据库 AI 系统与 benchmark
 
-> **2026-07-23 精读勘误（重要，两环境协同修正）**：精读代理据论文原文修正了多处早期误述——
-> (1) **SABER** 确实**使用 USL**（§IV.B Step 2 明写 "select the USL with the best R²"，Fig 7 对比三变体）作为估计机制，SLA-aware 是其系统目的，二者是机制与目的关系，非二选一；
-> (2) **CONCUR** 用 **AIMD**（非 EWMA），双信号 U_t/H_t + 0.3 死区；
-> (3) **DistServe** 全文用 simple FCFS 调度，**无** "AFGM attention-focused fairness" 与 "prediction-based prefill-decode pairing"；
-> (4) **ProServe** 真实主题是**多优先级请求调度**（TDG 收益 + SlideBatching + GoRouting），非"预测式 PD 分离调度"——PD 分离仅是其部署模式之一。
-> 笔记均按论文真实内容撰写。
+| 文献 | 状态 | 作用 |
+|---|---|---|
+| Palimpzest | CIDR 2025 | 声明式 plan search、系统 baseline |
+| SemBench | PVLDB 2026 benchmark | 跨系统 workload、质量/延迟/成本/内存指标 |
+| Database Perspective on LLM Inference | PVLDB Tutorial | 技术版图与 open problem |
+| Cortex AISQL | 按实际轨道引用 | 工业需求证据 |
+| NeurDB | CIDR 2025 | AI-native database vision |
 
-> **命名说明**：CoLoRA 笔记文件名为 `colora_2026.md`（codex 命名），对应 PDF 为 `colora_aspdac2026.pdf`；Clipper 笔记 `clipper_nsdi2017.md` ↔ PDF `clipper_nsdi2017.pdf`。
+### 公平与 program/job 调度
 
-精读笔记模板：`tpl-文献精读-深度版.md`（四层：基本信息 → 论文结构分析 → 批判性评估 → 与课题连接）
-泛读笔记模板：`tpl-文献泛读.md`
+| 文献 | 状态 | 作用 |
+|---|---|---|
+| FairServe | arXiv 2024 | weighted service、interaction throttling |
+| DLPM/D2LPM | arXiv 2025 | deficit fairness 与 prefix locality |
+| Autellix | arXiv 2025 | program-level attained service |
+| Chiron | arXiv 2025 | 分层 backpressure/autoscaling |
+| Clipper | NSDI 2017 | AIMD batching 历史来源 |
+| Splitwise | ISCA 2024 | prefill/decode 分池边界 |
+| Ray Data Streaming Batch | arXiv 2025 | 官方数据引擎执行模型 |
 
-## GPU 调度与数据放置补充调研
-
-已新增补充调研文件：
+### 其他已有权威笔记
 
 ```text
-research/gpu_scheduler_data_placement_supplement_20260715.md
+bucketserve_2025.md
+clipper_nsdi2017.md
+colora_2026.md
+concerto_cost_estimation_arxiv2024.md
+concur_2025.md
+cortex_aisql_sigmod2026.md
+db_perspective_llm_pvldb2025.md
+diskann_neurips2019.md
+flashattention_neurips2022.md
+flexgen_icml2023.md
+inferdb_pvldb2024.md
+lance_2025.md
+leads_pvldb2024.md
+llm4dm_pvldb2024.md
+milvus_sigmod2021.md
+mooncake_acmtos2025.md
+multibin_batching_2024.md
+neurdb_cidr2025.md
+proserve_2025.md
+ray_data_streaming_batch_2025.md
+redefining_cost_estimation_arxiv2025.md
+saber_2025.md
+scorpio_llm_serving_2025.md
+serverlessllm_osdi2024.md
+sfs_latency_routing_arxiv2026.md
+smart_vldb_journal_2025.md
+smartlite_pvldb2024.md
+splitwise_isca2024.md
 ```
 
-该文件用于回答策略控制器设计从哪些前沿系统思想中来，重点覆盖：
+## 代价估计精读问题
 
-- GPU / LLM 推理服务调度：continuous batching、iteration-level scheduling、SLO-aware scheduling、KV/prefix reuse。
-- 异构数据管线：Ray / Ray Data 中的 task、actor、partition-at-a-time 和 CPU/GPU pipeline。
-- GPU 数据库算子与数据放置：GPU-resident 结构、materialization、数据是否值得搬到 GPU。
-- 数据库 AI 算子：Cortex AISQL、GaussML、Galois、LEADS、NeurDB 等 AI-aware 查询执行背景。
+每篇代价估计论文都必须回答：
 
-当前定位是“策略依据与后续精读清单”，不是最终综述；其中未下载或未逐篇核验的条目仍需标注为待核验。
+1. 预测对象是 runtime、cardinality、quality、money cost，还是 plan ranking？
+2. 输入特征能否覆盖 prompt/output token、模型、GPU、arrival、concurrency 和 operator type？
+3. 如何迁移到新 workload、模型或硬件？
+4. 预测误差是否真的改善 plan/config 选择？
+5. profile 成本和在线校正成本是多少？
 
-## 本地已下载 PDF 子集
-
-用户已将部分参考文献 PDF 下载到：
-
-```text
-research/reference/
-```
-
-该目录当前只是**部分文献子集**，用于精读、看论文机制图和核验引用细节；不能视为完整文献库。目录索引见：
-
-```text
-research/reference/README.md
-```
-
-后续继续下载 PDF 时，先追加登记到该 README，再决定是否补充精读笔记。
-
-## 开题优先精读顺序
-
-1. Snowflake Cortex AISQL paper / docs：回答“为什么数据库 AI 算子是现实问题”。
-2. Ray paper + Ray Core objects / task anti-pattern：回答“为什么 task/actor/object 是合理机制入口”。
-3. Daft partitioning / shuffle docs：回答“为什么 partition、shuffle、object slots 会成为链路成本”。
-4. pgai / pgvector / PostgresML：回答“PostgreSQL 生态中外部 worker、向量写回、近数据库模型路线分别是什么”。
-5. Ray Serve dynamic batching / routing：回答“为什么模型服务状态感知调度有实验接口”。
-6. Arrow Flight / Lance：回答“为什么列式中间表示和 AI 数据存储与本课题相关”。
+本项目首版仍采用“简单解析模型 + profile 校准 + residual correction”，不因新增四篇成本论文就扩张为 learned optimizer 课题。
 
 ## 可直接支撑开题的观点
 
-- 数据库 AI 算子是工业真实需求：Snowflake、BigQuery、Oracle 和 PostgreSQL 生态均已有相关能力或路线。
-- 外部 worker + embedding endpoint + 写回数据库不是本项目凭空发明：pgai vectorizer 形态可作为工程参考。
-- Ray task/actor/object store 是分布式 AI 执行中的常见机制，但不能据此声称所有数据库 AI 算子都使用 Ray。
-- Daft / Spark 等系统说明 partition、shuffle、batch、coalescing 是分布式数据处理中的成熟问题；本课题的特殊性在于加入了数据库 AI 算子、模型服务队列和写回。
-- Ray Serve / vLLM 类模型服务说明 dynamic batching、routing、backpressure 和 token-aware 调度是推理 infra 中的真实问题。
+- vLLM/Orca/Sarathi-Serve 说明下游 continuous batching 和 token/KV 约束；上游优化应先达到 serving capacity ceiling，再比较压力效率、尾延迟和多 job 隔离。
+- VTC 说明 token-cost 公平可以 work-conserving 地实现；它不等于单请求 GPU 加速。
+- LOTUS、Galois、GaussML、Palimpzest、Abacus 说明 AI 算子需要声明式物理实现、质量/成本/延迟的联合选择。
+- Learned Cost Models、GRACEFUL、COSTREAM 说明代价模型的价值应由下游决策质量验证，而不是只比较误差。
+- SemBench 说明数据库 AI baseline 必须同时报告质量、调用数、token work、延迟、成本、内存与失败。
 
-## 不能过度引用的地方
+## 不能过度引用
 
-- 不能写成 Snowflake 或 BigQuery 公开使用 Ray / Daft / Lance。
-- 不能写成 pgai 是后续长期核心依赖；它更适合作为外部 worker 架构参考。
-- 不能用 Ray / Daft 文档直接证明本项目链路中一定存在瓶颈；瓶颈必须由本地 GPU-backed E2E profile 证明。
-- 不能把 fake/CPU microbenchmark 写成真实 GPU-backed 链路结论。
+- 不把 CIDR、MLSys、arXiv、Companion、Tutorial 写成 CCF-A research paper。
+- 不把 serving 内部调度论文的收益直接归因到本项目上游 Ray 调度。
+- 不把减少 LLM 调用数的系统收益与“相同 work 执行更快”混为一谈。
+- 不把单 job 饱和 throughput 平台解释为调度无价值；多 job 公平、压力效率与 transient ramp 是不同问题。
+- 不把 learned cost model 作为既定实现，除非简单模型在 held-out 决策上确实不足。
 
-## 精读笔记模板
+## 模板
 
-```text
-论文 / 资料：
-来源级别：
-解决的问题：
-核心方法：
-关键实验：
-和本课题的关系：
-可以引用的观点：
-不能过度引用的地方：
-```
+- 权威深度模板：`research/reading_notes/tpl-文献精读-深度版.md`
+- 泛读模板：`research/reading_notes/tpl-文献泛读.md`

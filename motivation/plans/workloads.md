@@ -2,7 +2,7 @@
 
 生成日期：2026-07-10（2026-07-16 补充 AI_COMPLETE 主线更新；2026-07-17 口径更新）
 
-> **2026-07-17 口径更新**：本文档为早期场景探索记录。当前方向已收敛：两项策略（数据组织 + 提交控制）+ 多模态泛化验证 + 算子代价估计补充。Daft 为数据引擎，文本阶段直接接入。主场景：AI_COMPLETE（文本 LLM）+ AI_EMBED/AI_CLASSIFY（图像，多模态泛化）。vLLM 为部署平台。写回已降为实验设置。最新方向、优先级和边界以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。本文档中的三场景分析（Embedding/Classify/LLM）作为历史场景探索保留，场景优先级已按 2026-07-16 更新调整。
+> **2026-07-29 口径更新**：本文档为早期场景探索记录。当前方向为两项策略（数据组织 + 调度提交）+ 多模态泛化验证 + 贯穿两项策略的算子代价估计。Daft 为数据引擎，文本阶段直接接入。主场景：AI_COMPLETE（文本 LLM）+ AI_EMBED/AI_CLASSIFY（图像，多模态泛化）。vLLM 为部署平台，写回为实验设置。最新方向、优先级和边界以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
 
 ## 1. 目的
 

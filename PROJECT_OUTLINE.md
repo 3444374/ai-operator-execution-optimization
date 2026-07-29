@@ -10,18 +10,24 @@
 
 **2026-07-16 方向重大更新**：主场景从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理），上游 batching 从静态固定 batch_size 转向探索按 token 量动态组织的方式，Ray 从 task executor 升级为架构设计空间（异构 actor pool + 去中心化自适应提交）。vLLM 定位为部署平台。Daft 确认为数据引擎，文本阶段直接接入，多模态阶段复用同一套 pipeline。详见 `PROJECT_LOG.md` 2026-07-16 条目。
 
-**2026-07-17 更新**：与导师讨论后明确多模态实验进入正文（§5.3 策略泛化性验证），不是仅 Discussion。算子代价估计作为 §6.1 补充讨论。优化空间从纯策略层扩展为"策略级决策 + 引擎级参数"联合表征。Daft 从"后续切换"改为文本阶段直接接入。
+**2026-07-29 文献基线升级**：多模态仍是正文泛化验证。算子代价估计从“补充讨论”提升为数据组织和调度提交控制共同依赖的重要组件，但不单独扩张成第三项研究内容。首版采用简单解析模型 + profile 校准 + residual correction，用于 work/service/JCT、active-work/K、组织、路由和多 job remaining-work/SLO 判断。
 
 当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本文中作为 workload 入口，研究重点是上游 Ray 数据执行层的调度优化——探索数据组织策略和提交控制策略，利用 Ray actor 实现去中心化自适应提交。Daft 作为数据引擎，提供 Rust 执行内核、Arrow 零拷贝、Morsel 流式背压和 `@daft.cls` GPU UDF 接口。
 
 ## 研究内容
 
-当前开题报告采用两项策略设计 + 多模态泛化验证 + 算子代价估计（补充）：
+当前开题报告采用两项策略设计 + 多模态泛化验证 + 算子代价估计（共同使能组件）：
 
 1. **AI workload 感知的动态数据组织与批处理构造策略**（研究内容一）：对比 token-budget batching 与固定 batch_size 在端到端吞吐和 P99 延迟上的差异，以及 length-aligned/prefix-aware 分组与随机分组的效果差异。利用 Ray actor 异构化实现。引擎级参数（Daft `into_batches`、`batch_size`、`repartition`）与策略级决策共同构成优化空间。
-2. **运行层调度与提交控制策略**（研究内容二）：利用 Ray actor 研究去中心化的调度与提交控制，候选策略包括 queue-adaptive flush、K_max 动态控制、actor pool 分池路由等。引擎级参数（Daft `max_concurrency`、`gpus` 分配）与策略级决策共同构成优化空间。
+2. **运行层调度与提交控制策略**（研究内容二）：利用 Ray actor 的 stateful + async 能力，研究固定资源下的最小饱和 active work、request-level replenishment、endpoint-shared request/work credit、work-conserving idle borrowing 和多 job fair queue。固定静态 credit 是强 baseline；动态候选只有显著优于同上限静态策略才晋级。
 3. **多模态泛化验证**（正文实验，§5.3）：在图像 workload 上使用同一套策略代码和配置逻辑，验证 token-budget → frame-budget、queue-adaptive flush → 完全复用的模态无关性。
-4. **算子代价估计**（补充讨论，§6.1，不作为独立研究内容）：基于实验阶段采集的 profile 数据，建立 AI 算子的端到端成本估计方法，辅助编排决策。
+4. **算子代价估计**（共同使能组件，不作为独立研究内容）：预测 prompt/output work、operator service time、JCT、remaining work 和 SLO slack；初始化不同 GPU/模型/workload 的 active-work/K，并辅助数据组织、endpoint 路由和提交策略。除误差外报告配置 ranking、决策 regret 和预测区间。
+
+两项方法下收敛为三个研究问题：
+
+1. 固定硬件、模型和 workload 下，能否用更小 active work 更快达到 serving ceiling？
+2. 相同 token/frame work 下，数据组织如何影响 JCT、尾延迟和 cache/active-work 波动？
+3. 多 job 共享同一 vLLM 时，shared credit、idle borrowing 和 fair queue 如何平衡吞吐、JCT、SLO 与公平性？
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index baseline），不作为独立研究内容，仅在实验设置中说明。
 
@@ -180,7 +186,9 @@
 6. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work
    与 equal-weight 1/2/4-job 重复 formal；路由增量、staggered/weighted
    公平性与故障迁移仍待验证。
-7. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
+7. 算子代价估计需增加独立时间段/新 workload 校准、预测区间、配置 ranking
+   与决策 regret；它作为两项策略的共同输入，不单列第三项贡献，也不在首版
+   扩展为复杂 learned optimizer。
 8. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
 文献机制的发现、迁移审计和晋级/放弃条件统一见

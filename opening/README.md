@@ -1,5 +1,19 @@
 # 开题工作区
 
+## 2026-07-29 文献与研究问题基线
+
+- 开题 Top 15 已升级为 15/15 严格 CCF-A 正式 research paper；权威清单见
+  `../research/top15_ranked_papers.md`，自包含快照见
+  `literature/top15_reading_notes/`。
+- `../research/reading_notes/` 当前有 49 篇权威精读笔记，
+  `../research/reference/` 当前有 21 份可解析 PDF，Top 15 PDF 15/15 齐全。
+- Tutorial、Companion、CIDR、MLSys、arXiv 统一放在核心补充层，不写成
+  CCF-A full research。
+- 开题保持两项研究内容：数据组织；调度与提交控制。代价估计升级为两项内容
+  的共同使能组件，多模态仍是泛化验证。
+- 三个研究问题为：最小饱和压力与 transient ramp、相同 work 的数据组织、
+  多 job shared credit/fairness。
+
 本目录用于同步准备开题报告、开题汇报 PPT 和飞书进度汇报。当前阶段优先维护本地 Markdown 源稿和飞书文档，不急于生成 DOCX。后续顺序是：本地 Markdown -> 飞书文档补全 -> PPT -> PPT 同步飞书 -> 最终 DOCX 生成。
 
 开题材料不是独立于项目的展示层。当前报告确定的题目和研究内容会反向影响 `overview/` 中的阶段规划、`motivation/` 中的后续实验设计以及项目级 README / PROJECT_INDEX 的方向说明。修改开题题目、研究内容或实验边界时，需要同步检查这些项目入口，避免开题材料和项目主线割裂。

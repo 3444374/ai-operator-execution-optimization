@@ -243,7 +243,7 @@ least-work、动态预算、shared-credit、异构显存容量、故障迁移和
   未显著优于独立拼接，因此保留分层配置与联合搜索工具，不增加联合在线控制器。
 - **多模态泛化验证**：策略接口和中性 `cost_units` 边界已具备，但真实图像
   source/cost adapter、CLIP/Qwen-VL workload 和 GPU 结果尚未完成。
-- **算子代价估计（补充）**：初版实现与 grouped held-out 评估已完成，可提供
+- **算子代价估计（共同使能组件）**：初版实现与 grouped held-out 评估已完成，可提供
   粗粒度编排提示；独立时间段/新 workload 校准、预测区间和跨模型迁移仍未完成。
 
 | 部分 | 代码完成度 | 真实证据 | 当前判断 |

@@ -1,21 +1,22 @@
 # 推理管线交互文献综述：上游批处理与下游连续批处理的协同优化
 
-生成日期：2026-07-16
-调研方法：多源并行检索（WebSearch x 16 轮），覆盖 CCF-A 会议/期刊（SOSP, OSDI, NSDI, ISCA, NeurIPS, ICML, SIGMOD, VLDB, EuroSys, MLSys, FAST）及技术报告
+生成日期：2026-07-16；题录与研究空白复审：2026-07-29
+调研方法：多源检索并以论文全文和官方题录复核；覆盖 serving、数据库 AI 算子、Ray/数据引擎、公平调度和代价估计
 
 ---
 
-## 研究空白确认
+## 研究空白复审
 
-**确认存在研究空白**：现有文献在三类主要的批处理优化之间缺乏桥接工作：
+现有文献在三类主要的批处理优化之间仍缺少完整桥接，但 2026-07-29 新增的 LOTUS、Palimpzest、SemBench、VTC、Llumnix、Abacus 等工作已经覆盖了部分邻接问题，不能再使用“完全无人研究”的绝对表述：
 
 1. **上游数据管线批处理**（data pipeline batching）：如何将数据库/数据源的行组织为 batch，控制 batch_size、partition_count、concurrency 等参数。现有工作：Ray Data Streaming Batch Model、Spark SQL tuning、Daft partitioning。
 2. **推理引擎内部批处理**（inference engine batching）：如何将到达推理引擎的请求合并为 GPU 上的 micro-batch，控制 continuous batching、chunked prefill、KV cache 管理。现有工作：vLLM、Orca、Sarathi-Serve 等大量论文。
 3. **推理引擎内部的 prefill-decode 协同**（prefill-decode interaction）：推理引擎内部两个阶段的批处理冲突与调度。现有工作：DistServe、Splitwise、Mooncake 等。
 
-**没有任何已有工作研究**："上游数据管线以何种 batch_size / partition / concurrency 组织数据，对下游推理引擎的 continuous batching 效率、GPU 利用率、队列延迟和端到端吞吐有何影响，以及两者之间是否存在最优协调策略"。
+4. **数据库 semantic operator 优化**：LOTUS、Palimpzest、Abacus 已研究调用数、模型选择、质量、成本和物理计划，但不研究固定 vLLM endpoint 下的最小饱和 active work、request-level refill 和 shared credit。
+5. **多租户公平与动态 serving**：VTC、Llumnix、FairServe、DLPM、Autellix 已研究 token-cost fairness、多实例迁移、interaction/program scheduling，但主要位于 serving 内部或应用服务层。
 
-这一空白正是本课题"研究内容一（数据组织）与研究内容二（模型服务调度）之间的跨层协同"的核心研究空间。
+因此本课题的可辩护空白是：**在不修改 vLLM 的条件下，数据库 AI operator 的上游 Daft/Ray runtime 如何用统一 work 估计协调数据组织、达到 serving ceiling 所需的最小压力、request-level replenishment 和多 job work-conserving fairness，并在同模型、同 work、同硬件的官方系统 baseline 上验证。**
 
 ---
 
@@ -371,12 +372,15 @@
 | **推理引擎内 P/D 协同** | DistServe, Splitwise, Mooncake disaggregation, DynaServe hybrid | P/D 协同逻辑向外延伸到数据管线层 |
 | **Prefix/Tag/Cache-Aware** | SGLang radix tree, Parrot semantic variable, KVFlow agent step graph, EPIC position-independent | 数据管线侧 prefix-aware 预组织对推理引擎 prefix caching 效率的影响 |
 | **Pipeline × Inference 桥接** | Ray Data vLLM integration（工程集成，非研究）, HedraRAG（检索×生成协调） | 系统性的上游 batch 策略 × 下游 continuous batching 协同优化（理论模型、实验验证、跨 workload 泛化） |
+| **数据库 semantic operator** | LOTUS、Palimpzest、Abacus；SemBench 负责 benchmark | 固定相同模型调用 work 时，上游 runtime 怎样更快达到 capacity ceiling 并控制排队 |
+| **多 job 公平** | VTC、Llumnix、FairServe、DLPM、Autellix | 不修改 vLLM 时的 endpoint-shared request/work credit、idle borrowing 和 job-level JCT |
+| **代价估计** | Learned Cost Models、GRACEFUL、COSTREAM、Abacus | prompt/output work、service/JCT、remaining work 怎样初始化 active-work/K 并驱动组织/路由/提交 |
 
 ### 核心空白表述
 
-**没有任何已有工作系统性研究**：数据管线侧的 batch_size、partition_count、concurrency、token-aware 分组、prefix-aware 分组等参数选择，对推理引擎侧的 continuous batching 效率（micro-batch 大小分布、GPU 利用率、KV cache 命中率、队列等待时间、端到端延迟和吞吐）的因果影响及最优协调策略。
+**当前未发现直接覆盖的组合问题**：数据库/数据引擎侧的 batch、partition、concurrency、token/prefix work 估计，怎样与固定下游 vLLM capacity、request-level refill 和多 job shared credit 联合，并在官方数据库 AI/数据引擎 baseline 上以统一 work 和端到端指标验证。
 
-这个空白正是本课题"研究内容一（数据组织与批处理构造）"和"研究内容二（模型服务调度）"之间的跨层协同空间的核心研究机会。
+这个表述保留两项研究内容，不把代价估计扩张成第三项贡献：代价估计是数据组织和提交控制的公共输入，多模态是同一抽象的泛化验证。
 
 ---
 
@@ -404,6 +408,15 @@
 | 18 | ChunkAttention: Prefix-Aware Self-Attention. | ACL 2024 | 2024 | ★★★ |
 | 19 | EPIC: Position-Independent Caching. | ICML 2025 | 2025 | ★★★ |
 | 20 | NVIDIA Triton Inference Server Docs. | docs.nvidia.com | 2025 | ★★★ |
+| 21 | Sheng et al. Fairness in Serving LLMs (VTC). | OSDI 2024 | 2024 | ★★★★★ |
+| 22 | Sun et al. Llumnix. | OSDI 2024 | 2024 | ★★★★★ |
+| 23 | Patel et al. LOTUS. | PVLDB 18(11) | 2025 | ★★★★★ |
+| 24 | Russo et al. Abacus. | PVLDB 19(5) | 2026 | ★★★★★ |
+| 25 | Liu et al. Palimpzest. | CIDR 2025（非 CCF-A） | 2025 | ★★★★ |
+| 26 | Lao et al. SemBench. | PVLDB 19(8) | 2026 | ★★★★ |
+| 27 | Heinrich et al. How Good Are Learned Cost Models, Really? | SIGMOD 2025 | 2025 | ★★★★★ |
+| 28 | Wehrstein et al. GRACEFUL. | ICDE 2025 | 2025 | ★★★★ |
+| 29 | Heinrich et al. COSTREAM. | ICDE 2024 | 2024 | ★★★★ |
 | 21 | Ray Serve LLM Configuration Reference. | docs.ray.io | 2025 | ★★★★ |
 | 22 | BatchLLM: Global Prefix Sharing + Token Batching. | MLSys 2026 | 2026 | ★★★★ |
 | 23 | PKAS: Predictive KV Cache-Aware Scheduling. | HPDC 2026 | 2026 | ★★★★ |

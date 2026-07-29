@@ -33,9 +33,11 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 ## 3. 研究内容
 
 1. **研究内容一：数据组织策略** — token-budget batching、length-aligned/prefix-aware grouping + Daft 引擎级参数
-2. **研究内容二：调度与提交控制策略** — queue-adaptive flush、K_max 动态控制、actor pool 分池路由 + Daft 引擎级参数
+2. **研究内容二：调度与提交控制策略** — 最小饱和 active work、request-level replenishment、endpoint-shared request/work credit、idle borrowing、多 job fair queue
 3. **多模态泛化验证**（正文 §5.3）— 图像 workload 上同一套策略代码，验证模态无关性
-4. **算子代价估计**（§6.1 补充讨论）— 基于已有 profile 数据，不新增实验
+4. **算子代价估计**（共同使能组件，不独立成第三项研究内容）— 简单解析模型 + profile 校准 + residual correction，服务于 work/service/JCT、active-work/K、组织、路由和提交决策
+
+三个研究问题：用更小 active work 更快达到 serving ceiling；相同 work 的数据组织；多 job 的 shared-credit/fairness。
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立研究内容。
 
@@ -153,7 +155,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 |---|---|
 | 完整研究内容定义、实验路线、近期优先级 | `PROJECT_OUTLINE.md` |
 | 项目规则、边界、不能写成什么 | `AGENTS.md` |
-| vLLM 机制 + Ray 架构 + 66 篇文献 + 策略设计 + 知识缺口 | `research/knowledge_hub.md` |
+| vLLM 机制 + Ray 架构 + 分级文献基线 + 策略设计 + 知识缺口 | `research/knowledge_hub.md` |
 | Daft 技术细节、多模态管线、具身智能连接 | `research/daft_ray_multimodal_reference.md` |
 | 实验状态与缺口分析 | `experiments/plans/experiment_status_and_gaps.md` |
 | 实验计划与实现参考 | `experiments/plans/strategy_design_implementation_reference.md` |

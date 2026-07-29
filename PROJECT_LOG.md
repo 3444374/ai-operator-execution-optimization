@@ -1,5 +1,24 @@
 # 项目日志
 
+## 2026-07-29 文献基线版本升级
+
+- 题录核验并新增 VTC、Llumnix、LOTUS、Palimpzest、Abacus、SemBench、
+  FairServe、DLPM、Autellix、Chiron 的本地 PDF 与权威精读笔记。
+- 纠正三项关键状态：LOTUS 为 PVLDB 18(11) 2025 正式论文；Abacus 为
+  PVLDB 19(5) 2026 正式论文；SemBench 为 PVLDB 19(8) 2026 正式
+  benchmark paper。`Database Perspective on LLM Inference Systems` 明确为
+  PVLDB Tutorial，不占正式 research Top 15。
+- Top 15 重排为 AI 算子 3、LLM 推理/公平 7、Ray 1、代价估计 4，共
+  15/15 CCF-A 正式 research paper；每篇均有权威精读和本地可解析 PDF。
+- 算子代价估计从补充讨论提升为数据组织和调度提交控制共同依赖的使能组件；
+  首版限定为简单解析模型 + profile 校准 + residual correction，评价配置
+  ranking、决策 regret 与预测区间，不扩张为独立 learned optimizer 贡献。
+- 研究问题收敛为：固定资源下的最小饱和 active work/瞬态 ramp、相同 work
+  的数据组织、多 job shared credit/idle borrowing/fairness。开题仍保留两项
+  方法贡献，多模态仍为泛化验证。
+- 同步更新文献索引、知识总汇、推理管线综述、开题报告/PPT、baseline 依据、
+  项目总纲与入口。按用户要求未同步 Wiki。
+
 ## 2026-07-29 Official baseline AutoDL 部署与 gate 编排补全
 
 - baseline 部署被固化为可恢复状态机：本地完整验证并推送 `main` → 远端
