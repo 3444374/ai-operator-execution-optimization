@@ -2570,4 +2570,16 @@
   `documents`，按 workload + `ORDER BY doc_id` + limit/offset 选择完整行，
   固定 output cap/estimated-output 模式，计算 source-row hash 后再使用共同
   largest-work-first endpoint 分片；拒绝短结果与重复 doc_id。
+- 64 行真实双 GPU core gate 在全新目录连续保留失败证据并逐项修复：
+  vLLM Bench 的 console entry、显式本地 tokenizer、`vllm[bench]` extra、
+  0.25.1 timing schema 和 bounded HTTP 全局 endpoint offset 均已用回归测试
+  锁定。`dual_gpu_official_baseline_core_gate_20260729_1730` 中 vLLM Bench、
+  bounded HTTP、Daft Native 和 Daft Ray 已分别通过 exactly-once、双 endpoint
+  work skew 与空队列门禁；Ray Data 单元因 worker 无法导入项目 `src` 失败。
+- Ray Data 失败日志证明两个 driver 均已连接同一个 6380 Ray cluster；所谓
+  `0 CPU/pending` 是 actor 构造失败后的伴随告警，根因是 driver 的临时
+  `sys.path` 不会传播到 Ray worker。测试先行要求
+  `ray.init(runtime_env={"env_vars": {"PYTHONPATH": ...}})` 显式注入仓库
+  `code/` 根目录，同时保留既有 `PYTHONPATH`。修复后只能使用全新目录重跑
+  最小 gate，不能覆盖 `_1730` 或直接进入 calibration。
 - 按用户要求不执行 Wiki 同步。

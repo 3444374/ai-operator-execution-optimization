@@ -1,7 +1,7 @@
 # 数据库 AI 算子与官方 Runtime Baseline 矩阵
 
 日期：2026-07-29
-状态：预注册设计；尚无本矩阵 GPU 结果
+状态：预注册完成；64 行双 GPU 功能门禁进行中，尚无可用于性能结论的结果
 
 ## 1. 研究问题
 
@@ -161,6 +161,20 @@ time-to-ceiling/ramp-regret 至少改善 10%，只声称压力效率或瞬态改
 
 远端遵循 `deploy/autodl/README.md`：先检查 runner/lease/endpoint/git，使用
 全新输出目录，gate 未通过禁止 formal，保留失败证据和所有未跟踪结果。
+
+### 8.1 2026-07-29 功能门禁状态
+
+固定 64 行 manifest 已生成并冻结；两个 endpoint 的预测 token work 为
+11,713/11,712，偏差 0.0085%。在
+`dual_gpu_official_baseline_core_gate_20260729_1730` 中，vLLM Bench、
+bounded HTTP、Daft Native 与 Daft Ray 均通过 64/64 exactly-once、双 endpoint
+与最终空队列门禁。
+
+Ray Data HTTP 尚未通过：两个 driver 都已连接同一个 6380 cluster，但 Ray
+worker 反序列化项目 UDF 时缺少仓库 `code/` 的 `PYTHONPATH`。这属于部署可移植性
+缺陷，不是性能结果，也不能从 pending 资源告警推断 Ray 容量不足。修复必须先以
+单元测试锁定 `runtime_env`，再在全新输出目录重跑整个 core gate；`_1730`
+保留为失败证据。core gate 完整通过前，calibration 和 formal 继续禁止启动。
 
 ## 9. 详细工程设计
 

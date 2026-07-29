@@ -268,6 +268,11 @@ class OfficialRuntimeAdapterTests(unittest.TestCase):
             {
                 "address": "127.0.0.1:6380",
                 "ignore_reinit_error": True,
+                "runtime_env": {
+                    "env_vars": {
+                        "PYTHONPATH": str(CODE_ROOT),
+                    },
+                },
             },
         )
         self.assertEqual(calls["config"]["max_retries"], 0)

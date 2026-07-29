@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Iterable, Literal
 
@@ -11,6 +13,7 @@ from .contracts import BaselineRequestResult, ChatRequest
 
 
 DaftRunner = Literal["native", "ray"]
+_CODE_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass(frozen=True)
@@ -220,6 +223,16 @@ def _load_ray_data_modules() -> SimpleNamespace:
     )
 
 
+def _ray_runtime_env() -> dict[str, dict[str, str]]:
+    pythonpath = str(_CODE_ROOT)
+    existing_pythonpath = os.environ.get("PYTHONPATH")
+    if existing_pythonpath:
+        pythonpath = os.pathsep.join(
+            [pythonpath, existing_pythonpath]
+        )
+    return {"env_vars": {"PYTHONPATH": pythonpath}}
+
+
 def run_ray_data_http(
     requests: Iterable[ChatRequest],
     config: RayDataHttpConfig,
@@ -238,6 +251,7 @@ def run_ray_data_http(
         runtime.ray.init(
             address=config.ray_address,
             ignore_reinit_error=True,
+            runtime_env=_ray_runtime_env(),
         )
     headers = (
         {"Authorization": f"Bearer {config.api_key}"}
