@@ -177,3 +177,33 @@ these are lifecycle and credit-turnover corrections rather than claimed
 throughput gains. Near max active work fell from the stale-credit value 65,532
 to 11,224. The selected windows remain load-sensitive (high mean/P50
 46.73/50ms; near 37.49/35.29ms), so the six-arm formal matrix is now allowed.
+
+## Formal closure
+
+The six-arm formal matrix completed 24/24 runs with no incidents or skipped
+runs. All 18 formal runs passed exactly-once request, document and submission
+identity checks, with 36,864 requests, 36,864 submissions, zero worker
+failures, valid resource/MFU metrics and millisecond completion collection.
+
+The candidate did not pass the preregistered promotion gate:
+
+- high SLO-EWMA versus fixed-50: throughput -0.52%, SLO goodput -0.52%,
+  request P99 -0.94%;
+- near SLO-EWMA versus fixed-50: throughput +0.10%, SLO goodput +0.10%,
+  request P99 -0.49%;
+- every formal arm had zero violations of the configured 30s request SLO.
+
+The controller was active but had little causal leverage. High selected
+48.84ms on average with a 50ms median; near selected 42.55ms with a 50ms
+median. No formal trace used an SLO-deadline reason. The configured SLO left
+12.8-24.4 seconds of P99 slack while the policy could change at most 25ms of
+flush delay. The `near_*` identifier is retained for reproducibility, but
+observed vLLM running requests (about 19), MFU (7.07%) and active work (about
+19K) show that it was arrival-limited rather than near saturated capacity.
+
+SLO-EWMA is therefore not promoted, and no alpha/deadband retuning is
+authorized in this action space. The single-job baseline remains
+`request + 65K active work + 1x256 + fixed-50`. The next mechanism gate should
+exercise shared request/work credits and work-conserving fairness across
+1/2/4 jobs, where the controller can affect seconds-scale queueing and
+isolation rather than only a 25ms flush interval.

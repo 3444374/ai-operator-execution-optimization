@@ -91,15 +91,17 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - ✅ Complete-row service quantum：固定 65K work 后，四档 quantum 相对
   batch 仅 -0.03%～+0.54%，request +1.75%；credit-held 可降约 16%，但
   没有提高吞吐平台，不晋升固定 quantum
+- ✅ SLO-aware EWMA flush：双 4090 high/arrival-limited 六场景 24/24；
+  相对 fixed-50 吞吐 -0.52%/+0.10%，P99 -0.94%/-0.49%，所有 30s SLO
+  零违约；25–50ms 动作未形成一阶收益，不晋升
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P1**：SLO-aware EWMA flush；当前 25/50ms two-level 只作为 baseline
+1. **P1**：Shared-vLLM 扩展 1/2/4 job；共享 endpoint 的 request/work
+   credit 与 work-conserving 公平队列代码已完成，尚待远端门禁和正式数据
 2. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
 3. **P2**（文本门禁已完成）：多模态泛化验证
-4. 在当前 2×4090 上完成多 endpoint / 多 GPU 重复 formal 验证
+4. 在当前 2×4090 上完成多 endpoint / 多 GPU 的多 job 公平性、路由与故障迁移
 5. 代价模型增加独立时间段/新 workload 校准和预测区间
-6. **P1**：Shared-vLLM 扩展 1/2/4 job；共享 endpoint 的 request/work
-   credit 与 work-conserving 公平队列代码已完成，尚待远端门禁和正式数据
 
 继续从文献提取机制时，统一按
 `experiments/plans/literature_driven_pipeline_optimization_guide.md` 的机制卡、

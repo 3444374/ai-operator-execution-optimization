@@ -119,18 +119,18 @@ Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
 - UCB 多臂老虎机已有有限 action set 与 SLO reward 的纯控制器代码，但尚未
   接入 profiler。原因是缺少稳定的 epoch-level reward/归因边界；现在接入会把
   跨 epoch 的请求完成错误归因给当前 arm。
-- 当前 queue-adaptive 仍是 25/50ms 两档、瞬时 running/waiting/KV 阈值
-  baseline；动态 token-budget 已使用 arrival/service-rate EWMA，但 flush
-  尚未加入 oldest-request SLO slack、token backlog EWMA 和滞回控制。
+- 完整 SLO-aware flush 已加入 oldest-request slack、arrival/service EWMA、
+  独立容量下界、hard deadline 和滞回，并完成双 4090 正式重复；相对 fixed-50
+  未过 5% 晋升门槛。25–50ms 动作相对秒级 request P99 缺少一阶杠杆。
 - 逐请求完成释放 credit 和持续补位已实现；此前 7B 云端 warm-up 误用
   `ray_batch_rows=1` 且仍为 batch granularity，不能作为该机制性能证据。
   下一步必须保留 packing row cap/token budget，并按等价请求负载比较 batch K
   与 request K。
 - complete-row service quantum 已接入 offline/arrival replay：planning batch
   只定义组织边界，quantum 独立定义 HTTP/Ray completion 与 credit 释放边界，
-  单行 prompt 永不拆分。active-work、service quantum、least-work routing 和
-  shared multi-job credit 仍缺 GPU 性能证据；正式顺序是先标定 active-work，
-  再固定总 actor slots 比较 pool 形状和 quantum，不能先跑组合策略再归因。
+  单行 prompt 永不拆分。active-work、pool shape 与 service quantum GPU
+  对照均已完成；least-work routing 和 shared multi-job credit/fairness 仍缺
+  GPU 性能证据，下一步只先做共享 credit/fairness 门禁，不能先跑组合策略再归因。
 
 ## 4. Actor pool、endpoint 与 GPU 扩展
 
@@ -254,11 +254,11 @@ least-work、动态预算、shared-credit、异构显存容量、故障迁移和
 | BFD/row-cap-first | 高 | 512 + 1024 | 负向边界明确，不默认启用 |
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
 | Queue-adaptive flush | 高 | 512 变长重复 + 跨 rate + 2048 held-out + shared-vLLM | 优于 fixed-25；未优于 fixed-50 |
-| SLO-aware EWMA flush | 低（未实现） | 无 | 当前 two-level 仅为 baseline |
-| Request-level continuous replenishment | 高（代码） | 双 GPU K 对照，但 offered work 未完全匹配 | 逐请求释放已实现；需在饱和 active work 下复验 |
+| SLO-aware EWMA flush | 高 | 双 4090 high/arrival-limited 各三次 formal | 相对 fixed-50 未过 5% 门槛；不默认启用 |
+| Request-level continuous replenishment | 高（代码） | 双 GPU K 对照 + 固定 active-work quantum/formal | 逐请求释放与 completion 已验证；保留为 shared-credit/fairness 基础 |
 | AIMD/EWMA/PID | 高（代码） | 单作业矩阵 + static K16 control + shared-vLLM 双作业 | AIMD 饱和至 K16，未保护前台；不默认启用 |
 | UCB bandit | 中（纯控制器） | 无端到端实验 | 尚未接入执行路径 |
-| Actor pool / endpoint routing | 高（有界 slots/trace） | 双 GPU endpoint 基线；pool shape 待测 | 固定 256 slots 后比较 1×256/2×128/4×64 |
+| Actor pool / endpoint routing | 高（有界 slots/trace） | 双 GPU 1×256/2×128/4×64 formal | 多 actor 未过 5% 门槛；单 job 保留 1×256，多 job 分池待测 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |
 | 多模态复用 | 低 | 未启动 | 文本主线完成后进行 |
 | 算子代价估计 | 中 | 283 行、70 配置组、五个 held-out split | 粗粒度可用；不能作严格 SLO 预测 |
@@ -291,14 +291,15 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 3. prefix ratio `0/30/70/100%` cache-off 实验未显示 prefix-only 收益，
    并修复唯一 prefix 重排和隐式 length-align 耦合。
 
-### 下一优先：饱和后 Actor Pool/持续补位、完整 flush 与缓存机制
+### 下一优先：多 job shared credit/fairness 与缓存机制
 
 1. 已完成 16K–131K active-work 扩展曲线，选择 65,536；
-2. 正在该点固定每 endpoint 256 slots，比 1×256/2×128/4×64 actor pool；
-3. 固定最佳 pool 与相同 planning/work，比较 whole-batch、
-   service-quantum 512/1024/2048/4096 和 request diagnostic；
-4. 再实现 oldest-request slack、token backlog 与 arrival/service EWMA 驱动的
-   SLO-aware flush；
+2. 已完成固定 slots/CPU 的 1×256/2×128/4×64 actor pool 对照，保留 1×256；
+3. 已完成 whole-batch、service quantum 与 request diagnostic，固定 quantum
+   未过 5% 门槛；
+4. 已完成 SLO-aware EWMA flush 正式对照，25–50ms 动作未过 5% 门槛；
+   下一步门禁 Shared-vLLM 1/2/4-job shared request/work credit 与
+   work-conserving fairness；
 5. Prefix-aware 只有在单独启用 prefix cache、记录命中证据后才重新评估；
 6. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
    K=8 safety fallback。

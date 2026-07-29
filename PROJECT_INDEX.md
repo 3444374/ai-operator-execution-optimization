@@ -6,6 +6,8 @@
 |---|---|---|
 | `code/INFRA_STATUS.md` | Current Daft+Ray AI-operator infra flow, implementation completeness, evidence boundaries, and prioritized remaining work | Use for a single implementation-status handoff before reading detailed plans |
 | `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` | Unified map from implemented/tested mechanisms to code, tests, principal result directories, evidence level, current decision, and remaining validation | Read first when asking what has actually been implemented, tested, proven, rejected, or left unverified |
+| `experiments/results/dual_gpu_slo_ewma_flush_formal_20260729/README.md` | High/arrival-limited fixed, queue-adaptive and SLO-EWMA flush formal comparison | Audit why a functioning load-sensitive controller did not pass the 5% gate and why fixed-50 remains the single-job baseline |
+| `experiments/results/dual_gpu_slo_ewma_flush_formal_20260729/formal_summary.csv` | Plot-ready throughput, SLO, tails, utilization, selected waits, fallback and completion-lag summary | Compare all six formal arms without downloading large remote traces |
 | `experiments/results/dual_gpu_service_quantum_20260729/README.md` | Fixed-saturation-work batch/complete-row-quantum/request comparison with causal credit analysis | Distinguish a real HOL/credit reduction from the absence of a steady-state throughput win |
 | `experiments/results/dual_gpu_service_quantum_20260729/formal_summary.csv` | Plot-ready granularity, submissions, throughput, tails, SLO, credit-held, Ray delay and energy | Audit the no-promotion decision and RPC/control trade-off |
 | `experiments/results/dual_gpu_actor_pool_shape_20260729/README.md` | Fixed-work, fixed-slot and fixed-CPU dual-4090 Ray actor-pool shape comparison | Retain 1×256 for the current single-job homogeneous endpoint case; do not extrapolate the negative scaling result to multi-job pool isolation |
@@ -536,10 +538,11 @@ python feasibility/benchmarks/analyze_results.py \
 - ✅ Queue-adaptive flush 首次实现与测试（⚠️ adaptive 当前不如静态 K_max=8，foreground E2E 10.2s vs 7.3s，见 experiment_status_and_gaps.md P0-1）
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P0**：改进 queue-adaptive 控制器 + 两项策略联合消融
-2. **P1**：Prefix 受控 workload + scale 到 2048 行
-3. **P2**（触发：P0+P1 完成）：多模态泛化验证
-4. 算子代价估计（§6.1 讨论，基于已有数据）
+1. **P1**：Shared-vLLM 1/2/4-job shared request/work credit 与
+   work-conserving 公平队列远端门禁和正式矩阵
+2. **P1**：Prefix cache-on 与 length-align 独立消融
+3. **P2**：图像 workload 多模态泛化验证
+4. 算子代价估计增加独立时间段、新 workload 与预测区间
 
 **Scope 缩减触发条件**：Month 1 无 vLLM baseline → 多模态降 Discussion（✅ 已建立，未触发）；研究内容一+二的消融实验未完成不启动多模态 pipeline；VLM 生成始终 optional；Adaptive 3 轮不能超 static K_max=8 → 研究内容二降级。
 

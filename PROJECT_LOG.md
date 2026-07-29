@@ -1,5 +1,34 @@
 # 项目日志
 
+## 2026-07-29 SLO-aware EWMA flush 正式矩阵负结果
+
+- 双 GPU 正式矩阵 24/24 runs 完成、0 incident、0 skipped，租约正常释放；
+  18 个 formal run 共 36,864 request/36,864 submission，逐 run request、
+  doc 与 submission exactly-once，request→submission 集合完全匹配，
+  0 worker failure，resource/MFU 状态均为 `ok`。
+- arrival-gap completion 修复在正式矩阵中保持有效：backend service-end 到
+  scheduler completion 的 P95，high 三策略为 10.32–13.03ms，near 三策略
+  为 4.01–4.13ms；未再出现数十到数百秒 stale-credit。
+- high 下 fixed/queue/SLO-EWMA 吞吐均值为
+  8037.4/8030.1/7995.6 tokens/s；SLO-EWMA 相对 fixed 为 -0.52%，P99
+  -0.94%。near 下为 1667.0/1672.2/1668.6 tokens/s；SLO-EWMA 相对 fixed
+  +0.10%，P99 -0.49%。所有 arm 的 30s SLO violation 均为 0，未达到预注册
+  5% 吞吐/SLO-goodput或独立尾延迟晋升门槛。
+- 控制器实现产生了可观测动作，但没有一阶决策空间：high SLO-EWMA
+  selected wait mean/P50 为 48.84/50ms，near 为 42.55/50ms；fallback event
+  分别占 65.72%/48.69%，且 formal trace 没有 SLO deadline 主导 reason。
+  30s SLO 相对 P99 仍有 12.8–24.4s slack，而 25–50ms 控制幅度最多 25ms。
+- `near_*` 只保留为预注册 scenario ID。formal 实测其 vLLM running 约 19、
+  MFU 7.07%、active work 峰值约 19K，属于 arrival-limited/underloaded，
+  不能称为真实 near-capacity；更早 flush 不能创造未到达的请求。
+- 不晋升 SLO-EWMA，不继续在同一 25–50ms 动作空间调 alpha/deadband。
+  单 job 默认保持 `request + active-work 65K + 1×256 + fixed-50`。下一安全
+  方向是已有代码基础的 Shared-vLLM 1/2/4-job shared request/work credit 与
+  work-conserving 公平队列门禁，使策略作用于秒级跨 job 排队与隔离。
+- compact 结果、七步解释和绘图汇总归档到
+  `experiments/results/dual_gpu_slo_ewma_flush_formal_20260729/`；大体积 traces
+  保留在远端同名目录。
+
 ## 2026-07-29 SLO-aware EWMA flush 实现与双负载门禁
 
 - 根据 fixed-50 与旧 two-level adaptive 在单 job 饱和稳态下几乎无差异的结果，

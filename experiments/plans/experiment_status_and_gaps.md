@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-29，补充扩展饱和曲线与 Ray actor/service-quantum 门禁）
+Date: 2026-07-20（最后更新：2026-07-29，补充 SLO-EWMA 正式负结果与多 job 优先级）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -33,12 +33,13 @@ Date: 2026-07-20（最后更新：2026-07-29，补充扩展饱和曲线与 Ray a
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
 | **Request-level continuous replenishment** | ⚠️ 双卡重复已完成 | global K32≈per-endpoint K16，确认 K 语义；work-matched request K48≈batch K16；request K64 为最高已测吞吐 | K64 同时增加约 33% offered work 且 P99 更差，尚未隔离补位机制的独立吞吐/SLO 收益；需固定 active work 复验 |
 | **Per-endpoint active-work capacity** | ✅ 07-29 扩展曲线完成 | 双 4090 八档各三次 formal；32/32 成功，65K 达最大吞吐 97.80%，下一档 +0.92% | 按预注册规则选择 65,536；98K→131K 吞吐持平而 P99/SLO 更差 |
-| **SLO-aware EWMA flush** | ❌ 未做 | 当前 two-level queue-adaptive 只作为真实链路 baseline | 尚未使用 oldest-request slack、服务速率、token backlog、EWMA/滞回形成完整控制律 |
+| **SLO-aware EWMA flush** | ✅ 07-29 | 双 4090 high/arrival-limited 各 3 次 formal；相对 fixed-50 吞吐 -0.52%/+0.10%，P99 -0.94%/-0.49%，30s SLO 全部零违约 | 25–50ms 动作相对 5.6–17.4s P99 缺少一阶杠杆；`near_*` 实测为 arrival-limited，不晋升动态策略 |
 | **多 job/多 foreground size 扩展** | ⏳ 代码完成，GPU 未测 | job-local K 不构成共享 endpoint 的全局保护 | 1/2/4 job、不同 mix/offset；shared request/work credit 与公平队列待远端门禁和正式验证 |
 
 **RC2 当前状态**：✅ static K8 guardrail 与 fixed 50ms coalescing 均有真实
 证据。跨 arrival-rate、2048 held-out 和 shared-vLLM 双作业均未显示
-queue-adaptive 稳定增量，因此当前单 GPU 默认采用 static K8 + fixed 50ms。
+queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛，因此
+当前单 job 默认采用 static K8/已标定 active-work + fixed 50ms。
 单作业与 shared-vLLM 复验均表明 AIMD 未优于同上限 static K=16，且根因不
 是控制器参数问题——shared-vLLM 实验中 vLLM waiting 始终为 0（请求在 Ray
 侧排队），AIMD 看的拥塞信号（vLLM waiting > 0 / KV usage 高）不反映 Ray 侧积压——形成"软拥塞"，即请求在 Ray actor 侧排队但 vLLM waiting 仍显示空闲。
@@ -103,7 +104,7 @@ grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。定位为�
 ❌ 未证明（关键缺口）：
    ├── "Queue-adaptive flush 优于最佳静态 timeout"（未证明）
    ├── "上游 request-level continuous replenishment 能放大 vLLM continuous batching 收益"（双卡链路已跑通，但 work-matched K48 与 batch K16 吞吐不可分辨）
-   ├── "SLO-aware 动态 flush 优于最佳静态窗口"（未实现）
+   ├── "SLO-aware 动态 flush 优于最佳静态窗口"（已实现并重复，但未证明）
    ├── "Prefix-aware 在 cache-off 受控 prefix 比例下有效"（未证明）
    └── "策略代码对多模态 workload 可复用"（未启动）
 ```
@@ -493,7 +494,8 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
    complete-row service quantum 512/1024/2048/4096 与 request diagnostic。
    512/request 将 credit-held 降约 16%，但吞吐相对 batch 最高仅 +1.75%，
    固定 quantum 不晋升；8192 因会退化为 batch control 未运行；
-5. SLO-aware EWMA flush 与最佳静态窗口、现有 two-level baseline 对照；
+5. SLO-aware EWMA flush 已完成正式对照且未晋升；不在同一 25–50ms 动作
+   空间继续调 alpha/deadband；
 6. prefix cache-on、多模态复用，以及 shared-vLLM 的 1/2/4 job、workload
    mix、arrival offset 和共享 endpoint credit/fairness；
 7. 动态控制的信号选择问题——逐请求完成时间或端到端 SLO slack 可能替代
@@ -526,7 +528,7 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 | Token-work admission | 已实现；八档扩展曲线完成并选定 65,536 | 后续策略固定该 work，不再靠增加 offered load 获得表面收益 |
 | Complete-row service quantum | gate 与 24-run 正式重复完成 | credit-held 降约 16% 但吞吐增益不足 5%；不晋升固定 quantum，request 保留作精确控制基础 |
 | Bounded Ray actor pool | 固定 slots、worker routing 与失败清理已实现并完成正式重复 | 多 actor 未过 5% 晋升门槛；当前保留 1×256，多 job 分池另行验证 |
-| SLO-aware adaptive flush | two-level 25/50ms baseline | oldest age/slack + fill + EWMA service/arrival + hard deadline |
+| SLO-aware adaptive flush | 24-run 正式重复完成 | oldest slack、arrival/service EWMA、容量下界与 deadband 均已接入；相对 fixed-50 未过 5% 门槛，不晋升 |
 | Completion-span/HOL 观测 | 有 request/submission join key | 记录同 submission 首末完成跨度和 credit idle |
 | Endpoint-local controller | topology/接口具备 | 两个真实 endpoint 后验证独立状态与回退 |
 
@@ -547,8 +549,9 @@ decrease 的根因不是控制器参数问题，而是 vLLM Prometheus `waiting`
 3. 固定最佳 pool、planning budget、work、row cap 与 timeout，比较
    whole-batch、service quantum 512/1024/2048/4096 和 request diagnostic；
 4. 只有出现 worker imbalance 时才增加 least-active-work routing；
-5. 再实现 SLO-aware EWMA flush，比较 fixed-best、two-level 和 EWMA；
-6. 只在独立收益成立后做小规模联合矩阵；
+5. SLO-aware EWMA flush 已完成且未晋升，不在同一动作空间继续调参；
+6. 转向 Shared-vLLM 1/2/4-job shared request/work credit 与
+   work-conserving fairness gate；只有门禁通过才启动正式矩阵；
 7. UCB 必须等 epoch reward 能按产生请求的 arm 正确归因后再接入。
 
 晋级要求是相对最佳静态基线改善 observed tokens/s 或 SLO goodput，且 request

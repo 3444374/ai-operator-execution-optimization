@@ -46,17 +46,18 @@ PostgreSQL 18.3
 当前缺口（vLLM baseline、Daft 文本接入、token-budget / K_max、flush
 跨负载与 2048 留出、本地单 GPU 联合消融、受控 prefix cache-off 实验、
 算子代价估计初版、request-level credit-release 双卡重复、active-work 八档
-扩展曲线、固定资源 Actor Pool 和 complete-row service quantum 对照均已完成）：
+扩展曲线、固定资源 Actor Pool、complete-row service quantum 和 SLO-aware
+EWMA flush 对照均已完成）：
 ① 已按预注册规则选择每 endpoint 65,536 active work；多 actor 与固定 quantum
 均未达到 5% 晋升门槛，保留 `request + 1×256`，其价值是精确 completion/
-credit 语义而非显著稳态提速 → ② oldest-request slack、token backlog
-与 arrival/service EWMA 驱动的完整 adaptive flush →
-③ prefix cache 开启后的独立机制验证与 length-align 显式联合消融 →
-④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 当前 2×4090 上完成多 job
-公平性、路由与故障迁移 → ⑥ 代价模型增加独立时间段或新 workload 校准。当前证据
+credit 语义而非显著稳态提速；SLO-EWMA 相对 fixed-50 未过 5% 门槛 →
+② 当前 2×4090 上完成 shared request/work credit、1/2/4 job 公平性、路由
+与故障迁移 → ③ prefix cache 开启后的独立机制验证与 length-align 显式联合
+消融 → ④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 代价模型增加独立
+时间段或新 workload 校准。当前证据
 支持 sequential token-budget + static K8 + fixed 50ms；联合候选未显著优于
-独立拼接，当前 two-level adaptive 未显著优于 fixed-50，prefix-only 在
-cache-off 下无稳定收益。写回使用 PostgreSQL + pgvector
+独立拼接，two-level adaptive 和 SLO-EWMA 均未显著优于 fixed-50，
+prefix-only 在 cache-off 下无稳定收益。写回使用 PostgreSQL + pgvector
 （COPY + deferred index），不作为独立实验阶段。详见 `PROJECT_OUTLINE.md`
 §近期优先级。
 

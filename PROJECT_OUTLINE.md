@@ -148,25 +148,26 @@
   work 后，512/1024/2048/4096 quantum 相对 batch 吞吐变化仅
   -0.03%/+0.11%/+0.12%/+0.54%，request 为 +1.75%。512/request 把
   credit-held 降约 16%，但未提高稳态 GPU 吞吐，固定 quantum 不晋升
+- ✅ 双 4090 SLO-aware EWMA flush：24/24 run 成功；相对 fixed-50，
+  high/arrival-limited 的吞吐为 -0.52%/+0.10%，P99 为 -0.94%/-0.49%，
+  所有 30s SLO 均零违约。25–50ms 动作相对 5.6–17.4s P99 缺少一阶杠杆，
+  SLO-EWMA 不晋升
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1**：完整 SLO-aware adaptive flush。当前 25/50ms 双窗口只是 baseline；
-   下一版需显式使用 oldest-request slack、token backlog、arrival/service-rate
-   EWMA、hard deadline 与滞回，并对比最佳静态窗口。
+1. **P1**：Shared-vLLM 扩展 1/2/4 job、不同 workload mix 和 arrival
+   offset；endpoint-shared request/work credit 与 work-conserving 公平队列
+   代码已完成，下一步是远端门禁和正式 GPU 公平性数据。
 2. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
    证据，不能用当前 cache-off 数据推断缓存收益。
-5. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
-6. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
+3. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
+4. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
    ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
-7. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay 与 active-work
+5. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay 与 active-work
    重复 formal；容量与机制证据已建立，1/2/4 job 公平性、路由策略和故障迁移
    仍待验证。
-8. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
-9. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
-10. **P1**：Shared-vLLM 扩展 1/2/4 job、不同 workload mix 和 arrival offset；
-    endpoint-local request/work credit 与 work-conserving 公平队列代码已完成，
-    但仍需远端功能门禁和正式 GPU 公平性数据。
+6. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
+7. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
 文献机制的发现、迁移审计和晋级/放弃条件统一见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
