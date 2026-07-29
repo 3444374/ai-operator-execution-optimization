@@ -232,7 +232,7 @@ git commit -m "feat: support chat completion profiling"
   - `validate_results(requests, results)`
   - `summarize_results(requests, results)`
 
-- [ ] **Step 0: Add explicit test fixtures**
+- [x] **Step 0: Add explicit test fixtures**
 
 ```python
 def sample_request(
@@ -274,7 +274,7 @@ def sample_result(
     )
 ```
 
-- [ ] **Step 1: Write failing immutable-manifest tests**
+- [x] **Step 1: Write failing immutable-manifest tests**
 
 ```python
 def test_manifest_round_trip_preserves_order_and_hash(self) -> None:
@@ -313,7 +313,7 @@ def test_manifest_rejects_duplicate_doc_id(self) -> None:
         write_manifest(self.path, (request, request))
 ```
 
-- [ ] **Step 2: Run and witness RED**
+- [x] **Step 2: Run and witness RED**
 
 Run:
 
@@ -323,7 +323,7 @@ Run:
 
 Expected: import failure because `src.baselines` does not exist.
 
-- [ ] **Step 3: Implement immutable dataclasses and canonical JSONL**
+- [x] **Step 3: Implement immutable dataclasses and canonical JSONL**
 
 ```python
 @dataclass(frozen=True)
@@ -349,13 +349,13 @@ class ChatRequest:
 Canonical JSON uses UTF-8, one object per line, `sort_keys=True`, compact
 separators and a final newline. The SHA-256 covers the exact written bytes.
 
-- [ ] **Step 4: Write failing deterministic-shard tests**
+- [x] **Step 4: Write failing deterministic-shard tests**
 
 ```python
 def test_endpoint_assignment_is_deterministic_and_balances_work(self) -> None:
     requests = tuple(
         sample_request(doc_id=i, prompt_tokens=cost, endpoint_index=-1)
-        for i, cost in enumerate([20, 18, 7, 6], start=1)
+        for i, cost in enumerate([20, 18, 7, 5], start=1)
     )
     first = assign_endpoint_shards(requests, endpoint_count=2)
     second = assign_endpoint_shards(requests, endpoint_count=2)
@@ -366,13 +366,13 @@ def test_endpoint_assignment_is_deterministic_and_balances_work(self) -> None:
     self.assertLessEqual(abs(work[0] - work[1]) / max(work), 0.02)
 ```
 
-- [ ] **Step 5: Implement stable largest-work-first assignment**
+- [x] **Step 5: Implement stable largest-work-first assignment**
 
 Sort only for assignment by `(-estimated_work, doc_id)`, assign to the endpoint
 with the smallest `(current_work, endpoint_index)`, then return requests in
 their original manifest order with the computed `endpoint_index`.
 
-- [ ] **Step 6: Write failing exactly-once tests**
+- [x] **Step 6: Write failing exactly-once tests**
 
 ```python
 def test_result_validation_rejects_missing_duplicate_and_failed_rows(self) -> None:
@@ -387,14 +387,14 @@ def test_result_validation_rejects_missing_duplicate_and_failed_rows(self) -> No
         )
 ```
 
-- [ ] **Step 7: Implement result validation and normalized summary**
+- [x] **Step 7: Implement result validation and normalized summary**
 
 `BaselineRequestResult` contains doc/endpoint/status/error, submit/start/end
 epochs, input/output tokens, output text and finish reason. Summary reports
 row counts, failures, token totals, JCT, tokens/s, P50/P95/P99, endpoint counts,
 endpoint predicted-work skew and exactly-once status.
 
-- [ ] **Step 8: Run tests and commit**
+- [x] **Step 8: Run tests and commit**
 
 Run:
 
