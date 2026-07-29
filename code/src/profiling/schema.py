@@ -46,6 +46,7 @@ FORMAL_RESULT_FIELDS = tuple(
     controller_min_window controller_max_window adaptive_sample_interval_s
     adaptive_downshifts adaptive_upshifts adaptive_limit_mean control_trace_path
     control_trace_events arrival_replay arrival_time_scale arrival_replay_preload
+    arrival_replay_start_epoch_s arrival_replay_observed_start_epoch_s
     submission_granularity
     flush_policy flush_timeout_ms flush_max_wait_ms flush_ewma_alpha
     flush_deadband_ratio flush_service_capacity_tokens_s_per_endpoint

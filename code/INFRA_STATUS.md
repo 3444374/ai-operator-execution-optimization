@@ -259,6 +259,7 @@ least-work、动态预算、shared-credit、异构显存容量、故障迁移和
 | AIMD/EWMA/PID | 高（代码） | 单作业矩阵 + static K16 control + shared-vLLM 双作业 | AIMD 饱和至 K16，未保护前台；不默认启用 |
 | UCB bandit | 中（纯控制器） | 无端到端实验 | 尚未接入执行路径 |
 | Actor pool / endpoint routing | 高（有界 slots/trace） | 双 GPU 1×256/2×128/4×64 formal | 多 actor 未过 5% 门槛；单 job 保留 1×256，多 job 分池待测 |
+| Shared-vLLM group runner | 高（代码/模板） | 本地契约测试；真实双 GPU gate 待运行 | 1/2/4-job 独立/静态分区/shared-DRR 已预注册，gate 未过前无性能结论 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |
 | 多模态复用 | 低 | 未启动 | 文本主线完成后进行 |
 | 算子代价估计 | 中 | 283 行、70 配置组、五个 held-out split | 粗粒度可用；不能作严格 SLO 预测 |
@@ -300,6 +301,9 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 4. 已完成 SLO-aware EWMA flush 正式对照，25–50ms 动作未过 5% 门槛；
    下一步门禁 Shared-vLLM 1/2/4-job shared request/work credit 与
    work-conserving fairness；
+   正式 group runner 已具备共同 replay epoch、启动偏差门禁、endpoint-global
+   精确 credit 峰值、组级 vLLM/GPU/MFU、每 job exactly-once、durable record
+   与安全 resume；当前仅通过本地契约测试，真实双 GPU gate 尚未运行；
 5. Prefix-aware 只有在单独启用 prefix cache、记录命中证据后才重新评估；
 6. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
    K=8 safety fallback。

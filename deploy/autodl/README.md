@@ -65,7 +65,7 @@ cd /root/autodl-tmp/ai-operator
 
 # 1) 先确认没有实验 runner；有 runner 时停止，不得同步代码或重复启动
 ps -C python -C python3 -o pid=,etime=,args= |
-  grep '[r]un_ai_operator_scenarios.py' || true
+  grep -E '[r]un_(ai_operator_scenarios|shared_vllm_experiment)\.py' || true
 
 # 若准备恢复已有输出，再检查目录级租约；不能只凭 ps 结果判断可恢复
 OUTPUT_DIR=experiments/results/<existing_run_id>
@@ -138,7 +138,8 @@ OUTPUT_DIR=experiments/results/<unique_run_id>
 RUN_LOG=/root/autodl-tmp/logs/<unique_run_id>.log
 
 ps -C python -C python3 -o args= |
-  grep '[r]un_ai_operator_scenarios.py' && exit 1 || true
+  grep -E '[r]un_(ai_operator_scenarios|shared_vllm_experiment)\.py' &&
+  exit 1 || true
 test ! -e "$OUTPUT_DIR"
 test ! -e "$RUN_LOG"
 
@@ -712,6 +713,92 @@ Pool-shape 模板还固定每 endpoint 的 Ray CPU reservation 为 0.5：
 1×0.5、2×0.25、4×0.125。该值是 Ray placement/resource 契约，不等同于操作
 系统 CPU 利用率；若任一 arm 因集群最小 fractional resource 限制无法创建，
 gate 直接失败并记录 incident，不能只为该 arm 临时增加总 CPU 配额。
+
+### Shared-vLLM 1/2/4-job 专用启动与清理
+
+该实验使用 `run_shared_vllm_experiment.py`，不能套用单 profiler scenario
+runner。控制面是一个 Ray named actor，数据面首轮使用 Ray task，所有 job
+必须连接同一显式 Ray head。旧 `run_kmax_interference_experiment.py` 仅保留
+历史前后台诊断用途，不得用于正式矩阵。
+
+启动前：
+
+```bash
+cd /root/autodl-tmp/ai-operator
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+set +a
+CONFIG=deploy/autodl/dual_gpu_shared_vllm_gate.example.json
+OUTPUT_DIR=experiments/results/dual_gpu_shared_vllm_gate_<unique_id>
+RUN_LOG=/root/autodl-tmp/logs/dual_gpu_shared_vllm_gate_<unique_id>.log
+
+# 只读门禁：任一 runner、租约或忙 endpoint 存在时都不启动
+ps -C python -C python3 -o pid=,etime=,args= |
+  grep -E '[r]un_(ai_operator_scenarios|shared_vllm_experiment)\.py' || true
+test ! -e "$OUTPUT_DIR/.runner-lease.json" ||
+  cat "$OUTPUT_DIR/.runner-lease.json"
+curl -fsS http://127.0.0.1:8000/metrics |
+  grep -E '^vllm:num_requests_(running|waiting)' | tail -n 2
+curl -fsS http://127.0.0.1:8001/metrics |
+  grep -E '^vllm:num_requests_(running|waiting)' | tail -n 2
+ray status 2>&1 || true
+
+# 在确认没有旧 Ray workload 后，只启动一个实验专用 head
+ray start --head --node-ip-address=127.0.0.1 --port=6380 \
+  --disable-usage-stats
+export RAY_ADDRESS=127.0.0.1:6380
+ray status
+```
+
+环境准备仍只执行一次。并发 job 命令由 group runner 生成，配置中禁止
+`--setup`、`--reset-documents`、output/trace、Ray address、本地/共享 credit
+等 runner-owned 参数。
+
+最小双 GPU gate：
+
+```bash
+test ! -e "$OUTPUT_DIR"
+test ! -e "$RUN_LOG"
+nohup /root/miniconda3/bin/python \
+  code/scripts/run_shared_vllm_experiment.py \
+  --config "$CONFIG" \
+  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --python-executable /root/miniconda3/bin/python \
+  --output-dir "$OUTPUT_DIR" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+    --ray-address "$RAY_ADDRESS" \
+    --idle-timeout-s 120 \
+    --start-delay-s 15 \
+    --max-start-lateness-s 2 \
+    --max-start-skew-s 0.5 \
+  </dev/null >"$RUN_LOG" 2>&1 &
+```
+
+该 gate 固定两个 job、每 job 64 行，并依次跑 independent、静态分区和
+shared DRR。通过条件不是只看 `status=completed`，还必须核对：
+
+- 每 job request/submission trace 均为 64 个唯一成功请求；
+- `group_runs.csv` 为三行、0 incident、0 actor worker failure；
+  - 两个 endpoint 都收到请求；
+  - 每 job 实际 replay 起点不早于配置起点、迟到不超过 2s，跨 job 起点偏差
+    不超过 0.5s；
+  - shared-credit final snapshot 的 active/waiting request/work 均为 0；
+- 精确峰值不超过每 endpoint 256 requests / 65,536 work；
+  - group resource/credit trace 非空，组级 GPU utilization/MFU 可用，Ray 地址
+    在所有 job 中一致；
+- runner 正常释放目录租约，唯一 coordinator actor 已清理。
+
+  gate 未通过时保留输出目录、日志、manifest、trace 和最终 snapshot，禁止删目录
+  重跑或启动 formal。gate 全部通过后，换全新输出目录并将 config 改为
+  `dual_gpu_shared_vllm_formal.example.json`；其余命令不变。formal 是
+`{1,2,4} job × {independent, static partition, shared DRR}`，
+  每场景 1 warmup + 3 repeats。完成或保存失败证据后再执行 `ray stop`；不要在
+  runner 仍存活时停止 Ray head。
+
+  coordinator 名称包含 manifest 持久化的 run-instance ID；同一输出目录 resume
+  会连接同一物理 run，而新的输出目录会得到全新 actor 名称。失败 gate 保留的
+  detached actor 因此不会污染下一次新目录 gate，仍不得手工复用旧输出路径。
 
 已完成的 1024–32768 曲线只能记作 offered-load 诊断：固定的是每 endpoint
 四个 batch，而平均每 batch 行数约从 2.3 增至 64，所以可供给的 request

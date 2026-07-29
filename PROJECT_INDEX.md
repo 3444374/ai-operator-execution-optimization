@@ -228,9 +228,12 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code_doc/superpowers/plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md` | 双 GPU 实验正确性实施计划 | TDD 修复服务元数据、组织/提交指标、共享 Ray cluster 契约与 AutoDL 分阶段模板 |
 | `code_doc/superpowers/plans/2026-07-29-saturated-ray-execution-foundation-implementation.md` | 饱和 Ray 执行基础实施计划 | TDD 实现 runner 独占、Ray 失败清理、扩展 active-work 曲线、固定 service quantum 与有界可观测 actor pool，再分两次远端 gate 验证 |
 | `code_doc/superpowers/plans/2026-07-29-slo-aware-ewma-flush-implementation.md` | SLO-aware EWMA flush 实施计划 | TDD 实现 oldest-slack、arrival/service EWMA、deadband 与 stale fallback，并在高压/临界双 GPU 负载下做固定资源消融 |
+| `code_doc/superpowers/plans/2026-07-29-shared-vllm-fairness-implementation.md` | Shared-vLLM 1/2/4-job 实施计划 | 全局 credit 观测、group runner、双 GPU gate 与 formal 门槛 |
 | `code/src/cost_estimation.py` | Engine-independent grouped split, ridge cost model, and regression metrics | Build offline operator-cost estimates without post-execution feature leakage |
 | `code/scripts/estimate_operator_cost.py` | Reproducible profile-CSV cost-estimation CLI | Generate model schema, coefficients, splits, and held-out metrics |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
+| `code/scripts/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
+| `code/src/shared_vllm_experiment.py` | Shared-vLLM 编排核心 | 配置校验、三臂 credit 语义、并发执行、exactly-once 与公平性汇总 |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |
 | `learning/AGENTS.md` | 学习讲解规则 | 写学习材料前读 |
@@ -287,6 +290,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/test_token_budget_controller.py` | static/service-quantum budget 与 arrival EWMA 契约测试 | 修改动态预算选择规则后运行 |
 | `code/tests/test_shared_credit.py` | 多 job endpoint credit、借用、公平轮转与 ID 隔离测试 | 修改共享 admission 纯策略后运行 |
 | `code/tests/test_shared_credit_ray.py` | named Ray actor 复用与配置一致性边界测试 | 修改共享 credit 的 Ray ownership 接线后运行 |
+| `code/tests/test_shared_vllm_experiment.py` | Shared-vLLM 配置、容量语义、组级指标与公平性测试 | 修改多 job runner 后运行 |
 | `code/tests/test_import_ai_complete_workload.py` | ShareGPT/BurstGPT importer 单元测试 | 修改 importer 或 trace 过滤逻辑后运行 |
 | `code/tests/test_scheduling_models.py` | scheduling request/endpoint/topology schema 单元测试 | 修改 typed scheduling metadata 前运行 |
 | `code/tests/test_scheduling_policies.py` | static admission 与 round-robin routing 单元测试 | 修改 admission/routing baseline 前运行 |
@@ -329,6 +333,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_actor_pool_shape.example.json` | 固定每 endpoint 256 个可见 slot 的 1×256/2×128/4×64 Ray actor 拓扑对照 | 在 active-work 饱和点比较 actor pool 形状，不改变 offered-load 上限 |
 | `deploy/autodl/dual_gpu_service_quantum.example.json` | 固定 planning budget、active work 和 actor slots 的 batch/512/1024/2048/4096/request 完成粒度对照 | 量化批内 HOL、credit-held 空转与 completion-driven replenishment |
 | `deploy/autodl/dual_gpu_slo_ewma_flush.example.json` | 高压/临界到达率下 fixed、queue-adaptive 与 SLO-aware EWMA flush 对照 | 在固定 request-level、65K active work 和 1×256 actor pool 下验证动态关批是否改善吞吐、SLO-goodput或尾延迟 |
+| `deploy/autodl/dual_gpu_shared_vllm_gate.example.json` | Shared-vLLM 双 GPU 最小门禁模板 | 2 job × independent/partition/shared-DRR，各 64 行 |
+| `deploy/autodl/dual_gpu_shared_vllm_formal.example.json` | Shared-vLLM 1/2/4-job 正式模板 | 三种 credit 策略，1 warmup + 3 repeats |
 | `deploy/autodl/dual_gpu_submission_policy.example.json` | active-work、least-work routing、动态 token budget 与 adaptive flush 的可组合消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |

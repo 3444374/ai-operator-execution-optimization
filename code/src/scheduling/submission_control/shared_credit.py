@@ -26,7 +26,15 @@ class EndpointCreditSnapshot:
     active_requests: int
     active_work: int
     waiting_requests: int
+    waiting_work: int
     active_by_job: tuple[tuple[str, int], ...]
+    active_work_by_job: tuple[tuple[str, int], ...]
+    waiting_by_job: tuple[tuple[str, int], ...]
+    waiting_work_by_job: tuple[tuple[str, int], ...]
+    max_active_requests_seen: int
+    max_active_work_seen: int
+    granted_requests_by_job: tuple[tuple[str, int], ...]
+    granted_work_by_job: tuple[tuple[str, int], ...]
 
 
 class FairEndpointCreditCoordinator:
@@ -60,6 +68,18 @@ class FairEndpointCreditCoordinator:
         self._active_requests: dict[str, int] = {
             endpoint_id: 0 for endpoint_id in capacities
         }
+        self._max_active_work: dict[str, int] = {
+            endpoint_id: 0 for endpoint_id in capacities
+        }
+        self._max_active_requests: dict[str, int] = {
+            endpoint_id: 0 for endpoint_id in capacities
+        }
+        self._granted_requests: dict[str, dict[str, int]] = {
+            endpoint_id: {} for endpoint_id in capacities
+        }
+        self._granted_work: dict[str, dict[str, int]] = {
+            endpoint_id: {} for endpoint_id in capacities
+        }
         self._waiting: dict[str, dict[str, deque[CreditLease]]] = {
             endpoint_id: {} for endpoint_id in capacities
         }
@@ -91,6 +111,12 @@ class FairEndpointCreditCoordinator:
             raise ValueError("request_id and job_id must be non-empty")
         if estimated_work <= 0:
             raise ValueError("estimated_work must be positive")
+        work_limit = self._capacities[endpoint_id][1]
+        if estimated_work > work_limit:
+            raise ValueError(
+                "estimated_work exceeds endpoint work limit: "
+                f"{estimated_work} > {work_limit}"
+            )
         if weight <= 0:
             raise ValueError("weight must be positive")
         previous_weight = self._weights.setdefault(job_id, weight)
@@ -129,20 +155,46 @@ class FairEndpointCreditCoordinator:
         if endpoint_id not in self._capacities:
             raise ValueError(f"unknown endpoint_id: {endpoint_id}")
         active_by_job: dict[str, int] = {}
+        active_work_by_job: dict[str, int] = {}
         for lease in self._active.values():
             if lease.endpoint_id == endpoint_id:
                 active_by_job[lease.job_id] = (
                     active_by_job.get(lease.job_id, 0) + 1
                 )
+                active_work_by_job[lease.job_id] = (
+                    active_work_by_job.get(lease.job_id, 0)
+                    + lease.estimated_work
+                )
+        waiting_by_job = {
+            job_id: len(queue)
+            for job_id, queue in self._waiting[endpoint_id].items()
+            if queue
+        }
+        waiting_work_by_job = {
+            job_id: sum(lease.estimated_work for lease in queue)
+            for job_id, queue in self._waiting[endpoint_id].items()
+            if queue
+        }
         return EndpointCreditSnapshot(
             endpoint_id=endpoint_id,
             active_requests=self._active_requests[endpoint_id],
             active_work=self._active_work[endpoint_id],
-            waiting_requests=sum(
-                len(queue)
-                for queue in self._waiting[endpoint_id].values()
-            ),
+            waiting_requests=sum(waiting_by_job.values()),
+            waiting_work=sum(waiting_work_by_job.values()),
             active_by_job=tuple(sorted(active_by_job.items())),
+            active_work_by_job=tuple(sorted(active_work_by_job.items())),
+            waiting_by_job=tuple(sorted(waiting_by_job.items())),
+            waiting_work_by_job=tuple(
+                sorted(waiting_work_by_job.items())
+            ),
+            max_active_requests_seen=self._max_active_requests[endpoint_id],
+            max_active_work_seen=self._max_active_work[endpoint_id],
+            granted_requests_by_job=tuple(
+                sorted(self._granted_requests[endpoint_id].items())
+            ),
+            granted_work_by_job=tuple(
+                sorted(self._granted_work[endpoint_id].items())
+            ),
         )
 
     def _grant_waiters(self, endpoint_id: str) -> None:
@@ -187,8 +239,7 @@ class FairEndpointCreditCoordinator:
                 continue
             current_work = self._active_work[endpoint_id]
             fits_work = current_work + lease.estimated_work <= work_limit
-            oversized_idle = current_work == 0
-            if not fits_work and not oversized_idle:
+            if not fits_work:
                 visits_without_grant += 1
                 continue
             queue.popleft()
@@ -198,4 +249,21 @@ class FairEndpointCreditCoordinator:
             self._active[request_key] = lease
             self._active_requests[endpoint_id] += 1
             self._active_work[endpoint_id] += lease.estimated_work
+            self._max_active_requests[endpoint_id] = max(
+                self._max_active_requests[endpoint_id],
+                self._active_requests[endpoint_id],
+            )
+            self._max_active_work[endpoint_id] = max(
+                self._max_active_work[endpoint_id],
+                self._active_work[endpoint_id],
+            )
+            granted_requests = self._granted_requests[endpoint_id]
+            granted_requests[lease.job_id] = (
+                granted_requests.get(lease.job_id, 0) + 1
+            )
+            granted_work = self._granted_work[endpoint_id]
+            granted_work[lease.job_id] = (
+                granted_work.get(lease.job_id, 0)
+                + lease.estimated_work
+            )
             visits_without_grant = 0

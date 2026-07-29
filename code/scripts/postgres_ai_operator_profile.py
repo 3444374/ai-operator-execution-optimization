@@ -15,6 +15,7 @@ import math
 import os
 import statistics
 import sys
+import time
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
@@ -966,6 +967,18 @@ def submit_python_compatible_http_batches(
 
 
 def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
+    if (
+        isinstance(args.arrival_replay_start_epoch_s, bool)
+        or not math.isfinite(args.arrival_replay_start_epoch_s)
+        or args.arrival_replay_start_epoch_s < 0
+    ):
+        raise SystemExit(
+            "--arrival-replay-start-epoch-s must be finite and non-negative"
+        )
+    if args.arrival_replay_start_epoch_s > 0 and not args.arrival_replay:
+        raise SystemExit(
+            "--arrival-replay-start-epoch-s requires --arrival-replay"
+        )
     if args.submission_granularity == "service_quantum":
         if args.service_quantum_tokens <= 0:
             raise SystemExit(
@@ -1110,6 +1123,19 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
             "slo-ewma flush requires calibrated "
             "--flush-service-capacity-tokens-s-per-endpoint > 0"
         )
+
+
+def _wait_for_replay_start(
+    target_epoch_s: float,
+    *,
+    wall_clock=time.time,
+    sleeper=time.sleep,
+) -> float:
+    if target_epoch_s > 0:
+        remaining_s = target_epoch_s - wall_clock()
+        if remaining_s > 0:
+            sleeper(remaining_s)
+    return wall_clock()
 
 
 def _validate_request_trace_args(args: argparse.Namespace) -> None:
@@ -1528,6 +1554,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "arrival_replay_preload": (
                 "bounded_requested_workload" if args.arrival_replay else ""
             ),
+            "arrival_replay_start_epoch_s": (
+                args.arrival_replay_start_epoch_s
+            ),
+            "arrival_replay_observed_start_epoch_s": 0.0,
             "submission_granularity": args.submission_granularity,
             "flush_policy": args.flush_policy,
             "flush_timeout_ms": args.flush_timeout_ms,
@@ -1987,6 +2017,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         organizer_warnings = []
         replay_tables: list[pa.Table] = []
         flush_trace_events = []
+        arrival_replay_observed_start_epoch_s = 0.0
         offset = 0
         while processed_rows < args.total_rows:
             source_config = SourceConfig(
@@ -2095,6 +2126,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             processed_rows += table.num_rows
 
         if args.arrival_replay:
+            _wait_for_replay_start(
+                args.arrival_replay_start_epoch_s
+            )
             flush_observation_provider = None
             if _requires_replay_feedback(args):
                 if not resolved_metrics_urls and not args.dry_run:
@@ -2120,6 +2154,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 )
             )
             try:
+                arrival_replay_observed_start_epoch_s = time.time()
                 replay_envelopes = _arrival_replay_envelopes(
                     replay_tables,
                     args,
@@ -2136,6 +2171,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     quantum_sink=service_quanta,
                     epoch_clock=lifecycle_epoch_clock,
                     service_endpoint_count=len(endpoint_urls),
+                    replay_origin_epoch_s=(
+                        args.arrival_replay_start_epoch_s
+                        if args.arrival_replay_start_epoch_s > 0
+                        else None
+                    ),
                 )
                 operator_timer = StageTimer.start("operator_wall")
                 results, metrics = submit_operator_batches(
@@ -2486,6 +2526,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "arrival_time_scale": args.arrival_time_scale,
             "arrival_replay_preload": (
                 "bounded_requested_workload" if args.arrival_replay else ""
+            ),
+            "arrival_replay_start_epoch_s": (
+                args.arrival_replay_start_epoch_s
+            ),
+            "arrival_replay_observed_start_epoch_s": (
+                arrival_replay_observed_start_epoch_s
             ),
             "submission_granularity": args.submission_granularity,
             "flush_policy": args.flush_policy,

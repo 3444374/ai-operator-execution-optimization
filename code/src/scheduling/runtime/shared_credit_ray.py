@@ -48,6 +48,11 @@ class RaySharedCreditClient:
             self.actor.release.remote(request_id, job_id=job_id)
         )
 
+    def snapshot(self, endpoint_id: str):
+        return self.ray_module.get(
+            self.actor.snapshot.remote(endpoint_id)
+        )
+
 
 def get_or_create_shared_credit_client(
     ray_module,

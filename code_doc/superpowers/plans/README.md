@@ -15,3 +15,4 @@ These files are process artifacts. They do not replace `PROJECT_OUTLINE.md`,
 | `2026-07-25-scheduling-foundation-implementation.md` | TDD plan for typed scheduling schemas, topology, static admission/routing, and deterministic scheduler |
 | `2026-07-25-ray-static-wiring-implementation.md` | TDD plan for production static Ray task/actor delegation through the typed scheduling core |
 | `2026-07-25-arrival-replay-flush-runtime-implementation.md` | TDD plan for monotonic arrival replay, pending batch construction, and real flush-policy runtime wiring |
+| `2026-07-29-shared-vllm-fairness-implementation.md` | TDD plan for the 1/2/4-job shared-credit group runner, global observation, fairness summaries, and AutoDL gate |

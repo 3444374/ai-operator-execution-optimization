@@ -448,13 +448,14 @@ def _arrival_replay_envelopes(
     quantum_sink=None,
     epoch_clock=None,
     service_endpoint_count: int = 1,
+    replay_origin_epoch_s: float | None = None,
 ) -> Iterable[PayloadEnvelope]:
     completion_max_tokens = (
         args.completion_max_tokens if operator == "ai_complete" else 0
     )
 
     first_source_arrival_s: float | None = None
-    replay_start_epoch_s: float | None = None
+    replay_start_epoch_s: float | None = replay_origin_epoch_s
     arrival_time_scale = getattr(args, "arrival_time_scale", 1.0)
     replay_clock = getattr(args, "_replay_clock", None) or SystemReplayClock()
     lifecycle_epoch_clock = epoch_clock or MonotonicEpochClock()
@@ -696,7 +697,8 @@ def _arrival_replay_envelopes(
 
     def replay() -> Iterable[PayloadEnvelope]:
         nonlocal replay_start_epoch_s
-        replay_start_epoch_s = lifecycle_epoch_clock()
+        if replay_start_epoch_s is None:
+            replay_start_epoch_s = lifecycle_epoch_clock()
         try:
             for closed_envelopes in batcher:
                 yield from closed_envelopes

@@ -554,6 +554,13 @@ decrease 的根因不是控制器参数问题，而是 vLLM Prometheus `waiting`
    work-conserving fairness gate；只有门禁通过才启动正式矩阵；
 7. UCB 必须等 epoch reward 能按产生请求的 arm 正确归因后再接入。
 
+**2026-07-29 实施状态**：已在
+`service_scheduling_backpressure.md` §13 完成 1/2/4-job 三臂预注册与
+fatal-flaw audit。旧 interference runner 不直接用于 formal；新 group
+runner 和 gate/formal 模板负责单次环境准备、统一 replay 起点、每 job 隔离
+trace、组级 vLLM 指标以及 shared-credit 精确峰值。当前只有本地契约验证，
+真实双 GPU gate 未通过前不启动 formal，也不声称公平性或性能收益。
+
 晋级要求是相对最佳静态基线改善 observed tokens/s 或 SLO goodput，且 request
 P99、failure、exactly-once 不退化。否则记录负结果，不增加控制复杂度。
 

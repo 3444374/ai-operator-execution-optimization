@@ -1885,6 +1885,47 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [100.005, 100.005],
         )
 
+    def test_replay_can_preserve_a_shared_fixed_epoch_origin(self) -> None:
+        args = SimpleNamespace(
+            ray_batch_rows=1,
+            batching_policy="fixed_rows",
+            token_budget=0,
+            flush_policy="fixed_timeout",
+            flush_timeout_ms=1000.0,
+            flush_max_wait_ms=2000.0,
+            _replay_clock=_DeterministicReplayClock(now_s=10.0),
+        )
+        table = pa.table(
+            {
+                "doc_id": [1],
+                "prompt_tokens": [2],
+                "arrival_time_s": [0.0],
+            }
+        )
+        lifecycle_seeds = []
+
+        list(
+            profile._arrival_replay_envelopes(
+                [table],
+                args,
+                job_id="job",
+                operator="ai_embed",
+                service_observation=lambda: ReplayServiceObservation(
+                    fresh=True,
+                    running=0,
+                    waiting=0,
+                    kv_usage=0.0,
+                ),
+                trace_sink=[],
+                lifecycle_seed_sink=lifecycle_seeds,
+                epoch_clock=lambda: 110.0,
+                replay_origin_epoch_s=100.0,
+            )
+        )
+
+        self.assertEqual(lifecycle_seeds[0].arrival_epoch_s, 100.0)
+        self.assertEqual(lifecycle_seeds[0].flush_epoch_s, 110.0)
+
     def test_token_budget_membership_survives_arrow_assembly(self) -> None:
         args = SimpleNamespace(
             ray_batch_rows=8,
@@ -2212,6 +2253,11 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertFalse(default_row["arrival_replay"])
         self.assertEqual(default_row["submission_granularity"], "batch")
         self.assertEqual(default_row["arrival_time_scale"], 1.0)
+        self.assertEqual(default_row["arrival_replay_start_epoch_s"], 0.0)
+        self.assertEqual(
+            default_row["arrival_replay_observed_start_epoch_s"],
+            0.0,
+        )
         self.assertEqual(default_row["flush_policy"], "immediate")
         self.assertEqual(default_row["flush_timeout_ms"], 25.0)
         self.assertEqual(default_row["flush_max_wait_ms"], 50.0)
@@ -2255,6 +2301,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "request",
                 "--arrival-time-scale",
                 "0.0005",
+                "--arrival-replay-start-epoch-s",
+                "123.5",
                 "--flush-policy",
                 "fixed_timeout",
                 "--flush-timeout-ms",
@@ -2270,6 +2318,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertTrue(replay_row["arrival_replay"])
         self.assertEqual(replay_row["submission_granularity"], "request")
         self.assertEqual(replay_row["arrival_time_scale"], 0.0005)
+        self.assertEqual(
+            replay_row["arrival_replay_start_epoch_s"],
+            123.5,
+        )
         self.assertEqual(replay_row["flush_policy"], "fixed_timeout")
         self.assertEqual(replay_row["flush_timeout_ms"], 12.5)
         self.assertEqual(replay_row["flush_max_wait_ms"], 30.0)
@@ -2279,6 +2331,31 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             replay_row["arrival_replay_preload"],
             "bounded_requested_workload",
         )
+
+    def test_replay_start_epoch_requires_arrival_replay(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--arrival-replay-start-epoch-s",
+                "123.5",
+            ]
+        )
+
+        with self.assertRaisesRegex(SystemExit, "requires --arrival-replay"):
+            profile.run_once(args, "formal", 1)
+
+    def test_wait_for_replay_start_sleeps_until_target(self) -> None:
+        times = iter([100.0, 105.0])
+        sleeps = []
+
+        observed = profile._wait_for_replay_start(
+            105.0,
+            wall_clock=lambda: next(times),
+            sleeper=sleeps.append,
+        )
+
+        self.assertEqual(sleeps, [5.0])
+        self.assertEqual(observed, 105.0)
 
         dynamic_args = profile.parse_args(
             [

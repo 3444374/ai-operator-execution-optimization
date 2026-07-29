@@ -413,3 +413,121 @@ service-only 上界；不能要求上游链路超过同 workload 的服务物理
 - [ ] P2: 消融数据可以画 Fig_RC2_1 到 Fig_RC2_4
 - [ ] 所有结果 CSV 保存在 `experiments/results/rc2/`
 - [ ] 每个图标注数据来源、warm-up 策略、重复次数、取中位数还是平均值
+
+---
+
+## 13. Shared-vLLM 1/2/4-job 预注册实验（2026-07-29）
+
+### 13.1 研究问题与候选方案
+
+研究问题不是“增加 job 能否让 GPU 更忙”，而是：在已标定的每 endpoint
+`256 request slots + 65,536 predicted active-work` 饱和容量下，多个数据库
+AI job 能否共享同一 vLLM endpoint，并同时获得容量保护、work conservation
+和可解释的公平性。
+
+实现前比较三种路径：
+
+1. **直接复用旧 interference runner**：改动最少，但只支持前后台两个 job，
+   每个 profiler 都执行 `--setup`，并发 profiler 还会重复计算同一份 vLLM
+   全局 token 增量；不能作为正式证据。
+2. **继续扩展旧 runner**：可以加入 N-job，但会把旧的前后台语义、覆盖写入、
+   无租约生命周期和新的公平性语义堆在一个脚本中。
+3. **新增正式 group runner（采用）**：复用现有 profiler、runner lease、
+   Ray named coordinator 与 trace 契约；每个 group run 同时启动 N 个隔离
+   profiler，统一记录组级 service 指标和全局 credit 状态。
+
+### 13.2 Fatal-flaw audit
+
+正式运行前必须消除以下混淆：
+
+- **全局指标重复计数**：并发 profiler 的 vLLM Prometheus delta 相互重叠，
+  不能相加；总吞吐、MFU 和 endpoint 分布必须由 group runner 在组级采样。
+- **重复环境准备**：并发 job 禁止携带 `--setup` 或 reset；schema/workload
+  在 runner 启动前只读校验，环境准备独立执行一次。
+- **总容量随 job 数膨胀**：策略比较固定 endpoint 总 request/work 上限；
+  `independent_full` 只作为当前系统的过量认购 baseline，不能与共享策略混称
+  为相同 offered-work 对照。
+- **共享上限缺少精确证据**：周期采样可能漏掉峰值；coordinator snapshot
+  必须累计精确的 request/work 峰值和按 job grant work。
+- **启动偏移污染公平性**：主矩阵使用同一未来 epoch 的 replay start；
+  staggered arrival 作为单独 work-conservation 场景，不混入同时启动结果。
+- **Ray 集群分裂**：所有 profiler 和 monitor 必须使用同一个显式
+  `--ray-address`；禁止隐式创建各自的本地 Ray cluster。
+- **detached actor 污染下一 run**：每个 group run 使用包含实验、场景、重复
+  序号的唯一 coordinator name；结束后核对 active/waiting 均为零，再清理
+  该 actor。失败时保留 manifest、日志和最终 snapshot。
+- **相同输入行的语义**：首轮 equal-workload 使用相同确定性行序列，exactly-once
+  按 job 校验；它验证调度隔离，不声称处理了全局唯一文档。不同 workload mix
+  与 arrival offset 在核心门禁后单独扩展。
+
+### 13.3 策略消融
+
+| 策略 | 每 job 本地 credit | endpoint 全局 credit | 借用/公平语义 |
+|---|---:|---:|---|
+| `independent_full` | 每个 job 都持有 256/65,536 | 无 | 当前系统 baseline；可能过量认购 |
+| `static_partition` | 将 256/65,536 静态均分给 N job | 无 | 容量安全但空闲份额不可借用 |
+| `shared_drr` | 本地上限不成为瓶颈 | Ray named actor 持有 256/65,536 | weighted DRR；空闲份额可借用 |
+
+首轮正式矩阵为 `job_count ∈ {1,2,4}` × 上述三种策略，每个场景
+`1 warmup + 3 formal repeats`。同一 job-count 内固定 workload、行数、
+token budget、arrival replay、endpoint、随机种子和总 endpoint 容量。
+`job_count=1` 是协调开销与语义等价性检查；`job_count=2/4` 才用于公平性结论。
+
+核心矩阵通过后，再运行两个机制场景：
+
+- `staggered_2job`：一个 job 延迟到达，验证空闲 credit 能否被在场 job 借用；
+- `weighted_2job_3to1`：权重 3:1，验证 normalized service 是否按权重收敛。
+
+### 13.4 最小真实双 GPU gate
+
+gate 只验证基础设施，不生成性能结论：
+
+- 双 vLLM endpoint，显式同一 Ray address；
+- `job_count=2`，每 job 64 行，`independent_full/static_partition/shared_drr`
+  各一次，使用全新输出目录；
+- 每 job 独立 runs/request/submission trace；group runner 生成 manifest、
+  group summary、global service/resource trace 和 shared-credit trace；
+- 必须满足：0 worker failure、每 job 64/64 exactly-once、endpoint 均有流量、
+  shared actor 最终 active/waiting 为 0、精确峰值不超过 256/65,536、日志与
+  manifest 无密钥、退出后无 runner lease 和该 run 的 detached actor。
+
+任一项失败都禁止启动 formal；保留目录和租约/进程证据，按系统化调试定位。
+
+### 13.5 指标与预注册门槛
+
+事实指标：
+
+- group observed prompt/output tokens/s、MFU、GPU utilization、endpoint 分布；
+- 每 job JCT、request P50/P95/P99、SLO goodput、completion lag、worker failure；
+- 每 job processed request/submission exactly-once；
+- coordinator 精确 request/work 峰值、waiting、active/granted work by job；
+- `slowdown_j = JCT_shared_j / JCT_solo_j`；
+- equal-weight Jain fairness：
+  `J = (Σ service_j)^2 / (N × Σ service_j^2)`，其中
+  `service_j = completed predicted work_j / JCT_j`，weighted 场景再除以配置
+  权重。禁止直接使用每个 job 固定的 offered work 计算公平性，否则等量输入会
+ 机械地产生 `J=1`，无法观察完成速率差异。首轮 formal 只包含同步、等权场景；
+ staggered/weighted 仍保持禁用，后续启用前必须增加共同重叠时间窗内的完成
+ work rate，不能直接沿用全 JCT 指标做机制结论。
+
+正确性门槛是硬门槛：0 incident、0 worker failure、每 job exactly-once、
+全局 request/work 上限不越界、结束状态归零。
+
+策略晋升门槛：
+
+- `job_count=1` 的 `shared_drr` 相对等价静态配置吞吐损失不超过 3%；
+- equal-weight `job_count=2/4` 的 Jain fairness 中位数至少 0.95，且任一
+  job 的 normalized service 不低于均值的 90%；
+- 相对 `independent_full`，`shared_drr` 的最大 slowdown 或 request P99
+  至少改善 5%，且 group tokens/s 退化不超过 5%；
+- 在 staggered 场景，相对 `static_partition`，`shared_drr` 的 group
+  tokens/s 或完成时间至少改善 5%，同时后到 job 不发生 starvation；
+- 未过门槛则保留容量安全/诊断基础设施，不把 DRR 记为性能优化。
+
+### 13.6 证据边界
+
+该矩阵验证的是外部 Ray 调度层对共享 vLLM endpoint 的多 job 隔离与
+work conservation，不修改、也不声称改进 vLLM 内部 continuous batching。
+同质 equal-workload 下若三种策略没有差异，是有效的边界结果；只有在并发
+竞争或 arrival/workload 异质性下出现稳定改善，才能把收益归因于共享 credit
+与公平队列。

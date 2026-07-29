@@ -2320,3 +2320,36 @@
 - 本地和远端环境均未预装 Ruff；远端临时安装因包镜像缺失、官方 PyPI 超时未
   完成，残留下载进程已清理。该环境限制不记作 Ruff 通过；以 374 tests、
   `compileall`、JSON 解析和 `git diff --check` 作为本次已完成门禁。
+
+## 2026-07-29 Shared-vLLM 1/2/4-job 实验预注册
+
+- SLO-aware EWMA 正式矩阵已完成并封板，25–50ms alpha/deadband 不再继续调参；
+  下一安全方向切换为 endpoint-shared request/work credit 与 work-conserving
+  fairness。
+- 复审旧 interference runner 后确认其不能直接承担正式矩阵：只支持两个前后台
+  job、每个并发 profiler 都携带 `--setup`、全局 vLLM token delta 会重叠，
+  且缺少 coordinator 精确峰值与按 job 服务量证据。
+- 在 `experiments/plans/service_scheduling_backpressure.md` §13 预注册
+  `independent_full`、`static_partition`、`shared_drr` 三臂的 1/2/4-job
+  矩阵、fatal-flaw audit、双 GPU gate、exactly-once/容量/公平性硬门槛和
+  5% 晋升条件。
+- 新实施计划
+  `code_doc/superpowers/plans/2026-07-29-shared-vllm-fairness-implementation.md`
+  要求测试先行补齐精确 shared-credit 观测、同步 replay 起点、正式 group
+  runner、组级指标与 AutoDL gate/formal 模板；gate 未通过禁止 formal。
+- 已按独立代码审阅补齐正式 runner 的恢复与证据边界：每组先生成 durable
+  record，再由 manifest 原子确认并重建 `group_runs.csv`；无 record 的残留
+  artifact 会安全拒绝恢复，避免覆盖日志或重复追加 CSV。resume 同时强制匹配
+  repository commit。
+- replay 现在使用 runner 配置的共同 epoch 作为生命周期原点，并硬校验每 job
+  启动迟到与跨 job skew；非零 worker failure、不可用的组级 vLLM/resource/MFU、
+  endpoint 未覆盖、共享 credit 越界或结束未归零都会使整组失败并保留
+  `failure.json`、日志和 trace。
+- coordinator 名称包含由物理 output path 派生并持久化的 run-instance ID；
+  同一目录 resume 保持确定性，新目录不会复用失败 gate 留下的 detached actor。
+- 本地 141 项直接相关测试通过；完整 424 项中 414 项通过，剩余 10 项仅因当前
+  本地 Python 缺少 Ray/Daft/psycopg。`compileall` 与 `git diff --check`
+  通过；依赖完整的全量测试留待远端同步后、GPU gate 前执行。
+- 当前仍没有新的 Shared-vLLM GPU 性能结果；真实双 GPU gate 尚未启动，不能
+  声称 shared DRR 的公平性、MFU 或性能收益。
+- 用户明确要求本轮不再同步 Wiki；项目文档仍作为唯一事实来源维护。

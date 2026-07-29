@@ -13,6 +13,7 @@ remaining work are summarized in `code/INFRA_STATUS.md`.
 code/
 ├── scripts/
 │   ├── postgres_ai_operator_profile.py   ← PostgreSQL AI 算子链路画像（Ray actor + GPU endpoint + writeback）
+│   ├── run_shared_vllm_experiment.py     ← 1/2/4-job 共享 vLLM 正式 group runner
 │   ├── pgai_sql_operator_profile.py      ← pgai SQL 触发面画像（ai.ollama_embed via pgai 扩展）
 │   ├── local_embedding_server.py         ← 本地 OpenAI 兼容 embedding 服务（Ollama）
 │   ├── daft_text_organizer_smoke.py      ← Daft 文本 DataFrame / into_batches / Ray runner smoke
@@ -22,6 +23,7 @@ code/
 │   ├── sources.py                        ← PostgreSQL/Daft 数据入口后端
 │   ├── organizers.py                     ← ArrowOrganizer / DaftOrganizer 数据组织后端
 │   ├── request_costs.py                   ← 严格的输出成本模式与来源标签
+│   ├── shared_vllm_experiment.py          ← 多 job 配置、并发编排、组级指标与公平性验证
 │   ├── packing.py                         ← 与模态无关的确定性 BFD 与 row-cap-first 候选
 │   ├── runner_lease.py                    ← 场景输出目录的原子单写者租约与显式 stale recovery
 │   ├── model_backends.py                 ← fake / compatible HTTP embedding and completion backend

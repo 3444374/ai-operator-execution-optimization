@@ -35,6 +35,11 @@ class SharedCreditCoordinatorTests(unittest.TestCase):
         self.assertEqual(snapshot.active_requests, 3)
         self.assertEqual(snapshot.active_work, 300)
         self.assertEqual(snapshot.active_by_job, (("bulk", 3),))
+        self.assertEqual(snapshot.active_work_by_job, (("bulk", 300),))
+        self.assertEqual(snapshot.max_active_requests_seen, 3)
+        self.assertEqual(snapshot.max_active_work_seen, 300)
+        self.assertEqual(snapshot.granted_requests_by_job, (("bulk", 3),))
+        self.assertEqual(snapshot.granted_work_by_job, (("bulk", 300),))
 
     def test_waiting_jobs_receive_credit_after_completion(self) -> None:
         coordinator = FairEndpointCreditCoordinator(
@@ -72,6 +77,62 @@ class SharedCreditCoordinatorTests(unittest.TestCase):
             coordinator.snapshot("gpu0").active_by_job,
             (("interactive", 1),),
         )
+        snapshot = coordinator.snapshot("gpu0")
+        self.assertEqual(
+            snapshot.granted_requests_by_job,
+            (("bulk", 1), ("interactive", 1)),
+        )
+        self.assertEqual(
+            snapshot.granted_work_by_job,
+            (("bulk", 100), ("interactive", 100)),
+        )
+
+    def test_idempotent_polling_does_not_double_count_grants(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+        )
+        for _ in range(3):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id="same",
+                    job_id="job",
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                )
+            )
+
+        snapshot = coordinator.snapshot("gpu0")
+        self.assertEqual(snapshot.granted_requests_by_job, (("job", 1),))
+        self.assertEqual(snapshot.granted_work_by_job, (("job", 100),))
+
+    def test_snapshot_tracks_waiting_request_and_work_by_job(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="active",
+                job_id="a",
+                endpoint_id="gpu0",
+                estimated_work=100,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="waiting",
+                job_id="b",
+                endpoint_id="gpu0",
+                estimated_work=80,
+            )
+        )
+
+        snapshot = coordinator.snapshot("gpu0")
+        self.assertEqual(snapshot.waiting_requests, 1)
+        self.assertEqual(snapshot.waiting_work, 80)
+        self.assertEqual(snapshot.waiting_by_job, (("b", 1),))
+        self.assertEqual(snapshot.waiting_work_by_job, (("b", 80),))
 
     def test_work_cap_blocks_large_head_until_capacity_is_released(self) -> None:
         coordinator = FairEndpointCreditCoordinator(
@@ -105,6 +166,27 @@ class SharedCreditCoordinatorTests(unittest.TestCase):
                 estimated_work=80,
             )
         )
+
+    def test_single_request_cannot_exceed_endpoint_work_limit(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (4, 100)},
+            quantum=25,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "exceeds endpoint work limit",
+        ):
+            coordinator.try_acquire(
+                request_id="oversized",
+                job_id="job",
+                endpoint_id="gpu0",
+                estimated_work=101,
+            )
+
+        snapshot = coordinator.snapshot("gpu0")
+        self.assertEqual(snapshot.active_requests, 0)
+        self.assertEqual(snapshot.waiting_requests, 0)
 
     def test_job_weight_must_remain_stable(self) -> None:
         coordinator = FairEndpointCreditCoordinator(

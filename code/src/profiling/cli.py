@@ -275,6 +275,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--arrival-replay", action="store_true")
     parser.add_argument("--arrival-time-scale", type=float, default=1.0)
     parser.add_argument(
+        "--arrival-replay-start-epoch-s",
+        type=float,
+        default=0.0,
+        help=(
+            "Optional wall-clock epoch for synchronized replay submission; "
+            "zero starts immediately after preload."
+        ),
+    )
+    parser.add_argument(
         "--submission-granularity",
         choices=["batch", "request", "service_quantum"],
         default="batch",

@@ -724,3 +724,25 @@ truncating a row that exceeds the model context.
 profile CSVs. It uses only pre-execution features and writes the feature schema,
 split groups, coefficients, normalization values, and regression metrics to
 JSON.
+
+## 2026-07-29 Shared-vLLM multi-job runner
+
+`run_shared_vllm_experiment.py` is the formal 1/2/4-job group runner. Unlike
+`run_ai_operator_scenarios.py`, one scheduled run contains multiple concurrent
+profiler processes. It requires one explicit Ray address, gives every job an
+  independent summary/request/submission trace, records group-level vLLM/resource
+  metrics and MFU once, and uses one uniquely named Ray credit actor for
+  `shared_drr`. A common replay epoch plus lateness/skew checks prevents startup
+  jitter from becoming a hidden fairness variable. Durable per-group records
+  rebuild the compact CSV on resume instead of appending duplicate rows.
+
+Committed templates:
+
+- `deploy/autodl/dual_gpu_shared_vllm_gate.example.json`
+- `deploy/autodl/dual_gpu_shared_vllm_formal.example.json`
+
+The config must not contain `--setup`, reset, output/trace, Ray-address, or
+credit flags. The runner owns them so concurrent jobs cannot race schema setup,
+append to one CSV, or silently connect to different Ray clusters. Use the full
+startup, gate, resume, evidence-preservation, and cleanup procedure in
+`deploy/autodl/README.md`.

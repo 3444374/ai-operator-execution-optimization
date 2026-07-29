@@ -90,6 +90,12 @@ class SharedCreditRayTests(unittest.TestCase):
             )
         first.release("batch-0", job_id="a")
         self.assertEqual(len(ray.actors), 1)
+        snapshot = second.snapshot("gpu0")
+        self.assertEqual(snapshot.active_by_job, (("b", 1),))
+        self.assertEqual(
+            snapshot.granted_requests_by_job,
+            (("a", 1), ("b", 1)),
+        )
 
     def test_existing_actor_rejects_mismatched_capacity(self) -> None:
         ray = _FakeRay()
