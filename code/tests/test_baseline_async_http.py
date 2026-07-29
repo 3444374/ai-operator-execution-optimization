@@ -63,14 +63,9 @@ class BoundedHttpBaselineTests(unittest.TestCase):
 
         results = asyncio.run(
             run_bounded_http(
-                tuple(
-                    sample_request(i, endpoint_index=0)
-                    for i in range(8)
-                ),
+                tuple(sample_request(i, endpoint_index=0) for i in range(8)),
                 BoundedHttpConfig(
-                    endpoint_urls=(
-                        "http://ep0/v1/chat/completions",
-                    ),
+                    endpoint_urls=("http://ep0/v1/chat/completions",),
                     model="model",
                     concurrency_per_endpoint=2,
                     timeout_s=30,
@@ -88,14 +83,11 @@ class BoundedHttpBaselineTests(unittest.TestCase):
         self.assertEqual(len(payloads), 8)
         self.assertTrue(
             all(
-                payload["messages"]
-                == [{"role": "user", "content": f"question-{index}"}]
+                payload["messages"] == [{"role": "user", "content": f"question-{index}"}]
                 for index, payload in enumerate(payloads)
             )
         )
-        self.assertTrue(
-            all("prompt" not in payload for payload in payloads)
-        )
+        self.assertTrue(all("prompt" not in payload for payload in payloads))
 
     def test_transport_failure_is_preserved_as_failed_result(self) -> None:
         async def failing_transport(_url: str, _payload: dict) -> dict:
@@ -105,9 +97,7 @@ class BoundedHttpBaselineTests(unittest.TestCase):
             run_bounded_http(
                 (sample_request(1, endpoint_index=0),),
                 BoundedHttpConfig(
-                    endpoint_urls=(
-                        "http://ep0/v1/chat/completions",
-                    ),
+                    endpoint_urls=("http://ep0/v1/chat/completions",),
                     model="model",
                     concurrency_per_endpoint=1,
                     timeout_s=30,
@@ -119,6 +109,45 @@ class BoundedHttpBaselineTests(unittest.TestCase):
 
         self.assertEqual(results[0].status, "failed")
         self.assertIn("endpoint unavailable", results[0].error or "")
+
+    def test_single_shard_preserves_global_endpoint_index(self) -> None:
+        seen_urls: list[str] = []
+
+        async def fake_transport(url: str, _payload: dict) -> dict:
+            seen_urls.append(url)
+            return {
+                "choices": [
+                    {
+                        "message": {"content": "ok"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 4,
+                    "completion_tokens": 1,
+                },
+            }
+
+        results = asyncio.run(
+            run_bounded_http(
+                (sample_request(1, endpoint_index=1),),
+                BoundedHttpConfig(
+                    endpoint_urls=("http://ep1/v1/chat/completions",),
+                    endpoint_index_offset=1,
+                    model="model",
+                    concurrency_per_endpoint=1,
+                    timeout_s=30,
+                    api_key=None,
+                ),
+                transport=fake_transport,
+            )
+        )
+
+        self.assertEqual(
+            seen_urls,
+            ["http://ep1/v1/chat/completions"],
+        )
+        self.assertEqual(results[0].endpoint_index, 1)
 
 
 if __name__ == "__main__":

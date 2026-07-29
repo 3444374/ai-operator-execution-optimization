@@ -24,6 +24,7 @@ class BoundedHttpConfig:
     concurrency_per_endpoint: int
     timeout_s: float
     api_key: str | None
+    endpoint_index_offset: int = 0
     replay_arrivals: bool = True
     arrival_time_scale: float = 1.0
 
@@ -41,7 +42,8 @@ def _validate_config(
     if config.arrival_time_scale <= 0:
         raise ValueError("arrival_time_scale must be positive")
     for request in requests:
-        if not 0 <= request.endpoint_index < len(config.endpoint_urls):
+        local_index = request.endpoint_index - config.endpoint_index_offset
+        if not 0 <= local_index < len(config.endpoint_urls):
             raise ValueError(
                 "request endpoint_index is outside configured endpoints: "
                 f"doc_id={request.doc_id} "
@@ -78,14 +80,10 @@ def _completed_result(
         submitted_at_s=submitted_at_s,
         started_at_s=started_at_s,
         completed_at_s=completed_at_s,
-        input_tokens=int(
-            usage.get("prompt_tokens", request.prompt_tokens)
-        ),
+        input_tokens=int(usage.get("prompt_tokens", request.prompt_tokens)),
         output_tokens=int(usage.get("completion_tokens", 0)),
         output_text=str(content),
-        finish_reason=(
-            str(finish_reason) if finish_reason is not None else None
-        ),
+        finish_reason=(str(finish_reason) if finish_reason is not None else None),
     )
 
 
@@ -95,8 +93,7 @@ async def _run_requests(
     transport: HttpTransport,
 ) -> tuple[BaselineRequestResult, ...]:
     semaphores = tuple(
-        asyncio.Semaphore(config.concurrency_per_endpoint)
-        for _ in config.endpoint_urls
+        asyncio.Semaphore(config.concurrency_per_endpoint) for _ in config.endpoint_urls
     )
     loop = asyncio.get_running_loop()
     replay_start = loop.time()
@@ -108,11 +105,12 @@ async def _run_requests(
             if remaining_s > 0:
                 await asyncio.sleep(remaining_s)
         submitted_at_s = time.time()
-        async with semaphores[request.endpoint_index]:
+        local_index = request.endpoint_index - config.endpoint_index_offset
+        async with semaphores[local_index]:
             started_at_s = time.time()
             try:
                 response = await transport(
-                    config.endpoint_urls[request.endpoint_index],
+                    config.endpoint_urls[local_index],
                     {
                         "model": config.model,
                         "messages": list(request.messages),
@@ -161,9 +159,7 @@ async def run_bounded_http(
     try:
         import httpx
     except ImportError as exc:
-        raise RuntimeError(
-            "bounded HTTP baseline requires the 'httpx' package"
-        ) from exc
+        raise RuntimeError("bounded HTTP baseline requires the 'httpx' package") from exc
 
     headers = {"Content-Type": "application/json"}
     if config.api_key:
@@ -172,6 +168,7 @@ async def run_bounded_http(
         headers=headers,
         timeout=config.timeout_s,
     ) as client:
+
         async def http_transport(
             url: str,
             payload: dict[str, object],

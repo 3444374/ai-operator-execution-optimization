@@ -113,6 +113,7 @@ def _run_adapter(
                     concurrency_per_endpoint=args.concurrency,
                     timeout_s=args.timeout_s,
                     api_key=args.api_key,
+                    endpoint_index_offset=args.endpoint_index,
                     replay_arrivals=not args.disable_arrival_replay,
                     arrival_time_scale=args.arrival_time_scale,
                 ),
