@@ -38,6 +38,23 @@ from src.shared_vllm_experiment import (  # noqa: E402
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_credit_observer_exports_code_root_to_ray_workers(self) -> None:
+        ray_module = MagicMock()
+        ray_module.is_initialized.return_value = False
+
+        with patch.dict(sys.modules, {"ray": ray_module}):
+            shared_vllm._RayCreditObserver(
+                "127.0.0.1:6380",
+                "namespace",
+                "credits",
+                ("task-0", "task-1"),
+            )
+
+        ray_module.init.assert_called_once()
+        runtime_env = ray_module.init.call_args.kwargs["runtime_env"]
+        pythonpath = runtime_env["env_vars"]["PYTHONPATH"].split(os.pathsep)
+        self.assertIn(str(CODE_ROOT), pythonpath)
+
     def test_credit_observer_prewarms_actor_before_replay(self) -> None:
         observer = shared_vllm._RayCreditObserver.__new__(
             shared_vllm._RayCreditObserver

@@ -166,6 +166,12 @@ Remote progress on 2026-07-29:
   the 2s hard gate: pre-create and validate the actor, then compute the future
   epoch and launch children. The new prewarm contract and 144 related tests
   pass. Publish and use a fourth fresh gate directory.
+- Commit `e45fe1c` passed 436/436 remote tests. The fourth gate stopped before
+  the shared arm because the group runner's Ray connection did not export
+  `code/` on worker `PYTHONPATH`; the prewarmed actor could not import `src`.
+- Keep prewarming before the barrier and give the observer the same explicit
+  runtime environment as the profiler. The new Ray-init contract and 145
+  related tests pass. Publish and use a fifth fresh gate directory.
 
 ## Stop conditions
 

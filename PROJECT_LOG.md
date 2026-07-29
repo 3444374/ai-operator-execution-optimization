@@ -2405,3 +2405,14 @@
   在计算未来 replay epoch 之前创建、核对配置并 snapshot 所有 endpoint，
   profiler child 只复用已存在 actor。相关 144 项测试全部通过。发布后必须用
   第四个全新 gate 目录验证首提交迟到是否消失。
+- 预热修复提交 `e45fe1c869e45f230eec878f42e305eaa5e249bf` 同步后，
+  远端完整测试增至 436 项并全部通过。第四个全新 gate
+  `experiments/results/dual_gpu_shared_vllm_gate_20260729_1112/` 再次完成
+  `independent_full`，但 runner 预创建 `_FairCreditActor` 时 Ray worker 报
+  `ModuleNotFoundError: No module named 'src'`，因此在 shared arm 执行前失败。
+  原因是 profiler 连接 Ray 时会把 `code/` 注入 worker `PYTHONPATH`，而新加的
+  group-runner observer 只传了 address，没有复用该 runtime environment。
+- 保持 barrier 前预热设计不变；测试先行新增 Ray init 契约，observer 现在把
+  `_CODE_ROOT` 与已有 `PYTHONPATH` 合并后通过 `runtime_env.env_vars` 传给 worker。
+  相关 145 项测试全部通过。发布后仍使用第五个全新目录验证，不复用已有失败
+  actor 或输出。

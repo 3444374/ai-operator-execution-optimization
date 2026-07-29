@@ -1328,6 +1328,16 @@ def _nonnegative_float_tuple(
     return tuple(resolved)
 
 
+def _ray_runtime_env() -> dict[str, dict[str, str]]:
+    pythonpath = str(_CODE_ROOT)
+    existing_pythonpath = os.environ.get("PYTHONPATH")
+    if existing_pythonpath:
+        pythonpath = os.pathsep.join(
+            [pythonpath, existing_pythonpath]
+        )
+    return {"env_vars": {"PYTHONPATH": pythonpath}}
+
+
 class _RayCreditObserver:
     def __init__(
         self,
@@ -1344,7 +1354,11 @@ class _RayCreditObserver:
         self.endpoint_ids = endpoint_ids
         self.actor = None
         if not ray.is_initialized():
-            ray.init(address=address, ignore_reinit_error=True)
+            ray.init(
+                address=address,
+                ignore_reinit_error=True,
+                runtime_env=_ray_runtime_env(),
+            )
 
     def prewarm(
         self,
