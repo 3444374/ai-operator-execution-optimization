@@ -8,6 +8,7 @@
     "http://127.0.0.1:8001/v1/chat/completions"
   ],
   "model": "qwen2.5-7b",
+  "tokenizer": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
   "completion_protocol": "chat_completions",
   "temperature": 0.0,
   "manifest": "/root/autodl-tmp/gates/official_baseline_gate_manifest.jsonl",

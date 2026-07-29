@@ -94,9 +94,7 @@ def _service_fingerprint(args: argparse.Namespace) -> str:
 def _chat_base_url(endpoint_url: str) -> str:
     suffix = "/chat/completions"
     if not endpoint_url.endswith(suffix):
-        raise ValueError(
-            "endpoint URL must end with /v1/chat/completions"
-        )
+        raise ValueError("endpoint URL must end with /v1/chat/completions")
     return endpoint_url[: -len(suffix)]
 
 
@@ -123,11 +121,7 @@ def _run_adapter(
         return run_daft_prompt(
             requests,
             DaftPromptConfig(
-                runner=(
-                    "native"
-                    if args.adapter == "daft_native"
-                    else "ray"
-                ),
+                runner=("native" if args.adapter == "daft_native" else "ray"),
                 base_url=_chat_base_url(args.endpoint_url),
                 api_key=args.api_key,
                 model=args.model,
@@ -156,9 +150,7 @@ def _run_adapter(
         }
         missing = [name for name, value in required.items() if not value]
         if missing:
-            raise ValueError(
-                "missing OceanBase options: " + ", ".join(missing)
-            )
+            raise ValueError("missing OceanBase options: " + ", ".join(missing))
         return run_oceanbase_ai_complete(
             requests,
             OceanBaseConfig(
@@ -172,46 +164,36 @@ def _run_adapter(
                 endpoint_url=args.endpoint_url,
                 access_key=args.api_key or "not-needed",
                 parallel_degree=args.oceanbase_parallel_degree,
-                source_table=(
-                    f"baseline_requests_ep{args.endpoint_index}"
-                ),
-                result_table=(
-                    f"baseline_results_ep{args.endpoint_index}"
-                ),
+                source_table=(f"baseline_requests_ep{args.endpoint_index}"),
+                result_table=(f"baseline_results_ep{args.endpoint_index}"),
                 register_model=args.oceanbase_register_model,
             ),
         )
-    raise ValueError(
-        "vllm_bench is prepared and executed by its dedicated branch"
-    )
+    raise ValueError("vllm_bench is prepared and executed by its dedicated branch")
 
 
 def _run_shard(args: argparse.Namespace) -> dict[str, object]:
     manifest = read_manifest(args.manifest)
     requests = tuple(
-        request
-        for request in manifest
-        if request.endpoint_index == args.endpoint_index
+        request for request in manifest if request.endpoint_index == args.endpoint_index
     )
     if not requests:
         raise ValueError("selected endpoint shard is empty")
     _chat_base_url(args.endpoint_url)
-    if (
-        args.adapter in {"daft_ray", "ray_data_http"}
-        and not args.ray_address
-    ):
-        raise ValueError(
-            f"{args.adapter} requires an explicit --ray-address"
-        )
+    if args.adapter in {"daft_ray", "ray_data_http"} and not args.ray_address:
+        raise ValueError(f"{args.adapter} requires an explicit --ray-address")
+    if args.adapter == "vllm_bench":
+        if not args.tokenizer:
+            raise ValueError("vllm_bench requires an explicit --tokenizer local directory")
+        if not Path(args.tokenizer).is_dir():
+            raise ValueError("vllm_bench --tokenizer must be an existing local directory")
     base_summary: dict[str, object] = {
         "adapter": args.adapter,
         "status": "dry_run" if args.dry_run else "running",
         "request_count": len(requests),
         "endpoint_index": args.endpoint_index,
         "endpoint_url": args.endpoint_url,
-        "predicted_work": sum(
-            request.estimated_work for request in requests
-        ),
+        "predicted_work": sum(request.estimated_work for request in requests),
         "model_name": args.model,
         "completion_protocol": "chat_completions",
         "service_config_sha256": _service_fingerprint(args),
@@ -221,9 +203,7 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
 
     output_dir = Path(args.output_dir)
     if output_dir.exists():
-        raise FileExistsError(
-            f"output directory already exists: {output_dir}"
-        )
+        raise FileExistsError(f"output directory already exists: {output_dir}")
     output_dir.mkdir(parents=True)
     raw_dir = output_dir / "raw"
     raw_dir.mkdir()
@@ -242,10 +222,9 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
         command = build_vllm_bench_command(
             VllmBenchConfig(
                 python_executable=args.python_executable,
-                base_url=_chat_base_url(args.endpoint_url).removesuffix(
-                    "/v1"
-                ),
+                base_url=_chat_base_url(args.endpoint_url).removesuffix("/v1"),
                 model=args.model,
+                tokenizer=args.tokenizer,
                 dataset_path=dataset_path,
                 result_dir=raw_dir,
                 result_filename="vllm_bench.json",
@@ -288,8 +267,7 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
                 "error": f"{type(exc).__name__}: {exc}",
                 "observed_result_count": len(results),
                 "failed_result_count": sum(
-                    result.status != "completed" or bool(result.error)
-                    for result in results
+                    result.status != "completed" or bool(result.error) for result in results
                 ),
                 "worker_failures": 0,
             },
@@ -299,12 +277,8 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
         **base_summary,
         **result_summary,
         "status": "completed",
-        "vllm_num_requests_running_final": (
-            args.vllm_running_final
-        ),
-        "vllm_num_requests_waiting_final": (
-            args.vllm_waiting_final
-        ),
+        "vllm_num_requests_running_final": (args.vllm_running_final),
+        "vllm_num_requests_waiting_final": (args.vllm_waiting_final),
         "worker_failures": 0,
     }
     _atomic_json(output_dir / "summary.json", normalized)
@@ -312,12 +286,7 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
 
 
 def _export_manifest(args: argparse.Namespace) -> dict[str, object]:
-    rows = [
-        json.loads(line)
-        for line in Path(args.input).read_text(
-            encoding="utf-8"
-        ).splitlines()
-    ]
+    rows = [json.loads(line) for line in Path(args.input).read_text(encoding="utf-8").splitlines()]
     requests = tuple(
         ChatRequest(
             **{
@@ -340,9 +309,7 @@ def _connect_postgres(database_url: str):
     try:
         import psycopg
     except ImportError as exc:
-        raise RuntimeError(
-            "PostgreSQL manifest export requires psycopg"
-        ) from exc
+        raise RuntimeError("PostgreSQL manifest export requires psycopg") from exc
     return psycopg.connect(database_url)
 
 
@@ -366,8 +333,7 @@ def _export_postgres_manifest(
     endpoint_work: dict[int, int] = {}
     for request in assigned:
         endpoint_work[request.endpoint_index] = (
-            endpoint_work.get(request.endpoint_index, 0)
-            + request.estimated_work
+            endpoint_work.get(request.endpoint_index, 0) + request.estimated_work
         )
     work_values = list(endpoint_work.values())
     work_skew = (
@@ -414,36 +380,26 @@ def _normalize_vllm_bench(
 ) -> dict[str, object]:
     manifest = read_manifest(args.manifest)
     requests = tuple(
-        request
-        for request in manifest
-        if request.endpoint_index == args.endpoint_index
+        request for request in manifest if request.endpoint_index == args.endpoint_index
     )
     raw = json.loads(Path(args.input).read_text(encoding="utf-8"))
     input_lens = raw.get("input_lens") or raw.get("input_lengths")
     output_lens = raw.get("output_lens") or raw.get("output_lengths")
-    latencies = (
-        raw.get("request_latencies")
-        or raw.get("e2els")
-        or raw.get("e2e_latencies")
-    )
-    if not all(isinstance(values, list) for values in (
-        input_lens,
-        output_lens,
-        latencies,
-    )):
+    latencies = raw.get("request_latencies") or raw.get("e2els") or raw.get("e2e_latencies")
+    if not all(
+        isinstance(values, list)
+        for values in (
+            input_lens,
+            output_lens,
+            latencies,
+        )
+    ):
         raise ValueError(
             "unsupported vLLM detailed result: expected input_lens, "
             "output_lens and request_latencies/e2els arrays"
         )
-    if not (
-        len(requests)
-        == len(input_lens)
-        == len(output_lens)
-        == len(latencies)
-    ):
-        raise ValueError(
-            "vLLM detailed result length does not match manifest shard"
-        )
+    if not (len(requests) == len(input_lens) == len(output_lens) == len(latencies)):
+        raise ValueError("vLLM detailed result length does not match manifest shard")
     results = tuple(
         BaselineRequestResult(
             doc_id=request.doc_id,
@@ -467,9 +423,7 @@ def _normalize_vllm_bench(
     )
     output_dir = Path(args.output_dir)
     if output_dir.exists():
-        raise FileExistsError(
-            f"output directory already exists: {output_dir}"
-        )
+        raise FileExistsError(f"output directory already exists: {output_dir}")
     output_dir.mkdir(parents=True)
     summary = {
         **summarize_results(requests, results),
@@ -477,9 +431,7 @@ def _normalize_vllm_bench(
         "status": "completed",
         "endpoint_index": args.endpoint_index,
         "endpoint_url": args.endpoint_url,
-        "predicted_work": sum(
-            request.estimated_work for request in requests
-        ),
+        "predicted_work": sum(request.estimated_work for request in requests),
         "model_name": args.model,
         "completion_protocol": "chat_completions",
         "service_config_sha256": _service_fingerprint(args),
@@ -498,13 +450,10 @@ def _validate_gate_command(
     report = validate_gate(
         manifest=read_manifest(args.manifest),
         summaries=tuple(
-            json.loads(Path(path).read_text(encoding="utf-8"))
-            for path in args.summary
+            json.loads(Path(path).read_text(encoding="utf-8")) for path in args.summary
         ),
         request_results=tuple(
-            result
-            for path in args.request_results
-            for result in _read_result_csv(path)
+            result for path in args.request_results for result in _read_result_csv(path)
         ),
     )
     payload = {
@@ -529,9 +478,7 @@ def _parser() -> argparse.ArgumentParser:
     export.add_argument("--output", required=True)
     export.add_argument("--endpoint-count", type=int, required=True)
 
-    postgres_export = commands.add_parser(
-        "export-postgres-manifest"
-    )
+    postgres_export = commands.add_parser("export-postgres-manifest")
     postgres_export.add_argument("--database-url", required=True)
     postgres_export.add_argument("--workload-name", required=True)
     postgres_export.add_argument("--row-count", type=int, required=True)
@@ -559,6 +506,7 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--endpoint-index", type=int, required=True)
     run.add_argument("--endpoint-url", required=True)
     run.add_argument("--model", required=True)
+    run.add_argument("--tokenizer")
     run.add_argument("--concurrency", type=int, default=1)
     run.add_argument("--batch-size", type=int, default=1)
     run.add_argument("--timeout-s", type=float, default=120.0)

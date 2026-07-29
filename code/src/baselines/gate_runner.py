@@ -55,6 +55,7 @@ class CoreGateConfig:
     rows_total: int
     endpoint_urls: tuple[str, ...]
     model: str
+    tokenizer: str | None
     manifest: Path
     output_root: Path
     cells: tuple[CoreGateCell, ...]
@@ -156,11 +157,18 @@ def load_core_gate_config(
         )
     if not cells:
         raise ValueError("config contains no runnable core gate cells")
+    tokenizer = payload.get("tokenizer")
+    if any(cell.adapter == "vllm_bench" for cell in cells):
+        if not isinstance(tokenizer, str) or not tokenizer.strip():
+            raise ValueError("vllm_bench cell requires an explicit tokenizer local directory")
+        if not Path(tokenizer).is_dir():
+            raise ValueError("vllm_bench tokenizer must be an existing local directory")
     return CoreGateConfig(
         experiment_id=str(payload.get("experiment_id", "core_gate")),
         rows_total=rows_total,
         endpoint_urls=endpoint_urls,
         model=model,
+        tokenizer=(str(tokenizer) if tokenizer is not None else None),
         manifest=manifest,
         output_root=output_root,
         cells=tuple(cells),
@@ -279,7 +287,16 @@ def _shard_command(
     if cell.ray_address:
         command.extend(["--ray-address", cell.ray_address])
     if cell.adapter == "vllm_bench":
-        command.extend(["--python-executable", vllm_python])
+        if config.tokenizer is None:
+            raise ValueError("vllm_bench tokenizer is missing")
+        command.extend(
+            [
+                "--python-executable",
+                vllm_python,
+                "--tokenizer",
+                config.tokenizer,
+            ]
+        )
     return command
 
 
@@ -412,6 +429,7 @@ def run_core_gate(
         "rows_total": config.rows_total,
         "endpoint_urls": list(config.endpoint_urls),
         "model": config.model,
+        "tokenizer": config.tokenizer,
         "manifest": str(config.manifest),
         "output_root": str(config.output_root),
         "driver_python": driver_python,

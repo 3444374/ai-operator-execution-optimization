@@ -15,6 +15,7 @@ class VllmBenchConfig:
     python_executable: str
     base_url: str
     model: str
+    tokenizer: str
     dataset_path: Path
     result_dir: Path
     result_filename: str
@@ -70,6 +71,8 @@ def build_vllm_bench_command(
         "/v1/chat/completions",
         "--model",
         config.model,
+        "--tokenizer",
+        config.tokenizer,
         "--dataset-name",
         "custom",
         "--dataset-path",

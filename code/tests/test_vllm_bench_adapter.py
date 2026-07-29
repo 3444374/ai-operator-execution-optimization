@@ -41,6 +41,7 @@ class VllmBenchAdapterTests(unittest.TestCase):
                 python_executable="/venv/bin/python",
                 base_url="http://127.0.0.1:8000",
                 model="qwen",
+                tokenizer="/models/qwen",
                 dataset_path=Path("/tmp/shard0.jsonl"),
                 result_dir=Path("/tmp/results"),
                 result_filename="ep0.json",
@@ -66,6 +67,10 @@ class VllmBenchAdapterTests(unittest.TestCase):
         self.assertIn("--custom-output-len", command)
         self.assertIn("-1", command)
         self.assertIn("--save-detailed", command)
+        self.assertEqual(
+            command[command.index("--tokenizer") + 1],
+            "/models/qwen",
+        )
         self.assertEqual(
             command[command.index("--temperature") + 1],
             "0",

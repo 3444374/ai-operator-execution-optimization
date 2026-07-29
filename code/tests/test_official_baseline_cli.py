@@ -111,10 +111,38 @@ class OfficialBaselineCliTests(unittest.TestCase):
                         "--endpoint-index",
                         "0",
                         "--endpoint-url",
-                        (
-                            "http://127.0.0.1:8000"
-                            "/v1/chat/completions"
-                        ),
+                        ("http://127.0.0.1:8000/v1/chat/completions"),
+                        "--model",
+                        "qwen",
+                        "--output-dir",
+                        str(root / "output"),
+                        "--dry-run",
+                    ]
+                )
+
+    def test_vllm_bench_dry_run_requires_explicit_tokenizer(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            self._write_balanced_manifest(manifest)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "explicit --tokenizer",
+            ):
+                run_cli(
+                    [
+                        "run-shard",
+                        "--adapter",
+                        "vllm_bench",
+                        "--manifest",
+                        str(manifest),
+                        "--endpoint-index",
+                        "0",
+                        "--endpoint-url",
+                        ("http://127.0.0.1:8000/v1/chat/completions"),
                         "--model",
                         "qwen",
                         "--output-dir",
@@ -195,12 +223,7 @@ class OfficialBaselineCliTests(unittest.TestCase):
             )
             self.assertEqual(result["row_count"], 4)
             self.assertEqual(result["workload_name"], "sharegpt_burstgpt")
-            frozen = [
-                json.loads(line)
-                for line in output.read_text(
-                    encoding="utf-8"
-                ).splitlines()
-            ]
+            frozen = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines()]
             self.assertEqual(
                 {row["endpoint_index"] for row in frozen},
                 {0, 1},
@@ -226,10 +249,7 @@ class OfficialBaselineCliTests(unittest.TestCase):
                         "--endpoint-index",
                         str(endpoint_index),
                         "--endpoint-url",
-                        (
-                            f"http://127.0.0.1:{port}"
-                            "/v1/chat/completions"
-                        ),
+                        (f"http://127.0.0.1:{port}/v1/chat/completions"),
                         "--model",
                         "qwen",
                         "--output-dir",
@@ -281,10 +301,7 @@ class OfficialBaselineCliTests(unittest.TestCase):
                             "--endpoint-index",
                             "0",
                             "--endpoint-url",
-                            (
-                                "http://127.0.0.1:8000"
-                                "/v1/chat/completions"
-                            ),
+                            ("http://127.0.0.1:8000/v1/chat/completions"),
                             "--model",
                             "qwen",
                             "--output-dir",
@@ -293,9 +310,7 @@ class OfficialBaselineCliTests(unittest.TestCase):
                     )
 
             self.assertTrue((output_dir / "requests.csv").exists())
-            summary = json.loads(
-                (output_dir / "summary.json").read_text(encoding="utf-8")
-            )
+            summary = json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
             self.assertEqual(summary["status"], "failed")
             self.assertIn(
                 "exactly-once validation failed",
@@ -361,9 +376,7 @@ class OfficialBaselineCliTests(unittest.TestCase):
             result_paths: list[Path] = []
             for endpoint_index in (0, 1):
                 endpoint_requests = tuple(
-                    request
-                    for request in requests
-                    if request.endpoint_index == endpoint_index
+                    request for request in requests if request.endpoint_index == endpoint_index
                 )
                 summary_path = root / f"summary-{endpoint_index}.json"
                 summary_path.write_text(

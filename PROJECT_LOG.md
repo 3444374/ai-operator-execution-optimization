@@ -27,7 +27,11 @@
   frozen Chat arm 使用不同采样语义。首轮 core gate 随后 fail closed：
   `python -m vllm.benchmarks.serve` 返回 0 却不执行 CLI，因此无结果 JSON；
   安装包确认官方入口为 `vllm.entrypoints.cli.main`，命令已改为
-  `python -m vllm.entrypoints.cli.main bench serve`，失败目录完整保留。
+  `python -m vllm.entrypoints.cli.main bench serve`，失败目录完整保留。第二轮
+  随后在请求前暴露 tokenizer 漏项：served alias 被当成 Hugging Face repo，
+  两端均未发请求并出现网络重试。确认 queue 始终为 0 后终止无效 client，
+  runner 正常写失败状态；模板、gate runner 与 shard CLI 现强制使用存在的
+  本地 `MODEL_PATH` tokenizer 目录。
   已验证的依赖、未跟踪文件冲突备份、CRLF hash、Ray Serve extra、vLLM
   0.25.1 结果字段、失败证据保存和 service fingerprint 处理均记录在
   `deploy/autodl/README.md`，不依赖新会话重新探索。
