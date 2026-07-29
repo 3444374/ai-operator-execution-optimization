@@ -23,6 +23,7 @@ import pyarrow as pa
 EmbeddingBackendName = Literal["fake", "compatible_http", "http_openai"]
 CompletionBackendName = Literal["fake", "compatible_http", "http_openai", "ollama"]
 CompletionPromptFormat = Literal["raw", "chatml"]
+CompletionProtocol = Literal["completions", "chat_completions"]
 
 
 @dataclass(frozen=True)
@@ -48,6 +49,31 @@ def format_completion_prompts(
             for prompt in prompts
         ]
     raise ValueError(f"Unknown completion prompt format: {prompt_format}")
+
+
+def _completion_request_body(
+    model_name: str,
+    prompts: list[str],
+    max_tokens: int,
+    protocol: CompletionProtocol,
+) -> dict:
+    if protocol == "completions":
+        return {
+            "model": model_name,
+            "prompt": prompts,
+            "max_tokens": max_tokens,
+        }
+    if protocol == "chat_completions":
+        if len(prompts) != 1:
+            raise ValueError(
+                "Chat Completions requires one complete prompt per HTTP request"
+            )
+        return {
+            "model": model_name,
+            "messages": [{"role": "user", "content": prompts[0]}],
+            "max_tokens": max_tokens,
+        }
+    raise ValueError(f"Unknown completion protocol: {protocol}")
 
 
 def normalize_embedding_backend(name: EmbeddingBackendName) -> Literal["fake", "compatible_http"]:
@@ -108,12 +134,14 @@ def call_compatible_completion_endpoint(
     return_token_ids: bool = False,
     prompt_format: CompletionPromptFormat = "raw",
     temperature: float | None = None,
+    protocol: CompletionProtocol = "completions",
 ) -> CompletionEndpointResult:
-    request_body = {
-        "model": model_name,
-        "prompt": format_completion_prompts(prompts, prompt_format),
-        "max_tokens": max_tokens,
-    }
+    request_body = _completion_request_body(
+        model_name,
+        format_completion_prompts(prompts, prompt_format),
+        max_tokens,
+        protocol,
+    )
     if return_token_ids:
         request_body["return_token_ids"] = True
     if temperature is not None:
@@ -334,6 +362,7 @@ class CompatibleHTTPCompletionActor:
         return_token_ids: bool = False,
         prompt_format: CompletionPromptFormat = "raw",
         temperature: float | None = None,
+        protocol: CompletionProtocol = "completions",
     ):
         self.endpoint_url = endpoint_url
         self.model_name = model_name
@@ -343,6 +372,7 @@ class CompatibleHTTPCompletionActor:
         self.return_token_ids = return_token_ids
         self.prompt_format = prompt_format
         self.temperature = temperature
+        self.protocol = protocol
 
     def complete(self, batch: pa.RecordBatch | pa.Table) -> dict:
         service_start = time.perf_counter()
@@ -358,6 +388,7 @@ class CompatibleHTTPCompletionActor:
             return_token_ids=self.return_token_ids,
             prompt_format=self.prompt_format,
             temperature=self.temperature,
+            protocol=self.protocol,
         )
         outputs = endpoint_result.outputs
         input_token_count = sum(text_token_count(prompt) for prompt in prompts)
@@ -444,6 +475,7 @@ def compatible_http_complete_batch(
     return_token_ids: bool = False,
     prompt_format: CompletionPromptFormat = "raw",
     temperature: float | None = None,
+    protocol: CompletionProtocol = "completions",
 ) -> dict:
     return CompatibleHTTPCompletionActor(
         endpoint_url,
@@ -454,6 +486,7 @@ def compatible_http_complete_batch(
         return_token_ids,
         prompt_format,
         temperature,
+        protocol,
     ).complete(batch)
 
 

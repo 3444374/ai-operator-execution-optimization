@@ -927,6 +927,7 @@ def submit_python_compatible_http_batches(
     completion_return_token_ids: bool = False,
     completion_prompt_format: str = "raw",
     completion_temperature: float | None = None,
+    completion_protocol: str = "completions",
 ) -> tuple[list[dict], dict]:
     results = []
     invocation_count = 0
@@ -950,6 +951,7 @@ def submit_python_compatible_http_batches(
                     completion_return_token_ids,
                     completion_prompt_format,
                     completion_temperature,
+                    completion_protocol,
                 )
             )
         invocation_count += 1
@@ -1487,6 +1489,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
             "completion_return_token_ids": args.completion_return_token_ids,
             "completion_prompt_format": args.completion_prompt_format,
+            "completion_protocol": args.completion_protocol,
             "completion_temperature": (
                 args.completion_temperature
                 if args.completion_temperature is not None
@@ -1704,6 +1707,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                                         args.completion_return_token_ids,
                                         args.completion_prompt_format,
                                         args.completion_temperature,
+                                        args.completion_protocol,
                                     ]
                                     if (
                                         model_backend == "compatible_http"
@@ -1713,6 +1717,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                                             != "raw"
                                             or args.completion_temperature
                                             is not None
+                                            or args.completion_protocol
+                                            != "completions"
                                         )
                                     )
                                     else []
@@ -1991,6 +1997,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     ),
                     completion_prompt_format=args.completion_prompt_format,
                     completion_temperature=args.completion_temperature,
+                    completion_protocol=args.completion_protocol,
                 )
             if replay_envelopes is not None:
                 raise RuntimeError("arrival replay requires a Ray executor")
@@ -2012,6 +2019,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 args.completion_return_token_ids,
                 args.completion_prompt_format,
                 args.completion_temperature,
+                args.completion_protocol,
             )
 
         organizer_warnings = []
@@ -2452,6 +2460,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
             "completion_return_token_ids": args.completion_return_token_ids,
             "completion_prompt_format": args.completion_prompt_format,
+            "completion_protocol": args.completion_protocol,
             "completion_temperature": (
                 args.completion_temperature
                 if args.completion_temperature is not None

@@ -161,6 +161,59 @@ class ModelBackendTests(unittest.TestCase):
         self.assertEqual(result.output_token_counts, [None])
         self.assertEqual(result.finish_reasons, ["stop"])
 
+    def test_chat_completion_endpoint_sends_one_message_per_prompt(
+        self,
+    ) -> None:
+        response_body = json.dumps(
+            {
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"content": "answer"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 4,
+                    "completion_tokens": 2,
+                    "total_tokens": 6,
+                },
+            }
+        ).encode("utf-8")
+
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return None
+
+            def read(self):
+                return response_body
+
+        with patch(
+            "src.model_backends.request.urlopen",
+            return_value=Response(),
+        ) as urlopen:
+            result = call_compatible_completion_endpoint(
+                "http://localhost/v1/chat/completions",
+                "model",
+                ["question"],
+                None,
+                1.0,
+                8,
+                protocol="chat_completions",
+                temperature=0.0,
+            )
+
+        sent = json.loads(urlopen.call_args.args[0].data.decode("utf-8"))
+        self.assertEqual(
+            sent["messages"],
+            [{"role": "user", "content": "question"}],
+        )
+        self.assertNotIn("prompt", sent)
+        self.assertEqual(result.outputs, ["answer"])
+
     def test_fake_embedding_batch_returns_expected_shape(self) -> None:
         result = fake_embed_batch(sample_table(), embedding_dim=4, service_tokens_per_s=1_000_000.0)
 

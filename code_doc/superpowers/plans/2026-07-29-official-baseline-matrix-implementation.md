@@ -42,6 +42,7 @@ RTX 4090.
 **Files:**
 - Modify: `code/src/model_backends.py`
 - Modify: `code/src/profiling/cli.py`
+- Modify: `code/src/profiling/ray.py`
 - Modify: `code/scripts/postgres_ai_operator_profile.py`
 - Modify: `code/src/profiling/schema.py`
 - Test: `code/tests/test_model_backends.py`
@@ -53,7 +54,7 @@ RTX 4090.
 - Produces: `CompletionProtocol = Literal["completions", "chat_completions"]`
   and `--completion-protocol`.
 
-- [ ] **Step 1: Write the failing backend request-body test**
+- [x] **Step 1: Write the failing backend request-body test**
 
 ```python
 def _json_response(payload: dict):
@@ -109,7 +110,7 @@ def test_chat_completion_endpoint_sends_one_message_per_prompt(self) -> None:
     self.assertEqual(result.outputs, ["answer"])
 ```
 
-- [ ] **Step 2: Run the test and witness RED**
+- [x] **Step 2: Run the test and witness RED**
 
 Run:
 
@@ -120,7 +121,7 @@ Run:
 Expected: FAIL because `call_compatible_completion_endpoint()` does not accept
 `protocol`.
 
-- [ ] **Step 3: Implement the minimal protocol switch**
+- [x] **Step 3: Implement the minimal protocol switch**
 
 ```python
 CompletionProtocol = Literal["completions", "chat_completions"]
@@ -149,7 +150,7 @@ def _completion_request_body(
 Thread `protocol` through the completion actor and task helper without changing
 the default `completions` behavior.
 
-- [ ] **Step 4: Write and witness the profiler CLI RED test**
+- [x] **Step 4: Write and witness the profiler CLI RED test**
 
 ```python
 def test_chat_protocol_is_recorded_in_dry_run_summary(self) -> None:
@@ -177,7 +178,7 @@ Run:
 
 Expected: FAIL because the CLI and summary schema do not expose the field.
 
-- [ ] **Step 5: Add the CLI field and propagate it**
+- [x] **Step 5: Add the CLI field and propagate it**
 
 ```python
 parser.add_argument(
@@ -190,7 +191,7 @@ parser.add_argument(
 Pass `args.completion_protocol` to Python, Ray task, and Ray actor completion
 paths, and add `completion_protocol` to the formal ordered summary schema.
 
-- [ ] **Step 6: Run focused and full tests**
+- [x] **Step 6: Run focused and full tests**
 
 Run:
 
@@ -202,7 +203,7 @@ Run:
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add code/src/model_backends.py code/src/profiling/cli.py code/src/profiling/schema.py code/scripts/postgres_ai_operator_profile.py code/tests/test_model_backends.py code/tests/test_postgres_profile_scheduling.py

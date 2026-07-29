@@ -125,6 +125,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=["raw", "chatml"],
         default="raw",
     )
+    parser.add_argument(
+        "--completion-protocol",
+        choices=["completions", "chat_completions"],
+        default="completions",
+    )
     parser.add_argument("--completion-temperature", type=float)
     parser.add_argument(
         "--output-cost-mode",

@@ -2550,6 +2550,26 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
         self.assertEqual(filtered_row["source_max_prompt_tokens"], 1500)
 
+    def test_chat_protocol_is_recorded_in_dry_run_summary(self) -> None:
+        row = profile.run_once(
+            profile.parse_args(
+                [
+                    "--dry-run",
+                    "--operator",
+                    "ai_complete",
+                    "--completion-protocol",
+                    "chat_completions",
+                ]
+            ),
+            "formal",
+            0,
+        )
+
+        self.assertEqual(
+            row["completion_protocol"],
+            "chat_completions",
+        )
+
     def test_dry_run_rejects_invalid_completion_observation_inputs(
         self,
     ) -> None:
@@ -3641,10 +3661,13 @@ class StaticTaskSchedulingTests(unittest.TestCase):
             completion_return_token_ids=True,
         )
 
-        self.assertTrue(all(call[-3] is True for call in remote.calls))
-        self.assertTrue(all(call[-2] == "raw" for call in remote.calls))
-        self.assertTrue(all(call[-1] is None for call in remote.calls))
-        self.assertTrue(all(len(call) == 9 for call in remote.calls))
+        self.assertTrue(all(call[-4] is True for call in remote.calls))
+        self.assertTrue(all(call[-3] == "raw" for call in remote.calls))
+        self.assertTrue(all(call[-2] is None for call in remote.calls))
+        self.assertTrue(
+            all(call[-1] == "completions" for call in remote.calls)
+        )
+        self.assertTrue(all(len(call) == 10 for call in remote.calls))
 
     def test_adaptive_task_path_remains_isolated_from_static_scheduler(self) -> None:
         remote = _RecordingRemote()

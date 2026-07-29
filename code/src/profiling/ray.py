@@ -476,6 +476,7 @@ def submit_ray_tasks(
     completion_return_token_ids: bool = False,
     completion_prompt_format: str = "raw",
     completion_temperature: float | None = None,
+    completion_protocol: str = "completions",
     per_endpoint_limit: int | None = None,
     per_endpoint_work_limit: int | None = None,
     shared_credit_config: dict | None = None,
@@ -508,6 +509,7 @@ def submit_ray_tasks(
             completion_return_token_ids,
             completion_prompt_format,
             completion_temperature,
+            completion_protocol,
         )
 
     envelopes = (
@@ -553,6 +555,7 @@ def submit_ray_tasks(
                     completion_return_token_ids
                     or completion_prompt_format != "raw"
                     or completion_temperature is not None
+                    or completion_protocol != "completions"
                 )
             ):
                 submitters[endpoint_id] = (
@@ -566,6 +569,7 @@ def submit_ray_tasks(
                         completion_return_token_ids,
                         completion_prompt_format,
                         completion_temperature,
+                        completion_protocol,
                     )
                 )
             else:
@@ -650,6 +654,7 @@ def _submit_ray_tasks_legacy_adaptive(
     completion_return_token_ids: bool = False,
     completion_prompt_format: str = "raw",
     completion_temperature: float | None = None,
+    completion_protocol: str = "completions",
 ) -> tuple[list[dict], dict]:
     pending = []
     results = []
@@ -699,6 +704,7 @@ def _submit_ray_tasks_legacy_adaptive(
                     completion_return_token_ids
                     or completion_prompt_format != "raw"
                     or completion_temperature is not None
+                    or completion_protocol != "completions"
                 )
             ):
                 pending.append(
@@ -712,6 +718,7 @@ def _submit_ray_tasks_legacy_adaptive(
                         completion_return_token_ids,
                         completion_prompt_format,
                         completion_temperature,
+                        completion_protocol,
                     )
                 )
             else:
