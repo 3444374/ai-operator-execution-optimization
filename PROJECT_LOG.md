@@ -1,5 +1,19 @@
 # 项目日志
 
+## 2026-07-29 开题答辩 PPT v6 设计冻结
+
+- 审阅 `opening_defense_20260720_v5.pptx` 后，确认下一版不做局部美化，
+  而是按 2026-07-29 当前正式证据重构为“完整正文 + 可跳过证据页 +
+  答辩备份页”。
+- 新增 `opening/slides/opening_defense_v6_design.md`，冻结约 31 页正文、
+  8 页备份的页面结构、三张核心架构图语义、内容修正项、同步范围和 QA
+  验收门禁。
+- 架构图采用一张高信息密度总体执行架构图，加 Request Shaping 和 Runtime
+  Credit Lifecycle 两张局部放大图；vLLM 保持黑盒，写回保持工程 baseline，
+  completion 时释放 endpoint-shared request/work credit。
+- 设计阶段尚未修改 v5 或生成 v6 PPTX。后续必须从 v5 复制并使用
+  `python-pptx` 增量编辑，不得重跑 `build_ppt.py` 覆盖人工版式。
+
 ## 2026-07-29 文献基线版本升级
 
 - 题录核验并新增 VTC、Llumnix、LOTUS、Palimpzest、Abacus、SemBench、
