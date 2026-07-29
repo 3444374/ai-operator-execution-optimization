@@ -30,6 +30,7 @@ from .official_runtime import (
     run_ray_data_http,
 )
 from .results import summarize_results
+from .postgres_manifest import load_postgres_requests
 from .vllm_bench import (
     VllmBenchConfig,
     build_vllm_bench_command,
@@ -335,6 +336,58 @@ def _export_manifest(args: argparse.Namespace) -> dict[str, object]:
     }
 
 
+def _connect_postgres(database_url: str):
+    try:
+        import psycopg
+    except ImportError as exc:
+        raise RuntimeError(
+            "PostgreSQL manifest export requires psycopg"
+        ) from exc
+    return psycopg.connect(database_url)
+
+
+def _export_postgres_manifest(
+    args: argparse.Namespace,
+) -> dict[str, object]:
+    with _connect_postgres(args.database_url) as connection:
+        requests = load_postgres_requests(
+            connection,
+            workload_name=args.workload_name,
+            row_count=args.row_count,
+            row_offset=args.row_offset,
+            max_output_tokens=args.max_output_tokens,
+            estimated_output_mode=args.estimated_output_mode,
+        )
+    assigned = assign_endpoint_shards(
+        requests,
+        args.endpoint_count,
+    )
+    metadata = write_manifest(args.output, assigned)
+    endpoint_work: dict[int, int] = {}
+    for request in assigned:
+        endpoint_work[request.endpoint_index] = (
+            endpoint_work.get(request.endpoint_index, 0)
+            + request.estimated_work
+        )
+    work_values = list(endpoint_work.values())
+    work_skew = (
+        (max(work_values) - min(work_values)) / max(work_values)
+        if work_values and max(work_values) > 0
+        else 0.0
+    )
+    return {
+        "status": "completed",
+        "row_count": metadata.row_count,
+        "sha256": metadata.sha256,
+        "workload_name": args.workload_name,
+        "row_offset": args.row_offset,
+        "max_output_tokens": args.max_output_tokens,
+        "estimated_output_mode": args.estimated_output_mode,
+        "endpoint_work": dict(sorted(endpoint_work.items())),
+        "endpoint_work_skew": work_skew,
+    }
+
+
 def _read_result_csv(path: str | Path) -> tuple[BaselineRequestResult, ...]:
     with Path(path).open(encoding="utf-8", newline="") as stream:
         rows = tuple(csv.DictReader(stream))
@@ -476,6 +529,30 @@ def _parser() -> argparse.ArgumentParser:
     export.add_argument("--output", required=True)
     export.add_argument("--endpoint-count", type=int, required=True)
 
+    postgres_export = commands.add_parser(
+        "export-postgres-manifest"
+    )
+    postgres_export.add_argument("--database-url", required=True)
+    postgres_export.add_argument("--workload-name", required=True)
+    postgres_export.add_argument("--row-count", type=int, required=True)
+    postgres_export.add_argument("--row-offset", type=int, default=0)
+    postgres_export.add_argument(
+        "--max-output-tokens",
+        type=int,
+        required=True,
+    )
+    postgres_export.add_argument(
+        "--estimated-output-mode",
+        choices=("fixed_cap", "trace_target"),
+        required=True,
+    )
+    postgres_export.add_argument(
+        "--endpoint-count",
+        type=int,
+        required=True,
+    )
+    postgres_export.add_argument("--output", required=True)
+
     run = commands.add_parser("run-shard")
     run.add_argument("--adapter", choices=ADAPTERS, required=True)
     run.add_argument("--manifest", required=True)
@@ -536,6 +613,8 @@ def run_cli(argv: Sequence[str]) -> dict[str, object]:
     args = _parser().parse_args(list(argv))
     if args.command == "export-manifest":
         return _export_manifest(args)
+    if args.command == "export-postgres-manifest":
+        return _export_postgres_manifest(args)
     if args.command == "run-shard":
         return _run_shard(args)
     if args.command == "normalize-vllm-bench":

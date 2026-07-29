@@ -2519,4 +2519,10 @@
   测试先行增加 runtime 与 CLI 契约；Ray Data 现在显式连接同一 address，
   Daft Ray/Ray Data 缺少 `--ray-address` 时连 dry-run 也 fail closed，双 GPU
   gate/calibration 模板冻结为现有 `127.0.0.1:6380`。
+- 远端正式 gate 前继续审计发现薄 CLI 只有 JSONL 再分片入口，没有从正式
+  PostgreSQL workload 生成 JSONL 的可复现路径。新增独立
+  `postgres_manifest` 模块与 `export-postgres-manifest`：只读
+  `documents`，按 workload + `ORDER BY doc_id` + limit/offset 选择完整行，
+  固定 output cap/estimated-output 模式，计算 source-row hash 后再使用共同
+  largest-work-first endpoint 分片；拒绝短结果与重复 doc_id。
 - 按用户要求不执行 Wiki 同步。

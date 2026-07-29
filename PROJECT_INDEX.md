@@ -240,6 +240,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `code/scripts/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
 | `code/scripts/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
+| `code/src/baselines/postgres_manifest.py` | 正式 PostgreSQL workload 的不可变 baseline manifest 导出核心 | 按 workload/doc_id/limit/offset 读取完整行，固定 output 代价语义、source hash 与 endpoint 分片前输入 |
 | `code/src/shared_vllm_experiment.py` | Shared-vLLM 编排核心 | 配置校验、三臂 credit 语义、并发执行、exactly-once 与公平性汇总 |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |

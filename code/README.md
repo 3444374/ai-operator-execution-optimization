@@ -437,6 +437,8 @@ Daft organizer dry-run:
 - `contracts.py` / `manifests.py` 固定请求语义、顺序、hash 与 endpoint 分片；
 - `async_http.py` / `vllm_bench.py` 提供无 Daft/Ray 对照和 serving ceiling；
 - `official_runtime.py` 对接 Daft Native/Ray 与 Ray Data 官方接口；
+- `postgres_manifest.py` 从正式 PostgreSQL workload 只读导出完整行与 source
+  hash，随后交给共同 endpoint 分片器；
 - `oceanbase.py` 对接原生 `AI_COMPLETE`，不以 Python HTTP 模拟产品算子；
 - `results.py` / `gate.py` 统一 exactly-once、延迟、吞吐和 fail-closed 门禁；
 - `cli.py` 只做 shard dispatch、原始证据保存和格式归一化。

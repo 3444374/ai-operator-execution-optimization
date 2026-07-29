@@ -1053,6 +1053,10 @@ HTTP loop and label it OceanBase.
 4. 从正式 workload 导出 64 行 immutable manifest；hash、行数、模型、
    Chat protocol、temperature、输出上限和服务启动参数写入 gate 证据。
    两 endpoint 采用 manifest 中固定分片，不由 adapter 再路由。
+   使用已提交的 `export-postgres-manifest`，固定
+   `SOURCE_WORKLOAD_NAME`、`ORDER BY doc_id`、`row_offset=0`、
+   `max_output_tokens=256` 与 `estimated_output_mode=trace_target`；
+   不在远端临时编写 SQL/JSON 转换脚本。
 5. 每个 core cell 只运行一次，两个 endpoint shard 同时启动；输出写到
    `experiments/results/dual_gpu_official_baseline_gate_<unique-id>/` 下的独立
    cell/shard 目录。目录已存在即停止，禁止覆盖或 resume 成新 gate。

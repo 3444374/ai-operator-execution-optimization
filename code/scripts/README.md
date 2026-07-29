@@ -764,6 +764,16 @@ startup, gate, resume, evidence-preservation, and cleanup procedure in
 largest-work-first 固定分片；执行器不得自行重新洗牌。示例：
 
 ```bash
+python code/scripts/run_official_baseline.py export-postgres-manifest \
+  --database-url "$DATABASE_URL" \
+  --workload-name "$SOURCE_WORKLOAD_NAME" \
+  --row-count 64 \
+  --row-offset 0 \
+  --max-output-tokens 256 \
+  --estimated-output-mode trace_target \
+  --endpoint-count 2 \
+  --output /root/autodl-tmp/gates/official_baseline_gate_manifest.jsonl
+
 python code/scripts/run_official_baseline.py run-shard \
   --adapter bounded_http \
   --manifest /path/to/manifest.jsonl \

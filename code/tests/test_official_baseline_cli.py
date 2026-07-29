@@ -123,6 +123,89 @@ class OfficialBaselineCliTests(unittest.TestCase):
                     ]
                 )
 
+    def test_export_postgres_manifest_freezes_and_assigns_rows(
+        self,
+    ) -> None:
+        class FakeCursor:
+            def execute(self, _sql, params):
+                self.params = params
+
+            def fetchall(self):
+                return [
+                    (1, "a", 0.0, 12, 8),
+                    (2, "b", 0.1, 11, 9),
+                    (3, "c", 0.2, 10, 10),
+                    (4, "d", 0.3, 9, 11),
+                ]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return None
+
+        class FakeConnection:
+            def __init__(self):
+                self.cursor_instance = FakeCursor()
+
+            def cursor(self):
+                return self.cursor_instance
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return None
+
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            output = root / "manifest.jsonl"
+            connection = FakeConnection()
+
+            with patch(
+                "src.baselines.cli._connect_postgres",
+                create=True,
+                return_value=connection,
+            ):
+                result = run_cli(
+                    [
+                        "export-postgres-manifest",
+                        "--database-url",
+                        "postgresql://example",
+                        "--workload-name",
+                        "sharegpt_burstgpt",
+                        "--row-count",
+                        "4",
+                        "--row-offset",
+                        "32",
+                        "--max-output-tokens",
+                        "256",
+                        "--estimated-output-mode",
+                        "trace_target",
+                        "--endpoint-count",
+                        "2",
+                        "--output",
+                        str(output),
+                    ]
+                )
+
+            self.assertEqual(
+                connection.cursor_instance.params,
+                ("sharegpt_burstgpt", 4, 32),
+            )
+            self.assertEqual(result["row_count"], 4)
+            self.assertEqual(result["workload_name"], "sharegpt_burstgpt")
+            frozen = [
+                json.loads(line)
+                for line in output.read_text(
+                    encoding="utf-8"
+                ).splitlines()
+            ]
+            self.assertEqual(
+                {row["endpoint_index"] for row in frozen},
+                {0, 1},
+            )
+
     def test_service_fingerprint_ignores_equivalent_endpoint_address(
         self,
     ) -> None:

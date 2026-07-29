@@ -13,6 +13,7 @@ from .official_runtime import (
     run_daft_prompt,
     run_ray_data_http,
 )
+from .postgres_manifest import load_postgres_requests
 from .oceanbase import (
     OceanBaseConfig,
     SqlStatement,
@@ -46,6 +47,7 @@ __all__ = [
     "run_daft_prompt",
     "run_oceanbase_ai_complete",
     "run_ray_data_http",
+    "load_postgres_requests",
     "summarize_results",
     "validate_results",
     "write_vllm_custom_dataset",
