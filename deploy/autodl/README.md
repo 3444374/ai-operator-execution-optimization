@@ -1098,7 +1098,7 @@ main 已通过本地全量测试并推送
   -> 只补项目声明的缺失依赖
   -> 64 行 immutable Chat manifest + 固定双 endpoint 分片
   -> 每个 core adapter 的单次双 endpoint gate
-  -> exactly-once/元数据/work skew/空队列门禁
+  -> exactly-once/元数据/work skew/服务端 token 差分/空队列门禁
   -> 停止并分析
   -> 独立 calibration
   -> 32/64/128/256 transient + 2,048 held-out formal
@@ -1121,9 +1121,17 @@ failed `summary.json` 和外层日志，不自动重试。
 `dual_gpu_official_baseline_core_gate_20260729_1725_fix5708e85` 已完成第一轮
 5/5 core adapter 功能门禁：每项 64/64 exactly-once、0 incident、两 endpoint
 均使用、work skew 0.0085%，最终 running/waiting 为 0。该结果只证明链路可执行。
-后续等价性审计发现 vLLM Bench 双重 chat template、Ray Data 固定池语义和
-Daft/Ray Data 观测粒度问题，因此在相应修复完成全新 re-gate 前仍禁止
-calibration/formal。
+等价性修复提交 `f2e82bd` 已在全新目录
+`dual_gpu_official_baseline_equivalence_gate_20260729_f2e82bd` 再次通过
+5/5、最终队列归零；`--skip-chat-template` 与 `(n,n)` 固定 Ray Data actor
+pool 均已生效。小 manifest 只有两个 16 行 task，日志虽创建 4 actor，实际只由
+1 actor 执行，说明固定建池不等于小作业必然均匀使用全部 actor；后续必须按
+actor 数与可并行 task 数联合标定。
+
+该 re-gate 仍不产生性能结论。vLLM Bench、bounded/Ray Data 和 Daft 的客户端
+token 统计口径不同，下一道门禁必须对每个 cell、每个 endpoint 在执行前后采样
+`vllm:prompt_tokens_total` 与 `vllm:generation_tokens_total`，保存原值和差分。
+服务端差分门禁通过前仍禁止 calibration/formal。
 
 ### 已验证部署问题与解决方案
 
@@ -1137,11 +1145,12 @@ calibration/formal。
 | `python -m vllm.benchmarks.serve` 返回 0 但无 stdout/结果 JSON | 0.25.1 的 `benchmarks/serve.py` 只定义函数，没有模块级 `main`；真正 console script 指向 `vllm.entrypoints.cli.main` | 使用相同 vLLM Python 执行 `python -m vllm.entrypoints.cli.main bench serve ...`，回归测试锁定前五个 argv。禁止仅凭子进程退出码 0 判定 benchmark 已执行；还必须存在详细 JSON 并通过归一化。 |
 | vLLM Bench 启动后数分钟不发请求，日志出现 Hugging Face repo 重试 | `--model qwen2.5-7b` 是 served alias；0.25.1 在 `--tokenizer` 缺失时把 model id 当 tokenizer id，尝试访问远程仓库 | gate 模板和 runner 必须显式传本机 `MODEL_PATH` 对应的 tokenizer 目录；加载配置和单 shard CLI 都检查目录实际存在。确认两端 queue 始终为 0 后才可终止无效 client，保留 `run_status.json` 和 shard log。 |
 | 0.25.1 详细 JSON 有请求结果但没有 `e2els` | 实际文件保留 `start_times`、`ttfts`、逐请求 `itls`；源码的 timeline 路径也以 `ttft + sum(itls)` 重建 latency | 归一化器优先接受直接 E2E 数组，否则按官方源码公式重建；以相对 start time 还原 JCT，并要求重建 duration 与顶层 duration 在 `max(100ms, 2%)` 内一致。失败/错误数组也必须为 0/空。 |
-| vLLM Bench 的每行 input token 比 bounded HTTP 多一个 chat wrapper | 0.25.1 `CustomDataset.sample()` 默认先对裸 prompt 执行 `apply_chat_template`；`openai-chat` backend 又把生成后的字符串作为 user content 发给服务端，服务端再次套 template。真实 gate 中首行 92 vs 63 tokens，差值正好对应额外 wrapper | 对 custom 裸 prompt + `openai-chat` 明确传 `--skip-chat-template`，只允许服务端套一次模板。re-gate 必须核对 vLLM Bench 与 bounded HTTP 的逐行 input token；仍不一致就停止，不能进入吞吐比较。 |
+| vLLM Bench 的每行 input token 比 bounded HTTP 多一个 chat wrapper | 0.25.1 `CustomDataset.sample()` 默认先对裸 prompt 执行 `apply_chat_template`；`openai-chat` backend 又把生成后的字符串作为 user content 发给服务端，服务端再次套 template。真实 gate 中首行 92 vs 63 tokens，差值正好对应额外 wrapper | 对 custom 裸 prompt + `openai-chat` 明确传 `--skip-chat-template`，只允许服务端套一次模板。注意修复后 bench 的 `input_lens` 仍是裸 prompt 客户端口径，而服务端 usage 包含一次 chat wrapper，二者不应强制逐行相等；公平比较使用 endpoint-local vLLM 服务端 prompt/generation counter 差分。 |
 | bounded HTTP 的 endpoint 1 shard 报全局索引越界 | shard 子进程只持有一条本地 URL，但 immutable manifest 必须保留全局 `endpoint_index=1` | `BoundedHttpConfig` 增加 `endpoint_index_offset`，仅在访问本地 semaphore/URL 时计算局部索引；结果与 gate 仍使用全局 endpoint id，禁止改写 manifest。 |
 | Ray Data 已连接 6380，但 actor pending 后报 `ModuleNotFoundError: No module named 'src'` | driver 脚本只把仓库 `code/` 加到本进程 `sys.path`；Ray worker 反序列化 `HttpRequestUDF` 时没有继承该临时修改。日志中“资源不足、0 CPU”是 actor 构造失败后的伴随告警，不是本次根因 | `ray.init(address=...)` 必须同时传 `runtime_env.env_vars.PYTHONPATH=<repo>/code[:existing]`，让同一集群的 worker 可导入项目模块。先以 actor traceback 判定根因，禁止因 pending 告警直接扩容、重启 Ray 或提高并发。修复后使用全新输出目录重跑 gate，失败目录原样保留。 |
 | Ray Data 配置 `concurrency=4`，小 gate 只启动 1 个 actor | Ray 2.56 公共说明把整数写成并发上限，而内部 `ProcessorConfig.get_concurrency()` 可把整数解释为 `min=1,max=n` autoscaling；本次日志明确为 `Actors: 1` | 为使 baseline 参数可复现，包装器把 `n` 显式传为 `(n,n)` 固定 actor pool。`batch_size` 仍是每 actor 每 task 的行数，不能当作 vLLM 内部 batch；calibration 必须独立扫描 batch size 与固定 actor 数。 |
 | Daft/Ray Data 的 P50/P95 全等，Daft output token 为 0 | Daft `prompt()` 只返回最终文本，当前没有逐请求 usage/timing；Ray Data 官方 Processor 返回 usage，但包装器只能在 shard barrier 外观察开始/结束。把公共 barrier 复制给每行会产生不可比较的“伪 P95” | summary 显式记录 `timing_granularity` 和 `token_accounting`。Daft 标为 `shard_barrier/manifest_prompt_only`，Ray Data 标为 `shard_barrier/server_usage`；正式比较必须补服务侧 token/请求 trace，或只报告 JCT，不得把 barrier P95 与 request-level P95 横比。 |
+| 不同 adapter 的 input/output token 无法直接对齐 | vLLM Bench 记录裸 prompt 的 `input_lens`，bounded/Ray Data 记录服务端 usage，Daft 只返回文本；直接比较客户端字段会把 chat-template 与 API 能力差异误写成工作量差异 | gate runner 在每个 cell 前后分别采样每个 endpoint 的 vLLM cumulative prompt/generation counters，保存 `service_counters.json` 并把差分写入 summary。`server_usage` 必须与两项服务端差分完全一致；official bench 只要求 output 与 generation 差分一致；Daft 以服务端差分作为统一工作量证据。任一差分非正、counter 回退、endpoint 集变化或可核对字段不一致均 fail closed。每次采样期间禁止其它请求污染 endpoint。 |
 | gate CLI 在失败验证前未留下失败请求行 | 先 summarize/validate，异常发生在写 `requests.csv` 之前 | 现在先原子写 request rows，再验证；失败时写 `status=failed` summary 并保持非零退出。不得用重试覆盖失败现场。 |
 | 8000/8001 被误判为服务配置不一致 | 初版 service fingerprint 把 endpoint URL/端口也纳入 hash | 服务指纹只比较模型、协议、temperature 等等价配置；endpoint 地址作为独立拓扑字段审计。实际 vLLM 启动参数仍需从两个进程命令和 service metadata 单独核对。 |
 | 已有单 shard CLI，但没有可复现的双 endpoint gate runner | 临时拼接后台命令无法保证两个 shard 先启动再等待，也没有逐 cell 失败即停、空队列盖章和统一日志 | 新增 `run_official_baseline_gate.py`。每个 cell 保存 `commands.json`、两份 shard log、两份归一化结果和 `gate.json`；根 `run_status.json` 记录已完成与 blocked cell。已有输出目录拒绝覆盖。 |

@@ -1,8 +1,8 @@
 # 数据库 AI 算子与官方 Runtime Baseline 矩阵
 
 日期：2026-07-29
-状态：预注册完成；首轮 64 行双 GPU core gate 通过，等价性 re-gate 待完成，
-尚无可用于性能结论的结果
+状态：预注册完成；64 行双 GPU 功能与等价性 re-gate 均通过，统一服务端
+token counter gate 待完成，尚无可用于性能结论的结果
 
 ## 1. 研究问题
 
@@ -79,6 +79,10 @@ POST /v1/chat/completions
 - 0 failure、exactly-once、结束后 vLLM running/waiting 为 0。
 
 实际 output token 总量跨 arm 差异超过 1% 时，不得只凭 JCT 声称加速。
+工作量主口径使用每个 endpoint 在 cell 前后的 vLLM prompt/generation cumulative
+counter 差分。客户端 token 字段只作交叉核验：server-usage arm 两项必须与
+服务端差分一致；official bench 只核对 generation/output；Daft 不以缺失的
+client usage 伪造 output token。
 
 ## 5. Workload
 
@@ -179,16 +183,25 @@ work skew 0.0085%，最终 vLLM 队列归零。此前 `_1730` 的 Ray worker
 通过后的等价性审计又发现三项 fatal flaw：
 
 1. vLLM CustomDataset 默认先套 chat template，`openai-chat` 再交给服务端套
-   第二次；必须使用 `--skip-chat-template` 并核对逐行 input token；
+   第二次；必须使用 `--skip-chat-template`。修复后 bench `input_lens` 是裸
+   prompt，不能与服务端套一次模板后的 usage 强制逐行相等；
 2. Ray Data 的整数 concurrency 在该版本实际形成 `1..n` autoscaling，小作业
    只起 1 actor；必须显式使用 `(n,n)` 固定池再独立 calibration；
 3. Daft 只有 shard barrier 时间和裸 prompt token，Ray Data 当前也只有 shard
    barrier 时间；summary 必须标注观测粒度，不能把公共 barrier 复制出的 P95
    与 request-level P95 横比。
 
-因此首轮 gate 是功能证据，不是冻结 baseline。上述契约修复通过测试后必须使用
-全新目录 re-gate；逐行 request body/input token、固定 actor 数和观测来源均
-通过后，才允许进入 calibration。
+提交 `f2e82bd` 的等价性修复已在
+`dual_gpu_official_baseline_equivalence_gate_20260729_f2e82bd` 使用全新目录
+再次通过 5/5、最终队列归零。Ray Data 固定池创建 4 actor，但 64 行双 shard
+每端只有两个 16 行 task，实际只有 1 actor 执行；因此 actor 使用率留到
+calibration 由 `batch_size × actor_count × task_count` 联合判断，不能把小 gate
+当并行扩展证据。
+
+当前最后一个正式性能前置门禁是统一服务端 token 计数：每个 cell、每个 endpoint
+在运行前后采样 vLLM prompt/generation cumulative counters，保存原值和差分；
+server-usage arm 与差分不一致、差分非正、counter 回退或存在并发污染时均失败。
+该门禁通过后才允许进入 calibration。
 
 ## 9. 详细工程设计
 

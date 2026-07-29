@@ -38,6 +38,10 @@ IdleWaiter = Callable[
     [tuple[str, ...], float],
     Mapping[int, Mapping[str, int]],
 ]
+CounterSampler = Callable[
+    [tuple[str, ...]],
+    Mapping[int, Mapping[str, int]],
+]
 
 
 @dataclass(frozen=True)
@@ -180,6 +184,14 @@ _QUEUE_PATTERNS = {
     "running": re.compile(r"^vllm:num_requests_running(?:\{[^}]*\})?\s+([0-9.eE+-]+)$"),
     "waiting": re.compile(r"^vllm:num_requests_waiting(?:\{[^}]*\})?\s+([0-9.eE+-]+)$"),
 }
+_TOKEN_COUNTER_PATTERNS = {
+    "prompt_tokens": re.compile(
+        r"^vllm:prompt_tokens_total(?:\{[^}]*\})?\s+([0-9.eE+-]+)$"
+    ),
+    "generation_tokens": re.compile(
+        r"^vllm:generation_tokens_total(?:\{[^}]*\})?\s+([0-9.eE+-]+)$"
+    ),
+}
 
 
 def parse_vllm_queue_metrics(text: str) -> dict[str, int]:
@@ -194,6 +206,26 @@ def parse_vllm_queue_metrics(text: str) -> dict[str, int]:
         total = sum(values)
         if not total.is_integer():
             raise ValueError(f"vLLM {name} queue gauge is not integral")
+        parsed[name] = int(total)
+    return parsed
+
+
+def parse_vllm_token_counters(text: str) -> dict[str, int]:
+    """Parse and sum cumulative prompt/generation token counters."""
+
+    parsed: dict[str, int] = {}
+    lines = text.splitlines()
+    for name, pattern in _TOKEN_COUNTER_PATTERNS.items():
+        values = [
+            float(match.group(1))
+            for line in lines
+            if (match := pattern.match(line.strip()))
+        ]
+        if not values:
+            raise ValueError(f"vLLM metrics missing {name} counter")
+        total = sum(values)
+        if not total.is_integer():
+            raise ValueError(f"vLLM {name} counter is not integral")
         parsed[name] = int(total)
     return parsed
 
@@ -221,6 +253,17 @@ def wait_for_idle(
         if time.monotonic() >= deadline:
             raise TimeoutError(f"vLLM queues did not drain before timeout: {latest}")
         time.sleep(0.5)
+
+
+def sample_vllm_token_counters(
+    metrics_urls: tuple[str, ...],
+) -> dict[int, dict[str, int]]:
+    """Snapshot cumulative token counters for every endpoint."""
+
+    return {
+        index: parse_vllm_token_counters(_fetch_metrics(url))
+        for index, url in enumerate(metrics_urls)
+    }
 
 
 def run_command_pair(
@@ -366,6 +409,102 @@ def _stamp_final_queues(
         _atomic_json(summary_path, summary)
 
 
+def _service_counter_evidence(
+    before: Mapping[int, Mapping[str, int]],
+    after: Mapping[int, Mapping[str, int]],
+) -> dict[str, object]:
+    if set(before) != set(after):
+        raise ValueError("service counter endpoint set changed during cell")
+    delta: dict[int, dict[str, int]] = {}
+    for endpoint_index in sorted(before):
+        if set(before[endpoint_index]) != set(after[endpoint_index]):
+            raise ValueError(
+                f"service counter keys changed for endpoint {endpoint_index}"
+            )
+        endpoint_delta = {
+            name: after[endpoint_index][name]
+            - before[endpoint_index][name]
+            for name in before[endpoint_index]
+        }
+        if any(value < 0 for value in endpoint_delta.values()):
+            raise ValueError(
+                f"service counter decreased for endpoint {endpoint_index}"
+            )
+        delta[endpoint_index] = endpoint_delta
+    return {
+        "before": before,
+        "after": after,
+        "delta": delta,
+    }
+
+
+def _stamp_service_counters(
+    output_dirs: tuple[Path, ...],
+    delta: Mapping[int, Mapping[str, int]],
+) -> None:
+    for endpoint_index, output_dir in enumerate(output_dirs):
+        endpoint_delta = delta[endpoint_index]
+        prompt_tokens = endpoint_delta["prompt_tokens"]
+        generation_tokens = endpoint_delta["generation_tokens"]
+        summary_path = output_dir / "summary.json"
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        summary.update(
+            {
+                "service_counter_status": "ok",
+                "service_prompt_tokens_delta": prompt_tokens,
+                "service_generation_tokens_delta": generation_tokens,
+                "service_total_tokens_delta": (
+                    prompt_tokens + generation_tokens
+                ),
+            }
+        )
+        _atomic_json(summary_path, summary)
+
+
+def validate_service_counter_summary(
+    summary: Mapping[str, object],
+    endpoint_index: int,
+) -> tuple[str, ...]:
+    """Validate service-side token deltas and compatible client counters."""
+
+    incidents: list[str] = []
+    if summary.get("service_counter_status") != "ok":
+        return (f"endpoint {endpoint_index} missing service token counters",)
+
+    prompt_delta = int(summary.get("service_prompt_tokens_delta", 0))
+    generation_delta = int(summary.get("service_generation_tokens_delta", 0))
+    if prompt_delta <= 0:
+        incidents.append(
+            f"endpoint {endpoint_index} missing positive service prompt delta"
+        )
+    if generation_delta <= 0:
+        incidents.append(
+            f"endpoint {endpoint_index} missing positive service generation delta"
+        )
+
+    accounting = summary.get("token_accounting")
+    if accounting == "server_usage":
+        if int(summary.get("input_tokens", -1)) != prompt_delta:
+            incidents.append(
+                f"endpoint {endpoint_index} client/service prompt mismatch"
+            )
+        if int(summary.get("output_tokens", -1)) != generation_delta:
+            incidents.append(
+                f"endpoint {endpoint_index} client/service generation mismatch"
+            )
+    elif accounting == "official_benchmark":
+        if int(summary.get("output_tokens", -1)) != generation_delta:
+            incidents.append(
+                f"endpoint {endpoint_index} benchmark/service generation mismatch"
+            )
+    elif accounting not in {"manifest_prompt_only", "unavailable"}:
+        incidents.append(
+            f"endpoint {endpoint_index} unknown token accounting {accounting!r}"
+        )
+
+    return tuple(incidents)
+
+
 def _validate_cell(
     config: CoreGateConfig,
     output_dirs: tuple[Path, ...],
@@ -380,15 +519,27 @@ def _validate_cell(
         for output_dir in output_dirs
         for result in _read_results(output_dir / "requests.csv")
     )
+    counter_incidents = [
+        incident
+        for endpoint_index, summary in enumerate(summaries)
+        for incident in validate_service_counter_summary(
+            summary,
+            endpoint_index,
+        )
+    ]
     report = validate_gate(
         manifest=read_manifest(config.manifest),
         summaries=summaries,
         request_results=results,
     )
     payload = {
-        "status": "passed" if report.passed else "failed",
-        "passed": report.passed,
-        "incidents": list(report.incidents),
+        "status": (
+            "passed"
+            if report.passed and not counter_incidents
+            else "failed"
+        ),
+        "passed": report.passed and not counter_incidents,
+        "incidents": list(report.incidents) + counter_incidents,
         "metrics": report.metrics,
     }
     _atomic_json(gate_path, payload)
@@ -405,6 +556,7 @@ def run_core_gate(
     idle_timeout_s: float = 120.0,
     pair_runner: PairRunner = run_command_pair,
     idle_waiter: IdleWaiter = wait_for_idle,
+    counter_sampler: CounterSampler = sample_vllm_token_counters,
 ) -> dict[str, object]:
     """Run each core adapter once, fail closed, and preserve all evidence."""
 
@@ -475,6 +627,7 @@ def run_core_gate(
                 for endpoint_index in (0, 1)
             ]
             _atomic_json(cell_root / "commands.json", commands)
+            counters_before = counter_sampler(metrics_urls)
             return_codes = pair_runner(
                 commands,
                 [
@@ -485,6 +638,14 @@ def run_core_gate(
             if return_codes != (0, 0):
                 raise RuntimeError(f"cell {cell.cell_id} shard exits: {return_codes}")
             queues = idle_waiter(metrics_urls, idle_timeout_s)
+            counter_evidence = _service_counter_evidence(
+                counters_before,
+                counter_sampler(metrics_urls),
+            )
+            _atomic_json(
+                cell_root / "service_counters.json",
+                counter_evidence,
+            )
 
             output_dirs = raw_dirs
             if cell.adapter == "vllm_bench":
@@ -517,8 +678,11 @@ def run_core_gate(
                     raise RuntimeError(
                         f"cell {cell.cell_id} normalization exits: {normalize_codes}"
                     )
-            else:
-                _stamp_final_queues(output_dirs, queues)
+            _stamp_final_queues(output_dirs, queues)
+            _stamp_service_counters(
+                output_dirs,
+                counter_evidence["delta"],
+            )
 
             gate = _validate_cell(
                 config,

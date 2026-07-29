@@ -161,9 +161,10 @@
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P0**：先补同规模同条件 baseline。64 行双 GPU core 功能门禁已 5/5
-   通过，但发现 vLLM Bench 双重 chat template、Ray Data actor 池语义和
-   Daft/Ray Data 观测粒度缺口；先完成等价性 re-gate。之后第一层比较无
+1. **P0**：先补同规模同条件 baseline。64 行双 GPU core 功能门禁与
+   `f2e82bd` 等价性 re-gate 均已 5/5 通过；当前先完成 endpoint-local vLLM
+   prompt/generation counter 差分门禁，统一不同 adapter 的工作量口径。之后
+   第一层比较无
    Daft/Ray 的 OceanBase `AI_COMPLETE`、同 PostgreSQL bounded AsyncIO、
    ours 和 direct-vLLM ceiling；第二层比较 Daft `prompt()` Native/Ray、
    Ray Data HTTP Processor 与 ours。统一 Chat Completions，各 arm 独立

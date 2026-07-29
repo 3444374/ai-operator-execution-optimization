@@ -331,11 +331,16 @@ exactly-once、0 incident、双 endpoint、work skew 0.0085%，最终队列归�
 该门禁仍不是远端性能 baseline。通过后的等价性审计发现 vLLM Bench 会对
 custom prompt 与 openai-chat 重复套 chat template；Ray Data 的整数 concurrency
 在小作业中只起一个 autoscaling actor；Daft/Ray Data 只有 shard-barrier 级
-延迟，且 Daft 不返回 output usage。当前修复为 vLLM Bench
-`--skip-chat-template`、Ray Data `(n,n)` 固定 actor pool，并在 summary 显式
-记录 `timing_granularity/token_accounting`。下一动作是全新目录 re-gate，
-核对逐行 input token、实际 actor 数和观测口径；通过前不能启动
-calibration/formal。
+延迟，且 Daft 不返回 output usage。vLLM Bench `--skip-chat-template`、Ray Data
+`(n,n)` 固定 actor pool 与 `timing_granularity/token_accounting` 已在提交
+`f2e82bd` 的全新 re-gate 再次 5/5 通过。小 gate 固定创建 4 actor，但可并行
+task 不足，实际只使用 1 actor，不能据此得出扩展结论。
+
+当前最后一个 calibration 前置缺口是统一服务端工作量计数。gate runner 已增加
+每个 cell、每个 endpoint 的 vLLM prompt/generation cumulative counter 前后
+快照和差分，并按 adapter accounting 能力交叉核验客户端字段。Daft 以服务端
+差分补齐 output-work 证据；shard-barrier P95 仍不得与 request-level P95 横比。
+全新真实双 GPU service-counter gate 通过前不能启动 calibration/formal。
 
 完整顺序与放弃条件见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。

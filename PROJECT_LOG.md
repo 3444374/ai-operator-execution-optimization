@@ -44,6 +44,20 @@
   已验证的依赖、未跟踪文件冲突备份、CRLF hash、Ray Serve extra、vLLM
   0.25.1 结果字段、失败证据保存和 service fingerprint 处理均记录在
   `deploy/autodl/README.md`，不依赖新会话重新探索。
+- 提交 `5708e85` 在
+  `dual_gpu_official_baseline_core_gate_20260729_1725_fix5708e85` 完成
+  5/5 core 功能门禁；提交 `f2e82bd` 修复双重 chat template、固定 Ray Data
+  actor pool 并标注观测粒度后，在
+  `dual_gpu_official_baseline_equivalence_gate_20260729_f2e82bd` 再次
+  5/5 通过、最终队列归零。小 gate 虽创建 4 个 Ray Data actor，但每端只有
+  两个 16 行 task，实际仅 1 actor 执行；固定建池不能替代 actor/task 联合
+  calibration。
+- 进一步审计确认不同 adapter 的 client token 字段不能直接横比：vLLM Bench
+  `input_lens` 是裸 prompt，bounded/Ray Data 是服务端 usage，Daft 不返回
+  usage。gate runner 因此增加每 cell、每 endpoint 的 vLLM prompt/generation
+  cumulative counter 前后快照、差分证据和 fail-closed 交叉核验。部署手册已
+  记录 counter 污染、回退、非正差分和 accounting mismatch 的判定与处理；
+  真实 service-counter gate 通过前 calibration/formal 继续阻塞。
 
 ## 2026-07-29 Shared-vLLM 1/2/4-job 正式矩阵条件性正结果
 

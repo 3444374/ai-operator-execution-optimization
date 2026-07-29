@@ -17,7 +17,9 @@ from src.baselines.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.gate_runner import (
     load_core_gate_config,
     parse_vllm_queue_metrics,
+    parse_vllm_token_counters,
     run_core_gate,
+    validate_service_counter_summary,
 )
 from src.baselines.manifests import read_manifest, write_manifest
 
@@ -36,6 +38,44 @@ vllm:num_requests_waiting{model_name="qwen"} 3.0
         )
         with self.assertRaisesRegex(ValueError, "waiting"):
             parse_vllm_queue_metrics('vllm:num_requests_running{model_name="qwen"} 0.0')
+
+    def test_parse_vllm_token_counters_sums_labelled_series(self) -> None:
+        metrics = """
+vllm:prompt_tokens_total{engine="0",model_name="qwen"} 1.2e+02
+vllm:generation_tokens_total{engine="0",model_name="qwen"} 80
+"""
+
+        self.assertEqual(
+            parse_vllm_token_counters(metrics),
+            {"prompt_tokens": 120, "generation_tokens": 80},
+        )
+        with self.assertRaisesRegex(ValueError, "generation_tokens"):
+            parse_vllm_token_counters(
+                'vllm:prompt_tokens_total{model_name="qwen"} 1'
+            )
+
+    def test_service_usage_must_match_endpoint_counter_delta(self) -> None:
+        summary = {
+            "service_counter_status": "ok",
+            "service_prompt_tokens_delta": 8,
+            "service_generation_tokens_delta": 4,
+            "token_accounting": "server_usage",
+            "input_tokens": 8,
+            "output_tokens": 4,
+        }
+        self.assertEqual(
+            validate_service_counter_summary(summary, 0),
+            (),
+        )
+        self.assertIn(
+            "generation",
+            " ".join(
+                validate_service_counter_summary(
+                    {**summary, "output_tokens": 3},
+                    0,
+                )
+            ),
+        )
 
     def test_config_rejects_placeholder_and_unsupported_core_cell(
         self,
@@ -214,12 +254,39 @@ vllm:num_requests_waiting{model_name="qwen"} 3.0
                                 "completion_protocol": "chat_completions",
                                 "service_config_sha256": "same",
                                 "worker_failures": 0,
+                                "token_accounting": "server_usage",
+                                "input_tokens": 8,
+                                "output_tokens": 4,
                             }
                         ),
                         encoding="utf-8",
                     )
                 return (0, 0)
 
+            counter_snapshots = iter(
+                (
+                    {
+                        0: {
+                            "prompt_tokens": 100,
+                            "generation_tokens": 200,
+                        },
+                        1: {
+                            "prompt_tokens": 300,
+                            "generation_tokens": 400,
+                        },
+                    },
+                    {
+                        0: {
+                            "prompt_tokens": 108,
+                            "generation_tokens": 204,
+                        },
+                        1: {
+                            "prompt_tokens": 308,
+                            "generation_tokens": 404,
+                        },
+                    },
+                )
+            )
             report = run_core_gate(
                 config_path,
                 driver_python="driver-python",
@@ -229,6 +296,9 @@ vllm:num_requests_waiting{model_name="qwen"} 3.0
                     0: {"running": 0, "waiting": 0},
                     1: {"running": 0, "waiting": 0},
                 },
+                counter_sampler=lambda _urls: next(
+                    counter_snapshots
+                ),
             )
 
             self.assertEqual(report["status"], "passed")
@@ -247,6 +317,30 @@ vllm:num_requests_waiting{model_name="qwen"} 3.0
             self.assertEqual(len(seen_commands[0]), 2)
             self.assertIn("--disable-arrival-replay", seen_commands[0][0])
             self.assertTrue((output_root / "bounded_http" / "gate.json").exists())
+            service_counters = json.loads(
+                (
+                    output_root
+                    / "bounded_http"
+                    / "service_counters.json"
+                ).read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                service_counters["delta"]["0"],
+                {"prompt_tokens": 8, "generation_tokens": 4},
+            )
+            summary = json.loads(
+                (
+                    output_root
+                    / "bounded_http"
+                    / "shard_0"
+                    / "summary.json"
+                ).read_text(encoding="utf-8")
+            )
+            self.assertEqual(summary["service_prompt_tokens_delta"], 8)
+            self.assertEqual(
+                summary["service_generation_tokens_delta"],
+                4,
+            )
 
 
 if __name__ == "__main__":

@@ -568,10 +568,12 @@ max P99 -22.52%，但三次吞吐变化为 +8.43%/-0.28%/+22.60%。因此只晋�
 **2026-07-29 baseline 门禁状态**：首轮 64 行双 GPU core gate 已让
 vLLM Bench、bounded HTTP、Daft Native/Ray 和 Ray Data HTTP 全部通过
 64/64 exactly-once、0 incident、双 endpoint 与空队列门禁。但这只建立功能
-证据。等价性审计发现 vLLM Bench 双重 chat template、Ray Data 整数
-concurrency 退化为 `1..n` autoscaling，以及 Daft/Ray Data 的 shard-barrier
-观测不能与 request-level P95 横比。修复与全新 re-gate 完成前，推荐顺序中的
-第 4 步 calibration 继续阻塞。
+证据。等价性审计发现的 vLLM Bench 双重 chat template 与 Ray Data `1..n`
+autoscaling 已修复，提交 `f2e82bd` 的全新 re-gate 再次 5/5 通过。Daft/Ray
+Data 的 shard-barrier 观测仍不能与 request-level P95 横比；而各 adapter 的
+client token 口径也不一致。当前在每个 cell 前后增加 endpoint-local vLLM
+prompt/generation cumulative counter 差分门禁；该真实双 GPU gate 通过前，
+推荐顺序中的第 4 步 calibration 继续阻塞。
 
 晋级要求是相对最佳静态基线改善 observed tokens/s 或 SLO goodput，且 request
 P99、failure、exactly-once 不退化。否则记录负结果，不增加控制复杂度。
