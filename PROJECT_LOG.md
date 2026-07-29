@@ -2680,8 +2680,9 @@
 - bounded C128 虽完整性门禁通过，但仅 8,711 total tokens/s。fatal-flaw
   audit 定位为 httpx 0.28.1 默认 `max_connections=100`、keepalive=20，
   配置 C128 被隐式截断。测试先行把连接池总容量显式设为
-  `concurrency_per_endpoint × endpoint_count`；只需在新目录重跑 bounded
-  C128，有效 vLLM C128 不重复。
+  `concurrency_per_endpoint × endpoint_count`。全新 bounded-only C128
+  re-gate 实测 running=124/125、12,472 total tokens/s、JCT 8.048s；相对
+  旧污染点吞吐 +43.2%、JCT -30.1%，与有效 vLLM C128 只差约 2.3%。
 - 现有 256 行 manifest 每 endpoint 只有 128 行，不能有效运行 C256。下一
   ceiling 点至少使用 512 行；同时优先让 project profiler 在同 manifest、
   Chat Completions、no replay 条件下运行。未完成该同条件对照前，不新增上游

@@ -356,14 +356,15 @@ JCT 均约 12.02s；相对 C32 提升约 69%。vLLM Bench C128 的真实 peak
 concurrency=128，达到 12,762 total tokens/s、JCT 7.849s，相对 C64 再提升
 53%。bounded C128 被 httpx 默认 100-connection pool 截断，8,711
 tokens/s 数据作废；`async_http.py` 已把总连接与 keepalive 容量显式绑定为
-`concurrency_per_endpoint × endpoint_count`，等待全新目录的 bounded-only
-C128 re-gate。
+`concurrency_per_endpoint × endpoint_count`。全新 bounded-only C128 re-gate
+观测到 endpoint running=124/125，得到 12,472 total tokens/s、JCT 8.048s，
+与 vLLM Bench C128 只差约 2.3%，修复已通过真实双 GPU 门禁。
 
 因此 8.0–8.2K 只能称为历史 project runner/arrival-replay 链路的平台，不能
 再称双 4090 或 vLLM 的物理极限。现有 256 行清单每端只有 128 行，也不能产生
-有效 C256。下一步先完成 bounded C128 修复复验，再建立至少 512 行的直接
-ceiling 容量点，并让 project profiler 在同 manifest、Chat Completions、
-no replay 条件下执行；在此之前不新增上游策略。
+有效 C256。下一步建立至少 512 行的直接 ceiling 容量点，并让 project
+profiler 在同 manifest、Chat Completions、no replay 条件下执行；在此之前
+不新增上游策略。
 
 完整顺序与放弃条件见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。

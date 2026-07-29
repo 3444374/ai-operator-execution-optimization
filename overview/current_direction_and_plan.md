@@ -102,11 +102,12 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - ✅ 官方 direct baseline 校准：vLLM Bench C32/C64/C128 为
   4,930/8,342/12,762 total tokens/s；因此历史约 8K 是旧 project
   runner/arrival-replay 链路平台，不是 vLLM/双 4090 物理上限。bounded
-  C128 被 httpx 默认 100 连接截断，已修复连接池契约，待单臂复验
+  C128 被 httpx 默认 100 连接截断；修复后达到 12,472 tokens/s，与官方
+  vLLM Bench 仅差约 2.3%
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P0**：先完成 bounded C128 修复复验，再用至少 512 行冻结 manifest
-   继续 direct ceiling；project profiler 必须在同 manifest、Chat
+1. **P0**：用至少 512 行冻结 manifest 继续 direct ceiling；project
+   profiler 必须在同 manifest、Chat
    Completions、no replay 下重跑，之后才比较 OceanBase、Daft Native/Ray
    与 Ray Data 官方框架对照
 2. **P1**：baseline 锁定后再做 Shared-vLLM 4-job held-out、staggered idle borrowing、
