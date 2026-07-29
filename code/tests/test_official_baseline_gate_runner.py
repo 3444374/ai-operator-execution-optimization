@@ -155,6 +155,57 @@ vllm:generation_tokens_total{engine="0",model_name="qwen"} 80
             with self.assertRaisesRegex(ValueError, "tokenizer"):
                 load_core_gate_config(config_path)
 
+    def test_rows_total_override_supports_scale_gate(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            write_manifest(
+                manifest,
+                tuple(
+                    ChatRequest(
+                        doc_id=index,
+                        prompt=f"question-{index}",
+                        arrival_time_s=0.0,
+                        prompt_tokens=4,
+                        max_output_tokens=8,
+                        estimated_output_tokens=8,
+                        source_row_hash=f"row-{index}",
+                        endpoint_index=index % 2,
+                    )
+                    for index in range(4)
+                ),
+            )
+            config_path = root / "gate.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "formal": False,
+                        "rows_total": 2,
+                        "endpoint_urls": [
+                            "http://127.0.0.1:8000/v1/chat/completions",
+                            "http://127.0.0.1:8001/v1/chat/completions",
+                        ],
+                        "model": "qwen",
+                        "manifest": str(manifest),
+                        "output_root": str(root / "output"),
+                        "cells": [
+                            {
+                                "id": "bounded",
+                                "adapter": "bounded_http",
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            config = load_core_gate_config(
+                config_path,
+                rows_total_override=4,
+            )
+
+            self.assertEqual(config.rows_total, 4)
+
     def test_core_gate_runs_two_shards_and_writes_pass_report(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

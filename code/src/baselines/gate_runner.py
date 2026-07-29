@@ -88,13 +88,18 @@ def load_core_gate_config(
     *,
     manifest_override: str | Path | None = None,
     output_root_override: str | Path | None = None,
+    rows_total_override: int | None = None,
 ) -> CoreGateConfig:
     """Load and fail closed on an unresolved or formal gate config."""
 
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     if payload.get("formal") is not False:
         raise ValueError("core gate runner only accepts formal=false")
-    rows_total = int(payload.get("rows_total", 0))
+    rows_total = (
+        int(rows_total_override)
+        if rows_total_override is not None
+        else int(payload.get("rows_total", 0))
+    )
     if rows_total <= 0:
         raise ValueError("rows_total must be positive")
     endpoint_urls = tuple(payload.get("endpoint_urls", ()))
@@ -553,6 +558,7 @@ def run_core_gate(
     vllm_python: str,
     manifest_override: str | Path | None = None,
     output_root_override: str | Path | None = None,
+    rows_total_override: int | None = None,
     idle_timeout_s: float = 120.0,
     pair_runner: PairRunner = run_command_pair,
     idle_waiter: IdleWaiter = wait_for_idle,
@@ -564,6 +570,7 @@ def run_core_gate(
         config_path,
         manifest_override=manifest_override,
         output_root_override=output_root_override,
+        rows_total_override=rows_total_override,
     )
     manifest = read_manifest(config.manifest)
     if len(manifest) != config.rows_total:
@@ -721,6 +728,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--vllm-python", required=True)
     parser.add_argument("--manifest")
     parser.add_argument("--output-root")
+    parser.add_argument("--rows-total", type=int)
     parser.add_argument("--idle-timeout-s", type=float, default=120.0)
     return parser
 
@@ -734,6 +742,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             vllm_python=args.vllm_python,
             manifest_override=args.manifest,
             output_root_override=args.output_root,
+            rows_total_override=args.rows_total,
             idle_timeout_s=args.idle_timeout_s,
         )
     except Exception as exc:
