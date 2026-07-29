@@ -322,6 +322,31 @@ predicate 的显式 `max_prompt_tokens=1500` 重建并逐字段核验
 append-only 插入 `2048..2559`；任一 prefix 不一致或 doc ID 冲突都阻止写入，
 禁止旧 upsert 路径覆盖已有实验数据。
 
+### 8.5 Project active-work 背压故障与重新放行条件
+
+`beeee20` 的全新 64 行 re-gate 已通过 64/64 exactly-once、双 endpoint
+32/32、0 incident 和最终空队列。随后 512 行校准首个
+`work16384` 场景在 position/doc_id=89 停止：固定 endpoint-0 已有
+16,161 work，新请求 work=234，加入后 16,395 超过 cap；endpoint-1 仍可接收。
+旧实现把这个 request-specific capacity 结果覆盖到 `healthy`，pinned router
+因而误报 endpoint-0 不健康。两个服务的 `/health` 始终正常，失败完成
+0/9、无 `runs.csv`，现场未覆盖且没有自动重试。
+
+修复合同如下：
+
+- `healthy` 只表示服务健康，`available` 表示当前请求是否还有 endpoint-local
+  request/work credit；
+- manifest-pinned endpoint 暂满时收集完成并重试，不允许改投；
+- preferred endpoint 同时确定 pool，pool fallback 不能改变冻结分片；
+- fixed pool 中有健康 endpoint 但暂时无 capacity 时走 typed retry；真正无健康
+  endpoint 才是终止故障；
+- 空 endpoint 上的 oversized local work 可独占执行；若同时启用更严格的
+  shared-credit work limit，则在提交前 fail fast，不能静默越界。
+
+本地 512 tests、相关 170 tests 与独立审阅已通过。远端必须使用包含该修复的新
+提交和全新输出目录重新跑 64 行 gate；只有 gate 再次通过才恢复 512 行校准。
+旧 `beeee20` 校准目录只作为 incident 证据，不参与参数选择。
+
 ## 9. 详细工程设计
 
 适配器边界、fatal-flaw audit 和实现模块见：

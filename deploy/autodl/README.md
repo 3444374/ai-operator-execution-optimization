@@ -1305,3 +1305,21 @@ eligible rows 计数；`append-only` 遇到任一 doc ID 冲突即使事务失�
 本次远端原始冲突备份位置为
 `/root/autodl-tmp/premerge-backups/20260729_shared_vllm_results_before_7267324/`。
 它是事故审计副本，不是新的 formal 结果目录。
+
+### Pinned endpoint active-work 背压故障
+
+若 project request-level 场景在启用
+`--max-active-work-per-endpoint` 后报
+`preferred endpoint ... is not healthy`，先同时核对：
+
+1. stderr 中失败请求的 `preferred_endpoint_id` 与 estimated work；
+2. 失败前该 endpoint 的 local active request/work；
+3. 另一 endpoint 是否仍有容量；
+4. 两个 `/health`、`/metrics` 与最终队列。
+
+若服务健康、固定 endpoint 仅因加入当前请求会超过 work cap 而被标为
+`healthy=false`，这是旧版把容量复用为健康状态的已知缺陷，不得重启 vLLM、
+改写 manifest 或改投另一 endpoint。保留失败目录和 lease 证据，使用包含
+`EndpointSnapshot.available` 与 typed capacity backpressure 的新提交，在全新
+目录先重跑 64 行 gate。门禁必须核对 exactly-once、固定 endpoint 分布、0
+worker failure、服务端 counter 和最终空队列；通过后才允许重新启动 512 校准。

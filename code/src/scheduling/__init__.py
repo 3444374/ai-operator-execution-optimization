@@ -27,6 +27,7 @@ from .flush import (
     QueueAdaptiveFlush,
     SloAwareEwmaFlush,
 )
+from .errors import EndpointCapacityUnavailable
 from .lifecycle import (
     MonotonicEpochClock,
     RequestLifecycleSeed,
@@ -87,7 +88,7 @@ from .shared_credit import (
     EndpointCreditSnapshot,
     FairEndpointCreditCoordinator,
 )
-from .topology import healthy_endpoints
+from .topology import healthy_endpoints, schedulable_endpoints
 from .token_budget import (
     ArrivalRateEwma,
     ServiceQuantumTokenBudgetController,
@@ -125,6 +126,7 @@ __all__ = [
     "EndpointSnapshot",
     "EndpointRouter",
     "EndpointCreditSnapshot",
+    "EndpointCapacityUnavailable",
     "EwmaAimdAdmissionController",
     "FixedTimeoutFlush",
     "FairEndpointCreditCoordinator",
@@ -181,6 +183,7 @@ __all__ = [
     "WindowDecision",
     "WindowController",
     "healthy_endpoints",
+    "schedulable_endpoints",
     "build_request_trace_rows",
     "slice_service_quanta",
     "slo_constrained_reward",

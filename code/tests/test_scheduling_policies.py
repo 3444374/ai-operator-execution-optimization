@@ -18,7 +18,10 @@ from src.scheduling.routing import (  # noqa: E402
     RequestPoolRouter,
     RoundRobinEndpointRouter,
 )
-from src.scheduling.topology import healthy_endpoints  # noqa: E402
+from src.scheduling.topology import (  # noqa: E402
+    healthy_endpoints,
+    schedulable_endpoints,
+)
 
 
 def request(
@@ -52,6 +55,7 @@ def endpoint(
     waiting: int = 0,
     active_work: int = 0,
     service_rate: float | None = None,
+    available: bool = True,
 ) -> EndpointSnapshot:
     return EndpointSnapshot(
         endpoint_id,
@@ -65,18 +69,31 @@ def endpoint(
         1.0,
         active_work,
         service_rate,
+        available,
     )
 
 
 class SchedulingPolicyTests(unittest.TestCase):
     def test_healthy_endpoints_filters_pool_and_health(self) -> None:
         topology = TopologySnapshot(
-            (endpoint("e1"), endpoint("e2", healthy=False), endpoint("e3", pool_id="long")),
+            (
+                endpoint("e1"),
+                endpoint("e2", healthy=False),
+                endpoint("e3", pool_id="long"),
+                endpoint("e4", available=False),
+            ),
             1.0,
         )
 
         self.assertEqual(
             [item.endpoint_id for item in healthy_endpoints(topology, "default")],
+            ["e1", "e4"],
+        )
+        self.assertEqual(
+            [
+                item.endpoint_id
+                for item in schedulable_endpoints(topology, "default")
+            ],
             ["e1"],
         )
 

@@ -386,6 +386,16 @@ project 512 calibration，不启动 formal 或新上游策略。补行必须复�
 参数，按过滤后 eligible-row offset 选择 suffix，先逐字段核验 `0..2047`，
 再 append-only 写入 `2048..2559`；禁止 upsert 覆盖旧行。
 
+第二次 64 行 re-gate 已在 `beeee20` 通过，但随后 512 行校准首场景暴露
+active-work 背压语义缺陷：调度器曾把“该请求会超过 endpoint-local work
+credit”复用为 `healthy=false`。当冻结 manifest 指定的 endpoint 暂满、另一
+endpoint 仍有容量时，pinned router 会误报服务不健康而不是等待。当前模型已
+明确拆成长期/观测健康 `healthy` 与 request-specific `available`；容量不足是
+可重试背压，真实不健康仍立即失败。preferred endpoint 也固定其 pool，不能被
+pool fallback 改写。fixed-pool、multi-pool pinned 与 shared-credit oversized
+边界均已测试锁定。失败校准 0/9、无该失败请求的 HTTP 提交且无 `runs.csv`，
+现场保留；新提交通过全新 64 行远端门禁前仍不得恢复 512 校准。
+
 完整顺序与放弃条件见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
 

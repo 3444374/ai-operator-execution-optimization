@@ -282,6 +282,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/workloads.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
 | `code/src/experiment_scenarios.py` | 可复现的 warm-up / formal 场景交错顺序生成器 | 修改实验随机化与运行顺序前读 |
 | `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core；按 `organization/`、`submission_control/`、`endpoint_routing/`、`runtime/` 分包，根级旧模块仅作兼容导入 | 实现或审查运行时策略前读 |
+| `code/src/scheduling/errors.py` | 可重试 endpoint capacity 背压与终止性调度错误的 typed 边界 | 修改健康/容量语义或 scheduler retry 控制流前读 |
 | `code/src/scheduling/organization/` | 上游 static/service-quantum token-budget 决策 | 修改数据组织预算控制或动态安全动作集前读 |
 | `code/src/scheduling/organization/service_quantum.py` | 将 planning batch 按预测 work 切成不拆单行的有界 service-completion 单元 | 修改 HTTP/Ray completion 粒度、whole-submission HOL 或 quantum 超预算语义前读 |
 | `code/src/scheduling/submission_control/` | static/adaptive admission、active-work 与多 job shared fair credit | 修改提交反压、公平性或 endpoint capacity 语义前读 |

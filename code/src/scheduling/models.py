@@ -59,6 +59,7 @@ class EndpointSnapshot:
     observed_at_s: float
     estimated_active_work: int = 0
     service_rate_tokens_s: float | None = None
+    available: bool = True
 
     def __post_init__(self) -> None:
         if not self.endpoint_id or not self.url or not self.pool_id:

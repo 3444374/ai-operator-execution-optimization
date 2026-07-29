@@ -22,10 +22,14 @@ from src.scheduling.models import (  # noqa: E402
 )
 from src.scheduling.routing import (  # noqa: E402
     LeastQueuedEndpointRouter,
+    PinnedEndpointRouter,
     RequestPoolRouter,
     RoundRobinEndpointRouter,
 )
 from src.scheduling.scheduler import SynchronousScheduler  # noqa: E402
+from src.scheduling.shared_credit import (  # noqa: E402
+    FairEndpointCreditCoordinator,
+)
 
 
 def envelope(index: int) -> PayloadEnvelope:
@@ -163,7 +167,11 @@ class SchedulerTests(unittest.TestCase):
                 endpoint = next(
                     item
                     for item in topology.endpoints
-                    if item.healthy and item.pool_id == pool_id
+                    if (
+                        item.healthy
+                        and item.available
+                        and item.pool_id == pool_id
+                    )
                 )
                 return RoutingDecision(endpoint.endpoint_id, pool_id, "first")
 
@@ -204,7 +212,11 @@ class SchedulerTests(unittest.TestCase):
                 endpoint = next(
                     item
                     for item in topology.endpoints
-                    if item.healthy and item.pool_id == pool_id
+                    if (
+                        item.healthy
+                        and item.available
+                        and item.pool_id == pool_id
+                    )
                 )
                 return RoutingDecision(endpoint.endpoint_id, pool_id, "first")
 
@@ -228,6 +240,192 @@ class SchedulerTests(unittest.TestCase):
             adapter.submitted[:3],
             [("r0", "e1"), ("r1", "e2"), ("r2", "e1")],
         )
+
+    def test_pinned_endpoint_waits_for_its_own_work_credit(self) -> None:
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=8),
+            router=PinnedEndpointRouter(),
+            adapter=adapter,
+            pool_id="default",
+            per_endpoint_work_limit=20,
+        )
+        pinned = [
+            PayloadEnvelope(
+                BatchRequest(
+                    request_id=f"r{index}",
+                    job_id="j1",
+                    operator="ai_complete",
+                    row_count=1,
+                    prompt_tokens=10,
+                    estimated_output_tokens=5,
+                    prefix_key="",
+                    first_arrival_s=float(index),
+                    oldest_arrival_s=float(index),
+                    payload_id=f"p{index}",
+                    preferred_endpoint_id="e1",
+                ),
+                f"payload-{index}",
+            )
+            for index in range(2)
+        ]
+
+        result = scheduler.run(pinned, topology())
+
+        self.assertEqual(adapter.submitted, [("r0", "e1"), ("r1", "e1")])
+        self.assertEqual(result.max_inflight_seen, 1)
+        self.assertEqual(result.max_active_work_per_endpoint_seen, 15)
+
+    def test_pinned_endpoint_keeps_its_pool_while_capacity_is_full(
+        self,
+    ) -> None:
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=8),
+            router=PinnedEndpointRouter(),
+            adapter=adapter,
+            pool_id="short",
+            pool_router=RequestPoolRouter(long_request_tokens=100),
+            per_endpoint_limit=1,
+        )
+        multi_pool_topology = TopologySnapshot(
+            (
+                EndpointSnapshot(
+                    "long-1",
+                    "http://localhost/long-1",
+                    "long",
+                    "0",
+                    True,
+                    0,
+                    0,
+                    0.0,
+                    1.0,
+                ),
+                EndpointSnapshot(
+                    "short-1",
+                    "http://localhost/short-1",
+                    "short",
+                    "1",
+                    True,
+                    0,
+                    0,
+                    0.0,
+                    1.0,
+                ),
+            ),
+            1.0,
+        )
+        pinned = [
+            PayloadEnvelope(
+                BatchRequest(
+                    request_id=f"r{index}",
+                    job_id="j1",
+                    operator="ai_complete",
+                    row_count=1,
+                    prompt_tokens=10,
+                    estimated_output_tokens=5,
+                    prefix_key="",
+                    first_arrival_s=float(index),
+                    oldest_arrival_s=float(index),
+                    payload_id=f"p{index}",
+                    preferred_endpoint_id="long-1",
+                ),
+                f"payload-{index}",
+            )
+            for index in range(2)
+        ]
+
+        scheduler.run(pinned, multi_pool_topology)
+
+        self.assertEqual(
+            adapter.submitted,
+            [("r0", "long-1"), ("r1", "long-1")],
+        )
+
+    def test_fixed_pool_waits_when_only_another_pool_has_capacity(
+        self,
+    ) -> None:
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=8),
+            router=RoundRobinEndpointRouter(),
+            adapter=adapter,
+            pool_id="default",
+            per_endpoint_limit=1,
+        )
+        multi_pool_topology = TopologySnapshot(
+            (
+                EndpointSnapshot(
+                    "default-1",
+                    "http://localhost/default-1",
+                    "default",
+                    "0",
+                    True,
+                    0,
+                    0,
+                    0.0,
+                    1.0,
+                ),
+                EndpointSnapshot(
+                    "other-1",
+                    "http://localhost/other-1",
+                    "other",
+                    "1",
+                    True,
+                    0,
+                    0,
+                    0.0,
+                    1.0,
+                ),
+            ),
+            1.0,
+        )
+
+        scheduler.run([envelope(0), envelope(1)], multi_pool_topology)
+
+        self.assertEqual(
+            adapter.submitted,
+            [("r0", "default-1"), ("r1", "default-1")],
+        )
+
+    def test_shared_credit_rejects_oversized_request_before_submit(
+        self,
+    ) -> None:
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=1),
+            router=RoundRobinEndpointRouter(),
+            adapter=adapter,
+            pool_id="default",
+            per_endpoint_work_limit=100,
+            shared_credit=FairEndpointCreditCoordinator(
+                {"e1": (1, 100), "e2": (1, 100)},
+                quantum=100,
+            ),
+        )
+        oversized = PayloadEnvelope(
+            BatchRequest(
+                request_id="oversized",
+                job_id="j1",
+                operator="ai_complete",
+                row_count=1,
+                prompt_tokens=101,
+                estimated_output_tokens=0,
+                prefix_key="",
+                first_arrival_s=0.0,
+                oldest_arrival_s=0.0,
+                payload_id="oversized-payload",
+            ),
+            "payload",
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "exceeds endpoint work limit",
+        ):
+            scheduler.run([oversized], topology())
+
+        self.assertEqual(adapter.submitted, [])
 
     def test_observed_endpoint_work_counts_toward_work_cap(self) -> None:
         observed = TopologySnapshot(
@@ -255,7 +453,8 @@ class SchedulerTests(unittest.TestCase):
             request_work=5,
         )
 
-        self.assertFalse(capped.endpoints[0].healthy)
+        self.assertTrue(capped.endpoints[0].healthy)
+        self.assertFalse(capped.endpoints[0].available)
         self.assertEqual(capped.endpoints[0].estimated_active_work, 18)
 
     def test_shared_credit_is_acquired_before_submit_and_released_after(self) -> None:

@@ -41,7 +41,7 @@ code/
 │       ├── submission_control/           ← request/work admission and shared fair credit
 │       ├── endpoint_routing/             ← round-robin/queue/work/prefix routing
 │       ├── runtime/                      ← Ray adapters and cached service observations
-│       └── models.py/scheduler.py/...    ← shared typed core and compatibility imports
+│       └── models.py/errors.py/scheduler.py/... ← typed state, backpressure, orchestration
 ├── tests/
 │   ├── test_sources.py                   ← 数据入口后端最小单元测试
 │   ├── test_organizers.py                ← 数据组织后端最小单元测试
@@ -151,6 +151,13 @@ data-organization policies, request/work admission, shared multi-job credit,
 endpoint routing, a deterministic policy-composition scheduler, and Ray runtime
 adapters. Policy modules do not import Daft, Arrow, Ray, or HTTP; only runtime
 adapters receive the active Ray module explicitly.
+
+Endpoint state separates service health (`healthy`) from request-specific
+admission capacity (`available`). Routers use `schedulable_endpoints()` for
+selection, while `healthy_endpoints()` remains a pure health query. Temporary
+request/work-credit exhaustion raises typed backpressure so the scheduler
+collects a completion and retries; a manifest-pinned request keeps both its
+endpoint and that endpoint's pool.
 Arrival replay is produced through a one-element bounded queue so waiting for
 the next source arrival cannot block Ray completion collection. The scheduler
 keeps submit/routing/credit/lifecycle state on its main thread: it prioritizes

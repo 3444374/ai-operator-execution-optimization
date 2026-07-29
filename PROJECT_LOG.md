@@ -2733,3 +2733,28 @@
   通过。下一步只允许在新提交与全新远端目录重跑 64 行 gate，通过后再启动
   512 行 K/active-work 校准。
 - 开题 PPT 由另一对话并行修改，本轮未触碰；按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 Project active-work 校准：健康状态与容量背压分离
+
+- 修复输出 work 口径后，全新 64 行门禁
+  `dual_gpu_same_condition_project_gate64_20260729_beeee20` 通过：64/64
+  exactly-once、endpoint 32/32、0 incident、0 worker failure，manifest
+  64/64 校验通过，服务端 prompt/generation/success counter 为
+  12058/13554/64，最终双 endpoint 队列均为 0。
+- 随后 512 行校准首个交错场景 `work16384` 在第 89 个请求、任何该请求 HTTP
+  提交前失败。endpoint-0 已有 44 个请求、16,161 active work；固定到该端点
+  的新请求 work=234，加入后会到 16,395，超过 16,384。endpoint-1 尚有容量，
+  但旧调度器把“当前请求在 endpoint-0 暂时无 credit”覆盖写成
+  `healthy=false`，因此 pinned router 误报服务不健康。外部 `/health` 始终
+  正常，失败后队列归零；失败目录
+  `dual_gpu_same_condition_project_calibration_20260729_beeee20`、stderr、
+  manifest 与 incident 原样保留，未重试且无 `runs.csv`。
+- 测试先行把 `EndpointSnapshot.healthy` 与 request-specific `available`
+  分离；固定 endpoint 同时固定其所属 pool，容量不足抛可重试的 typed
+  backpressure，调度器先收集完成再重试，绝不改投另一 endpoint。公开
+  `healthy_endpoints()` 保持纯健康语义，新增 `schedulable_endpoints()`；
+  fixed-pool、multi-pool pinned、oversized shared-credit fail-fast 均有回归。
+- 最终本地全量 512 tests、相关 170 tests、ruff、compileall 和
+  `git diff --check` 通过，独立代码审阅无 Critical/Important。下一步只能在
+  新提交和全新远端目录重跑 64 行门禁；通过后才重新开始 512 行校准。
+- 开题 PPT 仍由另一对话修改，本轮未触碰；按用户要求不执行 Wiki 同步。

@@ -9,6 +9,7 @@ from dataclasses import dataclass, replace
 from queue import Empty, Full, Queue
 from typing import Callable, Iterable, Iterator, Protocol
 
+from .errors import EndpointCapacityUnavailable
 from .models import (
     AdmissionDecision,
     BatchRequest,
@@ -249,6 +250,8 @@ class SynchronousScheduler:
             if request_id in submission_order:
                 raise ValueError(f"duplicate request_id: {request_id}")
             submission_order[request_id] = len(submission_order)
+            pool_id: str | None = None
+            route: RoutingDecision | None = None
             while True:
                 hol_age_s = self._head_of_line_age_s(submission_context)
                 globally_allowed = self.admission.decide(
@@ -262,9 +265,34 @@ class SynchronousScheduler:
                     request_work=envelope.request.estimated_total_tokens,
                 )
                 if globally_allowed and any(
-                    endpoint.healthy for endpoint in capacity_topology.endpoints
+                    endpoint.healthy and endpoint.available
+                    for endpoint in capacity_topology.endpoints
                 ):
-                    break
+                    preferred_endpoint = endpoints_by_id.get(
+                        envelope.request.preferred_endpoint_id
+                    )
+                    pool_id = (
+                        preferred_endpoint.pool_id
+                        if preferred_endpoint is not None
+                        else (
+                            self.pool_router.route(
+                                envelope.request,
+                                capacity_topology,
+                            ).pool_id
+                            if self.pool_router is not None
+                            else self.pool_id
+                        )
+                    )
+                    try:
+                        route = self.router.route(
+                            envelope.request,
+                            capacity_topology,
+                            pool_id,
+                        )
+                    except EndpointCapacityUnavailable:
+                        route = None
+                    if route is not None:
+                        break
                 if not pending:
                     raise RuntimeError(
                         "admission denied or no endpoint has capacity with no "
@@ -279,31 +307,8 @@ class SynchronousScheduler:
                 )
                 bounded_wait_samples.append(collected.wait_s)
                 fanin_s += collected.result_s
-            pool_id = (
-                self.pool_router.route(
-                    envelope.request,
-                    self._topology_with_local_inflight(
-                        topology,
-                        submission_context,
-                        per_endpoint_limit=self.per_endpoint_limit,
-                        per_endpoint_work_limit=self.per_endpoint_work_limit,
-                        request_work=envelope.request.estimated_total_tokens,
-                    ),
-                ).pool_id
-                if self.pool_router is not None
-                else self.pool_id
-            )
-            route = self.router.route(
-                envelope.request,
-                self._topology_with_local_inflight(
-                    topology,
-                    submission_context,
-                    per_endpoint_limit=self.per_endpoint_limit,
-                    per_endpoint_work_limit=self.per_endpoint_work_limit,
-                    request_work=envelope.request.estimated_total_tokens,
-                ),
-                pool_id,
-            )
+            if pool_id is None or route is None:
+                raise AssertionError("routing decision missing after admission")
             endpoint = endpoints_by_id.get(route.endpoint_id)
             if endpoint is None:
                 raise RuntimeError("router selected an endpoint outside the topology")
@@ -438,8 +443,8 @@ class SynchronousScheduler:
             endpoints=tuple(
                 replace(
                     endpoint,
-                    healthy=(
-                        endpoint.healthy
+                    available=(
+                        endpoint.available
                         and (
                             per_endpoint_limit is None
                             or inflight_by_endpoint.get(endpoint.endpoint_id, 0)
