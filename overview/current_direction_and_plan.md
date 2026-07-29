@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-生成日期：2026-07-17（最后更新：2026-07-26）
+生成日期：2026-07-17（最后更新：2026-07-29）
 
 > 本文档是项目方向的**快速参考卡片**。完整定义、依据和细节见 `PROJECT_OUTLINE.md`（项目总纲）、`AGENTS.md`（规则边界）、`research/knowledge_hub.md`（知识库）。本文档不替代上述文件，仅提供 TL;DR。
 
@@ -94,13 +94,16 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - ✅ SLO-aware EWMA flush：双 4090 high/arrival-limited 六场景 24/24；
   相对 fixed-50 吞吐 -0.52%/+0.10%，P99 -0.94%/-0.49%，所有 30s SLO
   零违约；25–50ms 动作未形成一阶收益，不晋升
+- ✅ 双 4090 Shared-vLLM 1/2/4-job：36/36、0 incident；共享 credit
+  容量安全与公平门槛通过。2-job 无增量；4-job 聚合吞吐 +9.57%、
+  max P99 -22.52%，但逐 repeat 不稳定，暂作高竞争条件性候选
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P1**：Shared-vLLM 扩展 1/2/4 job；共享 endpoint 的 request/work
-   credit 与 work-conserving 公平队列代码已完成，尚待远端门禁和正式数据
+1. **P1**：Shared-vLLM 4-job held-out、staggered idle borrowing、
+   weighted overlap fairness 与异构 workload/arrival offset
 2. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
 3. **P2**（文本门禁已完成）：多模态泛化验证
-4. 在当前 2×4090 上完成多 endpoint / 多 GPU 的多 job 公平性、路由与故障迁移
+4. 在当前 2×4090 上完成 staggered/weighted 公平性、路由与故障迁移
 5. 代价模型增加独立时间段/新 workload 校准和预测区间
 
 继续从文献提取机制时，统一按

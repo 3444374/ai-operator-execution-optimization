@@ -259,7 +259,7 @@ least-work、动态预算、shared-credit、异构显存容量、故障迁移和
 | AIMD/EWMA/PID | 高（代码） | 单作业矩阵 + static K16 control + shared-vLLM 双作业 | AIMD 饱和至 K16，未保护前台；不默认启用 |
 | UCB bandit | 中（纯控制器） | 无端到端实验 | 尚未接入执行路径 |
 | Actor pool / endpoint routing | 高（有界 slots/trace） | 双 GPU 1×256/2×128/4×64 formal | 多 actor 未过 5% 门槛；单 job 保留 1×256，多 job 分池待测 |
-| Shared-vLLM group runner | 高（代码/模板） | 本地契约测试；真实双 GPU gate 待运行 | 1/2/4-job 独立/静态分区/shared-DRR 已预注册，gate 未过前无性能结论 |
+| Shared-vLLM group runner | 高（代码/模板/真实 formal） | 双 4090 36/36 group run、63 formal job | shared-credit 容量安全、公平性通过；2-job 无增量，4-job 聚合过 5% 门槛但逐 repeat 不稳定，暂作高竞争条件性候选 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |
 | 多模态复用 | 低 | 未启动 | 文本主线完成后进行 |
 | 算子代价估计 | 中 | 283 行、70 配置组、五个 held-out split | 粗粒度可用；不能作严格 SLO 预测 |
@@ -292,20 +292,30 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 3. prefix ratio `0/30/70/100%` cache-off 实验未显示 prefix-only 收益，
    并修复唯一 prefix 重排和隐式 length-align 耦合。
 
-### 下一优先：多 job shared credit/fairness 与缓存机制
+### 已完成：多 job shared credit/fairness 核心矩阵
+
+- 1/2/4-job × independent/static/shared-DRR 共 36/36 group run 完成；
+  共享 request/work credit 无越界并最终归零；
+- 1-job 协调开销可忽略，2-job 无可分辨增量；
+- 4-job shared 聚合吞吐 +9.57%、max P99 -22.52%、max JCT -15.89%，
+  但三次吞吐变化为 +8.43%/-0.28%/+22.60%，保留为高竞争条件性候选；
+- staggered idle borrowing、weighted overlap fairness 和异构 workload
+  尚未验证。
+
+### 下一优先：4-job 复验、瞬态饱和与缓存机制
 
 1. 已完成 16K–131K active-work 扩展曲线，选择 65,536；
 2. 已完成固定 slots/CPU 的 1×256/2×128/4×64 actor pool 对照，保留 1×256；
 3. 已完成 whole-batch、service quantum 与 request diagnostic，固定 quantum
    未过 5% 门槛；
 4. 已完成 SLO-aware EWMA flush 正式对照，25–50ms 动作未过 5% 门槛；
-   下一步门禁 Shared-vLLM 1/2/4-job shared request/work credit 与
-   work-conserving fairness；
-   正式 group runner 已具备共同 replay epoch、启动偏差门禁、endpoint-global
-   精确 credit 峰值、组级 vLLM/GPU/MFU、每 job exactly-once、durable record
-   与安全 resume；当前仅通过本地契约测试，真实双 GPU gate 尚未运行；
-5. Prefix-aware 只有在单独启用 prefix cache、记录命中证据后才重新评估；
-6. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
+5. 已完成 Shared-vLLM 1/2/4-job 核心矩阵；下一步先做 4-job held-out，
+   再用共同 overlap-window service rate 验证 staggered idle borrowing 与
+   weighted fairness；
+6. 单独建立 transient saturation/ramp 实验，固定总工作量与下游容量，比较
+   direct flood、最佳静态 active-work 和快速 ramp controller；
+7. Prefix-aware 只有在单独启用 prefix cache、记录命中证据后才重新评估；
+8. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
    K=8 safety fallback。
 
 完整顺序与放弃条件见

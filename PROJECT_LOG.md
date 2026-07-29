@@ -1,5 +1,30 @@
 # 项目日志
 
+## 2026-07-29 Shared-vLLM 1/2/4-job 正式矩阵条件性正结果
+
+- 双 4090 正式矩阵 36/36 group runs 完成、0 incident；27 个 formal group
+  run 包含 63 个 job、32,256 个 request。每 job 512/512 completed，
+  request id 全局唯一，两个 endpoint 均有流量，runner 与租约正常退出。
+- `shared_drr` 的 9 个 formal credit trace 均满足 endpoint 全局上限：
+  active requests 峰值 197/256，active work 峰值 65,536/65,536，结束时
+  active/waiting request/work 全部归零。有等待时 2/4-job active-work ratio
+  均值为 0.9966/0.9960，未发现 credit 足以容纳最大请求却仍等待的采样点。
+- 1-job shared 相对 static 吞吐 -0.02%，通过 3% 协调开销门槛；2-job
+  shared 相对 independent 吞吐 -0.04%、max P99 -0.04%，没有 5% 增量。
+- 4-job shared 相对 independent 吞吐 +9.57%、max P99 -22.52%、max JCT
+  -15.89%；相对 static partition 为 +7.91%/-14.78%/-10.53%。Jain
+  fairness median 为 0.9961，最低 normalized service/mean 为 0.9193，
+  通过公平性门槛。
+- 4-job 结果存在重复间异质性：shared 相对 independent 吞吐分别
+  +8.43%、-0.28%、+22.60%，不能写成无条件稳定加速。当前结论是：
+  shared credit/DRR 已通过容量安全与公平性验证，并在高竞争聚合数据上达到
+  晋级门槛；2-job 无收益，4-job 仍需 held-out repeats。
+- 结果落盘于
+  `experiments/results/dual_gpu_shared_vllm_formal_20260729_1135/`。
+  下一机制验证是 staggered idle borrowing、weighted overlap fairness，
+  以及单独的 transient saturation/ramp 实验；不重复当前矩阵，也不把策略
+  写成 vLLM 内部推理加速。
+
 ## 2026-07-29 SLO-aware EWMA flush 正式矩阵负结果
 
 - 双 GPU 正式矩阵 24/24 runs 完成、0 incident、0 skipped，租约正常释放；

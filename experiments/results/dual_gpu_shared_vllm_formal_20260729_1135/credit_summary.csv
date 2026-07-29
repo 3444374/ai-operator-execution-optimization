@@ -1,0 +1,4 @@
+job_count,repeats,request_peak,work_peak,final_zero_all,waiting_samples,active_work_ratio_when_waiting_mean,active_work_ratio_when_waiting_p05,fit_eligible_waiting_samples
+1,3,178,65524,true,0,,,0
+2,3,194,65536,true,166,0.996598,0.986313,0
+4,3,197,65536,true,440,0.995968,0.987289,0

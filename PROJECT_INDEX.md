@@ -6,6 +6,9 @@
 |---|---|---|
 | `code/INFRA_STATUS.md` | Current Daft+Ray AI-operator infra flow, implementation completeness, evidence boundaries, and prioritized remaining work | Use for a single implementation-status handoff before reading detailed plans |
 | `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` | Unified map from implemented/tested mechanisms to code, tests, principal result directories, evidence level, current decision, and remaining validation | Read first when asking what has actually been implemented, tested, proven, rejected, or left unverified |
+| `experiments/results/dual_gpu_shared_vllm_formal_20260729_1135/README.md` | Shared-vLLM 1/2/4-job independent/static/shared-DRR seven-step formal report | Audit the capacity/fairness pass, the 2-job no-gain boundary, the 4-job conditional gain and repeat instability |
+| `experiments/results/dual_gpu_shared_vllm_formal_20260729_1135/formal_summary.csv` | Plot-ready throughput, MFU, JCT, P99, SLO and fairness statistics | Compare all nine formal cells without downloading remote request traces |
+| `experiments/results/dual_gpu_shared_vllm_formal_20260729_1135/credit_summary.csv` | Shared-credit exact request/work peaks and waiting utilization audit | Verify global capacity, final-zero and work-conserving behavior |
 | `experiments/results/dual_gpu_slo_ewma_flush_formal_20260729/README.md` | High/arrival-limited fixed, queue-adaptive and SLO-EWMA flush formal comparison | Audit why a functioning load-sensitive controller did not pass the 5% gate and why fixed-50 remains the single-job baseline |
 | `experiments/results/dual_gpu_slo_ewma_flush_formal_20260729/formal_summary.csv` | Plot-ready throughput, SLO, tails, utilization, selected waits, fallback and completion-lag summary | Compare all six formal arms without downloading large remote traces |
 | `experiments/results/dual_gpu_service_quantum_20260729/README.md` | Fixed-saturation-work batch/complete-row-quantum/request comparison with causal credit analysis | Distinguish a real HOL/credit reduction from the absence of a steady-state throughput win |
@@ -544,8 +547,8 @@ python feasibility/benchmarks/analyze_results.py \
 - ✅ Queue-adaptive flush 首次实现与测试（⚠️ adaptive 当前不如静态 K_max=8，foreground E2E 10.2s vs 7.3s，见 experiment_status_and_gaps.md P0-1）
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P1**：Shared-vLLM 1/2/4-job shared request/work credit 与
-   work-conserving 公平队列远端门禁和正式矩阵
+1. **P1**：Shared-vLLM 核心 1/2/4-job 已完成；补 4-job held-out、
+   staggered idle borrowing、weighted overlap fairness 与异构 mix/offset
 2. **P1**：Prefix cache-on 与 length-align 独立消融
 3. **P2**：图像 workload 多模态泛化验证
 4. 算子代价估计增加独立时间段、新 workload 与预测区间

@@ -152,20 +152,26 @@
   high/arrival-limited 的吞吐为 -0.52%/+0.10%，P99 为 -0.94%/-0.49%，
   所有 30s SLO 均零违约。25–50ms 动作相对 5.6–17.4s P99 缺少一阶杠杆，
   SLO-EWMA 不晋升
+- ✅ 双 4090 Shared-vLLM 1/2/4-job：36/36 group run、0 incident，
+  endpoint-shared request/work credit 全程不越界并最终归零。1-job 协调
+  开销 -0.02%，2-job shared 与 independent 不可分辨；4-job shared
+  聚合吞吐 +9.57%、max P99 -22.52%、max JCT -15.89%，Jain median
+  0.9961。4-job 三次吞吐变化为 +8.43%/-0.28%/+22.60%，因此仅记为
+  高竞争条件性候选，需 held-out 复验
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1**：Shared-vLLM 扩展 1/2/4 job、不同 workload mix 和 arrival
-   offset；endpoint-shared request/work credit 与 work-conserving 公平队列
-   代码已完成，下一步是远端门禁和正式 GPU 公平性数据。
+1. **P1**：Shared-vLLM 核心 1/2/4-job equal-workload 矩阵已完成；下一步
+   用 held-out repeats 确认 4-job 稳定性，并分别验证 staggered idle
+   borrowing、weighted overlap fairness 和异构 workload mix。
 2. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
    证据，不能用当前 cache-off 数据推断缓存收益。
 3. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
 4. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
    ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
-5. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay 与 active-work
-   重复 formal；容量与机制证据已建立，1/2/4 job 公平性、路由策略和故障迁移
-   仍待验证。
+5. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work
+   与 equal-weight 1/2/4-job 重复 formal；路由增量、staggered/weighted
+   公平性与故障迁移仍待验证。
 6. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
 7. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 

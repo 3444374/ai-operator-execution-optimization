@@ -531,3 +531,24 @@ work conservation，不修改、也不声称改进 vLLM 内部 continuous batchi
 同质 equal-workload 下若三种策略没有差异，是有效的边界结果；只有在并发
 竞争或 arrival/workload 异质性下出现稳定改善，才能把收益归因于共享 credit
 与公平队列。
+
+### 13.7 正式结果与决策（2026-07-29）
+
+- 正式矩阵 36/36 group run 完成、0 incident；63 个 formal job 共
+  32,256 request，每 job 512/512 completed，request id 全局唯一。
+- 9 个 formal `shared_drr` credit trace 全部满足 256 request /
+  65,536 predicted-work 上限并最终归零；2/4-job 有等待时 active-work
+  ratio 均值为 0.9966/0.9960，未发现 fit-eligible waiting 采样点。
+- 1-job shared 相对 static 吞吐 -0.02%，通过协调开销门槛；2-job shared
+  相对 independent 吞吐 -0.04%、max P99 -0.04%，未达到 5% 收益门槛。
+- 4-job shared 相对 independent 吞吐 +9.57%、max P99 -22.52%、
+  max JCT -15.89%；Jain fairness median 0.9961，最低 normalized
+  service/mean 0.9193，聚合值通过预注册门槛。
+- 4-job 三次吞吐收益为 +8.43%、-0.28%、+22.60%，策略不是逐 repeat
+  稳定胜出。决策为“高竞争条件性候选”：保留 shared credit/DRR 作为容量
+  安全与公平基础设施，但在 held-out 复验前不晋升为通用默认。
+- staggered 和 weighted 场景仍未运行；必须先补共同 overlap window 的
+  service-rate 指标，再分别验证 idle borrowing 与 3:1 weighted fairness。
+
+完整七步报告见
+`experiments/results/dual_gpu_shared_vllm_formal_20260729_1135/README.md`。

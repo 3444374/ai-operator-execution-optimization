@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-29，补充 SLO-EWMA 正式负结果与多 job 优先级）
+Date: 2026-07-20（最后更新：2026-07-29，补充 Shared-vLLM 正式结果与边界）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -34,7 +34,7 @@ Date: 2026-07-20（最后更新：2026-07-29，补充 SLO-EWMA 正式负结果�
 | **Request-level continuous replenishment** | ⚠️ 双卡重复已完成 | global K32≈per-endpoint K16，确认 K 语义；work-matched request K48≈batch K16；request K64 为最高已测吞吐 | K64 同时增加约 33% offered work 且 P99 更差，尚未隔离补位机制的独立吞吐/SLO 收益；需固定 active work 复验 |
 | **Per-endpoint active-work capacity** | ✅ 07-29 扩展曲线完成 | 双 4090 八档各三次 formal；32/32 成功，65K 达最大吞吐 97.80%，下一档 +0.92% | 按预注册规则选择 65,536；98K→131K 吞吐持平而 P99/SLO 更差 |
 | **SLO-aware EWMA flush** | ✅ 07-29 | 双 4090 high/arrival-limited 各 3 次 formal；相对 fixed-50 吞吐 -0.52%/+0.10%，P99 -0.94%/-0.49%，30s SLO 全部零违约 | 25–50ms 动作相对 5.6–17.4s P99 缺少一阶杠杆；`near_*` 实测为 arrival-limited，不晋升动态策略 |
-| **多 job/多 foreground size 扩展** | ⏳ 代码完成，GPU 未测 | job-local K 不构成共享 endpoint 的全局保护 | 1/2/4 job、不同 mix/offset；shared request/work credit 与公平队列待远端门禁和正式验证 |
+| **多 job/多 foreground size 扩展** | ✅ 07-29 equal-workload 正式矩阵 | 36/36、0 incident；shared credit 容量安全与公平门槛通过。2-job 无增量；4-job 聚合吞吐 +9.57%、max P99 -22.52%，但逐 repeat 不稳定 | held-out 4-job、staggered idle borrowing、weighted overlap fairness、异构 mix/offset 仍待验证 |
 
 **RC2 当前状态**：✅ static K8 guardrail 与 fixed 50ms coalescing 均有真实
 证据。跨 arrival-rate、2048 held-out 和 shared-vLLM 双作业均未显示
@@ -496,8 +496,9 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
    固定 quantum 不晋升；8192 因会退化为 batch control 未运行；
 5. SLO-aware EWMA flush 已完成正式对照且未晋升；不在同一 25–50ms 动作
    空间继续调 alpha/deadband；
-6. prefix cache-on、多模态复用，以及 shared-vLLM 的 1/2/4 job、workload
-   mix、arrival offset 和共享 endpoint credit/fairness；
+6. prefix cache-on、多模态复用，以及 shared-vLLM 4-job held-out、
+   workload mix、arrival offset、staggered idle borrowing 和 weighted
+   overlap fairness；
 7. 动态控制的信号选择问题——逐请求完成时间或端到端 SLO slack 可能替代
    当前 vLLM waiting 信号（不反映 Ray 侧积压），但尚未验证。
 
@@ -507,6 +508,7 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
 - `experiments/results/joint_batching_submission_512_20260726/README.md`
 - `experiments/results/shared_vllm_adaptive_admission_20260726/README.md`
 - `experiments/results/adaptive_admission_controller_20260726/README.md`
+- `experiments/results/dual_gpu_shared_vllm_formal_20260729_1135/README.md`
 
 ## 10. 2026-07-26 文献驱动执行链缺口重审
 
@@ -550,16 +552,17 @@ decrease 的根因不是控制器参数问题，而是 vLLM Prometheus `waiting`
    whole-batch、service quantum 512/1024/2048/4096 和 request diagnostic；
 4. 只有出现 worker imbalance 时才增加 least-active-work routing；
 5. SLO-aware EWMA flush 已完成且未晋升，不在同一动作空间继续调参；
-6. 转向 Shared-vLLM 1/2/4-job shared request/work credit 与
-   work-conserving fairness gate；只有门禁通过才启动正式矩阵；
+6. Shared-vLLM 1/2/4-job equal-workload 正式矩阵已完成；4-job 聚合结果
+   过门槛但逐 repeat 不稳定，转向 held-out 复验与 staggered/weighted
+   机制隔离；
 7. UCB 必须等 epoch reward 能按产生请求的 arm 正确归因后再接入。
 
-**2026-07-29 实施状态**：已在
-`service_scheduling_backpressure.md` §13 完成 1/2/4-job 三臂预注册与
-fatal-flaw audit。旧 interference runner 不直接用于 formal；新 group
-runner 和 gate/formal 模板负责单次环境准备、统一 replay 起点、每 job 隔离
-trace、组级 vLLM 指标以及 shared-credit 精确峰值。当前只有本地契约验证，
-真实双 GPU gate 未通过前不启动 formal，也不声称公平性或性能收益。
+**2026-07-29 实施状态**：`service_scheduling_backpressure.md` §13 的
+1/2/4-job 三臂 gate 与 formal 均已完成。36/36 group run、0 incident；
+shared credit 精确峰值未越过 256 request/65,536 work，最终归零。
+2-job 无 5% 增量；4-job shared 相对 independent 聚合吞吐 +9.57%、
+max P99 -22.52%，但三次吞吐变化为 +8.43%/-0.28%/+22.60%。因此只晋升为
+高竞争条件性候选，需 held-out 复验；staggered/weighted 仍未验证。
 
 晋级要求是相对最佳静态基线改善 observed tokens/s 或 SLO goodput，且 request
 P99、failure、exactly-once 不退化。否则记录负结果，不增加控制复杂度。
