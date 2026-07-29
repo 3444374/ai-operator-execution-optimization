@@ -34,6 +34,7 @@ from .postgres_manifest import load_postgres_requests
 from .vllm_bench import (
     VllmBenchConfig,
     build_vllm_bench_command,
+    extract_vllm_bench_request_timings,
     write_vllm_custom_dataset,
 )
 
@@ -385,40 +386,40 @@ def _normalize_vllm_bench(
     raw = json.loads(Path(args.input).read_text(encoding="utf-8"))
     input_lens = raw.get("input_lens") or raw.get("input_lengths")
     output_lens = raw.get("output_lens") or raw.get("output_lengths")
-    latencies = raw.get("request_latencies") or raw.get("e2els") or raw.get("e2e_latencies")
-    if not all(
-        isinstance(values, list)
-        for values in (
-            input_lens,
-            output_lens,
-            latencies,
-        )
-    ):
+    if not all(isinstance(values, list) for values in (input_lens, output_lens)):
         raise ValueError(
-            "unsupported vLLM detailed result: expected input_lens, "
-            "output_lens and request_latencies/e2els arrays"
+            "unsupported vLLM detailed result: expected input_lens, output_lens arrays"
         )
-    if not (len(requests) == len(input_lens) == len(output_lens) == len(latencies)):
+    if not (len(requests) == len(input_lens) == len(output_lens)):
         raise ValueError("vLLM detailed result length does not match manifest shard")
+    submitted_at, latencies = extract_vllm_bench_request_timings(
+        raw,
+        len(requests),
+    )
+    generated_texts = raw.get("generated_texts")
+    if not isinstance(generated_texts, list) or len(generated_texts) != len(requests):
+        generated_texts = [None] * len(requests)
     results = tuple(
         BaselineRequestResult(
             doc_id=request.doc_id,
             endpoint_index=request.endpoint_index,
             status="completed",
             error=None,
-            submitted_at_s=0.0,
-            started_at_s=0.0,
-            completed_at_s=float(latency),
+            submitted_at_s=float(submitted),
+            started_at_s=float(submitted),
+            completed_at_s=float(submitted + latency),
             input_tokens=int(input_length),
             output_tokens=int(output_length),
-            output_text=None,
+            output_text=(str(generated_text) if generated_text is not None else None),
             finish_reason=None,
         )
-        for request, input_length, output_length, latency in zip(
+        for request, input_length, output_length, submitted, latency, generated_text in zip(
             requests,
             input_lens,
             output_lens,
+            submitted_at,
             latencies,
+            generated_texts,
         )
     )
     output_dir = Path(args.output_dir)

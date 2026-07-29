@@ -788,6 +788,8 @@ python code/scripts/run_official_baseline_gate.py \
 失败都立即停止后续 cell，写 `run_status.json` 并保留现场；输出根目录已存在
 时拒绝运行。`project_profiler` cell 显式记录为 blocked，仍由现有 profiler
 执行，不能被 core runner 中的近似实现替代。
+vLLM Bench 必须从独立 vLLM venv 启动，并在该 venv 安装与服务完全同版本的
+`vllm[bench]` extra；仅安装 serving 包会在 CustomDataset 读取阶段失败。
 
 `run_official_baseline.py --dry-run` 仍用于单 shard 接口检查且不创建输出目录。
 单 cell 校验由 `validate-gate` 合并两份 summary 和 request CSV；任一

@@ -367,6 +367,55 @@ class OfficialBaselineCliTests(unittest.TestCase):
                 rows = list(csv.DictReader(stream))
             self.assertEqual([row["doc_id"] for row in rows], ["0", "2"])
 
+    def test_normalize_vllm_bench_reconstructs_e2e_from_ttft_itl(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            self._write_balanced_manifest(manifest)
+            raw_result = root / "raw.json"
+            raw_result.write_text(
+                json.dumps(
+                    {
+                        "completed": 2,
+                        "failed": 0,
+                        "errors": ["", ""],
+                        "input_lens": [4, 4],
+                        "output_lens": [2, 3],
+                        "start_times": [10.0, 10.1],
+                        "ttfts": [0.1, 0.2],
+                        "itls": [[0.2], [0.1, 0.1]],
+                        "duration": 0.5,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            normalized = run_cli(
+                [
+                    "normalize-vllm-bench",
+                    "--manifest",
+                    str(manifest),
+                    "--endpoint-index",
+                    "0",
+                    "--endpoint-url",
+                    "http://127.0.0.1:8000/v1/chat/completions",
+                    "--model",
+                    "qwen",
+                    "--input",
+                    str(raw_result),
+                    "--output-dir",
+                    str(root / "normalized"),
+                    "--vllm-running-final",
+                    "0",
+                    "--vllm-waiting-final",
+                    "0",
+                ]
+            )
+
+            self.assertAlmostEqual(normalized["jct_s"], 0.5)
+
     def test_validate_gate_cli_accepts_two_complete_shards(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

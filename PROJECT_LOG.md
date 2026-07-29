@@ -31,7 +31,12 @@
   随后在请求前暴露 tokenizer 漏项：served alias 被当成 Hugging Face repo，
   两端均未发请求并出现网络重试。确认 queue 始终为 0 后终止无效 client，
   runner 正常写失败状态；模板、gate runner 与 shard CLI 现强制使用存在的
-  本地 `MODEL_PATH` tokenizer 目录。
+  本地 `MODEL_PATH` tokenizer 目录。安装官方 `vllm[bench]==0.25.1` extra
+  后，第四轮已真实完成两端各 32 个请求并保存详细 JSON，但实际文件没有
+  `e2els`；按 0.25.1 timeline 源码确认 E2E 应由 `ttft + sum(itls)` 重建。
+  新归一化器同时使用相对 `start_times` 还原 JCT，并以顶层 duration 做
+  100ms/2% 一致性门禁。官方 extra 安装日志保存在
+  `/root/autodl-tmp/logs/vllm_bench_extra_20260729_1700.log`。
   已验证的依赖、未跟踪文件冲突备份、CRLF hash、Ray Serve extra、vLLM
   0.25.1 结果字段、失败证据保存和 service fingerprint 处理均记录在
   `deploy/autodl/README.md`，不依赖新会话重新探索。

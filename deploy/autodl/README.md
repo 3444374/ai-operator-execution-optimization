@@ -301,7 +301,7 @@ cd ai-operator
 | 包 | 版本 | 来源 / 说明 |
 |---|---|---|
 | Python | 3.12.3 | 镜像自带 `/root/miniconda3` |
-| **vllm** | **0.25.1** | **与本机 Docker `vllm/vllm-openai:v0.25.1` 对齐**(见 `experiments/results/adaptive_admission_controller_20260726/service.json`) |
+| **vllm** | **0.25.1 + `bench` extra** | **与本机 Docker `vllm/vllm-openai:v0.25.1` 对齐**；official baseline 还需同版本 `bench` extra(见 `experiments/results/adaptive_admission_controller_20260726/service.json`) |
 | torch | **2.11.0** | vllm 0.25.1 的依赖,pip 会自动把它装上(见下) |
 | ray | 2.56.1 | pip 解析 |
 | daft | 0.7.21 | pip 解析 |
@@ -322,7 +322,7 @@ cd ai-operator
 ```bash
 source /root/miniconda3/etc/profile.d/conda.sh && conda activate base
 # 1) 先装 vllm,让它自己选定 torch(关键:不要先装 bare torch 把版本锁死)
-pip install -i https://pypi.tuna.tsinghua.edu.cn/simple vllm==0.25.1
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 'vllm[bench]==0.25.1'
 # 2) 再装其余(跳过 torch,保留 vllm 选定的版本)
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple \
   numpy "pyarrow>=16,<25" ray "psycopg[binary]>=3.2" daft sqlglot connectorx transformers
@@ -330,7 +330,9 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple \
 
 ### 4.3.1 推荐 uv + 独立 venv(2026-07-27 4090 实测)
 上面 §4.3 把 vllm 装进 base,可行但有两个更优做法(本节实测):
-- **用 uv 替代 pip**:`pip install -U uv` 后 `uv pip install vllm==0.25.1`,解析+并行下载比 plain pip 快一个量级(4090 上约 5 分钟 vs pip 30+ 分钟)。
+- **用 uv 替代 pip**:`pip install -U uv` 后
+  `uv pip install 'vllm[bench]==0.25.1'`,解析+并行下载比 plain pip
+  快一个量级(4090 上约 5 分钟 vs pip 30+ 分钟)。
 - **vllm 装独立 venv,不进 base**:base 留给 driver(ray/daft/psycopg/transformers + 镜像自带 torch);vllm 单独放 `/root/autodl-tmp/venvs/vllm-4090`,两者 torch 互不污染(镜像 base 自带 torch 2.12.1+cu130,vllm 0.25.1 要 torch 2.11.0,分开避免覆盖)。`vllm serve` 用 venv 的 python 启动。
 - **缓存必须放数据盘**:`export UV_CACHE_DIR=/root/autodl-tmp/uv-cache HF_HOME=/root/autodl-tmp/huggingface`,否则 30G 系统盘易满。
 - **Python 环境**:`python -m venv /root/autodl-tmp/venvs/vllm-4090`(用 venv,不要 `conda create`,conda solver 在这套频道下会卡 repodata)。
@@ -344,6 +346,10 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple \
 ```bash
 python -c "import vllm,ray,daft,torch; print(vllm.__version__, ray.__version__, daft.__version__, torch.__version__, torch.cuda.is_available(), torch.cuda.device_count())"
 # 期望:0.25.1 2.56.1 0.7.21 2.11.0 True 2
+
+# 在独立 vLLM venv 额外验证 official benchmark 能力；不能只验证 serve
+/root/autodl-tmp/venvs/vllm-4090/bin/python -c \
+  "import vllm,pandas,datasets,matplotlib,seaborn,scipy,plotly; print(vllm.__version__)"
 ```
 
 ---
@@ -1123,6 +1129,7 @@ failed `summary.json` 和外层日志，不自动重试。
 | vLLM Bench 与其它 arm 输出随机性不等价 | vLLM 0.25.1 源码明确提示 `bench serve` 不再默认 `temperature=0`；不传参数会破坏 frozen Chat contract | 命令构造器显式传 `--temperature 0` 并用回归测试锁定。升级 vLLM 时在真实 gate 前再次只读检查已安装源码/`--help`，不能依赖历史默认值。 |
 | `python -m vllm.benchmarks.serve` 返回 0 但无 stdout/结果 JSON | 0.25.1 的 `benchmarks/serve.py` 只定义函数，没有模块级 `main`；真正 console script 指向 `vllm.entrypoints.cli.main` | 使用相同 vLLM Python 执行 `python -m vllm.entrypoints.cli.main bench serve ...`，回归测试锁定前五个 argv。禁止仅凭子进程退出码 0 判定 benchmark 已执行；还必须存在详细 JSON 并通过归一化。 |
 | vLLM Bench 启动后数分钟不发请求，日志出现 Hugging Face repo 重试 | `--model qwen2.5-7b` 是 served alias；0.25.1 在 `--tokenizer` 缺失时把 model id 当 tokenizer id，尝试访问远程仓库 | gate 模板和 runner 必须显式传本机 `MODEL_PATH` 对应的 tokenizer 目录；加载配置和单 shard CLI 都检查目录实际存在。确认两端 queue 始终为 0 后才可终止无效 client，保留 `run_status.json` 和 shard log。 |
+| 0.25.1 详细 JSON 有请求结果但没有 `e2els` | 实际文件保留 `start_times`、`ttfts`、逐请求 `itls`；源码的 timeline 路径也以 `ttft + sum(itls)` 重建 latency | 归一化器优先接受直接 E2E 数组，否则按官方源码公式重建；以相对 start time 还原 JCT，并要求重建 duration 与顶层 duration 在 `max(100ms, 2%)` 内一致。失败/错误数组也必须为 0/空。 |
 | gate CLI 在失败验证前未留下失败请求行 | 先 summarize/validate，异常发生在写 `requests.csv` 之前 | 现在先原子写 request rows，再验证；失败时写 `status=failed` summary 并保持非零退出。不得用重试覆盖失败现场。 |
 | 8000/8001 被误判为服务配置不一致 | 初版 service fingerprint 把 endpoint URL/端口也纳入 hash | 服务指纹只比较模型、协议、temperature 等等价配置；endpoint 地址作为独立拓扑字段审计。实际 vLLM 启动参数仍需从两个进程命令和 service metadata 单独核对。 |
 | 已有单 shard CLI，但没有可复现的双 endpoint gate runner | 临时拼接后台命令无法保证两个 shard 先启动再等待，也没有逐 cell 失败即停、空队列盖章和统一日志 | 新增 `run_official_baseline_gate.py`。每个 cell 保存 `commands.json`、两份 shard log、两份归一化结果和 `gate.json`；根 `run_status.json` 记录已完成与 blocked cell。已有输出目录拒绝覆盖。 |
