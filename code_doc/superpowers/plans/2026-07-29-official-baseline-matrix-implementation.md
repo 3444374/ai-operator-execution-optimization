@@ -775,11 +775,12 @@ git commit -m "feat: add official runtime baselines"
 **Interfaces:**
 - Produces:
   - `OceanBaseConfig`
+  - `SqlStatement`
   - `build_register_model_sql(config)`
   - `build_ai_complete_sql(table_name, result_table, parallel_degree)`
   - `run_oceanbase_ai_complete(requests, config, connection_factory=None)`
 
-- [ ] **Step 1: Write failing endpoint-registration SQL tests**
+- [x] **Step 1: Write failing endpoint-registration SQL tests**
 
 ```python
 def test_oceanbase_registration_targets_same_vllm_chat_endpoint(self) -> None:
@@ -797,14 +798,17 @@ def test_oceanbase_registration_targets_same_vllm_chat_endpoint(self) -> None:
             parallel_degree=1,
         )
     )
-    joined = "\n".join(statements)
-    self.assertIn("CREATE_AI_MODEL", joined)
-    self.assertIn("CREATE_AI_MODEL_ENDPOINT", joined)
-    self.assertIn("/v1/chat/completions", joined)
-    self.assertIn('"provider": "openai"', joined)
+    self.assertIn("CREATE_AI_MODEL", statements[0].sql)
+    self.assertIn("CREATE_AI_MODEL_ENDPOINT", statements[1].sql)
+    endpoint = json.loads(statements[1].params[1])
+    self.assertEqual(
+        endpoint["url"],
+        "http://127.0.0.1:8000/v1/chat/completions",
+    )
+    self.assertEqual(endpoint["provider"], "openai")
 ```
 
-- [ ] **Step 2: Run and witness RED**
+- [x] **Step 2: Run and witness RED**
 
 Run:
 
@@ -814,7 +818,7 @@ Run:
 
 Expected: import failure because the adapter does not exist.
 
-- [ ] **Step 3: Implement identifier validation and SQL builders**
+- [x] **Step 3: Implement identifier validation and SQL builders**
 
 Accept identifiers matching:
 
@@ -822,8 +826,9 @@ Accept identifiers matching:
 r"[A-Za-z_][A-Za-z0-9_]*"
 ```
 
-Bind all values through PyMySQL parameters. Only validated identifiers and the
-integer parallel degree may be interpolated.
+`SqlStatement` separates SQL text from bound parameters. Bind all values
+through PyMySQL parameters. Only validated identifiers and the integer
+parallel degree may be interpolated.
 
 The execution statement is:
 
@@ -842,7 +847,7 @@ FROM baseline_requests
 ORDER BY doc_id
 ```
 
-- [ ] **Step 4: Write failing exactly-once transaction tests**
+- [x] **Step 4: Write failing exactly-once transaction tests**
 
 Add concrete `RecordingConnection` and `RecordingCursor` test doubles. The
 cursor appends `(sql, params)` to `connection.executed`; `executemany()`
@@ -857,13 +862,13 @@ The connection exposes boolean `committed` and `rolled_back` flags through
 - commit happens only after successful execution;
 - rollback occurs on model-call failure.
 
-- [ ] **Step 5: Implement the minimal PyMySQL adapter**
+- [x] **Step 5: Implement the minimal PyMySQL adapter**
 
 Keep one connection per endpoint shard. The outer dual-endpoint runner starts
 two shard processes concurrently, each with its own OceanBase model key,
 source/result tables and vLLM URL. No Ray or Daft import is allowed.
 
-- [ ] **Step 6: Add the read-only-compatible gate SQL**
+- [x] **Step 6: Add the read-only-compatible gate SQL**
 
 `deploy/autodl/oceanbase_ai_complete_gate.sql` must:
 
@@ -875,7 +880,7 @@ source/result tables and vLLM URL. No Ray or Daft import is allowed.
 
 It must not drop databases, tenants or existing model registrations.
 
-- [ ] **Step 7: Add dependency and AutoDL instructions**
+- [x] **Step 7: Add dependency and AutoDL instructions**
 
 Add:
 
@@ -887,7 +892,7 @@ Document that OceanBase formal is forbidden until the local CE image/version
 gate proves AI Function availability and the endpoint points to
 `127.0.0.1:{8000,8001}`.
 
-- [ ] **Step 8: Run tests and commit**
+- [x] **Step 8: Run tests and commit**
 
 Run:
 

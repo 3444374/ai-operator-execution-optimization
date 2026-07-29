@@ -13,6 +13,13 @@ from .official_runtime import (
     run_daft_prompt,
     run_ray_data_http,
 )
+from .oceanbase import (
+    OceanBaseConfig,
+    SqlStatement,
+    build_ai_complete_sql,
+    build_register_model_sql,
+    run_oceanbase_ai_complete,
+)
 from .results import summarize_results, validate_results
 from .vllm_bench import (
     VllmBenchConfig,
@@ -26,13 +33,18 @@ __all__ = [
     "ChatRequest",
     "DaftPromptConfig",
     "ManifestMetadata",
+    "OceanBaseConfig",
     "RayDataHttpConfig",
+    "SqlStatement",
     "VllmBenchConfig",
     "assign_endpoint_shards",
+    "build_ai_complete_sql",
+    "build_register_model_sql",
     "build_vllm_bench_command",
     "read_manifest",
     "run_bounded_http",
     "run_daft_prompt",
+    "run_oceanbase_ai_complete",
     "run_ray_data_http",
     "summarize_results",
     "validate_results",

@@ -1002,3 +1002,28 @@ AutoDL 租卡跑 pip 装的 vllm,**避开 50xx/6000D/6000 Blackwell**,选 4090 /
 ## 附:本地驱动远端的 SSH helper(参考)
 
 若从本地脚本驱动远端(非交互密码登录),`sshpass`/`plink` 在 Windows 上常缺失,可用 Python+paramiko 自写小 helper:支持 `exec`(短命令,走 `bash -lc`)、`bgexec`(长任务,4s 后主动关 channel,远端 nohup 存活)、`upload_tar`(tar 流走 exec 通道,绕过 SFTP 路径怪异)。凭据只放环境变量,不落盘。该 helper 不入项目库(本地临时),但其模式(尤其 `bgexec` 和 `bash -lc` 包裹)值得任何远程驱动方案沿用。
+
+## OceanBase AI_COMPLETE capability gate (2026-07-29)
+
+OceanBase is an optional product baseline, not a substitute for the
+no-Daft/no-Ray bounded HTTP control. Do not include it in calibration or formal
+results until the exact Community Edition image passes the following gate:
+
+1. both vLLM Chat Completions endpoints are healthy and idle;
+2. the OceanBase version and MySQL-compatible tenant are recorded;
+3. `DBMS_AI_SERVICE`, `AI_COMPLETE`, `DBA_OB_AI_MODELS`, and
+   `DBA_OB_AI_MODEL_ENDPOINTS` are available;
+4. the registered endpoint URL is the intended local
+   `/v1/chat/completions` endpoint with provider `openai`;
+5. one deterministic prompt completes successfully.
+
+Run the read-only discovery section in
+`deploy/autodl/oceanbase_ai_complete_gate.sql` first. The second section creates
+a new explicit gate registration and must run only after every `BASELINE_*`
+placeholder is replaced. It never drops databases, tenants, tables, models, or
+existing endpoints. Preserve failed output as fatal-flaw evidence.
+
+Formal dual-endpoint runs use different model keys and source/result tables for
+each endpoint shard. They are forbidden if the installed CE image lacks the AI
+Function service; do not replace a failed OceanBase cell with a custom Python
+HTTP loop and label it OceanBase.
