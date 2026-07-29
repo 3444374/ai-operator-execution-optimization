@@ -38,6 +38,46 @@ from src.shared_vllm_experiment import (  # noqa: E402
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_credit_observer_prewarms_actor_before_replay(self) -> None:
+        observer = shared_vllm._RayCreditObserver.__new__(
+            shared_vllm._RayCreditObserver
+        )
+        observer.ray = MagicMock()
+        observer.namespace = "namespace"
+        observer.actor_name = "credits"
+        observer.endpoint_ids = ("task-0", "task-1")
+        observer.actor = None
+        client = MagicMock()
+        client.actor = object()
+
+        with patch.object(
+            shared_vllm,
+            "get_or_create_shared_credit_client",
+            return_value=client,
+            create=True,
+        ) as create_client:
+            observer.prewarm(
+                request_limit=256,
+                work_limit=65536,
+                quantum=2048,
+            )
+
+        create_client.assert_called_once_with(
+            observer.ray,
+            name="credits",
+            namespace="namespace",
+            capacities={
+                "task-0": (256, 65536),
+                "task-1": (256, 65536),
+            },
+            quantum=2048,
+        )
+        self.assertEqual(
+            [call.args for call in client.snapshot.call_args_list],
+            [("task-0",), ("task-1",)],
+        )
+        self.assertIs(observer.actor, client.actor)
+
     def test_request_trace_success_matches_profiler_schema(self) -> None:
         self.assertTrue(
             shared_vllm._request_trace_succeeded(

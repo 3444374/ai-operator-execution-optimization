@@ -158,6 +158,14 @@ Remote progress on 2026-07-29:
 - A second failing contract test now distinguishes the two schemas. Request
   evidence accepts only `completed` plus an empty error type; 143 related
   tests pass. Publish this fix and use a third fresh gate directory.
+- Commit `983e6e1` passed 435/435 remote tests. The third gate completed the
+  independent arm, then stopped because shared DRR's first submit was 3.90s
+  late even though both jobs crossed the barrier within 0.2ms and their first
+  submits were only 11.8ms apart.
+- The shared-credit actor was lazily created after the replay barrier. Keep
+  the 2s hard gate: pre-create and validate the actor, then compute the future
+  epoch and launch children. The new prewarm contract and 144 related tests
+  pass. Publish and use a fourth fresh gate directory.
 
 ## Stop conditions
 

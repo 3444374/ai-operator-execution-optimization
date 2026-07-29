@@ -2389,3 +2389,19 @@
   `_request_trace_succeeded` 严格接受 `completed + empty error_type`，并继续
   拒绝 `ok` 或带错误类型的行；相关 143 项测试全部通过。修复发布后仍必须使用
   第三个全新 gate 目录，不得复用两次失败现场。
+- 状态契约修复提交 `983e6e13f4a0420b9b2a35fb448f4df63a65c978`
+  同步后，远端完整测试增至 435 项并全部通过。第三个全新 gate
+  `experiments/results/dual_gpu_shared_vllm_gate_20260729_1103/` 的
+  `independent_full` 已完成并形成 durable record；随后 `shared_drr` 两 job
+  均成功执行，但 job0 首提交比统一 replay epoch 晚 3.900816s，超过预注册 2s
+  门槛，因此整组按设计失败并停止，未进入 formal。
+- trace 排除随机不同步：两 job 的 barrier observed epoch 与 configured epoch
+  误差均小于 0.2ms，实际首提交彼此仅差 11.8ms；3.9s 延迟只出现在
+  `shared_drr`。共享 credit 最终 active/waiting request/work 全部归零，每
+  endpoint 两 job 各获 32 次 grant，request 峰值 47、work 峰值不超过
+  22191，均未触及 256/65536 上限。这些是功能诊断证据，不构成性能收益结论。
+- 根因是 shared-credit Ray actor/client 在 replay barrier 之后由 profiler
+  首次懒创建。没有放宽门槛；测试先行新增控制面预热契约，并让 group runner
+  在计算未来 replay epoch 之前创建、核对配置并 snapshot 所有 endpoint，
+  profiler child 只复用已存在 actor。相关 144 项测试全部通过。发布后必须用
+  第四个全新 gate 目录验证首提交迟到是否消失。

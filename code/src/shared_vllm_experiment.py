@@ -28,6 +28,9 @@ from .metrics import (
     vllm_metric_delta_stats,
 )
 from .runner_lease import acquire_runner_lease
+from .scheduling.runtime.shared_credit_ray import (
+    get_or_create_shared_credit_client,
+)
 
 
 POLICIES = {
@@ -747,37 +750,15 @@ def _run_group(
         run_instance_id,
         run_stem,
     )
-    start_epoch_s = time.time() + options.start_delay_s
-    commands = [
-        build_job_command(
-            options,
-            config,
-            scenario,
-            identity,
-            job_index=job_index,
-            start_epoch_s=start_epoch_s,
-            coordinator_name=coordinator_name,
-        )
-        for job_index in range(scenario.job_count)
-    ]
-    _write_json_atomic(
-        options.output_dir / "traces" / f"{run_stem}.commands.json",
-        {
-            "schema_version": 1,
-            "commands": [_redact_command(command) for command in commands],
-        },
-    )
+    start_epoch_s = 0.0
+    commands: list[list[str]] = []
     observer = None
     processes = []
     log_handles = []
     resource_samples: list[dict[str, object]] = []
     credit_samples: list[dict[str, object]] = []
-    group_launch_epoch_s = time.time()
+    group_launch_epoch_s = 0.0
     try:
-        before = [
-            scrape_prometheus_metrics(url)
-            for url in options.metrics_urls
-        ]
         observer = (
             _RayCreditObserver(
                 options.ray_address,
@@ -788,6 +769,39 @@ def _run_group(
             if scenario.policy == "shared_drr"
             else None
         )
+        if observer is not None:
+            observer.prewarm(
+                request_limit=config.request_limit_per_endpoint,
+                work_limit=config.work_limit_per_endpoint,
+                quantum=config.credit_quantum,
+            )
+        start_epoch_s = time.time() + options.start_delay_s
+        commands = [
+            build_job_command(
+                options,
+                config,
+                scenario,
+                identity,
+                job_index=job_index,
+                start_epoch_s=start_epoch_s,
+                coordinator_name=coordinator_name,
+            )
+            for job_index in range(scenario.job_count)
+        ]
+        _write_json_atomic(
+            options.output_dir / "traces" / f"{run_stem}.commands.json",
+            {
+                "schema_version": 1,
+                "commands": [
+                    _redact_command(command) for command in commands
+                ],
+            },
+        )
+        group_launch_epoch_s = time.time()
+        before = [
+            scrape_prometheus_metrics(url)
+            for url in options.metrics_urls
+        ]
         for job_index, command in enumerate(commands):
             stdout_path = (
                 options.output_dir
@@ -1331,6 +1345,28 @@ class _RayCreditObserver:
         self.actor = None
         if not ray.is_initialized():
             ray.init(address=address, ignore_reinit_error=True)
+
+    def prewarm(
+        self,
+        *,
+        request_limit: int,
+        work_limit: int,
+        quantum: int,
+    ) -> None:
+        capacities = {
+            endpoint_id: (request_limit, work_limit)
+            for endpoint_id in self.endpoint_ids
+        }
+        client = get_or_create_shared_credit_client(
+            self.ray,
+            name=self.actor_name,
+            namespace=self.namespace,
+            capacities=capacities,
+            quantum=quantum,
+        )
+        for endpoint_id in self.endpoint_ids:
+            client.snapshot(endpoint_id)
+        self.actor = client.actor
 
     def _resolve_actor(self):
         if self.actor is not None:
