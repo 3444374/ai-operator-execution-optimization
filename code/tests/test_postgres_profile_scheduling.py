@@ -946,6 +946,48 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             )
         )
 
+    def test_offline_request_granularity_emits_one_envelope_per_row(
+        self,
+    ) -> None:
+        table = pa.table(
+            {
+                "doc_id": [11, 12],
+                "text": ["a", "b"],
+                "prompt_tokens": [3, 5],
+                "target_output_tokens": [7, 9],
+                "prefix_key": ["", ""],
+            }
+        )
+
+        envelopes, seeds = profile._offline_batch_envelopes(
+            [table],
+            job_id="job",
+            operator="ai_complete",
+            completion_max_tokens=256,
+            output_cost_mode="trace_target_output",
+            batch_index_start=0,
+            job_start_epoch_s=10.0,
+            ready_epoch_s=10.1,
+            submission_granularity="request",
+        )
+
+        self.assertEqual(
+            [item.request.row_count for item in envelopes],
+            [1, 1],
+        )
+        self.assertEqual(
+            [item.request.request_id for item in envelopes],
+            ["job:request:11", "job:request:12"],
+        )
+        self.assertEqual(
+            [item.request.planning_batch_id for item in envelopes],
+            ["job:batch:0", "job:batch:0"],
+        )
+        self.assertEqual(
+            [seed.submission_id for seed in seeds],
+            ["job:request:11", "job:request:12"],
+        )
+
     def test_offline_service_quanta_preserve_planning_batch_membership(
         self,
     ) -> None:
@@ -2720,14 +2762,6 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             (
                 [
                     "--dry-run",
-                    "--submission-granularity",
-                    "request",
-                ],
-                "requires --arrival-replay",
-            ),
-            (
-                [
-                    "--dry-run",
                     "--request-trace-output",
                     "tmp/requests.csv",
                     "--executor",
@@ -2803,6 +2837,22 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             offline_row["request_trace_path"],
             "tmp/offline-requests.csv",
         )
+
+    def test_request_submission_granularity_allows_offline_execution(
+        self,
+    ) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--submission-granularity",
+                "request",
+            ]
+        )
+
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertFalse(row["arrival_replay"])
+        self.assertEqual(row["submission_granularity"], "request")
 
     def test_single_run_mode_selects_exact_phase_and_repeat(self) -> None:
         args = profile.parse_args(

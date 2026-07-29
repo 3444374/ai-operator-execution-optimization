@@ -990,10 +990,6 @@ def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
         raise SystemExit(
             "--service-quantum-tokens requires service_quantum granularity"
         )
-    if args.submission_granularity == "request" and not args.arrival_replay:
-        raise SystemExit(
-            "--submission-granularity request requires --arrival-replay"
-        )
     if not args.arrival_replay:
         if args.token_budget_policy != "static":
             raise SystemExit(
@@ -1608,7 +1604,6 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 "request"
                 if (
                     args.request_trace_output
-                    and args.arrival_replay
                     and args.submission_granularity == "request"
                 )
                 else "submission"
@@ -2086,7 +2081,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             offline_envelopes = None
             if (
                 args.request_trace_output
-                or args.submission_granularity == "service_quantum"
+                or args.submission_granularity
+                in {"request", "service_quantum"}
             ):
                 if args.request_trace_output and (
                     lifecycle_epoch_clock is None
@@ -2120,7 +2116,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 )
                 if args.request_trace_output:
                     request_lifecycle_seeds.extend(offline_seeds)
-                if args.submission_granularity == "service_quantum":
+                if args.submission_granularity in {
+                    "request",
+                    "service_quantum",
+                }:
                     object_count += len(offline_envelopes) - len(ray_batches)
                 offline_batch_index += len(ray_batches)
             operator_timer = StageTimer.start("operator_wall")

@@ -166,6 +166,37 @@ def _service_quantum_envelopes(
     return tuple(envelopes)
 
 
+def _offline_request_envelopes(
+    batch: pa.RecordBatch | pa.Table,
+    *,
+    planning_batch_id: str,
+    job_id: str,
+    operator: str,
+    completion_max_tokens: int,
+    output_cost_mode: OutputCostMode,
+) -> tuple[PayloadEnvelope, ...]:
+    if "doc_id" not in batch.column_names:
+        raise ValueError("doc_id column is required for request expansion")
+    envelopes = []
+    for row_index in range(batch.num_rows):
+        doc_value = batch.column("doc_id")[row_index].as_py()
+        if doc_value is None:
+            raise ValueError("doc_id must be non-null for request expansion")
+        request_id = f"{job_id}:request:{doc_value}"
+        envelopes.append(
+            _batch_envelope(
+                batch.slice(row_index, 1),
+                request_id=request_id,
+                job_id=job_id,
+                operator=operator,
+                completion_max_tokens=completion_max_tokens,
+                output_cost_mode=output_cost_mode,
+                planning_batch_id=planning_batch_id,
+            )
+        )
+    return tuple(envelopes)
+
+
 def _offline_batch_envelopes(
     batches: Iterable[pa.Table | pa.RecordBatch],
     *,
@@ -208,6 +239,15 @@ def _offline_batch_envelopes(
                 output_cost_mode=output_cost_mode,
                 target_tokens=service_quantum_tokens,
             )
+        elif submission_granularity == "request":
+            batch_envelopes = _offline_request_envelopes(
+                batch,
+                planning_batch_id=planning_batch_id,
+                job_id=job_id,
+                operator=operator,
+                completion_max_tokens=completion_max_tokens,
+                output_cost_mode=output_cost_mode,
+            )
         elif submission_granularity == "batch":
             batch_envelopes = (
                 _batch_envelope(
@@ -222,7 +262,8 @@ def _offline_batch_envelopes(
             )
         else:
             raise ValueError(
-                "offline envelope expansion supports batch or service_quantum"
+                "offline envelope expansion supports batch, request, "
+                "or service_quantum"
             )
         envelopes.extend(batch_envelopes)
         if quantum_sink is not None and submission_granularity == "service_quantum":
@@ -276,6 +317,11 @@ def _offline_batch_envelopes(
                     arrival_epoch_s=job_start_epoch_s,
                     flush_epoch_s=ready_epoch_s,
                     request_time_origin="offline_job_start",
+                    latency_granularity=(
+                        "request"
+                        if submission_granularity == "request"
+                        else "submission"
+                    ),
                 )
             )
     return envelopes, seeds
