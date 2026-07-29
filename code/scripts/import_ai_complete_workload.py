@@ -10,7 +10,7 @@ import json
 import math
 import sys
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, fields, replace
 from pathlib import Path
 from urllib import request
 
@@ -82,9 +82,37 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--workload-name", default="sharegpt_burstgpt")
     parser.add_argument("--max-rows", type=int, default=1024)
     parser.add_argument("--start-doc-id", type=int, default=0)
+    parser.add_argument(
+        "--source-row-offset",
+        type=int,
+        default=0,
+        help="Skip this many eligible rows after all prompt/token length filters.",
+    )
+    parser.add_argument(
+        "--verify-existing-prefix-rows",
+        type=int,
+        default=0,
+        help=(
+            "Regenerate and exactly compare doc IDs 0..N-1 before an append. "
+            "Requires --append-only and matching source/start offsets."
+        ),
+    )
+    parser.add_argument(
+        "--append-only",
+        action="store_true",
+        help="Insert new doc IDs and fail on any conflict instead of updating old rows.",
+    )
     parser.add_argument("--batch-rows", type=int, default=1000)
     parser.add_argument("--max-prompt-chars", type=int, default=6000)
     parser.add_argument("--max-request-tokens", type=int, default=1800)
+    parser.add_argument(
+        "--max-prompt-tokens",
+        type=int,
+        help=(
+            "Optional explicit prompt-token eligibility limit, independent "
+            "of the model context limit."
+        ),
+    )
     parser.add_argument(
         "--tokenizer-path",
         help="Optional local tokenizer path used to store and filter model-specific prompt token counts.",
@@ -262,17 +290,24 @@ def build_workload_rows(
     start_doc_id: int,
     max_rows: int,
     prompt_token_counter: Callable[[str], int] | None = None,
+    max_prompt_tokens: int | None = None,
     max_model_len: int | None = None,
     completion_max_tokens: int = 0,
+    source_row_offset: int = 0,
 ) -> list[WorkloadRow]:
     if max_rows <= 0:
         raise ValueError("--max-rows must be positive")
+    if source_row_offset < 0:
+        raise ValueError("source_row_offset must be non-negative")
+    if max_prompt_tokens is not None and max_prompt_tokens <= 0:
+        raise ValueError("max_prompt_tokens must be positive")
     if not prompts:
         raise ValueError("ShareGPT prompt list is empty after filtering")
     if not traces:
         raise ValueError("BurstGPT trace list is empty after filtering")
 
     rows: list[WorkloadRow] = []
+    eligible_rows_seen = 0
     for prompt_record, trace in zip(prompts, traces):
         if len(rows) >= max_rows:
             break
@@ -282,8 +317,14 @@ def build_workload_rows(
             prompt_tokens = prompt_token_counter(prompt)
         if prompt_tokens <= 0:
             continue
+        if max_prompt_tokens is not None and prompt_tokens > max_prompt_tokens:
+            continue
         if max_model_len is not None and prompt_tokens + completion_max_tokens > max_model_len:
             continue
+        if eligible_rows_seen < source_row_offset:
+            eligible_rows_seen += 1
+            continue
+        eligible_rows_seen += 1
         doc_id = start_doc_id + len(rows)
         rows.append(
             WorkloadRow(
@@ -411,21 +452,72 @@ def load_existing_workload_rows(
     return [WorkloadRow(*record) for record in records]
 
 
+def load_existing_workload_prefix(
+    conn,
+    workload_name: str,
+    row_count: int,
+) -> list[WorkloadRow]:
+    if row_count <= 0:
+        raise ValueError("prefix row count must be positive")
+    sql = """
+        SELECT doc_id, tenant_id, category, text, workload_name, prompt_tokens,
+               target_output_tokens, arrival_time_s, session_id, prefix_key
+        FROM documents
+        WHERE workload_name = %s
+          AND doc_id >= 0
+          AND doc_id < %s
+        ORDER BY doc_id
+    """
+    with conn.cursor() as cur:
+        cur.execute(sql, (workload_name, row_count))
+        records = cur.fetchall()
+    return [WorkloadRow(*record) for record in records]
+
+
+def verify_workload_prefix(
+    existing_rows: list[WorkloadRow],
+    expected_rows: list[WorkloadRow],
+) -> None:
+    if len(existing_rows) != len(expected_rows):
+        raise ValueError(
+            "existing workload prefix returned "
+            f"{len(existing_rows)} rows; expected {len(expected_rows)}"
+        )
+    for existing, expected in zip(existing_rows, expected_rows):
+        for field in fields(WorkloadRow):
+            existing_value = getattr(existing, field.name)
+            expected_value = getattr(expected, field.name)
+            if existing_value != expected_value:
+                raise ValueError(
+                    "existing workload prefix mismatch at "
+                    f"doc_id={expected.doc_id}, field={field.name}: "
+                    f"database={existing_value!r}, regenerated={expected_value!r}"
+                )
+
+
 def reset_documents(conn) -> None:
     with conn.cursor() as cur:
         cur.execute("TRUNCATE documents CASCADE")
     conn.commit()
 
 
-def insert_rows(conn, rows: list[WorkloadRow], batch_rows: int) -> None:
+def insert_rows(
+    conn,
+    rows: list[WorkloadRow],
+    batch_rows: int,
+    *,
+    append_only: bool = False,
+) -> None:
     if batch_rows <= 0:
         raise ValueError("--batch-rows must be positive")
-    sql = """
+    insert_sql = """
         INSERT INTO documents (
             doc_id, tenant_id, category, text, workload_name, prompt_tokens,
             target_output_tokens, arrival_time_s, session_id, prefix_key
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    update_sql = """
         ON CONFLICT (doc_id) DO UPDATE SET
             tenant_id = EXCLUDED.tenant_id,
             category = EXCLUDED.category,
@@ -438,6 +530,7 @@ def insert_rows(conn, rows: list[WorkloadRow], batch_rows: int) -> None:
             prefix_key = EXCLUDED.prefix_key,
             updated_at = CURRENT_TIMESTAMP
     """
+    sql = insert_sql if append_only else f"{insert_sql}\n{update_sql}"
     values = [
         (
             row.doc_id,
@@ -491,6 +584,23 @@ def main() -> None:
         raise ValueError("--tokenizer-endpoint-url requires --tokenizer-model")
     if args.completion_max_tokens < 0:
         raise ValueError("--completion-max-tokens must be non-negative")
+    if args.verify_existing_prefix_rows < 0:
+        raise ValueError("--verify-existing-prefix-rows must be non-negative")
+    if args.reset_documents and args.append_only:
+        raise ValueError("--reset-documents and --append-only are mutually exclusive")
+    if args.verify_existing_prefix_rows:
+        if not args.append_only:
+            raise ValueError(
+                "--verify-existing-prefix-rows requires --append-only"
+            )
+        if args.source_row_offset != args.verify_existing_prefix_rows:
+            raise ValueError(
+                "--source-row-offset must equal --verify-existing-prefix-rows"
+            )
+        if args.start_doc_id != args.verify_existing_prefix_rows:
+            raise ValueError(
+                "--start-doc-id must equal --verify-existing-prefix-rows"
+            )
     if args.tokenizer_path:
         token_counter = load_prompt_token_counter(args.tokenizer_path)
     elif args.tokenizer_endpoint_url:
@@ -502,6 +612,22 @@ def main() -> None:
     else:
         token_counter = None
     if args.controlled_prefix_source_workload:
+        if args.verify_existing_prefix_rows:
+            raise ValueError(
+                "--verify-existing-prefix-rows is not supported with "
+                "--controlled-prefix-source-workload"
+            )
+        if args.source_row_offset:
+            raise ValueError(
+                "--source-row-offset is not supported with "
+                "--controlled-prefix-source-workload"
+            )
+        if args.max_prompt_tokens is not None:
+            raise ValueError(
+                "--max-prompt-tokens is not supported with "
+                "--controlled-prefix-source-workload; use "
+                "--controlled-prefix-source-max-prompt-tokens"
+            )
         if args.controlled_prefix_ratio is None:
             raise ValueError(
                 "--controlled-prefix-source-workload requires "
@@ -540,7 +666,12 @@ def main() -> None:
                     )
                 )
                 return
-            insert_rows(conn, rows, args.batch_rows)
+            insert_rows(
+                conn,
+                rows,
+                args.batch_rows,
+                append_only=args.append_only,
+            )
         print(json.dumps({"status": "ok", **summary}, ensure_ascii=False, indent=2))
         return
     prompts = load_sharegpt_prompts(Path(args.sharegpt_json), args.max_prompt_chars)
@@ -552,19 +683,57 @@ def main() -> None:
         args.start_doc_id,
         args.max_rows,
         prompt_token_counter=token_counter,
+        max_prompt_tokens=args.max_prompt_tokens,
         max_model_len=args.max_model_len,
         completion_max_tokens=args.completion_max_tokens,
+        source_row_offset=args.source_row_offset,
     )
     summary = summarize(rows)
-    if args.dry_run:
+    if args.dry_run and not args.verify_existing_prefix_rows:
         print(json.dumps({"status": "dry_run", **summary}, ensure_ascii=False, indent=2))
         return
 
+    expected_prefix = None
+    if args.verify_existing_prefix_rows:
+        expected_prefix = build_workload_rows(
+            prompts,
+            traces,
+            args.workload_name,
+            start_doc_id=0,
+            max_rows=args.verify_existing_prefix_rows,
+            prompt_token_counter=token_counter,
+            max_prompt_tokens=args.max_prompt_tokens,
+            max_model_len=args.max_model_len,
+            completion_max_tokens=args.completion_max_tokens,
+        )
+
     with psycopg.connect(args.database_url) as conn:
-        setup_documents(conn)
+        if not args.dry_run:
+            setup_documents(conn)
+        if expected_prefix is not None:
+            existing_prefix = load_existing_workload_prefix(
+                conn,
+                args.workload_name,
+                args.verify_existing_prefix_rows,
+            )
+            verify_workload_prefix(existing_prefix, expected_prefix)
+        if args.dry_run:
+            print(
+                json.dumps(
+                    {"status": "verified_dry_run", **summary},
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+            return
         if args.reset_documents:
             reset_documents(conn)
-        insert_rows(conn, rows, args.batch_rows)
+        insert_rows(
+            conn,
+            rows,
+            args.batch_rows,
+            append_only=args.append_only,
+        )
     print(json.dumps({"status": "ok", **summary}, ensure_ascii=False, indent=2))
 
 

@@ -37,6 +37,14 @@ class RequestCostTests(unittest.TestCase):
             ),
             9,
         )
+        self.assertEqual(
+            resolve_output_tokens(
+                "trace_target_output",
+                completion_max_tokens=16,
+                target_output_tokens=20,
+            ),
+            16,
+        )
 
     def test_modes_have_explicit_non_oracle_sources(self) -> None:
         self.assertEqual(output_cost_source("prompt_only"), "configured_zero")

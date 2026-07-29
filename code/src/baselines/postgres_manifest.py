@@ -30,7 +30,7 @@ class ConnectionLike(Protocol):
     def cursor(self) -> CursorLike: ...
 
 
-def _source_row_hash(
+def source_row_hash(
     *,
     workload_name: str,
     doc_id: int,
@@ -137,7 +137,7 @@ def load_postgres_requests(
                 prompt_tokens=prompt_tokens,
                 max_output_tokens=max_output_tokens,
                 estimated_output_tokens=estimated_output_tokens,
-                source_row_hash=_source_row_hash(
+                source_row_hash=source_row_hash(
                     workload_name=workload_name,
                     doc_id=doc_id,
                     prompt=prompt,

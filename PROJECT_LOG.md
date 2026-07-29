@@ -2710,3 +2710,26 @@
   calibration 行。
 - 开题 PPT 由另一对话并行修改，本轮隔离 worktree 未接触或暂存其文件。
 - 按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 Project 同条件门禁：输出 work 口径修复与 held-out 安全补数
+
+- 首次 64 行 project gate 在任何 HTTP 请求前 fail closed；远端保留目录
+  `dual_gpu_same_condition_project_gate64_20260729_33c278b`。`doc_id=2`
+  的数据库 trace target 为 276，官方 manifest 按请求 cap 记录 256，
+  `source_row_hash` 一致，排除数据漂移。512 calibration 未启动。
+- 系统化调试确认 project `trace_target_output` 既直接校验 raw target，也把
+  未裁剪值计入 active work，与 official manifest 的有效请求 work 不一致。
+  测试先行统一为 `min(trace target, completion_max_tokens)`；manifest guard
+  同时用 workload、arrival、prompt、token 字段和 raw target 重算
+  `source_row_hash`，因此 raw target 即使同在 cap 之上发生变化也会拒绝；
+  没有跳过或放宽源行身份校验。
+- importer 新增按过滤后 eligible rows 计数的 `--source-row-offset`、既有
+  prefix 逐字段核验、显式 `--max-prompt-tokens` 和 `--append-only`。远端
+  审计确认两份 raw hash、2,048 行文本/session/tokenizer 全部一致且原始数据
+  足够，但历史 shell 命令缺失；因此不声称恢复 exact CLI，而以当前正式
+  prompt 上限 1,500 重建 0..2047 并逐字段核验。不一致即在写入前停止，
+  doc ID 冲突由数据库事务失败，禁止 upsert 覆盖旧行。
+- 本地完整 suite 通过 508 tests；ruff、compileall 与 `git diff --check`
+  通过。下一步只允许在新提交与全新远端目录重跑 64 行 gate，通过后再启动
+  512 行 K/active-work 校准。
+- 开题 PPT 由另一对话并行修改，本轮未触碰；按用户要求不执行 Wiki 同步。

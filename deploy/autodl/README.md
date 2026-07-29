@@ -1262,6 +1262,45 @@ request/submission/resource traces、0 failure、服务端 counter 和最终空�
 | `python -m unittest code.tests...` 报标准库 `code` 没有 `tests` | 仓库目录名 `code/` 与 Python 标准库模块同名，不是测试实现失败 | 在仓库根使用 `python -m unittest discover -s code/tests -p 'test_x.py'`。远程封装先保存测试进程退出码，再清理临时环境变量，避免清理命令把失败状态覆盖成 0。 |
 | project Chat template 展开时报缺失变量，或仍请求 `/v1/completions` | 旧 runtime env 只有 `COMPLETION_ENDPOINT_URLS`，没有同条件 Chat URL；直接复用会改变协议 | 从更新后的 `autodl.env.example` 补 `COMPLETION_CHAT_ENDPOINT_URLS=.../v1/chat/completions`，启动前打印解析后的模板参数；禁止用 legacy URL 兜底。 |
 | 512 校准后无法导出 disjoint 2,048-row formal | 当前 workload 只有 2,048 行，`OFFSET 512` 后数据库实测仅返回 1,536 行 | formal 前补齐并冻结另外 512 行或导入独立 held-out workload；profiler 使用 `--source-row-offset 512`。不得回用 `doc_id=0..511` 或复制行凑数。 |
+| project 64 行 gate 在 HTTP 前报 `target_output_tokens mismatch` | official manifest 将 trace target 裁到 `max_tokens=256`，project profiler 曾比较和调度未裁剪的数据库原值；大于 256 的行因此既校验失败又高估 active work | `trace_target_output` 的统一语义为 `min(target_output_tokens, completion_max_tokens)`；校验仍保留 fail-closed。修复提交通过本地完整测试后，必须在全新目录重新运行 64 行 gate，旧失败目录不覆盖。 |
+
+### 安全补齐 disjoint held-out 行
+
+禁止用 `--start-doc-id 2048` 重新导入开头 512 个 prompt，也禁止使用默认
+upsert 补数。只读审计已确认：ShareGPT SHA-256
+`35f0e213…f6479ba4`、BurstGPT SHA-256 `4bb37836…e12122`，现有 2,048 行
+文本/session 与 Qwen2.5-7B tokenizer 全部一致；原始 pair capacity 90,122，
+足够补齐。历史 shell 命令没有保留，不能声称恢复了 exact CLI；现有行的跳过
+边界和正式 source predicate 均支持显式 `max_prompt_tokens=1500`。最终是否
+同源由下述 2,048 行逐字段核验决定：
+
+```bash
+/root/miniconda3/bin/python code/scripts/import_ai_complete_workload.py \
+  --database-url "$DATABASE_URL" \
+  --sharegpt-json "$EXACT_SHAREGPT_JSON" \
+  --burstgpt-csv "$EXACT_BURSTGPT_CSV" \
+  --workload-name "$SOURCE_WORKLOAD_NAME" \
+  --tokenizer-endpoint-url http://127.0.0.1:8000/tokenize \
+  --tokenizer-model "$COMPLETION_MODEL" \
+  --max-prompt-tokens 1500 \
+  --max-model-len 8192 \
+  --completion-max-tokens 256 \
+  --max-rows 512 \
+  --start-doc-id 2048 \
+  --source-row-offset 2048 \
+  --verify-existing-prefix-rows 2048 \
+  --append-only \
+  --dry-run
+```
+
+只有输出 `status=verified_dry_run`，并确认数据库仍为 2,048 行后，才允许在同一
+idle 窗口用同一命令移除 `--dry-run`。`source-row-offset` 按所有过滤完成后的
+eligible rows 计数；`append-only` 遇到任一 doc ID 冲突即使事务失败，不更新旧
+行。显式 prompt 上限避免为复现 1,500 边界而伪造历史
+`max_model_len - completion_max_tokens` 组合。写入后重新核对连续
+`doc_id=0..2559`、总数 2,560，再导出 2,048 行
+`OFFSET 512` manifest 并设为 `0444`。若 prefix 任一字段不一致，停止并恢复
+过滤证据，不得尝试“近似匹配”或覆盖数据库。
 
 本次远端原始冲突备份位置为
 `/root/autodl-tmp/premerge-backups/20260729_shared_vllm_results_before_7267324/`。

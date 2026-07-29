@@ -296,6 +296,32 @@ replenishment、同一固定 endpoint 分片和显式 Ray address；任一源行
 workload；profiler formal 模板固定 `--source-row-offset 512`。在此阻塞解除前，
 只允许执行 512 行 project calibration，不允许重用校准行启动 formal。
 
+### 8.4 Project 64 行首次门禁故障与修复
+
+首次 project gate
+`dual_gpu_same_condition_project_gate64_20260729_33c278b` 在任何 HTTP 请求
+前停止。`doc_id=2` 的数据库原始 `target_output_tokens=276`，official
+manifest 按请求 `max_output_tokens=256` 记录有效
+`estimated_output_tokens=256`；`source_row_hash` 一致，因此不是数据库或
+manifest 漂移。
+
+根因是 project 原有 `trace_target_output` 把未裁剪的 276 用于 active work，
+manifest guard 也直接比较 raw 276 与 effective 256。统一合同现改为
+`min(target_output_tokens, completion_max_tokens)`：调度估计和 guard 使用
+同一有效 work；guard 还会用 raw target 等完整源字段重算
+`source_row_hash`，所以两个不同的 above-cap raw rows 仍不等价，校验没有
+移除或放宽。旧失败目录、stderr、lease 证据均保留；
+双 endpoint 最终队列为 0，512 校准未启动。只有修复通过本地完整测试并在全新
+目录通过 64 行 re-gate 后，才恢复 512 校准。
+
+补齐 formal 数据时，`source-row-offset` 按全部过滤后的 eligible rows 计数。
+远端已核对 raw hash、2,048 行文本/session 和 Qwen2.5-7B token 数，但历史
+shell 命令没有留存，不能声称 exact CLI provenance。使用正式 source
+predicate 的显式 `max_prompt_tokens=1500` 重建并逐字段核验
+`doc_id=0..2047`，随后用
+append-only 插入 `2048..2559`；任一 prefix 不一致或 doc ID 冲突都阻止写入，
+禁止旧 upsert 路径覆盖已有实验数据。
+
 ## 9. 详细工程设计
 
 适配器边界、fatal-flaw audit 和实现模块见：

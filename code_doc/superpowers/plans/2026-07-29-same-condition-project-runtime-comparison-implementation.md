@@ -351,6 +351,16 @@ exactly-once, manifest validation, both pinned endpoints, positive service
 counter deltas, request trace coverage, zero worker failures, and final empty
 queues.
 
+First attempt
+`dual_gpu_same_condition_project_gate64_20260729_33c278b` stopped before any
+HTTP request: database `target_output_tokens` above 256 was compared directly
+with the manifest's capped estimate. The preserved incident established that
+project `trace_target_output` also used an uncapped work estimate. Fix and
+re-gate must use `min(trace target, completion_max_tokens)` in both scheduling
+and manifest validation, while recomputing `source_row_hash` from the raw
+source fields so two different above-cap rows remain distinguishable; do not
+weaken or remove the guard.
+
 - [ ] **Step 4: Run the 512-row calibration**
 
 Run direct vLLM/bounded C128 and C256, independently calibrate official Daft
@@ -379,6 +389,13 @@ reasons into the formal manifest before any held-out run.
 another 512 independent rows or a separate 2,048-row held-out workload is
 imported and frozen. The profiler records `source_row_offset`, and the formal
 template fixes it to 512; reusing calibration rows is forbidden.
+
+The approved append path must use the verified raw hashes/Qwen tokenizer and
+the explicit 1,500-prompt-token workload predicate, select eligible source rows
+after all filters, regenerate and exactly compare database doc IDs `0..2047`, then insert
+`2048..2559` with a conflict-failing append-only statement. A prefix mismatch
+or existing suffix doc ID blocks the write; the legacy upsert path is forbidden
+for this supplement.
 
 **Files:**
 - Create: `experiments/results/dual_gpu_same_condition_baseline_formal_<id>/`

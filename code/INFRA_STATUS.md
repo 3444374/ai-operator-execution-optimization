@@ -371,10 +371,20 @@ project profiler 现已支持 manifest 锁定的离线 request-level replenishme
 active work 16K–98K，并在正式 CSV 记录 manifest SHA 与 validated rows。
 远端持久 Ray head `127.0.0.1:6380` 已只读确认可用。
 
+首次 64 行 project gate 在任何 HTTP 请求前 fail closed：数据库有
+`target_output_tokens>256` 的行，而 official manifest 的有效输出 work 已按
+请求 cap 裁为 256；project 旧路径仍使用未裁剪 trace target。统一语义已改为
+`min(trace target, completion_max_tokens)`，同时修正调度 work 与 manifest
+校验；guard 另行重算 exact `source_row_hash`，不会把两个不同的 above-cap
+raw targets 当成同一源行。旧失败目录保留，512 校准未启动；完整测试和全新 64 行 re-gate 通过前
+不得继续。
+
 2,048 formal 当前被数据门禁阻塞：数据库只有 `doc_id=0..2047`，校准使用
 0..511 后仅余 1,536 行。必须新增 512 个独立行或导入单独 held-out workload，
 再以 offset 512 导出只读 manifest；禁止回用校准行。在此之前只允许运行
-project 512 calibration，不启动 formal 或新上游策略。
+project 512 calibration，不启动 formal 或新上游策略。补行必须复用原始导入
+参数，按过滤后 eligible-row offset 选择 suffix，先逐字段核验 `0..2047`，
+再 append-only 写入 `2048..2559`；禁止 upsert 覆盖旧行。
 
 完整顺序与放弃条件见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。

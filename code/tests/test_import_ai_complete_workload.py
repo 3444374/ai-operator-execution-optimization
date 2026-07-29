@@ -20,10 +20,41 @@ from import_ai_complete_workload import (  # noqa: E402
     burstgpt_rows_from_dicts,
     category_for,
     first_human_prompt,
+    insert_rows,
     length_bucket,
     load_http_prompt_token_counter,
     prefix_key,
+    verify_workload_prefix,
 )
+
+
+class RecordingCursor:
+    def __init__(self, *, fail_on_call: int | None = None) -> None:
+        self.executed_many: list[tuple[str, list[tuple]]] = []
+        self.fail_on_call = fail_on_call
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback):
+        return False
+
+    def executemany(self, sql, values) -> None:
+        self.executed_many.append((sql, list(values)))
+        if len(self.executed_many) == self.fail_on_call:
+            raise RuntimeError("simulated doc_id conflict")
+
+
+class RecordingConnection:
+    def __init__(self, *, fail_on_call: int | None = None) -> None:
+        self.recording_cursor = RecordingCursor(fail_on_call=fail_on_call)
+        self.commit_count = 0
+
+    def cursor(self) -> RecordingCursor:
+        return self.recording_cursor
+
+    def commit(self) -> None:
+        self.commit_count += 1
 
 
 class ImportAiCompleteWorkloadTests(unittest.TestCase):
@@ -258,6 +289,192 @@ class ImportAiCompleteWorkloadTests(unittest.TestCase):
         self.assertEqual(rows[0].session_id, "fits")
         self.assertEqual(rows[0].prompt_tokens, 20)
         self.assertEqual(rows[0].category, "short_chatgpt")
+
+    def test_build_workload_rows_applies_explicit_prompt_token_limit(self) -> None:
+        prompts = [("too-long", "long prompt"), ("fits", "short prompt")]
+        traces = [
+            BurstTraceRow(
+                timestamp_s=float(index),
+                model="ChatGPT",
+                request_tokens=10,
+                response_tokens=20,
+                total_tokens=30,
+                log_type="Conversation log",
+            )
+            for index in range(2)
+        ]
+
+        rows = build_workload_rows(
+            prompts,
+            traces,
+            "heldout",
+            start_doc_id=0,
+            max_rows=2,
+            prompt_token_counter=lambda text: (
+                1501 if text == "long prompt" else 1500
+            ),
+            max_prompt_tokens=1500,
+            max_model_len=8192,
+            completion_max_tokens=256,
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].session_id, "fits")
+        self.assertEqual(rows[0].prompt_tokens, 1500)
+
+    def test_build_workload_rows_uses_disjoint_source_offset(self) -> None:
+        prompts = [
+            ("session-0", "prompt zero"),
+            ("session-1", "prompt one"),
+            ("session-2", "prompt two"),
+        ]
+        traces = [
+            BurstTraceRow(
+                timestamp_s=float(index),
+                model="ChatGPT",
+                request_tokens=10 + index,
+                response_tokens=20 + index,
+                total_tokens=30 + 2 * index,
+                log_type="Conversation log",
+            )
+            for index in range(3)
+        ]
+
+        rows = build_workload_rows(
+            prompts,
+            traces,
+            "heldout",
+            start_doc_id=2048,
+            max_rows=1,
+            prompt_token_counter=(
+                lambda text: 999 if text == "prompt zero" else 12
+            ),
+            max_model_len=64,
+            completion_max_tokens=16,
+            source_row_offset=1,
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].doc_id, 2048)
+        self.assertEqual(rows[0].session_id, "session-2")
+        self.assertEqual(rows[0].text, "prompt two")
+        self.assertEqual(rows[0].prompt_tokens, 12)
+        self.assertEqual(rows[0].target_output_tokens, 22)
+
+    def test_build_workload_rows_rejects_invalid_source_offset(self) -> None:
+        prompts = [("session-0", "prompt zero")]
+        traces = [
+            BurstTraceRow(
+                timestamp_s=0.0,
+                model="ChatGPT",
+                request_tokens=10,
+                response_tokens=20,
+                total_tokens=30,
+                log_type="Conversation log",
+            )
+        ]
+
+        with self.assertRaisesRegex(ValueError, "source_row_offset"):
+            build_workload_rows(
+                prompts,
+                traces,
+                "heldout",
+                start_doc_id=2048,
+                max_rows=1,
+                source_row_offset=-1,
+            )
+        with self.assertRaisesRegex(ValueError, "max_prompt_tokens"):
+            build_workload_rows(
+                prompts,
+                traces,
+                "heldout",
+                start_doc_id=2048,
+                max_rows=1,
+                max_prompt_tokens=0,
+            )
+        with self.assertRaisesRegex(ValueError, "No workload rows"):
+            build_workload_rows(
+                prompts,
+                traces,
+                "heldout",
+                start_doc_id=2048,
+                max_rows=1,
+                source_row_offset=1,
+            )
+
+    def test_verify_workload_prefix_accepts_exact_rows_and_rejects_mismatch(self) -> None:
+        expected = WorkloadRow(
+            doc_id=0,
+            tenant_id=1,
+            category="short_chatgpt",
+            text="prompt zero",
+            workload_name="heldout",
+            prompt_tokens=12,
+            target_output_tokens=20,
+            arrival_time_s=1.0,
+            session_id="session-0",
+            prefix_key="prefix-0",
+        )
+
+        verify_workload_prefix([expected], [expected])
+
+        with self.assertRaisesRegex(ValueError, "prompt_tokens"):
+            verify_workload_prefix(
+                [replace(expected, prompt_tokens=13)],
+                [expected],
+            )
+        with self.assertRaisesRegex(ValueError, "returned 0 rows; expected 1"):
+            verify_workload_prefix([], [expected])
+
+    def test_insert_rows_append_only_never_updates_conflicting_doc_ids(self) -> None:
+        row = WorkloadRow(
+            doc_id=2048,
+            tenant_id=1,
+            category="short_chatgpt",
+            text="held-out prompt",
+            workload_name="heldout",
+            prompt_tokens=12,
+            target_output_tokens=20,
+            arrival_time_s=1.0,
+            session_id="session-2048",
+            prefix_key="prefix-2048",
+        )
+        conn = RecordingConnection()
+
+        insert_rows(conn, [row], batch_rows=100, append_only=True)
+
+        sql, values = conn.recording_cursor.executed_many[0]
+        self.assertNotIn("ON CONFLICT", sql)
+        self.assertEqual(values[0][0], 2048)
+        self.assertEqual(conn.commit_count, 1)
+
+    def test_insert_rows_append_only_does_not_commit_after_later_batch_failure(
+        self,
+    ) -> None:
+        row = WorkloadRow(
+            doc_id=2048,
+            tenant_id=1,
+            category="short_chatgpt",
+            text="held-out prompt",
+            workload_name="heldout",
+            prompt_tokens=12,
+            target_output_tokens=20,
+            arrival_time_s=1.0,
+            session_id="session-2048",
+            prefix_key="prefix-2048",
+        )
+        conn = RecordingConnection(fail_on_call=2)
+
+        with self.assertRaisesRegex(RuntimeError, "doc_id conflict"):
+            insert_rows(
+                conn,
+                [row, replace(row, doc_id=2049)],
+                batch_rows=1,
+                append_only=True,
+            )
+
+        self.assertEqual(len(conn.recording_cursor.executed_many), 2)
+        self.assertEqual(conn.commit_count, 0)
 
     def test_burstgpt_rows_from_dicts_filters_zero_token_rows(self) -> None:
         rows = burstgpt_rows_from_dicts(

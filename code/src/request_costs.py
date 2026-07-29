@@ -50,7 +50,8 @@ def resolve_output_tokens(
         return 0
     if mode == "fixed_output_cap":
         return cap
-    return _non_negative_int(
+    target = _non_negative_int(
         target_output_tokens,
         "target_output_tokens",
     )
+    return min(target, cap)

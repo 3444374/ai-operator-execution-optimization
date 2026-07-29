@@ -264,7 +264,8 @@ request fan-out.
   (`output_cost_source=configured_zero`);
 - `fixed_output_cap` uses the configured completion cap for every row
   (`output_cost_source=backend_completion_cap`);
-- `trace_target_output` reads each row's `target_output_tokens`
+- `trace_target_output` reads each row's `target_output_tokens` and caps the
+  estimate at `completion_max_tokens`
   (`output_cost_source=burstgpt_unpaired_trace_metadata`).
 
 The current trace targets are unpaired BurstGPT metadata, not oracle output
@@ -719,6 +720,23 @@ endpoint when a local tokenizer checkout is unavailable. Controlled-prefix
 materialization clones complete rows, chooses an exact nested subset
 deterministically, preserves the original prompt suffix, and fails rather than
 truncating a row that exceeds the model context.
+
+For a disjoint held-out suffix, `--max-prompt-tokens` expresses a workload
+eligibility boundary independently from `max_model_len`, and
+`--source-row-offset N` skips `N` rows only after all ShareGPT/BurstGPT,
+prompt-token and tokenizer/context filters. Never use a new `start_doc_id`
+alone: that would relabel the first prompts instead of selecting new prompts.
+The safe append contract is:
+
+1. reuse the verified raw-file hashes, tokenizer and explicit workload filter;
+2. set `--source-row-offset N --start-doc-id N`;
+3. set `--verify-existing-prefix-rows N --append-only --dry-run`;
+4. remove only `--dry-run` after every field of doc IDs `0..N-1` matches;
+5. keep `--append-only`, so any conflicting new doc ID aborts instead of
+   updating existing rows.
+
+Prefix verification is read-only and returns `status=verified_dry_run`.
+Without an exact match, the importer fails before the suffix is written.
 
 `estimate_operator_cost.py` fits a grouped held-out cost model from one or more
 profile CSVs. It uses only pre-execution features and writes the feature schema,

@@ -11,6 +11,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.baselines.contracts import ChatRequest  # noqa: E402
+from src.baselines.postgres_manifest import source_row_hash  # noqa: E402
 from src.profiling.manifest_guard import (  # noqa: E402
     ProfileManifestGuard,
     validate_profile_manifest_contract,
@@ -24,15 +25,29 @@ def request(
     prompt_tokens: int,
     output_tokens: int,
     endpoint_index: int,
+    raw_output_tokens: int | None = None,
 ) -> ChatRequest:
+    workload_name = "test_workload"
+    arrival_time_s = 0.0
     return ChatRequest(
         doc_id=doc_id,
         prompt=prompt,
-        arrival_time_s=0.0,
+        arrival_time_s=arrival_time_s,
         prompt_tokens=prompt_tokens,
         max_output_tokens=256,
         estimated_output_tokens=output_tokens,
-        source_row_hash=f"row-{doc_id}",
+        source_row_hash=source_row_hash(
+            workload_name=workload_name,
+            doc_id=doc_id,
+            prompt=prompt,
+            arrival_time_s=arrival_time_s,
+            prompt_tokens=prompt_tokens,
+            target_output_tokens=(
+                output_tokens
+                if raw_output_tokens is None
+                else raw_output_tokens
+            ),
+        ),
         endpoint_index=endpoint_index,
     )
 
@@ -43,13 +58,19 @@ def table(
     prompts: list[str] | None = None,
     prompt_tokens: list[int] | None = None,
     output_tokens: list[int] | None = None,
+    workload_names: list[str] | None = None,
+    arrival_times_s: list[float] | None = None,
 ) -> pa.Table:
+    resolved_doc_ids = doc_ids or [1, 2]
+    row_count = len(resolved_doc_ids)
     return pa.table(
         {
-            "doc_id": doc_ids or [1, 2],
+            "doc_id": resolved_doc_ids,
             "text": prompts or ["one", "two"],
             "prompt_tokens": prompt_tokens or [3, 4],
             "target_output_tokens": output_tokens or [7, 8],
+            "workload_name": workload_names or ["test_workload"] * row_count,
+            "arrival_time_s": arrival_times_s or [0.0] * row_count,
         }
     )
 
@@ -93,6 +114,47 @@ class ProfileManifestGuardTests(unittest.TestCase):
         self.assertEqual(evidence.manifest_sha256, "a" * 64)
         self.assertEqual(evidence.manifest_rows, 2)
         self.assertEqual(evidence.validated_rows, 2)
+
+    def test_guard_compares_effective_trace_target_after_output_cap(self) -> None:
+        capped_request = request(
+            1,
+            prompt="one",
+            prompt_tokens=3,
+            output_tokens=256,
+            endpoint_index=1,
+            raw_output_tokens=300,
+        )
+        guard = ProfileManifestGuard(
+            requests=(capped_request,),
+            manifest_sha256="a" * 64,
+            endpoint_ids=("endpoint-0", "endpoint-1"),
+        )
+
+        annotated = guard.validate_and_annotate(
+            table(
+                doc_ids=[1],
+                prompts=["one"],
+                prompt_tokens=[3],
+                output_tokens=[300],
+            )
+        )
+
+        self.assertEqual(annotated.num_rows, 1)
+        self.assertEqual(guard.finish().validated_rows, 1)
+
+        with self.assertRaisesRegex(ValueError, "source_row_hash"):
+            ProfileManifestGuard(
+                requests=(capped_request,),
+                manifest_sha256="a" * 64,
+                endpoint_ids=("endpoint-0", "endpoint-1"),
+            ).validate_and_annotate(
+                table(
+                    doc_ids=[1],
+                    prompts=["one"],
+                    prompt_tokens=[3],
+                    output_tokens=[301],
+                )
+            )
 
     def test_guard_rejects_row_semantic_mismatches(self) -> None:
         invalid = [

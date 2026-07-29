@@ -108,8 +108,10 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 1. **P0**：project profiler 在同 512 manifest、Chat Completions、
-   no replay 下完成 K/active-work 校准。disjoint 2,048 formal 还缺 512 个
-   独立源行，补齐并通过 64 行 gate 后才启动；之后才比较 OceanBase、Daft
+   no replay 下完成 K/active-work 校准。首次 64 行 gate 在 HTTP 前发现
+   trace target 未按 completion cap 裁剪，已统一 work/guard 语义，须在全新
+   目录 re-gate 后才启动 512。disjoint 2,048 formal 还缺 512 个独立源行，
+   必须逐字段核验旧 prefix 后 append-only 补齐并再过 64 行 gate；之后才比较 OceanBase、Daft
    Native/Ray 与 Ray Data 官方框架对照
 2. **P1**：baseline 锁定后再做 Shared-vLLM 4-job held-out、staggered idle borrowing、
    weighted overlap fairness 与异构 workload/arrival offset

@@ -11,6 +11,8 @@ import pyarrow as pa
 
 from ..baselines.contracts import ChatRequest
 from ..baselines.manifests import read_manifest
+from ..baselines.postgres_manifest import source_row_hash
+from ..request_costs import resolve_output_tokens
 
 
 @dataclass(frozen=True)
@@ -133,8 +135,10 @@ class ProfileManifestGuard:
         required = {
             "doc_id",
             "text",
+            "workload_name",
             "prompt_tokens",
             "target_output_tokens",
+            "arrival_time_s",
         }
         missing = required - set(table.column_names)
         if missing:
@@ -162,12 +166,35 @@ class ProfileManifestGuard:
                 raise ValueError(
                     f"prompt_tokens mismatch for doc_id {doc_id}"
                 )
-            output_tokens = table.column("target_output_tokens")[
+            target_output_tokens = table.column("target_output_tokens")[
                 row_index
             ].as_py()
-            if output_tokens != request.estimated_output_tokens:
+            effective_output_tokens = resolve_output_tokens(
+                "trace_target_output",
+                completion_max_tokens=request.max_output_tokens,
+                target_output_tokens=target_output_tokens,
+            )
+            if effective_output_tokens != request.estimated_output_tokens:
                 raise ValueError(
                     f"target_output_tokens mismatch for doc_id {doc_id}"
+                )
+            workload_name = str(
+                table.column("workload_name")[row_index].as_py()
+            )
+            arrival_time_s = float(
+                table.column("arrival_time_s")[row_index].as_py() or 0.0
+            )
+            observed_source_hash = source_row_hash(
+                workload_name=workload_name,
+                doc_id=doc_id,
+                prompt=prompt,
+                arrival_time_s=arrival_time_s,
+                prompt_tokens=prompt_tokens,
+                target_output_tokens=target_output_tokens,
+            )
+            if observed_source_hash != request.source_row_hash:
+                raise ValueError(
+                    f"source_row_hash mismatch for doc_id {doc_id}"
                 )
             batch_doc_ids.add(doc_id)
             validated_doc_ids.append(doc_id)
