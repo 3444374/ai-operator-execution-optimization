@@ -49,6 +49,16 @@ class VllmBenchAdapterTests(unittest.TestCase):
             )
         )
 
+        self.assertEqual(
+            command[:5],
+            [
+                "/venv/bin/python",
+                "-m",
+                "vllm.entrypoints.cli.main",
+                "bench",
+                "serve",
+            ],
+        )
         self.assertIn("openai-chat", command)
         self.assertIn("--dataset-name", command)
         self.assertIn("custom", command)

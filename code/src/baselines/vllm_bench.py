@@ -59,7 +59,9 @@ def build_vllm_bench_command(
     return [
         config.python_executable,
         "-m",
-        "vllm.benchmarks.serve",
+        "vllm.entrypoints.cli.main",
+        "bench",
+        "serve",
         "--backend",
         "openai-chat",
         "--base-url",
