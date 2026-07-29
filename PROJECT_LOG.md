@@ -2650,3 +2650,23 @@
   total/generation tokens/s、JCT、服务端 counter、空队列与 3% 饱和阈值决定
   最小安全并发。
 - 按用户要求不执行 Wiki 同步。
+## 2026-07-29 Direct baseline C64/C128 与 8K ceiling 纠偏
+
+- C64 vLLM Bench/bounded 均通过 256/256 exactly-once、0 incident、服务端
+  counter 与空队列门禁，total tokens/s 分别为 8,342/8,333，JCT 均约
+  12.02s；相对 C32 约提升 69%，确认 C32 欠载。
+- vLLM Bench C128 日志确认 peak concurrency=128，达到 12,762 total
+  tokens/s、JCT 7.849s，相对 C64 再提升 53%。这直接否定“约 8.0–8.2K 是
+  双 4090/vLLM 物理极限”的旧解释；8K 仅是历史 project
+  profiler/arrival-replay/请求语义的平台，不能跨协议外推。
+- bounded C128 虽完整性门禁通过，但仅 8,711 total tokens/s。fatal-flaw
+  audit 定位为 httpx 0.28.1 默认 `max_connections=100`、keepalive=20，
+  配置 C128 被隐式截断。测试先行把连接池总容量显式设为
+  `concurrency_per_endpoint × endpoint_count`。全新 bounded-only C128
+  re-gate 实测 running=124/125、12,472 total tokens/s、JCT 8.048s；相对
+  旧污染点吞吐 +43.2%、JCT -30.1%，与有效 vLLM C128 只差约 2.3%。
+- 现有 256 行 manifest 每 endpoint 只有 128 行，不能有效运行 C256。下一
+  ceiling 点至少使用 512 行；同时优先让 project profiler 在同 manifest、
+  Chat Completions、no replay 条件下运行。未完成该同条件对照前，不新增上游
+  策略，也不据 direct gate 宣称 ours 更慢。
+- 按用户要求不执行 Wiki 同步。

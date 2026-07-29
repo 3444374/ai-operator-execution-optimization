@@ -248,7 +248,11 @@ tokens/s、JCT 7.849s，较 C64 再提升 53%，尚未达到 3% 平台阈值。
 bounded C128 虽通过完整性门禁，但仅 8,711 total tokens/s；fatal-flaw audit
 确认 httpx 0.28.1 默认 `max_connections=100`、keepalive=20，配置 C128 被
 客户端隐式截断，因此该点作废。客户端连接池现已测试先行改为显式匹配配置并发，
-只需在新目录重跑 bounded C128。
+并在全新目录完成 bounded-only C128 re-gate：endpoint running 峰值观测到
+124/125，256/256 exactly-once、0 incident、最终队列归零；修复后 JCT
+8.048s、total/generation tokens/s 为 12,472/6,823。相对旧污染点吞吐
++43.2%、JCT -30.1%；相对有效 vLLM Bench C128 只低 2.27%/2.11%，JCT
+高 2.53%，已无明显协议分叉。
 
 现有 256 行 manifest 每 endpoint 只有 128 行，不能执行有效 C256。下一容量点
 必须使用至少 512 行、每 endpoint 256 行的同构冻结 manifest。更重要的是，

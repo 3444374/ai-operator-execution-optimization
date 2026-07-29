@@ -579,7 +579,9 @@ prompt/generation cumulative counter 差分门禁；该真实双 GPU gate 通过
 C32 均约 4.93K total tokens/s，在 C64 均约 8.34K；vLLM Bench C128 的真实
 peak concurrency=128，达到 12.76K，较 C64 再增 53%。bounded C128 被
 httpx 0.28.1 默认 100 总连接/20 keepalive 截断，因此该点作废，客户端 pool
-已用回归测试显式绑定配置并发，待单臂 re-gate。
+已用回归测试显式绑定配置并发。全新 bounded-only C128 re-gate 观测到
+running=124/125，达到 12.47K total tokens/s、JCT 8.048s，与 vLLM Bench
+C128 只差约 2.3%，没有剩余明显协议分叉。
 
 该结果推翻“历史约 8K 是双 4090/vLLM 物理 ceiling”的解释：8K 仅是当时
 project profiler + arrival replay + 旧请求语义下的平台。现有 256 行清单每端
