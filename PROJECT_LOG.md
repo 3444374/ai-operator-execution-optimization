@@ -22,6 +22,9 @@
   项目 profiler cell 明确保持 blocked/独立执行，不复制成近似 baseline。
 - 修正双 GPU gate 模板残留的本地历史模型名：当前 AutoDL 两个 endpoint
   served model 是 `qwen2.5-7b`，不能继续使用 `qwen2.5-1.5b` 模板值。
+  远端 vLLM 0.25.1 源码审计还确认 `bench serve` 已不再默认 greedy；
+  命令构造器现显式传 `--temperature 0`，避免 serving ceiling arm 与其它
+  frozen Chat arm 使用不同采样语义。
   已验证的依赖、未跟踪文件冲突备份、CRLF hash、Ray Serve extra、vLLM
   0.25.1 结果字段、失败证据保存和 service fingerprint 处理均记录在
   `deploy/autodl/README.md`，不依赖新会话重新探索。

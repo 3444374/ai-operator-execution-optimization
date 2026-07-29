@@ -57,6 +57,10 @@ class VllmBenchAdapterTests(unittest.TestCase):
         self.assertIn("-1", command)
         self.assertIn("--save-detailed", command)
         self.assertEqual(
+            command[command.index("--temperature") + 1],
+            "0",
+        )
+        self.assertEqual(
             command[command.index("--endpoint") + 1],
             "/v1/chat/completions",
         )
@@ -69,10 +73,7 @@ class VllmBenchAdapterTests(unittest.TestCase):
                 (sample_request(2), sample_request(1)),
             )
 
-            rows = [
-                json.loads(line)
-                for line in path.read_text(encoding="utf-8").splitlines()
-            ]
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
         self.assertEqual(
             rows,

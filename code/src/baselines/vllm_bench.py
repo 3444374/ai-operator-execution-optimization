@@ -77,6 +77,8 @@ def build_vllm_bench_command(
         "--disable-shuffle",
         "--request-rate",
         "inf",
+        "--temperature",
+        "0",
         "--num-prompts",
         str(config.num_prompts),
         "--max-concurrency",
