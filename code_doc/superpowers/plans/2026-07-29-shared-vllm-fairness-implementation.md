@@ -172,6 +172,15 @@ Remote progress on 2026-07-29:
 - Keep prewarming before the barrier and give the observer the same explicit
   runtime environment as the profiler. The new Ray-init contract and 145
   related tests pass. Publish and use a fifth fresh gate directory.
+- Commit `e322183` passed 437/437 remote tests. The fifth gate reached 3/3
+  completed and zero incidents; exactly-once, replay timing, endpoint
+  coverage, final-zero credit, actor cleanup, and failure gates all passed.
+- Independent trace audit found invalid aggregate quantiles: raw execution
+  windows reached 100% GPU with 71–74% means, while recorded GPU P95 was zero.
+  The shared percentile helper expects 0–100, but this runner passed
+  `0.95/0.99` for GPU P95 and job P99. Fix both call sites; the two failing
+  contracts and 146 related tests now pass. Use a sixth fresh gate because the
+  fifth directory is functionally valid but statistically invalid.
 
 ## Stop conditions
 

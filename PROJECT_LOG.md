@@ -2416,3 +2416,20 @@
   `_CODE_ROOT` 与已有 `PYTHONPATH` 合并后通过 `runtime_env.env_vars` 传给 worker。
   相关 145 项测试全部通过。发布后仍使用第五个全新目录验证，不复用已有失败
   actor 或输出。
+- worker 路径修复提交 `e322183c1c2166fd6c603d9221feb6e848d7d338`
+  同步后，远端完整测试增至 437 项并全部通过。第五个 gate
+  `experiments/results/dual_gpu_shared_vllm_gate_20260729_1119/` 首次达到
+  manifest 3/3 completed、0 incident：6 份 job trace 均为 64/64 exactly-once，
+  0 worker failure，两 endpoint 均有请求；最大首提交迟到 0.144058s、最大
+  跨 job skew 0.027164s；shared credit 最终全部归零，两个 endpoint 的
+  request/work 峰值分别为 46/20976 与 45/21210；runner、lease 和 named actor
+  均清理，端点健康空闲。
+- 独立审计同时发现 gate 汇总统计无效，故仍不放行 formal：raw resource trace
+  在执行窗口内的 GPU utilization mean 分别为 73.01%/74.25%/71.16%，max
+  均为 100%，但 `group_runs.csv` 的 P95 均错误为 0。根因是公共
+  `percentile()` 接受 0–100 参数，新 runner 的 `_distribution_fields` 和
+  per-job latency 分别误传 `0.95` 与 `0.99`，因此 GPU P95 与 job P99 都退化
+  到最小样本附近。
+- 测试先行新增 GPU P95 与 job P99 nearest-rank 契约，修正调用为 95/99；
+  相关 146 项测试全部通过。第五个目录只证明功能链路通过，不能作为统计有效的
+  正式 gate；发布后必须用第六个全新目录重新生成完整汇总。

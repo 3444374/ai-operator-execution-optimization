@@ -1293,7 +1293,7 @@ def _distribution_fields(
         }
     return {
         f"{prefix}_mean": sum(values) / len(values),
-        f"{prefix}_p95": percentile(values, 0.95),
+        f"{prefix}_p95": percentile(values, 95),
         f"{prefix}_max": max(values),
     }
 
@@ -1535,7 +1535,7 @@ def _validate_job_evidence(
         )
     return {
         "jct_s": jct_s,
-        "p99_s": percentile(e2e, 0.99),
+        "p99_s": percentile(e2e, 99),
         "completion_lag_s": max(completion) - max(arrival),
         "slo_violation_ratio": 1.0 - completed_in_slo / len(slo_met),
         "slo_goodput_per_s": completed_in_slo / jct_s,

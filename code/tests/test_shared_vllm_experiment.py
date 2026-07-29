@@ -399,9 +399,70 @@ class SharedVllmExperimentTests(unittest.TestCase):
         )
 
         self.assertEqual(summary["gpu_utilization_pct_mean"], 75.0)
+        self.assertEqual(summary["gpu_utilization_pct_p95"], 100.0)
         self.assertEqual(summary["vllm_running_mean"], 7.0)
         self.assertEqual(summary["vllm_running_max"], 9.0)
         self.assertEqual(summary["vllm_waiting_max"], 2.0)
+
+    def test_job_evidence_reports_nearest_rank_p99(self) -> None:
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+        scenario = SharedVllmScenario(
+            scenario_id="latency",
+            policy="independent_full",
+            job_count=1,
+            rows_per_job=4,
+            weights=(1,),
+            arrival_offsets_s=(0.0,),
+        )
+        request_rows = [
+            {
+                "request_id": f"request-{index}",
+                "status": "completed",
+                "error_type": "",
+                "arrival_epoch_s": str(index),
+                "completion_epoch_s": str(index + latency),
+                "e2e_s": str(latency),
+                "slo_met": "True",
+                "prompt_tokens": "10",
+                "client_estimated_output_tokens": "20",
+                "estimated_output_tokens": "20",
+                "endpoint_id": f"task-{index % 2}",
+                "submit_epoch_s": str(index + 0.1),
+            }
+            for index, latency in enumerate((1.0, 2.0, 3.0, 100.0))
+        ]
+        summary_rows = [
+            {
+                "status": "ok",
+                "total_rows": "4",
+                "actor_worker_failures": "0",
+                "arrival_replay_start_epoch_s": "100.0",
+                "arrival_replay_observed_start_epoch_s": "100.0",
+            }
+        ]
+
+        with patch.object(
+            shared_vllm,
+            "_read_csv",
+            side_effect=[summary_rows, request_rows, [{}] * 4],
+        ):
+            evidence = shared_vllm._validate_job_evidence(
+                options,
+                scenario,
+                GroupRunIdentity("formal", 1, 0),
+                0,
+            )
+
+        self.assertEqual(evidence["p99_s"], 100.0)
 
     def test_jain_fairness_handles_equal_weight_and_zero_service(self) -> None:
         self.assertEqual(jain_fairness([100.0, 100.0]), 1.0)
