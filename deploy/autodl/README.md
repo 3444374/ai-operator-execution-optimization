@@ -1060,6 +1060,9 @@ HTTP loop and label it OceanBase.
 5. 每个 core cell 只运行一次，两个 endpoint shard 同时启动；输出写到
    `experiments/results/dual_gpu_official_baseline_gate_<unique-id>/` 下的独立
    cell/shard 目录。目录已存在即停止，禁止覆盖或 resume 成新 gate。
+   使用已提交的 `code/scripts/run_official_baseline_gate.py` 作为唯一 core
+   编排入口；它按配置串行 cell、并行双 shard、保存命令/日志、等待队列归零并
+   fail closed。禁止在远端临时手拼两个后台命令充当正式 gate runner。
 6. vLLM Bench 必须保存 `--save-detailed` 原始 JSON，再运行
    `normalize-vllm-bench`；其它 adapter 直接写共同 request schema。
 7. 每个 cell 运行 `validate-gate`。必须满足 64/64 exactly-once、0 failed、
@@ -1119,6 +1122,9 @@ failed `summary.json` 和外层日志，不自动重试。
 | vLLM Bench 原始结果无法按旧字段解析 | vLLM 0.25.1 的详细结果使用 `input_lens`、`output_lens`、`e2els`，没有 `request_latencies` | 启动前用安装环境源码/API 检查字段；归一化器接受 `e2els`。必须保留 `--save-detailed` 原始 JSON，字段不匹配时停止并加回归测试。 |
 | gate CLI 在失败验证前未留下失败请求行 | 先 summarize/validate，异常发生在写 `requests.csv` 之前 | 现在先原子写 request rows，再验证；失败时写 `status=failed` summary 并保持非零退出。不得用重试覆盖失败现场。 |
 | 8000/8001 被误判为服务配置不一致 | 初版 service fingerprint 把 endpoint URL/端口也纳入 hash | 服务指纹只比较模型、协议、temperature 等等价配置；endpoint 地址作为独立拓扑字段审计。实际 vLLM 启动参数仍需从两个进程命令和 service metadata 单独核对。 |
+| 已有单 shard CLI，但没有可复现的双 endpoint gate runner | 临时拼接后台命令无法保证两个 shard 先启动再等待，也没有逐 cell 失败即停、空队列盖章和统一日志 | 新增 `run_official_baseline_gate.py`。每个 cell 保存 `commands.json`、两份 shard log、两份归一化结果和 `gate.json`；根 `run_status.json` 记录已完成与 blocked cell。已有输出目录拒绝覆盖。 |
+| gate 模板仍写本地历史模型 `qwen2.5-1.5b` | AutoDL 当前两个 endpoint 实际 served model 为 `qwen2.5-7b`；模板与服务元数据不一致会污染同条件比较 | 双 GPU official gate 模板改为 `qwen2.5-7b`。每次开机仍以 runtime env、endpoint 进程命令和 `/metrics` 为准，不从模板猜模型。 |
+| `python -m unittest code.tests...` 报标准库 `code` 没有 `tests` | 仓库目录名 `code/` 与 Python 标准库模块同名，不是测试实现失败 | 在仓库根使用 `python -m unittest discover -s code/tests -p 'test_x.py'`。远程封装先保存测试进程退出码，再清理临时环境变量，避免清理命令把失败状态覆盖成 0。 |
 
 本次远端原始冲突备份位置为
 `/root/autodl-tmp/premerge-backups/20260729_shared_vllm_results_before_7267324/`。

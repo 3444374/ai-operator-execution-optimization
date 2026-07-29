@@ -441,7 +441,9 @@ Daft organizer dry-run:
   hash，随后交给共同 endpoint 分片器；
 - `oceanbase.py` 对接原生 `AI_COMPLETE`，不以 Python HTTP 模拟产品算子；
 - `results.py` / `gate.py` 统一 exactly-once、延迟、吞吐和 fail-closed 门禁；
-- `cli.py` 只做 shard dispatch、原始证据保存和格式归一化。
+- `cli.py` 只做 shard dispatch、原始证据保存和格式归一化；
+- `gate_runner.py` 串行 core cell、并行双 endpoint shard，并在空队列校验后
+  fail closed，不复制项目 profiler。
 
 该模块的目标不是让 baseline 共享本项目调度逻辑，而是共享同一个不可变
 Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属于数据库

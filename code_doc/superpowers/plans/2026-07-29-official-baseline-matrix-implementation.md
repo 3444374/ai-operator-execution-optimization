@@ -1069,7 +1069,7 @@ git commit -m "feat: add official baseline gate"
   vLLM endpoints.
 - Produces: durable gate evidence; does not start formal.
 
-- [ ] **Step 1: Run verification-before-publish**
+- [x] **Step 1: Run verification-before-publish**
 
 Run all commands from Task 6 Step 7 and inspect:
 
@@ -1081,7 +1081,7 @@ git log -5 --oneline
 
 Expected: only intended baseline files differ and all tests pass.
 
-- [ ] **Step 2: Push `main`**
+- [x] **Step 2: Push `main`**
 
 ```powershell
 git push origin main
@@ -1089,7 +1089,7 @@ git push origin main
 
 Expected: pushed commit SHA matches local `HEAD`.
 
-- [ ] **Step 3: Perform remote read-only preflight**
+- [x] **Step 3: Perform remote read-only preflight**
 
 Following `deploy/autodl/README.md`, verify:
 
@@ -1099,13 +1099,13 @@ Following `deploy/autodl/README.md`, verify:
 - no Ray workload;
 - remote git state and untracked results are preserved.
 
-- [ ] **Step 4: Safely fast-forward the idle checkout**
+- [x] **Step 4: Safely fast-forward the idle checkout**
 
 Use `git pull --ff-only` only when the preflight proves there is no active
 runner and no tracked-file conflict. Never delete or overwrite untracked
 results.
 
-- [ ] **Step 5: Install only declared missing dependencies**
+- [x] **Step 5: Install only declared missing dependencies**
 
 In the base conda environment, verify imports first. Install only
 `httpx/openai/pandas/aiohttp/PyMySQL` packages that are missing, using the

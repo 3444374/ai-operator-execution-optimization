@@ -774,20 +774,25 @@ python code/scripts/run_official_baseline.py export-postgres-manifest \
   --endpoint-count 2 \
   --output /root/autodl-tmp/gates/official_baseline_gate_manifest.jsonl
 
-python code/scripts/run_official_baseline.py run-shard \
-  --adapter bounded_http \
+python code/scripts/run_official_baseline_gate.py \
+  --config deploy/autodl/dual_gpu_official_baseline_gate.example.json \
+  --driver-python /root/miniconda3/bin/python \
+  --vllm-python /root/autodl-tmp/venvs/vllm-4090/bin/python \
   --manifest /path/to/manifest.jsonl \
-  --endpoint-index 0 \
-  --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
-  --model qwen2.5-1.5b \
-  --concurrency 32 \
-  --output-dir /path/to/fresh-output/endpoint-0
+  --output-root /path/to/fresh-gate-output
 ```
 
-`--dry-run` 不创建输出目录。正式运行拒绝覆盖已有目录。每个 cell 的两个
-endpoint shard 都完成后，用 `validate-gate` 合并两份 summary 和 request
-CSV；任一 exactly-once、预测 work 偏斜、endpoint 未使用、服务元数据不一致、
-worker failure 或 vLLM 最终队列非空都会 fail closed。
+`run_official_baseline_gate.py` 是可复现的双 endpoint core gate runner：
+每个 cell 都先同时启动两个 shard，再等待二者完成；逐 endpoint 保存命令与
+日志，轮询 vLLM queue 归零后才归一化和执行 gate。任一 shard、归一化或 gate
+失败都立即停止后续 cell，写 `run_status.json` 并保留现场；输出根目录已存在
+时拒绝运行。`project_profiler` cell 显式记录为 blocked，仍由现有 profiler
+执行，不能被 core runner 中的近似实现替代。
+
+`run_official_baseline.py --dry-run` 仍用于单 shard 接口检查且不创建输出目录。
+单 cell 校验由 `validate-gate` 合并两份 summary 和 request CSV；任一
+exactly-once、预测 work 偏斜、endpoint 未使用、服务元数据不一致、worker
+failure 或 vLLM 最终队列非空都会 fail closed。
 
 配置边界见：
 

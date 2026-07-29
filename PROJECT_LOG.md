@@ -1,5 +1,31 @@
 # 项目日志
 
+## 2026-07-29 Official baseline AutoDL 部署与 gate 编排补全
+
+- baseline 部署被固化为可恢复状态机：本地完整验证并推送 `main` → 远端
+  runner/lease/endpoint/Ray/GPU/PostgreSQL 只读检查 → 保留未跟踪结果的
+  fast-forward → base/vLLM 两套 Python 依赖检查 → immutable manifest →
+  64 行双 endpoint core gate → 独立 calibration；gate 失败禁止继续。
+- AutoDL 已安全同步到 manifest exporter 提交 `d8487b1`。聚焦测试采用
+  `unittest discover` 后全部通过；直接使用 `python -m unittest code.tests`
+  会与标准库 `code` 模块冲突，远程封装还必须在清理环境变量前保存退出码，
+  否则可能把测试失败误报为成功。
+- 从正式 PostgreSQL workload `sharegpt_burstgpt` 按 `doc_id` 顺序只读导出
+  前 64 行，固定 `max_output_tokens=256`、`trace_target` 估计和双 endpoint
+  largest-work-first 分片。manifest SHA-256 为
+  `b1def6c9e89c5aed2b35b7fdcde4eca300410023f73e21084d799d9fbdaa3f9a`，
+  两端预测 work 为 11,713/11,712，偏斜 0.0085%。
+- 审计发现“单 shard CLI + 单 cell validator”之间缺正式编排层；远端手拼
+  后台命令无法复现并发启动、失败即停和空队列盖章。新增
+  `run_official_baseline_gate.py`：每个 core cell 同时启动两个 shard，保存
+  命令/日志/原始结果，等待两个 vLLM queue 归零，归一化并 fail closed。
+  项目 profiler cell 明确保持 blocked/独立执行，不复制成近似 baseline。
+- 修正双 GPU gate 模板残留的本地历史模型名：当前 AutoDL 两个 endpoint
+  served model 是 `qwen2.5-7b`，不能继续使用 `qwen2.5-1.5b` 模板值。
+  已验证的依赖、未跟踪文件冲突备份、CRLF hash、Ray Serve extra、vLLM
+  0.25.1 结果字段、失败证据保存和 service fingerprint 处理均记录在
+  `deploy/autodl/README.md`，不依赖新会话重新探索。
+
 ## 2026-07-29 Shared-vLLM 1/2/4-job 正式矩阵条件性正结果
 
 - 双 4090 正式矩阵 36/36 group runs 完成、0 incident；27 个 formal group
