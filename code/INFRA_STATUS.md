@@ -322,12 +322,20 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 10. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
    K=8 safety fallback。
 
-截至 2026-07-29，以上 baseline 的本地执行基础设施已实现但尚无远端性能
-证据：统一 Chat Completions 后端、不可变 manifest、固定双 endpoint 分片、
-bounded HTTP、vLLM Bench、Daft Native/Ray、Ray Data HTTP、OceanBase
-`AI_COMPLETE` adapter、归一化结果和 fail-closed gate 均已有单元测试。
-下一动作是全新目录的 64 行双 GPU 功能门禁；在门禁通过前不能把“代码可运行”
-写成“性能 baseline 已建立”，也不能启动 calibration/formal。
+截至 2026-07-29，统一 Chat Completions、不可变 manifest、固定双 endpoint
+分片、bounded HTTP、vLLM Bench、Daft Native/Ray、Ray Data HTTP、
+OceanBase `AI_COMPLETE` adapter、归一化结果和 fail-closed gate 均已有实现与
+单元测试。首轮 64 行双 GPU core gate 已 5/5 通过：每项 64/64
+exactly-once、0 incident、双 endpoint、work skew 0.0085%，最终队列归零。
+
+该门禁仍不是远端性能 baseline。通过后的等价性审计发现 vLLM Bench 会对
+custom prompt 与 openai-chat 重复套 chat template；Ray Data 的整数 concurrency
+在小作业中只起一个 autoscaling actor；Daft/Ray Data 只有 shard-barrier 级
+延迟，且 Daft 不返回 output usage。当前修复为 vLLM Bench
+`--skip-chat-template`、Ray Data `(n,n)` 固定 actor pool，并在 summary 显式
+记录 `timing_granularity/token_accounting`。下一动作是全新目录 re-gate，
+核对逐行 input token、实际 actor 数和观测口径；通过前不能启动
+calibration/formal。
 
 完整顺序与放弃条件见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。

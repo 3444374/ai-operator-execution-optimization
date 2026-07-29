@@ -1,7 +1,8 @@
 # 数据库 AI 算子与官方 Runtime Baseline 矩阵
 
 日期：2026-07-29
-状态：预注册完成；64 行双 GPU 功能门禁进行中，尚无可用于性能结论的结果
+状态：预注册完成；首轮 64 行双 GPU core gate 通过，等价性 re-gate 待完成，
+尚无可用于性能结论的结果
 
 ## 1. 研究问题
 
@@ -170,11 +171,24 @@ time-to-ceiling/ramp-regret 至少改善 10%，只声称压力效率或瞬态改
 bounded HTTP、Daft Native 与 Daft Ray 均通过 64/64 exactly-once、双 endpoint
 与最终空队列门禁。
 
-Ray Data HTTP 尚未通过：两个 driver 都已连接同一个 6380 cluster，但 Ray
-worker 反序列化项目 UDF 时缺少仓库 `code/` 的 `PYTHONPATH`。这属于部署可移植性
-缺陷，不是性能结果，也不能从 pending 资源告警推断 Ray 容量不足。修复必须先以
-单元测试锁定 `runtime_env`，再在全新输出目录重跑整个 core gate；`_1730`
-保留为失败证据。core gate 完整通过前，calibration 和 formal 继续禁止启动。
+`dual_gpu_official_baseline_core_gate_20260729_1725_fix5708e85` 已通过全部
+5 个 core adapter：每项 64/64 exactly-once、0 incident、两 endpoint 均使用、
+work skew 0.0085%，最终 vLLM 队列归零。此前 `_1730` 的 Ray worker
+`PYTHONPATH` 失败目录继续保留为证据。
+
+通过后的等价性审计又发现三项 fatal flaw：
+
+1. vLLM CustomDataset 默认先套 chat template，`openai-chat` 再交给服务端套
+   第二次；必须使用 `--skip-chat-template` 并核对逐行 input token；
+2. Ray Data 的整数 concurrency 在该版本实际形成 `1..n` autoscaling，小作业
+   只起 1 actor；必须显式使用 `(n,n)` 固定池再独立 calibration；
+3. Daft 只有 shard barrier 时间和裸 prompt token，Ray Data 当前也只有 shard
+   barrier 时间；summary 必须标注观测粒度，不能把公共 barrier 复制出的 P95
+   与 request-level P95 横比。
+
+因此首轮 gate 是功能证据，不是冻结 baseline。上述契约修复通过测试后必须使用
+全新目录 re-gate；逐行 request body/input token、固定 actor 数和观测来源均
+通过后，才允许进入 calibration。
 
 ## 9. 详细工程设计
 

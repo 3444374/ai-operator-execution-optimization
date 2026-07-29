@@ -87,7 +87,36 @@ class OfficialBaselineCliTests(unittest.TestCase):
                 result["completion_protocol"],
                 "chat_completions",
             )
+            self.assertEqual(result["timing_granularity"], "request")
+            self.assertEqual(result["token_accounting"], "server_usage")
             self.assertFalse(output_dir.exists())
+
+            daft_result = run_cli(
+                [
+                    "run-shard",
+                    "--adapter",
+                    "daft_native",
+                    "--manifest",
+                    str(manifest),
+                    "--endpoint-index",
+                    "0",
+                    "--endpoint-url",
+                    "http://127.0.0.1:8000/v1/chat/completions",
+                    "--model",
+                    "qwen",
+                    "--output-dir",
+                    str(output_dir),
+                    "--dry-run",
+                ]
+            )
+            self.assertEqual(
+                daft_result["timing_granularity"],
+                "shard_barrier",
+            )
+            self.assertEqual(
+                daft_result["token_accounting"],
+                "manifest_prompt_only",
+            )
 
     def test_ray_runtime_dry_run_requires_explicit_cluster_address(
         self,

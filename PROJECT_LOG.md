@@ -2582,4 +2582,21 @@
   `ray.init(runtime_env={"env_vars": {"PYTHONPATH": ...}})` 显式注入仓库
   `code/` 根目录，同时保留既有 `PYTHONPATH`。修复后只能使用全新目录重跑
   最小 gate，不能覆盖 `_1730` 或直接进入 calibration。
+- 提交 `5708e85` 在全新目录
+  `dual_gpu_official_baseline_core_gate_20260729_1725_fix5708e85` 完成首轮
+  5/5 core gate：每项 64/64 exactly-once、0 incident、双 endpoint、
+  work skew 0.0085%，最终 vLLM running/waiting 均为 0。
+- gate 后等价性审计没有把功能通过误写成性能 baseline。vLLM 0.25.1
+  `CustomDataset.sample()` 默认先套 chat template，而 openai-chat 请求又由
+  服务端套一次；首行 input token 为 92 vs bounded 的 63。测试先行增加
+  `--skip-chat-template`，要求 re-gate 逐行核对 input token。
+- Ray 2.56 的整数 concurrency 在该 Processor 中可解释为 `1..n` autoscaling，
+  首轮 Ray Data 日志实际只有 1 actor；包装器改为 `(n,n)` 固定池，避免小作业
+  underscale。官方 HTTP UDF 的 batch 内执行语义保持不改，后续仍独立扫描
+  batch size × actor 数。
+- Daft 只返回文本且没有逐请求 usage/timing，Ray Data 包装器当前也只能观察
+  shard barrier。共同 summary 新增 `timing_granularity` 与
+  `token_accounting`，禁止把 barrier P95、manifest prompt token 当作可与
+  request-level/server-usage 直接比较的指标。全新等价性 re-gate 通过前，
+  calibration/formal 继续阻塞。
 - 按用户要求不执行 Wiki 同步。

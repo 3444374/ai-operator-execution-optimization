@@ -47,6 +47,24 @@ ADAPTERS = (
     "ray_data_http",
     "oceanbase",
 )
+_OBSERVABILITY_BY_ADAPTER = {
+    "bounded_http": ("request", "server_usage"),
+    "vllm_bench": ("request", "official_benchmark"),
+    "daft_native": ("shard_barrier", "manifest_prompt_only"),
+    "daft_ray": ("shard_barrier", "manifest_prompt_only"),
+    "ray_data_http": ("shard_barrier", "server_usage"),
+    "oceanbase": ("query_barrier", "unavailable"),
+}
+
+
+def _observability_fields(adapter: str) -> dict[str, str]:
+    timing_granularity, token_accounting = _OBSERVABILITY_BY_ADAPTER[
+        adapter
+    ]
+    return {
+        "timing_granularity": timing_granularity,
+        "token_accounting": token_accounting,
+    }
 
 
 def _atomic_json(path: Path, payload: object) -> None:
@@ -191,6 +209,7 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
             raise ValueError("vllm_bench --tokenizer must be an existing local directory")
     base_summary: dict[str, object] = {
         "adapter": args.adapter,
+        **_observability_fields(args.adapter),
         "status": "dry_run" if args.dry_run else "running",
         "request_count": len(requests),
         "endpoint_index": args.endpoint_index,
@@ -430,6 +449,7 @@ def _normalize_vllm_bench(
     summary = {
         **summarize_results(requests, results),
         "adapter": "vllm_bench",
+        **_observability_fields("vllm_bench"),
         "status": "completed",
         "endpoint_index": args.endpoint_index,
         "endpoint_url": args.endpoint_url,

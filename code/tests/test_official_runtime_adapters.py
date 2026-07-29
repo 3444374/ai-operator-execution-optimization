@@ -277,7 +277,7 @@ class OfficialRuntimeAdapterTests(unittest.TestCase):
         )
         self.assertEqual(calls["config"]["max_retries"], 0)
         self.assertEqual(calls["config"]["batch_size"], 16)
-        self.assertEqual(calls["config"]["concurrency"], 4)
+        self.assertEqual(calls["config"]["concurrency"], (4, 4))
         self.assertEqual(results[0].output_tokens, 2)
 
 

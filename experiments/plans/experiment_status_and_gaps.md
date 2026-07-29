@@ -565,6 +565,14 @@ shared credit 精确峰值未越过 256 request/65,536 work，最终归零。
 max P99 -22.52%，但三次吞吐变化为 +8.43%/-0.28%/+22.60%。因此只晋升为
 高竞争条件性候选，需 held-out 复验；staggered/weighted 仍未验证。
 
+**2026-07-29 baseline 门禁状态**：首轮 64 行双 GPU core gate 已让
+vLLM Bench、bounded HTTP、Daft Native/Ray 和 Ray Data HTTP 全部通过
+64/64 exactly-once、0 incident、双 endpoint 与空队列门禁。但这只建立功能
+证据。等价性审计发现 vLLM Bench 双重 chat template、Ray Data 整数
+concurrency 退化为 `1..n` autoscaling，以及 Daft/Ray Data 的 shard-barrier
+观测不能与 request-level P95 横比。修复与全新 re-gate 完成前，推荐顺序中的
+第 4 步 calibration 继续阻塞。
+
 晋级要求是相对最佳静态基线改善 observed tokens/s 或 SLO goodput，且 request
 P99、failure、exactly-once 不退化。否则记录负结果，不增加控制复杂度。
 

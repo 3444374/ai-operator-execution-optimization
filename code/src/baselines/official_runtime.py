@@ -262,7 +262,7 @@ def run_ray_data_http(
         batch_size=config.batch_size,
         url=config.endpoint_url,
         headers=headers,
-        concurrency=config.concurrency,
+        concurrency=(config.concurrency, config.concurrency),
         max_retries=0,
     )
     processor = runtime.build_processor(

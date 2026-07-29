@@ -79,6 +79,7 @@ def build_vllm_bench_command(
         str(config.dataset_path),
         "--custom-output-len",
         "-1",
+        "--skip-chat-template",
         "--disable-shuffle",
         "--request-rate",
         "inf",

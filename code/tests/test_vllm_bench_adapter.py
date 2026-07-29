@@ -66,6 +66,7 @@ class VllmBenchAdapterTests(unittest.TestCase):
         self.assertIn("--disable-shuffle", command)
         self.assertIn("--custom-output-len", command)
         self.assertIn("-1", command)
+        self.assertIn("--skip-chat-template", command)
         self.assertIn("--save-detailed", command)
         self.assertEqual(
             command[command.index("--tokenizer") + 1],
