@@ -1,15 +1,16 @@
 # 开题材料 project log
 
-## 2026-07-29 开题答辩 PPT v6 设计确认
+## 2026-07-29 开题答辩 PPT v6 设计规划与反馈修订
 
 - 完成 v5 的内容、视觉和架构图审阅，确认当前文件落后于 2026-07-29
   项目实验结论，不能直接作为当前汇报版本。
-- 新增 `opening/slides/opening_defense_v6_design.md`：正文采用完整证据链，
-  speaker notes 标记优先讲、可跳过和答辩备份；核心图采用总体架构、
-  Request Shaping 和 Runtime Credit Lifecycle 三图组合。
+- 新增 `opening/slides/opening_defense_v6_design.md`：正文沿用 v5 四章节，
+  重点讲动机、架构、策略与实验设计；大量正式结果移入备份或 speaker notes。
+- official baseline 先展示同条件实验设计，只有通过输入/资源等价、计量口径、
+  规模校准和正式重复门禁后，才向正文模块化插入结果。
 - 设计要求架构图以 SVG 为权威源，并输出 EMF/高清 PNG；不使用普通文生图，
   不把 vLLM waiting 画成当前默认控制器的一阶反馈，不把写回画成独立贡献。
-- 当前只完成设计冻结，未修改 v5、未生成 v6、未同步线上飞书。
+- 当前等待设计复审，未修改 v5、未生成 v6、未同步线上飞书。
 
 ## 2026-07-29 文献基线升级与研究问题收敛
 

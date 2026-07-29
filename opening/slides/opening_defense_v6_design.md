@@ -3,17 +3,22 @@
 ## 1. 目标与状态
 
 本文件定义 `opening_defense_20260720_v5.pptx` 的后续增量版本设计。
-当前状态为：**设计已确认，尚未修改 PPTX**。
+当前状态为：**已按用户反馈修订，等待复审，尚未修改 PPTX**。
 
-v6 的目标不是单纯美化 v5，而是把 2026-07-29 已形成的实验事实、负结果、
-当前默认配置和后续验证任务组织成一套完整、可按现场时间跳页的开题答辩材料。
+v6 的目标是在 v5 的章节、页面顺序和学校模板基础上，修正过时口径并强化
+研究设计。正文只保留能够证明问题存在、链路可观测和方案可执行的动机测试；
+已完成的大量正式实验主要进入答辩备份和 speaker notes。开题报告的主体是
+研究问题、总体架构、两项策略设计、baseline 设计、消融方案和后续验证路线，
+不是阶段性结果汇报。
 
 设计原则：
 
 - 保留学校模板、母版、页眉页脚和用户已有的人工版式调整；
 - 不重新运行 `opening/slides/build_ppt.py` 全量覆盖 v5；
 - 从 v5 复制生成新文件后，使用 `python-pptx` 做增量编辑；
-- 正文保留完整证据链，通过讲稿标签区分“优先讲”“可跳过”“答辩备份”；
+- 正文沿用 v5 的四段式主线，通过讲稿标签区分“优先讲”“可跳过”“答辩备份”；
+- 正文实验只讲动机测试、baseline 设计和少量可行性信号；
+- baseline 正式测试完成后，按预先定义的等价性和重复门禁模块化插入结果页；
 - 架构图对标 SIGMOD/VLDB 系统论文的 Solution Overview 与机制放大图；
 - 所有结论以项目权威总纲、正式结果报告和 CSV 为依据。
 
@@ -28,7 +33,7 @@ v6 的目标不是单纯美化 v5，而是把 2026-07-29 已形成的实验事�
 5. `opening/report/opening_report.md`
 6. v5 PPT 与旧图仅作为版式和历史口径参考
 
-必须采用的当前结论：
+以下当前结论用于约束页面口径、答辩备注和备份材料，不要求全部进入正文：
 
 - 数据组织当前默认采用 sequential token-budget；
 - shared-vLLM 单 endpoint 当前默认采用 static `K=8` 与 fixed `50 ms`；
@@ -43,6 +48,15 @@ v6 的目标不是单纯美化 v5，而是把 2026-07-29 已形成的实验事�
 - 多模态泛化、路由增量与故障迁移、代价模型跨时间段或新 workload 校准仍属于后续任务；
 - 写回使用 PostgreSQL + pgvector、COPY + deferred index，仅作为工程 baseline 和端到端 guardrail。
 
+正文实验内容的选择原则：
+
+- AI_EMBED 预研用于证明端到端链路可观测、调用粒度重要和写回成本可量化；
+- AI_COMPLETE 预研只保留“固定行数不是固定计算量”和“无界提交伤害共享服务”
+  两个动机信号；
+- 双 4090 active-work、Actor Pool、service quantum、SLO-EWMA 和多作业公平性
+  结果默认进入备份页，不在主讲路径逐项展开；
+- 正文不提前宣讲仍在测试中的 official baseline 性能排名。
+
 必须修正的旧口径：
 
 - `37.5×` 是 operator/推理执行阶段差异，端到端差异约为 `13.4×`；
@@ -56,9 +70,10 @@ v6 的目标不是单纯美化 v5，而是把 2026-07-29 已形成的实验事�
 
 目标规模：
 
-- 正文约 31 页；
-- 答辩备份约 8 页；
-- 其中约 22 页标为优先讲，其余正文页标为可跳过。
+- 正文约 31 页，保持接近 v5 的体量和四章节结构；
+- 答辩备份约 6 页；
+- official baseline 完成后允许模块化增加 1–2 页结果；
+- 其中约 20 页标为优先讲，其余正文页标为可跳过。
 
 标签只写入 speaker notes，不在页面上显示：
 
@@ -83,52 +98,78 @@ v6 的目标不是单纯美化 v5，而是把 2026-07-29 已形成的实验事�
 | 页码 | 页面题目 | 角色 | 核心信息 |
 |---|---|---|---|
 | 1 | 封面 | 优先讲 | 正式题目、报告人、指导老师 |
-| 2 | 汇报路线与一句话定位 | 可跳过 | 数据库 AI 算子外部执行链路的上游调度 |
+| 2 | 目录 | 可跳过 | 沿用 v5 四章节结构 |
 | 3 | 数据库成为 AI workload 入口 | 优先讲 | 工业场景与 AI SQL 算子 |
 | 4 | AI 算子执行链路为何不同 | 优先讲 | 模型推理引入数据库优化器未覆盖的决策地带 |
 | 5 | 现有研究与连接处缺口 | 优先讲 | DB4AI、模型服务、数据系统各自边界 |
-| 6 | 研究问题与明确边界 | 优先讲 | 数据组织、提交控制、多模态泛化、补充性代价估计使能 |
-| 7 | 可观测的端到端执行路径 | 优先讲 | 阶段划分、计时边界和统一评价指标 |
-| 8 | GPU-backed AI_EMBED 动机结果 | 优先讲 | operator 约 37.5×、端到端约 13.4× |
-| 9 | vLLM + AI_COMPLETE 基线设置 | 可跳过 | workload、模型、资源和无写回边界 |
-| 10 | 固定行数不是固定计算量 | 优先讲 | token tail 与请求计算量失配 |
-| 11 | sequential token-budget 的当前证据 | 优先讲 | 约束 token tail，保留接近的吞吐 |
-| 12 | 共享模型服务需要在途保护 | 优先讲 | static K8 对前台作业的保护作用 |
-| 13 | fixed 50 ms 与 adaptive flush | 优先讲 | adaptive 无额外增量，选择更简单静态窗口 |
-| 14 | 双 4090 active-work 饱和点 | 优先讲 | 每 endpoint 65,536 的预注册选择 |
-| 15 | 固定资源 Actor Pool 与 service quantum | 可跳过 | 多 actor 与 fixed quantum 未晋升 |
-| 16 | 多作业 shared-credit 正式结果 | 优先讲 | 容量安全、公平性与条件性 4-job 收益 |
-| 17 | 当前选定的两类执行配置 | 优先讲 | 单 endpoint：token-budget + K8 + 50 ms；双 endpoint：request-level credit + 65,536 + 1×256 |
-| 18 | 总体执行架构 | 优先讲 | 系统边界、两项研究内容、黑盒 vLLM 和写回 baseline |
-| 19 | 研究内容一：数据组织设计空间 | 优先讲 | Cost Adapter、Organizer 与 BatchRequest |
-| 20 | Request Shaping 机制放大图 | 优先讲 | token/frame cost、budget、length、prefix metadata |
-| 21 | length-align 与 output-aware 的证据边界 | 可跳过 | 单点正向不等于跨规模稳定收益 |
-| 22 | prefix-aware 的受控验证要求 | 可跳过 | cache-off 负结果与 cache-on 下一步 |
-| 23 | 研究内容二：提交控制设计空间 | 优先讲 | per-job queue、shared credit、router、endpoint |
-| 24 | Runtime Credit Lifecycle 机制放大图 | 优先讲 | acquire、submit、complete、release |
-| 25 | 独立拼接与联合搜索 | 优先讲 | 未出现显著 coupling gap |
-| 26 | 多模态策略复用 | 优先讲 | prompt token cost 切换为 image/frame cost |
-| 27 | 算子代价估计补充 | 可跳过 | 共同使能组件，不独立构成研究内容；评价 ranking、regret 与预测区间 |
-| 28 | 证据状态与剩余验证矩阵 | 优先讲 | 已选定、未晋升、待验证三类状态 |
-| 29 | 后续工作、进度与风险控制 | 优先讲 | prefix cache-on、多模态、校准和公平性扩展 |
-| 30 | 总结 | 优先讲 | 场景、方法、证据、边界 |
+| 6 | 目录：预研基础与动机证据 | 可跳过 | 沿用 v5 章节切换页 |
+| 7 | GPU-backed AI_EMBED 端到端链路 | 优先讲 | 链路跑通、阶段可观测、可做消融 |
+| 8 | 动机测试：粒度、写回与 Ray 边界 | 优先讲 | operator 约 37.5×、端到端约 13.4×，写回已量化 |
+| 9 | AI_COMPLETE 动机：固定行数不是固定计算量 | 优先讲 | token tail 与请求计算量失配 |
+| 10 | AI_COMPLETE 动机：无界提交伤害共享服务 | 优先讲 | 证明 admission/in-flight 控制有必要 |
+| 11 | official baseline 的实验设计与准入门禁 | 可跳过 | 同一 workload、资源、tokenization、计量与重复规则 |
+| 12 | 目录：研究目标与内容 | 可跳过 | 沿用 v5 章节切换页 |
+| 13 | 研究目标与总体执行架构 | 优先讲 | 系统边界、两项研究内容、黑盒 vLLM 和写回 baseline |
+| 14 | 研究内容总览 | 优先讲 | 数据组织、提交控制、多模态验证和补充性代价估计 |
+| 15 | 研究内容一：数据组织设计空间 | 优先讲 | Cost Adapter、Organizer 与 BatchRequest |
+| 16 | token-budget：按计算量形成请求 | 优先讲 | 预算约束、oversize row 和输出元数据 |
+| 17 | length-align：降低提交内计算量方差 | 优先讲 | 候选机制与验证指标，不提前声称收益 |
+| 18 | prefix-aware：为缓存命中创造条件 | 优先讲 | 候选机制与 cache-on 受控验证 |
+| 19 | 研究内容二：提交控制设计空间 | 优先讲 | flush、admission/shared credit、routing |
+| 20 | 高信息密度提交控制架构 | 优先讲 | per-job queue、shared credit、router、endpoint pool |
+| 21 | Runtime Credit Lifecycle | 优先讲 | acquire、submit、complete、release |
+| 22 | 实验设计：baseline、变量与指标矩阵 | 优先讲 | 对照组、资源条件、吞吐/尾延迟/公平性与 MFU |
+| 23 | 实验设计：独立消融与耦合验证 | 优先讲 | 分别调优、独立拼接、联合搜索和反证条件 |
+| 24 | 多作业与多 endpoint 验证设计 | 可跳过 | shared credit、公平性、routing 与故障迁移 |
+| 25 | 多模态泛化验证 | 优先讲 | prompt token cost 切换为 image/frame cost |
+| 26 | 算子代价估计补充 | 可跳过 | profile 校准、ranking、regret 与预测区间 |
+| 27 | 目录：可行性与计划 | 可跳过 | 沿用 v5 章节切换页 |
+| 28 | 可行性、预期创新与风险控制 | 优先讲 | 已跑通链路、策略设计、失败门禁和降级路径 |
+| 29 | 进度安排 | 优先讲 | baseline → 消融 → 耦合 → 多模态 → 整理 |
+| 30 | 总结 | 优先讲 | 场景、设计、可行性和边界 |
 | 31 | 致谢 | 优先讲 | 结束页 |
 
-所有实验页标题必须改为结论式标题，禁止继续连续使用
-`vLLM + AI_COMPLETE Baseline` 作为四页相同标题。
+正文中的实验页必须服务于动机或实验设计。禁止连续展示大量参数扫描，也禁止
+继续使用相同的 `vLLM + AI_COMPLETE Baseline` 标题堆叠结果。
 
-## 5. 答辩备份页
+## 5. Baseline 结果插入门禁与答辩备份
 
-| 页码 | 页面题目 | 用途 |
+### 5.1 正文中的 baseline 页面
+
+第 11 页只讲 official baseline 的实验设计和准入规则，不讲尚未完成的性能排名。
+页面列出：
+
+- vLLM Bench；
+- bounded HTTP；
+- Daft Native；
+- Daft Ray；
+- Ray Data；
+- immutable manifest、相同模型配置、相同 endpoint 和相同输出上限；
+- exactly-once、双 endpoint work balance、服务队列归零和零 incident 门禁；
+- request-level/server-usage 与 barrier/manifest 计量粒度差异。
+
+### 5.2 条件式 baseline 结果页
+
+baseline 测完后最多向第 11 页后插入两页：
+
+1. **等价性门禁结果**：只有当 row set、tokenization/chat template、输出上限、
+   endpoint 数、固定 actor pool、exactly-once 和队列归零全部通过时才进入正文；
+2. **规模校准与正式性能结果**：只有完成最小安全并发校准、同资源正式重复，
+   且 token accounting 与 timing granularity 可比时才报告性能差异。
+
+若门禁未全部通过，结果留在实验记录或答辩备份，不在开题正文做性能排名。
+插入条件页后，后续页面由脚本自动顺延编号。
+
+### 5.3 答辩备份页
+
+| 逻辑顺序 | 页面题目 | 用途 |
 |---|---|---|
-| 32 | 完整实验环境与可复现参数 | 回答硬件、模型、版本与 workload 问题 |
-| 33 | baseline 等价性与证据层级 | 区分本地预演、双 GPU 正式结果和不同 runner |
-| 34 | active-work 八档扩展曲线 | 解释 65,536 的选择规则 |
-| 35 | Actor Pool 与 service quantum 完整结果 | 支撑未晋升判断 |
-| 36 | SLO-EWMA 与 fixed-50 完整对照 | 支撑负结果判断 |
-| 37 | 1/2/4-job 公平性与 shared credit | 展开 fairness、P99、JCT 与条件性收益 |
-| 38 | PostgreSQL + pgvector 写回 baseline | 解释写回为何不是独立贡献 |
-| 39 | 参考文献与研究边界问答 | 给出核心文献和常见质疑口径 |
+| 1 | 完整实验环境与 baseline 等价性矩阵 | 回答硬件、模型、版本、runner 和 workload 问题 |
+| 2 | official baseline 详细结果 | 仅在门禁通过后展开规模、吞吐和 JCT |
+| 3 | active-work、Actor Pool、service quantum 与 adaptive 对照 | 回答参数选择和负结果问题 |
+| 4 | 1/2/4-job 公平性与 shared credit | 展开 fairness、P99、JCT 与条件性收益 |
+| 5 | PostgreSQL + pgvector 写回 baseline | 解释写回为何不是独立贡献 |
+| 6 | 参考文献与研究边界问答 | 给出核心文献和常见质疑口径 |
 
 ## 6. 总体执行架构图
 
@@ -200,9 +241,11 @@ vLLM 指标进入 Observability/Evaluation，不直接进入当前默认静态�
 
 颜色必须同时配合空间位置、标题和线型，不允许只靠颜色表达语义。
 
-## 7. Request Shaping 机制放大图
+## 7. 数据组织机制图组
 
-该图展示从数据库行到 `BatchRequest` 的成形过程：
+沿用并重绘 v5 的 token-budget、length-align、prefix-aware 三页机制图。
+三页共享同一套输入、元数据和 `BatchRequest` 视觉语法，共同展示从数据库行
+到请求成形的过程：
 
 ```text
 row
@@ -213,7 +256,7 @@ row
   -> BatchRequest
 ```
 
-图中明确区分：
+图组中明确区分：
 
 - sequential token-budget：当前默认；
 - length-align/output-aware：需要跨规模正式重复；
@@ -221,7 +264,7 @@ row
 - oversize row：单独提交，不能静默丢弃或截断。
 
 图中不声称 length-align 必然降低尾延迟，也不声称 prefix-aware 必然提高 APC
-命中率。图注第一句必须说明该图展示的是“候选请求成形机制与当前证据状态”。
+命中率。图注第一句必须说明对应页面展示的是候选请求成形机制及其验证目标。
 
 ## 8. Runtime Credit Lifecycle 机制放大图
 
