@@ -347,8 +347,47 @@ append-only 插入 `2048..2559`；任一 prefix 不一致或 doc ID 冲突都阻
 提交和全新输出目录重新跑 64 行 gate；只有 gate 再次通过才恢复 512 行校准。
 旧 `beeee20` 校准目录只作为 incident 证据，不参与参数选择。
 
+### 8.6 单次 512 校准失效与等价性门禁
+
+提交 `0c370ce` 的全新 64 行 gate 已通过：64/64 exactly-once、endpoint
+32/32、0 incident/failure、最终队列归零。随后 9 个 512 行单次 calibration
+cell 均正确完成，但结果非单调：static K256 为 11,736 total tokens/s，
+nonbinding work98K 为 4,153；两者均达到 512 max inflight、endpoint work
+73,329/73,328、bounded wait 0，理论上应等价。
+
+只读 trace 诊断排除了 active-work 限制、actor 并行度、manifest/payload、
+output work 和统计口径。W98K 相对 K256 的额外约 28.6 秒位于
+`model_request_wall`；actor ramp 仅多约 3 秒。W98K 是首个 full-concurrency
+cell，vLLM running 峰值只有 332 且两 endpoint 分波接纳；K256 running 峰值
+510。当前最可能是 Ray threaded urllib、OS connection 或 vLLM HTTP ingress
+的首次高并发冷路径，尚不能进一步归因。
+
+因此该 9-cell 数据只作诊断，不选择 K256/W65K 进入 formal。下一步固定为：
+
+1. actor ready barrier 放在 measured E2E timer 之前，单独记录
+   `actor_ready_s`；
+2. 非流式 HTTP 请求记录 request-start、headers-ready、body-complete、
+   headers-wait 和 body-read；不改变 streaming 语义；
+3. 使用
+   `dual_gpu_same_condition_project_equivalence_gate.example.json`，只比较
+   K256 与 nonbinding W98K，每臂 1 warm-up + 3 interleaved repeats；
+4. mean throughput/JCT 差异均不超过 5%、至少 2/3 repeats 在界内且所有
+   正确性门禁通过后，才启动完整 calibration。
+
+完整 baseline 按因果阶梯推进：单 job steady-state → 32/64/128/256 小作业
+transient/ramp → 单/双 GPU scaling → shared-vLLM 1/2/4-job。单 job 要求 ours
+吞吐不低于 bounded HTTP 95%；压力效率要求在至少 97% ceiling 下 active
+work/inflight 少 20%；transient 要求 time-to-ceiling/ramp regret 改善 20%；
+多 job 要求聚合吞吐不低于 95%，同时 P99/SLO/fairness 至少改善 10% 且无
+饥饿。均不通过时，结论为当前 workload 下无可证明优势。
+
 ## 9. 详细工程设计
 
 适配器边界、fatal-flaw audit 和实现模块见：
 
 `../../code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md`
+
+本轮批准的 staged validation 与实施清单见：
+
+- `../../code_doc/superpowers/specs/2026-07-29-daft-ray-baseline-advantage-validation-design.md`
+- `../../code_doc/superpowers/plans/2026-07-29-daft-ray-baseline-advantage-validation-implementation.md`

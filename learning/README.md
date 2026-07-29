@@ -1,5 +1,24 @@
 # Learning Notes
 
+## 2026-07-29 为什么要先做 K256/W98K 等价性门禁
+
+K256 表示每个 endpoint 最多同时保留 256 个 request；W98K 在同一个 K256
+上再加每 endpoint 98,304 predicted-token work 上限。当前 512 行的实际峰值
+work 只有约 73,329，所以 W98K 理论上没有约束任何请求。这两个配置应该接近。
+
+单次远端结果却是约 11,736 对 4,153 total tokens/s。trace 显示不是 W98K
+真的挡住了请求：两者都达到 512 个全局 inflight、bounded wait 为 0、输入与
+输出 work 一致。主要差异发生在 HTTP/vLLM request wall，而且 W98K 恰好是
+第一个 full-concurrency 场景。于是这组数字更像“首次把 512 个连接/请求压上去
+的冷路径”，不能解释成 active-work 策略变慢。
+
+新的等价性门禁做三件事：第一，所有 Ray actor ready 后才启动 E2E 计时，启动
+耗时另记；第二，每个配置先在完全相同的压力下 warm-up；第三，记录 HTTP
+request start、response headers 和 body complete。非流式请求的 headers-wait
+仍混合 connect、服务入口排队和推理，不能把它直接叫 GPU 时间。只有 K256 与
+W98K 在三次 formal 中收敛到 5% 内，才能继续比较 Daft+Ray 是否用更少
+active work、更快爬到吞吐上限，或在多 job 中改善 P99/SLO/fairness。
+
 ## 2026-07-29 planning batch 与 service quantum 为什么要分开
 
 planning batch 回答“上游先把哪些完整行组织在一起”，由 token budget、

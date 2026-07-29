@@ -175,13 +175,16 @@
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
 1. **P0**：先完成 project profiler 的 512 行同 manifest、Chat
-   Completions、no-replay 校准，比较 direct C256 hard ceiling、ours 与达到
+   Completions、no-replay 等价性门禁和校准，比较 direct C256 hard ceiling、ours 与达到
    同吞吐所需的 active work。2,048 行 disjoint formal 当前因源数据只有
    `doc_id=0..2047` 而缺 512 行；必须补独立数据并用 `source_row_offset=512`
    导出只读 manifest，64 行 gate 通过后才启动。首次 project gate 在 HTTP
    前暴露 trace target 未按 completion cap 裁剪；已统一为
    `min(trace target, completion cap)`，完整测试与全新 re-gate 前不启动
-   512 校准。补数必须逐字段核验已有 0..2047 后 append-only。OceanBase、Daft Native/Ray
+   512 校准。单次 9-cell 校准又暴露首个 full-concurrency HTTP/vLLM 冷路径：
+   理论等价 K256/W98K 相差 2.83×；现先用 actor-ready barrier、同压力
+   warm-up、HTTP headers/body timing 做 1+3 repeat 等价性门禁，通过 5%
+   阈值后才扩大矩阵。补数必须逐字段核验已有 0..2047 后 append-only。OceanBase、Daft Native/Ray
    与 Ray Data 只在各自独立校准后进入 held-out，不能用弱默认值排名。
 2. **P1**：Shared-vLLM 核心 1/2/4-job equal-workload 矩阵已完成；baseline
    锁定后再用 held-out repeats 确认 4-job 稳定性，并分别验证 staggered idle

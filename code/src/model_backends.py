@@ -32,6 +32,21 @@ class CompletionEndpointResult:
     total_tokens: int | None
     output_token_counts: list[int | None]
     finish_reasons: list[str | None]
+    http_request_start_epoch_s: float
+    http_response_headers_epoch_s: float
+    http_response_body_epoch_s: float
+    http_headers_wait_s: float
+    http_body_read_s: float
+
+
+class _ReadyActor:
+    """Side-effect-free readiness contract for explicit Ray startup barriers."""
+
+    def ready(self) -> dict[str, object]:
+        return {
+            "actor_worker_pid": os.getpid(),
+            "actor_type": type(self).__name__,
+        }
 
 
 def format_completion_prompts(
@@ -153,9 +168,15 @@ def call_compatible_completion_endpoint(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     req = request.Request(endpoint_url, data=payload, headers=headers, method="POST")
+    http_request_start_epoch_s = time.time()
+    http_request_start_s = time.perf_counter()
     try:
         with request.urlopen(req, timeout=timeout_s) as response:
+            http_response_headers_epoch_s = time.time()
+            http_response_headers_s = time.perf_counter()
             body = response.read()
+            http_response_body_epoch_s = time.time()
+            http_response_body_s = time.perf_counter()
     except error.URLError as exc:
         raise RuntimeError(f"Completion endpoint request failed: {exc}") from exc
     decoded = json.loads(body.decode("utf-8"))
@@ -185,6 +206,17 @@ def call_compatible_completion_endpoint(
         ),
         output_token_counts=output_token_counts,
         finish_reasons=finish_reasons,
+        http_request_start_epoch_s=http_request_start_epoch_s,
+        http_response_headers_epoch_s=http_response_headers_epoch_s,
+        http_response_body_epoch_s=http_response_body_epoch_s,
+        http_headers_wait_s=max(
+            0.0,
+            http_response_headers_s - http_request_start_s,
+        ),
+        http_body_read_s=max(
+            0.0,
+            http_response_body_s - http_response_headers_s,
+        ),
     )
 
 
@@ -232,7 +264,7 @@ def call_ollama_completion_endpoint(
     return outputs, total_tokens if saw_token_metrics else None
 
 
-class FakeEmbeddingActor:
+class FakeEmbeddingActor(_ReadyActor):
     def __init__(self, embedding_dim: int, service_tokens_per_s: float = 50000.0):
         self.embedding_dim = embedding_dim
         self.service_tokens_per_s = service_tokens_per_s
@@ -266,7 +298,7 @@ class FakeEmbeddingActor:
         }
 
 
-class CompatibleHTTPEmbeddingActor:
+class CompatibleHTTPEmbeddingActor(_ReadyActor):
     def __init__(self, endpoint_url: str, model_name: str, api_key: str | None, timeout_s: float):
         self.endpoint_url = endpoint_url
         self.model_name = model_name
@@ -317,7 +349,7 @@ def compatible_http_embed_batch(
     return CompatibleHTTPEmbeddingActor(endpoint_url, model_name, api_key, timeout_s).embed(batch)
 
 
-class FakeCompletionActor:
+class FakeCompletionActor(_ReadyActor):
     def __init__(self, output_tokens_per_row: int = 16, service_tokens_per_s: float = 50000.0):
         self.output_tokens_per_row = output_tokens_per_row
         self.service_tokens_per_s = service_tokens_per_s
@@ -351,7 +383,7 @@ class FakeCompletionActor:
         }
 
 
-class CompatibleHTTPCompletionActor:
+class CompatibleHTTPCompletionActor(_ReadyActor):
     def __init__(
         self,
         endpoint_url: str,
@@ -414,11 +446,22 @@ class CompatibleHTTPCompletionActor:
             "service_s": service_s,
             "service_start_epoch_s": service_start_epoch,
             "service_end_epoch_s": service_end_epoch,
+            "http_request_start_epoch_s": (
+                endpoint_result.http_request_start_epoch_s
+            ),
+            "http_response_headers_epoch_s": (
+                endpoint_result.http_response_headers_epoch_s
+            ),
+            "http_response_body_epoch_s": (
+                endpoint_result.http_response_body_epoch_s
+            ),
+            "http_headers_wait_s": endpoint_result.http_headers_wait_s,
+            "http_body_read_s": endpoint_result.http_body_read_s,
             "actor_worker_pid": os.getpid(),
         }
 
 
-class OllamaCompletionActor:
+class OllamaCompletionActor(_ReadyActor):
     def __init__(self, endpoint_url: str, model_name: str, api_key: str | None, timeout_s: float, max_tokens: int):
         self.endpoint_url = endpoint_url
         self.model_name = model_name

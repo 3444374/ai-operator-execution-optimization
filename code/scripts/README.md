@@ -843,7 +843,15 @@ failure 或 vLLM 最终队列非空都会 fail closed。
 
 - `deploy/autodl/dual_gpu_official_baseline_gate.example.json`
 - `deploy/autodl/dual_gpu_official_baseline_calibration.example.json`
+- `deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json`
 - `experiments/plans/database_ai_operator_baseline_matrix_20260729.md`
 
 模板是预注册规格，不是允许远端临时拼接 formal 命令的替代品。64 行 gate
 通过前不得启动 calibration；calibration 通过前不得启动 2,048 held-out。
+
+Project profiler 的 512 行 broad calibration 之前还有一道更窄门禁：
+`static_k256` 与 `work98304_nonbinding` 各运行一次同压力 warm-up 和三次
+formal repeat。actor-ready barrier 不计入 measured E2E，耗时写入
+`actor_ready_s`；submission trace schema 5 记录 HTTP request、headers 和
+body-read 边界。两臂 throughput/JCT 没有收敛到 5% 内时必须停止，不能以
+单次最佳结果选择参数。

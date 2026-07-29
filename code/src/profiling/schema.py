@@ -36,6 +36,7 @@ FORMAL_RESULT_FIELDS = tuple(
     ray_actor_max_concurrency
     ray_worker_num_cpus ray_worker_num_gpus endpoint_count actor_worker_count
     actor_worker_submission_counts actor_worker_routing
+    actor_ready_s
     actor_pool_slots_per_endpoint actor_worker_max_running
     actor_worker_max_active_work actor_worker_failures
     actor_worker_slot_held_utilization max_inflight_limit admission_scope
@@ -77,6 +78,8 @@ FORMAL_RESULT_FIELDS = tuple(
     token_count batch_rows_min batch_rows_max batch_rows_mean batch_tokens_min
     batch_tokens_max batch_tokens_mean batch_tokens_p50 batch_tokens_p95
     batch_service_s_p50 batch_service_s_p95 batch_service_s_p99
+    http_headers_wait_s_p50 http_headers_wait_s_p95 http_headers_wait_s_p99
+    http_body_read_s_p50 http_body_read_s_p95 http_body_read_s_p99
     vllm_metrics_status vllm_prompt_tokens_delta vllm_generation_tokens_delta
     vllm_request_success_delta vllm_estimated_flops_per_gpu_delta
     vllm_e2e_request_latency_mean_s vllm_request_queue_time_mean_s

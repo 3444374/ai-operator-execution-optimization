@@ -16,6 +16,10 @@ Current designs:
 - `specs/2026-07-29-saturated-ray-actor-pool-replenishment-design.md`: saturated
   active-work calibration, service quanta, bounded Ray actor pools, and
   endpoint-local completion replenishment.
+- `specs/2026-07-29-daft-ray-baseline-advantage-validation-design.md`:
+  pre-registered direct/official/project baseline ladder, cold-path
+  measurement gate, pressure efficiency, transient scaling, and multi-job
+  promotion thresholds.
 
 Current implementation plans:
 
@@ -24,3 +28,6 @@ Current implementation plans:
 - `plans/2026-07-29-saturated-ray-execution-foundation-implementation.md`:
   runner exclusivity, failure-safe Ray fan-in, saturation calibration, fixed
   service quanta, and a bounded observable actor pool.
+- `plans/2026-07-29-daft-ray-baseline-advantage-validation-implementation.md`:
+  actor readiness, HTTP transport timing, same-pressure equivalence gate,
+  staged baseline handoff, verification, and remote synchronization.

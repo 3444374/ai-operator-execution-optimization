@@ -14,6 +14,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.model_backends import (
+    FakeCompletionActor,
     call_compatible_completion_endpoint,
     fake_complete_batch,
     fake_embed_batch,
@@ -116,6 +117,72 @@ class ModelBackendTests(unittest.TestCase):
         self.assertEqual(result.total_tokens, 9)
         self.assertEqual(result.output_token_counts, [1, 2])
         self.assertEqual(result.finish_reasons, ["stop", "length"])
+
+    def test_completion_endpoint_records_non_streaming_http_boundaries(
+        self,
+    ) -> None:
+        response_body = json.dumps(
+            {
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"content": "answer"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {"total_tokens": 6},
+            }
+        ).encode("utf-8")
+
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return None
+
+            def read(self):
+                return response_body
+
+        with (
+            patch(
+                "src.model_backends.request.urlopen",
+                return_value=Response(),
+            ),
+            patch(
+                "src.model_backends.time.time",
+                side_effect=[100.0, 101.25, 101.5],
+            ),
+            patch(
+                "src.model_backends.time.perf_counter",
+                side_effect=[10.0, 11.0, 11.2],
+            ),
+        ):
+            result = call_compatible_completion_endpoint(
+                "http://localhost/v1/chat/completions",
+                "model",
+                ["question"],
+                None,
+                5.0,
+                8,
+                protocol="chat_completions",
+            )
+
+        self.assertEqual(result.http_request_start_epoch_s, 100.0)
+        self.assertEqual(result.http_response_headers_epoch_s, 101.25)
+        self.assertEqual(result.http_response_body_epoch_s, 101.5)
+        self.assertAlmostEqual(result.http_headers_wait_s, 1.0)
+        self.assertAlmostEqual(result.http_body_read_s, 0.2)
+
+    def test_fake_actor_ready_is_side_effect_free(self) -> None:
+        worker = FakeCompletionActor()
+
+        first = worker.ready()
+        second = worker.ready()
+
+        self.assertEqual(first["actor_worker_pid"], os.getpid())
+        self.assertEqual(second, first)
+        self.assertEqual(first["actor_type"], "FakeCompletionActor")
 
     def test_completion_endpoint_omits_vllm_extension_by_default(
         self,

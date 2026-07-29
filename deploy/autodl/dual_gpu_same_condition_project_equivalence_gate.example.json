@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "experiment_id": "dual_gpu_same_condition_project_calibration",
+  "experiment_id": "dual_gpu_same_condition_project_equivalence_gate",
   "seed": 20260729,
   "service_metadata": {
     "vllm_version": "0.25.1",
@@ -106,59 +106,11 @@
   ],
   "scenarios": [
     {
-      "scenario_id": "static_k32",
-      "args": ["--max-inflight", "32"]
-    },
-    {
-      "scenario_id": "static_k64",
-      "args": ["--max-inflight", "64"]
-    },
-    {
-      "scenario_id": "static_k128",
-      "args": ["--max-inflight", "128"]
-    },
-    {
       "scenario_id": "static_k256",
       "args": ["--max-inflight", "256"]
     },
     {
-      "scenario_id": "work16384",
-      "args": [
-        "--max-inflight",
-        "256",
-        "--max-active-work-per-endpoint",
-        "16384"
-      ]
-    },
-    {
-      "scenario_id": "work32768",
-      "args": [
-        "--max-inflight",
-        "256",
-        "--max-active-work-per-endpoint",
-        "32768"
-      ]
-    },
-    {
-      "scenario_id": "work49152",
-      "args": [
-        "--max-inflight",
-        "256",
-        "--max-active-work-per-endpoint",
-        "49152"
-      ]
-    },
-    {
-      "scenario_id": "work65536",
-      "args": [
-        "--max-inflight",
-        "256",
-        "--max-active-work-per-endpoint",
-        "65536"
-      ]
-    },
-    {
-      "scenario_id": "work98304",
+      "scenario_id": "work98304_nonbinding",
       "args": [
         "--max-inflight",
         "256",

@@ -40,7 +40,7 @@ class RecordingRemoteMethod:
     def __init__(self):
         self.payloads = []
 
-    def remote(self, payload):
+    def remote(self, payload=None):
         self.payloads.append(payload)
         return FakeRef(payload)
 
@@ -48,6 +48,7 @@ class RecordingRemoteMethod:
 class RecordingActor:
     def __init__(self):
         self.complete = RecordingRemoteMethod()
+        self.ready = RecordingRemoteMethod()
 
 
 def envelope() -> PayloadEnvelope:
@@ -58,6 +59,27 @@ def envelope() -> PayloadEnvelope:
 
 
 class RaySubmissionAdapterTests(unittest.TestCase):
+    def test_actor_submission_state_waits_for_every_actor_ready_reference(
+        self,
+    ) -> None:
+        actors = [RecordingActor(), RecordingActor()]
+        state = ActorSubmissionState({"endpoint-0": actors}, "complete")
+
+        class ReadyRay:
+            @staticmethod
+            def get(refs):
+                return [ref.value for ref in refs]
+
+        duration_s, evidence = state.wait_until_ready(
+            ReadyRay,
+            clock=iter([10.0, 10.25]).__next__,
+        )
+
+        self.assertEqual(duration_s, 0.25)
+        self.assertEqual(evidence, (None, None))
+        self.assertEqual(actors[0].ready.payloads, [None])
+        self.assertEqual(actors[1].ready.payloads, [None])
+
     def test_actor_worker_pool_rotates_inside_one_endpoint(self) -> None:
         actors = [RecordingActor(), RecordingActor()]
         submitter = ActorWorkerPoolSubmitter(actors, "complete")

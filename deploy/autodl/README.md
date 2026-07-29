@@ -1139,9 +1139,10 @@ token 统计口径不同，下一道门禁必须对每个 cell、每个 endpoint
 
 ### Project profiler 同 manifest 校准与 formal
 
-项目 runtime 不再使用“相似 workload”与 direct baseline 横比。两个已提交模板
-分别固定 512 行校准和 2,048 行 disjoint formal：
+项目 runtime 不再使用“相似 workload”与 direct baseline 横比。三个已提交模板
+依次固定 512 行等价性门禁、512 行校准和 2,048 行 disjoint formal：
 
+- `dual_gpu_same_condition_project_equivalence_gate.example.json`
 - `dual_gpu_same_condition_project_calibration.example.json`
 - `dual_gpu_same_condition_project_formal.example.json`
 
@@ -1176,7 +1177,41 @@ PY
 ```bash
 export PROJECT_CALIBRATION_REQUEST_MANIFEST=\
 /root/autodl-tmp/gates/official_baseline_calibration_512_20260729_0f5d60f.jsonl
+```
 
+先运行理论等价的 K256 与 nonbinding W98K 门禁。两者各有一个同压力 warm-up
+和三个交错 formal repeat；actor ready barrier 在 measured E2E timer 之前，
+`actor_ready_s` 单独记录，submission trace schema 5 记录 HTTP request start、
+response headers 和 body-read 边界：
+
+```bash
+CONFIG=deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json
+OUTPUT_DIR=experiments/results/dual_gpu_same_condition_project_equivalence_gate_<unique-id>
+RUN_LOG=/root/autodl-tmp/logs/dual_gpu_same_condition_project_equivalence_gate_<unique-id>.log
+
+test ! -e "$OUTPUT_DIR"
+test ! -e "$RUN_LOG"
+nohup /root/miniconda3/bin/python \
+  code/scripts/run_ai_operator_scenarios.py \
+  --config "$CONFIG" \
+  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --python-executable /root/miniconda3/bin/python \
+  --output-dir "$OUTPUT_DIR" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --idle-timeout-s 120 \
+  </dev/null >"$RUN_LOG" 2>&1 &
+```
+
+只有两臂 repeat-mean throughput 与 JCT 均在 5% 内、至少 2/3 repeats 落在
+该范围、且所有正确性门禁通过，才允许运行完整校准。失败时保留目录、日志、
+lease、request/submission/resource traces 与 endpoint 日志，停止；不得通过
+换顺序或删除首轮数据继续 formal。`headers_wait` 包含 connect、HTTP ingress、
+vLLM queue 与 inference，不能单独解释为 server accept 或 GPU compute。
+
+等价性门禁通过后才运行完整校准：
+
+```bash
 CONFIG=deploy/autodl/dual_gpu_same_condition_project_calibration.example.json
 OUTPUT_DIR=experiments/results/dual_gpu_same_condition_project_calibration_<unique-id>
 RUN_LOG=/root/autodl-tmp/logs/dual_gpu_same_condition_project_calibration_<unique-id>.log
@@ -1196,7 +1231,8 @@ nohup /root/miniconda3/bin/python \
 ```
 
 校准模板扫描 per-endpoint static K `{32,64,128,256}` 和 active work
-`{16384,32768,49152,65536,98304}`。完成后按预注册 97% ceiling / 相邻增益
+`{16384,32768,49152,65536,98304}`，每个配置一个同压力 warm-up 和三个
+formal repeat。完成后按预注册 97% ceiling / 相邻增益
 <3% 规则选择最小压力点，写入 `PROJECT_STATIC_K_PER_ENDPOINT` 和
 `PROJECT_ACTIVE_WORK_PER_ENDPOINT`。不要因为 C256 是 `max_num_seqs` 配置硬上限
 就把它误写成已验证的经验平台。
@@ -1263,6 +1299,7 @@ request/submission/resource traces、0 failure、服务端 counter 和最终空�
 | project Chat template 展开时报缺失变量，或仍请求 `/v1/completions` | 旧 runtime env 只有 `COMPLETION_ENDPOINT_URLS`，没有同条件 Chat URL；直接复用会改变协议 | 从更新后的 `autodl.env.example` 补 `COMPLETION_CHAT_ENDPOINT_URLS=.../v1/chat/completions`，启动前打印解析后的模板参数；禁止用 legacy URL 兜底。 |
 | 512 校准后无法导出 disjoint 2,048-row formal | 当前 workload 只有 2,048 行，`OFFSET 512` 后数据库实测仅返回 1,536 行 | formal 前补齐并冻结另外 512 行或导入独立 held-out workload；profiler 使用 `--source-row-offset 512`。不得回用 `doc_id=0..511` 或复制行凑数。 |
 | project 64 行 gate 在 HTTP 前报 `target_output_tokens mismatch` | official manifest 将 trace target 裁到 `max_tokens=256`，project profiler 曾比较和调度未裁剪的数据库原值；大于 256 的行因此既校验失败又高估 active work | `trace_target_output` 的统一语义为 `min(target_output_tokens, completion_max_tokens)`；校验仍保留 fail-closed。修复提交通过本地完整测试后，必须在全新目录重新运行 64 行 gate，旧失败目录不覆盖。 |
+| 同样 512 outstanding 的 W98K 比 K256 慢约 2.83× | 只读诊断排除 active-work 背压、actor 数、payload、output work 和汇总计算；主要差异是首个 full-concurrency cell 在 HTTP/vLLM request wall 多约 28.6s，并出现 endpoint 不对称逐波接纳 | 不选取该单次结果做参数。先加 actor-ready barrier、同压力 warm-up 和 HTTP headers/body timing，只复测理论等价 K256/W98K；门禁未通过禁止扩大矩阵。 |
 
 ### 安全补齐 disjoint held-out 行
 

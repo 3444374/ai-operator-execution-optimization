@@ -897,3 +897,28 @@ baseline"。代码实现均保持可用状态，后续重新激活时改动量�
 §10.2 的诊断指出选错信号是根因而非控制器参数问题，一旦
 request-level completion replenishment 提供了逐请求完成时间信号，
 动态控制的价值可能需要重新评估。
+
+---
+
+## 13. 2026-07-29 baseline 优势验证的当前门禁
+
+512 行 direct C256 已达到 vLLM Bench 15,351、bounded HTTP 14,532 total
+tokens/s；project 单次 K256 为 11,736。project 的 9-cell calibration 因理论
+等价的 K256/W98K 相差 2.83× 而失效。只读诊断把主差异定位到首次
+full-concurrency 的 HTTP/vLLM request wall，而不是 active-work credit 或 actor
+创建。
+
+因此当前唯一安全远端动作是运行 K256/W98K 的 1 warm-up + 3 repeats
+等价性门禁。它通过后才依次执行：
+
+1. direct/official/project 单 job 独立 calibration 与 held-out；
+2. 32/64/128/256-row transient saturation；
+3. matched one/two-GPU scaling；
+4. bounded HTTP、independent project、shared static credit、fair credit 的
+   1/2/4-job 矩阵；
+5. 官方 OceanBase capability 通过则测产品 arm，否则仅测明确标注的
+   OceanBase-style 轻量模拟；pgai 保持 embedding 对照。
+
+所有主 arm 使用同一双 endpoint。不得通过挑选 Daft Native 单次高值、弱连接
+池、不同 request body 或不同输出 work 寻找优势。晋级门槛以
+`database_ai_operator_baseline_matrix_20260729.md` §8.6 为准。

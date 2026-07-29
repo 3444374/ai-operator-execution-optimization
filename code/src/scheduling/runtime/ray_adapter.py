@@ -256,6 +256,25 @@ class ActorSubmissionState:
             list(self.pool_submitters.values())
         )
 
+    def wait_until_ready(
+        self,
+        ray_module,
+        *,
+        clock: Callable[[], float] = time.perf_counter,
+    ) -> tuple[float, tuple[object, ...]]:
+        """Resolve every actor's explicit ready method before measurement."""
+
+        started_at_s = clock()
+        ready_refs = [
+            actor.ready.remote()
+            for actors in self._actor_pools.values()
+            for actor in actors
+        ]
+        evidence = tuple(ray_module.get(ready_refs))
+        if len(evidence) != len(ready_refs):
+            raise RuntimeError("actor ready barrier returned incomplete evidence")
+        return max(0.0, clock() - started_at_s), evidence
+
     def validate(
         self,
         actor_pools: Mapping[str, Sequence[object]],

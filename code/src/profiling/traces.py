@@ -142,7 +142,7 @@ def write_submission_trace(
         append_metrics(
             output_path,
             {
-                "schema_version": 4,
+                "schema_version": 5,
                 "experiment_id": experiment_id,
                 "phase": phase,
                 "repeat_index": repeat_index,
@@ -209,6 +209,26 @@ def write_submission_trace(
                 "service_end_epoch_s": result.get(
                     "service_end_epoch_s",
                     0.0,
+                ),
+                "http_request_start_epoch_s": result.get(
+                    "http_request_start_epoch_s",
+                    "",
+                ),
+                "http_response_headers_epoch_s": result.get(
+                    "http_response_headers_epoch_s",
+                    "",
+                ),
+                "http_response_body_epoch_s": result.get(
+                    "http_response_body_epoch_s",
+                    "",
+                ),
+                "http_headers_wait_s": result.get(
+                    "http_headers_wait_s",
+                    "",
+                ),
+                "http_body_read_s": result.get(
+                    "http_body_read_s",
+                    "",
                 ),
             },
         )

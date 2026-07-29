@@ -492,6 +492,7 @@ def _actor_worker_run_metrics(
     submission_state: ActorSubmissionState | None,
     *,
     routing_policy: str,
+    actor_ready_s: float,
     slots_per_endpoint: int,
     operator_wall_s: float,
 ) -> dict[str, float | int | str]:
@@ -517,6 +518,7 @@ def _actor_worker_run_metrics(
     )
     return {
         "actor_worker_routing": routing_policy,
+        "actor_ready_s": round(actor_ready_s, 6),
         "actor_pool_slots_per_endpoint": slots_per_endpoint,
         "actor_worker_max_running": ";".join(
             str(snapshot.max_running) for snapshot in snapshots
@@ -528,6 +530,33 @@ def _actor_worker_run_metrics(
             str(snapshot.failed) for snapshot in snapshots
         ),
         "actor_worker_slot_held_utilization": round(utilization, 6),
+    }
+
+
+def _http_transport_metrics(results: Sequence[dict]) -> dict[str, float]:
+    """Summarize only explicitly observed non-streaming HTTP intervals."""
+
+    headers_wait = [
+        float(result["http_headers_wait_s"])
+        for result in results
+        if result.get("http_headers_wait_s") is not None
+    ]
+    body_read = [
+        float(result["http_body_read_s"])
+        for result in results
+        if result.get("http_body_read_s") is not None
+    ]
+
+    def observed_percentile(values: list[float], quantile: float) -> float:
+        return percentile(values, quantile) if values else 0.0
+
+    return {
+        "http_headers_wait_s_p50": observed_percentile(headers_wait, 50),
+        "http_headers_wait_s_p95": observed_percentile(headers_wait, 95),
+        "http_headers_wait_s_p99": observed_percentile(headers_wait, 99),
+        "http_body_read_s_p50": observed_percentile(body_read, 50),
+        "http_body_read_s_p95": observed_percentile(body_read, 95),
+        "http_body_read_s_p99": observed_percentile(body_read, 99),
     }
 
 
@@ -1472,9 +1501,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.executor == "ray_actor"
                 else ""
             ),
+            actor_ready_s=0.0,
             slots_per_endpoint=actor_pool_slots_per_endpoint,
             operator_wall_s=0.0,
         )
+        dry_http_transport_metrics = _http_transport_metrics([])
         dry_resource_metrics = resource_sample_stats(
             [],
             observed_tokens=0,
@@ -1668,6 +1699,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ),
             "writeback_mode": args.writeback_mode,
             "write_batch_rows": args.write_batch_rows,
+            **dry_http_transport_metrics,
         }
     if not args.database_url:
         raise SystemExit("Missing --database-url or DATABASE_URL.")
@@ -1852,6 +1884,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             if args.executor == "ray_actor"
             else None
         )
+        actor_ready_s = 0.0
+        if actor_submission_state is not None:
+            actor_ready_s, _ = actor_submission_state.wait_until_ready(
+                ray_module
+            )
         e2e_timer = StageTimer.start("e2e")
         processed_rows = 0
         object_count = 0
@@ -2407,6 +2444,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         request_wall_s = model_request_wall_time(operator_results)
         token_count = sum(int(result["token_count"]) for result in operator_results)
         batch_stats = batch_result_stats(operator_results)
+        http_transport_metrics = _http_transport_metrics(operator_results)
         vllm_stats = vllm_metric_delta_stats(vllm_metrics_before, vllm_metrics_after)
         observed_tokens = (
             int(vllm_stats["vllm_prompt_tokens_delta"])
@@ -2469,6 +2507,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.executor == "ray_actor"
                 else ""
             ),
+            actor_ready_s=actor_ready_s,
             slots_per_endpoint=actor_pool_slots_per_endpoint,
             operator_wall_s=operator_wall_s,
         )
@@ -2697,6 +2736,30 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "batch_service_s_p50": round(float(batch_stats["batch_service_s_p50"]), 6),
             "batch_service_s_p95": round(float(batch_stats["batch_service_s_p95"]), 6),
             "batch_service_s_p99": round(float(batch_stats["batch_service_s_p99"]), 6),
+            "http_headers_wait_s_p50": round(
+                float(http_transport_metrics["http_headers_wait_s_p50"]),
+                6,
+            ),
+            "http_headers_wait_s_p95": round(
+                float(http_transport_metrics["http_headers_wait_s_p95"]),
+                6,
+            ),
+            "http_headers_wait_s_p99": round(
+                float(http_transport_metrics["http_headers_wait_s_p99"]),
+                6,
+            ),
+            "http_body_read_s_p50": round(
+                float(http_transport_metrics["http_body_read_s_p50"]),
+                6,
+            ),
+            "http_body_read_s_p95": round(
+                float(http_transport_metrics["http_body_read_s_p95"]),
+                6,
+            ),
+            "http_body_read_s_p99": round(
+                float(http_transport_metrics["http_body_read_s_p99"]),
+                6,
+            ),
             "vllm_metrics_status": vllm_stats["vllm_metrics_status"],
             "vllm_prompt_tokens_delta": vllm_stats["vllm_prompt_tokens_delta"],
             "vllm_generation_tokens_delta": vllm_stats["vllm_generation_tokens_delta"],

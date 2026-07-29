@@ -396,6 +396,20 @@ pool fallback 改写。fixed-pool、multi-pool pinned 与 shared-credit oversize
 边界均已测试锁定。失败校准 0/9、无该失败请求的 HTTP 提交且无 `runs.csv`，
 现场保留；新提交通过全新 64 行远端门禁前仍不得恢复 512 校准。
 
+`0c370ce` 的全新 64 行 gate 随后已通过。512 行 9-cell calibration 虽为
+9/9、0 incident，但理论等价的 static K256 与 nonbinding W98K 分别只有
+11,736/4,153 total tokens/s，不能用于参数选择。只读诊断确认两者 manifest、
+payload、max inflight=512、endpoint work、bounded wait 和 output work 等价；
+主差异是 W98K 首个 full-concurrency cell 在 HTTP/vLLM request wall 多约
+28.6s，actor readiness 只贡献约 3s。
+
+当前实现增加显式 actor-ready barrier，barrier 在 E2E timer 之前并记录
+`actor_ready_s`；非流式 Chat HTTP 结果与 submission trace 记录 request
+start、response headers、body complete、headers wait 和 body read。校准模板
+改为同压力 warm-up + 3 repeats，并新增只包含 K256/W98K 的等价性门禁。
+该门禁未达到 5% 等价阈值前，完整 calibration、2,048 formal 和新策略均不
+启动。
+
 完整顺序与放弃条件见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
 

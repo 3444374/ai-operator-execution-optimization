@@ -335,6 +335,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code_doc/superpowers/specs/2026-07-26-row-cap-aware-packing-and-observation-design.md` | row cap、token budget、packing 与 adaptive 非阻塞观测的候选选择设计 | 继续数据组织与提交控制联合优化前读 |
 | `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md` | BFD、离线逐请求 E2E、资源效率指标与 64/512/1024 实验实施计划 | 继续当前数据组织策略主线前读 |
 | `code_doc/superpowers/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md` | 非阻塞 adaptive 观测、row-cap-first packing 与真实 GPU 策略筛选计划 | 执行当前数据组织优化和机制选择前读 |
+| `code_doc/superpowers/specs/2026-07-29-daft-ray-baseline-advantage-validation-design.md` | Daft+Ray baseline 优势验证的批准规格 | 查询预注册门槛、staged matrix、负结果规则与远端停止条件 |
+| `code_doc/superpowers/plans/2026-07-29-daft-ray-baseline-advantage-validation-implementation.md` | actor readiness、HTTP timing、等价性门禁和交接计划 | 继续实现或交给新 agent 运行前读 |
 | `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
 | `deploy/autodl/` | AutoDL 云服务器 runbook、环境模板、模型下载/endpoint 启动脚本与双 GPU 场景模板 | 2× GPU 云上复现：配置化 vLLM 多 endpoint + PG18.4 + Ray/Daft |
@@ -351,6 +353,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_submission_policy.example.json` | active-work、least-work routing、动态 token budget 与 adaptive flush 的可组合消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
 | `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 官方/强 baseline 功能门禁规格 | calibration 前验证 Chat 请求等价、exactly-once、endpoint 分片、空队列与 adapter 能力 |
 | `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 同条件 baseline 独立标定网格 | gate 通过后标定 direct/Daft/Ray Data/project 容量；不得直接当作 formal |
+| `deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json` | project K256 与 nonbinding W98K 的首次高并发等价性门禁 | 1 same-pressure warmup + 3 repeats；未收敛到 5% 内禁止 broad calibration |
 | `deploy/autodl/dual_gpu_same_condition_project_calibration.example.json` | 同 512 行 immutable Chat manifest 的 project static-K 与 active-work 校准模板 | direct C256 后测 project 达到 ceiling 所需的最小上游压力 |
 | `deploy/autodl/dual_gpu_same_condition_project_formal.example.json` | disjoint 2,048 行 manifest 的 project static request-credit 与 token-work 正式模板 | 数据补齐、64 行 gate 与参数冻结后运行 1 warmup + 3 repeats |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |

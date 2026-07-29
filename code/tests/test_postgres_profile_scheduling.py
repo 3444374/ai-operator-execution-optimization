@@ -181,6 +181,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "MFU_PRECISION": "bf16_dense_fp32_accumulate",
             }
             templates = (
+                "dual_gpu_same_condition_project_equivalence_gate.example.json",
                 "dual_gpu_same_condition_project_calibration.example.json",
                 "dual_gpu_same_condition_project_formal.example.json",
             )
@@ -210,6 +211,61 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                                 row["request_manifest_validation_status"],
                                 "not_executed",
                             )
+
+    def test_equivalence_gate_uses_same_pressure_warmups_and_repeats(
+        self,
+    ) -> None:
+        env = {
+            "DATABASE_URL": "postgresql://example",
+            "COMPLETION_CHAT_ENDPOINT_URLS": (
+                "http://gpu0/v1/chat/completions,"
+                "http://gpu1/v1/chat/completions"
+            ),
+            "MODEL_METRICS_URLS": (
+                "http://gpu0/metrics,http://gpu1/metrics"
+            ),
+            "SOURCE_WORKLOAD_NAME": "sharegpt_burstgpt",
+            "SOURCE_MAX_PROMPT_TOKENS": "1500",
+            "COMPLETION_MODEL": "qwen2.5-7b",
+            "PROJECT_CALIBRATION_REQUEST_MANIFEST": "manifest.jsonl",
+            "RAY_ADDRESS": "127.0.0.1:6380",
+            "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
+            "VLLM_MAX_NUM_SEQS": "256",
+            "REQUEST_SLO_MS": "30000",
+            "GPU_PEAK_TFLOPS": "165",
+            "MFU_PRECISION": "bf16_dense_fp32_accumulate",
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            config = _load_config(
+                CODE_ROOT.parent
+                / "deploy"
+                / "autodl"
+                / "dual_gpu_same_condition_project_equivalence_gate.example.json"
+            )
+
+        self.assertEqual(config.warmup_runs_per_scenario, 1)
+        self.assertEqual(config.formal_repeats, 3)
+        self.assertEqual(
+            [scenario.scenario_id for scenario in config.scenarios],
+            ["static_k256", "work98304_nonbinding"],
+        )
+        for scenario in config.scenarios:
+            resolved = [*config.common_args, *scenario.args]
+            self.assertIn("256", resolved)
+        self.assertNotIn("--arrival-replay", config.common_args)
+        self.assertIn("request", config.common_args)
+        self.assertIn("manifest_pinned", config.common_args)
+        self.assertIn("127.0.0.1:6380", config.common_args)
+
+    def test_profiler_waits_for_actor_readiness_before_e2e_timer(self) -> None:
+        source = Path(profile.__file__).read_text(encoding="utf-8")
+
+        ready_index = source.index("wait_until_ready")
+        timer_index = source.index('StageTimer.start("e2e")')
+
+        self.assertLess(ready_index, timer_index)
+        self.assertIn("actor_ready_s", profile.FORMAL_RESULT_FIELDS)
 
     def test_ray_task_worker_options_ignore_actor_only_concurrency(self) -> None:
         args = profile.parse_args(
@@ -815,12 +871,17 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 return self
 
             def remote(self, *_args):
-                return object()
+                return SimpleNamespace(
+                    ready=SimpleNamespace(
+                        remote=Mock(return_value=object())
+                    )
+                )
 
         ray_module = SimpleNamespace(
             __version__="2.test",
             init=Mock(),
             remote=Mock(return_value=RemoteDefinition()),
+            get=Mock(side_effect=lambda refs: [None for _ in refs]),
         )
         submission_metrics = {
             "operator_invocations": 1,
@@ -875,6 +936,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(row["endpoint_count"], 1)
         self.assertEqual(row["actor_worker_count"], 2)
         self.assertEqual(row["actor_worker_submission_counts"], "1;0")
+        self.assertGreaterEqual(row["actor_ready_s"], 0.0)
 
     def test_single_endpoint_legacy_workers_remain_compatible(self) -> None:
         args = profile.parse_args(["--model-workers", "4"])
@@ -3513,6 +3575,11 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         "service_s": 0.2,
                         "service_start_epoch_s": 100.0,
                         "service_end_epoch_s": 100.2,
+                        "http_request_start_epoch_s": 100.01,
+                        "http_response_headers_epoch_s": 100.18,
+                        "http_response_body_epoch_s": 100.19,
+                        "http_headers_wait_s": 0.17,
+                        "http_body_read_s": 0.01,
                     }
                 ],
                 submission_events=[
@@ -3556,7 +3623,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 resource = list(csv.DictReader(handle))
 
             self.assertEqual(submission[0]["doc_ids"], "11;12")
-            self.assertEqual(submission[0]["schema_version"], "4")
+            self.assertEqual(submission[0]["schema_version"], "5")
             self.assertEqual(submission[0]["submission_id"], "9:request:11")
             self.assertEqual(submission[0]["planning_batch_id"], "9:batch:0")
             self.assertEqual(submission[0]["service_quantum_index"], "1")
@@ -3574,6 +3641,16 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             self.assertEqual(submission[0]["job_id"], "9")
             self.assertEqual(submission[0]["server_version"], "18.4")
             self.assertEqual(submission[0]["pgvector_version"], "0.8.2")
+            self.assertEqual(
+                submission[0]["http_request_start_epoch_s"],
+                "100.01",
+            )
+            self.assertEqual(
+                submission[0]["http_response_headers_epoch_s"],
+                "100.18",
+            )
+            self.assertEqual(submission[0]["http_headers_wait_s"], "0.17")
+            self.assertEqual(submission[0]["http_body_read_s"], "0.01")
             self.assertEqual(resource[0]["gpu_utilization_pct"], "50")
             self.assertEqual(resource[0]["repeat_index"], "2")
         finally:

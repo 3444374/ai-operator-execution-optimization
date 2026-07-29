@@ -2758,3 +2758,26 @@
   `git diff --check` 通过，独立代码审阅无 Critical/Important。下一步只能在
   新提交和全新远端目录重跑 64 行门禁；通过后才重新开始 512 行校准。
 - 开题 PPT 仍由另一对话修改，本轮未触碰；按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 Baseline 优势验证：首次高并发等价性门禁
+
+- `0c370ce` 的全新 64 行 gate 通过 64/64 exactly-once、endpoint 32/32、
+  0 incident/failure 和最终空队列。随后 512 行 9-cell calibration 完成
+  9/9，但 static K256 与理论 nonbinding W98K 分别为 11,736/4,153 total
+  tokens/s，单次结果不能用于参数选择。
+- 只读系统化诊断排除 active-work credit、actor 数、manifest/payload、
+  output work 和汇总计算。W98K 的额外约 28.6s 位于 HTTP/vLLM request
+  wall；actor ramp 只多约 3s。W98K 恰为首个 full-concurrency cell，并出现
+  endpoint 不对称的逐波接纳，当前保留为客户端/OS/vLLM ingress 冷路径假说。
+- 用户批准预注册门槛：单 job ours 吞吐至少为 bounded HTTP 95%；在至少
+  97% ceiling 下压力降低 20%才称压力效率；transient time-to-ceiling/ramp
+  改善 20%；多 job 聚合吞吐至少 95%，并使 P99/SLO/fairness 至少改善 10%
+  且无饥饿。未通过则记录无可证明优势。
+- 新增 staged validation 规格与实施计划、K256/W98K 等价性模板；actor-ready
+  barrier 移到 measured E2E 前并单列 `actor_ready_s`，非流式 HTTP 与
+  submission trace 增加 request/headers/body timing。每臂 1 same-pressure
+  warm-up + 3 formal repeats；5% 等价门禁未通过禁止 broad calibration。
+- 所有主 baseline 继续使用同一双单-GPU vLLM endpoint。OceanBase-style
+  lightweight arm 仅作明确标注的次级模拟，不冒充官方产品；pgai 保持
+  embedding 对照。
+- 开题 PPT 由另一对话并行修改，本轮未触碰；按用户要求不执行 Wiki 同步。
