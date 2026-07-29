@@ -431,7 +431,7 @@ git commit -m "feat: add immutable baseline contracts"
   - `write_vllm_custom_dataset(path, requests)`
   - `build_vllm_bench_command(config)`
 
-- [ ] **Step 1: Write the failing bounded-concurrency test**
+- [x] **Step 1: Write the failing bounded-concurrency test**
 
 ```python
 def sample_request(
@@ -487,7 +487,7 @@ self.assertEqual(peak, 2)
 self.assertEqual({row.status for row in results}, {"completed"})
 ```
 
-- [ ] **Step 2: Run and witness RED**
+- [x] **Step 2: Run and witness RED**
 
 Run:
 
@@ -497,7 +497,7 @@ Run:
 
 Expected: import failure because the adapter does not exist.
 
-- [ ] **Step 3: Implement one-request-per-row bounded HTTP**
+- [x] **Step 3: Implement one-request-per-row bounded HTTP**
 
 Use one `asyncio.Semaphore` per endpoint and one shared `httpx.AsyncClient`.
 The payload is exactly:
@@ -514,7 +514,7 @@ The payload is exactly:
 Do not retry formal requests. Convert HTTP/JSON failures into failed result
 rows so the validity gate can reject the run without losing evidence.
 
-- [ ] **Step 4: Write failing vLLM command tests**
+- [x] **Step 4: Write failing vLLM command tests**
 
 ```python
 def test_vllm_bench_uses_custom_chat_dataset_without_shuffle(self) -> None:
@@ -539,7 +539,7 @@ def test_vllm_bench_uses_custom_chat_dataset_without_shuffle(self) -> None:
     self.assertIn("--save-detailed", command)
 ```
 
-- [ ] **Step 5: Implement the vLLM custom dataset and command builder**
+- [x] **Step 5: Implement the vLLM custom dataset and command builder**
 
 Each JSONL line is:
 
@@ -562,7 +562,7 @@ python -m vllm.benchmarks.serve
 --save-result --save-detailed
 ```
 
-- [ ] **Step 6: Declare direct dependencies**
+- [x] **Step 6: Declare direct dependencies**
 
 Add:
 
@@ -572,7 +572,7 @@ httpx>=0.27
 
 to `code/requirements.txt`.
 
-- [ ] **Step 7: Run tests and commit**
+- [x] **Step 7: Run tests and commit**
 
 Run:
 
