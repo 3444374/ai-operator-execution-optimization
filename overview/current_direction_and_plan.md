@@ -99,12 +99,15 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
   max P99 -22.52%，但逐 repeat 不稳定，暂作高竞争条件性候选
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P1**：Shared-vLLM 4-job held-out、staggered idle borrowing、
+1. **P0**：先完成同规模同条件 baseline：OceanBase `AI_COMPLETE` 和同
+   PostgreSQL bounded AsyncIO 两个无 Daft/Ray 对照；Daft `prompt()`
+   Native/Ray 与 Ray Data 官方框架对照；全部统一 Chat Completions
+2. **P1**：baseline 锁定后再做 Shared-vLLM 4-job held-out、staggered idle borrowing、
    weighted overlap fairness 与异构 workload/arrival offset
-2. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
-3. **P2**（文本门禁已完成）：多模态泛化验证
-4. 在当前 2×4090 上完成 staggered/weighted 公平性、路由与故障迁移
-5. 代价模型增加独立时间段/新 workload 校准和预测区间
+3. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
+4. **P2**（文本门禁已完成）：多模态泛化验证
+5. 在当前 2×4090 上完成 staggered/weighted 公平性、路由与故障迁移
+6. 代价模型增加独立时间段/新 workload 校准和预测区间
 
 继续从文献提取机制时，统一按
 `experiments/plans/literature_driven_pipeline_optimization_guide.md` 的机制卡、

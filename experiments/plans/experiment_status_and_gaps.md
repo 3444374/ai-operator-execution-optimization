@@ -544,18 +544,19 @@ decrease 的根因不是控制器参数问题，而是 vLLM Prometheus `waiting`
 
 ### 10.3 推荐顺序与成功标准
 
-1. 完成 16K–131K active-work 扩展曲线，按最大安全吞吐 97% 与下一安全档
-   增益 <3% 的预注册规则选择最小饱和点；
-2. 固定该 work 和每 endpoint 256 slots，先用 request granularity 比较
-   1×256/2×128/4×64 actor pool；
-3. 固定最佳 pool、planning budget、work、row cap 与 timeout，比较
-   whole-batch、service quantum 512/1024/2048/4096 和 request diagnostic；
-4. 只有出现 worker imbalance 时才增加 least-active-work routing；
-5. SLO-aware EWMA flush 已完成且未晋升，不在同一动作空间继续调参；
-6. Shared-vLLM 1/2/4-job equal-workload 正式矩阵已完成；4-job 聚合结果
-   过门槛但逐 repeat 不稳定，转向 held-out 复验与 staggered/weighted
-   机制隔离；
-7. UCB 必须等 epoch reward 能按产生请求的 arm 正确归因后再接入。
+1. 16K–131K active-work、Actor Pool、service quantum、SLO-aware EWMA 和
+   Shared-vLLM equal-workload 矩阵均已完成；在继续增加策略前，先补同规模
+   同条件强 baseline；
+2. 第一层统一 Chat Completions，比较 direct-vLLM ceiling、OceanBase
+   `AI_COMPLETE`、同 PostgreSQL bounded AsyncIO、Daft+Ray static 和当前
+   token-work/request-refill；
+3. 第二层比较 Daft `prompt()` Native/Ray、Ray Data HTTP Processor 与 ours，
+   以排除收益只是官方框架能力；
+4. 各 arm 独立 calibration，在冻结参数后运行 32/64/128/256 瞬态与 2,048
+   held-out；报告 time-to-ceiling、ramp regret 和 minimum saturating work；
+5. baseline 锁定后再进行 4-job held-out 与 staggered/weighted 机制隔离；
+6. Prefix cache、length-align、多模态和 UCB 继续保持后续优先级；UCB 必须等
+   epoch reward 能按产生请求的 arm 正确归因后再接入。
 
 **2026-07-29 实施状态**：`service_scheduling_backpressure.md` §13 的
 1/2/4-job 三臂 gate 与 formal 均已完成。36/36 group run、0 incident；

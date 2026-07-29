@@ -20,11 +20,20 @@
 
 ## 一、GPU 调度侧 Baseline
 
-正式端到端实验同时保留两类参照，不能混称为“baseline”：
+2026-07-29 起，正式端到端实验保留四类参照，不能混称为一个 baseline：
 
 - **direct-vLLM service-only capacity** 是物理上界参照。使用相同模型、请求
   trace、输出设置和 endpoint 数，绕过 PostgreSQL/Daft/Ray 测服务可实现容量；
   上游 infra 的目标是逼近而不是超过它。
+- **现有无 Daft/Ray 数据库 AI 算子** 是产品级核心 baseline。当前首选
+  OceanBase `AI_COMPLETE`，使用同机 OpenAI-compatible vLLM endpoint；
+  若 Community Edition/endpoint/观测门禁未通过，只作工业参考。
+- **同 PostgreSQL bounded AsyncIO** 是因果 baseline。它不是产品竞争对手，
+  但能隔离 OceanBase/PostgreSQL 差异与 Daft/Ray 的净贡献；必须独立标定，
+  不能使用串行 strawman。
+- **Daft/Ray 官方 runtime** 是框架归因 baseline：Daft `prompt()` Native/Ray
+  和 Ray Data HTTP Processor，用于判断自定义 token-work/refill 是否超越
+  现有官方实现。
 - **naive DB→Daft→Ray→vLLM** 是必须显著击败的工程 baseline，例如固定行数、
   job-local/global K、无 workload-aware organization。正式策略还必须对比经
   静态 sweep 得到的最佳强 baseline，不能只赢单行串行 strawman。
@@ -32,6 +41,10 @@
 报告 `capacity_efficiency = pipeline_tokens_s / direct_service_tokens_s`，并在
 相同 P99/SLO guardrail 下比较 goodput；若 direct 上界未测，不能用 MFU 单独
 声称“GPU 已压满”或“仍有 70% 优化空间”。
+
+上述 baseline 统一使用 Chat Completions、同一 request manifest、同一双
+endpoint 和独立 calibration。详细预注册见
+`database_ai_operator_baseline_matrix_20260729.md`。
 
 | 编号 | Baseline 名称 | 来源 | CCF | 策略要点 | 实验配置 |
 |---|---|---|---|---|---|

@@ -302,20 +302,24 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 - staggered idle borrowing、weighted overlap fairness 和异构 workload
   尚未验证。
 
-### 下一优先：4-job 复验、瞬态饱和与缓存机制
+### 下一优先：无 Daft/Ray 数据库算子与官方 runtime baseline
 
 1. 已完成 16K–131K active-work 扩展曲线，选择 65,536；
 2. 已完成固定 slots/CPU 的 1×256/2×128/4×64 actor pool 对照，保留 1×256；
 3. 已完成 whole-batch、service quantum 与 request diagnostic，固定 quantum
    未过 5% 门槛；
 4. 已完成 SLO-aware EWMA flush 正式对照，25–50ms 动作未过 5% 门槛；
-5. 已完成 Shared-vLLM 1/2/4-job 核心矩阵；下一步先做 4-job held-out，
-   再用共同 overlap-window service rate 验证 staggered idle borrowing 与
-   weighted fairness；
-6. 单独建立 transient saturation/ramp 实验，固定总工作量与下游容量，比较
-   direct flood、最佳静态 active-work 和快速 ramp controller；
-7. Prefix-aware 只有在单独启用 prefix cache、记录命中证据后才重新评估；
-8. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
+5. 已完成 Shared-vLLM 1/2/4-job 核心矩阵；正式推进前先补两层 baseline：
+   OceanBase `AI_COMPLETE`/同 PostgreSQL bounded AsyncIO 的无 Daft/Ray 核心
+   对照，以及 Daft `prompt()` Native/Ray/Ray Data 的官方 runtime 对照；
+6. 两层统一使用 Chat Completions、同一双 endpoint 与请求 manifest；每个
+   baseline 独立 calibration，不能以弱默认值对比已调优 ours；
+7. baseline 同时承担 transient saturation/ramp 实验：固定总工作量与下游
+   容量，报告 direct ceiling、time-to-ceiling、ramp regret 和最小饱和 work；
+8. baseline 锁定后再做 4-job held-out、staggered idle borrowing 与 weighted
+   fairness；
+9. Prefix-aware 只有在单独启用 prefix cache、记录命中证据后才重新评估；
+10. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
    K=8 safety fallback。
 
 完整顺序与放弃条件见

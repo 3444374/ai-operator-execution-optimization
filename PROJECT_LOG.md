@@ -2458,3 +2458,34 @@
 - 测试先行新增 GPU P95 与 job P99 nearest-rank 契约，修正调用为 95/99；
   相关 146 项测试全部通过。第五个目录只证明功能链路通过，不能作为统计有效的
   正式 gate；发布后必须用第六个全新目录重新生成完整汇总。
+
+## 2026-07-29 Baseline 口径重构：数据库 AI 算子 + 官方 Runtime
+
+- 根据对“力大砖飞”、单 job 瞬态饱和和现有系统对照不足的复核，暂停继续
+  增加 Ray 内部策略。下一优先级改为先建立同规模同条件强 baseline。
+- 核心产品 baseline 定义为无 Daft/Ray 的现有数据库 AI 算子，首选
+  OceanBase `AI_COMPLETE`。官方文档确认它可以注册 OpenAI-compatible Chat
+  Completions endpoint；正式 arm 仍需通过 Community Edition 版本、同机
+  vLLM 直连、原生并行和可观测性门禁。
+- 为避免 OceanBase/PostgreSQL 数据库差异污染归因，增加同 PostgreSQL
+  bounded AsyncIO 强因果 baseline；该 arm 必须独立标定，不能使用串行
+  strawman。
+- 为避免遗漏“官方框架已经足够”的解释，保留第二层必测 baseline：
+  Daft `prompt()` Native Runner、Daft `prompt()` Ray Runner 和 Ray Data
+  HTTP Processor。LOTUS `sem_map` 仅在 cache/prompt/token 语义门禁通过后
+  作为第二阶段扩展。
+- vLLM Bench 只作为 serving ceiling。两层正式对照均统一重跑
+  `/v1/chat/completions`；旧 `/v1/completions` 结果只保留为历史机制证据，
+  禁止直接横比。
+- 新增
+  `experiments/plans/database_ai_operator_baseline_matrix_20260729.md` 和
+  `code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md`，
+  预注册固定 manifest、双 endpoint 等价性、独立 calibration、32–256
+  瞬态与 2,048 held-out、time-to-ceiling/ramp-regret/minimum-saturating-work
+  指标，以及 5%/2-of-3 晋级门槛。
+- 同步更新 `PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、
+  `experiments/README.md`、`experiments/plans/README.md`、
+  `experiments/plans/baseline_reference.md`、
+  `experiments/plans/experiment_status_and_gaps.md`、`code/INFRA_STATUS.md`、
+  `research/existing_ai_operator_execution_chains.md` 与 `PROJECT_INDEX.md`。
+  按用户要求不执行 Wiki 同步。

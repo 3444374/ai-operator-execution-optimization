@@ -16,3 +16,5 @@ These files are process artifacts. They do not replace `PROJECT_OUTLINE.md`,
 | `2026-07-25-ray-static-wiring-implementation.md` | TDD plan for production static Ray task/actor delegation through the typed scheduling core |
 | `2026-07-25-arrival-replay-flush-runtime-implementation.md` | TDD plan for monotonic arrival replay, pending batch construction, and real flush-policy runtime wiring |
 | `2026-07-29-shared-vllm-fairness-implementation.md` | TDD plan for the 1/2/4-job shared-credit group runner, global observation, fairness summaries, and AutoDL gate |
+| `2026-07-29-same-condition-official-baselines-design.md` | Two-layer baseline design: no-Daft/no-Ray OceanBase and same-PostgreSQL controls, plus official Daft prompt/Ray Data framework controls under one Chat protocol |
+| `2026-07-29-official-baseline-matrix-implementation.md` | TDD implementation plan for the Chat request contract, direct/OceanBase/Daft/Ray Data adapters, unified gate and AutoDL fatal-flaw run |

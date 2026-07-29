@@ -10,6 +10,7 @@
 |---|---|---|---|---|
 | Snowflake Cortex AISQL | SQL / Python AI functions，如 `AI_COMPLETE`、`AI_FILTER`、`AI_EMBED` | 托管在 Snowflake Service perimeter 内的 AI functions；官方强调 throughput 与 batch processing | 未见公开证据 | 证明数据库 AI SQL 算子是真实工业问题，但不能复现其闭源内部链路 |
 | pgai Vectorizer | PostgreSQL 中声明 vectorizer pipeline | PostgreSQL + stateless vectorizer workers；worker 读取队列、调用 embedding endpoint、写回数据库 | 否 | 与本项目“外部 worker + 模型服务 + 写回”最接近 |
+| OceanBase AI Function | SQL `AI_COMPLETE` / `AI_PROMPT` / `AI_EMBED` / `AI_RERANK` | 数据库内注册模型与 HTTP endpoint，由 SQL 表达式调用 OpenAI-compatible 模型服务 | 否 | 当前最合适的无 Daft/Ray、可连接同机 vLLM 的数据库 AI 算子产品 baseline 候选 |
 | PostgresML | PostgreSQL 扩展中的 `pgml.embed`、`pgml.transform` 等 | 模型靠近数据库或在数据库内/近数据库执行，强调减少数据搬运 | 否 | 代表“把模型移到数据附近”的对照路线 |
 | pgvector | PostgreSQL 向量类型、索引与相似度查询 | 存储和查询向量，不负责 embedding 计算 | 否 | 是本项目 PostgreSQL 写回与检索 baseline |
 | Daft + Ray | DataFrame / batch inference / AI functions | Daft 可运行在 Ray 上，负责 DataFrame、partition、batch、shuffle 等数据处理抽象 | 是，可选 Ray runner | 更适合作为后续 batch/partition 表达层，不是已有数据库 AI 算子的必要事实 |
@@ -74,6 +75,24 @@ application / SQL declaration
 
 这说明后续实验必须加入“worker 写回”而不只是“driver fan-in 后统一写回”。
 
+## 对 OceanBase 是否需要测性能
+
+需要，且优先于继续增加新的 Ray 内部策略。OceanBase V4.4.1+ 的官方文档公开
+了 `AI_COMPLETE` SQL 表达式、模型/endpoint 管理和 OpenAI-compatible
+Chat Completions URL，理论上可以直接指向同一台 AutoDL 上的 vLLM。
+
+它作为产品级 baseline 回答“现有数据库 AI 算子能否达到相同效果”。但它会
+同时把 PostgreSQL 换成 OceanBase，因此必须配套一个同 PostgreSQL 的 bounded
+AsyncIO 强 baseline，才能把数据库种类差异与 Daft/Ray 的净贡献分开。
+
+正式性能 arm 的前置条件：
+
+1. 可部署 Community Edition 版本实际包含 AI Function；
+2. 直连同机 vLLM，不经过云 AI 网关；
+3. Chat messages、输出上限和真实 token 工作量等价；
+4. 独立标定 OceanBase 原生并行/多 session 能力，避免串行 strawman；
+5. exactly-once、失败和完成时间可审计。
+
 ## 对方向的微调
 
 当前方向不需要推翻，但需要从“Ray 调度优化”微调为：
@@ -123,6 +142,8 @@ PostgreSQL fetch
 - Snowflake Cortex AISQL 官方文档：`https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql`
 - Snowflake `COMPLETE` / `AI_COMPLETE` 文档：`https://docs.snowflake.com/en/sql-reference/functions/complete-snowflake-cortex`
 - pgai README：`https://github.com/timescale/pgai`
+- OceanBase AI Function 语法：`https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975`
+- OceanBase AI Function quick start：`https://en.oceanbase.com/docs/common-oceanbase-database-10000000003450338`
 - PostgresML README：`https://github.com/postgresml/postgresml`
 - pgvector README：`https://github.com/pgvector/pgvector`
 - Daft on Ray 文档：`https://docs.daft.ai/en/stable/distributed/ray/`

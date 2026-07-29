@@ -161,19 +161,23 @@
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P1**：Shared-vLLM 核心 1/2/4-job equal-workload 矩阵已完成；下一步
-   用 held-out repeats 确认 4-job 稳定性，并分别验证 staggered idle
+1. **P0**：先补同规模同条件 baseline。第一层比较无 Daft/Ray 的 OceanBase
+   `AI_COMPLETE`、同 PostgreSQL bounded AsyncIO、ours 和 direct-vLLM
+   ceiling；第二层比较 Daft `prompt()` Native/Ray、Ray Data HTTP Processor
+   与 ours。统一重跑 Chat Completions，独立 calibration 后再跑 held-out。
+2. **P1**：Shared-vLLM 核心 1/2/4-job equal-workload 矩阵已完成；baseline
+   锁定后再用 held-out repeats 确认 4-job 稳定性，并分别验证 staggered idle
    borrowing、weighted overlap fairness 和异构 workload mix。
-2. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
+3. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
    证据，不能用当前 cache-off 数据推断缓存收益。
-3. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
-4. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
+4. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
+5. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
    ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
-5. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work
+6. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work
    与 equal-weight 1/2/4-job 重复 formal；路由增量、staggered/weighted
    公平性与故障迁移仍待验证。
-6. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
-7. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+7. 算子代价估计需增加独立时间段/新 workload 校准和预测区间，当前只作为讨论。
+8. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
 文献机制的发现、迁移审计和晋级/放弃条件统一见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
