@@ -575,6 +575,18 @@ client token 口径也不一致。当前在每个 cell 前后增加 endpoint-loc
 prompt/generation cumulative counter 差分门禁；该真实双 GPU gate 通过前，
 推荐顺序中的第 4 步 calibration 继续阻塞。
 
+服务端 counter 门禁与 256 行 scale gate 随后通过。direct-vLLM/bounded 在
+C32 均约 4.93K total tokens/s，在 C64 均约 8.34K；vLLM Bench C128 的真实
+peak concurrency=128，达到 12.76K，较 C64 再增 53%。bounded C128 被
+httpx 0.28.1 默认 100 总连接/20 keepalive 截断，因此该点作废，客户端 pool
+已用回归测试显式绑定配置并发，待单臂 re-gate。
+
+该结果推翻“历史约 8K 是双 4090/vLLM 物理 ceiling”的解释：8K 仅是当时
+project profiler + arrival replay + 旧请求语义下的平台。现有 256 行清单每端
+只有 128 行，不能有效测 C256；下一 direct ceiling 需至少 512 行。更高优先级
+是先让 project profiler 支持同一冻结 manifest、Chat Completions、no replay，
+再比较吞吐、JCT、ramp regret 与最小饱和 work；不继续调当前上游策略参数。
+
 晋级要求是相对最佳静态基线改善 observed tokens/s 或 SLO goodput，且 request
 P99、failure、exactly-once 不退化。否则记录负结果，不增加控制复杂度。
 

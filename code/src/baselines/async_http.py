@@ -164,9 +164,17 @@ async def run_bounded_http(
     headers = {"Content-Type": "application/json"}
     if config.api_key:
         headers["Authorization"] = f"Bearer {config.api_key}"
+    connection_capacity = (
+        config.concurrency_per_endpoint * len(config.endpoint_urls)
+    )
+    limits = httpx.Limits(
+        max_connections=connection_capacity,
+        max_keepalive_connections=connection_capacity,
+    )
     async with httpx.AsyncClient(
         headers=headers,
         timeout=config.timeout_s,
+        limits=limits,
     ) as client:
 
         async def http_transport(

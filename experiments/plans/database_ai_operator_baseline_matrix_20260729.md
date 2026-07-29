@@ -239,6 +239,25 @@ generation tokens/s 增益低于 3%，选择达到最大安全吞吐 97% 的最�
 单次高值解释为框架加速，也不与历史 2,048 行 arrival-replay 的约 8K tokens/s
 直接比较。
 
+C64 与 C128 随后完成。C64 两个直接客户端均通过 256/256 exactly-once、0
+incident 与空队列门禁：vLLM Bench/bounded 分别为 8,342/8,333 total
+tokens/s、JCT 12.021/12.019s，较 C32 约提升 69%，证明 C32 明显欠载。
+vLLM Bench C128 日志确认 peak concurrency=128，得到 12,762 total
+tokens/s、JCT 7.849s，较 C64 再提升 53%，尚未达到 3% 平台阈值。
+
+bounded C128 虽通过完整性门禁，但仅 8,711 total tokens/s；fatal-flaw audit
+确认 httpx 0.28.1 默认 `max_connections=100`、keepalive=20，配置 C128 被
+客户端隐式截断，因此该点作废。客户端连接池现已测试先行改为显式匹配配置并发，
+只需在新目录重跑 bounded C128。
+
+现有 256 行 manifest 每 endpoint 只有 128 行，不能执行有效 C256。下一容量点
+必须使用至少 512 行、每 endpoint 256 行的同构冻结 manifest。更重要的是，
+12,762 total tokens/s 已否定“历史约 8.0–8.2K 是双 4090 物理极限”的解释；
+历史 active-work 平台只属于当时 project profiler、arrival replay、请求协议和
+workload。下一强制对照是把 project profiler 映射到同一 manifest、Chat
+Completions、no replay，再比较 direct ceiling、ours 的 JCT/吞吐以及达到同一
+吞吐所需的 active work，不能跨口径判断谁更快。
+
 ## 9. 详细工程设计
 
 适配器边界、fatal-flaw audit 和实现模块见：

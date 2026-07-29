@@ -99,11 +99,16 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - ✅ 双 4090 Shared-vLLM 1/2/4-job：36/36、0 incident；共享 credit
   容量安全与公平门槛通过。2-job 无增量；4-job 聚合吞吐 +9.57%、
   max P99 -22.52%，但逐 repeat 不稳定，暂作高竞争条件性候选
+- ✅ 官方 direct baseline 校准：vLLM Bench C32/C64/C128 为
+  4,930/8,342/12,762 total tokens/s；因此历史约 8K 是旧 project
+  runner/arrival-replay 链路平台，不是 vLLM/双 4090 物理上限。bounded
+  C128 被 httpx 默认 100 连接截断，已修复连接池契约，待单臂复验
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P0**：先完成同规模同条件 baseline：OceanBase `AI_COMPLETE` 和同
-   PostgreSQL bounded AsyncIO 两个无 Daft/Ray 对照；Daft `prompt()`
-   Native/Ray 与 Ray Data 官方框架对照；全部统一 Chat Completions
+1. **P0**：先完成 bounded C128 修复复验，再用至少 512 行冻结 manifest
+   继续 direct ceiling；project profiler 必须在同 manifest、Chat
+   Completions、no replay 下重跑，之后才比较 OceanBase、Daft Native/Ray
+   与 Ray Data 官方框架对照
 2. **P1**：baseline 锁定后再做 Shared-vLLM 4-job held-out、staggered idle borrowing、
    weighted overlap fairness 与异构 workload/arrival offset
 3. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
