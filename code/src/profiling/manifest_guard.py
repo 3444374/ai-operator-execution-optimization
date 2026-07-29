@@ -28,6 +28,8 @@ def validate_profile_manifest_contract(
     model_backend: str,
     endpoint_count: int,
     completion_protocol: str,
+    completion_prompt_format: str,
+    completion_temperature: float | None,
     completion_max_tokens: int,
     output_cost_mode: str,
     source_order: str,
@@ -49,6 +51,10 @@ def validate_profile_manifest_contract(
         raise ValueError("request manifest comparison requires two endpoints")
     if completion_protocol != "chat_completions":
         raise ValueError("request manifest requires chat_completions")
+    if completion_prompt_format != "raw":
+        raise ValueError("request manifest requires raw prompt format")
+    if completion_temperature != 0.0:
+        raise ValueError("request manifest requires temperature=0")
     output_caps = {request.max_output_tokens for request in requests}
     if output_caps != {completion_max_tokens}:
         raise ValueError(

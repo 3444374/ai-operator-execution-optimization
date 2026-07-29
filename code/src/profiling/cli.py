@@ -39,6 +39,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=["doc_id", "arrival_time"],
         default="doc_id",
     )
+    parser.add_argument("--source-row-offset", type=int, default=0)
     parser.add_argument(
         "--operator",
         choices=["ai_embed", "ai_complete"],

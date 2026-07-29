@@ -273,6 +273,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/profiling/traces.py` | profiler control/flush/submission/request/resource 的版本化 CSV 序列化 | 修改 trace schema、生命周期标识或 endpoint/GPU 归因前读 |
 | `code/src/profiling/cli.py` / `config.py` / `schema.py` | profiler 参数面、CLI/env 解析与正式汇总 schema 的独立边界 | 修改运行参数、环境切换优先级或 runs.csv 字段前读 |
 | `code/src/profiling/replay.py` | Arrow planning-batch/request/service-quantum envelope、arrival replay 与 lifecycle seed 组装 | 修改 token-budget 关批、complete-row quantum、request 粒度补位或 replay 时间语义前读 |
+| `code/src/profiling/manifest_guard.py` | 同条件 project runtime 的 fail-closed manifest 行语义、payload 契约与固定 endpoint 证据 | 修改 direct/project 公平比较、source offset 或 manifest 映射时读 |
 | `code/src/profiling/ray.py` | Ray task/actor submitter、typed scheduler、credit 释放与 fan-in 接线 | 修改 actor pool、request-level replenishment 或 Ray 资源语义前读 |
 | `code/src/packing.py` | 与模态无关的确定性 BFD 标量容量装箱与指标 | 修改离线 batch membership、超预算行处理或 packing 指标前读 |
 | `code/src/model_backends.py` | fake debug backend、vLLM-compatible HTTP embedding/completion backend、Ollama native completion backend | 修改模型服务接入、vLLM/Ollama endpoint 或 AI_COMPLETE backend 前读 |
@@ -284,7 +285,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/scheduling/organization/` | 上游 static/service-quantum token-budget 决策 | 修改数据组织预算控制或动态安全动作集前读 |
 | `code/src/scheduling/organization/service_quantum.py` | 将 planning batch 按预测 work 切成不拆单行的有界 service-completion 单元 | 修改 HTTP/Ray completion 粒度、whole-submission HOL 或 quantum 超预算语义前读 |
 | `code/src/scheduling/submission_control/` | static/adaptive admission、active-work 与多 job shared fair credit | 修改提交反压、公平性或 endpoint capacity 语义前读 |
-| `code/src/scheduling/endpoint_routing/` | round-robin、least-queued、least-work、prefix-affinity 路由 | 修改多 endpoint 选择策略前读 |
+| `code/src/scheduling/endpoint_routing/` | round-robin、least-queued、least-work、manifest-pinned、prefix-affinity 路由 | 修改多 endpoint 选择策略前读 |
 | `code/src/scheduling/runtime/` | 有界 Ray actor worker pool、submit/complete adapter、worker contract、metrics observation cache 与 named credit actor | 修改 Ray worker slots、worker routing、completion cleanup 或服务观测接线前读 |
 | `code/scripts/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本 | 构造最终可比 `AI_COMPLETE` baseline workload 前运行 |
 | `code/scripts/run_ai_operator_scenarios.py` | 带空闲门禁、失败审计和原子 manifest 的 seeded 场景运行器 | 执行随机化策略对比或真实基础设施门禁前运行 |
@@ -349,6 +350,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_submission_policy.example.json` | active-work、least-work routing、动态 token budget 与 adaptive flush 的可组合消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
 | `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 官方/强 baseline 功能门禁规格 | calibration 前验证 Chat 请求等价、exactly-once、endpoint 分片、空队列与 adapter 能力 |
 | `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 同条件 baseline 独立标定网格 | gate 通过后标定 direct/Daft/Ray Data/project 容量；不得直接当作 formal |
+| `deploy/autodl/dual_gpu_same_condition_project_calibration.example.json` | 同 512 行 immutable Chat manifest 的 project static-K 与 active-work 校准模板 | direct C256 后测 project 达到 ceiling 所需的最小上游压力 |
+| `deploy/autodl/dual_gpu_same_condition_project_formal.example.json` | disjoint 2,048 行 manifest 的 project static request-credit 与 token-work 正式模板 | 数据补齐、64 行 gate 与参数冻结后运行 1 warmup + 3 repeats |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |
 

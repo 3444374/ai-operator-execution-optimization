@@ -1,8 +1,9 @@
 # 数据库 AI 算子与官方 Runtime Baseline 矩阵
 
 日期：2026-07-29
-状态：预注册完成；64 行双 GPU 功能与等价性 re-gate 均通过，统一服务端
-token counter gate 待完成，尚无可用于性能结论的结果
+状态：直接客户端 512 行 C128/C256 calibration 已完成；project profiler
+同 manifest 校准模板与护栏已就绪，2,048 行 disjoint formal 因源数据短缺
+512 行而阻塞
 
 ## 1. 研究问题
 
@@ -261,6 +262,39 @@ bounded C128 虽通过完整性门禁，但仅 8,711 total tokens/s；fatal-flaw
 workload。下一强制对照是把 project profiler 映射到同一 manifest、Chat
 Completions、no replay，再比较 direct ceiling、ours 的 JCT/吞吐以及达到同一
 吞吐所需的 active work，不能跨口径判断谁更快。
+
+### 8.3 512 行 C256 结果与 project runtime 前置状态
+
+512 行 immutable manifest 已冻结在远端，SHA-256 为
+`7205f7ec2b9d52d8f0a4546a044cbbdaff644c0f88d06e9fc11a9a0c86077ced`。
+两 endpoint 各 256 行，预测 work 为 73,329/73,328，偏斜 0.00136%。
+四个直接客户端 cell 均满足 512/512 exactly-once、0 incident、双 endpoint、
+服务端 counter 一致和最终空队列：
+
+| arm | per-endpoint concurrency | JCT (s) | total tokens/s | generation tokens/s |
+|---|---:|---:|---:|---:|
+| vLLM Bench | 128 | 14.864 | 12,354 | 7,327 |
+| bounded HTTP | 128 | 16.762 | 10,929 | 6,471 |
+| vLLM Bench | 256 | 11.931 | 15,351 | 9,088 |
+| bounded HTTP | 256 | 12.569 | 14,532 | 8,587 |
+
+C128→C256 的 total tokens/s 增益分别为 +24.3% 和 +33.0%，因此 C128
+明确不是 ceiling。C256 是当前 `max_num_seqs=256` 的配置硬上限；因为没有更高
+可执行相邻点，不能把它写成已经满足“下一档增益 <3%”的经验平台。
+
+project profiler 使用
+`dual_gpu_same_condition_project_calibration.example.json` 在同一 512 行
+manifest 上扫描 per-endpoint static K `{32,64,128,256}` 与 active work
+`{16384,32768,49152,65536,98304}`。契约强制 Chat Completions、原始 prompt、
+`temperature=0`、trace-target output cost、no arrival replay、request-level
+replenishment、同一固定 endpoint 分片和显式 Ray address；任一源行或 token
+字段不匹配即失败。
+
+远端 PostgreSQL 当前只有 `doc_id=0..2047` 的 2,048 行。校准占用 `0..511`
+后，`512..2047` 仅 1,536 行，不能冒充 disjoint 2,048-row formal。正式矩阵
+启动前必须新增并冻结 `doc_id=2048..2559`，或导入独立的 2,048 行 held-out
+workload；profiler formal 模板固定 `--source-row-offset 512`。在此阻塞解除前，
+只允许执行 512 行 project calibration，不允许重用校准行启动 formal。
 
 ## 9. 详细工程设计
 

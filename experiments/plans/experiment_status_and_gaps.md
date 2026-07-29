@@ -1,6 +1,7 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-29，补充 Shared-vLLM 正式结果与边界）
+Date: 2026-07-20（最后更新：2026-07-29，补充同条件 baseline 与 project
+runtime 执行门禁）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -86,6 +87,19 @@ grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。定位为�
 
 详见 `experiments/results/operator_cost_estimation_20260726/README.md`。
 
+### 1.6 同条件强 baseline 与 project runtime
+
+| 实验 | 状态 | 已有证据 | 当前缺口 |
+|---|---|---|---|
+| Official/直接客户端 512 行 C128/C256 | ✅ 07-29 | 4/4 cell、512/512 exactly-once、0 incident；vLLM Bench C256 15,351 total tok/s，bounded C256 14,532；C128→C256 仍提升 24.3%/33.0% | C256 是 `max_num_seqs` 配置硬上限，不是已证明的经验平台 |
+| Project profiler 同 512 manifest 校准 | 🟡 模板与护栏完成，待远端运行 | request-level no-replay、manifest 固定分片、raw Chat、temperature=0、trace-target work 已由测试锁定 | 需扫描 K32/64/128/256 与 work16K–98K，比较 JCT/吞吐/压力效率 |
+| 2,048 行 disjoint formal | ⛔ 数据门禁阻塞 | 远端库仅 `doc_id=0..2047`；校准占 0..511 后只剩 1,536 行 | 补 `doc_id=2048..2559` 或独立 held-out workload，导出新只读 manifest 后先跑 64 行 gate |
+
+这组结果已经推翻“历史 project 约 8.0–8.2K tok/s 是双 4090 物理极限”的
+解释。当前唯一安全顺序是：先完成 project 512 校准，再准备 disjoint formal
+数据；formal 通过后才恢复多 job 或新策略搜索。不得跨协议、arrival replay
+或 workload 直接比较历史数字。
+
 ---
 
 ## 2. 证据链完整性评估
@@ -152,6 +166,17 @@ AI_COMPLETE 的根本差异：每行 token 量可差 13.9×，"一行"不再是�
 ---
 
 ## 4. 下一步实验路线图
+
+### 当前强制顺序（2026-07-29）
+
+1. 在同一 512 行 immutable Chat manifest 上完成 project static-K 与
+   token-work 校准；
+2. 用 direct C256 的 15,351 total tok/s 作为当前配置 hard-ceiling 参考，
+   比较 project 的 time-to-ceiling、JCT、P99、MFU 与 minimum active work；
+3. 补齐独立 2,048 行数据，使用 `source_row_offset=512` 导出并核对 formal
+   manifest，先 64 行 gate，再 1 warm-up + 3 repeats；
+4. 单 job strong baseline 结论冻结后，才进入 1/2/4-job shared-credit/fairness；
+5. 旧的 25–50ms adaptive flush 调参不再优先。
 
 ### 候选机制优先级（跨论文，2026-07-24）
 

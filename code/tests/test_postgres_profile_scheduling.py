@@ -128,6 +128,89 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         row = profile.run_once(args, "formal", 1)
                         self.assertEqual(row["status"], "dry_run")
 
+    def test_same_condition_project_templates_pass_dry_validation(
+        self,
+    ) -> None:
+        def requests(
+            row_count: int,
+            *,
+            start: int = 0,
+        ) -> tuple[ChatRequest, ...]:
+            return tuple(
+                ChatRequest(
+                    doc_id=index,
+                    prompt=f"prompt-{index}",
+                    arrival_time_s=0.0,
+                    prompt_tokens=8 + index % 7,
+                    max_output_tokens=256,
+                    estimated_output_tokens=32 + index % 11,
+                    source_row_hash=f"row-{index}",
+                    endpoint_index=index % 2,
+                )
+                for index in range(start, start + row_count)
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            calibration_manifest = Path(directory) / "calibration.jsonl"
+            formal_manifest = Path(directory) / "formal.jsonl"
+            write_manifest(calibration_manifest, requests(512))
+            write_manifest(formal_manifest, requests(2048, start=512))
+            env = {
+                "DATABASE_URL": "postgresql://example",
+                "COMPLETION_CHAT_ENDPOINT_URLS": (
+                    "http://gpu0/v1/chat/completions,"
+                    "http://gpu1/v1/chat/completions"
+                ),
+                "MODEL_METRICS_URLS": (
+                    "http://gpu0/metrics,http://gpu1/metrics"
+                ),
+                "SOURCE_WORKLOAD_NAME": "sharegpt_burstgpt",
+                "SOURCE_MAX_PROMPT_TOKENS": "1500",
+                "COMPLETION_MODEL": "qwen2.5-7b",
+                "PROJECT_CALIBRATION_REQUEST_MANIFEST": str(
+                    calibration_manifest
+                ),
+                "PROJECT_FORMAL_REQUEST_MANIFEST": str(formal_manifest),
+                "PROJECT_STATIC_K_PER_ENDPOINT": "256",
+                "PROJECT_ACTIVE_WORK_PER_ENDPOINT": "65536",
+                "RAY_ADDRESS": "127.0.0.1:6380",
+                "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
+                "VLLM_MAX_NUM_SEQS": "256",
+                "REQUEST_SLO_MS": "30000",
+                "GPU_PEAK_TFLOPS": "165",
+                "MFU_PRECISION": "bf16_dense_fp32_accumulate",
+            }
+            templates = (
+                "dual_gpu_same_condition_project_calibration.example.json",
+                "dual_gpu_same_condition_project_formal.example.json",
+            )
+
+            with patch.dict(os.environ, env, clear=True):
+                for filename in templates:
+                    config = _load_config(
+                        CODE_ROOT.parent / "deploy" / "autodl" / filename
+                    )
+                    for scenario in config.scenarios:
+                        with self.subTest(
+                            filename=filename,
+                            scenario=scenario.scenario_id,
+                        ):
+                            args = profile.parse_args(
+                                [
+                                    *config.common_args,
+                                    *scenario.args,
+                                    "--scenario-id",
+                                    scenario.scenario_id,
+                                    "--dry-run",
+                                ]
+                            )
+                            row = profile.run_once(args, "formal", 1)
+                            self.assertEqual(row["status"], "dry_run")
+                            self.assertEqual(
+                                row["request_manifest_validation_status"],
+                                "not_executed",
+                            )
+
     def test_ray_task_worker_options_ignore_actor_only_concurrency(self) -> None:
         args = profile.parse_args(
             [
@@ -2876,6 +2959,38 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(args.request_manifest, "manifest.jsonl")
         self.assertEqual(args.endpoint_routing, "manifest_pinned")
 
+    def test_source_row_offset_is_recorded_and_must_be_non_negative(
+        self,
+    ) -> None:
+        row = profile.run_once(
+            profile.parse_args(
+                [
+                    "--dry-run",
+                    "--source-row-offset",
+                    "512",
+                ]
+            ),
+            "formal",
+            1,
+        )
+        self.assertEqual(row["source_row_offset"], 512)
+
+        with self.assertRaisesRegex(
+            SystemExit,
+            "source-row-offset must be non-negative",
+        ):
+            profile.run_once(
+                profile.parse_args(
+                    [
+                        "--dry-run",
+                        "--source-row-offset",
+                        "-1",
+                    ]
+                ),
+                "formal",
+                1,
+            )
+
     def test_manifest_pinned_routing_requires_request_manifest(self) -> None:
         args = profile.parse_args(
             [
@@ -2934,6 +3049,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "http://gpu0/v1,http://gpu1/v1",
                     "--completion-protocol",
                     "chat_completions",
+                    "--completion-prompt-format",
+                    "raw",
+                    "--completion-temperature",
+                    "0",
                     "--completion-max-tokens",
                     "256",
                     "--output-cost-mode",

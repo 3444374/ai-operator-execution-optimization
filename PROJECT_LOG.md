@@ -2683,3 +2683,30 @@
   相同吞吐下的更低 active work、P99 或更快爬坡写成 GPU 推理加速。
 - 开题 PPT 由另一对话并行修改，本轮隔离 worktree 不接触或暂存其文件。
 - 按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 512 行 direct hard ceiling 与 project 同条件执行护栏
+
+- 冻结的 512 行 Chat manifest SHA-256 为
+  `7205f7ec2b9d52d8f0a4546a044cbbdaff644c0f88d06e9fc11a9a0c86077ced`，
+  两 endpoint 各 256 行、预测 work 73,329/73,328。vLLM Bench C256 与
+  bounded C256 分别达到 15,351/14,532 total tokens/s，JCT 11.931/12.569s；
+  C128→C256 仍增长 24.3%/33.0%，所以 C256 只称当前 `max_num_seqs`
+  配置硬上限，不称经验平台。
+- project profiler 增加离线 request-level continuous replenishment、
+  immutable manifest 行语义校验、manifest-pinned endpoint routing 和正式
+  CSV 证据。公平契约强制 raw Chat Completions、`temperature=0`、
+  trace-target output work、no arrival replay；错误行、token 估计、路由或
+  payload 配置均 fail closed。
+- 新增 project 512 校准和 2,048 formal AutoDL 模板。校准扫描 static K
+  32/64/128/256 与 active work 16K/32K/49K/65K/98K；formal 只接受校准后
+  冻结的最小 97%-ceiling 参数。
+- 远端只读预检确认持久 Ray head `127.0.0.1:6380`、双 endpoint、GPU 和
+  runner 均空闲；旧 runtime env 缺 Chat URL，因此新环境模板显式区分
+  `/v1/completions` 与 `/v1/chat/completions`。
+- 数据门禁发现 `sharegpt_burstgpt` 只有 `doc_id=0..2047`。校准占用
+  `0..511` 后只能得到 1,536 个 disjoint 行，不能运行 2,048 formal。
+  profiler/CSV 增加 `source_row_offset`，formal 固定 offset 512；正式执行
+  前必须新增 512 个独立行或导入独立 held-out workload，禁止复制或回用
+  calibration 行。
+- 开题 PPT 由另一对话并行修改，本轮隔离 worktree 未接触或暂存其文件。
+- 按用户要求不执行 Wiki 同步。

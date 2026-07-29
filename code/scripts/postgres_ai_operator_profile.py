@@ -1208,6 +1208,8 @@ def _validate_completion_observation_args(args: argparse.Namespace) -> None:
         and args.source_max_prompt_tokens <= 0
     ):
         raise SystemExit("--source-max-prompt-tokens must be positive")
+    if args.source_row_offset < 0:
+        raise SystemExit("--source-row-offset must be non-negative")
     uses_compatible_completion_options = (
         args.completion_return_token_ids
         or args.completion_prompt_format != "raw"
@@ -1290,6 +1292,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             model_backend=model_backend,
             endpoint_count=len(endpoint_urls),
             completion_protocol=args.completion_protocol,
+            completion_prompt_format=args.completion_prompt_format,
+            completion_temperature=args.completion_temperature,
             completion_max_tokens=args.completion_max_tokens,
             output_cost_mode=args.output_cost_mode,
             source_order=args.source_order,
@@ -1498,6 +1502,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "data_source": args.data_source,
             "source_workload_name": args.source_workload_name or "",
             "source_order": args.source_order,
+            "source_row_offset": args.source_row_offset,
             "source_max_prompt_tokens": (
                 args.source_max_prompt_tokens
                 if args.source_max_prompt_tokens is not None
@@ -2072,7 +2077,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         replay_tables: list[pa.Table] = []
         flush_trace_events = []
         arrival_replay_observed_start_epoch_s = 0.0
-        offset = 0
+        offset = args.source_row_offset
         while processed_rows < args.total_rows:
             source_config = SourceConfig(
                 limit=args.db_fetch_rows,
@@ -2486,6 +2491,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "data_source": args.data_source,
             "source_workload_name": args.source_workload_name or "",
             "source_order": args.source_order,
+            "source_row_offset": args.source_row_offset,
             "source_max_prompt_tokens": (
                 args.source_max_prompt_tokens
                 if args.source_max_prompt_tokens is not None

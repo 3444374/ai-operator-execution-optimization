@@ -360,11 +360,21 @@ tokens/s 数据作废；`async_http.py` 已把总连接与 keepalive 容量显�
 观测到 endpoint running=124/125，得到 12,472 total tokens/s、JCT 8.048s，
 与 vLLM Bench C128 只差约 2.3%，修复已通过真实双 GPU 门禁。
 
-因此 8.0–8.2K 只能称为历史 project runner/arrival-replay 链路的平台，不能
-再称双 4090 或 vLLM 的物理极限。现有 256 行清单每端只有 128 行，也不能产生
-有效 C256。下一步建立至少 512 行的直接 ceiling 容量点，并让 project
-profiler 在同 manifest、Chat Completions、no replay 条件下执行；在此之前
-不新增上游策略。
+512 行 direct calibration 随后完成：vLLM Bench/bounded C256 分别为
+15,351/14,532 total tokens/s、JCT 11.931/12.569s；C128→C256 仍提升
+24.3%/33.0%。因此 8.0–8.2K 只能称为历史 project runner/arrival-replay
+链路平台，C256 只能称当前 `max_num_seqs` 配置硬上限。
+
+project profiler 现已支持 manifest 锁定的离线 request-level replenishment、
+固定 endpoint routing、raw Chat/temperature=0/trace-target payload 契约、
+逐行源数据核验和 `source_row_offset`。512 行模板扫描 static K32–256 与
+active work 16K–98K，并在正式 CSV 记录 manifest SHA 与 validated rows。
+远端持久 Ray head `127.0.0.1:6380` 已只读确认可用。
+
+2,048 formal 当前被数据门禁阻塞：数据库只有 `doc_id=0..2047`，校准使用
+0..511 后仅余 1,536 行。必须新增 512 个独立行或导入单独 held-out workload，
+再以 offset 512 导出只读 manifest；禁止回用校准行。在此之前只允许运行
+project 512 calibration，不启动 formal 或新上游策略。
 
 完整顺序与放弃条件见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。

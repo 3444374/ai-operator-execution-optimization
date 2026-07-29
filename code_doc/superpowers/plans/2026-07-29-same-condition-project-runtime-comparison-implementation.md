@@ -52,7 +52,7 @@ Completions, JSONL/SHA-256 manifests, unittest, AutoDL dual RTX 4090.
 - Consumes: `_offline_batch_envelopes(..., submission_granularity="request")`.
 - Produces: one `PayloadEnvelope` and one request-lifecycle seed per Arrow row.
 
-- [ ] **Step 1: Write the failing offline-request expansion test**
+- [x] **Step 1: Write the failing offline-request expansion test**
 
 ```python
 def test_offline_request_granularity_emits_one_envelope_per_row(self) -> None:
@@ -87,7 +87,7 @@ def test_offline_request_granularity_emits_one_envelope_per_row(self) -> None:
     )
 ```
 
-- [ ] **Step 2: Run the test and witness RED**
+- [x] **Step 2: Run the test and witness RED**
 
 Run:
 
@@ -98,21 +98,21 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\
 Expected: FAIL with `offline envelope expansion supports batch or
 service_quantum`.
 
-- [ ] **Step 3: Implement the minimal row expansion**
+- [x] **Step 3: Implement the minimal row expansion**
 
 Add an offline helper that slices each row, computes its prompt/output work,
 uses `f"{job_id}:request:{doc_id}"`, and preserves the parent
 `planning_batch_id`. Select it in `_offline_batch_envelopes()` when
 `submission_granularity == "request"`.
 
-- [ ] **Step 4: Remove the obsolete replay-only validation**
+- [x] **Step 4: Remove the obsolete replay-only validation**
 
 Delete only the validation that rejects request granularity without
 `--arrival-replay`. Ensure the non-replay execution constructs offline
 envelopes whenever granularity is `request`, even if request tracing is off.
 Report request-level latency granularity for this path.
 
-- [ ] **Step 5: Run focused and full tests**
+- [x] **Step 5: Run focused and full tests**
 
 ```powershell
 D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
@@ -140,7 +140,7 @@ Expected: PASS.
   - `guard.finish() -> ProfileManifestEvidence`
   - CLI `--request-manifest PATH`
 
-- [ ] **Step 1: Write failing manifest-equivalence tests**
+- [x] **Step 1: Write failing manifest-equivalence tests**
 
 ```python
 def test_guard_validates_rows_and_adds_pinned_endpoint_id(self) -> None:
@@ -173,7 +173,7 @@ Add separate tests for prompt mismatch, prompt-token mismatch, target-output
 mismatch, duplicate row, missing row, unknown endpoint index, and manifest
 row-count versus `--total-rows` mismatch.
 
-- [ ] **Step 2: Run and witness RED**
+- [x] **Step 2: Run and witness RED**
 
 ```powershell
 D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_profile_manifest_guard.py
@@ -181,14 +181,14 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\
 
 Expected: import failure because `manifest_guard` does not exist.
 
-- [ ] **Step 3: Implement a fail-closed guard**
+- [x] **Step 3: Implement a fail-closed guard**
 
 Reuse `src.baselines.manifests.read_manifest()` and SHA-256 metadata. Match by
 `doc_id`; compare exact prompt text and integer token fields; append one Arrow
 string column named `preferred_endpoint_id`. `finish()` rejects unseen or
 duplicate manifest rows.
 
-- [ ] **Step 4: Wire the CLI and result evidence**
+- [x] **Step 4: Wire the CLI and result evidence**
 
 Add `--request-manifest`. Require:
 
@@ -204,7 +204,7 @@ Add `--request-manifest`. Require:
 Record the resolved path, SHA-256, row count, validated count, and validation
 status in the formal CSV row.
 
-- [ ] **Step 5: Run focused and full tests**
+- [x] **Step 5: Run focused and full tests**
 
 ```powershell
 D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_profile_manifest_guard.py
@@ -234,7 +234,7 @@ Expected: PASS.
 - Produces `PinnedEndpointRouter.route(request, topology, pool_id)`.
 - Adds profiler choice `--endpoint-routing manifest_pinned`.
 
-- [ ] **Step 1: Write failing routing tests**
+- [x] **Step 1: Write failing routing tests**
 
 ```python
 def test_pinned_router_selects_the_requested_healthy_endpoint(self) -> None:
@@ -251,7 +251,7 @@ def test_pinned_router_selects_the_requested_healthy_endpoint(self) -> None:
 Add tests rejecting a missing pin, an unknown pin, an unhealthy pin, and a pin
 outside the selected pool.
 
-- [ ] **Step 2: Run and witness RED**
+- [x] **Step 2: Run and witness RED**
 
 ```powershell
 D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
@@ -259,14 +259,14 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\
 
 Expected: import failure for `PinnedEndpointRouter`.
 
-- [ ] **Step 3: Implement the router and propagate row pins**
+- [x] **Step 3: Implement the router and propagate row pins**
 
 Read `preferred_endpoint_id` from a one-row Arrow payload when building offline
 request envelopes. Batch and service-quantum behavior remain unchanged and
 leave the field empty. Add the router to `_build_routing_config()` without
 changing existing defaults.
 
-- [ ] **Step 4: Run focused and full tests**
+- [x] **Step 4: Run focused and full tests**
 
 Run the three focused files, then full unittest discovery. Expected: PASS.
 
@@ -294,26 +294,26 @@ Run the three focused files, then full unittest discovery. Expected: PASS.
 - Formal scenarios freeze the smallest 97%-ceiling point for bounded HTTP,
   project static, and project token-work.
 
-- [ ] **Step 1: Add failing template contract tests**
+- [x] **Step 1: Add failing template contract tests**
 
 Load both JSON files and assert Chat protocol, no `--arrival-replay`, request
 granularity, manifest path, fixed 512/2,048 row counts, 1 warmup, 3 formal
 repeats, and an explicit single Ray address.
 
-- [ ] **Step 2: Witness RED, then add the minimal templates**
+- [x] **Step 2: Witness RED, then add the minimal templates**
 
 The calibration template uses the disjoint 512-row manifest and no formal
 repeats beyond the pre-registered single-run curve. The held-out template uses
 2,048 rows, seeded interleaving, and only frozen configurations.
 
-- [ ] **Step 3: Document the exact startup and stop conditions**
+- [x] **Step 3: Document the exact startup and stop conditions**
 
 Document preflight, manifest export/hash, endpoint health, Ray address, runner
 lease, fresh output directory, monitoring, evidence preservation, and cleanup.
 State that no 2,048 formal may start until the 64-row project gate and 512-row
 calibration both pass.
 
-- [ ] **Step 4: Run tests and diff checks**
+- [x] **Step 4: Run tests and diff checks**
 
 ```powershell
 D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_experiment_scenario_runner.py
@@ -339,7 +339,7 @@ Run full tests, ruff, compileall, and `git diff --check`. Review the exact diff,
 commit without AI attribution, and push the isolated branch. Do not publish the
 other conversation's slide changes.
 
-- [ ] **Step 2: Perform the documented remote preflight**
+- [x] **Step 2: Perform the documented remote preflight**
 
 Verify no runner/lease, endpoints idle, Ray idle, GPU idle, and git/untracked
 results safe. Use a clean remote worktree at the pushed commit.
@@ -372,6 +372,13 @@ reasons into the formal manifest before any held-out run.
 ---
 
 ### Task 6: Run the 2,048-Row Formal Matrix and Produce the Comparison
+
+**Current gate (2026-07-29):** remote PostgreSQL contains only
+`sharegpt_burstgpt` doc IDs `0..2047`. The calibration manifest consumes
+`0..511`, so `OFFSET 512` yields only 1,536 rows. Formal is blocked until
+another 512 independent rows or a separate 2,048-row held-out workload is
+imported and frozen. The profiler records `source_row_offset`, and the formal
+template fixes it to 512; reusing calibration rows is forbidden.
 
 **Files:**
 - Create: `experiments/results/dual_gpu_same_condition_baseline_formal_<id>/`

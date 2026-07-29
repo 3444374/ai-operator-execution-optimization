@@ -1137,6 +1137,104 @@ token 统计口径不同，下一道门禁必须对每个 cell、每个 endpoint
 `vllm:prompt_tokens_total` 与 `vllm:generation_tokens_total`，保存原值和差分。
 服务端差分门禁通过前仍禁止 calibration/formal。
 
+### Project profiler 同 manifest 校准与 formal
+
+项目 runtime 不再使用“相似 workload”与 direct baseline 横比。两个已提交模板
+分别固定 512 行校准和 2,048 行 disjoint formal：
+
+- `dual_gpu_same_condition_project_calibration.example.json`
+- `dual_gpu_same_condition_project_formal.example.json`
+
+两者都强制一行一个 Chat Completions 请求、原始 prompt、`temperature=0`、
+`max_tokens=256`、trace-target output cost、no arrival replay、request-level
+continuous replenishment、同一 manifest 固定 endpoint 分片和显式
+`RAY_ADDRESS`。profiler 会逐行核对 `doc_id/text/prompt_tokens/
+target_output_tokens`，并在 `runs.csv` 记录 manifest path、SHA、总行数、
+validated rows 与状态；任一不一致即失败。
+
+启动前除通用 idle 检查外，还要执行：
+
+```bash
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+set +a
+
+export COMPLETION_CHAT_ENDPOINT_URLS=\
+http://127.0.0.1:8000/v1/chat/completions,http://127.0.0.1:8001/v1/chat/completions
+export RAY_ADDRESS=127.0.0.1:6380
+
+/root/miniconda3/bin/python - <<'PY'
+import ray
+ray.init(address="127.0.0.1:6380")
+print(ray.cluster_resources())
+ray.shutdown()
+PY
+```
+
+512 行校准复用 direct calibration 已冻结的只读 manifest，不重新导出：
+
+```bash
+export PROJECT_CALIBRATION_REQUEST_MANIFEST=\
+/root/autodl-tmp/gates/official_baseline_calibration_512_20260729_0f5d60f.jsonl
+
+CONFIG=deploy/autodl/dual_gpu_same_condition_project_calibration.example.json
+OUTPUT_DIR=experiments/results/dual_gpu_same_condition_project_calibration_<unique-id>
+RUN_LOG=/root/autodl-tmp/logs/dual_gpu_same_condition_project_calibration_<unique-id>.log
+
+test ! -e "$OUTPUT_DIR"
+test ! -e "$RUN_LOG"
+nohup /root/miniconda3/bin/python \
+  code/scripts/run_ai_operator_scenarios.py \
+  --config "$CONFIG" \
+  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --python-executable /root/miniconda3/bin/python \
+  --output-dir "$OUTPUT_DIR" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --idle-timeout-s 120 \
+  </dev/null >"$RUN_LOG" 2>&1 &
+```
+
+校准模板扫描 per-endpoint static K `{32,64,128,256}` 和 active work
+`{16384,32768,49152,65536,98304}`。完成后按预注册 97% ceiling / 相邻增益
+<3% 规则选择最小压力点，写入 `PROJECT_STATIC_K_PER_ENDPOINT` 和
+`PROJECT_ACTIVE_WORK_PER_ENDPOINT`。不要因为 C256 是 `max_num_seqs` 配置硬上限
+就把它误写成已验证的经验平台。
+
+formal manifest 必须来自 `ORDER BY doc_id LIMIT 2048 OFFSET 512`，且导出前
+数据库必须实际存在 2,560 个连续目标行。当前已核验
+`sharegpt_burstgpt` 只有 `doc_id=0..2047`，因此只剩 1,536 个 disjoint 行，
+formal 被阻塞；禁止回用校准行。补齐独立数据后才允许：
+
+```bash
+PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d ai_operator \
+  -c "SELECT count(*), min(doc_id), max(doc_id) FROM documents
+      WHERE workload_name='sharegpt_burstgpt'"
+
+export PROJECT_FORMAL_REQUEST_MANIFEST=\
+/root/autodl-tmp/gates/<new-immutable-formal-manifest>.jsonl
+
+/root/miniconda3/bin/python code/scripts/run_official_baseline.py \
+  export-postgres-manifest \
+  --database-url "$DATABASE_URL" \
+  --workload-name "$SOURCE_WORKLOAD_NAME" \
+  --row-count 2048 \
+  --row-offset 512 \
+  --max-output-tokens 256 \
+  --estimated-output-mode trace_target \
+  --endpoint-count 2 \
+  --output "$PROJECT_FORMAL_REQUEST_MANIFEST"
+chmod 0444 "$PROJECT_FORMAL_REQUEST_MANIFEST"
+```
+
+随后先另外导出 `row_count=64,row_offset=512` 的只读 gate manifest，并在
+`/root/autodl-tmp/gates/` 复制 formal 模板，机械改为 64 行、0 warm-up、
+1 repeat，令 `PROJECT_FORMAL_REQUEST_MANIFEST` 暂时指向该 gate manifest。
+在新目录核对 manifest SHA/validated rows、64/64 exactly-once、双 endpoint、
+request/submission/resource traces、0 failure、服务端 counter 和最终空队列。
+只有 gate 通过才把变量切回 2,048 行 manifest 并运行原模板的 1 warm-up +
+3 formal；失败目录、租约和日志原样保留。
+
 ### 已验证部署问题与解决方案
 
 | 现象 | 根因与判定证据 | 处理方式 |
@@ -1162,6 +1260,8 @@ token 统计口径不同，下一道门禁必须对每个 cell、每个 endpoint
 | C32/C64 时 vLLM Bench 与 bounded 一致，C128 时 bounded 突然落后 | httpx 0.28.1 `AsyncClient` 默认总连接上限 100、keepalive 20；配置 C128 实际没有形成 128 并发。vLLM Bench 日志则确认 peak=128 | bounded client 必须显式把 `Limits.max_connections` 与 `max_keepalive_connections` 设为 `concurrency_per_endpoint × endpoint_count`，用回归测试锁定。修复后只在全新目录重跑被污染的 bounded C128；有效 vLLM C128 不重复。 |
 | gate 模板仍写本地历史模型 `qwen2.5-1.5b` | AutoDL 当前两个 endpoint 实际 served model 为 `qwen2.5-7b`；模板与服务元数据不一致会污染同条件比较 | 双 GPU official gate 模板改为 `qwen2.5-7b`。每次开机仍以 runtime env、endpoint 进程命令和 `/metrics` 为准，不从模板猜模型。 |
 | `python -m unittest code.tests...` 报标准库 `code` 没有 `tests` | 仓库目录名 `code/` 与 Python 标准库模块同名，不是测试实现失败 | 在仓库根使用 `python -m unittest discover -s code/tests -p 'test_x.py'`。远程封装先保存测试进程退出码，再清理临时环境变量，避免清理命令把失败状态覆盖成 0。 |
+| project Chat template 展开时报缺失变量，或仍请求 `/v1/completions` | 旧 runtime env 只有 `COMPLETION_ENDPOINT_URLS`，没有同条件 Chat URL；直接复用会改变协议 | 从更新后的 `autodl.env.example` 补 `COMPLETION_CHAT_ENDPOINT_URLS=.../v1/chat/completions`，启动前打印解析后的模板参数；禁止用 legacy URL 兜底。 |
+| 512 校准后无法导出 disjoint 2,048-row formal | 当前 workload 只有 2,048 行，`OFFSET 512` 后数据库实测仅返回 1,536 行 | formal 前补齐并冻结另外 512 行或导入独立 held-out workload；profiler 使用 `--source-row-offset 512`。不得回用 `doc_id=0..511` 或复制行凑数。 |
 
 本次远端原始冲突备份位置为
 `/root/autodl-tmp/premerge-backups/20260729_shared_vllm_results_before_7267324/`。
