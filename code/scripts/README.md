@@ -753,7 +753,9 @@ startup, gate, resume, evidence-preservation, and cleanup procedure in
 矩阵，只执行已经固定的 manifest shard，并把不同实现统一到
 `requests.csv + summary.json`：
 
-- `bounded_http`：无 Daft/Ray 的强 AsyncIO 因果对照；
+- `bounded_http`：无 Daft/Ray 的强 AsyncIO 因果对照；其 httpx
+  `max_connections/max_keepalive_connections` 显式等于全部 endpoint 的配置
+  并发总量，禁止由客户端默认连接池暗中截断 C128/C256；
 - `vllm_bench`：官方 serving ceiling，先保存详细原始结果，再显式归一化；
 - `daft_native` / `daft_ray`：官方 `daft.functions.prompt()`；
 - `ray_data_http`：官方 Ray Data HTTP Processor；

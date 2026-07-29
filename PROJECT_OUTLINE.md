@@ -164,17 +164,20 @@
   聚合吞吐 +9.57%、max P99 -22.52%、max JCT -15.89%，Jain median
   0.9961。4-job 三次吞吐变化为 +8.43%/-0.28%/+22.60%，因此仅记为
   高竞争条件性候选，需 held-out 复验
+- ✅ 官方 direct baseline C32/C64/C128 校准：vLLM Bench total tokens/s
+  4,930→8,342→12,762，C128 日志确认 peak concurrency=128；历史约
+  8.0–8.2K 只属于当时 project profiler/arrival-replay 链路，不能再称为
+  vLLM 或双 4090 物理上限。bounded C128 暴露 httpx 默认 100 连接上限，
+  已测试先行显式扩展连接池，待 bounded-only re-gate
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P0**：先补同规模同条件 baseline。64 行双 GPU core 功能门禁与
-   `f2e82bd` 等价性 re-gate 均已 5/5 通过；当前先完成 endpoint-local vLLM
-   prompt/generation counter 差分门禁，统一不同 adapter 的工作量口径。之后
-   第一层比较无
-   Daft/Ray 的 OceanBase `AI_COMPLETE`、同 PostgreSQL bounded AsyncIO、
-   ours 和 direct-vLLM ceiling；第二层比较 Daft `prompt()` Native/Ray、
-   Ray Data HTTP Processor 与 ours。统一 Chat Completions，各 arm 独立
-   calibration 后再跑 held-out。
+1. **P0**：先锁定同规模同条件 baseline。C64 direct-vLLM/bounded 已一致，
+   C128 bounded 需在显式 httpx pool 修复后单独 re-gate；现有 256 行清单
+   无法暴露 C256，下一 ceiling 点至少使用 512 行。随后让 project profiler
+   在同 manifest、Chat Completions、no replay 下运行，比较 direct ceiling、
+   ours 与达到同吞吐所需的 active work。OceanBase、Daft Native/Ray 与
+   Ray Data 只在各自独立校准后进入 held-out，不能用弱默认值排名。
 2. **P1**：Shared-vLLM 核心 1/2/4-job equal-workload 矩阵已完成；baseline
    锁定后再用 held-out repeats 确认 4-job 稳定性，并分别验证 staggered idle
    borrowing、weighted overlap fairness 和异构 workload mix。

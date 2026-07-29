@@ -1159,6 +1159,7 @@ token 统计口径不同，下一道门禁必须对每个 cell、每个 endpoint
 | 8000/8001 被误判为服务配置不一致 | 初版 service fingerprint 把 endpoint URL/端口也纳入 hash | 服务指纹只比较模型、协议、temperature 等等价配置；endpoint 地址作为独立拓扑字段审计。实际 vLLM 启动参数仍需从两个进程命令和 service metadata 单独核对。 |
 | 已有单 shard CLI，但没有可复现的双 endpoint gate runner | 临时拼接后台命令无法保证两个 shard 先启动再等待，也没有逐 cell 失败即停、空队列盖章和统一日志 | 新增 `run_official_baseline_gate.py`。每个 cell 保存 `commands.json`、两份 shard log、两份归一化结果和 `gate.json`；根 `run_status.json` 记录已完成与 blocked cell。已有输出目录拒绝覆盖。 |
 | gate 配置固定 5 个 core arm 与 C32，无法安全只跑 vLLM/bounded C64/C128 | 在远端临时复制 JSON 或手拼 shard 会绕过已提交配置、统一编排和审计证据 | 使用 runner 的 `--include-cell` 与 `--concurrency-override id=N`。未知、重复、非正或覆盖未选 cell 均 fail closed；每档使用新输出根并以 `resolved_config.json` 复核。 |
+| C32/C64 时 vLLM Bench 与 bounded 一致，C128 时 bounded 突然落后 | httpx 0.28.1 `AsyncClient` 默认总连接上限 100、keepalive 20；配置 C128 实际没有形成 128 并发。vLLM Bench 日志则确认 peak=128 | bounded client 必须显式把 `Limits.max_connections` 与 `max_keepalive_connections` 设为 `concurrency_per_endpoint × endpoint_count`，用回归测试锁定。修复后只在全新目录重跑被污染的 bounded C128；有效 vLLM C128 不重复。 |
 | gate 模板仍写本地历史模型 `qwen2.5-1.5b` | AutoDL 当前两个 endpoint 实际 served model 为 `qwen2.5-7b`；模板与服务元数据不一致会污染同条件比较 | 双 GPU official gate 模板改为 `qwen2.5-7b`。每次开机仍以 runtime env、endpoint 进程命令和 `/metrics` 为准，不从模板猜模型。 |
 | `python -m unittest code.tests...` 报标准库 `code` 没有 `tests` | 仓库目录名 `code/` 与 Python 标准库模块同名，不是测试实现失败 | 在仓库根使用 `python -m unittest discover -s code/tests -p 'test_x.py'`。远程封装先保存测试进程退出码，再清理临时环境变量，避免清理命令把失败状态覆盖成 0。 |
 

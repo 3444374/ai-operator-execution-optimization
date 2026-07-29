@@ -4,6 +4,8 @@ import asyncio
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 
 CODE_ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +34,98 @@ def sample_request(
 
 
 class BoundedHttpBaselineTests(unittest.TestCase):
+    def test_default_transport_scales_httpx_pool_to_requested_concurrency(
+        self,
+    ) -> None:
+        captured: dict[str, object] = {}
+
+        class FakeLimits:
+            def __init__(
+                self,
+                *,
+                max_connections: int,
+                max_keepalive_connections: int,
+            ) -> None:
+                captured["limits_instance"] = self
+                captured["max_connections"] = max_connections
+                captured["max_keepalive_connections"] = (
+                    max_keepalive_connections
+                )
+
+        class FakeResponse:
+            def raise_for_status(self) -> None:
+                return None
+
+            def json(self) -> dict:
+                return {
+                    "choices": [
+                        {
+                            "message": {"content": "ok"},
+                            "finish_reason": "stop",
+                        }
+                    ],
+                    "usage": {
+                        "prompt_tokens": 4,
+                        "completion_tokens": 1,
+                    },
+                }
+
+        class FakeClient:
+            def __init__(self, **kwargs: object) -> None:
+                captured["client_kwargs"] = kwargs
+
+            async def __aenter__(self) -> "FakeClient":
+                return self
+
+            async def __aexit__(self, *_args: object) -> None:
+                return None
+
+            async def post(
+                self,
+                _url: str,
+                *,
+                json: dict[str, object],
+            ) -> FakeResponse:
+                self.assert_payload(json)
+                return FakeResponse()
+
+            @staticmethod
+            def assert_payload(payload: dict[str, object]) -> None:
+                if payload["model"] != "model":
+                    raise AssertionError(payload)
+
+        fake_httpx = SimpleNamespace(
+            AsyncClient=FakeClient,
+            Limits=FakeLimits,
+        )
+        with patch.dict(sys.modules, {"httpx": fake_httpx}):
+            results = asyncio.run(
+                run_bounded_http(
+                    (
+                        sample_request(0, endpoint_index=0),
+                        sample_request(1, endpoint_index=1),
+                    ),
+                    BoundedHttpConfig(
+                        endpoint_urls=(
+                            "http://ep0/v1/chat/completions",
+                            "http://ep1/v1/chat/completions",
+                        ),
+                        model="model",
+                        concurrency_per_endpoint=128,
+                        timeout_s=30,
+                        api_key=None,
+                    ),
+                )
+            )
+
+        self.assertEqual(len(results), 2)
+        self.assertEqual(captured["max_connections"], 256)
+        self.assertEqual(captured["max_keepalive_connections"], 256)
+        self.assertIs(
+            captured["client_kwargs"]["limits"],
+            captured["limits_instance"],
+        )
+
     def test_concurrency_is_bounded_per_endpoint(self) -> None:
         active = 0
         peak = 0

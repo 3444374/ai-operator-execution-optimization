@@ -100,6 +100,10 @@ credit-held 空转和 Ray-to-service delay。
 - 当前约 35.7% MFU 不证明 GPU kernel 已达到硬件理论上限；本实验只标定当前
   完整服务链路的上游 work 平台。
 - 本曲线不比较数据组织或 actor pool 算法，不能把容量标定写成策略贡献。
+- 后续同机 direct-vLLM Chat/no-replay C128 单次 gate 已达到约 12,762
+  total tokens/s，高于本曲线 8,211。因此这里的“平台”只适用于当时 project
+  profiler、arrival replay、协议和 workload，不能外推为 vLLM 或双 4090
+  的容量 ceiling；跨链路比较必须先统一 manifest 与请求语义。
 
 ## 6. 对课题的含义
 
