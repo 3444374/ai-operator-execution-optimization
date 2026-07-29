@@ -342,6 +342,15 @@ task 不足，实际只使用 1 actor，不能据此得出扩展结论。
 差分补齐 output-work 证据；shard-barrier P95 仍不得与 request-level P95 横比。
 全新真实双 GPU service-counter gate 通过前不能启动 calibration/formal。
 
+统一服务端计数门禁随后已通过。256 行 scale gate 的五个 core arm 为 5/5、
+0 incident；vLLM Bench C32 与 bounded HTTP C32 均约 4.93K total tokens/s，
+而 Daft Native 单次约 9.82K。该差异目前只说明直接客户端 C32 可能未饱和，
+不能证明 Daft 提升了 vLLM 计算速度。runner 已提供 fail-closed 的
+`--include-cell` 与 `--concurrency-override id=N`，下一步只用同一 manifest
+校准 vLLM/bounded C64→C128，不再远端临时改配置，也不重复运行 Daft/Ray
+Data。每个并发档使用全新输出目录，先过 exactly-once、服务端 counter 和空
+队列门禁，再比较 JCT、generation/total tokens/s 与 3% 饱和阈值。
+
 完整顺序与放弃条件见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
 

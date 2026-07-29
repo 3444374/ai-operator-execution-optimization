@@ -210,6 +210,35 @@ calibration 由 `batch_size × actor_count × task_count` 联合判断，不能�
 server-usage arm 与差分不一致、差分非正、counter 回退或存在并发污染时均失败。
 该门禁通过后才允许进入 calibration。
 
+### 8.2 256 行 scale gate 与直接客户端校准
+
+`dual_gpu_official_baseline_scale_gate_256_20260729_3b4aef0` 已完成 5/5
+core arm 单次 scale gate：每项 256/256 exactly-once、0 incident、最终队列
+归零。按统一服务端 counter 计算：
+
+| arm | per-endpoint 配置 | JCT (s) | total tokens/s | generation tokens/s |
+|---|---:|---:|---:|---:|
+| vLLM Bench | C32 | 20.37 | 4930 | 2698 |
+| bounded HTTP | C32 | 20.37 | 4926 | 2694 |
+| Daft Native | official default | 10.20 | 9818 | 5359 |
+| Daft Ray | official default | 16.35 | 6125 | 3345 |
+| Ray Data HTTP | batch16 × actor4 | 128.53 | 780 | 426 |
+
+这是一次 scale gate，不是统计有效的性能排名。vLLM Bench 与 bounded HTTP 在
+相同 C32 下几乎重合，说明当前直接客户端对照实现一致，但二者都未证明达到服务
+ceiling。Daft CLI 的 `concurrency=1` 没有成为实际 `prompt()` 并发控制，官方
+执行保持 `concurrency=None`；Ray Data 包装器则在 UDF 内逐行请求，每 endpoint
+只有约四个服务请求并行。Daft/Ray Data 的 barrier 延迟也不能与 request-level
+P99 横比。
+
+因此下一步只校准直接客户端 C64，再在门禁通过后运行 C128；使用同一 256 行
+manifest、同一双 endpoint、全新输出目录与 runner 的 `--include-cell` /
+`--concurrency-override`，不重跑 Daft/Ray Data。若 C64→C128 的 total 或
+generation tokens/s 增益低于 3%，选择达到最大安全吞吐 97% 的最小档位；若仍
+增长，再依据预注册矩阵决定是否运行 C256。该校准完成前，不把 Daft Native
+单次高值解释为框架加速，也不与历史 2,048 行 arrival-replay 的约 8K tokens/s
+直接比较。
+
 ## 9. 详细工程设计
 
 适配器边界、fatal-flaw audit 和实现模块见：

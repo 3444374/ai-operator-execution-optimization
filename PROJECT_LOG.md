@@ -2633,3 +2633,20 @@
   request-level/server-usage 直接比较的指标。全新等价性 re-gate 通过前，
   calibration/formal 继续阻塞。
 - 按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 Official baseline 256 行 scale gate 与校准入口
+
+- 256 行双 GPU scale gate 完成 5/5、0 incident、256/256 exactly-once、最终
+  队列归零。vLLM Bench C32 与 bounded HTTP C32 的 total tokens/s 分别为
+  4930/4926，JCT 均为 20.37s；Daft Native official default 单次为
+  9818 total tokens/s、10.20s。该结果只证明 C32 直接客户端可能未饱和，
+  不构成 Daft 加速 vLLM 或统计性能排名。
+- 审计确认旧 gate runner 只能固定运行五个 core arm 与 C32。为避免远端临时
+  JSON/手拼 shard，测试先行新增重复 `--include-cell` 和
+  `--concurrency-override id=N`；未知、重复、非正与覆盖未选 cell 均在请求前
+  fail closed，最终选择写入 `resolved_config.json`。
+- 下一步只在同一 256 行 manifest 上运行 vLLM Bench/bounded HTTP C64，门禁
+  通过后再运行 C128；每档使用全新输出目录，不重复运行 Daft/Ray Data。以
+  total/generation tokens/s、JCT、服务端 counter、空队列与 3% 饱和阈值决定
+  最小安全并发。
+- 按用户要求不执行 Wiki 同步。

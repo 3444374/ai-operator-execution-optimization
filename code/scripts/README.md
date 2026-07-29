@@ -782,6 +782,29 @@ python code/scripts/run_official_baseline_gate.py \
   --output-root /path/to/fresh-gate-output
 ```
 
+校准时不得复制或临时改写远端 JSON。只选择已提交配置中的实验臂，并显式覆盖
+各 arm 的 per-endpoint concurrency；例如在同一份 256 行 manifest 上运行
+vLLM Bench 与 bounded HTTP 的 C64：
+
+```bash
+python code/scripts/run_official_baseline_gate.py \
+  --config deploy/autodl/dual_gpu_official_baseline_gate.example.json \
+  --driver-python /root/miniconda3/bin/python \
+  --vllm-python /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  --manifest /path/to/immutable-256-row-manifest.jsonl \
+  --rows-total 256 \
+  --output-root /path/to/fresh-c64-output \
+  --include-cell vllm_bench \
+  --include-cell bounded_http \
+  --concurrency-override vllm_bench=64 \
+  --concurrency-override bounded_http=64
+```
+
+每个更高并发档必须使用新的输出根目录。未知 cell、重复或非正并发、以及对未选
+cell 的覆盖都会在启动请求前失败；`resolved_config.json` 保存最终选择和有效
+并发。C64/C128 是校准压力点，不是默认值，更不能据单次 gate 直接得出正式
+性能结论。
+
 `run_official_baseline_gate.py` 是可复现的双 endpoint core gate runner：
 每个 cell 都先同时启动两个 shard，再等待二者完成；逐 endpoint 保存命令与
 日志，轮询 vLLM queue 归零后才归一化和执行 gate。任一 shard、归一化或 gate

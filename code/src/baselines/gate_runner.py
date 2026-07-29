@@ -89,6 +89,8 @@ def load_core_gate_config(
     manifest_override: str | Path | None = None,
     output_root_override: str | Path | None = None,
     rows_total_override: int | None = None,
+    include_cell_ids: Sequence[str] | None = None,
+    concurrency_overrides: Mapping[str, int] | None = None,
 ) -> CoreGateConfig:
     """Load and fail closed on an unresolved or formal gate config."""
 
@@ -126,17 +128,51 @@ def load_core_gate_config(
     if output_root.exists():
         raise FileExistsError(f"output root already exists: {output_root}")
 
-    cells: list[CoreGateCell] = []
-    blocked_cells: list[dict[str, str]] = []
-    seen_ids: set[str] = set()
-    for raw_cell in payload.get("cells", ()):
+    requested_cell_ids = tuple(include_cell_ids or ())
+    if len(set(requested_cell_ids)) != len(requested_cell_ids):
+        raise ValueError("include_cell_ids contains duplicates")
+    selected_cell_ids = set(requested_cell_ids) if requested_cell_ids else None
+    normalized_overrides = dict(concurrency_overrides or {})
+    if any(value <= 0 for value in normalized_overrides.values()):
+        raise ValueError("concurrency overrides must be positive")
+
+    raw_cells = payload.get("cells", ())
+    if not isinstance(raw_cells, list):
+        raise ValueError("cells must be a list")
+    raw_cell_ids: list[str] = []
+    for raw_cell in raw_cells:
         if not isinstance(raw_cell, dict):
             raise ValueError("each gate cell must be an object")
         cell_id = str(raw_cell.get("id", "")).strip()
-        adapter = str(raw_cell.get("adapter", "")).strip()
-        if not cell_id or cell_id in seen_ids:
+        if not cell_id or cell_id in raw_cell_ids:
             raise ValueError(f"invalid or duplicate cell id: {cell_id!r}")
-        seen_ids.add(cell_id)
+        raw_cell_ids.append(cell_id)
+    available_cell_ids = set(raw_cell_ids)
+    unknown_selected = set(requested_cell_ids) - available_cell_ids
+    if unknown_selected:
+        raise ValueError(
+            f"unknown included gate cells: {sorted(unknown_selected)}"
+        )
+    unknown_overrides = set(normalized_overrides) - available_cell_ids
+    if unknown_overrides:
+        raise ValueError(
+            f"unknown concurrency override cells: {sorted(unknown_overrides)}"
+        )
+    if selected_cell_ids is not None:
+        excluded_overrides = set(normalized_overrides) - selected_cell_ids
+        if excluded_overrides:
+            raise ValueError(
+                "concurrency overrides target excluded cells: "
+                f"{sorted(excluded_overrides)}"
+            )
+
+    cells: list[CoreGateCell] = []
+    blocked_cells: list[dict[str, str]] = []
+    for raw_cell in raw_cells:
+        cell_id = str(raw_cell.get("id", "")).strip()
+        adapter = str(raw_cell.get("adapter", "")).strip()
+        if selected_cell_ids is not None and cell_id not in selected_cell_ids:
+            continue
         if adapter in BLOCKED_ADAPTER_REASONS:
             blocked_cells.append(
                 {
@@ -148,7 +184,12 @@ def load_core_gate_config(
             continue
         if adapter not in CORE_ADAPTERS:
             raise ValueError(f"unsupported core gate adapter: {adapter!r}")
-        concurrency = int(raw_cell.get("concurrency_per_endpoint", 1))
+        concurrency = int(
+            normalized_overrides.get(
+                cell_id,
+                raw_cell.get("concurrency_per_endpoint", 1),
+            )
+        )
         batch_size = int(raw_cell.get("batch_size", 1))
         if concurrency <= 0 or batch_size <= 0:
             raise ValueError(f"cell {cell_id} concurrency/batch_size must be positive")
@@ -559,6 +600,8 @@ def run_core_gate(
     manifest_override: str | Path | None = None,
     output_root_override: str | Path | None = None,
     rows_total_override: int | None = None,
+    include_cell_ids: Sequence[str] | None = None,
+    concurrency_overrides: Mapping[str, int] | None = None,
     idle_timeout_s: float = 120.0,
     pair_runner: PairRunner = run_command_pair,
     idle_waiter: IdleWaiter = wait_for_idle,
@@ -571,6 +614,8 @@ def run_core_gate(
         manifest_override=manifest_override,
         output_root_override=output_root_override,
         rows_total_override=rows_total_override,
+        include_cell_ids=include_cell_ids,
+        concurrency_overrides=concurrency_overrides,
     )
     manifest = read_manifest(config.manifest)
     if len(manifest) != config.rows_total:
@@ -729,13 +774,58 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--manifest")
     parser.add_argument("--output-root")
     parser.add_argument("--rows-total", type=int)
+    parser.add_argument(
+        "--include-cell",
+        action="append",
+        default=[],
+        help="Run only this configured cell; repeat for multiple cells.",
+    )
+    parser.add_argument(
+        "--concurrency-override",
+        action="append",
+        default=[],
+        metavar="CELL_ID=N",
+        help="Override per-endpoint concurrency for one cell; repeat as needed.",
+    )
     parser.add_argument("--idle-timeout-s", type=float, default=120.0)
     return parser
+
+
+def parse_concurrency_overrides(values: Sequence[str]) -> dict[str, int]:
+    """Parse repeatable CELL_ID=N overrides and reject ambiguous input."""
+
+    overrides: dict[str, int] = {}
+    for value in values:
+        cell_id, separator, raw_concurrency = value.partition("=")
+        cell_id = cell_id.strip()
+        if not separator or not cell_id or not raw_concurrency.strip():
+            raise ValueError(
+                f"invalid concurrency override {value!r}; expected CELL_ID=N"
+            )
+        if cell_id in overrides:
+            raise ValueError(
+                f"duplicate concurrency override for cell {cell_id!r}"
+            )
+        try:
+            concurrency = int(raw_concurrency)
+        except ValueError as exc:
+            raise ValueError(
+                f"invalid concurrency for cell {cell_id!r}: {raw_concurrency!r}"
+            ) from exc
+        if concurrency <= 0:
+            raise ValueError(
+                f"concurrency for cell {cell_id!r} must be positive"
+            )
+        overrides[cell_id] = concurrency
+    return overrides
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
+        concurrency_overrides = parse_concurrency_overrides(
+            args.concurrency_override
+        )
         result = run_core_gate(
             args.config,
             driver_python=args.driver_python,
@@ -743,6 +833,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             manifest_override=args.manifest,
             output_root_override=args.output_root,
             rows_total_override=args.rows_total,
+            include_cell_ids=args.include_cell,
+            concurrency_overrides=concurrency_overrides,
             idle_timeout_s=args.idle_timeout_s,
         )
     except Exception as exc:

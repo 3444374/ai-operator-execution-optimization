@@ -16,6 +16,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.baselines.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.gate_runner import (
     load_core_gate_config,
+    parse_concurrency_overrides,
     parse_vllm_queue_metrics,
     parse_vllm_token_counters,
     run_core_gate,
@@ -205,6 +206,97 @@ vllm:generation_tokens_total{engine="0",model_name="qwen"} 80
             )
 
             self.assertEqual(config.rows_total, 4)
+
+    def test_cell_selection_and_concurrency_override_scope_calibration(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            write_manifest(
+                manifest,
+                (
+                    ChatRequest(
+                        doc_id=0,
+                        prompt="question",
+                        arrival_time_s=0.0,
+                        prompt_tokens=4,
+                        max_output_tokens=8,
+                        estimated_output_tokens=8,
+                        source_row_hash="row-0",
+                        endpoint_index=0,
+                    ),
+                ),
+            )
+            config_path = root / "gate.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "formal": False,
+                        "rows_total": 1,
+                        "endpoint_urls": [
+                            "http://127.0.0.1:8000/v1/chat/completions",
+                            "http://127.0.0.1:8001/v1/chat/completions",
+                        ],
+                        "model": "qwen",
+                        "manifest": str(manifest),
+                        "output_root": str(root / "output"),
+                        "cells": [
+                            {
+                                "id": "bounded_http",
+                                "adapter": "bounded_http",
+                                "concurrency_per_endpoint": 32,
+                            },
+                            {
+                                "id": "ray_data_http",
+                                "adapter": "ray_data_http",
+                                "ray_address": "127.0.0.1:6380",
+                                "concurrency_per_endpoint": 4,
+                            },
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            config = load_core_gate_config(
+                config_path,
+                include_cell_ids=("bounded_http",),
+                concurrency_overrides={"bounded_http": 64},
+            )
+
+            self.assertEqual(
+                [
+                    (cell.cell_id, cell.concurrency)
+                    for cell in config.cells
+                ],
+                [("bounded_http", 64)],
+            )
+            with self.assertRaisesRegex(ValueError, "unknown included"):
+                load_core_gate_config(
+                    config_path,
+                    include_cell_ids=("missing",),
+                )
+            with self.assertRaisesRegex(ValueError, "excluded cells"):
+                load_core_gate_config(
+                    config_path,
+                    include_cell_ids=("bounded_http",),
+                    concurrency_overrides={"ray_data_http": 8},
+                )
+
+    def test_concurrency_override_parser_rejects_ambiguous_values(self) -> None:
+        self.assertEqual(
+            parse_concurrency_overrides(
+                ("vllm_bench=64", "bounded_http=128")
+            ),
+            {"vllm_bench": 64, "bounded_http": 128},
+        )
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            parse_concurrency_overrides(
+                ("vllm_bench=64", "vllm_bench=128")
+            )
+        with self.assertRaisesRegex(ValueError, "positive"):
+            parse_concurrency_overrides(("vllm_bench=0",))
+        with self.assertRaisesRegex(ValueError, "CELL_ID=N"):
+            parse_concurrency_overrides(("vllm_bench",))
 
     def test_core_gate_runs_two_shards_and_writes_pass_report(self) -> None:
         with TemporaryDirectory() as temp_dir:
