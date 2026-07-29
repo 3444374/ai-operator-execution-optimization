@@ -2670,3 +2670,16 @@
   Chat Completions、no replay 条件下运行。未完成该同条件对照前，不新增上游
   策略，也不据 direct gate 宣称 ours 更慢。
 - 按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 同条件 project runtime 对比实施顺序冻结
+
+- 用户确认先完成单 Job 同条件对比，再独立进入多 Job：使用互不重叠的
+  512 行 calibration 与 2,048 行 held-out Chat manifest，所有可比 arm 关闭
+  arrival replay，并保持一行一次 Chat Completions 请求。
+- 新实施计划把缺口拆成 manifest 锁定、离线 request-level 补位、固定 endpoint
+  路由、项目 static/token-work 校准和正式矩阵；direct/官方 baseline 分别独立
+  校准，OceanBase 仅在 CE 能力与语义门禁通过时进入数值对照。
+- 结论门槛同时覆盖吞吐/JCT 加速与压力效率：未达到 5%/2-of-3 门槛时，不把
+  相同吞吐下的更低 active work、P99 或更快爬坡写成 GPU 推理加速。
+- 开题 PPT 由另一对话并行修改，本轮隔离 worktree 不接触或暂存其文件。
+- 按用户要求不执行 Wiki 同步。
