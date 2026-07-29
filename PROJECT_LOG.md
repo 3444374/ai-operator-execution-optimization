@@ -2505,4 +2505,8 @@
   服务配置不一致的指纹问题，并增加回归测试。
 - 本地代码/契约完成不等于远端性能 baseline 已建立。下一步仅允许在全新目录
   运行一次真实双 GPU gate；通过后停止分析，不能自动进入 calibration/formal。
+- 首次远端依赖门禁发现 Ray 2.56.1 的 `ray.data.llm` 间接导入 Ray Serve；
+  仅声明 pandas/aiohttp 会在干净 base 环境报缺少 `starlette`。修正项目依赖
+  为 `ray[data,serve]`，并增加 requirements 契约测试；远端必须按现有 Ray
+  相同版本补官方 extras，不能以手工安装单个传递依赖掩盖契约缺口。
 - 按用户要求不执行 Wiki 同步。

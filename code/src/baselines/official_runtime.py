@@ -210,7 +210,7 @@ def _load_ray_data_modules() -> SimpleNamespace:
         )
     except ImportError as exc:
         raise RuntimeError(
-            "Ray Data HTTP baseline requires ray[data], pandas and aiohttp"
+            "Ray Data HTTP baseline requires ray[data,serve]"
         ) from exc
     return SimpleNamespace(
         ray=ray,

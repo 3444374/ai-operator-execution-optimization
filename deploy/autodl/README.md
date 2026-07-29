@@ -1046,6 +1046,10 @@ HTTP loop and label it OceanBase.
 3. 在 base conda 环境先检查 `httpx/openai/pandas/aiohttp/pymysql` import，
    仅安装缺失的项目声明依赖。Daft Ray 与 Ray Data 必须显式连接同一个已有
    Ray address，不能各自隐式创建 cluster。
+   Ray 2.56 的 `ray.data.llm` 会间接导入 Ray Serve，因此还必须验证
+   `from ray.data.llm import HttpRequestProcessorConfig`；缺少 Serve 依赖时
+   按已安装 Ray 的相同版本补 `ray[data,serve]`，不能只补报错中的单个
+   `starlette`。
 4. 从正式 workload 导出 64 行 immutable manifest；hash、行数、模型、
    Chat protocol、temperature、输出上限和服务启动参数写入 gate 证据。
    两 endpoint 采用 manifest 中固定分片，不由 adapter 再路由。

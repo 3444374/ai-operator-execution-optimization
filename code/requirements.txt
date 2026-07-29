@@ -1,6 +1,6 @@
 numpy
 pyarrow>=16,<25
-ray
+ray[data,serve]
 psycopg[binary]>=3.2
 daft
 sqlglot

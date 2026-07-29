@@ -40,6 +40,19 @@ def sample_request(
 
 
 class OfficialRuntimeAdapterTests(unittest.TestCase):
+    def test_requirements_include_ray_data_llm_runtime_extras(
+        self,
+    ) -> None:
+        requirements = {
+            line.strip().lower()
+            for line in (CODE_ROOT / "requirements.txt")
+            .read_text(encoding="utf-8")
+            .splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        }
+
+        self.assertIn("ray[data,serve]", requirements)
+
     def test_daft_prompt_options_are_same_request_chat_semantics(
         self,
     ) -> None:
