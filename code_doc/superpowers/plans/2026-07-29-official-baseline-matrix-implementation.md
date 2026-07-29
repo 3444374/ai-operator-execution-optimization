@@ -1046,7 +1046,7 @@ git diff --check
 
 Expected: all PASS with no diff errors.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```powershell
 git add code/scripts/run_official_baseline.py code/src/baselines/cli.py code/src/baselines/gate.py code/tests/test_official_baseline_cli.py code/tests/test_official_baseline_gate.py deploy/autodl/dual_gpu_official_baseline_gate.example.json deploy/autodl/dual_gpu_official_baseline_calibration.example.json code/scripts/README.md code/README.md code/INFRA_STATUS.md PROJECT_INDEX.md PROJECT_LOG.md
