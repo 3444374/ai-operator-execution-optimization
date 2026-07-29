@@ -80,6 +80,39 @@ class LeastWorkEndpointRouter:
         return RoutingDecision(endpoint.endpoint_id, pool_id, "least_work")
 
 
+class PinnedEndpointRouter:
+    """Route a request only to the endpoint fixed by its input manifest."""
+
+    def route(
+        self,
+        request: BatchRequest,
+        topology: TopologySnapshot,
+        pool_id: str,
+    ) -> RoutingDecision:
+        endpoint_id = request.preferred_endpoint_id
+        if not endpoint_id:
+            raise RuntimeError("missing preferred endpoint")
+        endpoint = next(
+            (
+                candidate
+                for candidate in topology.endpoints
+                if candidate.endpoint_id == endpoint_id
+            ),
+            None,
+        )
+        if endpoint is None:
+            raise RuntimeError(f"unknown preferred endpoint {endpoint_id}")
+        if endpoint.pool_id != pool_id:
+            raise RuntimeError(
+                f"preferred endpoint {endpoint_id} is outside pool {pool_id}"
+            )
+        if not endpoint.healthy:
+            raise RuntimeError(
+                f"preferred endpoint {endpoint_id} is not healthy"
+            )
+        return RoutingDecision(endpoint_id, pool_id, "manifest_pinned")
+
+
 class RequestPoolRouter:
     def __init__(
         self,

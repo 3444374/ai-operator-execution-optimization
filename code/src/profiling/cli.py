@@ -32,6 +32,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="arrow_postgres",
     )
     parser.add_argument("--source-workload-name")
+    parser.add_argument("--request-manifest")
     parser.add_argument("--source-max-prompt-tokens", type=int)
     parser.add_argument(
         "--source-order",
@@ -174,6 +175,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "round_robin",
             "least_queued",
             "least_work",
+            "manifest_pinned",
             "prefix_affinity",
         ],
         default="round_robin",

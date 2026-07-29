@@ -87,6 +87,14 @@ def _batch_envelope(
         }
         if len(prefix_values) == 1:
             prefix_key = prefix_values.pop()
+    preferred_endpoint_id = ""
+    if "preferred_endpoint_id" in batch.column_names and batch.num_rows:
+        preferred_endpoint_values = {
+            str(value.as_py() or "")
+            for value in batch.column("preferred_endpoint_id")
+        }
+        if len(preferred_endpoint_values) == 1:
+            preferred_endpoint_id = preferred_endpoint_values.pop()
     arrival_times = []
     if "arrival_time_s" in batch.column_names:
         arrival_times = [
@@ -118,6 +126,7 @@ def _batch_envelope(
             planning_batch_id=planning_batch_id,
             service_quantum_index=service_quantum_index,
             service_quantum_oversized=service_quantum_oversized,
+            preferred_endpoint_id=preferred_endpoint_id,
         ),
         payload=batch,
     )

@@ -13,6 +13,7 @@ from src.scheduling.models import BatchRequest, EndpointSnapshot, TopologySnapsh
 from src.scheduling.routing import (  # noqa: E402
     LeastQueuedEndpointRouter,
     LeastWorkEndpointRouter,
+    PinnedEndpointRouter,
     PrefixAffinityEndpointRouter,
     RequestPoolRouter,
     RoundRobinEndpointRouter,
@@ -25,6 +26,7 @@ def request(
     prompt_tokens: int = 10,
     output_tokens: int = 5,
     prefix_key: str = "",
+    preferred_endpoint_id: str = "",
 ) -> BatchRequest:
     return BatchRequest(
         "r1",
@@ -37,6 +39,7 @@ def request(
         1.0,
         1.0,
         "p1",
+        preferred_endpoint_id=preferred_endpoint_id,
     )
 
 
@@ -147,6 +150,49 @@ class SchedulingPolicyTests(unittest.TestCase):
 
         self.assertEqual(decision.endpoint_id, "fast")
         self.assertEqual(decision.reason, "least_work")
+
+    def test_pinned_router_selects_requested_healthy_endpoint(self) -> None:
+        topology = TopologySnapshot(
+            (endpoint("endpoint-0"), endpoint("endpoint-1")),
+            1.0,
+        )
+
+        decision = PinnedEndpointRouter().route(
+            request(preferred_endpoint_id="endpoint-1"),
+            topology,
+            "default",
+        )
+
+        self.assertEqual(decision.endpoint_id, "endpoint-1")
+        self.assertEqual(decision.reason, "manifest_pinned")
+
+    def test_pinned_router_rejects_missing_or_unavailable_endpoint(
+        self,
+    ) -> None:
+        topology = TopologySnapshot(
+            (
+                endpoint("endpoint-0"),
+                endpoint("endpoint-1", healthy=False),
+                endpoint("long-0", pool_id="long"),
+            ),
+            1.0,
+        )
+        router = PinnedEndpointRouter()
+        invalid = [
+            ("", "missing preferred endpoint"),
+            ("unknown", "unknown preferred endpoint"),
+            ("endpoint-1", "not healthy"),
+            ("long-0", "outside pool"),
+        ]
+
+        for endpoint_id, message in invalid:
+            with self.subTest(endpoint_id=endpoint_id):
+                with self.assertRaisesRegex(RuntimeError, message):
+                    router.route(
+                        request(preferred_endpoint_id=endpoint_id),
+                        topology,
+                        "default",
+                    )
 
     def test_request_pool_router_applies_prefix_long_short_precedence(self) -> None:
         topology = TopologySnapshot(

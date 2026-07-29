@@ -196,7 +196,7 @@ Add `--request-manifest`. Require:
 --operator ai_complete
 --completion-protocol chat_completions
 --source-order doc_id
---output-cost-mode fixed_output_cap
+--output-cost-mode trace_target_output
 --completion-max-tokens == every manifest max_output_tokens
 --total-rows == manifest row count
 ```

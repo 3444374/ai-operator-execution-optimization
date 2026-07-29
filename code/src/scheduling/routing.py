@@ -3,6 +3,7 @@
 from .endpoint_routing.policies import (
     LeastQueuedEndpointRouter,
     LeastWorkEndpointRouter,
+    PinnedEndpointRouter,
     PrefixAffinityEndpointRouter,
     RequestPoolRouter,
     RoundRobinEndpointRouter,
@@ -11,6 +12,7 @@ from .endpoint_routing.policies import (
 __all__ = [
     "LeastQueuedEndpointRouter",
     "LeastWorkEndpointRouter",
+    "PinnedEndpointRouter",
     "PrefixAffinityEndpointRouter",
     "RequestPoolRouter",
     "RoundRobinEndpointRouter",

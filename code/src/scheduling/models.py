@@ -25,6 +25,7 @@ class BatchRequest:
     planning_batch_id: str = ""
     service_quantum_index: int = -1
     service_quantum_oversized: bool = False
+    preferred_endpoint_id: str = ""
 
     def __post_init__(self) -> None:
         if self.row_count <= 0:

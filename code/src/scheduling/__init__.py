@@ -69,6 +69,7 @@ from .ray_runtime import RayWorkerOptions
 from .routing import (
     LeastQueuedEndpointRouter,
     LeastWorkEndpointRouter,
+    PinnedEndpointRouter,
     PrefixAffinityEndpointRouter,
     RequestPoolRouter,
     RoundRobinEndpointRouter,
@@ -146,6 +147,7 @@ __all__ = [
     "RayWorkerOptions",
     "LeastQueuedEndpointRouter",
     "LeastWorkEndpointRouter",
+    "PinnedEndpointRouter",
     "MonotonicEpochClock",
     "PrefixAffinityEndpointRouter",
     "RequestPoolRouter",

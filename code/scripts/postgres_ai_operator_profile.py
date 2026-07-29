@@ -87,6 +87,10 @@ from src.profile_replay import (
     _offline_batch_envelopes,
     _requires_replay_feedback,
 )
+from src.profiling.manifest_guard import (
+    ProfileManifestGuard,
+    validate_profile_manifest_contract,
+)
 from src.profile_ray import (
     submit_ray_tasks,
     submit_with_backpressure,
@@ -126,6 +130,7 @@ from src.scheduling.pid_admission import PidAdmissionController, PidConfig
 from src.scheduling.routing import (
     LeastQueuedEndpointRouter,
     LeastWorkEndpointRouter,
+    PinnedEndpointRouter,
     PrefixAffinityEndpointRouter,
     RequestPoolRouter,
     RoundRobinEndpointRouter,
@@ -679,6 +684,7 @@ def _build_routing_config(
         "round_robin": RoundRobinEndpointRouter,
         "least_queued": LeastQueuedEndpointRouter,
         "least_work": LeastWorkEndpointRouter,
+        "manifest_pinned": PinnedEndpointRouter,
         "prefix_affinity": PrefixAffinityEndpointRouter,
     }
     if endpoint_routing not in endpoint_routers:
@@ -969,6 +975,10 @@ def submit_python_compatible_http_batches(
 
 
 def _validate_arrival_replay_args(args: argparse.Namespace) -> None:
+    if args.endpoint_routing == "manifest_pinned" and not args.request_manifest:
+        raise SystemExit(
+            "manifest_pinned routing requires --request-manifest"
+        )
     if (
         isinstance(args.arrival_replay_start_epoch_s, bool)
         or not math.isfinite(args.arrival_replay_start_epoch_s)
@@ -1259,6 +1269,38 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "Missing endpoint URL. Use embedding endpoint args for ai_embed "
             "or completion endpoint args for ai_complete."
         )
+    request_manifest_path = args.request_manifest or ""
+    request_manifest_sha256 = ""
+    request_manifest_rows = 0
+    request_manifest_validated_rows = 0
+    request_manifest_validation_status = "disabled"
+    request_manifest_guard = None
+    if request_manifest_path:
+        endpoint_ids = tuple(
+            f"endpoint-{index}" for index in range(len(endpoint_urls))
+        )
+        request_manifest_guard = ProfileManifestGuard.from_path(
+            request_manifest_path,
+            endpoint_ids,
+        )
+        validate_profile_manifest_contract(
+            request_manifest_guard.requests,
+            total_rows=args.total_rows,
+            operator=args.operator,
+            model_backend=model_backend,
+            endpoint_count=len(endpoint_urls),
+            completion_protocol=args.completion_protocol,
+            completion_max_tokens=args.completion_max_tokens,
+            output_cost_mode=args.output_cost_mode,
+            source_order=args.source_order,
+            executor=args.executor,
+            submission_granularity=args.submission_granularity,
+            endpoint_routing=args.endpoint_routing,
+            arrival_replay=args.arrival_replay,
+        )
+        request_manifest_sha256 = request_manifest_guard.manifest_sha256
+        request_manifest_rows = len(request_manifest_guard.requests)
+        request_manifest_validation_status = "pending"
     actor_workers_per_endpoint = 0
     if args.executor == "ray_actor":
         actor_endpoint_count = (
@@ -1460,6 +1502,15 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 args.source_max_prompt_tokens
                 if args.source_max_prompt_tokens is not None
                 else ""
+            ),
+            "request_manifest_path": request_manifest_path,
+            "request_manifest_sha256": request_manifest_sha256,
+            "request_manifest_rows": request_manifest_rows,
+            "request_manifest_validated_rows": 0,
+            "request_manifest_validation_status": (
+                "not_executed"
+                if request_manifest_guard is not None
+                else "disabled"
             ),
             "organizer": args.organizer,
             "organizer_partition_mode": args.organizer_partition_mode,
@@ -2044,6 +2095,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             remaining = args.total_rows - processed_rows
             if table.num_rows > remaining:
                 table = table.slice(0, remaining)
+            if request_manifest_guard is not None:
+                table = request_manifest_guard.validate_and_annotate(table)
             if args.arrival_replay:
                 replay_tables.append(table)
                 processed_rows += table.num_rows
@@ -2196,6 +2249,13 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             operator_results.extend(results)
             object_count = metrics["operator_invocations"]
             _merge_submit_metrics(submit_metrics, metrics)
+
+        if request_manifest_guard is not None:
+            request_manifest_evidence = request_manifest_guard.finish()
+            request_manifest_validated_rows = (
+                request_manifest_evidence.validated_rows
+            )
+            request_manifest_validation_status = "ok"
 
         request_trace_path = args.request_trace_output or ""
         if request_trace_path:
@@ -2430,6 +2490,15 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 args.source_max_prompt_tokens
                 if args.source_max_prompt_tokens is not None
                 else ""
+            ),
+            "request_manifest_path": request_manifest_path,
+            "request_manifest_sha256": request_manifest_sha256,
+            "request_manifest_rows": request_manifest_rows,
+            "request_manifest_validated_rows": (
+                request_manifest_validated_rows
+            ),
+            "request_manifest_validation_status": (
+                request_manifest_validation_status
             ),
             "organizer": args.organizer,
             "organizer_partition_mode": args.organizer_partition_mode,

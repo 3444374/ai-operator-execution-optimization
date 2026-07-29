@@ -9,7 +9,9 @@ FORMAL_RESULT_FIELDS = tuple(
     server_version pgvector_version gpu_metrics_status gpu_name
     gpu_utilization_pct gpu_memory_used_mib gpu_memory_total_mib gpu_power_w
     database_trigger job_id operator seed_workload executor strategy data_source
-    source_workload_name source_order source_max_prompt_tokens organizer
+    source_workload_name source_order source_max_prompt_tokens
+    request_manifest_path request_manifest_sha256 request_manifest_rows
+    request_manifest_validated_rows request_manifest_validation_status organizer
     organizer_partition_mode organizer_partitions daft_runner
     organizer_partition_effective model_backend model_endpoint_url model_name
     model_request_timeout_s total_rows written_rows db_fetch_rows ray_batch_rows

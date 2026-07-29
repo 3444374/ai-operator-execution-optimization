@@ -4,6 +4,7 @@ import csv
 import io
 import os
 import sys
+import tempfile
 import threading
 import time
 import unittest
@@ -19,6 +20,8 @@ if str(CODE_ROOT) not in sys.path:
 
 from scripts import postgres_ai_operator_profile as profile  # noqa: E402
 from scripts.run_ai_operator_scenarios import _load_config  # noqa: E402
+from src.baselines.contracts import ChatRequest  # noqa: E402
+from src.baselines.manifests import write_manifest  # noqa: E402
 from src.profiling import ray as profile_ray  # noqa: E402
 from src.profiling import replay as profile_replay  # noqa: E402
 from src.scheduling.adaptive_admission import AimdAdmissionController  # noqa: E402
@@ -956,6 +959,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "prompt_tokens": [3, 5],
                 "target_output_tokens": [7, 9],
                 "prefix_key": ["", ""],
+                "preferred_endpoint_id": ["endpoint-1", "endpoint-0"],
             }
         )
 
@@ -982,6 +986,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(
             [item.request.planning_batch_id for item in envelopes],
             ["job:batch:0", "job:batch:0"],
+        )
+        self.assertEqual(
+            [item.request.preferred_endpoint_id for item in envelopes],
+            ["endpoint-1", "endpoint-0"],
         )
         self.assertEqual(
             [seed.submission_id for seed in seeds],
@@ -2853,6 +2861,104 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertFalse(row["arrival_replay"])
         self.assertEqual(row["submission_granularity"], "request")
+
+    def test_request_manifest_cli_accepts_pinned_project_runtime(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--request-manifest",
+                "manifest.jsonl",
+                "--endpoint-routing",
+                "manifest_pinned",
+            ]
+        )
+
+        self.assertEqual(args.request_manifest, "manifest.jsonl")
+        self.assertEqual(args.endpoint_routing, "manifest_pinned")
+
+    def test_manifest_pinned_routing_requires_request_manifest(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--endpoint-routing",
+                "manifest_pinned",
+            ]
+        )
+
+        with self.assertRaisesRegex(
+            SystemExit,
+            "manifest_pinned routing requires --request-manifest",
+        ):
+            profile.run_once(args, "formal", 1)
+
+    def test_request_manifest_dry_run_records_frozen_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manifest_path = Path(directory) / "requests.jsonl"
+            metadata = write_manifest(
+                manifest_path,
+                (
+                    ChatRequest(
+                        doc_id=1,
+                        prompt="one",
+                        arrival_time_s=0.0,
+                        prompt_tokens=3,
+                        max_output_tokens=256,
+                        estimated_output_tokens=7,
+                        source_row_hash="row-1",
+                        endpoint_index=0,
+                    ),
+                    ChatRequest(
+                        doc_id=2,
+                        prompt="two",
+                        arrival_time_s=0.0,
+                        prompt_tokens=4,
+                        max_output_tokens=256,
+                        estimated_output_tokens=8,
+                        source_row_hash="row-2",
+                        endpoint_index=1,
+                    ),
+                ),
+            )
+            args = profile.parse_args(
+                [
+                    "--dry-run",
+                    "--request-manifest",
+                    str(manifest_path),
+                    "--total-rows",
+                    "2",
+                    "--operator",
+                    "ai_complete",
+                    "--model-backend",
+                    "compatible_http",
+                    "--completion-endpoint-urls",
+                    "http://gpu0/v1,http://gpu1/v1",
+                    "--completion-protocol",
+                    "chat_completions",
+                    "--completion-max-tokens",
+                    "256",
+                    "--output-cost-mode",
+                    "trace_target_output",
+                    "--executor",
+                    "ray_actor",
+                    "--actor-workers-per-endpoint",
+                    "1",
+                    "--submission-granularity",
+                    "request",
+                    "--endpoint-routing",
+                    "manifest_pinned",
+                ]
+            )
+
+            row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["request_manifest_path"], str(manifest_path))
+        self.assertEqual(row["request_manifest_sha256"], metadata.sha256)
+        self.assertEqual(row["request_manifest_rows"], 2)
+        self.assertEqual(row["request_manifest_validated_rows"], 0)
+        self.assertEqual(
+            row["request_manifest_validation_status"],
+            "not_executed",
+        )
 
     def test_single_run_mode_selects_exact_phase_and_repeat(self) -> None:
         args = profile.parse_args(
