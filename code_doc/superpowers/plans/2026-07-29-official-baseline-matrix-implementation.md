@@ -937,7 +937,7 @@ git commit -m "feat: add oceanbase ai baseline"
   - `normalize-vllm-bench`
   - `validate-gate`
 
-- [ ] **Step 1: Write failing CLI dry-run tests**
+- [x] **Step 1: Write failing CLI dry-run tests**
 
 ```python
 def test_run_shard_dry_run_is_side_effect_free(self) -> None:
@@ -966,7 +966,7 @@ def test_run_shard_dry_run_is_side_effect_free(self) -> None:
     self.assertFalse(self.output_dir.exists())
 ```
 
-- [ ] **Step 2: Run and witness RED**
+- [x] **Step 2: Run and witness RED**
 
 Run:
 
@@ -976,7 +976,7 @@ Run:
 
 Expected: import failure because the CLI does not exist.
 
-- [ ] **Step 3: Implement thin CLI dispatch**
+- [x] **Step 3: Implement thin CLI dispatch**
 
 The CLI parses and validates arguments, loads one immutable shard and dispatches
 to one adapter. It writes:
@@ -990,7 +990,7 @@ raw/
 
 using an atomic temporary-file rename. It never owns experiment-matrix policy.
 
-- [ ] **Step 4: Write failing gate tests**
+- [x] **Step 4: Write failing gate tests**
 
 ```python
 def test_gate_rejects_endpoint_work_skew_over_two_percent(self) -> None:
@@ -1006,12 +1006,12 @@ def test_gate_rejects_endpoint_work_skew_over_two_percent(self) -> None:
 Add tests for duplicate/missing/failed requests, unused endpoint, mismatched
 model/protocol/service metadata and non-empty final vLLM queues.
 
-- [ ] **Step 5: Implement fail-closed gate validation**
+- [x] **Step 5: Implement fail-closed gate validation**
 
 The validator reports every incident and returns non-zero from the CLI when any
 hard gate fails. It never deletes artifacts or retries.
 
-- [ ] **Step 6: Add gate and calibration templates**
+- [x] **Step 6: Add gate and calibration templates**
 
 Gate:
 
@@ -1031,7 +1031,7 @@ Calibration:
 - project static capacity curve;
 - project token-work recheck around 65,536.
 
-- [ ] **Step 7: Run focused, full, lint and compile checks**
+- [x] **Step 7: Run focused, full, lint and compile checks**
 
 Run:
 

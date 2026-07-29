@@ -746,3 +746,44 @@ credit flags. The runner owns them so concurrent jobs cannot race schema setup,
 append to one CSV, or silently connect to different Ray clusters. Use the full
 startup, gate, resume, evidence-preservation, and cleanup procedure in
 `deploy/autodl/README.md`.
+
+## 2026-07-29 同条件官方 baseline 入口
+
+`run_official_baseline.py` 为同条件 baseline 提供薄执行入口。它不决定实验
+矩阵，只执行已经固定的 manifest shard，并把不同实现统一到
+`requests.csv + summary.json`：
+
+- `bounded_http`：无 Daft/Ray 的强 AsyncIO 因果对照；
+- `vllm_bench`：官方 serving ceiling，先保存详细原始结果，再显式归一化；
+- `daft_native` / `daft_ray`：官方 `daft.functions.prompt()`；
+- `ray_data_http`：官方 Ray Data HTTP Processor；
+- `oceanbase`：仅在 OceanBase CE 能力门禁通过后启用。
+
+所有 arm 使用一行一个完整 Chat Completions 请求、`temperature=0`、
+相同模型和相同输出上限。两张卡先通过不可变 manifest 做
+largest-work-first 固定分片；执行器不得自行重新洗牌。示例：
+
+```bash
+python code/scripts/run_official_baseline.py run-shard \
+  --adapter bounded_http \
+  --manifest /path/to/manifest.jsonl \
+  --endpoint-index 0 \
+  --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
+  --model qwen2.5-1.5b \
+  --concurrency 32 \
+  --output-dir /path/to/fresh-output/endpoint-0
+```
+
+`--dry-run` 不创建输出目录。正式运行拒绝覆盖已有目录。每个 cell 的两个
+endpoint shard 都完成后，用 `validate-gate` 合并两份 summary 和 request
+CSV；任一 exactly-once、预测 work 偏斜、endpoint 未使用、服务元数据不一致、
+worker failure 或 vLLM 最终队列非空都会 fail closed。
+
+配置边界见：
+
+- `deploy/autodl/dual_gpu_official_baseline_gate.example.json`
+- `deploy/autodl/dual_gpu_official_baseline_calibration.example.json`
+- `experiments/plans/database_ai_operator_baseline_matrix_20260729.md`
+
+模板是预注册规格，不是允许远端临时拼接 formal 命令的替代品。64 行 gate
+通过前不得启动 calibration；calibration 通过前不得启动 2,048 held-out。

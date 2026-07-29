@@ -1027,3 +1027,44 @@ Formal dual-endpoint runs use different model keys and source/result tables for
 each endpoint shard. They are forbidden if the installed CE image lacks the AI
 Function service; do not replace a failed OceanBase cell with a custom Python
 HTTP loop and label it OceanBase.
+
+## Official baseline 双 GPU gate（2026-07-29）
+
+该 gate 使用
+`deploy/autodl/dual_gpu_official_baseline_gate.example.json`，目的只是证明
+同一份 64 行 Chat Completions manifest 能由两张卡上的官方/强对照适配器
+正确执行，不产生性能结论。calibration 规格在
+`dual_gpu_official_baseline_calibration.example.json`；gate 未通过禁止运行。
+
+开机后仍先完整执行 §10.5。随后按本节顺序操作：
+
+1. 只读检查 scenario/shared/baseline runner、`.runner-lease.json`、Ray
+   workload、两个 endpoint 的 `/health` 与 `/metrics`、GPU 和远端 git 状态。
+   任一 runner、租约或非空 vLLM running/waiting 存在时不启动。
+2. 只在 checkout idle 且没有 tracked-file 冲突时 `git pull --ff-only`；
+   所有未跟踪结果原样保留。
+3. 在 base conda 环境先检查 `httpx/openai/pandas/aiohttp/pymysql` import，
+   仅安装缺失的项目声明依赖。Daft Ray 与 Ray Data 必须显式连接同一个已有
+   Ray address，不能各自隐式创建 cluster。
+4. 从正式 workload 导出 64 行 immutable manifest；hash、行数、模型、
+   Chat protocol、temperature、输出上限和服务启动参数写入 gate 证据。
+   两 endpoint 采用 manifest 中固定分片，不由 adapter 再路由。
+5. 每个 core cell 只运行一次，两个 endpoint shard 同时启动；输出写到
+   `experiments/results/dual_gpu_official_baseline_gate_<unique-id>/` 下的独立
+   cell/shard 目录。目录已存在即停止，禁止覆盖或 resume 成新 gate。
+6. vLLM Bench 必须保存 `--save-detailed` 原始 JSON，再运行
+   `normalize-vllm-bench`；其它 adapter 直接写共同 request schema。
+7. 每个 cell 运行 `validate-gate`。必须满足 64/64 exactly-once、0 failed、
+   两 endpoint 均使用、预测 work skew ≤2%、0 worker failure、相同服务
+   元数据且最终 running/waiting 均为 0。
+
+`project_static` 与 `project_token_work` 仍由现有 profiler/scenario runner
+运行并保留完整 request/submission/resource trace；本节薄 CLI 不复制项目
+调度实现。它们必须使用同一 manifest 对应的数据库行与相同 Chat protocol。
+如果尚未提供无损的 manifest-to-profiler 映射，就将这两个 cell 标记为
+`blocked`，不得改用相似随机 workload 代替。
+
+OceanBase 是独立可选 capability gate。缺少 CE AI Function service 时保存
+发现证据并标记 unsupported；核心 gate 仍可继续。核心 gate 通过后也必须先
+停止并分析 request-body 等价性、真实 HTTP request 数、Daft/Ray Data 的一行
+一请求语义和原始 vLLM Bench schema，不能自动启动 calibration 或 formal。

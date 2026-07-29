@@ -680,7 +680,7 @@ def _run_locked(
                     raise RuntimeError(
                         "completed record conflicts with failure evidence"
                     )
-                record = _load_group_record(
+                _load_group_record(
                     record_path,
                     config,
                     scenario,
@@ -697,7 +697,7 @@ def _run_locked(
                     options.metrics_urls,
                     options.idle_timeout_s,
                 )
-                record = _run_group(
+                _run_group(
                     options,
                     config,
                     scenario,

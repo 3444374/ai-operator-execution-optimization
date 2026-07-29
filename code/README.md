@@ -429,3 +429,19 @@ Daft organizer dry-run:
 - PostgreSQL 18.3 内部验证平台；
 - 普通 PostgreSQL + pgvector 同构预演替身；
 - 其他开源数据库 AI 算子平台。
+
+## 同条件 baseline 模块
+
+`code/src/baselines/` 把现有系统对照与本项目实现分离成可审计适配层：
+
+- `contracts.py` / `manifests.py` 固定请求语义、顺序、hash 与 endpoint 分片；
+- `async_http.py` / `vllm_bench.py` 提供无 Daft/Ray 对照和 serving ceiling；
+- `official_runtime.py` 对接 Daft Native/Ray 与 Ray Data 官方接口；
+- `oceanbase.py` 对接原生 `AI_COMPLETE`，不以 Python HTTP 模拟产品算子；
+- `results.py` / `gate.py` 统一 exactly-once、延迟、吞吐和 fail-closed 门禁；
+- `cli.py` 只做 shard dispatch、原始证据保存和格式归一化。
+
+该模块的目标不是让 baseline 共享本项目调度逻辑，而是共享同一个不可变
+Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属于数据库
+算子；bounded HTTP 是强因果对照，不冒充已有产品；OceanBase 缺少 AI Function
+能力时记为 capability failure，不阻塞 bounded HTTP 与官方 runtime 主矩阵。

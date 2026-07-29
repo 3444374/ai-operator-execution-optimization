@@ -2489,3 +2489,20 @@
   `experiments/plans/experiment_status_and_gaps.md`、`code/INFRA_STATUS.md`、
   `research/existing_ai_operator_execution_chains.md` 与 `PROJECT_INDEX.md`。
   按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 同条件 baseline 执行基础设施
+
+- 实现统一 Chat Completions 请求协议，同时保留旧 Completions 默认路径供历史
+  profiler 使用；新 baseline 全部固定一行一个完整请求、`temperature=0`。
+- 新增不可变 manifest、canonical hash、largest-work-first 双 endpoint 固定
+  分片、共同 request/result schema、exactly-once 与吞吐/延迟汇总。
+- 新增 vLLM Bench、bounded AsyncIO、Daft `prompt()` Native/Ray、Ray Data
+  HTTP Processor 和 OceanBase `AI_COMPLETE` 适配器。OceanBase 仍为可选产品
+  capability gate，不替代无 Daft/Ray 的 bounded HTTP 因果对照。
+- 新增 `run_official_baseline.py` 薄 CLI、64 行 gate 与 calibration 规格；
+  gate 对 endpoint work skew、请求完整性、服务元数据、worker failure 和最终
+  vLLM 队列 fail closed。交叉审计修正了一个会把 8000/8001 地址差异误判成
+  服务配置不一致的指纹问题，并增加回归测试。
+- 本地代码/契约完成不等于远端性能 baseline 已建立。下一步仅允许在全新目录
+  运行一次真实双 GPU gate；通过后停止分析，不能自动进入 calibration/formal。
+- 按用户要求不执行 Wiki 同步。

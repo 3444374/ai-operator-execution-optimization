@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dual_gpu_official_baseline_calibration",
+  "formal": false,
+  "requires_passing_gate": true,
+  "workload_rows": [
+    32,
+    64,
+    128,
+    256
+  ],
+  "held_out_rows": 2048,
+  "grids": {
+    "vllm_bench": {
+      "concurrency_per_endpoint": [
+        16,
+        32,
+        64,
+        128,
+        256
+      ]
+    },
+    "bounded_http": {
+      "concurrency_per_endpoint": [
+        16,
+        32,
+        64,
+        128,
+        256
+      ]
+    },
+    "daft_native": {
+      "partition_count": [
+        1,
+        2,
+        4
+      ]
+    },
+    "daft_ray": {
+      "partition_count": [
+        2,
+        4,
+        8
+      ],
+      "ray_address": "auto"
+    },
+    "ray_data_http": {
+      "batch_size": [
+        1,
+        16,
+        32,
+        64
+      ],
+      "concurrency": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32
+      ],
+      "ray_address": "auto"
+    },
+    "project_static": {
+      "max_inflight_per_endpoint": [
+        16,
+        32,
+        64,
+        128,
+        256
+      ]
+    },
+    "project_token_work": {
+      "max_active_work_per_endpoint": [
+        49152,
+        65536,
+        81920
+      ]
+    }
+  },
+  "selection_rule": {
+    "primary": "minimum_time_to_95pct_vllm_bench_ceiling",
+    "secondary": [
+      "minimum_ramp_regret",
+      "minimum_saturating_active_work",
+      "p99_non_regression",
+      "zero_incidents"
+    ],
+    "formal_repeats_after_calibration": 3
+  }
+}

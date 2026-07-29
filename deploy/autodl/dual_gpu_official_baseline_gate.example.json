@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dual_gpu_official_baseline_gate",
+  "formal": false,
+  "rows_total": 64,
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "model": "qwen2.5-1.5b",
+  "completion_protocol": "chat_completions",
+  "temperature": 0.0,
+  "manifest": "/root/autodl-tmp/gates/official_baseline_gate_manifest.jsonl",
+  "output_root": "/root/autodl-tmp/ai-operator/experiments/results/dual_gpu_official_baseline_gate_REPLACE_ME",
+  "cells": [
+    {
+      "id": "vllm_bench",
+      "adapter": "vllm_bench",
+      "concurrency_per_endpoint": 32
+    },
+    {
+      "id": "bounded_http",
+      "adapter": "bounded_http",
+      "concurrency_per_endpoint": 32
+    },
+    {
+      "id": "daft_native",
+      "adapter": "daft_native",
+      "concurrency_per_endpoint": 1
+    },
+    {
+      "id": "daft_ray",
+      "adapter": "daft_ray",
+      "ray_address": "auto",
+      "concurrency_per_endpoint": 1
+    },
+    {
+      "id": "ray_data_http",
+      "adapter": "ray_data_http",
+      "ray_address": "auto",
+      "batch_size": 16,
+      "concurrency_per_endpoint": 4
+    },
+    {
+      "id": "project_static",
+      "adapter": "project_profiler",
+      "submission_granularity": "request",
+      "scheduling_policy": "static",
+      "admission_scope": "per_endpoint"
+    },
+    {
+      "id": "project_token_work",
+      "adapter": "project_profiler",
+      "submission_granularity": "request",
+      "scheduling_policy": "static",
+      "admission_scope": "per_endpoint",
+      "max_active_work_per_endpoint": 65536
+    }
+  ],
+  "optional_fatal_flaw_cells": [
+    {
+      "id": "oceanbase_ai_complete_one_row",
+      "adapter": "oceanbase",
+      "rows_total": 1,
+      "required_before_oceanbase_formal": true
+    }
+  ],
+  "hard_gates": {
+    "exactly_once": true,
+    "failed_rows": 0,
+    "worker_failures": 0,
+    "both_endpoints_used": true,
+    "endpoint_predicted_work_skew_max": 0.02,
+    "vllm_running_final": 0,
+    "vllm_waiting_final": 0,
+    "same_model": true,
+    "same_protocol": true,
+    "same_service_config": true
+  }
+}

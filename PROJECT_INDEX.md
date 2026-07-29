@@ -239,6 +239,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/estimate_operator_cost.py` | Reproducible profile-CSV cost-estimation CLI | Generate model schema, coefficients, splits, and held-out metrics |
 | `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `code/scripts/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
+| `code/scripts/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
 | `code/src/shared_vllm_experiment.py` | Shared-vLLM 编排核心 | 配置校验、三臂 credit 语义、并发执行、exactly-once 与公平性汇总 |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |
@@ -342,6 +343,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_shared_vllm_gate.example.json` | Shared-vLLM 双 GPU 最小门禁模板 | 2 job × independent/partition/shared-DRR，各 64 行 |
 | `deploy/autodl/dual_gpu_shared_vllm_formal.example.json` | Shared-vLLM 1/2/4-job 正式模板 | 三种 credit 策略，1 warmup + 3 repeats |
 | `deploy/autodl/dual_gpu_submission_policy.example.json` | active-work、least-work routing、动态 token budget 与 adaptive flush 的可组合消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
+| `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 官方/强 baseline 功能门禁规格 | calibration 前验证 Chat 请求等价、exactly-once、endpoint 分片、空队列与 adapter 能力 |
+| `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 同条件 baseline 独立标定网格 | gate 通过后标定 direct/Daft/Ray Data/project 容量；不得直接当作 formal |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |
 
