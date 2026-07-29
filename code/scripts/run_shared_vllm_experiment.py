@@ -58,10 +58,10 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
     if args.recover_stale_lease and not args.resume:
         parser.error("--recover-stale-lease requires --resume")
     return RunnerOptions(
-        config_path=args.config,
-        profiler_path=args.profiler,
-        python_executable=args.python_executable,
-        output_dir=args.output_dir,
+        config_path=args.config.resolve(),
+        profiler_path=args.profiler.resolve(),
+        python_executable=args.python_executable.resolve(),
+        output_dir=args.output_dir.resolve(),
         health_url=args.health_url,
         metrics_urls=metrics_urls,
         ray_address=args.ray_address,

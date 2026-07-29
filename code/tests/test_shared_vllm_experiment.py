@@ -12,6 +12,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
+from scripts.run_shared_vllm_experiment import parse_args  # noqa: E402
 from src.shared_vllm_experiment import (  # noqa: E402
     GroupRunIdentity,
     RunnerOptions,
@@ -36,6 +37,38 @@ from src.shared_vllm_experiment import (  # noqa: E402
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_cli_resolves_child_process_paths_before_changing_cwd(self) -> None:
+        root = Path.cwd()
+        options = parse_args(
+            [
+                "--config",
+                "config.json",
+                "--profiler",
+                "code/scripts/profile.py",
+                "--python-executable",
+                "bin/python",
+                "--output-dir",
+                "results/gate",
+                "--health-url",
+                "http://health",
+                "--metrics-urls",
+                "http://gpu0/metrics,http://gpu1/metrics",
+                "--ray-address",
+                "127.0.0.1:6380",
+            ]
+        )
+
+        self.assertEqual(options.config_path, root / "config.json")
+        self.assertEqual(
+            options.profiler_path,
+            root / "code" / "scripts" / "profile.py",
+        )
+        self.assertEqual(
+            options.python_executable,
+            root / "bin" / "python",
+        )
+        self.assertEqual(options.output_dir, root / "results" / "gate")
+
     def test_config_expands_environment_and_validates_scenarios(self) -> None:
         payload = self._config_payload(
             common_args=[

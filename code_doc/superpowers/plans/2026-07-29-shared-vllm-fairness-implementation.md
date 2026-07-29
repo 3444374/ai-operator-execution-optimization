@@ -138,6 +138,20 @@ Steps:
    monitor it; never launch a duplicate.
 9. Start the formal matrix only if every §13.4 gate condition passes.
 
+Remote progress on 2026-07-29:
+
+- AutoDL dependency-complete suite passed 433/433 tests; both templates and
+  `compileall` passed.
+- The first fresh gate directory failed before workload execution because a
+  relative profiler path was interpreted from the runner's `code/` child cwd.
+  All failure evidence remains in
+  `experiments/results/dual_gpu_shared_vllm_gate_20260729_1047/`.
+- A failing CLI regression test was added first. The CLI now resolves every
+  filesystem argument before child cwd changes; 142 related tests pass.
+- Publish this fix, fast-forward the idle remote checkout, rerun the full
+  remote suite, and use a second brand-new gate directory. Do not resume or
+  reuse the failed directory.
+
 ## Stop conditions
 
 - Do not repair a failed gate by deleting its result directory or lease.

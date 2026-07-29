@@ -2353,3 +2353,26 @@
 - 当前仍没有新的 Shared-vLLM GPU 性能结果；真实双 GPU gate 尚未启动，不能
   声称 shared DRR 的公平性、MFU 或性能收益。
 - 用户明确要求本轮不再同步 Wiki；项目文档仍作为唯一事实来源维护。
+
+## 2026-07-29 Shared-vLLM 远端门禁首次启动失败与路径修复
+
+- AutoDL 主 checkout 在确认无 runner、无租约、双 vLLM endpoint 空闲且 tracked
+  worktree 干净后，快进到 `c39f569782b86713ac01a5b079ff8900e11ed674`。
+  与 incoming commit 冲突的两份未跟踪 SLO-EWMA compact 结果经哈希核对：
+  `manifest.json` 完全相同，`runs.csv` 仅 CRLF/LF 不同；原始字节副本保存在
+  `/root/autodl-tmp/result-backups/premerge_c39f569_dual_gpu_slo_ewma_flush_formal_20260729/`，
+  其余 929 个未跟踪产物未修改。
+- 远端依赖完整环境执行 `code/tests`：433 项全部通过；`compileall` 和 gate/formal
+  JSON 解析通过。随后按固定地址 `127.0.0.1:6380` 启动唯一 Ray head，资源为
+  32 CPU / 2 GPU，无 pending demand 或 node failure。
+- 首次 gate 输出
+  `experiments/results/dual_gpu_shared_vllm_gate_20260729_1047/` 在第一组两个
+  profiler 子进程均以退出码 2 失败；目录、manifest、commands、failure
+  evidence 和 stderr 全部保留，未复用或删除。根因不是策略或 GPU：runner
+  固定用 `code/` 作为 child cwd，但 CLI 保留相对
+  `code/scripts/postgres_ai_operator_profile.py`，导致 child 尝试打开
+  `code/code/scripts/postgres_ai_operator_profile.py`。
+- 测试先行新增 CLI 路径回归用例，确认修复前失败；随后让 shared-vLLM CLI
+  在切换 child cwd 前把 config、profiler、Python 和 output 路径解析为绝对
+  路径。相关 142 项测试全部通过。修复提交同步后必须使用全新 gate 输出目录；
+  旧失败目录不得恢复为正式结果。
