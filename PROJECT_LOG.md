@@ -2376,3 +2376,16 @@
   在切换 child cwd 前把 config、profiler、Python 和 output 路径解析为绝对
   路径。相关 142 项测试全部通过。修复提交同步后必须使用全新 gate 输出目录；
   旧失败目录不得恢复为正式结果。
+- 路径修复提交 `96a24a85612b872a4a2cc5e6a53d442d17c21425` 同步后，
+  远端完整测试增至 434 项并全部通过。第二个全新 gate
+  `experiments/results/dual_gpu_shared_vllm_gate_20260729_1056/` 已进入真实
+  双 GPU 执行：两 job 子进程退出码均为 0，每 job 64/64 request trace 均为
+  profiler schema 的 `status=completed`、空 `error_type`，GPU0/GPU1 均达到
+  100% utilization。
+- 第二次 gate 仍被 runner 错误标为失败：新 validator 把 request trace 成功
+  状态写成了 `ok`，而 `ok` 只属于 runs summary；request trace 的正式成功值是
+  `completed`。该失败目录及 128 条完整 trace 保留，不作为正式 gate 结果。
+  测试先行新增 schema 契约用例，集中用
+  `_request_trace_succeeded` 严格接受 `completed + empty error_type`，并继续
+  拒绝 `ok` 或带错误类型的行；相关 143 项测试全部通过。修复发布后仍必须使用
+  第三个全新 gate 目录，不得复用两次失败现场。

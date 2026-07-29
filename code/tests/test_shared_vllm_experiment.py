@@ -13,6 +13,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts.run_shared_vllm_experiment import parse_args  # noqa: E402
+from src import shared_vllm_experiment as shared_vllm  # noqa: E402
 from src.shared_vllm_experiment import (  # noqa: E402
     GroupRunIdentity,
     RunnerOptions,
@@ -37,6 +38,23 @@ from src.shared_vllm_experiment import (  # noqa: E402
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_request_trace_success_matches_profiler_schema(self) -> None:
+        self.assertTrue(
+            shared_vllm._request_trace_succeeded(
+                {"status": "completed", "error_type": ""}
+            )
+        )
+        self.assertFalse(
+            shared_vllm._request_trace_succeeded(
+                {"status": "ok", "error_type": ""}
+            )
+        )
+        self.assertFalse(
+            shared_vllm._request_trace_succeeded(
+                {"status": "completed", "error_type": "RuntimeError"}
+            )
+        )
+
     def test_cli_resolves_child_process_paths_before_changing_cwd(self) -> None:
         root = Path.cwd()
         options = parse_args(

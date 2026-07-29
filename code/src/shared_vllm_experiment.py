@@ -1455,7 +1455,7 @@ def _validate_job_evidence(
     request_ids = [row.get("request_id", "") for row in request_rows]
     if len(set(request_ids)) != len(request_ids) or "" in request_ids:
         raise RuntimeError(f"job {job_index} has duplicate request IDs")
-    if any(row.get("status") != "ok" for row in request_rows):
+    if any(not _request_trace_succeeded(row) for row in request_rows):
         raise RuntimeError(f"job {job_index} contains failed requests")
     arrival = [float(row["arrival_epoch_s"]) for row in request_rows]
     completion = [float(row["completion_epoch_s"]) for row in request_rows]
@@ -1506,6 +1506,13 @@ def _validate_job_evidence(
         ),
         "replay_actual_submit_start_epoch_s": min(submission_starts),
     }
+
+
+def _request_trace_succeeded(row: dict[str, str]) -> bool:
+    return (
+        row.get("status", "").strip().lower() == "completed"
+        and not row.get("error_type", "").strip()
+    )
 
 
 def _validate_final_credit(

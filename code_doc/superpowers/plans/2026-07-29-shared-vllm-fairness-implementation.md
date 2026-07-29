@@ -151,6 +151,13 @@ Remote progress on 2026-07-29:
 - Publish this fix, fast-forward the idle remote checkout, rerun the full
   remote suite, and use a second brand-new gate directory. Do not resume or
   reuse the failed directory.
+- Commit `96a24a8` passed 434/434 remote tests and reached real dual-GPU
+  execution in the second fresh directory. Both child processes exited zero
+  and all 128 request rows were `completed` with empty `error_type`, but the
+  group validator incorrectly expected the runs-summary value `ok`.
+- A second failing contract test now distinguishes the two schemas. Request
+  evidence accepts only `completed` plus an empty error type; 143 related
+  tests pass. Publish this fix and use a third fresh gate directory.
 
 ## Stop conditions
 
