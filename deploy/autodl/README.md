@@ -1072,3 +1072,50 @@ OceanBase 是独立可选 capability gate。缺少 CE AI Function service 时保
 发现证据并标记 unsupported；核心 gate 仍可继续。核心 gate 通过后也必须先
 停止并分析 request-body 等价性、真实 HTTP request 数、Daft/Ray Data 的一行
 一请求语义和原始 vLLM Bench schema，不能自动启动 calibration 或 formal。
+
+### Official baseline 部署方案速查
+
+部署与实验按以下状态机执行，不能跨级：
+
+```text
+main 已通过本地全量测试并推送
+  -> 远端只读 idle/git/lease/endpoint/Ray/GPU/PG 检查
+  -> 安全 fast-forward（保留未跟踪结果）
+  -> base/vLLM 两套 Python API 与版本检查
+  -> 只补项目声明的缺失依赖
+  -> 64 行 immutable Chat manifest + 固定双 endpoint 分片
+  -> 每个 core adapter 的单次双 endpoint gate
+  -> exactly-once/元数据/work skew/空队列门禁
+  -> 停止并分析
+  -> 独立 calibration
+  -> 32/64/128/256 transient + 2,048 held-out formal
+```
+
+环境职责固定如下：
+
+| 环境 | 用途 | 禁止 |
+|---|---|---|
+| `/root/miniconda3/bin/python` | manifest、bounded HTTP、Daft、Ray Data、项目 profiler、门禁 | 启动 vLLM |
+| `/root/autodl-tmp/venvs/vllm-4090/bin/python` | 两个 vLLM endpoint 与 `vllm.benchmarks.serve` | 运行 Daft/Ray/project driver |
+| 同一个现有 Ray address | Daft Ray、Ray Data、项目 Ray 路径 | 每个 adapter 隐式新建不同 cluster |
+
+核心顺序是 `vLLM Bench -> bounded HTTP -> Daft Native -> Daft Ray ->
+Ray Data HTTP`，项目 `static/token-work` 通过已有 profiler 运行。OceanBase
+只在 CE AI Function capability gate 通过后加入。每个 cell 的两份 endpoint
+输出必须放独立新目录；任一 adapter 失败时保留 `raw/`、`requests.csv`、
+failed `summary.json` 和外层日志，不自动重试。
+
+### 已验证部署问题与解决方案
+
+| 现象 | 根因与判定证据 | 处理方式 |
+|---|---|---|
+| `git merge --ff-only` 报 untracked files would be overwritten | 远端历史正式结果仍是未跟踪文件，而新 `main` 已跟踪同路径 | 先逐文件比较工作副本与 `origin/main:path` 的 SHA-256；不一致时再做内容 diff。把原始文件逐个移动到 `/root/autodl-tmp/premerge-backups/<unique-id>/`，复核移动前后 hash 后再 fast-forward。禁止 `git clean`、直接删除或覆盖整个结果目录。 |
+| `group_runs.csv` SHA 不同，但大小只差每行 1 字节 | 远端文件为 CRLF；`tr -d '\r'` 后与 Git 版本 SHA 完全相同。本次 37 行恰好多 37 字节 | 仍保留原始 CRLF 备份；以规范化 hash 证明数值内容一致，再让 Git 恢复受控 LF 版本。不能仅因文件大小接近就假定相同。 |
+| `from ray.data.llm import ...` 报 `No module named starlette` | Ray 2.56.1 的 `ray.data.llm` 间接导入 Ray Serve；包元数据明确把 FastAPI/Starlette/gRPC 等列在 `serve` extra | 项目声明 `ray[data,serve]`。远端使用当前 Ray 的精确版本安装，如 `ray[data,serve]==2.56.1`；不要只装 `starlette`，否则仍可能逐个暴露传递依赖。 |
+| vLLM Bench 原始结果无法按旧字段解析 | vLLM 0.25.1 的详细结果使用 `input_lens`、`output_lens`、`e2els`，没有 `request_latencies` | 启动前用安装环境源码/API 检查字段；归一化器接受 `e2els`。必须保留 `--save-detailed` 原始 JSON，字段不匹配时停止并加回归测试。 |
+| gate CLI 在失败验证前未留下失败请求行 | 先 summarize/validate，异常发生在写 `requests.csv` 之前 | 现在先原子写 request rows，再验证；失败时写 `status=failed` summary 并保持非零退出。不得用重试覆盖失败现场。 |
+| 8000/8001 被误判为服务配置不一致 | 初版 service fingerprint 把 endpoint URL/端口也纳入 hash | 服务指纹只比较模型、协议、temperature 等等价配置；endpoint 地址作为独立拓扑字段审计。实际 vLLM 启动参数仍需从两个进程命令和 service metadata 单独核对。 |
+
+本次远端原始冲突备份位置为
+`/root/autodl-tmp/premerge-backups/20260729_shared_vllm_results_before_7267324/`。
+它是事故审计副本，不是新的 formal 结果目录。

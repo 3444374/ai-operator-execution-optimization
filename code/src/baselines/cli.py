@@ -144,6 +144,7 @@ def _run_adapter(
                 max_tokens=requests[0].max_output_tokens,
                 batch_size=args.batch_size,
                 concurrency=args.concurrency,
+                ray_address=args.ray_address,
             ),
         )
     if args.adapter == "oceanbase":
@@ -194,6 +195,13 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
     if not requests:
         raise ValueError("selected endpoint shard is empty")
     _chat_base_url(args.endpoint_url)
+    if (
+        args.adapter in {"daft_ray", "ray_data_http"}
+        and not args.ray_address
+    ):
+        raise ValueError(
+            f"{args.adapter} requires an explicit --ray-address"
+        )
     base_summary: dict[str, object] = {
         "adapter": args.adapter,
         "status": "dry_run" if args.dry_run else "running",

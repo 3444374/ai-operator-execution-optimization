@@ -31,6 +31,7 @@ class RayDataHttpConfig:
     max_tokens: int
     batch_size: int
     concurrency: int
+    ray_address: str | None = None
 
 
 def daft_prompt_options(
@@ -233,6 +234,11 @@ def run_ray_data_http(
     if config.concurrency <= 0:
         raise ValueError("concurrency must be positive")
     runtime = modules or _load_ray_data_modules()
+    if config.ray_address is not None:
+        runtime.ray.init(
+            address=config.ray_address,
+            ignore_reinit_error=True,
+        )
     headers = (
         {"Authorization": f"Bearer {config.api_key}"}
         if config.api_key

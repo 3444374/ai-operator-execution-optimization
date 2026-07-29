@@ -31,13 +31,13 @@
     {
       "id": "daft_ray",
       "adapter": "daft_ray",
-      "ray_address": "auto",
+      "ray_address": "127.0.0.1:6380",
       "concurrency_per_endpoint": 1
     },
     {
       "id": "ray_data_http",
       "adapter": "ray_data_http",
-      "ray_address": "auto",
+      "ray_address": "127.0.0.1:6380",
       "batch_size": 16,
       "concurrency_per_endpoint": 4
     },

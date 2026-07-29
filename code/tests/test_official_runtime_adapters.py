@@ -215,6 +215,12 @@ class OfficialRuntimeAdapterTests(unittest.TestCase):
             def from_items(self, rows):
                 return FakeDataset(rows)
 
+        class FakeRay:
+            data = FakeData()
+
+            def init(self, **options):
+                calls["ray_init"] = options
+
         def build_processor(_config, *, preprocess, postprocess):
             def processor(dataset):
                 rows = []
@@ -248,14 +254,22 @@ class OfficialRuntimeAdapterTests(unittest.TestCase):
                 max_tokens=128,
                 batch_size=16,
                 concurrency=4,
+                ray_address="127.0.0.1:6380",
             ),
             modules=SimpleNamespace(
-                ray=SimpleNamespace(data=FakeData()),
+                ray=FakeRay(),
                 config_class=FakeConfig,
                 build_processor=build_processor,
             ),
         )
 
+        self.assertEqual(
+            calls["ray_init"],
+            {
+                "address": "127.0.0.1:6380",
+                "ignore_reinit_error": True,
+            },
+        )
         self.assertEqual(calls["config"]["max_retries"], 0)
         self.assertEqual(calls["config"]["batch_size"], 16)
         self.assertEqual(calls["config"]["concurrency"], 4)

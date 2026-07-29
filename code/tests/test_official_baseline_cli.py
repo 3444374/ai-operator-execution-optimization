@@ -89,6 +89,40 @@ class OfficialBaselineCliTests(unittest.TestCase):
             )
             self.assertFalse(output_dir.exists())
 
+    def test_ray_runtime_dry_run_requires_explicit_cluster_address(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            self._write_balanced_manifest(manifest)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "explicit --ray-address",
+            ):
+                run_cli(
+                    [
+                        "run-shard",
+                        "--adapter",
+                        "ray_data_http",
+                        "--manifest",
+                        str(manifest),
+                        "--endpoint-index",
+                        "0",
+                        "--endpoint-url",
+                        (
+                            "http://127.0.0.1:8000"
+                            "/v1/chat/completions"
+                        ),
+                        "--model",
+                        "qwen",
+                        "--output-dir",
+                        str(root / "output"),
+                        "--dry-run",
+                    ]
+                )
+
     def test_service_fingerprint_ignores_equivalent_endpoint_address(
         self,
     ) -> None:

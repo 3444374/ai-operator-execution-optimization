@@ -42,7 +42,7 @@
         4,
         8
       ],
-      "ray_address": "auto"
+      "ray_address": "127.0.0.1:6380"
     },
     "ray_data_http": {
       "batch_size": [
@@ -59,7 +59,7 @@
         16,
         32
       ],
-      "ray_address": "auto"
+      "ray_address": "127.0.0.1:6380"
     },
     "project_static": {
       "max_inflight_per_endpoint": [

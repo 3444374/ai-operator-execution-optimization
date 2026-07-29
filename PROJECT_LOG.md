@@ -2509,4 +2509,14 @@
   仅声明 pandas/aiohttp 会在干净 base 环境报缺少 `starlette`。修正项目依赖
   为 `ray[data,serve]`，并增加 requirements 契约测试；远端必须按现有 Ray
   相同版本补官方 extras，不能以手工安装单个传递依赖掩盖契约缺口。
+- 按用户要求把 official baseline 的部署状态机、base/vLLM 环境职责、core
+  adapter 顺序、结果停止条件与已遇事故集中写入 `deploy/autodl/README.md`。
+  已记录远端未跟踪结果阻止快进、CRLF 规范化 hash、安全仓库外备份、
+  Ray Serve extra、vLLM Bench 0.25.1 详细字段、失败证据先落盘和 endpoint
+  指纹语义，供新对话直接复用。
+- manifest 准备审计发现 Daft Ray 已接受显式 Ray address，而 Ray Data HTTP
+  adapter 未调用 `ray.init(address=...)`，新进程可能隐式创建另一 cluster。
+  测试先行增加 runtime 与 CLI 契约；Ray Data 现在显式连接同一 address，
+  Daft Ray/Ray Data 缺少 `--ray-address` 时连 dry-run 也 fail closed，双 GPU
+  gate/calibration 模板冻结为现有 `127.0.0.1:6380`。
 - 按用户要求不执行 Wiki 同步。
