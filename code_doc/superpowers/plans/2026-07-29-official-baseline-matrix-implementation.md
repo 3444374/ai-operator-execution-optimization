@@ -608,7 +608,7 @@ git commit -m "feat: add direct baseline adapters"
   - `run_daft_prompt(requests, config, modules=None)`
   - `run_ray_data_http(requests, config, modules=None)`
 
-- [ ] **Step 1: Write failing Daft plan-construction tests**
+- [x] **Step 1: Write failing Daft plan-construction tests**
 
 ```python
 def test_daft_prompt_options_are_same_request_chat_semantics(self) -> None:
@@ -629,7 +629,7 @@ def test_daft_prompt_options_are_same_request_chat_semantics(self) -> None:
     )
 ```
 
-- [ ] **Step 2: Run and witness RED**
+- [x] **Step 2: Run and witness RED**
 
 Run:
 
@@ -639,7 +639,7 @@ Run:
 
 Expected: import failure because the module does not exist.
 
-- [ ] **Step 3: Implement the Daft adapter with lazy imports**
+- [x] **Step 3: Implement the Daft adapter with lazy imports**
 
 For Native:
 
@@ -656,6 +656,8 @@ daft.set_runner_ray(noop_if_initialized=True)
 Build:
 
 ```python
+from daft.ai.openai.provider import OpenAIProvider
+
 provider = OpenAIProvider(
     base_url=config.base_url,
     api_key=config.api_key or "not-needed",
@@ -684,7 +686,7 @@ rows = frame.collect().to_pylist()
 
 Reject mixed per-row output caps in one adapter invocation.
 
-- [ ] **Step 4: Write the failing Ray Data payload and semantics test**
+- [x] **Step 4: Write the failing Ray Data payload and semantics test**
 
 ```python
 def test_ray_data_preprocess_emits_one_chat_request_per_row(self) -> None:
@@ -701,7 +703,7 @@ def test_ray_data_preprocess_emits_one_chat_request_per_row(self) -> None:
     self.assertNotIn("prompt", row["payload"])
 ```
 
-- [ ] **Step 5: Implement the Ray Data adapter**
+- [x] **Step 5: Implement the Ray Data adapter**
 
 Use `HttpRequestProcessorConfig` with `max_retries=0`. `batch_size` is the Ray
 stage batch: source inspection shows `HttpRequestUDF` creates one
@@ -728,7 +730,7 @@ processor = build_processor(
 rows = processor(ray.data.from_items(items)).take_all()
 ```
 
-- [ ] **Step 6: Declare official adapter dependencies**
+- [x] **Step 6: Declare official adapter dependencies**
 
 Add:
 
@@ -741,7 +743,7 @@ aiohttp>=3.9
 to `code/requirements.txt`. Keep all imports inside adapter functions so the
 base unit suite still reports a clear optional-dependency error.
 
-- [ ] **Step 7: Run tests and commit**
+- [x] **Step 7: Run tests and commit**
 
 Run:
 
