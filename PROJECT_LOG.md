@@ -2923,3 +2923,21 @@
      ON（进程参数 + 日志 ~71% 命中率）。runner 从 env 默认填该字段、未探测 live vLLM。
      不影响有效性（cache 确实开着），待修：runner 启动时从 vLLM /metrics 或进程参数探测
      实际开关，并在 resources 增采 vLLM prefix_cache_hit_rate（本次 per-arm 命中率因此未记录）。
+
+## 2026-07-31 OceanBase B1 门禁验证：CE 有 AI_COMPLETE，但容器部署受阻
+
+- 在 `claude/oceanbase-baseline` 分支尝试 matrix §2 的 B1（OceanBase AI_COMPLETE → 双 vLLM）。
+- **门禁 #1 通过**：远端 apt 装 oceanbase-ce 4.5.0.0，observer 二进制（`T_FUN_SYS_AI_COMPLETE`、
+  全套 `DBMS_AI_SERVICE_CREATE_AI_MODEL[_ENDPOINT]`）+ seed SQL（`dbms_ai_service_*.sql`）
+  静态确证 `AI_COMPLETE`/`DBMS_AI_SERVICE` 在 **Community Edition**（非企业版独占）。
+  见 `experiments/results/oceanbase_b1_gate_20260731/README.md`。
+- **部署阻塞**：observer 在此 AutoDL 容器 init step 4/18（`clog/log_block_mgr`，errcode -9100
+  `prepare_dir_and_create_meta_ failed`）自杀（`tgkill SIGKILL`）。已修复：obd/obclient 缺失
+  → 直用 observer 二进制；`libaio1`；`memory_limit=6G`（2G 低于最小值、8192 被当 bytes）；
+  `-N` nodaemon（无 systemd PID1）。已 strace 排除 max_map_count（257 mmap 零失败）、overlayfs
+  （md0 真实盘同样）、磁盘、配置。容器 seccomp（Seccomp=2）拦 clone3（ENOSYS），但 observer 起了
+  ~20 线程，非直接死因；真因未完全定位，从容器内部不可修（seccomp/kernel 只读）。
+- 按 matrix §2：OceanBase 暂降为"工业参考/待部署"，不伪造 B1。复跑需特权容器
+  （`seccomp=unconfined`/`--privileged`）或带 systemd 的 VM；复跑时复用 `code/src/baselines/oceanbase.py`
+  （其对 DBMS_AI_SERVICE/AI_COMPLETE 的调用已确证 CE 支持）。
+- 远端保留证据：oceanbase-ce 安装 + `/root/obdata/strace{2..7}.log` + `/etc/oceanbase.cnf`。

@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-更新日期：2026-07-30
+更新日期：2026-07-31
 
 本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
 
@@ -23,7 +23,7 @@
 | 固定行 batching | `code/src/scheduling/batching.py`、profiler 与 baseline tests | `local_vllm_qwen15b_baseline/` | 真实 GPU baseline；用于和计算量感知组织方式比较。 |
 | Sequential token-budget | `code/src/scheduling/batching.py`、batching tests | baseline、joint、BFD 与 row-cap 系列 | 已重复验证；当前数据组织默认，必须同时满足 token budget 和 row cap。 |
 | Length-align | batching 实现与测试 | local baseline 早期消融 | 有真实初筛但缺独立、受控的正式重复；不能声称稳定收益。 |
-| Prefix-aware | batching 实现与语义测试 | `prefix_aware_batching_20260726/` | cache-off 的 0/30/70/100% 受控筛选无稳定收益；默认关闭，启用 prefix cache 后才值得重测。 |
+| Prefix-aware | batching 实现与语义测试 | `prefix_aware_batching_20260726/`、`prefix_cache_data_org_20260730/`、`prefix_cache_routing_req_20260730/` | cache-off 0/30/70/100% 无稳定收益；cache-on batching（within 1.2%）+ routing（-0.1%）均中性 <5% 门禁。prefix 方向收口，vLLM APC 覆盖上游 prefix 组织/路由。 |
 | BFD、output-aware、row-cap-first | batching 与 cost-mode tests | output-aware BFD、row-cap-aware packing 全系列 | 512 行有局部信号，1024 行未泛化且 SLO 明显恶化；不采用为默认，只保留可复用设计点。 |
 | Arrival replay 与 request lifecycle | lifecycle、runner 和 trace tests | `request_lifecycle_gate_20260725/` 及 flush 系列 | exactly-once、request→submission、arrival/flush/complete 时间链已闭环。 |
 | Per-endpoint active-work admission | active-work credit、least-work/least-queued routing 与 profiler tests | `dual_gpu_active_work_saturation_20260729/` | 双 4090 八档、每档三次 formal。65K 达到最大吞吐 97.80%，下一档仅 +0.92%；按预注册规则选为最小饱和点。98K→131K 吞吐持平且 P99/SLO 更差。 |
@@ -48,6 +48,9 @@
 
 | 结果目录 | 角色 | 当前状态或结论 |
 |---|---|---|
+| `oceanbase_b1_gate_20260731/` | OceanBase B1 baseline 门禁 #1 验证 + 部署阻塞 | 门禁通过（CE 4.5.0 含 `AI_COMPLETE`/`DBMS_AI_SERVICE`，静态确证）；当前 AutoDL 容器 observer init step 4/18 clog errcode -9100 自杀（seccomp 等，容器内不可修）。降为待部署，复跑需特权容器/VM。 |
+| `prefix_cache_routing_req_20260730/` | cache-on prefix-affinity routing 消融（request 粒度，3 臂） | 12/12 ok；纯 routing -0.1%、length-align +1.9%（均 <5% 门禁）。prefix 方向收口。 |
+| `prefix_cache_data_org_20260730/` | cache-on prefix-aware batching 消融（batch 粒度，3 臂）+ routing 报告交叉引用 | 12/12 ok；上游 batching 顺序 within 1.2% 中性。vLLM APC 覆盖上游 prefix 组织。 |
 | `static_credit_prompt_length_screen_20260730/` | Short/long prompt 下 request K 与 active-work 的存在性筛选 | 48/48 成功；long W65K 有稳定正信号，但 short 未绑定等价臂高方差、urllib/no-token-ID 与非 factorial 设计使正式判决阻塞。保留为机制审计，先重跑 async 等价臂 gate。 |
 | `dual_gpu_shared_vllm_formal_20260729_1135/` | 1/2/4-job independent/static/shared-DRR 核心矩阵 | 36/36、0 incident；容量安全与公平门槛通过。2-job 无收益，4-job 聚合过门槛但重复异质，需 held-out 复验。 |
 | `dual_gpu_slo_ewma_flush_formal_20260729/` | high/arrival-limited 下 fixed、queue-adaptive 与 SLO-EWMA 对照 | 24/24 成功；exactly-once 与 completion-lag 审计通过。25–50ms 控制窗口相对 5.6–17.4s P99 缺少一阶杠杆，SLO-EWMA 不晋升。 |
@@ -128,6 +131,7 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 3. 真实多 endpoint/多 GPU 的多 job 公平性、共享 request/work credit、
    work-conserving queue、路由与故障迁移。
 4. Ray task/actor 有效并发和 vLLM scheduling capacity 的分层调优。
-5. Prefix cache 开启后的 prefix-aware 独立消融。
+5. ~~Prefix cache 开启后的 prefix-aware 独立消融~~（已完成 07-30/07-31：cache-on batching + routing
+   均中性，prefix 方向收口；见 `prefix_cache_data_org_20260730/` 与 `prefix_cache_routing_req_20260730/`）。
 6. 图像 workload 的多模态泛化验证。
 7. 代价估计的独立时间段、新 workload、跨模型校准和预测区间。

@@ -58,6 +58,11 @@ OceanBase B1 的 formal 前置门禁：
 
 门禁失败时，保留失败证据并把 OceanBase 降为工业参考，不伪造等价 arm。
 
+> **2026-07-31 验证**：门禁 #1 通过——CE 4.5.0 含 `AI_COMPLETE`/`DBMS_AI_SERVICE`
+> （静态确证，见 `experiments/results/oceanbase_b1_gate_20260731/`）；但当前 AutoDL 容器
+> 无法部署 observer（init step 4/18 clog errcode -9100；容器 seccomp 拦 clone3 等，从内部不可修），
+> B1 暂降为"待部署"，不伪造等价 arm。
+
 ## 3. 第二层：现有官方框架矩阵
 
 | Arm | 链路 | 角色 |
