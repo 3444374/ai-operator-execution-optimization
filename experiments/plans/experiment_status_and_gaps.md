@@ -525,9 +525,9 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
    固定 quantum 不晋升；8192 因会退化为 batch control 未运行；
 5. SLO-aware EWMA flush 已完成正式对照且未晋升；不在同一 25–50ms 动作
    空间继续调 alpha/deadband；
-6. prefix cache-on、多模态复用，以及 shared-vLLM 4-job held-out、
+6. 多模态复用，以及 shared-vLLM 4-job held-out、
    workload mix、arrival offset、staggered idle borrowing 和 weighted
-   overlap fairness；
+   overlap fairness（prefix cache-on 已完成：batching + routing 均中性、prefix 方向收口）；
 7. 动态控制的信号选择问题——逐请求完成时间或端到端 SLO slack 可能替代
    当前 vLLM waiting 信号（不反映 Ray 侧积压），但尚未验证。
 

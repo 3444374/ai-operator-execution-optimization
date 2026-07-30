@@ -282,6 +282,8 @@ OceanBase 对本项目也有参考价值，但目前证据性质不同。当前�
 
 > OceanBase 已经有类似 Snowflake 的数据库 AI 算子，所以我们直接基于 OceanBase AI 架构继续做。
 
+> **2026-07-31 更新**：已静态确证 OceanBase CE 4.5.0 含生成式 `AI_COMPLETE` + `DBMS_AI_SERVICE`（见 `experiments/results/oceanbase_b1_gate_20260731/`），但 `AI_EMBED` / `AI_FILTER` / vectorizer worker 仍未在 CE 中观察到。上述限制对生成式算子部分解除，对 embedding/filter 类仍成立。
+
 更严谨的表述是：
 
 > Snowflake 提供了数据库 AI SQL 算子的强工业参照；OceanBase 提供了分布式数据库、列式/向量化执行和工业级写回/事务/资源管理的数据库侧参照。达梦内部平台是否存在类似 AI 算子或外部 worker，需要进一步确认。

@@ -114,6 +114,7 @@
 - BFD/row-cap-first 在**多 endpoint/多 GPU** 场景下是否会重新显示优势?当前单 GPU 单 endpoint 下 vLLM 内部调度吸收了上游碎片,但多 endpoint 时上游碎片可能直接放大。
 - Length-align + token-budget 的正式独立重复仍未做(07-19 ablation 中 length+fixed 是负结果,length+token6144 仅 ablation 一格)。
 - prefix cache 开启 + prefix-aware 的真实收益未验证(本批次只在 cache-off 下筛)。
+  【2026-07-31 已验证：cache-on batching + routing 均中性（<5% 门禁），prefix 方向收口；见 `prefix_cache_data_org_20260730/`、`prefix_cache_routing_req_20260730/`】
 
 **不能声称**:
 
