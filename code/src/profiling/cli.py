@@ -132,6 +132,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=["completions", "chat_completions"],
         default="completions",
     )
+    parser.add_argument(
+        "--completion-http-transport",
+        choices=["urllib", "httpx_async"],
+        default="urllib",
+        help=(
+            "HTTP transport used by compatible completion Ray actors. "
+            "httpx_async keeps one bounded connection pool per actor."
+        ),
+    )
     parser.add_argument("--completion-temperature", type=float)
     parser.add_argument(
         "--output-cost-mode",

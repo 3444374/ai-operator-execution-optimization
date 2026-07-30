@@ -304,6 +304,41 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(options.actor_max_concurrency, 4)
         self.assertEqual(options.num_cpus, 0.5)
 
+    def test_async_completion_transport_requires_compatible_ray_actor(
+        self,
+    ) -> None:
+        valid = profile.parse_args(
+            [
+                "--operator",
+                "ai_complete",
+                "--executor",
+                "ray_actor",
+                "--model-backend",
+                "compatible_http",
+                "--completion-http-transport",
+                "httpx_async",
+            ]
+        )
+        profile._validate_completion_observation_args(valid)
+
+        invalid = profile.parse_args(
+            [
+                "--operator",
+                "ai_complete",
+                "--executor",
+                "ray_task",
+                "--model-backend",
+                "compatible_http",
+                "--completion-http-transport",
+                "httpx_async",
+            ]
+        )
+        with self.assertRaisesRegex(
+            SystemExit,
+            "requires .* --executor ray_actor",
+        ):
+            profile._validate_completion_observation_args(invalid)
+
     def test_http_actor_definition_receives_safe_ray_options(self) -> None:
         ray = _RecordingRay()
         options = RayWorkerOptions(0.25, actor_max_concurrency=4)
@@ -3580,7 +3615,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         "http_response_body_epoch_s": 100.19,
                         "http_headers_wait_s": 0.17,
                         "http_body_read_s": 0.01,
-                    }
+                    },
+                    None,
                 ],
                 submission_events=[
                     SubmissionLifecycleEvent(
@@ -3597,7 +3633,19 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         actor_worker_id="endpoint-1:worker:3",
                         actor_worker_index=3,
                         actor_worker_pid=4321,
-                    )
+                    ),
+                    SubmissionLifecycleEvent(
+                        submission_id="9:request:13",
+                        pool_id="default",
+                        endpoint_id="endpoint-0",
+                        gpu_id="0",
+                        submit_epoch_s=100.0,
+                        completion_epoch_s=100.3,
+                        status="failed",
+                        error="RayActorError: worker unavailable",
+                        actor_worker_id="endpoint-0:worker:0",
+                        actor_worker_index=0,
+                    ),
                 ],
             )
             profile._write_resource_trace(
@@ -3623,6 +3671,12 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 resource = list(csv.DictReader(handle))
 
             self.assertEqual(submission[0]["doc_ids"], "11;12")
+            self.assertEqual(submission[1]["status"], "failed")
+            self.assertEqual(
+                submission[1]["error"],
+                "RayActorError: worker unavailable",
+            )
+            self.assertEqual(submission[1]["rows"], "0")
             self.assertEqual(submission[0]["schema_version"], "5")
             self.assertEqual(submission[0]["submission_id"], "9:request:11")
             self.assertEqual(submission[0]["planning_batch_id"], "9:batch:0")

@@ -174,18 +174,20 @@
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P0**：先完成 project profiler 的 512 行同 manifest、Chat
-   Completions、no-replay 等价性门禁和校准，比较 direct C256 hard ceiling、ours 与达到
-   同吞吐所需的 active work。2,048 行 disjoint formal 当前因源数据只有
+1. **P0**：先完成 feeding-first 双协议门禁。512 行 Chat 下 vLLM Bench
+   C256 为 11.931s/15,351 tokens/s，bounded Chat 为
+   12.569s/14,532 tokens/s，而 project 最佳已测约
+   31.227s/5,884 tokens/s；因此当前不能扩大 token-budget/动态 K/flush
+   策略网格。Chat 轨道先比较旧 `urllib`、持久 async actor dispatch 和
+   1×256/2×128/4×64 actor shape；Completions 轨道保留原 multi-prompt
+   设计，先用无 Ray bounded fixed-row multi-prompt 对照校准 HTTP packing，
+   再测 project fixed-row feeding。warmed project 达到同协议 bounded 至少
+   95% 后，才冻结最小 97%-ceiling 配置并启动策略排名。两个协议不得交叉
+   声称加速。2,048 行 disjoint formal 当前因源数据只有
    `doc_id=0..2047` 而缺 512 行；必须补独立数据并用 `source_row_offset=512`
-   导出只读 manifest，64 行 gate 通过后才启动。首次 project gate 在 HTTP
-   前暴露 trace target 未按 completion cap 裁剪；已统一为
-   `min(trace target, completion cap)`，完整测试与全新 re-gate 前不启动
-   512 校准。单次 9-cell 校准又暴露首个 full-concurrency HTTP/vLLM 冷路径：
-   理论等价 K256/W98K 相差 2.83×；现先用 actor-ready barrier、同压力
-   warm-up、HTTP headers/body timing 做 1+3 repeat 等价性门禁，通过 5%
-   阈值后才扩大矩阵。补数必须逐字段核验已有 0..2047 后 append-only。OceanBase、Daft Native/Ray
-   与 Ray Data 只在各自独立校准后进入 held-out，不能用弱默认值排名。
+   导出只读 manifest；补数必须逐字段核验已有 0..2047 后 append-only。
+   OceanBase、Daft Native/Ray 与 Ray Data 只在各自独立校准后进入 held-out，
+   不能用弱默认值排名。
 2. **P1**：Shared-vLLM 核心 1/2/4-job equal-workload 矩阵已完成；baseline
    锁定后再用 held-out repeats 确认 4-job 稳定性，并分别验证 staggered idle
    borrowing、weighted overlap fairness 和异构 workload mix。

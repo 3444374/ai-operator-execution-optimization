@@ -22,6 +22,7 @@ from .manifests import read_manifest
 CORE_ADAPTERS = (
     "vllm_bench",
     "bounded_http",
+    "bounded_completions",
     "daft_native",
     "daft_ray",
     "ray_data_http",
@@ -58,6 +59,7 @@ class CoreGateConfig:
     experiment_id: str
     rows_total: int
     endpoint_urls: tuple[str, ...]
+    completion_protocol: str
     model: str
     tokenizer: str | None
     manifest: Path
@@ -105,11 +107,24 @@ def load_core_gate_config(
     if rows_total <= 0:
         raise ValueError("rows_total must be positive")
     endpoint_urls = tuple(payload.get("endpoint_urls", ()))
+    completion_protocol = str(
+        payload.get("completion_protocol", "chat_completions")
+    )
+    if completion_protocol not in {"chat_completions", "completions"}:
+        raise ValueError("unsupported completion_protocol")
+    endpoint_suffix = (
+        "/v1/completions"
+        if completion_protocol == "completions"
+        else "/v1/chat/completions"
+    )
     if len(endpoint_urls) != 2 or any(
-        not isinstance(url, str) or not url.endswith("/v1/chat/completions")
+        not isinstance(url, str) or not url.endswith(endpoint_suffix)
         for url in endpoint_urls
     ):
-        raise ValueError("core gate requires exactly two Chat Completions endpoints")
+        raise ValueError(
+            "core gate requires exactly two "
+            f"{completion_protocol} endpoints"
+        )
     model = payload.get("model")
     if not isinstance(model, str) or not model.strip():
         raise ValueError("model must be non-empty")
@@ -184,6 +199,21 @@ def load_core_gate_config(
             continue
         if adapter not in CORE_ADAPTERS:
             raise ValueError(f"unsupported core gate adapter: {adapter!r}")
+        if (
+            completion_protocol == "completions"
+            and adapter != "bounded_completions"
+        ):
+            raise ValueError(
+                "Completions core gate currently supports "
+                "bounded_completions cells only"
+            )
+        if (
+            completion_protocol == "chat_completions"
+            and adapter == "bounded_completions"
+        ):
+            raise ValueError(
+                "bounded_completions requires completion_protocol=completions"
+            )
         concurrency = int(
             normalized_overrides.get(
                 cell_id,
@@ -217,6 +247,7 @@ def load_core_gate_config(
         experiment_id=str(payload.get("experiment_id", "core_gate")),
         rows_total=rows_total,
         endpoint_urls=endpoint_urls,
+        completion_protocol=completion_protocol,
         model=model,
         tokenizer=(str(tokenizer) if tokenizer is not None else None),
         manifest=manifest,
@@ -543,7 +574,11 @@ def validate_service_counter_summary(
             incidents.append(
                 f"endpoint {endpoint_index} benchmark/service generation mismatch"
             )
-    elif accounting not in {"manifest_prompt_only", "unavailable"}:
+    elif accounting not in {
+        "manifest_prompt_only",
+        "service_counter",
+        "unavailable",
+    }:
         incidents.append(
             f"endpoint {endpoint_index} unknown token accounting {accounting!r}"
         )
@@ -632,6 +667,7 @@ def run_core_gate(
         "formal": False,
         "rows_total": config.rows_total,
         "endpoint_urls": list(config.endpoint_urls),
+        "completion_protocol": config.completion_protocol,
         "model": config.model,
         "tokenizer": config.tokenizer,
         "manifest": str(config.manifest),

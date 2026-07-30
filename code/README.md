@@ -24,9 +24,11 @@ code/
 │   ├── organizers.py                     ← ArrowOrganizer / DaftOrganizer 数据组织后端
 │   ├── request_costs.py                   ← 严格的输出成本模式与来源标签
 │   ├── shared_vllm_experiment.py          ← 多 job 配置、并发编排、组级指标与公平性验证
+│   ├── runtime_env.py                     ← driver/subprocess/Ray worker 数值线程与 PYTHONPATH 合同
 │   ├── packing.py                         ← 与模态无关的确定性 BFD 与 row-cap-first 候选
 │   ├── runner_lease.py                    ← 场景输出目录的原子单写者租约与显式 stale recovery
-│   ├── model_backends.py                 ← fake / compatible HTTP embedding and completion backend
+│   ├── model_backends.py                  ← sync/async compatible HTTP 与 multi-prompt completion backend
+│   ├── baselines/                         ← direct Chat/Completions、官方 runtime 与统一 gate
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
 │   ├── profiling/
@@ -104,6 +106,13 @@ now lives under `code/src/`:
 - `packing.py`: deterministic, modality-neutral classic BFD and a
   row-cap-first placement candidate sharing the same validation and ordering.
 - `model_backends.py`: `fake` debug backend, `compatible_http` embedding/completion backend, and Ollama native completion backend.
+- `runtime_env.py`: one shared contract for `PYTHONPATH` plus single-threaded
+  OpenBLAS/MKL/OMP/NumExpr settings inherited by Ray workers and multi-job
+  subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per
+  worker before any model request is sent.
+- `baselines/`: no-Ray bounded Chat, fixed-row multi-prompt Completions,
+  vLLM Bench, Daft/Ray/OceanBase adapters, immutable manifests and fail-closed
+  two-endpoint gates. Baseline code does not import project scheduling policy.
 - `sinks.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
 - `metrics.py`: timers, GPU/memory/power sampling, energy/MFU estimates, and
   schema-safe CSV preflight/append helpers. Formal runs preflight the main
@@ -140,9 +149,19 @@ now lives under `code/src/`:
 pipeline debugging. It is not a model-service result source. For vLLM-compatible
 experiments, use `--model-backend compatible_http`; the older `http_openai`
 name is accepted only as a compatibility alias. `AI_COMPLETE` is selected with
-`--operator ai_complete` and expects a vLLM-compatible `/v1/completions` URL
-through `--completion-endpoint-url`. For local Ollama smoke runs, use
+`--operator ai_complete`. Use `/v1/completions` for the original multi-prompt
+mechanism path, or `/v1/chat/completions` with
+`--completion-protocol chat_completions` for product/official-runtime
+compatibility. `--completion-http-transport httpx_async` creates one persistent,
+bounded async connection pool per Ray actor. In Completions mode one actor call
+keeps the original multi-prompt HTTP body; in Chat mode a multi-row actor call
+dispatches one independent Chat request per row with `asyncio.gather`. For local
+Ollama smoke runs, use
 `--model-backend ollama --completion-endpoint-url http://localhost:11434`.
+
+`src/profiling/` owns profiler implementation. Root `src/profile_*.py` files
+contain compatibility imports only, so old scripts and remote environments keep
+working while all new production imports use the subpackage directly.
 
 ## Scheduling foundation
 

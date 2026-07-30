@@ -1,9 +1,24 @@
 # 数据库 AI 算子与官方 Runtime Baseline 矩阵
 
-日期：2026-07-29
-状态：直接客户端 512 行 C128/C256 calibration 已完成；project profiler
-同 manifest 校准模板与护栏已就绪，2,048 行 disjoint formal 因源数据短缺
-512 行而阻塞
+日期：2026-07-30
+状态：直接客户端 512 行 Chat C128/C256 calibration 已完成；远端结果证明
+project profiler 尚未通过提交/传输层喂饱门禁。先完成 Chat 持久异步连接和
+multi-prompt Completions 同协议校准，再允许策略排名；2,048 行 disjoint
+formal 仍因源数据短缺 512 行而阻塞。
+
+## 0. 一句话目标与成功条件
+
+本项目不是要超过绕过数据库和 Ray 的 vLLM Bench 服务上限，而是要在相同物理
+环境、相同请求语义和相同工作量下：
+
+1. 先使项目提交路径稳定达到同协议强客户端上限的至少 95%，避免把客户端欠载
+   误判成调度策略效果；
+2. 再证明数据组织或提交控制相对“冻结的最佳静态配置”改善 operator E2E/JCT、
+   tokens/s、P99/SLO 或达到同等吞吐所需的 active work；
+3. 最后在 database E2E、多 job 和多模态负载上验证收益仍成立。
+
+任何阶段只汇报该阶段可回答的问题。服务上限不是竞争 baseline，默认参数不是
+强 baseline，事后逐 workload 搜索出的最优点也不能冒充可在线部署的动态策略。
 
 ## 1. 研究问题
 
@@ -66,15 +81,23 @@ SemBench（PVLDB 2026）不作为一个可执行 arm，而作为扩展 workload�
 第一轮只测固定 manifest 的 operator-only；随后 F1–F4 接回相同 PostgreSQL
 读取与写回，形成 database-e2e 对照。
 
-## 4. 同条件契约
+## 4. 同条件契约与双协议实验轨道
 
-核心矩阵统一使用：
+保留两个互不交叉排名的协议轨道：
 
-```text
-POST /v1/chat/completions
-```
+| 轨道 | 项目请求语义 | 同协议强对照 | 回答的问题 |
+|---|---|---|---|
+| Completions 机制主线 | 一个 HTTP body 可含多个完整 prompt；每个 prompt 仍是一行独立请求 | 持久异步 bounded multi-prompt client，固定 `batch_rows × concurrency` | token-budget、length-align、动态关批等数据组织是否降低上游开销并改善 E2E |
+| Chat 产品兼容线 | 一行一次 Chat 请求；Ray actor 内异步并发 dispatch | vLLM Bench、bounded Chat、Daft Native/Ray、Ray Data、可用时 OceanBase | 与现有产品/官方 runtime 的同语义比较及通用性 |
 
-现有 `/v1/completions` 结果仅作历史机制证据，不与本矩阵直接比较。
+Completions 不是为了“换协议制造更高吞吐”，而是项目原始的多 prompt 设计；
+Chat 也不是被删除的慢路径，而是官方 runtime 和数据库产品普遍可比的兼容合同。
+任何数值比较都必须协议内进行：Completions 只对 Completions，Chat 只对 Chat。
+跨协议结果只能解释接口/封装代价，不能声称策略胜出。
+
+两条轨道都保持“一行是一个完整 prompt”，严禁把一行 prompt 内容切成多个
+请求。multi-prompt 只是在同一个 HTTP body 中批量提交多行，vLLM 仍为每个
+prompt 建立独立 sequence。
 
 固定：
 
@@ -115,7 +138,7 @@ client usage 伪造 output token。
 多 job 不与本轮同时启动。先锁定单 job 强 baseline，之后用同一批 arm 扩展到
 1/2/4-job。
 
-## 6. Calibration
+## 6. Calibration、冻结静态对照与动态策略
 
 calibration 与 held-out 数据严格分离：
 
@@ -130,7 +153,32 @@ calibration 与 held-out 数据严格分离：
 
 选取达到本 arm 最大安全吞吐至少 97%、下一档增益小于 3% 的最小压力点。
 
+四类参数必须明确区分：
+
+- **服务/传输容量校准**：在 calibration manifest 上找连接数、actor pool、
+  K/active work 和 HTTP batch 的可行平台，只用于消除欠载；
+- **冻结的最佳静态 baseline**：从 calibration 选择一个参数点，随后在
+  held-out、小作业、多 job 中保持不变，是动态策略必须击败的主对照；
+- **per-workload static oracle**：每个测试 workload 都事后 sweep 得到的
+  最优点，只用于报告 dynamic regret/上界，不能作为可部署 baseline；
+- **动态策略**：冻结候选集合、上下界、控制周期和反馈信号，运行时自动选择。
+  它的意义不是“免除一切离线校准”，而是用一次安全边界校准替代每个 workload
+  的人工精调，并在 workload 改变时逼近 oracle。
+
+token budget 不是越大越好。正式曲线保持每 endpoint active work 和请求总量
+一致，扫描 2K/4K/8K/16K/32K/49K/65K，记录实际每 HTTP body 的行数/token
+利用率、关批原因、JCT、P99 和 vLLM running/waiting。只有在固定预算曲线证明
+存在随负载变化的不同甜点后，才评价动态 token budget 是否能逼近各 workload
+oracle；不能只拿一个人工调到最优的静态点证明动态策略无意义。
+
 ## 7. 指标与结论门槛
+
+时间指标按以下层级报告，tokens/s 不能单独代表系统效果：
+
+1. service-only JCT：vLLM Bench/直接客户端完成固定 manifest 的时间；
+2. operator E2E/JCT：数据已在 PostgreSQL 中，到最后一行 AI 结果回到 runtime；
+3. database E2E：读取、AI 执行、fan-in、写回和 commit；
+4. per-request P50/P95/P99 与小 job JCT、多 job slowdown/SLO。
 
 共同指标：
 
@@ -162,15 +210,28 @@ time-to-ceiling/ramp-regret 至少改善 10%，只声称压力效率或瞬态改
 
 ## 8. 实施顺序
 
-1. 冻结 Chat manifest、hash、公共结果 schema；
-2. OceanBase 版本/函数/endpoint/单行 SQL gate；
-3. B0/B1/B2 双 endpoint gate；
-4. B3/B4 Chat 适配 gate；
-5. F1/F2/F3 request-body、batch、exactly-once gate；
-6. 各 arm 独立 calibration；
-7. 小作业瞬态 formal；
-8. 2,048 held-out formal；
-9. 七步结构分析后再决定 LOTUS/Palimpzest system-level baseline 和多 job 扩展。
+| 阶段 | 比较对象 | 首要指标 | 停止/放行条件 |
+|---|---|---|---|
+| 正确性 gate | 所有 adapter | exactly-once、0 failure、同 manifest/counter、空队列 | 任一失败即停 |
+| 服务上限 | vLLM Bench/同协议 direct client | service JCT、tokens/s、平台曲线 | 记录 ceiling；不要求项目超越 |
+| 喂饱门禁 | project fixed submission vs 同协议 bounded client | operator JCT、capacity efficiency、headers wait、running | warmed project ≥95% bounded；否则禁止策略排名 |
+| 官方 runtime | Daft Native/Ray、Ray Data、OceanBase capability | operator/database E2E、真实 HTTP 粒度 | 同语义、同计时边界后才排名 |
+| 数据组织 | fixed rows vs token-budget/length/prefix | operator E2E、P99、packing/HTTP body | 相对冻结静态 baseline 做单因素消融 |
+| 提交控制 | static K/flush vs adaptive | E2E、ramp regret、SLO、active work | 控制参数冻结，不能 per-workload 手调 |
+| 单/双 GPU | 相同 per-endpoint 压力 | JCT、吞吐、scaling efficiency | 每卡 workload/并发足够且同协议 |
+| 1/2/4 job | independent/partition/shared | aggregate throughput、job JCT、P99、Jain/slowdown | 0 starvation；先修资源故障 |
+| DB E2E/多模态 | PostgreSQL+writeback；图像同策略 | database E2E、策略收益保留率 | 前述机制已通过才启动 |
+
+当前实际顺序：
+
+1. 冻结 Chat 与 Completions manifest/hash、公共结果 schema；
+2. 修复 Ray worker 线程上限、失败 trace、持久异步 client；
+3. 分别运行 Chat feeding gate 和 Completions fixed-row feeding gate；
+4. 门禁通过后冻结 Chat actor/K 和 Completions `batch_rows × concurrency`；
+5. 才运行 token budget、length-align、动态 K/flush 单因素消融；
+6. 再运行小作业、2,048 held-out、单/双 GPU 和 1/2/4-job；
+7. 最后接回数据库写回、多模态，以及可用时 OceanBase；LOTUS/Palimpzest 仅按
+   system-level quality/cost 合同扩展。
 
 远端遵循 `deploy/autodl/README.md`：先检查 runner/lease/endpoint/git，使用
 全新输出目录，gate 未通过禁止 formal，保留失败证据和所有未跟踪结果。
@@ -380,6 +441,45 @@ transient/ramp → 单/双 GPU scaling → shared-vLLM 1/2/4-job。单 job 要�
 work/inflight 少 20%；transient 要求 time-to-ceiling/ramp regret 改善 20%；
 多 job 要求聚合吞吐不低于 95%，同时 P99/SLO/fairness 至少改善 10% 且无
 饥饿。均不通过时，结论为当前 workload 下无可证明优势。
+
+### 8.7 2026-07-30 远端结果复核：先修 feeding，不再扩大策略网格
+
+同一 512 行 Chat manifest 的三次 formal 汇总显示：
+
+| 路径 | 最佳/代表配置 | operator/service JCT (s) | total tokens/s |
+|---|---|---:|---:|
+| vLLM Bench | C256 | 11.931 | 15,351 |
+| bounded Chat | C256 | 12.569 | 14,532 |
+| project profiler | static K32K active work | 31.227 | 5,884 |
+| project profiler | static K64 | 33.328 | 5,509 |
+| project profiler | static K128 | 33.015 | 5,551 |
+| project profiler | static K256 | 41.053 | 4,592 |
+
+这是“项目提交路径尚未通过 feeding gate”的证据，不是 token-budget 或动态控制
+策略较差的正式结论。K 从 64/128 增至 256 后，bounded wait 归零但 JCT 反而
+上升，说明容量不是越大越好；project 与 bounded 的约 18.7 秒差距主要仍在
+Ray actor、HTTP connection/headers 和 vLLM ingress 所见的提交形态。旧 threaded
+`urllib` 每次调用不能提供持久异步连接池，因此新增以下最小因果对照：
+
+1. **Chat feeding**：相同 manifest、request granularity 和 K，比较旧
+   `urllib` 与每 actor 一个持久 `httpx.AsyncClient`；再只改变 1×256、
+   2×128、4×64 actor 形状。Chat 每行仍独立，actor 内使用 async dispatch；
+2. **Completions transport ceiling**：无 Ray bounded client 比较固定
+   `batch_rows={1,4,16,32}`，并令 `batch_rows × HTTP concurrency=256`
+   per endpoint，隔离 HTTP packing 本身；
+3. **project Completions feeding**：使用相同 fixed-row 组合和持久 async
+   actor，保留原 multi-prompt body。只有它接近对应 bounded Completions，
+   才进入 token-budget/length-align/adaptive flush；
+4. feeding gate 使用 warmed repeat，project 吞吐不低于同协议 bounded 95%，
+   且 JCT 不高于 1.05×、0 failure、exactly-once、最终空队列。未通过时只继续
+   transport/runtime profiling，不运行大规模策略矩阵。
+
+此前 shared-vLLM 1/2/4-job `_v3` 只完成 1-job 和 2-job warm-up，4-job
+independent warm-up 因 Ray worker 创建失败及 OpenBLAS 每进程尝试 32 线程而
+终止；随后 trace writer 对缺失结果调用 `.get` 又遮蔽了根因。这批数据不能作为
+formal 多 job 结论。运行环境现统一限制 OMP/OpenBLAS/MKL/NumExpr 为单线程，
+trace 对失败 lifecycle 写出证据后再抛原始错误；必须在新提交、新 worktree、
+新输出目录重跑功能 gate 后才恢复 multi-job formal。
 
 ## 9. 详细工程设计
 

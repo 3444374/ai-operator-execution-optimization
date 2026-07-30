@@ -51,8 +51,10 @@ def validate_profile_manifest_contract(
         raise ValueError("request manifest requires compatible_http")
     if endpoint_count != 2:
         raise ValueError("request manifest comparison requires two endpoints")
-    if completion_protocol != "chat_completions":
-        raise ValueError("request manifest requires chat_completions")
+    if completion_protocol not in {"chat_completions", "completions"}:
+        raise ValueError(
+            "request manifest requires chat_completions or completions"
+        )
     if completion_prompt_format != "raw":
         raise ValueError("request manifest requires raw prompt format")
     if completion_temperature != 0.0:
@@ -68,10 +70,32 @@ def validate_profile_manifest_contract(
         raise ValueError("request manifest requires doc_id source order")
     if executor != "ray_actor":
         raise ValueError("request manifest requires ray_actor")
-    if submission_granularity != "request":
-        raise ValueError("request manifest requires request granularity")
-    if endpoint_routing != "manifest_pinned":
-        raise ValueError("request manifest requires manifest_pinned routing")
+    if completion_protocol == "chat_completions":
+        if submission_granularity != "request":
+            raise ValueError(
+                "Chat request manifest requires request granularity"
+            )
+        if endpoint_routing != "manifest_pinned":
+            raise ValueError(
+                "Chat request manifest requires manifest_pinned routing"
+            )
+    elif submission_granularity == "request":
+        if endpoint_routing != "manifest_pinned":
+            raise ValueError(
+                "request-granularity Completions manifest requires "
+                "manifest_pinned routing"
+            )
+    elif submission_granularity == "batch":
+        if endpoint_routing != "least_queued":
+            raise ValueError(
+                "batch-granularity Completions manifest requires "
+                "least_queued routing"
+            )
+    else:
+        raise ValueError(
+            "Completions request manifest requires request or batch "
+            "granularity"
+        )
     if arrival_replay:
         raise ValueError("request manifest comparison forbids arrival replay")
 

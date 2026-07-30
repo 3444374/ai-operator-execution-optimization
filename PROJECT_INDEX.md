@@ -243,6 +243,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
 | `code/scripts/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
 | `code/src/baselines/postgres_manifest.py` | 正式 PostgreSQL workload 的不可变 baseline manifest 导出核心 | 按 workload/doc_id/limit/offset 读取完整行，固定 output 代价语义、source hash 与 endpoint 分片前输入 |
+| `code/src/baselines/batched_completions.py` | 无 Ray 的持久异步 fixed-row multi-prompt Completions 强对照 | 同协议标定 HTTP packing 上限，验证每个完整 prompt exactly-once 后再测试项目 token-budget |
+| `code/src/runtime_env.py` | driver、multi-job subprocess 与 Ray worker 的共享 PYTHONPATH/数值线程环境 | 防止 1/2/4-job 因每进程 OpenBLAS 线程膨胀而在请求前耗尽 OS 线程 |
 | `code/src/shared_vllm_experiment.py` | Shared-vLLM 编排核心 | 配置校验、三臂 credit 语义、并发执行、exactly-once 与公平性汇总 |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |
@@ -353,6 +355,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_submission_policy.example.json` | active-work、least-work routing、动态 token budget 与 adaptive flush 的可组合消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
 | `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 官方/强 baseline 功能门禁规格 | calibration 前验证 Chat 请求等价、exactly-once、endpoint 分片、空队列与 adapter 能力 |
 | `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 同条件 baseline 独立标定网格 | gate 通过后标定 direct/Daft/Ray Data/project 容量；不得直接当作 formal |
+| `deploy/autodl/dual_gpu_completions_baseline_gate.example.json` | 无 Ray fixed-row multi-prompt Completions 双 GPU transport ceiling | 在相同 Completions 协议下扫描 1/4/16/32 行 HTTP packing，保持每 endpoint 最多 256 active prompts |
+| `deploy/autodl/dual_gpu_project_chat_feeding.example.json` | project Chat `urllib`/持久 async transport 与 1×256/2×128/4×64 actor 校准 | 先通过同协议 bounded 95% feeding 门禁，再运行 Chat 策略或官方 runtime 排名 |
+| `deploy/autodl/dual_gpu_project_completions_feeding.example.json` | project 原始 multi-prompt Completions fixed-row feeding 校准 | 隔离 Ray/HTTP transport 后才进入 token-budget、length-align 与 adaptive flush 消融 |
 | `deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json` | project K256 与 nonbinding W98K 的首次高并发等价性门禁 | 1 same-pressure warmup + 3 repeats；未收敛到 5% 内禁止 broad calibration |
 | `deploy/autodl/dual_gpu_same_condition_project_calibration.example.json` | 同 512 行 immutable Chat manifest 的 project static-K 与 active-work 校准模板 | direct C256 后测 project 达到 ceiling 所需的最小上游压力 |
 | `deploy/autodl/dual_gpu_same_condition_project_formal.example.json` | disjoint 2,048 行 manifest 的 project static request-credit 与 token-work 正式模板 | 数据补齐、64 行 gate 与参数冻结后运行 1 warmup + 3 repeats |

@@ -1,5 +1,37 @@
 # 项目日志
 
+## 2026-07-30 双协议 baseline 与 feeding-first 门禁
+
+- 重新定义 baseline 目标：vLLM Bench 是同机服务上限参照，项目不以超过它为
+  目标；正式贡献必须先使上游路径达到同协议 bounded client 至少 95%，再与
+  冻结的最佳静态配置比较 operator/database E2E、JCT、tokens/s、P99/SLO、
+  active work 和多 job fairness。
+- 保留原始 multi-prompt Completions 作为机制主线，并新增同协议、无 Ray、
+  持久异步 fixed-row strong baseline；Chat 作为 vLLM Bench、Daft/Ray、
+  OceanBase 等产品/官方 runtime 的兼容轨道。两个协议只做协议内排名，禁止
+  用 Completions 数值直接声称超过 Chat baseline。
+- 同一 512 行 Chat manifest 的远端复核显示：vLLM Bench C256 为
+  11.931s/15,351 tokens/s，bounded Chat C256 为 12.569s/14,532 tokens/s，
+  project 最佳已测约 31.227s/5,884 tokens/s；K256 反而退化到
+  41.053s/4,592 tokens/s。因此当前是 feeding/transport 未过门禁，不是
+  token-budget、动态 K 或 flush 策略的正式负结论。
+- project completion actor 新增每 actor 一个 bounded persistent
+  `httpx.AsyncClient`。Completions 保留一个 HTTP body 多个完整 prompt；
+  Chat 使用 actor 内 async dispatch，每行仍是一条完整请求。新增 Chat
+  transport/actor-shape 和 Completions fixed-row feeding 配置，门禁通过前
+  禁止扩大策略网格。
+- `_v3` 多 job 运行在 4-job warm-up 因 Ray worker/OpenBLAS 线程资源耗尽
+  终止，且旧 trace writer 对缺失结果 `.get` 遮蔽根因；该批只有 warm-up，
+  不作为 formal 结果。统一 runtime env 现限制 OMP/OpenBLAS/MKL/NumExpr 为
+  单线程，失败 trace 保留 lifecycle error 后显式终止。
+- profiler 实现继续归入 `code/src/profiling/`；主入口已直接导入子包，根级
+  `profile_*.py` 只作兼容层。baseline direct adapters 归入
+  `code/src/baselines/`，避免策略代码和对照实现相互依赖。
+- 文档明确区分容量 calibration、held-out 上冻结的最佳静态 baseline、
+  per-workload static oracle 和 dynamic policy；动态策略允许一次安全边界
+  校准，但不能针对每个 workload 人工精调。token-budget 实验在固定 active
+  work 下扫描完整曲线，证明预算并非越大越好后才评价动态控制。
+
 ## 2026-07-29 文献基线版本升级
 
 - 题录核验并新增 VTC、Llumnix、LOTUS、Palimpzest、Abacus、SemBench、

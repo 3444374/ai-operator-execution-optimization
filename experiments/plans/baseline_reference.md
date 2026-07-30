@@ -42,9 +42,22 @@
 相同 P99/SLO guardrail 下比较 goodput；若 direct 上界未测，不能用 MFU 单独
 声称“GPU 已压满”或“仍有 70% 优化空间”。
 
-上述 baseline 统一使用 Chat Completions、同一 request manifest、同一双
-endpoint 和独立 calibration。详细预注册见
-`database_ai_operator_baseline_matrix_20260729.md`。
+上述 baseline 使用两个互不交叉排名的协议轨道：
+
+- **Chat 产品兼容轨道**：vLLM Bench、bounded Chat、Daft Native/Ray、
+  Ray Data、OceanBase capability 与项目 Ray async dispatch；
+- **Completions 机制轨道**：bounded fixed-row multi-prompt 与项目原始
+  multi-prompt token-budget/length-align/flush 路径。
+
+两条轨道分别使用同一 request manifest、同一双 endpoint、同一输出上限和
+独立 calibration。不得用 Completions 数值直接声称超过 Chat baseline。
+详细预注册见 `database_ai_operator_baseline_matrix_20260729.md`。
+
+正式策略比较还必须区分：calibration 得到并在 held-out 上冻结的最佳静态
+baseline、每个 workload 事后 sweep 的 static oracle，以及仅冻结候选边界、
+运行时自动选择的 dynamic policy。动态策略应对比冻结静态点，并报告相对
+per-workload oracle 的 regret；不能把为每个 workload 人工精调的 oracle
+冒充可部署静态方案，也不能完全跳过安全容量边界校准。
 
 | 编号 | Baseline 名称 | 来源 | CCF | 策略要点 | 实验配置 |
 |---|---|---|---|---|---|
@@ -59,8 +72,12 @@ endpoint 和独立 calibration。详细预注册见
 
 当前已使用真实双 4090 vLLM endpoint，并建立 vLLM Bench、bounded HTTP、
 Daft `prompt()` Native/Ray 和 Ray Data HTTP Processor 的同 manifest 功能/计数
-门禁。下一步只做必要的独立 calibration，找到合理强且进入平台期的配置；不把
-每个 baseline 调成无限参数搜索，也不把未到 ceiling 的默认点当最终结果。
+门禁。2026-07-30 复核发现项目 Chat 路径最佳约 5.9K tokens/s、31.2s，而
+同 manifest bounded Chat C256 为 14.5K tokens/s、12.6s；因此下一步先完成
+持久异步 HTTP/Ray dispatch 与 multi-prompt Completions 同协议 feeding gate。
+在 warmed project 未达到同协议 bounded 至少 95% 前，不进行策略正式排名。
+之后只做必要的独立 calibration，找到合理强且进入平台期的配置；不把每个
+baseline 调成无限参数搜索，也不把未到 ceiling 的默认点当最终结果。
 
 多 job 侧增加 VTC（OSDI 2024）作为算法基线：token-cost service counter、
 work-conserving borrowing 和每 job service/JCT/fairness。Llumnix（OSDI 2024）

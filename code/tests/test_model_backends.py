@@ -5,6 +5,7 @@ import os
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pyarrow as pa
@@ -14,6 +15,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.model_backends import (
+    CompatibleAsyncHTTPCompletionActor,
     FakeCompletionActor,
     call_compatible_completion_endpoint,
     fake_complete_batch,
@@ -327,6 +329,166 @@ class ModelBackendTests(unittest.TestCase):
             ollama_generate_url("http://localhost:11434/api/generate"),
             "http://localhost:11434/api/generate",
         )
+
+
+class AsyncModelBackendTests(unittest.IsolatedAsyncioTestCase):
+    async def test_async_actor_reuses_one_bounded_http_client(self) -> None:
+        response_body = json.dumps(
+            {
+                "choices": [
+                    {
+                        "index": 0,
+                        "text": "first",
+                        "finish_reason": "stop",
+                    },
+                    {
+                        "index": 1,
+                        "text": "second",
+                        "finish_reason": "length",
+                    },
+                ],
+                "usage": {"total_tokens": 9},
+            }
+        ).encode("utf-8")
+
+        class FakeLimits:
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+
+        class FakeResponse:
+            def raise_for_status(self):
+                return None
+
+            async def aread(self):
+                return response_body
+
+        class FakeStream:
+            async def __aenter__(self):
+                return FakeResponse()
+
+            async def __aexit__(self, *_args):
+                return None
+
+        class FakeClient:
+            instances = []
+
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+                self.calls = []
+                self.is_closed = False
+                self.__class__.instances.append(self)
+
+            def stream(self, method, url, **kwargs):
+                self.calls.append((method, url, kwargs))
+                return FakeStream()
+
+            async def aclose(self):
+                self.is_closed = True
+
+        fake_httpx = SimpleNamespace(
+            AsyncClient=FakeClient,
+            Limits=FakeLimits,
+            HTTPError=RuntimeError,
+        )
+        with patch.dict(sys.modules, {"httpx": fake_httpx}):
+            actor = CompatibleAsyncHTTPCompletionActor(
+                "http://localhost/v1/completions",
+                "model",
+                None,
+                10.0,
+                8,
+                max_connections=4,
+            )
+
+        readiness = await actor.ready()
+        first = await actor.complete(sample_table())
+        second = await actor.complete(sample_table())
+
+        self.assertEqual(len(FakeClient.instances), 1)
+        client = FakeClient.instances[0]
+        self.assertEqual(len(client.calls), 2)
+        self.assertEqual(
+            client.kwargs["limits"].kwargs,
+            {
+                "max_connections": 4,
+                "max_keepalive_connections": 4,
+            },
+        )
+        self.assertEqual(readiness["http_transport"], "httpx_async")
+        self.assertTrue(readiness["client_initialized"])
+        self.assertEqual(first["output_text"], ["first", "second"])
+        self.assertEqual(second["token_count"], 9)
+
+        await actor.close()
+        self.assertTrue(client.is_closed)
+
+    async def test_async_actor_batches_ray_calls_without_batching_chat_rows(
+        self,
+    ) -> None:
+        response_body = json.dumps(
+            {
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"content": "answer"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {"total_tokens": 6},
+            }
+        ).encode("utf-8")
+
+        class FakeResponse:
+            def raise_for_status(self):
+                return None
+
+            async def aread(self):
+                return response_body
+
+        class FakeStream:
+            async def __aenter__(self):
+                return FakeResponse()
+
+            async def __aexit__(self, *_args):
+                return None
+
+        class FakeClient:
+            def __init__(self, **_kwargs):
+                self.calls = []
+                self.is_closed = False
+
+            def stream(self, method, url, **kwargs):
+                self.calls.append((method, url, kwargs))
+                return FakeStream()
+
+            async def aclose(self):
+                self.is_closed = True
+
+        fake_httpx = SimpleNamespace(
+            AsyncClient=FakeClient,
+            Limits=lambda **kwargs: kwargs,
+            HTTPError=RuntimeError,
+        )
+        with patch.dict(sys.modules, {"httpx": fake_httpx}):
+            actor = CompatibleAsyncHTTPCompletionActor(
+                "http://localhost/v1/chat/completions",
+                "model",
+                None,
+                10.0,
+                8,
+                protocol="chat_completions",
+                max_connections=4,
+            )
+
+        result = await actor.complete(sample_table())
+
+        self.assertEqual(len(actor._client.calls), 2)
+        self.assertEqual(result["rows"], 2)
+        self.assertEqual(result["output_text"], ["answer", "answer"])
+        self.assertEqual(result["token_count"], 12)
+        for _, _, kwargs in actor._client.calls:
+            self.assertEqual(len(kwargs["json"]["messages"]), 1)
+            self.assertNotIn("prompt", kwargs["json"])
 
 
 if __name__ == "__main__":

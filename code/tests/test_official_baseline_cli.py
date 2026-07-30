@@ -91,6 +91,38 @@ class OfficialBaselineCliTests(unittest.TestCase):
             self.assertEqual(result["token_accounting"], "server_usage")
             self.assertFalse(output_dir.exists())
 
+            completions_result = run_cli(
+                [
+                    "run-shard",
+                    "--adapter",
+                    "bounded_completions",
+                    "--manifest",
+                    str(manifest),
+                    "--endpoint-index",
+                    "0",
+                    "--endpoint-url",
+                    "http://127.0.0.1:8000/v1/completions",
+                    "--model",
+                    "qwen",
+                    "--concurrency",
+                    "8",
+                    "--batch-size",
+                    "16",
+                    "--output-dir",
+                    str(output_dir),
+                    "--dry-run",
+                ]
+            )
+            self.assertEqual(
+                completions_result["completion_protocol"],
+                "completions",
+            )
+            self.assertEqual(
+                completions_result["timing_granularity"],
+                "http_batch",
+            )
+            self.assertEqual(completions_result["http_batch_rows"], 16)
+
             daft_result = run_cli(
                 [
                     "run-shard",

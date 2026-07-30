@@ -107,12 +107,15 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
   vLLM Bench 仅差约 2.3%
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P0**：project profiler 在同 512 manifest、Chat Completions、
-   no replay 下完成 K/active-work 校准。首次 64 行 gate 在 HTTP 前发现
-   trace target 未按 completion cap 裁剪，已统一 work/guard 语义，须在全新
-   目录 re-gate 后才启动 512。disjoint 2,048 formal 还缺 512 个独立源行，
-   必须逐字段核验旧 prefix 后 append-only 补齐并再过 64 行 gate；之后才比较 OceanBase、Daft
-   Native/Ray 与 Ray Data 官方框架对照
+1. **P0**：先过 feeding-first 双协议门禁。512 行 Chat direct/bounded 为
+   11.9/12.6s，project 最佳约 31.2s，说明当前主要是 Ray/HTTP/ingress
+   欠载，尚不能做策略排名。Chat 轨道比较持久 async actor dispatch 与 actor
+   shape；Completions 轨道保留原 multi-prompt 设计，以无 Ray fixed-row
+   multi-prompt 作同协议强对照。warmed project 达到同协议 bounded 至少
+   95% 后，才冻结静态点并测试 token-budget、动态 K/flush。两个协议不得
+   交叉排名。disjoint 2,048 formal 仍缺 512 个独立源行，须逐字段核验旧
+   prefix 后 append-only 补齐；之后才比较 OceanBase、Daft Native/Ray 与
+   Ray Data 官方框架对照
 2. **P1**：baseline 锁定后再做 Shared-vLLM 4-job held-out、staggered idle borrowing、
    weighted overlap fairness 与异构 workload/arrival offset
 3. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融

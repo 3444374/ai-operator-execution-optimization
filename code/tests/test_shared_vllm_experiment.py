@@ -54,6 +54,10 @@ class SharedVllmExperimentTests(unittest.TestCase):
         runtime_env = ray_module.init.call_args.kwargs["runtime_env"]
         pythonpath = runtime_env["env_vars"]["PYTHONPATH"].split(os.pathsep)
         self.assertIn(str(CODE_ROOT), pythonpath)
+        self.assertEqual(
+            runtime_env["env_vars"]["OPENBLAS_NUM_THREADS"],
+            "1",
+        )
 
     def test_credit_observer_prewarms_actor_before_replay(self) -> None:
         observer = shared_vllm._RayCreditObserver.__new__(
@@ -611,7 +615,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 patch(
                     "src.shared_vllm_experiment.subprocess.Popen",
                     return_value=process,
-                ),
+                ) as popen,
                 patch(
                     "src.shared_vllm_experiment.scrape_prometheus_metrics",
                     return_value={
@@ -637,6 +641,9 @@ class SharedVllmExperimentTests(unittest.TestCase):
                         GroupRunIdentity("formal", 1, 0),
                     )
 
+            child_env = popen.call_args.kwargs["env"]
+            self.assertEqual(child_env["OMP_NUM_THREADS"], "1")
+            self.assertEqual(child_env["OPENBLAS_NUM_THREADS"], "1")
             failure = (
                 options.output_dir
                 / "traces"

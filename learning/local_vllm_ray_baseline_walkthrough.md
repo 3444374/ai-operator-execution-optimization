@@ -142,3 +142,30 @@ adapter。这样做的目的不是更换技术栈，而是避免 AIMD、PID、fl
 - AIMD、PID、EWMA 或 UCB 已经在真实 vLLM 上优于静态 K=8；
 - 这些接口带来了吞吐或尾延迟收益；
 - 单节点 contract smoke 等价于真实 vLLM 性能实验。
+
+## 8. 2026-07-30：为什么先做 feeding gate，且保留两种协议
+
+最新双 4090、512 行同 manifest 结果中，bounded Chat C256 约
+12.6 秒/14.5K tokens/s，而 project 最佳已测约 31.2 秒/5.9K tokens/s。
+这说明当前 project 路径还没有达到同协议强客户端的送入能力。此时继续比较
+token-budget 或动态 K，只会把 Ray/HTTP 欠载混入策略效果。
+
+因此实验分成两条协议内对照：
+
+- Chat 轨道：一行一次请求，用 vLLM Bench、bounded Chat、Daft/Ray 等作
+  产品/官方 runtime 对照；project actor 内可以异步 dispatch，但不能把多行
+  合成一个 Chat 请求。
+- Completions 轨道：保留项目原始的 multi-prompt HTTP body；先与无 Ray 的
+  fixed-row multi-prompt client 比较，再测试 token-budget、length-align 和
+  adaptive flush。
+
+multi-prompt 不是把一行 prompt 切碎，而是一次 HTTP 携带多条完整 prompt。
+它可能减少 Ray RPC、HTTP header、JSON 编解码和 ingress 开销，但不会减少
+模型必须完成的 token 计算。batch 过大还会增加关批等待和尾延迟，所以正式
+判断必须同时看 service/operator/database JCT、tokens/s、P99 和实际 batch
+利用率，不能只看吞吐。
+
+动态策略也仍需一次安全边界校准。区别在于：静态 baseline 从 calibration
+选定后在 held-out 上冻结；dynamic policy 只冻结候选范围和反馈规则，运行时
+适应负载；为每个 workload 事后 sweep 的最优静态点只能作为 oracle，用来
+衡量 dynamic regret，不能冒充可部署方案。

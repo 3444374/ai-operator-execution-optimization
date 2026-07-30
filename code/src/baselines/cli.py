@@ -15,6 +15,10 @@ from pathlib import Path
 from typing import Sequence
 
 from .async_http import BoundedHttpConfig, run_bounded_http
+from .batched_completions import (
+    BatchedCompletionsConfig,
+    run_batched_completions,
+)
 from .contracts import BaselineRequestResult, ChatRequest
 from .gate import validate_gate
 from .manifests import (
@@ -41,6 +45,7 @@ from .vllm_bench import (
 
 ADAPTERS = (
     "bounded_http",
+    "bounded_completions",
     "vllm_bench",
     "daft_native",
     "daft_ray",
@@ -49,6 +54,7 @@ ADAPTERS = (
 )
 _OBSERVABILITY_BY_ADAPTER = {
     "bounded_http": ("request", "server_usage"),
+    "bounded_completions": ("http_batch", "service_counter"),
     "vllm_bench": ("request", "official_benchmark"),
     "daft_native": ("shard_barrier", "manifest_prompt_only"),
     "daft_ray": ("shard_barrier", "manifest_prompt_only"),
@@ -97,11 +103,14 @@ def _write_results(
     temporary.replace(path)
 
 
-def _service_fingerprint(args: argparse.Namespace) -> str:
+def _service_fingerprint(
+    args: argparse.Namespace,
+    completion_protocol: str,
+) -> str:
     payload = json.dumps(
         {
             "model": args.model,
-            "protocol": "chat_completions",
+            "protocol": completion_protocol,
             "temperature": 0.0,
         },
         sort_keys=True,
@@ -115,6 +124,27 @@ def _chat_base_url(endpoint_url: str) -> str:
     if not endpoint_url.endswith(suffix):
         raise ValueError("endpoint URL must end with /v1/chat/completions")
     return endpoint_url[: -len(suffix)]
+
+
+def _completion_protocol(adapter: str) -> str:
+    return (
+        "completions"
+        if adapter == "bounded_completions"
+        else "chat_completions"
+    )
+
+
+def _validate_endpoint_url(
+    endpoint_url: str,
+    completion_protocol: str,
+) -> None:
+    suffix = (
+        "/v1/completions"
+        if completion_protocol == "completions"
+        else "/v1/chat/completions"
+    )
+    if not endpoint_url.endswith(suffix):
+        raise ValueError(f"endpoint URL must end with {suffix}")
 
 
 def _run_adapter(
@@ -134,6 +164,21 @@ def _run_adapter(
                     endpoint_index_offset=args.endpoint_index,
                     replay_arrivals=not args.disable_arrival_replay,
                     arrival_time_scale=args.arrival_time_scale,
+                ),
+            )
+        )
+    if args.adapter == "bounded_completions":
+        return asyncio.run(
+            run_batched_completions(
+                requests,
+                BatchedCompletionsConfig(
+                    endpoint_urls=(args.endpoint_url,),
+                    model=args.model,
+                    batch_rows=args.batch_size,
+                    concurrency_per_endpoint=args.concurrency,
+                    timeout_s=args.timeout_s,
+                    api_key=args.api_key,
+                    endpoint_index_offset=args.endpoint_index,
                 ),
             )
         )
@@ -199,7 +244,8 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
     )
     if not requests:
         raise ValueError("selected endpoint shard is empty")
-    _chat_base_url(args.endpoint_url)
+    completion_protocol = _completion_protocol(args.adapter)
+    _validate_endpoint_url(args.endpoint_url, completion_protocol)
     if args.adapter in {"daft_ray", "ray_data_http"} and not args.ray_address:
         raise ValueError(f"{args.adapter} requires an explicit --ray-address")
     if args.adapter == "vllm_bench":
@@ -216,8 +262,16 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
         "endpoint_url": args.endpoint_url,
         "predicted_work": sum(request.estimated_work for request in requests),
         "model_name": args.model,
-        "completion_protocol": "chat_completions",
-        "service_config_sha256": _service_fingerprint(args),
+        "completion_protocol": completion_protocol,
+        "http_batch_rows": (
+            args.batch_size
+            if args.adapter == "bounded_completions"
+            else 1
+        ),
+        "service_config_sha256": _service_fingerprint(
+            args,
+            completion_protocol,
+        ),
     }
     if args.dry_run:
         return base_summary
@@ -456,7 +510,10 @@ def _normalize_vllm_bench(
         "predicted_work": sum(request.estimated_work for request in requests),
         "model_name": args.model,
         "completion_protocol": "chat_completions",
-        "service_config_sha256": _service_fingerprint(args),
+        "service_config_sha256": _service_fingerprint(
+            args,
+            "chat_completions",
+        ),
         "vllm_num_requests_running_final": args.vllm_running_final,
         "vllm_num_requests_waiting_final": args.vllm_waiting_final,
         "worker_failures": 0,

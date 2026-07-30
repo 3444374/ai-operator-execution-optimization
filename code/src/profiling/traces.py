@@ -126,7 +126,7 @@ def write_submission_trace(
     job_id: int,
     server_version: str,
     pgvector_version: str,
-    results: list[dict],
+    results: list[dict | None],
     submission_events: Sequence[SubmissionLifecycleEvent] | None = None,
 ) -> None:
     if submission_events is not None and len(submission_events) != len(results):
@@ -134,6 +134,7 @@ def write_submission_trace(
             "submission lifecycle events and results must align"
         )
     for submission_index, result in enumerate(results):
+        resolved_result = result or {}
         event = (
             submission_events[submission_index]
             if submission_events is not None
@@ -188,45 +189,57 @@ def write_submission_trace(
                 "ray_to_service_s": (
                     max(
                         0.0,
-                        float(result.get("service_start_epoch_s", 0.0))
+                        float(
+                            resolved_result.get(
+                                "service_start_epoch_s",
+                                0.0,
+                            )
+                        )
                         - event.submit_epoch_s,
                     )
                     if event is not None
                     else 0.0
                 ),
                 "doc_ids": ";".join(
-                    str(item) for item in result.get("doc_id", [])
+                    str(item)
+                    for item in resolved_result.get("doc_id", [])
                 ),
-                "rows": result.get("rows", 0),
-                "token_count": result.get("token_count", 0),
-                "input_token_count": result.get("input_token_count", 0),
-                "output_token_count": result.get("output_token_count", 0),
-                "service_s": result.get("service_s", 0.0),
-                "service_start_epoch_s": result.get(
+                "rows": resolved_result.get("rows", 0),
+                "token_count": resolved_result.get("token_count", 0),
+                "input_token_count": resolved_result.get(
+                    "input_token_count",
+                    0,
+                ),
+                "output_token_count": resolved_result.get(
+                    "output_token_count",
+                    0,
+                ),
+                "service_s": resolved_result.get("service_s", 0.0),
+                "service_start_epoch_s": resolved_result.get(
                     "service_start_epoch_s",
                     0.0,
                 ),
-                "service_end_epoch_s": result.get(
+                "service_end_epoch_s": resolved_result.get(
                     "service_end_epoch_s",
                     0.0,
                 ),
-                "http_request_start_epoch_s": result.get(
+                "http_request_start_epoch_s": resolved_result.get(
                     "http_request_start_epoch_s",
                     "",
                 ),
-                "http_response_headers_epoch_s": result.get(
+                "http_response_headers_epoch_s": resolved_result.get(
                     "http_response_headers_epoch_s",
                     "",
                 ),
-                "http_response_body_epoch_s": result.get(
+                "http_response_body_epoch_s": resolved_result.get(
                     "http_response_body_epoch_s",
                     "",
                 ),
-                "http_headers_wait_s": result.get(
+                "http_headers_wait_s": resolved_result.get(
                     "http_headers_wait_s",
                     "",
                 ),
-                "http_body_read_s": result.get(
+                "http_body_read_s": resolved_result.get(
                     "http_body_read_s",
                     "",
                 ),

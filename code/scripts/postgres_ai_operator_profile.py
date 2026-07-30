@@ -40,6 +40,7 @@ from src.metrics import (
     vllm_metric_delta_stats,
 )
 from src.model_backends import (
+    CompatibleAsyncHTTPCompletionActor,
     CompatibleHTTPCompletionActor,
     CompatibleHTTPEmbeddingActor,
     FakeCompletionActor,
@@ -62,27 +63,27 @@ from src.organizers import (
     packing_algorithm_name,
 )
 from src.packing import summarize_packing
-from src.profile_cli import parse_args
-from src.profile_config import (
+from src.profiling.cli import parse_args
+from src.profiling.config import (
     completion_endpoint_urls,
     embedding_endpoint_urls,
     model_metrics_urls,
     ray_worker_options as _ray_worker_options,
     resolve_actor_workers_per_endpoint as _resolve_actor_workers_per_endpoint,
 )
-from src.profile_traces import (
+from src.profiling.traces import (
     write_control_trace as _write_control_trace,
     write_flush_trace as _write_flush_trace,
     write_request_trace as _write_request_trace,
     write_resource_trace as _write_resource_trace,
     write_submission_trace as _write_submission_trace,
 )
-from src.profile_schema import (
+from src.profiling.schema import (
     FORMAL_RESULT_FIELDS,
     GPU_METADATA_DEFAULTS,
     validated_formal_result_row as _validated_formal_result_row,
 )
-from src.profile_replay import (
+from src.profiling.replay import (
     _arrival_replay_envelopes,
     _offline_batch_envelopes,
     _requires_replay_feedback,
@@ -91,13 +92,14 @@ from src.profiling.manifest_guard import (
     ProfileManifestGuard,
     validate_profile_manifest_contract,
 )
-from src.profile_ray import (
+from src.profiling.ray import (
     submit_ray_tasks,
     submit_with_backpressure,
 )
 from src.request_costs import (
     output_cost_source,
 )
+from src.runtime_env import ray_runtime_env as _shared_ray_runtime_env
 from src.scheduling.adaptive_admission import (
     AimdAdmissionController,
     AimdConfig,
@@ -259,11 +261,7 @@ def _merge_submit_metrics(
 
 
 def ray_runtime_env() -> dict[str, dict[str, str]]:
-    pythonpath = str(CODE_ROOT)
-    existing_pythonpath = os.environ.get("PYTHONPATH")
-    if existing_pythonpath:
-        pythonpath = os.pathsep.join([pythonpath, existing_pythonpath])
-    return {"env_vars": {"PYTHONPATH": pythonpath}}
+    return _shared_ray_runtime_env(CODE_ROOT)
 
 
 def connect(database_url: str):
@@ -1252,6 +1250,16 @@ def _validate_completion_observation_args(args: argparse.Namespace) -> None:
             "completion token IDs, prompt format, and temperature require "
             "--operator ai_complete with a compatible HTTP backend"
         )
+    if args.completion_http_transport == "httpx_async" and (
+        args.operator != "ai_complete"
+        or args.model_backend not in {"compatible_http", "http_openai"}
+        or args.executor != "ray_actor"
+    ):
+        raise SystemExit(
+            "httpx_async completion transport requires "
+            "--operator ai_complete, a compatible HTTP backend, "
+            "and --executor ray_actor"
+        )
 
 
 def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
@@ -1573,6 +1581,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "completion_return_token_ids": args.completion_return_token_ids,
             "completion_prompt_format": args.completion_prompt_format,
             "completion_protocol": args.completion_protocol,
+            "completion_http_transport": (
+                args.completion_http_transport
+                if args.operator == "ai_complete"
+                else ""
+            ),
             "completion_temperature": (
                 args.completion_temperature
                 if args.completion_temperature is not None
@@ -1770,7 +1783,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                         for endpoint_id in actor_endpoint_urls
                     }
                 elif args.operator == "ai_complete":
-                    actor_cls = OllamaCompletionActor if model_backend == "ollama" else CompatibleHTTPCompletionActor
+                    if model_backend == "ollama":
+                        actor_cls = OllamaCompletionActor
+                    elif args.completion_http_transport == "httpx_async":
+                        actor_cls = CompatibleAsyncHTTPCompletionActor
+                    else:
+                        actor_cls = CompatibleHTTPCompletionActor
                     RayCompletionActor = _remote_actor_class(
                         ray_module,
                         actor_cls,
@@ -1778,35 +1796,31 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     )
                     actor_pools = {}
                     for endpoint_id, endpoint_url in actor_endpoint_urls.items():
-                        actor_pools[endpoint_id] = [
-                            RayCompletionActor.remote(
-                                endpoint_url,
-                                model_name,
-                                api_key,
-                                request_timeout_s,
-                                args.completion_max_tokens,
-                                *(
-                                    [
-                                        args.completion_return_token_ids,
-                                        args.completion_prompt_format,
-                                        args.completion_temperature,
-                                        args.completion_protocol,
-                                    ]
-                                    if (
-                                        model_backend == "compatible_http"
-                                        and (
-                                            args.completion_return_token_ids
-                                            or args.completion_prompt_format
-                                            != "raw"
-                                            or args.completion_temperature
-                                            is not None
-                                            or args.completion_protocol
-                                            != "completions"
-                                        )
-                                    )
-                                    else []
-                                ),
+                        actor_args = [
+                            endpoint_url,
+                            model_name,
+                            api_key,
+                            request_timeout_s,
+                            args.completion_max_tokens,
+                        ]
+                        if model_backend == "compatible_http":
+                            actor_args.extend(
+                                [
+                                    args.completion_return_token_ids,
+                                    args.completion_prompt_format,
+                                    args.completion_temperature,
+                                    args.completion_protocol,
+                                ]
                             )
+                            if (
+                                args.completion_http_transport
+                                == "httpx_async"
+                            ):
+                                actor_args.append(
+                                    reported_ray_actor_max_concurrency
+                                )
+                        actor_pools[endpoint_id] = [
+                            RayCompletionActor.remote(*actor_args)
                             for _ in range(actor_workers_per_endpoint)
                         ]
                 elif model_backend == "fake":
@@ -2347,6 +2361,21 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     else None
                 ),
             )
+        missing_result_count = sum(
+            not isinstance(result, dict) for result in operator_results
+        )
+        if missing_result_count:
+            lifecycle_errors = [
+                event.error
+                for event in submission_lifecycle_events
+                if event.error
+            ]
+            detail = lifecycle_errors[0] if lifecycle_errors else "unavailable"
+            raise RuntimeError(
+                "model submission produced "
+                f"{missing_result_count} missing result(s); "
+                f"first lifecycle error: {detail}"
+            )
         resource_trace_path = args.resource_trace_output or ""
         if resource_trace_path:
             _write_resource_trace(
@@ -2574,6 +2603,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "completion_return_token_ids": args.completion_return_token_ids,
             "completion_prompt_format": args.completion_prompt_format,
             "completion_protocol": args.completion_protocol,
+            "completion_http_transport": (
+                args.completion_http_transport
+                if args.operator == "ai_complete"
+                else ""
+            ),
             "completion_temperature": (
                 args.completion_temperature
                 if args.completion_temperature is not None

@@ -1343,6 +1343,92 @@ eligible rows 计数；`append-only` 遇到任一 doc ID 冲突即使事务失�
 `/root/autodl-tmp/premerge-backups/20260729_shared_vllm_results_before_7267324/`。
 它是事故审计副本，不是新的 formal 结果目录。
 
+## 双协议 feeding 校准与正式 baseline 顺序（2026-07-30）
+
+### 目标
+
+先验证项目提交路径能否持续喂饱 vLLM，再测试 token-budget、动态 K 或 adaptive
+flush。对固定 512 行 manifest，warmed project 必须达到同协议 bounded client
+至少 95% tokens/s，且 JCT 不超过 1.05×、0 failure、exactly-once、最终队列
+为空。未通过时停止策略矩阵，只分析 Ray/HTTP/ingress。
+
+两条轨道不得交叉排名：
+
+| 轨道 | direct/bounded 配置 | project 配置 |
+|---|---|---|
+| Chat 产品兼容 | 既有 official baseline gate/calibration | `dual_gpu_project_chat_feeding.example.json` |
+| multi-prompt Completions 机制 | `dual_gpu_completions_baseline_gate.example.json` | `dual_gpu_project_completions_feeding.example.json` |
+
+Chat project 配置比较旧 threaded `urllib`、持久 `httpx_async` 和
+1×256/2×128/4×64 actor 形状；每行仍是一条 Chat 请求，actor 内使用 async
+dispatch。Completions 两份配置都比较 fixed rows 1/4/16/32，并保持
+`batch_rows × HTTP concurrency=256` per endpoint；project 端一个 Ray
+submission 仍发送一个含多条完整 prompt 的 HTTP body。
+
+### 开始前
+
+1. 执行 §10.5 的只读 idle/lease/Ray/endpoint/GPU/PG 检查；
+2. 使用独立 git worktree 和全新输出目录，禁止覆盖已有结果；
+3. `source deploy/autodl/autodl.env` 后确认
+   `COMPLETION_ENDPOINT_URLS` 以 `/v1/completions` 结尾，
+   `COMPLETION_CHAT_ENDPOINT_URLS` 以 `/v1/chat/completions` 结尾；
+4. 模型不存在时必须按 §5 先启用 AutoDL 学术加速并禁用 Xet；不要直接使用
+   未加速的默认 Hugging Face 下载；
+5. 两个 vLLM endpoint 必须是同一模型/版本/参数，且 512 行 immutable
+   manifest SHA-256 与 direct Chat 校准一致。
+
+### 命令
+
+先跑 multi-prompt direct/bounded 固定行数 gate：
+
+```bash
+/root/miniconda3/bin/python code/scripts/run_official_baseline_gate.py \
+  --config deploy/autodl/dual_gpu_completions_baseline_gate.example.json \
+  --driver-python /root/miniconda3/bin/python \
+  --vllm-python /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  --output-root \
+    experiments/results/dual_gpu_completions_baseline_gate_<unique-id>
+```
+
+再分别运行 project Chat 与 Completions feeding 矩阵：
+
+```bash
+/root/miniconda3/bin/python code/scripts/run_ai_operator_scenarios.py \
+  --config deploy/autodl/dual_gpu_project_chat_feeding.example.json \
+  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --python-executable /root/miniconda3/bin/python \
+  --output-dir experiments/results/dual_gpu_project_chat_feeding_<unique-id> \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS"
+
+/root/miniconda3/bin/python code/scripts/run_ai_operator_scenarios.py \
+  --config deploy/autodl/dual_gpu_project_completions_feeding.example.json \
+  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --python-executable /root/miniconda3/bin/python \
+  --output-dir \
+    experiments/results/dual_gpu_project_completions_feeding_<unique-id> \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS"
+```
+
+每次只允许一个 runner。先检查 `resolved_config.json` 中协议、transport、
+actor 数、每 actor concurrency、K 和 manifest，再查看 `runs.csv`、
+submission/request trace 与服务端 counter。full feeding 配置是正式校准，
+本地或新 worktree 的可运行性验证只需使用 16/64 行 smoke，不得把 smoke
+数字写成性能结果。
+
+### 放行后的实验
+
+1. 分别冻结 Chat actor/K 和 Completions `batch_rows × concurrency` 的最小
+   97%-ceiling 点；
+2. 在 Completions 轨道固定 active work，扫描 token budget
+   2K/4K/8K/16K/32K/49K/65K，证明预算不是越大越好；
+3. 再做 length-align、queue-adaptive flush、dynamic token budget 和动态 K
+   单因素消融；
+4. 单 job 通过后再跑 1/2/4 job。多 job 子进程和 Ray worker 必须继承
+   `runtime_env.py` 的单线程 BLAS 环境；旧 `_v3` 4-job 失败结果不参与排名；
+5. 最后在 disjoint held-out、database E2E 和多模态上复验。
+
 ### Pinned endpoint active-work 背压故障
 
 若 project request-level 场景在启用

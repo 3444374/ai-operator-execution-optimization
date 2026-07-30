@@ -19,7 +19,8 @@ FORMAL_RESULT_FIELDS = tuple(
     token_budget_target_service_ms token_budget_arrival_ewma_alpha
     embedding_dim embedding_vector_dim
     completion_max_tokens completion_return_token_ids completion_prompt_format
-    completion_protocol completion_temperature output_cost_mode
+    completion_protocol completion_http_transport completion_temperature
+    output_cost_mode
     output_cost_source packing_cost_unit
     cost_model_id cost_tokenizer_id packing_algorithm packing_scope
     packing_budget_utilization_mean packing_budget_utilization_p95

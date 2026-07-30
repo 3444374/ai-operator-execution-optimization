@@ -228,6 +228,27 @@ class ProfileManifestGuardTests(unittest.TestCase):
             arrival_replay=False,
         )
 
+    def test_profile_manifest_contract_accepts_multi_prompt_completions(
+        self,
+    ) -> None:
+        validate_profile_manifest_contract(
+            self.requests,
+            total_rows=2,
+            operator="ai_complete",
+            model_backend="compatible_http",
+            endpoint_count=2,
+            completion_protocol="completions",
+            completion_prompt_format="raw",
+            completion_temperature=0.0,
+            completion_max_tokens=256,
+            output_cost_mode="trace_target_output",
+            source_order="doc_id",
+            executor="ray_actor",
+            submission_granularity="batch",
+            endpoint_routing="least_queued",
+            arrival_replay=False,
+        )
+
     def test_profile_manifest_contract_rejects_non_equivalent_runs(
         self,
     ) -> None:
@@ -252,7 +273,7 @@ class ProfileManifestGuardTests(unittest.TestCase):
             ("operator", "ai_embed", "ai_complete"),
             ("model_backend", "fake", "compatible_http"),
             ("endpoint_count", 1, "two endpoints"),
-            ("completion_protocol", "completions", "chat_completions"),
+            ("completion_protocol", "unknown", "chat_completions or completions"),
             ("completion_prompt_format", "chatml", "raw prompt format"),
             ("completion_temperature", None, "temperature=0"),
             ("completion_temperature", 0.7, "temperature=0"),

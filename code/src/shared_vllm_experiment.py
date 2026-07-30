@@ -28,6 +28,10 @@ from .metrics import (
     vllm_metric_delta_stats,
 )
 from .runner_lease import acquire_runner_lease
+from .runtime_env import (
+    ray_runtime_env,
+    subprocess_env,
+)
 from .scheduling.runtime.shared_credit_ray import (
     get_or_create_shared_credit_client,
 )
@@ -823,6 +827,7 @@ def _run_group(
                     stdout=stdout_handle,
                     stderr=stderr_handle,
                     text=True,
+                    env=subprocess_env(),
                 )
             )
         while any(process.poll() is None for process in processes):
@@ -1329,13 +1334,7 @@ def _nonnegative_float_tuple(
 
 
 def _ray_runtime_env() -> dict[str, dict[str, str]]:
-    pythonpath = str(_CODE_ROOT)
-    existing_pythonpath = os.environ.get("PYTHONPATH")
-    if existing_pythonpath:
-        pythonpath = os.pathsep.join(
-            [pythonpath, existing_pythonpath]
-        )
-    return {"env_vars": {"PYTHONPATH": pythonpath}}
+    return ray_runtime_env(_CODE_ROOT)
 
 
 class _RayCreditObserver:
