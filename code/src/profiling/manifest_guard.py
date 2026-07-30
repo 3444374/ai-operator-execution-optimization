@@ -80,10 +80,10 @@ def validate_profile_manifest_contract(
                 "Chat request manifest requires manifest_pinned routing"
             )
     elif submission_granularity == "request":
-        if endpoint_routing != "manifest_pinned":
+        if endpoint_routing not in ("manifest_pinned", "prefix_affinity", "least_queued"):
             raise ValueError(
                 "request-granularity Completions manifest requires "
-                "manifest_pinned routing"
+                "manifest_pinned, prefix_affinity, or least_queued routing"
             )
     elif submission_granularity == "batch":
         if endpoint_routing != "least_queued":
