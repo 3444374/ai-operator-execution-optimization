@@ -17,7 +17,7 @@ runtime 执行门禁）
 | Token-budget vs Fixed Row（timeout=300）| ✅ 07-19 | **Token-budget 能约束 token tail**：6144/8192 吞吐接近 fixed 32/64，token P95 大幅降低 | 4096 吞吐更低（tradeoff）；未证明在所有场景下优于 fixed |
 | **Token-budget 1024–32768 容量曲线** | ⏳ 配置完成 | — | 预算甜点、过大预算的 completion barrier/HOL 代价、动态预算动作集 |
 | Length-align + Prefix-aware ablation | ✅ 07-19 | length+fixed 是负结果（token P95=33407）；prefix+token6144 吞吐最高（339 rows/s）但 prefix ratio 仅 6.4% | length-align 需配 token-budget；prefix 信号太弱 |
-| **Prefix 受控 workload 实验** | ✅ 07-26 | 0/30/70/100% cache-off screen；修复唯一 prefix 重排与隐式 length-align 耦合 | prefix cache 开启后的命中收益仍未验证 |
+| **Prefix 受控 workload + cache-ON 消融** | ✅ 07-26 / 07-31 | cache-OFF 0/30/70/100% screen；cache-ON batching（07-30，上游 batching 顺序中性 within 1.2%）+ prefix-affinity routing（07-31，纯 routing −0.1%、length-align +1.8% 不过门禁） | prefix 方向收口；per-arm 命中率待 runner 增采 |
 
 **RC1 当前状态**：✅ 动机成立，策略机制已验证。⚠️ 但不是"全面胜利"——token-budget 控制 token tail 的代价是更多 HTTP 调用，这个 tradeoff 本身是论文的讨论点。
 
@@ -255,18 +255,13 @@ static K=16 机制 control 后，AIMD 的 E2E +0.66%、tokens/s -0.69%，差异
 
 **同时追加指标**：`tokens/s`、`service_p99`。
 
-### P1：Prefix cache 机制确认 + 显式联合消融
+### P1：Prefix cache 机制确认 + 显式联合消融（✅ 完成 07-31）
 
-受控 prefix 0/30/70/100% 和 2048 请求扩展已经完成。下一步只在单独启用
-prefix cache 并能记录命中证据时重验 prefix-aware；length-align 与 prefix
-grouping 必须作为两个独立因素做显式联合消融。
-
-**设计**：
-- 构造 prefix ratio = 0/30/70/100% 的受控 workload
-- 仅在 prefix+token6144 条件下评估
-- 选取 token-budget vs fixed 实验 scale 到 2048 行
-
-**同时追加指标**：per-request e2e latency 分布（对 prefix-aware 论证至关重要）。
+- cache-OFF 受控 prefix 0/30/70/100% + 2048 请求扩展（07-26）；
+- cache-ON batching 消融（07-30，`experiments/results/prefix_cache_data_org_20260730/`）：上游 batching 顺序中性（within 1.2%，CV ≤0.5%）；
+- cache-ON prefix-affinity routing 消融（07-31，`experiments/results/prefix_cache_routing_req_20260730/`）：纯 routing −0.1%、length-align +1.8%（repeat 不重叠但 <5% 门禁）。
+- **结论**：vLLM APC 在多轮 ShareGPT 上覆盖上游 prefix 组织/路由优化，prefix 方向收口。
+- 残留（可选，reviewer 追问时）：per-arm prefix cache 命中率未记录（resources.csv 只采样 KV 用量，待 runner 增采）；>2 endpoint 或低 prefix 重复率 workload 泛化未测。
 
 ### P2：多模态泛化（触发条件：P0 和 P1 完成）
 

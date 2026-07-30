@@ -2900,3 +2900,26 @@
   检查 repeat CV、未施压等价臂、per-request token-ID 覆盖和交叉 regret，
   审计失败时 fail closed。新增 async/token-ID 单 runner 等价臂模板，先比较
   short/long K256、W65K、W98K；通过后才扩展 W49K 与 K×work 交互面。
+
+## 2026-07-31 Prefix-affinity routing 消融（cache ON）收口 prefix 方向
+
+- 完成 prefix-affinity routing 实验（`experiments/results/prefix_cache_routing_req_20260730/`）：
+  route_least_queued / route_affinity (prefix_affinity) / route_affinity_pala (prefix_affinity
+  + prefix_aware_length_align 二级排序)，1 warmup + 3 formal，seed 20260729，cache ON，
+  request 粒度。12/12 ok，0 incident。
+- model-request tok/s 中位数：least_queued 16093 / affinity 16078 / pala 16382，CV ≤0.5%。
+  纯路由效应 −0.1%（中性，cache 碎片化假设不被支持）；pala +1.8% 来自 length-align，
+  repeat 不重叠但低于 5% 门禁，不晋级。
+- 与 07-30 batching 消融（cache ON，batch 粒度，上游 batching 顺序中性，within 1.2%）
+  一致：vLLM APC 在多轮 ShareGPT 上自动复用 prefix，上游 batching + routing 均无额外
+  空间。**prefix 方向收口，转 OceanBase baseline。**
+- submission 粒度：`manifest_guard.py:82-93` 只在 request 粒度允许 prefix_affinity
+  （batch 粒度强制 least_queued）。故 routing baseline 与 batching（batch 粒度）不直接
+  可比；routing 三臂为干净 A/B。
+- 过程问题：
+  1. 环境漂移——batching 后 runtime env 的 BEST_TOKEN_BUDGET 改 8192→32768、
+     SOURCE_WORKLOAD_NAME 改 multiturn→burstgpt。已硬编码回 batching 值避免 silent 不可比。
+  2. manifest 元数据 bug——`service_metadata.prefix_caching` 声明 false 但 live vLLM 实际
+     ON（进程参数 + 日志 ~71% 命中率）。runner 从 env 默认填该字段、未探测 live vLLM。
+     不影响有效性（cache 确实开着），待修：runner 启动时从 vLLM /metrics 或进程参数探测
+     实际开关，并在 resources 增采 vLLM prefix_cache_hit_rate（本次 per-arm 命中率因此未记录）。
