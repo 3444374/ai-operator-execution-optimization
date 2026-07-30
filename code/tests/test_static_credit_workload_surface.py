@@ -128,6 +128,47 @@ class StaticCreditWorkloadSurfaceTests(unittest.TestCase):
                 )
             )
 
+    def test_reads_interleaved_workloads_from_one_runs_file(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "runs.csv"
+            self._write(
+                path,
+                {
+                    "short_k256_w65536": (
+                        100.0,
+                        10.0,
+                        65536.0,
+                        3.0,
+                    ),
+                    "short_k256_w98304": (
+                        90.0,
+                        8.0,
+                        98304.0,
+                        4.0,
+                    ),
+                    "long_k256_w65536": (
+                        100.0,
+                        10.0,
+                        65536.0,
+                        3.0,
+                    ),
+                    "long_k256_w98304": (
+                        90.0,
+                        8.0,
+                        98304.0,
+                        4.0,
+                    ),
+                },
+            )
+
+            result = summarize({"short": path, "long": path})
+
+            self.assertEqual(result["status"], "not_justified")
+            self.assertEqual(
+                result["selected_active_work_arm_by_workload"],
+                {"long": "w65536", "short": "w65536"},
+            )
+
     @staticmethod
     def _write(
         path: Path,
@@ -166,8 +207,9 @@ class StaticCreditWorkloadSurfaceTests(unittest.TestCase):
             )
             writer.writeheader()
             for scenario_id, metrics in values.items():
-                control = scenario_id[0]
-                limit = int(scenario_id[1:])
+                control_body = scenario_id.rsplit("_", 1)[-1]
+                control = control_body[0]
+                limit = int(control_body[1:])
                 for repeat in range(1, 4):
                     writer.writerow(
                         {

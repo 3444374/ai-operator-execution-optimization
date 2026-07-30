@@ -15,6 +15,13 @@ from pathlib import Path
 SCENARIO_PATTERN = re.compile(
     r"^(?P<control>[kw])(?P<limit>[1-9][0-9]*)$"
 )
+SCENARIO_BODY_PATTERN = re.compile(
+    r"^(?:"
+    r"k(?P<request_limit>[1-9][0-9]*)"
+    r"(?:_w(?P<combined_work_limit>[1-9][0-9]*))?"
+    r"|w(?P<work_limit>[1-9][0-9]*)"
+    r")$"
+)
 
 
 def _formal_rows(path: Path) -> list[dict[str, str]]:
@@ -68,6 +75,47 @@ def _parse_surface(value: str) -> tuple[str, Path]:
     return workload, Path(raw_path)
 
 
+def _scenario_for_workload(
+    raw_scenario_id: str,
+    workload: str,
+    workload_names: set[str],
+    *,
+    require_prefix: bool,
+) -> str | None:
+    body = raw_scenario_id
+    matched_workload = next(
+        (
+            candidate
+            for candidate in sorted(
+                workload_names, key=len, reverse=True
+            )
+            if raw_scenario_id.startswith(f"{candidate}_")
+        ),
+        None,
+    )
+    if matched_workload is not None:
+        if matched_workload != workload:
+            return None
+        body = raw_scenario_id[len(matched_workload) + 1 :]
+    elif require_prefix:
+        raise ValueError(
+            f"shared runs.csv scenario {raw_scenario_id!r} must start "
+            f"with one of {sorted(workload_names)}"
+        )
+
+    match = SCENARIO_BODY_PATTERN.fullmatch(body)
+    if match is None:
+        raise ValueError(
+            f"{workload} has invalid scenario_id {raw_scenario_id!r}"
+        )
+    work_limit = (
+        match["combined_work_limit"] or match["work_limit"]
+    )
+    if work_limit is not None:
+        return f"w{work_limit}"
+    return f"k{match['request_limit']}"
+
+
 def summarize(
     surfaces: dict[str, Path],
     *,
@@ -83,15 +131,21 @@ def summarize(
 
     workloads: dict[str, dict[str, dict[str, object]]] = {}
     audit_failures: list[dict[str, object]] = []
+    path_counts: dict[Path, int] = defaultdict(int)
+    for path in surfaces.values():
+        path_counts[path.resolve()] += 1
+    workload_names = set(surfaces)
     for workload, path in sorted(surfaces.items()):
         grouped: dict[str, list[dict[str, str]]] = defaultdict(list)
         for row in _formal_rows(path):
-            match = SCENARIO_PATTERN.fullmatch(row.get("scenario_id", ""))
-            if match is None:
-                raise ValueError(
-                    f"{workload} has invalid scenario_id "
-                    f"{row.get('scenario_id', '')}"
-                )
+            scenario_id = _scenario_for_workload(
+                row.get("scenario_id", ""),
+                workload,
+                workload_names,
+                require_prefix=path_counts[path.resolve()] > 1,
+            )
+            if scenario_id is None:
+                continue
             if row.get("status") != "ok":
                 raise ValueError(f"{workload} contains a non-ok formal row")
             failures = [
@@ -105,7 +159,9 @@ def summarize(
                 raise ValueError(
                     f"{workload} contains actor worker failures"
                 )
-            grouped[row["scenario_id"]].append(row)
+            normalized_row = dict(row)
+            normalized_row["scenario_id"] = scenario_id
+            grouped[scenario_id].append(normalized_row)
 
         cells: dict[str, dict[str, object]] = {}
         for scenario_id, rows in sorted(grouped.items()):
