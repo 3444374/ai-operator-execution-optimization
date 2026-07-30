@@ -34,6 +34,7 @@ runtime 执行门禁）
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
 | **Request-level continuous replenishment** | ⚠️ 双卡重复已完成 | global K32≈per-endpoint K16，确认 K 语义；work-matched request K48≈batch K16；request K64 为最高已测吞吐 | K64 同时增加约 33% offered work 且 P99 更差，尚未隔离补位机制的独立吞吐/SLO 收益；需固定 active work 复验 |
 | **Per-endpoint active-work capacity** | ✅ 07-29 扩展曲线完成 | 双 4090 八档各三次 formal；32/32 成功，65K 达最大吞吐 97.80%，下一档 +0.92% | 按预注册规则选择 65,536；98K→131K 吞吐持平而 P99/SLO 更差 |
+| **Short/long static credit existence screen** | ⚠️ 07-30 screening 完成，正式判决阻塞 | 48/48 run 成功；long 的 W65K 信号稳定，K256 在短/长两侧均造成明显 SLO 退化 | 实际为 urllib、无 output token IDs、非 K×work factorial；short 未绑定等价臂分裂 48.5%，均值/中位数选点相反。审计=`inconclusive`，必须先重跑 async 等价臂 gate |
 | **SLO-aware EWMA flush** | ✅ 07-29 | 双 4090 high/arrival-limited 各 3 次 formal；相对 fixed-50 吞吐 -0.52%/+0.10%，P99 -0.94%/-0.49%，30s SLO 全部零违约 | 25–50ms 动作相对 5.6–17.4s P99 缺少一阶杠杆；`near_*` 实测为 arrival-limited，不晋升动态策略 |
 | **多 job/多 foreground size 扩展** | ✅ 07-29 equal-workload 正式矩阵 | 36/36、0 incident；shared credit 容量安全与公平门槛通过。2-job 无增量；4-job 聚合吞吐 +9.57%、max P99 -22.52%，但逐 repeat 不稳定 | held-out 4-job、staggered idle borrowing、weighted overlap fairness、异构 mix/offset 仍待验证 |
 
@@ -44,6 +45,12 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 单作业与 shared-vLLM 复验均表明 AIMD 未优于同上限 static K=16，且根因不
 是控制器参数问题——shared-vLLM 实验中 vLLM waiting 始终为 0（请求在 Ray
 侧排队），AIMD 看的拥塞信号（vLLM waiting > 0 / KV usage 高）不反映 Ray 侧积压——形成"软拥塞"，即请求在 Ray actor 侧排队但 vLLM waiting 仍显示空闲。
+07-30 short/long prompt 静态 credit screening 不能关闭动态路线：远端最初
+使用 E2E tokens/s 算术平均得到 short/long 均为 W65K；正式 model-request
+中位数却得到 short W98K、long W65K。由于 short W65K/W98K cap 均未绑定却
+出现 18%/34% CV，且实验没有使用冻结的 async transport，该迁移信号与
+“共同 65K”信号都不具判决资格。下一步先运行 version-controlled async
+等价臂 gate，只有稳定性通过才重建交错静态面。
 不继续在当前稳态 workload 上调 PID 参数；动态控制在负载阶段变化/多租户/
 多 GPU 场景下仍是开放问题。
 

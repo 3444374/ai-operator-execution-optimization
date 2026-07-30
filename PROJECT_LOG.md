@@ -2877,3 +2877,26 @@
   分别扫描 K64/128/256，先过 95% capacity floor，再验证 K 迁移/可接受集合、
   ≥5% cross-workload regret 和 ≥2/3 paired repeats 同向。另增双 endpoint
   adaptive 256-row gate，只验证独立 controller/metrics/trace，不产出性能结论。
+
+## 2026-07-30 Short/long 静态 credit 筛选审计与动态判决纠错
+
+- 从远端同步 short/long prompt 两组 48/48 成功运行的 config、manifest、
+  runs 和独立汇总。short/long server-observed prompt tokens/row 分别为
+  16.95/566.23；prefix cache 关闭，模型为双 4090 Qwen2.5-7B。
+- 远端初始报告使用 E2E tokens/s 算术平均，得到 short/long 均为 W65K；
+  项目正式 model-request 中位数却选择 short W98K、long W65K。short
+  W65K/W98K throughput CV 为 18%/34%，不能把平均值交叉表作为动态
+  NO-GO。
+- 机制审计发现 short K256/W65K/W98K 均无 bounded wait、一次性放行
+  512 请求，work 高水位仅 49,318/endpoint；两个 work cap 未绑定，理论
+  等价臂的 model-request 中位数仍分裂 48.5%。同时配置实际使用 urllib、
+  未启用 output token IDs、short/long 未跨 workload 交错，六臂也不是
+  K×work factorial。
+- 因此本轮证据登记为 real-GPU screening / mechanism audit，机器判定为
+  `inconclusive`，不能声称动态 K 已被否决，也不能声称 short/long
+  精确 oracle 均为 65K。long W65K 的低 CV 正信号与 K256 的 SLO 负结果
+  保留为后续候选依据。
+- 新增 `summarize_static_credit_workload_surface.py`：统一使用中位数，
+  检查 repeat CV、未施压等价臂、per-request token-ID 覆盖和交叉 regret，
+  审计失败时 fail closed。新增 async/token-ID 单 runner 等价臂模板，先比较
+  short/long K256、W65K、W98K；通过后才扩展 W49K 与 K×work 交互面。

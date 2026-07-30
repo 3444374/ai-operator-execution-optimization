@@ -1,5 +1,29 @@
 # Learning Notes
 
+## 2026-07-30 为什么“短长都选 65K”还不能直接判动态无用
+
+远端把三次 formal 的 E2E tokens/s 做算术平均，得到 short/long 都是
+W65K，于是写成“固定 token-aware credit 已自动适配，动态 K 不需要”。
+这条推理的前半部分是合理假设，但数据还没有满足判决条件。
+
+项目正式校准使用 model-request throughput 中位数。按这个口径，short
+选 W98K，long 选 W65K；而 short W65K/W98K 的 repeat CV 高达 18%/34%。
+更关键的是，short 每 endpoint 最多只有约 49.3K observed work，65K 和
+98K cap 都没有真正挡住请求，bounded wait 都是 0。K256、W65K、W98K
+实际都一次性放行 512 行，理论上应接近，却出现 48.5% 中位数吞吐分裂。
+这说明当前差异首先是实验稳定性或服务状态问题，不是 active-work limit
+的因果效果。
+
+配置还暴露了三项执行偏差：实际 transport 是 urllib 而非冻结的 async；
+没有返回 token IDs，拿不到 per-request 实际 output token 分布；short
+全部跑完后才跑 long，而且六个臂只是 K-only/W-only 两条一维曲线，不是
+K×work factorial。
+
+因此正确读法是：long W65K 是值得保留的静态候选，K256 过度接纳的 SLO
+负结果也有价值；但动态 GO/NO-GO 必须标为 `inconclusive`。先用同一 async
+runner 交错重跑 K256/W65K/W98K 等价臂，未绑定臂收敛到 5% 内后，才有资格
+比较不同 workload 的静态 oracle 和交叉 regret。
+
 ## 2026-07-29 为什么要先做 K256/W98K 等价性门禁
 
 K256 表示每个 endpoint 最多同时保留 256 个 request；W98K 在同一个 K256

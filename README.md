@@ -124,6 +124,11 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
   formal；65K 已达到最大吞吐的 97.80%，下一档只增 0.92%，98K→131K
   完全持平而 P99 约升至 40s。按预注册规则选择 65,536。
   详见 `experiments/results/dual_gpu_active_work_saturation_20260729/`。
+- ⚠️ **短/长 prompt 静态 credit screening**（2026-07-30）：48/48 run
+  成功，但远端均值结论与正式中位数选点相反；short 未绑定等价臂出现
+  48.5% 吞吐分裂，且运行误用 urllib、缺 per-request output token IDs。
+  该轮保留为机制审计，判定为 `inconclusive`，不能据此关闭动态路线。
+  详见 `experiments/results/static_credit_prompt_length_screen_20260730/`。
 - ✅ **固定资源 Ray actor-pool 形状对照**（2026-07-29）：在相同 65K
   active work、256 slots 和 0.5 Ray CPU/endpoint 下，2×128/4×64 相对
   1×256 仅 +2.00%/+0.75%，未达到 5% 晋升门槛；保留最简单的 1×256。
@@ -139,10 +144,11 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
 - pgvector(384) 写回 0.897s vs JSON text 1.567s。
 - 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 与 `motivation/results/fake_cpu/` 仅作历史参考。
 
-**下一步**：active-work 已标定为每 endpoint 65,536，Actor Pool 保留
-1×256，固定 service quantum 与 SLO-EWMA 均未晋升；保留 request-level
-精确 completion 作为多 job 控制基础。下一轮优先做 Shared-vLLM 1/2/4-job
-shared request/work credit 与 work-conserving 公平队列门禁，再做
+**下一步**：active-work 当前静态候选仍为每 endpoint 65,536，Actor Pool
+保留 1×256，固定 service quantum 与 SLO-EWMA 均未晋升。先用
+async/token-ID 单一 runner 重跑 short/long K256/W65K/W98K 等价臂门禁，
+再决定单 job dynamic 是否有存在性；同时保留 request-level 精确 completion
+作为异质多 job shared credit、idle borrowing 和公平队列的控制基础。随后做
 prefix cache-on、多模态和路由/故障迁移 formal 验证。
 详见 `PROJECT_OUTLINE.md`
 §近期优先级、`experiments/plans/experiment_status_and_gaps.md` 和

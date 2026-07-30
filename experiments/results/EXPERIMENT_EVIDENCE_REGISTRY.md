@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-更新日期：2026-07-29
+更新日期：2026-07-30
 
 本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
 
@@ -27,6 +27,7 @@
 | BFD、output-aware、row-cap-first | batching 与 cost-mode tests | output-aware BFD、row-cap-aware packing 全系列 | 512 行有局部信号，1024 行未泛化且 SLO 明显恶化；不采用为默认，只保留可复用设计点。 |
 | Arrival replay 与 request lifecycle | lifecycle、runner 和 trace tests | `request_lifecycle_gate_20260725/` 及 flush 系列 | exactly-once、request→submission、arrival/flush/complete 时间链已闭环。 |
 | Per-endpoint active-work admission | active-work credit、least-work/least-queued routing 与 profiler tests | `dual_gpu_active_work_saturation_20260729/` | 双 4090 八档、每档三次 formal。65K 达到最大吞吐 97.80%，下一档仅 +0.92%；按预注册规则选为最小饱和点。98K→131K 吞吐持平且 P99/SLO 更差。 |
+| Static credit workload-existence audit | `summarize_static_credit_workload_surface.py` 与等价臂门禁模板 | `static_credit_prompt_length_screen_20260730/` | Short/long 48/48 成功，但 urllib/no-token-ID、非 factorial、short 无准入压力等价臂分裂 48.5%，且均值/中位数选择冲突；证据等级为真实 GPU screening，动态 GO/NO-GO=`inconclusive`。 |
 | Request-level continuous replenishment | request 粒度 replay、逐请求 credit release、Ray adapter 与 trace tests | `dual_gpu_request_replay_20260728/` | 双 4090 三次重复已跑通。等名义工作量的 request K48 与 batch K16 吞吐不可分辨；K64 吞吐最高但 offered work 高约 33%，且 P99 更差。机制可用，但独立性能增量尚未证明。 |
 | Complete-row service quantum | `slice_service_quanta`、offline/replay expansion、completion/credit trace tests | `dual_gpu_service_quantum_20260729/` | 固定 65K work 的三次重复完成；512/request 将 credit-held 降约 16%，但四档 quantum 吞吐相对 batch 仅 -0.03%～+0.54%，request +1.75%。固定 quantum 不晋升，request 保留作精确控制基础。 |
 | Static K_max | admission 与 profiler tests | local baseline 干扰实验、joint search | shared-vLLM 下 `K_max=8` 有必要性证据；当前静态安全基线。 |
@@ -47,6 +48,7 @@
 
 | 结果目录 | 角色 | 当前状态或结论 |
 |---|---|---|
+| `static_credit_prompt_length_screen_20260730/` | Short/long prompt 下 request K 与 active-work 的存在性筛选 | 48/48 成功；long W65K 有稳定正信号，但 short 未绑定等价臂高方差、urllib/no-token-ID 与非 factorial 设计使正式判决阻塞。保留为机制审计，先重跑 async 等价臂 gate。 |
 | `dual_gpu_shared_vllm_formal_20260729_1135/` | 1/2/4-job independent/static/shared-DRR 核心矩阵 | 36/36、0 incident；容量安全与公平门槛通过。2-job 无收益，4-job 聚合过门槛但重复异质，需 held-out 复验。 |
 | `dual_gpu_slo_ewma_flush_formal_20260729/` | high/arrival-limited 下 fixed、queue-adaptive 与 SLO-EWMA 对照 | 24/24 成功；exactly-once 与 completion-lag 审计通过。25–50ms 控制窗口相对 5.6–17.4s P99 缺少一阶杠杆，SLO-EWMA 不晋升。 |
 | `dual_gpu_service_quantum_20260729/` | 固定 work/pool 的 batch、四档 complete-row quantum 与 request 对照 | 24/24 成功；HOL/credit barrier 确实缩短，但没有转化为超过 5% 的稳态吞吐或 SLO 收益。 |

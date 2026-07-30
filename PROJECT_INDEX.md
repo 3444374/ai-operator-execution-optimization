@@ -22,6 +22,7 @@
 | `experiments/results/dual_gpu_actor_pool_shape_20260729/formal_summary.csv` | Plot-ready actor topology throughput, variability, tails, SLO, MFU and Ray overhead | Audit the preregistered 5% promotion decision |
 | `experiments/results/dual_gpu_active_work_saturation_20260729/README.md` | Dual-4090 eight-point request-level active-work saturation curve, preregistered selection, and seven-step analysis | Use 65,536 as the matched-work control for subsequent Ray strategy experiments |
 | `experiments/results/dual_gpu_active_work_saturation_20260729/formal_summary.csv` | Plot-ready means, variability, adjacent gains, tails, SLO, MFU and maximum work seen | Audit the 97%/next-gain<3% saturation decision |
+| `experiments/results/static_credit_prompt_length_screen_20260730/` | Short/long prompt request-K and active-work screening, resolved manifests/runs, median summary and fail-closed decision audit | Preserve the 48/48 real-GPU evidence while treating the dynamic GO/NO-GO as inconclusive because async/token-ID/equivalent-arm gates failed |
 | `experiments/results/dual_gpu_active_work_curve_20260728/README.md` | Dual-4090 request-level per-endpoint active-work capacity curve with three formal repeats per cap | Use 49,152 as the current knee candidate and 65,536 only as the best tested throughput boundary, not a proven optimum |
 | `experiments/results/dual_gpu_active_work_curve_20260728/formal_summary.csv` | Plot-ready active-work means, variability, tails, SLO goodput, utilization, and energy | Select matched-work control points for subsequent mechanism comparisons |
 | `experiments/results/dual_gpu_request_replay_20260728/README.md` | Dual-4090 batch-barrier vs request-level replenishment repeats with admission-work audit | Use the work-matched K48 comparison; treat K64 only as the best tested request K, not an isolated mechanism win or capacity optimum |
@@ -160,6 +161,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/README.md` | AutoDL 单一 runbook：环境准备、开机恢复、gate、正式实验和中断恢复 | 新对话接手远端实验时按顶部唯一入口直接操作 |
 | `code/scripts/select_strategy_calibration.py` | 从 feeding/direct/token-budget/actor-shape 证据生成冻结校准合同和环境覆盖 | 同协议 actor 曲线完成后、启动数据组织/提交策略/多 job formal 前执行 |
 | `code/scripts/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
+| `code/scripts/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
 | `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |
 | `research/literature_and_evidence_review.md` | 文献与官方资料依据 | 写调研、论文动机时读 |
@@ -358,6 +360,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_shared_vllm_j4_formal.example.json` | Shared-vLLM 4-job 独立正式模板 | j4 gate 通过后用于故障隔离或单独复验 |
 | `deploy/autodl/dual_gpu_submission_policy.example.json` | 保留 multi-prompt batch 的 active-work、least-work routing、动态预算与 adaptive flush 消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
 | `deploy/autodl/dual_gpu_static_k_workload_surface.example.json` | low/near-capacity/burst × K64/128/256 静态性能面 | 先判断不同 workload 的最佳静态点和错配代价是否足以支持动态策略 |
+| `deploy/autodl/dual_gpu_static_credit_prompt_length_gate.example.json` | short/long prompt 的 K256、K256+W65K、K256+W98K async 等价臂门禁 | 在重建静态 credit surface 前验证 transport、token IDs、跨 workload 交错与未绑定臂 5% 等价性 |
 | `deploy/autodl/dual_gpu_endpoint_adaptive_gate.example.json` | 双 endpoint typed adaptive 256 行可运行性门禁 | 验证 endpoint-local state/metrics/action trace，禁止当作性能结果 |
 | `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 官方/强 baseline 功能门禁规格 | calibration 前验证 Chat 请求等价、exactly-once、endpoint 分片、空队列与 adapter 能力 |
 | `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 同条件 baseline 独立标定网格 | gate 通过后标定 direct/Daft/Ray Data/project 容量；不得直接当作 formal |

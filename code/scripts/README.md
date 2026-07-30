@@ -883,3 +883,11 @@ data-organization、submission-policy 和 shared-vLLM formal runner 会核对
 workload 的静态 K。只有最佳 K 至少迁移 2×或 97% 可接受集合不重叠、错配
 损失至少 5%，且至少 2/3 paired repeats 同向时才输出 `passed`。
 `--require-pass` 在不存在动态优化空间时返回 2，供远端 runner fail closed。
+
+`summarize_static_credit_workload_surface.py` 用于 prompt 长度等 workload
+变化下的 request/work credit 审计。输入为重复的
+`--surface workload=/path/to/runs.csv`，统一输出 formal 中位数、均值、CV、
+SLO goodput/JCT、observed/configured limit、无准入压力标志和交叉 regret。
+如果候选臂 CV 超过 5%、未绑定等价臂相差超过 5%，或缺少 per-request output
+token IDs，结果固定为 `inconclusive`，不能用算术平均表触发 adaptive
+GO/NO-GO。07-30 short/long screening 正是因这些审计失败而被降级。

@@ -183,10 +183,16 @@
    并始终分列 model-request、
    operator 和 database E2E。旧 8K length-align 的 P50/SLO 正信号只作候选，
    需 512/1024/2048 规模头对头复验；旧 K64/K32 submission 延迟不可归因。
-2. **P0**：动态提交先过存在性门禁：固定其他变量，对 low/near/burst
-   workload 扫 K64/128/256。只有最佳 K 迁移至少 2×或 97% 可接受区间不
-   重叠，且错配造成至少 5% SLO-goodput/JCT 损失，才运行 endpoint-local
-   AIMD/PID/预测式 formal；否则冻结静态点并停止动态排名。
+2. **P0**：动态提交先过存在性门禁。07-30 short/long prompt 六臂
+   screening 虽 48/48 成功，但实际为 urllib、无 output token IDs、非
+   K×work factorial；short 侧未绑定的 K256/W65K/W98K 等价臂
+   model-request throughput 中位数分裂 48.5%，且 W65K/W98K CV 为
+   18%/34%。远端算术平均得到“共同 W65K”，正式中位数却选择 short
+   W98K/long W65K，因此审计结论是 `inconclusive`，不能据此关闭或启动
+   dynamic。先用 async/token-ID 单一 runner 交错重跑等价臂 gate；通过后
+   才扫描 static K/work surface。只有最佳点明显迁移、97% 区间不重叠且
+   错配造成至少 5% SLO-goodput/JCT 损失，才运行 endpoint-local
+   AIMD/PID/预测式 formal；否则冻结共同静态点并停止动态排名。
 3. **P1**：当前 AutoDL 使用有界 async actor 的 1/2/4-job formal。j4
    `ray_task` 因 200+ worker 撞上 `vm.max_map_count=65530`；独立
    j4 actor gate 已在相同 VMA 容器三臂通过，正式矩阵恢复 1/2/4。随后再验证 staggered idle

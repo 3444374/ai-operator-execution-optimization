@@ -113,8 +113,12 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
    Completions 工作点补跑 1/2/4/8/16 actor 曲线后再冻结 actor shape，Chat
    曲线不能跨协议代替。49K 另记为 SLO-goodput 候选。下一步按同一合同重跑 length-align
    与 submission 单因素消融，继续分列 model-request/operator/database E2E
-2. **P0**：先跑 static-K workload surface；只有不同 workload 的最佳 K
-   明显迁移且错配代价至少 5%，才继续 endpoint-local adaptive formal。
+2. **P0**：07-30 short/long static-credit screening 为
+   `inconclusive`：远端均值表选择共同 W65K，但正式中位数选择 short
+   W98K/long W65K；short 未绑定等价臂分裂且 CV 达 18%/34%，同时误用了
+   urllib、缺 output token IDs。先用同一 async runner 交错重跑
+   K256/W65K/W98K 等价臂门禁；只有静态最优稳定迁移且错配代价至少 5%，
+   才继续 endpoint-local adaptive formal。
 3. **P1**：完成有界 actor 的 Shared-vLLM 1/2/4-job。原 j4 `ray_task`
    创建 200+ worker 并撞上容器 VMA 上限；新的 j4 actor gate 已在同一容器
    三臂通过。正式 1/2/4 后再做 staggered idle borrowing、weighted overlap fairness 与异构

@@ -8,6 +8,7 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
+| `static_credit_prompt_length_screen_20260730/` | Short/long prompt static request/work credit screening, with independent median/CV/equivalent-arm audit. | 48/48 succeeded, but urllib/no-token-ID and 48.5% divergence among no-pressure short arms make the dynamic GO/NO-GO inconclusive. Retained as mechanism-audit evidence; rerun the async equivalence gate. |
 | `dual_gpu_shared_vllm_formal_20260729_1135/` | 1/2/4-job independent-full, static-partition and endpoint-shared DRR comparison. | 36/36 succeeded with exact global request/work bounds. Two jobs show no gain; four jobs improve aggregate throughput by 9.57% and max P99 by 22.52%, but repeat-level results are heterogeneous, so this is a high-contention candidate rather than a universal default. |
 | `dual_gpu_slo_ewma_flush_formal_20260729/` | Fixed-50, queue-25/50 and SLO-EWMA-25/50 under high and arrival-limited replay. | 24/24 succeeded; SLO-EWMA changes throughput by -0.52%/+0.10% versus fixed and all arms have zero 30s-SLO violations. It does not meet the promotion gate. |
 | `dual_gpu_service_quantum_20260729/` | Fixed-work batch/512/1024/2048/4096/request completion-granularity comparison. | Fine granularity reduces credit-held by about 16% but changes throughput by at most +1.75%; no fixed quantum meets the promotion gate. |

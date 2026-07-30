@@ -92,6 +92,7 @@ class ExperimentScenarioTests(unittest.TestCase):
         )
         env = {
             "DATABASE_URL": "postgresql://example",
+            "RAY_ADDRESS": "127.0.0.1:6380",
             "COMPLETION_ENDPOINT_URLS": (
                 "http://gpu0/v1/completions,http://gpu1/v1/completions"
             ),
@@ -103,6 +104,12 @@ class ExperimentScenarioTests(unittest.TestCase):
             "SINGLE_ENDPOINT_GPU_ID": "0",
             "SOURCE_WORKLOAD_NAME": "sharegpt_burstgpt",
             "SOURCE_MAX_PROMPT_TOKENS": "1500",
+            "SHORT_TOTAL_ROWS": "512",
+            "SHORT_REQUEST_MANIFEST": "/tmp/short.jsonl",
+            "SHORT_SOURCE_WORKLOAD_NAME": "short_prompt_lt50",
+            "LONG_TOTAL_ROWS": "325",
+            "LONG_REQUEST_MANIFEST": "/tmp/long.jsonl",
+            "LONG_SOURCE_WORKLOAD_NAME": "long_prompt_ge150",
             "COMPLETION_MODEL": "qwen2.5-7b",
             "COMPLETION_MAX_TOKENS": "256",
             "COMPLETION_PROTOCOL": "completions",
@@ -139,6 +146,7 @@ class ExperimentScenarioTests(unittest.TestCase):
             "dual_gpu_active_work_curve.example.json": 8,
             "dual_gpu_actor_pool_shape.example.json": 5,
             "dual_gpu_static_k_workload_surface.example.json": 9,
+            "dual_gpu_static_credit_prompt_length_gate.example.json": 6,
             "dual_gpu_endpoint_adaptive_gate.example.json": 2,
             "dual_gpu_service_quantum.example.json": 6,
             "dual_gpu_slo_ewma_flush.example.json": 6,
@@ -370,6 +378,32 @@ class ExperimentScenarioTests(unittest.TestCase):
                     self.assertIn("slo_ewma", scenario.args)
                     self.assertIn("--flush-ewma-alpha", scenario.args)
                     self.assertIn("--flush-deadband-ratio", scenario.args)
+
+            prompt_length_gate = _load_config(
+                CODE_ROOT.parent
+                / "deploy"
+                / "autodl"
+                / "dual_gpu_static_credit_prompt_length_gate.example.json"
+            )
+            self.assertIn("httpx_async", prompt_length_gate.common_args)
+            self.assertIn(
+                "--completion-return-token-ids",
+                prompt_length_gate.common_args,
+            )
+            self.assertEqual(
+                [
+                    item.scenario_id
+                    for item in prompt_length_gate.scenarios
+                ],
+                [
+                    "short_k256",
+                    "short_k256_w65536",
+                    "short_k256_w98304",
+                    "long_k256",
+                    "long_k256_w65536",
+                    "long_k256_w98304",
+                ],
+            )
 
     def test_wait_for_idle_reports_metrics_fetch_failure(self) -> None:
         health_response = MagicMock()

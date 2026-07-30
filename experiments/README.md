@@ -20,6 +20,14 @@ SLO-goodput 候选。
 4-job `ray_task` 因数百 worker 撞上容器 VMA 上限；有界 actor gate 已在同一
 65530 VMA 容器通过，默认 formal 因而恢复为 1/2/4-job。
 
+2026-07-30 的 short/long prompt static-credit screening 完成 48/48 run，
+但未通过正式判决门禁：运行使用 urllib 且未返回 token IDs，short 的
+K256/W65K/W98K 没有形成准入等待却出现 48.5% 中位数吞吐分裂，
+W65K/W98K repeat CV 达 18%/34%。远端算术平均的“共同 W65K”与正式
+中位数选择相反，因此只登记为真实 GPU screening / 机制审计，状态为
+`inconclusive`。下一步先运行 async/token-ID 等价臂 gate，不直接启动
+adaptive formal。
+
 2026-07-29 起，继续增加调度策略前先补两层同规模 baseline：第一层为无
 Daft/Ray 的 OceanBase `AI_COMPLETE` 与同 PostgreSQL bounded AsyncIO；第二层
 为 Daft `prompt()` Native/Ray 和 Ray Data HTTP Processor。两层与 ours 均统一

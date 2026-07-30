@@ -673,7 +673,15 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 
     只有状态为 `passed` 才允许继续 adaptive formal；退出码 2 表示不同
     workload 的静态最优区间/错配代价不足，应该停止动态策略排名。
-11. `dual_gpu_endpoint_adaptive_gate.example.json`：仅验证双 endpoint typed
+11. `dual_gpu_static_credit_prompt_length_gate.example.json`：07-30
+    short/long screening 的纠错门禁。它在一个 runner 内交错 short/long，
+    显式使用 `httpx_async` 与 output token IDs，并比较 K256、
+    K256+W65K、K256+W98K。若某 work cap 未绑定且 bounded wait=0，该臂与
+    K256 的 model-request throughput/P99 必须在 5% 内、至少 2/3 repeats
+    同向；否则状态保持 `inconclusive`，禁止扩大静态面或启动 adaptive。
+    门禁通过后才增加 W49K 和 K×work 交互，不得再把三档 K-only 加三档
+    W-only 写成 “K×active-work factorial”。
+12. `dual_gpu_endpoint_adaptive_gate.example.json`：仅验证双 endpoint typed
     controller 的独立 state、metrics 和 action trace，不产出性能结论。两个
     endpoint 都必须有 trace、0 failure、最终空队列后，才能制作漂移 formal。
 

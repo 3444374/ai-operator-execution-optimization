@@ -271,6 +271,31 @@ JCT、P99、waiting/KV 和 active work。动态策略只有同时满足以下条
 3. 该损失发生在相同模型、协议、endpoint、actor shape 和数据组织下，不能由
    Chat/Completions、行数、work credit 或 actor 数混杂解释。
 
+2026-07-30 的 short/long prompt screening 进一步增加以下 fail-closed
+条件。该轮 48/48 run 成功，但实际使用 `urllib`、没有 output token IDs，
+且 short 侧两个未绑定 work cap 的吞吐 CV 达 18%/34%；远端均值结论与正式
+中位数选择相反。因此它登记为 `inconclusive`，不能触发 adaptive：
+
+1. 正式链路必须显式固定 `httpx_async` 和
+   `completion_return_token_ids`，不能依赖 profiler 默认值；
+2. short/long 场景放在同一个 runner 中按 repeat 交错，不能先跑完一个
+   workload 再跑另一个；
+3. 同时报告相同行数与相同 offered token work；两种口径回答不同问题；
+4. K 与 work 若声称为 “K×work”，必须运行笛卡尔或最小交互矩阵；只跑三档
+   K-only 加三档 W-only 只能称 alternative-control screening；
+5. 使用 formal 中位数选点；候选臂 model-request throughput CV 必须
+   ≤5%。CV 超限先查服务状态和顺序效应，不增加 repeat 掩盖事故；
+6. 如果两个 cap 都未绑定、bounded wait=0 且放行相同请求，它们是等价性
+   sentinel，吞吐差必须在 5% 内并至少 2/3 repeats 同向；否则整轮判为
+   `inconclusive`；
+7. per-request prompt/output P50/P95/P99 必须来自目标模型 tokenizer 或
+   token IDs；whitespace word count 不能替代模型 token。
+
+最小重跑先使用
+`deploy/autodl/dual_gpu_static_credit_prompt_length_gate.example.json`
+交错比较 K256、K256+W65K、K256+W98K。只有等价臂门禁通过，才补
+W32K/W49K/W65K/W98K 与必要的 K×work 交互面。
+
 该门禁必须在真实 GPU、真实模型、真实 vLLM/Ray/Daft 链路上运行。CPU/fake
 只允许验证判定脚本和 trace 正确性，不能用来证明静态最优点迁移或决定动态
 控制器参数；这与项目“完整真实链路 → 分阶段定位 → 大块消融”的既定方法一致。

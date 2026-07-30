@@ -42,6 +42,12 @@ arrival replay 隔离数据组织，最后回到 arrival replay 检验 request-l
 破坏公平对照。具体矩阵和晋级条件以 `experiment_status_and_gaps.md`
 §剩余关键缺口与 §10.3 为准。
 
+动态提交另有独立 fail-closed 顺序：07-30 short/long screening 因
+urllib/no-token-ID、未绑定等价臂高方差和非 factorial 设计判为
+`inconclusive`。先运行 version-controlled async 等价臂门禁；只有同一
+runner 中 short/long 的 K256/W65K/W98K 通过 5% 等价性和 repeat 稳定性，
+才补静态 credit surface，最后才决定是否运行 endpoint-local adaptive。
+
 ## 二、设计参考
 
 | 文件 | 用途 | 回答什么 |
