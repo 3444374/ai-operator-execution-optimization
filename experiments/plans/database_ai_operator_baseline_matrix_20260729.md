@@ -1,10 +1,10 @@
 # 数据库 AI 算子与官方 Runtime Baseline 矩阵
 
 日期：2026-07-30
-状态：直接客户端 512 行 Chat C128/C256 calibration 已完成；远端结果证明
-project profiler 尚未通过提交/传输层喂饱门禁。先完成 Chat 持久异步连接和
-multi-prompt Completions 同协议校准，再允许策略排名；2,048 行 disjoint
-formal 仍因源数据短缺 512 行而阻塞。
+状态：直接客户端 512 行 Chat C128/C256 calibration 已完成；2026-07-30
+worktree 单次 smoke 显示 Chat async K256 与 multi-prompt Completions fixed16
+均已接近同协议 direct 的模型请求窗口，功能门禁通过，仍需 1 warm-up + 3
+formal repeats 确认。2,048 行 disjoint formal 仍因源数据短缺 512 行而阻塞。
 
 ## 0. 一句话目标与成功条件
 
@@ -214,7 +214,7 @@ time-to-ceiling/ramp-regret 至少改善 10%，只声称压力效率或瞬态改
 |---|---|---|---|
 | 正确性 gate | 所有 adapter | exactly-once、0 failure、同 manifest/counter、空队列 | 任一失败即停 |
 | 服务上限 | vLLM Bench/同协议 direct client | service JCT、tokens/s、平台曲线 | 记录 ceiling；不要求项目超越 |
-| 喂饱门禁 | project fixed submission vs 同协议 bounded client | operator JCT、capacity efficiency、headers wait、running | warmed project ≥95% bounded；否则禁止策略排名 |
+| 喂饱门禁 | project fixed submission vs 同协议 bounded client | model-request JCT/throughput、headers wait、running；另报 operator/E2E | warmed model-request capacity ≥95% bounded；否则禁止策略排名 |
 | 官方 runtime | Daft Native/Ray、Ray Data、OceanBase capability | operator/database E2E、真实 HTTP 粒度 | 同语义、同计时边界后才排名 |
 | 数据组织 | fixed rows vs token-budget/length/prefix | operator E2E、P99、packing/HTTP body | 相对冻结静态 baseline 做单因素消融 |
 | 提交控制 | static K/flush vs adaptive | E2E、ramp regret、SLO、active work | 控制参数冻结，不能 per-workload 手调 |
@@ -470,9 +470,13 @@ Ray actor、HTTP connection/headers 和 vLLM ingress 所见的提交形态。旧
 3. **project Completions feeding**：使用相同 fixed-row 组合和持久 async
    actor，保留原 multi-prompt body。只有它接近对应 bounded Completions，
    才进入 token-budget/length-align/adaptive flush；
-4. feeding gate 使用 warmed repeat，project 吞吐不低于同协议 bounded 95%，
-   且 JCT 不高于 1.05×、0 failure、exactly-once、最终空队列。未通过时只继续
-   transport/runtime profiling，不运行大规模策略矩阵。
+4. feeding gate 先比较不含 source fetch/organize/writeback 的
+   `model_request_wall_s` 与
+   `model_request_tokens_per_s=(server prompt+generation tokens) /
+   model_request_wall_s`。project 不低于同协议 bounded 95%，且模型请求 JCT
+   不高于 1.05×、0 failure、exactly-once、最终空队列才通过。完整
+   `operator_wall_s`、`operator_tokens_per_s`、`e2e_s` 和 `tokens_per_s`
+   仍必须同时报告，但不能把数据库/Daft 固有时间归因成 feeding 缺口。
 
 此前 shared-vLLM 1/2/4-job `_v3` 只完成 1-job 和 2-job warm-up，4-job
 independent warm-up 因 Ray worker 创建失败及 OpenBLAS 每进程尝试 32 线程而
@@ -480,6 +484,31 @@ independent warm-up 因 Ray worker 创建失败及 OpenBLAS 每进程尝试 32 �
 formal 多 job 结论。运行环境现统一限制 OMP/OpenBLAS/MKL/NumExpr 为单线程，
 trace 对失败 lifecycle 写出证据后再抛原始错误；必须在新提交、新 worktree、
 新输出目录重跑功能 gate 后才恢复 multi-job formal。
+
+### 8.8 2026-07-30 worktree 单次真实请求 smoke
+
+提交 `24d6fe3` 在远端独立 worktree 完成 524/524 单元测试、ruff 和
+compileall。512 行 immutable manifest、双 endpoint 的三项真实 smoke 均
+512/512 success、0 worker failure、exactly-once、最终空队列：
+
+| 路径 | 配置 | model/direct JCT (s) | model-request 或 direct tokens/s | 完整 project E2E (s) / tokens/s |
+|---|---|---:|---:|---:|
+| bounded Completions | fixed16 × C16/endpoint | 10.943 | 16,624 | service-only |
+| project Completions | fixed16、async、K16/endpoint | 11.164 | 16,265 | 14.211 / 12,778 |
+| project Chat | async、K64/endpoint | 23.464 | 7,807 | 25.884 / 7,077 |
+| project Chat | async、K256/endpoint | 12.552 | 14,581 | 13.916 / 13,152 |
+| bounded Chat（既有） | C256/endpoint | 12.569 | 14,532 | service-only |
+
+事实：Completions model-request capacity 为同协议 direct 的约 97.8%；Chat
+async K256 的模型请求窗口与 bounded Chat 基本重合，而 K64 明显欠载。这支持
+“持久 async dispatch + 足够的 per-endpoint K 修复 feeding”的机制判断，也
+说明 K 必须按负载校准而不是越小越稳。
+
+边界：以上是一次 worktree smoke，project E2E 还包含约 0.6–2.3s source fetch
+以及组织/编排时间；不能把 model-request 接近 direct 写成 database E2E 已等价，
+也不能据此选择正式最优 batch/K。下一步只运行已预注册的 1 warm-up + 3
+repeats feeding 配置；重复门禁通过后，Completions 轨道才进入 token-budget
+曲线，Chat 轨道才进入官方 runtime/多 job 对照。
 
 ## 9. 详细工程设计
 

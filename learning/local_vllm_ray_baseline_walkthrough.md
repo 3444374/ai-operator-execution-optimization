@@ -169,3 +169,11 @@ multi-prompt 不是把一行 prompt 切碎，而是一次 HTTP 携带多条完�
 选定后在 held-out 上冻结；dynamic policy 只冻结候选范围和反馈规则，运行时
 适应负载；为每个 workload 事后 sweep 的最优静态点只能作为 oracle，用来
 衡量 dynamic regret，不能冒充可部署方案。
+
+feeding 要按正确的计时边界判断。direct client 没有 PostgreSQL fetch 和 Daft
+organize，因此它应与 project 的 `model_request_wall_s` /
+`model_request_tokens_per_s` 比较；`operator_wall_s` 和完整 `e2e_s` 则回答
+上游框架与数据库链路还付出了多少代价。2026-07-30 单次 smoke 中，Chat async
+K256 和 Completions fixed16 的 model-request 窗口都已接近同协议 direct，
+但完整 E2E 仍慢约 1.3–3.3s。正确结论是“feeding 已接近上限、上游仍有开销”，
+而不是“项目等于服务上限”。

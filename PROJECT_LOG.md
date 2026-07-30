@@ -31,6 +31,16 @@
   per-workload static oracle 和 dynamic policy；动态策略允许一次安全边界
   校准，但不能针对每个 workload 人工精调。token-budget 实验在固定 active
   work 下扫描完整曲线，证明预算并非越大越好后才评价动态控制。
+- 远端独立 worktree 的 524/524 测试、ruff、compileall 和三项 512 行真实
+  smoke 通过。multi-prompt fixed16 的 project model-request wall 为
+  11.164s、同协议 bounded 为 10.943s（约 97.8% capacity）；Chat async
+  K256 为 12.552s，与 bounded Chat C256 12.569s 基本重合，而 K64 为
+  23.464s。完整 project E2E 分别为 14.211s/13.916s，说明提交层已接近上限，
+  但 PostgreSQL/Daft/编排开销仍需单独优化和报告。该证据仅是单次 smoke，
+  正式晋级仍需 1 warm-up + 3 repeats。
+- runs.csv 新增 `model_request_tokens_per_s` 与 `operator_tokens_per_s`；
+  既有 `tokens_per_s` 继续明确表示完整 E2E 吞吐，避免把 source/organize
+  时间混成 feeding 缺口。
 
 ## 2026-07-29 文献基线版本升级
 

@@ -1348,9 +1348,12 @@ eligible rows 计数；`append-only` 遇到任一 doc ID 冲突即使事务失�
 ### 目标
 
 先验证项目提交路径能否持续喂饱 vLLM，再测试 token-budget、动态 K 或 adaptive
-flush。对固定 512 行 manifest，warmed project 必须达到同协议 bounded client
-至少 95% tokens/s，且 JCT 不超过 1.05×、0 failure、exactly-once、最终队列
-为空。未通过时停止策略矩阵，只分析 Ray/HTTP/ingress。
+flush。对固定 512 行 manifest，feeding 主口径使用服务端 token counter 除以
+`model_request_wall_s`，并与同协议 bounded service JCT/throughput 比较；
+warmed project 必须达到至少 95%，且 model-request JCT 不超过 1.05×、
+0 failure、exactly-once、最终队列为空。完整 `operator_wall_s`/E2E 仍报告，
+但 source fetch/Daft 时间不能误归因给 vLLM feeding。未通过时停止策略矩阵，
+只分析 Ray/HTTP/ingress。
 
 两条轨道不得交叉排名：
 

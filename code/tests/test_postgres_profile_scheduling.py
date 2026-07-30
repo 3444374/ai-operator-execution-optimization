@@ -3945,6 +3945,13 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertEqual(profile._vllm_tokens_per_second(stats, 4.0), 250.0)
         self.assertEqual(profile._vllm_tokens_per_second(stats, 0.0), 0.0)
+        self.assertEqual(
+            profile.FORMAL_RESULT_FIELDS[-2:],
+            (
+                "model_request_tokens_per_s",
+                "operator_tokens_per_s",
+            ),
+        )
 
 
 class _DeterministicReplayClock:

@@ -112,7 +112,10 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
    欠载，尚不能做策略排名。Chat 轨道比较持久 async actor dispatch 与 actor
    shape；Completions 轨道保留原 multi-prompt 设计，以无 Ray fixed-row
    multi-prompt 作同协议强对照。warmed project 达到同协议 bounded 至少
-   95% 后，才冻结静态点并测试 token-budget、动态 K/flush。两个协议不得
+   95% 后，才冻结静态点并测试 token-budget、动态 K/flush。单次 worktree
+   smoke 已显示 Completions project/direct model-request 11.164/10.943s，
+   Chat async K256/bounded 12.552/12.569s；功能门禁通过，正式放行仍需
+   1 warm-up + 3 repeats。完整 operator/database E2E 继续单列。两个协议不得
    交叉排名。disjoint 2,048 formal 仍缺 512 个独立源行，须逐字段核验旧
    prefix 后 append-only 补齐；之后才比较 OceanBase、Daft Native/Ray 与
    Ray Data 官方框架对照

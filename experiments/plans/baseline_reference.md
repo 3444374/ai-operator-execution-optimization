@@ -72,10 +72,12 @@ per-workload oracle 的 regret；不能把为每个 workload 人工精调的 ora
 
 当前已使用真实双 4090 vLLM endpoint，并建立 vLLM Bench、bounded HTTP、
 Daft `prompt()` Native/Ray 和 Ray Data HTTP Processor 的同 manifest 功能/计数
-门禁。2026-07-30 复核发现项目 Chat 路径最佳约 5.9K tokens/s、31.2s，而
-同 manifest bounded Chat C256 为 14.5K tokens/s、12.6s；因此下一步先完成
-持久异步 HTTP/Ray dispatch 与 multi-prompt Completions 同协议 feeding gate。
-在 warmed project 未达到同协议 bounded 至少 95% 前，不进行策略正式排名。
+门禁。2026-07-30 复核发现旧 project Chat 路径最佳约
+5.9K tokens/s、31.2s，而同 manifest bounded Chat C256 为
+14.5K tokens/s、12.6s。新增持久异步 HTTP/Ray dispatch 后，单次 worktree
+smoke 的 Chat K256 model-request wall 为 12.552s；multi-prompt
+Completions fixed16 project/direct 为 11.164/10.943s，功能上已接近同协议
+上限。正式策略排名仍需 1 warm-up + 3 repeats feeding gate 达到至少 95%。
 之后只做必要的独立 calibration，找到合理强且进入平台期的配置；不把每个
 baseline 调成无限参数搜索，也不把未到 ceiling 的默认点当最终结果。
 

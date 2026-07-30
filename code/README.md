@@ -119,6 +119,9 @@ now lives under `code/src/`:
   output against dry-run keys before database or GPU work. Empty files receive
   a header; non-empty files reject appended rows whose ordered keys do not
   exactly match the existing header.
+  `model_request_tokens_per_s` isolates the model-submission window,
+  `operator_tokens_per_s` uses the operator wall, and legacy `tokens_per_s`
+  remains the complete E2E rate; comparisons must not mix these time bases.
 - `profiling/traces.py`: versioned control/flush/submission/request/resource CSV
   serializers. Control schema 2 records the actual `hol_age_s` input;
   submission schema 3 uses scheduler lifecycle IDs and records pool,

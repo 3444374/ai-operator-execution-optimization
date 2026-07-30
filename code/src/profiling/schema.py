@@ -92,6 +92,7 @@ FORMAL_RESULT_FIELDS = tuple(
     batch_prompt_token_spread_mean prefix_group_ratio organizer_warnings
     model_service_s model_request_wall_s operator_wall_s submit_s bounded_wait_s
     avg_bounded_wait_s fanin_s writeback_s e2e_s rows_per_s tokens_per_s
+    model_request_tokens_per_s operator_tokens_per_s
     """.split()
 )
 

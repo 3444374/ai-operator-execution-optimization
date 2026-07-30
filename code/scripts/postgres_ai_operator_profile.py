@@ -2832,6 +2832,14 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "e2e_s": round(e2e_s, 6),
             "rows_per_s": round(processed_rows / e2e_s, 3) if e2e_s else 0.0,
             "tokens_per_s": round(_vllm_tokens_per_second(vllm_stats, e2e_s), 3),
+            "model_request_tokens_per_s": round(
+                _vllm_tokens_per_second(vllm_stats, request_wall_s),
+                3,
+            ),
+            "operator_tokens_per_s": round(
+                _vllm_tokens_per_second(vllm_stats, operator_wall_s),
+                3,
+            ),
         })
     except BaseException as original_error:
         if job_id is not None:

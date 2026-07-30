@@ -182,7 +182,11 @@
    1×256/2×128/4×64 actor shape；Completions 轨道保留原 multi-prompt
    设计，先用无 Ray bounded fixed-row multi-prompt 对照校准 HTTP packing，
    再测 project fixed-row feeding。warmed project 达到同协议 bounded 至少
-   95% 后，才冻结最小 97%-ceiling 配置并启动策略排名。两个协议不得交叉
+   95% 后，才冻结最小 97%-ceiling 配置并启动策略排名。单次 worktree
+   smoke 中，Completions fixed16 的 project/direct model-request JCT 为
+   11.164/10.943s，Chat async K256/bounded Chat 为 12.552/12.569s，已通过
+   功能门禁；仍需 1 warm-up + 3 repeats 才能正式放行。feeding 比较使用
+   model-request 窗口，operator 与 database E2E 另行报告。两个协议不得交叉
    声称加速。2,048 行 disjoint formal 当前因源数据只有
    `doc_id=0..2047` 而缺 512 行；必须补独立数据并用 `source_row_offset=512`
    导出只读 manifest；补数必须逐字段核验已有 0..2047 后 append-only。
