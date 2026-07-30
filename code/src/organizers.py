@@ -39,6 +39,8 @@ BatchingPolicy = Literal[
     "length_align_token_budget",
     "prefix_aware_fixed_rows",
     "prefix_aware_token_budget",
+    "prefix_aware_length_align_fixed_rows",
+    "prefix_aware_length_align_token_budget",
 ]
 _CONFIGURED_DAFT_RUNNER: DaftRunner | None = None
 
@@ -237,6 +239,8 @@ def _validate_batching_policy(config: OrganizerConfig) -> None:
         "length_align_token_budget",
         "prefix_aware_fixed_rows",
         "prefix_aware_token_budget",
+        "prefix_aware_length_align_fixed_rows",
+        "prefix_aware_length_align_token_budget",
     ):
         raise ValueError(f"unknown batching policy: {config.batching_policy}")
     if _uses_token_budget(config.batching_policy) and config.token_budget <= 0:
@@ -250,6 +254,7 @@ def _uses_token_budget(policy: BatchingPolicy) -> bool:
         "row_cap_aware_token_budget",
         "length_align_token_budget",
         "prefix_aware_token_budget",
+        "prefix_aware_length_align_token_budget",
     )
 
 
@@ -292,6 +297,21 @@ def _sort_table_for_policy(table: pa.Table, policy: BatchingPolicy) -> pa.Table:
                 continue
             order.extend(groups[value])
             emitted.add(value)
+        return table.take(pa.array(order, type=pa.int64()))
+    if policy in ("prefix_aware_length_align_fixed_rows", "prefix_aware_length_align_token_budget"):
+        # Two-level sort: primary by prefix_key (group same-prefix rows
+        # contiguously for cache locality), secondary by prompt_tokens
+        # (length-align within each prefix group to reduce HOL blocking).
+        if "prefix_key" not in table.column_names or "prompt_tokens" not in table.column_names:
+            return table
+        order = sorted(
+            range(table.num_rows),
+            key=lambda index: (
+                str(table.column("prefix_key")[index].as_py() or ""),
+                _safe_int(table.column("prompt_tokens")[index].as_py()),
+                _safe_int(table.column("doc_id")[index].as_py()) if "doc_id" in table.column_names else index,
+            ),
+        )
         return table.take(pa.array(order, type=pa.int64()))
     return table
 
