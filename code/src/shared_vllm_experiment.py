@@ -216,6 +216,15 @@ def load_config(path: Path) -> SharedVllmConfig:
     if len(set(scenario_ids)) != len(scenario_ids):
         raise ValueError("scenario_id values must be unique")
     executor = _argument_value(common_args, "--executor", "")
+    if executor == "ray_actor":
+        expected_endpoint_ids = tuple(
+            f"endpoint-{index}" for index in range(len(endpoint_ids_raw))
+        )
+        if tuple(endpoint_ids_raw) != expected_endpoint_ids:
+            raise ValueError(
+                "ray_actor endpoint_ids must match profiler actor topology: "
+                + ",".join(expected_endpoint_ids)
+            )
     if (
         any(scenario.job_count >= 4 for scenario in scenarios)
         and executor == "ray_task"

@@ -286,6 +286,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 }
             ],
         )
+        payload["endpoint_ids"] = ["endpoint-0", "endpoint-1"]
         with patch.object(
             Path,
             "read_text",
@@ -294,6 +295,25 @@ class SharedVllmExperimentTests(unittest.TestCase):
             config = load_config(Path("config.json"))
 
         self.assertEqual(config.scenarios[0].job_count, 4)
+
+    def test_config_rejects_actor_endpoint_id_contract_mismatch(self) -> None:
+        payload = self._config_payload(
+            common_args=[
+                "--arrival-replay",
+                "--executor",
+                "ray_actor",
+            ],
+        )
+        with patch.object(
+            Path,
+            "read_text",
+            return_value=json.dumps(payload),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                "ray_actor endpoint_ids",
+            ):
+                load_config(Path("config.json"))
 
     def test_command_audit_redacts_split_and_equals_secrets(self) -> None:
         command = [

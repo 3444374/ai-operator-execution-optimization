@@ -16,7 +16,7 @@
   },
   "warmup_runs_per_scenario": 0,
   "formal_repeats": 1,
-  "endpoint_ids": ["task-0", "task-1"],
+  "endpoint_ids": ["endpoint-0", "endpoint-1"],
   "request_limit_per_endpoint": 256,
   "work_limit_per_endpoint": 65536,
   "credit_quantum": 2048,
