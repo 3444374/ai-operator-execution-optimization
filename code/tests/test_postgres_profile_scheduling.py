@@ -768,6 +768,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "auto",
                 "--admission-scope",
                 "per_endpoint",
+                "--max-inflight",
+                "16",
                 "--scheduling-policy",
                 "aimd_hol",
             ]
