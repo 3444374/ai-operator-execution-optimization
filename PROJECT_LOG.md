@@ -24,6 +24,11 @@
   终止，且旧 trace writer 对缺失结果 `.get` 遮蔽根因；该批只有 warm-up，
   不作为 formal 结果。统一 runtime env 现限制 OMP/OpenBLAS/MKL/NumExpr 为
   单线程，失败 trace 保留 lifecycle error 后显式终止。
+- f203257 再次确认 OMP 限制可使 j2 通过，但 j4 `ray_task` 仍扩张到 200+
+  worker，并在只读 `vm.max_map_count=65530` 的 AutoDL 容器触发 raylet
+  `SIGABRT`。共享矩阵改为固定 async Ray actor pool；loader 在外部工作前拒绝
+  4-job `ray_task`。默认 formal 改跑 j1/j2/j3，j4 拆成独立 gate/formal，
+  避免宿主能力故障污染已经完成的较小 job 结果。
 - profiler 实现继续归入 `code/src/profiling/`；主入口已直接导入子包，根级
   `profile_*.py` 只作兼容层。baseline direct adapters 归入
   `code/src/baselines/`，避免策略代码和对照实现相互依赖。
@@ -2841,6 +2846,10 @@
   ≥95%、至少三次正式重复，并按 97%-ceiling/下一档增益 <3% 选择预算；输出
   选择 JSON 和环境覆盖。data-organization、submission-policy 和 shared-vLLM
   formal 在任何外部请求前核对同一合同。
+- token-budget 合同不再把一个预算写成所有目标的通用最优：32K 仍是当前
+  throughput-oriented 冻结点；在吞吐不低于峰值 95% 的候选中另记录最大
+  request SLO goodput 的预算。f203257 上该点为 49K，必须在 held-out 重复后
+  才能作为 SLO-oriented static 对照。
 - data-organization 与 submission-policy 不再硬编码 8K/K64/actor shape，
   改用冻结的 32K、K、active work 和 actor 参数。AutoDL 新运行时结果统一写到
   `/root/autodl-tmp/experiment-artifacts/`，仓库只接收审计后的摘要与报告。

@@ -40,6 +40,8 @@ class StrategyCalibrationTests(unittest.TestCase):
                 selection["selection"],
                 {
                     "best_token_budget": 32768,
+                    "best_throughput_token_budget": 32768,
+                    "best_slo_goodput_token_budget": 49152,
                     "project_static_k_per_endpoint": 256,
                     "project_active_work_per_endpoint": 65536,
                     "project_actor_workers_per_endpoint": 1,
@@ -126,6 +128,7 @@ class StrategyCalibrationTests(unittest.TestCase):
             "actor_worker_failures",
             "token_budget",
             "model_request_tokens_per_s",
+            "request_slo_goodput_per_s",
             "per_endpoint_inflight_limit",
             "max_active_work_per_endpoint",
             "actor_workers_per_endpoint",
@@ -135,7 +138,13 @@ class StrategyCalibrationTests(unittest.TestCase):
             2048: 900.0,
             8192: 950.0,
             32768: 1000.0,
-            49152: 940.0,
+            49152: 960.0,
+        }
+        slo_goodputs = {
+            2048: 10.0,
+            8192: 11.0,
+            32768: 12.0,
+            49152: 14.0,
         }
         with path.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=fields)
@@ -151,6 +160,7 @@ class StrategyCalibrationTests(unittest.TestCase):
                             "actor_worker_failures": "0;0",
                             "token_budget": budget,
                             "model_request_tokens_per_s": throughput,
+                            "request_slo_goodput_per_s": slo_goodputs[budget],
                             "per_endpoint_inflight_limit": 256,
                             "max_active_work_per_endpoint": 65536,
                             "actor_workers_per_endpoint": 1,

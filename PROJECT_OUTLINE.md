@@ -174,26 +174,16 @@
 
 **当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
 
-1. **P0**：先完成 feeding-first 双协议门禁。512 行 Chat 下 vLLM Bench
-   C256 为 11.931s/15,351 tokens/s，bounded Chat 为
-   12.569s/14,532 tokens/s，而 project 最佳已测约
-   31.227s/5,884 tokens/s；因此当前不能扩大 token-budget/动态 K/flush
-   策略网格。Chat 轨道先比较旧 `urllib`、持久 async actor dispatch 和
-   1×256/2×128/4×64 actor shape；Completions 轨道保留原 multi-prompt
-   设计，先用无 Ray bounded fixed-row multi-prompt 对照校准 HTTP packing，
-   再测 project fixed-row feeding。warmed project 达到同协议 bounded 至少
-   95% 后，才冻结最小 97%-ceiling 配置并启动策略排名。单次 worktree
-   smoke 中，Completions fixed16 的 project/direct model-request JCT 为
-   11.164/10.943s，Chat async K256/bounded Chat 为 12.552/12.569s，已通过
-   功能门禁；仍需 1 warm-up + 3 repeats 才能正式放行。feeding 比较使用
-   model-request 窗口，operator 与 database E2E 另行报告。两个协议不得交叉
-   声称加速。2,048 行 disjoint formal 当前因源数据只有
-   `doc_id=0..2047` 而缺 512 行；必须补独立数据并用 `source_row_offset=512`
-   导出只读 manifest；补数必须逐字段核验已有 0..2047 后 append-only。
-   OceanBase、Daft Native/Ray 与 Ray Data 只在各自独立校准后进入 held-out，
-   不能用弱默认值排名。
-2. **P1**：Shared-vLLM 核心 1/2/4-job equal-workload 矩阵已完成；baseline
-   锁定后再用 held-out repeats 确认 4-job 稳定性，并分别验证 staggered idle
+1. **P0**：f203257 双协议 feeding formal 已通过：Completions fixed16
+   project/direct 为 16,036/16,416 tokens/s（97.7%），Chat async K256
+   与 bounded Chat 同量级。当前合同冻结 32K throughput budget、K256、
+   65K active work 和 1×256 async actor；49K 另记为 SLO-goodput 候选。
+   下一步在相同合同下重跑数据组织与提交控制，并始终分列 model-request、
+   operator 和 database E2E。旧 8K length-align 的 P50/SLO 正信号只作候选，
+   需 512/1024/2048 规模头对头复验；旧 K64/K32 submission 延迟不可归因。
+2. **P1**：当前 AutoDL 先跑有界 async actor 的 1/2/3-job formal。j4
+   `ray_task` 因 200+ worker 撞上 `vm.max_map_count=65530`；改用独立
+   j4 actor gate，只有通过后才运行 j4 formal。随后再验证 staggered idle
    borrowing、weighted overlap fairness 和异构 workload mix。
 3. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
    证据，不能用当前 cache-off 数据推断缓存收益。
@@ -201,8 +191,9 @@
 5. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
    ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
 6. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work
-   与 equal-weight 1/2/4-job 重复 formal；路由增量、staggered/weighted
-   公平性与故障迁移仍待验证。
+   与早期 equal-weight 多 job 重复；当前高并发合同需重新完成 1/2/3-job，
+   j4 受独立 actor/VMA 门禁约束。路由增量、staggered/weighted 公平性与
+   故障迁移仍待验证。
 7. 算子代价估计需增加独立时间段/新 workload 校准、预测区间、配置 ranking
    与决策 regret；它作为两项策略的共同输入，不单列第三项贡献，也不在首版
    扩展为复杂 learned optimizer。

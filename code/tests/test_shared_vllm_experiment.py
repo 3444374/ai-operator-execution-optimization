@@ -243,6 +243,58 @@ class SharedVllmExperimentTests(unittest.TestCase):
                     ):
                         load_config(Path("config.json"))
 
+    def test_config_rejects_four_job_ray_task_worker_explosion(self) -> None:
+        payload = self._config_payload(
+            common_args=["--arrival-replay", "--executor", "ray_task"],
+            scenarios=[
+                {
+                    "scenario_id": "j4",
+                    "policy": "shared_drr",
+                    "job_count": 4,
+                    "rows_per_job": 64,
+                }
+            ],
+        )
+        with patch.object(
+            Path,
+            "read_text",
+            return_value=json.dumps(payload),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                "four-or-more-job.*ray_actor",
+            ):
+                load_config(Path("config.json"))
+
+    def test_config_accepts_four_job_bounded_actor_pool(self) -> None:
+        payload = self._config_payload(
+            common_args=[
+                "--arrival-replay",
+                "--executor",
+                "ray_actor",
+                "--actor-workers-per-endpoint",
+                "1",
+                "--ray-actor-max-concurrency",
+                "256",
+            ],
+            scenarios=[
+                {
+                    "scenario_id": "j4",
+                    "policy": "shared_drr",
+                    "job_count": 4,
+                    "rows_per_job": 64,
+                }
+            ],
+        )
+        with patch.object(
+            Path,
+            "read_text",
+            return_value=json.dumps(payload),
+        ):
+            config = load_config(Path("config.json"))
+
+        self.assertEqual(config.scenarios[0].job_count, 4)
+
     def test_command_audit_redacts_split_and_equals_secrets(self) -> None:
         command = [
             "python",

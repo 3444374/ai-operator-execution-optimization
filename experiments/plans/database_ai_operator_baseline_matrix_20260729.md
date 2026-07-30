@@ -1,10 +1,11 @@
 # 数据库 AI 算子与官方 Runtime Baseline 矩阵
 
 日期：2026-07-30
-状态：直接客户端 512 行 Chat C128/C256 calibration 已完成；2026-07-30
-worktree 单次 smoke 显示 Chat async K256 与 multi-prompt Completions fixed16
-均已接近同协议 direct 的模型请求窗口，功能门禁通过，仍需 1 warm-up + 3
-formal repeats 确认。2,048 行 disjoint formal 仍因源数据短缺 512 行而阻塞。
+状态：f203257 双协议 feeding formal 已完成。Completions fixed16 project
+达到同协议 bounded direct 的 97.7%，Chat async K256 达到 bounded Chat
+的同量级服务窗口，feeding 门禁已通过。32K 是当前 throughput-oriented
+token-budget 冻结点；49K 是保留吞吐下的 SLO-goodput 候选。旧 8K 数据组织
+和 K32/K64 提交消融只作机制证据，必须在冻结合同下重跑才能进入最终排名。
 
 ## 0. 一句话目标与成功条件
 
@@ -136,7 +137,8 @@ client usage 伪造 output token。
 - 达到同吞吐所需的 upstream/vLLM 排队压力。
 
 多 job 不与本轮同时启动。先锁定单 job 强 baseline，之后用同一批 arm 扩展到
-1/2/4-job。
+1/2/3-job；4-job 先通过独立宿主/进程能力门禁，再单独运行，避免失败污染已完成
+矩阵。
 
 ## 6. Calibration、冻结静态对照与动态策略
 
@@ -165,11 +167,13 @@ calibration 与 held-out 数据严格分离：
   它的意义不是“免除一切离线校准”，而是用一次安全边界校准替代每个 workload
   的人工精调，并在 workload 改变时逼近 oracle。
 
-token budget 不是越大越好。正式曲线保持每 endpoint active work 和请求总量
+token budget 不是越大越好，也不存在脱离目标函数的单一“最佳预算”。正式曲线保持每 endpoint active work 和请求总量
 一致，扫描 2K/4K/8K/16K/32K/49K/65K，记录实际每 HTTP body 的行数/token
 利用率、关批原因、JCT、P99 和 vLLM running/waiting。只有在固定预算曲线证明
 存在随负载变化的不同甜点后，才评价动态 token budget 是否能逼近各 workload
-oracle；不能只拿一个人工调到最优的静态点证明动态策略无意义。
+oracle；不能只拿一个人工调到最优的静态点证明动态策略无意义。冻结合同分别
+记录 throughput-oriented 点和“吞吐至少为峰值 95% 时最大 SLO goodput”的
+SLO-oriented 点；动态策略必须与二者构成的静态 Pareto 对照比较。
 
 ## 7. 指标与结论门槛
 
@@ -219,7 +223,7 @@ time-to-ceiling/ramp-regret 至少改善 10%，只声称压力效率或瞬态改
 | 数据组织 | fixed rows vs token-budget/length/prefix | operator E2E、P99、packing/HTTP body | 相对冻结静态 baseline 做单因素消融 |
 | 提交控制 | static K/flush vs adaptive | E2E、ramp regret、SLO、active work | 控制参数冻结，不能 per-workload 手调 |
 | 单/双 GPU | 相同 per-endpoint 压力 | JCT、吞吐、scaling efficiency | 每卡 workload/并发足够且同协议 |
-| 1/2/4 job | independent/partition/shared | aggregate throughput、job JCT、P99、Jain/slowdown | 0 starvation；先修资源故障 |
+| 1/2/3 job + 独立 4-job | independent/partition/shared | aggregate throughput、job JCT、P99、Jain/slowdown | 0 starvation；j4 先过有界 actor/VMA 能力门禁 |
 | DB E2E/多模态 | PostgreSQL+writeback；图像同策略 | database E2E、策略收益保留率 | 前述机制已通过才启动 |
 
 当前实际顺序：
@@ -229,7 +233,7 @@ time-to-ceiling/ramp-regret 至少改善 10%，只声称压力效率或瞬态改
 3. 分别运行 Chat feeding gate 和 Completions fixed-row feeding gate；
 4. 门禁通过后冻结 Chat actor/K 和 Completions `batch_rows × concurrency`；
 5. 才运行 token budget、length-align、动态 K/flush 单因素消融；
-6. 再运行小作业、2,048 held-out、单/双 GPU 和 1/2/4-job；
+6. 再运行小作业、2,048 held-out、单/双 GPU 和 1/2/3-job；4-job 独立门禁后再跑；
 7. 最后接回数据库写回、多模态，以及可用时 OceanBase；LOTUS/Palimpzest 仅按
    system-level quality/cost 合同扩展。
 
@@ -509,6 +513,42 @@ async K256 的模型请求窗口与 bounded Chat 基本重合，而 K64 明显�
 也不能据此选择正式最优 batch/K。下一步只运行已预注册的 1 warm-up + 3
 repeats feeding 配置；重复门禁通过后，Completions 轨道才进入 token-budget
 曲线，Chat 轨道才进入官方 runtime/多 job 对照。
+
+### 8.9 f203257 正式结果复核与下一轮冻结合同
+
+同协议 formal 已证明 feeding 缺口关闭：Completions fixed16 project/direct
+model-request throughput 为 16,036/16,416 tokens/s（97.7%）；Chat async
+K256 的 model-request throughput 中位数为 14,588 tokens/s，与既有 bounded
+Chat C256 14,532 tokens/s 同量级。direct 只计 service JCT，project 必须另报
+model-request、operator 和 database E2E，禁止用不同计时边界排名。
+
+固定 K256/endpoint、active work 65,536 的 token-budget 曲线并非单调。32K
+的 model-request throughput 中位数最高（15,007 tokens/s）；49K 为
+14,316 tokens/s，仍达峰值 95.4%，但 30s SLO 违约率稳定为 51.5%，低于
+32K 的 57.5%，SLO goodput 18.59/s 高于 17.03/s。因此：
+
+- 32K 冻结为 throughput-oriented static baseline；
+- 49K 只冻结为 SLO-oriented 候选，不把它写成已跨 workload 成立的最优；
+- 动态 token budget 需同时比较吞吐、P99/SLO 与 static Pareto frontier，
+  不能只追一个 tokens/s reward。
+
+旧 8K 数据组织消融内部条件一致，能够提供机制信号：length-align 相对
+sequential 的 model-request throughput 仅 -1.8%，但 request P50
+32.93→23.56s、30s SLO 违约 58.6%→44.8%、SLO goodput 15.33→20.23/s；
+P95 53.64→50.40s。row-cap-aware 则同时降低吞吐并把 SLO 违约提高到 81.4%。
+这支持“length-align 可能改善 multi-prompt body 内长短请求拖尾”的假设，
+但最终结论仍需在冻结 32K、相同 manifest 上重跑，并增加 512/1024/2048
+规模头对头；当前不能把推断写成已证明的 vLLM 内部 HOL 机制。
+
+旧 submission-policy 数据中 active-work 为 K64、request-credit 为 K32，
+两者 P50/P95 差异不是受控策略效应。新模板统一 K256、32K、actor shape 和
+active-work，只改变 credit/routing/flush 单因素后再排名。
+
+f203257 的 OMP 单线程修复使 j2 通过，但 j4 `ray_task` 仍创建 200+ worker，
+在 `vm.max_map_count=65530` 的只读容器触发 raylet `SIGABRT`。下一轮 shared
+矩阵统一改为每 job、每 endpoint 一个 persistent async Ray actor：j1/j2/j3
+作为默认 formal，j4 先跑独立 64-row gate，再单独 formal。若 actor gate
+仍失败，j4 标记为宿主能力阻塞，不把失败解释为 shared-credit 策略结果。
 
 ## 9. 详细工程设计
 

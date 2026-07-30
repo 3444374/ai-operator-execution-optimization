@@ -215,6 +215,16 @@ def load_config(path: Path) -> SharedVllmConfig:
     scenario_ids = [item.scenario_id for item in scenarios]
     if len(set(scenario_ids)) != len(scenario_ids):
         raise ValueError("scenario_id values must be unique")
+    executor = _argument_value(common_args, "--executor", "")
+    if (
+        any(scenario.job_count >= 4 for scenario in scenarios)
+        and executor == "ray_task"
+    ):
+        raise ValueError(
+            "four-or-more-job shared-vLLM runs require ray_actor with a "
+            "bounded persistent actor pool; ray_task can expand to hundreds "
+            "of worker processes and exhaust the host VMA map limit"
+        )
     service_metadata = decoded.get("service_metadata", {})
     if not isinstance(service_metadata, dict):
         raise ValueError("service_metadata must be an object")

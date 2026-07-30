@@ -352,7 +352,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_service_quantum.example.json` | 固定 planning budget、active work 和 actor slots 的 batch/512/1024/2048/4096/request 完成粒度对照 | 量化批内 HOL、credit-held 空转与 completion-driven replenishment |
 | `deploy/autodl/dual_gpu_slo_ewma_flush.example.json` | 高压/临界到达率下 fixed、queue-adaptive 与 SLO-aware EWMA flush 对照 | 在固定 request-level、65K active work 和 1×256 actor pool 下验证动态关批是否改善吞吐、SLO-goodput或尾延迟 |
 | `deploy/autodl/dual_gpu_shared_vllm_gate.example.json` | Shared-vLLM 双 GPU 最小门禁模板 | 2 job × independent/partition/shared-DRR，各 64 行 |
-| `deploy/autodl/dual_gpu_shared_vllm_formal.example.json` | Shared-vLLM 1/2/4-job 正式模板 | 三种 credit 策略，1 warmup + 3 repeats |
+| `deploy/autodl/dual_gpu_shared_vllm_formal.example.json` | 受限 AutoDL 的 Shared-vLLM 1/2/3-job 正式模板 | 有界 async actor pool，三种 credit 策略，1 warmup + 3 repeats |
+| `deploy/autodl/dual_gpu_shared_vllm_j4_gate.example.json` | Shared-vLLM 4-job 独立能力门禁 | 在 j4 formal 前验证有界 actor pool、VMA/线程和 exactly-once |
+| `deploy/autodl/dual_gpu_shared_vllm_j4_formal.example.json` | Shared-vLLM 4-job 独立正式模板 | j4 gate 通过后再运行，失败不污染 1/2/3-job 结果 |
 | `deploy/autodl/dual_gpu_submission_policy.example.json` | 保留 multi-prompt batch 的 active-work、least-work routing、动态预算与 adaptive flush 消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
 | `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 官方/强 baseline 功能门禁规格 | calibration 前验证 Chat 请求等价、exactly-once、endpoint 分片、空队列与 adapter 能力 |
 | `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 同条件 baseline 独立标定网格 | gate 通过后标定 direct/Daft/Ray Data/project 容量；不得直接当作 formal |

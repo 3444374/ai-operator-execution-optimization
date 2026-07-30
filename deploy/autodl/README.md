@@ -799,10 +799,26 @@ shared DRR。通过条件不是只看 `status=completed`，还必须核对：
 
   gate 未通过时保留输出目录、日志、manifest、trace 和最终 snapshot，禁止删目录
   重跑或启动 formal。gate 全部通过后，换全新输出目录并将 config 改为
-  `dual_gpu_shared_vllm_formal.example.json`；其余命令不变。formal 是
-`{1,2,4} job × {independent, static partition, shared DRR}`，
-  每场景 1 warmup + 3 repeats。完成或保存失败证据后再执行 `ray stop`；不要在
-  runner 仍存活时停止 Ray head。
+  `dual_gpu_shared_vllm_formal.example.json`；其余命令不变。当前受限
+  AutoDL 容器的默认 formal 是
+`{1,2,3} job × {independent, static partition, shared DRR}`，
+  每场景 1 warmup + 3 repeats。4-job 必须先单独运行
+  `dual_gpu_shared_vllm_j4_gate.example.json`，通过后才可使用
+  `dual_gpu_shared_vllm_j4_formal.example.json`。完成或保存失败证据后再执行
+  `ray stop`；不要在 runner 仍存活时停止 Ray head。
+
+  共享实验的数据面必须使用 `ray_actor + httpx_async`，每 job、每 endpoint
+  创建固定数量的持久 actor，并在 actor 内做有界并发。禁止把 4-job 配置改回
+  `ray_task`：K256/endpoint 下四个 driver 可同时暴露上千个 task，
+  `num_cpus=0.01` 又允许 Ray 扩张到数百 worker，已在
+  `vm.max_map_count=65530` 的容器上触发 raylet `SIGABRT`。OMP/OpenBLAS
+  单线程限制仍是必要条件，但只能消除每 worker 的线程膨胀，不能限制 worker
+  进程数量；group runner 会在外部工作前拒绝 4-job `ray_task` 配置。
+
+  j4 gate 必须额外保存 `cat /proc/sys/vm/max_map_count`、Ray worker 峰值和
+  raylet 日志。若固定 actor pool 的 j4 gate 仍触发 VMA/pthread 故障，本机
+  只报告 j1/j2/j3；j4 标为宿主能力阻塞，迁移到更高 VMA 的容器后再运行，
+  不得在同一 9-cell formal 尾部反复试错。
 
   coordinator 名称包含 manifest 持久化的 run-instance ID；同一输出目录 resume
   会连接同一物理 run，而新的输出目录会得到全新 actor 名称。失败 gate 保留的
@@ -1470,8 +1486,9 @@ per-endpoint K、active work 和 Completions actor shape。
 3. 生成并核对上述冻结选择文件；
 4. 再做 length-align、queue-adaptive flush、dynamic token budget 和动态 K
    单因素消融；
-5. 单 job 通过后再跑 1/2/4 job。多 job 子进程和 Ray worker 必须继承
-   `runtime_env.py` 的单线程 BLAS 环境；旧 `_v3` 4-job 失败结果不参与排名；
+5. 单 job 通过后先跑 1/2/3 job；4-job 使用独立 gate/formal。多 job 子进程
+   和 Ray worker 必须继承 `runtime_env.py` 的单线程 BLAS 环境，并使用有界
+   persistent actor pool；旧 `ray_task` j4 失败结果不参与排名；
 6. 最后在 disjoint held-out、database E2E 和多模态上复验。
 
 ### Pinned endpoint active-work 背压故障

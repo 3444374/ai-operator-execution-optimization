@@ -8,6 +8,14 @@
 
 Adaptive K_max 的 shared-vLLM 双作业复验已经完成：static K8 保护前台，AIMD 无 decrease 并饱和至 K≈16，未优于 static K16；追加 adaptive-flush 分支同样没有稳定增量。双 4090 request-level active-work 已扩展到 16K–131K 并按预注册规则选择每 endpoint 65,536；固定资源的有界 Actor Pool 三形状、complete-row service quantum 和 SLO-aware EWMA flush 重复均已完成，三者都未达到 5% 晋升门槛。SLO-EWMA formal 还确认 25–50ms flush 动作相对 5.6–17.4s request P99 缺少一阶控制杠杆。当前保留 `request + 1×256 + 65K active work + fixed-50` 作为单 job 基线。尚未完成的主要验证是多 job 共享 endpoint 的 request/work credit 与公平队列、UCB 的 epoch reward 正确归因与端到端接入、路由/故障迁移、prefix cache 开启后的独立消融，以及图像 workload 多模态泛化。GPU-backed `AI_EMBED` 动机证据仍放在 `motivation/results/gpu/`，不与方法实验混放。
 
+2026-07-30 的 f203257 双协议 formal 已关闭 feeding 缺口：
+Completions fixed16 达同协议 direct 的 97.7%，Chat async K256 与 bounded
+Chat 同量级。后续模板已冻结 32K throughput-oriented budget、K256/endpoint、
+65K active work 和 1×256 async actor；49K 另记为 SLO-goodput 候选。
+旧 8K length-align 显示 P50/SLO 的明确正信号，但必须在冻结合同下重跑。
+4-job `ray_task` 因数百 worker 撞上容器 VMA 上限，当前默认 formal 改为
+1/2/3-job，j4 使用有界 actor pool 的独立 gate/formal。
+
 2026-07-29 起，继续增加调度策略前先补两层同规模 baseline：第一层为无
 Daft/Ray 的 OceanBase `AI_COMPLETE` 与同 PostgreSQL bounded AsyncIO；第二层
 为 Daft `prompt()` Native/Ray 和 Ray Data HTTP Processor。两层与 ours 均统一

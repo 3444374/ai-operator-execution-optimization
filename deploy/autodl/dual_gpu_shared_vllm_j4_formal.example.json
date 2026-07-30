@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "experiment_id": "dual_gpu_shared_vllm_gate",
-  "seed": 20260729,
+  "experiment_id": "dual_gpu_shared_vllm_j4_formal",
+  "seed": 20260730,
   "require_complete_service_metadata": true,
   "service_metadata": {
     "vllm_version": "0.25.1",
@@ -14,13 +14,23 @@
     "prefix_caching": false,
     "mfu_metrics": true
   },
-  "warmup_runs_per_scenario": 0,
-  "formal_repeats": 1,
+  "calibration_contract": {
+    "path": "${STRATEGY_CALIBRATION_SELECTION}",
+    "expected": {
+      "best_token_budget": "${BEST_TOKEN_BUDGET}",
+      "project_static_k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
+      "project_active_work_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
+      "project_actor_workers_per_endpoint": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
+      "project_ray_actor_max_concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"
+    }
+  },
+  "warmup_runs_per_scenario": 1,
+  "formal_repeats": 3,
   "endpoint_ids": ["task-0", "task-1"],
-  "request_limit_per_endpoint": 256,
-  "work_limit_per_endpoint": 65536,
+  "request_limit_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
+  "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
   "credit_quantum": 2048,
-  "shared_credit_namespace": "ai-operator-shared-vllm",
+  "shared_credit_namespace": "ai-operator-shared-vllm-j4",
   "common_args": [
     "--database-url",
     "${DATABASE_URL}",
@@ -31,17 +41,21 @@
     "--executor",
     "ray_actor",
     "--actor-workers-per-endpoint",
-    "1",
+    "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
     "--ray-actor-max-concurrency",
-    "256",
-    "--completion-http-transport",
-    "httpx_async",
+    "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}",
+    "--ray-worker-num-cpus",
+    "0.5",
     "--model-backend",
     "compatible_http",
     "--completion-endpoint-urls",
     "${COMPLETION_ENDPOINT_URLS}",
     "--completion-model",
     "${COMPLETION_MODEL}",
+    "--completion-protocol",
+    "completions",
+    "--completion-http-transport",
+    "httpx_async",
     "--completion-max-tokens",
     "${COMPLETION_MAX_TOKENS}",
     "--completion-return-token-ids",
@@ -77,10 +91,6 @@
     "${COMPLETION_MODEL}",
     "--cost-tokenizer-id",
     "${COMPLETION_MODEL}",
-    "--model-workers",
-    "2",
-    "--ray-worker-num-cpus",
-    "0.5",
     "--arrival-replay",
     "--arrival-time-scale",
     "0.001",
@@ -106,24 +116,8 @@
     "${MFU_PRECISION}"
   ],
   "scenarios": [
-    {
-      "scenario_id": "gate_j2_independent",
-      "policy": "independent_full",
-      "job_count": 2,
-      "rows_per_job": 64
-    },
-    {
-      "scenario_id": "gate_j2_partition",
-      "policy": "static_partition",
-      "job_count": 2,
-      "rows_per_job": 64
-    },
-    {
-      "scenario_id": "gate_j2_shared_drr",
-      "policy": "shared_drr",
-      "job_count": 2,
-      "rows_per_job": 64,
-      "weights": [1, 1]
-    }
+    {"scenario_id": "j4_independent", "policy": "independent_full", "job_count": 4, "rows_per_job": 512},
+    {"scenario_id": "j4_partition", "policy": "static_partition", "job_count": 4, "rows_per_job": 512},
+    {"scenario_id": "j4_shared_drr", "policy": "shared_drr", "job_count": 4, "rows_per_job": 512}
   ]
 }

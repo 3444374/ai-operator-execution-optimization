@@ -13,7 +13,7 @@ remaining work are summarized in `code/INFRA_STATUS.md`.
 code/
 ├── scripts/
 │   ├── postgres_ai_operator_profile.py   ← PostgreSQL AI 算子链路画像（Ray actor + GPU endpoint + writeback）
-│   ├── run_shared_vllm_experiment.py     ← 1/2/4-job 共享 vLLM 正式 group runner
+│   ├── run_shared_vllm_experiment.py     ← 多 job 共享 vLLM 正式 group runner
 │   ├── pgai_sql_operator_profile.py      ← pgai SQL 触发面画像（ai.ollama_embed via pgai 扩展）
 │   ├── local_embedding_server.py         ← 本地 OpenAI 兼容 embedding 服务（Ollama）
 │   ├── daft_text_organizer_smoke.py      ← Daft 文本 DataFrame / into_batches / Ray runner smoke
@@ -482,3 +482,7 @@ Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属�
 `src/calibration.py` 与 `scripts/select_strategy_calibration.py` 负责把 feeding
 和 token-budget 校准结果冻结为后续策略实验的机器可校验合同，避免示例环境
 中的历史默认值静默进入正式 data-organization、submission 或多 job 矩阵。
+合同分别记录 throughput-oriented token budget 与在 95% throughput floor
+内最大化 SLO goodput 的候选预算，避免把一个预算误写成所有目标的通用最优。
+Shared-vLLM 的 4-job 数据面必须使用有界 persistent async actor pool；显式
+4-job `ray_task` 配置会在外部请求前失败，防止数百 worker 再次耗尽容器 VMA。

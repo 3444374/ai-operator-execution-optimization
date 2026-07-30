@@ -107,20 +107,15 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
   vLLM Bench 仅差约 2.3%
 
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
-1. **P0**：先过 feeding-first 双协议门禁。512 行 Chat direct/bounded 为
-   11.9/12.6s，project 最佳约 31.2s，说明当前主要是 Ray/HTTP/ingress
-   欠载，尚不能做策略排名。Chat 轨道比较持久 async actor dispatch 与 actor
-   shape；Completions 轨道保留原 multi-prompt 设计，以无 Ray fixed-row
-   multi-prompt 作同协议强对照。warmed project 达到同协议 bounded 至少
-   95% 后，才冻结静态点并测试 token-budget、动态 K/flush。单次 worktree
-   smoke 已显示 Completions project/direct model-request 11.164/10.943s，
-   Chat async K256/bounded 12.552/12.569s；功能门禁通过，正式放行仍需
-   1 warm-up + 3 repeats。完整 operator/database E2E 继续单列。两个协议不得
-   交叉排名。disjoint 2,048 formal 仍缺 512 个独立源行，须逐字段核验旧
-   prefix 后 append-only 补齐；之后才比较 OceanBase、Daft Native/Ray 与
-   Ray Data 官方框架对照
-2. **P1**：baseline 锁定后再做 Shared-vLLM 4-job held-out、staggered idle borrowing、
-   weighted overlap fairness 与异构 workload/arrival offset
+1. **P0**：f203257 双协议 feeding formal 已通过。Completions fixed16
+   project/direct 为 97.7%，Chat async K256 与 bounded Chat 同量级。
+   当前冻结 32K throughput budget、K256、65K active work、1×256 async
+   actor；49K 另记为 SLO-goodput 候选。下一步按同一合同重跑 length-align
+   与 submission 单因素消融，继续分列 model-request/operator/database E2E
+2. **P1**：先完成有界 actor 的 Shared-vLLM 1/2/3-job；j4 单独 gate。
+   原 j4 `ray_task` 创建 200+ worker 并撞上容器 VMA 上限，不能当策略结果。
+   通过后再做 staggered idle borrowing、weighted overlap fairness 与异构
+   workload/arrival offset
 3. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
 4. **P2**（文本门禁已完成）：多模态泛化验证
 5. 在当前 2×4090 上完成 staggered/weighted 公平性、路由与故障迁移

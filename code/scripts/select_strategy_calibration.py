@@ -126,6 +126,36 @@ def _select_token_budget(
     raise ValueError("no token budget satisfies the frozen selection rule")
 
 
+def _select_slo_goodput_budget(
+    rows: list[dict[str, str]],
+    throughput_medians: dict[int, float],
+    *,
+    throughput_floor_ratio: float,
+) -> tuple[int, dict[int, float]]:
+    grouped: dict[int, list[dict[str, str]]] = defaultdict(list)
+    for row in rows:
+        grouped[int(row["token_budget"])].append(row)
+    goodput_medians = {
+        budget: _median(items, "request_slo_goodput_per_s")
+        for budget, items in grouped.items()
+    }
+    throughput_floor = (
+        throughput_floor_ratio * max(throughput_medians.values())
+    )
+    candidates = [
+        budget
+        for budget, throughput in throughput_medians.items()
+        if throughput >= throughput_floor
+    ]
+    if not candidates:
+        raise ValueError("no token budget satisfies the SLO throughput floor")
+    selected = min(
+        candidates,
+        key=lambda budget: (-goodput_medians[budget], budget),
+    )
+    return selected, goodput_medians
+
+
 def build_selection(
     *,
     feeding_runs: Path,
@@ -164,8 +194,15 @@ def build_selection(
         ceiling_ratio=0.97,
         next_gain_limit=0.03,
     )
+    best_slo_budget, slo_goodput_medians = _select_slo_goodput_budget(
+        budget_rows,
+        budget_medians,
+        throughput_floor_ratio=0.95,
+    )
     selected = {
         "best_token_budget": best_budget,
+        "best_throughput_token_budget": best_budget,
+        "best_slo_goodput_token_budget": best_slo_budget,
         "project_static_k_per_endpoint": _unique_int(
             budget_rows,
             "per_endpoint_inflight_limit",
@@ -223,6 +260,14 @@ def build_selection(
                     str(key): value
                     for key, value in sorted(budget_medians.items())
                 },
+                "slo_selection_rule": {
+                    "throughput_floor_ratio": 0.95,
+                    "objective": "max_request_slo_goodput_per_s",
+                },
+                "request_slo_goodput_per_s_median": {
+                    str(key): value
+                    for key, value in sorted(slo_goodput_medians.items())
+                },
             },
         },
     }
@@ -266,6 +311,12 @@ def main() -> None:
         env_values = {
             "STRATEGY_CALIBRATION_SELECTION": str(args.output.resolve()),
             "BEST_TOKEN_BUDGET": values["best_token_budget"],
+            "BEST_THROUGHPUT_TOKEN_BUDGET": (
+                values["best_throughput_token_budget"]
+            ),
+            "BEST_SLO_GOODPUT_TOKEN_BUDGET": (
+                values["best_slo_goodput_token_budget"]
+            ),
             "PROJECT_STATIC_K_PER_ENDPOINT": (
                 values["project_static_k_per_endpoint"]
             ),

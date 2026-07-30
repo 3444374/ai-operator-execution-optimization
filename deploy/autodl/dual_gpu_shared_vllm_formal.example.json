@@ -19,7 +19,9 @@
     "expected": {
       "best_token_budget": "${BEST_TOKEN_BUDGET}",
       "project_static_k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
-      "project_active_work_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}"
+      "project_active_work_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
+      "project_actor_workers_per_endpoint": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
+      "project_ray_actor_max_concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"
     }
   },
   "warmup_runs_per_scenario": 1,
@@ -37,7 +39,13 @@
     "--operator",
     "ai_complete",
     "--executor",
-    "ray_task",
+    "ray_actor",
+    "--actor-workers-per-endpoint",
+    "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
+    "--ray-actor-max-concurrency",
+    "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}",
+    "--completion-http-transport",
+    "httpx_async",
     "--model-backend",
     "compatible_http",
     "--completion-endpoint-urls",
@@ -82,7 +90,7 @@
     "--model-workers",
     "2",
     "--ray-worker-num-cpus",
-    "0.01",
+    "0.5",
     "--arrival-replay",
     "--arrival-time-scale",
     "0.001",
@@ -114,8 +122,8 @@
     {"scenario_id": "j2_independent", "policy": "independent_full", "job_count": 2, "rows_per_job": 512},
     {"scenario_id": "j2_partition", "policy": "static_partition", "job_count": 2, "rows_per_job": 512},
     {"scenario_id": "j2_shared_drr", "policy": "shared_drr", "job_count": 2, "rows_per_job": 512},
-    {"scenario_id": "j4_independent", "policy": "independent_full", "job_count": 4, "rows_per_job": 512},
-    {"scenario_id": "j4_partition", "policy": "static_partition", "job_count": 4, "rows_per_job": 512},
-    {"scenario_id": "j4_shared_drr", "policy": "shared_drr", "job_count": 4, "rows_per_job": 512}
+    {"scenario_id": "j3_independent", "policy": "independent_full", "job_count": 3, "rows_per_job": 512},
+    {"scenario_id": "j3_partition", "policy": "static_partition", "job_count": 3, "rows_per_job": 512},
+    {"scenario_id": "j3_shared_drr", "policy": "shared_drr", "job_count": 3, "rows_per_job": 512}
   ]
 }
