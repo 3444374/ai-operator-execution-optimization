@@ -622,15 +622,17 @@ python code/scripts/postgres_ai_operator_profile.py ... \
    在所有安全档位中选择首个达到最大已测吞吐 97%、且下一个安全档增益低于
    3% 的最小配额；若不存在，结论必须写 `saturation_not_reached`，不能把最高
    已测点改名为饱和点。
-3. `dual_gpu_token_budget_curve.example.json`：关闭 arrival replay，49K
-   主点扫描 8/16/32/49K，65K 敏感性点扫描 8/16/32/49/65K，共 9 个场景。
-   每个预算都不超过对应 active-work 上限，避免 oversized admission 破坏
-   固定-work 语义。它回答等量 offered work 下组织/提交形状是否有收益，
-   而不是继续用更大的 batch 暗中增加并发。
+3. `dual_gpu_token_budget_curve.example.json`：feeding formal 通过并冻结
+   `ACTIVE_WORK_PER_ENDPOINT` 后，使用 disjoint formal manifest、持久 async
+   multi-prompt Completions 和 raw prompt，在同一 active-work 上限下扫描
+   2/4/8/16/32/49/65K。它回答等量 offered work 下组织/提交形状是否有收益，
+   同时验证预算过小的 RPC/packing 开销与预算过大的关批/HOL/排队代价；不得
+   再把 active-work 和 token budget 同时变化。
 4. `dual_gpu_data_organization.example.json`：使用上一步的最佳已测预算并继续
-   关闭 arrival replay，避免 50ms flush 在 token budget 生效前关批；在相同
-   active work 下回答 fixed rows、sequential token-budget、row-cap-aware 和
-   length-align 的数据组织差异。
+   使用同一个 disjoint manifest、async transport、raw prompt 并关闭 arrival
+   replay，避免 50ms flush 在 token budget 生效前关批；在相同 active work
+   下回答 fixed16、sequential token-budget、row-cap-aware 和 length-align
+   的数据组织差异。
 5. `dual_gpu_request_replay.example.json`：恢复相同 arrival replay/flush，
    比较 whole-submission barrier 与真正的 request-level replenishment。
 6. `dual_gpu_actor_pool_shape.example.json`：沿用 request-level 饱和点，
@@ -653,7 +655,8 @@ python code/scripts/postgres_ai_operator_profile.py ... \
    `--flush-service-capacity-tokens-s-per-endpoint 4000` 作为分母下界。
    更换模型、GPU 或 endpoint 数量时必须重新标定，禁止沿用 4000。
 9. `dual_gpu_submission_policy.example.json`：在已标定 token budget 和
-   active-work 配额上，逐项消融 least-work routing、service-quantum 动态预算
+   active-work 配额上，使用持久 async Completions，并保留 batch-level
+   multi-prompt body，逐项消融 least-work routing、service-quantum 动态预算
    和 queue-adaptive flush；最后的 combined arm 只检查交互，不替代单项结论。
 
 `${DATABASE_URL}`、`${COMPLETION_MODEL}`、endpoint/metrics URL 等变量在 runner

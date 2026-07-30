@@ -23,6 +23,12 @@
     "2048",
     "--db-fetch-rows",
     "2048",
+    "--request-manifest",
+    "${PROJECT_FORMAL_REQUEST_MANIFEST}",
+    "--source-workload-name",
+    "${SOURCE_WORKLOAD_NAME}",
+    "--source-row-offset",
+    "512",
     "--source-max-prompt-tokens",
     "${SOURCE_MAX_PROMPT_TOKENS}",
     "--operator",
@@ -41,11 +47,15 @@
     "${COMPLETION_ENDPOINT_URLS}",
     "--completion-model",
     "${COMPLETION_MODEL}",
+    "--completion-protocol",
+    "completions",
+    "--completion-http-transport",
+    "httpx_async",
     "--completion-max-tokens",
     "${COMPLETION_MAX_TOKENS}",
     "--completion-return-token-ids",
     "--completion-prompt-format",
-    "${COMPLETION_PROMPT_FORMAT}",
+    "raw",
     "--completion-temperature",
     "0",
     "--completion-request-timeout-s",
@@ -54,8 +64,6 @@
     "${MODEL_METRICS_URLS}",
     "--endpoint-gpu-ids",
     "0,1",
-    "--source-workload-name",
-    "${SOURCE_WORKLOAD_NAME}",
     "--source-order",
     "doc_id",
     "--data-source",
@@ -69,7 +77,7 @@
     "--ray-batch-rows",
     "256",
     "--output-cost-mode",
-    "fixed_output_cap",
+    "trace_target_output",
     "--cost-model-id",
     "${COMPLETION_MODEL}",
     "--cost-tokenizer-id",
@@ -81,7 +89,9 @@
     "--admission-scope",
     "per_endpoint",
     "--max-inflight",
-    "64",
+    "256",
+    "--max-active-work-per-endpoint",
+    "${ACTIVE_WORK_PER_ENDPOINT}",
     "--endpoint-routing",
     "least_queued",
     "--writeback-mode",
@@ -99,82 +109,50 @@
   ],
   "scenarios": [
     {
-      "scenario_id": "work49152_tb8192",
+      "scenario_id": "tb2048",
       "args": [
-        "--max-active-work-per-endpoint",
-        "49152",
+        "--token-budget",
+        "2048"
+      ]
+    },
+    {
+      "scenario_id": "tb4096",
+      "args": [
+        "--token-budget",
+        "4096"
+      ]
+    },
+    {
+      "scenario_id": "tb8192",
+      "args": [
         "--token-budget",
         "8192"
       ]
     },
     {
-      "scenario_id": "work49152_tb16384",
+      "scenario_id": "tb16384",
       "args": [
-        "--max-active-work-per-endpoint",
-        "49152",
         "--token-budget",
         "16384"
       ]
     },
     {
-      "scenario_id": "work49152_tb32768",
+      "scenario_id": "tb32768",
       "args": [
-        "--max-active-work-per-endpoint",
-        "49152",
         "--token-budget",
         "32768"
       ]
     },
     {
-      "scenario_id": "work49152_tb49152",
+      "scenario_id": "tb49152",
       "args": [
-        "--max-active-work-per-endpoint",
-        "49152",
         "--token-budget",
         "49152"
       ]
     },
     {
-      "scenario_id": "work65536_tb8192",
+      "scenario_id": "tb65536",
       "args": [
-        "--max-active-work-per-endpoint",
-        "65536",
-        "--token-budget",
-        "8192"
-      ]
-    },
-    {
-      "scenario_id": "work65536_tb16384",
-      "args": [
-        "--max-active-work-per-endpoint",
-        "65536",
-        "--token-budget",
-        "16384"
-      ]
-    },
-    {
-      "scenario_id": "work65536_tb32768",
-      "args": [
-        "--max-active-work-per-endpoint",
-        "65536",
-        "--token-budget",
-        "32768"
-      ]
-    },
-    {
-      "scenario_id": "work65536_tb49152",
-      "args": [
-        "--max-active-work-per-endpoint",
-        "65536",
-        "--token-budget",
-        "49152"
-      ]
-    },
-    {
-      "scenario_id": "work65536_tb65536",
-      "args": [
-        "--max-active-work-per-endpoint",
-        "65536",
         "--token-budget",
         "65536"
       ]

@@ -41,6 +41,11 @@
 - runs.csv 新增 `model_request_tokens_per_s` 与 `operator_tokens_per_s`；
   既有 `tokens_per_s` 继续明确表示完整 E2E 吞吐，避免把 source/organize
   时间混成 feeding 缺口。
+- 后续策略模板不再回退到 threaded `urllib`：token-budget 与 data-organization
+  使用 disjoint formal manifest、raw multi-prompt Completions 和持久 async
+  transport；token-budget 在固定 `ACTIVE_WORK_PER_ENDPOINT` 下独立扫描
+  2K/4K/8K/16K/32K/49K/65K。submission-policy 也改为 async batch-level，
+  保留 multi-prompt 组织结果，不再用 request granularity 绕过 token-budget。
 
 ## 2026-07-29 文献基线版本升级
 

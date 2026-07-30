@@ -72,6 +72,25 @@ class SchedulingProfileHelperTests(unittest.TestCase):
     def test_committed_dual_gpu_scenarios_pass_profiler_dry_validation(
         self,
     ) -> None:
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        formal_manifest = Path(temp_dir.name) / "formal-manifest.jsonl"
+        write_manifest(
+            formal_manifest,
+            tuple(
+                ChatRequest(
+                    doc_id=index,
+                    prompt=f"prompt-{index}",
+                    arrival_time_s=0.0,
+                    prompt_tokens=8,
+                    max_output_tokens=256,
+                    estimated_output_tokens=64,
+                    source_row_hash=f"hash-{index}",
+                    endpoint_index=index % 2,
+                )
+                for index in range(2048)
+            ),
+        )
         env = {
             "DATABASE_URL": "postgresql://example",
             "COMPLETION_ENDPOINT_URLS": (
@@ -90,7 +109,9 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "COMPLETION_PROMPT_FORMAT": "chatml",
             "TOKEN_BUDGET": "8192",
             "BEST_TOKEN_BUDGET": "8192",
+            "TOKEN_BUDGET_CANDIDATES": "2048,4096,8192,16384",
             "ACTIVE_WORK_PER_ENDPOINT": "65536",
+            "PROJECT_FORMAL_REQUEST_MANIFEST": str(formal_manifest),
             "CAPACITY_PROBE_TOKEN_BUDGET": "32768",
             "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
             "VLLM_MAX_NUM_SEQS": "256",
@@ -102,6 +123,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "dual_gpu_capacity_scaling.example.json",
             "dual_gpu_token_budget_curve.example.json",
             "dual_gpu_data_organization.example.json",
+            "dual_gpu_submission_policy.example.json",
             "dual_gpu_request_replay.example.json",
             "dual_gpu_active_work_curve.example.json",
         )
