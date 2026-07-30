@@ -161,8 +161,10 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | pgvector writeback 0.897s vs JSON 1.567s | GPU-backed 预研 CSV | pgvector 写回可行 |
 | 研究空白双重确认 | 多源检索（2026-07-16） | 无 CCF-A 论文研究上游 pipeline batching × downstream continuous batching 交互 |
 
-**尚未建立**：prefix cache-on 机制收益、多模态泛化验证、多 endpoint /
-多 GPU 实测、PG18.3 内部平台复测。
+**尚未建立**：多模态泛化验证、多 endpoint /
+多 GPU 实测、PG18.3 内部平台复测、OceanBase B1 可部署环境复测（门禁 #1
+已过：CE 4.5.0 含 AI_COMPLETE；当前 AutoDL 容器部署受阻）。prefix cache-on
+batching/routing 消融已完成且中性（<5% 门禁），prefix 方向收口。
 
 ---
 
@@ -198,8 +200,9 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 - queue-adaptive 随机化变长输出复验与 batching × submission 联合消融均已
   完成。前者优于 fixed-25 但未优于 fixed-50；后者未显示联合搜索相对独立
   拼接的可分辨增量。
-- 跨 arrival-rate、2048 held-out、受控 prefix cache-off 与代价估计初版均
-  已完成；当前最优先工作转为 prefix cache-on 门禁和多模态泛化验证。
+- 跨 arrival-rate、2048 held-out、受控 prefix cache-off、cache-on prefix
+  batching/routing 消融（中性，prefix 方向收口）与代价估计初版均已完成；
+  当前最优先工作转为多模态泛化验证与 OceanBase B1 复跑（门禁已过、待可部署环境）。
 - UCB 端到端和多 GPU 实测尚未完成，且不会在缺少正确 reward 归因或硬件时
   伪接入。
 - Infra 代码与证据边界见 `code/INFRA_STATUS.md`。

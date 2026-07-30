@@ -149,7 +149,8 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
 async/token-ID 单一 runner 重跑 short/long K256/W65K/W98K 等价臂门禁，
 再决定单 job dynamic 是否有存在性；同时保留 request-level 精确 completion
 作为异质多 job shared credit、idle borrowing 和公平队列的控制基础。随后做
-prefix cache-on、多模态和路由/故障迁移 formal 验证。
+多模态和路由/故障迁移 formal 验证（prefix cache-on batching/routing 消融
+已完成、中性）；OceanBase B1 门禁已过（CE 含 AI_COMPLETE），待可部署环境复跑。
 详见 `PROJECT_OUTLINE.md`
 §近期优先级、`experiments/plans/experiment_status_and_gaps.md` 和
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。

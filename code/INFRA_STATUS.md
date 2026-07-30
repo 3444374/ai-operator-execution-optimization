@@ -231,9 +231,9 @@ least-work、动态预算、shared-credit、异构显存容量、故障迁移和
 - **研究内容一——数据组织**：主机制和工程链路已经闭环。Sequential
   token-budget 是当前默认；fixed rows、length-align、prefix-aware、classic
   BFD、row-cap-first 都有可运行实现和对照入口。BFD/row-cap-first 已有负向规模
-  边界，prefix-only 在 cache-off 下无稳定收益。尚未完成的是 prefix cache-on
-  机制门禁、length-align×prefix 的显式联合消融，以及图像 frame/pixel cost
-  adapter 的多模态复用验证。
+  边界，prefix-only 在 cache-off 下无稳定收益；cache-on 下 prefix-aware batching
+  与 prefix-affinity routing 消融已完成且中性（<5% 门禁），prefix 方向收口。
+  尚未完成的是图像 frame/pixel cost adapter 的多模态复用验证。
 - **研究内容二——调度与提交控制**：static K_max、arrival replay、flush、
   非阻塞 service observation、typed controller、pool/endpoint routing 和
   lifecycle trace 已形成完整流程。当前证据选择 static `K_max=8` + fixed
@@ -250,7 +250,7 @@ least-work、动态预算、shared-credit、异构显存容量、故障迁移和
 |---|---|---|---|
 | 数据读取与 Daft/Ray 主链路 | 高 | 64/512/1024 真实链路 | 已完成基础设施 |
 | Fixed/token-budget batching | 高 | 多轮真实实验 | 机制成立，sequential 默认 |
-| Length/prefix grouping | 高（代码） | 0/30/70/100% 受控 cache-off screen | prefix-only 无稳定收益；默认关闭 |
+| Length/prefix grouping | 高（代码） | 0/30/70/100% cache-off screen + cache-on batching/routing 消融 | cache-off 无收益；cache-on 亦中性（<5% 门禁），prefix 方向收口 |
 | BFD/row-cap-first | 高 | 512 + 1024 | 负向边界明确，不默认启用 |
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
 | Queue-adaptive flush | 高 | 512 变长重复 + 跨 rate + 2048 held-out + shared-vLLM | 优于 fixed-25；未优于 fixed-50 |
@@ -318,7 +318,8 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
    容量，报告 direct ceiling、time-to-ceiling、ramp regret 和最小饱和 work；
 8. baseline 锁定后再做 4-job held-out、staggered idle borrowing 与 weighted
    fairness；
-9. Prefix-aware 只有在单独启用 prefix cache、记录命中证据后才重新评估；
+9. Prefix-aware 已在 cache-on 下评估（batching + routing 均中性，prefix 方向收口）；
+   per-arm 命中率待 runner 增采；
 10. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
    K=8 safety fallback。
 
