@@ -57,6 +57,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "length_align_token_budget",
             "prefix_aware_fixed_rows",
             "prefix_aware_token_budget",
+            "prefix_aware_length_align_fixed_rows",
+            "prefix_aware_length_align_token_budget",
         ],
         default="fixed_rows",
     )
