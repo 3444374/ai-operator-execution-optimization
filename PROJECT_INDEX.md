@@ -158,6 +158,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |
 | `deploy/autodl/README.md` | AutoDL 单一 runbook：环境准备、开机恢复、gate、正式实验和中断恢复 | 新对话接手远端实验时按顶部唯一入口直接操作 |
+| `code/scripts/select_strategy_calibration.py` | 从 feeding/direct/token-budget 证据生成冻结校准合同和环境覆盖 | token-budget 曲线完成后、启动数据组织/提交策略/多 job formal 前执行 |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
 | `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |
 | `research/literature_and_evidence_review.md` | 文献与官方资料依据 | 写调研、论文动机时读 |

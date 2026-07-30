@@ -172,6 +172,58 @@ class SharedVllmExperimentTests(unittest.TestCase):
         )
         self.assertEqual(config.scenarios[0].weights, (1, 1))
 
+    def test_shared_config_uses_same_calibration_contract(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            selection_path = root / "selection.json"
+            selection_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "status": "ready",
+                        "selection": {
+                            "best_token_budget": 32768,
+                            "project_static_k_per_endpoint": 256,
+                            "project_active_work_per_endpoint": 65536,
+                        },
+                        "evidence": {
+                            "feeding": {"status": "passed"},
+                            "token_budget": {"status": "passed"},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = self._config_payload()
+            payload["request_limit_per_endpoint"] = "${PROJECT_K}"
+            payload["work_limit_per_endpoint"] = "${PROJECT_WORK}"
+            payload["calibration_contract"] = {
+                "path": "${SELECTION_PATH}",
+                "expected": {
+                    "best_token_budget": "${BEST_TOKEN_BUDGET}",
+                    "project_static_k_per_endpoint": "${PROJECT_K}",
+                    "project_active_work_per_endpoint": "${PROJECT_WORK}",
+                },
+            }
+            config_path = root / "config.json"
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with patch.dict(
+                os.environ,
+                {
+                    "SELECTION_PATH": str(selection_path),
+                    "BEST_TOKEN_BUDGET": "32768",
+                    "PROJECT_K": "256",
+                    "PROJECT_WORK": "65536",
+                },
+                clear=True,
+            ):
+                config = load_config(config_path)
+
+            self.assertEqual(config.request_limit_per_endpoint, 256)
+            self.assertEqual(config.work_limit_per_endpoint, 65536)
+            self.assertIsNotNone(config.calibration_contract)
+
     def test_config_rejects_setup_and_runner_owned_credit_flags(self) -> None:
         for forbidden in (
             "--setup",

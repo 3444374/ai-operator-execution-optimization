@@ -27,7 +27,7 @@
 
 | 项目 | 当前约定路径 | 说明 |
 |---|---|---|
-| Git 仓库 | `/root/autodl-tmp/ai-operator` | 只从 GitHub `main` 同步；保留未跟踪实验结果 |
+| Git 仓库 | `/root/autodl-tmp/ai-operator` | 只从 GitHub `main` 同步；不再写入新的运行时结果 |
 | runtime env | `/root/autodl-tmp/ai-operator-runtime.env` | 仓库外保存模型、端口、CUDA、容量和 workload 参数 |
 | driver Python | `/root/miniconda3/bin/python` | 运行 Ray/Daft/profiler/scenario runner |
 | vLLM Python | `/root/autodl-tmp/venvs/vllm-4090/bin/python` | 只运行 vLLM endpoint |
@@ -35,7 +35,7 @@
 | vLLM 日志 | `/root/autodl-tmp/vllm_logs/` | 每个端口有 log/PID 文件 |
 | 编排日志 | `/root/autodl-tmp/logs/` | endpoint 启动、gate、formal runner 日志 |
 | 临时 gate 配置 | `/root/autodl-tmp/gates/` | 仓库外机械缩小正式模板，不作为正式结果 |
-| 正式结果 | 仓库内 `experiments/results/<unique_run_id>/` | 输出目录必须在启动前不存在 |
+| 运行时结果 | `/root/autodl-tmp/experiment-artifacts/<unique_run_id>/` | 仓库外保存；审计后只把摘要和报告纳入 Git |
 
 ### 全新实例从零准备
 
@@ -68,7 +68,7 @@ ps -C python -C python3 -o pid=,etime=,args= |
   grep -E '[r]un_(ai_operator_scenarios|shared_vllm_experiment)\.py' || true
 
 # 若准备恢复已有输出，再检查目录级租约；不能只凭 ps 结果判断可恢复
-OUTPUT_DIR=experiments/results/<existing_run_id>
+OUTPUT_DIR=/root/autodl-tmp/experiment-artifacts/<existing_run_id>
 test ! -e "$OUTPUT_DIR/.runner-lease.json" ||
   cat "$OUTPUT_DIR/.runner-lease.json"
 
@@ -134,7 +134,7 @@ source /root/autodl-tmp/ai-operator-runtime.env
 set +a
 
 CONFIG=deploy/autodl/<current_template>.example.json
-OUTPUT_DIR=experiments/results/<unique_run_id>
+OUTPUT_DIR=/root/autodl-tmp/experiment-artifacts/<unique_run_id>
 RUN_LOG=/root/autodl-tmp/logs/<unique_run_id>.log
 
 ps -C python -C python3 -o args= |
@@ -677,14 +677,13 @@ python code/scripts/run_ai_operator_scenarios.py \
   --metrics-urls "$MODEL_METRICS_URLS"
 ```
 
-完成硬件 scaling 后，只替换 `--config` 和 `--output-dir`，依次运行
-active-work-curve、token-budget-curve、data-organization、request-replay 与
-actor-pool-shape、service-quantum、submission-policy 模板。active-work 曲线完成后，token-budget 模板直接使用
-已标定的 49K 主点与 65K 敏感性点；固定 offered work 的预算曲线完成后，再把
-49K 主点在 SLO/P99 约束下选出的值写入 `BEST_TOKEN_BUDGET`。预算扫描期间
-active-work 配额必须不小于同场景单 batch 预算，否则会混入 oversized
-admission 语义。每轮都必须等待 runner manifest 为 `complete`，不要手工拼接
-失败重跑的 CSV。
+完成硬件 scaling 后，依次运行 active-work、feeding 和 token-budget
+calibration。三者通过后必须按本文件“冻结校准选择”生成选择文件和环境覆盖；
+只有选择文件状态为 `ready`，才允许运行 data-organization、
+submission-policy 和 shared-vLLM formal。不得从旧经验预填 8K、49K 或 K64。
+预算扫描期间 active-work 配额必须不小于同场景单 batch 预算，否则会混入
+oversized admission 语义。每轮都必须等待 runner manifest 为 `complete`，
+不要手工拼接失败重跑的 CSV。
 
 动态预算只在 `TOKEN_BUDGET_CANDIDATES` 的静态已测动作中移动。这里的 token
 budget 是 Ray 上游关批边界，active-work 是 endpoint admission credit，
@@ -1423,17 +1422,57 @@ submission/request trace 与服务端 counter。full feeding 配置是正式校�
 本地或新 worktree 的可运行性验证只需使用 16/64 行 smoke，不得把 smoke
 数字写成性能结果。
 
+### 冻结校准选择
+
+feeding 和 token-budget 曲线完成后，不得手工凭记忆修改 8K/K64。使用已提交
+脚本从原始证据生成不可歧义的选择文件和环境覆盖：
+
+```bash
+ARTIFACT_ROOT=/root/autodl-tmp/experiment-artifacts
+CALIBRATION_ROOT=/root/autodl-tmp/gates/calibration_<commit>
+mkdir -p "$CALIBRATION_ROOT"
+
+/root/miniconda3/bin/python \
+  code/scripts/select_strategy_calibration.py \
+  --feeding-runs \
+    "$ARTIFACT_ROOT/<project-completions-feeding>/runs.csv" \
+  --direct-baseline-root \
+    "$ARTIFACT_ROOT/<direct-completions-gate>" \
+  --token-budget-runs \
+    "$ARTIFACT_ROOT/<token-budget-curve>/runs.csv" \
+  --output "$CALIBRATION_ROOT/selection.json" \
+  --env-output "$CALIBRATION_ROOT/calibration.env"
+
+python -m json.tool "$CALIBRATION_ROOT/selection.json"
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+source "$CALIBRATION_ROOT/calibration.env"
+set +a
+```
+
+脚本只接受至少三次成功 formal feeding/token-budget 重复，要求项目
+model-request throughput 达到同协议 direct baseline 的 95%，并按
+97%-ceiling/下一档增益小于 3% 规则选择最小 token budget。它同时冻结
+per-endpoint K、active work 和 Completions actor shape。
+
+`dual_gpu_data_organization.example.json`、
+`dual_gpu_submission_policy.example.json` 和
+`dual_gpu_shared_vllm_formal.example.json` 会在启动任何外部请求前读取同一
+选择文件，并逐项核对环境值。文件缺失、evidence 未通过、仍为旧 8K/K64 或
+任一值不一致都会 fail closed，且不会创建实验输出目录。
+
 ### 放行后的实验
 
-1. 分别冻结 Chat actor/K 和 Completions `batch_rows × concurrency` 的最小
+1. 分别标定 Chat actor/K 和 Completions `batch_rows × concurrency` 的最小
    97%-ceiling 点；
 2. 在 Completions 轨道固定 active work，扫描 token budget
    2K/4K/8K/16K/32K/49K/65K，证明预算不是越大越好；
-3. 再做 length-align、queue-adaptive flush、dynamic token budget 和动态 K
+3. 生成并核对上述冻结选择文件；
+4. 再做 length-align、queue-adaptive flush、dynamic token budget 和动态 K
    单因素消融；
-4. 单 job 通过后再跑 1/2/4 job。多 job 子进程和 Ray worker 必须继承
+5. 单 job 通过后再跑 1/2/4 job。多 job 子进程和 Ray worker 必须继承
    `runtime_env.py` 的单线程 BLAS 环境；旧 `_v3` 4-job 失败结果不参与排名；
-5. 最后在 disjoint held-out、database E2E 和多模态上复验。
+6. 最后在 disjoint held-out、database E2E 和多模态上复验。
 
 ### Pinned endpoint active-work 背压故障
 

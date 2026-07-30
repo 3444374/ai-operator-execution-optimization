@@ -64,6 +64,29 @@ class ExperimentScenarioTests(unittest.TestCase):
             )
 
     def test_committed_dual_gpu_templates_expand_and_validate(self) -> None:
+        calibration_dir = TemporaryDirectory()
+        self.addCleanup(calibration_dir.cleanup)
+        calibration_path = Path(calibration_dir.name) / "selection.json"
+        calibration_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "status": "ready",
+                    "selection": {
+                        "best_token_budget": 32768,
+                        "project_static_k_per_endpoint": 256,
+                        "project_active_work_per_endpoint": 65536,
+                        "project_actor_workers_per_endpoint": 1,
+                        "project_ray_actor_max_concurrency": 256,
+                    },
+                    "evidence": {
+                        "feeding": {"status": "passed"},
+                        "token_budget": {"status": "passed"},
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
         env = {
             "DATABASE_URL": "postgresql://example",
             "COMPLETION_ENDPOINT_URLS": (
@@ -81,8 +104,17 @@ class ExperimentScenarioTests(unittest.TestCase):
             "COMPLETION_MAX_TOKENS": "256",
             "COMPLETION_PROMPT_FORMAT": "chatml",
             "TOKEN_BUDGET": "8192",
-            "BEST_TOKEN_BUDGET": "8192",
+            "BEST_TOKEN_BUDGET": "32768",
+            "TOKEN_BUDGET_CANDIDATES": (
+                "2048,4096,8192,16384,32768,49152,65536"
+            ),
             "ACTIVE_WORK_PER_ENDPOINT": "65536",
+            "STRATEGY_CALIBRATION_SELECTION": str(calibration_path),
+            "PROJECT_STATIC_K_PER_ENDPOINT": "256",
+            "PROJECT_ACTIVE_WORK_PER_ENDPOINT": "65536",
+            "PROJECT_ACTOR_WORKERS_PER_ENDPOINT": "1",
+            "PROJECT_RAY_ACTOR_MAX_CONCURRENCY": "256",
+            "PROJECT_FORMAL_REQUEST_MANIFEST": "/tmp/formal.jsonl",
             "ACTOR_WORKERS_PER_ENDPOINT": "2",
             "RAY_ACTOR_MAX_CONCURRENCY": "128",
             "RAY_WORKER_NUM_CPUS": "0.25",
@@ -95,8 +127,9 @@ class ExperimentScenarioTests(unittest.TestCase):
         }
         templates = {
             "dual_gpu_capacity_scaling.example.json": 6,
-            "dual_gpu_token_budget_curve.example.json": 9,
+            "dual_gpu_token_budget_curve.example.json": 7,
             "dual_gpu_data_organization.example.json": 4,
+            "dual_gpu_submission_policy.example.json": 6,
             "dual_gpu_request_replay.example.json": 5,
             "dual_gpu_active_work_curve.example.json": 8,
             "dual_gpu_actor_pool_shape.example.json": 3,
@@ -137,26 +170,24 @@ class ExperimentScenarioTests(unittest.TestCase):
             self.assertEqual(
                 [item.scenario_id for item in capacity.scenarios],
                 [
-                    "work49152_tb8192",
-                    "work49152_tb16384",
-                    "work49152_tb32768",
-                    "work49152_tb49152",
-                    "work65536_tb8192",
-                    "work65536_tb16384",
-                    "work65536_tb32768",
-                    "work65536_tb49152",
-                    "work65536_tb65536",
+                    "tb2048",
+                    "tb4096",
+                    "tb8192",
+                    "tb16384",
+                    "tb32768",
+                    "tb49152",
+                    "tb65536",
                 ],
             )
             self.assertIn("256", capacity.common_args)
             self.assertIn("2048", capacity.common_args)
             self.assertNotIn("--arrival-replay", capacity.common_args)
+            work_index = capacity.common_args.index(
+                "--max-active-work-per-endpoint"
+            )
+            active_work = int(capacity.common_args[work_index + 1])
             for scenario in capacity.scenarios:
-                work_index = scenario.args.index(
-                    "--max-active-work-per-endpoint"
-                )
                 budget_index = scenario.args.index("--token-budget")
-                active_work = int(scenario.args[work_index + 1])
                 token_budget = int(scenario.args[budget_index + 1])
                 self.assertLessEqual(token_budget, active_work)
 
@@ -652,6 +683,80 @@ class ScenarioRunnerTests(unittest.TestCase):
                 ):
                     _load_config(config_path)
 
+    def test_config_validates_calibration_contract_before_work(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            selection_path = self._write_calibration_selection(root)
+            config_path = self._write_config(
+                root,
+                scenario_ids=["fixed"],
+                formal_repeats=1,
+                seed=7,
+            )
+            decoded = json.loads(config_path.read_text(encoding="utf-8"))
+            decoded["calibration_contract"] = {
+                "path": "${SELECTION_PATH}",
+                "expected": {
+                    "best_token_budget": "${BEST_TOKEN_BUDGET}",
+                },
+            }
+            config_path.write_text(json.dumps(decoded), encoding="utf-8")
+
+            with patch.dict(
+                os.environ,
+                {
+                    "SELECTION_PATH": str(selection_path),
+                    "BEST_TOKEN_BUDGET": "32768",
+                },
+                clear=False,
+            ):
+                config = _load_config(config_path)
+
+            self.assertIsNotNone(config.calibration_contract)
+            assert config.calibration_contract is not None
+            self.assertEqual(
+                dict(config.calibration_contract.selection),
+                {"best_token_budget": 32768},
+            )
+
+    def test_config_rejects_stale_calibration_before_work(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            selection_path = self._write_calibration_selection(root)
+            config_path = self._write_config(
+                root,
+                scenario_ids=["fixed"],
+                formal_repeats=1,
+                seed=7,
+            )
+            decoded = json.loads(config_path.read_text(encoding="utf-8"))
+            decoded["calibration_contract"] = {
+                "path": str(selection_path),
+                "expected": {"best_token_budget": 8192},
+            }
+            config_path.write_text(json.dumps(decoded), encoding="utf-8")
+            idle_checks = []
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "best_token_budget.*8192.*32768",
+            ):
+                run_experiment(
+                    RunnerOptions(
+                        config_path=config_path,
+                        profiler_path=self._write_fake_profiler(root),
+                        python_executable=Path(sys.executable),
+                        output_dir=root / "output",
+                        health_url="http://health",
+                        metrics_urls=("http://metrics",),
+                        idle_timeout_s=1.0,
+                    ),
+                    idle_gate=lambda *_args: idle_checks.append(True),
+                )
+
+            self.assertEqual(idle_checks, [])
+            self.assertFalse((root / "output").exists())
+
     def test_runner_validates_opted_in_metadata_before_external_work(
         self,
     ) -> None:
@@ -962,6 +1067,25 @@ class ScenarioRunnerTests(unittest.TestCase):
                 {failed_scenario},
             )
             self.assertEqual(len(manifest["skipped_runs"]), 2)
+
+    @staticmethod
+    def _write_calibration_selection(root: Path) -> Path:
+        path = root / "selection.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "status": "ready",
+                    "selection": {"best_token_budget": 32768},
+                    "evidence": {
+                        "feeding": {"status": "passed"},
+                        "token_budget": {"status": "passed"},
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        return path
 
     @staticmethod
     def _write_config(

@@ -15,6 +15,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from .calibration import (
+    CalibrationContract,
+    JsonScalar,
+    load_calibration_contract as validate_calibration_contract,
+)
 from .experiment_scenarios import (
     build_scenario_schedule,
     validate_service_metadata,
@@ -126,6 +131,7 @@ class SharedVllmConfig:
     common_args: tuple[str, ...]
     scenarios: tuple[SharedVllmScenario, ...]
     service_metadata: tuple[tuple[str, object], ...]
+    calibration_contract: CalibrationContract | None = None
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[1]
@@ -160,11 +166,17 @@ def load_config(path: Path) -> SharedVllmConfig:
     ):
         raise ValueError("endpoint_ids must be unique non-empty strings")
     request_limit = _positive_integer(
-        decoded.get("request_limit_per_endpoint"),
+        _expand_scalar(
+            decoded.get("request_limit_per_endpoint"),
+            "request_limit_per_endpoint",
+        ),
         "request_limit_per_endpoint",
     )
     work_limit = _positive_integer(
-        decoded.get("work_limit_per_endpoint"),
+        _expand_scalar(
+            decoded.get("work_limit_per_endpoint"),
+            "work_limit_per_endpoint",
+        ),
         "work_limit_per_endpoint",
     )
     quantum = _positive_integer(
@@ -217,6 +229,9 @@ def load_config(path: Path) -> SharedVllmConfig:
     )
     if decoded.get("require_complete_service_metadata") is True:
         validate_service_metadata(dict(expanded_metadata))
+    calibration_contract = _load_calibration_contract(
+        decoded.get("calibration_contract")
+    )
     return SharedVllmConfig(
         experiment_id=experiment_id,
         seed=seed,
@@ -232,6 +247,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         common_args=common_args,
         scenarios=scenarios,
         service_metadata=expanded_metadata,
+        calibration_contract=calibration_contract,
     )
 
 
@@ -1240,6 +1256,43 @@ def _expand_scalar(value: object, label: str) -> object:
     return expanded
 
 
+def _load_calibration_contract(
+    value: object,
+) -> CalibrationContract | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise ValueError("calibration_contract must be an object")
+    raw_path = value.get("path")
+    if not isinstance(raw_path, str) or not raw_path.strip():
+        raise ValueError("calibration_contract.path must be non-empty")
+    path = Path(_expand_text(raw_path, "calibration_contract.path"))
+    raw_expected = value.get("expected")
+    if not isinstance(raw_expected, dict) or not raw_expected:
+        raise ValueError(
+            "calibration_contract.expected must be a non-empty object"
+        )
+    expected: dict[str, JsonScalar] = {}
+    for key, item in raw_expected.items():
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError(
+                "calibration_contract.expected keys must be non-empty"
+            )
+        expanded = _expand_scalar(
+            item,
+            f"calibration_contract.expected.{key}",
+        )
+        if (
+            not isinstance(expanded, (str, int, float, bool))
+            and expanded is not None
+        ):
+            raise ValueError(
+                "calibration_contract.expected values must be JSON scalars"
+            )
+        expected[key] = expanded
+    return validate_calibration_contract(path, expected)
+
+
 def _nonempty_string(value: object, label: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{label} must be a non-empty string")
@@ -1766,6 +1819,15 @@ def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
         "common_args": _redact_command(list(config.common_args)),
         "scenarios": [asdict(item) for item in config.scenarios],
         "service_metadata": dict(config.service_metadata),
+        "calibration_contract": (
+            {
+                "path": config.calibration_contract.path,
+                "sha256": config.calibration_contract.sha256,
+                "selection": dict(config.calibration_contract.selection),
+            }
+            if config.calibration_contract is not None
+            else None
+        ),
     }
 
 

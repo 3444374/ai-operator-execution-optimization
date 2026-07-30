@@ -22,6 +22,11 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
+from src.calibration import (  # noqa: E402
+    CalibrationContract,
+    JsonScalar,
+    load_calibration_contract,
+)
 from src.experiment_scenarios import (  # noqa: E402
     ScheduledScenarioRun,
     build_scenario_schedule,
@@ -75,6 +80,7 @@ class ScenarioExperimentConfig:
     experiment_id: str
     seed: int
     service_metadata: tuple[tuple[str, object], ...]
+    calibration_contract: CalibrationContract | None
     warmup_runs_per_scenario: int
     formal_repeats: int
     common_args: tuple[str, ...]
@@ -519,6 +525,9 @@ def _load_config(path: Path) -> ScenarioExperimentConfig:
     )
     if decoded.get("require_complete_service_metadata") is True:
         validate_service_metadata(dict(service_metadata))
+    calibration_contract = _load_calibration_contract(
+        decoded.get("calibration_contract")
+    )
     warmups = decoded.get("warmup_runs_per_scenario")
     repeats = decoded.get("formal_repeats")
     if not isinstance(seed, int) or isinstance(seed, bool):
@@ -562,11 +571,59 @@ def _load_config(path: Path) -> ScenarioExperimentConfig:
         experiment_id=experiment_id,
         seed=seed,
         service_metadata=service_metadata,
+        calibration_contract=calibration_contract,
         warmup_runs_per_scenario=warmups,
         formal_repeats=repeats,
         common_args=common_args,
         scenarios=tuple(scenarios),
     )
+
+
+def _load_calibration_contract(
+    value: object,
+) -> CalibrationContract | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise ValueError("calibration_contract must be an object")
+    raw_path = value.get("path")
+    if not isinstance(raw_path, str) or not raw_path.strip():
+        raise ValueError("calibration_contract.path must be non-empty")
+    path = Path(
+        _expand_environment_references(
+            raw_path,
+            "calibration_contract.path",
+        )
+    )
+    raw_expected = value.get("expected")
+    if not isinstance(raw_expected, dict) or not raw_expected:
+        raise ValueError(
+            "calibration_contract.expected must be a non-empty object"
+        )
+    expected: dict[str, JsonScalar] = {}
+    for key, item in raw_expected.items():
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError(
+                "calibration_contract.expected keys must be non-empty"
+            )
+        if isinstance(item, str):
+            expanded = _expand_environment_references(
+                item,
+                f"calibration_contract.expected.{key}",
+            )
+            if _ENV_REFERENCE_PATTERN.fullmatch(item):
+                try:
+                    item = json.loads(expanded)
+                except json.JSONDecodeError:
+                    item = expanded
+            else:
+                item = expanded
+        if not isinstance(item, (str, int, float, bool)) and item is not None:
+            raise ValueError(
+                "calibration_contract.expected values must be JSON scalars"
+            )
+        expected[key] = item
+    return load_calibration_contract(path, expected)
 
 
 def _validate_argument_list(values, label: str) -> tuple[str, ...]:
@@ -705,6 +762,15 @@ def _redacted_config(config: ScenarioExperimentConfig) -> dict:
         "seed": config.seed,
         "service_metadata": _redact_service_metadata(
             config.service_metadata
+        ),
+        "calibration_contract": (
+            {
+                "path": config.calibration_contract.path,
+                "sha256": config.calibration_contract.sha256,
+                "selection": dict(config.calibration_contract.selection),
+            }
+            if config.calibration_contract is not None
+            else None
         ),
         "warmup_runs_per_scenario": config.warmup_runs_per_scenario,
         "formal_repeats": config.formal_repeats,

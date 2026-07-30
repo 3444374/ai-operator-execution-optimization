@@ -14,6 +14,16 @@
     "mfu_metrics": true
   },
   "require_complete_service_metadata": true,
+  "calibration_contract": {
+    "path": "${STRATEGY_CALIBRATION_SELECTION}",
+    "expected": {
+      "best_token_budget": "${BEST_TOKEN_BUDGET}",
+      "project_static_k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
+      "project_active_work_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
+      "project_actor_workers_per_endpoint": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
+      "project_ray_actor_max_concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"
+    }
+  },
   "warmup_runs_per_scenario": 1,
   "formal_repeats": 3,
   "common_args": [
@@ -36,9 +46,9 @@
     "--executor",
     "ray_actor",
     "--actor-workers-per-endpoint",
-    "1",
+    "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
     "--ray-actor-max-concurrency",
-    "256",
+    "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}",
     "--ray-worker-num-cpus",
     "0.5",
     "--model-backend",
@@ -89,9 +99,9 @@
     "--admission-scope",
     "per_endpoint",
     "--max-inflight",
-    "256",
+    "${PROJECT_STATIC_K_PER_ENDPOINT}",
     "--max-active-work-per-endpoint",
-    "${ACTIVE_WORK_PER_ENDPOINT}",
+    "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
     "--endpoint-routing",
     "least_queued",
     "--writeback-mode",

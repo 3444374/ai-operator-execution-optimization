@@ -478,3 +478,7 @@ Daft organizer dry-run:
 Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属于数据库
 算子；bounded HTTP 是强因果对照，不冒充已有产品；OceanBase 缺少 AI Function
 能力时记为 capability failure，不阻塞 bounded HTTP 与官方 runtime 主矩阵。
+
+`src/calibration.py` 与 `scripts/select_strategy_calibration.py` 负责把 feeding
+和 token-budget 校准结果冻结为后续策略实验的机器可校验合同，避免示例环境
+中的历史默认值静默进入正式 data-organization、submission 或多 job 矩阵。

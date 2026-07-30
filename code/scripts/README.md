@@ -855,3 +855,11 @@ formal repeat。actor-ready barrier 不计入 measured E2E，耗时写入
 `actor_ready_s`；submission trace schema 5 记录 HTTP request、headers 和
 body-read 边界。两臂 throughput/JCT 没有收敛到 5% 内时必须停止，不能以
 单次最佳结果选择参数。
+
+`select_strategy_calibration.py` 把通过门禁的 Completions feeding、
+direct bounded gate 和 token-budget formal CSV 合并为
+`selection.json + calibration.env`。它按 95% feeding parity、
+至少三次 formal repeat、97%-ceiling 和下一档增益小于 3% 的预注册规则冻结
+token budget、per-endpoint K、active work 与 actor shape。后续
+data-organization、submission-policy 和 shared-vLLM formal runner 会核对
+该选择文件；旧 8K/K64、缺失证据或环境漂移会在外部请求前失败。

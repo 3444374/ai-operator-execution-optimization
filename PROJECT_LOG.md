@@ -2828,3 +2828,19 @@
   lightweight arm 仅作明确标注的次级模拟，不冒充官方产品；pgai 保持
   embedding 对照。
 - 开题 PPT 由另一对话并行修改，本轮未触碰；按用户要求不执行 Wiki 同步。
+
+## 2026-07-30 双 GPU 校准合同与远端结果目录规整
+
+- 远端 f203257 结果确认 Completions fixed16 project/direct model-request
+  throughput 为 16,036/16,416 tokens/s，达到 97.7%；固定 offered work 的
+  token-budget 曲线在 32K 达到最高正式重复中位数 15,007 tokens/s。
+- 审计发现旧 runtime env 仍默认 8K，submission-policy 模板硬编码 K64，
+  导致后续实验虽可运行但没有继承本轮校准结果。旧数据保留为诊断证据，不进入
+  饱和策略排名。
+- 新增 `select_strategy_calibration.py` 和 `src/calibration.py`：要求 feeding
+  ≥95%、至少三次正式重复，并按 97%-ceiling/下一档增益 <3% 选择预算；输出
+  选择 JSON 和环境覆盖。data-organization、submission-policy 和 shared-vLLM
+  formal 在任何外部请求前核对同一合同。
+- data-organization 与 submission-policy 不再硬编码 8K/K64/actor shape，
+  改用冻结的 32K、K、active work 和 actor 参数。AutoDL 新运行时结果统一写到
+  `/root/autodl-tmp/experiment-artifacts/`，仓库只接收审计后的摘要与报告。
