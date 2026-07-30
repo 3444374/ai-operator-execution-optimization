@@ -84,7 +84,6 @@ class ExperimentScenarioTests(unittest.TestCase):
                         "feeding": {"status": "passed"},
                         "token_budget": {"status": "passed"},
                         "actor_pool": {"status": "passed"},
-                        "actor_pool": {"status": "passed"},
                     },
                 }
             ),
