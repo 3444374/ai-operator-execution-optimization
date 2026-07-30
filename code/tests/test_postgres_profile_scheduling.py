@@ -136,7 +136,9 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "PROJECT_ACTOR_WORKERS_PER_ENDPOINT": "1",
             "PROJECT_RAY_ACTOR_MAX_CONCURRENCY": "256",
             "STRATEGY_CALIBRATION_SELECTION": str(calibration_path),
-            "TOKEN_BUDGET_CANDIDATES": "2048,4096,8192,16384",
+            "TOKEN_BUDGET_CANDIDATES": (
+                "2048,4096,8192,16384,32768,49152,65536"
+            ),
             "ACTIVE_WORK_PER_ENDPOINT": "65536",
             "PROJECT_FORMAL_REQUEST_MANIFEST": str(formal_manifest),
             "CAPACITY_PROBE_TOKEN_BUDGET": "32768",
