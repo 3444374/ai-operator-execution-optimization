@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import os
 import sys
 import tempfile
@@ -91,6 +92,27 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 for index in range(2048)
             ),
         )
+        calibration_path = Path(temp_dir.name) / "selection.json"
+        calibration_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "status": "ready",
+                    "selection": {
+                        "best_token_budget": 32768,
+                        "project_static_k_per_endpoint": 256,
+                        "project_active_work_per_endpoint": 65536,
+                        "project_actor_workers_per_endpoint": 1,
+                        "project_ray_actor_max_concurrency": 256,
+                    },
+                    "evidence": {
+                        "feeding": {"status": "passed"},
+                        "token_budget": {"status": "passed"},
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
         env = {
             "DATABASE_URL": "postgresql://example",
             "COMPLETION_ENDPOINT_URLS": (
@@ -108,7 +130,12 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "COMPLETION_MAX_TOKENS": "256",
             "COMPLETION_PROMPT_FORMAT": "chatml",
             "TOKEN_BUDGET": "8192",
-            "BEST_TOKEN_BUDGET": "8192",
+            "BEST_TOKEN_BUDGET": "32768",
+            "PROJECT_STATIC_K_PER_ENDPOINT": "256",
+            "PROJECT_ACTIVE_WORK_PER_ENDPOINT": "65536",
+            "PROJECT_ACTOR_WORKERS_PER_ENDPOINT": "1",
+            "PROJECT_RAY_ACTOR_MAX_CONCURRENCY": "256",
+            "STRATEGY_CALIBRATION_SELECTION": str(calibration_path),
             "TOKEN_BUDGET_CANDIDATES": "2048,4096,8192,16384",
             "ACTIVE_WORK_PER_ENDPOINT": "65536",
             "PROJECT_FORMAL_REQUEST_MANIFEST": str(formal_manifest),
