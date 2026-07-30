@@ -5,6 +5,7 @@ from __future__ import annotations
 import statistics
 import threading
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from queue import Empty, Full, Queue
 from typing import Callable, Iterable, Iterator, Protocol
@@ -178,6 +179,7 @@ class SynchronousScheduler:
         epoch_clock: Callable[[], float] = time.time,
         per_endpoint_limit: int | None = None,
         per_endpoint_work_limit: int | None = None,
+        per_endpoint_admission: Mapping[str, AdmissionPolicy] | None = None,
         shared_credit: SharedCreditPolicy | None = None,
         shared_credit_poll_s: float = 0.001,
         job_weight: int = 1,
@@ -198,6 +200,7 @@ class SynchronousScheduler:
         self.epoch_clock = epoch_clock
         self.per_endpoint_limit = per_endpoint_limit
         self.per_endpoint_work_limit = per_endpoint_work_limit
+        self.per_endpoint_admission = dict(per_endpoint_admission or {})
         self.shared_credit = shared_credit
         self.shared_credit_poll_s = shared_credit_poll_s
         self.job_weight = job_weight
@@ -218,6 +221,21 @@ class SynchronousScheduler:
         endpoints_by_id = {
             endpoint.endpoint_id: endpoint for endpoint in topology.endpoints
         }
+        unknown_admission_endpoints = (
+            set(self.per_endpoint_admission) - set(endpoints_by_id)
+        )
+        if unknown_admission_endpoints:
+            raise ValueError(
+                "per-endpoint admission contains endpoints outside topology: "
+                + ", ".join(sorted(unknown_admission_endpoints))
+            )
+        if self.per_endpoint_admission and (
+            set(self.per_endpoint_admission) != set(endpoints_by_id)
+        ):
+            raise ValueError(
+                "per-endpoint admission must define exactly one policy for "
+                "every topology endpoint"
+            )
         max_inflight_seen = 0
         max_active_work_per_endpoint_seen = 0
         bounded_wait_samples: list[float] = []
@@ -264,6 +282,11 @@ class SynchronousScheduler:
                     per_endpoint_work_limit=self.per_endpoint_work_limit,
                     request_work=envelope.request.estimated_total_tokens,
                 )
+                if self.per_endpoint_admission:
+                    capacity_topology = self._topology_with_endpoint_admission(
+                        capacity_topology,
+                        submission_context,
+                    )
                 if globally_allowed and any(
                     endpoint.healthy and endpoint.available
                     for endpoint in capacity_topology.endpoints
@@ -490,6 +513,54 @@ class SynchronousScheduler:
                 work_by_endpoint.get(endpoint_id, 0) + work
             )
         return max(work_by_endpoint.values(), default=0)
+
+    def _topology_with_endpoint_admission(
+        self,
+        topology: TopologySnapshot,
+        submission_context: dict[str, tuple[str, str, str, float, int]],
+    ) -> TopologySnapshot:
+        inflight_by_endpoint: dict[str, int] = {}
+        oldest_submit_by_endpoint: dict[str, float] = {}
+        for (
+            _pool_id,
+            endpoint_id,
+            _gpu_id,
+            submit_epoch_s,
+            _work,
+        ) in submission_context.values():
+            inflight_by_endpoint[endpoint_id] = (
+                inflight_by_endpoint.get(endpoint_id, 0) + 1
+            )
+            oldest_submit_by_endpoint[endpoint_id] = min(
+                submit_epoch_s,
+                oldest_submit_by_endpoint.get(endpoint_id, submit_epoch_s),
+            )
+        now = self.epoch_clock()
+        return replace(
+            topology,
+            endpoints=tuple(
+                replace(
+                    endpoint,
+                    available=(
+                        endpoint.available
+                        and self.per_endpoint_admission[
+                            endpoint.endpoint_id
+                        ].decide(
+                            inflight_by_endpoint.get(endpoint.endpoint_id, 0),
+                            hol_age_s=max(
+                                0.0,
+                                now
+                                - oldest_submit_by_endpoint.get(
+                                    endpoint.endpoint_id,
+                                    now,
+                                ),
+                            ),
+                        ).allowed
+                    ),
+                )
+                for endpoint in topology.endpoints
+            ),
+        )
 
     def _collect_one(
         self,

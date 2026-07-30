@@ -104,10 +104,12 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         "project_active_work_per_endpoint": 65536,
                         "project_actor_workers_per_endpoint": 1,
                         "project_ray_actor_max_concurrency": 256,
+                        "project_ray_worker_num_cpus": 0.5,
                     },
                     "evidence": {
                         "feeding": {"status": "passed"},
                         "token_budget": {"status": "passed"},
+                        "actor_pool": {"status": "passed"},
                     },
                 }
             ),
@@ -128,6 +130,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "SOURCE_MAX_PROMPT_TOKENS": "1500",
             "COMPLETION_MODEL": "qwen2.5-7b",
             "COMPLETION_MAX_TOKENS": "256",
+            "COMPLETION_PROTOCOL": "completions",
             "COMPLETION_PROMPT_FORMAT": "chatml",
             "TOKEN_BUDGET": "8192",
             "BEST_TOKEN_BUDGET": "32768",
@@ -135,6 +138,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "PROJECT_ACTIVE_WORK_PER_ENDPOINT": "65536",
             "PROJECT_ACTOR_WORKERS_PER_ENDPOINT": "1",
             "PROJECT_RAY_ACTOR_MAX_CONCURRENCY": "256",
+            "PROJECT_RAY_WORKER_NUM_CPUS": "0.5",
             "STRATEGY_CALIBRATION_SELECTION": str(calibration_path),
             "TOKEN_BUDGET_CANDIDATES": (
                 "2048,4096,8192,16384,32768,49152,65536"
@@ -155,6 +159,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             "dual_gpu_submission_policy.example.json",
             "dual_gpu_request_replay.example.json",
             "dual_gpu_active_work_curve.example.json",
+            "dual_gpu_static_k_workload_surface.example.json",
+            "dual_gpu_endpoint_adaptive_gate.example.json",
         )
 
         with patch.dict(os.environ, env, clear=True):
@@ -750,7 +756,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(row["per_endpoint_inflight_limit"], 16)
         self.assertEqual(row["effective_global_inflight_limit"], 32)
 
-    def test_per_endpoint_admission_rejects_global_adaptive_controller(
+    def test_per_endpoint_admission_accepts_typed_adaptive_controller(
         self,
     ) -> None:
         args = profile.parse_args(
@@ -767,8 +773,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             ]
         )
 
-        with self.assertRaisesRegex(SystemExit, "static only"):
-            profile.run_once(args, "formal", 1)
+        row = profile.run_once(args, "formal", 1)
+
+        self.assertEqual(row["admission_scope"], "per_endpoint")
+        self.assertEqual(row["scheduling_policy"], "aimd_hol")
 
     def test_python_dry_run_records_non_applicable_ray_contract(self) -> None:
         args = profile.parse_args(["--dry-run", "--executor", "python"])
@@ -1418,6 +1426,42 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             if provider is not None:
                 provider.close()
 
+    def test_builds_independent_per_endpoint_adaptive_controllers(
+        self,
+    ) -> None:
+        traces = []
+        config = profile._build_per_endpoint_adaptive_config(
+            scheduling_policy="aimd_hol",
+            endpoint_ids=["endpoint-0", "endpoint-1"],
+            metrics_urls=[],
+            trace_events=traces,
+            min_window=4,
+            max_window=16,
+            initial_window=4,
+            sample_interval_s=0.25,
+            ewma_alpha=0.3,
+            pid_proportional_gain=0.5,
+            pid_integral_gain=0.1,
+            pid_derivative_gain=0.05,
+            hol_age_congestion_s=2.0,
+            hol_age_low_load_s=0.5,
+        )
+        try:
+            gates = config["per_endpoint_gates"]
+            self.assertEqual(set(gates), {"endpoint-0", "endpoint-1"})
+            self.assertIsNot(gates["endpoint-0"], gates["endpoint-1"])
+
+            gates["endpoint-0"].decide(0, hol_age_s=0.1)
+            gates["endpoint-1"].decide(0, hol_age_s=3.0)
+
+            self.assertEqual(
+                [event.endpoint_id for event in traces],
+                ["endpoint-0", "endpoint-1"],
+            )
+        finally:
+            for provider in config["observation_providers"]:
+                provider.close()
+
     def test_typed_adaptive_config_uses_nonblocking_provider(self) -> None:
         config = profile._build_adaptive_config(
             scheduling_policy="aimd",
@@ -1856,6 +1900,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertTrue(all(path == output for path, _ in captured_rows))
         rows = [row for _, row in captured_rows]
         self.assertEqual(rows[0]["elapsed_s"], 0.0)
+        self.assertEqual(rows[0]["endpoint_id"], "")
         self.assertEqual(rows[1]["elapsed_s"], 0.5)
         self.assertEqual(rows[1]["k_max"], 4)
         self.assertEqual(rows[1]["controller_action"], "decrease")

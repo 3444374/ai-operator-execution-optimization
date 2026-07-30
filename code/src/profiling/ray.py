@@ -149,6 +149,7 @@ def _run_scheduler(
     per_endpoint_work_limit: int | None = None,
     shared_credit=None,
     job_weight: int = 1,
+    per_endpoint_admission: Mapping[str, object] | None = None,
 ) -> tuple[list[dict], dict]:
     routing_config = routing_config or {}
     scheduler = SynchronousScheduler(
@@ -160,6 +161,7 @@ def _run_scheduler(
         epoch_clock=epoch_clock or time.time,
         per_endpoint_limit=per_endpoint_limit,
         per_endpoint_work_limit=per_endpoint_work_limit,
+        per_endpoint_admission=per_endpoint_admission,
         shared_credit=shared_credit,
         job_weight=job_weight,
     )
@@ -202,6 +204,52 @@ def _run_dynamic_scheduler(
         statistics.mean(event.window for event in new_events)
         if new_events
         else adaptive_config["admission_gate"].limit
+    )
+    return results, metrics
+
+
+def _run_per_endpoint_dynamic_scheduler(
+    ray_module,
+    envelopes: Iterable[PayloadEnvelope],
+    topology: TopologySnapshot,
+    submitters: dict,
+    adaptive_config: dict,
+    routing_config: dict | None = None,
+    submission_lifecycle_sink: list[SubmissionLifecycleEvent] | None = None,
+    epoch_clock=None,
+    per_endpoint_limit: int | None = None,
+) -> tuple[list[dict], dict]:
+    endpoint_gates = adaptive_config["per_endpoint_gates"]
+    trace_events = adaptive_config["trace_events"]
+    trace_start = len(trace_events)
+    max_window = int(adaptive_config["max_window"])
+    global_safety_limit = max_window * len(endpoint_gates)
+    results, metrics = _run_scheduler(
+        ray_module,
+        envelopes,
+        topology,
+        submitters,
+        StaticAdmissionController(global_safety_limit),
+        routing_config,
+        submission_lifecycle_sink,
+        epoch_clock,
+        per_endpoint_limit,
+        None,
+        None,
+        1,
+        endpoint_gates,
+    )
+    new_events = trace_events[trace_start:]
+    metrics["adaptive_downshifts"] = sum(
+        event.controller_action == "decrease" for event in new_events
+    )
+    metrics["adaptive_upshifts"] = sum(
+        event.controller_action == "increase" for event in new_events
+    )
+    metrics["adaptive_limit_mean"] = (
+        statistics.mean(event.window for event in new_events)
+        if new_events
+        else statistics.mean(gate.limit for gate in endpoint_gates.values())
     )
     return results, metrics
 
@@ -255,8 +303,9 @@ def submit_with_backpressure(
         endpoint_id: submitter.submission_counts
         for endpoint_id, submitter in pool_submitters.items()
     }
-    typed_adaptive = (
-        adaptive_config is not None and "admission_gate" in adaptive_config
+    typed_adaptive = adaptive_config is not None and (
+        "admission_gate" in adaptive_config
+        or "per_endpoint_gates" in adaptive_config
     )
     if adaptive_config is not None and not typed_adaptive:
         if submission_lifecycle_sink is not None:
@@ -309,24 +358,40 @@ def submit_with_backpressure(
             for endpoint_id, submitter in pool_submitters.items()
         }
         if typed_adaptive:
-            if (
-                per_endpoint_limit is not None
-                or per_endpoint_work_limit is not None
-            ):
+            if per_endpoint_work_limit is not None:
                 raise ValueError(
-                    "endpoint-local admission currently supports static "
-                    "scheduling only"
+                    "dynamic active-work admission is not implemented; "
+                    "keep the work-credit arm static for an independent "
+                    "ablation"
                 )
-            results, metrics = _run_dynamic_scheduler(
-                ray_module,
-                envelopes,
-                topology,
-                submitters,
-                adaptive_config,
-                routing_config,
-                submission_lifecycle_sink,
-                epoch_clock,
-            )
+            if "per_endpoint_gates" in adaptive_config:
+                results, metrics = _run_per_endpoint_dynamic_scheduler(
+                    ray_module,
+                    envelopes,
+                    topology,
+                    submitters,
+                    adaptive_config,
+                    routing_config,
+                    submission_lifecycle_sink,
+                    epoch_clock,
+                    per_endpoint_limit,
+                )
+            else:
+                if per_endpoint_limit is not None:
+                    raise ValueError(
+                        "global adaptive admission cannot be combined with "
+                        "an endpoint-local limit"
+                    )
+                results, metrics = _run_dynamic_scheduler(
+                    ray_module,
+                    envelopes,
+                    topology,
+                    submitters,
+                    adaptive_config,
+                    routing_config,
+                    submission_lifecycle_sink,
+                    epoch_clock,
+                )
         else:
             shared_credit = _shared_credit_client(
                 ray_module,
@@ -481,8 +546,9 @@ def submit_ray_tasks(
     per_endpoint_work_limit: int | None = None,
     shared_credit_config: dict | None = None,
 ) -> tuple[list[dict], dict]:
-    typed_adaptive = (
-        adaptive_config is not None and "admission_gate" in adaptive_config
+    typed_adaptive = adaptive_config is not None and (
+        "admission_gate" in adaptive_config
+        or "per_endpoint_gates" in adaptive_config
     )
     if adaptive_config is not None and not typed_adaptive:
         if submission_lifecycle_sink is not None:
@@ -594,13 +660,27 @@ def submit_ray_tasks(
         ),
     )
     if typed_adaptive:
-        if (
-            per_endpoint_limit is not None
-            or per_endpoint_work_limit is not None
-        ):
+        if per_endpoint_work_limit is not None:
             raise ValueError(
-                "endpoint-local admission currently supports static "
-                "scheduling only"
+                "dynamic active-work admission is not implemented; keep "
+                "the work-credit arm static for an independent ablation"
+            )
+        if "per_endpoint_gates" in adaptive_config:
+            return _run_per_endpoint_dynamic_scheduler(
+                ray_module,
+                envelopes,
+                topology,
+                submitters,
+                adaptive_config,
+                routing_config,
+                submission_lifecycle_sink,
+                epoch_clock,
+                per_endpoint_limit,
+            )
+        if per_endpoint_limit is not None:
+            raise ValueError(
+                "global adaptive admission cannot be combined with an "
+                "endpoint-local limit"
             )
         return _run_dynamic_scheduler(
             ray_module,

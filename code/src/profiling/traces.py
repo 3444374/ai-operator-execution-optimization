@@ -37,6 +37,7 @@ def write_control_trace(
                 "server_version": server_version,
                 "pgvector_version": pgvector_version,
                 "controller": controller_name,
+                "endpoint_id": event.endpoint_id or "",
                 "trace_index": trace_index,
                 "elapsed_s": event.observed_at_s - first_observed_at_s,
                 "fresh": event.fresh,

@@ -78,10 +78,13 @@ class ExperimentScenarioTests(unittest.TestCase):
                         "project_active_work_per_endpoint": 65536,
                         "project_actor_workers_per_endpoint": 1,
                         "project_ray_actor_max_concurrency": 256,
+                        "project_ray_worker_num_cpus": 0.5,
                     },
                     "evidence": {
                         "feeding": {"status": "passed"},
                         "token_budget": {"status": "passed"},
+                        "actor_pool": {"status": "passed"},
+                        "actor_pool": {"status": "passed"},
                     },
                 }
             ),
@@ -102,6 +105,7 @@ class ExperimentScenarioTests(unittest.TestCase):
             "SOURCE_MAX_PROMPT_TOKENS": "1500",
             "COMPLETION_MODEL": "qwen2.5-7b",
             "COMPLETION_MAX_TOKENS": "256",
+            "COMPLETION_PROTOCOL": "completions",
             "COMPLETION_PROMPT_FORMAT": "chatml",
             "TOKEN_BUDGET": "8192",
             "BEST_TOKEN_BUDGET": "32768",
@@ -114,6 +118,7 @@ class ExperimentScenarioTests(unittest.TestCase):
             "PROJECT_ACTIVE_WORK_PER_ENDPOINT": "65536",
             "PROJECT_ACTOR_WORKERS_PER_ENDPOINT": "1",
             "PROJECT_RAY_ACTOR_MAX_CONCURRENCY": "256",
+            "PROJECT_RAY_WORKER_NUM_CPUS": "0.5",
             "PROJECT_FORMAL_REQUEST_MANIFEST": "/tmp/formal.jsonl",
             "ACTOR_WORKERS_PER_ENDPOINT": "2",
             "RAY_ACTOR_MAX_CONCURRENCY": "128",
@@ -132,7 +137,9 @@ class ExperimentScenarioTests(unittest.TestCase):
             "dual_gpu_submission_policy.example.json": 6,
             "dual_gpu_request_replay.example.json": 5,
             "dual_gpu_active_work_curve.example.json": 8,
-            "dual_gpu_actor_pool_shape.example.json": 3,
+            "dual_gpu_actor_pool_shape.example.json": 5,
+            "dual_gpu_static_k_workload_surface.example.json": 9,
+            "dual_gpu_endpoint_adaptive_gate.example.json": 2,
             "dual_gpu_service_quantum.example.json": 6,
             "dual_gpu_slo_ewma_flush.example.json": 6,
         }
@@ -225,7 +232,13 @@ class ExperimentScenarioTests(unittest.TestCase):
             self.assertIn("round_robin", actor_pool.common_args)
             self.assertEqual(
                 [item.scenario_id for item in actor_pool.scenarios],
-                ["pool_1x256", "pool_2x128", "pool_4x64"],
+                [
+                    "pool_1x256",
+                    "pool_2x128",
+                    "pool_4x64",
+                    "pool_8x32",
+                    "pool_16x16",
+                ],
             )
             for scenario in actor_pool.scenarios:
                 workers_index = scenario.args.index(
@@ -1080,6 +1093,7 @@ class ScenarioRunnerTests(unittest.TestCase):
                     "evidence": {
                         "feeding": {"status": "passed"},
                         "token_budget": {"status": "passed"},
+                        "actor_pool": {"status": "passed"},
                     },
                 }
             ),

@@ -11,7 +11,11 @@ Adaptive K_max 的 shared-vLLM 双作业复验已经完成：static K8 保护前
 2026-07-30 的 f203257 双协议 formal 已关闭 feeding 缺口：
 Completions fixed16 达同协议 direct 的 97.7%，Chat async K256 与 bounded
 Chat 同量级。后续模板已冻结 32K throughput-oriented budget、K256/endpoint、
-65K active work 和 1×256 async actor；49K 另记为 SLO-goodput 候选。
+65K active work；旧 Completions 三形状证据暂保留 1×256 async actor，
+但最终合同现在要求在 32K 工作点补跑 1/2/4/8/16 同协议曲线后重新选择。
+一份 512 行 Chat 曲线显示约 4–8 actors 进入平台、16 actors 方差增大；它是
+协议特定 feeding 诊断，不能直接替换 Completions 默认。49K 另记为
+SLO-goodput 候选。
 旧 8K length-align 显示 P50/SLO 的明确正信号，但必须在冻结合同下重跑。
 4-job `ray_task` 因数百 worker 撞上容器 VMA 上限；有界 actor gate 已在同一
 65530 VMA 容器通过，默认 formal 因而恢复为 1/2/4-job。

@@ -269,6 +269,27 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--controller-min-window", type=int)
     parser.add_argument("--controller-max-window", type=int, default=16)
     parser.add_argument("--controller-initial-window", type=int)
+    parser.add_argument("--controller-additive-increase", type=int, default=2)
+    parser.add_argument(
+        "--controller-multiplicative-decrease",
+        type=float,
+        default=0.5,
+    )
+    parser.add_argument(
+        "--controller-congestion-kv-usage",
+        type=float,
+        default=0.85,
+    )
+    parser.add_argument(
+        "--controller-low-load-kv-usage",
+        type=float,
+        default=0.50,
+    )
+    parser.add_argument(
+        "--controller-low-load-running",
+        type=int,
+        default=64,
+    )
     parser.add_argument(
         "--adaptive-sample-interval-s",
         type=float,

@@ -2854,3 +2854,26 @@
 - data-organization 与 submission-policy 不再硬编码 8K/K64/actor shape，
   改用冻结的 32K、K、active work 和 actor 参数。AutoDL 新运行时结果统一写到
   `/root/autodl-tmp/experiment-artifacts/`，仓库只接收审计后的摘要与报告。
+- 调度实验重新明确“动态”的比较目标：direct-vLLM 是容量上界、一次校准后
+  冻结的 static 是主要可部署 baseline、per-phase static oracle 只作诊断
+  上界。动态策略不以改变单请求 kernel 速度为目标，而在运行中 workload
+  漂移或多 job 竞争下，以容量退化不超过 3% 为护栏，比较 SLO goodput、JCT、
+  P99、time-to-ceiling 和 adaptation regret。
+- 在动态控制器头对头之前新增“存在性门禁”：固定其他变量后先验证不同
+  workload 的最佳安全 static K 是否至少迁移 2×或 97%-ceiling 区间不重叠，
+  且错用静态点是否造成至少 5% 的 SLO-goodput/JCT 损失。门禁不成立就停止
+  adaptive formal 排名，避免为没有实际代价的静态差异设计控制器。
+- 双 GPU adaptive formal 增加硬前置并完成代码拆分：typed AIMD/EWMA/PID/HOL
+  controller state、服务指标和 action trace 均改为 endpoint-local；
+  control trace 新增 endpoint ID。global adaptive 与 endpoint-local static
+  limit 的混搭、dynamic K 与 active-work 动态混搭继续 fail closed，防止聚合
+  指标或多变量联动污染正式策略结论；正式运行前仍需远端双 endpoint gate。
+- actor pool shape 升级为 calibration contract 的独立证据：同协议、
+  同 token budget/K/work、固定 256 slots 与 0.5 CPU/endpoint，扫描
+  1/2/4/8/16 actors，并选择达到峰值中位数 97% 的最小 actor 数。Chat
+  512-row 曲线的 4–8 actor 平台只作 feeding 诊断，不跨协议冻结
+  Completions；选择脚本新增必填 actor-shape CSV 与 repeat 离散度记录。
+- 新增可执行 static-K workload surface 与判定脚本：low/near/burst 到达压力
+  分别扫描 K64/128/256，先过 95% capacity floor，再验证 K 迁移/可接受集合、
+  ≥5% cross-workload regret 和 ≥2/3 paired repeats 同向。另增双 endpoint
+  adaptive 256-row gate，只验证独立 controller/metrics/trace，不产出性能结论。

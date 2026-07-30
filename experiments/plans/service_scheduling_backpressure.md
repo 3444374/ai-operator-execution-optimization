@@ -81,6 +81,28 @@ vLLM 的 `--enable-chunked-prefill` 和你的 queue-adaptive flush / K_max 控�
 
 **关键反证条件**：如果 vLLM continuous batching 内部已经很好地消化了请求波动，那外部 Ray 层的调度优化空间可能很小。
 
+### 1.1 “动态提交”不以改变单请求推理速度为目标
+
+在模型、vLLM 配置和 GPU 固定时，外部提交控制不能改变模型 kernel，也不能
+突破相同协议和 workload 的 direct-vLLM 服务容量。动态控制要回答的是：
+
+> 当 prompt/output 长度、到达率、SLO 或并发 job 在运行中发生变化时，能否
+> 在维持服务容量的同时，比一次校准后永久冻结的静态配置更快恢复到合适工作点，
+> 减少排队、SLO 违约和不公平 slowdown？
+
+因此三类对照的角色必须分开：
+
+| 对照 | 含义 | 动态策略应达到的目标 |
+|---|---|---|
+| direct-vLLM / bounded client | 同协议服务容量上界 | 逼近，不要求超过 |
+| calibration 后冻结的单一 static K/work/flush | 可部署的主要策略 baseline | 在 workload 漂移和竞争下胜出 |
+| 每个 phase 事后单独 sweep 的 static oracle | 不可部署的诊断上界 | 缩小与 oracle 的累计差距 |
+
+稳态、同质、单 job 下，最佳静态点与动态持平甚至略优是合理边界，不算动态
+失败。动态策略只有在**未重新调参**的 held-out 漂移或多 job 场景改善
+SLO goodput、JCT、P99 或公平性，同时维持容量，才构成正结果。单纯提高某个
+稳态点的 raw tokens/s 更接近静态并发校准，不是“动态”的独立贡献。
+
 ---
 
 ## 2. 假设（Hypotheses）
@@ -225,26 +247,96 @@ K_max = K_max*（从 5.1 取最优值）
 - 多 endpoint + 均匀 workload：round_robin ≈ least_queued
 - 多 endpoint + 不均匀 workload（有 straggler）：least_queued > round_robin
 
-### 5.3 Adaptive vs Static K_max（当 workload 变化时）
+### 5.3 Frozen Static vs Adaptive（运行中 workload 漂移）
 
-```
-策略:
-  - static_K: K_max = K_max*（来自 5.1，固定不变）
-  - adaptive_K: K_max 根据 queue depth 动态调整
+#### 5.3.0 动态策略存在性门禁：静态最优点是否真的迁移
 
-测试场景:
-  - 均匀注入（benchmark 到 benchmark 的直接对比）
-  - 突发注入（模拟生产中的 spike）
-  - workload 混合（EMBED + FILTER，两种不同 GPU 耗时特征）
+在运行任何 adaptive arm 前，先冻结 actor shape、data organization、routing
+和 flush，只扫描 static K（必要时另开独立 static active-work 扫描），建立
+下列 workload 的静态性能面：
 
-总组合: 2 (策略) × 3 (场景) = 6
-每组合: 3 次重复
-总运行: 18 次
+```text
+short-uniform / long-uniform / mixed-length
+low-arrival / near-capacity / burst
+single-job / unequal-size multi-job
 ```
 
-**要推翻的假设**："静态 K_max 在不同 workload 下表现一致。"
+使用 disjoint calibration/held-out 数据，并分别记录 throughput、SLO goodput、
+JCT、P99、waiting/KV 和 active work。动态策略只有同时满足以下条件才继续：
 
-**期望发现**：adaptive 在均匀场景 ≈ static，在突发/混合场景 > static。
+1. 至少两个 held-out workload 的最佳安全静态 K 明显不同（预注册为相差至少
+   2×），或其 97%-ceiling 可接受区间不重叠；
+2. 把某 workload 的最佳静态 K 用到另一个 workload，SLO goodput 或 JCT
+   至少恶化 5%，至少 2/3 repeats 同向；
+3. 该损失发生在相同模型、协议、endpoint、actor shape 和数据组织下，不能由
+   Chat/Completions、行数、work credit 或 actor 数混杂解释。
+
+该门禁必须在真实 GPU、真实模型、真实 vLLM/Ray/Daft 链路上运行。CPU/fake
+只允许验证判定脚本和 trace 正确性，不能用来证明静态最优点迁移或决定动态
+控制器参数；这与项目“完整真实链路 → 分阶段定位 → 大块消融”的既定方法一致。
+
+若门禁不成立，停止 AIMD/PID/预测式控制的 formal 排名，结论写成“该硬件与
+workload 范围内单一冻结静态点足够稳健”。动态代码仅保留为诊断/可扩展能力，
+研究内容二转向已有证据更强的 request replenishment、actor feeding 和多 job
+共享隔离。
+
+本实验不再把几个彼此独立的 steady-state benchmark 当作“动态”证据。每个
+repeat 使用同一条有明确 phase 边界的 arrival replay，控制器在 phase 之间
+保持状态且禁止人工重新调参。
+
+```text
+AI_COMPLETE replay:
+  A. short + low arrival rate
+  B. long/异长 + burst/high arrival rate
+  C. mixed length + staggered second job
+
+策略臂:
+  frozen_static:
+    calibration manifest 选择一次 K/work/flush，三个 phase 全程不变
+  reactive_aimd:
+    标准 AIMD，只根据 endpoint-local 运行时反馈调 endpoint-local K
+  cost_aware_feedback:
+    prompt-cost/arrival 预测给出初始工作点，再由 endpoint-local 反馈纠偏
+  per_phase_static_oracle:
+    每个 phase 事后单独 sweep；只作诊断上界，不是可部署 baseline
+```
+
+控制变量：
+
+- 同一模型、Completions 协议、双单-GPU endpoint、prompt/output manifest；
+- 同一总行数、offered prompt/output tokens、phase 起止时间与随机种子；
+- actor pool shape、data organization、routing 和重试语义全部冻结；
+- 控制器参数只允许用 calibration partition 选择一次；held-out replay 禁止
+  按 phase 重调；
+- 双 endpoint 的动态窗口和观测必须 endpoint-local。把两个 GPU 的 metrics
+  聚合后只调一个 global K 会把一端拥塞错误传播到另一端，不进入正式比较。
+
+主指标不是“kernel 推理是否更快”，而是：
+
+1. `SLO goodput`、job JCT、request P95/P99 和 SLO 违约率；
+2. phase 切换后的 `time_to_95pct_oracle_goodput`；
+3. `adaptation_regret = ∫(oracle_goodput - achieved_goodput)dt`；
+4. GPU starvation time、vLLM waiting/KV、active request/work overshoot；
+5. aggregate prompt/output tokens/s 与 capacity efficiency，作为容量护栏。
+
+预注册判据：
+
+- 稳态同质 phase 相对 frozen static 的 aggregate tokens/s 退化不超过 3%；
+- 完整漂移 replay 的 SLO goodput 或 JCT 至少改善 5%，且至少 2/3 formal
+  repeats 同向；
+- time-to-ceiling 或 adaptation regret 至少改善 10%；
+- 若只改善 MFU、GPU utilization 或控制器窗口，而 P99/SLO/JCT/goodput
+  没有改善，不判定策略有效。
+
+**要推翻的假设**：“一次校准得到的静态配置可在所有运行阶段保持接近
+per-phase oracle 的质量。”
+
+代码前置条件：typed adaptive controller 已拆为 endpoint-local state，
+每个 endpoint 单独读取 metrics，并在 control trace 记录 `endpoint_id`。
+global adaptive 与 per-endpoint static limit 的混搭会 fail closed；
+active-work 动态化仍未实现，保持静态/关闭以便独立消融。正式运行前仍必须先过
+双 endpoint 小规模 gate，确认两个 endpoint 都有独立 action trace、窗口不互相
+串扰、0 failure 和最终空队列；未过 gate 的结果只能作为诊断。
 
 ### 5.4 Whole-submission barrier vs continuous replenishment
 
@@ -325,8 +417,12 @@ slowdown/饥饿，相对静态分区保持更高总 goodput，并且单 job 时�
 | **queue_depth** | 每个 endpoint 前等待的 task 数 | Orca 的 batch queue 分析 |
 | **补位效率** | credit idle ratio、refill interval、completion span | Orca/vLLM continuous batching 的上游迁移验证 |
 | **有效吞吐** | observed tokens/s、SLO goodput | vLLM/Clipper 的吞吐—SLO评估范式 |
+| **动态适应** | time-to-95%-oracle、adaptation regret、starvation/overshoot time | workload 漂移下的控制质量 |
+| **多 job 质量** | JCT/solo slowdown、worst normalized slowdown、weighted service deficit、overlap-window Jain | VTC/DRR 的共享服务评估范式 |
 
-**关键**：不报"adaptive 比 static 好 X%"，而是画 **"延迟-吞吐曲线"**——在不同吞吐水平下 P99 延迟如何变化。这是 vLLM/Orca 的标准做法。
+**关键**：稳态容量实验画“延迟—吞吐曲线”；动态实验必须另外画 phase
+时间序列与相对 static oracle 的累计 regret。只报一个全程平均 tokens/s 会把
+控制器恢复速度、短时 SLO 崩溃和过冲全部掩盖。
 
 MFU 只作为机制诊断，不作为控制器 reward 或“是否压满 GPU”的唯一判据。
 prefill 主要受计算吞吐限制，decode 常受 HBM 带宽和 KV-cache 读写限制；decode

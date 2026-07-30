@@ -48,7 +48,10 @@ FORMAL_RESULT_FIELDS = tuple(
     endpoint_routing
     pool_routing endpoint_pool_ids endpoint_gpu_ids long_request_token_threshold
     scheduling_policy adaptive_min_inflight adaptive_max_inflight
-    controller_min_window controller_max_window adaptive_sample_interval_s
+    controller_min_window controller_max_window controller_initial_window
+    controller_additive_increase controller_multiplicative_decrease
+    controller_congestion_kv_usage controller_low_load_kv_usage
+    controller_low_load_running adaptive_sample_interval_s
     adaptive_downshifts adaptive_upshifts adaptive_limit_mean control_trace_path
     control_trace_events arrival_replay arrival_time_scale arrival_replay_preload
     arrival_replay_start_epoch_s arrival_replay_observed_start_epoch_s

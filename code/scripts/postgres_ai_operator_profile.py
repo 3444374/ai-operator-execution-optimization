@@ -612,6 +612,12 @@ def _build_adaptive_config(
     pid_derivative_gain: float,
     hol_age_congestion_s: float,
     hol_age_low_load_s: float,
+    endpoint_id: str | None = None,
+    additive_increase: int = 2,
+    multiplicative_decrease: float = 0.5,
+    congestion_kv_usage: float = 0.85,
+    low_load_kv_usage: float = 0.50,
+    low_load_running: int = 64,
 ) -> dict:
     # aimd_hol keys on Ray-side head-of-line age and ignores service metrics,
     # so it (alone) can run without a model metrics URL; the service-metric
@@ -619,7 +625,15 @@ def _build_adaptive_config(
     if scheduling_policy != "aimd_hol" and not metrics_urls:
         raise ValueError("service-metric adaptive scheduling requires a model metrics URL")
     if scheduling_policy in {"aimd", "ewma_aimd"}:
-        config = AimdConfig(min_window=min_window, max_window=max_window)
+        config = AimdConfig(
+            min_window=min_window,
+            max_window=max_window,
+            additive_increase=additive_increase,
+            multiplicative_decrease=multiplicative_decrease,
+            congestion_kv_usage=congestion_kv_usage,
+            low_load_kv_usage=low_load_kv_usage,
+            low_load_running=low_load_running,
+        )
         if scheduling_policy == "aimd":
             controller = AimdAdmissionController(config, initial_window)
         else:
@@ -644,6 +658,8 @@ def _build_adaptive_config(
             HolAgeAimdConfig(
                 min_window=min_window,
                 max_window=max_window,
+                additive_increase=additive_increase,
+                multiplicative_decrease=multiplicative_decrease,
                 congestion_hol_age_s=hol_age_congestion_s,
                 low_load_hol_age_s=hol_age_low_load_s,
             ),
@@ -668,10 +684,86 @@ def _build_adaptive_config(
         controller,
         provider,
         trace_sink=trace_events.append,
+        endpoint_id=endpoint_id,
     )
     return {
         "admission_gate": gate,
         "observation_provider": provider,
+        "trace_events": trace_events,
+        "controller_name": scheduling_policy,
+        "min_window": min_window,
+        "max_window": max_window,
+    }
+
+
+def _build_per_endpoint_adaptive_config(
+    *,
+    scheduling_policy: str,
+    endpoint_ids: Sequence[str],
+    metrics_urls: Sequence[str],
+    trace_events: list,
+    min_window: int,
+    max_window: int,
+    initial_window: int,
+    sample_interval_s: float,
+    ewma_alpha: float,
+    pid_proportional_gain: float,
+    pid_integral_gain: float,
+    pid_derivative_gain: float,
+    hol_age_congestion_s: float,
+    hol_age_low_load_s: float,
+    additive_increase: int = 2,
+    multiplicative_decrease: float = 0.5,
+    congestion_kv_usage: float = 0.85,
+    low_load_kv_usage: float = 0.50,
+    low_load_running: int = 64,
+) -> dict:
+    if not endpoint_ids:
+        raise ValueError("per-endpoint adaptive scheduling requires endpoints")
+    if scheduling_policy != "aimd_hol" and (
+        len(metrics_urls) != len(endpoint_ids)
+    ):
+        raise ValueError(
+            "per-endpoint adaptive scheduling requires exactly one metrics "
+            "URL per service endpoint"
+        )
+    endpoint_configs = {}
+    for index, endpoint_id in enumerate(endpoint_ids):
+        endpoint_metrics_urls = (
+            []
+            if scheduling_policy == "aimd_hol"
+            else [metrics_urls[index]]
+        )
+        endpoint_configs[endpoint_id] = _build_adaptive_config(
+            scheduling_policy=scheduling_policy,
+            metrics_urls=endpoint_metrics_urls,
+            trace_events=trace_events,
+            min_window=min_window,
+            max_window=max_window,
+            initial_window=initial_window,
+            sample_interval_s=sample_interval_s,
+            ewma_alpha=ewma_alpha,
+            pid_proportional_gain=pid_proportional_gain,
+            pid_integral_gain=pid_integral_gain,
+            pid_derivative_gain=pid_derivative_gain,
+            hol_age_congestion_s=hol_age_congestion_s,
+            hol_age_low_load_s=hol_age_low_load_s,
+            endpoint_id=endpoint_id,
+            additive_increase=additive_increase,
+            multiplicative_decrease=multiplicative_decrease,
+            congestion_kv_usage=congestion_kv_usage,
+            low_load_kv_usage=low_load_kv_usage,
+            low_load_running=low_load_running,
+        )
+    return {
+        "per_endpoint_gates": {
+            endpoint_id: config["admission_gate"]
+            for endpoint_id, config in endpoint_configs.items()
+        },
+        "observation_providers": [
+            config["observation_provider"]
+            for config in endpoint_configs.values()
+        ],
         "trace_events": trace_events,
         "controller_name": scheduling_policy,
         "min_window": min_window,
@@ -1400,10 +1492,30 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     if args.admission_scope == "per_endpoint":
         if args.executor not in {"ray_actor", "ray_task"}:
             raise SystemExit("per-endpoint admission requires a Ray executor")
-        if args.scheduling_policy != "static":
+        if (
+            args.scheduling_policy != "static"
+            and args.scheduling_policy not in typed_adaptive_policies
+        ):
             raise SystemExit(
-                "per-endpoint admission currently supports --scheduling-policy "
-                "static only"
+                "per-endpoint admission supports static or typed adaptive "
+                "scheduling; legacy queue_adaptive is global-only"
+            )
+        if (
+            args.scheduling_policy in typed_adaptive_policies
+            and args.controller_max_window > args.max_inflight
+        ):
+            raise SystemExit(
+                "per-endpoint controller max window must not exceed "
+                "--max-inflight"
+            )
+        if (
+            args.scheduling_policy in typed_adaptive_policies
+            and args.scheduling_policy != "aimd_hol"
+            and len(resolved_metrics_urls) != routing_endpoint_count
+        ):
+            raise SystemExit(
+                "per-endpoint adaptive scheduling requires exactly one "
+                "model metrics URL per service endpoint"
             )
     if args.max_active_work_per_endpoint < 0:
         raise SystemExit(
@@ -1646,6 +1758,21 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.controller_min_window is not None
                 else (2 if args.scheduling_policy == "pid" else 4)
             ),
+            "controller_additive_increase": (
+                args.controller_additive_increase
+            ),
+            "controller_multiplicative_decrease": (
+                args.controller_multiplicative_decrease
+            ),
+            "controller_congestion_kv_usage": (
+                args.controller_congestion_kv_usage
+            ),
+            "controller_low_load_kv_usage": (
+                args.controller_low_load_kv_usage
+            ),
+            "controller_low_load_running": (
+                args.controller_low_load_running
+            ),
             "adaptive_sample_interval_s": args.adaptive_sample_interval_s,
             "control_trace_output": args.control_trace_output or "",
             "arrival_replay": args.arrival_replay,
@@ -1719,7 +1846,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     if args.operator == "ai_complete" and args.writeback_mode == "pgvector":
         raise SystemExit("AI_COMPLETE does not support --writeback-mode pgvector.")
     resource_sampler = None
-    adaptive_observation_provider = None
+    adaptive_observation_providers = []
     conn = connect(args.database_url)
     job_id = None
     try:
@@ -2009,24 +2136,59 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 else min_window
             )
             try:
-                adaptive_config = _build_adaptive_config(
-                    scheduling_policy=args.scheduling_policy,
-                    metrics_urls=resolved_metrics_urls,
-                    trace_events=control_trace_events,
-                    min_window=min_window,
-                    max_window=args.controller_max_window,
-                    initial_window=initial_window,
-                    sample_interval_s=args.adaptive_sample_interval_s,
-                    ewma_alpha=args.ewma_alpha,
-                    pid_proportional_gain=args.pid_proportional_gain,
-                    pid_integral_gain=args.pid_integral_gain,
-                    pid_derivative_gain=args.pid_derivative_gain,
-                    hol_age_congestion_s=args.hol_age_congestion_s,
-                    hol_age_low_load_s=args.hol_age_low_load_s,
-                )
-                adaptive_observation_provider = adaptive_config[
-                    "observation_provider"
-                ]
+                adaptive_kwargs = {
+                    "scheduling_policy": args.scheduling_policy,
+                    "metrics_urls": resolved_metrics_urls,
+                    "trace_events": control_trace_events,
+                    "min_window": min_window,
+                    "max_window": args.controller_max_window,
+                    "initial_window": initial_window,
+                    "sample_interval_s": args.adaptive_sample_interval_s,
+                    "ewma_alpha": args.ewma_alpha,
+                    "pid_proportional_gain": args.pid_proportional_gain,
+                    "pid_integral_gain": args.pid_integral_gain,
+                    "pid_derivative_gain": args.pid_derivative_gain,
+                    "hol_age_congestion_s": args.hol_age_congestion_s,
+                    "hol_age_low_load_s": args.hol_age_low_load_s,
+                    "additive_increase": (
+                        args.controller_additive_increase
+                    ),
+                    "multiplicative_decrease": (
+                        args.controller_multiplicative_decrease
+                    ),
+                    "congestion_kv_usage": (
+                        args.controller_congestion_kv_usage
+                    ),
+                    "low_load_kv_usage": (
+                        args.controller_low_load_kv_usage
+                    ),
+                    "low_load_running": (
+                        args.controller_low_load_running
+                    ),
+                }
+                if args.admission_scope == "per_endpoint":
+                    adaptive_endpoint_ids = (
+                        list(actor_endpoint_urls)
+                        if args.executor == "ray_actor"
+                        else [
+                            f"task-{index}"
+                            for index in range(routing_endpoint_count)
+                        ]
+                    )
+                    adaptive_config = _build_per_endpoint_adaptive_config(
+                        endpoint_ids=adaptive_endpoint_ids,
+                        **adaptive_kwargs,
+                    )
+                    adaptive_observation_providers.extend(
+                        adaptive_config["observation_providers"]
+                    )
+                else:
+                    adaptive_config = _build_adaptive_config(
+                        **adaptive_kwargs,
+                    )
+                    adaptive_observation_providers.append(
+                        adaptive_config["observation_provider"]
+                    )
             except ValueError as exc:
                 raise SystemExit(str(exc)) from exc
 
@@ -2417,7 +2579,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         control_trace_path = ""
         if (
             adaptive_config is not None
-            and "admission_gate" in adaptive_config
+            and (
+                "admission_gate" in adaptive_config
+                or "per_endpoint_gates" in adaptive_config
+            )
         ):
             trace_events = adaptive_config["trace_events"]
             submit_metrics["adaptive_downshifts"] = sum(
@@ -2429,7 +2594,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             submit_metrics["adaptive_limit_mean"] = (
                 statistics.mean(event.window for event in trace_events)
                 if trace_events
-                else adaptive_config["admission_gate"].limit
+                else (
+                    adaptive_config["admission_gate"].limit
+                    if "admission_gate" in adaptive_config
+                    else statistics.mean(
+                        gate.limit
+                        for gate in adaptive_config[
+                            "per_endpoint_gates"
+                        ].values()
+                    )
+                )
             )
             control_trace_path = args.control_trace_output
             if not control_trace_path:
@@ -2670,6 +2844,52 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "controller_max_window": adaptive_config.get("max_window", 0)
             if adaptive_config
             else 0,
+            "controller_initial_window": (
+                args.controller_initial_window
+                if (
+                    args.scheduling_policy in typed_adaptive_policies
+                    and args.controller_initial_window is not None
+                )
+                else (
+                    args.controller_min_window
+                    if (
+                        args.scheduling_policy in typed_adaptive_policies
+                        and args.controller_min_window is not None
+                    )
+                    else (
+                        2
+                        if args.scheduling_policy == "pid"
+                        else 4
+                        if args.scheduling_policy in typed_adaptive_policies
+                        else 0
+                    )
+                )
+            ),
+            "controller_additive_increase": (
+                args.controller_additive_increase
+                if args.scheduling_policy in typed_adaptive_policies
+                else 0
+            ),
+            "controller_multiplicative_decrease": (
+                args.controller_multiplicative_decrease
+                if args.scheduling_policy in typed_adaptive_policies
+                else 0
+            ),
+            "controller_congestion_kv_usage": (
+                args.controller_congestion_kv_usage
+                if args.scheduling_policy in typed_adaptive_policies
+                else 0
+            ),
+            "controller_low_load_kv_usage": (
+                args.controller_low_load_kv_usage
+                if args.scheduling_policy in typed_adaptive_policies
+                else 0
+            ),
+            "controller_low_load_running": (
+                args.controller_low_load_running
+                if args.scheduling_policy in typed_adaptive_policies
+                else 0
+            ),
             "adaptive_sample_interval_s": args.adaptive_sample_interval_s
             if args.scheduling_policy in typed_adaptive_policies
             else 0,
@@ -2861,7 +3081,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     finally:
         if resource_sampler is not None and resource_sampler.is_running:
             resource_sampler.close()
-        if adaptive_observation_provider is not None:
+        for adaptive_observation_provider in adaptive_observation_providers:
             adaptive_observation_provider.close()
         conn.close()
 

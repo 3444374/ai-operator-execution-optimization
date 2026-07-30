@@ -21,9 +21,11 @@ class StrategyCalibrationTests(unittest.TestCase):
             root = Path(temp_dir)
             feeding = root / "feeding.csv"
             budget = root / "budget.csv"
+            actor_shape = root / "actor_shape.csv"
             direct = root / "direct"
             self._write_feeding(feeding, throughput=970.0)
             self._write_budget(budget)
+            self._write_actor_shape(actor_shape)
             self._write_direct(direct, throughput=1000.0)
 
             selection = build_selection(
@@ -32,6 +34,7 @@ class StrategyCalibrationTests(unittest.TestCase):
                 direct_baseline_root=direct,
                 direct_cell="bounded_fixed16_c16",
                 token_budget_runs=budget,
+                actor_shape_runs=actor_shape,
                 minimum_repeats=3,
                 minimum_feeding_ratio=0.95,
             )
@@ -44,8 +47,9 @@ class StrategyCalibrationTests(unittest.TestCase):
                     "best_slo_goodput_token_budget": 49152,
                     "project_static_k_per_endpoint": 256,
                     "project_active_work_per_endpoint": 65536,
-                    "project_actor_workers_per_endpoint": 1,
-                    "project_ray_actor_max_concurrency": 256,
+                    "project_actor_workers_per_endpoint": 4,
+                    "project_ray_actor_max_concurrency": 64,
+                    "project_ray_worker_num_cpus": 0.125,
                 },
             )
 
@@ -54,9 +58,11 @@ class StrategyCalibrationTests(unittest.TestCase):
             root = Path(temp_dir)
             feeding = root / "feeding.csv"
             budget = root / "budget.csv"
+            actor_shape = root / "actor_shape.csv"
             direct = root / "direct"
             self._write_feeding(feeding, throughput=900.0)
             self._write_budget(budget)
+            self._write_actor_shape(actor_shape)
             self._write_direct(direct, throughput=1000.0)
 
             with self.assertRaisesRegex(ValueError, "feeding ratio"):
@@ -66,6 +72,7 @@ class StrategyCalibrationTests(unittest.TestCase):
                     direct_baseline_root=direct,
                     direct_cell="bounded_fixed16_c16",
                     token_budget_runs=budget,
+                    actor_shape_runs=actor_shape,
                     minimum_repeats=3,
                     minimum_feeding_ratio=0.95,
                 )
@@ -82,6 +89,7 @@ class StrategyCalibrationTests(unittest.TestCase):
                         "evidence": {
                             "feeding": {"status": "passed"},
                             "token_budget": {"status": "passed"},
+                            "actor_pool": {"status": "passed"},
                         },
                     }
                 ),
@@ -193,6 +201,45 @@ class StrategyCalibrationTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
+
+    @staticmethod
+    def _write_actor_shape(path: Path) -> None:
+        fields = [
+            "status",
+            "phase",
+            "repeat_index",
+            "scenario_id",
+            "actor_worker_failures",
+            "actor_workers_per_endpoint",
+            "ray_actor_max_concurrency",
+            "ray_worker_num_cpus",
+            "model_request_tokens_per_s",
+        ]
+        throughputs = {
+            1: [900.0, 905.0, 895.0],
+            2: [950.0, 955.0, 945.0],
+            4: [980.0, 985.0, 975.0],
+            8: [1000.0, 1005.0, 995.0],
+            16: [999.0, 1120.0, 995.0],
+        }
+        with path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fields)
+            writer.writeheader()
+            for workers, values in throughputs.items():
+                for repeat, throughput in enumerate(values, start=1):
+                    writer.writerow(
+                        {
+                            "status": "ok",
+                            "phase": "formal",
+                            "repeat_index": repeat,
+                            "scenario_id": f"pool_{workers}",
+                            "actor_worker_failures": "0;0",
+                            "actor_workers_per_endpoint": workers,
+                            "ray_actor_max_concurrency": 256 // workers,
+                            "ray_worker_num_cpus": 0.5 / workers,
+                            "model_request_tokens_per_s": throughput,
+                        }
+                    )
 
 
 if __name__ == "__main__":

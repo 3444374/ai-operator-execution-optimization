@@ -68,6 +68,13 @@ def _median(rows: list[dict[str, str]], key: str) -> float:
     return statistics.median(float(row[key]) for row in rows)
 
 
+def _unique_float(rows: list[dict[str, str]], key: str) -> float:
+    values = {float(row[key]) for row in rows}
+    if len(values) != 1:
+        raise ValueError(f"{key} is not constant: {sorted(values)}")
+    return values.pop()
+
+
 def _direct_baseline_metrics(root: Path, cell_id: str) -> tuple[float, int]:
     cell_root = root / cell_id
     gate = json.loads((cell_root / "gate.json").read_text(encoding="utf-8"))
@@ -156,6 +163,73 @@ def _select_slo_goodput_budget(
     return selected, goodput_medians
 
 
+def _select_actor_shape(
+    rows: list[dict[str, str]],
+    *,
+    minimum_repeats: int,
+    ceiling_ratio: float,
+) -> tuple[int, int, float, dict[int, float], dict[int, float]]:
+    grouped: dict[int, list[dict[str, str]]] = defaultdict(list)
+    total_slots = set()
+    for row in rows:
+        workers = int(row["actor_workers_per_endpoint"])
+        concurrency = int(row["ray_actor_max_concurrency"])
+        grouped[workers].append(row)
+        total_slots.add(workers * concurrency)
+    if len(total_slots) != 1:
+        raise ValueError(
+            "actor shape calibration must keep total slots per endpoint "
+            f"constant: {sorted(total_slots)}"
+        )
+
+    throughput_medians = {}
+    relative_ranges = {}
+    concurrency_by_workers = {}
+    cpu_by_workers = {}
+    for workers, items in grouped.items():
+        _require_successful_repeats(
+            items,
+            label=f"actor_workers_per_endpoint={workers}",
+            minimum=minimum_repeats,
+        )
+        concurrency_by_workers[workers] = _unique_int(
+            items,
+            "ray_actor_max_concurrency",
+        )
+        cpu_by_workers[workers] = _unique_float(
+            items,
+            "ray_worker_num_cpus",
+        )
+        values = [
+            float(row["model_request_tokens_per_s"])
+            for row in items
+        ]
+        median = statistics.median(values)
+        throughput_medians[workers] = median
+        relative_ranges[workers] = (
+            (max(values) - min(values)) / median
+            if median > 0
+            else float("inf")
+        )
+
+    peak = max(throughput_medians.values())
+    candidates = [
+        workers
+        for workers, throughput in throughput_medians.items()
+        if throughput >= ceiling_ratio * peak
+    ]
+    if not candidates:
+        raise ValueError("no actor shape satisfies the ceiling rule")
+    selected_workers = min(candidates)
+    return (
+        selected_workers,
+        concurrency_by_workers[selected_workers],
+        cpu_by_workers[selected_workers],
+        throughput_medians,
+        relative_ranges,
+    )
+
+
 def build_selection(
     *,
     feeding_runs: Path,
@@ -163,6 +237,7 @@ def build_selection(
     direct_baseline_root: Path,
     direct_cell: str,
     token_budget_runs: Path,
+    actor_shape_runs: Path,
     minimum_repeats: int,
     minimum_feeding_ratio: float,
 ) -> dict[str, object]:
@@ -199,6 +274,18 @@ def build_selection(
         budget_medians,
         throughput_floor_ratio=0.95,
     )
+    actor_rows = _read_formal_rows(actor_shape_runs)
+    (
+        actor_workers,
+        actor_concurrency,
+        actor_num_cpus,
+        actor_throughput_medians,
+        actor_relative_ranges,
+    ) = _select_actor_shape(
+        actor_rows,
+        minimum_repeats=minimum_repeats,
+        ceiling_ratio=0.97,
+    )
     selected = {
         "best_token_budget": best_budget,
         "best_throughput_token_budget": best_budget,
@@ -211,14 +298,9 @@ def build_selection(
             budget_rows,
             "max_active_work_per_endpoint",
         ),
-        "project_actor_workers_per_endpoint": _unique_int(
-            budget_rows,
-            "actor_workers_per_endpoint",
-        ),
-        "project_ray_actor_max_concurrency": _unique_int(
-            budget_rows,
-            "ray_actor_max_concurrency",
-        ),
+        "project_actor_workers_per_endpoint": actor_workers,
+        "project_ray_actor_max_concurrency": actor_concurrency,
+        "project_ray_worker_num_cpus": actor_num_cpus,
     }
     repository_commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
@@ -269,6 +351,29 @@ def build_selection(
                     for key, value in sorted(slo_goodput_medians.items())
                 },
             },
+            "actor_pool": {
+                "status": "passed",
+                "runs_path": str(actor_shape_runs.resolve()),
+                "runs_sha256": _sha256(actor_shape_runs),
+                "formal_repeats_per_shape": minimum_repeats,
+                "selection_rule": {
+                    "ceiling_ratio": 0.97,
+                    "objective": (
+                        "minimum_actor_count_within_ceiling"
+                    ),
+                    "constant_total_slots_required": True,
+                },
+                "model_request_tokens_per_s_median": {
+                    str(key): value
+                    for key, value in sorted(
+                        actor_throughput_medians.items()
+                    )
+                },
+                "relative_repeat_range": {
+                    str(key): value
+                    for key, value in sorted(actor_relative_ranges.items())
+                },
+            },
         },
     }
 
@@ -280,6 +385,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--direct-baseline-root", required=True, type=Path)
     parser.add_argument("--direct-cell", default="bounded_fixed16_c16")
     parser.add_argument("--token-budget-runs", required=True, type=Path)
+    parser.add_argument("--actor-shape-runs", required=True, type=Path)
     parser.add_argument("--minimum-repeats", type=int, default=3)
     parser.add_argument("--minimum-feeding-ratio", type=float, default=0.95)
     parser.add_argument("--output", required=True, type=Path)
@@ -295,6 +401,7 @@ def main() -> None:
         direct_baseline_root=args.direct_baseline_root,
         direct_cell=args.direct_cell,
         token_budget_runs=args.token_budget_runs,
+        actor_shape_runs=args.actor_shape_runs,
         minimum_repeats=args.minimum_repeats,
         minimum_feeding_ratio=args.minimum_feeding_ratio,
     )
@@ -328,6 +435,9 @@ def main() -> None:
             ),
             "PROJECT_RAY_ACTOR_MAX_CONCURRENCY": (
                 values["project_ray_actor_max_concurrency"]
+            ),
+            "PROJECT_RAY_WORKER_NUM_CPUS": (
+                values["project_ray_worker_num_cpus"]
             ),
         }
         args.env_output.parent.mkdir(parents=True, exist_ok=True)

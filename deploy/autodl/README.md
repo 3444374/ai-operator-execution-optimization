@@ -636,9 +636,11 @@ python code/scripts/postgres_ai_operator_profile.py ... \
 5. `dual_gpu_request_replay.example.json`：恢复相同 arrival replay/flush，
    比较 whole-submission barrier 与真正的 request-level replenishment。
 6. `dual_gpu_actor_pool_shape.example.json`：沿用 request-level 饱和点，
-   固定每 endpoint 256 个可见 actor slots，比较 1×256、2×128、4×64。
-   16-slot 草案已在启动前否决：按当前约 332 work/request 或
-   1337 work/organization batch，它无法维持已测饱和区，会混入 offered-load。
+   固定每 endpoint 256 个可见 actor slots和 0.5 Ray CPU reservation，比较
+   1×256、2×128、4×64、8×32、16×16。runner 会按 repeat 交错顺序，避免
+   把 GPU 温度或前一场景缓存漂移写成 actor 数效果。选择“达到峰值 97% 的
+   最小 actor 数”，而不是追逐单次最高值；同时报告 repeat relative range。
+   16×16 只用于确认平台/转折，不自动晋升默认，且必须保留 worker/VMA 证据。
 7. `dual_gpu_service_quantum.example.json`：固定上一步最佳 pool、active work
    和 planning budget，比较 whole batch、512/1024/2048/4096 complete-row
    quantum 与 request diagnostic。当前组织批次 P95≈3366、max≈5892，因此
@@ -658,6 +660,22 @@ python code/scripts/postgres_ai_operator_profile.py ... \
    active-work 配额上，使用持久 async Completions，并保留 batch-level
    multi-prompt body，逐项消融 least-work routing、service-quantum 动态预算
    和 queue-adaptive flush；最后的 combined arm 只检查交互，不替代单项结论。
+10. `dual_gpu_static_k_workload_surface.example.json`：在 actor/token budget
+    冻结后，以 low/near-capacity/burst 三种到达压力扫描 K64/128/256。
+    完成后必须运行：
+
+    ```bash
+    python code/scripts/summarize_static_k_workload_surface.py \
+      --runs "$OUTPUT_DIR/runs.csv" \
+      --output "$OUTPUT_DIR/adaptive_justification.json" \
+      --require-pass
+    ```
+
+    只有状态为 `passed` 才允许继续 adaptive formal；退出码 2 表示不同
+    workload 的静态最优区间/错配代价不足，应该停止动态策略排名。
+11. `dual_gpu_endpoint_adaptive_gate.example.json`：仅验证双 endpoint typed
+    controller 的独立 state、metrics 和 action trace，不产出性能结论。两个
+    endpoint 都必须有 trace、0 failure、最终空队列后，才能制作漂移 formal。
 
 `${DATABASE_URL}`、`${COMPLETION_MODEL}`、endpoint/metrics URL 等变量在 runner
 读取时从环境展开；缺失变量会在启动任何外部工作前报错。容量模板的单 GPU
@@ -1440,8 +1458,9 @@ submission/request trace 与服务端 counter。full feeding 配置是正式校�
 
 ### 冻结校准选择
 
-feeding 和 token-budget 曲线完成后，不得手工凭记忆修改 8K/K64。使用已提交
-脚本从原始证据生成不可歧义的选择文件和环境覆盖：
+feeding、token-budget 和**同协议 actor-shape** 曲线完成后，不得手工凭记忆
+修改 8K/K64/actor 数。使用已提交脚本从原始证据生成不可歧义的选择文件和
+环境覆盖：
 
 ```bash
 ARTIFACT_ROOT=/root/autodl-tmp/experiment-artifacts
@@ -1456,6 +1475,8 @@ mkdir -p "$CALIBRATION_ROOT"
     "$ARTIFACT_ROOT/<direct-completions-gate>" \
   --token-budget-runs \
     "$ARTIFACT_ROOT/<token-budget-curve>/runs.csv" \
+  --actor-shape-runs \
+    "$ARTIFACT_ROOT/<completions-actor-shape>/runs.csv" \
   --output "$CALIBRATION_ROOT/selection.json" \
   --env-output "$CALIBRATION_ROOT/calibration.env"
 
@@ -1466,10 +1487,12 @@ source "$CALIBRATION_ROOT/calibration.env"
 set +a
 ```
 
-脚本只接受至少三次成功 formal feeding/token-budget 重复，要求项目
+脚本只接受至少三次成功 formal feeding/token-budget/actor-shape 重复，要求项目
 model-request throughput 达到同协议 direct baseline 的 95%，并按
-97%-ceiling/下一档增益小于 3% 规则选择最小 token budget。它同时冻结
-per-endpoint K、active work 和 Completions actor shape。
+97%-ceiling/下一档增益小于 3% 规则选择最小 token budget。actor shape 必须
+保持总 slots 不变，并选择达到峰值 97% 的最小 actor 数。它最终冻结
+per-endpoint K、active work 和 **Completions** actor shape；Chat actor 曲线
+只能作为协议特定诊断，禁止传给该选择命令。
 
 `dual_gpu_data_organization.example.json`、
 `dual_gpu_submission_policy.example.json` 和

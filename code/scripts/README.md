@@ -99,7 +99,9 @@ utilization；submission trace 另记 worker ID/index/PID 供归因。
 双 GPU 饱和后门禁使用两份隔离模板：
 
 - `deploy/autodl/dual_gpu_actor_pool_shape.example.json` 固定每 endpoint
-  256 slots 和 0.5 Ray CPU reservation，比 1×256/2×128/4×64；
+  256 slots 和 0.5 Ray CPU reservation，比
+  1×256/2×128/4×64/8×32/16×16；按 97%-ceiling 选择最小 actor 数，
+  16×16 只用于确认平台和方差；
 - `deploy/autodl/dual_gpu_service_quantum.example.json` 固定所选 pool、active
   work 与 planning budget，比 batch、512/1024/2048/4096 quantum 和 request
   diagnostic。
@@ -867,9 +869,17 @@ body-read 边界。两臂 throughput/JCT 没有收敛到 5% 内时必须停止�
 单次最佳结果选择参数。
 
 `select_strategy_calibration.py` 把通过门禁的 Completions feeding、
-direct bounded gate 和 token-budget formal CSV 合并为
+direct bounded gate、token-budget 和同协议 actor-shape formal CSV 合并为
 `selection.json + calibration.env`。它按 95% feeding parity、
 至少三次 formal repeat、97%-ceiling 和下一档增益小于 3% 的预注册规则冻结
-token budget、per-endpoint K、active work 与 actor shape。后续
+token budget、per-endpoint K、active work；actor shape 在总 slots 固定时
+选择达到峰值 97% 的最小 actor 数。后续
 data-organization、submission-policy 和 shared-vLLM formal runner 会核对
-该选择文件；旧 8K/K64、缺失证据或环境漂移会在外部请求前失败。
+该选择文件；旧 8K/K64、缺失 actor-pool 证据或环境漂移会在外部请求前失败。
+
+`summarize_static_k_workload_surface.py` 读取
+`dual_gpu_static_k_workload_surface.example.json` 的 formal CSV，先用
+95% capacity floor 排除欠喂点，再按 SLO goodput（缺失时用 JCT）选择各
+workload 的静态 K。只有最佳 K 至少迁移 2×或 97% 可接受集合不重叠、错配
+损失至少 5%，且至少 2/3 paired repeats 同向时才输出 `passed`。
+`--require-pass` 在不存在动态优化空间时返回 2，供远端 runner fail closed。

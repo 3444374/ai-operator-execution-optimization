@@ -479,10 +479,13 @@ Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属�
 算子；bounded HTTP 是强因果对照，不冒充已有产品；OceanBase 缺少 AI Function
 能力时记为 capability failure，不阻塞 bounded HTTP 与官方 runtime 主矩阵。
 
-`src/calibration.py` 与 `scripts/select_strategy_calibration.py` 负责把 feeding
-和 token-budget 校准结果冻结为后续策略实验的机器可校验合同，避免示例环境
-中的历史默认值静默进入正式 data-organization、submission 或多 job 矩阵。
+`src/calibration.py` 与 `scripts/select_strategy_calibration.py` 负责把 feeding、
+token-budget 和同协议 actor-shape 校准结果冻结为后续策略实验的机器可校验
+合同，避免示例环境中的历史默认值静默进入正式 data-organization、
+submission 或多 job 矩阵。
 合同分别记录 throughput-oriented token budget 与在 95% throughput floor
 内最大化 SLO goodput 的候选预算，避免把一个预算误写成所有目标的通用最优。
+actor shape 保持每 endpoint 总 slots 不变，并选择达到峰值 97% 的最小
+actor 数；Chat 结果不能冻结 Completions 主线。
 Shared-vLLM 的 4-job 数据面必须使用有界 persistent async actor pool；显式
 4-job `ray_task` 配置会在外部请求前失败，防止数百 worker 再次耗尽容器 VMA。

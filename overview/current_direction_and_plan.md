@@ -109,17 +109,20 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 **当前缺口**（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 1. **P0**：f203257 双协议 feeding formal 已通过。Completions fixed16
    project/direct 为 97.7%，Chat async K256 与 bounded Chat 同量级。
-   当前冻结 32K throughput budget、K256、65K active work、1×256 async
-   actor；49K 另记为 SLO-goodput 候选。下一步按同一合同重跑 length-align
+   当前冻结 32K throughput budget、K256、65K active work；在同一
+   Completions 工作点补跑 1/2/4/8/16 actor 曲线后再冻结 actor shape，Chat
+   曲线不能跨协议代替。49K 另记为 SLO-goodput 候选。下一步按同一合同重跑 length-align
    与 submission 单因素消融，继续分列 model-request/operator/database E2E
-2. **P1**：完成有界 actor 的 Shared-vLLM 1/2/4-job。原 j4 `ray_task`
+2. **P0**：先跑 static-K workload surface；只有不同 workload 的最佳 K
+   明显迁移且错配代价至少 5%，才继续 endpoint-local adaptive formal。
+3. **P1**：完成有界 actor 的 Shared-vLLM 1/2/4-job。原 j4 `ray_task`
    创建 200+ worker 并撞上容器 VMA 上限；新的 j4 actor gate 已在同一容器
    三臂通过。正式 1/2/4 后再做 staggered idle borrowing、weighted overlap fairness 与异构
    workload/arrival offset
-3. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
-4. **P2**（文本门禁已完成）：多模态泛化验证
-5. 在当前 2×4090 上完成 staggered/weighted 公平性、路由与故障迁移
-6. 代价模型增加独立时间段/新 workload 校准和预测区间
+4. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
+5. **P2**（文本门禁已完成）：多模态泛化验证
+6. 在当前 2×4090 上完成 staggered/weighted 公平性、路由与故障迁移
+7. 代价模型增加独立时间段/新 workload 校准和预测区间
 
 继续从文献提取机制时，统一按
 `experiments/plans/literature_driven_pipeline_optimization_guide.md` 的机制卡、

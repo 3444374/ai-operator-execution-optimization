@@ -54,12 +54,14 @@ class DynamicAdmissionGate:
         observation_provider: ObservationProvider,
         *,
         trace_sink: Callable[[AdmissionTraceEvent], None] | None = None,
+        endpoint_id: str | None = None,
     ):
         if controller.current_window <= 0:
             raise ValueError("controller current_window must be positive")
         self.controller = controller
         self.observation_provider = observation_provider
         self.trace_sink = trace_sink
+        self.endpoint_id = endpoint_id
         self.limit = controller.current_window
 
     def decide(
@@ -86,6 +88,7 @@ class DynamicAdmissionGate:
                     allowed=allowed,
                     sample_age_s=observation.sample_age_s,
                     hol_age_s=observation.hol_age_s,
+                    endpoint_id=self.endpoint_id,
                 )
             )
         return AdmissionDecision(

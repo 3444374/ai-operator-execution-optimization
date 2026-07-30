@@ -49,7 +49,7 @@ def load_calibration_contract(
     evidence = payload.get("evidence")
     if not isinstance(evidence, dict):
         raise ValueError("calibration evidence must be an object")
-    for required in ("feeding", "token_budget"):
+    for required in ("feeding", "token_budget", "actor_pool"):
         item = evidence.get(required)
         if not isinstance(item, dict) or item.get("status") != "passed":
             raise ValueError(

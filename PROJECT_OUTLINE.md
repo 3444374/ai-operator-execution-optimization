@@ -176,18 +176,24 @@
 
 1. **P0**：f203257 双协议 feeding formal 已通过：Completions fixed16
    project/direct 为 16,036/16,416 tokens/s（97.7%），Chat async K256
-   与 bounded Chat 同量级。当前合同冻结 32K throughput budget、K256、
-   65K active work 和 1×256 async actor；49K 另记为 SLO-goodput 候选。
-   下一步在相同合同下重跑数据组织与提交控制，并始终分列 model-request、
+   与 bounded Chat 同量级。当前冻结 32K throughput budget、K256 和
+   65K active work；actor shape 必须在该 Completions 工作点补跑固定
+   256 slots/0.5 CPU 的 1/2/4/8/16 曲线后由合同选择，不能用 Chat 曲线代替。
+   49K 另记为 SLO-goodput 候选。下一步在相同合同下重跑数据组织与提交控制，
+   并始终分列 model-request、
    operator 和 database E2E。旧 8K length-align 的 P50/SLO 正信号只作候选，
    需 512/1024/2048 规模头对头复验；旧 K64/K32 submission 延迟不可归因。
-2. **P1**：当前 AutoDL 使用有界 async actor 的 1/2/4-job formal。j4
+2. **P0**：动态提交先过存在性门禁：固定其他变量，对 low/near/burst
+   workload 扫 K64/128/256。只有最佳 K 迁移至少 2×或 97% 可接受区间不
+   重叠，且错配造成至少 5% SLO-goodput/JCT 损失，才运行 endpoint-local
+   AIMD/PID/预测式 formal；否则冻结静态点并停止动态排名。
+3. **P1**：当前 AutoDL 使用有界 async actor 的 1/2/4-job formal。j4
    `ray_task` 因 200+ worker 撞上 `vm.max_map_count=65530`；独立
    j4 actor gate 已在相同 VMA 容器三臂通过，正式矩阵恢复 1/2/4。随后再验证 staggered idle
    borrowing、weighted overlap fairness 和异构 workload mix。
-3. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
+4. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
    证据，不能用当前 cache-off 数据推断缓存收益。
-4. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
+5. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
 5. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
    ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
 6. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work

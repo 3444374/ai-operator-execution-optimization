@@ -97,6 +97,7 @@ class AdmissionTraceEvent:
     allowed: bool
     sample_age_s: float | None = None
     hol_age_s: float | None = None
+    endpoint_id: str | None = None
 
 
 class CachedMetricsObservationProvider:

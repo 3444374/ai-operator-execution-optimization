@@ -189,6 +189,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                         "evidence": {
                             "feeding": {"status": "passed"},
                             "token_budget": {"status": "passed"},
+                            "actor_pool": {"status": "passed"},
                         },
                     }
                 ),

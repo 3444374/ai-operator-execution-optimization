@@ -195,6 +195,58 @@ class SchedulerTests(unittest.TestCase):
             [("r0", "e1"), ("r1", "e1"), ("r2", "e2"), ("r3", "e2")],
         )
 
+    def test_per_endpoint_admission_applies_independent_windows(
+        self,
+    ) -> None:
+        class FirstHealthyRouter:
+            def route(self, request, topology, pool_id):
+                del request
+                endpoint = next(
+                    item
+                    for item in topology.endpoints
+                    if item.healthy and item.available
+                )
+                return RoutingDecision(endpoint.endpoint_id, pool_id, "first")
+
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=4),
+            router=FirstHealthyRouter(),
+            adapter=adapter,
+            pool_id="default",
+            per_endpoint_admission={
+                "e1": StaticAdmissionController(limit=1),
+                "e2": StaticAdmissionController(limit=2),
+            },
+        )
+
+        result = scheduler.run(
+            [envelope(index) for index in range(5)],
+            topology(),
+        )
+
+        self.assertEqual(result.max_inflight_seen, 3)
+        self.assertEqual(
+            adapter.submitted[:3],
+            [("r0", "e1"), ("r1", "e2"), ("r2", "e2")],
+        )
+
+    def test_per_endpoint_admission_requires_complete_topology_mapping(
+        self,
+    ) -> None:
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=2),
+            router=RoundRobinEndpointRouter(),
+            adapter=FakeSubmissionAdapter(),
+            pool_id="default",
+            per_endpoint_admission={
+                "e1": StaticAdmissionController(limit=1),
+            },
+        )
+
+        with self.assertRaisesRegex(ValueError, "exactly one policy"):
+            scheduler.run([envelope(0)], topology())
+
     def test_per_endpoint_limit_must_be_positive(self) -> None:
         with self.assertRaisesRegex(ValueError, "must be positive"):
             SynchronousScheduler(

@@ -466,7 +466,8 @@ Ray actor、HTTP connection/headers 和 vLLM ingress 所见的提交形态。旧
 
 1. **Chat feeding**：相同 manifest、request granularity 和 K，比较旧
    `urllib` 与每 actor 一个持久 `httpx.AsyncClient`；再只改变 1×256、
-   2×128、4×64 actor 形状。Chat 每行仍独立，actor 内使用 async dispatch；
+   2×128、4×64、8×32、16×16 actor 形状。Chat 每行仍独立，actor 内使用
+   async dispatch；该曲线只解释 Chat feeding，不能冻结 Completions actor；
 2. **Completions transport ceiling**：无 Ray bounded client 比较固定
    `batch_rows={1,4,16,32}`，并令 `batch_rows × HTTP concurrency=256`
    per endpoint，隔离 HTTP packing 本身；
@@ -479,7 +480,11 @@ Ray actor、HTTP connection/headers 和 vLLM ingress 所见的提交形态。旧
    model_request_wall_s`。project 不低于同协议 bounded 95%，且模型请求 JCT
    不高于 1.05×、0 failure、exactly-once、最终空队列才通过。完整
    `operator_wall_s`、`operator_tokens_per_s`、`e2e_s` 和 `tokens_per_s`
-   仍必须同时报告，但不能把数据库/Daft 固有时间归因成 feeding 缺口。
+   仍必须同时报告，但不能把数据库/Daft 固有时间归因成 feeding 缺口；
+5. **Completions actor-shape 校准**：在已经选定的 token budget、K 和 active
+   work 上固定每 endpoint 256 slots/0.5 CPU，扫描 1/2/4/8/16 actors。
+   按“达到正式重复峰值中位数 97% 的最小 actor 数”冻结；16 actors 的单次
+   高点不覆盖中位数和离散度。只有这份同协议证据能进入 calibration contract。
 
 此前 shared-vLLM 1/2/4-job `_v3` 只完成 1-job 和 2-job warm-up，4-job
 independent warm-up 因 Ray worker 创建失败及 OpenBLAS 每进程尝试 32 线程而

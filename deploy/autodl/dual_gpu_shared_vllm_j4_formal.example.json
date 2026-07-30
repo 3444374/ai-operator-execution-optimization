@@ -21,7 +21,8 @@
       "project_static_k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
       "project_active_work_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
       "project_actor_workers_per_endpoint": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
-      "project_ray_actor_max_concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}"
+      "project_ray_actor_max_concurrency": "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}",
+      "project_ray_worker_num_cpus": "${PROJECT_RAY_WORKER_NUM_CPUS}"
     }
   },
   "warmup_runs_per_scenario": 1,
@@ -45,7 +46,7 @@
     "--ray-actor-max-concurrency",
     "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}",
     "--ray-worker-num-cpus",
-    "0.5",
+    "${PROJECT_RAY_WORKER_NUM_CPUS}",
     "--model-backend",
     "compatible_http",
     "--completion-endpoint-urls",
