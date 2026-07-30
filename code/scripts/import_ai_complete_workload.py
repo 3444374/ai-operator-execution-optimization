@@ -89,6 +89,23 @@ def parse_args() -> argparse.Namespace:
         help="Skip this many eligible rows after all prompt/token length filters.",
     )
     parser.add_argument(
+        "--multi-turn",
+        action="store_true",
+        help=(
+            "Import ShareGPT multi-turn conversations with running context. "
+            "Each human turn becomes a row whose prompt is the accumulated "
+            "conversation, so later turns share earlier turns' prefix "
+            "(enables prefix-cache experiments). session_id and prefix_key "
+            "group turns by conversation."
+        ),
+    )
+    parser.add_argument(
+        "--max-turns-per-session",
+        type=int,
+        default=8,
+        help="Maximum human turns to emit per ShareGPT conversation in multi-turn mode.",
+    )
+    parser.add_argument(
         "--verify-existing-prefix-rows",
         type=int,
         default=0,
@@ -255,6 +272,58 @@ def load_sharegpt_prompts(path: Path, max_prompt_chars: int) -> list[tuple[str, 
     return prompts
 
 
+def load_sharegpt_multi_turn_prompts(
+    path: Path, max_prompt_chars: int, max_turns_per_session: int
+) -> list[tuple[str, str, str | None]]:
+    """Load multi-turn ShareGPT prompts with running context for prefix overlap.
+
+    For each conversation, emits one ``(session_id, prompt, response)`` per
+    human turn.  The prompt is the accumulated conversation text up to and
+    including the current human turn, so turn N+1's prompt **starts with**
+    turn N's prompt → vLLM prefix-cache material.  The response is the actual
+    assistant reply (used for a more accurate target_output_tokens than the
+    BurstGPT trace pairing).
+
+    The conversation is formatted as ``"Human: ...\\nAssistant: ...\\nHuman: ..."``
+    (model-agnostic raw text).  All turns from the same conversation share the
+    same session_id, enabling session-level prefix-affinity routing.
+    """
+    if max_turns_per_session <= 0:
+        raise ValueError("max_turns_per_session must be positive")
+    records = json.load(path.open(encoding="utf-8"))
+    prompts: list[tuple[str, str, str | None]] = []
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            continue
+        session_id = str(record.get("id") or f"sharegpt-{index}")
+        conversations = record.get("conversations")
+        if not isinstance(conversations, list):
+            continue
+        context_parts: list[str] = []
+        turns_emitted = 0
+        pending_prompt: str | None = None
+        for turn in conversations:
+            if turns_emitted >= max_turns_per_session:
+                break
+            if not isinstance(turn, dict):
+                continue
+            role = turn.get("from")
+            value = turn.get("value")
+            if not isinstance(value, str) or not value.strip():
+                continue
+            value = normalize_text(value)
+            label = "Human" if role in ("human", "user") else "Assistant"
+            context_parts.append(f"{label}: {value}")
+            if role in ("human", "user"):
+                pending_prompt = "\n".join(context_parts)
+            elif role in ("gpt", "assistant", "model") and pending_prompt is not None:
+                if len(pending_prompt) <= max_prompt_chars:
+                    prompts.append((session_id, pending_prompt, value))
+                    turns_emitted += 1
+                pending_prompt = None
+    return prompts
+
+
 def burstgpt_rows_from_dicts(rows: Iterable[dict[str, str]], max_request_tokens: int) -> list[BurstTraceRow]:
     traces: list[BurstTraceRow] = []
     for row in rows:
@@ -342,6 +411,89 @@ def build_workload_rows(
         )
     if not rows:
         raise ValueError("No workload rows remain after tokenizer/model-length filtering")
+    return rows
+
+
+def build_multi_turn_workload_rows(
+    prompts: list[tuple[str, str, str | None]],
+    traces: list[BurstTraceRow],
+    workload_name: str,
+    start_doc_id: int,
+    max_rows: int,
+    prompt_token_counter: Callable[[str], int] | None = None,
+    max_prompt_tokens: int | None = None,
+    max_model_len: int | None = None,
+    completion_max_tokens: int = 0,
+    source_row_offset: int = 0,
+) -> list[WorkloadRow]:
+    """Build rows from multi-turn ShareGPT prompts with prefix overlap.
+
+    Each turn's prompt is the running conversation context, so later turns
+    share earlier turns' prefix (prefix-cache material).  ``session_id`` and
+    ``prefix_key`` group turns by conversation so prefix-affinity routing can
+    concentrate them on one endpoint.
+
+    ``target_output_tokens`` uses the **actual** assistant response token count
+    (when a tokenizer is available), which is more accurate than the BurstGPT
+    trace pairing.  BurstGPT traces are cycled for ``arrival_time_s`` and as a
+    fallback for token counts.
+    """
+    if max_rows <= 0:
+        raise ValueError("--max-rows must be positive")
+    if source_row_offset < 0:
+        raise ValueError("source_row_offset must be non-negative")
+    if not prompts:
+        raise ValueError("multi-turn prompt list is empty after filtering")
+    if not traces:
+        raise ValueError("BurstGPT trace list is empty after filtering")
+
+    rows: list[WorkloadRow] = []
+    eligible_seen = 0
+    trace_count = len(traces)
+    for index, (session_id, prompt, response) in enumerate(prompts):
+        if len(rows) >= max_rows:
+            break
+        trace = traces[index % trace_count]
+        prompt_tokens = (
+            prompt_token_counter(prompt) if prompt_token_counter else trace.request_tokens
+        )
+        if prompt_tokens <= 0:
+            continue
+        if max_prompt_tokens is not None and prompt_tokens > max_prompt_tokens:
+            continue
+        if max_model_len is not None and prompt_tokens + completion_max_tokens > max_model_len:
+            continue
+        if eligible_seen < source_row_offset:
+            eligible_seen += 1
+            continue
+        eligible_seen += 1
+        # Prefer the actual response token count; fall back to the trace.
+        if response and prompt_token_counter:
+            raw_response_tokens = prompt_token_counter(response)
+            target_output_tokens = (
+                min(raw_response_tokens, completion_max_tokens)
+                if completion_max_tokens > 0
+                else raw_response_tokens
+            )
+        else:
+            target_output_tokens = trace.response_tokens
+        doc_id = start_doc_id + len(rows)
+        rows.append(
+            WorkloadRow(
+                doc_id=doc_id,
+                tenant_id=stable_tenant_id(session_id),
+                category=category_for(trace, prompt_tokens),
+                text=prompt,
+                workload_name=workload_name,
+                prompt_tokens=prompt_tokens,
+                target_output_tokens=target_output_tokens,
+                arrival_time_s=trace.timestamp_s,
+                session_id=session_id,
+                prefix_key=hashlib.sha1(session_id.encode("utf-8")).hexdigest()[:16],
+            )
+        )
+    if not rows:
+        raise ValueError("No multi-turn rows remain after filtering")
     return rows
 
 
@@ -674,6 +826,40 @@ def main() -> None:
             )
         print(json.dumps({"status": "ok", **summary}, ensure_ascii=False, indent=2))
         return
+    if args.multi_turn:
+        multi_prompts = load_sharegpt_multi_turn_prompts(
+            Path(args.sharegpt_json), args.max_prompt_chars, args.max_turns_per_session
+        )
+        traces = load_burstgpt_trace(Path(args.burstgpt_csv), args.max_request_tokens)
+        rows = build_multi_turn_workload_rows(
+            multi_prompts,
+            traces,
+            args.workload_name,
+            args.start_doc_id,
+            args.max_rows,
+            prompt_token_counter=token_counter,
+            max_prompt_tokens=args.max_prompt_tokens,
+            max_model_len=args.max_model_len,
+            completion_max_tokens=args.completion_max_tokens,
+            source_row_offset=args.source_row_offset,
+        )
+        summary = summarize(rows)
+        sessions = sorted({row.session_id for row in rows})
+        summary["distinct_sessions"] = len(sessions)
+        summary["rows_per_session_mean"] = (
+            round(len(rows) / len(sessions), 2) if sessions else 0.0
+        )
+        if args.dry_run:
+            print(json.dumps({"status": "dry_run", **summary}, ensure_ascii=False, indent=2))
+            return
+        with psycopg.connect(args.database_url) as conn:
+            setup_documents(conn)
+            if args.reset_documents:
+                reset_documents(conn)
+            insert_rows(conn, rows, args.batch_rows, append_only=args.append_only)
+        print(json.dumps({"status": "ok", **summary}, ensure_ascii=False, indent=2))
+        return
+
     prompts = load_sharegpt_prompts(Path(args.sharegpt_json), args.max_prompt_chars)
     traces = load_burstgpt_trace(Path(args.burstgpt_csv), args.max_request_tokens)
     rows = build_workload_rows(
