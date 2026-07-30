@@ -761,13 +761,13 @@ Committed templates:
 - `deploy/autodl/dual_gpu_shared_vllm_j4_gate.example.json`
 - `deploy/autodl/dual_gpu_shared_vllm_j4_formal.example.json`
 
-The constrained AutoDL formal template runs 1/2/3 jobs. Four-job runs are
-staged separately because the former `ray_task` path expanded to more than 200
+The AutoDL formal template runs 1/2/4 jobs after a separate four-job gate.
+The former `ray_task` path expanded to more than 200
 Ray workers and exhausted the container's `vm.max_map_count=65530`. Shared
 multi-job templates now use one persistent async actor per endpoint per job;
 the loader rejects an explicit four-or-more-job `ray_task` configuration before
 any output directory or external request is created. The j4 gate must pass
-before the j4 formal template is eligible.
+before the 1/2/4 formal template or the j4-only isolation template is eligible.
 
 The config must not contain `--setup`, reset, output/trace, Ray-address, or
 credit flags. The runner owns them so concurrent jobs cannot race schema setup,

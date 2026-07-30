@@ -137,8 +137,7 @@ client usage 伪造 output token。
 - 达到同吞吐所需的 upstream/vLLM 排队压力。
 
 多 job 不与本轮同时启动。先锁定单 job 强 baseline，之后用同一批 arm 扩展到
-1/2/3-job；4-job 先通过独立宿主/进程能力门禁，再单独运行，避免失败污染已完成
-矩阵。
+1/2/4-job；4-job 先通过独立宿主/进程能力门禁，再进入同一正式矩阵。
 
 ## 6. Calibration、冻结静态对照与动态策略
 
@@ -223,7 +222,7 @@ time-to-ceiling/ramp-regret 至少改善 10%，只声称压力效率或瞬态改
 | 数据组织 | fixed rows vs token-budget/length/prefix | operator E2E、P99、packing/HTTP body | 相对冻结静态 baseline 做单因素消融 |
 | 提交控制 | static K/flush vs adaptive | E2E、ramp regret、SLO、active work | 控制参数冻结，不能 per-workload 手调 |
 | 单/双 GPU | 相同 per-endpoint 压力 | JCT、吞吐、scaling efficiency | 每卡 workload/并发足够且同协议 |
-| 1/2/3 job + 独立 4-job | independent/partition/shared | aggregate throughput、job JCT、P99、Jain/slowdown | 0 starvation；j4 先过有界 actor/VMA 能力门禁 |
+| 1/2/4 job | independent/partition/shared | aggregate throughput、job JCT、P99、Jain/slowdown | 0 starvation；j4 先过有界 actor/VMA 能力门禁 |
 | DB E2E/多模态 | PostgreSQL+writeback；图像同策略 | database E2E、策略收益保留率 | 前述机制已通过才启动 |
 
 当前实际顺序：
@@ -233,7 +232,7 @@ time-to-ceiling/ramp-regret 至少改善 10%，只声称压力效率或瞬态改
 3. 分别运行 Chat feeding gate 和 Completions fixed-row feeding gate；
 4. 门禁通过后冻结 Chat actor/K 和 Completions `batch_rows × concurrency`；
 5. 才运行 token budget、length-align、动态 K/flush 单因素消融；
-6. 再运行小作业、2,048 held-out、单/双 GPU 和 1/2/3-job；4-job 独立门禁后再跑；
+6. 再运行小作业、2,048 held-out、单/双 GPU 和 1/2/4-job；4-job 独立门禁后再进入 formal；
 7. 最后接回数据库写回、多模态，以及可用时 OceanBase；LOTUS/Palimpzest 仅按
    system-level quality/cost 合同扩展。
 
@@ -546,8 +545,9 @@ active-work，只改变 credit/routing/flush 单因素后再排名。
 
 f203257 的 OMP 单线程修复使 j2 通过，但 j4 `ray_task` 仍创建 200+ worker，
 在 `vm.max_map_count=65530` 的只读容器触发 raylet `SIGABRT`。下一轮 shared
-矩阵统一改为每 job、每 endpoint 一个 persistent async Ray actor：j1/j2/j3
-作为默认 formal，j4 先跑独立 64-row gate，再单独 formal。若 actor gate
+矩阵统一改为每 job、每 endpoint 一个 persistent async Ray actor。独立
+64-row j4 gate 已在相同 `vm.max_map_count=65530` 容器完成三臂、0 actor
+failure、0 failure record，正式矩阵恢复 j1/j2/j4。若未来 actor gate
 仍失败，j4 标记为宿主能力阻塞，不把失败解释为 shared-credit 策略结果。
 
 ## 9. 详细工程设计

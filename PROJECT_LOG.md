@@ -27,8 +27,9 @@
 - f203257 再次确认 OMP 限制可使 j2 通过，但 j4 `ray_task` 仍扩张到 200+
   worker，并在只读 `vm.max_map_count=65530` 的 AutoDL 容器触发 raylet
   `SIGABRT`。共享矩阵改为固定 async Ray actor pool；loader 在外部工作前拒绝
-  4-job `ray_task`。默认 formal 改跑 j1/j2/j3，j4 拆成独立 gate/formal，
-  避免宿主能力故障污染已经完成的较小 job 结果。
+  4-job `ray_task`。ec9b19e 的 j4 gate 在相同 VMA 容器完成
+  independent/partition/shared-DRR 三臂、每臂 4×64 行、0 actor failure；
+  默认 formal 因而恢复 j1/j2/j4，j4-only 模板保留作故障隔离。
 - profiler 实现继续归入 `code/src/profiling/`；主入口已直接导入子包，根级
   `profile_*.py` 只作兼容层。baseline direct adapters 归入
   `code/src/baselines/`，避免策略代码和对照实现相互依赖。

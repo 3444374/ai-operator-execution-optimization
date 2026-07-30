@@ -801,7 +801,7 @@ shared DRR。通过条件不是只看 `status=completed`，还必须核对：
   重跑或启动 formal。gate 全部通过后，换全新输出目录并将 config 改为
   `dual_gpu_shared_vllm_formal.example.json`；其余命令不变。当前受限
   AutoDL 容器的默认 formal 是
-`{1,2,3} job × {independent, static partition, shared DRR}`，
+`{1,2,4} job × {independent, static partition, shared DRR}`，
   每场景 1 warmup + 3 repeats。4-job 必须先单独运行
   `dual_gpu_shared_vllm_j4_gate.example.json`，通过后才可使用
   `dual_gpu_shared_vllm_j4_formal.example.json`。完成或保存失败证据后再执行
@@ -817,7 +817,7 @@ shared DRR。通过条件不是只看 `status=completed`，还必须核对：
 
   j4 gate 必须额外保存 `cat /proc/sys/vm/max_map_count`、Ray worker 峰值和
   raylet 日志。若固定 actor pool 的 j4 gate 仍触发 VMA/pthread 故障，本机
-  只报告 j1/j2/j3；j4 标为宿主能力阻塞，迁移到更高 VMA 的容器后再运行，
+  只报告 j1/j2；j4 标为宿主能力阻塞，迁移到更高 VMA 的容器后再运行，
   不得在同一 9-cell formal 尾部反复试错。
 
   coordinator 名称包含 manifest 持久化的 run-instance ID；同一输出目录 resume
@@ -1486,7 +1486,8 @@ per-endpoint K、active work 和 Completions actor shape。
 3. 生成并核对上述冻结选择文件；
 4. 再做 length-align、queue-adaptive flush、dynamic token budget 和动态 K
    单因素消融；
-5. 单 job 通过后先跑 1/2/3 job；4-job 使用独立 gate/formal。多 job 子进程
+5. 单 job 通过后跑 1/2/4 job；4-job 必须先通过独立 gate，j4-only formal
+   用于失败隔离/复验。多 job 子进程
    和 Ray worker 必须继承 `runtime_env.py` 的单线程 BLAS 环境，并使用有界
    persistent actor pool；旧 `ray_task` j4 失败结果不参与排名；
 6. 最后在 disjoint held-out、database E2E 和多模态上复验。

@@ -112,9 +112,9 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
    当前冻结 32K throughput budget、K256、65K active work、1×256 async
    actor；49K 另记为 SLO-goodput 候选。下一步按同一合同重跑 length-align
    与 submission 单因素消融，继续分列 model-request/operator/database E2E
-2. **P1**：先完成有界 actor 的 Shared-vLLM 1/2/3-job；j4 单独 gate。
-   原 j4 `ray_task` 创建 200+ worker 并撞上容器 VMA 上限，不能当策略结果。
-   通过后再做 staggered idle borrowing、weighted overlap fairness 与异构
+2. **P1**：完成有界 actor 的 Shared-vLLM 1/2/4-job。原 j4 `ray_task`
+   创建 200+ worker 并撞上容器 VMA 上限；新的 j4 actor gate 已在同一容器
+   三臂通过。正式 1/2/4 后再做 staggered idle borrowing、weighted overlap fairness 与异构
    workload/arrival offset
 3. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
 4. **P2**（文本门禁已完成）：多模态泛化验证

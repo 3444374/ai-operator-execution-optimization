@@ -122,8 +122,8 @@
     {"scenario_id": "j2_independent", "policy": "independent_full", "job_count": 2, "rows_per_job": 512},
     {"scenario_id": "j2_partition", "policy": "static_partition", "job_count": 2, "rows_per_job": 512},
     {"scenario_id": "j2_shared_drr", "policy": "shared_drr", "job_count": 2, "rows_per_job": 512},
-    {"scenario_id": "j3_independent", "policy": "independent_full", "job_count": 3, "rows_per_job": 512},
-    {"scenario_id": "j3_partition", "policy": "static_partition", "job_count": 3, "rows_per_job": 512},
-    {"scenario_id": "j3_shared_drr", "policy": "shared_drr", "job_count": 3, "rows_per_job": 512}
+    {"scenario_id": "j4_independent", "policy": "independent_full", "job_count": 4, "rows_per_job": 512},
+    {"scenario_id": "j4_partition", "policy": "static_partition", "job_count": 4, "rows_per_job": 512},
+    {"scenario_id": "j4_shared_drr", "policy": "shared_drr", "job_count": 4, "rows_per_job": 512}
   ]
 }

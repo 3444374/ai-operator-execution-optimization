@@ -181,9 +181,9 @@
    下一步在相同合同下重跑数据组织与提交控制，并始终分列 model-request、
    operator 和 database E2E。旧 8K length-align 的 P50/SLO 正信号只作候选，
    需 512/1024/2048 规模头对头复验；旧 K64/K32 submission 延迟不可归因。
-2. **P1**：当前 AutoDL 先跑有界 async actor 的 1/2/3-job formal。j4
-   `ray_task` 因 200+ worker 撞上 `vm.max_map_count=65530`；改用独立
-   j4 actor gate，只有通过后才运行 j4 formal。随后再验证 staggered idle
+2. **P1**：当前 AutoDL 使用有界 async actor 的 1/2/4-job formal。j4
+   `ray_task` 因 200+ worker 撞上 `vm.max_map_count=65530`；独立
+   j4 actor gate 已在相同 VMA 容器三臂通过，正式矩阵恢复 1/2/4。随后再验证 staggered idle
    borrowing、weighted overlap fairness 和异构 workload mix。
 3. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
    证据，不能用当前 cache-off 数据推断缓存收益。
@@ -191,8 +191,8 @@
 5. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
    ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
 6. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work
-   与早期 equal-weight 多 job 重复；当前高并发合同需重新完成 1/2/3-job，
-   j4 受独立 actor/VMA 门禁约束。路由增量、staggered/weighted 公平性与
+   与早期 equal-weight 多 job 重复；当前高并发合同需重新完成 1/2/4-job，
+   j4 已通过独立 actor/VMA 门禁。路由增量、staggered/weighted 公平性与
    故障迁移仍待验证。
 7. 算子代价估计需增加独立时间段/新 workload 校准、预测区间、配置 ranking
    与决策 regret；它作为两项策略的共同输入，不单列第三项贡献，也不在首版

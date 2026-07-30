@@ -13,8 +13,8 @@ Completions fixed16 达同协议 direct 的 97.7%，Chat async K256 与 bounded
 Chat 同量级。后续模板已冻结 32K throughput-oriented budget、K256/endpoint、
 65K active work 和 1×256 async actor；49K 另记为 SLO-goodput 候选。
 旧 8K length-align 显示 P50/SLO 的明确正信号，但必须在冻结合同下重跑。
-4-job `ray_task` 因数百 worker 撞上容器 VMA 上限，当前默认 formal 改为
-1/2/3-job，j4 使用有界 actor pool 的独立 gate/formal。
+4-job `ray_task` 因数百 worker 撞上容器 VMA 上限；有界 actor gate 已在同一
+65530 VMA 容器通过，默认 formal 因而恢复为 1/2/4-job。
 
 2026-07-29 起，继续增加调度策略前先补两层同规模 baseline：第一层为无
 Daft/Ray 的 OceanBase `AI_COMPLETE` 与同 PostgreSQL bounded AsyncIO；第二层
