@@ -552,7 +552,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             {
                 "status": "ok",
                 "total_rows": "4",
-                "actor_worker_failures": "0",
+                "actor_worker_failures": "0;0",
                 "arrival_replay_start_epoch_s": "100.0",
                 "arrival_replay_observed_start_epoch_s": "100.0",
             }
@@ -571,6 +571,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             )
 
         self.assertEqual(evidence["p99_s"], 100.0)
+        self.assertEqual(evidence["actor_worker_failures"], 0)
 
     def test_jain_fairness_handles_equal_weight_and_zero_service(self) -> None:
         self.assertEqual(jain_fairness([100.0, 100.0]), 1.0)

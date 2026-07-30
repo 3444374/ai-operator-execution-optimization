@@ -1603,8 +1603,8 @@ def _validate_job_evidence(
         "slo_goodput_per_s": completed_in_slo / jct_s,
         "predicted_work": predicted_work,
         "endpoint_counts": endpoint_counts,
-        "actor_worker_failures": int(
-            summary.get("actor_worker_failures", "0") or 0
+        "actor_worker_failures": _sum_semicolon_integers(
+            summary.get("actor_worker_failures", "")
         ),
         "replay_configured_start_epoch_s": float(
             summary.get("arrival_replay_start_epoch_s", "0") or 0
@@ -1618,6 +1618,15 @@ def _validate_job_evidence(
         ),
         "replay_actual_submit_start_epoch_s": min(submission_starts),
     }
+
+
+def _sum_semicolon_integers(value: object) -> int:
+    fields = [
+        item.strip()
+        for item in str(value or "").split(";")
+        if item.strip()
+    ]
+    return sum(int(item) for item in fields)
 
 
 def _request_trace_succeeded(row: dict[str, str]) -> bool:
