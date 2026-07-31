@@ -17,8 +17,11 @@ from __future__ import annotations
 import re
 import subprocess
 
-_VLLM_PROC_MARKER = "vllm.entrypoints"
-_API_SERVER_MARKER = "api_server"
+# Full module path of the vLLM OpenAI server entry point. Using the full path
+# (not just the partial "vllm.entrypoints") avoids matching unrelated processes
+# that merely reference the string — e.g. `grep vllm.entrypoints`, an editor
+# with the source open, or the runner's own subprocess running this probe.
+_VLLM_PROC_MARKER = "vllm.entrypoints.openai.api_server"
 
 
 def parse_prefix_caching_flag(cmdline: str) -> bool | None:
@@ -68,7 +71,7 @@ def probe_live_prefix_caching() -> bool | None:
     """
     flags: list[bool] = []
     for line in _list_process_cmdlines():
-        if _VLLM_PROC_MARKER not in line or _API_SERVER_MARKER not in line:
+        if _VLLM_PROC_MARKER not in line:
             continue
         flag = parse_prefix_caching_flag(line)
         if flag is not None:

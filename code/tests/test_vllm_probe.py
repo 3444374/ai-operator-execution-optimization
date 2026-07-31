@@ -143,6 +143,17 @@ class ProbeLivePrefixCachingTests(unittest.TestCase):
         with patch("src.vllm_probe._list_process_cmdlines", return_value=lines):
             self.assertIsNone(probe_live_prefix_caching())
 
+    def test_partial_marker_does_not_self_match(self) -> None:
+        # A process that only references the partial string (grep, an editor,
+        # or the probe's own diagnostic command) must not be mistaken for a
+        # vLLM server. Only the full module path counts.
+        lines = [
+            "bash -lc python -c print('lines with vllm.entrypoints marker')",
+            "grep --color=auto vllm.entrypoints /some/log",
+        ]
+        with patch("src.vllm_probe._list_process_cmdlines", return_value=lines):
+            self.assertIsNone(probe_live_prefix_caching())
+
 
 if __name__ == "__main__":
     unittest.main()
