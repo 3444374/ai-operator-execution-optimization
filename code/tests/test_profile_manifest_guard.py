@@ -295,6 +295,29 @@ class ProfileManifestGuardTests(unittest.TestCase):
                         **options,
                     )
 
+    def test_profile_manifest_contract_accepts_more_than_two_endpoints(self) -> None:
+        # The contract was relaxed from exactly-two to at-least-two so routing
+        # ablations (prefix_affinity / least_queued) can run across four (or
+        # more) endpoints. Equal-work-per-endpoint comparison is loose above the
+        # manifest's shard count, which is acceptable for routing ablations.
+        options = {
+            "total_rows": len(self.requests),
+            "operator": "ai_complete",
+            "model_backend": "compatible_http",
+            "endpoint_count": 4,
+            "completion_protocol": "completions",
+            "completion_prompt_format": "raw",
+            "completion_temperature": 0.0,
+            "completion_max_tokens": 256,
+            "output_cost_mode": "trace_target_output",
+            "source_order": "doc_id",
+            "executor": "ray_actor",
+            "submission_granularity": "request",
+            "endpoint_routing": "prefix_affinity",
+            "arrival_replay": False,
+        }
+        validate_profile_manifest_contract(self.requests, **options)
+
 
 if __name__ == "__main__":
     unittest.main()

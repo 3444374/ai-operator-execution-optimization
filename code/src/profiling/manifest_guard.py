@@ -49,8 +49,17 @@ def validate_profile_manifest_contract(
         raise ValueError("request manifest requires ai_complete")
     if model_backend != "compatible_http":
         raise ValueError("request manifest requires compatible_http")
-    if endpoint_count != 2:
-        raise ValueError("request manifest comparison requires two endpoints")
+    # The frozen-manifest comparison contract needs at least two endpoints.
+    # Two is the standard dual-GPU comparison; more (e.g. four) is allowed for
+    # routing experiments that distribute requests dynamically across the
+    # topology — the equal-work-per-endpoint comparison is exact at the
+    # manifest's shard count and loose above it, which is acceptable for
+    # routing ablations (prefix_affinity / least_queued) but not for formal
+    # pinned-comparison rankings.
+    if endpoint_count < 2:
+        raise ValueError(
+            "request manifest comparison requires at least two endpoints"
+        )
     if completion_protocol not in {"chat_completions", "completions"}:
         raise ValueError(
             "request manifest requires chat_completions or completions"
