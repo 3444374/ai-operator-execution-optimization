@@ -53,7 +53,7 @@ PY
 结果 ~1.7G（vision+text 权重）。对照模型 `openai/clip-vit-base-patch16` 同法。
 
 ### 3.3 GPU 推理验证（⭐ transformers 5.x 返回类型坑）
-transformers 5.x 的 `CLIPModel.get_image_features` 返回 **`BaseModelOutputWithPooling`**（不是旧版的裸 tensor），取 embedding 要 `.image_embeds`（或 `.pooler_output`），**不能直接 `.shape`**：
+transformers 5.x 的 `CLIPModel.get_image_features` 返回 **`BaseModelOutputWithPooling`**（不是旧版的裸 tensor），取 512d embedding 要 **`.pooler_output`**（实测：`last_hidden_state` 是 (B,50,768) 的 patch tokens、`.pooler_output` 才是投影后的 (B,512)；`.image_embeds` 不存在），**不能直接 `.shape`**：
 
 ```bash
 /root/autodl-tmp/venvs/vllm-4090/bin/python - <<'PY'
@@ -67,7 +67,7 @@ img = Image.fromarray((np.random.rand(224,224,3)*255).astype("uint8"))
 inp = proc(images=img, return_tensors="pt").to("cuda")
 with torch.no_grad():
     out = m.get_image_features(**inp)          # 5.x → BaseModelOutputWithPooling
-emb = out if torch.is_tensor(out) else out.image_embeds
+emb = out if torch.is_tensor(out) else out.pooler_output
 print("CLIP_GPU_OK", tuple(emb.shape), float(emb.norm()))   # 期望 (1, 512) ~10
 PY
 ```
@@ -128,7 +128,7 @@ CLIP serving **不能复用 vLLM**。按 `image_clip_workload_lock_20260731.md` 
 | 坑 | 表现 | 解法 |
 |---|---|---|
 | `huggingface-cli download` 在 hf_hub 1.x 坏 | 打印 help、0 文件 | 改 Python `snapshot_download`（§3.2） |
-| transformers 5.x `get_image_features` 返回类型变 | `.shape` 报 AttributeError | 取 `.image_embeds`（§3.3） |
+| transformers 5.x `get_image_features` 返回类型变 | `.shape` 报 AttributeError | 取 `.pooler_output`（§3.3） |
 | COCO 走 turbo 反而慢/不通 | turbo 只代理 github/HF | COCO 直连 cocodataset.org，不 source turbo |
 | CLIP 无 KV/prefix | vLLM 观测指标不适用 | 改采 CPU decode/transfer/embed 计时 + endpoint 队列深度（§2） |
 | 磁盘 | smoke ~2.5G 够；正式集（COCO train/ImageNet）要清盘/挂数据盘 | smoke 先行，正式前清盘 |
