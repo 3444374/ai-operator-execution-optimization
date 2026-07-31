@@ -3222,3 +3222,12 @@
   - **跨 regime**：**准入控制是吞吐 binding 杠杆，效应随 regime 反向**——2-ep 压住上限（放开 W 可提速）、4-ep 防 thrash（应保留）。这把 feeding 门禁从"过/不过"细化成一个**研究内容二（调度/准入）的实证信号**。
 - **诚实边界**：策略**确实喂饱 vLLM**（GPU 80–90%、model_wall≈operator_wall、非饥饿），但**不榨干 raw 上限**——不能声称"策略已达理论上限"。4-ep bounded 病态值不能当上限用。2-ep 放开 W 测能否逼近 79k = 下一步验证。
 - **同步**：`rc1_data_organization/README.md` §3 合规自检 + §6/§8 更新；本条记入 PROJECT_LOG；`experiment_status_and_gaps.md` / `EXPERIMENT_EVIDENCE_REGISTRY.md` / `PROJECT_OUTLINE.md` 的"feeding 待补"口径改成"已补 + 准入杠杆结论"；`gate_runner.py` 放宽 ≥2 endpoint（本地+远程，待 commit）。
+
+## 2026-08-01 image-CLIP 多模态环境准备就绪（首个多模态 workload）
+
+- **决策背景**：prefix 轨暂停（vLLM APC + Daft v0.6.9 已覆盖大半，与 §0 scoop 一致）；下一步 workload 锁定 image AI_EMBED（CLIP）找 DB-read/CPU→GPU 数据搬运瓶颈。用户要求远端准备环境。
+- **完成**（远端 AutoDL 2×4090）：① 代码 git 同步 a26c1e2 → ba35e93（条件 reset，fetch 受下载抢带宽拖 ~7min）；② CLIP ViT-B/32 下到 `models/clip-vit-base-patch32`（~1.7G）；③ COCO val2017 下到 `data/raw/coco_val2017/`（~780M，5000 图 smoke 集）；④ GPU 验证 CLIP load + `get_image_features` → 512d embedding OK。
+- **两个坑（已记入 `deploy/autodl/README.md` image-CLIP 节）**：
+  1. `huggingface_hub 1.x`（1.25.1）的 `huggingface-cli download` wrapper 解析参数失败 → 改用 Python `snapshot_download`。
+  2. `transformers 5.x` 的 `CLIPModel.get_image_features` 返回 `BaseModelOutputWithPooling`（非裸 tensor）→ 取 `.image_embeds`，不能直接 `.shape`。
+- **下一步（serving 引擎，待建）**：CLIP 是 embedding 非 vLLM 生成；按 image_clip plan "ours 路径 B" = CLIP embedding HTTP endpoint（FastAPI）+ 上游 Ray CPU decode，项目 scheduler 观测 endpoint 队列；baseline A = Daft `@daft.cls` Native。观测层换：vLLM 的 prefix_cache_hit_rate/KV/running 在 CLIP 无对应物，改采 CPU decode/resize + CPU→GPU transfer + GPU embed 分阶段计时（"找搬运瓶颈"的画像）。
