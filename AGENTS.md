@@ -115,6 +115,32 @@ prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching 中性，ro
 
 按七步结构：实验设置 → 实验设计 → 严谨性自检 → 实验数据（基于 CSV）→ 结果解释（事实/推断/待确认/不能声称）→ 对课题含义 → 下一步。禁止把 microbenchmark 包装成完整论文结论。详见 `learning/AGENTS.md`。
 
+## 7.5 实验执行与结果记录流程（每次实验必跑，自动执行）
+
+**A. 跑前 pre-flight**：endpoint 健康 + PG + Ray 干净（主机重启过则先 `rm -f /tmp/ray/ray_current_cluster`，否则 `ray.init()` 会卡 14 分钟连死 GCS）；同协议 **bounded HTTP baseline** 可用（feeding-saturation 门禁的参照）；策略参数设到能测出效应的区间（非 trivial）。
+
+**B. 跑**：统一干净合同（见 `experiments/plans/` RC1/RC2 模板）——2×4090 + 当前拓扑（2-ep 干净基线 / 4-ep consolidation）+ **最新修正 workload** + tokens/s + httpx async + token-IDs + prefix-cache ON + K256/W65536/fixed-50ms + 1 warmup + 3 formal（formal 由 runner 交错）。
+
+**C. 跑完先合规自检（任一不过 → 不抽策略结论，诊断/重跑/丢弃）**：
+1. **喂饱 GPU/vLLM**：`gpu_utilization_pct_mean` ≥ ~80% + `vllm_num_requests_running` 持续高 + `waiting` 低。**用 `*_mean/p50/p95/max` 系列，不用单次 snapshot 列 `gpu_utilization_pct`**（那是单点采样，曾显 0% 假象）。
+2. **feeding-saturation 门禁**：E2E `tokens_per_s` ≥ 95% of 同协议 bounded client。baseline（vLLM Bench / bounded HTTP）按各自标准测，它们没跑满 vLLM 是它们自己的特性，不是本门禁要修的。
+3. **策略到极限**：参数在效应区间；A/B 两臂同 config 仅策略不同。
+4. **稳定**：formal repeats CV 合理、一致。
+
+**D. 结果记录（全数据进 README，按此顺序）**：
+1. **实验目的**（问题 + 方法 + 关系到哪个方向）。
+2. **实验设置**（平台/拓扑/workload/调度合同/重复/指标/配置路径/原始数据路径）。
+3. **合规性自检**（C 的四项 + 异常指标明确标注）。
+4. **实验设计**。
+5. **实验数据——全组件表格（不只主指标）**：吞吐+端到端延迟（E2E tok/s / 模型侧 tok/s / operator tok/s / rows/s / E2E wall / req p50-p99 / SLO / goodput）/ vLLM 模型服务（running·waiting mean-max / KV usage / e2e-queue-inference-prefill-decode / prompt-gen tokens）/ GPU+能耗+MFU（util mean-max / 显存 / 功耗 / 能耗 / J per 1k tok / MFU）/ pipeline 阶段计时（db_fetch·source_fetch·organizer·submit·fanin·bounded_wait·actor_ready·wall）/ Ray-actor-调度（max_inflight / actor slots / packing util / prefix_group_ratio / batch_tokens / finish_reason）。**每个指标标注含义/单位**；异常指标标"坏、不用"。
+6. **结果解释**（事实/推断/不能声称）。
+7. **对课题含义**。
+8. **下一步**。
+
+**E. 存储**：`experiments/results/<方向>/<exp>_<date>/{README.md, raw/}`（`raw/` = runs.csv + manifest.json + per-run requests/submissions/resources CSV）。
+
+**F. 指标注意**：优先用 time-series 聚合列（`*_mean/p50/p95/max`）；`vllm_kv_cache_usage_perc` 当前实现可疑（曾在 working set 应近满时显 0.06–0.29%），需改采 vLLM `gpu_cache_usage_perc` 或 Prometheus 累计值——修前不要拿它量化"KV 压力"。
+
 ## 8. 沟通规则
 
 对外表述：**数据库内置 AI 算子的外部分布式数据处理执行链路优化**。待确认事项见 `notes/communication_notes.md`。
