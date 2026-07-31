@@ -359,11 +359,13 @@ manifest 上扫描 per-endpoint static K `{32,64,128,256}` 与 active work
 replenishment、同一固定 endpoint 分片和显式 Ray address；任一源行或 token
 字段不匹配即失败。
 
-远端 PostgreSQL 当前只有 `doc_id=0..2047` 的 2,048 行。校准占用 `0..511`
-后，`512..2047` 仅 1,536 行，不能冒充 disjoint 2,048-row formal。正式矩阵
-启动前必须新增并冻结 `doc_id=2048..2559`，或导入独立的 2,048 行 held-out
-workload；profiler formal 模板固定 `--source-row-offset 512`。在此阻塞解除前，
-只允许执行 512 行 project calibration，不允许重用校准行启动 formal。
+远端 PostgreSQL 已重建为多 workload 数据集：`sharegpt_multiturn`
+（2,048 行，doc_id 300000-302047，当前主 workload）、
+`sharegpt_concentrated`（2,048 行）、`lmcache_agent`（851 行）及 prompt
+长度变体等。原 `doc_id=0..2047` 单 workload 方案已被取代。formal 矩阵应
+直接选用其中一个独立的 2,048 行 workload（如 `sharegpt_concentrated`）作为
+held-out，不再使用旧的 `--source-row-offset 512` / `doc_id=2048..2559`
+append 方案。
 
 ### 8.4 Project 64 行首次门禁故障与修复
 
@@ -385,10 +387,11 @@ manifest guard 也直接比较 raw 276 与 effective 256。统一合同现改为
 
 补齐 formal 数据时，`source-row-offset` 按全部过滤后的 eligible rows 计数。
 远端已核对 raw hash、2,048 行文本/session 和 Qwen2.5-7B token 数，但历史
-shell 命令没有留存，不能声称 exact CLI provenance。使用正式 source
-predicate 的显式 `max_prompt_tokens=1500` 重建并逐字段核验
-`doc_id=0..2047`，随后用
-append-only 插入 `2048..2559`；任一 prefix 不一致或 doc ID 冲突都阻止写入，
+shell 命令没有留存，不能声称 exact CLI provenance。held-out 2,048 行 formal
+workload 现从重建后的多 workload 数据库中直接选取（如
+`sharegpt_concentrated`），不再使用 `max_prompt_tokens=1500` 重建
+`doc_id=0..2047` 或 append-only 插入 `2048..2559` 的旧方案；field-level
+hash 校验仍必须保留，任一 prefix/hash 不一致或 doc ID 冲突都阻止写入，
 禁止旧 upsert 路径覆盖已有实验数据。
 
 ### 8.5 Project active-work 背压故障与重新放行条件

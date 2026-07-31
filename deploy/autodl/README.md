@@ -72,6 +72,16 @@ OUTPUT_DIR=/root/autodl-tmp/experiment-artifacts/<existing_run_id>
 test ! -e "$OUTPUT_DIR/.runner-lease.json" ||
   cat "$OUTPUT_DIR/.runner-lease.json"
 
+# 1.5) 清理重启前残留的 stale Ray 集群指针。Ray 进程会随主机重启死亡，但
+#      /tmp/ray/ray_current_cluster 指针文件仍在，下一个 ray.init()（无显式 address）
+#      会读取它、反复连接死 GCS 直至 ~14 分钟后 ConnectionError，表现为 warmup 卡死。
+#      重启后容器 IP 也可能变化，使旧地址双重失效。先 ray stop（若有残留进程），
+#      再删除指针；之后 ray.init() 会自动起本地集群。
+if pgrep -f '[g]cs_server\|[r]aylet' >/dev/null 2>&1; then
+  ray stop -f >/dev/null 2>&1 || true
+fi
+rm -f /tmp/ray/ray_current_cluster
+
 # 2) 同步代码。未跟踪 experiments/results/ 属于实验数据，不得 git clean
 git status --short --branch
 source /etc/network_turbo >/dev/null 2>&1
@@ -101,11 +111,11 @@ printf 'model=%s gpus=%s ports=%s workload=%s\n' \
 bash deploy/autodl/start_endpoints.sh \
   /root/autodl-tmp/ai-operator-runtime.env
 
-# 6) 独立复核两个 endpoint、真实参数和每卡进程
-curl -fsS http://127.0.0.1:8000/health
-curl -fsS http://127.0.0.1:8001/health
-curl -fsS http://127.0.0.1:8000/v1/models
-curl -fsS http://127.0.0.1:8001/v1/models
+# 6) 独立复核全部已配置 endpoint（$PORTS 可能为 4：8000-8003）、真实参数和每卡进程
+for p in ${PORTS//,/ }; do
+  curl -fsS "http://127.0.0.1:$p/health"
+  curl -fsS "http://127.0.0.1:$p/v1/models"
+done
 ps -C python -C python3 -o pid=,etime=,args=
 nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total \
   --format=csv,noheader
@@ -544,22 +554,22 @@ bash deploy/autodl/start_endpoints.sh /root/autodl-tmp/ai-operator-runtime.env
 只有同时满足以下条件，才允许启动正式 scenario runner：
 
 ```bash
-# 1) 两个 health endpoint 均成功
-for p in 8000 8001; do
+# 1) 全部已配置 health endpoint 均成功（$PORTS 可能为 4：8000-8003）
+for p in ${PORTS//,/ }; do
   curl -sf "http://127.0.0.1:$p/health" >/dev/null || exit 1
 done
 
 # 2) 进程命令包含固定 capacity
 ps -eo pid,args | grep '[v]llm.entrypoints.openai.api_server'
 
-# 3) 两张 GPU 各有一个服务进程
+# 3) 每张 GPU 上的服务进程与显存占用
 nvidia-smi --query-compute-apps=pid,gpu_uuid,used_memory --format=csv,noheader
 
-# 4) 模型与 metrics 可读
-curl -sf http://127.0.0.1:8000/v1/models
-curl -sf http://127.0.0.1:8001/v1/models
-curl -sf http://127.0.0.1:8000/metrics | grep -m1 '^vllm:'
-curl -sf http://127.0.0.1:8001/metrics | grep -m1 '^vllm:'
+# 4) 全部 endpoint 的模型与 metrics 可读
+for p in ${PORTS//,/ }; do
+  curl -sf "http://127.0.0.1:$p/v1/models"
+  curl -sf "http://127.0.0.1:$p/metrics" | grep -m1 '^vllm:'
+done
 ```
 
 随后先跑一个小规模门禁，核对 exactly-once、两 endpoint 分流、resource/MFU
@@ -587,7 +597,7 @@ cd /root/autodl-tmp/ai-operator
 # 先灌数据
 python code/scripts/import_ai_complete_workload.py \
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator \
-  --workload-name sharegpt_burstgpt --max-rows 1024 --batch-rows 500 \
+  --workload-name sharegpt_multiturn --max-rows 2048 --batch-rows 500 \
   --tokenizer-path /root/autodl-tmp/models/Qwen2.5-1.5B-Instruct \
   --max-model-len 2048 --completion-max-tokens 16
 # 单 endpoint baseline
@@ -597,7 +607,7 @@ python code/scripts/postgres_ai_operator_profile.py \
   --operator ai_complete --executor ray_task --model-backend compatible_http \
   --completion-endpoint-url http://127.0.0.1:8000/v1/completions \
   --completion-model qwen2.5-1.5b --completion-max-tokens 32 \
-  --source-workload-name sharegpt_burstgpt --data-source daft_postgres --organizer daft \
+  --source-workload-name sharegpt_multiturn --data-source daft_postgres --organizer daft \
   --writeback-mode none --experiment-id cloud_single_ep \
   --output experiments/results/cloud_autodl/single_endpoint.csv
 # 双 endpoint(各占一张 GPU)
@@ -943,6 +953,10 @@ pg_isready
 source /root/autodl-tmp/venvs/vllm-4090/bin/activate
 export PATH="/root/autodl-tmp/venvs/vllm-4090/lib/python3.12/site-packages/nvidia/cuda_nvcc/bin:$PATH"
 
+# 注意：以下为 legacy 2-endpoint 调试基线（每 GPU 1 副本、--gpu-memory-utilization 0.9、
+# --max-model-len 2048）。当前 4-endpoint 部署需按 runtime env 的 $PORTS /
+# $VLLM_GPU_MEMORY_UTILIZATION / $VLLM_MAX_MODEL_LEN 调整后再用；标准启动应改用
+# start_endpoints.sh，本节仅作手动分步调试参考。
 CUDA_VISIBLE_DEVICES=0 nohup python -m vllm.entrypoints.openai.api_server \
   --model /root/autodl-tmp/models/Qwen2.5-1.5B-Instruct \
   --served-model-name qwen2.5-1.5b --dtype auto \
@@ -1053,11 +1067,18 @@ AutoDL 租卡跑 pip 装的 vllm,**避开 50xx/6000D/6000 Blackwell**,选 4090 /
 
 若从本地脚本驱动远端(非交互密码登录),`sshpass`/`plink` 在 Windows 上常缺失,可用 Python+paramiko 自写小 helper:支持 `exec`(短命令,走 `bash -lc`)、`bgexec`(长任务,4s 后主动关 channel,远端 nohup 存活)、`upload_tar`(tar 流走 exec 通道,绕过 SFTP 路径怪异)。凭据只放环境变量,不落盘。该 helper 不入项目库(本地临时),但其模式(尤其 `bgexec` 和 `bash -lc` 包裹)值得任何远程驱动方案沿用。
 
-## OceanBase AI_COMPLETE capability gate (2026-07-29)
+## OceanBase AI_COMPLETE capability gate (2026-07-29; capability verified 2026-07-31)
 
 OceanBase is an optional product baseline, not a substitute for the
-no-Daft/no-Ray bounded HTTP control. Do not include it in calibration or formal
-results until the exact Community Edition image passes the following gate:
+no-Daft/no-Ray bounded HTTP control. Capability gate #1 has PASSED: OceanBase
+Community Edition 4.5.0.0 is statically confirmed to contain `AI_COMPLETE` and
+`DBMS_AI_SERVICE` (observer binary `T_FUN_SYS_AI_COMPLETE` + seed SQL
+`dbms_ai_service_*.sql`); see `experiments/results/oceanbase_b1_gate_20260731/`.
+The current blocker is DEPLOYMENT, not capability: in this AutoDL container the
+observer clogs at init step 4/18 with errcode -9100 (container seccomp blocks
+clone3 / ENOSYS; unfixable from inside), so it must be re-run in a privileged
+container or systemd VM. Do not include OceanBase in calibration or formal
+results until a deployable host passes the following end-to-end gate:
 
 1. both vLLM Chat Completions endpoints are healthy and idle;
 2. the OceanBase version and MySQL-compatible tenant are recorded;
@@ -1074,8 +1095,10 @@ placeholder is replaced. It never drops databases, tenants, tables, models, or
 existing endpoints. Preserve failed output as fatal-flaw evidence.
 
 Formal dual-endpoint runs use different model keys and source/result tables for
-each endpoint shard. They are forbidden if the installed CE image lacks the AI
-Function service; do not replace a failed OceanBase cell with a custom Python
+each endpoint shard. CE 4.5.0 does not lack the AI Function service (capability
+gate #1 passed); the current blocking issue is observer deployment (errcode
+-9100 / container seccomp / clone3), not CE AI Function availability. Do not
+replace a failed OceanBase cell with a custom Python
 HTTP loop and label it OceanBase.
 
 ## Official baseline 双 GPU gate（2026-07-29）
@@ -1129,8 +1152,9 @@ HTTP loop and label it OceanBase.
 如果尚未提供无损的 manifest-to-profiler 映射，就将这两个 cell 标记为
 `blocked`，不得改用相似随机 workload 代替。
 
-OceanBase 是独立可选 capability gate。缺少 CE AI Function service 时保存
-发现证据并标记 unsupported；核心 gate 仍可继续。核心 gate 通过后也必须先
+OceanBase 是独立可选 capability gate。CE AI Function service 已确认存在
+（capability gate #1 通过），当前阻塞为容器级部署（observer clog -9100 /
+seccomp / clone3），待特权容器或 VM 内重跑；核心 gate 仍可继续。核心 gate 通过后也必须先
 停止并分析 request-body 等价性、真实 HTTP request 数、Daft/Ray Data 的一行
 一请求语义和原始 vLLM Bench schema，不能自动启动 calibration 或 formal。
 
@@ -1281,15 +1305,11 @@ formal repeat。完成后按预注册 97% ceiling / 相邻增益
 `PROJECT_ACTIVE_WORK_PER_ENDPOINT`。不要因为 C256 是 `max_num_seqs` 配置硬上限
 就把它误写成已验证的经验平台。
 
-formal manifest 必须来自 `ORDER BY doc_id LIMIT 2048 OFFSET 512`，且导出前
-数据库必须实际存在 2,560 个连续目标行。当前已核验
-`sharegpt_burstgpt` 只有 `doc_id=0..2047`，因此只剩 1,536 个 disjoint 行，
-formal 被阻塞；禁止回用校准行。补齐独立数据后才允许：
+formal manifest 必须来自一个独立的 2,048 行 workload 切片（远端数据库现已持有多个 2,048 行重建 workload：`sharegpt_multiturn` doc_id 300000-302047、`sharegpt_concentrated`、`sharegpt_burstgpt` 等），不再使用旧的 `ORDER BY doc_id LIMIT 2048 OFFSET 512` 或 append `2048..2559` 方案；禁止回用校准行。选定 disjoint workload 后导出只读 manifest：
 
 ```bash
 PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d ai_operator \
-  -c "SELECT count(*), min(doc_id), max(doc_id) FROM documents
-      WHERE workload_name='sharegpt_burstgpt'"
+  -c "SELECT workload_name, count(*), min(doc_id), max(doc_id) FROM documents GROUP BY workload_name ORDER BY workload_name"
 
 export PROJECT_FORMAL_REQUEST_MANIFEST=\
 /root/autodl-tmp/gates/<new-immutable-formal-manifest>.jsonl

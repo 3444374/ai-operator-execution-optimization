@@ -149,8 +149,11 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
 async/token-ID 单一 runner 重跑 short/long K256/W65K/W98K 等价臂门禁，
 再决定单 job dynamic 是否有存在性；同时保留 request-level 精确 completion
 作为异质多 job shared credit、idle borrowing 和公平队列的控制基础。随后做
-多模态和路由/故障迁移 formal 验证（prefix cache-on batching/routing 消融
-已完成、中性）；OceanBase B1 门禁已过（CE 含 AI_COMPLETE），待可部署环境复跑。
+多模态和路由/故障迁移 formal 验证（prefix cache-on batching 消融已完成、中性；2-ep/7B prefix routing
+中性（prefix_affinity vs least_queued −0.1%，<5% 门禁），4-ep/1.5B
+prefix_affinity +5.9%（46,943 vs 44,317 tok/s，3 repeat 不重叠、CV≤0.9%）
+跨过 5% 门禁，但受 model×endpoint×KV 与过饱和 regime（SLO 违约 25–31%）
+混淆，方向有条件重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融后定级）；OceanBase B1 门禁已过（CE 含 AI_COMPLETE），待可部署环境复跑。
 详见 `PROJECT_OUTLINE.md`
 §近期优先级、`experiments/plans/experiment_status_and_gaps.md` 和
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
@@ -165,11 +168,13 @@ async/token-ID 单一 runner 重跑 short/long K256/W65K/W98K 等价臂门禁，
 
 vLLM baseline 与 Daft 文本阶段接入已完成（见上"当前证据"）。当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 
-1. **P1**：Shared-vLLM 1/2/4-job shared request/work credit、
-   work-conserving 公平队列、不同 foreground size 与 arrival offset。
-2. **P1**：Prefix cache-on 与 length-align 显式消融。
-3. **P2**：多模态泛化验证、真实多 endpoint/多 GPU、代价模型独立校准。
-4. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+1. **P1**：Shared-vLLM 有界 async actor 1/2/4-job formal 矩阵（j4 ray_task
+   撞 vm.max_map_count，actor/VMA 臂已通过，需在固定合同下恢复 1/2/4）；
+   随后验证 staggered idle borrowing、weighted overlap fairness 和异构
+   workload mix/arrival offset（endpoint-shared request/work credit 与
+   路由/故障迁移已完成）。
+2. **P2**：多模态泛化验证、真实多 endpoint/多 GPU、代价模型独立校准。
+3. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。
 

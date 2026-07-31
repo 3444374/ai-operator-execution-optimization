@@ -91,7 +91,7 @@ work-conserving borrowing 和每 job service/JCT/fairness。Llumnix（OSDI 2024�
 
 | 编号 | Baseline 名称 | 来源 | CCF | 策略要点 | 实验配置 |
 |---|---|---|---|---|---|
-| **W1** | COPY + 延迟建索引 | PostgreSQL 官方文档 §14.4 + pgvector Issues #400/#430 | 官方文档 | 先 COPY 到 unlogged table → `CREATE INDEX HNSW`（事后建索引远比增量插入快） | 写回侧"工程最优"baseline。跑 B 系列实验确认数字 |
+| **W1** | COPY + 延迟建索引 | PostgreSQL 官方文档 §14.4 + pgvector Issues #400/#430 | 官方文档 | 先 COPY 到 unlogged table → `CREATE INDEX HNSW`（事后建索引远比增量插入快） | 写回侧"工程最优"baseline 出处（已采纳） |
 | **W2** | io_uring + 空间感知插入 | TurboVecDB (PVLDB 2025) | **A** | 并行 I/O + 空间感知重排插入顺序；HNSW index build 减少 98.4%；查询吞吐 11.1× | 若 pgvector 版本已包含此优化，自动成为写回 baseline |
 | **W3** | Worker-Direct Blind Append | Delta Lake (Armbrust et al., PVLDB 2020) | **A** | 多 worker 各写各的，盲追加永不冲突；optimistic concurrency | 对应本项目的 A2 实验（worker-direct 写回） |
 | **W4** | Queue-Worker Decoupled | pgai Vectorizer Worker (Timescale) | 工程 | 触发器→队列表→外部 worker 轮询→各自写回；`FOR UPDATE SKIP LOCKED` + advisory lock | 对应本项目的 A3 实验（queue-worker 写回） |
@@ -101,9 +101,7 @@ work-conserving borrowing 和每 job service/JCT/fairness。Llumnix（OSDI 2024�
 
 ### 当前状态
 
-本项目目前使用 `psycopg2 execute_values()` 逐批 UPSERT。这不是最优工程实践（COPY 可快 10-50×）。
-
-**下一步**：**B 系列实验必须先做**——确认 COPY + unlogged table + 延迟建索引 是否为当前最优写回 baseline。如果 COPY 把写回从 1.5s 降到 0.3s，写回占比从 45% 降到 12%，则研究内容三的论证需要收紧——但这本身也是有价值的发现。
+项目写回 baseline 为 PostgreSQL + pgvector 的 COPY + 延迟建索引（先 COPY 到 unlogged table，再 `CREATE INDEX HNSW`），已在动机 GPU 实验中建立（pgvector writeback 0.897s vs JSON 1.567s，见 `motivation/results/gpu/`）。按 `AGENTS.md` §1/§3，写回作为工程 baseline 处理，不作为独立实验阶段；本节 W1 仅作 baseline 出处登记，不再设为待跑门禁实验。
 
 ---
 
@@ -154,7 +152,7 @@ work-conserving borrowing 和每 job service/JCT/fairness。Llumnix（OSDI 2024�
 设计新实验或新 baseline 时，逐项确认：
 
 - [ ] GPU 调度侧 baseline 是否覆盖了 vLLM/Orca/Sarathi-Serve 中的至少一种？
-- [ ] 写回侧 baseline 是否已确认 COPY + 延迟建索引为当前最优工程实践？
+- [ ] 写回 baseline 是否已采用 COPY + 延迟建索引（工程 baseline，非独立实验阶段）？
 - [ ] 跨层对照是否包含了 FlexPushdownDB 或 AIDB 的决策模型？
 - [ ] 每个 baseline 是否标注了来源论文/系统？
 - [ ] 是否避免了"常识级 strawman"作为唯一 baseline？

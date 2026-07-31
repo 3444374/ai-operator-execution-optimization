@@ -20,8 +20,11 @@
 
 当前状态：vLLM baseline 与真实双 endpoint 已建立；global/per-endpoint static
 admission、request-level 补位、active-work credit、least-work routing 和
-shared multi-job credit 已实现。后四项及 service-quantum 动态预算仍需正式
-GPU 重复，代码完成不等于策略有效。
+shared multi-job credit 已实现，并已在 2x4090 上完成正式 GPU 重复：active-work
+已选定 65,536（07-29 八档扩展曲线），request-level 补位双卡重复完成，shared
+multi-job credit 完成 1/2/4-job 正式矩阵 36/36（详见 §13.7）；service-quantum
+24 次正式 run 已完成且未过 5% 晋升门槛、保留 request+1x256，SLO-EWMA flush
+相对 fixed-50ms 同样未晋升。代码完成已获正式 GPU 证据支撑。
 ```
 
 **为什么**：在手动 HTTP endpoint 上做 K_max 扫描，搜出来的"最优 K_max"可能只是因为 endpoint 的队列处理能力不同。vLLM continuous batching 改变了 GPU 侧的请求处理模式，K_max 的最优值和时间分布都会变化。

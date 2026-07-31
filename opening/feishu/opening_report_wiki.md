@@ -82,7 +82,7 @@ PostgreSQL 生态中，pgvector[4] 负责向量类型、索引和相似度检索
 
 具体目标包括：
 
-1. 建立 vLLM + 小 LLM（适配 RTX 5070 12GB VRAM）作为 GPU baseline，替代手动 HTTP endpoint，在真实 continuous batching 环境下进行所有后续实验。
+1. 建立 vLLM + 小 LLM（适配 AutoDL 2×4090，24GB/卡）作为 GPU baseline，替代手动 HTTP endpoint，在真实 continuous batching 环境下进行所有后续实验。
 2. 设计并验证上游动态 batching policy：token-budget batching（按 token 预算累积行而非固定行数）、length-aligned grouping（减少 straggler）、prefix-aware grouping（利用 vLLM APC），利用 Ray 异构 actor pool 实现。
 3. 设计并验证 Ray actor 去中心化自适应提交策略：每个 actor 独立观测模型服务队列深度，自主决定 flush 时机，K_max 由 queue-adaptive 行为自然形成。
 4. 通过耦合验证实验（独立最优拼接 vs 联合 grid search）判断上游 batching 策略和提交策略是否需要联合调优。
@@ -156,7 +156,7 @@ Database AI COMPLETE workload source (PostgreSQL)
 
 实验分为四个阶段：
 
-**前置阶段：vLLM baseline 建立。** 部署 vLLM + 小 LLM（如 Qwen2.5-1.5B-Instruct，适配 RTX 5070 12GB VRAM），替代当前手动 HTTP endpoint。构造 AI_COMPLETE workload（4096+ 行，含三类 token 长度分布：短 <128 tokens、中 128-512 tokens、长 >512 tokens，控制 shared prefix ratio）。记录 vLLM 默认 continuous batching 行为下的端到端指标（TTFT、TPOT、tokens/s、GPU utilization、queue metrics），为后续动态 batching 和自适应提交实验建立可对比 baseline。
+**前置阶段：vLLM baseline 建立。** 部署 vLLM + 小 LLM（如 Qwen2.5-1.5B-Instruct，适配 AutoDL 2×4090，24GB/卡），替代当前手动 HTTP endpoint。构造 AI_COMPLETE workload（4096+ 行，含三类 token 长度分布：短 <128 tokens、中 128-512 tokens、长 >512 tokens，控制 shared prefix ratio）。记录 vLLM 默认 continuous batching 行为下的端到端指标（TTFT、TPOT、tokens/s、GPU utilization、queue metrics），为后续动态 batching 和自适应提交实验建立可对比 baseline。
 
 **第一阶段（研究内容一）：上游动态 batching 策略消融。** 固定 vLLM 配置和默认提交策略，比较四种方案：
 - 静态 baseline：固定 batch_size=32/64/128（按行数打包，不做 token 感知）
@@ -221,7 +221,7 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 | GPU-backed `AI_EMBED` 画像 | PostgreSQL -> Arrow -> Ray/Python -> CUDA embedding endpoint -> writeback | 真实模型服务可接入端到端执行路径；7 月 14 日复测覆盖 batch、writeback、endpoint、规模和 pgvector(384) sink 对比 | PG18.4 本地预演，不代表 PostgreSQL 18.3 内部平台性能 |
 | 双 endpoint Ray 动机测试 | Ray actor 调用 `8000` / `8001` 两个本地 endpoint | 可验证并发 routing 对 operator wall time 的影响 | 两个 endpoint 在同一 GPU 上，不代表多 GPU 或 Ray Serve 结论 |
 
-**硬件边界说明。** 当前实验环境为单机单 GPU（NVIDIA GeForce RTX 5070, 12GB VRAM, 64GB RAM）。这一约束对研究方案的影响有三点：（1）AI_COMPLETE 场景使用 1-3B 级 LLM（如 Qwen2.5-1.5B），无法运行 7B 以上模型；（2）单 GPU 下所有请求共享同一物理设备，workload-aware 分池的价值通过 in-flight 上限差异和队列优先级体现，而非物理隔离；（3）多节点分布式调度（如两层 Engine + Cluster 架构）属于 §8 未来工作，不在本文实验范围内。以上约束不影响数据组织、in-flight 控制、routing 和耦合验证等核心方法的单机验证。
+**硬件边界说明。** 当前实验环境为 AutoDL 单机双 GPU（2× NVIDIA GeForce RTX 4090，每卡 24GB VRAM），vLLM 0.25.1，PostgreSQL 18.4 + pgvector，同时使用 Qwen2.5-1.5B-Instruct 与 Qwen2.5-7B-Instruct（当前 4-endpoint 部署为 4× Qwen2.5-1.5B，每 GPU 2 副本，gpu_mem_util≈0.43，prefix-caching 开启，端口 8000-8003）。这一约束对研究方案的影响有两点：（1）双 GPU 下不同 endpoint 可分布在不同物理设备上，workload-aware 分池路由的价值既通过 in-flight 上限差异和队列优先级体现，也可借助物理隔离体现；（2）多节点分布式调度（如两层 Engine + Cluster 架构）属于 §8 未来工作，不在本文实验范围内。以上约束不影响数据组织、in-flight 控制、routing 和耦合验证等核心方法在单机双 GPU 上的验证。
 
 **实验证据一：Batch 粒度决定端到端性能的上限。** 图 4-3 汇总了不同行数、执行策略和写回模式下的端到端耗时分解。每个堆叠柱分三段：模型推理执行（model_service_s）、writeback 写回、以及其余阶段（DB 读取 + Arrow 构建 + 汇聚）。前三行为无写回对照组（writeback_mode=none），1024 行 fine 策略的推理执行阶段达到 20.6s——相比同样行数的 coalesced 策略，差异约 37.5 倍。这背后的原因很直接：fine 策略向 CUDA embedding endpoint 发起了 1024 次独立请求，每次请求的固定开销（HTTP 往返、CUDA kernel launch、GPU 上下文切换）被放大了 1024 次；coalesced 策略只发 4 次请求，每次携带 256 行，固定开销被摊销。
 

@@ -19,7 +19,7 @@
 前置：研究内容一 动态 batching 最优策略确定
 前置：研究内容二 自适应提交最优策略确定
 
-当前状态: 写回 = execute_values() UPSERT + logged table + online index（仅预研可用）
+当前状态: 写回 = COPY + deferred index（PostgreSQL + pgvector 工程 baseline）
 ```
 
 **为什么**：拿 "未优化的 driver UPSERT" 当 baseline 来证明 worker-direct 好——那是 strawman。Worker-direct 的公平对照是 **最优 driver-side 写回配置**（= A3.1 的工程最优版 = B 系列结果）。

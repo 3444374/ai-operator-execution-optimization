@@ -50,7 +50,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 | AI_COMPLETE（生成式 LLM） | 文本 | 主场景 |
 | AI_EMBED / AI_CLASSIFY | 图像 | 多模态泛化验证（正文实验） |
 
-模型：Qwen2.5-1.5B（文本）、CLIP-ViT-B/32（图像 embedding）、Qwen2.5-VL-3B（图像分类，optional）。硬件：单 RTX 5070 12GB VRAM。
+模型：Qwen2.5-1.5B-Instruct + Qwen2.5-7B-Instruct（文本）、CLIP-ViT-B/32（图像 embedding）、Qwen2.5-VL-3B（图像分类，optional）。硬件：AutoDL 2×4090（24GB/卡）。
 
 ---
 
@@ -123,7 +123,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
    创建 200+ worker 并撞上容器 VMA 上限；新的 j4 actor gate 已在同一容器
    三臂通过。正式 1/2/4 后再做 staggered idle borrowing、weighted overlap fairness 与异构
    workload/arrival offset
-4. **P1**：Prefix cache 开启后的机制实验与 length-align 显式联合消融
+4. **P1**：4-endpoint / Qwen2.5-1.5B prefix_affinity 隔离消融（cache-on batching 与 2-ep/7B prefix routing 已完成且中性；4-ep/1.5B +5.9% 跨过 5% 门禁但受 model × endpoint × KV 及饱和区 25–31% SLO 违约混淆，需隔离）
 5. **P2**（文本门禁已完成）：多模态泛化验证
 6. 在当前 2×4090 上完成 staggered/weighted 公平性、路由与故障迁移
 7. 代价模型增加独立时间段/新 workload 校准和预测区间
@@ -164,7 +164,9 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 **尚未建立**：多模态泛化验证、多 endpoint /
 多 GPU 实测、PG18.3 内部平台复测、OceanBase B1 可部署环境复测（门禁 #1
 已过：CE 4.5.0 含 AI_COMPLETE；当前 AutoDL 容器部署受阻）。prefix cache-on
-batching/routing 消融已完成且中性（<5% 门禁），prefix 方向收口。
+batching 中性；2-ep/7B routing 中性（<5% 门禁）；4-ep/1.5B routing +5.9% 跨过
+5% 门禁但混淆（model×endpoint×KV、过饱和 regime 25–31% SLO 违约），方向有条件
+重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融后正式晋级。
 
 ---
 
@@ -201,7 +203,8 @@ batching/routing 消融已完成且中性（<5% 门禁），prefix 方向收口�
   完成。前者优于 fixed-25 但未优于 fixed-50；后者未显示联合搜索相对独立
   拼接的可分辨增量。
 - 跨 arrival-rate、2048 held-out、受控 prefix cache-off、cache-on prefix
-  batching/routing 消融（中性，prefix 方向收口）与代价估计初版均已完成；
+  batching 消融（中性）与代价估计初版均已完成；prefix routing 在 2-ep/7B 下
+  中性，后续 4-ep/1.5B 复验 +5.9% 跨过 5% 门禁，方向有条件重开，待隔离消融；
   当前最优先工作转为多模态泛化验证与 OceanBase B1 复跑（门禁已过、待可部署环境）。
 - UCB 端到端和多 GPU 实测尚未完成，且不会在缺少正确 reward 归因或硬件时
   伪接入。

@@ -603,7 +603,7 @@ Minimal `AI_COMPLETE + Daft + vLLM` smoke:
   --output tmp\vllm_local_qwen15b_ai_complete_smoke.csv
 ```
 
-Controlled `AI_COMPLETE + Daft + Ray + vLLM` baseline workload:
+Legacy 07-25..07-28 `AI_COMPLETE + Daft + Ray + vLLM` baseline workload (sharegpt_burstgpt, 1024 rows, doc_id 1000000). The CURRENT main workload is sharegpt_multiturn (2048 rows, doc_id 300000-302047, target_output 1-256) — substitute `--workload-name sharegpt_multiturn` / `--source-workload-name sharegpt_multiturn` (and the corresponding doc-id/row-count flags) in the commands below for new runs:
 
 ```powershell
 .conda\pg-ai-profile\python.exe code\scripts\import_ai_complete_workload.py `

@@ -358,22 +358,24 @@ Final comparable AI_COMPLETE baselines should use the normalized
 ShareGPT/BurstGPT workload instead of the legacy synthetic seed. Raw payloads
 live under `data/raw/` and are ignored by git; see `data/README.md`.
 
-Import 1024 local rows without clearing existing `documents` rows:
+Import 2048 local rows of the current main workload (sharegpt_multiturn, doc_id 300000-302047, target_output_tokens 1-256) without clearing existing `documents` rows:
 
 ```powershell
 .conda\pg-ai-profile\python.exe code\scripts\import_ai_complete_workload.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
-  --workload-name sharegpt_burstgpt `
-  --start-doc-id 1000000 `
-  --max-rows 1024 `
+  --workload-name sharegpt_multiturn `
+  --start-doc-id 300000 `
+  --max-rows 2048 `
   --batch-rows 500
 ```
 
 Run the profiling script against this workload with:
 
 ```powershell
---source-workload-name sharegpt_burstgpt
+--source-workload-name sharegpt_multiturn
 ```
+
+Note: `sharegpt_burstgpt` (formerly 1024 rows, now 2048) is a legacy workload retained for reproducing 0725-0728 experiments; it is no longer the default for current baselines.
 
 ## Daft 文本组织 smoke
 

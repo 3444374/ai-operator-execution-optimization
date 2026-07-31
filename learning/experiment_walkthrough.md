@@ -624,7 +624,7 @@ e2e_s           = 13.168s
 
 ### 13.6 和三个场景的关系
 
-现在开题优先用 `AI_EMBED`，不是因为另外两个场景不重要，而是因为 `AI_EMBED` 最容易形成真实闭环：
+在 07-12 这组动机实验阶段，开题优先用 `AI_EMBED`，不是因为另外两个场景不重要，而是因为 `AI_EMBED` 最容易形成真实闭环：
 
 ```text
 PostgreSQL documents
@@ -637,11 +637,11 @@ PostgreSQL documents
 
 三个场景的定位应是：
 
-| 场景 | 当前定位 |
+| 场景 | 定位（2026-07-12 开题阶段，历史） |
 |---|---|
-| `AI_EMBED` / RAG ingestion | 开题阶段真实链路主动机主场景 |
+| `AI_EMBED` / RAG ingestion | 开题阶段真实链路主动机主场景（文本预研已完成） |
 | `AI_FILTER` / `AI_CLASSIFY` | 后续补 selectivity、predicate ordering、cascade |
-| `AI_COMPLETE` / offline LLM | 后续更贴近 AI infra 的重点主线候选 |
+| `AI_COMPLETE` / offline LLM | 当时的后续主线候选 |
 
 尤其是 `AI_COMPLETE`，后续要尽量作为主线候选推进，因为它能自然引出：
 
@@ -660,6 +660,8 @@ PostgreSQL documents
 再把 AI_COMPLETE 提升为更贴近 AI infra 的核心压力 workload
 AI_FILTER / AI_CLASSIFY 用来补足 AI predicate 场景
 ```
+
+> 2026-07-31 更新：AI_COMPLETE 现已是项目文本主场景（见 AGENTS.md §1）；prefix/routing（2-ep/7B prefix routing 中性（prefix_affinity vs least_queued −0.1%，<5% 门禁）；4-ep/1.5B prefix_affinity +5.9%（46,943 vs 44,317 tok/s，3 repeat 不重叠、CV≤0.9%）跨过 5% 门禁，但受 model×endpoint×KV 与过饱和 regime（SLO 违约 25–31%）混淆，方向有条件重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融后定级）、active-work 65K、batching、K_max 等实验均已在 sharegpt_multiturn（2048 行）上完成。AI_EMBED 文本预研已完成，AI_EMBED/AI_CLASSIFY 现指标记图像/多模态泛化验证场景。本节“先把 AI_EMBED 建立主动机、再把 AI_COMPLETE 提升”描述的是 07-12 开题阶段的推进顺序，不是当前主线状态。
 
 ### 13.7 Ray 的价值为什么还要继续测
 

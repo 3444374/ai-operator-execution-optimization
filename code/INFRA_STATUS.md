@@ -234,7 +234,11 @@ least-work、动态预算、shared-credit、异构显存容量、故障迁移和
   token-budget 是当前默认；fixed rows、length-align、prefix-aware、classic
   BFD、row-cap-first 都有可运行实现和对照入口。BFD/row-cap-first 已有负向规模
   边界，prefix-only 在 cache-off 下无稳定收益；cache-on 下 prefix-aware batching
-  与 prefix-affinity routing 消融已完成且中性（<5% 门禁），prefix 方向收口。
+  中性；prefix-affinity routing 在 2-ep/7B 中性（prefix_affinity vs least_queued
+  −0.1%，<5% 门禁），但 4-ep/1.5B prefix_affinity +5.9%（46,943 vs 44,317 tok/s，
+  3 repeat 不重叠、CV≤0.9%）跨过 5% 门禁，受 model×endpoint×KV 与过饱和 regime
+  （SLO 违约 25–31%）混淆，方向有条件重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融
+  后定级。
   尚未完成的是图像 frame/pixel cost adapter 的多模态复用验证。
 - **研究内容二——调度与提交控制**：static K_max、arrival replay、flush、
   非阻塞 service observation、typed controller、pool/endpoint routing 和
@@ -252,7 +256,7 @@ least-work、动态预算、shared-credit、异构显存容量、故障迁移和
 |---|---|---|---|
 | 数据读取与 Daft/Ray 主链路 | 高 | 64/512/1024 真实链路 | 已完成基础设施 |
 | Fixed/token-budget batching | 高 | 多轮真实实验 | 机制成立，sequential 默认 |
-| Length/prefix grouping | 高（代码） | 0/30/70/100% cache-off screen + cache-on batching/routing 消融 | cache-off 无收益；cache-on 亦中性（<5% 门禁），prefix 方向收口 |
+| Length/prefix grouping | 高（代码） | 0/30/70/100% cache-off screen + cache-on batching/routing 消融 | cache-off 无收益；cache-on batching 中性；2-ep/7B routing 中性（−0.1%），4-ep/1.5B +5.9% 跨过 5% 门禁但混淆待隔离，方向有条件重开 |
 | BFD/row-cap-first | 高 | 512 + 1024 | 负向边界明确，不默认启用 |
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
 | Queue-adaptive flush | 高 | 512 变长重复 + 跨 rate + 2048 held-out + shared-vLLM | 优于 fixed-25；未优于 fixed-50 |
@@ -320,7 +324,9 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
    容量，报告 direct ceiling、time-to-ceiling、ramp regret 和最小饱和 work；
 8. baseline 锁定后再做 4-job held-out、staggered idle borrowing 与 weighted
    fairness；
-9. Prefix-aware 已在 cache-on 下评估（batching + routing 均中性，prefix 方向收口）；
+9. Prefix-aware 已在 cache-on 下评估：batching 中性；routing 在 2-ep/7B 中性
+   （−0.1%），4-ep/1.5B prefix_affinity +5.9% 跨过 5% 门禁但受 model×endpoint×KV
+   与过饱和 regime（SLO 违约 25–31%）混淆，方向有条件重开，待隔离消融；
    per-arm 命中率待 runner 增采；
 10. UCB 只在能按固定 epoch 正确归因跨 epoch 请求 reward 后接入，并保留 static
    K=8 safety fallback。
@@ -382,12 +388,12 @@ active work 16K–98K，并在正式 CSV 记录 manifest SHA 与 validated rows�
 raw targets 当成同一源行。旧失败目录保留，512 校准未启动；完整测试和全新 64 行 re-gate 通过前
 不得继续。
 
-2,048 formal 当前被数据门禁阻塞：数据库只有 `doc_id=0..2047`，校准使用
-0..511 后仅余 1,536 行。必须新增 512 个独立行或导入单独 held-out workload，
-再以 offset 512 导出只读 manifest；禁止回用校准行。在此之前只允许运行
-project 512 calibration，不启动 formal 或新上游策略。补行必须复用原始导入
-参数，按过滤后 eligible-row offset 选择 suffix，先逐字段核验 `0..2047`，
-再 append-only 写入 `2048..2559`；禁止 upsert 覆盖旧行。
+行数门禁已解除：数据库现已持有多个 2048 行 workload（sharegpt_multiturn，
+doc_id 300000-302047；sharegpt_concentrated 2048 行；sharegpt_burstgpt 2048 行）
+以及 lmcache_agent（851 行）等，2,048 formal 不再因行数不足或 held-out 复用被
+阻塞。2,048 formal 当前唯一的前置阻塞为下文的 5% 等价性门禁（K256 vs W98K），
+该门禁未达阈值前完整 calibration、2,048 formal 与新上游策略均不启动；manifest
+导出改用上述独立 workload 的只读切片，不再需要向 `0..2047` 追加 `2048..2559`。
 
 第二次 64 行 re-gate 已在 `beeee20` 通过，但随后 512 行校准首场景暴露
 active-work 背压语义缺陷：调度器曾把“该请求会超过 endpoint-local work
