@@ -12,6 +12,8 @@
 
 **2026-07-29 文献基线升级**：多模态仍是正文泛化验证。算子代价估计从“补充讨论”提升为数据组织和调度提交控制共同依赖的重要组件，但不单独扩张成第三项研究内容。首版采用简单解析模型 + profile 校准 + residual correction，用于 work/service/JCT、active-work/K、组织、路由和多 job remaining-work/SLO 判断。
 
+**2026-08-01 workload 锁定（scope reframe 提案待导师确认）**：文本实验（RC1 数据组织 regime-dependent）已证**文本搬运可忽略、binding 瓶颈在 vLLM serving**（RC1 pipeline：db_fetch ~1.4–2.4s vs model_wall ~27–37s）。**下一步 workload = image AI_EMBED（CLIP）**——让 DB-read / CPU→GPU 数据搬运瓶颈（每行 ~600KB，文本 ~600×）显现。方向 scope（DB↔GPU 经 Daft 桥接）仍为**提案待导师确认**，见 `overview/current_direction_and_plan.md` §当前重点、`research/daft_db_gpu_bridge_direction_scope_20260731.md`、`experiments/plans/image_clip_workload_lock_20260731.md`。文本 RC1/K_max/active-work 结果在上游调度框架下继续有效，image 是其多模态泛化 + 搬运瓶颈验证。
+
 当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本文中作为 workload 入口，研究重点是上游 Ray 数据执行层的调度优化——探索数据组织策略和提交控制策略，利用 Ray actor 实现去中心化自适应提交。Daft 作为数据引擎，提供 Rust 执行内核、Arrow 零拷贝、Morsel 流式背压和 `@daft.cls` GPU UDF 接口。
 
 ## 研究内容
@@ -221,16 +223,15 @@
    残留：per-arm APC 命中率待 runner 增采。
 5. **P1（✅ 完成 07-31）**：Length-align 已与 prefix grouping 分开消融——batch 粒度
    +0.7%、request 粒度 +1.9%，repeat 不重叠但均 <5% 门禁，不晋级。
-5. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
-   ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
-6. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work
+6. **🔴 当前下一步（2026-08-01 workload 锁定）**：image AI_EMBED（CLIP）——找 DB-read/CPU→GPU 数据搬运瓶颈；文本门禁已满足、复用 organizer/scheduler/tracing 仅替换 cost adapter，见 `experiments/plans/image_clip_workload_lock_20260731.md`。
+7. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work
    与早期 equal-weight 多 job 重复；当前高并发合同需重新完成 1/2/4-job，
    j4 已通过独立 actor/VMA 门禁。路由增量、staggered/weighted 公平性与
    故障迁移仍待验证。
-7. 算子代价估计需增加独立时间段/新 workload 校准、预测区间、配置 ranking
+8. 算子代价估计需增加独立时间段/新 workload 校准、预测区间、配置 ranking
    与决策 regret；它作为两项策略的共同输入，不单列第三项贡献，也不在首版
    扩展为复杂 learned optimizer。
-8. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+9. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
 
 文献机制的发现、迁移审计和晋级/放弃条件统一见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。

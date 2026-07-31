@@ -67,7 +67,7 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 
 | 实验 | 状态 |
 |---|---|
-| CLIP embedding + ImageNet subset | ❌ 未做（scope 缩减条件：文本 RC1+RC2 消融完成前不启动）|
+| CLIP embedding + ImageNet subset | 🔴 当前下一步（2026-08-01 workload 锁定；"文本 RC1+RC2 完成前不启动"的 scope 缩减条件已被 07-31 reframe 取消，见 §1.1 / overview §当前重点 / `image_clip_workload_lock_20260731.md`）|
 
 ### 1.5 算子代价估计 & 写回
 

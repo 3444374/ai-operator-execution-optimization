@@ -53,7 +53,7 @@ EWMA flush 对照均已完成）：
 credit 语义而非显著稳态提速；SLO-EWMA 相对 fixed-50 未过 5% 门槛 →
 ② 当前 2×4090 上完成 shared request/work credit、1/2/4 job 公平性、路由
 与故障迁移；③ prefix cache 开启后的数据组织机制验证（07-31 系统重测 `rc1_data_organization/`，**取代 07-25/26 gropy；07-18/19 保留作历史动机参照**）：**regime-dependent**——2-ep/0.9（每 endpoint KV 池占 GPU 显存 0.9、无压力 max 7–10%）5 策略 50–56k 近似中性；4-ep/0.43（2 endpoint/GPU 各占 0.43、KV 饱和 max 98–100%）分化 39–50k、排名反转为 sequential>fixed>>row_cap≈best_fit>length_align。机制 `prefix_group_ratio`：重排序类 organizer 打散 prefix 组 → 4-ep 命中从 0.60–0.76 塌到 0.06–0.07。prefix-affinity routing 2-ep/7B 中性 −0.1%、4-ep/1.5B +5.9% 跨门禁但仍被 model×endpoint×KV 混淆、routing 侧隔离消融待补→
-④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 代价模型增加独立
+④ 多模态泛化验证（图像，同一套策略代码）——**2026-08-01 workload 锁定**：下一步 image AI_EMBED（CLIP）找 DB-read/CPU→GPU 数据搬运瓶颈（文本 RC1 已证搬运可忽略、binding 在 vLLM serving；image 每行 ~600KB 让搬运变 binding）；scope reframe（DB↔GPU 经 Daft 桥接）仍提案待导师确认 → ⑤ 代价模型增加独立
 时间段或新 workload 校准。当前证据
 支持 sequential token-budget + static K8 + fixed 50ms；联合候选未显著优于
 独立拼接，two-level adaptive 和 SLO-EWMA 均未显著优于 fixed-50，

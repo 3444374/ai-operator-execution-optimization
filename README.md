@@ -4,6 +4,8 @@
 
 > 数据库 AI 负载的执行优化与调度研究方向。
 
+> **方向更新（2026-08-01：workload 已定 / scope reframe 提案待导师确认）**：文本实验（RC1 数据组织 regime-dependent 等）已证**文本 payload 搬运可忽略、binding 瓶颈在 vLLM serving 侧**（RC1 pipeline：db_fetch ~1.4–2.4s vs model_wall ~27–37s）。**下一步 workload 锁定 image AI_EMBED（CLIP）**——每行 CPU→GPU 搬运 ~600KB（文本 ~600×），让 **DB-read / CPU→GPU 数据搬运瓶颈**显现，找数据搬运瓶颈。方向 scope（DB↔GPU 经 Daft 桥接）仍为提案待导师确认。详见 `overview/current_direction_and_plan.md` §当前重点、`experiments/plans/image_clip_workload_lock_20260731.md`、`research/daft_db_gpu_bridge_direction_scope_20260731.md`。文本 RC1/K_max/active-work 结果在上游调度框架下继续有效，image 是其多模态泛化 + 搬运瓶颈验证。
+
 当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本项目中主要作为 workload 入口和验证场景。主场景为 `AI_COMPLETE`（生成式 LLM 推理），经由 Daft/Arrow 数据组织、Ray 动态 batching（异构 actor pool）、GPU 推理引擎、最终写回数据库 sink。研究重点是上游 Ray 数据执行层的数据组织策略和调度提交控制。`AI_EMBED` 已完成真实 GPU-backed 预研验证，用于支撑实验框架可行性。
 
 后续真实端到端实验平台优先使用公司内部统一采用的 PostgreSQL 18.3；当前 PG18.4 本地同构预演只能作为平台暂不可用时的替身。

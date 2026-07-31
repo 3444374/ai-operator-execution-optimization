@@ -86,7 +86,7 @@ mkdir -p data/raw/coco_val2017
 wget -c --tries=10 --timeout=30 http://images.cocodataset.org/zips/val2017.zip \
   -O data/raw/coco_val2017/val2017.zip
 # CLIP ViT-B/32（默认 embedding 模型，~600 MB）
-python -c "from huggingface_hub import snapshot_folder; snapshot_folder('openai/clip-vit-base-patch32', cache_dir='models')" 2>/dev/null \
+python -c "from huggingface_hub import snapshot_download; snapshot_download('openai/clip-vit-base-patch32', cache_dir='models')" 2>/dev/null \
   || huggingface-cli download openai/clip-vit-base-patch32 \
        --local-dir models/clip-vit-base-patch32
 ```
