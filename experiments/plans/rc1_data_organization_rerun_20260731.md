@@ -51,7 +51,7 @@
 
 ## 6. 已知指标缺口（重测前最好先修）
 
-- `vllm_kv_cache_usage_perc` 当前实现可疑（KV-budget sweep 显 0.06–0.29% 而实际近满）→ 改采 vLLM `gpu_cache_usage_perc` / Prometheus 累计，否则"cache 压力"无法量化。
+- ~~`vllm_kv_cache_usage_perc` 当前实现可疑~~ → **已澄清（见 `kv_budget_sweep`）**：是分数（0–1）非百分比，按分数读正常可靠（0.06 = 6%，非"坏"）。重测已按分数读 + 用 TTFT/命中率/bounded 信号交叉印证 4-ep 饱和，无需改采其他指标。
 - per-arm APC 命中率未采（resources.csv 只采样 KV 用量）→ runner 增采 `prefix_cache_hit_rate`。
 
 ## 7. 执行顺序

@@ -52,7 +52,7 @@ EWMA flush 对照均已完成）：
 均未达到 5% 晋升门槛，保留 `request + 1×256`，其价值是精确 completion/
 credit 语义而非显著稳态提速；SLO-EWMA 相对 fixed-50 未过 5% 门槛 →
 ② 当前 2×4090 上完成 shared request/work credit、1/2/4 job 公平性、路由
-与故障迁移；③ prefix cache 开启后的数据组织机制验证（07-31 系统重测 `rc1_data_organization/`，**取代 07-18/19/25/26 早期 gropy**）：**regime-dependent**——2-ep/0.9（KV 无压力 max 7–10%）5 策略 50–56k 近似中性；4-ep/0.43（KV 饱和 max 98–100%）分化 39–50k、排名反转为 sequential>fixed>>row_cap≈best_fit>length_align。机制 `prefix_group_ratio`：重排序类 organizer 打散 prefix 组 → 4-ep 命中从 0.60–0.76 塌到 0.06–0.07。prefix-affinity routing 2-ep/7B 中性 −0.1%、4-ep/1.5B +5.9% 跨门禁但仍被 model×endpoint×KV 混淆、routing 侧隔离消融待补）→
+与故障迁移；③ prefix cache 开启后的数据组织机制验证（07-31 系统重测 `rc1_data_organization/`，**取代 07-25/26 gropy；07-18/19 保留作历史动机参照**）：**regime-dependent**——2-ep/0.9（每 endpoint KV 池占 GPU 显存 0.9、无压力 max 7–10%）5 策略 50–56k 近似中性；4-ep/0.43（2 endpoint/GPU 各占 0.43、KV 饱和 max 98–100%）分化 39–50k、排名反转为 sequential>fixed>>row_cap≈best_fit>length_align。机制 `prefix_group_ratio`：重排序类 organizer 打散 prefix 组 → 4-ep 命中从 0.60–0.76 塌到 0.06–0.07。prefix-affinity routing 2-ep/7B 中性 −0.1%、4-ep/1.5B +5.9% 跨门禁但仍被 model×endpoint×KV 混淆、routing 侧隔离消融待补→
 ④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 代价模型增加独立
 时间段或新 workload 校准。当前证据
 支持 sequential token-budget + static K8 + fixed 50ms；联合候选未显著优于
@@ -138,7 +138,7 @@ prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching **regime-de
 
 **E. 存储**：`experiments/results/<方向>/<exp>_<date>/{README.md, raw/}`（`raw/` = runs.csv + manifest.json + per-run requests/submissions/resources CSV）。
 
-**F. 指标注意**：优先用 time-series 聚合列（`*_mean/p50/p95/max`）；`vllm_kv_cache_usage_perc` 当前实现可疑（曾在 working set 应近满时显 0.06–0.29%），需改采 vLLM `gpu_cache_usage_perc` 或 Prometheus 累计值——修前不要拿它量化"KV 压力"。
+**F. 指标注意**：优先用 time-series 聚合列（`*_mean/p50/p95/max`）；`vllm_kv_cache_usage_perc` 是**分数（0–1）非百分比**（vLLM HELP: "1 = 100%"），按分数读时正常可靠——曾把 0.06 误读成 0.06% 当"指标坏"，实为 6%、working set 本就只占 6–45%（见 `rc1_prefix_routing/kv_budget_sweep` 纠正）。量化 KV 压力时按分数读，并用 TTFT / 命中率 / bounded client 行为等信号交叉印证饱和。
 
 ## 8. 沟通规则
 

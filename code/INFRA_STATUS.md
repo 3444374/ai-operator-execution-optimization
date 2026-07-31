@@ -256,7 +256,7 @@ least-work、动态预算、shared-credit、异构显存容量、故障迁移和
 |---|---|---|---|
 | 数据读取与 Daft/Ray 主链路 | 高 | 64/512/1024 真实链路 | 已完成基础设施 |
 | Fixed/token-budget batching | 高 | 多轮真实实验 | 机制成立，sequential 默认 |
-| Length/prefix grouping | 高（代码） | 0/30/70/100% cache-off screen + cache-on batching/routing 消融 | cache-off 无收益；cache-on batching 中性；2-ep/7B routing 中性（−0.1%），4-ep/1.5B +5.9% 跨过 5% 门禁但混淆待隔离，方向有条件重开 |
+| Length/prefix grouping | 高（代码） | 0/30/70/100% cache-off screen + cache-on batching/routing 消融 | cache-off 无收益；cache-on batching **regime-dependent**（2-ep 近似中性、4-ep KV 饱和分化+排名反转，见 `rc1_data_organization/`）；2-ep/7B routing 中性（−0.1%），4-ep/1.5B +5.9% 跨过 5% 门禁但混淆待隔离，方向有条件重开 |
 | BFD/row-cap-first | 高 | 512 + 1024 | 负向边界明确，不默认启用 |
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
 | Queue-adaptive flush | 高 | 512 变长重复 + 跨 rate + 2048 held-out + shared-vLLM | 优于 fixed-25；未优于 fixed-50 |
@@ -324,7 +324,7 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
    容量，报告 direct ceiling、time-to-ceiling、ramp regret 和最小饱和 work；
 8. baseline 锁定后再做 4-job held-out、staggered idle borrowing 与 weighted
    fairness；
-9. Prefix-aware 已在 cache-on 下评估：batching 中性；routing 在 2-ep/7B 中性
+9. Prefix-aware 已在 cache-on 下评估：batching regime-dependent（2-ep 近似中性、4-ep 饱和分化，见 `rc1_data_organization/`）；routing 在 2-ep/7B 中性
    （−0.1%），4-ep/1.5B prefix_affinity +5.9% 跨过 5% 门禁但受 model×endpoint×KV
    与过饱和 regime（SLO 违约 25–31%）混淆，方向有条件重开，待隔离消融；
    per-arm 命中率待 runner 增采；

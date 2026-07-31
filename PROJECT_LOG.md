@@ -3207,7 +3207,7 @@
   bounded shard 1/1024 瞬时 ReadError 触发 `failed_rows:0` 硬门禁（已解耦：bounded best-effort，不影响 data-org）。
   每坑秒级发现（监控 60s 内断 halt），vLLM 跨 attempt 不重启、未浪费 GPU。
 - **同步**：`experiment_status_and_gaps.md` §1.1 新增「RC1 数据组织系统重测」行 + 状态行更新（regime-dependent 闭合）；
-  本目录 README（8 段全组件）；旧 07-18/19/25/26 gropy 标 superseded（07-18/19 最原始动机保留作历史参照）。
+  本目录 README（8 段全组件）；旧 07-25/26 gropy 标 superseded；07-18/19 最原始动机保留作历史参照。
 - **下一步**：prefix_aware_token_budget 正文实验（能否回收 4-ep 重排序类命中率）；batched/4-ep bounded 补 feeding 门禁；
   `sharegpt_concentrated` + 7B 泛化对照；MFU 采集修复。
 

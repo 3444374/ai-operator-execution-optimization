@@ -93,8 +93,8 @@
    - **2026-07-31 RC1 数据组织系统重测（干净平台，取代 07-25/26 gropy；07-18/19 保留作历史动机参照）**：
      `experiments/results/rc1_data_organization/README.md`。5 策略（fixed_rows/sequential token_budget/
      length_align/best_fit BFD/row_cap_aware）× {2-ep/0.9, 4-ep/0.43}，1.5B，sharegpt_multiturn，cache-ON，
-     含 P0 指标（prefix_cache_hit_rate/TTFT）。**regime-dependent 闭合**：2-ep（KV max 7–10% 无压力）
-     5 策略 E2E 50–56k 紧凑、fixed≈seq>bestfit>rowcap>lenalign；4-ep（KV max 98–100% 饱和）分化 39–50k、
+     含 P0 指标（prefix_cache_hit_rate/TTFT）。**regime-dependent 闭合**：2-ep/0.9（每 endpoint KV 池占 GPU 0.9、无压力 max 7–10%）
+     5 策略 E2E 50–56k 紧凑、fixed≈seq>bestfit>rowcap>lenalign；4-ep/0.43（2 endpoint/GPU 各占 0.43、KV max 98–100% 饱和）分化 39–50k、
      **排名反转为 seq>fixed>>rowcap≈bestfit>lenalign**。机制（`prefix_group_ratio`）：重排序类 organizer 打散
      prefix 组（ratio 0.03）→ 4-ep 命中从 0.60–0.76 崩到 0.06–0.07 → TTFT 翻倍、best_fit/row_cap SLO 60%；
      保序类 ratio 0.13–0.29、命中 0.47–0.48。consolidation 是惩罚（4-ep −10～−26% + 能耗 +40%）。**与 #28 routing /
@@ -209,7 +209,7 @@
    j4 actor gate 已在相同 VMA 容器三臂通过，正式矩阵恢复 1/2/4。随后再验证 staggered idle
    borrowing、weighted overlap fairness 和异构 workload mix。
 4. **P1（部分完成 07-31，prefix 路由有条件重开）**：Prefix cache 开启后的独立机制验证——cache-ON
-   batching（`experiments/results/prefix_cache_data_org_20260730/`）中性（<1.2%）；2-ep/7B
+   **batch 粒度** prefix-aware 消融（`experiments/results/prefix_cache_data_org_20260730/`）中性（<1.2%）；**request 粒度 5 策略系统重测见 `rc1_data_organization/`（regime-dependent：2-ep 近似中性、4-ep 饱和分化 39–50k + 排名反转）**；2-ep/7B
    prefix-affinity routing 跨分散/agent/concentrated 三数据集
    （`prefix_cache_routing_req_20260730/`、`prefix_routing_agent_20260730/`、`prefix_routing_concentrated_20260730/`）
    吞吐全部 |Δ|<2% 中性（APC 覆盖 working set），但 agent-trace（高 cache 压力 workload）上 pala

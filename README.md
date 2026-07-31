@@ -141,7 +141,7 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
   arrival-limited 两组共 24/24 runs；相对 fixed-50 吞吐
   -0.52%/+0.10%，P99 -0.94%/-0.49%，所有 30s SLO 零违约。25–50ms
   动作相对 5.6–17.4s request P99 缺少一阶杠杆，因此不晋升。
-- ✅ **RC1 数据组织策略系统重测**（2026-07-31，`experiments/results/rc1_data_organization/`，取代 07-18/19/25/26 gropy）：5 策略 × {2-ep/0.9, 4-ep/0.43}，cache-ON + P0 指标（prefix_hit/TTFT）。**regime-dependent**：2-ep（KV 无压力）50–56k 近似中性；4-ep（KV 饱和 98–100%）分化 39–50k、排名反转为 sequential>fixed>>重排序类。机制 `prefix_group_ratio`：重排序类 organizer 打散 prefix 组 → 4-ep 命中从 0.60–0.76 塌到 0.06–0.07。喂饱门禁已补（batched bounded 2-ep 79,488 / 4-ep 24,733 病态）→ 准入控制（W65536）是吞吐 binding 杠杆、效应随 regime 反向。
+- ✅ **RC1 数据组织策略系统重测**（2026-07-31，`experiments/results/rc1_data_organization/`，取代 07-25/26 gropy；07-18/19 保留作历史动机）：5 策略 × {2-ep/0.9, 4-ep/0.43}，cache-ON + P0 指标（prefix_hit/TTFT）。**regime-dependent**：2-ep（KV 无压力）50–56k 近似中性；4-ep（KV 饱和 98–100%）分化 39–50k、排名反转为 sequential>fixed>>重排序类。机制 `prefix_group_ratio`：重排序类 organizer 打散 prefix 组 → 4-ep 命中从 0.60–0.76 塌到 0.06–0.07。喂饱门禁已补（batched bounded 2-ep 79,488 / 4-ep 24,733 病态）→ 准入控制（W65536）是吞吐 binding 杠杆、效应随 regime 反向。
 - pgvector(384) 写回 0.897s vs JSON text 1.567s。
 - 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 与 `motivation/results/fake_cpu/` 仅作历史参考。
 
