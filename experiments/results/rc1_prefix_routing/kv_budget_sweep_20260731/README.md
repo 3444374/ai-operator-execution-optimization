@@ -98,13 +98,14 @@
 - util 0.3–0.6 吞吐 ~48–49k tok/s、SLO 违约 13–15%、req p95 ~32s；util 0.9 吞吐 ~57k、**0% SLO**、p95 ~27.5s。**util 越高（KV 池越大）越快**。
 - decode 主导 vLLM 延迟（97%）；GPU 持续 88–91% 利用。
 
-### 推断（matched-KV 对比：endpoint 数效应作为 DATA 成立，但机制非 KV）
+### 推断（matched-KV 对比：endpoint 数决定 KV 压力 regime；机制 IS prefix 复用——见 routing_4ep_hitrate）
 - **2-ep/0.45（~7GB KV）= −0.1%** vs **4-ep/0.43（~7GB KV/端）= +5.9%**：per-endpoint KV 量级相当、只差 endpoint 数 → **endpoint 数（consolidation）效应作为 DATA 成立**。
-- ⚠️ **但机制不是 KV**：本扫描证明 2-ep 全程无 KV 淘汰（usage 6–45%）；4-ep 每 endpoint KV 用量更低（~5%）、也无 KV 压力。→ +5.9% **不是"KV 碎片化"**，更可能是 endpoint 数驱动的**并行度 / 每 endpoint batch 容量 / 内存预算**差异（2-ep 的 util 效应——低 util → 有效 batch 小 → decode 慢 → SLO 违约——本身就像"内存给 batching 的预算"问题，不是 KV）。**需重新归因。**
-- ⚠️ **平台方法论 caveat**：routing 实验没走"先扫平台再对比"。本扫描找到 **2-ep 平台 = util 0.9**（routing 在此中性）；**4-ep/0.43 不是扫出来的平台**（是 2/GPU 共享倒推的），所以 4-ep +5.9% 可能在非平台点测得，需 4-ep 自己的 util 扫描确认平台后再判 routing。
+- ⚠️ **重要纠正（之前过度泛化）**：本扫描在 **2-ep** 测得全程无 KV 淘汰（usage 6–45%）——这**对 2-ep 是对的**。但**不能推广到 4-ep**：后续 `routing_4ep_hitrate` 实测 **4-ep/0.43 during-run KV usage 80–100%（重度饱和）**。endpoint 数决定 KV 压力 regime（4-ep 高并发 + 小 per-endpoint 池 → 饱和；2-ep 不饱和）。
+- **机制已闭合（routing_4ep_hitrate）**：在 4-ep KV 饱和 regime 下，prefix_affinity **命中率 +5pp**（0.274 vs 0.224）、TTFT −0.19s → **+5.9% IS prefix 复用**（affinity 钉同 prefix 到一端 → 该端 APC 命中更多 → 少 prefill 重算）。**之前的"机制非 KV"推断是错的**（把 2-ep 无压力误推到 4-ep）。
+- **平台方法论 caveat（仍有效）**：本扫描找到 2-ep 平台 = util 0.9；4-ep/0.43 非"扫出来的平台"（2/GPU 倒推），4-ep +5.9% 的 util 是否其平台仍未扫确认。
 
 ### 不能声称 / 待查
-- **不能声称 4-ep +5.9% 是"KV 碎片化"驱动**——本扫描证明无 KV 压力，机制待重新归因（并行度 / batch 容量 / 内存预算）。
+- **2-ep 无压力不能推广到 4-ep**——4-ep/0.43 实测 80–100% 饱和（见 `routing_4ep_hitrate`）；4-ep +5.9% 已归因为 **prefix 复用**（affinity +5pp 命中率）。本扫描的"无 KV 压力"**仅适用 2-ep**。
 - **不能声称 routing 在 4-ep 平台上的真实收益**——4-ep 平台未扫（feasible util 上限 ~0.45，需确认 0.43 是否其平台）。
 - 2-ep util 效应（0.3–0.6 慢）机制：最可能是**内存给 batching 的预算不足**（非 KV 淘销），待控制实验确认。
 - util 0.9 n=2（第 3 rep 偶发失败）；MFU 在 0.9 反常下降待查。
@@ -112,14 +113,14 @@
 
 ## 6. 对课题含义
 
-1. **endpoint 数（consolidation）效应作为 DATA 成立**（matched-KV：2-ep 中性、4-ep +5.9%），但**机制不是 KV**（全程无 KV 淘汰）——更可能是并行度 / batch 容量 / 内存预算，待重新归因。
-2. **⚠️ "跨引擎共享 KV（Mooncake/LMCache）"方向的动机被削弱**：本 workload（multiturn、~1.4GB working set）下**根本没有 KV 淘汰** → 没有跨引擎复用空间。共享 KV 池有价值的前提（KV 淘汰压力）**在本 setup 不成立** → 该方向需在能产生真实 KV 压力的场景重评，或重新判断是否还值得做。
+1. **endpoint 数决定 KV 压力 regime**：4-ep（高并发 + 小 per-endpoint 池）饱和（80–100%），2-ep 不饱和（6–45%）。routing 收益**只在 KV 压力 regime（4-ep）出现**。
+2. **机制 IS prefix 复用（在 4-ep 饱和 regime）**——affinity +5pp 命中率 → +2.5–5.9% 吞吐（borderline）。**跨引擎共享 KV（Mooncake/LMCache）动机复活（modest）**：4-ep KV 压力真实 + prefix-reuse 机制真实；但 affinity 的吞吐 payoff 已 borderline，共享池的边际 upside 估计有限。需在 4-ep 饱和 regime 评估 LMCache 能否把命中率推过 affinity 的 27%。
 3. 2-ep（util 0.9 平台）是 RC1 数据组织策略重测的**干净基线**（策略效应不被 routing/consolidation/memory-constraint 混淆）。
 
 ## 7. 下一步
 
-1. **重新归因 4-ep +5.9%（非 KV）**：4-ep 扫 util 找平台 + 测 routing，确认是不是 endpoint 数驱动的并行度 / batch 容量——优先于跨引擎 KV 池。
-2. **重评跨引擎 KV 池方向**：本 workload 无 KV 淘汰 → 动机削弱；除非换能产生真实 KV 压力的场景（更大 working set / 更小池），否则不建议投入。
+1. **归因已闭合**（见 `routing_4ep_hitrate`）：4-ep IS KV-pressured（80–100%）+ mechanism IS prefix-reuse（affinity +5pp 命中率）。**待办**：3+ 重复确认 borderline Δ（+2.5% vs +5.9% 方差）；4-ep 扫 util 找平台（确认 0.43 是否其平台）。
+2. **跨引擎 KV 池方向动机复活（modest）**：4-ep KV 压力真实 + prefix-reuse 机制真实。若推进，在 4-ep 饱和 regime 评估 LMCache 能否把命中率推过 affinity 的 27%。
 3. **#22 补 bounded HTTP baseline** → 正式算 feeding-saturation 门禁。
 4. **平台方法论补进流程**：先扫参数找平台、再在平台上对比（加进 AGENTS §7.5.C）。
 5. 小改进：`vllm_kv_cache_usage_perc` CSV 列名（装分数 0–1）可改 `_ratio` 或加文档，防再误读。
