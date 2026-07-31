@@ -52,14 +52,13 @@ EWMA flush 对照均已完成）：
 均未达到 5% 晋升门槛，保留 `request + 1×256`，其价值是精确 completion/
 credit 语义而非显著稳态提速；SLO-EWMA 相对 fixed-50 未过 5% 门槛 →
 ② 当前 2×4090 上完成 shared request/work credit、1/2/4 job 公平性、路由
-与故障迁移；③ prefix cache 开启后的独立机制验证与 length-align 显式联合消融
-（cache-ON batching 中性；prefix-affinity routing 2-ep/7B 中性 −0.1%，4-ep/1.5B +5.9% 跨过 5% 门禁但被 model×endpoint×KV 与饱和 regime 混淆，有条件重新打开、待隔离消融）→
+与故障迁移；③ prefix cache 开启后的数据组织机制验证（07-31 系统重测 `rc1_data_organization/`，**取代 07-18/19/25/26 早期 gropy**）：**regime-dependent**——2-ep/0.9（KV 无压力 max 7–10%）5 策略 50–56k 近似中性；4-ep/0.43（KV 饱和 max 98–100%）分化 39–50k、排名反转为 sequential>fixed>>row_cap≈best_fit>length_align。机制 `prefix_group_ratio`：重排序类 organizer 打散 prefix 组 → 4-ep 命中从 0.60–0.76 塌到 0.06–0.07。prefix-affinity routing 2-ep/7B 中性 −0.1%、4-ep/1.5B +5.9% 跨门禁但仍被 model×endpoint×KV 混淆、routing 侧隔离消融待补）→
 ④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 代价模型增加独立
 时间段或新 workload 校准。当前证据
 支持 sequential token-budget + static K8 + fixed 50ms；联合候选未显著优于
 独立拼接，two-level adaptive 和 SLO-EWMA 均未显著优于 fixed-50，
-prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching 中性，routing
-2-ep/7B 中性（−0.1%）、4-ep/1.5B +5.9% 跨门禁但有条件待隔离消融。写回使用 PostgreSQL + pgvector
+prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching **regime-dependent**（2-ep 无压力近似中性、4-ep KV 饱和分化 27% 且排名反转），routing
+2-ep/7B 中性（−0.1%）、4-ep/1.5B +5.9% 跨门禁但有条件待隔离消融。**RC1 数据组织 + #28 routing + KV-sweep 三向闭环：上游策略价值只在 4-ep KV 饱和 regime 显现，2-ep 是干净对照基线。** 写回使用 PostgreSQL + pgvector
 （COPY + deferred index），不作为独立实验阶段。详见 `PROJECT_OUTLINE.md`
 §近期优先级。
 

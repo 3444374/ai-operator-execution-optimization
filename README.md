@@ -141,6 +141,7 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
   arrival-limited 两组共 24/24 runs；相对 fixed-50 吞吐
   -0.52%/+0.10%，P99 -0.94%/-0.49%，所有 30s SLO 零违约。25–50ms
   动作相对 5.6–17.4s request P99 缺少一阶杠杆，因此不晋升。
+- ✅ **RC1 数据组织策略系统重测**（2026-07-31，`experiments/results/rc1_data_organization/`，取代 07-18/19/25/26 gropy）：5 策略 × {2-ep/0.9, 4-ep/0.43}，cache-ON + P0 指标（prefix_hit/TTFT）。**regime-dependent**：2-ep（KV 无压力）50–56k 近似中性；4-ep（KV 饱和 98–100%）分化 39–50k、排名反转为 sequential>fixed>>重排序类。机制 `prefix_group_ratio`：重排序类 organizer 打散 prefix 组 → 4-ep 命中从 0.60–0.76 塌到 0.06–0.07。喂饱门禁已补（batched bounded 2-ep 79,488 / 4-ep 24,733 病态）→ 准入控制（W65536）是吞吐 binding 杠杆、效应随 regime 反向。
 - pgvector(384) 写回 0.897s vs JSON text 1.567s。
 - 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 与 `motivation/results/fake_cpu/` 仅作历史参考。
 
@@ -149,11 +150,11 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
 async/token-ID 单一 runner 重跑 short/long K256/W65K/W98K 等价臂门禁，
 再决定单 job dynamic 是否有存在性；同时保留 request-level 精确 completion
 作为异质多 job shared credit、idle borrowing 和公平队列的控制基础。随后做
-多模态和路由/故障迁移 formal 验证（prefix cache-on batching 消融已完成、中性；2-ep/7B prefix routing
+多模态和路由/故障迁移 formal 验证（prefix cache-on 数据组织消融已完成（07-31 系统重测 `rc1_data_organization/`，**regime-dependent**：2-ep 无压力 5 策略 50–56k 近似中性；4-ep KV 饱和分化 39–50k、排名反转为 sequential>fixed>>重排序类，`prefix_group_ratio` 打散 → 命中从 0.60–0.76 塌到 0.06–0.07）；2-ep/7B prefix routing
 中性（prefix_affinity vs least_queued −0.1%，<5% 门禁），4-ep/1.5B
 prefix_affinity +5.9%（46,943 vs 44,317 tok/s，3 repeat 不重叠、CV≤0.9%）
 跨过 5% 门禁，但受 model×endpoint×KV 与过饱和 regime（SLO 违约 25–31%）
-混淆，方向有条件重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融后定级）；OceanBase B1 门禁已过（CE 含 AI_COMPLETE），待可部署环境复跑。
+混淆，方向有条件重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融后定级。**RC1 数据组织 + prefix routing + KV-sweep 三向闭环：上游策略价值只在 4-ep KV 饱和 regime 显现，2-ep 是干净对照基线。**）；OceanBase B1 门禁已过（CE 含 AI_COMPLETE），待可部署环境复跑。
 详见 `PROJECT_OUTLINE.md`
 §近期优先级、`experiments/plans/experiment_status_and_gaps.md` 和
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
