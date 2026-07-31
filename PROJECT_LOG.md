@@ -1,5 +1,24 @@
 # 项目日志
 
+## 2026-07-31 评估指标体系调研（文献 + 数据库厂商）
+
+- 新增 `research/evaluation_metrics_survey_20260731.md`：以
+  `nature-academic-search` + `deep-research` 工作流调研 AI 算子/推理服务文献
+  与数据库厂商/标准基准的评估指标，按 10 类归目并对照项目现有指标做 gap
+  分析。同步更新 `research/README.md`、`research/knowledge_hub.md` §9、
+  `PROJECT_INDEX.md` 入口。
+- 结论：throughput / 尾延迟 / SLO attainment / MFU+KV 利用率 / 能耗 /
+  Jain+max-JCT 公平 / exactly-once 审计 / 控制 trace 八大类项目已覆盖或优于
+  多数文献；细分缺口见该文件 §5。
+- P0 缺口三条均为"vLLM 已暴露信号、采集端未落字段或折叠分布"，已亲自核实
+  代码：`code/src/metrics.py:433-437` 仅采 prefill/decode 均值，未采
+  `time_to_first_token`/`inter_token_latency` 分位；全文无 `prefix_cache`
+  Counter；`code/src/baselines/vllm_bench.py:126-141` 把 `ttfts+itls` 折叠
+  成单条 e2e。补采改动集中在 metrics.py 与 vllm_bench.py，不触策略代码。
+- 落点：prefix cache hit rate 直接服务当前 prefix 路由结论的隔离消融；
+  TTFT/ITL 分位使 service_p99 的 prefill/decode 可解释；登记到
+  `experiments/plans/experiment_status_and_gaps.md` 指标缺口区（待补）。
+
 ## 2026-07-30 双协议 baseline 与 feeding-first 门禁
 
 - 重新定义 baseline 目标：vLLM Bench 是同机服务上限参照，项目不以超过它为

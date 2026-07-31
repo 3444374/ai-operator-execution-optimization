@@ -754,6 +754,9 @@ Ray Actor 去中心化自适应提交
 
 ## 9. 文件清单
 
+**2026-07-31 新增**：
+- `research/evaluation_metrics_survey_20260731.md` — 评估指标体系调研：7 簇精读笔记（49 篇）+ 8 个数据库厂商/标准基准 web 调研，按 10 类归目并对照项目指标做 gap 分析。P0 缺口：TTFT 分位、ITL/TBT 分布、prefix cache hit rate（均已核实为 vLLM 已暴露但采集端未落字段，见该文件 §6）。
+
 **2026-07-21 更新**：
 - `research/ray_actor_dynamic_batching_reference.md` — 新增 §1.6-§1.8（Ray Serve 准入控制与队列自适应）、§3.7 大幅扩展（7 种反压机制详述 + ConcurrencyCap 废弃分析）、§6.7-§6.12（6 篇 2025-2026 新论文）
 - `research/knowledge_hub.md` — 新增 §5.5（6 篇新论文设计原则提取）、§5.6（Ray 现存机制能力边界）、§8 知识缺口更新
