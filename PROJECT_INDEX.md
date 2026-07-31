@@ -274,6 +274,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `research/top15_ranked_papers.md` | 开题 Top 15 | 15/15 CCF-A 正式论文；按 AI 算子、LLM 调度、Ray、代价估计组织 |
 | `research/gpu_scheduler_data_placement_supplement_20260715.md` | GPU 调度与数据放置补充调研 | 查看策略控制器设计的前沿系统依据、可借鉴思想和后续精读清单 |
 | `research/evaluation_metrics_survey_20260731.md` | AI 算子/推理服务文献 + 数据库厂商评估指标调研与 gap 分析 | 设计新实验指标、对照文献标准指标时读；P0 缺口 TTFT/ITL/prefix-cache-hit-rate |
+| `research/daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：DB↔GPU 经 Daft 桥接 + 三痛点源码核实 + offline-batch foreknowledge 可防御界面 | 方向/题目讨论、Daft 痛点、workload 选型时读；冷启动 parked |
 | `research/reference/README.md` | 本地 PDF 状态 | 查看 21 份实体 PDF、Top 15 完整性和维护规则 |
 | `research/reference/REFERENCE_INDEX.md` | 权威题录索引 | 查看 DOI、正式轨道、核心补充级别和工程资料入口 |
 | `data/README.md` | 本地 workload 数据说明；raw payloads 被 git ignore | 查看 ShareGPT/BurstGPT 下载位置、用途和边界 |
@@ -418,6 +419,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `sink_writeback_coordination.md` | 写回工程参考（不作为独立实验阶段）：COPY + deferred index baseline |
 | `cross_layer_killer_experiment.md` | 耦合验证实验计划：独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数的完整交互面）|
 | `experiment_status_and_gaps.md` | **实验状态与缺口分析（2026-07-20）**：已完成/未完成实验表、证据链完整性、指标盲区、P0/P1/P2 路线图、审稿人视角风险。当前实验设计的第一参考。|
+| `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload（当务之急）**：图像 CLIP——每行 CPU→GPU 搬运 ~600KB（文本 ~600×），让 DB 读 + CPU→GPU 数据搬运瓶颈显现（学长判据）；benchmark = ImageNet/COCO + ANN-benchmarks recall@10 + §7.5 自定吞吐协议 |
+| `msmarco_embedding_workload_20260731.md` | ⏸ 文本轻对照（降级）：MS MARCO 文本，token ID 紧凑搬运轻，瓶颈不显现——仅作"文本下不显现"的边界对照 |
 
 所有实验计划遵循从 vLLM/Orca/TurboVecDB/GaussML/FlexPushdownDB 五篇 CCF-A 论文提取的共同方法论：曲线 > 单点、先暴露瓶颈再优化、同硬件公平 baseline、消融拆开、诚实报告边界、统计严谨。
 

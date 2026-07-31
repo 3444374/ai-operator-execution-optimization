@@ -2,6 +2,16 @@
 
 本目录是正式研究实验入口，用于规划、运行和记录研究内容的优化实验与消融实验。它不同于 `motivation/`：动机测试回答”为什么这个课题值得做”，本目录回答”提出的方法或调优是否真的有效”。
 
+## benchmark / workload 选型（当前主线，2026-07-31）
+
+学长反馈（`../notes/communication_notes.md` §5）把场景 reframe 成"**数据库↔GPU 经 Daft 桥接、算子多样、大数据量、流式 pipeline**"，并定原则：**先锁被认可的 benchmark/workload**。核心判据：数据搬运瓶颈有两段——送 vLLM（拥挤）+ **DB 读出来 / CPU 搬到 GPU**（机会）；**当前 prompt 文本每行 ~1KB、搬运太轻，瓶颈不显现**，必须换"每行 payload 重"的 workload。方向 scope 见 [`../research/daft_db_gpu_bridge_direction_scope_20260731.md`](../research/daft_db_gpu_bridge_direction_scope_20260731.md)（Daft 三痛点核实 + 可防御界面 + §10.1 benchmark 三层）。
+
+**首个 workload**：**图像 AI_EMBED (CLIP)**——每行 CPU→GPU 搬运 ~600KB（文本 ~600×）+ JPEG decode/resize 重，让 **DB 读 + CPU→GPU 数据搬运瓶颈真正显现**。设计 + go/no-go 门禁见 [`plans/image_clip_workload_lock_20260731.md`](plans/image_clip_workload_lock_20260731.md)。
+
+**benchmark 三层**（讲清楚，见 scope §10.1）：① 数据集 = ImageNet/COCO（公开经典）；② 质量协议 = ANN-benchmarks recall@10（CCF 认可）；③ 吞吐/搬运协议 = 无现成 benchmark（厂商全闭源），项目 §7.5 自定（自定本身是贡献）。可引名字 = BigVectorBench（VLDB'25）image 切片 + ANN-benchmarks。
+
+**升级路径**（benchmark 名始终 BigVectorBench）：CLIP image（当前）→ +MS MARCO text（轻对照，证明文本下不显现）→ +audio → 三模态触发冷启动 regime（若解封）。MS MARCO 降级为"文本轻对照"（[`plans/msmarco_embedding_workload_20260731.md`](plans/msmarco_embedding_workload_20260731.md)）——文本搬运太轻，不满足判据。workload 选型汇总见 [`plans/README.md`](plans/README.md) §〇。
+
 ## 当前状态
 
 文本主线的正式研究实验已经开展：数据组织、K_max/flush 提交控制、联合搜索、prefix-aware、BFD/row-cap、CUDA Graph baseline 和算子代价估计均已有不同等级的证据。统一完成度、全部结果目录和结论边界见 [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)。

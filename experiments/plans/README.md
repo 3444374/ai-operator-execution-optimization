@@ -21,6 +21,17 @@
 
 > 技术基础知识（decode memory-bound、AIMD、continuous batching 等）的单一来源在 `research/` 和 `research/reading_notes/`，本目录只引用、不重复。
 
+## 〇、workload 选型与锁定（学长原则：先锁被认可场景）
+
+学长反馈（`notes/communication_notes.md` §5）明确：**先定 benchmark/workload，场景被认可后任何正指标都被接受**。以下为 workload 选型文档：
+
+| 文件 | 状态 | 内容 |
+|---|---|---|
+| `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload**（当务之急） | 图像 AI_EMBED (CLIP)——每行 CPU→GPU 搬运 ~600KB（文本 ~600×），让 **DB 读 + CPU→GPU 数据搬运瓶颈显现**（学长判据：文本太轻不显现）。设计 + go/no-go 门禁。**benchmark** = ImageNet/COCO + ANN-benchmarks recall@10 + BigVectorBench image 切片。 |
+| `msmarco_embedding_workload_20260731.md` | ⏸ 文本轻对照（降级） | MS MARCO 8.8M 批 embedding。仍是文本，token ID 紧凑，搬运轻，**瓶颈不显现**——仅作"文本下不显现"的边界对照。 |
+
+方向 scope（DB↔GPU 经 Daft 桥接 + 三痛点 + 可防御界面）见 `research/daft_db_gpu_bridge_direction_scope_20260731.md`。
+
 ## 一、实验计划（按研究内容）
 
 | 文件 | 对应研究内容 | 内容 |

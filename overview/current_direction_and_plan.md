@@ -6,6 +6,16 @@
 
 ---
 
+## 当前重点（2026-07-31，学长反馈后）
+
+学长反馈（`notes/communication_notes.md` §5）把场景 reframe 成"**数据库↔GPU 经 Daft 桥接、算子多样、大数据、流式**"，并定原则：**先锁被认可的 benchmark/workload**。核心判据：数据搬运瓶颈有两段——送 vLLM（拥挤）+ **DB 读出来 / CPU 搬到 GPU**（机会）；当前 prompt **文本每行 ~1KB、搬运太轻，瓶颈不显现**，必须换"每行 payload 重"的 workload。
+
+- 🔴 **首个 workload**：**图像 AI_EMBED (CLIP)**——每行 CPU→GPU 搬运 ~600KB（文本 ~600×）+ decode/resize 重，让 DB 读 + CPU→GPU 数据搬运瓶颈显现。**benchmark 三层**（ImageNet/COCO 数据集 + ANN-benchmarks recall@10 + §7.5 自定吞吐协议）见 scope §10.1。设计见 `experiments/plans/image_clip_workload_lock_20260731.md`。MS MARCO 降级为文本轻对照（搬运太轻不显现）。
+- 🆕 **方向 scope（提案，待导师/学长确认）**：Daft 三痛点源码核实 + offline-batch foreknowledge 可防御界面，见 `research/daft_db_gpu_bridge_direction_scope_20260731.md`。冷启动（机制候选）parked。
+- ⏸ 题目精修暂缓；§1–§4 官方定位在导师确认 reframe 前不变。
+
+---
+
 ## 1. 课题定位
 
 优化数据库 AI 算子外部执行链路的上游调度——数据如何组织为请求、以什么节奏发送、如何根据模型服务状态调节并发。

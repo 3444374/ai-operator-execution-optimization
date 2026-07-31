@@ -15,6 +15,8 @@
 
 在此基础上对照项目当前指标集，找出**细分缺口**与可补采项。不重新论证项目已有指标——只标"已覆盖/部分/缺口/不适用"。
 
+> **文档范围扩展**：正文 §3–§5 聚焦指标；**附录 A** 扩展到 workload/数据集（含对 AI_COMPLETE 可用性判定）；**附录 B** 扩展到数据库厂商 AI 算子的测试方法论（逐家怎么测 + 跨厂商共识 + 对本项目的启示 + PolarDB Lakebase 同栈专项）。
+
 ---
 
 ## 2. 方法与证据来源
@@ -259,3 +261,183 @@
 2. **P1 与代价模型计划合并**——Q-Error/Spearman/Pick Rate 已在代价估计计划清单（见 `research/knowledge_hub.md` §5.7 模式 2），与本调研一致，按既定批次推进；Goodput-as-tokens、padding waste、service disparity、recall@k 作为对应研究内容实验的附加报告项。
 3. **P2 作为报告期统一处理**——Variance/CI、SLO Scale、CV、regression count、调度开销% 在正式结果报告与 `figures/` 绘图阶段一次性补齐。
 4. 本文件作为 `research/` 的指标体系参考入口；后续新实验设计指标时先查本目录 §3，避免重复造指标或漏报文献标准项。
+
+---
+
+## 附录 A：workload / 数据集调研（2026-07-31 补）
+
+本附录回答"这些文献和厂商用了什么数据"，并分析其对项目 AI_COMPLETE 算子的可用性。来自同一工作流的 `workloads` 抽取字段。
+
+### A.1 五类 workload 来源
+
+**A.1.1 LLM serving 文献（最大的一支，纯文本，不碰数据库）**
+
+vLLM / Orca / Sarathi-Serve / DistServe / Splitwise / Mooncake / SGLang / VTC / Llumnix / CONCUR / SCORPIO / SABER / Clipper / BucketServe / ProServe / arXiv 2410.14257 几乎共用同一组数据：
+
+- 对话/指令（事实标准）：**ShareGPT / ShareGPT-gpt4**、**Alpaca / Stanford Alpaca**、LMSYS-Chat-1M、BurstGPT、openchat_sharegpt4
+- 长文本：LongBench、L-Eval、arxiv_summarization、GovReport、Ruler、16k–128k 长上下文模拟
+- 代码：HumanEval、Code QnA/Generation/Summary/Translation (HF)
+- 生产 trace：**Azure Serverless/Inference Trace**、**Kimi 1 小时生产 trace**（23608 请求）、**DeepSeek-V3 生产 trace**（agentic ReAct）、Microsoft Azure coding/conversation trace
+- 合成：Poisson 合成到达（input/output token 均匀/指数）、vLLM random / sonnet poems、LLMPerf synthetic chat N(200,40)/N(100,10)
+- Agentic/多步：ReAct、Tree-of-Thought (GSM-8K)、BFCL、LATS/MCTS、LLM-as-Judge（DLPM）
+
+> 这一支无数据库表、无写回，"请求"即输入。本项目与之同源（文本主线可比）。
+
+**A.1.2 代价估计/查询优化文献（用真数据库 benchmark，但不含 AI 算子）**
+
+Heinrich / CONCERTO / GRACEFUL / COSTREAM / Pathak 用经典 OLAP：**TPC-H**、**TPC-DS**、**JOB / JOB-Light（IMDB）**、IMDB (8 表)、Baseball (25 表)、SSB；Heinrich 训练集 20 真实库 × 10000 queries/db；GRACEFUL genome 数据集（zero-shot）；自建 UDF benchmark（20 真实库、90000+ 查询）；执行引擎 ClickHouse、PostgreSQL + pg_hint_plan。
+
+**A.1.3 数据库 AI 系统文献（真正的"数据库表 + AI 算子"）**
+
+| 系统 | 数据 |
+|---|---|
+| LOTUS / Abacus | FEVER (claims)、BioDEX (docs)、SciFact、HellaSwag、ArXiv 分析 |
+| Galois | Flight / Geo / World / Scholar / Movies / Presidents / Premier / Fortune / Geo-Test（真实 DB 表 + LLM-as-storage） |
+| Smart | Flight 表（SQL+ML 谓词推理重写） |
+| SmartLite / LEADS / InferDB | NYC-rides (1.5M)、Pollution (106M)、Fraud (284k)、Hits (143k)、Digits/MNIST、Rice、Avazu(40M) |
+| SemBench | filter / join / map / rank / classify 五类 × text/image/audio × MMQA |
+
+**A.1.4 数据库厂商基准**
+
+| 厂商 | 数据 |
+|---|---|
+| Snowflake Cortex | TPC-DS 100TB+10TB（Samples，派生非官方）、Cortex Analyst 150 题 BI 基准、Spider/BIRD、MTEB/CLEF/MIRACL、TRAIL/GAIA、MMLU/HumanEval/GSM8K |
+| BigQuery ML | 合成 per-row text（500 in + 50 out）、合成 embedding（50 tok/row）、Faraday 客户负载（12.6M embeddings/45 min）、bigquery-public-data |
+| Oracle AI Vector Search | SIFT (1M 128-d)、GIST (1M 968-d)、Fashion-MNIST、Llama 3.2 3B on OCI A10、LLMPerf synthetic、semantic-cache demo、ONNX All-MiniLM-L12-v2 |
+| PostgresML | Kaggle Flight Delay、Amazon US Reviews Video DVD (5,069,140 行)、HuggingFace 模型、pgbench |
+| pgai / pgvector / pgvectorscale | 50M Cohere (768-d)、LAION 5M、ann-benchmarks glove/sift、OpenAI ada-002/3-small/3-large (1536-d) |
+
+**A.1.5 向量库 benchmark（独立一支）**
+
+ANN-benchmarks（glove/sift/fashion-mnist/gist）、Big-ANN NeurIPS'21&'23（SIFT1B、Deep1B、BIGANN-1B、SimSearchNet++-1B、Turing-ANNS-1B、SPACEV-1B、Yandex DEEP/Text-to-Image-1B、YFCC100M 10M CLIP）、BigVectorBench（arXiv+PubMed/ImageNet/squad_v2/img-wikipedia/librispeech × 十 workload）、VectorDBBench（GIST/dbpedia-openai-1M/MS MARCO/HotpotQA）。
+
+### A.2 对项目 AI_COMPLETE 的可用性分析
+
+AI_COMPLETE 是**生成式**（输入文本 → LLM 生成 → 写回）。SemBench/LOTUS 算子按输出形态：
+
+| 算子 | 输出形态 | 对应 AI 算子 | AI_COMPLETE 可用 |
+|---|---|---|---|
+| filter | 布尔 | AI_FILTER | ❌ |
+| classify | 类别标签 | AI_CLASSIFY | ❌ |
+| join | 匹配/不匹配 | AI_JOIN | ❌ |
+| rank / top-k | 打分/排序 | LLM-as-judge | ❌ |
+| aggregate | 计数/摘要 | 混合 | 🟡 |
+| **map** | **行 → 变换文本** | **AI_COMPLETE** | ✅ 形态匹配 |
+| reduce | 多文档 → 摘要 | 近亲 | 🟡 |
+
+**结论**：只有 `map`（及部分 `reduce`）形态对得上；SemBench/LOTUS 的大头（filter/classify/join/rank）是 AI_CLASSIFY/AI_FILTER，不是 AI_COMPLETE。
+
+即使 `map` 形态匹配，两个坑：
+
+1. **输出短且结构化**——LOTUS map（BioDEX 抽取→JSON、FEVER 改写）输出短而均匀；而本项目调度问题（token-budget batching、尾延迟、HOL-age、goodput、prefix cache 压力）需要**变长长输出**压测。ShareGPT/BurstGPT 在调度压测上比 LOTUS map **更强**。
+2. **模型与质量口径**——LOTUS/SemBench 用 GPT-4 via API（SemBench 一次 $9935 / 18 天）；本项目用本地 Qwen2.5-1.5B/7B。任务能跑（调度只看请求形态），但 recall/accuracy 不可与 LOTUS 同比。
+
+### A.3 数据/代码可用性（已核实，官方来源）
+
+- **SemBench**：官方站 [sembench.github.io/SemBench](https://sembench.github.io/SemBench/)，代码与数据在 [github.com/SemBench](https://github.com/SemBench)（Cornell/Google/UT Austin，定位"semantic query engine 的 TPC-H"）。**厂商来源**。
+- **LOTUS**：开源仓库 [github.com/lotus-data/lotus](https://github.com/lotus-data/lotus)（Stanford/Berkeley），语义算子 map/reduce/filter 等，跑在 pandas DataFrame 上。**官方文档+源码**。
+- 底层数据集 FEVER / BioDEX / SciFact / HellaSwag 均为公开 benchmark。
+
+### A.4 推荐与缺口登记
+
+| 目标 | 做法 |
+|---|---|
+| 加"数据库 AI 算子"定位味 | 采纳**一个 LOTUS `map` 任务**（BioDEX 抽取 或 ArXiv 摘要）重排版成 `df["prompt"]` 跑 AI_COMPLETE 写回 PG 表。低成本高定位价值，**补充不替代** ShareGPT。 |
+| 压测调度策略 | 继续 ShareGPT/BurstGPT/agent-trace（变长长输出是调度压力源）。 |
+| 多模态泛化 | SemBench image + 向量 benchmark（SIFT/LAION/Cohere 50M）更直接可用。 |
+
+**缺口登记**：本项目目前 workload 偏"LLM serving + 写回"，**未用过 SemBench/LOTUS 式"数据库表上的语义算子"任务**。若开题/论文要把课题定位成"数据库 AI 算子"而不仅是"LLM 推理上游调度"，建议补一个 LOTUS map 任务做定位佐证（P2，多模态/数据库味优先级，不进调度主实验）。待用户确认后登记到 `experiments/plans/experiment_status_and_gaps.md`。
+
+> 本附录的 workload 清单为**文献事实/厂商来源**；AI_COMPLETE 可用性判定为基于算子输出形态的**合理推断**；数据/代码可用性为**官方来源**（已 web 核实）。
+
+---
+
+## 附录 B：数据库厂商 AI 算子测试方法（2026-07-31 补）
+
+回答"别的数据库厂商怎么测自己的 AI 算子"——逐家方法论 + 跨厂商共识 + 对本项目的启示。来自一个后台工作流（6 家厂商 × 测试方法论 web 抽取 + 综合）加一个 PolarDB 专项核查 agent。
+
+**覆盖 7 家**：PolarDB Lakebase、Snowflake Cortex、BigQuery ML、Oracle AI Vector Search、PostgresML、pgai/pgvector/pgvectorscale、Databricks Lakehouse AI。
+
+**证据分级**：官方文档 / 工程博客 / 基准规范 / 论文 / 营销——每条标注。厂商自报数字一律视作**厂商来源**，非独立第三方。
+
+### B.1 PolarDB Lakebase（与本项目同栈，单独重点）
+
+| 维度 | 核实结论 |
+|---|---|
+| 是否有 AI 算子 | ✅ 属实，但**三条平行路径**：(1) `polar_ai` SQL 扩展（`ai_text_embedding` 等）= **外挂 HTTP 调百炼/DashScope，不跑在 Daft 上**；(2) **Daft on Ray DataFrame AI 函数**（`embed_text`/`classify_image`/`prompt`）= 跑在 Daft on Ray ✅；(3) `AI_SEARCH()` 模型算子化（2026 新）= 未明说是否走 Daft |
+| 是否真用 Daft on Ray | ✅ 属实——且是**开源 Eventual-Inc/Daft 本身，不是阿里自研 fork**：Swordfish 引擎、`@daft.cls(gpus=N, max_concurrency=M)`、`daft.set_runner_ray()` 全部匹配开源 Daft。PolarDB Lakebase 集成的是**和本项目同一个开源 Daft** |
+| 命名陷阱 | PolarDB **没有 `AI_COMPLETE`**（那是 Snowflake 的）；等价物是 `polar_ai.*`（SQL）+ Daft `prompt()`（DataFrame） |
+| 开源 | PolarDB-PG 仓库 [polardb/PolarDB-for-PostgreSQL](https://github.com/polardb/PolarDB-for-PostgreSQL)（Apache 2.0）；但 `polar_ai` 扩展源码可见性未确认；Daft on Ray 代码 = 开源 Daft，不在 PolarDB 仓库 |
+| 怎么测 | [性能测试报告](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/daft-performance-benchmark)：Daft vs Ray Data vs Spark，8 worker × (1×GPU 24GB + 4vCPU + 16GB)；workload = Audio 113,800 条 / Doc Embedding 10,000 PDF / Image 803,580 图 / Video 1,000 视频 + TPC-H SF=100/1000；指标 = **仅端到端 wall time**；vs Ray Data 2.2–7.6×、vs Spark 4.0–18.4× |
+| vendor 缺陷 | **warm-up/重复次数未说明**；TPC-H 明确声明"不完全合规、不可与已发布 TPC-H 比较"；**数据/脚本不公开**（方法论公开、产品闭源云） |
+| 相关度 | **4.5/5**（迄今最贴近本项目技术栈的工业产品） |
+
+**对项目的核心含义（双刃）**：
+- ✅ **工业正当性顶级背书**——阿里云旗舰数据库把**同一个开源 Daft on Ray** 当作"AI 原生数据库核心计算层"在卖。本项目 `code/AGENTS.md` 的 `@daft.cls` 编码规范被工业验证。
+- ⚠️ **新颖性门槛拉高**——PolarDB 的卖点（CPU/GPU 异构调度、morsel+backpressure、util 60→80%）**逐条对应项目研究方向**。"Daft on Ray + 异构调度 + 背压"已是产品，项目**不能**把这一层当新颖性。
+- 🎯 **新颖性边界因此切得很清**：PolarDB 的背压是**纯数据流背压**（下游慢→减缓上游），**不观测 vLLM 内部状态**（KV/prefix/queue）。项目能占的切片 = **模型服务状态感知的请求成形 + 闭源产品未公开的上游调度策略开放消融**。
+- ❓ **Scoop 待确认**：未见阿里云/Daft 团队声称做"模型服务状态感知调度"的**研究论文**（产品闭源、调度细节未披露）；但**未穷尽搜 VLDB/SIGMOD/ICDE 学术文献**，正式定稿新颖性前需补一轮专门学术检索。
+
+### B.2 其他 6 家逐家方法论
+
+| 厂商 | 怎么测（一句话） | benchmark / workload | 指标 | 对照 baseline | 可复现性 |
+|---|---|---|---|---|---|
+| **Snowflake Cortex** | 最接近学术：SIGMOD Companion'26 论文（arXiv 2511.07663v3）做**三臂消融**（强 oracle-only / 动态 cascade / 便宜 proxy-only）+ 单变量扫描，**每查询 5 次取均值** | 6 HF 布尔分类集（NQ/BOOLQ/IMDB/SST2/QUORA/FARL）+ 8 HF entity-matching 集（ABTBUY/NASDAQ/ARXIX/EURLEX/NYT/CNN/AG NEWS/BIODEX）+ 自建 NYT 1000 篇 | F1/precision/recall + 执行时间 + **LLM 调用次数**（110000 vs 330）+ observed delegation rate | 三臂同系统对照；Cortex Analyst 单 prompt GPT-4o（营销） | 论文 public-data-**no-code**；被测栈闭源云；营销 70% 黑盒 |
+| **BigQuery ML** | 官方只发"internal benchmarking"数字：6h 单 job × 固定 QPM 配额 × 固定 tokens/row，dynamic token batching 打满 | 合成 per-row（embedding 50 tok/row、文本 500 in+50 out）；客户负载 Faraday 12.6M embeddings/45min；bbc_news 教程 | 吞吐（rows/6h）、可靠性、$ | 旧版自比、Vertex AI PT、Gemini Flash vs Pro | 多数 closed-cloud-**blackbox**；唯一 public-data-public-code 是 bbc_news 教程 |
+| **Oracle AI Vector Search** | LLMPerf + ann-benchmarks 数据集 + 4 场景正态分布 token 模型 | SIFT1M/GIST1M/Fashion-MNIST；Llama 3.2 3B on OCI A10；LLMPerf synthetic chat N(200,40)/N(100,10)；semantic-cache demo | TTFT/TPOT/Latency/Throughput + MBU + MFU；recall@k；QPS | 匿名竞品 O-DB-VDB-1/2/3、O-VDB、O-DOCDB（**反模式**：匿名 + 承认对手 2–4× CPU 线程） | 协议公开（LLMPerf）+ 公开数据；但匿名 baseline 被社区批评；**自承 LLMPerf 把 tokenization 编码时间误算进 tokens/s** |
+| **PostgresML** | 严谨度两极分化：唯一严谨的 Scaling 篇用 pgbench + EC2 机型 + 100+ 配置扫描 + 公开 raw CSV；其余 4 篇教学博客用 `psql \timing` 单次/25 次平均、无 warm-up | flights（航班延误）XGBoost；Amazon US Reviews 5M 行 embedding；HuggingFace 模型；pgbench | rows/s、predictions/s、p99（仅引用 OpenAI 的）、$ | Python+Flask+Redis（多跳，被 HN 批）、MindsDB（无 GPU）、OpenAI、Pinecone/Qdrant/Weaviate | Scaling 篇 public-data-public-code；其余 toy（2-文档 RAG） |
+| **pgai/pgvector/pgvectorscale** | 全聚焦 read-side ANN：ANN-Benchmarks fork（修了多线程 QPS + warmup/test 分离：29k 预热 + 1000 disjoint 测试）画 recall@k vs QPS Pareto | 50M Cohere Wikipedia 768d；LAION 5M/100M；ann-benchmarks glove/sift；OpenAI ada-002/3-small | **recall@k vs QPS**（recall-defined throughput）+ p50/p95/p99 + $/month-for-target-QPS | Pinecone s1、Qdrant、pgvector HNSW/IVFFlat、pgvectorscale StreamingDiskANN、VectorChord、exact | 协议+数据+OSS 扩展公开（**最可复现**之一）；但 YDB/wasowski 第三方复现发现 harness/单节点竞争主导差距 |
+| **Databricks Lakehouse AI** | 分层：(1) AI/Vector Search 最透明（Locust 逐步并发 + 二分搜索 max sustainable QPS + per-component 计时）；(2) LLM 推理指标框架最成熟（MosaicML TTFT/TPOT/Latency/Throughput+MBU+MFU）；(3) AI Functions 最不透明（10x/100x 营销） | 10亿向量 768d（Standard 320M / Storage-Opt 1B+）；2048/256 RAG summarization；512/64 静态批 | recall@10 + p50/p99；TTFT/TPOT/MBU/MFU；ann_time/embedding_gen_time/reranker_time/response_time 分解 | Standard AI Search、FasterTransformers+TensorRT-LLM、旧版自比 | 协议层公开（Locust notebook、benchmarking notebook、Eval Gauntlet PDF）；被测系统闭源云 |
+
+### B.3 跨厂商共识与惯例
+
+**benchmark 使用（核心发现）**：**数据库 AI 算子层目前没有任何被主流厂商采纳的现成标准 benchmark。** TPC-DS/TPC-H 仅作数据仓库语境或 Marketplace 数据，**从未用于 AI 算子基准**；MTEB 只被 PostgresML 外部引用、Databricks 明确不用；ann-benchmarks 的标准 harness 无厂商直接跑（但数据集 SIFT/GIST/Fashion-MNIST 被 Oracle/pgai 私有协议复用）；MLPerf、Spider/BIRD 全无人用。厂商实际复用的"准标准"来自三个相邻社区：NLP/HuggingFace 公开集、IR/向量检索公开语料、经典 DB-ML 公开数据。**→ 本项目没有现成 DB-AI benchmark 可套，必须自定干净合同（§7.5 已做）+ 引用上述公开数据集作 workload 锚点。**
+
+**指标惯例**：
+- 吞吐口径分裂：LLM 生成算子用 token 级（tokens/s、output tok/s across concurrent、combined in+out tok/s）；批处理/embedding 用行级（rows/s、QPS@recall、req/s）
+- **LLM 推理成熟指标分解（Oracle + Databricks 共识，已成行业词汇）**：TTFT、TPOT、`Latency = TTFT + TPOT×n_out`、`Throughput = output tok/s across concurrent`、MBU（decode-bound 利用率）、MFU。**本项目已用 MFU，缺 TTFT/TPOT/MBU**
+- 质量口径：分类用 ground-truth F1/precision/recall（Snowflake）；向量检索用 recall@k（Oracle/pgai/Databricks 共识）；生成质量用公开学术集（Databricks Mosaic Gauntlet）；均不主观打分
+- 成本口径跨厂商一致：$/month、$/M-rows、$/M-tokens、$/vector、vectors-per-$
+- 两个机制解释力强的辅助指标：**LLM 调用次数**（Snowflake 110000 vs 330）、**row-level success rate**（BigQuery >99.99%）
+- GPU 利用率口径最不成熟：PostgresML 用 htop+nvidia-smi 肉眼、Oracle 自承 LLMPerf 把 tokenization 编进 tokens/s
+
+**workload 惯例**（三种，可信度不同）：(1) 真实公开数据集（最可信）；(2) 合成固定形状（Databricks 2048/256、Oracle 4 场景 N(mean,std)、BigQuery 固定 tokens/row）——参数化清晰但非真实；(3) 私有客户负载（仅动机）。**新兴共识：按 (prompt_len, response_len) 参数化**（Oracle 的 Random-Length/Chat/Generation-Heavy/RAG 四场景）。规模：向量侧 10M/100M/1B；生成/embedding 侧 1M–10M 行。
+
+**baseline 惯例**：两种公认做法——(1) 命名的同协议外部竞品（pgai 的 Pinecone/Qdrant、PostgresML 的 OpenAI/MindsDB）；(2) 多臂同系统对照（Snowflake 三臂、PostgresML 1/2/5 副本自比）。**反模式**（被社区批评）：Oracle 匿名+不对齐资源、PostgresML Python baseline 多跳、"自比旧版 + 无外部锚点"营销（BigQuery 100x/30x、Snowflake 70%、Databricks 10x/100x）。共识：baseline 必须共享数据读取/写回路径 + 对齐资源。
+
+**可复现性缺口（5 层）**：① 被测系统几乎全闭源云黑盒（Snowflake/BigQuery/Oracle/Databricks）；② public-data-no-code（放数据不放 harness）；③ 营销数字无协议；④ 匿名+不对齐资源 baseline；⑤ 单次计时无 warm-up/repeats/CV。**最可复现的也只到 public-data-no-code 级，无人达全栈可复现。→ 本项目全开源 vLLM+Ray+Daft 栈 + 公开数据 + 全量 CSV 进 README，可复现性严格优于全部 7 家，是天然差异化卖点。**
+
+**独特空白（最重要）**：**没有任何厂商公开 benchmark "写入侧/上游调度 pipeline"**（embedding 生成吞吐、ingestion、writeback、批合并、提交节奏）——pgai 只测并发写回正确性不测吞吐，其余完全忽略。**本项目的主战场（数据组织 + 提交控制 + 写回）正好填这个洞。**
+
+### B.4 对本项目的具体启示
+
+**应采纳（让评估被社区认可）**：
+1. **公开数据集作 workload 锚点**：文本分类/过滤用 Snowflake HF 集（NQ/BOOLQ/IMDB/SST2/QUORA/FARL + entity-matching）；embedding/向量用 pgai Cohere 50M + LAION 5M/100M 或 Oracle SIFT/GIST/Fashion-MNIST；文本生成用 BigQuery bbc_news 或 Databricks 2048/256 形状——多家交叉复用的"准标准"。
+2. **补 TTFT / TPOT / MBU**（Oracle + Databricks 共识），与厂商级 LLM 服务指标口径对齐（与附录 A 的 P0 缺口一致）。
+3. **正态分布 token workload 模型 + 4 场景分类**（Oracle 的 Random-Length/Chat/Generation-Heavy/RAG）作 AI_COMPLETE workload 生成网格。
+4. **recall-defined throughput**（QPS@95% 或 99% recall，单线程 + disjoint warmup/test split）+ ANN-Benchmarks 协议框架——裸 QPS 社区无意义。
+5. **LLM 调用次数**作独立于 wall-clock 的成本指标（解释 token-budget/批合并减请求数的机制）。
+6. **单变量扫描**刻画机制边界（Snowflake selectivity 0.1→1.0；本项目 token-budget/active-work/K_max 容量曲线固定其余只扫一个）。
+7. **成本归一化**（$/M-tokens、J/1k-tok、vectors-per-$）——本项目已有 J/1k-tok，补 $/M-tokens。
+8. **per-component timing 分解**对齐 Databricks（ann_time/embedding_gen_time/reranker_time）——本项目已有 db_fetch/organizer/submit/fanin/bounded_wait 同构。
+9. **Ray LLMPerf / Locust / pgbench** 作可引用的社区认可 bounded 负载生成器（feeding 门禁的 bounded HTTP baseline 显式对齐 LLMPerf/Locust：逐步并发 + 二分搜索 max sustainable QPS + Little's Law）。
+
+**应强化（项目已有的优势）**：
+10. §7.5 的"1 warmup + 3 formal repeats + CV 控制 + feeding-saturation ≥95% bounded 门禁"**已超过除 Snowflake 论文外所有厂商的公开协议**——在报告中明确声明此协议层级。
+11. **三臂对照设计**（Snowflake 强 oracle / 动态 / 便宜 static）直接对应本项目"固定静态 credit 是强 baseline、动态需显著优于同上限静态才过 5% 门禁"——除 Snowflake 外无厂商做到。
+12. **测量卫生**：tokens/s 计算明确排除 tokenization/编码时间（从 vLLM Prometheus prompt_tokens_total+generation_tokens_total 取）——避免重蹈 Oracle 公开 bug。
+
+**应规避（被社区批评的反模式）**：
+13. 禁止匿名 baseline（Oracle O-DB-VDB 反模式）——baseline 必须命名 + 对齐资源。
+14. 禁止"自比旧版 + 无外部锚点"营销数字（BigQuery/Snowflake/Databricks 反模式）——AGENTS.md §6 已编码。
+15. 禁止单次 `psql \timing` 或 toy 2-文档 RAG（PostgresML 反模式）——必须 formal repeats + 真实规模。
+
+**定位（项目独特贡献）**：
+16. **"写入侧/上游调度 pipeline benchmark"是 7 家厂商留下的空白**——本项目主战场（数据组织 + 提交控制 + 写回）正填此洞，评估 framing 中明确点出。
+17. **PolarDB Lakebase 是最近、最同栈的工业系统**——Related Work 必须点名，项目差异 = 模型服务状态感知 vs 通用数据流 backpressure + 闭源产品未公开的调度消融。
+
+### B.5 不能声称
+
+- **不引用任何厂商的提速倍数**（100x/30x/10x/100x/70%/4-10x/2.2-7.6x 全是闭源黑盒或匿名 baseline 营销）。跨厂商对比只能说"采用某厂商公开 tutorial 同款公开数据（如 bbc_news、Cohere 50M）与公开过程做可复现对照"，不能声称对标某厂商闭源数字。
+- PolarDB 的 scoop 核查状态为"**未见研究论文证据**"，非"确定不存在"——正式定稿新颖性前需补 VLDB/SIGMOD/ICDE 阿里云 Daft 团队学术文献检索。
+- 本附录厂商方法论为**厂商来源/官方文档**（非独立第三方）；PolarDB 同栈与开源 Daft 关系为**官方文档 + 开源仓库交叉核实**的**本地事实**；新颖性边界（PolarDB 不观测 vLLM 状态）为基于其公开文档未提及的**合理推断**（闭源内部无法确证）。

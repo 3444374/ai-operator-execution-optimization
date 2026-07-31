@@ -1,5 +1,97 @@
 # 项目日志
 
+## 2026-07-31 baseline 同步：直接对比 vs Related Work + 补 OceanBase
+
+- 用户 push：需明确"哪些 baseline 要数字对比、哪些只 Related Work 定位"，并补上
+  漏掉的 **OceanBase AI 算子**（项目既定的数据库原生算子产品级 baseline）。
+- 校正 scope §10.1 + image_clip plan §7 + msmarco plan §5：
+  - **A. 直接 baseline**（同杠杆=执行，必须跑+比数字）：Daft native、**OceanBase
+    AI_EMBED**（无 Daft/Ray，DB 原生；B1 门禁已过函数存在性，部署待可部署环境）、
+    Ray Data、naive、bounded direct。
+  - **B. Related Work**（不同杠杆=语义/计划，只引用+定位，不比数字）：LOTUS /
+    Palimpzest / Abacus、Cortex / Oracle（闭源）、Smart / GaussML、SemBench。
+- 审稿人"怎么不跟 LOTUS 比"标准答法：LOTUS 优化调用数/语义（不同杠杆，互补），
+  本文优化执行调度；实验对比同杠杆执行层 baseline。
+- OceanBase 状态：CE 4.5.0 含 AI_COMPLETE/DBMS_AI_SERVICE（B1 门禁过），当前
+  AutoDL 容器 observer init 受阻，待特权容器/VM 复跑——见
+  `experiments/results/oceanbase_b1_gate_20260731/` + install_runbook。
+
+## 2026-07-31 评估口径校正：数据库 AI 算子论文（执行优化子方向）
+
+- 用户 push：recall@10 跟"执行调度优化"没关系（它是向量检索质量，跟调度正交）；
+  应以**数据库 AI 算子论文**（LOTUS/Cortex/GaussML/Smart/Galois/SemBench）为锚，
+  不对标 vLLM/Sarathi（serving 内部，非本层）。
+- 校正 scope 文档 §10.1：本项目 = 数据库 AI 算子 field 里的**执行优化子方向**，
+  与 LOTUS 的语义优化**互补**（同领域不同杠杆）。recall@10 降为**质量门禁**
+  （非主指标、非卖点）；性能主指标 = execution time/throughput + 阶段拆解 +
+  cost + vs baseline speedup + scaling（6 项，按 LOTUS/GaussML 口径）。
+- Baseline 校正：Daft native（关键，PolarDB 同款）+ naive + Ray Data +
+  bounded direct；**LOTUS/Palimpzest 不作 baseline**（不同杠杆，仅 Related Work
+  定位互补方向）。
+- 执行层吞吐/搬运协议：无现成 benchmark（厂商全闭源），§7.5 自定，自定本身是贡献。
+
+## 2026-07-31 workload 纠正：CLIP 回升首个，MS MARCO 降级（数据搬运判据）
+
+- 学长判据校正：数据搬运瓶颈有两段——送 vLLM（拥挤）+ **DB 读出来 / CPU 搬到 GPU**
+  （机会）。当前 prompt **文本每行 ~1KB、搬运太轻，瓶颈不显现**。workload 必须让
+  "DB 读 + CPU→GPU 搬运"重到能显现。
+- 据此**推翻上一条"MS MARCO 首选"**：MS MARCO 仍是文本，token ID 紧凑（~1KB/行），
+  搬运轻，不满足判据 → **降级为"文本轻对照"**（仅证明文本下不显现）。
+- **图像 CLIP 回升为首个 workload**：每行 CPU→GPU 搬运 ~600KB（文本 ~600×）+
+  JPEG decode/resize 重，DB 读 + 搬运瓶颈能显现。与冷启动（机制，parked）无关。
+- **benchmark 三层讲清**（scope §10.1）：① 数据集 ImageNet/COCO（公开经典）；
+  ② 质量协议 ANN-benchmarks recall@10（CCF 认可）；③ 吞吐/搬运协议——无现成
+  benchmark（厂商全闭源），项目 §7.5 自定（自定本身是贡献）。可引 BigVectorBench
+  image 切片 + ANN-benchmarks。
+- 同步翻转所有索引：scope §5/§10、image_clip plan（解冻回升）、msmarco plan
+  （降级对照）、experiments/README、experiments/plans/README §〇、data/README、
+  overview/current_direction_and_plan、PROJECT_INDEX。题目/官方方向不变。
+
+## 2026-07-31 MS MARCO workload 设计 + 执行计划（首个锁定 workload）
+
+- 新增 `experiments/plans/msmarco_embedding_workload_20260731.md`——首个
+  锁定的 workload（当务之急，机制无关）。MS MARCO Passage 8.8M 批 embedding，
+  作 BigVectorBench（VLDB'25）的 text 切片入口。
+- 选定理由：被认可（MS MARCO leaderboard + BigVectorBench text 切片）+ fit
+  18G + 大数据（8.8M 段）+ 异构（CPU tokenize vs GPU embed）+ 复用现有文本
+  管线 + 机制无关（exercise 痛点①③，冷启动②解封后可升级多模态切片）。
+- 设计要点：BGE-base-en-v1.5（1024d）→ pgvector；embedding 走独立 FastAPI
+  endpoint（BGE 非 vLLM），复用项目 Ray→HTTP 机械。主 bar = 项目动态 vs 项目
+  静态 >5%（不是 vs Daft Native）。Go/No-Go 门禁 = CPU tokenize/GPU embed
+  时间比 >0.3。指标含 recall@10（ANN-benchmarks 协议）。
+- 执行计划 11 步：下数据 → §6 go/no-go 画像 → 建 endpoint → 导入 PG → smoke
+  → baseline（bounded + 项目静态）→ ours 动态 → formal 3 repeats → 决策点
+  （动态>静态？）→ 扩 image CLIP → 远期 audio+冷启动。
+- 升级路径：benchmark 名始终 BigVectorBench，text 切片 → image → audio，
+  场景认可度一路保持。
+
+## 2026-07-31 方向 reframe：数据库↔GPU 经 Daft 桥接（学长反馈 + 三痛点核实）
+
+- 学长完整反馈把场景 reframe 成"数据库↔GPU 经 Daft 桥接、GPU 侧算子多样
+  （不止 vLLM）、大数据量、流式 pipeline"，明确不能用 ShareGPT 这种对话式
+  workload。记录到 `notes/communication_notes.md` §5.1.1。
+- 新增 `research/daft_db_gpu_bridge_direction_scope_20260731.md`（academic-pipeline
+  Stage 1 scoped 输出）：工作流 `w6xclfb0g` 用 Daft 源码一手核实学长三痛点
+  全部真实——① `@daft.cls(gpus=N)` 写死（`daft/udf/__init__.py` L360-410）、
+  ② 多算子冷启动 Daft 完全不做（无 model garden/swap/LRU）、③ 流式 dynamic
+  batching 是 model-service-blind。可防御性排序 ② >> ① > ③。
+- 核心发现：**可防御界面 = online vs offline 分界**——所有 scoop 先验
+  （ServerlessLLM/Llumnix/AlpaServe/Clockwork/INFaaS/Chiron/Autellix/TORTA +
+  Daft v0.6.9 prefix + llm-d/Preble）都是 online serving，结构性无法利用批
+  dataflow 在 plan 阶段已知的两份 foreknowledge（算子 DAG + 各算子数据量）。
+  这翻转了之前 §5.5 的 partially-scooped 判定——批 dataflow + foreknowledge
+  + 多样异构算子调度是结构性空白。
+- Fatal-flaw：2×4090(48G HBM) + 18G 盘下，模型 garden ≤18G < 48G HBM，自然
+  条件下永远不触发冷启动——冷启动 regime 需"约束预算"构造或扩盘。
+- 用户决定：方向 validate；**当务之急 = 锁 benchmark/workload**（学长原则：
+  场景先被认可，机制后说；与冷启动无关，之前文档把优先级写反了已修正）；
+  冷启动（机制候选）parked，后面做；题目精修暂缓。
+- scope 文档 §10 推荐首个 workload = MS MARCO Passage 8.8M 批 embedding
+  （被认可 + fit 18G + 大数据 + CPU tokenize vs GPU embed 异构 + 复用文本管线 +
+  机制无关）。锁定后即可开跑，不必等冷启动/导师定机制。
+- 同步：`experiments/plans/image_clip_workload_lock_20260731.md` 状态降级
+  （CLIP 从旗舰降为 model garden 里一个算子/模态探针，设计冻结）。
+
 ## 2026-07-31 评估指标体系调研（文献 + 数据库厂商）
 
 - 新增 `research/evaluation_metrics_survey_20260731.md`：以
@@ -18,6 +110,21 @@
 - 落点：prefix cache hit rate 直接服务当前 prefix 路由结论的隔离消融；
   TTFT/ITL 分位使 service_p99 的 prefill/decode 可解释；登记到
   `experiments/plans/experiment_status_and_gaps.md` 指标缺口区（待补）。
+- 文档扩展（同日）：该调研文件追加**附录 A**（workload/数据集五类清单 +
+  AI_COMPLETE 可用性判定——多数 SemBench/LOTUS 任务是 filter/classify 短输出，
+  非 AI_COMPLETE；只有 `map` 形态匹配）和**附录 B**（7 家数据库厂商 AI 算子
+  测试方法论：逐家怎么测 + 跨厂商共识 + 17 条项目启示 + PolarDB Lakebase
+  同栈专项）。
+- **PolarDB Lakebase 同栈核查**（用户提示 + 专项 agent 核实）：PolarDB
+  Lakebase 集成**开源 Eventual-Inc/Daft on Ray**（非 fork），内置
+  embed/classify/prompt——是迄今最贴近本项目技术栈的工业产品（相关度 4.5/5），
+  强化工业正当性；但其卖点（异构调度/背压/util 60→80%）逐条对应项目方向，
+  **新颖性门槛因此拉高**——项目不能把"Daft on Ray 异构调度+背压"当新颖性。
+  新颖性边界切清：PolarDB 做通用数据流 backpressure，**不观测 vLLM 内部状态**
+  （KV/prefix/queue）；项目能占的切片 = 模型服务状态感知请求成形 + 闭源产品
+  未公开的上游调度开放消融。scoop 待确认（未见研究论文，但未穷尽学术检索）。
+  PolarDB 命名陷阱：无 `AI_COMPLETE`（Snowflake 命名），等价物是 `polar_ai.*`
+  + Daft `prompt()`。**题目不变。**
 
 ## 2026-07-30 双协议 baseline 与 feeding-first 门禁
 
@@ -3073,6 +3180,7 @@
   新存储约定（方向分组 + raw/ + README）首次采用，后续新数据（RC1 重测等）按此存。
 - **对方向**：跨引擎共享 KV（Mooncake/LMCache）价值定位在**多 endpoint consolidation**（现实 DB-AI 部署：多模型
   endpoint 共享 GPU），不在小 KV。2-ep 作为 RC1 数据组织重测（#21–24）的干净基线合理（策略效应不被 routing/consolidation 混淆）。
+
 ## 2026-07-31 RC1 数据组织策略系统重测（2-ep + 4-ep，1.5B，cache-ON）：regime-dependent 闭合
 
 - **动机**：07-18/19/25/26 早期 RC1 数据组织实验在旧数据集/rows(s)/单 5070/未喂饱（07-30 cache-OFF run GPU 67.7%）下，
