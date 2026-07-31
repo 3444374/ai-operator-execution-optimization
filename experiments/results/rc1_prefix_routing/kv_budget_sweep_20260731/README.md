@@ -20,6 +20,14 @@
 - **配置**：`/root/autodl-tmp/gates/prefix_routing_2ep_util{0.3,0.45,0.6}.json`（util 0.9 复用 `prefix_cache_routing_2ep_1.5b.json`）。
 - **原始数据**：`raw/`（4 个子目录，每点 runs.csv + manifest.json + per-run request/submission/resource trace）。
 
+## 合规性自检
+
+- **喂饱 vLLM：是**。`vllm_num_requests_running` 持续 mean ~139 / max ~194，`vllm_num_requests_waiting` ≈ 0（max 0–3）→ GPU 持续满载、无饥饿。（`gpu_utilization_pct=0%` 是 `gpu_metrics_status=snapshot` 的瞬时采样假象，不可信。）
+- **E2E 效率**：E2E tokens/s ≈ 模型侧的 **88–91%**（pipeline 开销 ~9–12%：DB fetch + Daft organize + fan-in；`writeback=none`）。
+- **正式 feeding-saturation 门禁（E2E ≥95% of 同协议 bounded）= 未算出**：本扫描**没跑 bounded HTTP 臂**，缺同 config 的 bounded 上限。**合规缺口**——#22 RC1 baselines 补 bounded HTTP 后该门禁才可正式算。
+- **指标异常（待排查）**：`vllm_kv_cache_usage_perc` 全 util 点 0.1–0.5%（mean 0.1–0.3%），与 util 0.3–0.6 的 13–15% SLO 违约（理应 KV 抖动）**不一致**——疑似 snapshot 采样漏峰或指标在该 setup 下不可靠。影响"KV 压力"叙事的可信度（吞吐/SLO 模式方向上仍支持"大 KV = 少重算 = 快"，但 KV-usage 指标未佐证）。
+- **策略是否到极限**：routing 两臂同 config（仅 routing 不同）、同 ~139 running → matched-KV 对比有效；Δ 的相对结论不依赖绝对饱和度。
+
 ## 3. 实验设计
 
 固定 endpoint 数 = 2、workload、调度合同，**只变 `gpu_mem_util`**（per-endpoint KV 预算）。每点 A/B：`prefix_affinity`（rendezvous hash by prefix_key 钉到一端）vs `least_queued`（散到两端的 baseline）。Δ = (affinity − least_queued) / least_queued。
@@ -35,12 +43,24 @@
 | 0.6 | ~15.6GB | 54,653 [54653,54195,54770] cv0.6% | 54,119 [54119,54324,54063] cv0.3% | **+1.0%** | 14.2% / 14.8% | 32.6s / 32.8s |
 | 0.9 | ~22.8GB | 64,804 [64709,64900] cv0.2% (n=2) | 64,565 [64683,64447] cv0.3% (n=2) | **+0.4%** | 0.0% / 0.0% | 27.5s / 27.6s |
 
+**端到端视角（E2E `tokens_per_s`，全链路 DB→organize→Ray→vLLM→fan-in，`writeback=none`）：**
+
+| util | E2E affinity | E2E least_queued | E2E Δ | E2E/模型 (aff/lq) | E2E p95 (aff/lq) | E2E p99 (aff/lq) |
+|---|---|---|---|---|---|---|
+| 0.3 | 48,277 | 49,274 | **−2.0%** | 89.0% / 90.8% | 32.8s / 32.2s | 33.5s / 32.8s |
+| 0.45 | 49,676 | 48,612 | **+2.2%** | 91.5% / 89.5% | 31.9s / 32.6s | 32.6s / 33.3s |
+| 0.6 | 48,592 | 48,369 | **+0.5%** | 88.9% / 89.4% | 32.6s / 32.8s | 33.3s / 33.5s |
+| 0.9 | 57,044 | 56,992 | **+0.1%** | 88.0% / 88.3% | 27.5s / 27.6s | 28.2s / 28.3s |
+
+E2E 吞吐 48–57k tok/s（util 0.9 最优 ~57k、0% SLO；0.3–0.6 ~48–49k、13–15% SLO）；**E2E ≈ 模型侧的 88–91%**（pipeline 开销 ~9–12%）。
+
 ## 5. 结果解释
 
 ### 事实
 - **2 endpoint 下，prefix_affinity 在整个 KV 预算范围内中性**：Δ ∈ [−0.1%, +1.0%]，4 个 util 点全部 <5% 门禁。
 - 包括**正在淘汰抖动的 util 0.3–0.6**（SLO 违约 12–15%，P95 ~32s）——即便单 engine KV 小到引发明显抖动，2 endpoint 下 affinity 仍无收益。
 - 只有 util 0.9（~22.8GB 显存，working set 完全放下，SLO 违约 0%）回到正常吞吐（~64.8k vs 抖动点的 ~54.2k）。
+- **E2E 视角同结论但更噪**：E2E Δ ∈ [−2.0%, +2.2%]（pipeline 开销叠加波动），仍全部 <5% 门禁 → E2E 下 prefix_affinity 也中性。原结论（endpoint 数是驱动）在 E2E 视角不变。
 
 ### 推断（matched-KV 对比）
 - **2-ep/0.45（~12GB 显存，~7–8GB KV）= −0.1%** 对 **4-ep/0.43（~7GB KV/端）= +5.9%**：per-endpoint KV 量级相当，**只差 endpoint 数（2 vs 4）**，结果从中性跳到 +5.9%。
