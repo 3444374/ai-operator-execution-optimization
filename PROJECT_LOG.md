@@ -2970,3 +2970,67 @@
   （`test_postgres_profile_scheduling` 本地缺 pyarrow 无法 import，与本次改动无关。）
 - **边界**：探测只覆盖同机 vLLM（runner 与 vLLM 共宿）；vLLM 远程部署时探不到→warn。
   仅校验 `prefix_caching`（最易飘、影响最大）；其他 `service_metadata` 字段仍按声明值。
+
+## 2026-07-31 4-endpoint prefix-affinity routing 消融（1.5B，跨过 5% 门禁）
+
+- **背景**：2-endpoint/7B routing 实验中 prefix_affinity 相对 least_queued 完全中性
+  （−0.1%，`experiments/results/prefix_cache_routing_req_20260730/`）。其 §6.2 把
+  「>2 endpoint 下重测」列为可选扩展。本实验在 4×Qwen2.5-1.5B（2 endpoint/卡）上
+  重测，检验「高淘汰压力 regime 下路由是否重新有空间」。
+- **结果**（3 formal，seed 20260729，0 incident，manifest completed）：
+  prefix_affinity 46,943 vs least_queued 44,317 model-request tok/s = **+5.9%**，
+  raw 不重叠、CV≤0.9%；SLO 违约 25.1% vs 31.4%（−6.3pp），P95 36.16s vs 39.31s（−3.15s）。
+  **跨过 5% 晋升门禁**——首个非中性的路由结果。报告：
+  `experiments/results/prefix_cache_routing_4ep_1.5b_20260731/README.md`。
+- **谨慎边界**：同时改了 model（1.5B vs 7B）、endpoint 数（4 vs 2）、per-endpoint KV
+  大小，**不能干净归因于 endpoint 数单一变量**；两臂 SLO 违约 25–31% 处于过饱和
+  /cache 抖动 regime，相对比较成立、绝对值是 thrashing 区间。跨门禁但需隔离消融
+  （4-ep/7B 或 2-ep/1.5B）后才正式晋级。per-arm APC 命中率仍未单独记录（与 0730 同缺口）。
+- **为了 4 endpoint 做的调整（4 项）**：
+  1. **代码（使能点，commit `a26c1e2`）**：`code/src/profiling/manifest_guard.py`
+     `endpoint_count != 2` → `< 2`，错误消息 "two endpoints" → "at least two endpoints"。
+     注释明确：分片数上精确、超出变松，只允许 routing 消融、不能用于 pinned 排名。
+     新增测试 `test_profile_manifest_contract_accepts_more_than_two_endpoints`。
+  2. **配置**：`prefix_cache_routing_4ep_1.5b.json` 由 0730 的 req 配置派生——4 个
+     endpoint URL、`--endpoint-gpu-ids 0,0,1,1`、模型 qwen2.5-1.5b（completion/cost/tokenizer
+     三处）、4 metrics URL、scenario 去掉 pala 只留 2 臂。
+  3. **vLLM 部署**：`4ep-1.5b.env`，4×Qwen2.5-1.5B-Instruct，2 endpoint/卡，
+     `VLLM_GPU_MEMORY_UTILIZATION=0.43`，prefix-caching ON。换 1.5B 是为制造真实淘汰压力
+     （7B/2-ep 下 APC 已覆盖 working set → 路由中性；1.5B/4-ep 下 APC 不够 → 路由效应显现）。
+  4. **环境（主机重启后）**：清理 stale `/tmp/ray/ray_current_cluster`（见下条）。
+- **stale Ray pointer 事故**：主机重启后首次 launch 在 warmup 的 `ray.init()` 卡死 ~14 分钟
+  后 `ConnectionError`，0 请求发出。根因：`/tmp/ray/ray_current_cluster` 残留重启前死地址
+  `172.17.0.8:6380`（重启后容器 IP 变为 172.17.0.3），ray.init 读取 stale 指针反复连死 GCS。
+  修复：删除该指针（无活跃 Ray 进程需 stop）。失败首跑目录保留为
+  `..._4ep_1.5b_20260731_failed_raystale/` 作事故证据。回归防范写入
+  `deploy/autodl/README.md` 开机恢复流程。
+- **对课题含义**：prefix 路由方向**有条件重新打开**（2-ep/7B 中性结论在该 regime 仍成立）；
+  25–31% SLO 违约 + affinity 收益共同指向 KV cache 淘汰/重算瓶颈，为用户讨论的
+  Mooncake/共享 KV cache 方向提供了首个动机数据点（待与导师确认是否纳入为第二贡献）。
+
+## 2026-07-31 prefix 实验数据回填 git + 跨数据集（agent/concentrated）补分析
+
+- **问题**：盘点发现构成当前 prefix 证据基底的三个 registry 引用目录——
+  `prefix_cache_data_org_20260730/`、`prefix_cache_routing_req_20260730/`、
+  `prefix_cache_routing_4ep_1.5b_20260731/`——**git 里只有 README.md，底层 runs.csv/manifest/per-run
+  CSV（13–22 MB）全部只在远端**；4ep 目录更是 0 文件（README 仅本地 untracked）。一旦远端释放，活结论（+5.9%
+  重开 prefix 方向）将无原始证据。属「有意义数据滞留远端」风险。
+- **动作（分支 `claude/sync-prefix-cache-evidence`，未 push）**：
+  1. 从 AutoDL 拉回 5 个目录的 runs.csv + manifest.json + per-run requests/submissions/resources/flush
+     CSV（排除 gitignore 的 `*.log`）：上述 3 个 + `prefix_routing_agent_20260730/` +
+     `prefix_routing_concentrated_20260730/`。
+  2. 新写 Tier 2 跨数据集报告：`prefix_routing_agent_20260730/README.md`（agent + concentrated 合并分析，
+     七步结构）+ `prefix_routing_concentrated_20260730/README.md`（自包含简表 + 指回 agent 报告）。
+  3. 同步 `EXPERIMENT_EVIDENCE_REGISTRY.md`（§2 Prefix-aware 行、§3 新增两目录行、§6 item 5）、
+     `experiments/plans/experiment_status_and_gaps.md`（§1 表 + P1 段）、`PROJECT_OUTLINE.md`（P1-4）：
+     prefix 状态从「2-ep/7B 收口」细化为「2-ep/7B 跨三数据集吞吐中性 + 高淘汰压力 regime 双数据点（4-ep/1.5B +5.9%、agent-trace pala P50 −7.8%）有条件重开」。
+- **新发现（agent-trace pala 信号）**：2-ep/7B、lmcache_agent（851 行、高 cache 压力 workload）下 pala
+  相对 least_queued：吞吐 −1.9%（**未过门禁、负向**），但 **P50 64.2 vs 69.6s = −7.8%、SLO 78% vs 82% = −3.8pp、
+  goodput +17%**。concentrated（cache 压力低）同信号弱（P50 −1.3%）。**信号随 cache 淘汰压力增大而增强**，
+  与 4-ep/1.5B +5.9% 同机制——为「cache 淘汰压力是 prefix 方向价值是否显现的开关」补第 2 个独立数据点（仅改
+  workload、不混淆 model/endpoint）。agent/concentrated 均 12/12 ok、0 incident、CV≤0.9%。
+- **不同步（判定）**：4 个 `checkpoint_*`/`slo_ewma_flush_gate128` 是 1-repeat 门禁 screen，结论已被 git 里
+  3-repeat 正式目录（active_work_saturation/actor_pool_shape/service_quantum/slo_ewma_formal）完整覆盖，
+  不进 git；~30 个带时间戳 debug 变体 + 早期无日期目录属迭代噪声/被取代，保留远端不同步。
+- **待办**：per-arm APC 命中率指标仍缺（runner resources 只采样 KV 用量）；agent pala P50 改善需人为缩 KV
+  制造可控淘汰率单调验证；4-ep/1.5B +5.9% 仍需 4-ep/7B 或 2-ep/1.5B 隔离 model×endpoint×cache 解耦。

@@ -23,7 +23,7 @@
 | 固定行 batching | `code/src/scheduling/batching.py`、profiler 与 baseline tests | `local_vllm_qwen15b_baseline/` | 真实 GPU baseline；用于和计算量感知组织方式比较。 |
 | Sequential token-budget | `code/src/scheduling/batching.py`、batching tests | baseline、joint、BFD 与 row-cap 系列 | 已重复验证；当前数据组织默认，必须同时满足 token budget 和 row cap。 |
 | Length-align | batching 实现与测试 | local baseline 早期消融 | 有真实初筛但缺独立、受控的正式重复；不能声称稳定收益。 |
-| Prefix-aware | batching 实现与语义测试 | `prefix_aware_batching_20260726/`、`prefix_cache_data_org_20260730/`、`prefix_cache_routing_req_20260730/` | cache-off 0/30/70/100% 无稳定收益；cache-on batching（within 1.2%）+ routing（-0.1%）均中性 <5% 门禁。prefix 方向收口，vLLM APC 覆盖上游 prefix 组织/路由。 |
+| Prefix-aware | batching 实现与语义测试 | `prefix_aware_batching_20260726/`、`prefix_cache_data_org_20260730/`、`prefix_cache_routing_req_20260730/`、`prefix_routing_agent_20260730/`、`prefix_routing_concentrated_20260730/`、`prefix_cache_routing_4ep_1.5b_20260731/` | cache-off 0/30/70/100% 无稳定收益；cache-on 2-ep/7B batching（within 1.2%）+ routing 跨分散/agent/concentrated 三数据集吞吐全部 \|Δ\|<2% 中性 <5% 门禁；但 cache-on **4-ep/1.5B routing +5.9% 跨门禁**（高淘汰压力 regime，混淆 model×endpoint×KV 且过饱和，待 4-ep/7B 或 2-ep/1.5B 隔离消融），且 **2-ep/7B agent-trace 上 pala P50 −7.8%/SLO −3.8pp**（高 cache 压力 workload，过饱和区间，吞吐 −1.9% 未过门禁）。低淘汰压力 regime prefix 收口，高淘汰压力 regime 有条件重新打开；**cache 淘汰压力是信号是否显现的开关**。 |
 | BFD、output-aware、row-cap-first | batching 与 cost-mode tests | output-aware BFD、row-cap-aware packing 全系列 | 512 行有局部信号，1024 行未泛化且 SLO 明显恶化；不采用为默认，只保留可复用设计点。 |
 | Arrival replay 与 request lifecycle | lifecycle、runner 和 trace tests | `request_lifecycle_gate_20260725/` 及 flush 系列 | exactly-once、request→submission、arrival/flush/complete 时间链已闭环。 |
 | Per-endpoint active-work admission | active-work credit、least-work/least-queued routing 与 profiler tests | `dual_gpu_active_work_saturation_20260729/` | 双 4090 八档、每档三次 formal。65K 达到最大吞吐 97.80%，下一档仅 +0.92%；按预注册规则选为最小饱和点。98K→131K 吞吐持平且 P99/SLO 更差。 |
@@ -51,8 +51,11 @@
 | `hol_age_diagnostic_512_20260728/` | HOL-age 诊断实验实际运行（6 臂 × 3 formal，24/24 ok） | **负向**：aimd_hol/replenish/aimd_hol_replenish SLO-goodput（6.78/4.62/2.91）远低于 static_k16（15.27），P99 恶化 4–13×。「诊断优先」假设被否定——补 HOL-age 信号 + request-level replenish 后动态稳态仍不优于最佳静态。 |
 | `hol_age_diagnostic_512_20260727/` | HOL-age 诊断预注册设计 + 配置（设置 A） | 07-27 本机无 GPU 未运行；实际执行在 `_20260728/`。含预注册判据与 6 臂设计。 |
 | `oceanbase_b1_gate_20260731/` | OceanBase B1 baseline 门禁 #1 验证 + 部署阻塞 | 门禁通过（CE 4.5.0 含 `AI_COMPLETE`/`DBMS_AI_SERVICE`，静态确证）；当前 AutoDL 容器 observer init step 4/18 clog errcode -9100 自杀（seccomp 等，容器内不可修）。降为待部署，复跑需特权容器/VM。 |
-| `prefix_cache_routing_req_20260730/` | cache-on prefix-affinity routing 消融（request 粒度，3 臂） | 12/12 ok；纯 routing -0.1%、length-align +1.9%（均 <5% 门禁）。prefix 方向收口。 |
+| `prefix_cache_routing_req_20260730/` | cache-on prefix-affinity routing 消融（request 粒度，3 臂） | 12/12 ok；纯 routing -0.1%、length-align +1.9%（均 <5% 门禁）。2-ep/7B 下 prefix 方向收口。 |
+| `prefix_cache_routing_4ep_1.5b_20260731/` | cache-on prefix-affinity routing 消融（4×Qwen2.5-1.5B，request 粒度，2 臂；含 4-endpoint 调整与 stale-Ray 事故记录） | 8/8 ok、0 incident；prefix_affinity 相对 least_queued **+5.9%**（46,943 vs 44,317 tok/s，raw 不重叠、CV≤0.9%）、SLO −6.3pp、P95 −3.15s，**跨过 5% 门禁**。⚠️ 混淆（1.5B×4-ep×更小 KV）、过饱和 regime（SLO 违约 25–31%），需隔离消融后正式晋级。 |
 | `prefix_cache_data_org_20260730/` | cache-on prefix-aware batching 消融（batch 粒度，3 臂）+ routing 报告交叉引用 | 12/12 ok；上游 batching 顺序 within 1.2% 中性。vLLM APC 覆盖上游 prefix 组织。 |
+| `prefix_routing_agent_20260730/` | cache-on prefix-affinity routing 跨数据集消融（agent-trace，2-ep/7B，3 臂）+ 跨数据集合并分析 | 12/12 ok、0 incident；吞吐三臂 \|Δ\|<2% 中性，但 pala P50 −7.8%/SLO −3.8pp/goodput +17%（高 cache 压力，过饱和区间，吞吐 −1.9% 未过门禁）。 |
+| `prefix_routing_concentrated_20260730/` | cache-on prefix-affinity routing 跨数据集消融（concentrated ShareGPT，2-ep/7B，3 臂） | 12/12 ok、0 incident；吞吐 \|Δ\|<1.2% 中性，pala 信号弱（cache 压力低于 agent）。自包含简表 + 指向 agent 报告的合并分析。 |
 | `static_credit_prompt_length_screen_20260730/` | Short/long prompt 下 request K 与 active-work 的存在性筛选 | 48/48 成功；long W65K 有稳定正信号，但 short 未绑定等价臂高方差、urllib/no-token-ID 与非 factorial 设计使正式判决阻塞。保留为机制审计，先重跑 async 等价臂 gate。 |
 | `dual_gpu_shared_vllm_formal_20260729_1135/` | 1/2/4-job independent/static/shared-DRR 核心矩阵 | 36/36、0 incident；容量安全与公平门槛通过。2-job 无收益，4-job 聚合过门槛但重复异质，需 held-out 复验。 |
 | `dual_gpu_slo_ewma_flush_formal_20260729/` | high/arrival-limited 下 fixed、queue-adaptive 与 SLO-EWMA 对照 | 24/24 成功；exactly-once 与 completion-lag 审计通过。25–50ms 控制窗口相对 5.6–17.4s P99 缺少一阶杠杆，SLO-EWMA 不晋升。 |
@@ -133,7 +136,12 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 3. 真实多 endpoint/多 GPU 的多 job 公平性、共享 request/work credit、
    work-conserving queue、路由与故障迁移。
 4. Ray task/actor 有效并发和 vLLM scheduling capacity 的分层调优。
-5. ~~Prefix cache 开启后的 prefix-aware 独立消融~~（已完成 07-30/07-31：cache-on batching + routing
-   均中性，prefix 方向收口；见 `prefix_cache_data_org_20260730/` 与 `prefix_cache_routing_req_20260730/`）。
+5. ~~Prefix cache 开启后的 prefix-aware 独立消融~~（2-ep/7B 已完成 07-30/07-31：cache-on batching + routing
+   跨分散/agent/concentrated 三数据集吞吐均中性，prefix 方向在低淘汰 regime 收口；见 `prefix_cache_data_org_20260730/`、
+   `prefix_cache_routing_req_20260730/`、`prefix_routing_agent_20260730/`、`prefix_routing_concentrated_20260730/`）。
+   ⚠️ 高淘汰压力 regime 有条件重新打开：4-ep/1.5B routing **+5.9% 跨门禁**（`prefix_cache_routing_4ep_1.5b_20260731/`），
+   且 2-ep/7B agent-trace 上 pala **P50 −7.8%/SLO −3.8pp**（吞吐 −1.9% 未过门禁，过饱和区间）。
+   两者共同指向 **cache 淘汰压力是 prefix 信号是否显现的开关**；待隔离消融（4-ep/7B 或 2-ep/1.5B、
+   人为缩 KV 制造可控淘汰率）把 model×endpoint×cache 压力解耦后正式晋级。
 6. 图像 workload 的多模态泛化验证。
 7. 代价估计的独立时间段、新 workload、跨模型校准和预测区间。

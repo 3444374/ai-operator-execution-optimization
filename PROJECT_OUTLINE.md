@@ -197,10 +197,17 @@
    `ray_task` 因 200+ worker 撞上 `vm.max_map_count=65530`；独立
    j4 actor gate 已在相同 VMA 容器三臂通过，正式矩阵恢复 1/2/4。随后再验证 staggered idle
    borrowing、weighted overlap fairness 和异构 workload mix。
-4. **P1（✅ 完成 07-31）**：Prefix cache 开启后的独立机制实验已完成——cache-ON
-   batching（`experiments/results/prefix_cache_data_org_20260730/`）与 prefix-affinity
-   routing（`experiments/results/prefix_cache_routing_req_20260730/`）均中性（<5% 门禁），
-   vLLM APC 在多轮 ShareGPT 上覆盖上游 prefix 优化。残留：per-arm 命中率待 runner 增采。
+4. **P1（部分完成 07-31，prefix 路由有条件重开）**：Prefix cache 开启后的独立机制验证——cache-ON
+   batching（`experiments/results/prefix_cache_data_org_20260730/`）中性（<1.2%）；2-ep/7B
+   prefix-affinity routing 跨分散/agent/concentrated 三数据集
+   （`prefix_cache_routing_req_20260730/`、`prefix_routing_agent_20260730/`、`prefix_routing_concentrated_20260730/`）
+   吞吐全部 |Δ|<2% 中性（APC 覆盖 working set），但 agent-trace（高 cache 压力 workload）上 pala
+   P50 −7.8%/SLO −3.8pp（吞吐 −1.9% 未过门禁，过饱和区间）；4-ep/1.5B prefix_affinity
+   （`experiments/results/prefix_cache_routing_4ep_1.5b_20260731/`）+5.9%（3 repeat 不重叠、
+   CV≤0.9%）跨过 5% 门禁，且 SLO 违约 25-31% 的过饱和 regime + 同时改 model/endpoint/KV 使
+   净归因未隔离——prefix 方向有条件重新打开。**cache 淘汰压力是信号是否显现的开关**（4-ep/1.5B 改 endpoint/model
+   与 agent-trace 仅改 workload 两个独立高压数据点同向），待 4-ep/7B 或 2-ep/1.5B / 人为缩 KV 隔离消融后定级。
+   残留：per-arm APC 命中率待 runner 增采。
 5. **P1（✅ 完成 07-31）**：Length-align 已与 prefix grouping 分开消融——batch 粒度
    +0.7%、request 粒度 +1.9%，repeat 不重叠但均 <5% 门禁，不晋级。
 5. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
