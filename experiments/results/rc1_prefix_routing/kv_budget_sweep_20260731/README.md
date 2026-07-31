@@ -24,8 +24,8 @@
 - **喂饱 vLLM / GPU：是**。`gpu_utilization_pct_mean` = **88–91%**（max 100%，`below_10pct_ratio` ~10%——仅启动/排空瞬间空闲）；`vllm_num_requests_running` mean **~139 / max ~194**（持续高并发），`waiting` ≈ 0。→ GPU 持续满载、**无饥饿**。（注：runs.csv 里另有一个 `gpu_utilization_pct` 列 = 单次 snapshot，值为 0，是采样假象，**不用它**；用 `*_mean/p50/p95/max` 系列。）
 - **E2E 效率**：`tokens_per_s`(E2E) ≈ `model_request_tokens_per_s` 的 **88–91%**（pipeline 开销 ~9–12%）。
 - **正式 feeding-saturation 门禁（E2E ≥95% of 同协议 bounded）= 未算出**：本扫描**没跑 bounded HTTP 臂**，缺同 config 的 bounded 上限 → **合规缺口**。#22 RC1 baselines 补 bounded HTTP 后才可正式算。
-- **⚠️ 指标异常（已判定为指标坏，不用）**：`vllm_kv_cache_usage_perc` 全 util 点 **0.06–0.29%**，但实际 working set（2k 行 × ~500 prompt tokens × 28KB/token ≈ 5.7GB）在 util 0.3 的 ~4GB 池下应近 100% → **该指标不可信、已弃用**。"KV 抖动"叙事改用 throughput/SLO 模式佐证（见 §5）。
-- **策略是否到极限**：两臂同 config（仅 routing 不同）、同 ~139 running → matched-KV 对比有效。
+- **`vllm_kv_cache_usage_perc` 是分数（0–1）非百分比**（vLLM HELP: "1 means 100 percent usage"）：实测 mean 0.06–0.29 / max 0.09–0.45 = **6–45% 用量**。working set 跨 util 稳定 ~1.2–1.4GB，**所有 util 点都放得下（peak ≤45%）→ 全程无持续 KV 淘汰**。（注：早先一度把 0.06 读成 0.06% 当"指标坏"，是 scale 读错，已纠正——指标正常。）
+- **策略是否到极限 / 平台**：两臂同 config（仅 routing 不同）、同 ~139 running → matched-KV 对比有效。**但本扫描（2-ep）平台 = util 0.9（65k/0% SLO）；routing 实验里 4-ep/0.43 的 util 是按"2/GPU 共享"倒推、非扫出来的平台** → 见 §5 平台方法论 caveat。
 
 ## 3. 实验设计
 
@@ -60,7 +60,7 @@
 | 0.6 | aff | 54,653 | 139/192 | 0/0 | 0.09/0.12⚠️ | 2.33 | 0.00 | 2.31 | 0.05 | 2.26 | 485,822 |
 | 0.9 | aff | 64,804 | 136/191 | 0/0 | 0.06/0.08⚠️ | 1.95 | 0.00 | 1.94 | 0.03 | 1.91 | 484,882 |
 
-（lq 臂与 aff 几乎相同，略。）**decode 主导**（~2.25s 占 vLLM e2e 2.3s 的 97%），prefill 0.05s，queue 0。util 0.9 的 decode 更快（1.91 vs 2.25s）→ 吞吐更高。⚠️ KV usage 列已判定为指标坏（§合规自检），**仅记录、不解读**。
+（lq 臂与 aff 几乎相同，略。）**decode 主导**（~2.25s 占 vLLM e2e 2.3s 的 97%），prefill 0.05s，queue 0。util 0.9 的 decode 更快（1.91 vs 2.25s）→ 吞吐更高。KV usage 列是**分数（0.06–0.45 = 6–45%）**，working set ~1.4GB 跨 util 稳定、全程放得下 → **无 KV 淘汰**（util 越高池越大、用量 % 越低，但绝对 working set 不变）。
 
 ### 4.3 GPU + 能耗 + MFU
 
@@ -98,24 +98,28 @@
 - util 0.3–0.6 吞吐 ~48–49k tok/s、SLO 违约 13–15%、req p95 ~32s；util 0.9 吞吐 ~57k、**0% SLO**、p95 ~27.5s。**util 越高（KV 池越大）越快**。
 - decode 主导 vLLM 延迟（97%）；GPU 持续 88–91% 利用。
 
-### 推断（matched-KV 对比，核心）
-- **2-ep/0.45（~7–8GB KV）= −0.1%** vs **4-ep/0.43（~7GB KV/端）= +5.9%**：per-endpoint KV 量级相当、**只差 endpoint 数（2 vs 4）** → **驱动是 endpoint 数（consolidation），不是 per-endpoint KV**。
+### 推断（matched-KV 对比：endpoint 数效应作为 DATA 成立，但机制非 KV）
+- **2-ep/0.45（~7GB KV）= −0.1%** vs **4-ep/0.43（~7GB KV/端）= +5.9%**：per-endpoint KV 量级相当、只差 endpoint 数 → **endpoint 数（consolidation）效应作为 DATA 成立**。
+- ⚠️ **但机制不是 KV**：本扫描证明 2-ep 全程无 KV 淘汰（usage 6–45%）；4-ep 每 endpoint KV 用量更低（~5%）、也无 KV 压力。→ +5.9% **不是"KV 碎片化"**，更可能是 endpoint 数驱动的**并行度 / 每 endpoint batch 容量 / 内存预算**差异（2-ep 的 util 效应——低 util → 有效 batch 小 → decode 慢 → SLO 违约——本身就像"内存给 batching 的预算"问题，不是 KV）。**需重新归因。**
+- ⚠️ **平台方法论 caveat**：routing 实验没走"先扫平台再对比"。本扫描找到 **2-ep 平台 = util 0.9**（routing 在此中性）；**4-ep/0.43 不是扫出来的平台**（是 2/GPU 共享倒推的），所以 4-ep +5.9% 可能在非平台点测得，需 4-ep 自己的 util 扫描确认平台后再判 routing。
 
 ### 不能声称 / 待查
-- **`vllm_kv_cache_usage_perc` 指标坏**（0.06–0.29% 与实际 ~近满 不符）→ "KV 压力/淘汰"只能用 throughput/SLO 模式佐证，不能用该指标直接量化。需修指标（runner 侧采 vLLM `gpu_cache_usage_perc` 或 Prometheus 累计值）。
-- 4-ep regime（SLO 28%）比 2-ep 最高（14%）抖动更深，未完全分离"endpoint 数"与"抖动深度"；matched-KV 强烈指向 endpoint 数。
+- **不能声称 4-ep +5.9% 是"KV 碎片化"驱动**——本扫描证明无 KV 压力，机制待重新归因（并行度 / batch 容量 / 内存预算）。
+- **不能声称 routing 在 4-ep 平台上的真实收益**——4-ep 平台未扫（feasible util 上限 ~0.45，需确认 0.43 是否其平台）。
+- 2-ep util 效应（0.3–0.6 慢）机制：最可能是**内存给 batching 的预算不足**（非 KV 淘销），待控制实验确认。
 - util 0.9 n=2（第 3 rep 偶发失败）；MFU 在 0.9 反常下降待查。
 - **正式 feeding-saturation 门禁未算**（缺 bounded 臂）。
 
 ## 6. 对课题含义
 
-1. **prefix_affinity（及跨引擎共享 KV）是"多 endpoint 现象"**：价值在 prefix 碎到**多个** engine cache 时（4-ep consolidation），不在单 engine KV 小。贴合 DB-AI 真实部署（一台机多模型 endpoint 共享 GPU）。
-2. 跨引擎共享池（Mooncake/LMCache）评估 regime 应锁定**多 endpoint consolidation**，不是 2-ep/小 KV。
-3. 2-ep 是 RC1 数据组织策略重测的**干净基线**（策略效应不被 routing/consolidation 混淆）。
+1. **endpoint 数（consolidation）效应作为 DATA 成立**（matched-KV：2-ep 中性、4-ep +5.9%），但**机制不是 KV**（全程无 KV 淘汰）——更可能是并行度 / batch 容量 / 内存预算，待重新归因。
+2. **⚠️ "跨引擎共享 KV（Mooncake/LMCache）"方向的动机被削弱**：本 workload（multiturn、~1.4GB working set）下**根本没有 KV 淘汰** → 没有跨引擎复用空间。共享 KV 池有价值的前提（KV 淘汰压力）**在本 setup 不成立** → 该方向需在能产生真实 KV 压力的场景重评，或重新判断是否还值得做。
+3. 2-ep（util 0.9 平台）是 RC1 数据组织策略重测的**干净基线**（策略效应不被 routing/consolidation/memory-constraint 混淆）。
 
 ## 7. 下一步
 
-1. **修 `vllm_kv_cache_usage_perc` 指标**（采 vLLM `gpu_cache_usage_perc` / Prometheus 累计），使"KV 压力"可量化——优先级高，影响所有 cache 相关结论。
-2. **#22 补 bounded HTTP baseline** → 正式算 feeding-saturation 门禁。
-3. 隔离 endpoint 数 vs 抖动深度（4-ep 扫 util，或 2-ep 更大 working set）。
-4. 跨引擎 KV 池方向：评估锁定 4-ep/multi-endpoint。
+1. **重新归因 4-ep +5.9%（非 KV）**：4-ep 扫 util 找平台 + 测 routing，确认是不是 endpoint 数驱动的并行度 / batch 容量——优先于跨引擎 KV 池。
+2. **重评跨引擎 KV 池方向**：本 workload 无 KV 淘汰 → 动机削弱；除非换能产生真实 KV 压力的场景（更大 working set / 更小池），否则不建议投入。
+3. **#22 补 bounded HTTP baseline** → 正式算 feeding-saturation 门禁。
+4. **平台方法论补进流程**：先扫参数找平台、再在平台上对比（加进 AGENTS §7.5.C）。
+5. 小改进：`vllm_kv_cache_usage_perc` CSV 列名（装分数 0–1）可改 `_ratio` 或加文档，防再误读。
