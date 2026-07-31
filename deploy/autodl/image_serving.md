@@ -1,7 +1,7 @@
-# 多模态（image/CLIP）推理服务引擎——部署与使用
+# 图像模态（image/CLIP）推理服务引擎——部署与使用
 
-> 本项目有**两条推理引擎 track**：① 文本（vLLM 生成式 LLM）② 多模态图像（CLIP embedding）。本篇是 **②**。
-> ① 见 `deploy/autodl/README.md` §8（vLLM endpoint）。两条 track 的**共享平台 setup**（实例/venv/network_turbo/代码同步/模型下载方法/PG）也在 `deploy/autodl/README.md` §1–§7，本篇不重复，只写图像/CLIP 独有部分。
+> 本项目按**数据模态**分部署文档：文本（`text_serving.md`）、**图像（本篇）**，后续 video/audio 各起一篇。各模态共享同一套"调度策略模态无关"框架（见 `deploy/autodl/README.md` 总览），本篇只写图像独有部分。
+> **共享平台 setup**（实例/venv/network_turbo/代码同步/模型下载方法/PG）在 `deploy/autodl/README.md` §1–§7，本篇不重复。
 > 实验设计（测什么、go/no-go 门禁）在 `experiments/plans/image_clip_workload_lock_20260731.md`；本篇只讲"引擎是什么 + 在服务器上怎么部署/跑"。
 
 ## 1. 这个"模态"是什么

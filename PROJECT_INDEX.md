@@ -165,7 +165,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |
 | `deploy/autodl/README.md` | AutoDL 单一 runbook：环境准备、开机恢复、gate、正式实验和中断恢复；顶部有"两条推理引擎 track（文本 vLLM / 多模态 CLIP）"概念总览 | 新对话接手远端实验时按顶部唯一入口直接操作 |
-| `deploy/autodl/multimodal_embed_serving.md` | 多模态（image/CLIP）推理服务引擎的部署与使用：模态是啥、CLIP vs vLLM 差异、环境配置（CLIP 模型下载/GPU 验证，含 transformers 5.x + hf_hub 1.x 坑）、数据集（COCO 哪来）、serving 架构（路径 B）、分阶段瓶颈画像、注意事项 | 准备/跑图像 AI_EMBED workload 时读；与文本 vLLM track（README §8）平行 |
+| `deploy/autodl/text_serving.md` | 文本模态（vLLM 生成式 LLM）推理服务引擎部署：vLLM 是什么（continuous batching/APC/KV cache）、vLLM vs CLIP 差异、Qwen 模型下载 + start_endpoints.sh、sharegpt_multiturn 数据集、runner/合同/喂饱门禁、7 条坑 | 跑文本 AI_COMPLETE 实验时读；与 image_serving.md 对称 |
+| `deploy/autodl/image_serving.md` | 图像模态（CLIP embedding）推理服务引擎部署：模态是啥、CLIP vs vLLM 差异、环境配置（snapshot_download + GPU 验证，含 hf_hub 1.x + transformers 5.x 坑）、COCO 数据集、serving 架构（路径 B）、分阶段瓶颈画像、注意事项 | 准备/跑图像 AI_EMBED workload 时读；与 text_serving.md 对称（video/audio 后续各起一篇 _serving.md） |
 | `code/scripts/select_strategy_calibration.py` | 从 feeding/direct/token-budget/actor-shape 证据生成冻结校准合同和环境覆盖 | 同协议 actor 曲线完成后、启动数据组织/提交策略/多 job formal 前执行 |
 | `code/scripts/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
 | `code/scripts/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |

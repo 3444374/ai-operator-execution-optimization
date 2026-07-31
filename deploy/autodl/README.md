@@ -16,16 +16,18 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
   → 推理引擎（GPU 上算）→ 写回 PostgreSQL + pgvector
 ```
 
-**推理引擎有两条 track**（本指南核心区分，务必先理解）：
+**按数据模态分部署文档**（核心区分，务必先理解）。每个模态一篇 `<modality>_serving.md`，共享同一套"调度策略模态无关"框架（只换模型 + 数据列 + 预处理段）：
 
-| track | 是什么 | 模型 | 算子 | 部署在哪 |
+| 模态 | 引擎/模型 | 算子 | 部署文档 | 状态 |
 |---|---|---|---|---|
-| **文本（生成式）** | **vLLM**——一个开源 LLM **serving 引擎**，用 continuous batching + prefix cache(APC) + KV cache(PagedAttention) 高吞吐服务**生成式**推理。本项目**不修改 vLLM 内部**，只把它当部署平台 | Qwen2.5-1.5B/7B-Instruct | `AI_COMPLETE`（生成 token 序列） | 本指南 §8 `start_endpoints.sh` |
-| **多模态（图像 embedding）** | **CLIP**——**不是**生成式 LLM，是 embedding 模型，把图像压成 512d 向量。**无 KV / 无 prefix / 无生成**，观测层与 vLLM 完全不同 | CLIP ViT-B/32 | `AI_EMBED`（图像→向量） | 单独文档 `deploy/autodl/multimodal_embed_serving.md` |
+| **文本（生成式）** | **vLLM**（开源 LLM serving 引擎：continuous batching + prefix cache APC + KV cache PagedAttention；本项目**不改其内部**）+ Qwen2.5-Instruct | `AI_COMPLETE`（生成 token 序列） | `deploy/autodl/text_serving.md`（逐步命令另见本指南 §8） | ✅ 主线，RC1 等已完成 |
+| **图像（embedding）** | **CLIP** ViT-B/32（embedding 模型，**非生成式**；无 KV/prefix/生成） | `AI_EMBED`（图像→512d 向量） | `deploy/autodl/image_serving.md` | 🔴 下一步 workload |
+| 视频（后续） | VideoCLIP/时序 ViT/Qwen-VL（候选） | AI_EMBED/CLASSIFY | `video_serving.md`（待建） | ⏸ 后续 |
+| 音频（后续） | CLAP/audio encoder（候选） | AI_EMBED | `audio_serving.md`（待建） | ⏸ 后续 |
 
-> **为什么分两条**：文本每行 ~1KB、搬运太轻，binding 瓶颈在 vLLM serving（RC1 实测 db_fetch 1.4–2.4s vs model_wall 27–37s）；图像每行 ~600KB，DB-read / CPU→GPU 搬运变 binding——两条要找/优化的瓶颈不同，引擎也不同（vLLM 服务生成、CLIP 服务 embedding）。
+> **为什么按模态分**：文本每行 ~1KB、搬运轻，binding 在 vLLM serving（RC1 实测 db_fetch 1.4–2.4s vs model_wall 27–37s）；图像每行 ~600KB，DB-read/CPU→GPU 搬运变 binding；视频/音频更重——各模态要找/优化的瓶颈 + 引擎都不同。**但调度策略层（active-work/K_max/flush/queue-adaptive）跨模态复用**，这是项目"调度策略模态无关"的核心 claim。
 
-**怎么用本指南**：§1–§7 是**共享平台 setup**（实例/连接/venv/network_turbo/代码同步/模型下载方法/PG，两条 track 都用）；§8 起是**文本 vLLM track**；**图像 CLIP track 全在 `multimodal_embed_serving.md`**。
+**怎么用本指南**：§1–§7 是**共享平台 setup**（实例/连接/venv/network_turbo/代码同步/模型下载方法/PG，所有模态都用）；各模态的"引擎是什么 + 怎么部署/跑"在对应 `<modality>_serving.md`；**文本 vLLM 的逐步启动命令**另在本指南 §8（历史 runbook，保留）。
 
 ## 新对话 / 新 agent 的唯一操作入口
 
