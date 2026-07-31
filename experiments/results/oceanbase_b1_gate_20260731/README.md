@@ -62,20 +62,51 @@ observer 在 init step 4/18（`init_io` → `ob_server_log_block_mgr.prepare_dir
 - `/root/obdata/strace{2..7}.log`：多次 strace，含 `OB_INVALID_CONFIG`、`Load config succ`、clog `-9100 prepare_dir_and_create_meta_ failed`、`clone3 ... ENOSYS`、`tgkill(SIGKILL)` 全链证据。
 - `/root/obdata/{diag*,ob*}/`：各次启动尝试的 data_dir + stdout。
 
-## 5. 能声称 / 不能声称
+## 5. 实验参数与指标定义
+
+> 状态：**待部署后采集**。以下为 B1 复跑时的实验级参数与指标词汇定义；本会话 observer 未跑通（见 §3.3），未实际采集到任何数值。此节只为补齐实验级词汇，不构成任何实测结果。
+
+B1 复跑时将使用的实验级参数（调度 / 数据组织层，区别于 §9 的 observer 部署参数）：
+
+| 参数 | 含义 | B1 取值 |
+|---|---|---|
+| `K`（active work 上限） | 同时在途的请求数 / work 上限，控制对 vLLM 的并发注入 | 待部署后按 matrix §2 设定 |
+| `W`（credit 配额） | 每次请求完成后释放 / 补充的 work credit，与 K 共同决定饱和度 | 待部署后按 matrix §2 设定 |
+| `token_budget` | 动态 batching 的 token 预算，决定多少行合并为一个 batch（行间合并，每行仍是独立完整请求，不做行内拆分） | 待部署后按 matrix §2 设定 |
+| `batch_size` | 单次请求的行数 / token 数组织粒度 | 待部署后按 matrix §2 设定 |
+
+B1 复跑时将采集的指标（与 `experiments/AGENTS.md` §6 新实验指标完整性要求一致）：
+
+| 指标 | 含义 | 状态 |
+|---|---|---|
+| `tokens/s` | 吞吐主指标，从 vLLM Prometheus `prompt_tokens_total + generation_tokens_total` 计算（AI_COMPLETE 中每行 token 量差异大，不能只看 rows/s） | 待采集 |
+| `throughput`（rows/s） | 行级吞吐，作为 tokens/s 的补充对照 | 待采集 |
+| `service_p99` | 系统性尾延迟（per-request e2e latency 分布 p99） | 待采集 |
+| SLO violation | 违反时延 SLO 的请求占比 | 待采集 |
+| MFU | model utilization（GPU 计算利用率） | 待采集 |
+
+注意：本会话未产生上述任何参数的实测取值或指标的实测数值；§4 列出的远端证据仅为安装 / 调试日志，不含运行期指标。
+
+## 6. 实验数据
+
+**当前无 `runs.csv`** —— observer init 失败（见 §3.3 clog `-9100`），端到端链路（OceanBase `AI_COMPLETE` → 同机双 vLLM → 写回）未执行，故本目录无 `runs.csv` / `summary_long.csv` / `comparison_summary.csv` 等任何结果 CSV。
+
+复跑需可部署环境（带 systemd 的 VM 或特权容器，见 §8「下一步 / 复跑条件」）；在 observer 跑通后，由 `code/src/baselines/oceanbase.py` 适配器驱动产生上述 CSV。
+
+## 7. 能声称 / 不能声称
 
 - ✅ **能**：OceanBase CE 4.5.0 内置 `AI_COMPLETE` + `DBMS_AI_SERVICE`（门禁 #1 通过）；B1 测的是 OB 真实原生 AI 算子，不是 strawman。
 - ❌ **不能**：B1 的任何性能数字（observer 未跑通，未执行 `AI_COMPLETE`）。
 - ❌ **不能**：`DBMS_AI_SERVICE.CREATE_AI_MODEL_ENDPOINT` → 同机 vLLM 的连通性、`AI_COMPLETE` 端到端正确性（未动态验证）。
 - ❌ **不能**：「OceanBase 不适合做 baseline」——仅此容器部署受阻，是环境问题，不是产品能力问题。
 
-## 6. 下一步 / 复跑条件
+## 8. 下一步 / 复跑条件
 
 - 按 matrix §2：当前把 OceanBase **降为"工业系统参考 / 待部署"**，不伪造 B1 数字；待可部署环境就绪再补 formal。
 - 复跑 B1 所需环境（任一）：带 systemd 的 VM；或特权容器（`--security-opt seccomp=unconfined` 或 `--privileged`，且 kernel 参数可写）。在该环境重跑：observer + bootstrap → `DBMS_AI_SERVICE` 注册 AI model endpoint 指向同机双 vLLM → 灌 `sharegpt_multiturn` → 跑 B1 → 与 B0/B2/B4 对比。
 - 复跑时直接复用本地 `code/src/baselines/oceanbase.py`（其对 `DBMS_AI_SERVICE` / `AI_COMPLETE` 的调用已确证 CE 支持）；pymysql 2.2.8 已在 driver env。
 
-## 7. 附：用于复跑的已验证启动参数
+## 9. 附：用于复跑的已验证启动参数
 
 在可部署环境（能起 observer 的）里，以下参数已在本会话验证到「配置加载成功、线程起来」这一步（卡在容器 clog，非参数问题）：
 
