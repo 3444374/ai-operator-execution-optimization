@@ -2941,3 +2941,32 @@
   （`seccomp=unconfined`/`--privileged`）或带 systemd 的 VM；复跑时复用 `code/src/baselines/oceanbase.py`
   （其对 DBMS_AI_SERVICE/AI_COMPLETE 的调用已确证 CE 支持）。
 - 远端保留证据：oceanbase-ce 安装 + `/root/obdata/strace{2..7}.log` + `/etc/oceanbase.cnf`。
+
+## 2026-07-31 代码修复：runner 校验 service_metadata.prefix_caching 与 live vLLM 一致
+
+- **Bug**：scenario config 的 `service_metadata.prefix_caching` 是声明值，
+  `code/src/experiment_scenarios.py:validate_service_metadata` 只校验类型、不比对
+  live vLLM。后果：prefix-cache 实验在 cache-ON 的 vLLM 上跑，manifest 却记
+  `prefix_caching: false`（声明值），silent 不一致——07-30 prefix-cache batching/
+  routing 实验的 manifest 元数据就是因此失真。
+- **根因**：vLLM 不经 `/metrics` 暴露 prefix-cache 开关（只有运行时命中率、且需流量）；
+  唯一可靠信号是 vLLM 进程 cmdline 的 `--enable-prefix-caching` / `--no-enable-prefix-caching`。
+- **修复（3 个文件）**：
+  1. 新增 `code/src/vllm_probe.py`：`parse_prefix_caching_flag(cmdline)`（纯函数，
+     argparse last-wins 语义，支持 `--flag` 与 `--flag=bool`）+ `probe_live_prefix_caching()`
+     （best-effort：`ps -eo args` 找 vLLM api_server 进程、解析、取共识；探不到/进程间
+     不一致/非 Linux 返回 None）。
+  2. `code/scripts/run_ai_operator_scenarios.py`：加 `_verify_prefix_caching_matches_live`
+     预检——声明值与 live 不符 → **fail-closed**（ValueError）；探不到 → stderr warn 后继续。
+     **挂在 `main()` 而非 `run_experiment`**，使直接驱动 `run_experiment` 的 9 处单元测试
+     保持 hermetic（不依赖宿主 vLLM 状态）。
+  3. 新增 `code/tests/test_vllm_probe.py`（15 测试）：parse 各分支 + probe（mock
+     `_list_process_cmdlines`）+ verify helper 的 mismatch/match/none/skip。
+- **怎么改的（关键决策）**：探测设计为 best-effort + fail-closed-on-detectable——
+  能确证不一致时拒绝跑（防 silent 失真），探不到（Windows/CI/无同机 vLLM）时 warn 不 block。
+  放 `main()` 而非 `run_experiment` 是为避免单元测试依赖宿主 vLLM 进程状态。
+- **验证**：本地 `python code/tests/test_vllm_probe.py` 15/15、
+  `python code/tests/test_experiment_scenarios.py` 26/26 全绿；`--help` 正常。
+  （`test_postgres_profile_scheduling` 本地缺 pyarrow 无法 import，与本次改动无关。）
+- **边界**：探测只覆盖同机 vLLM（runner 与 vLLM 共宿）；vLLM 远程部署时探不到→warn。
+  仅校验 `prefix_caching`（最易飘、影响最大）；其他 `service_metadata` 字段仍按声明值。

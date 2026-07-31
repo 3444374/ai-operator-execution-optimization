@@ -194,7 +194,9 @@ least-work、动态预算、shared-credit、异构显存容量、故障迁移和
   recovered。
 - 本轮增加失败场景剪枝：不伪造 CSV，manifest 显式记录 skipped run。
 - 本轮增加 `service_metadata`：vLLM 版本、prefix cache 和 MFU 开关进入
-  manifest，并参与 resume 一致性校验。
+  manifest，并参与 resume 一致性校验。（2026-07-31 起 runner 在 `main()` 额外
+  校验 `prefix_caching` 与 live vLLM 进程标志一致，见 `code/src/vllm_probe.py`：
+  不符 fail-closed、探不到则 warn。）
 
 ### 本轮发现并修正的实验问题
 

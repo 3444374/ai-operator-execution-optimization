@@ -34,6 +34,7 @@ from src.experiment_scenarios import (  # noqa: E402
 )
 from src.metrics import parse_prometheus_metrics  # noqa: E402
 from src.runner_lease import acquire_runner_lease  # noqa: E402
+from src.vllm_probe import probe_live_prefix_caching  # noqa: E402
 
 
 _SCENARIO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
@@ -145,6 +146,40 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
         skip_failed_scenarios=args.skip_failed_scenarios,
         recover_stale_lease=args.recover_stale_lease,
     )
+
+
+def _verify_prefix_caching_matches_live(config) -> None:
+    """Fail-closed when declared ``prefix_caching`` contradicts the live vLLM.
+
+    Probing is best-effort: when the live flag cannot be determined (non-Linux
+    host, no co-located vLLM ``api_server`` process, or disagreeing processes),
+    warn on stderr and rely on the declared value instead of failing. This
+    catches the class of bug where a scenario config declares
+    ``prefix_caching: false`` while vLLM is actually started with
+    ``--enable-prefix-caching`` (or vice versa), which would otherwise silently
+    record wrong ``service_metadata`` in the manifest.
+    """
+    declared = dict(config.service_metadata).get("prefix_caching")
+    if not isinstance(declared, bool):
+        return
+    live = probe_live_prefix_caching()
+    if live is None:
+        sys.stderr.write(
+            "[runner] warning: could not live-verify vLLM prefix_caching "
+            "(no local vllm api_server process found, or ps unavailable); "
+            "relying on declared service_metadata.prefix_caching="
+            + str(declared)
+            + "\n"
+        )
+        return
+    if live != declared:
+        raise ValueError(
+            "service_metadata.prefix_caching="
+            + str(declared)
+            + " conflicts with the live vLLM process flags (detected "
+            "prefix_caching=" + str(live) + "). Fix the scenario config or "
+            "the vLLM startup flags before running."
+        )
 
 
 def run_experiment(
@@ -859,7 +894,14 @@ def _write_json_atomic(path: Path, value: dict) -> None:
 
 
 def main() -> None:
-    raise SystemExit(run_experiment(parse_args()))
+    options = parse_args()
+    # Pre-flight: fail-closed (or warn) if the scenario config's declared
+    # ``service_metadata.prefix_caching`` contradicts the live vLLM process
+    # flags, before acquiring the lease or touching the GPU. Done here rather
+    # than in ``run_experiment`` so unit tests that drive ``run_experiment``
+    # directly stay hermetic (no dependence on host vLLM state).
+    _verify_prefix_caching_matches_live(_load_config(options.config_path))
+    raise SystemExit(run_experiment(options))
 
 
 if __name__ == "__main__":
