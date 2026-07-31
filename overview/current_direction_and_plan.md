@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-生成日期：2026-07-17（最后更新：2026-07-29）
+生成日期：2026-07-17（最后更新：2026-07-31）
 
 > 本文档是项目方向的**快速参考卡片**。完整定义、依据和细节见 `PROJECT_OUTLINE.md`（项目总纲）、`AGENTS.md`（规则边界）、`research/knowledge_hub.md`（知识库）。本文档不替代上述文件，仅提供 TL;DR。
 
@@ -133,7 +133,7 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
    创建 200+ worker 并撞上容器 VMA 上限；新的 j4 actor gate 已在同一容器
    三臂通过。正式 1/2/4 后再做 staggered idle borrowing、weighted overlap fairness 与异构
    workload/arrival offset
-4. **P1**：4-endpoint / Qwen2.5-1.5B prefix_affinity 隔离消融（cache-on batching 与 2-ep/7B prefix routing 已完成且中性；4-ep/1.5B +5.9% 跨过 5% 门禁但受 model × endpoint × KV 及饱和区 25–31% SLO 违约混淆，需隔离）
+4. **P1**：4-endpoint / Qwen2.5-1.5B prefix_affinity 隔离消融（cache-on 数据组织 07-31 系统重测已完成、**regime-dependent**：2-ep 无压力近似中性、4-ep KV 饱和分化 39–50k 且排名反转；2-ep/7B prefix routing 中性；4-ep/1.5B +5.9% 跨过 5% 门禁但受 model × endpoint × KV 及饱和区 25–31% SLO 违约混淆，需隔离）
 5. **P2**（文本门禁已完成）：多模态泛化验证
 6. 在当前 2×4090 上完成 staggered/weighted 公平性、路由与故障迁移
 7. 代价模型增加独立时间段/新 workload 校准和预测区间
@@ -173,10 +173,9 @@ PostgreSQL 18.3 → Daft DataFrame（数据引擎）→ Ray actor（策略执行
 
 **尚未建立**：多模态泛化验证、多 endpoint /
 多 GPU 实测、PG18.3 内部平台复测、OceanBase B1 可部署环境复测（门禁 #1
-已过：CE 4.5.0 含 AI_COMPLETE；当前 AutoDL 容器部署受阻）。prefix cache-on
-batching 中性；2-ep/7B routing 中性（<5% 门禁）；4-ep/1.5B routing +5.9% 跨过
+已过：CE 4.5.0 含 AI_COMPLETE；当前 AutoDL 容器部署受阻）。prefix cache-on 数据组织（07-31 系统重测 `rc1_data_organization/`）**regime-dependent**：2-ep 无压力近似中性，4-ep KV 饱和分化 39–50k、排名反转、`prefix_group_ratio` 打散→命中塌缩；2-ep/7B routing 中性（<5% 门禁）；4-ep/1.5B routing +5.9% 跨过
 5% 门禁但混淆（model×endpoint×KV、过饱和 regime 25–31% SLO 违约），方向有条件
-重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融后正式晋级。
+重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融后正式晋级。**RC1 数据组织 + prefix routing + KV-sweep 三向闭环：上游策略价值只在 4-ep KV 饱和 regime 显现，2-ep 是干净对照基线。**
 
 ---
 
@@ -213,7 +212,7 @@ batching 中性；2-ep/7B routing 中性（<5% 门禁）；4-ep/1.5B routing +5.
   完成。前者优于 fixed-25 但未优于 fixed-50；后者未显示联合搜索相对独立
   拼接的可分辨增量。
 - 跨 arrival-rate、2048 held-out、受控 prefix cache-off、cache-on prefix
-  batching 消融（中性）与代价估计初版均已完成；prefix routing 在 2-ep/7B 下
+  batching 消融（当时判定中性；**07-31 系统重测已取代——见 §5/§6 regime-dependent 结论**）与代价估计初版均已完成；prefix routing 在 2-ep/7B 下
   中性，后续 4-ep/1.5B 复验 +5.9% 跨过 5% 门禁，方向有条件重开，待隔离消融；
   当前最优先工作转为多模态泛化验证与 OceanBase B1 复跑（门禁已过、待可部署环境）。
 - UCB 端到端和多 GPU 实测尚未完成，且不会在缺少正确 reward 归因或硬件时
