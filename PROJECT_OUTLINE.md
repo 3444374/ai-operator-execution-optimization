@@ -90,6 +90,17 @@
      但 1024 行反转为 -5.156%，并产生更多 submission、较高能耗和较低 MFU。
      因此经典 BFD 仅保留为条件性候选；下一版必须联合搜索 row cap、token
      budget 与 packing objective，不能把 512 单点写成普遍收益。
+   - **2026-07-31 RC1 数据组织系统重测（干净平台，取代上面 07-18/19 gropy）**：
+     `experiments/results/rc1_data_organization/README.md`。5 策略（fixed_rows/sequential token_budget/
+     length_align/best_fit BFD/row_cap_aware）× {2-ep/0.9, 4-ep/0.43}，1.5B，sharegpt_multiturn，cache-ON，
+     含 P0 指标（prefix_cache_hit_rate/TTFT）。**regime-dependent 闭合**：2-ep（KV max 7–10% 无压力）
+     5 策略 E2E 50–56k 紧凑、fixed≈seq>bestfit>rowcap>lenalign；4-ep（KV max 98–100% 饱和）分化 39–50k、
+     **排名反转为 seq>fixed>>rowcap≈bestfit>lenalign**。机制（`prefix_group_ratio`）：重排序类 organizer 打散
+     prefix 组（ratio 0.03）→ 4-ep 命中从 0.60–0.76 崩到 0.06–0.07 → TTFT 翻倍、best_fit/row_cap SLO 60%；
+     保序类 ratio 0.13–0.29、命中 0.47。consolidation 是惩罚（4-ep −10～−26% + 能耗 +40%）。**与 #28 routing /
+     KV-sweep 闭环：上游策略价值在 4-ep 饱和 regime 才显现，2-ep 是干净对照基线。** ✅ feeding 门禁已补
+     （batched bounded，gate 放宽 ≥2 endpoint）：2-ep 真上限 79,488（策略 63–71%，缺口=准入节流非饿死）；
+     4-ep bounded 24,733 病态（策略超过）→ 准入控制是吞吐杠杆、效应随 regime 反向（2-ep 可放开 W 提速、4-ep 防 thrash 应保留）。
    - 边界：本地 rehearsal，不代表 PG18.3 内部平台结果。
    - 状态与缺口审计：`experiments/plans/experiment_status_and_gaps.md`。
 2. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`

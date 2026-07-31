@@ -1,0 +1,33 @@
+{
+  "blocked_cells": [],
+  "cells": [
+    {
+      "adapter": "bounded_completions",
+      "batch_size": 16,
+      "concurrency_per_endpoint": 64,
+      "id": "bounded_b16_c64",
+      "ray_address": null
+    },
+    {
+      "adapter": "bounded_completions",
+      "batch_size": 32,
+      "concurrency_per_endpoint": 32,
+      "id": "bounded_b32_c32",
+      "ray_address": null
+    }
+  ],
+  "completion_protocol": "completions",
+  "driver_python": "/root/autodl-tmp/venvs/vllm-4090/bin/python",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/completions",
+    "http://127.0.0.1:8001/v1/completions"
+  ],
+  "experiment_id": "rc1_bounded_2ep_batched",
+  "formal": false,
+  "manifest": "/root/autodl-tmp/gates/sharegpt_multiturn_2048.jsonl",
+  "model": "qwen2.5-1.5b",
+  "output_root": "/root/autodl-tmp/ai-operator/experiments/results/rc1_data_organization/bounded_2ep_batched_20260731/raw",
+  "rows_total": 2048,
+  "tokenizer": null,
+  "vllm_python": "/root/autodl-tmp/venvs/vllm-4090/bin/python"
+}

@@ -3073,3 +3073,44 @@
   新存储约定（方向分组 + raw/ + README）首次采用，后续新数据（RC1 重测等）按此存。
 - **对方向**：跨引擎共享 KV（Mooncake/LMCache）价值定位在**多 endpoint consolidation**（现实 DB-AI 部署：多模型
   endpoint 共享 GPU），不在小 KV。2-ep 作为 RC1 数据组织重测（#21–24）的干净基线合理（策略效应不被 routing/consolidation 混淆）。
+## 2026-07-31 RC1 数据组织策略系统重测（2-ep + 4-ep，1.5B，cache-ON）：regime-dependent 闭合
+
+- **动机**：07-18/19/25/26 早期 RC1 数据组织实验在旧数据集/rows(s)/单 5070/未喂饱（07-30 cache-OFF run GPU 67.7%）下，
+  策略结论不可比。在干净平台（2×4090 + sharegpt_multiturn 2048 + tokens/s + httpx_async + token-IDs + **P0 指标**
+  prefix_cache_hit_rate/TTFT/TBT，#27 新增采集）系统重测 5 策略 × {2-ep/0.9, 4-ep/0.43}。结果存新存储约定
+  `experiments/results/rc1_data_organization/{README.md, dataorg_2ep_1.5b_cacheON_20260731/raw/(102),
+  dataorg_4ep_1.5b_cacheON_20260731/raw/(102), bounded_2ep_1.5b_cacheON_20260731/raw/}`。
+- **主结论（regime-dependent）**：
+  - **2-ep（KV max 7–10%，无压力）**：5 策略 E2E 50–56k 紧凑，排名 fixed≈seq>bestfit>rowcap>lenalign；prefix 命中 0.60–0.76。
+  - **4-ep（KV max 98–100%，饱和）**：5 策略 E2E 39–50k 分化两簇，**排名反转为 seq>fixed>>rowcap≈bestfit>lenalign**；
+    **prefix 命中崩塌**——重排序类（length_align/best_fit/row_cap）0.60–0.76 → **0.06–0.07**，保序类 fixed/sequential 0.47–0.48。
+  - **机制闭合（`prefix_group_ratio` 是 smoking gun）**：重排序类 organizer 打散 prefix 组（ratio 0.03）→
+    4-ep KV 饱和 + least_queued 散到 4 端 → 同 prefix 淘汰前无法复用 → 命中崩 → prefill 重算激增 → TTFT 翻倍（0.2–0.3s→0.6–1.1s）、
+    best_fit/row_cap SLO 60%。保序类 ratio 0.13–0.29，受影响小。
+  - **consolidation 是惩罚**：4-ep 比 2-ep −10～−26%，能耗 +40%（17.2 vs 12.3 J/1k tok）。多 endpoint 小池 + 高 churn + 局部性丢失。
+- **与 #28 / KV-sweep 闭环**：三者共同支撑「上游调度/组织策略的价值在模型服务饱和 regime（4-ep）才显现」；
+  2-ep 无压力 regime 是干净对照基线。本重测从**数据组织侧**（#28 从 routing 侧）独立确认 4-ep KV 压力下局部性决定性。
+- **合规**：GPU util 2-ep 79–85%（borderline）/4-ep 86–90%；CV 1–6% 稳定。**⚠️ feeding-saturation 门禁未正式算出**：
+  (a) 2-ep bounded 是 batch-1 c256（46,947 tok/s，2,047/2,048 完成、1 瞬时 ReadError 排除），策略 107–120% **超过**它 → batch-1 太弱非真上限；
+  (b) 4-ep bounded gate 硬编码 `exactly two completions endpoints`，4 endpoint 直接 ValueError 无法测。
+  喂饱用 GPU util + 绝对 tok/s（与 #19 2-ep/0.9 ~57k 同量级）间接确认。**batched bounded（batch 16/32）+ 4-ep bounded 客户端列为待办。**
+- **执行教训（harness 调试）**：4 个配置坑依次修复——runner 必需 `--metrics-urls`（非仅 `--health-url`）；
+  profiler manifest 行数 guard（total-rows 必须=manifest 2048，512 行 smoke 不可行）；bounded gate 对输出目录已存在 fail-closed（须让 gate 自建目录）；
+  bounded shard 1/1024 瞬时 ReadError 触发 `failed_rows:0` 硬门禁（已解耦：bounded best-effort，不影响 data-org）。
+  每坑秒级发现（监控 60s 内断 halt），vLLM 跨 attempt 不重启、未浪费 GPU。
+- **同步**：`experiment_status_and_gaps.md` §1.1 新增「RC1 数据组织系统重测」行 + 状态行更新（regime-dependent 闭合）；
+  本目录 README（8 段全组件）；旧 07-18/19/25/26 gropy 标 superseded（07-18/19 最原始动机保留作历史参照）。
+- **下一步**：prefix_aware_token_budget 正文实验（能否回收 4-ep 重排序类命中率）；batched/4-ep bounded 补 feeding 门禁；
+  `sharegpt_concentrated` + 7B 泛化对照；MFU 采集修复。
+
+## 2026-07-31 补 feeding-saturation 门禁：准入控制是吞吐杠杆、效应随 regime 反向
+
+- **动机**：RC1 数据组织重测（上一条）留了"feeding 门禁未正式算出"的缺口（2-ep batch-1 bounded 太弱、4-ep bounded gate 硬限 2-endpoint）。本条补齐。
+- **改动**：`code/src/baselines/gate_runner.py` 把 `len(endpoint_urls) != 2` 放宽到 `< 2`（"at least two"）——2-endpoint 硬限是早期 2-ep-only 遗留，4-ep 实验需要；其余 shard/校验逻辑本就 N-endpoint 通用。2 cell（b16-c64/b32-c32）× 2 拓扑，2,048/2,048 完成、0 失败、`status: passed`。结果存 `rc1_data_organization/bounded_{2ep_batched,4ep_1.5b_cacheON}_20260731/raw/`。
+- **bounded 真上限**：**2-ep = 79,488 tok/s**（b32-c32，wall 20.8s）；**4-ep = 24,733 tok/s**（b16-c64，wall 66.9s，**病态**）。
+- **主结论（门禁细化，不是简单过/不过）**：
+  - **2-ep**：策略 E2E 50–56k = 真上限的 **63–71%（严格 ≥95% 门禁不过）**。但 `model_request_wall`(27.5s) ≈ `operator_wall`(27.5s) → **非模型开销可忽略、无 pipeline 瓶颈**。缺口 = **active-work 准入门 W65536 把 inflight 压到 4–22（远低于 K256）**——故意节流（换 SLO/公平），非饿死 vLLM。GPU 79–85% 印证"在干活但没榨干"。
+  - **4-ep**：unthrottled batched bounded **自己搞慢自己**——小 KV 池（0.43、KV max 98–100%）上一次打 256 并发 batched → 淘汰风暴 + 重 prefill → 24k（比策略 39–50k 还低）。**策略的准入节流反而帮忙**（inflight 8–22 → 少 thrash）。→ unthrottled bounded 在 4-ep **不是有效上限**；准入节流是 4-ep 解法的一部分。
+  - **跨 regime**：**准入控制是吞吐 binding 杠杆，效应随 regime 反向**——2-ep 压住上限（放开 W 可提速）、4-ep 防 thrash（应保留）。这把 feeding 门禁从"过/不过"细化成一个**研究内容二（调度/准入）的实证信号**。
+- **诚实边界**：策略**确实喂饱 vLLM**（GPU 80–90%、model_wall≈operator_wall、非饥饿），但**不榨干 raw 上限**——不能声称"策略已达理论上限"。4-ep bounded 病态值不能当上限用。2-ep 放开 W 测能否逼近 79k = 下一步验证。
+- **同步**：`rc1_data_organization/README.md` §3 合规自检 + §6/§8 更新；本条记入 PROJECT_LOG；`experiment_status_and_gaps.md` / `EXPERIMENT_EVIDENCE_REGISTRY.md` / `PROJECT_OUTLINE.md` 的"feeding 待补"口径改成"已补 + 准入杠杆结论"；`gate_runner.py` 放宽 ≥2 endpoint（本地+远程，待 commit）。

@@ -117,12 +117,12 @@ def load_core_gate_config(
         if completion_protocol == "completions"
         else "/v1/chat/completions"
     )
-    if len(endpoint_urls) != 2 or any(
+    if len(endpoint_urls) < 2 or any(
         not isinstance(url, str) or not url.endswith(endpoint_suffix)
         for url in endpoint_urls
     ):
         raise ValueError(
-            "core gate requires exactly two "
+            "core gate requires at least two "
             f"{completion_protocol} endpoints"
         )
     model = payload.get("model")

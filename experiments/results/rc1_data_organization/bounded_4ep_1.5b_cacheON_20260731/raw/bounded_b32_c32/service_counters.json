@@ -1,0 +1,56 @@
+{
+  "after": {
+    "0": {
+      "generation_tokens": 2929417,
+      "prompt_tokens": 6958228
+    },
+    "1": {
+      "generation_tokens": 2702176,
+      "prompt_tokens": 6608680
+    },
+    "2": {
+      "generation_tokens": 2307465,
+      "prompt_tokens": 5797036
+    },
+    "3": {
+      "generation_tokens": 2723336,
+      "prompt_tokens": 6397242
+    }
+  },
+  "before": {
+    "0": {
+      "generation_tokens": 2686026,
+      "prompt_tokens": 6372595
+    },
+    "1": {
+      "generation_tokens": 2459360,
+      "prompt_tokens": 6023350
+    },
+    "2": {
+      "generation_tokens": 2307465,
+      "prompt_tokens": 5797036
+    },
+    "3": {
+      "generation_tokens": 2723336,
+      "prompt_tokens": 6397242
+    }
+  },
+  "delta": {
+    "0": {
+      "generation_tokens": 243391,
+      "prompt_tokens": 585633
+    },
+    "1": {
+      "generation_tokens": 242816,
+      "prompt_tokens": 585330
+    },
+    "2": {
+      "generation_tokens": 0,
+      "prompt_tokens": 0
+    },
+    "3": {
+      "generation_tokens": 0,
+      "prompt_tokens": 0
+    }
+  }
+}
