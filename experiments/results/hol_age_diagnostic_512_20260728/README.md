@@ -12,7 +12,7 @@
 ## 2. 设置
 
 - 6 臂 ×（1 warmup + 3 formal），formal 随机交错，24/24 ok。
-- 环境（按 07-27 设计；runs.csv 确认 server=PG18.4、pgvector 0.8.5、workload=sharegpt_burstgpt、token_budget=6144、executor=ray_task）：单 RTX 5070，vLLM 0.25.1 + Qwen2.5-1.5B，prefix cache off，CUDA Graph on，本地 PG18.4，arrival replay ×0.0005，flush fixed_timeout 50ms。
+- 环境（按 07-27 设计；runs.csv 确认 server=PG18.4、pgvector 0.8.5、workload=sharegpt_burstgpt、token_budget=6144、executor=ray_task）：单 RTX 4090，vLLM 0.25.1 + Qwen2.5-1.5B，prefix cache off，CUDA Graph on，本地 PG18.4，arrival replay ×0.0005，flush fixed_timeout 50ms。
 - 主指标：SLO-goodput（req/s）+ request P99；次：tokens/s。预注册「正向」判据：`aimd_hol`/`replenish_static_k8`/`aimd_hol_replenish` 之一在 SLO-goodput 上相对 `static_k16` >+5% 且 SLO 违约 <1%。
 
 ## 3. 结果（formal 中位数）
