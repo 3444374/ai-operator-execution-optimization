@@ -3034,3 +3034,23 @@
   不进 git；~30 个带时间戳 debug 变体 + 早期无日期目录属迭代噪声/被取代，保留远端不同步。
 - **待办**：per-arm APC 命中率指标仍缺（runner resources 只采样 KV 用量）；agent pala P50 改善需人为缩 KV
   制造可控淘汰率单调验证；4-ep/1.5B +5.9% 仍需 4-ep/7B 或 2-ep/1.5B 隔离 model×endpoint×cache 解耦。
+
+## 2026-07-31 KV-budget 扫描（2-ep/1.5B）隔离 4-ep +5.9%：endpoint 数是驱动，非 per-endpoint KV
+
+- **回答上一条待办**：「4-ep/1.5B +5.9% 需 2-ep/1.5B 隔离 model×endpoint×cache」。固定 2 endpoint（1/GPU），扫
+  `gpu_mem_util ∈ {0.3,0.45,0.6,0.9}`（+ 复用 2-ep/0.9 ablation 点），每点 `least_queued` vs `prefix_affinity`，
+  sharegpt_multiturn 2048。结果存**新存储约定** `experiments/results/rc1_prefix_routing/kv_budget_sweep_20260731/{README.md, raw/}`。
+- **结果**：2-ep 全 KV 范围 prefix_affinity **中性**（Δ ∈ [−0.1%, +1.0%]，含 util 0.3–0.6 的 13–15% SLO 抖动点）；
+  util 0.9（~22.8GB、working set 全放下、0% SLO）吞吐回升到 ~64.8k（vs 抖动点 ~54.2k）。32 run、0 incident、CV≤1.0%。
+- **matched-KV 对比（关键）**：2-ep/0.45（~12GB 显存、~7–8GB KV）= **−0.1%** vs 4-ep/0.43（~7GB KV/端）= **+5.9%**——
+  per-endpoint KV 量级相当、**只差 endpoint 数（2 vs 4）**。→ **驱动是 endpoint 数（consolidation 拓扑），非 per-endpoint KV 大小**。
+- **修正上一条 framing**：「cache 淘汰压力是开关」在 1.5B/multiturn 下被证伪——2-ep 即便 13–15% SLO 抖动也无 affinity
+  收益；**endpoint 数才是开关**。agent-trace（2-ep/7B/不同 workload）的 P50 信号是独立数据点，跨 workload 是否
+  cache-pressure 驱动待验。
+- **诚实边界**：4-ep regime SLO 违约（25–31%）比 2-ep 最高（14%）更深，未完全分离「endpoint 数」与「抖动深度」；
+  matched-KV 对比强烈指向 endpoint 数。util 0.9 为 n=2（第 3 rep 偶发 subprocess_nonzero 失败，2 rep CV≤0.3% 仍稳）。
+- **同步**：`EXPERIMENT_EVIDENCE_REGISTRY.md` 新增 `rc1_prefix_routing/kv_budget_sweep_20260731/` 行；
+  `experiment_status_and_gaps.md` §1.1 prefix 行细化（KV 排除、endpoint 数指向、cache-pressure-开关 假设证伪）；
+  新存储约定（方向分组 + raw/ + README）首次采用，后续新数据（RC1 重测等）按此存。
+- **对方向**：跨引擎共享 KV（Mooncake/LMCache）价值定位在**多 endpoint consolidation**（现实 DB-AI 部署：多模型
+  endpoint 共享 GPU），不在小 KV。2-ep 作为 RC1 数据组织重测（#21–24）的干净基线合理（策略效应不被 routing/consolidation 混淆）。
