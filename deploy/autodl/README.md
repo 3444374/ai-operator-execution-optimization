@@ -4,6 +4,29 @@
 
 指南面向"从零起一台 AutoDL 实例到跑通首个多 endpoint 实验"。所有命令均为 Linux bash(远端)。
 
+## 这份指南讲什么（先读这段，搞清概念）
+
+**AutoDL 服务器**：一台云上 2×4090（每卡 24G）Linux GPU 盒子，项目所有 GPU 实验在它上面跑。本指南讲怎么从空实例配到能跑实验 + 开机恢复。
+
+**项目执行栈**（数据怎么走一遍）：
+```
+PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
+  → Daft DataFrame（数据引擎：读出 / 组织成请求）
+  → Ray actor（策略执行：数据组织 + 调度/提交控制）
+  → 推理引擎（GPU 上算）→ 写回 PostgreSQL + pgvector
+```
+
+**推理引擎有两条 track**（本指南核心区分，务必先理解）：
+
+| track | 是什么 | 模型 | 算子 | 部署在哪 |
+|---|---|---|---|---|
+| **文本（生成式）** | **vLLM**——一个开源 LLM **serving 引擎**，用 continuous batching + prefix cache(APC) + KV cache(PagedAttention) 高吞吐服务**生成式**推理。本项目**不修改 vLLM 内部**，只把它当部署平台 | Qwen2.5-1.5B/7B-Instruct | `AI_COMPLETE`（生成 token 序列） | 本指南 §8 `start_endpoints.sh` |
+| **多模态（图像 embedding）** | **CLIP**——**不是**生成式 LLM，是 embedding 模型，把图像压成 512d 向量。**无 KV / 无 prefix / 无生成**，观测层与 vLLM 完全不同 | CLIP ViT-B/32 | `AI_EMBED`（图像→向量） | 单独文档 `deploy/autodl/multimodal_embed_serving.md` |
+
+> **为什么分两条**：文本每行 ~1KB、搬运太轻，binding 瓶颈在 vLLM serving（RC1 实测 db_fetch 1.4–2.4s vs model_wall 27–37s）；图像每行 ~600KB，DB-read / CPU→GPU 搬运变 binding——两条要找/优化的瓶颈不同，引擎也不同（vLLM 服务生成、CLIP 服务 embedding）。
+
+**怎么用本指南**：§1–§7 是**共享平台 setup**（实例/连接/venv/network_turbo/代码同步/模型下载方法/PG，两条 track 都用）；§8 起是**文本 vLLM track**；**图像 CLIP track 全在 `multimodal_embed_serving.md`**。
+
 ## 新对话 / 新 agent 的唯一操作入口
 
 本文件是 AutoDL 环境准备、开机恢复、实验启动和故障恢复的单一 runbook。
@@ -1560,78 +1583,3 @@ per-endpoint K、active work 和 **Completions** actor shape；Chat actor 曲线
 `EndpointSnapshot.available` 与 typed capacity backpressure 的新提交，在全新
 目录先重跑 64 行 gate。门禁必须核对 exactly-once、固定 endpoint 分布、0
 worker failure、服务端 counter 和最终空队列；通过后才允许重新启动 512 校准。
-
-## image-CLIP 多模态环境准备（2026-08-01，首个多模态 workload）
-
-> 与文本 vLLM pipeline（§8）平行的多模态路径。image AI_EMBED（CLIP）是 2026-08-01 锁定的下一步 workload——文本 payload 搬运太轻、找 DB-read/CPU→GPU 数据搬运瓶颈要换图像（每行 ~600KB）。**CLIP 是 embedding 模型，不是 vLLM 的生成式 LLM**，不能复用 vLLM endpoint。本节只到"环境就绪、CLIP 能在 GPU encode"；serving 引擎是下一阶段（§5）。
-
-### 0. 前提 survey（实测远端初始状态）
-- GPU：2×4090（24G/卡），文本 vLLM 关掉后全空。
-- venv：只有 `venvs/vllm-4090`，但已含 `torch 2.11+cu130` / `transformers 5.14` / `PIL`——**可直接跑 CLIP，不必建新 venv**。
-- models：只有 Qwen2.5-1.5B/7B-Instruct（文本），**无 CLIP/VLM**。
-- 数据：无图像数据。
-- 磁盘：`/root/autodl-tmp` 需 ~2.5G 空闲（CLIP ~1.7G + COCO val ~780M）。
-
-### 1. 代码同步 gotcha（先做）
-远端 `/root/autodl-tmp/ai-operator` git 常落后本地 main（实验由本地 commit/push，远端只跑）。跑多模态前先同步到本地 HEAD，否则跑旧代码：
-```bash
-cd /root/autodl-tmp/ai-operator
-source /etc/network_turbo 2>/dev/null          # GitHub SSH 走 turbo，否则 fetch 极慢/卡死
-git fetch origin main
-# ⭐ 条件 reset：仅当 origin/main == 本地 HEAD 才 reset，保护已 scp 的代码不被旧 origin 覆盖
-TGT=$(本地 git rev-parse HEAD 的输出贴这里)
-[ "$(git rev-parse origin/main)" = "$TGT" ] && git reset --hard origin/main || echo "FETCH_STALE 不 reset"
-```
-远端是 runner workspace，`reset --hard` 不碰 untracked 实验结果文件。2026-08-01 实测：fetch 受 COCO/HF 下载抢带宽会拖到 ~7 分钟，等即可。
-
-### 2. CLIP 模型下载（⭐ 用 Python API，别用 huggingface-cli）
-`huggingface_hub 1.x`（1.25.1 实测）的 `huggingface-cli download` wrapper **解析参数失败、打印 help、下不到文件**。改用 Python `snapshot_download`：
-```bash
-source /etc/network_turbo 2>/dev/null                       # HF 必开加速
-export HF_HUB_DISABLE_XET=1 HF_HUB_ENABLE_HF_TRANSFER=0     # 禁 Xet，否则 stall
-/root/autodl-tmp/venvs/vllm-4090/bin/python - <<'PY'
-from huggingface_hub import snapshot_download
-p = snapshot_download("openai/clip-vit-base-patch32",
-                      local_dir="/root/autodl-tmp/models/clip-vit-base-patch32")
-print("DOWNLOADED_TO", p)
-PY
-```
-结果 ~1.7G（vision+text 权重）。对照模型 `openai/clip-vit-base-patch16` 同法。
-
-### 3. COCO val2017 下载（smoke 集，5000 图）
-cocodataset.org 直连，**不开 turbo**（turbo 只代理 github/HF）：
-```bash
-mkdir -p /root/autodl-tmp/data/raw/coco_val2017
-wget -cq --tries=10 --timeout=30 \
-  http://images.cocodataset.org/zips/val2017.zip \
-  -O /root/autodl-tmp/data/raw/coco_val2017/val2017.zip      # ~780M
-cd /root/autodl-tmp/data/raw/coco_val2017 && unzip -q val2017.zip   # → val2017/*.jpg
-```
-
-### 4. GPU 推理验证（⭐ transformers 5.x 返回类型坑）
-transformers 5.x 的 `CLIPModel.get_image_features` 返回 **`BaseModelOutputWithPooling`**（不是旧版的裸 tensor），取 embedding 要 `.image_embeds`（或 `.pooler_output`），不能直接 `.shape`：
-```bash
-/root/autodl-tmp/venvs/vllm-4090/bin/python - <<'PY'
-import torch, numpy as np
-from PIL import Image
-from transformers import CLIPModel, CLIPProcessor
-MD="/root/autodl-tmp/models/clip-vit-base-patch32"
-m = CLIPModel.from_pretrained(MD).to("cuda").eval()
-proc = CLIPProcessor.from_pretrained(MD)
-img = Image.fromarray((np.random.rand(224,224,3)*255).astype("uint8"))
-inp = proc(images=img, return_tensors="pt").to("cuda")
-with torch.no_grad():
-    out = m.get_image_features(**inp)          # 5.x → BaseModelOutputWithPooling
-emb = out if torch.is_tensor(out) else out.image_embeds
-print("CLIP_GPU_OK", tuple(emb.shape), float(emb.norm()))   # 期望 (1, 512) ~10
-PY
-```
-看到 `CLIP_GPU_OK (1, 512) <norm>` = CLIP 在 GPU 能 encode，环境就绪。
-
-### 5. 下一步：serving 引擎（待建，非环境准备）
-CLIP serving 不能复用 vLLM。按 `experiments/plans/image_clip_workload_lock_20260731.md` 的"ours 路径 B"：
-- **CLIP embedding HTTP endpoint**（FastAPI 包 transformers CLIP）+ 上游 Ray worker 做 CPU decode（JPEG decode+resize），项目 scheduler（K_max/flush/credit）观测 CLIP endpoint 队列。
-- baseline A：Daft `@daft.cls` Native（Daft 自己做 overlap/backpressure，PolarDB 式）。
-- **只有 ours 显著优于 Daft Native** 才能声称"模型服务感知调度 > 通用 overlap"——这是相对 PolarDB Lakebase 的核心 claim。
-
-观测层差异（CLIP ≠ vLLM）：vLLM 的 `prefix_cache_hit_rate` / `kv_cache_usage` / `running·waiting` 在 CLIP embedding 服务**没有对应物**；image pipeline 要采 **CPU decode/resize 计时 + CPU→GPU transfer 计时 + GPU embed 计时 + endpoint 队列深度**（这正是"找数据搬运瓶颈"要分阶段画像的）。
