@@ -1,8 +1,29 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-31，RC1 数据组织系统重测 regime-dependent 闭合 + 喂饱门禁补全）
+Date: 2026-07-20（最后更新：2026-08-01，方向 pivot：image-first（A 状态感知调度 + B 代价估计），文本轨道 parked-conditional，见 §0；此前 2026-07-31 RC1 数据组织系统重测 regime-dependent 闭合 + 喂饱门禁补全）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
+
+## 0. 当前优先级（2026-08-01 方向 pivot —— 取代 §4 / §10.3 / §13 的文本轨道强制顺序）
+
+**方向决定（2026-08-01；本节为该决定的记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `image_clip_workload_lock_20260731.md` §0「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
+
+**✅ §6 go/no-go 门禁已通过（GO）**（2026-08-01，`motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`）：ratio = CPU 准备 / GPU embed，实用 batch（≥16）**13–17**，远超 0.3 门禁；瓶颈是 CLIPProcessor resize+normalize（~5.2 ms/img），不是 decode/transfer/pg_read。**⚠️ 首跑为 1024 图 × 50 iters（"试试"量级）；§6 规范的 5K COCO val + 加长 redo 仍待跑**（publishable 级稳定数字；结论预期不翻转）。过门禁 → 下一步建 path-B runner（PG→Daft→Ray CPU decode+preprocess→CLIP endpoint→pgvector）+ image §7 对照臂。详见 `image_clip_workload_lock_20260731.md` §6/§7。
+
+**过门禁后（image build，顺序固定）**：① 写 CLIP embedding adapter + path B runner（PG→Daft→Ray CPU decode→CLIP endpoint→pgvector，复用 organizer/scheduler/tracing）→ ② image §7 对照臂（见 `image_clip_workload_lock_20260731.md` §7；bounded direct CLIP / **Daft `@daft.cls` Native 强 baseline** / Ray Data / naive / ours，+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 CLIP endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
+
+**文本轨道遗留的 pivot 后分类**：
+
+| 遗留项 | pivot 后状态 | 理由 |
+|---|---|---|
+| 代价模型 ranking（Spearman / pairwise / Top-K，§1.5） | 🟢 **保留（服务 B）** | B 的方法论基础；文本侧 283 profile 可直接验证 ranking/regret 方法 |
+| §13 K256/W98K 等价性门禁 + disjoint 2048 formal | ⏸ parked-conditional | 文本 baseline-matrix 严谨度；论文收录文本结果时恢复 |
+| §10.3 baseline 矩阵第 1–6 步（OceanBase / Daft / Ray Data formal） | ⏸ parked-conditional（image §7 用同结构，可复用） | 同上；image §7 会重建同臂结构 |
+| 4-ep/1.5B prefix routing 隔离（endpoint vs model，§1.1） | ⏸ parked | 文本归因诚实性，非 A+B |
+| prefix_aware_token_budget 正文实验（§1.1） | ⏸ parked | 文本 RC1 残留 |
+| 动态控制信号选择（§10.4 三方式） | ⏸ parked | 文本 RC2；A 在 image 侧重做（观测 CLIP endpoint 队列） |
+
+> **阅读指引**：§1（实验全景）+ §2（证据链）主体是已完成实验的**事实记录，不受 pivot 影响**，保留原样——但 §1.2 / §1.6 结尾的"下一步 / 唯一安全顺序"句是**规范性指令**（已就地标注 parked）。以下章节是 **pivot 前（2026-07-29）的文本轨道**前瞻 / 路线图，**整节已被 §0 取代**（标题处加 ⏸），文本轨道恢复时仍可参考：§4 全节（当前强制顺序 + 候选机制 + P0/P1/P2 路线图）、§6 完整问题审计、§9 剩余关键缺口、§10.3 推荐顺序、§10.4 动态控制信号、§11 RC2 备选方案推进顺序、§13 baseline 门禁。
 
 ## 1. 实验全景：已完成 vs 未完成
 
@@ -17,7 +38,7 @@ Date: 2026-07-20（最后更新：2026-07-31，RC1 数据组织系统重测 regi
 | **Token-budget 1024–32768 容量曲线** | ⏳ 配置完成 | — | 预算甜点、过大预算的 completion barrier/HOL 代价、动态预算动作集 |
 | Length-align + Prefix-aware ablation | ✅ 07-19 | length+fixed 是负结果（token P95=33407）；prefix+token6144 吞吐最高（339 rows/s）但 prefix ratio 仅 6.4% | length-align 需配 token-budget；prefix 信号太弱 |
 | **Prefix 受控 workload + cache-ON 消融** | ✅ 07-26 / 07-31（2-ep/7B 跨三数据集）；⚠️ 07-31（4-ep/1.5B）；07-31 KV-budget 扫描（2-ep/1.5B，`rc1_prefix_routing/kv_budget_sweep_20260731`） | cache-OFF 0/30/70/100% screen；cache-ON 2-ep/7B batching 中性（within 1.2%）+ routing 跨分散/agent/concentrated 三数据集吞吐 \|Δ\|<2% 不过门禁（agent-trace pala P50 −7.8%/SLO −3.8pp 但吞吐 −1.9%，过饱和区间）；cache-ON 4-ep/1.5B routing **+5.9% 跨门禁**（KV-budget 扫描已排除 per-endpoint KV 为驱动：2-ep/1.5B 全 KV 范围中性、含 13–15% SLO 抖动点；matched-KV ~7GB → 2-ep −0.1% vs 4-ep +5.9%，指向 endpoint 数；agent-trace 为不同 workload 信号） | 1.5B/multiturn 下 endpoint 数（consolidation）是开关、非 per-endpoint KV（KV 扫描证伪 cache-pressure-开关 假设）；agent-trace(2-ep/7B) 是否 cache-pressure 驱动待跨 workload 验证；per-arm 命中率待 runner 增采 |
-| **RC1 数据组织系统重测（5 策略 × {2-ep/0.9, 4-ep/0.43}, cache-ON, 1.5B, multiturn）** | ✅ 07-31（`rc1_data_organization/`，**取代 07-25/26 gropy；07-18/19 保留作历史动机参照**） | **regime-dependent**：2-ep（KV max 7–10% 无压力）5 策略 E2E 50–56k 紧凑，fixed≈seq>bestfit>rowcap>lenalign；4-ep（KV max **98–100% 饱和**）分化 39–50k 且**排名反转** seq>fixed>>rowcap≈bestfit>lenalign。**机制闭合（prefix_group_ratio）**：重排序类 organizer（length_align/best_fit/row_cap）打散 prefix 组（ratio 0.03）→ 4-ep 命中从 0.60–0.76 崩到 **0.06–0.07** → prefill 重算激增 → TTFT 翻倍/tail 崩（best_fit/row_cap SLO 60%）；保序类 fixed/sequential 保留局部性（ratio 0.13–0.29，命中 0.47–0.48）。consolidation 是惩罚（4-ep 比 2-ep −10～−26% + 能耗 +40%）。P0 指标（prefix_hit/TTFT）首次采集 | ✅ 喂饱门禁已补（batched bounded，gate 放宽 ≥2 endpoint）：2-ep 真上限 79,488（策略 63–71%、缺口=active-work 准入节流非饿死）；4-ep bounded 24,733 病态（策略超过）→ 准入控制是吞吐杠杆、随 regime 反向；prefix_aware_token_budget 正文实验待跑（能否回收 4-ep 重排序类命中率）；仅 1 workload + 1 model；MFU 未产出 |
+| **RC1 数据组织系统重测（5 策略 × {2-ep/0.9, 4-ep/0.43}, cache-ON, 1.5B, multiturn）** | ✅ 07-31（`rc1_data_organization/`，**取代 07-25/26 gropy；07-18/19 保留作历史动机参照**） | **regime-dependent**：2-ep（KV max 7–10% 无压力）5 策略 E2E 50–56k 紧凑，fixed≈seq>bestfit>rowcap>lenalign；4-ep（KV max **98–100% 饱和**）分化 39–50k 且**排名反转** seq>fixed>>rowcap≈bestfit>lenalign。**机制闭合（prefix_group_ratio）**：重排序类 organizer（length_align/best_fit/row_cap）打散 prefix 组（ratio 0.03）→ 4-ep 命中从 0.60–0.76 崩到 **0.06–0.07** → prefill 重算激增 → TTFT 翻倍/tail 崩（best_fit/row_cap SLO 60%）；保序类 fixed/sequential 保留局部性（ratio 0.13–0.29，命中 0.47–0.48）。consolidation 是惩罚（4-ep 比 2-ep −10～−26% + 能耗 +40%）。P0 指标（prefix_hit/TTFT）首次采集 | ✅ 喂饱门禁已补（batched bounded，gate 放宽 ≥2 endpoint）：2-ep 真上限 79,488（策略 63–71%、缺口=active-work 准入节流非饿死）；4-ep bounded 24,733 病态（策略超过）→ 准入控制是吞吐杠杆、随 regime 反向；prefix_aware_token_budget 正文实验 ⏸ parked（见 §0；能否回收 4-ep 重排序类命中率）；仅 1 workload + 1 model；MFU 未产出 |
 
 **RC1 当前状态**：✅ 动机成立，策略机制已验证 + **regime-dependent 闭合**（07-31 系统重测：组织策略效应取决于 KV 压力 regime；cache-ON 下保 prefix 局部性是隐性目标，重排序类在 KV 饱和下崩）。⚠️ 但不是"全面胜利"——token-budget 控制 token tail 的代价是更多 HTTP 调用，这个 tradeoff 本身是论文的讨论点。✅ feeding-saturation 门禁已补（batched bounded 2-ep 79,488/4-ep 24,733 病态）：策略确实喂饱但**不榨干 raw 上限**——active-work 准入（W65536）是吞吐 binding 杠杆、效应随 regime 反向（2-ep 压住可放开、4-ep 防 thrash 应保留），这本身是研究内容二的实证信号。
 
@@ -49,7 +70,7 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 使用 E2E tokens/s 算术平均得到 short/long 均为 W65K；正式 model-request
 中位数却得到 short W98K、long W65K。由于 short W65K/W98K cap 均未绑定却
 出现 18%/34% CV，且实验没有使用冻结的 async transport，该迁移信号与
-“共同 65K”信号都不具判决资格。下一步先运行 version-controlled async
+“共同 65K”信号都不具判决资格。（文本轨道恢复后）下一步先运行 version-controlled async
 等价臂 gate，只有稳定性通过才重建交错静态面。
 不继续在当前稳态 workload 上调 PID 参数；动态控制在负载阶段变化/多租户/
 多 GPU 场景下仍是开放问题。
@@ -67,7 +88,7 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 
 | 实验 | 状态 |
 |---|---|
-| CLIP embedding + ImageNet subset | 🔴 当前下一步（2026-08-01 workload 锁定；"文本 RC1+RC2 完成前不启动"的 scope 缩减条件已被 07-31 reframe 取消，见 §1.1 / overview §当前重点 / `image_clip_workload_lock_20260731.md`）|
+| CLIP embedding (COCO/ImageNet subset) AI_EMBED | ✅ **§6 go/no-go 门禁已过（GO，ratio 13–17，见 §0）**。首跑 1024 图 × 50 iters；**5K COCO val + 加长 redo 待跑**（publishable 级）。过门禁 → 建 path-B runner + image §7 对照臂（bounded direct / Daft Native / Ray Data / ours） |
 
 ### 1.5 算子代价估计 & 写回
 
@@ -103,7 +124,7 @@ grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。定位为�
 | 2,048 行 disjoint formal | 🟡 数据已就绪，待 manifest/gate | 远端库已含多个 2048 行重建 workload（`sharegpt_multiturn` 在 `doc_id=300000..302047`，另含 `sharegpt_concentrated`/`sharegpt_burstgpt`），disjoint 2048 行不再缺；raw/text/session/Qwen token 已核对 | 选定一个与主实验 disjoint 的 2048 行 workload（如 `doc_id=300000..302047` 之外的重建集）导出只读 manifest，先 64 行 gate，再 1 warm-up + 3 repeats |
 
 这组结果已经推翻“历史 project 约 8.0–8.2K tok/s 是双 4090 物理极限”的
-解释。当前唯一安全顺序是：先完成 project 512 校准，再准备 disjoint formal
+解释。**文本 baseline 轨道恢复时**的安全顺序（当前 parked-conditional，见 §0）：先完成 project 512 校准，再准备 disjoint formal
 数据；formal 通过后才恢复多 job 或新策略搜索。不得跨协议、arrival replay
 或 workload 直接比较历史数字。
 
@@ -172,9 +193,9 @@ AI_COMPLETE 的根本差异：每行 token 量可差 13.9×，"一行"不再是�
 
 ---
 
-## 4. 下一步实验路线图
+## 4. 下一步实验路线图 — ⏸ pivot 前文本轨道（含下方 候选机制 + P0/P1/P2 路线图），整节已被 §0 取代
 
-### 当前强制顺序（2026-07-29）
+### 当前强制顺序（2026-07-29）— ⏸ pivot 前文本轨道顺序，已被 §0 取代（保留供文本轨道恢复时参考）
 
 1. 在同一 512 行 immutable Chat manifest 上完成 project static-K 与
    token-work 校准；
@@ -264,7 +285,7 @@ static K=16 机制 control 后，AIMD 的 E2E +0.66%、tokens/s -0.69%，差异
 - **结论（分层）**：低淘汰压力 regime（2-ep/7B，APC 覆盖 working set）prefix 方向收口，vLLM APC 覆盖上游 prefix 组织/路由优化；高淘汰压力 regime（4-ep/1.5B APC 不够覆盖，或 2-ep/7B agent-trace 高 cache 压力 workload）prefix_affinity / pala 重新显现收益（+5.9% 吞吐或 P50 −7.8%）。**cache 淘汰压力是信号是否显现的开关**，现由两个独立高压数据点支持（4-ep/1.5B 改 endpoint/model；agent-trace 只改 workload）。⚠️ 4-ep/1.5B 同时改了 model/endpoint 数/KV 大小（混淆）且 SLO 违约 25–31% 处于过饱和 regime——跨门禁但需隔离消融后正式晋级。
 - 残留：per-arm prefix cache 命中率未记录（resources.csv 只采样 KV 用量，待 runner 增采）；4-ep/1.5B 的 +5.9% 需 4-ep/7B 或 2-ep/1.5B 隔离 endpoint 数 vs model size；agent pala 的 P50 改善需人为缩 KV 制造可控淘汰率单调验证；低 prefix 重复率 workload 泛化未测。高淘汰压力 regime 的 KV 淘汰/重算瓶颈信号（4-ep 25–31% SLO 违约 + affinity 收益、2-ep/7B agent-trace P50 改善）为 Mooncake/共享 KV cache 方向提供动机数据点。
 
-### P2：多模态泛化（触发条件：P0 和 P1 完成）
+### P2：多模态泛化（⚠️ 触发条件已被 §0 pivot 取代——image 多模态现为首要 workload，不再等文本 P0/P1）
 
 **目标**：验证策略代码的模态无关性。
 
@@ -289,7 +310,7 @@ static K=16 机制 control 后，AIMD 的 E2E +0.66%、tokens/s -0.69%，差异
 
 ---
 
-## 6. 完整问题审计（2026-07-23）
+## 6. 完整问题审计（2026-07-23）— ⏸ 文本轨道问题清单（parked-conditional，见 §0；仅当论文收录文本结果时为生效优先级）
 
 以下审计覆盖所有已知问题（不含"ML as Native Operator"叙事定位问题，该问题已在 2026-07-23 对话中单独讨论，结论为搁置至后续阶段）。问题按 P0/P1/P2 分级。
 
@@ -509,7 +530,7 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
   复验证实；但 AIMD 无法观测 Ray 侧软拥塞（vLLM waiting=0），动态控制
   相对最佳静态无增量；当前共享服务默认继续使用 static K=8 + fixed 50ms。
 
-### 剩余关键缺口
+### 剩余关键缺口 — ⏸ 文本轨道待办（parked-conditional，见 §0；item 6 多模态已升为 §0 首要 workload、item 7 动态控制信号 = §0 parked）
 
 1. 用相同 per-GPU K 完成单/双 endpoint 容量曲线，替代历史 global K 同值
    的不公平对照；
@@ -572,9 +593,9 @@ decrease 的根因不是控制器参数问题，而是 vLLM Prometheus `waiting`
 "软拥塞"。Completion-span/HOL 观测和 request-level replenishment 的副产品——
 逐请求完成时间——可作为反映 Ray 侧积压的信号，使动态控制真正有价值。这
 将 request-level replenishment 的优先级从"工程改进"提升为"可能解锁动态控制
-价值的必要前置"。
+价值的必要前置”（当前 parked-conditional，见 §0；仅动态控制方向恢复时生效）。
 
-### 10.3 推荐顺序与成功标准
+### 10.3 推荐顺序与成功标准 — ⏸ pivot 前文本轨道（2026-07-29），已被 §0 取代
 
 1. 16K–131K active-work、Actor Pool、service quantum、SLO-aware EWMA 和
    Shared-vLLM equal-workload 矩阵均已完成；在继续增加策略前，先补同规模
@@ -627,7 +648,7 @@ P99、failure、exactly-once 不退化。否则记录负结果，不增加控制
 完整机制卡、文献映射、fatal-flaw audit 和候选池见
 `literature_driven_pipeline_optimization_guide.md`。
 
-### 10.4 RC2 核心瓶颈：AIMD 选错了观测信号（2026-07-27 集中梳理）
+### 10.4 RC2 核心瓶颈：AIMD 选错了观测信号（2026-07-27 集中梳理）— ⏸ parked-conditional（见 §0），文本轨道恢复且需做动态控制信号选择时再启用
 
 **问题**：07-26 shared-vLLM 实验中 AIMD 0 次 decrease，根因是 AIMD 盯着
 vLLM Prometheus `vllm:num_requests_waiting` 做决策——但请求在 Ray actor
@@ -654,7 +675,7 @@ vLLM Prometheus `vllm:num_requests_waiting` 做决策——但请求在 Ray acto
 - 方式 1 可以**叠加**在 2+3 之上：当 2+3 的解析推断显示"当前接近饱和"时，用 1 做精确的 per-request TTFT 预测来决定哪些请求立即提交、哪些等待
 - 推荐**渐进式推进**：先方式 3（零新依赖）→ 再方式 2（验证 K=8 解析依据）→ 最后方式 1（需要模拟器基础设施）
 
-## 11. 2026-07-27 提交策略（RC2）文献驱动备选方案
+## 11. 2026-07-27 提交策略（RC2）文献驱动备选方案 — ⏸ parked-conditional（见 §0），文本轨道恢复时参考；方案 A–G 机制卡保留
 
 以下从新精读的 SFS (arXiv 2026) 及其他 5 篇代价估计论文中提取的
 提交策略备选技术方案。每个方案标注来源、落地难度、和与当前 K_max +
@@ -904,7 +925,7 @@ request-level completion replenishment 提供了逐请求完成时间信号，
 
 ---
 
-## 13. 2026-07-29 baseline 优势验证的当前门禁
+## 13. 2026-07-29 baseline 优势验证的当前门禁 — ⏸ pivot 前文本轨道门禁（K256/W98K），已被 §0 取代；文本轨道恢复时为入口
 
 512 行 direct C256 已达到 vLLM Bench 15,351、bounded HTTP 14,532 total
 tokens/s；project 单次 K256 为 11,736。project 的 9-cell calibration 因理论

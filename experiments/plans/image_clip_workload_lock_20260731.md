@@ -2,11 +2,14 @@
 
 日期：2026-07-31
 状态：**🔴 首个 workload（2026-07-31 校正回升）**。学长反馈的核心判据：数据搬运瓶颈有两段——送 vLLM（拥挤）+ **DB 读出来 / CPU 搬到 GPU**（机会）；当前 prompt 文本每行 ~1KB、搬运太轻，瓶颈不显现。**图像 CLIP 每行 CPU→GPU 搬运 ~600KB（文本的 ~600×）+ JPEG decode+resize 重**，让 DB 读 + CPU→GPU 搬运瓶颈真正显现——这正是满足判据的首选 workload。**注意**：回升的理由是"让数据搬运瓶颈显现"，**与冷启动（机制，parked）无关**；CLIP 不绑死在冷启动旗舰上。详见 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10 + §10.1（benchmark 三层）。
+
+> ✅ **2026-08-01 更新**：方向已锁 A+B（见 `experiment_status_and_gaps.md` §0）；**§6 go/no-go 门禁已过（GO，ratio 13–17，CPU preprocess 主导）** → 下方「暂停 build」**已解除**，进入 path-B runner 建设期。首跑 1024 图 / 50 iters（"试试"量级），**5K COCO val + 加长 redo 待跑**。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
+
 关联：`research/daft_db_gpu_bridge_direction_scope_20260731.md`；`research/evaluation_metrics_survey_20260731.md` 附录 A.4 / B.4；`notes/communication_notes.md` §5；`code/INFRA_STATUS.md` §6–§7；`PROJECT_OUTLINE.md` §5.3（多模态泛化）。
 
 > 本方案不改题目。它是把 PROJECT_OUTLINE §5.3 既定的"token-budget → frame-budget 多模态泛化"从 P2 提到当前优先级，作为**体现异构资源调度（学长反馈的第二种 bottleneck：重 CPU 数据准备 → GPU 等）的 flagship workload**，同时给课题加"数据库 AI 算子"定位的 workload 锚点。
 
-> ⚠️ **2026-07-31 scoop 检索后更新（暂停 build）**：scoop 工作流（`notes/communication_notes.md` §5.5）判定项目 **partially-scooped**——prefix-aware 子切片已被 SOLO(ICML'26)/Liu 直接发表；"上游状态感知"一般声称被 llm-d/Preble 占据；Kalypso(2026-07) 重叠 framing；**Daft v0.6.9 已在同栈产品化 prefix bucketing + router，其 Future Work 明确列出"读 serving-engine cache metrics"= 本项目剩余切片**。本 workload 的 build 暂停，等方向决策（见本文末 §11）。图像 workload 的价值现在主要在：① 多模态模态无关性（剩余可防御切片的一部分）；② 寻找"重 CPU 准备 regime"作为剩余切片**可能仍有显著收益**的最后机会。但它**不再是"体现异构调度"的纯技术展示**——必须先过 scoop 边界。
+> ⚠️ **2026-07-31 scoop 检索后更新（暂停 build）**：scoop 工作流（`notes/communication_notes.md` §5.5）判定项目 **partially-scooped**——prefix-aware 子切片已被 SOLO(ICML'26)/Liu 直接发表；"上游状态感知"一般声称被 llm-d/Preble 占据；Kalypso(2026-07) 重叠 framing；**Daft v0.6.9 已在同栈产品化 prefix bucketing + router，其 Future Work 明确列出"读 serving-engine cache metrics"= 本项目剩余切片**。本 workload 的 build ~~暂停~~ **已恢复**（2026-08-01：方向锁 A+B + §6 门禁过 GO，见文首 ✅ 更新与 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`）。图像 workload 的价值现在主要在：① 多模态模态无关性（剩余可防御切片的一部分）；② 寻找"重 CPU 准备 regime"作为剩余切片**可能仍有显著收益**的最后机会。但它**不再是"体现异构调度"的纯技术展示**——必须先过 scoop 边界。
 
 ---
 

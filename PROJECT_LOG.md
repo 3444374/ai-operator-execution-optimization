@@ -3231,3 +3231,15 @@
   1. `huggingface_hub 1.x`（1.25.1）的 `huggingface-cli download` wrapper 解析参数失败 → 改用 Python `snapshot_download`。
   2. `transformers 5.x` 的 `CLIPModel.get_image_features` 返回 `BaseModelOutputWithPooling`（非裸 tensor）→ 取 `.image_embeds`，不能直接 `.shape`。
 - **下一步（serving 引擎，待建）**：CLIP 是 embedding 非 vLLM 生成；按 image_clip plan "ours 路径 B" = CLIP embedding HTTP endpoint（FastAPI）+ 上游 Ray CPU decode，项目 scheduler 观测 endpoint 队列；baseline A = Daft `@daft.cls` Native。观测层换：vLLM 的 prefix_cache_hit_rate/KV/running 在 CLIP 无对应物，改采 CPU decode/resize + CPU→GPU transfer + GPU embed 分阶段计时（"找搬运瓶颈"的画像）。
+
+## 2026-08-01 image-CLIP §6 瓶颈画像门禁通过（GO）+ 代码质量总则
+
+- **动机**：image-CLIP 锁为首个 workload 后、建 runner 前的 fatal-flaw go/no-go 门禁（`image_clip_workload_lock_20260731.md` §6）——CPU 数据准备相对 GPU CLIP forward 有多重？ratio > 0.3 才有异构调度舞台。
+- **脚本**：`code/scripts/profile_image_clip_bottleneck.py`（~330 LOC，单进程、走 PG bytea、分阶段计时；按新「代码质量总则」写成可复用 stage 函数 `load_clip/pil_decode/cpu_preprocess/clip_encode`，path-B runner 后续直接复用）。
+- **结果（GO）**（`motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`）：ratio = (decode+preprocess)/embed，实用 batch（≥16）**13–17**，远超 0.3。
+  - 瓶颈 = **CLIPProcessor resize+normalize（cpu_preprocess ~5.2 ms/img）**，不是 JPEG decode（0.04 ms）、不是 CPU→GPU transfer（0.07–0.19 ms）、不是 pg_read（0.83 ms/img bulk 摊销）。
+  - B=128 单 batch：CPU preprocess 655 ms vs GPU embed 38 ms → 串行下 GPU 忙 ~5.5%、空转 ~94%。量化了 path-B（分离 CPU preprocess 与 GPU embed 并 overlap）的必要性。
+- **口径澄清**：ratio 分子不含 pg_read（pg_read 单独一列）；不算 DB 读 ratio 仍 13–17，结论不变。"数据搬运瓶颈"更准确是 **CPU 预处理计算瓶颈**。
+- **更正上条 #32 记录**：transformers 5.x `get_image_features` 取 **`.pooler_output`**（512d），非 `.image_embeds`（5.x 无此属性）；脚本与 `image_serving.md §3.3` 均已用对。
+- **规模边界 + redo 计划**：首跑 **1024 张 COCO val × 50 iters**（~75s，「试试」量级）；§6 规范为 **5K val + 更长测量**。**用户要求加大数据量 + 增加时间重做**——待办：① PG 载入完整 COCO val 5K（现仅 1024）；② 重跑 `--limit 5000 --iters 200`（~5min）拿 publishable 级稳定数字。结论（GO、CPU preprocess 主导）预期不翻转。
+- **同步**：`experiment_status_and_gaps.md` §0/§1.4（门禁过 + redo pending）；`image_clip_workload_lock §0`「暂停 build」→ 解除；`motivation/results/gpu/README.md` 索引；`code/AGENTS.md` 新增「代码质量总则（模块清晰 / 框架分明 / 低耦合 / 目标清晰）」。

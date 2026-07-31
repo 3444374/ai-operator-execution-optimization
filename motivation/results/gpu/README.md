@@ -12,6 +12,7 @@
 | `ai_embed_chain_breakdown_20260712.md` / `.csv` | 真实 embedding 链路拆分结果：PostgreSQL fetch、Arrow/batch、operator wall、HTTP model request wall、fan-in、writeback |
 | `multi_endpoint_ray_motivation_20260712.md` / `ai_embed_multi_endpoint_20260712.csv` | 两个本地 GPU endpoint 下的 Ray task/actor 初步动机测试 |
 | `ai_embed_chain_breakdown_draft_20260712.csv` | 早期草稿结果，含计时字段修正前的行；不要用于正式分析 |
+| `image_clip_bottleneck_profile_20260801.md` / `.csv` | **图像 CLIP AI_EMBED** 分阶段瓶颈画像 + §6 go/no-go 门禁：CPU preprocess(resize+normalize) ~5.2ms/img vs GPU embed 0.3ms/img，ratio 13–17×，**GO**；瓶颈是 CPU 预处理，不是 decode/transfer/pg_read |
 
 ## Endpoint
 
