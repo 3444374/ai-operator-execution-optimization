@@ -132,7 +132,7 @@ prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching 中性，ro
 2. **实验设置**（平台/拓扑/workload/调度合同/重复/指标/配置路径/原始数据路径）。
 3. **合规性自检**（C 的四项 + 异常指标明确标注）。
 4. **实验设计**。
-5. **实验数据——全组件表格（不只主指标）**：吞吐+端到端延迟（E2E tok/s / 模型侧 tok/s / operator tok/s / rows/s / E2E wall / req p50-p99 / SLO / goodput）/ vLLM 模型服务（running·waiting mean-max / KV usage / e2e-queue-inference-prefill-decode / prompt-gen tokens）/ GPU+能耗+MFU（util mean-max / 显存 / 功耗 / 能耗 / J per 1k tok / MFU）/ pipeline 阶段计时（db_fetch·source_fetch·organizer·submit·fanin·bounded_wait·actor_ready·wall）/ Ray-actor-调度（max_inflight / actor slots / packing util / prefix_group_ratio / batch_tokens / finish_reason）。**每个指标标注含义/单位**；异常指标标"坏、不用"。
+5. **实验数据——全组件表格（不只主指标）**：吞吐+端到端延迟（E2E tok/s / 模型侧 tok/s / operator tok/s / rows/s / E2E wall / req p50-p99 / SLO / goodput）/ vLLM 模型服务（running·waiting mean-max / KV usage / e2e-queue-inference-prefill-decode / prompt-gen tokens / TTFT 分位 / TBT-ITL 分布 / prefix_cache_hit_rate）/ GPU+能耗+MFU（util mean-max / 显存 / 功耗 / 能耗 / J per 1k tok / MFU）/ pipeline 阶段计时（db_fetch·source_fetch·organizer·submit·fanin·bounded_wait·actor_ready·wall）/ Ray-actor-调度（max_inflight / actor slots / packing util / prefix_group_ratio / batch_tokens / finish_reason）。**每个指标标注含义/单位**；异常指标标"坏、不用"。**质量+成本补充**（AI_EMBED 写回→检索闭环报 recall@k/nDCG@10 证伪"批处理/写回引入质量偏差"；成本报 $/M tokens，input/output 分计并标注单价假设）——口径见 `research/evaluation_metrics_survey_20260731.md`。
 6. **结果解释**（事实/推断/不能声称）。
 7. **对课题含义**。
 8. **下一步**。

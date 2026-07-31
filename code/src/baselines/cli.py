@@ -38,7 +38,9 @@ from .postgres_manifest import load_postgres_requests
 from .vllm_bench import (
     VllmBenchConfig,
     build_vllm_bench_command,
+    extract_vllm_bench_latency_distribution,
     extract_vllm_bench_request_timings,
+    summarize_vllm_bench_latency_distribution,
     write_vllm_custom_dataset,
 )
 
@@ -470,6 +472,8 @@ def _normalize_vllm_bench(
         raw,
         len(requests),
     )
+    ttfts, itls = extract_vllm_bench_latency_distribution(raw, len(requests))
+    latency_distribution = summarize_vllm_bench_latency_distribution(ttfts, itls)
     generated_texts = raw.get("generated_texts")
     if not isinstance(generated_texts, list) or len(generated_texts) != len(requests):
         generated_texts = [None] * len(requests)
@@ -502,6 +506,7 @@ def _normalize_vllm_bench(
     output_dir.mkdir(parents=True)
     summary = {
         **summarize_results(requests, results),
+        **latency_distribution,
         "adapter": "vllm_bench",
         **_observability_fields("vllm_bench"),
         "status": "completed",

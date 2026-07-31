@@ -89,7 +89,9 @@ FORMAL_RESULT_FIELDS = tuple(
     vllm_e2e_request_latency_mean_s vllm_request_queue_time_mean_s
     vllm_request_inference_time_mean_s vllm_request_prefill_time_mean_s
     vllm_request_decode_time_mean_s vllm_num_requests_running_after
-    vllm_num_requests_waiting_after vllm_kv_cache_usage_perc_after db_fetch_s
+    vllm_num_requests_waiting_after vllm_kv_cache_usage_perc_after
+    vllm_prefix_cache_queries_delta vllm_prefix_cache_hits_delta
+    vllm_prefix_cache_hit_rate vllm_time_to_first_token_mean_s db_fetch_s
     arrow_build_s source_fetch_s organizer_from_arrow_s organizer_plan_s
     organizer_collect_s organization_policy_family
     batch_prompt_token_spread_mean prefix_group_ratio organizer_warnings

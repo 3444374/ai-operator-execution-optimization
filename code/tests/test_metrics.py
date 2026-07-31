@@ -166,6 +166,10 @@ vllm:e2e_request_latency_seconds_count{model_name="qwen2.5-1.5b"} 4
 vllm:e2e_request_latency_seconds_sum{model_name="qwen2.5-1.5b"} 2.0
 vllm:request_queue_time_seconds_count{model_name="qwen2.5-1.5b"} 4
 vllm:request_queue_time_seconds_sum{model_name="qwen2.5-1.5b"} 0.2
+vllm:time_to_first_token_seconds_count{model_name="qwen2.5-1.5b"} 4
+vllm:time_to_first_token_seconds_sum{model_name="qwen2.5-1.5b"} 0.8
+vllm:prefix_cache_queries_total{model_name="qwen2.5-1.5b"} 1000
+vllm:prefix_cache_hits_total{model_name="qwen2.5-1.5b"} 200
 vllm:num_requests_waiting{model_name="qwen2.5-1.5b"} 0
 vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 1000000000000
 """
@@ -179,6 +183,10 @@ vllm:e2e_request_latency_seconds_count{model_name="qwen2.5-1.5b"} 8
 vllm:e2e_request_latency_seconds_sum{model_name="qwen2.5-1.5b"} 5.0
 vllm:request_queue_time_seconds_count{model_name="qwen2.5-1.5b"} 8
 vllm:request_queue_time_seconds_sum{model_name="qwen2.5-1.5b"} 0.6
+vllm:time_to_first_token_seconds_count{model_name="qwen2.5-1.5b"} 8
+vllm:time_to_first_token_seconds_sum{model_name="qwen2.5-1.5b"} 2.4
+vllm:prefix_cache_queries_total{model_name="qwen2.5-1.5b"} 2500
+vllm:prefix_cache_hits_total{model_name="qwen2.5-1.5b"} 500
 vllm:num_requests_waiting{model_name="qwen2.5-1.5b"} 1
 vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 4000000000000
 """
@@ -197,6 +205,31 @@ vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 4000000000000
         self.assertAlmostEqual(stats["vllm_e2e_request_latency_mean_s"], 0.75)
         self.assertAlmostEqual(stats["vllm_request_queue_time_mean_s"], 0.1)
         self.assertEqual(stats["vllm_num_requests_waiting_after"], 1)
+        # Prefix-cache attribution (P0#3): queries 1000->2500 (delta 1500),
+        # hits 200->500 (delta 300), hit_rate = 300/1500 = 0.2.
+        self.assertEqual(stats["vllm_prefix_cache_queries_delta"], 1500)
+        self.assertEqual(stats["vllm_prefix_cache_hits_delta"], 300)
+        self.assertAlmostEqual(stats["vllm_prefix_cache_hit_rate"], 0.2)
+        # TTFT mean (P0#1): sum 0.8->2.4, count 4->8 => 1.6/4 = 0.4.
+        self.assertAlmostEqual(stats["vllm_time_to_first_token_mean_s"], 0.4)
+
+    def test_vllm_metric_delta_stats_prefix_cache_hit_rate_guards_divide_by_zero(self) -> None:
+        # When prefix caching is off / no queries land in the window, the
+        # queries delta is zero; hit_rate must be 0.0 rather than raise.
+        before = {
+            "vllm:prefix_cache_queries_total": 0.0,
+            "vllm:prefix_cache_hits_total": 0.0,
+        }
+        after = {
+            "vllm:prefix_cache_queries_total": 0.0,
+            "vllm:prefix_cache_hits_total": 0.0,
+        }
+
+        stats = vllm_metric_delta_stats(before, after)
+
+        self.assertEqual(stats["vllm_prefix_cache_queries_delta"], 0)
+        self.assertEqual(stats["vllm_prefix_cache_hits_delta"], 0)
+        self.assertEqual(stats["vllm_prefix_cache_hit_rate"], 0.0)
 
     def test_multi_endpoint_aggregation_preserves_metric_units(self) -> None:
         metrics = aggregate_model_metric_snapshots(

@@ -477,6 +477,75 @@ class OfficialBaselineCliTests(unittest.TestCase):
 
             self.assertAlmostEqual(normalized["jct_s"], 0.5)
 
+            # E2E latency is preserved (backward compat) while the TTFT and
+            # per-token ITL (TBT) distribution are now surfaced separately.
+            self.assertIn("latency_p99_s", normalized)
+            self.assertAlmostEqual(normalized["ttft_mean_s"], 0.15)
+            self.assertAlmostEqual(normalized["ttft_p95_s"], 0.195)
+            self.assertAlmostEqual(normalized["ttft_p99_s"], 0.199)
+            # ITL stats flatten every per-token interval across requests
+            # ([0.2, 0.1, 0.1]); TPOT (e2e / output_tokens) they are not.
+            self.assertAlmostEqual(normalized["itl_mean_s"], 0.4 / 3)
+            self.assertAlmostEqual(normalized["itl_p95_s"], 0.19)
+            self.assertAlmostEqual(normalized["itl_p99_s"], 0.198)
+
+    def test_normalize_vllm_bench_distribution_none_without_ttft_itl(
+        self,
+    ) -> None:
+        # When vLLM detailed output only carries folded request_latencies and
+        # no ttfts/itls arrays, the distribution keys stay in the schema but
+        # report None, and the E2E latency fields are unchanged.
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            self._write_balanced_manifest(manifest)
+            raw_result = root / "raw.json"
+            raw_result.write_text(
+                json.dumps(
+                    {
+                        "input_lens": [4, 4],
+                        "output_lens": [2, 3],
+                        "request_latencies": [0.2, 0.3],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            normalized = run_cli(
+                [
+                    "normalize-vllm-bench",
+                    "--manifest",
+                    str(manifest),
+                    "--endpoint-index",
+                    "0",
+                    "--endpoint-url",
+                    "http://127.0.0.1:8000/v1/chat/completions",
+                    "--model",
+                    "qwen",
+                    "--input",
+                    str(raw_result),
+                    "--output-dir",
+                    str(root / "normalized"),
+                    "--vllm-running-final",
+                    "0",
+                    "--vllm-waiting-final",
+                    "0",
+                ]
+            )
+
+            self.assertEqual(normalized["status"], "completed")
+            self.assertAlmostEqual(normalized["latency_p99_s"], 0.299)
+            for field in (
+                "ttft_mean_s",
+                "ttft_p95_s",
+                "ttft_p99_s",
+                "itl_mean_s",
+                "itl_p95_s",
+                "itl_p99_s",
+            ):
+                self.assertIn(field, normalized)
+                self.assertIsNone(normalized[field])
+
     def test_validate_gate_cli_accepts_two_complete_shards(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

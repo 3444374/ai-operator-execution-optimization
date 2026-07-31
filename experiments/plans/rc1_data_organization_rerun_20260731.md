@@ -16,7 +16,7 @@
 - **平台**：AutoDL 2×4090，vLLM 0.25.1，PG 18.4 + pgvector。
 - **拓扑（双测）**：**2-ep/0.9**（1 endpoint/GPU，干净低淘汰基线）+ **4-ep/0.43**（2 endpoint/GPU，consolidation/淘汰压力）。
 - **workload**：`sharegpt_multiturn`（2,048 行，最新修正版）；可选 `sharegpt_concentrated` 做泛化对照。
-- **指标**：`tokens_per_s`(E2E) + `model_request_tokens_per_s` + `operator_tokens_per_s` + `service_p99` + SLO + per-arm APC 命中率（待 runner 增采，见 §6）。
+- **指标**：`tokens_per_s`(E2E) + `model_request_tokens_per_s` + `operator_tokens_per_s` + `service_p99` + SLO + TTFT 分位（P50/P95/P99）+ TBT/ITL 分布 + `prefix_cache_hit_rate`（**prefix 策略归因的关键指标——不采命中率则 routing/分组收益无法证明来自 cache 复用**）+ per-arm APC 命中率（待 runner 增采，见 §6）。
 - **transport**：httpx_async + return-token-IDs；prefix-cache ON。
 - **调度合同**：K256 inflight / W65536 active-work / token_budget=8192（策略变量除外）/ request 粒度 / fixed-50ms flush / seed 固定。
 - **重复**：1 warmup + 3 formal（formal 交错）。

@@ -424,6 +424,19 @@ def vllm_metric_delta_stats(before: dict[str, float], after: dict[str, float]) -
         after,
         "vllm:estimated_flops_per_gpu_total",
     )
+    # Prefix-cache attribution (P0#3): vLLM exposes both as cumulative token
+    # counters; the delta ratio attributes routing gains to cache reuse.
+    prefix_cache_queries = _metric_delta(
+        before, after, "vllm:prefix_cache_queries_total"
+    )
+    prefix_cache_hits = _metric_delta(
+        before, after, "vllm:prefix_cache_hits_total"
+    )
+    prefix_cache_hit_rate = (
+        prefix_cache_hits / prefix_cache_queries
+        if prefix_cache_queries > 0
+        else 0.0
+    )
     return {
         "vllm_metrics_status": status,
         "vllm_prompt_tokens_delta": int(prompt_tokens),
@@ -438,6 +451,12 @@ def vllm_metric_delta_stats(before: dict[str, float], after: dict[str, float]) -
         "vllm_num_requests_running_after": int(after.get("vllm:num_requests_running", 0.0)),
         "vllm_num_requests_waiting_after": int(after.get("vllm:num_requests_waiting", 0.0)),
         "vllm_kv_cache_usage_perc_after": after.get("vllm:kv_cache_usage_perc", 0.0),
+        "vllm_prefix_cache_queries_delta": int(prefix_cache_queries),
+        "vllm_prefix_cache_hits_delta": int(prefix_cache_hits),
+        "vllm_prefix_cache_hit_rate": prefix_cache_hit_rate,
+        # TTFT mean (P0#1, simple part). The Histogram percentiles (P50/P95/P99)
+        # need bucket handling and are out of scope here; only the mean is captured.
+        "vllm_time_to_first_token_mean_s": _mean_delta(before, after, "vllm:time_to_first_token_seconds"),
     }
 
 
