@@ -346,6 +346,23 @@ GPU-resident compute ceiling → pinned H2D → pageable/Ray tensor → in-memor
 preprocess → PostgreSQL/Daft operator E2E。先跑无 CUDA 同步的正式曲线，再只对
 代表点启用 `--detailed-stage-timing` 并用 CUDA events/Nsight 短窗口复核。
 
+R0/R1/R2 的第一层可复用诊断入口：
+
+```bash
+OUT=/root/autodl-tmp/experiment-artifacts/image_clip_transfer_ceiling_20260802
+PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
+mkdir -p "$OUT"
+
+CUDA_VISIBLE_DEVICES=0 "$PY" code/scripts/profile_clip_transfer_ceiling.py \
+  --model /root/autodl-tmp/models/clip-vit-base-patch32 \
+  --batch-sizes 16,64,256 --warmup 5 --repeats 30 --seed 20260802 \
+  --out-csv "$OUT/raw.csv" --out-manifest "$OUT/manifest.json"
+```
+
+这里 R2 复现 pageable FP32 tensor 的 ownership copy + dtype/H2D 边界，但不包含
+PostgreSQL、Daft iterator 或完整 Ray actor queue；这些增量由 R3/R4 和 operator-E2E
+补齐。R0–R2 是 synthetic ceiling diagnostic，不参与系统 baseline headline 排名。
+
 在该实验过门禁前，只能写“CPU prepare 是候选限制、阶段拆分有 E2E 收益”，不能写
 “PCIe 是瓶颈”“CPU 已饱和”或“传输可忽略”。
 

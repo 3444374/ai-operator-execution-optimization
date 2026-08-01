@@ -50,6 +50,10 @@
   float16 tensor约 19.3MB；当前约 7.4ms 是同步 `torch.as_tensor` 阶段 wall，
   不是 PCIe counter。增大总行数只延长稳态，不增加单批传输压力；PCIe 是否值得
   优化仍按 R0/R1/R2 与 pinned/pageable GO/NO-GO 门槛判定。
+- 新增 `profile_clip_transfer_ceiling.py`：batch16/64/256 下交错采集 R0
+  GPU-resident、R1 pinned FP16 和 R2 read-only pageable FP32 的 ownership copy、
+  CUDA-event H2D/forward、同步 wall 与逻辑带宽。该脚本明确标记 synthetic
+  diagnostic，不含 PostgreSQL/Daft/Ray queue，不替代 R3/R4 或正式系统比较。
 
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过
