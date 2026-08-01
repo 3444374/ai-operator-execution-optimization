@@ -28,7 +28,8 @@ motivation/results/
 │   ├── pgai_integrated_key_rerun_20260714.md
 │   ├── ai_embed_pgvector_writeback_20260714.csv
 │   ├── pgvector_writeback_20260714.md
-│   └── image_host_path_screening_20260802/ ← 图像 host-path 木桶 screening/诊断
+│   ├── image_host_path_screening_20260802/ ← 图像 host-path 木桶 screening/诊断
+│   └── image_clip_transfer_ceiling_20260802/ ← R0/R1/R2 H2D ceiling 诊断
 └── pg18_4_fake/                 ← PG18.4 本地同构预演（不代表真实平台结论）
     ├── README.md
     ├── baseline_matrix.csv / .md
@@ -42,10 +43,11 @@ motivation/results/
 
 正式论证优先引用 GPU-backed 结果：
 
-1. `gpu/image_host_path_screening_20260802/README.md` — 图像 CLIP host-path 最新木桶诊断（screening 边界）
-2. `gpu/ai_embed_chain_breakdown_20260712.md` — GPU-backed embedding 链路拆分
-3. `gpu/pgai_integrated_key_rerun_20260714.md` — pgai-integrated GPU-backed rerun
-4. `gpu/pgvector_writeback_20260714.md` — pgvector(384) 写回对比
+1. `gpu/image_clip_transfer_ceiling_20260802/README.md` — R0/R1/R2 compute/H2D/ownership 最新机制诊断
+2. `gpu/image_host_path_screening_20260802/README.md` — 图像 CLIP host-path 木桶诊断（screening 边界）
+3. `gpu/ai_embed_chain_breakdown_20260712.md` — GPU-backed embedding 链路拆分
+4. `gpu/pgai_integrated_key_rerun_20260714.md` — pgai-integrated GPU-backed rerun
+5. `gpu/pgvector_writeback_20260714.md` — pgvector(384) 写回对比
 
 `fake_cpu/analysis.md` 只用于了解早期为什么关注 task/object/invocation/fan-in/backpressure，不代表真实 GPU-backed 链路瓶颈。
 

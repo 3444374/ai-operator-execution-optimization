@@ -54,6 +54,12 @@
   GPU-resident、R1 pinned FP16 和 R2 read-only pageable FP32 的 ownership copy、
   CUDA-event H2D/forward、同步 wall 与逻辑带宽。该脚本明确标记 synthetic
   diagnostic，不含 PostgreSQL/Daft/Ray queue，不替代 R3/R4 或正式系统比较。
+- 远端完成上述 R0/R1/R2 诊断：270/270 raw rows，输出 sum 完全一致、norm error
+  ≤5.96e-8。batch64 中位数为 R0 forward 6.86ms；R1 pinned FP16 H2D 0.80ms、
+  逻辑24.0GB/s；R2 pageable FP32 ownership copy 20.87ms、H2D/转换4.14ms、
+  逻辑9.3GB/s。结果支持“纯 PCIe capacity 暂非首要木桶、host ownership/dtype
+  边界需继续做 E2E 消融”，但仍不构成 PCIe NO-GO，七步报告与 raw 已归档到
+  `motivation/results/gpu/image_clip_transfer_ceiling_20260802/`。
 
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过
