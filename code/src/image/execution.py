@@ -147,6 +147,8 @@ def build_project_ray_worker_pool(
     gpu_workers: int,
     dtype: str,
     detailed_stage_timing: bool = False,
+    torch_intraop_threads: int = 1,
+    torch_interop_threads: int = 1,
 ) -> ProjectRayWorkerPool:
     """Create persistent CPU preprocess and tensor-only GPU actors."""
     if min(cpu_workers, gpu_workers) <= 0:
@@ -158,11 +160,25 @@ def build_project_ray_worker_pool(
 
     @ray.remote(num_cpus=1, max_restarts=0, max_task_retries=0)
     class CpuPreprocessActor:
-        def __init__(self, revision: str):
-            self._preprocessor = FastClipImagePreprocessor(revision)
+        def __init__(
+            self,
+            revision: str,
+            intraop_threads: int,
+            interop_threads: int,
+        ):
+            self._preprocessor = FastClipImagePreprocessor(
+                revision,
+                torch_intraop_threads=intraop_threads,
+                torch_interop_threads=interop_threads,
+            )
 
-        def ready(self) -> bool:
-            return True
+        def ready(self) -> dict[str, int]:
+            import torch
+
+            return {
+                "torch_intraop_threads": torch.get_num_threads(),
+                "torch_interop_threads": torch.get_num_interop_threads(),
+            }
 
         def preprocess(
             self,
@@ -192,7 +208,12 @@ def build_project_ray_worker_pool(
         max_task_retries=0,
     )(ClipTensorActor)
     preprocessors = tuple(
-        CpuPreprocessActor.remote(processor_revision) for _ in range(cpu_workers)
+        CpuPreprocessActor.remote(
+            processor_revision,
+            torch_intraop_threads,
+            torch_interop_threads,
+        )
+        for _ in range(cpu_workers)
     )
     gpu_actors = tuple(
         RemoteGpuActor.remote(
@@ -201,11 +222,23 @@ def build_project_ray_worker_pool(
             dtype=dtype,
             normalize=True,
             detailed_stage_timing=detailed_stage_timing,
+            torch_intraop_threads=torch_intraop_threads,
+            torch_interop_threads=torch_interop_threads,
         )
         for _ in range(gpu_workers)
     )
-    ray.get([actor.ready.remote() for actor in preprocessors])
-    ray.get([actor.ready.remote() for actor in gpu_actors])
+    readiness = ray.get([actor.ready.remote() for actor in preprocessors])
+    readiness.extend(ray.get([actor.ready.remote() for actor in gpu_actors]))
+    expected_threads = {
+        "torch_intraop_threads": torch_intraop_threads,
+        "torch_interop_threads": torch_interop_threads,
+    }
+    mismatches = [item for item in readiness if item != expected_threads]
+    if mismatches:
+        raise RuntimeError(
+            "Ray worker Torch thread contract mismatch: "
+            f"expected={expected_threads}, observed={mismatches}"
+        )
     return ProjectRayWorkerPool(
         preprocessors=preprocessors,
         gpu_actors=gpu_actors,

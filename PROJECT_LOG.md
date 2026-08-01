@@ -2,6 +2,16 @@
 
 ## 2026-08-02 图像 staged baseline、资源死锁修复与分类质量轨道
 
+- 5000-image project-Ray 侵入式诊断显示每批 p50 completion 650ms，其中 CPU
+  preprocess 316ms、未归因 dependency/queue wait 287ms、host copy 26ms、H2D
+  3.5ms、forward 7.0ms；这是“CPU preprocess + framework bubble”为当前木桶、
+  PCIe 暂非主瓶颈的初步信号，尚不能替代 R0–R4 正式曲线。
+- 同次诊断发现隐藏资源混淆：4 个声明 `num_cpus=1` 的 actor 实际继承 Torch
+  intra/inter-op=32/64，host busy 均值约 23.3 cores。Ray CPU 是准入 token 而非
+  线程 quota，因此该结果不能称为“4 CPU matched-resource”。图像 runner 升级到
+  schema v5，显式配置/记录每 worker Torch 线程；project Ray 在查询前校验实测值，
+  正式 matched-resource 默认 1/1，线程容量扫描另列。
+
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过
   exactly-once、512d、L2 norm，完整 embedding digest 一致且两卡激活；Ray Data

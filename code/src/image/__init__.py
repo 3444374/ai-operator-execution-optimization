@@ -4,6 +4,7 @@ from .clip import (
     ClipImagePreprocessor,
     ClipTensorActor,
     FastClipImagePreprocessor,
+    configure_torch_thread_pools,
     extract_clip_image_features,
     l2_normalize_embeddings,
 )
@@ -32,6 +33,7 @@ __all__ = [
     "ImageEmbeddingResult",
     "ImageBatchTelemetry",
     "ImageSourceConfig",
+    "configure_torch_thread_pools",
     "extract_clip_image_features",
     "image_documents_query",
     "l2_normalize_embeddings",

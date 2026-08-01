@@ -1,6 +1,6 @@
 # 图像 AI 算子系统木桶效应与 host data path 瓶颈判定实验
 
-状态：预注册设计，等待 schema v2 gate 与 AutoDL 正式复测
+状态：schema v5 诊断已启动；等待线程配额封闭后的 AutoDL 容量曲线与正式复测
 
 适用 workload：PostgreSQL `BYTEA` → Daft → Ray → CLIP `AI_EMBED`
 
@@ -146,11 +146,20 @@ COCO/CLIP/2×4090 regime 下，哪个边界形成短板、项目是否改善。
 batch、GPU 数、CPU 配额、actor 数、source shards、active batches、质量门槛和
 计时边界。每个实验块只改变一个表示层或传输机制。
 
+这里的 CPU 配额必须同时包含两层合同：Ray `num_cpus`/Daft `cpus` 是准入资源，
+不是操作系统线程上限；每个 worker 的 Torch intra-op/inter-op 线程也必须显式冻结并
+记录。正式 matched-resource 默认每 worker `1/1`，同时固定 `OMP_NUM_THREADS`、
+`MKL_NUM_THREADS` 等底层线程池。若只声明 4 个 Ray CPU actor、却让每个 actor 继承
+host-wide 32 个 Torch 线程，该结果属于物理 CPU 超卖诊断，不能声称“4 CPU 下”的
+系统效率。CPU actor 数扫描与每 actor 线程数扫描应分开，且都报告 host busy cores。
+
 必须记录：
 
 - 输入 JPEG bytes、host tensor bytes、device tensor bytes、output bytes；
 - CPU preprocess、Ray dependency/completion、host copy、H2D、forward、D2H；
 - host-wide per-core CPU、busy-core equivalent；该指标不能冒充 actor attribution；
+- Ray/Daft 声明的 CPU slots、每 worker Torch intra/inter-op 实测值，以及 OMP/MKL
+  环境；声明资源与实际线程合同不一致时 fail closed；
 - active-device GPU utilization、memory 与采样频率；低频 util 不能称 MFU；
 - GPU power/clock、每卡估算能耗、`nvidia-smi topo -m`、PCIe current/max link
   generation/width 与 CPU NUMA 拓扑；

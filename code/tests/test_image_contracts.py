@@ -14,7 +14,10 @@ SCRIPTS_ROOT = CODE_ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from src.image.clip import extract_clip_image_features  # noqa: E402
+from src.image.clip import (  # noqa: E402
+    configure_torch_thread_pools,
+    extract_clip_image_features,
+)
 from src.image.contracts import (  # noqa: E402
     EmbeddingSemantics,
     ImageBatchTelemetry,
@@ -30,6 +33,10 @@ from import_coco_images import coco_doc_id  # noqa: E402
 
 
 class ImageContractTests(unittest.TestCase):
+    def test_torch_thread_contract_rejects_non_positive_values(self) -> None:
+        with self.assertRaisesRegex(ValueError, "must be positive"):
+            configure_torch_thread_pools(0, 1)
+
     def test_batch_telemetry_rejects_negative_measurements(self) -> None:
         with self.assertRaisesRegex(ValueError, "byte counts"):
             ImageBatchTelemetry(encoded_bytes=-1)

@@ -17,6 +17,36 @@ from .contracts import (
 )
 
 
+def configure_torch_thread_pools(
+    intraop_threads: int,
+    interop_threads: int,
+) -> dict[str, int]:
+    """Set per-process Torch CPU pools before actor work starts.
+
+    Ray ``num_cpus`` is a scheduling resource, not an operating-system CPU
+    quota. Without this contract each actor inherits host-wide thread defaults,
+    so changing actor count silently changes the physical CPU budget.
+    """
+    if min(intraop_threads, interop_threads) <= 0:
+        raise ValueError("Torch intra-op and inter-op thread counts must be positive")
+
+    import torch
+
+    if torch.get_num_threads() != intraop_threads:
+        torch.set_num_threads(intraop_threads)
+    if torch.get_num_interop_threads() != interop_threads:
+        try:
+            torch.set_num_interop_threads(interop_threads)
+        except RuntimeError as error:
+            raise RuntimeError(
+                "Torch inter-op threads must be configured before parallel work starts"
+            ) from error
+    return {
+        "torch_intraop_threads": torch.get_num_threads(),
+        "torch_interop_threads": torch.get_num_interop_threads(),
+    }
+
+
 def decode_rgb_image(encoded: bytes):
     """Decode one encoded image into an eagerly materialized RGB PIL image."""
     from PIL import Image
@@ -72,7 +102,20 @@ class FastClipImagePreprocessor:
     :class:`ClipImagePreprocessor`.
     """
 
-    def __init__(self, processor_revision: str):
+    def __init__(
+        self,
+        processor_revision: str,
+        *,
+        torch_intraop_threads: int | None = None,
+        torch_interop_threads: int | None = None,
+    ):
+        if (torch_intraop_threads is None) != (torch_interop_threads is None):
+            raise ValueError("set both Torch thread counts or leave both unset")
+        if torch_intraop_threads is not None and torch_interop_threads is not None:
+            configure_torch_thread_pools(
+                torch_intraop_threads,
+                torch_interop_threads,
+            )
         from transformers import AutoImageProcessor
 
         self.processor_revision = processor_revision
@@ -121,7 +164,16 @@ class ClipTensorActor:
         dtype: str = "float16",
         normalize: bool = True,
         detailed_stage_timing: bool = False,
+        torch_intraop_threads: int | None = None,
+        torch_interop_threads: int | None = None,
     ) -> None:
+        if (torch_intraop_threads is None) != (torch_interop_threads is None):
+            raise ValueError("set both Torch thread counts or leave both unset")
+        if torch_intraop_threads is not None and torch_interop_threads is not None:
+            configure_torch_thread_pools(
+                torch_intraop_threads,
+                torch_interop_threads,
+            )
         import torch
         from transformers import CLIPModel
 
@@ -156,6 +208,8 @@ class ClipTensorActor:
             "input_kind": self.input_kind,
             "embedding_dimension": self.semantics.dimension,
             "normalized": self.semantics.normalized,
+            "torch_intraop_threads": self._torch.get_num_threads(),
+            "torch_interop_threads": self._torch.get_num_interop_threads(),
         }
 
     def embed(self, batch: ImageEmbeddingBatch) -> ImageEmbeddingResult:

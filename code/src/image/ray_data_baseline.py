@@ -18,10 +18,19 @@ from .source import (
 class RayDataClipPreprocessor:
     """Stateful CPU ``map_batches`` callable for encoded PostgreSQL images."""
 
-    def __init__(self, processor_revision: str) -> None:
+    def __init__(
+        self,
+        processor_revision: str,
+        torch_intraop_threads: int,
+        torch_interop_threads: int,
+    ) -> None:
         from .clip import FastClipImagePreprocessor
 
-        self._preprocessor = FastClipImagePreprocessor(processor_revision)
+        self._preprocessor = FastClipImagePreprocessor(
+            processor_revision,
+            torch_intraop_threads=torch_intraop_threads,
+            torch_interop_threads=torch_interop_threads,
+        )
 
     def __call__(self, batch: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         encoded = [bytes(item) for item in batch["image"]]
@@ -39,6 +48,8 @@ class RayDataClipPredictor:
         model_revision: str,
         processor_revision: str,
         dtype: str,
+        torch_intraop_threads: int,
+        torch_interop_threads: int,
     ) -> None:
         from .clip import ClipTensorActor
 
@@ -47,6 +58,8 @@ class RayDataClipPredictor:
             processor_revision=processor_revision,
             dtype=dtype,
             normalize=True,
+            torch_intraop_threads=torch_intraop_threads,
+            torch_interop_threads=torch_interop_threads,
         )
 
     def __call__(self, batch: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
@@ -80,6 +93,8 @@ def build_ray_data_clip_pipeline(
     cpu_workers: int,
     gpu_workers: int,
     max_active_batches: int,
+    torch_intraop_threads: int = 1,
+    torch_interop_threads: int = 1,
 ):
     """Return one lazy Ray Data staged inference pipeline.
 
@@ -124,7 +139,11 @@ def build_ray_data_clip_pipeline(
     cpu_pool = ray.data.ActorPoolStrategy(size=cpu_workers)
     dataset = dataset.map_batches(
         RayDataClipPreprocessor,
-        fn_constructor_kwargs={"processor_revision": processor_revision},
+        fn_constructor_kwargs={
+            "processor_revision": processor_revision,
+            "torch_intraop_threads": torch_intraop_threads,
+            "torch_interop_threads": torch_interop_threads,
+        },
         batch_size=batch_size,
         batch_format="numpy",
         compute=cpu_pool,
@@ -142,6 +161,8 @@ def build_ray_data_clip_pipeline(
             "model_revision": model_revision,
             "processor_revision": processor_revision,
             "dtype": dtype,
+            "torch_intraop_threads": torch_intraop_threads,
+            "torch_interop_threads": torch_interop_threads,
         },
         batch_size=batch_size,
         batch_format="numpy",

@@ -79,6 +79,8 @@ CSV_FIELDS = (
     "declared_model_cpus",
     "declared_total_cpus",
     "resource_budget_semantics",
+    "torch_intraop_threads_per_worker",
+    "torch_interop_threads_per_worker",
     "worker_setup_s",
     "worker_setup_accounting",
     "operator_e2e_s",
@@ -218,6 +220,8 @@ def parse_args():
         help="PostgreSQL lazy source shards; 0 follows model worker count",
     )
     parser.add_argument("--max-active-batches", type=int, default=8)
+    parser.add_argument("--torch-intraop-threads", type=int, default=1)
+    parser.add_argument("--torch-interop-threads", type=int, default=1)
     parser.add_argument("--dtype", choices=("float16", "float32", "bfloat16"), default="float16")
     parser.add_argument("--embedding-dimension", type=int, default=512)
     parser.add_argument(
@@ -352,6 +356,8 @@ def main() -> None:
         args.cpu_workers,
         args.gpu_workers,
         args.max_active_batches,
+        args.torch_intraop_threads,
+        args.torch_interop_threads,
         args.embedding_dimension,
         args.gpu_sample_interval_s,
         args.cpu_sample_interval_s,
@@ -423,6 +429,8 @@ def main() -> None:
             gpus_per_worker=gpus_per_model_worker,
             dtype=args.dtype,
             embedding_dimension=args.embedding_dimension,
+            torch_intraop_threads=args.torch_intraop_threads,
+            torch_interop_threads=args.torch_interop_threads,
         )
     elif args.arm == "daft_ray":
         ray.init(
@@ -439,6 +447,8 @@ def main() -> None:
             gpus_per_worker=gpus_per_model_worker,
             dtype=args.dtype,
             embedding_dimension=args.embedding_dimension,
+            torch_intraop_threads=args.torch_intraop_threads,
+            torch_interop_threads=args.torch_interop_threads,
         )
     elif args.arm == "daft_staged":
         ray.init(
@@ -456,6 +466,8 @@ def main() -> None:
             gpus_per_worker=gpus_per_model_worker,
             dtype=args.dtype,
             embedding_dimension=args.embedding_dimension,
+            torch_intraop_threads=args.torch_intraop_threads,
+            torch_interop_threads=args.torch_interop_threads,
         )
     elif args.arm == "ray_data_staged":
         ray.init(
@@ -480,6 +492,8 @@ def main() -> None:
             gpu_workers=args.gpu_workers,
             dtype=args.dtype,
             detailed_stage_timing=args.detailed_stage_timing,
+            torch_intraop_threads=args.torch_intraop_threads,
+            torch_interop_threads=args.torch_interop_threads,
         )
 
     def execute(limit: int, expected_ids: frozenset[str]) -> ExecutionResult:
@@ -499,6 +513,8 @@ def main() -> None:
                 cpu_workers=args.cpu_workers,
                 gpu_workers=args.gpu_workers,
                 max_active_batches=args.max_active_batches,
+                torch_intraop_threads=args.torch_intraop_threads,
+                torch_interop_threads=args.torch_interop_threads,
             )
             return run_ray_data_clip_baseline(
                 dataset,
@@ -555,6 +571,8 @@ def main() -> None:
             gpu_workers=args.gpu_workers,
             dtype=args.dtype,
             detailed_stage_timing=args.detailed_stage_timing,
+            torch_intraop_threads=args.torch_intraop_threads,
+            torch_interop_threads=args.torch_interop_threads,
         )
         worker_setup_s = time.perf_counter() - setup_started
     else:
@@ -610,6 +628,8 @@ def main() -> None:
         "declared_model_cpus": declared_model_cpus if declared_model_cpus is not None else "",
         "declared_total_cpus": cpu_budget.declared_total_slots,
         "resource_budget_semantics": cpu_budget.semantics,
+        "torch_intraop_threads_per_worker": args.torch_intraop_threads,
+        "torch_interop_threads_per_worker": args.torch_interop_threads,
         "worker_setup_s": worker_setup_s if project_metrics else "",
         "worker_setup_accounting": (
             "explicit_pre_query_plus_query_wall"
@@ -707,7 +727,7 @@ def main() -> None:
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 4,
+        "schema_version": 5,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,
@@ -717,6 +737,10 @@ def main() -> None:
         "detailed_stage_timing_intrusive": args.detailed_stage_timing,
         "bandwidth_semantics": "logical_bytes_over_stage_wall_not_pcie_counter",
         "mfu_semantics": "estimated_only_when_verified_flops_and_dtype_peak_are_supplied",
+        "thread_budget_semantics": (
+            "explicit_torch_intraop_and_interop_per_worker; "
+            "ray_num_cpus_is_admission_not_os_quota"
+        ),
         "row": row,
     }
     manifest_path = Path(args.out_manifest)

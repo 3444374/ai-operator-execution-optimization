@@ -121,6 +121,12 @@ now lives under `code/src/`:
   OpenBLAS/MKL/OMP/NumExpr settings inherited by Ray workers and multi-job
   subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per
   worker before any model request is sent.
+- Image workers apply the same rule inside long-lived Ray/Daft processes:
+  `run_image_clip_e2e.py` defaults Torch intra-op/inter-op pools to `1/1`,
+  records them in schema v5, and the project Ray pool verifies the observed
+  values before admitting work. Ray `num_cpus` remains an admission token, not
+  an OS thread quota; actor count and per-actor thread count are separate
+  experiment variables.
 - `baselines/`: no-Ray bounded Chat, fixed-row multi-prompt Completions,
   vLLM Bench, Daft/Ray/OceanBase adapters, immutable manifests and fail-closed
   two-endpoint gates. Baseline code does not import project scheduling policy.

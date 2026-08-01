@@ -18,6 +18,8 @@ def build_daft_clip_embedder(
     gpus_per_worker: float,
     dtype: str,
     embedding_dimension: int = 512,
+    torch_intraop_threads: int = 1,
+    torch_interop_threads: int = 1,
 ):
     """Build the strong Daft-native persistent GPU UDF baseline.
 
@@ -49,15 +51,23 @@ def build_daft_clip_embedder(
             model_path: str,
             processor_path: str,
             model_dtype: str,
+            intraop_threads: int,
+            interop_threads: int,
         ) -> None:
             from .clip import ClipTensorActor, FastClipImagePreprocessor
 
-            self._preprocessor = FastClipImagePreprocessor(processor_path)
+            self._preprocessor = FastClipImagePreprocessor(
+                processor_path,
+                torch_intraop_threads=intraop_threads,
+                torch_interop_threads=interop_threads,
+            )
             self._actor = ClipTensorActor(
                 model_path,
                 processor_revision=processor_path,
                 dtype=model_dtype,
                 normalize=True,
+                torch_intraop_threads=intraop_threads,
+                torch_interop_threads=interop_threads,
             )
 
         @daft.method.batch(return_dtype=return_dtype, batch_size=batch_size)
@@ -75,7 +85,13 @@ def build_daft_clip_embedder(
             )
             return self._actor.embed(batch).embeddings
 
-    return DaftClipEmbedder(model_revision, processor_revision, dtype)
+    return DaftClipEmbedder(
+        model_revision,
+        processor_revision,
+        dtype,
+        torch_intraop_threads,
+        torch_interop_threads,
+    )
 
 
 def build_daft_staged_clip_pipeline(
@@ -88,6 +104,8 @@ def build_daft_staged_clip_pipeline(
     gpus_per_worker: float,
     dtype: str,
     embedding_dimension: int = 512,
+    torch_intraop_threads: int = 1,
+    torch_interop_threads: int = 1,
 ):
     """Build Daft CPU-preprocess and tensor-only GPU stages.
 
@@ -114,10 +132,19 @@ def build_daft_staged_clip_pipeline(
 
     @daft.cls(cpus=1, max_concurrency=cpu_workers, max_retries=0)
     class DaftClipPreprocessor:
-        def __init__(self, processor_path: str) -> None:
+        def __init__(
+            self,
+            processor_path: str,
+            intraop_threads: int,
+            interop_threads: int,
+        ) -> None:
             from .clip import FastClipImagePreprocessor
 
-            self._preprocessor = FastClipImagePreprocessor(processor_path)
+            self._preprocessor = FastClipImagePreprocessor(
+                processor_path,
+                torch_intraop_threads=intraop_threads,
+                torch_interop_threads=interop_threads,
+            )
 
         @daft.method.batch(return_dtype=pixel_dtype, batch_size=batch_size)
         def preprocess(self, encoded_images):
@@ -135,6 +162,8 @@ def build_daft_staged_clip_pipeline(
             model_path: str,
             processor_path: str,
             model_dtype: str,
+            intraop_threads: int,
+            interop_threads: int,
         ) -> None:
             from .clip import ClipTensorActor
 
@@ -143,6 +172,8 @@ def build_daft_staged_clip_pipeline(
                 processor_revision=processor_path,
                 dtype=model_dtype,
                 normalize=True,
+                torch_intraop_threads=intraop_threads,
+                torch_interop_threads=interop_threads,
             )
 
         @daft.method.batch(return_dtype=embedding_dtype, batch_size=batch_size)
@@ -161,8 +192,18 @@ def build_daft_staged_clip_pipeline(
             return self._actor.embed(batch).embeddings
 
     return (
-        DaftClipPreprocessor(processor_revision),
-        DaftClipTensorEmbedder(model_revision, processor_revision, dtype),
+        DaftClipPreprocessor(
+            processor_revision,
+            torch_intraop_threads,
+            torch_interop_threads,
+        ),
+        DaftClipTensorEmbedder(
+            model_revision,
+            processor_revision,
+            dtype,
+            torch_intraop_threads,
+            torch_interop_threads,
+        ),
     )
 
 
