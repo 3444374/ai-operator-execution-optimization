@@ -19,15 +19,19 @@
 - 代码：`c1484f2` 运行 screening，`084f08c` 运行代表点分段诊断；当前 main 已包含
   两者所需的资源与 telemetry 修复。
 
-远端 raw artifacts（未提交大体积原始 manifest）：
+原始结果已随报告归档在 [`raw/`](raw/)；每个子目录同时保存该扫描的
+`runs.csv` 和逐臂 manifest JSON，避免结论只依赖服务器临时文件：
 
 ```text
-/root/autodl-tmp/experiment-artifacts/image_cpu_actor_screen_c1484f2/
-/root/autodl-tmp/experiment-artifacts/image_source_thread_screen_c1484f2/
-/root/autodl-tmp/experiment-artifacts/image_active_batch_screen_c1484f2/
-/root/autodl-tmp/experiment-artifacts/image_cpu_actor_high_screen_c1484f2/
-/root/autodl-tmp/experiment-artifacts/image_rep_diag_schema8_084f08c/
+raw/cpu_actor_screen/                 # preprocess actor = 1/2/4/8
+raw/source_thread_screen/             # source threads = 1/2/4/6
+raw/active_batch_screen/              # active batches = 4/8/16/32/64
+raw/cpu_actor_followup/               # preprocess actor = 16/32
+raw/representative_stage_diagnostic/  # 16 actor + active32 的 schema v8 诊断
 ```
+
+服务器 `/root/autodl-tmp/experiment-artifacts/` 中仍保留同内容的运行时副本，但它不再是
+报告可复现性的唯一来源。`summary.csv` 是由上述原始记录整理出的紧凑读表，不替代原始证据。
 
 ## 2. 实验设计
 

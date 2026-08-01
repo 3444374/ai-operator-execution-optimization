@@ -36,6 +36,11 @@
 - 为定位 16-actor 点剩余 gap，schema v8 新增 driver `source_next`、Arrow/Python
   materialize、Ray submit 分段；它们缩小候选范围，但仍不冒充 DB 内部或 Ray
   serialization 的硬件级时间。
+- 本轮 host-path screening 的报告按“实验设置→实验设计→严谨性自检→原始数据→
+  事实/推断/不能声称→课题含义→下一步”七步结构归档；5 组扫描/诊断的 `runs.csv`
+  与 16 个逐臂 manifest JSON 已从服务器临时目录复制到
+  `motivation/results/gpu/image_host_path_screening_20260802/raw/` 并纳入 Git。
+  原始文件归档不提升证据等级：各点仍只有一次，继续标记为 screening。
 
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过
