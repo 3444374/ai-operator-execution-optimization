@@ -66,7 +66,7 @@ GPU 阶段用 `torch.cuda.synchronize()` 包住，wall clock 反映真实设备�
 
 **不能声称**：
 - 这是**单进程、单卡、单模型（CLIP ViT-B/32）画像**，没有调度、没有 overlap、没有写回——不能声称任何策略收益，只回答"瓶颈在哪、有多重"。
-- `cpu_preprocess` ~5 ms/img 是 CLIPProcessor 当前实现的实测值（resize BICUBIC + to_tensor + normalize），**版本/实现相关**（transformers 5.14.1）。换更快的预处理（GPU-side resize、torchvision JIT 等）会改变绝对值；但"CPU 预处理主导"的结构在 CPU 预处理路径下成立。
+- `cpu_preprocess` ~5 ms/img 是 CLIPProcessor 当前实现的实测值（resize BICUBIC + to_tensor + normalize），**版本/实现相关**（transformers 5.14.1）。换更快的预处理（GPU-side resize、torchvision JIT 等）会改变绝对值；但"CPU 预处理主导"的结构在 CPU 预处理路径下成立。子步拆分见文末「附：preproc 子阶段拆分」——resize 只 ~1.3 ms（~25%），residual（PIL→numpy→tensor 转换 + 逐图循环）~3.8 ms（~74%）才是大头。
 - pg_read 0.755 ms/img 是 **bulk 摊销**（一次 SELECT 5000 行）；真实流式/分批读会更大（path-B runner 范畴，本画像未测）。
 
 ## 对课题含义
@@ -80,6 +80,20 @@ GPU 阶段用 `torch.cuda.synchronize()` 包住，wall clock 反映真实设备�
 1. 建 path-B runner：PG → Daft → Ray CPU decode+preprocess → CLIP endpoint → pgvector，复用本脚本的 `load_clip()` / `pil_decode()` / `cpu_preprocess()` / `clip_encode()`（已按 code/AGENTS.md 代码质量总则写成可复用 stage 函数）。
 2. `image_clip_workload_lock` §7 对照臂：bounded direct CLIP / **Daft `@daft.cls` Native（A，关键强 baseline）** / Ray Data / naive / **ours（B + A 状态感知调度）**——claim 门槛：ours 相对 Daft Native 的 images/s 或 SLO-goodput **>+5% 且 SLO 违约 <1%** 才晋级。
 3. （可选）若日后要测**流式/分批 pg_read** 的真实成本，在 path-B runner 里按 chunked SELECT 计时，本单进程画像不含该口径。
+
+## 附：preproc 子阶段拆分（2026-08-01 补测）
+
+把 `cpu_preprocess`（整 ~5.2 ms/img）按 CLIPImageProcessor 自身方法拆分——包住 `resize`/`center_crop`/`rescale`/`normalize` 计时，外加 whole-`processor()` 总时间与 residual（5K × 100 iters，脚本 `code/scripts/profile_clip_preproc_stages.py`，原始 `clip_preproc_stages_20260801.csv`）：
+
+| B | resize | crop | rescale | normalize | 子步求和 | total preproc | **residual** |
+|---|---|---|---|---|---|---|---|
+| 1 | 1.49 | 0.025 | 0 | 0.062 | 1.58 | 5.72 | **4.15** |
+| 32 | 1.29 | 0.006 | 0 | 0.043 | 1.34 | 5.11 | **3.77** |
+| 128 | 1.26 | 0.003 | 0 | 0.023 | 1.29 | 5.13 | **3.85** |
+
+**修正一处估算**：曾凭印象估"BICUBIC resize 占大头（~3-4 ms）"——实测不对。resize 只 ~1.3 ms/img（~25%）；crop/rescale/normalize 可忽略（rescale 在 transformers 5.14.1 折叠进 normalize、不单独触发）。**真正占大头的是 residual ~3.8 ms/img（~74%）** = CLIPImageProcessor「slow」路径里未被命名方法覆盖的部分：PIL→numpy 转换、被折叠的 rescale、numpy→tensor + 批堆叠、逐图 Python 循环开销。
+
+**含义**：preproc 瓶颈不是"resize 算法重"，而是 **slow CLIPImageProcessor 逐图 CPU 转换路径整体重**——这反而更强地支撑"用 `CLIPImageProcessorFast`（torchvision 后端）/ GPU-side preprocess 能大幅压低 preproc"（大头是转换开销，不是 resize 本身）。本项目故意保留 CPU slow 路径以制造异构舞台。子步细节**不改变 headline**（CPU preproc 5 ms >> GPU embed 0.3 ms；ratio ~18；GPU 空转 ~95%），只把"5 ms 花在哪"讲清楚。residual 还可进一步拆（np.array / torch.from_numpy / stack / 循环），需更深桩，按需补。
 
 ## 原始数据
 
