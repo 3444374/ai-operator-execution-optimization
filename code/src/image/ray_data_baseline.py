@@ -179,4 +179,5 @@ def run_ray_data_clip_baseline(
         total_s=total_s,
         first_output_s=first_output_s or total_s,
         audit=audit.finish(),
+        engine_stats=dataset.stats(),
     )

@@ -98,6 +98,7 @@ class ExecutionResult:
     output_bytes: int = 0
     submitted_batches: int = 0
     pending_batches_peak: int = 0
+    engine_stats: str = ""
 
     def __post_init__(self) -> None:
         if self.total_s <= 0 or not math.isfinite(self.total_s):

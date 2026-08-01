@@ -79,23 +79,32 @@ CSV_FIELDS = (
     "images_per_s",
     "batch_service_p50_s",
     "batch_service_p95_s",
+    "batch_service_p99_s",
     "batch_service_semantics",
     "batch_completion_wall_p50_s",
     "batch_completion_wall_p95_s",
+    "batch_completion_wall_p99_s",
     "batch_actor_service_p50_s",
     "batch_actor_service_p95_s",
+    "batch_actor_service_p99_s",
     "batch_unattributed_wait_p50_s",
     "batch_unattributed_wait_p95_s",
+    "batch_unattributed_wait_p99_s",
     "batch_preprocess_p50_s",
     "batch_preprocess_p95_s",
+    "batch_preprocess_p99_s",
     "batch_host_copy_p50_s",
     "batch_host_copy_p95_s",
+    "batch_host_copy_p99_s",
     "batch_h2d_p50_s",
     "batch_h2d_p95_s",
+    "batch_h2d_p99_s",
     "batch_forward_p50_s",
     "batch_forward_p95_s",
+    "batch_forward_p99_s",
     "batch_d2h_p50_s",
     "batch_d2h_p95_s",
+    "batch_d2h_p99_s",
     "detailed_stage_timing",
     "input_encoded_bytes",
     "avg_encoded_bytes",
@@ -120,6 +129,17 @@ CSV_FIELDS = (
     "cpu_per_core_peak_pct",
     "cpu_logical_count",
     "cpu_samples",
+    "cpu_core_seconds_estimate",
+    "cpu_core_seconds_per_image",
+    "host_memory_mean_pct",
+    "host_memory_peak_pct",
+    "host_memory_available_min_mib",
+    "host_disk_read_bytes",
+    "host_disk_write_bytes",
+    "host_net_recv_bytes",
+    "host_net_sent_bytes",
+    "host_context_switches",
+    "host_interrupts",
     "gpu_util_mean_pct",
     "gpu_util_peak_pct",
     "gpu_active_util_mean_pct",
@@ -138,6 +158,11 @@ CSV_FIELDS = (
     "gpu_memory_peak_mib",
     "gpu_samples",
     "gpu_per_device_json",
+    "gpu_seconds",
+    "images_per_gpu_s",
+    "images_per_joule",
+    "engine_stats_text",
+    "engine_stats_semantics",
     "model_revision",
     "processor_revision",
     "dtype",
@@ -539,6 +564,10 @@ def main() -> None:
     project_metrics = args.arm == "project_ray"
     batch_completion_p50 = percentile(result.batch_completion_wall_s, 0.50)
     batch_completion_p95 = percentile(result.batch_completion_wall_s, 0.95)
+    batch_completion_p99 = percentile(result.batch_completion_wall_s, 0.99)
+    cpu_core_seconds = float(cpu_metrics["cpu_busy_cores_mean"]) * operator_e2e_s
+    gpu_seconds = args.gpu_workers * operator_e2e_s
+    gpu_energy_j = float(gpu_metrics["gpu_energy_estimate_j"])
 
     row: dict[str, object] = {
         "arm": args.arm,
@@ -567,15 +596,18 @@ def main() -> None:
         # service times; the explicit semantics and replacement fields follow.
         "batch_service_p50_s": batch_completion_p50,
         "batch_service_p95_s": batch_completion_p95,
+        "batch_service_p99_s": batch_completion_p99,
         "batch_service_semantics": (
             "submission_to_result_includes_dependency_queue_actor_and_return"
             if project_metrics
-            else "unavailable_fused_udf"
+            else "unavailable_engine_internal"
         ),
         "batch_completion_wall_p50_s": batch_completion_p50,
         "batch_completion_wall_p95_s": batch_completion_p95,
+        "batch_completion_wall_p99_s": batch_completion_p99,
         "batch_actor_service_p50_s": percentile(result.batch_actor_service_s, 0.50),
         "batch_actor_service_p95_s": percentile(result.batch_actor_service_s, 0.95),
+        "batch_actor_service_p99_s": percentile(result.batch_actor_service_s, 0.99),
         "batch_unattributed_wait_p50_s": percentile(
             result.batch_unattributed_wait_s,
             0.50,
@@ -584,16 +616,25 @@ def main() -> None:
             result.batch_unattributed_wait_s,
             0.95,
         ),
+        "batch_unattributed_wait_p99_s": percentile(
+            result.batch_unattributed_wait_s,
+            0.99,
+        ),
         "batch_preprocess_p50_s": percentile(result.batch_preprocess_s, 0.50),
         "batch_preprocess_p95_s": percentile(result.batch_preprocess_s, 0.95),
+        "batch_preprocess_p99_s": percentile(result.batch_preprocess_s, 0.99),
         "batch_host_copy_p50_s": percentile(result.batch_host_copy_s, 0.50),
         "batch_host_copy_p95_s": percentile(result.batch_host_copy_s, 0.95),
+        "batch_host_copy_p99_s": percentile(result.batch_host_copy_s, 0.99),
         "batch_h2d_p50_s": percentile(result.batch_h2d_s, 0.50),
         "batch_h2d_p95_s": percentile(result.batch_h2d_s, 0.95),
+        "batch_h2d_p99_s": percentile(result.batch_h2d_s, 0.99),
         "batch_forward_p50_s": percentile(result.batch_forward_s, 0.50),
         "batch_forward_p95_s": percentile(result.batch_forward_s, 0.95),
+        "batch_forward_p99_s": percentile(result.batch_forward_s, 0.99),
         "batch_d2h_p50_s": percentile(result.batch_d2h_s, 0.50),
         "batch_d2h_p95_s": percentile(result.batch_d2h_s, 0.95),
+        "batch_d2h_p99_s": percentile(result.batch_d2h_s, 0.99),
         "detailed_stage_timing": args.detailed_stage_timing,
         "telemetry_encoded_bytes": result.encoded_bytes if project_metrics else "",
         "input_tensor_bytes": result.input_tensor_bytes if project_metrics else "",
@@ -609,6 +650,15 @@ def main() -> None:
         ),
         "submitted_batches": result.submitted_batches if project_metrics else "",
         "pending_batches_peak": result.pending_batches_peak if project_metrics else "",
+        "cpu_core_seconds_estimate": cpu_core_seconds,
+        "cpu_core_seconds_per_image": cpu_core_seconds / args.limit,
+        "gpu_seconds": gpu_seconds,
+        "images_per_gpu_s": args.limit / gpu_seconds,
+        "images_per_joule": args.limit / gpu_energy_j if gpu_energy_j > 0 else "",
+        "engine_stats_text": result.engine_stats,
+        "engine_stats_semantics": (
+            "ray_data_operator_stats" if result.engine_stats else "unavailable"
+        ),
         **result.audit,
         **cpu_metrics,
         **gpu_metrics,
@@ -629,7 +679,7 @@ def main() -> None:
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 2,
+        "schema_version": 3,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,

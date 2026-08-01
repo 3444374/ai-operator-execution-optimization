@@ -270,7 +270,12 @@ class NvidiaSmiSampler:
 
 
 class SystemCpuSampler:
-    """Sample host-wide CPU utilization; values are not per-actor attribution."""
+    """Sample host-wide CPU/memory and before/after host I/O counters.
+
+    The counters include unrelated host activity and are therefore diagnostics,
+    not per-actor attribution.  They are still useful for detecting a disk or
+    network regime change that CPU percentages alone would hide.
+    """
 
     def __init__(self, interval_s: float) -> None:
         if interval_s <= 0:
@@ -278,15 +283,40 @@ class SystemCpuSampler:
         self.interval_s = interval_s
         self._stop = threading.Event()
         self._samples: list[list[float]] = []
+        self._memory_pct_samples: list[float] = []
+        self._memory_available_mib_samples: list[float] = []
         self._thread = threading.Thread(target=self._run, daemon=True)
+        self._started_counters: dict[str, int] = {}
 
     def start(self) -> None:
+        self._started_counters = self._host_counters()
         self._thread.start()
 
     def stop(self) -> dict[str, object]:
         self._stop.set()
         self._thread.join(timeout=max(2.0, self.interval_s * 4))
-        return summarize_cpu_samples(self._samples)
+        ended = self._host_counters()
+        io_metrics = {
+            key: max(0, ended.get(key, 0) - value)
+            for key, value in self._started_counters.items()
+        }
+        memory_metrics = {
+            "host_memory_mean_pct": (
+                statistics.fmean(self._memory_pct_samples)
+                if self._memory_pct_samples
+                else 0.0
+            ),
+            "host_memory_peak_pct": max(self._memory_pct_samples, default=0.0),
+            "host_memory_available_min_mib": min(
+                self._memory_available_mib_samples,
+                default=0.0,
+            ),
+        }
+        return {
+            **summarize_cpu_samples(self._samples),
+            **memory_metrics,
+            **io_metrics,
+        }
 
     def _run(self) -> None:
         import psutil
@@ -296,3 +326,24 @@ class SystemCpuSampler:
             self._samples.append(
                 [float(value) for value in psutil.cpu_percent(interval=None, percpu=True)]
             )
+            memory = psutil.virtual_memory()
+            self._memory_pct_samples.append(float(memory.percent))
+            self._memory_available_mib_samples.append(
+                float(memory.available) / (1024 * 1024)
+            )
+
+    @staticmethod
+    def _host_counters() -> dict[str, int]:
+        import psutil
+
+        disk = psutil.disk_io_counters()
+        network = psutil.net_io_counters()
+        cpu = psutil.cpu_stats()
+        return {
+            "host_disk_read_bytes": int(disk.read_bytes) if disk else 0,
+            "host_disk_write_bytes": int(disk.write_bytes) if disk else 0,
+            "host_net_recv_bytes": int(network.bytes_recv),
+            "host_net_sent_bytes": int(network.bytes_sent),
+            "host_context_switches": int(cpu.ctx_switches),
+            "host_interrupts": int(cpu.interrupts),
+        }
