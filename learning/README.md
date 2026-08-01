@@ -1,5 +1,11 @@
 # Learning Notes
 
+文本 baseline 的当前入门材料：
+
+- [`text_native_baseline_guide.md`](text_native_baseline_guide.md)：区分 vLLM 服务上限、
+  bounded control、Daft/Ray Data/OceanBase 原生 baseline 和项目方法，并解释
+  Chat/Completions 分轨与 64→512→4096 复测流程。
+
 ## 2026-07-30 为什么“短长都选 65K”还不能直接判动态无用
 
 远端把三次 formal 的 E2E tokens/s 做算术平均，得到 short/long 都是

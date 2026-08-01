@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter, defaultdict
-from typing import Iterable
+from typing import Iterable, Mapping
 
 from .contracts import BaselineRequestResult, ChatRequest
 
@@ -111,4 +111,42 @@ def summarize_results(
         "endpoint_counts": dict(sorted(endpoint_counts.items())),
         "endpoint_predicted_work": dict(sorted(endpoint_work.items())),
         "endpoint_work_skew": endpoint_work_skew,
+    }
+
+
+def summarize_group_service_counters(
+    summaries: Iterable[Mapping[str, object]],
+    results: Iterable[BaselineRequestResult],
+) -> dict[str, float | int]:
+    """Compute dual-endpoint service throughput over one shared group wall."""
+
+    summary_rows = tuple(summaries)
+    observed = tuple(results)
+    if not observed:
+        raise ValueError("group service summary requires request results")
+    prompt_tokens = sum(
+        int(row["service_prompt_tokens_delta"])
+        for row in summary_rows
+    )
+    generation_tokens = sum(
+        int(row["service_generation_tokens_delta"])
+        for row in summary_rows
+    )
+    group_jct_s = (
+        max(result.completed_at_s for result in observed)
+        - min(result.submitted_at_s for result in observed)
+    )
+    if group_jct_s <= 0:
+        raise ValueError("group service wall must be positive")
+    total_tokens = prompt_tokens + generation_tokens
+    return {
+        "group_service_wall_s": group_jct_s,
+        "group_service_prompt_tokens": prompt_tokens,
+        "group_service_generation_tokens": generation_tokens,
+        "group_service_total_tokens": total_tokens,
+        "group_service_prompt_tokens_per_s": prompt_tokens / group_jct_s,
+        "group_service_generation_tokens_per_s": (
+            generation_tokens / group_jct_s
+        ),
+        "group_service_total_tokens_per_s": total_tokens / group_jct_s,
     }

@@ -76,6 +76,33 @@ def validate_gate(
     ):
         incidents.append("metadata_mismatch")
 
+    provenance_fields = (
+        "comparison_role",
+        "implementation_provenance",
+        "scheduler_owner",
+        "custom_scheduling_code",
+        "formal_baseline_eligible",
+        "upstream_source",
+        "qualification_gate",
+    )
+    if not summary_rows or any(
+        field not in row
+        for row in summary_rows
+        for field in provenance_fields
+    ):
+        incidents.append("provenance_missing")
+    elif any(
+        bool(row["formal_baseline_eligible"])
+        and bool(row["custom_scheduling_code"])
+        for row in summary_rows
+    ):
+        incidents.append("invalid_native_provenance")
+    elif any(
+        len({row[field] for row in summary_rows}) != 1
+        for field in provenance_fields
+    ):
+        incidents.append("provenance_mismatch")
+
     summary_by_endpoint = {
         int(row["endpoint_index"]): row
         for row in summary_rows

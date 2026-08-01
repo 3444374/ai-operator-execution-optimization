@@ -1127,13 +1127,18 @@ gate #1 passed); the current blocking issue is observer deployment (errcode
 replace a failed OceanBase cell with a custom Python
 HTTP loop and label it OceanBase.
 
-## Official baseline 双 GPU gate（2026-07-29）
+## 文本 comparison 双 GPU validity gate（历史文件名含 official，2026-08-02 复核）
 
 该 gate 使用
 `deploy/autodl/dual_gpu_official_baseline_gate.example.json`，目的只是证明
-同一份 64 行 Chat Completions manifest 能由两张卡上的官方/强对照适配器
+同一份 64 行 Chat Completions manifest 能由两张卡上的 service ceiling、direct
+control 与 vendor-native 适配器
 正确执行，不产生性能结论。calibration 规格在
 `dual_gpu_official_baseline_calibration.example.json`；gate 未通过禁止运行。
+`vLLM Bench` 只作 ceiling，`bounded_*` 只作项目自写 control；Daft built-in prompt、
+Ray Data Processor 和通过部署门禁的 OceanBase 才称 native baseline。正式 held-out
+合同在 `dual_gpu_text_native_baseline_formal.example.json`，详细解释见
+`experiments/plans/text_native_baseline_rerun_20260802.md`。
 
 开机后仍先完整执行 §10.5。随后按本节顺序操作：
 
@@ -1199,7 +1204,7 @@ main 已通过本地全量测试并推送
   -> exactly-once/元数据/work skew/服务端 token 差分/空队列门禁
   -> 停止并分析
   -> 独立 calibration
-  -> 32/64/128/256 transient + 2,048 held-out formal
+  -> 512 calibration + 4,096 held-out、至少 60 秒、1 warmup + 3 interleaved formal
 ```
 
 环境职责固定如下：

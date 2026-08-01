@@ -97,7 +97,7 @@ mysql -h127.0.0.1 -P2881 -uroot -e "ALTER SYSTEM BOOTSTRAP CLUSTER TO 'zone1' DE
 
 ## 6. 动态验证 AI_COMPLETE ⚠️ 预期流程，本会话未执行
 
-> 门禁 #1（CE 含 `AI_COMPLETE`/`DBMS_AI_SERVICE`）已静态确证（见 README §2）。下面是注册指向同机 vLLM 的 endpoint 并测一次 `AI_COMPLETE` 的预期流程；本地 `code/src/baselines/oceanbase.py` 已用 pymysql 实现同样的调用序列。
+> 门禁 #1（CE 含 `AI_COMPLETE`/`DBMS_AI_SERVICE`）已静态确证（见 README §2）。下面是注册指向同机 vLLM 的 endpoint 并测一次 `AI_COMPLETE` 的预期流程；本地 `code/src/baselines/products/oceanbase.py` 已用 pymysql 实现同样的调用序列。
 
 ```sql
 CALL DBMS_AI_SERVICE.CREATE_AI_MODEL('qwen25b', '{"type":"completion","model_name":"qwen2.5-7b"}');
@@ -110,7 +110,7 @@ SELECT AI_COMPLETE('qwen25b', 'hello', JSON_OBJECT('temperature',0.0,'max_tokens
 
 当前 AutoDL 容器里，observer 装得上、配置能加载，但 init step 4/18（`clog/log_block_mgr.prepare_dir_and_create_meta_`，errcode -9100）`tgkill(self, SIGKILL)` 自杀。已 strace 排除 max_map_count（257 mmap、零失败）、overlayfs（md0 真实盘同样失败）、磁盘、配置。容器有 seccomp（`Seccomp: 2`）拦 `clone3`（ENOSYS）等；真因未完全定位，**容器内部不可修**（seccomp/kernel 参数只读）。详见 `README.md` §3.3。
 
-**复跑 B1 必须换可部署环境**：带 systemd 的 VM，或特权容器（`--security-opt seccomp=unconfined` 或 `--privileged`，kernel 参数可写）。在该环境重复 §2–§6；本地 `code/src/baselines/oceanbase.py` 可直接复用。
+**复跑 B1 必须换可部署环境**：带 systemd 的 VM，或特权容器（`--security-opt seccomp=unconfined` 或 `--privileged`，kernel 参数可写）。在该环境重复 §2–§6；本地 `code/src/baselines/products/oceanbase.py` 可直接复用。
 
 ## 8. 卸载（如需清理）
 

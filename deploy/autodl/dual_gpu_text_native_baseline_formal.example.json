@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dual_gpu_text_native_baseline_formal",
+  "formal": true,
+  "execution_status": "contract_only_until_calibration_is_frozen",
+  "completion_protocol": "chat_completions",
+  "rows_total": 4096,
+  "minimum_measurement_seconds": 60,
+  "warmup_repeats": 1,
+  "formal_repeats": 3,
+  "schedule": "balanced_interleaved_random_order",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "model": "qwen2.5-7b",
+  "tokenizer": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
+  "manifest": "/root/autodl-tmp/gates/text_native_formal_manifest_4096.jsonl",
+  "output_root": "/root/autodl-tmp/ai-operator/experiments/results/text_native_baseline_formal_REPLACE_ME",
+  "arms": [
+    {
+      "id": "vllm_bench",
+      "adapter": "vllm_bench",
+      "comparison_role": "service_ceiling",
+      "configuration": "freeze_from_independent_calibration"
+    },
+    {
+      "id": "bounded_http",
+      "adapter": "bounded_http",
+      "comparison_role": "direct_client_control",
+      "configuration": "freeze_from_independent_calibration"
+    },
+    {
+      "id": "daft_native",
+      "adapter": "daft_native",
+      "comparison_role": "framework_native_baseline",
+      "configuration": "vendor_default_prompt_api"
+    },
+    {
+      "id": "daft_ray",
+      "adapter": "daft_ray",
+      "comparison_role": "framework_native_baseline",
+      "ray_address": "127.0.0.1:6380",
+      "configuration": "vendor_default_prompt_api"
+    },
+    {
+      "id": "ray_data_http",
+      "adapter": "ray_data_http",
+      "comparison_role": "framework_native_baseline",
+      "ray_address": "127.0.0.1:6380",
+      "configuration": "freeze_batch_and_concurrency_from_independent_calibration"
+    }
+  ],
+  "optional_arms": [
+    {
+      "id": "oceanbase_ai_complete",
+      "adapter": "oceanbase",
+      "comparison_role": "database_product_native_baseline",
+      "requires": "successful_privileged_or_vm_capability_gate"
+    }
+  ],
+  "required_metrics": [
+    "jct_s",
+    "service_prompt_tokens_per_s",
+    "service_generation_tokens_per_s",
+    "service_total_tokens_per_s",
+    "request_throughput",
+    "latency_p50_p95_p99_when_request_level_observable",
+    "slo_goodput_when_request_level_observable",
+    "first_output_or_ttft_when_observable",
+    "vllm_running_waiting_kv_cache",
+    "gpu_utilization_memory_power_energy_mfu",
+    "host_cpu_memory_network_io",
+    "worker_actor_task_counts",
+    "failures_retries_exactly_once"
+  ],
+  "hard_gates": {
+    "provenance_fields_present": true,
+    "native_arms_have_no_project_scheduler": true,
+    "same_manifest_model_protocol_service_config": true,
+    "exactly_once": true,
+    "failed_rows": 0,
+    "worker_failures": 0,
+    "both_endpoints_used": true,
+    "service_counter_consistency": true,
+    "final_vllm_queues_empty": true,
+    "formal_duration_at_least_seconds": 60
+  }
+}

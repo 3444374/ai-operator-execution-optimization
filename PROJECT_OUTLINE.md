@@ -202,13 +202,18 @@ inflight，需重做 256 行门禁。正式比较还必须直接复用官方 Res
   聚合吞吐 +9.57%、max P99 -22.52%、max JCT -15.89%，Jain median
   0.9961。4-job 三次吞吐变化为 +8.43%/-0.28%/+22.60%，因此仅记为
   高竞争条件性候选，需 held-out 复验
-- ✅ 官方 direct baseline C32/C64/C128/C256 校准：vLLM Bench total
+- ✅ service ceiling / direct-control C32/C64/C128/C256 校准：vLLM Bench total
   tokens/s 4,930→8,342→12,762→15,351；512 行 C256 的 bounded HTTP 为
   14,532 tokens/s。C128→C256 仍增长 24.3%/33.0%，因此 C256 只称当前
   `max_num_seqs=256` 配置硬上限；历史约
   8.0–8.2K 只属于当时 project profiler/arrival-replay 链路，不能再称为
   vLLM 或双 4090 物理上限。bounded C128 暴露 httpx 默认 100 连接上限，
   显式扩展连接池后 re-gate 达到 12,472 tokens/s，与 vLLM Bench 仅差 2.3%
+- ✅ 文本 baseline 原生性审计与复测合同：vLLM Bench 固定为 service ceiling，
+  bounded Chat/Completions 固定为项目 direct controls；Daft built-in prompt、Ray Data
+  Processor 和通过 capability gate 的 OceanBase 才进入 native baseline。代码已增加
+  provenance fail-closed、服务端统一 token throughput，并删除未接线的 Daft
+  `partition_count` 扫描；4,096 held-out formal 等待服务器开机后执行
 
 **当前缺口与顺序（以 `experiments/plans/experiment_status_and_gaps.md` §0 为准）**：
 

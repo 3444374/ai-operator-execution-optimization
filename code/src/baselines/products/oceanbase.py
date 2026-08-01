@@ -1,4 +1,4 @@
-"""OceanBase AI_COMPLETE product baseline with bound SQL parameters."""
+"""OceanBase product-native AI_COMPLETE adapter with bound SQL parameters."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass
 from typing import Callable, Iterable
 
-from .contracts import BaselineRequestResult, ChatRequest
+from ..contracts import BaselineRequestResult, ChatRequest
 
 
 _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")

@@ -102,6 +102,14 @@
 `code/configs/image_vendor_baselines.json`；该 pin 尚未在本项目双 4090 上执行，不能把
 Daft README 中的 AWS 8×g6.xlarge 数字与本机结果直接排名。
 
+文本轨道采用同一 fail-closed 规则：每个 summary 由
+`code/src/baselines/provenance.py` 写入 comparison role、implementation provenance、
+scheduler owner、custom scheduling、formal eligibility、upstream source 和资格门禁。
+`vLLM Bench` 是 service ceiling，项目 `bounded_*` 是 direct controls，二者均不标记为
+native baseline；Daft built-in `functions.prompt`、Ray Data HTTP Processor 和通过
+capability gate 的 OceanBase `AI_COMPLETE` 才可进入原生系统排名。执行合同见
+`text_native_baseline_rerun_20260802.md`。
+
 ### 5. 过期清理规则
 
 候选状态统一使用 `candidate → capability-verified → gated → calibrated → formal`；
@@ -127,7 +135,7 @@ CSV 才是实验数字的权威来源。三者发生冲突时，不能自行拼�
 - **现有无 Daft/Ray 数据库 AI 算子** 是产品级核心 baseline。当前首选
   OceanBase `AI_COMPLETE`，使用同机 OpenAI-compatible vLLM endpoint；
   若 Community Edition/endpoint/观测门禁未通过，只作工业参考。
-- **同 PostgreSQL bounded AsyncIO** 是因果 baseline。它不是产品竞争对手，
+- **同 PostgreSQL bounded AsyncIO** 是因果 control。它不是原生 baseline 或产品竞争对手，
   但能隔离 OceanBase/PostgreSQL 差异与 Daft/Ray 的净贡献；必须独立标定，
   不能使用串行 strawman。
 - **Daft/Ray 官方 runtime** 是框架归因 baseline：Daft `prompt()` Native/Ray

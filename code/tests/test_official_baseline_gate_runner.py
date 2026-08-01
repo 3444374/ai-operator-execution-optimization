@@ -23,6 +23,7 @@ from src.baselines.gate_runner import (
     validate_service_counter_summary,
 )
 from src.baselines.manifests import read_manifest, write_manifest
+from src.baselines.provenance import adapter_provenance
 
 
 class OfficialBaselineGateRunnerTests(unittest.TestCase):
@@ -475,6 +476,10 @@ vllm:generation_tokens_total{engine="0",model_name="qwen"} 80
                                 "token_accounting": "server_usage",
                                 "input_tokens": 8,
                                 "output_tokens": 4,
+                                "jct_s": 0.1,
+                                **adapter_provenance(
+                                    "bounded_http"
+                                ).summary_fields(),
                             }
                         ),
                         encoding="utf-8",
@@ -558,6 +563,16 @@ vllm:generation_tokens_total{engine="0",model_name="qwen"} 80
             self.assertEqual(
                 summary["service_generation_tokens_delta"],
                 4,
+            )
+            self.assertEqual(summary["service_total_tokens_per_s"], 120.0)
+            gate = json.loads(
+                (output_root / "bounded_http" / "gate.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(
+                gate["metrics"]["group_service_total_tokens_per_s"],
+                240.0,
             )
 
 

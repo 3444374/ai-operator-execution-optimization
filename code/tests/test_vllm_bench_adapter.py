@@ -12,7 +12,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.baselines.contracts import ChatRequest
-from src.baselines.vllm_bench import (
+from src.baselines.ceilings import (
     VllmBenchConfig,
     build_vllm_bench_command,
     extract_vllm_bench_latency_distribution,

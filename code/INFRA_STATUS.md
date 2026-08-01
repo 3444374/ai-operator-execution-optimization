@@ -464,6 +464,24 @@ start、response headers、body complete、headers wait 和 body read。校准�
 该门禁未达到 5% 等价阈值前，完整 calibration、2,048 formal 和新策略均不
 启动。
 
+### 2026-08-02 文本 baseline 原生性与复测合同
+
+- 旧 `official baseline` 命名已在输出语义上拆成四类：vLLM Bench service ceiling、
+  bounded direct control、Daft/Ray Data framework-native baseline、OceanBase
+  product-native baseline。历史文件名为兼容保留，不再决定实验角色。
+- 每个 summary/validity gate 强制记录并核验 implementation provenance、scheduler
+  owner、custom scheduling、formal eligibility、upstream source；原生 arm 含项目
+  调度或 provenance 缺失时 fail closed。
+- `official_runtime.py` 已按框架拆到 `baselines/runtime/daft_prompt.py` 与
+  `ray_data_http.py`，共享单 endpoint shard 合同，避免把不同框架逻辑继续堆在扁平文件。
+- Daft public `functions.prompt` adapter 没有接线 `partition_count`，旧 calibration
+  中该假扫描因子已删除；Ray Data 只扫描其官方 batch/concurrency 参数。
+- 服务端 token counter 现在直接写 prompt/generation/total tokens/s，解决 Daft
+  不返回 output usage 时不同 arm 的吞吐口径不一致；Daft barrier 仍不能冒充 request P99。
+- 新复测按 64 行 validity → 512 行独立 calibration → 4,096 held-out、至少 60 秒、
+  1 warmup + 3 interleaved repeats 执行。完整合同见
+  `experiments/plans/text_native_baseline_rerun_20260802.md`。服务器当前关机，尚未远端运行。
+
 完整顺序与放弃条件见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
 

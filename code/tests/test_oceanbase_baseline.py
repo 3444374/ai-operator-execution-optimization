@@ -11,7 +11,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.baselines.contracts import ChatRequest
-from src.baselines.oceanbase import (
+from src.baselines.products import (
     OceanBaseConfig,
     build_ai_complete_sql,
     build_register_model_sql,

@@ -17,6 +17,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.baselines.cli import run_cli
 from src.baselines.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.manifests import write_manifest
+from src.baselines.provenance import adapter_provenance
 
 
 class OfficialBaselineCliTests(unittest.TestCase):
@@ -89,6 +90,12 @@ class OfficialBaselineCliTests(unittest.TestCase):
             )
             self.assertEqual(result["timing_granularity"], "request")
             self.assertEqual(result["token_accounting"], "server_usage")
+            self.assertEqual(
+                result["comparison_role"],
+                "direct_client_control",
+            )
+            self.assertTrue(result["custom_scheduling_code"])
+            self.assertFalse(result["formal_baseline_eligible"])
             self.assertFalse(output_dir.exists())
 
             completions_result = run_cli(
@@ -149,6 +156,12 @@ class OfficialBaselineCliTests(unittest.TestCase):
                 daft_result["token_accounting"],
                 "manifest_prompt_only",
             )
+            self.assertEqual(
+                daft_result["comparison_role"],
+                "framework_native_baseline",
+            )
+            self.assertFalse(daft_result["custom_scheduling_code"])
+            self.assertTrue(daft_result["formal_baseline_eligible"])
 
     def test_ray_runtime_dry_run_requires_explicit_cluster_address(
         self,
@@ -569,6 +582,9 @@ class OfficialBaselineCliTests(unittest.TestCase):
                             "vllm_num_requests_running_final": 0,
                             "vllm_num_requests_waiting_final": 0,
                             "worker_failures": 0,
+                            **adapter_provenance(
+                                "bounded_http"
+                            ).summary_fields(),
                         }
                     ),
                     encoding="utf-8",

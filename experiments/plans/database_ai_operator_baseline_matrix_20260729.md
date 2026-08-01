@@ -13,6 +13,13 @@ token-budget 冻结点；49K 是保留吞吐下的 SLO-goodput 候选。旧 8K �
 > 为准。下文出现的“当前”“下一步”只在其相邻日期快照内有效，不能覆盖新的图像轨道
 > 状态或结果目录。
 
+> **原生性纠错（2026-08-02）**：`vLLM Bench` 只属于 service ceiling，
+> `bounded_http`/`bounded_completions` 是项目自写 direct-client controls；只有 Daft
+> built-in `functions.prompt`、Ray Data 官方 Processor graph 和通过部署门禁的
+> OceanBase SQL AI Function 可以标记为 vendor-native baseline。新的复测合同与
+> 4,096 行 held-out 计划见 `text_native_baseline_rerun_20260802.md`。下文历史表中的
+> “官方/强 baseline”若包含 bounded client，按本条重新解释，不能按旧标题越界引用。
+
 ## 0. 一句话目标与成功条件
 
 本项目不是要超过绕过数据库和 Ray 的 vLLM Bench 服务上限，而是要在相同物理
@@ -46,7 +53,7 @@ token-budget 冻结点；49K 是保留吞吐下的 SLO-goodput 候选。旧 8K �
 |---|---|---|
 | B0 | vLLM Bench → 双 vLLM | serving ceiling |
 | B1 | OceanBase `AI_COMPLETE` → 双 vLLM | 现有数据库 AI 算子产品 baseline |
-| B2 | PostgreSQL → bounded AsyncIO → 双 vLLM → PostgreSQL | 同数据库强因果 baseline |
+| B2 | PostgreSQL → bounded AsyncIO → 双 vLLM → PostgreSQL | 项目自写强因果 control（非原生 baseline） |
 | B3 | PostgreSQL → Daft+Ray static → 双 vLLM → PostgreSQL | 框架成本消融 |
 | B4 | PostgreSQL → Daft+Ray token-work/refill → 双 vLLM → PostgreSQL | proposed 单 job arm |
 

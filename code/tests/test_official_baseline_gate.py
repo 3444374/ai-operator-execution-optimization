@@ -11,6 +11,7 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.baselines.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.gate import validate_gate
+from src.baselines.provenance import adapter_provenance
 
 
 def request(
@@ -71,7 +72,26 @@ def summary(
         "vllm_num_requests_running_final": running,
         "vllm_num_requests_waiting_final": waiting,
         "worker_failures": worker_failures,
+        **adapter_provenance("bounded_http").summary_fields(),
     }
+
+
+class BaselineProvenanceGateTests(unittest.TestCase):
+    def test_gate_rejects_missing_provenance(self) -> None:
+        manifest = (request(1, 0, 100), request(2, 1, 100))
+        summaries = [
+            summary(endpoint=0, predicted_work=100),
+            summary(endpoint=1, predicted_work=100),
+        ]
+        summaries[0].pop("scheduler_owner")
+
+        report = validate_gate(
+            manifest=manifest,
+            summaries=summaries,
+            request_results=(result(1, 0), result(2, 1)),
+        )
+
+        self.assertIn("provenance_missing", report.incidents)
 
 
 class OfficialBaselineGateTests(unittest.TestCase):

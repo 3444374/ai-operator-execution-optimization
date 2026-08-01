@@ -7,6 +7,7 @@
 | `code/INFRA_STATUS.md` | Current Daft+Ray AI-operator infra flow, implementation completeness, evidence boundaries, and prioritized remaining work | Use for a single implementation-status handoff before reading detailed plans |
 | `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` | Unified map from implemented/tested mechanisms to code, tests, principal result directories, evidence level, current decision, and remaining validation | Read first when asking what has actually been implemented, tested, proven, rejected, or left unverified |
 | `experiments/plans/database_ai_operator_baseline_matrix_20260729.md` | Pre-registered no-Daft/Ray database-AI and official Daft/Ray runtime baseline matrix | Read before the next AutoDL baseline gate; defines arms, workload, calibration, validity checks and claim thresholds |
+| `experiments/plans/text_native_baseline_rerun_20260802.md` | 文本 ceiling/control/vendor-native baseline 原生性审计与复测合同 | 远端重测前读取；定义 Chat/Completions 分轨、64→512→4096 流程、指标和结论边界 |
 | `code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md` | Two-layer same-scale baseline design: OceanBase/no-Daft-Ray controls plus official Daft/Ray Data controls | Read before implementing or running the next baseline matrix; contains the Chat protocol contract, causal controls, framework controls, calibration, metrics and promotion gates |
 | `code_doc/superpowers/plans/2026-07-29-official-baseline-matrix-implementation.md` | TDD implementation plan for the official baseline harness and remote fatal-flaw gate | Execute after the baseline design is approved; enumerates exact files, interfaces, RED/GREEN tests, dependencies, templates and remote stop conditions |
 | `code_doc/superpowers/plans/2026-07-29-same-condition-project-runtime-comparison-implementation.md` | TDD implementation plan for the final single-job same-condition comparison | Execute after the official gate; adds manifest-locked project profiling, no-replay request refill, pinned routing, 512-row calibration and 2,048-row held-out thresholds |
@@ -103,6 +104,7 @@
 | `learning/local_vllm_ray_baseline_walkthrough.md` | Local vLLM + Ray baseline learning walkthrough | Read when explaining what the fixed row-batch baseline does and does not prove |
 | `learning/archive/early_experiments_walkthrough.md` | 早期实验学习讲解（已归档） | pre-convergence 时期实验（组件可行性、fake/CPU、PG18.4 接入等）的历史参考 |
 | `learning/metric_selection_methodology.md` | AI_EMBED vs AI_COMPLETE 观察变量选择方法论 | 理解为什么从"阶段时延拆分"转向"多维分布表征" |
+| `learning/text_native_baseline_guide.md` | 文本 AI 算子 baseline 初学者讲解 | 理解 ceiling/control/native/project 的区别、请求链路、分轨与正式结果读法 |
 | `figures/architecture/runtime_strategy_rule_table.png` / `.svg` | 信号触发候选策略规则表 | 与闭环图配套使用，说明观测信号、候选动作和保护约束；不作为已验证结论 |
 | `figures/architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时信号驱动的上游执行闭环图 | 当前首选策略机制图；用一个 AI_COMPLETE SQL 例子说明数据组织（token-budget/length-align/prefix-aware）、提交控制（queue-adaptive flush/K_max/routing）、vLLM 部署平台（观测不修改）的分工；不重切数据库侧已物化批次 |
 | `figures/scripts/generate_runtime_strategy_control_loop.py` | 运行时策略闭环图生成脚本 | 重新生成策略机制图 PNG/SVG，并执行边框、箭头和禁用术语自检 |
@@ -273,7 +275,14 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
 | `code/scripts/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
 | `code/src/baselines/postgres_manifest.py` | 正式 PostgreSQL workload 的不可变 baseline manifest 导出核心 | 按 workload/doc_id/limit/offset 读取完整行，固定 output 代价语义、source hash 与 endpoint 分片前输入 |
-| `code/src/baselines/batched_completions.py` | 无 Ray 的持久异步 fixed-row multi-prompt Completions 强对照 | 同协议标定 HTTP packing 上限，验证每个完整 prompt exactly-once 后再测试项目 token-budget |
+| `code/src/baselines/controls/batched_completions.py` | 无 Ray 的持久异步 fixed-row multi-prompt Completions control | 同协议标定 HTTP packing 上限，验证每个完整 prompt exactly-once 后再测试项目 token-budget；不作为 native baseline |
+| `code/src/baselines/README.md` | 文本 comparison harness 分层与代码归属 | 修改 baseline adapter 或调度归属前读取，防止 control/native 混写 |
+| `code/src/baselines/provenance.py` | 文本 arm 原生性与来源 fail-closed 合同 | 每个 summary/gate 写入 role、scheduler owner、custom scheduling、formal eligibility 与 upstream source |
+| `code/src/baselines/runtime/` | Daft prompt / Ray Data vendor-native runtime adapters | 框架拥有 batching/backpressure；只做 workload payload/response 适配，不注入项目调度 |
+| `code/src/baselines/ceilings/` | vLLM Bench 官方服务容量上限 | 只衡量 service ceiling，不冒充数据库/框架 baseline |
+| `code/src/baselines/controls/` | bounded Chat/Completions 项目自写 direct controls | 隔离 feeding/HTTP packing；`formal_baseline_eligible=false` |
+| `code/src/baselines/products/` | OceanBase 等数据库产品原生 adapter | 只有真实 SQL AI Function 与 capability gate 通过后才进入产品 baseline |
+| `code/tests/test_baseline_provenance.py` | 文本 native baseline 资格单测 | 阻止项目自写 scheduler 被标记为 vendor-native，拒绝未分类 adapter |
 | `code/src/runtime_env.py` | driver、multi-job subprocess 与 Ray worker 的共享 PYTHONPATH/数值线程环境 | 防止 1/2/4-job 因每进程 OpenBLAS 线程膨胀而在请求前耗尽 OS 线程 |
 | `code/src/shared_vllm_experiment.py` | Shared-vLLM 编排核心 | 配置校验、三臂 credit 语义、并发执行、exactly-once 与公平性汇总 |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
@@ -398,8 +407,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_static_k_workload_surface.example.json` | low/near-capacity/burst × K64/128/256 静态性能面 | 先判断不同 workload 的最佳静态点和错配代价是否足以支持动态策略 |
 | `deploy/autodl/dual_gpu_static_credit_prompt_length_gate.example.json` | short/long prompt 的 K256、K256+W65K、K256+W98K async 等价臂门禁 | 在重建静态 credit surface 前验证 transport、token IDs、跨 workload 交错与未绑定臂 5% 等价性 |
 | `deploy/autodl/dual_gpu_endpoint_adaptive_gate.example.json` | 双 endpoint typed adaptive 256 行可运行性门禁 | 验证 endpoint-local state/metrics/action trace，禁止当作性能结果 |
-| `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 官方/强 baseline 功能门禁规格 | calibration 前验证 Chat 请求等价、exactly-once、endpoint 分片、空队列与 adapter 能力 |
-| `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 同条件 baseline 独立标定网格 | gate 通过后标定 direct/Daft/Ray Data/project 容量；不得直接当作 formal |
+| `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 文本 comparison validity gate（历史兼容文件名） | calibration 前验证 provenance、Chat 请求等价、exactly-once、endpoint 分片与空队列 |
+| `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 文本 ceiling/control/native arm 独立标定网格 | 删除未接线 Daft partition_count；只扫描各 arm 真实暴露参数，不得直接当 formal |
+| `deploy/autodl/dual_gpu_text_native_baseline_formal.example.json` | 4,096 行文本原生 baseline held-out 正式合同 | calibration 冻结后执行至少 60 秒、1 warmup + 3 interleaved repeats |
 | `deploy/autodl/dual_gpu_completions_baseline_gate.example.json` | 无 Ray fixed-row multi-prompt Completions 双 GPU transport ceiling | 在相同 Completions 协议下扫描 1/4/16/32 行 HTTP packing，保持每 endpoint 最多 256 active prompts |
 | `deploy/autodl/dual_gpu_project_chat_feeding.example.json` | project Chat `urllib`/持久 async transport 与 1×256/2×128/4×64 actor 校准 | 先通过同协议 bounded 95% feeding 门禁，再运行 Chat 策略或官方 runtime 排名 |
 | `deploy/autodl/dual_gpu_project_completions_feeding.example.json` | project 原始 multi-prompt Completions fixed-row feeding 校准 | 隔离 Ray/HTTP transport 后才进入 token-budget、length-align 与 adaptive flush 消融 |

@@ -235,7 +235,7 @@
 
 本节为本调研中亲自核实，非工作流传言：
 
-1. **`code/src/baselines/vllm_bench.py:126-141`**——vLLM bench detailed-result 解析路径读取 `ttfts` 与 `itls` 数组后，把每条请求折叠为 `latency = ttft + sum(intervals)`（第 138-141 行），**TTFT 值与逐 token ITL 分布均被丢弃**，只保留单条 e2e 标量。
+1. **`code/src/baselines/ceilings/vllm_bench.py`（当时 126-141 行）**——vLLM bench detailed-result 解析路径读取 `ttfts` 与 `itls` 数组后，把每条请求折叠为 `latency = ttft + sum(intervals)`，**TTFT 值与逐 token ITL 分布均被丢弃**，只保留单条 e2e 标量。
 2. **`code/src/metrics.py:433-437`**——从 vLLM Prometheus 采集 `vllm:e2e_request_latency_seconds / request_queue_time / request_inference_time / request_prefill_time / request_decode_time` 全部以 `_mean_delta`（仅均值）记录；**未采集** `vllm:time_to_first_token_seconds` 与 `vllm:inter_token_latency_seconds` 两个 Histogram 的分位。
 3. **`code/src/metrics.py` 全文无 `prefix_cache` 字段**——未采集 `vllm:prefix_cache_queries_total` / `vllm:prefix_cache_hits_total`（cache-ON 实验下 vLLM 已暴露这两个 Counter）。
 
@@ -257,7 +257,7 @@
 
 ## 8. 下一步与落点
 
-1. **P0 三条优先**——TTFT 分位、ITL 分布、prefix cache hit rate。改动集中在 `code/src/metrics.py` + `code/src/baselines/vllm_bench.py`，不触策略代码；先在 cache-ON 路由实验上补采，**直接服务当前 prefix 结论的隔离消融**（4-ep/7B 或 2-ep/1.5B、人为缩 KV 制造可控淘汰率）。登记到 `experiments/plans/experiment_status_and_gaps.md` 指标缺口区。
+1. **P0 三条优先**——TTFT 分位、ITL 分布、prefix cache hit rate。改动集中在 `code/src/metrics.py` + `code/src/baselines/ceilings/vllm_bench.py`，不触策略代码；先在 cache-ON 路由实验上补采，**直接服务当前 prefix 结论的隔离消融**（4-ep/7B 或 2-ep/1.5B、人为缩 KV 制造可控淘汰率）。登记到 `experiments/plans/experiment_status_and_gaps.md` 指标缺口区。
 2. **P1 与代价模型计划合并**——Q-Error/Spearman/Pick Rate 已在代价估计计划清单（见 `research/knowledge_hub.md` §5.7 模式 2），与本调研一致，按既定批次推进；Goodput-as-tokens、padding waste、service disparity、recall@k 作为对应研究内容实验的附加报告项。
 3. **P2 作为报告期统一处理**——Variance/CI、SLO Scale、CV、regression count、调度开销% 在正式结果报告与 `figures/` 绘图阶段一次性补齐。
 4. 本文件作为 `research/` 的指标体系参考入口；后续新实验设计指标时先查本目录 §3，避免重复造指标或漏报文献标准项。

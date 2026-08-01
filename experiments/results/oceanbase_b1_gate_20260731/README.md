@@ -20,7 +20,7 @@ matrix §2 把以下列为 **formal 前置门禁 #1**：「当前可部署的 Co
   - `DBMS_AI_SERVICE` 全套过程：`CREATE_AI_MODEL`、`CREATE_AI_MODEL_ENDPOINT`、`ALTER_AI_MODEL_ENDPOINT`、`DROP_AI_MODEL`、`DROP_AI_MODEL_ENDPOINT`（PRAGMA INTERFACE(C, ...) 绑定）。
 - **种子 SQL**：`/home/admin/oceanbase/admin/dbms_ai_service_mysql.sql` + `dbms_ai_service_body_mysql.sql`（PACKAGE spec + body，bootstrap 时装入 `sys` 租户）。
 
-**结论**：`AI_COMPLETE` + `DBMS_AI_SERVICE` 存在于 **Community Edition**（非企业版独占）。本地 `code/src/baselines/oceanbase.py` 适配器调用的 `DBMS_AI_SERVICE.CREATE_AI_MODEL` / `CREATE_AI_MODEL_ENDPOINT` 与 `AI_COMPLETE(...)` SQL 都是 CE 实际支持的对象，B1 不是 strawman 对照。
+**结论**：`AI_COMPLETE` + `DBMS_AI_SERVICE` 存在于 **Community Edition**（非企业版独占）。本地 `code/src/baselines/products/oceanbase.py` 适配器调用的 `DBMS_AI_SERVICE.CREATE_AI_MODEL` / `CREATE_AI_MODEL_ENDPOINT` 与 `AI_COMPLETE(...)` SQL 都是 CE 实际支持的对象，B1 不是 strawman 对照。
 
 ## 3. 部署尝试：❌ 当前容器无法运行 observer
 
@@ -105,7 +105,7 @@ B1 复跑时将采集的指标（与 `experiments/AGENTS.md` §6 新实验指标
 
 **当前无 `runs.csv`** —— observer init 失败（见 §3.3 clog `-9100`），端到端链路（OceanBase `AI_COMPLETE` → 同机双 vLLM → 写回）未执行，故本目录无 `runs.csv` / `summary_long.csv` / `comparison_summary.csv` 等任何结果 CSV。
 
-复跑需可部署环境（带 systemd 的 VM 或特权容器，见 §8「下一步 / 复跑条件」）；在 observer 跑通后，由 `code/src/baselines/oceanbase.py` 适配器驱动产生上述 CSV。
+复跑需可部署环境（带 systemd 的 VM 或特权容器，见 §8「下一步 / 复跑条件」）；在 observer 跑通后，由 `code/src/baselines/products/oceanbase.py` 适配器驱动产生上述 CSV。
 
 ## 7. 能声称 / 不能声称
 
@@ -118,7 +118,7 @@ B1 复跑时将采集的指标（与 `experiments/AGENTS.md` §6 新实验指标
 
 - 按 matrix §2：当前把 OceanBase **降为"工业系统参考 / 待部署"**，不伪造 B1 数字；待可部署环境就绪再补 formal。
 - 复跑 B1 所需环境（任一）：带 systemd 的 VM；或特权容器（`--security-opt seccomp=unconfined` 或 `--privileged`，且 kernel 参数可写）。在该环境重跑：observer + bootstrap → `DBMS_AI_SERVICE` 注册 AI model endpoint 指向同机双 vLLM → 灌 `sharegpt_multiturn` → 跑 B1 → 与 B0/B2/B4 对比。
-- 复跑时直接复用本地 `code/src/baselines/oceanbase.py`（其对 `DBMS_AI_SERVICE` / `AI_COMPLETE` 的调用已确证 CE 支持）；pymysql 2.2.8 已在 driver env。
+- 复跑时直接复用本地 `code/src/baselines/products/oceanbase.py`（其对 `DBMS_AI_SERVICE` / `AI_COMPLETE` 的调用已确证 CE 支持）；pymysql 2.2.8 已在 driver env。
 
 ## 9. 附：用于复跑的已验证启动参数
 

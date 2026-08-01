@@ -1,4 +1,4 @@
-"""Reproducible two-endpoint orchestration for the official baseline gate."""
+"""Two-endpoint validity gate for text ceilings, controls, and native baselines."""
 
 from __future__ import annotations
 
@@ -17,6 +17,8 @@ from typing import Callable, Mapping, Sequence
 from .contracts import BaselineRequestResult
 from .gate import validate_gate
 from .manifests import read_manifest
+from .provenance import adapter_provenance
+from .results import summarize_group_service_counters
 
 
 CORE_ADAPTERS = (
@@ -199,6 +201,7 @@ def load_core_gate_config(
             continue
         if adapter not in CORE_ADAPTERS:
             raise ValueError(f"unsupported core gate adapter: {adapter!r}")
+        adapter_provenance(adapter)
         if (
             completion_protocol == "completions"
             and adapter != "bounded_completions"
@@ -533,6 +536,22 @@ def _stamp_service_counters(
                 "service_total_tokens_delta": (
                     prompt_tokens + generation_tokens
                 ),
+                "service_prompt_tokens_per_s": (
+                    prompt_tokens / float(summary["jct_s"])
+                    if float(summary.get("jct_s", 0.0)) > 0
+                    else 0.0
+                ),
+                "service_generation_tokens_per_s": (
+                    generation_tokens / float(summary["jct_s"])
+                    if float(summary.get("jct_s", 0.0)) > 0
+                    else 0.0
+                ),
+                "service_total_tokens_per_s": (
+                    (prompt_tokens + generation_tokens)
+                    / float(summary["jct_s"])
+                    if float(summary.get("jct_s", 0.0)) > 0
+                    else 0.0
+                ),
             }
         )
         _atomic_json(summary_path, summary)
@@ -621,7 +640,10 @@ def _validate_cell(
         ),
         "passed": report.passed and not counter_incidents,
         "incidents": list(report.incidents) + counter_incidents,
-        "metrics": report.metrics,
+        "metrics": {
+            **report.metrics,
+            **summarize_group_service_counters(summaries, results),
+        },
     }
     _atomic_json(gate_path, payload)
     return payload
@@ -681,6 +703,7 @@ def run_core_gate(
                 "concurrency_per_endpoint": cell.concurrency,
                 "batch_size": cell.batch_size,
                 "ray_address": cell.ray_address,
+                **adapter_provenance(cell.adapter).summary_fields(),
             }
             for cell in config.cells
         ],
@@ -792,7 +815,7 @@ def run_core_gate(
 
     passed = {
         "status": "passed",
-        "scope": "core_official_adapters",
+        "scope": "text_comparison_validity_gate",
         "completed_cells": completed_cells,
         "blocked_cells": list(config.blocked_cells),
     }
@@ -802,7 +825,9 @@ def run_core_gate(
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run the reproducible two-endpoint official baseline gate."
+        description=(
+            "Run the reproducible two-endpoint text comparison validity gate."
+        )
     )
     parser.add_argument("--config", required=True)
     parser.add_argument("--driver-python", required=True)

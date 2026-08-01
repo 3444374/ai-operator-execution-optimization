@@ -32,7 +32,13 @@ code/
 │   ├── runner_lease.py                    ← 场景输出目录的原子单写者租约与显式 stale recovery
 │   ├── model_backends.py                  ← sync/async compatible HTTP 与 multi-prompt completion backend
 │   ├── image/                             ← 图像 contracts/source/CPU preprocess/CLIP actor、Daft/Ray Data baseline、显式资源预算与采样
-│   ├── baselines/                         ← direct Chat/Completions、官方 runtime 与统一 gate
+│   ├── baselines/                         ← 文本 ceiling/control/native baseline 共享合同与 gate
+│   │   ├── ceilings/                      ← vLLM Bench 官方服务上限（不是系统 baseline）
+│   │   ├── controls/                      ← 项目自写 bounded Chat/Completions 因果对照
+│   │   ├── runtime/                       ← Daft prompt 与 Ray Data 官方执行图（框架拥有调度）
+│   │   ├── products/                      ← OceanBase 等数据库产品原生 SQL adapter
+│   │   ├── provenance.py                  ← arm 角色、实现来源与原生资格 fail-closed 合同
+│   │   └── cli.py / gate_runner.py        ← 薄 CLI、双 endpoint 编排与证据落盘
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
 │   ├── profiling/
@@ -148,9 +154,10 @@ now lives under `code/src/`:
   Project execution additionally times source iterator waits, driver batch
   materialization, and Ray submission so the residual framework gap is not
   mislabeled as GPU or PCIe time.
-- `baselines/`: no-Ray bounded Chat, fixed-row multi-prompt Completions,
-  vLLM Bench, Daft/Ray/OceanBase adapters, immutable manifests and fail-closed
-  two-endpoint gates. Baseline code does not import project scheduling policy.
+- `baselines/`: vLLM Bench service ceiling、项目自写 bounded controls、Daft/Ray Data
+  framework-native adapters、OceanBase product-native adapter、immutable manifest 和
+  fail-closed 双 endpoint gate。`runtime/` 只封装 vendor API graph，不注入项目
+  credit/router；`provenance.py` 防止 control/ceiling 被误报为原生 baseline。
 - `sinks.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
 - `metrics.py`: timers, GPU/memory/power sampling, energy/MFU estimates, and
   schema-safe CSV preflight/append helpers. Formal runs preflight the main
@@ -504,11 +511,15 @@ Daft organizer dry-run:
 `code/src/baselines/` 把现有系统对照与本项目实现分离成可审计适配层：
 
 - `contracts.py` / `manifests.py` 固定请求语义、顺序、hash 与 endpoint 分片；
-- `async_http.py` / `vllm_bench.py` 提供无 Daft/Ray 对照和 serving ceiling；
-- `official_runtime.py` 对接 Daft Native/Ray 与 Ray Data 官方接口；
+- `controls/` 提供项目自写 direct controls，`ceilings/vllm_bench.py` 提供 serving
+  ceiling；
+- `runtime/daft_prompt.py` / `runtime/ray_data_http.py` 分别对接 Daft 与 Ray Data
+  vendor-native API graph；
+- `provenance.py` 固定 role、scheduler owner、custom scheduling、formal eligibility
+  与 upstream source，避免 control/ceiling 冒充 native baseline；
 - `postgres_manifest.py` 从正式 PostgreSQL workload 只读导出完整行与 source
   hash，随后交给共同 endpoint 分片器；
-- `oceanbase.py` 对接原生 `AI_COMPLETE`，不以 Python HTTP 模拟产品算子；
+- `products/oceanbase.py` 对接原生 `AI_COMPLETE`，不以 Python HTTP 模拟产品算子；
 - `results.py` / `gate.py` 统一 exactly-once、延迟、吞吐和 fail-closed 门禁；
 - `cli.py` 只做 shard dispatch、原始证据保存和格式归一化；
 - `gate_runner.py` 串行 core cell、并行双 endpoint shard，并在空队列校验后

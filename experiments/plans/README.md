@@ -70,6 +70,7 @@ runner 中 short/long 的 K256/W65K/W98K 通过 5% 等价性和 repeat 稳定性
 | `strategy_design_implementation_reference.md` | 写代码 / 设计实验变量时查 | **怎么实现**：信号→变量→指标→baseline→§8 目标代码架构→实现优先级 |
 | `literature_driven_pipeline_optimization_guide.md` | 继续从文献寻找优化点时查 | **怎么发现下一项机制**：三层 batch 边界、Orca 式上游持续补位、完整 adaptive flush 缺口、机制卡模板、fatal-flaw audit、候选池与晋级/放弃条件 |
 | `database_ai_operator_baseline_matrix_20260729.md` | 启动下一轮正式 baseline 前查 | **测什么**：无 Daft/Ray 的 OceanBase/同 PostgreSQL 核心矩阵，以及 Daft prompt/Ray Data 官方框架矩阵；统一协议、标定、门禁与晋级标准 |
+| `text_native_baseline_rerun_20260802.md` | 重跑文本 baseline 前查 | **怎么严谨重测**：区分 service ceiling、direct control、framework/product native；定义 Chat/Completions 分轨与 64→512→4096 合同 |
 | `../../code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md` | 补正式系统 baseline 时查 | **怎么公平比较现有系统**：第一层为无 Daft/Ray 的 OceanBase `AI_COMPLETE` 与同 PostgreSQL 因果对照；第二层为 Daft `prompt()` Native/Ray 与 Ray Data 官方实现；统一使用 Chat Completions |
 
 > **文档分工**：`literature_basis` 是论文边界论证，`implementation_reference`

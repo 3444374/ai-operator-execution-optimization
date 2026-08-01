@@ -1,4 +1,4 @@
-"""Official vLLM benchmark dataset and command construction."""
+"""Official vLLM Bench Serve ceiling dataset and command construction."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from .contracts import ChatRequest
+from ..contracts import ChatRequest
 
 
 @dataclass(frozen=True)

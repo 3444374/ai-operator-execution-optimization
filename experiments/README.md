@@ -24,6 +24,8 @@ BYTEA、模型、预处理、资源、计时边界和 sink，采集阶段/硬件
 
 baseline 如何检索、证据如何分级、哪些指标必须记录，以
 [`plans/baseline_reference.md`](plans/baseline_reference.md) 的检索流程和指标合同为准。
+文本 AI_COMPLETE 的原生性审计、Chat/Completions 分轨和 64→512→4096 复测合同见
+[`plans/text_native_baseline_rerun_20260802.md`](plans/text_native_baseline_rerun_20260802.md)。
 MS MARCO 仅作为文本 embedding 轻对照，不能把图像、文本、音频强行统称为
 BigVectorBench。
 

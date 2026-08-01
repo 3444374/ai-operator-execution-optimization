@@ -14,10 +14,19 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Sequence
 
-from .async_http import BoundedHttpConfig, run_bounded_http
-from .batched_completions import (
+from .ceilings import (
+    VllmBenchConfig,
+    build_vllm_bench_command,
+    extract_vllm_bench_latency_distribution,
+    extract_vllm_bench_request_timings,
+    summarize_vllm_bench_latency_distribution,
+    write_vllm_custom_dataset,
+)
+from .controls import (
     BatchedCompletionsConfig,
+    BoundedHttpConfig,
     run_batched_completions,
+    run_bounded_http,
 )
 from .contracts import BaselineRequestResult, ChatRequest
 from .gate import validate_gate
@@ -26,34 +35,19 @@ from .manifests import (
     read_manifest,
     write_manifest,
 )
-from .oceanbase import OceanBaseConfig, run_oceanbase_ai_complete
-from .official_runtime import (
+from .products import OceanBaseConfig, run_oceanbase_ai_complete
+from .postgres_manifest import load_postgres_requests
+from .provenance import adapter_provenance, registered_adapters
+from .results import summarize_results
+from .runtime import (
     DaftPromptConfig,
     RayDataHttpConfig,
     run_daft_prompt,
     run_ray_data_http,
 )
-from .results import summarize_results
-from .postgres_manifest import load_postgres_requests
-from .vllm_bench import (
-    VllmBenchConfig,
-    build_vllm_bench_command,
-    extract_vllm_bench_latency_distribution,
-    extract_vllm_bench_request_timings,
-    summarize_vllm_bench_latency_distribution,
-    write_vllm_custom_dataset,
-)
 
 
-ADAPTERS = (
-    "bounded_http",
-    "bounded_completions",
-    "vllm_bench",
-    "daft_native",
-    "daft_ray",
-    "ray_data_http",
-    "oceanbase",
-)
+ADAPTERS = registered_adapters()
 _OBSERVABILITY_BY_ADAPTER = {
     "bounded_http": ("request", "server_usage"),
     "bounded_completions": ("http_batch", "service_counter"),
@@ -72,6 +66,7 @@ def _observability_fields(adapter: str) -> dict[str, str]:
     return {
         "timing_granularity": timing_granularity,
         "token_accounting": token_accounting,
+        **adapter_provenance(adapter).summary_fields(),
     }
 
 
@@ -553,7 +548,10 @@ def _validate_gate_command(
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run same-condition official AI operator baselines."
+        description=(
+            "Run same-condition text service ceilings, controls, and "
+            "vendor-native AI operator baselines."
+        )
     )
     commands = parser.add_subparsers(dest="command", required=True)
 

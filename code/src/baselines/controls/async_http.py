@@ -1,4 +1,4 @@
-"""Strong no-Ray/no-Daft Chat Completions baseline."""
+"""Project-authored bounded Chat control with request-level timing."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from typing import Any
 
-from .contracts import BaselineRequestResult, ChatRequest
+from ..contracts import BaselineRequestResult, ChatRequest
 
 
 HttpTransport = Callable[

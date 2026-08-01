@@ -221,7 +221,7 @@
 - P0 缺口三条均为"vLLM 已暴露信号、采集端未落字段或折叠分布"，已亲自核实
   代码：`code/src/metrics.py:433-437` 仅采 prefill/decode 均值，未采
   `time_to_first_token`/`inter_token_latency` 分位；全文无 `prefix_cache`
-  Counter；`code/src/baselines/vllm_bench.py:126-141` 把 `ttfts+itls` 折叠
+  Counter；`code/src/baselines/ceilings/vllm_bench.py` 当时把 `ttfts+itls` 折叠
   成单条 e2e。补采改动集中在 metrics.py 与 vllm_bench.py，不触策略代码。
 - 落点：prefix cache hit rate 直接服务当前 prefix 路由结论的隔离消融；
   TTFT/ITL 分位使 service_p99 的 prefill/decode 可解释；登记到
@@ -3180,7 +3180,7 @@
   （md0 真实盘同样）、磁盘、配置。容器 seccomp（Seccomp=2）拦 clone3（ENOSYS），但 observer 起了
   ~20 线程，非直接死因；真因未完全定位，从容器内部不可修（seccomp/kernel 只读）。
 - 按 matrix §2：OceanBase 暂降为"工业参考/待部署"，不伪造 B1。复跑需特权容器
-  （`seccomp=unconfined`/`--privileged`）或带 systemd 的 VM；复跑时复用 `code/src/baselines/oceanbase.py`
+  （`seccomp=unconfined`/`--privileged`）或带 systemd 的 VM；复跑时复用 `code/src/baselines/products/oceanbase.py`
   （其对 DBMS_AI_SERVICE/AI_COMPLETE 的调用已确证 CE 支持）。
 - 远端保留证据：oceanbase-ce 安装 + `/root/obdata/strace{2..7}.log` + `/etc/oceanbase.cnf`。
 
@@ -3576,3 +3576,27 @@
   不再称官方 Daft baseline。正式图像比较改为 Daft built-in、固定 upstream commit 的
   官方 803,580-row ResNet18 Daft/Ray Data 脚本、Ray Data database native graph、
   bounded direct 和 frozen project static。
+
+## 2026-08-02 文本 baseline 原生性审计与复测准备
+
+- **角色纠错**：文本 harness 不再把全部 arms 混称 official baseline。vLLM Bench
+  固定为 service ceiling；项目 `bounded_http`/`bounded_completions` 固定为 direct
+  controls；Daft built-in `functions.prompt`、Ray Data HTTP Processor 与通过部署门禁的
+  OceanBase `AI_COMPLETE` 才具有 vendor-native baseline 资格。
+- **代码分层**：删除扁平 `baselines/official_runtime.py`，拆为
+  `baselines/runtime/{common,daft_prompt,ray_data_http}.py`；新增 `provenance.py` 统一
+  arm 身份、调度所有者、custom scheduling、formal eligibility 与 upstream source。
+  进一步把 vLLM Bench、bounded controls、OceanBase 分别归入 `ceilings/`、`controls/`、
+  `products/`，根层只保留共享合同、结果和编排，避免后续新增 adapter 再次扁平堆积。
+- **Fail-closed**：CLI summary、resolved gate config 和 validity gate 记录/核验 provenance；
+  缺字段或原生 arm 含项目调度即失败。服务端 counter 新增 prompt/generation/total
+  tokens/s，保证 Daft 无 output usage 时仍可按统一服务工作量比较。
+- **配置纠错**：删除 Daft adapter 未接线的 `partition_count` calibration 假因子；Ray
+  Data 只扫描官方 batch/concurrency。新增 4,096 held-out、≥60 秒、1 warmup + 3
+  interleaved repeats 的 formal 合同。
+- **执行边界**：旧 64/256 行数据继续作为 gate/screening；因缺少长稳态、交错三重复和
+  新 provenance 字段，不进入正式排名。用户已关闭 AutoDL，本次只完成本地代码/文档/
+  测试准备，远端重测等待开机。
+- **学习材料**：新增 `learning/text_native_baseline_guide.md`，用数据链路解释
+  ceiling/control/native/project、Chat/Completions 分轨、64→512→4096 流程和双 endpoint
+  group throughput，避免后续只看单个 tokens/s 或把 barrier 当逐请求 P99。
