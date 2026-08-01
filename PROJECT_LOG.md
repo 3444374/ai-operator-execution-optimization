@@ -15,6 +15,9 @@
   可导入，但 Ray worker 在没有交互式 `PYTHONPATH` 时无法 import `src`。所有图像 Ray
   arm 改为显式传共享 `ray_runtime_env()`，同时传播项目代码路径和 OMP/MKL 等线程
   合同，避免依赖 shell 隐式状态。
+- schema v5 首轮 fail-closed 校验确认 Ray CPU/GPU worker 的 Torch 实测值均为
+  `1/1`；同时修正校验器只比较线程字段，不把 GPU `ready()` 返回的模型/进程元数据
+  误判为线程不一致。失败尝试未写入 CSV，不属于实验结果。
 
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过

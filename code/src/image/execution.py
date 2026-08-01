@@ -233,7 +233,11 @@ def build_project_ray_worker_pool(
         "torch_intraop_threads": torch_intraop_threads,
         "torch_interop_threads": torch_interop_threads,
     }
-    mismatches = [item for item in readiness if item != expected_threads]
+    mismatches = [
+        item
+        for item in readiness
+        if any(item.get(key) != value for key, value in expected_threads.items())
+    ]
     if mismatches:
         raise RuntimeError(
             "Ray worker Torch thread contract mismatch: "
