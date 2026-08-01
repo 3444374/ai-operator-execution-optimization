@@ -151,6 +151,52 @@ CPU prepare 与模型副本绑定的限制；CPU/GPU stage separation 能在固�
 5. 上述门禁闭合后，才以“冻结最佳静态 project pipeline”为对照测试状态感知请求
    成形、frame-work credit、multi-job shared credit 和代价模型。
 
+## 附：per-arm 全指标与资源缺口（2026-08-01 追加观察）
+
+本节从 `raw/image_clip_native_baseline_formal_ba1b710/runs.csv`（12 个 formal run）补充 §4 headline 之外的 per-arm 指标，并记录资源侧的两个测量缺口。数值为 3-run 中位。
+
+### 附.1 per-arm 全指标（中位）
+
+| 指标 | native 单卡 | project 单卡 | daft_ray 双卡 | project 双卡 |
+|---|---|---|---|---|
+| operator_e2e_s | 22.15 | 17.09 | 17.95 | 15.77 |
+| images/s | 225.8 | 292.5 | 278.5 | 317.0 |
+| first_output_s（首输出） | 9.18 | 8.48 | 15.43 | 8.90 |
+| batch_service_p50_s（每批 GPU，仅 project 测） | — | 0.91 | — | 0.71 |
+| batch_service_p95_s | — | 1.10 | — | 0.89 |
+| worker_setup_s（冷启动，含进 E2E） | 0.0 | 6.93 | 0.0 | 7.51 |
+| gpu_util_mean %（500ms 采样） | ~1.7 | ~1.9 | ~2.2 | ~2.0 |
+| gpu_util_peak % | 18 | 17 | 15 | 15 |
+| gpu_mem_peak MiB | 3714 | 930 | 1855/卡 | 930/卡 |
+| model_workers（模型副本数） | 4 | 1 | 4 | 2 |
+| gpus_per_model_worker | 0.25 | 1.0 | 0.5 | 1.0 |
+| embedding_checksum | -36.447 | -36.446 | -36.446 | -36.446 |
+| max_norm_error | 1.79e-7 | 1.79e-7 | 1.79e-7 | 1.79e-7 |
+| exactly_once / output_rows | T / 5000 | T / 5000 | T / 5000 | T / 5000 |
+
+公共：batch=64、float16、512d、max_active_batches=8、CLIP ViT-B/32；栈版本见 §1。
+
+### 附.2 E2E 之外的观察
+
+1. **first_output（首输出延迟）**：project 双卡 15.43s → 8.90s（快 ~6.5s），单卡 9.18→8.48s（小 gap）。阶段拆分 pipeline 填充更快——CPU actor 早出第一个 tensor 喂 GPU，fused UDF 要等 actor 内 decode+preprocess+forward 全跑完才出首批。
+2. **gpu_util 全臂 ~2% 均值、峰值 ≤22%**——每条路径都没压满 GPU，与"CPU-prep-bound"一致；但 500ms 采样漏短 kernel，**不能算 MFU**（§5 已声明），只能说"数据不支持 GPU 已压满"。
+3. **显存 project 省 ~4×**：native 单卡 4 副本 3714 MiB vs project 1 副本 930 MiB；双卡 1855/卡 vs 930/卡——阶段拆分不加模型副本的直接体现。
+4. **质量全臂一致**：embedding_checksum ~-36.446、max_norm_error 1.79e-7、exactly_once/5000 行——native/ray/project 产出相同 embedding，质量不是速度差异的混淆变量。
+5. **batch_service 仅 project 有值**：每批 GPU forward p50 单卡 0.91s、双卡 0.71s；native/ray 的每批服务融在 fused UDF 里没单独计时。
+
+### 附.3 worker_setup 边界不对称（待澄清）
+
+project 的 operator_e2e **含 ~7s 冷启动**（Ray GPU actor 加载模型，worker_setup_s 6.93/7.51s）；native/ray 该列为 **0**。§1 边界声明"模型 worker cold setup 包含、Ray framework startup 排除"，但 Daft `@daft.cls` 的 worker 初始化可能落在 framework-startup 侧（排除），project 的 Ray actor 初始化落在 cold-setup 侧（包含）——**即 project 的 E2E 被罚 ~7s（保守、对 project 不利）**。正式比较应明确对齐该边界；按 steady-state（扣 setup）project 优势更大。
+
+### 附.4 资源测量缺口（gap）
+
+runs.csv 的资源侧**只有 GPU 指标**（util/显存，nvidia-smi 500ms），缺两项：
+
+- **CPU 利用率（%）未测**：只有 `cpu_workers` 配置（3 或 4），没开 psutil/mpstat 采 CPU util。"CPU preprocess 是瓶颈"目前靠**间接证据**——阶段时间比（preproc ~5ms/img >> embed ~0.3ms/img，见 `image_clip_bottleneck_profile_20260801.md`）+ GPU util 全面 ~2%——逻辑成立，但**缺 CPU worker 是否真饱和的直接佐证**。正式论文应补后台 CPU 采样（psutil per-core %）。
+- **CPU↔GPU 传输带宽（GB/s）未测未报**：传输**时间**在独立 bottleneck profile 测过（`transfer` ~0.1ms/img），但在本 native-baseline 实验里折进 actor_call 没单列；带宽从未计算。可从 tensor 字节数 / transfer 时间粗推（float32 0.6MB/img ÷ ~0.1ms ≈ **~5 GB/s**，远低于 PCIe 4.0 ×16 ~32GB/s → 传输未饱和、可忽略），但这只是推导值、非实测。
+
+→ 当前数据能说"GPU 没压满 + 阶段时间 CPU 占大头"，但**"CPU worker 已饱和"仍缺直接 CPU util 证据**；传输带宽同理。两者列为后续采集待办（runner 加 psutil CPU 采样 + transfer 字节计 → 带宽）。
+
 ## 复现入口
 
 - runner：`code/scripts/run_image_clip_e2e.py`
