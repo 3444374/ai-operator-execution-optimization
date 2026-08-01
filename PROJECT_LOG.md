@@ -3524,3 +3524,15 @@
   GDS 只在存储 I/O 位于关键路径或与 GPU decode 联合成独立臂时考虑。
 - **实现缺口**：`run_image_clip_e2e.py` 当前只覆盖 fused Daft 与 project-Ray；下一步
   需新增 staged Daft-on-Ray/Ray Data arms，再做 R0→R4、统一 pgvector sink 和策略实验。
+
+## 2026-08-02 数据库 AI 算子评价指标合同
+
+- **外部口径审计**：综合 SemBench、LOTUS、Palimpzest、Cortex AISQL、vLLM serving、
+  Ray Data 与 PolarDB 多模态 benchmark，确认正式评价不能只报告吞吐；最低证据链为
+  质量、JCT/E2E、容量、尾延迟/SLO、成本/work、内存、失败与扩展性。
+- **指标合同**：在 `experiments/plans/baseline_reference.md` 固化每个正式 run 的身份、
+  工作量、正确性、任务质量、时间、容量、成本、资源、调度、扩展和统计字段，并区分
+  managed product 可观察指标与同机开源 baseline 的内部诊断指标。
+- **图像缺口**：schema v9 已覆盖 stage timing、CPU/GPU/能耗/传输与执行正确性，
+  但 ground-truth 质量、失败 run 结构化落盘、统一 system sink、Ray object-store/spill
+  和逐行尾延迟仍待补。任务质量、失败记录和 system sink 被列为正式排名阻断项。

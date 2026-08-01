@@ -151,6 +151,74 @@ failure 与扩展性协议；不为了扩大表格而实现与研究问题无关
 [PolarDB AI Functions](https://help.aliyun.com/en/polardb/polardb-for-postgresql/ai-functions-and-supported-model-providers)、
 [OceanBase AI Function](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975)。
 
+### 数据库 AI 算子评价指标合同
+
+本节是后续文本与图像实验的最低指标合同。它不是把所有论文的字段机械相加，而是
+要求每个实验报告与算子语义相适用的完整证据链。任何 headline 性能结果若缺少质量、
+计时边界、工作量或失败记录，不得进入正式系统排名。
+
+#### 外部系统实际采用的指标
+
+| 来源 | 主要指标 | 对本项目的约束 |
+|---|---|---|
+| SemBench（PVLDB 2026） | result quality、execution time、monetary cost、memory、scaling；5 次运行的标准差；timeout/failure | 数据库语义算子必须同时报告质量、时间、成本/调用 work、内存和失败，不能只比吞吐 |
+| LOTUS（PVLDB 2025） | accuracy / nDCG / RP@K、runtime、model calls，以及准确率目标和失败概率 | 若不同方案改变调用数、模型或近似程度，必须把质量和调用 work 一起报告 |
+| Palimpzest（CIDR 2025） | runtime、financial cost、F1，比较 Pareto 计划 | 允许比较 quality-cost-time Pareto，但不能把降低质量换来的时间写成纯性能收益 |
+| Cortex AISQL（SIGMOD 2026） | latency/speedup、throughput、inference work/cost、F1/相对 oracle quality | 数据库产品比较至少覆盖执行时间、容量、推理 work 和任务质量 |
+| vLLM / LLM serving | request/token throughput、normalized latency、TTFT、TPOT/ITL、E2E tail、SLO goodput、KV/显存 | AI_COMPLETE 必须同时报告容量与 P50/P95/P99/SLO，不能只看 tokens/s |
+| Ray Data / PolarDB 多模态 benchmark | job completion time、rows/images processed、均值/方差、资源规格、scale-out、完成/失败/OOM | 多模态 batch pipeline 必须报告 JCT、吞吐、扩展效率、资源规模和稳定完成率 |
+
+外部闭源产品通常不暴露 GPU/MFU、队列或 PCIe 指标。因此 Snowflake/BigQuery 等
+managed SQL 只要求可观测的 query E2E、成本、质量、调用/配额和失败率；内部资源指标
+不得伪造或由客户端 wall time 反推。相反，本项目与同机开源 baseline 必须额外记录
+CPU/GPU/内存/传输和队列指标，用于解释为什么快，而不是只给最终排名。
+
+#### 每个正式 run 的必记字段
+
+| 类别 | 必须记录 | 适用说明 |
+|---|---|---|
+| 实验身份 | git commit、系统/库/模型/processor revision、数据集版本与 split、硬件、CPU/GPU 配额、随机种子、warm/cold 生命周期 | 所有实验 |
+| 工作量 | 输入 rows、unique objects、输入 bytes、调用/请求/batch 数、prompt/output tokens 或 image/frame 数、实际输出 rows | 所有实验；重复 pass 与 unique data 分开 |
+| 正确性 | exactly-once、行 ID 集合、完整输出 digest、错误/重试/timeout/OOM 数 | 所有实验；失败 run 也必须落盘，禁止只保留成功样本 |
+| 任务质量 | AI_COMPLETE 的任务指标；AI_CLASSIFY 的 top-1/top-5 或 mAP/F1/precision/recall；AI_EMBED 检索的 Recall@K/MRR/nDCG | 有 ground truth 的正式比较必选；embedding norm/checksum 只是执行门禁 |
+| 时间 | operator E2E、system E2E/JCT、first output、per-row/request P50/P95/P99、各 pipeline stage wall | system E2E 必须包含统一 sink；stage time 用于归因 |
+| 容量 | rows/images/requests/s、input/output/total tokens/s；SLO-compliant goodput | 按算子报告，不用 tokens/s 描述图像分类 |
+| 成本 | model calls、token/image work、GPU-seconds、CPU-core-seconds、Joules 与单位工作能耗；云/API 可比时报告 $/1K rows 或 $/query | 金钱成本不可比时报告资源成本，不填虚假美元值 |
+| 内存与 I/O | host/VRAM peak、Ray object-store/spill、disk/network bytes、H2D/D2H bytes 与时间 | 同机开源 baseline 必选；闭源产品仅记录可观察项 |
+| 调度诊断 | queue/wait/active work、batch-size 分布、GPU starvation/bubble、preemption/cache 指标、scheduler overhead | 与策略因果相关时必选；不是产品 headline |
+| 扩展与公平 | 1/2 GPU speedup 与 scaling efficiency；1/2/4 job aggregate throughput、per-job JCT/P99、slowdown、Jain fairness | 多 GPU、多 job 正式实验 |
+| 统计 | 至少 1 warmup + 3 个交错 formal repeats；raw values、median、mean、std/CV，必要时 CI | 公开 Ray/SemBench 已报告重复方差，本项目不得只给最好一次 |
+
+任务质量按算子分别冻结：ImageNet 单标签分类用 top-1/top-5；COCO 多标签分类用
+mAP、micro/macro-F1、precision/recall；embedding 检索用 Recall@K、MRR、nDCG；
+文本生成必须选择与具体 workload 对应的任务指标，不能统一用一个无语义的字符串相似度。
+若当前数据集没有 labels/captions/ground truth，该 run 只能承担性能/执行正确性门禁，
+报告中必须写明“任务质量未评价”，不能声称更准确或质量等价。
+
+#### 当前采集覆盖与缺口
+
+`code/scripts/run_image_clip_e2e.py` schema v9 已覆盖 operator E2E、first output、
+images/s、batch/stage P50/P95/P99、输入/输出 bytes、H2D/D2H、CPU-core-seconds、
+GPU util/power/energy/显存、exactly-once、digest/norm、资源版本与 CPU 预算。它仍然
+缺少或只部分覆盖以下正式指标：
+
+1. **任务质量**：当前 PostgreSQL COCO 表没有 annotations/captions，不能计算
+   mAP/F1 或 Recall@K；正式 AI_CLASSIFY/AI_EMBED 前必须加入 ground truth evaluator。
+2. **失败样本落盘**：进程异常时目前可能只有日志，没有结构化 run status、error type、
+   retry/timeout/OOM 计数；正式 matrix runner 必须 fail-closed 并保留失败行。
+3. **system E2E**：当前图像 gate 排除 pgvector sink；正式系统比较要为所有 arm 接入
+   相同 COPY + deferred-index sink，并同时保留 operator E2E。
+4. **内存与 Ray 数据面**：已有 host/VRAM peak，但缺 object-store peak、spill bytes、
+   task retry 和资源清理后的残留审计。
+5. **请求级尾延迟**：当前主要是 batch latency；若产品语义是一行一个 AI 算子请求，
+   需按 row ID 记录 submit→complete 分布，避免 batch P99 冒充 request P99。
+6. **扩展/成本派生量**：已有 CPU/GPU/energy 原始量，但仍需统一生成 scaling efficiency、
+   $/1K rows（仅在价格可比时）、failure rate 和 oracle regret summary。
+
+上述缺口分两类处理：任务质量 evaluator、system sink 与失败记录是正式排名前的
+**阻断项**；object-store、逐行 latency、queue/bubble 等是策略或瓶颈归因需要时的
+**解释项**。不得因为解释项很多而遗漏质量、JCT、吞吐和失败这四类核心证据。
+
 当前 COCO/CLIP host-path matrix 只承担动机画像、actor/batch/active-window 校准和
 收益归因，不承担外部 baseline headline。若使用 COCO AI_CLASSIFY，必须补 annotations
 并报告 mAP、micro/macro-F1、precision/recall；若使用 ImageNet/ResNet18，报告

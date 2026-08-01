@@ -253,6 +253,15 @@ headline 同时报告 operator E2E/JCT、images/s、first-output、GPU per-devic
 embedding checksum、最大 norm error 和 exactly-once，禁止只汇报吞吐。若 checksum/norm
 或行集合不一致，性能结果无效。
 
+指标执行以 `baseline_reference.md` 的“数据库 AI 算子评价指标合同”为最低合同。
+当前 120K host-path matrix 仍是无 ground truth 的性能/瓶颈实验，因此必须明确写
+`task_quality_not_evaluated`，不能用 embedding checksum/norm 声称分类准确率、检索
+召回率或语义质量等价。进入正式 AI_CLASSIFY 时接入 ImageNet labels 并报告
+top-1/top-5，或接入 COCO annotations 并报告 mAP、micro/macro-F1、precision/recall；
+进入 AI_EMBED 检索时必须提供 queries/qrels 并报告 Recall@K、MRR/nDCG。正式 matrix
+还必须结构化保存失败 run（success、error type、retry/timeout/OOM）以及 Ray
+object-store peak/spill；system-E2E 排名需要所有 arm 接入相同 pgvector sink。
+
 所有 Ray-backed staged graph 必须显式预留
 `source reader slots + CPU preprocess actors（如有）+ GPU/model actor CPU slots`。2026-08-02
 门禁复现了只分配 `4+2=6 CPU` 时 SQL reader 无 slot、0-row 永久等待的资源死锁；
