@@ -111,6 +111,16 @@ cd /root/autodl-tmp/data/raw/coco_val2017 && unzip -q val2017.zip   # → val201
 - **节省空间的导入**：train ZIP 约 19 GB。使用
   `import_coco_images.py --zip ... --limit 60000 --workload coco_train2017_60k`
   直接流式写入 PostgreSQL，不同时保留完整解压目录；运行前后检查数据盘与 WAL 空间。
+- **行身份合同**：COCO train/val 的原始 image ID 会重叠，表主键必须是
+  `(workload_name, doc_id)`。旧表若仍为全局 `PRIMARY KEY(doc_id)`，先执行：
+
+  ```bash
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+    -f deploy/autodl/image_documents_workload_key.sql
+  ```
+
+  迁移脚本只接受预期的 legacy/current 主键并在事务内加锁；其他 schema fail closed。
+  importer 会在读取/写入前复核主键，禁止用人为 ID offset 绕开冲突。
 - **质量协议**：执行路径先以 exactly-once、完整 embedding digest、norm/finite 为
   等价门禁。ImageNet/ResNet18 分类才报告 top-1/top-5；COCO/CLIP 分类需先导入
   annotations，再报告 mAP、micro/macro-F1、precision/recall。只有定义检索任务和

@@ -61,6 +61,8 @@ code/scripts/run_ai_operator_scenarios.py
 
 `import_coco_images.py` 同时支持 `--dir` 与 `--zip`；ZIP 模式直接顺序读取成员并在
 单事务内写 PostgreSQL，不落地完整解压目录，适用于 COCO train 正式规模。
+导入前强制表主键为 `(workload_name, doc_id)`；legacy 全局 `doc_id` 主键需先执行
+`deploy/autodl/image_documents_workload_key.sql`，不能给某个 split 人工加 ID offset。
 
 `profile_clip_transfer_ceiling.py` 是 H2D 机制诊断：R0 GPU-resident、R1 pinned
 FP16、R2 pageable FP32 分别保存每个 batch/repeat 的 CUDA-event H2D、forward、

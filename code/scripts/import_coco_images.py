@@ -92,6 +92,25 @@ def get_versions(conn):
     return versions
 
 
+def primary_key_columns(conn, table: str) -> tuple[str, ...]:
+    """Return ordered primary-key columns for the target table."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT attribute.attname "
+            "FROM pg_index AS index_definition "
+            "CROSS JOIN LATERAL unnest(index_definition.indkey) "
+            "WITH ORDINALITY AS key_column(attnum, ordinality) "
+            "JOIN pg_attribute AS attribute "
+            "ON attribute.attrelid = index_definition.indrelid "
+            "AND attribute.attnum = key_column.attnum "
+            "WHERE index_definition.indrelid = %s::regclass "
+            "AND index_definition.indisprimary "
+            "ORDER BY key_column.ordinality",
+            (table,),
+        )
+        return tuple(str(row[0]) for row in cur.fetchall())
+
+
 def main():
     args = parse_args()
     if not args.pg_dsn:
@@ -119,6 +138,19 @@ def main():
     conn = psycopg.connect(args.pg_dsn)
     versions = get_versions(conn)
     print(f"versions: {versions}")
+    identity_columns = primary_key_columns(conn, args.table)
+    if identity_columns != ("workload_name", "doc_id"):
+        if archive is not None:
+            archive.close()
+        conn.close()
+        print(
+            "ERROR: image_documents identity must be PRIMARY KEY "
+            "(workload_name, doc_id); run "
+            "deploy/autodl/image_documents_workload_key.sql first "
+            f"(found {identity_columns})",
+            file=sys.stderr,
+        )
+        sys.exit(5)
 
     table_identifier = sql.Identifier(args.table)
     insert_sql = sql.SQL(

@@ -31,7 +31,11 @@ from src.image.source import (  # noqa: E402
     image_documents_query,
     split_image_source_config,
 )
-from import_coco_images import coco_doc_id, list_zip_images  # noqa: E402
+from import_coco_images import (  # noqa: E402
+    coco_doc_id,
+    list_zip_images,
+    primary_key_columns,
+)
 
 
 class ImageContractTests(unittest.TestCase):
@@ -109,6 +113,33 @@ class ImageContractTests(unittest.TestCase):
             self.assertEqual(coco_doc_id(paths[0]), 1)
             self.assertEqual(payload, b"one")
             self.assertFalse((Path(directory) / "train2017").exists())
+
+    def test_coco_import_reads_ordered_workload_scoped_primary_key(self) -> None:
+        class Cursor:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return None
+
+            def execute(self, _query, parameters):
+                self.parameters = parameters
+
+            def fetchall(self):
+                return [("workload_name",), ("doc_id",)]
+
+        class Connection:
+            def __init__(self):
+                self.current = Cursor()
+
+            def cursor(self):
+                return self.current
+
+        connection = Connection()
+        columns = primary_key_columns(connection, "image_documents")
+
+        self.assertEqual(columns, ("workload_name", "doc_id"))
+        self.assertEqual(connection.current.parameters, ("image_documents",))
 
 
 if __name__ == "__main__":

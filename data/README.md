@@ -90,6 +90,8 @@ mkdir -p data/raw/coco_train2017
 wget -c --tries=10 --timeout=30 http://images.cocodataset.org/zips/train2017.zip \
   -O data/raw/coco_train2017/train2017.zip
 # 可直接从 ZIP 向 PostgreSQL 流式导入，不同时保留解压副本。
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -f deploy/autodl/image_documents_workload_key.sql
 python code/scripts/import_coco_images.py \
   --zip data/raw/coco_train2017/train2017.zip --limit 60000 \
   --pg-dsn "$DATABASE_URL" --workload coco_train2017_60k
@@ -102,6 +104,8 @@ python -c "from huggingface_hub import snapshot_download; snapshot_download('ope
 COCO train 压缩包约 19 GB，导入 PostgreSQL 后还会再占一份 BYTEA/索引/WAL 空间。
 不要依赖文档中的历史剩余容量；每次下载前用 `df -h /root/autodl-tmp` 实测。导入器
 支持直接读取 ZIP，避免额外保留完整解压目录，但仍需为数据库与 WAL 留安全余量。
+COCO split 的 source ID 可能重叠，canonical row identity 是
+`(workload_name, doc_id)`，不是全局 `doc_id`；禁止通过 split-specific 数字偏移伪造唯一性。
 
 ## Boundary
 

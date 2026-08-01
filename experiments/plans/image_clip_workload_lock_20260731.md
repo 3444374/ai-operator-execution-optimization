@@ -107,8 +107,9 @@ AutoDL runbook 明确不使用 Docker，而 Triton 官方推荐 NGC 容器部署
 **PostgreSQL image 表设计**（写回 sink 也用 pgvector）：
 
 ```text
-image_documents(doc_id BIGINT PK, workload_name TEXT, source_image_id TEXT,
+image_documents(workload_name TEXT, doc_id BIGINT, source_image_id TEXT,
                 split TEXT, image BYTEA, image_bytes BIGINT, ...)
+PRIMARY KEY (workload_name, doc_id)
 image_embeddings(doc_id BIGINT, workload_name TEXT, model_revision TEXT,
                  processor_revision TEXT, normalized BOOL,
                  embedding vector(512), PRIMARY KEY (...))
@@ -118,6 +119,9 @@ image_embeddings(doc_id BIGINT, workload_name TEXT, model_revision TEXT,
   混跑。当前 COCO 5K profile 已使用 BYTEA。
 - `doc_id` 不再由本次导入顺序生成；保留 COCO/source image ID、split 和 workload，
   以便 held-out、重导入和 recall@10 可复现。
+- COCO train/val 的原始 ID 空间会重叠，因此身份必须是 `(workload_name, doc_id)`；
+  禁止给某个 split 人工加偏移来维持错误的全局 `doc_id` 主键。source、correctness
+  与未来 writeback/update 查询都必须携带 workload。
 - embedding 维度：CLIP ViT-B/32 = 512；写回 `vector(512)` + HNSW 索引（deferred）。
 
 ---

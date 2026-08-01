@@ -46,6 +46,10 @@
   1 warmup + 3 formal，并对 unique rows、exactly-once 和至少 60 秒查询阶段
   fail closed。COCO 导入器新增 ZIP 流式读取，避免同时保留 19GB 压缩包、完整解压
   目录和 PostgreSQL BYTEA 三份数据；事务失败仍完整回滚。
+- 首次60K导入被 legacy `PRIMARY KEY(doc_id)` 在 train/val source ID=9 冲突处
+  fail closed，事务完整回滚，暴露多 workload 行身份缺口。新增幂等迁移 SQL 将主键
+  改为 `(workload_name, doc_id)`；importer 在写入前强制复核该合同。禁止用 split
+  专属数字偏移掩盖错误 schema，后续 source/correctness/writeback 均须携带 workload。
 - H2D 口径补充到学习材料：batch64 的 host float32 tensor约 38.5MB、device
   float16 tensor约 19.3MB；当前约 7.4ms 是同步 `torch.as_tensor` 阶段 wall，
   不是 PCIe counter。增大总行数只延长稳态，不增加单批传输压力；PCIe 是否值得
