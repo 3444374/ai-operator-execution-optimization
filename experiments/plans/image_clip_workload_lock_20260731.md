@@ -208,6 +208,10 @@ headline 同时报告 operator E2E/JCT、images/s、first-output、GPU per-devic
 embedding checksum、最大 norm error 和 exactly-once，禁止只汇报吞吐。若 checksum/norm
 或行集合不一致，性能结果无效。
 
+Daft SQL scan 在当前 PostgreSQL connector 下可能只有一个输入 partition；双 GPU
+baseline 必须显式 repartition 到 GPU worker 数，并从 per-device trace 确认两张卡
+均被激活。只声明 `max_concurrency=2` 但实际单卡执行的结果无效。
+
 ### 7.3 完整对照臂
 
 **对照臂**（对齐附录 B.4 + §7.5 干净合同；区分"直接 baseline"vs"Related Work"）：

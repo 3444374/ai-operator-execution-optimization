@@ -334,6 +334,7 @@ def main() -> None:
                 source,
                 embedder=embedder,
                 expected_doc_ids=expected_ids,
+                partitions=args.gpu_workers,
                 embedding_dimension=args.embedding_dimension,
             )
         return run_project_ray_pipeline(
