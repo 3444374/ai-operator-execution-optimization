@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""Import images from a directory into PostgreSQL `image_documents` as bytea.
+"""Import directory or ZIP images into PostgreSQL `image_documents` as bytea.
 
 Verifiable goal
 ---------------
-Read every `--pattern` file (default *.jpg) under `--dir`, preserve the numeric
-COCO source ID from the filename, and INSERT as bytea into
+Read every `--pattern` file (default *.jpg) under exactly one of `--dir` or
+`--zip`, preserve the numeric COCO source ID from the filename, and INSERT as bytea into
 `image_documents(doc_id, workload_name, image, image_bytes)`. Only rows for the
 selected workload are replaced; unrelated workloads remain intact.
 
@@ -17,20 +17,29 @@ Usage
     python import_coco_images.py \\
         --dir /root/autodl-tmp/data/raw/coco_val2017/val2017 \\
         --pg-dsn "$DATABASE_URL" --workload coco_val2017
+
+    python import_coco_images.py \\
+        --zip /root/autodl-tmp/data/raw/coco_train2017/train2017.zip \\
+        --limit 60000 --pg-dsn "$DATABASE_URL" --workload coco_train2017_60k
 """
 
 import argparse
 import os
 import sys
 import time
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath
+from zipfile import ZipFile
 
 
 def parse_args():
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    p.add_argument("--dir", required=True, help="directory containing images")
+    source = p.add_mutually_exclusive_group(required=True)
+    source.add_argument("--dir", help="directory containing images")
+    source.add_argument(
+        "--zip", help="ZIP archive containing images; read without extraction"
+    )
     p.add_argument(
         "--pg-dsn",
         default=os.environ.get("DATABASE_URL") or os.environ.get("PG_DSN", ""),
@@ -49,7 +58,17 @@ def list_images(directory, pattern, limit):
     return paths[:limit] if limit > 0 else paths
 
 
-def coco_doc_id(path: Path) -> int:
+def list_zip_images(archive: ZipFile, pattern: str, limit: int) -> list[PurePosixPath]:
+    """Return deterministic matching ZIP members without extracting the archive."""
+    paths = sorted(
+        PurePosixPath(info.filename)
+        for info in archive.infolist()
+        if not info.is_dir() and PurePosixPath(info.filename).match(pattern)
+    )
+    return paths[:limit] if limit > 0 else paths
+
+
+def coco_doc_id(path: PurePath) -> int:
     """Preserve the stable numeric COCO image ID encoded in the filename."""
     try:
         return int(path.stem)
@@ -82,11 +101,19 @@ def main():
     import psycopg
     from psycopg import sql
 
-    paths = list_images(args.dir, args.pattern, args.limit)
+    archive = ZipFile(args.zip) if args.zip else None
+    source_label = args.zip or args.dir
+    paths = (
+        list_zip_images(archive, args.pattern, args.limit)
+        if archive is not None
+        else list_images(args.dir, args.pattern, args.limit)
+    )
     if not paths:
-        print(f"ERROR: no {args.pattern} under {args.dir}", file=sys.stderr)
+        if archive is not None:
+            archive.close()
+        print(f"ERROR: no {args.pattern} under {source_label}", file=sys.stderr)
         sys.exit(3)
-    print(f"loading {len(paths)} images from {args.dir} -> {args.table} "
+    print(f"loading {len(paths)} images from {source_label} -> {args.table} "
           f"(workload={args.workload}, batch={args.batch})")
 
     conn = psycopg.connect(args.pg_dsn)
@@ -112,7 +139,7 @@ def main():
                 )
                 buf = []
                 for i, p in enumerate(paths):
-                    b = p.read_bytes()
+                    b = archive.read(str(p)) if archive is not None else p.read_bytes()
                     buf.append((coco_doc_id(p), args.workload, b, len(b)))
                     total_bytes += len(b)
                     if len(buf) >= args.batch:
@@ -125,8 +152,13 @@ def main():
     except Exception as exc:  # noqa: BLE001
         print(f"ERROR during load (transaction rolled back, table preserved): {exc}",
               file=sys.stderr)
+        if archive is not None:
+            archive.close()
         conn.close()
         sys.exit(4)
+
+    if archive is not None:
+        archive.close()
 
     # Verify (read after commit).
     with conn.cursor() as cur:

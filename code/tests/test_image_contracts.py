@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from zipfile import ZipFile
 
 import numpy as np
 
@@ -29,7 +31,7 @@ from src.image.source import (  # noqa: E402
     image_documents_query,
     split_image_source_config,
 )
-from import_coco_images import coco_doc_id  # noqa: E402
+from import_coco_images import coco_doc_id, list_zip_images  # noqa: E402
 
 
 class ImageContractTests(unittest.TestCase):
@@ -90,6 +92,23 @@ class ImageContractTests(unittest.TestCase):
 
     def test_coco_import_preserves_numeric_source_id(self) -> None:
         self.assertEqual(coco_doc_id(Path("000000123456.jpg")), 123456)
+
+    def test_coco_zip_import_is_sorted_limited_and_not_extracted(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            archive_path = Path(directory) / "images.zip"
+            with ZipFile(archive_path, "w") as archive:
+                archive.writestr("train2017/000000000003.jpg", b"three")
+                archive.writestr("train2017/000000000001.jpg", b"one")
+                archive.writestr("train2017/README.txt", b"ignored")
+
+            with ZipFile(archive_path) as archive:
+                paths = list_zip_images(archive, "*.jpg", limit=1)
+                payload = archive.read(str(paths[0]))
+
+            self.assertEqual(str(paths[0]), "train2017/000000000001.jpg")
+            self.assertEqual(coco_doc_id(paths[0]), 1)
+            self.assertEqual(payload, b"one")
+            self.assertFalse((Path(directory) / "train2017").exists())
 
 
 if __name__ == "__main__":

@@ -1115,6 +1115,21 @@ Ray cluster 外。现在每 worker Torch 固定 1/1，并把 external source thr
 1.97s。H2D 与 forward p50 都约 7ms/batch，明显更小。因此目前最诚实的判定是
 “CPU preprocess + driver/Ray submission 混合木桶”，不是“PCIe 已经限制 GPU”。
 
+这里的 H2D 是 **Host-to-Device**：CPU actor 先在主机内存产生图像 tensor，GPU actor
+再通过 PCIe 把它复制到显存。当前 batch=64 时，host tensor 为
+`64×3×224×224×4 ≈ 38.5 MB`（float32），转换为 float16 后的 device tensor约
+19.3 MB。诊断里的约 7.4ms 是同步包围 `torch.as_tensor(..., device="cuda",
+dtype=float16)` 得到的阶段 wall；它还包含 dtype 转换语义，`逻辑 bytes / wall`
+不是 PCIe 硬件计数器。按 38.5MB 粗算约 5.2GB/s，反而明显低于 PCIe 4.0 x16 的
+理论链路上限，不能把“几毫秒”理解为已经测到总线极限。
+
+把总图片数从 5K 增到 60K，只会让相同 H2D 操作重复更多次、降低启停噪声，不会让
+每批 tensor 自动变大，也不会提高 H2D 在关键路径中的占比。真正改变每批传输压力的
+是 batch、分辨率、host/device dtype、多 crop/frame 数以及 pageable/pinned memory；
+但不能为了制造 PCIe 瓶颈随意放大 synthetic payload。正式判定先保持真实
+CLIP/224×224 语义，比较 GPU-resident、pinned H2D、pageable/Ray tensor 三层；只有
+H2D 占 steady wall≥20%，且 pinned/降字节/overlap 让 E2E 改善≥5%，PCIe 路线才 GO。
+
 这些点都只有一次，作用是挑 formal 候选。下一步仍要在 20K unique images、至少
 60s 稳态、交错三重复下比较 Daft fused/staged、Ray Data staged 和 project；并用
 GPU-resident/pinned/pageable 表示阶梯正式判 PCIe GO/NO-GO。

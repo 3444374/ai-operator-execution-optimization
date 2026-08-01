@@ -50,6 +50,18 @@ code/scripts/run_ai_operator_scenarios.py
   `ClipTensorActor` 合同并做 embedding parity gate。它仍不是
   PG→Daft→Ray→pgvector E2E runner。
 
+图像正式链路另有两个入口：
+
+- `run_image_clip_e2e.py`：单个 fused/staged/project arm 的 operator-E2E、资源、
+  正确性与 schema v8 原始记录；
+- `run_image_clip_matrix.py`：读取 JSON 场景矩阵，用固定 seed 做 warmup + formal
+  block 内交错，持有输出目录租约，并对 unique rows、exactly-once 与最小稳态时长
+  fail closed。原始 CSV、逐 run manifest/stdout/stderr 和外层 schedule 必须保存在
+  同一结果目录，不能只摘录汇总数字。
+
+`import_coco_images.py` 同时支持 `--dir` 与 `--zip`；ZIP 模式直接顺序读取成员并在
+单事务内写 PostgreSQL，不落地完整解压目录，适用于 COCO train 正式规模。
+
 ## 流程与函数映射
 
 ```text

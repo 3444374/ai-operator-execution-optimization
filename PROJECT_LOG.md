@@ -41,6 +41,15 @@
   与 16 个逐臂 manifest JSON 已从服务器临时目录复制到
   `motivation/results/gpu/image_host_path_screening_20260802/raw/` 并纳入 Git。
   原始文件归档不提升证据等级：各点仍只有一次，继续标记为 screening。
+- 为把 screening 升级为 formal，新增 `run_image_clip_matrix.py` 与 60K project
+  静态矩阵模板：固定 seed 交错 8/16 preprocess actors × active16/32，执行每点
+  1 warmup + 3 formal，并对 unique rows、exactly-once 和至少 60 秒查询阶段
+  fail closed。COCO 导入器新增 ZIP 流式读取，避免同时保留 19GB 压缩包、完整解压
+  目录和 PostgreSQL BYTEA 三份数据；事务失败仍完整回滚。
+- H2D 口径补充到学习材料：batch64 的 host float32 tensor约 38.5MB、device
+  float16 tensor约 19.3MB；当前约 7.4ms 是同步 `torch.as_tensor` 阶段 wall，
+  不是 PCIe counter。增大总行数只延长稳态，不增加单批传输压力；PCIe 是否值得
+  优化仍按 R0/R1/R2 与 pinned/pageable GO/NO-GO 门槛判定。
 
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过
