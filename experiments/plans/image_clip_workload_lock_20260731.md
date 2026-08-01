@@ -99,6 +99,8 @@ image_embeddings(id BIGINT PK, embedding vector(512), model TEXT, ...)
 
 ## 6. 最小验证实验（fatal-flaw 门禁，必跑）
 
+> ✅ **结果（2026-08-01，已通过 GO）**：5K COCO val × 100 iters 正式跑，ratio = CPU 准备/GPU embed 在实用 batch（≥16）**13.8–18.3**（B=256 渐近 ~18），远超 0.3 门禁；p95 紧贴 p50。瓶颈 = CLIPProcessor resize+normalize（~5.2 ms/img），非 decode/transfer/pg_read(0.755 bulk)；B=128 串行下 GPU 空转 ~95%。结论与 1024 首跑一致。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`（脚本 `code/scripts/profile_image_clip_bottleneck.py` + `import_coco_images.py`）。
+
 **目标**：在 all-in 搭完整 pipeline 前，用最小成本回答一个问题——**CPU decode 在我们的设置下是否真的足够重，让异构调度有真实变量？**
 
 **步骤**（本地或 AutoDL 单 GPU，半天）：
