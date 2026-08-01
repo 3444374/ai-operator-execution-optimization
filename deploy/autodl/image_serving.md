@@ -229,7 +229,9 @@ PYTHONPATH=code /root/miniconda3/bin/python \
 
 这是一项实现边界画像，不是正式方法实验。有效结果必须满足：
 
-- `production_np`、`legacy_pt` 均完成；torchvision backend 不可用时在 manifest
+- `production_np`、`legacy_pt` 均完成；`torchvision_pil_pt` 明确隔离“只换
+  processor backend”，`torchvision_tensor_pt` 同时使用 tensor decode 检验真正的
+  fast path；torchvision backend 不可用时在 manifest
   记录 skip 原因，不能静默丢臂；
 - 非 reference embedding 对 `production_np` 的逐行最小 cosine ≥0.999；
 - raw CSV 保留每个 repeat，不只保留均值；同一批图像内 variant 顺序随机交错；

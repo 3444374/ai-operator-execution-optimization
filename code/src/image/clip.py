@@ -131,10 +131,12 @@ class ClipTensorActor:
             raise ValueError("pixel tensor must have shape (rows, channels, height, width)")
         with self._torch.inference_mode():
             output = self._model.get_image_features(pixel_values=pixel_values)
-            features = extract_clip_image_features(output)
+            # Normalize in float32 so ``normalized=True`` is an accurate output
+            # contract rather than an approximate float16 property.
+            features = extract_clip_image_features(output).float()
             if self._normalize:
                 features = l2_normalize_embeddings(features)
-        embeddings = features.float().cpu().numpy()
+        embeddings = features.cpu().numpy()
         return ImageEmbeddingResult(
             doc_ids=batch.doc_ids,
             embeddings=embeddings,

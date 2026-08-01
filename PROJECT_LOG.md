@@ -3290,9 +3290,15 @@
   “GPU 空转 95%”改为由串行阶段时间推导的理论非-forward占比；profile 只证明存在
   overlap 候选空间，不证明 path-B E2E 必然更快。
 - **实现边界复测**：新增 `profile_image_clip_preprocess_variants.py`，在相同图片批次
-  上随机交错 production-np、legacy-pt、torchvision-pt，经同一
+  上随机交错 production-np、legacy-pt 与 torchvision 对照，经同一
   `ClipTensorActor` 输出并执行逐行 embedding cosine 门禁。正式实验不得故意保留
   slow processor 制造优化空间；fast/production 路径若消除瓶颈，应撤回旧外推。
 - **远端 gate 部署坑**：仓库外旧 runtime env 尚无 `IMAGE_MODEL_PATH`，首次 gate 在
   模型加载前因空路径 fail。脚本新增非空 fail-fast，runbook 对旧 env 使用当前固定
   模型目录 fallback，并在运行前 `test -d`；失败 gate 保留作部署诊断，不当成实验。
+- **首次 formal gate 的质量计算 bug**：540 条数据完整，但旧 parity 直接用点积
+  代替 cosine；float16 归一化范数不精确，使完全相同（max_abs=0）的 embedding
+  被误判为 0.998907。改为带范数分母的真 cosine，并让 actor 在 float32 归一化。
+- **fast baseline 修正**：torchvision processor 若仍输入 PIL，会先做转换，实测与
+  slow path 几乎相同，不能代表官方 fast-path 能力。复测拆为 torchvision+PIL 与
+  torchvision tensor-decode 两臂；后者才检验 tensor backend 的性能/质量 trade-off。

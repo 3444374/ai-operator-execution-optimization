@@ -148,7 +148,7 @@ image_embeddings(doc_id BIGINT, workload_name TEXT, model_revision TEXT,
 > 性能结论。子阶段补测只直接归因出 resize ~1.3ms，约 3.8ms 尚未细分；“GPU
 > 空转 ~95%”已修正为由串行阶段时间推导的理论非-forward占比。当前代码改为
 > `return_tensors="np" → ClipTensorActor`，正式 build 前补 production_np / legacy_pt /
-> torchvision_pt 交错复测并做 embedding parity gate。详见
+> torchvision+PIL / torchvision+tensor-decode 交错复测并做 embedding parity gate。详见
 > `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
 
 **目标**：在 all-in 搭完整 pipeline 前，用最小成本回答一个问题——**CPU decode 在我们的设置下是否真的足够重，让异构调度有真实变量？**

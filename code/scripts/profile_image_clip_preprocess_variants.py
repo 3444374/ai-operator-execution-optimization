@@ -44,6 +44,7 @@ class ProcessorVariant:
     processor: object
     output_kind: str
     exact_production_path: bool = False
+    decode_backend: str = "pil"
 
     @property
     def backend(self) -> str:
@@ -68,7 +69,21 @@ class ProcessorVariant:
         if self.exact_production_path:
             # This deliberately calls the reusable implementation unchanged.
             return self.processor.preprocess(encoded_images)
-        images = [decode_rgb_image(item) for item in encoded_images]
+        if self.decode_backend == "pil":
+            images = [decode_rgb_image(item) for item in encoded_images]
+        elif self.decode_backend == "torchvision":
+            import torch
+            from torchvision.io import ImageReadMode, decode_image
+
+            images = [
+                decode_image(
+                    torch.frombuffer(bytearray(item), dtype=torch.uint8),
+                    mode=ImageReadMode.RGB,
+                )
+                for item in encoded_images
+            ]
+        else:
+            raise ValueError(f"unsupported decode backend: {self.decode_backend}")
         output = self.processor(
             images=images,
             return_tensors=self.output_kind,
@@ -127,13 +142,23 @@ def build_variants(model_path: str):
         )
         variants.append(
             ProcessorVariant(
-                name="torchvision_pt",
+                name="torchvision_pil_pt",
                 processor=torchvision_processor,
                 output_kind="pt",
             )
         )
+        variants.append(
+            ProcessorVariant(
+                name="torchvision_tensor_pt",
+                processor=torchvision_processor,
+                output_kind="pt",
+                decode_backend="torchvision",
+            )
+        )
     except Exception as exc:  # noqa: BLE001 - unsupported backend is evidence
-        skipped["torchvision_pt"] = f"{type(exc).__name__}: {exc}"
+        message = f"{type(exc).__name__}: {exc}"
+        skipped["torchvision_pil_pt"] = message
+        skipped["torchvision_tensor_pt"] = message
     return variants, skipped
 
 
@@ -145,7 +170,12 @@ def _payload_work_units(payload, rows: int) -> int:
 
 
 def _parity(candidate: np.ndarray, reference: np.ndarray) -> tuple[float, float, float]:
-    cosine = np.sum(candidate * reference, axis=1)
+    dot = np.sum(candidate * reference, axis=1)
+    denominator = np.linalg.norm(candidate, axis=1) * np.linalg.norm(
+        reference,
+        axis=1,
+    )
+    cosine = dot / np.maximum(denominator, np.finfo(np.float32).tiny)
     return (
         float(np.mean(cosine)),
         float(np.min(cosine)),

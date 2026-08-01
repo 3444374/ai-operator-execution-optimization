@@ -45,9 +45,10 @@ code/scripts/run_ai_operator_scenarios.py
 - `profile_image_clip_bottleneck.py`：历史 slow-pt 单进程阶段画像；
 - `profile_clip_preproc_stages.py`：slow processor method-wrapper 诊断，未归因时间
   不能解释成具体转换步骤；
-- `profile_image_clip_preprocess_variants.py`：当前 production-np、历史 legacy-pt
-  和 torchvision processor 的交错受控复测，经过同一 `ClipTensorActor` 合同并做
-  embedding parity gate。它仍不是 PG→Daft→Ray→pgvector E2E runner。
+- `profile_image_clip_preprocess_variants.py`：当前 production-np、历史 legacy-pt、
+  torchvision+PIL 和 torchvision+tensor-decode 的交错受控复测，经过同一
+  `ClipTensorActor` 合同并做 embedding parity gate。它仍不是
+  PG→Daft→Ray→pgvector E2E runner。
 
 ## 流程与函数映射
 

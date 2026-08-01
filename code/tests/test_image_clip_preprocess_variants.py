@@ -26,7 +26,8 @@ class ImageClipPreprocessVariantTests(unittest.TestCase):
         self.assertEqual(_payload_work_units(payload, 2), 2 * 224 * 224)
 
     def test_embedding_parity_reports_cosine_and_max_error(self) -> None:
-        reference = np.asarray([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
+        # Identical vectors need cosine=1 even when their norms are not exactly 1.
+        reference = np.asarray([[0.5, 0.0], [0.0, 0.75]], dtype=np.float32)
         candidate = reference.copy()
 
         mean_cosine, min_cosine, max_abs = _parity(candidate, reference)

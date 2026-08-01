@@ -14,7 +14,8 @@ slow-pt 路径的 CPU 准备/GPU embed=**13.8–18.3**。该结果只支持继�
 sub-stage 证据确认 resize 约 1.3ms，其余约 3.8ms 尚未归因，且 95% 是理论串行
 非-forward占比而非 GPU trace。当前先用
 `profile_image_clip_preprocess_variants.py` 对 production-np / legacy-pt /
-torchvision-pt 做交错、质量门禁复测，再进入 path-B E2E runner 和 §7 对照臂。
+torchvision+PIL / torchvision+tensor-decode 做交错、质量门禁复测，再进入
+path-B E2E runner 和 §7 对照臂。
 
 **过门禁后（image build，顺序固定）**：① 中性 work-unit + lazy image source + typed CLIP tensor actor 基础合同已实现；下一步补 path B runner（PG→Daft→Ray CPU decode/preprocess→Ray CLIP GPU actor→pgvector，复用 scheduler/tracing）→ ② image §7 对照臂（见 `image_clip_workload_lock_20260731.md` §7；bounded direct CLIP / **Daft `@daft.cls` Native 强 baseline** / vLLM pooling / Ray Data / naive / ours，+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
 
