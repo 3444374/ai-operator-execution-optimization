@@ -1,8 +1,8 @@
 # 实验与机制证据台账
 
-更新日期：2026-07-31
+更新日期：2026-08-01
 
-本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。
+本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。2026-08-01 起内部执行方向转为 image-first A+B；文本遗留 formal 为 `parked-conditional`，状态以 `experiments/plans/experiment_status_and_gaps.md` §0 为准。
 
 ## 1. 证据等级
 
@@ -23,7 +23,7 @@
 | 固定行 batching | `code/src/scheduling/batching.py`、profiler 与 baseline tests | `local_vllm_qwen15b_baseline/` | 真实 GPU baseline；用于和计算量感知组织方式比较。 |
 | Sequential token-budget | `code/src/scheduling/batching.py`、batching tests | baseline、joint、BFD 与 row-cap 系列；`rc1_data_organization/`（07-31 系统重测） | 已重复验证；当前数据组织默认，必须同时满足 token budget 和 row cap。**07-31 干净平台**：2-ep/4-ep 均属第一梯队（保 prefix 局部性，ratio 0.13），4-ep KV 饱和 regime 下**最稳**（50k，命中 0.47–0.48，SLO 17%）。 |
 | Length-align | batching 实现与测试 | local baseline 早期消融；`rc1_data_organization/`（07-31 系统重测，2-ep+4-ep） | 早期仅初筛。**07-31 干净平台**：2-ep（无 KV 压力）length_align 已是最慢（50.3k vs fixed 56.3k，命中最低 0.60——按长度排序破坏 prefix 局部性）；4-ep（KV 饱和）进一步崩到 39.4k、命中 0.06。**cache-ON 下 length-align 的 HOL 收益被丢掉的 cache 复用抵消**，regime-dependent 不稳定收益。 |
-| Prefix-aware | batching 实现与语义测试 | `prefix_aware_batching_20260726/`、`prefix_cache_data_org_20260730/`、`prefix_cache_routing_req_20260730/`、`prefix_routing_agent_20260730/`、`prefix_routing_concentrated_20260730/`、`prefix_cache_routing_4ep_1.5b_20260731/` | cache-off 0/30/70/100% 无稳定收益；cache-on 2-ep/7B batching（within 1.2%）+ routing 跨分散/agent/concentrated 三数据集吞吐全部 \|Δ\|<2% 中性 <5% 门禁；但 cache-on **4-ep/1.5B routing +5.9% 跨门禁**（高淘汰压力 regime，混淆 model×endpoint×KV 且过饱和，待 4-ep/7B 或 2-ep/1.5B 隔离消融），且 **2-ep/7B agent-trace 上 pala P50 −7.8%/SLO −3.8pp**（高 cache 压力 workload，过饱和区间，吞吐 −1.9% 未过门禁）。低淘汰压力 regime prefix 收口，高淘汰压力 regime 有条件重新打开；**cache 淘汰压力是信号是否显现的开关**。 |
+| Prefix-aware | batching 实现与语义测试 | `prefix_aware_batching_20260726/`、`prefix_cache_data_org_20260730/`、`prefix_cache_routing_req_20260730/`、`prefix_routing_agent_20260730/`、`prefix_routing_concentrated_20260730/`、`prefix_cache_routing_4ep_1.5b_20260731/`、`rc1_prefix_routing/kv_budget_sweep_20260731/` | cache-off 0/30/70/100% 无稳定收益；cache-on 2-ep/7B batching/routing 跨数据集吞吐均中性（\|Δ\|<2%）。4-ep/1.5B routing +5.9% 跨门禁，但 matched-KV 隔离显示 2-ep/1.5B 在 gpu_mem_util 0.3–0.9 均中性（−0.1%～+1.0%），因此当前证据更支持 **endpoint consolidation** 是信号显现的驱动因素，而不是单纯 per-endpoint KV 大小或“cache 压力开关”；4-ep 饱和深度仍是残余混淆。agent-trace 的 P50/SLO 信号属于不同 workload，不能合并成统一 cache-pressure 结论。文本 prefix 遗留实验已 parked。 |
 | BFD、output-aware、row-cap-first | batching 与 cost-mode tests | output-aware BFD、row-cap-aware packing 全系列；`rc1_data_organization/`（07-31 系统重测） | 512 行有局部信号，1024 行未泛化且 SLO 明显恶化；不采用为默认，只保留可复用设计点。**07-31 干净平台**：best_fit 在 2-ep 命中最高（0.76）；row_cap 命中 0.68（第 4/5）。两者在 4-ep KV 饱和时**一起崩最惨**（命中 0.07、SLO 60%、TTFT ~1.1s）——重排序装箱打散 prefix 组（ratio 0.03）。regime-dependent：仅适合无压力 regime。 |
 | Arrival replay 与 request lifecycle | lifecycle、runner 和 trace tests | `request_lifecycle_gate_20260725/` 及 flush 系列 | exactly-once、request→submission、arrival/flush/complete 时间链已闭环。 |
 | Per-endpoint active-work admission | active-work credit、least-work/least-queued routing 与 profiler tests | `dual_gpu_active_work_saturation_20260729/` | 双 4090 八档、每档三次 formal。65K 达到最大吞吐 97.80%，下一档仅 +0.92%；按预注册规则选为最小饱和点。98K→131K 吞吐持平且 P99/SLO 更差。 |
@@ -40,7 +40,7 @@
 | Batching × submission 联合搜索 | scenario runner 与汇总工具 | `joint_batching_submission_512_20260726/` | 18 单元筛选和候选重复完成；当前单 GPU 下联合候选未显著优于独立拼接。 |
 | vLLM CUDA Graph | 服务配置与相同 profiler 路径 | `vllm_cuda_graph_512_20260726/` | 重复真实对照显著优于 eager；作为本地部署 baseline，不作为上游调度研究贡献。 |
 | 算子代价估计 | `code/src/cost_estimation.py`、`code/scripts/estimate_operator_cost.py` 及测试 | `operator_cost_estimation_20260726/` | 283 行、70 配置组、五个 grouped held-out split；可作粗粒度提示，不能作严格 SLO 预测。 |
-| 多模态 cost adapter | 中性 `cost_units`/策略接口 | 无图像 workload 结果 | 基础抽象已留出，真实 image source、frame/patch cost、CLIP/Qwen-VL 链路尚未完成。 |
+| 多模态 cost adapter / image path | 中性 `work_units` + lazy Daft image source + typed CLIP tensor actor 已实现基础合同；`profile_image_clip_bottleneck.py`；`profile_image_clip_preprocess_variants.py`；`import_coco_images.py` | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`（历史 slow-pt 动机画像，不是正式方法结果） | COCO val 5K × 100 iterations 的 slow-pt 路径 CPU 准备/GPU embed=13.8–18.3；resize 仅约 1.3ms，其余 processor 时间未归因。production-np/torchvision 对照、端到端 path-B runner、写回和相对 Daft Native/vLLM pooling 的正式方法对照尚未完成。 |
 | 多 endpoint/多 GPU 调度 | endpoint/pool 配置与 routing contract | request replay、active-work saturation、Actor Pool 与 Shared-vLLM formal | 真实双 4090 容量、admission、worker identity 与 equal-weight 1/2/4-job 公平性证据已建立；尚不能声称 staggered/weighted、路由增量或故障迁移有效。 |
 | Ray task/actor 与 vLLM capacity 调优 | 执行接口、参数字段和实验设计 | CUDA Graph、双 GPU request replay、active-work、Actor Pool 与 service quantum | 已固定 vLLM 8192 batched-token/256 seq capacity，并标定上游 65K work 饱和点；增加 actor 或固定 quantum 均未过 5% 门槛。 |
 
@@ -131,19 +131,17 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 - `summary_long.csv` 或 `comparison_summary.csv` 等绘图友好汇总。
 - 事实、推断、待确认和不能声称的内容分开写。
 
-## 6. 仍欠缺的正式实验
+## 6. 当前缺口（2026-08-01 pivot 后）
 
-1. Shared-vLLM 不同 foreground size、arrival offset 和 job 数量下的 static K8 边界与公平性；当前只完成一个 128/512 双作业规模。
-2. UCB profiler 集成前的封闭 epoch/reward 归因设计与测试，随后才可做 GPU 对照。
-3. 真实多 endpoint/多 GPU 的多 job 公平性、共享 request/work credit、
-   work-conserving queue、路由与故障迁移。
-4. Ray task/actor 有效并发和 vLLM scheduling capacity 的分层调优。
+以下顺序服从 `experiments/plans/experiment_status_and_gaps.md` §0；文本项不是当前 image build 的前置条件。
+
+1. **Image path-B**：在已实现的中性 work-unit、lazy image source 和 typed Ray CLIP actor 上补 PG→Daft→Ray CPU preprocess→GPU actor→pgvector runner。
+2. **Image 强 baseline**：bounded direct CLIP、Daft `@daft.cls` Native、Ray Data、naive 与 ours 的独立 calibration 和正式对照；画像 GO 不等于方法胜出。
+3. **Image A+B**：endpoint-state-aware 请求成形/提交 + 小型代价模型，并完成吞吐、JCT、tail、SLO、overlap、能耗和 Recall@10 闭环。
+4. 文本 Shared-vLLM held-out、UCB reward 归因、多 endpoint 公平性/故障迁移和 runtime baseline 统一为 `parked-conditional`。
 5. ~~Prefix cache 开启后的 prefix-aware 独立消融~~（2-ep/7B 已完成 07-30/07-31：cache-on batching + routing
    跨分散/agent/concentrated 三数据集吞吐均中性，prefix 方向在低淘汰 regime 收口；见 `prefix_cache_data_org_20260730/`、
    `prefix_cache_routing_req_20260730/`、`prefix_routing_agent_20260730/`、`prefix_routing_concentrated_20260730/`）。
-   ⚠️ 高淘汰压力 regime 有条件重新打开：4-ep/1.5B routing **+5.9% 跨门禁**（`prefix_cache_routing_4ep_1.5b_20260731/`），
-   且 2-ep/7B agent-trace 上 pala **P50 −7.8%/SLO −3.8pp**（吞吐 −1.9% 未过门禁，过饱和区间）。
-   两者共同指向 **cache 淘汰压力是 prefix 信号是否显现的开关**；待隔离消融（4-ep/7B 或 2-ep/1.5B、
-   人为缩 KV 制造可控淘汰率）把 model×endpoint×cache 压力解耦后正式晋级。
-6. 图像 workload 的多模态泛化验证。
-7. 代价估计的独立时间段、新 workload、跨模型校准和预测区间。
+   ⚠️ 4-ep/1.5B routing **+5.9% 跨门禁**，但 KV sweep 的 matched-KV 对照显示 2-ep 全 KV 范围中性；当前更支持
+   **endpoint consolidation** 是驱动，单纯“cache 淘汰压力开关”已被否定。饱和深度尚未完全隔离；该文本残留实验 parked。
+6. 代价估计的独立时间段、新 workload、跨模型校准、配置 ranking、regret 和预测区间。

@@ -12,3 +12,4 @@ aiohttp>=3.9
 PyMySQL>=1.1
 torch
 transformers
+Pillow

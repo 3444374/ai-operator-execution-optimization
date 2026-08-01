@@ -40,6 +40,15 @@ code/scripts/run_ai_operator_scenarios.py
 
 本目录只放实验主体、服务启动、数据采集和 profiling 入口。绘图、图表复现和素材筛选脚本统一放在 `figures/scripts/`。
 
+图像 CLIP 当前有三类不同入口，不能混读：
+
+- `profile_image_clip_bottleneck.py`：历史 slow-pt 单进程阶段画像；
+- `profile_clip_preproc_stages.py`：slow processor method-wrapper 诊断，未归因时间
+  不能解释成具体转换步骤；
+- `profile_image_clip_preprocess_variants.py`：当前 production-np、历史 legacy-pt
+  和 torchvision processor 的交错受控复测，经过同一 `ClipTensorActor` 合同并做
+  embedding parity gate。它仍不是 PG→Daft→Ray→pgvector E2E runner。
+
 ## 流程与函数映射
 
 ```text

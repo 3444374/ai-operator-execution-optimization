@@ -25,19 +25,55 @@
 
 ---
 
-## 2. 架构决策（CLIP 如何服务——必须先定）
+## 2. 架构决策（CLIP 如何服务——2026-08-01 能力校正）
 
-CLIP 是 **embedding 模型，不是 vLLM 服务的生成式 LLM**。当前项目 pipeline 终点是"vLLM-compatible endpoint"，CLIP 不能直接复用 vLLM。三个选项：
+CLIP 是 embedding 模型，不是生成式 LLM，但当前 vLLM 已通过 pooling runner
+正式支持 `CLIPModel` / `SiglipModel` 的图像 embedding。因此，旧前提“CLIP 不能
+复用 vLLM、CLIP 服务没有 batching”已经失效。真正需要区分的是**预处理在哪一层**：
 
-| 选项 | 机制 | 是否复用项目调度机械 | 是否对照 PolarDB 模式 | 采纳 |
-|---|---|---|---|---|
-| **A. `@daft.cls(gpus=1)` GPU UDF** | decode + CLIP 在同一 Daft GPU worker，Daft morsel/backpressure 做 overlap | ❌ 绕过项目 Ray adapter + endpoint 层 | ✅ 正是 PolarDB/Daft 模式 | 作 **baseline** |
-| **B. 独立 CLIP embedding HTTP endpoint**（FastAPI/Infinity）+ 上游 CPU decode | 上游 Ray worker 做 CPU decode（重），organizer 做 frame-budget，项目 scheduler（K_max/flush/credit，观测 CLIP endpoint 队列）→ Ray adapter → CLIP endpoint | ✅ 完整复用项目机械，只换 adapter | 🟡 项目独有的"模型服务感知上游"形态 | **主路径（ours）** |
-| C. TEI / Infinity 现成服务 | 同 B 但用现成 serving 框架 | ✅（同 B） | ❌ 非数据库场景 | 备选 baseline |
+| 选项 | 输入和预处理边界 | 角色 | 采纳 |
+|---|---|---|---|
+| **Daft `@daft.cls(gpus=1)`** | Daft worker 内 decode/preprocess + CLIP forward | Daft Native 强 baseline；官方推荐的常驻 GPU UDF 形态 | 必跑 baseline |
+| **vLLM pooling (`--runner pooling`)** | encoded image 进入服务，processor + pooling 在服务内部 | 与文本统一运维的成熟服务 baseline；官方说明 pooling 目前以功能便利为主，不保证优于 Transformers | 必跑服务 baseline；也是部署默认候选 |
+| **常驻 Ray CLIP GPU actor** | Daft/Ray CPU worker 做 decode/resize/normalize，GPU actor 只收 typed tensor batch 并 forward | 直接复用现有 Ray actor pool/backpressure；保留“CPU 准备与 GPU 推理分离”的可归因主路径 | **ours 主路径** |
+| Infinity / Ray Serve | encoded image 或服务内 preprocess，均自带 batching | 快速 smoke/补充 baseline；若使用必须冻结并记录隐藏 batching | 可选 |
+| Triton | tensor-input、成熟 metrics/dynamic batching | 生产级上界；AutoDL 当前无 Docker，不能作为第一实现 | 容器环境 optional |
 
-**决定**：主路径选 **B**，baseline 含 **A**。
+**决定**：主路径不是自写一个不受控的 FastAPI serving engine，而是通过统一
+`ImageEmbeddingBackend` 接口接入**常驻 Ray GPU actor**。CPU worker 产出
+preprocessed tensor，GPU actor 只执行 CLIP forward；项目已有 actor pool、credit、
+backpressure 和 exactly-once 机械可以直接复用。vLLM pooling 作为统一部署默认候选
+和强服务 baseline，Daft `@daft.cls` Native 仍是关键系统 baseline。
 
-**为什么 B 是 ours**：项目的核心 claim 是"调度策略模态无关 + 模型服务状态感知"。B 完整复用现有 Ray adapter → HTTP endpoint → trace 管线（最小新代码——加一个 CLIP embedding adapter），并把 CPU decode 放在上游 Ray worker，让"decode（CPU）vs embed（GPU）"的 overlap 由**项目 scheduler** 控制——这正是模型服务感知异构调度的舞台。A（`@daft.cls` Native）作为 PolarDB 式强 baseline：Daft 自己做 overlap/backpressure，项目必须证明"再观测 endpoint 状态做请求成形"能比 A 更优或在多 job/高压下更稳。
+**为什么不能只选 vLLM pooling**：它会把本轮 profile 中最重的
+decode/resize/normalize 移入服务端，无法直接验证“Daft/Ray 上游 CPU preprocess 与
+GPU embed overlap”这一机制。它并非不好，而是回答另一个问题：一个成熟黑盒图像
+服务的端到端上限。正式报告必须把两类预处理归属分别计时，不能混成同一 baseline。
+
+**为什么 Ray GPU actor 是 AutoDL 上 ours 的默认 engine**：Daft/Ray 负责数据读取、
+CPU 预处理、请求组织和提交；actor 仅常驻模型并执行 GPU forward，不再二次攒批。
+AutoDL runbook 明确不使用 Docker，而 Triton 官方推荐 NGC 容器部署；为了跑 Triton
+而在当前实例编译服务端会引入与研究问题无关的环境变量。Triton因此保留为有容器
+能力环境中的生产上界，不阻塞首版方法验证。
+
+**采用的官方/开源架构依据**：
+
+- vLLM 官方 [Pooling Models](https://docs.vllm.ai/en/stable/models/pooling_models/)
+  与 [vision embedding example](https://github.com/vllm-project/vllm/blob/main/examples/pooling/embed/vision_embedding_online.py)：
+  CLIP 可用 `--runner pooling` 在线提供图像 embedding；官方同时说明 pooling 当前
+  以功能便利为主，不保证优于直接 Transformers。
+- Daft 官方 [Working with GPUs](https://docs.daft.ai/en/stable/custom-code/gpu/)：
+  GPU UDF 使用 `@daft.cls` 常驻模型，且给出 CLIP image batch 示例；因此它是必须
+  对照的原生实现，而不是本项目重复实现的模块。
+- Ray 官方 [offline batch inference](https://docs.ray.io/en/latest/data/batch_inference.html)：
+  重 CPU preprocess 与 GPU inference 应拆成两个 operation 以实现跨 batch overlap；
+  这与 path-B 阶段划分一致，Ray Data 同时作为强 baseline。
+- Triton 官方 [dynamic batching](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/user_guide/batcher.html)
+  与 [DALI backend](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/dali_backend/README.html)：
+  支持成熟 batching、metrics 和 GPU 图像预处理。DALI 会改变预处理归属，只在独立
+  upper-bound 臂开启。
+- [Infinity](https://github.com/michaelfeil/infinity) 原生支持 CLIP 和 dynamic batching，
+  可作快速服务 baseline，但不是主方法默认 engine。
 
 **CLIP 无 KV cache / prefix** —— 所以 prefix-aware routing 这一支不适用图像；但 active-work / K_max / flush / queue-adaptive 全部适用。这也是有用的边界：说明哪些策略是模态无关的（flush/K_max），哪些是 LLM-only 的（prefix）。
 
@@ -56,10 +92,17 @@ CLIP 是 **embedding 模型，不是 vLLM 服务的生成式 LLM**。当前项�
 **PostgreSQL image 表设计**（写回 sink 也用 pgvector）：
 
 ```text
-images(id BIGINT PK, path TEXT, split TEXT, label TEXT, ...)
-image_embeddings(id BIGINT PK, embedding vector(512), model TEXT, ...)
+image_documents(doc_id BIGINT PK, workload_name TEXT, source_image_id TEXT,
+                split TEXT, image BYTEA, image_bytes BIGINT, ...)
+image_embeddings(doc_id BIGINT, workload_name TEXT, model_revision TEXT,
+                 processor_revision TEXT, normalized BOOL,
+                 embedding vector(512), PRIMARY KEY (...))
 ```
-- 上游不把图像字节塞进 PG（大 value 慢）；PG 存 **path**（指向 autodl-tmp 上的解压图），Daft source 读 path → Ray worker 按 path 加载+decode。
+- canonical DB→GPU 路径把 encoded image bytes 放入 PostgreSQL，才能真实计入 DB read；
+  `source_uri` 路径只作“外部对象存储/共享文件系统”独立 baseline，不能与 BYTEA 轨道
+  混跑。当前 COCO 5K profile 已使用 BYTEA。
+- `doc_id` 不再由本次导入顺序生成；保留 COCO/source image ID、split 和 workload，
+  以便 held-out、重导入和 recall@10 可复现。
 - embedding 维度：CLIP ViT-B/32 = 512；写回 `vector(512)` + HNSW 索引（deferred）。
 
 ---
@@ -99,7 +142,14 @@ image_embeddings(id BIGINT PK, embedding vector(512), model TEXT, ...)
 
 ## 6. 最小验证实验（fatal-flaw 门禁，必跑）
 
-> ✅ **结果（2026-08-01，已通过 GO）**：5K COCO val × 100 iters 正式跑，ratio = CPU 准备/GPU embed 在实用 batch（≥16）**13.8–18.3**（B=256 渐近 ~18），远超 0.3 门禁；p95 紧贴 p50。瓶颈 = CLIPProcessor resize+normalize（~5.2 ms/img），非 decode/transfer/pg_read(0.755 bulk)；B=128 串行下 GPU 空转 ~95%。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`（脚本 `code/scripts/profile_image_clip_bottleneck.py` + `import_coco_images.py`）。
+> ✅ **初始门禁结果（2026-08-01，GO）**：历史
+> `CLIPProcessor(..., return_tensors="pt")` slow path 在实用 batch（≥16）的
+> CPU 准备/GPU embed 比为 **13.8–18.3**；这证明值得建设 E2E runner，但不是方法
+> 性能结论。子阶段补测只直接归因出 resize ~1.3ms，约 3.8ms 尚未细分；“GPU
+> 空转 ~95%”已修正为由串行阶段时间推导的理论非-forward占比。当前代码改为
+> `return_tensors="np" → ClipTensorActor`，正式 build 前补 production_np / legacy_pt /
+> torchvision_pt 交错复测并做 embedding parity gate。详见
+> `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
 
 **目标**：在 all-in 搭完整 pipeline 前，用最小成本回答一个问题——**CPU decode 在我们的设置下是否真的足够重，让异构调度有真实变量？**
 
@@ -114,6 +164,12 @@ image_embeddings(id BIGINT PK, embedding vector(512), model TEXT, ...)
 - 中间（0.1–0.3）→ 边界，升分辨率或 batch 内交错 decode/embed 再测。
 
 **这是 karpathy "先定义可验证目标、做最小实验" 的落地——用半天数据决定是否 all-in。**
+
+**实现边界复测**：使用
+`code/scripts/profile_image_clip_preprocess_variants.py`，同一批图像内交错三条
+processor 路径，保留 raw repeats；必须满足 embedding cosine gate，且不能故意保留
+slow processor 制造策略空间。若生产/torchvision 路径令 CPU/GPU 比降到门禁以下，
+应撤回“CPU preprocess 是主优化舞台”的外推，但仍保留历史 slow-path 结果。
 
 ---
 
@@ -154,7 +210,8 @@ image_embeddings(id BIGINT PK, embedding vector(512), model TEXT, ...)
 ## 9. 待决与开放问题
 
 1. **scoop 检索结果**（已启动工作流）——若发现已有"CLIP/图像 embedding 上游调度"论文，方案需调整定位。
-2. **CLIP endpoint 选型**——自写 FastAPI（最灵活，复用项目 adapter 模式）vs Infinity/TEI（省事但非数据库场景）。倾向自写 FastAPI 跑 CLIP，保持 endpoint 行为可控、可观测队列。
+2. **生产上界环境**——若后续获得可用 Docker/NGC 环境，再补 Triton
+   PyTorch/ONNX/TensorRT；不得同时改变模型精度、processor 和 batching。
 3. **正式数据集规模**——smoke 通过后定（COCO train 精选 / ImageNet 子集），受磁盘约束。
 4. **是否同时上 T2 大表文本 embedding 作过渡**——可与图像并行，信号更早。
 

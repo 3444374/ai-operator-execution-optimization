@@ -3,21 +3,24 @@
 
 Verifiable goal
 ---------------
-The bottleneck profiler measures `processor(images=..., return_tensors="pt")`
+The historical bottleneck profiler measures
+`processor(images=..., return_tensors="pt")`
 as ONE ~5.2 ms/img stage (`cpu_preprocess`). This script wraps
 CLIPImageProcessor's OWN resize / center_crop / rescale / normalize methods with
 timers (same code path as real preproc -> faithful), answering WHICH sub-step
 dominates the ~5.2 ms. Also times the whole processor() call and reports the
-residual = total - sum(substeps) (PIL->numpy, tensor stacking, and any rescale
-folded outside the wrapped methods).
+unattributed time = total - sum(substeps). The unattributed value is not itself
+a named stage: it may include validation, PIL/NumPy conversion, functional
+transforms, tensor conversion/stacking, Python dispatch, and wrapper overhead.
 
 Verified on transformers 5.14.1: CLIPImageProcessor fires resize / center_crop /
 normalize during processor(); rescale is folded (0 separate calls) -> its cost
-shows up inside normalize or the residual.
+is not separately attributable with this instrumentation.
 
-Single-process; reads COCO bytea from PG; decodes via shared `pil_decode`; only
-preproc sub-steps are timed (no model forward, no H2D transfer). Reuses
-`pil_decode` / `fetch_image_bytes` from profile_image_clip_bottleneck.py.
+Single-process; reads COCO bytea from PG; decodes via shared ``src.image`` code;
+only preproc sub-steps are timed (no model forward, no H2D transfer). This
+profiles the historical ``return_tensors="pt"`` boundary, not the current
+``ClipImagePreprocessor(..., return_tensors="np") -> ClipTensorActor`` boundary.
 
 Usage
 -----
@@ -32,6 +35,14 @@ import os
 import sys
 import time
 from collections import defaultdict
+from pathlib import Path
+
+
+CODE_ROOT = Path(__file__).resolve().parents[1]
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
+
+from src.image.clip import decode_rgb_image  # noqa: E402
 
 SUBSTEPS = ["resize", "center_crop", "rescale", "normalize"]
 
@@ -104,9 +115,12 @@ def main():
         print("ERROR: --pg-dsn required (or set DATABASE_URL/PG_DSN)", file=sys.stderr)
         sys.exit(2)
 
+    import psycopg
+    import torch
+    import transformers
     from transformers import CLIPProcessor
-    from profile_image_clip_bottleneck import pil_decode, fetch_image_bytes
-    import psycopg2
+
+    from profile_image_clip_bottleneck import fetch_image_bytes, get_versions
 
     processor = CLIPProcessor.from_pretrained(args.model)
     ip = processor.image_processor
@@ -116,7 +130,8 @@ def main():
         f"crop_size={getattr(ip, 'crop_size', None)}"
     )
 
-    conn = psycopg2.connect(args.pg_dsn)
+    conn = psycopg.connect(args.pg_dsn)
+    versions = get_versions(conn)
     pool, _ = fetch_image_bytes(
         conn, args.table, args.id_column, args.image_column, args.limit
     )
@@ -138,10 +153,14 @@ def main():
         for i in range(args.warmup):
             chunk = [byteas[(i * B + j) % n] for j in range(B)]
             reset()
-            processor(images=[pil_decode(b) for b in chunk], return_tensors="pt")
+            processor(
+                images=[decode_rgb_image(b) for b in chunk],
+                return_tensors="pt",
+            )
         for i in range(args.iters):
             chunk = [byteas[((args.warmup + i) * B + j) % n] for j in range(B)]
-            imgs = [pil_decode(b) for b in chunk]  # decode is NOT part of preproc timing
+            # Decode is intentionally outside the preprocessing timer.
+            imgs = [decode_rgb_image(b) for b in chunk]
             reset()
             t0 = time.perf_counter()
             processor(images=imgs, return_tensors="pt")
@@ -149,7 +168,17 @@ def main():
             total_pre.append(total / B)
             for s in SUBSTEPS:
                 per_img[s].append(totals[s] / B)
-        row = {"batch_size": B, "n_measured": args.iters}
+            per_img["unattributed"].append(
+                (total - sum(totals.values())) / B
+            )
+        row = {
+            "batch_size": B,
+            "n_measured": args.iters,
+            "processor_output_kind": "pt",
+            "transformers_version": transformers.__version__,
+            "torch_version": torch.__version__,
+            **versions,
+        }
         sum_p50 = 0.0
         for s in SUBSTEPS:
             p50 = percentile(per_img[s], 0.50)
@@ -158,7 +187,14 @@ def main():
         tot_p50 = percentile(total_pre, 0.50)
         row["substeps_sum_p50_ms"] = sum_p50 * 1000
         row["total_preproc_p50_ms"] = tot_p50 * 1000
-        row["residual_p50_ms"] = (tot_p50 - sum_p50) * 1000
+        # Compute the percentile from a per-iteration derived distribution.
+        # Subtracting independently computed medians is not statistically valid.
+        row["unattributed_p50_ms"] = percentile(
+            per_img["unattributed"], 0.50
+        ) * 1000
+        row["unattributed_p95_ms"] = percentile(
+            per_img["unattributed"], 0.95
+        ) * 1000
         results.append(row)
 
     # restore original methods
@@ -169,7 +205,7 @@ def main():
     print("\n=== CLIPProcessor preproc sub-stage cost (p50, ms/img) ===")
     hdr = (
         f"{'B':>4} {'resize':>8} {'crop':>8} {'rescale':>8} {'normalize':>10} "
-        f"{'sum':>8} {'total':>8} {'residual':>9}"
+        f"{'sum':>8} {'total':>8} {'unattrib':>9}"
     )
     print(hdr)
     print("-" * len(hdr))
@@ -178,12 +214,13 @@ def main():
             f"{r['batch_size']:>4} {r['resize_p50_ms']:>8.3f} "
             f"{r['center_crop_p50_ms']:>8.3f} {r['rescale_p50_ms']:>8.3f} "
             f"{r['normalize_p50_ms']:>10.3f} {r['substeps_sum_p50_ms']:>8.3f} "
-            f"{r['total_preproc_p50_ms']:>8.3f} {r['residual_p50_ms']:>9.3f}"
+            f"{r['total_preproc_p50_ms']:>8.3f} "
+            f"{r['unattributed_p50_ms']:>9.3f}"
         )
 
     mid = results[len(results) // 2]
     candidates = {s: mid[f"{s}_p50_ms"] for s in SUBSTEPS}
-    candidates["residual"] = mid["residual_p50_ms"]
+    candidates["unattributed"] = mid["unattributed_p50_ms"]
     dom = max(candidates, key=candidates.get)
     print(
         f"\ndominant sub-step (B={mid['batch_size']}): {dom} "
@@ -194,13 +231,18 @@ def main():
     cols = [
         "batch_size", "n_measured", "resize_p50_ms", "center_crop_p50_ms",
         "rescale_p50_ms", "normalize_p50_ms", "substeps_sum_p50_ms",
-        "total_preproc_p50_ms", "residual_p50_ms",
+        "total_preproc_p50_ms", "unattributed_p50_ms",
+        "unattributed_p95_ms", "processor_output_kind",
+        "transformers_version", "torch_version", "server_version",
+        "pgvector_version",
     ]
     with open(args.out_csv, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(cols)
         for r in results:
-            w.writerow([f"{r[c]:.4f}" if isinstance(r[c], float) else r[c] for c in cols])
+            w.writerow(
+                [f"{r[c]:.4f}" if isinstance(r[c], float) else r[c] for c in cols]
+            )
     print(f"\ncsv -> {args.out_csv}")
 
 

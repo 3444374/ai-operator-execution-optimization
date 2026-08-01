@@ -3242,4 +3242,54 @@
 - **口径澄清**：ratio 分子不含 pg_read（pg_read 单独一列）；不算 DB 读 ratio 仍 13–17，结论不变。"数据搬运瓶颈"更准确是 **CPU 预处理计算瓶颈**。
 - **更正上条 #32 记录**：transformers 5.x `get_image_features` 取 **`.pooler_output`**（512d），非 `.image_embeds`（5.x 无此属性）；脚本与 `image_serving.md §3.3` 均已用对。
 - **规模边界 + redo（已完成 5K 规范跑）**：首跑 1024×50 iters 后，按用户要求加大规模重做——新增 `code/scripts/import_coco_images.py`（TRUNCATE+INSERT 单事务原子、记版本、path-B 可复用）载入完整 COCO val **5K**（815MB/33.8s），重跑 `--limit 5000 --iters 100 --batch-sizes 1,16,32,64,128,256`（~5min）。5K 结果 ratio **13.8–18.3**（B=256 渐近 ~18），p95 紧贴 p50，与 1024 首跑完全一致——结论（GO、CPU preprocess 主导）确认。pg_read 0.755ms/img（5K bulk 摊销）。
-- **同步**：`experiment_status_and_gaps.md` §0/§1.4（门禁过 + redo pending）；`image_clip_workload_lock §0`「暂停 build」→ 解除；`motivation/results/gpu/README.md` 索引；`code/AGENTS.md` 新增「代码质量总则（模块清晰 / 框架分明 / 低耦合 / 目标清晰）」。
+- **同步**：`experiment_status_and_gaps.md` §0/§1.4 已统一为 5K canonical GO；`image_clip_workload_lock §0`「暂停 build」→ 解除；`motivation/results/gpu/README.md` 索引；`code/AGENTS.md` 新增「代码质量总则（模块清晰 / 框架分明 / 低耦合 / 目标清晰）」。
+
+## 2026-08-01 文档状态对账：统一 image-first、5K canonical 与 prefix 归因
+
+- **权威关系**：明确 `experiments/plans/experiment_status_and_gaps.md` §0 记录内部执行顺序；内部已锁 A+B image-first，外部“DB↔GPU 经 Daft 桥接”scope/题目仍待导师和学长确认，二者不再混写。
+- **5K 状态**：`AGENTS.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、`code/INFRA_STATUS.md` 和证据台账统一为 COCO val 5K × 100 iterations 已通过 GO；当前进入 path-B runner + image 强 baseline，不再保留 redo pending。
+- **文本轨道**：遗留 feeding/static-credit/prefix/multi-job/runtime baseline 统一标为 `parked-conditional`，不再阻塞 image build；文本历史证据保留。
+- **prefix 归因修正**：证据台账与总纲移除“cache 淘汰压力是开关”的过时确定表述。matched-KV 结果更支持 endpoint consolidation 是驱动；4-ep 饱和深度仍是残余混淆。
+- **代码边界**：`code/INFRA_STATUS.md` 明确区分“5K motivation/profile 已完成”和“image source/frame-cost、CLIP endpoint、path-B runner、正式方法对照尚未实现”，避免把画像写成系统完成。
+- **快速入口**：`overview/current_direction_and_plan.md` 收缩为一页式当前状态卡片，删除被 pivot 取代的旧文本 P0/P1 执行清单。
+
+## 2026-08-01 图像代码架构审阅与 serving 选型校正
+
+- **官方能力校正**：vLLM 当前 pooling runner 已正式支持 CLIP/SigLIP 图像
+  embedding；删除“CLIP 不能复用 vLLM / 没有服务端 batching”的过时前提。
+- **实验边界**：vLLM pooling 接收 encoded image 并在服务内部预处理，不能与
+  `Daft/Ray CPU preprocess -> tensor endpoint` 不加区分地比较。前者作为统一部署
+  和强服务 baseline；主方法路径保留上游预处理边界，并使用 typed backend adapter。
+- **工程规则**：`code/AGENTS.md` 增加中性 work-unit、图像输入表示、预处理归属、
+  embedding 语义、隐藏 batching、流式 collect 禁令和引擎隔离合同；禁止正式 runner
+  复用 `code/scripts/` 内实现。
+- **审阅结论**：现有 text scheduler 可复用，但 source/organizer/BatchRequest/model
+  adapter 尚为 text/token-specific；正式 image runner 前需先完成中性合同和流式
+  Daft->Ray 边界，不能把图像逻辑继续堆入 profiler 单体。
+- **部署约束二次校正**：审阅 AutoDL runbook 后确认当前实例明确不使用 Docker，
+  而 Triton 官方推荐 NGC 容器；主方法第一实现因此改为常驻 Ray CLIP GPU actor，
+  与既有 actor pool/backpressure 直接衔接。Triton保留为容器环境 production upper
+  bound，vLLM pooling 保留强服务 baseline。
+- **代码基础合同**：`BatchRequest` 新增兼容式 `work_units/work_unit`，scheduler、
+  least-work 和 Ray adapter 已消费中性 `estimated_work_units`；新增 `code/src/image/`
+  （embedding semantics、lazy Daft image source、CPU CLIP preprocessor、tensor-only
+  GPU actor），并把 profiler 的 decode/output extraction 改为复用 `src.image`。
+- **导入安全**：COCO importer 改为保留文件名中的稳定 source ID、按 workload
+  原子替换而非 TRUNCATE 全表，并用安全 SQL identifier。
+
+## 2026-08-01 合并远端 CLIP 子阶段画像并收紧证据边界
+
+- **远端合并**：fast-forward 合并 `fa8f77a`，保留 slow-pt processor 子阶段脚本、
+  5K 采样池 CSV 和对原画像“resize 不是大头”的事实修正。
+- **审计修正**：旧脚本以 `p50(total)-Σp50(stage)` 近似 residual，且未记录
+  PG/pgvector；新版改为逐 iteration 求未归因时间再计算 p50/p95，迁移到 psycopg3，
+  补 processor/backend/torch/transformers/PG/pgvector 元数据。历史 CSV 保留原数字，
+  补齐已知运行元数据，不覆盖重算。
+- **结论降级**：能直接声称的只有 resize 约 1.3ms（约 25%）；其余约 3.8ms 是
+  method-wrapper 未覆盖时间，不能归因成 PIL→NumPy、tensor stacking 或 Python 循环。
+  “GPU 空转 95%”改为由串行阶段时间推导的理论非-forward占比；profile 只证明存在
+  overlap 候选空间，不证明 path-B E2E 必然更快。
+- **实现边界复测**：新增 `profile_image_clip_preprocess_variants.py`，在相同图片批次
+  上随机交错 production-np、legacy-pt、torchvision-pt，经同一
+  `ClipTensorActor` 输出并执行逐行 embedding cosine 门禁。正式实验不得故意保留
+  slow processor 制造优化空间；fast/production 路径若消除瓶颈，应撤回旧外推。

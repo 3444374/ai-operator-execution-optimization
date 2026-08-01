@@ -50,7 +50,45 @@ class SchedulingModelTests(unittest.TestCase):
         envelope = PayloadEnvelope(request=request, payload=payload)
 
         self.assertEqual(request.estimated_total_tokens, 16)
+        self.assertEqual(request.estimated_work_units, 16)
         self.assertIs(envelope.payload, payload)
+
+    def test_batch_request_can_override_tokens_with_modality_work(self) -> None:
+        request = BatchRequest(
+            request_id="image-1",
+            job_id="image-job",
+            operator="ai_embed",
+            row_count=4,
+            prompt_tokens=0,
+            estimated_output_tokens=0,
+            prefix_key="",
+            first_arrival_s=1.0,
+            oldest_arrival_s=1.0,
+            payload_id="pixels-1",
+            work_units=4 * 224 * 224,
+            work_unit="pixels",
+        )
+
+        self.assertEqual(request.estimated_total_tokens, 0)
+        self.assertEqual(request.estimated_work_units, 200704)
+        self.assertEqual(request.work_unit, "pixels")
+
+    def test_batch_request_rejects_invalid_modality_work(self) -> None:
+        with self.assertRaisesRegex(ValueError, "work_units"):
+            BatchRequest(
+                request_id="image-1",
+                job_id="image-job",
+                operator="ai_embed",
+                row_count=1,
+                prompt_tokens=0,
+                estimated_output_tokens=0,
+                prefix_key="",
+                first_arrival_s=1.0,
+                oldest_arrival_s=1.0,
+                payload_id="pixels-1",
+                work_units=-1,
+                work_unit="pixels",
+            )
 
     def test_batch_request_preserves_planning_and_service_quantum_identity(
         self,

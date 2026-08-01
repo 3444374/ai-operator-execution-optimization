@@ -171,13 +171,13 @@ prefix_affinity +5.9%（46,943 vs 44,317 tok/s，3 repeat 不重叠、CV≤0.9%�
 
 vLLM baseline 与 Daft 文本阶段接入已完成（见上"当前证据"）。当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）：
 
-1. **P1**：Shared-vLLM 有界 async actor 1/2/4-job formal 矩阵（j4 ray_task
-   撞 vm.max_map_count，actor/VMA 臂已通过，需在固定合同下恢复 1/2/4）；
-   随后验证 staggered idle borrowing、weighted overlap fairness 和异构
-   workload mix/arrival offset（endpoint-shared request/work credit 与
-   路由/故障迁移已完成）。
-2. **P2**：多模态泛化验证、真实多 endpoint/多 GPU、代价模型独立校准。
-3. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+1. **Image E2E runner**：中性 work-unit、lazy image source、CPU CLIP
+   preprocessor 和 tensor-only Ray GPU actor 已实现基础合同；还需串起
+   PG→Daft→Ray→pgvector、阶段 trace 和 exactly-once 写回。
+2. **Image 强 baseline**：分别校准 Daft `@daft.cls` Native、vLLM pooling、
+   Ray Data、bounded direct、naive 与 ours，不能跨预处理边界混比。
+3. 文本 shared-vLLM/multi-job 遗留 formal 为 `parked-conditional`；后续进入
+   PostgreSQL 18.3 内部平台复测时，避免把 PG18.4 AutoDL rehearsal 写成正式结论。
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。
 

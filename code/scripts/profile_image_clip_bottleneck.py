@@ -25,10 +25,8 @@ Design
 ------
 Single-process by design: isolate per-stage cost, no Ray/Daft/scheduler noise
 (minimal experiment per karpathy-guidelines). DB is in the path (reads image
-bytea from PostgreSQL, per project requirement). Standalone -- no code.src
-imports; load_clip() / pil_decode() / cpu_preprocess() / clip_encode() are
-reused verbatim by the later path-B runner (framework-clear + low-coupling per
-code/AGENTS.md 代码质量总则).
+bytea from PostgreSQL, per project requirement). Reusable CLIP output/decode
+semantics live in ``src.image``; this script owns only profiling orchestration.
 
 Usage
 -----
@@ -39,10 +37,20 @@ Usage
 
 import argparse
 import csv
-import io
 import os
 import sys
 import time
+from pathlib import Path
+
+
+CODE_ROOT = Path(__file__).resolve().parents[1]
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
+
+from src.image.clip import (  # noqa: E402
+    decode_rgb_image,
+    extract_clip_image_features,
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -77,7 +85,7 @@ def parse_args():
 
 
 # --------------------------------------------------------------------------- #
-# Stage functions (each one responsibility; reused by path-B runner verbatim)
+# Stage functions (profiling wrappers around reusable src.image semantics)
 # --------------------------------------------------------------------------- #
 def fetch_image_bytes(conn, table, id_col, img_col, limit):
     """PG -> list[(id, bytes)], bulk-fetched. Returns (rows, fetch_seconds)."""
@@ -90,7 +98,7 @@ def fetch_image_bytes(conn, table, id_col, img_col, limit):
         cur.execute(sql, (limit,))
         rows = cur.fetchall()
     fetch_s = time.perf_counter() - t0
-    # psycopg2 returns bytea as memoryview -> normalize to bytes
+    # Normalize bytea values so profiling is independent of driver return type.
     out = [(r[0], bytes(r[1])) for r in rows]
     return out, fetch_s
 
@@ -123,12 +131,7 @@ def load_clip(model_path, device):
 
 def pil_decode(raw):
     """JPEG bytes -> RGB PIL.Image (forces decode)."""
-    from PIL import Image
-
-    img = Image.open(io.BytesIO(raw))
-    if img.mode != "RGB":
-        img = img.convert("RGB")
-    return img
+    return decode_rgb_image(raw)
 
 
 def cpu_preprocess(images, processor):
@@ -145,9 +148,9 @@ def clip_encode(model, inputs):
     """
     import torch
 
-    with torch.no_grad():
+    with torch.inference_mode():
         out = model.get_image_features(**inputs)
-    return out.pooler_output if hasattr(out, "pooler_output") else out
+    return extract_clip_image_features(out)
 
 
 # --------------------------------------------------------------------------- #
@@ -319,7 +322,10 @@ def print_verdict(results):
         print("VERDICT: GO   -- ratio > 0.3 at all practical batches; CPU data-prep is a")
         print("               real stage, heterogeneous scheduling has something to overlap.")
     elif r_max < 0.1:
-        print("VERDICT: NO-GO -- ratio < 0.1; CPU prep too light vs GPU embed, no stage to overlap.")
+        print(
+            "VERDICT: NO-GO -- ratio < 0.1; CPU prep too light vs GPU "
+            "embed, no stage to overlap."
+        )
     else:
         print("VERDICT: BORDERLINE -- some batches >0.3, some below; inspect the curve vs B.")
 
@@ -330,10 +336,10 @@ def print_verdict(results):
 def main():
     args = parse_args()
 
-    import psycopg2  # local import: fail late with a clear message if missing
+    import psycopg  # local import: fail late with a clear message if missing
 
     try:
-        conn = psycopg2.connect(args.pg_dsn)
+        conn = psycopg.connect(args.pg_dsn)
     except Exception as exc:  # noqa: BLE001
         print(f"ERROR: cannot connect to PG ({args.pg_dsn}): {exc}", file=sys.stderr)
         sys.exit(2)

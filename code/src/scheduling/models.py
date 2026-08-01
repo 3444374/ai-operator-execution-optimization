@@ -26,18 +26,35 @@ class BatchRequest:
     service_quantum_index: int = -1
     service_quantum_oversized: bool = False
     preferred_endpoint_id: str = ""
+    work_units: int | None = None
+    work_unit: str = "tokens"
 
     def __post_init__(self) -> None:
         if self.row_count <= 0:
             raise ValueError("row_count must be positive")
         if self.prompt_tokens < 0 or self.estimated_output_tokens < 0:
             raise ValueError("token counts must be non-negative")
+        if self.work_units is not None and (
+            not isinstance(self.work_units, int)
+            or isinstance(self.work_units, bool)
+            or self.work_units < 0
+        ):
+            raise ValueError("work_units must be a non-negative integer when present")
+        if not isinstance(self.work_unit, str) or not self.work_unit:
+            raise ValueError("work_unit must be a non-empty string")
         if not self.request_id or not self.job_id or not self.payload_id:
             raise ValueError("request_id, job_id, and payload_id must be non-empty")
 
     @property
     def estimated_total_tokens(self) -> int:
         return self.prompt_tokens + self.estimated_output_tokens
+
+    @property
+    def estimated_work_units(self) -> int:
+        """Return modality-neutral admission work with token compatibility."""
+        if self.work_units is not None:
+            return self.work_units
+        return self.estimated_total_tokens
 
 
 @dataclass(frozen=True)
@@ -60,6 +77,7 @@ class EndpointSnapshot:
     estimated_active_work: int = 0
     service_rate_tokens_s: float | None = None
     available: bool = True
+    service_rate_work_units_s: float | None = None
 
     def __post_init__(self) -> None:
         if not self.endpoint_id or not self.url or not self.pool_id:
@@ -77,6 +95,18 @@ class EndpointSnapshot:
             raise ValueError(
                 "service_rate_tokens_s must be finite and positive when present"
             )
+        if self.service_rate_work_units_s is not None and (
+            not math.isfinite(self.service_rate_work_units_s)
+            or self.service_rate_work_units_s <= 0
+        ):
+            raise ValueError(
+                "service_rate_work_units_s must be finite and positive when present"
+            )
+
+    @property
+    def effective_service_rate_work_units_s(self) -> float | None:
+        """Prefer a neutral work rate while preserving text-only callers."""
+        return self.service_rate_work_units_s or self.service_rate_tokens_s
 
 
 @dataclass(frozen=True)

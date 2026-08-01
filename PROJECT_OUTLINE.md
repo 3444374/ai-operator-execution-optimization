@@ -12,7 +12,7 @@
 
 **2026-07-29 文献基线升级**：多模态仍是正文泛化验证。算子代价估计从“补充讨论”提升为数据组织和调度提交控制共同依赖的重要组件，但不单独扩张成第三项研究内容。首版采用简单解析模型 + profile 校准 + residual correction，用于 work/service/JCT、active-work/K、组织、路由和多 job remaining-work/SLO 判断。
 
-**2026-08-01 workload 锁定（scope reframe 提案待导师确认）**：文本实验（RC1 数据组织 regime-dependent）已证**文本搬运可忽略、binding 瓶颈在 vLLM serving**（RC1 pipeline：db_fetch ~1.4–2.4s vs model_wall ~27–37s）。**下一步 workload = image AI_EMBED（CLIP）**——让 DB-read / CPU→GPU 数据搬运瓶颈（每行 ~600KB，文本 ~600×）显现。方向 scope（DB↔GPU 经 Daft 桥接）仍为**提案待导师确认**，见 `overview/current_direction_and_plan.md` §当前重点、`research/daft_db_gpu_bridge_direction_scope_20260731.md`、`experiments/plans/image_clip_workload_lock_20260731.md`。文本 RC1/K_max/active-work 结果在上游调度框架下继续有效，image 是其多模态泛化 + 搬运瓶颈验证。
+**2026-08-01 image-first 执行方向锁定**：项目内部已锁定 **A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）**，首个 workload 为 image AI_EMBED（CLIP）；文本 vLLM 遗留实验转为 `parked-conditional`，不是废弃。外部题目是否采用“DB↔GPU 经 Daft 桥接”的 scope reframe 仍待导师/学长确认，这与内部实施顺序分开记录。CLIP 5K 初始画像在历史 slow-pt processor 路径上通过 fatal-flaw 门禁：实用 batch（≥16）的 CPU 准备/GPU embed 比为 **13.8–18.3**；sub-stage 只直接归因出 resize 约 1.3ms，其余 processor 时间尚未拆清。当前先复测 production-np/torchvision processor 边界，再进入 path-B runner 与强 baseline 建设，见 `experiments/plans/experiment_status_and_gaps.md` §0、`experiments/plans/image_clip_workload_lock_20260731.md` 和 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
 
 当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本文中作为 workload 入口，研究重点是上游 Ray 数据执行层的调度优化——探索数据组织策略和提交控制策略，利用 Ray actor 实现去中心化自适应提交。Daft 作为数据引擎，提供 Rust 执行内核、Arrow 零拷贝、Morsel 流式背压和 `@daft.cls` GPU UDF 接口。
 
@@ -105,11 +105,17 @@
      4-ep bounded 24,733 病态（策略超过）→ 准入控制是吞吐杠杆、效应随 regime 反向（2-ep 可放开 W 提速、4-ep 防 thrash 应保留）。
    - 边界：本地 rehearsal，不代表 PG18.3 内部平台结果。
    - 状态与缺口审计：`experiments/plans/experiment_status_and_gaps.md`。
-2. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
+2. `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`
+   - **COCO val 5K × 100 iterations 的 image-CLIP fatal-flaw 门禁**。
+   - 实用 batch（≥16）的 CPU 准备/GPU embed 比为 `13.8–18.3`，B=128 串行下 GPU 约 95% 时间等待上游。
+   - 历史 slow-pt 路径的 CLIPProcessor 总预处理约 5.2ms/image；resize 仅约
+     1.3ms，其余时间尚未细分，且需要按当前 production-np 边界复测。
+   - 这是 motivation/profile 的 GO 证据，不是 path-B 策略胜过 Daft Native 的结果。
+3. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
    - 真实 GPU-backed embedding 链路拆分（AI_EMBED 预研，已完成）。
    - 1024 行下 fine / coalesced 端到端约 `13.4x`。
    - 16384 行下 operator 和 writeback 均为大块成本。
-3. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
+4. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
    - 双 endpoint 下 Ray task / actor 开始体现并发 routing 价值。
    - 端到端收益仍受 writeback 约束。
 
@@ -185,53 +191,26 @@
   vLLM 或双 4090 物理上限。bounded C128 暴露 httpx 默认 100 连接上限，
   显式扩展连接池后 re-gate 达到 12,472 tokens/s，与 vLLM Bench 仅差 2.3%
 
-**当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
+**当前缺口与顺序（以 `experiments/plans/experiment_status_and_gaps.md` §0 为准）**：
 
-1. **P0**：f203257 双协议 feeding formal 已通过：Completions fixed16
-   project/direct 为 16,036/16,416 tokens/s（97.7%），Chat async K256
-   与 bounded Chat 同量级。当前冻结 32K throughput budget、K256 和
-   65K active work；actor shape 必须在该 Completions 工作点补跑固定
-   256 slots/0.5 CPU 的 1/2/4/8/16 曲线后由合同选择，不能用 Chat 曲线代替。
-   49K 另记为 SLO-goodput 候选。下一步在相同合同下重跑数据组织与提交控制，
-   并始终分列 model-request、
-   operator 和 database E2E。旧 8K length-align 的 P50/SLO 正信号只作候选，
-   需 512/1024/2048 规模头对头复验；旧 K64/K32 submission 延迟不可归因。
-2. **P0**：动态提交先过存在性门禁。07-30 short/long prompt 六臂
-   screening 虽 48/48 成功，但实际为 urllib、无 output token IDs、非
-   K×work factorial；short 侧未绑定的 K256/W65K/W98K 等价臂
-   model-request throughput 中位数分裂 48.5%，且 W65K/W98K CV 为
-   18%/34%。远端算术平均得到“共同 W65K”，正式中位数却选择 short
-   W98K/long W65K，因此审计结论是 `inconclusive`，不能据此关闭或启动
-   dynamic。先用 async/token-ID 单一 runner 交错重跑等价臂 gate；通过后
-   才扫描 static K/work surface。只有最佳点明显迁移、97% 区间不重叠且
-   错配造成至少 5% SLO-goodput/JCT 损失，才运行 endpoint-local
-   AIMD/PID/预测式 formal；否则冻结共同静态点并停止动态排名。
-3. **P1**：当前 AutoDL 使用有界 async actor 的 1/2/4-job formal。j4
-   `ray_task` 因 200+ worker 撞上 `vm.max_map_count=65530`；独立
-   j4 actor gate 已在相同 VMA 容器三臂通过，正式矩阵恢复 1/2/4。随后再验证 staggered idle
-   borrowing、weighted overlap fairness 和异构 workload mix。
-4. **P1（部分完成 07-31，prefix 路由有条件重开）**：Prefix cache 开启后的独立机制验证——cache-ON
-   **batch 粒度** prefix-aware 消融（`experiments/results/prefix_cache_data_org_20260730/`）中性（<1.2%）；**request 粒度 5 策略系统重测见 `rc1_data_organization/`（regime-dependent：2-ep 近似中性、4-ep 饱和分化 39–50k + 排名反转）**；2-ep/7B
-   prefix-affinity routing 跨分散/agent/concentrated 三数据集
-   （`prefix_cache_routing_req_20260730/`、`prefix_routing_agent_20260730/`、`prefix_routing_concentrated_20260730/`）
-   吞吐全部 |Δ|<2% 中性（APC 覆盖 working set），但 agent-trace（高 cache 压力 workload）上 pala
-   P50 −7.8%/SLO −3.8pp（吞吐 −1.9% 未过门禁，过饱和区间）；4-ep/1.5B prefix_affinity
-   （`experiments/results/prefix_cache_routing_4ep_1.5b_20260731/`）+5.9%（3 repeat 不重叠、
-   CV≤0.9%）跨过 5% 门禁，且 SLO 违约 25-31% 的过饱和 regime + 同时改 model/endpoint/KV 使
-   净归因未隔离——prefix 方向有条件重新打开。**cache 淘汰压力是信号是否显现的开关**（4-ep/1.5B 改 endpoint/model
-   与 agent-trace 仅改 workload 两个独立高压数据点同向），待 4-ep/7B 或 2-ep/1.5B / 人为缩 KV 隔离消融后定级。
-   残留：per-arm APC 命中率待 runner 增采。
-5. **P1（✅ 完成 07-31）**：Length-align 已与 prefix grouping 分开消融——batch 粒度
-   +0.7%、request 粒度 +1.9%，repeat 不重叠但均 <5% 门禁，不晋级。
-6. **🔴 当前下一步（2026-08-01 workload 锁定）**：image AI_EMBED（CLIP）——找 DB-read/CPU→GPU 数据搬运瓶颈；文本门禁已满足、复用 organizer/scheduler/tracing 仅替换 cost adapter，见 `experiments/plans/image_clip_workload_lock_20260731.md`。
-7. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work
-   与早期 equal-weight 多 job 重复；当前高并发合同需重新完成 1/2/4-job，
-   j4 已通过独立 actor/VMA 门禁。路由增量、staggered/weighted 公平性与
-   故障迁移仍待验证。
-8. 算子代价估计需增加独立时间段/新 workload 校准、预测区间、配置 ranking
-   与决策 regret；它作为两项策略的共同输入，不单列第三项贡献，也不在首版
-   扩展为复杂 learned optimizer。
-9. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+1. **Image path-B 实现**：补齐中性 work-unit、CLIP embedding adapter、流式图像
+   source 与 `PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor→pgvector`
+   runner；复用既有 organizer、scheduler 和 tracing，不复制一套图像调度框架。
+2. **同语义强 baseline**：分别独立标定 bounded direct CLIP、Daft
+   `@daft.cls` Native、vLLM pooling、Ray Data、naive 和 ours；OceanBase AI_EMBED 等待可部署环境。
+   当前 5K 画像只证明存在优化空间，尚未证明 ours 胜出。
+3. **A+B 方法验证**：A 读取 CLIP endpoint queue/active-work 做状态感知请求成形；
+   B 先实现 `<100 LOC` 解析代价模型 + profile 校准 + residual correction，并报告
+   ranking、regret 和预测区间，不直接扩张成复杂 learned optimizer。
+4. **正式指标闭环**：除吞吐/JCT/P95/P99/SLO 外，报告 CPU preprocess、H2D、
+   GPU embed、overlap、GPU busy、能耗与写回后的 Recall@10；策略晋级需相对各自
+   强静态 baseline 改善约 5%、重复方向一致且质量不退化。
+5. **文本遗留项统一 parked-conditional**：feeding 等价性、short/long static-credit、
+   4-job held-out、prefix routing 隔离和文本系统 baseline 不再阻塞 image build；仅在
+   论文收录文本结果时按已有实验合同恢复。matched-KV 证据目前指向 endpoint
+   consolidation，而不是单纯 per-endpoint KV 大小，但仍未完全隔离饱和深度。
+6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 AutoDL rehearsal 写成
+   正式内部平台结论；最终 scope/题目 framing 仍需导师/学长确认。
 
 文献机制的发现、迁移审计和晋级/放弃条件统一见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
@@ -248,7 +227,7 @@
 
 **Scope 缩减触发条件**：
 - Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（✅ 已建立，未触发）
-- 文本 RC1+RC2 消融未完成前，不启动 Daft 多模态 pipeline
+- 文本 RC1+RC2 达到可转轨门槛后才启动 Daft 多模态 pipeline（✅ 2026-08-01 已满足，image build 已解除暂停）
 - VLM 生成实验始终标记为 optional
 - Adaptive 控制器 3 轮改进后不能超过 static K_max=8 → RC2 降级
 

@@ -77,11 +77,12 @@ class LeastWorkEndpointRouter:
         def predicted_finish(endpoint) -> tuple[float, str]:
             work = (
                 endpoint.estimated_active_work
-                + request.estimated_total_tokens
+                + request.estimated_work_units
             )
+            service_rate = endpoint.effective_service_rate_work_units_s
             drain_s = (
-                work / endpoint.service_rate_tokens_s
-                if endpoint.service_rate_tokens_s is not None
+                work / service_rate
+                if service_rate is not None
                 else float(work)
             )
             return drain_s, endpoint.endpoint_id

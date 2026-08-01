@@ -81,12 +81,39 @@ vLLM 的 `--enable-chunked-prefill` 在 token 级做数学等价拆分；手动�
 
 ### 4. 多模态复用文本代码路径（来源：策略泛化性验证设计）
 
-Token-budget 和 frame-budget 本质都是"按计算量预算组织数据"——合并逻辑相同，仅计数函数不同。
+Token-budget 和 frame/image-work budget 本质都是"按计算量预算组织数据"——合并逻辑相同，仅代价估计器和模态适配器不同。
 
 **要求**：
-- `token_budget` → `frame_budget` 仅替换计数函数：`_row_token_cost()` → `_row_frame_cost()`
-- 分组策略（length-align、bin-packing、prefix-aware）的排序/合并逻辑不变
+- 新的公共合同使用中性字段 `estimated_work_units` / `work_unit`；文本
+  `prompt_tokens + output_tokens` 和图像 `frames/pixels/preprocess_cost` 只在模态
+  adapter 中换算。迁移期间保留 token 字段兼容层，不在 scheduler 中增加
+  `if image ... else text ...` 分支。
+- budget packing、bin-packing、flush、credit、routing 只消费中性 work units；
+  length-align/prefix-aware 等**不适用所有模态**的能力由显式 capability 声明，
+  不能靠缺列时静默退化。
 - 不为图像单独写一套 batch 构造代码
+- `code/scripts/` 只做配置和编排；可被 profiler、runner、baseline 共同复用的
+  decode/preprocess/model-output 逻辑必须放入 `code/src/`，禁止生产 runner
+  反向 import profiling 脚本。
+
+### 4.1 图像执行路径合同
+
+图像路径新增代码必须先冻结下列合同，再实现 endpoint 或实验：
+
+- **输入表示**：明确是 encoded bytes、共享 URI 还是预处理后的 tensor；不能在
+  不同 baseline 间悄悄改变表示。
+- **预处理归属**：decode/resize/normalize 位于 Daft/Ray 上游或模型服务内部必须
+  写入 manifest。两种归属是不同实验边界，不能只比较一个总吞吐数。
+- **embedding 语义**：记录模型 revision、processor revision、dtype、输出维度、
+  projection 和 L2 normalization；写回前校验 shape、finite 和行 ID 对齐。
+- **隐藏 batching**：记录服务端 dynamic/continuous batching 是否开启及参数；研究
+  上游 batching 时，服务端 batching 要么冻结，要么作为独立实验因子。
+- **流式边界**：正式 image runner 不得在 driver 上对全量图像调用
+  `to_arrow()`、`list(to_arrow_iter())` 或等价 collect；仅 smoke/profile 可在文档
+  明示规模边界后 materialize。
+- **引擎隔离**：Daft/Ray pipeline 只依赖 typed `ImageEmbeddingBackend` 合同；
+  Ray GPU actor、vLLM pooling、Triton、Daft `@daft.cls` 和测试 fake backend 均由 adapter 接入，
+  不把供应商 API 写进 organizer/scheduler。
 
 **文献依据**：`research/daft_ray_multimodal_reference.md`；Daft DataFrame 统一 API
 

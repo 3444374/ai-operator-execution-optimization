@@ -317,7 +317,7 @@ class RaySubmissionAdapter:
         if isinstance(submitter, ActorWorkerPoolSubmitter):
             handle = submitter.submit(
                 envelope.payload,
-                estimated_work=envelope.request.estimated_total_tokens,
+                estimated_work=envelope.request.estimated_work_units,
             )
             self._stateful_handles.append((handle, submitter))
             return handle

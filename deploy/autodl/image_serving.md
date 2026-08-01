@@ -16,17 +16,18 @@
 
 图像 CLIP 每行 CPU→GPU 搬运 ~**600KB**（文本的 ~600×）+ JPEG decode+resize 重（每图毫秒级，常重于 GPU CLIP forward）。这让 **DB-read / CPU→GPU 数据搬运**变成 binding 瓶颈——这正是要找/优化的对象，也是 2026-08-01 锁定 image-CLIP-first 的原因（找数据搬运瓶颈）。
 
-## 2. CLIP 引擎 vs vLLM 引擎（关键差异，务必先理解）
+## 2. 引擎角色（关键差异，务必先理解）
 
 CLIP 是 **embedding 模型，不是 vLLM 服务的生成式 LLM**。两套引擎从模型类型到观测层都不同：
 
-| 维度 | vLLM（文本 track，§8） | CLIP（图像 track，本篇） |
+| 维度 | vLLM generation（文本） | Ray CLIP actor（ours） | vLLM pooling（图像 baseline） |
 |---|---|---|
-| 模型类型 | 生成式 LLM（Qwen2.5） | embedding 模型（CLIP image encoder） |
-| 输出 | token 序列（可变长） | 定长向量（512d） |
-| 服务机制 | continuous batching + APC（prefix cache）+ KV cache + paged attention | 批量 embedding（**无 KV cache、无 prefix、无生成**） |
-| 关键观测 | `prefix_cache_hit_rate` / `kv_cache_usage` / `running·waiting` / TTFT / TBT-ITL | **CPU decode+resize 计时 / CPU→GPU transfer 计时 / GPU embed 计时 / endpoint 队列深度** |
-| 部署 | `start_endpoints.sh`（§8） | 本篇 §5：FastAPI CLIP endpoint + 上游 Ray CPU decode |
+| 模型类型 | Qwen2.5 生成 | CLIP image encoder | CLIP pooling |
+| 输入边界 | prompt | **预处理后的 pixel tensor** | encoded image/data URL |
+| batching owner | vLLM | **项目 organizer/scheduler** | vLLM pooling server |
+| 预处理位置 | 服务内 tokenizer | **Daft/Ray CPU worker** | vLLM 服务内部 |
+| 关键观测 | KV/running/waiting/TTFT/TBT | preprocess、actor queue、GPU embed、overlap | 服务吞吐/延迟/queue |
+| 角色 | 文本主平台 | **图像主方法** | 强服务 baseline |
 
 **推论**：
 - vLLM 的 **prefix-aware routing / prefix 分组对图像不适用**（CLIP 无 prefix 概念）——这正好是 prefix 轨暂停的理由之一（vLLM APC + Daft v0.6.9 已覆盖大半）。
@@ -35,7 +36,19 @@ CLIP 是 **embedding 模型，不是 vLLM 服务的生成式 LLM**。两套引�
 ## 3. 环境配置（在 AutoDL 服务器上怎么配）
 
 ### 3.1 前提（共享平台，不重复）
-先按 `deploy/autodl/README.md` §1–§7 完成共享部分：AutoDL 2×4090 实例、`venvs/vllm-4090`（已含 `torch 2.11+cu130` / `transformers 5.14` / `PIL`，**可直接跑 CLIP，不必建新 venv**）、`network_turbo`、代码 git 同步、PostgreSQL+pgvector。
+先按 `deploy/autodl/README.md` §1–§7 完成共享部分：AutoDL 2×4090、driver
+Python `/root/miniconda3/bin/python`、独立 vLLM venv、network turbo、代码同步和
+PostgreSQL+pgvector。**主方法 Ray actor 使用 driver Python，不在 vLLM venv 中运行**；
+这样 vLLM 的 torch 依赖不会污染 Daft/Ray driver。
+
+driver 环境至少应满足：
+
+```bash
+/root/miniconda3/bin/python -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple \
+  -r code/requirements.txt
+/root/miniconda3/bin/python -c \
+  "import ray,daft,torch,transformers,PIL,psycopg; print(ray.__version__, daft.__version__, torch.__version__, torch.cuda.device_count())"
+```
 
 ### 3.2 CLIP 模型下载（⭐ 用 Python API，别用 huggingface-cli）
 `huggingface_hub 1.x`（实测 1.25.1）的 `huggingface-cli download` **wrapper 解析参数失败、打印 help、下不到文件**。改用 Python `snapshot_download`：
@@ -43,7 +56,7 @@ CLIP 是 **embedding 模型，不是 vLLM 服务的生成式 LLM**。两套引�
 ```bash
 source /etc/network_turbo 2>/dev/null                       # HF 必开加速
 export HF_HUB_DISABLE_XET=1 HF_HUB_ENABLE_HF_TRANSFER=0     # 禁 Xet，否则 stall
-/root/autodl-tmp/venvs/vllm-4090/bin/python - <<'PY'
+/root/miniconda3/bin/python - <<'PY'
 from huggingface_hub import snapshot_download
 p = snapshot_download("openai/clip-vit-base-patch32",
                       local_dir="/root/autodl-tmp/models/clip-vit-base-patch32")
@@ -56,7 +69,7 @@ PY
 transformers 5.x 的 `CLIPModel.get_image_features` 返回 **`BaseModelOutputWithPooling`**（不是旧版的裸 tensor），取 512d embedding 要 **`.pooler_output`**（实测：`last_hidden_state` 是 (B,50,768) 的 patch tokens、`.pooler_output` 才是投影后的 (B,512)；`.image_embeds` 不存在），**不能直接 `.shape`**：
 
 ```bash
-/root/autodl-tmp/venvs/vllm-4090/bin/python - <<'PY'
+/root/miniconda3/bin/python - <<'PY'
 import torch, numpy as np
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor
@@ -65,10 +78,11 @@ m = CLIPModel.from_pretrained(MD).to("cuda").eval()
 proc = CLIPProcessor.from_pretrained(MD)
 img = Image.fromarray((np.random.rand(224,224,3)*255).astype("uint8"))
 inp = proc(images=img, return_tensors="pt").to("cuda")
-with torch.no_grad():
+with torch.inference_mode():
     out = m.get_image_features(**inp)          # 5.x → BaseModelOutputWithPooling
 emb = out if torch.is_tensor(out) else out.pooler_output
-print("CLIP_GPU_OK", tuple(emb.shape), float(emb.norm()))   # 期望 (1, 512) ~10
+emb = emb / emb.norm(dim=-1, keepdim=True)
+print("CLIP_GPU_OK", tuple(emb.shape), float(emb.norm()))   # 期望 (1, 512), norm~1
 PY
 ```
 看到 `CLIP_GPU_OK (1, 512) <norm>` = CLIP 在 GPU 能 encode，环境就绪。
@@ -93,25 +107,85 @@ cd /root/autodl-tmp/data/raw/coco_val2017 && unzip -q val2017.zip   # → val201
 ### 4.3 数据怎么进 pipeline
 图像 workload 的数据流（与文本对称，只换"行"的内容 + 计数函数）：
 ```
-PostgreSQL 表（图像 bytea 或路径列）
-  → Daft DataFrame 读出（数据引擎，df["image"] 列）
+PostgreSQL image_documents.image（canonical BYTEA 轨道）
+  → Daft lazy DataFrame（禁止 driver to_arrow/collect）
   → Ray worker CPU decode（JPEG decode + resize 224 + normalize）  ← 重 CPU 段
-  → CPU→GPU transfer（每图 ~600KB）                                ← 搬运段
-  → CLIP image encoder（GPU）                                       ← GPU 段
+  → ImageEmbeddingBatch(preprocessed_tensor, work_units)             ← typed boundary
+  → 常驻 ClipTensorActor（每 GPU 一个，forward-only）                ← GPU 段
   → pgvector 写回（512d 向量）
 ```
-**文本 pipeline 是 `df["prompt"]`，图像是 `df["image"]`——这是"模态无关、只换数据列"的设计点**。
+source URI/共享文件路径只能作独立 baseline，不能与 BYTEA 轨道混为同一实验。
 
 ## 5. 怎么操作（serving 引擎 + 跑实验）
 
-### 5.1 serving 架构（plan "ours" 路径 B）
-CLIP serving **不能复用 vLLM**。按 `image_clip_workload_lock_20260731.md` §2 的决定：
+### 5.1 当前实现状态
 
-- **主路径（ours）B**：**CLIP embedding HTTP endpoint**（FastAPI 包 transformers CLIP）+ 上游 Ray worker 做 CPU decode（重），项目 scheduler（K_max / flush / credit，观测 CLIP endpoint 队列）→ Ray adapter → CLIP endpoint。
-- **baseline A**：Daft `@daft.cls(gpus=1)` Native（decode + CLIP 在同一 Daft GPU worker，Daft morsel/backpressure 自己做 overlap）——PolarDB 式强 baseline。
-- **claim 门槛**：只有 ours 显著优于 Daft Native，才能声称"模型服务感知调度 > 通用 overlap"（相对 PolarDB Lakebase 的核心 claim）。
+已实现：
 
-### 5.2 第一刀：分阶段瓶颈画像（先测，不是先优化）
+- `BatchRequest.work_units/work_unit` 及 scheduler/least-work/Ray adapter 中性计量；
+- `src.image.DaftImageSource` lazy source；
+- `ClipImagePreprocessor`、typed `ImageEmbeddingBatch/Result`；
+- `ClipTensorActor`：常驻 GPU、只接收预处理 tensor、输出 projected + L2-normalized embedding。
+
+尚未实现：把以上模块串成完整 PG→Daft→Ray→pgvector runner、阶段 trace、写回和
+正式 baseline runner。因此下面只做**合同 smoke**，不能产出方法结论。
+
+### 5.2 Ray GPU actor 合同 smoke（单卡）
+
+确保此时没有 vLLM 或其他 GPU 实验占卡，然后运行：
+
+```bash
+cd /root/autodl-tmp/ai-operator
+export IMAGE_MODEL_PATH=/root/autodl-tmp/models/clip-vit-base-patch32
+PYTHONPATH=code /root/miniconda3/bin/python - <<'PY'
+import os
+from pathlib import Path
+import ray
+from src.image import ClipImagePreprocessor, ClipTensorActor, ImageEmbeddingBatch
+
+model = os.environ["IMAGE_MODEL_PATH"]
+image_path = next(Path("/root/autodl-tmp/data/raw/coco_val2017/val2017").glob("*.jpg"))
+pixels = ClipImagePreprocessor(model).preprocess([image_path.read_bytes()])
+
+ray.init(num_gpus=1)
+RemoteActor = ray.remote(num_gpus=1, num_cpus=1)(ClipTensorActor)
+actor = RemoteActor.remote(model, processor_revision=model, dtype="float16")
+print(ray.get(actor.ready.remote()))
+batch = ImageEmbeddingBatch(
+    doc_ids=(image_path.stem,),
+    payload=pixels,
+    input_kind="preprocessed_tensor",
+    work_units=224 * 224,
+    work_unit="pixels",
+)
+result = ray.get(actor.embed.remote(batch))
+print("IMAGE_ACTOR_OK", result.embeddings.shape, result.embeddings.dtype,
+      float((result.embeddings[0] ** 2).sum()))
+ray.shutdown()
+PY
+```
+
+通过条件：`IMAGE_ACTOR_OK (1, 512) float32`，最后的平方和约为 1，且
+`nvidia-smi` 中只出现一个 actor 占用一张 GPU。
+
+### 5.3 vLLM pooling 强服务 baseline
+
+当前 vLLM 已支持 CLIP 图像 embedding。它接收 encoded image、在服务内部预处理，
+因此是不同阶段边界的 baseline，不能与 tensor actor 只按一个总吞吐数混读。使用
+独立 vLLM venv，且与 Ray actor **串行运行**：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  -m vllm.entrypoints.openai.api_server \
+  --model /root/autodl-tmp/models/clip-vit-base-patch32 \
+  --served-model-name clip-vit-b32 --runner pooling \
+  --host 127.0.0.1 --port 8100
+```
+
+请求格式以 vLLM 官方 `examples/pooling/embed/vision_embedding_online.py` 为准。
+正式实验必须记录 vLLM 版本、runner、processor placement 和服务端 batching 参数。
+
+### 5.4 已完成：分阶段瓶颈画像
 **第一步不是写优化策略，是先画像——确认瓶颈到底在哪段、有多重。** 把 §4.3 的数据流分阶段计时：
 - DB-read（PostgreSQL 取图）
 - CPU JPEG decode + resize + normalize
@@ -120,8 +194,44 @@ CLIP serving **不能复用 vLLM**。按 `image_clip_workload_lock_20260731.md` 
 
 这是"找数据搬运瓶颈"的直接验证，也是后续策略优化的基线。跑法类似文本侧的 GPU-backed E2E motivation profile（`motivation/results/gpu/`，fine vs coalesced 13.4× 那套），只是换模态 + 分阶段更细。
 
-### 5.3 go/no-go 门禁
-跑 §6 smoke（5000 图）→ 按 `image_clip_workload_lock` §6 的 **ratio>0.3** 门禁决定是否晋级正式规模。
+5K×100 画像已经通过 `ratio>0.3` 门禁；不得重复跑画像代替端到端 runner gate。
+
+### 5.5 当前实现边界的受控复测
+
+旧画像使用 `CLIPProcessor(..., return_tensors="pt")`，当前实现使用
+`ClipImagePreprocessor(..., return_tensors="np") → ClipTensorActor`。两者不能直接
+视作同一条路径。同步本次代码后，在没有其他 GPU runner 时执行：
+
+```bash
+cd /root/autodl-tmp/ai-operator
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+set +a
+
+RUN_ID=image_clip_preprocess_variants_$(date +%Y%m%d_%H%M%S)
+OUT=/root/autodl-tmp/experiment-artifacts/$RUN_ID
+mkdir -p "$OUT"
+
+PYTHONPATH=code /root/miniconda3/bin/python \
+  code/scripts/profile_image_clip_preprocess_variants.py \
+  --model "$IMAGE_MODEL_PATH" \
+  --pg-dsn "$DATABASE_URL" \
+  --limit 5000 --batch-sizes 1,32,128 \
+  --warmup 5 --repeats 30 --seed 20260801 \
+  --out-csv "$OUT/raw_repeats.csv" \
+  --out-manifest "$OUT/manifest.json" \
+  >"$OUT/run.log" 2>&1
+```
+
+这是一项实现边界画像，不是正式方法实验。有效结果必须满足：
+
+- `production_np`、`legacy_pt` 均完成；torchvision backend 不可用时在 manifest
+  记录 skip 原因，不能静默丢臂；
+- 非 reference embedding 对 `production_np` 的逐行最小 cosine ≥0.999；
+- raw CSV 保留每个 repeat，不只保留均值；同一批图像内 variant 顺序随机交错；
+- CSV 含 processor/backend/output kind、torch/transformers、PG/pgvector 和 GPU；
+- 若 torchvision 或 production-np 将 CPU/GPU 失衡降到原门禁以下，应撤回 slow
+  processor 外推，不能故意保留慢实现制造优化空间。
 
 ## 6. 注意事项（坑汇总）
 
@@ -130,7 +240,8 @@ CLIP serving **不能复用 vLLM**。按 `image_clip_workload_lock_20260731.md` 
 | `huggingface-cli download` 在 hf_hub 1.x 坏 | 打印 help、0 文件 | 改 Python `snapshot_download`（§3.2） |
 | transformers 5.x `get_image_features` 返回类型变 | `.shape` 报 AttributeError | 取 `.pooler_output`（§3.3） |
 | COCO 走 turbo 反而慢/不通 | turbo 只代理 github/HF | COCO 直连 cocodataset.org，不 source turbo |
-| CLIP 无 KV/prefix | vLLM 观测指标不适用 | 改采 CPU decode/transfer/embed 计时 + endpoint 队列深度（§2） |
+| CLIP 无 KV/prefix | 文本 KV/TTFT 指标不适用 | 改采 preprocess/transfer/embed/actor queue/overlap（§2） |
+| 在 AutoDL 强行上 Triton | 无 Docker，编译依赖大 | 首版用 Ray GPU actor；Triton只在容器环境补 upper bound |
 | 磁盘 | smoke ~2.5G 够；正式集（COCO train/ImageNet）要清盘/挂数据盘 | smoke 先行，正式前清盘 |
 | 代码同步 | 远端 git 常落后本地 main | 跑前同步（见 `deploy/autodl/README.md` §1 同步 gotcha） |
 | scoop 边界 | prefix-aware 切片已被 SOLO(ICML'26)/Liu、llm-d/Preble、Daft v0.6.9 占 | 本项目走**数据搬运瓶颈切片**（un-scooped），避开 prefix-aware |

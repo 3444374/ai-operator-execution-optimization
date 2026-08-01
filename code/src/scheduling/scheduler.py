@@ -280,7 +280,7 @@ class SynchronousScheduler:
                     submission_context,
                     per_endpoint_limit=self.per_endpoint_limit,
                     per_endpoint_work_limit=self.per_endpoint_work_limit,
-                    request_work=envelope.request.estimated_total_tokens,
+                    request_work=envelope.request.estimated_work_units,
                 )
                 if self.per_endpoint_admission:
                     capacity_topology = self._topology_with_endpoint_admission(
@@ -342,7 +342,7 @@ class SynchronousScheduler:
                     endpoint_id=route.endpoint_id,
                     estimated_work=max(
                         1,
-                        envelope.request.estimated_total_tokens,
+                        envelope.request.estimated_work_units,
                     ),
                     weight=self.job_weight,
                 )
@@ -374,7 +374,7 @@ class SynchronousScheduler:
                 route.endpoint_id,
                 endpoint.gpu_id,
                 self.epoch_clock(),
-                envelope.request.estimated_total_tokens,
+                envelope.request.estimated_work_units,
             )
             pending.append((handle, envelope))
             max_inflight_seen = max(max_inflight_seen, len(pending))

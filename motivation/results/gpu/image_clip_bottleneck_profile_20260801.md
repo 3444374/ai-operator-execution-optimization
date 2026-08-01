@@ -8,7 +8,9 @@ image AI_EMBED (CLIP) 锁定为首个 workload 后、建 runner 前，先回答�
 
 判据：> 0.3 → **GO**（建 path-B runner）；< 0.1 → NO-GO；中间 → BORDERLINE。
 
-> ✅ **本报告为 5K 规范跑**（5000 张 COCO val2017 × 100 iters/batch，~5min）——publishable 级稳定数字（p95 紧贴 p50），VERDICT: GO。
+> ✅ **本报告为 5K 稳定画像**（5000 张 COCO val2017 作为采样池，100
+> iters/batch，约 5min）：p95 紧贴 p50，足以通过“是否继续建设 E2E runner”的
+> 动机门禁；它不是端到端方法实验，不能单独作为论文性能结论。
 
 ## Setup
 
@@ -30,7 +32,7 @@ image AI_EMBED (CLIP) 锁定为首个 workload 后、建 runner 前，先回答�
 PostgreSQL image_documents.image (bytea)
   -> pg_read        bulk-fetch bytea（一次查 5000 行，摊到 /img）
   -> pil_decode     JPEG decode + convert RGB               [CPU]
-  -> cpu_preprocess CLIPProcessor resize(224) + normalize   [CPU]
+  -> cpu_preprocess CLIPProcessor slow preprocessing path   [CPU]
   -> transfer       CPU tensor -> GPU (.to(cuda))           [H2D]
   -> gpu_embed      CLIP forward, .pooler_output            [GPU]
 ```
@@ -54,46 +56,76 @@ GPU 阶段用 `torch.cuda.synchronize()` 包住，wall clock 反映真实设备�
 
 **事实**：
 - **VERDICT: GO**。实用 batch（≥16）ratio 13.8–18.3，远超 0.3 门禁。
-- 瓶颈是 **CLIPProcessor resize+normalize（`cpu_preprocess` ~5.2–5.7 ms/img）**——随 batch 基本不下降（per-image CPU 工作），而 `gpu_embed` 随 batch 摊销急降（3.90 → 0.29 ms/img）。
+- 该配置下的瓶颈是 **CLIPProcessor slow preprocessing path**
+  （`cpu_preprocess` ~5.2–5.7 ms/img）——随 batch 基本不下降，而
+  `gpu_embed` 随 batch 摊销急降（3.90 → 0.29 ms/img）。子阶段补测只直接归因出
+  resize ~1.3ms；其余大部分仍是未细分的 processor overhead。
 - **不是** JPEG decode（0.04–0.10 ms/img）、**不是** CPU→GPU transfer（0.08–0.19 ms/img）、**不是** PG-read（0.755 ms/img bulk 摊销）。
-- B=128 单 batch：`cpu_preprocess` 5.21×128 ≈ 667 ms vs `gpu_embed` 0.297×128 ≈ 38 ms。同一 worker 串行（先 preprocess 再 embed）时 **GPU 忙约 5.3%、空转约 94.7%**；B=256 空转约 94.8%（几乎不变——preproc 主导且固定）。
+- B=128 单 batch：`cpu_preprocess` 5.21×128 ≈ 667 ms vs `gpu_embed`
+  0.297×128 ≈ 38 ms。若二者在同一 worker 严格串行且忽略其他开销，GPU forward
+  时间只占这两段总时间约 5.3%；这是由阶段计时推导的**理论串行占比**，不是
+  `nvidia-smi` 时间序列实测的“GPU 空转 94.7%”。
 - ratio 随 batch **渐近**（13.8→17.5→17.6→17.7→18.3），B≥32 后基本饱和在 ~18：preproc 扁平、embed 在 B=256 已近地板（0.286 ms），再加大 batch ratio 不会显著上升。
 
 **推断**：
-- "数据搬运瓶颈"更精确是 **CPU 预处理（resize+normalize）计算瓶颈**——仍是 CPU-vs-GPU 异构性的体现，但根因在 CLIPProcessor 的 CPU 变换，不在 JPEG decode 或 H2D 搬运。
-- 印证 path-B 架构（`image_clip_workload_lock_20260731.md` §2）：CPU decode+preprocess 放上游 Ray worker、CLIP 跑独立 endpoint，让 **CPU 预处理与 GPU embed overlap**——对照 Daft `@daft.cls` Native（选项 A）在同一 GPU worker 串行做 preprocess+embed、GPU 在 preprocess 期间空转。**本 profile 量化了为什么 path-B 必须分离 CPU 预处理**（否则 GPU 空转 ~95%）。
+- “数据搬运瓶颈”更精确是当前实现的 **CPU 预处理路径瓶颈**——仍是
+  CPU-vs-GPU 异构性的体现，但当前证据不支持把全部 residual 归因到某个具体
+  resize、转换或 tensor 操作。
+- 该比例支持继续验证 path-B 架构（`image_clip_workload_lock_20260731.md` §2）：
+  CPU decode+preprocess 放上游 Ray worker、CLIP 跑独立 actor，以尝试 overlap。
+  但 profile 只证明“存在可重叠工作”，没有证明分离后一定提升 E2E；Ray 调度、
+  object transfer、actor queue 和写回开销可能抵消收益，必须由端到端对照决定。
 - `gpu_embed` 随 batch 摊销（B=1 3.90 ms → B=256 0.29 ms）证实 CLIP 无 KV / 无生成、纯 forward 高度可批；但 CPU preprocess 不随之下降，故 batch 越大 CPU/GPU 失衡越严重（ratio 1.5 → 18.3）。
 
 **不能声称**：
 - 这是**单进程、单卡、单模型（CLIP ViT-B/32）画像**，没有调度、没有 overlap、没有写回——不能声称任何策略收益，只回答"瓶颈在哪、有多重"。
-- `cpu_preprocess` ~5 ms/img 是 CLIPProcessor 当前实现的实测值（resize BICUBIC + to_tensor + normalize），**版本/实现相关**（transformers 5.14.1）。换更快的预处理（GPU-side resize、torchvision JIT 等）会改变绝对值；但"CPU 预处理主导"的结构在 CPU 预处理路径下成立。子步拆分见文末「附：preproc 子阶段拆分」——resize 只 ~1.3 ms（~25%），residual（PIL→numpy→tensor 转换 + 逐图循环）~3.8 ms（~74%）才是大头。
+- `cpu_preprocess` ~5 ms/img 是 transformers 5.14.1 的
+  `CLIPProcessor(..., return_tensors="pt")` slow path 实测值，不能外推到
+  `return_tensors="np"`、`CLIPImageProcessorFast`、GPU-side preprocess 或其他
+  processor 版本。子步拆分只确认 resize ~1.3 ms；旧脚本得到的约 3.8 ms
+  residual 是“未被四个 method wrapper 覆盖的时间”，不是对其内部组成的实测分解。
 - pg_read 0.755 ms/img 是 **bulk 摊销**（一次 SELECT 5000 行）；真实流式/分批读会更大（path-B runner 范畴，本画像未测）。
 
 ## 对课题含义
 
 - **§6 go/no-go 门禁通过（GO）**——image AI_EMBED (CLIP) 作为首个 workload 成立：CPU 数据准备是真实、重、可量化的瓶颈（~5 ms/img，是 GPU embed 的 14–18×），异构调度（CPU 预处理 vs GPU embed 的 overlap）有明确舞台。
-- **path-B 架构决策获得量化动机**：CPU preprocess 必须与 GPU embed 分离并 overlap，否则 GPU 空转 ~95%。这把 `image_clip_workload_lock` §2 的 A vs B 决定从"设计选择"升级为"有动机数据支撑"。
+- **path-B 获得了继续实现和验证的量化动机**：CPU preprocess 与 GPU embed
+  存在明显阶段失衡；是否应分离、能否形成有效 overlap，仍由 E2E gate 判定。
 - **A（状态感知请求成形/提交）+ B（代价估计）方向**在此 workload 上有实际可优化空间：观测 CLIP endpoint 状态、按 frame-budget + CPU-prep 节奏组织提交，目标正是压低这 ~95% GPU 空转。
 
 ## 下一步
 
-1. 建 path-B runner：PG → Daft → Ray CPU decode+preprocess → CLIP endpoint → pgvector，复用本脚本的 `load_clip()` / `pil_decode()` / `cpu_preprocess()` / `clip_encode()`（已按 code/AGENTS.md 代码质量总则写成可复用 stage 函数）。
+1. 建 path-B runner：PG → Daft → Ray CPU decode+preprocess → CLIP actor →
+   pgvector。生产路径复用 `code/src/image/` 的 typed contracts、preprocessor 和
+   actor；不得从 profiling 脚本反向 import 实现。
 2. `image_clip_workload_lock` §7 对照臂：bounded direct CLIP / **Daft `@daft.cls` Native（A，关键强 baseline）** / Ray Data / naive / **ours（B + A 状态感知调度）**——claim 门槛：ours 相对 Daft Native 的 images/s 或 SLO-goodput **>+5% 且 SLO 违约 <1%** 才晋级。
 3. （可选）若日后要测**流式/分批 pg_read** 的真实成本，在 path-B runner 里按 chunked SELECT 计时，本单进程画像不含该口径。
 
 ## 附：preproc 子阶段拆分（2026-08-01 补测）
 
-把 `cpu_preprocess`（整 ~5.2 ms/img）按 CLIPImageProcessor 自身方法拆分——包住 `resize`/`center_crop`/`rescale`/`normalize` 计时，外加 whole-`processor()` 总时间与 residual（5K × 100 iters，脚本 `code/scripts/profile_clip_preproc_stages.py`，原始 `clip_preproc_stages_20260801.csv`）：
+把 `cpu_preprocess`（整 ~5.2 ms/img）按 CLIPImageProcessor 自身方法拆分——
+包住 `resize`/`center_crop`/`rescale`/`normalize` 计时，外加
+whole-`processor()` 总时间与未归因时间。下表是**旧版脚本**以“总时间 p50 −
+各阶段 p50 之和”计算的近似值（5000 图采样池、100 iters；原始
+`clip_preproc_stages_20260801.csv`）；合并后的脚本已改为逐 iteration 求差再计算
+p50/p95，需在新代码路径复测后生成新 CSV，不能覆盖这份历史证据：
 
-| B | resize | crop | rescale | normalize | 子步求和 | total preproc | **residual** |
+| B | resize | crop | rescale | normalize | 子步求和 | total preproc | **未归因（近似）** |
 |---|---|---|---|---|---|---|---|
 | 1 | 1.49 | 0.025 | 0 | 0.062 | 1.58 | 5.72 | **4.15** |
 | 32 | 1.29 | 0.006 | 0 | 0.043 | 1.34 | 5.11 | **3.77** |
 | 128 | 1.26 | 0.003 | 0 | 0.023 | 1.29 | 5.13 | **3.85** |
 
-**修正一处估算**：曾凭印象估"BICUBIC resize 占大头（~3-4 ms）"——实测不对。resize 只 ~1.3 ms/img（~25%）；crop/rescale/normalize 可忽略（rescale 在 transformers 5.14.1 折叠进 normalize、不单独触发）。**真正占大头的是 residual ~3.8 ms/img（~74%）** = CLIPImageProcessor「slow」路径里未被命名方法覆盖的部分：PIL→numpy 转换、被折叠的 rescale、numpy→tensor + 批堆叠、逐图 Python 循环开销。
+**能确定的修正**：曾凭印象估“BICUBIC resize 占大头（~3–4 ms）”，实测不对；
+resize 约 1.3 ms/img（约总时间 25%）。四个 wrapper 没覆盖约 3.8 ms/img，但当前
+instrumentation 没有继续分解它，所以不能把 PIL→NumPy、rescale、tensor stacking
+或 Python 循环中的任一项写成主因。
 
-**含义**：preproc 瓶颈不是"resize 算法重"，而是 **slow CLIPImageProcessor 逐图 CPU 转换路径整体重**——这反而更强地支撑"用 `CLIPImageProcessorFast`（torchvision 后端）/ GPU-side preprocess 能大幅压低 preproc"（大头是转换开销，不是 resize 本身）。本项目故意保留 CPU slow 路径以制造异构舞台。子步细节**不改变 headline**（CPU preproc 5 ms >> GPU embed 0.3 ms；ratio ~18；GPU 空转 ~95%），只把"5 ms 花在哪"讲清楚。residual 还可进一步拆（np.array / torch.from_numpy / stack / 循环），需更深桩，按需补。
+**含义**：当前 slow processor 路径整体较重，值得把
+`CLIPImageProcessorFast`、当前 `return_tensors="np"` 边界和 GPU-side preprocess
+作为受控对照；不能在没有数据时声称它们“一定大幅降低”成本。正式实验也不能
+故意保留较慢实现来制造优化空间：ours 与 baseline 必须冻结相同的模型、processor
+语义和输出质量，slow/fast 只能作为显式实验因子。
 
 ## 原始数据
 

@@ -17,6 +17,8 @@ code/
 │   ├── pgai_sql_operator_profile.py      ← pgai SQL 触发面画像（ai.ollama_embed via pgai 扩展）
 │   ├── local_embedding_server.py         ← 本地 OpenAI 兼容 embedding 服务（Ollama）
 │   ├── daft_text_organizer_smoke.py      ← Daft 文本 DataFrame / into_batches / Ray runner smoke
+│   ├── profile_image_clip_preprocess_variants.py ← 图像 production/legacy/torchvision 交错画像
+│   ├── profile_clip_preproc_stages.py     ← 历史 slow processor 子阶段诊断
 │   └── summarize_output_aware_bfd.py     ← BFD 正式重复实验的长表统计汇总
 ├── configs/                              ← 后续工程配置文件（当前为空）
 ├── src/
@@ -28,6 +30,7 @@ code/
 │   ├── packing.py                         ← 与模态无关的确定性 BFD 与 row-cap-first 候选
 │   ├── runner_lease.py                    ← 场景输出目录的原子单写者租约与显式 stale recovery
 │   ├── model_backends.py                  ← sync/async compatible HTTP 与 multi-prompt completion backend
+│   ├── image/                             ← 图像 typed contracts、lazy source、CPU preprocess 与 CLIP tensor actor
 │   ├── baselines/                         ← direct Chat/Completions、官方 runtime 与统一 gate
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
@@ -56,10 +59,11 @@ code/
 │   ├── test_shared_credit_ray.py          ← named Ray actor ownership 测试
 │   ├── test_runner_lease.py               ← runner 活跃 owner、stale recovery 与 fingerprint 门禁
 │   ├── test_model_backends.py            ← 模型后端最小单元测试
+│   ├── test_image_contracts.py            ← 图像 embedding/source/tensor boundary 单元测试
 │   ├── test_sinks.py                     ← 写回后端最小单元测试
 │   ├── test_workloads.py                 ← 内置 workload seed 单元测试
 │   └── test_import_ai_complete_workload.py ← ShareGPT/BurstGPT importer 单元测试
-└── requirements.txt                      ← Python 依赖（numpy, pyarrow<25, ray, psycopg, daft, torch, transformers）
+└── requirements.txt                      ← Python 依赖（numpy, pyarrow<25, ray, psycopg, daft, torch, transformers, Pillow）
 ```
 
 安装依赖：
@@ -106,6 +110,11 @@ now lives under `code/src/`:
 - `packing.py`: deterministic, modality-neutral classic BFD and a
   row-cap-first placement candidate sharing the same validation and ordering.
 - `model_backends.py`: `fake` debug backend, `compatible_http` embedding/completion backend, and Ollama native completion backend.
+- `image/`: engine-independent image batch/result semantics, a lazy Daft
+  PostgreSQL image source, CPU CLIP preprocessing, and a tensor-only GPU actor.
+  The actor owns no hidden batching; organizer/scheduler remains the batching
+  owner. The complete image E2E runner and pgvector writeback wiring are still
+  pending and must not be inferred from these foundation modules.
 - `runtime_env.py`: one shared contract for `PYTHONPATH` plus single-threaded
   OpenBLAS/MKL/OMP/NumExpr settings inherited by Ray workers and multi-job
   subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per
