@@ -147,9 +147,10 @@ image_embeddings(doc_id BIGINT, workload_name TEXT, model_revision TEXT,
 > CPU 准备/GPU embed 比为 **13.8–18.3**；这证明值得建设 E2E runner，但不是方法
 > 性能结论。子阶段补测只直接归因出 resize ~1.3ms，约 3.8ms 尚未细分；“GPU
 > 空转 ~95%”已修正为由串行阶段时间推导的理论非-forward占比。当前代码改为
-> `return_tensors="np" → ClipTensorActor`，正式 build 前补 production_np / legacy_pt /
-> torchvision+PIL / torchvision+tensor-decode 交错复测并做 embedding parity gate。详见
-> `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
+> `return_tensors="np" → ClipTensorActor`。该边界已在 `f3d17af` 上以四变体、6 个
+> batch size、5+30 repeats 完成交错复测：tensor fast path 提升 1.14–1.22×，但
+> CPU prepare 仍为 actor 的 13.8–31.2×；cosine=1/max_abs=0。详见
+> `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
 
 **目标**：在 all-in 搭完整 pipeline 前，用最小成本回答一个问题——**CPU decode 在我们的设置下是否真的足够重，让异构调度有真实变量？**
 
@@ -165,11 +166,12 @@ image_embeddings(doc_id BIGINT, workload_name TEXT, model_revision TEXT,
 
 **这是 karpathy "先定义可验证目标、做最小实验" 的落地——用半天数据决定是否 all-in。**
 
-**实现边界复测**：使用
+**实现边界复测（✅ 已完成）**：使用
 `code/scripts/profile_image_clip_preprocess_variants.py`，同一批图像内交错三条
 processor 路径，保留 raw repeats；必须满足 embedding cosine gate，且不能故意保留
 slow processor 制造策略空间。若生产/torchvision 路径令 CPU/GPU 比降到门禁以下，
-应撤回“CPU preprocess 是主优化舞台”的外推，但仍保留历史 slow-path 结果。
+应撤回“CPU preprocess 是主优化舞台”的外推，但仍保留历史 slow-path 结果。本次
+fast path 未触发撤回条件，不过它只支持继续建设 E2E，不能证明调度收益。
 
 ---
 

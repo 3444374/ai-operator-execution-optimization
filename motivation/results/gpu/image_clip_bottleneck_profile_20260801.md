@@ -127,6 +127,11 @@ instrumentation 没有继续分解它，所以不能把 PIL→NumPy、rescale、
 故意保留较慢实现来制造优化空间：ours 与 baseline 必须冻结相同的模型、processor
 语义和输出质量，slow/fast 只能作为显式实验因子。
 
+上述实现边界复测现已完成：`image_clip_preprocess_variants_20260801/` 保存
+production-np、legacy-pt、torchvision+PIL/tensor-decode 四臂 720 条 raw repeats。
+tensor fast path 提升约 1.14–1.22×，但 CPU prepare 仍为 actor 的 13.8–31.2×；
+embedding parity 通过。该结果保留 E2E build 动机，但仍不证明 path-B 方法收益。
+
 ## 原始数据
 
 ```text

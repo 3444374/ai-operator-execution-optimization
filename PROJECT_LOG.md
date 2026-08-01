@@ -3302,3 +3302,19 @@
 - **fast baseline 修正**：torchvision processor 若仍输入 PIL，会先做转换，实测与
   slow path 几乎相同，不能代表官方 fast-path 能力。复测拆为 torchvision+PIL 与
   torchvision tensor-decode 两臂；后者才检验 tensor backend 的性能/质量 trade-off。
+
+## 2026-08-01 CLIP 当前实现边界正式画像完成并同步
+
+- **远端运行**：AutoDL 单卡，提交 `f3d17af`，COCO val 5000 图采样池，batch
+  1/16/32/64/128/256，每格 5 warmup + 30 formal，四变体随机交错；720/720 raw
+  rows 完整，PG18.4/pgvector0.8.5/Torch2.12.1/Transformers5.14.1 元数据齐全。
+- **质量**：修复真 cosine 与 float32 normalization 后，四臂最小 cosine=1、
+  max_abs=0；无 silent skip。首次空模型 env gate 和错误 cosine formal 均保留在远端
+  独立失败目录，不混入正式结果。
+- **性能事实**：torchvision tensor-decode 相对 production-np 的配对串行 profile
+  提升 1.14–1.22×（B≥16 为 30/30 repeats 同向）；但 fast CPU prepare 仍为
+  4.44–4.78ms/image、是 actor 的 13.8–31.2×，阶段失衡未消失。
+- **证据边界**：结果只支持继续建设 E2E overlap runner；不能声称胜过 Daft Native、
+  Ray Data 或 vLLM pooling，也不能把 profile speedup 写成调度策略收益。
+- **同步**：raw CSV、manifest、run log 和七步报告纳入
+  `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。

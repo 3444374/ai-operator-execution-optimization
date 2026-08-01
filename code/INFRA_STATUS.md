@@ -262,7 +262,9 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 - **两项策略联合关系**：18 单元筛选与候选重复已经完成；当前单 GPU 上联合候选
   未显著优于独立拼接，因此保留分层配置与联合搜索工具，不增加联合在线控制器。
 - **多模态泛化验证**：策略接口和中性 `cost_units` 边界已具备；COCO val 5K 的
-  CLIP motivation/profile 已完成并通过门禁（CPU 准备/GPU embed=13.8–18.3）。
+  CLIP 初始 slow-path 与当前实现边界画像均完成。tensor fast path 相对
+  production-np 串行 profile 约 1.14–1.22×，但 CPU prepare 仍为 actor 的
+  13.8–31.2×，因此 E2E build 动机保留。
   但真实 image source/frame-cost adapter、CLIP HTTP endpoint、path-B runner 和
   正式策略/baseline 结果尚未完成。
 - **算子代价估计（共同使能组件）**：初版实现与 grouped held-out 评估已完成，可提供

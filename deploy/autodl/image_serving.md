@@ -239,6 +239,10 @@ PYTHONPATH=code /root/miniconda3/bin/python \
 - 若 torchvision 或 production-np 将 CPU/GPU 失衡降到原门禁以下，应撤回 slow
   processor 外推，不能故意保留慢实现制造优化空间。
 
+2026-08-01 已按 `f3d17af` 完成 5000 图、6 batch sizes、四变体、5+30 repeats；
+结果已同步到 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
+命令保留作复现入口，不应无条件重复消耗 GPU。
+
 ## 6. 注意事项（坑汇总）
 
 | 坑 | 表现 | 解法 |

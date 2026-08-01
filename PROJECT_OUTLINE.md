@@ -12,7 +12,7 @@
 
 **2026-07-29 文献基线升级**：多模态仍是正文泛化验证。算子代价估计从“补充讨论”提升为数据组织和调度提交控制共同依赖的重要组件，但不单独扩张成第三项研究内容。首版采用简单解析模型 + profile 校准 + residual correction，用于 work/service/JCT、active-work/K、组织、路由和多 job remaining-work/SLO 判断。
 
-**2026-08-01 image-first 执行方向锁定**：项目内部已锁定 **A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）**，首个 workload 为 image AI_EMBED（CLIP）；文本 vLLM 遗留实验转为 `parked-conditional`，不是废弃。外部题目是否采用“DB↔GPU 经 Daft 桥接”的 scope reframe 仍待导师/学长确认，这与内部实施顺序分开记录。CLIP 5K 初始画像在历史 slow-pt processor 路径上通过 fatal-flaw 门禁：实用 batch（≥16）的 CPU 准备/GPU embed 比为 **13.8–18.3**；sub-stage 只直接归因出 resize 约 1.3ms，其余 processor 时间尚未拆清。当前先复测 production-np/torchvision processor 边界，再进入 path-B runner 与强 baseline 建设，见 `experiments/plans/experiment_status_and_gaps.md` §0、`experiments/plans/image_clip_workload_lock_20260731.md` 和 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
+**2026-08-01 image-first 执行方向锁定**：项目内部已锁定 **A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）**，首个 workload 为 image AI_EMBED（CLIP）；文本 vLLM 遗留实验转为 `parked-conditional`，不是废弃。外部题目是否采用“DB↔GPU 经 Daft 桥接”的 scope reframe 仍待导师/学长确认，这与内部实施顺序分开记录。CLIP 5K 初始 slow-pt 画像和当前实现边界复测均通过门禁：production-np 的 CPU prepare 约 5.2–5.6ms/image；更强 torchvision tensor-decode 虽带来约 1.14–1.22× 串行 profile 加速，CPU prepare 仍为 actor 的 13.8–31.2×。当前进入 path-B E2E runner 与强 baseline 建设，见 `experiments/plans/experiment_status_and_gaps.md` §0、`experiments/plans/image_clip_workload_lock_20260731.md` 和 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
 
 当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本文中作为 workload 入口，研究重点是上游 Ray 数据执行层的调度优化——探索数据组织策略和提交控制策略，利用 Ray actor 实现去中心化自适应提交。Daft 作为数据引擎，提供 Rust 执行内核、Arrow 零拷贝、Morsel 流式背压和 `@daft.cls` GPU UDF 接口。
 
@@ -108,8 +108,9 @@
 2. `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`
    - **COCO val 5K × 100 iterations 的 image-CLIP fatal-flaw 门禁**。
    - 实用 batch（≥16）的 CPU 准备/GPU embed 比为 `13.8–18.3`，B=128 串行下 GPU 约 95% 时间等待上游。
-   - 历史 slow-pt 路径的 CLIPProcessor 总预处理约 5.2ms/image；resize 仅约
-     1.3ms，其余时间尚未细分，且需要按当前 production-np 边界复测。
+   - production-np 总 CPU prepare 约 5.2–5.6ms/image；torchvision tensor-decode
+     降至约 4.4–4.8ms，但仍显著重于 GPU actor。历史 method wrapper 只直接归因出
+     resize 约 1.3ms，其余 processor 时间仍未细分。
    - 这是 motivation/profile 的 GO 证据，不是 path-B 策略胜过 Daft Native 的结果。
 3. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
    - 真实 GPU-backed embedding 链路拆分（AI_EMBED 预研，已完成）。

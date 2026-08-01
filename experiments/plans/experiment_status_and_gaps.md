@@ -8,14 +8,14 @@ Date: 2026-07-20（最后更新：2026-08-01，方向 pivot：image-first（A �
 
 **方向决定（2026-08-01；本节为该决定的记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `image_clip_workload_lock_20260731.md` §0「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
 
-**✅ §6 初始 go/no-go 门禁已通过（GO）**（2026-08-01，
-`motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`）：历史
-slow-pt 路径的 CPU 准备/GPU embed=**13.8–18.3**。该结果只支持继续 build；
-sub-stage 证据确认 resize 约 1.3ms，其余约 3.8ms 尚未归因，且 95% 是理论串行
-非-forward占比而非 GPU trace。当前先用
-`profile_image_clip_preprocess_variants.py` 对 production-np / legacy-pt /
-torchvision+PIL / torchvision+tensor-decode 做交错、质量门禁复测，再进入
-path-B E2E runner 和 §7 对照臂。
+**✅ §6 go/no-go 与实现边界复测均已通过（GO）**（2026-08-01）：历史 slow-pt
+路径 CPU 准备/GPU embed=**13.8–18.3**；随后在 `f3d17af` 上用 5000 图、四变体、
+6 batch sizes、5+30 repeats 交错复测。torchvision tensor-decode 相对
+production-np 的配对串行吞吐为 **1.14–1.22×**，但 CPU prepare 仍为 actor 的
+**13.8–31.2×**；720/720 rows 完整，embedding cosine=1/max_abs=0。因而 slow
+processor 混淆没有推翻异构阶段失衡，但 95% 仍只能写成理论串行非-forward占比。
+下一步进入 path-B E2E runner 和 §7 对照臂。原始数据与七步报告见
+`motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
 
 **过门禁后（image build，顺序固定）**：① 中性 work-unit + lazy image source + typed CLIP tensor actor 基础合同已实现；下一步补 path B runner（PG→Daft→Ray CPU decode/preprocess→Ray CLIP GPU actor→pgvector，复用 scheduler/tracing）→ ② image §7 对照臂（见 `image_clip_workload_lock_20260731.md` §7；bounded direct CLIP / **Daft `@daft.cls` Native 强 baseline** / vLLM pooling / Ray Data / naive / ours，+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
 

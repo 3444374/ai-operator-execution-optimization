@@ -313,7 +313,11 @@ def main() -> None:
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     out_manifest.parent.mkdir(parents=True, exist_ok=True)
     with out_csv.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(raw_rows[0]))
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=list(raw_rows[0]),
+            lineterminator="\n",
+        )
         writer.writeheader()
         writer.writerows(raw_rows)
     out_manifest.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")

@@ -94,7 +94,8 @@ baseline 的证据。
 | 项目总纲 | `PROJECT_OUTLINE.md` |
 | 当前执行状态与 parked 项 | `experiments/plans/experiment_status_and_gaps.md` §0 |
 | 图像 workload、baseline 与门禁 | `experiments/plans/image_clip_workload_lock_20260731.md` |
-| 5K CLIP 瓶颈结果 | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md` |
+| 5K CLIP 初始画像 | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md` |
+| 当前实现边界复测 | `motivation/results/gpu/image_clip_preprocess_variants_20260801/` |
 | 正式机制证据台账 | `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` |
 | 代码完成度与边界 | `code/INFRA_STATUS.md` |
 | 文献与设计依据 | `research/knowledge_hub.md` |
