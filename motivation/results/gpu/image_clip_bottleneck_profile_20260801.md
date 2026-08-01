@@ -8,7 +8,7 @@ image AI_EMBED (CLIP) 锁定为首个 workload 后、建 runner 前，先回答�
 
 判据：> 0.3 → **GO**（建 path-B runner）；< 0.1 → NO-GO；中间 → BORDERLINE。
 
-> ✅ **本报告为 5K 规范跑**（5000 张 COCO val2017 × 100 iters/batch，~5min）。早先 1024 张 × 50 iters 的"试试"首跑已给出一致结论（ratio 13–17）；本 5K 跑为 publishable 级稳定数字，结论相同（GO）。
+> ✅ **本报告为 5K 规范跑**（5000 张 COCO val2017 × 100 iters/batch，~5min）——publishable 级稳定数字（p95 紧贴 p50），VERDICT: GO。
 
 ## Setup
 

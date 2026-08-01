@@ -3,7 +3,7 @@
 日期：2026-07-31
 状态：**🔴 首个 workload（2026-07-31 校正回升）**。学长反馈的核心判据：数据搬运瓶颈有两段——送 vLLM（拥挤）+ **DB 读出来 / CPU 搬到 GPU**（机会）；当前 prompt 文本每行 ~1KB、搬运太轻，瓶颈不显现。**图像 CLIP 每行 CPU→GPU 搬运 ~600KB（文本的 ~600×）+ JPEG decode+resize 重**，让 DB 读 + CPU→GPU 搬运瓶颈真正显现——这正是满足判据的首选 workload。**注意**：回升的理由是"让数据搬运瓶颈显现"，**与冷启动（机制，parked）无关**；CLIP 不绑死在冷启动旗舰上。详见 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10 + §10.1（benchmark 三层）。
 
-> ✅ **2026-08-01 更新**：方向已锁 A+B（见 `experiment_status_and_gaps.md` §0）；**§6 go/no-go 门禁已过（GO，ratio 13–17，CPU preprocess 主导）** → 下方「暂停 build」**已解除**，进入 path-B runner 建设期。首跑 1024 图 / 50 iters（"试试"量级），**5K COCO val + 加长 redo 待跑**。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
+> ✅ **2026-08-01 更新**：方向已锁 A+B（见 `experiment_status_and_gaps.md` §0）；**§6 go/no-go 门禁已过（GO，5K 规范跑 ratio 13.8–18.3，CPU preprocess 主导、GPU 串行空转 ~95%）** → 下方「暂停 build」**已解除**，进入 path-B runner 建设期。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
 
 关联：`research/daft_db_gpu_bridge_direction_scope_20260731.md`；`research/evaluation_metrics_survey_20260731.md` 附录 A.4 / B.4；`notes/communication_notes.md` §5；`code/INFRA_STATUS.md` §6–§7；`PROJECT_OUTLINE.md` §5.3（多模态泛化）。
 
@@ -99,7 +99,7 @@ image_embeddings(id BIGINT PK, embedding vector(512), model TEXT, ...)
 
 ## 6. 最小验证实验（fatal-flaw 门禁，必跑）
 
-> ✅ **结果（2026-08-01，已通过 GO）**：5K COCO val × 100 iters 正式跑，ratio = CPU 准备/GPU embed 在实用 batch（≥16）**13.8–18.3**（B=256 渐近 ~18），远超 0.3 门禁；p95 紧贴 p50。瓶颈 = CLIPProcessor resize+normalize（~5.2 ms/img），非 decode/transfer/pg_read(0.755 bulk)；B=128 串行下 GPU 空转 ~95%。结论与 1024 首跑一致。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`（脚本 `code/scripts/profile_image_clip_bottleneck.py` + `import_coco_images.py`）。
+> ✅ **结果（2026-08-01，已通过 GO）**：5K COCO val × 100 iters 正式跑，ratio = CPU 准备/GPU embed 在实用 batch（≥16）**13.8–18.3**（B=256 渐近 ~18），远超 0.3 门禁；p95 紧贴 p50。瓶颈 = CLIPProcessor resize+normalize（~5.2 ms/img），非 decode/transfer/pg_read(0.755 bulk)；B=128 串行下 GPU 空转 ~95%。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`（脚本 `code/scripts/profile_image_clip_bottleneck.py` + `import_coco_images.py`）。
 
 **目标**：在 all-in 搭完整 pipeline 前，用最小成本回答一个问题——**CPU decode 在我们的设置下是否真的足够重，让异构调度有真实变量？**
 

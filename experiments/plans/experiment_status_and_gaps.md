@@ -8,7 +8,7 @@ Date: 2026-07-20（最后更新：2026-08-01，方向 pivot：image-first（A �
 
 **方向决定（2026-08-01；本节为该决定的记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `image_clip_workload_lock_20260731.md` §0「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
 
-**✅ §6 go/no-go 门禁已通过（GO）**（2026-08-01，`motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`）：ratio = CPU 准备 / GPU embed，实用 batch（≥16）**13–17**，远超 0.3 门禁；瓶颈是 CLIPProcessor resize+normalize（~5.2 ms/img），不是 decode/transfer/pg_read。**⚠️ 首跑为 1024 图 × 50 iters（"试试"量级）；§6 规范的 5K COCO val + 加长 redo 仍待跑**（publishable 级稳定数字；结论预期不翻转）。过门禁 → 下一步建 path-B runner（PG→Daft→Ray CPU decode+preprocess→CLIP endpoint→pgvector）+ image §7 对照臂。详见 `image_clip_workload_lock_20260731.md` §6/§7。
+**✅ §6 go/no-go 门禁已通过（GO）**（2026-08-01，`motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`，**5K 规范跑** 5000 图 × 100 iters）：ratio = CPU 准备 / GPU embed，实用 batch（≥16）**13.8–18.3**（B=256 渐近 ~18），远超 0.3 门禁；瓶颈是 CLIPProcessor resize+normalize（~5.2 ms/img），不是 decode/transfer/pg_read(0.755 ms/img bulk)；B=128 串行下 GPU 空转 ~95%。过门禁 → 下一步建 path-B runner（PG→Daft→Ray CPU decode+preprocess→CLIP endpoint→pgvector）+ image §7 对照臂。详见 `image_clip_workload_lock_20260731.md` §6/§7。
 
 **过门禁后（image build，顺序固定）**：① 写 CLIP embedding adapter + path B runner（PG→Daft→Ray CPU decode→CLIP endpoint→pgvector，复用 organizer/scheduler/tracing）→ ② image §7 对照臂（见 `image_clip_workload_lock_20260731.md` §7；bounded direct CLIP / **Daft `@daft.cls` Native 强 baseline** / Ray Data / naive / ours，+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 CLIP endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
 
@@ -88,7 +88,7 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 
 | 实验 | 状态 |
 |---|---|
-| CLIP embedding (COCO/ImageNet subset) AI_EMBED | ✅ **§6 go/no-go 门禁已过（GO，ratio 13–17，见 §0）**。首跑 1024 图 × 50 iters；**5K COCO val + 加长 redo 待跑**（publishable 级）。过门禁 → 建 path-B runner + image §7 对照臂（bounded direct / Daft Native / Ray Data / ours） |
+| CLIP embedding (COCO/ImageNet subset) AI_EMBED | ✅ **§6 go/no-go 门禁已过（GO，5K 规范跑 ratio 13.8–18.3，见 §0）**。过门禁 → 建 path-B runner + image §7 对照臂（bounded direct / Daft Native / Ray Data / ours） |
 
 ### 1.5 算子代价估计 & 写回
 
