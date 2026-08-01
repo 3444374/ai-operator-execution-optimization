@@ -172,16 +172,18 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
 | `code/scripts/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |
 | `code/scripts/profile_image_clip_preprocess_variants.py` | 交错比较当前 production-np、历史 legacy-pt 与 torchvision CLIP preprocessing，并经过同一 tensor actor 做 embedding parity gate | 复核 image motivation 是否能外推到当前代码边界；不是 E2E 方法结果 |
-| `code/scripts/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、fast processor、CLIP、batch/GPU 和输出审计下运行五个 fused/staged Daft/Ray Data/project arms | 跑 operator-E2E gate/formal；schema v9 fail-closed 核对 unique/pass/processed rows、source/stage/model CPU、线程、driver/H2D 与输出，当前不含 pgvector 写回 |
+| `code/scripts/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、模型/GPU 和输出审计下运行 Daft built-in、Ray Data native graph、诊断 reference 与 project arms | 跑 operator-E2E gate/formal；schema v10 记录 baseline provenance/scheduler owner，并拒绝把项目自写 Daft UDF 当正式 native baseline |
+| `code/configs/image_vendor_baselines.json` | Daft 官方 803,580-row ResNet18 Daft/Ray Data 入口的仓库、commit、文件 SHA256、官方 workload 与允许适配范围 | 跑 vendor-code parity 前核对；禁止改写官方调度图 |
 | `code/scripts/run_image_clip_matrix.py` | 固定 seed 交错编排图像 warmup/formal，持有结果目录租约并校验 unique rows、exactly-once、稳态时长 | 防止手工顺序漂移、并发写结果和短作业误入 formal；输出 raw CSV、逐 run manifest/log 与外层 schedule |
 | `code/scripts/import_coco_images.py` | 从目录或 ZIP 流式导入 COCO 图像 BYTEA，保留 source doc_id，单事务替换指定 workload | 正式规模避免完整解压副本；失败回滚，不覆盖无关 workload |
 | `code/scripts/profile_clip_transfer_ceiling.py` | CLIP batch16/64/256 的 R0 GPU-resident、R1 pinned FP16、R2 pageable FP32 逐 repeat CUDA-event/wall 诊断 | 分离 compute、H2D 与 ownership/dtype 边界；属于 synthetic ceiling，不作系统排名 |
 | `deploy/autodl/image_project_static_formal.example.json` | 60K unique × 2 logical passes 下 project 8/16 preprocess actors × active16/32 的交错 1+3 矩阵 | 先冻结项目静态点；分开审计 unique/pass/processed rows，任何 formal 查询阶段不足 60 秒则 fail closed |
 | `deploy/autodl/image_documents_workload_key.sql` | 把 legacy `PRIMARY KEY(doc_id)` 原子迁移为 `(workload_name, doc_id)`，重复执行安全、未知 schema 拒绝 | 允许 COCO train/val 保留重叠 source ID；导入、source、correctness/writeback 统一 workload-scoped identity |
 | `code/src/image/resource_budget.py` | 图像 Ray graph 的 source/preprocess/model CPU slot 精确账本与 affinity 超卖门禁 | 新增或调整 Daft/Ray Data/project actor/source 形状时复用；禁止只给常驻 actor CPU 而饿死 SQL reader |
+| `code/src/image/baseline_contract.py` | 图像 arm 的 upstream、实现来源、scheduler owner、自定义调度与 formal eligibility 合同 | 新增 baseline arm 或解释结果前读取；未登记来源的 arm fail closed |
 | `code/scripts/profile_clip_preproc_stages.py` | 对历史 slow CLIP processor 的可见 method 子阶段计时 | 只用于解释 resize 占比；未归因时间不能写成具体转换主因 |
 | `motivation/results/gpu/image_clip_preprocess_variants_20260801/` | 四种 CLIP processor/decode 边界的 720 条 raw repeats、manifest、日志与七步报告 | 判断 slow-path 动机能否外推到当前/fast 实现；不能当作 Daft/Ray E2E 方法结果 |
-| `motivation/results/gpu/image_clip_native_baseline_20260801/` | Fused Daft fractional-GPU actor 校准、5000 图×3 operator-E2E formal、派生 summary 与七步报告 | image-first 当前 fused 动机基线；区分 staged 强基线、CPU reservation 边界与待补 system-E2E |
+| `motivation/results/gpu/image_clip_native_baseline_20260801/` | 项目自写 fused Daft fractional-GPU UDF 校准、5000 图×3 operator-E2E、派生 summary 与七步报告 | 仅作历史机制诊断；不是官方/native baseline，不进入正式排名 |
 | `motivation/results/gpu/image_host_path_screening_20260802/` | 线程/资源合同修复后的 preprocess、source、active-window 单因素 screening、schema v8 分段诊断及 `raw/` 原始 CSV/manifest | 查图像 feeding 木桶迁移、16 actor/active32 候选和 PCIe 初步 NO-GO；不可当 formal baseline 排名 |
 | `motivation/results/gpu/image_clip_transfer_ceiling_20260802/` | R0/R1/R2 batch16/64/256×30 的 raw、summary 与七步 H2D/compute ceiling 报告 | pinned H2D约24–25GB/s、pageable/ownership 更重；synthetic diagnostic，不作系统排名或 PCIe 最终判决 |
 | `motivation/plans/image_host_data_path_bottleneck.md` | R0→R4 表示阶梯、低扰动/侵入式双轨计时与 CPU/Ray/PCIe/GPU GO/NO-GO 门槛 | 重测 image motivation、判断 GPU feeding 缺口来自哪一段时读 |
@@ -309,7 +311,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/profiling/ray.py` | Ray task/actor submitter、typed scheduler、credit 释放与 fan-in 接线 | 修改 actor pool、request-level replenishment 或 Ray 资源语义前读 |
 | `code/src/packing.py` | 与模态无关的确定性 BFD 标量容量装箱与指标 | 修改离线 batch membership、超预算行处理或 packing 指标前读 |
 | `code/src/model_backends.py` | fake debug backend、vLLM-compatible HTTP embedding/completion backend、Ollama native completion backend | 修改模型服务接入、vLLM/Ollama endpoint 或 AI_COMPLETE backend 前读 |
-| `code/src/image/` | 图像 typed batch/result/semantics、lazy Daft source、slow/fast CLIP preprocess、Daft `@daft.cls` baseline、bounded Ray CPU→GPU pipeline 与输出审计 | 实现 image path-B、切换 backend 或审计 embedding/执行语义前读 |
+| `code/src/image/` | 图像 typed batch/result/semantics、lazy Daft source、CLIP preprocess、vendor-native baseline、诊断 Daft UDF、bounded Ray CPU→GPU pipeline 与输出审计 | 实现 image path-B、切换 backend 或审计 embedding/执行语义前读 |
 | `code/src/image/resource_sampling.py` | host per-core CPU、visible/active-device GPU 的低频采样与明确汇总语义 | 图像 E2E 资源采样；不能把低频 GPU util 当 MFU |
 | `code/src/sinks.py` | `none/json_text/pgvector` embedding 写回与 completion JSON-text 写回 | 修改写回路径或后续接 Lance sink 前读 |
 | `code/src/metrics.py` | Stage timer、GPU/显存/功率时序汇总、能耗、MFU 估计和严格 header 契约的 CSV append helper | 修改 profiling 指标、资源效率、CSV 输出或计时边界前读 |
@@ -336,6 +338,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/test_image_clip_preprocess_variants.py` | 图像 processor 对照脚本的 spatial-work 与 embedding parity 计算测试 | 修改图像受控复测脚本后运行 |
 | `code/tests/test_image_execution.py` | 图像 streaming exactly-once、向量归一化和执行时间边界测试 | 修改图像 E2E baseline/pipeline 后运行 |
 | `code/tests/test_image_resource_sampling.py` | visible/active GPU 与 host busy-core 汇总测试 | 修改图像资源指标后运行 |
+| `code/tests/test_image_baseline_contract.py` | vendor-native eligibility、scheduler ownership 与诊断 reference fail-closed 测试 | 新增/改名图像 baseline arm 后运行 |
+| `code/tests/test_image_vendor_baseline_manifest.py` | 官方图像 baseline commit/file pin 与“禁止项目调度”适配策略测试 | 更新 upstream pin 或 vendor parity 合同时运行 |
 | `code/tests/test_sinks.py` | 写回后端最小单元测试 | 修改 sink/writeback 行为后运行 |
 | `code/tests/test_workloads.py` | 内置 workload seed 单元测试 | 修改 smoke/dev workload 后运行 |
 | `code/tests/test_token_budget_controller.py` | static/service-quantum budget 与 arrival EWMA 契约测试 | 修改动态预算选择规则后运行 |

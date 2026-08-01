@@ -1,4 +1,4 @@
-"""Official-style Ray Data SQL -> CPU preprocess -> GPU actor baseline."""
+"""Ray Data-native SQL -> CPU ``map_batches`` -> GPU actor baseline."""
 
 from __future__ import annotations
 
@@ -92,15 +92,15 @@ def build_ray_data_clip_pipeline(
     batch_size: int,
     cpu_workers: int,
     gpu_workers: int,
-    max_active_batches: int,
     torch_intraop_threads: int = 1,
     torch_interop_threads: int = 1,
 ):
     """Return one lazy Ray Data staged inference pipeline.
 
-    The SQL reader, CPU callable actors, and fixed GPU actor pool all remain
-    inside Ray Data.  ``max_active_batches`` maps to per-GPU in-flight tasks;
-    this keeps the baseline bounded instead of relying on an unbounded default.
+    The SQL reader, CPU callable actors, GPU actor pool, backpressure, and task
+    dispatch all remain inside Ray Data. The adapter defines only workload
+    UDFs and native worker/batch configuration; it does not implement project
+    admission or in-flight scheduling.
     """
     if not database_url:
         raise ValueError("database_url must be non-empty")
@@ -110,11 +110,8 @@ def build_ray_data_clip_pipeline(
         batch_size,
         cpu_workers,
         gpu_workers,
-        max_active_batches,
     ) <= 0:
-        raise ValueError("row, shard, batch, worker, and active values must be positive")
-    if max_active_batches < gpu_workers:
-        raise ValueError("max_active_batches must be at least gpu_workers")
+        raise ValueError("row, shard, batch, and worker values must be positive")
 
     import psycopg
     import ray.data
@@ -150,11 +147,7 @@ def build_ray_data_clip_pipeline(
         num_cpus=1,
         zero_copy_batch=True,
     )
-    in_flight_per_gpu = max(1, max_active_batches // gpu_workers)
-    gpu_pool = ray.data.ActorPoolStrategy(
-        size=gpu_workers,
-        max_tasks_in_flight_per_actor=in_flight_per_gpu,
-    )
+    gpu_pool = ray.data.ActorPoolStrategy(size=gpu_workers)
     return dataset.map_batches(
         RayDataClipPredictor,
         fn_constructor_kwargs={

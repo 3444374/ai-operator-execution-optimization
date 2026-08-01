@@ -33,10 +33,12 @@ BigVectorBench。
 [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)
 和对应结果目录读取，不再在本入口复制容易过期的参数与“下一步”。
 
-图像侧五个 operator arms 已进入同一 runner：Daft Native、Daft Ray、Daft staged、
-Ray Data staged 和 project Ray。fused baseline 已完成 5K×3 formal；两个 staged arms
-已经通过 256 行资源、正确性和双 GPU 可运行门禁，但独立 calibration、60 秒以上稳态
-formal、统一 pgvector sink、任务 ground truth 和失败 run 落盘仍未完成。当前执行状态
+图像 runner 已新增 Daft 内置 `embed_image` native arm；Ray Data arm 只使用官方
+`read_sql/map_batches/ActorPoolStrategy` graph，由 Ray Data 自己调度。原有 Daft
+Native/Ray/staged 是项目自写 UDF reference，旧 5K×3 数据只保留为机制诊断，不能称
+官方 baseline；旧 256 行 staged gate 也需在移除项目式 inflight 后重做 native gate。
+后续还需直接复用 Daft 官方 803,580-row ResNet18 脚本做 vendor-code parity，并完成
+60 秒以上稳态、统一 pgvector sink、任务 ground truth 和失败 run 落盘。当前执行状态
 以 [`plans/experiment_status_and_gaps.md`](plans/experiment_status_and_gaps.md) §0 为准。
 
 ## 目录分工

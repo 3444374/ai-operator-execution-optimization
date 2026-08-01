@@ -6,7 +6,7 @@
 
 研究方向：数据库 AI 负载的执行优化与调度。不回到传统数据库内核或 GPU 查询算子。
 
-**课题定位**：优化数据库 AI 算子外部执行链路的上游调度——数据如何组织为请求、以什么节奏发送、如何根据模型服务状态调节并发。vLLM 是文本 AI_COMPLETE 的部署平台；图像 AI_EMBED 主方法使用 typed Ray GPU actor，并以 vLLM pooling / fused Daft / Daft-on-Ray staged / Ray Data staged 作分层 baseline；均不修改模型内部。Ray 作为架构设计空间，利用其 actor 模型和异步能力实现调度方案。Daft 作为数据引擎（Rust 核心 + Arrow 零拷贝 + `@daft.cls` GPU UDF），从文本阶段直接接入，多模态阶段复用同一套 pipeline 代码。只赢 fused Daft 不能声称优于主流异构流水线；策略增量必须再对比冻结最佳项目静态点。
+**课题定位**：优化数据库 AI 算子外部执行链路的上游调度——数据如何组织为请求、以什么节奏发送、如何根据模型服务状态调节并发。vLLM 是文本 AI_COMPLETE 的部署平台；图像 AI_EMBED 主方法使用 typed Ray GPU actor，并以 vLLM pooling、Daft 内置 AI Function、官方多模态 benchmark 代码和 Ray Data native API graph 作分层 baseline；均不修改模型内部。Ray 作为架构设计空间，利用其 actor 模型和异步能力实现调度方案。Daft 作为数据引擎（Rust 核心 + Arrow 零拷贝 + `@daft.cls` GPU UDF），从文本阶段直接接入，多模态阶段复用同一套 pipeline 代码。项目自写 Daft UDF 只作 diagnostic reference；策略增量必须再对比冻结最佳项目静态点。
 
 **方向已收敛，策略候选池开放**：经过 2026-07-16 的讨论与文献收集，优化方向已明确收敛到上游调度（数据组织 + 提交控制），但具体策略不提前锁定——动态 batching（token-budget/length-align/prefix-aware）、K_max 自适应、queue-adaptive flush、actor pool 分池路由等均为候选方案，最终采用哪些由后续实验数据决定。新增候选策略应记入 `research/knowledge_hub.md` §5 供以后参考。
 
@@ -115,6 +115,11 @@ prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching **regime-de
 - 新实验必须有明确问题、运行命令、CSV 输出、结果解释
 - 区分数据生成、序列化、`ray.put`、fan-in、写回等阶段边界
 - warm-up 忽略或标注；Python baseline 与 Ray baseline 共享数据读取和写回路径
+- **正式 baseline 必须由被测系统拥有执行与调度**：优先直接运行官方 benchmark、
+  内置 AI Function 或官方推荐 API graph；项目只允许做数据源、统一 sink、质量审计和
+  指标采集适配。自写 actor pool、credit、inflight/backpressure 或重写框架执行器的
+  路径只能标为 diagnostic reference，不能进入 baseline 主排名。每个 run 必须记录
+  upstream URL/commit、实现来源、scheduler owner 和适配 diff。
 
 ## 6. 严谨性规则
 

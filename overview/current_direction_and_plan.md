@@ -14,11 +14,11 @@
   导师和学长确认；这不阻塞已经锁定的 image workload 与 path-B 工程验证。
 - **文本轨道不是废弃**：vLLM 文本实验已完成 regime-dependent 机制闭环，遗留 formal
   统一标为 `parked-conditional`，仅在论文正文需要文本结果时恢复。
-- **CLIP operator-E2E 门禁已通过**：在先校准 Daft actor shape 后，COCO val 5K×3
-  formal 中静态阶段拆分相对 fused Daft Native 单卡为 1.296×、相对 fused Daft Ray
-  双卡为 1.138×。Daft staged/Ray Data staged 已通过 256 行资源与正确性门禁，但尚未
-  完成独立校准和正式排名；下一步是 staged formal、统一 pgvector sink、direct ceiling
-  和资源归一化，而非继续做小画像。
+- **CLIP 诊断门禁已通过，但 native baseline 待重跑**：COCO val 5K×3 中项目静态
+  阶段拆分相对项目自写 fused Daft UDF 单/双卡为 1.296×/1.138×；这只作机制诊断。
+  当前已接入 Daft 内置 `embed_image`，Ray Data graph 也已移除项目式 inflight；下一步
+  重做 native gate，并直接复用官方 ResNet18 benchmark 代码，再补统一 pgvector sink、
+  direct ceiling 和资源归一化。
 
 ## 2. 课题定位
 
@@ -70,11 +70,11 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 
 ## 5. 当前实施顺序
 
-1. ✅ Fused Daft Native/Ray actor-shape 校准与 bounded project-Ray COCO 5K×3
+1. ✅ 项目自写 fused Daft UDF actor-shape 校准与 bounded project-Ray COCO 5K×3
    operator-E2E formal 已完成。
 2. 先跑 `motivation/plans/image_host_data_path_bottleneck.md` 的 R0→R4 表示阶梯，
    再给三臂接统一 pgvector sink，并补 bounded direct CLIP、CPU-budget-normalized
-   curve、Daft-on-Ray staged/Ray Data staged 的独立校准与 formal、vLLM pooling、naive 等完整 baseline；
+   curve、Daft built-in/官方 ResNet18 parity/Ray Data native graph 的独立校准与 formal、vLLM pooling、naive 等完整 baseline；
    OceanBase `AI_EMBED` 等待可部署环境。
 3. 在同 workload、同硬件、同计时边界下校准 frame budget、K、actor/endpoint 形状和静态 active work。
 4. 实现 A：读取 CLIP endpoint queue/active-work 的状态感知请求成形与提交。
@@ -85,9 +85,9 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 
 ## 6. 仍不能声称
 
-- 不能把静态阶段拆分胜过 Daft Native/Ray 写成“动态状态感知策略已胜出”；后者尚未
+- 不能把静态阶段拆分胜过项目自写 `daft_native/daft_ray` UDF 写成“动态状态感知策略已胜出”；后者尚未
   与冻结最佳静态 project pipeline 正式对照。
-- 不能把赢 fused Daft UDF 写成“优于 PolarDB/Daft 异构流水线”；staged baseline 目前只有 256 行 gate，没有正式规模排名。
+- 不能把赢项目自写 fused Daft UDF 写成“优于 Daft/PolarDB 原生流水线”；旧 staged gate 也只是 adapter 可行性，native baseline 尚无正式规模排名。
 - 不能把 CPU preprocess 主导写成“CPU→GPU 数据传输主导”。
 - 不能把 4-ep 病态 bounded 值当作服务上限，或把 text/image 跨协议吞吐直接比较。
 - 不能把 prefix/KV 机制迁移到 CLIP；CLIP 没有自回归 KV cache、TTFT 或 TPOT。
@@ -103,7 +103,7 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 | 图像 workload、baseline 与门禁 | `experiments/plans/image_clip_workload_lock_20260731.md` |
 | 5K CLIP 初始画像 | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md` |
 | 当前实现边界复测 | `motivation/results/gpu/image_clip_preprocess_variants_20260801/` |
-| CLIP Daft Native/Ray operator-E2E | `motivation/results/gpu/image_clip_native_baseline_20260801/` |
+| CLIP 项目自写 Daft UDF diagnostic | `motivation/results/gpu/image_clip_native_baseline_20260801/` |
 | 正式机制证据台账 | `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` |
 | 代码完成度与边界 | `code/INFRA_STATUS.md` |
 | 文献与设计依据 | `research/knowledge_hub.md` |

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "baselines": {
+    "daft_image_classification_2024": {
+      "status": "pinned_not_yet_executed_on_project_hardware",
+      "repository": "https://github.com/Eventual-Inc/Daft.git",
+      "commit": "3f5bdd175b7de3dcdf35765e1ba604b5c1cb8e15",
+      "source_directory": "benchmarking/ai/image_classification",
+      "upstream_files": {
+        "README.md": "974d38645b3ea606c761a858efdc63e266eae5b95c258564f33751241f89e59a",
+        "daft_main.py": "2f77e8fddafe65f9c22ccf3a25574051363a2ea010bc8315560a0904f6f7d65c",
+        "ray_data_main.py": "f0b9b0f12d068d545f86f293d2b07209351726168e0a5a27d7fdbd74ac3ff3e0"
+      },
+      "official_workload": {
+        "task": "ImageNet ResNet18 classification",
+        "rows": 803580,
+        "unique_images": 80358,
+        "repetitions_per_image": 10,
+        "batch_size": 100,
+        "official_gpu_workers": 8,
+        "official_daft_version": "0.6.2",
+        "official_ray_data_version": "2.49.2"
+      },
+      "formal_adapter_policy": {
+        "allowed": [
+          "credentials and input/output paths",
+          "GPU worker count to match physical hardware",
+          "external metrics collection",
+          "result correctness audit"
+        ],
+        "forbidden": [
+          "project actor pools",
+          "project credit or active-window admission",
+          "project routing or custom backpressure",
+          "rewriting the vendor execution graph"
+        ],
+        "adapter_diff_required": true
+      }
+    }
+  }
+}

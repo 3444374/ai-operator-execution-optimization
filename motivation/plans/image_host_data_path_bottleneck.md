@@ -59,16 +59,17 @@ pgvector sink 作为 R5 system-E2E 单独补充。它回答完整数据库作业
 R0–R4 的 PCIe/CPU 机制判定，避免写回掩盖上游瓶颈。
 
 R0/R1 是诊断 ceiling，不是项目需要击败的系统 baseline；R4 中必须同时包含 Daft
-fused UDF、Daft/Ray Data staged pipeline 和冻结最佳 project pipeline。当前已完成的
-Daft Native/Ray 数字仅属于 fused UDF 轨道，不能代替 staged 强 baseline。
+内置 AI Function、固定 upstream 的官方 ResNet18 parity、Ray Data native graph 和
+冻结最佳 project pipeline。当前已完成的 Daft Native/Ray 数字来自项目自写 UDF，
+只能作为 diagnostic reference。
 
 ## 3.1 主流执行栈对照，不预设谁有固定缺陷
 
 | 轨道 | 正式对照 | 公平边界 |
 |---|---|---|
-| fused data-engine | Daft Native、Daft Ray `@daft.cls` 内 preprocess+forward | 校准 batch 与 fractional-GPU actor shape；用于隔离粗资源边界，不代表 Daft 最强形态 |
-| staged Daft-on-Ray | Daft CPU decode/resize/processor → Daft GPU `@daft.cls` | 同一 lazy DataFrame、按算子资源声明、校准 batch/max-concurrency/actor shape |
-| staged Ray Data | Ray Data CPU `map_batches` → GPU callable-class actor pool | 固定 batch/actor pool/in-flight；不把默认参数当强 baseline |
+| Daft vendor-native | 内置 `decode_image → embed_image`；另跑官方 ResNet18 原脚本 | Daft 拥有 batching/backpressure；固定 upstream commit 和 adapter diff |
+| Daft UDF diagnostic | 项目自写 Daft Native/Ray fused/staged UDF | 只隔离粗资源边界，不进入官方 baseline 排名 |
+| Ray Data vendor-native | 官方 ResNet18 原脚本；数据库轨道用原生 `map_batches` graph | Ray Data 拥有 actor/task/backpressure；不注入项目 inflight/credit |
 | model service | vLLM pooling CLIP | processor 在服务内，单列 service ceiling 与 DB→service E2E，不和 tensor-only micro track 混读 |
 | proposed static | Daft source → Ray CPU preprocess → tensor-only GPU actor | 冻结静态 batch/active batches；动态策略全部关闭 |
 
@@ -76,7 +77,7 @@ Daft Native/Ray 数字仅属于 fused UDF 轨道，不能代替 staged 强 basel
 
 1. **matched physical/resource budget**：相同 GPU 数、CPU core reservation、数据行、
    batch 与冷/热生命周期；这是判断系统效率的主比较；
-2. **independently calibrated best-achievable**：每个系统独立调 actor/batch/in-flight，
+2. **independently calibrated best-achievable**：每个系统只通过其公开 native 参数调 worker/batch，
    这是判断各系统可达到上限的补充，不能替代 matched-resource 结论。
 
 现有官方系统本身已经提供 batch、actor pool、fractional GPU、in-flight/prefetch 等

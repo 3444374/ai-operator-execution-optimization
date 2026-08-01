@@ -1,4 +1,10 @@
-# Image CLIP：fused Daft Native/Ray 基线与阶段拆分动机实验
+# Image CLIP：项目自写 Daft UDF reference 与阶段拆分动机实验
+
+> **2026-08-02 provenance 更正**：本报告的 Daft arms 使用官方 `@daft.cls`/
+> Native/Ray runner，但 CLIP UDF、预处理和 staged graph 均由项目编写。它们只能作为
+> diagnostic reference，不能称 Daft 官方/native baseline。数值和机制诊断保留；正式
+> baseline 改用 Daft 内置 `embed_image`、固定 upstream commit 的官方 ResNet18 脚本，
+> 以及无项目调度代码的 Ray Data native graph。
 
 日期：2026-08-01
 代码：`ba1b7101ecfdaea989485f011f8e6d809e3ab68c`
@@ -7,7 +13,7 @@
 
 本实验回答一个先于策略设计的问题：在数据库图像 `AI_EMBED` 链路中，把
 JPEG decode/processor 与 CLIP GPU forward 从同一个 Daft GPU UDF 拆成有界的
-CPU→GPU 流水线，是否比经过独立 actor-shape 校准的 Daft 原生执行更快？
+CPU→GPU 流水线，是否比经过独立 actor-shape 校准的项目自写 Daft fused UDF 更快？
 
 - 机器：AutoDL，2× NVIDIA RTX 4090，32 vCPU。
 - 数据：PostgreSQL `image_documents` 中 COCO val2017 的 5000 条 JPEG `BYTEA`。
@@ -28,8 +34,8 @@ system-E2E，也不是只测 CLIP kernel 的 microbenchmark。
 
 | 路径 | 数据流 | 角色 |
 |---|---|---|
-| `daft_native` | PG lazy shards → `@daft.cls`，actor 内 preprocess+forward；Native runner | 单 GPU fused Daft baseline |
-| `daft_ray` | 同一个 `@daft.cls` UDF，仅切 Daft Ray runner | 双 GPU fused Daft/Ray baseline |
+| `daft_native` | PG lazy shards → 项目自写 `@daft.cls`，actor 内 preprocess+forward；Native runner | 单 GPU diagnostic reference |
+| `daft_ray` | 同一个项目 UDF，仅切 Daft Ray runner | 双 GPU diagnostic reference |
 | `project_ray` | PG lazy shards → Ray CPU preprocess actors → tensor-only CLIP GPU actors | 当前项目的静态有界阶段拆分路径 |
 
 Daft 0.7.21 Native runner 无法可靠隔离双 GPU，故不把单卡 Native 与双卡结果
@@ -94,7 +100,7 @@ first-output median 由 Daft Ray 的 15.43s 降为 8.90s。
 1. baseline actor shape 是一级变量。若直接使用 one-actor-per-GPU，会把单卡
    Daft baseline 低估约 1.7×；正式比较必须使用校准后的 4-actor 配置。
 2. 在同一物理机器、各自独立校准最佳配置下，阶段拆分在 3/3 repeats 中均快于
-   对应校准后的 fused Daft 基线；单卡增益 29.6%，双卡增益 13.8%。
+   对应校准后的项目自写 fused Daft reference；单卡增益 29.6%，双卡增益 13.8%。
 3. 继续复制 fused Daft actor 并非越多越好：双卡 6/8 actor 都退化，说明用模型
    副本换 CPU prepare 并发会很快撞上内存/调度竞争。
 4. 项目路径只保留每 GPU 一个模型副本。观测到的每卡显存峰值约 930 MiB，Daft
@@ -138,7 +144,7 @@ CPU prepare 并发，而阶段拆分允许增加 CPU workers 但不复制 GPU �
 ## 6. 对课题的含义
 
 这组结果提供了一个比旧 micro-profile 更直接的动机：在真实 PostgreSQL BYTEA→
-Daft→CLIP operator E2E 中，Daft fused GPU UDF 即使独立调到强运行点，仍存在
+Daft→CLIP operator E2E 中，项目自写 Daft fused GPU UDF 即使独立调到强运行点，仍存在
 阶段耦合与资源配比限制；CPU/GPU stage separation 能在固定物理主机上取得
 13.8%–29.6% 的可复现改善。CPU prepare、Ray/host copy、PCIe H2D 各自贡献多少，
 仍须由 R0→R4 表示阶梯复测确定。
@@ -146,7 +152,7 @@ Daft→CLIP operator E2E 中，Daft fused GPU UDF 即使独立调到强运行点
 它支持继续建设项目执行链路，但还不能证明后续“状态感知策略”优于最佳静态阶段拆分。
 今后的策略主对照必须是本项目冻结的最佳静态 pipeline，而不是重新拿 Daft fused
 当策略对照；fused Daft 的角色是系统/动机 baseline。是否存在架构级增量，还要先
-与 Daft-on-Ray/Ray Data staged pipeline 比较。
+与 Daft 内置 AI Function、官方 benchmark code 和 Ray Data native graph 比较。
 
 ## 7. 下一步
 

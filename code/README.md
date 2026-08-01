@@ -21,7 +21,7 @@ code/
 │   ├── run_image_clip_e2e.py          ← fused/staged Daft、Ray Data、project-Ray 图像 operator-E2E
 │   ├── profile_clip_preproc_stages.py     ← 历史 slow processor 子阶段诊断
 │   └── summarize_output_aware_bfd.py     ← BFD 正式重复实验的长表统计汇总
-├── configs/                              ← 后续工程配置文件（当前为空）
+├── configs/                              ← vendor baseline pin 与可复现实验配置
 ├── src/
 │   ├── sources.py                        ← PostgreSQL/Daft 数据入口后端
 │   ├── organizers.py                     ← ArrowOrganizer / DaftOrganizer 数据组织后端
@@ -67,6 +67,17 @@ code/
 │   └── test_import_ai_complete_workload.py ← ShareGPT/BurstGPT importer 单元测试
 └── requirements.txt                      ← Python 依赖（numpy, pyarrow<25, ray, psycopg, daft, torch, transformers, Pillow）
 ```
+
+图像 baseline 的来源合同由 `src/image/baseline_contract.py` 统一维护。正式 native
+baseline 当前为 Daft 内置 `embed_image` 和由 Ray Data 自己调度的官方
+`read_sql → map_batches(CPU) → map_batches(GPU)` graph；项目自写的 Daft fused/staged
+UDF 只保留为机制诊断 reference。所有 runner CSV/manifest 必须记录 scheduler owner、
+upstream source、是否包含项目调度代码和 formal eligibility。
+
+Daft 官方 803,580-row ResNet18 vendor-code baseline 固定在
+`configs/image_vendor_baselines.json`。该轨道直接运行固定 commit 的官方 Daft/Ray Data
+入口；允许的适配只有凭证/路径、物理 GPU 数、外部指标采集和结果审计，禁止加入项目
+actor pool、credit、active window、routing 或 backpressure。
 
 安装依赖：
 

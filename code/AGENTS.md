@@ -21,6 +21,12 @@
 - 不提前引入复杂框架；只有当重复逻辑稳定出现时才抽象。
 - 每条真实运行 CSV 必须记录实际 `server_version` 和 `pgvector_version`，不能靠目录名推断平台。
 - Python baseline、Ray task、Ray actor、模型服务等 baseline 要尽量共享同一数据读取和写回路径，避免 baseline 不可比。
+- baseline 共享的是输入、输出与计时合同，不共享项目调度实现。正式 baseline 必须
+  直接使用官方 benchmark、内置函数或官方 native API graph，让 Daft/Ray Data/产品
+  自己负责 batching、backpressure、actor/task 调度；项目 adapter 只能负责数据源、
+  sink、质量审计和指标采集。自写 UDF 可以作为 workload kernel，但不得包含项目
+  credit/inflight/router；自写框架执行图必须命名为 `diagnostic_reference`，不得冒充
+  official/native baseline。
 - 完成代码实现或功能测试后，按根规则同步更新 `learning/` 中的学习讲解。
 
 ## 代码质量总则（模块清晰 / 框架分明 / 低耦合 / 目标清晰）

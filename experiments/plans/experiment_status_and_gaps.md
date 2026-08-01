@@ -14,13 +14,14 @@ Date: 2026-07-20（最后更新：2026-08-02；image staged resource gate 与 ba
 production-np 的配对串行吞吐为 **1.14–1.22×**，但 CPU prepare 仍为 actor 的
 **13.8–31.2×**；720/720 rows 完整，embedding cosine=1/max_abs=0。因而 slow
 processor 混淆没有推翻异构阶段失衡，但 95% 仍只能写成理论串行非-forward占比。
-Fused Daft Native/Ray 与 bounded project-Ray operator-E2E runner 已实现；fractional-GPU
+项目自写 fused Daft Native/Ray 与 bounded project-Ray operator-E2E runner 已实现；fractional-GPU
 actor shape 已独立校准，5000 图×3 formal 已完成。项目阶段拆分相对最佳 Daft
 Native 单卡吞吐 +29.6%，相对最佳 Daft Ray 双卡 +13.8%，12/12 exactly-once；
 但它是同物理机器各自最佳点，不是相同 Ray CPU reservation 的资源效率证明，也不
-代表 Daft-on-Ray/Ray Data staged 强 baseline。两个 staged runner arms 已实现并通过
-256 行资源账本、exactly-once、双 GPU 可运行门禁；该 gate 不是性能排名。下一步先做
-staged 独立 calibration 与 60 秒以上稳态 formal，再补统一 pgvector sink、bounded
+代表 Daft 官方 native baseline。旧 staged reference arms 已通过 256 行资源账本、
+exactly-once、双 GPU 可运行门禁，但只能证明 adapter 能力。当前已新增 Daft 内置
+`embed_image`，并从 Ray Data arm 移除项目 `max_active_batches`；下一步先重做 native
+gate，再运行 Daft 官方 ResNet18 vendor-code parity 与 60 秒以上稳态 formal，补统一 pgvector sink、bounded
 direct ceiling 与 CPU-budget-normalized curve。
 实现边界复测见 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`，
 operator-E2E 原始数据和七步报告见

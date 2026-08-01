@@ -107,10 +107,11 @@
    - 边界：本地 rehearsal，不代表 PG18.3 内部平台结果。
    - 状态与缺口审计：`experiments/plans/experiment_status_and_gaps.md`。
 2. `motivation/results/gpu/image_clip_native_baseline_20260801/README.md`
-   - **图像 CLIP operator-E2E fused Daft 基线（当前 image-first 动机优先入口）**。
+   - **图像 CLIP operator-E2E 项目自写 Daft UDF 诊断（历史 image-first 动机入口）**。
    - 先校准 Daft fractional-GPU actor shape，再做 COCO 5000 图×3 formal：
-     project-Ray 相对单卡 Daft Native 1.296×，相对双卡 Daft Ray 1.138×。
-   - 结论只支持静态阶段拆分在同物理机器上优于独立校准的 fused UDF；尚不包含
+     project-Ray 相对项目自写单卡 `daft_native` UDF 1.296×，相对项目自写双卡
+     `daft_ray` UDF 1.138×。
+   - 结论只支持静态阶段拆分在同物理机器上优于独立校准的项目自写 fused UDF；尚不包含
      Daft-on-Ray/Ray Data staged、pgvector sink、bounded direct ceiling，也不是动态
      状态感知策略收益。
 3. `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`
@@ -119,7 +120,7 @@
    - production-np 总 CPU prepare 约 5.2–5.6ms/image；torchvision tensor-decode
      降至约 4.4–4.8ms，但仍显著重于 GPU actor。历史 method wrapper 只直接归因出
      resize 约 1.3ms，其余 processor 时间仍未细分。
-   - 这是 motivation/profile 的 GO 证据，不是 path-B 策略胜过 Daft Native 的结果。
+   - 这是 motivation/profile 的 GO 证据，不是 path-B 策略胜过 Daft 原生实现的结果。
 4. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
    - 真实 GPU-backed embedding 链路拆分（AI_EMBED 预研，已完成）。
    - 1024 行下 fine / coalesced 端到端约 `13.4x`。
@@ -134,9 +135,10 @@
 `motivation/plans/image_host_data_path_bottleneck.md` 完成 R0→R4 表示阶梯与
 schema v2 复测。当前证据只支持“阶段拆分有 operator-E2E 收益、CPU prepare 是候选
 限制”，不支持把 PCIe、CPU saturation 或 GPU MFU 写成已确认瓶颈。低扰动正式曲线
-与侵入式 CUDA/Nsight 机制诊断分开报告。当前 fused Daft 结果不能代表 PolarDB/Daft
-官方 staged 异构流水线。Daft staged 与 Ray Data staged 已通过 256 行资源/正确性
-门禁，但仍须在策略实验前完成独立校准和正式规模重复。
+与侵入式 CUDA/Nsight 机制诊断分开报告。当前 fused Daft 结果不能代表官方 native
+baseline。Daft 内置 `embed_image` 已接入；Ray Data native graph 已移除项目式
+inflight，需重做 256 行门禁。正式比较还必须直接复用官方 ResNet18 benchmark 代码
+并固定 upstream commit；项目自写 Daft staged/fused 仅保留为诊断 reference。
 
 **已完成**：
 - ✅ vLLM + Qwen2.5-1.5B baseline 建立（07-18）
@@ -211,9 +213,9 @@ schema v2 复测。当前证据只支持“阶段拆分有 operator-E2E 收益�
 **当前缺口与顺序（以 `experiments/plans/experiment_status_and_gaps.md` §0 为准）**：
 
 1. **Image fused operator-E2E gate**：中性 work-unit、lazy source、fast processor、
-   fused Daft Native/Ray 与 bounded `PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor`
+   项目自写 fused Daft Native/Ray diagnostic 与 bounded `PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor`
    runner 和 5K×3 formal 已完成。
-2. **补 system E2E 与完整强 baseline**：Daft-on-Ray staged 和 Ray Data staged
+2. **补 system E2E 与完整强 baseline**：Daft built-in、官方 ResNet18 parity 和 Ray Data native graph
    runner/256 行门禁已完成，下一步独立标定并做正式重复，再给系统臂接同一 pgvector sink；同时补 bounded direct CLIP、
    vLLM pooling、naive 和 ours。OceanBase AI_EMBED 等待可部署环境。当前 5K 结果只
    证明相对 fused UDF 的优化空间，尚未证明 ours 优于主流 staged pipeline。

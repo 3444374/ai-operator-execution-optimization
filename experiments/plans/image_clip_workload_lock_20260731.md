@@ -42,9 +42,10 @@ CLIP 是 embedding 模型，不是生成式 LLM，但当前 vLLM 已通过 pooli
 
 | 选项 | 输入和预处理边界 | 角色 | 采纳 |
 |---|---|---|---|
-| **Daft fused `@daft.cls(gpus=1)`** | 同一 GPU-reserved UDF 内 decode/preprocess + CLIP forward | 已完成校准的 fused baseline；用于暴露粗资源边界，但不代表 Daft 最强 staged 形态 | 必跑诊断/系统 baseline |
-| **Daft-on-Ray staged pipeline** | Daft CPU decode/resize/processor → Daft GPU 类 UDF | PolarDB/Daft 官方异构算子形态；与 ours 最接近的强框架 baseline | runner 与 256 行门禁已通过；待独立校准/formal |
-| **Ray Data staged pipeline** | CPU `map_batches` → GPU callable-class actor pool | 官方 streaming batch baseline | runner 与 256 行门禁已通过；待独立校准/formal |
+| **Daft built-in `embed_image`** | Daft `decode_image` → 内置 Transformers provider | Daft 自己拥有 batching/concurrency/backpressure 的主 native baseline | runner 已接入；待远端 gate/calibration/formal |
+| **官方 803,580-row ResNet18 parity** | 固定 `Eventual-Inc/Daft@3f5bdd175b7de3dcdf35765e1ba604b5c1cb8e15` 的 `daft_main.py` / `ray_data_main.py` | 公开 file/object track 的 vendor-code baseline | pin/文件哈希已记录；待双 4090 原图 gate，仅做白名单环境/指标适配 |
+| **Ray Data native API graph** | SQL source → CPU `map_batches` → GPU callable class | Ray Data 拥有调度/backpressure；workload UDF 不得包含项目策略 | 旧 gate 仅证明 adapter 可运行；移除项目 inflight 后重做 native gate |
+| **项目自写 Daft fused/staged UDF** | 自写 `@daft.cls` 内核与阶段边界 | 暴露阶段耦合的 diagnostic reference，不是官方 baseline | 保留历史诊断，不进入主排名 |
 | **vLLM pooling (`--runner pooling`)** | encoded image 进入服务，processor + pooling 在服务内部 | 与文本统一运维的成熟服务 baseline；官方说明 pooling 目前以功能便利为主，不保证优于 Transformers | 必跑服务 baseline；也是部署默认候选 |
 | **常驻 Ray CLIP GPU actor** | Daft/Ray CPU worker 做 decode/resize/normalize，GPU actor 只收 typed tensor batch 并 forward | 直接复用现有 Ray actor pool/backpressure；保留“CPU 准备与 GPU 推理分离”的可归因主路径 | **ours 主路径** |
 | Infinity / Ray Serve | encoded image 或服务内 preprocess，均自带 batching | 快速 smoke/补充 baseline；若使用必须冻结并记录隐藏 batching | 可选 |
@@ -54,8 +55,13 @@ CLIP 是 embedding 模型，不是生成式 LLM，但当前 vLLM 已通过 pooli
 `ImageEmbeddingBackend` 接口接入**常驻 Ray GPU actor**。CPU worker 产出
 preprocessed tensor，GPU actor 只执行 CLIP forward；项目已有 actor pool、credit、
 backpressure 和 exactly-once 机制可以直接复用。vLLM pooling 作为统一部署默认候选
-和强服务 baseline；Daft fused 只是一条已完成的系统臂，Daft-on-Ray/Ray Data staged
-虽已通过可运行性门禁，但完成独立校准和正式重复后才能判断“项目阶段拆分是否有额外价值”。
+和强服务 baseline；旧 Daft fused/staged UDF 只是一条项目自写诊断臂。正式框架结论
+必须来自 Daft 内置 AI Function、官方 ResNet18 parity 脚本和 Ray Data native graph。
+
+Daft built-in 校准只扫描其公开原生 `batch_size`；GPU concurrency/actor placement 由
+Daft 根据 Ray 集群 GPU 自行推断，不额外包项目 actor 或 admission。Transformers
+provider 当前使用模型默认 dtype，runner 必须记录 `provider_default`，不得把命令行
+`--dtype` 误记为已生效；公平比较同时报告相同默认精度控制和项目优化精度臂。
 
 **为什么不能只选 vLLM pooling**：它会把本轮 profile 中最重的
 decode/resize/normalize 移入服务端，无法直接验证“Daft/Ray 上游 CPU preprocess 与
@@ -74,9 +80,14 @@ AutoDL runbook 明确不使用 Docker，而 Triton 官方推荐 NGC 容器部署
   与 [vision embedding example](https://github.com/vllm-project/vllm/blob/main/examples/pooling/embed/vision_embedding_online.py)：
   CLIP 可用 `--runner pooling` 在线提供图像 embedding；官方同时说明 pooling 当前
   以功能便利为主，不保证优于直接 Transformers。
-- Daft 官方 [Working with GPUs](https://docs.daft.ai/en/stable/custom-code/gpu/)：
-  GPU UDF 使用 `@daft.cls` 常驻模型，且给出 CLIP image batch 示例；因此它是必须
-  对照的原生实现，而不是本项目重复实现的模块。
+- Daft 官方 [embed_image](https://docs.daft.ai/en/stable/api/functions/embed_image/)：
+  内置 AI Function 自行解析 provider 的 batch、concurrency、GPU 和 retry 配置；
+  因而它是数据库输入轨道的 native baseline。`@daft.cls` CLIP 示例只能证明 API
+  使用方式，项目重写后的 UDF 不再称官方 baseline。
+- Daft 官方 [image-classification benchmark](https://github.com/Eventual-Inc/Daft/tree/3f5bdd175b7de3dcdf35765e1ba604b5c1cb8e15/benchmarking/ai/image_classification)：
+  803,580 行（80,358 张 ImageNet 图重复 10 次）、ResNet18、batch 100；同目录同时
+  提供 Daft 与 Ray Data 原始入口。正式复现保持两张执行图不变，只把 8 GPU worker
+  改成当前物理 2 GPU，并外置采集指标。
 - PolarDB 官方 [CPU/GPU 异构算子编排和调度](https://help.aliyun.com/en/polardb/polardb-for-postgresql/heterogeneous-operator-scheduling)：
   CPU decode/resize 与 GPU 类 UDF 可在同一 Daft-on-Ray pipeline 中按算子声明资源并
   流式重叠；因此不能用 fused `@daft.cls` 代表完整 Daft/PolarDB-style baseline。
@@ -239,13 +250,15 @@ transfer、CLIP forward、Daft/Ray 调度和结果 fan-in，只暂时排除 pgve
 
 | 臂 | 唯一变化 | 角色 |
 |---|---|---|
-| `daft_native` | `@daft.cls(gpus=1)` + Native runner，UDF 内完成 preprocess+forward | 已校准 fused baseline；不是最终 staged 强 baseline |
-| `daft_ray` | 同一 UDF，仅切换 Daft Ray runner | 执行器成本归因 |
-| `daft_staged` | Daft Ray CPU 类 UDF → tensor-only GPU 类 UDF | 官方异构 staged 强 baseline |
-| `ray_data_staged` | Ray Data SQL shards → CPU `map_batches` → 固定 GPU actor pool | 官方 streaming staged 强 baseline |
+| `daft_builtin_embed` | Daft `decode_image` + 内置 `embed_image` | 正式 Daft native baseline；Daft 拥有隐藏 batching/backpressure |
+| upstream `daft_main.py` | 官方 803,580-row ResNet18 脚本 | public parity 的 Daft vendor-code baseline |
+| upstream `ray_data_main.py` | 同一官方目录中的 Ray Data 脚本 | public parity 的 Ray Data vendor-code baseline |
+| `ray_data_staged` | Ray Data SQL + 两个官方 `map_batches` stage | database track native-API baseline；无项目 active-work/inflight |
 | `project_ray` | Daft lazy source；Ray CPU preprocess actors 与 tensor-only GPU actors 有界重叠 | ours 当前主路径 |
+| `daft_native/daft_ray/daft_staged` | 项目自写 Daft UDF | diagnostic only；formal 默认 fail closed |
 
-执行顺序：先 256 行五臂 gate，全部通过后使用 COCO val 5000 行，batch=64、2 GPU。
+执行顺序：先对 native arms 做 256 行 gate，再使用相同 PostgreSQL workload 进入正式
+database track；官方 ResNet18 parity 在独立 ImageNet file/object track 运行。
 每次 invocation 先执行 64 行 preflight/warmup，但 formal 必须新建模型 worker：Daft
 每 query 天然重建 UDF actor，project-Ray 也显式销毁 warmup pool 后重建，避免生命周期
 不对称。五臂按预注册随机块顺序交错，3 个 formal repeats。
@@ -265,7 +278,7 @@ object-store peak/spill；system-E2E 排名需要所有 arm 接入相同 pgvecto
 所有 Ray-backed staged graph 必须显式预留
 `source reader slots + CPU preprocess actors（如有）+ GPU/model actor CPU slots`。2026-08-02
 门禁复现了只分配 `4+2=6 CPU` 时 SQL reader 无 slot、0-row 永久等待的资源死锁；
-runner 对 Ray Data、Daft staged 和 fused Daft Ray 分别建立精确资源账本，并在
+runner 对 Ray Data native graph 和项目路径分别建立精确资源账本，并在
 `ray.init` 前按 CPU affinity 拒绝物理超卖；cluster/host/declaration 分项写入 schema v8。
 Ray `num_cpus` 只是准入资源，不是线程 quota；schema v8 同时冻结并记录每 worker
 Torch intra-op/inter-op 线程，正式 matched-resource 默认 `1/1`。若 actor 实测线程
@@ -291,11 +304,11 @@ baseline 也获得更多 CPU preprocessing concurrency。冻结最佳 Daft shape
 使用相同 PostgreSQL source-shard 数重跑；不能把未经 actor-shape 校准的 Daft 数字
 作为 fused baseline。它不能替代 Daft-on-Ray staged pipeline 的独立 calibration。
 
-**2026-08-01 已完成**：单卡 Daft Native 最佳为 4 fused actors，双卡 Daft Ray
+**2026-08-01 历史 diagnostic 已完成**：项目自写的单卡 Daft Native UDF 最佳为 4 fused actors，双卡 Daft Ray
 最佳为 4 fused actors；6/8 actors 已出现明显竞争退化。5000 图×3 formal 中，
 project-Ray 相对最佳单卡 Native 为 1.296×，相对最佳双卡 Daft Ray 为 1.138×，
 3/3 repeats 同向。该结果通过 operator gate，但仍缺 pgvector system-E2E、bounded
-direct ceiling 和 CPU-budget-normalized curve。正式报告：
+direct ceiling 和 CPU-budget-normalized curve；它不再作为 official/native baseline。报告：
 `../../motivation/results/gpu/image_clip_native_baseline_20260801/README.md`。
 
 ### 7.3 完整对照臂
@@ -305,15 +318,17 @@ direct ceiling 和 CPU-budget-normalized curve。正式报告：
 | 臂 | 角色 |
 |---|---|
 | **bounded direct CLIP** | 物理上界（同协议绕过 Daft/Ray） |
-| **Daft fused `@daft.cls` Native/Ray** | 已完成的粗资源边界对照；不是 PolarDB staged pipeline 的替身 |
-| **Daft-on-Ray staged CPU→GPU** | ⭐ 与 ours 最接近的官方异构流水线强 baseline；256-row resource/correctness gate 已通过，待校准/formal |
+| **Daft built-in `decode_image → embed_image`** | 正式 database-track native baseline；由 Daft provider 拥有调度 |
+| **Daft 官方 ResNet18 script** | public file/object vendor-code baseline；固定 upstream commit |
+| **项目自写 Daft fused/staged UDF** | 历史粗资源边界诊断，不进入官方主排名 |
 | **PolarDB `classify_image` / Snowflake image `AI_CLASSIFY`** | 产品 SQL 语义参照；闭源服务不能在本机匹配硬件时只比较接口、质量口径和 timing boundary，不把厂商 raw time 与本项目排名 |
-| **Ray Data staged CPU→GPU** | 官方 streaming batch / actor-pool 框架 baseline；256-row resource/correctness gate 已通过，待校准/formal |
+| **Ray Data 官方 ResNet18 script + native API graph** | 分别承担 public parity 与 PostgreSQL database track；均不注入项目 inflight/credit |
 | **pgvector 直采 / 无组织串行** | 弱 baseline（仅诊断） |
 | **ours：项目 scheduler（frame-budget + K_max + flush，观测 CLIP endpoint 队列）** | 主路径 |
 
-> **直接 baseline**（必须跑 + 比数字，同杠杆=执行）：Daft fused、Daft staged、
-> Ray Data staged、naive、bounded direct；产品 SQL 仅在能做到同硬件/同模型/同输入时进入数值排名。
+> **直接 baseline**（必须跑 + 比数字，同杠杆=执行）：Daft built-in、官方
+> ResNet18 parity、Ray Data native graph、naive、bounded direct；项目自写 Daft UDF
+> 只作 diagnostic。产品 SQL 仅在能做到同硬件/同模型/同输入时进入数值排名。
 > **Related Work**（只引用 + 定位，不比数字，不同杠杆=语义）：LOTUS / Palimpzest / Abacus（语义优化）、Cortex/Oracle（闭源）、Smart/GaussML（重写/实现）。
 > 完整矩阵见 `database_ai_operator_baseline_matrix_20260729.md` + `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10.1。
 

@@ -93,22 +93,26 @@ class ExecutionResultTest(unittest.TestCase):
 
 
 class RayDataBaselineValidationTest(unittest.TestCase):
-    def test_rejects_active_batch_limit_below_gpu_count(self):
-        from src.image.source import ImageSourceConfig
+    def test_native_ray_data_graph_has_no_project_active_batch_knob(self):
+        import inspect
 
-        with self.assertRaisesRegex(ValueError, "at least gpu_workers"):
-            build_ray_data_clip_pipeline(
-                database_url="postgresql://example",
-                source_config=ImageSourceConfig("coco", limit=8),
-                source_shards=2,
-                processor_revision="processor",
-                model_revision="model",
-                dtype="float16",
-                batch_size=4,
-                cpu_workers=2,
-                gpu_workers=2,
-                max_active_batches=1,
-            )
+        parameters = inspect.signature(build_ray_data_clip_pipeline).parameters
+
+        self.assertNotIn("max_active_batches", parameters)
+
+    def test_native_ray_data_graph_contains_no_project_task_scheduler(self):
+        import inspect
+
+        source = inspect.getsource(build_ray_data_clip_pipeline)
+
+        for forbidden in (
+            "max_tasks_in_flight_per_actor",
+            "ray.wait",
+            "ray.get",
+            "@ray.remote",
+        ):
+            self.assertNotIn(forbidden, source)
+
 
 if __name__ == "__main__":
     unittest.main()

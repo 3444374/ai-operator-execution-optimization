@@ -40,6 +40,19 @@ class ImageResourceBudgetTest(unittest.TestCase):
         self.assertEqual(budget.cluster_slots, 10)
         self.assertIn("daft_sql_readers", budget.semantics)
 
+    def test_daft_builtin_leaves_concurrency_to_provider(self):
+        budget = build_ray_cpu_budget(
+            arm="daft_builtin_embed",
+            source_shards=4,
+            preprocess_workers=4,
+            gpu_workers=2,
+            model_workers=2,
+            host_slots=32,
+        )
+
+        self.assertEqual(budget.cluster_slots, 6)
+        self.assertIn("builtin_provider_owns_actual_concurrency", budget.semantics)
+
     def test_project_source_is_outside_ray_cluster(self):
         budget = build_ray_cpu_budget(
             arm="project_ray",

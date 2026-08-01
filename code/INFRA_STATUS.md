@@ -267,12 +267,14 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
   CLIP 初始 slow-path 与当前实现边界画像均完成。tensor fast path 相对
   production-np 串行 profile 约 1.14–1.22×，但 CPU prepare 仍为 actor 的
   13.8–31.2×，因此 E2E build 动机保留。
-  lazy image source、fused Daft Native/Ray baseline 与 bounded Ray CPU→GPU operator-E2E
-  runner/formal 已完成：独立校准后 project 相对单卡 Native 1.296×、双卡 Ray
+  lazy image source、项目自写 fused Daft UDF diagnostic 与 bounded Ray CPU→GPU operator-E2E
+  runner/formal 已完成：独立校准后 project 相对单卡 `daft_native` UDF 1.296×、双卡 `daft_ray` UDF
   1.138×。旧字段尚不能定位 CPU/Ray/PCIe/GPU 主瓶颈；schema v2 已补 CPU、
   active-device GPU、逻辑字节与可选侵入式 CUDA stage telemetry，等待按 R0→R4
-  表示阶梯复测。Daft-on-Ray/Ray Data staged runner 与 256 行资源/正确性 gate 已
-  完成，但独立 calibration/formal、统一 pgvector sink、CPU-budget-normalized curve、
+  表示阶梯复测。Daft 内置 `embed_image` native arm 已接入；Ray Data graph 已移除
+  项目 `max_active_batches`，由 Ray Data 原生调度。旧自写 Daft staged 及旧版含项目
+  active-window 的 Ray Data adapter 256 行 gate 只作可行性证据，native gate 需重跑。官方 ResNet18 parity、
+  独立 calibration/formal、统一 pgvector sink、CPU-budget-normalized curve、
   frame-cost 策略接线、CLIP HTTP/vLLM pooling 对照和正式策略结果尚未完成。
 - **算子代价估计（共同使能组件）**：初版实现与 grouped held-out 评估已完成，可提供
   粗粒度编排提示；独立时间段/新 workload 校准、预测区间和跨模型迁移仍未完成。
@@ -292,7 +294,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 | Actor pool / endpoint routing | 高（有界 slots/trace） | 双 GPU 1×256/2×128/4×64 formal | 多 actor 未过 5% 门槛；单 job 保留 1×256，多 job 分池待测 |
 | Shared-vLLM group runner | 高（代码/模板/真实 formal） | 双 4090 36/36 group run、63 formal job | shared-credit 容量安全、公平性通过；2-job 无增量，4-job 聚合过 5% 门槛但逐 repeat 不稳定，暂作高竞争条件性候选 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |
-| 多模态复用 | 中（五臂 operator runner 已具备） | 5K CLIP profile + fused formal + staged 256-row resource gate | 当前主线；待 staged 独立 calibration/formal、pgvector sink、frame-cost/state-aware policy 与完整服务 baseline |
+| 多模态复用 | 中（native + diagnostic + project operator runner） | 5K CLIP diagnostic + 旧 staged 256-row resource gate | 当前主线；待 Daft built-in/Ray Data native gate、官方 ResNet18 parity、pgvector sink、frame-cost/state-aware policy 与完整服务 baseline |
 | 算子代价估计 | 中 | 283 行、70 配置组、五个 held-out split | 粗粒度可用；不能作严格 SLO 预测 |
 
 ## 7. 后续设计与实施顺序
@@ -304,14 +306,15 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 2. ✅ PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor operator-E2E、exactly-once、
    fused Daft actor shape 与 ours 静态 shape 已完成；
 3. 先跑 image host data path R0→R4 动机实验，判定 CPU/Ray/PCIe/GPU 主限制；
-4. Daft-on-Ray staged 与 Ray Data staged 已实现并通过 256 行 gate；下一步独立校准
-   和 formal，接统一 pgvector sink，补 system-E2E、任务 ground truth、
+4. Daft built-in 已接入，Ray Data native graph 已移除项目式 inflight；下一步重做
+   native gate，并固定 upstream commit 运行官方 ResNet18 parity，再接统一 pgvector
+   sink，补 system-E2E、任务 ground truth、
    CPU-budget-normalized curve，并继续校准 bounded direct、vLLM pooling、naive；
 5. 在强静态点上实现 endpoint-state-aware 请求成形和 `<100 LOC` 代价模型 v1；
 6. 正式报告吞吐/JCT/tail/SLO、overlap、GPU busy、能耗和 Recall@10。
 
-5K CLIP operator-E2E 已证明静态阶段拆分在同物理机器上优于独立校准的 fused Daft
-Native/Ray；这仍不代表优于主流 staged pipeline、完整 system-E2E，或状态感知策略
+5K CLIP operator-E2E 只证明静态阶段拆分优于独立校准的项目自写 fused Daft UDF；
+这不代表优于 Daft/Ray Data 官方 native pipeline、完整 system-E2E，或状态感知策略
 已经胜过最佳静态路径。
 
 ### 已闭环：提交控制与局部联合实验

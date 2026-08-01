@@ -52,9 +52,16 @@ code/scripts/run_ai_operator_scenarios.py
 
 图像正式链路另有两个入口：
 
-- `run_image_clip_e2e.py`：单个 fused/staged/project arm 的 operator-E2E、资源、
-  正确性与 schema v9 原始记录（v9 将 `unique_images`、`dataset_passes` 与
-  processed `rows` 分离，防止用重复访问虚增唯一数据规模）；
+- `run_image_clip_e2e.py`：单个 vendor-native/diagnostic/project arm 的 operator-E2E、
+  资源、正确性与 schema v10 原始记录；v10 在 unique/pass/processed rows 之外记录
+  implementation provenance、scheduler owner 和 formal eligibility。Daft 内置
+  `embed_image` 与 Ray Data native graph 可作 baseline；项目自写 Daft UDF formal
+  默认拒绝，不能冒充官方实现；
+  Daft built-in 只使用公开原生 `batch_size`，GPU 并发由 provider/Daft 推断，dtype
+  记录为 `provider_default`，不会伪装成命令行 `--dtype` 已生效；
+- `../configs/image_vendor_baselines.json`：固定 Daft 官方 image-classification
+  benchmark 的 commit、入口 SHA256 与允许适配白名单；vendor-code parity 不通过
+  项目 runner 重写其 batching、actor 或 backpressure；
 - `run_image_clip_matrix.py`：读取 JSON 场景矩阵，用固定 seed 做 warmup + formal
   block 内交错，持有输出目录租约，并对 unique rows、exactly-once 与最小稳态时长
   fail closed。原始 CSV、逐 run manifest/stdout/stderr 和外层 schedule 必须保存在

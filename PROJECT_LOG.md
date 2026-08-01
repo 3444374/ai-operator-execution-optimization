@@ -3555,3 +3555,24 @@
 - **研究口径纠错**：`research/daft_db_gpu_bridge_direction_scope_20260731.md` 删除
   “执行优化空白”“厂商全闭源”“统一 BigVectorBench”和 OceanBase 文本 embedding
   冒充图像 CLIP baseline 的旧表述，改为公开 benchmark + 同机 DB track 双轨协议。
+
+## 2026-08-02 图像 baseline 原生性门禁
+
+- **口径收紧**：正式 baseline 必须直接运行 vendor benchmark、内置 AI Function 或
+  vendor-native API graph；项目只能适配 source/sink/审计/指标。项目自写 actor pool、
+  inflight/credit/backpressure 或重写执行图不得进入 baseline 主排名。
+- **代码调整**：新增 Daft 内置 `decode_image → embed_image` arm；Ray Data graph 删除
+  项目 `max_active_batches`，由 Ray Data 自己管理 actor task/backpressure。旧
+  `daft_native/daft_ray/daft_staged` 明确降级为 diagnostic reference，formal 默认
+  fail closed，只有显式 diagnostic override 才能运行且 eligibility 仍为 false。
+- **可审计 provenance**：schema v10/manifest 新增 implementation provenance、
+  scheduler owner、custom scheduling、formal eligibility 和 upstream source；新增
+  `code/src/image/baseline_contract.py` 与对应单测。
+- **官方代码固定**：Daft image-classification vendor-code parity 固定到
+  `Eventual-Inc/Daft@3f5bdd175b7de3dcdf35765e1ba604b5c1cb8e15`，并记录官方
+  `README.md`、`daft_main.py`、`ray_data_main.py` 的 SHA256、803,580-row workload
+  和适配白名单；禁止重写 vendor batching/actor/backpressure。
+- **实验路线修正**：旧 1.296×/1.138× 保留为项目自写 Daft UDF 的阶段耦合动机，
+  不再称官方 Daft baseline。正式图像比较改为 Daft built-in、固定 upstream commit 的
+  官方 803,580-row ResNet18 Daft/Ray Data 脚本、Ray Data database native graph、
+  bounded direct 和 frozen project static。

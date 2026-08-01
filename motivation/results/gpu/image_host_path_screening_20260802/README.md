@@ -142,7 +142,8 @@ first output 从 9.86s 恶化到 14.34s，所以对 5000-row 冷作业是净损�
 ### 不能声称
 
 - 不能把 16 actor 或 active32 称为稳定最优；它们尚未做交错 3 repeats。
-- 不能声称项目已优于 Daft staged/Ray Data staged；本轮没有同资源正式对照。
+- 不能声称项目已优于 Daft/Ray Data 官方 native baseline；本轮没有运行 Daft 内置
+  AI Function、固定 upstream 的官方 benchmark code 或移除项目 inflight 后的 Ray Data graph。
 - 不能把 `source_next` 称为纯 PostgreSQL 时间，也不能把 `submit` 全称为序列化。
 - 不能声称 GPU MFU=2.5%；该字段只是 `nvidia-smi` 利用率。
 - 不能从 CLIP ViT-B/32 外推到高分辨率 VLM、视频或 GPU decode workload。
@@ -158,7 +159,7 @@ first output 从 9.86s 恶化到 14.34s，所以对 5000-row 冷作业是净损�
 
 1. 导入至少 20K unique images，让每个 formal 点持续至少 60s；对 8/16 CPU actor、
    active16/32 做交错 `1 warmup + 3 repeats`，按 JCT、first-output、P95/P99、能耗共同选点。
-2. 在相同 host 总 CPU/GPU 预算下跑 Daft fused、Daft staged、Ray Data staged、project
+2. 在相同 host 总 CPU/GPU 预算下跑 Daft built-in、官方 ResNet18 parity、Ray Data native graph、project
    static，区分“资源更多”与“执行效率更高”。
 3. 补 R0 GPU-resident、R1 pinned H2D、R2 pageable/Ray tensor 直接 ceiling；只有 H2D
    占关键路径≥20%且 pinned/overlap 改善 E2E≥5%，才推进 PCIe 优化。

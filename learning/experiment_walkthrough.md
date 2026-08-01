@@ -405,7 +405,8 @@ GPU-backed model service 不等于自动变快
 
 结论：
 
-- Ray task 是必须保留的强 baseline；
+- Ray task 是必须保留的框架 primitive 诊断对照；若含项目编排代码，不进入正式
+  vendor-native baseline 排名；
 - actor 不应默认更优；
 - pgvector 批量写回可用且显著；
 - 行数扩大后，Ray 并行会把瓶颈推向 writeback。
@@ -1131,5 +1132,5 @@ CLIP/224×224 语义，比较 GPU-resident、pinned H2D、pageable/Ray tensor �
 H2D 占 steady wall≥20%，且 pinned/降字节/overlap 让 E2E 改善≥5%，PCIe 路线才 GO。
 
 这些点都只有一次，作用是挑 formal 候选。下一步仍要在 20K unique images、至少
-60s 稳态、交错三重复下比较 Daft fused/staged、Ray Data staged 和 project；并用
+60s 稳态、交错三重复下比较 Daft built-in、官方 ResNet18 parity、Ray Data native graph 和 project；并用
 GPU-resident/pinned/pageable 表示阶梯正式判 PCIe GO/NO-GO。

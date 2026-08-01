@@ -136,7 +136,9 @@ D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
 以下顺序服从 `experiments/plans/experiment_status_and_gaps.md` §0；文本项不是当前 image build 的前置条件。
 
 1. **Image path-B**：在已实现的中性 work-unit、lazy image source 和 typed Ray CLIP actor 上补 PG→Daft→Ray CPU preprocess→GPU actor→pgvector runner。
-2. **Image 强 baseline**：bounded direct CLIP、Daft `@daft.cls` Native、Ray Data、naive 与 ours 的独立 calibration 和正式对照；画像 GO 不等于方法胜出。
+2. **Image 强 baseline**：bounded direct CLIP、Daft built-in、固定 commit 的官方
+   ResNet18 Daft/Ray Data 入口、Ray Data native API graph、naive 与 ours 的独立
+   calibration 和正式对照；项目自写 `@daft.cls` 只作 diagnostic，画像 GO 不等于方法胜出。
 3. **Image A+B**：endpoint-state-aware 请求成形/提交 + 小型代价模型，并完成吞吐、JCT、tail、SLO、overlap、能耗和 Recall@10 闭环。
 4. 文本 Shared-vLLM held-out、UCB reward 归因、多 endpoint 公平性/故障迁移和 runtime baseline 统一为 `parked-conditional`。
 5. ~~Prefix cache 开启后的 prefix-aware 独立消融~~（2-ep/7B 已完成 07-30/07-31：cache-on batching + routing

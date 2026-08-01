@@ -79,6 +79,29 @@
 项目配置。产品和学术系统只在算子语义与工作量可对齐时进入数字排名，不能为了表格
 数量实现无关系统。
 
+### 4.1 原生执行准入门禁
+
+“使用某框架的 API”不自动等于“官方原生 baseline”。正式主排名只接受以下两类：
+
+1. **vendor-code parity**：固定官方 benchmark/example 的仓库、commit、依赖和入口，
+   只修改路径、凭证、硬件规模和指标输出；保存适配 diff。
+2. **vendor-native API graph**：官方没有可直接复用的相同 workload 时，使用官方推荐
+   的 built-in AI Function 或执行图，由框架拥有 batching、backpressure 和调度；项目
+   只写模型 workload UDF、输入/sink adapter 和审计，不得注入项目 credit、router、
+   active-window 或 actor 编排。
+
+项目自写 `@daft.cls`、Ray actor pool 或重构后的 staged pipeline 即使“参考官方文档”，
+也只能是 `diagnostic_reference`。每个正式 run 必须记录 `implementation_provenance`、
+`scheduler_owner`、`custom_scheduling_code`、`formal_baseline_eligible`、upstream URL/commit
+和 adapter diff；字段缺失则 fail closed，不进入 baseline 排名。
+
+当前 Daft image-classification vendor-code parity 已固定到
+`Eventual-Inc/Daft@3f5bdd175b7de3dcdf35765e1ba604b5c1cb8e15`，入口为
+`benchmarking/ai/image_classification/{daft_main.py,ray_data_main.py}`。文件 SHA256、
+官方 803,580-row workload 和允许适配白名单见
+`code/configs/image_vendor_baselines.json`；该 pin 尚未在本项目双 4090 上执行，不能把
+Daft README 中的 AWS 8×g6.xlarge 数字与本机结果直接排名。
+
 ### 5. 过期清理规则
 
 候选状态统一使用 `candidate → capability-verified → gated → calibrated → formal`；
@@ -138,15 +161,18 @@ CSV 才是实验数字的权威来源。三者发生冲突时，不能自行拼�
 |---|---|---|
 | compute ceiling | GPU-resident CLIP tensor→forward | 模型计算平台，不是项目对手 |
 | direct service | bounded direct CLIP、vLLM pooling | 绕过 DB/Daft/Ray 的容量与部署参照 |
-| fused framework | Daft Native/Ray：同一 GPU UDF 内 preprocess+forward | 已完成的粗资源边界诊断；必须校准 fractional-GPU actor shape |
-| staged framework | Daft-on-Ray CPU operators→GPU UDF、Ray Data CPU→GPU actor pool | 与项目最接近的强系统 baseline；必须独立校准 batch/actor/in-flight |
+| vendor built-in | Daft `decode_image` + `embed_image` / `classify_image` | 由 Daft provider 拥有 batching、concurrency 和 backpressure 的主 baseline |
+| vendor-code parity | Daft 官方 803,580-row ResNet18 benchmark 中的 Daft/Ray Data 原脚本 | 公开 file/object track；固定 upstream commit，只做环境适配 |
+| native API graph | Ray Data `read_sql → map_batches(CPU) → map_batches(GPU)` | 数据库输入轨道；Ray Data 自己调度，UDF 只定义 workload kernel |
+| diagnostic reference | 项目自写 Daft fused/staged UDF | 只作阶段边界与资源机制诊断，不进入 official/native 主排名 |
 | product-integrated data engine | PolarDB Daft AI Functions `classify_image` / `embed_image` | 同一 Daft/Ray 架构家族的工业集成，不冒充独立数据库内核执行方式 |
 | managed product SQL | Snowflake / BigQuery image `AI_CLASSIFY` | 闭源托管路径只比较 E2E、成本、质量和失败率，不跨硬件比较 MFU |
 | project static | 冻结最佳 frame budget/active batches/actor shape | 动态策略的唯一主对照 |
 | project adaptive | state-aware request shaping/shared credit | 只报告相对 frozen static 的增量与 oracle regret |
 
-当前 1.296×/1.138× 只属于 `project static vs fused framework`，不能写成优于
-PolarDB/Daft staged 异构流水线。每个系统同时报告 matched-resource 与 independently
+当前 1.296×/1.138× 只属于 `project static vs project-authored Daft UDF diagnostic`
+历史结果，不能写成优于 Daft 内置 AI Function、官方 benchmark 或 PolarDB 异构
+流水线。每个系统同时报告 matched-resource 与 independently
 calibrated best-achievable；统一输入、模型、输出、生命周期、计时边界和 sink。
 
 OceanBase 4.5/4.6 官方 AI Function 当前确证的是文本 `AI_COMPLETE`、文本

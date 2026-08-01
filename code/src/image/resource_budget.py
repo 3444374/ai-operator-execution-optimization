@@ -75,10 +75,15 @@ def build_ray_cpu_budget(
     if detected_host_slots <= 0:
         raise ValueError("host CPU slots must be positive")
 
-    if arm == "daft_ray":
+    if arm in ("daft_ray", "daft_builtin_embed"):
         parts = (source_shards, None, model_workers)
         external_slots = 0
-        semantics = "ray_reserved_slots_includes_daft_sql_readers_and_fused_model_actors"
+        semantics = (
+            "ray_reserved_slots_includes_daft_sql_readers_and_model_actors; "
+            "builtin_provider_owns_actual_concurrency"
+            if arm == "daft_builtin_embed"
+            else "ray_reserved_slots_includes_daft_sql_readers_and_fused_model_actors"
+        )
     elif arm == "daft_staged":
         parts = (source_shards, preprocess_workers, model_workers)
         external_slots = 0

@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 """Run comparable PostgreSQL -> data engine -> CLIP operator-E2E arms.
 
-The five arms keep the input table, processor, model, batch size, GPU count,
-output validation, and timing boundary fixed:
+The arms keep the input table, model, GPU count, output validation, and timing
+boundary fixed:
 
-* ``daft_native``: official-style Daft ``@daft.cls`` native GPU UDF.
-* ``daft_ray``: the same UDF under Daft's Ray runner.
-* ``daft_staged``: Daft-on-Ray CPU preprocessing stage feeding a GPU class UDF.
-* ``ray_data_staged``: Ray Data SQL source, CPU ``map_batches``, and GPU actors.
+* ``daft_builtin_embed``: Daft built-in decode + ``embed_image`` AI Function;
+  Daft owns batching, concurrency, backpressure, and scheduling.
+* ``ray_data_staged``: native Ray Data SQL source and ``map_batches`` graph;
+  Ray Data owns backpressure and actor scheduling.
+* ``daft_native`` / ``daft_ray`` / ``daft_staged``: project-authored UDF
+  references retained for mechanism diagnosis, not formal native baselines.
 * ``project_ray``: bounded Ray CPU preprocessing actors feeding tensor-only GPU
   actors, with the source kept lazy and streamed from Daft.
 
@@ -32,9 +34,14 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.image import DaftImageSource, ImageSourceConfig  # noqa: E402
+from src.image.baseline_contract import (  # noqa: E402
+    image_arm_provenance,
+    require_formal_arm_allowed,
+)
 from src.image.daft_baseline import (  # noqa: E402
     build_daft_clip_embedder,
     build_daft_staged_clip_pipeline,
+    run_daft_builtin_image_embedding,
     run_daft_clip_baseline,
     run_daft_staged_clip_baseline,
 )
@@ -54,6 +61,7 @@ from src.runtime_env import ray_runtime_env  # noqa: E402
 
 
 ARMS = (
+    "daft_builtin_embed",
     "daft_native",
     "daft_ray",
     "daft_staged",
@@ -62,6 +70,12 @@ ARMS = (
 )
 CSV_FIELDS = (
     "arm",
+    "baseline_role",
+    "implementation_provenance",
+    "scheduler_owner",
+    "custom_scheduling_code",
+    "formal_baseline_eligible",
+    "upstream_source",
     "phase",
     "repeat_index",
     "workload_name",
@@ -248,7 +262,20 @@ def parse_args():
         default=0,
         help="Daft native source/runner threads; 0 follows --cpu-workers",
     )
-    parser.add_argument("--max-active-batches", type=int, default=8)
+    parser.add_argument(
+        "--max-active-batches",
+        type=int,
+        default=8,
+        help="Project-Ray admission window; ignored by framework-native baseline arms",
+    )
+    parser.add_argument(
+        "--allow-non-native-diagnostic",
+        action="store_true",
+        help=(
+            "Allow a project-authored Daft reference in a formal-phase diagnostic; "
+            "it remains ineligible for baseline ranking"
+        ),
+    )
     parser.add_argument("--torch-intraop-threads", type=int, default=1)
     parser.add_argument("--torch-interop-threads", type=int, default=1)
     parser.add_argument("--dtype", choices=("float16", "float32", "bfloat16"), default="float16")
@@ -388,6 +415,15 @@ def git_commit() -> str:
 
 def main() -> None:
     args = parse_args()
+    provenance = image_arm_provenance(args.arm)
+    try:
+        require_formal_arm_allowed(
+            args.arm,
+            phase=args.phase,
+            allow_non_native_diagnostic=args.allow_non_native_diagnostic,
+        )
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     processor = args.processor or args.model
     positive = (
         args.limit,
@@ -409,7 +445,7 @@ def main() -> None:
         raise SystemExit("row, batch, worker, and dimension values must be positive")
     if min(args.daft_model_workers, args.source_shards, args.source_cpu_threads) < 0:
         raise SystemExit("optional worker and shard overrides must be non-negative")
-    if args.max_active_batches < args.gpu_workers:
+    if args.arm == "project_ray" and args.max_active_batches < args.gpu_workers:
         raise SystemExit("--max-active-batches must be at least --gpu-workers")
     if args.detailed_stage_timing and args.arm != "project_ray":
         raise SystemExit("--detailed-stage-timing currently supports project_ray only")
@@ -464,7 +500,15 @@ def main() -> None:
         raise SystemExit(str(error)) from error
     ray_cluster_num_cpus = cpu_budget.cluster_slots
     worker_runtime_env = ray_runtime_env(CODE_ROOT)
-    if args.arm == "daft_native":
+    if args.arm == "daft_builtin_embed":
+        ray.init(
+            num_cpus=ray_cluster_num_cpus,
+            num_gpus=args.gpu_workers,
+            include_dashboard=False,
+            runtime_env=worker_runtime_env,
+        )
+        daft.set_runner_ray(noop_if_initialized=True)
+    elif args.arm == "daft_native":
         daft.set_runner_native(num_threads=source_cpu_threads)
         embedder = build_daft_clip_embedder(
             model_revision=args.model,
@@ -567,7 +611,6 @@ def main() -> None:
                 batch_size=args.batch_size,
                 cpu_workers=args.cpu_workers,
                 gpu_workers=args.gpu_workers,
-                max_active_batches=args.max_active_batches,
                 torch_intraop_threads=args.torch_intraop_threads,
                 torch_interop_threads=args.torch_interop_threads,
             )
@@ -584,6 +627,14 @@ def main() -> None:
             source_shards=source_shards,
             dataset_passes=dataset_passes,
         )
+        if args.arm == "daft_builtin_embed":
+            return run_daft_builtin_image_embedding(
+                source,
+                model_revision=args.model,
+                batch_size=args.batch_size,
+                expected_doc_ids=expected_ids,
+                embedding_dimension=args.embedding_dimension,
+            )
         if args.arm in ("daft_native", "daft_ray"):
             return run_daft_clip_baseline(
                 source,
@@ -669,6 +720,12 @@ def main() -> None:
 
     row: dict[str, object] = {
         "arm": args.arm,
+        "baseline_role": provenance.role,
+        "implementation_provenance": provenance.implementation_provenance,
+        "scheduler_owner": provenance.scheduler_owner,
+        "custom_scheduling_code": provenance.custom_scheduling_code,
+        "formal_baseline_eligible": provenance.formal_baseline_eligible,
+        "upstream_source": provenance.upstream_source,
         "phase": args.phase,
         "repeat_index": args.repeat_index,
         "workload_name": args.workload_name,
@@ -676,13 +733,13 @@ def main() -> None:
         "unique_images": args.limit,
         "dataset_passes": args.dataset_passes,
         "batch_size": args.batch_size,
-        "cpu_workers": args.cpu_workers,
+        "cpu_workers": "" if args.arm == "daft_builtin_embed" else args.cpu_workers,
         "gpu_workers": args.gpu_workers,
         "model_workers": model_workers,
         "gpus_per_model_worker": gpus_per_model_worker,
         "source_shards": source_shards,
         "source_cpu_threads": source_cpu_threads,
-        "max_active_batches": args.max_active_batches,
+        "max_active_batches": args.max_active_batches if project_metrics else "",
         "ray_cluster_num_cpus": ray_cluster_num_cpus or "",
         "host_cpu_slots_detected": cpu_budget.host_slots,
         "declared_external_cpus": cpu_budget.external_slots,
@@ -699,7 +756,7 @@ def main() -> None:
         "worker_setup_accounting": (
             "explicit_pre_query_plus_query_wall"
             if project_metrics
-            else "folded_into_timed_daft_query_wall"
+            else "folded_into_timed_framework_query_wall"
         ),
         "operator_e2e_s": operator_e2e_s,
         "first_output_s": first_output_s,
@@ -791,8 +848,12 @@ def main() -> None:
         **cpu_metrics,
         **gpu_metrics,
         "model_revision": args.model,
-        "processor_revision": processor,
-        "dtype": args.dtype,
+        "processor_revision": (
+            "provider_resolved_from_model"
+            if args.arm == "daft_builtin_embed"
+            else processor
+        ),
+        "dtype": "provider_default" if args.arm == "daft_builtin_embed" else args.dtype,
         "embedding_dimension": args.embedding_dimension,
         "daft_version": daft.__version__,
         "ray_version": ray.__version__,
@@ -807,13 +868,25 @@ def main() -> None:
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 9,
+        "schema_version": 10,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,
         "writeback_included": False,
-        "preprocessing": "torchvision_tensor_decode_and_processor",
-        "hidden_batching": False,
+        "preprocessing": (
+            "daft_builtin_decode_and_transformers_provider"
+            if args.arm == "daft_builtin_embed"
+            else "torchvision_tensor_decode_and_processor"
+        ),
+        "hidden_batching": args.arm == "daft_builtin_embed",
+        "baseline_provenance": {
+            "role": provenance.role,
+            "implementation": provenance.implementation_provenance,
+            "scheduler_owner": provenance.scheduler_owner,
+            "custom_scheduling_code": provenance.custom_scheduling_code,
+            "formal_baseline_eligible": provenance.formal_baseline_eligible,
+            "upstream_source": provenance.upstream_source,
+        },
         "detailed_stage_timing_intrusive": args.detailed_stage_timing,
         "bandwidth_semantics": "logical_bytes_over_stage_wall_not_pcie_counter",
         "mfu_semantics": "estimated_only_when_verified_flops_and_dtype_peak_are_supplied",
