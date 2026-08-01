@@ -105,6 +105,10 @@ def build_ray_data_clip_pipeline(
         image_documents_query(source_config),
         connection_factory,
         shard_keys=["doc_id"],
+        # PostgreSQL does not implicitly cast BIGINT for MD5.  Its native
+        # hashint8 function preserves distributed SQL reads without changing
+        # the shared doc_id schema or silently falling back to one read task.
+        shard_hash_fn="hashint8",
         override_num_blocks=source_shards,
         concurrency=source_shards,
         num_cpus=1,
