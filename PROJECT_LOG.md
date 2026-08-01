@@ -11,6 +11,10 @@
   线程 quota，因此该结果不能称为“4 CPU matched-resource”。图像 runner 升级到
   schema v5，显式配置/记录每 worker Torch 线程；project Ray 在查询前校验实测值，
   正式 matched-resource 默认 1/1，线程容量扫描另列。
+- 远端首次 schema v5 gate 暴露图像 runner 的部署缺口：driver 通过本地 `sys.path`
+  可导入，但 Ray worker 在没有交互式 `PYTHONPATH` 时无法 import `src`。所有图像 Ray
+  arm 改为显式传共享 `ray_runtime_env()`，同时传播项目代码路径和 OMP/MKL 等线程
+  合同，避免依赖 shell 隐式状态。
 
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过

@@ -50,6 +50,7 @@ from src.image.ray_data_baseline import (  # noqa: E402
 )
 from src.image.resource_budget import build_ray_cpu_budget  # noqa: E402
 from src.image.resource_sampling import NvidiaSmiSampler, SystemCpuSampler  # noqa: E402
+from src.runtime_env import ray_runtime_env  # noqa: E402
 
 
 ARMS = (
@@ -419,6 +420,7 @@ def main() -> None:
     except ValueError as error:
         raise SystemExit(str(error)) from error
     ray_cluster_num_cpus = cpu_budget.cluster_slots
+    worker_runtime_env = ray_runtime_env(CODE_ROOT)
     if args.arm == "daft_native":
         daft.set_runner_native(num_threads=args.cpu_workers)
         embedder = build_daft_clip_embedder(
@@ -437,6 +439,7 @@ def main() -> None:
             num_cpus=ray_cluster_num_cpus,
             num_gpus=args.gpu_workers,
             include_dashboard=False,
+            runtime_env=worker_runtime_env,
         )
         daft.set_runner_ray(noop_if_initialized=True)
         embedder = build_daft_clip_embedder(
@@ -455,6 +458,7 @@ def main() -> None:
             num_cpus=ray_cluster_num_cpus,
             num_gpus=args.gpu_workers,
             include_dashboard=False,
+            runtime_env=worker_runtime_env,
         )
         daft.set_runner_ray(noop_if_initialized=True)
         preprocessor, embedder = build_daft_staged_clip_pipeline(
@@ -477,12 +481,14 @@ def main() -> None:
             num_cpus=ray_cluster_num_cpus,
             num_gpus=args.gpu_workers,
             include_dashboard=False,
+            runtime_env=worker_runtime_env,
         )
     else:
         ray.init(
             num_cpus=ray_cluster_num_cpus,
             num_gpus=args.gpu_workers,
             include_dashboard=False,
+            runtime_env=worker_runtime_env,
         )
         daft.set_runner_native(num_threads=args.cpu_workers)
         worker_pool = build_project_ray_worker_pool(

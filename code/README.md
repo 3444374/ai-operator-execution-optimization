@@ -127,6 +127,9 @@ now lives under `code/src/`:
   values before admitting work. Ray `num_cpus` remains an admission token, not
   an OS thread quota; actor count and per-actor thread count are separate
   experiment variables.
+  The image runner passes the shared `ray_runtime_env()` contract at every
+  `ray.init`, so workers receive project imports and numeric thread limits
+  without relying on an interactive shell's `PYTHONPATH`.
 - `baselines/`: no-Ray bounded Chat, fixed-row multi-prompt Completions,
   vLLM Bench, Daft/Ray/OceanBase adapters, immutable manifests and fail-closed
   two-endpoint gates. Baseline code does not import project scheduling policy.

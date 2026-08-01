@@ -314,6 +314,9 @@ cluster 总量和 source/preprocess/model 分项；绕过 runner 时也必须遵
 查询前校验实测线程值，不匹配则 fail closed。不要把 host 默认的
 `OMP_NUM_THREADS=32` 或 Torch 32/64 线程解释成“4 CPU actor”的 matched-resource
 结果；actor 数与每 actor 线程数必须分开扫描，并同时报告 host busy cores。
+runner 会在所有 `ray.init` 调用中传入共享 `ray_runtime_env()`，自动传播项目
+`PYTHONPATH` 与 OMP/MKL/OpenBLAS/NumExpr 单线程合同；不再要求操作者在交互式 shell
+手工 export `PYTHONPATH`。绕过 runner 的自定义入口仍必须显式传同一 runtime env。
 
 ### 5.5 待完成：host data path 瓶颈判定
 
