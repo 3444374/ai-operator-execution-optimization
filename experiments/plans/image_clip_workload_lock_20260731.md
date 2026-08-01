@@ -43,8 +43,8 @@ CLIP 是 embedding 模型，不是生成式 LLM，但当前 vLLM 已通过 pooli
 | 选项 | 输入和预处理边界 | 角色 | 采纳 |
 |---|---|---|---|
 | **Daft fused `@daft.cls(gpus=1)`** | 同一 GPU-reserved UDF 内 decode/preprocess + CLIP forward | 已完成校准的 fused baseline；用于暴露粗资源边界，但不代表 Daft 最强 staged 形态 | 必跑诊断/系统 baseline |
-| **Daft-on-Ray staged pipeline** | Daft CPU decode/resize/processor → Daft GPU 类 UDF | PolarDB/Daft 官方异构算子形态；与 ours 最接近的强框架 baseline | **必跑强 baseline，待实现 runner arm** |
-| **Ray Data staged pipeline** | CPU `map_batches` → GPU callable-class actor pool | 官方 streaming batch baseline | **必跑强 baseline** |
+| **Daft-on-Ray staged pipeline** | Daft CPU decode/resize/processor → Daft GPU 类 UDF | PolarDB/Daft 官方异构算子形态；与 ours 最接近的强框架 baseline | runner 与 256 行门禁已通过；待独立校准/formal |
+| **Ray Data staged pipeline** | CPU `map_batches` → GPU callable-class actor pool | 官方 streaming batch baseline | runner 与 256 行门禁已通过；待独立校准/formal |
 | **vLLM pooling (`--runner pooling`)** | encoded image 进入服务，processor + pooling 在服务内部 | 与文本统一运维的成熟服务 baseline；官方说明 pooling 目前以功能便利为主，不保证优于 Transformers | 必跑服务 baseline；也是部署默认候选 |
 | **常驻 Ray CLIP GPU actor** | Daft/Ray CPU worker 做 decode/resize/normalize，GPU actor 只收 typed tensor batch 并 forward | 直接复用现有 Ray actor pool/backpressure；保留“CPU 准备与 GPU 推理分离”的可归因主路径 | **ours 主路径** |
 | Infinity / Ray Serve | encoded image 或服务内 preprocess，均自带 batching | 快速 smoke/补充 baseline；若使用必须冻结并记录隐藏 batching | 可选 |
@@ -55,7 +55,7 @@ CLIP 是 embedding 模型，不是生成式 LLM，但当前 vLLM 已通过 pooli
 preprocessed tensor，GPU actor 只执行 CLIP forward；项目已有 actor pool、credit、
 backpressure 和 exactly-once 机制可以直接复用。vLLM pooling 作为统一部署默认候选
 和强服务 baseline；Daft fused 只是一条已完成的系统臂，Daft-on-Ray/Ray Data staged
-才是判断“项目阶段拆分是否有额外价值”的关键强 baseline。
+虽已通过可运行性门禁，但完成独立校准和正式重复后才能判断“项目阶段拆分是否有额外价值”。
 
 **为什么不能只选 vLLM pooling**：它会把本轮 profile 中最重的
 decode/resize/normalize 移入服务端，无法直接验证“Daft/Ray 上游 CPU preprocess 与

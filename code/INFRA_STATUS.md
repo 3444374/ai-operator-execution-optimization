@@ -271,9 +271,9 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
   runner/formal 已完成：独立校准后 project 相对单卡 Native 1.296×、双卡 Ray
   1.138×。旧字段尚不能定位 CPU/Ray/PCIe/GPU 主瓶颈；schema v2 已补 CPU、
   active-device GPU、逻辑字节与可选侵入式 CUDA stage telemetry，等待按 R0→R4
-  表示阶梯复测。Daft-on-Ray/Ray Data staged baseline、统一 pgvector sink、
-  CPU-budget-normalized curve、frame-cost 策略接线、CLIP HTTP/vLLM pooling 对照和
-  正式策略结果尚未完成。
+  表示阶梯复测。Daft-on-Ray/Ray Data staged runner 与 256 行资源/正确性 gate 已
+  完成，但独立 calibration/formal、统一 pgvector sink、CPU-budget-normalized curve、
+  frame-cost 策略接线、CLIP HTTP/vLLM pooling 对照和正式策略结果尚未完成。
 - **算子代价估计（共同使能组件）**：初版实现与 grouped held-out 评估已完成，可提供
   粗粒度编排提示；独立时间段/新 workload 校准、预测区间和跨模型迁移仍未完成。
 
@@ -292,7 +292,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 | Actor pool / endpoint routing | 高（有界 slots/trace） | 双 GPU 1×256/2×128/4×64 formal | 多 actor 未过 5% 门槛；单 job 保留 1×256，多 job 分池待测 |
 | Shared-vLLM group runner | 高（代码/模板/真实 formal） | 双 4090 36/36 group run、63 formal job | shared-credit 容量安全、公平性通过；2-job 无增量，4-job 聚合过 5% 门槛但逐 repeat 不稳定，暂作高竞争条件性候选 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |
-| 多模态复用 | 中（source/typed actor/operator runner 已具备） | 5K CLIP profile + fused Daft Native/Ray operator-E2E formal | 当前主线；待 staged Daft/Ray Data、pgvector sink、frame-cost/state-aware policy 与完整服务 baseline |
+| 多模态复用 | 中（五臂 operator runner 已具备） | 5K CLIP profile + fused formal + staged 256-row resource gate | 当前主线；待 staged 独立 calibration/formal、pgvector sink、frame-cost/state-aware policy 与完整服务 baseline |
 | 算子代价估计 | 中 | 283 行、70 配置组、五个 held-out split | 粗粒度可用；不能作严格 SLO 预测 |
 
 ## 7. 后续设计与实施顺序
@@ -304,9 +304,9 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 2. ✅ PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor operator-E2E、exactly-once、
    fused Daft actor shape 与 ours 静态 shape 已完成；
 3. 先跑 image host data path R0→R4 动机实验，判定 CPU/Ray/PCIe/GPU 主限制；
-4. 实现并校准 Daft-on-Ray staged 与 Ray Data staged；接统一 pgvector sink，补
-   system-E2E、Recall@10、CPU-budget-normalized curve，并继续校准 bounded direct、
-   vLLM pooling、naive；
+4. Daft-on-Ray staged 与 Ray Data staged 已实现并通过 256 行 gate；下一步独立校准
+   和 formal，接统一 pgvector sink，补 system-E2E、任务 ground truth、
+   CPU-budget-normalized curve，并继续校准 bounded direct、vLLM pooling、naive；
 5. 在强静态点上实现 endpoint-state-aware 请求成形和 `<100 LOC` 代价模型 v1；
 6. 正式报告吞吐/JCT/tail/SLO、overlap、GPU busy、能耗和 Recall@10。
 

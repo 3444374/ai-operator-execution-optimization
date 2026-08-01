@@ -135,7 +135,8 @@
 schema v2 复测。当前证据只支持“阶段拆分有 operator-E2E 收益、CPU prepare 是候选
 限制”，不支持把 PCIe、CPU saturation 或 GPU MFU 写成已确认瓶颈。低扰动正式曲线
 与侵入式 CUDA/Nsight 机制诊断分开报告。当前 fused Daft 结果不能代表 PolarDB/Daft
-官方 staged 异构流水线；该强 baseline 必须在策略实验前补齐。
+官方 staged 异构流水线。Daft staged 与 Ray Data staged 已通过 256 行资源/正确性
+门禁，但仍须在策略实验前完成独立校准和正式规模重复。
 
 **已完成**：
 - ✅ vLLM + Qwen2.5-1.5B baseline 建立（07-18）
@@ -212,8 +213,8 @@ schema v2 复测。当前证据只支持“阶段拆分有 operator-E2E 收益�
 1. **Image fused operator-E2E gate**：中性 work-unit、lazy source、fast processor、
    fused Daft Native/Ray 与 bounded `PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor`
    runner 和 5K×3 formal 已完成。
-2. **补 system E2E 与完整强 baseline**：先实现并独立标定 Daft-on-Ray staged 和
-   Ray Data staged，再给系统臂接同一 pgvector sink；同时补 bounded direct CLIP、
+2. **补 system E2E 与完整强 baseline**：Daft-on-Ray staged 和 Ray Data staged
+   runner/256 行门禁已完成，下一步独立标定并做正式重复，再给系统臂接同一 pgvector sink；同时补 bounded direct CLIP、
    vLLM pooling、naive 和 ours。OceanBase AI_EMBED 等待可部署环境。当前 5K 结果只
    证明相对 fused UDF 的优化空间，尚未证明 ours 优于主流 staged pipeline。
 3. **A+B 方法验证**：A 读取 CLIP endpoint queue/active-work 做状态感知请求成形；

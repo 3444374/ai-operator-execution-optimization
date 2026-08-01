@@ -151,24 +151,31 @@ DB bytes、CPU processor、host copy/H2D 和 GPU forward stage，而不是预注
 | 语义/计划优化 | LOTUS / Smart / Abacus | 少调模型、重写计划 | cost↓、调用数↓（accuracy 不变） |
 | **执行优化** ⭐本项目 | Daft-on-Ray / Ray Data / PolarDB Lakebase | **在已有 overlap/backpressure 之上的 work-aware / state-aware / multi-job 调度** | **JCT/SLO/fairness/资源效率改善**（quality 不变） |
 
-同领域、不同杠杆、互补——Related Work 里明确分工："语义优化有人做了（LOTUS），执行优化是空白（本项目）。"
+同领域、不同杠杆、互补——Related Work 里明确分工：语义优化已有 LOTUS 等系统，
+执行侧也已有 Daft/Ray Data/PolarDB staged pipeline；本项目必须证明的是在这些强执行
+baseline 之上，work-aware/state-aware/multi-job 上游调度仍有可复现增量，不能再写
+“执行优化是空白”。
 
-**性能节报什么（按数据库 AI 算子论文口径，6 项）**：
+**性能节报什么（摘要；完整合同见 `experiments/plans/baseline_reference.md`）**：
 
 | 项 | 指标 | 角色 |
 |---|---|---|
-| ① accuracy（质量门禁） | recall@10 ≥ 0.95（ANN-benchmarks 协议） | 证明 embedding/写回没出错，**非卖点**（一句带过） |
-| ② execution time / throughput | embeddings/s + 墙钟 | **主卖点**：执行优化让吞吐高 X× |
-| ③ 时间分解（阶段拆解） | DB 读 + CPU decode + GPU embed + 搬运 + 写回 | LOTUS 式阶段表，定位瓶颈在哪 |
-| ④ cost | $/M embeddings + GPU-hours + J/1k | 数据库 AI 算子论文标配 |
-| ⑤ vs baseline speedup | 相对 Daft native / naive 的 X× | GaussML/Smart 式"X× faster" |
-| ⑥ scaling（可选） | 数据量增长曲线 | SemBench/GaussML 式 |
+| ① 任务质量 | classify：top-1/top-5 或 mAP/F1；retrieval：Recall@K/MRR/nDCG | 有 ground truth 时为正式排名门禁；digest/norm 仅执行正确性 |
+| ② execution time / throughput | operator/system JCT、images/embeddings/s、P50/P95/P99、SLO goodput | 同时看容量与尾延迟 |
+| ③ 时间分解（阶段拆解） | DB 读 + CPU decode + host/Ray + H2D + GPU embed + 写回 | 定位瓶颈和 GPU bubble，不把阶段和超过 wall 的总和误读为关键路径 |
+| ④ cost/resource | model work、CPU-core/GPU-seconds、J/1K；可比时 $/1K rows | 金钱成本不可比时报告资源成本 |
+| ⑤ correctness/failure | exactly-once、digest、retry/timeout/OOM、完成率 | 失败 run 也落盘 |
+| ⑥ scaling/fairness | 数据规模、1/2 GPU 效率、1/2/4 job JCT/slowdown/Jain | 多 GPU/多 job 正式实验必选 |
 
 **Benchmark 现状（诚实）**：
 - 数据集：ImageNet-1K 子集 / COCO（公开经典，可引）。
-- 质量协议：ANN-benchmarks recall@10（CCF 认可，作**质量门禁**，非主指标）。
-- **执行层吞吐/搬运协议：无现成 benchmark**（survey 附录 B：厂商全闭源、无人 benchmark 上游 DB→GPU 搬运）→ 项目 §7.5 自定干净合同（feeding ≥95% bounded + 1 warmup + 3 formal + CV），**自定本身是贡献**（填补空白）。
-- 可引名字：BigVectorBench（VLDB'25）image 切片 + ANN-benchmarks。
+- 质量协议按算子分开：ImageNet top-1/top-5、COCO mAP/F1、embedding retrieval
+  Recall@K/MRR/nDCG；ANN 指标不能替代 AI_CLASSIFY 质量。
+- 执行层已有 Ray Data 与 PolarDB 的公开多模态 benchmark，并非“厂商全闭源”；但其
+  file/object 输入、硬件和计时边界与本项目 PostgreSQL BYTEA→pgvector 不同。
+- 因此保留两条轨道：复现公开 file/object workload；另建同机 database-operator
+  track 统一 DB/source/sink，并采集阶段、硬件和失败指标。自定义诊断合同是必要的
+  补充，不应单独宣称“填补 benchmark 空白”。
 
 **Baseline 分两类（关键区分：直接对比 vs 只定位）**：
 
@@ -177,9 +184,9 @@ DB bytes、CPU processor、host copy/H2D 和 GPU forward stage，而不是预注
 | Baseline | 角色 |
 |---|---|
 | **Daft fused `@daft.cls` Native/Ray** | 已完成的粗资源边界对照；不是 PolarDB staged 同款 |
-| **Daft-on-Ray staged CPU→GPU** | ⭐ PolarDB/Daft 官方异构流水线强 baseline；必须补 |
-| **OceanBase AI_EMBED**（数据库原生算子，**无 Daft/Ray**） | **产品级核心 baseline**——DB 触发外部 CLIP endpoint 再写回；完整矩阵见 `experiments/plans/database_ai_operator_baseline_matrix_20260729.md`（B1 门禁已过函数存在性 CE 4.5.0，当前 AutoDL 容器部署受阻、待可部署环境，见 `experiments/results/oceanbase_b1_gate_20260731/`） |
-| Ray Data staged | 另一数据引擎的 streaming batch 强 baseline |
+| **Daft-on-Ray staged CPU→GPU** | ⭐ PolarDB/Daft 官方异构流水线强 baseline；256 行 gate 已通过，待独立 calibration/formal |
+| **OceanBase AI_EMBED**（数据库原生算子，**无 Daft/Ray**） | 当前官方能力是文本 embedding；只能进入文本同语义产品轨道，不能冒充图像 CLIP baseline。AutoDL 容器部署仍受阻 |
+| Ray Data staged | 另一数据引擎的 streaming batch 强 baseline；256 行 gate 已通过，待独立 calibration/formal |
 | naive 串行 / 固定行 pipeline | 工程默认对照 |
 | bounded direct CLIP | 物理上界（绕 Daft/Ray 直连打满） |
 
@@ -198,9 +205,11 @@ OceanBase/同 PostgreSQL direct control 与冻结最佳项目静态点。
 
 **不能声称**：在 ANN-benchmarks 排行榜比向量检索（那是 Milvus/Faiss/pgvector 的事，非本层）；recall@10 是性能主指标（它是质量门禁）。
 
-### 10.2 升级路径（benchmark 名始终 BigVectorBench）
+### 10.2 可选 workload 扩展路径
 
 CLIP（image 切片，当前）→ +MS MARCO（text 切片，作对照）→ +LibriSpeech audio → 三模态触发冷启动 regime（若解封）。
+
+不同模态使用各自公开数据集与质量协议，不再把整条路线统一命名为 BigVectorBench。
 
 ## 9. 证据来源（一手）
 

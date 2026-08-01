@@ -128,17 +128,25 @@ Token-budget 和 frame/image-work budget 本质都是"按计算量预算组织�
 
 **文献依据**：`research/README.md` §文献优先设计方法论；Wiki `设计方法论` MOC
 
-### 6. 新实验指标完整性（来源：指标盲区审计）
+### 6. 新实验指标完整性（来源：指标盲区与外部 benchmark 审计）
 
-所有 07-18/19 实验用 `rows/s` 作为主吞吐指标，但 AI_COMPLETE 中每行 token 量可差 13.9×。
+所有新实验遵循 `experiments/plans/baseline_reference.md` 的“数据库 AI 算子评价指标
+合同”，按算子记录适用指标，不能把文本 serving 字段机械套到图像：
 
-**要求**：
-- 所有新实验 CSV 必须包含 `tokens/s`（从 vLLM Prometheus `prompt_tokens_total` + `generation_tokens_total` 计算）
-- 必须包含 `service_p99`（系统性 tail latency）
-- 涉及 adaptive 的实验必须记录 inflight/queue 时间序列
-- 涉及分组策略的实验必须记录 per-request e2e latency 分布
-- 不重跑已有实验仅为了补指标——已有 CSV 中 vLLM Prometheus 数据可做事后计算
+- AI_COMPLETE 记录 input/output/total tokens/s、TTFT、TPOT/ITL、request E2E
+  P50/P95/P99 和 SLO goodput；
+- AI_CLASSIFY 记录 images/s、JCT/tail，以及 top-1/top-5 或 mAP/F1；
+- AI_EMBED 记录 embeddings/s、JCT/tail，若承担检索语义则记录 Recall@K/MRR/nDCG；
+- 所有模态记录 exactly-once、失败/重试/timeout/OOM、CPU/GPU/内存/能耗和工作量；
+- 涉及 adaptive 的实验记录 inflight/queue 时间序列，涉及分组策略的实验记录
+  per-request/row E2E 分布；
+- 失败 run 也必须结构化落盘。缺 ground truth 的 smoke 只能标记任务质量未评价，
+  digest/norm 不能替代 accuracy/recall。
 
-**文献依据**：`experiments/plans/experiment_status_and_gaps.md` §3
+不只为补非阻断诊断指标重跑历史实验；但任务质量、统一 system sink、失败记录等
+正式排名阻断项不能靠事后推断绕过。
+
+**文献依据**：`experiments/plans/baseline_reference.md`“数据库 AI 算子评价指标合同”；
+`experiments/plans/experiment_status_and_gaps.md` §3。
 
 详细脚本说明见 `scripts/README.md`。依赖清单见 `requirements.txt`。

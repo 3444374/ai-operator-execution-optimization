@@ -3536,3 +3536,22 @@
 - **图像缺口**：schema v9 已覆盖 stage timing、CPU/GPU/能耗/传输与执行正确性，
   但 ground-truth 质量、失败 run 结构化落盘、统一 system sink、Ray object-store/spill
   和逐行尾延迟仍待补。任务质量、失败记录和 system sink 被列为正式排名阻断项。
+
+## 2026-08-02 Baseline 检索流程与过期文档清理
+
+- **可复核检索**：在 `baseline_reference.md` 固化“先定义算子/层级→官方 capability→
+  官方 benchmark/code→数据库论文→部署平台”的来源顺序、来源卡片、A–E 证据等级、
+  最小强 baseline 集合与过期触发条件。
+- **公开 benchmark 纠错**：删除“多模态 benchmark 无现成协议、厂商全闭源”和
+  “统一叫 BigVectorBench”的旧说法，改为 Ray/PolarDB 公开 file/object track、
+  任务质量协议与项目 PostgreSQL database-operator track 分层。
+- **状态同步**：Daft staged 与 Ray Data staged 已从“待实现/未测”更新为“runner 和
+  256 行资源/正确性 gate 已通过，独立 calibration/formal 未完成”；gate 不进入性能排名。
+- **入口去重**：`experiments/README.md` 不再复制大段容易过期的文本参数和下一步，
+  历史数字回归 evidence registry/结果目录，当前执行顺序只指向 status §0。
+- **规则同步**：`code/AGENTS.md` 的“所有实验必须 tokens/s”旧规则改为按算子语义
+  采集文本、分类和 embedding 指标；`code/INFRA_STATUS.md` 同步 staged gate 状态，
+  文本 baseline matrix 增加历史阅读范围提示。
+- **研究口径纠错**：`research/daft_db_gpu_bridge_direction_scope_20260731.md` 删除
+  “执行优化空白”“厂商全闭源”“统一 BigVectorBench”和 OceanBase 文本 embedding
+  冒充图像 CLIP baseline 的旧表述，改为公开 benchmark + 同机 DB track 双轨协议。

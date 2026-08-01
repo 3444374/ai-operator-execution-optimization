@@ -1,6 +1,6 @@
 # 实验 Baseline 参考矩阵
 
-整理日期：2026-07-16；文献与官方 baseline 复审：2026-08-01
+整理日期：2026-07-16；文献、官方 benchmark 与指标合同复审：2026-08-02
 
 > **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
 用途：正式实验设计时，从正式论文、官方系统和可审计工程默认中提取 baseline，避免使用 strawman 对照
@@ -15,6 +15,82 @@
 1. 每个实验方向（GPU 调度 / 写回 / 数据组织）在选择 baseline 时，**优先从本矩阵中选取**已有文献中的最优策略。
 2. 非文献来源的工程 baseline（如 COPY、unlogged table）必须先在 B 系列实验中确认其为当前最优实践。
 3. 最终论文的对照表必须标注每个 baseline 的来源论文或系统。
+
+## Baseline / benchmark 的检索、筛选与维护流程
+
+本矩阵不是凭系统知名度罗列名称。新增或替换 baseline 时必须按以下流程留下可复核
+记录；未完成来源核验的候选只能放 Related Work，不能直接进入性能排名。
+
+### 1. 先定义问题，再检索系统
+
+每次检索前先填写四项：算子语义（AI_COMPLETE / AI_EMBED / AI_CLASSIFY）、比较层级
+（服务上限 / 执行框架 / 数据库产品 / 策略）、输入与输出合同、要回答的因果问题。
+例如“Daft staged vs ours”回答执行框架差异，“vLLM Bench”只回答服务容量，
+“Snowflake AI_CLASSIFY”回答产品 SQL 的质量-成本-时间，不允许互相替代。
+
+### 2. 来源按优先级搜索
+
+1. **官方产品能力文档**：确认算子是否真实存在、输入类型、模型/endpoint、配额与
+   计费；用于 OceanBase、PolarDB、Snowflake、BigQuery 等 capability gate。
+2. **官方 benchmark 页面与可运行代码**：提取 workload、模型、数据表示、预处理、
+   硬件、版本、生命周期、重复次数和原始计时边界；当前 Ray Data 与 PolarDB
+   多模态公开结果属于此层。
+3. **数据库系统论文与 benchmark paper**：从 PVLDB/SIGMOD/CIDR/USENIX/ACM 官方
+   论文页检索 semantic operator、AI query processing、multimodal batch inference、
+   serving/scheduling；再沿论文的 baseline 和引用向前/向后追踪。SemBench、LOTUS、
+   Palimpzest、Cortex AISQL 属于此层。
+4. **部署平台与执行框架论文/文档**：补充服务上限和诊断指标，如 vLLM、Ray Data、
+   Daft；它们不能自动代表数据库产品 baseline。
+5. **博客、二手报告和搜索摘要**：只用于发现线索，结论必须回到官方文档、论文、代码
+   或本项目同机复现；无法回溯时不进入矩阵。
+
+推荐检索式至少覆盖 `operator + database + benchmark`、`system + workload + metrics`、
+`AI_CLASSIFY/AI_EMBED + performance`、`multimodal inference + data pipeline`，并检查
+论文/页面发布日期、软件版本和后续更新。项目已有精读材料优先复用
+`research/reading_notes/`，但性能数字仍回查原文或官方结果页。
+
+### 3. 每个候选的来源卡片
+
+候选进入矩阵前必须能回答并记录：
+
+| 字段 | 必填内容 |
+|---|---|
+| 身份 | 系统/论文、官方 URL/DOI、发布日期与访问日期、代码/版本 |
+| 语义 | 算子、输入/输出、是否改变模型调用数或结果质量 |
+| workload | 数据集/split/规模、unique data 与重复 pass、数据表示和 source/sink |
+| compute | 模型、processor、dtype、CPU/GPU/内存/节点和并发配置 |
+| execution | fused/staged/service、batch/actor/task、缓存、cold/warm 生命周期 |
+| measurement | 计时起止、warmup/repeats、汇总统计、质量/成本/失败定义 |
+| tuning | 默认点、独立校准、matched-resource 或 best-achievable |
+| reproducibility | 可同机运行、仅外部数字、仅 capability，及缺失字段 |
+
+### 4. 证据等级和准入
+
+| 等级 | 定义 | 可以声称什么 |
+|---|---|---|
+| A：同机正式复现 | 同输入、模型、质量、物理资源和计时边界；独立校准；原始 CSV 可审计 | 可进入主性能排名 |
+| B：同机 capability/gate | 代码可运行且正确，但规模、稳态或重复不足 | 只证明可行性，不排名 |
+| C：外部官方 benchmark | 官方配置和数字可核验，但硬件/边界与本项目不同 | 行业参照和复现目标，不与本机 raw time 排名 |
+| D：产品 capability / 论文 Related Work | 功能存在，但闭源或无法对齐模型/硬件 | 比语义、质量/成本口径或定位，不比内部 MFU |
+| E：二手或缺失合同 | 无法回到原文，或关键配置/质量/计时边界缺失 | 不采用 |
+
+正式 baseline 的最低集合遵循“少而强”：一个 compute/service ceiling、一个无项目
+调度层的强因果对照、同栈官方 runtime、至少一个不同栈开源 runtime、冻结最佳静态
+项目配置。产品和学术系统只在算子语义与工作量可对齐时进入数字排名，不能为了表格
+数量实现无关系统。
+
+### 5. 过期清理规则
+
+候选状态统一使用 `candidate → capability-verified → gated → calibrated → formal`；
+失败或超出 scope 使用 `blocked` / `related-work-only` / `retired`。发生以下任一情况时
+必须复审：官方文档或 benchmark 更新、软件/模型版本变化、计时边界变化、同名 arm
+实现变化、出现相反的公开排名、项目新结果推翻旧结论。旧数字若仍有诊断价值，移到
+带日期的结果报告并标成历史证据；当前入口不得继续写成“下一步”或“当前默认”。
+
+`baseline_reference.md` 负责来源、分层、准入与指标合同；
+`database_ai_operator_baseline_matrix_20260729.md` 是文本轨道预注册和历史执行记录；
+`image_clip_workload_lock_20260731.md` 是当前图像执行合同；各 `results/README.md` 和
+CSV 才是实验数字的权威来源。三者发生冲突时，不能自行拼接数字，必须回到结果目录。
 
 ---
 

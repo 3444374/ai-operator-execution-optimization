@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-01，方向 pivot：image-first（A 状态感知调度 + B 代价估计），文本轨道 parked-conditional，见 §0；此前 2026-07-31 RC1 数据组织系统重测 regime-dependent 闭合 + 喂饱门禁补全）
+Date: 2026-07-20（最后更新：2026-08-02；image staged resource gate 与 baseline/指标合同同步）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -18,13 +18,15 @@ Fused Daft Native/Ray 与 bounded project-Ray operator-E2E runner 已实现；fr
 actor shape 已独立校准，5000 图×3 formal 已完成。项目阶段拆分相对最佳 Daft
 Native 单卡吞吐 +29.6%，相对最佳 Daft Ray 双卡 +13.8%，12/12 exactly-once；
 但它是同物理机器各自最佳点，不是相同 Ray CPU reservation 的资源效率证明，也不
-代表 Daft-on-Ray/Ray Data staged 强 baseline。下一步先补 staged runner arms，再补
-统一 pgvector sink、bounded direct ceiling 与 CPU-budget-normalized curve。
+代表 Daft-on-Ray/Ray Data staged 强 baseline。两个 staged runner arms 已实现并通过
+256 行资源账本、exactly-once、双 GPU 可运行门禁；该 gate 不是性能排名。下一步先做
+staged 独立 calibration 与 60 秒以上稳态 formal，再补统一 pgvector sink、bounded
+direct ceiling 与 CPU-budget-normalized curve。
 实现边界复测见 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`，
 operator-E2E 原始数据和七步报告见
 `motivation/results/gpu/image_clip_native_baseline_20260801/`。
 
-**过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + fused Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② 实现并校准 Daft-on-Ray staged、Ray Data staged，再接统一 pgvector sink，并扩展 bounded direct CLIP、CPU-normalized curve、vLLM pooling、naive（+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
+**过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + fused Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② ✅ staged runner/resource gate；待独立校准与 formal，再接统一 pgvector sink，并扩展 bounded direct CLIP、CPU-normalized curve、vLLM pooling、naive（+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
 
 **文本轨道遗留的 pivot 后分类**：
 

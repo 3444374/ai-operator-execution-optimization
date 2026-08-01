@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-最后更新：2026-08-01
+最后更新：2026-08-02
 
 > 本文是两分钟快速参考卡片。完整定义以 `PROJECT_OUTLINE.md` 为准；当前执行顺序以
 > `experiments/plans/experiment_status_and_gaps.md` §0 为准；实验数字以各结果目录的
@@ -16,8 +16,9 @@
   统一标为 `parked-conditional`，仅在论文正文需要文本结果时恢复。
 - **CLIP operator-E2E 门禁已通过**：在先校准 Daft actor shape 后，COCO val 5K×3
   formal 中静态阶段拆分相对 fused Daft Native 单卡为 1.296×、相对 fused Daft Ray
-  双卡为 1.138×。这还不是对最强 staged Daft/Ray Data 的胜利；下一步是补 staged
-  baseline、统一 pgvector sink、direct ceiling 和资源归一化，而非继续做小画像。
+  双卡为 1.138×。Daft staged/Ray Data staged 已通过 256 行资源与正确性门禁，但尚未
+  完成独立校准和正式排名；下一步是 staged formal、统一 pgvector sink、direct ceiling
+  和资源归一化，而非继续做小画像。
 
 ## 2. 课题定位
 
@@ -40,7 +41,7 @@
 PostgreSQL
   → Daft DataFrame
   → Ray CPU decode / preprocess + organizer / scheduler
-  → typed tensor-input CLIP backend（Ray GPU actor 主路径；每张 4090 一个 actor）
+  → typed tensor-input CLIP backend（有界、独立校准的 Ray GPU actor pool）
   → PostgreSQL + pgvector
 ```
 
@@ -60,7 +61,7 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 | 2-ep 与 4-ep cache-ON 数据组织排名反转 | 上游组织/准入价值依赖 endpoint consolidation 与 KV 饱和 regime |
 | matched-KV：2-ep 中性、4-ep prefix routing +5.9% | 目前更支持 endpoint consolidation，而非单纯 per-endpoint KV 大小是驱动；仍有饱和深度混淆 |
 | CLIP 5K 串行画像：CPU 准备/actor forward=`13.8–18.3` | 图像链路存在异构流水线候选空间；尚未证明 CPU、Ray/host copy 或 PCIe 谁是主瓶颈 |
-| CLIP operator-E2E：project/fused-Daft=单卡 1.296×、双卡 1.138× | 独立校准后，静态阶段拆分优于 fused UDF；Daft-on-Ray/Ray Data staged 尚未测，故不能声称优于主流异构流水线 |
+| CLIP operator-E2E：project/fused-Daft=单卡 1.296×、双卡 1.138× | 独立校准后，静态阶段拆分优于 fused UDF；staged 两臂仅通过小规模 gate、尚无正式排名，故不能声称优于主流异构流水线 |
 
 CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path 约
 4.4–4.8ms/image）；子阶段实验只直接测得 resize 约 1.3ms，剩余时间尚未充分归因，
@@ -73,7 +74,7 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    operator-E2E formal 已完成。
 2. 先跑 `motivation/plans/image_host_data_path_bottleneck.md` 的 R0→R4 表示阶梯，
    再给三臂接统一 pgvector sink，并补 bounded direct CLIP、CPU-budget-normalized
-   curve、Daft-on-Ray staged、Ray Data staged、vLLM pooling、naive 等完整 baseline；
+   curve、Daft-on-Ray staged/Ray Data staged 的独立校准与 formal、vLLM pooling、naive 等完整 baseline；
    OceanBase `AI_EMBED` 等待可部署环境。
 3. 在同 workload、同硬件、同计时边界下校准 frame budget、K、actor/endpoint 形状和静态 active work。
 4. 实现 A：读取 CLIP endpoint queue/active-work 的状态感知请求成形与提交。
@@ -86,7 +87,7 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 
 - 不能把静态阶段拆分胜过 Daft Native/Ray 写成“动态状态感知策略已胜出”；后者尚未
   与冻结最佳静态 project pipeline 正式对照。
-- 不能把赢 fused Daft UDF 写成“优于 PolarDB/Daft 异构流水线”；staged baseline 尚未测。
+- 不能把赢 fused Daft UDF 写成“优于 PolarDB/Daft 异构流水线”；staged baseline 目前只有 256 行 gate，没有正式规模排名。
 - 不能把 CPU preprocess 主导写成“CPU→GPU 数据传输主导”。
 - 不能把 4-ep 病态 bounded 值当作服务上限，或把 text/image 跨协议吞吐直接比较。
 - 不能把 prefix/KV 机制迁移到 CLIP；CLIP 没有自回归 KV cache、TTFT 或 TPOT。
