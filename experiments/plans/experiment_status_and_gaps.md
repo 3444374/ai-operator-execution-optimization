@@ -14,10 +14,11 @@ Date: 2026-07-20（最后更新：2026-08-01，方向 pivot：image-first（A �
 production-np 的配对串行吞吐为 **1.14–1.22×**，但 CPU prepare 仍为 actor 的
 **13.8–31.2×**；720/720 rows 完整，embedding cosine=1/max_abs=0。因而 slow
 processor 混淆没有推翻异构阶段失衡，但 95% 仍只能写成理论串行非-forward占比。
-下一步进入 path-B E2E runner 和 §7 对照臂。原始数据与七步报告见
+Daft Native/Ray 与 bounded project-Ray operator-E2E runner 已实现，下一步先跑
+256 行 gate，再运行 5K×3 交错 formal；通过后补统一 pgvector sink。原始数据与七步报告见
 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
 
-**过门禁后（image build，顺序固定）**：① 中性 work-unit + lazy image source + typed CLIP tensor actor 基础合同已实现；下一步补 path B runner（PG→Daft→Ray CPU decode/preprocess→Ray CLIP GPU actor→pgvector，复用 scheduler/tracing）→ ② image §7 对照臂（见 `image_clip_workload_lock_20260731.md` §7；bounded direct CLIP / **Daft `@daft.cls` Native 强 baseline** / vLLM pooling / Ray Data / naive / ours，+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
+**过门禁后（image build，顺序固定）**：① 中性 work-unit + lazy image source + typed CLIP tensor actor + Daft Native/Ray/project-Ray operator-E2E runner 已实现，先完成 gate/formal → ② 三臂接统一 pgvector sink，并扩展 image §7 对照（bounded direct CLIP / vLLM pooling / Ray Data / naive / ours，+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
 
 **文本轨道遗留的 pivot 后分类**：
 

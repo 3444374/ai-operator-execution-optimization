@@ -3,7 +3,7 @@
 日期：2026-07-31
 状态：**🔴 首个 workload（2026-07-31 校正回升）**。学长反馈的核心判据：数据搬运瓶颈有两段——送 vLLM（拥挤）+ **DB 读出来 / CPU 搬到 GPU**（机会）；当前 prompt 文本每行 ~1KB、搬运太轻，瓶颈不显现。**图像 CLIP 每行 CPU→GPU 搬运 ~600KB（文本的 ~600×）+ JPEG decode+resize 重**，让 DB 读 + CPU→GPU 搬运瓶颈真正显现——这正是满足判据的首选 workload。**注意**：回升的理由是"让数据搬运瓶颈显现"，**与冷启动（机制，parked）无关**；CLIP 不绑死在冷启动旗舰上。详见 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10 + §10.1（benchmark 三层）。
 
-> ✅ **2026-08-01 更新**：方向已锁 A+B（见 `experiment_status_and_gaps.md` §0）；**§6 go/no-go 门禁已过（GO，5K 规范跑 ratio 13.8–18.3，CPU preprocess 主导、GPU 串行空转 ~95%）** → 下方「暂停 build」**已解除**，进入 path-B runner 建设期。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
+> ✅ **2026-08-01 更新**：方向已锁 A+B（见 `experiment_status_and_gaps.md` §0）；**§6 go/no-go 门禁已过（GO，5K 规范跑显示 CPU preprocess 明显重于 GPU actor service）** → 下方「暂停 build」**已解除**，进入 path-B runner 建设期。该比例来自串行阶段计时，不等同于实测 GPU idle。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
 
 关联：`research/daft_db_gpu_bridge_direction_scope_20260731.md`；`research/evaluation_metrics_survey_20260731.md` 附录 A.4 / B.4；`notes/communication_notes.md` §5；`code/INFRA_STATUS.md` §6–§7；`PROJECT_OUTLINE.md` §5.3（多模态泛化）。
 
@@ -176,6 +176,37 @@ fast path 未触发撤回条件，不过它只支持继续建设 E2E，不能证
 ---
 
 ## 7. 正式对照与晋级门禁
+
+### 7.1 两层计时边界
+
+图像 baseline 必须分两层，不能把 micro-profile 或只跑模型的数字称为数据库
+端到端：
+
+| 层 | 统一边界 | 回答的问题 | 当前脚本 |
+|---|---|---|---|
+| **operator E2E gate** | PostgreSQL BYTEA 开始读取 → 最后一批 embedding 返回；不含写回 | Daft Native/Ray 与拆阶段流水线谁更有效地执行同一 AI 算子？ | `code/scripts/run_image_clip_e2e.py` |
+| **system E2E formal** | PostgreSQL BYTEA 读取 → pgvector COPY 完成；索引延后统一构建 | 数据库作业实际多久完成，优化是否被写回抵消？ | operator gate 通过后接统一 sink |
+
+operator gate 不是“只测 GPU”：它包含 DB read、JPEG decode、processor、CPU→GPU
+transfer、CLIP forward、Daft/Ray 调度和结果 fan-in，只暂时排除 pgvector sink。三臂
+必须使用同一张 `image_documents` 表、同一行集合、fast torchvision tensor processor、
+模型 revision、dtype、batch size、两张 GPU 和 exactly-once/归一化审计。
+
+### 7.2 第一轮最小矩阵（优先执行）
+
+| 臂 | 唯一变化 | 角色 |
+|---|---|---|
+| `daft_native` | `@daft.cls(gpus=1)` + Native runner，UDF 内完成 preprocess+forward | **关键强 baseline** |
+| `daft_ray` | 同一 UDF，仅切换 Daft Ray runner | 执行器成本归因 |
+| `project_ray` | Daft lazy source；Ray CPU preprocess actors 与 tensor-only GPU actors 有界重叠 | ours 当前主路径 |
+
+执行顺序：先 256 行 gate，全部通过后使用 COCO val 5000 行，batch=64、2 GPU、
+每次 invocation 内先 warmup 64 行；三臂按 Latin-square 顺序交错，3 个 formal repeats。
+headline 同时报告 operator E2E/JCT、images/s、first-output、GPU per-device util、
+embedding checksum、最大 norm error 和 exactly-once，禁止只汇报吞吐。若 checksum/norm
+或行集合不一致，性能结果无效。
+
+### 7.3 完整对照臂
 
 **对照臂**（对齐附录 B.4 + §7.5 干净合同；区分"直接 baseline"vs"Related Work"）：
 

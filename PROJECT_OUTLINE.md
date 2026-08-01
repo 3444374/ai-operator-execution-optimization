@@ -194,10 +194,11 @@
 
 **当前缺口与顺序（以 `experiments/plans/experiment_status_and_gaps.md` §0 为准）**：
 
-1. **Image path-B 实现**：补齐中性 work-unit、CLIP embedding adapter、流式图像
-   source 与 `PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor→pgvector`
-   runner；复用既有 organizer、scheduler 和 tracing，不复制一套图像调度框架。
-2. **同语义强 baseline**：分别独立标定 bounded direct CLIP、Daft
+1. **Image operator-E2E gate**：中性 work-unit、lazy source、fast processor、
+   Daft Native/Ray 与 bounded `PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor`
+   runner 已实现；先在远端跑 256 行 gate，再跑 5K×3 交错 repeats。
+2. **补 system E2E 与完整强 baseline**：operator gate 后给三臂接同一 pgvector sink，
+   再分别独立标定 bounded direct CLIP、Daft
    `@daft.cls` Native、vLLM pooling、Ray Data、naive 和 ours；OceanBase AI_EMBED 等待可部署环境。
    当前 5K 画像只证明存在优化空间，尚未证明 ours 胜出。
 3. **A+B 方法验证**：A 读取 CLIP endpoint queue/active-work 做状态感知请求成形；

@@ -3,6 +3,7 @@
 from .clip import (
     ClipImagePreprocessor,
     ClipTensorActor,
+    FastClipImagePreprocessor,
     extract_clip_image_features,
     l2_normalize_embeddings,
 )
@@ -19,6 +20,7 @@ __all__ = [
     "ClipTensorActor",
     "DaftImageSource",
     "EmbeddingSemantics",
+    "FastClipImagePreprocessor",
     "ImageEmbeddingBackend",
     "ImageEmbeddingBatch",
     "ImageEmbeddingResult",

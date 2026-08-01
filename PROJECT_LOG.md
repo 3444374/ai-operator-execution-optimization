@@ -3318,3 +3318,19 @@
   Ray Data 或 vLLM pooling，也不能把 profile speedup 写成调度策略收益。
 - **同步**：raw CSV、manifest、run log 和七步报告纳入
   `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
+
+## 2026-08-01 图像 operator-E2E 强 baseline runner
+
+- **方法学分层**：新增 operator E2E（PG BYTEA read → 最后一批 embedding 返回）
+  与 system E2E（再含统一 pgvector sink）两层边界；micro-profile 不再代替动机
+  baseline，operator gate 也不冒充完整数据库作业时间。
+- **强 baseline**：新增同语义 `daft_native` 与 `daft_ray` 两臂，复用同一个
+  `@daft.cls(gpus=1)` fast torchvision tensor processor + CLIP UDF，仅切换 runner。
+- **项目臂**：新增 Daft lazy source → 有界 Ray CPU preprocess actors → tensor-only
+  GPU actors 流水线；不在 driver 全量 collect，限制 active batches，复用 typed image
+  batch/result 合同。
+- **严谨性**：三臂固定数据行、模型/processor revision、dtype、batch 和 GPU 数，
+  输出 streaming exactly-once、512d/finite/L2 norm/checksum 审计；记录 operator JCT、
+  first-output、images/s 和 per-device GPU util，不再只报告吞吐。
+- **运行顺序**：先 256 行三臂 gate，再 COCO val 5000、3 repeats、Latin-square
+  交错 formal。首轮排除 writeback 以隔离执行器；通过后给三臂接相同 pgvector sink。

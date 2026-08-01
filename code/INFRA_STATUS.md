@@ -265,8 +265,9 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
   CLIP 初始 slow-path 与当前实现边界画像均完成。tensor fast path 相对
   production-np 串行 profile 约 1.14–1.22×，但 CPU prepare 仍为 actor 的
   13.8–31.2×，因此 E2E build 动机保留。
-  但真实 image source/frame-cost adapter、CLIP HTTP endpoint、path-B runner 和
-  正式策略/baseline 结果尚未完成。
+  lazy image source、Daft Native/Ray baseline 与 bounded Ray CPU→GPU operator-E2E
+  runner 已实现，等待远端 gate/formal；统一 pgvector sink、frame-cost 策略接线、
+  CLIP HTTP/vLLM pooling 对照和正式策略结果尚未完成。
 - **算子代价估计（共同使能组件）**：初版实现与 grouped held-out 评估已完成，可提供
   粗粒度编排提示；独立时间段/新 workload 校准、预测区间和跨模型迁移仍未完成。
 

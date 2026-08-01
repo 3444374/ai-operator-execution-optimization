@@ -127,8 +127,11 @@ source URI/共享文件路径只能作独立 baseline，不能与 BYTEA 轨道�
 - `ClipImagePreprocessor`、typed `ImageEmbeddingBatch/Result`；
 - `ClipTensorActor`：常驻 GPU、只接收预处理 tensor、输出 projected + L2-normalized embedding。
 
-尚未实现：把以上模块串成完整 PG→Daft→Ray→pgvector runner、阶段 trace、写回和
-正式 baseline runner。因此下面只做**合同 smoke**，不能产出方法结论。
+已新增 operator-E2E runner：`code/scripts/run_image_clip_e2e.py`，统一比较
+Daft Native、Daft Ray 与项目分阶段 Ray pipeline。它从 PostgreSQL BYTEA 读取开始，
+计时到最后一批 embedding 返回，包含 DB read/preprocess/transfer/forward/fan-in，
+但**暂不含 pgvector 写回**。因此可作强 baseline gate，不能冒充完整 system E2E。
+统一 pgvector sink、阶段 trace 和正式 system-E2E runner 仍待接入。
 
 ### 5.2 Ray GPU actor 合同 smoke（单卡）
 
@@ -185,7 +188,35 @@ CUDA_VISIBLE_DEVICES=0 /root/autodl-tmp/venvs/vllm-4090/bin/python \
 请求格式以 vLLM 官方 `examples/pooling/embed/vision_embedding_online.py` 为准。
 正式实验必须记录 vLLM 版本、runner、processor placement 和服务端 batching 参数。
 
-### 5.4 已完成：分阶段瓶颈画像
+### 5.4 Daft Native / Daft Ray / project-Ray operator E2E gate
+
+三臂必须串行运行，且运行前确认没有 vLLM/其他 GPU 任务。示例 gate：
+
+```bash
+cd /root/autodl-tmp/ai-operator
+set -a; source /root/autodl-tmp/ai-operator-runtime.env; set +a
+MODEL=/root/autodl-tmp/models/clip-vit-base-patch32
+OUT=/root/autodl-tmp/experiment-artifacts/image_clip_e2e_gate_$(date +%Y%m%d_%H%M%S)
+mkdir -p "$OUT"
+
+for ARM in daft_native daft_ray project_ray; do
+  PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
+    code/scripts/run_image_clip_e2e.py \
+    --arm "$ARM" --model "$MODEL" --pg-dsn "$DATABASE_URL" \
+    --limit 256 --warmup-rows 64 --batch-size 64 \
+    --cpu-workers 4 --gpu-workers 2 --max-active-batches 8 \
+    --phase gate --repeat-index 0 \
+    --out-csv "$OUT/runs.csv" \
+    --out-manifest "$OUT/${ARM}.manifest.json"
+done
+```
+
+通过条件：三臂各 256 行、`exactly_once=true`、embedding dimension=512、
+`max_norm_error` 在 float32 归一化容差内、checksum 一致；没有残留 Ray/GPU 进程。
+正式 5000 行用 3 repeats，并按文档预注册的 Latin-square 顺序交错，不能连续跑完
+同一臂后直接比较，以免时间漂移成为混淆变量。
+
+### 5.5 已完成：分阶段瓶颈画像
 **第一步不是写优化策略，是先画像——确认瓶颈到底在哪段、有多重。** 把 §4.3 的数据流分阶段计时：
 - DB-read（PostgreSQL 取图）
 - CPU JPEG decode + resize + normalize
@@ -196,7 +227,7 @@ CUDA_VISIBLE_DEVICES=0 /root/autodl-tmp/venvs/vllm-4090/bin/python \
 
 5K×100 画像已经通过 `ratio>0.3` 门禁；不得重复跑画像代替端到端 runner gate。
 
-### 5.5 当前实现边界的受控复测
+### 5.6 当前实现边界的受控复测
 
 旧画像使用 `CLIPProcessor(..., return_tensors="pt")`，当前实现使用
 `ClipImagePreprocessor(..., return_tensors="np") → ClipTensorActor`。两者不能直接

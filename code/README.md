@@ -18,6 +18,7 @@ code/
 │   ├── local_embedding_server.py         ← 本地 OpenAI 兼容 embedding 服务（Ollama）
 │   ├── daft_text_organizer_smoke.py      ← Daft 文本 DataFrame / into_batches / Ray runner smoke
 │   ├── profile_image_clip_preprocess_variants.py ← 图像 production/legacy/torchvision 交错画像
+│   ├── run_image_clip_e2e.py          ← Daft Native/Ray/project-Ray 图像 operator-E2E 对照
 │   ├── profile_clip_preproc_stages.py     ← 历史 slow processor 子阶段诊断
 │   └── summarize_output_aware_bfd.py     ← BFD 正式重复实验的长表统计汇总
 ├── configs/                              ← 后续工程配置文件（当前为空）

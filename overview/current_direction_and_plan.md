@@ -60,16 +60,17 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 | matched-KV：2-ep 中性、4-ep prefix routing +5.9% | 目前更支持 endpoint consolidation，而非单纯 per-endpoint KV 大小是驱动；仍有饱和深度混淆 |
 | CLIP 5K 画像：CPU 准备/GPU embed=`13.8–18.3` | 图像链路存在真实 CPU-preprocess→GPU 的异构流水线优化空间 |
 
-CLIP 画像进一步表明主要瓶颈是 `CLIPProcessor` resize/normalize（约 5.2ms/image），
-不是 JPEG decode、H2D 或 PostgreSQL bulk read。该结果属于 motivation/profile，尚不是项目策略优于
+CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path 约
+4.4–4.8ms/image）；子阶段实验只直接测得 resize 约 1.3ms，剩余时间尚未充分归因，
+不能全部写成 normalize。该结果属于 motivation/profile，尚不是项目策略优于
 baseline 的证据。
 
 ## 5. 当前实施顺序
 
-1. 在已实现的中性 work-unit、lazy image source、CPU preprocessor 和 CLIP
-   tensor actor 上补 path-B runner：
-   `PG → Daft → Ray CPU preprocess → Ray CLIP GPU actor → pgvector`。
-2. 建立同语义强 baseline：bounded direct CLIP、Daft `@daft.cls` Native、vLLM pooling、Ray Data、naive、ours；
+1. 对已实现的 Daft Native、Daft Ray 和 bounded project-Ray operator-E2E runner
+   先跑 256 行 gate，再跑 COCO val 5K×3 交错 formal。
+2. gate 通过后给三臂接统一 pgvector sink，并继续建立 bounded direct CLIP、
+   vLLM pooling、Ray Data、naive、ours 等完整同语义 baseline；
    OceanBase `AI_EMBED` 等待可部署环境。
 3. 在同 workload、同硬件、同计时边界下校准 frame budget、K、actor/endpoint 形状和静态 active work。
 4. 实现 A：读取 CLIP endpoint queue/active-work 的状态感知请求成形与提交。

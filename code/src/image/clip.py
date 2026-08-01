@@ -62,6 +62,45 @@ class ClipImagePreprocessor:
         return np.ascontiguousarray(pixel_values, dtype=np.float32)
 
 
+class FastClipImagePreprocessor:
+    """CPU CLIP preprocessing using torchvision tensor decode end to end.
+
+    This is the production candidate selected by the interleaved preprocessing
+    profile. It keeps encoded JPEG bytes on the source boundary, avoids a PIL
+    round trip, and returns the same contiguous float32 tensor contract as
+    :class:`ClipImagePreprocessor`.
+    """
+
+    def __init__(self, processor_revision: str):
+        from transformers import AutoImageProcessor
+
+        self.processor_revision = processor_revision
+        self.processor = AutoImageProcessor.from_pretrained(
+            processor_revision,
+            backend="torchvision",
+        )
+
+    def preprocess(self, encoded_images: Sequence[bytes]) -> np.ndarray:
+        if not encoded_images:
+            raise ValueError("encoded_images must not be empty")
+
+        import torch
+        from torchvision.io import ImageReadMode, decode_image
+
+        images = [
+            decode_image(
+                torch.frombuffer(bytearray(item), dtype=torch.uint8),
+                mode=ImageReadMode.RGB,
+            )
+            for item in encoded_images
+        ]
+        pixel_values = self.processor(
+            images=images,
+            return_tensors="pt",
+        )["pixel_values"]
+        return np.ascontiguousarray(pixel_values.numpy(), dtype=np.float32)
+
+
 class ClipTensorActor:
     """GPU-resident CLIP actor accepting only preprocessed pixel tensors.
 
