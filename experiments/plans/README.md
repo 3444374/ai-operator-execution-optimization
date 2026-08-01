@@ -27,7 +27,7 @@
 
 | 文件 | 状态 | 内容 |
 |---|---|---|
-| `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload**（当务之急） | 图像 AI_EMBED (CLIP)——JPEG decode/processor + 大 tensor 让 DB/CPU/Ray/H2D/GPU 木桶效应可测；不预设瓶颈。包含 fused/staged baseline 与 go/no-go 门禁。**benchmark** = ImageNet/COCO + ANN-benchmarks recall@10 + BigVectorBench image 切片。 |
+| `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload**（当务之急） | 图像 AI_EMBED 执行门禁 + AI_CLASSIFY 正式候选。公开对齐轨道为 ImageNet/ResNet18，数据库泛化轨道为 COCO/CLIP multi-label；包含质量门禁、fused/staged baseline 与 host-data-path go/no-go。 |
 | `msmarco_embedding_workload_20260731.md` | ⏸ 文本轻对照（降级） | MS MARCO 8.8M 批 embedding。仍是文本，token ID 紧凑，搬运轻，**瓶颈不显现**——仅作"文本下不显现"的边界对照。 |
 
 方向 scope（DB↔GPU 经 Daft 桥接 + 三痛点 + 待验证的 offline-batch 候选界面）见

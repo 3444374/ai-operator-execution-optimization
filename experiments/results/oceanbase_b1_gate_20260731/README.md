@@ -55,6 +55,20 @@ observer 在 init step 4/18（`init_io` → `ob_server_log_block_mgr.prepare_dir
 
 **经验性结论**：此 AutoDL 容器无法初始化 OceanBase observer；seccomp profile 与只读 kernel 参数从容器内部不可修改，无法在本机修复。
 
+### 3.4 2026-08-02 独立目录复核：阻塞仍然存在
+
+在代码更新后使用全新、不覆盖旧证据的目录
+`/root/autodl-tmp/experiment-artifacts/oceanbase_recheck_e674e71_20260802`
+重新执行启动门禁。机器仍为普通 AutoDL Docker 容器，`Seccomp: 2`、
+`Seccomp_filters: 1`、`vm.max_map_count=65530` 且容器内不可写。observer 再次在
+init step 4/18 退出；本次 `observer.log` 明确记录
+`prepare_dir_and_create_meta_ failed`、errcode `-9100` / `OB_NO_SUCH_FILE_OR_DIRECTORY`，
+2881 未监听。该复核没有执行 bootstrap 或 AI SQL，因而没有产生 B1 性能数据。
+
+这次复核强化的是“当前容器部署门禁稳定失败”，仍不能把原因唯一归结为
+`vm.max_map_count` 或断言 OceanBase 产品不可运行；后续不再在相同容器条件下重复消耗
+实验时间，只有 seccomp-unconfined/privileged 容器或 VM 条件变化时才重开动态 B1。
+
 ## 4. 保留的证据（远端）
 
 - `/home/admin/oceanbase/`：apt 安装的 observer 4.5.0 + libs + admin SQL（含 `dbms_ai_service_*.sql`）。

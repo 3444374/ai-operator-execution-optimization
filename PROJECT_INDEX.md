@@ -11,7 +11,7 @@
 | `code_doc/superpowers/plans/2026-07-29-official-baseline-matrix-implementation.md` | TDD implementation plan for the official baseline harness and remote fatal-flaw gate | Execute after the baseline design is approved; enumerates exact files, interfaces, RED/GREEN tests, dependencies, templates and remote stop conditions |
 | `code_doc/superpowers/plans/2026-07-29-same-condition-project-runtime-comparison-implementation.md` | TDD implementation plan for the final single-job same-condition comparison | Execute after the official gate; adds manifest-locked project profiling, no-replay request refill, pinned routing, 512-row calibration and 2,048-row held-out thresholds |
 | `code/scripts/run_official_baseline_gate.py` | Reproducible two-endpoint official baseline core gate runner | Use after freezing the PostgreSQL manifest; starts both shards per cell, preserves logs/raw output, waits for empty vLLM queues and stops on the first failed gate |
-| `experiments/results/oceanbase_b1_gate_20260731/README.md` | OceanBase B1 baseline gate #1 verification + deployment-blocker record | Confirm CE 4.5.0 contains AI_COMPLETE/DBMS_AI_SERVICE (gate passed) and why this AutoDL container cannot init observer before retrying B1 on a deployable host |
+| `experiments/results/oceanbase_b1_gate_20260731/README.md` | OceanBase B1 capability gate + 2026-08-02 independent deployment recheck | Confirm CE 4.5.0 contains AI_COMPLETE/DBMS_AI_SERVICE and why the ordinary AutoDL container still cannot init observer before retrying on a deployable host |
 | `experiments/results/oceanbase_b1_gate_20260731/install_runbook.md` | Reusable OceanBase CE install/start runbook (apt path, config gotchas, verified observer start command, bootstrap + dynamic AI_COMPLETE steps) | Follow when redeploying OceanBase on a privileged container or systemd VM |
 | `experiments/results/prefix_cache_routing_req_20260730/README.md` | Cache-on prefix-affinity routing ablation, request granularity, three arms (least_queued / prefix_affinity / +length-align) | Review why pure routing is -0.1% neutral and the prefix direction is closed under vLLM APC |
 | `experiments/results/prefix_cache_routing_4ep_1.5b_20260731/README.md` | 4-endpoint prefix-affinity routing ablation (4×Qwen2.5-1.5B, 2 arms) + the code/config/vLLM/deploy adjustments that enabled 4 endpoints | Review why prefix_affinity is +5.9% (crosses 5% gate) at 4-ep/1.5B but neutral at 2-ep/7B — high-eviction regime; confounded (model×endpoints×KV) and saturated, needs isolation |
@@ -166,12 +166,13 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |
 | `deploy/autodl/README.md` | AutoDL 单一 runbook：环境准备、开机恢复、gate、正式实验和中断恢复；顶部有"两条推理引擎 track（文本 vLLM / 多模态 CLIP）"概念总览 | 新对话接手远端实验时按顶部唯一入口直接操作 |
 | `deploy/autodl/text_serving.md` | 文本模态（vLLM 生成式 LLM）推理服务引擎部署：vLLM 是什么（continuous batching/APC/KV cache）、vLLM vs CLIP 差异、Qwen 模型下载 + start_endpoints.sh、sharegpt_multiturn 数据集、runner/合同/喂饱门禁、7 条坑 | 跑文本 AI_COMPLETE 实验时读；与 image_serving.md 对称 |
-| `deploy/autodl/image_serving.md` | 图像 CLIP 部署：fused Daft Native/Ray/project-Ray operator-E2E gate、Ray GPU actor、vLLM pooling、COCO/PG BYTEA 数据边界与 staged/system-E2E 待完成项 | 准备/跑图像 AI_EMBED workload 时读；区分 fused、staged、operator E2E 与含 pgvector 的 system E2E |
+| `deploy/autodl/image_serving.md` | 图像 CLIP 部署：五臂 fused/staged operator-E2E gate、显式 Ray 资源账本、Ray GPU actor、vLLM pooling、COCO/PG BYTEA 边界 | 准备/跑图像 AI_EMBED/AI_CLASSIFY 时读；先过 schema v4 资源/正确性门禁，再区分 operator E2E 与含 sink 的 system E2E |
 | `code/scripts/select_strategy_calibration.py` | 从 feeding/direct/token-budget/actor-shape 证据生成冻结校准合同和环境覆盖 | 同协议 actor 曲线完成后、启动数据组织/提交策略/多 job formal 前执行 |
 | `code/scripts/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
 | `code/scripts/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |
 | `code/scripts/profile_image_clip_preprocess_variants.py` | 交错比较当前 production-np、历史 legacy-pt 与 torchvision CLIP preprocessing，并经过同一 tensor actor 做 embedding parity gate | 复核 image motivation 是否能外推到当前代码边界；不是 E2E 方法结果 |
-| `code/scripts/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、fast processor、CLIP、batch/GPU 和输出审计下运行 fused Daft Native、fused Daft Ray 与 project-Ray | 跑 fused operator-E2E gate；当前不含 staged Daft/Ray Data 与 pgvector 写回 |
+| `code/scripts/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、fast processor、CLIP、batch/GPU 和输出审计下运行五个 fused/staged Daft/Ray Data/project arms | 跑 operator-E2E gate；schema v4 fail-closed 核对 source/stage/model CPU 资源，当前不含 pgvector 写回 |
+| `code/src/image/resource_budget.py` | 图像 Ray graph 的 source/preprocess/model CPU slot 精确账本与 affinity 超卖门禁 | 新增或调整 Daft/Ray Data/project actor/source 形状时复用；禁止只给常驻 actor CPU 而饿死 SQL reader |
 | `code/scripts/profile_clip_preproc_stages.py` | 对历史 slow CLIP processor 的可见 method 子阶段计时 | 只用于解释 resize 占比；未归因时间不能写成具体转换主因 |
 | `motivation/results/gpu/image_clip_preprocess_variants_20260801/` | 四种 CLIP processor/decode 边界的 720 条 raw repeats、manifest、日志与七步报告 | 判断 slow-path 动机能否外推到当前/fast 实现；不能当作 Daft/Ray E2E 方法结果 |
 | `motivation/results/gpu/image_clip_native_baseline_20260801/` | Fused Daft fractional-GPU actor 校准、5000 图×3 operator-E2E formal、派生 summary 与七步报告 | image-first 当前 fused 动机基线；区分 staged 强基线、CPU reservation 边界与待补 system-E2E |
@@ -434,7 +435,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `sink_writeback_coordination.md` | 写回工程参考（不作为独立实验阶段）：COPY + deferred index baseline |
 | `cross_layer_killer_experiment.md` | 耦合验证实验计划：独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数的完整交互面）|
 | `experiment_status_and_gaps.md` | **实验状态与缺口分析（2026-07-20）**：已完成/未完成实验表、证据链完整性、指标盲区、P0/P1/P2 路线图、审稿人视角风险。当前实验设计的第一参考。|
-| `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload（当务之急）**：图像 CLIP——JPEG decode/processor + 大 tensor 使 DB/CPU/Ray/H2D/GPU 木桶效应可测；包含 fused/staged baseline、ImageNet/COCO + recall@10 + §7.5 协议 |
+| `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload（当务之急）**：AI_EMBED 执行门禁 + AI_CLASSIFY 正式候选；ImageNet/ResNet18 单标签与 COCO/CLIP multi-label 两条质量轨道 | 设计图像实验、选择 top-1/top-5 或 mAP/F1、审计五臂 fused/staged baseline 和 host-data-path 门禁时读 |
 | `msmarco_embedding_workload_20260731.md` | ⏸ 文本轻对照（降级）：MS MARCO 文本，token ID 紧凑搬运轻，瓶颈不显现——仅作"文本下不显现"的边界对照 |
 
 所有实验计划遵循从 vLLM/Orca/TurboVecDB/GaussML/FlexPushdownDB 五篇 CCF-A 论文提取的共同方法论：曲线 > 单点、先暴露瓶颈再优化、同硬件公平 baseline、消融拆开、诚实报告边界、统计严谨。

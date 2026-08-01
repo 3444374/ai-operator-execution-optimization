@@ -1,7 +1,9 @@
-# 图像 AI_EMBED (CLIP) Workload 锁定方案
+# 图像 AI_EMBED / AI_CLASSIFY Workload 锁定方案
 
 日期：2026-07-31
-状态：**🔴 首个 workload（2026-07-31 校正回升）**。图像 CLIP 每行包含 JPEG bytes、
+状态：**🔴 首个 workload（2026-08-02 分类轨道升级）**。现有 COCO/CLIP
+AI_EMBED 先作为执行链和 host-data-path 门禁；正式产品语义优先验证
+AI_CLASSIFY。图像每行包含 JPEG bytes、
 CPU decode/processor、约 600KB 的 FP32 pixel tensor 和 GPU forward，因此能把文本轨道
 不明显的 host data path 与 CPU/GPU stage balance 变成可测变量。**这只是 workload
 选择动机，不预设 DB read、Ray copy、PCIe 或 CPU 一定是 binding bottleneck**；具体
@@ -151,6 +153,30 @@ image_embeddings(doc_id BIGINT, workload_name TEXT, model_revision TEXT,
 
 **TTFT/TPOT 不适用** CLIP（非自回归生成）——这是诚实的边界，说明哪些 LLM 指标可迁移、哪些不可。
 
+### 5.1 AI_CLASSIFY 的质量与公开 benchmark 对齐
+
+系统性能和模型质量必须分开报告；“同一实现 digest 一致”只能证明各执行 arm
+算出了同一结果，不能替代分类质量。正式分类使用两条不混读的 workload：
+
+| 轨道 | 数据/模型 | 直接对齐对象 | 质量指标 | 系统指标 |
+|---|---|---|---|---|
+| public-system parity | ImageNet-1K（先 val 50K，许可/空间允许再扩）+ ResNet18 | Ray Data/Daft 官方约 803,580 图 image-classification pipeline | top-1/top-5 accuracy、invalid/missing label | E2E/JCT、images/s、first output、repeat mean/std/CV、写出时间、stage/resource 指标 |
+| database/generalization | COCO val + CLIP zero-shot multi-label | PolarDB `classify_image`/Snowflake image `AI_CLASSIFY` 的数据库算子形态 | mAP、micro/macro-F1、precision/recall@阈值、coverage、置信度校准 | 同上，并记录标签集合/描述/prompt 与每图类别数 |
+
+COCO 不是单标签 ImageNet，不能对它报告误导性的 top-1/top-5；必须先导入 COCO
+annotations 并冻结 label/prompt manifest。反过来，ImageNet/ResNet18 的单标签结果
+也不能冒充 user-defined-category `AI_CLASSIFY` 的语义质量。
+
+官方公开口径只作方法参考，不跨硬件比较 raw time：[PolarDB 2026 性能页](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/daft-performance-benchmark)
+在 8×24GB GPU 上报告约 803,580 图的总耗时，[Ray 2026 nightly](https://docs.ray.io/en/master/data/benchmark.html)
+也使用约 800K ImageNet/ResNet18，
+但两者公布的 Daft/Ray Data 排名方向相反。正式结论只来自本项目同硬件、同代码版本、
+同数据和独立校准后的重跑。我们的结果至少比公开 headline 多报告 accuracy/quality、
+尾延迟、CPU/GPU/内存/能耗、失败数和完整 timing boundary。
+
+当前 COCO 表只有图像 bytes，尚无 annotations/captions；在 ground truth 导入前，
+只允许报告 embedding 数值等价和系统门禁，不允许声称分类准确率或检索 recall。
+
 ---
 
 ## 6. 最小验证实验（fatal-flaw 门禁，必跑）
@@ -211,15 +237,25 @@ transfer、CLIP forward、Daft/Ray 调度和结果 fan-in，只暂时排除 pgve
 |---|---|---|
 | `daft_native` | `@daft.cls(gpus=1)` + Native runner，UDF 内完成 preprocess+forward | 已校准 fused baseline；不是最终 staged 强 baseline |
 | `daft_ray` | 同一 UDF，仅切换 Daft Ray runner | 执行器成本归因 |
+| `daft_staged` | Daft Ray CPU 类 UDF → tensor-only GPU 类 UDF | 官方异构 staged 强 baseline |
+| `ray_data_staged` | Ray Data SQL shards → CPU `map_batches` → 固定 GPU actor pool | 官方 streaming staged 强 baseline |
 | `project_ray` | Daft lazy source；Ray CPU preprocess actors 与 tensor-only GPU actors 有界重叠 | ours 当前主路径 |
 
-执行顺序：先 256 行 gate，全部通过后使用 COCO val 5000 行，batch=64、2 GPU。
+执行顺序：先 256 行五臂 gate，全部通过后使用 COCO val 5000 行，batch=64、2 GPU。
 每次 invocation 先执行 64 行 preflight/warmup，但 formal 必须新建模型 worker：Daft
 每 query 天然重建 UDF actor，project-Ray 也显式销毁 warmup pool 后重建，避免生命周期
-不对称。三臂按 Latin-square 顺序交错，3 个 formal repeats。
+不对称。五臂按预注册随机块顺序交错，3 个 formal repeats。
 headline 同时报告 operator E2E/JCT、images/s、first-output、GPU per-device util、
 embedding checksum、最大 norm error 和 exactly-once，禁止只汇报吞吐。若 checksum/norm
 或行集合不一致，性能结果无效。
+
+所有 Ray-backed staged graph 必须显式预留
+`source reader slots + CPU preprocess actors（如有）+ GPU/model actor CPU slots`。2026-08-02
+门禁复现了只分配 `4+2=6 CPU` 时 SQL reader 无 slot、0-row 永久等待的资源死锁；
+runner 对 Ray Data、Daft staged 和 fused Daft Ray 分别建立精确资源账本，并在
+`ray.init` 前按 CPU affinity 拒绝物理超卖；cluster/host/declaration 分项写入 schema v4。
+任何通过超卖或遗漏 source CPU 才能运行的点
+不得进入正式 baseline；各 arm 的 Ray reservation 和 host 实测 CPU-core-seconds分开报告。
 
 Daft SQL scan 在当前 PostgreSQL connector 下只有一个输入 partition，而 Daft 0.7.21
 NativeRunner 的 `repartition/into_partitions` 均为 no-op。双 GPU baseline 因此在 source
@@ -248,14 +284,14 @@ direct ceiling 和 CPU-budget-normalized curve。正式报告：
 |---|---|
 | **bounded direct CLIP** | 物理上界（同协议绕过 Daft/Ray） |
 | **Daft fused `@daft.cls` Native/Ray** | 已完成的粗资源边界对照；不是 PolarDB staged pipeline 的替身 |
-| **Daft-on-Ray staged CPU→GPU** | ⭐ 与 ours 最接近的官方异构流水线强 baseline；待补 |
-| **OceanBase AI_EMBED**（无 Daft/Ray，DB 原生算子） | 产品级核心 baseline——B1 门禁已过函数存在性（CE 4.5.0），当前 AutoDL 容器部署受阻、待可部署环境（见 `../results/oceanbase_b1_gate_20260731/`） |
-| **Ray Data staged CPU→GPU** | 官方 streaming batch / actor-pool 框架 baseline；待补 |
+| **Daft-on-Ray staged CPU→GPU** | ⭐ 与 ours 最接近的官方异构流水线强 baseline；runner arm 与 32-row gate 已通过，待校准/formal |
+| **PolarDB `classify_image` / Snowflake image `AI_CLASSIFY`** | 产品 SQL 语义参照；闭源服务不能在本机匹配硬件时只比较接口、质量口径和 timing boundary，不把厂商 raw time 与本项目排名 |
+| **Ray Data staged CPU→GPU** | 官方 streaming batch / actor-pool 框架 baseline；runner arm 与 32-row gate 已通过，待校准/formal |
 | **pgvector 直采 / 无组织串行** | 弱 baseline（仅诊断） |
 | **ours：项目 scheduler（frame-budget + K_max + flush，观测 CLIP endpoint 队列）** | 主路径 |
 
 > **直接 baseline**（必须跑 + 比数字，同杠杆=执行）：Daft fused、Daft staged、
-> Ray Data staged、OceanBase、naive、bounded direct。
+> Ray Data staged、naive、bounded direct；产品 SQL 仅在能做到同硬件/同模型/同输入时进入数值排名。
 > **Related Work**（只引用 + 定位，不比数字，不同杠杆=语义）：LOTUS / Palimpzest / Abacus（语义优化）、Cortex/Oracle（闭源）、Smart/GaussML（重写/实现）。
 > 完整矩阵见 `database_ai_operator_baseline_matrix_20260729.md` + `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10.1。
 
@@ -265,7 +301,8 @@ direct ceiling 和 CPU-budget-normalized curve。正式报告：
    达到 +29.6%/+13.8%，但这只是 fused 对照；相对 Daft-on-Ray/Ray Data staged 的
    增量尚未知，system-E2E 也须在统一 pgvector sink 后重判。
 3. stable：3 formal repeats CV 合理。
-4. recall@10 不退化（写回质量证伪）。
+4. 质量不退化：embedding gate 用 digest/norm/检索 recall；ImageNet 分类用
+   top-1/top-5；COCO multi-label 用 mAP 与 micro/macro-F1，禁止跨任务混用。
 
 **只有 ours 在 matched-resource 和 independently calibrated 两种口径下，显著优于
 Daft-on-Ray 或 Ray Data staged，同时再优于冻结最佳项目静态点，才能分别声称

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Run comparable PostgreSQL -> data engine -> CLIP operator-E2E arms.
 
-The three arms keep the input table, processor, model, batch size, GPU count,
+The five arms keep the input table, processor, model, batch size, GPU count,
 output validation, and timing boundary fixed:
 
 * ``daft_native``: official-style Daft ``@daft.cls`` native GPU UDF.
@@ -48,6 +48,7 @@ from src.image.ray_data_baseline import (  # noqa: E402
     build_ray_data_clip_pipeline,
     run_ray_data_clip_baseline,
 )
+from src.image.resource_budget import build_ray_cpu_budget  # noqa: E402
 from src.image.resource_sampling import NvidiaSmiSampler, SystemCpuSampler  # noqa: E402
 
 
@@ -71,6 +72,13 @@ CSV_FIELDS = (
     "gpus_per_model_worker",
     "source_shards",
     "max_active_batches",
+    "ray_cluster_num_cpus",
+    "host_cpu_slots_detected",
+    "declared_source_cpus",
+    "declared_preprocess_cpus",
+    "declared_model_cpus",
+    "declared_total_cpus",
+    "resource_budget_semantics",
     "worker_setup_s",
     "worker_setup_accounting",
     "operator_e2e_s",
@@ -394,6 +402,17 @@ def main() -> None:
         model_workers = args.gpu_workers
         gpus_per_model_worker = 1.0
     source_shards = args.source_shards or model_workers
+    try:
+        cpu_budget = build_ray_cpu_budget(
+            arm=args.arm,
+            source_shards=source_shards,
+            preprocess_workers=args.cpu_workers,
+            gpu_workers=args.gpu_workers,
+            model_workers=model_workers,
+        )
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
+    ray_cluster_num_cpus = cpu_budget.cluster_slots
     if args.arm == "daft_native":
         daft.set_runner_native(num_threads=args.cpu_workers)
         embedder = build_daft_clip_embedder(
@@ -407,7 +426,7 @@ def main() -> None:
         )
     elif args.arm == "daft_ray":
         ray.init(
-            num_cpus=max(args.cpu_workers + args.gpu_workers, 4),
+            num_cpus=ray_cluster_num_cpus,
             num_gpus=args.gpu_workers,
             include_dashboard=False,
         )
@@ -423,7 +442,7 @@ def main() -> None:
         )
     elif args.arm == "daft_staged":
         ray.init(
-            num_cpus=max(args.cpu_workers + model_workers, 4),
+            num_cpus=ray_cluster_num_cpus,
             num_gpus=args.gpu_workers,
             include_dashboard=False,
         )
@@ -443,16 +462,13 @@ def main() -> None:
             # Ray Data keeps SQL readers and both callable actor pools live in
             # one streaming graph. Reserve reader slots explicitly so fixed
             # actor pools cannot starve the source and deadlock the pipeline.
-            num_cpus=max(
-                args.source_shards + args.cpu_workers + args.gpu_workers,
-                4,
-            ),
+            num_cpus=ray_cluster_num_cpus,
             num_gpus=args.gpu_workers,
             include_dashboard=False,
         )
     else:
         ray.init(
-            num_cpus=max(args.cpu_workers + args.gpu_workers, 4),
+            num_cpus=ray_cluster_num_cpus,
             num_gpus=args.gpu_workers,
             include_dashboard=False,
         )
@@ -568,6 +584,9 @@ def main() -> None:
     cpu_core_seconds = float(cpu_metrics["cpu_busy_cores_mean"]) * operator_e2e_s
     gpu_seconds = args.gpu_workers * operator_e2e_s
     gpu_energy_j = float(gpu_metrics["gpu_energy_estimate_j"])
+    declared_source_cpus = cpu_budget.source_slots
+    declared_preprocess_cpus = cpu_budget.preprocess_slots
+    declared_model_cpus = cpu_budget.model_slots
 
     row: dict[str, object] = {
         "arm": args.arm,
@@ -582,6 +601,15 @@ def main() -> None:
         "gpus_per_model_worker": gpus_per_model_worker,
         "source_shards": source_shards,
         "max_active_batches": args.max_active_batches,
+        "ray_cluster_num_cpus": ray_cluster_num_cpus or "",
+        "host_cpu_slots_detected": cpu_budget.host_slots,
+        "declared_source_cpus": declared_source_cpus if declared_source_cpus is not None else "",
+        "declared_preprocess_cpus": (
+            declared_preprocess_cpus if declared_preprocess_cpus is not None else ""
+        ),
+        "declared_model_cpus": declared_model_cpus if declared_model_cpus is not None else "",
+        "declared_total_cpus": cpu_budget.declared_total_slots,
+        "resource_budget_semantics": cpu_budget.semantics,
         "worker_setup_s": worker_setup_s if project_metrics else "",
         "worker_setup_accounting": (
             "explicit_pre_query_plus_query_wall"
@@ -679,7 +707,7 @@ def main() -> None:
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 3,
+        "schema_version": 4,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,

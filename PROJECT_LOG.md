@@ -1,5 +1,28 @@
 # 项目日志
 
+## 2026-08-02 图像 staged baseline、资源死锁修复与分类质量轨道
+
+- 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；32-row 双卡 gate
+  均通过 exactly-once、512d、L2 norm，且完整 embedding digest 一致。该规模只证明
+  可运行，不能作为性能结果；至少 256 行 actor-use gate 后才进入独立校准/formal。
+- Ray Data 第二次门禁复现资源死锁：4 preprocess actor + 2 GPU actor 占满错误声明的
+  6 CPU 后，SQL reader 无 slot，0 rows 无法推进。该次运行已中止并标记无效。
+- 资源修复升级为通用合同：Ray Data、Daft staged、fused Daft Ray 均显式计算
+  source + preprocess（如有）+ model actor CPU；在 `ray.init` 前按进程 CPU affinity
+  拒绝物理超卖。CSV/manifest schema v4 记录 host slots、Ray cluster、三段声明和语义。
+- 图像 runner 补 CPU core-seconds、内存、disk/network、context switch、GPU seconds、
+  images/J、P99 与 Ray Data operator stats；这些是 host 级观测，不能替代 PCIe 硬件
+  byte counter，PCIe 归因仍须 CUDA events/Nsight 代表点。
+- workload 拆成两条质量轨道：ImageNet/ResNet18 报 top-1/top-5；COCO/CLIP
+  multi-label 报 mAP、micro/macro-F1、precision/recall。当前 COCO PostgreSQL 表没有
+  annotations/captions，只能做执行与数值等价门禁，不能声称分类准确率/检索 recall。
+- 纠正产品 baseline：OceanBase 当前官方/本机确证的是文本 AI_COMPLETE/AI_EMBED/
+  RERANK，不冒充图像分类对照；图像产品语义参考为 PolarDB `classify_image` 与
+  Snowflake image `AI_CLASSIFY`，闭源且不同硬件时不与本项目 raw time 排名。
+- OceanBase CE 4.5.0 在全新独立目录做 2026-08-02 复核，仍于 observer init step
+  4/18 报 `prepare_dir_and_create_meta_ failed` / -9100，端口 2881 未监听；没有 B1
+  CSV。相同普通容器条件下停止重复尝试，待 privileged/seccomp-unconfined 或 VM。
+
 ## 2026-07-31 baseline 同步：直接对比 vs Related Work + 补 OceanBase
 
 - 用户 push：需明确"哪些 baseline 要数字对比、哪些只 Related Work 定位"，并补上

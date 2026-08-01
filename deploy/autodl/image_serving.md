@@ -132,15 +132,18 @@ source URI/共享文件路径只能作独立 baseline，不能与 BYTEA 轨道�
 - `ClipTensorActor`：常驻 GPU、只接收预处理 tensor、输出 projected + L2-normalized embedding。
 
 已新增 operator-E2E runner：`code/scripts/run_image_clip_e2e.py`，统一比较
-fused Daft Native、fused Daft Ray 与项目分阶段 Ray pipeline。它从每个 query 的模型 worker
+fused Daft Native/Ray、Daft-on-Ray staged、Ray Data staged 与项目分阶段 Ray
+pipeline。它从每个 query 的模型 worker
 建立/执行开始计时到最后一批 embedding 返回（Ray 框架启动排除），包含模型 worker
 建立、DB read/preprocess/transfer/forward/fan-in，
-但**暂不含 pgvector 写回**。因此可作 fused baseline gate，不能冒充完整 system E2E，
-也不能替代 Daft-on-Ray/Ray Data staged CPU→GPU 强 baseline。
-统一 pgvector sink和正式 system-E2E runner仍待接入。schema v2 已补 system
+但**暂不含 pgvector 写回**。因此可作 operator baseline gate，不能冒充完整 system E2E。
+统一 pgvector sink和正式 system-E2E runner仍待接入。schema v4 已补 system
 per-core CPU、active-device GPU、逻辑字节和 project-Ray 分段 telemetry；其中
 `--detailed-stage-timing` 会同步 CUDA，只能用于机制诊断，不能替代低扰动 headline。
 GPU 采样还记录 active-card 功耗/时钟/估算能耗和 PCIe current/max link；
+host 侧还记录内存、disk/network byte delta、context switch、CPU-core-seconds，
+Ray Data 保存 operator stats；所有 Ray arm 记录 cluster 与 source/preprocess/model
+声明 CPU。硬件 byte counter 仍不能用这些逻辑指标替代，PCIe 归因要走 Nsight/CUDA events。
 `estimated_e2e_mfu` 仅在命令同时显式提供经校准的 `--model-flops-per-image` 与
 `--gpu-peak-flops-per-s` 时生成，默认留空。
 
@@ -249,6 +252,25 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
   --max-active-batches 8 --phase formal --repeat-index 1 \
   --out-csv "$OUT/runs.csv" --out-manifest "$OUT/daft_ray_2gpu_r1.json"
 
+# 双卡 Daft-on-Ray staged 强 baseline。
+PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  code/scripts/run_image_clip_e2e.py \
+  --arm daft_staged --model "$MODEL" --pg-dsn "$DATABASE_URL" \
+  --limit 5000 --warmup-rows 64 --batch-size 64 \
+  --cpu-workers 4 --gpu-workers 2 --daft-model-workers 2 --source-shards 4 \
+  --max-active-batches 8 --phase formal --repeat-index 1 \
+  --out-csv "$OUT/runs.csv" --out-manifest "$OUT/daft_staged_2gpu_r1.json"
+
+# 双卡 Ray Data staged 强 baseline。source-shards 至少覆盖 CPU actor pool，
+# 且 runner 会另给 SQL readers 预留 CPU slots，不能手工减掉造成资源死锁。
+PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  code/scripts/run_image_clip_e2e.py \
+  --arm ray_data_staged --model "$MODEL" --pg-dsn "$DATABASE_URL" \
+  --limit 5000 --warmup-rows 64 --batch-size 64 \
+  --cpu-workers 4 --gpu-workers 2 --source-shards 4 \
+  --max-active-batches 8 --phase formal --repeat-index 1 \
+  --out-csv "$OUT/runs.csv" --out-manifest "$OUT/ray_data_staged_2gpu_r1.json"
+
 # 双卡 project-Ray。
 PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
   code/scripts/run_image_clip_e2e.py \
@@ -259,11 +281,11 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
   --out-csv "$OUT/runs.csv" --out-manifest "$OUT/project_2gpu_r1.json"
 ```
 
-通过条件：三臂各 256 行、`exactly_once=true`、embedding dimension=512、
-`max_norm_error` 在 float32 归一化容差内；schema v2 还要求
+通过条件：五臂各 256 行、`exactly_once=true`、embedding dimension=512、
+`max_norm_error` 在 float32 归一化容差内；schema v4 还要求
 `embedding_digest_xor_rounded5` 一致。没有残留 Ray/GPU 进程。旧 checksum 只覆盖
 第一维求和，不能单独作为完整输出等价证据。
-正式 5000 行用 3 repeats，并按文档预注册的 Latin-square 顺序交错，不能连续跑完
+正式 5000 行用 3 repeats，并按文档预注册的随机块顺序交错，不能连续跑完
 同一臂后直接比较，以免时间漂移成为混淆变量。
 Daft 的 UDF actor 按 query 重建；脚本因此也会在 project-Ray warmup 后销毁并重建
 模型 worker pool，同时记录 `worker_setup_s`，避免用持久 project actor 对比冷 Daft actor。
@@ -272,8 +294,17 @@ Daft 的 UDF actor 按 query 重建；脚本因此也会在 project-Ray warmup �
 `motivation/results/gpu/image_clip_native_baseline_20260801/`。headline 为单卡
 project 1.296× Daft Native、双卡 project 1.138× Daft Ray。该结果不包含 pgvector，
 也不是相同 CPU reservation 的资源效率证明；复述时必须同时带上报告中的限制。
-下一轮需要新增 Daft-on-Ray staged（CPU decode/processor 算子 → GPU 类 UDF）和
-Ray Data staged arm，并分别校准 batch、actor pool 与 in-flight；当前 runner 尚无这两臂。
+Daft-on-Ray staged 与 Ray Data staged 已在 2026-08-02 完成 32-row 双卡 correctness
+gate，输出 digest 与 exactly-once 一致；该规模只证明可运行。下一轮仍须用至少 256 行
+验证全部 actor 被使用，再分别校准 batch、source shards、actor pool 与 in-flight。
+
+**Ray 资源门禁**：固定 4 个 preprocess actor + 2 个 GPU actor 只给 6 CPU
+会把 SQL read task 饿死，表现为 0 rows 永久等待。runner 现在对 Ray Data 使用
+`source_shards + cpu_workers + gpu_workers`，对 Daft staged 使用
+`source_shards + cpu_workers + model_workers`，对 fused Daft Ray 使用
+`source_shards + model_workers`。程序在 `ray.init` 前用 CPU affinity 校验物理可用
+slot，超出时 fail closed，不用虚拟 `num_cpus` 超卖。schema v4 同时记录 host 可用、
+cluster 总量和 source/preprocess/model 分项；绕过 runner 时也必须遵守同一账本。
 
 ### 5.5 待完成：host data path 瓶颈判定
 

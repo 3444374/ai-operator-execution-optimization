@@ -53,7 +53,7 @@
 独立 calibration。不得用 Completions 数值直接声称超过 Chat baseline。
 详细预注册见 `database_ai_operator_baseline_matrix_20260729.md`。
 
-### 图像 AI_EMBED 的 baseline 层级
+### 图像 AI_EMBED / AI_CLASSIFY 的 baseline 层级
 
 图像轨道不能直接复用文本的 Chat/Completions 排名，也不能把所有 Daft 路径称为
 一个 baseline。按以下层级分开报告：
@@ -64,13 +64,19 @@
 | direct service | bounded direct CLIP、vLLM pooling | 绕过 DB/Daft/Ray 的容量与部署参照 |
 | fused framework | Daft Native/Ray：同一 GPU UDF 内 preprocess+forward | 已完成的粗资源边界诊断；必须校准 fractional-GPU actor shape |
 | staged framework | Daft-on-Ray CPU operators→GPU UDF、Ray Data CPU→GPU actor pool | 与项目最接近的强系统 baseline；必须独立校准 batch/actor/in-flight |
-| product SQL | OceanBase/PolarDB AI_EMBED | 同 endpoint/同硬件可部署时严格比较，否则只作工业参考 |
+| product SQL | PolarDB `classify_image` / `embed_image`、Snowflake image `AI_CLASSIFY` | 同模型/同硬件可部署时严格比较，否则只对齐 SQL 语义、质量与计时边界 |
 | project static | 冻结最佳 frame budget/active batches/actor shape | 动态策略的唯一主对照 |
 | project adaptive | state-aware request shaping/shared credit | 只报告相对 frozen static 的增量与 oracle regret |
 
 当前 1.296×/1.138× 只属于 `project static vs fused framework`，不能写成优于
 PolarDB/Daft staged 异构流水线。每个系统同时报告 matched-resource 与 independently
 calibrated best-achievable；统一输入、模型、输出、生命周期、计时边界和 sink。
+
+OceanBase 4.5/4.6 官方 AI Function 当前确证的是文本 `AI_COMPLETE`、文本
+`AI_EMBED` 与 `AI_RERANK`，不把它冒充图像分类 baseline；其 CE 4.5.0 动态部署
+仍受当前 AutoDL 容器门禁阻塞。公开 ImageNet/ResNet18 系统 benchmark 只提供方法模板：
+PolarDB 与 Ray 官方页面对 Daft/Ray Data 的 raw 排名方向并不一致，因此外部数字不跨
+硬件排名，必须在本项目机器上按同数据、同模型、同版本分别校准重跑。
 
 正式策略比较还必须区分：calibration 得到并在 held-out 上冻结的最佳静态
 baseline、每个 workload 事后 sweep 的 static oracle，以及仅冻结候选边界、
