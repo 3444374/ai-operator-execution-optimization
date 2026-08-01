@@ -1,0 +1,43 @@
+{
+  "bandwidth_semantics": "logical_host_bytes_over_cuda_event_not_hardware_counter",
+  "batch_sizes": [
+    16,
+    64,
+    256
+  ],
+  "device": "cuda:0",
+  "diagnostic_only": true,
+  "dtype": "float16",
+  "git_commit": "4cf5f67881280a82d7f9b2961832f512d0ee3259",
+  "gpu": {
+    "gpu_active_device_count": 1,
+    "gpu_active_devices_json": "[0]",
+    "gpu_active_memory_clock_mean_mhz": 10251.0,
+    "gpu_active_pcie_generation": 4.0,
+    "gpu_active_pcie_generation_max": 4.0,
+    "gpu_active_pcie_width": 16.0,
+    "gpu_active_pcie_width_max": 16.0,
+    "gpu_active_power_mean_w": 216.1166101694915,
+    "gpu_active_power_peak_w": 275.04,
+    "gpu_active_sm_clock_mean_mhz": 2722.1186440677966,
+    "gpu_active_util_mean_pct": 43.94915254237288,
+    "gpu_active_util_peak_pct": 99.0,
+    "gpu_energy_estimate_j": 2185.628821632463,
+    "gpu_memory_peak_mib": 1528.0,
+    "gpu_per_device_json": "{\"0\": {\"memory_clock_mean_mhz\": 10251.0, \"memory_peak_mib\": 1528.0, \"pcie_generation\": 4.0, \"pcie_generation_max\": 4.0, \"pcie_width\": 16.0, \"pcie_width_max\": 16.0, \"power_mean_w\": 216.1166101694915, \"samples\": 59, \"sm_clock_mean_mhz\": 2722.1186440677966, \"util_mean_pct\": 43.94915254237288, \"util_peak_pct\": 99.0}, \"1\": {\"memory_clock_mean_mhz\": 405.0, \"memory_peak_mib\": 1.0, \"pcie_generation\": 1.0, \"pcie_generation_max\": 4.0, \"pcie_width\": 16.0, \"pcie_width_max\": 16.0, \"power_mean_w\": 23.66491525423729, \"samples\": 59, \"sm_clock_mean_mhz\": 210.0, \"util_mean_pct\": 0.0, \"util_peak_pct\": 0.0}}",
+    "gpu_samples": 118,
+    "gpu_util_mean_pct": 21.97457627118644,
+    "gpu_util_peak_pct": 99.0
+  },
+  "model": "/root/autodl-tmp/models/clip-vit-base-patch32",
+  "r0": "gpu_resident_model_input_then_forward",
+  "r1": "pinned_fp16_nonblocking_h2d_then_forward",
+  "r2": "readonly_pageable_fp32_ownership_copy_dtype_conversion_h2d_then_forward",
+  "repeats": 30,
+  "rows": 270,
+  "schema_version": 1,
+  "seed": 20260802,
+  "timing": "cuda_events_plus_synchronized_wall; model_setup_excluded",
+  "topology": "\t\u001b[4mGPU0\tGPU1\tNIC0\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m\nGPU0\t X \tSYS\tSYS\t0-31,64-95\t0\t\tN/A\nGPU1\tSYS\t X \tNODE\t32-63,96-127\t1\t\tN/A\nNIC0\tSYS\tNODE\t X \t\t\t\t\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks\n\nNIC Legend:\n\n  NIC0: mlx5_bond_0\n\n",
+  "warmup": 5
+}
