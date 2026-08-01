@@ -137,7 +137,7 @@ pipeline。它从每个 query 的模型 worker
 建立/执行开始计时到最后一批 embedding 返回（Ray 框架启动排除），包含模型 worker
 建立、DB read/preprocess/transfer/forward/fan-in，
 但**暂不含 pgvector 写回**。因此可作 operator baseline gate，不能冒充完整 system E2E。
-统一 pgvector sink和正式 system-E2E runner仍待接入。schema v6 已补 system
+统一 pgvector sink和正式 system-E2E runner仍待接入。schema v7 已补 system
 per-core CPU、active-device GPU、逻辑字节和 project-Ray 分段 telemetry；其中
 `--detailed-stage-timing` 会同步 CUDA，只能用于机制诊断，不能替代低扰动 headline。
 GPU 采样还记录 active-card 功耗/时钟/估算能耗和 PCIe current/max link；
@@ -282,7 +282,7 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
 ```
 
 通过条件：五臂各 256 行、`exactly_once=true`、embedding dimension=512、
-`max_norm_error` 在 float32 归一化容差内；schema v6 还要求
+`max_norm_error` 在 float32 归一化容差内；schema v7 还要求
 `embedding_digest_xor_rounded5` 一致。没有残留 Ray/GPU 进程。旧 checksum 只覆盖
 第一维求和，不能单独作为完整输出等价证据。
 正式 5000 行用 3 repeats，并按文档预注册的随机块顺序交错，不能连续跑完
@@ -305,7 +305,7 @@ correctness gate，输出 digest 与 exactly-once 一致，两卡均激活；Ray
 `source_shards + cpu_workers + gpu_workers`，对 Daft staged 使用
 `source_shards + cpu_workers + model_workers`，对 fused Daft Ray 使用
 `source_shards + model_workers`。程序在 `ray.init` 前用 CPU affinity 校验物理可用
-slot，超出时 fail closed，不用虚拟 `num_cpus` 超卖。schema v6 同时记录 host 可用、
+slot，超出时 fail closed，不用虚拟 `num_cpus` 超卖。schema v7 同时记录 host 可用、
 cluster 总量和 source/preprocess/model 分项；绕过 runner 时也必须遵守同一账本。
 
 `num_cpus` 只是 Ray 准入 token，不是 OS CPU quota。schema v5 因此额外冻结并记录
@@ -320,6 +320,8 @@ runner 会在所有 `ray.init` 调用中传入共享 `ray_runtime_env()`，自�
 project Ray 的 Daft native source 在 Ray cluster 外运行；其 `num_threads` 现在作为
 `declared_external_cpus` 加入 host 总预算。默认 4 preprocess + 2 GPU actor + 4 source
 threads 因而是 Ray cluster=6、host declared total=10，不再误写成总共 6 CPU。
+`--source-cpu-threads` 与 `--cpu-workers` 分离；扫描 preprocess actor 数时固定 source
+threads，避免一次改变数据源和预处理两块木板。未显式设置时前者仅为兼容而跟随后者。
 
 ### 5.5 待完成：host data path 瓶颈判定
 

@@ -66,6 +66,21 @@ class ImageResourceBudgetTest(unittest.TestCase):
                 host_slots=8,
             )
 
+    def test_project_source_threads_are_independent_of_preprocess_actors(self):
+        budget = build_ray_cpu_budget(
+            arm="project_ray",
+            source_shards=6,
+            preprocess_workers=8,
+            gpu_workers=2,
+            model_workers=2,
+            external_source_threads=3,
+            host_slots=32,
+        )
+
+        self.assertEqual(budget.cluster_slots, 10)
+        self.assertEqual(budget.external_slots, 3)
+        self.assertEqual(budget.declared_total_slots, 13)
+
     def test_refuses_virtual_cpu_oversubscription(self):
         with self.assertRaisesRegex(ValueError, "refusing CPU oversubscription"):
             build_ray_cpu_budget(

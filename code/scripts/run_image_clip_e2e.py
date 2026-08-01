@@ -72,6 +72,7 @@ CSV_FIELDS = (
     "model_workers",
     "gpus_per_model_worker",
     "source_shards",
+    "source_cpu_threads",
     "max_active_batches",
     "ray_cluster_num_cpus",
     "host_cpu_slots_detected",
@@ -221,6 +222,12 @@ def parse_args():
         default=0,
         help="PostgreSQL lazy source shards; 0 follows model worker count",
     )
+    parser.add_argument(
+        "--source-cpu-threads",
+        type=int,
+        default=0,
+        help="Daft native source/runner threads; 0 follows --cpu-workers",
+    )
     parser.add_argument("--max-active-batches", type=int, default=8)
     parser.add_argument("--torch-intraop-threads", type=int, default=1)
     parser.add_argument("--torch-interop-threads", type=int, default=1)
@@ -368,7 +375,7 @@ def main() -> None:
         raise SystemExit("--pg-dsn is required (or set DATABASE_URL/PG_DSN)")
     if min(positive) <= 0 or args.offset < 0:
         raise SystemExit("row, batch, worker, and dimension values must be positive")
-    if args.daft_model_workers < 0 or args.source_shards < 0:
+    if min(args.daft_model_workers, args.source_shards, args.source_cpu_threads) < 0:
         raise SystemExit("optional worker and shard overrides must be non-negative")
     if args.max_active_batches < args.gpu_workers:
         raise SystemExit("--max-active-batches must be at least --gpu-workers")
@@ -410,6 +417,7 @@ def main() -> None:
         model_workers = args.gpu_workers
         gpus_per_model_worker = 1.0
     source_shards = args.source_shards or model_workers
+    source_cpu_threads = args.source_cpu_threads or args.cpu_workers
     try:
         cpu_budget = build_ray_cpu_budget(
             arm=args.arm,
@@ -417,13 +425,14 @@ def main() -> None:
             preprocess_workers=args.cpu_workers,
             gpu_workers=args.gpu_workers,
             model_workers=model_workers,
+            external_source_threads=source_cpu_threads,
         )
     except ValueError as error:
         raise SystemExit(str(error)) from error
     ray_cluster_num_cpus = cpu_budget.cluster_slots
     worker_runtime_env = ray_runtime_env(CODE_ROOT)
     if args.arm == "daft_native":
-        daft.set_runner_native(num_threads=args.cpu_workers)
+        daft.set_runner_native(num_threads=source_cpu_threads)
         embedder = build_daft_clip_embedder(
             model_revision=args.model,
             processor_revision=processor,
@@ -491,7 +500,7 @@ def main() -> None:
             include_dashboard=False,
             runtime_env=worker_runtime_env,
         )
-        daft.set_runner_native(num_threads=args.cpu_workers)
+        daft.set_runner_native(num_threads=source_cpu_threads)
         worker_pool = build_project_ray_worker_pool(
             model_revision=args.model,
             processor_revision=processor,
@@ -625,6 +634,7 @@ def main() -> None:
         "model_workers": model_workers,
         "gpus_per_model_worker": gpus_per_model_worker,
         "source_shards": source_shards,
+        "source_cpu_threads": source_cpu_threads,
         "max_active_batches": args.max_active_batches,
         "ray_cluster_num_cpus": ray_cluster_num_cpus or "",
         "host_cpu_slots_detected": cpu_budget.host_slots,
@@ -735,7 +745,7 @@ def main() -> None:
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 6,
+        "schema_version": 7,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,

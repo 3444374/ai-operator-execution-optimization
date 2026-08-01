@@ -1,6 +1,6 @@
 # 图像 AI 算子系统木桶效应与 host data path 瓶颈判定实验
 
-状态：schema v6 诊断已启动；等待 CPU/active-batch 容量曲线与正式复测
+状态：schema v7 诊断已启动；等待 CPU/active-batch 容量曲线与正式复测
 
 适用 workload：PostgreSQL `BYTEA` → Daft → Ray → CLIP `AI_EMBED`
 
@@ -154,6 +154,9 @@ host-wide 32 个 Torch 线程，该结果属于物理 CPU 超卖诊断，不能�
 系统效率。CPU actor 数扫描与每 actor 线程数扫描应分开，且都报告 host busy cores。
 若数据源在 Ray cluster 外由 Daft native runner 执行，其线程也必须作为
 `declared_external_cpus` 加入 host 总预算；不能只统计 Ray actor slots。
+source runner threads 与 preprocess actor 数是不同物理变量，runner 用
+`--source-cpu-threads` 独立控制；CPU preprocess 容量扫描必须固定前者，不能让两者
+随 `--cpu-workers` 一起变化。
 
 必须记录：
 

@@ -24,6 +24,9 @@
   首要木桶。诊断同时发现 project 的 Daft native source 线程位于 Ray cluster 外；
   schema v6 新增 external CPU，默认配置修正为 Ray 6 + external source 4 = host
   declared total 10，并按该总量做物理超卖门禁。
+- 木桶实验继续消除联动变量：schema v7 新增独立 `--source-cpu-threads`，不再强制
+  Daft native source runner threads 跟随 preprocess actor 数。后续 CPU actor 容量扫描
+  固定 source threads，只改变 preprocess stage；兼容默认仍跟随 `--cpu-workers`。
 
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过

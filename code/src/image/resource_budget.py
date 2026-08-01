@@ -57,6 +57,7 @@ def build_ray_cpu_budget(
     preprocess_workers: int,
     gpu_workers: int,
     model_workers: int,
+    external_source_threads: int | None = None,
     host_slots: int | None = None,
 ) -> RayCpuBudget:
     """Build an exact source + stage + model CPU budget for one runner arm."""
@@ -64,6 +65,13 @@ def build_ray_cpu_budget(
     if min(values) <= 0:
         raise ValueError("resource counts must be positive")
     detected_host_slots = available_cpu_slots() if host_slots is None else host_slots
+    resolved_external_source_threads = (
+        preprocess_workers
+        if external_source_threads is None
+        else external_source_threads
+    )
+    if resolved_external_source_threads <= 0:
+        raise ValueError("external source thread count must be positive")
     if detected_host_slots <= 0:
         raise ValueError("host CPU slots must be positive")
 
@@ -81,13 +89,13 @@ def build_ray_cpu_budget(
         semantics = "ray_reserved_slots_includes_sql_readers_and_both_actor_stages"
     elif arm == "project_ray":
         parts = (None, preprocess_workers, gpu_workers)
-        external_slots = preprocess_workers
+        external_slots = resolved_external_source_threads
         semantics = (
             "host_budget_includes_daft_native_source_threads_plus_ray_actor_slots"
         )
     elif arm == "daft_native":
         parts = (None, None, None)
-        external_slots = preprocess_workers
+        external_slots = resolved_external_source_threads
         semantics = "host_budget_is_daft_native_runner_threads_no_local_ray_cluster"
     else:
         raise ValueError(f"unsupported image arm: {arm}")
