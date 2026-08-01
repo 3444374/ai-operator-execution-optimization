@@ -3338,6 +3338,7 @@
   formal 同样在 warmup 后销毁并重建 pool，并把 worker/model setup 计入 job JCT，
   防止持久 project actor 与冷 Daft actor 的不公平比较。
 - **Daft 分区校正**：256 行双 GPU gate 显示 PostgreSQL scan 的单输入 partition
-  只激活一个 Daft GPU UDF worker；`repartition` 又被 Daft 0.7.21 NativeRunner 明确
-  no-op，最终改用官方提示的 order-preserving `into_partitions` 拆到 GPU worker 数。
+  只激活一个 Daft GPU UDF worker；Daft 0.7.21 NativeRunner 对 `repartition` 和
+  `into_partitions` 都明确 no-op。最终改为 source 端生成两个不重叠 PostgreSQL lazy
+  shards，再 `daft.concat` 保留独立输入 partitions；三臂统一使用同一 sharded source。
   修正前单卡 gate 仅作配置诊断，不进入性能比较。

@@ -208,9 +208,11 @@ headline 同时报告 operator E2E/JCT、images/s、first-output、GPU per-devic
 embedding checksum、最大 norm error 和 exactly-once，禁止只汇报吞吐。若 checksum/norm
 或行集合不一致，性能结果无效。
 
-Daft SQL scan 在当前 PostgreSQL connector 下可能只有一个输入 partition；双 GPU
-baseline 必须用 NativeRunner 支持的 `into_partitions` 显式拆到 GPU worker 数，并从 per-device trace 确认两张卡
-均被激活。只声明 `max_concurrency=2` 但实际单卡执行的结果无效。
+Daft SQL scan 在当前 PostgreSQL connector 下只有一个输入 partition，而 Daft 0.7.21
+NativeRunner 的 `repartition/into_partitions` 均为 no-op。双 GPU baseline 因此在 source
+端建立两个不重叠 PostgreSQL lazy shards，再 `daft.concat`；三臂统一使用同一 shards，
+并从 per-device trace 确认两张卡均被激活。只声明 `max_concurrency=2` 但实际单卡执行
+的结果无效。
 
 ### 7.3 完整对照臂
 

@@ -20,7 +20,11 @@ from src.image.contracts import (  # noqa: E402
     ImageEmbeddingBatch,
     ImageEmbeddingResult,
 )
-from src.image.source import ImageSourceConfig, image_documents_query  # noqa: E402
+from src.image.source import (  # noqa: E402
+    ImageSourceConfig,
+    image_documents_query,
+    split_image_source_config,
+)
 from import_coco_images import coco_doc_id  # noqa: E402
 
 
@@ -60,6 +64,17 @@ class ImageContractTests(unittest.TestCase):
         self.assertIn("coco_''heldout", query)
         self.assertIn("LIMIT 32 OFFSET 4", query)
         self.assertNotIn("to_arrow", query)
+
+    def test_image_source_shards_cover_range_without_overlap(self) -> None:
+        shards = split_image_source_config(
+            ImageSourceConfig("coco", limit=10, offset=7),
+            shards=3,
+        )
+
+        self.assertEqual(
+            [(item.offset, item.limit) for item in shards],
+            [(7, 4), (11, 3), (14, 3)],
+        )
 
     def test_coco_import_preserves_numeric_source_id(self) -> None:
         self.assertEqual(coco_doc_id(Path("000000123456.jpg")), 123456)

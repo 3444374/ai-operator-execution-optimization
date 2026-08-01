@@ -13,7 +13,12 @@ from .contracts import (
     ImageEmbeddingBatch,
     ImageEmbeddingResult,
 )
-from .source import DaftImageSource, ImageSourceConfig, image_documents_query
+from .source import (
+    DaftImageSource,
+    ImageSourceConfig,
+    image_documents_query,
+    split_image_source_config,
+)
 
 __all__ = [
     "ClipImagePreprocessor",
@@ -28,4 +33,5 @@ __all__ = [
     "extract_clip_image_features",
     "image_documents_query",
     "l2_normalize_embeddings",
+    "split_image_source_config",
 ]

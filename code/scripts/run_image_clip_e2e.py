@@ -54,6 +54,7 @@ CSV_FIELDS = (
     "batch_size",
     "cpu_workers",
     "gpu_workers",
+    "source_shards",
     "max_active_batches",
     "worker_setup_s",
     "operator_e2e_s",
@@ -207,14 +208,22 @@ def read_database_metadata(
     }
 
 
-def make_source(dsn: str, workload_name: str, limit: int, offset: int):
-    return DaftImageSource().read(
+def make_source(
+    dsn: str,
+    workload_name: str,
+    limit: int,
+    offset: int,
+    *,
+    source_shards: int,
+):
+    return DaftImageSource().read_sharded(
         dsn,
         ImageSourceConfig(
             workload_name=workload_name,
             limit=limit,
             offset=offset,
         ),
+        shards=source_shards,
     )
 
 
@@ -328,13 +337,18 @@ def main() -> None:
         )
 
     def execute(limit: int, expected_ids: frozenset[str]) -> ExecutionResult:
-        source = make_source(args.pg_dsn, args.workload_name, limit, args.offset)
+        source = make_source(
+            args.pg_dsn,
+            args.workload_name,
+            limit,
+            args.offset,
+            source_shards=args.gpu_workers,
+        )
         if args.arm in ("daft_native", "daft_ray"):
             return run_daft_clip_baseline(
                 source,
                 embedder=embedder,
                 expected_doc_ids=expected_ids,
-                partitions=args.gpu_workers,
                 embedding_dimension=args.embedding_dimension,
             )
         return run_project_ray_pipeline(
@@ -383,6 +397,7 @@ def main() -> None:
         "batch_size": args.batch_size,
         "cpu_workers": args.cpu_workers,
         "gpu_workers": args.gpu_workers,
+        "source_shards": args.gpu_workers,
         "max_active_batches": args.max_active_batches,
         "worker_setup_s": worker_setup_s,
         "operator_e2e_s": operator_e2e_s,
