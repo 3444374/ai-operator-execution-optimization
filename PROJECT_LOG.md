@@ -50,6 +50,10 @@
   fail closed，事务完整回滚，暴露多 workload 行身份缺口。新增幂等迁移 SQL 将主键
   改为 `(workload_name, doc_id)`；importer 在写入前强制复核该合同。禁止用 split
   专属数字偏移掩盖错误 schema，后续 source/correctness/writeback 均须携带 workload。
+- 主键迁移后的60K写入已提交（60,000 distinct、9,341MiB JPEG），但 importer 的
+  提交后验证暴露 psycopg3 生命周期 bug：`with conn:` 退出会关闭连接。改为先结束
+  metadata 隐式事务，再用 `conn.transaction()` 包围 DELETE+INSERT，使同一连接可在
+  commit 后完成行数验证；旧写入未丢失，也未把验证异常误报为回滚成功。
 - H2D 口径补充到学习材料：batch64 的 host float32 tensor约 38.5MB、device
   float16 tensor约 19.3MB；当前约 7.4ms 是同步 `torch.as_tensor` 阶段 wall，
   不是 PCIe counter。增大总行数只延长稳态，不增加单批传输压力；PCIe 是否值得

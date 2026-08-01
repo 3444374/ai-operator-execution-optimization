@@ -151,6 +151,10 @@ def main():
             file=sys.stderr,
         )
         sys.exit(5)
+    # psycopg3 ``with conn:`` closes the connection on exit. End the implicit
+    # read transaction created by the metadata probes, then use an explicit
+    # transaction context so post-commit verification can reuse the connection.
+    conn.commit()
 
     table_identifier = sql.Identifier(args.table)
     insert_sql = sql.SQL(
@@ -161,7 +165,7 @@ def main():
     total_bytes = 0
     try:
         # Single transaction: replace only this workload (atomic on failure).
-        with conn:
+        with conn.transaction():
             with conn.cursor() as cur:
                 cur.execute(
                     sql.SQL("DELETE FROM {} WHERE workload_name = %s").format(
