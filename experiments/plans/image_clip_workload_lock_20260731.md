@@ -214,6 +214,12 @@ NativeRunner 的 `repartition/into_partitions` 均为 no-op。双 GPU baseline �
 并从 per-device trace 确认两张卡均被激活。只声明 `max_concurrency=2` 但实际单卡执行
 的结果无效。
 
+Daft `@daft.cls` 支持 fractional GPU。one-actor-per-GPU 通过 gate 后仍须独立筛选
+每 GPU 1/2/4 个 UDF actors（GPU share 1/0.5/0.25），让 combined preprocess+forward
+baseline 也获得更多 CPU preprocessing concurrency。冻结最佳 Daft shape 后，ours
+使用相同 PostgreSQL source-shard 数重跑；不能把未经 actor-shape 校准的 Daft 数字
+作为最终强 baseline。
+
 ### 7.3 完整对照臂
 
 **对照臂**（对齐附录 B.4 + §7.5 干净合同；区分"直接 baseline"vs"Related Work"）：

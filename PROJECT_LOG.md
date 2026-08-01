@@ -3342,3 +3342,7 @@
   `into_partitions` 都明确 no-op。最终改为 source 端生成两个不重叠 PostgreSQL lazy
   shards，再 `daft.concat` 保留独立输入 partitions；三臂统一使用同一 sharded source。
   修正前单卡 gate 仅作配置诊断，不进入性能比较。
+- **强 baseline 追加**：首轮 5K×3 证明 stage-separated project-Ray 稳定快于
+  one-actor-per-GPU Daft，但 Daft UDF 尚未独立标定 fractional-GPU actor shape。
+  正式结论前追加 1/2/4 actors-per-GPU screening；冻结 Daft 最佳形状后，与相同
+  source shards 的 project 重跑，避免把额外 CPU preprocess 并发只给 proposed 臂。

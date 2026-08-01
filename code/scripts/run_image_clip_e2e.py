@@ -54,6 +54,8 @@ CSV_FIELDS = (
     "batch_size",
     "cpu_workers",
     "gpu_workers",
+    "model_workers",
+    "gpus_per_model_worker",
     "source_shards",
     "max_active_batches",
     "worker_setup_s",
@@ -102,6 +104,18 @@ def parse_args():
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--cpu-workers", type=int, default=4)
     parser.add_argument("--gpu-workers", type=int, default=2)
+    parser.add_argument(
+        "--daft-model-workers",
+        type=int,
+        default=0,
+        help="Daft UDF actors; 0 means one actor per physical GPU",
+    )
+    parser.add_argument(
+        "--source-shards",
+        type=int,
+        default=0,
+        help="PostgreSQL lazy source shards; 0 follows model worker count",
+    )
     parser.add_argument("--max-active-batches", type=int, default=8)
     parser.add_argument("--dtype", choices=("float16", "float32", "bfloat16"), default="float16")
     parser.add_argument("--embedding-dimension", type=int, default=512)
@@ -272,6 +286,8 @@ def main() -> None:
         raise SystemExit("--pg-dsn is required (or set DATABASE_URL/PG_DSN)")
     if min(positive) <= 0 or args.offset < 0:
         raise SystemExit("row, batch, worker, and dimension values must be positive")
+    if args.daft_model_workers < 0 or args.source_shards < 0:
+        raise SystemExit("optional worker and shard overrides must be non-negative")
     if args.max_active_batches < args.gpu_workers:
         raise SystemExit("--max-active-batches must be at least --gpu-workers")
 
@@ -296,13 +312,23 @@ def main() -> None:
 
     worker_pool = None
     embedder = None
+    if args.arm in ("daft_native", "daft_ray"):
+        model_workers = args.daft_model_workers or args.gpu_workers
+        gpus_per_model_worker = args.gpu_workers / model_workers
+        if gpus_per_model_worker > 1:
+            raise SystemExit("Daft model workers must be at least the physical GPU count")
+    else:
+        model_workers = args.gpu_workers
+        gpus_per_model_worker = 1.0
+    source_shards = args.source_shards or model_workers
     if args.arm == "daft_native":
         daft.set_runner_native(num_threads=args.cpu_workers)
         embedder = build_daft_clip_embedder(
             model_revision=args.model,
             processor_revision=processor,
             batch_size=args.batch_size,
-            gpu_workers=args.gpu_workers,
+            model_workers=model_workers,
+            gpus_per_worker=gpus_per_model_worker,
             dtype=args.dtype,
             embedding_dimension=args.embedding_dimension,
         )
@@ -317,7 +343,8 @@ def main() -> None:
             model_revision=args.model,
             processor_revision=processor,
             batch_size=args.batch_size,
-            gpu_workers=args.gpu_workers,
+            model_workers=model_workers,
+            gpus_per_worker=gpus_per_model_worker,
             dtype=args.dtype,
             embedding_dimension=args.embedding_dimension,
         )
@@ -342,7 +369,7 @@ def main() -> None:
             args.workload_name,
             limit,
             args.offset,
-            source_shards=args.gpu_workers,
+            source_shards=source_shards,
         )
         if args.arm in ("daft_native", "daft_ray"):
             return run_daft_clip_baseline(
@@ -397,7 +424,9 @@ def main() -> None:
         "batch_size": args.batch_size,
         "cpu_workers": args.cpu_workers,
         "gpu_workers": args.gpu_workers,
-        "source_shards": args.gpu_workers,
+        "model_workers": model_workers,
+        "gpus_per_model_worker": gpus_per_model_worker,
+        "source_shards": source_shards,
         "max_active_batches": args.max_active_batches,
         "worker_setup_s": worker_setup_s,
         "operator_e2e_s": operator_e2e_s,

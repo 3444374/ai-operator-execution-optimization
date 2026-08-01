@@ -14,7 +14,8 @@ def build_daft_clip_embedder(
     model_revision: str,
     processor_revision: str,
     batch_size: int,
-    gpu_workers: int,
+    model_workers: int,
+    gpus_per_worker: float,
     dtype: str,
     embedding_dimension: int = 512,
 ):
@@ -24,8 +25,10 @@ def build_daft_clip_embedder(
     official Daft execution boundary; unlike the project pipeline it does not
     expose an intermediate tensor batch to an external scheduler.
     """
-    if batch_size <= 0 or gpu_workers <= 0:
-        raise ValueError("batch_size and gpu_workers must be positive")
+    if batch_size <= 0 or model_workers <= 0 or gpus_per_worker <= 0:
+        raise ValueError("batch size, model workers, and GPU share must be positive")
+    if gpus_per_worker > 1:
+        raise ValueError("each Daft CLIP worker may use at most one GPU")
 
     import daft
 
@@ -34,7 +37,12 @@ def build_daft_clip_embedder(
         embedding_dimension,
     )
 
-    @daft.cls(cpus=1, gpus=1, max_concurrency=gpu_workers, max_retries=0)
+    @daft.cls(
+        cpus=1,
+        gpus=gpus_per_worker,
+        max_concurrency=model_workers,
+        max_retries=0,
+    )
     class DaftClipEmbedder:
         def __init__(
             self,
