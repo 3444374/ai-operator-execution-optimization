@@ -191,25 +191,62 @@ CUDA_VISIBLE_DEVICES=0 /root/autodl-tmp/venvs/vllm-4090/bin/python \
 
 ### 5.4 Daft Native / Daft Ray / project-Ray operator E2E gate
 
-三臂必须串行运行，且运行前确认没有 vLLM/其他 GPU 任务。示例 gate：
+各臂必须串行运行，且运行前确认没有 vLLM/其他 GPU 任务。不要用一个统一的
+`--gpu-workers/--cpu-workers` 循环跑完三臂：Native 单卡和 Ray 双卡是两个独立
+track，而且 baseline actor shape 必须先校准。当前 5000 图 formal 冻结配置为：
+
+| track | arm | `cpu-workers` | `gpu-workers` | `daft-model-workers` | `source-shards` |
+|---|---|---:|---:|---:|---:|
+| 单卡 | `daft_native` | 4 | 1 | 4 | 4 |
+| 单卡 | `project_ray` | 3 | 1 | — | 4 |
+| 双卡 | `daft_ray` | 4 | 2 | 4 | 4 |
+| 双卡 | `project_ray` | 4 | 2 | — | 6 |
+
+先把下面命令的 `--limit` 改为 256、`--phase` 改为 gate、`--repeat-index` 改为
+0 做正确性 gate；通过后按 baseline→project 交错运行 repeat 1/2/3：
 
 ```bash
 cd /root/autodl-tmp/ai-operator
 set -a; source /root/autodl-tmp/ai-operator-runtime.env; set +a
 MODEL=/root/autodl-tmp/models/clip-vit-base-patch32
-OUT=/root/autodl-tmp/experiment-artifacts/image_clip_e2e_gate_$(date +%Y%m%d_%H%M%S)
+OUT=/root/autodl-tmp/experiment-artifacts/image_clip_native_baseline_formal_$(date +%Y%m%d_%H%M%S)
 mkdir -p "$OUT"
 
-for ARM in daft_native daft_ray project_ray; do
-  PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
-    code/scripts/run_image_clip_e2e.py \
-    --arm "$ARM" --model "$MODEL" --pg-dsn "$DATABASE_URL" \
-    --limit 256 --warmup-rows 64 --batch-size 64 \
-    --cpu-workers 4 --gpu-workers 2 --max-active-batches 8 \
-    --phase gate --repeat-index 0 \
-    --out-csv "$OUT/runs.csv" \
-    --out-manifest "$OUT/${ARM}.manifest.json"
-done
+# 单卡 Daft Native；repeat 1/2/3 时分别修改 repeat-index 与 manifest 名。
+PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  code/scripts/run_image_clip_e2e.py \
+  --arm daft_native --model "$MODEL" --pg-dsn "$DATABASE_URL" \
+  --limit 5000 --warmup-rows 64 --batch-size 64 \
+  --cpu-workers 4 --gpu-workers 1 --daft-model-workers 4 --source-shards 4 \
+  --max-active-batches 8 --phase formal --repeat-index 1 \
+  --out-csv "$OUT/runs.csv" --out-manifest "$OUT/native_1gpu_r1.json"
+
+# 单卡 project-Ray。
+PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  code/scripts/run_image_clip_e2e.py \
+  --arm project_ray --model "$MODEL" --pg-dsn "$DATABASE_URL" \
+  --limit 5000 --warmup-rows 64 --batch-size 64 \
+  --cpu-workers 3 --gpu-workers 1 --source-shards 4 \
+  --max-active-batches 8 --phase formal --repeat-index 1 \
+  --out-csv "$OUT/runs.csv" --out-manifest "$OUT/project_1gpu_r1.json"
+
+# 双卡 Daft Ray。
+PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  code/scripts/run_image_clip_e2e.py \
+  --arm daft_ray --model "$MODEL" --pg-dsn "$DATABASE_URL" \
+  --limit 5000 --warmup-rows 64 --batch-size 64 \
+  --cpu-workers 4 --gpu-workers 2 --daft-model-workers 4 --source-shards 4 \
+  --max-active-batches 8 --phase formal --repeat-index 1 \
+  --out-csv "$OUT/runs.csv" --out-manifest "$OUT/daft_ray_2gpu_r1.json"
+
+# 双卡 project-Ray。
+PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  code/scripts/run_image_clip_e2e.py \
+  --arm project_ray --model "$MODEL" --pg-dsn "$DATABASE_URL" \
+  --limit 5000 --warmup-rows 64 --batch-size 64 \
+  --cpu-workers 4 --gpu-workers 2 --source-shards 6 \
+  --max-active-batches 8 --phase formal --repeat-index 1 \
+  --out-csv "$OUT/runs.csv" --out-manifest "$OUT/project_2gpu_r1.json"
 ```
 
 通过条件：三臂各 256 行、`exactly_once=true`、embedding dimension=512、
@@ -218,6 +255,11 @@ done
 同一臂后直接比较，以免时间漂移成为混淆变量。
 Daft 的 UDF actor 按 query 重建；脚本因此也会在 project-Ray warmup 后销毁并重建
 模型 worker pool，同时记录 `worker_setup_s`，避免用持久 project actor 对比冷 Daft actor。
+
+2026-08-01 已完成的正式结果和原始 manifest 在
+`motivation/results/gpu/image_clip_native_baseline_20260801/`。headline 为单卡
+project 1.296× Daft Native、双卡 project 1.138× Daft Ray。该结果不包含 pgvector，
+也不是相同 CPU reservation 的资源效率证明；复述时必须同时带上报告中的限制。
 
 ### 5.5 已完成：分阶段瓶颈画像
 **第一步不是写优化策略，是先画像——确认瓶颈到底在哪段、有多重。** 把 §4.3 的数据流分阶段计时：

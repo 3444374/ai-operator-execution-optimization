@@ -14,9 +14,9 @@
   导师和学长确认；这不阻塞已经锁定的 image workload 与 path-B 工程验证。
 - **文本轨道不是废弃**：vLLM 文本实验已完成 regime-dependent 机制闭环，遗留 formal
   统一标为 `parked-conditional`，仅在论文正文需要文本结果时恢复。
-- **CLIP fatal-flaw 门禁已通过**：COCO val 5K × 100 iterations 的规范画像中，实用 batch
-  （≥16）CPU 准备/GPU embed 比为 `13.8–18.3`，远高于 `0.3` 门槛；当前进入 path-B
-  runner 建设，而不是继续做小规模画像。
+- **CLIP operator-E2E 门禁已通过**：在先校准 Daft actor shape 后，COCO val 5K×3
+  formal 中静态阶段拆分相对 Daft Native 单卡为 1.296×、相对 Daft Ray 双卡为
+  1.138×；下一步是统一 pgvector sink、direct ceiling 和资源归一化，而非继续做小画像。
 
 ## 2. 课题定位
 
@@ -33,7 +33,7 @@
 
 ## 3. 当前技术路径
 
-**Image 目标路径（基础合同已实现，E2E runner 待实现）**：
+**Image 目标路径（operator-E2E runner/formal 已完成，system-E2E 待补）**：
 
 ```text
 PostgreSQL
@@ -59,18 +59,19 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 | 2-ep 与 4-ep cache-ON 数据组织排名反转 | 上游组织/准入价值依赖 endpoint consolidation 与 KV 饱和 regime |
 | matched-KV：2-ep 中性、4-ep prefix routing +5.9% | 目前更支持 endpoint consolidation，而非单纯 per-endpoint KV 大小是驱动；仍有饱和深度混淆 |
 | CLIP 5K 画像：CPU 准备/GPU embed=`13.8–18.3` | 图像链路存在真实 CPU-preprocess→GPU 的异构流水线优化空间 |
+| CLIP operator-E2E：project/Daft=单卡 1.296×、双卡 1.138× | 独立校准后，静态阶段拆分在同物理机器上优于 fused Daft UDF；尚非动态策略或 system-E2E 证据 |
 
 CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path 约
 4.4–4.8ms/image）；子阶段实验只直接测得 resize 约 1.3ms，剩余时间尚未充分归因，
-不能全部写成 normalize。该结果属于 motivation/profile，尚不是项目策略优于
-baseline 的证据。
+不能全部写成 normalize。后续 operator-E2E 已把该候选空间转化为静态阶段拆分的
+正结果，但状态感知策略仍未与冻结最佳静态 pipeline 对照。
 
 ## 5. 当前实施顺序
 
-1. 对已实现的 Daft Native、Daft Ray 和 bounded project-Ray operator-E2E runner
-   先跑 256 行 gate，再跑 COCO val 5K×3 交错 formal。
-2. gate 通过后给三臂接统一 pgvector sink，并继续建立 bounded direct CLIP、
-   vLLM pooling、Ray Data、naive、ours 等完整同语义 baseline；
+1. ✅ Daft Native/Ray actor-shape 校准与 bounded project-Ray COCO 5K×3
+   operator-E2E formal 已完成。
+2. 给三臂接统一 pgvector sink，并补 bounded direct CLIP、CPU-budget-normalized
+   curve、Ray Data、vLLM pooling、naive 等完整 baseline；
    OceanBase `AI_EMBED` 等待可部署环境。
 3. 在同 workload、同硬件、同计时边界下校准 frame budget、K、actor/endpoint 形状和静态 active work。
 4. 实现 A：读取 CLIP endpoint queue/active-work 的状态感知请求成形与提交。
@@ -81,7 +82,8 @@ baseline 的证据。
 
 ## 6. 仍不能声称
 
-- 不能说 image 策略已经胜过 Daft Native；目前只有 5K 瓶颈门禁，没有正式策略对照。
+- 不能把静态阶段拆分胜过 Daft Native/Ray 写成“动态状态感知策略已胜出”；后者尚未
+  与冻结最佳静态 project pipeline 正式对照。
 - 不能把 CPU preprocess 主导写成“CPU→GPU 数据传输主导”。
 - 不能把 4-ep 病态 bounded 值当作服务上限，或把 text/image 跨协议吞吐直接比较。
 - 不能把 prefix/KV 机制迁移到 CLIP；CLIP 没有自回归 KV cache、TTFT 或 TPOT。
@@ -97,6 +99,7 @@ baseline 的证据。
 | 图像 workload、baseline 与门禁 | `experiments/plans/image_clip_workload_lock_20260731.md` |
 | 5K CLIP 初始画像 | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md` |
 | 当前实现边界复测 | `motivation/results/gpu/image_clip_preprocess_variants_20260801/` |
+| CLIP Daft Native/Ray operator-E2E | `motivation/results/gpu/image_clip_native_baseline_20260801/` |
 | 正式机制证据台账 | `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` |
 | 代码完成度与边界 | `code/INFRA_STATUS.md` |
 | 文献与设计依据 | `research/knowledge_hub.md` |

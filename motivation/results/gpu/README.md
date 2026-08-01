@@ -15,6 +15,7 @@
 | `image_clip_bottleneck_profile_20260801.md` / `.csv` | **图像 CLIP AI_EMBED** 历史 slow-pt 分阶段画像：5000 图采样池 × 100 iters，CPU processor ~5.2ms/img vs GPU embed 0.29ms/img；只支持继续建设 E2E |
 | `clip_preproc_stages_20260801.csv` | slow-pt processor method-wrapper 子阶段历史数据；resize ~1.3ms，旧 residual 为近似未归因时间，不能解释成具体转换步骤 |
 | `image_clip_preprocess_variants_20260801/` | 当前 production-np、legacy-pt、torchvision+PIL/tensor-decode 四臂交错复测；720 raw repeats、质量门禁、七步报告。fast path 仍未消除 CPU/GPU 阶段失衡 |
+| `image_clip_native_baseline_20260801/` | **图像 CLIP operator-E2E 动机强基线**：先校准 Daft fractional-GPU actor shape，再做 5000 图×3 formal；项目阶段拆分相对 Daft Native 单卡 +29.6%、相对 Daft Ray 双卡 +13.8%。不含 pgvector，且资源效率边界见报告 |
 
 ## Endpoint
 
@@ -43,6 +44,9 @@ sentence-transformers/all-MiniLM-L6-v2
 - 本目录只放真实 GPU-backed 模型端点结果。
 - CPU-only、fake-model、连接验证结果不能放在这里。
 - 当前真实模型返回 384 维 embedding；`ai_embed_chain_breakdown_20260712` 使用 JSON text 写回，不是 384 维 pgvector 写回。
+- 图像 CLIP operator-E2E 的当前正式入口是
+  `image_clip_native_baseline_20260801/README.md`；它包含 PostgreSQL BYTEA 读取、
+  preprocess、transfer、forward 和 fan-in，但尚不包含 pgvector sink。
 - `model_service_s` 是请求耗时加和；阶段占比优先看 `model_request_wall_s`、`operator_wall_s` 和 `writeback_s`。
 - `multi_endpoint_ray_motivation_20260712` 是 Ray 价值的初步动机测试，不是最终 Ray Serve / vLLM / 多 GPU 结论。
 

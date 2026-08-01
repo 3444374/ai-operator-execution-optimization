@@ -21,7 +21,7 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
 | 模态 | 引擎/模型 | 算子 | 部署文档 | 状态 |
 |---|---|---|---|---|
 | **文本（生成式）** | **vLLM**（开源 LLM serving 引擎：continuous batching + prefix cache APC + KV cache PagedAttention；本项目**不改其内部**）+ Qwen2.5-Instruct | `AI_COMPLETE`（生成 token 序列） | `deploy/autodl/text_serving.md`（逐步命令另见本指南 §8） | ✅ 主线，RC1 等已完成 |
-| **图像（embedding）** | ours：Ray CLIP GPU actor；baseline：vLLM pooling / Daft Native | `AI_EMBED`（图像→512d 向量） | `deploy/autodl/image_serving.md` | 🟡 基础合同已实现，E2E runner 待补 |
+| **图像（embedding）** | ours：Ray CLIP GPU actor；baseline：Daft Native/Ray、vLLM pooling | `AI_EMBED`（图像→512d 向量） | `deploy/autodl/image_serving.md` | 🟡 operator-E2E formal 已完成；pgvector system-E2E 待补 |
 | 视频（后续） | VideoCLIP/时序 ViT/Qwen-VL（候选） | AI_EMBED/CLASSIFY | `video_serving.md`（待建） | ⏸ 后续 |
 | 音频（后续） | CLAP/audio encoder（候选） | AI_EMBED | `audio_serving.md`（待建） | ⏸ 后续 |
 

@@ -220,6 +220,13 @@ baseline 也获得更多 CPU preprocessing concurrency。冻结最佳 Daft shape
 使用相同 PostgreSQL source-shard 数重跑；不能把未经 actor-shape 校准的 Daft 数字
 作为最终强 baseline。
 
+**2026-08-01 已完成**：单卡 Daft Native 最佳为 4 fused actors，双卡 Daft Ray
+最佳为 4 fused actors；6/8 actors 已出现明显竞争退化。5000 图×3 formal 中，
+project-Ray 相对最佳单卡 Native 为 1.296×，相对最佳双卡 Daft Ray 为 1.138×，
+3/3 repeats 同向。该结果通过 operator gate，但仍缺 pgvector system-E2E、bounded
+direct ceiling 和 CPU-budget-normalized curve。正式报告：
+`../../motivation/results/gpu/image_clip_native_baseline_20260801/README.md`。
+
 ### 7.3 完整对照臂
 
 **对照臂**（对齐附录 B.4 + §7.5 干净合同；区分"直接 baseline"vs"Related Work"）：
@@ -238,8 +245,8 @@ baseline 也获得更多 CPU preprocessing concurrency。冻结最佳 Daft shape
 > 完整矩阵见 `database_ai_operator_baseline_matrix_20260729.md` + `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10.1。
 
 **晋级门禁**（同项目 §7.5）：
-1. 喂饱 GPU：bounded direct ≥ 95%（图像版 feeding 门禁）。
-2. ours 相对 **Daft `@daft.cls` Native**（强 baseline，非串行 strawman）：images/s 或 SLO-goodput **>+5% 且 SLO 违约 <1%** 才晋级。
+1. 喂饱 GPU：bounded direct ≥ 95%（图像版 feeding 门禁；尚待补）。
+2. ours 相对 **独立校准后的 Daft `@daft.cls` Native/Ray**（强 baseline，非串行 strawman）：operator-E2E images/s 已分别达到 +29.6%/+13.8%；system-E2E 仍须在统一 pgvector sink 后重判。
 3. stable：3 formal repeats CV 合理。
 4. recall@10 不退化（写回质量证伪）。
 
@@ -271,4 +278,4 @@ baseline 也获得更多 CPU preprocessing concurrency。冻结最佳 Daft shape
 3. AutoDL 下载 COCO val 5K + CLIP base（smoke 集，放得下 7.4G）。
 4. 跑 §6 最小验证（CPU/GPU 时间比）——**这是 go/no-go 门禁**。
 5. 门禁通过 → 写 CLIP embedding adapter + CPU decode pipeline（`code/src/`），复用 organizer/scheduler/tracing。
-6. §7 正式对照（先 bounded direct + Daft Native + ours 三臂 smoke，再 formal）。
+6. ✅ §7 operator-E2E Daft Native/Ray + ours 正式对照；下一步补 bounded direct、统一 pgvector sink、Ray Data 与 CPU-normalized curve。

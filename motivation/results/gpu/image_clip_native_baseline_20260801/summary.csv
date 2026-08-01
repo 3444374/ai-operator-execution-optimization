@@ -1,0 +1,5 @@
+track,arm,cpu_workers,gpu_workers,model_workers,source_shards,e2e_s_r1,e2e_s_r2,e2e_s_r3,e2e_s_median,e2e_cv_pct,images_per_s_median,speedup_vs_native,throughput_gain_pct
+single_gpu,daft_native,4,1,4,4,21.955346,22.147478,25.519303,22.147478,8.64,225.759334,1.0000,0.00
+single_gpu,project_ray,3,1,1,4,17.015021,17.268890,17.091838,17.091838,0.76,292.537297,1.2958,29.58
+dual_gpu,daft_ray,4,2,4,4,17.739695,19.172713,17.953265,17.953265,4.23,278.500881,1.0000,0.00
+dual_gpu,project_ray,4,2,2,6,15.364579,15.824024,15.774960,15.774960,1.61,316.958013,1.1381,13.81

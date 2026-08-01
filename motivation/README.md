@@ -24,7 +24,8 @@
 
 1. `plans/integration.md`：看真实 AI-SQL-compatible 算子、worker、GPU 模型服务和写回链路怎么组织，用于建立动机画像。
 2. `plans/workloads.md`：看 `AI_EMBED`、`AI_FILTER/AI_CLASSIFY`、`AI_COMPLETE` 三类 baseline 和后续 GPU 动机实验计划。
-3. `results/gpu/README.md`：真实 GPU-backed 主动机结果入口，优先读 pgai 集成后的关键复测和 pgvector(384) 写回对比。
+3. `results/gpu/README.md`：真实 GPU-backed 主动机结果入口；image-first 当前优先读
+   `image_clip_native_baseline_20260801/`，文本/早期 embedding 再读 pgai 与 pgvector 对照。
 4. `results/pg18_4_fake/system_profile.md`：理解 PG18.4 本地同构 fake-model 链路中的早期系统信号。
 5. `results/fake_cpu/analysis.md`：只在追溯历史 fake/CPU 预研时阅读。
 

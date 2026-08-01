@@ -105,18 +105,24 @@
      4-ep bounded 24,733 病态（策略超过）→ 准入控制是吞吐杠杆、效应随 regime 反向（2-ep 可放开 W 提速、4-ep 防 thrash 应保留）。
    - 边界：本地 rehearsal，不代表 PG18.3 内部平台结果。
    - 状态与缺口审计：`experiments/plans/experiment_status_and_gaps.md`。
-2. `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`
+2. `motivation/results/gpu/image_clip_native_baseline_20260801/README.md`
+   - **图像 CLIP operator-E2E 强基线（当前 image-first 动机优先入口）**。
+   - 先校准 Daft fractional-GPU actor shape，再做 COCO 5000 图×3 formal：
+     project-Ray 相对单卡 Daft Native 1.296×，相对双卡 Daft Ray 1.138×。
+   - 结论只支持静态阶段拆分在同物理机器上优于独立校准的 fused UDF；尚不包含
+     pgvector sink、bounded direct ceiling，也不是动态状态感知策略收益。
+3. `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`
    - **COCO val 5K × 100 iterations 的 image-CLIP fatal-flaw 门禁**。
    - 实用 batch（≥16）的 CPU 准备/GPU embed 比为 `13.8–18.3`，B=128 串行下 GPU 约 95% 时间等待上游。
    - production-np 总 CPU prepare 约 5.2–5.6ms/image；torchvision tensor-decode
      降至约 4.4–4.8ms，但仍显著重于 GPU actor。历史 method wrapper 只直接归因出
      resize 约 1.3ms，其余 processor 时间仍未细分。
    - 这是 motivation/profile 的 GO 证据，不是 path-B 策略胜过 Daft Native 的结果。
-3. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
+4. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
    - 真实 GPU-backed embedding 链路拆分（AI_EMBED 预研，已完成）。
    - 1024 行下 fine / coalesced 端到端约 `13.4x`。
    - 16384 行下 operator 和 writeback 均为大块成本。
-4. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
+5. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
    - 双 endpoint 下 Ray task / actor 开始体现并发 routing 价值。
    - 端到端收益仍受 writeback 约束。
 

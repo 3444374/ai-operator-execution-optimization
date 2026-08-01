@@ -3346,3 +3346,18 @@
   one-actor-per-GPU Daft，但 Daft UDF 尚未独立标定 fractional-GPU actor shape。
   正式结论前追加 1/2/4 actors-per-GPU screening；冻结 Daft 最佳形状后，与相同
   source shards 的 project 重跑，避免把额外 CPU preprocess 并发只给 proposed 臂。
+
+## 2026-08-01 图像 Daft Native/Ray 强基线校准与 operator-E2E formal
+
+- **baseline 校准**：单卡 Native 从 1→2→4 fused actors 持续改善，冻结 4 actor；
+  双卡 Daft Ray 冻结 4 actor，6 actor 退化到 28.23s，8 actor 退化到 179.62s。
+  因此 one-actor-per-GPU 结果只保留为“为什么必须校准”的诊断，不作为正式基线。
+- **formal**：提交 `ba1b710`，PG18.4 COCO val 5000 BYTEA、batch64、cold worker
+  lifecycle、3 repeats。单卡 project median 17.09s/292.54 img/s，相对 Native
+  22.15s/225.76 img/s 为 1.296×；双卡 project 15.77s/316.96 img/s，相对
+  Daft Ray 17.95s/278.50 img/s 为 1.138×。12/12 exactly-once，norm/error 合同通过。
+- **诚实边界**：这是同物理机器各自校准最佳点，不是相同 Ray CPU reservation；
+  当前静态 bounded stage separation 也不是状态感知策略。pgvector system-E2E、
+  bounded direct ceiling、CPU-budget-normalized curve 与 Ray Data baseline 仍待补。
+- **归档**：原始 CSV、逐 run manifest、派生 summary 与七步报告纳入
+  `motivation/results/gpu/image_clip_native_baseline_20260801/`。

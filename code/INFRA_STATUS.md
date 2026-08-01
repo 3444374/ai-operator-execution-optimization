@@ -28,7 +28,9 @@ PostgreSQL
 ```
 
 上图是已完成的**文本/vLLM 路径**。2026-08-01 内部执行方向转为 image-first A+B；
-CLIP 5K motivation/profile 已通过门禁，但下列 path-B 仍是**待实现目标**，不能写成已跑通：
+CLIP 5K profile 与不含写回的 operator-E2E 已通过门禁。下图中 PostgreSQL→Daft→
+Ray CPU preprocess→typed CLIP actor 已跑通；frame-cost/state-aware policy 与最终
+pgvector sink 仍是**待实现目标**：
 
 ```text
 PostgreSQL image source
@@ -266,7 +268,8 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
   production-np 串行 profile 约 1.14–1.22×，但 CPU prepare 仍为 actor 的
   13.8–31.2×，因此 E2E build 动机保留。
   lazy image source、Daft Native/Ray baseline 与 bounded Ray CPU→GPU operator-E2E
-  runner 已实现，等待远端 gate/formal；统一 pgvector sink、frame-cost 策略接线、
+  runner/formal 已完成：独立校准后 project 相对单卡 Native 1.296×、双卡 Ray
+  1.138×。统一 pgvector sink、CPU-budget-normalized curve、frame-cost 策略接线、
   CLIP HTTP/vLLM pooling 对照和正式策略结果尚未完成。
 - **算子代价估计（共同使能组件）**：初版实现与 grouped held-out 评估已完成，可提供
   粗粒度编排提示；独立时间段/新 workload 校准、预测区间和跨模型迁移仍未完成。
@@ -286,7 +289,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 | Actor pool / endpoint routing | 高（有界 slots/trace） | 双 GPU 1×256/2×128/4×64 formal | 多 actor 未过 5% 门槛；单 job 保留 1×256，多 job 分池待测 |
 | Shared-vLLM group runner | 高（代码/模板/真实 formal） | 双 4090 36/36 group run、63 formal job | shared-credit 容量安全、公平性通过；2-job 无增量，4-job 聚合过 5% 门槛但逐 repeat 不稳定，暂作高竞争条件性候选 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |
-| 多模态复用 | 低（画像脚本已具备） | 5K CLIP motivation/profile GO | 当前主线；待 source/frame-cost、endpoint、path-B runner 与正式 baseline |
+| 多模态复用 | 中（source/typed actor/operator runner 已具备） | 5K CLIP profile + Daft Native/Ray operator-E2E formal | 当前主线；待 pgvector sink、frame-cost/state-aware policy 与完整服务 baseline |
 | 算子代价估计 | 中 | 283 行、70 配置组、五个 held-out split | 粗粒度可用；不能作严格 SLO 预测 |
 
 ## 7. 后续设计与实施顺序
@@ -295,14 +298,15 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 
 1. ✅ `BatchRequest`/scheduler/Ray adapter 已支持中性 work-unit；lazy image source、
    typed batch/result、CPU CLIP preprocessor 和常驻 tensor actor 已实现并有单测；
-2. 补齐通用 organizer 的 work-cost adapter，避免 image runner 复制 token batching；
-3. 跑通 PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor→pgvector，并补 exactly-once、阶段计时和队列 trace；
-4. 分别校准 bounded direct、Daft `@daft.cls` Native、vLLM pooling、Ray Data、naive 与 ours；
+2. ✅ PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor operator-E2E、exactly-once、
+   Daft actor shape 与 ours 静态 shape 已完成；
+3. 接统一 pgvector sink，补 system-E2E、Recall@10 与 CPU-budget-normalized curve；
+4. 继续校准 bounded direct、vLLM pooling、Ray Data、naive；Daft Native/Ray 已完成；
 5. 在强静态点上实现 endpoint-state-aware 请求成形和 `<100 LOC` 代价模型 v1；
 6. 正式报告吞吐/JCT/tail/SLO、overlap、GPU busy、能耗和 Recall@10。
 
-5K CLIP 画像只通过了“存在异构优化空间”的 fatal-flaw 门禁，不代表上述系统已经
-实现或项目策略已经胜过 Daft Native。
+5K CLIP operator-E2E 已证明静态阶段拆分在同物理机器上优于独立校准的 Daft
+Native/Ray；这仍不代表完整 system-E2E 或状态感知策略已经胜过最佳静态路径。
 
 ### 已闭环：提交控制与局部联合实验
 
@@ -458,9 +462,8 @@ start、response headers、body complete、headers wait 和 body read。校准�
 
 - 多 GPU：先部署同构、各自独立占用 GPU 的双 service endpoint，再做异构池；
   验证健康回退、队列均衡和公平性。
-- 多模态：5K CLIP 画像已完成；下一步增加 image source/cost adapter，把 token
-  cost 替换为 frame/pixel cost，复用 organizer、scheduler、routing 和 tracing，
-  并接入独立 CLIP endpoint。
+- 多模态：5K CLIP 画像和静态 operator-E2E 已完成；下一步接 pgvector sink、补
+  frame/pixel cost adapter 与 endpoint-state trace，再测试状态感知策略。
 - 代价估计：当前 grouped held-out 五切分平均 MAE 11.68s、MAPE 50.60%、
   R² 0.776；相对误差仍不稳定，下一步增加独立时间段/新 workload 校准和
   预测区间，不新增独立系统层。
