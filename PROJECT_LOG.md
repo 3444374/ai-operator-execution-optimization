@@ -18,6 +18,12 @@
 - schema v5 首轮 fail-closed 校验确认 Ray CPU/GPU worker 的 Torch 实测值均为
   `1/1`；同时修正校验器只比较线程字段，不把 GPU `ready()` 返回的模型/进程元数据
   误判为线程不一致。失败尝试未写入 CSV，不属于实验结果。
+- 线程收紧后的 5000-image 诊断为 324.4 images/s（隐式 32/64 线程旧诊断为
+  333.2，差 -2.6%），host busy 由 23.3 降至 7.83 cores；preprocess/H2D/forward
+  p50 分别 344/6.8/7.0ms。线程超卖消耗大量 CPU 却几乎不增吞吐，PCIe 仍非当前
+  首要木桶。诊断同时发现 project 的 Daft native source 线程位于 Ray cluster 外；
+  schema v6 新增 external CPU，默认配置修正为 Ray 6 + external source 4 = host
+  declared total 10，并按该总量做物理超卖门禁。
 
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过

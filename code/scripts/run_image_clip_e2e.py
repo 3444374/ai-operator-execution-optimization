@@ -75,6 +75,7 @@ CSV_FIELDS = (
     "max_active_batches",
     "ray_cluster_num_cpus",
     "host_cpu_slots_detected",
+    "declared_external_cpus",
     "declared_source_cpus",
     "declared_preprocess_cpus",
     "declared_model_cpus",
@@ -627,6 +628,7 @@ def main() -> None:
         "max_active_batches": args.max_active_batches,
         "ray_cluster_num_cpus": ray_cluster_num_cpus or "",
         "host_cpu_slots_detected": cpu_budget.host_slots,
+        "declared_external_cpus": cpu_budget.external_slots,
         "declared_source_cpus": declared_source_cpus if declared_source_cpus is not None else "",
         "declared_preprocess_cpus": (
             declared_preprocess_cpus if declared_preprocess_cpus is not None else ""
@@ -733,7 +735,7 @@ def main() -> None:
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 5,
+        "schema_version": 6,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,
