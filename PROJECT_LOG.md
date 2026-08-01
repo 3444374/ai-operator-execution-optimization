@@ -50,6 +50,9 @@
   `feasibility/results/image_staged_resource_gate_20260802/`。
 - Ray Data 第二次门禁复现资源死锁：4 preprocess actor + 2 GPU actor 占满错误声明的
   6 CPU 后，SQL reader 无 slot，0 rows 无法推进。该次运行已中止并标记无效。
+- staged resource gate 的 `runs.csv`、Daft manifest 与 Ray Data manifest 已从服务器
+  临时目录归档到 `feasibility/results/image_staged_resource_gate_20260802/raw/`；
+  45 列 `runs_summary.csv` 仅为读表摘要，原始证据现已随 Git 保存。
 - 资源修复升级为通用合同：Ray Data、Daft staged、fused Daft Ray 均显式计算
   source + preprocess（如有）+ model actor CPU；在 `ray.init` 前按进程 CPU affinity
   拒绝物理超卖。CSV/manifest schema v4 记录 host slots、Ray cluster、三段声明和语义。

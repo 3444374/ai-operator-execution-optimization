@@ -44,7 +44,7 @@ gpu_model_service_smoke.csv
 | `pg18_4_connection_smoke_256_rows.csv` | 首次 256 行 PG18.4 链路冒烟 CSV |
 | `pg18_4_connection_smoke_runs.csv` | PG18.4 连接冒烟补充运行 CSV |
 | `pg18_4_script_dryrun.csv` | 画像脚本 dry-run 展开验证 CSV |
-| `image_staged_resource_gate_20260802/` | 2×4090 上 Daft/Ray Data staged 256-row 显式 source+stage+model CPU 资源门禁；只证明可运行和输出等价，不作性能排名 |
+| `image_staged_resource_gate_20260802/` | 2×4090 上 Daft/Ray Data staged 256-row 显式 source+stage+model CPU 资源门禁；报告、45 列摘要和原始 CSV/manifest 均已归档；只证明可运行和输出等价，不作性能排名 |
 
 PG18.4 系统画像与瓶颈定位实验已经移动到：
 

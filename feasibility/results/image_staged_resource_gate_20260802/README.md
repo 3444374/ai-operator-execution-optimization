@@ -11,11 +11,17 @@
 同一 `coco_val2017` PostgreSQL BYTEA 行集合、CLIP ViT-B/32、float16、256 行，
 batch=32，4 个显式 SQL shards、4 个 CPU preprocess actors、2 个单 GPU model
 actors。每臂先 warmup 64 行；Ray framework 启动不计入 operator wall，模型 worker
-冷启动计入。原始 schema v4 CSV/manifest 保留在服务器：
+冷启动计入。原始 schema v4 CSV/manifest 已归档在 [`raw/`](raw/)：
 
 ```text
-/root/autodl-tmp/experiment-artifacts/image_staged_gate_v4_c0b5733/
+raw/runs.csv
+raw/daft_staged_256.json
+raw/ray_data_staged_256.json
 ```
+
+服务器 `/root/autodl-tmp/experiment-artifacts/image_staged_gate_v4_c0b5733/` 仍保留同内容
+运行时副本，但不再是唯一证据来源。`runs_summary.csv` 是便于阅读的 45 列紧凑摘要，
+不能替代原始 CSV/manifest。
 
 ## 2. 实验设计
 
