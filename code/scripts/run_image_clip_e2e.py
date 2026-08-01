@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-"""Run comparable PostgreSQL -> Daft -> CLIP image-embedding E2E arms.
+"""Run comparable PostgreSQL -> data engine -> CLIP operator-E2E arms.
 
 The three arms keep the input table, processor, model, batch size, GPU count,
 output validation, and timing boundary fixed:
 
 * ``daft_native``: official-style Daft ``@daft.cls`` native GPU UDF.
 * ``daft_ray``: the same UDF under Daft's Ray runner.
+* ``daft_staged``: Daft-on-Ray CPU preprocessing stage feeding a GPU class UDF.
+* ``ray_data_staged``: Ray Data SQL source, CPU ``map_batches``, and GPU actors.
 * ``project_ray``: bounded Ray CPU preprocessing actors feeding tensor-only GPU
   actors, with the source kept lazy and streamed from Daft.
 
@@ -32,7 +34,9 @@ if str(CODE_ROOT) not in sys.path:
 from src.image import DaftImageSource, ImageSourceConfig  # noqa: E402
 from src.image.daft_baseline import (  # noqa: E402
     build_daft_clip_embedder,
+    build_daft_staged_clip_pipeline,
     run_daft_clip_baseline,
+    run_daft_staged_clip_baseline,
 )
 from src.image.execution import (  # noqa: E402
     ExecutionResult,
@@ -40,10 +44,20 @@ from src.image.execution import (  # noqa: E402
     run_project_ray_pipeline,
     stop_project_ray_worker_pool,
 )
+from src.image.ray_data_baseline import (  # noqa: E402
+    build_ray_data_clip_pipeline,
+    run_ray_data_clip_baseline,
+)
 from src.image.resource_sampling import NvidiaSmiSampler, SystemCpuSampler  # noqa: E402
 
 
-ARMS = ("daft_native", "daft_ray", "project_ray")
+ARMS = (
+    "daft_native",
+    "daft_ray",
+    "daft_staged",
+    "ray_data_staged",
+    "project_ray",
+)
 CSV_FIELDS = (
     "arm",
     "phase",
@@ -345,7 +359,8 @@ def main() -> None:
 
     worker_pool = None
     embedder = None
-    if args.arm in ("daft_native", "daft_ray"):
+    preprocessor = None
+    if args.arm in ("daft_native", "daft_ray", "daft_staged"):
         model_workers = args.daft_model_workers or args.gpu_workers
         gpus_per_model_worker = args.gpu_workers / model_workers
         if gpus_per_model_worker > 1:
@@ -381,6 +396,29 @@ def main() -> None:
             dtype=args.dtype,
             embedding_dimension=args.embedding_dimension,
         )
+    elif args.arm == "daft_staged":
+        ray.init(
+            num_cpus=max(args.cpu_workers + model_workers, 4),
+            num_gpus=args.gpu_workers,
+            include_dashboard=False,
+        )
+        daft.set_runner_ray(noop_if_initialized=True)
+        preprocessor, embedder = build_daft_staged_clip_pipeline(
+            model_revision=args.model,
+            processor_revision=processor,
+            batch_size=args.batch_size,
+            cpu_workers=args.cpu_workers,
+            model_workers=model_workers,
+            gpus_per_worker=gpus_per_model_worker,
+            dtype=args.dtype,
+            embedding_dimension=args.embedding_dimension,
+        )
+    elif args.arm == "ray_data_staged":
+        ray.init(
+            num_cpus=max(args.cpu_workers + args.gpu_workers, 4),
+            num_gpus=args.gpu_workers,
+            include_dashboard=False,
+        )
     else:
         ray.init(
             num_cpus=max(args.cpu_workers + args.gpu_workers, 4),
@@ -398,6 +436,28 @@ def main() -> None:
         )
 
     def execute(limit: int, expected_ids: frozenset[str]) -> ExecutionResult:
+        if args.arm == "ray_data_staged":
+            dataset = build_ray_data_clip_pipeline(
+                database_url=args.pg_dsn,
+                source_config=ImageSourceConfig(
+                    workload_name=args.workload_name,
+                    limit=limit,
+                    offset=args.offset,
+                ),
+                source_shards=source_shards,
+                processor_revision=processor,
+                model_revision=args.model,
+                dtype=args.dtype,
+                batch_size=args.batch_size,
+                cpu_workers=args.cpu_workers,
+                gpu_workers=args.gpu_workers,
+                max_active_batches=args.max_active_batches,
+            )
+            return run_ray_data_clip_baseline(
+                dataset,
+                expected_doc_ids=expected_ids,
+                embedding_dimension=args.embedding_dimension,
+            )
         source = make_source(
             args.pg_dsn,
             args.workload_name,
@@ -408,6 +468,14 @@ def main() -> None:
         if args.arm in ("daft_native", "daft_ray"):
             return run_daft_clip_baseline(
                 source,
+                embedder=embedder,
+                expected_doc_ids=expected_ids,
+                embedding_dimension=args.embedding_dimension,
+            )
+        if args.arm == "daft_staged":
+            return run_daft_staged_clip_baseline(
+                source,
+                preprocessor=preprocessor,
                 embedder=embedder,
                 expected_doc_ids=expected_ids,
                 embedding_dimension=args.embedding_dimension,

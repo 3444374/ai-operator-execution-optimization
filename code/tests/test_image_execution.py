@@ -10,6 +10,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.image.execution import EmbeddingAudit, ExecutionResult
+from src.image.ray_data_baseline import build_ray_data_clip_pipeline
 
 
 class EmbeddingAuditTest(unittest.TestCase):
@@ -78,6 +79,24 @@ class ExecutionResultTest(unittest.TestCase):
                 pending_batches_peak=2,
             )
 
+
+class RayDataBaselineValidationTest(unittest.TestCase):
+    def test_rejects_active_batch_limit_below_gpu_count(self):
+        from src.image.source import ImageSourceConfig
+
+        with self.assertRaisesRegex(ValueError, "at least gpu_workers"):
+            build_ray_data_clip_pipeline(
+                database_url="postgresql://example",
+                source_config=ImageSourceConfig("coco", limit=8),
+                source_shards=2,
+                processor_revision="processor",
+                model_revision="model",
+                dtype="float16",
+                batch_size=4,
+                cpu_workers=2,
+                gpu_workers=2,
+                max_active_batches=1,
+            )
 
 if __name__ == "__main__":
     unittest.main()
