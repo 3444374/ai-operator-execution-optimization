@@ -85,7 +85,10 @@ def run_daft_clip_baseline(
         expected_doc_ids=expected_doc_ids,
         dimension=embedding_dimension,
     )
-    source_df = source_df.repartition(partitions)
+    # NativeRunner does not implement shuffle repartition. ``into_partitions``
+    # is the supported order-preserving split and gives the persistent UDF pool
+    # enough independent partitions to activate every requested GPU worker.
+    source_df = source_df.into_partitions(partitions)
     query = source_df.with_column("embedding", embedder.embed(source_df["image"]))
     query = query.select("doc_id", "embedding")
     started = time.perf_counter()

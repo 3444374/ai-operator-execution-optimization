@@ -209,7 +209,7 @@ embedding checksum、最大 norm error 和 exactly-once，禁止只汇报吞吐�
 或行集合不一致，性能结果无效。
 
 Daft SQL scan 在当前 PostgreSQL connector 下可能只有一个输入 partition；双 GPU
-baseline 必须显式 repartition 到 GPU worker 数，并从 per-device trace 确认两张卡
+baseline 必须用 NativeRunner 支持的 `into_partitions` 显式拆到 GPU worker 数，并从 per-device trace 确认两张卡
 均被激活。只声明 `max_concurrency=2` 但实际单卡执行的结果无效。
 
 ### 7.3 完整对照臂
