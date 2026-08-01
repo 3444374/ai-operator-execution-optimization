@@ -3361,3 +3361,31 @@
   bounded direct ceiling、CPU-budget-normalized curve 与 Ray Data baseline 仍待补。
 - **归档**：原始 CSV、逐 run manifest、派生 summary 与七步报告纳入
   `motivation/results/gpu/image_clip_native_baseline_20260801/`。
+
+## 2026-08-01 图像 baseline 指标审计与 host data path 动机实验预注册
+
+- **历史字段纠错**：schema v1 的 `batch_service` 实为 submission→result wall，
+  包含 CPU ObjectRef 依赖、actor queue、host copy、H2D、forward、D2H 与返回，不能
+  称纯 GPU service；Daft `worker_setup_s=0` 表示 setup 折叠在 timed query，不表示
+  setup 未计入；单卡旧 GPU mean 还平均了第二张空闲卡。
+- **证据降级**：旧结果保留 13.8%–29.6% operator-E2E 事实，但不再由它声称 CPU
+  已饱和、PCIe 已饱和/可忽略或 GPU MFU；第一维 checksum 只作粗粒度异常检查，
+  不能证明完整逐行 embedding 等价。
+- **schema v2**：图像 runner 增加 explicit/folded setup 语义、completion/actor/
+  preprocess/host-copy/H2D/forward/D2H 字段、system per-core CPU、active-device GPU、
+  功耗/时钟/估算能耗、PCIe current/max link、pending peak/未归因 wait、各阶段
+  逻辑 bytes、全维 sum 与按 doc_id 的 rounded digest。CUDA 分段同步只允许
+  diagnostic 模式；MFU 仅在显式输入经校准 FLOP 口径时估算。
+- **新动机计划**：新增 `motivation/plans/image_host_data_path_bottleneck.md`。
+  用 R0 GPU-resident compute ceiling → R1 pinned H2D → R2 pageable/Ray tensor →
+  R3 in-memory JPEG → R4 PostgreSQL/Daft 的表示阶梯，按预注册门槛判定
+  CPU-preprocess、framework/host-copy、PCIe/H2D、GPU compute 或 mixed。
+- **负载定义**：不是盲目增加总行数或追求 `nvidia-smi=100%`；总 work volume 只
+  用于获得至少 60 秒稳态，真正扫描 batch 与 active batches/producer concurrency。
+  连续两个点吞吐增益 <3%、CV≤5% 定义平台，97% 平台吞吐的最小 active work 是
+  minimum saturation point。增加队列只涨 JCT 不涨吞吐时不得继续称“喂得更满”。
+- **研究问题修正**：不预设“主流系统普遍 GPU 空转”。正式问题改为 matched
+  input/model/quality/resource 下，Daft Native/Ray、Ray Data、vLLM pooling 与项目
+  静态路径各自由哪一阶段形成木桶，谁能以更少 GPU bubble 获得更高 E2E 有效工作
+  效率且不牺牲 JCT/SLO。官方系统均先独立校准，matched-resource 与各自最佳上限
+  分表报告。

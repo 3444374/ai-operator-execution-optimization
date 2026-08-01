@@ -175,6 +175,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/profile_clip_preproc_stages.py` | 对历史 slow CLIP processor 的可见 method 子阶段计时 | 只用于解释 resize 占比；未归因时间不能写成具体转换主因 |
 | `motivation/results/gpu/image_clip_preprocess_variants_20260801/` | 四种 CLIP processor/decode 边界的 720 条 raw repeats、manifest、日志与七步报告 | 判断 slow-path 动机能否外推到当前/fast 实现；不能当作 Daft/Ray E2E 方法结果 |
 | `motivation/results/gpu/image_clip_native_baseline_20260801/` | Daft fractional-GPU actor 校准、5000 图×3 operator-E2E formal、派生 summary 与七步报告 | image-first 当前动机强基线；区分最佳可达性能、CPU reservation 边界与待补 system-E2E |
+| `motivation/plans/image_host_data_path_bottleneck.md` | R0→R4 表示阶梯、低扰动/侵入式双轨计时与 CPU/Ray/PCIe/GPU GO/NO-GO 门槛 | 重测 image motivation、判断 GPU feeding 缺口来自哪一段时读 |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
 | `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |
 | `research/literature_and_evidence_review.md` | 文献与官方资料依据 | 写调研、论文动机时读 |
@@ -188,6 +189,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `motivation/README.md` | 动机测试目录详细说明 | 了解 motivation/ 下有什么、怎么组织 |
 | `motivation/plans/workloads.md` | 三类 AI 算子场景、动机测试和 idea-evaluator 评估 | 比较候选场景、决定下一步测试时读 |
 | `motivation/plans/integration.md` | PostgreSQL / 外部 worker / Ray / GPU model service / writeback 集成路线 | 规划集成和测试时读 |
+| `motivation/plans/image_host_data_path_bottleneck.md` | 逐层加入 H2D、Ray tensor、JPEG preprocess 和 DB/Daft，并预注册容量平台与瓶颈 GO/NO-GO | 设计图像数据路径动机复测时读 |
 | `motivation/plans/ai_sql_surface.md` | 数据库 AI 算子现状、推荐业务场景、动机测试标准 | 搭建业务场景前读 |
 | `motivation/benchmarks/fake_embed_pipeline.py` | fake `AI_EMBED(text)` 端到端动机测试脚本 | 验证 embedding / RAG 链路中的 fan-in 成本 |
 | `motivation/benchmarks/workload_matrix.py` | 三类候选 AI 算子场景动机测试脚本 | 比较不同 AI 算子的瓶颈形态 |
@@ -299,6 +301,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/packing.py` | 与模态无关的确定性 BFD 标量容量装箱与指标 | 修改离线 batch membership、超预算行处理或 packing 指标前读 |
 | `code/src/model_backends.py` | fake debug backend、vLLM-compatible HTTP embedding/completion backend、Ollama native completion backend | 修改模型服务接入、vLLM/Ollama endpoint 或 AI_COMPLETE backend 前读 |
 | `code/src/image/` | 图像 typed batch/result/semantics、lazy Daft source、slow/fast CLIP preprocess、Daft `@daft.cls` baseline、bounded Ray CPU→GPU pipeline 与输出审计 | 实现 image path-B、切换 backend 或审计 embedding/执行语义前读 |
+| `code/src/image/resource_sampling.py` | host per-core CPU、visible/active-device GPU 的低频采样与明确汇总语义 | 图像 E2E 资源采样；不能把低频 GPU util 当 MFU |
 | `code/src/sinks.py` | `none/json_text/pgvector` embedding 写回与 completion JSON-text 写回 | 修改写回路径或后续接 Lance sink 前读 |
 | `code/src/metrics.py` | Stage timer、GPU/显存/功率时序汇总、能耗、MFU 估计和严格 header 契约的 CSV append helper | 修改 profiling 指标、资源效率、CSV 输出或计时边界前读 |
 | `code/src/workloads.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
@@ -323,6 +326,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/test_image_contracts.py` | 图像 embedding shape/finite、CLIP v5 pooler output、work units 和 lazy source query 测试 | 修改 `code/src/image/` 后运行 |
 | `code/tests/test_image_clip_preprocess_variants.py` | 图像 processor 对照脚本的 spatial-work 与 embedding parity 计算测试 | 修改图像受控复测脚本后运行 |
 | `code/tests/test_image_execution.py` | 图像 streaming exactly-once、向量归一化和执行时间边界测试 | 修改图像 E2E baseline/pipeline 后运行 |
+| `code/tests/test_image_resource_sampling.py` | visible/active GPU 与 host busy-core 汇总测试 | 修改图像资源指标后运行 |
 | `code/tests/test_sinks.py` | 写回后端最小单元测试 | 修改 sink/writeback 行为后运行 |
 | `code/tests/test_workloads.py` | 内置 workload seed 单元测试 | 修改 smoke/dev workload 后运行 |
 | `code/tests/test_token_budget_controller.py` | static/service-quantum budget 与 arrival EWMA 契约测试 | 修改动态预算选择规则后运行 |

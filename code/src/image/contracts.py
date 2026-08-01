@@ -3,13 +3,55 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, Protocol
 
 import numpy as np
 
 
 ImageInputKind = Literal["encoded_bytes", "preprocessed_tensor"]
+
+
+@dataclass(frozen=True)
+class ImageBatchTelemetry:
+    """Optional per-batch stage measurements carried across Ray actors.
+
+    Byte counts are logical payload sizes, not hardware bus counters. H2D/D2H
+    timings are populated only when the runner explicitly enables intrusive
+    detailed stage timing.
+    """
+
+    preprocess_s: float = 0.0
+    encoded_bytes: int = 0
+    input_tensor_bytes: int = 0
+    device_input_bytes: int = 0
+    host_copy_s: float = 0.0
+    h2d_s: float = 0.0
+    forward_s: float = 0.0
+    d2h_s: float = 0.0
+    output_bytes: int = 0
+
+    def __post_init__(self) -> None:
+        times = (
+            self.preprocess_s,
+            self.host_copy_s,
+            self.h2d_s,
+            self.forward_s,
+            self.d2h_s,
+        )
+        if any(value < 0 or not math.isfinite(value) for value in times):
+            raise ValueError("telemetry times must be finite and non-negative")
+        byte_counts = (
+            self.encoded_bytes,
+            self.input_tensor_bytes,
+            self.device_input_bytes,
+            self.output_bytes,
+        )
+        if any(
+            not isinstance(value, int) or isinstance(value, bool) or value < 0
+            for value in byte_counts
+        ):
+            raise ValueError("telemetry byte counts must be non-negative integers")
 
 
 @dataclass(frozen=True)
@@ -41,6 +83,7 @@ class ImageEmbeddingBatch:
     input_kind: ImageInputKind
     work_units: int
     work_unit: str
+    telemetry: ImageBatchTelemetry = field(default_factory=ImageBatchTelemetry)
 
     def __post_init__(self) -> None:
         if not self.doc_ids or any(not item for item in self.doc_ids):
@@ -67,6 +110,7 @@ class ImageEmbeddingResult:
     embeddings: np.ndarray
     semantics: EmbeddingSemantics
     service_s: float
+    telemetry: ImageBatchTelemetry = field(default_factory=ImageBatchTelemetry)
 
     def __post_init__(self) -> None:
         if self.service_s < 0 or not math.isfinite(self.service_s):

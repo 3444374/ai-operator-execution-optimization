@@ -269,8 +269,10 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
   13.8–31.2×，因此 E2E build 动机保留。
   lazy image source、Daft Native/Ray baseline 与 bounded Ray CPU→GPU operator-E2E
   runner/formal 已完成：独立校准后 project 相对单卡 Native 1.296×、双卡 Ray
-  1.138×。统一 pgvector sink、CPU-budget-normalized curve、frame-cost 策略接线、
-  CLIP HTTP/vLLM pooling 对照和正式策略结果尚未完成。
+  1.138×。旧字段尚不能定位 CPU/Ray/PCIe/GPU 主瓶颈；schema v2 已补 CPU、
+  active-device GPU、逻辑字节与可选侵入式 CUDA stage telemetry，等待按 R0→R4
+  表示阶梯复测。统一 pgvector sink、CPU-budget-normalized curve、frame-cost 策略
+  接线、CLIP HTTP/vLLM pooling 对照和正式策略结果尚未完成。
 - **算子代价估计（共同使能组件）**：初版实现与 grouped held-out 评估已完成，可提供
   粗粒度编排提示；独立时间段/新 workload 校准、预测区间和跨模型迁移仍未完成。
 
@@ -300,8 +302,9 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
    typed batch/result、CPU CLIP preprocessor 和常驻 tensor actor 已实现并有单测；
 2. ✅ PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor operator-E2E、exactly-once、
    Daft actor shape 与 ours 静态 shape 已完成；
-3. 接统一 pgvector sink，补 system-E2E、Recall@10 与 CPU-budget-normalized curve；
-4. 继续校准 bounded direct、vLLM pooling、Ray Data、naive；Daft Native/Ray 已完成；
+3. 先跑 image host data path R0→R4 动机实验，判定 CPU/Ray/PCIe/GPU 主限制；
+4. 接统一 pgvector sink，补 system-E2E、Recall@10、CPU-budget-normalized curve，
+   并继续校准 bounded direct、vLLM pooling、Ray Data、naive；
 5. 在强静态点上实现 endpoint-state-aware 请求成形和 `<100 LOC` 代价模型 v1；
 6. 正式报告吞吐/JCT/tail/SLO、overlap、GPU busy、能耗和 Recall@10。
 
@@ -462,8 +465,9 @@ start、response headers、body complete、headers wait 和 body read。校准�
 
 - 多 GPU：先部署同构、各自独立占用 GPU 的双 service endpoint，再做异构池；
   验证健康回退、队列均衡和公平性。
-- 多模态：5K CLIP 画像和静态 operator-E2E 已完成；下一步接 pgvector sink、补
-  frame/pixel cost adapter 与 endpoint-state trace，再测试状态感知策略。
+- 多模态：5K CLIP 画像和静态 operator-E2E 已完成，但 CPU/Ray/PCIe/GPU 归因仍
+  未闭合；下一步先跑 R0→R4 host data path，再接 pgvector sink、frame/pixel cost
+  adapter 与 endpoint-state trace。
 - 代价估计：当前 grouped held-out 五切分平均 MAE 11.68s、MAPE 50.60%、
   R² 0.776；相对误差仍不稳定，下一步增加独立时间段/新 workload 校准和
   预测区间，不新增独立系统层。

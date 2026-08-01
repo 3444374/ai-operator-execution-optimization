@@ -19,10 +19,8 @@ import argparse
 import csv
 import json
 import os
-import statistics
 import subprocess
 import sys
-import threading
 import time
 from pathlib import Path
 
@@ -42,6 +40,7 @@ from src.image.execution import (  # noqa: E402
     run_project_ray_pipeline,
     stop_project_ray_worker_pool,
 )
+from src.image.resource_sampling import NvidiaSmiSampler, SystemCpuSampler  # noqa: E402
 
 
 ARMS = ("daft_native", "daft_ray", "project_ray")
@@ -59,17 +58,69 @@ CSV_FIELDS = (
     "source_shards",
     "max_active_batches",
     "worker_setup_s",
+    "worker_setup_accounting",
     "operator_e2e_s",
     "first_output_s",
+    "first_output_semantics",
     "images_per_s",
     "batch_service_p50_s",
     "batch_service_p95_s",
+    "batch_service_semantics",
+    "batch_completion_wall_p50_s",
+    "batch_completion_wall_p95_s",
+    "batch_actor_service_p50_s",
+    "batch_actor_service_p95_s",
+    "batch_unattributed_wait_p50_s",
+    "batch_unattributed_wait_p95_s",
+    "batch_preprocess_p50_s",
+    "batch_preprocess_p95_s",
+    "batch_host_copy_p50_s",
+    "batch_host_copy_p95_s",
+    "batch_h2d_p50_s",
+    "batch_h2d_p95_s",
+    "batch_forward_p50_s",
+    "batch_forward_p95_s",
+    "batch_d2h_p50_s",
+    "batch_d2h_p95_s",
+    "detailed_stage_timing",
+    "input_encoded_bytes",
+    "avg_encoded_bytes",
+    "telemetry_encoded_bytes",
+    "input_tensor_bytes",
+    "device_input_bytes",
+    "output_embedding_bytes",
+    "logical_h2d_effective_gbps",
+    "logical_d2h_effective_gbps",
+    "submitted_batches",
+    "pending_batches_peak",
     "output_rows",
     "exactly_once",
     "embedding_checksum",
+    "embedding_sum_all",
+    "embedding_digest_xor_rounded5",
     "max_norm_error",
+    "cpu_system_mean_pct",
+    "cpu_system_peak_pct",
+    "cpu_busy_cores_mean",
+    "cpu_busy_cores_peak",
+    "cpu_per_core_peak_pct",
+    "cpu_logical_count",
+    "cpu_samples",
     "gpu_util_mean_pct",
     "gpu_util_peak_pct",
+    "gpu_active_util_mean_pct",
+    "gpu_active_util_peak_pct",
+    "gpu_active_device_count",
+    "gpu_active_devices_json",
+    "gpu_active_power_mean_w",
+    "gpu_active_power_peak_w",
+    "gpu_energy_estimate_j",
+    "gpu_active_sm_clock_mean_mhz",
+    "gpu_active_memory_clock_mean_mhz",
+    "gpu_active_pcie_generation",
+    "gpu_active_pcie_width",
+    "gpu_active_pcie_generation_max",
+    "gpu_active_pcie_width_max",
     "gpu_memory_peak_mib",
     "gpu_samples",
     "gpu_per_device_json",
@@ -82,6 +133,9 @@ CSV_FIELDS = (
     "torch_version",
     "transformers_version",
     "gpu_name",
+    "model_flops_per_image",
+    "gpu_peak_flops_per_s",
+    "estimated_e2e_mfu",
     "server_version",
     "pgvector_version",
     "git_commit",
@@ -119,76 +173,30 @@ def parse_args():
     parser.add_argument("--max-active-batches", type=int, default=8)
     parser.add_argument("--dtype", choices=("float16", "float32", "bfloat16"), default="float16")
     parser.add_argument("--embedding-dimension", type=int, default=512)
+    parser.add_argument(
+        "--model-flops-per-image",
+        type=float,
+        default=0.0,
+        help="Verified model FLOPs per image; 0 leaves estimated MFU blank",
+    )
+    parser.add_argument(
+        "--gpu-peak-flops-per-s",
+        type=float,
+        default=0.0,
+        help="Per-GPU peak FLOP/s matching dtype; 0 leaves estimated MFU blank",
+    )
     parser.add_argument("--phase", choices=("gate", "warmup", "formal"), default="gate")
     parser.add_argument("--repeat-index", type=int, default=0)
     parser.add_argument("--gpu-sample-interval-s", type=float, default=0.5)
+    parser.add_argument("--cpu-sample-interval-s", type=float, default=0.25)
+    parser.add_argument(
+        "--detailed-stage-timing",
+        action="store_true",
+        help="Synchronize CUDA stages to measure H2D/forward/D2H; use as a diagnostic arm",
+    )
     parser.add_argument("--out-csv", required=True)
     parser.add_argument("--out-manifest", required=True)
     return parser.parse_args()
-
-
-class NvidiaSmiSampler:
-    """Low-frequency, arm-neutral GPU utilization sampler."""
-
-    def __init__(self, interval_s: float) -> None:
-        if interval_s <= 0:
-            raise ValueError("GPU sample interval must be positive")
-        self.interval_s = interval_s
-        self._stop = threading.Event()
-        self._samples: list[tuple[int, float, float]] = []
-        self._thread = threading.Thread(target=self._run, daemon=True)
-
-    def start(self) -> None:
-        self._thread.start()
-
-    def stop(self) -> dict[str, object]:
-        self._stop.set()
-        self._thread.join(timeout=max(2.0, self.interval_s * 4))
-        per_device: dict[int, dict[str, list[float]]] = {}
-        for index, utilization, memory_mib in self._samples:
-            entry = per_device.setdefault(index, {"utilization": [], "memory_mib": []})
-            entry["utilization"].append(utilization)
-            entry["memory_mib"].append(memory_mib)
-        summaries = {
-            str(index): {
-                "util_mean_pct": statistics.fmean(values["utilization"]),
-                "util_peak_pct": max(values["utilization"]),
-                "memory_peak_mib": max(values["memory_mib"]),
-                "samples": len(values["utilization"]),
-            }
-            for index, values in per_device.items()
-        }
-        all_util = [sample[1] for sample in self._samples]
-        all_memory = [sample[2] for sample in self._samples]
-        return {
-            "gpu_util_mean_pct": statistics.fmean(all_util) if all_util else 0.0,
-            "gpu_util_peak_pct": max(all_util, default=0.0),
-            "gpu_memory_peak_mib": max(all_memory, default=0.0),
-            "gpu_samples": len(self._samples),
-            "gpu_per_device_json": json.dumps(summaries, sort_keys=True),
-        }
-
-    def _run(self) -> None:
-        command = [
-            "nvidia-smi",
-            "--query-gpu=index,utilization.gpu,memory.used",
-            "--format=csv,noheader,nounits",
-        ]
-        while not self._stop.is_set():
-            completed = subprocess.run(
-                command,
-                capture_output=True,
-                check=False,
-                text=True,
-            )
-            if completed.returncode == 0:
-                for line in completed.stdout.splitlines():
-                    fields = [item.strip() for item in line.split(",")]
-                    if len(fields) == 3:
-                        self._samples.append(
-                            (int(fields[0]), float(fields[1]), float(fields[2]))
-                        )
-            self._stop.wait(self.interval_s)
 
 
 def read_database_metadata(
@@ -197,7 +205,7 @@ def read_database_metadata(
     workload_name: str,
     limit: int,
     offset: int,
-) -> tuple[frozenset[str], dict[str, str]]:
+) -> tuple[frozenset[str], dict[str, object]]:
     import psycopg
 
     with psycopg.connect(dsn) as connection:
@@ -214,11 +222,22 @@ def read_database_metadata(
                 "SELECT extversion FROM pg_extension WHERE extname = 'vector'"
             )
             extension = cursor.fetchone()
+            cursor.execute(
+                "SELECT COALESCE(SUM(image_bytes), 0), "
+                "COALESCE(AVG(image_bytes), 0) FROM ("
+                "SELECT image_bytes FROM image_documents "
+                "WHERE workload_name = %s ORDER BY doc_id LIMIT %s OFFSET %s"
+                ") AS selected_rows",
+                (workload_name, limit, offset),
+            )
+            input_encoded_bytes, avg_encoded_bytes = cursor.fetchone()
     if len(doc_ids) != limit:
         raise ValueError(f"expected {limit} source rows, found {len(doc_ids)}")
     return doc_ids, {
         "server_version": server_version,
         "pgvector_version": str(extension[0]) if extension else "not_installed",
+        "input_encoded_bytes": int(input_encoded_bytes),
+        "avg_encoded_bytes": float(avg_encoded_bytes),
     }
 
 
@@ -247,6 +266,12 @@ def percentile(values: tuple[float, ...], fraction: float) -> float | str:
     ordered = sorted(values)
     position = min(len(ordered) - 1, max(0, int(round((len(ordered) - 1) * fraction))))
     return ordered[position]
+
+
+def logical_bandwidth_gbps(byte_count: int, durations_s: tuple[float, ...]) -> float | str:
+    """Return logical payload bytes / measured stage wall, not a PCIe counter."""
+    total_s = sum(durations_s)
+    return byte_count / total_s / 1e9 if byte_count > 0 and total_s > 0 else ""
 
 
 def append_csv(path: Path, row: dict[str, object]) -> None:
@@ -281,6 +306,8 @@ def main() -> None:
         args.gpu_workers,
         args.max_active_batches,
         args.embedding_dimension,
+        args.gpu_sample_interval_s,
+        args.cpu_sample_interval_s,
     )
     if not args.pg_dsn:
         raise SystemExit("--pg-dsn is required (or set DATABASE_URL/PG_DSN)")
@@ -290,6 +317,12 @@ def main() -> None:
         raise SystemExit("optional worker and shard overrides must be non-negative")
     if args.max_active_batches < args.gpu_workers:
         raise SystemExit("--max-active-batches must be at least --gpu-workers")
+    if args.detailed_stage_timing and args.arm != "project_ray":
+        raise SystemExit("--detailed-stage-timing currently supports project_ray only")
+    if min(args.model_flops_per_image, args.gpu_peak_flops_per_s) < 0:
+        raise SystemExit("FLOP values must be non-negative")
+    if bool(args.model_flops_per_image) != bool(args.gpu_peak_flops_per_s):
+        raise SystemExit("set both FLOP values or leave both at 0")
 
     import daft
     import ray
@@ -361,6 +394,7 @@ def main() -> None:
             cpu_workers=args.cpu_workers,
             gpu_workers=args.gpu_workers,
             dtype=args.dtype,
+            detailed_stage_timing=args.detailed_stage_timing,
         )
 
     def execute(limit: int, expected_ids: frozenset[str]) -> ExecutionResult:
@@ -390,8 +424,13 @@ def main() -> None:
     execute(warmup_count, warmup_ids)
     if worker_pool is not None:
         stop_project_ray_worker_pool(worker_pool)
-    sampler = NvidiaSmiSampler(args.gpu_sample_interval_s)
-    sampler.start()
+    gpu_sampler = NvidiaSmiSampler(
+        args.gpu_sample_interval_s,
+        active_device_count=args.gpu_workers,
+    )
+    cpu_sampler = SystemCpuSampler(args.cpu_sample_interval_s)
+    gpu_sampler.start()
+    cpu_sampler.start()
     if worker_pool is not None:
         setup_started = time.perf_counter()
         worker_pool = build_project_ray_worker_pool(
@@ -400,6 +439,7 @@ def main() -> None:
             cpu_workers=args.cpu_workers,
             gpu_workers=args.gpu_workers,
             dtype=args.dtype,
+            detailed_stage_timing=args.detailed_stage_timing,
         )
         worker_setup_s = time.perf_counter() - setup_started
     else:
@@ -408,12 +448,23 @@ def main() -> None:
         # first_output_s rather than this explicit setup field.
         worker_setup_s = 0.0
     result = execute(args.limit, formal_ids)
-    gpu_metrics = sampler.stop()
+    gpu_metrics = gpu_sampler.stop()
+    cpu_metrics = cpu_sampler.stop()
     if worker_pool is not None:
         stop_project_ray_worker_pool(worker_pool)
 
     operator_e2e_s = result.total_s + worker_setup_s
     first_output_s = result.first_output_s + worker_setup_s
+    estimated_e2e_mfu = ""
+    if args.model_flops_per_image and args.gpu_peak_flops_per_s:
+        estimated_e2e_mfu = (
+            args.limit
+            * args.model_flops_per_image
+            / (operator_e2e_s * args.gpu_workers * args.gpu_peak_flops_per_s)
+        )
+    project_metrics = args.arm == "project_ray"
+    batch_completion_p50 = percentile(result.batch_completion_wall_s, 0.50)
+    batch_completion_p95 = percentile(result.batch_completion_wall_s, 0.95)
 
     row: dict[str, object] = {
         "arm": args.arm,
@@ -428,13 +479,64 @@ def main() -> None:
         "gpus_per_model_worker": gpus_per_model_worker,
         "source_shards": source_shards,
         "max_active_batches": args.max_active_batches,
-        "worker_setup_s": worker_setup_s,
+        "worker_setup_s": worker_setup_s if project_metrics else "",
+        "worker_setup_accounting": (
+            "explicit_pre_query_plus_query_wall"
+            if project_metrics
+            else "folded_into_timed_daft_query_wall"
+        ),
         "operator_e2e_s": operator_e2e_s,
         "first_output_s": first_output_s,
+        "first_output_semantics": "cold_setup_to_first_complete_arrow_record_batch",
         "images_per_s": args.limit / operator_e2e_s,
-        "batch_service_p50_s": percentile(result.batch_service_s, 0.50),
-        "batch_service_p95_s": percentile(result.batch_service_s, 0.95),
+        # Legacy aliases retained for old summarizers. These are not pure GPU
+        # service times; the explicit semantics and replacement fields follow.
+        "batch_service_p50_s": batch_completion_p50,
+        "batch_service_p95_s": batch_completion_p95,
+        "batch_service_semantics": (
+            "submission_to_result_includes_dependency_queue_actor_and_return"
+            if project_metrics
+            else "unavailable_fused_udf"
+        ),
+        "batch_completion_wall_p50_s": batch_completion_p50,
+        "batch_completion_wall_p95_s": batch_completion_p95,
+        "batch_actor_service_p50_s": percentile(result.batch_actor_service_s, 0.50),
+        "batch_actor_service_p95_s": percentile(result.batch_actor_service_s, 0.95),
+        "batch_unattributed_wait_p50_s": percentile(
+            result.batch_unattributed_wait_s,
+            0.50,
+        ),
+        "batch_unattributed_wait_p95_s": percentile(
+            result.batch_unattributed_wait_s,
+            0.95,
+        ),
+        "batch_preprocess_p50_s": percentile(result.batch_preprocess_s, 0.50),
+        "batch_preprocess_p95_s": percentile(result.batch_preprocess_s, 0.95),
+        "batch_host_copy_p50_s": percentile(result.batch_host_copy_s, 0.50),
+        "batch_host_copy_p95_s": percentile(result.batch_host_copy_s, 0.95),
+        "batch_h2d_p50_s": percentile(result.batch_h2d_s, 0.50),
+        "batch_h2d_p95_s": percentile(result.batch_h2d_s, 0.95),
+        "batch_forward_p50_s": percentile(result.batch_forward_s, 0.50),
+        "batch_forward_p95_s": percentile(result.batch_forward_s, 0.95),
+        "batch_d2h_p50_s": percentile(result.batch_d2h_s, 0.50),
+        "batch_d2h_p95_s": percentile(result.batch_d2h_s, 0.95),
+        "detailed_stage_timing": args.detailed_stage_timing,
+        "telemetry_encoded_bytes": result.encoded_bytes if project_metrics else "",
+        "input_tensor_bytes": result.input_tensor_bytes if project_metrics else "",
+        "device_input_bytes": result.device_input_bytes if project_metrics else "",
+        "output_embedding_bytes": result.output_bytes if project_metrics else "",
+        "logical_h2d_effective_gbps": logical_bandwidth_gbps(
+            result.input_tensor_bytes,
+            result.batch_h2d_s,
+        ),
+        "logical_d2h_effective_gbps": logical_bandwidth_gbps(
+            result.output_bytes,
+            result.batch_d2h_s,
+        ),
+        "submitted_batches": result.submitted_batches if project_metrics else "",
+        "pending_batches_peak": result.pending_batches_peak if project_metrics else "",
         **result.audit,
+        **cpu_metrics,
         **gpu_metrics,
         "model_revision": args.model,
         "processor_revision": processor,
@@ -445,18 +547,24 @@ def main() -> None:
         "torch_version": torch.__version__,
         "transformers_version": transformers.__version__,
         "gpu_name": torch.cuda.get_device_name(0),
+        "model_flops_per_image": args.model_flops_per_image or "",
+        "gpu_peak_flops_per_s": args.gpu_peak_flops_per_s or "",
+        "estimated_e2e_mfu": estimated_e2e_mfu,
         **database_metadata,
         "git_commit": git_commit(),
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,
         "writeback_included": False,
         "preprocessing": "torchvision_tensor_decode_and_processor",
         "hidden_batching": False,
+        "detailed_stage_timing_intrusive": args.detailed_stage_timing,
+        "bandwidth_semantics": "logical_bytes_over_stage_wall_not_pcie_counter",
+        "mfu_semantics": "estimated_only_when_verified_flops_and_dtype_peak_are_supplied",
         "row": row,
     }
     manifest_path = Path(args.out_manifest)

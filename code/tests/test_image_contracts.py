@@ -17,6 +17,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
 from src.image.clip import extract_clip_image_features  # noqa: E402
 from src.image.contracts import (  # noqa: E402
     EmbeddingSemantics,
+    ImageBatchTelemetry,
     ImageEmbeddingBatch,
     ImageEmbeddingResult,
 )
@@ -29,6 +30,10 @@ from import_coco_images import coco_doc_id  # noqa: E402
 
 
 class ImageContractTests(unittest.TestCase):
+    def test_batch_telemetry_rejects_negative_measurements(self) -> None:
+        with self.assertRaisesRegex(ValueError, "byte counts"):
+            ImageBatchTelemetry(encoded_bytes=-1)
+
     def test_embedding_result_validates_rows_dimension_and_finite_values(self) -> None:
         semantics = EmbeddingSemantics("clip-rev", "processor-rev", 2)
         result = ImageEmbeddingResult(

@@ -11,6 +11,7 @@ import numpy as np
 
 from .contracts import (
     EmbeddingSemantics,
+    ImageBatchTelemetry,
     ImageEmbeddingBatch,
     ImageEmbeddingResult,
 )
@@ -119,6 +120,7 @@ class ClipTensorActor:
         device: str = "cuda",
         dtype: str = "float16",
         normalize: bool = True,
+        detailed_stage_timing: bool = False,
     ) -> None:
         import torch
         from transformers import CLIPModel
@@ -134,6 +136,7 @@ class ClipTensorActor:
         self._device = device
         self._dtype = dtype_by_name[dtype]
         self._normalize = normalize
+        self._detailed_stage_timing = detailed_stage_timing
         self._model = CLIPModel.from_pretrained(model_revision).eval()
         self._model = self._model.to(device=device, dtype=self._dtype)
         projection_dim = int(self._model.config.projection_dim)
@@ -166,15 +169,29 @@ class ClipTensorActor:
         # warns even though CLIP never mutates the input, so take ownership at
         # this device-transfer boundary instead of relying on undefined write
         # behavior in a future model implementation.
+        host_copy_started = time.perf_counter()
         if not payload.flags.writeable:
             payload = payload.copy()
+        host_copy_s = time.perf_counter() - host_copy_started
+
+        detailed_cuda_timing = self._detailed_stage_timing and self._device.startswith("cuda")
+        if detailed_cuda_timing:
+            self._torch.cuda.synchronize()
+        h2d_started = time.perf_counter()
         pixel_values = self._torch.as_tensor(
             payload,
             dtype=self._dtype,
             device=self._device,
         )
+        if detailed_cuda_timing:
+            self._torch.cuda.synchronize()
+        h2d_s = time.perf_counter() - h2d_started if detailed_cuda_timing else 0.0
         if pixel_values.ndim != 4 or pixel_values.shape[0] != len(batch.doc_ids):
             raise ValueError("pixel tensor must have shape (rows, channels, height, width)")
+
+        if detailed_cuda_timing:
+            self._torch.cuda.synchronize()
+        forward_started = time.perf_counter()
         with self._torch.inference_mode():
             output = self._model.get_image_features(pixel_values=pixel_values)
             # Normalize in float32 so ``normalized=True`` is an accurate output
@@ -182,10 +199,30 @@ class ClipTensorActor:
             features = extract_clip_image_features(output).float()
             if self._normalize:
                 features = l2_normalize_embeddings(features)
+        if detailed_cuda_timing:
+            self._torch.cuda.synchronize()
+        forward_s = time.perf_counter() - forward_started if detailed_cuda_timing else 0.0
+
+        if detailed_cuda_timing:
+            self._torch.cuda.synchronize()
+        d2h_started = time.perf_counter()
         embeddings = features.cpu().numpy()
+        d2h_s = time.perf_counter() - d2h_started if detailed_cuda_timing else 0.0
+        telemetry = ImageBatchTelemetry(
+            preprocess_s=batch.telemetry.preprocess_s,
+            encoded_bytes=batch.telemetry.encoded_bytes,
+            input_tensor_bytes=int(payload.nbytes),
+            device_input_bytes=int(pixel_values.numel() * pixel_values.element_size()),
+            host_copy_s=host_copy_s,
+            h2d_s=h2d_s,
+            forward_s=forward_s,
+            d2h_s=d2h_s,
+            output_bytes=int(embeddings.nbytes),
+        )
         return ImageEmbeddingResult(
             doc_ids=batch.doc_ids,
             embeddings=embeddings,
             semantics=self.semantics,
             service_s=time.perf_counter() - started,
+            telemetry=telemetry,
         )

@@ -9,6 +9,7 @@ from .clip import (
 )
 from .contracts import (
     EmbeddingSemantics,
+    ImageBatchTelemetry,
     ImageEmbeddingBackend,
     ImageEmbeddingBatch,
     ImageEmbeddingResult,
@@ -29,6 +30,7 @@ __all__ = [
     "ImageEmbeddingBackend",
     "ImageEmbeddingBatch",
     "ImageEmbeddingResult",
+    "ImageBatchTelemetry",
     "ImageSourceConfig",
     "extract_clip_image_features",
     "image_documents_query",

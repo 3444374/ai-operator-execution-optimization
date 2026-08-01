@@ -58,7 +58,7 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 | AIMD/PID/EWMA、动态 flush、多 actor 多数未过 5% 门槛 | 不能声称复杂动态策略普遍胜过强静态 baseline |
 | 2-ep 与 4-ep cache-ON 数据组织排名反转 | 上游组织/准入价值依赖 endpoint consolidation 与 KV 饱和 regime |
 | matched-KV：2-ep 中性、4-ep prefix routing +5.9% | 目前更支持 endpoint consolidation，而非单纯 per-endpoint KV 大小是驱动；仍有饱和深度混淆 |
-| CLIP 5K 画像：CPU 准备/GPU embed=`13.8–18.3` | 图像链路存在真实 CPU-preprocess→GPU 的异构流水线优化空间 |
+| CLIP 5K 串行画像：CPU 准备/actor forward=`13.8–18.3` | 图像链路存在异构流水线候选空间；尚未证明 CPU、Ray/host copy 或 PCIe 谁是主瓶颈 |
 | CLIP operator-E2E：project/Daft=单卡 1.296×、双卡 1.138× | 独立校准后，静态阶段拆分在同物理机器上优于 fused Daft UDF；尚非动态策略或 system-E2E 证据 |
 
 CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path 约
@@ -70,7 +70,8 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 
 1. ✅ Daft Native/Ray actor-shape 校准与 bounded project-Ray COCO 5K×3
    operator-E2E formal 已完成。
-2. 给三臂接统一 pgvector sink，并补 bounded direct CLIP、CPU-budget-normalized
+2. 先跑 `motivation/plans/image_host_data_path_bottleneck.md` 的 R0→R4 表示阶梯，
+   再给三臂接统一 pgvector sink，并补 bounded direct CLIP、CPU-budget-normalized
    curve、Ray Data、vLLM pooling、naive 等完整 baseline；
    OceanBase `AI_EMBED` 等待可部署环境。
 3. 在同 workload、同硬件、同计时边界下校准 frame budget、K、actor/endpoint 形状和静态 active work。

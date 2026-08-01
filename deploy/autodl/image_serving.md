@@ -132,7 +132,12 @@ Daft Native、Daft Ray 与项目分阶段 Ray pipeline。它从每个 query 的�
 建立/执行开始计时到最后一批 embedding 返回（Ray 框架启动排除），包含模型 worker
 建立、DB read/preprocess/transfer/forward/fan-in，
 但**暂不含 pgvector 写回**。因此可作强 baseline gate，不能冒充完整 system E2E。
-统一 pgvector sink、阶段 trace 和正式 system-E2E runner 仍待接入。
+统一 pgvector sink和正式 system-E2E runner仍待接入。schema v2 已补 system
+per-core CPU、active-device GPU、逻辑字节和 project-Ray 分段 telemetry；其中
+`--detailed-stage-timing` 会同步 CUDA，只能用于机制诊断，不能替代低扰动 headline。
+GPU 采样还记录 active-card 功耗/时钟/估算能耗和 PCIe current/max link；
+`estimated_e2e_mfu` 仅在命令同时显式提供经校准的 `--model-flops-per-image` 与
+`--gpu-peak-flops-per-s` 时生成，默认留空。
 
 ### 5.2 Ray GPU actor 合同 smoke（单卡）
 
@@ -250,7 +255,9 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
 ```
 
 通过条件：三臂各 256 行、`exactly_once=true`、embedding dimension=512、
-`max_norm_error` 在 float32 归一化容差内、checksum 一致；没有残留 Ray/GPU 进程。
+`max_norm_error` 在 float32 归一化容差内；schema v2 还要求
+`embedding_digest_xor_rounded5` 一致。没有残留 Ray/GPU 进程。旧 checksum 只覆盖
+第一维求和，不能单独作为完整输出等价证据。
 正式 5000 行用 3 repeats，并按文档预注册的 Latin-square 顺序交错，不能连续跑完
 同一臂后直接比较，以免时间漂移成为混淆变量。
 Daft 的 UDF actor 按 query 重建；脚本因此也会在 project-Ray warmup 后销毁并重建
@@ -261,16 +268,20 @@ Daft 的 UDF actor 按 query 重建；脚本因此也会在 project-Ray warmup �
 project 1.296× Daft Native、双卡 project 1.138× Daft Ray。该结果不包含 pgvector，
 也不是相同 CPU reservation 的资源效率证明；复述时必须同时带上报告中的限制。
 
-### 5.5 已完成：分阶段瓶颈画像
-**第一步不是写优化策略，是先画像——确认瓶颈到底在哪段、有多重。** 把 §4.3 的数据流分阶段计时：
-- DB-read（PostgreSQL 取图）
-- CPU JPEG decode + resize + normalize
-- CPU→GPU transfer
-- GPU CLIP embed
+### 5.5 待完成：host data path 瓶颈判定
 
-这是"找数据搬运瓶颈"的直接验证，也是后续策略优化的基线。跑法类似文本侧的 GPU-backed E2E motivation profile（`motivation/results/gpu/`，fine vs coalesced 13.4× 那套），只是换模态 + 分阶段更细。
+旧 5K×100 串行画像只证明 CPU preprocess 时间明显大于一次 actor forward，不能
+证明 CPU 已饱和，更不能证明或排除 PCIe、Ray object store 与 host copy。旧
+`batch_service` 也不是纯 GPU service。因此“分阶段瓶颈画像已完成”的说法撤回。
 
-5K×100 画像已经通过 `ratio>0.3` 门禁；不得重复跑画像代替端到端 runner gate。
+正式判定按
+`motivation/plans/image_host_data_path_bottleneck.md` 执行 R0→R4 表示阶梯：
+GPU-resident compute ceiling → pinned H2D → pageable/Ray tensor → in-memory JPEG
+preprocess → PostgreSQL/Daft operator E2E。先跑无 CUDA 同步的正式曲线，再只对
+代表点启用 `--detailed-stage-timing` 并用 CUDA events/Nsight 短窗口复核。
+
+在该实验过门禁前，只能写“CPU prepare 是候选限制、阶段拆分有 E2E 收益”，不能写
+“PCIe 是瓶颈”“CPU 已饱和”或“传输可忽略”。
 
 ### 5.6 当前实现边界的受控复测
 

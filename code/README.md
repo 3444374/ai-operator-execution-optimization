@@ -31,7 +31,7 @@ code/
 │   ├── packing.py                         ← 与模态无关的确定性 BFD 与 row-cap-first 候选
 │   ├── runner_lease.py                    ← 场景输出目录的原子单写者租约与显式 stale recovery
 │   ├── model_backends.py                  ← sync/async compatible HTTP 与 multi-prompt completion backend
-│   ├── image/                             ← 图像 typed contracts、lazy source、CPU preprocess 与 CLIP tensor actor
+│   ├── image/                             ← 图像 contracts/source/CPU preprocess/CLIP actor 与资源采样
 │   ├── baselines/                         ← direct Chat/Completions、官方 runtime 与统一 gate
 │   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
 │   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
@@ -61,6 +61,7 @@ code/
 │   ├── test_runner_lease.py               ← runner 活跃 owner、stale recovery 与 fingerprint 门禁
 │   ├── test_model_backends.py            ← 模型后端最小单元测试
 │   ├── test_image_contracts.py            ← 图像 embedding/source/tensor boundary 单元测试
+│   ├── test_image_resource_sampling.py    ← active/visible GPU 与 host CPU 汇总语义测试
 │   ├── test_sinks.py                     ← 写回后端最小单元测试
 │   ├── test_workloads.py                 ← 内置 workload seed 单元测试
 │   └── test_import_ai_complete_workload.py ← ShareGPT/BurstGPT importer 单元测试

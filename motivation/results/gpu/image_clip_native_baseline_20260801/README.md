@@ -67,8 +67,9 @@ workers 的 21.74s 明显欠供给；4 CPU workers 后 source=4 为 15.94s，sou
 - 每次 invocation 都先跑 64 行 preflight；formal 重新建立 cold model workers，
   没有让项目臂复用 warm actor 对比 cold Daft actor。
 - 12/12 formal runs 均 `output_rows=5000`、`exactly_once=true`。
-- 12/12 的最大归一化误差均为 `1.788139e-07`；embedding checksum 全体相对
-  span 为 `2.91e-5`，未发现静默缺行或输出合同变化。
+- 12/12 的最大归一化误差均为 `1.788139e-07`；embedding 第一维 checksum 全体
+  相对 span 为 `2.91e-5`，未发现粗粒度数值异常。该字段不能证明完整逐行等价；
+  exactly-once 只证明行集合完整。
 - baseline 与 project 交错执行，避免连续跑同一臂造成单向时间漂移。
 - 原始 CSV 与逐 run manifest 均保存在 `raw/`；`summary.csv` 仅为可复核派生表。
 
@@ -101,10 +102,12 @@ first-output median 由 Daft Ray 的 15.43s 降为 8.90s。
 
 ### 推断
 
-最符合数据的机制解释是：图像 decode/processor 是 CPU-heavy stage；fused UDF
-只能通过复制整个模型 actor 增加 CPU prepare 并发，而阶段拆分允许增加 CPU workers
-但不复制 GPU 模型，因此 pipeline 更快且更稳定。这是**阶段边界/资源配比动机**，
-不是动态调度策略已经生效的证据。
+结合独立 preprocessing profile，当前最符合数据的候选解释是：图像
+decode/processor 是 CPU-heavy stage；fused UDF 只能通过复制整个模型 actor 增加
+CPU prepare 并发，而阶段拆分允许增加 CPU workers 但不复制 GPU 模型。不过 formal
+本身没有采集 CPU busy cores，也没有把 host copy/H2D/forward 拆开，因此这里只能称
+**待验证机制推断**，不能由本轮单独确认 CPU 已饱和或排除数据搬运。它支持的是
+阶段边界/资源配比动机，不是动态调度策略已经生效的证据。
 
 `nvidia-smi` 500ms 采样得到的 active-device util 均值仅约 2%–5%，且峰值约
 15%–22%。短 kernel 会被低频采样漏掉，因此不能据此计算 MFU；但这些数据至少不支持
@@ -133,9 +136,10 @@ first-output median 由 Daft Ray 的 15.43s 降为 8.90s。
 ## 6. 对课题的含义
 
 这组结果提供了一个比旧 micro-profile 更直接的动机：在真实 PostgreSQL BYTEA→
-Daft→CLIP operator E2E 中，官方 Daft fused GPU UDF 即使独立调到强运行点，仍会受
-CPU prepare 与模型副本绑定的限制；CPU/GPU stage separation 能在固定物理主机上
-取得 13.8%–29.6% 的可复现改善。
+Daft→CLIP operator E2E 中，官方 Daft fused GPU UDF 即使独立调到强运行点，仍存在
+阶段耦合与资源配比限制；CPU/GPU stage separation 能在固定物理主机上取得
+13.8%–29.6% 的可复现改善。CPU prepare、Ray/host copy、PCIe H2D 各自贡献多少，
+仍须由 R0→R4 表示阶梯复测确定。
 
 它支持继续建设项目执行链路，但还不能证明后续“状态感知策略”优于最佳静态阶段拆分。
 今后的策略主对照必须是本项目冻结的最佳静态 pipeline，而不是重新拿 Daft Native
@@ -143,59 +147,90 @@ CPU prepare 与模型副本绑定的限制；CPU/GPU stage separation 能在固�
 
 ## 7. 下一步
 
-1. 三臂接同一个 pgvector COPY sink，补 system-E2E、写回占比和 recall@10。
-2. 补 bounded direct CLIP ceiling；用于判断 pipeline feeding 缺口，不要求超越。
-3. 补 CPU-budget-normalized actor curve；同时报告最佳可达性能与资源效率。
+1. 先按 `motivation/plans/image_host_data_path_bottleneck.md` 运行 R0→R4 表示阶梯，
+   以 schema v2 低扰动 headline + 短窗口侵入式诊断判定 CPU/Ray/PCIe/GPU 瓶颈。
+2. 在同一复测中补 bounded direct CLIP ceiling和 CPU-budget-normalized actor curve；
+   同时报告最佳可达性能与资源效率。
+3. 三臂接同一个 pgvector COPY sink，补 system-E2E、写回占比和 recall@10。
 4. 再补 Ray Data baseline作框架归因；vLLM pooling因 processor placement 不同，单列
    服务轨道，不能与 tensor-only actor 混成一个吞吐排名。
 5. 上述门禁闭合后，才以“冻结最佳静态 project pipeline”为对照测试状态感知请求
    成形、frame-work credit、multi-job shared credit 和代价模型。
 
-## 附：per-arm 全指标与资源缺口（2026-08-01 追加观察）
+## 附：per-arm 指标的审计修订与资源缺口
 
-本节从 `raw/image_clip_native_baseline_formal_ba1b710/runs.csv`（12 个 formal run）补充 §4 headline 之外的 per-arm 指标，并记录资源侧的两个测量缺口。数值为 3-run 中位。
+本节只解释历史 `schema_version=1` 的 12 个 formal runs，不改写原始 CSV。
+逐行复核 runner 后，早先追加说明里有三个语义错误：把外部 batch completion
+误称为纯 GPU forward、把 Daft `worker_setup_s=0` 误解为冷启动未计入、把包含
+闲置卡的 visible-GPU 平均值当成 active-GPU 平均值。以下为修订口径。
 
-### 附.1 per-arm 全指标（中位）
+### 附.1 per-arm 全指标（3-run 中位）
 
-| 指标 | native 单卡 | project 单卡 | daft_ray 双卡 | project 双卡 |
-|---|---|---|---|---|
-| operator_e2e_s | 22.15 | 17.09 | 17.95 | 15.77 |
+| 指标 | Native 单卡 | project 单卡 | Daft Ray 双卡 | project 双卡 |
+|---|---:|---:|---:|---:|
+| operator E2E (s) | 22.15 | 17.09 | 17.95 | 15.77 |
 | images/s | 225.8 | 292.5 | 278.5 | 317.0 |
-| first_output_s（首输出） | 9.18 | 8.48 | 15.43 | 8.90 |
-| batch_service_p50_s（每批 GPU，仅 project 测） | — | 0.91 | — | 0.71 |
-| batch_service_p95_s | — | 1.10 | — | 0.89 |
-| worker_setup_s（冷启动，含进 E2E） | 0.0 | 6.93 | 0.0 | 7.51 |
-| gpu_util_mean %（500ms 采样） | ~1.7 | ~1.9 | ~2.2 | ~2.0 |
-| gpu_util_peak % | 18 | 17 | 15 | 15 |
-| gpu_mem_peak MiB | 3714 | 930 | 1855/卡 | 930/卡 |
-| model_workers（模型副本数） | 4 | 1 | 4 | 2 |
-| gpus_per_model_worker | 0.25 | 1.0 | 0.5 | 1.0 |
-| embedding_checksum | -36.447 | -36.446 | -36.446 | -36.446 |
-| max_norm_error | 1.79e-7 | 1.79e-7 | 1.79e-7 | 1.79e-7 |
-| exactly_once / output_rows | T / 5000 | T / 5000 | T / 5000 | T / 5000 |
+| first complete output batch (s) | 9.18 | 8.48 | 15.43 | 8.90 |
+| submission→result wall p50 (s) | — | 0.91 | — | 0.71 |
+| submission→result wall p95 (s) | — | 1.10 | — | 0.89 |
+| explicit project pool setup (s) | folded | 6.93 | folded | 7.51 |
+| visible-GPU mean（旧 CSV 字段） | 1.7% | 1.9% | 2.2% | 2.0% |
+| active-card mean（由 per-device JSON 复算） | 3.4% | 3.9% | 2.2% | 2.0% |
+| GPU peak（500ms 采样） | 18% | 17% | 15% | 15% |
+| 每卡显存峰值 | 3714 MiB | 930 MiB | 1855 MiB | 930 MiB |
+| 模型副本数 | 4 | 1 | 4 | 2 |
+| 每 worker GPU 配额 | 0.25 | 1.0 | 0.5 | 1.0 |
+| checksum（仅第一维求和） | -36.447 | -36.446 | -36.446 | -36.446 |
+| max norm error | 1.79e-7 | 1.79e-7 | 1.79e-7 | 1.79e-7 |
+| exactly-once / rows | true / 5000 | true / 5000 | true / 5000 | true / 5000 |
 
-公共：batch=64、float16、512d、max_active_batches=8、CLIP ViT-B/32；栈版本见 §1。
+公共配置：batch=64、float16、512d、CLIP ViT-B/32。单卡旧
+`gpu_util_mean_pct` 把第二张闲置 GPU 也纳入平均，不能直接用于单/双卡比较。
 
-### 附.2 E2E 之外的观察
+### 附.2 字段的正确解释
 
-1. **first_output（首输出延迟）**：project 双卡 15.43s → 8.90s（快 ~6.5s），单卡 9.18→8.48s（小 gap）。阶段拆分 pipeline 填充更快——CPU actor 早出第一个 tensor 喂 GPU，fused UDF 要等 actor 内 decode+preprocess+forward 全跑完才出首批。
-2. **gpu_util 全臂 ~2% 均值、峰值 ≤22%**——每条路径都没压满 GPU，与"CPU-prep-bound"一致；但 500ms 采样漏短 kernel，**不能算 MFU**（§5 已声明），只能说"数据不支持 GPU 已压满"。
-3. **显存 project 省 ~4×**：native 单卡 4 副本 3714 MiB vs project 1 副本 930 MiB；双卡 1855/卡 vs 930/卡——阶段拆分不加模型副本的直接体现。
-4. **质量全臂一致**：embedding_checksum ~-36.446、max_norm_error 1.79e-7、exactly_once/5000 行——native/ray/project 产出相同 embedding，质量不是速度差异的混淆变量。
-5. **batch_service 仅 project 有值**：每批 GPU forward p50 单卡 0.91s、双卡 0.71s；native/ray 的每批服务融在 fused UDF 里没单独计时。
+1. `first_output_s` 是从 cold worker 边界到**第一个完整 Arrow record batch**返回，
+   不是单图片延迟，也不是模型 TTFT。双卡 15.43→8.90s 说明项目更早产出首批，
+   但不能仅凭该字段把全部差异归因于 pipeline fill。
+2. 历史 `batch_service_p50/p95_s` 从 GPU actor 调用提交时开始计时；其输入
+   ObjectRef 此时可能仍在 CPU preprocess。它包含依赖等待、actor queue、host copy、
+   H2D、forward、D2H 和返回，不是纯 GPU forward。Daft fused UDF 没有对应分解。
+3. project 的显式 pool setup 约 7s，随后被加回 E2E。Daft actor/model 在遍历
+   timed query 时懒创建，因此 setup 已折叠在 `total_s/first_output_s` 内；
+   `worker_setup_s=0` 只表示“未单独观测”，不能扣除 project 的 7s 后比较。
+4. 单卡显存差约 4×（4 对 1 模型副本）；双卡每卡差约 2×（每卡 2 对 1），
+   不能把所有 track 概括成统一“省 4×”。
+5. exactly-once、shape、finite 和 norm 均通过；但 checksum 只累加 embedding 第一维，
+   不是完整逐行等价证明。正式质量结论仍需逐行 cosine/max-abs 和 Recall@10。
 
-### 附.3 worker_setup 边界不对称（待澄清）
+### 附.3 当前数据能支持与不能支持的硬件判断
 
-project 的 operator_e2e **含 ~7s 冷启动**（Ray GPU actor 加载模型，worker_setup_s 6.93/7.51s）；native/ray 该列为 **0**。§1 边界声明"模型 worker cold setup 包含、Ray framework startup 排除"，但 Daft `@daft.cls` 的 worker 初始化可能落在 framework-startup 侧（排除），project 的 Ray actor 初始化落在 cold-setup 侧（包含）——**即 project 的 E2E 被罚 ~7s（保守、对 project 不利）**。正式比较应明确对齐该边界；按 steady-state（扣 setup）project 优势更大。
+当前能支持：GPU 没有持续繁忙的证据；增加 fused Daft 模型副本会增加显存和竞争；
+阶段拆分能利用更多 CPU 并发而不复制模型。
 
-### 附.4 资源测量缺口（gap）
+当前不能支持：CPU cores 已饱和、PCIe 已饱和、主机内存带宽是瓶颈、GPU MFU 约为
+2%，或者传输可以忽略。旧 profile 的 `tensor bytes / transfer wall` 只能得到逻辑
+有效速率，不能冒充 PCIe hardware counter；而且当前 E2E 没有把 Ray object-store
+copy、pageable/pinned memory 和 H2D 分开。
 
-runs.csv 的资源侧**只有 GPU 指标**（util/显存，nvidia-smi 500ms），缺两项：
+### 附.4 schema v2 修复（等待同目的正式复测）
 
-- **CPU 利用率（%）未测**：只有 `cpu_workers` 配置（3 或 4），没开 psutil/mpstat 采 CPU util。"CPU preprocess 是瓶颈"目前靠**间接证据**——阶段时间比（preproc ~5ms/img >> embed ~0.3ms/img，见 `image_clip_bottleneck_profile_20260801.md`）+ GPU util 全面 ~2%——逻辑成立，但**缺 CPU worker 是否真饱和的直接佐证**。正式论文应补后台 CPU 采样（psutil per-core %）。
-- **CPU↔GPU 传输带宽（GB/s）未测未报**：传输**时间**在独立 bottleneck profile 测过（`transfer` ~0.1ms/img），但在本 native-baseline 实验里折进 actor_call 没单列；带宽从未计算。可从 tensor 字节数 / transfer 时间粗推（float32 0.6MB/img ÷ ~0.1ms ≈ **~5 GB/s**，远低于 PCIe 4.0 ×16 ~32GB/s → 传输未饱和、可忽略），但这只是推导值、非实测。
+runner 已为下一次同目的实验改为 fail-explicit 记录：
 
-→ 当前数据能说"GPU 没压满 + 阶段时间 CPU 占大头"，但**"CPU worker 已饱和"仍缺直接 CPU util 证据**；传输带宽同理。两者列为后续采集待办（runner 加 psutil CPU 采样 + transfer 字节计 → 带宽）。
+- `worker_setup_accounting` 区分 explicit 与 folded，不再用 0 表示“没有 setup”；
+- 保留旧 `batch_service_*` 兼容列，但增加明确的 completion-wall、actor-service、
+  CPU preprocess、host-copy、H2D、forward 和 D2H 字段；详细 CUDA 分段计时是显式
+  diagnostic 模式，因为同步本身会扰动 headline；
+- 同时记录 system per-core CPU utilization、等价 busy cores、active-GPU 聚合、
+  功耗/时钟/估算能耗、PCIe current/max link、pending batch peak、未归因 wait，以及
+  encoded/tensor/device/output logical bytes；
+- 带宽字段明确命名为 `logical_*_effective_gbps`，不称为 PCIe 实测；
+- 只有同时提供经过校准的 per-image FLOPs 与相应 dtype 的 per-GPU peak FLOP/s，
+  才填写 `estimated_e2e_mfu`；否则留空，不用 GPU util 冒充 MFU；
+- 质量审计增加全维求和与按 doc_id 的 rounded embedding digest。
+
+新复测通过后，schema v2 可覆盖本报告 headline；schema v1 原始文件保留作审计，
+不回填不存在的指标。
 
 ## 复现入口
 

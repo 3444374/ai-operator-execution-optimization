@@ -46,6 +46,7 @@
 | `motivation/README.md` | 动机测试目录总入口 |
 | `motivation/plans/workloads.md` | 三类 AI 算子场景、动机测试和后续实验优先级 |
 | `motivation/plans/integration.md` | PostgreSQL / 外部 worker / Ray / GPU model service / writeback 集成路线 |
+| `motivation/plans/image_host_data_path_bottleneck.md` | 图像 R0→R4 容量/表示阶梯与 CPU/Ray/PCIe/GPU 瓶颈判决 |
 | `motivation/results/README.md` | 动机测试结果阅读顺序和结论边界 |
 | `motivation/results/gpu/README.md` | 真实 GPU-backed E2E 结果入口 |
 
@@ -127,6 +128,12 @@
    - 端到端收益仍受 writeback 约束。
 
 ## 近期优先级
+
+图像轨道在继续策略实验前，先按
+`motivation/plans/image_host_data_path_bottleneck.md` 完成 R0→R4 表示阶梯与
+schema v2 复测。当前证据只支持“阶段拆分有 operator-E2E 收益、CPU prepare 是候选
+限制”，不支持把 PCIe、CPU saturation 或 GPU MFU 写成已确认瓶颈。低扰动正式曲线
+与侵入式 CUDA/Nsight 机制诊断分开报告。
 
 **已完成**：
 - ✅ vLLM + Qwen2.5-1.5B baseline 建立（07-18）

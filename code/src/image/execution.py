@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 import time
 from dataclasses import dataclass, field
@@ -9,7 +10,7 @@ from typing import Any
 
 import numpy as np
 
-from .contracts import ImageEmbeddingResult
+from .contracts import ImageBatchTelemetry, ImageEmbeddingResult
 
 
 @dataclass
@@ -21,6 +22,8 @@ class EmbeddingAudit:
     seen_doc_ids: set[str] = field(default_factory=set)
     rows: int = 0
     checksum: float = 0.0
+    all_values_checksum: float = 0.0
+    rounded_digest_xor: int = 0
     max_norm_error: float = 0.0
 
     def add(self, doc_ids: tuple[str, ...], embeddings: Any) -> None:
@@ -38,6 +41,14 @@ class EmbeddingAudit:
         self.seen_doc_ids.update(doc_ids)
         self.rows += len(doc_ids)
         self.checksum += float(matrix[:, 0].sum(dtype=np.float64))
+        self.all_values_checksum += float(matrix.sum(dtype=np.float64))
+        for doc_id, row in zip(doc_ids, matrix, strict=True):
+            rounded = np.round(row, decimals=5).astype("<f4", copy=False)
+            digest = hashlib.blake2b(
+                doc_id.encode("utf-8") + b"\0" + rounded.tobytes(),
+                digest_size=16,
+            ).digest()
+            self.rounded_digest_xor ^= int.from_bytes(digest, byteorder="big")
         norm_error = np.abs(np.linalg.norm(matrix, axis=1) - 1.0)
         self.max_norm_error = max(self.max_norm_error, float(norm_error.max()))
 
@@ -59,6 +70,8 @@ class EmbeddingAudit:
         return {
             "output_rows": self.rows,
             "embedding_checksum": self.checksum,
+            "embedding_sum_all": self.all_values_checksum,
+            "embedding_digest_xor_rounded5": f"{self.rounded_digest_xor:032x}",
             "max_norm_error": self.max_norm_error,
             "exactly_once": True,
         }
@@ -71,13 +84,42 @@ class ExecutionResult:
     total_s: float
     first_output_s: float
     audit: dict[str, object]
-    batch_service_s: tuple[float, ...] = ()
+    batch_completion_wall_s: tuple[float, ...] = ()
+    batch_actor_service_s: tuple[float, ...] = ()
+    batch_unattributed_wait_s: tuple[float, ...] = ()
+    batch_preprocess_s: tuple[float, ...] = ()
+    batch_host_copy_s: tuple[float, ...] = ()
+    batch_h2d_s: tuple[float, ...] = ()
+    batch_forward_s: tuple[float, ...] = ()
+    batch_d2h_s: tuple[float, ...] = ()
+    encoded_bytes: int = 0
+    input_tensor_bytes: int = 0
+    device_input_bytes: int = 0
+    output_bytes: int = 0
+    submitted_batches: int = 0
+    pending_batches_peak: int = 0
 
     def __post_init__(self) -> None:
         if self.total_s <= 0 or not math.isfinite(self.total_s):
             raise ValueError("total_s must be finite and positive")
         if self.first_output_s < 0 or self.first_output_s > self.total_s:
             raise ValueError("first_output_s must fall within the execution wall")
+        if min(
+            self.encoded_bytes,
+            self.input_tensor_bytes,
+            self.device_input_bytes,
+            self.output_bytes,
+        ) < 0:
+            raise ValueError("execution byte counts must be non-negative")
+        if self.submitted_batches < 0 or self.pending_batches_peak < 0:
+            raise ValueError("execution batch counts must be non-negative")
+        if self.pending_batches_peak > self.submitted_batches:
+            raise ValueError("pending batch peak cannot exceed submitted batches")
+
+    @property
+    def batch_service_s(self) -> tuple[float, ...]:
+        """Deprecated alias for submission-to-result completion wall time."""
+        return self.batch_completion_wall_s
 
 
 @dataclass(frozen=True)
@@ -103,6 +145,7 @@ def build_project_ray_worker_pool(
     cpu_workers: int,
     gpu_workers: int,
     dtype: str,
+    detailed_stage_timing: bool = False,
 ) -> ProjectRayWorkerPool:
     """Create persistent CPU preprocess and tensor-only GPU actors."""
     if min(cpu_workers, gpu_workers) <= 0:
@@ -125,13 +168,20 @@ def build_project_ray_worker_pool(
             doc_ids: tuple[str, ...],
             encoded_images: list[bytes],
         ) -> ImageEmbeddingBatch:
+            started = time.perf_counter()
             pixels = self._preprocessor.preprocess(encoded_images)
+            preprocess_s = time.perf_counter() - started
             return ImageEmbeddingBatch(
                 doc_ids=doc_ids,
                 payload=pixels,
                 input_kind="preprocessed_tensor",
                 work_units=len(doc_ids) * int(pixels.shape[-2]) * int(pixels.shape[-1]),
                 work_unit="pixels",
+                telemetry=ImageBatchTelemetry(
+                    preprocess_s=preprocess_s,
+                    encoded_bytes=sum(len(item) for item in encoded_images),
+                    input_tensor_bytes=int(pixels.nbytes),
+                ),
             )
 
     RemoteGpuActor = ray.remote(
@@ -149,6 +199,7 @@ def build_project_ray_worker_pool(
             processor_revision=processor_revision,
             dtype=dtype,
             normalize=True,
+            detailed_stage_timing=detailed_stage_timing,
         )
         for _ in range(gpu_workers)
     )
@@ -187,17 +238,49 @@ def run_project_ray_pipeline(
     cpu_position = 0
     gpu_position = 0
     first_output_s: float | None = None
-    batch_service_s: list[float] = []
+    batch_completion_wall_s: list[float] = []
+    batch_actor_service_s: list[float] = []
+    batch_unattributed_wait_s: list[float] = []
+    batch_preprocess_s: list[float] = []
+    batch_host_copy_s: list[float] = []
+    batch_h2d_s: list[float] = []
+    batch_forward_s: list[float] = []
+    batch_d2h_s: list[float] = []
+    encoded_bytes = 0
+    input_tensor_bytes = 0
+    device_input_bytes = 0
+    output_bytes = 0
+    submitted_batches = 0
+    pending_batches_peak = 0
     started = time.perf_counter()
 
     def consume_one() -> None:
         nonlocal first_output_s
+        nonlocal encoded_bytes, input_tensor_bytes, device_input_bytes, output_bytes
         ready, _ = ray.wait(list(pending), num_returns=1)
         reference = ready[0]
         submitted_at = pending.pop(reference)
         result = ray.get(reference)
         audit.add_result(result)
-        batch_service_s.append(time.perf_counter() - submitted_at)
+        completion_wall_s = time.perf_counter() - submitted_at
+        batch_completion_wall_s.append(completion_wall_s)
+        batch_actor_service_s.append(result.service_s)
+        telemetry = result.telemetry
+        batch_preprocess_s.append(telemetry.preprocess_s)
+        batch_unattributed_wait_s.append(
+            max(0.0, completion_wall_s - telemetry.preprocess_s - result.service_s)
+        )
+        batch_host_copy_s.append(telemetry.host_copy_s)
+        if telemetry.h2d_s > 0:
+            batch_h2d_s.append(telemetry.h2d_s)
+        if telemetry.forward_s > 0:
+            batch_forward_s.append(telemetry.forward_s)
+        if telemetry.d2h_s > 0:
+            batch_d2h_s.append(telemetry.d2h_s)
+        encoded_bytes += telemetry.encoded_bytes
+        input_tensor_bytes += telemetry.input_tensor_bytes
+        device_input_bytes += telemetry.device_input_bytes
+        output_bytes += telemetry.output_bytes
         if first_output_s is None:
             first_output_s = time.perf_counter() - started
 
@@ -215,6 +298,8 @@ def run_project_ray_pipeline(
         submitted_at = time.perf_counter()
         output = gpu_actor.embed.remote(preprocessed)
         pending[output] = submitted_at
+        submitted_batches += 1
+        pending_batches_peak = max(pending_batches_peak, len(pending))
         if len(pending) >= max_active_batches:
             consume_one()
 
@@ -226,5 +311,18 @@ def run_project_ray_pipeline(
         total_s=total_s,
         first_output_s=first_output_s or total_s,
         audit=audit.finish(),
-        batch_service_s=tuple(batch_service_s),
+        batch_completion_wall_s=tuple(batch_completion_wall_s),
+        batch_actor_service_s=tuple(batch_actor_service_s),
+        batch_unattributed_wait_s=tuple(batch_unattributed_wait_s),
+        batch_preprocess_s=tuple(batch_preprocess_s),
+        batch_host_copy_s=tuple(batch_host_copy_s),
+        batch_h2d_s=tuple(batch_h2d_s),
+        batch_forward_s=tuple(batch_forward_s),
+        batch_d2h_s=tuple(batch_d2h_s),
+        encoded_bytes=encoded_bytes,
+        input_tensor_bytes=input_tensor_bytes,
+        device_input_bytes=device_input_bytes,
+        output_bytes=output_bytes,
+        submitted_batches=submitted_batches,
+        pending_batches_peak=pending_batches_peak,
     )

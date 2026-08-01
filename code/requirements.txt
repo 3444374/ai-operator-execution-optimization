@@ -8,6 +8,7 @@ connectorx
 httpx>=0.27
 openai>=1.0
 pandas>=2.0
+psutil>=5.9
 aiohttp>=3.9
 PyMySQL>=1.1
 torch
