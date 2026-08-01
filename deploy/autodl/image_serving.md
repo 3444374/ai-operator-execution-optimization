@@ -106,8 +106,11 @@ cd /root/autodl-tmp/data/raw/coco_val2017 && unzip -q val2017.zip   # → val201
 
 ### 4.2 正式集 + 质量协议（smoke 通过后再定）
 - **正式集**：COCO 2017 train 的独立图像子集；host-path formal 至少 20K unique，
-  并以实测查询阶段不少于 60 秒为第二道独立门槛。当前候选先导入 60K；若最快臂
-  仍不足 60 秒，必须扩大独立行数或如实降级，不能重复 5K val 冒充 unique workload。
+  并以实测查询阶段不少于 60 秒为第二道独立门槛。60K 单 pass 探针的最快配置
+  `operator_e2e=40.53s`、扣除 worker setup 后约 `32.09s`，不满足门槛。因此正式
+  矩阵预注册为 **60K unique × 2 logical passes = 120K processed rows**。CSV 必须
+  分别记录 `unique_images=60000`、`dataset_passes=2` 和 `rows=120000`；不能把
+  processed rows 误称为 120K unique images。
 - **节省空间的导入**：train ZIP 约 19 GB。使用
   `import_coco_images.py --zip ... --limit 60000 --workload coco_train2017_60k`
   直接流式写入 PostgreSQL，不同时保留完整解压目录；运行前后检查数据盘与 WAL 空间。
@@ -423,15 +426,17 @@ PYTHONPATH=code /root/miniconda3/bin/python \
 结果已同步到 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
 命令保留作复现入口，不应无条件重复消耗 GPU。
 
-### 5.7 60K unique project 静态点 formal
+### 5.7 60K unique × 2 passes project 静态点 formal
 
 数据导入完成并验证 `count(*)=count(distinct doc_id)=60000` 后，用矩阵 runner 执行
-8/16 preprocess actors × active16/32。runner 按固定 seed 对每个 formal repeat block
+8/16 preprocess actors × active16/32。每个 run 对 60K 唯一图执行两次，逻辑执行 ID
+使用 `doc_id#pass=N` 保持 exactly-once 可审计；这只延长稳态，不增加唯一图数量。
+runner 按固定 seed 对每个 formal repeat block
 洗牌，保存 raw CSV、逐 run manifest/stdout/stderr 和外层 schedule；任一 formal 的
 exactly-once、最少 unique 行数或查询阶段 60 秒门禁失败即停止：
 
 ```bash
-OUT=/root/autodl-tmp/experiment-artifacts/image_project_static_60k_20260802
+OUT=/root/autodl-tmp/experiment-artifacts/image_project_static_60k_x2_20260802
 PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
 
 "$PY" code/scripts/run_image_clip_matrix.py \
@@ -441,8 +446,9 @@ PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
   --output-dir "$OUT"
 ```
 
-若最快 formal 的 steady-state proxy 不足 60 秒，本轮 fail-closed，先扩大独立图像行数
-或重新预注册时长口径；禁止删掉门禁继续把短作业写成正式稳态结果。项目静态点冻结后，
+若最快 formal 的 steady-state proxy 仍不足 60 秒，本轮 fail-closed，先扩大处理次数或
+重新预注册时长口径；禁止删掉门禁继续把短作业写成正式稳态结果。正式报告须同时给出
+unique images、logical passes 与 processed rows。项目静态点冻结后，
 Daft fused、Daft staged、Ray Data staged 分别独立校准，再在相同物理 CPU/GPU 上限下
 做同一 workload、同一随机块顺序的正式比较。
 

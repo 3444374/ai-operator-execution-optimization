@@ -223,6 +223,7 @@ def _run_locked(
                 **asdict(scheduled),
                 "arm": row["arm"],
                 "rows": row["rows"],
+                "unique_images": row.get("unique_images", row["rows"]),
                 "operator_e2e_s": row["operator_e2e_s"],
                 "steady_state_proxy_s": _steady_state_proxy(row),
                 "manifest": per_run_manifest.name,
@@ -244,8 +245,11 @@ def _validated_row(
     if not isinstance(row, dict):
         raise ValueError("per-run manifest has no row object")
     rows = row.get("rows")
-    if not isinstance(rows, int) or rows < config.minimum_unique_rows:
+    unique_images = row.get("unique_images", rows)
+    if not isinstance(unique_images, int) or unique_images < config.minimum_unique_rows:
         raise ValueError("run does not satisfy minimum_unique_rows")
+    if not isinstance(rows, int) or rows < unique_images:
+        raise ValueError("processed rows must be at least unique images")
     if row.get("output_rows") != rows or row.get("exactly_once") is not True:
         raise ValueError("row-count or exactly-once gate failed")
     steady_s = _steady_state_proxy(row)

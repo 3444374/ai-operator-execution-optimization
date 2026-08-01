@@ -86,6 +86,41 @@ class ImageClipMatrixTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "below"):
                 MODULE._validated_row(path, config, "formal")
 
+    def test_repeated_dataset_passes_do_not_inflate_unique_image_gate(self) -> None:
+        config = MODULE.MatrixConfig(
+            experiment_id="x",
+            seed=1,
+            warmup_runs_per_scenario=0,
+            formal_repeats=1,
+            minimum_unique_rows=20000,
+            minimum_steady_state_s=60.0,
+            common_args=(),
+            scenarios=(MODULE.Scenario("a", ()),),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "run.json"
+            row = {
+                "arm": "project_ray",
+                "rows": 120000,
+                "unique_images": 60000,
+                "dataset_passes": 2,
+                "output_rows": 120000,
+                "exactly_once": True,
+                "operator_e2e_s": 70.0,
+                "worker_setup_s": 8.0,
+            }
+            path.write_text(json.dumps({"row": row}), encoding="utf-8")
+
+            self.assertEqual(
+                MODULE._validated_row(path, config, "formal")["unique_images"],
+                60000,
+            )
+
+            row["unique_images"] = 10000
+            path.write_text(json.dumps({"row": row}), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "minimum_unique_rows"):
+                MODULE._validated_row(path, config, "formal")
+
 
 if __name__ == "__main__":
     unittest.main()

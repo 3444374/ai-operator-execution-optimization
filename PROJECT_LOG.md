@@ -54,6 +54,11 @@
   提交后验证暴露 psycopg3 生命周期 bug：`with conn:` 退出会关闭连接。改为先结束
   metadata 隐式事务，再用 `conn.transaction()` 包围 DELETE+INSERT，使同一连接可在
   commit 后完成行数验证；旧写入未丢失，也未把验证异常误报为回滚成功。
+- 60K project 最快点时长探针得到 `operator_e2e=40.53s`、显式 worker setup
+  `8.44s`，查询稳态代理仅约 `32.09s`，因此未直接启动不合格 formal。image source
+  与五臂 runner 新增 `dataset_passes`，schema v9 分开记录 60K `unique_images`、2
+  logical passes 和 120K processed `rows`；pass-qualified execution ID 继续接受
+  exactly-once 审计。矩阵 unique 门禁读取真实 unique 字段，禁止重复行虚增数据规模。
 - H2D 口径补充到学习材料：batch64 的 host float32 tensor约 38.5MB、device
   float16 tensor约 19.3MB；当前约 7.4ms 是同步 `torch.as_tensor` 阶段 wall，
   不是 PCIe counter。增大总行数只延长稳态，不增加单批传输压力；PCIe 是否值得

@@ -261,6 +261,10 @@ runner 对 Ray Data、Daft staged 和 fused Daft Ray 分别建立精确资源账
 Ray `num_cpus` 只是准入资源，不是线程 quota；schema v8 同时冻结并记录每 worker
 Torch intra-op/inter-op 线程，正式 matched-resource 默认 `1/1`。若 actor 实测线程
 合同不一致则 fail closed，actor 数扫描与 per-actor thread 扫描分开报告。
+正式 host-path 矩阵使用 schema v9：在上述 v8 资源字段之外，分开记录
+`unique_images`、`dataset_passes` 与 processed `rows`。当前锁定 60K COCO train
+唯一图、2 logical passes（120K processed rows）；pass-qualified execution ID 保留
+exactly-once 门禁。重复 pass 只用于达到每 run 60 秒以上稳态，不得声称为更多唯一图。
 Ray cluster 外的 Daft native source threads 单列为 external CPU，并计入 host 总预算。
 source threads 与 preprocess actor 数分别配置，任何单因素扫描不得联动二者。
 任何通过超卖或遗漏 source CPU 才能运行的点

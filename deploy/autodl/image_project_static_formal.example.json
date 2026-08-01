@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "experiment_id": "image_project_static_60k_20260802",
+  "experiment_id": "image_project_static_60k_x2_20260802",
   "seed": 20260802,
   "warmup_runs_per_scenario": 1,
   "formal_repeats": 3,
@@ -10,6 +10,7 @@
     "--model", "/root/autodl-tmp/models/clip-vit-base-patch32",
     "--workload-name", "coco_train2017_60k",
     "--limit", "60000",
+    "--dataset-passes", "2",
     "--warmup-rows", "64",
     "--batch-size", "64",
     "--gpu-workers", "2",

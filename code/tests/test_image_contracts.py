@@ -83,6 +83,15 @@ class ImageContractTests(unittest.TestCase):
         self.assertIn("LIMIT 32 OFFSET 4", query)
         self.assertNotIn("to_arrow", query)
 
+    def test_image_source_query_can_repeat_unique_images_with_execution_ids(self) -> None:
+        query = image_documents_query(
+            ImageSourceConfig("coco", limit=32, offset=4, dataset_passes=2)
+        )
+
+        self.assertIn("generate_series(1, 2)", query)
+        self.assertIn("'#pass='", query)
+        self.assertIn("LIMIT 32 OFFSET 4", query)
+
     def test_image_source_shards_cover_range_without_overlap(self) -> None:
         shards = split_image_source_config(
             ImageSourceConfig("coco", limit=10, offset=7),
@@ -90,9 +99,17 @@ class ImageContractTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            [(item.offset, item.limit) for item in shards],
-            [(7, 4), (11, 3), (14, 3)],
+            [(item.offset, item.limit, item.dataset_passes) for item in shards],
+            [(7, 4, 1), (11, 3, 1), (14, 3, 1)],
         )
+
+    def test_image_source_shards_preserve_dataset_passes(self) -> None:
+        shards = split_image_source_config(
+            ImageSourceConfig("coco", limit=10, dataset_passes=3),
+            shards=2,
+        )
+
+        self.assertEqual([item.dataset_passes for item in shards], [3, 3])
 
     def test_coco_import_preserves_numeric_source_id(self) -> None:
         self.assertEqual(coco_doc_id(Path("000000123456.jpg")), 123456)

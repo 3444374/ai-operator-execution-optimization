@@ -172,11 +172,11 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
 | `code/scripts/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |
 | `code/scripts/profile_image_clip_preprocess_variants.py` | 交错比较当前 production-np、历史 legacy-pt 与 torchvision CLIP preprocessing，并经过同一 tensor actor 做 embedding parity gate | 复核 image motivation 是否能外推到当前代码边界；不是 E2E 方法结果 |
-| `code/scripts/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、fast processor、CLIP、batch/GPU 和输出审计下运行五个 fused/staged Daft/Ray Data/project arms | 跑 operator-E2E gate/formal；schema v8 fail-closed 核对 source/stage/model CPU、线程、driver/H2D 与输出，当前不含 pgvector 写回 |
+| `code/scripts/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、fast processor、CLIP、batch/GPU 和输出审计下运行五个 fused/staged Daft/Ray Data/project arms | 跑 operator-E2E gate/formal；schema v9 fail-closed 核对 unique/pass/processed rows、source/stage/model CPU、线程、driver/H2D 与输出，当前不含 pgvector 写回 |
 | `code/scripts/run_image_clip_matrix.py` | 固定 seed 交错编排图像 warmup/formal，持有结果目录租约并校验 unique rows、exactly-once、稳态时长 | 防止手工顺序漂移、并发写结果和短作业误入 formal；输出 raw CSV、逐 run manifest/log 与外层 schedule |
 | `code/scripts/import_coco_images.py` | 从目录或 ZIP 流式导入 COCO 图像 BYTEA，保留 source doc_id，单事务替换指定 workload | 正式规模避免完整解压副本；失败回滚，不覆盖无关 workload |
 | `code/scripts/profile_clip_transfer_ceiling.py` | CLIP batch16/64/256 的 R0 GPU-resident、R1 pinned FP16、R2 pageable FP32 逐 repeat CUDA-event/wall 诊断 | 分离 compute、H2D 与 ownership/dtype 边界；属于 synthetic ceiling，不作系统排名 |
-| `deploy/autodl/image_project_static_formal.example.json` | 60K unique 下 project 8/16 preprocess actors × active16/32 的交错 1+3 矩阵 | 先冻结项目静态点；任何 formal 查询阶段不足 60 秒则 fail closed |
+| `deploy/autodl/image_project_static_formal.example.json` | 60K unique × 2 logical passes 下 project 8/16 preprocess actors × active16/32 的交错 1+3 矩阵 | 先冻结项目静态点；分开审计 unique/pass/processed rows，任何 formal 查询阶段不足 60 秒则 fail closed |
 | `deploy/autodl/image_documents_workload_key.sql` | 把 legacy `PRIMARY KEY(doc_id)` 原子迁移为 `(workload_name, doc_id)`，重复执行安全、未知 schema 拒绝 | 允许 COCO train/val 保留重叠 source ID；导入、source、correctness/writeback 统一 workload-scoped identity |
 | `code/src/image/resource_budget.py` | 图像 Ray graph 的 source/preprocess/model CPU slot 精确账本与 affinity 超卖门禁 | 新增或调整 Daft/Ray Data/project actor/source 形状时复用；禁止只给常驻 actor CPU 而饿死 SQL reader |
 | `code/scripts/profile_clip_preproc_stages.py` | 对历史 slow CLIP processor 的可见 method 子阶段计时 | 只用于解释 resize 占比；未归因时间不能写成具体转换主因 |

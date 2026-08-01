@@ -66,6 +66,8 @@ CSV_FIELDS = (
     "repeat_index",
     "workload_name",
     "rows",
+    "unique_images",
+    "dataset_passes",
     "batch_size",
     "cpu_workers",
     "gpu_workers",
@@ -214,6 +216,15 @@ def parse_args():
     parser.add_argument("--processor", default="")
     parser.add_argument("--workload-name", default="coco_val2017")
     parser.add_argument("--limit", type=int, default=5000)
+    parser.add_argument(
+        "--dataset-passes",
+        type=int,
+        default=1,
+        help=(
+            "Logical passes over the selected unique images. Repeated rows receive "
+            "pass-qualified execution IDs; --limit remains the unique-image count."
+        ),
+    )
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--warmup-rows", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=64)
@@ -274,6 +285,7 @@ def read_database_metadata(
     workload_name: str,
     limit: int,
     offset: int,
+    dataset_passes: int = 1,
 ) -> tuple[frozenset[str], dict[str, object]]:
     import psycopg
 
@@ -284,7 +296,7 @@ def read_database_metadata(
                 "WHERE workload_name = %s ORDER BY doc_id LIMIT %s OFFSET %s",
                 (workload_name, limit, offset),
             )
-            doc_ids = frozenset(str(row[0]) for row in cursor.fetchall())
+            physical_doc_ids = frozenset(str(row[0]) for row in cursor.fetchall())
             cursor.execute("SHOW server_version")
             server_version = str(cursor.fetchone()[0])
             cursor.execute(
@@ -300,12 +312,20 @@ def read_database_metadata(
                 (workload_name, limit, offset),
             )
             input_encoded_bytes, avg_encoded_bytes = cursor.fetchone()
-    if len(doc_ids) != limit:
-        raise ValueError(f"expected {limit} source rows, found {len(doc_ids)}")
+    if len(physical_doc_ids) != limit:
+        raise ValueError(f"expected {limit} source rows, found {len(physical_doc_ids)}")
+    if dataset_passes == 1:
+        doc_ids = physical_doc_ids
+    else:
+        doc_ids = frozenset(
+            f"{doc_id}#pass={pass_index}"
+            for pass_index in range(1, dataset_passes + 1)
+            for doc_id in physical_doc_ids
+        )
     return doc_ids, {
         "server_version": server_version,
         "pgvector_version": str(extension[0]) if extension else "not_installed",
-        "input_encoded_bytes": int(input_encoded_bytes),
+        "input_encoded_bytes": int(input_encoded_bytes) * dataset_passes,
         "avg_encoded_bytes": float(avg_encoded_bytes),
     }
 
@@ -317,6 +337,7 @@ def make_source(
     offset: int,
     *,
     source_shards: int,
+    dataset_passes: int = 1,
 ):
     return DaftImageSource().read_sharded(
         dsn,
@@ -324,6 +345,7 @@ def make_source(
             workload_name=workload_name,
             limit=limit,
             offset=offset,
+            dataset_passes=dataset_passes,
         ),
         shards=source_shards,
     )
@@ -369,6 +391,7 @@ def main() -> None:
     processor = args.processor or args.model
     positive = (
         args.limit,
+        args.dataset_passes,
         args.warmup_rows,
         args.batch_size,
         args.cpu_workers,
@@ -405,6 +428,7 @@ def main() -> None:
         workload_name=args.workload_name,
         limit=args.limit,
         offset=args.offset,
+        dataset_passes=args.dataset_passes,
     )
     warmup_count = min(args.warmup_rows, args.limit)
     warmup_ids, _ = read_database_metadata(
@@ -521,7 +545,12 @@ def main() -> None:
             torch_interop_threads=args.torch_interop_threads,
         )
 
-    def execute(limit: int, expected_ids: frozenset[str]) -> ExecutionResult:
+    def execute(
+        limit: int,
+        expected_ids: frozenset[str],
+        *,
+        dataset_passes: int = 1,
+    ) -> ExecutionResult:
         if args.arm == "ray_data_staged":
             dataset = build_ray_data_clip_pipeline(
                 database_url=args.pg_dsn,
@@ -529,6 +558,7 @@ def main() -> None:
                     workload_name=args.workload_name,
                     limit=limit,
                     offset=args.offset,
+                    dataset_passes=dataset_passes,
                 ),
                 source_shards=source_shards,
                 processor_revision=processor,
@@ -552,6 +582,7 @@ def main() -> None:
             limit,
             args.offset,
             source_shards=source_shards,
+            dataset_passes=dataset_passes,
         )
         if args.arm in ("daft_native", "daft_ray"):
             return run_daft_clip_baseline(
@@ -605,7 +636,11 @@ def main() -> None:
         # its worker/model startup is already included in result.total_s and
         # first_output_s rather than this explicit setup field.
         worker_setup_s = 0.0
-    result = execute(args.limit, formal_ids)
+    result = execute(
+        args.limit,
+        formal_ids,
+        dataset_passes=args.dataset_passes,
+    )
     gpu_metrics = gpu_sampler.stop()
     cpu_metrics = cpu_sampler.stop()
     if worker_pool is not None:
@@ -613,10 +648,11 @@ def main() -> None:
 
     operator_e2e_s = result.total_s + worker_setup_s
     first_output_s = result.first_output_s + worker_setup_s
+    total_rows = args.limit * args.dataset_passes
     estimated_e2e_mfu = ""
     if args.model_flops_per_image and args.gpu_peak_flops_per_s:
         estimated_e2e_mfu = (
-            args.limit
+            total_rows
             * args.model_flops_per_image
             / (operator_e2e_s * args.gpu_workers * args.gpu_peak_flops_per_s)
         )
@@ -636,7 +672,9 @@ def main() -> None:
         "phase": args.phase,
         "repeat_index": args.repeat_index,
         "workload_name": args.workload_name,
-        "rows": args.limit,
+        "rows": total_rows,
+        "unique_images": args.limit,
+        "dataset_passes": args.dataset_passes,
         "batch_size": args.batch_size,
         "cpu_workers": args.cpu_workers,
         "gpu_workers": args.gpu_workers,
@@ -666,7 +704,7 @@ def main() -> None:
         "operator_e2e_s": operator_e2e_s,
         "first_output_s": first_output_s,
         "first_output_semantics": "cold_setup_to_first_complete_arrow_record_batch",
-        "images_per_s": args.limit / operator_e2e_s,
+        "images_per_s": total_rows / operator_e2e_s,
         # Legacy aliases retained for old summarizers. These are not pure GPU
         # service times; the explicit semantics and replacement fields follow.
         "batch_service_p50_s": batch_completion_p50,
@@ -741,10 +779,10 @@ def main() -> None:
         "submitted_batches": result.submitted_batches if project_metrics else "",
         "pending_batches_peak": result.pending_batches_peak if project_metrics else "",
         "cpu_core_seconds_estimate": cpu_core_seconds,
-        "cpu_core_seconds_per_image": cpu_core_seconds / args.limit,
+        "cpu_core_seconds_per_image": cpu_core_seconds / total_rows,
         "gpu_seconds": gpu_seconds,
-        "images_per_gpu_s": args.limit / gpu_seconds,
-        "images_per_joule": args.limit / gpu_energy_j if gpu_energy_j > 0 else "",
+        "images_per_gpu_s": total_rows / gpu_seconds,
+        "images_per_joule": total_rows / gpu_energy_j if gpu_energy_j > 0 else "",
         "engine_stats_text": result.engine_stats,
         "engine_stats_semantics": (
             "ray_data_operator_stats" if result.engine_stats else "unavailable"
@@ -769,7 +807,7 @@ def main() -> None:
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 8,
+        "schema_version": 9,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,
