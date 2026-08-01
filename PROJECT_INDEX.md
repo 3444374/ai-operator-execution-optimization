@@ -166,20 +166,20 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |
 | `deploy/autodl/README.md` | AutoDL 单一 runbook：环境准备、开机恢复、gate、正式实验和中断恢复；顶部有"两条推理引擎 track（文本 vLLM / 多模态 CLIP）"概念总览 | 新对话接手远端实验时按顶部唯一入口直接操作 |
 | `deploy/autodl/text_serving.md` | 文本模态（vLLM 生成式 LLM）推理服务引擎部署：vLLM 是什么（continuous batching/APC/KV cache）、vLLM vs CLIP 差异、Qwen 模型下载 + start_endpoints.sh、sharegpt_multiturn 数据集、runner/合同/喂饱门禁、7 条坑 | 跑文本 AI_COMPLETE 实验时读；与 image_serving.md 对称 |
-| `deploy/autodl/image_serving.md` | 图像 CLIP 部署：Daft Native/Ray/project-Ray operator-E2E gate、Ray GPU actor、vLLM pooling、COCO/PG BYTEA 数据边界与 system-E2E 待完成项 | 准备/跑图像 AI_EMBED workload 时读；区分 operator E2E 与含 pgvector 的 system E2E |
+| `deploy/autodl/image_serving.md` | 图像 CLIP 部署：fused Daft Native/Ray/project-Ray operator-E2E gate、Ray GPU actor、vLLM pooling、COCO/PG BYTEA 数据边界与 staged/system-E2E 待完成项 | 准备/跑图像 AI_EMBED workload 时读；区分 fused、staged、operator E2E 与含 pgvector 的 system E2E |
 | `code/scripts/select_strategy_calibration.py` | 从 feeding/direct/token-budget/actor-shape 证据生成冻结校准合同和环境覆盖 | 同协议 actor 曲线完成后、启动数据组织/提交策略/多 job formal 前执行 |
 | `code/scripts/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
 | `code/scripts/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |
 | `code/scripts/profile_image_clip_preprocess_variants.py` | 交错比较当前 production-np、历史 legacy-pt 与 torchvision CLIP preprocessing，并经过同一 tensor actor 做 embedding parity gate | 复核 image motivation 是否能外推到当前代码边界；不是 E2E 方法结果 |
-| `code/scripts/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、fast processor、CLIP、batch/GPU 和输出审计下运行 Daft Native、Daft Ray 与 project-Ray | 优先跑图像 operator-E2E 强 baseline；当前不含 pgvector 写回 |
+| `code/scripts/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、fast processor、CLIP、batch/GPU 和输出审计下运行 fused Daft Native、fused Daft Ray 与 project-Ray | 跑 fused operator-E2E gate；当前不含 staged Daft/Ray Data 与 pgvector 写回 |
 | `code/scripts/profile_clip_preproc_stages.py` | 对历史 slow CLIP processor 的可见 method 子阶段计时 | 只用于解释 resize 占比；未归因时间不能写成具体转换主因 |
 | `motivation/results/gpu/image_clip_preprocess_variants_20260801/` | 四种 CLIP processor/decode 边界的 720 条 raw repeats、manifest、日志与七步报告 | 判断 slow-path 动机能否外推到当前/fast 实现；不能当作 Daft/Ray E2E 方法结果 |
-| `motivation/results/gpu/image_clip_native_baseline_20260801/` | Daft fractional-GPU actor 校准、5000 图×3 operator-E2E formal、派生 summary 与七步报告 | image-first 当前动机强基线；区分最佳可达性能、CPU reservation 边界与待补 system-E2E |
+| `motivation/results/gpu/image_clip_native_baseline_20260801/` | Fused Daft fractional-GPU actor 校准、5000 图×3 operator-E2E formal、派生 summary 与七步报告 | image-first 当前 fused 动机基线；区分 staged 强基线、CPU reservation 边界与待补 system-E2E |
 | `motivation/plans/image_host_data_path_bottleneck.md` | R0→R4 表示阶梯、低扰动/侵入式双轨计时与 CPU/Ray/PCIe/GPU GO/NO-GO 门槛 | 重测 image motivation、判断 GPU feeding 缺口来自哪一段时读 |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
 | `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |
 | `research/literature_and_evidence_review.md` | 文献与官方资料依据 | 写调研、论文动机时读 |
-| `research/existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子与 AI 数据处理执行链路对比 | 比较外部系统路线时读 |
+| `research/existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子四类执行形态、PolarDB/OceanBase/pgai/Daft/Ray 路线与严格 baseline 层级 | 比较外部系统路线、判断哪些数字可同表排名时读 |
 | `research/knowledge_hub.md` | **知识库总汇**——按问题快速定位参考材料、已知结论和待研究缺口 | 开始设计、做决策前先读 |
 | `research/vllm_continuous_batching_reference.md` | vLLM Continuous Batching 机制详解（调度器、APC、metrics） | 设计上游动态 batching 策略时读 |
 | `experiments/plans/literature_driven_pipeline_optimization_guide.md` | 文献驱动的执行链优化指南 | 继续寻找优化点、审计三层 batch/Orca 式补位、设计完整 adaptive flush 或设置候选晋级/放弃条件时读 |
@@ -283,7 +283,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `research/top15_ranked_papers.md` | 开题 Top 15 | 15/15 CCF-A 正式论文；按 AI 算子、LLM 调度、Ray、代价估计组织 |
 | `research/gpu_scheduler_data_placement_supplement_20260715.md` | GPU 调度与数据放置补充调研 | 查看策略控制器设计的前沿系统依据、可借鉴思想和后续精读清单 |
 | `research/evaluation_metrics_survey_20260731.md` | AI 算子/推理服务文献 + 数据库厂商评估指标调研与 gap 分析 | 设计新实验指标、对照文献标准指标时读；P0 缺口 TTFT/ITL/prefix-cache-hit-rate |
-| `research/daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：DB↔GPU 经 Daft 桥接 + 三痛点源码核实 + offline-batch foreknowledge 可防御界面 | 方向/题目讨论、Daft 痛点、workload 选型时读；冷启动 parked |
+| `research/daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：DB↔GPU 经 Daft 桥接 + 三痛点 + offline-batch 候选；已撤回传输瓶颈/结构性空白预设 | 方向/题目讨论、Daft 痛点、workload 选型时读；以 staged baseline 后的证据为准 |
 | `research/reference/README.md` | 本地 PDF 状态 | 查看 21 份实体 PDF、Top 15 完整性和维护规则 |
 | `research/reference/REFERENCE_INDEX.md` | 权威题录索引 | 查看 DOI、正式轨道、核心补充级别和工程资料入口 |
 | `data/README.md` | 本地 workload 数据说明；raw payloads 被 git ignore | 查看 ShareGPT/BurstGPT 下载位置、用途和边界 |
@@ -434,7 +434,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `sink_writeback_coordination.md` | 写回工程参考（不作为独立实验阶段）：COPY + deferred index baseline |
 | `cross_layer_killer_experiment.md` | 耦合验证实验计划：独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数的完整交互面）|
 | `experiment_status_and_gaps.md` | **实验状态与缺口分析（2026-07-20）**：已完成/未完成实验表、证据链完整性、指标盲区、P0/P1/P2 路线图、审稿人视角风险。当前实验设计的第一参考。|
-| `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload（当务之急）**：图像 CLIP——每行 CPU→GPU 搬运 ~600KB（文本 ~600×），让 DB 读 + CPU→GPU 数据搬运瓶颈显现（学长判据）；benchmark = ImageNet/COCO + ANN-benchmarks recall@10 + §7.5 自定吞吐协议 |
+| `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload（当务之急）**：图像 CLIP——JPEG decode/processor + 大 tensor 使 DB/CPU/Ray/H2D/GPU 木桶效应可测；包含 fused/staged baseline、ImageNet/COCO + recall@10 + §7.5 协议 |
 | `msmarco_embedding_workload_20260731.md` | ⏸ 文本轻对照（降级）：MS MARCO 文本，token ID 紧凑搬运轻，瓶颈不显现——仅作"文本下不显现"的边界对照 |
 
 所有实验计划遵循从 vLLM/Orca/TurboVecDB/GaussML/FlexPushdownDB 五篇 CCF-A 论文提取的共同方法论：曲线 > 单点、先暴露瓶颈再优化、同硬件公平 baseline、消融拆开、诚实报告边界、统计严谨。

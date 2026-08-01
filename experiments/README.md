@@ -4,9 +4,15 @@
 
 ## benchmark / workload 选型（当前主线，2026-07-31）
 
-学长反馈（`../notes/communication_notes.md` §5）把场景 reframe 成"**数据库↔GPU 经 Daft 桥接、算子多样、大数据量、流式 pipeline**"，并定原则：**先锁被认可的 benchmark/workload**。核心判据：数据搬运瓶颈有两段——送 vLLM（拥挤）+ **DB 读出来 / CPU 搬到 GPU**（机会）；**当前 prompt 文本每行 ~1KB、搬运太轻，瓶颈不显现**，必须换"每行 payload 重"的 workload。方向 scope 见 [`../research/daft_db_gpu_bridge_direction_scope_20260731.md`](../research/daft_db_gpu_bridge_direction_scope_20260731.md)（Daft 三痛点核实 + 可防御界面 + §10.1 benchmark 三层）。
+学长反馈（`../notes/communication_notes.md` §5）把场景 reframe 成“数据库↔GPU 经
+Daft 桥接、算子多样、大数据量、流式 pipeline”，并强调先锁 workload。2026-08-01
+审计后，图像 CLIP 的选择理由收紧为“让 DB/CPU/Ray/H2D/GPU 木桶效应可测”，不再
+预设数据搬运是瓶颈或执行层为空白。方向 scope 见
+[`../research/daft_db_gpu_bridge_direction_scope_20260731.md`](../research/daft_db_gpu_bridge_direction_scope_20260731.md)。
 
-**首个 workload**：**图像 AI_EMBED (CLIP)**——每行 CPU→GPU 搬运 ~600KB（文本 ~600×）+ JPEG decode/resize 重，让 **DB 读 + CPU→GPU 数据搬运瓶颈真正显现**。设计 + go/no-go 门禁见 [`plans/image_clip_workload_lock_20260731.md`](plans/image_clip_workload_lock_20260731.md)。
+**首个 workload**：**图像 AI_EMBED (CLIP)**——JPEG decode/processor + 约 600KB
+pixel tensor 让 DB/CPU/Ray/H2D/GPU 的木桶效应成为可测变量，但不预设哪一段是主瓶颈。
+设计 + go/no-go 门禁见 [`plans/image_clip_workload_lock_20260731.md`](plans/image_clip_workload_lock_20260731.md)。
 
 **benchmark 三层**（讲清楚，见 scope §10.1）：① 数据集 = ImageNet/COCO（公开经典）；② 质量协议 = ANN-benchmarks recall@10（CCF 认可）；③ 吞吐/搬运协议 = 无现成 benchmark（厂商全闭源），项目 §7.5 自定（自定本身是贡献）。可引名字 = BigVectorBench（VLDB'25）image 切片 + ANN-benchmarks。
 

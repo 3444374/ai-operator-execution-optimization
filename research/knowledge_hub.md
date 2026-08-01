@@ -754,9 +754,17 @@ Ray Actor 去中心化自适应提交
 
 ## 9. 文件清单
 
+**2026-08-01 更新**：
+- `research/existing_ai_operator_execution_chains.md` — 将数据库 AI 执行链归纳为
+  in-database、SQL→remote endpoint、queue-worker、distributed data pipeline 四类；
+  补 Polar_AI→EAS 与 PolarDB Daft-on-Ray 两条路线，并明确 fused Daft 不能替代
+  staged CPU/GPU 强 baseline。
+
 **2026-07-31 新增**：
 - `research/evaluation_metrics_survey_20260731.md` — 评估指标体系调研：7 簇精读笔记（49 篇）+ 8 个数据库厂商/标准基准 web 调研，按 10 类归目并对照项目指标做 gap 分析。P0 缺口：TTFT 分位、ITL/TBT 分布、prefix cache hit rate（均已核实为 vLLM 已暴露但采集端未落字段，见该文件 §6）。附录 B 含 7 家厂商 AI 算子测试方法 + PolarDB Lakebase 同栈专项。
-- `research/daft_db_gpu_bridge_direction_scope_20260731.md` — 方向 reframe scope（学长"DB↔GPU 经 Daft 桥接"场景）：Daft 三痛点源码核实（`@daft.cls(gpus=N)` 写死 / 多算子冷启动 / 流式 model-service-blind）+ 可防御界面 = 批 dataflow foreknowledge vs online serving + 贡献空间排序 + workload 推荐。冷启动（主贡献候选）parked。
+- `research/daft_db_gpu_bridge_direction_scope_20260731.md` — 方向 reframe scope：保留
+  Daft 三痛点、offline-batch foreknowledge 与 workload 讨论；08-01 已撤回“数据搬运
+  必然是瓶颈/执行层结构性空白”的预设，新增 staged baseline 前置条件。
 
 **2026-07-21 更新**：
 - `research/ray_actor_dynamic_batching_reference.md` — 新增 §1.6-§1.8（Ray Serve 准入控制与队列自适应）、§3.7 大幅扩展（7 种反压机制详述 + ConcurrencyCap 废弃分析）、§6.7-§6.12（6 篇 2025-2026 新论文）
@@ -874,7 +882,7 @@ OSS 原始视频 → read_video_frames(采样关键帧) → encode_image(JPEG)
 - 京东云 + GR00T-N1.5：单轮训练 15h → 22min（40×）
 - 字节跳动：236 亿次 LLM 查询（24T tokens），90K GPU，零崩溃
 
-### 10.5 与本课题的关系：互补而非竞争
+### 10.5 与本课题的关系：既是底座，也是强 baseline
 
 Daft+Ray 和本课题解决不同层面的问题：
 
@@ -894,7 +902,16 @@ Daft+Ray 和本课题解决不同层面的问题：
 └─────────────────────────────────────────────────────────┘
 ```
 
-**关键差异**：Daft 优化的是"数据流得是否顺畅"（引擎层），本课题优化的是"什么时候发、发多少、发给谁"（策略层）。Daft 不观测 vLLM Prometheus metrics 来做反馈驱动决策，不做 token-aware grouping，不关心数据库写回瓶颈——这些恰好是本课题的核心贡献。
+**2026-08-01 口径修正**：Daft/PolarDB 官方已经支持在同一流水线中把 CPU
+download/decode/resize 与 GPU 类 UDF 分开声明资源并流式重叠，因此 stage separation、
+通用 overlap 和 backpressure 本身不能作为本项目原创贡献。当前 1.296×/1.138× 只证明
+项目静态阶段拆分优于校准后的 **fused** UDF，不代表优于 Daft-on-Ray staged pipeline。
+
+本项目剩余可比较的增量是：数据库 job/workload 语义下的 token/frame work 计量、模型
+服务/actor 状态感知的请求成形与准入、跨 job shared credit/idle borrowing，以及它们
+相对冻结最佳静态点的 JCT/SLO/fairness 收益。实验必须先补 Daft-on-Ray 与 Ray Data
+staged baseline；若两者在 matched-resource 下与项目静态路径差异小于 5%，则阶段拆分
+只是实现选择，后续只能以策略增量立论。
 
 **与具身智能的关联**：
 - Snowflake Cortex AISQL 已支持多模态 AI 算子（AI_COMPLETE/AI_EMBED/AI_CLASSIFY 处理图片/视频/音频），数据库 AI 算子已是多模态的

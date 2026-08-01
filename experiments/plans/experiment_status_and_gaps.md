@@ -14,16 +14,17 @@ Date: 2026-07-20（最后更新：2026-08-01，方向 pivot：image-first（A �
 production-np 的配对串行吞吐为 **1.14–1.22×**，但 CPU prepare 仍为 actor 的
 **13.8–31.2×**；720/720 rows 完整，embedding cosine=1/max_abs=0。因而 slow
 processor 混淆没有推翻异构阶段失衡，但 95% 仍只能写成理论串行非-forward占比。
-Daft Native/Ray 与 bounded project-Ray operator-E2E runner 已实现；fractional-GPU
+Fused Daft Native/Ray 与 bounded project-Ray operator-E2E runner 已实现；fractional-GPU
 actor shape 已独立校准，5000 图×3 formal 已完成。项目阶段拆分相对最佳 Daft
 Native 单卡吞吐 +29.6%，相对最佳 Daft Ray 双卡 +13.8%，12/12 exactly-once；
-但它是同物理机器各自最佳点，不是相同 Ray CPU reservation 的资源效率证明。
-下一步补统一 pgvector sink、bounded direct ceiling 与 CPU-budget-normalized curve。
+但它是同物理机器各自最佳点，不是相同 Ray CPU reservation 的资源效率证明，也不
+代表 Daft-on-Ray/Ray Data staged 强 baseline。下一步先补 staged runner arms，再补
+统一 pgvector sink、bounded direct ceiling 与 CPU-budget-normalized curve。
 实现边界复测见 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`，
 operator-E2E 原始数据和七步报告见
 `motivation/results/gpu/image_clip_native_baseline_20260801/`。
 
-**过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② 三臂接统一 pgvector sink，并扩展 image §7 对照（先 bounded direct CLIP 与 CPU-normalized curve；再 Ray Data / vLLM pooling / naive，+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
+**过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + fused Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② 实现并校准 Daft-on-Ray staged、Ray Data staged，再接统一 pgvector sink，并扩展 bounded direct CLIP、CPU-normalized curve、vLLM pooling、naive（+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
 
 **文本轨道遗留的 pivot 后分类**：
 

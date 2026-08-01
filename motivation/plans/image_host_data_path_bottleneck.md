@@ -58,15 +58,17 @@ L2-normalized embedding，并做逐行 rounded digest 与抽样 cosine/max-abs �
 pgvector sink 作为 R5 system-E2E 单独补充。它回答完整数据库作业时间，不参与
 R0–R4 的 PCIe/CPU 机制判定，避免写回掩盖上游瓶颈。
 
-R0/R1 是诊断 ceiling，不是项目需要击败的系统 baseline；R4 中的 Daft Native、
-Daft Ray 和冻结最佳 project pipeline 才是系统/方法对照。
+R0/R1 是诊断 ceiling，不是项目需要击败的系统 baseline；R4 中必须同时包含 Daft
+fused UDF、Daft/Ray Data staged pipeline 和冻结最佳 project pipeline。当前已完成的
+Daft Native/Ray 数字仅属于 fused UDF 轨道，不能代替 staged 强 baseline。
 
 ## 3.1 主流执行栈对照，不预设谁有固定缺陷
 
 | 轨道 | 正式对照 | 公平边界 |
 |---|---|---|
-| fused data-engine | Daft Native、Daft Ray `@daft.cls` | 官方 batch UDF、fractional GPU actor shape 独立校准 |
-| staged data-engine | Ray Data CPU `map_batches` → GPU callable-class actor pool | 固定 batch/actor pool/in-flight；不把默认参数当强 baseline |
+| fused data-engine | Daft Native、Daft Ray `@daft.cls` 内 preprocess+forward | 校准 batch 与 fractional-GPU actor shape；用于隔离粗资源边界，不代表 Daft 最强形态 |
+| staged Daft-on-Ray | Daft CPU decode/resize/processor → Daft GPU `@daft.cls` | 同一 lazy DataFrame、按算子资源声明、校准 batch/max-concurrency/actor shape |
+| staged Ray Data | Ray Data CPU `map_batches` → GPU callable-class actor pool | 固定 batch/actor pool/in-flight；不把默认参数当强 baseline |
 | model service | vLLM pooling CLIP | processor 在服务内，单列 service ceiling 与 DB→service E2E，不和 tensor-only micro track 混读 |
 | proposed static | Daft source → Ray CPU preprocess → tensor-only GPU actor | 冻结静态 batch/active batches；动态策略全部关闭 |
 
@@ -160,6 +162,10 @@ batch、GPU 数、CPU 配额、actor 数、source shards、active batches、质�
 不要把人为复制 payload 得到的大传输量作为 headline。若为了画机制曲线扩大 tensor，
 必须标为 synthetic diagnostic；真实结论仍来自 COCO/CLIP，或后续更高分辨率/VLM/
 视频等真实 workload。
+
+GPUDirect Storage 不作为默认优化臂：它改变的是存储→GPU 路径，而当前 R3/R4 仍有
+CPU JPEG decode/processor。只有先证明存储 I/O 位于关键路径，或同时加入 GPU decode
+并单独记录语义/资源变化时，才增加 GDS/DALI/nvJPEG 对照。
 
 ## 6. 预注册 GO/NO-GO 门槛
 

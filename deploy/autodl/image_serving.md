@@ -12,9 +12,13 @@
 
 ### 为什么从文本切到图像（核心动机）
 
-文本 prompt 每行 ~1KB，**CPU→GPU 搬运太轻**，"DB 读 + CPU 搬到 GPU"这段数据搬运瓶颈**根本显现不出来**。RC1 文本实测：`db_fetch` 1.4–2.4s vs `model_wall` 27–37s——binding 瓶颈在 vLLM serving，不在数据搬运。
+文本 prompt 每行约 1KB，RC1 实测 `db_fetch` 1.4–2.4s、`model_wall` 27–37s，
+说明该文本 regime 的主要墙钟在 vLLM serving，上游数据路径不是首要优化对象。
 
-图像 CLIP 每行 CPU→GPU 搬运 ~**600KB**（文本的 ~600×）+ JPEG decode+resize 重（每图毫秒级，常重于 GPU CLIP forward）。这让 **DB-read / CPU→GPU 数据搬运**变成 binding 瓶颈——这正是要找/优化的对象，也是 2026-08-01 锁定 image-CLIP-first 的原因（找数据搬运瓶颈）。
+图像 CLIP 每行包含 JPEG bytes、CPU decode/resize 和约 **600KB** 的 FP32 pixel
+tensor（文本 payload 的数量级更小）。这使 DB read、CPU preprocess、Ray/host copy、
+PCIe H2D 和 GPU forward 的木桶效应变得可测，但**不预设其中哪一段是 binding
+bottleneck**。当前只确认 CPU prepare 是候选限制；正式归因按 §5.5 的 R0→R4 实验。
 
 ## 2. 引擎角色（关键差异，务必先理解）
 
@@ -128,10 +132,11 @@ source URI/共享文件路径只能作独立 baseline，不能与 BYTEA 轨道�
 - `ClipTensorActor`：常驻 GPU、只接收预处理 tensor、输出 projected + L2-normalized embedding。
 
 已新增 operator-E2E runner：`code/scripts/run_image_clip_e2e.py`，统一比较
-Daft Native、Daft Ray 与项目分阶段 Ray pipeline。它从每个 query 的模型 worker
+fused Daft Native、fused Daft Ray 与项目分阶段 Ray pipeline。它从每个 query 的模型 worker
 建立/执行开始计时到最后一批 embedding 返回（Ray 框架启动排除），包含模型 worker
 建立、DB read/preprocess/transfer/forward/fan-in，
-但**暂不含 pgvector 写回**。因此可作强 baseline gate，不能冒充完整 system E2E。
+但**暂不含 pgvector 写回**。因此可作 fused baseline gate，不能冒充完整 system E2E，
+也不能替代 Daft-on-Ray/Ray Data staged CPU→GPU 强 baseline。
 统一 pgvector sink和正式 system-E2E runner仍待接入。schema v2 已补 system
 per-core CPU、active-device GPU、逻辑字节和 project-Ray 分段 telemetry；其中
 `--detailed-stage-timing` 会同步 CUDA，只能用于机制诊断，不能替代低扰动 headline。
@@ -194,7 +199,7 @@ CUDA_VISIBLE_DEVICES=0 /root/autodl-tmp/venvs/vllm-4090/bin/python \
 请求格式以 vLLM 官方 `examples/pooling/embed/vision_embedding_online.py` 为准。
 正式实验必须记录 vLLM 版本、runner、processor placement 和服务端 batching 参数。
 
-### 5.4 Daft Native / Daft Ray / project-Ray operator E2E gate
+### 5.4 Fused Daft Native / Daft Ray / project-Ray operator E2E gate
 
 各臂必须串行运行，且运行前确认没有 vLLM/其他 GPU 任务。不要用一个统一的
 `--gpu-workers/--cpu-workers` 循环跑完三臂：Native 单卡和 Ray 双卡是两个独立
@@ -263,10 +268,12 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
 Daft 的 UDF actor 按 query 重建；脚本因此也会在 project-Ray warmup 后销毁并重建
 模型 worker pool，同时记录 `worker_setup_s`，避免用持久 project actor 对比冷 Daft actor。
 
-2026-08-01 已完成的正式结果和原始 manifest 在
+2026-08-01 已完成的 fused 正式结果和原始 manifest 在
 `motivation/results/gpu/image_clip_native_baseline_20260801/`。headline 为单卡
 project 1.296× Daft Native、双卡 project 1.138× Daft Ray。该结果不包含 pgvector，
 也不是相同 CPU reservation 的资源效率证明；复述时必须同时带上报告中的限制。
+下一轮需要新增 Daft-on-Ray staged（CPU decode/processor 算子 → GPU 类 UDF）和
+Ray Data staged arm，并分别校准 batch、actor pool 与 in-flight；当前 runner 尚无这两臂。
 
 ### 5.5 待完成：host data path 瓶颈判定
 
@@ -341,7 +348,7 @@ PYTHONPATH=code /root/miniconda3/bin/python \
 | 在 AutoDL 强行上 Triton | 无 Docker，编译依赖大 | 首版用 Ray GPU actor；Triton只在容器环境补 upper bound |
 | 磁盘 | smoke ~2.5G 够；正式集（COCO train/ImageNet）要清盘/挂数据盘 | smoke 先行，正式前清盘 |
 | 代码同步 | 远端 git 常落后本地 main | 跑前同步（见 `deploy/autodl/README.md` §1 同步 gotcha） |
-| scoop 边界 | prefix-aware 切片已被 SOLO(ICML'26)/Liu、llm-d/Preble、Daft v0.6.9 占 | 本项目走**数据搬运瓶颈切片**（un-scooped），避开 prefix-aware |
+| scoop 边界 | prefix/state-aware 有强先验，Daft/PolarDB/Ray Data 已覆盖 staged overlap | 不预设“数据搬运空白”；先以 staged baseline 和 R0→R4 证据决定剩余增量 |
 
 ## 7. 关联文档
 - 实验 design + go/no-go 门禁：`experiments/plans/image_clip_workload_lock_20260731.md`

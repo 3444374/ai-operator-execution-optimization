@@ -3389,3 +3389,22 @@
   静态路径各自由哪一阶段形成木桶，谁能以更少 GPU bubble 获得更高 E2E 有效工作
   效率且不牺牲 JCT/SLO。官方系统均先独立校准，matched-resource 与各自最佳上限
   分表报告。
+
+## 2026-08-01 图像 baseline 分层与主流执行链口径修正
+
+- **关键纠错**：现有 1.296×/1.138× 对照的 Daft UDF 把 CPU preprocess 与 GPU
+  forward 融合在同一个 GPU-reserved actor 中，只能称校准后的 fused Daft baseline。
+  PolarDB/Daft 官方已支持 CPU 算子→GPU 类 UDF 的 staged 异构流水线，因此旧结果
+  不能代表最强 Daft/PolarDB-style baseline。
+- **baseline 补齐**：图像正式矩阵增加 Daft-on-Ray staged 和 Ray Data staged；
+  compute ceiling、direct service、fused framework、staged framework、product SQL、
+  frozen project static、project adaptive 分层报告。架构增量与策略增量分别对比 staged
+  system baseline 和 frozen project static。
+- **产品路线梳理**：把数据库 AI 执行链归纳为 in-database、SQL→remote endpoint、
+  queue-worker、distributed data pipeline 四类；PolarDB 同时存在 Polar_AI→EAS 与
+  Daft-on-Ray 两条路线。不同云硬件只作工业参考，不参与 raw throughput 排名。
+- **传输口径**：存储/DB、序列化/网络、Ray object store/host copy、PCIe H2D、D2H/
+  writeback 分段判定；不再把约 600KB tensor 直接写成 PCIe/数据搬运已成为 binding。
+  GDS 只在存储 I/O 位于关键路径或与 GPU decode 联合成独立臂时考虑。
+- **实现缺口**：`run_image_clip_e2e.py` 当前只覆盖 fused Daft 与 project-Ray；下一步
+  需新增 staged Daft-on-Ray/Ray Data arms，再做 R0→R4、统一 pgvector sink 和策略实验。

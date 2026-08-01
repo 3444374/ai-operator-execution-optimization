@@ -1,7 +1,13 @@
 # 图像 AI_EMBED (CLIP) Workload 锁定方案
 
 日期：2026-07-31
-状态：**🔴 首个 workload（2026-07-31 校正回升）**。学长反馈的核心判据：数据搬运瓶颈有两段——送 vLLM（拥挤）+ **DB 读出来 / CPU 搬到 GPU**（机会）；当前 prompt 文本每行 ~1KB、搬运太轻，瓶颈不显现。**图像 CLIP 每行 CPU→GPU 搬运 ~600KB（文本的 ~600×）+ JPEG decode+resize 重**，让 DB 读 + CPU→GPU 搬运瓶颈真正显现——这正是满足判据的首选 workload。**注意**：回升的理由是"让数据搬运瓶颈显现"，**与冷启动（机制，parked）无关**；CLIP 不绑死在冷启动旗舰上。详见 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10 + §10.1（benchmark 三层）。
+状态：**🔴 首个 workload（2026-07-31 校正回升）**。图像 CLIP 每行包含 JPEG bytes、
+CPU decode/processor、约 600KB 的 FP32 pixel tensor 和 GPU forward，因此能把文本轨道
+不明显的 host data path 与 CPU/GPU stage balance 变成可测变量。**这只是 workload
+选择动机，不预设 DB read、Ray copy、PCIe 或 CPU 一定是 binding bottleneck**；具体
+判决以 `motivation/plans/image_host_data_path_bottleneck.md` 的 R0→R4 实验为准。
+CLIP 不绑死在冷启动旗舰上。详见
+`research/daft_db_gpu_bridge_direction_scope_20260731.md` §10 + §10.1（benchmark 三层）。
 
 > ✅ **2026-08-01 更新**：方向已锁 A+B（见 `experiment_status_and_gaps.md` §0）；**§6 go/no-go 门禁已过（GO，5K 规范跑显示 CPU preprocess 明显重于 GPU actor service）** → 下方「暂停 build」**已解除**，进入 path-B runner 建设期。该比例来自串行阶段计时，不等同于实测 GPU idle。详见 `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`。
 
@@ -21,7 +27,8 @@
 2. **多模态泛化验证（§5.3 既定路线）**——验证 token-budget → frame-budget、queue-adaptive flush → 完全复用的模态无关性。策略接口和中性 `cost_units` 已具备（INFRA_STATUS §6），只缺图像 source + CLIP workload。
 3. **"数据库 AI 算子"定位锚点**——AI_EMBED/AI_CLASSIFY 是 Snowflake Cortex / PolarDB / Oracle 都有的正经数据库 AI 算子；写回 pgvector 是数据库 sink。采用它能强化"数据库 AI 算子"定位（对学长/导师/审稿人）。
 
-**不 claim**：这个 workload 能保证项目策略赢。它只是让异构调度的问题真实存在；能否赢朴素 Daft overlap 要跑出来（见 §7 晋级门禁）。
+**不 claim**：这个 workload 能保证项目策略赢。它只是让异构调度的问题真实存在；
+能否赢 Daft/Ray Data 已有 staged overlap 和冻结最佳项目静态点，要按 §7 跑出来。
 
 ---
 
@@ -33,7 +40,9 @@ CLIP 是 embedding 模型，不是生成式 LLM，但当前 vLLM 已通过 pooli
 
 | 选项 | 输入和预处理边界 | 角色 | 采纳 |
 |---|---|---|---|
-| **Daft `@daft.cls(gpus=1)`** | Daft worker 内 decode/preprocess + CLIP forward | Daft Native 强 baseline；官方推荐的常驻 GPU UDF 形态 | 必跑 baseline |
+| **Daft fused `@daft.cls(gpus=1)`** | 同一 GPU-reserved UDF 内 decode/preprocess + CLIP forward | 已完成校准的 fused baseline；用于暴露粗资源边界，但不代表 Daft 最强 staged 形态 | 必跑诊断/系统 baseline |
+| **Daft-on-Ray staged pipeline** | Daft CPU decode/resize/processor → Daft GPU 类 UDF | PolarDB/Daft 官方异构算子形态；与 ours 最接近的强框架 baseline | **必跑强 baseline，待实现 runner arm** |
+| **Ray Data staged pipeline** | CPU `map_batches` → GPU callable-class actor pool | 官方 streaming batch baseline | **必跑强 baseline** |
 | **vLLM pooling (`--runner pooling`)** | encoded image 进入服务，processor + pooling 在服务内部 | 与文本统一运维的成熟服务 baseline；官方说明 pooling 目前以功能便利为主，不保证优于 Transformers | 必跑服务 baseline；也是部署默认候选 |
 | **常驻 Ray CLIP GPU actor** | Daft/Ray CPU worker 做 decode/resize/normalize，GPU actor 只收 typed tensor batch 并 forward | 直接复用现有 Ray actor pool/backpressure；保留“CPU 准备与 GPU 推理分离”的可归因主路径 | **ours 主路径** |
 | Infinity / Ray Serve | encoded image 或服务内 preprocess，均自带 batching | 快速 smoke/补充 baseline；若使用必须冻结并记录隐藏 batching | 可选 |
@@ -42,8 +51,9 @@ CLIP 是 embedding 模型，不是生成式 LLM，但当前 vLLM 已通过 pooli
 **决定**：主路径不是自写一个不受控的 FastAPI serving engine，而是通过统一
 `ImageEmbeddingBackend` 接口接入**常驻 Ray GPU actor**。CPU worker 产出
 preprocessed tensor，GPU actor 只执行 CLIP forward；项目已有 actor pool、credit、
-backpressure 和 exactly-once 机械可以直接复用。vLLM pooling 作为统一部署默认候选
-和强服务 baseline，Daft `@daft.cls` Native 仍是关键系统 baseline。
+backpressure 和 exactly-once 机制可以直接复用。vLLM pooling 作为统一部署默认候选
+和强服务 baseline；Daft fused 只是一条已完成的系统臂，Daft-on-Ray/Ray Data staged
+才是判断“项目阶段拆分是否有额外价值”的关键强 baseline。
 
 **为什么不能只选 vLLM pooling**：它会把本轮 profile 中最重的
 decode/resize/normalize 移入服务端，无法直接验证“Daft/Ray 上游 CPU preprocess 与
@@ -65,6 +75,9 @@ AutoDL runbook 明确不使用 Docker，而 Triton 官方推荐 NGC 容器部署
 - Daft 官方 [Working with GPUs](https://docs.daft.ai/en/stable/custom-code/gpu/)：
   GPU UDF 使用 `@daft.cls` 常驻模型，且给出 CLIP image batch 示例；因此它是必须
   对照的原生实现，而不是本项目重复实现的模块。
+- PolarDB 官方 [CPU/GPU 异构算子编排和调度](https://help.aliyun.com/en/polardb/polardb-for-postgresql/heterogeneous-operator-scheduling)：
+  CPU decode/resize 与 GPU 类 UDF 可在同一 Daft-on-Ray pipeline 中按算子声明资源并
+  流式重叠；因此不能用 fused `@daft.cls` 代表完整 Daft/PolarDB-style baseline。
 - Ray 官方 [offline batch inference](https://docs.ray.io/en/latest/data/batch_inference.html)：
   重 CPU preprocess 与 GPU inference 应拆成两个 operation 以实现跨 batch overlap；
   这与 path-B 阶段划分一致，Ray Data 同时作为强 baseline。
@@ -196,7 +209,7 @@ transfer、CLIP forward、Daft/Ray 调度和结果 fan-in，只暂时排除 pgve
 
 | 臂 | 唯一变化 | 角色 |
 |---|---|---|
-| `daft_native` | `@daft.cls(gpus=1)` + Native runner，UDF 内完成 preprocess+forward | **关键强 baseline** |
+| `daft_native` | `@daft.cls(gpus=1)` + Native runner，UDF 内完成 preprocess+forward | 已校准 fused baseline；不是最终 staged 强 baseline |
 | `daft_ray` | 同一 UDF，仅切换 Daft Ray runner | 执行器成本归因 |
 | `project_ray` | Daft lazy source；Ray CPU preprocess actors 与 tensor-only GPU actors 有界重叠 | ours 当前主路径 |
 
@@ -218,7 +231,7 @@ Daft `@daft.cls` 支持 fractional GPU。one-actor-per-GPU 通过 gate 后仍须
 每 GPU 1/2/4 个 UDF actors（GPU share 1/0.5/0.25），让 combined preprocess+forward
 baseline 也获得更多 CPU preprocessing concurrency。冻结最佳 Daft shape 后，ours
 使用相同 PostgreSQL source-shard 数重跑；不能把未经 actor-shape 校准的 Daft 数字
-作为最终强 baseline。
+作为 fused baseline。它不能替代 Daft-on-Ray staged pipeline 的独立 calibration。
 
 **2026-08-01 已完成**：单卡 Daft Native 最佳为 4 fused actors，双卡 Daft Ray
 最佳为 4 fused actors；6/8 actors 已出现明显竞争退化。5000 图×3 formal 中，
@@ -234,23 +247,30 @@ direct ceiling 和 CPU-budget-normalized curve。正式报告：
 | 臂 | 角色 |
 |---|---|
 | **bounded direct CLIP** | 物理上界（同协议绕过 Daft/Ray） |
-| **Daft `@daft.cls` Native**（选项 A） | ⭐ 关键直接对照——PolarDB 式强 baseline（通用 overlap/backpressure） |
+| **Daft fused `@daft.cls` Native/Ray** | 已完成的粗资源边界对照；不是 PolarDB staged pipeline 的替身 |
+| **Daft-on-Ray staged CPU→GPU** | ⭐ 与 ours 最接近的官方异构流水线强 baseline；待补 |
 | **OceanBase AI_EMBED**（无 Daft/Ray，DB 原生算子） | 产品级核心 baseline——B1 门禁已过函数存在性（CE 4.5.0），当前 AutoDL 容器部署受阻、待可部署环境（见 `../results/oceanbase_b1_gate_20260731/`） |
-| **Ray Data HTTP** | 框架归因 baseline |
+| **Ray Data staged CPU→GPU** | 官方 streaming batch / actor-pool 框架 baseline；待补 |
 | **pgvector 直采 / 无组织串行** | 弱 baseline（仅诊断） |
 | **ours：项目 scheduler（frame-budget + K_max + flush，观测 CLIP endpoint 队列）** | 主路径 |
 
-> **直接 baseline**（必须跑 + 比数字，同杠杆=执行）：Daft native / OceanBase / Ray Data / naive / bounded direct。
+> **直接 baseline**（必须跑 + 比数字，同杠杆=执行）：Daft fused、Daft staged、
+> Ray Data staged、OceanBase、naive、bounded direct。
 > **Related Work**（只引用 + 定位，不比数字，不同杠杆=语义）：LOTUS / Palimpzest / Abacus（语义优化）、Cortex/Oracle（闭源）、Smart/GaussML（重写/实现）。
 > 完整矩阵见 `database_ai_operator_baseline_matrix_20260729.md` + `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10.1。
 
 **晋级门禁**（同项目 §7.5）：
 1. 喂饱 GPU：bounded direct ≥ 95%（图像版 feeding 门禁；尚待补）。
-2. ours 相对 **独立校准后的 Daft `@daft.cls` Native/Ray**（强 baseline，非串行 strawman）：operator-E2E images/s 已分别达到 +29.6%/+13.8%；system-E2E 仍须在统一 pgvector sink 后重判。
+2. ours 相对独立校准后的 **fused Daft Native/Ray**：operator-E2E images/s 已分别
+   达到 +29.6%/+13.8%，但这只是 fused 对照；相对 Daft-on-Ray/Ray Data staged 的
+   增量尚未知，system-E2E 也须在统一 pgvector sink 后重判。
 3. stable：3 formal repeats CV 合理。
 4. recall@10 不退化（写回质量证伪）。
 
-**只有 ours 显著优于 Daft Native**，才能声称"模型服务感知调度 > 通用 overlap"——这是项目相对 PolarDB Lakebase 的核心 claim。
+**只有 ours 在 matched-resource 和 independently calibrated 两种口径下，显著优于
+Daft-on-Ray 或 Ray Data staged，同时再优于冻结最佳项目静态点，才能分别声称
+“项目执行架构有增量”和“状态感知策略有增量”。** 只赢 fused Daft 不能声称优于
+PolarDB Lakebase 异构流水线。
 
 ---
 
@@ -278,4 +298,5 @@ direct ceiling 和 CPU-budget-normalized curve。正式报告：
 3. AutoDL 下载 COCO val 5K + CLIP base（smoke 集，放得下 7.4G）。
 4. 跑 §6 最小验证（CPU/GPU 时间比）——**这是 go/no-go 门禁**。
 5. 门禁通过 → 写 CLIP embedding adapter + CPU decode pipeline（`code/src/`），复用 organizer/scheduler/tracing。
-6. ✅ §7 operator-E2E Daft Native/Ray + ours 正式对照；下一步补 bounded direct、统一 pgvector sink、Ray Data 与 CPU-normalized curve。
+6. ✅ §7 operator-E2E fused Daft Native/Ray + ours 正式对照；下一步补 bounded direct、
+   Daft-on-Ray staged、Ray Data staged、统一 pgvector sink 与 CPU-normalized curve。

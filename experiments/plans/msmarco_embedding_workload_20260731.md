@@ -1,7 +1,12 @@
 # MS MARCO 批 embedding workload 设计 + 执行计划
 
 日期：2026-07-31
-状态：**⏸ 降级为"文本轻对照"（2026-07-31 校正）**。学长判据：数据搬运瓶颈要在"DB 读 + CPU→GPU 搬运"段显现，需要每行 payload 重。**MS MARCO 仍是文本——token ID 紧凑（~1KB/行），DB 读 + CPU→GPU 搬运太轻，瓶颈不显现**，不满足判据。因此**不作首选 workload**，仅保留作"文本下数据搬运瓶颈不显现"的**边界对照**（与图像 CLIP 对比，证明文本 regime 下问题不存在）。首选 workload 改回图像 CLIP，见 `image_clip_workload_lock_20260731.md` + `research/daft_db_gpu_bridge_direction_scope_20260731.md` §10。
+状态：**⏸ 文本 serving-dominant 对照**。当前文本实验的主要墙钟在 vLLM serving，
+因此 MS MARCO 不作为 image-first 主 workload；它只能代表另一种 workload regime，
+不能用来“证明数据搬运问题不存在”。首选 workload 为图像 CLIP，后者也只负责让
+DB/CPU/Ray/H2D/GPU 各阶段可测，不预设传输瓶颈。见
+`image_clip_workload_lock_20260731.md` 与
+`research/daft_db_gpu_bridge_direction_scope_20260731.md` §10。
 关联：`research/daft_db_gpu_bridge_direction_scope_20260731.md`（方向 scope）；`notes/communication_notes.md` §5（学长反馈）；`code/INFRA_STATUS.md`（现有管线）。
 
 > 本 workload 是学长原则"先锁被认可场景"的落地。**机制（冷启动/调度策略）后面再叠加**——先把战场选在 MS MARCO 这个被认可的 benchmark 上跑通，有正指标再扩。不改题目。

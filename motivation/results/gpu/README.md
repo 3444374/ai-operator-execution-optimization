@@ -15,7 +15,7 @@
 | `image_clip_bottleneck_profile_20260801.md` / `.csv` | **图像 CLIP AI_EMBED** 历史 slow-pt 分阶段画像：5000 图采样池 × 100 iters，CPU processor ~5.2ms/img vs GPU embed 0.29ms/img；只支持继续建设 E2E |
 | `clip_preproc_stages_20260801.csv` | slow-pt processor method-wrapper 子阶段历史数据；resize ~1.3ms，旧 residual 为近似未归因时间，不能解释成具体转换步骤 |
 | `image_clip_preprocess_variants_20260801/` | 当前 production-np、legacy-pt、torchvision+PIL/tensor-decode 四臂交错复测；720 raw repeats、质量门禁、七步报告。fast path 仍未消除 CPU/GPU 阶段失衡 |
-| `image_clip_native_baseline_20260801/` | **图像 CLIP operator-E2E 动机强基线**：先校准 Daft fractional-GPU actor shape，再做 5000 图×3 formal；项目阶段拆分相对 Daft Native 单卡 +29.6%、相对 Daft Ray 双卡 +13.8%。不含 pgvector，且资源效率边界见报告 |
+| `image_clip_native_baseline_20260801/` | **图像 CLIP operator-E2E fused Daft 基线**：先校准 fractional-GPU actor shape，再做 5000 图×3 formal；项目阶段拆分相对 fused Native 单卡 +29.6%、fused Ray 双卡 +13.8%。不含 staged Daft/Ray Data、pgvector，且资源效率边界见报告 |
 
 ## Endpoint
 

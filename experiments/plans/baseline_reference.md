@@ -1,6 +1,6 @@
 # 实验 Baseline 参考矩阵
 
-整理日期：2026-07-16；文献与官方 baseline 复审：2026-07-29
+整理日期：2026-07-16；文献与官方 baseline 复审：2026-08-01
 
 > **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
 用途：正式实验设计时，从正式论文、官方系统和可审计工程默认中提取 baseline，避免使用 strawman 对照
@@ -52,6 +52,25 @@
 两条轨道分别使用同一 request manifest、同一双 endpoint、同一输出上限和
 独立 calibration。不得用 Completions 数值直接声称超过 Chat baseline。
 详细预注册见 `database_ai_operator_baseline_matrix_20260729.md`。
+
+### 图像 AI_EMBED 的 baseline 层级
+
+图像轨道不能直接复用文本的 Chat/Completions 排名，也不能把所有 Daft 路径称为
+一个 baseline。按以下层级分开报告：
+
+| 层 | 对照 | 作用 |
+|---|---|---|
+| compute ceiling | GPU-resident CLIP tensor→forward | 模型计算平台，不是项目对手 |
+| direct service | bounded direct CLIP、vLLM pooling | 绕过 DB/Daft/Ray 的容量与部署参照 |
+| fused framework | Daft Native/Ray：同一 GPU UDF 内 preprocess+forward | 已完成的粗资源边界诊断；必须校准 fractional-GPU actor shape |
+| staged framework | Daft-on-Ray CPU operators→GPU UDF、Ray Data CPU→GPU actor pool | 与项目最接近的强系统 baseline；必须独立校准 batch/actor/in-flight |
+| product SQL | OceanBase/PolarDB AI_EMBED | 同 endpoint/同硬件可部署时严格比较，否则只作工业参考 |
+| project static | 冻结最佳 frame budget/active batches/actor shape | 动态策略的唯一主对照 |
+| project adaptive | state-aware request shaping/shared credit | 只报告相对 frozen static 的增量与 oracle regret |
+
+当前 1.296×/1.138× 只属于 `project static vs fused framework`，不能写成优于
+PolarDB/Daft staged 异构流水线。每个系统同时报告 matched-resource 与 independently
+calibrated best-achievable；统一输入、模型、输出、生命周期、计时边界和 sink。
 
 正式策略比较还必须区分：calibration 得到并在 held-out 上冻结的最佳静态
 baseline、每个 workload 事后 sweep 的 static oracle，以及仅冻结候选边界、

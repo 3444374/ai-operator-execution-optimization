@@ -1,4 +1,4 @@
-# Image CLIP：Daft Native/Ray 强基线与阶段拆分动机实验
+# Image CLIP：fused Daft Native/Ray 基线与阶段拆分动机实验
 
 日期：2026-08-01
 代码：`ba1b7101ecfdaea989485f011f8e6d809e3ab68c`
@@ -28,8 +28,8 @@ system-E2E，也不是只测 CLIP kernel 的 microbenchmark。
 
 | 路径 | 数据流 | 角色 |
 |---|---|---|
-| `daft_native` | PG lazy shards → `@daft.cls`，actor 内 preprocess+forward；Native runner | 单 GPU 直接强基线 |
-| `daft_ray` | 同一个 `@daft.cls` UDF，仅切 Daft Ray runner | 双 GPU 官方执行栈强基线 |
+| `daft_native` | PG lazy shards → `@daft.cls`，actor 内 preprocess+forward；Native runner | 单 GPU fused Daft baseline |
+| `daft_ray` | 同一个 `@daft.cls` UDF，仅切 Daft Ray runner | 双 GPU fused Daft/Ray baseline |
 | `project_ray` | PG lazy shards → Ray CPU preprocess actors → tensor-only CLIP GPU actors | 当前项目的静态有界阶段拆分路径 |
 
 Daft 0.7.21 Native runner 无法可靠隔离双 GPU，故不把单卡 Native 与双卡结果
@@ -94,7 +94,7 @@ first-output median 由 Daft Ray 的 15.43s 降为 8.90s。
 1. baseline actor shape 是一级变量。若直接使用 one-actor-per-GPU，会把单卡
    Daft baseline 低估约 1.7×；正式比较必须使用校准后的 4-actor 配置。
 2. 在同一物理机器、各自独立校准最佳配置下，阶段拆分在 3/3 repeats 中均快于
-   对应 Daft 强基线；单卡增益 29.6%，双卡增益 13.8%。
+   对应校准后的 fused Daft 基线；单卡增益 29.6%，双卡增益 13.8%。
 3. 继续复制 fused Daft actor 并非越多越好：双卡 6/8 actor 都退化，说明用模型
    副本换 CPU prepare 并发会很快撞上内存/调度竞争。
 4. 项目路径只保留每 GPU 一个模型副本。观测到的每卡显存峰值约 930 MiB，Daft
@@ -122,8 +122,9 @@ CPU prepare 并发，而阶段拆分允许增加 CPU workers 但不复制 GPU �
   Daft 17.61s；相同总 6 个 reservation 时项目 15.19s 快于 Daft 28.23s。正式论文
   需要补 CPU-budget-normalized curve，明确收益来自有效利用空闲 CPU，而非免费加资源。
 - 尚未接 pgvector sink；writeback 可能缩小 operator E2E 增益。
-- 尚未测 bounded direct CLIP ceiling、Ray Data 和 vLLM pooling；当前只完成最接近
-  项目栈的 Daft Native/Ray 强基线。
+- 尚未测 bounded direct CLIP ceiling、Daft-on-Ray staged pipeline、Ray Data staged
+  pipeline 和 vLLM pooling；当前只完成 fused Daft Native/Ray 对照。PolarDB/Daft
+  官方已支持按算子拆分 CPU preprocess 与 GPU UDF，因此本轮不能代表最强 Daft 路径。
 
 ### 不能声称
 
@@ -131,19 +132,21 @@ CPU prepare 并发，而阶段拆分允许增加 CPU workers 但不复制 GPU �
   本轮项目臂是固定 actor shape + 静态 bounded queue。
 - 不能声称完整数据库 E2E 提升，不能声称 recall@10 不退化。
 - 不能把低频 `nvidia-smi` util 当 MFU，也不能声称双 GPU 已达到线性扩展。
-- 不能把 Daft Ray 当成纯 Ray Data baseline；Ray Data 是后续独立框架归因臂。
+- 不能把 fused Daft Ray 当成 Daft staged 或 Ray Data baseline；两者都是后续独立
+  框架归因臂。
 
 ## 6. 对课题的含义
 
 这组结果提供了一个比旧 micro-profile 更直接的动机：在真实 PostgreSQL BYTEA→
-Daft→CLIP operator E2E 中，官方 Daft fused GPU UDF 即使独立调到强运行点，仍存在
+Daft→CLIP operator E2E 中，Daft fused GPU UDF 即使独立调到强运行点，仍存在
 阶段耦合与资源配比限制；CPU/GPU stage separation 能在固定物理主机上取得
 13.8%–29.6% 的可复现改善。CPU prepare、Ray/host copy、PCIe H2D 各自贡献多少，
 仍须由 R0→R4 表示阶梯复测确定。
 
 它支持继续建设项目执行链路，但还不能证明后续“状态感知策略”优于最佳静态阶段拆分。
-今后的策略主对照必须是本项目冻结的最佳静态 pipeline，而不是重新拿 Daft Native
-当策略对照；Daft Native/Ray 的角色是系统/动机 baseline。
+今后的策略主对照必须是本项目冻结的最佳静态 pipeline，而不是重新拿 Daft fused
+当策略对照；fused Daft 的角色是系统/动机 baseline。是否存在架构级增量，还要先
+与 Daft-on-Ray/Ray Data staged pipeline 比较。
 
 ## 7. 下一步
 
@@ -152,8 +155,8 @@ Daft→CLIP operator E2E 中，官方 Daft fused GPU UDF 即使独立调到强�
 2. 在同一复测中补 bounded direct CLIP ceiling和 CPU-budget-normalized actor curve；
    同时报告最佳可达性能与资源效率。
 3. 三臂接同一个 pgvector COPY sink，补 system-E2E、写回占比和 recall@10。
-4. 再补 Ray Data baseline作框架归因；vLLM pooling因 processor placement 不同，单列
-   服务轨道，不能与 tensor-only actor 混成一个吞吐排名。
+4. 补 Daft-on-Ray staged 与 Ray Data staged baseline 作框架归因；vLLM pooling 因
+   processor placement 不同，单列服务轨道，不能与 tensor-only actor 混成一个吞吐排名。
 5. 上述门禁闭合后，才以“冻结最佳静态 project pipeline”为对照测试状态感知请求
    成形、frame-work credit、multi-job shared credit 和代价模型。
 

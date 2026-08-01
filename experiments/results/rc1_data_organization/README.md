@@ -197,7 +197,11 @@ batched bounded（b16-c64 / b32-c32，2,048/2,048 完成、0 失败、两 cell �
 2. **cache-ON 下，"保 prefix 局部性"是组织策略的隐性目标**——重排序类（length_align/BFD/row_cap）以丢失 cache 复用为代价换取长度/output 均匀，在 KV 压力下净亏。**prefix-aware 组织**（`prefix_aware_token_budget`，已在 #28 侧验证）应能回收这部分命中。
 3. **consolidation 非收益**：4-ep/0.43 比 2-ep/0.9 慢且费能——多 endpoint 小池 + 高 churn + 局部性丢失。这反衬 2-ep/0.9 是更高效的默认拓扑。
 4. 与 #19（KV-sweep）/ #28（routing）共同支撑课题 spine：**上游调度/组织策略的价值在模型服务饱和 regime（4-ep）才显现**；2-ep 无压力 regime 是干净对照基线。
-5. **文本搬运可忽略 → 为何转 image**：RC1 pipeline 数字（db_fetch ~1.4–2.4s vs model_wall ~27–37s）显示文本 payload 下数据搬运（DB-read + CPU→GPU）远小于模型服务耗时——即文本 regime 的 binding 瓶颈在 vLLM serving、不在数据搬运。这正说明为何下一步 workload 锁定 **image AI_EMBED（CLIP）**：每行 CPU→GPU 搬运 ~600KB（文本 ~600×），让 DB-read/CPU→GPU 数据搬运瓶颈显现。本实验的 token_budget→frame_budget、queue-adaptive flush 等调度机械在 image 上复用（见 `image_clip_workload_lock`）。
+5. **文本上游开销较小 → 为何转 image**：RC1 pipeline 数字（db_fetch ~1.4–2.4s vs
+   model_wall ~27–37s）显示文本 regime 的主要墙钟在 vLLM serving。下一步锁定
+   **image AI_EMBED（CLIP）**，是因为 JPEG decode/processor 与约 600KB pixel tensor
+   让 DB/CPU/Ray/H2D/GPU 木桶效应可测；并不预设数据传输一定是瓶颈。token_budget→
+   frame_budget、queue-adaptive flush 等机制可在 image 上复用（见 `image_clip_workload_lock`）。
 
 ## 8. 下一步
 

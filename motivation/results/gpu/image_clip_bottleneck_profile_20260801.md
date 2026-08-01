@@ -98,7 +98,10 @@ GPU 阶段用 `torch.cuda.synchronize()` 包住，wall clock 反映真实设备�
 1. 建 path-B runner：PG → Daft → Ray CPU decode+preprocess → CLIP actor →
    pgvector。生产路径复用 `code/src/image/` 的 typed contracts、preprocessor 和
    actor；不得从 profiling 脚本反向 import 实现。
-2. `image_clip_workload_lock` §7 对照臂：bounded direct CLIP / **Daft `@daft.cls` Native（A，关键强 baseline）** / Ray Data / naive / **ours（B + A 状态感知调度）**——claim 门槛：ours 相对 Daft Native 的 images/s 或 SLO-goodput **>+5% 且 SLO 违约 <1%** 才晋级。
+2. `image_clip_workload_lock` §7 对照臂：bounded direct CLIP / fused Daft /
+   **Daft-on-Ray staged** / **Ray Data staged** / naive / ours。当前 profile 只决定是否
+   值得进入 E2E；架构 claim 需先赢独立校准的 staged baseline，策略 claim 再比较冻结
+   最佳项目静态点，且至少改善约 5%、重复同向、质量/SLO 不退化。
 3. （可选）若日后要测**流式/分批 pg_read** 的真实成本，在 path-B runner 里按 chunked SELECT 计时，本单进程画像不含该口径。
 
 ## 附：preproc 子阶段拆分（2026-08-01 补测）

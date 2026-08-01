@@ -16,7 +16,7 @@
 | `vllm_continuous_batching_reference.md` | vLLM continuous batching、KV/cache、metrics 和集成边界 |
 | `ray_actor_dynamic_batching_reference.md` | Ray actor/Serve 动态 batching 与路由机制 |
 | `evaluation_metrics_survey_20260731.md` | AI 算子/推理服务文献 + 数据库厂商评估指标调研，对照项目指标做 gap 分析 |
-| `daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：学长"DB↔GPU 经 Daft 桥接"场景 + Daft 三痛点源码核实 + offline-batch foreknowledge 可防御界面（Stage 1 scoped 输出，冷启动 parked） |
+| `daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：保留 Daft 三痛点与 offline-batch 候选，已按 08-01 审计撤回“传输瓶颈/结构性空白”预设，并要求 staged baseline |
 
 ## 文献分级
 
@@ -67,4 +67,3 @@
 - 不根据摘要直接重排 Top 15。
 - 新增/删除笔记或 PDF 时同步 `REFERENCE_INDEX.md`、`PROJECT_INDEX.md` 和 `PROJECT_LOG.md`。
 - 结论标明来源：论文、官方文档、源码、本地实验、合理推断或待确认。
-

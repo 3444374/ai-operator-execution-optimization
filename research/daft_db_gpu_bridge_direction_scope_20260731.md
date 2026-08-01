@@ -5,6 +5,12 @@
 来源：学长反馈（`notes/communication_notes.md` §5）+ 工作流 `w6xclfb0g`（Daft 内部核实 + 三痛点先验 + workload fit）+ 之前 scoop（`notes/communication_notes.md` §5.5）。
 不改题目；本文是 academic-pipeline Stage 1 (RESEARCH) 的 scoped 输出。
 
+> **2026-08-01 证据边界修正**：图像 workload 已锁，但“数据搬运是主瓶颈”和
+> “执行优化是结构性空白”均未被证明。PolarDB/Daft 官方已提供按算子声明资源的
+> staged CPU→GPU 流水线；当前 1.296×/1.138× 只相对 fused UDF。本文的历史 scope
+> 讨论保留，但实验判决以 `motivation/plans/image_host_data_path_bottleneck.md` 和
+> `experiments/plans/image_clip_workload_lock_20260731.md` 的 fused/staged 矩阵为准。
+
 ---
 
 ## 1. 场景 reframe（学长最新反馈）
@@ -56,7 +62,9 @@
 
 这份 foreknowledge 是三痛点共同的**新颖性来源**，也是对学长"数据未到/GPU 不慢"最该举起的一点：**批管线的"数据"是 plan 阶段可估的已知体积，不是 online 随机请求流。**
 
-> 这是对之前 scoop（`notes/communication_notes.md` §5.5 判 partially-scooped）的**翻转**：被占切片全在 online-serving-adjacent 层（prefix 被 SOLO(ICML'26)/Liu、状态感知被 llm-d/Preble、Kalypso(2026-07) 重叠 framing、Daft v0.6.9 同栈产品化）；批 dataflow + foreknowledge + 多样异构算子调度 = **结构性空白**。
+> 这不是对之前 partially-scooped 判决的完全翻转。offline batch foreknowledge 仍是
+> 候选差异，但 Daft/PolarDB/Ray Data 已覆盖 staged pipeline、overlap 与 backpressure；
+> 只有在强 staged baseline 之后仍存在可复现的调度增量，才能把该界面写成研究空白。
 
 ## 4. 贡献空间（按先验距离由远到近）
 
@@ -64,14 +72,17 @@
 2. **方法组件（痛点①）**：data-volume-aware right-sizing，用每算子已知 token/frame 体积反推 gpus/concurrency。可借 Pollux goodpass 思路落到批算子；Daft 团队 RFC #5683 roadmap 正在关闭，**作组件不作独立贡献**。
 3. **实验平台（痛点③）**：在 Flotilla/Ray Data 之上做 model-residency-aware 流式策略层，验证 service-state-aware 对非 vLLM 算子的泛化；**不作独立引擎贡献**。
 
-**可防御 framing**：在通用 Daft-on-Ray pipeline 之上，利用批管线 DAG + 数据量 foreknowledge，对多样异构 GPU 算子做冷启动感知的放置与流式调度——PolarDB Lakebase（通用数据流 backpressure）、Daft v0.6.9（vLLM prefix）、Clockwork/AlpaServe/ServerlessLLM（online serving）均结构性不覆盖。
+**候选 framing**：在通用 Daft-on-Ray pipeline 之上，利用批管线 DAG + 数据量
+foreknowledge 做 service-state/work-aware 请求成形、共享 credit 或多算子资源决策。
+该 framing 尚待 staged Daft/Ray Data baseline 和多 job 结果验证，不能预先写成
+PolarDB Lakebase “结构性不覆盖”。
 
 ## 5. Workload 推荐（不依赖冷启动 regime 的优先）
 
 | 角色 | workload | 为什么 | 来源 / 可引 |
 |---|---|---|---|
-| **🔴 首个 workload** | **图像 CLIP AI_EMBED（COCO/ImageNet 子集）** | 数据搬运重（JPEG decode+resize + **CPU→GPU ~600KB/行**，是文本 ~600×），**DB 读 + CPU→GPU 搬运瓶颈能显现**——满足学长判据 | ImageNet/COCO + ANN-benchmarks recall@10 + BigVectorBench image 切片（VLDB'25） |
-| 文本轻对照（降级） | MS MARCO 8.8M（文本） | token ID 紧凑，DB 读 + 搬运轻，**瓶颈不显现**——仅作"文本下不显现"的边界对照 | MS MARCO leaderboard |
+| **🔴 首个 workload** | **图像 CLIP AI_EMBED（COCO/ImageNet 子集）** | JPEG decode/processor + 大 pixel tensor 让 DB/CPU/Ray/H2D/GPU 木桶效应可测；不预设哪段是瓶颈 | ImageNet/COCO + ANN-benchmarks recall@10 + BigVectorBench image 切片（VLDB'25） |
+| 文本轻对照（降级） | MS MARCO 8.8M（文本） | 当前文本实测主要墙钟在 vLLM serving；作为另一 regime 对照 | MS MARCO leaderboard |
 | 冷启动 regime（parked） | BigVectorBench 异构 embedding 全套（多模型 >HBM） | 三模态触发冷启动②；parked 待解封 | VLDB'25 PVLDB |
 | operator 多样性参照 | SemBench 55 queries/5 workloads/4 模态 | ② 参照 | arXiv 2511.01716 |
 
@@ -104,21 +115,26 @@
 2. ⏸ 冷启动（痛点②，机制候选）parked——后面做，不阻塞 workload 锁定。
 3. ⏸ 题目精修暂缓。
 
-- ✅ 方向 validate：数据库↔GPU 经 Daft 桥接、大数据、异构、流式 + offline-batch foreknowledge 可防御界面。
+- ✅ workload validate：图像链路能暴露 CPU/GPU 阶段失衡；❌ 具体瓶颈与相对 staged
+  系统的贡献尚未 validate。
 - 下一步：**立刻锁一个 workload**（见 §5 推荐 + §10 当务之急行动），再谈机制。
 
 ## 10. 当务之急行动（lock workload，不依赖冷启动）
 
-**核心判据（学长反馈，2026-07-31 校正）**：数据搬运瓶颈有两段——
+**历史候选（学长反馈，2026-07-31）**：数据路径可拆为两段——
 1. 送到 vLLM（prompt→vLLM）——**做的人很多、拥挤**（vLLM + 一堆 serving 论文）。
 2. **从 DB 读出来 + CPU 处理/搬到 GPU 侧**——做的人少，是机会。
 
-当前 prompt **文本**每行几百字节：DB 读小、CPU 预处理轻（tokenize）、**CPU→GPU 搬运极轻（token ID ~1KB/行）**——瓶颈根本不显现。因此 workload 必须让"DB 读 + CPU→GPU 搬运"**重到能显现**。
+当前文本实验的主要墙钟在 vLLM serving。选择图像 workload 的目的是增加可观测的
+DB bytes、CPU processor、host copy/H2D 和 GPU forward stage，而不是预注册“传输必然
+成为瓶颈”。
 
 按此判据筛，**首选图像 AI_EMBED (CLIP)** 作为第一个 workload（之前误推 MS MARCO，已纠正）：
 
-- **数据搬运重**（满足判据的关键）：每图 JPEG decode+resize+normalize（CPU 重，ms/图）+ **CPU→GPU 搬运 ~600KB/行**（224×224×3×4 张量，是文本 ~1KB 的 **~600×**）+ DB 读图字节——三段全重，瓶颈能显现。
-- **go/no-go 门禁现成**：CPU decode_s/row vs GPU embed_s/row 比值 >0.3——**正好测"搬运瓶颈显没显现"**。
+- **阶段成本可测**：每图含 JPEG bytes、CPU decode/processor、约 600KB FP32 tensor、
+  host copy/H2D 和 GPU forward；具体主限制由 R0→R4 阶梯判定。
+- **go/no-go 门禁**：CPU prepare/GPU forward 比只用于判断是否值得做异构 E2E；
+  不能单独证明 GPU idle、PCIe 或数据搬运饱和。
 - **fit 18G 盘**：COCO val 5K（smoke ~1G）/ ImageNet 子集（formal 3-8G）。
 - 复用：CLIP 走独立 HTTP endpoint（非 vLLM），复用项目 Ray→HTTP 机械；`@daft.cls` Native 作 baseline。
 
@@ -133,7 +149,7 @@
 | 杠杆 | 代表 | 优化什么 | 结果 |
 |---|---|---|---|
 | 语义/计划优化 | LOTUS / Smart / Abacus | 少调模型、重写计划 | cost↓、调用数↓（accuracy 不变） |
-| **执行优化** ⭐本项目 | （空白） | **DB↔GPU 数据搬运 / overlap / 提交节奏** | **execution time↓、throughput↑**（accuracy 不变） |
+| **执行优化** ⭐本项目 | Daft-on-Ray / Ray Data / PolarDB Lakebase | **在已有 overlap/backpressure 之上的 work-aware / state-aware / multi-job 调度** | **JCT/SLO/fairness/资源效率改善**（quality 不变） |
 
 同领域、不同杠杆、互补——Related Work 里明确分工："语义优化有人做了（LOTUS），执行优化是空白（本项目）。"
 
@@ -160,9 +176,10 @@
 
 | Baseline | 角色 |
 |---|---|
-| **Daft `@daft.cls` Native**（通用 overlap，PolarDB 同款） | ⭐ 关键——执行优化的直接对照 |
+| **Daft fused `@daft.cls` Native/Ray** | 已完成的粗资源边界对照；不是 PolarDB staged 同款 |
+| **Daft-on-Ray staged CPU→GPU** | ⭐ PolarDB/Daft 官方异构流水线强 baseline；必须补 |
 | **OceanBase AI_EMBED**（数据库原生算子，**无 Daft/Ray**） | **产品级核心 baseline**——DB 触发外部 CLIP endpoint 再写回；完整矩阵见 `experiments/plans/database_ai_operator_baseline_matrix_20260729.md`（B1 门禁已过函数存在性 CE 4.5.0，当前 AutoDL 容器部署受阻、待可部署环境，见 `experiments/results/oceanbase_b1_gate_20260731/`） |
-| Ray Data | 另一数据引擎对照（框架归因） |
+| Ray Data staged | 另一数据引擎的 streaming batch 强 baseline |
 | naive 串行 / 固定行 pipeline | 工程默认对照 |
 | bounded direct CLIP | 物理上界（绕 Daft/Ray 直连打满） |
 
@@ -175,7 +192,9 @@
 | Smart / GaussML | SQL 重写 / 算子实现，非 DB↔GPU 执行调度 |
 | SemBench | benchmark（给 workload），不是要比的系统 |
 
-**审稿人问"怎么不跟 LOTUS 比"**：标准答法——LOTUS 优化调用数/语义（不同杠杆），本文优化执行调度（互补）；实验对比的是**同杠杆**执行层 baseline（Daft native / OceanBase / Ray Data / naive）。
+**审稿人问"怎么不跟 LOTUS 比"**：LOTUS 优化调用数/语义（不同杠杆），本文优化
+执行调度；直接性能对照必须覆盖同杠杆的 Daft-on-Ray staged、Ray Data staged、
+OceanBase/同 PostgreSQL direct control 与冻结最佳项目静态点。
 
 **不能声称**：在 ANN-benchmarks 排行榜比向量检索（那是 Milvus/Faiss/pgvector 的事，非本层）；recall@10 是性能主指标（它是质量门禁）。
 
