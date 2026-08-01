@@ -155,6 +155,8 @@ def _parity(candidate: np.ndarray, reference: np.ndarray) -> tuple[float, float,
 
 def main() -> None:
     args = parse_args()
+    if not args.model.strip():
+        raise SystemExit("--model must be a non-empty local path or model ID")
     if not args.pg_dsn:
         raise SystemExit("--pg-dsn is required (or set DATABASE_URL/PG_DSN)")
     if args.limit <= 0 or args.warmup < 0 or args.repeats <= 0:

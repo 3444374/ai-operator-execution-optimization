@@ -3293,3 +3293,6 @@
   上随机交错 production-np、legacy-pt、torchvision-pt，经同一
   `ClipTensorActor` 输出并执行逐行 embedding cosine 门禁。正式实验不得故意保留
   slow processor 制造优化空间；fast/production 路径若消除瓶颈，应撤回旧外推。
+- **远端 gate 部署坑**：仓库外旧 runtime env 尚无 `IMAGE_MODEL_PATH`，首次 gate 在
+  模型加载前因空路径 fail。脚本新增非空 fail-fast，runbook 对旧 env 使用当前固定
+  模型目录 fallback，并在运行前 `test -d`；失败 gate 保留作部署诊断，不当成实验。

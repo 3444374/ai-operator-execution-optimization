@@ -208,6 +208,10 @@ set -a
 source /root/autodl-tmp/ai-operator-runtime.env
 set +a
 
+# 兼容尚未补 IMAGE_MODEL_PATH 的旧 runtime env；正式运行前必须解析为存在的目录。
+IMAGE_MODEL_PATH=${IMAGE_MODEL_PATH:-/root/autodl-tmp/models/clip-vit-base-patch32}
+test -d "$IMAGE_MODEL_PATH"
+
 RUN_ID=image_clip_preprocess_variants_$(date +%Y%m%d_%H%M%S)
 OUT=/root/autodl-tmp/experiment-artifacts/$RUN_ID
 mkdir -p "$OUT"
