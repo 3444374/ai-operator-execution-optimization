@@ -40,6 +40,7 @@ from src.image.execution import (  # noqa: E402
     ExecutionResult,
     build_project_ray_worker_pool,
     run_project_ray_pipeline,
+    stop_project_ray_worker_pool,
 )
 
 
@@ -54,6 +55,7 @@ CSV_FIELDS = (
     "cpu_workers",
     "gpu_workers",
     "max_active_batches",
+    "worker_setup_s",
     "operator_e2e_s",
     "first_output_s",
     "images_per_s",
@@ -344,10 +346,32 @@ def main() -> None:
         )
 
     execute(warmup_count, warmup_ids)
+    if worker_pool is not None:
+        stop_project_ray_worker_pool(worker_pool)
     sampler = NvidiaSmiSampler(args.gpu_sample_interval_s)
     sampler.start()
+    if worker_pool is not None:
+        setup_started = time.perf_counter()
+        worker_pool = build_project_ray_worker_pool(
+            model_revision=args.model,
+            processor_revision=processor,
+            cpu_workers=args.cpu_workers,
+            gpu_workers=args.gpu_workers,
+            dtype=args.dtype,
+        )
+        worker_setup_s = time.perf_counter() - setup_started
+    else:
+        # Daft creates the model-owning UDF actor lazily inside each query, so
+        # its worker/model startup is already included in result.total_s and
+        # first_output_s rather than this explicit setup field.
+        worker_setup_s = 0.0
     result = execute(args.limit, formal_ids)
     gpu_metrics = sampler.stop()
+    if worker_pool is not None:
+        stop_project_ray_worker_pool(worker_pool)
+
+    operator_e2e_s = result.total_s + worker_setup_s
+    first_output_s = result.first_output_s + worker_setup_s
 
     row: dict[str, object] = {
         "arm": args.arm,
@@ -359,9 +383,10 @@ def main() -> None:
         "cpu_workers": args.cpu_workers,
         "gpu_workers": args.gpu_workers,
         "max_active_batches": args.max_active_batches,
-        "operator_e2e_s": result.total_s,
-        "first_output_s": result.first_output_s,
-        "images_per_s": args.limit / result.total_s,
+        "worker_setup_s": worker_setup_s,
+        "operator_e2e_s": operator_e2e_s,
+        "first_output_s": first_output_s,
+        "images_per_s": args.limit / operator_e2e_s,
         "batch_service_p50_s": percentile(result.batch_service_s, 0.50),
         "batch_service_p95_s": percentile(result.batch_service_s, 0.95),
         **result.audit,
@@ -381,7 +406,9 @@ def main() -> None:
     append_csv(Path(args.out_csv), row)
     manifest = {
         "schema_version": 1,
-        "timing_boundary": "postgresql_read_start_to_last_embedding_batch_returned",
+        "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
+        "worker_lifecycle": "per_query_cold_model_worker",
+        "ray_framework_startup_included": False,
         "writeback_included": False,
         "preprocessing": "torchvision_tensor_decode_and_processor",
         "hidden_batching": False,

@@ -161,8 +161,15 @@ class ClipTensorActor:
                 f"ClipTensorActor requires {self.input_kind}, got {batch.input_kind}"
             )
         started = time.perf_counter()
+        payload = np.asarray(batch.payload)
+        # Ray's zero-copy object-store view is intentionally read-only. Torch
+        # warns even though CLIP never mutates the input, so take ownership at
+        # this device-transfer boundary instead of relying on undefined write
+        # behavior in a future model implementation.
+        if not payload.flags.writeable:
+            payload = payload.copy()
         pixel_values = self._torch.as_tensor(
-            batch.payload,
+            payload,
             dtype=self._dtype,
             device=self._device,
         )

@@ -184,8 +184,8 @@ fast path 未触发撤回条件，不过它只支持继续建设 E2E，不能证
 
 | 层 | 统一边界 | 回答的问题 | 当前脚本 |
 |---|---|---|---|
-| **operator E2E gate** | PostgreSQL BYTEA 开始读取 → 最后一批 embedding 返回；不含写回 | Daft Native/Ray 与拆阶段流水线谁更有效地执行同一 AI 算子？ | `code/scripts/run_image_clip_e2e.py` |
-| **system E2E formal** | PostgreSQL BYTEA 读取 → pgvector COPY 完成；索引延后统一构建 | 数据库作业实际多久完成，优化是否被写回抵消？ | operator gate 通过后接统一 sink |
+| **operator E2E gate** | 每 query 的模型 worker 建立/执行开始 → 最后一批 embedding 返回；Ray 框架已启动，不含写回 | Daft Native/Ray 与拆阶段流水线谁更有效地执行同一 AI 算子？ | `code/scripts/run_image_clip_e2e.py` |
+| **system E2E formal** | 同一 query/job 开始 → pgvector COPY 完成；索引延后统一构建 | 数据库作业实际多久完成，优化是否被写回抵消？ | operator gate 通过后接统一 sink |
 
 operator gate 不是“只测 GPU”：它包含 DB read、JPEG decode、processor、CPU→GPU
 transfer、CLIP forward、Daft/Ray 调度和结果 fan-in，只暂时排除 pgvector sink。三臂
@@ -200,8 +200,10 @@ transfer、CLIP forward、Daft/Ray 调度和结果 fan-in，只暂时排除 pgve
 | `daft_ray` | 同一 UDF，仅切换 Daft Ray runner | 执行器成本归因 |
 | `project_ray` | Daft lazy source；Ray CPU preprocess actors 与 tensor-only GPU actors 有界重叠 | ours 当前主路径 |
 
-执行顺序：先 256 行 gate，全部通过后使用 COCO val 5000 行，batch=64、2 GPU、
-每次 invocation 内先 warmup 64 行；三臂按 Latin-square 顺序交错，3 个 formal repeats。
+执行顺序：先 256 行 gate，全部通过后使用 COCO val 5000 行，batch=64、2 GPU。
+每次 invocation 先执行 64 行 preflight/warmup，但 formal 必须新建模型 worker：Daft
+每 query 天然重建 UDF actor，project-Ray 也显式销毁 warmup pool 后重建，避免生命周期
+不对称。三臂按 Latin-square 顺序交错，3 个 formal repeats。
 headline 同时报告 operator E2E/JCT、images/s、first-output、GPU per-device util、
 embedding checksum、最大 norm error 和 exactly-once，禁止只汇报吞吐。若 checksum/norm
 或行集合不一致，性能结果无效。

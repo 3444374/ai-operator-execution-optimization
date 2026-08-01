@@ -88,6 +88,14 @@ class ProjectRayWorkerPool:
     gpu_actors: tuple[object, ...]
 
 
+def stop_project_ray_worker_pool(worker_pool: ProjectRayWorkerPool) -> None:
+    """Terminate one per-query worker pool after warmup or formal execution."""
+    import ray
+
+    for actor in (*worker_pool.preprocessors, *worker_pool.gpu_actors):
+        ray.kill(actor, no_restart=True)
+
+
 def build_project_ray_worker_pool(
     *,
     model_revision: str,

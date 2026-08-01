@@ -128,8 +128,9 @@ source URI/共享文件路径只能作独立 baseline，不能与 BYTEA 轨道�
 - `ClipTensorActor`：常驻 GPU、只接收预处理 tensor、输出 projected + L2-normalized embedding。
 
 已新增 operator-E2E runner：`code/scripts/run_image_clip_e2e.py`，统一比较
-Daft Native、Daft Ray 与项目分阶段 Ray pipeline。它从 PostgreSQL BYTEA 读取开始，
-计时到最后一批 embedding 返回，包含 DB read/preprocess/transfer/forward/fan-in，
+Daft Native、Daft Ray 与项目分阶段 Ray pipeline。它从每个 query 的模型 worker
+建立/执行开始计时到最后一批 embedding 返回（Ray 框架启动排除），包含模型 worker
+建立、DB read/preprocess/transfer/forward/fan-in，
 但**暂不含 pgvector 写回**。因此可作强 baseline gate，不能冒充完整 system E2E。
 统一 pgvector sink、阶段 trace 和正式 system-E2E runner 仍待接入。
 
@@ -215,6 +216,8 @@ done
 `max_norm_error` 在 float32 归一化容差内、checksum 一致；没有残留 Ray/GPU 进程。
 正式 5000 行用 3 repeats，并按文档预注册的 Latin-square 顺序交错，不能连续跑完
 同一臂后直接比较，以免时间漂移成为混淆变量。
+Daft 的 UDF actor 按 query 重建；脚本因此也会在 project-Ray warmup 后销毁并重建
+模型 worker pool，同时记录 `worker_setup_s`，避免用持久 project actor 对比冷 Daft actor。
 
 ### 5.5 已完成：分阶段瓶颈画像
 **第一步不是写优化策略，是先画像——确认瓶颈到底在哪段、有多重。** 把 §4.3 的数据流分阶段计时：

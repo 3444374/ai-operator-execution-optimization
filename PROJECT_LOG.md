@@ -3321,7 +3321,7 @@
 
 ## 2026-08-01 图像 operator-E2E 强 baseline runner
 
-- **方法学分层**：新增 operator E2E（PG BYTEA read → 最后一批 embedding 返回）
+- **方法学分层**：新增 operator E2E（每 query 模型 worker 建立/执行开始 → 最后一批 embedding 返回，排除 Ray 框架启动）
   与 system E2E（再含统一 pgvector sink）两层边界；micro-profile 不再代替动机
   baseline，operator gate 也不冒充完整数据库作业时间。
 - **强 baseline**：新增同语义 `daft_native` 与 `daft_ray` 两臂，复用同一个
@@ -3334,3 +3334,6 @@
   first-output、images/s 和 per-device GPU util，不再只报告吞吐。
 - **运行顺序**：先 256 行三臂 gate，再 COCO val 5000、3 repeats、Latin-square
   交错 formal。首轮排除 writeback 以隔离执行器；通过后给三臂接相同 pgvector sink。
+- **生命周期校正**：远端最小 smoke 确认 Daft UDF actor 按 query 重建；project-Ray
+  formal 同样在 warmup 后销毁并重建 pool，并把 worker/model setup 计入 job JCT，
+  防止持久 project actor 与冷 Daft actor 的不公平比较。
