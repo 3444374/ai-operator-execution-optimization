@@ -16,6 +16,7 @@
 | `clip_preproc_stages_20260801.csv` | slow-pt processor method-wrapper 子阶段历史数据；resize ~1.3ms，旧 residual 为近似未归因时间，不能解释成具体转换步骤 |
 | `image_clip_preprocess_variants_20260801/` | 当前 production-np、legacy-pt、torchvision+PIL/tensor-decode 四臂交错复测；720 raw repeats、质量门禁、七步报告。fast path 仍未消除 CPU/GPU 阶段失衡 |
 | `image_clip_native_baseline_20260801/` | **图像 CLIP operator-E2E fused Daft 基线**：先校准 fractional-GPU actor shape，再做 5000 图×3 formal；项目阶段拆分相对 fused Native 单卡 +29.6%、fused Ray 双卡 +13.8%。不含 staged Daft/Ray Data、pgvector，且资源效率边界见报告 |
+| `image_host_path_screening_20260802/` | 2×4090 图像 host-path 单因素 screening + schema v8 代表点诊断；当前判为 CPU preprocess 与 driver/Ray submit 混合木桶，PCIe 仅初步 NO-GO，尚非 formal |
 
 ## Endpoint
 
@@ -47,6 +48,8 @@ sentence-transformers/all-MiniLM-L6-v2
 - 图像 CLIP operator-E2E 的当前正式入口是
   `image_clip_native_baseline_20260801/README.md`；它包含 PostgreSQL BYTEA 读取、
   preprocess、transfer、forward 和 fan-in，但尚不包含 pgvector sink。
+- 木桶机制的最新诊断入口是 `image_host_path_screening_20260802/README.md`；其中
+  1-run 曲线只能选择 formal 候选，不能替代三重复 baseline 排名。
 - `model_service_s` 是请求耗时加和；阶段占比优先看 `model_request_wall_s`、`operator_wall_s` 和 `writeback_s`。
 - `multi_endpoint_ray_motivation_20260712` 是 Ray 价值的初步动机测试，不是最终 Ray Serve / vLLM / 多 GPU 结论。
 

@@ -1086,3 +1086,35 @@ flush 决定未满 batch 最多等多久，`K_max` 决定已经关闭的 batch �
 逐请求真实 output token 与 finish reason 现在来自 vLLM 每个 choice 的 token
 IDs，不再把 submission aggregate usage 平均分摊。generic compatible endpoint
 默认不请求这个 vLLM 扩展，因此缺失时仍保持为空，而不是伪造数据。
+
+## 2026-08-02：图像链路的“木桶”不是简单等于 PCIe
+
+图像从 PostgreSQL 到 CLIP GPU 的实际位置依次是：数据库中的 JPEG bytes → Daft
+source iterator → driver 把 Arrow batch 转成 Python bytes → Ray CPU actor decode/resize/
+normalize → Ray GPU actor 接收 tensor → host copy/H2D → CLIP forward → embedding 返回。
+
+这次先修了两个会让实验不公平的隐藏变量：Ray `num_cpus=1` 只是准入 token，原先
+每个 actor 可能继承 32/64 个 Torch 线程；另外 project 的 Daft source 在线程上位于
+Ray cluster 外。现在每 worker Torch 固定 1/1，并把 external source threads 加入 host
+总预算。线程从隐式 32/64 收紧到 1/1 后，吞吐只下降约 2.6%，但 host busy 从约
+23.3 降到 7.8 cores，说明旧配置主要浪费 CPU，并没有形成相称收益。
+
+单因素 screening 的直观读法：
+
+- preprocess actor 1→2→4→8，冷吞吐 143→210→296→363 images/s，说明 CPU
+  preprocess 是真杠杆；
+- source threads 1→2→4→6，冷吞吐 359→366→368→345，说明多开 DB/Daft source
+  thread 不是主要答案；
+- active batches 4→8→16→32→64，冷吞吐 279→350→375→398→359，说明窗口太小
+  会断粮，但 64 只制造排队；
+- 16 preprocess actor + active32 的冷 E2E 最好（单次 11.45s），32 actor 查询稍快，
+  却因创建大量 processor/model worker 使 cold E2E 和 first output 明显变差。
+
+代表点把 driver 又拆成 source-next、materialize、submit。扣除模型池建立后，查询约
+3.13s；三段累计约 1.66s，而 79 批 preprocess actor-time 除以 16 actor 的理想下界约
+1.97s。H2D 与 forward p50 都约 7ms/batch，明显更小。因此目前最诚实的判定是
+“CPU preprocess + driver/Ray submission 混合木桶”，不是“PCIe 已经限制 GPU”。
+
+这些点都只有一次，作用是挑 formal 候选。下一步仍要在 20K unique images、至少
+60s 稳态、交错三重复下比较 Daft fused/staged、Ray Data staged 和 project；并用
+GPU-resident/pinned/pageable 表示阶梯正式判 PCIe GO/NO-GO。
