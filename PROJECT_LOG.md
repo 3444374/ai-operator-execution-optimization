@@ -3241,5 +3241,5 @@
   - B=128 单 batch：CPU preprocess 655 ms vs GPU embed 38 ms → 串行下 GPU 忙 ~5.5%、空转 ~94%。量化了 path-B（分离 CPU preprocess 与 GPU embed 并 overlap）的必要性。
 - **口径澄清**：ratio 分子不含 pg_read（pg_read 单独一列）；不算 DB 读 ratio 仍 13–17，结论不变。"数据搬运瓶颈"更准确是 **CPU 预处理计算瓶颈**。
 - **更正上条 #32 记录**：transformers 5.x `get_image_features` 取 **`.pooler_output`**（512d），非 `.image_embeds`（5.x 无此属性）；脚本与 `image_serving.md §3.3` 均已用对。
-- **规模边界 + redo 计划**：首跑 **1024 张 COCO val × 50 iters**（~75s，「试试」量级）；§6 规范为 **5K val + 更长测量**。**用户要求加大数据量 + 增加时间重做**——待办：① PG 载入完整 COCO val 5K（现仅 1024）；② 重跑 `--limit 5000 --iters 200`（~5min）拿 publishable 级稳定数字。结论（GO、CPU preprocess 主导）预期不翻转。
+- **规模边界 + redo（已完成 5K 规范跑）**：首跑 1024×50 iters 后，按用户要求加大规模重做——新增 `code/scripts/import_coco_images.py`（TRUNCATE+INSERT 单事务原子、记版本、path-B 可复用）载入完整 COCO val **5K**（815MB/33.8s），重跑 `--limit 5000 --iters 100 --batch-sizes 1,16,32,64,128,256`（~5min）。5K 结果 ratio **13.8–18.3**（B=256 渐近 ~18），p95 紧贴 p50，与 1024 首跑完全一致——结论（GO、CPU preprocess 主导）确认。pg_read 0.755ms/img（5K bulk 摊销）。
 - **同步**：`experiment_status_and_gaps.md` §0/§1.4（门禁过 + redo pending）；`image_clip_workload_lock §0`「暂停 build」→ 解除；`motivation/results/gpu/README.md` 索引；`code/AGENTS.md` 新增「代码质量总则（模块清晰 / 框架分明 / 低耦合 / 目标清晰）」。
