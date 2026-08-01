@@ -64,7 +64,8 @@
 | direct service | bounded direct CLIP、vLLM pooling | 绕过 DB/Daft/Ray 的容量与部署参照 |
 | fused framework | Daft Native/Ray：同一 GPU UDF 内 preprocess+forward | 已完成的粗资源边界诊断；必须校准 fractional-GPU actor shape |
 | staged framework | Daft-on-Ray CPU operators→GPU UDF、Ray Data CPU→GPU actor pool | 与项目最接近的强系统 baseline；必须独立校准 batch/actor/in-flight |
-| product SQL | PolarDB `classify_image` / `embed_image`、Snowflake image `AI_CLASSIFY` | 同模型/同硬件可部署时严格比较，否则只对齐 SQL 语义、质量与计时边界 |
+| product-integrated data engine | PolarDB Daft AI Functions `classify_image` / `embed_image` | 同一 Daft/Ray 架构家族的工业集成，不冒充独立数据库内核执行方式 |
+| managed product SQL | Snowflake / BigQuery image `AI_CLASSIFY` | 闭源托管路径只比较 E2E、成本、质量和失败率，不跨硬件比较 MFU |
 | project static | 冻结最佳 frame budget/active batches/actor shape | 动态策略的唯一主对照 |
 | project adaptive | state-aware request shaping/shared credit | 只报告相对 frozen static 的增量与 oracle regret |
 
@@ -77,6 +78,84 @@ OceanBase 4.5/4.6 官方 AI Function 当前确证的是文本 `AI_COMPLETE`、�
 仍受当前 AutoDL 容器门禁阻塞。公开 ImageNet/ResNet18 系统 benchmark 只提供方法模板：
 PolarDB 与 Ray 官方页面对 Daft/Ray Data 的 raw 排名方向并不一致，因此外部数字不跨
 硬件排名，必须在本项目机器上按同数据、同模型、同版本分别校准重跑。
+
+### 外部多模态公开 benchmark：事实、冲突与复现合同
+
+这组公开结果必须保留，因为它同时提供了行业参照和“为什么必须同机重跑”的直接证据，
+但不得把厂商 raw time 与本项目 AutoDL 数字直接排名。
+
+| 发布方 | workload / 数据规模 | Daft | Ray Data | Spark |
+|---|---|---:|---:|---:|
+| Ray Data 官方 | Image classification，约 800K ImageNet、ResNet18 | `195.3±2.5s` | `111.2±1.2s` | 未列 |
+| Ray Data 官方 | Document embedding，10K PDF | `51.3±1.3s` | `29.4±0.8s` | 未列 |
+| Ray Data 官方 | Audio transcription，113,800 FLAC、Whisper | `510.5±10.4s` | `312.6±3.1s` | 未列 |
+| Ray Data 官方 | Video object detection，10K frames、YOLO | `735.3±7.6s` | `623.0±1.4s` | 未列 |
+| PolarDB 官方 | Image classification，803,580 图 | `4m23s`（263s） | `23m30s`（1410s） | `45m07s`（2707s） |
+| PolarDB 官方 | Document embedding，10K PDF | `1m54s`（114s） | `14m32s`（872s） | `8m04s`（484s） |
+| PolarDB 官方 | Audio transcription，113,800 audio files | `6m22s`（382s） | `29m20s`（1760s） | `25m46s`（1546s） |
+| PolarDB 官方 | Video object detection，1,000 videos | `11m46s`（706s） | `25m54s`（1554s） | `3h36m`（12960s） |
+
+Ray 官方在其当前实现与资源下四项均为 Ray Data 更快；PolarDB 官方在 8 workers、
+每节点 1×24GB GPU、4 vCPU、16GB RAM 的环境中四项均为 Daft 更快。两边 workload
+名称相近但数据表示、pipeline、实例形状和测量边界未完全统一，因此这些数字不是一张
+可直接排名的总榜。它们共同证明：外部公开 benchmark 必须保留，但必须在项目机器上
+复现才能评价本项目。
+
+Ray 官方还报告同一 image-classification workload 的 Ray Data E2E 随单节点 CPU
+规格从 4 CPU 的 `456.2±39.9s`、8 CPU 的 `195.5±7.6s`、16 CPU 的
+`144.8±1.9s`，降到 32 CPU 的 `111.2±1.2s`；Daft 对应为
+`315.0±31.2s`、`202.0±2.2s`、`195.0±6.6s`、`195.3±2.5s`。这说明 CPU
+供给、pipeline 边界和 actor/batch 实现足以改变排名，公开 raw time 只能作为外部
+证据，不能替代同硬件复现。
+
+来源：[Ray Data Benchmarks](https://docs.ray.io/en/master/data/benchmark.html)、
+[PolarDB Daft 性能报告](https://help.aliyun.com/en/polardb/polardb-for-postgresql/daft-performance-benchmark)。
+
+正式复现分成两个输入轨道：
+
+1. **公开 file/object track**：尽量复用公开 ImageNet/ResNet18 数据、变换、模型、
+   输出和版本，比较官方 Daft、Ray Data、可运行时 Spark，以及项目 adapter。该轨道
+   回答“项目执行引擎相对公开 AI batch pipeline 如何”。
+2. **database-operator track**：相同图像写入同一 PostgreSQL 输入，所有 arm 统一
+   BYTEA 读取、结果物化和可选 sink，比较 Daft Native/Ray、Ray Data、强 bounded
+   pipeline 和项目。该轨道回答“数据库 AI 算子外部链路是否更好”。
+
+每个系统既报告 matched physical CPU/GPU budget，也报告 independently calibrated
+best-achievable；后者允许各系统使用自己的 batch、actor/task 和 pipeline 参数，不能
+强迫不同技术栈共享 Ray 概念。正式结果要求至少 1 warmup + 3 interleaved repeats、
+相同模型权重、相同预处理、相同输出集合和质量门禁，同时报告 E2E/JCT、images/s、
+first-output、P95/P99、CPU-core-seconds、GPU utilization/starvation、host/device
+memory、失败率和 top-1/top-5 accuracy。
+
+### 不同技术栈的产品与学术比较
+
+Daft/Ray 是本项目实现手段，不是 baseline 准入条件。外部系统按算子语义入选：
+
+| 系统族 | 候选 | 比较口径 |
+|---|---|---|
+| 同栈官方 runtime | Daft Native/Ray | 同机同模型严格排名，判断自定义调度相对官方实现的净收益 |
+| 不同栈开源 runtime | Ray Data；可运行时 Spark | 同机同模型严格排名，防止只赢同栈弱实现 |
+| 数据库调用外部 endpoint | OceanBase `AI_COMPLETE` / text `AI_EMBED` | 文本轨道同 endpoint 严格比较；当前容器门禁失败则保留工业参考 |
+| 工业同类集成 | PolarDB Daft AI Functions | 作为 Daft/Ray 架构家族的产品实现，不称为独立数据库内核方案 |
+| 闭源托管 SQL | Snowflake / BigQuery image `AI_CLASSIFY` | 同数据/标签比较查询 E2E、$/1K rows、质量、错误率和配额；不比较内部 GPU/MFU |
+| 学术语义系统 | LOTUS、Palimpzest、ThalamusDB | 使用 SemBench 对齐 operator、数据、ground truth、runtime/cost/F1；不与固定-work CLIP 只比吞吐 |
+
+SemBench 已对 LOTUS、Palimpzest、ThalamusDB 和 BigQuery 运行多模态 semantic
+filter/join/map/rank/classification。项目只接入与课题语义一致的 image classification、
+semantic map/filter 和 text generation 子集，并保留其 runtime、cost、quality、memory、
+failure 与扩展性协议；不为了扩大表格而实现与研究问题无关的全部算子。
+
+来源：[SemBench](https://sembench.github.io/SemBench/)、
+[Snowflake AI_CLASSIFY](https://docs.snowflake.com/en/sql-reference/functions/ai_classify)、
+[BigQuery AI.CLASSIFY](https://docs.cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-ai-classify)、
+[PolarDB AI Functions](https://help.aliyun.com/en/polardb/polardb-for-postgresql/ai-functions-and-supported-model-providers)、
+[OceanBase AI Function](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975)。
+
+当前 COCO/CLIP host-path matrix 只承担动机画像、actor/batch/active-window 校准和
+收益归因，不承担外部 baseline headline。若使用 COCO AI_CLASSIFY，必须补 annotations
+并报告 mAP、micro/macro-F1、precision/recall；若使用 ImageNet/ResNet18，报告
+top-1/top-5；若使用 embedding 做检索，报告 Recall@K、MRR/nDCG。digest、norm 和
+exactly-once 只是执行正确性门禁，不能代替任务质量。
 
 正式策略比较还必须区分：calibration 得到并在 held-out 上冻结的最佳静态
 baseline、每个 workload 事后 sweep 的 static oracle，以及仅冻结候选边界、

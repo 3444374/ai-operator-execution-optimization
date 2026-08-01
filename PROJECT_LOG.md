@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-08-02 外部多模态 baseline 体系与公开 benchmark 合同
+
+- 明确 Daft/Ray 是项目实现手段而非 baseline 准入条件；外部对照按 AI 算子语义
+  选择，拆为同栈官方 runtime、不同栈开源 runtime、数据库外部 endpoint、工业同类
+  集成、闭源托管 SQL 和学术语义系统。PolarDB Daft AI Functions 归入同架构家族；
+  Snowflake/BigQuery 归入托管产品；OceanBase 只进入文本轨道；SemBench 用于
+  LOTUS/Palimpzest/ThalamusDB/BigQuery 的质量—成本—时间比较。
+- 记录 Ray 与 PolarDB 官方的 image classification、document embedding、audio
+  transcription、video object detection 八组公开 Daft/Ray Data（及 PolarDB Spark）
+  数据。两方对 Daft/Ray Data 的排名方向相反，因此厂商 raw time 只作外部证据；正式
+  比较冻结为公开 file/object 复现轨道与 PostgreSQL database-operator 轨道，在同一
+  模型、数据、输出、物理资源和计时边界下独立校准后运行。
+- 当前 COCO/CLIP GPU starvation 和 host-path matrix 仅承担动机、校准和机制归因，
+  不替代市场/学术 baseline，也不单独承担项目优越性结论。
+
 ## 2026-08-02 图像 staged baseline、资源死锁修复与分类质量轨道
 
 - 5000-image project-Ray 侵入式诊断显示每批 p50 completion 650ms，其中 CPU
