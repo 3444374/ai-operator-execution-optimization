@@ -92,6 +92,9 @@ class ExecutionResult:
     batch_h2d_s: tuple[float, ...] = ()
     batch_forward_s: tuple[float, ...] = ()
     batch_d2h_s: tuple[float, ...] = ()
+    batch_source_next_s: tuple[float, ...] = ()
+    batch_driver_materialize_s: tuple[float, ...] = ()
+    batch_submit_s: tuple[float, ...] = ()
     encoded_bytes: int = 0
     input_tensor_bytes: int = 0
     device_input_bytes: int = 0
@@ -284,6 +287,9 @@ def run_project_ray_pipeline(
     batch_h2d_s: list[float] = []
     batch_forward_s: list[float] = []
     batch_d2h_s: list[float] = []
+    batch_source_next_s: list[float] = []
+    batch_driver_materialize_s: list[float] = []
+    batch_submit_s: list[float] = []
     encoded_bytes = 0
     input_tensor_bytes = 0
     device_input_bytes = 0
@@ -322,19 +328,30 @@ def run_project_ray_pipeline(
         if first_output_s is None:
             first_output_s = time.perf_counter() - started
 
-    batches = source_df.into_batches(batch_size).to_arrow_iter(results_buffer_size=2)
-    for record_batch in batches:
+    batches = iter(source_df.into_batches(batch_size).to_arrow_iter(results_buffer_size=2))
+    while True:
+        source_next_started = time.perf_counter()
+        try:
+            record_batch = next(batches)
+        except StopIteration:
+            break
+        batch_source_next_s.append(time.perf_counter() - source_next_started)
+
+        materialize_started = time.perf_counter()
         doc_ids = tuple(str(item.as_py()) for item in record_batch["doc_id"])
         encoded = [item.as_py() for item in record_batch["image"]]
+        batch_driver_materialize_s.append(time.perf_counter() - materialize_started)
         preprocessor = worker_pool.preprocessors[
             cpu_position % len(worker_pool.preprocessors)
         ]
         gpu_actor = worker_pool.gpu_actors[gpu_position % len(worker_pool.gpu_actors)]
         cpu_position += 1
         gpu_position += 1
+        submit_started = time.perf_counter()
         preprocessed = preprocessor.preprocess.remote(doc_ids, encoded)
         submitted_at = time.perf_counter()
         output = gpu_actor.embed.remote(preprocessed)
+        batch_submit_s.append(time.perf_counter() - submit_started)
         pending[output] = submitted_at
         submitted_batches += 1
         pending_batches_peak = max(pending_batches_peak, len(pending))
@@ -357,6 +374,9 @@ def run_project_ray_pipeline(
         batch_h2d_s=tuple(batch_h2d_s),
         batch_forward_s=tuple(batch_forward_s),
         batch_d2h_s=tuple(batch_d2h_s),
+        batch_source_next_s=tuple(batch_source_next_s),
+        batch_driver_materialize_s=tuple(batch_driver_materialize_s),
+        batch_submit_s=tuple(batch_submit_s),
         encoded_bytes=encoded_bytes,
         input_tensor_bytes=input_tensor_bytes,
         device_input_bytes=device_input_bytes,

@@ -27,6 +27,15 @@
 - 木桶实验继续消除联动变量：schema v7 新增独立 `--source-cpu-threads`，不再强制
   Daft native source runner threads 跟随 preprocess actor 数。后续 CPU actor 容量扫描
   固定 source threads，只改变 preprocess stage；兼容默认仍跟随 `--cpu-workers`。
+- 单次 screening：preprocess actor 1/2/4/8 的冷吞吐为 143/210/296/363 images/s；
+  source threads 1/2/4/6 为 359/366/368/345，数据源线程不是主要杠杆；active batches
+  4/8/16/32/64 为 279/350/375/398/359，32 后吞吐回落且批等待暴涨。16 CPU actor +
+  active32 得到当前最佳冷 E2E 11.45s/436.7 images/s；32 actor 虽查询阶段略快，
+  setup/first-output 恶化使冷 E2E 降到 318.0 images/s。以上均为 1-run screening，
+  不能当 formal headline。
+- 为定位 16-actor 点剩余 gap，schema v8 新增 driver `source_next`、Arrow/Python
+  materialize、Ray submit 分段；它们缩小候选范围，但仍不冒充 DB 内部或 Ray
+  serialization 的硬件级时间。
 
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过

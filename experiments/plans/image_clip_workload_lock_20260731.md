@@ -253,8 +253,8 @@ embedding checksum、最大 norm error 和 exactly-once，禁止只汇报吞吐�
 `source reader slots + CPU preprocess actors（如有）+ GPU/model actor CPU slots`。2026-08-02
 门禁复现了只分配 `4+2=6 CPU` 时 SQL reader 无 slot、0-row 永久等待的资源死锁；
 runner 对 Ray Data、Daft staged 和 fused Daft Ray 分别建立精确资源账本，并在
-`ray.init` 前按 CPU affinity 拒绝物理超卖；cluster/host/declaration 分项写入 schema v7。
-Ray `num_cpus` 只是准入资源，不是线程 quota；schema v7 同时冻结并记录每 worker
+`ray.init` 前按 CPU affinity 拒绝物理超卖；cluster/host/declaration 分项写入 schema v8。
+Ray `num_cpus` 只是准入资源，不是线程 quota；schema v8 同时冻结并记录每 worker
 Torch intra-op/inter-op 线程，正式 matched-resource 默认 `1/1`。若 actor 实测线程
 合同不一致则 fail closed，actor 数扫描与 per-actor thread 扫描分开报告。
 Ray cluster 外的 Daft native source threads 单列为 external CPU，并计入 host 总预算。

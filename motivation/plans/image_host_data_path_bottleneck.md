@@ -1,6 +1,6 @@
 # 图像 AI 算子系统木桶效应与 host data path 瓶颈判定实验
 
-状态：schema v7 诊断已启动；等待 CPU/active-batch 容量曲线与正式复测
+状态：schema v8 screening 已完成；等待代表点分段复测与 formal repeats
 
 适用 workload：PostgreSQL `BYTEA` → Daft → Ray → CLIP `AI_EMBED`
 
@@ -171,6 +171,8 @@ source runner threads 与 preprocess actor 数是不同物理变量，runner 用
 - pending batches、completion wall、actor service、preprocess 与
   `completion-preprocess-actor-service` 的未归因 wait；该 wait 只能定位候选 queue/
   framework gap，不能继续拆成 serialization 或调度器耗时；
+- driver 获取下一 Arrow batch、Arrow scalar/bytes materialize、Ray remote submit 分段；
+  `source_next` 仍可能包含 Daft/DB 等待与 iterator buffer 行为，不能冒充纯数据库时间；
 - output rows/exactly-once、全维 sum、rounded digest，以及抽样逐行 cosine/max-abs。
 
 不要把人为复制 payload 得到的大传输量作为 headline。若为了画机制曲线扩大 tensor，

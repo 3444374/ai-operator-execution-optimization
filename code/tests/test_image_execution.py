@@ -43,6 +43,18 @@ class EmbeddingAuditTest(unittest.TestCase):
 
 
 class ExecutionResultTest(unittest.TestCase):
+    def test_accepts_driver_stage_timings(self):
+        result = ExecutionResult(
+            total_s=1.0,
+            first_output_s=0.5,
+            audit={},
+            batch_source_next_s=(0.1,),
+            batch_driver_materialize_s=(0.02,),
+            batch_submit_s=(0.03,),
+        )
+
+        self.assertEqual(result.batch_source_next_s, (0.1,))
+
     def test_rejects_first_output_after_total(self):
         with self.assertRaisesRegex(ValueError, "first_output"):
             ExecutionResult(total_s=1.0, first_output_s=2.0, audit={})
