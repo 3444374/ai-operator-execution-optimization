@@ -415,7 +415,13 @@ def main() -> None:
         )
     elif args.arm == "ray_data_staged":
         ray.init(
-            num_cpus=max(args.cpu_workers + args.gpu_workers, 4),
+            # Ray Data keeps SQL readers and both callable actor pools live in
+            # one streaming graph. Reserve reader slots explicitly so fixed
+            # actor pools cannot starve the source and deadlock the pipeline.
+            num_cpus=max(
+                args.source_shards + args.cpu_workers + args.gpu_workers,
+                4,
+            ),
             num_gpus=args.gpu_workers,
             include_dashboard=False,
         )

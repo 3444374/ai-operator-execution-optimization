@@ -8,7 +8,11 @@ import time
 import numpy as np
 
 from .execution import EmbeddingAudit, ExecutionResult
-from .source import ImageSourceConfig, image_documents_query
+from .source import (
+    ImageSourceConfig,
+    image_documents_query,
+    split_image_source_config,
+)
 
 
 class RayDataClipPreprocessor:
@@ -101,18 +105,22 @@ def build_ray_data_clip_pipeline(
     import ray.data
 
     connection_factory = functools.partial(psycopg.connect, database_url)
-    dataset = ray.data.read_sql(
-        image_documents_query(source_config),
-        connection_factory,
-        shard_keys=["doc_id"],
-        # PostgreSQL does not implicitly cast BIGINT for MD5.  Its native
-        # hashint8 function preserves distributed SQL reads without changing
-        # the shared doc_id schema or silently falling back to one read task.
-        shard_hash_fn="hashint8",
-        override_num_blocks=source_shards,
-        concurrency=source_shards,
-        num_cpus=1,
-    )
+    # Ray SQL's hash sharding does not support this ordered LIMIT/OFFSET query
+    # reliably across PostgreSQL types.  Use the exact same non-overlapping
+    # contiguous ranges as the Daft source and union their lazy read tasks.
+    source_datasets = [
+        ray.data.read_sql(
+            image_documents_query(shard),
+            connection_factory,
+            override_num_blocks=1,
+            concurrency=1,
+            num_cpus=1,
+        )
+        for shard in split_image_source_config(source_config, source_shards)
+    ]
+    dataset = source_datasets[0]
+    for shard_dataset in source_datasets[1:]:
+        dataset = dataset.union(shard_dataset)
     cpu_pool = ray.data.ActorPoolStrategy(size=cpu_workers)
     dataset = dataset.map_batches(
         RayDataClipPreprocessor,
