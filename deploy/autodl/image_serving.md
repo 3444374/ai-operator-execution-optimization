@@ -294,9 +294,11 @@ Daft 的 UDF actor 按 query 重建；脚本因此也会在 project-Ray warmup �
 `motivation/results/gpu/image_clip_native_baseline_20260801/`。headline 为单卡
 project 1.296× Daft Native、双卡 project 1.138× Daft Ray。该结果不包含 pgvector，
 也不是相同 CPU reservation 的资源效率证明；复述时必须同时带上报告中的限制。
-Daft-on-Ray staged 与 Ray Data staged 已在 2026-08-02 完成 32-row 双卡 correctness
-gate，输出 digest 与 exactly-once 一致；该规模只证明可运行。下一轮仍须用至少 256 行
-验证全部 actor 被使用，再分别校准 batch、source shards、actor pool 与 in-flight。
+Daft-on-Ray staged 与 Ray Data staged 已在 2026-08-02 完成 256-row 双卡 resource/
+correctness gate，输出 digest 与 exactly-once 一致，两卡均激活；Ray Data stats 记录
+4 preprocess + 4 predictor tasks。该规模仍只证明可运行，不能比较两臂吞吐；下一轮
+分别校准 batch、source shards、actor pool 与 in-flight。紧凑报告见
+`feasibility/results/image_staged_resource_gate_20260802/`。
 
 **Ray 资源门禁**：固定 4 个 preprocess actor + 2 个 GPU actor 只给 6 CPU
 会把 SQL read task 饿死，表现为 0 rows 永久等待。runner 现在对 Ray Data 使用

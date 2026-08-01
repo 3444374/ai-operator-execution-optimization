@@ -284,9 +284,9 @@ direct ceiling 和 CPU-budget-normalized curve。正式报告：
 |---|---|
 | **bounded direct CLIP** | 物理上界（同协议绕过 Daft/Ray） |
 | **Daft fused `@daft.cls` Native/Ray** | 已完成的粗资源边界对照；不是 PolarDB staged pipeline 的替身 |
-| **Daft-on-Ray staged CPU→GPU** | ⭐ 与 ours 最接近的官方异构流水线强 baseline；runner arm 与 32-row gate 已通过，待校准/formal |
+| **Daft-on-Ray staged CPU→GPU** | ⭐ 与 ours 最接近的官方异构流水线强 baseline；256-row resource/correctness gate 已通过，待校准/formal |
 | **PolarDB `classify_image` / Snowflake image `AI_CLASSIFY`** | 产品 SQL 语义参照；闭源服务不能在本机匹配硬件时只比较接口、质量口径和 timing boundary，不把厂商 raw time 与本项目排名 |
-| **Ray Data staged CPU→GPU** | 官方 streaming batch / actor-pool 框架 baseline；runner arm 与 32-row gate 已通过，待校准/formal |
+| **Ray Data staged CPU→GPU** | 官方 streaming batch / actor-pool 框架 baseline；256-row resource/correctness gate 已通过，待校准/formal |
 | **pgvector 直采 / 无组织串行** | 弱 baseline（仅诊断） |
 | **ours：项目 scheduler（frame-budget + K_max + flush，观测 CLIP endpoint 队列）** | 主路径 |
 

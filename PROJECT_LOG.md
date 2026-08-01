@@ -2,9 +2,12 @@
 
 ## 2026-08-02 图像 staged baseline、资源死锁修复与分类质量轨道
 
-- 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；32-row 双卡 gate
-  均通过 exactly-once、512d、L2 norm，且完整 embedding digest 一致。该规模只证明
-  可运行，不能作为性能结果；至少 256 行 actor-use gate 后才进入独立校准/formal。
+- 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
+  随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过
+  exactly-once、512d、L2 norm，完整 embedding digest 一致且两卡激活；Ray Data
+  记录 4 preprocess + 4 predictor tasks。单次冷启动吞吐不能作为性能排名，下一步才是
+  两个 baseline 各自独立校准/formal。紧凑证据见
+  `feasibility/results/image_staged_resource_gate_20260802/`。
 - Ray Data 第二次门禁复现资源死锁：4 preprocess actor + 2 GPU actor 占满错误声明的
   6 CPU 后，SQL reader 无 slot，0 rows 无法推进。该次运行已中止并标记无效。
 - 资源修复升级为通用合同：Ray Data、Daft staged、fused Daft Ray 均显式计算
