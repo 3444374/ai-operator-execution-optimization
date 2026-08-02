@@ -47,7 +47,7 @@ raw/representative_stage_diagnostic/  # 16 actor + active32 的 schema v8 诊断
 典型命令：
 
 ```bash
-python code/scripts/run_image_clip_e2e.py \
+python code/scripts/experiments/run_image_clip_e2e.py \
   --arm project_ray \
   --model /root/autodl-tmp/models/clip-vit-base-patch32 \
   --pg-dsn "$DATABASE_URL" --workload-name coco_val2017 \

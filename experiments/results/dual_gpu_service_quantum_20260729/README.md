@@ -34,9 +34,9 @@ export ACTOR_WORKERS_PER_ENDPOINT=1
 export RAY_ACTOR_MAX_CONCURRENCY=256
 export RAY_WORKER_NUM_CPUS=0.5
 nohup /root/miniconda3/bin/python \
-  code/scripts/run_ai_operator_scenarios.py \
+  code/scripts/experiments/run_ai_operator_scenarios.py \
   --config deploy/autodl/dual_gpu_service_quantum.example.json \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir experiments/results/dual_gpu_service_quantum_20260729 \
   --health-url http://127.0.0.1:8000/health \

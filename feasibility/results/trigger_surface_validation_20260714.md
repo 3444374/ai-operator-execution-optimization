@@ -12,8 +12,8 @@ a GPU-backed performance result.
 
 | Script | Role |
 |---|---|
-| `code/scripts/postgres_ai_operator_profile.py` | Existing PostgreSQL 18.4 job-table simulated trigger chain |
-| `code/scripts/pgai_sql_operator_profile.py` | New pgai SQL trigger chain using `ai.ollama_embed(...)` |
+| `code/scripts/profiling/postgres_ai_operator_profile.py` | Existing PostgreSQL 18.4 job-table simulated trigger chain |
+| `code/scripts/profiling/pgai_sql_operator_profile.py` | New pgai SQL trigger chain using `ai.ollama_embed(...)` |
 
 ## Step 1: PostgreSQL 18.4 Health
 
@@ -28,7 +28,7 @@ stopped container with that name already existed. The container reports:
 Smoke command:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 256 --total-rows 256 `
   --db-fetch-rows 128 --ray-batch-rows 64 `
@@ -53,7 +53,7 @@ environment changes.
 Command:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\pgai_sql_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\pgai_sql_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5433/postgres `
   --setup --seed-rows 1024 --total-rows 1024 `
   --sql-batch-rows 256 --embedding-model all-minilm `
@@ -103,7 +103,7 @@ is that both trigger surfaces are runnable and produce 1024 embeddings.
 - pgai SQL can generate 384-dimensional embeddings for 1024 rows.
 - Ollama `all-minilm` is available in the Docker named volume
   `ai-operator-pgai_pgai_ollama`.
-- The new reusable script is `code/scripts/pgai_sql_operator_profile.py`.
+- The new reusable script is `code/scripts/profiling/pgai_sql_operator_profile.py`.
 
 ## Cannot Claim
 

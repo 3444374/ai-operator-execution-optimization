@@ -21,10 +21,10 @@ image AI_EMBED (CLIP) 锁定为首个 workload 后、建 runner 前，先回答�
 | Model | `openai/clip-vit-base-patch32`（本地，transformers 5.14.1） |
 | Embedding dim | 512（`.pooler_output`） |
 | GPU | AutoDL 2×4090（本实验单卡 `cuda`） |
-| Dataset | **COCO val2017，5000 张**（bytea 存 PG `image_documents.image`，doc_id 0..4999；载入 815 MB / 33.8 s via `code/scripts/import_coco_images.py`） |
+| Dataset | **COCO val2017，5000 张**（bytea 存 PG `image_documents.image`，doc_id 0..4999；载入 815 MB / 33.8 s via `code/scripts/data/import_coco_images.py`） |
 | torch | 2.11.0+cu130 |
 | 运行方式 | 单进程；warmup 5 + 100 measured batches / batch-size；batch-size ∈ {1,16,32,64,128,256} |
-| 脚本 | `code/scripts/profile_image_clip_bottleneck.py` |
+| 脚本 | `code/scripts/profiling/profile_image_clip_bottleneck.py` |
 
 数据流（分阶段计时）：
 
@@ -141,4 +141,4 @@ embedding parity 通过。该结果保留 E2E build 动机，但仍不证明 pat
 motivation/results/gpu/image_clip_bottleneck_profile_20260801.csv
 ```
 
-脚本：`code/scripts/profile_image_clip_bottleneck.py`（复现：`source ai-operator-runtime.env && python code/scripts/profile_image_clip_bottleneck.py --pg-dsn "$DATABASE_URL" --limit 5000 --iters 100 --batch-sizes 1,16,32,64,128,256`）。数据装载：`code/scripts/import_coco_images.py`。
+脚本：`code/scripts/profiling/profile_image_clip_bottleneck.py`（复现：`source ai-operator-runtime.env && python code/scripts/profiling/profile_image_clip_bottleneck.py --pg-dsn "$DATABASE_URL" --limit 5000 --iters 100 --batch-sizes 1,16,32,64,128,256`）。数据装载：`code/scripts/data/import_coco_images.py`。

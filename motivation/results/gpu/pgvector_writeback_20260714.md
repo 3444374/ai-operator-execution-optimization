@@ -22,7 +22,7 @@ vector sink.
 | pgvector | 0.8.2 |
 | Trigger/profile surface | `job_table` external execution profile |
 | Executor | Ray actor |
-| Model service | `code/scripts/local_embedding_server.py` |
+| Model service | `code/scripts/services/local_embedding_server.py` |
 | Endpoint | `http://localhost:8000/v1/embeddings` |
 | Model | `.cache/models/all-MiniLM-L6-v2` |
 | Endpoint health | `device=cuda`, `embedding_dim=384` |
@@ -46,7 +46,7 @@ max(vector_dims(embedding_vector)) = 384
 Only `--writeback-mode` changed across the three groups.
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 4096 --total-rows 4096 `
   --db-fetch-rows 512 --ray-batch-rows 256 `

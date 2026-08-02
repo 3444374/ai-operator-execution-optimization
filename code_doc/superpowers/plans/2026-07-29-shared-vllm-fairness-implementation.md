@@ -19,8 +19,8 @@ Files:
 
 - Modify `code/src/scheduling/submission_control/shared_credit.py`
 - Modify `code/src/scheduling/runtime/shared_credit_ray.py`
-- Modify `code/tests/test_shared_credit.py`
-- Modify `code/tests/test_shared_credit_ray.py`
+- Modify `code/tests/scheduling/test_shared_credit.py`
+- Modify `code/tests/scheduling/test_shared_credit_ray.py`
 
 Steps:
 
@@ -37,8 +37,8 @@ Steps:
 Files:
 
 - Modify `code/src/profiling/cli.py`
-- Modify `code/scripts/postgres_ai_operator_profile.py`
-- Modify `code/tests/test_postgres_profile_scheduling.py`
+- Modify `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Modify `code/tests/observability/test_postgres_profile_scheduling.py`
 
 Steps:
 
@@ -54,8 +54,8 @@ Steps:
 Files:
 
 - Add `code/src/shared_vllm_experiment.py`
-- Add `code/scripts/run_shared_vllm_experiment.py`
-- Add `code/tests/test_shared_vllm_experiment.py`
+- Add `code/scripts/experiments/run_shared_vllm_experiment.py`
+- Add `code/tests/experiments/test_shared_vllm_experiment.py`
 
 Steps:
 
@@ -83,7 +83,7 @@ Steps:
 Files:
 
 - Modify `code/src/shared_vllm_experiment.py`
-- Modify `code/tests/test_shared_vllm_experiment.py`
+- Modify `code/tests/experiments/test_shared_vllm_experiment.py`
 
 Steps:
 

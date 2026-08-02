@@ -28,7 +28,7 @@ root collides with Python's standard-library `code` module on Windows.
 
 **Files:**
 - Modify: `code/src/experiment_scenarios.py`
-- Modify: `code/tests/test_experiment_scenarios.py`
+- Modify: `code/tests/experiments/test_experiment_scenarios.py`
 
 **Interfaces:**
 - Consumes: `validate_service_metadata(metadata: Mapping[str, object]) -> None`
@@ -95,7 +95,7 @@ Expected: all scenario tests pass.
 - [ ] **Step 5: Commit the metadata gate**
 
 ```powershell
-git add code/src/experiment_scenarios.py code/tests/test_experiment_scenarios.py
+git add code/src/experiment_scenarios.py code/tests/experiments/test_experiment_scenarios.py
 git commit -m "test: require concrete vllm capacity metadata"
 ```
 
@@ -104,9 +104,9 @@ git commit -m "test: require concrete vllm capacity metadata"
 ### Task 2: Preserve organization metrics across request expansion
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
 - Modify: `code/src/profiling/schema.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Consumes: `_packing_run_metrics(batch_cost_units, batch_row_counts, *, capacity, row_cap, packing_scope, packing_algorithm) -> dict`
@@ -223,7 +223,7 @@ accepts the new ordered fields.
 - [ ] **Step 5: Commit organization metric semantics**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/src/profiling/schema.py code/tests/test_postgres_profile_scheduling.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/src/profiling/schema.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "feat: separate organization and submission metrics"
 ```
 
@@ -233,10 +233,10 @@ git commit -m "feat: separate organization and submission metrics"
 
 **Files:**
 - Modify: `code/src/profiling/cli.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Modify: `code/scripts/run_kmax_interference_experiment.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
-- Modify: `code/tests/test_kmax_interference_script.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Modify: `code/scripts/experiments/run_kmax_interference_experiment.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
+- Modify: `code/tests/experiments/test_kmax_interference_script.py`
 
 **Interfaces:**
 - Produces: `--ray-address`, defaulting to `RAY_ADDRESS` and otherwise empty.
@@ -350,7 +350,7 @@ Expected: all tests pass.
 - [ ] **Step 6: Commit the shared-cluster guard**
 
 ```powershell
-git add code/src/profiling/cli.py code/scripts/postgres_ai_operator_profile.py code/scripts/run_kmax_interference_experiment.py code/tests/test_postgres_profile_scheduling.py code/tests/test_kmax_interference_script.py
+git add code/src/profiling/cli.py code/scripts/profiling/postgres_ai_operator_profile.py code/scripts/experiments/run_kmax_interference_experiment.py code/tests/observability/test_postgres_profile_scheduling.py code/tests/experiments/test_kmax_interference_script.py
 git commit -m "fix: require one ray cluster for shared credit"
 ```
 
@@ -364,7 +364,7 @@ git commit -m "fix: require one ray cluster for shared credit"
 - Modify: `deploy/autodl/dual_gpu_data_organization.example.json`
 - Modify: `deploy/autodl/autodl.env.example`
 - Modify: `deploy/autodl/README.md`
-- Modify: `code/tests/test_experiment_scenarios.py`
+- Modify: `code/tests/experiments/test_experiment_scenarios.py`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_OUTLINE.md`
 - Modify: `experiments/plans/data_organization_batching.md`
@@ -486,7 +486,7 @@ curve.
 - [ ] **Step 6: Commit templates and docs**
 
 ```powershell
-git add deploy/autodl code/tests/test_experiment_scenarios.py PROJECT_INDEX.md PROJECT_OUTLINE.md experiments/plans PROJECT_LOG.md
+git add deploy/autodl code/tests/experiments/test_experiment_scenarios.py PROJECT_INDEX.md PROJECT_OUTLINE.md experiments/plans PROJECT_LOG.md
 git commit -m "docs: correct dual gpu experiment gates"
 ```
 
@@ -517,7 +517,7 @@ Expected: PASS.
 - [ ] **Step 2: Run full local verification**
 
 ```powershell
-..\.conda\pg-ai-profile\python.exe -m unittest discover -s tests -p "test_*.py"
+..\.conda\pg-ai-profile\python.exe -m unittest discover -s tests -t . -p "test_*.py"
 ..\.conda\pg-ai-profile\python.exe -m ruff check .
 git diff --check
 ```

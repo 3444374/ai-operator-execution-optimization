@@ -4,16 +4,13 @@
 
 实施状态：`codex/code-architecture-refactor` 已完成第 0–3 阶段源码路径迁移，并完成
 metrics、backend、shared-vLLM 三个第 4 阶段拆分；第 5 阶段 scripts/tests 物理分组
-尚未合并到 main。
+也已在审计分支完成，尚未合并到 main。
 
 ## 1. 结论
 
-`src` 的主要职责层和 import 边界已经落地，整个 `code/` 尚未整理完成。现状仍有：
-
-- `scripts/` 顶层 22 个入口，数据导入、服务、profile、正式实验和汇总脚本混放；
-- `tests/` 顶层 58 个测试文件，没有镜像生产代码的模块边界；
-- `data/materializers/text.py` 等生产文件仍需逐个按职责拆分；
-- 文档中的 400 余条复现命令仍指向扁平 scripts 路径，必须与脚本移动原子更新。
+`src` 的主要职责层、import 边界、scripts 域分组和 tests 镜像目录已经落地。仍需另行
+处理 `data/materializers/text.py` 等剩余大文件，并在服务器恢复后执行文本/图像 gate；
+这些工作不与本次纯路径迁移混合。
 
 重构采用两个正交维度：
 
@@ -232,7 +229,7 @@ experiments/baselines → 可以组合以上模块
 
 建议生产文件目标小于约 400 行；不是硬性凑行数，超过时必须能说明单一职责为何不可再拆。
 
-### 第 5 阶段：整理 scripts/tests 和删除兼容层
+### 第 5 阶段：整理 scripts/tests 和删除兼容层（审计分支已完成）
 
 - scripts 按 data/services/baselines/profiling/experiments/analysis 分组；
 - tests 镜像 `src`；
@@ -253,7 +250,6 @@ experiments/baselines → 可以组合以上模块
 
 ## 8. 推荐下一步
 
-源码域和导入边界已经收敛，metrics、backend 和 1,923 行 shared-vLLM 编排已经按
-单一职责拆分并由原包入口兼容导出。下一步执行第 5 阶段：物理整理 scripts/tests，
-并在同一提交中同步所有复现命令；`data/materializers/text.py` 等剩余大文件另行拆分，
-不与路径迁移混做。
+源码域、metrics/backend/shared-vLLM 拆分和 scripts/tests 物理分组已经收敛；文档中的
+可复现命令同步指向新路径，历史 raw manifest 保持原样以保全证据。下一步只处理
+`data/materializers/text.py` 等剩余大文件和远端 gate，不再建立扁平兼容入口。

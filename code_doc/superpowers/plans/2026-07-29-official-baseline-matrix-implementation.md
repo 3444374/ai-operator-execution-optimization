@@ -43,10 +43,10 @@ RTX 4090.
 - Modify: `code/src/model_backends.py`
 - Modify: `code/src/profiling/cli.py`
 - Modify: `code/src/profiling/ray.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
 - Modify: `code/src/profiling/schema.py`
-- Test: `code/tests/test_model_backends.py`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
+- Test: `code/tests/serving/test_model_backends.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Consumes: existing `CompletionEndpointResult`,
@@ -115,7 +115,7 @@ def test_chat_completion_endpoint_sends_one_message_per_prompt(self) -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_model_backends.py
+.conda\pg-ai-profile\python.exe code\tests\serving\test_model_backends.py
 ```
 
 Expected: FAIL because `call_compatible_completion_endpoint()` does not accept
@@ -173,7 +173,7 @@ def test_chat_protocol_is_recorded_in_dry_run_summary(self) -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
 ```
 
 Expected: FAIL because the CLI and summary schema do not expose the field.
@@ -196,9 +196,9 @@ paths, and add `completion_protocol` to the formal ordered summary schema.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_model_backends.py
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
-.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -p "test_*.py"
+.conda\pg-ai-profile\python.exe code\tests\serving\test_model_backends.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -t code -p "test_*.py"
 ```
 
 Expected: PASS.
@@ -206,7 +206,7 @@ Expected: PASS.
 - [x] **Step 7: Commit**
 
 ```powershell
-git add code/src/model_backends.py code/src/profiling/cli.py code/src/profiling/schema.py code/scripts/postgres_ai_operator_profile.py code/tests/test_model_backends.py code/tests/test_postgres_profile_scheduling.py
+git add code/src/model_backends.py code/src/profiling/cli.py code/src/profiling/schema.py code/scripts/profiling/postgres_ai_operator_profile.py code/tests/serving/test_model_backends.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "feat: support chat completion profiling"
 ```
 
@@ -219,7 +219,7 @@ git commit -m "feat: support chat completion profiling"
 - Create: `code/src/baselines/contracts.py`
 - Create: `code/src/baselines/manifests.py`
 - Create: `code/src/baselines/results.py`
-- Create: `code/tests/test_baseline_contracts.py`
+- Create: `code/tests/baselines/text/test_baseline_contracts.py`
 
 **Interfaces:**
 - Produces:
@@ -318,7 +318,7 @@ def test_manifest_rejects_duplicate_doc_id(self) -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_baseline_contracts.py
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_baseline_contracts.py
 ```
 
 Expected: import failure because `src.baselines` does not exist.
@@ -399,8 +399,8 @@ endpoint predicted-work skew and exactly-once status.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_baseline_contracts.py
-.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -p "test_*.py"
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_baseline_contracts.py
+.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -t code -p "test_*.py"
 ```
 
 Expected: PASS.
@@ -408,7 +408,7 @@ Expected: PASS.
 Commit:
 
 ```powershell
-git add code/src/baselines code/tests/test_baseline_contracts.py
+git add code/src/baselines code/tests/baselines/text/test_baseline_contracts.py
 git commit -m "feat: add immutable baseline contracts"
 ```
 
@@ -419,8 +419,8 @@ git commit -m "feat: add immutable baseline contracts"
 **Files:**
 - Create: `code/src/baselines/async_http.py`
 - Create: `code/src/baselines/vllm_bench.py`
-- Create: `code/tests/test_baseline_async_http.py`
-- Create: `code/tests/test_vllm_bench_adapter.py`
+- Create: `code/tests/baselines/text/test_baseline_async_http.py`
+- Create: `code/tests/baselines/text/test_vllm_bench_adapter.py`
 - Modify: `code/requirements.txt`
 
 **Interfaces:**
@@ -492,7 +492,7 @@ self.assertEqual({row.status for row in results}, {"completed"})
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_baseline_async_http.py
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_baseline_async_http.py
 ```
 
 Expected: import failure because the adapter does not exist.
@@ -577,9 +577,9 @@ to `code/requirements.txt`.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_baseline_async_http.py
-.conda\pg-ai-profile\python.exe code\tests\test_vllm_bench_adapter.py
-.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -p "test_*.py"
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_baseline_async_http.py
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_vllm_bench_adapter.py
+.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -t code -p "test_*.py"
 ```
 
 Expected: PASS.
@@ -587,7 +587,7 @@ Expected: PASS.
 Commit:
 
 ```powershell
-git add code/src/baselines/async_http.py code/src/baselines/vllm_bench.py code/tests/test_baseline_async_http.py code/tests/test_vllm_bench_adapter.py code/requirements.txt
+git add code/src/baselines/async_http.py code/src/baselines/vllm_bench.py code/tests/baselines/text/test_baseline_async_http.py code/tests/baselines/text/test_vllm_bench_adapter.py code/requirements.txt
 git commit -m "feat: add direct baseline adapters"
 ```
 
@@ -597,7 +597,7 @@ git commit -m "feat: add direct baseline adapters"
 
 **Files:**
 - Create: `code/src/baselines/official_runtime.py`
-- Create: `code/tests/test_official_runtime_adapters.py`
+- Create: `code/tests/baselines/text/test_official_runtime_adapters.py`
 - Modify: `code/requirements.txt`
 
 **Interfaces:**
@@ -634,7 +634,7 @@ def test_daft_prompt_options_are_same_request_chat_semantics(self) -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_official_runtime_adapters.py
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_official_runtime_adapters.py
 ```
 
 Expected: import failure because the module does not exist.
@@ -748,8 +748,8 @@ base unit suite still reports a clear optional-dependency error.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_official_runtime_adapters.py
-.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -p "test_*.py"
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_official_runtime_adapters.py
+.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -t code -p "test_*.py"
 ```
 
 Expected: PASS without starting Ray or contacting a model endpoint.
@@ -757,7 +757,7 @@ Expected: PASS without starting Ray or contacting a model endpoint.
 Commit:
 
 ```powershell
-git add code/src/baselines/official_runtime.py code/tests/test_official_runtime_adapters.py code/requirements.txt
+git add code/src/baselines/official_runtime.py code/tests/baselines/text/test_official_runtime_adapters.py code/requirements.txt
 git commit -m "feat: add official runtime baselines"
 ```
 
@@ -767,7 +767,7 @@ git commit -m "feat: add official runtime baselines"
 
 **Files:**
 - Create: `code/src/baselines/oceanbase.py`
-- Create: `code/tests/test_oceanbase_baseline.py`
+- Create: `code/tests/baselines/text/test_oceanbase_baseline.py`
 - Create: `deploy/autodl/oceanbase_ai_complete_gate.sql`
 - Modify: `code/requirements.txt`
 - Modify: `deploy/autodl/README.md`
@@ -813,7 +813,7 @@ def test_oceanbase_registration_targets_same_vllm_chat_endpoint(self) -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_oceanbase_baseline.py
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_oceanbase_baseline.py
 ```
 
 Expected: import failure because the adapter does not exist.
@@ -897,8 +897,8 @@ gate proves AI Function availability and the endpoint points to
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_oceanbase_baseline.py
-.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -p "test_*.py"
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_oceanbase_baseline.py
+.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -t code -p "test_*.py"
 ```
 
 Expected: PASS.
@@ -906,7 +906,7 @@ Expected: PASS.
 Commit:
 
 ```powershell
-git add code/src/baselines/oceanbase.py code/tests/test_oceanbase_baseline.py deploy/autodl/oceanbase_ai_complete_gate.sql deploy/autodl/README.md code/requirements.txt
+git add code/src/baselines/oceanbase.py code/tests/baselines/text/test_oceanbase_baseline.py deploy/autodl/oceanbase_ai_complete_gate.sql deploy/autodl/README.md code/requirements.txt
 git commit -m "feat: add oceanbase ai baseline"
 ```
 
@@ -915,11 +915,11 @@ git commit -m "feat: add oceanbase ai baseline"
 ### Task 6: Add the Unified CLI, Templates and Gate Validation
 
 **Files:**
-- Create: `code/scripts/run_official_baseline.py`
+- Create: `code/scripts/baselines/run_official_baseline.py`
 - Create: `code/src/baselines/cli.py`
 - Create: `code/src/baselines/gate.py`
-- Create: `code/tests/test_official_baseline_cli.py`
-- Create: `code/tests/test_official_baseline_gate.py`
+- Create: `code/tests/baselines/text/test_official_baseline_cli.py`
+- Create: `code/tests/baselines/text/test_official_baseline_gate.py`
 - Create: `deploy/autodl/dual_gpu_official_baseline_gate.example.json`
 - Create: `deploy/autodl/dual_gpu_official_baseline_calibration.example.json`
 - Modify: `code/scripts/README.md`
@@ -971,7 +971,7 @@ def test_run_shard_dry_run_is_side_effect_free(self) -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_official_baseline_cli.py
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_official_baseline_cli.py
 ```
 
 Expected: import failure because the CLI does not exist.
@@ -1036,9 +1036,9 @@ Calibration:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_official_baseline_cli.py
-.conda\pg-ai-profile\python.exe code\tests\test_official_baseline_gate.py
-.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -p "test_*.py"
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_official_baseline_cli.py
+.conda\pg-ai-profile\python.exe code\tests\baselines\text\test_official_baseline_gate.py
+.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -t code -p "test_*.py"
 .conda\pg-ai-profile\python.exe -m compileall -q code
 .conda\pg-ai-profile\Scripts\ruff.exe check code
 git diff --check
@@ -1049,7 +1049,7 @@ Expected: all PASS with no diff errors.
 - [x] **Step 8: Commit**
 
 ```powershell
-git add code/scripts/run_official_baseline.py code/src/baselines/cli.py code/src/baselines/gate.py code/tests/test_official_baseline_cli.py code/tests/test_official_baseline_gate.py deploy/autodl/dual_gpu_official_baseline_gate.example.json deploy/autodl/dual_gpu_official_baseline_calibration.example.json code/scripts/README.md code/README.md code/INFRA_STATUS.md PROJECT_INDEX.md PROJECT_LOG.md
+git add code/scripts/baselines/run_official_baseline.py code/src/baselines/cli.py code/src/baselines/gate.py code/tests/baselines/text/test_official_baseline_cli.py code/tests/baselines/text/test_official_baseline_gate.py deploy/autodl/dual_gpu_official_baseline_gate.example.json deploy/autodl/dual_gpu_official_baseline_calibration.example.json code/scripts/README.md code/README.md code/INFRA_STATUS.md PROJECT_INDEX.md PROJECT_LOG.md
 git commit -m "feat: add official baseline gate"
 ```
 

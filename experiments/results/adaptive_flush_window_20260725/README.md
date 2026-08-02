@@ -21,7 +21,7 @@ PostgreSQL 18.4 + pgvector 0.8.2
 `sharegpt_burstgpt`。共同参数为 token budget 6144、静态 `K_max=8`、生成上限
 16 tokens、低负载窗口 25 ms、压力窗口 50 ms、无写回。
 
-复现命令以 `code/scripts/postgres_ai_operator_profile.py` 为入口，核心参数为：
+复现命令以 `code/scripts/profiling/postgres_ai_operator_profile.py` 为入口，核心参数为：
 
 ```text
 --total-rows {64|512|1024}

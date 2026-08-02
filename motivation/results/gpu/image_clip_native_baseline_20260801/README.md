@@ -243,7 +243,7 @@ runner 已为下一次同目的实验改为 fail-explicit 记录：
 
 ## 复现入口
 
-- runner：`code/scripts/run_image_clip_e2e.py`
+- runner：`code/scripts/experiments/run_image_clip_e2e.py`
 - 部署/命令：`deploy/autodl/image_serving.md` §5.4
 - 正式原始结果：`raw/image_clip_native_baseline_formal_ba1b710/`
 - actor-shape screening：`raw/image_clip_daft_actor_shape_ba1b710/`

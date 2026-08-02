@@ -36,7 +36,7 @@
 
 ```bash
 cd code
-python scripts/run_ai_operator_scenarios.py \
+python scripts/experiments/run_ai_operator_scenarios.py \
   ../experiments/results/hol_age_diagnostic_512_20260727/scenario_config.json \
   --result-dir ../experiments/results/hol_age_diagnostic_512_20260727
 ```
@@ -45,7 +45,7 @@ python scripts/run_ai_operator_scenarios.py \
 
 ```bash
 cd code
-python scripts/run_kmax_interference_experiment.py \
+python scripts/experiments/run_kmax_interference_experiment.py \
   --background-rows 512 \
   --background-static-kmax 8,16 \
   --include-aimd --include-aimd-hol \

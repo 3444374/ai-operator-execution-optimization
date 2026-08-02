@@ -57,7 +57,7 @@ per-request 实际 output token P50/P95/P99 未采到；request trace 中相关�
 生成审计：
 
 ```bash
-python3 code/scripts/summarize_static_credit_workload_surface.py \
+python3 code/scripts/analysis/summarize_static_credit_workload_surface.py \
   --surface short=experiments/results/static_credit_prompt_length_screen_20260730/short/runs.csv \
   --surface long=experiments/results/static_credit_prompt_length_screen_20260730/long/runs.csv \
   --output experiments/results/static_credit_prompt_length_screen_20260730/decision_audit.json \

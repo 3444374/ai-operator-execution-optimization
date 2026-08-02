@@ -37,7 +37,7 @@
 
 **语义边界（写在代码注释里）**：两个 endpoint 仍是标准双卡比较；多于两个允许用于**动态分发请求的 routing 消融**（prefix_affinity / least_queued）。「每 endpoint 等量工作」的比较在 manifest 分片数上精确、超出分片数后变松——对 routing 消融可接受，**不能用于正式 pinned-comparison 排名**。
 
-**测试**：`code/tests/test_profile_manifest_guard.py` 新增 `test_profile_manifest_contract_accepts_more_than_two_endpoints`（endpoint_count=4 + prefix_affinity 通过）。既有「拒绝 1 endpoint」用例同步改为匹配 `"two endpoints"` 子串（新消息 `"at least two endpoints"` 仍命中）。
+**测试**：`code/tests/observability/test_profile_manifest_guard.py` 新增 `test_profile_manifest_contract_accepts_more_than_two_endpoints`（endpoint_count=4 + prefix_affinity 通过）。既有「拒绝 1 endpoint」用例同步改为匹配 `"two endpoints"` 子串（新消息 `"at least two endpoints"` 仍命中）。
 
 ### 2.2 配置调整：`/root/autodl-tmp/gates/prefix_cache_routing_4ep_1.5b.json`
 

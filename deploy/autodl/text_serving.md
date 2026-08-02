@@ -80,9 +80,9 @@ bash /root/autodl-tmp/ai-operator/deploy/autodl/start_endpoints.sh
 ```bash
 cd /root/autodl-tmp/ai-operator
 set -a; source /root/autodl-tmp/ai-operator-runtime.env; set +a
-nohup /root/miniconda3/bin/python code/scripts/run_ai_operator_scenarios.py \
+nohup /root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scenarios.py \
   --config /root/autodl-tmp/gates/<scenario>.json \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir <OUTPUT_DIR> \
   --health-url http://127.0.0.1:8000/health \

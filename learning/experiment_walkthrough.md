@@ -827,7 +827,7 @@ pgai_documents.text
 
 ### 14.5 对后续代码有什么用
 
-后续可以给 `code/scripts/postgres_ai_operator_profile.py` 增加一个触发面参数：
+后续可以给 `code/scripts/profiling/postgres_ai_operator_profile.py` 增加一个触发面参数：
 
 ```text
 --operator-surface job_table|pgai_sql
@@ -848,7 +848,7 @@ fan-in 和 writeback。
 
 ```text
 feasibility/results/trigger_surface_validation_20260714.md
-code/scripts/pgai_sql_operator_profile.py
+code/scripts/profiling/pgai_sql_operator_profile.py
 ```
 
 这次依次做了三件事：

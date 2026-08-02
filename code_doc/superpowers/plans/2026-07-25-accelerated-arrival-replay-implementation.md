@@ -34,7 +34,7 @@ and result artifacts beside the CSV.
 
 **Files:**
 - Modify: `code/src/scheduling/batching.py`
-- Modify: `code/tests/test_runtime_batching.py`
+- Modify: `code/tests/scheduling/test_runtime_batching.py`
 
 **Interfaces:**
 - Produces: `ArrivalReplayBatcher(..., arrival_time_scale: float = 1.0)`
@@ -49,7 +49,7 @@ the default scale preserves existing waits.
 - [ ] **Step 2: Verify RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_runtime_batching.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_runtime_batching.py
 ```
 
 Expected: `ArrivalReplayBatcher` rejects the unknown
@@ -80,23 +80,23 @@ next_deadline_s = replay_start_s + (
 - [ ] **Step 4: Verify GREEN**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_runtime_batching.py
-.conda\pg-ai-profile\python.exe code\tests\test_flush_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_runtime_batching.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_flush_policies.py
 ```
 
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/src/scheduling/batching.py code/tests/test_runtime_batching.py
+git add code/src/scheduling/batching.py code/tests/scheduling/test_runtime_batching.py
 git commit -m "feat: scale arrival replay time"
 ```
 
 ### Task 2: Profiler CLI and Artifact Recording
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
-- Modify: `code/tests/test_scheduling_daft_ray_contract.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
+- Modify: `code/tests/scheduling/test_scheduling_daft_ray_contract.py`
 - Modify: `code/scripts/README.md`
 
 **Interfaces:**
@@ -114,8 +114,8 @@ assert its raw `100` gap completes near `0.1` seconds.
 - [ ] **Step 2: Verify RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
 ```
 
 - [ ] **Step 3: Add the explicit profiler wiring**
@@ -138,15 +138,15 @@ Do not read it in the replay-disabled organization path.
 - [ ] **Step 4: Verify the complete code path**
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -p "test_*.py"
+.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -t code -p "test_*.py"
 .conda\pg-ai-profile\python.exe -m compileall -q code/src code/scripts
-.conda\pg-ai-profile\python.exe code/scripts/postgres_ai_operator_profile.py --help
+.conda\pg-ai-profile\python.exe code/scripts/profiling/postgres_ai_operator_profile.py --help
 ```
 
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/tests/test_postgres_profile_scheduling.py code/tests/test_scheduling_daft_ray_contract.py code/scripts/README.md
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/tests/observability/test_postgres_profile_scheduling.py code/tests/scheduling/test_scheduling_daft_ray_contract.py code/scripts/README.md
 git commit -m "feat: expose accelerated arrival replay"
 ```
 

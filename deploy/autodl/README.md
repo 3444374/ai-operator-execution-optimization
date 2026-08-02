@@ -179,9 +179,9 @@ test ! -e "$OUTPUT_DIR"
 test ! -e "$RUN_LOG"
 
 nohup /root/miniconda3/bin/python \
-  code/scripts/run_ai_operator_scenarios.py \
+  code/scripts/experiments/run_ai_operator_scenarios.py \
   --config "$CONFIG" \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir "$OUTPUT_DIR" \
   --health-url http://127.0.0.1:8000/health \
@@ -474,7 +474,7 @@ sudo -u postgres psql -d ai_operator -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 ## 7. workload 数据
 
-实验默认从 `data/raw/` 读(见 `code/scripts/import_ai_complete_workload.py:78-81`):
+实验默认从 `data/raw/` 读(见 `code/scripts/data/import_ai_complete_workload.py:78-81`):
 - ShareGPT:`data/raw/sharegpt_vicuna/ShareGPT_V3_unfiltered_cleaned_split.json`
 - BurstGPT:`data/raw/burstgpt/BurstGPT_1.csv`
 
@@ -617,17 +617,17 @@ trace 与 service metadata，再启动多小时正式实验。GPU 显存已分�
 
 ## 9. 跑首个多 endpoint 实验
 
-代码已支持多 endpoint(`code/scripts/postgres_ai_operator_profile.py:325` 的 `--completion-endpoint-urls`,round-robin 路由,无需改代码):
+代码已支持多 endpoint(`code/scripts/profiling/postgres_ai_operator_profile.py:325` 的 `--completion-endpoint-urls`,round-robin 路由,无需改代码):
 ```bash
 cd /root/autodl-tmp/ai-operator
 # 先灌数据
-python code/scripts/import_ai_complete_workload.py \
+python code/scripts/data/import_ai_complete_workload.py \
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator \
   --workload-name sharegpt_multiturn --max-rows 2048 --batch-rows 500 \
   --tokenizer-path /root/autodl-tmp/models/Qwen2.5-1.5B-Instruct \
   --max-model-len 2048 --completion-max-tokens 16
 # 单 endpoint baseline
-python code/scripts/postgres_ai_operator_profile.py \
+python code/scripts/profiling/postgres_ai_operator_profile.py \
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator \
   --setup --total-rows 128 --db-fetch-rows 128 --ray-batch-rows 8 \
   --operator ai_complete --executor ray_task --model-backend compatible_http \
@@ -637,7 +637,7 @@ python code/scripts/postgres_ai_operator_profile.py \
   --writeback-mode none --experiment-id cloud_single_ep \
   --output experiments/results/cloud_autodl/single_endpoint.csv
 # 双 endpoint(各占一张 GPU)
-python code/scripts/postgres_ai_operator_profile.py ... \
+python code/scripts/profiling/postgres_ai_operator_profile.py ... \
   --completion-endpoint-urls http://127.0.0.1:8000/v1/completions,http://127.0.0.1:8001/v1/completions \
   --experiment-id cloud_dual_ep \
   --output experiments/results/cloud_autodl/dual_endpoint.csv
@@ -701,7 +701,7 @@ python code/scripts/postgres_ai_operator_profile.py ... \
     完成后必须运行：
 
     ```bash
-    python code/scripts/summarize_static_k_workload_surface.py \
+    python code/scripts/analysis/summarize_static_k_workload_surface.py \
       --runs "$OUTPUT_DIR/runs.csv" \
       --output "$OUTPUT_DIR/adaptive_justification.json" \
       --require-pass
@@ -730,9 +730,9 @@ control 还要求 `SINGLE_COMPLETION_ENDPOINT_URL`、`SINGLE_MODEL_METRICS_URL`
 set -a
 source /root/autodl-tmp/ai-operator-runtime.env
 set +a
-python code/scripts/run_ai_operator_scenarios.py \
+python code/scripts/experiments/run_ai_operator_scenarios.py \
   --config deploy/autodl/dual_gpu_capacity_scaling.example.json \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/autodl-tmp/venvs/vllm-4090/bin/python \
   --output-dir experiments/results/dual_gpu_capacity_scaling \
   --health-url http://127.0.0.1:8000/health \
@@ -830,9 +830,9 @@ ray status
 test ! -e "$OUTPUT_DIR"
 test ! -e "$RUN_LOG"
 nohup /root/miniconda3/bin/python \
-  code/scripts/run_shared_vllm_experiment.py \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
   --config "$CONFIG" \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir "$OUTPUT_DIR" \
   --health-url http://127.0.0.1:8000/health \
@@ -1029,7 +1029,7 @@ cd /root/autodl-tmp/ai-operator && git pull
 ```bash
 source /root/miniconda3/etc/profile.d/conda.sh && conda activate base
 cd /root/autodl-tmp/ai-operator
-python code/scripts/run_ai_operator_scenarios.py ... --python-executable /root/miniconda3/bin/python ...
+python code/scripts/experiments/run_ai_operator_scenarios.py ... --python-executable /root/miniconda3/bin/python ...
 ```
 
 关键：`--python-executable` 必须指向 base conda 的 python(有 pyarrow/daft/ray)，**不能**指向 vLLM venv 的 python(只有 vllm)。
@@ -1164,7 +1164,7 @@ Ray Data Processor 和通过部署门禁的 OceanBase 才称 native baseline。�
 5. 每个 core cell 只运行一次，两个 endpoint shard 同时启动；输出写到
    `experiments/results/dual_gpu_official_baseline_gate_<unique-id>/` 下的独立
    cell/shard 目录。目录已存在即停止，禁止覆盖或 resume 成新 gate。
-   使用已提交的 `code/scripts/run_official_baseline_gate.py` 作为唯一 core
+   使用已提交的 `code/scripts/baselines/run_official_baseline_gate.py` 作为唯一 core
    编排入口；它按配置串行 cell、并行双 shard、保存命令/日志、等待队列归零并
    fail closed。禁止在远端临时手拼两个后台命令充当正式 gate runner。
    calibration 只允许用重复的 `--include-cell <id>` 选择已提交 cell，并用
@@ -1291,9 +1291,9 @@ RUN_LOG=/root/autodl-tmp/logs/dual_gpu_same_condition_project_equivalence_gate_<
 test ! -e "$OUTPUT_DIR"
 test ! -e "$RUN_LOG"
 nohup /root/miniconda3/bin/python \
-  code/scripts/run_ai_operator_scenarios.py \
+  code/scripts/experiments/run_ai_operator_scenarios.py \
   --config "$CONFIG" \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir "$OUTPUT_DIR" \
   --health-url http://127.0.0.1:8000/health \
@@ -1318,9 +1318,9 @@ RUN_LOG=/root/autodl-tmp/logs/dual_gpu_same_condition_project_calibration_<uniqu
 test ! -e "$OUTPUT_DIR"
 test ! -e "$RUN_LOG"
 nohup /root/miniconda3/bin/python \
-  code/scripts/run_ai_operator_scenarios.py \
+  code/scripts/experiments/run_ai_operator_scenarios.py \
   --config "$CONFIG" \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir "$OUTPUT_DIR" \
   --health-url http://127.0.0.1:8000/health \
@@ -1345,7 +1345,7 @@ PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d ai_operator \
 export PROJECT_FORMAL_REQUEST_MANIFEST=\
 /root/autodl-tmp/gates/<new-immutable-formal-manifest>.jsonl
 
-/root/miniconda3/bin/python code/scripts/run_official_baseline.py \
+/root/miniconda3/bin/python code/scripts/baselines/run_official_baseline.py \
   export-postgres-manifest \
   --database-url "$DATABASE_URL" \
   --workload-name "$SOURCE_WORKLOAD_NAME" \
@@ -1390,7 +1390,7 @@ request/submission/resource traces、0 failure、服务端 counter 和最终空�
 | gate 配置固定 5 个 core arm 与 C32，无法安全只跑 vLLM/bounded C64/C128 | 在远端临时复制 JSON 或手拼 shard 会绕过已提交配置、统一编排和审计证据 | 使用 runner 的 `--include-cell` 与 `--concurrency-override id=N`。未知、重复、非正或覆盖未选 cell 均 fail closed；每档使用新输出根并以 `resolved_config.json` 复核。 |
 | C32/C64 时 vLLM Bench 与 bounded 一致，C128 时 bounded 突然落后 | httpx 0.28.1 `AsyncClient` 默认总连接上限 100、keepalive 20；配置 C128 实际没有形成 128 并发。vLLM Bench 日志则确认 peak=128 | bounded client 必须显式把 `Limits.max_connections` 与 `max_keepalive_connections` 设为 `concurrency_per_endpoint × endpoint_count`，用回归测试锁定。修复后只在全新目录重跑被污染的 bounded C128；有效 vLLM C128 不重复。 |
 | gate 模板仍写本地历史模型 `qwen2.5-1.5b` | AutoDL 当前两个 endpoint 实际 served model 为 `qwen2.5-7b`；模板与服务元数据不一致会污染同条件比较 | 双 GPU official gate 模板改为 `qwen2.5-7b`。每次开机仍以 runtime env、endpoint 进程命令和 `/metrics` 为准，不从模板猜模型。 |
-| `python -m unittest code.tests...` 报标准库 `code` 没有 `tests` | 仓库目录名 `code/` 与 Python 标准库模块同名，不是测试实现失败 | 在仓库根使用 `python -m unittest discover -s code/tests -p 'test_x.py'`。远程封装先保存测试进程退出码，再清理临时环境变量，避免清理命令把失败状态覆盖成 0。 |
+| `python -m unittest code.tests...` 报标准库 `code` 没有 `tests` | 仓库目录名 `code/` 与 Python 标准库模块同名，不是测试实现失败 | 在仓库根使用 `python -m unittest discover -s code/tests -t code -p 'test_x.py'`。远程封装先保存测试进程退出码，再清理临时环境变量，避免清理命令把失败状态覆盖成 0。 |
 | project Chat template 展开时报缺失变量，或仍请求 `/v1/completions` | 旧 runtime env 只有 `COMPLETION_ENDPOINT_URLS`，没有同条件 Chat URL；直接复用会改变协议 | 从更新后的 `autodl.env.example` 补 `COMPLETION_CHAT_ENDPOINT_URLS=.../v1/chat/completions`，启动前打印解析后的模板参数；禁止用 legacy URL 兜底。 |
 | 512 校准后无法导出 disjoint 2,048-row formal | 当前 workload 只有 2,048 行，`OFFSET 512` 后数据库实测仅返回 1,536 行 | formal 前补齐并冻结另外 512 行或导入独立 held-out workload；profiler 使用 `--source-row-offset 512`。不得回用 `doc_id=0..511` 或复制行凑数。 |
 | project 64 行 gate 在 HTTP 前报 `target_output_tokens mismatch` | official manifest 将 trace target 裁到 `max_tokens=256`，project profiler 曾比较和调度未裁剪的数据库原值；大于 256 的行因此既校验失败又高估 active work | `trace_target_output` 的统一语义为 `min(target_output_tokens, completion_max_tokens)`；校验仍保留 fail-closed。修复提交通过本地完整测试后，必须在全新目录重新运行 64 行 gate，旧失败目录不覆盖。 |
@@ -1407,7 +1407,7 @@ upsert 补数。只读审计已确认：ShareGPT SHA-256
 同源由下述 2,048 行逐字段核验决定：
 
 ```bash
-/root/miniconda3/bin/python code/scripts/import_ai_complete_workload.py \
+/root/miniconda3/bin/python code/scripts/data/import_ai_complete_workload.py \
   --database-url "$DATABASE_URL" \
   --sharegpt-json "$EXACT_SHAREGPT_JSON" \
   --burstgpt-csv "$EXACT_BURSTGPT_CSV" \
@@ -1480,7 +1480,7 @@ submission 仍发送一个含多条完整 prompt 的 HTTP body。
 先跑 multi-prompt direct/bounded 固定行数 gate：
 
 ```bash
-/root/miniconda3/bin/python code/scripts/run_official_baseline_gate.py \
+/root/miniconda3/bin/python code/scripts/baselines/run_official_baseline_gate.py \
   --config deploy/autodl/dual_gpu_completions_baseline_gate.example.json \
   --driver-python /root/miniconda3/bin/python \
   --vllm-python /root/autodl-tmp/venvs/vllm-4090/bin/python \
@@ -1491,17 +1491,17 @@ submission 仍发送一个含多条完整 prompt 的 HTTP body。
 再分别运行 project Chat 与 Completions feeding 矩阵：
 
 ```bash
-/root/miniconda3/bin/python code/scripts/run_ai_operator_scenarios.py \
+/root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scenarios.py \
   --config deploy/autodl/dual_gpu_project_chat_feeding.example.json \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir experiments/results/dual_gpu_project_chat_feeding_<unique-id> \
   --health-url http://127.0.0.1:8000/health \
   --metrics-urls "$MODEL_METRICS_URLS"
 
-/root/miniconda3/bin/python code/scripts/run_ai_operator_scenarios.py \
+/root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scenarios.py \
   --config deploy/autodl/dual_gpu_project_completions_feeding.example.json \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir \
     experiments/results/dual_gpu_project_completions_feeding_<unique-id> \
@@ -1527,7 +1527,7 @@ CALIBRATION_ROOT=/root/autodl-tmp/gates/calibration_<commit>
 mkdir -p "$CALIBRATION_ROOT"
 
 /root/miniconda3/bin/python \
-  code/scripts/select_strategy_calibration.py \
+  code/scripts/analysis/select_strategy_calibration.py \
   --feeding-runs \
     "$ARTIFACT_ROOT/<project-completions-feeding>/runs.csv" \
   --direct-baseline-root \

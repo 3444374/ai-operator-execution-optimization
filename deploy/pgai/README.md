@@ -105,7 +105,7 @@ docker compose -f deploy/pgai/compose.yaml down
 
 ## 和现有画像脚本的关系
 
-当前 `code/scripts/postgres_ai_operator_profile.py` 仍然是：
+当前 `code/scripts/profiling/postgres_ai_operator_profile.py` 仍然是：
 
 ```text
 PostgreSQL documents table

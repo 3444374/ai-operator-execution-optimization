@@ -6,8 +6,8 @@ remaining work are summarized in `code/INFRA_STATUS.md`.
 全项目代码分层、文本/图像模态边界与分阶段迁移计划见
 [`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、
 文本/图像模态隔离、baseline 分层、旧兼容入口清理，以及 metrics、model backend、
-shared-vLLM 三个大文件的语义拆分已在 `codex/code-architecture-refactor` 分支落地；
-scripts/tests 镜像整理仍按计划作为独立阶段进行。
+shared-vLLM 三个大文件的语义拆分，以及 scripts/tests 镜像整理已在
+`codex/code-architecture-refactor` 分支落地。
 
 本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `feasibility/benchmarks/` 或 `motivation/benchmarks/`。
 
@@ -37,8 +37,10 @@ code/
 │   │   └── image/                ← provenance 与 Daft/Ray Data native graph
 │   ├── experiments/              ← calibration、scenario、shared-vLLM 编排
 │   └── infrastructure/           ← runtime env 与 runner lease
-├── scripts/                      ← 当前稳定 CLI；按域分组迁移是下一独立阶段
-├── tests/                        ← 当前 601 个 unittest；镜像目录迁移是下一独立阶段
+├── scripts/
+│   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner
+│   └── profiling|experiments|analysis/ ← 画像、正式编排、离线分析
+├── tests/                        ← 607 个 unittest；镜像 src/baseline/experiment 域
 ├── configs/                      ← vendor baseline pin 与可复现实验配置
 └── requirements.txt
 ```
@@ -67,10 +69,17 @@ ruff check code
 机制修复提交中混入大面积无语义格式 diff。新代码仍按 100 列、4 空格缩进和
 双引号格式编写。
 
+目录化后的完整测试发现必须指定 top-level，避免 `tests/experiments` 与
+`src/experiments` 被 Python 当成同名顶级包：
+
+```bash
+python -m unittest discover -s code/tests -t code -p 'test_*.py'
+```
+
 ## PostgreSQL data source backends
 
 `code/src/data/sources/postgres_text.py` defines the data entry boundary used by
-`code/scripts/postgres_ai_operator_profile.py`:
+`code/scripts/profiling/postgres_ai_operator_profile.py`:
 
 - `arrow_postgres`: baseline psycopg read plus Arrow table construction.
 - `daft_postgres`: Daft `read_sql` PostgreSQL entry; it requires `sqlglot` and
@@ -79,7 +88,7 @@ ruff check code
 Data entry can use either the baseline psycopg path or Daft:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --dry-run --data-source daft_postgres --organizer daft `
   --output tmp\postgres_profile_dry_run.csv
 ```
@@ -109,7 +118,7 @@ now lives under `code/src/`:
   subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per
   worker before any model request is sent.
 - Image workers apply the same rule inside long-lived Ray/Daft processes:
-  `run_image_clip_e2e.py` defaults Torch intra-op/inter-op pools to `1/1`,
+  `experiments/run_image_clip_e2e.py` defaults Torch intra-op/inter-op pools to `1/1`,
   records them in schema v8, and the project Ray pool verifies the observed
   values before admitting work. Ray `num_cpus` remains an admission token, not
   an OS thread quota; actor count and per-actor thread count are separate
@@ -262,18 +271,18 @@ allowing smaller HTTP/Ray completions to release active-work credit
 independently; an oversized row remains intact and is explicitly marked.
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
-.conda\pg-ai-profile\python.exe code\tests\test_ray_adapter.py
-.conda\pg-ai-profile\python.exe code\tests\test_adaptive_admission.py
-.conda\pg-ai-profile\python.exe code\tests\test_dynamic_admission.py
-.conda\pg-ai-profile\python.exe code\tests\test_flush_policies.py
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
-.conda\pg-ai-profile\python.exe code\tests\test_token_budget_controller.py
-.conda\pg-ai-profile\python.exe code\tests\test_shared_credit.py
-.conda\pg-ai-profile\python.exe code\tests\test_shared_credit_ray.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_models.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_ray_adapter.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_adaptive_admission.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_dynamic_admission.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_flush_policies.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_token_budget_controller.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_shared_credit.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_shared_credit_ray.py
 ```
 
 Typed AIMD, optional EWMA-AIMD, and PID controllers can now drive the same Ray
@@ -355,7 +364,7 @@ the age of the oldest in-flight submission and should not be described as pure
 pre-submit queueing delay.
 
 `code/src/experiments/scenarios/core.py` and
-`code/scripts/run_ai_operator_scenarios.py` provide deterministic formal-run
+`code/scripts/experiments/run_ai_operator_scenarios.py` provide deterministic formal-run
 interleaving, per-run service-idle gates, failure incidents, redacted commands,
 and an atomically updated manifest. Scenario argument strings may reference
 explicit `${ENV_NAME}` values; an unset variable fails before health checks or
@@ -376,7 +385,7 @@ live under `data/raw/` and are ignored by git; see `data/README.md`.
 Import 2048 local rows of the current main workload (sharegpt_multiturn, doc_id 300000-302047, target_output_tokens 1-256) without clearing existing `documents` rows:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\import_ai_complete_workload.py `
+.conda\pg-ai-profile\python.exe code\scripts\data\import_ai_complete_workload.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --workload-name sharegpt_multiturn `
   --start-doc-id 300000 `
@@ -400,14 +409,14 @@ Note: `sharegpt_burstgpt` (formerly 1024 rows, now 2048) is a legacy workload re
 `into_partitions`。这不是正式性能实验，不写入 `motivation/results/gpu/`。
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\daft_text_organizer_smoke.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\daft_text_organizer_smoke.py `
   --organizer daft --runner ray --rows 32 --batch-size 8 `
   --partition-mode into_partitions --partitions 4 `
   --output tmp\daft_text_organizer_smoke.csv
 ```
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_organizers.py
+.conda\pg-ai-profile\python.exe code\tests\planning\test_organizers.py
 ```
 
 ## PostgreSQL AI 算子链路画像
@@ -415,7 +424,7 @@ Note: `sharegpt_burstgpt` (formerly 1024 rows, now 2048) is a legacy workload re
 当前新增入口：
 
 ```text
-code/scripts/postgres_ai_operator_profile.py
+code/scripts/profiling/postgres_ai_operator_profile.py
 ```
 
 目标是采集 PostgreSQL 18 触发 AI 算子后的外部执行链路画像；当前本地运行
@@ -442,7 +451,7 @@ PostgreSQL documents/job table
 最小 dry-run：
 
 ```bash
-.venv/bin/python code/scripts/postgres_ai_operator_profile.py \
+.venv/bin/python code/scripts/profiling/postgres_ai_operator_profile.py \
   --dry-run \
   --output feasibility/results/postgres_ai_operator_profile_dry_run.csv
 ```
@@ -451,7 +460,7 @@ PostgreSQL documents/job table
 
 ```bash
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
-.venv/bin/python code/scripts/postgres_ai_operator_profile.py \
+.venv/bin/python code/scripts/profiling/postgres_ai_operator_profile.py \
   --setup \
   --seed-rows 10000 \
   --total-rows 10000 \
@@ -467,7 +476,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
 Daft organizer dry-run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --dry-run --executor python `
   --organizer daft --daft-runner native `
   --output tmp\postgres_profile_dry_run.csv
@@ -503,7 +512,7 @@ Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属�
 算子；bounded HTTP 是强因果对照，不冒充已有产品；OceanBase 缺少 AI Function
 能力时记为 capability failure，不阻塞 bounded HTTP 与官方 runtime 主矩阵。
 
-`src/calibration.py` 与 `scripts/select_strategy_calibration.py` 负责把 feeding、
+`src/calibration.py` 与 `scripts/analysis/select_strategy_calibration.py` 负责把 feeding、
 token-budget 和同协议 actor-shape 校准结果冻结为后续策略实验的机器可校验
 合同，避免示例环境中的历史默认值静默进入正式 data-organization、
 submission 或多 job 矩阵。

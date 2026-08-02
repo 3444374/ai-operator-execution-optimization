@@ -25,7 +25,7 @@
 **Files:**
 - Modify: `code/src/scheduling/ray_adapter.py`
 - Modify: `code/src/scheduling/__init__.py`
-- Test: `code/tests/test_ray_adapter.py`
+- Test: `code/tests/scheduling/test_ray_adapter.py`
 
 **Interfaces:**
 - Consumes: actor handles whose named method exposes `.remote(payload)`.
@@ -60,7 +60,7 @@ def test_actor_worker_pool_rejects_empty_workers() -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_ray_adapter.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\scheduling\test_ray_adapter.py -q
 ```
 
 Expected: FAIL because `ActorWorkerPoolSubmitter` is not defined.
@@ -101,7 +101,7 @@ Export the class from `code/src/scheduling/__init__.py`.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_ray_adapter.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\scheduling\test_ray_adapter.py -q
 ```
 
 Expected: PASS.
@@ -109,7 +109,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/src/scheduling/ray_adapter.py code/src/scheduling/__init__.py code/tests/test_ray_adapter.py
+git add code/src/scheduling/ray_adapter.py code/src/scheduling/__init__.py code/tests/scheduling/test_ray_adapter.py
 git commit -m "feat: add endpoint-local actor submitter"
 ```
 
@@ -120,7 +120,7 @@ git commit -m "feat: add endpoint-local actor submitter"
 **Files:**
 - Create: `code/src/scheduling/ray_runtime.py`
 - Modify: `code/src/scheduling/__init__.py`
-- Create: `code/tests/test_ray_runtime.py`
+- Create: `code/tests/scheduling/test_ray_runtime.py`
 
 **Interfaces:**
 - Produces: `RayWorkerOptions(num_cpus: float, actor_max_concurrency: int)`.
@@ -157,7 +157,7 @@ def test_worker_options_require_positive_cpu(num_cpus: float) -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_ray_runtime.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\scheduling\test_ray_runtime.py -q
 ```
 
 Expected: FAIL because the module does not exist.
@@ -194,7 +194,7 @@ class RayWorkerOptions:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_ray_runtime.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\scheduling\test_ray_runtime.py -q
 ```
 
 Expected: PASS.
@@ -202,7 +202,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/src/scheduling/ray_runtime.py code/src/scheduling/__init__.py code/tests/test_ray_runtime.py
+git add code/src/scheduling/ray_runtime.py code/src/scheduling/__init__.py code/tests/scheduling/test_ray_runtime.py
 git commit -m "feat: define Ray HTTP worker resources"
 ```
 
@@ -211,8 +211,8 @@ git commit -m "feat: define Ray HTTP worker resources"
 ### Task 3: CLI resolution and validation
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Adds CLI: `--actor-workers-per-endpoint` (integer, default `0`).
@@ -246,7 +246,7 @@ def test_multi_endpoint_actor_requires_explicit_workers() -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_postgres_profile_scheduling.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\observability\test_postgres_profile_scheduling.py -q
 ```
 
 Expected: FAIL because the new parsed attributes and resolver do not exist.
@@ -283,7 +283,7 @@ database or Ray initialization.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_postgres_profile_scheduling.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\observability\test_postgres_profile_scheduling.py -q
 ```
 
 Expected: PASS.
@@ -291,7 +291,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/tests/test_postgres_profile_scheduling.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "feat: expose Ray actor worker settings"
 ```
 
@@ -300,8 +300,8 @@ git commit -m "feat: expose Ray actor worker settings"
 ### Task 4: Build endpoint-local actor pools
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Changes `submit_with_backpressure` to consume
@@ -344,7 +344,7 @@ def test_two_actor_workers_remain_one_service_endpoint() -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_postgres_profile_scheduling.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\observability\test_postgres_profile_scheduling.py -q
 ```
 
 Expected: FAIL because `submit_with_backpressure` still consumes a flat actor list.
@@ -377,7 +377,7 @@ Add `endpoint_count`, `actor_worker_count`, and semicolon-separated
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_postgres_profile_scheduling.py code\tests\test_scheduler.py code\tests\test_ray_adapter.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\observability\test_postgres_profile_scheduling.py code\tests\scheduling\test_scheduler.py code\tests\scheduling\test_ray_adapter.py -q
 ```
 
 Expected: PASS.
@@ -385,7 +385,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/tests/test_postgres_profile_scheduling.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "refactor: separate endpoints from Ray actors"
 ```
 
@@ -394,8 +394,8 @@ git commit -m "refactor: separate endpoints from Ray actors"
 ### Task 5: Apply Ray options during task and actor construction
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Consumes: `RayWorkerOptions`.
@@ -436,7 +436,7 @@ def test_http_task_definition_disables_retry() -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_postgres_profile_scheduling.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\observability\test_postgres_profile_scheduling.py -q
 ```
 
 Expected: FAIL because `_remote_actor_class` and `_remote_task` do not exist.
@@ -489,8 +489,8 @@ RayOllamaCompletionActor = _remote_actor_class(
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_postgres_profile_scheduling.py code\tests\test_model_backends.py -q
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py --help
+.conda\pg-ai-profile\python.exe -m pytest code\tests\observability\test_postgres_profile_scheduling.py code\tests\serving\test_model_backends.py -q
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py --help
 ```
 
 Expected: tests PASS; help lists all three new options.
@@ -498,7 +498,7 @@ Expected: tests PASS; help lists all three new options.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/tests/test_postgres_profile_scheduling.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "feat: apply Ray worker resource options"
 ```
 
@@ -507,14 +507,14 @@ git commit -m "feat: apply Ray worker resource options"
 ### Task 6: Result schema, documentation, and full verification
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
 - Modify: `code/README.md`
 - Modify: `code/scripts/README.md`
 - Modify: `code/INFRA_STATUS.md`
 - Modify: `learning/README.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Result fields:
@@ -546,7 +546,7 @@ def test_dry_run_records_ray_execution_contract() -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_postgres_profile_scheduling.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\observability\test_postgres_profile_scheduling.py -q
 ```
 
 Expected: FAIL because the fields are absent.
@@ -578,7 +578,7 @@ Run:
 ```powershell
 .conda\pg-ai-profile\python.exe -m compileall -q code
 .conda\pg-ai-profile\python.exe -m pytest code\tests -q
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py --dry-run --executor ray_actor --actor-workers-per-endpoint 4 --ray-actor-max-concurrency 2 --ray-worker-num-cpus 0.25 --output .test-tmp\ray_actor_dry_run.csv
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py --dry-run --executor ray_actor --actor-workers-per-endpoint 4 --ray-actor-max-concurrency 2 --ray-worker-num-cpus 0.25 --output .test-tmp\ray_actor_dry_run.csv
 ```
 
 Expected:
@@ -591,6 +591,6 @@ Expected:
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/README.md code/scripts/README.md code/INFRA_STATUS.md learning/README.md PROJECT_INDEX.md PROJECT_LOG.md code/tests/test_postgres_profile_scheduling.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/README.md code/scripts/README.md code/INFRA_STATUS.md learning/README.md PROJECT_INDEX.md PROJECT_LOG.md code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "docs: record Ray execution contract"
 ```

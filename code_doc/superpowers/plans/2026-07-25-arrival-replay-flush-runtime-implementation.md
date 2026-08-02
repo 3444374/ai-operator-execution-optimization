@@ -57,7 +57,7 @@ and vLLM services and are intentionally not marked as results here.
 **Files:**
 - Create: `code/src/scheduling/batching.py`
 - Modify: `code/src/scheduling/__init__.py`
-- Create: `code/tests/test_runtime_batching.py`
+- Create: `code/tests/scheduling/test_runtime_batching.py`
 
 **Interfaces:**
 - `RowArrival(row_id, arrival_s, prompt_tokens, estimated_output_tokens,
@@ -89,7 +89,7 @@ requires closing first.
 - [ ] **Step 2: Verify RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_runtime_batching.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_runtime_batching.py
 ```
 
 Expected: import failure because `src.scheduling.batching` does not exist.
@@ -102,14 +102,14 @@ row and token totals, reset on close, and contain no engine imports.
 - [ ] **Step 4: Verify GREEN and engine independence**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_runtime_batching.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_runtime_batching.py
 rg -n "import (daft|pyarrow|ray|psycopg)|from (daft|pyarrow|ray|psycopg)" code/src/scheduling
 ```
 
 - [ ] **Step 5: Commit Task 1**
 
 ```powershell
-git add code/src/scheduling/batching.py code/src/scheduling/__init__.py code/tests/test_runtime_batching.py
+git add code/src/scheduling/batching.py code/src/scheduling/__init__.py code/tests/scheduling/test_runtime_batching.py
 git commit -m "feat: add pending batch builder"
 ```
 
@@ -117,7 +117,7 @@ git commit -m "feat: add pending batch builder"
 
 **Files:**
 - Modify: `code/src/scheduling/batching.py`
-- Modify: `code/tests/test_runtime_batching.py`
+- Modify: `code/tests/scheduling/test_runtime_batching.py`
 
 **Interfaces:**
 - `ReplayClock.now() -> float`
@@ -146,7 +146,7 @@ Assert emitted groups and fake-clock deadlines, not only policy calls.
 - [ ] **Step 2: Verify RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_runtime_batching.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_runtime_batching.py
 ```
 
 - [ ] **Step 3: Implement the lazy replay iterator**
@@ -160,23 +160,23 @@ deadline. Flush the final pending rows without dropping them. Only
 - [ ] **Step 4: Verify GREEN and regressions**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_runtime_batching.py
-.conda\pg-ai-profile\python.exe code\tests\test_flush_policies.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_runtime_batching.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_flush_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py
 ```
 
 - [ ] **Step 5: Commit Task 2**
 
 ```powershell
-git add code/src/scheduling/batching.py code/tests/test_runtime_batching.py
+git add code/src/scheduling/batching.py code/tests/scheduling/test_runtime_batching.py
 git commit -m "feat: replay arrivals through flush policies"
 ```
 
 ### Task 3: Arrow Adapter and Profiler CLI Wiring
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - CLI: `--arrival-replay`, `--flush-policy
@@ -196,7 +196,7 @@ missing queue metrics still use the hard maximum.
 - [ ] **Step 2: Verify RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
 ```
 
 - [ ] **Step 3: Wire the explicit replay path**
@@ -210,24 +210,24 @@ unchanged.
 - [ ] **Step 4: Verify GREEN, help, and dry-run**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py --help
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py --dry-run --executor ray_task --source-order arrival_time --arrival-replay --flush-policy fixed_timeout --output tmp\arrival_replay_dry_run.csv
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py --help
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py --dry-run --executor ray_task --source-order arrival_time --arrival-replay --flush-policy fixed_timeout --output tmp\arrival_replay_dry_run.csv
 ```
 
 - [ ] **Step 5: Commit Task 3**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/tests/test_postgres_profile_scheduling.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "feat: wire arrival replay into profiler"
 ```
 
 ### Task 4: Real Daft-to-Ray Replay Contract
 
 **Files:**
-- Modify: `code/tests/test_scheduling_daft_ray_contract.py`
+- Modify: `code/tests/scheduling/test_scheduling_daft_ray_contract.py`
 - Modify: `code/src/scheduling/ray_adapter.py` and
-  `code/tests/test_ray_adapter.py` only if timeout-aware collection is required.
+  `code/tests/scheduling/test_ray_adapter.py` only if timeout-aware collection is required.
 
 - [ ] **Step 1: Write the failing contract test**
 
@@ -239,7 +239,7 @@ generous Windows tolerance.
 - [ ] **Step 2: Verify RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
 ```
 
 - [ ] **Step 3: Add only minimal adapter support**
@@ -250,14 +250,14 @@ support while retaining the blocking default.
 - [ ] **Step 4: Verify GREEN and full suite**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
-.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -p "test_*.py"
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -t code -p "test_*.py"
 ```
 
 - [ ] **Step 5: Commit Task 4**
 
 ```powershell
-git add code/tests/test_scheduling_daft_ray_contract.py code/src/scheduling/ray_adapter.py code/tests/test_ray_adapter.py
+git add code/tests/scheduling/test_scheduling_daft_ray_contract.py code/src/scheduling/ray_adapter.py code/tests/scheduling/test_ray_adapter.py
 git commit -m "test: validate arrival replay through daft and ray"
 ```
 
@@ -293,8 +293,8 @@ artifacts before formal repeats.
 
 ```powershell
 .conda\pg-ai-profile\python.exe -m compileall -q code/src code/scripts
-.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -p "test_*.py"
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py --help
+.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -t code -p "test_*.py"
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py --help
 ```
 
 - [ ] **Step 4: Inspect the complete diff**

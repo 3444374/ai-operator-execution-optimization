@@ -31,10 +31,10 @@
 - Create `code/src/scheduling/admission.py`: fixed in-flight admission baseline.
 - Create `code/src/scheduling/routing.py`: deterministic round-robin endpoint baseline.
 - Create `code/src/scheduling/scheduler.py`: synchronous scheduler and submission-adapter protocol.
-- Create `code/tests/test_scheduling_models.py`: schema and topology behavior.
-- Create `code/tests/test_scheduling_policies.py`: static admission and routing behavior.
-- Create `code/tests/test_scheduler.py`: deterministic scheduler and invariants.
-- Create `code/tests/test_scheduling_daft_ray_contract.py`: real Daft payload
+- Create `code/tests/scheduling/test_scheduling_models.py`: schema and topology behavior.
+- Create `code/tests/scheduling/test_scheduling_policies.py`: static admission and routing behavior.
+- Create `code/tests/scheduling/test_scheduler.py`: deterministic scheduler and invariants.
+- Create `code/tests/scheduling/test_scheduling_daft_ray_contract.py`: real Daft payload
   and Ray task contract smoke.
 - Modify `code/README.md`: scheduling package entry.
 - Modify `PROJECT_INDEX.md`: new source/test entries.
@@ -45,7 +45,7 @@
 **Files:**
 - Create: `code/src/scheduling/__init__.py`
 - Create: `code/src/scheduling/models.py`
-- Test: `code/tests/test_scheduling_models.py`
+- Test: `code/tests/scheduling/test_scheduling_models.py`
 
 **Interfaces:**
 - Produces: `BatchRequest`, `PayloadEnvelope`, `EndpointSnapshot`, `TopologySnapshot`, `AdmissionDecision`, `RoutingDecision`, `SubmissionCompletion`.
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_models.py
 ```
 
 Expected: import failure because `src.scheduling.models` does not exist.
@@ -273,7 +273,7 @@ __all__ = [
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_models.py
 ```
 
 Expected: `Ran 3 tests ... OK`.
@@ -281,7 +281,7 @@ Expected: `Ran 3 tests ... OK`.
 - [ ] **Step 5: Commit Task 1**
 
 ```powershell
-git add code/src/scheduling/__init__.py code/src/scheduling/models.py code/tests/test_scheduling_models.py
+git add code/src/scheduling/__init__.py code/src/scheduling/models.py code/tests/scheduling/test_scheduling_models.py
 git commit -m "feat: add typed scheduling models"
 ```
 
@@ -290,7 +290,7 @@ git commit -m "feat: add typed scheduling models"
 **Files:**
 - Create: `code/src/scheduling/topology.py`
 - Create: `code/src/scheduling/routing.py`
-- Test: `code/tests/test_scheduling_policies.py`
+- Test: `code/tests/scheduling/test_scheduling_policies.py`
 - Modify: `code/src/scheduling/__init__.py`
 
 **Interfaces:**
@@ -372,7 +372,7 @@ if __name__ == "__main__":
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_policies.py
 ```
 
 Expected: import failure for `src.scheduling.routing`.
@@ -442,7 +442,7 @@ Add both names to `__all__`.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_policies.py
 ```
 
 Expected: `Ran 3 tests ... OK`.
@@ -450,7 +450,7 @@ Expected: `Ran 3 tests ... OK`.
 - [ ] **Step 5: Commit Task 2**
 
 ```powershell
-git add code/src/scheduling/__init__.py code/src/scheduling/topology.py code/src/scheduling/routing.py code/tests/test_scheduling_policies.py
+git add code/src/scheduling/__init__.py code/src/scheduling/topology.py code/src/scheduling/routing.py code/tests/scheduling/test_scheduling_policies.py
 git commit -m "feat: add endpoint topology and routing baseline"
 ```
 
@@ -458,7 +458,7 @@ git commit -m "feat: add endpoint topology and routing baseline"
 
 **Files:**
 - Create: `code/src/scheduling/admission.py`
-- Modify: `code/tests/test_scheduling_policies.py`
+- Modify: `code/tests/scheduling/test_scheduling_policies.py`
 - Modify: `code/src/scheduling/__init__.py`
 
 **Interfaces:**
@@ -501,7 +501,7 @@ from src.scheduling.admission import StaticAdmissionController  # noqa: E402
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_policies.py
 ```
 
 Expected: import failure for `src.scheduling.admission`.
@@ -543,7 +543,7 @@ Export `StaticAdmissionController` from `code/src/scheduling/__init__.py`.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_policies.py
 ```
 
 Expected: `Ran 6 tests ... OK`.
@@ -551,7 +551,7 @@ Expected: `Ran 6 tests ... OK`.
 - [ ] **Step 5: Commit Task 3**
 
 ```powershell
-git add code/src/scheduling/__init__.py code/src/scheduling/admission.py code/tests/test_scheduling_policies.py
+git add code/src/scheduling/__init__.py code/src/scheduling/admission.py code/tests/scheduling/test_scheduling_policies.py
 git commit -m "feat: add static admission baseline"
 ```
 
@@ -559,7 +559,7 @@ git commit -m "feat: add static admission baseline"
 
 **Files:**
 - Create: `code/src/scheduling/scheduler.py`
-- Create: `code/tests/test_scheduler.py`
+- Create: `code/tests/scheduling/test_scheduler.py`
 - Modify: `code/src/scheduling/__init__.py`
 
 **Interfaces:**
@@ -696,7 +696,7 @@ if __name__ == "__main__":
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py
 ```
 
 Expected: import failure for `src.scheduling.scheduler`.
@@ -791,9 +791,9 @@ Export `SchedulerResult`, `SubmissionAdapter`, and `SynchronousScheduler` from
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_models.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py
 ```
 
 Expected: all three commands end in `OK`.
@@ -814,14 +814,14 @@ Expected: every test module ends in `OK`, with no traceback.
 - [ ] **Step 6: Commit Task 4**
 
 ```powershell
-git add code/src/scheduling/__init__.py code/src/scheduling/scheduler.py code/tests/test_scheduler.py
+git add code/src/scheduling/__init__.py code/src/scheduling/scheduler.py code/tests/scheduling/test_scheduler.py
 git commit -m "feat: add deterministic static scheduler"
 ```
 
 ### Task 5: Daft-to-Ray Framework Contract Smoke
 
 **Files:**
-- Create: `code/tests/test_scheduling_daft_ray_contract.py`
+- Create: `code/tests/scheduling/test_scheduling_daft_ray_contract.py`
 
 **Interfaces:**
 - Consumes: `DaftOrganizer`, `OrganizerConfig`, `PayloadEnvelope`,
@@ -962,7 +962,7 @@ if __name__ == "__main__":
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
 ```
 
 Expected: `Ran 1 test ... OK`. A dependency/import failure is an environment
@@ -981,7 +981,7 @@ Expected: no matches.
 - [ ] **Step 4: Commit Task 5**
 
 ```powershell
-git add code/tests/test_scheduling_daft_ray_contract.py
+git add code/tests/scheduling/test_scheduling_daft_ray_contract.py
 git commit -m "test: verify Daft Ray scheduling contract"
 ```
 
@@ -1010,10 +1010,10 @@ synchronous scheduler. Policies do not import Daft, Arrow, Ray, or HTTP.
 Run the focused tests with:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_models.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
 ```
 
 This foundation is designed only for the Daft-to-Ray production path. The
@@ -1037,7 +1037,7 @@ Add exact entries for:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m compileall -q code\src\scheduling code\tests\test_scheduling_models.py code\tests\test_scheduling_policies.py code\tests\test_scheduler.py code\tests\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe -m compileall -q code\src\scheduling code\tests\scheduling\test_scheduling_models.py code\tests\scheduling\test_scheduling_policies.py code\tests\scheduling\test_scheduler.py code\tests\scheduling\test_scheduling_daft_ray_contract.py
 .conda\pg-ai-profile\python.exe -c "import sys; sys.path.insert(0, 'code'); from src.scheduling import BatchRequest, StaticAdmissionController, SynchronousScheduler; print('scheduling imports ok')"
 ```
 

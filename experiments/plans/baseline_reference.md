@@ -307,7 +307,7 @@ mAP、micro/macro-F1、precision/recall；embedding 检索用 Recall@K、MRR、n
 
 #### 当前采集覆盖与缺口
 
-`code/scripts/run_image_clip_e2e.py` schema v9 已覆盖 operator E2E、first output、
+`code/scripts/experiments/run_image_clip_e2e.py` schema v9 已覆盖 operator E2E、first output、
 images/s、batch/stage P50/P95/P99、输入/输出 bytes、H2D/D2H、CPU-core-seconds、
 GPU util/power/energy/显存、exactly-once、digest/norm、资源版本与 CPU 预算。它仍然
 缺少或只部分覆盖以下正式指标：

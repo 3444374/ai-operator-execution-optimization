@@ -45,8 +45,8 @@ Completions, JSONL/SHA-256 manifests, unittest, AutoDL dual RTX 4090.
 
 **Files:**
 - Modify: `code/src/profiling/replay.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Consumes: `_offline_batch_envelopes(..., submission_granularity="request")`.
@@ -92,7 +92,7 @@ def test_offline_request_granularity_emits_one_envelope_per_row(self) -> None:
 Run:
 
 ```powershell
-D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
 ```
 
 Expected: FAIL with `offline envelope expansion supports batch or
@@ -115,8 +115,8 @@ Report request-level latency granularity for this path.
 - [x] **Step 5: Run focused and full tests**
 
 ```powershell
-D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
-D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -t code
 ```
 
 Expected: PASS.
@@ -129,9 +129,9 @@ Expected: PASS.
 - Create: `code/src/profiling/manifest_guard.py`
 - Modify: `code/src/profiling/cli.py`
 - Modify: `code/src/profiling/schema.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Test: `code/tests/test_profile_manifest_guard.py`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Test: `code/tests/observability/test_profile_manifest_guard.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Produces:
@@ -176,7 +176,7 @@ row-count versus `--total-rows` mismatch.
 - [x] **Step 2: Run and witness RED**
 
 ```powershell
-D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_profile_manifest_guard.py
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\observability\test_profile_manifest_guard.py
 ```
 
 Expected: import failure because `manifest_guard` does not exist.
@@ -207,9 +207,9 @@ status in the formal CSV row.
 - [x] **Step 5: Run focused and full tests**
 
 ```powershell
-D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_profile_manifest_guard.py
-D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
-D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\observability\test_profile_manifest_guard.py
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -t code
 ```
 
 Expected: PASS.
@@ -224,10 +224,10 @@ Expected: PASS.
 - Modify: `code/src/scheduling/routing.py`
 - Modify: `code/src/scheduling/__init__.py`
 - Modify: `code/src/profiling/replay.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Test: `code/tests/test_scheduling_models.py`
-- Test: `code/tests/test_scheduling_policies.py`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Test: `code/tests/scheduling/test_scheduling_models.py`
+- Test: `code/tests/scheduling/test_scheduling_policies.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Adds `BatchRequest.preferred_endpoint_id: str = ""`.
@@ -254,7 +254,7 @@ outside the selected pool.
 - [x] **Step 2: Run and witness RED**
 
 ```powershell
-D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_policies.py
 ```
 
 Expected: import failure for `PinnedEndpointRouter`.
@@ -283,8 +283,8 @@ Run the three focused files, then full unittest discovery. Expected: PASS.
 - Modify: `experiments/plans/database_ai_operator_baseline_matrix_20260729.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
-- Test: `code/tests/test_experiment_scenario_runner.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
+- Test: `code/tests/experiments/test_experiment_scenarios.py`
 
 **Interfaces:**
 - Calibration scenarios:
@@ -316,8 +316,8 @@ calibration both pass.
 - [x] **Step 4: Run tests and diff checks**
 
 ```powershell
-D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\test_experiment_scenario_runner.py
-D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe code\tests\experiments\test_experiment_scenarios.py
+D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe -m unittest discover -s code\tests -t code
 D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\Scripts\ruff.exe check code
 git diff --check
 ```

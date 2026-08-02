@@ -92,7 +92,7 @@ wget -c --tries=10 --timeout=30 http://images.cocodataset.org/zips/train2017.zip
 # 可直接从 ZIP 向 PostgreSQL 流式导入，不同时保留解压副本。
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
   -f deploy/autodl/image_documents_workload_key.sql
-python code/scripts/import_coco_images.py \
+python code/scripts/data/import_coco_images.py \
   --zip data/raw/coco_train2017/train2017.zip --limit 60000 \
   --pg-dsn "$DATABASE_URL" --workload coco_train2017_60k
 # CLIP ViT-B/32（默认 embedding 模型，~600 MB）
@@ -127,10 +127,10 @@ target_output_tokens range: 1..256
 
 `prompt_tokens` are counted with the local Qwen2.5-1.5B-Instruct tokenizer
 when `--tokenizer-path models\Qwen2.5-1.5B-Instruct` is passed to
-`code/scripts/import_ai_complete_workload.py`.
+`code/scripts/data/import_ai_complete_workload.py`.
 
 Use `--source-workload-name sharegpt_multiturn` in
-`code/scripts/postgres_ai_operator_profile.py` to read only this workload.
+`code/scripts/profiling/postgres_ai_operator_profile.py` to read only this workload.
 
 Legacy: the older `sharegpt_burstgpt` workload (previously rows=1024, doc_id
 starting at 1000000, target_output_tokens up to 2048, filtered by

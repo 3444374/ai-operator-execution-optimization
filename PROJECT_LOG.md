@@ -17,7 +17,8 @@
   planning 引入执行引擎、baseline 引入项目 scheduling，并防止已删除旧入口回归。
 - 本地 `unittest` 共发现 601 条：路径迁移相关测试无新增失败；当前未通过项仅为本地
   缺 `psycopg`/Daft、macOS 沙箱禁止 Ray 进程枚举的既有环境门槛。服务器关机期间未做
-  GPU gate；scripts/tests 物理分组与 500–1,923 行文件语义拆分继续作为独立阶段。
+  GPU gate；后续提交已完成 scripts/tests 物理分组和 metrics/backend/shared-vLLM 拆分，
+  其余大文件继续逐个处理。
 
 ## 2026-08-02 外部多模态 baseline 体系与公开 benchmark 合同
 
@@ -1047,7 +1048,7 @@
 - **实验规模**：64 行仅作真实组件门禁；六组策略使用同一 512 文档、
   1 次 warm-up + 3 次正式重复；512 审计通过后，仅对选中的 baseline 与
   adaptive 配置做 1024 行、3 次正式复验，不混算不同规模的 effect size。
-- **新增入口**：`code/scripts/summarize_output_aware_bfd.py` 输出
+- **新增入口**：`code/scripts/analysis/summarize_output_aware_bfd.py` 输出
   scenario/metric 长表统计，覆盖吞吐、E2E/tail、packing、GPU、能耗与 MFU。
 - **验证边界**：当前完成的是单元与真实本地 Daft→Ray task/actor contract；
   GPU-backed PostgreSQL+Daft+Ray+vLLM 的 64/512/1024 数据尚待运行，暂不形成
@@ -1300,7 +1301,7 @@
 
 ## 2026-07-19 Shared-vLLM K_max interference experiment
 
-- Added `code/scripts/run_kmax_interference_experiment.py`, a wrapper around
+- Added `code/scripts/experiments/run_kmax_interference_experiment.py`, a wrapper around
   `postgres_ai_operator_profile.py` that runs a foreground small job while a
   background bulk job shares the same local vLLM endpoint.
 - Ran the first two-job `AI_COMPLETE` interference experiment:
@@ -1362,7 +1363,7 @@
 ## 2026-07-19 Token-budget vs fixed-row AI_COMPLETE baseline
 
 - Added upstream `--batching-policy fixed_rows|token_budget` and
-  `--token-budget` support to `code/scripts/postgres_ai_operator_profile.py`
+  `--token-budget` support to `code/scripts/profiling/postgres_ai_operator_profile.py`
   through `code/src/organizers.py`. Token-budget batching greedily groups rows
   by estimated `prompt_tokens + completion_max_tokens` before Ray submission;
   it does not modify Ray or vLLM internals.
@@ -1392,14 +1393,14 @@
 ## 2026-07-19 PostgreSQL source-order mode for AI_COMPLETE profiles
 
 - Added `--source-order doc_id|arrival_time` to
-  `code/scripts/postgres_ai_operator_profile.py` and propagated the value into
+  `code/scripts/profiling/postgres_ai_operator_profile.py` and propagated the value into
   CSV rows.
 - Updated `code/src/sources.py` so both `PostgresArrowSource` and
   `DaftPostgresSource` share the same source-order semantics:
   `doc_id` for offline throughput/data-organization scans, and
   `arrival_time_s NULLS LAST, doc_id` for arrival-aware service scheduling
   experiments.
-- Updated `code/tests/test_sources.py`, `code/scripts/README.md`,
+- Updated `code/tests/data/test_sources.py`, `code/scripts/README.md`,
   `experiments/results/local_vllm_qwen15b_baseline/README.md`,
   `figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md`,
   `learning/local_vllm_ray_baseline_walkthrough.md`, and `PROJECT_INDEX.md`.
@@ -1451,7 +1452,7 @@
 ## 2026-07-18 AI_COMPLETE latency and vLLM metric probe
 
 - Added batch-level result statistics to `code/src/metrics.py` and
-  `code/scripts/postgres_ai_operator_profile.py`: batch row min/max/mean,
+  `code/scripts/profiling/postgres_ai_operator_profile.py`: batch row min/max/mean,
   batch token min/max/mean, and batch service latency P50/P95/P99.
 - Added optional `--model-metrics-url` Prometheus scraping for vLLM run-level
   delta metrics: prompt/generation token deltas, request success delta, mean
@@ -1465,7 +1466,7 @@
 
 ## 2026-07-18 ShareGPT/BurstGPT tokenizer-filtered Ray rerun
 
-- Updated `code/scripts/import_ai_complete_workload.py` so the imported
+- Updated `code/scripts/data/import_ai_complete_workload.py` so the imported
   `sharegpt_burstgpt` workload can use the local Qwen2.5-1.5B-Instruct
   tokenizer for `prompt_tokens` and filter rows by
   `prompt_tokens + completion_max_tokens <= max_model_len`.
@@ -1497,9 +1498,9 @@
 
 ## 2026-07-18 ShareGPT/BurstGPT workload import path
 
-- Added `code/scripts/import_ai_complete_workload.py` to normalize ShareGPT prompts with BurstGPT timestamp/token metadata into the PostgreSQL `documents` table.
+- Added `code/scripts/data/import_ai_complete_workload.py` to normalize ShareGPT prompts with BurstGPT timestamp/token metadata into the PostgreSQL `documents` table.
 - Extended `documents` with workload metadata columns: `workload_name`, `prompt_tokens`, `target_output_tokens`, `arrival_time_s`, `session_id`, and `prefix_key`.
-- Added `--source-workload-name` to `code/scripts/postgres_ai_operator_profile.py`, so different workloads can coexist in `documents` and profiling can select one explicitly.
+- Added `--source-workload-name` to `code/scripts/profiling/postgres_ai_operator_profile.py`, so different workloads can coexist in `documents` and profiling can select one explicitly.
 - Imported local `sharegpt_burstgpt` workload rows into PostgreSQL with `start_doc_id=1000000`, `rows=1024`, `prompt_tokens=8..1797`, `target_output_tokens=2..2048`, and categories covering short/medium/long x ChatGPT/GPT-4.
 - Verified a small `DaftPostgresSource -> DaftOrganizer -> Ray task -> vLLM` smoke under `tmp/sharegpt_burstgpt_daft_ray_vllm_smoke.csv` with `status=ok`, `total_rows=8`, `source_workload_name=sharegpt_burstgpt`.
 - Boundary: this validates the final workload import/read path. It is not yet the full baseline sweep or an optimized scheduling result.
@@ -1516,14 +1517,14 @@
 ## 2026-07-18 Ollama AI_COMPLETE backend
 
 - Added `ollama` as an `AI_COMPLETE` backend in `code/src/model_backends.py`, using Ollama native `/api/generate`.
-- Updated `code/scripts/postgres_ai_operator_profile.py` so `--operator ai_complete --model-backend ollama` defaults to `http://localhost:11434` when no completion endpoint URL is provided.
+- Updated `code/scripts/profiling/postgres_ai_operator_profile.py` so `--operator ai_complete --model-backend ollama` defaults to `http://localhost:11434` when no completion endpoint URL is provided.
 - Verified local PG18.4 smoke with Docker Ollama `qwen2.5:1.5b`: `ollama_ai_complete_smoke` completed with `written_rows=2`; `ollama_daft_ai_complete_smoke` completed with `data_source=daft_postgres`, `organizer=daft`, and `written_rows=2`.
 - Ran the layer-3 structural matrix under `tmp/ollama_ai_complete_layer3_matrix.csv`: `data_source` (`arrow_postgres`, `daft_postgres`) x `organizer` (`arrow`, `daft`) x `executor` (`python`, `ray_task`, `ray_actor`) x `writeback_mode` (`none`, `json_text`). All 24 rows returned `status=ok`; all `json_text` rows wrote `written_rows=4`.
 - This is a local Ollama completion smoke. It does not replace the future vLLM-compatible `/v1/completions` path and is not a token-aware/prefix-aware batching result.
 
 ## 2026-07-18 AI_COMPLETE runtime skeleton
 
-- Added `--operator ai_embed|ai_complete` to `code/scripts/postgres_ai_operator_profile.py`; default remains `ai_embed`.
+- Added `--operator ai_embed|ai_complete` to `code/scripts/profiling/postgres_ai_operator_profile.py`; default remains `ai_embed`.
 - Extended `code/src/model_backends.py` with fake and vLLM-compatible `/v1/completions` completion backends.
 - Extended `code/src/sinks.py` with `write_completions` and added `document_completions` to the local schema.
 - `AI_COMPLETE` supports `none/json_text` writeback. `pgvector` remains embedding-only and is rejected for `AI_COMPLETE`.
@@ -1532,18 +1533,18 @@
 
 ## 2026-07-18 Runtime code boundary cleanup
 
-- Split reusable runtime helpers out of `code/scripts/postgres_ai_operator_profile.py`:
+- Split reusable runtime helpers out of `code/scripts/profiling/postgres_ai_operator_profile.py`:
   - `code/src/model_backends.py`: fake debug embedding backend and compatible HTTP embedding backend.
   - `code/src/sinks.py`: existing `none/json_text/pgvector` PostgreSQL writeback.
   - `code/src/metrics.py`: stage timer, GPU snapshot, and CSV append helper.
 - Kept `fake` only as an offline smoke/control backend. vLLM-compatible runs should use `--model-backend compatible_http`; `http_openai` remains accepted as a compatibility alias.
-- Added `code/tests/test_model_backends.py` and `code/tests/test_sinks.py`.
+- Added `code/tests/serving/test_model_backends.py` and `code/tests/data/test_sinks.py`.
 - Updated `code/README.md`, `code/scripts/README.md`, and `PROJECT_INDEX.md` with the new code boundaries.
 
 ## 2026-07-17 Daft PostgreSQL data entry implementation
 
-- Added `code/src/sources.py` with `PostgresArrowSource` and `DaftPostgresSource`, plus `code/tests/test_sources.py`.
-- Updated `code/scripts/postgres_ai_operator_profile.py` with `--data-source arrow_postgres|daft_postgres`; default remains `arrow_postgres`.
+- Added `code/src/sources.py` with `PostgresArrowSource` and `DaftPostgresSource`, plus `code/tests/data/test_sources.py`.
+- Updated `code/scripts/profiling/postgres_ai_operator_profile.py` with `--data-source arrow_postgres|daft_postgres`; default remains `arrow_postgres`.
 - Kept writeback unchanged: `none/json_text/pgvector`. Lance remains a future optional sink and is not implemented in this step.
 - Added Daft SQL runtime dependencies `sqlglot` and `connectorx` to `code/requirements.txt`.
 - Verified local PG18.4 smoke under `tmp/postgres_daft_source_e2e.csv`: `source_arrow_smoke` and `source_daft_smoke` both completed with `total_rows=64` and `object_count=4`. This is a local smoke result, not a formal performance conclusion.
@@ -1563,9 +1564,9 @@
 - **触发**：用户要求实际使用 Daft，并要求遵循 `karpathy-guidelines`、保证代码可维护性。
 - **实现**：
   - 新增 `code/src/organizers.py`，实现 `ArrowOrganizer` 与 `DaftOrganizer`。两者接收 Arrow table，输出 downstream 可复用的 Arrow batch 列表和指标。
-  - 新增 `code/scripts/daft_text_organizer_smoke.py`，通过 `--organizer arrow|daft` 验证 `rows -> Arrow Table -> organizer -> batches`，并支持显式 `--runner ray` 检查 Daft `into_partitions`。
-  - 更新 `code/scripts/postgres_ai_operator_profile.py`：主链路的 `fetch_record_batch + split_batch` 已替换为 organizer 后端选择，新增 `--organizer arrow|daft`、`--organizer-partition-mode`、`--organizer-partitions`、`--daft-runner`。默认仍为 `arrow`，保留旧路径作为 baseline。
-  - 新增 `code/tests/test_organizers.py`，覆盖 Arrow 后端和 Daft native 后端的 batch 输出一致性。
+  - 新增 `code/scripts/profiling/daft_text_organizer_smoke.py`，通过 `--organizer arrow|daft` 验证 `rows -> Arrow Table -> organizer -> batches`，并支持显式 `--runner ray` 检查 Daft `into_partitions`。
+  - 更新 `code/scripts/profiling/postgres_ai_operator_profile.py`：主链路的 `fetch_record_batch + split_batch` 已替换为 organizer 后端选择，新增 `--organizer arrow|daft`、`--organizer-partition-mode`、`--organizer-partitions`、`--daft-runner`。默认仍为 `arrow`，保留旧路径作为 baseline。
+  - 新增 `code/tests/planning/test_organizers.py`，覆盖 Arrow 后端和 Daft native 后端的 batch 输出一致性。
   - 更新 `code/requirements.txt`：新增 `daft`，并将 `pyarrow` 约束为 `>=16,<25`，匹配 Daft 0.7.20 的依赖边界。
   - 更新 `code/README.md`、`code/scripts/README.md`、`PROJECT_INDEX.md`，登记新增入口和运行命令。
 - **本地验证**：
@@ -1798,7 +1799,7 @@
 - 已将 PPTX 以 user 身份导入为飞书在线幻灯片：`https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg`。
 # 2026-07-14 pgvector(384) writeback comparison
 
-- Updated `code/scripts/postgres_ai_operator_profile.py` so `--setup --embedding-dim 384` creates `document_embeddings.embedding_vector` as `vector(384)`.
+- Updated `code/scripts/profiling/postgres_ai_operator_profile.py` so `--setup --embedding-dim 384` creates `document_embeddings.embedding_vector` as `vector(384)`.
 - Ran the same GPU-backed Ray actor chain for no writeback, JSON text writeback, and pgvector `vector(384)` writeback.
 - Added result report and CSV under `motivation/results/gpu/`.
 - Added report-main figure `figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png`.
@@ -2787,8 +2788,8 @@
   profiler 子进程均以退出码 2 失败；目录、manifest、commands、failure
   evidence 和 stderr 全部保留，未复用或删除。根因不是策略或 GPU：runner
   固定用 `code/` 作为 child cwd，但 CLI 保留相对
-  `code/scripts/postgres_ai_operator_profile.py`，导致 child 尝试打开
-  `code/code/scripts/postgres_ai_operator_profile.py`。
+  `code/scripts/profiling/postgres_ai_operator_profile.py`，导致 child 尝试打开
+  `code/code/scripts/profiling/postgres_ai_operator_profile.py`。
 - 测试先行新增 CLI 路径回归用例，确认修复前失败；随后让 shared-vLLM CLI
   在切换 child cwd 前把 config、profiler、Python 和 output 路径解析为绝对
   路径。相关 142 项测试全部通过。修复提交同步后必须使用全新 gate 输出目录；
@@ -3217,17 +3218,17 @@
      argparse last-wins 语义，支持 `--flag` 与 `--flag=bool`）+ `probe_live_prefix_caching()`
      （best-effort：`ps -eo args` 找 vLLM api_server 进程、解析、取共识；探不到/进程间
      不一致/非 Linux 返回 None）。
-  2. `code/scripts/run_ai_operator_scenarios.py`：加 `_verify_prefix_caching_matches_live`
+  2. `code/scripts/experiments/run_ai_operator_scenarios.py`：加 `_verify_prefix_caching_matches_live`
      预检——声明值与 live 不符 → **fail-closed**（ValueError）；探不到 → stderr warn 后继续。
      **挂在 `main()` 而非 `run_experiment`**，使直接驱动 `run_experiment` 的 9 处单元测试
      保持 hermetic（不依赖宿主 vLLM 状态）。
-  3. 新增 `code/tests/test_vllm_probe.py`（15 测试）：parse 各分支 + probe（mock
+  3. 新增 `code/tests/serving/test_vllm_probe.py`（15 测试）：parse 各分支 + probe（mock
      `_list_process_cmdlines`）+ verify helper 的 mismatch/match/none/skip。
 - **怎么改的（关键决策）**：探测设计为 best-effort + fail-closed-on-detectable——
   能确证不一致时拒绝跑（防 silent 失真），探不到（Windows/CI/无同机 vLLM）时 warn 不 block。
   放 `main()` 而非 `run_experiment` 是为避免单元测试依赖宿主 vLLM 进程状态。
-- **验证**：本地 `python code/tests/test_vllm_probe.py` 15/15、
-  `python code/tests/test_experiment_scenarios.py` 26/26 全绿；`--help` 正常。
+- **验证**：本地 `python code/tests/serving/test_vllm_probe.py` 15/15、
+  `python code/tests/experiments/test_experiment_scenarios.py` 26/26 全绿；`--help` 正常。
   （`test_postgres_profile_scheduling` 本地缺 pyarrow 无法 import，与本次改动无关。）
 - **边界**：探测只覆盖同机 vLLM（runner 与 vLLM 共宿）；vLLM 远程部署时探不到→warn。
   仅校验 `prefix_caching`（最易飘、影响最大）；其他 `service_metadata` 字段仍按声明值。
@@ -3370,13 +3371,13 @@
 ## 2026-08-01 image-CLIP §6 瓶颈画像门禁通过（GO）+ 代码质量总则
 
 - **动机**：image-CLIP 锁为首个 workload 后、建 runner 前的 fatal-flaw go/no-go 门禁（`image_clip_workload_lock_20260731.md` §6）——CPU 数据准备相对 GPU CLIP forward 有多重？ratio > 0.3 才有异构调度舞台。
-- **脚本**：`code/scripts/profile_image_clip_bottleneck.py`（~330 LOC，单进程、走 PG bytea、分阶段计时；按新「代码质量总则」写成可复用 stage 函数 `load_clip/pil_decode/cpu_preprocess/clip_encode`，path-B runner 后续直接复用）。
+- **脚本**：`code/scripts/profiling/profile_image_clip_bottleneck.py`（~330 LOC，单进程、走 PG bytea、分阶段计时；按新「代码质量总则」写成可复用 stage 函数 `load_clip/pil_decode/cpu_preprocess/clip_encode`，path-B runner 后续直接复用）。
 - **结果（GO）**（`motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`）：ratio = (decode+preprocess)/embed，实用 batch（≥16）**13–17**，远超 0.3。
   - 瓶颈 = **CLIPProcessor resize+normalize（cpu_preprocess ~5.2 ms/img）**，不是 JPEG decode（0.04 ms）、不是 CPU→GPU transfer（0.07–0.19 ms）、不是 pg_read（0.83 ms/img bulk 摊销）。
   - B=128 单 batch：CPU preprocess 655 ms vs GPU embed 38 ms → 串行下 GPU 忙 ~5.5%、空转 ~94%。量化了 path-B（分离 CPU preprocess 与 GPU embed 并 overlap）的必要性。
 - **口径澄清**：ratio 分子不含 pg_read（pg_read 单独一列）；不算 DB 读 ratio 仍 13–17，结论不变。"数据搬运瓶颈"更准确是 **CPU 预处理计算瓶颈**。
 - **更正上条 #32 记录**：transformers 5.x `get_image_features` 取 **`.pooler_output`**（512d），非 `.image_embeds`（5.x 无此属性）；脚本与 `image_serving.md §3.3` 均已用对。
-- **规模边界 + redo（已完成 5K 规范跑）**：首跑 1024×50 iters 后，按用户要求加大规模重做——新增 `code/scripts/import_coco_images.py`（TRUNCATE+INSERT 单事务原子、记版本、path-B 可复用）载入完整 COCO val **5K**（815MB/33.8s），重跑 `--limit 5000 --iters 100 --batch-sizes 1,16,32,64,128,256`（~5min）。5K 结果 ratio **13.8–18.3**（B=256 渐近 ~18），p95 紧贴 p50，与 1024 首跑完全一致——结论（GO、CPU preprocess 主导）确认。pg_read 0.755ms/img（5K bulk 摊销）。
+- **规模边界 + redo（已完成 5K 规范跑）**：首跑 1024×50 iters 后，按用户要求加大规模重做——新增 `code/scripts/data/import_coco_images.py`（TRUNCATE+INSERT 单事务原子、记版本、path-B 可复用）载入完整 COCO val **5K**（815MB/33.8s），重跑 `--limit 5000 --iters 100 --batch-sizes 1,16,32,64,128,256`（~5min）。5K 结果 ratio **13.8–18.3**（B=256 渐近 ~18），p95 紧贴 p50，与 1024 首跑完全一致——结论（GO、CPU preprocess 主导）确认。pg_read 0.755ms/img（5K bulk 摊销）。
 - **同步**：`experiment_status_and_gaps.md` §0/§1.4 已统一为 5K canonical GO；`image_clip_workload_lock §0`「暂停 build」→ 解除；`motivation/results/gpu/README.md` 索引；`code/AGENTS.md` 新增「代码质量总则（模块清晰 / 框架分明 / 低耦合 / 目标清晰）」。
 
 ## 2026-08-01 文档状态对账：统一 image-first、5K canonical 与 prefix 归因
@@ -3643,3 +3644,16 @@
 - 本次只改变模块归属与测试 patch 位置，不改变 CLI、算法、默认值或 CSV schema。
 - 依赖无关测试 580/580 通过；Daft/psycopg 和 macOS Ray 权限相关用例仍需在完整远端环境
   验证。scripts/tests 物理迁移保留为下一独立提交。
+
+## 2026-08-02 scripts 与 tests 物理分组
+
+- 22 个 CLI 入口按 data/services/baselines/profiling/experiments/analysis 分组；58 个测试
+  文件按 data/planning/scheduling/serving/modalities/observability/baselines/
+  experiments/infrastructure/architecture 镜像归档。
+- 当前 README、部署指南、实验计划和结果 README 中的复现命令同步到新路径；已执行实验
+  的 raw JSON manifest 不改写，保留其原始命令证据。
+- 所有脚本/测试使用向上查找 `code/src` 的稳定 root 解析，不依赖固定 `parents[n]`；
+  unittest discovery 显式指定 `-t code`，避免 tests/experiments 与 src/experiments 冲突。
+- 目录迁移后依赖无关测试为 586/586 通过；完整 607 项中的其余环境用例需要远端
+  Daft、psycopg 和 Ray
+  权限环境。

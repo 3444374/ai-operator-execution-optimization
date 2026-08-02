@@ -26,7 +26,7 @@
 **Files:**
 - Modify: `code/src/scheduling/flush.py`
 - Modify: `code/src/scheduling/__init__.py`
-- Test: `code/tests/test_flush_policies.py`
+- Test: `code/tests/scheduling/test_flush_policies.py`
 
 **Interfaces:**
 - Produces: `FlushWindow(wait_s: float, reason: str)`.
@@ -71,7 +71,7 @@ Add validation cases for `min_wait_s <= 0`, `max_wait_s < min_wait_s`,
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_flush_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_flush_policies.py
 ```
 
 Expected: failures because `FlushWindow`, `select_window`, and the new
@@ -110,7 +110,7 @@ Run the same test command. Expected: all flush policy tests pass.
 - [ ] **Step 5: Commit Task 1**
 
 ```powershell
-git add code/src/scheduling/flush.py code/src/scheduling/__init__.py code/tests/test_flush_policies.py
+git add code/src/scheduling/flush.py code/src/scheduling/__init__.py code/tests/scheduling/test_flush_policies.py
 git commit -m "feat: select adaptive flush windows"
 ```
 
@@ -120,7 +120,7 @@ git commit -m "feat: select adaptive flush windows"
 
 **Files:**
 - Modify: `code/src/scheduling/batching.py`
-- Test: `code/tests/test_runtime_batching.py`
+- Test: `code/tests/scheduling/test_runtime_batching.py`
 
 **Interfaces:**
 - Consumes: `FlushWindow` and each policy's `select_window`.
@@ -173,7 +173,7 @@ Add tests that:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_runtime_batching.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_runtime_batching.py
 ```
 
 Expected: the delayed catch-up test splits `second` and `third`, and trace
@@ -206,8 +206,8 @@ trace events.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_runtime_batching.py
-.conda\pg-ai-profile\python.exe code\tests\test_flush_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_runtime_batching.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_flush_policies.py
 ```
 
 Expected: both modules pass; immediate/fixed regression behavior matches the
@@ -216,7 +216,7 @@ new event-time specification.
 - [ ] **Step 5: Commit Task 2**
 
 ```powershell
-git add code/src/scheduling/batching.py code/tests/test_runtime_batching.py
+git add code/src/scheduling/batching.py code/tests/scheduling/test_runtime_batching.py
 git commit -m "fix: preserve adaptive event-time windows"
 ```
 
@@ -225,10 +225,10 @@ git commit -m "fix: preserve adaptive event-time windows"
 ### Task 3: Wire capacity and versioned trace fields
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
 - Modify: `code/scripts/README.md`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
-- Test: `code/tests/test_scheduling_daft_ray_contract.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
+- Test: `code/tests/scheduling/test_scheduling_daft_ray_contract.py`
 
 **Interfaces:**
 - Consumes: `QueueAdaptiveFlush(min_wait_s, max_wait_s, pressure_running)`.
@@ -265,7 +265,7 @@ Add CLI validation asserting queue-adaptive rejects
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
 ```
 
 Expected: missing trace fields and missing min/max validation failures.
@@ -295,8 +295,8 @@ queue-adaptive flush requires --flush-max-wait-ms >= --flush-timeout-ms
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
 ```
 
 Expected: both modules pass, including real local Daft → Arrow → Ray
@@ -305,7 +305,7 @@ task/actor contracts.
 - [ ] **Step 5: Commit Task 3**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/scripts/README.md code/tests/test_postgres_profile_scheduling.py code/tests/test_scheduling_daft_ray_contract.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/scripts/README.md code/tests/observability/test_postgres_profile_scheduling.py code/tests/scheduling/test_scheduling_daft_ray_contract.py
 git commit -m "feat: wire adaptive flush window traces"
 ```
 
@@ -332,9 +332,9 @@ git commit -m "feat: wire adaptive flush window traces"
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -p "test_*.py"
+.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -t code -p "test_*.py"
 $env:PYTHONPYCACHEPREFIX="tmp\adaptive_flush_pycache"
-.conda\pg-ai-profile\python.exe -m compileall -q code/src code/scripts/postgres_ai_operator_profile.py code/tests
+.conda\pg-ai-profile\python.exe -m compileall -q code/src code/scripts/profiling/postgres_ai_operator_profile.py code/tests
 git diff --check
 ```
 

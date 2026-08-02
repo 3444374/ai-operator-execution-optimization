@@ -49,7 +49,7 @@ $env:HF_HUB_CACHE="D:\Code\ai-operator-execution-optimization\.cache\huggingface
 $env:TRANSFORMERS_CACHE=$env:HF_HUB_CACHE
 $env:TORCH_HOME="D:\Code\ai-operator-execution-optimization\.cache\torch"
 
-.conda\pg-ai-profile\python.exe code\scripts\local_embedding_server.py `
+.conda\pg-ai-profile\python.exe code\scripts\services\local_embedding_server.py `
   --model .cache\models\all-MiniLM-L6-v2 `
   --device cuda `
   --batch-size 64 `
@@ -67,7 +67,7 @@ Important schema note:
 4096-row coalesced baseline:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 4096 --total-rows 4096 `
   --db-fetch-rows 512 --ray-batch-rows 256 `
@@ -85,7 +85,7 @@ Important schema note:
 1024-row fine/coalesced contrast:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 1024 --total-rows 1024 `
   --db-fetch-rows 256 --ray-batch-rows 256 `

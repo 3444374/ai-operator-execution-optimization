@@ -221,7 +221,7 @@ annotations 并冻结 label/prompt manifest。反过来，ImageNet/ResNet18 的�
 **这是 karpathy "先定义可验证目标、做最小实验" 的落地——用半天数据决定是否 all-in。**
 
 **实现边界复测（✅ 已完成）**：使用
-`code/scripts/profile_image_clip_preprocess_variants.py`，同一批图像内交错三条
+`code/scripts/profiling/profile_image_clip_preprocess_variants.py`，同一批图像内交错三条
 processor 路径，保留 raw repeats；必须满足 embedding cosine gate，且不能故意保留
 slow processor 制造策略空间。若生产/torchvision 路径令 CPU/GPU 比降到门禁以下，
 应撤回“CPU preprocess 是主优化舞台”的外推，但仍保留历史 slow-path 结果。本次
@@ -238,7 +238,7 @@ fast path 未触发撤回条件，不过它只支持继续建设 E2E，不能证
 
 | 层 | 统一边界 | 回答的问题 | 当前脚本 |
 |---|---|---|---|
-| **operator E2E gate** | 每 query 的模型 worker 建立/执行开始 → 最后一批 embedding 返回；Ray 框架已启动，不含写回 | Daft Native/Ray 与拆阶段流水线谁更有效地执行同一 AI 算子？ | `code/scripts/run_image_clip_e2e.py` |
+| **operator E2E gate** | 每 query 的模型 worker 建立/执行开始 → 最后一批 embedding 返回；Ray 框架已启动，不含写回 | Daft Native/Ray 与拆阶段流水线谁更有效地执行同一 AI 算子？ | `code/scripts/experiments/run_image_clip_e2e.py` |
 | **system E2E formal** | 同一 query/job 开始 → pgvector COPY 完成；索引延后统一构建 | 数据库作业实际多久完成，优化是否被写回抵消？ | operator gate 通过后接统一 sink |
 
 operator gate 不是“只测 GPU”：它包含 DB read、JPEG decode、processor、CPU→GPU

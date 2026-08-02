@@ -28,13 +28,13 @@
 - `code/src/scheduling/models.py`: add sample-age semantics to an admission observation.
 - `code/src/scheduling/observations.py`: compute sample age in cached and background providers and expose it in trace rows.
 - `code/src/scheduling/admission.py`: depend on a small observation-provider protocol rather than one concrete provider.
-- `code/scripts/postgres_ai_operator_profile.py`: construct, retain, and close the non-blocking provider; emit sample age.
+- `code/scripts/profiling/postgres_ai_operator_profile.py`: construct, retain, and close the non-blocking provider; emit sample age.
 - `code/src/packing.py`: implement the pure BFD-inspired row-cap-first algorithm.
 - `code/src/organizers.py`: expose the candidate through the existing shared Arrow/Daft policy path.
-- `code/tests/test_dynamic_admission.py`: observation freshness, latency, and lifecycle tests.
-- `code/tests/test_postgres_profile_scheduling.py`: production construction/cleanup and profiler metric tests.
-- `code/tests/test_packing.py`: canonical membership and packing invariants.
-- `code/tests/test_organizers.py`: Arrow/Daft shared-policy contract.
+- `code/tests/scheduling/test_dynamic_admission.py`: observation freshness, latency, and lifecycle tests.
+- `code/tests/observability/test_postgres_profile_scheduling.py`: production construction/cleanup and profiler metric tests.
+- `code/tests/planning/test_packing.py`: canonical membership and packing invariants.
+- `code/tests/planning/test_organizers.py`: Arrow/Daft shared-policy contract.
 - `code/scripts/README.md`, `code/README.md`, `learning/experiment_walkthrough.md`: verified behavior and command documentation.
 - `experiments/results/row_cap_aware_packing_gate_20260726/`: real correctness gate.
 - `experiments/results/row_cap_aware_packing_512_20260726/`: screening and repeated candidate comparison.
@@ -48,7 +48,7 @@
 - Modify: `code/src/scheduling/models.py`
 - Modify: `code/src/scheduling/observations.py`
 - Modify: `code/src/scheduling/admission.py`
-- Test: `code/tests/test_dynamic_admission.py`
+- Test: `code/tests/scheduling/test_dynamic_admission.py`
 
 **Interfaces:**
 - Produces: `AdmissionObservation.sample_age_s: float | None`
@@ -103,7 +103,7 @@ with self.assertRaisesRegex(ValueError, "sample_age_s"):
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_dynamic_admission.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_dynamic_admission.py -v
 ```
 
 Expected: failure because `AdmissionObservation` has no `sample_age_s`.
@@ -146,7 +146,7 @@ time since `_last_sample_s` on a cached sample. Pass the observation age into
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_dynamic_admission.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_dynamic_admission.py -v
 ```
 
 Expected: all tests pass.
@@ -154,7 +154,7 @@ Expected: all tests pass.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/src/scheduling/models.py code/src/scheduling/observations.py code/src/scheduling/admission.py code/tests/test_dynamic_admission.py
+git add code/src/scheduling/models.py code/src/scheduling/observations.py code/src/scheduling/admission.py code/tests/scheduling/test_dynamic_admission.py
 git commit -m "feat: trace adaptive observation age"
 ```
 
@@ -163,8 +163,8 @@ git commit -m "feat: trace adaptive observation age"
 ### Task 2: Production Non-Blocking Adaptive Observation Lifecycle
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Test: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Test: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Consumes: `NonBlockingMetricsObservationProvider`
@@ -209,7 +209,7 @@ while no sample exists.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Expected: failure because `_build_adaptive_config` still constructs
@@ -256,8 +256,8 @@ is called once. Also assert static scheduling never creates the provider.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_dynamic_admission.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_dynamic_admission.py -v
 ```
 
 Expected: all tests pass; the slow-sampler latency assertion is below `0.05s`.
@@ -265,7 +265,7 @@ Expected: all tests pass; the slow-sampler latency assertion is below `0.05s`.
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/tests/test_postgres_profile_scheduling.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "fix: keep adaptive metric scrapes off submission path"
 ```
 
@@ -275,7 +275,7 @@ git commit -m "fix: keep adaptive metric scrapes off submission path"
 
 **Files:**
 - Modify: `code/src/packing.py`
-- Modify: `code/tests/test_packing.py`
+- Modify: `code/tests/planning/test_packing.py`
 
 **Interfaces:**
 - Produces:
@@ -321,7 +321,7 @@ and invalid row cap.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_packing.py -v
+.conda\pg-ai-profile\python.exe code\tests\planning\test_packing.py -v
 ```
 
 Expected: import failure for `row_cap_aware_best_fit_decreasing`.
@@ -361,7 +361,7 @@ Do not introduce weights, generalized resources, or a strategy class.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_packing.py -v
+.conda\pg-ai-profile\python.exe code\tests\planning\test_packing.py -v
 ```
 
 Expected: all tests pass.
@@ -369,7 +369,7 @@ Expected: all tests pass.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/src/packing.py code/tests/test_packing.py
+git add code/src/packing.py code/tests/planning/test_packing.py
 git commit -m "feat: add row-cap-aware best-fit packing"
 ```
 
@@ -379,9 +379,9 @@ git commit -m "feat: add row-cap-aware best-fit packing"
 
 **Files:**
 - Modify: `code/src/organizers.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Modify: `code/tests/test_organizers.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Modify: `code/tests/planning/test_organizers.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Adds batching policy: `row_cap_aware_token_budget`
@@ -420,7 +420,7 @@ membership and packing metrics.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_organizers.py -v
+.conda\pg-ai-profile\python.exe code\tests\planning\test_organizers.py -v
 ```
 
 Expected: `unknown batching policy: row_cap_aware_token_budget`.
@@ -454,8 +454,8 @@ Add the policy to the profiler CLI choices and dry-run metadata.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_organizers.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\planning\test_organizers.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Expected: all tests pass and dry-run reports the new algorithm.
@@ -463,7 +463,7 @@ Expected: all tests pass and dry-run reports the new algorithm.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/src/organizers.py code/scripts/postgres_ai_operator_profile.py code/tests/test_organizers.py code/tests/test_postgres_profile_scheduling.py
+git add code/src/organizers.py code/scripts/profiling/postgres_ai_operator_profile.py code/tests/planning/test_organizers.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "feat: expose row-cap-aware organizer policy"
 ```
 
@@ -483,7 +483,7 @@ git commit -m "feat: expose row-cap-aware organizer policy"
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -p "test_*.py" -v
+.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -t code -p "test_*.py" -v
 ```
 
 Expected: all tests pass with no error or warning introduced by this phase.
@@ -504,7 +504,7 @@ Expected: exit code `0`.
 Run this command three times with real Daft and Ray installed:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py -v
 ```
 
 The test covers both task and actor paths.
@@ -524,7 +524,7 @@ Expected: 12/12 contract checks pass; no fake performance result is recorded.
 - Modify: `PROJECT_LOG.md`
 
 **Interfaces:**
-- Consumes: `code/scripts/run_ai_operator_scenarios.py`
+- Consumes: `code/scripts/experiments/run_ai_operator_scenarios.py`
 - Produces scenarios: `seq_fixed`, `bfd_fixed`, `row_cap_fixed`
 
 - [ ] **Step 1: Check the real environment**

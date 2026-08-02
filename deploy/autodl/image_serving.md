@@ -152,7 +152,7 @@ source URI/共享文件路径只能作独立 baseline，不能与 BYTEA 轨道�
 - `ClipImagePreprocessor`、typed `ImageEmbeddingBatch/Result`；
 - `ClipTensorActor`：常驻 GPU、只接收预处理 tensor、输出 projected + L2-normalized embedding。
 
-已新增 operator-E2E runner：`code/scripts/run_image_clip_e2e.py`，统一比较
+已新增 operator-E2E runner：`code/scripts/experiments/run_image_clip_e2e.py`，统一比较
 fused Daft Native/Ray、Daft-on-Ray staged、Ray Data staged 与项目分阶段 Ray
 pipeline。它从每个 query 的模型 worker
 建立/执行开始计时到最后一批 embedding 返回（Ray 框架启动排除），包含模型 worker
@@ -248,7 +248,7 @@ mkdir -p "$OUT"
 
 # 单卡 Daft Native；repeat 1/2/3 时分别修改 repeat-index 与 manifest 名。
 PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
-  code/scripts/run_image_clip_e2e.py \
+  code/scripts/experiments/run_image_clip_e2e.py \
   --arm daft_native --model "$MODEL" --pg-dsn "$DATABASE_URL" \
   --limit 5000 --warmup-rows 64 --batch-size 64 \
   --cpu-workers 4 --gpu-workers 1 --daft-model-workers 4 --source-shards 4 \
@@ -257,7 +257,7 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
 
 # 单卡 project-Ray。
 PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
-  code/scripts/run_image_clip_e2e.py \
+  code/scripts/experiments/run_image_clip_e2e.py \
   --arm project_ray --model "$MODEL" --pg-dsn "$DATABASE_URL" \
   --limit 5000 --warmup-rows 64 --batch-size 64 \
   --cpu-workers 3 --gpu-workers 1 --source-shards 4 \
@@ -266,7 +266,7 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
 
 # 双卡 Daft Ray。
 PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
-  code/scripts/run_image_clip_e2e.py \
+  code/scripts/experiments/run_image_clip_e2e.py \
   --arm daft_ray --model "$MODEL" --pg-dsn "$DATABASE_URL" \
   --limit 5000 --warmup-rows 64 --batch-size 64 \
   --cpu-workers 4 --gpu-workers 2 --daft-model-workers 4 --source-shards 4 \
@@ -275,7 +275,7 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
 
 # 双卡 Daft-on-Ray staged 强 baseline。
 PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
-  code/scripts/run_image_clip_e2e.py \
+  code/scripts/experiments/run_image_clip_e2e.py \
   --arm daft_staged --model "$MODEL" --pg-dsn "$DATABASE_URL" \
   --limit 5000 --warmup-rows 64 --batch-size 64 \
   --cpu-workers 4 --gpu-workers 2 --daft-model-workers 2 --source-shards 4 \
@@ -285,7 +285,7 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
 # 双卡 Ray Data staged 强 baseline。source-shards 至少覆盖 CPU actor pool，
 # 且 runner 会另给 SQL readers 预留 CPU slots，不能手工减掉造成资源死锁。
 PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
-  code/scripts/run_image_clip_e2e.py \
+  code/scripts/experiments/run_image_clip_e2e.py \
   --arm ray_data_staged --model "$MODEL" --pg-dsn "$DATABASE_URL" \
   --limit 5000 --warmup-rows 64 --batch-size 64 \
   --cpu-workers 4 --gpu-workers 2 --source-shards 4 \
@@ -294,7 +294,7 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
 
 # 双卡 project-Ray。
 PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
-  code/scripts/run_image_clip_e2e.py \
+  code/scripts/experiments/run_image_clip_e2e.py \
   --arm project_ray --model "$MODEL" --pg-dsn "$DATABASE_URL" \
   --limit 5000 --warmup-rows 64 --batch-size 64 \
   --cpu-workers 4 --gpu-workers 2 --source-shards 6 \
@@ -366,7 +366,7 @@ OUT=/root/autodl-tmp/experiment-artifacts/image_clip_transfer_ceiling_20260802
 PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
 mkdir -p "$OUT"
 
-CUDA_VISIBLE_DEVICES=0 "$PY" code/scripts/profile_clip_transfer_ceiling.py \
+CUDA_VISIBLE_DEVICES=0 "$PY" code/scripts/profiling/profile_clip_transfer_ceiling.py \
   --model /root/autodl-tmp/models/clip-vit-base-patch32 \
   --batch-sizes 16,64,256 --warmup 5 --repeats 30 --seed 20260802 \
   --out-csv "$OUT/raw.csv" --out-manifest "$OUT/manifest.json"
@@ -400,7 +400,7 @@ OUT=/root/autodl-tmp/experiment-artifacts/$RUN_ID
 mkdir -p "$OUT"
 
 PYTHONPATH=code /root/miniconda3/bin/python \
-  code/scripts/profile_image_clip_preprocess_variants.py \
+  code/scripts/profiling/profile_image_clip_preprocess_variants.py \
   --model "$IMAGE_MODEL_PATH" \
   --pg-dsn "$DATABASE_URL" \
   --limit 5000 --batch-sizes 1,32,128 \
@@ -439,9 +439,9 @@ exactly-once、最少 unique 行数或查询阶段 60 秒门禁失败即停止�
 OUT=/root/autodl-tmp/experiment-artifacts/image_project_static_60k_x2_20260802
 PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
 
-"$PY" code/scripts/run_image_clip_matrix.py \
+"$PY" code/scripts/experiments/run_image_clip_matrix.py \
   --config deploy/autodl/image_project_static_formal.example.json \
-  --image-runner code/scripts/run_image_clip_e2e.py \
+  --image-runner code/scripts/experiments/run_image_clip_e2e.py \
   --python-executable "$PY" \
   --output-dir "$OUT"
 ```

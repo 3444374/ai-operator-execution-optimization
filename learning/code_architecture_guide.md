@@ -44,7 +44,8 @@ Arrow/Daft materializer 放在 `data/`，不是 `planning/`。原因是 material
 
 这次迁移只改变文件归属和 import 路径，没有改变算法、默认参数、CLI 参数或 CSV
 schema。旧的 6 个 `profile_*` 和 11 个 scheduling 兼容壳已删除，避免同一个实现有
-两个入口。`test_architecture_boundaries.py` 用 AST 检查跨层 import，并阻止旧路径重新出现。
+两个入口。`tests/architecture/test_architecture_boundaries.py` 用 AST 检查跨层 import，
+并阻止旧路径重新出现。
 
 ## 5. 大文件现在如何拆分
 
@@ -53,13 +54,15 @@ schema。旧的 6 个 `profile_*` 和 11 个 scheduling 兼容壳已删除，避
 `experiments/shared_vllm/` 已按 config、runtime、evidence、metrics、runner 拆分。三个包的
 `__init__.py` 继续导出原来的公共 API，因此调用方不需要知道内部文件位置。
 
-`data/materializers/text.py` 等剩余大文件后续仍按一次一个职责处理。`scripts/` 和
-`tests/` 的物理分组是下一阶段，因为仓库里有数百条可复现实验命令引用现有路径，必须在
-同一个独立提交里原子更新。
+`scripts/` 已按 data/services/baselines/profiling/experiments/analysis 分组，`tests/`
+按生产域镜像。数百条当前复现命令已同步迁移；已执行实验的 raw manifest 不改写，因为
+其中的旧路径属于证据的一部分。`data/materializers/text.py` 等剩余大文件后续仍按一次
+一个职责处理。
 
 ## 6. 如何判断迁移是否正确
 
-- 静态门禁：源码可编译，旧 import 搜索结果为空，AST boundary test 通过；
+- 静态门禁：源码可编译，旧 import 搜索结果为空，AST boundary test 通过；目录化测试
+  使用 `python -m unittest discover -s code/tests -t code -p 'test_*.py'`；
 - 本地行为：不需要 GPU 的单元测试保持通过；缺 Daft/psycopg 或 macOS Ray 权限要和
   真正代码失败分开报告；
 - 远端行为：服务器恢复后，用文本 64 行 baseline gate、图像 256 行 resource/correctness

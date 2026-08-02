@@ -77,7 +77,7 @@ runtime，不能只比固定工作量吞吐。
   active-window。
 
 入口仍为兼容文件名
-`code/scripts/run_official_baseline_gate.py`，配置为
+`code/scripts/baselines/run_official_baseline_gate.py`，配置为
 `deploy/autodl/dual_gpu_official_baseline_gate.example.json`。这里的 “official” 只是历史
 文件名；报告中的 scope 已改为 `text_comparison_validity_gate`。
 

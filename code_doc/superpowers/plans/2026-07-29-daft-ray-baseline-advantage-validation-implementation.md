@@ -27,11 +27,11 @@ the exact formal pressure. Keep direct/official baselines in the independent
 
 - Modify `code/src/model_backends.py`
 - Modify `code/src/scheduling/runtime/ray_adapter.py`
-- Modify `code/scripts/postgres_ai_operator_profile.py`
+- Modify `code/scripts/profiling/postgres_ai_operator_profile.py`
 - Modify `code/src/profiling/schema.py`
-- Test `code/tests/test_model_backends.py`
-- Test `code/tests/test_ray_adapter.py`
-- Test `code/tests/test_postgres_profile_scheduling.py`
+- Test `code/tests/serving/test_model_backends.py`
+- Test `code/tests/scheduling/test_ray_adapter.py`
+- Test `code/tests/observability/test_postgres_profile_scheduling.py`
 
 - [ ] Write tests proving every actor has a side-effect-free `ready()` result.
 - [ ] Write a test proving `ActorSubmissionState.wait_until_ready()` resolves
@@ -51,10 +51,9 @@ the exact formal pressure. Keep direct/official baselines in the independent
 - Modify `code/src/model_backends.py`
 - Modify `code/src/profiling/traces.py`
 - Modify `code/src/profiling/schema.py`
-- Modify `code/scripts/postgres_ai_operator_profile.py`
-- Test `code/tests/test_model_backends.py`
-- Test `code/tests/test_profiling_modules.py`
-- Test `code/tests/test_postgres_profile_scheduling.py`
+- Modify `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Test `code/tests/serving/test_model_backends.py`
+- Test `code/tests/observability/test_postgres_profile_scheduling.py`
 
 - [ ] Write a deterministic-clock test for request start, response headers,
   body complete, headers-wait, and body-read intervals.
@@ -77,8 +76,8 @@ the exact formal pressure. Keep direct/official baselines in the independent
 - Modify
   `deploy/autodl/dual_gpu_same_condition_project_calibration.example.json`
 - Modify `deploy/autodl/README.md`
-- Modify `code/tests/test_postgres_profile_scheduling.py`
-- Modify `code/tests/test_experiment_scenarios.py`
+- Modify `code/tests/observability/test_postgres_profile_scheduling.py`
+- Modify `code/tests/experiments/test_experiment_scenarios.py`
 
 - [ ] Write template-contract tests requiring one same-pressure warm-up, three
   formal repeats, explicit Ray address, Chat/no-replay/request semantics, and

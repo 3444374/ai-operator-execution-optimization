@@ -37,7 +37,7 @@ raw/ray_data_staged_256.json
 
 ```bash
 PYTHONPATH=code CUDA_VISIBLE_DEVICES=0,1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-  /root/autodl-tmp/venvs/vllm-4090/bin/python code/scripts/run_image_clip_e2e.py \
+  /root/autodl-tmp/venvs/vllm-4090/bin/python code/scripts/experiments/run_image_clip_e2e.py \
   --arm daft_staged --model /root/autodl-tmp/models/clip-vit-base-patch32 \
   --pg-dsn "$DATABASE_URL" --limit 256 --warmup-rows 64 --batch-size 32 \
   --cpu-workers 4 --gpu-workers 2 --daft-model-workers 2 --source-shards 4 \

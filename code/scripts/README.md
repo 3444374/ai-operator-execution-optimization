@@ -2,34 +2,48 @@
 
 ## 文件定位
 
+脚本按职责分为六组：
+
+| 子目录 | 只负责 |
+|---|---|
+| `data/` | workload 导入 |
+| `services/` | 本地调试服务 |
+| `baselines/` | 原生 baseline/gate 薄入口 |
+| `profiling/` | 数据链路画像与机制诊断 |
+| `experiments/` | 场景、矩阵和多 job 正式编排 |
+| `analysis/` | 离线汇总、代价估计和 calibration 选择 |
+
+入口脚本只解析参数并调用 `src/`；不得因为移动目录而复制生产逻辑。历史结果目录里的
+raw manifest 保留执行时旧路径作为不可变证据，README 中的复现命令使用当前新路径。
+
 当前连接与测试流程集中在：
 
 ```text
-code/scripts/postgres_ai_operator_profile.py
+code/scripts/profiling/postgres_ai_operator_profile.py
 ```
 
 pgai SQL trigger-surface profile entry:
 
 ```text
-code/scripts/pgai_sql_operator_profile.py
+code/scripts/profiling/pgai_sql_operator_profile.py
 ```
 
 Daft text DataOrganizer smoke entry:
 
 ```text
-code/scripts/daft_text_organizer_smoke.py
+code/scripts/profiling/daft_text_organizer_smoke.py
 ```
 
 Shared-vLLM K_max interference runner:
 
 ```text
-code/scripts/run_kmax_interference_experiment.py
+code/scripts/experiments/run_kmax_interference_experiment.py
 ```
 
 Seeded scenario runner:
 
 ```text
-code/scripts/run_ai_operator_scenarios.py
+code/scripts/experiments/run_ai_operator_scenarios.py
 ```
 
 该 runner 在输出目录持有 `.runner-lease.json` 原子租约，禁止两个进程同时写
@@ -38,21 +52,22 @@ code/scripts/run_ai_operator_scenarios.py
 
 它既是当前 Phase 1 的实验驱动脚本，也是后续拆分正式 worker 之前的最小端到端实现。当前没有另一份隐藏的连接代码。
 
-本目录只放实验主体、服务启动、数据采集和 profiling 入口。绘图、图表复现和素材筛选脚本统一放在 `figures/scripts/`。
+本目录只放实验主体、服务启动、数据采集和 profiling 入口。绘图、图表复现和素材筛选
+脚本统一放在 `figures/scripts/`。
 
 图像 CLIP 当前有三类不同入口，不能混读：
 
-- `profile_image_clip_bottleneck.py`：历史 slow-pt 单进程阶段画像；
-- `profile_clip_preproc_stages.py`：slow processor method-wrapper 诊断，未归因时间
+- `profiling/profile_image_clip_bottleneck.py`：历史 slow-pt 单进程阶段画像；
+- `profiling/profile_clip_preproc_stages.py`：slow processor method-wrapper 诊断，未归因时间
   不能解释成具体转换步骤；
-- `profile_image_clip_preprocess_variants.py`：当前 production-np、历史 legacy-pt、
+- `profiling/profile_image_clip_preprocess_variants.py`：当前 production-np、历史 legacy-pt、
   torchvision+PIL 和 torchvision+tensor-decode 的交错受控复测，经过同一
   `ClipTensorActor` 合同并做 embedding parity gate。它仍不是
   PG→Daft→Ray→pgvector E2E runner。
 
 图像正式链路另有两个入口：
 
-- `run_image_clip_e2e.py`：单个 vendor-native/diagnostic/project arm 的 operator-E2E、
+- `experiments/run_image_clip_e2e.py`：单个 vendor-native/diagnostic/project arm 的 operator-E2E、
   资源、正确性与 schema v10 原始记录；v10 在 unique/pass/processed rows 之外记录
   implementation provenance、scheduler owner 和 formal eligibility。Daft 内置
   `embed_image` 与 Ray Data native graph 可作 baseline；项目自写 Daft UDF formal
@@ -62,17 +77,17 @@ code/scripts/run_ai_operator_scenarios.py
 - `../configs/image_vendor_baselines.json`：固定 Daft 官方 image-classification
   benchmark 的 commit、入口 SHA256 与允许适配白名单；vendor-code parity 不通过
   项目 runner 重写其 batching、actor 或 backpressure；
-- `run_image_clip_matrix.py`：读取 JSON 场景矩阵，用固定 seed 做 warmup + formal
+- `experiments/run_image_clip_matrix.py`：读取 JSON 场景矩阵，用固定 seed 做 warmup + formal
   block 内交错，持有输出目录租约，并对 unique rows、exactly-once 与最小稳态时长
   fail closed。原始 CSV、逐 run manifest/stdout/stderr 和外层 schedule 必须保存在
   同一结果目录，不能只摘录汇总数字。
 
-`import_coco_images.py` 同时支持 `--dir` 与 `--zip`；ZIP 模式直接顺序读取成员并在
+`data/import_coco_images.py` 同时支持 `--dir` 与 `--zip`；ZIP 模式直接顺序读取成员并在
 单事务内写 PostgreSQL，不落地完整解压目录，适用于 COCO train 正式规模。
 导入前强制表主键为 `(workload_name, doc_id)`；legacy 全局 `doc_id` 主键需先执行
 `deploy/autodl/image_documents_workload_key.sql`，不能给某个 split 人工加 ID offset。
 
-`profile_clip_transfer_ceiling.py` 是 H2D 机制诊断：R0 GPU-resident、R1 pinned
+`profiling/profile_clip_transfer_ceiling.py` 是 H2D 机制诊断：R0 GPU-resident、R1 pinned
 FP16、R2 pageable FP32 分别保存每个 batch/repeat 的 CUDA-event H2D、forward、
 ownership copy 和同步 wall。它不含数据库/Daft/Ray queue，不能作为系统 E2E baseline。
 
@@ -100,7 +115,7 @@ PostgreSQL documents/job table
 | AI 算子 | `FakeEmbeddingActor` / `CompatibleHTTPEmbeddingActor` / `FakeCompletionActor` / `CompatibleHTTPCompletionActor` / `OllamaCompletionActor` | `fake` 只用于离线 smoke 和控制变量；`compatible_http` 用于 vLLM-compatible embedding 或 completion endpoint；`ollama` 用于本地 Ollama `/api/generate` completion smoke |
 | 并发与反压 | `submit_ray_tasks` / `submit_with_backpressure` → `SynchronousScheduler` | 静态 task/actor 路径统一执行 K_max、路由、等待和 fan-in；旧 queue-adaptive 分支暂时隔离保留 |
 | 数据写回 | `code/src/data/sinks/postgres.py::write_embeddings` / `write_completions` | embedding 支持 `none`、JSON 文本和 pgvector；completion 支持 `none` 和 JSON 文本 |
-| 指标输出 | `code/src/observability/metrics.py::preflight_metrics_schema` / `append_metrics` | 正式工作前用 dry-run keys 拒绝旧 schema；追加时要求已有 header 与当前 row keys 精确一致 |
+| 指标输出 | `code/src/observability/metrics/::preflight_metrics_schema` / `append_metrics` | 正式工作前用 dry-run keys 拒绝旧 schema；追加时要求已有 header 与当前 row keys 精确一致 |
 | 场景单写者 | `code/src/infrastructure/runner_lease.py::acquire_runner_lease` | 原子占用输出目录，校验 owner、进程启动身份与 config fingerprint，显式记录 stale recovery |
 | completion 粒度 | `profiling.replay::_service_quantum_envelopes` | 在 planning batch 内按预测 work 切完整行，分别生成 HTTP/Ray completion 与 credit 释放单元；不拆单行 prompt |
 | actor worker pool | `ActorWorkerPoolSubmitter` / `RaySubmissionAdapter` | 每个 endpoint 显式限制 worker slots，按 round-robin 或 least-active-work 分配，completion/failure 后由 canonical handle 精确释放 |
@@ -109,7 +124,7 @@ PostgreSQL documents/job table
 
 ```bash
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
-.venv/bin/python code/scripts/postgres_ai_operator_profile.py \
+.venv/bin/python code/scripts/profiling/postgres_ai_operator_profile.py \
   --setup --seed-rows 256 --total-rows 256 \
   --db-fetch-rows 128 --ray-batch-rows 64 \
   --model-workers 2 --max-inflight 4 \
@@ -155,7 +170,7 @@ utilization；submission trace 另记 worker ID/index/PID 供归因。
 
 ## Daft text organizer smoke
 
-`daft_text_organizer_smoke.py` is the smallest script-level entry for the
+`profiling/daft_text_organizer_smoke.py` is the smallest script-level entry for the
 organizer abstraction in `code/src/data/materializers/text.py`. It does not connect to
 PostgreSQL or vLLM; it verifies that text rows can pass through either
 `ArrowOrganizer` or `DaftOrganizer` and return downstream Arrow batches. Use
@@ -165,11 +180,11 @@ under `tmp/` because this is a local smoke result, not a formal experiment
 result.
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\daft_text_organizer_smoke.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\daft_text_organizer_smoke.py `
   --organizer arrow --rows 256 --batch-size 64 `
   --output tmp\daft_text_organizer_smoke.csv
 
-.conda\pg-ai-profile\python.exe code\scripts\daft_text_organizer_smoke.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\daft_text_organizer_smoke.py `
   --organizer daft --runner ray --rows 32 --batch-size 8 `
   --partition-mode into_partitions --partitions 4 `
   --output tmp\daft_text_organizer_smoke.csv
@@ -180,7 +195,7 @@ result.
 
 ## 正式对照实验
 
-2026-07-11 已为 `postgres_ai_operator_profile.py` 增加可重复对照实验参数：
+2026-07-11 已为 `profiling/postgres_ai_operator_profile.py` 增加可重复对照实验参数：
 
 - `--executor python|ray_task|ray_actor`
 - `--data-source arrow_postgres|daft_postgres`
@@ -352,7 +367,7 @@ describe both paths as estimated MFU.
 After repeated runs, generate plot-ready long-form statistics with:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\summarize_output_aware_bfd.py `
+.conda\pg-ai-profile\python.exe code\scripts\analysis\summarize_output_aware_bfd.py `
   --runs experiments\results\<experiment>\runs.csv `
   --output experiments\results\<experiment>\summary.csv
 ```
@@ -390,7 +405,7 @@ clock adjustments cannot invert arrival and flush ordering.
 
 ## Seeded scenario runner
 
-`run_ai_operator_scenarios.py` executes each profiler run in a separate
+`experiments/run_ai_operator_scenarios.py` executes each profiler run in a separate
 process. Warm-ups preserve configuration order; formal scenarios are shuffled
 once per repeat with the recorded seed. Before every run, the runner requires
 the model health endpoint to return HTTP 200 and the vLLM running/waiting
@@ -415,9 +430,9 @@ redacted manifest and therefore participates in resume compatibility checks.
 Secret-like metadata keys are redacted.
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\run_ai_operator_scenarios.py `
+.conda\pg-ai-profile\python.exe code\scripts\experiments\run_ai_operator_scenarios.py `
   --config experiments\results\request_lifecycle_gate_20260725\scenario_config.json `
-  --profiler code\scripts\postgres_ai_operator_profile.py `
+  --profiler code\scripts\profiling\postgres_ai_operator_profile.py `
   --python-executable .conda\pg-ai-profile\python.exe `
   --output-dir experiments\results\request_lifecycle_gate_20260725 `
   --health-url http://localhost:8000/health `
@@ -428,7 +443,7 @@ Secret-like metadata keys are redacted.
 Single-GPU smoke configuration:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --data-source daft_postgres --source-order arrival_time --arrival-replay `
   --arrival-time-scale 0.0005 `
@@ -529,8 +544,8 @@ non-empty CSV it reads the existing header and requires an exact ordered match
 with the current row keys. A stale/legacy schema raises `ValueError` before any
 bytes are appended; use a new output file or explicitly migrate the old CSV.
 
-`run_kmax_interference_experiment.py` is a small orchestration wrapper around
-`postgres_ai_operator_profile.py`. It starts a background bulk `AI_COMPLETE`
+`experiments/run_kmax_interference_experiment.py` is a small orchestration wrapper around
+`profiling/postgres_ai_operator_profile.py`. It starts a background bulk `AI_COMPLETE`
 job and then starts a foreground small job against the same vLLM endpoint. Use
 it when testing the admission-control motivation for `K_max`: bounded
 background inflight versus unbounded background inflight under shared service.
@@ -557,7 +572,7 @@ GPU-backed model service。推荐参数名是 `compatible_http`，旧的 `http_o
 示例命令：
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 4096 --total-rows 4096 `
   --db-fetch-rows 512 --ray-batch-rows 256 `
@@ -577,7 +592,7 @@ motivation/results/pg18_4_fake/system_profile.md
 GPU-backed embedding endpoint 配置检查示例：
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --dry-run `
   --executor ray_actor `
   --model-backend compatible_http `
@@ -590,7 +605,7 @@ GPU-backed embedding endpoint 配置检查示例：
 AI_COMPLETE vLLM-compatible completion endpoint 配置检查示例：
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --dry-run `
   --operator ai_complete `
   --executor ray_actor `
@@ -623,7 +638,7 @@ docker run -d --name ai-operator-vllm-qwen --gpus all `
 Minimal `AI_COMPLETE + Daft + vLLM` smoke:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 4 --total-rows 2 `
   --db-fetch-rows 2 --ray-batch-rows 1 `
@@ -642,7 +657,7 @@ Minimal `AI_COMPLETE + Daft + vLLM` smoke:
 Legacy 07-25..07-28 `AI_COMPLETE + Daft + Ray + vLLM` baseline workload (sharegpt_burstgpt, 1024 rows, doc_id 1000000). The CURRENT main workload is sharegpt_multiturn (2048 rows, doc_id 300000-302047, target_output 1-256) — substitute `--workload-name sharegpt_multiturn` / `--source-workload-name sharegpt_multiturn` (and the corresponding doc-id/row-count flags) in the commands below for new runs:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\import_ai_complete_workload.py `
+.conda\pg-ai-profile\python.exe code\scripts\data\import_ai_complete_workload.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --workload-name sharegpt_burstgpt `
   --start-doc-id 1000000 `
@@ -656,7 +671,7 @@ Legacy 07-25..07-28 `AI_COMPLETE + Daft + Ray + vLLM` baseline workload (sharegp
 Then profile the imported workload:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup `
   --total-rows 128 `
@@ -679,7 +694,7 @@ Then profile the imported workload:
 AI_COMPLETE Ollama native completion smoke 示例：
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 4 --total-rows 2 `
   --db-fetch-rows 2 --ray-batch-rows 1 `
@@ -704,7 +719,7 @@ motivation/results/gpu/ai_embed_profile.csv
 只有在 `--model-backend compatible_http` 连接到真实 GPU-backed endpoint 时，结果才可放入
 `motivation/results/gpu/`。
 
-本地真实模型 endpoint 可用 `local_embedding_server.py` 启动：
+本地真实模型 endpoint 可用 `services/local_embedding_server.py` 启动：
 
 ```powershell
 $env:HF_HOME="D:\Code\ai-operator-execution-optimization\.cache\huggingface"
@@ -712,7 +727,7 @@ $env:HF_HUB_CACHE="D:\Code\ai-operator-execution-optimization\.cache\huggingface
 $env:TRANSFORMERS_CACHE=$env:HF_HUB_CACHE
 $env:TORCH_HOME="D:\Code\ai-operator-execution-optimization\.cache\torch"
 
-.conda\pg-ai-profile\python.exe code\scripts\local_embedding_server.py `
+.conda\pg-ai-profile\python.exe code\scripts\services\local_embedding_server.py `
   --model .cache\models\all-MiniLM-L6-v2 `
   --device cuda `
   --batch-size 64 `
@@ -732,7 +747,7 @@ motivation/results/gpu/pgai_integrated_key_rerun_20260714.md
 motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
 ```
 
-This rerun uses `local_embedding_server.py` on ports 8000 and 8001 with
+This rerun uses `services/local_embedding_server.py` on ports 8000 and 8001 with
 `--device cuda`. It keeps pgai SQL surface validation separate from the
 job-table GPU timing profile.
 
@@ -753,7 +768,7 @@ motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
 
 ## 2026-07-26 Workload materialization and cost estimation
 
-`import_ai_complete_workload.py` can use a live vLLM-compatible `/tokenize`
+`data/import_ai_complete_workload.py` can use a live vLLM-compatible `/tokenize`
 endpoint when a local tokenizer checkout is unavailable. Controlled-prefix
 materialization clones complete rows, chooses an exact nested subset
 deterministically, preserves the original prompt suffix, and fails rather than
@@ -776,15 +791,15 @@ The safe append contract is:
 Prefix verification is read-only and returns `status=verified_dry_run`.
 Without an exact match, the importer fails before the suffix is written.
 
-`estimate_operator_cost.py` fits a grouped held-out cost model from one or more
+`analysis/estimate_operator_cost.py` fits a grouped held-out cost model from one or more
 profile CSVs. It uses only pre-execution features and writes the feature schema,
 split groups, coefficients, normalization values, and regression metrics to
 JSON.
 
 ## 2026-07-29 Shared-vLLM multi-job runner
 
-`run_shared_vllm_experiment.py` is the shared-endpoint multi-job group runner. Unlike
-`run_ai_operator_scenarios.py`, one scheduled run contains multiple concurrent
+`experiments/run_shared_vllm_experiment.py` is the shared-endpoint multi-job group runner. Unlike
+`experiments/run_ai_operator_scenarios.py`, one scheduled run contains multiple concurrent
 profiler processes. It requires one explicit Ray address, gives every job an
   independent summary/request/submission trace, records group-level vLLM/resource
   metrics and MFU once, and uses one uniquely named Ray credit actor for
@@ -815,7 +830,7 @@ startup, gate, resume, evidence-preservation, and cleanup procedure in
 
 ## 2026-07-29 同条件官方 baseline 入口
 
-`run_official_baseline.py` 为同条件 baseline 提供薄执行入口。它不决定实验
+`baselines/run_official_baseline.py` 为同条件 baseline 提供薄执行入口。它不决定实验
 矩阵，只执行已经固定的 manifest shard，并把不同实现统一到
 `requests.csv + summary.json`：
 
@@ -832,7 +847,7 @@ startup, gate, resume, evidence-preservation, and cleanup procedure in
 largest-work-first 固定分片；执行器不得自行重新洗牌。示例：
 
 ```bash
-python code/scripts/run_official_baseline.py export-postgres-manifest \
+python code/scripts/baselines/run_official_baseline.py export-postgres-manifest \
   --database-url "$DATABASE_URL" \
   --workload-name "$SOURCE_WORKLOAD_NAME" \
   --row-count 64 \
@@ -842,7 +857,7 @@ python code/scripts/run_official_baseline.py export-postgres-manifest \
   --endpoint-count 2 \
   --output /root/autodl-tmp/gates/official_baseline_gate_manifest.jsonl
 
-python code/scripts/run_official_baseline_gate.py \
+python code/scripts/baselines/run_official_baseline_gate.py \
   --config deploy/autodl/dual_gpu_official_baseline_gate.example.json \
   --driver-python /root/miniconda3/bin/python \
   --vllm-python /root/autodl-tmp/venvs/vllm-4090/bin/python \
@@ -855,7 +870,7 @@ python code/scripts/run_official_baseline_gate.py \
 vLLM Bench 与 bounded HTTP 的 C64：
 
 ```bash
-python code/scripts/run_official_baseline_gate.py \
+python code/scripts/baselines/run_official_baseline_gate.py \
   --config deploy/autodl/dual_gpu_official_baseline_gate.example.json \
   --driver-python /root/miniconda3/bin/python \
   --vllm-python /root/autodl-tmp/venvs/vllm-4090/bin/python \
@@ -873,7 +888,7 @@ cell 的覆盖都会在启动请求前失败；`resolved_config.json` 保存最�
 并发。C64/C128 是校准压力点，不是默认值，更不能据单次 gate 直接得出正式
 性能结论。
 
-`run_official_baseline_gate.py` 是可复现的双 endpoint core gate runner：
+`baselines/run_official_baseline_gate.py` 是可复现的双 endpoint core gate runner：
 每个 cell 都先同时启动两个 shard，再等待二者完成；逐 endpoint 保存命令与
 日志，轮询 vLLM queue 归零后才归一化和执行 gate。任一 shard、归一化或 gate
 失败都立即停止后续 cell，写 `run_status.json` 并保留现场；输出根目录已存在
@@ -904,7 +919,7 @@ formal repeat。actor-ready barrier 不计入 measured E2E，耗时写入
 body-read 边界。两臂 throughput/JCT 没有收敛到 5% 内时必须停止，不能以
 单次最佳结果选择参数。
 
-`select_strategy_calibration.py` 把通过门禁的 Completions feeding、
+`analysis/select_strategy_calibration.py` 把通过门禁的 Completions feeding、
 direct bounded gate、token-budget 和同协议 actor-shape formal CSV 合并为
 `selection.json + calibration.env`。它按 95% feeding parity、
 至少三次 formal repeat、97%-ceiling 和下一档增益小于 3% 的预注册规则冻结
@@ -913,14 +928,14 @@ token budget、per-endpoint K、active work；actor shape 在总 slots 固定时
 data-organization、submission-policy 和 shared-vLLM formal runner 会核对
 该选择文件；旧 8K/K64、缺失 actor-pool 证据或环境漂移会在外部请求前失败。
 
-`summarize_static_k_workload_surface.py` 读取
+`analysis/summarize_static_k_workload_surface.py` 读取
 `dual_gpu_static_k_workload_surface.example.json` 的 formal CSV，先用
 95% capacity floor 排除欠喂点，再按 SLO goodput（缺失时用 JCT）选择各
 workload 的静态 K。只有最佳 K 至少迁移 2×或 97% 可接受集合不重叠、错配
 损失至少 5%，且至少 2/3 paired repeats 同向时才输出 `passed`。
 `--require-pass` 在不存在动态优化空间时返回 2，供远端 runner fail closed。
 
-`summarize_static_credit_workload_surface.py` 用于 prompt 长度等 workload
+`analysis/summarize_static_credit_workload_surface.py` 用于 prompt 长度等 workload
 变化下的 request/work credit 审计。输入为重复的
 `--surface workload=/path/to/runs.csv`，统一输出 formal 中位数、均值、CV、
 SLO goodput/JCT、observed/configured limit、无准入压力标志和交叉 regret。
