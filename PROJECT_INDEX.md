@@ -277,6 +277,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/baselines/postgres_manifest.py` | 正式 PostgreSQL workload 的不可变 baseline manifest 导出核心 | 按 workload/doc_id/limit/offset 读取完整行，固定 output 代价语义、source hash 与 endpoint 分片前输入 |
 | `code/src/baselines/controls/batched_completions.py` | 无 Ray 的持久异步 fixed-row multi-prompt Completions control | 同协议标定 HTTP packing 上限，验证每个完整 prompt exactly-once 后再测试项目 token-budget；不作为 native baseline |
 | `code/src/baselines/README.md` | 文本 comparison harness 分层与代码归属 | 修改 baseline adapter 或调度归属前读取，防止 control/native 混写 |
+| `code/ARCHITECTURE_REFACTOR_PLAN.md` | 全项目代码目录与文本/图像双维度重构计划 | 开始移动 `src/scripts/tests` 前读取；规定目标树、依赖方向、迁移顺序和验证门禁 |
 | `code/src/baselines/provenance.py` | 文本 arm 原生性与来源 fail-closed 合同 | 每个 summary/gate 写入 role、scheduler owner、custom scheduling、formal eligibility 与 upstream source |
 | `code/src/baselines/runtime/` | Daft prompt / Ray Data vendor-native runtime adapters | 框架拥有 batching/backpressure；只做 workload payload/response 适配，不注入项目调度 |
 | `code/src/baselines/ceilings/` | vLLM Bench 官方服务容量上限 | 只衡量 service ceiling，不冒充数据库/框架 baseline |

@@ -3600,3 +3600,17 @@
 - **学习材料**：新增 `learning/text_native_baseline_guide.md`，用数据链路解释
   ceiling/control/native/project、Chat/Completions 分轨、64→512→4096 流程和双 endpoint
   group throughput，避免后续只看单个 tokens/s 或把 barrier 当逐请求 P99。
+
+## 2026-08-02 全项目代码结构重构规划
+
+- **现状确认**：此前只整理了文本 baseline；`src` 顶层仍有 22 个 Python 文件，
+  `scripts/tests` 分别有 22/58 个顶层文件，并存在 profiler/scheduling 双入口与多个
+  500–1,923 行单体文件。
+- **双维度架构**：公共执行核心按 data/planning/scheduling/serving/observability/
+  sinks/experiments 分层；文本与图像只在 `modalities/` 保存合同、代价、预处理、payload、
+  后端和质量评价，不复制两套 scheduler。
+- **baseline 分轨**：目标结构为 `baselines/common|text|image`，文本与图像分别维护
+  ceiling/control/framework/product/vendor adapter，共用 provenance/result/gate 合同。
+- **迁移纪律**：先冻结边界和清除兼容入口，再整理模态/baseline，之后抽公共层并逐个拆
+  大文件；路径迁移不与算法修改或全仓格式化混合。完整计划见
+  `code/ARCHITECTURE_REFACTOR_PLAN.md`。
