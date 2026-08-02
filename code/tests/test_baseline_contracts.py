@@ -10,13 +10,13 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.baselines.contracts import BaselineRequestResult, ChatRequest
-from src.baselines.manifests import (
+from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
+from src.baselines.common.manifests import (
     assign_endpoint_shards,
     read_manifest,
     write_manifest,
 )
-from src.baselines.results import summarize_results, validate_results
+from src.baselines.common.results import summarize_results, validate_results
 
 
 def sample_request(

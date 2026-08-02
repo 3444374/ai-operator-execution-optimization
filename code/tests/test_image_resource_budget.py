@@ -7,7 +7,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.image.resource_budget import build_ray_cpu_budget  # noqa: E402
+from src.modalities.image.resource_budget import build_ray_cpu_budget  # noqa: E402
 
 
 class ImageResourceBudgetTest(unittest.TestCase):

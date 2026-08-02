@@ -69,8 +69,8 @@ vLLM 的 `--enable-chunked-prefill` 和你的 queue-adaptive flush / K_max 控�
 
 **架构边界（代码确证）**：
 
-- 数据组织（token-budget / length-align / prefix-aware）依据**已知输入 prompt token**，**不依赖自回归**——`code/src/organizers.py:230` `_row_token_cost = prompt_tokens + completion_max_tokens`，全在发请求之前决策。
-- 提交控制（adaptive K_max）依据**运行时 vLLM 指标**（running/waiting/kv_cache），**依赖自回归**——`code/scripts/postgres_ai_operator_profile.py:512` `adaptive_inflight_limit`。
+- 数据组织（token-budget / length-align / prefix-aware）依据**已知输入 prompt token**，**不依赖自回归**——`code/src/data/materializers/text.py` 的 `_row_token_cost()` 在发请求之前解析 prompt 与预测 output work。
+- 提交控制（adaptive K_max）依据**运行时 vLLM 指标**（running/waiting/kv_cache），**依赖自回归**——控制器位于 `code/src/scheduling/submission_control/`，profiler 只负责接线与记录实际上限。
 
 **含义**：实验若把 output 固定（如 `--completion-max-tokens 64`），会消除"输出长度不可预测"这个变异源，使 adaptive 的运行时动态优势无从发挥——这是 RC2 当前负结果（P0-1）的一个待排除混淆变量，见 `experiment_status_and_gaps.md` P0-1。
 

@@ -10,11 +10,11 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.baselines.controls import (  # noqa: E402
+from src.baselines.text.controls import (  # noqa: E402
     BatchedCompletionsConfig,
     run_batched_completions,
 )
-from src.baselines.contracts import ChatRequest  # noqa: E402
+from src.baselines.common.contracts import ChatRequest  # noqa: E402
 
 
 class BatchedCompletionsTests(unittest.TestCase):

@@ -16,17 +16,17 @@ SCRIPTS_ROOT = CODE_ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from src.image.clip import (  # noqa: E402
+from src.modalities.image.clip import (  # noqa: E402
     configure_torch_thread_pools,
     extract_clip_image_features,
 )
-from src.image.contracts import (  # noqa: E402
+from src.modalities.image.contracts import (  # noqa: E402
     EmbeddingSemantics,
     ImageBatchTelemetry,
     ImageEmbeddingBatch,
     ImageEmbeddingResult,
 )
-from src.image.source import (  # noqa: E402
+from src.modalities.image.source import (  # noqa: E402
     ImageSourceConfig,
     image_documents_query,
     split_image_source_config,

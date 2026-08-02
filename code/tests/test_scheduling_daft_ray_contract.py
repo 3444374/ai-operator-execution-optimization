@@ -13,18 +13,18 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts import postgres_ai_operator_profile as profile  # noqa: E402
-from src.organizers import DaftOrganizer, OrganizerConfig  # noqa: E402
-from src.scheduling.admission import StaticAdmissionController  # noqa: E402
-from src.scheduling.lifecycle import MonotonicEpochClock  # noqa: E402
-from src.scheduling.models import (  # noqa: E402
+from src.data.materializers.text import DaftOrganizer, OrganizerConfig  # noqa: E402
+from src.scheduling.submission_control.admission import StaticAdmissionController  # noqa: E402
+from src.scheduling.core.lifecycle import MonotonicEpochClock  # noqa: E402
+from src.scheduling.core.models import (  # noqa: E402
     BatchRequest,
     EndpointSnapshot,
     PayloadEnvelope,
     TopologySnapshot,
 )
-from src.scheduling.ray_adapter import RaySubmissionAdapter  # noqa: E402
-from src.scheduling.routing import RoundRobinEndpointRouter  # noqa: E402
-from src.scheduling.scheduler import SynchronousScheduler  # noqa: E402
+from src.scheduling.runtime.ray_adapter import RaySubmissionAdapter  # noqa: E402
+from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter  # noqa: E402
+from src.scheduling.core.scheduler import SynchronousScheduler  # noqa: E402
 
 
 class DaftRayContractTests(unittest.TestCase):

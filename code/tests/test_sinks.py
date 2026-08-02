@@ -10,7 +10,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.sinks import batched_rows, vector_to_pg_literal, write_completions, write_embeddings
+from src.data.sinks import batched_rows, vector_to_pg_literal, write_completions, write_embeddings
 
 
 class FakeCursor:

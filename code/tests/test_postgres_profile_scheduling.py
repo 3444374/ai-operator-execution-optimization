@@ -21,37 +21,37 @@ if str(CODE_ROOT) not in sys.path:
 
 from scripts import postgres_ai_operator_profile as profile  # noqa: E402
 from scripts.run_ai_operator_scenarios import _load_config  # noqa: E402
-from src.baselines.contracts import ChatRequest  # noqa: E402
-from src.baselines.manifests import write_manifest  # noqa: E402
-from src.profiling import ray as profile_ray  # noqa: E402
-from src.profiling import replay as profile_replay  # noqa: E402
-from src.scheduling.adaptive_admission import AimdAdmissionController  # noqa: E402
-from src.scheduling.admission import DynamicAdmissionGate  # noqa: E402
-from src.scheduling.models import (  # noqa: E402
+from src.baselines.common.contracts import ChatRequest  # noqa: E402
+from src.baselines.common.manifests import write_manifest  # noqa: E402
+from src.observability.profiling import ray as profile_ray  # noqa: E402
+from src.observability.profiling import replay as profile_replay  # noqa: E402
+from src.scheduling.submission_control.adaptive import AimdAdmissionController  # noqa: E402
+from src.scheduling.submission_control.admission import DynamicAdmissionGate  # noqa: E402
+from src.scheduling.core.models import (  # noqa: E402
     SubmissionCompletion,
     SubmissionLifecycleEvent,
 )
-from src.scheduling.observations import (  # noqa: E402
+from src.scheduling.runtime.observations import (  # noqa: E402
     AdmissionTraceEvent,
     CachedMetricsObservationProvider,
     NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
-from src.scheduling.batching import (  # noqa: E402
+from src.scheduling.organization.batching import (  # noqa: E402
     FlushTraceEvent,
     PendingBatchBuilder,
     ReplayServiceObservation,
 )
-from src.scheduling.lifecycle import (  # noqa: E402
+from src.scheduling.core.lifecycle import (  # noqa: E402
     RequestLifecycleSeed,
     RequestTraceRow,
 )
-from src.scheduling.routing import (  # noqa: E402
+from src.scheduling.endpoint_routing.policies import (  # noqa: E402
     LeastQueuedEndpointRouter,
     RequestPoolRouter,
 )
-from src.scheduling.ray_runtime import RayWorkerOptions  # noqa: E402
-from src.scheduling.scheduler import SchedulerResult  # noqa: E402
+from src.scheduling.runtime.ray_runtime import RayWorkerOptions  # noqa: E402
+from src.scheduling.core.scheduler import SchedulerResult  # noqa: E402
 
 
 class _RecordingRemoteDefinition:
@@ -1883,7 +1883,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         output = Path("control_trace.csv")
         captured_rows = []
         with patch(
-            "src.profiling.traces.append_metrics",
+            "src.observability.profiling.traces.append_metrics",
             side_effect=lambda path, row: captured_rows.append((path, row)),
         ):
             profile._write_control_trace(

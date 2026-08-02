@@ -14,7 +14,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.model_backends import (
+from src.serving.backends import (
     CompatibleAsyncHTTPCompletionActor,
     FakeCompletionActor,
     call_compatible_completion_endpoint,
@@ -98,7 +98,7 @@ class ModelBackendTests(unittest.TestCase):
                 return response_body
 
         with patch(
-            "src.model_backends.request.urlopen",
+            "src.serving.backends.request.urlopen",
             return_value=Response(),
         ) as urlopen:
             result = call_compatible_completion_endpoint(
@@ -148,15 +148,15 @@ class ModelBackendTests(unittest.TestCase):
 
         with (
             patch(
-                "src.model_backends.request.urlopen",
+                "src.serving.backends.request.urlopen",
                 return_value=Response(),
             ),
             patch(
-                "src.model_backends.time.time",
+                "src.serving.backends.time.time",
                 side_effect=[100.0, 101.25, 101.5],
             ),
             patch(
-                "src.model_backends.time.perf_counter",
+                "src.serving.backends.time.perf_counter",
                 side_effect=[10.0, 11.0, 11.2],
             ),
         ):
@@ -213,7 +213,7 @@ class ModelBackendTests(unittest.TestCase):
                 return response_body
 
         with patch(
-            "src.model_backends.request.urlopen",
+            "src.serving.backends.request.urlopen",
             return_value=Response(),
         ) as urlopen:
             result = call_compatible_completion_endpoint(
@@ -261,7 +261,7 @@ class ModelBackendTests(unittest.TestCase):
                 return response_body
 
         with patch(
-            "src.model_backends.request.urlopen",
+            "src.serving.backends.request.urlopen",
             return_value=Response(),
         ) as urlopen:
             result = call_compatible_completion_endpoint(

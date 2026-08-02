@@ -10,20 +10,20 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.scheduling.batching import (  # noqa: E402
+from src.scheduling.organization.batching import (  # noqa: E402
     ArrivalReplayBatcher,
     PendingBatchBuilder,
     ReplayServiceObservation,
     RowArrival,
     SystemReplayClock,
 )
-from src.scheduling.flush import (  # noqa: E402
+from src.scheduling.submission_control.flush import (  # noqa: E402
     FixedTimeoutFlush,
     ImmediateFlush,
     QueueAdaptiveFlush,
     SloAwareEwmaFlush,
 )
-from src.scheduling.token_budget import (  # noqa: E402
+from src.scheduling.organization.token_budget import (  # noqa: E402
     ServiceQuantumTokenBudgetController,
 )
 
@@ -129,8 +129,8 @@ class SystemReplayClockTests(unittest.TestCase):
                 timeline["now_s"] += delay_s
 
         with (
-            patch("src.scheduling.batching.time.monotonic", side_effect=monotonic),
-            patch("src.scheduling.batching.time.sleep", side_effect=sleep),
+            patch("src.scheduling.organization.batching.time.monotonic", side_effect=monotonic),
+            patch("src.scheduling.organization.batching.time.sleep", side_effect=sleep),
         ):
             clock = SystemReplayClock()
             clock.wait_until(101.0)

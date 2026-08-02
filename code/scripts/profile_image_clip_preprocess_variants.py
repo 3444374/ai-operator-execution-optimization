@@ -30,12 +30,12 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.image import (  # noqa: E402
+from src.modalities.image import (  # noqa: E402
     ClipImagePreprocessor,
     ClipTensorActor,
     ImageEmbeddingBatch,
 )
-from src.image.clip import decode_rgb_image  # noqa: E402
+from src.modalities.image.clip import decode_rgb_image  # noqa: E402
 
 
 @dataclass(frozen=True)

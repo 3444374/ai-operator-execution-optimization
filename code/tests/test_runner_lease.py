@@ -10,7 +10,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.runner_lease import RunnerOwner, acquire_runner_lease  # noqa: E402
+from src.infrastructure.runner_lease import RunnerOwner, acquire_runner_lease  # noqa: E402
 
 
 class RunnerLeaseTests(unittest.TestCase):

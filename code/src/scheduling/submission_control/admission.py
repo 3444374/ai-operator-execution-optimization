@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Protocol
 
-from ..models import (
+from ..core.models import (
     AdmissionDecision,
     AdmissionObservation,
     WindowDecision,

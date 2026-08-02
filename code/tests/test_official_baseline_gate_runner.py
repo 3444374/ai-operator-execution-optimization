@@ -13,8 +13,8 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.baselines.contracts import BaselineRequestResult, ChatRequest
-from src.baselines.gate_runner import (
+from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
+from src.baselines.text.orchestration.gate_runner import (
     load_core_gate_config,
     parse_concurrency_overrides,
     parse_vllm_queue_metrics,
@@ -22,8 +22,8 @@ from src.baselines.gate_runner import (
     run_core_gate,
     validate_service_counter_summary,
 )
-from src.baselines.manifests import read_manifest, write_manifest
-from src.baselines.provenance import adapter_provenance
+from src.baselines.common.manifests import read_manifest, write_manifest
+from src.baselines.common.provenance import adapter_provenance
 
 
 class OfficialBaselineGateRunnerTests(unittest.TestCase):

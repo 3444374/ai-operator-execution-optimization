@@ -148,7 +148,7 @@ source URI/共享文件路径只能作独立 baseline，不能与 BYTEA 轨道�
 已实现：
 
 - `BatchRequest.work_units/work_unit` 及 scheduler/least-work/Ray adapter 中性计量；
-- `src.image.DaftImageSource` lazy source；
+- `src.modalities.image.DaftImageSource` lazy source；
 - `ClipImagePreprocessor`、typed `ImageEmbeddingBatch/Result`；
 - `ClipTensorActor`：常驻 GPU、只接收预处理 tensor、输出 projected + L2-normalized embedding。
 
@@ -179,7 +179,7 @@ PYTHONPATH=code /root/miniconda3/bin/python - <<'PY'
 import os
 from pathlib import Path
 import ray
-from src.image import ClipImagePreprocessor, ClipTensorActor, ImageEmbeddingBatch
+from src.modalities.image import ClipImagePreprocessor, ClipTensorActor, ImageEmbeddingBatch
 
 model = os.environ["IMAGE_MODEL_PATH"]
 image_path = next(Path("/root/autodl-tmp/data/raw/coco_val2017/val2017").glob("*.jpg"))

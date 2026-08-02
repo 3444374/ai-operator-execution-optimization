@@ -9,13 +9,13 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.scheduling.adaptive_admission import (  # noqa: E402
+from src.scheduling.submission_control.adaptive import (  # noqa: E402
     AimdAdmissionController,
     HolAgeAimdAdmissionController,
     HolAgeAimdConfig,
 )
-from src.scheduling.admission import DynamicAdmissionGate  # noqa: E402
-from src.scheduling.models import (  # noqa: E402
+from src.scheduling.submission_control.admission import DynamicAdmissionGate  # noqa: E402
+from src.scheduling.core.models import (  # noqa: E402
     AdmissionObservation,
     BatchRequest,
     CollectedSubmission,
@@ -24,13 +24,13 @@ from src.scheduling.models import (  # noqa: E402
     SubmissionCompletion,
     TopologySnapshot,
 )
-from src.scheduling.observations import (  # noqa: E402
+from src.scheduling.runtime.observations import (  # noqa: E402
     CachedMetricsObservationProvider,
     NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
-from src.scheduling.routing import RoundRobinEndpointRouter  # noqa: E402
-from src.scheduling.scheduler import SynchronousScheduler  # noqa: E402
+from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter  # noqa: E402
+from src.scheduling.core.scheduler import SynchronousScheduler  # noqa: E402
 
 
 class FakeClock:

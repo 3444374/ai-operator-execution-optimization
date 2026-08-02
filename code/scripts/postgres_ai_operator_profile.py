@@ -25,7 +25,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.metrics import (
+from src.observability.metrics import (
     PeriodicSampler,
     StageTimer,
     aggregate_model_metric_snapshots,
@@ -39,7 +39,7 @@ from src.metrics import (
     scrape_prometheus_metrics,
     vllm_metric_delta_stats,
 )
-from src.model_backends import (
+from src.serving.backends import (
     CompatibleAsyncHTTPCompletionActor,
     CompatibleHTTPCompletionActor,
     CompatibleHTTPEmbeddingActor,
@@ -56,80 +56,80 @@ from src.model_backends import (
     ollama_complete_batch,
     text_token_count,
 )
-from src.organizers import (
+from src.data.materializers.text import (
     OrganizerConfig,
     configure_daft_runner,
     make_organizer,
     packing_algorithm_name,
 )
-from src.packing import summarize_packing
-from src.profiling.cli import parse_args
-from src.profiling.config import (
+from src.planning.packing.scalar import summarize_packing
+from src.observability.profiling.cli import parse_args
+from src.observability.profiling.config import (
     completion_endpoint_urls,
     embedding_endpoint_urls,
     model_metrics_urls,
     ray_worker_options as _ray_worker_options,
     resolve_actor_workers_per_endpoint as _resolve_actor_workers_per_endpoint,
 )
-from src.profiling.traces import (
+from src.observability.profiling.traces import (
     write_control_trace as _write_control_trace,
     write_flush_trace as _write_flush_trace,
     write_request_trace as _write_request_trace,
     write_resource_trace as _write_resource_trace,
     write_submission_trace as _write_submission_trace,
 )
-from src.profiling.schema import (
+from src.observability.profiling.schema import (
     FORMAL_RESULT_FIELDS,
     GPU_METADATA_DEFAULTS,
     validated_formal_result_row as _validated_formal_result_row,
 )
-from src.profiling.replay import (
+from src.observability.profiling.replay import (
     _arrival_replay_envelopes,
     _offline_batch_envelopes,
     _requires_replay_feedback,
 )
-from src.profiling.manifest_guard import (
+from src.observability.profiling.manifest_guard import (
     ProfileManifestGuard,
     validate_profile_manifest_contract,
 )
-from src.profiling.ray import (
+from src.observability.profiling.ray import (
     submit_ray_tasks,
     submit_with_backpressure,
 )
-from src.request_costs import (
+from src.modalities.text.costs import (
     output_cost_source,
 )
-from src.runtime_env import ray_runtime_env as _shared_ray_runtime_env
-from src.scheduling.adaptive_admission import (
+from src.infrastructure.runtime_env import ray_runtime_env as _shared_ray_runtime_env
+from src.scheduling.submission_control.adaptive import (
     AimdAdmissionController,
     AimdConfig,
     EwmaAimdAdmissionController,
     HolAgeAimdAdmissionController,
     HolAgeAimdConfig,
 )
-from src.scheduling.admission import DynamicAdmissionGate
-from src.scheduling.batching import ReplayServiceObservation
-from src.scheduling.lifecycle import (
+from src.scheduling.submission_control.admission import DynamicAdmissionGate
+from src.scheduling.organization.batching import ReplayServiceObservation
+from src.scheduling.core.lifecycle import (
     MonotonicEpochClock,
     RequestLifecycleSeed,
     RequestTraceRow,
     SubmissionServiceTiming,
     build_request_trace_rows,
 )
-from src.scheduling.models import (
+from src.scheduling.core.models import (
     PayloadEnvelope,
     SubmissionLifecycleEvent,
 )
-from src.scheduling.ray_adapter import (
+from src.scheduling.runtime.ray_adapter import (
     ActorSubmissionState,
 )
-from src.scheduling.observations import (
+from src.scheduling.runtime.observations import (
     CachedMetricsObservationProvider,
     NonBlockingMetricsObservationProvider,
     ServiceMetricsSnapshot,
 )
-from src.scheduling.pid_admission import PidAdmissionController, PidConfig
-from src.scheduling.routing import (
+from src.scheduling.submission_control.pid import PidAdmissionController, PidConfig
+from src.scheduling.endpoint_routing.policies import (
     LeastQueuedEndpointRouter,
     LeastWorkEndpointRouter,
     PinnedEndpointRouter,
@@ -137,9 +137,9 @@ from src.scheduling.routing import (
     RequestPoolRouter,
     RoundRobinEndpointRouter,
 )
-from src.sinks import write_completions, write_embeddings
-from src.sources import SourceConfig, make_source
-from src.workloads import generate_document_rows
+from src.data.sinks import write_completions, write_embeddings
+from src.data.sources import SourceConfig, make_source
+from src.data.workloads import generate_document_rows
 
 
 SCHEMA_SQL = """

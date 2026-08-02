@@ -2,6 +2,9 @@
 
 日期：2026-08-02
 
+实施状态：`codex/code-architecture-refactor` 已完成第 0–3 阶段的源码路径迁移；
+第 4 阶段的大文件语义拆分和第 5 阶段的 scripts/tests 物理分组尚未合并到 main。
+
 ## 1. 结论
 
 当前只完成了 `src/baselines/` 的第一轮分层，整个 `code/` 尚未整理完成。现状仍有：
@@ -28,12 +31,12 @@ code/
 │   ├── data/
 │   │   ├── sources/              # PostgreSQL/Daft/Arrow 读取与流式批次
 │   │   ├── sinks/                # completion、embedding、pgvector 写回
-│   │   └── workloads/            # workload manifest/seed/split；不含实验策略
+│   │   ├── workloads/            # workload manifest/seed/split；不含实验策略
+│   │   └── materializers/        # Arrow/Daft 将既定成员关系物化；允许引擎依赖
 │   ├── planning/
 │   │   ├── contracts.py          # WorkItem/WorkBatch/estimated_work_units
 │   │   ├── costs/                # 中性 cost interface、profile 校准、residual
 │   │   ├── packing/              # fixed/work-budget/BFD 等纯策略
-│   │   └── materializers/        # Arrow/Daft 将成员关系物化为 batch
 │   ├── scheduling/
 │   │   ├── organization/         # work-budget、service quantum
 │   │   ├── submission_control/   # request/work credit、AIMD/PID/UCB、shared fair credit
@@ -147,7 +150,8 @@ experiments/baselines → 可以组合以上模块
 
 硬边界：
 
-- `planning/` 不 import Daft、Ray、psycopg 或供应商 SDK；
+- `planning/` 不 import Daft、Ray、Arrow、psycopg 或供应商 SDK；引擎相关物化归
+  `data/materializers/`，避免原计划中“materializer 在 planning”与纯策略边界冲突；
 - `scheduling/` 不 import `modalities.image`、`modalities.text`、Daft、Arrow、数据库连接；
 - `modalities/` 不实现 credit、routing、flush 或 actor pool；
 - `serving/` 不决定 batch membership 和 admission；
@@ -166,7 +170,7 @@ experiments/baselines → 可以组合以上模块
 | `workloads.py` | `data/workloads/text.py` |
 | `request_costs.py` | `modalities/text/costs.py` |
 | `packing.py` | `planning/packing/scalar.py` |
-| `organizers.py` | `planning/materializers/{arrow,daft}.py` + 中性 contracts |
+| `organizers.py` | `data/materializers/text.py`；后续再拆 Arrow/Daft adapter 与中性 contracts |
 | `cost_estimation.py`、`calibration.py` | `planning/costs/` 与 `experiments/calibration/` |
 | `model_backends.py` | `serving/contracts.py` + `serving/{completion,embedding}/` |
 | `vllm_probe.py` | `serving/probes/vllm.py` |
@@ -249,6 +253,7 @@ experiments/baselines → 可以组合以上模块
 
 ## 8. 推荐下一步
 
-先执行第 0、1 阶段：它们能删除最显眼的重复兼容层，风险最低，也会让后续移动的真实
-依赖关系更清楚。不要先拆 1,923 行 shared-vLLM 文件；在旧导入和目录职责尚未收敛时拆
-它，冲突与回归风险最高。
+源码域和导入边界已经收敛。下一步按第 4 阶段顺序拆
+`observability/metrics.py`、`serving/backends.py`、`data/materializers/text.py`，最后处理
+1,923 行 shared-vLLM 编排；每个拆分单独提交。scripts/tests 的物理分组必须与 400 余处
+复现命令路径同步进行，不能在当前源码迁移提交中顺手改完。

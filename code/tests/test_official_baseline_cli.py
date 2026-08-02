@@ -14,10 +14,10 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.baselines.cli import run_cli
-from src.baselines.contracts import BaselineRequestResult, ChatRequest
-from src.baselines.manifests import write_manifest
-from src.baselines.provenance import adapter_provenance
+from src.baselines.text.orchestration.cli import run_cli
+from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
+from src.baselines.common.manifests import write_manifest
+from src.baselines.common.provenance import adapter_provenance
 
 
 class OfficialBaselineCliTests(unittest.TestCase):
@@ -265,7 +265,7 @@ class OfficialBaselineCliTests(unittest.TestCase):
             connection = FakeConnection()
 
             with patch(
-                "src.baselines.cli._connect_postgres",
+                "src.baselines.text.orchestration.cli._connect_postgres",
                 create=True,
                 return_value=connection,
             ):
@@ -358,7 +358,7 @@ class OfficialBaselineCliTests(unittest.TestCase):
             )
 
             with patch(
-                "src.baselines.cli._run_adapter",
+                "src.baselines.text.orchestration.cli._run_adapter",
                 return_value=(failed,),
             ):
                 with self.assertRaisesRegex(

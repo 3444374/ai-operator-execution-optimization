@@ -25,8 +25,8 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.image.clip import extract_clip_image_features  # noqa: E402
-from src.image.resource_sampling import NvidiaSmiSampler  # noqa: E402
+from src.modalities.image.clip import extract_clip_image_features  # noqa: E402
+from src.modalities.image.resource_sampling import NvidiaSmiSampler  # noqa: E402
 
 
 MODES = ("r0_gpu_resident", "r1_pinned_fp16", "r2_pageable_fp32")

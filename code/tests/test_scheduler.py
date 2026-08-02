@@ -9,8 +9,8 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.scheduling.admission import StaticAdmissionController  # noqa: E402
-from src.scheduling.models import (  # noqa: E402
+from src.scheduling.submission_control.admission import StaticAdmissionController  # noqa: E402
+from src.scheduling.core.models import (  # noqa: E402
     AdmissionDecision,
     BatchRequest,
     CollectedSubmission,
@@ -20,14 +20,14 @@ from src.scheduling.models import (  # noqa: E402
     SubmissionCompletion,
     TopologySnapshot,
 )
-from src.scheduling.routing import (  # noqa: E402
+from src.scheduling.endpoint_routing.policies import (  # noqa: E402
     LeastQueuedEndpointRouter,
     PinnedEndpointRouter,
     RequestPoolRouter,
     RoundRobinEndpointRouter,
 )
-from src.scheduling.scheduler import SynchronousScheduler  # noqa: E402
-from src.scheduling.shared_credit import (  # noqa: E402
+from src.scheduling.core.scheduler import SynchronousScheduler  # noqa: E402
+from src.scheduling.submission_control.shared_credit import (  # noqa: E402
     FairEndpointCreditCoordinator,
 )
 

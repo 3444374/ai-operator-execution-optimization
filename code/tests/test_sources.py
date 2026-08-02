@@ -8,7 +8,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.sources import PostgresArrowSource, SourceConfig, daft_sql_query, make_source, postgres_documents_query
+from src.data.sources import PostgresArrowSource, SourceConfig, daft_sql_query, make_source, postgres_documents_query
 
 
 class SourceTests(unittest.TestCase):

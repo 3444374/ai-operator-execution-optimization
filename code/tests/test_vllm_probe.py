@@ -9,7 +9,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.vllm_probe import (  # noqa: E402
+from src.serving.probes.vllm import (  # noqa: E402
     parse_prefix_caching_flag,
     probe_live_prefix_caching,
 )
@@ -107,7 +107,7 @@ class VerifyMatchesLiveTests(unittest.TestCase):
 
 class ProbeLivePrefixCachingTests(unittest.TestCase):
     def test_no_procs_returns_none(self) -> None:
-        with patch("src.vllm_probe._list_process_cmdlines", return_value=[]):
+        with patch("src.serving.probes.vllm._list_process_cmdlines", return_value=[]):
             self.assertIsNone(probe_live_prefix_caching())
 
     def test_agreeing_procs_return_common_flag(self) -> None:
@@ -118,7 +118,7 @@ class ProbeLivePrefixCachingTests(unittest.TestCase):
             "--enable-prefix-caching --port 8001",
             "some unrelated process --port 9000",
         ]
-        with patch("src.vllm_probe._list_process_cmdlines", return_value=lines):
+        with patch("src.serving.probes.vllm._list_process_cmdlines", return_value=lines):
             self.assertIs(probe_live_prefix_caching(), True)
 
     def test_disagreeing_procs_return_none(self) -> None:
@@ -128,19 +128,19 @@ class ProbeLivePrefixCachingTests(unittest.TestCase):
             "python -m vllm.entrypoints.openai.api_server "
             "--no-enable-prefix-caching --port 8001",
         ]
-        with patch("src.vllm_probe._list_process_cmdlines", return_value=lines):
+        with patch("src.serving.probes.vllm._list_process_cmdlines", return_value=lines):
             self.assertIsNone(probe_live_prefix_caching())
 
     def test_procs_without_flag_return_none(self) -> None:
         lines = [
             "python -m vllm.entrypoints.openai.api_server --port 8000"
         ]
-        with patch("src.vllm_probe._list_process_cmdlines", return_value=lines):
+        with patch("src.serving.probes.vllm._list_process_cmdlines", return_value=lines):
             self.assertIsNone(probe_live_prefix_caching())
 
     def test_non_vllm_lines_ignored(self) -> None:
         lines = ["bash --enable-prefix-caching --no-enable-prefix-caching"]
-        with patch("src.vllm_probe._list_process_cmdlines", return_value=lines):
+        with patch("src.serving.probes.vllm._list_process_cmdlines", return_value=lines):
             self.assertIsNone(probe_live_prefix_caching())
 
     def test_partial_marker_does_not_self_match(self) -> None:
@@ -151,7 +151,7 @@ class ProbeLivePrefixCachingTests(unittest.TestCase):
             "bash -lc python -c print('lines with vllm.entrypoints marker')",
             "grep --color=auto vllm.entrypoints /some/log",
         ]
-        with patch("src.vllm_probe._list_process_cmdlines", return_value=lines):
+        with patch("src.serving.probes.vllm._list_process_cmdlines", return_value=lines):
             self.assertIsNone(probe_live_prefix_caching())
 
 

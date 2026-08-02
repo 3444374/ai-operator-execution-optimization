@@ -1,32 +1,32 @@
 """Same-request baseline adapters and artifact contracts."""
 
-from .ceilings import (
+from .text.ceilings import (
     VllmBenchConfig,
     build_vllm_bench_command,
     write_vllm_custom_dataset,
 )
-from .controls import BoundedHttpConfig, run_bounded_http
-from .contracts import BaselineRequestResult, ChatRequest, ManifestMetadata
-from .manifests import (
+from .text.controls import BoundedHttpConfig, run_bounded_http
+from .common.contracts import BaselineRequestResult, ChatRequest, ManifestMetadata
+from .common.manifests import (
     assign_endpoint_shards,
     read_manifest,
     write_manifest,
 )
-from .products import (
+from .text.products import (
     OceanBaseConfig,
     SqlStatement,
     build_ai_complete_sql,
     build_register_model_sql,
     run_oceanbase_ai_complete,
 )
-from .postgres_manifest import load_postgres_requests
-from .provenance import AdapterProvenance, adapter_provenance
-from .results import (
+from .text.orchestration.postgres_manifest import load_postgres_requests
+from .common.provenance import AdapterProvenance, adapter_provenance
+from .common.results import (
     summarize_group_service_counters,
     summarize_results,
     validate_results,
 )
-from .runtime import (
+from .text.frameworks import (
     DaftPromptConfig,
     RayDataHttpConfig,
     run_daft_prompt,

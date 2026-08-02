@@ -9,8 +9,8 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.image.execution import EmbeddingAudit, ExecutionResult
-from src.image.ray_data_baseline import build_ray_data_clip_pipeline
+from src.modalities.image.execution import EmbeddingAudit, ExecutionResult
+from src.baselines.image.frameworks.ray_data import build_ray_data_clip_pipeline
 
 
 class EmbeddingAuditTest(unittest.TestCase):

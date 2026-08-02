@@ -33,31 +33,31 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.image import DaftImageSource, ImageSourceConfig  # noqa: E402
-from src.image.baseline_contract import (  # noqa: E402
+from src.modalities.image import DaftImageSource, ImageSourceConfig  # noqa: E402
+from src.baselines.image.provenance import (  # noqa: E402
     image_arm_provenance,
     require_formal_arm_allowed,
 )
-from src.image.daft_baseline import (  # noqa: E402
+from src.baselines.image.frameworks.daft import (  # noqa: E402
     build_daft_clip_embedder,
     build_daft_staged_clip_pipeline,
     run_daft_builtin_image_embedding,
     run_daft_clip_baseline,
     run_daft_staged_clip_baseline,
 )
-from src.image.execution import (  # noqa: E402
+from src.modalities.image.execution import (  # noqa: E402
     ExecutionResult,
     build_project_ray_worker_pool,
     run_project_ray_pipeline,
     stop_project_ray_worker_pool,
 )
-from src.image.ray_data_baseline import (  # noqa: E402
+from src.baselines.image.frameworks.ray_data import (  # noqa: E402
     build_ray_data_clip_pipeline,
     run_ray_data_clip_baseline,
 )
-from src.image.resource_budget import build_ray_cpu_budget  # noqa: E402
-from src.image.resource_sampling import NvidiaSmiSampler, SystemCpuSampler  # noqa: E402
-from src.runtime_env import ray_runtime_env  # noqa: E402
+from src.modalities.image.resource_budget import build_ray_cpu_budget  # noqa: E402
+from src.modalities.image.resource_sampling import NvidiaSmiSampler, SystemCpuSampler  # noqa: E402
+from src.infrastructure.runtime_env import ray_runtime_env  # noqa: E402
 
 
 ARMS = (

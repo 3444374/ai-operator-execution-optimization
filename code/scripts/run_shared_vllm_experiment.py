@@ -13,7 +13,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts.run_ai_operator_scenarios import wait_for_idle  # noqa: E402
-from src.shared_vllm_experiment import (  # noqa: E402
+from src.experiments.shared_vllm.core import (  # noqa: E402
     RunnerOptions,
     run_experiment,
 )

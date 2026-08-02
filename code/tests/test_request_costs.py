@@ -8,7 +8,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.request_costs import output_cost_source, resolve_output_tokens
+from src.modalities.text.costs import output_cost_source, resolve_output_tokens
 
 
 class RequestCostTests(unittest.TestCase):

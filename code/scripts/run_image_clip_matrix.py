@@ -24,11 +24,11 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.experiment_scenarios import (  # noqa: E402
+from src.experiments.scenarios.core import (  # noqa: E402
     ScheduledScenarioRun,
     build_scenario_schedule,
 )
-from src.runner_lease import acquire_runner_lease  # noqa: E402
+from src.infrastructure.runner_lease import acquire_runner_lease  # noqa: E402
 
 
 _SCENARIO_ID = re.compile(r"^[A-Za-z0-9_.-]+$")

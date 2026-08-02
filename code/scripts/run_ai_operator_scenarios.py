@@ -22,19 +22,19 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.calibration import (  # noqa: E402
+from src.experiments.calibration.contracts import (  # noqa: E402
     CalibrationContract,
     JsonScalar,
     load_calibration_contract,
 )
-from src.experiment_scenarios import (  # noqa: E402
+from src.experiments.scenarios.core import (  # noqa: E402
     ScheduledScenarioRun,
     build_scenario_schedule,
     validate_service_metadata,
 )
-from src.metrics import parse_prometheus_metrics  # noqa: E402
-from src.runner_lease import acquire_runner_lease  # noqa: E402
-from src.vllm_probe import probe_live_prefix_caching  # noqa: E402
+from src.observability.metrics import parse_prometheus_metrics  # noqa: E402
+from src.infrastructure.runner_lease import acquire_runner_lease  # noqa: E402
+from src.serving.probes.vllm import probe_live_prefix_caching  # noqa: E402
 
 
 _SCENARIO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")

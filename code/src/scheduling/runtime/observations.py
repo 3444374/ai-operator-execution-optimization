@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from ..models import AdmissionObservation
+from ..core.models import AdmissionObservation
 
 _logger = logging.getLogger(__name__)
 

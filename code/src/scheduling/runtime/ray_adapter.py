@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from ..models import CollectedSubmission, PayloadEnvelope, SubmissionCompletion
+from ..core.models import CollectedSubmission, PayloadEnvelope, SubmissionCompletion
 
 
 @dataclass(frozen=True)

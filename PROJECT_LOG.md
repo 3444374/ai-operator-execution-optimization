@@ -1,5 +1,24 @@
 # 项目日志
 
+## 2026-08-02 源码域重构第 0–3 阶段落地
+
+- 在 `codex/code-architecture-refactor` 独立分支实施路径重构，不改策略算法、默认值、
+  CLI 参数或 CSV schema。删除 6 个根级 `profile_*` 与 11 个 scheduling 兼容壳，所有
+  调用方改到唯一 owning package。
+- `src` 顶层功能实现已收进 `data/`、`planning/`、`scheduling/`、`serving/`、
+  `modalities/`、`observability/`、`baselines/`、`experiments/` 和 `infrastructure/`；
+  scheduling 进一步分成 core/organization/submission_control/endpoint_routing/runtime。
+- 文本 baseline 落入 `baselines/text`，图像 native graph 落入 `baselines/image`，共享
+  manifest/result/provenance/gate 落入 `baselines/common`；原 `image/` 的非 baseline
+  实现迁入 `modalities/image`，防止项目执行代码与 native 对照身份混写。
+- 修正原计划的一个边界矛盾：纯 `planning` 不得依赖 Arrow/Daft，因此引擎相关批次
+  物化归 `data/materializers`，planning 只保留 cost/packing 决策。
+- 新增 AST architecture boundary test，禁止 scheduling 反向依赖 data/modality/engine、
+  planning 引入执行引擎、baseline 引入项目 scheduling，并防止已删除旧入口回归。
+- 本地 `unittest` 共发现 601 条：路径迁移相关测试无新增失败；当前未通过项仅为本地
+  缺 `psycopg`/Daft、macOS 沙箱禁止 Ray 进程枚举的既有环境门槛。服务器关机期间未做
+  GPU gate；scripts/tests 物理分组与 500–1,923 行文件语义拆分继续作为独立阶段。
+
 ## 2026-08-02 外部多模态 baseline 体系与公开 benchmark 合同
 
 - 明确 Daft/Ray 是项目实现手段而非 baseline 准入条件；外部对照按 AI 算子语义

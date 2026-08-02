@@ -9,8 +9,8 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.scheduling import ActorSubmissionState, ActorWorkerPoolSubmitter  # noqa: E402
-from src.scheduling.models import BatchRequest, PayloadEnvelope  # noqa: E402
-from src.scheduling.ray_adapter import RaySubmissionAdapter  # noqa: E402
+from src.scheduling.core.models import BatchRequest, PayloadEnvelope  # noqa: E402
+from src.scheduling.runtime.ray_adapter import RaySubmissionAdapter  # noqa: E402
 
 
 class FakeRef:

@@ -12,7 +12,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts.select_strategy_calibration import build_selection  # noqa: E402
-from src.calibration import load_calibration_contract  # noqa: E402
+from src.experiments.calibration.contracts import load_calibration_contract  # noqa: E402
 
 
 class StrategyCalibrationTests(unittest.TestCase):

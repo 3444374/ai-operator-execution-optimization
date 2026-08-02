@@ -8,9 +8,9 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.scheduling.admission import StaticAdmissionController  # noqa: E402
-from src.scheduling.models import BatchRequest, EndpointSnapshot, TopologySnapshot  # noqa: E402
-from src.scheduling.routing import (  # noqa: E402
+from src.scheduling.submission_control.admission import StaticAdmissionController  # noqa: E402
+from src.scheduling.core.models import BatchRequest, EndpointSnapshot, TopologySnapshot  # noqa: E402
+from src.scheduling.endpoint_routing.policies import (  # noqa: E402
     LeastQueuedEndpointRouter,
     LeastWorkEndpointRouter,
     PinnedEndpointRouter,
@@ -18,7 +18,7 @@ from src.scheduling.routing import (  # noqa: E402
     RequestPoolRouter,
     RoundRobinEndpointRouter,
 )
-from src.scheduling.topology import (  # noqa: E402
+from src.scheduling.core.topology import (  # noqa: E402
     healthy_endpoints,
     schedulable_endpoints,
 )

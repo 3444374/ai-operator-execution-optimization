@@ -17,7 +17,7 @@ Verified on transformers 5.14.1: CLIPImageProcessor fires resize / center_crop /
 normalize during processor(); rescale is folded (0 separate calls) -> its cost
 is not separately attributable with this instrumentation.
 
-Single-process; reads COCO bytea from PG; decodes via shared ``src.image`` code;
+Single-process; reads COCO bytea from PG; decodes via shared ``src.modalities.image`` code;
 only preproc sub-steps are timed (no model forward, no H2D transfer). This
 profiles the historical ``return_tensors="pt"`` boundary, not the current
 ``ClipImagePreprocessor(..., return_tensors="np") -> ClipTensorActor`` boundary.
@@ -42,7 +42,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.image.clip import decode_rgb_image  # noqa: E402
+from src.modalities.image.clip import decode_rgb_image  # noqa: E402
 
 SUBSTEPS = ["resize", "center_crop", "rescale", "normalize"]
 

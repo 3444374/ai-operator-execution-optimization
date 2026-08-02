@@ -26,7 +26,7 @@ Design
 Single-process by design: isolate per-stage cost, no Ray/Daft/scheduler noise
 (minimal experiment per karpathy-guidelines). DB is in the path (reads image
 bytea from PostgreSQL, per project requirement). Reusable CLIP output/decode
-semantics live in ``src.image``; this script owns only profiling orchestration.
+semantics live in ``src.modalities.image``; this script owns only profiling orchestration.
 
 Usage
 -----
@@ -47,7 +47,7 @@ CODE_ROOT = Path(__file__).resolve().parents[1]
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.image.clip import (  # noqa: E402
+from src.modalities.image.clip import (  # noqa: E402
     decode_rgb_image,
     extract_clip_image_features,
 )
@@ -85,7 +85,7 @@ def parse_args():
 
 
 # --------------------------------------------------------------------------- #
-# Stage functions (profiling wrappers around reusable src.image semantics)
+# Stage functions (profiling wrappers around reusable src.modalities.image semantics)
 # --------------------------------------------------------------------------- #
 def fetch_image_bytes(conn, table, id_col, img_col, limit):
     """PG -> list[(id, bytes)], bulk-fetched. Returns (rows, fetch_seconds)."""

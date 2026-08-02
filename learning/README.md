@@ -1,5 +1,10 @@
 # Learning Notes
 
+代码结构导读：
+
+- [`code_architecture_guide.md`](code_architecture_guide.md)：解释公共执行阶段与
+  text/image 模态为什么是两条正交轴、每个 `src` 子包负责什么，以及路径迁移的验证门禁。
+
 文本 baseline 的当前入门材料：
 
 - [`text_native_baseline_guide.md`](text_native_baseline_guide.md)：区分 vLLM 服务上限、

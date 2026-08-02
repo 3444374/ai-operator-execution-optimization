@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import hashlib
 
-from ..errors import EndpointCapacityUnavailable
-from ..models import (
+from ..core.errors import EndpointCapacityUnavailable
+from ..core.models import (
     BatchRequest,
     EndpointSnapshot,
     PoolRoutingDecision,
     RoutingDecision,
     TopologySnapshot,
 )
-from ..topology import healthy_endpoints, schedulable_endpoints
+from ..core.topology import healthy_endpoints, schedulable_endpoints
 
 
 def _schedulable_or_raise(
