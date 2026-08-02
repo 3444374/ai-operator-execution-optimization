@@ -2,18 +2,18 @@
 
 日期：2026-08-02
 
-实施状态：`codex/code-architecture-refactor` 已完成第 0–3 阶段的源码路径迁移；
-第 4 阶段的大文件语义拆分和第 5 阶段的 scripts/tests 物理分组尚未合并到 main。
+实施状态：`codex/code-architecture-refactor` 已完成第 0–3 阶段源码路径迁移，并完成
+metrics、backend、shared-vLLM 三个第 4 阶段拆分；第 5 阶段 scripts/tests 物理分组
+尚未合并到 main。
 
 ## 1. 结论
 
-当前只完成了 `src/baselines/` 的第一轮分层，整个 `code/` 尚未整理完成。现状仍有：
+`src` 的主要职责层和 import 边界已经落地，整个 `code/` 尚未整理完成。现状仍有：
 
-- `src/` 顶层 22 个 Python 文件，混有数据、代价、后端、指标、实验编排和兼容导入；
 - `scripts/` 顶层 22 个入口，数据导入、服务、profile、正式实验和汇总脚本混放；
 - `tests/` 顶层 58 个测试文件，没有镜像生产代码的模块边界；
-- `profile_*.py` 有 6 个顶层兼容模块；`scheduling/` 根层也保留多组已迁入子包的兼容模块；
-- `shared_vllm_experiment.py` 为 1,923 行，另有 8 个生产文件超过 500 行。
+- `data/materializers/text.py` 等生产文件仍需逐个按职责拆分；
+- 文档中的 400 余条复现命令仍指向扁平 scripts 路径，必须与脚本移动原子更新。
 
 重构采用两个正交维度：
 
@@ -172,14 +172,14 @@ experiments/baselines → 可以组合以上模块
 | `packing.py` | `planning/packing/scalar.py` |
 | `organizers.py` | `data/materializers/text.py`；后续再拆 Arrow/Daft adapter 与中性 contracts |
 | `cost_estimation.py`、`calibration.py` | `planning/costs/` 与 `experiments/calibration/` |
-| `model_backends.py` | `serving/contracts.py` + `serving/{completion,embedding}/` |
+| `model_backends.py` | `serving/backends/{common,completion,embedding}.py`（已完成） |
 | `vllm_probe.py` | `serving/probes/vllm.py` |
-| `metrics.py` | `observability/timing.py`、`resources/`、`schemas/` |
+| `metrics.py` | `observability/metrics/{timing,csv,statistics,resources,vllm}.py`（已完成） |
 | `profiling/` | `observability/profiling/` |
 | `image/` | 非 baseline 内容迁入 `modalities/image/`；baseline 内容迁入 `baselines/image/` |
 | `baselines/` | 公共合同下沉 `common/`，现有实现迁入 `text/` |
 | `experiment_scenarios.py` | `experiments/scenarios/` |
-| `shared_vllm_experiment.py` | `experiments/shared_vllm/{config,runner,metrics,fairness}.py` |
+| `shared_vllm_experiment.py` | `experiments/shared_vllm/{config,runner,runtime,evidence,metrics}.py`（已完成） |
 | `runtime_env.py`、`runner_lease.py` | `infrastructure/` |
 | 根层 `profile_*.py`、`scheduling/*` 兼容文件 | 迁移调用方后删除，不长期保留双入口 |
 
@@ -253,7 +253,7 @@ experiments/baselines → 可以组合以上模块
 
 ## 8. 推荐下一步
 
-源码域和导入边界已经收敛。下一步按第 4 阶段顺序拆
-`observability/metrics.py`、`serving/backends.py`、`data/materializers/text.py`，最后处理
-1,923 行 shared-vLLM 编排；每个拆分单独提交。scripts/tests 的物理分组必须与 400 余处
-复现命令路径同步进行，不能在当前源码迁移提交中顺手改完。
+源码域和导入边界已经收敛，metrics、backend 和 1,923 行 shared-vLLM 编排已经按
+单一职责拆分并由原包入口兼容导出。下一步执行第 5 阶段：物理整理 scripts/tests，
+并在同一提交中同步所有复现命令；`data/materializers/text.py` 等剩余大文件另行拆分，
+不与路径迁移混做。

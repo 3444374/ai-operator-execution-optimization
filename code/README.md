@@ -5,8 +5,9 @@ remaining work are summarized in `code/INFRA_STATUS.md`.
 
 全项目代码分层、文本/图像模态边界与分阶段迁移计划见
 [`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、
-文本/图像模态隔离、baseline 分层和旧兼容入口清理已在
-`codex/code-architecture-refactor` 分支落地；大文件语义拆分与 scripts/tests 镜像整理仍按计划分阶段进行。
+文本/图像模态隔离、baseline 分层、旧兼容入口清理，以及 metrics、model backend、
+shared-vLLM 三个大文件的语义拆分已在 `codex/code-architecture-refactor` 分支落地；
+scripts/tests 镜像整理仍按计划作为独立阶段进行。
 
 本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `feasibility/benchmarks/` 或 `motivation/benchmarks/`。
 
@@ -96,7 +97,8 @@ now lives under `code/src/`:
 - `modalities/text/costs.py`: strict, shared output-cost modes and provenance.
 - `planning/packing/scalar.py`: deterministic, modality-neutral classic BFD and a
   row-cap-first placement candidate sharing the same validation and ordering.
-- `serving/backends.py`: `fake` debug backend, `compatible_http` embedding/completion backend, and Ollama native completion backend.
+- `serving/backends/`: 公共 backend 合同、embedding backend 与
+  completion/async/Ollama backend；包入口保持原公开 import 不变。
 - `modalities/image/`: engine-independent image batch/result semantics, a lazy Daft
   PostgreSQL image source, CPU CLIP preprocessing, and a tensor-only GPU actor.
   The actor owns no hidden batching; organizer/scheduler remains the batching
@@ -127,8 +129,9 @@ now lives under `code/src/`:
   fail-closed 双 endpoint gate。`text/frameworks/` 只封装 vendor API graph，不注入项目
   credit/router；`provenance.py` 防止 control/ceiling 被误报为原生 baseline。
 - `data/sinks/postgres.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
-- `observability/metrics.py`: timers, GPU/memory/power sampling, energy/MFU estimates, and
-  schema-safe CSV preflight/append helpers. Formal runs preflight the main
+- `observability/metrics/`: `timing.py`、`csv.py`、`statistics.py`、`resources.py`、
+  `vllm.py` 分别负责计时、schema-safe CSV、分布统计、GPU/能耗/MFU 和 vLLM 指标；
+  包入口保持原公开 import 不变。Formal runs preflight the main
   output against dry-run keys before database or GPU work. Empty files receive
   a header; non-empty files reject appended rows whose ordered keys do not
   exactly match the existing header.

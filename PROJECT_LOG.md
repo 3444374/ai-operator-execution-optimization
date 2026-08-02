@@ -3633,3 +3633,13 @@
 - **迁移纪律**：先冻结边界和清除兼容入口，再整理模态/baseline，之后抽公共层并逐个拆
   大文件；路径迁移不与算法修改或全仓格式化混合。完整计划见
   `code/ARCHITECTURE_REFACTOR_PLAN.md`。
+
+## 2026-08-02 metrics、backend 与 shared-vLLM 大文件拆分
+
+- `observability/metrics.py` 拆为 timing、CSV、statistics、resources、vLLM 五个职责模块；
+  `serving/backends.py` 拆为 common、embedding、completion，公开包导入保持兼容。
+- 1,923 行 shared-vLLM 单体拆为 config、runtime、evidence、metrics、runner；配置、执行、
+  Ray 观测、exactly-once/resume 证据和组级统计不再相互混放。
+- 本次只改变模块归属与测试 patch 位置，不改变 CLI、算法、默认值或 CSV schema。
+- 依赖无关测试 580/580 通过；Daft/psycopg 和 macOS Ray 权限相关用例仍需在完整远端环境
+  验证。scripts/tests 物理迁移保留为下一独立提交。

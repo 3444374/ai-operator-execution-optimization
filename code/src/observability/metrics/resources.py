@@ -1,146 +1,13 @@
-"""Shared timing, resource snapshot, and CSV metric helpers."""
+"""GPU resource, energy, and MFU summaries."""
 
 from __future__ import annotations
 
-import csv
 import math
 import statistics
 import subprocess
-import threading
-import time
-from collections.abc import Callable, Sequence
-from dataclasses import dataclass
-from pathlib import Path
-from urllib import error, request
+from collections.abc import Sequence
 
-
-@dataclass
-class StageTimer:
-    name: str
-    start_s: float
-    elapsed_s: float = 0.0
-
-    @classmethod
-    def start(cls, name: str) -> "StageTimer":
-        return cls(name=name, start_s=time.perf_counter())
-
-    def stop(self) -> float:
-        self.elapsed_s = time.perf_counter() - self.start_s
-        return self.elapsed_s
-
-
-class PeriodicSampler:
-    """Collect timestamped resource snapshots without blocking the run loop."""
-
-    def __init__(
-        self,
-        sample: Callable[[], dict[str, object]],
-        *,
-        interval_s: float = 0.25,
-    ) -> None:
-        if interval_s <= 0:
-            raise ValueError("interval_s must be positive")
-        self._sample = sample
-        self._interval_s = interval_s
-        self._stop = threading.Event()
-        self._lock = threading.Lock()
-        self._samples: list[dict[str, object]] = []
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
-
-    @property
-    def samples(self) -> tuple[dict[str, object], ...]:
-        with self._lock:
-            return tuple(dict(item) for item in self._samples)
-
-    @property
-    def is_running(self) -> bool:
-        return self._thread.is_alive()
-
-    def close(self) -> None:
-        self._stop.set()
-        self._thread.join()
-
-    def _run(self) -> None:
-        while not self._stop.is_set():
-            try:
-                values = self._sample()
-            except Exception as exc:
-                values = {"sample_status": f"unavailable:{type(exc).__name__}"}
-            with self._lock:
-                self._samples.append(
-                    {
-                        "sample_index": len(self._samples),
-                        "sample_epoch_s": time.time(),
-                        **values,
-                    }
-                )
-            self._stop.wait(self._interval_s)
-
-
-def preflight_metrics_schema(
-    path: Path,
-    fieldnames,
-    *,
-    allow_additional_fields: bool = False,
-) -> None:
-    expected = list(fieldnames)
-    has_content = path.exists() and path.stat().st_size > 0
-    if has_content:
-        with path.open(newline="", encoding="utf-8") as existing:
-            header = next(csv.reader(existing), [])
-        if allow_additional_fields:
-            expected_set = set(expected)
-            matches = [
-                field for field in header if field in expected_set
-            ] == expected
-        else:
-            matches = header == expected
-        if not matches:
-            raise ValueError(
-                "CSV schema mismatch: "
-                f"existing header {header!r} != row keys {expected!r}"
-            )
-
-
-def append_metrics(path: Path, row: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = list(row.keys())
-    preflight_metrics_schema(path, fieldnames)
-    has_content = path.exists() and path.stat().st_size > 0
-    with path.open("a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        if not has_content:
-            writer.writeheader()
-        writer.writerow(row)
-
-
-def percentile(values: list[float], p: float) -> float:
-    if not values:
-        return 0.0
-    ordered = sorted(values)
-    index = math.ceil((p / 100.0) * len(ordered)) - 1
-    index = min(max(index, 0), len(ordered) - 1)
-    return ordered[index]
-
-
-def batch_result_stats(results: list[dict]) -> dict[str, float | int]:
-    rows = [int(result.get("rows", 0)) for result in results]
-    tokens = [int(result.get("token_count", 0)) for result in results]
-    service_s = [float(result.get("service_s", 0.0)) for result in results]
-    return {
-        "batch_rows_min": min(rows) if rows else 0,
-        "batch_rows_max": max(rows) if rows else 0,
-        "batch_rows_mean": statistics.mean(rows) if rows else 0.0,
-        "batch_tokens_min": min(tokens) if tokens else 0,
-        "batch_tokens_max": max(tokens) if tokens else 0,
-        "batch_tokens_mean": statistics.mean(tokens) if tokens else 0.0,
-        "batch_tokens_p50": percentile([float(value) for value in tokens], 50),
-        "batch_tokens_p95": percentile([float(value) for value in tokens], 95),
-        "batch_service_s_p50": percentile(service_s, 50),
-        "batch_service_s_p95": percentile(service_s, 95),
-        "batch_service_s_p99": percentile(service_s, 99),
-    }
+from .statistics import percentile
 
 
 def _finite_number(value: object) -> float | None:
@@ -151,7 +18,6 @@ def _finite_number(value: object) -> float | None:
     except (TypeError, ValueError):
         return None
     return resolved if math.isfinite(resolved) else None
-
 
 def _series_stats(
     values: list[float],
@@ -170,7 +36,6 @@ def _series_stats(
         f"{prefix}_p95": percentile(values, 95),
         f"{prefix}_max": max(values),
     }
-
 
 def resource_sample_stats(
     samples: list[dict],
@@ -282,7 +147,6 @@ def resource_sample_stats(
     }
     return metrics
 
-
 def estimate_mfu(
     *,
     estimated_flops: float,
@@ -354,111 +218,6 @@ def estimate_mfu(
         "mfu_status": "ok" if estimate <= 1.0 else "estimate_exceeds_peak",
         "mfu_estimate": estimate,
     }
-
-
-def parse_prometheus_metrics(text: str) -> dict[str, float]:
-    metrics: dict[str, float] = {}
-    for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        name_and_labels, _, value_text = line.rpartition(" ")
-        if not name_and_labels or not value_text:
-            continue
-        name = name_and_labels.split("{", 1)[0]
-        try:
-            value = float(value_text)
-        except ValueError:
-            continue
-        metrics[name] = metrics.get(name, 0.0) + value
-    return metrics
-
-
-def scrape_prometheus_metrics(url: str, timeout_s: float = 5.0) -> dict[str, float]:
-    try:
-        with request.urlopen(url, timeout=timeout_s) as response:
-            body = response.read()
-    except (OSError, error.URLError):
-        return {}
-    return parse_prometheus_metrics(body.decode("utf-8", errors="replace"))
-
-
-def aggregate_model_metric_snapshots(
-    snapshots: list[dict[str, float]],
-) -> dict[str, float]:
-    """Aggregate independent model-service metrics without losing units."""
-    if not snapshots or any(not snapshot for snapshot in snapshots):
-        return {}
-    names = {name for snapshot in snapshots for name in snapshot}
-    aggregated = {}
-    for name in names:
-        values = [snapshot.get(name, 0.0) for snapshot in snapshots]
-        if name == "vllm:kv_cache_usage_perc":
-            aggregated[name] = max(values)
-        elif name == "vllm:estimated_flops_per_gpu_total":
-            aggregated[name] = statistics.mean(values)
-        else:
-            aggregated[name] = sum(values)
-    return aggregated
-
-
-def _metric_delta(before: dict[str, float], after: dict[str, float], name: str) -> float:
-    return max(0.0, after.get(name, 0.0) - before.get(name, 0.0))
-
-
-def _mean_delta(before: dict[str, float], after: dict[str, float], base_name: str) -> float:
-    count_delta = _metric_delta(before, after, f"{base_name}_count")
-    if count_delta <= 0:
-        return 0.0
-    sum_delta = _metric_delta(before, after, f"{base_name}_sum")
-    return sum_delta / count_delta
-
-
-def vllm_metric_delta_stats(before: dict[str, float], after: dict[str, float]) -> dict[str, float | int | str]:
-    status = "ok" if before and after else "unavailable"
-    prompt_tokens = _metric_delta(before, after, "vllm:prompt_tokens_total")
-    generation_tokens = _metric_delta(before, after, "vllm:generation_tokens_total")
-    request_success = _metric_delta(before, after, "vllm:request_success_total")
-    estimated_flops = _metric_delta(
-        before,
-        after,
-        "vllm:estimated_flops_per_gpu_total",
-    )
-    # Prefix-cache attribution (P0#3): vLLM exposes both as cumulative token
-    # counters; the delta ratio attributes routing gains to cache reuse.
-    prefix_cache_queries = _metric_delta(
-        before, after, "vllm:prefix_cache_queries_total"
-    )
-    prefix_cache_hits = _metric_delta(
-        before, after, "vllm:prefix_cache_hits_total"
-    )
-    prefix_cache_hit_rate = (
-        prefix_cache_hits / prefix_cache_queries
-        if prefix_cache_queries > 0
-        else 0.0
-    )
-    return {
-        "vllm_metrics_status": status,
-        "vllm_prompt_tokens_delta": int(prompt_tokens),
-        "vllm_generation_tokens_delta": int(generation_tokens),
-        "vllm_request_success_delta": int(request_success),
-        "vllm_estimated_flops_per_gpu_delta": estimated_flops,
-        "vllm_e2e_request_latency_mean_s": _mean_delta(before, after, "vllm:e2e_request_latency_seconds"),
-        "vllm_request_queue_time_mean_s": _mean_delta(before, after, "vllm:request_queue_time_seconds"),
-        "vllm_request_inference_time_mean_s": _mean_delta(before, after, "vllm:request_inference_time_seconds"),
-        "vllm_request_prefill_time_mean_s": _mean_delta(before, after, "vllm:request_prefill_time_seconds"),
-        "vllm_request_decode_time_mean_s": _mean_delta(before, after, "vllm:request_decode_time_seconds"),
-        "vllm_num_requests_running_after": int(after.get("vllm:num_requests_running", 0.0)),
-        "vllm_num_requests_waiting_after": int(after.get("vllm:num_requests_waiting", 0.0)),
-        "vllm_kv_cache_usage_perc_after": after.get("vllm:kv_cache_usage_perc", 0.0),
-        "vllm_prefix_cache_queries_delta": int(prefix_cache_queries),
-        "vllm_prefix_cache_hits_delta": int(prefix_cache_hits),
-        "vllm_prefix_cache_hit_rate": prefix_cache_hit_rate,
-        # TTFT mean (P0#1, simple part). The Histogram percentiles (P50/P95/P99)
-        # need bucket handling and are out of scope here; only the mean is captured.
-        "vllm_time_to_first_token_mean_s": _mean_delta(before, after, "vllm:time_to_first_token_seconds"),
-    }
-
 
 def gpu_metadata(gpu_ids: Sequence[str] | None = None) -> dict[str, str]:
     command = [

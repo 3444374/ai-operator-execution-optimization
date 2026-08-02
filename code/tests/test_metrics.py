@@ -384,7 +384,7 @@ vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 4000000000000
         )
 
     def test_gpu_metadata_collects_power_when_supported(self) -> None:
-        with patch("src.observability.metrics.subprocess.run") as run:
+        with patch("src.observability.metrics.resources.subprocess.run") as run:
             run.return_value = SimpleNamespace(
                 stdout="NVIDIA Test, 75, 1024, 8192, 125.5\n"
             )
@@ -400,7 +400,7 @@ vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 4000000000000
         )
 
     def test_gpu_metadata_leaves_unsupported_power_empty(self) -> None:
-        with patch("src.observability.metrics.subprocess.run") as run:
+        with patch("src.observability.metrics.resources.subprocess.run") as run:
             run.return_value = SimpleNamespace(
                 stdout="NVIDIA Test, 75, 1024, 8192, [N/A]\n"
             )
@@ -411,7 +411,7 @@ vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 4000000000000
         self.assertEqual(snapshot["gpu_power_w"], "")
 
     def test_gpu_metadata_aggregates_all_visible_gpus(self) -> None:
-        with patch("src.observability.metrics.subprocess.run") as run:
+        with patch("src.observability.metrics.resources.subprocess.run") as run:
             run.return_value = SimpleNamespace(
                 stdout=(
                     "NVIDIA Test, 80, 1000, 8000, 120\n"
@@ -428,7 +428,7 @@ vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 4000000000000
         self.assertEqual(snapshot["gpu_power_w"], "220.0")
 
     def test_gpu_metadata_filters_to_configured_endpoint_devices(self) -> None:
-        with patch("src.observability.metrics.subprocess.run") as run:
+        with patch("src.observability.metrics.resources.subprocess.run") as run:
             run.return_value = SimpleNamespace(
                 stdout="NVIDIA Test, 90, 22000, 24564, 400\n"
             )

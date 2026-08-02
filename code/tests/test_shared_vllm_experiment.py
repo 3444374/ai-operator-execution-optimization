@@ -13,8 +13,8 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from scripts.run_shared_vllm_experiment import parse_args  # noqa: E402
-from src.experiments.shared_vllm import core as shared_vllm  # noqa: E402
-from src.experiments.shared_vllm.core import (  # noqa: E402
+import src.experiments.shared_vllm as shared_vllm  # noqa: E402
+from src.experiments.shared_vllm import (  # noqa: E402
     GroupRunIdentity,
     RunnerOptions,
     SharedVllmConfig,
@@ -71,8 +71,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
         client = MagicMock()
         client.actor = object()
 
-        with patch.object(
-            shared_vllm,
+        with patch(
+            "src.experiments.shared_vllm.runtime."
             "get_or_create_shared_credit_client",
             return_value=client,
             create=True,
@@ -579,9 +579,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
             }
         ]
 
-        with patch.object(
-            shared_vllm,
-            "_read_csv",
+        with patch(
+            "src.experiments.shared_vllm.evidence._read_csv",
             side_effect=[summary_rows, request_rows, [{}] * 4],
         ):
             evidence = shared_vllm._validate_job_evidence(
@@ -739,11 +738,11 @@ class SharedVllmExperimentTests(unittest.TestCase):
             process.wait.return_value = 0
             with (
                 patch(
-                    "src.experiments.shared_vllm.core.subprocess.Popen",
+                    "src.experiments.shared_vllm.runner.subprocess.Popen",
                     return_value=process,
                 ) as popen,
                 patch(
-                    "src.experiments.shared_vllm.core.scrape_prometheus_metrics",
+                    "src.experiments.shared_vllm.runner.scrape_prometheus_metrics",
                     return_value={
                         "vllm:prompt_tokens_total": 1.0,
                         "vllm:generation_tokens_total": 1.0,
@@ -752,7 +751,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                     },
                 ),
                 patch(
-                    "src.experiments.shared_vllm.core._validate_job_evidence",
+                    "src.experiments.shared_vllm.runner._validate_job_evidence",
                     side_effect=RuntimeError("exactly-once failed"),
                 ),
             ):
@@ -802,15 +801,15 @@ class SharedVllmExperimentTests(unittest.TestCase):
             }
             with (
                 patch(
-                    "src.experiments.shared_vllm.core.time.time",
+                    "src.experiments.shared_vllm.runner.time.time",
                     side_effect=[95.0, 95.0, 101.0],
                 ),
                 patch(
-                    "src.experiments.shared_vllm.core.subprocess.Popen",
+                    "src.experiments.shared_vllm.runner.subprocess.Popen",
                     return_value=process,
                 ),
                 patch(
-                    "src.experiments.shared_vllm.core.scrape_prometheus_metrics",
+                    "src.experiments.shared_vllm.runner.scrape_prometheus_metrics",
                     return_value={
                         "vllm:prompt_tokens_total": 1.0,
                         "vllm:generation_tokens_total": 1.0,
@@ -819,7 +818,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                     },
                 ),
                 patch(
-                    "src.experiments.shared_vllm.core._validate_job_evidence",
+                    "src.experiments.shared_vllm.runner._validate_job_evidence",
                     return_value=evidence,
                 ),
             ):

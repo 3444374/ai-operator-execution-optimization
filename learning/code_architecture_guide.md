@@ -46,13 +46,16 @@ Arrow/Daft materializer 放在 `data/`，不是 `planning/`。原因是 material
 schema。旧的 6 个 `profile_*` 和 11 个 scheduling 兼容壳已删除，避免同一个实现有
 两个入口。`test_architecture_boundaries.py` 用 AST 检查跨层 import，并阻止旧路径重新出现。
 
-## 5. 还没有完成什么
+## 5. 大文件现在如何拆分
 
-目录边界已经落地，但少数文件内部仍偏大：`observability/metrics.py`、
-`serving/backends.py`、`data/materializers/text.py` 和
-`experiments/shared_vllm/core.py`。它们要按一次一个文件的方式继续拆，避免在纯路径迁移
-时同时改变运行语义。`scripts/` 和 `tests/` 的物理分组也尚未执行，因为仓库里有数百条
-可复现实验命令引用现有脚本路径，必须在同一个独立提交里原子更新。
+`observability/metrics/` 已按 timing、CSV、statistics、resources、vLLM 指标拆分；
+`serving/backends/` 已按公共合同、embedding、completion 拆分；
+`experiments/shared_vllm/` 已按 config、runtime、evidence、metrics、runner 拆分。三个包的
+`__init__.py` 继续导出原来的公共 API，因此调用方不需要知道内部文件位置。
+
+`data/materializers/text.py` 等剩余大文件后续仍按一次一个职责处理。`scripts/` 和
+`tests/` 的物理分组是下一阶段，因为仓库里有数百条可复现实验命令引用现有路径，必须在
+同一个独立提交里原子更新。
 
 ## 6. 如何判断迁移是否正确
 
