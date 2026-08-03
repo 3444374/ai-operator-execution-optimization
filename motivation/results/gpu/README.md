@@ -19,6 +19,7 @@
 | `image_host_path_screening_20260802/` | 2×4090 图像 host-path 单因素 screening + schema v8 代表点诊断；报告、summary、各扫描 `runs.csv` 与逐臂 manifest 均已归档；当前判为 CPU preprocess 与 driver/Ray submit 混合木桶，PCIe 仅初步 NO-GO，尚非 formal |
 | `image_clip_transfer_ceiling_20260802/` | 单卡 CLIP R0 GPU-resident、R1 pinned FP16、R2 pageable FP32，batch16/64/256×30 repeats；raw/summary/七步报告齐全。分离 compute/H2D/ownership ceiling，属于 synthetic diagnostic，不作系统排名 |
 | `image_embedding_parity_20260803/` | Daft built-in `embed_image` 与项目 `project_ray` 的 256 图逐行语义门禁；L2-normalize 后 cosine P1=0.999788、overlap@10 mean=0.9949，支持统一 normalized contract；不是性能排名 |
+| `daft_builtin_calibration_20260803/` | **Daft built-in `embed_image` batch 独立校准**（vendor-native，step 4 前半）：batch {16,32,64,128,256}×2 rep @5000 图双卡；平台点 batch=64≈177 img/s、GPU 平均利用率仅 1.2–4.1%（双卡均 claim）→ 原生 pipeline 喂入侧瓶颈、GPU 严重未打满；不排名，只独立校准 |
 
 ## Endpoint
 
