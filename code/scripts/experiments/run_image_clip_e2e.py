@@ -307,6 +307,16 @@ def parse_args():
     )
     parser.add_argument("--out-csv", required=True)
     parser.add_argument("--out-manifest", required=True)
+    parser.add_argument(
+        "--save-embeddings",
+        default="",
+        help=(
+            "Diagnostic only: dump result.doc_ids + result.embeddings to a compressed "
+            ".npz, with a sidecar <path>.manifest.json (arm/model/processor/dtype/"
+            "versions). Refuses to overwrite an existing file. Does NOT change timing "
+            "or the execution path; empty default is a no-op."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -696,6 +706,56 @@ def main() -> None:
         formal_ids,
         dataset_passes=args.dataset_passes,
     )
+    if args.save_embeddings:
+        # Diagnostic only: dump per-row embeddings for offline parity probes.
+        # Pure side-effect (file writes); does NOT alter timing or execution path.
+        import json as _json
+        import os as _os
+        if _os.path.exists(args.save_embeddings):
+            raise SystemExit(
+                f"ERROR: --save-embeddings target already exists; refuse overwrite: "
+                f"{args.save_embeddings}"
+            )
+        import numpy as _np
+        _emb_arr = _np.asarray(result.embeddings)
+        _np.savez_compressed(
+            args.save_embeddings,
+            embeddings=_emb_arr,
+            doc_ids=_np.asarray(result.doc_ids, dtype=object),
+        )
+        _manifest = {
+            "arm": args.arm,
+            "phase": args.phase,
+            "repeat_index": args.repeat_index,
+            "model_revision": args.model,
+            "processor_revision": processor,
+            "dtype": args.dtype,
+            "embedding_dimension": args.embedding_dimension,
+            "rows": int(_emb_arr.shape[0]),
+            "dimension": int(_emb_arr.shape[1]) if _emb_arr.ndim == 2 else None,
+            "note": (
+                "embeddings are the arm's raw output; project_ray L2-normalizes, "
+                "daft_builtin_embed may not -- a parity probe must L2-normalize offline "
+                "before comparing"
+            ),
+        }
+        try:
+            import daft as _daft
+            import ray as _ray
+            import torch as _torch
+            import transformers as _transformers
+            _manifest.update(
+                {
+                    "daft_version": _daft.__version__,
+                    "ray_version": _ray.__version__,
+                    "torch_version": _torch.__version__,
+                    "transformers_version": _transformers.__version__,
+                }
+            )
+        except Exception:  # noqa: BLE001
+            pass
+        with open(args.save_embeddings + ".manifest.json", "w") as _f:
+            _json.dump(_manifest, _f, indent=2)
     gpu_metrics = gpu_sampler.stop()
     cpu_metrics = cpu_sampler.stop()
     if worker_pool is not None:
