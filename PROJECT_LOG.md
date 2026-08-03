@@ -3783,3 +3783,29 @@ formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④
   下一步 Daft built-in 60K 长门禁 → 四臂同机 formal。
 - 同时确认 codex `238f261`+`f450e07` 已归档 Ray Data 60K×2 长稳态 crosscheck（batch64≈957 img/s）
   并收紧了我两份校准报告的 claim 边界（GPU busy 采样≠MFU、"候选限制阶段"非定论）——接受这些收紧。
+
+
+## 2026-08-03 Daft built-in 60K 物化-cap 决策 + 2-arm formal 启动
+
+- **Daft built-in 60K×1 长门禁结论**：3 次公平环境尝试（默认 / `RAY_TMPDIR` /
+  `/tmp/ray`→大盘 symlink）全部 `OutOfDiskError`。根因：Daft built-in 的
+  `DistributedActorPoolProject` **物化执行（不流式）**，60K×1 已超 Ray object store
+  → spill 填满小 `/tmp`（30G overlay 仅 7G free）；60K×2（formal 规模）需 ~190GB
+  物化（即 120K 的 189GB 漏斗 RSS），远超 77GB object store + 磁盘。**Definitive：
+  Daft built-in 无法 scale 到 60K×2 formal**。runner 的 `ray.init` 不传 `_temp_dir`/
+  `object_store_memory`，故 env 重定向无效。保留 symlink gate log 作 cap 证据。
+- **用户决策（option A）**：正式排名 = **Ray Data native vs project static @ 60K×2
+  held-out**（都流式、≥60s、同合同）；**Daft built-in 单列**（5K 校准 177 img/s +
+  60K 物化-cap 发现，本身是"物化 native baseline 不可扩展"的证据，支持课题执行结构论点）；
+  direct ceiling 单独容量参照。
+- **2-arm formal 启动**（commit `37dc8fd`，dir `ai_embed_formal_2arm_60kx2_20260803`）：
+  Ray Data(batch64/cpu8/gpu2/source4) + project(cpu16/active32/gpu2/source4)，workload
+  `coco_train2017_heldout`(58287 unique，与 calibration 60k 完全 disjoint)×2=116574 行/run，
+  1 warmup + 3 formal，alternate interleave（R1 ray→proj, R2 proj→ray, R3 ray→proj），
+  `--embedding-output-contract l2_normalized`。主指标 `verified_operator_jct_s`=
+  `operator_e2e_s`(exactly_once filtered)。成功门槛：project 相对 Ray Data ≥5% + 3/3 同向。
+- **heldout 数据加载**（`import_coco_images.py` 新增 `--offset`，commit `37dc8fd`）：
+  zip sorted [60000:118287] = 58287 行，与 60k calibration disjoint（验证：heldout 不在
+  任何跨 workload doc_id dup 中；那 956 个 dup 是 val∩60k 的 `int(stem)` 撞零头、不同图，
+  formal 不用 val，不影响）。
+- cron `8741a68c` 监控 formal 完成。
