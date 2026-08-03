@@ -1,5 +1,43 @@
 # 项目日志
 
+## 2026-08-04 数据库厂商 AI 算子可安装性与 baseline 扩展
+
+- 使用厂商官方文档、官方仓库和 release notes 复核本地/云端数据库 AI 算子，按
+  “数据库执行器是否拥有模型调用调度、能否本地安装、能否复用同一 OpenAI-compatible
+  vLLM endpoint”三项拆分，而不是把向量类型、客户端 SDK 或自写 UDF 混称 AI 算子。
+- 将可本地候选补入 `experiments/plans/baseline_reference.md`：首批为 Apache Doris
+  4.1.3、ClickHouse 26.6、StarRocks 4.1.1+；Oracle AI Database 26ai Free、Db2
+  12.1.5 Community 和 SQL Server 2025 分别补充文本生成/embedding 对照；OceanBase
+  保留为需要 systemd VM 或特权容器的正式文本候选。
+- 将 DuckDB `ai` 明确标为社区扩展，将已归档 pgai 标为历史扩展，将 PostgresML 标为
+  in-database inference 机制对照；三者均不得冒充数据库 core 或与外部 vLLM 同机制排名。
+- 拆开同品牌不同产品线：用户给出的 PolarDB-X RPM 可安装但未验证一等 AI SQL
+  算子；有 AI 能力的是 PolarDB PostgreSQL Polar_AI 和 Lakebase Daft on Ray，属于
+  云/商业产品，不能写成由该 RPM 提供。
+- 新增 Snowflake、BigQuery、Databricks、Hologres、AnalyticDB、腾讯云数据库、
+  SingleStore、HeatWave、AWS/Azure 数据库、MotherDuck、SAP HANA/Teradata 等云端
+  capability 表，并规定只比较 E2E、质量、成本、失败/配额；不与本地 2×4090 raw time
+  或内部 GPU/MFU 混排。
+- 明确排除 self-managed TiDB/MariaDB/普通 MySQL 的 vector-only 能力、MatrixOne
+  Python glue、openGauss 经典 DB4AI，以及证据不足的厂商；新增安装、一行协议、
+  exactly-once/调用计数、缓存四道门禁和统一 `scheduler_owner` 审计合同。
+
+## 2026-08-04 输出长度不确定性与决策导向代价估计文献补充
+
+- 将 SFS、TIE、Past-Future、JITServe、Beyond Prediction 与 FastServe 按“动态 TTFT 估计、重尾输出长度分布、未来显存/SLA、渐进式 remaining-work 修正、prediction-free tail 风险、prediction-light 对照”补入 `research/knowledge_hub.md` 和 `research/ai_operator_literature_inventory.md`；FastServe 题录从旧 arXiv 状态更新为 NSDI 2026。
+- 将 μ-Serve 按正式 USENIX ATC 2024 定位补入 GPU serving 能耗/资源成本文献，而非误归为输出长度预测；它支撑 GPU frequency scaling、功耗与 SLO attainment 的评价口径。
+- 明确这些 serving 工作多数需要修改内部 scheduler，本项目固定 vLLM 为黑盒，只迁移 admission-time 估计、不确定性表示、评价指标与静态回退合同；不得把它们写成已经实现的直接 baseline。
+- 在 `experiments/plans/baseline_reference.md` 增补代价估计七级 baseline 和三层晋级指标：点预测/区间、配置排序、下游 decision regret/SLO goodput；要求配置组、时间、workload、长度漂移和 burst 留出。
+- 收紧“Daft+Ray 队列可控”的表述：它提高 pre-submit held work 和动作的可观测性，但不消除自然 EOS、continuous batching、KV/cache 与共享负载造成的 service 不确定性；低置信度或 OOD 时必须回退到同上限强静态策略。
+
+## 2026-08-04 AI 算子评价指标与决策导向代价估计调研补充
+
+- 在 `research/evaluation_metrics_survey_20260731.md` 增补按论文与数据库/厂商系统拆分的指标矩阵，覆盖语义算子质量、端到端性能、服务侧 TTFT/TPOT、资源成本、调用次数、可复现性与多 job 公平性，并给出本项目三层公平对比合同。
+- 明确跨系统比较必须先对齐算子语义、模型质量、硬件资源、source/sink 和计时边界；闭源厂商仅作方法学与指标覆盖对照，不引用其 wall-time 倍数作性能排名。
+- 补充 AI 算子代价估计的四层评价：点预测、不确定性、配置排序和下游决策；把 configuration ranking、oracle regret、SLO goodput 和性能回退率设为比单一 MAPE/R² 更接近研究目标的指标。
+- 使用 `idea-evaluator` 审计“Daft+Ray 队列可控使代价估计更方便”的设想。结论为 Accept with Revisions：队列可控提高 pre-submit work 的可观测性、决策可辨识性和干预能力，但不消除自然 EOS、continuous batching、KV/cache、共享负载造成的 endpoint service 不确定性；代价模型应改写为带预测区间的 state-action conditional decision model。
+- 登记最小决定性实验：强静态/解析/profile/residual/state-aware/oracle 多臂消融，开环预测与闭环 regret 联合评价，Ray/vLLM 队列迁移审计，受控 submit/hold 干预，以及独立时间、workload、模型/endpoint 泛化留出。
+
 ## 2026-07-29 开题答辩 PPT v6 设计规划与反馈修订
 
 - 审阅 `opening_defense_20260720_v5.pptx` 后，确认下一版以 v5 的章节和

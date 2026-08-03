@@ -1,6 +1,6 @@
 # 实验 Baseline 参考矩阵
 
-整理日期：2026-07-16；文献、官方 benchmark 与指标合同复审：2026-08-03
+整理日期：2026-07-16；文献、官方 benchmark、厂商 AI 算子可安装性与指标合同复审：2026-08-04
 
 > **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
 用途：正式实验设计时，从正式论文、官方系统和可审计工程默认中提取 baseline，避免使用 strawman 对照
@@ -29,9 +29,9 @@
 
 | 算子 | 服务/计算上限 | 同机原生框架 | 产品/公开 benchmark | 项目主对照 |
 |---|---|---|---|---|
-| **AI_COMPLETE** | vLLM Bench；bounded Chat/Completions 为 direct control | Daft `prompt()` Native/Ray；Ray Data HTTP Processor | OceanBase `AI_COMPLETE`；PolarDB/Snowflake/BigQuery capability；Cortex AISQL、LOTUS、SemBench | calibration 后冻结的 static active-work/actor/flush；dynamic 只与其比较 |
-| **AI_EMBED** | direct embedding service；CLIP R0/vLLM pooling | Daft `embed_image`；Ray Data native graph | PolarDB/Daft document/image embedding；公开检索 benchmark | 冻结 frame/work budget、batch、actor shape 的 project static |
-| **AI_CLASSIFY** | GPU-resident/direct classifier | Daft `classify_image`；Ray Data native graph；可运行时 Spark | 官方 803,580-row ImageNet/ResNet18；Snowflake/BigQuery `AI_CLASSIFY`；SemBench | 冻结 project static；adaptive 报相对 static 与 oracle regret |
+| **AI_COMPLETE** | vLLM Bench；bounded Chat/Completions 为 direct control | Daft `prompt()` Native/Ray；Ray Data HTTP Processor | 可本地：Doris `AI_GENERATE`、ClickHouse `aiGenerate`、StarRocks `ai_query`、Oracle `UTL_TO_GENERATE_TEXT`、Db2 `TEXT_GENERATION`、OceanBase `AI_COMPLETE`；云端另列 Snowflake/BigQuery/Databricks 等 | calibration 后冻结的 static active-work/actor/flush；dynamic 只与其比较 |
+| **AI_EMBED** | direct embedding service；CLIP R0/vLLM pooling | Daft `embed_image`；Ray Data native graph | 可本地：Doris `EMBED`、ClickHouse `aiEmbed`、Oracle `UTL_TO_EMBEDDING(S)`、Db2 `TO_EMBEDDING`、SQL Server `AI_GENERATE_EMBEDDINGS`；DuckDB/pgai 扩展另列；云端多模态产品另列 | 冻结 frame/work budget、batch、actor shape 的 project static |
+| **AI_CLASSIFY** | GPU-resident/direct classifier | Daft `classify_image`；Ray Data native graph；可运行时 Spark | 可本地：Doris `AI_CLASSIFY`、ClickHouse `aiClassify`、DuckDB `ai_classify`（社区扩展）；官方 803,580-row ImageNet/ResNet18、Snowflake/BigQuery、SemBench | 冻结 project static；adaptive 报相对 static 与 oracle regret |
 
 当前执行状态只作导航，数字仍以结果目录为准：
 
@@ -40,6 +40,11 @@
 | AI_COMPLETE service/direct | 历史 gate 与 feeding 证据存在；新 provenance formal 待重跑 | 64-row validity 后独立 calibration |
 | AI_COMPLETE Daft/Ray Data native | 功能/计数 gate 已有；旧短规模不进正式排名 | 512 calibration → 4096+ held-out formal（单 run 至少 60s） |
 | OceanBase `AI_COMPLETE` | 普通 AutoDL 容器 observer init `-9100`，`blocked` | privileged/seccomp-unconfined 容器或 VM |
+| Doris / ClickHouse AI SQL | 官方文档已确认可自托管和 OpenAI-compatible endpoint；尚未在本机安装 | 固定版本后一行协议 gate → 计数/缓存 gate → 独立 calibration |
+| StarRocks `ai_query` | 4.1.1 已修复函数注册；独立函数文档和稳定性仍不足 | 固定 4.1.1+，关闭响应缓存后做一行 vLLM gate |
+| Oracle / Db2 AI SQL | 官方确认本地版本与文本生成/embedding；尚未在本机安装 | 核对 Free/Community 镜像是否含功能、TLS/endpoint 协议和资源限制 |
+| SQL Server AI embedding | 2025 可本地 Docker；仅 embedding，远端 endpoint 要求 HTTPS | TLS reverse proxy + 一行 embedding gate |
+| DuckDB `ai` / PostgreSQL pgai | 可安装，但分别是社区扩展和已归档历史扩展 | 固定扩展版本/commit，单列 extension baseline，不冒充数据库 core |
 | Daft built-in image embedding | 256-row gate 与逐行语义 parity 已通过；主要差异为 L2 归一化 | 按统一 normalized contract 独立 calibration → formal |
 | Ray Data native image graph | 256-row resource/deadlock gate 已通过 | 独立 batch/actor calibration → formal |
 | 官方 ImageNet/ResNet18 parity | upstream commit、文件哈希和适配白名单已冻结 | 双 4090 原生脚本 gate |
@@ -304,6 +309,117 @@ failure 与扩展性协议；不为了扩大表格而实现与研究问题无关
 [PolarDB AI Functions](https://help.aliyun.com/en/polardb/polardb-for-postgresql/ai-functions-and-supported-model-providers)、
 [OceanBase AI Function](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975)。
 
+### 数据库厂商 AI 算子与可安装性清单（2026-08-04）
+
+本清单回答三个不同问题：厂商是否提供由 SQL/数据库执行器发起模型调用的一等算子；
+该产品线是否能在本地自托管；能否把算子接到项目拥有的同一 OpenAI-compatible vLLM
+endpoint。只有三项都通过且完成同机 capability gate 的系统，才可能从产品参考升级为
+正式性能 baseline。仅有 `VECTOR` 类型、向量索引、Python SDK 或可自写 HTTP UDF，均不
+等于数据库原生 AI 算子。
+
+兼容性措辞固定如下：**direct** 表示官方明确支持 OpenAI-compatible/vLLM；**likely**
+表示 endpoint 可配置但 wire protocol 尚须一行请求验证；**prompt-emulated** 表示没有
+专用分类算子，只能用生成算子改写任务。下表“可安装”只表示官方存在公开本地安装路径，
+不表示本项目已经安装成功。
+
+#### 可本地安装的数据库/扩展
+
+| 产品与建议固定版本 | 一等 AI SQL 算子（与本项目相关） | 本地安装与同 vLLM | baseline 身份与当前判断 |
+|---|---|---|---|
+| **Apache Doris 4.1.3**（或 4.0.7 stable） | `AI_GENERATE`、`AI_CLASSIFY`、`AI_EXTRACT`、`AI_FILTER`、`AI_SUMMARIZE`、`AI_TRANSLATE`、`AI_SIMILARITY`、`AI_AGG`、`EMBED` | 官方 Docker/binary；AI Resource 支持 local/OpenAI-compatible，**direct**。`EMBED` 官方覆盖文本及图像/音视频文件引用 | **首选新增正式候选**。同时覆盖文本生成、文本分类、文本/多模态 embedding；固定 provider/model 后做同 vLLM gate |
+| **ClickHouse 26.6** | `aiGenerate`、`aiClassify`、`aiExtract`、`aiTranslate`、`aiEmbed` | 官方 binary/DEB/RPM/Docker；支持 OpenAI-compatible/Ollama，**direct** | **高优先级候选**。功能较新且部分仍属 experimental，必须记录 feature flag、named collection、版本和缓存 |
+| **StarRocks 4.1.1+** | `ai_query(prompt, config_json)` | 官方 all-in-one Docker；endpoint/config 为 OpenAI 风格，**likely** | **门禁候选**。4.1.1 修复函数注册；需验证 payload、关闭/清空 response cache，并记录 `llm_max_queue_size`、`llm_max_concurrent_queries` |
+| **OceanBase CE 4.5.x** | `AI_COMPLETE`、`AI_PROMPT`、文本 `AI_EMBED`、`AI_RERANK` | CE/standalone 可装；自定义 endpoint **likely**。当前普通 AutoDL 容器因 seccomp/systemd/kernel 条件阻塞 | **正式文本候选但当前 blocked**。改用 systemd VM 或 privileged/seccomp-unconfined 容器；无图像 embedding 证据 |
+| **Oracle AI Database 26ai Free** | `DBMS_VECTOR[_CHAIN].UTL_TO_GENERATE_TEXT`、`UTL_TO_EMBEDDING(S)`、`UTL_TO_SUMMARY`、`UTL_TO_RERANK` | RPM/Windows/官方容器；官方明确列 OpenAI-compatible 和 vLLM，**direct** | **正式文本生成/embedding 候选**。安装较重；Free 版 2 CPU/2 GB RAM/12 GB 数据限制必须单列，不能外推企业版吞吐 |
+| **IBM Db2 12.1.5 Community** | `TEXT_GENERATION`、`TO_EMBEDDING`，模型由 `CREATE EXTERNAL MODEL` 注册 | Community Docker 可装；OPENAI provider 面向 OpenAI-compatible REST，**direct**，但 endpoint/TLS 需 gate | **正式文本候选**。先确认 Community 镜像实际包含 12.1.5 LLM 功能；容器通常需要 privileged |
+| **SQL Server 2025 Developer** | `AI_GENERATE_EMBEDDINGS`、`AI_GENERATE_CHUNKS` | 官方 Docker；OpenAI/Ollama embedding endpoint，**direct**，但远端 URL 必须 HTTPS | **文本 embedding-only 候选**。需在 vLLM 前加 TLS reverse proxy；没有本地原生 AI_COMPLETE，不能补生成 baseline |
+| **DuckDB 当前稳定版 + `ai` community extension** | `ai_complete`、`ai_classify`、`ai_extract`、`ai_embed`、`ai_similarity`、`ai_rerank`、`ai_agg` 等 | `INSTALL ai FROM community`；OpenAI-compatible/Ollama/llama.cpp，**direct** | **社区扩展 baseline**。安装最容易，但不是 DuckDB core；必须记录 extension version/commit、签名来源和扩展自有并发/重试设置 |
+| **PostgreSQL + Timescale pgai 0.11.2** | `ai.openai_chat_complete`、`ai.openai_embed`、`ai.ollama_generate`、`ai.ollama_embed` | Docker/源码可装；`base_url` 可指向本地服务，**direct** | **历史扩展 baseline**。仓库已归档，固定最后版本复现，不作为首要长期对手 |
+| **PostgresML 2.10.0** | `pgml.transform`、`pgml.embed`、`pgml.rank`、`pgml.predict` | Docker 可装；模型加载在数据库侧，不直接复用外部 vLLM | **不同机制对照**。改变模型副本、GPU 内存和 scheduler owner，只能单独报告 in-database inference |
+
+本地安装执行顺序为：Doris → ClickHouse → StarRocks 一行门禁 → Oracle/Db2 → SQL Server
+embedding；OceanBase 在获得合适 VM/特权容器后恢复。DuckDB `ai` 用作低安装成本的扩展
+control，pgai 只补历史机制。安装动作不在本轮调研中执行；每个系统必须先保存版本、镜像
+digest、官方 URL/commit 和最小 SQL，再决定是否投入正式 calibration。
+
+官方依据：[Doris AI Functions](https://doris.apache.org/docs/4.x/sql-manual/sql-functions/ai-functions/overview/)、
+[Doris EMBED](https://doris.apache.org/docs/dev/key-features/embedding/)、
+[Doris Docker quick start](https://doris.apache.org/docs/dev/getting-started/quick-start/)、
+[ClickHouse 26.6 AI embedding](https://clickhouse.com/blog/clickhouse-release-26-06#aiembed)、
+[ClickHouse 安装平台](https://clickhouse.com/support/platforms)、
+[StarRocks 4.1 release notes](https://docs.starrocks.io/releasenotes/release-4.1/)、
+[OceanBase AI Functions](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975)、
+[Oracle chainable AI functions](https://docs.oracle.com/en/database/oracle/oracle-database/23/vecse/chainable-utility-functions-and-common-use-cases.html)、
+[Oracle vLLM generation endpoint](https://docs.oracle.com/en/database/oracle/oracle-database/23/vecse/utl_to_generate_text-dbms_vector_chain.html)、
+[Db2 LLM integration](https://www.ibm.com/docs/en/db2/12.1.x?topic=sql-llm-integration-db2)、
+[SQL Server AI_GENERATE_EMBEDDINGS](https://learn.microsoft.com/en-us/sql/t-sql/functions/ai-generate-embeddings-transact-sql?view=sql-server-ver17)、
+[DuckDB `ai` community extension](https://duckdb.org/community_extensions/extensions/ai)、
+[pgai official repository](https://github.com/timescale/pgai)、
+[PostgresML](https://postgresml.org/docs/)。
+
+#### 可用云账号测试、但不进入本地同机排名的厂商产品
+
+| 产品 | 主要 SQL AI 算子 | 可安装性/endpoint 限制 | 正确比较口径 |
+|---|---|---|---|
+| **PolarDB PostgreSQL Polar_AI** | `AI_CallModel`、`AI_Text_Embedding`、`AI_Text_Classification`、`AI_Text_Generation` | 云 AI node/商业产品；模型 URL 可配置但对 vLLM 仅 **likely** | 有账号时做云产品 E2E/成本/质量。用户给出的 PolarDB-X RPM **不是该产品线** |
+| **PolarDB Lakebase Daft on Ray** | Daft `prompt`、`embed_text`、`classify_text`、`embed_image`、`classify_image` | 完整集成为阿里云托管；Daft 本身可本地 | 工业同栈参考；本地 Daft 已由现有 baseline 覆盖，不能重复包装成 PolarDB 本地 baseline |
+| **Hologres** | `ai_gen`、`AI_EMBED`（含图像 CLIP）、`ai_classify`、`ai_rank`、`ai_extract`、`ai_similarity` 等 | 托管模型/AI node，无公开自托管 | 当前图像 CLIP 最贴近的国产云工业参考；比 E2E、质量、成本和配额 |
+| **AnalyticDB MySQL / PostgreSQL** | MySQL 有 `ai_generate/classify/embed/...`；PG 有 `AI_GENERATE_TEXT`、`pgml.embed/transform` | 云/商业集群，模型或 PAI-EAS 契约受控 | 云产品/机制参考，不与本机 MFU 排名 |
+| **TDSQL Boundless / TCHouse-X / TencentDB for PostgreSQL** | `LLM_INVOKE` 或 `AI_GENERATE/CLASSIFY/...`，以及 `call_model/get_embedding/run_rerank` | 腾讯云商业节点；部分 endpoint 可配置但协议 **likely**，其余绑定托管模型 | 有账号后做 capability、质量、成本；不得声称已兼容本地 vLLM |
+| **TiDB Cloud Starter** | `EMBED_TEXT`、`VEC_EMBED_COSINE_DISTANCE`、`VEC_EMBED_L2_DISTANCE` | SQL Auto Embedding 仅 Cloud Starter on AWS | text-embedding 云参考；Self-Managed 仅 vector search，另见排除表 |
+| **Snowflake Cortex AI** | `AI_COMPLETE`、`AI_EMBED`、`AI_CLASSIFY`、`AI_FILTER`、`AI_AGG`、`AI_EXTRACT`、`AI_TRANSCRIBE` 等 | 托管服务，原生函数不能注册任意本地 vLLM | 单列 query E2E、$/1K rows、质量、错误/配额；External Function 必须另标 generic UDF |
+| **BigQuery** | `AI.GENERATE*`、`AI.EMBED*`、`AI.IF`、`AI.SCORE`、`AI.CLASSIFY`、`AI.AGG` | 托管服务；原生函数绑定 BigQuery/Vertex endpoint | 单列云面板；物化精确输入，记录实际模型调用行数、Vertex 配额和两侧费用 |
+| **Databricks** | `ai_query`、`ai_gen`、`ai_classify`、`ai_extract`、`ai_summarize`、`ai_similarity` 等 | Serverless 云端；custom external model 支持 OpenAI-compatible 公网 HTTPS endpoint | 可做“同 endpoint、云端 scheduler”面板，但 WAN/AI Gateway/serverless 开销使其不能与本机 raw time 混排 |
+| **SingleStore Helios** | `AI_COMPLETE`、`AI_CLASSIFY`、`AI_EXTRACT`、`EMBED_TEXT` 等 | AI Functions 属于 Helios/Aura managed Python UDF containers；本地 Dev Image 未证明含同功能 | 云 capability/成本参考 |
+| **MySQL HeatWave** | `ML_GENERATE(_TABLE)`、`ML_EMBED_ROW/TABLE`、`ML_RAG(_TABLE)`、`HEATWAVE_CHAT` | HeatWave 托管云，普通 MySQL 安装不含这些算子 | 云 capability/多模态参考；不能称为 MySQL Community baseline |
+| **Amazon Aurora PostgreSQL / Redshift** | Aurora `aws_bedrock.invoke_model*`；Redshift `CREATE EXTERNAL MODEL ... BEDROCK` 生成 SQL inference function | AWS 托管，绑定 Bedrock/SageMaker；自写 Lambda 代理属于 generic UDF | 单列 AWS 云面板，记录 region、quota、throttle/retry、provisioned throughput 和费用 |
+| **Azure Database for PostgreSQL** | `azure_ai.generate/is_true/extract/rank`、`azure_openai.create_embeddings` | 云预览扩展，绑定 Azure AI/Foundry endpoint | capability/成本参考 |
+| **MotherDuck** | `prompt()`、`embedding()` | MotherDuck 托管、无 on-prem、不能注册本地 endpoint | 轻量云数仓参考；不得称为 DuckDB native |
+| **SAP HANA Cloud / Teradata Vantage** | `VECTOR_EMBEDDING`；`AI_AskLLM`、`AI_TextEmbeddings`、`AI_TextClassifier` 等 | 云/企业许可，无公开低成本同机安装路径 | 企业 capability/成本/质量参考 |
+
+官方依据：[PolarDB Polar_AI SQL](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/polar-ai-sql-reference/)、
+[Hologres AI Functions](https://help.aliyun.com/zh/hologres/user-guide/ai-function-list)、
+[AnalyticDB MySQL AI Functions](https://help.aliyun.com/zh/analyticdb/analyticdb-for-mysql/ai-function)、
+[Snowflake Cortex AISQL](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql)、
+[BigQuery Generative AI overview](https://docs.cloud.google.com/bigquery/docs/generative-ai-overview)、
+[Databricks AI Functions](https://docs.databricks.com/aws/en/large-language-models/ai-functions)、
+[SingleStore AI Functions](https://docs.singlestore.com/cloud/ai/ai-ml-functions/ai-functions/)、
+[HeatWave GenAI routines](https://dev.mysql.com/doc/heatwave/en/mys-hwgenai-routines.html)、
+[Aurora PostgreSQL ML](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/postgresql-ml.html)、
+[Azure PostgreSQL AI Functions](https://learn.microsoft.com/en-us/azure/postgresql/azure-ai/generative-ai-azure-ai-functions)、
+[MotherDuck prompt](https://motherduck.com/blog/sql-llm-prompt-function-gpt-models/)。
+
+#### 不纳入生成式数据库 AI 算子 baseline 的安装包
+
+| 产品/安装包 | 核查结果 | 排除原因 |
+|---|---|---|
+| **PolarDB-X 标准版 RPM** | 可以在 CentOS 类 VM 安装；未在官方文档/仓库验证 `AI_COMPLETE`、`AI_EMBED` 或模型 endpoint | 与 PolarDB PostgreSQL Polar_AI/Lakebase 是不同产品，不能因同品牌误列 baseline |
+| **TiDB Self-Managed、MariaDB 11.7+、普通 MySQL** | 提供向量类型/索引/距离函数；embedding 由客户端或外部模型生成 | vector-only，不是 DB-owned model-call scheduler |
+| **MatrixOne** | 官方 RAG 示例由 Python/Ollama 生成 embedding/答案；数据库负责向量存取 | Python UDF/自写 HTTP glue 不等于 vendor-native AI operator |
+| **openGauss/GaussDB DB4AI** | `CREATE MODEL` / `PREDICT BY` 覆盖回归、分类、聚类等经典 ML | 可本地但任务和部署机制不是 AI_COMPLETE/LLM/多模态 embedding |
+| **ByteHouse、KingbaseES、Dameng** | 截至核查日未在官方公开资料验证一等模型调用 SQL 函数和 endpoint 契约 | 证据不足，保留观察，不写成绝对不存在 |
+| **自写 External Function/Lambda/Python UDF** | 技术上可把任意数据库连到 vLLM | scheduler owner 是项目 glue，不是厂商 AI 算子，只能作 generic UDF control |
+
+排除依据：[PolarDB-X RPM 部署](https://doc.polardbx.com/deployment/topics/deploy-by-rpm-std.html)、
+[TiDB Self-Managed Vector Search](https://docs.pingcap.com/tidb/stable/vector-search-integration-overview/)、
+[MariaDB Vector](https://mariadb.com/docs/server/reference/sql-structure/vectors/vector-overview)、
+[MatrixOne RAG example](https://docs.matrixorigin.cn/v25.3.0.0/MatrixOne/Tutorial/rag-demo/)、
+[openGauss DB4AI](https://docs.opengauss.org/en/docs/7.0.0-RC3/characteristic_description/aifeature_guide/native_db4ai_engine.html)。
+
+#### 厂商 baseline 的统一准入与报告合同
+
+1. **先过四道 capability gate**：安装并记录精确版本；一行调用返回正确 schema；N 行
+   exactly-once 且调用数可审计；关闭或冻结响应/prefix/result cache 后再测并发。
+2. **同机主排名只收可复现系统**：相同输入、模型权重、endpoint、输出上限、source/sink、
+   CPU/GPU 上限和 warm/cold 生命周期；各系统独立 calibration，不能把同一 Ray 参数强塞
+   给不同数据库。
+3. **外部厂商 raw number 与本地分榜**：云产品只比较其可观察的 query E2E、质量、
+   $/1K rows、token/image work、失败/429、quota 和 region；不推断内部 GPU/MFU。
+4. **记录谁拥有调度**：每个 run 必须写 `scheduler_owner`、原生 AI Function 还是扩展/
+   generic UDF、数据库内部队列/批大小/重试/缓存参数，以及项目 adapter diff。
+5. **不同模型只做产品比较**：只有相同模型和 endpoint 才能讨论调度效率；厂商托管不同
+   模型只能比较产品 E2E、质量和成本 Pareto，不能据此声称执行链路更快。
+
 ### 数据库 AI 算子评价指标合同
 
 本节是后续文本与图像实验的最低指标合同。它不是把所有论文的字段机械相加，而是
@@ -452,6 +568,27 @@ work-conserving borrowing 和每 job service/JCT/fairness。Llumnix（OSDI 2024�
 | **X3** | 延迟视图维护 | Deferred View Maintenance (Colby et al., SIGMOD 1996) | **A** | 攒批 → 批量维护物化视图，减少事务开销 | 经典理论，但不涉及 GPU 推理侧 |
 | **X4** | Semantic Operator Pareto Optimization | Abacus (Russo et al., PVLDB 2026) | **A** | profile + MAB/Pareto 搜索 quality/cost/latency 计划 | 优化调用/实现选择；本项目只迁移 profile 与 ranking 方法 |
 | **X5** | UDF/Placement Cost Estimation | GRACEFUL (ICDE 2025) + COSTREAM (ICDE 2024) | **A** | 估计 UDF runtime 与异构 operator placement | 本项目首版为解析模型 + profile + residual，不直接采用复杂 GNN |
+| **X6** | Uncertainty-aware Admission Cost | SFS、TIE（ICML 2026）、Past-Future（ASPLOS 2025）、JITServe（NSDI 2026）、Beyond Prediction（ICML 2026） | 正式论文 + 预印本 | serving simulation、输出长度分布、remaining-work 修正、SLO goodput 与 prediction-free tail 对照 | 多数机制修改 serving scheduler；本项目只迁移 admission-time 估计、区间、指标和回退合同，不修改 vLLM |
+
+### 代价估计的可实施 baseline 与晋级合同
+
+代价模型不是以“拟合秒数最好看”为目标，而是要改善数据组织、active-work、endpoint 和 submit/hold 决策。按实现复杂度依次比较：
+
+1. 不使用估计器的固定静态 active-work/credit；
+2. 输入 token/frame + output cap 的解析公式；
+3. profile bucket/lookup；
+4. 解析模型 + residual correction；
+5. 输出 work 分位数/预测区间 + endpoint state；
+6. oracle actual output length（只作不可部署上界）；
+7. 只有拿到细粒度 running prefill/decode snapshot 时，才加入 SFS 式 what-if simulation。
+
+每个估计器必须同时报告三层结果：
+
+- **预测层**：MAE/RMSE、median/p95/p99/max Q-error、prediction interval coverage/width、tail underestimation；
+- **排序层**：Spearman、pairwise accuracy、Top-K、pick rate；
+- **决策层**：selected JCT/throughput/SLO goodput、oracle regret、SLO 违反、性能回退率、回退到静态策略的比例与估计器开销。
+
+训练/验证至少采用配置组留出、独立时间段和 workload 留出；自然 EOS 场景另做长度分布漂移与 burst 留出。动态估计器只有显著优于**同最大 work/credit 上限的强静态策略**，且 P95/P99、公平性和失败率无明显回退，才进入正文主结果。Beyond Prediction 提供的反例要求保留 prediction-free 静态 arm，不能把 oracle output length 当作调度最优的充分条件。
 
 ---
 

@@ -441,3 +441,184 @@ AI_COMPLETE 是**生成式**（输入文本 → LLM 生成 → 写回）。SemBe
 - **不引用任何厂商的提速倍数**（100x/30x/10x/100x/70%/4-10x/2.2-7.6x 全是闭源黑盒或匿名 baseline 营销）。跨厂商对比只能说"采用某厂商公开 tutorial 同款公开数据（如 bbc_news、Cohere 50M）与公开过程做可复现对照"，不能声称对标某厂商闭源数字。
 - PolarDB 的 scoop 核查状态为"**未见研究论文证据**"，非"确定不存在"——正式定稿新颖性前需补 VLDB/SIGMOD/ICDE 阿里云 Daft 团队学术文献检索。
 - 本附录厂商方法论为**厂商来源/官方文档**（非独立第三方）；PolarDB 同栈与开源 Daft 关系为**官方文档 + 开源仓库交叉核实**的**本地事实**；新颖性边界（PolarDB 不观测 vLLM 状态）为基于其公开文档未提及的**合理推断**（闭源内部无法确证）。
+
+---
+
+## 9. 按论文与数据库系统拆分的指标矩阵及本项目对比合同（2026-08-04）
+
+本节回答两个问题：已有工作究竟用什么指标评价数据库 AI 算子；本项目与它们比较时，哪些指标可以直接比较，哪些只能作功能或方法学对照。结论先行：**不能把不同模型、质量目标、资源和执行边界下的 wall time 放在一张表里比较**。本项目应采用“先保证语义/质量等价，再比较端到端性能；同时报告服务侧、上游调度侧和代价模型决策侧指标”的三层合同。
+
+### 9.1 学术论文：算子、指标与可比边界
+
+| 论文/系统 | 主要 AI 算子或任务 | 论文采用的核心指标 | 本项目应如何比较 |
+|---|---|---|---|
+| **LOTUS（PVLDB 2025）** | semantic filter/join/aggregation/top-k/group-by/map | 任务质量（accuracy、RP@k、nDCG 等）、执行时间、模型调用次数；部分算子带准确率/失败概率约束 | 选择可落到 `map`/AI_COMPLETE 或分类任务的同一语义；冻结模型、prompt、输出约束和数据，只比较质量达标后的 JCT、吞吐、调用数、输入/输出 token 和成本。LOTUS 的逻辑算子优化不能直接等同于本项目的物理提交调度。 |
+| **Galois（SIGMOD 2025）** | 生成式数据集成/表格构造 | F1-Cell、Cardinality、Tuple Constraint、AVG-Score、token 数、执行时间 | 仅在相同生成任务上比较“质量—token—时间”；它没有并发、尾延迟、batching 或服务饱和指标，不能据此推断调度优劣。 |
+| **GaussML（ICDE 2024）** | 数据库内 ML 推理的算子/计划优化 | 执行时间、speedup | 必须补上模型质量与完整 E2E 边界；只可把其计划优化思想作 related work，不应跨模型引用 speedup。 |
+| **Smart（VLDB Journal 2025）** | SQL 中 ML 推理算子及计划选择 | 查询执行时间、speedup，推理成本常作为已知/固定输入 | 用作“传统优化器把推理代价视为静态参数”的对照；本项目重点检验动态 batch、服务状态和输出长度不确定性下该假设何时失效。 |
+| **SmartLite（PVLDB 2024）** | 轻量推理执行/模型压缩 | 内存占用、推理延迟或加速比 | 若比较必须锁定质量目标并补 F1/accuracy；否则只能说明资源—速度权衡，不能说明算子效果更好。 |
+| **InferDB（PVLDB 2024）** | 数据库内分类/回归推理 | 回归 RMSLE；分类 F1/Recall/Precision；推理延迟、训练/索引构建时间、存储大小；多次运行标准差 | 对 AI_CLASSIFY 可复用 F1/Recall/Precision + 延迟口径；训练/索引代价与本项目的外部执行调度不是同一阶段，应分表。 |
+| **LEADS（PVLDB 2024）** | 工作负载感知的数据库内学习/推理 | Workload-AUC、Worst-AUC、FLOPs、响应时间，含数据库内/外执行和消融 | 可借鉴“平均质量 + 最坏工作负载质量”和完整消融；本项目应将 FLOPs 扩展为实际 token/frame work、GPU 时间和能耗。 |
+| **NeurDB（CIDR 2025）** | AI 原生数据库中的训练与推理 | E2E latency、训练吞吐、loss 曲线、事务吞吐 | 只作系统愿景与分层测量参考；本项目不把训练吞吐或事务吞吐混入 AI 算子执行主表。 |
+| **Cortex AISQL（SIGMOD 2026）** | AI SQL 谓词/模型级联与运行时重排 | F1/precision/recall、执行时间、吞吐、模型调用次数、delegation rate | 是强相关对照。相同任务上比较质量达标后的调用数、token、JCT；但其线性 per-row cost/谓词重排与本项目的可变长生成、连续 batching、上游 admission 是不同控制层。 |
+| **Palimpzest（CIDR 2025）** | LLM 数据处理算子与物理计划搜索 | 时间、货币成本、质量/F1，输出 Pareto 计划；用少量 workload profile | 借鉴 Pareto 展示和小样本 profile；比较时统一 API/本地模型与并发，避免把单线程 API 账单和固定 GPU 的吞吐直接相除。 |
+| **Abacus（PVLDB 2026）** | 语义算子的模型/计划选择 | 质量、货币成本、延迟及约束满足，验证样本预算，多次试验 | 借鉴“约束下选择”而非只做点预测；本项目对应目标是固定资源下最大 SLO goodput/最小 JCT，报告选择 regret 和约束违反率。 |
+| **SemBench（PVLDB 2026）** | semantic filter/join/map 等跨系统基准 | 质量、执行时间、货币成本、内存、伸缩性、调用次数、失败/限流，多次重复 | 最适合承载跨系统功能对照。对 LOTUS/Palimpzest/托管 SQL 做质量—成本—时间比较；对本项目再追加 TTFT/TPOT、上游队列、active work、GPU 利用率和写回分段。 |
+
+由上表可见，论文通常分成三类：
+
+1. **语义/逻辑优化论文**关注质量、模型调用数、token 或货币成本以及总时间；
+2. **数据库内推理论文**关注单查询延迟、吞吐、内存、索引/训练开销；
+3. **LLM 数据处理系统**开始报告质量—成本—延迟 Pareto，但很少公开上游 submission、服务内部排队、active work、写回和多 job 公平性。
+
+本项目的区别不应表述为“我们比所有 AI 算子系统更快”，而应表述为：**在相同算子语义和模型质量下，研究它们普遍未拆开的外部执行链路——数据组织、提交控制、模型服务、fan-in 与写回——并给出可解释的调度机制指标。**
+
+### 9.2 数据库/厂商系统：公开指标与合理对照方式
+
+| 数据库/产品族 | 公开评测主要指标 | 对本项目的用途 | 不可直接声称 |
+|---|---|---|---|
+| **PolarDB Lakebase + Daft on Ray** | 多模态 workload 的 E2E wall time，和 Ray Data/Spark 的厂商对照 | 最近的同栈工业锚点；复现公开 workload 形状，并对齐硬件、模型、数据与计时边界后比较 | 公开结果未充分披露 warm-up、重复和原始脚本，不能直接引用厂商倍数；也不能由公开材料断言其内部没有服务状态感知。 |
+| **Snowflake Cortex/AISQL** | F1/precision/recall、执行时间、LLM 调用数、delegation rate | 借鉴强模型、动态级联、便宜 proxy 的多臂对照和质量门禁 | 闭源云环境数字不能与本地 2×4090 wall time 排名。 |
+| **BigQuery ML/AI functions** | rows/time、成功率、固定 token/QPM 条件下吞吐、账单成本 | 借鉴大规模行级成功率和成本归一化 | 内部 benchmark、配额和后端模型不透明，不能作性能 headline。 |
+| **Oracle AI Vector Search/LLM 服务** | TTFT、TPOT、latency、throughput、MBU/MFU；Recall@k、QPS | 采用成熟 LLM 服务指标分解与向量质量门禁 | 匿名或资源不对齐 baseline 不可采用；向量 read-side ANN 不能代替本项目的生成/写入侧链路。 |
+| **PostgresML** | rows/s、predictions/s、部分 p99、训练/推理时间 | 对数据库内本地推理给出功能锚点 | toy query 或单次计时不足以支撑系统对比。 |
+| **pgai/pgvector/pgvectorscale** | Recall@k–QPS Pareto、p50/p95/p99、目标 QPS 下成本 | 对 AI_EMBED 写回后的 read-side 质量和索引基线有用 | 主要评测 ANN 查询，不覆盖 embedding 生成、上游组织和写回吞吐。 |
+| **Databricks Lakehouse AI** | Recall@10、p50/p99、TTFT/TPOT/throughput、MBU/MFU、组件分段时间 | 借鉴服务指标和 per-component breakdown | 闭源系统只作方法学对齐，不作数值速度排名。 |
+
+### 9.3 本项目的公平对比合同
+
+#### 第一层：语义与资源等价门禁
+
+任何性能表之前先冻结：数据与行数、算子语义、模型/checkpoint/精度、tokenizer 与预处理、prompt 模板、temperature/采样和最大输出、质量阈值、GPU/CPU/内存、endpoint 数、数据读取和写回路径、warm-up、重复次数与计时边界。生成算子还要同时报告实际输出 token 分布；分类报告 F1/precision/recall；embedding/检索报告 Recall@k 或 nDCG。**质量未对齐的吞吐不进入同一排名。**
+
+#### 第二层：分组设置 baseline，避免跨层错比
+
+- **服务上限**：直接/有界 HTTP → vLLM，只说明 endpoint ceiling，不是完整系统竞争者；
+- **框架原生**：Daft native、Ray Data native，与本项目共享数据、模型、source/sink 和资源；
+- **强静态策略**：固定 token/frame budget + 固定 active-work/K + fixed flush，是动态策略的主要反事实；
+- **数据库/学术 AI 系统**：LOTUS、Palimpzest、Abacus、SemBench 等只在共同算子语义与共同模型上作质量—成本—时间比较；
+- **闭源厂商**：只比较公开方法、指标覆盖和可复现性，不做本地 wall-time 排名。
+
+#### 第三层：论文主表必须同时覆盖四组指标
+
+| 组别 | 主指标 | 用途 |
+|---|---|---|
+| **端到端效果** | operator JCT；tokens/s（生成）或 images/rows/s（embedding/classify）；p50/p95/p99；SLO goodput | 回答策略是否真正改善用户可见结果 |
+| **质量/正确性** | exact row count 与 exactly-once；F1/Recall@k/nDCG；失败率、重试率、缺失/重复行 | 防止靠少算、丢行或降低质量换速度 |
+| **资源/成本** | GPU busy/MFU，CPU 利用率，峰值显存/内存，J/1k-token 或 J/image，$/M-token 或 $/M-row | 判断提速来自利用率提升还是额外资源 |
+| **机制与控制面** | 实际 prompt/output work、batch work 分布、active work、Ray pending/pre-submit wait、vLLM running/waiting/KV、credit 持有时间、HOL、提交/调用次数 | 解释为何有效，并揭示队列从一个层级迁移到另一个层级 |
+
+多 job 实验另报 Jain fairness、service disparity、各 job JCT/p99 与最大 SLO 违反率；不能只报聚合吞吐。
+
+### 9.4 AI 算子代价估计：文献真正看重的指标
+
+代价模型不应只回答“预测秒数准不准”，而应回答“它能否让优化器或调度器作出更好的选择”。相关文献形成了四层评价：
+
+| 层级 | 建议指标 | 对本项目的含义 |
+|---|---|---|
+| **点预测** | MAE、RMSE、R²；median/p95/p99/max Q-error；分 stage 误差 | 评价 service time/JCT/remaining work 的绝对和乘法误差；MAPE 只作辅助，因为小真值会放大比例误差 |
+| **不确定性** | 预测区间 coverage、平均宽度、分位数 calibration、tail underestimation rate | 可变输出长度和共享 serving 状态使点预测不够；尾部低估比同量级高估更危险 |
+| **配置排序** | Spearman ρ、pairwise ranking accuracy、Top-k precision/recall、pick rate、surpassed plans | 代价模型首先要选对 token budget、active-work、路由或 flush 配置，而非复原每次秒数 |
+| **下游决策** | selected JCT/throughput/SLO goodput、regret vs oracle、SLO 违反、性能回退率、决策稳定性、模型推理开销 | 这是最终主指标；高 R² 不能替代低 regret，较大点误差也可能不影响正确排序 |
+
+传统 learned cost model 的系统性比较已经指出，Q-error 单指标不能代表计划选择质量；应同时报告 selected runtime、排序、pick rate、最大高估/低估和下游回退。GRACEFUL 在黑盒 UDF 上报告运行时间 Q-error，并用 pull-up 决策是否带来实际 speedup/回退；COSTREAM 同时预测 streaming dataflow 的吞吐、E2E/per-operator latency、backpressure 与可运行性，并在未见查询/硬件上验证；近期 LLM serving 工作则把输出长度分布、TTFT、SLO goodput 和 tail risk 纳入调度。因此，本项目首版 283 行模型的 R²=0.776、五种子平均 MAE=11.682s、MAPE=50.60% 只能证明“存在粗粒度容量信号”，不能证明可用于严格 SLO。
+
+建议的代价目标分解为：
+
+```text
+operator JCT
+  = 可观测的 pre-submit wait
+  + 数据读取/组织时间
+  + 条件于服务状态与提交动作的 endpoint wait + service time
+  + fan-in / writeback
+```
+
+请求特征至少包括 prompt token、输出长度分布或分位数、frame/pixel work、模型与精度、batch 构成；状态特征至少包括 active work、running/waiting、KV/cache、endpoint、并发 job；动作特征包括是否提交、提交到哪个 endpoint、batch/token budget 和 credit。目标不只是总 JCT，还包括 TTFT、TPOT/ITL、remaining work、SLO slack 与预测区间。
+
+推荐的 cost-estimator baseline 顺序是：
+
+1. 不使用估计器的固定静态策略；
+2. 仅以输入 token/frame 和 output cap 构成的解析模型；
+3. 分桶/profile lookup；
+4. 解析模型 + residual correction；
+5. 增加输出长度分位数和 endpoint 状态的模型；
+6. oracle actual output length（只作上界，不可部署）；
+7. 若能取得足够细的 vLLM workload snapshot，再实现 serving-framework simulation 类对照。
+
+所有模型使用配置组留出、独立时间段、workload 留出；进一步做模型/硬件留出。随机逐行切分会泄露同配置信息，不足以说明泛化。
+
+### 9.5 `idea-evaluator`：Daft + Ray 队列可控设想
+
+#### 第一印象与论文类型
+
+**类型：Novel Setting + Method Contribution。** 最有价值的命题不是“Ray 队列让代价估计更容易”，而是：
+
+> 在数据库 AI 算子的外部执行链路中，用轻量解析模型、profile residual 与不确定性估计，在 admission 之前预测 work/service/JCT，并利用 Daft+Ray 可控提交点选择数据组织、endpoint 和提交时机，以最小化固定资源下的决策 regret 与 SLO 违反。
+
+代价估计应继续作为两项调度策略的共同使能组件，而不是独立第三项贡献。
+
+#### 致命缺陷审计（最多两个）
+
+| 风险 | 严重度 | 为什么危险 | 可行防守 |
+|---|---|---|---|
+| **“队列可控 + 代价感知调度”本身不新** | **MAJOR** | 数据库优化、LLM 路由和 output-length-aware scheduling 已经广泛使用成本/长度预测；若贡献只剩“用 Ray 控制提交”，容易成为 solution-first 工程组合 | 把新颖性限定为数据库 AI 外部链路的**决策导向、跨层代价模型**：共同建模组织、pre-submit、endpoint service、fan-in/writeback，并用同资源静态策略、解析模型、oracle 与 serving-aware 方法比较 regret，而不是声称首个代价感知调度器 |
+| **队列控制不消除 service cost 的内生性和部分不可观测性** | **MAJOR** | pre-submit wait 可精确记录，但提交后的 service time 仍由自然 EOS、continuous batching、KV/cache、共同运行请求、其他 job 和硬件状态决定；且“暂不提交”会改变未来 batch/state。项目已有 AIMD 反例：工作积在 Ray 时，vLLM `waiting` 可保持 0 | 使用 state-action conditional 模型与预测区间；同时记录 Ray held work 和 vLLM state；用随机/受控探索覆盖动作；报告 tail underestimation、OOD 与 oracle regret；若细粒度 serving snapshot 不可得，就明确只做粗粒度 admission/capacity guidance |
+
+两项都是可通过实验修订的 **MAJOR**，目前没有不可修复的 CRITICAL flaw。
+
+#### 生命周期与能力匹配
+
+| 维度 | 评估 |
+|---|---|
+| 原型→初步结果 | 已有双卡执行链路、request-level credit 语义和 283 行真实 profile；短周期可做 |
+| 稳健结果 | 需要独立时间/workload、输出长度分布、多个 endpoint 状态与干预实验；中等工程量 |
+| 可发表证据 | 需要证明较强点预测不是目标、而低 regret/SLO 改善来自模型；并完成跨模态或跨模型验证；约 6–12 个月研究周期更合理 |
+| 能力/资源 | 现有 2×4090 与代码基础匹配；最大缺口是细粒度 serving snapshot 和更多外部验证数据。每周可投入时间未给出，资源匹配暂评 **Yellow** |
+
+#### 五维评分（10 分制）
+
+| 维度 | 分数 | 依据 |
+|---|---:|---|
+| Higher Effectiveness | 5 | 代价模型主要优化执行决策，不直接提升模型任务质量 |
+| Faster | 8 | admission 前预测可减少过载排队和空闲，但必须由干预实验确认 |
+| Stronger | 7 | 不确定性、remaining work、SLO slack 比单一 runtime 回归更稳健；尚未完成 OOD 验证 |
+| Cheaper | 7 | 解析模型 + profile residual 的训练/推理成本低，并可能减少 GPU 空转和 SLO 浪费 |
+| Broader | 8 | token work 可映射到 frame work，同一模型可服务数据组织、提交、路由和多 job 控制 |
+
+该想法有两个维度达到 8 分，但 fatal-flaw audit 仍有两项 MAJOR，因此不能直接给 Strong Accept。
+
+#### 范式潜力
+
+- **First-principles reset：部分满足。** 把“预测误差最小”改成“选择 regret 最小”是正确重置；
+- **Elephant-in-the-room：满足。** 语义系统与 serving 系统经常分别优化，外部数据库执行链路的 queue relocation 与写回被忽略；
+- **Technology-cycle alignment：满足。** Daft/Ray 的可编程数据流和 vLLM 的运行指标使 admission-time 控制现在可实现；
+- **Hamming importance：部分满足。** 问题重要但仍属系统子领域，不宜夸大为普适数据库代价模型革命。
+
+结论是**渐进式工作中含有可扩展的范式种子**：从 point-estimation 转向 decision-oriented、uncertainty-aware、cross-layer admission cost。
+
+#### 最终裁决
+
+**Accept with Revisions。** 这个方向值得做，而且和现有项目结构高度吻合；但论点应改成“队列可控提高了决策可辨识性与干预能力”，而不是“让全部代价容易估计”。只有 pre-submit 部分更确定，endpoint service 仍是随机、内生且部分不可观测的。
+
+### 9.6 最小决定性实验
+
+1. **估计器消融**：固定静态、解析模型、profile lookup、解析+residual、加入输出分位数/服务状态、oracle actual output；所有臂共享同一最大 active work 与资源。
+2. **开环预测 + 闭环决策同时评价**：报告 MAE/Q-error/区间 coverage，同时报告配置排序、SLO goodput、regret、回退率；若预测更准但 decision regret 不降，模型不晋级。
+3. **队列迁移审计**：同步记录 Ray held/pending work、pre-submit wait、vLLM running/waiting/KV、TTFT/TPOT；证明策略不是把可见排队移到不可见层。
+4. **受控干预**：在相同 arrival trace 下随机化部分 submit/hold 或 threshold，检验估计器在不同 action 下是否校准，避免只学习旧策略生成的数据分布。
+5. **泛化留出**：配置组、独立时间段、短/长输出 workload、burst、不同模型/endpoint；多模态仅替换 work 定义为 frame/pixel budget，复用相同决策接口。
+6. **晋级准则**：只有在至少一个主 workload 上相对同上限强静态策略显著改善 SLO goodput/JCT，且无明显 tail/fairness 回退，才把 cost-aware 动态策略写入主贡献。
+
+### 9.7 本节主要文献来源
+
+- LOTUS: [LOTUS: Enabling Semantic Queries with LLMs Over Tables of Unstructured and Structured Data](https://www.vldb.org/pvldb/vol18/p4171-patel.pdf)
+- Abacus: [Abacus: Cost-Effective and Quality-Aware Planning for Semantic Operators](https://www.vldb.org/pvldb/vol19/p1060-russo.pdf)
+- Learned cost model evaluation: [How Good are Learned Cost Models, Really?](https://arxiv.org/abs/2502.01229)
+- GRACEFUL: [Zero-Shot Cost Models for UDFs](https://arxiv.org/abs/2503.23863)
+- COSTREAM: [Learned Cost Models for Distributed Stream Processing](https://arxiv.org/abs/2403.08444)
+- LLM serving simulation/routing: [Beyond Accuracy and Cost: Latency-Aware LLM Query Routing for Dynamic Workloads](https://arxiv.org/abs/2607.18253)
+- Output-length uncertainty: [Scheduling LLM Inference with Uncertainty-Aware Output Length Predictions](https://arxiv.org/abs/2604.00499)
+- SLA/goodput scheduling: [Past-Future Scheduler for LLM Serving under SLA Guarantees](https://arxiv.org/abs/2507.10150)
+- Fairness work accounting: [VTC: Fairness Scheduling for Serving Large Language Models](https://www.usenix.org/conference/osdi24/presentation/sheng)
+- Chunked prefill/service metrics: [Sarathi-Serve](https://www.usenix.org/conference/osdi24/presentation/agrawal)
+- Prediction fragility and tail risk: [Beyond Prediction: Tail-Aware Scheduling for LLM Serving](https://arxiv.org/abs/2606.18431)

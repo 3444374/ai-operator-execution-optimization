@@ -176,9 +176,10 @@ class AdaptiveSubmitActor:
 | **vLLM** | SOSP 2023 Best Paper | PagedAttention + Continuous Batching，>96% KV cache 利用率 | 部署平台，不修改其内部 |
 | **Orca** | OSDI 2022 | Iteration-level scheduling 开山之作，GPT-3 175B 上 36.9× | 不研究上游如何组织数据 |
 | **Sarathi-Serve** | OSDI 2024 | Chunked prefill + stall-free scheduling，2.6-5.6× | 不控制请求到达粒度 |
-| **FastServe** | arXiv 2023 | 抢占式 MLFQ 调度，skip-join 优先 | 调度策略参考 |
+| **FastServe** | NSDI 2026 | token 粒度抢占式 MLFQ，按输入长度初始化 skip-join 队列 | serving 内部 prediction-light 调度参考；本项目不修改其内部 |
 | **DistServe** | OSDI 2024 | Prefill-Decode 分离，消除阶段干扰 | 仅优化 GPU 内部 |
 | **Splitwise** | ISCA 2024 | 阶段分离降功耗成本 | 仅 GPU 内部 |
+| **μ-Serve** | USENIX ATC 2024 | GPU 频率缩放与模型 multiplexing 协同，优化功耗并维持吞吐/延迟 SLO | 能耗/资源成本评价参考，不是输出长度或 admission cost 模型 |
 | **Mooncake** | FAST 2025 Best Paper | KV cache 中心化 disaggregated 架构 | KV cache 分布架构 |
 | **S-LoRA** | MLSys 2024 | 并发 LoRA adapter 服务，统一 batching | 多租户参考 |
 
@@ -278,7 +279,7 @@ class AdaptiveSubmitActor:
 | 自引 | 3 | 本项目 GPU-backed E2E |
 | **合计** | **65** | |
 
-### 3.8 算子代价估计与查询优化（2026-07-29 升级）
+### 3.8 算子代价估计与查询优化（2026-08-04 补充）
 
 算子代价估计不再只作为附录中的孤立预测任务，而是数据组织与调度提交控制共同依赖的重要组件；它仍不单独扩张成第三项研究内容。以下论文覆盖传统 learned cost model、UDF 感知、算子放置、semantic operator 优化和推理延迟预测：
 
@@ -295,8 +296,16 @@ class AdaptiveSubmitActor:
 | **Pathak & Mankodi — Redefining Cost Estimation** | arXiv 2025 | 三类特征（标量/结构/语义）+ XGBoost → MSE 0.3002；树集成在低数据量下优于深度学习 | 特征工程方法参考，印证 Ridge 在 283 行上的选择合理 |
 | **Learned Query Optimizer (Zhu et al.)** | SIGMOD 2024 | 学习型优化器综述 | 未下载（ACM 付费墙），作为领域全景引用 |
 | **Learning Database Optimization (Qiao et al.)** | FCS 2025 | 数据库优化技术综述 | 已下载，作为领域全景引用 |
+| **SFS — Beyond Accuracy and Cost (Patel et al.)** | arXiv 2026 | 用 serving-framework token-batch simulation 估计动态 workload 下的 TTFT，并联合优化 latency/quality/cost 路由 | 最接近“提交前 what-if 估计”的对照；但需要细粒度 running prefill/decode snapshot，粗粒度 Prometheus 指标不足以完整复现 |
+| **TIE — Scheduling LLM Inference with Uncertainty-Aware Output Length Predictions (Zheng et al.)** | ICML 2026 | 不把输出长度当点值，而用重尾分布与 Tail Inflated Expectation 表达长输出风险 | 直接支持输出 work 使用分布/分位数；本项目不能只用 `completion_max_tokens` 或预测均值 |
+| **Past-Future Scheduler (Gong et al.)** | ASPLOS 2025 | 用历史输出长度分布估计未来各时点显存占用，在排队与 eviction 间优化 SLA goodput | 支持同时预测 remaining work、KV/memory risk 与 goodput，而不是只预测总 JCT |
+| **JITServe (Zhang et al.)** | NSDI 2026 | 在请求信息不精确时保守分配 serving bandwidth，并随生成进展逐步修正估计，以最大化 service goodput | 支持“初始区间 + online residual update”，以及按 token meeting SLO 评价决策 |
+| **Beyond Prediction: Tail-Aware Scheduling (Li et al.)** | ICML 2026 | 指出长度预测调度在分布漂移、burst 和 GPU memory pressure 下可能脆弱，甚至 perfect length knowledge 也不能保证尾延迟最优 | 关键反证：预测精度不是充分条件；必须报告 P90–P99、回退率、OOD 与 oracle regret，并保留 prediction-free 强静态/尾部策略 |
+| **FastServe (Wu et al.)** | NSDI 2026 | 在输出长度未知的 semi-information-agnostic setting 下，用输入长度初始化多级反馈队列并在 token 粒度抢占 | serving 内部的 prediction-light 对照；本项目不修改 vLLM，不能直接实现其抢占器，但应设置“不依赖输出预测”的稳健 baseline |
 
 **关键 insight**：以上文献反复出现三个模式——(a) 简单解析/传统公式提供一阶估计；(b) profile 或 learned component 只修正残差并提供不确定性；(c) 模型是否有用最终由 plan/config ranking 与 regret 决定，而不是只看 MAPE。
+
+**2026-08-04 新增边界**：TIE、Past-Future 与 JITServe 表明 output work 更适合表示为分布、分位数或随执行更新的区间；Beyond Prediction 与 FastServe 则说明 prediction-driven scheduler 不是默认更强。对本项目而言，可控 Ray 队列只让 `pre-submit wait`、held work 与提交动作更清楚，**不会消除提交后自然 EOS、continuous batching、KV/cache 和共享负载造成的 service 不确定性**。因此代价模型必须和无预测的强静态策略同场比较，并以 tail/SLO/regret 决定是否晋级。
 
 **首版边界**：继续采用“简单解析模型 + profile 校准 + residual correction”，不直接实现复杂 learned optimizer。预测对象覆盖 prompt/output token work、operator service time、JCT、remaining work 和 SLO slack；决策对象覆盖 active-work/K 初始化、数据组织、endpoint 路由和提交策略。
 
@@ -346,6 +355,9 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 | Llumnix (OSDI 2024) | 多实例动态调度与 KV live migration | 依赖 serving 内部迁移，不覆盖固定 endpoint 的上游 shared credit |
 | LOTUS / Palimpzest / Abacus | semantic operator 的质量、成本和物理计划优化 | 不研究固定模型服务下的最小饱和 active work 和 request-level refill |
 | SemBench (PVLDB 2026) | 多系统、多模态 semantic query benchmark | 提供 workload/指标，不提出上游调度算法 |
+| SFS (arXiv 2026) | 用 serving-framework simulation 做 TTFT-aware routing | 决策层是模型路由；依赖细粒度 serving snapshot，不覆盖数据库 source、Daft/Ray held queue 与 sink |
+| TIE / Past-Future / JITServe | 用输出长度分布、未来显存或渐进修正优化 SLO/goodput | 机制位于 serving scheduler 内；本项目只能迁移不确定性表示与评价方法，不能把其内部调度器写成已实现 baseline |
+| Beyond Prediction / FastServe | prediction-free 或 prediction-light 的尾部/抢占调度 | 证明输出长度预测不是唯一道路；其 token-level preemption 需要修改 serving runtime，超出当前边界 |
 
 ### 4.4 不能声称的结论
 
@@ -464,9 +476,9 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 **重要警示**：Ray Data 的 `ConcurrencyCapBackpressurePolicy`（EWMA + deadband 自适应并发控制）已被废弃——原因是用 ~400 行复杂控制逻辑实现的策略，性能反而不如简单方案。这对我们的设计有直接含义：**自适应策略必须保持简单，避免陷入参数调优的泥潭**。
 
-### 5.7 从代价估计与提交策略文献提取的设计模式（2026-07-29 更新）
+### 5.7 从代价估计与提交策略文献提取的设计模式（2026-08-04 更新）
 
-以下从 Heinrich、CONCERTO、GRACEFUL、COSTREAM、Abacus、LOTUS、Palimpzest、VTC、Llumnix 与 SFS 中提取可迁移的技术与设计思路。代价估计是两项研究内容的公共组件，提交策略是研究内容二；内部旧代号只用于历史实验追踪。
+以下从 Heinrich、CONCERTO、GRACEFUL、COSTREAM、Abacus、LOTUS、Palimpzest、VTC、Llumnix、SFS、TIE、Past-Future、JITServe、Beyond Prediction 与 FastServe 中提取可迁移的技术与设计思路。代价估计是两项研究内容的公共组件，提交策略是研究内容二；内部旧代号只用于历史实验追踪。
 
 #### 5.7.1 代价估计（RC4）设计模式
 
@@ -533,11 +545,19 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **gap**：无
 
 **模式 15：Output-Length 预测替代 Completion 上限**
-- **来源**：SFS §3.4（output-length predictor: LightGBM on prompt features）+ GRACEFUL §IV.C（自然 EOS 概率 ≈ 分支命中率类比）
-- **含义**：当前 Ridge 以 `completion_max_tokens`（用户设定的输出上限）作为特征——但实际 E2E 时间高度依赖于真实输出 token 数（自然 EOS 位置），而非上限。SFS 证明用一个轻量 LightGBM 从 prompt 特征预测实际输出长度是可行的。GRACEFUL 的类比：用 DB 基数估计器预测"UDF 走哪个分支"→ 本课题可用 output-length predictor 预测"请求以自然 EOS 结束还是在 max_tokens 处截断"
-- **为什么有效**：当前 283 行 profile 中许多请求的自然 EOS 远小于 `completion_max_tokens`——用上限代理高估了实际计算量。如果 Ridge 能同时看到"上限"和"预测实际输出"，排序能力可能显著改善。实现简单：离线训练一个 LightGBM（输入 prompt 特征→输出实际 output tokens），推理时作为第 16 个特征输入 Ridge
-- **落地难度**：🟢 低——已有 283 行 profile 中包含每行的实际 output token 数（可作为 ground truth），prompt 特征也已存在。只需增加一个 LightGBM 子模型 + 一个特征列
-- **gap**：当前 `completion_max_tokens` 的唯一替代；无实际输出长度的执行前估计
+- **来源**：SFS §3.4（output-length predictor）+ GRACEFUL §IV.C（自然 EOS 概率与 UDF 分支估计类比）+ TIE（ICML 2026）
+- **含义**：当前 Ridge 以 `completion_max_tokens`（用户设定的输出上限）作为特征——但实际 E2E 时间高度依赖于真实输出 token 数（自然 EOS 位置），而非上限。第一步可用轻量模型预测实际输出；第二步必须像 TIE 一样保留输出长度的重尾分布，而非只留下一个均值。
+- **为什么有效**：当前 283 行 profile 中许多请求的自然 EOS 远小于 `completion_max_tokens`，用上限代理会系统高估平均 work；反过来，只用预测均值又会低估长尾。可同时输出 `q50/q90/q95` 或期望 + tail-risk 特征，供排序和 SLO admission 使用。
+- **落地难度**：🟡 中——点预测很容易，但可信分位数需要更多 per-request 样本、独立时间/workload calibration 与 coverage 审计。
+- **gap**：当前只有 output cap；无执行前实际输出分布，也未评价 tail underestimation。
+
+**模式 19：分布式 work、渐进修正与 prediction-free 回退**
+- **来源**：TIE（ICML 2026）+ Past-Future（ASPLOS 2025）+ JITServe（NSDI 2026）+ Beyond Prediction（ICML 2026）+ FastServe（NSDI 2026）
+- **含义**：admission-time cost 不应是静态标量，而应是 `work distribution + confidence + remaining-work update`。初始准入用保守分位数；请求开始生成后，用实际 completion/remaining work 更新 credit。若 OOD、区间过宽或分布漂移，则回退到不依赖输出预测的固定 active-work/静态策略。
+- **为什么有效**：Past-Future/JITServe 说明历史分布和执行中信息可以改善 goodput；Beyond Prediction 说明即便知道真实长度，burst、memory pressure 和 tail interaction 仍可让 prediction-driven 策略失效；FastServe 说明 input-only、prediction-light 路径仍是强对照。
+- **评价**：同时报告区间 coverage/width、tail underestimation、P95/P99、SLO goodput、regret、回退率与 OOD split；点预测 MAE/R² 只作诊断。
+- **落地难度**：🟡 中——首版可用 bootstrap/quantile regression + completion trace 更新，不需要实现 serving 内部抢占或复杂模拟。
+- **gap**：当前 credit 只在 completion 时释放，代价模型只输出单一 `e2e_s` 点值；尚无 confidence gate、remaining-work correction 或 prediction-free fallback 审计。
 
 #### 5.7.2 提交策略（RC2）设计模式
 

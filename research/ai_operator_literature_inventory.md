@@ -53,6 +53,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | Chiron | arXiv 2025 | 分层 backpressure 与 autoscaling |
 | Clipper | NSDI 2017 | AIMD batching 历史来源 |
 | Splitwise | ISCA 2024 | prefill/decode 分池 |
+| μ-Serve | USENIX ATC 2024 | GPU frequency scaling + model multiplexing；作为功耗、能耗与 SLO attainment 参考，不归入输出长度代价估计 |
 | Clockwork | OSDI 2020 | predictable serving |
 | CONCUR、SABER、BucketServe、Scorpio、ProServe | arXiv | 候选 admission/length/SLO/priority 机制 |
 | Ray Data Streaming Batch | arXiv 2025 | 数据引擎 streaming batch 模型 |
@@ -64,8 +65,25 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | CONCERTO | arXiv 2024 | execution-mechanism-aware cost features |
 | Redefining Cost Estimation | arXiv 2025 | plan feature 与学习型模型综述 |
 | SFS | arXiv 2026 | 动态 workload 的 service/TTFT 估计与路由 |
+| TIE — Scheduling LLM Inference with Uncertainty-Aware Output Length Predictions | ICML 2026 | 用重尾输出长度分布和 Tail Inflated Expectation 替代单一点估计；支撑 work 分位数与 tail-risk 特征 |
+| Past-Future Scheduler | ASPLOS 2025 | 从历史输出长度分布预测未来显存占用，以 SLA goodput 评价排队/eviction 决策 |
+| JITServe | NSDI 2026 | 不精确信息下保守准入并随生成进展修正估计；支撑 remaining-work online update |
+| Beyond Prediction: Tail-Aware Scheduling | ICML 2026 | 证明长度预测策略在分布漂移、burst、GPU memory pressure 下可能脆弱；作为 prediction-free/tail baseline 依据 |
+| FastServe | NSDI 2026 | 用输入长度和多级反馈队列做 prediction-light 抢占调度；本项目只迁移强对照思想，不实现 serving 内部抢占 |
 | Palimpzest | CIDR 2025 | 小样本 sentinel profile |
 | LOTUS / Abacus | PVLDB | semantic operator cost-quality optimization |
+
+以上新增 serving 文献不能全部当作可直接实现的系统 baseline：Past-Future、JITServe、Beyond Prediction 与 FastServe 都进入或修改 serving scheduler，而本项目固定 vLLM 为黑盒。它们在本项目中的角色是：定义输出 work 的不确定性表示、SLO goodput/tail/regret 指标，以及要求保留不依赖预测的强静态回退。可直接落地的首版仍是解析模型 + profile residual + 分位数/区间，作用点位于 Daft/Ray admission 之前。
+
+主要来源：
+
+- [SFS / Beyond Accuracy and Cost](https://arxiv.org/abs/2607.18253)
+- [TIE / Uncertainty-Aware Output Length Predictions](https://arxiv.org/abs/2604.00499)
+- [Past-Future Scheduler](https://arxiv.org/abs/2507.10150)
+- [JITServe](https://www.usenix.org/conference/nsdi26/presentation/zhang-wei)
+- [Beyond Prediction: Tail-Aware Scheduling](https://arxiv.org/abs/2606.18431)
+- [FastServe](https://www.usenix.org/conference/nsdi26/presentation/wu-bingyang)
+- [μ-Serve](https://www.usenix.org/conference/atc24/presentation/qiu)
 
 ## 三、题录核验勘误
 
@@ -97,6 +115,8 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 - 候选配置 ranking / top-k recall；
 - 选定计划相对 oracle 的 JCT、吞吐和 SLO regret；
 - 新 GPU、模型、长度分布和到达模式上的 held-out 泛化。
+
+输出 work 在首版中按两档实现：固定长度/图像 workload 使用确定 work unit；自然 EOS 文本 workload 输出 `q50/q90/q95` 或等价预测区间，并记录 coverage、区间宽度和 tail underestimation。若区间过宽或检测到 OOD，必须回退到同上限静态 active-work/credit 策略；不能强制使用低置信度预测。
 
 ## 五、Baseline 对应关系
 
