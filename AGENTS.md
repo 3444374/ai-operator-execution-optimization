@@ -6,7 +6,7 @@
 
 研究方向：数据库 AI 负载的执行优化与调度。不回到传统数据库内核或 GPU 查询算子。
 
-**课题定位**：优化数据库 AI 算子外部执行链路的上游调度——数据如何组织为请求、以什么节奏发送、如何根据模型服务状态调节并发。vLLM 为部署平台（不修改其内部）。Ray 作为架构设计空间，利用其 actor 模型和异步能力实现调度方案。Daft 作为数据引擎（Rust 核心 + Arrow 零拷贝 + `@daft.cls` GPU UDF），从文本阶段直接接入，多模态阶段复用同一套 pipeline 代码。
+**课题定位**：优化数据库 AI 算子外部执行链路的上游调度——数据如何组织为请求、以什么节奏发送、如何根据模型服务状态调节并发。vLLM 是文本 AI_COMPLETE 的部署平台；图像 AI_EMBED 主方法使用 typed Ray GPU actor，并以 vLLM pooling、Daft 内置 AI Function、官方多模态 benchmark 代码和 Ray Data native API graph 作分层 baseline；均不修改模型内部。Ray 作为架构设计空间，利用其 actor 模型和异步能力实现调度方案。Daft 作为数据引擎（Rust 核心 + Arrow 零拷贝 + `@daft.cls` GPU UDF），从文本阶段直接接入，多模态阶段复用同一套 pipeline 代码。项目自写 Daft UDF 只作 diagnostic reference；策略增量必须再对比冻结最佳项目静态点。
 
 **方向已收敛，策略候选池开放**：经过 2026-07-16 的讨论与文献收集，优化方向已明确收敛到上游调度（数据组织 + 提交控制），但具体策略不提前锁定——动态 batching（token-budget/length-align/prefix-aware）、K_max 自适应、queue-adaptive flush、actor pool 分池路由等均为候选方案，最终采用哪些由后续实验数据决定。新增候选策略应记入 `research/knowledge_hub.md` §5 供以后参考。
 
@@ -21,7 +21,7 @@
 
 **验证方式**：研究内容一和二的每种策略通过消融实验对比（静态 baseline vs 动态策略）。两项策略分别独立搜索最优配置后拼接，再与联合 grid search 对比——联合显著优于拼接则说明需要联合调优，两者接近则分层独立优化即可。无论哪种结果，都不改变课题的核心贡献（上游优化策略设计）。多模态实验使用同一套策略代码，仅替换数据列类型（`df["prompt"]` → `df["image"]`）。
 
-**主场景**：AI_COMPLETE（生成式 LLM，文本）+ AI_EMBED/AI_CLASSIFY（图像，多模态泛化验证）。AI_EMBED 文本预研已完成。vLLM 为部署平台。Daft 为数据引擎。
+**主场景**：AI_COMPLETE（生成式 LLM，文本）+ AI_EMBED/AI_CLASSIFY（图像，多模态泛化验证）。AI_EMBED 文本预研已完成。文本服务使用 vLLM；图像主方法使用 tensor-input Ray GPU actor，vLLM pooling 是统一部署/服务 baseline；Daft 为统一数据引擎。
 
 详细描述见 `PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md`。
 
@@ -33,7 +33,7 @@ PostgreSQL 18.3
   → Ray 动态 Batching（token-budget / length-align / prefix-aware）
     + Ray actor 架构（异构 actor pool / queue-adaptive flush / 去中心化）
   → AI_COMPLETE（文本 LLM，主场景）/ AI_EMBED/AI_CLASSIFY（图像，多模态泛化验证）
-  → vLLM Continuous Batching + PagedAttention（部署平台，不修改）
+  → 文本：vLLM generation / 图像：typed CLIP backend（Ray GPU actor ours；vLLM pooling baseline）
   → PostgreSQL + pgvector（写回）
 ```
 
@@ -43,7 +43,15 @@ PostgreSQL 18.3
 
 已有实验：GPU-backed AI_EMBED 预研链路（fine vs coalesced：operator/推理执行阶段约 37.5×、端到端约 13.4×；pgvector writeback 0.897s vs JSON 1.567s）+ vLLM + Qwen2.5-1.5B AI_COMPLETE baseline（已建立，详见 `experiments/results/local_vllm_qwen15b_baseline/`）。详细数据见 `motivation/results/gpu/`。CPU/fake 实验仅历史参考。
 
-当前缺口（vLLM baseline、Daft 文本接入、token-budget / K_max、flush
+**2026-08-01 当前执行顺序**：内部已锁定 A（模型服务状态感知的请求成形/提交）+
+B（算子代价估计），首个 workload 为 image AI_EMBED (CLIP)；文本遗留实验统一
+`parked-conditional`。外部“DB↔GPU 经 Daft 桥接”scope 是否进入正式题目仍待
+导师/学长确认。CLIP 5K 规范画像已通过门禁：实用 batch（≥16）CPU 准备/GPU
+embed 比为 13.8–18.3，当前进入 path-B runner + image 强 baseline 建设；该画像
+仅是 motivation，不是策略胜出证据。权威顺序见
+`experiments/plans/experiment_status_and_gaps.md` §0。
+
+文本轨道已完成项（vLLM baseline、Daft 文本接入、token-budget / K_max、flush
 跨负载与 2048 留出、本地单 GPU 联合消融、受控 prefix cache-off 实验、
 算子代价估计初版、request-level credit-release 双卡重复、active-work 八档
 扩展曲线、固定资源 Actor Pool、complete-row service quantum 和 SLO-aware
@@ -51,19 +59,31 @@ EWMA flush 对照均已完成）：
 ① 已按预注册规则选择每 endpoint 65,536 active work；多 actor 与固定 quantum
 均未达到 5% 晋升门槛，保留 `request + 1×256`，其价值是精确 completion/
 credit 语义而非显著稳态提速；SLO-EWMA 相对 fixed-50 未过 5% 门槛 →
-② 当前 2×4090 上完成 shared request/work credit、1/2/4 job 公平性、路由
-与故障迁移 → ③ prefix cache 开启后的独立机制验证与 length-align 显式联合
-消融 → ④ 多模态泛化验证（图像，同一套策略代码）→ ⑤ 代价模型增加独立
+② 当前 2×4090 上完成 shared request/work credit 与 1/2/4 job 公平性核心矩阵；
+held-out、staggered/weighted、故障迁移仍是 parked 遗留项；③ prefix cache 开启后的
+数据组织机制验证（07-31 系统重测 `rc1_data_organization/`，**取代 07-25/26
+gropy；07-18/19 保留作历史动机参照**）：**regime-dependent**——2-ep/0.9（每
+endpoint KV 池占 GPU 显存 0.9、无压力 max 7–10%）5 策略 50–56k 近似中性；
+4-ep/0.43（2 endpoint/GPU 各占 0.43、KV 饱和 max 98–100%）分化 39–50k、排名
+反转为 sequential>fixed>>row_cap≈best_fit>length_align。机制
+`prefix_group_ratio`：重排序类 organizer 打散 prefix 组 → 4-ep 命中从 0.60–0.76
+塌到 0.06–0.07。prefix-affinity routing 2-ep/7B 中性 −0.1%、4-ep/1.5B +5.9%
+跨门禁；matched-KV 更支持 endpoint consolidation 是驱动，4-ep 饱和深度仍未完全
+隔离→④ 多模态泛化验证（图像，同一套策略代码）——**2026-08-01 已进入实施**：
+5K CLIP 画像确认 binding 是 CPU resize/normalize，不是 H2D 或 PG bulk read；下一步
+实现 PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor→pgvector，并与 bounded direct、
+Daft Native、vLLM pooling、Ray Data、naive 做同语义对照 → ⑤ 代价模型增加独立
 时间段或新 workload 校准。当前证据
 支持 sequential token-budget + static K8 + fixed 50ms；联合候选未显著优于
 独立拼接，two-level adaptive 和 SLO-EWMA 均未显著优于 fixed-50，
-prefix-only 在 cache-off 下无稳定收益。写回使用 PostgreSQL + pgvector
+prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching **regime-dependent**（2-ep 无压力近似中性、4-ep KV 饱和分化 27% 且排名反转），routing
+2-ep/7B 中性（−0.1%）、4-ep/1.5B +5.9% 跨门禁但有条件待隔离消融。**RC1 数据组织 + #28 routing + KV-sweep 三向闭环：上游策略价值只在 4-ep KV 饱和 regime 显现，2-ep 是干净对照基线。** 写回使用 PostgreSQL + pgvector
 （COPY + deferred index），不作为独立实验阶段。详见 `PROJECT_OUTLINE.md`
 §近期优先级。
 
 **Scope 缩减触发条件（2026-07-17 约定）**：
 - Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（✅ baseline 已建立，未触发）
-- 文本 RC1+RC2 消融未完成前，不启动 Daft 多模态 pipeline
+- 文本 RC1+RC2 达到可转轨门槛后才启动 Daft 多模态 pipeline（✅ 2026-08-01 已满足，image build 已解除暂停）
 - VLM 生成实验（AI_COMPLETE 多模态版）始终标记为 optional
 
 ## 4. 目录规则
@@ -95,6 +115,11 @@ prefix-only 在 cache-off 下无稳定收益。写回使用 PostgreSQL + pgvecto
 - 新实验必须有明确问题、运行命令、CSV 输出、结果解释
 - 区分数据生成、序列化、`ray.put`、fan-in、写回等阶段边界
 - warm-up 忽略或标注；Python baseline 与 Ray baseline 共享数据读取和写回路径
+- **正式 baseline 必须由被测系统拥有执行与调度**：优先直接运行官方 benchmark、
+  内置 AI Function 或官方推荐 API graph；项目只允许做数据源、统一 sink、质量审计和
+  指标采集适配。自写 actor pool、credit、inflight/backpressure 或重写框架执行器的
+  路径只能标为 diagnostic reference，不能进入 baseline 主排名。每个 run 必须记录
+  upstream URL/commit、实现来源、scheduler owner 和适配 diff。
 
 ## 6. 严谨性规则
 
@@ -112,6 +137,32 @@ prefix-only 在 cache-off 下无稳定收益。写回使用 PostgreSQL + pgvecto
 ## 7. 实验结果讲解规则
 
 按七步结构：实验设置 → 实验设计 → 严谨性自检 → 实验数据（基于 CSV）→ 结果解释（事实/推断/待确认/不能声称）→ 对课题含义 → 下一步。禁止把 microbenchmark 包装成完整论文结论。详见 `learning/AGENTS.md`。
+
+## 7.5 实验执行与结果记录流程（每次实验必跑，自动执行）
+
+**A. 跑前 pre-flight**：endpoint 健康 + PG + Ray 干净（主机重启过则先 `rm -f /tmp/ray/ray_current_cluster`，否则 `ray.init()` 会卡 14 分钟连死 GCS）；同协议 **bounded HTTP baseline** 可用（feeding-saturation 门禁的参照）；策略参数设到能测出效应的区间（非 trivial）。
+
+**B. 跑**：统一干净合同（见 `experiments/plans/` RC1/RC2 模板）——2×4090 + 当前拓扑（2-ep 干净基线 / 4-ep consolidation）+ **最新修正 workload** + tokens/s + httpx async + token-IDs + prefix-cache ON + K256/W65536/fixed-50ms + 1 warmup + 3 formal（formal 由 runner 交错）。
+
+**C. 跑完先合规自检（任一不过 → 不抽策略结论，诊断/重跑/丢弃）**：
+1. **喂饱 GPU/vLLM**：`gpu_utilization_pct_mean` ≥ ~80% + `vllm_num_requests_running` 持续高 + `waiting` 低。**用 `*_mean/p50/p95/max` 系列，不用单次 snapshot 列 `gpu_utilization_pct`**（那是单点采样，曾显 0% 假象）。
+2. **feeding-saturation 门禁**：E2E `tokens_per_s` ≥ 95% of 同协议 bounded client。baseline（vLLM Bench / bounded HTTP）按各自标准测，它们没跑满 vLLM 是它们自己的特性，不是本门禁要修的。
+3. **策略到极限**：参数在效应区间；A/B 两臂同 config 仅策略不同。
+4. **稳定**：formal repeats CV 合理、一致。
+
+**D. 结果记录（全数据进 README，按此顺序）**：
+1. **实验目的**（问题 + 方法 + 关系到哪个方向）。
+2. **实验设置**（平台/拓扑/workload/调度合同/重复/指标/配置路径/原始数据路径）。
+3. **合规性自检**（C 的四项 + 异常指标明确标注）。
+4. **实验设计**。
+5. **实验数据——全组件表格（不只主指标）**：吞吐+端到端延迟（E2E tok/s / 模型侧 tok/s / operator tok/s / rows/s / E2E wall / req p50-p99 / SLO / goodput）/ vLLM 模型服务（running·waiting mean-max / KV usage / e2e-queue-inference-prefill-decode / prompt-gen tokens / TTFT 分位 / TBT-ITL 分布 / prefix_cache_hit_rate）/ GPU+能耗+MFU（util mean-max / 显存 / 功耗 / 能耗 / J per 1k tok / MFU）/ pipeline 阶段计时（db_fetch·source_fetch·organizer·submit·fanin·bounded_wait·actor_ready·wall）/ Ray-actor-调度（max_inflight / actor slots / packing util / prefix_group_ratio / batch_tokens / finish_reason）。**每个指标标注含义/单位**；异常指标标"坏、不用"。**质量+成本补充**（AI_EMBED 写回→检索闭环报 recall@k/nDCG@10 证伪"批处理/写回引入质量偏差"；成本报 $/M tokens，input/output 分计并标注单价假设）——口径见 `research/evaluation_metrics_survey_20260731.md`。
+6. **结果解释**（事实/推断/不能声称）。
+7. **对课题含义**。
+8. **下一步**。
+
+**E. 存储**：`experiments/results/<方向>/<exp>_<date>/{README.md, raw/}`（`raw/` = runs.csv + manifest.json + per-run requests/submissions/resources CSV）。
+
+**F. 指标注意**：优先用 time-series 聚合列（`*_mean/p50/p95/max`）；`vllm_kv_cache_usage_perc` 是**分数（0–1）非百分比**（vLLM HELP: "1 = 100%"），按分数读时正常可靠——曾把 0.06 误读成 0.06% 当"指标坏"，实为 6%、working set 本就只占 6–45%（见 `rc1_prefix_routing/kv_budget_sweep` 纠正）。量化 KV 压力时按分数读，并用 TTFT / 命中率 / bounded client 行为等信号交叉印证饱和。
 
 ## 8. 沟通规则
 

@@ -1,0 +1,6 @@
+batch_size,n_reps,images_per_s_median,images_per_s_cv_pct,operator_e2e_s_median,first_output_s_median,gpu_util_mean_pct_median,gpu_util_peak_pct_max,gpu_active_device_count,gpu_active_power_mean_w_median,gpu0_util_mean_pct,gpu1_util_mean_pct,cpu_busy_cores_mean_median,adjacent_gain_vs_prev_batch_pct
+16,2,156.6,1.7,31.93,30.42,3.34,13.0,2,100.9,,,8.83,
+32,2,172.2,1.6,29.03,27.76,2.85,23.0,2,100.7,,,7.75,+10.0
+64,2,177.4,1.1,28.19,26.59,3.24,21.0,2,99.2,,,7.37,+3.0
+128,2,176.2,1.7,28.38,27.03,3.77,41.0,2,100.8,,,7.03,-0.6
+256,2,169.6,2.0,29.48,28.16,2.65,76.0,2,100.2,2.1..2.4,0.3..5.7,6.65,-3.8

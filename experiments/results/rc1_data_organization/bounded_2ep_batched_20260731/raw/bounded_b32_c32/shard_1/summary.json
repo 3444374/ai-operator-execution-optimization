@@ -1,0 +1,39 @@
+{
+  "adapter": "bounded_completions",
+  "completed_count": 1024,
+  "completion_protocol": "completions",
+  "endpoint_counts": {
+    "1": 1024
+  },
+  "endpoint_index": 1,
+  "endpoint_predicted_work": {
+    "1": 792819
+  },
+  "endpoint_url": "http://127.0.0.1:8001/v1/completions",
+  "endpoint_work_skew": 0.0,
+  "exactly_once": true,
+  "failed_count": 0,
+  "http_batch_rows": 32,
+  "input_tokens": 585330,
+  "jct_s": 20.05950379371643,
+  "latency_p50_s": 12.482421159744263,
+  "latency_p95_s": 19.97793436050415,
+  "latency_p99_s": 20.05950379371643,
+  "model_name": "qwen2.5-1.5b",
+  "output_tokens": 242583,
+  "predicted_work": 792819,
+  "request_count": 1024,
+  "service_config_sha256": "87fd786fa9a5be1a8c1148e5916187e94bf2e0ccad2d82a1477df896c9d40361",
+  "service_counter_status": "ok",
+  "service_generation_tokens_delta": 242583,
+  "service_prompt_tokens_delta": 585330,
+  "service_total_tokens_delta": 827913,
+  "status": "completed",
+  "timing_granularity": "http_batch",
+  "token_accounting": "service_counter",
+  "tokens_per_s": 41272.85542623147,
+  "total_tokens": 827913,
+  "vllm_num_requests_running_final": 0,
+  "vllm_num_requests_waiting_final": 0,
+  "worker_failures": 0
+}

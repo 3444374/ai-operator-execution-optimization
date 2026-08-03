@@ -51,6 +51,12 @@ PG18.4 连接验证：
 feasibility/results/pg18_4_connection_validation.md
 ```
 
+图像 staged baseline 资源门禁：
+
+```text
+feasibility/results/image_staged_resource_gate_20260802/
+```
+
 ## 运行示例
 
 ```bash

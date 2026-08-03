@@ -1,0 +1,18 @@
+{
+  "arm": "daft_builtin_embed",
+  "daft_version": "0.7.21",
+  "diagnostic_capture_enabled": true,
+  "dimension": 512,
+  "dtype": "provider_default",
+  "embedding_dimension": 512,
+  "model_revision": "/root/autodl-tmp/models/clip-vit-base-patch32",
+  "note": "embeddings are the arm's raw output; project_ray L2-normalizes, daft_builtin_embed may not -- a parity probe must L2-normalize offline before comparing",
+  "phase": "gate",
+  "processor_revision": "provider_resolved_from_model",
+  "ray_version": "2.56.1",
+  "repeat_index": 0,
+  "rows": 256,
+  "timing_valid_for_performance": false,
+  "torch_version": "2.11.0+cu130",
+  "transformers_version": "5.14.1"
+}

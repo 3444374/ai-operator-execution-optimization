@@ -24,9 +24,13 @@
 
 1. `plans/integration.md`：看真实 AI-SQL-compatible 算子、worker、GPU 模型服务和写回链路怎么组织，用于建立动机画像。
 2. `plans/workloads.md`：看 `AI_EMBED`、`AI_FILTER/AI_CLASSIFY`、`AI_COMPLETE` 三类 baseline 和后续 GPU 动机实验计划。
-3. `results/gpu/README.md`：真实 GPU-backed 主动机结果入口，优先读 pgai 集成后的关键复测和 pgvector(384) 写回对比。
-4. `results/pg18_4_fake/system_profile.md`：理解 PG18.4 本地同构 fake-model 链路中的早期系统信号。
-5. `results/fake_cpu/analysis.md`：只在追溯历史 fake/CPU 预研时阅读。
+3. `plans/image_host_data_path_bottleneck.md`：图像轨道用 R0→R4 容量/表示阶梯判定 GPU feeding 限制，避免预设 PCIe 或 CPU 结论。
+4. `results/gpu/README.md`：真实 GPU-backed 主动机结果入口；image-first 当前优先读
+   `image_host_path_screening_20260802/` 的最新木桶诊断，再用
+   `image_clip_native_baseline_20260801/` 看项目自写 Daft UDF 的 fused diagnostic；文本/早期 embedding 再读
+   pgai 与 pgvector 对照。
+5. `results/pg18_4_fake/system_profile.md`：理解 PG18.4 本地同构 fake-model 链路中的早期系统信号。
+6. `results/fake_cpu/analysis.md`：只在追溯历史 fake/CPU 预研时阅读。
 
 ## 文件索引
 
@@ -37,6 +41,7 @@
 | `plans/integration.md` | PostgreSQL / 外部 worker / Ray / GPU model service / writeback 集成计划 |
 | `plans/workloads.md` | 三类 AI 算子 workload、动机测试和可优化点 |
 | `plans/ai_sql_surface.md` | 数据库 AI 算子场景、业务动机和测试标准 |
+| `plans/image_host_data_path_bottleneck.md` | 图像 host data path 动机实验：用表示阶梯与 GO/NO-GO 门槛判定 CPU/Ray/PCIe/GPU 瓶颈 |
 
 ### benchmarks
 

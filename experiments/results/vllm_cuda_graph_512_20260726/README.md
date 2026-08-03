@@ -33,9 +33,9 @@ graph 运行命令：
 
 ```powershell
 D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
-  code\scripts\run_ai_operator_scenarios.py `
+  code\scripts\experiments\run_ai_operator_scenarios.py `
   --config experiments\results\vllm_cuda_graph_512_20260726\scenario_config_graph.json `
-  --profiler code\scripts\postgres_ai_operator_profile.py `
+  --profiler code\scripts\profiling\postgres_ai_operator_profile.py `
   --python-executable D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
   --output-dir experiments\results\vllm_cuda_graph_512_20260726\graph `
   --health-url http://localhost:8000/health `

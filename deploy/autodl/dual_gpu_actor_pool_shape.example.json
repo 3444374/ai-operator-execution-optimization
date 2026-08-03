@@ -38,8 +38,12 @@
     "--completion-max-tokens",
     "${COMPLETION_MAX_TOKENS}",
     "--completion-return-token-ids",
+    "--completion-protocol",
+    "completions",
     "--completion-prompt-format",
-    "${COMPLETION_PROMPT_FORMAT}",
+    "raw",
+    "--completion-http-transport",
+    "httpx_async",
     "--completion-temperature",
     "0",
     "--completion-request-timeout-s",
@@ -140,6 +144,28 @@
         "64",
         "--ray-worker-num-cpus",
         "0.125"
+      ]
+    },
+    {
+      "scenario_id": "pool_8x32",
+      "args": [
+        "--actor-workers-per-endpoint",
+        "8",
+        "--ray-actor-max-concurrency",
+        "32",
+        "--ray-worker-num-cpus",
+        "0.0625"
+      ]
+    },
+    {
+      "scenario_id": "pool_16x16",
+      "args": [
+        "--actor-workers-per-endpoint",
+        "16",
+        "--ray-actor-max-concurrency",
+        "16",
+        "--ray-worker-num-cpus",
+        "0.03125"
       ]
     }
   ]

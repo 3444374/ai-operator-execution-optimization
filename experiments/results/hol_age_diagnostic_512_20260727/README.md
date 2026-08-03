@@ -1,5 +1,7 @@
 # HOL-age 诊断实验（设置 A:单作业 512,2026-07-27）
 
+> ⚠️ **预注册/设计稿,本目录未运行。** 2026-07-27 本机无 vLLM/GPU/PG 环境,本目录仅含 `README.md` + `scenario_config.json`,无任何 CSV/`runs.csv`/`manifest.json`。**实际运行与结果分析见 `../hol_age_diagnostic_512_20260728/`**。文末 §状态 有相同说明。
+
 ## 目的
 
 验证「诊断优先」假设:把信号盲区诊断点名的两个杠杆修上后,**动态控制能否第一次击败同上限静态 K=16**。
@@ -34,7 +36,7 @@
 
 ```bash
 cd code
-python scripts/run_ai_operator_scenarios.py \
+python scripts/experiments/run_ai_operator_scenarios.py \
   ../experiments/results/hol_age_diagnostic_512_20260727/scenario_config.json \
   --result-dir ../experiments/results/hol_age_diagnostic_512_20260727
 ```
@@ -43,7 +45,7 @@ python scripts/run_ai_operator_scenarios.py \
 
 ```bash
 cd code
-python scripts/run_kmax_interference_experiment.py \
+python scripts/experiments/run_kmax_interference_experiment.py \
   --background-rows 512 \
   --background-static-kmax 8,16 \
   --include-aimd --include-aimd-hol \

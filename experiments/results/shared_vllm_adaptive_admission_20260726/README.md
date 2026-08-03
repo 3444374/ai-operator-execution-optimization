@@ -32,7 +32,7 @@ solo baseline，再用固定随机种子交错三个共享服务场景，避免�
 正式运行命令：
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\run_kmax_interference_experiment.py `
+.conda\pg-ai-profile\python.exe code\scripts\experiments\run_kmax_interference_experiment.py `
   --repeats 3 --random-seed 20260804 `
   --foreground-rows 128 --background-rows 512 `
   --ray-batch-rows 64 --completion-max-tokens 512 `

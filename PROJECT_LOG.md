@@ -17,6 +17,321 @@
 - 当前等待设计复审，尚未修改 v5 或生成 v6 PPTX。后续必须从 v5 复制并使用
   `python-pptx` 增量编辑，不得重跑 `build_ppt.py` 覆盖人工版式。
 
+## 2026-08-02 源码域重构第 0–3 阶段落地
+
+- 在 `codex/code-architecture-refactor` 独立分支实施路径重构，不改策略算法、默认值、
+  CLI 参数或 CSV schema。删除 6 个根级 `profile_*` 与 11 个 scheduling 兼容壳，所有
+  调用方改到唯一 owning package。
+- `src` 顶层功能实现已收进 `data/`、`planning/`、`scheduling/`、`serving/`、
+  `modalities/`、`observability/`、`baselines/`、`experiments/` 和 `infrastructure/`；
+  scheduling 进一步分成 core/organization/submission_control/endpoint_routing/runtime。
+- 文本 baseline 落入 `baselines/text`，图像 native graph 落入 `baselines/image`，共享
+  manifest/result/provenance/gate 落入 `baselines/common`；原 `image/` 的非 baseline
+  实现迁入 `modalities/image`，防止项目执行代码与 native 对照身份混写。
+- 修正原计划的一个边界矛盾：纯 `planning` 不得依赖 Arrow/Daft，因此引擎相关批次
+  物化归 `data/materializers`，planning 只保留 cost/packing 决策。
+- 新增 AST architecture boundary test，禁止 scheduling 反向依赖 data/modality/engine、
+  planning 引入执行引擎、baseline 引入项目 scheduling，并防止已删除旧入口回归。
+- 本地 `unittest` 共发现 601 条：路径迁移相关测试无新增失败；当前未通过项仅为本地
+  缺 `psycopg`/Daft、macOS 沙箱禁止 Ray 进程枚举的既有环境门槛。服务器关机期间未做
+  GPU gate；后续提交已完成 scripts/tests 物理分组和 metrics/backend/shared-vLLM 拆分，
+  其余大文件继续逐个处理。
+
+## 2026-08-02 外部多模态 baseline 体系与公开 benchmark 合同
+
+- 明确 Daft/Ray 是项目实现手段而非 baseline 准入条件；外部对照按 AI 算子语义
+  选择，拆为同栈官方 runtime、不同栈开源 runtime、数据库外部 endpoint、工业同类
+  集成、闭源托管 SQL 和学术语义系统。PolarDB Daft AI Functions 归入同架构家族；
+  Snowflake/BigQuery 归入托管产品；OceanBase 只进入文本轨道；SemBench 用于
+  LOTUS/Palimpzest/ThalamusDB/BigQuery 的质量—成本—时间比较。
+- 记录 Ray 与 PolarDB 官方的 image classification、document embedding、audio
+  transcription、video object detection 八组公开 Daft/Ray Data（及 PolarDB Spark）
+  数据。两方对 Daft/Ray Data 的排名方向相反，因此厂商 raw time 只作外部证据；正式
+  比较冻结为公开 file/object 复现轨道与 PostgreSQL database-operator 轨道，在同一
+  模型、数据、输出、物理资源和计时边界下独立校准后运行。
+- 当前 COCO/CLIP GPU starvation 和 host-path matrix 仅承担动机、校准和机制归因，
+  不替代市场/学术 baseline，也不单独承担项目优越性结论。
+
+## 2026-08-02 图像 staged baseline、资源死锁修复与分类质量轨道
+
+- 5000-image project-Ray 侵入式诊断显示每批 p50 completion 650ms，其中 CPU
+  preprocess 316ms、未归因 dependency/queue wait 287ms、host copy 26ms、H2D
+  3.5ms、forward 7.0ms；这是“CPU preprocess + framework bubble”为当前木桶、
+  PCIe 暂非主瓶颈的初步信号，尚不能替代 R0–R4 正式曲线。
+- 同次诊断发现隐藏资源混淆：4 个声明 `num_cpus=1` 的 actor 实际继承 Torch
+  intra/inter-op=32/64，host busy 均值约 23.3 cores。Ray CPU 是准入 token 而非
+  线程 quota，因此该结果不能称为“4 CPU matched-resource”。图像 runner 升级到
+  schema v5，显式配置/记录每 worker Torch 线程；project Ray 在查询前校验实测值，
+  正式 matched-resource 默认 1/1，线程容量扫描另列。
+- 远端首次 schema v5 gate 暴露图像 runner 的部署缺口：driver 通过本地 `sys.path`
+  可导入，但 Ray worker 在没有交互式 `PYTHONPATH` 时无法 import `src`。所有图像 Ray
+  arm 改为显式传共享 `ray_runtime_env()`，同时传播项目代码路径和 OMP/MKL 等线程
+  合同，避免依赖 shell 隐式状态。
+- schema v5 首轮 fail-closed 校验确认 Ray CPU/GPU worker 的 Torch 实测值均为
+  `1/1`；同时修正校验器只比较线程字段，不把 GPU `ready()` 返回的模型/进程元数据
+  误判为线程不一致。失败尝试未写入 CSV，不属于实验结果。
+- 线程收紧后的 5000-image 诊断为 324.4 images/s（隐式 32/64 线程旧诊断为
+  333.2，差 -2.6%），host busy 由 23.3 降至 7.83 cores；preprocess/H2D/forward
+  p50 分别 344/6.8/7.0ms。线程超卖消耗大量 CPU 却几乎不增吞吐，PCIe 仍非当前
+  首要木桶。诊断同时发现 project 的 Daft native source 线程位于 Ray cluster 外；
+  schema v6 新增 external CPU，默认配置修正为 Ray 6 + external source 4 = host
+  declared total 10，并按该总量做物理超卖门禁。
+- 木桶实验继续消除联动变量：schema v7 新增独立 `--source-cpu-threads`，不再强制
+  Daft native source runner threads 跟随 preprocess actor 数。后续 CPU actor 容量扫描
+  固定 source threads，只改变 preprocess stage；兼容默认仍跟随 `--cpu-workers`。
+- 单次 screening：preprocess actor 1/2/4/8 的冷吞吐为 143/210/296/363 images/s；
+  source threads 1/2/4/6 为 359/366/368/345，数据源线程不是主要杠杆；active batches
+  4/8/16/32/64 为 279/350/375/398/359，32 后吞吐回落且批等待暴涨。16 CPU actor +
+  active32 得到当前最佳冷 E2E 11.45s/436.7 images/s；32 actor 虽查询阶段略快，
+  setup/first-output 恶化使冷 E2E 降到 318.0 images/s。以上均为 1-run screening，
+  不能当 formal headline。
+- 为定位 16-actor 点剩余 gap，schema v8 新增 driver `source_next`、Arrow/Python
+  materialize、Ray submit 分段；它们缩小候选范围，但仍不冒充 DB 内部或 Ray
+  serialization 的硬件级时间。
+- 本轮 host-path screening 的报告按“实验设置→实验设计→严谨性自检→原始数据→
+  事实/推断/不能声称→课题含义→下一步”七步结构归档；5 组扫描/诊断的 `runs.csv`
+  与 16 个逐臂 manifest JSON 已从服务器临时目录复制到
+  `motivation/results/gpu/image_host_path_screening_20260802/raw/` 并纳入 Git。
+  原始文件归档不提升证据等级：各点仍只有一次，继续标记为 screening。
+- 为把 screening 升级为 formal，新增 `run_image_clip_matrix.py` 与 60K project
+  静态矩阵模板：固定 seed 交错 8/16 preprocess actors × active16/32，执行每点
+  1 warmup + 3 formal，并对 unique rows、exactly-once 和至少 60 秒查询阶段
+  fail closed。COCO 导入器新增 ZIP 流式读取，避免同时保留 19GB 压缩包、完整解压
+  目录和 PostgreSQL BYTEA 三份数据；事务失败仍完整回滚。
+- 首次60K导入被 legacy `PRIMARY KEY(doc_id)` 在 train/val source ID=9 冲突处
+  fail closed，事务完整回滚，暴露多 workload 行身份缺口。新增幂等迁移 SQL 将主键
+  改为 `(workload_name, doc_id)`；importer 在写入前强制复核该合同。禁止用 split
+  专属数字偏移掩盖错误 schema，后续 source/correctness/writeback 均须携带 workload。
+- 主键迁移后的60K写入已提交（60,000 distinct、9,341MiB JPEG），但 importer 的
+  提交后验证暴露 psycopg3 生命周期 bug：`with conn:` 退出会关闭连接。改为先结束
+  metadata 隐式事务，再用 `conn.transaction()` 包围 DELETE+INSERT，使同一连接可在
+  commit 后完成行数验证；旧写入未丢失，也未把验证异常误报为回滚成功。
+- 60K project 最快点时长探针得到 `operator_e2e=40.53s`、显式 worker setup
+  `8.44s`，查询稳态代理仅约 `32.09s`，因此未直接启动不合格 formal。image source
+  与五臂 runner 新增 `dataset_passes`，schema v9 分开记录 60K `unique_images`、2
+  logical passes 和 120K processed `rows`；pass-qualified execution ID 继续接受
+  exactly-once 审计。矩阵 unique 门禁读取真实 unique 字段，禁止重复行虚增数据规模。
+- H2D 口径补充到学习材料：batch64 的 host float32 tensor约 38.5MB、device
+  float16 tensor约 19.3MB；当前约 7.4ms 是同步 `torch.as_tensor` 阶段 wall，
+  不是 PCIe counter。增大总行数只延长稳态，不增加单批传输压力；PCIe 是否值得
+  优化仍按 R0/R1/R2 与 pinned/pageable GO/NO-GO 门槛判定。
+- 新增 `profile_clip_transfer_ceiling.py`：batch16/64/256 下交错采集 R0
+  GPU-resident、R1 pinned FP16 和 R2 read-only pageable FP32 的 ownership copy、
+  CUDA-event H2D/forward、同步 wall 与逻辑带宽。该脚本明确标记 synthetic
+  diagnostic，不含 PostgreSQL/Daft/Ray queue，不替代 R3/R4 或正式系统比较。
+- 远端完成上述 R0/R1/R2 诊断：270/270 raw rows，输出 sum 完全一致、norm error
+  ≤5.96e-8。batch64 中位数为 R0 forward 6.86ms；R1 pinned FP16 H2D 0.80ms、
+  逻辑24.0GB/s；R2 pageable FP32 ownership copy 20.87ms、H2D/转换4.14ms、
+  逻辑9.3GB/s。结果支持“纯 PCIe capacity 暂非首要木桶、host ownership/dtype
+  边界需继续做 E2E 消融”，但仍不构成 PCIe NO-GO，七步报告与 raw 已归档到
+  `motivation/results/gpu/image_clip_transfer_ceiling_20260802/`。
+
+- 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
+  随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过
+  exactly-once、512d、L2 norm，完整 embedding digest 一致且两卡激活；Ray Data
+  记录 4 preprocess + 4 predictor tasks。单次冷启动吞吐不能作为性能排名，下一步才是
+  两个 baseline 各自独立校准/formal。紧凑证据见
+  `feasibility/results/image_staged_resource_gate_20260802/`。
+- Ray Data 第二次门禁复现资源死锁：4 preprocess actor + 2 GPU actor 占满错误声明的
+  6 CPU 后，SQL reader 无 slot，0 rows 无法推进。该次运行已中止并标记无效。
+- staged resource gate 的 `runs.csv`、Daft manifest 与 Ray Data manifest 已从服务器
+  临时目录归档到 `feasibility/results/image_staged_resource_gate_20260802/raw/`；
+  45 列 `runs_summary.csv` 仅为读表摘要，原始证据现已随 Git 保存。
+- 资源修复升级为通用合同：Ray Data、Daft staged、fused Daft Ray 均显式计算
+  source + preprocess（如有）+ model actor CPU；在 `ray.init` 前按进程 CPU affinity
+  拒绝物理超卖。CSV/manifest schema v4 记录 host slots、Ray cluster、三段声明和语义。
+- 图像 runner 补 CPU core-seconds、内存、disk/network、context switch、GPU seconds、
+  images/J、P99 与 Ray Data operator stats；这些是 host 级观测，不能替代 PCIe 硬件
+  byte counter，PCIe 归因仍须 CUDA events/Nsight 代表点。
+- workload 拆成两条质量轨道：ImageNet/ResNet18 报 top-1/top-5；COCO/CLIP
+  multi-label 报 mAP、micro/macro-F1、precision/recall。当前 COCO PostgreSQL 表没有
+  annotations/captions，只能做执行与数值等价门禁，不能声称分类准确率/检索 recall。
+- 纠正产品 baseline：OceanBase 当前官方/本机确证的是文本 AI_COMPLETE/AI_EMBED/
+  RERANK，不冒充图像分类对照；图像产品语义参考为 PolarDB `classify_image` 与
+  Snowflake image `AI_CLASSIFY`，闭源且不同硬件时不与本项目 raw time 排名。
+- OceanBase CE 4.5.0 在全新独立目录做 2026-08-02 复核，仍于 observer init step
+  4/18 报 `prepare_dir_and_create_meta_ failed` / -9100，端口 2881 未监听；没有 B1
+  CSV。相同普通容器条件下停止重复尝试，待 privileged/seccomp-unconfined 或 VM。
+
+## 2026-07-31 baseline 同步：直接对比 vs Related Work + 补 OceanBase
+
+- 用户 push：需明确"哪些 baseline 要数字对比、哪些只 Related Work 定位"，并补上
+  漏掉的 **OceanBase AI 算子**（项目既定的数据库原生算子产品级 baseline）。
+- 校正 scope §10.1 + image_clip plan §7 + msmarco plan §5：
+  - **A. 直接 baseline**（同杠杆=执行，必须跑+比数字）：Daft native、**OceanBase
+    AI_EMBED**（无 Daft/Ray，DB 原生；B1 门禁已过函数存在性，部署待可部署环境）、
+    Ray Data、naive、bounded direct。
+  - **B. Related Work**（不同杠杆=语义/计划，只引用+定位，不比数字）：LOTUS /
+    Palimpzest / Abacus、Cortex / Oracle（闭源）、Smart / GaussML、SemBench。
+- 审稿人"怎么不跟 LOTUS 比"标准答法：LOTUS 优化调用数/语义（不同杠杆，互补），
+  本文优化执行调度；实验对比同杠杆执行层 baseline。
+- OceanBase 状态：CE 4.5.0 含 AI_COMPLETE/DBMS_AI_SERVICE（B1 门禁过），当前
+  AutoDL 容器 observer init 受阻，待特权容器/VM 复跑——见
+  `experiments/results/oceanbase_b1_gate_20260731/` + install_runbook。
+
+## 2026-07-31 评估口径校正：数据库 AI 算子论文（执行优化子方向）
+
+- 用户 push：recall@10 跟"执行调度优化"没关系（它是向量检索质量，跟调度正交）；
+  应以**数据库 AI 算子论文**（LOTUS/Cortex/GaussML/Smart/Galois/SemBench）为锚，
+  不对标 vLLM/Sarathi（serving 内部，非本层）。
+- 校正 scope 文档 §10.1：本项目 = 数据库 AI 算子 field 里的**执行优化子方向**，
+  与 LOTUS 的语义优化**互补**（同领域不同杠杆）。recall@10 降为**质量门禁**
+  （非主指标、非卖点）；性能主指标 = execution time/throughput + 阶段拆解 +
+  cost + vs baseline speedup + scaling（6 项，按 LOTUS/GaussML 口径）。
+- Baseline 校正：Daft native（关键，PolarDB 同款）+ naive + Ray Data +
+  bounded direct；**LOTUS/Palimpzest 不作 baseline**（不同杠杆，仅 Related Work
+  定位互补方向）。
+- 执行层吞吐/搬运协议：无现成 benchmark（厂商全闭源），§7.5 自定，自定本身是贡献。
+
+## 2026-07-31 workload 纠正：CLIP 回升首个，MS MARCO 降级（数据搬运判据）
+
+- 学长判据校正：数据搬运瓶颈有两段——送 vLLM（拥挤）+ **DB 读出来 / CPU 搬到 GPU**
+  （机会）。当前 prompt **文本每行 ~1KB、搬运太轻，瓶颈不显现**。workload 必须让
+  "DB 读 + CPU→GPU 搬运"重到能显现。
+- 据此**推翻上一条"MS MARCO 首选"**：MS MARCO 仍是文本，token ID 紧凑（~1KB/行），
+  搬运轻，不满足判据 → **降级为"文本轻对照"**（仅证明文本下不显现）。
+- **图像 CLIP 回升为首个 workload**：每行 CPU→GPU 搬运 ~600KB（文本 ~600×）+
+  JPEG decode/resize 重，DB 读 + 搬运瓶颈能显现。与冷启动（机制，parked）无关。
+- **benchmark 三层讲清**（scope §10.1）：① 数据集 ImageNet/COCO（公开经典）；
+  ② 质量协议 ANN-benchmarks recall@10（CCF 认可）；③ 吞吐/搬运协议——无现成
+  benchmark（厂商全闭源），项目 §7.5 自定（自定本身是贡献）。可引 BigVectorBench
+  image 切片 + ANN-benchmarks。
+- 同步翻转所有索引：scope §5/§10、image_clip plan（解冻回升）、msmarco plan
+  （降级对照）、experiments/README、experiments/plans/README §〇、data/README、
+  overview/current_direction_and_plan、PROJECT_INDEX。题目/官方方向不变。
+
+## 2026-07-31 MS MARCO workload 设计 + 执行计划（首个锁定 workload）
+
+- 新增 `experiments/plans/msmarco_embedding_workload_20260731.md`——首个
+  锁定的 workload（当务之急，机制无关）。MS MARCO Passage 8.8M 批 embedding，
+  作 BigVectorBench（VLDB'25）的 text 切片入口。
+- 选定理由：被认可（MS MARCO leaderboard + BigVectorBench text 切片）+ fit
+  18G + 大数据（8.8M 段）+ 异构（CPU tokenize vs GPU embed）+ 复用现有文本
+  管线 + 机制无关（exercise 痛点①③，冷启动②解封后可升级多模态切片）。
+- 设计要点：BGE-base-en-v1.5（1024d）→ pgvector；embedding 走独立 FastAPI
+  endpoint（BGE 非 vLLM），复用项目 Ray→HTTP 机械。主 bar = 项目动态 vs 项目
+  静态 >5%（不是 vs Daft Native）。Go/No-Go 门禁 = CPU tokenize/GPU embed
+  时间比 >0.3。指标含 recall@10（ANN-benchmarks 协议）。
+- 执行计划 11 步：下数据 → §6 go/no-go 画像 → 建 endpoint → 导入 PG → smoke
+  → baseline（bounded + 项目静态）→ ours 动态 → formal 3 repeats → 决策点
+  （动态>静态？）→ 扩 image CLIP → 远期 audio+冷启动。
+- 升级路径：benchmark 名始终 BigVectorBench，text 切片 → image → audio，
+  场景认可度一路保持。
+
+## 2026-07-31 方向 reframe：数据库↔GPU 经 Daft 桥接（学长反馈 + 三痛点核实）
+
+- 学长完整反馈把场景 reframe 成"数据库↔GPU 经 Daft 桥接、GPU 侧算子多样
+  （不止 vLLM）、大数据量、流式 pipeline"，明确不能用 ShareGPT 这种对话式
+  workload。记录到 `notes/communication_notes.md` §5.1.1。
+- 新增 `research/daft_db_gpu_bridge_direction_scope_20260731.md`（academic-pipeline
+  Stage 1 scoped 输出）：工作流 `w6xclfb0g` 用 Daft 源码一手核实学长三痛点
+  全部真实——① `@daft.cls(gpus=N)` 写死（`daft/udf/__init__.py` L360-410）、
+  ② 多算子冷启动 Daft 完全不做（无 model garden/swap/LRU）、③ 流式 dynamic
+  batching 是 model-service-blind。可防御性排序 ② >> ① > ③。
+- 核心发现：**可防御界面 = online vs offline 分界**——所有 scoop 先验
+  （ServerlessLLM/Llumnix/AlpaServe/Clockwork/INFaaS/Chiron/Autellix/TORTA +
+  Daft v0.6.9 prefix + llm-d/Preble）都是 online serving，结构性无法利用批
+  dataflow 在 plan 阶段已知的两份 foreknowledge（算子 DAG + 各算子数据量）。
+  这翻转了之前 §5.5 的 partially-scooped 判定——批 dataflow + foreknowledge
+  + 多样异构算子调度是结构性空白。
+- Fatal-flaw：2×4090(48G HBM) + 18G 盘下，模型 garden ≤18G < 48G HBM，自然
+  条件下永远不触发冷启动——冷启动 regime 需"约束预算"构造或扩盘。
+- 用户决定：方向 validate；**当务之急 = 锁 benchmark/workload**（学长原则：
+  场景先被认可，机制后说；与冷启动无关，之前文档把优先级写反了已修正）；
+  冷启动（机制候选）parked，后面做；题目精修暂缓。
+- scope 文档 §10 推荐首个 workload = MS MARCO Passage 8.8M 批 embedding
+  （被认可 + fit 18G + 大数据 + CPU tokenize vs GPU embed 异构 + 复用文本管线 +
+  机制无关）。锁定后即可开跑，不必等冷启动/导师定机制。
+- 同步：`experiments/plans/image_clip_workload_lock_20260731.md` 状态降级
+  （CLIP 从旗舰降为 model garden 里一个算子/模态探针，设计冻结）。
+
+## 2026-07-31 评估指标体系调研（文献 + 数据库厂商）
+
+- 新增 `research/evaluation_metrics_survey_20260731.md`：以
+  `nature-academic-search` + `deep-research` 工作流调研 AI 算子/推理服务文献
+  与数据库厂商/标准基准的评估指标，按 10 类归目并对照项目现有指标做 gap
+  分析。同步更新 `research/README.md`、`research/knowledge_hub.md` §9、
+  `PROJECT_INDEX.md` 入口。
+- 结论：throughput / 尾延迟 / SLO attainment / MFU+KV 利用率 / 能耗 /
+  Jain+max-JCT 公平 / exactly-once 审计 / 控制 trace 八大类项目已覆盖或优于
+  多数文献；细分缺口见该文件 §5。
+- P0 缺口三条均为"vLLM 已暴露信号、采集端未落字段或折叠分布"，已亲自核实
+  代码：`code/src/metrics.py:433-437` 仅采 prefill/decode 均值，未采
+  `time_to_first_token`/`inter_token_latency` 分位；全文无 `prefix_cache`
+  Counter；`code/src/baselines/ceilings/vllm_bench.py` 当时把 `ttfts+itls` 折叠
+  成单条 e2e。补采改动集中在 metrics.py 与 vllm_bench.py，不触策略代码。
+- 落点：prefix cache hit rate 直接服务当前 prefix 路由结论的隔离消融；
+  TTFT/ITL 分位使 service_p99 的 prefill/decode 可解释；登记到
+  `experiments/plans/experiment_status_and_gaps.md` 指标缺口区（待补）。
+- 文档扩展（同日）：该调研文件追加**附录 A**（workload/数据集五类清单 +
+  AI_COMPLETE 可用性判定——多数 SemBench/LOTUS 任务是 filter/classify 短输出，
+  非 AI_COMPLETE；只有 `map` 形态匹配）和**附录 B**（7 家数据库厂商 AI 算子
+  测试方法论：逐家怎么测 + 跨厂商共识 + 17 条项目启示 + PolarDB Lakebase
+  同栈专项）。
+- **PolarDB Lakebase 同栈核查**（用户提示 + 专项 agent 核实）：PolarDB
+  Lakebase 集成**开源 Eventual-Inc/Daft on Ray**（非 fork），内置
+  embed/classify/prompt——是迄今最贴近本项目技术栈的工业产品（相关度 4.5/5），
+  强化工业正当性；但其卖点（异构调度/背压/util 60→80%）逐条对应项目方向，
+  **新颖性门槛因此拉高**——项目不能把"Daft on Ray 异构调度+背压"当新颖性。
+  新颖性边界切清：PolarDB 做通用数据流 backpressure，**不观测 vLLM 内部状态**
+  （KV/prefix/queue）；项目能占的切片 = 模型服务状态感知请求成形 + 闭源产品
+  未公开的上游调度开放消融。scoop 待确认（未见研究论文，但未穷尽学术检索）。
+  PolarDB 命名陷阱：无 `AI_COMPLETE`（Snowflake 命名），等价物是 `polar_ai.*`
+  + Daft `prompt()`。**题目不变。**
+
+## 2026-07-30 双协议 baseline 与 feeding-first 门禁
+
+- 重新定义 baseline 目标：vLLM Bench 是同机服务上限参照，项目不以超过它为
+  目标；正式贡献必须先使上游路径达到同协议 bounded client 至少 95%，再与
+  冻结的最佳静态配置比较 operator/database E2E、JCT、tokens/s、P99/SLO、
+  active work 和多 job fairness。
+- 保留原始 multi-prompt Completions 作为机制主线，并新增同协议、无 Ray、
+  持久异步 fixed-row strong baseline；Chat 作为 vLLM Bench、Daft/Ray、
+  OceanBase 等产品/官方 runtime 的兼容轨道。两个协议只做协议内排名，禁止
+  用 Completions 数值直接声称超过 Chat baseline。
+- 同一 512 行 Chat manifest 的远端复核显示：vLLM Bench C256 为
+  11.931s/15,351 tokens/s，bounded Chat C256 为 12.569s/14,532 tokens/s，
+  project 最佳已测约 31.227s/5,884 tokens/s；K256 反而退化到
+  41.053s/4,592 tokens/s。因此当前是 feeding/transport 未过门禁，不是
+  token-budget、动态 K 或 flush 策略的正式负结论。
+- project completion actor 新增每 actor 一个 bounded persistent
+  `httpx.AsyncClient`。Completions 保留一个 HTTP body 多个完整 prompt；
+  Chat 使用 actor 内 async dispatch，每行仍是一条完整请求。新增 Chat
+  transport/actor-shape 和 Completions fixed-row feeding 配置，门禁通过前
+  禁止扩大策略网格。
+- `_v3` 多 job 运行在 4-job warm-up 因 Ray worker/OpenBLAS 线程资源耗尽
+  终止，且旧 trace writer 对缺失结果 `.get` 遮蔽根因；该批只有 warm-up，
+  不作为 formal 结果。统一 runtime env 现限制 OMP/OpenBLAS/MKL/NumExpr 为
+  单线程，失败 trace 保留 lifecycle error 后显式终止。
+- f203257 再次确认 OMP 限制可使 j2 通过，但 j4 `ray_task` 仍扩张到 200+
+  worker，并在只读 `vm.max_map_count=65530` 的 AutoDL 容器触发 raylet
+  `SIGABRT`。共享矩阵改为固定 async Ray actor pool；loader 在外部工作前拒绝
+  4-job `ray_task`。ec9b19e 的 j4 gate 在相同 VMA 容器完成
+  independent/partition/shared-DRR 三臂、每臂 4×64 行、0 actor failure；
+  默认 formal 因而恢复 j1/j2/j4，j4-only 模板保留作故障隔离。
+- profiler 实现继续归入 `code/src/profiling/`；主入口已直接导入子包，根级
+  `profile_*.py` 只作兼容层。baseline direct adapters 归入
+  `code/src/baselines/`，避免策略代码和对照实现相互依赖。
+- 文档明确区分容量 calibration、held-out 上冻结的最佳静态 baseline、
+  per-workload static oracle 和 dynamic policy；动态策略允许一次安全边界
+  校准，但不能针对每个 workload 人工精调。token-budget 实验在固定 active
+  work 下扫描完整曲线，证明预算并非越大越好后才评价动态控制。
+- 远端独立 worktree 的 524/524 测试、ruff、compileall 和三项 512 行真实
+  smoke 通过。multi-prompt fixed16 的 project model-request wall 为
+  11.164s、同协议 bounded 为 10.943s（约 97.8% capacity）；Chat async
+  K256 为 12.552s，与 bounded Chat C256 12.569s 基本重合，而 K64 为
+  23.464s。完整 project E2E 分别为 14.211s/13.916s，说明提交层已接近上限，
+  但 PostgreSQL/Daft/编排开销仍需单独优化和报告。该证据仅是单次 smoke，
+  正式晋级仍需 1 warm-up + 3 repeats。
+- runs.csv 新增 `model_request_tokens_per_s` 与 `operator_tokens_per_s`；
+  既有 `tokens_per_s` 继续明确表示完整 E2E 吞吐，避免把 source/organize
+  时间混成 feeding 缺口。
+- 后续策略模板不再回退到 threaded `urllib`：token-budget 与 data-organization
+  使用 disjoint formal manifest、raw multi-prompt Completions 和持久 async
+  transport；token-budget 在固定 `ACTIVE_WORK_PER_ENDPOINT` 下独立扫描
+  2K/4K/8K/16K/32K/49K/65K。submission-policy 也改为 async batch-level，
+  保留 multi-prompt 组织结果，不再用 request granularity 绕过 token-budget。
+
 ## 2026-07-29 文献基线版本升级
 
 - 题录核验并新增 VTC、Llumnix、LOTUS、Palimpzest、Abacus、SemBench、
@@ -750,7 +1065,7 @@
 - **实验规模**：64 行仅作真实组件门禁；六组策略使用同一 512 文档、
   1 次 warm-up + 3 次正式重复；512 审计通过后，仅对选中的 baseline 与
   adaptive 配置做 1024 行、3 次正式复验，不混算不同规模的 effect size。
-- **新增入口**：`code/scripts/summarize_output_aware_bfd.py` 输出
+- **新增入口**：`code/scripts/analysis/summarize_output_aware_bfd.py` 输出
   scenario/metric 长表统计，覆盖吞吐、E2E/tail、packing、GPU、能耗与 MFU。
 - **验证边界**：当前完成的是单元与真实本地 Daft→Ray task/actor contract；
   GPU-backed PostgreSQL+Daft+Ray+vLLM 的 64/512/1024 数据尚待运行，暂不形成
@@ -1003,7 +1318,7 @@
 
 ## 2026-07-19 Shared-vLLM K_max interference experiment
 
-- Added `code/scripts/run_kmax_interference_experiment.py`, a wrapper around
+- Added `code/scripts/experiments/run_kmax_interference_experiment.py`, a wrapper around
   `postgres_ai_operator_profile.py` that runs a foreground small job while a
   background bulk job shares the same local vLLM endpoint.
 - Ran the first two-job `AI_COMPLETE` interference experiment:
@@ -1065,7 +1380,7 @@
 ## 2026-07-19 Token-budget vs fixed-row AI_COMPLETE baseline
 
 - Added upstream `--batching-policy fixed_rows|token_budget` and
-  `--token-budget` support to `code/scripts/postgres_ai_operator_profile.py`
+  `--token-budget` support to `code/scripts/profiling/postgres_ai_operator_profile.py`
   through `code/src/organizers.py`. Token-budget batching greedily groups rows
   by estimated `prompt_tokens + completion_max_tokens` before Ray submission;
   it does not modify Ray or vLLM internals.
@@ -1095,14 +1410,14 @@
 ## 2026-07-19 PostgreSQL source-order mode for AI_COMPLETE profiles
 
 - Added `--source-order doc_id|arrival_time` to
-  `code/scripts/postgres_ai_operator_profile.py` and propagated the value into
+  `code/scripts/profiling/postgres_ai_operator_profile.py` and propagated the value into
   CSV rows.
 - Updated `code/src/sources.py` so both `PostgresArrowSource` and
   `DaftPostgresSource` share the same source-order semantics:
   `doc_id` for offline throughput/data-organization scans, and
   `arrival_time_s NULLS LAST, doc_id` for arrival-aware service scheduling
   experiments.
-- Updated `code/tests/test_sources.py`, `code/scripts/README.md`,
+- Updated `code/tests/data/test_sources.py`, `code/scripts/README.md`,
   `experiments/results/local_vllm_qwen15b_baseline/README.md`,
   `figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md`,
   `learning/local_vllm_ray_baseline_walkthrough.md`, and `PROJECT_INDEX.md`.
@@ -1154,7 +1469,7 @@
 ## 2026-07-18 AI_COMPLETE latency and vLLM metric probe
 
 - Added batch-level result statistics to `code/src/metrics.py` and
-  `code/scripts/postgres_ai_operator_profile.py`: batch row min/max/mean,
+  `code/scripts/profiling/postgres_ai_operator_profile.py`: batch row min/max/mean,
   batch token min/max/mean, and batch service latency P50/P95/P99.
 - Added optional `--model-metrics-url` Prometheus scraping for vLLM run-level
   delta metrics: prompt/generation token deltas, request success delta, mean
@@ -1168,7 +1483,7 @@
 
 ## 2026-07-18 ShareGPT/BurstGPT tokenizer-filtered Ray rerun
 
-- Updated `code/scripts/import_ai_complete_workload.py` so the imported
+- Updated `code/scripts/data/import_ai_complete_workload.py` so the imported
   `sharegpt_burstgpt` workload can use the local Qwen2.5-1.5B-Instruct
   tokenizer for `prompt_tokens` and filter rows by
   `prompt_tokens + completion_max_tokens <= max_model_len`.
@@ -1200,9 +1515,9 @@
 
 ## 2026-07-18 ShareGPT/BurstGPT workload import path
 
-- Added `code/scripts/import_ai_complete_workload.py` to normalize ShareGPT prompts with BurstGPT timestamp/token metadata into the PostgreSQL `documents` table.
+- Added `code/scripts/data/import_ai_complete_workload.py` to normalize ShareGPT prompts with BurstGPT timestamp/token metadata into the PostgreSQL `documents` table.
 - Extended `documents` with workload metadata columns: `workload_name`, `prompt_tokens`, `target_output_tokens`, `arrival_time_s`, `session_id`, and `prefix_key`.
-- Added `--source-workload-name` to `code/scripts/postgres_ai_operator_profile.py`, so different workloads can coexist in `documents` and profiling can select one explicitly.
+- Added `--source-workload-name` to `code/scripts/profiling/postgres_ai_operator_profile.py`, so different workloads can coexist in `documents` and profiling can select one explicitly.
 - Imported local `sharegpt_burstgpt` workload rows into PostgreSQL with `start_doc_id=1000000`, `rows=1024`, `prompt_tokens=8..1797`, `target_output_tokens=2..2048`, and categories covering short/medium/long x ChatGPT/GPT-4.
 - Verified a small `DaftPostgresSource -> DaftOrganizer -> Ray task -> vLLM` smoke under `tmp/sharegpt_burstgpt_daft_ray_vllm_smoke.csv` with `status=ok`, `total_rows=8`, `source_workload_name=sharegpt_burstgpt`.
 - Boundary: this validates the final workload import/read path. It is not yet the full baseline sweep or an optimized scheduling result.
@@ -1219,14 +1534,14 @@
 ## 2026-07-18 Ollama AI_COMPLETE backend
 
 - Added `ollama` as an `AI_COMPLETE` backend in `code/src/model_backends.py`, using Ollama native `/api/generate`.
-- Updated `code/scripts/postgres_ai_operator_profile.py` so `--operator ai_complete --model-backend ollama` defaults to `http://localhost:11434` when no completion endpoint URL is provided.
+- Updated `code/scripts/profiling/postgres_ai_operator_profile.py` so `--operator ai_complete --model-backend ollama` defaults to `http://localhost:11434` when no completion endpoint URL is provided.
 - Verified local PG18.4 smoke with Docker Ollama `qwen2.5:1.5b`: `ollama_ai_complete_smoke` completed with `written_rows=2`; `ollama_daft_ai_complete_smoke` completed with `data_source=daft_postgres`, `organizer=daft`, and `written_rows=2`.
 - Ran the layer-3 structural matrix under `tmp/ollama_ai_complete_layer3_matrix.csv`: `data_source` (`arrow_postgres`, `daft_postgres`) x `organizer` (`arrow`, `daft`) x `executor` (`python`, `ray_task`, `ray_actor`) x `writeback_mode` (`none`, `json_text`). All 24 rows returned `status=ok`; all `json_text` rows wrote `written_rows=4`.
 - This is a local Ollama completion smoke. It does not replace the future vLLM-compatible `/v1/completions` path and is not a token-aware/prefix-aware batching result.
 
 ## 2026-07-18 AI_COMPLETE runtime skeleton
 
-- Added `--operator ai_embed|ai_complete` to `code/scripts/postgres_ai_operator_profile.py`; default remains `ai_embed`.
+- Added `--operator ai_embed|ai_complete` to `code/scripts/profiling/postgres_ai_operator_profile.py`; default remains `ai_embed`.
 - Extended `code/src/model_backends.py` with fake and vLLM-compatible `/v1/completions` completion backends.
 - Extended `code/src/sinks.py` with `write_completions` and added `document_completions` to the local schema.
 - `AI_COMPLETE` supports `none/json_text` writeback. `pgvector` remains embedding-only and is rejected for `AI_COMPLETE`.
@@ -1235,18 +1550,18 @@
 
 ## 2026-07-18 Runtime code boundary cleanup
 
-- Split reusable runtime helpers out of `code/scripts/postgres_ai_operator_profile.py`:
+- Split reusable runtime helpers out of `code/scripts/profiling/postgres_ai_operator_profile.py`:
   - `code/src/model_backends.py`: fake debug embedding backend and compatible HTTP embedding backend.
   - `code/src/sinks.py`: existing `none/json_text/pgvector` PostgreSQL writeback.
   - `code/src/metrics.py`: stage timer, GPU snapshot, and CSV append helper.
 - Kept `fake` only as an offline smoke/control backend. vLLM-compatible runs should use `--model-backend compatible_http`; `http_openai` remains accepted as a compatibility alias.
-- Added `code/tests/test_model_backends.py` and `code/tests/test_sinks.py`.
+- Added `code/tests/serving/test_model_backends.py` and `code/tests/data/test_sinks.py`.
 - Updated `code/README.md`, `code/scripts/README.md`, and `PROJECT_INDEX.md` with the new code boundaries.
 
 ## 2026-07-17 Daft PostgreSQL data entry implementation
 
-- Added `code/src/sources.py` with `PostgresArrowSource` and `DaftPostgresSource`, plus `code/tests/test_sources.py`.
-- Updated `code/scripts/postgres_ai_operator_profile.py` with `--data-source arrow_postgres|daft_postgres`; default remains `arrow_postgres`.
+- Added `code/src/sources.py` with `PostgresArrowSource` and `DaftPostgresSource`, plus `code/tests/data/test_sources.py`.
+- Updated `code/scripts/profiling/postgres_ai_operator_profile.py` with `--data-source arrow_postgres|daft_postgres`; default remains `arrow_postgres`.
 - Kept writeback unchanged: `none/json_text/pgvector`. Lance remains a future optional sink and is not implemented in this step.
 - Added Daft SQL runtime dependencies `sqlglot` and `connectorx` to `code/requirements.txt`.
 - Verified local PG18.4 smoke under `tmp/postgres_daft_source_e2e.csv`: `source_arrow_smoke` and `source_daft_smoke` both completed with `total_rows=64` and `object_count=4`. This is a local smoke result, not a formal performance conclusion.
@@ -1266,9 +1581,9 @@
 - **触发**：用户要求实际使用 Daft，并要求遵循 `karpathy-guidelines`、保证代码可维护性。
 - **实现**：
   - 新增 `code/src/organizers.py`，实现 `ArrowOrganizer` 与 `DaftOrganizer`。两者接收 Arrow table，输出 downstream 可复用的 Arrow batch 列表和指标。
-  - 新增 `code/scripts/daft_text_organizer_smoke.py`，通过 `--organizer arrow|daft` 验证 `rows -> Arrow Table -> organizer -> batches`，并支持显式 `--runner ray` 检查 Daft `into_partitions`。
-  - 更新 `code/scripts/postgres_ai_operator_profile.py`：主链路的 `fetch_record_batch + split_batch` 已替换为 organizer 后端选择，新增 `--organizer arrow|daft`、`--organizer-partition-mode`、`--organizer-partitions`、`--daft-runner`。默认仍为 `arrow`，保留旧路径作为 baseline。
-  - 新增 `code/tests/test_organizers.py`，覆盖 Arrow 后端和 Daft native 后端的 batch 输出一致性。
+  - 新增 `code/scripts/profiling/daft_text_organizer_smoke.py`，通过 `--organizer arrow|daft` 验证 `rows -> Arrow Table -> organizer -> batches`，并支持显式 `--runner ray` 检查 Daft `into_partitions`。
+  - 更新 `code/scripts/profiling/postgres_ai_operator_profile.py`：主链路的 `fetch_record_batch + split_batch` 已替换为 organizer 后端选择，新增 `--organizer arrow|daft`、`--organizer-partition-mode`、`--organizer-partitions`、`--daft-runner`。默认仍为 `arrow`，保留旧路径作为 baseline。
+  - 新增 `code/tests/planning/test_organizers.py`，覆盖 Arrow 后端和 Daft native 后端的 batch 输出一致性。
   - 更新 `code/requirements.txt`：新增 `daft`，并将 `pyarrow` 约束为 `>=16,<25`，匹配 Daft 0.7.20 的依赖边界。
   - 更新 `code/README.md`、`code/scripts/README.md`、`PROJECT_INDEX.md`，登记新增入口和运行命令。
 - **本地验证**：
@@ -1501,7 +1816,7 @@
 - 已将 PPTX 以 user 身份导入为飞书在线幻灯片：`https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg`。
 # 2026-07-14 pgvector(384) writeback comparison
 
-- Updated `code/scripts/postgres_ai_operator_profile.py` so `--setup --embedding-dim 384` creates `document_embeddings.embedding_vector` as `vector(384)`.
+- Updated `code/scripts/profiling/postgres_ai_operator_profile.py` so `--setup --embedding-dim 384` creates `document_embeddings.embedding_vector` as `vector(384)`.
 - Ran the same GPU-backed Ray actor chain for no writeback, JSON text writeback, and pgvector `vector(384)` writeback.
 - Added result report and CSV under `motivation/results/gpu/`.
 - Added report-main figure `figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png`.
@@ -2490,8 +2805,8 @@
   profiler 子进程均以退出码 2 失败；目录、manifest、commands、failure
   evidence 和 stderr 全部保留，未复用或删除。根因不是策略或 GPU：runner
   固定用 `code/` 作为 child cwd，但 CLI 保留相对
-  `code/scripts/postgres_ai_operator_profile.py`，导致 child 尝试打开
-  `code/code/scripts/postgres_ai_operator_profile.py`。
+  `code/scripts/profiling/postgres_ai_operator_profile.py`，导致 child 尝试打开
+  `code/code/scripts/profiling/postgres_ai_operator_profile.py`。
 - 测试先行新增 CLI 路径回归用例，确认修复前失败；随后让 shared-vLLM CLI
   在切换 child cwd 前把 config、profiler、Python 和 output 路径解析为绝对
   路径。相关 142 项测试全部通过。修复提交同步后必须使用全新 gate 输出目录；
@@ -2573,7 +2888,8 @@
   `/v1/chat/completions`；旧 `/v1/completions` 结果只保留为历史机制证据，
   禁止直接横比。
 - 新增
-  `experiments/plans/database_ai_operator_baseline_matrix_20260729.md` 和
+  `experiments/plans/archive/database_ai_operator_baseline_matrix_20260729.md`（后于
+  2026-08-03 归档）和
   `code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md`，
   预注册固定 manifest、双 endpoint 等价性、独立 calibration、32–256
   瞬态与 2,048 held-out、time-to-ceiling/ramp-regret/minimum-saturating-work
@@ -2667,7 +2983,6 @@
   total/generation tokens/s、JCT、服务端 counter、空队列与 3% 饱和阈值决定
   最小安全并发。
 - 按用户要求不执行 Wiki 同步。
-
 ## 2026-07-29 Direct baseline C64/C128 与 8K ceiling 纠偏
 
 - C64 vLLM Bench/bounded 均通过 256/256 exactly-once、0 incident、服务端
@@ -2688,3 +3003,850 @@
   Chat Completions、no replay 条件下运行。未完成该同条件对照前，不新增上游
   策略，也不据 direct gate 宣称 ours 更慢。
 - 按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 同条件 project runtime 对比实施顺序冻结
+
+- 用户确认先完成单 Job 同条件对比，再独立进入多 Job：使用互不重叠的
+  512 行 calibration 与 2,048 行 held-out Chat manifest，所有可比 arm 关闭
+  arrival replay，并保持一行一次 Chat Completions 请求。
+- 新实施计划把缺口拆成 manifest 锁定、离线 request-level 补位、固定 endpoint
+  路由、项目 static/token-work 校准和正式矩阵；direct/官方 baseline 分别独立
+  校准，OceanBase 仅在 CE 能力与语义门禁通过时进入数值对照。
+- 结论门槛同时覆盖吞吐/JCT 加速与压力效率：未达到 5%/2-of-3 门槛时，不把
+  相同吞吐下的更低 active work、P99 或更快爬坡写成 GPU 推理加速。
+- 开题 PPT 由另一对话并行修改，本轮隔离 worktree 不接触或暂存其文件。
+- 按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 512 行 direct hard ceiling 与 project 同条件执行护栏
+
+- 冻结的 512 行 Chat manifest SHA-256 为
+  `7205f7ec2b9d52d8f0a4546a044cbbdaff644c0f88d06e9fc11a9a0c86077ced`，
+  两 endpoint 各 256 行、预测 work 73,329/73,328。vLLM Bench C256 与
+  bounded C256 分别达到 15,351/14,532 total tokens/s，JCT 11.931/12.569s；
+  C128→C256 仍增长 24.3%/33.0%，所以 C256 只称当前 `max_num_seqs`
+  配置硬上限，不称经验平台。
+- project profiler 增加离线 request-level continuous replenishment、
+  immutable manifest 行语义校验、manifest-pinned endpoint routing 和正式
+  CSV 证据。公平契约强制 raw Chat Completions、`temperature=0`、
+  trace-target output work、no arrival replay；错误行、token 估计、路由或
+  payload 配置均 fail closed。
+- 新增 project 512 校准和 2,048 formal AutoDL 模板。校准扫描 static K
+  32/64/128/256 与 active work 16K/32K/49K/65K/98K；formal 只接受校准后
+  冻结的最小 97%-ceiling 参数。
+- 远端只读预检确认持久 Ray head `127.0.0.1:6380`、双 endpoint、GPU 和
+  runner 均空闲；旧 runtime env 缺 Chat URL，因此新环境模板显式区分
+  `/v1/completions` 与 `/v1/chat/completions`。
+- 数据门禁发现 `sharegpt_burstgpt` 只有 `doc_id=0..2047`。校准占用
+  `0..511` 后只能得到 1,536 个 disjoint 行，不能运行 2,048 formal。
+  profiler/CSV 增加 `source_row_offset`，formal 固定 offset 512；正式执行
+  前必须新增 512 个独立行或导入独立 held-out workload，禁止复制或回用
+  calibration 行。
+- 开题 PPT 由另一对话并行修改，本轮隔离 worktree 未接触或暂存其文件。
+- 按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 Project 同条件门禁：输出 work 口径修复与 held-out 安全补数
+
+- 首次 64 行 project gate 在任何 HTTP 请求前 fail closed；远端保留目录
+  `dual_gpu_same_condition_project_gate64_20260729_33c278b`。`doc_id=2`
+  的数据库 trace target 为 276，官方 manifest 按请求 cap 记录 256，
+  `source_row_hash` 一致，排除数据漂移。512 calibration 未启动。
+- 系统化调试确认 project `trace_target_output` 既直接校验 raw target，也把
+  未裁剪值计入 active work，与 official manifest 的有效请求 work 不一致。
+  测试先行统一为 `min(trace target, completion_max_tokens)`；manifest guard
+  同时用 workload、arrival、prompt、token 字段和 raw target 重算
+  `source_row_hash`，因此 raw target 即使同在 cap 之上发生变化也会拒绝；
+  没有跳过或放宽源行身份校验。
+- importer 新增按过滤后 eligible rows 计数的 `--source-row-offset`、既有
+  prefix 逐字段核验、显式 `--max-prompt-tokens` 和 `--append-only`。远端
+  审计确认两份 raw hash、2,048 行文本/session/tokenizer 全部一致且原始数据
+  足够，但历史 shell 命令缺失；因此不声称恢复 exact CLI，而以当前正式
+  prompt 上限 1,500 重建 0..2047 并逐字段核验。不一致即在写入前停止，
+  doc ID 冲突由数据库事务失败，禁止 upsert 覆盖旧行。
+- 本地完整 suite 通过 508 tests；ruff、compileall 与 `git diff --check`
+  通过。下一步只允许在新提交与全新远端目录重跑 64 行 gate，通过后再启动
+  512 行 K/active-work 校准。
+- 开题 PPT 由另一对话并行修改，本轮未触碰；按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 Project active-work 校准：健康状态与容量背压分离
+
+- 修复输出 work 口径后，全新 64 行门禁
+  `dual_gpu_same_condition_project_gate64_20260729_beeee20` 通过：64/64
+  exactly-once、endpoint 32/32、0 incident、0 worker failure，manifest
+  64/64 校验通过，服务端 prompt/generation/success counter 为
+  12058/13554/64，最终双 endpoint 队列均为 0。
+- 随后 512 行校准首个交错场景 `work16384` 在第 89 个请求、任何该请求 HTTP
+  提交前失败。endpoint-0 已有 44 个请求、16,161 active work；固定到该端点
+  的新请求 work=234，加入后会到 16,395，超过 16,384。endpoint-1 尚有容量，
+  但旧调度器把“当前请求在 endpoint-0 暂时无 credit”覆盖写成
+  `healthy=false`，因此 pinned router 误报服务不健康。外部 `/health` 始终
+  正常，失败后队列归零；失败目录
+  `dual_gpu_same_condition_project_calibration_20260729_beeee20`、stderr、
+  manifest 与 incident 原样保留，未重试且无 `runs.csv`。
+- 测试先行把 `EndpointSnapshot.healthy` 与 request-specific `available`
+  分离；固定 endpoint 同时固定其所属 pool，容量不足抛可重试的 typed
+  backpressure，调度器先收集完成再重试，绝不改投另一 endpoint。公开
+  `healthy_endpoints()` 保持纯健康语义，新增 `schedulable_endpoints()`；
+  fixed-pool、multi-pool pinned、oversized shared-credit fail-fast 均有回归。
+- 最终本地全量 512 tests、相关 170 tests、ruff、compileall 和
+  `git diff --check` 通过，独立代码审阅无 Critical/Important。下一步只能在
+  新提交和全新远端目录重跑 64 行门禁；通过后才重新开始 512 行校准。
+- 开题 PPT 仍由另一对话修改，本轮未触碰；按用户要求不执行 Wiki 同步。
+
+## 2026-07-29 Baseline 优势验证：首次高并发等价性门禁
+
+- `0c370ce` 的全新 64 行 gate 通过 64/64 exactly-once、endpoint 32/32、
+  0 incident/failure 和最终空队列。随后 512 行 9-cell calibration 完成
+  9/9，但 static K256 与理论 nonbinding W98K 分别为 11,736/4,153 total
+  tokens/s，单次结果不能用于参数选择。
+- 只读系统化诊断排除 active-work credit、actor 数、manifest/payload、
+  output work 和汇总计算。W98K 的额外约 28.6s 位于 HTTP/vLLM request
+  wall；actor ramp 只多约 3s。W98K 恰为首个 full-concurrency cell，并出现
+  endpoint 不对称的逐波接纳，当前保留为客户端/OS/vLLM ingress 冷路径假说。
+- 用户批准预注册门槛：单 job ours 吞吐至少为 bounded HTTP 95%；在至少
+  97% ceiling 下压力降低 20%才称压力效率；transient time-to-ceiling/ramp
+  改善 20%；多 job 聚合吞吐至少 95%，并使 P99/SLO/fairness 至少改善 10%
+  且无饥饿。未通过则记录无可证明优势。
+- 新增 staged validation 规格与实施计划、K256/W98K 等价性模板；actor-ready
+  barrier 移到 measured E2E 前并单列 `actor_ready_s`，非流式 HTTP 与
+  submission trace 增加 request/headers/body timing。每臂 1 same-pressure
+  warm-up + 3 formal repeats；5% 等价门禁未通过禁止 broad calibration。
+- 所有主 baseline 继续使用同一双单-GPU vLLM endpoint。OceanBase-style
+  lightweight arm 仅作明确标注的次级模拟，不冒充官方产品；pgai 保持
+  embedding 对照。
+- 开题 PPT 由另一对话并行修改，本轮未触碰；按用户要求不执行 Wiki 同步。
+
+## 2026-07-30 双 GPU 校准合同与远端结果目录规整
+
+- 远端 f203257 结果确认 Completions fixed16 project/direct model-request
+  throughput 为 16,036/16,416 tokens/s，达到 97.7%；固定 offered work 的
+  token-budget 曲线在 32K 达到最高正式重复中位数 15,007 tokens/s。
+- 审计发现旧 runtime env 仍默认 8K，submission-policy 模板硬编码 K64，
+  导致后续实验虽可运行但没有继承本轮校准结果。旧数据保留为诊断证据，不进入
+  饱和策略排名。
+- 新增 `select_strategy_calibration.py` 和 `src/calibration.py`：要求 feeding
+  ≥95%、至少三次正式重复，并按 97%-ceiling/下一档增益 <3% 选择预算；输出
+  选择 JSON 和环境覆盖。data-organization、submission-policy 和 shared-vLLM
+  formal 在任何外部请求前核对同一合同。
+- token-budget 合同不再把一个预算写成所有目标的通用最优：32K 仍是当前
+  throughput-oriented 冻结点；在吞吐不低于峰值 95% 的候选中另记录最大
+  request SLO goodput 的预算。f203257 上该点为 49K，必须在 held-out 重复后
+  才能作为 SLO-oriented static 对照。
+- data-organization 与 submission-policy 不再硬编码 8K/K64/actor shape，
+  改用冻结的 32K、K、active work 和 actor 参数。AutoDL 新运行时结果统一写到
+  `/root/autodl-tmp/experiment-artifacts/`，仓库只接收审计后的摘要与报告。
+- 调度实验重新明确“动态”的比较目标：direct-vLLM 是容量上界、一次校准后
+  冻结的 static 是主要可部署 baseline、per-phase static oracle 只作诊断
+  上界。动态策略不以改变单请求 kernel 速度为目标，而在运行中 workload
+  漂移或多 job 竞争下，以容量退化不超过 3% 为护栏，比较 SLO goodput、JCT、
+  P99、time-to-ceiling 和 adaptation regret。
+- 在动态控制器头对头之前新增“存在性门禁”：固定其他变量后先验证不同
+  workload 的最佳安全 static K 是否至少迁移 2×或 97%-ceiling 区间不重叠，
+  且错用静态点是否造成至少 5% 的 SLO-goodput/JCT 损失。门禁不成立就停止
+  adaptive formal 排名，避免为没有实际代价的静态差异设计控制器。
+- 双 GPU adaptive formal 增加硬前置并完成代码拆分：typed AIMD/EWMA/PID/HOL
+  controller state、服务指标和 action trace 均改为 endpoint-local；
+  control trace 新增 endpoint ID。global adaptive 与 endpoint-local static
+  limit 的混搭、dynamic K 与 active-work 动态混搭继续 fail closed，防止聚合
+  指标或多变量联动污染正式策略结论；正式运行前仍需远端双 endpoint gate。
+- actor pool shape 升级为 calibration contract 的独立证据：同协议、
+  同 token budget/K/work、固定 256 slots 与 0.5 CPU/endpoint，扫描
+  1/2/4/8/16 actors，并选择达到峰值中位数 97% 的最小 actor 数。Chat
+  512-row 曲线的 4–8 actor 平台只作 feeding 诊断，不跨协议冻结
+  Completions；选择脚本新增必填 actor-shape CSV 与 repeat 离散度记录。
+- 新增可执行 static-K workload surface 与判定脚本：low/near/burst 到达压力
+  分别扫描 K64/128/256，先过 95% capacity floor，再验证 K 迁移/可接受集合、
+  ≥5% cross-workload regret 和 ≥2/3 paired repeats 同向。另增双 endpoint
+  adaptive 256-row gate，只验证独立 controller/metrics/trace，不产出性能结论。
+
+## 2026-07-30 Short/long 静态 credit 筛选审计与动态判决纠错
+
+- 从远端同步 short/long prompt 两组 48/48 成功运行的 config、manifest、
+  runs 和独立汇总。short/long server-observed prompt tokens/row 分别为
+  16.95/566.23；prefix cache 关闭，模型为双 4090 Qwen2.5-7B。
+- 远端初始报告使用 E2E tokens/s 算术平均，得到 short/long 均为 W65K；
+  项目正式 model-request 中位数却选择 short W98K、long W65K。short
+  W65K/W98K throughput CV 为 18%/34%，不能把平均值交叉表作为动态
+  NO-GO。
+- 机制审计发现 short K256/W65K/W98K 均无 bounded wait、一次性放行
+  512 请求，work 高水位仅 49,318/endpoint；两个 work cap 未绑定，理论
+  等价臂的 model-request 中位数仍分裂 48.5%。同时配置实际使用 urllib、
+  未启用 output token IDs、short/long 未跨 workload 交错，六臂也不是
+  K×work factorial。
+- 因此本轮证据登记为 real-GPU screening / mechanism audit，机器判定为
+  `inconclusive`，不能声称动态 K 已被否决，也不能声称 short/long
+  精确 oracle 均为 65K。long W65K 的低 CV 正信号与 K256 的 SLO 负结果
+  保留为后续候选依据。
+- 新增 `summarize_static_credit_workload_surface.py`：统一使用中位数，
+  检查 repeat CV、未施压等价臂、per-request token-ID 覆盖和交叉 regret，
+  审计失败时 fail closed。新增 async/token-ID 单 runner 等价臂模板，先比较
+  short/long K256、W65K、W98K；通过后才扩展 W49K 与 K×work 交互面。
+
+## 2026-07-31 Prefix-affinity routing 消融（cache ON）收口 prefix 方向
+
+- 完成 prefix-affinity routing 实验（`experiments/results/prefix_cache_routing_req_20260730/`）：
+  route_least_queued / route_affinity (prefix_affinity) / route_affinity_pala (prefix_affinity
+  + prefix_aware_length_align 二级排序)，1 warmup + 3 formal，seed 20260729，cache ON，
+  request 粒度。12/12 ok，0 incident。
+- model-request tok/s 中位数：least_queued 16093 / affinity 16078 / pala 16382，CV ≤0.5%。
+  纯路由效应 −0.1%（中性，cache 碎片化假设不被支持）；pala +1.8% 来自 length-align，
+  repeat 不重叠但低于 5% 门禁，不晋级。
+- 与 07-30 batching 消融（cache ON，batch 粒度，上游 batching 顺序中性，within 1.2%）
+  一致：vLLM APC 在多轮 ShareGPT 上自动复用 prefix，上游 batching + routing 均无额外
+  空间。**prefix 方向收口，转 OceanBase baseline。**
+- submission 粒度：`manifest_guard.py:82-93` 只在 request 粒度允许 prefix_affinity
+  （batch 粒度强制 least_queued）。故 routing baseline 与 batching（batch 粒度）不直接
+  可比；routing 三臂为干净 A/B。
+- 过程问题：
+  1. 环境漂移——batching 后 runtime env 的 BEST_TOKEN_BUDGET 改 8192→32768、
+     SOURCE_WORKLOAD_NAME 改 multiturn→burstgpt。已硬编码回 batching 值避免 silent 不可比。
+  2. manifest 元数据 bug——`service_metadata.prefix_caching` 声明 false 但 live vLLM 实际
+     ON（进程参数 + 日志 ~71% 命中率）。runner 从 env 默认填该字段、未探测 live vLLM。
+     不影响有效性（cache 确实开着），待修：runner 启动时从 vLLM /metrics 或进程参数探测
+     实际开关，并在 resources 增采 vLLM prefix_cache_hit_rate（本次 per-arm 命中率因此未记录）。
+
+## 2026-07-31 OceanBase B1 门禁验证：CE 有 AI_COMPLETE，但容器部署受阻
+
+- 在 `claude/oceanbase-baseline` 分支尝试 matrix §2 的 B1（OceanBase AI_COMPLETE → 双 vLLM）。
+- **门禁 #1 通过**：远端 apt 装 oceanbase-ce 4.5.0.0，observer 二进制（`T_FUN_SYS_AI_COMPLETE`、
+  全套 `DBMS_AI_SERVICE_CREATE_AI_MODEL[_ENDPOINT]`）+ seed SQL（`dbms_ai_service_*.sql`）
+  静态确证 `AI_COMPLETE`/`DBMS_AI_SERVICE` 在 **Community Edition**（非企业版独占）。
+  见 `experiments/results/oceanbase_b1_gate_20260731/README.md`。
+- **部署阻塞**：observer 在此 AutoDL 容器 init step 4/18（`clog/log_block_mgr`，errcode -9100
+  `prepare_dir_and_create_meta_ failed`）自杀（`tgkill SIGKILL`）。已修复：obd/obclient 缺失
+  → 直用 observer 二进制；`libaio1`；`memory_limit=6G`（2G 低于最小值、8192 被当 bytes）；
+  `-N` nodaemon（无 systemd PID1）。已 strace 排除 max_map_count（257 mmap 零失败）、overlayfs
+  （md0 真实盘同样）、磁盘、配置。容器 seccomp（Seccomp=2）拦 clone3（ENOSYS），但 observer 起了
+  ~20 线程，非直接死因；真因未完全定位，从容器内部不可修（seccomp/kernel 只读）。
+- 按 matrix §2：OceanBase 暂降为"工业参考/待部署"，不伪造 B1。复跑需特权容器
+  （`seccomp=unconfined`/`--privileged`）或带 systemd 的 VM；复跑时复用 `code/src/baselines/products/oceanbase.py`
+  （其对 DBMS_AI_SERVICE/AI_COMPLETE 的调用已确证 CE 支持）。
+- 远端保留证据：oceanbase-ce 安装 + `/root/obdata/strace{2..7}.log` + `/etc/oceanbase.cnf`。
+
+## 2026-07-31 代码修复：runner 校验 service_metadata.prefix_caching 与 live vLLM 一致
+
+- **Bug**：scenario config 的 `service_metadata.prefix_caching` 是声明值，
+  `code/src/experiment_scenarios.py:validate_service_metadata` 只校验类型、不比对
+  live vLLM。后果：prefix-cache 实验在 cache-ON 的 vLLM 上跑，manifest 却记
+  `prefix_caching: false`（声明值），silent 不一致——07-30 prefix-cache batching/
+  routing 实验的 manifest 元数据就是因此失真。
+- **根因**：vLLM 不经 `/metrics` 暴露 prefix-cache 开关（只有运行时命中率、且需流量）；
+  唯一可靠信号是 vLLM 进程 cmdline 的 `--enable-prefix-caching` / `--no-enable-prefix-caching`。
+- **修复（3 个文件）**：
+  1. 新增 `code/src/vllm_probe.py`：`parse_prefix_caching_flag(cmdline)`（纯函数，
+     argparse last-wins 语义，支持 `--flag` 与 `--flag=bool`）+ `probe_live_prefix_caching()`
+     （best-effort：`ps -eo args` 找 vLLM api_server 进程、解析、取共识；探不到/进程间
+     不一致/非 Linux 返回 None）。
+  2. `code/scripts/experiments/run_ai_operator_scenarios.py`：加 `_verify_prefix_caching_matches_live`
+     预检——声明值与 live 不符 → **fail-closed**（ValueError）；探不到 → stderr warn 后继续。
+     **挂在 `main()` 而非 `run_experiment`**，使直接驱动 `run_experiment` 的 9 处单元测试
+     保持 hermetic（不依赖宿主 vLLM 状态）。
+  3. 新增 `code/tests/serving/test_vllm_probe.py`（15 测试）：parse 各分支 + probe（mock
+     `_list_process_cmdlines`）+ verify helper 的 mismatch/match/none/skip。
+- **怎么改的（关键决策）**：探测设计为 best-effort + fail-closed-on-detectable——
+  能确证不一致时拒绝跑（防 silent 失真），探不到（Windows/CI/无同机 vLLM）时 warn 不 block。
+  放 `main()` 而非 `run_experiment` 是为避免单元测试依赖宿主 vLLM 进程状态。
+- **验证**：本地 `python code/tests/serving/test_vllm_probe.py` 15/15、
+  `python code/tests/experiments/test_experiment_scenarios.py` 26/26 全绿；`--help` 正常。
+  （`test_postgres_profile_scheduling` 本地缺 pyarrow 无法 import，与本次改动无关。）
+- **边界**：探测只覆盖同机 vLLM（runner 与 vLLM 共宿）；vLLM 远程部署时探不到→warn。
+  仅校验 `prefix_caching`（最易飘、影响最大）；其他 `service_metadata` 字段仍按声明值。
+
+## 2026-07-31 4-endpoint prefix-affinity routing 消融（1.5B，跨过 5% 门禁）
+
+- **背景**：2-endpoint/7B routing 实验中 prefix_affinity 相对 least_queued 完全中性
+  （−0.1%，`experiments/results/prefix_cache_routing_req_20260730/`）。其 §6.2 把
+  「>2 endpoint 下重测」列为可选扩展。本实验在 4×Qwen2.5-1.5B（2 endpoint/卡）上
+  重测，检验「高淘汰压力 regime 下路由是否重新有空间」。
+- **结果**（3 formal，seed 20260729，0 incident，manifest completed）：
+  prefix_affinity 46,943 vs least_queued 44,317 model-request tok/s = **+5.9%**，
+  raw 不重叠、CV≤0.9%；SLO 违约 25.1% vs 31.4%（−6.3pp），P95 36.16s vs 39.31s（−3.15s）。
+  **跨过 5% 晋升门禁**——首个非中性的路由结果。报告：
+  `experiments/results/prefix_cache_routing_4ep_1.5b_20260731/README.md`。
+- **谨慎边界**：同时改了 model（1.5B vs 7B）、endpoint 数（4 vs 2）、per-endpoint KV
+  大小，**不能干净归因于 endpoint 数单一变量**；两臂 SLO 违约 25–31% 处于过饱和
+  /cache 抖动 regime，相对比较成立、绝对值是 thrashing 区间。跨门禁但需隔离消融
+  （4-ep/7B 或 2-ep/1.5B）后才正式晋级。per-arm APC 命中率仍未单独记录（与 0730 同缺口）。
+- **为了 4 endpoint 做的调整（4 项）**：
+  1. **代码（使能点，commit `a26c1e2`）**：`code/src/profiling/manifest_guard.py`
+     `endpoint_count != 2` → `< 2`，错误消息 "two endpoints" → "at least two endpoints"。
+     注释明确：分片数上精确、超出变松，只允许 routing 消融、不能用于 pinned 排名。
+     新增测试 `test_profile_manifest_contract_accepts_more_than_two_endpoints`。
+  2. **配置**：`prefix_cache_routing_4ep_1.5b.json` 由 0730 的 req 配置派生——4 个
+     endpoint URL、`--endpoint-gpu-ids 0,0,1,1`、模型 qwen2.5-1.5b（completion/cost/tokenizer
+     三处）、4 metrics URL、scenario 去掉 pala 只留 2 臂。
+  3. **vLLM 部署**：`4ep-1.5b.env`，4×Qwen2.5-1.5B-Instruct，2 endpoint/卡，
+     `VLLM_GPU_MEMORY_UTILIZATION=0.43`，prefix-caching ON。换 1.5B 是为制造真实淘汰压力
+     （7B/2-ep 下 APC 已覆盖 working set → 路由中性；1.5B/4-ep 下 APC 不够 → 路由效应显现）。
+  4. **环境（主机重启后）**：清理 stale `/tmp/ray/ray_current_cluster`（见下条）。
+- **stale Ray pointer 事故**：主机重启后首次 launch 在 warmup 的 `ray.init()` 卡死 ~14 分钟
+  后 `ConnectionError`，0 请求发出。根因：`/tmp/ray/ray_current_cluster` 残留重启前死地址
+  `172.17.0.8:6380`（重启后容器 IP 变为 172.17.0.3），ray.init 读取 stale 指针反复连死 GCS。
+  修复：删除该指针（无活跃 Ray 进程需 stop）。失败首跑目录保留为
+  `..._4ep_1.5b_20260731_failed_raystale/` 作事故证据。回归防范写入
+  `deploy/autodl/README.md` 开机恢复流程。
+- **对课题含义**：prefix 路由方向**有条件重新打开**（2-ep/7B 中性结论在该 regime 仍成立）；
+  25–31% SLO 违约 + affinity 收益共同指向 KV cache 淘汰/重算瓶颈，为用户讨论的
+  Mooncake/共享 KV cache 方向提供了首个动机数据点（待与导师确认是否纳入为第二贡献）。
+
+## 2026-07-31 prefix 实验数据回填 git + 跨数据集（agent/concentrated）补分析
+
+- **问题**：盘点发现构成当前 prefix 证据基底的三个 registry 引用目录——
+  `prefix_cache_data_org_20260730/`、`prefix_cache_routing_req_20260730/`、
+  `prefix_cache_routing_4ep_1.5b_20260731/`——**git 里只有 README.md，底层 runs.csv/manifest/per-run
+  CSV（13–22 MB）全部只在远端**；4ep 目录更是 0 文件（README 仅本地 untracked）。一旦远端释放，活结论（+5.9%
+  重开 prefix 方向）将无原始证据。属「有意义数据滞留远端」风险。
+- **动作（分支 `claude/sync-prefix-cache-evidence`，未 push）**：
+  1. 从 AutoDL 拉回 5 个目录的 runs.csv + manifest.json + per-run requests/submissions/resources/flush
+     CSV（排除 gitignore 的 `*.log`）：上述 3 个 + `prefix_routing_agent_20260730/` +
+     `prefix_routing_concentrated_20260730/`。
+  2. 新写 Tier 2 跨数据集报告：`prefix_routing_agent_20260730/README.md`（agent + concentrated 合并分析，
+     七步结构）+ `prefix_routing_concentrated_20260730/README.md`（自包含简表 + 指回 agent 报告）。
+  3. 同步 `EXPERIMENT_EVIDENCE_REGISTRY.md`（§2 Prefix-aware 行、§3 新增两目录行、§6 item 5）、
+     `experiments/plans/experiment_status_and_gaps.md`（§1 表 + P1 段）、`PROJECT_OUTLINE.md`（P1-4）：
+     prefix 状态从「2-ep/7B 收口」细化为「2-ep/7B 跨三数据集吞吐中性 + 高淘汰压力 regime 双数据点（4-ep/1.5B +5.9%、agent-trace pala P50 −7.8%）有条件重开」。
+- **新发现（agent-trace pala 信号）**：2-ep/7B、lmcache_agent（851 行、高 cache 压力 workload）下 pala
+  相对 least_queued：吞吐 −1.9%（**未过门禁、负向**），但 **P50 64.2 vs 69.6s = −7.8%、SLO 78% vs 82% = −3.8pp、
+  goodput +17%**。concentrated（cache 压力低）同信号弱（P50 −1.3%）。**信号随 cache 淘汰压力增大而增强**，
+  与 4-ep/1.5B +5.9% 同机制——为「cache 淘汰压力是 prefix 方向价值是否显现的开关」补第 2 个独立数据点（仅改
+  workload、不混淆 model/endpoint）。agent/concentrated 均 12/12 ok、0 incident、CV≤0.9%。
+- **不同步（判定）**：4 个 `checkpoint_*`/`slo_ewma_flush_gate128` 是 1-repeat 门禁 screen，结论已被 git 里
+  3-repeat 正式目录（active_work_saturation/actor_pool_shape/service_quantum/slo_ewma_formal）完整覆盖，
+  不进 git；~30 个带时间戳 debug 变体 + 早期无日期目录属迭代噪声/被取代，保留远端不同步。
+- **待办**：per-arm APC 命中率指标仍缺（runner resources 只采样 KV 用量）；agent pala P50 改善需人为缩 KV
+  制造可控淘汰率单调验证；4-ep/1.5B +5.9% 仍需 4-ep/7B 或 2-ep/1.5B 隔离 model×endpoint×cache 解耦。
+
+## 2026-07-31 KV-budget 扫描（2-ep/1.5B）隔离 4-ep +5.9%：endpoint 数是驱动，非 per-endpoint KV
+
+- **回答上一条待办**：「4-ep/1.5B +5.9% 需 2-ep/1.5B 隔离 model×endpoint×cache」。固定 2 endpoint（1/GPU），扫
+  `gpu_mem_util ∈ {0.3,0.45,0.6,0.9}`（+ 复用 2-ep/0.9 ablation 点），每点 `least_queued` vs `prefix_affinity`，
+  sharegpt_multiturn 2048。结果存**新存储约定** `experiments/results/rc1_prefix_routing/kv_budget_sweep_20260731/{README.md, raw/}`。
+- **结果**：2-ep 全 KV 范围 prefix_affinity **中性**（Δ ∈ [−0.1%, +1.0%]，含 util 0.3–0.6 的 13–15% SLO 抖动点）；
+  util 0.9（~22.8GB、working set 全放下、0% SLO）吞吐回升到 ~64.8k（vs 抖动点 ~54.2k）。32 run、0 incident、CV≤1.0%。
+- **matched-KV 对比（关键）**：2-ep/0.45（~12GB 显存、~7–8GB KV）= **−0.1%** vs 4-ep/0.43（~7GB KV/端）= **+5.9%**——
+  per-endpoint KV 量级相当、**只差 endpoint 数（2 vs 4）**。→ **驱动是 endpoint 数（consolidation 拓扑），非 per-endpoint KV 大小**。
+- **修正上一条 framing**：「cache 淘汰压力是开关」在 1.5B/multiturn 下被证伪——2-ep 即便 13–15% SLO 抖动也无 affinity
+  收益；**endpoint 数才是开关**。agent-trace（2-ep/7B/不同 workload）的 P50 信号是独立数据点，跨 workload 是否
+  cache-pressure 驱动待验。
+- **诚实边界**：4-ep regime SLO 违约（25–31%）比 2-ep 最高（14%）更深，未完全分离「endpoint 数」与「抖动深度」；
+  matched-KV 对比强烈指向 endpoint 数。util 0.9 为 n=2（第 3 rep 偶发 subprocess_nonzero 失败，2 rep CV≤0.3% 仍稳）。
+- **同步**：`EXPERIMENT_EVIDENCE_REGISTRY.md` 新增 `rc1_prefix_routing/kv_budget_sweep_20260731/` 行；
+  `experiment_status_and_gaps.md` §1.1 prefix 行细化（KV 排除、endpoint 数指向、cache-pressure-开关 假设证伪）；
+  新存储约定（方向分组 + raw/ + README）首次采用，后续新数据（RC1 重测等）按此存。
+- **对方向**：跨引擎共享 KV（Mooncake/LMCache）价值定位在**多 endpoint consolidation**（现实 DB-AI 部署：多模型
+  endpoint 共享 GPU），不在小 KV。2-ep 作为 RC1 数据组织重测（#21–24）的干净基线合理（策略效应不被 routing/consolidation 混淆）。
+
+## 2026-07-31 RC1 数据组织策略系统重测（2-ep + 4-ep，1.5B，cache-ON）：regime-dependent 闭合
+
+- **动机**：07-18/19/25/26 早期 RC1 数据组织实验在旧数据集/rows(s)/单 5070/未喂饱（07-30 cache-OFF run GPU 67.7%）下，
+  策略结论不可比。在干净平台（2×4090 + sharegpt_multiturn 2048 + tokens/s + httpx_async + token-IDs + **P0 指标**
+  prefix_cache_hit_rate/TTFT/TBT，#27 新增采集）系统重测 5 策略 × {2-ep/0.9, 4-ep/0.43}。结果存新存储约定
+  `experiments/results/rc1_data_organization/{README.md, dataorg_2ep_1.5b_cacheON_20260731/raw/(102),
+  dataorg_4ep_1.5b_cacheON_20260731/raw/(102), bounded_2ep_1.5b_cacheON_20260731/raw/}`。
+- **主结论（regime-dependent）**：
+  - **2-ep（KV max 7–10%，无压力）**：5 策略 E2E 50–56k 紧凑，排名 fixed≈seq>bestfit>rowcap>lenalign；prefix 命中 0.60–0.76。
+  - **4-ep（KV max 98–100%，饱和）**：5 策略 E2E 39–50k 分化两簇，**排名反转为 seq>fixed>>rowcap≈bestfit>lenalign**；
+    **prefix 命中崩塌**——重排序类（length_align/best_fit/row_cap）0.60–0.76 → **0.06–0.07**，保序类 fixed/sequential 0.47–0.48。
+  - **机制闭合（`prefix_group_ratio` 是 smoking gun）**：重排序类 organizer 打散 prefix 组（ratio 0.03）→
+    4-ep KV 饱和 + least_queued 散到 4 端 → 同 prefix 淘汰前无法复用 → 命中崩 → prefill 重算激增 → TTFT 翻倍（0.2–0.3s→0.6–1.1s）、
+    best_fit/row_cap SLO 60%。保序类 ratio 0.13–0.29，受影响小。
+  - **consolidation 是惩罚**：4-ep 比 2-ep −10～−26%，能耗 +40%（17.2 vs 12.3 J/1k tok）。多 endpoint 小池 + 高 churn + 局部性丢失。
+- **与 #28 / KV-sweep 闭环**：三者共同支撑「上游调度/组织策略的价值在模型服务饱和 regime（4-ep）才显现」；
+  2-ep 无压力 regime 是干净对照基线。本重测从**数据组织侧**（#28 从 routing 侧）独立确认 4-ep KV 压力下局部性决定性。
+- **合规**：GPU util 2-ep 79–85%（borderline）/4-ep 86–90%；CV 1–6% 稳定。**⚠️ feeding-saturation 门禁未正式算出**：
+  (a) 2-ep bounded 是 batch-1 c256（46,947 tok/s，2,047/2,048 完成、1 瞬时 ReadError 排除），策略 107–120% **超过**它 → batch-1 太弱非真上限；
+  (b) 4-ep bounded gate 硬编码 `exactly two completions endpoints`，4 endpoint 直接 ValueError 无法测。
+  喂饱用 GPU util + 绝对 tok/s（与 #19 2-ep/0.9 ~57k 同量级）间接确认。**batched bounded（batch 16/32）+ 4-ep bounded 客户端列为待办。**
+- **执行教训（harness 调试）**：4 个配置坑依次修复——runner 必需 `--metrics-urls`（非仅 `--health-url`）；
+  profiler manifest 行数 guard（total-rows 必须=manifest 2048，512 行 smoke 不可行）；bounded gate 对输出目录已存在 fail-closed（须让 gate 自建目录）；
+  bounded shard 1/1024 瞬时 ReadError 触发 `failed_rows:0` 硬门禁（已解耦：bounded best-effort，不影响 data-org）。
+  每坑秒级发现（监控 60s 内断 halt），vLLM 跨 attempt 不重启、未浪费 GPU。
+- **同步**：`experiment_status_and_gaps.md` §1.1 新增「RC1 数据组织系统重测」行 + 状态行更新（regime-dependent 闭合）；
+  本目录 README（8 段全组件）；旧 07-25/26 gropy 标 superseded；07-18/19 最原始动机保留作历史参照。
+- **下一步**：prefix_aware_token_budget 正文实验（能否回收 4-ep 重排序类命中率）；batched/4-ep bounded 补 feeding 门禁；
+  `sharegpt_concentrated` + 7B 泛化对照；MFU 采集修复。
+
+## 2026-07-31 补 feeding-saturation 门禁：准入控制是吞吐杠杆、效应随 regime 反向
+
+- **动机**：RC1 数据组织重测（上一条）留了"feeding 门禁未正式算出"的缺口（2-ep batch-1 bounded 太弱、4-ep bounded gate 硬限 2-endpoint）。本条补齐。
+- **改动**：`code/src/baselines/gate_runner.py` 把 `len(endpoint_urls) != 2` 放宽到 `< 2`（"at least two"）——2-endpoint 硬限是早期 2-ep-only 遗留，4-ep 实验需要；其余 shard/校验逻辑本就 N-endpoint 通用。2 cell（b16-c64/b32-c32）× 2 拓扑，2,048/2,048 完成、0 失败、`status: passed`。结果存 `rc1_data_organization/bounded_{2ep_batched,4ep_1.5b_cacheON}_20260731/raw/`。
+- **bounded 真上限**：**2-ep = 79,488 tok/s**（b32-c32，wall 20.8s）；**4-ep = 24,733 tok/s**（b16-c64，wall 66.9s，**病态**）。
+- **主结论（门禁细化，不是简单过/不过）**：
+  - **2-ep**：策略 E2E 50–56k = 真上限的 **63–71%（严格 ≥95% 门禁不过）**。但 `model_request_wall`(27.5s) ≈ `operator_wall`(27.5s) → **非模型开销可忽略、无 pipeline 瓶颈**。缺口 = **active-work 准入门 W65536 把 inflight 压到 4–22（远低于 K256）**——故意节流（换 SLO/公平），非饿死 vLLM。GPU 79–85% 印证"在干活但没榨干"。
+  - **4-ep**：unthrottled batched bounded **自己搞慢自己**——小 KV 池（0.43、KV max 98–100%）上一次打 256 并发 batched → 淘汰风暴 + 重 prefill → 24k（比策略 39–50k 还低）。**策略的准入节流反而帮忙**（inflight 8–22 → 少 thrash）。→ unthrottled bounded 在 4-ep **不是有效上限**；准入节流是 4-ep 解法的一部分。
+  - **跨 regime**：**准入控制是吞吐 binding 杠杆，效应随 regime 反向**——2-ep 压住上限（放开 W 可提速）、4-ep 防 thrash（应保留）。这把 feeding 门禁从"过/不过"细化成一个**研究内容二（调度/准入）的实证信号**。
+- **诚实边界**：策略**确实喂饱 vLLM**（GPU 80–90%、model_wall≈operator_wall、非饥饿），但**不榨干 raw 上限**——不能声称"策略已达理论上限"。4-ep bounded 病态值不能当上限用。2-ep 放开 W 测能否逼近 79k = 下一步验证。
+- **同步**：`rc1_data_organization/README.md` §3 合规自检 + §6/§8 更新；本条记入 PROJECT_LOG；`experiment_status_and_gaps.md` / `EXPERIMENT_EVIDENCE_REGISTRY.md` / `PROJECT_OUTLINE.md` 的"feeding 待补"口径改成"已补 + 准入杠杆结论"；`gate_runner.py` 放宽 ≥2 endpoint（本地+远程，待 commit）。
+
+## 2026-08-01 image-CLIP 多模态环境准备就绪（首个多模态 workload）
+
+- **决策背景**：prefix 轨暂停（vLLM APC + Daft v0.6.9 已覆盖大半，与 §0 scoop 一致）；下一步 workload 锁定 image AI_EMBED（CLIP）找 DB-read/CPU→GPU 数据搬运瓶颈。用户要求远端准备环境。
+- **完成**（远端 AutoDL 2×4090）：① 代码 git 同步 a26c1e2 → ba35e93（条件 reset，fetch 受下载抢带宽拖 ~7min）；② CLIP ViT-B/32 下到 `models/clip-vit-base-patch32`（~1.7G）；③ COCO val2017 下到 `data/raw/coco_val2017/`（~780M，5000 图 smoke 集）；④ GPU 验证 CLIP load + `get_image_features` → 512d embedding OK。
+- **两个坑（已记入 `deploy/autodl/README.md` image-CLIP 节）**：
+  1. `huggingface_hub 1.x`（1.25.1）的 `huggingface-cli download` wrapper 解析参数失败 → 改用 Python `snapshot_download`。
+  2. `transformers 5.x` 的 `CLIPModel.get_image_features` 返回 `BaseModelOutputWithPooling`（非裸 tensor）→ 取 `.image_embeds`，不能直接 `.shape`。
+- **下一步（serving 引擎，待建）**：CLIP 是 embedding 非 vLLM 生成；按 image_clip plan "ours 路径 B" = CLIP embedding HTTP endpoint（FastAPI）+ 上游 Ray CPU decode，项目 scheduler 观测 endpoint 队列；baseline A = Daft `@daft.cls` Native。观测层换：vLLM 的 prefix_cache_hit_rate/KV/running 在 CLIP 无对应物，改采 CPU decode/resize + CPU→GPU transfer + GPU embed 分阶段计时（"找搬运瓶颈"的画像）。
+
+## 2026-08-01 image-CLIP §6 瓶颈画像门禁通过（GO）+ 代码质量总则
+
+- **动机**：image-CLIP 锁为首个 workload 后、建 runner 前的 fatal-flaw go/no-go 门禁（`image_clip_workload_lock_20260731.md` §6）——CPU 数据准备相对 GPU CLIP forward 有多重？ratio > 0.3 才有异构调度舞台。
+- **脚本**：`code/scripts/profiling/profile_image_clip_bottleneck.py`（~330 LOC，单进程、走 PG bytea、分阶段计时；按新「代码质量总则」写成可复用 stage 函数 `load_clip/pil_decode/cpu_preprocess/clip_encode`，path-B runner 后续直接复用）。
+- **结果（GO）**（`motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`）：ratio = (decode+preprocess)/embed，实用 batch（≥16）**13–17**，远超 0.3。
+  - 瓶颈 = **CLIPProcessor resize+normalize（cpu_preprocess ~5.2 ms/img）**，不是 JPEG decode（0.04 ms）、不是 CPU→GPU transfer（0.07–0.19 ms）、不是 pg_read（0.83 ms/img bulk 摊销）。
+  - B=128 单 batch：CPU preprocess 655 ms vs GPU embed 38 ms → 串行下 GPU 忙 ~5.5%、空转 ~94%。量化了 path-B（分离 CPU preprocess 与 GPU embed 并 overlap）的必要性。
+- **口径澄清**：ratio 分子不含 pg_read（pg_read 单独一列）；不算 DB 读 ratio 仍 13–17，结论不变。"数据搬运瓶颈"更准确是 **CPU 预处理计算瓶颈**。
+- **更正上条 #32 记录**：transformers 5.x `get_image_features` 取 **`.pooler_output`**（512d），非 `.image_embeds`（5.x 无此属性）；脚本与 `image_serving.md §3.3` 均已用对。
+- **规模边界 + redo（已完成 5K 规范跑）**：首跑 1024×50 iters 后，按用户要求加大规模重做——新增 `code/scripts/data/import_coco_images.py`（TRUNCATE+INSERT 单事务原子、记版本、path-B 可复用）载入完整 COCO val **5K**（815MB/33.8s），重跑 `--limit 5000 --iters 100 --batch-sizes 1,16,32,64,128,256`（~5min）。5K 结果 ratio **13.8–18.3**（B=256 渐近 ~18），p95 紧贴 p50，与 1024 首跑完全一致——结论（GO、CPU preprocess 主导）确认。pg_read 0.755ms/img（5K bulk 摊销）。
+- **同步**：`experiment_status_and_gaps.md` §0/§1.4 已统一为 5K canonical GO；`image_clip_workload_lock §0`「暂停 build」→ 解除；`motivation/results/gpu/README.md` 索引；`code/AGENTS.md` 新增「代码质量总则（模块清晰 / 框架分明 / 低耦合 / 目标清晰）」。
+
+## 2026-08-01 文档状态对账：统一 image-first、5K canonical 与 prefix 归因
+
+- **权威关系**：明确 `experiments/plans/experiment_status_and_gaps.md` §0 记录内部执行顺序；内部已锁 A+B image-first，外部“DB↔GPU 经 Daft 桥接”scope/题目仍待导师和学长确认，二者不再混写。
+- **5K 状态**：`AGENTS.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、`code/INFRA_STATUS.md` 和证据台账统一为 COCO val 5K × 100 iterations 已通过 GO；当前进入 path-B runner + image 强 baseline，不再保留 redo pending。
+- **文本轨道**：遗留 feeding/static-credit/prefix/multi-job/runtime baseline 统一标为 `parked-conditional`，不再阻塞 image build；文本历史证据保留。
+- **prefix 归因修正**：证据台账与总纲移除“cache 淘汰压力是开关”的过时确定表述。matched-KV 结果更支持 endpoint consolidation 是驱动；4-ep 饱和深度仍是残余混淆。
+- **代码边界**：`code/INFRA_STATUS.md` 明确区分“5K motivation/profile 已完成”和“image source/frame-cost、CLIP endpoint、path-B runner、正式方法对照尚未实现”，避免把画像写成系统完成。
+- **快速入口**：`overview/current_direction_and_plan.md` 收缩为一页式当前状态卡片，删除被 pivot 取代的旧文本 P0/P1 执行清单。
+
+## 2026-08-01 图像代码架构审阅与 serving 选型校正
+
+- **官方能力校正**：vLLM 当前 pooling runner 已正式支持 CLIP/SigLIP 图像
+  embedding；删除“CLIP 不能复用 vLLM / 没有服务端 batching”的过时前提。
+- **实验边界**：vLLM pooling 接收 encoded image 并在服务内部预处理，不能与
+  `Daft/Ray CPU preprocess -> tensor endpoint` 不加区分地比较。前者作为统一部署
+  和强服务 baseline；主方法路径保留上游预处理边界，并使用 typed backend adapter。
+- **工程规则**：`code/AGENTS.md` 增加中性 work-unit、图像输入表示、预处理归属、
+  embedding 语义、隐藏 batching、流式 collect 禁令和引擎隔离合同；禁止正式 runner
+  复用 `code/scripts/` 内实现。
+- **审阅结论**：现有 text scheduler 可复用，但 source/organizer/BatchRequest/model
+  adapter 尚为 text/token-specific；正式 image runner 前需先完成中性合同和流式
+  Daft->Ray 边界，不能把图像逻辑继续堆入 profiler 单体。
+- **部署约束二次校正**：审阅 AutoDL runbook 后确认当前实例明确不使用 Docker，
+  而 Triton 官方推荐 NGC 容器；主方法第一实现因此改为常驻 Ray CLIP GPU actor，
+  与既有 actor pool/backpressure 直接衔接。Triton保留为容器环境 production upper
+  bound，vLLM pooling 保留强服务 baseline。
+- **代码基础合同**：`BatchRequest` 新增兼容式 `work_units/work_unit`，scheduler、
+  least-work 和 Ray adapter 已消费中性 `estimated_work_units`；新增 `code/src/image/`
+  （embedding semantics、lazy Daft image source、CPU CLIP preprocessor、tensor-only
+  GPU actor），并把 profiler 的 decode/output extraction 改为复用 `src.image`。
+- **导入安全**：COCO importer 改为保留文件名中的稳定 source ID、按 workload
+  原子替换而非 TRUNCATE 全表，并用安全 SQL identifier。
+
+## 2026-08-01 合并远端 CLIP 子阶段画像并收紧证据边界
+
+- **远端合并**：fast-forward 合并 `fa8f77a`，保留 slow-pt processor 子阶段脚本、
+  5K 采样池 CSV 和对原画像“resize 不是大头”的事实修正。
+- **审计修正**：旧脚本以 `p50(total)-Σp50(stage)` 近似 residual，且未记录
+  PG/pgvector；新版改为逐 iteration 求未归因时间再计算 p50/p95，迁移到 psycopg3，
+  补 processor/backend/torch/transformers/PG/pgvector 元数据。历史 CSV 保留原数字，
+  补齐已知运行元数据，不覆盖重算。
+- **结论降级**：能直接声称的只有 resize 约 1.3ms（约 25%）；其余约 3.8ms 是
+  method-wrapper 未覆盖时间，不能归因成 PIL→NumPy、tensor stacking 或 Python 循环。
+  “GPU 空转 95%”改为由串行阶段时间推导的理论非-forward占比；profile 只证明存在
+  overlap 候选空间，不证明 path-B E2E 必然更快。
+- **实现边界复测**：新增 `profile_image_clip_preprocess_variants.py`，在相同图片批次
+  上随机交错 production-np、legacy-pt 与 torchvision 对照，经同一
+  `ClipTensorActor` 输出并执行逐行 embedding cosine 门禁。正式实验不得故意保留
+  slow processor 制造优化空间；fast/production 路径若消除瓶颈，应撤回旧外推。
+- **远端 gate 部署坑**：仓库外旧 runtime env 尚无 `IMAGE_MODEL_PATH`，首次 gate 在
+  模型加载前因空路径 fail。脚本新增非空 fail-fast，runbook 对旧 env 使用当前固定
+  模型目录 fallback，并在运行前 `test -d`；失败 gate 保留作部署诊断，不当成实验。
+- **首次 formal gate 的质量计算 bug**：540 条数据完整，但旧 parity 直接用点积
+  代替 cosine；float16 归一化范数不精确，使完全相同（max_abs=0）的 embedding
+  被误判为 0.998907。改为带范数分母的真 cosine，并让 actor 在 float32 归一化。
+- **fast baseline 修正**：torchvision processor 若仍输入 PIL，会先做转换，实测与
+  slow path 几乎相同，不能代表官方 fast-path 能力。复测拆为 torchvision+PIL 与
+  torchvision tensor-decode 两臂；后者才检验 tensor backend 的性能/质量 trade-off。
+
+## 2026-08-01 CLIP 当前实现边界正式画像完成并同步
+
+- **远端运行**：AutoDL 单卡，提交 `f3d17af`，COCO val 5000 图采样池，batch
+  1/16/32/64/128/256，每格 5 warmup + 30 formal，四变体随机交错；720/720 raw
+  rows 完整，PG18.4/pgvector0.8.5/Torch2.12.1/Transformers5.14.1 元数据齐全。
+- **质量**：修复真 cosine 与 float32 normalization 后，四臂最小 cosine=1、
+  max_abs=0；无 silent skip。首次空模型 env gate 和错误 cosine formal 均保留在远端
+  独立失败目录，不混入正式结果。
+- **性能事实**：torchvision tensor-decode 相对 production-np 的配对串行 profile
+  提升 1.14–1.22×（B≥16 为 30/30 repeats 同向）；但 fast CPU prepare 仍为
+  4.44–4.78ms/image、是 actor 的 13.8–31.2×，阶段失衡未消失。
+- **证据边界**：结果只支持继续建设 E2E overlap runner；不能声称胜过 Daft Native、
+  Ray Data 或 vLLM pooling，也不能把 profile speedup 写成调度策略收益。
+- **同步**：raw CSV、manifest、run log 和七步报告纳入
+  `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
+
+## 2026-08-01 图像 operator-E2E 强 baseline runner
+
+- **方法学分层**：新增 operator E2E（每 query 模型 worker 建立/执行开始 → 最后一批 embedding 返回，排除 Ray 框架启动）
+  与 system E2E（再含统一 pgvector sink）两层边界；micro-profile 不再代替动机
+  baseline，operator gate 也不冒充完整数据库作业时间。
+- **强 baseline**：新增同语义 `daft_native` 与 `daft_ray` 两臂，复用同一个
+  `@daft.cls(gpus=1)` fast torchvision tensor processor + CLIP UDF，仅切换 runner。
+- **项目臂**：新增 Daft lazy source → 有界 Ray CPU preprocess actors → tensor-only
+  GPU actors 流水线；不在 driver 全量 collect，限制 active batches，复用 typed image
+  batch/result 合同。
+- **严谨性**：三臂固定数据行、模型/processor revision、dtype、batch 和 GPU 数，
+  输出 streaming exactly-once、512d/finite/L2 norm/checksum 审计；记录 operator JCT、
+  first-output、images/s 和 per-device GPU util，不再只报告吞吐。
+- **运行顺序**：先 256 行三臂 gate，再 COCO val 5000、3 repeats、Latin-square
+  交错 formal。首轮排除 writeback 以隔离执行器；通过后给三臂接相同 pgvector sink。
+- **生命周期校正**：远端最小 smoke 确认 Daft UDF actor 按 query 重建；project-Ray
+  formal 同样在 warmup 后销毁并重建 pool，并把 worker/model setup 计入 job JCT，
+  防止持久 project actor 与冷 Daft actor 的不公平比较。
+- **Daft 分区校正**：256 行双 GPU gate 显示 PostgreSQL scan 的单输入 partition
+  只激活一个 Daft GPU UDF worker；Daft 0.7.21 NativeRunner 对 `repartition` 和
+  `into_partitions` 都明确 no-op。最终改为 source 端生成两个不重叠 PostgreSQL lazy
+  shards，再 `daft.concat` 保留独立输入 partitions；三臂统一使用同一 sharded source。
+  修正前单卡 gate 仅作配置诊断，不进入性能比较。
+- **强 baseline 追加**：首轮 5K×3 证明 stage-separated project-Ray 稳定快于
+  one-actor-per-GPU Daft，但 Daft UDF 尚未独立标定 fractional-GPU actor shape。
+  正式结论前追加 1/2/4 actors-per-GPU screening；冻结 Daft 最佳形状后，与相同
+  source shards 的 project 重跑，避免把额外 CPU preprocess 并发只给 proposed 臂。
+
+## 2026-08-01 图像 Daft Native/Ray 强基线校准与 operator-E2E formal
+
+- **baseline 校准**：单卡 Native 从 1→2→4 fused actors 持续改善，冻结 4 actor；
+  双卡 Daft Ray 冻结 4 actor，6 actor 退化到 28.23s，8 actor 退化到 179.62s。
+  因此 one-actor-per-GPU 结果只保留为“为什么必须校准”的诊断，不作为正式基线。
+- **formal**：提交 `ba1b710`，PG18.4 COCO val 5000 BYTEA、batch64、cold worker
+  lifecycle、3 repeats。单卡 project median 17.09s/292.54 img/s，相对 Native
+  22.15s/225.76 img/s 为 1.296×；双卡 project 15.77s/316.96 img/s，相对
+  Daft Ray 17.95s/278.50 img/s 为 1.138×。12/12 exactly-once，norm/error 合同通过。
+- **诚实边界**：这是同物理机器各自校准最佳点，不是相同 Ray CPU reservation；
+  当前静态 bounded stage separation 也不是状态感知策略。pgvector system-E2E、
+  bounded direct ceiling、CPU-budget-normalized curve 与 Ray Data baseline 仍待补。
+- **归档**：原始 CSV、逐 run manifest、派生 summary 与七步报告纳入
+  `motivation/results/gpu/image_clip_native_baseline_20260801/`。
+
+## 2026-08-01 图像 baseline 指标审计与 host data path 动机实验预注册
+
+- **历史字段纠错**：schema v1 的 `batch_service` 实为 submission→result wall，
+  包含 CPU ObjectRef 依赖、actor queue、host copy、H2D、forward、D2H 与返回，不能
+  称纯 GPU service；Daft `worker_setup_s=0` 表示 setup 折叠在 timed query，不表示
+  setup 未计入；单卡旧 GPU mean 还平均了第二张空闲卡。
+- **证据降级**：旧结果保留 13.8%–29.6% operator-E2E 事实，但不再由它声称 CPU
+  已饱和、PCIe 已饱和/可忽略或 GPU MFU；第一维 checksum 只作粗粒度异常检查，
+  不能证明完整逐行 embedding 等价。
+- **schema v2**：图像 runner 增加 explicit/folded setup 语义、completion/actor/
+  preprocess/host-copy/H2D/forward/D2H 字段、system per-core CPU、active-device GPU、
+  功耗/时钟/估算能耗、PCIe current/max link、pending peak/未归因 wait、各阶段
+  逻辑 bytes、全维 sum 与按 doc_id 的 rounded digest。CUDA 分段同步只允许
+  diagnostic 模式；MFU 仅在显式输入经校准 FLOP 口径时估算。
+- **新动机计划**：新增 `motivation/plans/image_host_data_path_bottleneck.md`。
+  用 R0 GPU-resident compute ceiling → R1 pinned H2D → R2 pageable/Ray tensor →
+  R3 in-memory JPEG → R4 PostgreSQL/Daft 的表示阶梯，按预注册门槛判定
+  CPU-preprocess、framework/host-copy、PCIe/H2D、GPU compute 或 mixed。
+- **负载定义**：不是盲目增加总行数或追求 `nvidia-smi=100%`；总 work volume 只
+  用于获得至少 60 秒稳态，真正扫描 batch 与 active batches/producer concurrency。
+  连续两个点吞吐增益 <3%、CV≤5% 定义平台，97% 平台吞吐的最小 active work 是
+  minimum saturation point。增加队列只涨 JCT 不涨吞吐时不得继续称“喂得更满”。
+- **研究问题修正**：不预设“主流系统普遍 GPU 空转”。正式问题改为 matched
+  input/model/quality/resource 下，Daft Native/Ray、Ray Data、vLLM pooling 与项目
+  静态路径各自由哪一阶段形成木桶，谁能以更少 GPU bubble 获得更高 E2E 有效工作
+  效率且不牺牲 JCT/SLO。官方系统均先独立校准，matched-resource 与各自最佳上限
+  分表报告。
+
+## 2026-08-01 图像 baseline 分层与主流执行链口径修正
+
+- **关键纠错**：现有 1.296×/1.138× 对照的 Daft UDF 把 CPU preprocess 与 GPU
+  forward 融合在同一个 GPU-reserved actor 中，只能称校准后的 fused Daft baseline。
+  PolarDB/Daft 官方已支持 CPU 算子→GPU 类 UDF 的 staged 异构流水线，因此旧结果
+  不能代表最强 Daft/PolarDB-style baseline。
+- **baseline 补齐**：图像正式矩阵增加 Daft-on-Ray staged 和 Ray Data staged；
+  compute ceiling、direct service、fused framework、staged framework、product SQL、
+  frozen project static、project adaptive 分层报告。架构增量与策略增量分别对比 staged
+  system baseline 和 frozen project static。
+- **产品路线梳理**：把数据库 AI 执行链归纳为 in-database、SQL→remote endpoint、
+  queue-worker、distributed data pipeline 四类；PolarDB 同时存在 Polar_AI→EAS 与
+  Daft-on-Ray 两条路线。不同云硬件只作工业参考，不参与 raw throughput 排名。
+- **传输口径**：存储/DB、序列化/网络、Ray object store/host copy、PCIe H2D、D2H/
+  writeback 分段判定；不再把约 600KB tensor 直接写成 PCIe/数据搬运已成为 binding。
+  GDS 只在存储 I/O 位于关键路径或与 GPU decode 联合成独立臂时考虑。
+- **实现缺口**：`run_image_clip_e2e.py` 当前只覆盖 fused Daft 与 project-Ray；下一步
+  需新增 staged Daft-on-Ray/Ray Data arms，再做 R0→R4、统一 pgvector sink 和策略实验。
+
+## 2026-08-02 数据库 AI 算子评价指标合同
+
+- **外部口径审计**：综合 SemBench、LOTUS、Palimpzest、Cortex AISQL、vLLM serving、
+  Ray Data 与 PolarDB 多模态 benchmark，确认正式评价不能只报告吞吐；最低证据链为
+  质量、JCT/E2E、容量、尾延迟/SLO、成本/work、内存、失败与扩展性。
+- **指标合同**：在 `experiments/plans/baseline_reference.md` 固化每个正式 run 的身份、
+  工作量、正确性、任务质量、时间、容量、成本、资源、调度、扩展和统计字段，并区分
+  managed product 可观察指标与同机开源 baseline 的内部诊断指标。
+- **图像缺口**：schema v9 已覆盖 stage timing、CPU/GPU/能耗/传输与执行正确性，
+  但 ground-truth 质量、失败 run 结构化落盘、统一 system sink、Ray object-store/spill
+  和逐行尾延迟仍待补。任务质量、失败记录和 system sink 被列为正式排名阻断项。
+
+## 2026-08-02 Baseline 检索流程与过期文档清理
+
+- **可复核检索**：在 `baseline_reference.md` 固化“先定义算子/层级→官方 capability→
+  官方 benchmark/code→数据库论文→部署平台”的来源顺序、来源卡片、A–E 证据等级、
+  最小强 baseline 集合与过期触发条件。
+- **公开 benchmark 纠错**：删除“多模态 benchmark 无现成协议、厂商全闭源”和
+  “统一叫 BigVectorBench”的旧说法，改为 Ray/PolarDB 公开 file/object track、
+  任务质量协议与项目 PostgreSQL database-operator track 分层。
+- **状态同步**：Daft staged 与 Ray Data staged 已从“待实现/未测”更新为“runner 和
+  256 行资源/正确性 gate 已通过，独立 calibration/formal 未完成”；gate 不进入性能排名。
+- **入口去重**：`experiments/README.md` 不再复制大段容易过期的文本参数和下一步，
+  历史数字回归 evidence registry/结果目录，当前执行顺序只指向 status §0。
+- **规则同步**：`code/AGENTS.md` 的“所有实验必须 tokens/s”旧规则改为按算子语义
+  采集文本、分类和 embedding 指标；`code/INFRA_STATUS.md` 同步 staged gate 状态，
+  文本 baseline matrix 增加历史阅读范围提示。
+- **研究口径纠错**：`research/daft_db_gpu_bridge_direction_scope_20260731.md` 删除
+  “执行优化空白”“厂商全闭源”“统一 BigVectorBench”和 OceanBase 文本 embedding
+  冒充图像 CLIP baseline 的旧表述，改为公开 benchmark + 同机 DB track 双轨协议。
+
+## 2026-08-02 图像 baseline 原生性门禁
+
+- **口径收紧**：正式 baseline 必须直接运行 vendor benchmark、内置 AI Function 或
+  vendor-native API graph；项目只能适配 source/sink/审计/指标。项目自写 actor pool、
+  inflight/credit/backpressure 或重写执行图不得进入 baseline 主排名。
+- **代码调整**：新增 Daft 内置 `decode_image → embed_image` arm；Ray Data graph 删除
+  项目 `max_active_batches`，由 Ray Data 自己管理 actor task/backpressure。旧
+  `daft_native/daft_ray/daft_staged` 明确降级为 diagnostic reference，formal 默认
+  fail closed，只有显式 diagnostic override 才能运行且 eligibility 仍为 false。
+- **可审计 provenance**：schema v10/manifest 新增 implementation provenance、
+  scheduler owner、custom scheduling、formal eligibility 和 upstream source；新增
+  `code/src/image/baseline_contract.py` 与对应单测。
+- **官方代码固定**：Daft image-classification vendor-code parity 固定到
+  `Eventual-Inc/Daft@3f5bdd175b7de3dcdf35765e1ba604b5c1cb8e15`，并记录官方
+  `README.md`、`daft_main.py`、`ray_data_main.py` 的 SHA256、803,580-row workload
+  和适配白名单；禁止重写 vendor batching/actor/backpressure。
+- **实验路线修正**：旧 1.296×/1.138× 保留为项目自写 Daft UDF 的阶段耦合动机，
+  不再称官方 Daft baseline。正式图像比较改为 Daft built-in、固定 upstream commit 的
+  官方 803,580-row ResNet18 Daft/Ray Data 脚本、Ray Data database native graph、
+  bounded direct 和 frozen project static。
+
+## 2026-08-02 文本 baseline 原生性审计与复测准备
+
+- **角色纠错**：文本 harness 不再把全部 arms 混称 official baseline。vLLM Bench
+  固定为 service ceiling；项目 `bounded_http`/`bounded_completions` 固定为 direct
+  controls；Daft built-in `functions.prompt`、Ray Data HTTP Processor 与通过部署门禁的
+  OceanBase `AI_COMPLETE` 才具有 vendor-native baseline 资格。
+- **代码分层**：删除扁平 `baselines/official_runtime.py`，拆为
+  `baselines/runtime/{common,daft_prompt,ray_data_http}.py`；新增 `provenance.py` 统一
+  arm 身份、调度所有者、custom scheduling、formal eligibility 与 upstream source。
+  进一步把 vLLM Bench、bounded controls、OceanBase 分别归入 `ceilings/`、`controls/`、
+  `products/`，根层只保留共享合同、结果和编排，避免后续新增 adapter 再次扁平堆积。
+- **Fail-closed**：CLI summary、resolved gate config 和 validity gate 记录/核验 provenance；
+  缺字段或原生 arm 含项目调度即失败。服务端 counter 新增 prompt/generation/total
+  tokens/s，保证 Daft 无 output usage 时仍可按统一服务工作量比较。
+- **配置纠错**：删除 Daft adapter 未接线的 `partition_count` calibration 假因子；Ray
+  Data 只扫描官方 batch/concurrency。新增 4,096 held-out、≥60 秒、1 warmup + 3
+  interleaved repeats 的 formal 合同。
+- **执行边界**：旧 64/256 行数据继续作为 gate/screening；因缺少长稳态、交错三重复和
+  新 provenance 字段，不进入正式排名。用户已关闭 AutoDL，本次只完成本地代码/文档/
+  测试准备，远端重测等待开机。
+- **学习材料**：新增 `learning/text_native_baseline_guide.md`，用数据链路解释
+  ceiling/control/native/project、Chat/Completions 分轨、64→512→4096 流程和双 endpoint
+  group throughput，避免后续只看单个 tokens/s 或把 barrier 当逐请求 P99。
+
+## 2026-08-02 全项目代码结构重构规划
+
+- **现状确认**：此前只整理了文本 baseline；`src` 顶层仍有 22 个 Python 文件，
+  `scripts/tests` 分别有 22/58 个顶层文件，并存在 profiler/scheduling 双入口与多个
+  500–1,923 行单体文件。
+- **双维度架构**：公共执行核心按 data/planning/scheduling/serving/observability/
+  sinks/experiments 分层；文本与图像只在 `modalities/` 保存合同、代价、预处理、payload、
+  后端和质量评价，不复制两套 scheduler。
+- **baseline 分轨**：目标结构为 `baselines/common|text|image`，文本与图像分别维护
+  ceiling/control/framework/product/vendor adapter，共用 provenance/result/gate 合同。
+- **迁移纪律**：先冻结边界和清除兼容入口，再整理模态/baseline，之后抽公共层并逐个拆
+  大文件；路径迁移不与算法修改或全仓格式化混合。完整计划见
+  `code/ARCHITECTURE_REFACTOR_PLAN.md`。
+
+## 2026-08-02 metrics、backend 与 shared-vLLM 大文件拆分
+
+- `observability/metrics.py` 拆为 timing、CSV、statistics、resources、vLLM 五个职责模块；
+  `serving/backends.py` 拆为 common、embedding、completion，公开包导入保持兼容。
+- 1,923 行 shared-vLLM 单体拆为 config、runtime、evidence、metrics、runner；配置、执行、
+  Ray 观测、exactly-once/resume 证据和组级统计不再相互混放。
+- 本次只改变模块归属与测试 patch 位置，不改变 CLI、算法、默认值或 CSV schema。
+- 依赖无关测试 580/580 通过；Daft/psycopg 和 macOS Ray 权限相关用例仍需在完整远端环境
+  验证。scripts/tests 物理迁移保留为下一独立提交。
+
+## 2026-08-02 scripts 与 tests 物理分组
+
+- 22 个 CLI 入口按 data/services/baselines/profiling/experiments/analysis 分组；58 个测试
+  文件按 data/planning/scheduling/serving/modalities/observability/baselines/
+  experiments/infrastructure/architecture 镜像归档。
+- 当前 README、部署指南、实验计划和结果 README 中的复现命令同步到新路径；已执行实验
+  的 raw JSON manifest 不改写，保留其原始命令证据。
+- 所有脚本/测试使用向上查找 `code/src` 的稳定 root 解析，不依赖固定 `parents[n]`；
+  unittest discovery 显式指定 `-t code`，避免 tests/experiments 与 src/experiments 冲突。
+- 目录迁移后依赖无关测试为 586/586 通过；完整 607 项中的其余环境用例需要远端
+  Daft、psycopg 和 Ray
+  权限环境。
+
+## 2026-08-03 架构重构远端门禁与根入口同步
+
+- 在独立 AutoDL worktree `6380a96` 完成完整依赖测试，622/622 通过；主仓库中的
+  未跟踪历史实验数据未清理、未覆盖。
+- 双 4090 文本链路用匹配的 512 行 immutable manifest 完成 Daft→Ray actor→双 vLLM
+  smoke；图像 Daft staged 与 Ray Data staged 均完成 256/256 exactly-once gate，输出
+  digest 一致。上述均为可运行性/正确性证据，不进入正式性能排名。
+- 发现服务器旧 `rc1_dataorg_2ep_smoke.json` 声明 512 行却引用 2048 行 manifest；
+  fail-closed 正确拒绝，正式运行不得复用该旧本地 gate。
+- 将代码架构重构快进合入并推送 `main`；根 `README.md` 同步当前代码分层、baseline
+  身份、已完成 gate、当前证据边界和近期执行顺序，移除重构前扁平脚本树与过期目标。
+## 2026-08-03 baseline 总入口收敛与 embedding parity 诊断修复
+
+- 将 `experiments/plans/baseline_reference.md` 收敛为 AI_COMPLETE、AI_EMBED、
+  AI_CLASSIFY 三类算子的统一 baseline/benchmark 入口；专项文件继续分别承担文本执行、
+  图像 workload、状态审计和厂商/论文证据，避免物理合并造成重复与过期。
+- 修复 `282e09f` 中 `--save-embeddings` 误读 `ExecutionResult.embeddings` 的问题：
+  默认流式路径不保留矩阵，小规模 gate 仅通过可选 `EmbeddingCapture` 捕获已验证输出；
+  capture-enabled timing 明确禁止用于性能结论。
+
+## 2026-08-03 Daft built-in / project 图像 embedding 语义门禁
+
+- AutoDL commit `6092b84` 上完成 Daft built-in `embed_image` 与 `project_ray` 的同一
+  256 图逐行 capture；两臂均 256/256、512 维、finite、exactly-once，无重复或漏行。
+- Daft raw norm P50=10.4718，项目 raw norm P50=1.0；分别 L2 normalize 后逐行 cosine
+  P1=0.999788、P50=0.999985、min=0.999716，非自身 overlap@10 mean=0.9949，超过预注册
+  门槛，判定为 `SCALE_NORMALIZATION_ONLY`。
+- 正式 AI_EMBED baseline 可使用统一 normalized contract，但归一化成本必须计入每个 arm
+  的 E2E，并保留 vendor raw 辅助结果。capture timing 与 256 图冷启动 gate 均不进入性能
+  排名；两条默认无 capture 路径也已在远端通过。
+- 报告与派生摘要保存于
+  `motivation/results/gpu/image_embedding_parity_20260803/`；原始 `.npz`、逐行 CSV 与
+  manifest 保留在 AutoDL experiment-artifacts，不提交大矩阵。
+
+## 2026-08-03 baseline / benchmark 文档收敛
+
+- 冻结 `experiments/plans/baseline_reference.md` 为三类算子的唯一 baseline 总入口；
+  文本执行、图像 workload、状态审计、外部指标证据、学习讲解和结果目录各自只保留
+  单一职责，不再复制总表或“当前下一步”。
+- 将混有旧预注册、逐日结果和过期执行顺序的
+  `database_ai_operator_baseline_matrix_20260729.md` 完整移入 `plans/archive/`，保留历史
+  证据但从当前 README、索引、runner 说明和结果入口移除。
+- 当前运行只读取 `baseline_reference.md`、对应模态执行合同和
+  `experiment_status_and_gaps.md` §0；`code_doc/superpowers/` 与 `plans/archive/` 仅作
+  设计历史。
+
+## 2026-08-03 图像长稳态实验执行顺序
+
+- 将服务器后续任务收敛为五段 fail-closed 流程：当前代码 project static 复验 →
+  normalized output contract/官方 vendor-code 门禁 → 各原生 arm 独立 calibration →
+  frozen operator formal → 统一 pgvector system E2E 与方法消融。
+- 明确 60K unique×logical passes、单 run≥60s、固定 seed 交错 1+3、3% 近最优选简单
+  点、CV>10% 补重复、动态只对 frozen static 等规则；不以扩大无效网格换取运行时长。
+- 修正 AutoDL 后台启动模板：runtime env 必须通过 `set -a` 导出，否则 matrix 子进程
+  在第 0 个 run 缺少 `DATABASE_URL`；补充唯一输出目录、监控、resume 和 0-run 清理
+  边界。科学合同在 image workload §10，部署文档只保留可执行命令。
+
+## 2026-08-03 图像原生 baseline 独立校准完成（campaign §10 step 3）
+
+campaign §10 五步：① project static ✅ → ② normalized output contract/官方 vendor-code
+门禁 ⏸（codex WIP）→ **③ 各 arm 独立 calibration ✅（本轮完成）** → ④ frozen operator
+formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④）。
+
+**③ 本轮完成**（commit `0f66017` + `f1cb248`）：
+- **Daft built-in `embed_image`**（vendor-native，`scheduler_owner=daft`）：
+  batch {16,32,64,128,256}×2 rep @ 5000 COCO/双卡。平台点 batch=64≈**177 img/s**
+  （CV 1.1%）。GPU 平均利用率仅 **1.2–4.1%**（双卡均 claim），近末端发射（first_output≈e2e）。
+- **Ray Data `map_batches`**（framework-native，`scheduler_owner=ray_data`，`normalize=True`）：
+  Phase 1 batch 扫（batch 几乎无影响，321–344）+ Phase 2 cpu_workers 扫（平台 cpu=8）。
+  最佳 batch=64/cpu=8≈**346 img/s**（CV 1.2%），GPU 平均利用率 **1.1–3.9%**，first_output≈9s（真流式）。
+  Ray Data stats 显示 binding stage=**CPU preprocess**（171 rows/single-task，GPU predictor 1662 rows/single-task 被饿）。
+- **关键动机信号**：两个 framework-native baseline 在真实 bytea-in-PG 链路上都把两张 4090
+  闲置到 ~2–4%，binding 在 CPU preprocess/喂入侧（与 R0–R2 ceiling ~9.7K img/s、R3 CPU preprocess ~5ms/img
+  一致）。Ray Data ~1.95× Daft built-in（5K/双卡/cpu≈4 同条件对照，**校准条件下的 cross-check，非正式排名**）。
+- **修正点**：先前误用 `--limit 60000 --dataset-passes 2`=120K 校准导致 Daft 单 PhysicalScan 漏斗
+  （458% CPU/189GB RSS）饿死 GPU 池；改回文档 §5.4 的 5000 规模后双卡均激活、正常流式。
+- **③ 不排名**：统一 L2-normalized contract 是 ②（codex），未推送前不做 ④ formal ranking。
+  Daft raw vs Ray Data/project normalized 的正式横向比较待 ②。
+
+报告与派生摘要：`motivation/results/gpu/daft_builtin_calibration_20260803/`、
+`motivation/results/gpu/ray_data_calibration_20260803/`（七步 README + summary + raw runs.csv）。
+原始 per-run manifest + calibration.log 保留在 AutoDL experiment-artifacts。
+
+## 2026-08-03 图像 embedding 统一输出合同
+
+- runner schema 升至 v11，新增 `arm_default/l2_normalized` 输出合同；正式跨系统排名必须
+  显式使用 `l2_normalized`，并记录 requested/effective contract、normalization owner
+  与计时归属。
+- Daft built-in 仍使用官方 `decode_image→embed_image` 原生图；adapter 仅在消费官方
+  embedding 后执行计时内 CPU L2 normalization，不注入项目 batching、credit、router
+  或 actor 调度。历史 raw-output Daft 数据只保留作 batch screening。
+- normalized parity 远端门禁在 `6f0954b` 上通过：Daft/project 均为单位 norm、
+  exactly-once，cosine P1=0.999800、min=0.999727、non-self overlap@10=0.9949。
+- 新增 Ray Data 原生 batch 上界复核模板：固定 cpu8/gpu2/source4，只扫官方
+  batch16/64/256/512。25K×1 预跑 formal 仅约 30 秒，被 60 秒门禁拒绝；正式模板改为
+  60K unique×2 passes、1+2 交错；512 未改善 3% 即停止。
+- 60K×2 复核在 `d73fbfb` 上完成 12/12、0 incident。formal 中位吞吐：batch16
+  935.109、batch64 957.100、batch256 919.193、batch512 883.221 img/s；各点 CV
+  0.03%–2.08%，全部 exactly-once、L2-normalized。冻结 batch64；512 相对慢 7.719%，
+  按 stop condition 不测 1024。原始 runs、matrix manifest 与派生 summary 已同步 Git。
+- normalized parity 的两份 256×512 `.npz`、capture sidecar 与逐行 CSV 同步 Git；本地用
+  `probe_embedding_parity.py` 重算与服务器 summary/per-row 完全一致。审计同时发现旧
+  sidecar `note` 未随输出合同变化；raw 保持不变，runner 改为在 sidecar 记录实际
+  requested/effective contract、normalization owner 与 timed-boundary 标志。
+- `238f261` 已在服务器执行全量 `unittest discover`，628/628 通过；另跑 64 图 Daft
+  normalized capture 代码门禁，sidecar 正确写入 effective contract、owner、timed boundary
+  和 `timing_valid_for_performance=false`。该临时 gate 不产生研究结论，核验后删除；成功
+  parity 与 60K×2 calibration artifact 继续保留。
+
+
+## 2026-08-03 project_ray 静态配置选择证据归档 + 状态修正
+
+- 把只在服务器的两轮 project-static 矩阵归档进 Git：
+  `motivation/results/gpu/image_project_static_60k_x2_20260803/`（两轮 runs.csv + matrix_manifest
+  + summary + 七步报告）。两轮 commit `1f2e4fe`(08-02) + `29b256b`(08-03)，4 配置 cpu{8,16}×active{16,32}×3 formal @60K×2。
+- **冻结 project 静态点 `cpu16/active32/batch64`**：两轮 formal 中位 **1701.0 / 1681.0 img/s**（~1.2% 差）、
+  exactly-once、120000/60000、max_norm_error=0。cpu16 是主杠杆（cpu8→16 +45–60%），active32 在 cpu16 时再 +15%。
+- **定位为"静态配置选择证据"，不是跨系统正式排名**：两轮均为旧 schema（无 `schema_version`、
+  无 `embedding_output_contract` 字段），早于 `03b815d` 统一合同。最终排名须在当前 commit + `l2_normalized` 合同下重跑。
+- 修正过期状态：`experiment_status_and_gaps.md` §0 的"② 待独立校准与 formal"改为反映
+  原生校准已完成（Daft built-in + Ray Data native）、project 静态点已冻结、统一合同已落地；
+  下一步 Daft built-in 60K 长门禁 → 四臂同机 formal。
+- 同时确认 codex `238f261`+`f450e07` 已归档 Ray Data 60K×2 长稳态 crosscheck（batch64≈957 img/s）
+  并收紧了我两份校准报告的 claim 边界（GPU busy 采样≠MFU、"候选限制阶段"非定论）——接受这些收紧。
+
+
+## 2026-08-03 Daft built-in 60K 物化-cap 决策 + 2-arm formal 启动
+
+- **Daft built-in 60K×1 长门禁结论**：3 次公平环境尝试（默认 / `RAY_TMPDIR` /
+  `/tmp/ray`→大盘 symlink）全部 `OutOfDiskError`。根因：Daft built-in 的
+  `DistributedActorPoolProject` **物化执行（不流式）**，60K×1 已超 Ray object store
+  → spill 填满小 `/tmp`（30G overlay 仅 7G free）；60K×2（formal 规模）需 ~190GB
+  物化（即 120K 的 189GB 漏斗 RSS），远超 77GB object store + 磁盘。**Definitive：
+  Daft built-in 无法 scale 到 60K×2 formal**。runner 的 `ray.init` 不传 `_temp_dir`/
+  `object_store_memory`，故 env 重定向无效。保留 symlink gate log 作 cap 证据。
+- **用户决策（option A）**：正式排名 = **Ray Data native vs project static @ 60K×2
+  held-out**（都流式、≥60s、同合同）；**Daft built-in 单列**（5K 校准 177 img/s +
+  60K 物化-cap 发现，本身是"物化 native baseline 不可扩展"的证据，支持课题执行结构论点）；
+  direct ceiling 单独容量参照。
+- **2-arm formal 启动**（commit `37dc8fd`，dir `ai_embed_formal_2arm_60kx2_20260803`）：
+  Ray Data(batch64/cpu8/gpu2/source4) + project(cpu16/active32/gpu2/source4)，workload
+  `coco_train2017_heldout`(58287 unique，与 calibration 60k 完全 disjoint)×2=116574 行/run，
+  1 warmup + 3 formal，alternate interleave（R1 ray→proj, R2 proj→ray, R3 ray→proj），
+  `--embedding-output-contract l2_normalized`。主指标 `verified_operator_jct_s`=
+  `operator_e2e_s`(exactly_once filtered)。成功门槛：project 相对 Ray Data ≥5% + 3/3 同向。
+- **heldout 数据加载**（`import_coco_images.py` 新增 `--offset`，commit `37dc8fd`）：
+  zip sorted [60000:118287] = 58287 行，与 60k calibration disjoint（验证：heldout 不在
+  任何跨 workload doc_id dup 中；那 956 个 dup 是 val∩60k 的 `int(stem)` 撞零头、不同图，
+  formal 不用 val，不影响）。
+- cron `8741a68c` 监控 formal 完成。
+
+
+## 2026-08-03 AI_EMBED operator 正式对比结果（step 6 + step 8）——修正 headline
+
+**核心修正**：step-6 的 "project 比 Ray Data 快 45.7%" **是虚高**——Ray Data 用了 5K 校准冻结的
+cpu8（其 60K×2 弱配置）。matched-resource（step 8）抓出：Ray Data 在 60K×2 下 cpu8→cpu16 涨 56%
+（905→1415 img/s），真实强配置是 cpu16。
+
+**Table B matched-resource 2×2（60K×2 held-out，l2_normalized，3 formal/cell，CV≤3.2%）operator_jct**：
+- @cpu8：Ray Data 128.75s vs project 112.24s → project **−12.8%**
+- @cpu16：Ray Data 82.41s vs project 69.95s → project **−15.1%**
+→ 同 CPU 下 project 两档都显著快（≥5%、方向一致）→ **执行结构收益真实，约 13–15%**（非纯资源）。
+
+**Table A best-achievable（修正）**：project(cpu16) vs Ray Data(cpu16) = **project −15.1%**（公平的最强对最强）。
+step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
+
+其它：project 更早出首条（22s vs 40–46s）、略更省能（matched img/J 略高）；两臂 **GPU 都饥饿**
+（busy 6–10%，双卡均 claim，远未饱和——瓶颈在喂入侧）；两臂都 scale CPU（+56–60% cpu8→16）。
+
+**Daft built-in**：物化执行，30K×1 即 OutOfDisk（max < 30K，远小于先前估计的 ~59K；每行 ~2.5MB 物化）。
+按 option-A 单列。Daft-max 探针重测中（12K/20K/25K）。注意：Daft max（~20-25K）远小于 project 可靠
+测量规模（~100K），3-arm 同规模一致性 run 在 fast arm 侧可能太短——待 Daft max 定后评估可行性。
+
+报告 + summary + raw：`experiments/results/image_ai_embed_operator_formal_20260803/`。

@@ -30,7 +30,7 @@ motivation/results/pg18_4_fake/system_profile.csv
 入口脚本：
 
 ```text
-code/scripts/postgres_ai_operator_profile.py
+code/scripts/profiling/postgres_ai_operator_profile.py
 ```
 
 本轮新增能力：
@@ -103,7 +103,7 @@ $py = '.conda\pg-ai-profile\python.exe'
 $out = 'motivation\results\pg18_4_fake\system_profile.csv'
 foreach ($executor in @('python','ray_actor')) {
   foreach ($strategy in @('fine','coalesced')) {
-    & $py code\scripts\postgres_ai_operator_profile.py `
+    & $py code\scripts\profiling\postgres_ai_operator_profile.py `
       --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
       --setup --seed-rows 4096 --total-rows 4096 `
       --db-fetch-rows 512 --ray-batch-rows 256 `

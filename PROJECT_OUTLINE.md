@@ -12,6 +12,8 @@
 
 **2026-07-29 文献基线升级**：多模态仍是正文泛化验证。算子代价估计从“补充讨论”提升为数据组织和调度提交控制共同依赖的重要组件，但不单独扩张成第三项研究内容。首版采用简单解析模型 + profile 校准 + residual correction，用于 work/service/JCT、active-work/K、组织、路由和多 job remaining-work/SLO 判断。
 
+**2026-08-01 image-first 执行方向锁定**：项目内部已锁定 **A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）**，首个 workload 为 image AI_EMBED（CLIP）；文本 vLLM 遗留实验转为 `parked-conditional`，不是废弃。外部题目是否采用“DB↔GPU 经 Daft 桥接”的 scope reframe 仍待导师/学长确认，这与内部实施顺序分开记录。CLIP 5K 初始 slow-pt 画像和当前实现边界复测均通过门禁：production-np 的 CPU prepare 约 5.2–5.6ms/image；更强 torchvision tensor-decode 虽带来约 1.14–1.22× 串行 profile 加速，CPU prepare 仍为 actor 的 13.8–31.2×。当前进入 path-B E2E runner 与强 baseline 建设，见 `experiments/plans/experiment_status_and_gaps.md` §0、`experiments/plans/image_clip_workload_lock_20260731.md` 和 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
+
 当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本文中作为 workload 入口，研究重点是上游 Ray 数据执行层的调度优化——探索数据组织策略和提交控制策略，利用 Ray actor 实现去中心化自适应提交。Daft 作为数据引擎，提供 Rust 执行内核、Arrow 零拷贝、Morsel 流式背压和 `@daft.cls` GPU UDF 接口。
 
 ## 研究内容
@@ -44,6 +46,7 @@
 | `motivation/README.md` | 动机测试目录总入口 |
 | `motivation/plans/workloads.md` | 三类 AI 算子场景、动机测试和后续实验优先级 |
 | `motivation/plans/integration.md` | PostgreSQL / 外部 worker / Ray / GPU model service / writeback 集成路线 |
+| `motivation/plans/image_host_data_path_bottleneck.md` | 图像 R0→R4 容量/表示阶梯与 CPU/Ray/PCIe/GPU 瓶颈判决 |
 | `motivation/results/README.md` | 动机测试结果阅读顺序和结论边界 |
 | `motivation/results/gpu/README.md` | 真实 GPU-backed E2E 结果入口 |
 
@@ -90,17 +93,53 @@
      但 1024 行反转为 -5.156%，并产生更多 submission、较高能耗和较低 MFU。
      因此经典 BFD 仅保留为条件性候选；下一版必须联合搜索 row cap、token
      budget 与 packing objective，不能把 512 单点写成普遍收益。
+   - **2026-07-31 RC1 数据组织系统重测（干净平台，取代 07-25/26 gropy；07-18/19 保留作历史动机参照）**：
+     `experiments/results/rc1_data_organization/README.md`。5 策略（fixed_rows/sequential token_budget/
+     length_align/best_fit BFD/row_cap_aware）× {2-ep/0.9, 4-ep/0.43}，1.5B，sharegpt_multiturn，cache-ON，
+     含 P0 指标（prefix_cache_hit_rate/TTFT）。**regime-dependent 闭合**：2-ep/0.9（每 endpoint KV 池占 GPU 0.9、无压力 max 7–10%）
+     5 策略 E2E 50–56k 紧凑、fixed≈seq>bestfit>rowcap>lenalign；4-ep/0.43（2 endpoint/GPU 各占 0.43、KV max 98–100% 饱和）分化 39–50k、
+     **排名反转为 seq>fixed>>rowcap≈bestfit>lenalign**。机制（`prefix_group_ratio`）：重排序类 organizer 打散
+     prefix 组（ratio 0.03）→ 4-ep 命中从 0.60–0.76 崩到 0.06–0.07 → TTFT 翻倍、best_fit/row_cap SLO 60%；
+     保序类 ratio 0.13–0.29、命中 0.47–0.48。consolidation 是惩罚（4-ep −10～−26% + 能耗 +40%）。**与 #28 routing /
+     KV-sweep 闭环：上游策略价值在 4-ep 饱和 regime 才显现，2-ep 是干净对照基线。** ✅ feeding 门禁已补
+     （batched bounded，gate 放宽 ≥2 endpoint）：2-ep 真上限 79,488（策略 63–71%，缺口=准入节流非饿死）；
+     4-ep bounded 24,733 病态（策略超过）→ 准入控制是吞吐杠杆、效应随 regime 反向（2-ep 可放开 W 提速、4-ep 防 thrash 应保留）。
    - 边界：本地 rehearsal，不代表 PG18.3 内部平台结果。
    - 状态与缺口审计：`experiments/plans/experiment_status_and_gaps.md`。
-2. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
+2. `motivation/results/gpu/image_clip_native_baseline_20260801/README.md`
+   - **图像 CLIP operator-E2E 项目自写 Daft UDF 诊断（历史 image-first 动机入口）**。
+   - 先校准 Daft fractional-GPU actor shape，再做 COCO 5000 图×3 formal：
+     project-Ray 相对项目自写单卡 `daft_native` UDF 1.296×，相对项目自写双卡
+     `daft_ray` UDF 1.138×。
+   - 结论只支持静态阶段拆分在同物理机器上优于独立校准的项目自写 fused UDF；尚不包含
+     Daft-on-Ray/Ray Data staged、pgvector sink、bounded direct ceiling，也不是动态
+     状态感知策略收益。
+3. `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md`
+   - **COCO val 5K × 100 iterations 的 image-CLIP fatal-flaw 门禁**。
+   - 实用 batch（≥16）的 CPU 准备/GPU embed 比为 `13.8–18.3`，B=128 串行下 GPU 约 95% 时间等待上游。
+   - production-np 总 CPU prepare 约 5.2–5.6ms/image；torchvision tensor-decode
+     降至约 4.4–4.8ms，但仍显著重于 GPU actor。历史 method wrapper 只直接归因出
+     resize 约 1.3ms，其余 processor 时间仍未细分。
+   - 这是 motivation/profile 的 GO 证据，不是 path-B 策略胜过 Daft 原生实现的结果。
+4. `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`
    - 真实 GPU-backed embedding 链路拆分（AI_EMBED 预研，已完成）。
    - 1024 行下 fine / coalesced 端到端约 `13.4x`。
    - 16384 行下 operator 和 writeback 均为大块成本。
-3. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
+5. `motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md`
    - 双 endpoint 下 Ray task / actor 开始体现并发 routing 价值。
    - 端到端收益仍受 writeback 约束。
 
 ## 近期优先级
+
+图像轨道在继续策略实验前，先按
+`motivation/plans/image_host_data_path_bottleneck.md` 完成 R0→R4 表示阶梯与
+schema v2 复测。R0–R2 已把 pageable FP32 ownership copy/dtype conversion 与 pinned H2D
+分开；Ray Data 60K×2 原生长稳态复核冻结 `batch64/cpu8/gpu2/source4`（957.100 img/s，
+2 repeats，CV 0.347%），batch512 相对慢 7.719%，不继续扫 1024。该结果支持 CPU
+preprocess/喂入是当前候选限制，但不把 `nvidia-smi` util 写成 MFU 或硬件因果证明。
+Daft built-in 与 Ray Data 均已独立校准，schema v11 计时内 normalized contract parity
+已通过；下一步是同 60K×2、1+3 的原生 baseline/project 正式排名。项目自写 Daft
+staged/fused 仅保留为诊断 reference；官方 ResNet18 仍需固定 upstream commit 与数据许可。
 
 **已完成**：
 - ✅ vLLM + Qwen2.5-1.5B baseline 建立（07-18）
@@ -164,35 +203,47 @@
   聚合吞吐 +9.57%、max P99 -22.52%、max JCT -15.89%，Jain median
   0.9961。4-job 三次吞吐变化为 +8.43%/-0.28%/+22.60%，因此仅记为
   高竞争条件性候选，需 held-out 复验
-- ✅ 官方 direct baseline C32/C64/C128 校准：vLLM Bench total tokens/s
-  4,930→8,342→12,762，C128 日志确认 peak concurrency=128；历史约
+- ✅ service ceiling / direct-control C32/C64/C128/C256 校准：vLLM Bench total
+  tokens/s 4,930→8,342→12,762→15,351；512 行 C256 的 bounded HTTP 为
+  14,532 tokens/s。C128→C256 仍增长 24.3%/33.0%，因此 C256 只称当前
+  `max_num_seqs=256` 配置硬上限；历史约
   8.0–8.2K 只属于当时 project profiler/arrival-replay 链路，不能再称为
   vLLM 或双 4090 物理上限。bounded C128 暴露 httpx 默认 100 连接上限，
   显式扩展连接池后 re-gate 达到 12,472 tokens/s，与 vLLM Bench 仅差 2.3%
+- ✅ 文本 baseline 原生性审计与复测合同：vLLM Bench 固定为 service ceiling，
+  bounded Chat/Completions 固定为项目 direct controls；Daft built-in prompt、Ray Data
+  Processor 和通过 capability gate 的 OceanBase 才进入 native baseline。代码已增加
+  provenance fail-closed、服务端统一 token throughput，并删除未接线的 Daft
+  `partition_count` 扫描；4,096 held-out formal 等待服务器开机后执行
+- ✅ baseline 文档入口收敛：`experiments/plans/baseline_reference.md` 统一维护三类算子的
+  分层、原生性、证据等级、指标与门禁；旧 2026-07-29 文本矩阵已移入 archive，不再
+  作为当前执行依据
 
-**当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）**：
+**当前缺口与顺序（以 `experiments/plans/experiment_status_and_gaps.md` §0 为准）**：
 
-1. **P0**：先锁定同规模同条件 baseline。C64/C128
-   direct-vLLM/bounded 已在相同并发下对齐；现有 256 行清单无法暴露 C256，
-   下一 ceiling 点至少使用 512 行。随后让 project profiler
-   在同 manifest、Chat Completions、no replay 下运行，比较 direct ceiling、
-   ours 与达到同吞吐所需的 active work。OceanBase、Daft Native/Ray 与
-   Ray Data 只在各自独立校准后进入 held-out，不能用弱默认值排名。
-2. **P1**：Shared-vLLM 核心 1/2/4-job equal-workload 矩阵已完成；baseline
-   锁定后再用 held-out repeats 确认 4-job 稳定性，并分别验证 staggered idle
-   borrowing、weighted overlap fairness 和异构 workload mix。
-3. **P1**：Prefix cache 开启后的独立机制实验；必须同时报告 cache 配置与命中
-   证据，不能用当前 cache-off 数据推断缓存收益。
-4. **P1**：Length-align+token-budget 的正式重复；与 prefix grouping 分开消融。
-5. **P2（文本门禁已满足，可启动）**：多模态泛化验证（CLIP embedding +
-   ImageNet/HF subset），复用 organizer/scheduler/tracing，仅替换 cost adapter。
-6. 多 endpoint / 多 GPU 已在 2×4090 上完成 request replay、active-work
-   与 equal-weight 1/2/4-job 重复 formal；路由增量、staggered/weighted
-   公平性与故障迁移仍待验证。
-7. 算子代价估计需增加独立时间段/新 workload 校准、预测区间、配置 ranking
-   与决策 regret；它作为两项策略的共同输入，不单列第三项贡献，也不在首版
-   扩展为复杂 learned optimizer。
-8. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+1. **Image fused operator-E2E gate**：中性 work-unit、lazy source、fast processor、
+   项目自写 fused Daft Native/Ray diagnostic 与 bounded `PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor`
+   runner 和 5K×3 formal 已完成。
+2. **补 system E2E 与完整强 baseline**：Daft built-in 的 256 图逐行 schema v11 计时内
+   normalized-contract parity 已通过（cosine P1=0.999800、非自身 overlap@10 mean=0.9949），正式比较采用统一
+   normalized AI_EMBED contract 并把归一化成本计入各臂 E2E；继续补官方 ResNet18 parity
+   和 Ray Data native graph runner/256 行门禁、独立校准及 60K×2 batch 上界复核均已完成；
+   当前冻结 Ray Data `batch64/cpu8/gpu2/source4`，下一步做统一规模 1+3 正式重复，再给
+   系统臂接同一 pgvector sink；同时补 bounded direct CLIP、
+   vLLM pooling、naive 和 ours。OceanBase AI_EMBED 等待可部署环境。当前 5K 结果只
+   证明相对 fused UDF 的优化空间，尚未证明 ours 优于主流 staged pipeline。
+3. **A+B 方法验证**：A 读取 CLIP endpoint queue/active-work 做状态感知请求成形；
+   B 先实现 `<100 LOC` 解析代价模型 + profile 校准 + residual correction，并报告
+   ranking、regret 和预测区间，不直接扩张成复杂 learned optimizer。
+4. **正式指标闭环**：除吞吐/JCT/P95/P99/SLO 外，报告 CPU preprocess、H2D、
+   GPU embed、overlap、GPU busy、能耗与写回后的 Recall@10；策略晋级需相对各自
+   强静态 baseline 改善约 5%、重复方向一致且质量不退化。
+5. **文本遗留项统一 parked-conditional**：feeding 等价性、short/long static-credit、
+   4-job held-out、prefix routing 隔离和文本系统 baseline 不再阻塞 image build；仅在
+   论文收录文本结果时按已有实验合同恢复。matched-KV 证据目前指向 endpoint
+   consolidation，而不是单纯 per-endpoint KV 大小，但仍未完全隔离饱和深度。
+6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 AutoDL rehearsal 写成
+   正式内部平台结论；最终 scope/题目 framing 仍需导师/学长确认。
 
 文献机制的发现、迁移审计和晋级/放弃条件统一见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
@@ -209,7 +260,7 @@
 
 **Scope 缩减触发条件**：
 - Month 1 结束前 vLLM baseline 未建立 → 多模态降为 Discussion（✅ 已建立，未触发）
-- 文本 RC1+RC2 消融未完成前，不启动 Daft 多模态 pipeline
+- 文本 RC1+RC2 达到可转轨门槛后才启动 Daft 多模态 pipeline（✅ 2026-08-01 已满足，image build 已解除暂停）
 - VLM 生成实验始终标记为 optional
 - Adaptive 控制器 3 轮改进后不能超过 static K_max=8 → RC2 降级
 

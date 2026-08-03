@@ -1,0 +1,448 @@
+"""Shared-vLLM exactly-once, resume, trace, and failure evidence helpers."""
+
+from __future__ import annotations
+
+import csv
+import hashlib
+import json
+import os
+import re
+import subprocess
+import time
+from dataclasses import asdict
+from pathlib import Path
+
+from src.observability.metrics import percentile
+
+from .config import GroupRunIdentity, RunnerOptions, SharedVllmConfig, SharedVllmScenario
+
+_CODE_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _validate_replay_starts(
+    job_evidence: list[dict[str, object]],
+    *,
+    expected_start_epoch_s: float,
+    arrival_offsets_s: tuple[float, ...],
+    max_lateness_s: float,
+    max_skew_s: float,
+) -> None:
+    if len(job_evidence) != len(arrival_offsets_s):
+        raise RuntimeError("replay start evidence is incomplete")
+    normalized_starts = []
+    for index, (evidence, offset_s) in enumerate(
+        zip(job_evidence, arrival_offsets_s)
+    ):
+        configured = float(
+            evidence["replay_configured_start_epoch_s"]
+        )
+        observed = float(evidence["replay_observed_start_epoch_s"])
+        actual_submit = float(
+            evidence["replay_actual_submit_start_epoch_s"]
+        )
+        expected = expected_start_epoch_s + offset_s
+        if abs(configured - expected) > 0.01:
+            raise RuntimeError(
+                f"job {index} replay configured start does not match runner"
+            )
+        barrier_lateness = observed - configured
+        if barrier_lateness < -0.01:
+            raise RuntimeError(
+                f"job {index} crossed replay barrier before its deadline"
+            )
+        lateness = actual_submit - configured
+        if lateness < -0.01 or lateness > max_lateness_s:
+            raise RuntimeError(
+                f"job {index} missed replay start deadline by "
+                f"{lateness:.6f}s"
+            )
+        normalized_starts.append(actual_submit - offset_s)
+    if (
+        normalized_starts
+        and max(normalized_starts) - min(normalized_starts) > max_skew_s
+    ):
+        raise RuntimeError("cross-job replay start skew exceeded limit")
+
+def _validate_runner_topology(
+    options: RunnerOptions,
+    config: SharedVllmConfig,
+) -> None:
+    if len(options.metrics_urls) != len(config.endpoint_ids):
+        raise ValueError(
+            "runner requires one metrics URL per configured endpoint"
+        )
+    if len(set(options.metrics_urls)) != len(options.metrics_urls):
+        raise ValueError("runner metrics URLs must be unique")
+    configured_metrics = _csv_argument_values(
+        config.common_args,
+        "--model-metrics-urls",
+    )
+    if configured_metrics and configured_metrics != options.metrics_urls:
+        raise ValueError(
+            "runner metrics URLs must match profiler model metrics URLs"
+        )
+    configured_endpoints = _csv_argument_values(
+        config.common_args,
+        "--completion-endpoint-urls",
+    )
+    if configured_endpoints and len(configured_endpoints) != len(
+        config.endpoint_ids
+    ):
+        raise ValueError(
+            "completion endpoint count must match endpoint_ids"
+        )
+
+def _validate_job_evidence(
+    options: RunnerOptions,
+    scenario: SharedVllmScenario,
+    identity: GroupRunIdentity,
+    job_index: int,
+) -> dict[str, object]:
+    run_stem = (
+        f"{identity.order_index:03d}_{identity.phase}_"
+        f"{identity.repeat_index}_{scenario.scenario_id}"
+    )
+    job_stem = options.output_dir / "jobs" / f"{run_stem}_job{job_index}"
+    summary_rows = _read_csv(job_stem.with_suffix(".runs.csv"))
+    request_rows = _read_csv(job_stem.with_suffix(".requests.csv"))
+    submission_rows = _read_csv(job_stem.with_suffix(".submissions.csv"))
+    if len(summary_rows) != 1 or summary_rows[0].get("status") != "ok":
+        raise RuntimeError(f"job {job_index} has no unique successful summary")
+    summary = summary_rows[0]
+    if int(summary.get("total_rows", -1)) != scenario.rows_per_job:
+        raise RuntimeError(f"job {job_index} processed an unexpected row count")
+    if len(request_rows) != scenario.rows_per_job:
+        raise RuntimeError(f"job {job_index} request trace is not exactly-once")
+    if len(submission_rows) != scenario.rows_per_job:
+        raise RuntimeError(
+            f"job {job_index} submission trace is not exactly-once"
+        )
+    request_ids = [row.get("request_id", "") for row in request_rows]
+    if len(set(request_ids)) != len(request_ids) or "" in request_ids:
+        raise RuntimeError(f"job {job_index} has duplicate request IDs")
+    if any(not _request_trace_succeeded(row) for row in request_rows):
+        raise RuntimeError(f"job {job_index} contains failed requests")
+    arrival = [float(row["arrival_epoch_s"]) for row in request_rows]
+    completion = [float(row["completion_epoch_s"]) for row in request_rows]
+    e2e = [float(row["e2e_s"]) for row in request_rows]
+    submission_starts = [
+        float(row["submit_epoch_s"]) for row in request_rows
+    ]
+    slo_met = [
+        str(row.get("slo_met", "")).strip().lower() == "true"
+        for row in request_rows
+    ]
+    jct_s = max(completion) - min(arrival)
+    completed_in_slo = sum(slo_met)
+    predicted_work = sum(
+        int(row["prompt_tokens"])
+        + int(
+            row["client_estimated_output_tokens"]
+            or row["estimated_output_tokens"]
+        )
+        for row in request_rows
+    )
+    endpoint_counts: dict[str, int] = {}
+    for row in request_rows:
+        endpoint_id = row["endpoint_id"]
+        endpoint_counts[endpoint_id] = (
+            endpoint_counts.get(endpoint_id, 0) + 1
+        )
+    return {
+        "jct_s": jct_s,
+        "p99_s": percentile(e2e, 99),
+        "completion_lag_s": max(completion) - max(arrival),
+        "slo_violation_ratio": 1.0 - completed_in_slo / len(slo_met),
+        "slo_goodput_per_s": completed_in_slo / jct_s,
+        "predicted_work": predicted_work,
+        "endpoint_counts": endpoint_counts,
+        "actor_worker_failures": _sum_semicolon_integers(
+            summary.get("actor_worker_failures", "")
+        ),
+        "replay_configured_start_epoch_s": float(
+            summary.get("arrival_replay_start_epoch_s", "0") or 0
+        ),
+        "replay_observed_start_epoch_s": float(
+            summary.get(
+                "arrival_replay_observed_start_epoch_s",
+                "0",
+            )
+            or 0
+        ),
+        "replay_actual_submit_start_epoch_s": min(submission_starts),
+    }
+
+def _sum_semicolon_integers(value: object) -> int:
+    fields = [
+        item.strip()
+        for item in str(value or "").split(";")
+        if item.strip()
+    ]
+    return sum(int(item) for item in fields)
+
+def _request_trace_succeeded(row: dict[str, str]) -> bool:
+    return (
+        row.get("status", "").strip().lower() == "completed"
+        and not row.get("error_type", "").strip()
+    )
+
+def _validate_final_credit(
+    config: SharedVllmConfig,
+    snapshots: list[dict[str, object]],
+) -> None:
+    if len(snapshots) != len(config.endpoint_ids):
+        raise RuntimeError("shared credit final snapshot is incomplete")
+    for snapshot in snapshots:
+        if (
+            int(snapshot["active_requests"]) != 0
+            or int(snapshot["active_work"]) != 0
+            or int(snapshot["waiting_requests"]) != 0
+            or int(snapshot["waiting_work"]) != 0
+        ):
+            raise RuntimeError("shared credit did not return to zero")
+        if (
+            int(snapshot["max_active_requests_seen"])
+            > config.request_limit_per_endpoint
+        ):
+            raise RuntimeError("shared request limit was exceeded")
+        if (
+            int(snapshot["max_active_work_seen"])
+            > config.work_limit_per_endpoint
+        ):
+            raise RuntimeError("shared work limit was exceeded")
+
+def _terminate_processes(processes: list[subprocess.Popen]) -> None:
+    for process in processes:
+        if process.poll() is None:
+            process.terminate()
+    deadline = time.monotonic() + 10.0
+    for process in processes:
+        if process.poll() is not None:
+            continue
+        remaining = max(0.0, deadline - time.monotonic())
+        try:
+            process.wait(timeout=remaining)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+
+def _write_trace_rows_atomic(
+    path: Path,
+    rows: list[dict[str, object]],
+) -> None:
+    if not rows:
+        return
+    fieldnames = list(rows[0])
+    if any(list(row) != fieldnames for row in rows):
+        raise ValueError("trace rows have inconsistent schemas")
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    with temporary.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    os.replace(temporary, path)
+
+def _read_csv(path: Path) -> list[dict[str, str]]:
+    if not path.exists():
+        return []
+    with path.open("r", newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+def _load_group_record(
+    path: Path,
+    config: SharedVllmConfig,
+    scenario: SharedVllmScenario,
+    identity: GroupRunIdentity,
+) -> dict[str, object]:
+    record = json.loads(path.read_text(encoding="utf-8"))
+    expected = {
+        "schema_version": 1,
+        "experiment_id": config.experiment_id,
+        "scenario_id": scenario.scenario_id,
+        "phase": identity.phase,
+        "repeat_index": identity.repeat_index,
+        "order_index": identity.order_index,
+        "policy": scenario.policy,
+        "job_count": scenario.job_count,
+        "rows_per_job": scenario.rows_per_job,
+        "run_instance_id": _run_instance_id(path.parent.parent),
+        "incidents": 0,
+        "actor_worker_failures": 0,
+    }
+    for key, value in expected.items():
+        if record.get(key) != value:
+            raise RuntimeError(
+                f"completed group record does not match {key}"
+            )
+    return record
+
+def _rewrite_group_runs(
+    path: Path,
+    output_dir: Path,
+    completed_runs: list[dict[str, object]],
+) -> None:
+    records = []
+    for completed in sorted(
+        completed_runs,
+        key=lambda item: int(item["order_index"]),
+    ):
+        relative = Path(str(completed.get("record_path", "")))
+        if (
+            not relative.parts
+            or relative.parts[0] != "records"
+            or ".." in relative.parts
+            or relative.is_absolute()
+        ):
+            raise RuntimeError("manifest contains an unsafe record_path")
+        record_path = output_dir / relative
+        if not record_path.exists():
+            raise RuntimeError("manifest completed record is missing")
+        records.append(json.loads(record_path.read_text(encoding="utf-8")))
+    if not records:
+        return
+    fieldnames = list(records[0])
+    if any(list(record) != fieldnames for record in records):
+        raise RuntimeError("completed group records have mixed schemas")
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    with temporary.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(records)
+    os.replace(temporary, path)
+
+def _group_failure_path(output_dir: Path, run_stem: str) -> Path:
+    return output_dir / "traces" / f"{run_stem}.failure.json"
+
+def _group_artifacts_exist(output_dir: Path, run_stem: str) -> bool:
+    patterns = (
+        ("jobs", f"{run_stem}_job*"),
+        ("logs", f"{run_stem}_job*"),
+        ("traces", f"{run_stem}.*"),
+    )
+    return any(
+        any((output_dir / child).glob(pattern))
+        for child, pattern in patterns
+    )
+
+def _coordinator_name(
+    experiment_id: str,
+    run_instance_id: str,
+    run_stem: str,
+) -> str:
+    raw = f"credit-{experiment_id}-{run_instance_id}-{run_stem}"
+    return re.sub(r"[^A-Za-z0-9_.-]", "-", raw)
+
+def _run_instance_id(output_dir: Path) -> str:
+    resolved = str(output_dir.resolve())
+    digest = hashlib.sha256(resolved.encode("utf-8")).hexdigest()[:12]
+    label = re.sub(r"[^A-Za-z0-9_.-]", "-", output_dir.name)
+    return f"{label}-{digest}"
+
+def _run_stem(
+    scenario: SharedVllmScenario,
+    identity: GroupRunIdentity,
+) -> str:
+    return (
+        f"{identity.order_index:03d}_{identity.phase}_"
+        f"{identity.repeat_index}_{scenario.scenario_id}"
+    )
+
+def _config_fingerprint(config: SharedVllmConfig, schedule) -> str:
+    payload = {
+        "config": _redacted_config(config),
+        "schedule": [asdict(item) for item in schedule],
+    }
+    return hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
+    return {
+        "experiment_id": config.experiment_id,
+        "seed": config.seed,
+        "warmup_runs_per_scenario": config.warmup_runs_per_scenario,
+        "formal_repeats": config.formal_repeats,
+        "endpoint_ids": config.endpoint_ids,
+        "request_limit_per_endpoint": config.request_limit_per_endpoint,
+        "work_limit_per_endpoint": config.work_limit_per_endpoint,
+        "credit_quantum": config.credit_quantum,
+        "shared_credit_namespace": config.shared_credit_namespace,
+        "gpu_peak_tflops": config.gpu_peak_tflops,
+        "mfu_precision": config.mfu_precision,
+        "common_args": _redact_command(list(config.common_args)),
+        "scenarios": [asdict(item) for item in config.scenarios],
+        "service_metadata": dict(config.service_metadata),
+        "calibration_contract": (
+            {
+                "path": config.calibration_contract.path,
+                "sha256": config.calibration_contract.sha256,
+                "selection": dict(config.calibration_contract.selection),
+            }
+            if config.calibration_contract is not None
+            else None
+        ),
+    }
+
+def _redact_command(command: list[str]) -> list[str]:
+    secret_flags = {
+        "--completion-api-key",
+        "--database-url",
+        "--embedding-api-key",
+    }
+    redacted = []
+    redact_next = False
+    for item in command:
+        if redact_next:
+            redacted.append("***")
+            redact_next = False
+            continue
+        flag, separator, _ = item.partition("=")
+        if separator and flag in secret_flags:
+            redacted.append(f"{flag}=***")
+            continue
+        redacted.append(item)
+        redact_next = item in secret_flags
+    return redacted
+
+def _repository_commit() -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=_CODE_ROOT.parent,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip()
+
+def _load_resume_manifest(path: Path, expected: dict) -> dict:
+    if not path.exists():
+        raise ValueError("--resume requires an existing manifest.json")
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    for key in (
+        "schema_version",
+        "experiment_id",
+        "config_fingerprint",
+        "repository_commit",
+        "run_instance_id",
+        "redacted_config",
+        "schedule",
+    ):
+        if manifest.get(key) != expected[key]:
+            raise ValueError(f"resume manifest does not match {key}")
+    if not isinstance(manifest.get("completed_runs"), list):
+        raise ValueError("resume manifest has invalid completed_runs")
+    if not isinstance(manifest.get("incidents"), list):
+        raise ValueError("resume manifest has invalid incidents")
+    return manifest
+
+def _write_json_atomic(path: Path, payload: dict) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    os.replace(temporary, path)

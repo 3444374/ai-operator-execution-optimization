@@ -48,8 +48,8 @@ the data cannot establish.
 ## Task 3: Controlled prefix workload
 
 **Files:**
-- Modify: `code/scripts/import_ai_complete_workload.py`
-- Modify: `code/tests/test_import_ai_complete_workload.py`
+- Modify: `code/scripts/data/import_ai_complete_workload.py`
+- Modify: `code/tests/data/test_import_ai_complete_workload.py`
 
 1. Add failing tests for deterministic prefix-ratio construction, unique-row
    identity, unchanged suffix content, and invalid ratios.
@@ -82,9 +82,9 @@ a second, incompatible row type to `src/workloads.py`.
 
 **Files:**
 - Create: `code/src/cost_estimation.py`
-- Create: `code/scripts/estimate_operator_cost.py`
-- Create: `code/tests/test_cost_estimation.py`
-- Create: `code/tests/test_estimate_operator_cost.py`
+- Create: `code/scripts/analysis/estimate_operator_cost.py`
+- Create: `code/tests/planning/test_cost_estimation.py`
+- Create: `code/tests/planning/test_estimate_operator_cost.py`
 - Create: `experiments/results/operator_cost_estimation_20260726/README.md`
 
 1. Add failing tests for deterministic train/test splitting, feature schema,

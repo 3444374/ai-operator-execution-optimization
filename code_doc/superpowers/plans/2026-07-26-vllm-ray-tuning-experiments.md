@@ -24,7 +24,7 @@
 
 **Files:**
 - Modify: `code/src/experiment_scenarios.py`
-- Test: `code/tests/test_experiment_scenarios.py`
+- Test: `code/tests/experiments/test_experiment_scenarios.py`
 
 **Interfaces:**
 - Produces:
@@ -62,7 +62,7 @@ def test_service_metadata_rejects_missing_capacity() -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_experiment_scenarios.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\experiments\test_experiment_scenarios.py -q
 ```
 
 Expected: FAIL because the validator does not exist.
@@ -105,7 +105,7 @@ Call the validator when a scenario config opts into
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m pytest code\tests\test_experiment_scenarios.py -q
+.conda\pg-ai-profile\python.exe -m pytest code\tests\experiments\test_experiment_scenarios.py -q
 ```
 
 Expected: PASS.
@@ -113,7 +113,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/src/experiment_scenarios.py code/tests/test_experiment_scenarios.py
+git add code/src/experiment_scenarios.py code/tests/experiments/test_experiment_scenarios.py
 git commit -m "feat: validate service experiment metadata"
 ```
 
@@ -235,7 +235,7 @@ Create `scenario_config_eager_gate.json` by copying the JSON in Step 2 with:
 Replace both `--total-rows` and `--db-fetch-rows` values with `64`, then run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\run_ai_operator_scenarios.py experiments\results\vllm_cuda_graph_512_20260726\scenario_config_eager_gate.json --output-dir experiments\results\vllm_cuda_graph_512_20260726\eager_gate --health-url http://localhost:8000/health --metrics-url http://localhost:8000/metrics
+.conda\pg-ai-profile\python.exe code\scripts\experiments\run_ai_operator_scenarios.py experiments\results\vllm_cuda_graph_512_20260726\scenario_config_eager_gate.json --output-dir experiments\results\vllm_cuda_graph_512_20260726\eager_gate --health-url http://localhost:8000/health --metrics-url http://localhost:8000/metrics
 ```
 
 Expected:
@@ -251,7 +251,7 @@ Expected:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\run_ai_operator_scenarios.py experiments\results\vllm_cuda_graph_512_20260726\scenario_config_eager.json --output-dir experiments\results\vllm_cuda_graph_512_20260726\eager --health-url http://localhost:8000/health --metrics-url http://localhost:8000/metrics
+.conda\pg-ai-profile\python.exe code\scripts\experiments\run_ai_operator_scenarios.py experiments\results\vllm_cuda_graph_512_20260726\scenario_config_eager.json --output-dir experiments\results\vllm_cuda_graph_512_20260726\eager --health-url http://localhost:8000/health --metrics-url http://localhost:8000/metrics
 ```
 
 Expected: one warm-up plus three formal completed runs, zero incidents.

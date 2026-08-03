@@ -20,8 +20,11 @@
 
 当前状态：vLLM baseline 与真实双 endpoint 已建立；global/per-endpoint static
 admission、request-level 补位、active-work credit、least-work routing 和
-shared multi-job credit 已实现。后四项及 service-quantum 动态预算仍需正式
-GPU 重复，代码完成不等于策略有效。
+shared multi-job credit 已实现，并已在 2x4090 上完成正式 GPU 重复：active-work
+已选定 65,536（07-29 八档扩展曲线），request-level 补位双卡重复完成，shared
+multi-job credit 完成 1/2/4-job 正式矩阵 36/36（详见 §13.7）；service-quantum
+24 次正式 run 已完成且未过 5% 晋升门槛、保留 request+1x256，SLO-EWMA flush
+相对 fixed-50ms 同样未晋升。代码完成已获正式 GPU 证据支撑。
 ```
 
 **为什么**：在手动 HTTP endpoint 上做 K_max 扫描，搜出来的"最优 K_max"可能只是因为 endpoint 的队列处理能力不同。vLLM continuous batching 改变了 GPU 侧的请求处理模式，K_max 的最优值和时间分布都会变化。
@@ -66,8 +69,8 @@ vLLM 的 `--enable-chunked-prefill` 和你的 queue-adaptive flush / K_max 控�
 
 **架构边界（代码确证）**：
 
-- 数据组织（token-budget / length-align / prefix-aware）依据**已知输入 prompt token**，**不依赖自回归**——`code/src/organizers.py:230` `_row_token_cost = prompt_tokens + completion_max_tokens`，全在发请求之前决策。
-- 提交控制（adaptive K_max）依据**运行时 vLLM 指标**（running/waiting/kv_cache），**依赖自回归**——`code/scripts/postgres_ai_operator_profile.py:512` `adaptive_inflight_limit`。
+- 数据组织（token-budget / length-align / prefix-aware）依据**已知输入 prompt token**，**不依赖自回归**——`code/src/data/materializers/text.py` 的 `_row_token_cost()` 在发请求之前解析 prompt 与预测 output work。
+- 提交控制（adaptive K_max）依据**运行时 vLLM 指标**（running/waiting/kv_cache），**依赖自回归**——控制器位于 `code/src/scheduling/submission_control/`，profiler 只负责接线与记录实际上限。
 
 **含义**：实验若把 output 固定（如 `--completion-max-tokens 64`），会消除"输出长度不可预测"这个变异源，使 adaptive 的运行时动态优势无从发挥——这是 RC2 当前负结果（P0-1）的一个待排除混淆变量，见 `experiment_status_and_gaps.md` P0-1。
 
@@ -80,6 +83,28 @@ vLLM 的 `--enable-chunked-prefill` 和你的 queue-adaptive flush / K_max 控�
 **核心假设**：Ray 默认调度（无界 in-flight）在 GPU 服务成为瓶颈时会导致 queue wait 累积，但简单加固定 `K_max` 不能适配 workload 变化——需要感知 GPU 服务状态的 adaptive backpressure。
 
 **关键反证条件**：如果 vLLM continuous batching 内部已经很好地消化了请求波动，那外部 Ray 层的调度优化空间可能很小。
+
+### 1.1 “动态提交”不以改变单请求推理速度为目标
+
+在模型、vLLM 配置和 GPU 固定时，外部提交控制不能改变模型 kernel，也不能
+突破相同协议和 workload 的 direct-vLLM 服务容量。动态控制要回答的是：
+
+> 当 prompt/output 长度、到达率、SLO 或并发 job 在运行中发生变化时，能否
+> 在维持服务容量的同时，比一次校准后永久冻结的静态配置更快恢复到合适工作点，
+> 减少排队、SLO 违约和不公平 slowdown？
+
+因此三类对照的角色必须分开：
+
+| 对照 | 含义 | 动态策略应达到的目标 |
+|---|---|---|
+| direct-vLLM / bounded client | 同协议服务容量上界 | 逼近，不要求超过 |
+| calibration 后冻结的单一 static K/work/flush | 可部署的主要策略 baseline | 在 workload 漂移和竞争下胜出 |
+| 每个 phase 事后单独 sweep 的 static oracle | 不可部署的诊断上界 | 缩小与 oracle 的累计差距 |
+
+稳态、同质、单 job 下，最佳静态点与动态持平甚至略优是合理边界，不算动态
+失败。动态策略只有在**未重新调参**的 held-out 漂移或多 job 场景改善
+SLO goodput、JCT、P99 或公平性，同时维持容量，才构成正结果。单纯提高某个
+稳态点的 raw tokens/s 更接近静态并发校准，不是“动态”的独立贡献。
 
 ---
 
@@ -225,26 +250,121 @@ K_max = K_max*（从 5.1 取最优值）
 - 多 endpoint + 均匀 workload：round_robin ≈ least_queued
 - 多 endpoint + 不均匀 workload（有 straggler）：least_queued > round_robin
 
-### 5.3 Adaptive vs Static K_max（当 workload 变化时）
+### 5.3 Frozen Static vs Adaptive（运行中 workload 漂移）
 
-```
-策略:
-  - static_K: K_max = K_max*（来自 5.1，固定不变）
-  - adaptive_K: K_max 根据 queue depth 动态调整
+#### 5.3.0 动态策略存在性门禁：静态最优点是否真的迁移
 
-测试场景:
-  - 均匀注入（benchmark 到 benchmark 的直接对比）
-  - 突发注入（模拟生产中的 spike）
-  - workload 混合（EMBED + FILTER，两种不同 GPU 耗时特征）
+在运行任何 adaptive arm 前，先冻结 actor shape、data organization、routing
+和 flush，只扫描 static K（必要时另开独立 static active-work 扫描），建立
+下列 workload 的静态性能面：
 
-总组合: 2 (策略) × 3 (场景) = 6
-每组合: 3 次重复
-总运行: 18 次
+```text
+short-uniform / long-uniform / mixed-length
+low-arrival / near-capacity / burst
+single-job / unequal-size multi-job
 ```
 
-**要推翻的假设**："静态 K_max 在不同 workload 下表现一致。"
+使用 disjoint calibration/held-out 数据，并分别记录 throughput、SLO goodput、
+JCT、P99、waiting/KV 和 active work。动态策略只有同时满足以下条件才继续：
 
-**期望发现**：adaptive 在均匀场景 ≈ static，在突发/混合场景 > static。
+1. 至少两个 held-out workload 的最佳安全静态 K 明显不同（预注册为相差至少
+   2×），或其 97%-ceiling 可接受区间不重叠；
+2. 把某 workload 的最佳静态 K 用到另一个 workload，SLO goodput 或 JCT
+   至少恶化 5%，至少 2/3 repeats 同向；
+3. 该损失发生在相同模型、协议、endpoint、actor shape 和数据组织下，不能由
+   Chat/Completions、行数、work credit 或 actor 数混杂解释。
+
+2026-07-30 的 short/long prompt screening 进一步增加以下 fail-closed
+条件。该轮 48/48 run 成功，但实际使用 `urllib`、没有 output token IDs，
+且 short 侧两个未绑定 work cap 的吞吐 CV 达 18%/34%；远端均值结论与正式
+中位数选择相反。因此它登记为 `inconclusive`，不能触发 adaptive：
+
+1. 正式链路必须显式固定 `httpx_async` 和
+   `completion_return_token_ids`，不能依赖 profiler 默认值；
+2. short/long 场景放在同一个 runner 中按 repeat 交错，不能先跑完一个
+   workload 再跑另一个；
+3. 同时报告相同行数与相同 offered token work；两种口径回答不同问题；
+4. K 与 work 若声称为 “K×work”，必须运行笛卡尔或最小交互矩阵；只跑三档
+   K-only 加三档 W-only 只能称 alternative-control screening；
+5. 使用 formal 中位数选点；候选臂 model-request throughput CV 必须
+   ≤5%。CV 超限先查服务状态和顺序效应，不增加 repeat 掩盖事故；
+6. 如果两个 cap 都未绑定、bounded wait=0 且放行相同请求，它们是等价性
+   sentinel，吞吐差必须在 5% 内并至少 2/3 repeats 同向；否则整轮判为
+   `inconclusive`；
+7. per-request prompt/output P50/P95/P99 必须来自目标模型 tokenizer 或
+   token IDs；whitespace word count 不能替代模型 token。
+
+最小重跑先使用
+`deploy/autodl/dual_gpu_static_credit_prompt_length_gate.example.json`
+交错比较 K256、K256+W65K、K256+W98K。只有等价臂门禁通过，才补
+W32K/W49K/W65K/W98K 与必要的 K×work 交互面。
+
+该门禁必须在真实 GPU、真实模型、真实 vLLM/Ray/Daft 链路上运行。CPU/fake
+只允许验证判定脚本和 trace 正确性，不能用来证明静态最优点迁移或决定动态
+控制器参数；这与项目“完整真实链路 → 分阶段定位 → 大块消融”的既定方法一致。
+
+若门禁不成立，停止 AIMD/PID/预测式控制的 formal 排名，结论写成“该硬件与
+workload 范围内单一冻结静态点足够稳健”。动态代码仅保留为诊断/可扩展能力，
+研究内容二转向已有证据更强的 request replenishment、actor feeding 和多 job
+共享隔离。
+
+本实验不再把几个彼此独立的 steady-state benchmark 当作“动态”证据。每个
+repeat 使用同一条有明确 phase 边界的 arrival replay，控制器在 phase 之间
+保持状态且禁止人工重新调参。
+
+```text
+AI_COMPLETE replay:
+  A. short + low arrival rate
+  B. long/异长 + burst/high arrival rate
+  C. mixed length + staggered second job
+
+策略臂:
+  frozen_static:
+    calibration manifest 选择一次 K/work/flush，三个 phase 全程不变
+  reactive_aimd:
+    标准 AIMD，只根据 endpoint-local 运行时反馈调 endpoint-local K
+  cost_aware_feedback:
+    prompt-cost/arrival 预测给出初始工作点，再由 endpoint-local 反馈纠偏
+  per_phase_static_oracle:
+    每个 phase 事后单独 sweep；只作诊断上界，不是可部署 baseline
+```
+
+控制变量：
+
+- 同一模型、Completions 协议、双单-GPU endpoint、prompt/output manifest；
+- 同一总行数、offered prompt/output tokens、phase 起止时间与随机种子；
+- actor pool shape、data organization、routing 和重试语义全部冻结；
+- 控制器参数只允许用 calibration partition 选择一次；held-out replay 禁止
+  按 phase 重调；
+- 双 endpoint 的动态窗口和观测必须 endpoint-local。把两个 GPU 的 metrics
+  聚合后只调一个 global K 会把一端拥塞错误传播到另一端，不进入正式比较。
+
+主指标不是“kernel 推理是否更快”，而是：
+
+1. `SLO goodput`、job JCT、request P95/P99 和 SLO 违约率；
+2. phase 切换后的 `time_to_95pct_oracle_goodput`；
+3. `adaptation_regret = ∫(oracle_goodput - achieved_goodput)dt`；
+4. GPU starvation time、vLLM waiting/KV、active request/work overshoot；
+5. aggregate prompt/output tokens/s 与 capacity efficiency，作为容量护栏。
+
+预注册判据：
+
+- 稳态同质 phase 相对 frozen static 的 aggregate tokens/s 退化不超过 3%；
+- 完整漂移 replay 的 SLO goodput 或 JCT 至少改善 5%，且至少 2/3 formal
+  repeats 同向；
+- time-to-ceiling 或 adaptation regret 至少改善 10%；
+- 若只改善 MFU、GPU utilization 或控制器窗口，而 P99/SLO/JCT/goodput
+  没有改善，不判定策略有效。
+
+**要推翻的假设**：“一次校准得到的静态配置可在所有运行阶段保持接近
+per-phase oracle 的质量。”
+
+代码前置条件：typed adaptive controller 已拆为 endpoint-local state，
+每个 endpoint 单独读取 metrics，并在 control trace 记录 `endpoint_id`。
+global adaptive 与 per-endpoint static limit 的混搭会 fail closed；
+active-work 动态化仍未实现，保持静态/关闭以便独立消融。正式运行前仍必须先过
+双 endpoint 小规模 gate，确认两个 endpoint 都有独立 action trace、窗口不互相
+串扰、0 failure 和最终空队列；未过 gate 的结果只能作为诊断。
 
 ### 5.4 Whole-submission barrier vs continuous replenishment
 
@@ -325,8 +445,12 @@ slowdown/饥饿，相对静态分区保持更高总 goodput，并且单 job 时�
 | **queue_depth** | 每个 endpoint 前等待的 task 数 | Orca 的 batch queue 分析 |
 | **补位效率** | credit idle ratio、refill interval、completion span | Orca/vLLM continuous batching 的上游迁移验证 |
 | **有效吞吐** | observed tokens/s、SLO goodput | vLLM/Clipper 的吞吐—SLO评估范式 |
+| **动态适应** | time-to-95%-oracle、adaptation regret、starvation/overshoot time | workload 漂移下的控制质量 |
+| **多 job 质量** | JCT/solo slowdown、worst normalized slowdown、weighted service deficit、overlap-window Jain | VTC/DRR 的共享服务评估范式 |
 
-**关键**：不报"adaptive 比 static 好 X%"，而是画 **"延迟-吞吐曲线"**——在不同吞吐水平下 P99 延迟如何变化。这是 vLLM/Orca 的标准做法。
+**关键**：稳态容量实验画“延迟—吞吐曲线”；动态实验必须另外画 phase
+时间序列与相对 static oracle 的累计 regret。只报一个全程平均 tokens/s 会把
+控制器恢复速度、短时 SLO 崩溃和过冲全部掩盖。
 
 MFU 只作为机制诊断，不作为控制器 reward 或“是否压满 GPU”的唯一判据。
 prefill 主要受计算吞吐限制，decode 常受 HBM 带宽和 KV-cache 读写限制；decode

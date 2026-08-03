@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dual_gpu_completions_baseline_gate",
+  "formal": false,
+  "rows_total": 512,
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/completions",
+    "http://127.0.0.1:8001/v1/completions"
+  ],
+  "model": "qwen2.5-7b",
+  "completion_protocol": "completions",
+  "temperature": 0.0,
+  "manifest": "/root/autodl-tmp/gates/official_baseline_calibration_512_20260729_0f5d60f.jsonl",
+  "output_root": "/root/autodl-tmp/ai-operator/experiments/results/dual_gpu_completions_baseline_gate_REPLACE_ME",
+  "cells": [
+    {
+      "id": "bounded_fixed1_c256",
+      "adapter": "bounded_completions",
+      "batch_size": 1,
+      "concurrency_per_endpoint": 256
+    },
+    {
+      "id": "bounded_fixed4_c64",
+      "adapter": "bounded_completions",
+      "batch_size": 4,
+      "concurrency_per_endpoint": 64
+    },
+    {
+      "id": "bounded_fixed16_c16",
+      "adapter": "bounded_completions",
+      "batch_size": 16,
+      "concurrency_per_endpoint": 16
+    },
+    {
+      "id": "bounded_fixed32_c8",
+      "adapter": "bounded_completions",
+      "batch_size": 32,
+      "concurrency_per_endpoint": 8
+    }
+  ],
+  "hard_gates": {
+    "exactly_once": true,
+    "failed_rows": 0,
+    "worker_failures": 0,
+    "both_endpoints_used": true,
+    "endpoint_predicted_work_skew_max": 0.02,
+    "vllm_running_final": 0,
+    "vllm_waiting_final": 0,
+    "same_model": true,
+    "same_protocol": true,
+    "same_service_config": true
+  }
+}

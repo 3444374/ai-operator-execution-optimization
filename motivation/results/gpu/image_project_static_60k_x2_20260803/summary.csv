@@ -1,0 +1,10 @@
+round,git_commit,cpu_workers,max_active_batches,batch_size,n_formal,images_per_s_median,operator_e2e_s_median,first_output_s_median,gpu_util_mean_pct_median,gpu_util_peak_pct,cpu_busy_cores_mean_median,images_per_joule_median
+round1,1f2e4fe,8,16,64,3,1031.6,,,9.6,,,
+round1,1f2e4fe,8,32,64,3,1051.1,,,9.6,,,
+round1,1f2e4fe,16,16,64,3,1484.9,,,9.6,,,
+round1,1f2e4fe,16,32,64,3,1701.0,70.5,23.2,9.6,37,19.5,8.43
+round2,29b256b,8,16,64,3,1026.6,,,9.8,,,
+round2,29b256b,8,32,64,3,1027.2,,,9.8,,,
+round2,29b256b,16,16,64,3,1463.1,,,9.8,,,
+round2,29b256b,16,32,64,3,1681.0,71.4,22.9,9.8,37,19.5,10.27
+cross_round,1f2e4fe+29b256b,16,32,64,6,1691.0,70.96,23.07,9.69,37,19.54,9.35

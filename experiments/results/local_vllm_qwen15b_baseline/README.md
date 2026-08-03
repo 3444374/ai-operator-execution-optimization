@@ -38,7 +38,7 @@ The legacy run below measures fixed row-batch sizes only. Treat it as a smoke ba
 - Served model name: `qwen2.5-1.5b`.
 - vLLM startup used `--max-model-len 2048`, `--gpu-memory-utilization 0.75`, and `--enforce-eager`.
 - Database: local Docker PostgreSQL on `localhost:5432`.
-- Script: `code/scripts/postgres_ai_operator_profile.py`.
+- Script: `code/scripts/profiling/postgres_ai_operator_profile.py`.
 
 Boundary: this is a local PG rehearsal. Do not cite it as a PostgreSQL 18.3 internal-platform result.
 
@@ -51,7 +51,7 @@ $output = 'experiments\results\local_vllm_qwen15b_baseline\static_batch_sweep.cs
 $batchRows = @(1,2,4,8,16)
 foreach ($batch in $batchRows) {
   $experiment = "vllm_qwen15b_static_batch_${batch}"
-  .conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+  .conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
     --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
     --setup `
     --seed-rows 32 `
@@ -103,7 +103,7 @@ $batches = @(1, 2, 4, 8, 16, 32)
 foreach ($executor in $executors) {
   foreach ($batch in $batches) {
     $experiment = "sharegpt_burstgpt_${executor}_batch${batch}"
-    .conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+    .conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
       --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
       --setup `
       --total-rows 128 `
@@ -183,7 +183,7 @@ $output = 'experiments\results\local_vllm_qwen15b_baseline\sharegpt_burstgpt_ray
 $batches = @(1,2,4,8,16,32,64,128)
 foreach ($batch in $batches) {
   $experiment = "sharegpt_burstgpt_ray_task_token_sweep_batch${batch}"
-  .conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+  .conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
     --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
     --setup `
     --total-rows 512 `
@@ -356,7 +356,7 @@ $kmaxValues = @(1,2,4,8,16,100000)
 foreach ($kmax in $kmaxValues) {
   if ($kmax -eq 100000) { $label = 'unbounded' } else { $label = "k${kmax}" }
   $experiment = "sharegpt_burstgpt_arrival_token6144_${label}"
-  .conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+  .conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
     --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
     --setup `
     --total-rows 512 `
@@ -533,7 +533,7 @@ experiments/results/local_vllm_qwen15b_baseline/sharegpt_burstgpt_kmax_interfere
 Runner:
 
 ```text
-code/scripts/run_kmax_interference_experiment.py
+code/scripts/experiments/run_kmax_interference_experiment.py
 ```
 
 This experiment targets the missing motivation for `K_max`: if each query has

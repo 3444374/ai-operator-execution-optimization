@@ -639,7 +639,7 @@ class OperatorAwareRouter:
 | 按 operator_type 分 bucket | 本课题方案设计 — 同类合并、异类分池 |
 | 按 token/frame budget 合并提交 | vLLM `max_num_batched_tokens` (SOSP 2023) — token-budget batching 思想 |
 | 异步 enqueue + 定时/阈值 flush | Ray Serve `batch_wait_timeout_s` (Ray 官方文档) — 攒批超时机制 |
-| CLIP 无 continuous batching → 必须显式合并 | CLIP/OpenAI embedding API 工程事实 — 多模态场景的强制需求 |
+| 上游 owns batching 时显式合并；成熟服务 batching 独立冻结/记录 | vLLM pooling / Triton / Ray Serve 均可能服务端 batching；避免重复机制与错误归因 |
 
 **接口规范**：
 
@@ -675,8 +675,9 @@ class GlobalRequestPool:
 
     纯文本场景（vLLM 有 continuous batching）：
       - 此池可选的——vLLM 内部自动合并请求
-    多模态场景（CLIP 无 continuous batching）：
-      - 此池必须的——不做显式合并则 GPU 利用率低
+    多模态场景：
+      - tensor-input、上游 owns batching 时此池是方法组件
+      - vLLM pooling / Triton dynamic batching 开启时，仅作独立消融，不能默认必需
     """
 
     def __init__(self, budget_strategy: BudgetStrategy): ...

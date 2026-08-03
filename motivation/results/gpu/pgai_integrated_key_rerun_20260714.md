@@ -21,7 +21,7 @@ This run answers four narrow questions:
 | Database | PostgreSQL 18.4 local rehearsal |
 | pgvector | 0.8.2 |
 | Trigger surface | `job_table` external execution profile |
-| Model service | `code/scripts/local_embedding_server.py` |
+| Model service | `code/scripts/services/local_embedding_server.py` |
 | Endpoint 1 | `http://localhost:8000/v1/embeddings` |
 | Endpoint 2 | `http://localhost:8001/v1/embeddings` |
 | Model | `.cache/models/all-MiniLM-L6-v2` |
@@ -40,7 +40,7 @@ execution and writeback timing boundaries.
 Endpoint startup:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\local_embedding_server.py `
+.conda\pg-ai-profile\python.exe code\scripts\services\local_embedding_server.py `
   --model .cache\models\all-MiniLM-L6-v2 `
   --device cuda `
   --batch-size 64 `
@@ -50,7 +50,7 @@ Endpoint startup:
 Second endpoint for the multi-endpoint test:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\local_embedding_server.py `
+.conda\pg-ai-profile\python.exe code\scripts\services\local_embedding_server.py `
   --model .cache\models\all-MiniLM-L6-v2 `
   --device cuda `
   --batch-size 64 `
@@ -60,7 +60,7 @@ Second endpoint for the multi-endpoint test:
 Representative profile command:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 4096 --total-rows 4096 `
   --db-fetch-rows 512 --ray-batch-rows 256 `

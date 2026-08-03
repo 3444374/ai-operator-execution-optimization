@@ -26,7 +26,7 @@ postgresql://postgres:postgres@localhost:5432/ai_operator
 项目画像入口：
 
 ```text
-code/scripts/postgres_ai_operator_profile.py
+code/scripts/profiling/postgres_ai_operator_profile.py
 ```
 
 首次真实连接已于 2026-07-11 完成，结果写入

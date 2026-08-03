@@ -29,7 +29,7 @@ motivation/results/pg18_4_fake/actor_batch_workers.csv
 入口脚本：
 
 ```text
-code/scripts/postgres_ai_operator_profile.py
+code/scripts/profiling/postgres_ai_operator_profile.py
 ```
 
 本轮新增：
@@ -81,7 +81,7 @@ $py = '.conda\pg-ai-profile\python.exe'
 $out = 'motivation\results\pg18_4_fake\baseline_matrix.csv'
 foreach ($executor in @('python','ray_task','ray_actor')) {
   foreach ($strategy in @('fine','coalesced')) {
-    & $py code\scripts\postgres_ai_operator_profile.py `
+    & $py code\scripts\profiling\postgres_ai_operator_profile.py `
       --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
       --setup --seed-rows 4096 --total-rows 4096 `
       --db-fetch-rows 512 --ray-batch-rows 256 `
@@ -148,7 +148,7 @@ $py = '.conda\pg-ai-profile\python.exe'
 $out = 'motivation\results\pg18_4_fake\actor_batch_workers.csv'
 foreach ($batchRows in @(64,256,1024)) {
   foreach ($workers in @(1,2,4)) {
-    & $py code\scripts\postgres_ai_operator_profile.py `
+    & $py code\scripts\profiling\postgres_ai_operator_profile.py `
       --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
       --setup --seed-rows 4096 --total-rows 4096 `
       --db-fetch-rows 4096 --ray-batch-rows $batchRows `

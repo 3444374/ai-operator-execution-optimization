@@ -2,17 +2,46 @@
 
 本目录是正式研究实验入口，用于规划、运行和记录研究内容的优化实验与消融实验。它不同于 `motivation/`：动机测试回答”为什么这个课题值得做”，本目录回答”提出的方法或调优是否真的有效”。
 
+## benchmark / workload 选型（当前主线，2026-08-02）
+
+学长反馈（`../notes/communication_notes.md` §5）把场景 reframe 成“数据库↔GPU 经
+Daft 桥接、算子多样、大数据量、流式 pipeline”，并强调先锁 workload。2026-08-01
+审计后，图像 CLIP 的选择理由收紧为“让 DB/CPU/Ray/H2D/GPU 木桶效应可测”，不再
+预设数据搬运是瓶颈或执行层为空白。方向 scope 见
+[`../research/daft_db_gpu_bridge_direction_scope_20260731.md`](../research/daft_db_gpu_bridge_direction_scope_20260731.md)。
+
+**首个 workload**：**图像 AI_EMBED (CLIP)**——JPEG decode/processor + 约 600KB
+pixel tensor 让 DB/CPU/Ray/H2D/GPU 的木桶效应成为可测变量，但不预设哪一段是主瓶颈。
+设计 + go/no-go 门禁见 [`plans/image_clip_workload_lock_20260731.md`](plans/image_clip_workload_lock_20260731.md)。
+
+**benchmark 四层**：① 产品/算子语义用 SemBench 和 OceanBase/PolarDB/Snowflake/
+BigQuery 官方文档对齐；② 公开多模态执行协议参考 Ray Data 与 PolarDB 的 ImageNet、
+PDF、audio、video benchmark；③ 任务质量按 ImageNet top-1/top-5、COCO mAP/F1 或
+embedding Recall@K/MRR/nDCG；④ 本项目同机 database-operator track 统一 PostgreSQL
+BYTEA、模型、预处理、资源、计时边界和 sink，采集阶段/硬件诊断。公开 benchmark
+不是全闭源，但没有一套与本项目 PostgreSQL→CPU preprocess→GPU→pgvector 完全一致
+的现成协议，因此必须同时保留公开 file/object track 和本项目 database track。
+
+baseline 如何检索、证据如何分级、哪些指标必须记录，以
+[`plans/baseline_reference.md`](plans/baseline_reference.md) 的检索流程和指标合同为准。
+文本 AI_COMPLETE 的原生性审计、Chat/Completions 分轨和 64→512→4096 复测合同见
+[`plans/text_native_baseline_rerun_20260802.md`](plans/text_native_baseline_rerun_20260802.md)。
+MS MARCO 仅作为文本 embedding 轻对照，不能把图像、文本、音频强行统称为
+BigVectorBench。
+
 ## 当前状态
 
-文本主线的正式研究实验已经开展：数据组织、K_max/flush 提交控制、联合搜索、prefix-aware、BFD/row-cap、CUDA Graph baseline 和算子代价估计均已有不同等级的证据。统一完成度、全部结果目录和结论边界见 [`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
+文本实验已经形成不同等级的历史证据，当前统一 parked-conditional；具体数字只从
+[`results/EXPERIMENT_EVIDENCE_REGISTRY.md`](results/EXPERIMENT_EVIDENCE_REGISTRY.md)
+和对应结果目录读取，不再在本入口复制容易过期的参数与“下一步”。
 
-Adaptive K_max 的 shared-vLLM 双作业复验已经完成：static K8 保护前台，AIMD 无 decrease 并饱和至 K≈16，未优于 static K16；追加 adaptive-flush 分支同样没有稳定增量。双 4090 request-level active-work 已扩展到 16K–131K 并按预注册规则选择每 endpoint 65,536；固定资源的有界 Actor Pool 三形状、complete-row service quantum 和 SLO-aware EWMA flush 重复均已完成，三者都未达到 5% 晋升门槛。SLO-EWMA formal 还确认 25–50ms flush 动作相对 5.6–17.4s request P99 缺少一阶控制杠杆。当前保留 `request + 1×256 + 65K active work + fixed-50` 作为单 job 基线。尚未完成的主要验证是多 job 共享 endpoint 的 request/work credit 与公平队列、UCB 的 epoch reward 正确归因与端到端接入、路由/故障迁移、prefix cache 开启后的独立消融，以及图像 workload 多模态泛化。GPU-backed `AI_EMBED` 动机证据仍放在 `motivation/results/gpu/`，不与方法实验混放。
-
-2026-07-29 起，继续增加调度策略前先补两层同规模 baseline：第一层为无
-Daft/Ray 的 OceanBase `AI_COMPLETE` 与同 PostgreSQL bounded AsyncIO；第二层
-为 Daft `prompt()` Native/Ray 和 Ray Data HTTP Processor。两层与 ours 均统一
-重跑 Chat Completions，并以 direct-vLLM 作为容量上限。正式预注册见
-`plans/database_ai_operator_baseline_matrix_20260729.md`。
+图像 runner 已新增 Daft 内置 `embed_image` native arm；Ray Data arm 只使用官方
+`read_sql/map_batches/ActorPoolStrategy` graph，由 Ray Data 自己调度。原有 Daft
+Native/Ray/staged 是项目自写 UDF reference，旧 5K×3 数据只保留为机制诊断，不能称
+官方 baseline；旧 256 行 staged gate 也需在移除项目式 inflight 后重做 native gate。
+后续还需直接复用 Daft 官方 803,580-row ResNet18 脚本做 vendor-code parity，并完成
+60 秒以上稳态、统一 pgvector sink、任务 ground truth 和失败 run 落盘。当前执行状态
+以 [`plans/experiment_status_and_gaps.md`](plans/experiment_status_and_gaps.md) §0 为准。
 
 ## 目录分工
 

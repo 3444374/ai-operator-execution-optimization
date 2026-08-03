@@ -4,9 +4,9 @@
 
 ```powershell
 D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
-  code\scripts\run_ai_operator_scenarios.py `
+  code\scripts\experiments\run_ai_operator_scenarios.py `
   --config experiments\results\output_aware_bfd_gate_v2_20260726\scenario_config.json `
-  --profiler code\scripts\postgres_ai_operator_profile.py `
+  --profiler code\scripts\profiling\postgres_ai_operator_profile.py `
   --python-executable D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
   --output-dir experiments\results\output_aware_bfd_gate_v2_20260726 `
   --health-url http://localhost:8000/health `

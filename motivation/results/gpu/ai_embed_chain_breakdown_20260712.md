@@ -58,7 +58,7 @@ $env:HF_HUB_CACHE="D:\Code\ai-operator-execution-optimization\.cache\huggingface
 $env:TRANSFORMERS_CACHE=$env:HF_HUB_CACHE
 $env:TORCH_HOME="D:\Code\ai-operator-execution-optimization\.cache\torch"
 
-.conda\pg-ai-profile\python.exe code\scripts\local_embedding_server.py `
+.conda\pg-ai-profile\python.exe code\scripts\services\local_embedding_server.py `
   --model .cache\models\all-MiniLM-L6-v2 `
   --device cuda `
   --batch-size 64 `

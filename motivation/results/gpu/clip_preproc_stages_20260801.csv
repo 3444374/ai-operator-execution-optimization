@@ -1,0 +1,4 @@
+batch_size,n_measured,resize_p50_ms,center_crop_p50_ms,rescale_p50_ms,normalize_p50_ms,substeps_sum_p50_ms,total_preproc_p50_ms,residual_p50_ms,processor_output_kind,transformers_version,torch_version,server_version,pgvector_version
+1,100,1.4902,0.0251,0.0000,0.0617,1.5770,5.7228,4.1457,pt,5.14.1,2.11.0+cu130,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5
+32,100,1.2949,0.0061,0.0000,0.0430,1.3440,5.1105,3.7665,pt,5.14.1,2.11.0+cu130,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5
+128,100,1.2592,0.0032,0.0000,0.0232,1.2856,5.1332,3.8476,pt,5.14.1,2.11.0+cu130,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5

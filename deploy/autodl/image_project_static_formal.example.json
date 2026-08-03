@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "experiment_id": "image_project_static_60k_x2_20260802",
+  "seed": 20260802,
+  "warmup_runs_per_scenario": 1,
+  "formal_repeats": 3,
+  "minimum_unique_rows": 20000,
+  "minimum_steady_state_s": 60.0,
+  "common_args": [
+    "--model", "/root/autodl-tmp/models/clip-vit-base-patch32",
+    "--workload-name", "coco_train2017_60k",
+    "--limit", "60000",
+    "--dataset-passes", "2",
+    "--warmup-rows", "64",
+    "--batch-size", "64",
+    "--gpu-workers", "2",
+    "--source-shards", "4",
+    "--source-cpu-threads", "4",
+    "--torch-intraop-threads", "1",
+    "--torch-interop-threads", "1"
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "project_cpu8_active16",
+      "args": ["--arm", "project_ray", "--cpu-workers", "8", "--max-active-batches", "16"]
+    },
+    {
+      "scenario_id": "project_cpu8_active32",
+      "args": ["--arm", "project_ray", "--cpu-workers", "8", "--max-active-batches", "32"]
+    },
+    {
+      "scenario_id": "project_cpu16_active16",
+      "args": ["--arm", "project_ray", "--cpu-workers", "16", "--max-active-batches", "16"]
+    },
+    {
+      "scenario_id": "project_cpu16_active32",
+      "args": ["--arm", "project_ray", "--cpu-workers", "16", "--max-active-batches", "32"]
+    }
+  ]
+}

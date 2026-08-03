@@ -1,6 +1,6 @@
 # Existing AI Operator Execution Chains
 
-更新日期：2026-07-12
+更新日期：2026-08-01
 
 ## 结论
 
@@ -10,15 +10,63 @@
 |---|---|---|---|---|
 | Snowflake Cortex AISQL | SQL / Python AI functions，如 `AI_COMPLETE`、`AI_FILTER`、`AI_EMBED` | 托管在 Snowflake Service perimeter 内的 AI functions；官方强调 throughput 与 batch processing | 未见公开证据 | 证明数据库 AI SQL 算子是真实工业问题，但不能复现其闭源内部链路 |
 | pgai Vectorizer | PostgreSQL 中声明 vectorizer pipeline | PostgreSQL + stateless vectorizer workers；worker 读取队列、调用 embedding endpoint、写回数据库 | 否 | 与本项目“外部 worker + 模型服务 + 写回”最接近 |
-| OceanBase AI Function | SQL `AI_COMPLETE` / `AI_PROMPT` / `AI_EMBED` / `AI_RERANK` | 数据库内注册模型与 HTTP endpoint，由 SQL 表达式调用 OpenAI-compatible 模型服务 | 否 | 当前最合适的无 Daft/Ray、可连接同机 vLLM 的数据库 AI 算子产品 baseline 候选 |
+| OceanBase AI Function | SQL `AI_COMPLETE` / `AI_PROMPT` / `AI_EMBED` / `AI_RERANK` | 数据库内注册模型与 HTTP endpoint，由 SQL 表达式调用 OpenAI-compatible 模型服务 | 否 | 无 Daft/Ray 的产品级 SQL→endpoint baseline；当前 AutoDL 容器不可部署 observer，只能等待合适环境 |
+| PolarDB Polar_AI + EAS | SQL 函数调用自定义模型 | PolarDB 将 SQL 数据转换为服务协议，调用 EAS endpoint，再转回数据库类型 | 否 | 与 OceanBase 同属 SQL→remote endpoint 路线；云端硬件不同，只作工业参考，除非能锁定同物理环境 |
+| PolarDB Daft on Ray | DataFrame / 多模态异构算子 | CPU 下载、解码、缩放与 GPU 类 UDF 在同一 Daft 流水线中按算子声明资源，并由 Ray runner 执行 | 是 | 与本项目图像链路最接近；其 staged CPU→GPU 形态是必须补的强系统 baseline，不可由 fused UDF 代替 |
 | PostgresML | PostgreSQL 扩展中的 `pgml.embed`、`pgml.transform` 等 | 模型靠近数据库或在数据库内/近数据库执行，强调减少数据搬运 | 否 | 代表“把模型移到数据附近”的对照路线 |
 | pgvector | PostgreSQL 向量类型、索引与相似度查询 | 存储和查询向量，不负责 embedding 计算 | 否 | 是本项目 PostgreSQL 写回与检索 baseline |
-| Daft + Ray | DataFrame / batch inference / AI functions | Daft 可运行在 Ray 上，负责 DataFrame、partition、batch、shuffle 等数据处理抽象 | 是，可选 Ray runner | 更适合作为后续 batch/partition 表达层，不是已有数据库 AI 算子的必要事实 |
+| Daft + Ray | DataFrame / batch inference / AI functions | Daft 可运行在 Ray 上，负责 DataFrame、partition、batch、shuffle 与按算子资源声明 | 是，可选 Ray runner | 既是项目数据引擎，也是必须独立校准的框架 baseline；要区分 fused GPU UDF 与 staged CPU/GPU pipeline |
 | Ray Serve / Ray Data | Python API / serving API | Ray Data 做 batch data processing，Ray Serve 做 model serving、batching、routing、autoscaling | 是 | 适合作为本项目多 endpoint、backpressure、routing 的实验机制 |
 
 因此，本项目不要表述为“现有 AI 算子都用 Ray，所以我们优化 Ray”。更稳的表述是：
 
 > 现有系统已经证明数据库 AI 算子、vectorizer worker、模型服务调用、batch processing 和写回是实际工程形态；本项目选择 Ray/Daft/Lance-like 系统机制作为可控实验平台，研究数据库 AI 负载 触发后的 batch、partition、task/actor、模型服务路由、backpressure 和 writeback 优化。
+
+## 四类可复现实行形态
+
+不同产品都可能经过磁盘、内存、CPU、网络和 GPU，但软件边界不同，不能因为物理层
+相似就直接横向排名。当前按以下四类组织 baseline：
+
+| 类型 | 典型系统 | 关键边界 | 本项目如何比较 |
+|---|---|---|---|
+| in-database inference | PostgresML、Oracle ONNX 类路线 | 模型在数据库进程内或近数据库执行 | 只在同模型/同硬件可部署时做严格性能臂，否则作架构参照 |
+| SQL→remote endpoint | OceanBase AI Function、Polar_AI + EAS | 数据库序列化请求并调用外部模型服务 | 指向同一 endpoint、同协议、同并发和同输出语义；否则仅作工业参考 |
+| queue-worker | pgai Vectorizer | 数据库触发/队列，外部 worker 异步调用并写回 | 比较 JCT、freshness、重试、写回和多 job，而非只比模型 tokens/s |
+| distributed data pipeline | PolarDB Daft on Ray、Ray Data、本项目 | CPU 数据准备与 GPU 推理按 stage/actor 流水化 | 图像主战场；必须比较 fused 与 staged，并分别做 matched-resource 和 independently calibrated best |
+
+这四类不是互斥产品标签，而是执行路径抽象。同一产品可能提供多条路线，例如 PolarDB
+同时存在 Polar_AI→EAS 和 Daft-on-Ray 异构流水线。
+
+## 严格 baseline 的比较层级
+
+1. **GPU-resident compute ceiling**：只测模型 forward，定位硬件计算平台，不是项目对手。
+2. **direct service ceiling**：绕过数据库/Daft/Ray，测相同协议下服务可实现容量。
+3. **framework/system baseline**：Daft fused、Daft staged Native/Ray、Ray Data staged。
+4. **product SQL baseline**：OceanBase、PolarDB、pgai 等可部署产品路径。
+5. **frozen best project static**：calibration 后在 held-out workload 冻结的项目静态点。
+6. **project adaptive policy**：只与第 5 层比较策略增量，并报告相对每 workload oracle 的 regret。
+
+严格排名必须固定输入、模型 revision、输出语义、CPU/GPU 配额、生命周期、计时边界和
+sink。`matched-resource` 与各系统 `independently calibrated best-achievable` 分开报告。
+云端闭源系统若不能复现同硬件，只能报告用户可见工业参考，不参与 raw throughput 排名。
+
+## 数据路径不能统称“传输”
+
+图像/多模态链路至少拆为：存储→数据库/数据引擎、数据库→worker 序列化与网络、Ray
+object store/host copy、pageable/pinned host→device H2D、device→host 结果和写回。
+只有某一段位于关键路径、占比可观，并且减少该段能改善 E2E，才可称其为瓶颈。
+
+GPUDirect Storage 只针对存储→GPU 的 I/O/bounce-buffer 路径。当前 CLIP 链路仍需 CPU
+JPEG decode/processor，不能仅启用 GDS 就假设绕过 CPU；除非同时引入 GPU decode
+（如 nvJPEG/DALI）并作为改变预处理归属的独立实验臂。
+
+## 对 PolarDB 的两条路线如何使用
+
+Polar_AI + EAS 官方流程是 SQL→模型服务调用→数据库类型转换，适合作为 remote-endpoint
+产品形态参考。Daft on Ray 官方文档则明确支持在同一 DataFrame 流水线中把下载、解码、
+缩放等 CPU 算子与 GPU 类 UDF 分开声明资源并流式重叠。后者意味着当前项目只测
+“preprocess+forward 融合在一个 GPU UDF”的 Daft 对照仍不完整：它能证明 stage
+separation 相对 fused 形态的收益，但不能代表最强 Daft/PolarDB-style staged baseline。
 
 ## 对 Snowflake 是否需要测性能
 
@@ -144,7 +192,12 @@ PostgreSQL fetch
 - pgai README：`https://github.com/timescale/pgai`
 - OceanBase AI Function 语法：`https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975`
 - OceanBase AI Function quick start：`https://en.oceanbase.com/docs/common-oceanbase-database-10000000003450338`
+- PolarDB Polar_AI + EAS：`https://help.aliyun.com/en/polardb/polardb-for-postgresql/polar-ai-and-eas-implement-custom-in-library-model-inference`
+- PolarDB Daft on Ray 异构算子调度：`https://help.aliyun.com/en/polardb/polardb-for-postgresql/heterogeneous-operator-scheduling`
 - PostgresML README：`https://github.com/postgresml/postgresml`
 - pgvector README：`https://github.com/pgvector/pgvector`
 - Daft on Ray 文档：`https://docs.daft.ai/en/stable/distributed/ray/`
+- Ray Data `map_batches`：`https://docs.ray.io/en/latest/data/api/doc/ray.data.Dataset.map_batches.html`
+- Ray Data `ActorPoolStrategy`：`https://docs.ray.io/en/latest/data/api/doc/ray.data.ActorPoolStrategy.html`
 - Ray Serve 文档：`https://docs.ray.io/en/latest/serve/index.html`
+- NVIDIA GPUDirect Storage：`https://docs.nvidia.com/gpudirect-storage/index.html`

@@ -144,11 +144,11 @@ PostgreSQL 里有一张 documents 表
 在代码里，当前有两个重要入口：
 
 - `motivation/benchmarks/fake_embed_pipeline.py`：不连真实数据库，生成 fake 文档，用 Ray + Arrow 跑端到端动机实验。
-- `code/scripts/postgres_ai_operator_profile.py`：连接 PostgreSQL 18.4，同构预演数据库触发、Ray/Python 执行、fan-in 和 writeback。
+- `code/scripts/profiling/postgres_ai_operator_profile.py`：连接 PostgreSQL 18.4，同构预演数据库触发、Ray/Python 执行、fan-in 和 writeback。
 
 后面说“主控 Python 程序”时，主要指运行这些脚本的 Python 进程。PG18.4 画像脚本里对应 `main()` 调 `run_once()`，再在 `run_once()` 里完成取数、切 batch、提交 Ray、收结果和写回。
 
-`psycopg` 是 Python 连接 PostgreSQL 的驱动库。它的作用类似“Python 和 PostgreSQL 之间的数据库连接器”。在 `code/scripts/postgres_ai_operator_profile.py` 里，Python 主控程序通过 `psycopg.connect()` 连接数据库，通过 SQL 把 `documents` 取出来，也通过它把 embedding 写回 `document_embeddings`。
+`psycopg` 是 Python 连接 PostgreSQL 的驱动库。它的作用类似“Python 和 PostgreSQL 之间的数据库连接器”。在 `code/scripts/profiling/postgres_ai_operator_profile.py` 里，Python 主控程序通过 `psycopg.connect()` 连接数据库，通过 SQL 把 `documents` 取出来，也通过它把 embedding 写回 `document_embeddings`。
 
 当前链路里可以把几个进程分开看：
 
@@ -235,7 +235,7 @@ Python 主控程序
 - Ray worker 是另外的 Python worker 进程，负责执行 AI 算子。
 - Ray object store 是 Ray 管理的共享数据区域，用来放 worker 的输入或输出对象。
 
-在 `code/scripts/postgres_ai_operator_profile.py` 里，三种执行方式对应不同函数：
+在 `code/scripts/profiling/postgres_ai_operator_profile.py` 里，三种执行方式对应不同函数：
 
 | executor | 代码位置 | 运行含义 |
 |---|---|---|
@@ -490,7 +490,7 @@ PostgreSQL documents 表里有 4096 行
 在代码里：
 
 - `motivation/benchmarks/fake_embed_pipeline.py` 里，`reduced_outputs = ray.get(reducer_refs)` 取回多个 reducer 的输出。
-- `code/scripts/postgres_ai_operator_profile.py` 里，`submit_with_backpressure()` 和 `submit_ray_tasks()` 内部对 ready refs 调 `ray_module.get(ready)`，把已完成的 Ray 结果取回。
+- `code/scripts/profiling/postgres_ai_operator_profile.py` 里，`submit_with_backpressure()` 和 `submit_ray_tasks()` 内部对 ready refs 调 `ray_module.get(ready)`，把已完成的 Ray 结果取回。
 
 所以 `ray.get` 只负责“取回结果”；fan-in 是围绕它发生的“多结果汇聚流程”；writeback 是再后面的数据库写入。
 

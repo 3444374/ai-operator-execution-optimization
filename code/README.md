@@ -3,6 +3,11 @@
 Current implementation flow, completed mechanisms, evidence boundaries, and
 remaining work are summarized in `code/INFRA_STATUS.md`.
 
+全项目代码分层、文本/图像模态边界与分阶段迁移计划见
+[`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、
+文本/图像模态隔离、baseline 分层、旧兼容入口清理，以及 metrics、model backend、
+shared-vLLM 三个大文件的语义拆分，以及 scripts/tests 镜像整理已合入 `main`。
+
 本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `feasibility/benchmarks/` 或 `motivation/benchmarks/`。
 
 绘图、图表复现和素材筛选脚本统一放在 `figures/scripts/`；本目录优先保留实验主体代码、服务入口和 profiling 驱动。
@@ -11,54 +16,44 @@ remaining work are summarized in `code/INFRA_STATUS.md`.
 
 ```
 code/
-├── scripts/
-│   ├── postgres_ai_operator_profile.py   ← PostgreSQL AI 算子链路画像（Ray actor + GPU endpoint + writeback）
-│   ├── run_shared_vllm_experiment.py     ← 1/2/4-job 共享 vLLM 正式 group runner
-│   ├── pgai_sql_operator_profile.py      ← pgai SQL 触发面画像（ai.ollama_embed via pgai 扩展）
-│   ├── local_embedding_server.py         ← 本地 OpenAI 兼容 embedding 服务（Ollama）
-│   ├── daft_text_organizer_smoke.py      ← Daft 文本 DataFrame / into_batches / Ray runner smoke
-│   └── summarize_output_aware_bfd.py     ← BFD 正式重复实验的长表统计汇总
-├── configs/                              ← 后续工程配置文件（当前为空）
 ├── src/
-│   ├── sources.py                        ← PostgreSQL/Daft 数据入口后端
-│   ├── organizers.py                     ← ArrowOrganizer / DaftOrganizer 数据组织后端
-│   ├── request_costs.py                   ← 严格的输出成本模式与来源标签
-│   ├── shared_vllm_experiment.py          ← 多 job 配置、并发编排、组级指标与公平性验证
-│   ├── packing.py                         ← 与模态无关的确定性 BFD 与 row-cap-first 候选
-│   ├── runner_lease.py                    ← 场景输出目录的原子单写者租约与显式 stale recovery
-│   ├── model_backends.py                 ← fake / compatible HTTP embedding and completion backend
-│   ├── sinks.py                          ← none/json_text/pgvector embedding 写回 + completion JSON 写回
-│   ├── metrics.py                        ← timing / GPU snapshot / CSV metrics helper
-│   ├── profiling/
-│   │   ├── cli.py/config.py              ← profiler 参数面与环境解析
-│   │   ├── schema.py/traces.py           ← 正式汇总/trace CSV 契约
-│   │   ├── replay.py                     ← Arrow envelope、arrival replay 与生命周期种子
-│   │   └── ray.py                        ← Ray 提交、typed scheduler 与 credit/fan-in
-│   ├── profile_*.py                      ← 旧导入路径的薄兼容模块
-│   ├── workloads.py                      ← 内置 synthetic / controlled workload seed
-│   └── scheduling/
-│       ├── organization/                 ← token-budget policy + complete-row service-quantum slicer
-│       ├── submission_control/           ← request/work admission and shared fair credit
-│       ├── endpoint_routing/             ← round-robin/queue/work/prefix routing
-│       ├── runtime/                      ← Ray adapters and cached service observations
-│       └── models.py/scheduler.py/...    ← shared typed core and compatibility imports
-├── tests/
-│   ├── test_sources.py                   ← 数据入口后端最小单元测试
-│   ├── test_organizers.py                ← 数据组织后端最小单元测试
-│   ├── test_request_costs.py              ← 输出成本语义测试
-│   ├── test_packing.py                    ← BFD membership/指标测试
-│   ├── test_output_aware_summary.py       ← 正式结果长表汇总测试
-│   ├── test_kmax_interference_script.py  ← K_max runner 默认输出 schema 版本测试
-│   ├── test_token_budget_controller.py   ← 动态预算安全动作与 EWMA 测试
-│   ├── test_shared_credit.py              ← 多 job shared-credit 纯策略测试
-│   ├── test_shared_credit_ray.py          ← named Ray actor ownership 测试
-│   ├── test_runner_lease.py               ← runner 活跃 owner、stale recovery 与 fingerprint 门禁
-│   ├── test_model_backends.py            ← 模型后端最小单元测试
-│   ├── test_sinks.py                     ← 写回后端最小单元测试
-│   ├── test_workloads.py                 ← 内置 workload seed 单元测试
-│   └── test_import_ai_complete_workload.py ← ShareGPT/BurstGPT importer 单元测试
-└── requirements.txt                      ← Python 依赖（numpy, pyarrow<25, ray, psycopg, daft, torch, transformers）
+│   ├── data/                     ← PostgreSQL/Daft source、Arrow/Daft materializer、sink、workload
+│   ├── planning/                 ← 纯 cost estimator 与 work-unit packing；不依赖执行引擎
+│   ├── scheduling/
+│   │   ├── core/                 ← typed state、lifecycle、topology、scheduler loop
+│   │   ├── organization/         ← pending batching、token/work budget、service quantum
+│   │   ├── submission_control/   ← request/work credit、flush、AIMD/PID/UCB、shared credit
+│   │   ├── endpoint_routing/     ← pinned/queue/work/prefix routing
+│   │   └── runtime/              ← Ray adapter 与服务观测缓存
+│   ├── serving/                  ← completion/embedding backend 与 vLLM probe
+│   ├── modalities/
+│   │   ├── text/                 ← prompt/output-token work 语义
+│   │   └── image/                ← encoded bytes/tensor/CLIP/source/audit 合同
+│   ├── observability/            ← metrics 与 profiler 配置/replay/trace/Ray 接线
+│   ├── baselines/
+│   │   ├── common/               ← manifest/result/provenance/validity gate
+│   │   ├── text/                 ← ceilings/controls/frameworks/products/orchestration
+│   │   └── image/                ← provenance 与 Daft/Ray Data native graph
+│   ├── experiments/              ← calibration、scenario、shared-vLLM 编排
+│   └── infrastructure/           ← runtime env 与 runner lease
+├── scripts/
+│   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner
+│   └── profiling|experiments|analysis/ ← 画像、正式编排、离线分析
+├── tests/                        ← 按生产域镜像；远端完整依赖环境当前 622 个 unittest
+├── configs/                      ← vendor baseline pin 与可复现实验配置
+└── requirements.txt
 ```
+
+图像 baseline 的来源合同由 `src/baselines/image/provenance.py` 统一维护。正式 native
+baseline 当前为 Daft 内置 `embed_image` 和由 Ray Data 自己调度的官方
+`read_sql → map_batches(CPU) → map_batches(GPU)` graph；项目自写的 Daft fused/staged
+UDF 只保留为机制诊断 reference。所有 runner CSV/manifest 必须记录 scheduler owner、
+upstream source、是否包含项目调度代码和 formal eligibility。
+
+Daft 官方 803,580-row ResNet18 vendor-code baseline 固定在
+`configs/image_vendor_baselines.json`。该轨道直接运行固定 commit 的官方 Daft/Ray Data
+入口；允许的适配只有凭证/路径、物理 GPU 数、外部指标采集和结果审计，禁止加入项目
+actor pool、credit、active window、routing 或 backpressure。
 
 安装依赖：
 
@@ -73,10 +68,17 @@ ruff check code
 机制修复提交中混入大面积无语义格式 diff。新代码仍按 100 列、4 空格缩进和
 双引号格式编写。
 
+目录化后的完整测试发现必须指定 top-level，避免 `tests/experiments` 与
+`src/experiments` 被 Python 当成同名顶级包：
+
+```bash
+python -m unittest discover -s code/tests -t code -p 'test_*.py'
+```
+
 ## PostgreSQL data source backends
 
-`code/src/sources.py` defines the data entry boundary used by
-`code/scripts/postgres_ai_operator_profile.py`:
+`code/src/data/sources/postgres_text.py` defines the data entry boundary used by
+`code/scripts/profiling/postgres_ai_operator_profile.py`:
 
 - `arrow_postgres`: baseline psycopg read plus Arrow table construction.
 - `daft_postgres`: Daft `read_sql` PostgreSQL entry; it requires `sqlglot` and
@@ -85,7 +87,7 @@ ruff check code
 Data entry can use either the baseline psycopg path or Daft:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --dry-run --data-source daft_postgres --organizer daft `
   --output tmp\postgres_profile_dry_run.csv
 ```
@@ -98,51 +100,94 @@ optional sink backend and is not part of this implementation.
 The main profiling script should stay as orchestration code. Reusable behavior
 now lives under `code/src/`:
 
-- `sources.py`: PostgreSQL/Daft data entry.
-- `organizers.py`: Arrow/Daft batch organization.
-- `request_costs.py`: strict, shared output-cost modes and provenance.
-- `packing.py`: deterministic, modality-neutral classic BFD and a
+- `data/sources/postgres_text.py`: PostgreSQL/Daft data entry.
+- `data/materializers/text.py`: Arrow/Daft batch organization.
+- `modalities/text/costs.py`: strict, shared output-cost modes and provenance.
+- `planning/packing/scalar.py`: deterministic, modality-neutral classic BFD and a
   row-cap-first placement candidate sharing the same validation and ordering.
-- `model_backends.py`: `fake` debug backend, `compatible_http` embedding/completion backend, and Ollama native completion backend.
-- `sinks.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
-- `metrics.py`: timers, GPU/memory/power sampling, energy/MFU estimates, and
-  schema-safe CSV preflight/append helpers. Formal runs preflight the main
+- `serving/backends/`: 公共 backend 合同、embedding backend 与
+  completion/async/Ollama backend；包入口保持原公开 import 不变。
+- `modalities/image/`: engine-independent image batch/result semantics, a lazy Daft
+  PostgreSQL image source, CPU CLIP preprocessing, and a tensor-only GPU actor.
+  The actor owns no hidden batching; organizer/scheduler remains the batching
+  owner. Native framework baselines are deliberately separate under
+  `baselines/image/frameworks/`.
+- `infrastructure/runtime_env.py`: one shared contract for `PYTHONPATH` plus single-threaded
+  OpenBLAS/MKL/OMP/NumExpr settings inherited by Ray workers and multi-job
+  subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per
+  worker before any model request is sent.
+- Image workers apply the same rule inside long-lived Ray/Daft processes:
+  `experiments/run_image_clip_e2e.py` defaults Torch intra-op/inter-op pools to `1/1`,
+  records them in schema v8, and the project Ray pool verifies the observed
+  values before admitting work. Ray `num_cpus` remains an admission token, not
+  an OS thread quota; actor count and per-actor thread count are separate
+  experiment variables.
+  The image runner passes the shared `ray_runtime_env()` contract at every
+  `ray.init`, so workers receive project imports and numeric thread limits
+  without relying on an interactive shell's `PYTHONPATH`.
+  Schema v8 also separates Ray cluster slots from external Daft source threads
+  and includes both in the host physical-resource budget.
+  `--source-cpu-threads` is independent from preprocess `--cpu-workers`, so
+  capacity sweeps change one stage at a time.
+  Project execution additionally times source iterator waits, driver batch
+  materialization, and Ray submission so the residual framework gap is not
+  mislabeled as GPU or PCIe time.
+- `baselines/`: vLLM Bench service ceiling、项目自写 bounded controls、Daft/Ray Data
+  framework-native adapters、OceanBase product-native adapter、immutable manifest 和
+  fail-closed 双 endpoint gate。`text/frameworks/` 只封装 vendor API graph，不注入项目
+  credit/router；`provenance.py` 防止 control/ceiling 被误报为原生 baseline。
+- `data/sinks/postgres.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
+- `observability/metrics/`: `timing.py`、`csv.py`、`statistics.py`、`resources.py`、
+  `vllm.py` 分别负责计时、schema-safe CSV、分布统计、GPU/能耗/MFU 和 vLLM 指标；
+  包入口保持原公开 import 不变。Formal runs preflight the main
   output against dry-run keys before database or GPU work. Empty files receive
   a header; non-empty files reject appended rows whose ordered keys do not
   exactly match the existing header.
-- `profiling/traces.py`: versioned control/flush/submission/request/resource CSV
+  `model_request_tokens_per_s` isolates the model-submission window,
+  `operator_tokens_per_s` uses the operator wall, and legacy `tokens_per_s`
+  remains the complete E2E rate; comparisons must not mix these time bases.
+- `observability/profiling/traces.py`: versioned control/flush/submission/request/resource CSV
   serializers. Control schema 2 records the actual `hol_age_s` input;
   submission schema 3 uses scheduler lifecycle IDs and records pool,
   endpoint, GPU, status, and error instead of synthesizing batch IDs for
   request-granularity runs.
-- `profiling/cli.py`: the profiler command-line surface only; it does not start
+- `observability/profiling/cli.py`: the profiler command-line surface only; it does not start
   Ray, connect to PostgreSQL, or inspect the environment beyond argument
   defaults.
-- `profiling/config.py`: post-parse endpoint/metrics precedence and Ray worker
+- `observability/profiling/config.py`: post-parse endpoint/metrics precedence and Ray worker
   resource resolution. Explicit CLI values win over plural/single environment
   defaults.
-- `profiling/schema.py`: the ordered formal summary-row contract and schema-drift
+- `observability/profiling/schema.py`: the ordered formal summary-row contract and schema-drift
   guard, separate from runtime orchestration.
-- `profiling/replay.py`: offline/replayed Arrow envelope construction,
+- `observability/profiling/replay.py`: offline/replayed Arrow envelope construction,
   token-budget row grouping, batch/request submission expansion, and request
   lifecycle seed assembly. It does not submit Ray work or call model services.
-- `profiling/ray.py`: Ray task/actor submitters, endpoint topology, typed
+- `observability/profiling/ray.py`: Ray task/actor submitters, endpoint topology, typed
   scheduler wiring, credit release/fan-in, and the explicitly retained legacy
   adaptive baselines. It does not parse CLI arguments or write trace CSVs.
-- `workloads.py`: small built-in seed workloads for smoke/dev only.
+- `data/workloads/text.py`: small built-in seed workloads for smoke/dev only.
 - `scheduling/`: engine-independent typed core split by decision boundary:
-  `organization/`, `submission_control/`, `endpoint_routing/`, and `runtime/`.
-  Thin modules at the old root import paths preserve existing callers while new
-  code imports the owning subpackage. The formal payload/execution path remains
-  Daft -> Arrow -> Ray.
+  `core/`, `organization/`, `submission_control/`, `endpoint_routing/`, and `runtime/`.
+  Duplicate root compatibility modules have been removed. The formal
+  payload/execution path remains Daft -> Arrow -> Ray.
 
 `fake` is retained only as a local control backend for offline smoke tests and
 pipeline debugging. It is not a model-service result source. For vLLM-compatible
 experiments, use `--model-backend compatible_http`; the older `http_openai`
 name is accepted only as a compatibility alias. `AI_COMPLETE` is selected with
-`--operator ai_complete` and expects a vLLM-compatible `/v1/completions` URL
-through `--completion-endpoint-url`. For local Ollama smoke runs, use
+`--operator ai_complete`. Use `/v1/completions` for the original multi-prompt
+mechanism path, or `/v1/chat/completions` with
+`--completion-protocol chat_completions` for product/official-runtime
+compatibility. `--completion-http-transport httpx_async` creates one persistent,
+bounded async connection pool per Ray actor. In Completions mode one actor call
+keeps the original multi-prompt HTTP body; in Chat mode a multi-row actor call
+dispatches one independent Chat request per row with `asyncio.gather`. For local
+Ollama smoke runs, use
 `--model-backend ollama --completion-endpoint-url http://localhost:11434`.
+
+`src/observability/profiling/` owns profiler implementation. The obsolete root
+`src/profile_*.py` compatibility modules have been removed; production and test callers now
+use the owning subpackage directly, and an AST architecture test prevents the old paths from returning.
 
 ## Scheduling foundation
 
@@ -151,6 +196,13 @@ data-organization policies, request/work admission, shared multi-job credit,
 endpoint routing, a deterministic policy-composition scheduler, and Ray runtime
 adapters. Policy modules do not import Daft, Arrow, Ray, or HTTP; only runtime
 adapters receive the active Ray module explicitly.
+
+Endpoint state separates service health (`healthy`) from request-specific
+admission capacity (`available`). Routers use `schedulable_endpoints()` for
+selection, while `healthy_endpoints()` remains a pure health query. Temporary
+request/work-credit exhaustion raises typed backpressure so the scheduler
+collects a completion and retries; a manifest-pinned request keeps both its
+endpoint and that endpoint's pool.
 Arrival replay is produced through a one-element bounded queue so waiting for
 the next source arrival cannot block Ray completion collection. The scheduler
 keeps submit/routing/credit/lifecycle state on its main thread: it prioritizes
@@ -218,18 +270,18 @@ allowing smaller HTTP/Ray completions to release active-work credit
 independently; an oversized row remains intact and is explicitly marked.
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_policies.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
-.conda\pg-ai-profile\python.exe code\tests\test_ray_adapter.py
-.conda\pg-ai-profile\python.exe code\tests\test_adaptive_admission.py
-.conda\pg-ai-profile\python.exe code\tests\test_dynamic_admission.py
-.conda\pg-ai-profile\python.exe code\tests\test_flush_policies.py
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
-.conda\pg-ai-profile\python.exe code\tests\test_token_budget_controller.py
-.conda\pg-ai-profile\python.exe code\tests\test_shared_credit.py
-.conda\pg-ai-profile\python.exe code\tests\test_shared_credit_ray.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_models.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_policies.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_ray_adapter.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_adaptive_admission.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_dynamic_admission.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_flush_policies.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_token_budget_controller.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_shared_credit.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_shared_credit_ray.py
 ```
 
 Typed AIMD, optional EWMA-AIMD, and PID controllers can now drive the same Ray
@@ -310,8 +362,8 @@ configured sample interval as its control clock; its current signal is still
 the age of the oldest in-flight submission and should not be described as pure
 pre-submit queueing delay.
 
-`code/src/experiment_scenarios.py` and
-`code/scripts/run_ai_operator_scenarios.py` provide deterministic formal-run
+`code/src/experiments/scenarios/core.py` and
+`code/scripts/experiments/run_ai_operator_scenarios.py` provide deterministic formal-run
 interleaving, per-run service-idle gates, failure incidents, redacted commands,
 and an atomically updated manifest. Scenario argument strings may reference
 explicit `${ENV_NAME}` values; an unset variable fails before health checks or
@@ -329,36 +381,41 @@ Final comparable AI_COMPLETE baselines should use the normalized
 ShareGPT/BurstGPT workload instead of the legacy synthetic seed. Raw payloads
 live under `data/raw/` and are ignored by git; see `data/README.md`.
 
-Import 1024 local rows without clearing existing `documents` rows:
+Import 2048 local rows of the current main workload (sharegpt_multiturn, doc_id 300000-302047, target_output_tokens 1-256) without clearing existing `documents` rows:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\import_ai_complete_workload.py `
+.conda\pg-ai-profile\python.exe code\scripts\data\import_ai_complete_workload.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
-  --workload-name sharegpt_burstgpt `
-  --start-doc-id 1000000 `
-  --max-rows 1024 `
+  --workload-name sharegpt_multiturn `
+  --start-doc-id 300000 `
+  --max-rows 2048 `
   --batch-rows 500
 ```
 
 Run the profiling script against this workload with:
 
 ```powershell
---source-workload-name sharegpt_burstgpt
+--source-workload-name sharegpt_multiturn
 ```
+
+Note: `sharegpt_burstgpt` (formerly 1024 rows, now 2048) is a legacy workload retained for reproducing 0725-0728 experiments; it is no longer the default for current baselines.
 
 ## Daft 文本组织 smoke
 
-当前 Daft 接入的项目代码在 `code/src/organizers.py`：`ArrowOrganizer` 是 baseline 后端，`DaftOrganizer` 是文本阶段 Daft DataFrame 后端。独立 smoke 入口只负责验证 `rows -> Arrow Table -> organizer -> batches`，并可显式切换 Ray runner 验证 `into_partitions`。这不是正式性能实验，不写入 `motivation/results/gpu/`。
+当前 Daft 接入的项目代码在 `code/src/data/materializers/text.py`：`ArrowOrganizer`
+是 baseline 后端，`DaftOrganizer` 是文本阶段 Daft DataFrame 后端。独立 smoke 入口只负责验证
+`rows -> Arrow Table -> organizer -> batches`，并可显式切换 Ray runner 验证
+`into_partitions`。这不是正式性能实验，不写入 `motivation/results/gpu/`。
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\daft_text_organizer_smoke.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\daft_text_organizer_smoke.py `
   --organizer daft --runner ray --rows 32 --batch-size 8 `
   --partition-mode into_partitions --partitions 4 `
   --output tmp\daft_text_organizer_smoke.csv
 ```
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_organizers.py
+.conda\pg-ai-profile\python.exe code\tests\planning\test_organizers.py
 ```
 
 ## PostgreSQL AI 算子链路画像
@@ -366,7 +423,7 @@ Run the profiling script against this workload with:
 当前新增入口：
 
 ```text
-code/scripts/postgres_ai_operator_profile.py
+code/scripts/profiling/postgres_ai_operator_profile.py
 ```
 
 目标是采集 PostgreSQL 18 触发 AI 算子后的外部执行链路画像；当前本地运行
@@ -393,7 +450,7 @@ PostgreSQL documents/job table
 最小 dry-run：
 
 ```bash
-.venv/bin/python code/scripts/postgres_ai_operator_profile.py \
+.venv/bin/python code/scripts/profiling/postgres_ai_operator_profile.py \
   --dry-run \
   --output feasibility/results/postgres_ai_operator_profile_dry_run.csv
 ```
@@ -402,7 +459,7 @@ PostgreSQL documents/job table
 
 ```bash
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
-.venv/bin/python code/scripts/postgres_ai_operator_profile.py \
+.venv/bin/python code/scripts/profiling/postgres_ai_operator_profile.py \
   --setup \
   --seed-rows 10000 \
   --total-rows 10000 \
@@ -418,7 +475,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
 Daft organizer dry-run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --dry-run --executor python `
   --organizer daft --daft-runner native `
   --output tmp\postgres_profile_dry_run.csv
@@ -435,11 +492,15 @@ Daft organizer dry-run:
 `code/src/baselines/` 把现有系统对照与本项目实现分离成可审计适配层：
 
 - `contracts.py` / `manifests.py` 固定请求语义、顺序、hash 与 endpoint 分片；
-- `async_http.py` / `vllm_bench.py` 提供无 Daft/Ray 对照和 serving ceiling；
-- `official_runtime.py` 对接 Daft Native/Ray 与 Ray Data 官方接口；
+- `controls/` 提供项目自写 direct controls，`ceilings/vllm_bench.py` 提供 serving
+  ceiling；
+- `runtime/daft_prompt.py` / `runtime/ray_data_http.py` 分别对接 Daft 与 Ray Data
+  vendor-native API graph；
+- `provenance.py` 固定 role、scheduler owner、custom scheduling、formal eligibility
+  与 upstream source，避免 control/ceiling 冒充 native baseline；
 - `postgres_manifest.py` 从正式 PostgreSQL workload 只读导出完整行与 source
   hash，随后交给共同 endpoint 分片器；
-- `oceanbase.py` 对接原生 `AI_COMPLETE`，不以 Python HTTP 模拟产品算子；
+- `products/oceanbase.py` 对接原生 `AI_COMPLETE`，不以 Python HTTP 模拟产品算子；
 - `results.py` / `gate.py` 统一 exactly-once、延迟、吞吐和 fail-closed 门禁；
 - `cli.py` 只做 shard dispatch、原始证据保存和格式归一化；
 - `gate_runner.py` 串行 core cell、并行双 endpoint shard，并在空队列校验后
@@ -449,3 +510,14 @@ Daft organizer dry-run:
 Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属于数据库
 算子；bounded HTTP 是强因果对照，不冒充已有产品；OceanBase 缺少 AI Function
 能力时记为 capability failure，不阻塞 bounded HTTP 与官方 runtime 主矩阵。
+
+`src/calibration.py` 与 `scripts/analysis/select_strategy_calibration.py` 负责把 feeding、
+token-budget 和同协议 actor-shape 校准结果冻结为后续策略实验的机器可校验
+合同，避免示例环境中的历史默认值静默进入正式 data-organization、
+submission 或多 job 矩阵。
+合同分别记录 throughput-oriented token budget 与在 95% throughput floor
+内最大化 SLO goodput 的候选预算，避免把一个预算误写成所有目标的通用最优。
+actor shape 保持每 endpoint 总 slots 不变，并选择达到峰值 97% 的最小
+actor 数；Chat 结果不能冻结 Completions 主线。
+Shared-vLLM 的 4-job 数据面必须使用有界 persistent async actor pool；显式
+4-job `ray_task` 配置会在外部请求前失败，防止数百 worker 再次耗尽容器 VMA。

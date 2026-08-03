@@ -1,8 +1,48 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-07-29，补充 Shared-vLLM 正式结果与边界）
+Date: 2026-07-20（最后更新：2026-08-03；Daft built-in embedding parity 与 baseline 合同同步）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
+
+## 0. 当前优先级（2026-08-01 方向 pivot —— 取代 §4 / §10.3 / §13 的文本轨道强制顺序）
+
+**方向决定（2026-08-01；本节为该决定的记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `image_clip_workload_lock_20260731.md` §0「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
+
+**✅ §6 go/no-go 与实现边界复测均已通过（GO）**（2026-08-01）：历史 slow-pt
+路径 CPU 准备/GPU embed=**13.8–18.3**；随后在 `f3d17af` 上用 5000 图、四变体、
+6 batch sizes、5+30 repeats 交错复测。torchvision tensor-decode 相对
+production-np 的配对串行吞吐为 **1.14–1.22×**，但 CPU prepare 仍为 actor 的
+**13.8–31.2×**；720/720 rows 完整，embedding cosine=1/max_abs=0。因而 slow
+processor 混淆没有推翻异构阶段失衡，但 95% 仍只能写成理论串行非-forward占比。
+项目自写 fused Daft Native/Ray 与 bounded project-Ray operator-E2E runner 已实现；fractional-GPU
+actor shape 已独立校准，5000 图×3 formal 已完成。项目阶段拆分相对最佳 Daft
+Native 单卡吞吐 +29.6%，相对最佳 Daft Ray 双卡 +13.8%，12/12 exactly-once；
+但它是同物理机器各自最佳点，不是相同 Ray CPU reservation 的资源效率证明，也不
+代表 Daft 官方 native baseline。旧 staged reference arms 已通过 256 行资源账本、
+exactly-once、双 GPU 可运行门禁，但只能证明 adapter 能力。当前已新增 Daft 内置
+`embed_image`，并从 Ray Data arm 移除项目 `max_active_batches`。Daft built-in 的 256 图
+gate 与逐行 parity 已闭合：离线 L2 normalize 后 cosine P1=0.999788、非自身
+overlap@10 mean=0.9949，正式比较采用统一 normalized contract 且把归一化计入各臂
+E2E。下一步运行 Daft 官方 ResNet18 vendor-code parity 与 60 秒以上稳态 formal，补统一 pgvector sink、bounded
+direct ceiling 与 CPU-budget-normalized curve。
+实现边界复测见 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`，
+operator-E2E 原始数据和七步报告见
+`motivation/results/gpu/image_clip_native_baseline_20260801/`。
+
+**过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + fused Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② ✅ staged runner/resource gate；✅ 原生 baseline 独立校准已完成（Daft built-in batch64≈177 img/s@5K、Ray Data native batch64/cpu8≈957 img/s@60K×2，见 `motivation/results/gpu/{daft_builtin,ray_data}_calibration_20260803/`）；✅ project 静态点已冻结 `cpu16/active32/batch64`（两轮 1701/1681 img/s，**旧 schema，只用于选点**，见 `motivation/results/gpu/image_project_static_60k_x2_20260803/`）；✅ 统一 `l2_normalized` 输出合同（`03b815d`/`6f0954b`）。下一步：Daft built-in 60K 长门禁 → 四臂同机 formal 排名（**当前 commit + 统一合同**，不复用旧 schema 行）→ 再接统一 pgvector sink，并扩展 bounded direct CLIP、CPU-normalized curve、vLLM pooling、naive（+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
+
+**文本轨道遗留的 pivot 后分类**：
+
+| 遗留项 | pivot 后状态 | 理由 |
+|---|---|---|
+| 代价模型 ranking（Spearman / pairwise / Top-K，§1.5） | 🟢 **保留（服务 B）** | B 的方法论基础；文本侧 283 profile 可直接验证 ranking/regret 方法 |
+| §13 K256/W98K 等价性门禁 + disjoint 2048 formal | ⏸ parked-conditional | 文本 baseline-matrix 严谨度；论文收录文本结果时恢复 |
+| §10.3 baseline 矩阵第 1–6 步（OceanBase / Daft / Ray Data formal） | ⏸ parked-conditional（image §7 用同结构，可复用） | 同上；image §7 会重建同臂结构 |
+| 4-ep/1.5B prefix routing 隔离（endpoint vs model，§1.1） | ⏸ parked | 文本归因诚实性，非 A+B |
+| prefix_aware_token_budget 正文实验（§1.1） | ⏸ parked | 文本 RC1 残留 |
+| 动态控制信号选择（§10.4 三方式） | ⏸ parked | 文本 RC2；A 在 image 侧重做（观测 CLIP endpoint 队列） |
+
+> **阅读指引**：§1（实验全景）+ §2（证据链）主体是已完成实验的**事实记录，不受 pivot 影响**，保留原样——但 §1.2 / §1.6 结尾的"下一步 / 唯一安全顺序"句是**规范性指令**（已就地标注 parked）。以下章节是 **pivot 前（2026-07-29）的文本轨道**前瞻 / 路线图，**整节已被 §0 取代**（标题处加 ⏸），文本轨道恢复时仍可参考：§4 全节（当前强制顺序 + 候选机制 + P0/P1/P2 路线图）、§6 完整问题审计、§9 剩余关键缺口、§10.3 推荐顺序、§10.4 动态控制信号、§11 RC2 备选方案推进顺序、§13 baseline 门禁。
 
 ## 1. 实验全景：已完成 vs 未完成
 
@@ -16,9 +56,10 @@ Date: 2026-07-20（最后更新：2026-07-29，补充 Shared-vLLM 正式结果�
 | Token-budget vs Fixed Row（timeout=300）| ✅ 07-19 | **Token-budget 能约束 token tail**：6144/8192 吞吐接近 fixed 32/64，token P95 大幅降低 | 4096 吞吐更低（tradeoff）；未证明在所有场景下优于 fixed |
 | **Token-budget 1024–32768 容量曲线** | ⏳ 配置完成 | — | 预算甜点、过大预算的 completion barrier/HOL 代价、动态预算动作集 |
 | Length-align + Prefix-aware ablation | ✅ 07-19 | length+fixed 是负结果（token P95=33407）；prefix+token6144 吞吐最高（339 rows/s）但 prefix ratio 仅 6.4% | length-align 需配 token-budget；prefix 信号太弱 |
-| **Prefix 受控 workload 实验** | ✅ 07-26 | 0/30/70/100% cache-off screen；修复唯一 prefix 重排与隐式 length-align 耦合 | prefix cache 开启后的命中收益仍未验证 |
+| **Prefix 受控 workload + cache-ON 消融** | ✅ 07-26 / 07-31（2-ep/7B 跨三数据集）；⚠️ 07-31（4-ep/1.5B）；07-31 KV-budget 扫描（2-ep/1.5B，`rc1_prefix_routing/kv_budget_sweep_20260731`） | cache-OFF 0/30/70/100% screen；cache-ON 2-ep/7B batching 中性（within 1.2%）+ routing 跨分散/agent/concentrated 三数据集吞吐 \|Δ\|<2% 不过门禁（agent-trace pala P50 −7.8%/SLO −3.8pp 但吞吐 −1.9%，过饱和区间）；cache-ON 4-ep/1.5B routing **+5.9% 跨门禁**（KV-budget 扫描已排除 per-endpoint KV 为驱动：2-ep/1.5B 全 KV 范围中性、含 13–15% SLO 抖动点；matched-KV ~7GB → 2-ep −0.1% vs 4-ep +5.9%，指向 endpoint 数；agent-trace 为不同 workload 信号） | 1.5B/multiturn 下 endpoint 数（consolidation）是开关、非 per-endpoint KV（KV 扫描证伪 cache-pressure-开关 假设）；agent-trace(2-ep/7B) 是否 cache-pressure 驱动待跨 workload 验证；per-arm 命中率待 runner 增采 |
+| **RC1 数据组织系统重测（5 策略 × {2-ep/0.9, 4-ep/0.43}, cache-ON, 1.5B, multiturn）** | ✅ 07-31（`rc1_data_organization/`，**取代 07-25/26 gropy；07-18/19 保留作历史动机参照**） | **regime-dependent**：2-ep（KV max 7–10% 无压力）5 策略 E2E 50–56k 紧凑，fixed≈seq>bestfit>rowcap>lenalign；4-ep（KV max **98–100% 饱和**）分化 39–50k 且**排名反转** seq>fixed>>rowcap≈bestfit>lenalign。**机制闭合（prefix_group_ratio）**：重排序类 organizer（length_align/best_fit/row_cap）打散 prefix 组（ratio 0.03）→ 4-ep 命中从 0.60–0.76 崩到 **0.06–0.07** → prefill 重算激增 → TTFT 翻倍/tail 崩（best_fit/row_cap SLO 60%）；保序类 fixed/sequential 保留局部性（ratio 0.13–0.29，命中 0.47–0.48）。consolidation 是惩罚（4-ep 比 2-ep −10～−26% + 能耗 +40%）。P0 指标（prefix_hit/TTFT）首次采集 | ✅ 喂饱门禁已补（batched bounded，gate 放宽 ≥2 endpoint）：2-ep 真上限 79,488（策略 63–71%、缺口=active-work 准入节流非饿死）；4-ep bounded 24,733 病态（策略超过）→ 准入控制是吞吐杠杆、随 regime 反向；prefix_aware_token_budget 正文实验 ⏸ parked（见 §0；能否回收 4-ep 重排序类命中率）；仅 1 workload + 1 model；MFU 未产出 |
 
-**RC1 当前状态**：✅ 动机成立，策略机制已验证。⚠️ 但不是"全面胜利"——token-budget 控制 token tail 的代价是更多 HTTP 调用，这个 tradeoff 本身是论文的讨论点。
+**RC1 当前状态**：✅ 动机成立，策略机制已验证 + **regime-dependent 闭合**（07-31 系统重测：组织策略效应取决于 KV 压力 regime；cache-ON 下保 prefix 局部性是隐性目标，重排序类在 KV 饱和下崩）。⚠️ 但不是"全面胜利"——token-budget 控制 token tail 的代价是更多 HTTP 调用，这个 tradeoff 本身是论文的讨论点。✅ feeding-saturation 门禁已补（batched bounded 2-ep 79,488/4-ep 24,733 病态）：策略确实喂饱但**不榨干 raw 上限**——active-work 准入（W65536）是吞吐 binding 杠杆、效应随 regime 反向（2-ep 压住可放开、4-ep 防 thrash 应保留），这本身是研究内容二的实证信号。
 
 ### 1.2 研究内容二：调度与提交控制策略
 
@@ -33,6 +74,7 @@ Date: 2026-07-20（最后更新：2026-07-29，补充 Shared-vLLM 正式结果�
 | **改进 adaptive flush** | ✅ 07-26 | 自然 EOS 重复、跨 arrival-rate 与 2048 held-out 均完成 | adaptive 未优于 fixed-50；当前默认 fixed 50ms |
 | **Request-level continuous replenishment** | ⚠️ 双卡重复已完成 | global K32≈per-endpoint K16，确认 K 语义；work-matched request K48≈batch K16；request K64 为最高已测吞吐 | K64 同时增加约 33% offered work 且 P99 更差，尚未隔离补位机制的独立吞吐/SLO 收益；需固定 active work 复验 |
 | **Per-endpoint active-work capacity** | ✅ 07-29 扩展曲线完成 | 双 4090 八档各三次 formal；32/32 成功，65K 达最大吞吐 97.80%，下一档 +0.92% | 按预注册规则选择 65,536；98K→131K 吞吐持平而 P99/SLO 更差 |
+| **Short/long static credit existence screen** | ⚠️ 07-30 screening 完成，正式判决阻塞 | 48/48 run 成功；long 的 W65K 信号稳定，K256 在短/长两侧均造成明显 SLO 退化 | 实际为 urllib、无 output token IDs、非 K×work factorial；short 未绑定等价臂分裂 48.5%，均值/中位数选点相反。审计=`inconclusive`，必须先重跑 async 等价臂 gate |
 | **SLO-aware EWMA flush** | ✅ 07-29 | 双 4090 high/arrival-limited 各 3 次 formal；相对 fixed-50 吞吐 -0.52%/+0.10%，P99 -0.94%/-0.49%，30s SLO 全部零违约 | 25–50ms 动作相对 5.6–17.4s P99 缺少一阶杠杆；`near_*` 实测为 arrival-limited，不晋升动态策略 |
 | **多 job/多 foreground size 扩展** | ✅ 07-29 equal-workload 正式矩阵 | 36/36、0 incident；shared credit 容量安全与公平门槛通过。2-job 无增量；4-job 聚合吞吐 +9.57%、max P99 -22.52%，但逐 repeat 不稳定 | held-out 4-job、staggered idle borrowing、weighted overlap fairness、异构 mix/offset 仍待验证 |
 
@@ -43,6 +85,12 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 单作业与 shared-vLLM 复验均表明 AIMD 未优于同上限 static K=16，且根因不
 是控制器参数问题——shared-vLLM 实验中 vLLM waiting 始终为 0（请求在 Ray
 侧排队），AIMD 看的拥塞信号（vLLM waiting > 0 / KV usage 高）不反映 Ray 侧积压——形成"软拥塞"，即请求在 Ray actor 侧排队但 vLLM waiting 仍显示空闲。
+07-30 short/long prompt 静态 credit screening 不能关闭动态路线：远端最初
+使用 E2E tokens/s 算术平均得到 short/long 均为 W65K；正式 model-request
+中位数却得到 short W98K、long W65K。由于 short W65K/W98K cap 均未绑定却
+出现 18%/34% CV，且实验没有使用冻结的 async transport，该迁移信号与
+“共同 65K”信号都不具判决资格。（文本轨道恢复后）下一步先运行 version-controlled async
+等价臂 gate，只有稳定性通过才重建交错静态面。
 不继续在当前稳态 workload 上调 PID 参数；动态控制在负载阶段变化/多租户/
 多 GPU 场景下仍是开放问题。
 
@@ -59,7 +107,7 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 
 | 实验 | 状态 |
 |---|---|
-| CLIP embedding + ImageNet subset | ❌ 未做（scope 缩减条件：文本 RC1+RC2 消融完成前不启动）|
+| CLIP embedding (COCO/ImageNet subset) AI_EMBED | ✅ **§6 go/no-go 门禁已过（GO，5K 规范跑 ratio 13.8–18.3，见 §0）**。过门禁 → 建 path-B runner + image §7 对照臂（bounded direct / Daft Native / Ray Data / ours） |
 
 ### 1.5 算子代价估计 & 写回
 
@@ -85,6 +133,19 @@ grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。定位为�
 - 点估计无预测区间：编排决策仅靠一个数字，无法评估风险。
 
 详见 `experiments/results/operator_cost_estimation_20260726/README.md`。
+
+### 1.6 同条件强 baseline 与 project runtime
+
+| 实验 | 状态 | 已有证据 | 当前缺口 |
+|---|---|---|---|
+| Official/直接客户端 512 行 C128/C256 | ✅ 07-29 | 4/4 cell、512/512 exactly-once、0 incident；vLLM Bench C256 15,351 total tok/s，bounded C256 14,532；C128→C256 仍提升 24.3%/33.0% | C256 是 `max_num_seqs` 配置硬上限，不是已证明的经验平台 |
+| Project profiler 同 512 manifest 校准 | 🟡 首次 64 行 gate fail closed，已修复待 re-gate | HTTP 前发现 trace target 276 与 capped manifest work 256 的语义分叉；source hash 一致，排除数据漂移。项目 work/guard 已统一为 `min(trace target, completion cap)`，旧现场保留，512 未启动 | 完整测试与全新 64 行 re-gate 通过后，扫描 K32/64/128/256 与 work16K–98K |
+| 2,048 行 disjoint formal | 🟡 数据已就绪，待 manifest/gate | 远端库已含多个 2048 行重建 workload（`sharegpt_multiturn` 在 `doc_id=300000..302047`，另含 `sharegpt_concentrated`/`sharegpt_burstgpt`），disjoint 2048 行不再缺；raw/text/session/Qwen token 已核对 | 选定一个与主实验 disjoint 的 2048 行 workload（如 `doc_id=300000..302047` 之外的重建集）导出只读 manifest，先 64 行 gate，再 1 warm-up + 3 repeats |
+
+这组结果已经推翻“历史 project 约 8.0–8.2K tok/s 是双 4090 物理极限”的
+解释。**文本 baseline 轨道恢复时**的安全顺序（当前 parked-conditional，见 §0）：先完成 project 512 校准，再准备 disjoint formal
+数据；formal 通过后才恢复多 job 或新策略搜索。不得跨协议、arrival replay
+或 workload 直接比较历史数字。
 
 ---
 
@@ -151,7 +212,19 @@ AI_COMPLETE 的根本差异：每行 token 量可差 13.9×，"一行"不再是�
 
 ---
 
-## 4. 下一步实验路线图
+## 4. 下一步实验路线图 — ⏸ pivot 前文本轨道（含下方 候选机制 + P0/P1/P2 路线图），整节已被 §0 取代
+
+### 当前强制顺序（2026-07-29）— ⏸ pivot 前文本轨道顺序，已被 §0 取代（保留供文本轨道恢复时参考）
+
+1. 在同一 512 行 immutable Chat manifest 上完成 project static-K 与
+   token-work 校准；
+2. 用 direct C256 的 15,351 total tok/s 作为当前配置 hard-ceiling 参考，
+   比较 project 的 time-to-ceiling、JCT、P99、MFU 与 minimum active work；
+3. 独立 2,048 行 held-out 数据已重建：使用 sharegpt_multiturn（doc_id
+   300000–302047）/ sharegpt_concentrated 作为 2,048 行源，加载对应只读
+   manifest；先 64 行 gate，再 1 warm-up + 3 repeats；
+4. 单 job strong baseline 结论冻结后，才进入 1/2/4-job shared-credit/fairness；
+5. 旧的 25–50ms adaptive flush 调参不再优先。
 
 ### 候选机制优先级（跨论文，2026-07-24）
 
@@ -221,20 +294,17 @@ static K=16 机制 control 后，AIMD 的 E2E +0.66%、tokens/s -0.69%，差异
 
 **同时追加指标**：`tokens/s`、`service_p99`。
 
-### P1：Prefix cache 机制确认 + 显式联合消融
+### P1：Prefix cache 机制确认 + 显式联合消融（2-ep/7B ✅ 完成 07-31；4-ep/1.5B ⚠️ 跨门禁待隔离）
 
-受控 prefix 0/30/70/100% 和 2048 请求扩展已经完成。下一步只在单独启用
-prefix cache 并能记录命中证据时重验 prefix-aware；length-align 与 prefix
-grouping 必须作为两个独立因素做显式联合消融。
+- cache-OFF 受控 prefix 0/30/70/100% + 2048 请求扩展（07-26）；
+- cache-ON batching 消融（07-30，`experiments/results/prefix_cache_data_org_20260730/`）：上游 batching 顺序中性（within 1.2%，CV ≤0.5%）；
+- cache-ON prefix-affinity routing 消融，2-ep/7B（07-31）：跨三个 workload 吞吐全部中性——分散 ShareGPT（`prefix_cache_routing_req_20260730/`，纯 routing −0.1%、length-align +1.8%，<5% 门禁）、agent-trace（`prefix_routing_agent_20260730/`，\|Δ\|<2%）、concentrated（`prefix_routing_concentrated_20260730/`，\|Δ\|<1.2%）。
+- ⚠️ **agent-trace 尾延迟信号**（2-ep/7B，`prefix_routing_agent_20260730/`）：pala P50 −7.8%（64.2 vs 69.6s）、SLO −3.8pp（78% vs 82%）、goodput +17%，但吞吐 −1.9%（过饱和区间 SLO 违约 78–83%、未过门禁）；concentrated cache 压力低、同信号弱。
+- cache-ON prefix-affinity routing 消融，4-ep/1.5B（07-31，`experiments/results/prefix_cache_routing_4ep_1.5b_20260731/`）：prefix_affinity 相对 least_queued **+5.9%**（46,943 vs 44,317 tok/s，raw 不重叠、CV≤0.9%）、SLO −6.3pp、P95 −3.15s，**跨过 5% 门禁**。
+- **结论（分层）**：低淘汰压力 regime（2-ep/7B，APC 覆盖 working set）prefix 方向收口，vLLM APC 覆盖上游 prefix 组织/路由优化；高淘汰压力 regime（4-ep/1.5B APC 不够覆盖，或 2-ep/7B agent-trace 高 cache 压力 workload）prefix_affinity / pala 重新显现收益（+5.9% 吞吐或 P50 −7.8%）。**cache 淘汰压力是信号是否显现的开关**，现由两个独立高压数据点支持（4-ep/1.5B 改 endpoint/model；agent-trace 只改 workload）。⚠️ 4-ep/1.5B 同时改了 model/endpoint 数/KV 大小（混淆）且 SLO 违约 25–31% 处于过饱和 regime——跨门禁但需隔离消融后正式晋级。
+- 残留：per-arm prefix cache 命中率未记录（resources.csv 只采样 KV 用量，待 runner 增采）；4-ep/1.5B 的 +5.9% 需 4-ep/7B 或 2-ep/1.5B 隔离 endpoint 数 vs model size；agent pala 的 P50 改善需人为缩 KV 制造可控淘汰率单调验证；低 prefix 重复率 workload 泛化未测。高淘汰压力 regime 的 KV 淘汰/重算瓶颈信号（4-ep 25–31% SLO 违约 + affinity 收益、2-ep/7B agent-trace P50 改善）为 Mooncake/共享 KV cache 方向提供动机数据点。
 
-**设计**：
-- 构造 prefix ratio = 0/30/70/100% 的受控 workload
-- 仅在 prefix+token6144 条件下评估
-- 选取 token-budget vs fixed 实验 scale 到 2048 行
-
-**同时追加指标**：per-request e2e latency 分布（对 prefix-aware 论证至关重要）。
-
-### P2：多模态泛化（触发条件：P0 和 P1 完成）
+### P2：多模态泛化（⚠️ 触发条件已被 §0 pivot 取代——image 多模态现为首要 workload，不再等文本 P0/P1）
 
 **目标**：验证策略代码的模态无关性。
 
@@ -259,7 +329,7 @@ grouping 必须作为两个独立因素做显式联合消融。
 
 ---
 
-## 6. 完整问题审计（2026-07-23）
+## 6. 完整问题审计（2026-07-23）— ⏸ 文本轨道问题清单（parked-conditional，见 §0；仅当论文收录文本结果时为生效优先级）
 
 以下审计覆盖所有已知问题（不含"ML as Native Operator"叙事定位问题，该问题已在 2026-07-23 对话中单独讨论，结论为搁置至后续阶段）。问题按 P0/P1/P2 分级。
 
@@ -391,7 +461,7 @@ service P99 均值降低 8.010%。每轮 512 个文档 exactly-once。
 
 #### P2-4：无多 endpoint / 多 GPU 实验
 
-**事实**：所有 AI_COMPLETE 实验均为单 RTX 5070 + 单 vLLM 实例。多 endpoint 是"actor pool 分池路由"的前置场景——无多 endpoint 则分池路由无意义。AI_EMBED 预研做了双 endpoint，但 AI_COMPLETE（主场景）无。
+**事实**（2026-07-23 审计快照）：当时 AI_COMPLETE 实验均为单 RTX 5070 + 单 vLLM 实例。**已修复（2026-07-31）**：AI_COMPLETE 已在 AutoDL 双 4090 上完成多 endpoint 实验——2-endpoint/Qwen2.5-7B 与 4-endpoint/Qwen2.5-1.5B prefix-affinity routing（见 §1.2 "Prefix 受控 workload + cache-ON 消融" 行）。"单 RTX 5070 / 无多 endpoint" 缺口已闭合；4-ep/1.5B 的 prefix 收益跨 5% 门禁但仍混淆待隔离，分池路由场景已具备前置条件。
 
 #### P2-5：跨查询 batching 是隐含效果而非显式策略
 
@@ -399,10 +469,14 @@ service P99 均值降低 8.010%。每轮 512 个文档 exactly-once。
 
 **多模态场景下的重要性提升（2026-07-23 更新）**：在纯文本场景下 vLLM 的 continuous batching 掩盖了"没有跨查询请求池"这个问题——所有 AI_COMPLETE 请求都走同一个 vLLM endpoint，vLLM 内部自动合并。但在多模态场景下：
 - AI_COMPLETE → vLLM（Qwen2.5-1.5B）
-- AI_EMBED → CLIP endpoint（**没有 continuous batching**）
+- AI_EMBED → CLIP backend（vLLM pooling / Triton / Infinity 等成熟服务均可能有
+  服务端 batching；是否开启必须作为 manifest 因子）
 - AI_CLASSIFY → Qwen2.5-VL endpoint
 
-CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器，不同 SQL 查询的 AI_EMBED 请求如果不显式合并，就是各自发小 batch → GPU 利用率低。因此跨查询请求池在多模态场景下从"vLLM 代劳"变为"必须自己做"。
+因此不能再以“CLIP 天然没有 continuous batching”作为跨查询请求池的立题依据。
+只有在**上游 owns batching**（例如 tensor-input Ray GPU actor 不再二次攒批）
+或成熟服务的 batching 在异质多 job 下被实验证明不足时，显式跨查询池才是可验证方法；
+否则它只是与服务端重复实现。
 
 **论文影响**：如果 claim "跨查询 continuous batching"作为方法贡献，需要在 Ray 层实现显式的全局请求池 + 算子类型感知路由（同类合并、异类分池）。纯文本场景下这个贡献被 vLLM 内部机制掩盖，多模态场景才是它真正体现价值的地方。
 
@@ -479,7 +553,7 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
   复验证实；但 AIMD 无法观测 Ray 侧软拥塞（vLLM waiting=0），动态控制
   相对最佳静态无增量；当前共享服务默认继续使用 static K=8 + fixed 50ms。
 
-### 剩余关键缺口
+### 剩余关键缺口 — ⏸ 文本轨道待办（parked-conditional，见 §0；item 6 多模态已升为 §0 首要 workload、item 7 动态控制信号 = §0 parked）
 
 1. 用相同 per-GPU K 完成单/双 endpoint 容量曲线，替代历史 global K 同值
    的不公平对照；
@@ -496,9 +570,11 @@ CLIP embedding 模型通常没有类似 vLLM 的 continuous batching 调度器�
    固定 quantum 不晋升；8192 因会退化为 batch control 未运行；
 5. SLO-aware EWMA flush 已完成正式对照且未晋升；不在同一 25–50ms 动作
    空间继续调 alpha/deadband；
-6. prefix cache-on、多模态复用，以及 shared-vLLM 4-job held-out、
+6. 多模态复用，以及 shared-vLLM 4-job held-out、
    workload mix、arrival offset、staggered idle borrowing 和 weighted
-   overlap fairness；
+   overlap fairness（prefix cache-on 2-ep/7B 已完成：batching + routing 均中性、
+   prefix 方向在该 regime 收口；4-ep/1.5B routing +5.9% 跨门禁、高淘汰压力 regime
+   有条件重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融）；
 7. 动态控制的信号选择问题——逐请求完成时间或端到端 SLO slack 可能替代
    当前 vLLM waiting 信号（不反映 Ray 侧积压），但尚未验证。
 
@@ -540,9 +616,9 @@ decrease 的根因不是控制器参数问题，而是 vLLM Prometheus `waiting`
 "软拥塞"。Completion-span/HOL 观测和 request-level replenishment 的副产品——
 逐请求完成时间——可作为反映 Ray 侧积压的信号，使动态控制真正有价值。这
 将 request-level replenishment 的优先级从"工程改进"提升为"可能解锁动态控制
-价值的必要前置"。
+价值的必要前置”（当前 parked-conditional，见 §0；仅动态控制方向恢复时生效）。
 
-### 10.3 推荐顺序与成功标准
+### 10.3 推荐顺序与成功标准 — ⏸ pivot 前文本轨道（2026-07-29），已被 §0 取代
 
 1. 16K–131K active-work、Actor Pool、service quantum、SLO-aware EWMA 和
    Shared-vLLM equal-workload 矩阵均已完成；在继续增加策略前，先补同规模
@@ -595,7 +671,7 @@ P99、failure、exactly-once 不退化。否则记录负结果，不增加控制
 完整机制卡、文献映射、fatal-flaw audit 和候选池见
 `literature_driven_pipeline_optimization_guide.md`。
 
-### 10.4 RC2 核心瓶颈：AIMD 选错了观测信号（2026-07-27 集中梳理）
+### 10.4 RC2 核心瓶颈：AIMD 选错了观测信号（2026-07-27 集中梳理）— ⏸ parked-conditional（见 §0），文本轨道恢复且需做动态控制信号选择时再启用
 
 **问题**：07-26 shared-vLLM 实验中 AIMD 0 次 decrease，根因是 AIMD 盯着
 vLLM Prometheus `vllm:num_requests_waiting` 做决策——但请求在 Ray actor
@@ -622,7 +698,7 @@ vLLM Prometheus `vllm:num_requests_waiting` 做决策——但请求在 Ray acto
 - 方式 1 可以**叠加**在 2+3 之上：当 2+3 的解析推断显示"当前接近饱和"时，用 1 做精确的 per-request TTFT 预测来决定哪些请求立即提交、哪些等待
 - 推荐**渐进式推进**：先方式 3（零新依赖）→ 再方式 2（验证 K=8 解析依据）→ 最后方式 1（需要模拟器基础设施）
 
-## 11. 2026-07-27 提交策略（RC2）文献驱动备选方案
+## 11. 2026-07-27 提交策略（RC2）文献驱动备选方案 — ⏸ parked-conditional（见 §0），文本轨道恢复时参考；方案 A–G 机制卡保留
 
 以下从新精读的 SFS (arXiv 2026) 及其他 5 篇代价估计论文中提取的
 提交策略备选技术方案。每个方案标注来源、落地难度、和与当前 K_max +
@@ -854,8 +930,7 @@ Credit-based admission 退化为 FIFO，与当前方案等价——不值得额�
 ## 12. 关于"已排除"技术的状态说明（2026-07-27 审计）
 
 以下技术在 07-26 实验中未表现出优于当前 baselines 的结果，但代码和
-实验记录均已保留，**不视为永久排除**。当前结论受限于单 GPU（RTX 5070）、
-Qwen2.5-1.5B、512 行稳态 workload 等测试条件——在不同硬件/模型/负载
+实验记录均已保留，**不视为永久排除**。AIMD/EWMA-AIMD/PID 与 SLO-EWMA flush 已于 07-29 在双 4090 重跑（见 §1.2），单 GPU 限制不再适用于这两项；其余技术的当前结论仍受限于 Qwen2.5-1.5B、512 行稳态 workload 等测试条件——在不同硬件/模型/负载
 /多租户场景下可能重新体现出价值：
 
 | 技术 | 当前结论 | 保留位置 | 重新激活条件 |
@@ -870,3 +945,29 @@ baseline"。代码实现均保持可用状态，后续重新激活时改动量�
 §10.2 的诊断指出选错信号是根因而非控制器参数问题，一旦
 request-level completion replenishment 提供了逐请求完成时间信号，
 动态控制的价值可能需要重新评估。
+
+---
+
+## 13. 2026-07-29 baseline 优势验证的当前门禁 — ⏸ pivot 前文本轨道门禁（K256/W98K），已被 §0 取代；文本轨道恢复时为入口
+
+512 行 direct C256 已达到 vLLM Bench 15,351、bounded HTTP 14,532 total
+tokens/s；project 单次 K256 为 11,736。project 的 9-cell calibration 因理论
+等价的 K256/W98K 相差 2.83× 而失效。只读诊断把主差异定位到首次
+full-concurrency 的 HTTP/vLLM request wall，而不是 active-work credit 或 actor
+创建。
+
+因此当前唯一安全远端动作是运行 K256/W98K 的 1 warm-up + 3 repeats
+等价性门禁。它通过后才依次执行：
+
+1. direct/official/project 单 job 独立 calibration 与 held-out；
+2. 32/64/128/256-row transient saturation；
+3. matched one/two-GPU scaling；
+4. bounded HTTP、independent project、shared static credit、fair credit 的
+   1/2/4-job 矩阵；
+5. 官方 OceanBase capability 通过则测产品 arm，否则仅测明确标注的
+   OceanBase-style 轻量模拟；pgai 保持 embedding 对照。
+
+所有主 arm 使用同一双 endpoint。不得通过挑选 Daft Native 单次高值、弱连接
+池、不同 request body 或不同输出 work 寻找优势。晋级门槛以
+baseline 身份与晋级门槛以 `baseline_reference.md` 为准，文本运行合同以
+`text_native_baseline_rerun_20260802.md` 为准。

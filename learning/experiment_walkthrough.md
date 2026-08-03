@@ -405,7 +405,8 @@ GPU-backed model service 不等于自动变快
 
 结论：
 
-- Ray task 是必须保留的强 baseline；
+- Ray task 是必须保留的框架 primitive 诊断对照；若含项目编排代码，不进入正式
+  vendor-native baseline 排名；
 - actor 不应默认更优；
 - pgvector 批量写回可用且显著；
 - 行数扩大后，Ray 并行会把瓶颈推向 writeback。
@@ -624,7 +625,7 @@ e2e_s           = 13.168s
 
 ### 13.6 和三个场景的关系
 
-现在开题优先用 `AI_EMBED`，不是因为另外两个场景不重要，而是因为 `AI_EMBED` 最容易形成真实闭环：
+在 07-12 这组动机实验阶段，开题优先用 `AI_EMBED`，不是因为另外两个场景不重要，而是因为 `AI_EMBED` 最容易形成真实闭环：
 
 ```text
 PostgreSQL documents
@@ -637,11 +638,11 @@ PostgreSQL documents
 
 三个场景的定位应是：
 
-| 场景 | 当前定位 |
+| 场景 | 定位（2026-07-12 开题阶段，历史） |
 |---|---|
-| `AI_EMBED` / RAG ingestion | 开题阶段真实链路主动机主场景 |
+| `AI_EMBED` / RAG ingestion | 开题阶段真实链路主动机主场景（文本预研已完成） |
 | `AI_FILTER` / `AI_CLASSIFY` | 后续补 selectivity、predicate ordering、cascade |
-| `AI_COMPLETE` / offline LLM | 后续更贴近 AI infra 的重点主线候选 |
+| `AI_COMPLETE` / offline LLM | 当时的后续主线候选 |
 
 尤其是 `AI_COMPLETE`，后续要尽量作为主线候选推进，因为它能自然引出：
 
@@ -660,6 +661,8 @@ PostgreSQL documents
 再把 AI_COMPLETE 提升为更贴近 AI infra 的核心压力 workload
 AI_FILTER / AI_CLASSIFY 用来补足 AI predicate 场景
 ```
+
+> 2026-07-31 更新：AI_COMPLETE 现已是项目文本主场景（见 AGENTS.md §1）；prefix/routing（2-ep/7B prefix routing 中性（prefix_affinity vs least_queued −0.1%，<5% 门禁）；4-ep/1.5B prefix_affinity +5.9%（46,943 vs 44,317 tok/s，3 repeat 不重叠、CV≤0.9%）跨过 5% 门禁，但受 model×endpoint×KV 与过饱和 regime（SLO 违约 25–31%）混淆，方向有条件重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融后定级）、active-work 65K、batching、K_max 等实验均已在 sharegpt_multiturn（2048 行）上完成。AI_EMBED 文本预研已完成，AI_EMBED/AI_CLASSIFY 现指标记图像/多模态泛化验证场景。本节“先把 AI_EMBED 建立主动机、再把 AI_COMPLETE 提升”描述的是 07-12 开题阶段的推进顺序，不是当前主线状态。
 
 ### 13.7 Ray 的价值为什么还要继续测
 
@@ -824,7 +827,7 @@ pgai_documents.text
 
 ### 14.5 对后续代码有什么用
 
-后续可以给 `code/scripts/postgres_ai_operator_profile.py` 增加一个触发面参数：
+后续可以给 `code/scripts/profiling/postgres_ai_operator_profile.py` 增加一个触发面参数：
 
 ```text
 --operator-surface job_table|pgai_sql
@@ -845,7 +848,7 @@ fan-in 和 writeback。
 
 ```text
 feasibility/results/trigger_surface_validation_20260714.md
-code/scripts/pgai_sql_operator_profile.py
+code/scripts/profiling/pgai_sql_operator_profile.py
 ```
 
 这次依次做了三件事：
@@ -1084,3 +1087,80 @@ flush 决定未满 batch 最多等多久，`K_max` 决定已经关闭的 batch �
 逐请求真实 output token 与 finish reason 现在来自 vLLM 每个 choice 的 token
 IDs，不再把 submission aggregate usage 平均分摊。generic compatible endpoint
 默认不请求这个 vLLM 扩展，因此缺失时仍保持为空，而不是伪造数据。
+
+## 2026-08-02：图像链路的“木桶”不是简单等于 PCIe
+
+图像从 PostgreSQL 到 CLIP GPU 的实际位置依次是：数据库中的 JPEG bytes → Daft
+source iterator → driver 把 Arrow batch 转成 Python bytes → Ray CPU actor decode/resize/
+normalize → Ray GPU actor 接收 tensor → host copy/H2D → CLIP forward → embedding 返回。
+
+这次先修了两个会让实验不公平的隐藏变量：Ray `num_cpus=1` 只是准入 token，原先
+每个 actor 可能继承 32/64 个 Torch 线程；另外 project 的 Daft source 在线程上位于
+Ray cluster 外。现在每 worker Torch 固定 1/1，并把 external source threads 加入 host
+总预算。线程从隐式 32/64 收紧到 1/1 后，吞吐只下降约 2.6%，但 host busy 从约
+23.3 降到 7.8 cores，说明旧配置主要浪费 CPU，并没有形成相称收益。
+
+单因素 screening 的直观读法：
+
+- preprocess actor 1→2→4→8，冷吞吐 143→210→296→363 images/s，说明 CPU
+  preprocess 是真杠杆；
+- source threads 1→2→4→6，冷吞吐 359→366→368→345，说明多开 DB/Daft source
+  thread 不是主要答案；
+- active batches 4→8→16→32→64，冷吞吐 279→350→375→398→359，说明窗口太小
+  会断粮，但 64 只制造排队；
+- 16 preprocess actor + active32 的冷 E2E 最好（单次 11.45s），32 actor 查询稍快，
+  却因创建大量 processor/model worker 使 cold E2E 和 first output 明显变差。
+
+代表点把 driver 又拆成 source-next、materialize、submit。扣除模型池建立后，查询约
+3.13s；三段累计约 1.66s，而 79 批 preprocess actor-time 除以 16 actor 的理想下界约
+1.97s。H2D 与 forward p50 都约 7ms/batch，明显更小。因此目前最诚实的判定是
+“CPU preprocess + driver/Ray submission 混合木桶”，不是“PCIe 已经限制 GPU”。
+
+这里的 H2D 是 **Host-to-Device**：CPU actor 先在主机内存产生图像 tensor，GPU actor
+再通过 PCIe 把它复制到显存。当前 batch=64 时，host tensor 为
+`64×3×224×224×4 ≈ 38.5 MB`（float32），转换为 float16 后的 device tensor约
+19.3 MB。诊断里的约 7.4ms 是同步包围 `torch.as_tensor(..., device="cuda",
+dtype=float16)` 得到的阶段 wall；它还包含 dtype 转换语义，`逻辑 bytes / wall`
+不是 PCIe 硬件计数器。按 38.5MB 粗算约 5.2GB/s，反而明显低于 PCIe 4.0 x16 的
+理论链路上限，不能把“几毫秒”理解为已经测到总线极限。
+
+把总图片数从 5K 增到 60K，只会让相同 H2D 操作重复更多次、降低启停噪声，不会让
+每批 tensor 自动变大，也不会提高 H2D 在关键路径中的占比。真正改变每批传输压力的
+是 batch、分辨率、host/device dtype、多 crop/frame 数以及 pageable/pinned memory；
+但不能为了制造 PCIe 瓶颈随意放大 synthetic payload。正式判定先保持真实
+CLIP/224×224 语义，比较 GPU-resident、pinned H2D、pageable/Ray tensor 三层；只有
+H2D 占 steady wall≥20%，且 pinned/降字节/overlap 让 E2E 改善≥5%，PCIe 路线才 GO。
+
+这些点都只有一次，作用是挑 formal 候选。下一步仍要在 20K unique images、至少
+60s 稳态、交错三重复下比较 Daft built-in、官方 ResNet18 parity、Ray Data native graph 和 project；并用
+GPU-resident/pinned/pageable 表示阶梯正式判 PCIe GO/NO-GO。
+
+## 2026-08-03：为什么保存 embedding 的运行不是性能 baseline
+
+Daft built-in 和 project 都输出 512 维向量，但前者由 provider 决定 processor、dtype
+和归一化，后者显式执行 CLIP projection 与 L2 normalization。两边 images/s 只有在
+输出语义足够接近时才能放到同一排名中，因此先用同一批 256 张图做逐行 parity probe。
+
+正常 runner 采用流式审计：每批 embedding 到达 driver 后只累计 exactly-once、digest、
+checksum 和 norm，矩阵随即释放。这样 formal 不会因保留 60K/120K 行输出而增加数百 MB
+driver 内存。`--save-embeddings` 只在小规模 gate 中启用可选 capture，把已经通过
+shape/finite/doc-id 校验的分块保留下来，再写为 `.npz`；默认路径不创建 capture。
+
+capture 本身会增加 driver copy 和内存，因此该次运行的 E2E、images/s、CPU/内存都不能
+进入性能排名。它只回答语义问题：离线 L2 normalization 后，同 doc-id cosine 的
+min/P1/P50/P99 是否接近 1，以及排除自身后的 Top-K 邻居是否重合。若只剩尺度差异，
+可以建立统一归一化轨道；否则 Daft built-in 保留为 separate-boundary 产品原生 baseline，
+不能为追求同一吞吐表而修改 vendor 内部执行图。
+
+当前统一轨道通过 `--embedding-output-contract l2_normalized` 显式启用。项目与 Ray Data
+本来就在模型 actor 内归一化；Daft built-in 保留官方 `decode_image→embed_image` 执行图，
+只在 adapter 消费官方输出后、写入共同 audit 前执行 CPU L2 normalization，并把这段成本
+计入该 arm 的 operator E2E。这个 adapter 只统一输出语义，不控制 Daft 的 batch、actor、
+backpressure 或调度，因此不会把项目调度机制注入原生 baseline。CSV/manifest 必须同时
+记录 requested/effective contract、normalization owner 和是否位于计时边界；未记录这些
+字段的历史 Daft run 只能用于 batch screening，不能用于统一语义正式排名。
+
+capture 的 `.npz.manifest.json` 也必须复制同一份输出合同元数据，不能再用“Daft 可能未
+归一化”这种静态提示代替本次实际参数。旧 artifact 的 sidecar 原文应保留并在结果报告中
+标注元数据缺陷；不能为了让历史记录看起来整齐而事后改写 raw 文件。合同判定以同次运行的
+schema v11 CSV/arm manifest 为准，并可用 `.npz` 重新运行 parity probe 复核。

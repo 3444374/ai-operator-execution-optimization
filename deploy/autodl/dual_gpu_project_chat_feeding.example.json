@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dual_gpu_project_chat_feeding",
+  "seed": 20260730,
+  "service_metadata": {
+    "vllm_version": "0.25.1",
+    "enforce_eager": false,
+    "compilation_mode": "default",
+    "chunked_prefill": true,
+    "max_num_batched_tokens": "${VLLM_MAX_NUM_BATCHED_TOKENS}",
+    "max_num_seqs": "${VLLM_MAX_NUM_SEQS}",
+    "gpu_memory_utilization": 0.9,
+    "prefix_caching": false,
+    "mfu_metrics": true
+  },
+  "require_complete_service_metadata": true,
+  "warmup_runs_per_scenario": 1,
+  "formal_repeats": 3,
+  "common_args": [
+    "--database-url",
+    "${DATABASE_URL}",
+    "--total-rows",
+    "512",
+    "--db-fetch-rows",
+    "512",
+    "--request-manifest",
+    "${PROJECT_CALIBRATION_REQUEST_MANIFEST}",
+    "--source-workload-name",
+    "${SOURCE_WORKLOAD_NAME}",
+    "--source-max-prompt-tokens",
+    "${SOURCE_MAX_PROMPT_TOKENS}",
+    "--source-order",
+    "doc_id",
+    "--data-source",
+    "daft_postgres",
+    "--operator",
+    "ai_complete",
+    "--model-backend",
+    "compatible_http",
+    "--completion-endpoint-urls",
+    "${COMPLETION_CHAT_ENDPOINT_URLS}",
+    "--completion-model",
+    "${COMPLETION_MODEL}",
+    "--completion-protocol",
+    "chat_completions",
+    "--completion-prompt-format",
+    "raw",
+    "--completion-temperature",
+    "0",
+    "--completion-max-tokens",
+    "256",
+    "--completion-request-timeout-s",
+    "300",
+    "--output-cost-mode",
+    "trace_target_output",
+    "--cost-model-id",
+    "${COMPLETION_MODEL}",
+    "--cost-tokenizer-id",
+    "${COMPLETION_MODEL}",
+    "--organizer",
+    "daft",
+    "--organizer-partition-mode",
+    "none",
+    "--daft-runner",
+    "native",
+    "--batching-policy",
+    "fixed_rows",
+    "--ray-batch-rows",
+    "512",
+    "--executor",
+    "ray_actor",
+    "--ray-address",
+    "${RAY_ADDRESS}",
+    "--actor-workers-per-endpoint",
+    "1",
+    "--ray-actor-max-concurrency",
+    "256",
+    "--ray-worker-num-cpus",
+    "0.5",
+    "--submission-granularity",
+    "request",
+    "--scheduling-policy",
+    "static",
+    "--admission-scope",
+    "per_endpoint",
+    "--endpoint-routing",
+    "manifest_pinned",
+    "--token-budget-policy",
+    "static",
+    "--flush-policy",
+    "immediate",
+    "--writeback-mode",
+    "none",
+    "--request-slo-ms",
+    "${REQUEST_SLO_MS}",
+    "--model-metrics-urls",
+    "${MODEL_METRICS_URLS}",
+    "--endpoint-gpu-ids",
+    "0,1",
+    "--resource-sample-interval-s",
+    "0.25",
+    "--gpu-peak-tflops",
+    "${GPU_PEAK_TFLOPS}",
+    "--mfu-precision",
+    "${MFU_PRECISION}"
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "urllib_k64",
+      "args": [
+        "--completion-http-transport",
+        "urllib",
+        "--max-inflight",
+        "64"
+      ]
+    },
+    {
+      "scenario_id": "urllib_k128",
+      "args": [
+        "--completion-http-transport",
+        "urllib",
+        "--max-inflight",
+        "128"
+      ]
+    },
+    {
+      "scenario_id": "urllib_k256",
+      "args": [
+        "--completion-http-transport",
+        "urllib",
+        "--max-inflight",
+        "256"
+      ]
+    },
+    {
+      "scenario_id": "async_k64",
+      "args": [
+        "--completion-http-transport",
+        "httpx_async",
+        "--max-inflight",
+        "64"
+      ]
+    },
+    {
+      "scenario_id": "async_k128",
+      "args": [
+        "--completion-http-transport",
+        "httpx_async",
+        "--max-inflight",
+        "128"
+      ]
+    },
+    {
+      "scenario_id": "async_k256",
+      "args": [
+        "--completion-http-transport",
+        "httpx_async",
+        "--max-inflight",
+        "256"
+      ]
+    },
+    {
+      "scenario_id": "async_k256_2x128",
+      "args": [
+        "--completion-http-transport",
+        "httpx_async",
+        "--max-inflight",
+        "256",
+        "--actor-workers-per-endpoint",
+        "2",
+        "--ray-actor-max-concurrency",
+        "128",
+        "--ray-worker-num-cpus",
+        "0.25"
+      ]
+    },
+    {
+      "scenario_id": "async_k256_4x64",
+      "args": [
+        "--completion-http-transport",
+        "httpx_async",
+        "--max-inflight",
+        "256",
+        "--actor-workers-per-endpoint",
+        "4",
+        "--ray-actor-max-concurrency",
+        "64",
+        "--ray-worker-num-cpus",
+        "0.125"
+      ]
+    }
+  ]
+}

@@ -26,7 +26,7 @@ feasibility/results/gpu_ai_embed_config_dry_run.csv
 All runs used:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 4096 --total-rows 4096 `
   --db-fetch-rows 512 --ray-batch-rows 256 `

@@ -37,7 +37,7 @@
 
 **Files:**
 - Create: `code/src/request_costs.py`
-- Create: `code/tests/test_request_costs.py`
+- Create: `code/tests/modalities/text/test_request_costs.py`
 
 **Interfaces:**
 - Produces:
@@ -65,7 +65,7 @@ def output_cost_source(mode: OutputCostMode) -> str
 
 - [ ] **Step 1: Write the failing cost tests**
 
-Create `code/tests/test_request_costs.py`:
+Create `code/tests/modalities/text/test_request_costs.py`:
 
 ```python
 from __future__ import annotations
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_request_costs.py -v
+.conda\pg-ai-profile\python.exe code\tests\modalities\text\test_request_costs.py -v
 ```
 
 Expected: import failure because `src.request_costs` does not exist.
@@ -229,7 +229,7 @@ def resolve_output_tokens(
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_request_costs.py -v
+.conda\pg-ai-profile\python.exe code\tests\modalities\text\test_request_costs.py -v
 Select-String -Path code\src\request_costs.py -Pattern 'pyarrow|daft|ray|vllm'
 ```
 
@@ -238,7 +238,7 @@ Expected: all tests pass and the dependency scan returns no matches.
 - [ ] **Step 5: Commit Task 1**
 
 ```powershell
-git add code/src/request_costs.py code/tests/test_request_costs.py
+git add code/src/request_costs.py code/tests/modalities/text/test_request_costs.py
 git commit -m "feat: resolve output cost modes"
 ```
 
@@ -248,7 +248,7 @@ git commit -m "feat: resolve output cost modes"
 
 **Files:**
 - Create: `code/src/packing.py`
-- Create: `code/tests/test_packing.py`
+- Create: `code/tests/planning/test_packing.py`
 
 **Interfaces:**
 - Produces:
@@ -291,7 +291,7 @@ def summarize_packing(
 
 - [ ] **Step 1: Write failing BFD and summary tests**
 
-Create `code/tests/test_packing.py` with:
+Create `code/tests/planning/test_packing.py` with:
 
 ```python
 from __future__ import annotations
@@ -402,7 +402,7 @@ if __name__ == "__main__":
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_packing.py -v
+.conda\pg-ai-profile\python.exe code\tests\planning\test_packing.py -v
 ```
 
 Expected: import failure because `src.packing` does not exist.
@@ -598,7 +598,7 @@ def summarize_packing(
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_packing.py -v
+.conda\pg-ai-profile\python.exe code\tests\planning\test_packing.py -v
 Select-String -Path code\src\packing.py -Pattern 'pyarrow|daft|ray|vllm|prompt|tokenizer|image'
 ```
 
@@ -607,7 +607,7 @@ Expected: all tests pass and the dependency/domain scan returns no matches.
 - [ ] **Step 6: Commit Task 2**
 
 ```powershell
-git add code/src/packing.py code/tests/test_packing.py
+git add code/src/packing.py code/tests/planning/test_packing.py
 git commit -m "feat: add deterministic BFD packing"
 ```
 
@@ -617,7 +617,7 @@ git commit -m "feat: add deterministic BFD packing"
 
 **Files:**
 - Modify: `code/src/organizers.py:17-253`
-- Modify: `code/tests/test_organizers.py`
+- Modify: `code/tests/planning/test_organizers.py`
 
 **Interfaces:**
 - Consumes `OutputCostMode`, `resolve_output_tokens`, `PackItem`,
@@ -653,7 +653,7 @@ class OrganizedBatches:
 
 - [ ] **Step 1: Add failing organizer tests**
 
-Extend `code/tests/test_organizers.py`:
+Extend `code/tests/planning/test_organizers.py`:
 
 ```python
 def output_aware_table() -> pa.Table:
@@ -742,7 +742,7 @@ fixed-row membership tests.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_organizers.py -v
+.conda\pg-ai-profile\python.exe code\tests\planning\test_organizers.py -v
 ```
 
 Expected: failures because the policy, config field, and BFD metrics do not
@@ -881,9 +881,9 @@ Return the raw tuples through `OrganizedBatches`.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_request_costs.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_packing.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_organizers.py -v
+.conda\pg-ai-profile\python.exe code\tests\modalities\text\test_request_costs.py -v
+.conda\pg-ai-profile\python.exe code\tests\planning\test_packing.py -v
+.conda\pg-ai-profile\python.exe code\tests\planning\test_organizers.py -v
 ```
 
 Expected: all tests pass, including identical Arrow/Daft membership.
@@ -891,7 +891,7 @@ Expected: all tests pass, including identical Arrow/Daft membership.
 - [ ] **Step 7: Commit Task 3**
 
 ```powershell
-git add code/src/organizers.py code/tests/test_organizers.py
+git add code/src/organizers.py code/tests/planning/test_organizers.py
 git commit -m "feat: organize requests with shared BFD"
 ```
 
@@ -900,12 +900,12 @@ git commit -m "feat: organize requests with shared BFD"
 ### Task 4: Wire Cost Modes Into Profiler and Arrival Replay
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py:174-218`
-- Modify: `code/scripts/postgres_ai_operator_profile.py:488-580`
-- Modify: `code/scripts/postgres_ai_operator_profile.py:1913-2711`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py:174-218`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py:488-580`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py:1913-2711`
 - Modify: `code/scripts/README.md`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
-- Modify: `code/tests/test_runtime_batching.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
+- Modify: `code/tests/scheduling/test_runtime_batching.py`
 
 **Interfaces:**
 - New CLI:
@@ -953,7 +953,7 @@ returned.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Expected: parser rejects the new flags and helper signatures do not accept the
@@ -1069,8 +1069,8 @@ populated.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_runtime_batching.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_runtime_batching.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Expected: all tests pass; replay order and flush tests remain unchanged.
@@ -1081,7 +1081,7 @@ Document the three cost modes, source labels, model/tokenizer provenance, and
 the rule that BFD is rejected in arrival replay.
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/scripts/README.md code/tests/test_postgres_profile_scheduling.py code/tests/test_runtime_batching.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/scripts/README.md code/tests/observability/test_postgres_profile_scheduling.py code/tests/scheduling/test_runtime_batching.py
 git commit -m "feat: wire output cost metrics"
 ```
 
@@ -1091,10 +1091,10 @@ git commit -m "feat: wire output cost metrics"
 
 **Files:**
 - Modify: `code/src/scheduling/lifecycle.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py:1072-1205`
-- Modify: `code/scripts/postgres_ai_operator_profile.py:1885-2443`
-- Modify: `code/tests/test_request_lifecycle.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py:1072-1205`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py:1885-2443`
+- Modify: `code/tests/scheduling/test_request_lifecycle.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Produces:
@@ -1207,8 +1207,8 @@ def test_offline_batch_envelopes_seed_every_row_from_job_start(self) -> None:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_request_lifecycle.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_request_lifecycle.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Expected: dataclasses lack `request_time_origin` and the offline helper is
@@ -1282,8 +1282,8 @@ or backend arguments.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_request_lifecycle.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_request_lifecycle.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Expected: all tests pass; replay rows retain `replayed_arrival`, offline rows
@@ -1292,7 +1292,7 @@ use `offline_job_start`, and submission IDs remain unique across fetch chunks.
 - [ ] **Step 8: Commit Task 5**
 
 ```powershell
-git add code/src/scheduling/lifecycle.py code/scripts/postgres_ai_operator_profile.py code/tests/test_request_lifecycle.py code/tests/test_postgres_profile_scheduling.py
+git add code/src/scheduling/lifecycle.py code/scripts/profiling/postgres_ai_operator_profile.py code/tests/scheduling/test_request_lifecycle.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "feat: trace offline request lifecycles"
 ```
 
@@ -1301,9 +1301,9 @@ git commit -m "feat: trace offline request lifecycles"
 ### Task 6: Real Daft-Ray Contracts, Regression, and Result Summaries
 
 **Files:**
-- Modify: `code/tests/test_scheduling_daft_ray_contract.py`
-- Create: `code/scripts/summarize_output_aware_bfd.py`
-- Create: `code/tests/test_output_aware_summary.py`
+- Modify: `code/tests/scheduling/test_scheduling_daft_ray_contract.py`
+- Create: `code/scripts/analysis/summarize_output_aware_bfd.py`
+- Create: `code/tests/experiments/test_output_aware_summary.py`
 - Modify: `code/scripts/README.md`
 
 **Interfaces:**
@@ -1409,7 +1409,7 @@ self.assertTrue(
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py -v
 ```
 
 Expected: failure until Tasks 3-5 provide BFD membership and offline seeds.
@@ -1420,7 +1420,7 @@ Create a temporary `runs.csv` containing warm-up and three formal rows for two
 scenarios. Assert warm-up is excluded, `n=3`, mean/median/min/max are exact,
 and sample standard deviation uses `statistics.stdev`.
 
-Create `code/tests/test_output_aware_summary.py`:
+Create `code/tests/experiments/test_output_aware_summary.py`:
 
 ```python
 from __future__ import annotations
@@ -1499,7 +1499,7 @@ if __name__ == "__main__":
 
 - [ ] **Step 4: Implement the small summary CLI**
 
-Create `code/scripts/summarize_output_aware_bfd.py` using only `argparse`,
+Create `code/scripts/analysis/summarize_output_aware_bfd.py` using only `argparse`,
 `csv`, `statistics`, and `pathlib`. Reject missing required columns and
 non-numeric formal values. Sort rows by `scenario_id`, then by the fixed metric
 order above. If there are no formal rows, exit nonzero with
@@ -1629,9 +1629,9 @@ if __name__ == "__main__":
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_output_aware_summary.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py -v
-.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -p "test_*.py" -v
+.conda\pg-ai-profile\python.exe code\tests\experiments\test_output_aware_summary.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py -v
+.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -t code -p "test_*.py" -v
 .conda\pg-ai-profile\python.exe -m compileall -q code/src code/scripts code/tests
 git diff --check
 ```
@@ -1644,7 +1644,7 @@ actor contracts; compile and diff checks are clean.
 Document the summary command and metric schema.
 
 ```powershell
-git add code/tests/test_scheduling_daft_ray_contract.py code/scripts/summarize_output_aware_bfd.py code/tests/test_output_aware_summary.py code/scripts/README.md
+git add code/tests/scheduling/test_scheduling_daft_ray_contract.py code/scripts/analysis/summarize_output_aware_bfd.py code/tests/experiments/test_output_aware_summary.py code/scripts/README.md
 git commit -m "test: validate output-aware BFD contracts"
 ```
 
@@ -1676,7 +1676,7 @@ git commit -m "test: validate output-aware BFD contracts"
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -p "test_*.py" -q
+.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -t code -p "test_*.py" -q
 .conda\pg-ai-profile\python.exe -m compileall -q code/src code/scripts code/tests
 git diff --check
 ```
@@ -1750,7 +1750,7 @@ uses the last occurrence.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\run_ai_operator_scenarios.py --config experiments\results\output_aware_bfd_20260726\gate_config.json --profiler code\scripts\postgres_ai_operator_profile.py --python-executable .conda\pg-ai-profile\python.exe --output-dir experiments\results\output_aware_bfd_20260726\gate --health-url http://localhost:8000/health --metrics-url http://localhost:8000/metrics --idle-timeout-s 120
+.conda\pg-ai-profile\python.exe code\scripts\experiments\run_ai_operator_scenarios.py --config experiments\results\output_aware_bfd_20260726\gate_config.json --profiler code\scripts\profiling\postgres_ai_operator_profile.py --python-executable .conda\pg-ai-profile\python.exe --output-dir experiments\results\output_aware_bfd_20260726\gate --health-url http://localhost:8000/health --metrics-url http://localhost:8000/metrics --idle-timeout-s 120
 ```
 
 Fail and stop unless every scenario satisfies:
@@ -1794,7 +1794,7 @@ runner only after the 64-row audit passes.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\run_ai_operator_scenarios.py --config experiments\results\output_aware_bfd_20260726\formal_512_config.json --profiler code\scripts\postgres_ai_operator_profile.py --python-executable .conda\pg-ai-profile\python.exe --output-dir experiments\results\output_aware_bfd_20260726\formal_512 --health-url http://localhost:8000/health --metrics-url http://localhost:8000/metrics --idle-timeout-s 120
+.conda\pg-ai-profile\python.exe code\scripts\experiments\run_ai_operator_scenarios.py --config experiments\results\output_aware_bfd_20260726\formal_512_config.json --profiler code\scripts\profiling\postgres_ai_operator_profile.py --python-executable .conda\pg-ai-profile\python.exe --output-dir experiments\results\output_aware_bfd_20260726\formal_512 --health-url http://localhost:8000/health --metrics-url http://localhost:8000/metrics --idle-timeout-s 120
 ```
 
 - [ ] **Step 5: Summarize and audit the 512-row evidence**
@@ -1802,7 +1802,7 @@ Run:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\summarize_output_aware_bfd.py --runs experiments\results\output_aware_bfd_20260726\formal_512\runs.csv --output experiments\results\output_aware_bfd_20260726\formal_512_summary.csv
+.conda\pg-ai-profile\python.exe code\scripts\analysis\summarize_output_aware_bfd.py --runs experiments\results\output_aware_bfd_20260726\formal_512\runs.csv --output experiments\results\output_aware_bfd_20260726\formal_512_summary.csv
 ```
 
 Audit all three formal repeats per scenario for:
@@ -1876,7 +1876,7 @@ automatically.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -p "test_*.py" -q
+.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -t code -p "test_*.py" -q
 .conda\pg-ai-profile\python.exe -m compileall -q code/src code/scripts code/tests
 git diff --check
 git status --short

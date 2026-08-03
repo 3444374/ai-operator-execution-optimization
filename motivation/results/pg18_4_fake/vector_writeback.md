@@ -32,7 +32,7 @@ motivation/results/pg18_4_fake/vector_writeback.csv
 入口脚本：
 
 ```text
-code/scripts/postgres_ai_operator_profile.py
+code/scripts/profiling/postgres_ai_operator_profile.py
 ```
 
 本轮新增：
@@ -91,7 +91,7 @@ $py = '.conda\pg-ai-profile\python.exe'
 $out = 'motivation\results\pg18_4_fake\vector_writeback.csv'
 foreach ($mode in @('json_text','pgvector')) {
   foreach ($writeBatch in @(1,64,256,1024,0)) {
-    & $py code\scripts\postgres_ai_operator_profile.py `
+    & $py code\scripts\profiling\postgres_ai_operator_profile.py `
       --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
       --setup --seed-rows 4096 --total-rows 4096 `
       --db-fetch-rows 4096 --ray-batch-rows 1024 `

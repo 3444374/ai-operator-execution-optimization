@@ -4,7 +4,17 @@
 
 > 数据库 AI 负载的执行优化与调度研究方向。
 
-当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。数据库 AI 算子在本项目中主要作为 workload 入口和验证场景。主场景为 `AI_COMPLETE`（生成式 LLM 推理），经由 Daft/Arrow 数据组织、Ray 动态 batching（异构 actor pool）、GPU 推理引擎、最终写回数据库 sink。研究重点是上游 Ray 数据执行层的数据组织策略和调度提交控制。`AI_EMBED` 已完成真实 GPU-backed 预研验证，用于支撑实验框架可行性。
+> **当前状态（2026-08-03）**：研究内容仍是数据组织与提交控制；文本
+> `AI_COMPLETE + vLLM` 保留为已建立的主证据轨道，当前工程验证优先推进图像
+> `AI_EMBED/AI_CLASSIFY`，检验同一套 work-unit、credit、routing 与观测抽象能否跨模态
+> 复用。图像正式 baseline 必须运行框架内置函数、官方 API graph 或固定 upstream
+> vendor code；项目自写 Daft UDF 只作为诊断参考。最终题目是否采用“数据库↔GPU 经
+> Daft 桥接”的外部 framing 仍待导师确认，不影响当前实现顺序。
+
+当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。研究对象是数据库
+触发后的外部链路：数据读取与物化、代价估计与组织、准入/路由/提交、模型执行、观测
+和写回。Daft 是数据引擎，Ray actor 是可控执行机制，vLLM/CLIP 等是模型执行后端，
+PostgreSQL + pgvector 是 source/sink 工程 baseline。
 
 后续真实端到端实验平台优先使用公司内部统一采用的 PostgreSQL 18.3；当前 PG18.4 本地同构预演只能作为平台暂不可用时的替身。
 
@@ -13,6 +23,11 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
 `deploy/autodl/README.md`“新对话 / 新 agent 的唯一操作入口”。全新实例环境
 准备、每次开机恢复、服务门禁、64 行 gate、正式后台运行和 `--resume`
 恢复均以该 runbook 为单一来源，不从历史聊天重新推断。
+
+Baseline / benchmark 不再从多份旧计划拼接：统一从
+`experiments/plans/baseline_reference.md` 选择比较层级、原生 arm、证据等级和指标；
+再进入文本或图像专项执行合同。`experiments/plans/archive/` 与 `code_doc/` 只用于追溯
+历史设计，不能覆盖当前门禁和实验顺序。
 
 ## 目录结构
 
@@ -77,15 +92,24 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
 ├── code/                             # 可复用工程代码
 │   ├── AGENTS.md
 │   ├── README.md
-│   ├── scripts/
-│   │   ├── README.md
-│   │   ├── postgres_ai_operator_profile.py
-│   │   ├── pgai_sql_operator_profile.py
-│   │   └── local_embedding_server.py
+│   ├── src/
+│   │   ├── data/                     # source、materializer、sink、workload
+│   │   ├── planning/                 # 纯代价估计与 work-unit packing
+│   │   ├── scheduling/               # 组织、准入、routing、Ray runtime
+│   │   ├── serving/                  # completion/embedding backend、vLLM probe
+│   │   ├── modalities/{text,image}/  # 文本/图像专属语义，不复制 scheduler
+│   │   ├── observability/            # metrics、profiler、trace
+│   │   ├── baselines/{common,text,image}/
+│   │   ├── experiments/              # calibration、scenario、shared-vLLM
+│   │   └── infrastructure/           # runtime env、runner lease
+│   ├── scripts/{data,services,baselines,profiling,experiments,analysis}/
+│   ├── tests/                        # 按生产域镜像；含架构边界测试
+│   ├── configs/                      # vendor pin 与可复现配置
 │   └── requirements.txt
 ├── code_doc/                         # 自动生成的代码文档（辅助）
 ├── data/                             # 本地 workload 数据（raw 被 git ignore）
-├── deploy/                           # Docker 部署配置
+├── deploy/                           # 本地 Docker 与 AutoDL 部署/runbook
+│   ├── autodl/
 │   ├── pgai/
 │   └── postgres18.4/
 ├── figures/                          # 项目级图资产
@@ -116,57 +140,53 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
 
 ## 当前证据
 
-正式论证优先引用（详见 `PROJECT_OUTLINE.md` §当前最重要证据）：
+根 README 只保留结论边界；精确数字以结果目录的 CSV、manifest 和 README 为准，
+汇总入口见 `PROJECT_OUTLINE.md` §当前最重要证据与
+`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`。
 
-- ✅ **vLLM + Qwen2.5-1.5B AI_COMPLETE baseline**（2026-07-18/19 已建立）：固定行 batch=8 时 token 跨度 13.9×；token-budget vs 固定行对照；shared-vLLM K_max 干扰（bulk unbounded 时前景 E2E 恶化 2.3×）。详见 `experiments/results/local_vllm_qwen15b_baseline/`。
-- ✅ **AI_EMBED 真实 GPU-backed 预研**（已完成）：1024 行下 fine/coalesced 端到端约 `13.4x`；双 endpoint 下 Ray task/actor 体现并发 routing 价值，端到端收益仍受 writeback 约束。详见 `motivation/results/gpu/`。
-- ✅ **双 4090 active-work 扩展饱和曲线**（2026-07-29）：八档各三次
-  formal；65K 已达到最大吞吐的 97.80%，下一档只增 0.92%，98K→131K
-  完全持平而 P99 约升至 40s。按预注册规则选择 65,536。
-  详见 `experiments/results/dual_gpu_active_work_saturation_20260729/`。
-- ✅ **固定资源 Ray actor-pool 形状对照**（2026-07-29）：在相同 65K
-  active work、256 slots 和 0.5 Ray CPU/endpoint 下，2×128/4×64 相对
-  1×256 仅 +2.00%/+0.75%，未达到 5% 晋升门槛；保留最简单的 1×256。
-  详见 `experiments/results/dual_gpu_actor_pool_shape_20260729/`。
-- ✅ **complete-row service quantum 对照**（2026-07-29）：固定饱和 work
-  后，512/1024/2048/4096 quantum 相对 batch 仅 -0.03%/+0.11%/+0.12%/
-  +0.54%；request 为 +1.75%。细粒度把 credit-held 降约 16%，但没有抬高
-  GPU 吞吐平台，因此不晋升固定 quantum 为默认性能策略。
-- ✅ **SLO-aware EWMA flush 正式对照**（2026-07-29）：high 与
-  arrival-limited 两组共 24/24 runs；相对 fixed-50 吞吐
-  -0.52%/+0.10%，P99 -0.94%/-0.49%，所有 30s SLO 零违约。25–50ms
-  动作相对 5.6–17.4s request P99 缺少一阶杠杆，因此不晋升。
-- pgvector(384) 写回 0.897s vs JSON text 1.567s。
-- 早期 CPU/fake 实验保留在 `feasibility/benchmarks/` 与 `motivation/results/fake_cpu/` 仅作历史参考。
+- **文本 feeding 已闭合**：同协议项目链路达到 direct control 的约 97.7%；固定
+  token-aware active-work 65,536/endpoint 达当前最大吞吐的 97.8%，是简单强静态点。
+- **复杂动态策略尚未普遍胜出**：AIMD/PID/EWMA、动态 flush、service quantum 和
+  多 actor 多数未超过预注册的约 5% 晋级门槛；不能因“动态”命名就声称更优。
+- **文本策略具有 regime 依赖**：2-endpoint KV 无压力时多数数据组织策略接近；
+  4-endpoint KV 饱和时排名和 prefix-cache 行为明显分化。相关结论不能脱离 endpoint/
+  KV 条件外推。
+- **图像瓶颈仍需逐阶段判定**：CLIP 画像支持 CPU preprocess 是候选限制，但尚未证明
+  PCIe/H2D 是主瓶颈。项目静态 staged 路径优于项目自写 fused UDF 只构成动机证据。
+- **原生 baseline 身份已收紧**：图像 Daft built-in、Ray Data native graph 和固定
+  upstream vendor code 才进入正式 baseline；项目自写 Daft fused/staged UDF 只作诊断。
+  256 图资源/正确性 gate 与 Daft built-in/project 逐行 embedding parity 已通过，独立
+  calibration 与正式重复尚未完成。
+- **可运行性验证**：最新代码在 AutoDL 完整依赖环境通过 624/624 单测；文本 512 行
+  双 endpoint、图像 256 行 Daft/Ray Data correctness gate、两条默认无 capture 路径均
+  跑通。它们是 smoke，不是论文性能排名。
 
-**下一步**：active-work 已标定为每 endpoint 65,536，Actor Pool 保留
-1×256，固定 service quantum 与 SLO-EWMA 均未晋升；保留 request-level
-精确 completion 作为多 job 控制基础。下一轮优先做 Shared-vLLM 1/2/4-job
-shared request/work credit 与 work-conserving 公平队列门禁，再做
-prefix cache-on、多模态和路由/故障迁移 formal 验证。
-详见 `PROJECT_OUTLINE.md`
-§近期优先级、`experiments/plans/experiment_status_and_gaps.md` 和
-`experiments/plans/literature_driven_pipeline_optimization_guide.md`。
-
-当前更值得继续验证的候选优化对象是：
-
-> 数据库 AI 负载进入 Daft/Arrow 数据组织层、Ray task/actor 执行层、GPU-backed 模型服务和 Lance / pgvector / PostgreSQL sink 后的分布式执行与存储协同问题。
-
-正式论证优先引用 `motivation/results/gpu/` 下的 GPU-backed 结果，PG18.4 / fake / CPU 结果只能作为预研背景和工具解释。
+早期 CPU/fake 结果仅作历史参考；PG18.4 AutoDL rehearsal 不能冒充 PostgreSQL 18.3
+内部平台结论。
 
 ## 近期目标
 
-vLLM baseline 与 Daft 文本阶段接入已完成（见上"当前证据"）。当前缺口（详见 `experiments/plans/experiment_status_and_gaps.md`）：
+当前执行顺序以 `experiments/plans/experiment_status_and_gaps.md` §0 为准：
 
-1. **P1**：Shared-vLLM 1/2/4-job shared request/work credit、
-   work-conserving 公平队列、不同 foreground size 与 arrival offset。
-2. **P1**：Prefix cache-on 与 length-align 显式消融。
-3. **P2**：多模态泛化验证、真实多 endpoint/多 GPU、代价模型独立校准。
-4. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地预演写成正式平台结论。
+1. 完成图像 R0→R4 表示/传输阶梯，明确 source、decode/preprocess、host copy、H2D、
+   GPU forward、D2H、写回和未归因等待，不能先验指定 PCIe 为瓶颈。
+2. 分别校准 Daft built-in、Ray Data native graph、官方 ResNet18 vendor code、bounded
+   direct、vLLM pooling、naive 与 frozen project static，再做同硬件、同质量、同计时边界
+   的稳态交错重复；项目自写 diagnostic 不进入 native baseline 主排名。
+3. 给正式系统臂接统一 PostgreSQL + pgvector sink，补完整 system-E2E、质量门禁与资源
+   账本。AI_CLASSIFY 报 accuracy/F1/mAP；embedding 正确性先用 digest/norm，检索任务再
+   报 Recall@K、MRR/nDCG。
+4. 只有 workload 变化会让最佳静态点稳定分离且错配代价约超过 5%，才继续复杂动态
+   控制；否则保留固定 token/frame-aware credit。多 job 异质竞争单独验证 shared credit、
+   idle borrowing、JCT/SLO 与公平性。
+5. 文本遗留 formal 保持 `parked-conditional`；需要进入论文时按新的原生 baseline 与
+   provenance 合同复测。
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。
 
-当前主实验入口在 `code/scripts/`（vLLM / K_max / token-budget 等运行脚本）和 `experiments/results/local_vllm_qwen15b_baseline/`；早期 fake/CPU 管道 `motivation/benchmarks/fake_embed_pipeline.py` 仅作历史参考，不再是主运行命令。具体脚本与参数见 `code/scripts/README.md` 和 `experiments/plans/`。
+当前 CLI 入口已按职责放在 `code/scripts/{data,services,baselines,profiling,experiments,analysis}/`；
+不要继续使用重构前的扁平脚本路径。具体命令见 `code/scripts/README.md`、
+`deploy/autodl/README.md` 与对应实验计划。
 
 动机测试正式结果和分析优先看：
 

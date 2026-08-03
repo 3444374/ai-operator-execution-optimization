@@ -73,7 +73,7 @@ $py = '.conda\pg-ai-profile\python.exe'
 $out = 'motivation\results\pg18_4_fake\pgvector_scaling.csv'
 foreach ($rows in @(1024,4096,16384)) {
   foreach ($executor in @('python','ray_task','ray_actor')) {
-    & $py code\scripts\postgres_ai_operator_profile.py `
+    & $py code\scripts\profiling\postgres_ai_operator_profile.py `
       --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
       --setup --seed-rows $rows --total-rows $rows `
       --db-fetch-rows $rows --ray-batch-rows 1024 `
@@ -94,7 +94,7 @@ $py = '.conda\pg-ai-profile\python.exe'
 $out = 'motivation\results\pg18_4_fake\pgvector_scaling_fine_contrast.csv'
 foreach ($rows in @(1024,4096)) {
   foreach ($executor in @('ray_task','ray_actor')) {
-    & $py code\scripts\postgres_ai_operator_profile.py `
+    & $py code\scripts\profiling\postgres_ai_operator_profile.py `
       --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
       --setup --seed-rows $rows --total-rows $rows `
       --db-fetch-rows $rows --ray-batch-rows 1024 `

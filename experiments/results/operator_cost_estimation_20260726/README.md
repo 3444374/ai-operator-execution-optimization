@@ -6,7 +6,7 @@
 
 ```powershell
 D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
-  code\scripts\estimate_operator_cost.py `
+  code\scripts\analysis\estimate_operator_cost.py `
   --input-csv <合并后的真实 runs.csv> `
   --output experiments\results\operator_cost_estimation_20260726\e2e_cost_model.json `
   --target e2e_s `
@@ -107,7 +107,7 @@ arrival replay 等执行前配置签名定义。同一配置的 warm-up/formal/r
 ## 工程产物
 
 - `code/src/cost_estimation.py`：分组切分、ridge estimator、回归指标；
-- `code/scripts/estimate_operator_cost.py`：从 profile CSV 构造可复现模型；
+- `code/scripts/analysis/estimate_operator_cost.py`：从 profile CSV 构造可复现模型；
 - `e2e_cost_model.json`：主切分完整特征 schema、系数、均值/尺度和指标；
 - `e2e_cost_model_seed_*.json`：五个稳健性切分。
 

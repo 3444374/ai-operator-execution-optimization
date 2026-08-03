@@ -6,10 +6,17 @@
 |---|---|---|
 | `code/INFRA_STATUS.md` | Current Daft+Ray AI-operator infra flow, implementation completeness, evidence boundaries, and prioritized remaining work | Use for a single implementation-status handoff before reading detailed plans |
 | `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` | Unified map from implemented/tested mechanisms to code, tests, principal result directories, evidence level, current decision, and remaining validation | Read first when asking what has actually been implemented, tested, proven, rejected, or left unverified |
-| `experiments/plans/database_ai_operator_baseline_matrix_20260729.md` | Pre-registered no-Daft/Ray database-AI and official Daft/Ray runtime baseline matrix | Read before the next AutoDL baseline gate; defines arms, workload, calibration, validity checks and claim thresholds |
-| `code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md` | Two-layer same-scale baseline design: OceanBase/no-Daft-Ray controls plus official Daft/Ray Data controls | Read before implementing or running the next baseline matrix; contains the Chat protocol contract, causal controls, framework controls, calibration, metrics and promotion gates |
-| `code_doc/superpowers/plans/2026-07-29-official-baseline-matrix-implementation.md` | TDD implementation plan for the official baseline harness and remote fatal-flaw gate | Execute after the baseline design is approved; enumerates exact files, interfaces, RED/GREEN tests, dependencies, templates and remote stop conditions |
-| `code/scripts/run_official_baseline_gate.py` | Reproducible two-endpoint official baseline core gate runner | Use after freezing the PostgreSQL manifest; starts both shards per cell, preserves logs/raw output, waits for empty vLLM queues and stops on the first failed gate |
+| `experiments/plans/baseline_reference.md` | AI_COMPLETE / AI_EMBED / AI_CLASSIFY 的统一 baseline/benchmark 总入口 | 先确认比较层级、原生性、证据等级、指标合同与当前门禁，再进入模态执行合同 |
+| `experiments/plans/text_native_baseline_rerun_20260802.md` | 文本 ceiling/control/vendor-native baseline 原生性审计与复测合同 | 远端重测前读取；定义 Chat/Completions 分轨、64→512→4096 流程、指标和结论边界 |
+| `experiments/plans/archive/database_ai_operator_baseline_matrix_20260729.md` | 2026-07-29 文本 baseline 预注册与逐日执行历史 | 仅追溯旧实验；不再作为当前 gate、calibration 或 formal 的运行依据 |
+| `code/scripts/baselines/run_official_baseline_gate.py` | Reproducible two-endpoint official baseline core gate runner | Use after freezing the PostgreSQL manifest; starts both shards per cell, preserves logs/raw output, waits for empty vLLM queues and stops on the first failed gate |
+| `experiments/results/oceanbase_b1_gate_20260731/README.md` | OceanBase B1 capability gate + 2026-08-02 independent deployment recheck | Confirm CE 4.5.0 contains AI_COMPLETE/DBMS_AI_SERVICE and why the ordinary AutoDL container still cannot init observer before retrying on a deployable host |
+| `experiments/results/oceanbase_b1_gate_20260731/install_runbook.md` | Reusable OceanBase CE install/start runbook (apt path, config gotchas, verified observer start command, bootstrap + dynamic AI_COMPLETE steps) | Follow when redeploying OceanBase on a privileged container or systemd VM |
+| `feasibility/results/image_staged_resource_gate_20260802/` | Daft/Ray Data staged 256-row 双卡显式资源与输出等价门禁，含 `raw/` 原始 CSV/manifest | 确认 SQL reader 不再被常驻 actor 饿死、schema v4 CPU 账本正确；不能把单次冷启动吞吐用于系统排名 |
+| `experiments/results/prefix_cache_routing_req_20260730/README.md` | Cache-on prefix-affinity routing ablation, request granularity, three arms (least_queued / prefix_affinity / +length-align) | Review why pure routing is -0.1% neutral and the prefix direction is closed under vLLM APC |
+| `experiments/results/prefix_cache_routing_4ep_1.5b_20260731/README.md` | 4-endpoint prefix-affinity routing ablation (4×Qwen2.5-1.5B, 2 arms) + the code/config/vLLM/deploy adjustments that enabled 4 endpoints | Review why prefix_affinity is +5.9% (crosses 5% gate) at 4-ep/1.5B but neutral at 2-ep/7B — high-eviction regime; confounded (model×endpoints×KV) and saturated, needs isolation |
+| `experiments/results/prefix_cache_data_org_20260730/README.md` | Cache-on prefix-aware batching ablation (batch granularity) plus routing-section cross-reference | Review why upstream batching order is neutral when vLLM APC is on |
+| `experiments/results/rc1_data_organization/README.md` | RC1 data-org systematic re-run (5 strategies × {2-ep/0.9, 4-ep/0.43}, 1.5B, multiturn, cache-ON, P0 metrics); supersedes 07-25/26 gropy (07-18/19 retained as historical motivation) | Review the regime-dependent finding (strategy ranking reverses 2-ep vs 4-ep) and the prefix_group_ratio mechanism (reorder organizers collapse cache hit to 0.06 under 4-ep KV saturation) |
 | `experiments/results/dual_gpu_shared_vllm_formal_20260729_1135/README.md` | Shared-vLLM 1/2/4-job independent/static/shared-DRR seven-step formal report | Audit the capacity/fairness pass, the 2-job no-gain boundary, the 4-job conditional gain and repeat instability |
 | `experiments/results/dual_gpu_shared_vllm_formal_20260729_1135/formal_summary.csv` | Plot-ready throughput, MFU, JCT, P99, SLO and fairness statistics | Compare all nine formal cells without downloading remote request traces |
 | `experiments/results/dual_gpu_shared_vllm_formal_20260729_1135/credit_summary.csv` | Shared-credit exact request/work peaks and waiting utilization audit | Verify global capacity, final-zero and work-conserving behavior |
@@ -21,6 +28,7 @@
 | `experiments/results/dual_gpu_actor_pool_shape_20260729/formal_summary.csv` | Plot-ready actor topology throughput, variability, tails, SLO, MFU and Ray overhead | Audit the preregistered 5% promotion decision |
 | `experiments/results/dual_gpu_active_work_saturation_20260729/README.md` | Dual-4090 eight-point request-level active-work saturation curve, preregistered selection, and seven-step analysis | Use 65,536 as the matched-work control for subsequent Ray strategy experiments |
 | `experiments/results/dual_gpu_active_work_saturation_20260729/formal_summary.csv` | Plot-ready means, variability, adjacent gains, tails, SLO, MFU and maximum work seen | Audit the 97%/next-gain<3% saturation decision |
+| `experiments/results/static_credit_prompt_length_screen_20260730/` | Short/long prompt request-K and active-work screening, resolved manifests/runs, median summary and fail-closed decision audit | Preserve the 48/48 real-GPU evidence while treating the dynamic GO/NO-GO as inconclusive because async/token-ID/equivalent-arm gates failed |
 | `experiments/results/dual_gpu_active_work_curve_20260728/README.md` | Dual-4090 request-level per-endpoint active-work capacity curve with three formal repeats per cap | Use 49,152 as the current knee candidate and 65,536 only as the best tested throughput boundary, not a proven optimum |
 | `experiments/results/dual_gpu_active_work_curve_20260728/formal_summary.csv` | Plot-ready active-work means, variability, tails, SLO goodput, utilization, and energy | Select matched-work control points for subsequent mechanism comparisons |
 | `experiments/results/dual_gpu_request_replay_20260728/README.md` | Dual-4090 batch-barrier vs request-level replenishment repeats with admission-work audit | Use the work-matched K48 comparison; treat K64 only as the best tested request K, not an isolated mechanism win or capacity optimum |
@@ -95,6 +103,7 @@
 | `learning/local_vllm_ray_baseline_walkthrough.md` | Local vLLM + Ray baseline learning walkthrough | Read when explaining what the fixed row-batch baseline does and does not prove |
 | `learning/archive/early_experiments_walkthrough.md` | 早期实验学习讲解（已归档） | pre-convergence 时期实验（组件可行性、fake/CPU、PG18.4 接入等）的历史参考 |
 | `learning/metric_selection_methodology.md` | AI_EMBED vs AI_COMPLETE 观察变量选择方法论 | 理解为什么从"阶段时延拆分"转向"多维分布表征" |
+| `learning/text_native_baseline_guide.md` | 文本 AI 算子 baseline 初学者讲解 | 理解 ceiling/control/native/project 的区别、请求链路、分轨与正式结果读法 |
 | `figures/architecture/runtime_strategy_rule_table.png` / `.svg` | 信号触发候选策略规则表 | 与闭环图配套使用，说明观测信号、候选动作和保护约束；不作为已验证结论 |
 | `figures/architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时信号驱动的上游执行闭环图 | 当前首选策略机制图；用一个 AI_COMPLETE SQL 例子说明数据组织（token-budget/length-align/prefix-aware）、提交控制（queue-adaptive flush/K_max/routing）、vLLM 部署平台（观测不修改）的分工；不重切数据库侧已物化批次 |
 | `figures/scripts/generate_runtime_strategy_control_loop.py` | 运行时策略闭环图生成脚本 | 重新生成策略机制图 PNG/SVG，并执行边框、箭头和禁用术语自检 |
@@ -157,11 +166,35 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |
-| `deploy/autodl/README.md` | AutoDL 单一 runbook：环境准备、开机恢复、gate、正式实验和中断恢复 | 新对话接手远端实验时按顶部唯一入口直接操作 |
+| `deploy/autodl/README.md` | AutoDL 单一 runbook：环境准备、开机恢复、gate、正式实验和中断恢复；顶部有"两条推理引擎 track（文本 vLLM / 多模态 CLIP）"概念总览 | 新对话接手远端实验时按顶部唯一入口直接操作 |
+| `deploy/autodl/text_serving.md` | 文本模态（vLLM 生成式 LLM）推理服务引擎部署：vLLM 是什么（continuous batching/APC/KV cache）、vLLM vs CLIP 差异、Qwen 模型下载 + start_endpoints.sh、sharegpt_multiturn 数据集、runner/合同/喂饱门禁、7 条坑 | 跑文本 AI_COMPLETE 实验时读；与 image_serving.md 对称 |
+| `deploy/autodl/image_serving.md` | 图像 CLIP 部署：五臂 fused/staged operator-E2E gate、显式 Ray 资源账本、Ray GPU actor、vLLM pooling、COCO/PG BYTEA 边界 | 准备/跑图像 AI_EMBED/AI_CLASSIFY 时读；先过 schema v4 资源/正确性门禁，再区分 operator E2E 与含 sink 的 system E2E |
+| `code/scripts/analysis/select_strategy_calibration.py` | 从 feeding/direct/token-budget/actor-shape 证据生成冻结校准合同和环境覆盖 | 同协议 actor 曲线完成后、启动数据组织/提交策略/多 job formal 前执行 |
+| `code/scripts/analysis/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
+| `code/scripts/analysis/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |
+| `code/scripts/profiling/profile_image_clip_preprocess_variants.py` | 交错比较当前 production-np、历史 legacy-pt 与 torchvision CLIP preprocessing，并经过同一 tensor actor 做 embedding parity gate | 复核 image motivation 是否能外推到当前代码边界；不是 E2E 方法结果 |
+| `code/scripts/experiments/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、模型/GPU 和输出审计下运行 Daft built-in、Ray Data native graph、诊断 reference 与 project arms | 跑 operator-E2E gate/formal；schema v11 记录 baseline provenance、scheduler owner 和计时内输出合同，并拒绝把项目自写 Daft UDF 当正式 native baseline |
+| `code/configs/image_vendor_baselines.json` | Daft 官方 803,580-row ResNet18 Daft/Ray Data 入口的仓库、commit、文件 SHA256、官方 workload 与允许适配范围 | 跑 vendor-code parity 前核对；禁止改写官方调度图 |
+| `code/scripts/experiments/run_image_clip_matrix.py` | 固定 seed 交错编排图像 warmup/formal，持有结果目录租约并校验 unique rows、exactly-once、稳态时长 | 防止手工顺序漂移、并发写结果和短作业误入 formal；输出 raw CSV、逐 run manifest/log 与外层 schedule |
+| `code/scripts/data/import_coco_images.py` | 从目录或 ZIP 流式导入 COCO 图像 BYTEA，保留 source doc_id，单事务替换指定 workload | 正式规模避免完整解压副本；失败回滚，不覆盖无关 workload |
+| `code/scripts/profiling/profile_clip_transfer_ceiling.py` | CLIP batch16/64/256 的 R0 GPU-resident、R1 pinned FP16、R2 pageable FP32 逐 repeat CUDA-event/wall 诊断 | 分离 compute、H2D 与 ownership/dtype 边界；属于 synthetic ceiling，不作系统排名 |
+| `deploy/autodl/image_project_static_formal.example.json` | 60K unique × 2 logical passes 下 project 8/16 preprocess actors × active16/32 的交错 1+3 矩阵 | 先冻结项目静态点；分开审计 unique/pass/processed rows，任何 formal 查询阶段不足 60 秒则 fail closed |
+| `deploy/autodl/image_ray_data_native_crosscheck.example.json` | Ray Data 原生图在 cpu8 下对 batch16/64/256/512 做 60K unique×2 passes、交错 1+2 长稳态边界复核 | 只调官方 batch 参数；512 不比 64 改善 3% 即停止，不继续扫描 1024 |
+| `deploy/autodl/image_documents_workload_key.sql` | 把 legacy `PRIMARY KEY(doc_id)` 原子迁移为 `(workload_name, doc_id)`，重复执行安全、未知 schema 拒绝 | 允许 COCO train/val 保留重叠 source ID；导入、source、correctness/writeback 统一 workload-scoped identity |
+| `code/src/modalities/image/resource_budget.py` | 图像 Ray graph 的 source/preprocess/model CPU slot 精确账本与 affinity 超卖门禁 | 新增或调整 Daft/Ray Data/project actor/source 形状时复用；禁止只给常驻 actor CPU 而饿死 SQL reader |
+| `code/src/baselines/image/provenance.py` | 图像 arm 的 upstream、实现来源、scheduler owner、自定义调度与 formal eligibility 合同 | 新增 baseline arm 或解释结果前读取；未登记来源的 arm fail closed |
+| `code/scripts/profiling/profile_clip_preproc_stages.py` | 对历史 slow CLIP processor 的可见 method 子阶段计时 | 只用于解释 resize 占比；未归因时间不能写成具体转换主因 |
+| `motivation/results/gpu/image_clip_preprocess_variants_20260801/` | 四种 CLIP processor/decode 边界的 720 条 raw repeats、manifest、日志与七步报告 | 判断 slow-path 动机能否外推到当前/fast 实现；不能当作 Daft/Ray E2E 方法结果 |
+| `motivation/results/gpu/image_clip_native_baseline_20260801/` | 项目自写 fused Daft fractional-GPU UDF 校准、5000 图×3 operator-E2E、派生 summary 与七步报告 | 仅作历史机制诊断；不是官方/native baseline，不进入正式排名 |
+| `motivation/results/gpu/image_host_path_screening_20260802/` | 线程/资源合同修复后的 preprocess、source、active-window 单因素 screening、schema v8 分段诊断及 `raw/` 原始 CSV/manifest | 查图像 feeding 木桶迁移、16 actor/active32 候选和 PCIe 初步 NO-GO；不可当 formal baseline 排名 |
+| `motivation/results/gpu/image_clip_transfer_ceiling_20260802/` | R0/R1/R2 batch16/64/256×30 的 raw、summary 与七步 H2D/compute ceiling 报告 | pinned H2D约24–25GB/s、pageable/ownership 更重；synthetic diagnostic，不作系统排名或 PCIe 最终判决 |
+| `motivation/results/gpu/image_embedding_parity_20260803/` | Daft built-in 与 project_ray 的 256 图逐行 embedding parity 摘要、七步报告，以及 `raw/normalized_contract_gate/` 中 schema v11 CSV/manifest、两份 `.npz` 与 per-row 数据 | 独立重算归一化后 cosine/近邻重合并冻结正式 baseline 的统一输出合同；capture 运行不可作性能排名 |
+| `motivation/results/gpu/ray_data_calibration_20260803/` | Ray Data 原生 `map_batches` 的 5000 图 screening、60K unique×2 passes 长稳态 batch 复核、raw CSV/manifest 和 `long_crosscheck_summary.csv` | 冻结原生 baseline 的 batch64/cpu8/gpu2/source4；只用于独立校准，不与 Daft/project 跨系统排名 |
+| `motivation/plans/image_host_data_path_bottleneck.md` | R0→R4 表示阶梯、低扰动/侵入式双轨计时与 CPU/Ray/PCIe/GPU GO/NO-GO 门槛 | 重测 image motivation、判断 GPU feeding 缺口来自哪一段时读 |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
 | `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |
 | `research/literature_and_evidence_review.md` | 文献与官方资料依据 | 写调研、论文动机时读 |
-| `research/existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子与 AI 数据处理执行链路对比 | 比较外部系统路线时读 |
+| `research/existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子四类执行形态、PolarDB/OceanBase/pgai/Daft/Ray 路线与严格 baseline 层级 | 比较外部系统路线、判断哪些数字可同表排名时读 |
 | `research/knowledge_hub.md` | **知识库总汇**——按问题快速定位参考材料、已知结论和待研究缺口 | 开始设计、做决策前先读 |
 | `research/vllm_continuous_batching_reference.md` | vLLM Continuous Batching 机制详解（调度器、APC、metrics） | 设计上游动态 batching 策略时读 |
 | `experiments/plans/literature_driven_pipeline_optimization_guide.md` | 文献驱动的执行链优化指南 | 继续寻找优化点、审计三层 batch/Orca 式补位、设计完整 adaptive flush 或设置候选晋级/放弃条件时读 |
@@ -171,6 +204,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `motivation/README.md` | 动机测试目录详细说明 | 了解 motivation/ 下有什么、怎么组织 |
 | `motivation/plans/workloads.md` | 三类 AI 算子场景、动机测试和 idea-evaluator 评估 | 比较候选场景、决定下一步测试时读 |
 | `motivation/plans/integration.md` | PostgreSQL / 外部 worker / Ray / GPU model service / writeback 集成路线 | 规划集成和测试时读 |
+| `motivation/plans/image_host_data_path_bottleneck.md` | 逐层加入 H2D、Ray tensor、JPEG preprocess 和 DB/Daft，并预注册容量平台与瓶颈 GO/NO-GO | 设计图像数据路径动机复测时读 |
 | `motivation/plans/ai_sql_surface.md` | 数据库 AI 算子现状、推荐业务场景、动机测试标准 | 搭建业务场景前读 |
 | `motivation/benchmarks/fake_embed_pipeline.py` | fake `AI_EMBED(text)` 端到端动机测试脚本 | 验证 embedding / RAG 链路中的 fan-in 成本 |
 | `motivation/benchmarks/workload_matrix.py` | 三类候选 AI 算子场景动机测试脚本 | 比较不同 AI 算子的瓶颈形态 |
@@ -237,17 +271,30 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code_doc/superpowers/plans/2026-07-29-saturated-ray-execution-foundation-implementation.md` | 饱和 Ray 执行基础实施计划 | TDD 实现 runner 独占、Ray 失败清理、扩展 active-work 曲线、固定 service quantum 与有界可观测 actor pool，再分两次远端 gate 验证 |
 | `code_doc/superpowers/plans/2026-07-29-slo-aware-ewma-flush-implementation.md` | SLO-aware EWMA flush 实施计划 | TDD 实现 oldest-slack、arrival/service EWMA、deadband 与 stale fallback，并在高压/临界双 GPU 负载下做固定资源消融 |
 | `code_doc/superpowers/plans/2026-07-29-shared-vllm-fairness-implementation.md` | Shared-vLLM 1/2/4-job 实施计划 | 全局 credit 观测、group runner、双 GPU gate 与 formal 门槛 |
-| `code/src/cost_estimation.py` | Engine-independent grouped split, ridge cost model, and regression metrics | Build offline operator-cost estimates without post-execution feature leakage |
-| `code/scripts/estimate_operator_cost.py` | Reproducible profile-CSV cost-estimation CLI | Generate model schema, coefficients, splits, and held-out metrics |
-| `code/scripts/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
-| `code/scripts/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
-| `code/scripts/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
-| `code/src/baselines/postgres_manifest.py` | 正式 PostgreSQL workload 的不可变 baseline manifest 导出核心 | 按 workload/doc_id/limit/offset 读取完整行，固定 output 代价语义、source hash 与 endpoint 分片前输入 |
-| `code/src/shared_vllm_experiment.py` | Shared-vLLM 编排核心 | 配置校验、三臂 credit 语义、并发执行、exactly-once 与公平性汇总 |
+| `code/src/planning/costs/regression.py` | Engine-independent grouped split, ridge cost model, and regression metrics | Build offline operator-cost estimates without post-execution feature leakage |
+| `code/scripts/analysis/estimate_operator_cost.py` | Reproducible profile-CSV cost-estimation CLI | Generate model schema, coefficients, splits, and held-out metrics |
+| `code/scripts/experiments/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
+| `code/scripts/experiments/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
+| `code/scripts/baselines/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
+| `code/src/baselines/text/orchestration/postgres_manifest.py` | 正式 PostgreSQL workload 的不可变 baseline manifest 导出核心 | 按 workload/doc_id/limit/offset 读取完整行，固定 output 代价语义、source hash 与 endpoint 分片前输入 |
+| `code/src/baselines/text/controls/batched_completions.py` | 无 Ray 的持久异步 fixed-row multi-prompt Completions control | 同协议标定 HTTP packing 上限，验证每个完整 prompt exactly-once 后再测试项目 token-budget；不作为 native baseline |
+| `code/src/baselines/README.md` | 文本 comparison harness 分层与代码归属 | 修改 baseline adapter 或调度归属前读取，防止 control/native 混写 |
+| `code/ARCHITECTURE_REFACTOR_PLAN.md` | 源码域、文本/图像正交边界、依赖方向和分阶段迁移状态 | 调整目录、拆大文件或移动 scripts/tests 前读 |
+| `code/scripts/{data,services,baselines,profiling,experiments,analysis}/` | 按职责分组的稳定 CLI 入口 | 运行脚本前先按任务类型定位；可复用逻辑必须留在 `src/` |
+| `code/tests/{data,planning,scheduling,serving,modalities,observability,baselines,experiments,infrastructure,architecture}/` | 镜像生产职责的测试目录 | 使用 `unittest discover -s code/tests -t code` 做递归发现 |
+| `code/src/baselines/common/provenance.py` | 文本 arm 原生性与来源 fail-closed 合同 | 每个 summary/gate 写入 role、scheduler owner、custom scheduling、formal eligibility 与 upstream source |
+| `code/src/baselines/text/frameworks/` | Daft prompt / Ray Data vendor-native runtime adapters | 框架拥有 batching/backpressure；只做 workload payload/response 适配，不注入项目调度 |
+| `code/src/baselines/text/ceilings/` | vLLM Bench 官方服务容量上限 | 只衡量 service ceiling，不冒充数据库/框架 baseline |
+| `code/src/baselines/text/controls/` | bounded Chat/Completions 项目自写 direct controls | 隔离 feeding/HTTP packing；`formal_baseline_eligible=false` |
+| `code/src/baselines/text/products/` | OceanBase 等数据库产品原生 adapter | 只有真实 SQL AI Function 与 capability gate 通过后才进入产品 baseline |
+| `code/tests/baselines/text/test_baseline_provenance.py` | 文本 native baseline 资格单测 | 阻止项目自写 scheduler 被标记为 vendor-native，拒绝未分类 adapter |
+| `code/src/infrastructure/runtime_env.py` | driver、multi-job subprocess 与 Ray worker 的共享 PYTHONPATH/数值线程环境 | 防止 1/2/4-job 因每进程 OpenBLAS 线程膨胀而在请求前耗尽 OS 线程 |
+| `code/src/experiments/shared_vllm/` | Shared-vLLM 编排包：config/runner/runtime/evidence/metrics | 配置校验、三臂 credit 语义、并发执行、exactly-once、资源证据与公平性汇总 |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |
 | `learning/AGENTS.md` | 学习讲解规则 | 写学习材料前读 |
 | `learning/README.md` | 学习材料入口 | 了解实验 walkthrough 和术语讲解 |
+| `learning/code_architecture_guide.md` | 公共执行阶段、文本/图像模态和 baseline 隔离的代码导读 | 理解重构后的 `src` 目录与迁移验证方法 |
 | `learning/experiment_walkthrough.md` | 按推进顺序讲解已完成实验 | 学习实验链路、参数和结果读法 |
 | `learning/metric_selection_methodology.md` | AI_EMBED vs AI_COMPLETE 观察变量选择方法论 | 理解为什么从"阶段时延拆分"转向"多维分布表征" |
 | `opening/AGENTS.md` | 开题工作规则 | 写开题报告、PPT、飞书材料前读 |
@@ -261,64 +308,77 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `research/ai_operator_literature_inventory.md` | 文献分级清单 | 查看 Top 15、核心补充、题录勘误、baseline 与代价估计关系 |
 | `research/top15_ranked_papers.md` | 开题 Top 15 | 15/15 CCF-A 正式论文；按 AI 算子、LLM 调度、Ray、代价估计组织 |
 | `research/gpu_scheduler_data_placement_supplement_20260715.md` | GPU 调度与数据放置补充调研 | 查看策略控制器设计的前沿系统依据、可借鉴思想和后续精读清单 |
+| `research/evaluation_metrics_survey_20260731.md` | AI 算子/推理服务文献 + 数据库厂商评估指标调研与 gap 分析 | 设计新实验指标、对照文献标准指标时读；P0 缺口 TTFT/ITL/prefix-cache-hit-rate |
+| `research/daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：DB↔GPU 经 Daft 桥接 + 三痛点 + offline-batch 候选；已撤回传输瓶颈/结构性空白预设 | 方向/题目讨论、Daft 痛点、workload 选型时读；以 staged baseline 后的证据为准 |
 | `research/reference/README.md` | 本地 PDF 状态 | 查看 21 份实体 PDF、Top 15 完整性和维护规则 |
 | `research/reference/REFERENCE_INDEX.md` | 权威题录索引 | 查看 DOI、正式轨道、核心补充级别和工程资料入口 |
 | `data/README.md` | 本地 workload 数据说明；raw payloads 被 git ignore | 查看 ShareGPT/BurstGPT 下载位置、用途和边界 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |
-| `code/src/sources.py` | PostgreSQL data source 后端：psycopg/Arrow baseline、Daft SQL entry、`doc_id`/`arrival_time` source order | 切换或修改数据入口与读取顺序时读 |
-| `code/src/organizers.py` | ArrowOrganizer / DaftOrganizer 数据组织后端 | 接入或比较 Arrow 与 Daft 文本数据组织路径时读 |
-| `code/src/request_costs.py` | 与引擎无关的 prompt/output 成本模式解析 | 修改 prompt-only、固定输出上限或 trace 输出成本语义前读 |
-| `code/src/runner_lease.py` | 场景输出目录的原子单写者租约、owner 身份校验和显式 stale recovery | 修改 runner 幂等、恢复或 manifest/CSV 单写者边界前读 |
-| `code/src/profiling/` | profiler 应用子包：CLI/config、正式 schema/trace、replay 和 Ray 接线；根级 `profile_*.py` 仅保留兼容导入 | 修改画像应用参数、运行接线或结果契约前读 |
-| `code/src/profiling/traces.py` | profiler control/flush/submission/request/resource 的版本化 CSV 序列化 | 修改 trace schema、生命周期标识或 endpoint/GPU 归因前读 |
-| `code/src/profiling/cli.py` / `config.py` / `schema.py` | profiler 参数面、CLI/env 解析与正式汇总 schema 的独立边界 | 修改运行参数、环境切换优先级或 runs.csv 字段前读 |
-| `code/src/profiling/replay.py` | Arrow planning-batch/request/service-quantum envelope、arrival replay 与 lifecycle seed 组装 | 修改 token-budget 关批、complete-row quantum、request 粒度补位或 replay 时间语义前读 |
-| `code/src/profiling/ray.py` | Ray task/actor submitter、typed scheduler、credit 释放与 fan-in 接线 | 修改 actor pool、request-level replenishment 或 Ray 资源语义前读 |
-| `code/src/packing.py` | 与模态无关的确定性 BFD 标量容量装箱与指标 | 修改离线 batch membership、超预算行处理或 packing 指标前读 |
-| `code/src/model_backends.py` | fake debug backend、vLLM-compatible HTTP embedding/completion backend、Ollama native completion backend | 修改模型服务接入、vLLM/Ollama endpoint 或 AI_COMPLETE backend 前读 |
-| `code/src/sinks.py` | `none/json_text/pgvector` embedding 写回与 completion JSON-text 写回 | 修改写回路径或后续接 Lance sink 前读 |
-| `code/src/metrics.py` | Stage timer、GPU/显存/功率时序汇总、能耗、MFU 估计和严格 header 契约的 CSV append helper | 修改 profiling 指标、资源效率、CSV 输出或计时边界前读 |
-| `code/src/workloads.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
-| `code/src/experiment_scenarios.py` | 可复现的 warm-up / formal 场景交错顺序生成器 | 修改实验随机化与运行顺序前读 |
-| `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core；按 `organization/`、`submission_control/`、`endpoint_routing/`、`runtime/` 分包，根级旧模块仅作兼容导入 | 实现或审查运行时策略前读 |
+| `code/tests/architecture/test_architecture_boundaries.py` | AST 导入边界与旧兼容入口 fail-closed 门禁 | 新增模块、改变跨层依赖或迁移路径后运行 |
+| `code/src/data/sources/postgres_text.py` | PostgreSQL data source 后端：psycopg/Arrow baseline、Daft SQL entry、`doc_id`/`arrival_time` source order | 切换或修改数据入口与读取顺序时读 |
+| `code/src/data/materializers/text.py` | ArrowOrganizer / DaftOrganizer 数据组织后端 | 接入或比较 Arrow 与 Daft 文本数据组织路径时读 |
+| `code/src/modalities/text/costs.py` | 与引擎无关的 prompt/output 成本模式解析 | 修改 prompt-only、固定输出上限或 trace 输出成本语义前读 |
+| `code/src/infrastructure/runner_lease.py` | 场景输出目录的原子单写者租约、owner 身份校验和显式 stale recovery | 修改 runner 幂等、恢复或 manifest/CSV 单写者边界前读 |
+| `code/src/observability/profiling/` | profiler 应用子包：CLI/config、正式 schema/trace、replay 和 Ray 接线；旧根级 `profile_*.py` 已删除 | 修改画像应用参数、运行接线或结果契约前读 |
+| `code/src/observability/profiling/traces.py` | profiler control/flush/submission/request/resource 的版本化 CSV 序列化 | 修改 trace schema、生命周期标识或 endpoint/GPU 归因前读 |
+| `code/src/observability/profiling/cli.py` / `config.py` / `schema.py` | profiler 参数面、CLI/env 解析与正式汇总 schema 的独立边界 | 修改运行参数、环境切换优先级或 runs.csv 字段前读 |
+| `code/src/observability/profiling/replay.py` | Arrow planning-batch/request/service-quantum envelope、arrival replay 与 lifecycle seed 组装 | 修改 token-budget 关批、complete-row quantum、request 粒度补位或 replay 时间语义前读 |
+| `code/src/observability/profiling/manifest_guard.py` | 同条件 project runtime 的 fail-closed manifest 行语义、payload 契约与固定 endpoint 证据 | 修改 direct/project 公平比较、source offset 或 manifest 映射时读 |
+| `code/src/observability/profiling/ray.py` | Ray task/actor submitter、typed scheduler、credit 释放与 fan-in 接线 | 修改 actor pool、request-level replenishment 或 Ray 资源语义前读 |
+| `code/src/planning/packing/scalar.py` | 与模态无关的确定性 BFD 标量容量装箱与指标 | 修改离线 batch membership、超预算行处理或 packing 指标前读 |
+| `code/src/serving/backends/` | common 合同、fake/HTTP embedding、vLLM-compatible async completion 与 Ollama backend | 修改模型服务接入、vLLM/Ollama endpoint 或 AI_COMPLETE backend 前读 |
+| `code/src/modalities/image/` | 图像 typed batch/result/semantics、lazy Daft source、CLIP preprocess、bounded Ray CPU→GPU pipeline 与输出审计；baseline 已隔离到 `baselines/image/` | 实现 image path-B、切换 backend 或审计 embedding/执行语义前读 |
+| `code/src/modalities/image/resource_sampling.py` | host per-core CPU、visible/active-device GPU 的低频采样与明确汇总语义 | 图像 E2E 资源采样；不能把低频 GPU util 当 MFU |
+| `code/src/data/sinks/postgres.py` | `none/json_text/pgvector` embedding 写回与 completion JSON-text 写回 | 修改写回路径或后续接 Lance sink 前读 |
+| `code/src/observability/metrics/` | timing/CSV/statistics/resources/vLLM 指标子模块及兼容包入口 | 修改 profiling 指标、资源效率、CSV 输出或计时边界前读 |
+| `code/src/data/workloads/text.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
+| `code/src/experiments/scenarios/core.py` | 可复现的 warm-up / formal 场景交错顺序生成器 | 修改实验随机化与运行顺序前读 |
+| `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core；按 `core/`、`organization/`、`submission_control/`、`endpoint_routing/`、`runtime/` 分包，旧根级兼容模块已删除 | 实现或审查运行时策略前读 |
+| `code/src/scheduling/core/errors.py` | 可重试 endpoint capacity 背压与终止性调度错误的 typed 边界 | 修改健康/容量语义或 scheduler retry 控制流前读 |
 | `code/src/scheduling/organization/` | 上游 static/service-quantum token-budget 决策 | 修改数据组织预算控制或动态安全动作集前读 |
 | `code/src/scheduling/organization/service_quantum.py` | 将 planning batch 按预测 work 切成不拆单行的有界 service-completion 单元 | 修改 HTTP/Ray completion 粒度、whole-submission HOL 或 quantum 超预算语义前读 |
 | `code/src/scheduling/submission_control/` | static/adaptive admission、active-work 与多 job shared fair credit | 修改提交反压、公平性或 endpoint capacity 语义前读 |
-| `code/src/scheduling/endpoint_routing/` | round-robin、least-queued、least-work、prefix-affinity 路由 | 修改多 endpoint 选择策略前读 |
+| `code/src/scheduling/endpoint_routing/` | round-robin、least-queued、least-work、manifest-pinned、prefix-affinity 路由 | 修改多 endpoint 选择策略前读 |
 | `code/src/scheduling/runtime/` | 有界 Ray actor worker pool、submit/complete adapter、worker contract、metrics observation cache 与 named credit actor | 修改 Ray worker slots、worker routing、completion cleanup 或服务观测接线前读 |
-| `code/scripts/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本 | 构造最终可比 `AI_COMPLETE` baseline workload 前运行 |
-| `code/scripts/run_ai_operator_scenarios.py` | 带空闲门禁、失败审计和原子 manifest 的 seeded 场景运行器 | 执行随机化策略对比或真实基础设施门禁前运行 |
-| `code/tests/test_runner_lease.py` | runner 活跃 owner、stale recovery、fingerprint 与租约释放测试 | 修改场景 runner 恢复或单写者边界后运行 |
-| `code/scripts/summarize_output_aware_bfd.py` | output-aware BFD 重复实验的长表统计汇总 | 汇总吞吐、E2E、packing、GPU、能耗与 MFU 正式结果时运行 |
-| `code/tests/test_sources.py` | data source 查询构造和 source factory 单元测试 | 修改数据入口行为后运行 |
-| `code/tests/test_organizers.py` | 数据组织后端最小单元测试 | 修改 organizer 接口或 batch 行为后运行 |
-| `code/tests/test_request_costs.py` | 输出成本模式、来源标签与严格输入校验 | 修改成本估计语义后运行 |
-| `code/tests/test_packing.py` | 确定性 BFD、超预算单行与 packing 汇总测试 | 修改装箱算法后运行 |
-| `code/tests/test_output_aware_summary.py` | 正式重复实验长表汇总与 warm-up/失败过滤测试 | 修改 output-aware 汇总脚本后运行 |
-| `code/tests/test_model_backends.py` | 模型后端最小单元测试 | 修改 fake 或 compatible HTTP embedding backend 后运行 |
-| `code/tests/test_sinks.py` | 写回后端最小单元测试 | 修改 sink/writeback 行为后运行 |
-| `code/tests/test_workloads.py` | 内置 workload seed 单元测试 | 修改 smoke/dev workload 后运行 |
-| `code/tests/test_token_budget_controller.py` | static/service-quantum budget 与 arrival EWMA 契约测试 | 修改动态预算选择规则后运行 |
-| `code/tests/test_shared_credit.py` | 多 job endpoint credit、借用、公平轮转与 ID 隔离测试 | 修改共享 admission 纯策略后运行 |
-| `code/tests/test_shared_credit_ray.py` | named Ray actor 复用与配置一致性边界测试 | 修改共享 credit 的 Ray ownership 接线后运行 |
-| `code/tests/test_shared_vllm_experiment.py` | Shared-vLLM 配置、容量语义、组级指标与公平性测试 | 修改多 job runner 后运行 |
-| `code/tests/test_import_ai_complete_workload.py` | ShareGPT/BurstGPT importer 单元测试 | 修改 importer 或 trace 过滤逻辑后运行 |
-| `code/tests/test_scheduling_models.py` | scheduling request/endpoint/topology schema 单元测试 | 修改 typed scheduling metadata 前运行 |
-| `code/tests/test_scheduling_policies.py` | static admission 与 round-robin routing 单元测试 | 修改 admission/routing baseline 前运行 |
-| `code/tests/test_scheduler.py` | bounded-inflight 与 exactly-once deterministic scheduler 测试 | 修改 scheduler orchestration 前运行 |
-| `code/tests/test_adaptive_admission.py` | AIMD、EWMA-AIMD、PID、UCB 控制律、边界与 reward 单元测试 | 修改动态 admission controller 前运行 |
-| `code/tests/test_dynamic_admission.py` | 缓存采样、stale hold、typed trace 与动态降窗调度不变量测试 | 修改 observation provider 或 dynamic gate 前运行 |
-| `code/tests/test_flush_policies.py` | immediate、fixed-timeout、queue-adaptive flush 与 hard max-wait 单元测试 | 修改独立 flush policy 前运行 |
-| `code/tests/test_runtime_batching.py` | pending batch、token membership、单调 arrival replay 与 flush deadline 单元测试 | 修改回放事件循环或 batch builder 前运行 |
-| `code/tests/test_ray_adapter.py` | 通用 Ray submission adapter 的 request identity 与 endpoint 映射测试 | 修改 Ray adapter 前运行 |
-| `code/tests/test_postgres_profile_scheduling.py` | profiler 静态 Ray task/actor 接线、路由与旧指标兼容测试 | 修改 profiler 提交路径前运行 |
-| `code/tests/test_metrics.py` | 资源/MFU 汇总与 CSV header/schema-safe append 测试 | 修改指标输出或追加契约前运行 |
-| `code/tests/test_kmax_interference_script.py` | shared-vLLM K_max runner 默认输出 schema 版本测试 | 修改干扰实验默认输出路径前运行 |
-| `code/tests/test_scheduling_daft_ray_contract.py` | 真实 DaftOrganizer→Arrow RecordBatch→arrival replay→单节点 Ray task/actor exactly-once contract | 修改 Daft/Ray/replay adapter boundary 前运行 |
-| `code/tests/test_request_lifecycle.py` | request/submission exactly-once join、时钟域与 SLO 语义测试 | 修改逐请求 lifecycle schema 或计时边界前运行 |
-| `code/tests/test_experiment_scenarios.py` | seeded schedule、runner 脱敏、失败即停与 manifest 测试 | 修改场景运行器或实验顺序前运行 |
-| `code/scripts/postgres_ai_operator_profile.py` | PostgreSQL→Daft→Ray→模型服务画像；CSV 记录 endpoint/actor worker、Ray 资源与提交计数契约 | 运行或审计正式 AI 算子链路前读 |
-| `code/scripts/daft_text_organizer_smoke.py` | Daft/Arrow organizer smoke 入口 | 验证文本阶段 Daft 最小接入 |
+| `code/scripts/data/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本；支持显式 prompt-token eligibility、按过滤后 offset 选择不重叠 suffix、逐字段核验既有 prefix 和 append-only 防覆盖 | 构造最终可比 `AI_COMPLETE` baseline workload 或补 held-out 行前运行 |
+| `code/scripts/experiments/run_ai_operator_scenarios.py` | 带空闲门禁、失败审计和原子 manifest 的 seeded 场景运行器 | 执行随机化策略对比或真实基础设施门禁前运行 |
+| `code/tests/infrastructure/test_runner_lease.py` | runner 活跃 owner、stale recovery、fingerprint 与租约释放测试 | 修改场景 runner 恢复或单写者边界后运行 |
+| `code/scripts/analysis/summarize_output_aware_bfd.py` | output-aware BFD 重复实验的长表统计汇总 | 汇总吞吐、E2E、packing、GPU、能耗与 MFU 正式结果时运行 |
+| `code/tests/data/test_sources.py` | data source 查询构造和 source factory 单元测试 | 修改数据入口行为后运行 |
+| `code/tests/planning/test_organizers.py` | 数据组织后端最小单元测试 | 修改 organizer 接口或 batch 行为后运行 |
+| `code/tests/modalities/text/test_request_costs.py` | 输出成本模式、来源标签与严格输入校验 | 修改成本估计语义后运行 |
+| `code/tests/planning/test_packing.py` | 确定性 BFD、超预算单行与 packing 汇总测试 | 修改装箱算法后运行 |
+| `code/tests/experiments/test_output_aware_summary.py` | 正式重复实验长表汇总与 warm-up/失败过滤测试 | 修改 output-aware 汇总脚本后运行 |
+| `code/tests/serving/test_model_backends.py` | 模型后端最小单元测试 | 修改 fake 或 compatible HTTP embedding backend 后运行 |
+| `code/tests/modalities/image/test_image_contracts.py` | 图像 embedding shape/finite、CLIP v5 pooler output、work units 和 lazy source query 测试 | 修改 `code/src/modalities/image/` 后运行 |
+| `code/tests/modalities/image/test_image_clip_preprocess_variants.py` | 图像 processor 对照脚本的 spatial-work 与 embedding parity 计算测试 | 修改图像受控复测脚本后运行 |
+| `code/tests/modalities/image/test_image_execution.py` | 图像 streaming exactly-once、向量归一化和执行时间边界测试 | 修改图像 E2E baseline/pipeline 后运行 |
+| `code/tests/modalities/image/test_image_resource_sampling.py` | visible/active GPU 与 host busy-core 汇总测试 | 修改图像资源指标后运行 |
+| `code/tests/baselines/image/test_image_baseline_contract.py` | vendor-native eligibility、scheduler ownership 与诊断 reference fail-closed 测试 | 新增/改名图像 baseline arm 后运行 |
+| `code/tests/baselines/image/test_image_vendor_baseline_manifest.py` | 官方图像 baseline commit/file pin 与“禁止项目调度”适配策略测试 | 更新 upstream pin 或 vendor parity 合同时运行 |
+| `code/tests/data/test_sinks.py` | 写回后端最小单元测试 | 修改 sink/writeback 行为后运行 |
+| `code/tests/data/test_workloads.py` | 内置 workload seed 单元测试 | 修改 smoke/dev workload 后运行 |
+| `code/tests/scheduling/test_token_budget_controller.py` | static/service-quantum budget 与 arrival EWMA 契约测试 | 修改动态预算选择规则后运行 |
+| `code/tests/scheduling/test_shared_credit.py` | 多 job endpoint credit、借用、公平轮转与 ID 隔离测试 | 修改共享 admission 纯策略后运行 |
+| `code/tests/scheduling/test_shared_credit_ray.py` | named Ray actor 复用与配置一致性边界测试 | 修改共享 credit 的 Ray ownership 接线后运行 |
+| `code/tests/experiments/test_shared_vllm_experiment.py` | Shared-vLLM 配置、容量语义、组级指标与公平性测试 | 修改多 job runner 后运行 |
+| `code/tests/data/test_import_ai_complete_workload.py` | ShareGPT/BurstGPT importer 单元测试 | 修改 importer 或 trace 过滤逻辑后运行 |
+| `code/tests/scheduling/test_scheduling_models.py` | scheduling request/endpoint/topology schema 单元测试 | 修改 typed scheduling metadata 前运行 |
+| `code/tests/scheduling/test_scheduling_policies.py` | static admission 与 round-robin routing 单元测试 | 修改 admission/routing baseline 前运行 |
+| `code/tests/scheduling/test_scheduler.py` | bounded-inflight 与 exactly-once deterministic scheduler 测试 | 修改 scheduler orchestration 前运行 |
+| `code/tests/scheduling/test_adaptive_admission.py` | AIMD、EWMA-AIMD、PID、UCB 控制律、边界与 reward 单元测试 | 修改动态 admission controller 前运行 |
+| `code/tests/scheduling/test_dynamic_admission.py` | 缓存采样、stale hold、typed trace 与动态降窗调度不变量测试 | 修改 observation provider 或 dynamic gate 前运行 |
+| `code/tests/scheduling/test_flush_policies.py` | immediate、fixed-timeout、queue-adaptive flush 与 hard max-wait 单元测试 | 修改独立 flush policy 前运行 |
+| `code/tests/scheduling/test_runtime_batching.py` | pending batch、token membership、单调 arrival replay 与 flush deadline 单元测试 | 修改回放事件循环或 batch builder 前运行 |
+| `code/tests/scheduling/test_ray_adapter.py` | 通用 Ray submission adapter 的 request identity 与 endpoint 映射测试 | 修改 Ray adapter 前运行 |
+| `code/tests/observability/test_postgres_profile_scheduling.py` | profiler 静态 Ray task/actor 接线、路由与旧指标兼容测试 | 修改 profiler 提交路径前运行 |
+| `code/tests/observability/test_metrics.py` | 资源/MFU 汇总与 CSV header/schema-safe append 测试 | 修改指标输出或追加契约前运行 |
+| `code/tests/experiments/test_kmax_interference_script.py` | shared-vLLM K_max runner 默认输出 schema 版本测试 | 修改干扰实验默认输出路径前运行 |
+| `code/tests/scheduling/test_scheduling_daft_ray_contract.py` | 真实 DaftOrganizer→Arrow RecordBatch→arrival replay→单节点 Ray task/actor exactly-once contract | 修改 Daft/Ray/replay adapter boundary 前运行 |
+| `code/tests/scheduling/test_request_lifecycle.py` | request/submission exactly-once join、时钟域与 SLO 语义测试 | 修改逐请求 lifecycle schema 或计时边界前运行 |
+| `code/tests/experiments/test_experiment_scenarios.py` | seeded schedule、runner 脱敏、失败即停与 manifest 测试 | 修改场景运行器或实验顺序前运行 |
+| `code/scripts/profiling/postgres_ai_operator_profile.py` | PostgreSQL→Daft→Ray→模型服务画像；CSV 记录 endpoint/actor worker、Ray 资源与提交计数契约 | 运行或审计正式 AI 算子链路前读 |
+| `code/scripts/profiling/daft_text_organizer_smoke.py` | Daft/Arrow organizer smoke 入口 | 验证文本阶段 Daft 最小接入 |
 | `code/scripts/README.md` | 脚本详细说明 | 运行 PostgreSQL 画像、pgai SQL profile、本地 embedding server、Daft text organizer smoke |
 | `code_doc/superpowers/plans/` | Superpowers implementation plans for code work | 按 superpowers 工作流执行多步代码任务前读 |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-admission-controller-design.md` | RC2 adaptive admission controller 与 shared-vLLM 实验设计 | 实现 AIMD 控制器、时序指标或重跑干扰实验前读 |
@@ -333,22 +393,36 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code_doc/superpowers/specs/2026-07-26-row-cap-aware-packing-and-observation-design.md` | row cap、token budget、packing 与 adaptive 非阻塞观测的候选选择设计 | 继续数据组织与提交控制联合优化前读 |
 | `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md` | BFD、离线逐请求 E2E、资源效率指标与 64/512/1024 实验实施计划 | 继续当前数据组织策略主线前读 |
 | `code_doc/superpowers/plans/2026-07-26-row-cap-aware-packing-and-observation-implementation.md` | 非阻塞 adaptive 观测、row-cap-first packing 与真实 GPU 策略筛选计划 | 执行当前数据组织优化和机制选择前读 |
+| `code_doc/superpowers/specs/2026-07-29-daft-ray-baseline-advantage-validation-design.md` | Daft+Ray baseline 优势验证的批准规格 | 查询预注册门槛、staged matrix、负结果规则与远端停止条件 |
+| `code_doc/superpowers/plans/2026-07-29-daft-ray-baseline-advantage-validation-implementation.md` | actor readiness、HTTP timing、等价性门禁和交接计划 | 继续实现或交给新 agent 运行前读 |
 | `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
 | `deploy/autodl/` | AutoDL 云服务器 runbook、环境模板、模型下载/endpoint 启动脚本与双 GPU 场景模板 | 2× GPU 云上复现：配置化 vLLM 多 endpoint + PG18.4 + Ray/Daft |
 | `deploy/autodl/dual_gpu_capacity_scaling.example.json` | 单/双 endpoint 相同 per-GPU K 的容量扩展模板 | 先确定双 GPU 公平 scaling 与每卡静态甜点 |
-| `deploy/autodl/dual_gpu_token_budget_curve.example.json` | 固定 per-endpoint active work、关闭 arrival replay 的 8192–65536 token-budget 曲线 | 在等量 offered work 下标定最佳已测组织预算并审计 row cap |
-| `deploy/autodl/dual_gpu_data_organization.example.json` | 固定 active work 与最佳已测预算、关闭 arrival replay 的双 GPU 数据组织隔离模板 | 复验 sequential、row-cap-aware 与 length-align，避免预算大小、offered load 和 flush 混淆 |
+| `deploy/autodl/dual_gpu_token_budget_curve.example.json` | disjoint manifest、async multi-prompt、固定 per-endpoint active work 的 2K–65K token-budget 曲线 | feeding formal 通过后，在等量 offered work 下证明预算不是越大越好并冻结 held-out 静态点 |
+| `deploy/autodl/dual_gpu_data_organization.example.json` | disjoint manifest、async multi-prompt、固定 active work/最佳预算的数据组织隔离模板 | 比较 fixed16、sequential、row-cap-aware 与 length-align，避免预算、transport、offered load 和 flush 混淆 |
 | `deploy/autodl/dual_gpu_request_replay.example.json` | batch barrier 与 request-level replenishment 模板 | 容量与组织阶段完成后运行，并按实际 batch rows 对齐 request K |
 | `deploy/autodl/dual_gpu_active_work_curve.example.json` | 第一优先级的 request-level per-endpoint active-token credit 容量曲线 | 先标定模型/负载相关的 offered-work 饱和区，避免按 batch K 暗中改变 request 并发 |
-| `deploy/autodl/dual_gpu_actor_pool_shape.example.json` | 固定每 endpoint 256 个可见 slot 的 1×256/2×128/4×64 Ray actor 拓扑对照 | 在 active-work 饱和点比较 actor pool 形状，不改变 offered-load 上限 |
+| `deploy/autodl/dual_gpu_actor_pool_shape.example.json` | 固定每 endpoint 256 个可见 slot/0.5 CPU 的 1/2/4/8/16 Ray actor 拓扑对照 | 在同协议饱和点选择达到峰值 97% 的最小 actor 数，不改变 offered-load 上限 |
 | `deploy/autodl/dual_gpu_service_quantum.example.json` | 固定 planning budget、active work 和 actor slots 的 batch/512/1024/2048/4096/request 完成粒度对照 | 量化批内 HOL、credit-held 空转与 completion-driven replenishment |
 | `deploy/autodl/dual_gpu_slo_ewma_flush.example.json` | 高压/临界到达率下 fixed、queue-adaptive 与 SLO-aware EWMA flush 对照 | 在固定 request-level、65K active work 和 1×256 actor pool 下验证动态关批是否改善吞吐、SLO-goodput或尾延迟 |
 | `deploy/autodl/dual_gpu_shared_vllm_gate.example.json` | Shared-vLLM 双 GPU 最小门禁模板 | 2 job × independent/partition/shared-DRR，各 64 行 |
-| `deploy/autodl/dual_gpu_shared_vllm_formal.example.json` | Shared-vLLM 1/2/4-job 正式模板 | 三种 credit 策略，1 warmup + 3 repeats |
-| `deploy/autodl/dual_gpu_submission_policy.example.json` | active-work、least-work routing、动态 token budget 与 adaptive flush 的可组合消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
-| `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 官方/强 baseline 功能门禁规格 | calibration 前验证 Chat 请求等价、exactly-once、endpoint 分片、空队列与 adapter 能力 |
-| `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 同条件 baseline 独立标定网格 | gate 通过后标定 direct/Daft/Ray Data/project 容量；不得直接当作 formal |
+| `deploy/autodl/dual_gpu_shared_vllm_formal.example.json` | Shared-vLLM 1/2/4-job 正式模板 | j4 gate 后使用有界 async actor pool，三种 credit 策略，1 warmup + 3 repeats |
+| `deploy/autodl/dual_gpu_shared_vllm_j4_gate.example.json` | Shared-vLLM 4-job 独立能力门禁 | 在 j4 formal 前验证有界 actor pool、VMA/线程和 exactly-once |
+| `deploy/autodl/dual_gpu_shared_vllm_j4_formal.example.json` | Shared-vLLM 4-job 独立正式模板 | j4 gate 通过后用于故障隔离或单独复验 |
+| `deploy/autodl/dual_gpu_submission_policy.example.json` | 保留 multi-prompt batch 的 active-work、least-work routing、动态预算与 adaptive flush 消融 | 完成静态预算和 active-work 标定后运行；单项有效才进入组合候选 |
+| `deploy/autodl/dual_gpu_static_k_workload_surface.example.json` | low/near-capacity/burst × K64/128/256 静态性能面 | 先判断不同 workload 的最佳静态点和错配代价是否足以支持动态策略 |
+| `deploy/autodl/dual_gpu_static_credit_prompt_length_gate.example.json` | short/long prompt 的 K256、K256+W65K、K256+W98K async 等价臂门禁 | 在重建静态 credit surface 前验证 transport、token IDs、跨 workload 交错与未绑定臂 5% 等价性 |
+| `deploy/autodl/dual_gpu_endpoint_adaptive_gate.example.json` | 双 endpoint typed adaptive 256 行可运行性门禁 | 验证 endpoint-local state/metrics/action trace，禁止当作性能结果 |
+| `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 文本 comparison validity gate（历史兼容文件名） | calibration 前验证 provenance、Chat 请求等价、exactly-once、endpoint 分片与空队列 |
+| `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 文本 ceiling/control/native arm 独立标定网格 | 删除未接线 Daft partition_count；只扫描各 arm 真实暴露参数，不得直接当 formal |
+| `deploy/autodl/dual_gpu_text_native_baseline_formal.example.json` | 4,096 行文本原生 baseline held-out 正式合同 | calibration 冻结后执行至少 60 秒、1 warmup + 3 interleaved repeats |
+| `deploy/autodl/dual_gpu_completions_baseline_gate.example.json` | 无 Ray fixed-row multi-prompt Completions 双 GPU transport ceiling | 在相同 Completions 协议下扫描 1/4/16/32 行 HTTP packing，保持每 endpoint 最多 256 active prompts |
+| `deploy/autodl/dual_gpu_project_chat_feeding.example.json` | project Chat `urllib`/持久 async transport 与 1×256/2×128/4×64 actor 校准 | 先通过同协议 bounded 95% feeding 门禁，再运行 Chat 策略或官方 runtime 排名 |
+| `deploy/autodl/dual_gpu_project_completions_feeding.example.json` | project 原始 multi-prompt Completions fixed-row feeding 校准 | 隔离 Ray/HTTP transport 后才进入 token-budget、length-align 与 adaptive flush 消融 |
+| `deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json` | project K256 与 nonbinding W98K 的首次高并发等价性门禁 | 1 same-pressure warmup + 3 repeats；未收敛到 5% 内禁止 broad calibration |
+| `deploy/autodl/dual_gpu_same_condition_project_calibration.example.json` | 同 512 行 immutable Chat manifest 的 project static-K 与 active-work 校准模板 | direct C256 后测 project 达到 ceiling 所需的最小上游压力 |
+| `deploy/autodl/dual_gpu_same_condition_project_formal.example.json` | disjoint 2,048 行 manifest 的 project static request-credit 与 token-work 正式模板 | 数据补齐、64 行 gate 与参数冻结后运行 1 warmup + 3 repeats |
 | `notes/AGENTS.md` | 沟通材料规则 | 整理导师/企业侧反馈时读 |
 | `notes/communication_notes.md` | 和同事/导师需要确认的问题和沟通话术 | 准备沟通 |
 
@@ -390,6 +464,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `sink_writeback_coordination.md` | 写回工程参考（不作为独立实验阶段）：COPY + deferred index baseline |
 | `cross_layer_killer_experiment.md` | 耦合验证实验计划：独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数的完整交互面）|
 | `experiment_status_and_gaps.md` | **实验状态与缺口分析（2026-07-20）**：已完成/未完成实验表、证据链完整性、指标盲区、P0/P1/P2 路线图、审稿人视角风险。当前实验设计的第一参考。|
+| `image_clip_workload_lock_20260731.md` | 🔴 **首个 workload（当务之急）**：AI_EMBED 执行门禁 + AI_CLASSIFY 正式候选；ImageNet/ResNet18 单标签与 COCO/CLIP multi-label 两条质量轨道 | 设计图像实验、选择 top-1/top-5 或 mAP/F1、审计五臂 fused/staged baseline 和 host-data-path 门禁时读 |
+| `msmarco_embedding_workload_20260731.md` | ⏸ 文本轻对照（降级）：MS MARCO 文本，token ID 紧凑搬运轻，瓶颈不显现——仅作"文本下不显现"的边界对照 |
 
 所有实验计划遵循从 vLLM/Orca/TurboVecDB/GaussML/FlexPushdownDB 五篇 CCF-A 论文提取的共同方法论：曲线 > 单点、先暴露瓶颈再优化、同硬件公平 baseline、消融拆开、诚实报告边界、统计严谨。
 

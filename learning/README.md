@@ -1,5 +1,67 @@
 # Learning Notes
 
+代码结构导读：
+
+- [`code_architecture_guide.md`](code_architecture_guide.md)：解释公共执行阶段与
+  text/image 模态为什么是两条正交轴、每个 `src` 子包负责什么，以及路径迁移的验证门禁。
+
+文本 baseline 的当前入门材料：
+
+- [`text_native_baseline_guide.md`](text_native_baseline_guide.md)：区分 vLLM 服务上限、
+  bounded control、Daft/Ray Data/OceanBase 原生 baseline 和项目方法，并解释
+  Chat/Completions 分轨与 64→512→4096 复测流程。
+
+学习材料只负责解释；正式 baseline 身份、状态和指标以
+[`../experiments/plans/baseline_reference.md`](../experiments/plans/baseline_reference.md)
+为准。
+
+图像木桶、H2D 与 embedding parity 的当前讲解统一追加在
+[`experiment_walkthrough.md`](experiment_walkthrough.md) 的 2026-08-02/03 小节；其中
+明确区分正常流式性能运行和仅用于语义判定的 capture 诊断运行。
+
+## 2026-07-30 为什么“短长都选 65K”还不能直接判动态无用
+
+远端把三次 formal 的 E2E tokens/s 做算术平均，得到 short/long 都是
+W65K，于是写成“固定 token-aware credit 已自动适配，动态 K 不需要”。
+这条推理的前半部分是合理假设，但数据还没有满足判决条件。
+
+项目正式校准使用 model-request throughput 中位数。按这个口径，short
+选 W98K，long 选 W65K；而 short W65K/W98K 的 repeat CV 高达 18%/34%。
+更关键的是，short 每 endpoint 最多只有约 49.3K observed work，65K 和
+98K cap 都没有真正挡住请求，bounded wait 都是 0。K256、W65K、W98K
+实际都一次性放行 512 行，理论上应接近，却出现 48.5% 中位数吞吐分裂。
+这说明当前差异首先是实验稳定性或服务状态问题，不是 active-work limit
+的因果效果。
+
+配置还暴露了三项执行偏差：实际 transport 是 urllib 而非冻结的 async；
+没有返回 token IDs，拿不到 per-request 实际 output token 分布；short
+全部跑完后才跑 long，而且六个臂只是 K-only/W-only 两条一维曲线，不是
+K×work factorial。
+
+因此正确读法是：long W65K 是值得保留的静态候选，K256 过度接纳的 SLO
+负结果也有价值；但动态 GO/NO-GO 必须标为 `inconclusive`。先用同一 async
+runner 交错重跑 K256/W65K/W98K 等价臂，未绑定臂收敛到 5% 内后，才有资格
+比较不同 workload 的静态 oracle 和交叉 regret。
+
+## 2026-07-29 为什么要先做 K256/W98K 等价性门禁
+
+K256 表示每个 endpoint 最多同时保留 256 个 request；W98K 在同一个 K256
+上再加每 endpoint 98,304 predicted-token work 上限。当前 512 行的实际峰值
+work 只有约 73,329，所以 W98K 理论上没有约束任何请求。这两个配置应该接近。
+
+单次远端结果却是约 11,736 对 4,153 total tokens/s。trace 显示不是 W98K
+真的挡住了请求：两者都达到 512 个全局 inflight、bounded wait 为 0、输入与
+输出 work 一致。主要差异发生在 HTTP/vLLM request wall，而且 W98K 恰好是
+第一个 full-concurrency 场景。于是这组数字更像“首次把 512 个连接/请求压上去
+的冷路径”，不能解释成 active-work 策略变慢。
+
+新的等价性门禁做三件事：第一，所有 Ray actor ready 后才启动 E2E 计时，启动
+耗时另记；第二，每个配置先在完全相同的压力下 warm-up；第三，记录 HTTP
+request start、response headers 和 body complete。非流式请求的 headers-wait
+仍混合 connect、服务入口排队和推理，不能把它直接叫 GPU 时间。只有 K256 与
+W98K 在三次 formal 中收敛到 5% 内，才能继续比较 Daft+Ray 是否用更少
+active work、更快爬到吞吐上限，或在多 job 中改善 P99/SLO/fairness。
+
 ## 2026-07-29 planning batch 与 service quantum 为什么要分开
 
 planning batch 回答“上游先把哪些完整行组织在一起”，由 token budget、

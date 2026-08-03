@@ -4,13 +4,29 @@ from __future__ import annotations
 
 import hashlib
 
-from ..models import (
+from ..core.errors import EndpointCapacityUnavailable
+from ..core.models import (
     BatchRequest,
+    EndpointSnapshot,
     PoolRoutingDecision,
     RoutingDecision,
     TopologySnapshot,
 )
-from ..topology import healthy_endpoints
+from ..core.topology import healthy_endpoints, schedulable_endpoints
+
+
+def _schedulable_or_raise(
+    topology: TopologySnapshot,
+    pool_id: str,
+) -> tuple[EndpointSnapshot, ...]:
+    candidates = schedulable_endpoints(topology, pool_id)
+    if candidates:
+        return candidates
+    if healthy_endpoints(topology, pool_id):
+        raise EndpointCapacityUnavailable(
+            f"no endpoint in pool {pool_id} has admission capacity"
+        )
+    raise RuntimeError(f"no healthy endpoint in pool {pool_id}")
 
 
 class RoundRobinEndpointRouter:
@@ -24,9 +40,7 @@ class RoundRobinEndpointRouter:
         pool_id: str,
     ) -> RoutingDecision:
         del request
-        candidates = healthy_endpoints(topology, pool_id)
-        if not candidates:
-            raise RuntimeError(f"no healthy endpoint in pool {pool_id}")
+        candidates = _schedulable_or_raise(topology, pool_id)
         index = self._next_index_by_pool.get(pool_id, 0)
         endpoint = candidates[index % len(candidates)]
         self._next_index_by_pool[pool_id] = (index + 1) % len(candidates)
@@ -41,9 +55,7 @@ class LeastQueuedEndpointRouter:
         pool_id: str,
     ) -> RoutingDecision:
         del request
-        candidates = healthy_endpoints(topology, pool_id)
-        if not candidates:
-            raise RuntimeError(f"no healthy endpoint in pool {pool_id}")
+        candidates = _schedulable_or_raise(topology, pool_id)
         endpoint = min(
             candidates,
             key=lambda item: (item.running + item.waiting, item.endpoint_id),
@@ -60,24 +72,60 @@ class LeastWorkEndpointRouter:
         topology: TopologySnapshot,
         pool_id: str,
     ) -> RoutingDecision:
-        candidates = healthy_endpoints(topology, pool_id)
-        if not candidates:
-            raise RuntimeError(f"no healthy endpoint in pool {pool_id}")
+        candidates = _schedulable_or_raise(topology, pool_id)
 
         def predicted_finish(endpoint) -> tuple[float, str]:
             work = (
                 endpoint.estimated_active_work
-                + request.estimated_total_tokens
+                + request.estimated_work_units
             )
+            service_rate = endpoint.effective_service_rate_work_units_s
             drain_s = (
-                work / endpoint.service_rate_tokens_s
-                if endpoint.service_rate_tokens_s is not None
+                work / service_rate
+                if service_rate is not None
                 else float(work)
             )
             return drain_s, endpoint.endpoint_id
 
         endpoint = min(candidates, key=predicted_finish)
         return RoutingDecision(endpoint.endpoint_id, pool_id, "least_work")
+
+
+class PinnedEndpointRouter:
+    """Route a request only to the endpoint fixed by its input manifest."""
+
+    def route(
+        self,
+        request: BatchRequest,
+        topology: TopologySnapshot,
+        pool_id: str,
+    ) -> RoutingDecision:
+        endpoint_id = request.preferred_endpoint_id
+        if not endpoint_id:
+            raise RuntimeError("missing preferred endpoint")
+        endpoint = next(
+            (
+                candidate
+                for candidate in topology.endpoints
+                if candidate.endpoint_id == endpoint_id
+            ),
+            None,
+        )
+        if endpoint is None:
+            raise RuntimeError(f"unknown preferred endpoint {endpoint_id}")
+        if endpoint.pool_id != pool_id:
+            raise RuntimeError(
+                f"preferred endpoint {endpoint_id} is outside pool {pool_id}"
+            )
+        if not endpoint.healthy:
+            raise RuntimeError(
+                f"preferred endpoint {endpoint_id} is not healthy"
+            )
+        if not endpoint.available:
+            raise EndpointCapacityUnavailable(
+                f"preferred endpoint {endpoint_id} has no admission capacity"
+            )
+        return RoutingDecision(endpoint_id, pool_id, "manifest_pinned")
 
 
 class RequestPoolRouter:
@@ -104,7 +152,7 @@ class RequestPoolRouter:
         available = {
             endpoint.pool_id
             for endpoint in topology.endpoints
-            if endpoint.healthy
+            if endpoint.healthy and endpoint.available
         }
         if not available:
             raise RuntimeError("no healthy endpoint in any pool")
@@ -156,8 +204,16 @@ class PrefixAffinityEndpointRouter:
             for endpoint in topology.endpoints
             if endpoint.pool_id == pool_id
         )
-        healthy = tuple(endpoint for endpoint in pool_endpoints if endpoint.healthy)
+        healthy = tuple(
+            endpoint
+            for endpoint in pool_endpoints
+            if endpoint.healthy and endpoint.available
+        )
         if not healthy:
+            if any(endpoint.healthy for endpoint in pool_endpoints):
+                raise EndpointCapacityUnavailable(
+                    f"no endpoint in pool {pool_id} has admission capacity"
+                )
             raise RuntimeError(f"no healthy endpoint in pool {pool_id}")
         affinity_endpoint = max(
             pool_endpoints,
@@ -166,7 +222,7 @@ class PrefixAffinityEndpointRouter:
                 endpoint.endpoint_id,
             ),
         )
-        if affinity_endpoint.healthy:
+        if affinity_endpoint.healthy and affinity_endpoint.available:
             return RoutingDecision(
                 affinity_endpoint.endpoint_id,
                 pool_id,

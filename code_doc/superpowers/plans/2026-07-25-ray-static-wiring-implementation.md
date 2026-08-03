@@ -25,12 +25,12 @@
 
 - Modify `code/src/scheduling/models.py`: typed collected-submission timing.
 - Modify `code/src/scheduling/scheduler.py`: aggregate static submission metrics.
-- Modify `code/tests/test_scheduler.py`: metric and completion-identity tests.
+- Modify `code/tests/scheduling/test_scheduler.py`: metric and completion-identity tests.
 - Create `code/src/scheduling/ray_adapter.py`: generic Ray ObjectRef adapter.
-- Create `code/tests/test_ray_adapter.py`: fake-Ray adapter unit tests.
-- Modify `code/tests/test_scheduling_daft_ray_contract.py`: use production adapter.
-- Modify `code/scripts/postgres_ai_operator_profile.py`: static task/actor delegation.
-- Create `code/tests/test_postgres_profile_scheduling.py`: static path parity tests.
+- Create `code/tests/scheduling/test_ray_adapter.py`: fake-Ray adapter unit tests.
+- Modify `code/tests/scheduling/test_scheduling_daft_ray_contract.py`: use production adapter.
+- Modify `code/scripts/profiling/postgres_ai_operator_profile.py`: static task/actor delegation.
+- Create `code/tests/observability/test_postgres_profile_scheduling.py`: static path parity tests.
 - Modify `code/README.md`, `code/scripts/README.md`,
   `learning/local_vllm_ray_baseline_walkthrough.md`, `PROJECT_INDEX.md`, and
   `PROJECT_LOG.md`.
@@ -41,7 +41,7 @@
 - Modify: `code/src/scheduling/models.py`
 - Modify: `code/src/scheduling/scheduler.py`
 - Modify: `code/src/scheduling/__init__.py`
-- Modify: `code/tests/test_scheduler.py`
+- Modify: `code/tests/scheduling/test_scheduler.py`
 
 **Interfaces:**
 - Produce `CollectedSubmission(handle, completion, wait_s, result_s)`.
@@ -110,7 +110,7 @@ def test_scheduler_rejects_completion_for_different_request(self) -> None:
 - [ ] **Step 2: Run RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py
 ```
 
 Expected: import failure for `CollectedSubmission`.
@@ -160,7 +160,7 @@ if collected.completion.request_id != pending_envelope.request.request_id:
 - [ ] **Step 4: Run GREEN**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py
 ```
 
 Expected: `Ran 3 tests ... OK`.
@@ -168,7 +168,7 @@ Expected: `Ran 3 tests ... OK`.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/src/scheduling code/tests/test_scheduler.py
+git add code/src/scheduling code/tests/scheduling/test_scheduler.py
 git commit -m "feat: collect typed scheduler metrics"
 ```
 
@@ -176,9 +176,9 @@ git commit -m "feat: collect typed scheduler metrics"
 
 **Files:**
 - Create: `code/src/scheduling/ray_adapter.py`
-- Create: `code/tests/test_ray_adapter.py`
+- Create: `code/tests/scheduling/test_ray_adapter.py`
 - Modify: `code/src/scheduling/__init__.py`
-- Modify: `code/tests/test_scheduling_daft_ray_contract.py`
+- Modify: `code/tests/scheduling/test_scheduling_daft_ray_contract.py`
 
 **Interfaces:**
 - `RaySubmissionAdapter(ray_module, submitters)`.
@@ -255,7 +255,7 @@ if __name__ == "__main__":
 - [ ] **Step 2: Run RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_ray_adapter.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_ray_adapter.py
 ```
 
 Expected: import failure for `src.scheduling.ray_adapter`.
@@ -316,8 +316,8 @@ Export `RaySubmissionAdapter`. Replace the test-local Ray adapter in
 - [ ] **Step 4: Run GREEN and real contract**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_ray_adapter.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_ray_adapter.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
 ```
 
 Expected: both modules end in `OK`.
@@ -325,15 +325,15 @@ Expected: both modules end in `OK`.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/src/scheduling code/tests/test_ray_adapter.py code/tests/test_scheduling_daft_ray_contract.py
+git add code/src/scheduling code/tests/scheduling/test_ray_adapter.py code/tests/scheduling/test_scheduling_daft_ray_contract.py
 git commit -m "feat: add Ray scheduling adapter"
 ```
 
 ### Task 3: Profiler Scheduling Helpers
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Create: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Create: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - `_batch_envelopes(batches, job_id, operator, completion_max_tokens)`.
@@ -378,7 +378,7 @@ Assert topology keeps endpoint ID/URL pairs and uses pool `default`. Assert
 - [ ] **Step 2: Run RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
 ```
 
 Expected: attribute failure for `_batch_envelopes`.
@@ -397,7 +397,7 @@ static limit from the result.
 - [ ] **Step 4: Run GREEN**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
 ```
 
 Expected: all helper tests pass.
@@ -405,15 +405,15 @@ Expected: all helper tests pass.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/tests/test_postgres_profile_scheduling.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "feat: add profiler scheduling helpers"
 ```
 
 ### Task 4: Static Ray Task Delegation
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Preserve `submit_ray_tasks(...) -> tuple[list[dict], dict]`.
@@ -451,7 +451,7 @@ be equal.
 - [ ] **Step 2: Run RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
 ```
 
 Expected: `_run_static_scheduler` spy reports that it was not called.
@@ -478,8 +478,8 @@ Do not change the legacy adaptive body beyond moving it to its named helper.
 - [ ] **Step 4: Run GREEN and profiler dry-run**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py --dry-run --executor ray_task --data-source daft_postgres --organizer daft --writeback-mode none --output tmp\ray_static_wiring_dry_run.csv
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py --dry-run --executor ray_task --data-source daft_postgres --organizer daft --writeback-mode none --output tmp\ray_static_wiring_dry_run.csv
 ```
 
 Expected: tests pass; dry-run reports `status=dry_run`.
@@ -487,15 +487,15 @@ Expected: tests pass; dry-run reports `status=dry_run`.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/tests/test_postgres_profile_scheduling.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "refactor: wire static Ray task scheduler"
 ```
 
 ### Task 5: Static Ray Actor Delegation
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Preserve `submit_with_backpressure(...) -> tuple[list[dict], dict]`.
@@ -520,7 +520,7 @@ so RED does not depend on incidental output differences.
 - [ ] **Step 2: Run RED**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
 ```
 
 Expected: actor delegation assertion fails before implementation.
@@ -537,8 +537,8 @@ Move the previous loop unchanged into
 - [ ] **Step 4: Run GREEN and real contract**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
 ```
 
 Expected: both modules end in `OK`.
@@ -546,7 +546,7 @@ Expected: both modules end in `OK`.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/tests/test_postgres_profile_scheduling.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "refactor: wire static Ray actor scheduler"
 ```
 
@@ -568,7 +568,7 @@ test and dry-run commands. Do not claim performance improvement.
 - [ ] **Step 2: Run compile/import/dependency checks**
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m compileall -q code\src\scheduling code\scripts\postgres_ai_operator_profile.py code\tests
+.conda\pg-ai-profile\python.exe -m compileall -q code\src\scheduling code\scripts\profiling\postgres_ai_operator_profile.py code\tests
 rg -n "import (daft|pyarrow|ray)|from (daft|pyarrow|ray)" code\src\scheduling\admission.py code\src\scheduling\models.py code\src\scheduling\routing.py code\src\scheduling\scheduler.py code\src\scheduling\topology.py
 ```
 
@@ -588,7 +588,7 @@ Expected: every module ends in `OK`.
 - [ ] **Step 4: Run real Daft→Ray smoke**
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py
 ```
 
 Expected: `Ran 1 test ... OK`.

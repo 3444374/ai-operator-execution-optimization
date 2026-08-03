@@ -1,91 +1,79 @@
 {
-  "schema_version": 1,
-  "experiment_id": "dual_gpu_official_baseline_calibration",
+  "schema_version": 2,
+  "experiment_id": "dual_gpu_text_comparison_calibration",
   "formal": false,
   "requires_passing_gate": true,
-  "workload_rows": [
-    32,
-    64,
-    128,
-    256
-  ],
-  "held_out_rows": 2048,
-  "grids": {
+  "completion_protocol": "chat_completions",
+  "calibration_rows": 512,
+  "held_out_formal_rows": 4096,
+  "minimum_formal_measurement_seconds": 60,
+  "arms": {
     "vllm_bench": {
-      "concurrency_per_endpoint": [
-        16,
-        32,
-        64,
-        128,
-        256
-      ]
+      "comparison_role": "service_ceiling",
+      "grid": {
+        "concurrency_per_endpoint": [32, 64, 128, 256]
+      }
     },
     "bounded_http": {
-      "concurrency_per_endpoint": [
-        16,
-        32,
-        64,
-        128,
-        256
-      ]
+      "comparison_role": "direct_client_control",
+      "grid": {
+        "concurrency_per_endpoint": [32, 64, 128, 256]
+      }
     },
     "daft_native": {
-      "partition_count": [
-        1,
-        2,
-        4
-      ]
+      "comparison_role": "framework_native_baseline",
+      "grid": {},
+      "fixed": {
+        "api": "daft.functions.prompt",
+        "runner": "native"
+      },
+      "note": "The public prompt adapter exposes no partition_count knob; do not invent one."
     },
     "daft_ray": {
-      "partition_count": [
-        2,
-        4,
-        8
-      ],
-      "ray_address": "127.0.0.1:6380"
+      "comparison_role": "framework_native_baseline",
+      "grid": {},
+      "fixed": {
+        "api": "daft.functions.prompt",
+        "runner": "ray",
+        "ray_address": "127.0.0.1:6380"
+      },
+      "note": "Daft owns batching and task scheduling in this native arm."
     },
     "ray_data_http": {
-      "batch_size": [
-        1,
-        16,
-        32,
-        64
-      ],
-      "concurrency": [
-        1,
-        2,
-        4,
-        8,
-        16,
-        32
-      ],
-      "ray_address": "127.0.0.1:6380"
+      "comparison_role": "framework_native_baseline",
+      "grid": {
+        "batch_size": [1, 16, 32, 64],
+        "concurrency_per_endpoint": [1, 2, 4, 8, 16]
+      },
+      "fixed": {
+        "ray_address": "127.0.0.1:6380",
+        "actor_pool_shape": "fixed_n_n"
+      }
     },
-    "project_static": {
-      "max_inflight_per_endpoint": [
-        16,
-        32,
-        64,
-        128,
-        256
-      ]
-    },
-    "project_token_work": {
-      "max_active_work_per_endpoint": [
-        49152,
-        65536,
-        81920
-      ]
+    "oceanbase": {
+      "comparison_role": "database_product_native_baseline",
+      "grid": {
+        "parallel_degree": [1, 2, 4, 8]
+      },
+      "requires": "privileged_or_vm_capability_gate"
     }
   },
   "selection_rule": {
-    "primary": "minimum_time_to_95pct_vllm_bench_ceiling",
-    "secondary": [
-      "minimum_ramp_regret",
-      "minimum_saturating_active_work",
-      "p99_non_regression",
-      "zero_incidents"
-    ],
-    "formal_repeats_after_calibration": 3
-  }
+    "per_arm_independent_calibration": true,
+    "primary": "highest_service_total_tokens_per_s_under_quality_and_slo_guards",
+    "tie_break": "smallest_resource_point_within_3pct_of_peak",
+    "required": [
+      "zero_incidents",
+      "exactly_once",
+      "service_counter_consistency",
+      "final_vllm_queues_empty",
+      "repeat_cv_le_0.05"
+    ]
+  },
+  "prohibited_factors": [
+    "project_credit_or_router_inside_native_arms",
+    "unwired_partition_count",
+    "cross_protocol_ranking",
+    "per_workload_post_hoc_retuning_in_formal"
+  ]
 }

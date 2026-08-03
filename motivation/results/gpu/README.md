@@ -12,6 +12,16 @@
 | `ai_embed_chain_breakdown_20260712.md` / `.csv` | 真实 embedding 链路拆分结果：PostgreSQL fetch、Arrow/batch、operator wall、HTTP model request wall、fan-in、writeback |
 | `multi_endpoint_ray_motivation_20260712.md` / `ai_embed_multi_endpoint_20260712.csv` | 两个本地 GPU endpoint 下的 Ray task/actor 初步动机测试 |
 | `ai_embed_chain_breakdown_draft_20260712.csv` | 早期草稿结果，含计时字段修正前的行；不要用于正式分析 |
+| `image_clip_bottleneck_profile_20260801.md` / `.csv` | **图像 CLIP AI_EMBED** 历史 slow-pt 分阶段画像：5000 图采样池 × 100 iters，CPU processor ~5.2ms/img vs GPU embed 0.29ms/img；只支持继续建设 E2E |
+| `clip_preproc_stages_20260801.csv` | slow-pt processor method-wrapper 子阶段历史数据；resize ~1.3ms，旧 residual 为近似未归因时间，不能解释成具体转换步骤 |
+| `image_clip_preprocess_variants_20260801/` | 当前 production-np、legacy-pt、torchvision+PIL/tensor-decode 四臂交错复测；720 raw repeats、质量门禁、七步报告。fast path 仍未消除 CPU/GPU 阶段失衡 |
+| `image_clip_native_baseline_20260801/` | **图像 CLIP operator-E2E Daft UDF diagnostic**：先校准项目自写 fractional-GPU UDF shape，再做 5000 图×3；项目阶段拆分相对 reference 单卡 +29.6%、双卡 +13.8%。不属于官方/native baseline，正式排名待 Daft built-in、官方 ResNet18 parity 与 Ray Data native graph |
+| `image_host_path_screening_20260802/` | 2×4090 图像 host-path 单因素 screening + schema v8 代表点诊断；报告、summary、各扫描 `runs.csv` 与逐臂 manifest 均已归档；当前判为 CPU preprocess 与 driver/Ray submit 混合木桶，PCIe 仅初步 NO-GO，尚非 formal |
+| `image_clip_transfer_ceiling_20260802/` | 单卡 CLIP R0 GPU-resident、R1 pinned FP16、R2 pageable FP32，batch16/64/256×30 repeats；raw/summary/七步报告齐全。分离 compute/H2D/ownership ceiling，属于 synthetic diagnostic，不作系统排名 |
+| `image_embedding_parity_20260803/` | Daft built-in `embed_image` 与项目 `project_ray` 的 256 图逐行语义门禁；离线诊断与 schema v11 计时边界内 `l2_normalized` 合同门禁均已归档。正式合同门禁 cosine P1=0.999800、P50=0.999985，overlap@10 mean=0.9949，两臂 256/256 exactly-once；支持统一 normalized contract，但 capture 运行不作性能排名 |
+| `daft_builtin_calibration_20260803/` | **Daft built-in `embed_image` batch 独立校准**（vendor-native，step 4 前半）：batch {16,32,64,128,256}×2 rep @5000 图双卡；平台点 batch=64≈177 img/s、GPU 平均利用率仅 1.2–4.1%（双卡均 claim）→ 原生 pipeline 喂入侧瓶颈、GPU 严重未打满；不排名，只独立校准 |
+| `ray_data_calibration_20260803/` | **Ray Data native `map_batches` 独立校准**（framework-native）：先以 5000 图筛选 cpu_workers=8，再以 60K unique×2 passes、1 warmup+2 formal 复核 batch {16,64,256,512}。长稳态中 batch64 中位 957.100 img/s，batch512 低 7.719%，因此冻结 batch64/cpu8/gpu2/source4 且不再扫 1024；raw CSV、manifest、派生 summary 与七步报告齐全。该结果只选原生配置，不作系统排名，也不能把低采样 GPU util 写成 MFU |
+| `image_project_static_60k_x2_20260803/` | **project_ray 静态配置选择证据**（campaign step 1）：两轮（`1f2e4fe`+`29b256b`）4 配置 cpu{8,16}×active{16,32}×3 formal @60K×2。冻结 `cpu16/active32/batch64`，两轮中位 1701.0/1681.0 img/s（~1.2% 差）、exactly-once、norm_error=0。**两轮均为旧 schema（无输出合同字段），只用于选 project 静态点，不是跨系统正式排名**——排名须在当前 commit+统一合同下重跑 |
 
 ## Endpoint
 
@@ -40,6 +50,13 @@ sentence-transformers/all-MiniLM-L6-v2
 - 本目录只放真实 GPU-backed 模型端点结果。
 - CPU-only、fake-model、连接验证结果不能放在这里。
 - 当前真实模型返回 384 维 embedding；`ai_embed_chain_breakdown_20260712` 使用 JSON text 写回，不是 384 维 pgvector 写回。
+- 图像 CLIP operator-E2E 的当前正式入口是
+  `image_clip_native_baseline_20260801/README.md`；它包含 PostgreSQL BYTEA 读取、
+  preprocess、transfer、forward 和 fan-in，但尚不包含 pgvector sink。
+- 木桶机制的最新诊断入口是 `image_host_path_screening_20260802/README.md`；其中
+  1-run 曲线只能选择 formal 候选，不能替代三重复 baseline 排名。
+- H2D/compute ceiling 的最新入口是 `image_clip_transfer_ceiling_20260802/README.md`；
+  它不包含数据库、Daft 或完整 Ray queue，只用于解释传输机制与选择 E2E 消融。
 - `model_service_s` 是请求耗时加和；阶段占比优先看 `model_request_wall_s`、`operator_wall_s` 和 `writeback_s`。
 - `multi_endpoint_ray_motivation_20260712` 是 Ray 价值的初步动机测试，不是最终 Ray Serve / vLLM / 多 GPU 结论。
 

@@ -1,0 +1,10 @@
+phase,fixed_var,swept_var,n_reps,images_per_s_median,images_per_s_cv_pct,operator_e2e_s_median,gpu_util_mean_pct_median,gpu_util_peak_pct_max,best_in_phase
+1,cpu_workers=4,batch=16,2,337.6,0.3,14.81,3.2,35,
+1,cpu_workers=4,batch=32,2,321.1,1.2,15.57,2.7,28,
+1,cpu_workers=4,batch=64,2,344.4,2.3,14.53,2.1,30,best_batch
+1,cpu_workers=4,batch=128,2,328.2,3.9,15.26,3.7,36,
+1,cpu_workers=4,batch=256,2,329.9,2.2,15.16,1.8,27,
+2,batch=64,cpu_workers=2,2,211.0,4.6,23.74,1.1,45,
+2,batch=64,cpu_workers=4,2,329.3,3.5,15.20,2.7,60,
+2,batch=64,cpu_workers=8,2,346.5,1.2,14.43,2.5,34,best_cpu
+2,batch=64,cpu_workers=12,2,330.9,0.6,14.79,1.5,28,

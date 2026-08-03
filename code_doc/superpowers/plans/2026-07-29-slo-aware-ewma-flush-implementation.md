@@ -35,8 +35,8 @@ capacity.
 
 **Files**
 
-- Modify `code/tests/test_flush_policies.py`
-- Modify `code/tests/test_runtime_batching.py`
+- Modify `code/tests/scheduling/test_flush_policies.py`
+- Modify `code/tests/scheduling/test_runtime_batching.py`
 
 Add tests for:
 
@@ -81,7 +81,7 @@ not claim to predict full autoregressive output or vLLM internals.
 - Modify `code/src/scheduling/batching.py`
 - Modify `code/src/profiling/cli.py`
 - Modify `code/src/profiling/replay.py`
-- Modify `code/scripts/postgres_ai_operator_profile.py`
+- Modify `code/scripts/profiling/postgres_ai_operator_profile.py`
 - Modify `code/src/profiling/schema.py`
 - Modify relevant profiler tests
 
@@ -99,7 +99,7 @@ reasons are visible.
 **Files**
 
 - Create `deploy/autodl/dual_gpu_slo_ewma_flush.example.json`
-- Modify `code/tests/test_experiment_scenarios.py`
+- Modify `code/tests/experiments/test_experiment_scenarios.py`
 - Modify `deploy/autodl/README.md`
 
 Use request granularity, active work 65,536/endpoint and 1×256 actors. Compare

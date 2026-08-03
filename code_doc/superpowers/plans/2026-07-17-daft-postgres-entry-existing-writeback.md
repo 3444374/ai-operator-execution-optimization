@@ -27,8 +27,8 @@
 ## File Structure
 
 - Create `code/src/sources.py`: Data source abstraction and two implementations.
-- Modify `code/scripts/postgres_ai_operator_profile.py`: add `--data-source arrow_postgres|daft_postgres`, use the source in the fetch loop, keep existing executor and writeback code.
-- Create `code/tests/test_sources.py`: unit tests for source query generation and Daft runner reuse behavior that can run without a live PostgreSQL server where possible.
+- Modify `code/scripts/profiling/postgres_ai_operator_profile.py`: add `--data-source arrow_postgres|daft_postgres`, use the source in the fetch loop, keep existing executor and writeback code.
+- Create `code/tests/data/test_sources.py`: unit tests for source query generation and Daft runner reuse behavior that can run without a live PostgreSQL server where possible.
 - Modify `code/README.md`: document the new data source switch and keep Lance as future extension.
 - Modify `code/scripts/README.md`: update flow diagram from `fetch_record_batch` to `DataSource`.
 - Modify `PROJECT_INDEX.md` and `PROJECT_LOG.md`: register the new source module and scope.
@@ -39,7 +39,7 @@
 
 **Files:**
 - Create: `code/src/sources.py`
-- Test: `code/tests/test_sources.py`
+- Test: `code/tests/data/test_sources.py`
 
 **Interfaces:**
 - Consumes: `pyarrow as pa`
@@ -52,7 +52,7 @@
 
 - [ ] **Step 1: Write the failing unit test for Arrow source query behavior**
 
-Add to `code/tests/test_sources.py`:
+Add to `code/tests/data/test_sources.py`:
 
 ```python
 from __future__ import annotations
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_sources.py
+.conda\pg-ai-profile\python.exe code\tests\data\test_sources.py
 ```
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'src.sources'`.
@@ -143,7 +143,7 @@ def postgres_documents_query(config: SourceConfig) -> tuple[str, tuple[int, int]
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_sources.py
+.conda\pg-ai-profile\python.exe code\tests\data\test_sources.py
 ```
 
 Expected: PASS.
@@ -154,7 +154,7 @@ Expected: PASS.
 
 **Files:**
 - Modify: `code/src/sources.py`
-- Test: `code/tests/test_sources.py`
+- Test: `code/tests/data/test_sources.py`
 
 **Interfaces:**
 - Consumes: `SourceConfig`, `postgres_documents_query`
@@ -162,7 +162,7 @@ Expected: PASS.
 
 - [ ] **Step 1: Add fake cursor test for PostgresArrowSource**
 
-Append to `code/tests/test_sources.py`:
+Append to `code/tests/data/test_sources.py`:
 
 ```python
 from src.sources import PostgresArrowSource
@@ -214,7 +214,7 @@ class PostgresArrowSourceTests(unittest.TestCase):
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_sources.py
+.conda\pg-ai-profile\python.exe code\tests\data\test_sources.py
 ```
 
 Expected: FAIL with `ImportError` or `AttributeError` for `PostgresArrowSource`.
@@ -256,7 +256,7 @@ class PostgresArrowSource:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_sources.py
+.conda\pg-ai-profile\python.exe code\tests\data\test_sources.py
 ```
 
 Expected: PASS.
@@ -267,7 +267,7 @@ Expected: PASS.
 
 **Files:**
 - Modify: `code/src/sources.py`
-- Test: `code/tests/test_sources.py`
+- Test: `code/tests/data/test_sources.py`
 
 **Interfaces:**
 - Consumes: `database_url: str`, `SourceConfig`
@@ -275,7 +275,7 @@ Expected: PASS.
 
 - [ ] **Step 1: Add test for Daft source SQL construction**
 
-Append to `code/tests/test_sources.py`:
+Append to `code/tests/data/test_sources.py`:
 
 ```python
 from src.sources import daft_sql_query
@@ -294,7 +294,7 @@ class DaftSqlTests(unittest.TestCase):
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_sources.py
+.conda\pg-ai-profile\python.exe code\tests\data\test_sources.py
 ```
 
 Expected: FAIL with `ImportError` for `daft_sql_query`.
@@ -338,7 +338,7 @@ class DaftPostgresSource:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_sources.py
+.conda\pg-ai-profile\python.exe code\tests\data\test_sources.py
 ```
 
 Expected: PASS.
@@ -356,7 +356,7 @@ def make_source(name: SourceName):
     raise ValueError(f"Unknown source: {name}")
 ```
 
-Add to `code/tests/test_sources.py`:
+Add to `code/tests/data/test_sources.py`:
 
 ```python
 from src.sources import make_source
@@ -371,7 +371,7 @@ class SourceFactoryTests(unittest.TestCase):
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_sources.py
+.conda\pg-ai-profile\python.exe code\tests\data\test_sources.py
 ```
 
 Expected: PASS.
@@ -381,7 +381,7 @@ Expected: PASS.
 ### Task 4: Wire DataSource into Main Script
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
 - Test: existing dry-run and smoke commands
 
 **Interfaces:**
@@ -418,7 +418,7 @@ Add dry-run output field:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --dry-run --data-source daft_postgres --organizer daft `
   --output tmp\postgres_profile_dry_run.csv
 ```
@@ -481,7 +481,7 @@ Keep existing `db_fetch_s` and `arrow_build_s` fields. For `daft_postgres`, `db_
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --dry-run --data-source arrow_postgres --organizer arrow `
   --output tmp\postgres_profile_dry_run.csv
 ```
@@ -491,7 +491,7 @@ Expected: JSON includes `"data_source": "arrow_postgres"`.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --dry-run --data-source daft_postgres --organizer daft `
   --output tmp\postgres_profile_dry_run.csv
 ```
@@ -515,7 +515,7 @@ Expected: JSON includes `"data_source": "daft_postgres"`.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 64 --total-rows 64 `
   --db-fetch-rows 32 --ray-batch-rows 16 `
@@ -533,7 +533,7 @@ Expected: status `ok`, `data_source=arrow_postgres`, `total_rows=64`, `object_co
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator `
   --setup --seed-rows 64 --total-rows 64 `
   --db-fetch-rows 32 --ray-batch-rows 16 `
@@ -578,7 +578,7 @@ Add this exact note under the PostgreSQL profile section:
 Data entry can use either the baseline psycopg path or Daft:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\scripts\postgres_ai_operator_profile.py `
+.conda\pg-ai-profile\python.exe code\scripts\profiling\postgres_ai_operator_profile.py `
   --dry-run --data-source daft_postgres --organizer daft `
   --output tmp\postgres_profile_dry_run.csv
 ```
@@ -617,7 +617,7 @@ In `PROJECT_INDEX.md`, add:
 
 ```markdown
 | `code/src/sources.py` | PostgreSQL data source backends: psycopg/Arrow baseline and Daft SQL entry | Switching data entry paths |
-| `code/tests/test_sources.py` | Unit tests for source query construction and source factory | Modifying data source behavior |
+| `code/tests/data/test_sources.py` | Unit tests for source query construction and source factory | Modifying data source behavior |
 ```
 
 In `PROJECT_LOG.md`, add a 2026-07-17 entry:
@@ -635,9 +635,9 @@ In `PROJECT_LOG.md`, add a 2026-07-17 entry:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_sources.py
-.conda\pg-ai-profile\python.exe code\tests\test_organizers.py
-$env:PYTHONPYCACHEPREFIX='tmp\pycache'; .conda\pg-ai-profile\python.exe -m py_compile code\src\sources.py code\src\organizers.py code\scripts\postgres_ai_operator_profile.py
+.conda\pg-ai-profile\python.exe code\tests\data\test_sources.py
+.conda\pg-ai-profile\python.exe code\tests\planning\test_organizers.py
+$env:PYTHONPYCACHEPREFIX='tmp\pycache'; .conda\pg-ai-profile\python.exe -m py_compile code\src\sources.py code\src\organizers.py code\scripts\profiling\postgres_ai_operator_profile.py
 ```
 
 Expected: all tests pass; `py_compile` exits with code `0`.

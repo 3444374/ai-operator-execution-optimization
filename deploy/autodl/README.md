@@ -4,6 +4,31 @@
 
 指南面向"从零起一台 AutoDL 实例到跑通首个多 endpoint 实验"。所有命令均为 Linux bash(远端)。
 
+## 这份指南讲什么（先读这段，搞清概念）
+
+**AutoDL 服务器**：一台云上 2×4090（每卡 24G）Linux GPU 盒子，项目所有 GPU 实验在它上面跑。本指南讲怎么从空实例配到能跑实验 + 开机恢复。
+
+**项目执行栈**（数据怎么走一遍）：
+```
+PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
+  → Daft DataFrame（数据引擎：读出 / 组织成请求）
+  → Ray actor（策略执行：数据组织 + 调度/提交控制）
+  → 推理引擎（GPU 上算）→ 写回 PostgreSQL + pgvector
+```
+
+**按数据模态分部署文档**（核心区分，务必先理解）。每个模态一篇 `<modality>_serving.md`，共享同一套"调度策略模态无关"框架（只换模型 + 数据列 + 预处理段）：
+
+| 模态 | 引擎/模型 | 算子 | 部署文档 | 状态 |
+|---|---|---|---|---|
+| **文本（生成式）** | **vLLM**（开源 LLM serving 引擎：continuous batching + prefix cache APC + KV cache PagedAttention；本项目**不改其内部**）+ Qwen2.5-Instruct | `AI_COMPLETE`（生成 token 序列） | `deploy/autodl/text_serving.md`（逐步命令另见本指南 §8） | ✅ 主线，RC1 等已完成 |
+| **图像（embedding）** | ours：Ray CLIP GPU actor；baseline：Daft Native/Ray、vLLM pooling | `AI_EMBED`（图像→512d 向量） | `deploy/autodl/image_serving.md` | 🟡 operator-E2E formal 已完成；pgvector system-E2E 待补 |
+| 视频（后续） | VideoCLIP/时序 ViT/Qwen-VL（候选） | AI_EMBED/CLASSIFY | `video_serving.md`（待建） | ⏸ 后续 |
+| 音频（后续） | CLAP/audio encoder（候选） | AI_EMBED | `audio_serving.md`（待建） | ⏸ 后续 |
+
+> **为什么按模态分**：文本每行 ~1KB、搬运轻，binding 在 vLLM serving（RC1 实测 db_fetch 1.4–2.4s vs model_wall 27–37s）；图像每行 ~600KB，DB-read/CPU→GPU 搬运变 binding；视频/音频更重——各模态要找/优化的瓶颈 + 引擎都不同。**但调度策略层（active-work/K_max/flush/queue-adaptive）跨模态复用**，这是项目"调度策略模态无关"的核心 claim。
+
+**怎么用本指南**：§1–§7 是**共享平台 setup**（实例/连接/venv/network_turbo/代码同步/模型下载方法/PG，所有模态都用）；各模态的"引擎是什么 + 怎么部署/跑"在对应 `<modality>_serving.md`；**文本 vLLM 的逐步启动命令**另在本指南 §8（历史 runbook，保留）。
+
 ## 新对话 / 新 agent 的唯一操作入口
 
 本文件是 AutoDL 环境准备、开机恢复、实验启动和故障恢复的单一 runbook。
@@ -27,7 +52,7 @@
 
 | 项目 | 当前约定路径 | 说明 |
 |---|---|---|
-| Git 仓库 | `/root/autodl-tmp/ai-operator` | 只从 GitHub `main` 同步；保留未跟踪实验结果 |
+| Git 仓库 | `/root/autodl-tmp/ai-operator` | 只从 GitHub `main` 同步；不再写入新的运行时结果 |
 | runtime env | `/root/autodl-tmp/ai-operator-runtime.env` | 仓库外保存模型、端口、CUDA、容量和 workload 参数 |
 | driver Python | `/root/miniconda3/bin/python` | 运行 Ray/Daft/profiler/scenario runner |
 | vLLM Python | `/root/autodl-tmp/venvs/vllm-4090/bin/python` | 只运行 vLLM endpoint |
@@ -35,7 +60,7 @@
 | vLLM 日志 | `/root/autodl-tmp/vllm_logs/` | 每个端口有 log/PID 文件 |
 | 编排日志 | `/root/autodl-tmp/logs/` | endpoint 启动、gate、formal runner 日志 |
 | 临时 gate 配置 | `/root/autodl-tmp/gates/` | 仓库外机械缩小正式模板，不作为正式结果 |
-| 正式结果 | 仓库内 `experiments/results/<unique_run_id>/` | 输出目录必须在启动前不存在 |
+| 运行时结果 | `/root/autodl-tmp/experiment-artifacts/<unique_run_id>/` | 仓库外保存；审计后只把摘要和报告纳入 Git |
 
 ### 全新实例从零准备
 
@@ -68,9 +93,19 @@ ps -C python -C python3 -o pid=,etime=,args= |
   grep -E '[r]un_(ai_operator_scenarios|shared_vllm_experiment)\.py' || true
 
 # 若准备恢复已有输出，再检查目录级租约；不能只凭 ps 结果判断可恢复
-OUTPUT_DIR=experiments/results/<existing_run_id>
+OUTPUT_DIR=/root/autodl-tmp/experiment-artifacts/<existing_run_id>
 test ! -e "$OUTPUT_DIR/.runner-lease.json" ||
   cat "$OUTPUT_DIR/.runner-lease.json"
+
+# 1.5) 清理重启前残留的 stale Ray 集群指针。Ray 进程会随主机重启死亡，但
+#      /tmp/ray/ray_current_cluster 指针文件仍在，下一个 ray.init()（无显式 address）
+#      会读取它、反复连接死 GCS 直至 ~14 分钟后 ConnectionError，表现为 warmup 卡死。
+#      重启后容器 IP 也可能变化，使旧地址双重失效。先 ray stop（若有残留进程），
+#      再删除指针；之后 ray.init() 会自动起本地集群。
+if pgrep -f '[g]cs_server\|[r]aylet' >/dev/null 2>&1; then
+  ray stop -f >/dev/null 2>&1 || true
+fi
+rm -f /tmp/ray/ray_current_cluster
 
 # 2) 同步代码。未跟踪 experiments/results/ 属于实验数据，不得 git clean
 git status --short --branch
@@ -101,11 +136,11 @@ printf 'model=%s gpus=%s ports=%s workload=%s\n' \
 bash deploy/autodl/start_endpoints.sh \
   /root/autodl-tmp/ai-operator-runtime.env
 
-# 6) 独立复核两个 endpoint、真实参数和每卡进程
-curl -fsS http://127.0.0.1:8000/health
-curl -fsS http://127.0.0.1:8001/health
-curl -fsS http://127.0.0.1:8000/v1/models
-curl -fsS http://127.0.0.1:8001/v1/models
+# 6) 独立复核全部已配置 endpoint（$PORTS 可能为 4：8000-8003）、真实参数和每卡进程
+for p in ${PORTS//,/ }; do
+  curl -fsS "http://127.0.0.1:$p/health"
+  curl -fsS "http://127.0.0.1:$p/v1/models"
+done
 ps -C python -C python3 -o pid=,etime=,args=
 nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total \
   --format=csv,noheader
@@ -134,7 +169,7 @@ source /root/autodl-tmp/ai-operator-runtime.env
 set +a
 
 CONFIG=deploy/autodl/<current_template>.example.json
-OUTPUT_DIR=experiments/results/<unique_run_id>
+OUTPUT_DIR=/root/autodl-tmp/experiment-artifacts/<unique_run_id>
 RUN_LOG=/root/autodl-tmp/logs/<unique_run_id>.log
 
 ps -C python -C python3 -o args= |
@@ -144,9 +179,9 @@ test ! -e "$OUTPUT_DIR"
 test ! -e "$RUN_LOG"
 
 nohup /root/miniconda3/bin/python \
-  code/scripts/run_ai_operator_scenarios.py \
+  code/scripts/experiments/run_ai_operator_scenarios.py \
   --config "$CONFIG" \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir "$OUTPUT_DIR" \
   --health-url http://127.0.0.1:8000/health \
@@ -325,7 +360,8 @@ source /root/miniconda3/etc/profile.d/conda.sh && conda activate base
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 'vllm[bench]==0.25.1'
 # 2) 再装其余(跳过 torch,保留 vllm 选定的版本)
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple \
-  numpy "pyarrow>=16,<25" ray "psycopg[binary]>=3.2" daft sqlglot connectorx transformers
+  numpy "pyarrow>=16,<25" 'ray[data,serve]' "psycopg[binary]>=3.2" \
+  daft sqlglot connectorx transformers Pillow
 ```
 
 ### 4.3.1 推荐 uv + 独立 venv(2026-07-27 4090 实测)
@@ -438,7 +474,7 @@ sudo -u postgres psql -d ai_operator -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 ## 7. workload 数据
 
-实验默认从 `data/raw/` 读(见 `code/scripts/import_ai_complete_workload.py:78-81`):
+实验默认从 `data/raw/` 读(见 `code/scripts/data/import_ai_complete_workload.py:78-81`):
 - ShareGPT:`data/raw/sharegpt_vicuna/ShareGPT_V3_unfiltered_cleaned_split.json`
 - BurstGPT:`data/raw/burstgpt/BurstGPT_1.csv`
 
@@ -544,22 +580,22 @@ bash deploy/autodl/start_endpoints.sh /root/autodl-tmp/ai-operator-runtime.env
 只有同时满足以下条件，才允许启动正式 scenario runner：
 
 ```bash
-# 1) 两个 health endpoint 均成功
-for p in 8000 8001; do
+# 1) 全部已配置 health endpoint 均成功（$PORTS 可能为 4：8000-8003）
+for p in ${PORTS//,/ }; do
   curl -sf "http://127.0.0.1:$p/health" >/dev/null || exit 1
 done
 
 # 2) 进程命令包含固定 capacity
 ps -eo pid,args | grep '[v]llm.entrypoints.openai.api_server'
 
-# 3) 两张 GPU 各有一个服务进程
+# 3) 每张 GPU 上的服务进程与显存占用
 nvidia-smi --query-compute-apps=pid,gpu_uuid,used_memory --format=csv,noheader
 
-# 4) 模型与 metrics 可读
-curl -sf http://127.0.0.1:8000/v1/models
-curl -sf http://127.0.0.1:8001/v1/models
-curl -sf http://127.0.0.1:8000/metrics | grep -m1 '^vllm:'
-curl -sf http://127.0.0.1:8001/metrics | grep -m1 '^vllm:'
+# 4) 全部 endpoint 的模型与 metrics 可读
+for p in ${PORTS//,/ }; do
+  curl -sf "http://127.0.0.1:$p/v1/models"
+  curl -sf "http://127.0.0.1:$p/metrics" | grep -m1 '^vllm:'
+done
 ```
 
 随后先跑一个小规模门禁，核对 exactly-once、两 endpoint 分流、resource/MFU
@@ -581,27 +617,27 @@ trace 与 service metadata，再启动多小时正式实验。GPU 显存已分�
 
 ## 9. 跑首个多 endpoint 实验
 
-代码已支持多 endpoint(`code/scripts/postgres_ai_operator_profile.py:325` 的 `--completion-endpoint-urls`,round-robin 路由,无需改代码):
+代码已支持多 endpoint(`code/scripts/profiling/postgres_ai_operator_profile.py:325` 的 `--completion-endpoint-urls`,round-robin 路由,无需改代码):
 ```bash
 cd /root/autodl-tmp/ai-operator
 # 先灌数据
-python code/scripts/import_ai_complete_workload.py \
+python code/scripts/data/import_ai_complete_workload.py \
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator \
-  --workload-name sharegpt_burstgpt --max-rows 1024 --batch-rows 500 \
+  --workload-name sharegpt_multiturn --max-rows 2048 --batch-rows 500 \
   --tokenizer-path /root/autodl-tmp/models/Qwen2.5-1.5B-Instruct \
   --max-model-len 2048 --completion-max-tokens 16
 # 单 endpoint baseline
-python code/scripts/postgres_ai_operator_profile.py \
+python code/scripts/profiling/postgres_ai_operator_profile.py \
   --database-url postgresql://postgres:postgres@localhost:5432/ai_operator \
   --setup --total-rows 128 --db-fetch-rows 128 --ray-batch-rows 8 \
   --operator ai_complete --executor ray_task --model-backend compatible_http \
   --completion-endpoint-url http://127.0.0.1:8000/v1/completions \
   --completion-model qwen2.5-1.5b --completion-max-tokens 32 \
-  --source-workload-name sharegpt_burstgpt --data-source daft_postgres --organizer daft \
+  --source-workload-name sharegpt_multiturn --data-source daft_postgres --organizer daft \
   --writeback-mode none --experiment-id cloud_single_ep \
   --output experiments/results/cloud_autodl/single_endpoint.csv
 # 双 endpoint(各占一张 GPU)
-python code/scripts/postgres_ai_operator_profile.py ... \
+python code/scripts/profiling/postgres_ai_operator_profile.py ... \
   --completion-endpoint-urls http://127.0.0.1:8000/v1/completions,http://127.0.0.1:8001/v1/completions \
   --experiment-id cloud_dual_ep \
   --output experiments/results/cloud_autodl/dual_endpoint.csv
@@ -622,21 +658,25 @@ python code/scripts/postgres_ai_operator_profile.py ... \
    在所有安全档位中选择首个达到最大已测吞吐 97%、且下一个安全档增益低于
    3% 的最小配额；若不存在，结论必须写 `saturation_not_reached`，不能把最高
    已测点改名为饱和点。
-3. `dual_gpu_token_budget_curve.example.json`：关闭 arrival replay，49K
-   主点扫描 8/16/32/49K，65K 敏感性点扫描 8/16/32/49/65K，共 9 个场景。
-   每个预算都不超过对应 active-work 上限，避免 oversized admission 破坏
-   固定-work 语义。它回答等量 offered work 下组织/提交形状是否有收益，
-   而不是继续用更大的 batch 暗中增加并发。
+3. `dual_gpu_token_budget_curve.example.json`：feeding formal 通过并冻结
+   `ACTIVE_WORK_PER_ENDPOINT` 后，使用 disjoint formal manifest、持久 async
+   multi-prompt Completions 和 raw prompt，在同一 active-work 上限下扫描
+   2/4/8/16/32/49/65K。它回答等量 offered work 下组织/提交形状是否有收益，
+   同时验证预算过小的 RPC/packing 开销与预算过大的关批/HOL/排队代价；不得
+   再把 active-work 和 token budget 同时变化。
 4. `dual_gpu_data_organization.example.json`：使用上一步的最佳已测预算并继续
-   关闭 arrival replay，避免 50ms flush 在 token budget 生效前关批；在相同
-   active work 下回答 fixed rows、sequential token-budget、row-cap-aware 和
-   length-align 的数据组织差异。
+   使用同一个 disjoint manifest、async transport、raw prompt 并关闭 arrival
+   replay，避免 50ms flush 在 token budget 生效前关批；在相同 active work
+   下回答 fixed16、sequential token-budget、row-cap-aware 和 length-align
+   的数据组织差异。
 5. `dual_gpu_request_replay.example.json`：恢复相同 arrival replay/flush，
    比较 whole-submission barrier 与真正的 request-level replenishment。
 6. `dual_gpu_actor_pool_shape.example.json`：沿用 request-level 饱和点，
-   固定每 endpoint 256 个可见 actor slots，比较 1×256、2×128、4×64。
-   16-slot 草案已在启动前否决：按当前约 332 work/request 或
-   1337 work/organization batch，它无法维持已测饱和区，会混入 offered-load。
+   固定每 endpoint 256 个可见 actor slots和 0.5 Ray CPU reservation，比较
+   1×256、2×128、4×64、8×32、16×16。runner 会按 repeat 交错顺序，避免
+   把 GPU 温度或前一场景缓存漂移写成 actor 数效果。选择“达到峰值 97% 的
+   最小 actor 数”，而不是追逐单次最高值；同时报告 repeat relative range。
+   16×16 只用于确认平台/转折，不自动晋升默认，且必须保留 worker/VMA 证据。
 7. `dual_gpu_service_quantum.example.json`：固定上一步最佳 pool、active work
    和 planning budget，比较 whole batch、512/1024/2048/4096 complete-row
    quantum 与 request diagnostic。当前组织批次 P95≈3366、max≈5892，因此
@@ -653,8 +693,33 @@ python code/scripts/postgres_ai_operator_profile.py ... \
    `--flush-service-capacity-tokens-s-per-endpoint 4000` 作为分母下界。
    更换模型、GPU 或 endpoint 数量时必须重新标定，禁止沿用 4000。
 9. `dual_gpu_submission_policy.example.json`：在已标定 token budget 和
-   active-work 配额上，逐项消融 least-work routing、service-quantum 动态预算
+   active-work 配额上，使用持久 async Completions，并保留 batch-level
+   multi-prompt body，逐项消融 least-work routing、service-quantum 动态预算
    和 queue-adaptive flush；最后的 combined arm 只检查交互，不替代单项结论。
+10. `dual_gpu_static_k_workload_surface.example.json`：在 actor/token budget
+    冻结后，以 low/near-capacity/burst 三种到达压力扫描 K64/128/256。
+    完成后必须运行：
+
+    ```bash
+    python code/scripts/analysis/summarize_static_k_workload_surface.py \
+      --runs "$OUTPUT_DIR/runs.csv" \
+      --output "$OUTPUT_DIR/adaptive_justification.json" \
+      --require-pass
+    ```
+
+    只有状态为 `passed` 才允许继续 adaptive formal；退出码 2 表示不同
+    workload 的静态最优区间/错配代价不足，应该停止动态策略排名。
+11. `dual_gpu_static_credit_prompt_length_gate.example.json`：07-30
+    short/long screening 的纠错门禁。它在一个 runner 内交错 short/long，
+    显式使用 `httpx_async` 与 output token IDs，并比较 K256、
+    K256+W65K、K256+W98K。若某 work cap 未绑定且 bounded wait=0，该臂与
+    K256 的 model-request throughput/P99 必须在 5% 内、至少 2/3 repeats
+    同向；否则状态保持 `inconclusive`，禁止扩大静态面或启动 adaptive。
+    门禁通过后才增加 W49K 和 K×work 交互，不得再把三档 K-only 加三档
+    W-only 写成 “K×active-work factorial”。
+12. `dual_gpu_endpoint_adaptive_gate.example.json`：仅验证双 endpoint typed
+    controller 的独立 state、metrics 和 action trace，不产出性能结论。两个
+    endpoint 都必须有 trace、0 failure、最终空队列后，才能制作漂移 formal。
 
 `${DATABASE_URL}`、`${COMPLETION_MODEL}`、endpoint/metrics URL 等变量在 runner
 读取时从环境展开；缺失变量会在启动任何外部工作前报错。容量模板的单 GPU
@@ -665,23 +730,22 @@ control 还要求 `SINGLE_COMPLETION_ENDPOINT_URL`、`SINGLE_MODEL_METRICS_URL`
 set -a
 source /root/autodl-tmp/ai-operator-runtime.env
 set +a
-python code/scripts/run_ai_operator_scenarios.py \
+python code/scripts/experiments/run_ai_operator_scenarios.py \
   --config deploy/autodl/dual_gpu_capacity_scaling.example.json \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/autodl-tmp/venvs/vllm-4090/bin/python \
   --output-dir experiments/results/dual_gpu_capacity_scaling \
   --health-url http://127.0.0.1:8000/health \
   --metrics-urls "$MODEL_METRICS_URLS"
 ```
 
-完成硬件 scaling 后，只替换 `--config` 和 `--output-dir`，依次运行
-active-work-curve、token-budget-curve、data-organization、request-replay 与
-actor-pool-shape、service-quantum、submission-policy 模板。active-work 曲线完成后，token-budget 模板直接使用
-已标定的 49K 主点与 65K 敏感性点；固定 offered work 的预算曲线完成后，再把
-49K 主点在 SLO/P99 约束下选出的值写入 `BEST_TOKEN_BUDGET`。预算扫描期间
-active-work 配额必须不小于同场景单 batch 预算，否则会混入 oversized
-admission 语义。每轮都必须等待 runner manifest 为 `complete`，不要手工拼接
-失败重跑的 CSV。
+完成硬件 scaling 后，依次运行 active-work、feeding 和 token-budget
+calibration。三者通过后必须按本文件“冻结校准选择”生成选择文件和环境覆盖；
+只有选择文件状态为 `ready`，才允许运行 data-organization、
+submission-policy 和 shared-vLLM formal。不得从旧经验预填 8K、49K 或 K64。
+预算扫描期间 active-work 配额必须不小于同场景单 batch 预算，否则会混入
+oversized admission 语义。每轮都必须等待 runner manifest 为 `complete`，
+不要手工拼接失败重跑的 CSV。
 
 动态预算只在 `TOKEN_BUDGET_CANDIDATES` 的静态已测动作中移动。这里的 token
 budget 是 Ray 上游关批边界，active-work 是 endpoint admission credit，
@@ -766,9 +830,9 @@ ray status
 test ! -e "$OUTPUT_DIR"
 test ! -e "$RUN_LOG"
 nohup /root/miniconda3/bin/python \
-  code/scripts/run_shared_vllm_experiment.py \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
   --config "$CONFIG" \
-  --profiler code/scripts/postgres_ai_operator_profile.py \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
   --python-executable /root/miniconda3/bin/python \
   --output-dir "$OUTPUT_DIR" \
   --health-url http://127.0.0.1:8000/health \
@@ -797,10 +861,26 @@ shared DRR。通过条件不是只看 `status=completed`，还必须核对：
 
   gate 未通过时保留输出目录、日志、manifest、trace 和最终 snapshot，禁止删目录
   重跑或启动 formal。gate 全部通过后，换全新输出目录并将 config 改为
-  `dual_gpu_shared_vllm_formal.example.json`；其余命令不变。formal 是
+  `dual_gpu_shared_vllm_formal.example.json`；其余命令不变。当前受限
+  AutoDL 容器的默认 formal 是
 `{1,2,4} job × {independent, static partition, shared DRR}`，
-  每场景 1 warmup + 3 repeats。完成或保存失败证据后再执行 `ray stop`；不要在
-  runner 仍存活时停止 Ray head。
+  每场景 1 warmup + 3 repeats。4-job 必须先单独运行
+  `dual_gpu_shared_vllm_j4_gate.example.json`，通过后才可使用
+  `dual_gpu_shared_vllm_j4_formal.example.json`。完成或保存失败证据后再执行
+  `ray stop`；不要在 runner 仍存活时停止 Ray head。
+
+  共享实验的数据面必须使用 `ray_actor + httpx_async`，每 job、每 endpoint
+  创建固定数量的持久 actor，并在 actor 内做有界并发。禁止把 4-job 配置改回
+  `ray_task`：K256/endpoint 下四个 driver 可同时暴露上千个 task，
+  `num_cpus=0.01` 又允许 Ray 扩张到数百 worker，已在
+  `vm.max_map_count=65530` 的容器上触发 raylet `SIGABRT`。OMP/OpenBLAS
+  单线程限制仍是必要条件，但只能消除每 worker 的线程膨胀，不能限制 worker
+  进程数量；group runner 会在外部工作前拒绝 4-job `ray_task` 配置。
+
+  j4 gate 必须额外保存 `cat /proc/sys/vm/max_map_count`、Ray worker 峰值和
+  raylet 日志。若固定 actor pool 的 j4 gate 仍触发 VMA/pthread 故障，本机
+  只报告 j1/j2；j4 标为宿主能力阻塞，迁移到更高 VMA 的容器后再运行，
+  不得在同一 9-cell formal 尾部反复试错。
 
   coordinator 名称包含 manifest 持久化的 run-instance ID；同一输出目录 resume
   会连接同一物理 run，而新的输出目录会得到全新 actor 名称。失败 gate 保留的
@@ -899,6 +979,10 @@ pg_isready
 source /root/autodl-tmp/venvs/vllm-4090/bin/activate
 export PATH="/root/autodl-tmp/venvs/vllm-4090/lib/python3.12/site-packages/nvidia/cuda_nvcc/bin:$PATH"
 
+# 注意：以下为 legacy 2-endpoint 调试基线（每 GPU 1 副本、--gpu-memory-utilization 0.9、
+# --max-model-len 2048）。当前 4-endpoint 部署需按 runtime env 的 $PORTS /
+# $VLLM_GPU_MEMORY_UTILIZATION / $VLLM_MAX_MODEL_LEN 调整后再用；标准启动应改用
+# start_endpoints.sh，本节仅作手动分步调试参考。
 CUDA_VISIBLE_DEVICES=0 nohup python -m vllm.entrypoints.openai.api_server \
   --model /root/autodl-tmp/models/Qwen2.5-1.5B-Instruct \
   --served-model-name qwen2.5-1.5b --dtype auto \
@@ -945,7 +1029,7 @@ cd /root/autodl-tmp/ai-operator && git pull
 ```bash
 source /root/miniconda3/etc/profile.d/conda.sh && conda activate base
 cd /root/autodl-tmp/ai-operator
-python code/scripts/run_ai_operator_scenarios.py ... --python-executable /root/miniconda3/bin/python ...
+python code/scripts/experiments/run_ai_operator_scenarios.py ... --python-executable /root/miniconda3/bin/python ...
 ```
 
 关键：`--python-executable` 必须指向 base conda 的 python(有 pyarrow/daft/ray)，**不能**指向 vLLM venv 的 python(只有 vllm)。
@@ -1009,11 +1093,18 @@ AutoDL 租卡跑 pip 装的 vllm,**避开 50xx/6000D/6000 Blackwell**,选 4090 /
 
 若从本地脚本驱动远端(非交互密码登录),`sshpass`/`plink` 在 Windows 上常缺失,可用 Python+paramiko 自写小 helper:支持 `exec`(短命令,走 `bash -lc`)、`bgexec`(长任务,4s 后主动关 channel,远端 nohup 存活)、`upload_tar`(tar 流走 exec 通道,绕过 SFTP 路径怪异)。凭据只放环境变量,不落盘。该 helper 不入项目库(本地临时),但其模式(尤其 `bgexec` 和 `bash -lc` 包裹)值得任何远程驱动方案沿用。
 
-## OceanBase AI_COMPLETE capability gate (2026-07-29)
+## OceanBase AI_COMPLETE capability gate (2026-07-29; capability verified 2026-07-31)
 
 OceanBase is an optional product baseline, not a substitute for the
-no-Daft/no-Ray bounded HTTP control. Do not include it in calibration or formal
-results until the exact Community Edition image passes the following gate:
+no-Daft/no-Ray bounded HTTP control. Capability gate #1 has PASSED: OceanBase
+Community Edition 4.5.0.0 is statically confirmed to contain `AI_COMPLETE` and
+`DBMS_AI_SERVICE` (observer binary `T_FUN_SYS_AI_COMPLETE` + seed SQL
+`dbms_ai_service_*.sql`); see `experiments/results/oceanbase_b1_gate_20260731/`.
+The current blocker is DEPLOYMENT, not capability: in this AutoDL container the
+observer clogs at init step 4/18 with errcode -9100 (container seccomp blocks
+clone3 / ENOSYS; unfixable from inside), so it must be re-run in a privileged
+container or systemd VM. Do not include OceanBase in calibration or formal
+results until a deployable host passes the following end-to-end gate:
 
 1. both vLLM Chat Completions endpoints are healthy and idle;
 2. the OceanBase version and MySQL-compatible tenant are recorded;
@@ -1030,17 +1121,24 @@ placeholder is replaced. It never drops databases, tenants, tables, models, or
 existing endpoints. Preserve failed output as fatal-flaw evidence.
 
 Formal dual-endpoint runs use different model keys and source/result tables for
-each endpoint shard. They are forbidden if the installed CE image lacks the AI
-Function service; do not replace a failed OceanBase cell with a custom Python
+each endpoint shard. CE 4.5.0 does not lack the AI Function service (capability
+gate #1 passed); the current blocking issue is observer deployment (errcode
+-9100 / container seccomp / clone3), not CE AI Function availability. Do not
+replace a failed OceanBase cell with a custom Python
 HTTP loop and label it OceanBase.
 
-## Official baseline 双 GPU gate（2026-07-29）
+## 文本 comparison 双 GPU validity gate（历史文件名含 official，2026-08-02 复核）
 
 该 gate 使用
 `deploy/autodl/dual_gpu_official_baseline_gate.example.json`，目的只是证明
-同一份 64 行 Chat Completions manifest 能由两张卡上的官方/强对照适配器
+同一份 64 行 Chat Completions manifest 能由两张卡上的 service ceiling、direct
+control 与 vendor-native 适配器
 正确执行，不产生性能结论。calibration 规格在
 `dual_gpu_official_baseline_calibration.example.json`；gate 未通过禁止运行。
+`vLLM Bench` 只作 ceiling，`bounded_*` 只作项目自写 control；Daft built-in prompt、
+Ray Data Processor 和通过部署门禁的 OceanBase 才称 native baseline。正式 held-out
+合同在 `dual_gpu_text_native_baseline_formal.example.json`，详细解释见
+`experiments/plans/text_native_baseline_rerun_20260802.md`。
 
 开机后仍先完整执行 §10.5。随后按本节顺序操作：
 
@@ -1066,7 +1164,7 @@ HTTP loop and label it OceanBase.
 5. 每个 core cell 只运行一次，两个 endpoint shard 同时启动；输出写到
    `experiments/results/dual_gpu_official_baseline_gate_<unique-id>/` 下的独立
    cell/shard 目录。目录已存在即停止，禁止覆盖或 resume 成新 gate。
-   使用已提交的 `code/scripts/run_official_baseline_gate.py` 作为唯一 core
+   使用已提交的 `code/scripts/baselines/run_official_baseline_gate.py` 作为唯一 core
    编排入口；它按配置串行 cell、并行双 shard、保存命令/日志、等待队列归零并
    fail closed。禁止在远端临时手拼两个后台命令充当正式 gate runner。
    calibration 只允许用重复的 `--include-cell <id>` 选择已提交 cell，并用
@@ -1085,8 +1183,9 @@ HTTP loop and label it OceanBase.
 如果尚未提供无损的 manifest-to-profiler 映射，就将这两个 cell 标记为
 `blocked`，不得改用相似随机 workload 代替。
 
-OceanBase 是独立可选 capability gate。缺少 CE AI Function service 时保存
-发现证据并标记 unsupported；核心 gate 仍可继续。核心 gate 通过后也必须先
+OceanBase 是独立可选 capability gate。CE AI Function service 已确认存在
+（capability gate #1 通过），当前阻塞为容器级部署（observer clog -9100 /
+seccomp / clone3），待特权容器或 VM 内重跑；核心 gate 仍可继续。核心 gate 通过后也必须先
 停止并分析 request-body 等价性、真实 HTTP request 数、Daft/Ray Data 的一行
 一请求语义和原始 vLLM Bench schema，不能自动启动 calibration 或 formal。
 
@@ -1105,7 +1204,7 @@ main 已通过本地全量测试并推送
   -> exactly-once/元数据/work skew/服务端 token 差分/空队列门禁
   -> 停止并分析
   -> 独立 calibration
-  -> 32/64/128/256 transient + 2,048 held-out formal
+  -> 512 calibration + 4,096 held-out、至少 60 秒、1 warmup + 3 interleaved formal
 ```
 
 环境职责固定如下：
@@ -1137,6 +1236,136 @@ token 统计口径不同，下一道门禁必须对每个 cell、每个 endpoint
 `vllm:prompt_tokens_total` 与 `vllm:generation_tokens_total`，保存原值和差分。
 服务端差分门禁通过前仍禁止 calibration/formal。
 
+### Project profiler 同 manifest 校准与 formal
+
+项目 runtime 不再使用“相似 workload”与 direct baseline 横比。三个已提交模板
+依次固定 512 行等价性门禁、512 行校准和 2,048 行 disjoint formal：
+
+- `dual_gpu_same_condition_project_equivalence_gate.example.json`
+- `dual_gpu_same_condition_project_calibration.example.json`
+- `dual_gpu_same_condition_project_formal.example.json`
+
+两者都强制一行一个 Chat Completions 请求、原始 prompt、`temperature=0`、
+`max_tokens=256`、trace-target output cost、no arrival replay、request-level
+continuous replenishment、同一 manifest 固定 endpoint 分片和显式
+`RAY_ADDRESS`。profiler 会逐行核对 `doc_id/text/prompt_tokens/
+target_output_tokens`，并在 `runs.csv` 记录 manifest path、SHA、总行数、
+validated rows 与状态；任一不一致即失败。
+
+启动前除通用 idle 检查外，还要执行：
+
+```bash
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+set +a
+
+export COMPLETION_CHAT_ENDPOINT_URLS=\
+http://127.0.0.1:8000/v1/chat/completions,http://127.0.0.1:8001/v1/chat/completions
+export RAY_ADDRESS=127.0.0.1:6380
+
+/root/miniconda3/bin/python - <<'PY'
+import ray
+ray.init(address="127.0.0.1:6380")
+print(ray.cluster_resources())
+ray.shutdown()
+PY
+```
+
+512 行校准复用 direct calibration 已冻结的只读 manifest，不重新导出：
+
+```bash
+export PROJECT_CALIBRATION_REQUEST_MANIFEST=\
+/root/autodl-tmp/gates/official_baseline_calibration_512_20260729_0f5d60f.jsonl
+```
+
+先运行理论等价的 K256 与 nonbinding W98K 门禁。两者各有一个同压力 warm-up
+和三个交错 formal repeat；actor ready barrier 在 measured E2E timer 之前，
+`actor_ready_s` 单独记录，submission trace schema 5 记录 HTTP request start、
+response headers 和 body-read 边界：
+
+```bash
+CONFIG=deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json
+OUTPUT_DIR=experiments/results/dual_gpu_same_condition_project_equivalence_gate_<unique-id>
+RUN_LOG=/root/autodl-tmp/logs/dual_gpu_same_condition_project_equivalence_gate_<unique-id>.log
+
+test ! -e "$OUTPUT_DIR"
+test ! -e "$RUN_LOG"
+nohup /root/miniconda3/bin/python \
+  code/scripts/experiments/run_ai_operator_scenarios.py \
+  --config "$CONFIG" \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable /root/miniconda3/bin/python \
+  --output-dir "$OUTPUT_DIR" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --idle-timeout-s 120 \
+  </dev/null >"$RUN_LOG" 2>&1 &
+```
+
+只有两臂 repeat-mean throughput 与 JCT 均在 5% 内、至少 2/3 repeats 落在
+该范围、且所有正确性门禁通过，才允许运行完整校准。失败时保留目录、日志、
+lease、request/submission/resource traces 与 endpoint 日志，停止；不得通过
+换顺序或删除首轮数据继续 formal。`headers_wait` 包含 connect、HTTP ingress、
+vLLM queue 与 inference，不能单独解释为 server accept 或 GPU compute。
+
+等价性门禁通过后才运行完整校准：
+
+```bash
+CONFIG=deploy/autodl/dual_gpu_same_condition_project_calibration.example.json
+OUTPUT_DIR=experiments/results/dual_gpu_same_condition_project_calibration_<unique-id>
+RUN_LOG=/root/autodl-tmp/logs/dual_gpu_same_condition_project_calibration_<unique-id>.log
+
+test ! -e "$OUTPUT_DIR"
+test ! -e "$RUN_LOG"
+nohup /root/miniconda3/bin/python \
+  code/scripts/experiments/run_ai_operator_scenarios.py \
+  --config "$CONFIG" \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable /root/miniconda3/bin/python \
+  --output-dir "$OUTPUT_DIR" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --idle-timeout-s 120 \
+  </dev/null >"$RUN_LOG" 2>&1 &
+```
+
+校准模板扫描 per-endpoint static K `{32,64,128,256}` 和 active work
+`{16384,32768,49152,65536,98304}`，每个配置一个同压力 warm-up 和三个
+formal repeat。完成后按预注册 97% ceiling / 相邻增益
+<3% 规则选择最小压力点，写入 `PROJECT_STATIC_K_PER_ENDPOINT` 和
+`PROJECT_ACTIVE_WORK_PER_ENDPOINT`。不要因为 C256 是 `max_num_seqs` 配置硬上限
+就把它误写成已验证的经验平台。
+
+formal manifest 必须来自一个独立的 2,048 行 workload 切片（远端数据库现已持有多个 2,048 行重建 workload：`sharegpt_multiturn` doc_id 300000-302047、`sharegpt_concentrated`、`sharegpt_burstgpt` 等），不再使用旧的 `ORDER BY doc_id LIMIT 2048 OFFSET 512` 或 append `2048..2559` 方案；禁止回用校准行。选定 disjoint workload 后导出只读 manifest：
+
+```bash
+PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d ai_operator \
+  -c "SELECT workload_name, count(*), min(doc_id), max(doc_id) FROM documents GROUP BY workload_name ORDER BY workload_name"
+
+export PROJECT_FORMAL_REQUEST_MANIFEST=\
+/root/autodl-tmp/gates/<new-immutable-formal-manifest>.jsonl
+
+/root/miniconda3/bin/python code/scripts/baselines/run_official_baseline.py \
+  export-postgres-manifest \
+  --database-url "$DATABASE_URL" \
+  --workload-name "$SOURCE_WORKLOAD_NAME" \
+  --row-count 2048 \
+  --row-offset 512 \
+  --max-output-tokens 256 \
+  --estimated-output-mode trace_target \
+  --endpoint-count 2 \
+  --output "$PROJECT_FORMAL_REQUEST_MANIFEST"
+chmod 0444 "$PROJECT_FORMAL_REQUEST_MANIFEST"
+```
+
+随后先另外导出 `row_count=64,row_offset=512` 的只读 gate manifest，并在
+`/root/autodl-tmp/gates/` 复制 formal 模板，机械改为 64 行、0 warm-up、
+1 repeat，令 `PROJECT_FORMAL_REQUEST_MANIFEST` 暂时指向该 gate manifest。
+在新目录核对 manifest SHA/validated rows、64/64 exactly-once、双 endpoint、
+request/submission/resource traces、0 failure、服务端 counter 和最终空队列。
+只有 gate 通过才把变量切回 2,048 行 manifest 并运行原模板的 1 warm-up +
+3 formal；失败目录、租约和日志原样保留。
+
 ### 已验证部署问题与解决方案
 
 | 现象 | 根因与判定证据 | 处理方式 |
@@ -1161,8 +1390,204 @@ token 统计口径不同，下一道门禁必须对每个 cell、每个 endpoint
 | gate 配置固定 5 个 core arm 与 C32，无法安全只跑 vLLM/bounded C64/C128 | 在远端临时复制 JSON 或手拼 shard 会绕过已提交配置、统一编排和审计证据 | 使用 runner 的 `--include-cell` 与 `--concurrency-override id=N`。未知、重复、非正或覆盖未选 cell 均 fail closed；每档使用新输出根并以 `resolved_config.json` 复核。 |
 | C32/C64 时 vLLM Bench 与 bounded 一致，C128 时 bounded 突然落后 | httpx 0.28.1 `AsyncClient` 默认总连接上限 100、keepalive 20；配置 C128 实际没有形成 128 并发。vLLM Bench 日志则确认 peak=128 | bounded client 必须显式把 `Limits.max_connections` 与 `max_keepalive_connections` 设为 `concurrency_per_endpoint × endpoint_count`，用回归测试锁定。修复后只在全新目录重跑被污染的 bounded C128；有效 vLLM C128 不重复。 |
 | gate 模板仍写本地历史模型 `qwen2.5-1.5b` | AutoDL 当前两个 endpoint 实际 served model 为 `qwen2.5-7b`；模板与服务元数据不一致会污染同条件比较 | 双 GPU official gate 模板改为 `qwen2.5-7b`。每次开机仍以 runtime env、endpoint 进程命令和 `/metrics` 为准，不从模板猜模型。 |
-| `python -m unittest code.tests...` 报标准库 `code` 没有 `tests` | 仓库目录名 `code/` 与 Python 标准库模块同名，不是测试实现失败 | 在仓库根使用 `python -m unittest discover -s code/tests -p 'test_x.py'`。远程封装先保存测试进程退出码，再清理临时环境变量，避免清理命令把失败状态覆盖成 0。 |
+| `python -m unittest code.tests...` 报标准库 `code` 没有 `tests` | 仓库目录名 `code/` 与 Python 标准库模块同名，不是测试实现失败 | 在仓库根使用 `python -m unittest discover -s code/tests -t code -p 'test_x.py'`。远程封装先保存测试进程退出码，再清理临时环境变量，避免清理命令把失败状态覆盖成 0。 |
+| project Chat template 展开时报缺失变量，或仍请求 `/v1/completions` | 旧 runtime env 只有 `COMPLETION_ENDPOINT_URLS`，没有同条件 Chat URL；直接复用会改变协议 | 从更新后的 `autodl.env.example` 补 `COMPLETION_CHAT_ENDPOINT_URLS=.../v1/chat/completions`，启动前打印解析后的模板参数；禁止用 legacy URL 兜底。 |
+| 512 校准后无法导出 disjoint 2,048-row formal | 当前 workload 只有 2,048 行，`OFFSET 512` 后数据库实测仅返回 1,536 行 | formal 前补齐并冻结另外 512 行或导入独立 held-out workload；profiler 使用 `--source-row-offset 512`。不得回用 `doc_id=0..511` 或复制行凑数。 |
+| project 64 行 gate 在 HTTP 前报 `target_output_tokens mismatch` | official manifest 将 trace target 裁到 `max_tokens=256`，project profiler 曾比较和调度未裁剪的数据库原值；大于 256 的行因此既校验失败又高估 active work | `trace_target_output` 的统一语义为 `min(target_output_tokens, completion_max_tokens)`；校验仍保留 fail-closed。修复提交通过本地完整测试后，必须在全新目录重新运行 64 行 gate，旧失败目录不覆盖。 |
+| 同样 512 outstanding 的 W98K 比 K256 慢约 2.83× | 只读诊断排除 active-work 背压、actor 数、payload、output work 和汇总计算；主要差异是首个 full-concurrency cell 在 HTTP/vLLM request wall 多约 28.6s，并出现 endpoint 不对称逐波接纳 | 不选取该单次结果做参数。先加 actor-ready barrier、同压力 warm-up 和 HTTP headers/body timing，只复测理论等价 K256/W98K；门禁未通过禁止扩大矩阵。 |
+
+### 安全补齐 disjoint held-out 行
+
+禁止用 `--start-doc-id 2048` 重新导入开头 512 个 prompt，也禁止使用默认
+upsert 补数。只读审计已确认：ShareGPT SHA-256
+`35f0e213…f6479ba4`、BurstGPT SHA-256 `4bb37836…e12122`，现有 2,048 行
+文本/session 与 Qwen2.5-7B tokenizer 全部一致；原始 pair capacity 90,122，
+足够补齐。历史 shell 命令没有保留，不能声称恢复了 exact CLI；现有行的跳过
+边界和正式 source predicate 均支持显式 `max_prompt_tokens=1500`。最终是否
+同源由下述 2,048 行逐字段核验决定：
+
+```bash
+/root/miniconda3/bin/python code/scripts/data/import_ai_complete_workload.py \
+  --database-url "$DATABASE_URL" \
+  --sharegpt-json "$EXACT_SHAREGPT_JSON" \
+  --burstgpt-csv "$EXACT_BURSTGPT_CSV" \
+  --workload-name "$SOURCE_WORKLOAD_NAME" \
+  --tokenizer-endpoint-url http://127.0.0.1:8000/tokenize \
+  --tokenizer-model "$COMPLETION_MODEL" \
+  --max-prompt-tokens 1500 \
+  --max-model-len 8192 \
+  --completion-max-tokens 256 \
+  --max-rows 512 \
+  --start-doc-id 2048 \
+  --source-row-offset 2048 \
+  --verify-existing-prefix-rows 2048 \
+  --append-only \
+  --dry-run
+```
+
+只有输出 `status=verified_dry_run`，并确认数据库仍为 2,048 行后，才允许在同一
+idle 窗口用同一命令移除 `--dry-run`。`source-row-offset` 按所有过滤完成后的
+eligible rows 计数；`append-only` 遇到任一 doc ID 冲突即使事务失败，不更新旧
+行。显式 prompt 上限避免为复现 1,500 边界而伪造历史
+`max_model_len - completion_max_tokens` 组合。写入后重新核对连续
+`doc_id=0..2559`、总数 2,560，再导出 2,048 行
+`OFFSET 512` manifest 并设为 `0444`。若 prefix 任一字段不一致，停止并恢复
+过滤证据，不得尝试“近似匹配”或覆盖数据库。
 
 本次远端原始冲突备份位置为
 `/root/autodl-tmp/premerge-backups/20260729_shared_vllm_results_before_7267324/`。
 它是事故审计副本，不是新的 formal 结果目录。
+
+## 双协议 feeding 校准与正式 baseline 顺序（2026-07-30）
+
+### 目标
+
+先验证项目提交路径能否持续喂饱 vLLM，再测试 token-budget、动态 K 或 adaptive
+flush。对固定 512 行 manifest，feeding 主口径使用服务端 token counter 除以
+`model_request_wall_s`，并与同协议 bounded service JCT/throughput 比较；
+warmed project 必须达到至少 95%，且 model-request JCT 不超过 1.05×、
+0 failure、exactly-once、最终队列为空。完整 `operator_wall_s`/E2E 仍报告，
+但 source fetch/Daft 时间不能误归因给 vLLM feeding。未通过时停止策略矩阵，
+只分析 Ray/HTTP/ingress。
+
+两条轨道不得交叉排名：
+
+| 轨道 | direct/bounded 配置 | project 配置 |
+|---|---|---|
+| Chat 产品兼容 | 既有 official baseline gate/calibration | `dual_gpu_project_chat_feeding.example.json` |
+| multi-prompt Completions 机制 | `dual_gpu_completions_baseline_gate.example.json` | `dual_gpu_project_completions_feeding.example.json` |
+
+Chat project 配置比较旧 threaded `urllib`、持久 `httpx_async` 和
+1×256/2×128/4×64 actor 形状；每行仍是一条 Chat 请求，actor 内使用 async
+dispatch。Completions 两份配置都比较 fixed rows 1/4/16/32，并保持
+`batch_rows × HTTP concurrency=256` per endpoint；project 端一个 Ray
+submission 仍发送一个含多条完整 prompt 的 HTTP body。
+
+### 开始前
+
+1. 执行 §10.5 的只读 idle/lease/Ray/endpoint/GPU/PG 检查；
+2. 使用独立 git worktree 和全新输出目录，禁止覆盖已有结果；
+3. `source deploy/autodl/autodl.env` 后确认
+   `COMPLETION_ENDPOINT_URLS` 以 `/v1/completions` 结尾，
+   `COMPLETION_CHAT_ENDPOINT_URLS` 以 `/v1/chat/completions` 结尾；
+4. 模型不存在时必须按 §5 先启用 AutoDL 学术加速并禁用 Xet；不要直接使用
+   未加速的默认 Hugging Face 下载；
+5. 两个 vLLM endpoint 必须是同一模型/版本/参数，且 512 行 immutable
+   manifest SHA-256 与 direct Chat 校准一致。
+
+### 命令
+
+先跑 multi-prompt direct/bounded 固定行数 gate：
+
+```bash
+/root/miniconda3/bin/python code/scripts/baselines/run_official_baseline_gate.py \
+  --config deploy/autodl/dual_gpu_completions_baseline_gate.example.json \
+  --driver-python /root/miniconda3/bin/python \
+  --vllm-python /root/autodl-tmp/venvs/vllm-4090/bin/python \
+  --output-root \
+    experiments/results/dual_gpu_completions_baseline_gate_<unique-id>
+```
+
+再分别运行 project Chat 与 Completions feeding 矩阵：
+
+```bash
+/root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scenarios.py \
+  --config deploy/autodl/dual_gpu_project_chat_feeding.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable /root/miniconda3/bin/python \
+  --output-dir experiments/results/dual_gpu_project_chat_feeding_<unique-id> \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS"
+
+/root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scenarios.py \
+  --config deploy/autodl/dual_gpu_project_completions_feeding.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable /root/miniconda3/bin/python \
+  --output-dir \
+    experiments/results/dual_gpu_project_completions_feeding_<unique-id> \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS"
+```
+
+每次只允许一个 runner。先检查 `resolved_config.json` 中协议、transport、
+actor 数、每 actor concurrency、K 和 manifest，再查看 `runs.csv`、
+submission/request trace 与服务端 counter。full feeding 配置是正式校准，
+本地或新 worktree 的可运行性验证只需使用 16/64 行 smoke，不得把 smoke
+数字写成性能结果。
+
+### 冻结校准选择
+
+feeding、token-budget 和**同协议 actor-shape** 曲线完成后，不得手工凭记忆
+修改 8K/K64/actor 数。使用已提交脚本从原始证据生成不可歧义的选择文件和
+环境覆盖：
+
+```bash
+ARTIFACT_ROOT=/root/autodl-tmp/experiment-artifacts
+CALIBRATION_ROOT=/root/autodl-tmp/gates/calibration_<commit>
+mkdir -p "$CALIBRATION_ROOT"
+
+/root/miniconda3/bin/python \
+  code/scripts/analysis/select_strategy_calibration.py \
+  --feeding-runs \
+    "$ARTIFACT_ROOT/<project-completions-feeding>/runs.csv" \
+  --direct-baseline-root \
+    "$ARTIFACT_ROOT/<direct-completions-gate>" \
+  --token-budget-runs \
+    "$ARTIFACT_ROOT/<token-budget-curve>/runs.csv" \
+  --actor-shape-runs \
+    "$ARTIFACT_ROOT/<completions-actor-shape>/runs.csv" \
+  --output "$CALIBRATION_ROOT/selection.json" \
+  --env-output "$CALIBRATION_ROOT/calibration.env"
+
+python -m json.tool "$CALIBRATION_ROOT/selection.json"
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+source "$CALIBRATION_ROOT/calibration.env"
+set +a
+```
+
+脚本只接受至少三次成功 formal feeding/token-budget/actor-shape 重复，要求项目
+model-request throughput 达到同协议 direct baseline 的 95%，并按
+97%-ceiling/下一档增益小于 3% 规则选择最小 token budget。actor shape 必须
+保持总 slots 不变，并选择达到峰值 97% 的最小 actor 数。它最终冻结
+per-endpoint K、active work 和 **Completions** actor shape；Chat actor 曲线
+只能作为协议特定诊断，禁止传给该选择命令。
+
+`dual_gpu_data_organization.example.json`、
+`dual_gpu_submission_policy.example.json` 和
+`dual_gpu_shared_vllm_formal.example.json` 会在启动任何外部请求前读取同一
+选择文件，并逐项核对环境值。文件缺失、evidence 未通过、仍为旧 8K/K64 或
+任一值不一致都会 fail closed，且不会创建实验输出目录。
+
+### 放行后的实验
+
+1. 分别标定 Chat actor/K 和 Completions `batch_rows × concurrency` 的最小
+   97%-ceiling 点；
+2. 在 Completions 轨道固定 active work，扫描 token budget
+   2K/4K/8K/16K/32K/49K/65K，证明预算不是越大越好；
+3. 生成并核对上述冻结选择文件；
+4. 再做 length-align、queue-adaptive flush、dynamic token budget 和动态 K
+   单因素消融；
+5. 单 job 通过后跑 1/2/4 job；4-job 必须先通过独立 gate，j4-only formal
+   用于失败隔离/复验。多 job 子进程
+   和 Ray worker 必须继承 `runtime_env.py` 的单线程 BLAS 环境，并使用有界
+   persistent actor pool；旧 `ray_task` j4 失败结果不参与排名；
+6. 最后在 disjoint held-out、database E2E 和多模态上复验。
+
+### Pinned endpoint active-work 背压故障
+
+若 project request-level 场景在启用
+`--max-active-work-per-endpoint` 后报
+`preferred endpoint ... is not healthy`，先同时核对：
+
+1. stderr 中失败请求的 `preferred_endpoint_id` 与 estimated work；
+2. 失败前该 endpoint 的 local active request/work；
+3. 另一 endpoint 是否仍有容量；
+4. 两个 `/health`、`/metrics` 与最终队列。
+
+若服务健康、固定 endpoint 仅因加入当前请求会超过 work cap 而被标为
+`healthy=false`，这是旧版把容量复用为健康状态的已知缺陷，不得重启 vLLM、
+改写 manifest 或改投另一 endpoint。保留失败目录和 lease 证据，使用包含
+`EndpointSnapshot.available` 与 typed capacity backpressure 的新提交，在全新
+目录先重跑 64 行 gate。门禁必须核对 exactly-once、固定 endpoint 分布、0
+worker failure、服务端 counter 和最终空队列；通过后才允许重新启动 512 校准。

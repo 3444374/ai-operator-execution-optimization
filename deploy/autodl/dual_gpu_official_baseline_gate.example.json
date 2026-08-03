@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "experiment_id": "dual_gpu_official_baseline_gate",
+  "experiment_id": "dual_gpu_text_comparison_validity_gate",
   "formal": false,
   "rows_total": 64,
   "endpoint_urls": [
@@ -67,6 +67,8 @@
     }
   ],
   "hard_gates": {
+    "provenance_fields_present": true,
+    "native_arms_have_no_project_scheduler": true,
     "exactly_once": true,
     "failed_rows": 0,
     "worker_failures": 0,

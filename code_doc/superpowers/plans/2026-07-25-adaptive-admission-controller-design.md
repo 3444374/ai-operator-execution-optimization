@@ -82,7 +82,7 @@ Strategy code therefore remains independent of Daft and Arrow, as required by
 `code/AGENTS.md`.
 
 `code/src/metrics.py` remains responsible for parsing and scraping Prometheus
-metrics. `code/scripts/postgres_ai_operator_profile.py` owns submission,
+metrics. `code/scripts/profiling/postgres_ai_operator_profile.py` owns submission,
 backpressure execution, and trace collection. The shared-vLLM experiment
 runner only constructs reproducible scenario commands.
 

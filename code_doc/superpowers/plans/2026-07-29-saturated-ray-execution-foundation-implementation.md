@@ -56,9 +56,9 @@ driver/Ray gap.
 
 **Files:**
 - Create: `code/src/runner_lease.py`
-- Create: `code/tests/test_runner_lease.py`
-- Modify: `code/scripts/run_ai_operator_scenarios.py`
-- Modify: `code/tests/test_experiment_scenarios.py`
+- Create: `code/tests/infrastructure/test_runner_lease.py`
+- Modify: `code/scripts/experiments/run_ai_operator_scenarios.py`
+- Modify: `code/tests/experiments/test_experiment_scenarios.py`
 
 **Interfaces:**
 - Produces:
@@ -73,7 +73,7 @@ driver/Ray gap.
 
 - [ ] **Step 1: Write lease collision and stale-recovery tests**
 
-Create `code/tests/test_runner_lease.py` with:
+Create `code/tests/infrastructure/test_runner_lease.py` with:
 
 ```python
 from __future__ import annotations
@@ -339,9 +339,9 @@ Expected: all tests pass, including existing resume behavior.
 - [ ] **Step 8: Commit**
 
 ```powershell
-git add code/src/runner_lease.py code/tests/test_runner_lease.py `
-  code/scripts/run_ai_operator_scenarios.py `
-  code/tests/test_experiment_scenarios.py
+git add code/src/runner_lease.py code/tests/infrastructure/test_runner_lease.py `
+  code/scripts/experiments/run_ai_operator_scenarios.py `
+  code/tests/experiments/test_experiment_scenarios.py
 git commit -m "fix: enforce one scenario runner per output"
 ```
 
@@ -351,8 +351,8 @@ git commit -m "fix: enforce one scenario runner per output"
 
 **Files:**
 - Modify: `code/src/scheduling/runtime/ray_adapter.py`
-- Modify: `code/tests/test_ray_adapter.py`
-- Modify: `code/tests/test_scheduler.py`
+- Modify: `code/tests/scheduling/test_ray_adapter.py`
+- Modify: `code/tests/scheduling/test_scheduler.py`
 
 **Interfaces:**
 - Preserves:
@@ -428,7 +428,7 @@ cd code
   tests.test_ray_adapter tests.test_scheduler -v
 cd ..
 git add code/src/scheduling/runtime/ray_adapter.py `
-  code/tests/test_ray_adapter.py code/tests/test_scheduler.py
+  code/tests/scheduling/test_ray_adapter.py code/tests/scheduling/test_scheduler.py
 git commit -m "fix: release ray credit after worker failure"
 ```
 
@@ -440,7 +440,7 @@ Expected: all adapter and scheduler tests pass.
 
 **Files:**
 - Modify: `deploy/autodl/dual_gpu_active_work_curve.example.json`
-- Modify: `code/tests/test_experiment_scenarios.py`
+- Modify: `code/tests/experiments/test_experiment_scenarios.py`
 - Modify: `deploy/autodl/README.md`
 - Modify: `PROJECT_LOG.md`
 
@@ -493,7 +493,7 @@ cd code
 ..\.conda\pg-ai-profile\python.exe -m unittest tests.test_experiment_scenarios -v
 cd ..
 git add deploy/autodl/dual_gpu_active_work_curve.example.json `
-  deploy/autodl/README.md code/tests/test_experiment_scenarios.py PROJECT_LOG.md
+  deploy/autodl/README.md code/tests/experiments/test_experiment_scenarios.py PROJECT_LOG.md
 git commit -m "test: extend active work saturation curve"
 ```
 
@@ -521,7 +521,7 @@ checkout must not pull later commits until its runner reaches a terminal state.
 
 **Files:**
 - Create: `code/src/scheduling/organization/service_quantum.py`
-- Create: `code/tests/test_service_quantum.py`
+- Create: `code/tests/scheduling/test_service_quantum.py`
 - Modify: `code/src/scheduling/__init__.py`
 
 **Interfaces:**
@@ -622,7 +622,7 @@ cd code
 ..\.conda\pg-ai-profile\python.exe -m unittest tests.test_service_quantum -v
 cd ..
 git add code/src/scheduling/organization/service_quantum.py `
-  code/src/scheduling/__init__.py code/tests/test_service_quantum.py
+  code/src/scheduling/__init__.py code/tests/scheduling/test_service_quantum.py
 git commit -m "feat: slice planning batches into service quanta"
 ```
 
@@ -637,12 +637,12 @@ Expected: all slicer tests pass.
 - Modify: `code/src/profiling/cli.py`
 - Modify: `code/src/profiling/replay.py`
 - Modify: `code/src/profile_replay.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
 - Modify: `code/src/profiling/schema.py`
 - Modify: `code/src/profiling/traces.py`
-- Modify: `code/tests/test_scheduling_models.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
-- Modify: `code/tests/test_request_lifecycle.py`
+- Modify: `code/tests/scheduling/test_scheduling_models.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
+- Modify: `code/tests/scheduling/test_request_lifecycle.py`
 
 **Interfaces:**
 - Adds backwards-compatible default `planning_batch_id`,
@@ -751,10 +751,10 @@ cd code
   tests.test_request_lifecycle -v
 cd ..
 git add code/src/scheduling/models.py code/src/profiling `
-  code/src/profile_replay.py code/scripts/postgres_ai_operator_profile.py `
-  code/tests/test_scheduling_models.py `
-  code/tests/test_postgres_profile_scheduling.py `
-  code/tests/test_request_lifecycle.py
+  code/src/profile_replay.py code/scripts/profiling/postgres_ai_operator_profile.py `
+  code/tests/scheduling/test_scheduling_models.py `
+  code/tests/observability/test_postgres_profile_scheduling.py `
+  code/tests/scheduling/test_request_lifecycle.py
 git commit -m "feat: execute fixed service quanta"
 ```
 
@@ -772,10 +772,10 @@ Expected: focused tests pass and batch/request defaults stay unchanged.
 - Modify: `code/src/profiling/schema.py`
 - Modify: `code/src/profiling/traces.py`
 - Modify: `code/src/model_backends.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Modify: `code/tests/test_ray_adapter.py`
-- Modify: `code/tests/test_model_backends.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Modify: `code/tests/scheduling/test_ray_adapter.py`
+- Modify: `code/tests/serving/test_model_backends.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - `ActorWorkerPoolSubmitter(..., max_concurrency_per_worker: int,
@@ -871,9 +871,9 @@ cd code
   tests.test_postgres_profile_scheduling -v
 cd ..
 git add code/src/scheduling code/src/profiling code/src/model_backends.py `
-  code/scripts/postgres_ai_operator_profile.py `
-  code/tests/test_ray_adapter.py code/tests/test_model_backends.py `
-  code/tests/test_postgres_profile_scheduling.py
+  code/scripts/profiling/postgres_ai_operator_profile.py `
+  code/tests/scheduling/test_ray_adapter.py code/tests/serving/test_model_backends.py `
+  code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "feat: bound and observe ray actor workers"
 ```
 
@@ -890,7 +890,7 @@ Expected: focused tests pass and legacy callable submitters remain compatible.
 - Modify: `deploy/autodl/README.md`
 - Create: `deploy/autodl/dual_gpu_actor_pool_shape.example.json`
 - Create: `deploy/autodl/dual_gpu_service_quantum.example.json`
-- Modify: `code/tests/test_experiment_scenarios.py`
+- Modify: `code/tests/experiments/test_experiment_scenarios.py`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_OUTLINE.md`
 - Modify: `PROJECT_LOG.md`

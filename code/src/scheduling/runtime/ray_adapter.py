@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from ..models import CollectedSubmission, PayloadEnvelope, SubmissionCompletion
+from ..core.models import CollectedSubmission, PayloadEnvelope, SubmissionCompletion
 
 
 @dataclass(frozen=True)
@@ -256,6 +256,25 @@ class ActorSubmissionState:
             list(self.pool_submitters.values())
         )
 
+    def wait_until_ready(
+        self,
+        ray_module,
+        *,
+        clock: Callable[[], float] = time.perf_counter,
+    ) -> tuple[float, tuple[object, ...]]:
+        """Resolve every actor's explicit ready method before measurement."""
+
+        started_at_s = clock()
+        ready_refs = [
+            actor.ready.remote()
+            for actors in self._actor_pools.values()
+            for actor in actors
+        ]
+        evidence = tuple(ray_module.get(ready_refs))
+        if len(evidence) != len(ready_refs):
+            raise RuntimeError("actor ready barrier returned incomplete evidence")
+        return max(0.0, clock() - started_at_s), evidence
+
     def validate(
         self,
         actor_pools: Mapping[str, Sequence[object]],
@@ -298,7 +317,7 @@ class RaySubmissionAdapter:
         if isinstance(submitter, ActorWorkerPoolSubmitter):
             handle = submitter.submit(
                 envelope.payload,
-                estimated_work=envelope.request.estimated_total_tokens,
+                estimated_work=envelope.request.estimated_work_units,
             )
             self._stateful_handles.append((handle, submitter))
             return handle

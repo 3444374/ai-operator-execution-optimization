@@ -29,7 +29,7 @@
 - Modify: `code/src/scheduling/models.py`
 - Modify: `code/src/scheduling/scheduler.py`
 - Modify: `code/src/scheduling/__init__.py`
-- Test: `code/tests/test_scheduler.py`
+- Test: `code/tests/scheduling/test_scheduler.py`
 
 **Interfaces:**
 - Produces:
@@ -53,7 +53,7 @@ class SubmissionLifecycleEvent:
 
 - [ ] **Step 1: Write failing scheduler lifecycle tests**
 
-Add a deterministic epoch clock and assertions to `code/tests/test_scheduler.py`:
+Add a deterministic epoch clock and assertions to `code/tests/scheduling/test_scheduler.py`:
 
 ```python
 class SequenceClock:
@@ -124,7 +124,7 @@ The failing adapter used by the second test must be a module-level test helper s
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py -v
 ```
 
 Expected: the new tests fail because `epoch_clock` and `submission_events` do not exist.
@@ -196,9 +196,9 @@ those existing durations continue to use `perf_counter`.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_scheduler.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_models.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduler.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_models.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Expected: all tests pass and existing completion ordering remains unchanged.
@@ -206,7 +206,7 @@ Expected: all tests pass and existing completion ordering remains unchanged.
 - [ ] **Step 5: Commit Task 1**
 
 ```powershell
-git add code/src/scheduling/models.py code/src/scheduling/scheduler.py code/src/scheduling/__init__.py code/tests/test_scheduler.py
+git add code/src/scheduling/models.py code/src/scheduling/scheduler.py code/src/scheduling/__init__.py code/tests/scheduling/test_scheduler.py
 git commit -m "feat: record submission lifecycle events"
 ```
 
@@ -217,9 +217,9 @@ git commit -m "feat: record submission lifecycle events"
 **Files:**
 - Create: `code/src/scheduling/lifecycle.py`
 - Modify: `code/src/scheduling/__init__.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
-- Create: `code/tests/test_request_lifecycle.py`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
+- Create: `code/tests/scheduling/test_request_lifecycle.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
 
 **Interfaces:**
 - Produces:
@@ -279,7 +279,7 @@ class RequestTraceRow:
 
 - [ ] **Step 1: Write failing lifecycle model and join tests**
 
-Create `code/tests/test_request_lifecycle.py` with tests covering:
+Create `code/tests/scheduling/test_request_lifecycle.py` with tests covering:
 
 ```python
 def test_build_request_trace_rows_preserves_row_arrival_and_shared_batch_timing():
@@ -339,7 +339,7 @@ Also add independent tests that reject:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_request_lifecycle.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_request_lifecycle.py -v
 ```
 
 Expected: import failure because `src.scheduling.lifecycle` does not exist.
@@ -397,7 +397,7 @@ Do not silently repair arbitrary timing errors.
 
 - [ ] **Step 4: Write the failing replay seed test**
 
-Add to `code/tests/test_postgres_profile_scheduling.py`:
+Add to `code/tests/observability/test_postgres_profile_scheduling.py`:
 
 ```python
 def test_arrival_replay_emits_one_lifecycle_seed_per_complete_row(self):
@@ -462,7 +462,7 @@ def test_arrival_replay_emits_one_lifecycle_seed_per_complete_row(self):
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Expected: failure because `lifecycle_seed_sink` is not accepted.
@@ -502,9 +502,9 @@ emit no partial seeds.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_request_lifecycle.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_runtime_batching.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_request_lifecycle.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_runtime_batching.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Expected: all tests pass.
@@ -512,7 +512,7 @@ Expected: all tests pass.
 - [ ] **Step 8: Commit Task 2**
 
 ```powershell
-git add code/src/scheduling/lifecycle.py code/src/scheduling/__init__.py code/scripts/postgres_ai_operator_profile.py code/tests/test_request_lifecycle.py code/tests/test_postgres_profile_scheduling.py
+git add code/src/scheduling/lifecycle.py code/src/scheduling/__init__.py code/scripts/profiling/postgres_ai_operator_profile.py code/tests/scheduling/test_request_lifecycle.py code/tests/observability/test_postgres_profile_scheduling.py
 git commit -m "feat: assemble per-request lifecycle traces"
 ```
 
@@ -521,10 +521,10 @@ git commit -m "feat: assemble per-request lifecycle traces"
 ### Task 3: Profiler Request CSV, SLO, and Run Metrics
 
 **Files:**
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
 - Modify: `code/scripts/README.md`
-- Modify: `code/tests/test_postgres_profile_scheduling.py`
-- Modify: `code/tests/test_scheduling_daft_ray_contract.py`
+- Modify: `code/tests/observability/test_postgres_profile_scheduling.py`
+- Modify: `code/tests/scheduling/test_scheduling_daft_ray_contract.py`
 
 **Interfaces:**
 - New CLI:
@@ -616,7 +616,7 @@ Assert versions, scenario identity, and numeric values survive CSV round-trip.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Expected: parser/writer tests fail for missing CLI and writer.
@@ -702,9 +702,9 @@ Daft/Arrow/Ray behavior, not GPU performance.
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_scheduling_daft_ray_contract.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_request_lifecycle.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_scheduling_daft_ray_contract.py -v
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_request_lifecycle.py -v
 ```
 
 Expected: all tests pass.
@@ -722,7 +722,7 @@ Document:
 Commit:
 
 ```powershell
-git add code/scripts/postgres_ai_operator_profile.py code/scripts/README.md code/tests/test_postgres_profile_scheduling.py code/tests/test_scheduling_daft_ray_contract.py
+git add code/scripts/profiling/postgres_ai_operator_profile.py code/scripts/README.md code/tests/observability/test_postgres_profile_scheduling.py code/tests/scheduling/test_scheduling_daft_ray_contract.py
 git commit -m "feat: write request lifecycle metrics"
 ```
 
@@ -732,9 +732,9 @@ git commit -m "feat: write request lifecycle metrics"
 
 **Files:**
 - Create: `code/src/experiment_scenarios.py`
-- Create: `code/scripts/run_ai_operator_scenarios.py`
-- Create: `code/tests/test_experiment_scenarios.py`
-- Modify: `code/scripts/postgres_ai_operator_profile.py`
+- Create: `code/scripts/experiments/run_ai_operator_scenarios.py`
+- Create: `code/tests/experiments/test_experiment_scenarios.py`
+- Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
 - Modify: `code/scripts/README.md`
 
 **Interfaces:**
@@ -798,7 +798,7 @@ one phase/repeat and ignores `--warmup-runs/--repeats`.
 
 - [ ] **Step 1: Write failing deterministic schedule tests**
 
-Create `code/tests/test_experiment_scenarios.py`:
+Create `code/tests/experiments/test_experiment_scenarios.py`:
 
 ```python
 def test_schedule_is_reproducible_and_interleaves_formal_scenarios():
@@ -843,7 +843,7 @@ Also test:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_experiment_scenarios.py -v
+.conda\pg-ai-profile\python.exe code\tests\experiments\test_experiment_scenarios.py -v
 ```
 
 Expected: import failure because the module does not exist.
@@ -939,14 +939,14 @@ tests. Assert:
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe code\tests\test_experiment_scenarios.py -v
-.conda\pg-ai-profile\python.exe code\tests\test_postgres_profile_scheduling.py -v
+.conda\pg-ai-profile\python.exe code\tests\experiments\test_experiment_scenarios.py -v
+.conda\pg-ai-profile\python.exe code\tests\observability\test_postgres_profile_scheduling.py -v
 ```
 
 Commit:
 
 ```powershell
-git add code/src/experiment_scenarios.py code/scripts/run_ai_operator_scenarios.py code/tests/test_experiment_scenarios.py code/scripts/postgres_ai_operator_profile.py code/scripts/README.md
+git add code/src/experiment_scenarios.py code/scripts/experiments/run_ai_operator_scenarios.py code/tests/experiments/test_experiment_scenarios.py code/scripts/profiling/postgres_ai_operator_profile.py code/scripts/README.md
 git commit -m "feat: run seeded scheduling scenarios"
 ```
 
@@ -974,7 +974,7 @@ git commit -m "feat: run seeded scheduling scenarios"
 Run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -p "test_*.py" -v
+.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -t code -p "test_*.py" -v
 .conda\pg-ai-profile\python.exe -m compileall -q code/src code/scripts
 git diff --check
 ```
@@ -1043,7 +1043,7 @@ close; do not silently sync.
 Re-run:
 
 ```powershell
-.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -p "test_*.py" -q
+.conda\pg-ai-profile\python.exe -m unittest discover -s code/tests -t code -p "test_*.py" -q
 .conda\pg-ai-profile\python.exe -m compileall -q code/src code/scripts
 git diff --check
 git status --short

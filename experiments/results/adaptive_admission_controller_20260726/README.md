@@ -20,9 +20,9 @@
 
 ```powershell
 D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
-  code\scripts\run_ai_operator_scenarios.py `
+  code\scripts\experiments\run_ai_operator_scenarios.py `
   --config experiments\results\adaptive_admission_controller_20260726\<config.json> `
-  --profiler code\scripts\postgres_ai_operator_profile.py `
+  --profiler code\scripts\profiling\postgres_ai_operator_profile.py `
   --python-executable D:\Code\ai-operator-execution-optimization\.conda\pg-ai-profile\python.exe `
   --output-dir experiments\results\adaptive_admission_controller_20260726\<run-directory> `
   --health-url http://localhost:8000/health `
