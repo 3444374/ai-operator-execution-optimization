@@ -14,11 +14,34 @@ from .contracts import ImageBatchTelemetry, ImageEmbeddingResult
 
 
 @dataclass
+class EmbeddingCapture:
+    """Collect validated per-row embeddings for a small diagnostic probe.
+
+    The normal streaming benchmark path leaves this object absent.  Capturing
+    retains full output matrices in driver memory, so callers must not use a
+    capture-enabled run for performance claims or large formal workloads.
+    """
+
+    doc_ids: list[str] = field(default_factory=list)
+    embedding_chunks: list[np.ndarray] = field(default_factory=list)
+
+    def add(self, doc_ids: tuple[str, ...], matrix: np.ndarray) -> None:
+        self.doc_ids.extend(doc_ids)
+        self.embedding_chunks.append(np.array(matrix, dtype=np.float32, copy=True))
+
+    def finish(self) -> tuple[tuple[str, ...], np.ndarray]:
+        if not self.embedding_chunks:
+            raise ValueError("embedding capture is empty")
+        return tuple(self.doc_ids), np.concatenate(self.embedding_chunks, axis=0)
+
+
+@dataclass
 class EmbeddingAudit:
     """Streaming exactly-once and embedding-semantics audit."""
 
     expected_doc_ids: frozenset[str]
     dimension: int
+    capture: EmbeddingCapture | None = None
     seen_doc_ids: set[str] = field(default_factory=set)
     rows: int = 0
     checksum: float = 0.0
@@ -51,6 +74,8 @@ class EmbeddingAudit:
             self.rounded_digest_xor ^= int.from_bytes(digest, byteorder="big")
         norm_error = np.abs(np.linalg.norm(matrix, axis=1) - 1.0)
         self.max_norm_error = max(self.max_norm_error, float(norm_error.max()))
+        if self.capture is not None:
+            self.capture.add(doc_ids, matrix)
 
     def add_result(self, result: ImageEmbeddingResult) -> None:
         self.add(result.doc_ids, result.embeddings)
@@ -260,6 +285,7 @@ def run_project_ray_pipeline(
     batch_size: int,
     max_active_batches: int,
     embedding_dimension: int = 512,
+    embedding_capture: EmbeddingCapture | None = None,
 ) -> ExecutionResult:
     """Run a bounded Daft-source -> Ray CPU -> Ray GPU streaming pipeline."""
     if min(batch_size, max_active_batches) <= 0:
@@ -274,6 +300,7 @@ def run_project_ray_pipeline(
     audit = EmbeddingAudit(
         expected_doc_ids=expected_doc_ids,
         dimension=embedding_dimension,
+        capture=embedding_capture,
     )
     pending: dict[object, float] = {}
     cpu_position = 0

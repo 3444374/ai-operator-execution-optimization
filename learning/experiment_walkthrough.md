@@ -1134,3 +1134,20 @@ H2D 占 steady wall≥20%，且 pinned/降字节/overlap 让 E2E 改善≥5%，P
 这些点都只有一次，作用是挑 formal 候选。下一步仍要在 20K unique images、至少
 60s 稳态、交错三重复下比较 Daft built-in、官方 ResNet18 parity、Ray Data native graph 和 project；并用
 GPU-resident/pinned/pageable 表示阶梯正式判 PCIe GO/NO-GO。
+
+## 2026-08-03：为什么保存 embedding 的运行不是性能 baseline
+
+Daft built-in 和 project 都输出 512 维向量，但前者由 provider 决定 processor、dtype
+和归一化，后者显式执行 CLIP projection 与 L2 normalization。两边 images/s 只有在
+输出语义足够接近时才能放到同一排名中，因此先用同一批 256 张图做逐行 parity probe。
+
+正常 runner 采用流式审计：每批 embedding 到达 driver 后只累计 exactly-once、digest、
+checksum 和 norm，矩阵随即释放。这样 formal 不会因保留 60K/120K 行输出而增加数百 MB
+driver 内存。`--save-embeddings` 只在小规模 gate 中启用可选 capture，把已经通过
+shape/finite/doc-id 校验的分块保留下来，再写为 `.npz`；默认路径不创建 capture。
+
+capture 本身会增加 driver copy 和内存，因此该次运行的 E2E、images/s、CPU/内存都不能
+进入性能排名。它只回答语义问题：离线 L2 normalization 后，同 doc-id cosine 的
+min/P1/P50/P99 是否接近 1，以及排除自身后的 Top-K 邻居是否重合。若只剩尺度差异，
+可以建立统一归一化轨道；否则 Daft built-in 保留为 separate-boundary 产品原生 baseline，
+不能为追求同一吞吐表而修改 vendor 内部执行图。

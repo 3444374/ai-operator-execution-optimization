@@ -50,6 +50,7 @@ from src.baselines.image.frameworks.daft import (  # noqa: E402
     run_daft_staged_clip_baseline,
 )
 from src.modalities.image.execution import (  # noqa: E402
+    EmbeddingCapture,
     ExecutionResult,
     build_project_ray_worker_pool,
     run_project_ray_pipeline,
@@ -311,10 +312,10 @@ def parse_args():
         "--save-embeddings",
         default="",
         help=(
-            "Diagnostic only: dump result.doc_ids + result.embeddings to a compressed "
-            ".npz, with a sidecar <path>.manifest.json (arm/model/processor/dtype/"
-            "versions). Refuses to overwrite an existing file. Does NOT change timing "
-            "or the execution path; empty default is a no-op."
+            "Diagnostic only: capture validated per-row embeddings to a compressed "
+            ".npz plus a sidecar manifest. Supported for daft_builtin_embed and "
+            "project_ray gate runs only. Capture adds driver memory/copy overhead, so "
+            "its timing is invalid for performance comparison; empty default is a no-op."
         ),
     )
     return parser.parse_args()
@@ -429,6 +430,8 @@ def git_commit() -> str:
 
 def main() -> None:
     args = parse_args()
+    embedding_target: Path | None = None
+    embedding_sidecar: Path | None = None
     provenance = image_arm_provenance(args.arm)
     try:
         require_formal_arm_allowed(
@@ -467,6 +470,28 @@ def main() -> None:
         raise SystemExit("FLOP values must be non-negative")
     if bool(args.model_flops_per_image) != bool(args.gpu_peak_flops_per_s):
         raise SystemExit("set both FLOP values or leave both at 0")
+    if args.save_embeddings:
+        if args.arm not in ("daft_builtin_embed", "project_ray"):
+            raise SystemExit(
+                "--save-embeddings supports daft_builtin_embed and project_ray only"
+            )
+        if args.phase != "gate" or args.dataset_passes != 1:
+            raise SystemExit(
+                "--save-embeddings is diagnostic-only: use --phase gate and one dataset pass"
+            )
+        if args.limit > 4096:
+            raise SystemExit("--save-embeddings is limited to at most 4096 diagnostic rows")
+        embedding_target = Path(args.save_embeddings)
+        if embedding_target.suffix != ".npz":
+            embedding_target = embedding_target.with_suffix(
+                embedding_target.suffix + ".npz"
+            )
+        embedding_sidecar = Path(str(embedding_target) + ".manifest.json")
+        if embedding_target.exists() or embedding_sidecar.exists():
+            raise SystemExit(
+                "ERROR: --save-embeddings target or sidecar already exists; "
+                f"refuse overwrite: {embedding_target}, {embedding_sidecar}"
+            )
 
     import daft
     import ray
@@ -608,6 +633,7 @@ def main() -> None:
         expected_ids: frozenset[str],
         *,
         dataset_passes: int = 1,
+        embedding_capture: EmbeddingCapture | None = None,
     ) -> ExecutionResult:
         if args.arm == "ray_data_staged":
             dataset = build_ray_data_clip_pipeline(
@@ -648,6 +674,7 @@ def main() -> None:
                 batch_size=args.batch_size,
                 expected_doc_ids=expected_ids,
                 embedding_dimension=args.embedding_dimension,
+                embedding_capture=embedding_capture,
             )
         if args.arm in ("daft_native", "daft_ray"):
             return run_daft_clip_baseline(
@@ -671,6 +698,7 @@ def main() -> None:
             batch_size=args.batch_size,
             max_active_batches=args.max_active_batches,
             embedding_dimension=args.embedding_dimension,
+            embedding_capture=embedding_capture,
         )
 
     execute(warmup_count, warmup_ids)
@@ -701,38 +729,52 @@ def main() -> None:
         # its worker/model startup is already included in result.total_s and
         # first_output_s rather than this explicit setup field.
         worker_setup_s = 0.0
+    embedding_capture = EmbeddingCapture() if args.save_embeddings else None
     result = execute(
         args.limit,
         formal_ids,
         dataset_passes=args.dataset_passes,
+        embedding_capture=embedding_capture,
     )
     if args.save_embeddings:
-        # Diagnostic only: dump per-row embeddings for offline parity probes.
-        # Pure side-effect (file writes); does NOT alter timing or execution path.
-        import json as _json
-        import os as _os
-        if _os.path.exists(args.save_embeddings):
+        # Diagnostic only: capture happens while validated batches are consumed.
+        # The default path has no capture; this run's timing is not performance-valid.
+        assert embedding_capture is not None
+        assert embedding_target is not None
+        assert embedding_sidecar is not None
+        _doc_ids, _emb_arr = embedding_capture.finish()
+        if embedding_target.exists() or embedding_sidecar.exists():
             raise SystemExit(
-                f"ERROR: --save-embeddings target already exists; refuse overwrite: "
-                f"{args.save_embeddings}"
+                "ERROR: --save-embeddings target or sidecar already exists; "
+                f"refuse overwrite: {embedding_target}, {embedding_sidecar}"
             )
+        embedding_target.parent.mkdir(parents=True, exist_ok=True)
         import numpy as _np
-        _emb_arr = _np.asarray(result.embeddings)
         _np.savez_compressed(
-            args.save_embeddings,
+            embedding_target,
             embeddings=_emb_arr,
-            doc_ids=_np.asarray(result.doc_ids, dtype=object),
+            doc_ids=_np.asarray(_doc_ids, dtype=str),
         )
         _manifest = {
             "arm": args.arm,
             "phase": args.phase,
             "repeat_index": args.repeat_index,
             "model_revision": args.model,
-            "processor_revision": processor,
-            "dtype": args.dtype,
+            "processor_revision": (
+                "provider_resolved_from_model"
+                if args.arm == "daft_builtin_embed"
+                else processor
+            ),
+            "dtype": (
+                "provider_default"
+                if args.arm == "daft_builtin_embed"
+                else args.dtype
+            ),
             "embedding_dimension": args.embedding_dimension,
             "rows": int(_emb_arr.shape[0]),
             "dimension": int(_emb_arr.shape[1]) if _emb_arr.ndim == 2 else None,
+            "diagnostic_capture_enabled": True,
+            "timing_valid_for_performance": False,
             "note": (
                 "embeddings are the arm's raw output; project_ray L2-normalizes, "
                 "daft_builtin_embed may not -- a parity probe must L2-normalize offline "
@@ -754,8 +796,10 @@ def main() -> None:
             )
         except Exception:  # noqa: BLE001
             pass
-        with open(args.save_embeddings + ".manifest.json", "w") as _f:
-            _json.dump(_manifest, _f, indent=2)
+        embedding_sidecar.write_text(
+            json.dumps(_manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     gpu_metrics = gpu_sampler.stop()
     cpu_metrics = cpu_sampler.stop()
     if worker_pool is not None:

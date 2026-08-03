@@ -13,7 +13,11 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.modalities.image.execution import EmbeddingAudit, ExecutionResult
+from src.modalities.image.execution import (
+    EmbeddingAudit,
+    EmbeddingCapture,
+    ExecutionResult,
+)
 from src.baselines.image.frameworks.ray_data import build_ray_data_clip_pipeline
 
 
@@ -44,6 +48,35 @@ class EmbeddingAuditTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "exactly-once"):
             audit.finish()
+
+    def test_optional_capture_retains_validated_chunks(self):
+        capture = EmbeddingCapture()
+        audit = EmbeddingAudit(
+            frozenset({"1", "2"}),
+            dimension=2,
+            capture=capture,
+        )
+        first = np.asarray([[1.0, 0.0]], dtype=np.float32)
+        audit.add(("1",), first)
+        first[0, 0] = 9.0
+        audit.add(("2",), np.asarray([[0.0, 1.0]], dtype=np.float32))
+
+        audit.finish()
+        doc_ids, embeddings = capture.finish()
+
+        self.assertEqual(doc_ids, ("1", "2"))
+        np.testing.assert_array_equal(
+            embeddings,
+            np.asarray([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32),
+        )
+
+    def test_default_audit_does_not_retain_embeddings(self):
+        audit = EmbeddingAudit(frozenset({"1"}), dimension=2)
+        audit.add(("1",), np.asarray([[1.0, 0.0]], dtype=np.float32))
+
+        audit.finish()
+
+        self.assertIsNone(audit.capture)
 
 
 class ExecutionResultTest(unittest.TestCase):

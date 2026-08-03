@@ -11,6 +11,10 @@
   bounded control、Daft/Ray Data/OceanBase 原生 baseline 和项目方法，并解释
   Chat/Completions 分轨与 64→512→4096 复测流程。
 
+图像木桶、H2D 与 embedding parity 的当前讲解统一追加在
+[`experiment_walkthrough.md`](experiment_walkthrough.md) 的 2026-08-02/03 小节；其中
+明确区分正常流式性能运行和仅用于语义判定的 capture 诊断运行。
+
 ## 2026-07-30 为什么“短长都选 65K”还不能直接判动态无用
 
 远端把三次 formal 的 E2E tokens/s 做算术平均，得到 short/long 都是

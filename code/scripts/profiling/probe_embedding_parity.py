@@ -56,9 +56,9 @@ def parse_args():
 
 
 def load_arm(path):
-    z = np.load(path, allow_pickle=True)
-    emb = np.asarray(z["embeddings"])
-    ids = [str(x) for x in z["doc_ids"]]
+    with np.load(path, allow_pickle=False) as z:
+        emb = np.asarray(z["embeddings"])
+        ids = [str(x) for x in z["doc_ids"]]
     manifest = {}
     sidecar = path + ".manifest.json"
     if os.path.exists(sidecar):

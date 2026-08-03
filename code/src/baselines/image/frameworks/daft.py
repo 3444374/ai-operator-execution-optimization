@@ -6,7 +6,11 @@ import time
 
 import numpy as np
 
-from src.modalities.image.execution import EmbeddingAudit, ExecutionResult
+from src.modalities.image.execution import (
+    EmbeddingAudit,
+    EmbeddingCapture,
+    ExecutionResult,
+)
 
 
 def run_daft_builtin_image_embedding(
@@ -16,6 +20,7 @@ def run_daft_builtin_image_embedding(
     batch_size: int,
     expected_doc_ids: frozenset[str],
     embedding_dimension: int = 512,
+    embedding_capture: EmbeddingCapture | None = None,
 ) -> ExecutionResult:
     """Run Daft's built-in decode and ``embed_image`` execution path.
 
@@ -34,6 +39,7 @@ def run_daft_builtin_image_embedding(
     audit = EmbeddingAudit(
         expected_doc_ids=expected_doc_ids,
         dimension=embedding_dimension,
+        capture=embedding_capture,
     )
     query = source_df.with_column(
         "_native_image",

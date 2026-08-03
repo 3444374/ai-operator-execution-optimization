@@ -1,12 +1,53 @@
 # 实验 Baseline 参考矩阵
 
-整理日期：2026-07-16；文献、官方 benchmark 与指标合同复审：2026-08-02
+整理日期：2026-07-16；文献、官方 benchmark 与指标合同复审：2026-08-03
 
 > **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
 用途：正式实验设计时，从正式论文、官方系统和可审计工程默认中提取 baseline，避免使用 strawman 对照
 来源：`research/ai_operator_literature_inventory.md` 与 `research/top15_ranked_papers.md`
 
 > **2026-07-16 方向更新**：vLLM 已定位为部署平台（非竞争对手），其 continuous batching 是 S 级 baseline——课题研究上游调度优化，不修改 vLLM 内部。新增 baseline 候选：Ray 2.49+ PrefixCacheAffinityRouter、Ray Serve batch_size_fn 等。详细背景见 `research/knowledge_hub.md`。
+
+---
+
+## 0. 统一入口：三类算子、四层对照、当前状态
+
+本文件是 baseline 选择、证据分级和指标合同的**唯一总入口**。为避免把证据综述、
+执行命令和实验结果复制成多份，其他文件只承担专项职责：
+
+| 专项文件 | 唯一职责 |
+|---|---|
+| `text_native_baseline_rerun_20260802.md` | AI_COMPLETE 的 Chat/Completions 分轨、validity→calibration→formal 执行合同 |
+| `image_clip_workload_lock_20260731.md` | AI_EMBED/AI_CLASSIFY 的 workload、语义、质量和图像执行合同 |
+| `experiment_status_and_gaps.md` | 当前完成度、阻断项和下一步，不复制 baseline 原理 |
+| `../../research/evaluation_metrics_survey_20260731.md` | 厂商/论文指标的来源证据，不承担运行职责 |
+| `../results/` 与 `../../motivation/results/` | 原始数据、七步分析和结论的权威来源 |
+
+三类算子统一使用四层对照，不能只列同机 runtime，也不能把外部厂商 raw time 与本机
+结果直接混排：
+
+| 算子 | 服务/计算上限 | 同机原生框架 | 产品/公开 benchmark | 项目主对照 |
+|---|---|---|---|---|
+| **AI_COMPLETE** | vLLM Bench；bounded Chat/Completions 为 direct control | Daft `prompt()` Native/Ray；Ray Data HTTP Processor | OceanBase `AI_COMPLETE`；PolarDB/Snowflake/BigQuery capability；Cortex AISQL、LOTUS、SemBench | calibration 后冻结的 static active-work/actor/flush；dynamic 只与其比较 |
+| **AI_EMBED** | direct embedding service；CLIP R0/vLLM pooling | Daft `embed_image`；Ray Data native graph | PolarDB/Daft document/image embedding；公开检索 benchmark | 冻结 frame/work budget、batch、actor shape 的 project static |
+| **AI_CLASSIFY** | GPU-resident/direct classifier | Daft `classify_image`；Ray Data native graph；可运行时 Spark | 官方 803,580-row ImageNet/ResNet18；Snowflake/BigQuery `AI_CLASSIFY`；SemBench | 冻结 project static；adaptive 报相对 static 与 oracle regret |
+
+当前执行状态只作导航，数字仍以结果目录为准：
+
+| 轨道 | 当前状态 | 下一门禁 |
+|---|---|---|
+| AI_COMPLETE service/direct | 历史 gate 与 feeding 证据存在；新 provenance formal 待重跑 | 64-row validity 后独立 calibration |
+| AI_COMPLETE Daft/Ray Data native | 功能/计数 gate 已有；旧短规模不进正式排名 | 512 calibration → 4096+ held-out formal（单 run 至少 60s） |
+| OceanBase `AI_COMPLETE` | 普通 AutoDL 容器 observer init `-9100`，`blocked` | privileged/seccomp-unconfined 容器或 VM |
+| Daft built-in image embedding | 256-row 远端 gate 已通过；语义 parity 尚未闭合 | 逐行 embedding parity → calibration → formal |
+| Ray Data native image graph | 256-row resource/deadlock gate 已通过 | 独立 batch/actor calibration → formal |
+| 官方 ImageNet/ResNet18 parity | upstream commit、文件哈希和适配白名单已冻结 | 双 4090 原生脚本 gate |
+| project image static | 60K unique 数据和 2-pass formal 配置已准备 | 先过语义/原生 baseline 门禁，再运行交错 formal |
+| Snowflake/BigQuery/PolarDB/学术系统 | external/capability evidence | 仅在语义、质量、模型和计时边界可对齐时升级为数字比较 |
+
+正式报告必须分别给出：① 外部公开 benchmark 锚点；② 同机原生系统排名；③ 数据库
+AI 算子的 quality-cost-time；④ project frozen-static/dynamic 消融。只给 tokens/s 或
+images/s 不能构成完整的数据库 AI 算子评价。
 
 ---
 

@@ -3669,3 +3669,11 @@
   fail-closed 正确拒绝，正式运行不得复用该旧本地 gate。
 - 将代码架构重构快进合入并推送 `main`；根 `README.md` 同步当前代码分层、baseline
   身份、已完成 gate、当前证据边界和近期执行顺序，移除重构前扁平脚本树与过期目标。
+## 2026-08-03 baseline 总入口收敛与 embedding parity 诊断修复
+
+- 将 `experiments/plans/baseline_reference.md` 收敛为 AI_COMPLETE、AI_EMBED、
+  AI_CLASSIFY 三类算子的统一 baseline/benchmark 入口；专项文件继续分别承担文本执行、
+  图像 workload、状态审计和厂商/论文证据，避免物理合并造成重复与过期。
+- 修复 `282e09f` 中 `--save-embeddings` 误读 `ExecutionResult.embeddings` 的问题：
+  默认流式路径不保留矩阵，小规模 gate 仅通过可选 `EmbeddingCapture` 捕获已验证输出；
+  capture-enabled timing 明确禁止用于性能结论。

@@ -2,6 +2,10 @@
 
 ## 2026-07-29 baseline 文献升级
 
+Baseline 的统一总入口是 [`baseline_reference.md`](baseline_reference.md)：先从其 §0
+确认 AI_COMPLETE / AI_EMBED / AI_CLASSIFY 的四层对照与当前门禁，再进入下面的专项
+执行合同。专项文件不得另建一份 baseline 总表或复制容易过期的状态数字。
+
 - serving ceiling：vLLM Bench；
 - 无 Daft/Ray 强上游：现有数据库 AI 算子 + bounded HTTP；
 - 官方 runtime：Daft `prompt()` Native/Ray + Ray Data HTTP Processor；
