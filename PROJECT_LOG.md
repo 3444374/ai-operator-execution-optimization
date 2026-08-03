@@ -3750,3 +3750,7 @@ formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④
 - Daft built-in 仍使用官方 `decode_image→embed_image` 原生图；adapter 仅在消费官方
   embedding 后执行计时内 CPU L2 normalization，不注入项目 batching、credit、router
   或 actor 调度。历史 raw-output Daft 数据只保留作 batch screening。
+- normalized parity 远端门禁在 `6f0954b` 上通过：Daft/project 均为单位 norm、
+  exactly-once，cosine P1=0.999800、min=0.999727、non-self overlap@10=0.9949。
+- 新增 Ray Data 原生 batch 上界复核模板：固定 cpu8/gpu2/source4，只扫官方
+  batch16/64/256/512，25K unique、1+2 交错且 formal≥60s；512 未改善 3% 即停止。

@@ -496,6 +496,23 @@ Daft fused、Daft staged、Ray Data staged 分别独立校准，再在相同物�
 `experiments/plans/image_clip_workload_lock_20260731.md` §10 维护；本节只负责服务器
 启动、监控和恢复命令。
 
+Ray Data 初始 5K screening 找到 `cpu_workers=8, batch=64` 后，使用下面的原生图交叉
+复核模板检查 batch 上界及参数交互：
+
+```bash
+OUT=/root/autodl-tmp/experiment-artifacts/image_ray_data_native_crosscheck_25k_$(date +%Y%m%d_%H%M%S)
+PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
+nohup "$PY" code/scripts/experiments/run_image_clip_matrix.py \
+  --config deploy/autodl/image_ray_data_native_crosscheck.example.json \
+  --image-runner code/scripts/experiments/run_image_clip_e2e.py \
+  --python-executable "$PY" --output-dir "$OUT" \
+  >"$OUT.launcher.log" 2>&1 &
+```
+
+该模板只使用 Ray Data 官方 `read_sql→map_batches→map_batches` 图及公开 batch/concurrency
+参数，不使用项目 credit、router、inflight 或 `ray.wait` 提交循环。batch512 相对 batch64
+formal 中位数改善不足 3% 时冻结平台点并停止；只有改善达到 3% 才允许继续测 1024。
+
 ## 6. 注意事项（坑汇总）
 
 | 坑 | 表现 | 解法 |
