@@ -3657,3 +3657,15 @@
 - 目录迁移后依赖无关测试为 586/586 通过；完整 607 项中的其余环境用例需要远端
   Daft、psycopg 和 Ray
   权限环境。
+
+## 2026-08-03 架构重构远端门禁与根入口同步
+
+- 在独立 AutoDL worktree `6380a96` 完成完整依赖测试，622/622 通过；主仓库中的
+  未跟踪历史实验数据未清理、未覆盖。
+- 双 4090 文本链路用匹配的 512 行 immutable manifest 完成 Daft→Ray actor→双 vLLM
+  smoke；图像 Daft staged 与 Ray Data staged 均完成 256/256 exactly-once gate，输出
+  digest 一致。上述均为可运行性/正确性证据，不进入正式性能排名。
+- 发现服务器旧 `rc1_dataorg_2ep_smoke.json` 声明 512 行却引用 2048 行 manifest；
+  fail-closed 正确拒绝，正式运行不得复用该旧本地 gate。
+- 将代码架构重构快进合入并推送 `main`；根 `README.md` 同步当前代码分层、baseline
+  身份、已完成 gate、当前证据边界和近期执行顺序，移除重构前扁平脚本树与过期目标。

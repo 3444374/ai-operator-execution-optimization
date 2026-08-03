@@ -6,8 +6,7 @@ remaining work are summarized in `code/INFRA_STATUS.md`.
 全项目代码分层、文本/图像模态边界与分阶段迁移计划见
 [`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、
 文本/图像模态隔离、baseline 分层、旧兼容入口清理，以及 metrics、model backend、
-shared-vLLM 三个大文件的语义拆分，以及 scripts/tests 镜像整理已在
-`codex/code-architecture-refactor` 分支落地。
+shared-vLLM 三个大文件的语义拆分，以及 scripts/tests 镜像整理已合入 `main`。
 
 本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `feasibility/benchmarks/` 或 `motivation/benchmarks/`。
 
@@ -40,7 +39,7 @@ code/
 ├── scripts/
 │   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner
 │   └── profiling|experiments|analysis/ ← 画像、正式编排、离线分析
-├── tests/                        ← 607 个 unittest；镜像 src/baseline/experiment 域
+├── tests/                        ← 按生产域镜像；远端完整依赖环境当前 622 个 unittest
 ├── configs/                      ← vendor baseline pin 与可复现实验配置
 └── requirements.txt
 ```
