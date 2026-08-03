@@ -1151,3 +1151,11 @@ capture 本身会增加 driver copy 和内存，因此该次运行的 E2E、imag
 min/P1/P50/P99 是否接近 1，以及排除自身后的 Top-K 邻居是否重合。若只剩尺度差异，
 可以建立统一归一化轨道；否则 Daft built-in 保留为 separate-boundary 产品原生 baseline，
 不能为追求同一吞吐表而修改 vendor 内部执行图。
+
+当前统一轨道通过 `--embedding-output-contract l2_normalized` 显式启用。项目与 Ray Data
+本来就在模型 actor 内归一化；Daft built-in 保留官方 `decode_image→embed_image` 执行图，
+只在 adapter 消费官方输出后、写入共同 audit 前执行 CPU L2 normalization，并把这段成本
+计入该 arm 的 operator E2E。这个 adapter 只统一输出语义，不控制 Daft 的 batch、actor、
+backpressure 或调度，因此不会把项目调度机制注入原生 baseline。CSV/manifest 必须同时
+记录 requested/effective contract、normalization owner 和是否位于计时边界；未记录这些
+字段的历史 Daft run 只能用于 batch screening，不能用于统一语义正式排名。

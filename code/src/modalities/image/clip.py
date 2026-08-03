@@ -73,6 +73,19 @@ def l2_normalize_embeddings(features, *, epsilon: float = 1e-12):
     return features / norms
 
 
+def l2_normalize_numpy_embeddings(
+    features: np.ndarray,
+    *,
+    epsilon: float = 1e-12,
+) -> np.ndarray:
+    """Return row-wise L2-normalized float32 embeddings for CPU adapters."""
+    matrix = np.asarray(features, dtype=np.float32)
+    if matrix.ndim != 2:
+        raise ValueError("embedding matrix must be two-dimensional")
+    norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+    return matrix / np.maximum(norms, epsilon)
+
+
 class ClipImagePreprocessor:
     """CPU-only encoded-image to contiguous CLIP pixel tensor adapter."""
 

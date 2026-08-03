@@ -318,6 +318,16 @@ def parse_args():
             "its timing is invalid for performance comparison; empty default is a no-op."
         ),
     )
+    parser.add_argument(
+        "--embedding-output-contract",
+        choices=("arm_default", "l2_normalized"),
+        default="arm_default",
+        help=(
+            "Output contract inside the timed operator boundary. arm_default preserves "
+            "each implementation's native behavior; l2_normalized charges any required "
+            "normalization to that arm and is required for cross-system formal ranking."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -675,6 +685,7 @@ def main() -> None:
                 expected_doc_ids=expected_ids,
                 embedding_dimension=args.embedding_dimension,
                 embedding_capture=embedding_capture,
+                normalize_output=args.embedding_output_contract == "l2_normalized",
             )
         if args.arm in ("daft_native", "daft_ray"):
             return run_daft_clip_baseline(
@@ -816,6 +827,14 @@ def main() -> None:
             / (operator_e2e_s * args.gpu_workers * args.gpu_peak_flops_per_s)
         )
     project_metrics = args.arm == "project_ray"
+    output_is_normalized = (
+        args.embedding_output_contract == "l2_normalized"
+        or args.arm != "daft_builtin_embed"
+    )
+    output_normalization_in_timed_boundary = (
+        args.arm != "daft_builtin_embed"
+        or args.embedding_output_contract == "l2_normalized"
+    )
     batch_completion_p50 = percentile(result.batch_completion_wall_s, 0.50)
     batch_completion_p95 = percentile(result.batch_completion_wall_s, 0.95)
     batch_completion_p99 = percentile(result.batch_completion_wall_s, 0.99)
@@ -963,6 +982,20 @@ def main() -> None:
         ),
         "dtype": "provider_default" if args.arm == "daft_builtin_embed" else args.dtype,
         "embedding_dimension": args.embedding_dimension,
+        "embedding_output_contract_requested": args.embedding_output_contract,
+        "embedding_output_contract_effective": (
+            "l2_normalized" if output_is_normalized else "provider_raw"
+        ),
+        "embedding_normalization_in_timed_boundary": (
+            output_normalization_in_timed_boundary
+        ),
+        "embedding_normalization_owner": (
+            "baseline_adapter"
+            if args.arm == "daft_builtin_embed" and output_is_normalized
+            else "model_actor"
+            if output_is_normalized
+            else "provider_native_output"
+        ),
         "daft_version": daft.__version__,
         "ray_version": ray.__version__,
         "torch_version": torch.__version__,
@@ -976,7 +1009,7 @@ def main() -> None:
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 10,
+        "schema_version": 11,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,

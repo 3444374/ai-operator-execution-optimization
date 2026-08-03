@@ -3716,7 +3716,6 @@
   在第 0 个 run 缺少 `DATABASE_URL`；补充唯一输出目录、监控、resume 和 0-run 清理
   边界。科学合同在 image workload §10，部署文档只保留可执行命令。
 
-
 ## 2026-08-03 图像原生 baseline 独立校准完成（campaign §10 step 3）
 
 campaign §10 五步：① project static ✅ → ② normalized output contract/官方 vendor-code
@@ -3742,3 +3741,12 @@ formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④
 报告与派生摘要：`motivation/results/gpu/daft_builtin_calibration_20260803/`、
 `motivation/results/gpu/ray_data_calibration_20260803/`（七步 README + summary + raw runs.csv）。
 原始 per-run manifest + calibration.log 保留在 AutoDL experiment-artifacts。
+
+## 2026-08-03 图像 embedding 统一输出合同
+
+- runner schema 升至 v11，新增 `arm_default/l2_normalized` 输出合同；正式跨系统排名必须
+  显式使用 `l2_normalized`，并记录 requested/effective contract、normalization owner
+  与计时归属。
+- Daft built-in 仍使用官方 `decode_image→embed_image` 原生图；adapter 仅在消费官方
+  embedding 后执行计时内 CPU L2 normalization，不注入项目 batching、credit、router
+  或 actor 调度。历史 raw-output Daft 数据只保留作 batch screening。

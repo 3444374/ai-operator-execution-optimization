@@ -231,6 +231,11 @@ CUDA_VISIBLE_DEVICES=0 /root/autodl-tmp/venvs/vllm-4090/bin/python \
 >
 > formal baseline 排名只用 vendor-native 两臂 + `project_ray`；diagnostic 三臂仅供 `--phase gate` 或显式加 flag 的 diagnostic formal。下方 daft_native/ray/staged 命令已补 flag，但它们的输出**不进入** baseline 排名。
 
+正式 AI_EMBED 横向排名还必须给 `daft_builtin_embed`、`ray_data_staged` 和
+`project_ray` 统一传入 `--embedding-output-contract l2_normalized`。该参数不改变
+Daft/Ray Data 的 batching、backpressure 或调度；它只在各 arm 的计时边界内落实共同
+输出合同。`arm_default` 仅用于 vendor-raw 诊断，不能进入统一语义排名。
+
 各臂必须串行运行，且运行前确认没有 vLLM/其他 GPU 任务。不要用一个统一的
 `--gpu-workers/--cpu-workers` 循环跑完三臂：Native 单卡和 Ray 双卡是两个独立
 track，而且 baseline actor shape 必须先校准。当前 5000 图 formal 冻结配置为：

@@ -18,6 +18,7 @@ from src.modalities.image.execution import (
     EmbeddingCapture,
     ExecutionResult,
 )
+from src.modalities.image.clip import l2_normalize_numpy_embeddings
 from src.baselines.image.frameworks.ray_data import build_ray_data_clip_pipeline
 
 
@@ -77,6 +78,24 @@ class EmbeddingAuditTest(unittest.TestCase):
         audit.finish()
 
         self.assertIsNone(audit.capture)
+
+
+class EmbeddingNormalizationTest(unittest.TestCase):
+    def test_numpy_normalization_preserves_rows_and_uses_float32(self):
+        matrix = np.asarray([[3.0, 4.0], [0.0, 2.0]], dtype=np.float64)
+
+        normalized = l2_normalize_numpy_embeddings(matrix)
+
+        self.assertEqual(normalized.dtype, np.float32)
+        np.testing.assert_allclose(
+            normalized,
+            np.asarray([[0.6, 0.8], [0.0, 1.0]], dtype=np.float32),
+            rtol=1e-6,
+        )
+
+    def test_numpy_normalization_rejects_non_matrix(self):
+        with self.assertRaisesRegex(ValueError, "two-dimensional"):
+            l2_normalize_numpy_embeddings(np.asarray([1.0, 2.0]))
 
 
 class ExecutionResultTest(unittest.TestCase):

@@ -68,12 +68,14 @@ code/scripts/experiments/run_ai_operator_scenarios.py
 图像正式链路另有两个入口：
 
 - `experiments/run_image_clip_e2e.py`：单个 vendor-native/diagnostic/project arm 的 operator-E2E、
-  资源、正确性与 schema v10 原始记录；v10 在 unique/pass/processed rows 之外记录
+  资源、正确性与 schema v11 原始记录；v11 在 unique/pass/processed rows 之外记录
   implementation provenance、scheduler owner 和 formal eligibility。Daft 内置
   `embed_image` 与 Ray Data native graph 可作 baseline；项目自写 Daft UDF formal
   默认拒绝，不能冒充官方实现；
   Daft built-in 只使用公开原生 `batch_size`，GPU 并发由 provider/Daft 推断，dtype
-  记录为 `provider_default`，不会伪装成命令行 `--dtype` 已生效；
+  记录为 `provider_default`，不会伪装成命令行 `--dtype` 已生效。正式跨系统排名必须传
+  `--embedding-output-contract l2_normalized`；Daft 的 adapter-side L2 成本位于计时边界
+  内，CSV 同时记录 requested/effective contract、归一化归属和是否计时；
 - `../configs/image_vendor_baselines.json`：固定 Daft 官方 image-classification
   benchmark 的 commit、入口 SHA256 与允许适配白名单；vendor-code parity 不通过
   项目 runner 重写其 batching、actor 或 backpressure；

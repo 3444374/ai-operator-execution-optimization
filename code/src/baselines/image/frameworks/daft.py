@@ -21,6 +21,7 @@ def run_daft_builtin_image_embedding(
     expected_doc_ids: frozenset[str],
     embedding_dimension: int = 512,
     embedding_capture: EmbeddingCapture | None = None,
+    normalize_output: bool = False,
 ) -> ExecutionResult:
     """Run Daft's built-in decode and ``embed_image`` execution path.
 
@@ -28,7 +29,8 @@ def run_daft_builtin_image_embedding(
     model-worker scheduling. ``batch_size`` is the documented native AI
     Function option rather than a project-side admission window. This adapter
     only supplies the PostgreSQL-backed image column and applies the common
-    output audit.
+    output audit. When ``normalize_output`` is enabled, row-wise L2
+    normalization happens before the audit and inside the timed query boundary.
     """
     if batch_size <= 0:
         raise ValueError("batch size must be positive")
@@ -59,6 +61,10 @@ def run_daft_builtin_image_embedding(
     for record_batch in query.to_arrow_iter(results_buffer_size=2):
         doc_ids = tuple(str(item.as_py()) for item in record_batch["doc_id"])
         embeddings = np.asarray(record_batch["embedding"].to_pylist(), dtype=np.float32)
+        if normalize_output:
+            from src.modalities.image.clip import l2_normalize_numpy_embeddings
+
+            embeddings = l2_normalize_numpy_embeddings(embeddings)
         audit.add(doc_ids, embeddings)
         if first_output_s is None:
             first_output_s = time.perf_counter() - started
