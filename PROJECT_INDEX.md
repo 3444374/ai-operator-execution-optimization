@@ -178,7 +178,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/data/import_coco_images.py` | 从目录或 ZIP 流式导入 COCO 图像 BYTEA，保留 source doc_id，单事务替换指定 workload | 正式规模避免完整解压副本；失败回滚，不覆盖无关 workload |
 | `code/scripts/profiling/profile_clip_transfer_ceiling.py` | CLIP batch16/64/256 的 R0 GPU-resident、R1 pinned FP16、R2 pageable FP32 逐 repeat CUDA-event/wall 诊断 | 分离 compute、H2D 与 ownership/dtype 边界；属于 synthetic ceiling，不作系统排名 |
 | `deploy/autodl/image_project_static_formal.example.json` | 60K unique × 2 logical passes 下 project 8/16 preprocess actors × active16/32 的交错 1+3 矩阵 | 先冻结项目静态点；分开审计 unique/pass/processed rows，任何 formal 查询阶段不足 60 秒则 fail closed |
-| `deploy/autodl/image_ray_data_native_crosscheck.example.json` | Ray Data 原生图在 cpu8 下对 batch16/64/256/512 做 25K、交错 1+2 长稳态边界复核 | 只调官方 batch 参数；512 不比 64 改善 3% 即停止，不继续扫描 1024 |
+| `deploy/autodl/image_ray_data_native_crosscheck.example.json` | Ray Data 原生图在 cpu8 下对 batch16/64/256/512 做 60K unique×2 passes、交错 1+2 长稳态边界复核 | 只调官方 batch 参数；512 不比 64 改善 3% 即停止，不继续扫描 1024 |
 | `deploy/autodl/image_documents_workload_key.sql` | 把 legacy `PRIMARY KEY(doc_id)` 原子迁移为 `(workload_name, doc_id)`，重复执行安全、未知 schema 拒绝 | 允许 COCO train/val 保留重叠 source ID；导入、source、correctness/writeback 统一 workload-scoped identity |
 | `code/src/modalities/image/resource_budget.py` | 图像 Ray graph 的 source/preprocess/model CPU slot 精确账本与 affinity 超卖门禁 | 新增或调整 Daft/Ray Data/project actor/source 形状时复用；禁止只给常驻 actor CPU 而饿死 SQL reader |
 | `code/src/baselines/image/provenance.py` | 图像 arm 的 upstream、实现来源、scheduler owner、自定义调度与 formal eligibility 合同 | 新增 baseline arm 或解释结果前读取；未登记来源的 arm fail closed |

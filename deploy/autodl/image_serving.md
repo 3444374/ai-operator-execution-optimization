@@ -500,7 +500,7 @@ Ray Data 初始 5K screening 找到 `cpu_workers=8, batch=64` 后，使用下面
 复核模板检查 batch 上界及参数交互：
 
 ```bash
-OUT=/root/autodl-tmp/experiment-artifacts/image_ray_data_native_crosscheck_25k_$(date +%Y%m%d_%H%M%S)
+OUT=/root/autodl-tmp/experiment-artifacts/image_ray_data_native_crosscheck_60k_x2_$(date +%Y%m%d_%H%M%S)
 PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
 nohup "$PY" code/scripts/experiments/run_image_clip_matrix.py \
   --config deploy/autodl/image_ray_data_native_crosscheck.example.json \
@@ -510,8 +510,10 @@ nohup "$PY" code/scripts/experiments/run_image_clip_matrix.py \
 ```
 
 该模板只使用 Ray Data 官方 `read_sql→map_batches→map_batches` 图及公开 batch/concurrency
-参数，不使用项目 credit、router、inflight 或 `ray.wait` 提交循环。batch512 相对 batch64
-formal 中位数改善不足 3% 时冻结平台点并停止；只有改善达到 3% 才允许继续测 1024。
+参数，不使用项目 credit、router、inflight 或 `ray.wait` 提交循环。25K×1 预跑因规模
+摊薄启动成本后 formal 只有约 30 秒，被 60 秒门禁正确拒绝；正式模板因此使用 60K
+unique×2 logical passes。batch512 相对 batch64 formal 中位数改善不足 3% 时冻结平台点并
+停止；只有改善达到 3% 才允许继续测 1024。
 
 ## 6. 注意事项（坑汇总）
 

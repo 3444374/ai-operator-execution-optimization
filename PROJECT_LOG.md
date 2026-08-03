@@ -3753,4 +3753,5 @@ formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④
 - normalized parity 远端门禁在 `6f0954b` 上通过：Daft/project 均为单位 norm、
   exactly-once，cosine P1=0.999800、min=0.999727、non-self overlap@10=0.9949。
 - 新增 Ray Data 原生 batch 上界复核模板：固定 cpu8/gpu2/source4，只扫官方
-  batch16/64/256/512，25K unique、1+2 交错且 formal≥60s；512 未改善 3% 即停止。
+  batch16/64/256/512。25K×1 预跑 formal 仅约 30 秒，被 60 秒门禁拒绝；正式模板改为
+  60K unique×2 passes、1+2 交错；512 未改善 3% 即停止。
