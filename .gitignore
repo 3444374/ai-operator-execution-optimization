@@ -48,3 +48,6 @@ skills-lock.json
 *.pdf
 validation/results/fake_ai_embed_outputs/
 validation/results/fake_ai_embed_outputs_smoke/
+
+# Codex checkpoint/snapshot working artifacts (not for commit).
+experiments/results/checkpoint_*/
