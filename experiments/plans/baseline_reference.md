@@ -22,6 +22,7 @@
 | `experiment_status_and_gaps.md` | 当前完成度、阻断项和下一步，不复制 baseline 原理 |
 | `../../research/evaluation_metrics_survey_20260731.md` | 厂商/论文指标的来源证据，不承担运行职责 |
 | `../results/` 与 `../../motivation/results/` | 原始数据、七步分析和结论的权威来源 |
+| `archive/database_ai_operator_baseline_matrix_20260729.md` | 2026-07-29 文本预注册与执行历史，仅供追溯，不指导新实验 |
 
 三类算子统一使用四层对照，不能只列同机 runtime，也不能把外部厂商 raw time 与本机
 结果直接混排：
@@ -160,7 +161,7 @@ capability gate 的 OceanBase `AI_COMPLETE` 才可进入原生系统排名。执
 带日期的结果报告并标成历史证据；当前入口不得继续写成“下一步”或“当前默认”。
 
 `baseline_reference.md` 负责来源、分层、准入与指标合同；
-`database_ai_operator_baseline_matrix_20260729.md` 是文本轨道预注册和历史执行记录；
+`archive/database_ai_operator_baseline_matrix_20260729.md` 是文本轨道预注册和历史记录；
 `image_clip_workload_lock_20260731.md` 是当前图像执行合同；各 `results/README.md` 和
 CSV 才是实验数字的权威来源。三者发生冲突时，不能自行拼接数字，必须回到结果目录。
 
@@ -199,7 +200,8 @@ CSV 才是实验数字的权威来源。三者发生冲突时，不能自行拼�
 
 两条轨道分别使用同一 request manifest、同一双 endpoint、同一输出上限和
 独立 calibration。不得用 Completions 数值直接声称超过 Chat baseline。
-详细预注册见 `database_ai_operator_baseline_matrix_20260729.md`。
+当前文本复测合同见 `text_native_baseline_rerun_20260802.md`；旧预注册仅在
+`archive/database_ai_operator_baseline_matrix_20260729.md` 保留。
 
 ### 图像 AI_EMBED / AI_CLASSIFY 的 baseline 层级
 

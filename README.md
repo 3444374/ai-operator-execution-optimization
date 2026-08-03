@@ -24,6 +24,11 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
 准备、每次开机恢复、服务门禁、64 行 gate、正式后台运行和 `--resume`
 恢复均以该 runbook 为单一来源，不从历史聊天重新推断。
 
+Baseline / benchmark 不再从多份旧计划拼接：统一从
+`experiments/plans/baseline_reference.md` 选择比较层级、原生 arm、证据等级和指标；
+再进入文本或图像专项执行合同。`experiments/plans/archive/` 与 `code_doc/` 只用于追溯
+历史设计，不能覆盖当前门禁和实验顺序。
+
 ## 目录结构
 
 ```text
@@ -150,10 +155,11 @@ AutoDL 双 GPU 远端实验的新对话入口固定为：
   PCIe/H2D 是主瓶颈。项目静态 staged 路径优于项目自写 fused UDF 只构成动机证据。
 - **原生 baseline 身份已收紧**：图像 Daft built-in、Ray Data native graph 和固定
   upstream vendor code 才进入正式 baseline；项目自写 Daft fused/staged UDF 只作诊断。
-  256 图资源/正确性 gate 已通过，独立 calibration 与正式重复尚未完成。
-- **可运行性验证**：架构重构在 AutoDL 完整依赖环境通过 622/622 单测；文本 512 行
-  双 endpoint 与图像 256 行 Daft/Ray Data correctness gate 均跑通。它们是 smoke，
-  不是论文性能排名。
+  256 图资源/正确性 gate 与 Daft built-in/project 逐行 embedding parity 已通过，独立
+  calibration 与正式重复尚未完成。
+- **可运行性验证**：最新代码在 AutoDL 完整依赖环境通过 624/624 单测；文本 512 行
+  双 endpoint、图像 256 行 Daft/Ray Data correctness gate、两条默认无 capture 路径均
+  跑通。它们是 smoke，不是论文性能排名。
 
 早期 CPU/fake 结果仅作历史参考；PG18.4 AutoDL rehearsal 不能冒充 PostgreSQL 18.3
 内部平台结论。

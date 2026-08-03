@@ -1,21 +1,25 @@
 # Research Experiment Plans
 
-## 2026-07-29 baseline 文献升级
+## Baseline / benchmark：单一入口与文档边界
 
-Baseline 的统一总入口是 [`baseline_reference.md`](baseline_reference.md)：先从其 §0
-确认 AI_COMPLETE / AI_EMBED / AI_CLASSIFY 的四层对照与当前门禁，再进入下面的专项
-执行合同。专项文件不得另建一份 baseline 总表或复制容易过期的状态数字。
+[`baseline_reference.md`](baseline_reference.md) 是 AI_COMPLETE、AI_EMBED、
+AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入、证据等级、指标合同和
+当前门禁。不要再从旧矩阵、结果 README 或部署文档拼接一份新的 baseline 总表。
 
-- serving ceiling：vLLM Bench；
-- 无 Daft/Ray 强上游：现有数据库 AI 算子 + bounded HTTP；
-- 官方 runtime：Daft `prompt()` Native/Ray + Ray Data HTTP Processor；
-- 数据库 AI 系统：LOTUS、Palimpzest；SemBench 提供 workload/指标；
-- 多 job：VTC service counter + endpoint-shared request/work credit，Llumnix作为
-  virtual usage/动态纠偏参考；
-- 代价估计：Learned Cost Models、GRACEFUL、COSTREAM、Abacus。
+| 需要回答的问题 | 唯一入口 |
+|---|---|
+| 比谁、为什么比、能否进入数字排名、必须记录什么 | `baseline_reference.md` |
+| 文本 Chat/Completions 怎么运行 | `text_native_baseline_rerun_20260802.md` |
+| 图像 workload、质量语义和执行矩阵怎么运行 | `image_clip_workload_lock_20260731.md` |
+| 当前做完什么、下一步是什么 | `experiment_status_and_gaps.md` §0 |
+| 厂商/论文为什么采用这些指标 | `../../research/evaluation_metrics_survey_20260731.md` |
+| 初学者如何理解四类 baseline | `../../learning/text_native_baseline_guide.md` |
+| 真实数字与结论 | 对应 `../results/` 或 `../../motivation/results/` |
 
-每个 arm 独立 calibration；不要求无限调优，但必须达到合理强配置并进入平台期。
-相同 work 的 runtime 比较与减少调用/换模型的 system-level 比较分开。
+2026-07-29 的数据库 AI 算子矩阵混有预注册和逐日执行日志，现完整保存在
+`archive/database_ai_operator_baseline_matrix_20260729.md`，仅用于历史追溯，不再指导
+新实验。每个正式 arm 仍需独立 calibration；相同 work 的 runtime 比较与改变调用数、
+模型或语义的 system-level 比较必须分开。
 
 本目录保存正式研究实验计划、设计参考与状态审计，不保存原始结果。文档按性质分三类：
 
@@ -73,17 +77,14 @@ runner 中 short/long 的 K256/W65K/W98K 通过 5% 等价性和 repeat 稳定性
 | `strategy_design_literature_basis.md` | 写论文 / 答辩 / reviewer 防御时查 | **为什么这样设计 + 不能过度声称什么**：可借鉴思想 vs baseline/边界 vs 本文策略定义、fatal flaws、§3.1 借鉴论文适用边界 |
 | `strategy_design_implementation_reference.md` | 写代码 / 设计实验变量时查 | **怎么实现**：信号→变量→指标→baseline→§8 目标代码架构→实现优先级 |
 | `literature_driven_pipeline_optimization_guide.md` | 继续从文献寻找优化点时查 | **怎么发现下一项机制**：三层 batch 边界、Orca 式上游持续补位、完整 adaptive flush 缺口、机制卡模板、fatal-flaw audit、候选池与晋级/放弃条件 |
-| `database_ai_operator_baseline_matrix_20260729.md` | 启动下一轮正式 baseline 前查 | **测什么**：无 Daft/Ray 的 OceanBase/同 PostgreSQL 核心矩阵，以及 Daft prompt/Ray Data 官方框架矩阵；统一协议、标定、门禁与晋级标准 |
 | `text_native_baseline_rerun_20260802.md` | 重跑文本 baseline 前查 | **怎么严谨重测**：区分 service ceiling、direct control、framework/product native；定义 Chat/Completions 分轨与 64→512→4096 合同 |
-| `../../code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md` | 补正式系统 baseline 时查 | **怎么公平比较现有系统**：第一层为无 Daft/Ray 的 OceanBase `AI_COMPLETE` 与同 PostgreSQL 因果对照；第二层为 Daft `prompt()` Native/Ray 与 Ray Data 官方实现；统一使用 Chat Completions |
 
 > **文档分工**：`literature_basis` 是论文边界论证，`implementation_reference`
 > 是已有工程映射，`literature_driven_pipeline_optimization_guide` 是今后重复使用的
 > 机制发现与筛选流程。具体完成度仍以 `experiment_status_and_gaps.md` 为准。
-> 同规模同条件 baseline 的本轮设计与预注册口径以
-> `database_ai_operator_baseline_matrix_20260729.md` 和
-> `../../code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md`
-> 为准；实现完成后，正式数据仍进入 `experiments/results/`。
+> baseline 的当前口径只以 `baseline_reference.md` 和对应模态执行合同为准；
+> `code_doc/superpowers/` 与 `plans/archive/` 中的文档仅保留设计历史。正式数据只进入
+> `experiments/results/` 或 `motivation/results/` 的对应结果目录。
 
 ## 三、状态审计
 

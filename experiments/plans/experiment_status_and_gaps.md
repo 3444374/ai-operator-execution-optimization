@@ -969,4 +969,5 @@ full-concurrency 的 HTTP/vLLM request wall，而不是 active-work credit 或 a
 
 所有主 arm 使用同一双 endpoint。不得通过挑选 Daft Native 单次高值、弱连接
 池、不同 request body 或不同输出 work 寻找优势。晋级门槛以
-`database_ai_operator_baseline_matrix_20260729.md` §8.6 为准。
+baseline 身份与晋级门槛以 `baseline_reference.md` 为准，文本运行合同以
+`text_native_baseline_rerun_20260802.md` 为准。

@@ -11,6 +11,10 @@
   bounded control、Daft/Ray Data/OceanBase 原生 baseline 和项目方法，并解释
   Chat/Completions 分轨与 64→512→4096 复测流程。
 
+学习材料只负责解释；正式 baseline 身份、状态和指标以
+[`../experiments/plans/baseline_reference.md`](../experiments/plans/baseline_reference.md)
+为准。
+
 图像木桶、H2D 与 embedding parity 的当前讲解统一追加在
 [`experiment_walkthrough.md`](experiment_walkthrough.md) 的 2026-08-02/03 小节；其中
 明确区分正常流式性能运行和仅用于语义判定的 capture 诊断运行。

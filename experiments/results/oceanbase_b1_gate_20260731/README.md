@@ -3,7 +3,8 @@
 日期：2026-07-31
 分支：`claude/oceanbase-baseline`
 平台：AutoDL 2×4090 容器（Ubuntu 22.04 jammy），Qwen2.5-7B + 双 vLLM
-对应计划：`experiments/plans/database_ai_operator_baseline_matrix_20260729.md` §2（B1）
+对应当前入口：`experiments/plans/baseline_reference.md`；当时预注册保留于
+`experiments/plans/archive/database_ai_operator_baseline_matrix_20260729.md` §2（B1）。
 
 ## 1. 研究问题与门禁
 

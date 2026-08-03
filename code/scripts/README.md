@@ -907,7 +907,8 @@ failure 或 vLLM 最终队列非空都会 fail closed。
 - `deploy/autodl/dual_gpu_official_baseline_gate.example.json`
 - `deploy/autodl/dual_gpu_official_baseline_calibration.example.json`
 - `deploy/autodl/dual_gpu_same_condition_project_equivalence_gate.example.json`
-- `experiments/plans/database_ai_operator_baseline_matrix_20260729.md`
+- `experiments/plans/baseline_reference.md`
+- `experiments/plans/text_native_baseline_rerun_20260802.md`
 
 模板是预注册规格，不是允许远端临时拼接 formal 命令的替代品。64 行 gate
 通过前不得启动 calibration；calibration 通过前不得启动 2,048 held-out。

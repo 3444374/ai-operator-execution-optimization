@@ -214,6 +214,9 @@ inflight，需重做 256 行门禁。正式比较还必须直接复用官方 Res
   Processor 和通过 capability gate 的 OceanBase 才进入 native baseline。代码已增加
   provenance fail-closed、服务端统一 token throughput，并删除未接线的 Daft
   `partition_count` 扫描；4,096 held-out formal 等待服务器开机后执行
+- ✅ baseline 文档入口收敛：`experiments/plans/baseline_reference.md` 统一维护三类算子的
+  分层、原生性、证据等级、指标与门禁；旧 2026-07-29 文本矩阵已移入 archive，不再
+  作为当前执行依据
 
 **当前缺口与顺序（以 `experiments/plans/experiment_status_and_gaps.md` §0 为准）**：
 

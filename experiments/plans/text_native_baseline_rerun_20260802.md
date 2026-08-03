@@ -1,7 +1,11 @@
 # 文本数据库 AI 算子原生 Baseline 复测合同
 
 日期：2026-08-02
-状态：代码与实验合同已准备；AutoDL 已由用户关机，尚未执行远端 gate/calibration/formal。
+状态：代码与实验合同已准备；重构后的远端 smoke 已通过，但新 provenance 合同下的
+calibration/formal 尚未执行。服务器开关属于运行态，不写入长期计划状态。
+
+baseline 的身份、证据等级和公共指标只以 `baseline_reference.md` 为准；本文只保留
+AI_COMPLETE 的 Chat/Completions 执行合同，不另建总表。
 
 ## 1. 为什么文本阶段也必须调整
 

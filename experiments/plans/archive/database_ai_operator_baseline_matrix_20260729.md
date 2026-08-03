@@ -7,9 +7,10 @@
 token-budget 冻结点；49K 是保留吞吐下的 SLO-goodput 候选。旧 8K 数据组织
 和 K32/K64 提交消融只作机制证据，必须在冻结合同下重跑才能进入最终排名。
 
-> **阅读范围（2026-08-02）**：本文是文本 AI_COMPLETE 轨道的预注册与带日期执行
-> 记录，不再承担全项目“当前下一步”。baseline 的检索/证据等级/指标合同以
-> `baseline_reference.md` 为准，当前执行顺序以 `experiment_status_and_gaps.md` §0
+> **归档说明（2026-08-03）**：本文是文本 AI_COMPLETE 轨道的预注册与带日期执行
+> 记录，已移入 `plans/archive/`，不再承担全项目“当前下一步”。baseline 的检索、
+> 证据等级和指标合同以 `../baseline_reference.md` 为准，当前执行顺序以
+> `../experiment_status_and_gaps.md` §0
 > 为准。下文出现的“当前”“下一步”只在其相邻日期快照内有效，不能覆盖新的图像轨道
 > 状态或结果目录。
 
@@ -17,7 +18,7 @@ token-budget 冻结点；49K 是保留吞吐下的 SLO-goodput 候选。旧 8K �
 > `bounded_http`/`bounded_completions` 是项目自写 direct-client controls；只有 Daft
 > built-in `functions.prompt`、Ray Data 官方 Processor graph 和通过部署门禁的
 > OceanBase SQL AI Function 可以标记为 vendor-native baseline。新的复测合同与
-> 4,096 行 held-out 计划见 `text_native_baseline_rerun_20260802.md`。下文历史表中的
+> 4,096 行 held-out 计划见 `../text_native_baseline_rerun_20260802.md`。下文历史表中的
 > “官方/强 baseline”若包含 bounded client，按本条重新解释，不能按旧标题越界引用。
 
 ## 0. 一句话目标与成功条件

@@ -2871,7 +2871,8 @@
   `/v1/chat/completions`；旧 `/v1/completions` 结果只保留为历史机制证据，
   禁止直接横比。
 - 新增
-  `experiments/plans/database_ai_operator_baseline_matrix_20260729.md` 和
+  `experiments/plans/archive/database_ai_operator_baseline_matrix_20260729.md`（后于
+  2026-08-03 归档）和
   `code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md`，
   预注册固定 manifest、双 endpoint 等价性、独立 calibration、32–256
   瞬态与 2,048 held-out、time-to-ceiling/ramp-regret/minimum-saturating-work
@@ -3691,3 +3692,15 @@
 - 报告与派生摘要保存于
   `motivation/results/gpu/image_embedding_parity_20260803/`；原始 `.npz`、逐行 CSV 与
   manifest 保留在 AutoDL experiment-artifacts，不提交大矩阵。
+
+## 2026-08-03 baseline / benchmark 文档收敛
+
+- 冻结 `experiments/plans/baseline_reference.md` 为三类算子的唯一 baseline 总入口；
+  文本执行、图像 workload、状态审计、外部指标证据、学习讲解和结果目录各自只保留
+  单一职责，不再复制总表或“当前下一步”。
+- 将混有旧预注册、逐日结果和过期执行顺序的
+  `database_ai_operator_baseline_matrix_20260729.md` 完整移入 `plans/archive/`，保留历史
+  证据但从当前 README、索引、runner 说明和结果入口移除。
+- 当前运行只读取 `baseline_reference.md`、对应模态执行合同和
+  `experiment_status_and_gaps.md` §0；`code_doc/superpowers/` 与 `plans/archive/` 仅作
+  设计历史。
