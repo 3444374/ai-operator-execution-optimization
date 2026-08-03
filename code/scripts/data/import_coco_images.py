@@ -49,23 +49,29 @@ def parse_args():
     p.add_argument("--pattern", default="*.jpg")
     p.add_argument("--batch", type=int, default=200, help="rows per INSERT")
     p.add_argument("--limit", type=int, default=0, help="0 = all")
+    p.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        help="skip the first N sorted images (for held-out splits disjoint from a prior --limit load)",
+    )
     return p.parse_args()
 
 
-def list_images(directory, pattern, limit):
+def list_images(directory, pattern, limit, offset=0):
     """Return a deterministic path list; IDs come from COCO filenames."""
     paths = sorted(Path(directory).glob(pattern))
-    return paths[:limit] if limit > 0 else paths
+    return paths[offset : offset + limit] if limit > 0 else paths[offset:]
 
 
-def list_zip_images(archive: ZipFile, pattern: str, limit: int) -> list[PurePosixPath]:
+def list_zip_images(archive: ZipFile, pattern: str, limit: int, offset: int = 0) -> list[PurePosixPath]:
     """Return deterministic matching ZIP members without extracting the archive."""
     paths = sorted(
         PurePosixPath(info.filename)
         for info in archive.infolist()
         if not info.is_dir() and PurePosixPath(info.filename).match(pattern)
     )
-    return paths[:limit] if limit > 0 else paths
+    return paths[offset : offset + limit] if limit > 0 else paths[offset:]
 
 
 def coco_doc_id(path: PurePath) -> int:
@@ -123,9 +129,9 @@ def main():
     archive = ZipFile(args.zip) if args.zip else None
     source_label = args.zip or args.dir
     paths = (
-        list_zip_images(archive, args.pattern, args.limit)
+        list_zip_images(archive, args.pattern, args.limit, args.offset)
         if archive is not None
-        else list_images(args.dir, args.pattern, args.limit)
+        else list_images(args.dir, args.pattern, args.limit, args.offset)
     )
     if not paths:
         if archive is not None:
