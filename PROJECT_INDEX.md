@@ -172,7 +172,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/analysis/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
 | `code/scripts/analysis/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |
 | `code/scripts/profiling/profile_image_clip_preprocess_variants.py` | 交错比较当前 production-np、历史 legacy-pt 与 torchvision CLIP preprocessing，并经过同一 tensor actor 做 embedding parity gate | 复核 image motivation 是否能外推到当前代码边界；不是 E2E 方法结果 |
-| `code/scripts/experiments/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、模型/GPU 和输出审计下运行 Daft built-in、Ray Data native graph、诊断 reference 与 project arms | 跑 operator-E2E gate/formal；schema v10 记录 baseline provenance/scheduler owner，并拒绝把项目自写 Daft UDF 当正式 native baseline |
+| `code/scripts/experiments/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、模型/GPU 和输出审计下运行 Daft built-in、Ray Data native graph、诊断 reference 与 project arms | 跑 operator-E2E gate/formal；schema v11 记录 baseline provenance、scheduler owner 和计时内输出合同，并拒绝把项目自写 Daft UDF 当正式 native baseline |
 | `code/configs/image_vendor_baselines.json` | Daft 官方 803,580-row ResNet18 Daft/Ray Data 入口的仓库、commit、文件 SHA256、官方 workload 与允许适配范围 | 跑 vendor-code parity 前核对；禁止改写官方调度图 |
 | `code/scripts/experiments/run_image_clip_matrix.py` | 固定 seed 交错编排图像 warmup/formal，持有结果目录租约并校验 unique rows、exactly-once、稳态时长 | 防止手工顺序漂移、并发写结果和短作业误入 formal；输出 raw CSV、逐 run manifest/log 与外层 schedule |
 | `code/scripts/data/import_coco_images.py` | 从目录或 ZIP 流式导入 COCO 图像 BYTEA，保留 source doc_id，单事务替换指定 workload | 正式规模避免完整解压副本；失败回滚，不覆盖无关 workload |
@@ -187,7 +187,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `motivation/results/gpu/image_clip_native_baseline_20260801/` | 项目自写 fused Daft fractional-GPU UDF 校准、5000 图×3 operator-E2E、派生 summary 与七步报告 | 仅作历史机制诊断；不是官方/native baseline，不进入正式排名 |
 | `motivation/results/gpu/image_host_path_screening_20260802/` | 线程/资源合同修复后的 preprocess、source、active-window 单因素 screening、schema v8 分段诊断及 `raw/` 原始 CSV/manifest | 查图像 feeding 木桶迁移、16 actor/active32 候选和 PCIe 初步 NO-GO；不可当 formal baseline 排名 |
 | `motivation/results/gpu/image_clip_transfer_ceiling_20260802/` | R0/R1/R2 batch16/64/256×30 的 raw、summary 与七步 H2D/compute ceiling 报告 | pinned H2D约24–25GB/s、pageable/ownership 更重；synthetic diagnostic，不作系统排名或 PCIe 最终判决 |
-| `motivation/results/gpu/image_embedding_parity_20260803/` | Daft built-in 与 project_ray 的 256 图逐行 embedding parity 摘要和七步报告 | 确认主要差异为 L2 归一化并冻结正式 baseline 的统一输出合同；不可作性能排名 |
+| `motivation/results/gpu/image_embedding_parity_20260803/` | Daft built-in 与 project_ray 的 256 图逐行 embedding parity 摘要、七步报告，以及 `raw/normalized_contract_gate/` 中 schema v11 CSV/manifest、两份 `.npz` 与 per-row 数据 | 独立重算归一化后 cosine/近邻重合并冻结正式 baseline 的统一输出合同；capture 运行不可作性能排名 |
+| `motivation/results/gpu/ray_data_calibration_20260803/` | Ray Data 原生 `map_batches` 的 5000 图 screening、60K unique×2 passes 长稳态 batch 复核、raw CSV/manifest 和 `long_crosscheck_summary.csv` | 冻结原生 baseline 的 batch64/cpu8/gpu2/source4；只用于独立校准，不与 Daft/project 跨系统排名 |
 | `motivation/plans/image_host_data_path_bottleneck.md` | R0→R4 表示阶梯、低扰动/侵入式双轨计时与 CPU/Ray/PCIe/GPU GO/NO-GO 门槛 | 重测 image motivation、判断 GPU feeding 缺口来自哪一段时读 |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
 | `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |

@@ -8,6 +8,11 @@
 > L2-normalized 合同 + 匹配规模。本结果只报 Ray Data native 的独立校准：最佳操作点、img/s、
 > GPU 饥饿现象、binding stage。
 
+> **2026-08-03 长稳态更新**：下文 Phase 1/2 是 5K screening；§9 的 60K unique×2
+> passes、schema v11、交错长稳态复核是当前配置选择权威证据。长稳态确认 batch16/64
+> 为同一近优平台，但 64 的吞吐、首输出、能效与重复稳定性均更好；batch256/512 稳定
+> 退化，因此冻结 `batch64/cpu8/gpu2/source4`，不继续测 1024。
+
 ## 1. 实验目的
 
 - **问题**：Ray Data native staged pipeline（`read_sql → CPU map_batches → GPU map_batches`）在固定
@@ -183,3 +188,99 @@ unavailable_engine_internal`）——Ray Data 自管执行内部，runner 看不
 - 远端：`/root/autodl-tmp/experiment-artifacts/ray_data_calib_5k_20260803/` +
   `…/ray_data_calib_5k_phase2_cpu_20260803/`（runs.csv + 18 个 per-run manifest + calibration.log）
 - 复现：见 `deploy/autodl/image_serving.md` §5.4（ray_data_staged 命令，本校准扫 batch/cpu_workers、2 rep）
+
+## 9. 60K×2 原生 batch 上界复核（当前配置选择证据）
+
+### 9.1 实验设置与目的
+
+- 问题：5K screening 下 batch16–256 差异小，且 cpu8 是预处理池平台；在扩大 workload
+  后，batch 最优点是否改变，512 是否仍可能提高吞吐？
+- 代码：commit `d73fbfb`；实际 runner 输出 commit 与 matrix repository commit 均为该
+  revision；runner schema v11。
+- 数据：PostgreSQL `coco_train2017_60k`，60,000 unique images×2 logical passes，
+  每 run 120,000 processed rows。
+- 原生执行图：Ray Data 官方
+  `read_sql→map_batches(RayDataClipPreprocessor)→map_batches(RayDataClipPredictor)`；
+  `scheduler_owner=ray_data`、`custom_scheduling_code=false`。项目 credit、router、
+  inflight 与 `ray.wait` 提交循环均未使用。
+- 固定项：cpu_workers=8、gpu_workers=2、source_shards=4、float16 CLIP ViT-B/32、
+  L2-normalized 输出合同；唯一变量为官方 `batch_size∈{16,64,256,512}`。
+- 编排：固定 seed 交错 1 warmup+2 formal，共 12 runs；formal steady-state proxy≥60s、
+  exactly-once 和 unique/processed row 门禁 fail closed。
+
+25K×1 的先导运行因 formal 只有 30.309s 被 60 秒门禁拒绝，未进入本结果；它只用于
+纠正 workload 规模。失败目录已清理，拒绝原因保留在 `PROJECT_LOG.md` 和部署文档。
+
+### 9.2 严谨性自检
+
+1. matrix `status=complete`，12/12 runs、0 incidents；8 个 formal 均为 120,000/120,000、
+   60,000 unique、`exactly_once=true`。
+2. 所有 formal 的 `embedding_output_contract_effective=l2_normalized`；同配置两个 repeat
+   的吞吐 CV 为 0.03%–2.08%。本矩阵预先固定为 2 个 formal repeat，只用于配置选择；
+   低 CV 不把它升级为跨系统正式排名，后者仍按 1 warmup+3 formal 执行。
+3. formal E2E 为 125.1–136.7s，全部超过 60 秒；没有把 warmup 用于配置排名。
+4. 四个 batch 的资源预算相同；只调整 Ray Data 官方 batch 参数，没有给 baseline 注入
+   项目调度代码。
+5. GPU utilization 是低频采样的 busy 指标，不是 MFU；本实验没有提供已验证模型 FLOPs，
+   因此 `estimated_e2e_mfu` 为空，报告不声称 MFU 数值。
+
+### 9.3 基于 raw CSV 的 formal 数据
+
+| batch | images/s 两次原值 | 中位数 | CV | vs batch64 | E2E 中位 | first output | GPU util mean | 显存峰值中位 | images/J |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 16 | 948.830 / 921.388 | 935.109 | 2.075% | -2.298% | 128.355s | 42.319s | 7.614% | 822 MiB | 6.744 |
+| **64** | **954.753 / 959.446** | **957.100** | **0.347%** | **0%** | **125.380s** | **38.742s** | **6.045%** | **931 MiB** | **6.998** |
+| 256 | 918.981 / 919.406 | 919.193 | 0.033% | -3.961% | 130.549s | 42.513s | 5.415% | 1,312 MiB | 6.817 |
+| 512 | 888.675 / 877.767 | 883.221 | 0.873% | -7.719% | 135.872s | 47.190s | 5.344% | 1,813 MiB | 6.575 |
+
+完整派生列见 [`long_crosscheck_summary.csv`](long_crosscheck_summary.csv)，原始 12 行见
+[`raw/runs_phase3_long_crosscheck.csv`](raw/runs_phase3_long_crosscheck.csv)，编排顺序、
+fingerprint、commit 和 0 incident 见
+[`raw/matrix_manifest_phase3_long_crosscheck.json`](raw/matrix_manifest_phase3_long_crosscheck.json)。
+
+batch64 两个 formal 的 Ray Data stats 中，CPU preprocess aggregate throughput 为
+1333.745/1354.235 rows/s、single-task 为 177.732/180.318 rows/s；GPU predictor
+aggregate throughput 为 1361.693/1381.741 rows/s、single-task 为
+2667.401/2627.867 rows/s。官方 stats 的 aggregate 值包含 stage overlap，不能与端到端
+957.100 images/s 直接相减解释成等待时间；它只支持 preprocess aggregate 略低于 predictor、
+且单 task 服务能力明显更低。
+
+### 9.4 结果解释
+
+**事实**：
+
+1. batch64 是观测吞吐最高点，且 first output、E2E、images/J 和 CV 同时最好。
+2. batch16 比 batch64 慢 2.30%，属于预注册的 3% 近优区；它只在显存上少约 109 MiB，
+   但首输出慢 3.58s、能效低 3.62%、CV 更高，因此没有足够理由替换 batch64。
+3. batch256/512 分别比 batch64 慢 3.96%/7.72%，且显存和 first output 同时变差。
+4. batch512 没有达到“相对 batch64 改善≥3%”的继续条件，因此停止，不测 1024。
+5. cpu busy cores 中位数约 14.1–14.8，与 source4+preprocess8+model2 的 14-slot 资源
+   账本一致；没有 CPU 资源超卖。
+
+**推断**：
+
+- 结合官方 operator stats，batch64 下 CPU preprocess aggregate throughput 略低于 GPU
+  predictor，且 single-task 速度约为 predictor 的 1/15，支持“预处理/喂入仍是主要限制”
+  的解释。这个推断与 R0 GPU-resident ceiling 明显更高一致，但不是硬件 PCIe counter 或
+  Nsight 因果证明。
+- 5K screening 的 346.5 img/s 与长稳态 957.1 img/s 差异主要说明启动和 fill/drain 成本
+  对小 workload 很大；不能把它写成 batch64 自身带来 2.76× 加速。
+
+**待确认**：
+
+- 正式系统排名仍需让 Daft built-in、Ray Data 和 project 在同一 60K×2、schema v11、
+  统一输出合同下交错 1+3；本节只冻结 Ray Data 自身配置。
+- 本实验只有 CPU preprocess actor pool 和 tensor predictor；若未来替换模型、分辨率、
+  processor 或硬件，batch64 必须重新校准。
+
+**不能声称**：
+
+- 不能用本节直接声称项目比 Ray Data 快，也不能与 5K Daft 数字计算正式倍数。
+- 不能把 5%–8% `nvidia-smi` util 写成 MFU，或据此宣称 GPU 92%–95% 时间严格空转。
+- 不能把 embedding norm/digest 当作 AI_CLASSIFY accuracy 或检索 Recall@K。
+
+### 9.5 对课题含义与下一步
+
+Ray Data 原生配置已冻结为 `batch64/cpu8/gpu2/source4`。扩大 batch 不是改善原生链路的
+有效杠杆；继续扫 1024 没有实验依据。下一步不是修改 Ray Data 调度，而是用该冻结点
+参加统一合同 formal，并把原生系统观察结果与项目方法分开报告。

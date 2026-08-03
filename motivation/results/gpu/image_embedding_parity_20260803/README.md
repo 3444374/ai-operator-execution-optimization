@@ -128,3 +128,33 @@ AI_EMBED contract”。它验证的是输出合同，不是项目调度策略的
 2. 保留 vendor-raw 辅助表，同时只在统一 contract 表中横向排名；
 3. 用≥20K unique images、≥60 秒稳态、交错 1 warmup+3 repeats 做正式性能实验；
 4. AI_CLASSIFY 另用带标签数据报告 top-1/top-5 或 mAP/F1，不能复用本 parity 指标代替质量。
+
+## 8. 计时内 normalized output contract 落地门禁（2026-08-03）
+
+commit `6f0954b` 上重新执行同一 256 图 capture gate。两臂均显式传入
+`--embedding-output-contract l2_normalized`；Daft 保持官方
+`decode_image→embed_image` 执行图，仅由 baseline adapter 在消费官方输出后、共同 audit
+前执行 CPU L2 normalization，并计入该 arm operator E2E。项目仍由 model actor 归一化。
+
+| 指标 | Daft built-in normalized | project_ray normalized |
+|---|---:|---:|
+| output rows / exactly-once | 256 / true | 256 / true |
+| max norm error | 1.1921e-7 | 1.1921e-7 |
+| effective contract | l2_normalized | l2_normalized |
+| normalization owner | baseline_adapter | model_actor |
+| normalization in timed boundary | true | true |
+
+逐行比较结果：cosine min=0.999727、P1=0.999800、P50=0.999985、P99=0.999997；
+non-self overlap@10 mean=0.9949。它再次超过预注册语义门槛，且现在不再依赖“正式运行后
+离线免费归一化”。原始 runner CSV、两臂 manifest 和 probe summary 保存在
+[`raw/normalized_contract_gate/`](raw/normalized_contract_gate/)。
+
+仓库同时保存两份约 0.5MB 的 `.npz`、其 capture sidecar 和逐行比较 CSV；用 §2 的 probe
+重新计算后，生成的 `summary.csv` 与 `per_row.csv` 与服务器 artifact 完全一致。须注意：
+commit `6f0954b` 生成的两个 capture sidecar 中 `note` 仍是旧的通用文案，未反映本次已启用
+计时内归一化；本次合同事实以 schema v11 runner CSV 和 arm manifest 为准。生成代码已在
+本次结果归档时修正，后续 sidecar 会直接记录 requested/effective contract、normalization
+owner 和 timed-boundary 标志；历史 raw sidecar 保持原样，不回写伪造。
+
+本 gate 使用 capture，计时仍不进入性能排名；其结论仅为 schema v11 输出合同实现和
+语义一致性通过。正式性能必须使用无 capture 的长稳态路径。

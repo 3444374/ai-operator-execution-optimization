@@ -1159,3 +1159,8 @@ min/P1/P50/P99 是否接近 1，以及排除自身后的 Top-K 邻居是否重�
 backpressure 或调度，因此不会把项目调度机制注入原生 baseline。CSV/manifest 必须同时
 记录 requested/effective contract、normalization owner 和是否位于计时边界；未记录这些
 字段的历史 Daft run 只能用于 batch screening，不能用于统一语义正式排名。
+
+capture 的 `.npz.manifest.json` 也必须复制同一份输出合同元数据，不能再用“Daft 可能未
+归一化”这种静态提示代替本次实际参数。旧 artifact 的 sidecar 原文应保留并在结果报告中
+标注元数据缺陷；不能为了让历史记录看起来整齐而事后改写 raw 文件。合同判定以同次运行的
+schema v11 CSV/arm manifest 为准，并可用 `.npz` 重新运行 parity probe 复核。

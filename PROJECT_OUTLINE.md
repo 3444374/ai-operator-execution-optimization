@@ -133,12 +133,13 @@
 
 图像轨道在继续策略实验前，先按
 `motivation/plans/image_host_data_path_bottleneck.md` 完成 R0→R4 表示阶梯与
-schema v2 复测。当前证据只支持“阶段拆分有 operator-E2E 收益、CPU prepare 是候选
-限制”，不支持把 PCIe、CPU saturation 或 GPU MFU 写成已确认瓶颈。低扰动正式曲线
-与侵入式 CUDA/Nsight 机制诊断分开报告。当前 fused Daft 结果不能代表官方 native
-baseline。Daft 内置 `embed_image` 已接入；Ray Data native graph 已移除项目式
-inflight，需重做 256 行门禁。正式比较还必须直接复用官方 ResNet18 benchmark 代码
-并固定 upstream commit；项目自写 Daft staged/fused 仅保留为诊断 reference。
+schema v2 复测。R0–R2 已把 pageable FP32 ownership copy/dtype conversion 与 pinned H2D
+分开；Ray Data 60K×2 原生长稳态复核冻结 `batch64/cpu8/gpu2/source4`（957.100 img/s，
+2 repeats，CV 0.347%），batch512 相对慢 7.719%，不继续扫 1024。该结果支持 CPU
+preprocess/喂入是当前候选限制，但不把 `nvidia-smi` util 写成 MFU 或硬件因果证明。
+Daft built-in 与 Ray Data 均已独立校准，schema v11 计时内 normalized contract parity
+已通过；下一步是同 60K×2、1+3 的原生 baseline/project 正式排名。项目自写 Daft
+staged/fused 仅保留为诊断 reference；官方 ResNet18 仍需固定 upstream commit 与数据许可。
 
 **已完成**：
 - ✅ vLLM + Qwen2.5-1.5B baseline 建立（07-18）
@@ -223,11 +224,12 @@ inflight，需重做 256 行门禁。正式比较还必须直接复用官方 Res
 1. **Image fused operator-E2E gate**：中性 work-unit、lazy source、fast processor、
    项目自写 fused Daft Native/Ray diagnostic 与 bounded `PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor`
    runner 和 5K×3 formal 已完成。
-2. **补 system E2E 与完整强 baseline**：Daft built-in 的 256 图逐行 parity 已通过（L2
-   normalize 后 cosine P1=0.999788、非自身 overlap@10 mean=0.9949），正式比较采用统一
+2. **补 system E2E 与完整强 baseline**：Daft built-in 的 256 图逐行 schema v11 计时内
+   normalized-contract parity 已通过（cosine P1=0.999800、非自身 overlap@10 mean=0.9949），正式比较采用统一
    normalized AI_EMBED contract 并把归一化成本计入各臂 E2E；继续补官方 ResNet18 parity
-   和 Ray Data native graph
-   runner/256 行门禁已完成，下一步独立标定并做正式重复，再给系统臂接同一 pgvector sink；同时补 bounded direct CLIP、
+   和 Ray Data native graph runner/256 行门禁、独立校准及 60K×2 batch 上界复核均已完成；
+   当前冻结 Ray Data `batch64/cpu8/gpu2/source4`，下一步做统一规模 1+3 正式重复，再给
+   系统臂接同一 pgvector sink；同时补 bounded direct CLIP、
    vLLM pooling、naive 和 ours。OceanBase AI_EMBED 等待可部署环境。当前 5K 结果只
    证明相对 fused UDF 的优化空间，尚未证明 ours 优于主流 staged pipeline。
 3. **A+B 方法验证**：A 读取 CLIP endpoint queue/active-work 做状态感知请求成形；

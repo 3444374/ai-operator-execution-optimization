@@ -228,6 +228,30 @@ CSV_FIELDS = (
 )
 
 
+def embedding_output_contract_metadata(
+    arm: str,
+    requested_contract: str,
+) -> dict[str, object]:
+    """Describe the output contract that the timed arm actually returns."""
+    output_is_normalized = (
+        requested_contract == "l2_normalized" or arm != "daft_builtin_embed"
+    )
+    return {
+        "embedding_output_contract_requested": requested_contract,
+        "embedding_output_contract_effective": (
+            "l2_normalized" if output_is_normalized else "provider_raw"
+        ),
+        "embedding_normalization_in_timed_boundary": output_is_normalized,
+        "embedding_normalization_owner": (
+            "baseline_adapter"
+            if arm == "daft_builtin_embed" and output_is_normalized
+            else "model_actor"
+            if output_is_normalized
+            else "provider_native_output"
+        ),
+    }
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arm", choices=ARMS, required=True)
@@ -751,6 +775,10 @@ def main() -> None:
         dataset_passes=args.dataset_passes,
         embedding_capture=embedding_capture,
     )
+    output_contract_metadata = embedding_output_contract_metadata(
+        args.arm,
+        args.embedding_output_contract,
+    )
     if args.save_embeddings:
         # Diagnostic only: capture happens while validated batches are consumed.
         # The default path has no capture; this run's timing is not performance-valid.
@@ -790,10 +818,11 @@ def main() -> None:
             "dimension": int(_emb_arr.shape[1]) if _emb_arr.ndim == 2 else None,
             "diagnostic_capture_enabled": True,
             "timing_valid_for_performance": False,
+            **output_contract_metadata,
             "note": (
-                "embeddings are the arm's raw output; project_ray L2-normalizes, "
-                "daft_builtin_embed may not -- a parity probe must L2-normalize offline "
-                "before comparing"
+                "captured embeddings are the post-arm output under the recorded effective "
+                "output contract; the parity probe L2-normalizes defensively before "
+                "comparison; capture timing is invalid for performance claims"
             ),
         }
         try:
@@ -831,14 +860,6 @@ def main() -> None:
             / (operator_e2e_s * args.gpu_workers * args.gpu_peak_flops_per_s)
         )
     project_metrics = args.arm == "project_ray"
-    output_is_normalized = (
-        args.embedding_output_contract == "l2_normalized"
-        or args.arm != "daft_builtin_embed"
-    )
-    output_normalization_in_timed_boundary = (
-        args.arm != "daft_builtin_embed"
-        or args.embedding_output_contract == "l2_normalized"
-    )
     batch_completion_p50 = percentile(result.batch_completion_wall_s, 0.50)
     batch_completion_p95 = percentile(result.batch_completion_wall_s, 0.95)
     batch_completion_p99 = percentile(result.batch_completion_wall_s, 0.99)
@@ -986,20 +1007,7 @@ def main() -> None:
         ),
         "dtype": "provider_default" if args.arm == "daft_builtin_embed" else args.dtype,
         "embedding_dimension": args.embedding_dimension,
-        "embedding_output_contract_requested": args.embedding_output_contract,
-        "embedding_output_contract_effective": (
-            "l2_normalized" if output_is_normalized else "provider_raw"
-        ),
-        "embedding_normalization_in_timed_boundary": (
-            output_normalization_in_timed_boundary
-        ),
-        "embedding_normalization_owner": (
-            "baseline_adapter"
-            if args.arm == "daft_builtin_embed" and output_is_normalized
-            else "model_actor"
-            if output_is_normalized
-            else "provider_native_output"
-        ),
+        **output_contract_metadata,
         "daft_version": daft.__version__,
         "ray_version": ray.__version__,
         "torch_version": torch.__version__,

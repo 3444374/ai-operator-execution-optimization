@@ -3755,3 +3755,11 @@ formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④
 - 新增 Ray Data 原生 batch 上界复核模板：固定 cpu8/gpu2/source4，只扫官方
   batch16/64/256/512。25K×1 预跑 formal 仅约 30 秒，被 60 秒门禁拒绝；正式模板改为
   60K unique×2 passes、1+2 交错；512 未改善 3% 即停止。
+- 60K×2 复核在 `d73fbfb` 上完成 12/12、0 incident。formal 中位吞吐：batch16
+  935.109、batch64 957.100、batch256 919.193、batch512 883.221 img/s；各点 CV
+  0.03%–2.08%，全部 exactly-once、L2-normalized。冻结 batch64；512 相对慢 7.719%，
+  按 stop condition 不测 1024。原始 runs、matrix manifest 与派生 summary 已同步 Git。
+- normalized parity 的两份 256×512 `.npz`、capture sidecar 与逐行 CSV 同步 Git；本地用
+  `probe_embedding_parity.py` 重算与服务器 summary/per-row 完全一致。审计同时发现旧
+  sidecar `note` 未随输出合同变化；raw 保持不变，runner 改为在 sidecar 记录实际
+  requested/effective contract、normalization owner 与 timed-boundary 标志。

@@ -117,6 +117,34 @@ class ImageRunnerSchemaTest(unittest.TestCase):
 
         self.assertTrue(expected.issubset(set(RUNNER_MODULE.CSV_FIELDS)))
 
+    def test_output_contract_metadata_matches_effective_arm_output(self):
+        self.assertEqual(
+            RUNNER_MODULE.embedding_output_contract_metadata(
+                "daft_builtin_embed",
+                "arm_default",
+            ),
+            {
+                "embedding_output_contract_requested": "arm_default",
+                "embedding_output_contract_effective": "provider_raw",
+                "embedding_normalization_in_timed_boundary": False,
+                "embedding_normalization_owner": "provider_native_output",
+            },
+        )
+        self.assertEqual(
+            RUNNER_MODULE.embedding_output_contract_metadata(
+                "daft_builtin_embed",
+                "l2_normalized",
+            )["embedding_normalization_owner"],
+            "baseline_adapter",
+        )
+        self.assertEqual(
+            RUNNER_MODULE.embedding_output_contract_metadata(
+                "project_ray",
+                "arm_default",
+            )["embedding_output_contract_effective"],
+            "l2_normalized",
+        )
+
 
 class ExecutionResultTest(unittest.TestCase):
     def test_accepts_driver_stage_timings(self):

@@ -1,0 +1,5 @@
+batch_size,n_repeats,images_per_s_values,images_per_s_median,images_per_s_cv_pct,relative_to_batch64_pct,operator_e2e_s_median,first_output_s_median,gpu_util_mean_pct_median,gpu_util_peak_pct_max,gpu_memory_peak_mib_median,cpu_busy_cores_mean_median,cpu_core_seconds_per_image_median,images_per_joule_median,host_memory_peak_pct_median,exactly_once_all,embedding_output_contract_effective,selection
+16,2,948.829643|921.387955,935.108799,2.075074,-2.297669,128.354948,42.319444,7.614112,35.000000,822.000000,14.539818,0.015556197,6.744341,13.250000,True,l2_normalized,
+64,2,954.753375|959.446186,957.099780,0.346706,0.000000,125.379531,38.742345,6.044594,84.000000,931.000000,14.844086,0.015509684,6.997974,13.400000,True,l2_normalized,frozen_native_point
+256,2,918.980839|919.405733,919.193286,0.032686,-3.960558,130.549263,42.512723,5.415092,50.000000,1312.000000,14.498879,0.015773341,6.816994,13.550000,True,l2_normalized,
+512,2,888.674914|877.767020,883.220967,0.873286,-7.719029,135.871521,47.190369,5.343604,74.000000,1813.000000,14.115530,0.015984851,6.574692,13.850000,True,l2_normalized,stop_no_batch1024
