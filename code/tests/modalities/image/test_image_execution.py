@@ -1,5 +1,6 @@
 import unittest
 import sys
+import importlib.util
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +21,13 @@ from src.modalities.image.execution import (
 )
 from src.modalities.image.clip import l2_normalize_numpy_embeddings
 from src.baselines.image.frameworks.ray_data import build_ray_data_clip_pipeline
+
+
+RUNNER_PATH = CODE_ROOT / "scripts" / "experiments" / "run_image_clip_e2e.py"
+RUNNER_SPEC = importlib.util.spec_from_file_location("image_clip_e2e_runner", RUNNER_PATH)
+assert RUNNER_SPEC is not None and RUNNER_SPEC.loader is not None
+RUNNER_MODULE = importlib.util.module_from_spec(RUNNER_SPEC)
+RUNNER_SPEC.loader.exec_module(RUNNER_MODULE)
 
 
 class EmbeddingAuditTest(unittest.TestCase):
@@ -96,6 +104,18 @@ class EmbeddingNormalizationTest(unittest.TestCase):
     def test_numpy_normalization_rejects_non_matrix(self):
         with self.assertRaisesRegex(ValueError, "two-dimensional"):
             l2_normalize_numpy_embeddings(np.asarray([1.0, 2.0]))
+
+
+class ImageRunnerSchemaTest(unittest.TestCase):
+    def test_output_contract_fields_are_declared_in_csv_schema(self):
+        expected = {
+            "embedding_output_contract_requested",
+            "embedding_output_contract_effective",
+            "embedding_normalization_in_timed_boundary",
+            "embedding_normalization_owner",
+        }
+
+        self.assertTrue(expected.issubset(set(RUNNER_MODULE.CSV_FIELDS)))
 
 
 class ExecutionResultTest(unittest.TestCase):
