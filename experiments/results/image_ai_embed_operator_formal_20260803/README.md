@@ -139,23 +139,50 @@ operator_jct（低=好；每 cell 3 formal 中位，CV 见括号）：
 4. **Ray Data 5K 校准低估了它**：60K×2 下它 cpu16 比 cpu8 快 56%。后续若要更紧的 Ray Data 最优，
    可扫 cpu20+（本次未做）。
 
-## 8. Daft built-in 处理（option-A，单列）
+## 8. Daft built-in 处理（option-A，单列）—— 物化-cap 已实测闭合
 
-Daft built-in 物化执行（`DistributedActorPoolProject` 把 decode 后图像缓冲进 object store）→ 60K×1
-即 OutOfDisk（3 次公平环境尝试：默认 / `RAY_TMPDIR` / `/tmp/ray`→大盘 symlink，全失败，因 runner
-`ray.init` 不传 `_temp_dir`）。60K×2 需 ~156GB ≫ 77GB object store + 磁盘 → **无法 scale 到本规模**。
-按 option-A：Daft 单列，报其 in-memory 最大规模的 img/s + 物化-cap 发现（"materializing native
-baseline 不可扩展"本身支持课题执行结构论点）。**Daft-max 探针 + 3-arm 一致性 run 进行中/待跑**
-（见下）。
+Daft built-in 物化执行（`DistributedActorPoolProject` 把 decode 后图像缓冲进 Ray object store）。
+**升序探针定 max**（`daft_max_probe2_20260803`，带磁盘状态日志）：
 
-## 9. 下一步（pending）
+| N (rows, ×1 pass) | 结果 | /dev/shm 峰值 | spill |
+|---:|---|---:|---|
+| 5K（5K 校准）| OK | — | 无 |
+| **12K** | **OK** | **68G（56%）** | 无（全装 /dev/shm）|
+| 20K | **OutOfDisk 崩** | 70G + spill 9G→/root/autodl-tmp | symlink 生效但仍崩 |
+| 30K / 60K | OutOfDisk 崩 | — | — |
 
-1. **Daft-max 探针**（进行中）：升序 gate run 30K→45K→52K→56K，找 Daft 不崩的最大行数 + 每行物化
-   足迹 → 定 3-arm 一致性 run 规模。
-2. **3-arm 一致性 run** @ Daft-max：Daft + Ray Data + project 同规模、img/s 同框 + 一致性检验（@短规模
-   速率是否与 >60s 稳态一致）。
-3. **direct/GPU ceiling**（step 7）：独立容量参照（R0 ~9.7K 单卡），不进排名表。
-4. 写入本报告的 Daft/direct-ceiling 小节（pending 1–3）。
+- **Daft max ≈ 12–16K 行**（12K 跑通、20K 崩），img/s @12K ≈ **187**（与 5K 校准 177 一致）。
+- **物化足迹 ~5.7MB/行**（Daft 在 object store 存多份副本：encoded + decoded + intermediate）。
+- **cap 是 /dev/shm object store（RAM ~70–77G），不是磁盘**：12K 时 /dev/shm 到 68G；20K 时撞顶
+  → spill。symlink 把 spill 引到大盘（/root/autodl-tmp +9G）**生效了，但照样崩**——因为 object store
+  本身（/dev/shm）撞 RAM 上限。
+- **扩容磁盘无效**：cap 是 RAM object store，不是 /root/autodl-tmp 磁盘。即便把 /dev/shm 120G 全配给
+  object store（需改 runner `object_store_memory`，代码改），Daft 也只能 ~24K 行（仍 ≪ 60K×2）。
+
+**3-arm 同规模一致性 run 不可行（最终判定）**：Daft max ~12K 下，project(1666 img/s)=**~7s**、
+Ray Data(905)=**~13s** —— fast arm 远短于 first_output（~22s），稳态窗口≈0，img/s 全 transient 噪声。
+Daft max（~12K）与 project 可靠测量规模（~100K）差 **~10×，无重叠**。故 **option-A 是唯一可行路径**：
+Daft 单列。
+
+**Daft 的发现本身有价值**：原生 materializing baseline 在 ~12K 行就撞 RAM object store、完全无法 scale，
+而 streaming 的 Ray Data/project 轻松 120K——**量化了"执行结构（stream vs materialize）决定可扩展性"**，
+比"Daft 在某规模慢多少"更有说服力，支持课题执行结构论点。远端：`daft_max_probe2_20260803/`（probe.log +
+runs.csv）+ `daft_builtin_60k_gate_symlink_20260803/`（60K 崩溃证据）。
+
+## 9. 容量参照（step 7）+ 下一步
+
+**direct/GPU ceiling（容量参照，不进排名表）**：R0 GPU-resident forward 天花板 **~9.7K img/s（单卡）**
+/ ~19K（双卡），见 `motivation/results/gpu/image_clip_transfer_ceiling_20260802/`（R0/R1/R2 profile）。
+对照本实验 operator 臂（Ray Data ~905–1415、project ~1039–1666 img/s）→ **所有 operator 臂都只到双卡
+天花板的 ~5–9%**，GPU 有 ~10× headroom——瓶颈在喂入侧（CPU preprocess），不在 GPU 算力。这与 §6 的
+GPU busy 6–10% 一致。
+
+**剩余 step**：
+1. **system E2E + pgvector 写回**（campaign step 5/6 后续）：operator formal 有效后才接统一 pgvector sink，
+   比较完整 source→operator→sink。
+2. **策略消融**（研究内容 A）：在冻结 project static 上做 frame/work budget、状态感知调度；动态策略只和
+   冻结静态点比。
+3. **官方 ResNet18 复现**（独立 AI_CLASSIFY 轨道，并行准备，不阻塞 AI_EMBED）。
 
 ## 原始数据
 
@@ -163,5 +190,6 @@ baseline 不可扩展"本身支持课题执行结构论点）。**Daft-max 探�
 - `raw/runs_step8_matched_resource.csv`（8 行：Ray Data cpu16 + project cpu8，各 1 warmup + 3 formal）
 - `summary.csv`（4 cell 全指标中位）
 - 远端：`/root/autodl-tmp/experiment-artifacts/ai_embed_formal_2arm_60kx2_20260803/` +
-  `…/ai_embed_matched_resource_20260803/`（runs.csv + 16 per-run manifest + formal.log/matched.log）
+  `…/ai_embed_matched_resource_20260803/`（runs.csv + 16 per-run manifest + formal.log/matched.log）；
+  `daft_max_probe2_20260803/`（Daft 物化-cap 探针）；`daft_builtin_60k_gate_symlink_20260803/`（60K 崩溃证据）
 - 复现：commit `37dc8fd`；`deploy/autodl/image_serving.md` §5.4（ray_data_staged / project_ray 命令）
