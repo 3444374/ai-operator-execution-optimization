@@ -225,6 +225,12 @@ CUDA_VISIBLE_DEVICES=0 /root/autodl-tmp/venvs/vllm-4090/bin/python \
 
 ### 5.4 Fused Daft Native / Daft Ray / project-Ray operator E2E gate
 
+> **arm 分类（2026-08-03 校正：防 `--phase formal` 被拒）**——runner 现按 provenance 区分：
+> - **vendor-native formal baseline**（`formal_baseline_eligible=True`，可直接 `--phase formal` 进排名）：`daft_builtin_embed`（Daft 内置 `decode_image→embed_image`）、`ray_data_staged`（Ray Data native `map_batches`）。
+> - **项目自写 diagnostic reference**（`daft_native`/`daft_ray`/`daft_staged`，UDF 由项目编写）：`--phase formal` **默认被拒**，必须加 `--allow-non-native-diagnostic` 才能跑，且 `formal_baseline_eligible` 仍为 False、**不进 baseline 排名**（仅粗资源边界隔离 / 复现 2026-08-01 历史 fused 数字）。
+>
+> formal baseline 排名只用 vendor-native 两臂 + `project_ray`；diagnostic 三臂仅供 `--phase gate` 或显式加 flag 的 diagnostic formal。下方 daft_native/ray/staged 命令已补 flag，但它们的输出**不进入** baseline 排名。
+
 各臂必须串行运行，且运行前确认没有 vLLM/其他 GPU 任务。不要用一个统一的
 `--gpu-workers/--cpu-workers` 循环跑完三臂：Native 单卡和 Ray 双卡是两个独立
 track，而且 baseline actor shape 必须先校准。当前 5000 图 formal 冻结配置为：
@@ -252,7 +258,7 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
   --arm daft_native --model "$MODEL" --pg-dsn "$DATABASE_URL" \
   --limit 5000 --warmup-rows 64 --batch-size 64 \
   --cpu-workers 4 --gpu-workers 1 --daft-model-workers 4 --source-shards 4 \
-  --max-active-batches 8 --phase formal --repeat-index 1 \
+  --max-active-batches 8 --allow-non-native-diagnostic --phase formal --repeat-index 1 \
   --out-csv "$OUT/runs.csv" --out-manifest "$OUT/native_1gpu_r1.json"
 
 # 单卡 project-Ray。
@@ -270,16 +276,16 @@ PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
   --arm daft_ray --model "$MODEL" --pg-dsn "$DATABASE_URL" \
   --limit 5000 --warmup-rows 64 --batch-size 64 \
   --cpu-workers 4 --gpu-workers 2 --daft-model-workers 4 --source-shards 4 \
-  --max-active-batches 8 --phase formal --repeat-index 1 \
+  --max-active-batches 8 --allow-non-native-diagnostic --phase formal --repeat-index 1 \
   --out-csv "$OUT/runs.csv" --out-manifest "$OUT/daft_ray_2gpu_r1.json"
 
-# 双卡 Daft-on-Ray staged 强 baseline。
+# 双卡 Daft-on-Ray staged（项目自写 diagnostic reference，非强 baseline；formal 需 --allow-non-native-diagnostic，不进排名）。
 PYTHONPATH=code /root/autodl-tmp/venvs/vllm-4090/bin/python \
   code/scripts/experiments/run_image_clip_e2e.py \
   --arm daft_staged --model "$MODEL" --pg-dsn "$DATABASE_URL" \
   --limit 5000 --warmup-rows 64 --batch-size 64 \
   --cpu-workers 4 --gpu-workers 2 --daft-model-workers 2 --source-shards 4 \
-  --max-active-batches 8 --phase formal --repeat-index 1 \
+  --max-active-batches 8 --allow-non-native-diagnostic --phase formal --repeat-index 1 \
   --out-csv "$OUT/runs.csv" --out-manifest "$OUT/daft_staged_2gpu_r1.json"
 
 # 双卡 Ray Data staged 强 baseline。source-shards 至少覆盖 CPU actor pool，
