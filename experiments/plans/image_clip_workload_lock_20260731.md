@@ -371,10 +371,31 @@ PolarDB Lakebase 异构流水线。
 
 ## 10. 下一步执行顺序
 
-1. ✅ 本方案文档（本文）。
-2. 更新 `data/README.md` 加 COCO + CLIP 条目（exact URL + fetch 命令，遵循既有约定）。
-3. AutoDL 下载 COCO val 5K + CLIP base（smoke 集，放得下 7.4G）。
-4. 跑 §6 最小验证（CPU/GPU 时间比）——**这是 go/no-go 门禁**。
-5. 门禁通过 → 写 CLIP embedding adapter + CPU decode pipeline（`code/src/`），复用 organizer/scheduler/tracing。
-6. ✅ §7 operator-E2E fused Daft Native/Ray + ours 正式对照；下一步补 bounded direct、
-   Daft-on-Ray staged、Ray Data staged、统一 pgvector sink 与 CPU-normalized curve。
+以下顺序取代早期“下载→smoke→build”清单。长时间本身不是目标；每一阶段只在前一
+门禁通过后启动，避免用大矩阵掩盖语义或资源错误。
+
+1. **当前代码 project static 复验（可立即运行）**：60K unique×2 logical passes，
+   `8/16 CPU actors × active16/32`，固定 seed 交错 `1 warmup + 3 formal`，共 16 runs。
+   每个 formal 的 steady-state proxy 必须≥60s、exactly-once、0 incident。该矩阵只冻结
+   项目静态点，不与 Daft/Ray Data 横向排名。
+2. **正式 baseline 公平性门禁**：Daft built-in 的 L2 normalization 必须在其 E2E
+   计时边界内执行并显式记录 output contract；Ray Data/project 使用同一 normalized
+   contract。逐行 parity、维度、finite、exactly-once 失败则停止。官方 ResNet18 另需
+   upstream SHA256、adapter diff 和 ImageNet 数据许可/可用性门禁，不能拿 COCO 冒充。
+3. **各 arm 独立 calibration**：Daft built-in 只扫公开 `batch_size`；Ray Data 扫官方
+   batch/actor-pool 形状；project 使用步骤 1 的四点。每点至少 `1+2`，若候选与最优
+   吞吐在 3% 内，选择更低 CPU/更简单的点；CV>10% 或 2 次重复方向冲突则补第 3 次，
+   不按单次峰值选点。
+4. **冻结后的长稳态 formal**：Daft built-in、Ray Data native、frozen project static
+   和 bounded/direct ceiling 分别使用自己的 calibration 最优点；60K unique×至少
+   2 passes，固定块顺序交错 `1+3`。同一结果表同时报告 E2E/JCT、images/s、first
+   output、stage latency、CPU/GPU/显存/能耗、失败率和 embedding 质量；外部厂商 raw
+   time 只作锚点，不与本机数字混排。
+5. **system E2E 与方法实验**：只有 operator formal 有效后才接统一 pgvector sink，
+   重跑 source→operator→writeback；再在 frozen project static 上做 frame/work budget、
+   active-window、routing/feedback 和多 job 消融。动态策略只与 frozen static 比，不与
+   弱默认或服务 ceiling 比。
+
+预计步骤 1 约 0.5–1 小时；步骤 3 约 1–3 小时；步骤 4/5 各约 2–6 小时，具体以首个
+完整 run 的实测时长外推。禁止为了“跑得久”增加无效 repeats；优先扩大 logical passes
+使单 run 达到稳态，再保持 3 个交错正式重复。

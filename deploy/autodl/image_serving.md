@@ -442,14 +442,43 @@ runner 按固定 seed 对每个 formal repeat block
 exactly-once、最少 unique 行数或查询阶段 60 秒门禁失败即停止：
 
 ```bash
-OUT=/root/autodl-tmp/experiment-artifacts/image_project_static_60k_x2_20260802
-PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
+cd /root/autodl-tmp/ai-operator
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+set +a
 
-"$PY" code/scripts/experiments/run_image_clip_matrix.py \
+test -n "$DATABASE_URL"
+test -d /root/autodl-tmp/models/clip-vit-base-patch32
+test "$(nvidia-smi --query-compute-apps=pid --format=csv,noheader | wc -l)" -eq 0
+
+RUN_ID=image_project_static_60k_x2_$(date +%Y%m%d_%H%M%S)
+OUT=/root/autodl-tmp/experiment-artifacts/$RUN_ID
+PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
+mkdir -p "$OUT"
+
+nohup "$PY" code/scripts/experiments/run_image_clip_matrix.py \
   --config deploy/autodl/image_project_static_formal.example.json \
   --image-runner code/scripts/experiments/run_image_clip_e2e.py \
   --python-executable "$PY" \
-  --output-dir "$OUT"
+  --output-dir "$OUT" >"$OUT/launcher.log" 2>&1 &
+echo $! >"$OUT/launcher.pid"
+```
+
+`source runtime.env` 前必须使用 `set -a`；否则 `DATABASE_URL` 只存在于交互 shell，
+matrix 子进程会在第 0 个 run 以 `--pg-dsn is required` fail closed。该类 0-run 目录确认
+`completed_runs=[]` 后可删除；包含有效 run 的目录不得覆盖。
+
+监控与断线恢复：
+
+```bash
+cat "$OUT/matrix_manifest.json" | tail -40
+tail -f "$OUT/launcher.log"
+
+# 仅在原进程确已退出、config/commit/fingerprint 未变化时恢复：
+"$PY" code/scripts/experiments/run_image_clip_matrix.py \
+  --config deploy/autodl/image_project_static_formal.example.json \
+  --image-runner code/scripts/experiments/run_image_clip_e2e.py \
+  --python-executable "$PY" --output-dir "$OUT" --resume
 ```
 
 若最快 formal 的 steady-state proxy 仍不足 60 秒，本轮 fail-closed，先扩大处理次数或
@@ -457,6 +486,10 @@ PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
 unique images、logical passes 与 processed rows。项目静态点冻结后，
 Daft fused、Daft staged、Ray Data staged 分别独立校准，再在相同物理 CPU/GPU 上限下
 做同一 workload、同一随机块顺序的正式比较。
+
+完整的长任务阶段、选择规则、formal 对照和 stop conditions 只在
+`experiments/plans/image_clip_workload_lock_20260731.md` §10 维护；本节只负责服务器
+启动、监控和恢复命令。
 
 ## 6. 注意事项（坑汇总）
 

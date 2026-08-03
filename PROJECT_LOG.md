@@ -3704,3 +3704,14 @@
 - 当前运行只读取 `baseline_reference.md`、对应模态执行合同和
   `experiment_status_and_gaps.md` §0；`code_doc/superpowers/` 与 `plans/archive/` 仅作
   设计历史。
+
+## 2026-08-03 图像长稳态实验执行顺序
+
+- 将服务器后续任务收敛为五段 fail-closed 流程：当前代码 project static 复验 →
+  normalized output contract/官方 vendor-code 门禁 → 各原生 arm 独立 calibration →
+  frozen operator formal → 统一 pgvector system E2E 与方法消融。
+- 明确 60K unique×logical passes、单 run≥60s、固定 seed 交错 1+3、3% 近最优选简单
+  点、CV>10% 补重复、动态只对 frozen static 等规则；不以扩大无效网格换取运行时长。
+- 修正 AutoDL 后台启动模板：runtime env 必须通过 `set -a` 导出，否则 matrix 子进程
+  在第 0 个 run 缺少 `DATABASE_URL`；补充唯一输出目录、监控、resume 和 0-run 清理
+  边界。科学合同在 image workload §10，部署文档只保留可执行命令。
