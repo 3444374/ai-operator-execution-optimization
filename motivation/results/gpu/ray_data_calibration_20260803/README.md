@@ -5,8 +5,8 @@
 > `gpu_workers` GPU 池），Ray Data 自管 backpressure、task dispatch、actor scheduling
 > （`scheduler_owner=ray_data`，`custom_scheduling_code=false`，`implementation=
 > official_api_with_workload_udfs`）。**这不是 baseline 排名**——排名是 step 5，需统一
-> L2-normalized 合同 + 匹配规模。本结果只报 Ray Data native 的独立校准：最佳操作点、img/s、
-> GPU 饥饿现象、binding stage。
+> L2-normalized 合同 + 匹配规模。本结果只报 Ray Data native 的独立校准：观测操作点、
+> img/s、低采样 GPU busy 率和候选限制阶段。
 
 > **2026-08-03 长稳态更新**：下文 Phase 1/2 是 5K screening；§9 的 60K unique×2
 > passes、schema v11、交错长稳态复核是当前配置选择权威证据。长稳态确认 batch16/64
@@ -55,8 +55,8 @@
 5. **已知 Ray warning（非错误）**：`MapWorker(MapBatches(RayDataClipPreprocessor)) has constructor
    arguments in the object store and max_restarts > 0`——Ray 已知 issue（ray-project/ray#53727），
    单 pass 不影响正确性，所有 run `exit=0`、`exactly_once=True`。
-6. **未跑 feeding-saturation 门禁**：Ray Data native 与 Daft built-in 一样是 GPU 喂入侧瓶颈
-   （见 §5/§6），GPU 平均利用率 ~2%，是"原生没喂饱"的对照样本，不是要修正的违规。
+6. **未跑 feeding-saturation 门禁**：5K screening 的 GPU busy 采样均值约 2%，只能作为
+   “可能未持续喂满”的候选信号；它不是 MFU，也不能单独确认喂入瓶颈。
 
 ## 4. 实验设计
 
@@ -75,9 +75,9 @@ Phase 2 在 batch 平台点上扫 cpu_workers 找预处理池平台。所有 run
 | 128 | 328.2 | 3.9% | 15.26 s | 9.47 s | 3.7% | 36% |
 | 256 | 329.9 | 2.2% | 15.16 s | 9.36 s | 1.8% | 27% |
 
-> **batch 几乎无影响**：321–344 img/s（±7%），相邻增益 −4.9%/+7.2%/−4.7%/+0.5% 全在噪声内。
-> batch=64 中位最高但与其余在 CV 范围内重合。**batch 不是 Ray Data 的杠杆**——因为 binding
-> stage 在 CPU 预处理（见 5.3），不在 GPU forward。
+> **screening 观察**：321–344 img/s（观测范围约 7%），batch=64 中位最高。每点只有两个
+> repeat，不能据此做统计等价声明；60K×2 长稳态复核见 §9，它确认 16/64 近优而 256/512
+> 退化。
 
 ### 5.2 Phase 2——cpu_workers 扫描（batch=64 固定，per cpu 2 rep 中位数）
 
@@ -91,7 +91,7 @@ Phase 2 在 batch 平台点上扫 cpu_workers 找预处理池平台。所有 run
 > **cpu_workers 平台在 8**（346.5 img/s，CV 最低 1.2%）。2→4 大跳（+56%，严重欠配），4→8 微升（+5%），
 > 8→12 持平略降（−3.9%）。文档 formal 配置 cpu=4（329）在平台点 5% 以内。
 
-### 5.3 per-operator throughput（最佳配置 batch=64/cpu=8/r1，Ray Data stats）
+### 5.3 per-operator throughput（候选配置 batch=64/cpu=8/r1，Ray Data stats）
 
 | operator | aggregate rows/s | single-task rows/s | UDF time total | wall |
 |---|---:|---:|---:|---:|
@@ -99,18 +99,17 @@ Phase 2 在 batch 平台点上扫 cpu_workers 找预处理池平台。所有 run
 | **MapBatches(RayDataClipPreprocessor)** | **632** | **171** | 29.0 s | 7.9 s |
 | MapBatches(RayDataClipPredictor) | 808 | **1662** | 3.0 s | 6.2 s |
 
-> **binding stage = CPU preprocess**（single-task 171 rows/s，最低；aggregate 632）。
-> GPU predictor single-task 1662 rows/s（preprocess 的 ~10×），aggregate 808——**GPU 被 preprocess 喂不够**。
-> 注：aggregate per-operator（632/808）高于 e2e 346 img/s，因 pipeline 各 stage 重叠，e2e 受最慢 stage +
-> pipeline fill/drain 限制。
+> CPU preprocess 的 single-task 与 aggregate throughput 均低于 predictor，支持它是候选限制
+> 阶段；但 aggregate operator stats 存在 pipeline overlap，不能与 E2E 直接相减，也不能仅由
+> 本表确认 GPU 等待的因果比例。
 
-### 5.4 GPU + 能耗（两阶段汇总）——**核心观察：GPU 严重未打满，与 Daft 同量级**
+### 5.4 GPU + 能耗（两阶段汇总）——低频 busy 采样信号
 
-- `gpu_util_mean_pct` 全程 **1.1–3.9%**（双卡均 claim，`gpu_active_device_count=2`），peak 22–60%。
+- `gpu_util_mean_pct` 全程 **1.1–3.9%**（双卡均可见，`gpu_active_device_count=2`），peak 22–60%。
 - `gpu_active_power_mean_w` ~111–113 W（TDP 450 W 的 ~25%）。
 - per-device（cpu=4 r2，peak 较高那 rep）：GPU0 util_mean 1.9% / GPU1 5.7%——两卡都未饱和。
-- **与 Daft built-in 同量级**：Daft gpu_util_mean 1.2–4.1%，Ray Data 1.1–3.9%。两者都把两张 4090
-  闲置到 ~97%。
+- **与 Daft built-in 同量级**：Daft gpu_util_mean 1.2–4.1%，Ray Data 1.1–3.9%。这些是
+  `nvidia-smi` 采样的 busy 指标，不等于 MFU，也不能换算成“严格空转 97%”。
 
 ### 5.5 流式边界——**比 Daft 早 ~3× 出首条**
 
@@ -131,15 +130,16 @@ unavailable_engine_internal`）——Ray Data 自管执行内部，runner 看不
 
 1. **batch 无影响**（Phase 1：321–344，±7%）；**cpu_workers 平台在 8**（Phase 2：211→346→331）。
 2. **最佳操作点 batch=64 / cpu_workers=8 / gpu_workers=2 → ~346 img/s**（CV 1.2%）；文档 cpu=4 给 329（5% 内）。
-3. **binding stage = CPU preprocess**（single-task 171 rows/s）；GPU predictor 1662 rows/s single-task，
-   被 preprocess 喂不够 → GPU 平均利用率 1–4%。
+3. CPU preprocess 的 single-task throughput 为 171 rows/s，predictor 为 1662 rows/s；
+   同期 `nvidia-smi` busy 采样均值为 1%–4%。前者是官方 operator stats，后者不是 MFU。
 4. Ray Data 真正流式（first_output ~9s），e2e ~15s。
 5. 输出正确性闭环：exactly_once、normalize=True（norm error ~1e-7）、digest 确定性。
 
 ### 推断（标注为推断）
 
-- Ray Data 与 Daft built-in **同属 CPU/喂入侧瓶颈**：两者 GPU 平均利用率都 ~2-4%，CLIP forward 很快
-  （见 `image_clip_transfer_ceiling_20260803` R0 ~9.7K img/s）但原生 pipeline 喂不够。
+- Ray Data 与 Daft built-in **可能同属 CPU/喂入侧受限**：两者 GPU busy 采样均值都低，且
+  R0 GPU-resident ceiling 明显更高；这是跨诊断证据形成的推断，不是 Nsight/硬件 counter
+  已确认因果。
 - Ray Data 比 Daft built-in 快 ~2× e2e（346 vs 177 img/s）且早 ~3× 出首条，原因是 Ray Data 的显式
   CPU/GPU 分级 + backpressure 让两 stage 重叠；Daft built-in 的单 `PhysicalScan→actor pool` 漏斗
   喂得更慢。**但两者都没喂饱 GPU**——优化空间在 GPU 之前的喂入/组织，不在 GPU 内部。
@@ -162,10 +162,10 @@ unavailable_engine_internal`）——Ray Data 自管执行内部，runner 看不
 
 ## 7. 对课题含义
 
-1. **强动机信号（与 Daft 互补）**：两个 framework-native baseline（Daft built-in、Ray Data）在真实
-   bytea-in-PG 链路上都把两张 4090 闲置到 ~2-4%，binding 在 CPU preprocess / 喂入侧。**GPU forward 天花板
-   ~9.7K img/s，原生 pipeline 只跑到 177–346 img/s**——巨大 headroom，且优化点在 GPU 之前。这正是课题
-   "上游数据组织/喂入调度"的价值，与 R0-R2/R3 木桶判决一致。
+1. **动机候选信号（与 Daft 互补）**：两个 framework-native baseline 的低频 GPU busy
+   采样均值都较低，Ray Data operator stats 又显示 preprocess 服务能力低于 predictor；结合
+   R0 GPU-resident ceiling，支持继续检验上游喂入优化。正式贡献仍须由统一合同、同规模
+   baseline/project 头对头证明，不能用 5K screening 直接成立。
 2. **为 step 5 选定 Ray Data native 配置**：batch=64、cpu_workers=8（或文档 cpu=4，5% 内）、gpu_workers=2。
    formal 排名时用此配置；注意 5K 的 task-count 限制，更大规模需复核 cpu_workers。
 3. **Ray Data 比 Daft built-in 快 ~2×（校准条件下）**：显式 CPU/GPU 分级 + backpressure 优于单漏斗。
@@ -210,6 +210,21 @@ unavailable_engine_internal`）——Ray Data 自管执行内部，runner 看不
 
 25K×1 的先导运行因 formal 只有 30.309s 被 60 秒门禁拒绝，未进入本结果；它只用于
 纠正 workload 规模。失败目录已清理，拒绝原因保留在 `PROJECT_LOG.md` 和部署文档。
+
+复现命令（`DATABASE_URL` 由服务器 runtime env 提供，不写入 artifact）：
+
+```bash
+cd /root/autodl-tmp/ai-operator
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+set +a
+PY=/root/autodl-tmp/venvs/vllm-4090/bin/python
+OUT=/root/autodl-tmp/experiment-artifacts/image_ray_data_native_crosscheck_60k_x2_<run-id>
+"$PY" code/scripts/experiments/run_image_clip_matrix.py \
+  --config deploy/autodl/image_ray_data_native_crosscheck.example.json \
+  --image-runner code/scripts/experiments/run_image_clip_e2e.py \
+  --python-executable "$PY" --output-dir "$OUT"
+```
 
 ### 9.2 严谨性自检
 

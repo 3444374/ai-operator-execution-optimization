@@ -3763,3 +3763,7 @@ formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④
   `probe_embedding_parity.py` 重算与服务器 summary/per-row 完全一致。审计同时发现旧
   sidecar `note` 未随输出合同变化；raw 保持不变，runner 改为在 sidecar 记录实际
   requested/effective contract、normalization owner 与 timed-boundary 标志。
+- `238f261` 已在服务器执行全量 `unittest discover`，628/628 通过；另跑 64 图 Daft
+  normalized capture 代码门禁，sidecar 正确写入 effective contract、owner、timed boundary
+  和 `timing_valid_for_performance=false`。该临时 gate 不产生研究结论，核验后删除；成功
+  parity 与 60K×2 calibration artifact 继续保留。
