@@ -3715,3 +3715,30 @@
 - 修正 AutoDL 后台启动模板：runtime env 必须通过 `set -a` 导出，否则 matrix 子进程
   在第 0 个 run 缺少 `DATABASE_URL`；补充唯一输出目录、监控、resume 和 0-run 清理
   边界。科学合同在 image workload §10，部署文档只保留可执行命令。
+
+
+## 2026-08-03 图像原生 baseline 独立校准完成（campaign §10 step 3）
+
+campaign §10 五步：① project static ✅ → ② normalized output contract/官方 vendor-code
+门禁 ⏸（codex WIP）→ **③ 各 arm 独立 calibration ✅（本轮完成）** → ④ frozen operator
+formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④）。
+
+**③ 本轮完成**（commit `0f66017` + `f1cb248`）：
+- **Daft built-in `embed_image`**（vendor-native，`scheduler_owner=daft`）：
+  batch {16,32,64,128,256}×2 rep @ 5000 COCO/双卡。平台点 batch=64≈**177 img/s**
+  （CV 1.1%）。GPU 平均利用率仅 **1.2–4.1%**（双卡均 claim），近末端发射（first_output≈e2e）。
+- **Ray Data `map_batches`**（framework-native，`scheduler_owner=ray_data`，`normalize=True`）：
+  Phase 1 batch 扫（batch 几乎无影响，321–344）+ Phase 2 cpu_workers 扫（平台 cpu=8）。
+  最佳 batch=64/cpu=8≈**346 img/s**（CV 1.2%），GPU 平均利用率 **1.1–3.9%**，first_output≈9s（真流式）。
+  Ray Data stats 显示 binding stage=**CPU preprocess**（171 rows/single-task，GPU predictor 1662 rows/single-task 被饿）。
+- **关键动机信号**：两个 framework-native baseline 在真实 bytea-in-PG 链路上都把两张 4090
+  闲置到 ~2–4%，binding 在 CPU preprocess/喂入侧（与 R0–R2 ceiling ~9.7K img/s、R3 CPU preprocess ~5ms/img
+  一致）。Ray Data ~1.95× Daft built-in（5K/双卡/cpu≈4 同条件对照，**校准条件下的 cross-check，非正式排名**）。
+- **修正点**：先前误用 `--limit 60000 --dataset-passes 2`=120K 校准导致 Daft 单 PhysicalScan 漏斗
+  （458% CPU/189GB RSS）饿死 GPU 池；改回文档 §5.4 的 5000 规模后双卡均激活、正常流式。
+- **③ 不排名**：统一 L2-normalized contract 是 ②（codex），未推送前不做 ④ formal ranking。
+  Daft raw vs Ray Data/project normalized 的正式横向比较待 ②。
+
+报告与派生摘要：`motivation/results/gpu/daft_builtin_calibration_20260803/`、
+`motivation/results/gpu/ray_data_calibration_20260803/`（七步 README + summary + raw runs.csv）。
+原始 per-run manifest + calibration.log 保留在 AutoDL experiment-artifacts。
