@@ -3809,3 +3809,27 @@ formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④
   任何跨 workload doc_id dup 中；那 956 个 dup 是 val∩60k 的 `int(stem)` 撞零头、不同图，
   formal 不用 val，不影响）。
 - cron `8741a68c` 监控 formal 完成。
+
+
+## 2026-08-03 AI_EMBED operator 正式对比结果（step 6 + step 8）——修正 headline
+
+**核心修正**：step-6 的 "project 比 Ray Data 快 45.7%" **是虚高**——Ray Data 用了 5K 校准冻结的
+cpu8（其 60K×2 弱配置）。matched-resource（step 8）抓出：Ray Data 在 60K×2 下 cpu8→cpu16 涨 56%
+（905→1415 img/s），真实强配置是 cpu16。
+
+**Table B matched-resource 2×2（60K×2 held-out，l2_normalized，3 formal/cell，CV≤3.2%）operator_jct**：
+- @cpu8：Ray Data 128.75s vs project 112.24s → project **−12.8%**
+- @cpu16：Ray Data 82.41s vs project 69.95s → project **−15.1%**
+→ 同 CPU 下 project 两档都显著快（≥5%、方向一致）→ **执行结构收益真实，约 13–15%**（非纯资源）。
+
+**Table A best-achievable（修正）**：project(cpu16) vs Ray Data(cpu16) = **project −15.1%**（公平的最强对最强）。
+step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
+
+其它：project 更早出首条（22s vs 40–46s）、略更省能（matched img/J 略高）；两臂 **GPU 都饥饿**
+（busy 6–10%，双卡均 claim，远未饱和——瓶颈在喂入侧）；两臂都 scale CPU（+56–60% cpu8→16）。
+
+**Daft built-in**：物化执行，30K×1 即 OutOfDisk（max < 30K，远小于先前估计的 ~59K；每行 ~2.5MB 物化）。
+按 option-A 单列。Daft-max 探针重测中（12K/20K/25K）。注意：Daft max（~20-25K）远小于 project 可靠
+测量规模（~100K），3-arm 同规模一致性 run 在 fast arm 侧可能太短——待 Daft max 定后评估可行性。
+
+报告 + summary + raw：`experiments/results/image_ai_embed_operator_formal_20260803/`。

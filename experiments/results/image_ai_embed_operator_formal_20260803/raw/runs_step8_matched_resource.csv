@@ -1,0 +1,234 @@
+arm,baseline_role,implementation_provenance,scheduler_owner,custom_scheduling_code,formal_baseline_eligible,upstream_source,phase,repeat_index,workload_name,rows,unique_images,dataset_passes,batch_size,cpu_workers,gpu_workers,model_workers,gpus_per_model_worker,source_shards,source_cpu_threads,max_active_batches,ray_cluster_num_cpus,host_cpu_slots_detected,declared_external_cpus,declared_source_cpus,declared_preprocess_cpus,declared_model_cpus,declared_total_cpus,resource_budget_semantics,torch_intraop_threads_per_worker,torch_interop_threads_per_worker,worker_setup_s,worker_setup_accounting,operator_e2e_s,first_output_s,first_output_semantics,images_per_s,batch_service_p50_s,batch_service_p95_s,batch_service_p99_s,batch_service_semantics,batch_completion_wall_p50_s,batch_completion_wall_p95_s,batch_completion_wall_p99_s,batch_actor_service_p50_s,batch_actor_service_p95_s,batch_actor_service_p99_s,batch_unattributed_wait_p50_s,batch_unattributed_wait_p95_s,batch_unattributed_wait_p99_s,batch_preprocess_p50_s,batch_preprocess_p95_s,batch_preprocess_p99_s,batch_host_copy_p50_s,batch_host_copy_p95_s,batch_host_copy_p99_s,batch_h2d_p50_s,batch_h2d_p95_s,batch_h2d_p99_s,batch_forward_p50_s,batch_forward_p95_s,batch_forward_p99_s,batch_d2h_p50_s,batch_d2h_p95_s,batch_d2h_p99_s,batch_source_next_p50_s,batch_source_next_p95_s,source_next_total_s,batch_driver_materialize_p50_s,batch_driver_materialize_p95_s,driver_materialize_total_s,batch_submit_p50_s,batch_submit_p95_s,submit_total_s,detailed_stage_timing,input_encoded_bytes,avg_encoded_bytes,telemetry_encoded_bytes,input_tensor_bytes,device_input_bytes,output_embedding_bytes,logical_h2d_effective_gbps,logical_d2h_effective_gbps,submitted_batches,pending_batches_peak,output_rows,exactly_once,embedding_checksum,embedding_sum_all,embedding_digest_xor_rounded5,max_norm_error,cpu_system_mean_pct,cpu_system_peak_pct,cpu_busy_cores_mean,cpu_busy_cores_peak,cpu_per_core_peak_pct,cpu_logical_count,cpu_samples,cpu_core_seconds_estimate,cpu_core_seconds_per_image,host_memory_mean_pct,host_memory_peak_pct,host_memory_available_min_mib,host_disk_read_bytes,host_disk_write_bytes,host_net_recv_bytes,host_net_sent_bytes,host_context_switches,host_interrupts,gpu_util_mean_pct,gpu_util_peak_pct,gpu_active_util_mean_pct,gpu_active_util_peak_pct,gpu_active_device_count,gpu_active_devices_json,gpu_active_power_mean_w,gpu_active_power_peak_w,gpu_energy_estimate_j,gpu_active_sm_clock_mean_mhz,gpu_active_memory_clock_mean_mhz,gpu_active_pcie_generation,gpu_active_pcie_width,gpu_active_pcie_generation_max,gpu_active_pcie_width_max,gpu_memory_peak_mib,gpu_samples,gpu_per_device_json,gpu_seconds,images_per_gpu_s,images_per_joule,engine_stats_text,engine_stats_semantics,model_revision,processor_revision,dtype,embedding_dimension,embedding_output_contract_requested,embedding_output_contract_effective,embedding_normalization_in_timed_boundary,embedding_normalization_owner,daft_version,ray_version,torch_version,transformers_version,gpu_name,model_flops_per_image,gpu_peak_flops_per_s,estimated_e2e_mfu,server_version,pgvector_version,git_commit
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,warmup,0,coco_train2017_heldout,116574,58287,2,64,16,2,2,1.0,4,16,,22,128,0,4,16,2,22,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,80.91475904546678,38.59467621333897,cold_setup_to_first_complete_arrow_record_batch,1440.7013179696419,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,19039433162,163324.86799800984,,,,,,,,,116574,True,-795.3261102220181,-24804.193033776086,49ceb36ef22e47ee5992f623b5adedff,1.7881393432617188e-07,17.275277613993712,30.31640625,22.11235534591195,38.805,100.0,128,318,1789.2159047422047,0.015348327283461189,12.486792452830189,15.2,874827.52734375,2949120,95674368,38360547945,38360551026,3171194,2057614,8.547445255474452,36.0,8.547445255474452,36.0,2,"[1, 0]",145.4597080291971,241.47,11777.215409590952,2056.5328467153286,8256.324817518249,4.0,16.0,4.0,16.0,936.0,274,"{""0"": {""memory_clock_mean_mhz"": 8254.846715328467, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 77.34737226277372, ""samples"": 137, ""sm_clock_mean_mhz"": 2056.204379562044, ""util_mean_pct"": 8.255474452554745, ""util_peak_pct"": 30.0}, ""1"": {""memory_clock_mean_mhz"": 8257.802919708029, ""memory_peak_mib"": 936.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 68.11233576642336, ""samples"": 137, ""sm_clock_mean_mhz"": 2056.8613138686133, ""util_mean_pct"": 8.83941605839416, ""util_peak_pct"": 36.0}}",161.82951809093356,720.3506589848209,9.898265077589242,"Operator 1 ReadSQL: 1 tasks executed, 36 blocks produced in 37.72s
+* Remote wall time: 313.26us min, 35.17s max, 986.05ms mean, 35.5s total
+* Remote cpu time: 389.66us min, 33.58s max, 942.0ms mean, 33.91s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 436 min, 826 max, 809 mean, 29144 total
+* Output size bytes per block: 72873928 min, 138435733 max, 132858145 mean, 4782893222 total
+* Output rows per task: 29144 min, 29144 max, 29144 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 29144 rows
+	* Ray Data throughput: 772.7194619733226 rows/s
+	* Estimated single task throughput: 821.009084818649 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 142 tasks executed, 566 blocks produced in 45.02s
+* Remote wall time: 249.92ms min, 1.92s max, 1.19s mean, 670.71s total
+* Remote cpu time: 250.71ms min, 1.92s max, 1.19s mean, 671.99s total
+* UDF time: 230.7ms min, 1.9s max, 1.17s mean, 664.6s total
+* Output num rows per block: 44 min, 256 max, 205 mean, 116574 total
+* Output size bytes per block: 26494028 min, 154147072 max, 124016817 mean, 70193518638 total
+* Output rows per task: 434 min, 1169 max, 820 mean, 142 tasks used
+* Tasks per node: 142 min, 142 max, 142 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 116574 rows
+	* Ray Data throughput: 2589.2330685795087 rows/s
+	* Estimated single task throughput: 173.8068320692169 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 464 tasks executed, 464 blocks produced in 43.23s
+* Remote wall time: 33.26ms min, 710.46ms max, 95.33ms mean, 44.23s total
+* Remote cpu time: 33.63ms min, 686.9ms max, 95.87ms mean, 44.48s total
+* UDF time: 32.62ms min, 707.32ms max, 94.43ms mean, 43.81s total
+* Output num rows per block: 94 min, 319 max, 251 mean, 116574 total
+* Output size bytes per block: 194862 min, 661287 max, 520814 mean, 241657902 total
+* Output rows per task: 94 min, 319 max, 251 mean, 464 tasks used
+* Tasks per node: 464 min, 464 max, 464 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 116574 rows
+	* Total output num rows: 116574 rows
+	* Ray Data throughput: 2696.882746917261 rows/s
+	* Estimated single task throughput: 2635.426179352646 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.012028397143046972 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,l2_normalized,l2_normalized,True,model_actor,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,37dc8fda7db9e16af9297ff7678062dec7c883a9
+project_ray,project_method,project_implementation,project_ray,True,False,local_project,warmup,0,coco_train2017_heldout,116574,58287,2,64,8,2,2,1.0,4,8,16,10,128,8,,8,2,18,host_budget_includes_daft_native_source_threads_plus_ray_actor_slots,1,1,7.683235626667738,explicit_pre_query_plus_query_wall,110.0352340657264,21.241711722686887,cold_setup_to_first_complete_arrow_record_batch,1059.4242924985997,0.7616522014141083,1.066994283348322,1.1835271827876568,submission_to_result_includes_dependency_queue_actor_and_return,0.7616522014141083,1.066994283348322,1.1835271827876568,0.04124699346721172,0.04916832596063614,0.0571732260286808,0.351599533110857,0.6455102097243071,0.7583277933299541,0.35542272590100765,0.43102131970226765,0.46030046232044697,0.0261349156498909,0.031105035915970802,0.033659180626273155,,,,,,,,,,0.0008159615099430084,0.0011697951704263687,15.805268753319979,0.007713623344898224,0.017180969938635826,18.4397834520787,0.005365479737520218,0.009670045226812363,10.753197820857167,False,19039433162,163324.86799800984,19039433162,70190604288,35095302144,238743552,,,1822,16,116574,True,-795.3214603097554,-24804.168234328932,2a3ed6a52a3ea6f55a375d5be1c96e56,1.7881393432617188e-07,12.350900454812207,21.11171875,15.809152582159623,27.023000000000003,100.0,128,426,1739.563804758717,0.014922399546714678,7.056338028169014,7.9,950059.671875,1630208,61967360,19267707209,19267704639,4040817,2243566,6.34054054054054,30.0,6.34054054054054,30.0,2,"[0, 1]",145.42691891891891,166.88,16096.284904038552,2414.2297297297296,9782.627027027027,4.0,16.0,4.0,16.0,930.0,370,"{""0"": {""memory_clock_mean_mhz"": 9780.437837837839, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 77.8087027027027, ""samples"": 185, ""sm_clock_mean_mhz"": 2413.7837837837837, ""util_mean_pct"": 6.34054054054054, ""util_peak_pct"": 30.0}, ""1"": {""memory_clock_mean_mhz"": 9784.816216216217, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 67.61821621621623, ""samples"": 185, ""sm_clock_mean_mhz"": 2414.675675675676, ""util_mean_pct"": 6.34054054054054, ""util_peak_pct"": 21.0}}",220.0704681314528,529.7121462492998,7.242292286386633,,unavailable,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,l2_normalized,l2_normalized,True,model_actor,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,37dc8fda7db9e16af9297ff7678062dec7c883a9
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,formal,1,coco_train2017_heldout,116574,58287,2,64,16,2,2,1.0,4,16,,22,128,0,4,16,2,22,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,78.59887577220798,37.418934924528,cold_setup_to_first_complete_arrow_record_batch,1483.1509847271857,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,19039433162,163324.86799800984,,,,,,,,,116574,True,-795.3172240944309,-24804.17700179508,4c8e9cd6dc74fb45f1a1e0b9a22429e9,1.7881393432617188e-07,16.302351334951457,32.67265625,20.867009708737864,41.821000000000005,100.0,128,309,1640.123503834545,0.01406937656625444,12.55242718446602,15.2,875177.203125,4608,57162752,38346585784,38346586979,3059770,1870829,7.8059701492537314,37.0,7.8059701492537314,37.0,2,"[0, 1]",147.6965671641791,246.49,11615.386705391813,2079.7388059701493,8354.089552238805,4.0,16.0,4.0,16.0,930.0,268,"{""0"": {""memory_clock_mean_mhz"": 8354.089552238805, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 77.60514925373134, ""samples"": 134, ""sm_clock_mean_mhz"": 2078.8432835820895, ""util_mean_pct"": 8.08955223880597, ""util_peak_pct"": 37.0}, ""1"": {""memory_clock_mean_mhz"": 8354.089552238805, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 70.09141791044776, ""samples"": 134, ""sm_clock_mean_mhz"": 2080.634328358209, ""util_mean_pct"": 7.522388059701493, ""util_peak_pct"": 36.0}}",157.19775154441595,741.5754923635928,10.036170379578223,"Operator 1 ReadSQL: 1 tasks executed, 36 blocks produced in 41.45s
+* Remote wall time: 291.1us min, 38.79s max, 1.09s mean, 39.11s total
+* Remote cpu time: 296.08us min, 36.81s max, 1.03s mean, 37.13s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 436 min, 826 max, 809 mean, 29144 total
+* Output size bytes per block: 72873928 min, 138435733 max, 132858145 mean, 4782893222 total
+* Output rows per task: 29144 min, 29144 max, 29144 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 29144 rows
+	* Ray Data throughput: 703.1761176879022 rows/s
+	* Estimated single task throughput: 745.2467031619427 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 142 tasks executed, 566 blocks produced in 44.43s
+* Remote wall time: 249.13ms min, 2.16s max, 1.18s mean, 666.22s total
+* Remote cpu time: 249.76ms min, 1.85s max, 1.17s mean, 664.94s total
+* UDF time: 228.41ms min, 2.15s max, 1.17s mean, 659.73s total
+* Output num rows per block: 44 min, 256 max, 205 mean, 116574 total
+* Output size bytes per block: 26494028 min, 154147072 max, 124016817 mean, 70193518638 total
+* Output rows per task: 434 min, 1169 max, 820 mean, 142 tasks used
+* Tasks per node: 142 min, 142 max, 142 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 116574 rows
+	* Ray Data throughput: 2623.8719826629963 rows/s
+	* Estimated single task throughput: 174.97764848580283 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 470 tasks executed, 470 blocks produced in 42.59s
+* Remote wall time: 37.59ms min, 1.24s max, 97.43ms mean, 45.79s total
+* Remote cpu time: 38.34ms min, 828.58ms max, 96.56ms mean, 45.39s total
+* UDF time: 36.64ms min, 1.24s max, 96.45ms mean, 45.33s total
+* Output num rows per block: 94 min, 315 max, 248 mean, 116574 total
+* Output size bytes per block: 194862 min, 652995 max, 514165 mean, 241657902 total
+* Output rows per task: 94 min, 315 max, 248 mean, 470 tasks used
+* Tasks per node: 470 min, 470 max, 470 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 116574 rows
+	* Total output num rows: 116574 rows
+	* Ray Data throughput: 2736.829740239062 rows/s
+	* Estimated single task throughput: 2545.8390995997415 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.012028104448518425 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,l2_normalized,l2_normalized,True,model_actor,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,37dc8fda7db9e16af9297ff7678062dec7c883a9
+project_ray,project_method,project_implementation,project_ray,True,False,local_project,formal,1,coco_train2017_heldout,116574,58287,2,64,8,2,2,1.0,4,8,16,10,128,8,,8,2,18,host_budget_includes_daft_native_source_threads_plus_ray_actor_slots,1,1,7.84252386726439,explicit_pre_query_plus_query_wall,111.23289529234171,21.807895448058844,cold_setup_to_first_complete_arrow_record_batch,1048.017312626996,0.7586841005831957,1.0605674888938665,1.1912269089370966,submission_to_result_includes_dependency_queue_actor_and_return,0.7586841005831957,1.0605674888938665,1.1912269089370966,0.02234646864235401,0.04826699011027813,0.05590547248721123,0.3638857174664736,0.6611949540674686,0.7731050476431847,0.35648616030812263,0.42745116725564003,0.4603110197931528,0.005028445273637772,0.02908376231789589,0.03493344411253929,,,,,,,,,,0.0008202251046895981,0.0011966880410909653,15.86878053098917,0.012790234759449959,0.017386116087436676,20.49786171130836,0.005526192486286163,0.009304368868470192,10.898621894419193,False,19039433162,163324.86799800984,19039433162,70190604288,35095302144,238743552,,,1822,16,116574,True,-795.3214603097554,-24804.16823432894,2a3ed6a52a3ea6f55a375d5be1c96e56,1.7881393432617188e-07,12.792149345930232,23.31484375,16.373951162790696,29.843000000000004,100.0,128,430,1821.3219952126144,0.015623741101897631,7.0667441860465114,8.0,949548.01953125,40960,63893504,19282965463,19282962385,4046298,2318077,5.935828877005347,30.0,5.935828877005347,30.0,2,"[0, 1]",145.1320320855615,167.88,16236.497638951676,2415.48128342246,9787.636363636364,4.0,16.0,4.0,16.0,930.0,374,"{""0"": {""memory_clock_mean_mhz"": 9785.470588235294, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 77.33545454545454, ""samples"": 187, ""sm_clock_mean_mhz"": 2414.9197860962568, ""util_mean_pct"": 5.839572192513369, ""util_peak_pct"": 30.0}, ""1"": {""memory_clock_mean_mhz"": 9789.802139037432, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 67.79657754010695, ""samples"": 187, ""sm_clock_mean_mhz"": 2416.042780748663, ""util_mean_pct"": 6.032085561497326, ""util_peak_pct"": 30.0}}",222.46579058468342,524.008656313498,7.179750374264009,,unavailable,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,l2_normalized,l2_normalized,True,model_actor,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,37dc8fda7db9e16af9297ff7678062dec7c883a9
+project_ray,project_method,project_implementation,project_ray,True,False,local_project,formal,2,coco_train2017_heldout,116574,58287,2,64,8,2,2,1.0,4,8,16,10,128,8,,8,2,18,host_budget_includes_daft_native_source_threads_plus_ray_actor_slots,1,1,8.564152432605624,explicit_pre_query_plus_query_wall,113.26072209328413,22.25718213431537,cold_setup_to_first_complete_arrow_record_batch,1029.253547438864,0.7975147292017937,1.2223542481660843,1.3906935025006533,submission_to_result_includes_dependency_queue_actor_and_return,0.7975147292017937,1.2223542481660843,1.3906935025006533,0.026459502056241035,0.049991847947239876,0.05706402100622654,0.38556597381830215,0.822195265442133,0.9556287527084351,0.35921066999435425,0.4354697000235319,0.4732022527605295,0.005625501275062561,0.029771480709314346,0.033223679289221764,,,,,,,,,,0.0008166804909706116,0.0011733248829841614,15.210784059017897,0.006717333570122719,0.016632752493023872,15.498767221346498,0.00515475869178772,0.009274102747440338,10.379391800612211,False,19039433162,163324.86799800984,19039433162,70190604288,35095302144,238743552,,,1822,16,116574,True,-795.3214603097554,-24804.168234328932,2a3ed6a52a3ea6f55a375d5be1c96e56,1.7881393432617188e-07,12.588081478310501,22.61875,16.11274429223744,28.951999999999998,100.0,128,438,1824.9410534432548,0.01565478625974278,7.030821917808219,8.0,949216.15625,20992,61574144,19196030479,19196030128,4076298,2405461,6.350785340314136,30.0,6.350785340314136,30.0,2,"[0, 1]",145.4823560209424,165.85000000000002,16562.423235229773,2411.387434554974,9771.565445026177,4.0,16.0,4.0,16.0,930.0,382,"{""0"": {""memory_clock_mean_mhz"": 9795.219895287959, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 77.51759162303665, ""samples"": 191, ""sm_clock_mean_mhz"": 2417.277486910995, ""util_mean_pct"": 6.345549738219895, ""util_peak_pct"": 30.0}, ""1"": {""memory_clock_mean_mhz"": 9747.910994764397, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 67.96476439790577, ""samples"": 191, ""sm_clock_mean_mhz"": 2405.497382198953, ""util_mean_pct"": 6.356020942408377, ""util_peak_pct"": 30.0}}",226.52144418656826,514.626773719432,7.03846281092712,,unavailable,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,l2_normalized,l2_normalized,True,model_actor,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,37dc8fda7db9e16af9297ff7678062dec7c883a9
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,formal,2,coco_train2017_heldout,116574,58287,2,64,16,2,2,1.0,4,16,,22,128,0,4,16,2,22,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,83.56604667380452,41.17297936230898,cold_setup_to_first_complete_arrow_record_batch,1394.9923999042364,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,19039433162,163324.86799800984,,,,,,,,,116574,True,-795.3140128842806,-24804.217662786486,b5a06679c0be036832917f403b5c64ac,1.7881393432617188e-07,19.529010733282675,34.0046875,24.997133738601825,43.526,100.0,128,329,2088.911644711334,0.017919189911226634,11.846808510638297,14.9,877771.76171875,5939200,273633280,38324654996,38324656469,3519727,2464900,8.23049645390071,37.0,8.23049645390071,37.0,2,"[0, 1]",142.99120567375886,237.03,11955.79056178296,1997.0744680851064,8002.436170212766,4.0,16.0,4.0,16.0,930.0,282,"{""0"": {""memory_clock_mean_mhz"": 7968.070921985815, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 75.77042553191488, ""samples"": 141, ""sm_clock_mean_mhz"": 1989.5744680851064, ""util_mean_pct"": 7.3120567375886525, ""util_peak_pct"": 36.0}, ""1"": {""memory_clock_mean_mhz"": 8036.801418439716, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 67.22078014184396, ""samples"": 141, ""sm_clock_mean_mhz"": 2004.5744680851064, ""util_mean_pct"": 9.148936170212766, ""util_peak_pct"": 37.0}}",167.13209334760904,697.4961999521182,9.750421722226571,"Operator 1 ReadSQL: 1 tasks executed, 36 blocks produced in 39.86s
+* Remote wall time: 290.56us min, 37.36s max, 1.05s mean, 37.64s total
+* Remote cpu time: 303.23us min, 36.22s max, 1.01s mean, 36.5s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 436 min, 826 max, 809 mean, 29144 total
+* Output size bytes per block: 72873928 min, 138435733 max, 132858145 mean, 4782893222 total
+* Output rows per task: 29144 min, 29144 max, 29144 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 29144 rows
+	* Ray Data throughput: 731.080482673723 rows/s
+	* Estimated single task throughput: 774.2272344692391 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 142 tasks executed, 566 blocks produced in 45.45s
+* Remote wall time: 260.16ms min, 2.11s max, 1.19s mean, 671.42s total
+* Remote cpu time: 261.5ms min, 1.95s max, 1.19s mean, 671.82s total
+* UDF time: 249.28ms min, 2.11s max, 1.17s mean, 664.51s total
+* Output num rows per block: 44 min, 256 max, 205 mean, 116574 total
+* Output size bytes per block: 26494028 min, 154147072 max, 124016817 mean, 70193518638 total
+* Output rows per task: 434 min, 1169 max, 820 mean, 142 tasks used
+* Tasks per node: 142 min, 142 max, 142 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 116574 rows
+	* Ray Data throughput: 2565.1045883223005 rows/s
+	* Estimated single task throughput: 173.62197326263123 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 459 tasks executed, 459 blocks produced in 43.44s
+* Remote wall time: 24.39ms min, 883.4ms max, 95.82ms mean, 43.98s total
+* Remote cpu time: 24.67ms min, 734.6ms max, 95.93ms mean, 44.03s total
+* UDF time: 23.35ms min, 881.88ms max, 94.87ms mean, 43.55s total
+* Output num rows per block: 44 min, 319 max, 253 mean, 116574 total
+* Output size bytes per block: 91212 min, 661287 max, 526487 mean, 241657902 total
+* Output rows per task: 44 min, 319 max, 253 mean, 459 tasks used
+* Tasks per node: 459 min, 459 max, 459 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 116574 rows
+	* Total output num rows: 116574 rows
+	* Ray Data throughput: 2683.510617503371 rows/s
+	* Estimated single task throughput: 2650.5466593293017 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.012027636300619805 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,l2_normalized,l2_normalized,True,model_actor,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,37dc8fda7db9e16af9297ff7678062dec7c883a9
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,formal,3,coco_train2017_heldout,116574,58287,2,64,16,2,2,1.0,4,16,,22,128,0,4,16,2,22,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,82.4098872859031,40.05579216964543,cold_setup_to_first_complete_arrow_record_batch,1414.5632743747358,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,19039433162,163324.86799800984,,,,,,,,,116574,True,-795.3197134811912,-24804.0420370343,21492c47002836efdc2490c6be57a776,1.7881393432617188e-07,17.04363667052469,33.23671875,21.815854938271602,42.543,100.0,128,324,1797.8421465085753,0.015422325274148397,11.287962962962963,14.2,885118.984375,851968,73221120,38356753624,38356754967,3264698,2220370,8.396428571428572,37.0,8.396428571428572,37.0,2,"[0, 1]",145.39264285714287,232.37,11990.243792466634,2034.3214285714287,8156.964285714285,4.0,16.0,4.0,16.0,930.0,280,"{""0"": {""memory_clock_mean_mhz"": 8154.071428571428, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 74.84285714285714, ""samples"": 140, ""sm_clock_mean_mhz"": 2035.2857142857142, ""util_mean_pct"": 7.921428571428572, ""util_peak_pct"": 37.0}, ""1"": {""memory_clock_mean_mhz"": 8159.857142857143, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 70.5497857142857, ""samples"": 140, ""sm_clock_mean_mhz"": 2033.357142857143, ""util_mean_pct"": 8.871428571428572, ""util_peak_pct"": 37.0}}",164.8197745718062,707.2816371873679,9.72240448298828,"Operator 1 ReadSQL: 1 tasks executed, 36 blocks produced in 40.71s
+* Remote wall time: 331.65us min, 37.24s max, 1.04s mean, 37.54s total
+* Remote cpu time: 379.34us min, 36.18s max, 1.01s mean, 36.48s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 436 min, 826 max, 809 mean, 29144 total
+* Output size bytes per block: 72873928 min, 138435733 max, 132858145 mean, 4782893222 total
+* Output rows per task: 29144 min, 29144 max, 29144 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 29144 rows
+	* Ray Data throughput: 715.8970876239082 rows/s
+	* Estimated single task throughput: 776.4474369087754 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 142 tasks executed, 566 blocks produced in 45.51s
+* Remote wall time: 245.65ms min, 2.26s max, 1.21s mean, 684.31s total
+* Remote cpu time: 246.6ms min, 2.0s max, 1.21s mean, 683.37s total
+* UDF time: 232.91ms min, 2.25s max, 1.2s mean, 677.53s total
+* Output num rows per block: 44 min, 256 max, 205 mean, 116574 total
+* Output size bytes per block: 26494028 min, 154147072 max, 124016817 mean, 70193518638 total
+* Output rows per task: 434 min, 1169 max, 820 mean, 142 tasks used
+* Tasks per node: 142 min, 142 max, 142 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 116574 rows
+	* Ray Data throughput: 2561.6916340286775 rows/s
+	* Estimated single task throughput: 170.3516531762132 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 474 tasks executed, 474 blocks produced in 43.56s
+* Remote wall time: 23.42ms min, 1.05s max, 98.4ms mean, 46.64s total
+* Remote cpu time: 23.77ms min, 760.31ms max, 97.99ms mean, 46.45s total
+* UDF time: 22.58ms min, 1.04s max, 97.43ms mean, 46.18s total
+* Output num rows per block: 44 min, 318 max, 245 mean, 116574 total
+* Output size bytes per block: 91212 min, 659214 max, 509826 mean, 241657902 total
+* Output rows per task: 44 min, 318 max, 245 mean, 474 tasks used
+* Tasks per node: 474 min, 474 max, 474 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 116574 rows
+	* Total output num rows: 116574 rows
+	* Ray Data throughput: 2675.886300902968 rows/s
+	* Estimated single task throughput: 2499.32390480166 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.012027505718928007 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,l2_normalized,l2_normalized,True,model_actor,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,37dc8fda7db9e16af9297ff7678062dec7c883a9
+project_ray,project_method,project_implementation,project_ray,True,False,local_project,formal,3,coco_train2017_heldout,116574,58287,2,64,8,2,2,1.0,4,8,16,10,128,8,,8,2,18,host_budget_includes_daft_native_source_threads_plus_ray_actor_slots,1,1,7.543442703783512,explicit_pre_query_plus_query_wall,112.23504227213562,20.915402757003903,cold_setup_to_first_complete_arrow_record_batch,1038.6595633593984,0.7876302637159824,1.2004533912986517,1.345918107777834,submission_to_result_includes_dependency_queue_actor_and_return,0.7876302637159824,1.2004533912986517,1.345918107777834,0.0394562091678381,0.049515875056385994,0.06746078841388226,0.37217336520552635,0.7747720833867788,0.9212748929858208,0.3635533004999161,0.44443752616643906,0.4807243291288614,0.0251083392649889,0.03100360371172428,0.033213021233677864,,,,,,,,,,0.000841217115521431,0.0012120287865400314,15.62196915410459,0.0067198872566223145,0.01745413802564144,16.024877147749066,0.005429763346910477,0.009457794949412346,10.709088690578938,False,19039433162,163324.86799800984,19039433162,70190604288,35095302144,238743552,,,1822,16,116574,True,-795.3214603097554,-24804.168234328954,2a3ed6a52a3ea6f55a375d5be1c96e56,1.7881393432617188e-07,13.505355603448274,24.471875,17.286855172413794,31.324,100.0,128,435,1940.1909210281485,0.01664342753125181,6.518620689655172,7.6,953541.75,7627264,96424960,19214467742,19214467102,4158459,2592437,6.271052631578947,30.0,6.271052631578947,30.0,2,"[0, 1]",146.13084210526316,162.42000000000002,16497.41379839345,2422.4210526315787,9818.731578947369,4.0,16.0,4.0,16.0,930.0,380,"{""0"": {""memory_clock_mean_mhz"": 9844.642105263158, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 77.65831578947369, ""samples"": 190, ""sm_clock_mean_mhz"": 2428.1052631578946, ""util_mean_pct"": 6.515789473684211, ""util_peak_pct"": 30.0}, ""1"": {""memory_clock_mean_mhz"": 9792.82105263158, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 68.47252631578948, ""samples"": 190, ""sm_clock_mean_mhz"": 2416.7368421052633, ""util_mean_pct"": 6.026315789473684, ""util_peak_pct"": 22.0}}",224.47008454427123,519.3297816796992,7.066198461443224,,unavailable,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,l2_normalized,l2_normalized,True,model_actor,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,37dc8fda7db9e16af9297ff7678062dec7c883a9
+

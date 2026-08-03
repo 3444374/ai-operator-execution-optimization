@@ -1,0 +1,5 @@
+cell,arm,cpu_workers,batch,operator_jct_s,images_per_s,first_output_s,gpu_busy_mean_pct,gpu_busy_peak_pct,cpu_busy_cores,images_per_joule,cv_pct,n_formal,exactly_once,max_norm_error
+A1,ray_data_staged,8,64,128.75,905.4,45.55,6.1,46.0,16.4,6.88,3.18,3,True,0.0
+A2,ray_data_staged,16,64,82.41,1414.6,40.06,8.2,37.0,21.8,9.75,2.60,3,True,0.0
+B1,project_ray,8,64,112.24,1038.7,21.81,6.3,30.0,16.4,7.07,0.74,3,True,0.0
+B2,project_ray,16,64,69.95,1666.5,22.41,9.6,37.0,25.1,10.33,2.02,3,True,0.0
