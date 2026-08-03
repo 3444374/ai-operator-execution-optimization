@@ -18,6 +18,7 @@
 | `image_clip_native_baseline_20260801/` | **图像 CLIP operator-E2E Daft UDF diagnostic**：先校准项目自写 fractional-GPU UDF shape，再做 5000 图×3；项目阶段拆分相对 reference 单卡 +29.6%、双卡 +13.8%。不属于官方/native baseline，正式排名待 Daft built-in、官方 ResNet18 parity 与 Ray Data native graph |
 | `image_host_path_screening_20260802/` | 2×4090 图像 host-path 单因素 screening + schema v8 代表点诊断；报告、summary、各扫描 `runs.csv` 与逐臂 manifest 均已归档；当前判为 CPU preprocess 与 driver/Ray submit 混合木桶，PCIe 仅初步 NO-GO，尚非 formal |
 | `image_clip_transfer_ceiling_20260802/` | 单卡 CLIP R0 GPU-resident、R1 pinned FP16、R2 pageable FP32，batch16/64/256×30 repeats；raw/summary/七步报告齐全。分离 compute/H2D/ownership ceiling，属于 synthetic diagnostic，不作系统排名 |
+| `image_embedding_parity_20260803/` | Daft built-in `embed_image` 与项目 `project_ray` 的 256 图逐行语义门禁；L2-normalize 后 cosine P1=0.999788、overlap@10 mean=0.9949，支持统一 normalized contract；不是性能排名 |
 
 ## Endpoint
 

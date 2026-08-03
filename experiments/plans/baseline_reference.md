@@ -39,7 +39,7 @@
 | AI_COMPLETE service/direct | 历史 gate 与 feeding 证据存在；新 provenance formal 待重跑 | 64-row validity 后独立 calibration |
 | AI_COMPLETE Daft/Ray Data native | 功能/计数 gate 已有；旧短规模不进正式排名 | 512 calibration → 4096+ held-out formal（单 run 至少 60s） |
 | OceanBase `AI_COMPLETE` | 普通 AutoDL 容器 observer init `-9100`，`blocked` | privileged/seccomp-unconfined 容器或 VM |
-| Daft built-in image embedding | 256-row 远端 gate 已通过；语义 parity 尚未闭合 | 逐行 embedding parity → calibration → formal |
+| Daft built-in image embedding | 256-row gate 与逐行语义 parity 已通过；主要差异为 L2 归一化 | 按统一 normalized contract 独立 calibration → formal |
 | Ray Data native image graph | 256-row resource/deadlock gate 已通过 | 独立 batch/actor calibration → formal |
 | 官方 ImageNet/ResNet18 parity | upstream commit、文件哈希和适配白名单已冻结 | 双 4090 原生脚本 gate |
 | project image static | 60K unique 数据和 2-pass formal 配置已准备 | 先过语义/原生 baseline 门禁，再运行交错 formal |

@@ -220,7 +220,10 @@ inflight，需重做 256 行门禁。正式比较还必须直接复用官方 Res
 1. **Image fused operator-E2E gate**：中性 work-unit、lazy source、fast processor、
    项目自写 fused Daft Native/Ray diagnostic 与 bounded `PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor`
    runner 和 5K×3 formal 已完成。
-2. **补 system E2E 与完整强 baseline**：Daft built-in、官方 ResNet18 parity 和 Ray Data native graph
+2. **补 system E2E 与完整强 baseline**：Daft built-in 的 256 图逐行 parity 已通过（L2
+   normalize 后 cosine P1=0.999788、非自身 overlap@10 mean=0.9949），正式比较采用统一
+   normalized AI_EMBED contract 并把归一化成本计入各臂 E2E；继续补官方 ResNet18 parity
+   和 Ray Data native graph
    runner/256 行门禁已完成，下一步独立标定并做正式重复，再给系统臂接同一 pgvector sink；同时补 bounded direct CLIP、
    vLLM pooling、naive 和 ours。OceanBase AI_EMBED 等待可部署环境。当前 5K 结果只
    证明相对 fused UDF 的优化空间，尚未证明 ours 优于主流 staged pipeline。

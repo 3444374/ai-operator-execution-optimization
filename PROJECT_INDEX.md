@@ -188,6 +188,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `motivation/results/gpu/image_clip_native_baseline_20260801/` | 项目自写 fused Daft fractional-GPU UDF 校准、5000 图×3 operator-E2E、派生 summary 与七步报告 | 仅作历史机制诊断；不是官方/native baseline，不进入正式排名 |
 | `motivation/results/gpu/image_host_path_screening_20260802/` | 线程/资源合同修复后的 preprocess、source、active-window 单因素 screening、schema v8 分段诊断及 `raw/` 原始 CSV/manifest | 查图像 feeding 木桶迁移、16 actor/active32 候选和 PCIe 初步 NO-GO；不可当 formal baseline 排名 |
 | `motivation/results/gpu/image_clip_transfer_ceiling_20260802/` | R0/R1/R2 batch16/64/256×30 的 raw、summary 与七步 H2D/compute ceiling 报告 | pinned H2D约24–25GB/s、pageable/ownership 更重；synthetic diagnostic，不作系统排名或 PCIe 最终判决 |
+| `motivation/results/gpu/image_embedding_parity_20260803/` | Daft built-in 与 project_ray 的 256 图逐行 embedding parity 摘要和七步报告 | 确认主要差异为 L2 归一化并冻结正式 baseline 的统一输出合同；不可作性能排名 |
 | `motivation/plans/image_host_data_path_bottleneck.md` | R0→R4 表示阶梯、低扰动/侵入式双轨计时与 CPU/Ray/PCIe/GPU GO/NO-GO 门槛 | 重测 image motivation、判断 GPU feeding 缺口来自哪一段时读 |
 | `research/AGENTS.md` | 背景调研规则 | 写文献、资料依据时读 |
 | `research/README.md` | 调研目录入口 | 了解 research/ 下有什么 |

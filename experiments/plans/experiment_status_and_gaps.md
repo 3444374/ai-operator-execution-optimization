@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-02；image staged resource gate 与 baseline/指标合同同步）
+Date: 2026-07-20（最后更新：2026-08-03；Daft built-in embedding parity 与 baseline 合同同步）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -20,8 +20,10 @@ Native 单卡吞吐 +29.6%，相对最佳 Daft Ray 双卡 +13.8%，12/12 exactly
 但它是同物理机器各自最佳点，不是相同 Ray CPU reservation 的资源效率证明，也不
 代表 Daft 官方 native baseline。旧 staged reference arms 已通过 256 行资源账本、
 exactly-once、双 GPU 可运行门禁，但只能证明 adapter 能力。当前已新增 Daft 内置
-`embed_image`，并从 Ray Data arm 移除项目 `max_active_batches`；下一步先重做 native
-gate，再运行 Daft 官方 ResNet18 vendor-code parity 与 60 秒以上稳态 formal，补统一 pgvector sink、bounded
+`embed_image`，并从 Ray Data arm 移除项目 `max_active_batches`。Daft built-in 的 256 图
+gate 与逐行 parity 已闭合：离线 L2 normalize 后 cosine P1=0.999788、非自身
+overlap@10 mean=0.9949，正式比较采用统一 normalized contract 且把归一化计入各臂
+E2E。下一步运行 Daft 官方 ResNet18 vendor-code parity 与 60 秒以上稳态 formal，补统一 pgvector sink、bounded
 direct ceiling 与 CPU-budget-normalized curve。
 实现边界复测见 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`，
 operator-E2E 原始数据和七步报告见

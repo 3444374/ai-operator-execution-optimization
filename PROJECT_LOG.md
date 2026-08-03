@@ -3677,3 +3677,17 @@
 - 修复 `282e09f` 中 `--save-embeddings` 误读 `ExecutionResult.embeddings` 的问题：
   默认流式路径不保留矩阵，小规模 gate 仅通过可选 `EmbeddingCapture` 捕获已验证输出；
   capture-enabled timing 明确禁止用于性能结论。
+
+## 2026-08-03 Daft built-in / project 图像 embedding 语义门禁
+
+- AutoDL commit `6092b84` 上完成 Daft built-in `embed_image` 与 `project_ray` 的同一
+  256 图逐行 capture；两臂均 256/256、512 维、finite、exactly-once，无重复或漏行。
+- Daft raw norm P50=10.4718，项目 raw norm P50=1.0；分别 L2 normalize 后逐行 cosine
+  P1=0.999788、P50=0.999985、min=0.999716，非自身 overlap@10 mean=0.9949，超过预注册
+  门槛，判定为 `SCALE_NORMALIZATION_ONLY`。
+- 正式 AI_EMBED baseline 可使用统一 normalized contract，但归一化成本必须计入每个 arm
+  的 E2E，并保留 vendor raw 辅助结果。capture timing 与 256 图冷启动 gate 均不进入性能
+  排名；两条默认无 capture 路径也已在远端通过。
+- 报告与派生摘要保存于
+  `motivation/results/gpu/image_embedding_parity_20260803/`；原始 `.npz`、逐行 CSV 与
+  manifest 保留在 AutoDL experiment-artifacts，不提交大矩阵。
