@@ -3767,3 +3767,19 @@ formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④
   normalized capture 代码门禁，sidecar 正确写入 effective contract、owner、timed boundary
   和 `timing_valid_for_performance=false`。该临时 gate 不产生研究结论，核验后删除；成功
   parity 与 60K×2 calibration artifact 继续保留。
+
+
+## 2026-08-03 project_ray 静态配置选择证据归档 + 状态修正
+
+- 把只在服务器的两轮 project-static 矩阵归档进 Git：
+  `motivation/results/gpu/image_project_static_60k_x2_20260803/`（两轮 runs.csv + matrix_manifest
+  + summary + 七步报告）。两轮 commit `1f2e4fe`(08-02) + `29b256b`(08-03)，4 配置 cpu{8,16}×active{16,32}×3 formal @60K×2。
+- **冻结 project 静态点 `cpu16/active32/batch64`**：两轮 formal 中位 **1701.0 / 1681.0 img/s**（~1.2% 差）、
+  exactly-once、120000/60000、max_norm_error=0。cpu16 是主杠杆（cpu8→16 +45–60%），active32 在 cpu16 时再 +15%。
+- **定位为"静态配置选择证据"，不是跨系统正式排名**：两轮均为旧 schema（无 `schema_version`、
+  无 `embedding_output_contract` 字段），早于 `03b815d` 统一合同。最终排名须在当前 commit + `l2_normalized` 合同下重跑。
+- 修正过期状态：`experiment_status_and_gaps.md` §0 的"② 待独立校准与 formal"改为反映
+  原生校准已完成（Daft built-in + Ray Data native）、project 静态点已冻结、统一合同已落地；
+  下一步 Daft built-in 60K 长门禁 → 四臂同机 formal。
+- 同时确认 codex `238f261`+`f450e07` 已归档 Ray Data 60K×2 长稳态 crosscheck（batch64≈957 img/s）
+  并收紧了我两份校准报告的 claim 边界（GPU busy 采样≠MFU、"候选限制阶段"非定论）——接受这些收紧。

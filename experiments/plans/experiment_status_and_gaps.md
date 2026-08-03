@@ -29,7 +29,7 @@ direct ceiling 与 CPU-budget-normalized curve。
 operator-E2E 原始数据和七步报告见
 `motivation/results/gpu/image_clip_native_baseline_20260801/`。
 
-**过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + fused Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② ✅ staged runner/resource gate；待独立校准与 formal，再接统一 pgvector sink，并扩展 bounded direct CLIP、CPU-normalized curve、vLLM pooling、naive（+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
+**过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + fused Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② ✅ staged runner/resource gate；✅ 原生 baseline 独立校准已完成（Daft built-in batch64≈177 img/s@5K、Ray Data native batch64/cpu8≈957 img/s@60K×2，见 `motivation/results/gpu/{daft_builtin,ray_data}_calibration_20260803/`）；✅ project 静态点已冻结 `cpu16/active32/batch64`（两轮 1701/1681 img/s，**旧 schema，只用于选点**，见 `motivation/results/gpu/image_project_static_60k_x2_20260803/`）；✅ 统一 `l2_normalized` 输出合同（`03b815d`/`6f0954b`）。下一步：Daft built-in 60K 长门禁 → 四臂同机 formal 排名（**当前 commit + 统一合同**，不复用旧 schema 行）→ 再接统一 pgvector sink，并扩展 bounded direct CLIP、CPU-normalized curve、vLLM pooling、naive（+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
 
 **文本轨道遗留的 pivot 后分类**：
 

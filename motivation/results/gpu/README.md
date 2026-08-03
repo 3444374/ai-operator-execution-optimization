@@ -21,6 +21,7 @@
 | `image_embedding_parity_20260803/` | Daft built-in `embed_image` 与项目 `project_ray` 的 256 图逐行语义门禁；离线诊断与 schema v11 计时边界内 `l2_normalized` 合同门禁均已归档。正式合同门禁 cosine P1=0.999800、P50=0.999985，overlap@10 mean=0.9949，两臂 256/256 exactly-once；支持统一 normalized contract，但 capture 运行不作性能排名 |
 | `daft_builtin_calibration_20260803/` | **Daft built-in `embed_image` batch 独立校准**（vendor-native，step 4 前半）：batch {16,32,64,128,256}×2 rep @5000 图双卡；平台点 batch=64≈177 img/s、GPU 平均利用率仅 1.2–4.1%（双卡均 claim）→ 原生 pipeline 喂入侧瓶颈、GPU 严重未打满；不排名，只独立校准 |
 | `ray_data_calibration_20260803/` | **Ray Data native `map_batches` 独立校准**（framework-native）：先以 5000 图筛选 cpu_workers=8，再以 60K unique×2 passes、1 warmup+2 formal 复核 batch {16,64,256,512}。长稳态中 batch64 中位 957.100 img/s，batch512 低 7.719%，因此冻结 batch64/cpu8/gpu2/source4 且不再扫 1024；raw CSV、manifest、派生 summary 与七步报告齐全。该结果只选原生配置，不作系统排名，也不能把低采样 GPU util 写成 MFU |
+| `image_project_static_60k_x2_20260803/` | **project_ray 静态配置选择证据**（campaign step 1）：两轮（`1f2e4fe`+`29b256b`）4 配置 cpu{8,16}×active{16,32}×3 formal @60K×2。冻结 `cpu16/active32/batch64`，两轮中位 1701.0/1681.0 img/s（~1.2% 差）、exactly-once、norm_error=0。**两轮均为旧 schema（无输出合同字段），只用于选 project 静态点，不是跨系统正式排名**——排名须在当前 commit+统一合同下重跑 |
 
 ## Endpoint
 
