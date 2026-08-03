@@ -20,6 +20,7 @@
 | `image_clip_transfer_ceiling_20260802/` | 单卡 CLIP R0 GPU-resident、R1 pinned FP16、R2 pageable FP32，batch16/64/256×30 repeats；raw/summary/七步报告齐全。分离 compute/H2D/ownership ceiling，属于 synthetic diagnostic，不作系统排名 |
 | `image_embedding_parity_20260803/` | Daft built-in `embed_image` 与项目 `project_ray` 的 256 图逐行语义门禁；L2-normalize 后 cosine P1=0.999788、overlap@10 mean=0.9949，支持统一 normalized contract；不是性能排名 |
 | `daft_builtin_calibration_20260803/` | **Daft built-in `embed_image` batch 独立校准**（vendor-native，step 4 前半）：batch {16,32,64,128,256}×2 rep @5000 图双卡；平台点 batch=64≈177 img/s、GPU 平均利用率仅 1.2–4.1%（双卡均 claim）→ 原生 pipeline 喂入侧瓶颈、GPU 严重未打满；不排名，只独立校准 |
+| `ray_data_calibration_20260803/` | **Ray Data native `map_batches` 独立校准**（framework-native，step 4 后半）：Phase 1 batch 扫 + Phase 2 cpu_workers 扫 @5000 图双卡；batch 几乎无影响、cpu_workers 平台在 8；最佳 batch=64/cpu=8≈346 img/s（~1.95× Daft built-in 同条件），GPU 利用率 1.1–3.9% 仍饥饿、binding=CPU preprocess；Ray Data stats 给 per-operator throughput；不排名 |
 
 ## Endpoint
 
