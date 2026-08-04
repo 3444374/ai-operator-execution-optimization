@@ -101,14 +101,15 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 │   │   ├── observability/            # metrics、profiler、trace
 │   │   ├── baselines/{common,text,image}/
 │   │   ├── experiments/              # calibration、scenario、shared-vLLM
-│   │   └── infrastructure/           # runtime env、runner lease
-│   ├── scripts/{data,services,baselines,profiling,experiments,analysis}/
+│   │   └── infrastructure/           # config/profile/assets、runtime env、runner lease
+│   ├── scripts/{data,services,baselines,profiling,experiments,analysis,environment}/
 │   ├── tests/                        # 按生产域镜像；含架构边界测试
 │   ├── configs/                      # vendor pin 与可复现配置
 │   └── requirements.txt
 ├── code_doc/                         # 自动生成的代码文档（辅助）
 ├── data/                             # 本地 workload 数据（raw 被 git ignore）
 ├── deploy/                           # 本地 Docker 与 AutoDL 部署/runbook
+│   ├── runtime/                      # 跨机器 profile、依赖能力和模型/数据资产合同
 │   ├── autodl/
 │   ├── pgai/
 │   └── postgres18.4/
@@ -184,7 +185,8 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。
 
-当前 CLI 入口已按职责放在 `code/scripts/{data,services,baselines,profiling,experiments,analysis}/`；
+当前 CLI 入口已按职责放在
+`code/scripts/{data,services,baselines,profiling,experiments,analysis,environment}/`；
 不要继续使用重构前的扁平脚本路径。具体命令见 `code/scripts/README.md`、
 `deploy/autodl/README.md` 与对应实验计划。
 

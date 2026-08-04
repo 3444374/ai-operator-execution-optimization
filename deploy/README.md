@@ -8,6 +8,7 @@
 |---|---|---|
 | `pgai/` | PostgreSQL + pgai AI 算子集成环境 | PostgreSQL、pgai 扩展、pgvector |
 | `postgres18.4/` | PostgreSQL 18.4 本地同构预演 | PostgreSQL 18.4、pgvector |
+| `runtime/` | 跨机器 profile、软件能力组、模型/数据资产清单与只读 preflight | AutoDL、单 5070、其他 Linux/NVIDIA 环境 |
 | `autodl/` | AutoDL 云服务器部署指南与配置化脚本 | 2× GPU、vLLM、Ray CLIP actor、PostgreSQL18.4+pgvector、Ray/Daft |
 
 ## 使用
@@ -25,6 +26,9 @@ docker compose up -d
 每个子目录有独立的 `AGENTS.md`（规则）、`README.md`（详细说明）和 `compose.yaml`。
 AutoDL 使用 `autodl.env.example`、`download_model.sh` 和
 `start_endpoints.sh`，不使用 Docker Compose。
+
+任何新机器先读 `runtime/README.md` 并保存 `preflight.json`；再进入对应平台 runbook。
+`runtime/` 只检查和补齐明确选择的能力/资产，不会自动修改驱动、CUDA 或正式实验参数。
 
 AutoDL 新对话的唯一入口是 `autodl/README.md` 顶部“新对话 / 新 agent 的
 唯一操作入口”。其中分别给出全新实例环境准备、每次开机恢复、64 行 gate、

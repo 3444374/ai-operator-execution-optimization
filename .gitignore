@@ -27,6 +27,11 @@ tmp/
 stdout
 .worktrees/
 
+# Machine-local runtime profiles can contain database credentials or tokens.
+*.env
+*.env.local
+!*.env.example
+
 # Local model checkpoints and downloaded weights.
 models/
 

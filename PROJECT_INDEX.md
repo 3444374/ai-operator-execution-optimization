@@ -146,6 +146,11 @@
    全新实例准备、开机恢复、服务门禁、gate、正式启动与恢复命令。
 6. `deploy/autodl/*.example.json`：实际实验配置；不得从聊天记录手工重建参数。
 
+换机器或新建环境时，在进入平台 runbook 前先读
+`deploy/runtime/README.md`：选择 machine profile、检查 Python 能力和模型/数据资产，
+并把 `preflight.json` 保存到仓库外 artifact 目录。检查不自动安装；安装/下载是显式
+子命令。
+
 新对话完成以上读取后直接按 runbook 做只读状态检查；不要重新探索 Python、
 CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时，才进入
 `deploy/autodl/README.md` 对应详细故障章节。
@@ -170,6 +175,12 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/README.md` | AutoDL 单一 runbook：环境准备、开机恢复、gate、正式实验和中断恢复；顶部有"两条推理引擎 track（文本 vLLM / 多模态 CLIP）"概念总览 | 新对话接手远端实验时按顶部唯一入口直接操作 |
 | `deploy/autodl/text_serving.md` | 文本模态（vLLM 生成式 LLM）推理服务引擎部署：vLLM 是什么（continuous batching/APC/KV cache）、vLLM vs CLIP 差异、Qwen 模型下载 + start_endpoints.sh、sharegpt_multiturn 数据集、runner/合同/喂饱门禁、7 条坑 | 跑文本 AI_COMPLETE 实验时读；与 image_serving.md 对称 |
 | `deploy/autodl/image_serving.md` | 图像 CLIP 部署：五臂 fused/staged operator-E2E gate、显式 Ray 资源账本、Ray GPU actor、vLLM pooling、COCO/PG BYTEA 边界 | 准备/跑图像 AI_EMBED/AI_CLASSIFY 时读；先过 schema v4 资源/正确性门禁，再区分 operator E2E 与含 sink 的 system E2E |
+| `deploy/runtime/README.md` | AutoDL/单 5070/其他 Linux GPU 的迁移合同、preflight、显式依赖安装和模型/数据下载流程 | 新机器首次部署、发现缺包/缺数据或新增 workload 时先读 |
+| `deploy/runtime/assets.json` | 通用 Python 能力组和公开/受许可模型数据资产清单 | 检查环境、补可选依赖或下载新资产；不替代数据库 importer |
+| `deploy/runtime/profiles/*.json` | AutoDL 双 4090 与单 5070 Linux/WSL2 的最低机器能力合同 | 检查 CPU/GPU/显存/磁盘/命令，不承诺性能最优 |
+| `deploy/runtime/runtime.env.example` | 与平台无关的仓库外环境变量模板 | 新机器集中设置五个根目录、模型、endpoint、数据库和 MFU 口径 |
+| `code/scripts/environment/manage_environment.py` | 只读 check + 显式 install-python/download CLI | 保存机器报告；默认不改变环境，受许可资产 fail closed |
+| `code/requirements/*.txt` | 通用下载与 learned estimator 等可选能力依赖 | 只装进明确指定的 driver/analysis Python，不装进所有环境 |
 | `code/scripts/analysis/select_strategy_calibration.py` | 从 feeding/direct/token-budget/actor-shape 证据生成冻结校准合同和环境覆盖 | 同协议 actor 曲线完成后、启动数据组织/提交策略/多 job formal 前执行 |
 | `code/scripts/analysis/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
 | `code/scripts/analysis/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |
@@ -286,7 +297,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/baselines/text/controls/batched_completions.py` | 无 Ray 的持久异步 fixed-row multi-prompt Completions control | 同协议标定 HTTP packing 上限，验证每个完整 prompt exactly-once 后再测试项目 token-budget；不作为 native baseline |
 | `code/src/baselines/README.md` | 文本 comparison harness 分层与代码归属 | 修改 baseline adapter 或调度归属前读取，防止 control/native 混写 |
 | `code/ARCHITECTURE_REFACTOR_PLAN.md` | 源码域、文本/图像正交边界、依赖方向和分阶段迁移状态 | 调整目录、拆大文件或移动 scripts/tests 前读 |
-| `code/scripts/{data,services,baselines,profiling,experiments,analysis}/` | 按职责分组的稳定 CLI 入口 | 运行脚本前先按任务类型定位；可复用逻辑必须留在 `src/` |
+| `code/scripts/{data,services,baselines,profiling,experiments,analysis,environment}/` | 按职责分组的稳定 CLI 入口 | 运行脚本前先按任务类型定位；可复用逻辑必须留在 `src/` |
 | `code/tests/{data,planning,scheduling,serving,modalities,observability,baselines,experiments,infrastructure,architecture}/` | 镜像生产职责的测试目录 | 使用 `unittest discover -s code/tests -t code` 做递归发现 |
 | `code/src/baselines/common/provenance.py` | 文本 arm 原生性与来源 fail-closed 合同 | 每个 summary/gate 写入 role、scheduler owner、custom scheduling、formal eligibility 与 upstream source |
 | `code/src/baselines/text/frameworks/` | Daft prompt / Ray Data vendor-native runtime adapters | 框架拥有 batching/backpressure；只做 workload payload/response 适配，不注入项目调度 |
@@ -295,6 +306,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/baselines/text/products/` | OceanBase 等数据库产品原生 adapter | 只有真实 SQL AI Function 与 capability gate 通过后才进入产品 baseline |
 | `code/tests/baselines/text/test_baseline_provenance.py` | 文本 native baseline 资格单测 | 阻止项目自写 scheduler 被标记为 vendor-native，拒绝未分类 adapter |
 | `code/src/infrastructure/runtime_env.py` | driver、multi-job subprocess 与 Ray worker 的共享 PYTHONPATH/数值线程环境 | 防止 1/2/4-job 因每进程 OpenBLAS 线程膨胀而在请求前耗尽 OS 线程 |
+| `code/src/infrastructure/config_env.py` | 文本、图像、shared-vLLM 和 baseline 配置共用的严格 `${ENV_VAR}` 展开 | unset 立即失败；完整 scalar 保留 JSON 数值/布尔类型 |
+| `code/src/infrastructure/environment.py` | machine profile、Python 能力与模型/数据资产检查/补齐核心 | 默认只读，安装下载由薄 CLI 显式触发 |
 | `code/src/experiments/shared_vllm/` | Shared-vLLM 编排包：config/runner/runtime/evidence/metrics | 配置校验、三臂 credit 语义、并发执行、exactly-once、资源证据与公平性汇总 |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
 | `figures/README.md` | 图资产入口 | 查找正式图、备份图和绘图脚本 |
@@ -404,6 +417,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
 | `deploy/autodl/` | AutoDL 云服务器 runbook、环境模板、模型下载/endpoint 启动脚本与双 GPU 场景模板 | 2× GPU 云上复现：配置化 vLLM 多 endpoint + PG18.4 + Ray/Daft |
+| `deploy/runtime/` | 跨机器 profile、软件能力组与模型/数据资产合同 | 在 AutoDL、单 5070 或其他 Linux/NVIDIA 主机之间迁移前做 preflight |
 | `deploy/autodl/dual_gpu_capacity_scaling.example.json` | 单/双 endpoint 相同 per-GPU K 的容量扩展模板 | 先确定双 GPU 公平 scaling 与每卡静态甜点 |
 | `deploy/autodl/dual_gpu_token_budget_curve.example.json` | disjoint manifest、async multi-prompt、固定 per-endpoint active work 的 2K–65K token-budget 曲线 | feeding formal 通过后，在等量 offered work 下证明预算不是越大越好并冻结 held-out 静态点 |
 | `deploy/autodl/dual_gpu_data_organization.example.json` | disjoint manifest、async multi-prompt、固定 active work/最佳预算的数据组织隔离模板 | 比较 fixed16、sequential、row-cap-aware 与 length-align，避免预算、transport、offered load 和 flush 混淆 |

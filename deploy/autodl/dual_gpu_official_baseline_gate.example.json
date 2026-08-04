@@ -4,15 +4,15 @@
   "formal": false,
   "rows_total": 64,
   "endpoint_urls": [
-    "http://127.0.0.1:8000/v1/chat/completions",
-    "http://127.0.0.1:8001/v1/chat/completions"
+    "${COMPLETION_CHAT_ENDPOINT_URL_0}",
+    "${COMPLETION_CHAT_ENDPOINT_URL_1}"
   ],
   "model": "qwen2.5-7b",
-  "tokenizer": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
+  "tokenizer": "${MODEL_PATH}",
   "completion_protocol": "chat_completions",
   "temperature": 0.0,
-  "manifest": "/root/autodl-tmp/gates/official_baseline_gate_manifest.jsonl",
-  "output_root": "/root/autodl-tmp/ai-operator/experiments/results/dual_gpu_official_baseline_gate_REPLACE_ME",
+  "manifest": "${OFFICIAL_BASELINE_GATE_MANIFEST}",
+  "output_root": "${ARTIFACT_ROOT}/dual_gpu_official_baseline_gate_REPLACE_ME",
   "cells": [
     {
       "id": "vllm_bench",
@@ -32,13 +32,13 @@
     {
       "id": "daft_ray",
       "adapter": "daft_ray",
-      "ray_address": "127.0.0.1:6380",
+      "ray_address": "${RAY_ADDRESS}",
       "concurrency_per_endpoint": 1
     },
     {
       "id": "ray_data_http",
       "adapter": "ray_data_http",
-      "ray_address": "127.0.0.1:6380",
+      "ray_address": "${RAY_ADDRESS}",
       "batch_size": 16,
       "concurrency_per_endpoint": 4
     },

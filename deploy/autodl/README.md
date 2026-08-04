@@ -29,6 +29,10 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
 
 **怎么用本指南**：§1–§7 是**共享平台 setup**（实例/连接/venv/network_turbo/代码同步/模型下载方法/PG，所有模态都用）；各模态的"引擎是什么 + 怎么部署/跑"在对应 `<modality>_serving.md`；**文本 vLLM 的逐步启动命令**另在本指南 §8（历史 runbook，保留）。
 
+跨机器共用的 profile、Python 能力和模型/数据资产合同在
+`deploy/runtime/README.md`。本文件只保留 AutoDL 特有步骤；换到单 5070 或其他云时
+不要复制 `/root/autodl-tmp`，应重新生成仓库外 runtime env 并先保存 preflight。
+
 ## 新对话 / 新 agent 的唯一操作入口
 
 本文件是 AutoDL 环境准备、开机恢复、实验启动和故障恢复的单一 runbook。
@@ -225,8 +229,9 @@ bash deploy/autodl/download_model.sh /root/autodl-tmp/ai-operator-runtime.env
 bash deploy/autodl/start_endpoints.sh /root/autodl-tmp/ai-operator-runtime.env
 ```
 
-`download_model.sh` 每次都会显式加载 `/etc/network_turbo` 并设置
-`HF_HUB_DISABLE_XET=1`，不依赖当前 shell 或操作者记得学术加速。
+`download_model.sh` 在 `/etc/network_turbo` 存在时显式加载，并始终设置
+`HF_HUB_DISABLE_XET=1`；其他云或本地机器没有该脚本时使用正常网络，不再因此拒绝
+下载。模型和数据集的统一缺失检查/下载入口见 `deploy/runtime/README.md`。
 `start_endpoints.sh` 不再写死 1.5B/7B、GPU 数、端口或 context length，也不会
 使用宽泛的 `pkill -f`。它只会在明确设置 `STOP_MANAGED_ENDPOINTS=1` 时，根据
 自身 PID 文件停止之前由同一脚本启动的 endpoint。脚本会把
@@ -409,8 +414,8 @@ export HF_HUB_DISABLE_XET=1                  # 否则走 cas-server.xethub.hf.co
 bash deploy/autodl/download_model.sh /root/autodl-tmp/ai-operator-runtime.env
 ```
 
-脚本把上述两项前置条件固化为可执行检查；后面的 wget/Python API 命令仅作为
-故障排查或手工备选。
+脚本在 AutoDL 上自动使用上述加速；其他机器不要求存在该文件。后面的 wget/Python
+API 命令仅作为故障排查或手工备选。
 
 ### 5.2 推荐:wget 直连 HF(走 turbo 代理)
 ```bash

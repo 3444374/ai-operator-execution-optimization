@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import sys
 import unittest
 from dataclasses import asdict
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 
 CODE_ROOT = next(
@@ -31,6 +33,60 @@ from src.baselines.common.provenance import adapter_provenance
 
 
 class OfficialBaselineGateRunnerTests(unittest.TestCase):
+    def test_config_expands_machine_environment(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            write_manifest(
+                manifest,
+                tuple(
+                    ChatRequest(
+                        doc_id=index,
+                        prompt=f"question-{index}",
+                        arrival_time_s=0.0,
+                        prompt_tokens=4,
+                        max_output_tokens=8,
+                        estimated_output_tokens=8,
+                        source_row_hash=f"row-{index}",
+                        endpoint_index=index % 2,
+                    )
+                    for index in range(2)
+                ),
+            )
+            config_path = root / "gate.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "formal": False,
+                        "rows_total": 2,
+                        "completion_protocol": "completions",
+                        "endpoint_urls": ["${EP0}", "${EP1}"],
+                        "model": "qwen",
+                        "manifest": "${MANIFEST}",
+                        "output_root": "${OUTPUT}",
+                        "cells": [
+                            {
+                                "id": "batched",
+                                "adapter": "bounded_completions",
+                                "batch_size": 1,
+                                "concurrency_per_endpoint": 1,
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            environment = {
+                "EP0": "http://127.0.0.1:8000/v1/completions",
+                "EP1": "http://127.0.0.1:8001/v1/completions",
+                "MANIFEST": str(manifest),
+                "OUTPUT": str(root / "output"),
+            }
+            with mock.patch.dict(os.environ, environment, clear=False):
+                config = load_core_gate_config(config_path)
+
+        self.assertEqual(config.manifest, manifest)
+
     def test_parse_vllm_queue_metrics_requires_both_gauges(self) -> None:
         metrics = """
 # HELP vllm:num_requests_running running

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import math
-import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +14,7 @@ from src.experiments.calibration.contracts import (
     load_calibration_contract as validate_calibration_contract,
 )
 from src.experiments.scenarios.core import validate_service_metadata
+from src.infrastructure.config_env import expand_scalar, expand_text
 
 
 POLICIES = {
@@ -24,8 +24,6 @@ POLICIES = {
 }
 
 _SCENARIO_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
-
-_ENV_REFERENCE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 _RUNNER_OWNED_FLAGS = {
     "--admission-scope",
@@ -431,31 +429,10 @@ def _csv_argument_values(
     return tuple(item.strip() for item in raw.split(",") if item.strip())
 
 def _expand_text(value: str, label: str) -> str:
-    missing = sorted(
-        name
-        for name in set(_ENV_REFERENCE.findall(value))
-        if name not in os.environ
-    )
-    if missing:
-        raise ValueError(
-            f"{label} references unset environment variable(s): "
-            + ", ".join(missing)
-        )
-    return _ENV_REFERENCE.sub(
-        lambda match: os.environ[match.group(1)],
-        value,
-    )
+    return expand_text(value, label)
 
 def _expand_scalar(value: object, label: str) -> object:
-    if not isinstance(value, str):
-        return value
-    expanded = _expand_text(value, label)
-    if _ENV_REFERENCE.fullmatch(value):
-        try:
-            return json.loads(expanded)
-        except json.JSONDecodeError:
-            return expanded
-    return expanded
+    return expand_scalar(value, label)
 
 def _load_calibration_contract(
     value: object,

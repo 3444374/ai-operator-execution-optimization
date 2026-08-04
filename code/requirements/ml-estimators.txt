@@ -1,0 +1,3 @@
+# Optional learned estimators. Current CE4 uses LightGBM; future estimators belong
+# here instead of being added to every execution environment.
+lightgbm>=4,<5

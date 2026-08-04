@@ -10,13 +10,13 @@
   "formal_repeats": 3,
   "schedule": "balanced_interleaved_random_order",
   "endpoint_urls": [
-    "http://127.0.0.1:8000/v1/chat/completions",
-    "http://127.0.0.1:8001/v1/chat/completions"
+    "${COMPLETION_CHAT_ENDPOINT_URL_0}",
+    "${COMPLETION_CHAT_ENDPOINT_URL_1}"
   ],
   "model": "qwen2.5-7b",
-  "tokenizer": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
-  "manifest": "/root/autodl-tmp/gates/text_native_formal_manifest_4096.jsonl",
-  "output_root": "/root/autodl-tmp/ai-operator/experiments/results/text_native_baseline_formal_REPLACE_ME",
+  "tokenizer": "${MODEL_PATH}",
+  "manifest": "${TEXT_NATIVE_FORMAL_MANIFEST}",
+  "output_root": "${ARTIFACT_ROOT}/text_native_baseline_formal_REPLACE_ME",
   "arms": [
     {
       "id": "vllm_bench",
@@ -40,14 +40,14 @@
       "id": "daft_ray",
       "adapter": "daft_ray",
       "comparison_role": "framework_native_baseline",
-      "ray_address": "127.0.0.1:6380",
+      "ray_address": "${RAY_ADDRESS}",
       "configuration": "vendor_default_prompt_api"
     },
     {
       "id": "ray_data_http",
       "adapter": "ray_data_http",
       "comparison_role": "framework_native_baseline",
-      "ray_address": "127.0.0.1:6380",
+      "ray_address": "${RAY_ADDRESS}",
       "configuration": "freeze_batch_and_concurrency_from_independent_calibration"
     }
   ],

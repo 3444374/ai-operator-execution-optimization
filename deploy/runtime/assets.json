@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "kind": "runtime_assets",
+  "python_groups": {
+    "core": [
+      {"module": "numpy", "install": "numpy"},
+      {"module": "pyarrow", "install": "pyarrow>=16,<25"},
+      {"module": "ray", "install": "ray[data,serve]"},
+      {"module": "psycopg", "install": "psycopg[binary]>=3.2"},
+      {"module": "daft", "install": "daft"},
+      {"module": "psutil", "install": "psutil>=5.9"}
+    ],
+    "text": [
+      {"module": "aiohttp", "install": "aiohttp>=3.9"},
+      {"module": "httpx", "install": "httpx>=0.27"},
+      {"module": "openai", "install": "openai>=1.0"},
+      {"module": "transformers", "install": "transformers"}
+    ],
+    "image": [
+      {"module": "torch", "install": "torch"},
+      {"module": "transformers", "install": "transformers"},
+      {"module": "PIL", "install": "Pillow"}
+    ],
+    "analysis": [
+      {"module": "numpy", "install": "numpy"}
+    ],
+    "ml-estimators": [
+      {"module": "lightgbm", "install": "lightgbm>=4,<5"}
+    ],
+    "download": [
+      {"module": "huggingface_hub", "install": "huggingface_hub>=0.28"}
+    ],
+    "text-qwen15b": [],
+    "text-qwen7b": [],
+    "image-clip": [],
+    "workload-text": [],
+    "workload-image-smoke": [],
+    "workload-image-formal": [],
+    "workload-imagenet": []
+  },
+  "assets": [
+    {
+      "id": "qwen25-15b",
+      "kind": "huggingface_snapshot",
+      "groups": ["text-qwen15b"],
+      "target": "${MODEL_ROOT}/Qwen2.5-1.5B-Instruct",
+      "repo_id": "Qwen/Qwen2.5-1.5B-Instruct",
+      "minimum_bytes": 100000000,
+      "required": true
+    },
+    {
+      "id": "qwen25-7b",
+      "kind": "huggingface_snapshot",
+      "groups": ["text-qwen7b"],
+      "target": "${MODEL_ROOT}/Qwen2.5-7B-Instruct",
+      "repo_id": "Qwen/Qwen2.5-7B-Instruct",
+      "minimum_bytes": 1000000000,
+      "required": true
+    },
+    {
+      "id": "clip-vit-b32",
+      "kind": "huggingface_snapshot",
+      "groups": ["image-clip"],
+      "target": "${MODEL_ROOT}/clip-vit-base-patch32",
+      "repo_id": "openai/clip-vit-base-patch32",
+      "minimum_bytes": 100000000,
+      "required": true
+    },
+    {
+      "id": "sharegpt-vicuna",
+      "kind": "http_file",
+      "groups": ["workload-text"],
+      "target": "${DATA_ROOT}/sharegpt_vicuna/ShareGPT_V3_unfiltered_cleaned_split.json",
+      "url": "https://huggingface.co/datasets/anon8231489123/ShareGPT_Vicuna_unfiltered/resolve/main/ShareGPT_V3_unfiltered_cleaned_split.json",
+      "minimum_bytes": 672000000,
+      "required": true
+    },
+    {
+      "id": "burstgpt-v2",
+      "kind": "http_file",
+      "groups": ["workload-text"],
+      "target": "${DATA_ROOT}/burstgpt/BurstGPT_1.csv",
+      "url": "https://github.com/HPMLL/BurstGPT/releases/download/v2.0/BurstGPT_1.csv",
+      "minimum_bytes": 52000000,
+      "required": true
+    },
+    {
+      "id": "coco-val2017",
+      "kind": "http_file",
+      "groups": ["workload-image-smoke"],
+      "target": "${DATA_ROOT}/coco_val2017/val2017.zip",
+      "url": "http://images.cocodataset.org/zips/val2017.zip",
+      "minimum_bytes": 700000000,
+      "required": true
+    },
+    {
+      "id": "coco-train2017",
+      "kind": "http_file",
+      "groups": ["workload-image-formal"],
+      "target": "${DATA_ROOT}/coco_train2017/train2017.zip",
+      "url": "http://images.cocodataset.org/zips/train2017.zip",
+      "minimum_bytes": 18000000000,
+      "required": true
+    },
+    {
+      "id": "imagenet-1k",
+      "kind": "manual",
+      "groups": ["workload-imagenet"],
+      "target": "${DATA_ROOT}/imagenet-1k",
+      "minimum_bytes": 1,
+      "required": true,
+      "instructions": "accept the ImageNet/Hugging Face terms with the dataset owner, then place the authorized snapshot under DATA_ROOT/imagenet-1k"
+    }
+  ]
+}

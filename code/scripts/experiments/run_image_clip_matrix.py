@@ -32,6 +32,7 @@ from src.experiments.scenarios.core import (  # noqa: E402
     ScheduledScenarioRun,
     build_scenario_schedule,
 )
+from src.infrastructure.config_env import expand_text  # noqa: E402
 from src.infrastructure.runner_lease import acquire_runner_lease  # noqa: E402
 
 
@@ -301,7 +302,7 @@ def _finite_number(mapping: dict[str, object], key: str, *, minimum: float) -> f
 def _string_tuple(value: object, label: str) -> tuple[str, ...]:
     if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
         raise ValueError(f"{label} must be a list of strings")
-    return tuple(value)
+    return tuple(expand_text(item, label) for item in value)
 
 
 def _reject_owned_flags(arguments: tuple[str, ...]) -> None:

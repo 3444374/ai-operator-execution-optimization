@@ -14,26 +14,28 @@ if [[ -n "$CONFIG_FILE" ]]; then
 fi
 
 : "${MODEL_ID:?set MODEL_ID, for example Qwen/Qwen2.5-7B-Instruct}"
-: "${MODEL_DIR:?set MODEL_DIR on /root/autodl-tmp}"
+: "${MODEL_DIR:?set MODEL_DIR to a persistent model directory}"
 
-VLLM_VENV=${VLLM_VENV:-/root/autodl-tmp/venvs/vllm-4090}
+VENV_ROOT=${VENV_ROOT:-/root/autodl-tmp/venvs}
+VLLM_VENV=${VLLM_VENV:-"$VENV_ROOT/vllm-4090"}
 HF_HOME=${HF_HOME:-/root/autodl-tmp/huggingface}
 TURBO_SCRIPT=${TURBO_SCRIPT:-/etc/network_turbo}
 PYTHON=${PYTHON:-"$VLLM_VENV/bin/python"}
 
-if [[ ! -f "$TURBO_SCRIPT" ]]; then
-  echo "AutoDL academic acceleration script not found: $TURBO_SCRIPT" >&2
-  exit 2
-fi
 if [[ ! -x "$PYTHON" ]]; then
   echo "Python executable not found: $PYTHON" >&2
   exit 2
 fi
 
-# AutoDL academic acceleration is shell-local, so every download invocation
-# activates it explicitly instead of relying on a previous interactive session.
-# shellcheck disable=SC1090
-source "$TURBO_SCRIPT" >/dev/null 2>&1
+# AutoDL acceleration is optional. Generic clouds and a local 5070 use their
+# normal network path; AutoDL still activates its shell-local proxy when present.
+if [[ -f "$TURBO_SCRIPT" ]]; then
+  # shellcheck disable=SC1090
+  source "$TURBO_SCRIPT" >/dev/null 2>&1
+  echo "using optional download accelerator: $TURBO_SCRIPT"
+else
+  echo "download accelerator not present; using the machine's normal network"
+fi
 export HF_HOME
 export HF_HUB_DISABLE_XET=1
 

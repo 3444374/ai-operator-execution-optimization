@@ -35,14 +35,19 @@ code/
 │   │   ├── text/                 ← ceilings/controls/frameworks/products/orchestration
 │   │   └── image/                ← provenance 与 Daft/Ray Data native graph
 │   ├── experiments/              ← calibration、scenario、shared-vLLM 编排
-│   └── infrastructure/           ← runtime env 与 runner lease
+│   └── infrastructure/           ← config env、机器/资产合同、runtime env 与 runner lease
 ├── scripts/
 │   ├── data|services|baselines/  ← 数据导入、服务入口、原生 baseline runner
-│   └── profiling|experiments|analysis/ ← 画像、正式编排、离线分析
+│   └── profiling|experiments|analysis|environment/ ← 画像、编排、分析、跨机器检查
 ├── tests/                        ← 按生产域镜像；远端完整依赖环境当前 622 个 unittest
 ├── configs/                      ← vendor baseline pin 与可复现实验配置
 └── requirements.txt
 ```
+
+跨机器运行不要直接对着 `requirements.txt` 反复试装。先按
+`deploy/runtime/README.md` 选择 machine profile 与能力组，保存只读 preflight 报告；
+可选能力分别维护在 `requirements/`，例如 learned estimator 与通用下载工具不会被
+强制装入每个 driver 或 vLLM 环境。
 
 图像 baseline 的来源合同由 `src/baselines/image/provenance.py` 统一维护。正式 native
 baseline 当前为 Daft 内置 `embed_image` 和由 Ray Data 自己调度的官方
@@ -119,6 +124,10 @@ now lives under `code/src/`:
   OpenBLAS/MKL/OMP/NumExpr settings inherited by Ray workers and multi-job
   subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per
   worker before any model request is sent.
+- `infrastructure/config_env.py` and `infrastructure/environment.py`: strict
+  `${ENV_VAR}` config expansion plus read-only machine/Python/model/dataset
+  preflight. Missing values fail closed; installs/downloads remain explicit CLI
+  actions.
 - Image workers apply the same rule inside long-lived Ray/Daft processes:
   `experiments/run_image_clip_e2e.py` defaults Torch intra-op/inter-op pools to `1/1`,
   records them in schema v8, and the project Ray pool verifies the observed

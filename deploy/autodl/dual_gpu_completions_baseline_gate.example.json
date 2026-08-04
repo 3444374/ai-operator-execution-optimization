@@ -4,14 +4,14 @@
   "formal": false,
   "rows_total": 512,
   "endpoint_urls": [
-    "http://127.0.0.1:8000/v1/completions",
-    "http://127.0.0.1:8001/v1/completions"
+    "${COMPLETION_ENDPOINT_URL_0}",
+    "${COMPLETION_ENDPOINT_URL_1}"
   ],
   "model": "qwen2.5-7b",
   "completion_protocol": "completions",
   "temperature": 0.0,
-  "manifest": "/root/autodl-tmp/gates/official_baseline_calibration_512_20260729_0f5d60f.jsonl",
-  "output_root": "/root/autodl-tmp/ai-operator/experiments/results/dual_gpu_completions_baseline_gate_REPLACE_ME",
+  "manifest": "${PROJECT_CALIBRATION_REQUEST_MANIFEST}",
+  "output_root": "${ARTIFACT_ROOT}/dual_gpu_completions_baseline_gate_REPLACE_ME",
   "cells": [
     {
       "id": "bounded_fixed1_c256",

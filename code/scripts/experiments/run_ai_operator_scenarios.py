@@ -8,7 +8,6 @@ import csv
 import hashlib
 import json
 import math
-import os
 import re
 import subprocess
 import sys
@@ -37,12 +36,12 @@ from src.experiments.scenarios.core import (  # noqa: E402
     validate_service_metadata,
 )
 from src.observability.metrics import parse_prometheus_metrics  # noqa: E402
+from src.infrastructure.config_env import ENV_REFERENCE, expand_text  # noqa: E402
 from src.infrastructure.runner_lease import acquire_runner_lease  # noqa: E402
 from src.serving.probes.vllm import probe_live_prefix_caching  # noqa: E402
 
 
 _SCENARIO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
-_ENV_REFERENCE_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 _RUNNER_OWNED_FLAGS = {
     "--control-trace-output",
     "--experiment-id",
@@ -650,7 +649,7 @@ def _load_calibration_contract(
                 item,
                 f"calibration_contract.expected.{key}",
             )
-            if _ENV_REFERENCE_PATTERN.fullmatch(item):
+            if ENV_REFERENCE.fullmatch(item):
                 try:
                     item = json.loads(expanded)
                 except json.JSONDecodeError:
@@ -681,22 +680,7 @@ def _validate_argument_list(values, label: str) -> tuple[str, ...]:
 
 
 def _expand_environment_references(value: str, label: str) -> str:
-    missing = sorted(
-        {
-            name
-            for name in _ENV_REFERENCE_PATTERN.findall(value)
-            if name not in os.environ
-        }
-    )
-    if missing:
-        raise ValueError(
-            f"{label} references unset environment variable(s): "
-            + ", ".join(missing)
-        )
-    return _ENV_REFERENCE_PATTERN.sub(
-        lambda match: os.environ[match.group(1)],
-        value,
-    )
+    return expand_text(value, label)
 
 
 def _normalize_service_metadata(
@@ -713,7 +697,7 @@ def _normalize_service_metadata(
                 item,
                 f"service_metadata.{key}",
             )
-            if _ENV_REFERENCE_PATTERN.fullmatch(item):
+            if ENV_REFERENCE.fullmatch(item):
                 try:
                     item = json.loads(expanded)
                 except json.JSONDecodeError:

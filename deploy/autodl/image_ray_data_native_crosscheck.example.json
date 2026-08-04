@@ -7,7 +7,7 @@
   "minimum_unique_rows": 60000,
   "minimum_steady_state_s": 60.0,
   "common_args": [
-    "--model", "/root/autodl-tmp/models/clip-vit-base-patch32",
+    "--model", "${IMAGE_MODEL_PATH}",
     "--workload-name", "coco_train2017_60k",
     "--limit", "60000",
     "--dataset-passes", "2",

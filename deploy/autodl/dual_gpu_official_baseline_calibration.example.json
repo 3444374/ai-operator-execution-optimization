@@ -35,7 +35,7 @@
       "fixed": {
         "api": "daft.functions.prompt",
         "runner": "ray",
-        "ray_address": "127.0.0.1:6380"
+        "ray_address": "${RAY_ADDRESS}"
       },
       "note": "Daft owns batching and task scheduling in this native arm."
     },
@@ -46,7 +46,7 @@
         "concurrency_per_endpoint": [1, 2, 4, 8, 16]
       },
       "fixed": {
-        "ray_address": "127.0.0.1:6380",
+        "ray_address": "${RAY_ADDRESS}",
         "actor_pool_shape": "fixed_n_n"
       }
     },

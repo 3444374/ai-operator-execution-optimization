@@ -19,6 +19,7 @@ from src.baselines.common.gate import validate_gate
 from src.baselines.common.manifests import read_manifest
 from src.baselines.common.provenance import adapter_provenance
 from src.baselines.common.results import summarize_group_service_counters
+from src.infrastructure.config_env import expand_structure
 
 
 CORE_ADAPTERS = (
@@ -98,7 +99,12 @@ def load_core_gate_config(
 ) -> CoreGateConfig:
     """Load and fail closed on an unresolved or formal gate config."""
 
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    payload = expand_structure(
+        json.loads(Path(path).read_text(encoding="utf-8")),
+        "core_gate_config",
+    )
+    if not isinstance(payload, dict):
+        raise ValueError("core gate config must be an object")
     if payload.get("formal") is not False:
         raise ValueError("core gate runner only accepts formal=false")
     rows_total = (

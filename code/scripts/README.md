@@ -1,5 +1,10 @@
 # PostgreSQL AI 算子画像脚本
 
+跨机器环境入口：`environment/manage_environment.py`。它按
+`deploy/runtime/profiles/*.json` 与 `deploy/runtime/assets.json` 只读检查机器、Python
+能力、模型和数据；安装/下载是独立显式子命令。它不导入 PostgreSQL workload，也不
+替代各实验 runner 的正确性门禁。完整流程见 `deploy/runtime/README.md`。
+
 ## 文件定位
 
 脚本按职责分为六组：

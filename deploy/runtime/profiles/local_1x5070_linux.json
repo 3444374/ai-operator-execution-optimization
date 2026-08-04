@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "kind": "machine_profile",
+  "name": "local_1x5070_linux_or_wsl2",
+  "platforms": ["Linux"],
+  "minimum_python": [3, 10],
+  "minimum_cpu_slots": 6,
+  "required_environment": [
+    "PROJECT_ROOT",
+    "ARTIFACT_ROOT",
+    "MODEL_ROOT",
+    "DATA_ROOT",
+    "VENV_ROOT",
+    "DATABASE_URL",
+    "GPU_IDS"
+  ],
+  "commands": [
+    {"name": "git", "required": true},
+    {"name": "psql", "required": true},
+    {"name": "nvidia-smi", "required": true},
+    {"name": "nvcc", "required": false}
+  ],
+  "paths": [
+    {"env": "PROJECT_ROOT", "required": true},
+    {"env": "VENV_ROOT", "required": false}
+  ],
+  "disk": {"root_env": "ARTIFACT_ROOT", "minimum_free_gib": 15},
+  "gpu": {"required": true, "minimum_count": 1, "minimum_memory_mib": 8000}
+}

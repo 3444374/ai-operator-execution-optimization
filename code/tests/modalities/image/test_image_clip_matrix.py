@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 CODE_ROOT = next(
@@ -53,6 +55,61 @@ class ImageClipMatrixTests(unittest.TestCase):
     def test_runner_owned_flags_are_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "runner-owned"):
             MODULE._reject_owned_flags(("--phase", "formal"))
+
+    def test_load_config_expands_environment_references(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "experiment_id": "portable_image_gate",
+                        "seed": 1,
+                        "warmup_runs_per_scenario": 0,
+                        "formal_repeats": 1,
+                        "minimum_unique_rows": 1,
+                        "minimum_steady_state_s": 0,
+                        "common_args": ["--model", "${IMAGE_MODEL_PATH}"],
+                        "scenarios": [
+                            {"scenario_id": "a", "args": ["--arm", "project_ray"]}
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.dict(
+                os.environ,
+                {"IMAGE_MODEL_PATH": "/models/clip"},
+                clear=False,
+            ):
+                config = MODULE.load_config(path)
+
+            self.assertEqual(config.common_args[-1], "/models/clip")
+
+    def test_load_config_rejects_unset_environment_reference(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "experiment_id": "portable_image_gate",
+                        "seed": 1,
+                        "warmup_runs_per_scenario": 0,
+                        "formal_repeats": 1,
+                        "minimum_unique_rows": 1,
+                        "minimum_steady_state_s": 0,
+                        "common_args": ["--model", "${MISSING_IMAGE_MODEL}"],
+                        "scenarios": [
+                            {"scenario_id": "a", "args": ["--arm", "project_ray"]}
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.dict(os.environ, {}, clear=True):
+                with self.assertRaisesRegex(ValueError, "MISSING_IMAGE_MODEL"):
+                    MODULE.load_config(path)
 
     def test_formal_duration_and_correctness_gate(self) -> None:
         config = MODULE.MatrixConfig(

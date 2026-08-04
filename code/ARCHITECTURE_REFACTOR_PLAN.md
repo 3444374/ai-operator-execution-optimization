@@ -82,6 +82,8 @@ code/
 │   │   ├── shared_vllm/          # 多 job 配置、编排、公平性、汇总
 │   │   └── calibration/          # 选择/冻结配置，不实现策略
 │   └── infrastructure/
+│       ├── config_env.py         # JSON config 的严格环境变量展开
+│       ├── environment.py        # 机器、能力组和外部资产 preflight
 │       ├── runtime_env.py        # 线程/PYTHONPATH/Ray runtime env
 │       └── runner_lease.py       # 单写者租约与恢复
 ├── scripts/
@@ -90,7 +92,8 @@ code/
 │   ├── baselines/                # baseline gate/matrix
 │   ├── profiling/                # profile/smoke/transfer ceiling
 │   ├── experiments/              # 正式 scenario/group runner
-│   └── analysis/                 # summarize/select calibration
+│   ├── analysis/                 # summarize/select calibration
+│   └── environment/              # 跨机器 check/install/download 薄入口
 └── tests/
     ├── data/
     ├── planning/
@@ -177,7 +180,7 @@ experiments/baselines → 可以组合以上模块
 | `baselines/` | 公共合同下沉 `common/`，现有实现迁入 `text/` |
 | `experiment_scenarios.py` | `experiments/scenarios/` |
 | `shared_vllm_experiment.py` | `experiments/shared_vllm/{config,runner,runtime,evidence,metrics}.py`（已完成） |
-| `runtime_env.py`、`runner_lease.py` | `infrastructure/` |
+| config/runtime/asset 与 runner lease | `infrastructure/{config_env,environment,runtime_env,runner_lease}.py` |
 | 根层 `profile_*.py`、`scheduling/*` 兼容文件 | 迁移调用方后删除，不长期保留双入口 |
 
 ## 6. 分阶段迁移

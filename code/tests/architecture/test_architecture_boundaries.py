@@ -20,6 +20,7 @@ SCRIPT_DOMAINS = {
     "analysis",
     "baselines",
     "data",
+    "environment",
     "experiments",
     "profiling",
     "services",

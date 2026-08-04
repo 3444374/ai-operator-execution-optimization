@@ -1,5 +1,19 @@
 # 项目日志
 
+## 2026-08-04 跨机器运行时、依赖与资产合同
+
+- 新增 `deploy/runtime/`：用 machine profile 区分 AutoDL 双 4090 与本地单 5070
+  Linux/WSL2，用统一资产清单维护 Python 能力、模型和数据集；LightGBM 作为通用
+  `ml-estimators` 能力成员，不为代价估计单独建设部署架构。
+- 新增 `manage_environment.py` 的只读 `check`、显式 `install-python` 与单资产
+  `download`。公共 HTTP 文件支持 `.partial` 恢复，Hugging Face 使用 snapshot；
+  ImageNet 等受许可资产 fail closed。下载与 PostgreSQL workload 导入保持分层。
+- 图像矩阵与文本原生 baseline 配置统一支持严格 `${ENV_VAR}` 展开，unset 立即失败；
+  当前图像模板去除 CLIP 绝对路径，AutoDL env 抽出 project/artifact/model/data/venv
+  五个根目录。模型下载加速改为 AutoDL 可选能力，其他机器可走正常网络。
+- 迁移合同只保证可运行与可审计，不搬运双 4090 的性能最优配置；新 GPU/模型仍须做
+  correctness gate 与静态容量校准，MFU 峰值口径须按 GPU 和精度重新确认。
+
 ## 2026-08-04 image 重跑（schema-v12）+ 代价估计排序层补齐 + Track B baseline 可行性
 
 - **schema-v12 三臂门禁（256 行）**：用 codex 的 single-writer matrix runner

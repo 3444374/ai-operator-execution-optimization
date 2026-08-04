@@ -16,6 +16,11 @@ metadata, download commands, and preprocessing scripts in the repository.
 
 Raw files are gitignored — **every environment (local machine, server, cloud) must download them fresh**. Use these exact URLs:
 
+跨机器时优先使用 `deploy/runtime/assets.json` 与
+`code/scripts/environment/manage_environment.py` 检查/下载；本节保留人工核验来源和
+应急命令。资产下载完成不代表 PostgreSQL workload 已导入，仍需执行本目录对应 importer
+并通过 runner 的 schema/行数/唯一性门禁。
+
 | Dataset | Exact URL | Repo |
 |---|---|---|
 | ShareGPT | `https://huggingface.co/datasets/anon8231489123/ShareGPT_Vicuna_unfiltered/resolve/main/ShareGPT_V3_unfiltered_cleaned_split.json` | HF dataset `anon8231489123/ShareGPT_Vicuna_unfiltered` |
