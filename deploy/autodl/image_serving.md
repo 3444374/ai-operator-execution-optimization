@@ -208,9 +208,31 @@ PY
 
 ### 5.3 vLLM pooling 强服务 baseline
 
-当前 vLLM 已支持 CLIP 图像 embedding。它接收 encoded image、在服务内部预处理，
+vLLM 文档/模型注册表声明支持 CLIP pooling，但每个具体版本、模型 revision 和 GPU
+组合仍须先过本机 capability gate；“配置解析成功”不等于 engine 已能返回 embedding。
+它接收 encoded image、在服务内部预处理，
 因此是不同阶段边界的 baseline，不能与 tensor actor 只按一个总吞吐数混读。使用
 独立 vLLM venv，且与 Ray actor **串行运行**：
+
+先跑 1 图离线门禁。监管器会在独立进程组运行 worker，600 秒超时后终止整个进程组，
+并在新目录保存 `process_status.json`、`stdout.log`、`stderr.log`；worker 成功或 Python
+异常时另存 `result.json`。输出目录已存在会拒绝覆盖：
+
+```bash
+cd /root/autodl-tmp/ai-operator
+/root/autodl-tmp/venvs/vllm-4090/bin/python \
+  code/scripts/profiling/run_vllm_clip_pooling_gate.py \
+  --output-dir /root/autodl-tmp/experiment-artifacts/gate_vllm_clip/offline_$(date +%Y%m%d_%H%M%S) \
+  --timeout-seconds 600 -- \
+  --model /root/autodl-tmp/models/clip-vit-base-patch32 \
+  --coco-glob '/root/autodl-tmp/data/raw/coco_train2017/*.jpg'
+```
+
+只有 `process_status.exit_code=0`、`timed_out=false` 且 `result.status=pass` 才进入在线
+门禁；退出码 124 是明确超时，不能口头记为 GO，也不能据此断言 vLLM 永久不支持。
+`enforce_eager=True` 只隔离 compile/CUDA graph 启动因素，不是正式性能配置。
+
+离线通过后才启动在线 server：
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 /root/autodl-tmp/venvs/vllm-4090/bin/python \
@@ -222,6 +244,8 @@ CUDA_VISIBLE_DEVICES=0 /root/autodl-tmp/venvs/vllm-4090/bin/python \
 
 请求格式以 vLLM 官方 `examples/pooling/embed/vision_embedding_online.py` 为准。
 正式实验必须记录 vLLM 版本、runner、processor placement 和服务端 batching 参数。
+在线门禁还必须保存 server/client 退出码、请求/响应 schema、embedding 维度/finite 和
+首个请求墙钟；未通过在线门禁不得启动 5K calibration 或 60K formal。
 
 ### 5.4 Fused Daft Native / Daft Ray / project-Ray operator E2E gate
 

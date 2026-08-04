@@ -184,7 +184,10 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/analysis/select_strategy_calibration.py` | 从 feeding/direct/token-budget/actor-shape 证据生成冻结校准合同和环境覆盖 | 同协议 actor 曲线完成后、启动数据组织/提交策略/多 job formal 前执行 |
 | `code/scripts/analysis/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
 | `code/scripts/analysis/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |
+| `code/scripts/analysis/compare_cost_estimators_contextloo.py` | 完整 decision-context LOO 的逐 fold、宏/pooled、repeat 聚合 ranking 与晋级合同 JSON | 复核代价估计 unseen-context 泛化；禁止只凭平均 regret 晋级 |
 | `code/scripts/profiling/profile_image_clip_preprocess_variants.py` | 交错比较当前 production-np、历史 legacy-pt 与 torchvision CLIP preprocessing，并经过同一 tensor actor 做 embedding parity gate | 复核 image motivation 是否能外推到当前代码边界；不是 E2E 方法结果 |
+| `code/scripts/profiling/gate_vllm_clip_pooling.py` | 单图离线 vLLM CLIP pooling 输入/输出/版本 capability worker | 只判断本机模型/API 能否返回合法 embedding，不作吞吐排名 |
+| `code/scripts/profiling/run_vllm_clip_pooling_gate.py` | 跨 macOS/Linux 的 vLLM gate 进程组超时、日志和退出码监管器 | engine 初始化可能阻塞时生成可归因 pass/error/timeout 证据 |
 | `code/scripts/experiments/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、模型/GPU 和输出审计下运行 Daft built-in、Ray Data native graph、诊断 reference 与 project arms | 跑 operator-E2E gate/formal；schema v12 记录 baseline provenance、计时内输出合同、首输出结构信号和单位工作资源，并拒绝把项目自写 Daft UDF 当正式 native baseline |
 | `code/src/modalities/image/metrics.py` | 从图像 run 已观测总量派生 first-output/E2E、60s duration gate 和单位图片资源指标 | 跨规模只能比较独立达平台的速率/单位成本；不推断隐藏调度或逐图 latency |
 | `code/scripts/analysis/augment_image_observability.py` | 为历史 schema-v11 图像 CSV 生成不覆盖 raw 的派生指标副本 | 复用已有 12K/60K 数据，不为纯代数字段重跑；缺原始字段时 fail-closed |
@@ -367,8 +370,11 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/planning/test_organizers.py` | 数据组织后端最小单元测试 | 修改 organizer 接口或 batch 行为后运行 |
 | `code/tests/modalities/text/test_request_costs.py` | 输出成本模式、来源标签与严格输入校验 | 修改成本估计语义后运行 |
 | `code/tests/planning/test_packing.py` | 确定性 BFD、超预算单行与 packing 汇总测试 | 修改装箱算法后运行 |
+| `code/tests/planning/test_cost_context_loo.py` | 候选 repeat 聚合、宏统计与 pooled selection 口径测试 | 修改 context-LOO 证据或晋级聚合时运行 |
 | `code/tests/experiments/test_output_aware_summary.py` | 正式重复实验长表汇总与 warm-up/失败过滤测试 | 修改 output-aware 汇总脚本后运行 |
 | `code/tests/serving/test_model_backends.py` | 模型后端最小单元测试 | 修改 fake 或 compatible HTTP embedding backend 后运行 |
+| `code/tests/serving/test_vllm_clip_pooling_gate.py` | vLLM 0.25/旧 pooling 输出解析和输入 fail-closed 测试 | 修改 CLIP capability worker 时运行 |
+| `code/tests/serving/test_vllm_clip_pooling_harness.py` | gate 正常退出与整进程组 timeout=124 测试 | 修改跨机器超时监管时运行 |
 | `code/tests/modalities/image/test_image_contracts.py` | 图像 embedding shape/finite、CLIP v5 pooler output、work units 和 lazy source query 测试 | 修改 `code/src/modalities/image/` 后运行 |
 | `code/tests/modalities/image/test_image_clip_preprocess_variants.py` | 图像 processor 对照脚本的 spatial-work 与 embedding parity 计算测试 | 修改图像受控复测脚本后运行 |
 | `code/tests/modalities/image/test_image_execution.py` | 图像 streaming exactly-once、向量归一化和执行时间边界测试 | 修改图像 E2E baseline/pipeline 后运行 |

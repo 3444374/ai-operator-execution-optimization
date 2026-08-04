@@ -103,6 +103,16 @@ code/scripts/experiments/run_ai_operator_scenarios.py
 FP16、R2 pageable FP32 分别保存每个 batch/repeat 的 CUDA-event H2D、forward、
 ownership copy 和同步 wall。它不含数据库/Daft/Ray queue，不能作为系统 E2E baseline。
 
+`profiling/gate_vllm_clip_pooling.py` 是单图离线 CLIP pooling capability worker；
+`profiling/run_vllm_clip_pooling_gate.py` 是跨 macOS/Linux 的超时监管器。监管器负责
+不可覆盖的 stdout/stderr、退出码和 timeout 证据，worker 负责输入、输出维度/finite 与
+版本门禁。两者都不是吞吐 benchmark，离线通过后仍需独立在线 API gate。
+
+`analysis/compare_cost_estimators_contextloo.py` 对完整 decision context 做 leave-one-out，
+将逐 fold 候选预测、宏平均/中位数/范围、pooled regret、repeat 合并后的候选 ranking、
+源 CSV SHA256 和配置覆盖缺口写入 JSON。它验证的是 unseen-context generalization，
+不能改称 unseen-config，也不能只抄控制台的 2.14% 均值。
+
 ## 流程与函数映射
 
 ```text
