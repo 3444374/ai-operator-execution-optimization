@@ -98,7 +98,7 @@ prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching **regime-de
 | `code/` | 可复用工程代码 |
 | `code_doc/` | 自动生成的代码文档（辅助参考，不承担规则职责） |
 | `data/` | 本地 workload 数据（raw 负载被 git ignore） |
-| `deploy/` | Docker 部署配置（pgai、postgres18.4 本地预演实例） |
+| `deploy/` | 跨机器 runtime/profile/资产合同 + Docker/AutoDL 平台部署配置 |
 | `figures/` | 图资产（架构图、实验图、绘图脚本、审计） |
 | `opening/` | 开题报告、PPT、飞书、文献 |
 | `projects/` | PPT 自动生成工程（旧版，已作废；仅保留工具链经验） |
@@ -106,6 +106,22 @@ prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching **regime-de
 | `notes/` | 沟通记录、待确认问题 |
 
 进入子目录前先读该目录的 `AGENTS.md`（规则），再读 `README.md`（内容）。
+
+### 4.1 新机器、缺依赖或缺资产的强制入口
+
+只要任务涉及下列任一情况：新机器/新容器、切换 GPU 或云环境、环境初始化、缺少
+Python 包、模型或数据集、下载新 workload、准备本地单 GPU 或远端多 GPU 实验，agent
+必须先读：
+
+1. `deploy/runtime/AGENTS.md`；
+2. `deploy/runtime/README.md`；
+3. 所选平台专项 runbook（如 `deploy/autodl/README.md`）。
+
+随后必须先运行 `manage_environment.py check` 的只读 preflight 并保存机器报告，再决定
+是否显式安装或下载。禁止 clone 后直接全量 `pip install`、混装 driver/vLLM 环境、绕过
+许可下载数据、沿用另一台机器的最优 K/batch/actor 参数，或在 correctness gate 前启动
+正式实验。模型/数据下载完成不等于数据库 workload 已导入；必须继续运行对应 importer
+和行数/schema/exactly-once 门禁。
 
 ## 5. 实验规则
 

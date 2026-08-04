@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-08-04 Agent 跨机器迁移强制路由
+
+- 根 `AGENTS.md` 新增自动入口规则：任何新机器/容器、GPU/云切换、缺包、缺模型或缺
+  数据任务，必须先读 `deploy/runtime/{AGENTS,README}.md`，运行只读 preflight，再做
+  显式安装/下载、importer、correctness gate 与本机校准。
+- `CLAUDE.md` 显式导入 `deploy/runtime/AGENTS.md` 并重复关键禁止项，使 Codex、Claude
+  Code 和远端 agent 不依赖是否主动发现 README；禁止混装 driver/vLLM、绕过许可资产
+  和把其他机器的最优参数直接用于正式实验。
+
 ## 2026-08-04 跨机器运行时、依赖与资产合同
 
 - 新增 `deploy/runtime/`：用 machine profile 区分 AutoDL 双 4090 与本地单 5070
