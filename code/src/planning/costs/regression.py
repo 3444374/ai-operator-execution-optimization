@@ -207,6 +207,7 @@ def selection_metrics(
     regression_count = 0
     selected_ranks = []
     surpassed_plans = 0
+    predicted_best_tie_contexts = 0
     for candidates in contexts.values():
         if len(candidates) < 2:
             continue
@@ -217,8 +218,24 @@ def selection_metrics(
             )
             for candidate, values in candidates.items()
         }
-        oracle = min(aggregated, key=lambda item: aggregated[item][0])
-        selected = min(aggregated, key=lambda item: aggregated[item][1])
+        oracle = min(
+            aggregated,
+            key=lambda item: (aggregated[item][0], str(item)),
+        )
+        selected = min(
+            aggregated,
+            key=lambda item: (aggregated[item][1], str(item)),
+        )
+        minimum_prediction = aggregated[selected][1]
+        predicted_best_tie_contexts += sum(
+            np.isclose(
+                predicted_value,
+                minimum_prediction,
+                rtol=1e-12,
+                atol=1e-12,
+            )
+            for _, predicted_value in aggregated.values()
+        ) > 1
         oracle_value = aggregated[oracle][0]
         selected_value = aggregated[selected][0]
         evaluated += 1
@@ -248,6 +265,11 @@ def selection_metrics(
             sum(selected_ranks) / len(selected_ranks) if selected_ranks else 0.0
         ),
         "surpassed_plans": surpassed_plans,
+        "predicted_best_tie_contexts": predicted_best_tie_contexts,
+        "tie_policy": (
+            "minimum predicted candidate mean; exact ties use lexicographically "
+            "smallest candidate_id"
+        ),
     }
 
 

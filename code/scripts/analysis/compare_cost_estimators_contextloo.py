@@ -142,9 +142,13 @@ def pool_fold_selection(folds: list[dict[str, Any]]) -> dict[str, float | int | 
             else 0.0
         ),
         "surpassed_plans": sum(int(fold["selection"]["surpassed_plans"]) for fold in folds),
+        "predicted_best_tie_contexts": sum(
+            int(fold["selection"].get("predicted_best_tie_contexts", 0))
+            for fold in folds
+        ),
         "tie_policy": (
-            "legacy selection_metrics first-minimum order; inspect predicted_best_tie_count "
-            "before interpreting pick/regret"
+            "minimum predicted candidate mean; exact ties use lexicographically "
+            "smallest candidate_id"
         ),
     }
 

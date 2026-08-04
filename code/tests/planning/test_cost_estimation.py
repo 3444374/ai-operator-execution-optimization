@@ -71,6 +71,25 @@ class CostEstimationTests(unittest.TestCase):
         self.assertEqual(metrics["performance_regression_count"], 1)
         self.assertGreater(metrics["decision_regret_pct"], 0.0)
 
+    def test_selection_ties_are_independent_of_input_row_order(self) -> None:
+        first = selection_metrics(
+            np.asarray([20.0, 10.0]),
+            np.asarray([5.0, 5.0]),
+            ["workload", "workload"],
+            ["candidate-b", "candidate-a"],
+        )
+        second = selection_metrics(
+            np.asarray([10.0, 20.0]),
+            np.asarray([5.0, 5.0]),
+            ["workload", "workload"],
+            ["candidate-a", "candidate-b"],
+        )
+
+        self.assertEqual(first["decision_regret_pct"], 0.0)
+        self.assertEqual(first["decision_regret_pct"], second["decision_regret_pct"])
+        self.assertEqual(first["predicted_best_tie_contexts"], 1)
+        self.assertIn("candidate_id", str(first["tie_policy"]))
+
     def test_feature_schema_excludes_post_execution_measurements(self) -> None:
         forbidden = ("actual", "e2e", "service_s", "vllm", "energy", "mfu")
 
