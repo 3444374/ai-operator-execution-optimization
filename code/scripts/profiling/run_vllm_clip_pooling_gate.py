@@ -41,6 +41,14 @@ def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
+def _recorded_environment() -> dict[str, str]:
+    return {
+        key: value
+        for key, value in sorted(os.environ.items())
+        if key.startswith("VLLM_") or key == "CUDA_VISIBLE_DEVICES"
+    }
+
+
 def run_process(
     command: list[str],
     *,
@@ -103,6 +111,7 @@ def main() -> int:
             "started_at_utc": started_at,
             "finished_at_utc": _utc_now(),
             "command": command,
+            "recorded_environment": _recorded_environment(),
             "exit_code": exit_code,
             "timed_out": timed_out,
             "timeout_seconds": args.timeout_seconds,

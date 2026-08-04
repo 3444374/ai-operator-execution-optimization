@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 import tempfile
 import unittest
@@ -16,6 +17,20 @@ SPEC.loader.exec_module(MODULE)
 
 
 class VllmClipPoolingHarnessTests(unittest.TestCase):
+    def test_only_selected_runtime_environment_is_recorded(self) -> None:
+        previous = os.environ.get("VLLM_TEST_GATE")
+        os.environ["VLLM_TEST_GATE"] = "enabled"
+        try:
+            recorded = MODULE._recorded_environment()
+        finally:
+            if previous is None:
+                os.environ.pop("VLLM_TEST_GATE", None)
+            else:
+                os.environ["VLLM_TEST_GATE"] = previous
+
+        self.assertEqual(recorded["VLLM_TEST_GATE"], "enabled")
+        self.assertNotIn("PATH", recorded)
+
     def test_run_process_records_normal_exit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

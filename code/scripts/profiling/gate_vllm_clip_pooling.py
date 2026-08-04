@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import glob
 import json
+import os
 import platform
 import sys
 import time
@@ -190,6 +191,11 @@ def run_gate(args: argparse.Namespace) -> dict[str, Any]:
             "vllm": vllm_version,
             "enforce_eager": True,
             "runner": "pooling",
+            "selected_process_environment": {
+                key: value
+                for key, value in sorted(os.environ.items())
+                if key.startswith("VLLM_") or key == "CUDA_VISIBLE_DEVICES"
+            },
         },
     }
 
