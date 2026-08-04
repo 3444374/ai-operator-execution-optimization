@@ -1,0 +1,22 @@
+captured_at_utc=2026-08-04T08:34:57Z
+capture_relation=post_gate_read_only_snapshot
+hostname=autodl-container-a4884eab4c-22401421
+cpu_cores_reported_by_autodl=32
+memory_gb_reported_by_autodl=240
+gpu_0=NVIDIA GeForce RTX 4090, 24564 MiB
+gpu_1=NVIDIA GeForce RTX 4090, 24564 MiB
+nvidia_driver=595.58.03
+python=3.12.3
+vllm=0.25.1
+torch=2.11.0+cu130
+torch_cuda=13.0
+cuda_available=true
+torch_device_count=2
+model_config_sha256=b575ef3c36f2a057fa19e221650105052d61cc9c1a972ec15019c6261ec98770
+image_sha256=261ba1b81c768f47b8452cd8fc7866a354a69c336a927032486d129b8684eb44
+gate_code_commit=d97dfcad9
+server_main_at_snapshot=f60023723374c5d9657e2d13de7c35d46d042580
+active_gpu_processes_at_snapshot=0
+
+This snapshot was captured after both gates finished. It identifies the host and
+software/assets but is not a replacement for runtime telemetry.

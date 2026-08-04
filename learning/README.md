@@ -13,6 +13,9 @@
 - [`observability_metrics_guide.md`](observability_metrics_guide.md)：解释下一轮新增的
   TTFT/ITL、token goodput、padding、成本、公平、重复统计、代价决策和检索质量字段，
   以及哪些输入缺失时必须标 unavailable。
+- [`vllm_clip_pooling_gate_guide.md`](vllm_clip_pooling_gate_guide.md)：解释图像 direct-service
+  ceiling 与数据库系统 baseline 的区别，以及为什么 1-image capability 未通过时必须
+  停止 5K/60K 性能测试。
 
 学习材料只负责解释；正式 baseline 身份、状态和指标以
 [`../experiments/plans/baseline_reference.md`](../experiments/plans/baseline_reference.md)

@@ -232,6 +232,14 @@ cd /root/autodl-tmp/ai-operator
 门禁；退出码 124 是明确超时，不能口头记为 GO，也不能据此断言 vLLM 永久不支持。
 `enforce_eager=True` 只隔离 compile/CUDA graph 启动因素，不是正式性能配置。
 
+**当前本机状态（2026-08-04）**：vLLM 0.25.1 的默认 sampler 与显式
+`VLLM_USE_FLASHINFER_SAMPLER=0` 两次离线 gate 均在 600 秒超时，且没有生成
+`result.json`。因此本环境的 pooling baseline 状态是 `blocked`，禁止继续在线、5K 或
+60K 测试。完整证据见
+`feasibility/results/vllm_clip_pooling_gate_20260804/`。日志不足以唯一归因为
+FlashInfer、权重加载或其它 EngineCore 初始化步骤；如需解锁，应使用隔离 venv 或可
+profiling 容器，不在现有文本 vLLM 环境原地升级。
+
 离线通过后才启动在线 server：
 
 ```bash

@@ -57,6 +57,15 @@ feasibility/results/pg18_4_connection_validation.md
 feasibility/results/image_staged_resource_gate_20260802/
 ```
 
+vLLM CLIP pooling 本机能力门禁：
+
+```text
+feasibility/results/vllm_clip_pooling_gate_20260804/
+```
+
+该结果只说明当前 vLLM/PyTorch/CUDA/容器组合未在 600 秒内返回 embedding；不代表
+vLLM 普遍不支持 CLIP，也不产生可进入系统排名的吞吐数据。
+
 ## 运行示例
 
 ```bash

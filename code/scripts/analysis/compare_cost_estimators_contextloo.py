@@ -150,11 +150,11 @@ def pool_fold_selection(folds: list[dict[str, Any]]) -> dict[str, float | int | 
 
 
 def _context_payload(row: dict[str, str]) -> dict[str, str]:
-    return {field: row.get(field, "") for field in _driver.DECISION_CONTEXT_FIELDS}
+    return _driver.decision_context_payload(row)
 
 
 def _candidate_payload(row: dict[str, str]) -> dict[str, str]:
-    return {field: row.get(field, "") for field in _driver.CANDIDATE_FIELDS}
+    return _driver.candidate_payload(row)
 
 
 def _sha256(path: Path) -> str:

@@ -6,9 +6,9 @@ system):
                             (overhead + per-prompt-token + per-output-cap-token).
                             Domain-knowledge functional form, OLS-calibrated.
   CE2 Profile Lookup      - bucket-by-config historical median, graceful relaxation.
-  CE3 Ridge (existing)    - standardized log1p ridge over the 15-feature vector
+  CE3 Ridge (existing)    - standardized log1p ridge over the pre-execution feature vector
                             (see regression.py).
-  CE4 FlatVector LightGBM - gradient-boosted trees over the same 15 features
+  CE4 FlatVector LightGBM - gradient-boosted trees over the same features
                             (GRACEFUL/COSTREAM/LCM-eval classic learned baseline;
                             lightgbm imported lazily so its absence only disables CE4).
   CE5 Hybrid              - CE1 analytical base + learned residual correction
@@ -16,7 +16,7 @@ system):
                             cost knowledge"). Static pre-execution variant.
 
 All estimators expose fit/predict. CE1/CE2/CE5 consume raw profile row dicts (for
-physical features / bucket keys); CE3/CE4 consume the 15-element feature matrix.
+physical features / bucket keys); CE3/CE4 consume the shared pre-execution feature matrix.
 The comparison driver threads both through. Nothing here modifies regression.py.
 """
 
@@ -89,7 +89,7 @@ class AnalyticalCostEstimator:
     ``output_cap = total_rows * completion_max_tokens`` (the pre-execution upper
     bound on generated tokens). Coefficients calibrated by ordinary least squares.
     The structure encodes pipeline domain knowledge (fixed overhead + per prefill
-    token + per decode-cap token); it deliberately avoids the kitchen-sink 15-feature
+    token + per decode-cap token); it deliberately avoids the kitchen-sink feature
     set, so it tests whether domain structure beats a generic learner (Heinrich R1/R4).
     """
 
@@ -164,7 +164,7 @@ class LookupCostEstimator:
 class LightGBMCostEstimator:
     """CE4: FlatVector LightGBM learned baseline.
 
-    Gradient-boosted trees over the same 15-feature vector used by CE3 Ridge
+    Gradient-boosted trees over the same pre-execution vector used by CE3 Ridge
     (GRACEFUL FlatVector / COSTREAM / LCM-eval). lightgbm is imported lazily so a
     missing dependency only disables this estimator rather than the whole comparison.
     """

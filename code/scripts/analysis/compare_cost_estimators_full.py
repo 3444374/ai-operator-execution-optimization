@@ -90,8 +90,12 @@ def build(rows: list[dict]):
     features = np.asarray([_drv.feature_vector(r) for r in rows], dtype=float)
     targets = np.asarray([_drv._number(r, TARGET) for r in rows], dtype=float)
     groups = [_drv.scenario_group(r) for r in rows]
-    contexts = [_drv._signature(r, _drv.DECISION_CONTEXT_FIELDS) for r in rows]
-    candidates = [_drv._signature(r, _drv.CANDIDATE_FIELDS) for r in rows]
+    contexts = [
+        _drv._payload_signature(_drv.decision_context_payload(r)) for r in rows
+    ]
+    candidates = [
+        _drv._payload_signature(_drv.candidate_payload(r)) for r in rows
+    ]
     return features, targets, groups, contexts, candidates
 
 

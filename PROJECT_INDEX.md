@@ -105,6 +105,7 @@
 | `learning/metric_selection_methodology.md` | AI_EMBED vs AI_COMPLETE 观察变量选择方法论 | 理解为什么从"阶段时延拆分"转向"多维分布表征" |
 | `learning/text_native_baseline_guide.md` | 文本 AI 算子 baseline 初学者讲解 | 理解 ceiling/control/native/project 的区别、请求链路、分轨与正式结果读法 |
 | `learning/observability_metrics_guide.md` | 新观测指标与 fail-closed 输入合同讲解 | 下一轮运行前确认 TTFT/ITL、goodput、成本、公平、CI/CV、代价模型与检索质量口径 |
+| `learning/vllm_clip_pooling_gate_guide.md` | 图像 vLLM pooling direct-service ceiling 的角色与能力门禁读法 | 区分“接口已注册”“本机可运行”和“已获得性能上限”，避免把 blocker 当性能结果 |
 | `figures/architecture/runtime_strategy_rule_table.png` / `.svg` | 信号触发候选策略规则表 | 与闭环图配套使用，说明观测信号、候选动作和保护约束；不作为已验证结论 |
 | `figures/architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时信号驱动的上游执行闭环图 | 当前首选策略机制图；用一个 AI_COMPLETE SQL 例子说明数据组织（token-budget/length-align/prefix-aware）、提交控制（queue-adaptive flush/K_max/routing）、vLLM 部署平台（观测不修改）的分工；不重切数据库侧已物化批次 |
 | `figures/scripts/generate_runtime_strategy_control_loop.py` | 运行时策略闭环图生成脚本 | 重新生成策略机制图 PNG/SVG，并执行边框、箭头和禁用术语自检 |
@@ -188,6 +189,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/profiling/profile_image_clip_preprocess_variants.py` | 交错比较当前 production-np、历史 legacy-pt 与 torchvision CLIP preprocessing，并经过同一 tensor actor 做 embedding parity gate | 复核 image motivation 是否能外推到当前代码边界；不是 E2E 方法结果 |
 | `code/scripts/profiling/gate_vllm_clip_pooling.py` | 单图离线 vLLM CLIP pooling 输入/输出/版本 capability worker | 只判断本机模型/API 能否返回合法 embedding，不作吞吐排名 |
 | `code/scripts/profiling/run_vllm_clip_pooling_gate.py` | 跨 macOS/Linux 的 vLLM gate 进程组超时、日志和退出码监管器 | engine 初始化可能阻塞时生成可归因 pass/error/timeout 证据 |
+| `feasibility/results/vllm_clip_pooling_gate_20260804/` | vLLM 0.25.1 CLIP pooling 两次 600 秒离线能力门禁、环境快照、完整日志和七步负结果报告 | 复核为什么当前环境停在 capability blocker，不能继续在线/5K/60K 或报告吞吐 |
 | `code/scripts/experiments/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、模型/GPU 和输出审计下运行 Daft built-in、Ray Data native graph、诊断 reference 与 project arms | 跑 operator-E2E gate/formal；schema v12 记录 baseline provenance、计时内输出合同、首输出结构信号和单位工作资源，并拒绝把项目自写 Daft UDF 当正式 native baseline |
 | `code/src/modalities/image/metrics.py` | 从图像 run 已观测总量派生 first-output/E2E、60s duration gate 和单位图片资源指标 | 跨规模只能比较独立达平台的速率/单位成本；不推断隐藏调度或逐图 latency |
 | `code/scripts/analysis/augment_image_observability.py` | 为历史 schema-v11 图像 CSV 生成不覆盖 raw 的派生指标副本 | 复用已有 12K/60K 数据，不为纯代数字段重跑；缺原始字段时 fail-closed |

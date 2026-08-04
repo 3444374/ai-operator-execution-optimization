@@ -25,6 +25,14 @@ FEATURE_NAMES = (
     "arrival_replay_enabled",
     "flush_is_adaptive",
     "flush_is_immediate",
+    "max_active_work_per_endpoint",
+    "per_endpoint_inflight_limit",
+    "actor_workers_per_endpoint",
+    "ray_actor_max_concurrency",
+    "endpoint_count",
+    "service_quantum_tokens",
+    "gpu_peak_tflops_per_gpu",
+    "gpu_memory_total_mib_per_gpu",
 )
 
 

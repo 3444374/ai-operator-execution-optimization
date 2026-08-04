@@ -1,0 +1,3 @@
+run_id,started_at_utc,finished_at_utc,vllm_version,runner,enforce_eager,flashinfer_sampler,timeout_seconds,exit_code,timed_out,result_json_exists,verdict
+vllm_clip_offline_1,2026-08-04T08:07:25.129443+00:00,2026-08-04T08:17:25.246661+00:00,0.25.1,pooling,true,default,600,124,true,false,blocked_timeout_before_embedding
+vllm_clip_offline_no_flashinfer_sampler,2026-08-04T08:20:57.097853+00:00,2026-08-04T08:30:57.214225+00:00,0.25.1,pooling,true,disabled,600,124,true,false,blocked_timeout_before_embedding

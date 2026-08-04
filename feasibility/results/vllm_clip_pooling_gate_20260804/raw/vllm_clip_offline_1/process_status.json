@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "started_at_utc": "2026-08-04T08:07:25.129443+00:00",
+  "finished_at_utc": "2026-08-04T08:17:25.246661+00:00",
+  "command": [
+    "/root/autodl-tmp/venvs/vllm-4090/bin/python",
+    "/root/autodl-tmp/ai-operator-ab-audit/code/scripts/profiling/gate_vllm_clip_pooling.py",
+    "--json-out",
+    "/root/autodl-tmp/experiment-artifacts/ab-line-audit-d97dfca/vllm_clip_offline_1/result.json",
+    "--model",
+    "/root/autodl-tmp/models/clip-vit-base-patch32",
+    "--image",
+    "/root/autodl-tmp/data/raw/coco_val2017/val2017/000000212226.jpg"
+  ],
+  "exit_code": 124,
+  "timed_out": true,
+  "timeout_seconds": 600,
+  "result_json_exists": false
+}

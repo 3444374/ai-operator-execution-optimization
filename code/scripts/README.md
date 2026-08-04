@@ -817,6 +817,12 @@ Without an exact match, the importer fails before the suffix is written.
 profile CSVs. It uses only pre-execution features and writes the feature schema,
 split groups, coefficients, normalization values, Q-error percentiles,
 Spearman correlation, and plan-selection pick-rate/runtime/regret to JSON.
+The current schema includes active-work/per-endpoint K, actor concurrency,
+endpoint count, service quantum and per-GPU capacity. Decision-context identity
+also includes database/runtime protocol plus normalized GPU model/memory, so a
+new machine cannot silently join an old machine's context. Profiles from a new
+machine still require their own calibration/holdout evidence; the identity guard
+does not claim zero-shot cross-hardware generalization.
 
 `analysis/summarize_formal_repeats.py` consumes a **new-schema** formal CSV and
 adds sample standard deviation, coefficient of variation, Student-t 95% confidence

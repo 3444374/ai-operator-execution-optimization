@@ -4036,3 +4036,29 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
 - 配置覆盖精算纠正为 38 个新 cells（现有 contexts 补齐 26 + 新增 3×4=12），按
   1 warmup+3 formal 为 152 runs；总耗时必须先用 4-cell pilot 实测，不再沿用
   “24 cells / 30–45 分钟”的无依据估计。
+
+## 2026-08-04 vLLM CLIP pooling 能力门禁收敛
+
+- 用进程组监管器在当前 2×4090 环境执行两次 1-image offline pooling gate：默认
+  sampler 与 `VLLM_USE_FLASHINFER_SAMPLER=0` 均在 600 秒退出 124，且没有生成
+  embedding `result.json`。
+- 可证明 vLLM 0.25.1 能解析 `CLIPModel`/pooling 配置，但当前
+  PyTorch 2.11.0+cu130/容器组合未通过可运行门禁；禁止继续在线、5K 和 60K 性能实验。
+- 原始命令、完整日志、退出状态、环境/资产 SHA256 和七步报告归档至
+  `feasibility/results/vllm_clip_pooling_gate_20260804/`。禁用 sampler 仍超时，只能排除
+  单一 sampler 开关，不能把根因写成 FlashInfer JIT、权重加载或其它具体步骤。
+- direct vLLM pooling 继续定位为服务 ceiling 候选，不是数据库 AI 算子系统 baseline；
+  当前状态为 `blocked/unavailable`，Daft built-in 与 Ray Data native graph 不受影响。
+
+## 2026-08-04 代价估计新数据采集前合同修复
+
+- 在设计双 4090 的 4-cell pilot 时发现旧 15-feature vector 不含 active-work、
+  per-endpoint K、actor concurrency、endpoint 数与 service quantum；改变这些候选时，
+  CE3/CE4/CE5 可能看到相同输入，属于实验设计缺陷。
+- pre-execution schema 扩为 23 项，并加入 per-GPU TFLOPS/显存容量；没有加入实际输出、
+  E2E、vLLM、能耗或 MFU 等执行后信息。
+- decision context 加入数据库版本、model backend、completion 协议/transport 及规范化
+  GPU model/per-GPU memory；endpoint 数保留为候选动作。单/双同型号 GPU 的 context
+  环境身份一致，但 candidate 不同；5070 与 4090 不会静默合并。
+- 该修复只建立新数据的可比合同，不声称已有 15-feature 结论自动适用于 23-feature；
+  必须在服务器独立 analysis venv 复算 LOO，再决定 pilot/formal。

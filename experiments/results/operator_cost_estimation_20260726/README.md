@@ -60,6 +60,12 @@ arrival replay 等执行前配置签名定义。同一配置的 warm-up/formal/r
 实际输出 token、实测 E2E/service、vLLM 指标、能耗和 MFU 均不作为特征。
 目标为 `e2e_s`。
 
+> 本节记录 2026-07-26 原始 15-feature 实验合同。2026-08-04 的新数据采集前审计发现，
+> 该合同看不到 active-work、per-endpoint K、actor concurrency、endpoint 数和硬件容量，
+> 且 context 身份未隔离机器/协议。当前代码已升级为 23 个纯 pre-execution 特征，并把
+> normalized GPU model/memory、数据库版本和 serving 协议纳入 context identity。旧结果
+> 继续作为历史证据；新的 23-feature LOO 结果必须单独复算，不能覆盖或静默混入本表。
+
 ## 模型与指标
 
 模型为标准化特征上的 log1p ridge regression（alpha=1），对照为训练集目标
