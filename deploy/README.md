@@ -27,7 +27,8 @@ docker compose up -d
 AutoDL 使用 `autodl.env.example`、`download_model.sh` 和
 `start_endpoints.sh`，不使用 Docker Compose。
 
-任何新机器先读 `runtime/README.md` 并保存 `preflight.json`；再进入对应平台 runbook。
+在任意机器开始或恢复实验前先读 `runtime/README.md` 并保存 `preflight.json`；硬件 profile
+默认自动选择，再进入对应平台 runbook。
 `runtime/` 只检查和补齐明确选择的能力/资产，不会自动修改驱动、CUDA 或正式实验参数。
 
 AutoDL 新对话的唯一入口是 `autodl/README.md` 顶部“新对话 / 新 agent 的

@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-08-04 多机器自动识别与按签名校准
+
+- `manage_environment.py check` 不再要求手工选择 profile：自动采集 CPU、GPU 型号/显存、
+  driver，并优先匹配双 4090/单 5070 专用合同；其他 Linux NVIDIA GPU 使用保守通用
+  profile。报告写入匿名稳定 machine ID 与 `automatic/explicit` 选择来源。
+- 每台机器保留自己的仓库外 `runtime.env`；CLI 支持显式路径、
+  `AI_OPERATOR_ENV_FILE` 和 `~/.config/ai-operator/runtime.env` 的确定性查找顺序。
+- 参数自适应边界明确为“运行签名 + 稳态 scale ramp + 短校准 + 冻结复用”：batch/K/actor/active-work
+  不能由 GPU 名称推导，使用现有约 97% 平台规则选满足正确性/SLO 的最小饱和点；机器、
+  实际 GPU 拓扑、模型/服务、协议或 workload 分布变化会使旧选择失效，formal 禁止在线调参。
+- 新增 profile 自动选择/通用回退测试；环境专项共 8 项通过。
+
 ## 2026-08-04 Agent 跨机器迁移强制路由
 
 - 根 `AGENTS.md` 新增自动入口规则：任何新机器/容器、GPU/云切换、缺包、缺模型或缺

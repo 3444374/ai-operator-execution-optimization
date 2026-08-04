@@ -15,13 +15,14 @@
 @research/AGENTS.md
 @deploy/runtime/AGENTS.md
 
-## 新机器与环境切换的强制路由
+## 多机器运行与环境切换的强制路由
 
 涉及新机器、新容器、单/多 GPU 切换、缺依赖、缺模型或缺数据集时，不得从历史聊天
 猜安装命令，也不得直接运行全量 pip/正式实验。必须先读
-`deploy/runtime/README.md`，选择 machine profile，运行只读 preflight 并保存报告；只有
+`deploy/runtime/README.md`，让 preflight 自动选择 machine profile 并保存报告；只有
 明确选定能力/资产后才执行独立的安装或下载命令。driver 与 vLLM 环境保持隔离，新机器
-通过最小 correctness gate 后重新校准，不能继承其他硬件的性能最优配置。
+通过最小 correctness gate 后按机器/模型/服务/workload 签名重新校准，不能继承其他
+签名的性能最优配置；签名未变化时才允许复用带证据 SHA 的冻结校准合同。
 
 ---
 

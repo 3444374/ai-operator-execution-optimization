@@ -245,10 +245,12 @@ staged/fused 仅保留为诊断 reference；官方 ResNet18 仍需固定 upstrea
 6. 后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 AutoDL rehearsal 写成
    正式内部平台结论；最终 scope/题目 framing 仍需导师/学长确认。
 
-**跨机器执行合同**：代码与实验配置不再以 AutoDL 固定路径作为通用接口。
-`deploy/runtime/` 统一描述 machine profile、Python 能力组和模型/数据资产；新机器先保存
-只读 preflight，再显式安装/下载并执行最小 gate。单 5070 可复用执行与指标合同，但
-必须独立校准 actor、batch、active work、显存和服务容量，不能继承双 4090 最优点。
+**多机器执行合同**：代码与实验配置不再以 AutoDL 固定路径作为通用接口。
+`deploy/runtime/` 统一描述 machine profile、Python 能力组和模型/数据资产；每台机器
+保存自己的仓库外 runtime env，preflight 自动识别已知双 4090/单 5070，并为其他 Linux
+NVIDIA GPU 选择保守通用 profile。单 5070 可复用执行与指标合同，但 actor、batch、
+active work、显存和服务容量按“机器 + 模型/服务 + 协议 + workload”签名独立校准；
+签名不变才复用冻结选择，不能继承双 4090 最优点。
 
 文献机制的发现、迁移审计和晋级/放弃条件统一见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。

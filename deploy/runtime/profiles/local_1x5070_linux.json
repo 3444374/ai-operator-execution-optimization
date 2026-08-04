@@ -2,6 +2,14 @@
   "schema_version": 1,
   "kind": "machine_profile",
   "name": "local_1x5070_linux_or_wsl2",
+  "match": {
+    "priority": 100,
+    "platforms": ["Linux"],
+    "minimum_gpu_count": 1,
+    "maximum_gpu_count": 1,
+    "minimum_gpu_memory_mib": 8000,
+    "gpu_name_regex": "(?i)5070"
+  },
   "platforms": ["Linux"],
   "minimum_python": [3, 10],
   "minimum_cpu_slots": 6,

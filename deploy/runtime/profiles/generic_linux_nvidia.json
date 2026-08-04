@@ -1,18 +1,16 @@
 {
   "schema_version": 1,
   "kind": "machine_profile",
-  "name": "autodl_2x4090",
+  "name": "generic_linux_nvidia",
   "match": {
-    "priority": 100,
+    "priority": 0,
     "platforms": ["Linux"],
-    "minimum_gpu_count": 2,
-    "maximum_gpu_count": 2,
-    "minimum_gpu_memory_mib": 20000,
-    "gpu_name_regex": "(?i)4090"
+    "minimum_gpu_count": 1,
+    "minimum_gpu_memory_mib": 8000
   },
   "platforms": ["Linux"],
   "minimum_python": [3, 10],
-  "minimum_cpu_slots": 10,
+  "minimum_cpu_slots": 4,
   "required_environment": [
     "PROJECT_ROOT",
     "ARTIFACT_ROOT",
@@ -32,6 +30,6 @@
     {"env": "PROJECT_ROOT", "required": true},
     {"env": "VENV_ROOT", "required": false}
   ],
-  "disk": {"root_env": "ARTIFACT_ROOT", "minimum_free_gib": 20},
-  "gpu": {"required": true, "minimum_count": 2, "minimum_memory_mib": 20000}
+  "disk": {"root_env": "ARTIFACT_ROOT", "minimum_free_gib": 10},
+  "gpu": {"required": true, "minimum_count": 1, "minimum_memory_mib": 8000}
 }

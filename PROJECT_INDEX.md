@@ -175,11 +175,11 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/README.md` | AutoDL 单一 runbook：环境准备、开机恢复、gate、正式实验和中断恢复；顶部有"两条推理引擎 track（文本 vLLM / 多模态 CLIP）"概念总览 | 新对话接手远端实验时按顶部唯一入口直接操作 |
 | `deploy/autodl/text_serving.md` | 文本模态（vLLM 生成式 LLM）推理服务引擎部署：vLLM 是什么（continuous batching/APC/KV cache）、vLLM vs CLIP 差异、Qwen 模型下载 + start_endpoints.sh、sharegpt_multiturn 数据集、runner/合同/喂饱门禁、7 条坑 | 跑文本 AI_COMPLETE 实验时读；与 image_serving.md 对称 |
 | `deploy/autodl/image_serving.md` | 图像 CLIP 部署：五臂 fused/staged operator-E2E gate、显式 Ray 资源账本、Ray GPU actor、vLLM pooling、COCO/PG BYTEA 边界 | 准备/跑图像 AI_EMBED/AI_CLASSIFY 时读；先过 schema v4 资源/正确性门禁，再区分 operator E2E 与含 sink 的 system E2E |
-| `deploy/runtime/README.md` | AutoDL/单 5070/其他 Linux GPU 的迁移合同、preflight、显式依赖安装和模型/数据下载流程 | 新机器首次部署、发现缺包/缺数据或新增 workload 时先读 |
+| `deploy/runtime/README.md` | AutoDL/单 5070/其他 Linux GPU 的多机器合同、自动 profile preflight、显式依赖/资产补齐和按运行签名校准流程 | 任意机器开始/恢复实验、发现缺包/缺数据或新增 workload 时先读 |
 | `deploy/runtime/assets.json` | 通用 Python 能力组和公开/受许可模型数据资产清单 | 检查环境、补可选依赖或下载新资产；不替代数据库 importer |
-| `deploy/runtime/profiles/*.json` | AutoDL 双 4090 与单 5070 Linux/WSL2 的最低机器能力合同 | 检查 CPU/GPU/显存/磁盘/命令，不承诺性能最优 |
+| `deploy/runtime/profiles/*.json` | 双 4090、单 5070 和通用 Linux NVIDIA GPU 的自动匹配与最低机器能力合同 | 检查 CPU/GPU/显存/磁盘/命令，不承诺性能最优 |
 | `deploy/runtime/runtime.env.example` | 与平台无关的仓库外环境变量模板 | 新机器集中设置五个根目录、模型、endpoint、数据库和 MFU 口径 |
-| `code/scripts/environment/manage_environment.py` | 只读 check + 显式 install-python/download CLI | 保存机器报告；默认不改变环境，受许可资产 fail closed |
+| `code/scripts/environment/manage_environment.py` | 自动硬件/profile 识别、只读 check + 显式 install-python/download CLI | 保存匿名 machine ID/能力报告；默认不改变环境，受许可资产 fail closed |
 | `code/requirements/*.txt` | 通用下载与 learned estimator 等可选能力依赖 | 只装进明确指定的 driver/analysis Python，不装进所有环境 |
 | `code/scripts/analysis/select_strategy_calibration.py` | 从 feeding/direct/token-budget/actor-shape 证据生成冻结校准合同和环境覆盖 | 同协议 actor 曲线完成后、启动数据组织/提交策略/多 job formal 前执行 |
 | `code/scripts/analysis/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
@@ -417,7 +417,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/pgai/` | pgai Docker Compose 部署 | 启动 pgai 测试环境 |
 | `deploy/postgres18.4/` | PostgreSQL 18.4 Docker Compose 部署 | 启动 PG18.4 同构预演环境 |
 | `deploy/autodl/` | AutoDL 云服务器 runbook、环境模板、模型下载/endpoint 启动脚本与双 GPU 场景模板 | 2× GPU 云上复现：配置化 vLLM 多 endpoint + PG18.4 + Ray/Daft |
-| `deploy/runtime/` | 跨机器 profile、软件能力组与模型/数据资产合同 | 在 AutoDL、单 5070 或其他 Linux/NVIDIA 主机之间迁移前做 preflight |
+| `deploy/runtime/` | 多机器自动 profile、软件能力组、模型/数据资产与参数校准合同 | 在 AutoDL、单 5070 或其他 Linux/NVIDIA 主机开始/恢复实验前做 preflight |
 | `deploy/autodl/dual_gpu_capacity_scaling.example.json` | 单/双 endpoint 相同 per-GPU K 的容量扩展模板 | 先确定双 GPU 公平 scaling 与每卡静态甜点 |
 | `deploy/autodl/dual_gpu_token_budget_curve.example.json` | disjoint manifest、async multi-prompt、固定 per-endpoint active work 的 2K–65K token-budget 曲线 | feeding formal 通过后，在等量 offered work 下证明预算不是越大越好并冻结 held-out 静态点 |
 | `deploy/autodl/dual_gpu_data_organization.example.json` | disjoint manifest、async multi-prompt、固定 active work/最佳预算的数据组织隔离模板 | 比较 fixed16、sequential、row-cap-aware 与 length-align，避免预算、transport、offered load 和 flush 混淆 |

@@ -8,6 +8,7 @@ import importlib.util
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -26,6 +27,19 @@ class CheckResult:
     check: str
     status: str
     detail: str
+
+
+@dataclass(frozen=True)
+class MachineObservation:
+    """Privacy-preserving hardware identity used to select a machine profile."""
+
+    machine_id: str
+    platform: str
+    python: str
+    cpu_slots: int
+    gpu_names: tuple[str, ...]
+    gpu_memory_mib: tuple[int, ...]
+    gpu_driver_versions: tuple[str, ...]
 
 
 def load_env_file(path: Path) -> dict[str, str]:
@@ -83,6 +97,89 @@ def load_json_contract(path: Path, expected_kind: str) -> dict[str, Any]:
     if decoded.get("kind") != expected_kind:
         raise ValueError(f"{path}: kind must be {expected_kind!r}")
     return decoded
+
+
+def observe_machine() -> MachineObservation:
+    """Observe stable host capabilities without exposing hostname or GPU UUIDs."""
+
+    cpu_slots = (
+        len(os.sched_getaffinity(0))
+        if hasattr(os, "sched_getaffinity")
+        else (os.cpu_count() or 1)
+    )
+    gpu_names: list[str] = []
+    gpu_memories: list[int] = []
+    gpu_drivers: list[str] = []
+    gpu_uuids: list[str] = []
+    executable = shutil.which("nvidia-smi")
+    if executable:
+        completed = subprocess.run(
+            [
+                executable,
+                "--query-gpu=name,memory.total,driver_version,uuid",
+                "--format=csv,noheader,nounits",
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if completed.returncode == 0:
+            for row in completed.stdout.splitlines():
+                parts = [item.strip() for item in row.split(",")]
+                if len(parts) < 4:
+                    continue
+                try:
+                    memory = int(parts[1])
+                except ValueError:
+                    continue
+                gpu_names.append(parts[0])
+                gpu_memories.append(memory)
+                gpu_drivers.append(parts[2])
+                gpu_uuids.append(parts[3])
+
+    # The hash distinguishes repeated runs on one host without recording raw hostnames
+    # or device UUIDs in experiment artifacts.
+    identity_parts = [platform.system(), platform.machine()]
+    identity_parts.extend(sorted(gpu_uuids) if gpu_uuids else [platform.node()])
+    identity_source = "|".join(identity_parts)
+    machine_id = (
+        "machine-"
+        + hashlib.sha256(identity_source.encode("utf-8")).hexdigest()[:16]
+    )
+    return MachineObservation(
+        machine_id=machine_id,
+        platform=platform.system(),
+        python=platform.python_version(),
+        cpu_slots=cpu_slots,
+        gpu_names=tuple(gpu_names),
+        gpu_memory_mib=tuple(gpu_memories),
+        gpu_driver_versions=tuple(gpu_drivers),
+    )
+
+
+def select_machine_profile(
+    profile_paths: tuple[Path, ...], observation: MachineObservation
+) -> tuple[Path, dict[str, Any]]:
+    """Choose the highest-priority profile whose explicit match contract applies."""
+
+    matches: list[tuple[int, str, Path, dict[str, Any]]] = []
+    for path in profile_paths:
+        profile = load_json_contract(path, "machine_profile")
+        match = profile.get("match", {})
+        if not isinstance(match, dict):
+            raise ValueError(f"{path}: match must be an object")
+        if _profile_matches(match, observation):
+            priority = int(match.get("priority", 0))
+            matches.append((priority, str(profile.get("name", path.stem)), path, profile))
+    if not matches:
+        observed = (
+            f"platform={observation.platform}; cpu_slots={observation.cpu_slots}; "
+            f"gpus={list(observation.gpu_names)}; memory_mib={list(observation.gpu_memory_mib)}"
+        )
+        raise RuntimeError(f"no machine profile matches observed hardware: {observed}")
+    matches.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    _, _, path, profile = matches[0]
+    return path, profile
 
 
 def selected_group_names(raw: str) -> tuple[str, ...]:
@@ -221,12 +318,16 @@ def report_payload(
     manifest_path: Path,
     groups: tuple[str, ...],
     results: tuple[CheckResult, ...],
+    *,
+    observation: MachineObservation | None = None,
+    profile_selection: str = "explicit",
 ) -> dict[str, Any]:
     """Build the portable preflight report stored beside experiment artifacts."""
 
-    return {
+    payload: dict[str, Any] = {
         "schema_version": 1,
         "profile": str(profile_path),
+        "profile_selection": profile_selection,
         "assets_manifest": str(manifest_path),
         "groups": list(groups),
         "python": sys.version,
@@ -238,6 +339,9 @@ def report_payload(
         ),
         "checks": [asdict(item) for item in results],
     }
+    if observation is not None:
+        payload["machine"] = asdict(observation)
+    return payload
 
 
 def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
@@ -334,6 +438,33 @@ def _check_profile(
         else:
             results.append(CheckResult("machine:disk_free", "missing", f"{root_key} unset"))
     _check_gpus(profile.get("gpu", {}), results)
+
+
+def _profile_matches(match: dict[str, Any], observation: MachineObservation) -> bool:
+    platforms = match.get("platforms")
+    if platforms is not None and observation.platform not in platforms:
+        return False
+    count = len(observation.gpu_names)
+    if count < int(match.get("minimum_gpu_count", 0)):
+        return False
+    maximum_count = match.get("maximum_gpu_count")
+    if maximum_count is not None and count > int(maximum_count):
+        return False
+    minimum_memory = int(match.get("minimum_gpu_memory_mib", 0))
+    if minimum_memory and (
+        not observation.gpu_memory_mib
+        or any(memory < minimum_memory for memory in observation.gpu_memory_mib)
+    ):
+        return False
+    name_pattern = match.get("gpu_name_regex")
+    if name_pattern is not None:
+        if not isinstance(name_pattern, str):
+            raise ValueError("gpu_name_regex must be a string")
+        if not observation.gpu_names or not all(
+            re.search(name_pattern, name) for name in observation.gpu_names
+        ):
+            return False
+    return True
 
 
 def _check_gpus(gpu: object, results: list[CheckResult]) -> None:

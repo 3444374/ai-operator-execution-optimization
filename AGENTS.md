@@ -107,9 +107,9 @@ prefix-only 在 cache-off 下无稳定收益；cache-ON 下 batching **regime-de
 
 进入子目录前先读该目录的 `AGENTS.md`（规则），再读 `README.md`（内容）。
 
-### 4.1 新机器、缺依赖或缺资产的强制入口
+### 4.1 多机器运行、缺依赖或缺资产的强制入口
 
-只要任务涉及下列任一情况：新机器/新容器、切换 GPU 或云环境、环境初始化、缺少
+只要任务涉及下列任一情况：在多台机器间轮流实验、新机器/新容器、切换 GPU 或云环境、环境初始化、缺少
 Python 包、模型或数据集、下载新 workload、准备本地单 GPU 或远端多 GPU 实验，agent
 必须先读：
 
@@ -117,11 +117,17 @@ Python 包、模型或数据集、下载新 workload、准备本地单 GPU 或�
 2. `deploy/runtime/README.md`；
 3. 所选平台专项 runbook（如 `deploy/autodl/README.md`）。
 
-随后必须先运行 `manage_environment.py check` 的只读 preflight 并保存机器报告，再决定
+随后必须先运行 `manage_environment.py check` 的只读 preflight（默认自动选择机器 profile）并保存机器报告，再决定
 是否显式安装或下载。禁止 clone 后直接全量 `pip install`、混装 driver/vLLM 环境、绕过
 许可下载数据、沿用另一台机器的最优 K/batch/actor 参数，或在 correctness gate 前启动
 正式实验。模型/数据下载完成不等于数据库 workload 已导入；必须继续运行对应 importer
 和行数/schema/exactly-once 门禁。
+
+环境自动识别不等于性能参数可以跨机器复用。batch/K/actor/active-work 必须绑定
+“机器 + 模型/服务配置 + 协议 + workload 分布/稳态规模”的校准签名；签名不变可复用冻结合同，
+签名变化必须重新 gate/校准。选择最小饱和点而非单次峰值，正式 run 禁止在线调参。
+校准先固定 batch 做 workload scale ramp，确认至少 60 秒且速率进入平台，再固定规模扫描
+batch/K/actor；禁止把两个维度同时上涨后归因。
 
 ## 5. 实验规则
 

@@ -6,9 +6,11 @@ from pathlib import Path
 from unittest import mock
 
 from src.infrastructure.environment import (
+    MachineObservation,
     check_environment,
     download_asset,
     load_env_file,
+    select_machine_profile,
     selected_group_names,
 )
 
@@ -117,6 +119,64 @@ class EnvironmentContractTests(unittest.TestCase):
                     "licensed",
                     {"DATA_ROOT": directory},
                 )
+
+    def test_machine_profile_selects_specific_match_before_generic(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            generic = root / "generic.json"
+            specific = root / "specific.json"
+            generic.write_text(
+                '{"schema_version":1,"kind":"machine_profile","name":"generic",'
+                '"match":{"priority":0,"platforms":["Linux"],'
+                '"minimum_gpu_count":1}}',
+                encoding="utf-8",
+            )
+            specific.write_text(
+                '{"schema_version":1,"kind":"machine_profile","name":"dual4090",'
+                '"match":{"priority":100,"platforms":["Linux"],'
+                '"minimum_gpu_count":2,"maximum_gpu_count":2,'
+                '"gpu_name_regex":"4090"}}',
+                encoding="utf-8",
+            )
+            observation = MachineObservation(
+                machine_id="machine-test",
+                platform="Linux",
+                python="3.12.0",
+                cpu_slots=16,
+                gpu_names=("NVIDIA GeForce RTX 4090", "NVIDIA GeForce RTX 4090"),
+                gpu_memory_mib=(24564, 24564),
+                gpu_driver_versions=("570", "570"),
+            )
+
+            path, profile = select_machine_profile(
+                (generic, specific), observation
+            )
+
+        self.assertEqual(path.name, "specific.json")
+        self.assertEqual(profile["name"], "dual4090")
+
+    def test_machine_profile_falls_back_to_generic_nvidia(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "generic.json"
+            path.write_text(
+                '{"schema_version":1,"kind":"machine_profile","name":"generic",'
+                '"match":{"priority":0,"platforms":["Linux"],'
+                '"minimum_gpu_count":1,"minimum_gpu_memory_mib":8000}}',
+                encoding="utf-8",
+            )
+            observation = MachineObservation(
+                machine_id="machine-test",
+                platform="Linux",
+                python="3.12.0",
+                cpu_slots=8,
+                gpu_names=("NVIDIA RTX A6000",),
+                gpu_memory_mib=(49140,),
+                gpu_driver_versions=("570",),
+            )
+
+            selected, _ = select_machine_profile((path,), observation)
+
+        self.assertEqual(selected, path)
 
 
 if __name__ == "__main__":
