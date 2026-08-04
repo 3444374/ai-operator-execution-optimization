@@ -157,6 +157,16 @@ def candidate_payload(row: dict[str, str]) -> dict[str, str]:
     return payload
 
 
+def is_formal_profile_row(row: dict[str, str]) -> bool:
+    """Accept only measured formal repeats for estimator fitting/evaluation.
+
+    Warm-up runs exercise caches and compilation and are intentionally excluded.
+    Missing phase metadata fails closed instead of being silently treated as formal.
+    """
+
+    return row.get("phase", "").strip().lower() == "formal"
+
+
 def load_dataset(
     paths: list[Path],
     target: str,
@@ -177,6 +187,9 @@ def load_dataset(
     for path in paths:
         with path.open(encoding="utf-8", newline="") as handle:
             for row in csv.DictReader(handle):
+                if not is_formal_profile_row(row):
+                    excluded += 1
+                    continue
                 if row.get("status") != "ok":
                     excluded += 1
                     continue

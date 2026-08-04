@@ -70,6 +70,8 @@ def load_rows() -> list[dict]:
     for path in paths:
         with path.open(encoding="utf-8", newline="") as handle:
             for row in csv.DictReader(handle):
+                if not _drv.is_formal_profile_row(row):
+                    continue
                 if row.get("status") != "ok":
                     continue
                 try:

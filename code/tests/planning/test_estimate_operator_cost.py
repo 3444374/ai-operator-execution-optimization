@@ -17,6 +17,7 @@ for path in (CODE_ROOT, SCRIPTS_ROOT):
 from scripts.analysis.estimate_operator_cost import (  # noqa: E402
     decision_context_payload,
     feature_vector,
+    is_formal_profile_row,
     scenario_group,
 )
 
@@ -52,6 +53,12 @@ def profile_row() -> dict[str, str]:
 
 
 class EstimateOperatorCostTests(unittest.TestCase):
+    def test_formal_filter_excludes_warmup_and_missing_phase(self) -> None:
+        self.assertTrue(is_formal_profile_row({"phase": "formal"}))
+        self.assertTrue(is_formal_profile_row({"phase": "FORMAL"}))
+        self.assertFalse(is_formal_profile_row({"phase": "warmup"}))
+        self.assertFalse(is_formal_profile_row({}))
+
     def test_feature_vector_has_stable_numeric_schema(self) -> None:
         values = feature_vector(profile_row())
 
