@@ -214,13 +214,67 @@ GPU busy 6–10% 一致。
    冻结静态点比。
 3. **官方 ResNet18 复现**（独立 AI_CLASSIFY 轨道，并行准备，不阻塞 AI_EMBED）。
 
+## 10. schema-v12 重跑（2026-08-04，matrix runner + 单写 lease）
+
+把 schema-v12 派生指标（per-image 资源/能耗 + streaming 信号）落到 60K 正式规模，并用 codex 的
+single-writer matrix runner（`run_image_clip_matrix.py` + lease，根治并发双写）重跑 matched-resource 2×2。
+配置 `deploy/autodl/image_2arm_60k_matched_resource.example.json`：2 arm（project_ray / ray_data_staged）
+× 2 CPU（8/16），60K×2 = 120000 行/run，1 warmup + 3 formal，`minimum_steady_state_s=50`（项目默认 60；
+project-cpu16 steady-proxy ~61s 贴边、CV~2%，matrix 不能从 steady-gate fail 恢复，故降到 50 留余量，
+仍远过 ~9s setup）。commit `9879167`。
+
+**合规性**：12/12 formal `exactly_once=True`、`output_rows=120000`、`unique_images=60000`、steady-proxy
+全部 ≥50s（实测最低 ~65s，无 fail-close），0 incident。
+
+### 10.1 matched-resource 2×2（schema-v12，3 formal 中位 / CV）
+
+| cell | operator_jct (s) | CV | images/s | CV | J/1k images | gpu_s/image | img/cpuCore_s | GPU busy% | first_out_frac |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| project cpu16 | **73.7** | 2.1% | 1629 | 2.1% | 113.2 | 0.00123 | 57.4 | 8.7 | 0.330 |
+| project cpu8 | **115.8** | 2.0% | 1037 | 2.0% | 160.3 | 0.00193 | 43.6 | 6.1 | 0.212 |
+| ray_data cpu16 | 90.4 | 1.6% | 1328 | 1.6% | 121.4 | 0.00151 | 48.3 | 8.2 | 0.482 |
+| ray_data cpu8 | 128.6 | 2.1% | 933 | 2.1% | 165.2 | 0.00214 | 41.4 | 5.9 | 0.325 |
+
+**matched-resource 优势**：project @cpu8 快 **10.0%**、@cpu16 快 **18.5%**——方向与 step-8 一致
+（step-8: 12.8% / 15.1%），**确认 ~13–15% 结构性收益**（cpu8 偏低、cpu16 偏高；本轮 ray_data cpu16
+90s vs step-8 82s 的方差驱动了 cpu16 数值）。CV 1.6–2.1%，稳态可靠。
+
+### 10.2 schema-v12 新增 per-image 指标（本次重跑的核心增量）
+
+- **能耗 J/1k images**：project @cpu16 = 113 vs ray_data 121（省 ~7%）；@cpu8 = 160 vs 165。project 单位吞吐更省能。
+- **gpu_seconds/image**：project 0.00123 vs ray_data 0.00151 @cpu16——project 单位 GPU 墙钟更低。
+- **images/cpu_core_second**：project 57.4 vs ray_data 48.3 @cpu16——project 单位 CPU 更高效。
+- **first_output_fraction_of_e2e**（streaming/materialization 信号）：project 0.33 vs ray_data 0.48 @cpu16
+  ——project 更早流式输出（显式 actor pipeline），ray_data 缓冲更多；@cpu8 同方向（0.21 vs 0.33）。
+- **GPU busy%**：5.9–8.7%，两臂都饥饿（CPU 喂入瓶颈，与 §6/§9 一致）。
+
+### 10.3 12K 三臂一致性（1 warmup + 3 formal，supersede 受污染双写 run）
+
+`deploy/autodl/image_3arm_12k_consistency.example.json`：3 arm（daft_builtin_embed / ray_data_staged /
+project_ray）@12K×1，`min_steady=0`（结构诊断：fast arm setup-dominated，非稳态排名）。12/12 formal
+`exactly_once=True`，0 incident。Daft ~64s@12K（187 img/s，/dev/shm 干净下无 OutOfDisk），ray_data ~17s、
+project ~15s（setup-dominated）。**作容量/结构诊断**，不进 matched-workload 排名（与 §8 一致：Daft
+max ~12K 与 fast-arm 可靠测量规模无重叠）。raw：`raw/runs_3arm_12k_consistency_20260804.csv`。
+
+### 10.4 不能声称
+
+- 不能把 schema-v12 的 18.5%（cpu16）当成"project 比 step-8 更优"——它在 ray_data cpu16 本轮方差范围内，
+  方向与 step-8 一致，正式 claim 仍是 ~13–15% 区间。
+- per-image 指标（J/1k 等）是 nvidia-smi/psutil 采样派生（非硬件 counter），跨硬件不可比，只作本机
+  project-vs-baseline 结构对照。
+- 12K 一致性 run 非稳态（fast arm setup-dominated），不进排名。
+
 ## 原始数据
 
 - `raw/runs_step6_2arm_formal.csv`（8 行：Ray Data cpu8 + project cpu16，各 1 warmup + 3 formal）
 - `raw/runs_step8_matched_resource.csv`（8 行：Ray Data cpu16 + project cpu8，各 1 warmup + 3 formal）
 - `raw/runs_daft_12k_consistency.csv.gz`（clean schema-v11 三臂 12K，1 warmup + 2 formal；
   只作 capacity/consistency 诊断）
-- `summary.csv`（4 cell 全指标中位；派生字段由 raw 代数补算）
+- `raw/runs_matched_resource_schemav12_20260804.csv`（**§10**：2 arm × 2 CPU matched-resource
+  schema-v12 重跑，1 warmup + 3 formal × 4 cell = 16 行）
+- `raw/runs_3arm_12k_consistency_20260804.csv`（**§10.3**：3 臂 12K 一致性，1 warmup + 3 formal × 3 arm = 12 行）
+- `summary.csv`（step-6/8 4 cell 全指标中位；派生字段由 raw 代数补算）
+- `summary_schemav12.csv`（**§10** schema-v12 4 cell 中位 + CV；派生自 runs_matched_resource_schemav12）
 - 完整 `*_with_derived.csv` 与 `*.metrics.json` 不重复入库；运行
   `code/scripts/analysis/augment_image_observability.py` 可从上述 raw 重建
 - 远端：`/root/autodl-tmp/experiment-artifacts/ai_embed_formal_2arm_60kx2_20260803/` +
