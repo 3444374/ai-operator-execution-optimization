@@ -3936,3 +3936,12 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
 - schema-v12 manifest 与历史增强 CSV 的旁置 `*.metrics.json` 统一保存指标字典，逐项
   标明中文含义、单位、公式、直接/采样/派生来源、比较范围和误差边界，便于复核错误
   字段、采样失真和跨规模误读。
+- 远端 `ai_embed_3arm_12k_1p3_20260804` 被两份相同 shell runner 同时写入同一
+  `runs.csv`：出现重复 formal index、并发占用双卡和 manifest 覆盖风险；停止后共有
+  15 行/12 formal，违反单写者与串行 Latin-square 合同，整目录排除性能结论、不入 Git。
+  后续 formal 必须走 `run_image_clip_matrix.py` 的输出目录 lease，禁止手工并发启动 raw
+  `run_image_clip_e2e.py`。
+- main/服务器同步至 `ed2fde5`；去掉测试命令人为注入的 `PYTHONPATH=code` 后，远端
+  全量 639 tests 与图像专项 49 tests 均通过。clean 2026-08-03 12K schema-v11 数据和
+  两份 60K×2 formal raw 已旁置验证派生计算；仓库归档 clean raw gzip、紧凑 summary
+  与 README，完整 derived CSV/metric definitions 可用分析脚本重建，不重复保存。

@@ -177,6 +177,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/experiments/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、模型/GPU 和输出审计下运行 Daft built-in、Ray Data native graph、诊断 reference 与 project arms | 跑 operator-E2E gate/formal；schema v12 记录 baseline provenance、计时内输出合同、首输出结构信号和单位工作资源，并拒绝把项目自写 Daft UDF 当正式 native baseline |
 | `code/src/modalities/image/metrics.py` | 从图像 run 已观测总量派生 first-output/E2E、60s duration gate 和单位图片资源指标 | 跨规模只能比较独立达平台的速率/单位成本；不推断隐藏调度或逐图 latency |
 | `code/scripts/analysis/augment_image_observability.py` | 为历史 schema-v11 图像 CSV 生成不覆盖 raw 的派生指标副本 | 复用已有 12K/60K 数据，不为纯代数字段重跑；缺原始字段时 fail-closed |
+| `experiments/results/image_ai_embed_operator_formal_20260803/` | Ray Data/project 60K×2 matched-resource formal、Daft 12K capacity consistency、派生单位资源与指标定义 | 阅读当前图像 operator 结果；区分同规模正式排名、Daft 容量上限和跨规模描述性指标 |
 | `code/configs/image_vendor_baselines.json` | Daft 官方 803,580-row ResNet18 Daft/Ray Data 入口的仓库、commit、文件 SHA256、官方 workload 与允许适配范围 | 跑 vendor-code parity 前核对；禁止改写官方调度图 |
 | `code/scripts/experiments/run_image_clip_matrix.py` | 固定 seed 交错编排图像 warmup/formal，持有结果目录租约并校验 unique rows、exactly-once、稳态时长 | 防止手工顺序漂移、并发写结果和短作业误入 formal；输出 raw CSV、逐 run manifest/log 与外层 schedule |
 | `code/scripts/data/import_coco_images.py` | 从目录或 ZIP 流式导入 COCO 图像 BYTEA，保留 source doc_id，单事务替换指定 workload | 正式规模避免完整解压副本；失败回滚，不覆盖无关 workload |

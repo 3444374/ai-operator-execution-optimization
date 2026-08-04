@@ -4,6 +4,12 @@
 
 先读 [`EXPERIMENT_EVIDENCE_REGISTRY.md`](EXPERIMENT_EVIDENCE_REGISTRY.md)。该台账登记主要机制结果，并区分“设计预留、功能测试、真实链路门禁、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 
+## 图像 AI_EMBED operator（2026-08-03/04）
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `image_ai_embed_operator_formal_20260803/` | 60K×2 held-out Ray Data/project 2×2 CPU formal、Daft 12K capacity consistency，以及 schema-v12 派生观测 | Ray/project 同规模 matched-resource 结论有效；Daft 因物化容量上限单列。跨规模只描述独立平台上的 images/s/单位资源，absolute JCT/first output 不混排。 |
+
 ## 双 GPU 调度与容量（2026-07-28/29）
 
 | Directory | Content | Boundary |

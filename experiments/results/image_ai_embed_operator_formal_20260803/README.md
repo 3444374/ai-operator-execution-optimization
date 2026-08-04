@@ -75,6 +75,30 @@ operator_jct（低=好；每 cell 3 formal 中位，CV 见括号）：
 | project cpu8 | 112.24s | 1039 | 21.8s | 6.3% / 30% | 16.4 | 7.07 |
 | project cpu16 | 69.95s | 1666 | 22.4s | 9.6% / 37% | 25.1 | 10.33 |
 
+#### 5.2.1 schema-v12 派生观测补算（不重跑、不改 raw）
+
+2026-08-04 使用 `augment_image_observability.py` 从 schema-v11 原始总量旁置补算；公式、
+数据源和误差边界见脚本生成的 `*.metrics.json` 及
+`learning/observability_metrics_guide.md`。仓库只保留下面的紧凑汇总；完整增强 CSV/JSON 可由
+归档 raw 重建，避免重复保存同一批逐 run 数据。这些字段没有增加新的 runtime
+instrumentation，不能补出 Ray/Daft 隐藏的逐 batch 或逐图时间。
+
+| cell | first-output/E2E | J/1K images | CPU core-s/image | images/CPU-core-s | GPU-s/image |
+|---|---:|---:|---:|---:|---:|
+| Ray Data cpu8 | 0.354 | 145.33 | 0.01819 | 54.96 | 0.002209 |
+| Ray Data cpu16 | 0.486 | 102.56 | 0.01542 | 64.84 | 0.001414 |
+| project cpu8 | 0.196 | 141.52 | 0.01565 | 63.88 | 0.001926 |
+| project cpu16 | 0.320 | 96.83 | 0.01539 | 64.98 | 0.001200 |
+
+读法：`first-output/E2E` 是首个完整 Arrow batch 返回时已消耗的总时间比例，不是
+per-image latency；比例越接近 1 越偏向晚返回/物化。`GPU-s/image` 是分配的 GPU 数×墙钟
+除以图片数，不是 kernel active time。CPU 核秒、能耗与 host I/O 均来自低频或 host-wide
+采样，适合辅助比较和发现 regime change，不应冒充精确进程归因。
+
+同一 raw 还显示 Ray Data 的 host network receive bytes/image 约为 project 的 2 倍
+（约 329KB vs 165KB）。这是**待确认观测**：计数器是整机总量，可能包含 SQL shard/
+Ray 数据路径差异或同机背景流量；没有进程级网络归属前，不能写成“Ray Data 多传一倍数据”。
+
 ### 5.3 CPU scaling（两臂在 60K×2 都能 scale，与 5K 不同）
 
 | arm | cpu8 img/s | cpu16 img/s | cpu8→16 增益 |
@@ -169,6 +193,12 @@ Daft 单列。
 比"Daft 在某规模慢多少"更有说服力，支持课题执行结构论点。远端：`daft_max_probe2_20260803/`（probe.log +
 runs.csv）+ `daft_builtin_60k_gate_symlink_20260803/`（60K 崩溃证据）。
 
+12K 三臂 clean consistency 的 Daft 两次 formal 旁置补算中位数为：
+`first_output/E2E=0.951`、`J/1K-images=648.19`、`CPU-core-s/image=0.08061`、
+`images/CPU-core-s=12.79`、`GPU-s/image=0.01064`。它说明结果几乎到 job 尾部才开始
+返回，并且单位工作资源显著高；但只有 2 个 formal repeats，且与 60K fast arms 不是同规模，
+因此只作容量/结构诊断，不进入 matched-workload 排名。
+
 ## 9. 容量参照（step 7）+ 下一步
 
 **direct/GPU ceiling（容量参照，不进排名表）**：R0 GPU-resident forward 天花板 **~9.7K img/s（单卡）**
@@ -188,7 +218,11 @@ GPU busy 6–10% 一致。
 
 - `raw/runs_step6_2arm_formal.csv`（8 行：Ray Data cpu8 + project cpu16，各 1 warmup + 3 formal）
 - `raw/runs_step8_matched_resource.csv`（8 行：Ray Data cpu16 + project cpu8，各 1 warmup + 3 formal）
-- `summary.csv`（4 cell 全指标中位）
+- `raw/runs_daft_12k_consistency.csv.gz`（clean schema-v11 三臂 12K，1 warmup + 2 formal；
+  只作 capacity/consistency 诊断）
+- `summary.csv`（4 cell 全指标中位；派生字段由 raw 代数补算）
+- 完整 `*_with_derived.csv` 与 `*.metrics.json` 不重复入库；运行
+  `code/scripts/analysis/augment_image_observability.py` 可从上述 raw 重建
 - 远端：`/root/autodl-tmp/experiment-artifacts/ai_embed_formal_2arm_60kx2_20260803/` +
   `…/ai_embed_matched_resource_20260803/`（runs.csv + 16 per-run manifest + formal.log/matched.log）；
   `daft_max_probe2_20260803/`（Daft 物化-cap 探针）；`daft_builtin_60k_gate_symlink_20260803/`（60K 崩溃证据）

@@ -1,5 +1,5 @@
-cell,arm,cpu_workers,batch,operator_jct_s,images_per_s,first_output_s,gpu_busy_mean_pct,gpu_busy_peak_pct,cpu_busy_cores,images_per_joule,cv_pct,n_formal,exactly_once,max_norm_error
-A1,ray_data_staged,8,64,128.75,905.4,45.55,6.1,46.0,16.4,6.88,3.18,3,True,0.0
-A2,ray_data_staged,16,64,82.41,1414.6,40.06,8.2,37.0,21.8,9.75,2.60,3,True,0.0
-B1,project_ray,8,64,112.24,1038.7,21.81,6.3,30.0,16.4,7.07,0.74,3,True,0.0
-B2,project_ray,16,64,69.95,1666.5,22.41,9.6,37.0,25.1,10.33,2.02,3,True,0.0
+cell,arm,cpu_workers,batch,operator_jct_s,images_per_s,first_output_s,first_output_fraction_of_e2e,post_first_output_s,steady_state_duration_gate_met,gpu_busy_mean_pct,gpu_busy_peak_pct,cpu_busy_cores,cpu_core_seconds_per_image,images_per_cpu_core_second,images_per_joule,joules_per_1k_images,gpu_seconds_per_image,host_net_recv_bytes_per_image,host_disk_read_bytes_per_image,cv_pct,n_formal,exactly_once,max_norm_error
+A1,ray_data_staged,8,64,128.75,905.4,45.55,0.353810,83.2000,True,6.1,46.0,16.4,0.0181943,54.9622,6.88,145.326,0.00220898,328978,7.8003,3.18,3,True,0.0
+A2,ray_data_staged,16,64,82.41,1414.6,40.06,0.486056,42.3541,True,8.2,37.0,21.8,0.0154223,64.8411,9.75,102.560,0.00141386,328946,7.30839,2.60,3,True,0.0
+B1,project_ray,8,64,112.24,1038.7,21.81,0.196056,91.0035,True,6.3,30.0,16.4,0.0156548,63.8782,7.07,141.519,0.00192556,164826,0.351365,0.74,3,True,0.0
+B2,project_ray,16,64,69.95,1666.5,22.41,0.320316,47.2366,True,9.6,37.0,25.1,0.0153891,64.9811,10.33,96.8282,0.00120012,164690,52.3534,2.02,3,True,0.0
