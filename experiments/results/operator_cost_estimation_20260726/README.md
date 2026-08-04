@@ -123,8 +123,37 @@ arrival replay 等执行前配置签名定义。同一配置的 warm-up/formal/r
 | Pairwise accuracy | 随机抽两个配置，模型正确排序的比例 | 两计划对比的置信度 | inflight estimate vs 新请求的轻重判断 |
 | Top-K precision | 预测最便宜的 K 个中，实际最便宜的比例 | 优化器挑最优候选的命中率 | 选择"安全提交窗口"的准确性 |
 
-R² 0.776 暗示排序能力大概率不错（回归好通常排序也好），但不能替代
-显式计算。需要补充计算后更新本节。
+### 排序能力补充计算（2026-08-04 重跑，schema-v2 selection metrics）
+
+用当前 driver（输出 schema_version 2，含 `selection_metrics`）在同样 29 个
+`runs.csv`（283 行 / 70 配置组）上重跑 5 个固定 seed，对照 mean baseline 与
+ridge cost model 的预测层与排序/选择层（`code/scripts/analysis/compare_cost_estimators.py`，
+复用 `estimate()`，未改原有代码）：
+
+| 层 | 指标 | ridge | mean baseline | 结论 |
+|---|---|---:|---:|---|
+| 预测 | MAE (s, 5-seed mean / med) | 11.68 / 11.09 | 29.89 / 28.93 | ridge ~2.6× 更准 |
+| 预测 | Spearman ρ | 0.677 | 0.000 | ridge 有真实排序信号，mean 无 |
+| 选择 | pick_rate (mean / med) | 0.380 / 0.500 | 0.257 | ridge 略高，方差大 |
+| 选择 | decision_regret% (mean / med) | 22.76 / 16.05 | 8.37 / 8.88 | **ridge 反而更高**（选错时挑了更慢的计划） |
+| 选择 | surpassed_plans | 4.40 | 4.80 | 接近 |
+
+**关键发现（验证 Heinrich SIGMOD 2025"精度 ≠ 选择"论点）**：ridge 在**预测层**
+（MAE / Spearman）显著优于 mean，但在**选择层**并不一致安全——pick_rate 略高，
+但 **decision_regret 反而更高**（选错时倾向挑更慢的计划）。即"MAE 更低的预测器"
+不等于"更安全的计划选择器"。
+
+**严谨性边界**：每个 seed 的 test split 只有 2–5 个 multi-candidate decision context
+（5-seed 平均 3.6 个），selection 指标噪声大、不应过度解读；预测层指标基于 39–87
+test 行，相对可靠。
+
+**仍未实现**：pairwise accuracy（全局）与 Top-K precision（K>1）需扩展
+`selection_metrics`；当前只有 context 内 pick_rate / surpassed_plans /
+selected_plan_rank_mean。
+
+**对用途的含义**：代价模型作为**粗粒度容量/编排提示**（预测层）可用；作为
+**优化器计划选择器**（选择层）尚不安全——需要更多 decision context 数据 +
+pairwise/Top-K 指标后才能下结论。
 
 ## 后续工作
 

@@ -1,5 +1,35 @@
 # 项目日志
 
+## 2026-08-04 image 重跑（schema-v12）+ 代价估计排序层补齐 + Track B baseline 可行性
+
+- **schema-v12 三臂门禁（256 行）**：用 codex 的 single-writer matrix runner
+  (`run_image_clip_matrix.py` + lease) 跑 3 臂 ×1 warmup ×1 formal，0 incident，
+  验证 schema-v12 derived 字段（`joules_per_1k_images` / `gpu_seconds_per_image` /
+  `images_per_cpu_core_second` / `first_output_fraction_of_e2e`）+ manifest
+  `cross_scale_comparison_semantics` / `metric_definitions` 在真实 GPU 正确产出。
+  单写 lease 根治了之前的并发双写 bug。
+- **3 臂 12K 一致性重跑**：supersede 受污染双写 run（已排除出 git）。Daft ~64s@12K
+  （187 img/s，/dev/shm 干净下无 OutOfDisk），fast arm setup-dominated（`min_steady=0`，
+  结构诊断非稳态排名）。
+- **2 臂 60K matched-resource schema-v12 重跑**：project 在 matched CPU 两档都快
+  （cpu8 −10.0%、cpu16 −18.5%），确认 step-8 结构性收益（~13–15% 区间；cpu16 偏高
+  是本轮 ray_data cpu16 方差 90s vs step-8 82s）。schema-v12 per-image 指标产出：
+  project 更省能（113 vs 121 J/1k@cpu16）、更早流式（fo_frac 0.33 vs 0.48）、
+  GPU 仍饥饿 6–9%。raw 进 `experiments/results/image_ai_embed_operator_formal_20260803/raw/`。
+- **代价估计排序层补齐**：重跑 `estimate_operator_cost.py` ×5 seed（schema-v2
+  `selection_metrics`）。**验证 Heinrich "精度≠选择"**：ridge 预测层显著优
+  （MAE 11.68 vs 29.89s、Spearman 0.677 vs 0），但选择层 `decision_regret` 反而更高
+  （22.76% vs 8.37%）——MAE 更低 ≠ 更安全的计划选择器。严谨边界：每 seed 仅 2–5 个
+  decision context，selection 指标噪声大；pairwise/Top-K 未实现。填了
+  `operator_cost_estimation_20260726` README "排序能力分析待补"。脚本
+  `code/scripts/analysis/compare_cost_estimators.py`（复用 `estimate()`，未改原代码）。
+- **Track B baseline 可行性**（6-reader workflow，691k tokens）：22 个外部 baseline
+  分级——ready/高价值 = Daft 官方 ResNet18 vendor-code parity（pin `3f5bdd17`）+
+  Apache Doris EMBED（唯一覆盖图像文件引用的自托管 DB）；needs_prep = SemBench/
+  LOTUS/DuckDB-ai/ClickHouse/Spark；reference_only/blocked = PolarDB（闭源但同栈可复现
+  开源臂）/Hologres/Galois/OceanBase（AutoDL seccomp）。硬件不同时只比 scaling/
+  质量/rank 指标，不比绝对墙钟（PolarDB 与 Ray 官方对 Daft/Ray Data 排名方向相反即证据）。
+
 ## 2026-08-04 文献 PDF 批量下载 + REFERENCE_INDEX 更新
 
 - 下载 15 篇此前缺失 PDF 的文献（knowledge_hub §3.8 新增 + REFERENCE_INDEX 已记录但实际缺失）：
