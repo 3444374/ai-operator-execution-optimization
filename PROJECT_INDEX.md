@@ -7,7 +7,7 @@
 | `code/INFRA_STATUS.md` | Current Daft+Ray AI-operator infra flow, implementation completeness, evidence boundaries, and prioritized remaining work | Use for a single implementation-status handoff before reading detailed plans |
 | `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` | Unified map from implemented/tested mechanisms to code, tests, principal result directories, evidence level, current decision, and remaining validation | Read first when asking what has actually been implemented, tested, proven, rejected, or left unverified |
 | `experiments/plans/baseline_reference.md` | AI_COMPLETE / AI_EMBED / AI_CLASSIFY 的统一 baseline/benchmark 总入口 | 先确认比较层级、原生性、证据等级、指标合同与当前门禁，再进入模态执行合同 |
-| `experiments/plans/text_native_baseline_rerun_20260802.md` | 文本 ceiling/control/vendor-native baseline 原生性审计与复测合同 | 远端重测前读取；定义 Chat/Completions 分轨、64→512→4096 流程、指标和结论边界 |
+| `experiments/plans/text_native_baseline_rerun_20260802.md` | 文本 ceiling/control/vendor-native baseline 原生性审计与复测合同 | 远端重测前读取；定义 Chat/Completions 分轨、64-row validity gate、512-row calibration 与 2,048-row held-out 合同、指标和结论边界 |
 | `experiments/plans/archive/database_ai_operator_baseline_matrix_20260729.md` | 2026-07-29 文本 baseline 预注册与逐日执行历史 | 仅追溯旧实验；不再作为当前 gate、calibration 或 formal 的运行依据 |
 | `code/scripts/baselines/run_official_baseline_gate.py` | Reproducible two-endpoint official baseline core gate runner | Use after freezing the PostgreSQL manifest; starts both shards per cell, preserves logs/raw output, waits for empty vLLM queues and stops on the first failed gate |
 | `experiments/results/oceanbase_b1_gate_20260731/README.md` | OceanBase B1 capability gate + 2026-08-02 independent deployment recheck | Confirm CE 4.5.0 contains AI_COMPLETE/DBMS_AI_SERVICE and why the ordinary AutoDL container still cannot init observer before retrying on a deployable host |
@@ -449,7 +449,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_endpoint_adaptive_gate.example.json` | 双 endpoint typed adaptive 256 行可运行性门禁 | 验证 endpoint-local state/metrics/action trace，禁止当作性能结果 |
 | `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 文本 comparison validity gate（历史兼容文件名） | calibration 前验证 provenance、Chat 请求等价、exactly-once、endpoint 分片与空队列 |
 | `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 文本 ceiling/control/native arm 独立标定网格 | 删除未接线 Daft partition_count；只扫描各 arm 真实暴露参数，不得直接当 formal |
-| `deploy/autodl/dual_gpu_text_native_baseline_formal.example.json` | 4,096 行文本原生 baseline held-out 正式合同 | calibration 冻结后执行至少 60 秒、1 warmup + 3 interleaved repeats |
+| `deploy/autodl/dual_gpu_text_native_baseline_formal.example.json` | 2,048 行文本原生 baseline held-out 正式合同（contract only） | 统一 formal runner 落地且 calibration 冻结后执行至少 60 秒、1 warmup + 3 interleaved repeats；若不足 60 秒，baseline/project 共同扩容 |
 | `deploy/autodl/dual_gpu_completions_baseline_gate.example.json` | 无 Ray fixed-row multi-prompt Completions 双 GPU transport ceiling | 在相同 Completions 协议下扫描 1/4/16/32 行 HTTP packing，保持每 endpoint 最多 256 active prompts |
 | `deploy/autodl/dual_gpu_project_chat_feeding.example.json` | project Chat `urllib`/持久 async transport 与 1×256/2×128/4×64 actor 校准 | 先通过同协议 bounded 95% feeding 门禁，再运行 Chat 策略或官方 runtime 排名 |
 | `deploy/autodl/dual_gpu_project_completions_feeding.example.json` | project 原始 multi-prompt Completions fixed-row feeding 校准 | 隔离 Ray/HTTP transport 后才进入 token-budget、length-align 与 adaptive flush 消融 |

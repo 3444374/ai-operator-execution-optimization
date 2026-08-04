@@ -18,7 +18,13 @@ Date: 2026-07-20（最后更新：2026-08-04；代价估计 formal-only 审计�
 
 **新下一步（两条并行线，共享 workload/观测/raw，执行控制隔离）**：
 
-- **A 线（系统 baseline）**：①vLLM pooling CLIP（capability gate→5K calib→60K×2 formal；回答"绕过 Daft/Ray 调度后成熟 CLIP 服务的可实现容量"，**前置：vLLM CLIP pooling 能力门禁未验**）→ ②Daft/Ray 官方 ResNet18 vendor-code parity（commit `3f5bdd17`，GPU 8→2，**阻塞于 ImageNet 数据 + Daft 0.6.2 独立环境 + 磁盘 27G**）→ ③Doris/ClickHouse（**阻塞于 AutoDL 无 Docker**，需独立 Docker/VM）→ ④system E2E + pgvector sink。
+- **A 线（系统 baseline）**：①vLLM pooling CLIP 只保留为 direct-service ceiling
+  候选；当前 vLLM 0.25.1 两次 1-image offline gate 均在 600s 超时且没有 embedding
+  结果，状态为 **blocked**，禁止继续在线、5K 或 60K。它不是数据库/框架原生
+  baseline，也不能据此声称 vLLM 普遍不支持 CLIP → ②Daft/Ray 官方 ResNet18
+  vendor-code parity（commit `3f5bdd17`，GPU 8→2，**阻塞于 ImageNet 数据 + Daft
+  0.6.2 独立环境 + 磁盘 27G**）→ ③Doris/ClickHouse（**阻塞于 AutoDL 无
+  Docker**，需独立 Docker/VM）→ ④system E2E + pgvector sink。
 - **B 线（代价估计）**：双 4090 4-cell pilot v2 已 8/8、0 incident；独立机器轨道不能
   与旧单 5070 静默合并。已冻结 5 workloads × 2 rows × 2 output caps × 4 active-work、
   每 cell 1+3 的 320-run formal，预计约 3.5–4 小时；当前按用户要求暂缓，由远端 agent
@@ -51,7 +57,7 @@ direct ceiling 与 CPU-budget-normalized curve。
 operator-E2E 原始数据和七步报告见
 `motivation/results/gpu/image_clip_native_baseline_20260801/`。
 
-**过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + fused Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② ✅ staged runner/resource gate；✅ 原生 baseline 独立校准已完成（Daft built-in batch64≈177 img/s@5K、Ray Data native batch64/cpu8≈957 img/s@60K×2，见 `motivation/results/gpu/{daft_builtin,ray_data}_calibration_20260803/`）；✅ project 静态点已冻结 `cpu16/active32/batch64`（两轮 1701/1681 img/s，**旧 schema，只用于选点**，见 `motivation/results/gpu/image_project_static_60k_x2_20260803/`）；✅ 统一 `l2_normalized` 输出合同（`03b815d`/`6f0954b`）。下一步：Daft built-in 60K 长门禁 → 四臂同机 formal 排名（**当前 commit + 统一合同**，不复用旧 schema 行）→ 再接统一 pgvector sink，并扩展 bounded direct CLIP、CPU-normalized curve、vLLM pooling、naive（+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
+**过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + fused Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② ✅ staged runner/resource gate；✅ 原生 baseline 独立校准已完成（Daft built-in batch64≈177 img/s@5K、Ray Data native batch64/cpu8≈957 img/s@60K×2，见 `motivation/results/gpu/{daft_builtin,ray_data}_calibration_20260803/`）；✅ project 静态点已冻结 `cpu16/active32/batch64`（两轮 1701/1681 img/s，**旧 schema，只用于选点**，见 `motivation/results/gpu/image_project_static_60k_x2_20260803/`）；✅ 统一 `l2_normalized` 输出合同（`03b815d`/`6f0954b`）。下一步：Daft built-in 60K 长门禁 → 四臂同机 formal 排名（**当前 commit + 统一合同**，不复用旧 schema 行）→ 再接统一 pgvector sink，并扩展 bounded direct CLIP、CPU-normalized curve 和 naive；vLLM pooling 当前保持 blocked，不进入队列（+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
 
 **文本轨道遗留的 pivot 后分类**：
 

@@ -1,8 +1,10 @@
 # 文本数据库 AI 算子原生 Baseline 复测合同
 
 日期：2026-08-02
-状态：代码与实验合同已准备；重构后的远端 smoke 已通过，但新 provenance 合同下的
-calibration/formal 尚未执行。服务器开关属于运行态，不写入长期计划状态。
+状态：64-row validity gate runner 与合同已准备；重构后的远端 smoke 已通过。calibration
+和 held-out formal 目前只有机器可读的**预注册合同**，尚无统一 matrix runner，不得把
+JSON 文件当成可执行命令。新 provenance 合同下的 calibration/formal 尚未执行。
+服务器开关属于运行态，不写入长期计划状态。
 
 baseline 的身份、证据等级和公共指标只以 `baseline_reference.md` 为准；本文只保留
 AI_COMPLETE 的 Chat/Completions 执行合同，不另建总表。
@@ -95,20 +97,28 @@ runtime，不能只比固定工作量吞吐。
 - OceanBase 仅在 capability gate 通过后扫描其原生 SQL parallel degree。
 - 选择“在正确性和 SLO guard 下最高 service tokens/s”；3% 峰值以内选资源更小的点。
 
-配置：`deploy/autodl/dual_gpu_official_baseline_calibration.example.json`。
+预注册合同：`deploy/autodl/dual_gpu_official_baseline_calibration.example.json`。该 JSON
+当前不由 `run_official_baseline_gate.py` 读取；正式 calibration runner 落地并通过单测前，
+只能按 validity runner 的 `--include-cell/--concurrency-override` 做独立 screening，不能
+称为完成了整套 calibration matrix。
 
 ### C. Held-out formal
 
-- 4,096 条与 calibration 不重叠的行，目标每个 run 至少 60 秒；不足则只增加 held-out
-  rows，不改请求分布或并发参数。
+- 2,048 条与 calibration 不重叠的行，目标每个 run 至少 60 秒；不足则停止排名，先为
+  baseline 和 project 同时冻结更大的同一 immutable manifest，再共同增加 rows，不能只
+  延长某一个 arm。
 - 1 warmup + 3 formal repeats，arm 顺序做 balanced interleaving/randomization。
 - 每个系统使用 calibration 冻结的自身最佳点；formal 阶段禁止按 arm 结果继续调参。
+- native formal 合同只列 service/control/native comparator；project frozen-static 仍由
+  project scenario runner 执行，但必须读取同一 2,048-row manifest、同一 Chat 协议和
+  同一服务配置。两边任一 manifest SHA/rows/model/protocol 不一致时禁止合并排名。
 - 结果目录：`experiments/results/text_native_baseline_formal_<timestamp_commit>/`，保存
   manifest/hash、resolved config、commands、版本、raw logs、requests、resource trace、
   service counters、失败证据和七步 README。
 
-合同：`deploy/autodl/dual_gpu_text_native_baseline_formal.example.json`。当前文件是 formal
-contract，不应在 calibration 数字冻结前直接运行。
+合同：`deploy/autodl/dual_gpu_text_native_baseline_formal.example.json`。该文件是 formal
+预注册合同，不是现有 CLI 的输入；统一 formal runner、calibration selection 文件和
+同 manifest 的 project-static 执行入口闭合前禁止运行或手工拼接结果。
 
 ## 5. 指标与可比边界
 

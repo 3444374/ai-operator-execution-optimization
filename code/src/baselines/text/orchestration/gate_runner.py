@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import re
 import subprocess
 import time
@@ -69,6 +70,75 @@ class CoreGateConfig:
     output_root: Path
     cells: tuple[CoreGateCell, ...]
     blocked_cells: tuple[dict[str, str], ...]
+    max_endpoint_work_skew: float
+
+
+_BOOLEAN_HARD_GATES = {
+    "provenance_fields_present",
+    "native_arms_have_no_project_scheduler",
+    "exactly_once",
+    "both_endpoints_used",
+    "service_counter_consistency",
+    "same_model",
+    "same_protocol",
+    "same_service_config",
+}
+_ZERO_HARD_GATES = {
+    "failed_rows",
+    "worker_failures",
+    "vllm_running_final",
+    "vllm_waiting_final",
+}
+_NUMERIC_HARD_GATES = {"endpoint_predicted_work_skew_max"}
+
+
+def _load_hard_gates(payload: Mapping[str, object]) -> float:
+    """Validate the documented gate contract and return its skew threshold."""
+
+    raw = payload.get("hard_gates", {})
+    if not isinstance(raw, dict):
+        raise ValueError("hard_gates must be an object")
+    unknown = (
+        set(raw)
+        - _BOOLEAN_HARD_GATES
+        - _ZERO_HARD_GATES
+        - _NUMERIC_HARD_GATES
+    )
+    if unknown:
+        raise ValueError(f"unsupported hard gate(s): {sorted(unknown)}")
+    disabled = [name for name in _BOOLEAN_HARD_GATES if raw.get(name, True) is not True]
+    if disabled:
+        raise ValueError(
+            "mandatory hard gates cannot be disabled: " + ", ".join(sorted(disabled))
+        )
+    invalid_zero = [
+        name
+        for name in _ZERO_HARD_GATES
+        if name in raw
+        and (
+            isinstance(raw[name], bool)
+            or not isinstance(raw[name], (int, float))
+            or raw[name] != 0
+        )
+    ]
+    if invalid_zero:
+        raise ValueError(
+            "zero-tolerance hard gates must remain 0: "
+            + ", ".join(sorted(invalid_zero))
+        )
+    threshold_value = raw.get("endpoint_predicted_work_skew_max", 0.02)
+    if isinstance(threshold_value, bool) or not isinstance(
+        threshold_value, (int, float)
+    ):
+        raise ValueError(
+            "endpoint_predicted_work_skew_max must be a JSON number"
+        )
+    threshold = float(threshold_value)
+    if not math.isfinite(threshold) or threshold < 0 or threshold >= 1:
+        raise ValueError(
+            "endpoint_predicted_work_skew_max must be finite in [0, 1)"
+        )
+    return threshold
 
 
 def _atomic_json(path: Path, payload: object) -> None:
@@ -107,6 +177,7 @@ def load_core_gate_config(
         raise ValueError("core gate config must be an object")
     if payload.get("formal") is not False:
         raise ValueError("core gate runner only accepts formal=false")
+    max_endpoint_work_skew = _load_hard_gates(payload)
     rows_total = (
         int(rows_total_override)
         if rows_total_override is not None
@@ -263,6 +334,7 @@ def load_core_gate_config(
         output_root=output_root,
         cells=tuple(cells),
         blocked_cells=tuple(blocked_cells),
+        max_endpoint_work_skew=max_endpoint_work_skew,
     )
 
 
@@ -611,6 +683,25 @@ def validate_service_counter_summary(
     return tuple(incidents)
 
 
+def validate_configured_service_identity(
+    summaries: Sequence[Mapping[str, object]],
+    *,
+    model: str,
+    completion_protocol: str,
+) -> tuple[str, ...]:
+    """Reject summaries that agree with each other but not with the config."""
+
+    incidents: list[str] = []
+    if any(summary.get("model_name") != model for summary in summaries):
+        incidents.append("configured_model_mismatch")
+    if any(
+        summary.get("completion_protocol") != completion_protocol
+        for summary in summaries
+    ):
+        incidents.append("configured_protocol_mismatch")
+    return tuple(incidents)
+
+
 def _validate_cell(
     config: CoreGateConfig,
     output_dirs: tuple[Path, ...],
@@ -633,19 +724,31 @@ def _validate_cell(
             endpoint_index,
         )
     ]
+    identity_incidents = validate_configured_service_identity(
+        summaries,
+        model=config.model,
+        completion_protocol=config.completion_protocol,
+    )
     report = validate_gate(
         manifest=read_manifest(config.manifest),
         summaries=summaries,
         request_results=results,
+        max_endpoint_work_skew=config.max_endpoint_work_skew,
     )
     payload = {
         "status": (
             "passed"
-            if report.passed and not counter_incidents
+            if report.passed and not counter_incidents and not identity_incidents
             else "failed"
         ),
-        "passed": report.passed and not counter_incidents,
-        "incidents": list(report.incidents) + counter_incidents,
+        "passed": (
+            report.passed and not counter_incidents and not identity_incidents
+        ),
+        "incidents": (
+            list(report.incidents)
+            + counter_incidents
+            + list(identity_incidents)
+        ),
         "metrics": {
             **report.metrics,
             **summarize_group_service_counters(summaries, results),
@@ -698,6 +801,7 @@ def run_core_gate(
         "completion_protocol": config.completion_protocol,
         "model": config.model,
         "tokenizer": config.tokenizer,
+        "max_endpoint_work_skew": config.max_endpoint_work_skew,
         "manifest": str(config.manifest),
         "output_root": str(config.output_root),
         "driver_python": driver_python,

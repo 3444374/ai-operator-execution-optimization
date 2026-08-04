@@ -64,6 +64,9 @@ candidate ID，并同时报告 tie-context 数；不允许依赖 CSV 行顺序�
 
 ## 6. Baseline 与晋级口径
 
+- 本节 CE0–CE5 是**算子代价估计方法 baseline**，不是 Daft/Ray Data/OceanBase 等
+  数据库 AI 算子系统 baseline。该 320-run 实验不能替代系统原生 baseline formal，二者
+  只共享 workload 与观测字段，不共享比较结论。
 - CE0：训练集均值；CE1：解析模型；CE2：lookup；CE3：Ridge；CE4：LightGBM；
   CE5：解析模型 + residual correction；CE6 oracle 只作上界。
 - 新数据的候选主门槛在运行前冻结为：candidate pairwise ≥0.75、median regret ≤5%、

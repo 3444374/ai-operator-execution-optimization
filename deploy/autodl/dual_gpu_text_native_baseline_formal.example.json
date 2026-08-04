@@ -4,7 +4,7 @@
   "formal": true,
   "execution_status": "contract_only_until_calibration_is_frozen",
   "completion_protocol": "chat_completions",
-  "rows_total": 4096,
+  "rows_total": 2048,
   "minimum_measurement_seconds": 60,
   "warmup_repeats": 1,
   "formal_repeats": 3,
@@ -13,7 +13,7 @@
     "${COMPLETION_CHAT_ENDPOINT_URL_0}",
     "${COMPLETION_CHAT_ENDPOINT_URL_1}"
   ],
-  "model": "qwen2.5-7b",
+  "model": "${COMPLETION_MODEL}",
   "tokenizer": "${MODEL_PATH}",
   "manifest": "${TEXT_NATIVE_FORMAL_MANIFEST}",
   "output_root": "${ARTIFACT_ROOT}/text_native_baseline_formal_REPLACE_ME",

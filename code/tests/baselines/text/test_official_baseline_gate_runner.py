@@ -26,6 +26,7 @@ from src.baselines.text.orchestration.gate_runner import (
     parse_vllm_queue_metrics,
     parse_vllm_token_counters,
     run_core_gate,
+    validate_configured_service_identity,
     validate_service_counter_summary,
 )
 from src.baselines.common.manifests import read_manifest, write_manifest
@@ -33,6 +34,80 @@ from src.baselines.common.provenance import adapter_provenance
 
 
 class OfficialBaselineGateRunnerTests(unittest.TestCase):
+    def test_native_and_project_formal_contracts_share_core_workload(self) -> None:
+        deploy_root = CODE_ROOT.parent / "deploy/autodl"
+        native = json.loads(
+            (deploy_root / "dual_gpu_text_native_baseline_formal.example.json")
+            .read_text(encoding="utf-8")
+        )
+        project = json.loads(
+            (deploy_root / "dual_gpu_same_condition_project_formal.example.json")
+            .read_text(encoding="utf-8")
+        )
+        project_args = project["common_args"]
+
+        def project_value(flag: str) -> str:
+            return project_args[project_args.index(flag) + 1]
+
+        self.assertEqual(native["rows_total"], 2048)
+        self.assertEqual(project_value("--total-rows"), "2048")
+        self.assertEqual(
+            native["completion_protocol"],
+            project_value("--completion-protocol"),
+        )
+        self.assertEqual(native["model"], project_value("--completion-model"))
+        self.assertEqual(project_value("--completion-max-tokens"), "256")
+
+    def test_committed_gate_template_is_runnable_after_expansion(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            tokenizer = root / "tokenizer"
+            tokenizer.mkdir()
+            write_manifest(
+                manifest,
+                tuple(
+                    ChatRequest(
+                        doc_id=index,
+                        prompt=f"question-{index}",
+                        arrival_time_s=0.0,
+                        prompt_tokens=4,
+                        max_output_tokens=8,
+                        estimated_output_tokens=8,
+                        source_row_hash=f"row-{index}",
+                        endpoint_index=index % 2,
+                    )
+                    for index in range(64)
+                ),
+            )
+            environment = {
+                "ARTIFACT_ROOT": str(root),
+                "COMPLETION_CHAT_ENDPOINT_URL_0": (
+                    "http://127.0.0.1:8000/v1/chat/completions"
+                ),
+                "COMPLETION_CHAT_ENDPOINT_URL_1": (
+                    "http://127.0.0.1:8001/v1/chat/completions"
+                ),
+                "COMPLETION_MODEL": "qwen",
+                "MODEL_PATH": str(tokenizer),
+                "OFFICIAL_BASELINE_GATE_MANIFEST": str(manifest),
+                "RAY_ADDRESS": "ray://127.0.0.1:10001",
+            }
+            config_path = (
+                CODE_ROOT.parent
+                / "deploy/autodl/dual_gpu_official_baseline_gate.example.json"
+            )
+            with mock.patch.dict(os.environ, environment, clear=False):
+                config = load_core_gate_config(
+                    config_path,
+                    output_root_override=root / "output",
+                )
+
+        self.assertEqual(config.model, "qwen")
+        self.assertEqual(config.max_endpoint_work_skew, 0.02)
+        self.assertEqual(len(config.cells), 5)
+        self.assertEqual(config.blocked_cells, ())
+
     def test_config_expands_machine_environment(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -64,6 +139,10 @@ class OfficialBaselineGateRunnerTests(unittest.TestCase):
                         "model": "qwen",
                         "manifest": "${MANIFEST}",
                         "output_root": "${OUTPUT}",
+                        "hard_gates": {
+                            "exactly_once": True,
+                            "endpoint_predicted_work_skew_max": 0.125,
+                        },
                         "cells": [
                             {
                                 "id": "batched",
@@ -86,6 +165,81 @@ class OfficialBaselineGateRunnerTests(unittest.TestCase):
                 config = load_core_gate_config(config_path)
 
         self.assertEqual(config.manifest, manifest)
+        self.assertEqual(config.max_endpoint_work_skew, 0.125)
+
+    def test_config_rejects_fake_or_disabled_hard_gates(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            write_manifest(
+                manifest,
+                (
+                    ChatRequest(
+                        doc_id=0,
+                        prompt="question",
+                        arrival_time_s=0.0,
+                        prompt_tokens=4,
+                        max_output_tokens=8,
+                        estimated_output_tokens=8,
+                        source_row_hash="row-0",
+                        endpoint_index=0,
+                    ),
+                    ChatRequest(
+                        doc_id=1,
+                        prompt="question",
+                        arrival_time_s=0.0,
+                        prompt_tokens=4,
+                        max_output_tokens=8,
+                        estimated_output_tokens=8,
+                        source_row_hash="row-1",
+                        endpoint_index=1,
+                    ),
+                ),
+            )
+            payload = {
+                "formal": False,
+                "rows_total": 2,
+                "endpoint_urls": [
+                    "http://127.0.0.1:8000/v1/chat/completions",
+                    "http://127.0.0.1:8001/v1/chat/completions",
+                ],
+                "model": "qwen",
+                "manifest": str(manifest),
+                "output_root": str(root / "output"),
+                "cells": [
+                    {
+                        "id": "bounded",
+                        "adapter": "bounded_http",
+                    }
+                ],
+                "hard_gates": {"exactly_once": False},
+            }
+            config_path = root / "gate.json"
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "cannot be disabled"):
+                load_core_gate_config(config_path)
+
+            payload["hard_gates"] = {"imaginary_gate": True}
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "unsupported hard gate"):
+                load_core_gate_config(config_path)
+
+            payload["hard_gates"] = {"failed_rows": 1}
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "must remain 0"):
+                load_core_gate_config(config_path)
+
+            payload["hard_gates"] = {"failed_rows": False}
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "must remain 0"):
+                load_core_gate_config(config_path)
+
+            payload["hard_gates"] = {
+                "endpoint_predicted_work_skew_max": "0.02"
+            }
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "JSON number"):
+                load_core_gate_config(config_path)
 
     def test_parse_vllm_queue_metrics_requires_both_gauges(self) -> None:
         metrics = """
@@ -147,6 +301,35 @@ vllm:generation_tokens_total{engine="0",model_name="qwen"} 80
                     "output_tokens": 0,
                 },
                 0,
+            ),
+            (),
+        )
+
+    def test_service_identity_must_match_config_not_only_other_shard(self) -> None:
+        summaries = (
+            {
+                "model_name": "wrong-model",
+                "completion_protocol": "chat_completions",
+            },
+            {
+                "model_name": "wrong-model",
+                "completion_protocol": "chat_completions",
+            },
+        )
+
+        self.assertEqual(
+            validate_configured_service_identity(
+                summaries,
+                model="qwen",
+                completion_protocol="chat_completions",
+            ),
+            ("configured_model_mismatch",),
+        )
+        self.assertEqual(
+            validate_configured_service_identity(
+                summaries,
+                model="wrong-model",
+                completion_protocol="chat_completions",
             ),
             (),
         )

@@ -7,7 +7,7 @@
     "${COMPLETION_CHAT_ENDPOINT_URL_0}",
     "${COMPLETION_CHAT_ENDPOINT_URL_1}"
   ],
-  "model": "qwen2.5-7b",
+  "model": "${COMPLETION_MODEL}",
   "tokenizer": "${MODEL_PATH}",
   "completion_protocol": "chat_completions",
   "temperature": 0.0,
@@ -41,21 +41,6 @@
       "ray_address": "${RAY_ADDRESS}",
       "batch_size": 16,
       "concurrency_per_endpoint": 4
-    },
-    {
-      "id": "project_static",
-      "adapter": "project_profiler",
-      "submission_granularity": "request",
-      "scheduling_policy": "static",
-      "admission_scope": "per_endpoint"
-    },
-    {
-      "id": "project_token_work",
-      "adapter": "project_profiler",
-      "submission_granularity": "request",
-      "scheduling_policy": "static",
-      "admission_scope": "per_endpoint",
-      "max_active_work_per_endpoint": 65536
     }
   ],
   "optional_fatal_flaw_cells": [
@@ -73,6 +58,7 @@
     "failed_rows": 0,
     "worker_failures": 0,
     "both_endpoints_used": true,
+    "service_counter_consistency": true,
     "endpoint_predicted_work_skew_max": 0.02,
     "vllm_running_final": 0,
     "vllm_waiting_final": 0,

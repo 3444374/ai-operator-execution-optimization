@@ -217,7 +217,8 @@ staged/fused 仅保留为诊断 reference；官方 ResNet18 仍需固定 upstrea
   bounded Chat/Completions 固定为项目 direct controls；Daft built-in prompt、Ray Data
   Processor 和通过 capability gate 的 OceanBase 才进入 native baseline。代码已增加
   provenance fail-closed、服务端统一 token throughput，并删除未接线的 Daft
-  `partition_count` 扫描；4,096 held-out formal 等待服务器开机后执行
+  `partition_count` 扫描；native/project 同一 2,048-row held-out formal 合同已冻结，
+  但统一 calibration/formal matrix runner 尚未实现，当前不得手工拼接执行
 - ✅ baseline 文档入口收敛：`experiments/plans/baseline_reference.md` 统一维护三类算子的
   分层、原生性、证据等级、指标与门禁；旧 2026-07-29 文本矩阵已移入 archive，不再
   作为当前执行依据
@@ -232,8 +233,10 @@ staged/fused 仅保留为诊断 reference；官方 ResNet18 仍需固定 upstrea
    normalized AI_EMBED contract 并把归一化成本计入各臂 E2E；继续补官方 ResNet18 parity
    和 Ray Data native graph runner/256 行门禁、独立校准及 60K×2 batch 上界复核均已完成；
    当前冻结 Ray Data `batch64/cpu8/gpu2/source4`，下一步做统一规模 1+3 正式重复，再给
-   系统臂接同一 pgvector sink；同时补 bounded direct CLIP、
-   vLLM pooling、naive 和 ours。OceanBase AI_EMBED 等待可部署环境。当前 5K 结果只
+   系统臂接同一 pgvector sink；同时补 bounded direct CLIP、naive 和 ours。vLLM
+   pooling 当前环境的两次 1-image offline gate 均 600s 超时且无 embedding，只保留为
+   blocked 的 direct-service ceiling 候选，不继续在线/5K/60K。OceanBase AI_EMBED
+   等待可部署环境。当前 5K 结果只
    证明相对 fused UDF 的优化空间，尚未证明 ours 优于主流 staged pipeline。
 3. **A+B 方法验证**：A 读取 CLIP endpoint queue/active-work 做状态感知请求成形；
    B 先实现 `<100 LOC` 解析代价模型 + profile 校准 + residual correction，并报告

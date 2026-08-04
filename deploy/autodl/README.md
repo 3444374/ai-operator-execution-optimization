@@ -21,7 +21,7 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
 | 模态 | 引擎/模型 | 算子 | 部署文档 | 状态 |
 |---|---|---|---|---|
 | **文本（生成式）** | **vLLM**（开源 LLM serving 引擎：continuous batching + prefix cache APC + KV cache PagedAttention；本项目**不改其内部**）+ Qwen2.5-Instruct | `AI_COMPLETE`（生成 token 序列） | `deploy/autodl/text_serving.md`（逐步命令另见本指南 §8） | ✅ 主线，RC1 等已完成 |
-| **图像（embedding）** | ours：Ray CLIP GPU actor；baseline：Daft Native/Ray、vLLM pooling | `AI_EMBED`（图像→512d 向量） | `deploy/autodl/image_serving.md` | 🟡 operator-E2E formal 已完成；pgvector system-E2E 待补 |
+| **图像（embedding）** | ours：Ray CLIP GPU actor；baseline：Daft Native/Ray；vLLM pooling direct ceiling 当前 blocked | `AI_EMBED`（图像→512d 向量） | `deploy/autodl/image_serving.md` | 🟡 operator-E2E formal 已完成；pgvector system-E2E 待补 |
 | 视频（后续） | VideoCLIP/时序 ViT/Qwen-VL（候选） | AI_EMBED/CLASSIFY | `video_serving.md`（待建） | ⏸ 后续 |
 | 音频（后续） | CLAP/audio encoder（候选） | AI_EMBED | `audio_serving.md`（待建） | ⏸ 后续 |
 
@@ -1139,7 +1139,9 @@ HTTP loop and label it OceanBase.
 同一份 64 行 Chat Completions manifest 能由两张卡上的 service ceiling、direct
 control 与 vendor-native 适配器
 正确执行，不产生性能结论。calibration 规格在
-`dual_gpu_official_baseline_calibration.example.json`；gate 未通过禁止运行。
+`dual_gpu_official_baseline_calibration.example.json`；它和 formal JSON 当前都是预注册
+合同，不是 gate runner 可直接执行的配置。gate 未通过禁止做任何 calibration screening；
+统一 matrix runner 未落地前不得声称 calibration/formal 已完成。
 `vLLM Bench` 只作 ceiling，`bounded_*` 只作项目自写 control；Daft built-in prompt、
 Ray Data Processor 和通过部署门禁的 OceanBase 才称 native baseline。正式 held-out
 合同在 `dual_gpu_text_native_baseline_formal.example.json`，详细解释见
@@ -1182,9 +1184,9 @@ Ray Data Processor 和通过部署门禁的 OceanBase 才称 native baseline。�
    两 endpoint 均使用、预测 work skew ≤2%、0 worker failure、相同服务
    元数据且最终 running/waiting 均为 0。
 
-`project_static` 与 `project_token_work` 仍由现有 profiler/scenario runner
-运行并保留完整 request/submission/resource trace；本节薄 CLI 不复制项目
-调度实现。它们必须使用同一 manifest 对应的数据库行与相同 Chat protocol。
+`project_static` 与 `project_token_work` 不在 core gate JSON 中；它们仍由现有
+profiler/scenario runner 运行并保留完整 request/submission/resource trace。本节薄 CLI
+不复制项目调度实现。它们必须使用同一 manifest 对应的数据库行与相同 Chat protocol。
 如果尚未提供无损的 manifest-to-profiler 映射，就将这两个 cell 标记为
 `blocked`，不得改用相似随机 workload 代替。
 
@@ -1209,8 +1211,14 @@ main 已通过本地全量测试并推送
   -> exactly-once/元数据/work skew/服务端 token 差分/空队列门禁
   -> 停止并分析
   -> 独立 calibration
-  -> 512 calibration + 4,096 held-out、至少 60 秒、1 warmup + 3 interleaved formal
+  -> 512 calibration + 2,048 held-out、至少 60 秒、1 warmup + 3 interleaved formal
+  -> 若 2,048 行不足 60 秒，baseline/project 共同冻结更大 manifest 后重新预注册
 ```
+
+截至 2026-08-04，状态机中 validity gate 有统一 runner；calibration/formal 两步只有
+预注册 JSON 和单 cell screening 能力，尚无统一 matrix runner。远端 agent 可以运行
+validity gate，但不得把手工循环若干 `--include-cell` 输出冒充完整交错 calibration 或
+formal。该缺口闭合前，长任务只运行已经有 scenario runner 的代价 profile formal。
 
 环境职责固定如下：
 
@@ -1250,12 +1258,17 @@ token 统计口径不同，下一道门禁必须对每个 cell、每个 endpoint
 - `dual_gpu_same_condition_project_calibration.example.json`
 - `dual_gpu_same_condition_project_formal.example.json`
 
-两者都强制一行一个 Chat Completions 请求、原始 prompt、`temperature=0`、
+三个模板都强制一行一个 Chat Completions 请求、原始 prompt、`temperature=0`、
 `max_tokens=256`、trace-target output cost、no arrival replay、request-level
 continuous replenishment、同一 manifest 固定 endpoint 分片和显式
 `RAY_ADDRESS`。profiler 会逐行核对 `doc_id/text/prompt_tokens/
 target_output_tokens`，并在 `runs.csv` 记录 manifest path、SHA、总行数、
 validated rows 与状态；任一不一致即失败。
+
+native baseline formal 与 project formal 只有在 resolved manifest SHA、rows、model、
+protocol、service config 和 output cap 全部相同时才能并表。当前两份 formal 合同均冻结
+为 2,048 行；如果稳态门禁要求增大规模，必须同时更新两个合同并重新提交，禁止用不同
+规模的 JCT/first-output 直接排名。
 
 启动前除通用 idle 检查外，还要执行：
 

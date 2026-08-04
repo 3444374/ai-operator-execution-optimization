@@ -77,7 +77,7 @@ runner 中 short/long 的 K256/W65K/W98K 通过 5% 等价性和 repeat 稳定性
 | `strategy_design_literature_basis.md` | 写论文 / 答辩 / reviewer 防御时查 | **为什么这样设计 + 不能过度声称什么**：可借鉴思想 vs baseline/边界 vs 本文策略定义、fatal flaws、§3.1 借鉴论文适用边界 |
 | `strategy_design_implementation_reference.md` | 写代码 / 设计实验变量时查 | **怎么实现**：信号→变量→指标→baseline→§8 目标代码架构→实现优先级 |
 | `literature_driven_pipeline_optimization_guide.md` | 继续从文献寻找优化点时查 | **怎么发现下一项机制**：三层 batch 边界、Orca 式上游持续补位、完整 adaptive flush 缺口、机制卡模板、fatal-flaw audit、候选池与晋级/放弃条件 |
-| `text_native_baseline_rerun_20260802.md` | 重跑文本 baseline 前查 | **怎么严谨重测**：区分 service ceiling、direct control、framework/product native；定义 Chat/Completions 分轨与 64→512→4096 合同 |
+| `text_native_baseline_rerun_20260802.md` | 重跑文本 baseline 前查 | **怎么严谨重测**：区分 service ceiling、direct control、framework/product native；定义 Chat/Completions 分轨、64-row validity gate、512-row calibration 与 2,048-row held-out 合同；当前仅 gate runner 可执行 |
 
 > **文档分工**：`literature_basis` 是论文边界论证，`implementation_reference`
 > 是已有工程映射，`literature_driven_pipeline_optimization_guide` 是今后重复使用的

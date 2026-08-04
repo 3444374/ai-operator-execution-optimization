@@ -4087,3 +4087,25 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
 - 服务器 `49e1dd2` 完整依赖环境在清除外部 `RAY_ADDRESS` 干扰后通过 675/675 tests；
   config loader 展开 80 个唯一 scenario。当前 runtime env 缺 `RAY_ADDRESS`，正式运行前
   必须启动 Ray 并写入实际地址；模板保持 fail-closed，不以虚假默认值绕过。
+
+## 2026-08-04 baseline 发布前语义审计
+
+- 文本文档明确区分当前可执行的 64-row validity gate 与尚未实现统一 runner 的
+  512-row calibration / 2,048-row held-out formal；后两份 JSON 仅为预注册合同，禁止
+  远端手工循环单 cell 后冒充完整交错正式实验。
+- native baseline 与 project formal 统一冻结为同一 2,048-row Chat manifest 合同；只有
+  manifest SHA、rows、model、protocol、service config 和 output cap 全部一致才可并表。
+  若单 run 不足 60 秒，双方共同冻结更大 manifest 并重新预注册，禁止只扩一个 arm。
+- validity gate 模板不再混入当前 runner 明确阻塞的 project-profiler cells；模型从机器
+  runtime env 的 `COMPLETION_MODEL` 展开，避免换模型后模板仍静默写死 7B 名称。
+- 修复 `endpoint_predicted_work_skew_max` 仅写在 JSON、runner 却忽略配置的问题：现在
+  布尔门禁必须为 true、失败/队列计数必须为数值 0、skew 阈值必须为 `[0,1)` JSON
+  number，未知或弱化门禁 fail-closed，并把解析值写入 resolved config。
+- 图像计划、证据注册表与部署入口统一把 vLLM CLIP pooling 标为当前环境 blocked 的
+  direct-service ceiling 候选；两次 1-image offline 600s timeout、无 embedding，不能
+  继续在线/5K/60K，也不能外推成“vLLM 普遍不支持 CLIP”。
+- 双 4090 320-run 的 CE0–CE5 明确为算子代价估计方法 baseline，不替代 Daft/Ray
+  Data/OceanBase 等系统原生 baseline。长实验仍保持暂缓。
+- 未提交改动先同步到服务器临时 detached worktree 做完整依赖验证；JSON/py_compile
+  门禁与最终 679/679 tests 全部通过。临时 worktree 随后删除，服务器主 worktree 保持
+  `c8d1d92`、无实验 runner，不触碰历史未跟踪原始数据。

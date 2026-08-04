@@ -5,7 +5,7 @@
   "requires_passing_gate": true,
   "completion_protocol": "chat_completions",
   "calibration_rows": 512,
-  "held_out_formal_rows": 4096,
+  "held_out_formal_rows": 2048,
   "minimum_formal_measurement_seconds": 60,
   "arms": {
     "vllm_bench": {

@@ -158,7 +158,7 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
   upstream vendor code 才进入正式 baseline；项目自写 Daft fused/staged UDF 只作诊断。
   256 图资源/正确性 gate 与 Daft built-in/project 逐行 embedding parity 已通过，独立
   calibration 与正式重复尚未完成。
-- **可运行性验证**：最新代码在 AutoDL 完整依赖环境通过 624/624 单测；文本 512 行
+- **可运行性验证**：最新代码在 AutoDL 完整依赖环境通过 679/679 单测；文本 512 行
   双 endpoint、图像 256 行 Daft/Ray Data correctness gate、两条默认无 capture 路径均
   跑通。它们是 smoke，不是论文性能排名。
 
@@ -172,8 +172,9 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 1. 完成图像 R0→R4 表示/传输阶梯，明确 source、decode/preprocess、host copy、H2D、
    GPU forward、D2H、写回和未归因等待，不能先验指定 PCIe 为瓶颈。
 2. 分别校准 Daft built-in、Ray Data native graph、官方 ResNet18 vendor code、bounded
-   direct、vLLM pooling、naive 与 frozen project static，再做同硬件、同质量、同计时边界
-   的稳态交错重复；项目自写 diagnostic 不进入 native baseline 主排名。
+   direct、naive 与 frozen project static，再做同硬件、同质量、同计时边界的稳态交错
+   重复；项目自写 diagnostic 不进入 native baseline 主排名。vLLM pooling 目前只是
+   blocked 的 direct-service ceiling 候选，不进入当前正式队列。
 3. 给正式系统臂接统一 PostgreSQL + pgvector sink，补完整 system-E2E、质量门禁与资源
    账本。AI_CLASSIFY 报 accuracy/F1/mAP；embedding 正确性先用 digest/norm，检索任务再
    报 Recall@K、MRR/nDCG。

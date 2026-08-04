@@ -38,7 +38,7 @@
 | 轨道 | 当前状态 | 下一门禁 |
 |---|---|---|
 | AI_COMPLETE service/direct | 历史 gate 与 feeding 证据存在；新 provenance formal 待重跑 | 64-row validity 后独立 calibration |
-| AI_COMPLETE Daft/Ray Data native | 功能/计数 gate 已有；旧短规模不进正式排名 | 512 calibration → 4096+ held-out formal（单 run 至少 60s） |
+| AI_COMPLETE Daft/Ray Data native | 功能/计数 gate 已有；旧短规模不进正式排名 | 512 calibration → 与 project 同一 2,048-row held-out formal（单 run 至少 60s；不足则双方共同扩容） |
 | OceanBase `AI_COMPLETE` | 普通 AutoDL 容器 observer init `-9100`，`blocked` | privileged/seccomp-unconfined 容器或 VM |
 | Doris / ClickHouse AI SQL | 官方文档已确认可自托管和 OpenAI-compatible endpoint；尚未在本机安装 | 固定版本后一行协议 gate → 计数/缓存 gate → 独立 calibration |
 | StarRocks `ai_query` | 4.1.1 已修复函数注册；独立函数文档和稳定性仍不足 | 固定 4.1.1+，关闭响应缓存后做一行 vLLM gate |
@@ -47,6 +47,7 @@
 | DuckDB `ai` / PostgreSQL pgai | 可安装，但分别是社区扩展和已归档历史扩展 | 固定扩展版本/commit，单列 extension baseline，不冒充数据库 core |
 | Daft built-in image embedding | 256-row gate 与逐行语义 parity 已通过；主要差异为 L2 归一化 | 按统一 normalized contract 独立 calibration → formal |
 | Ray Data native image graph | 256-row resource/deadlock gate 已通过 | 独立 batch/actor calibration → formal |
+| vLLM CLIP pooling | 当前 0.25.1 环境两次 1-image offline gate 均 600s timeout，无 embedding 输出 | `blocked`；不运行在线/5K/60K，只在新隔离环境重新做 capability gate |
 | 官方 ImageNet/ResNet18 parity | upstream commit、文件哈希和适配白名单已冻结 | 双 4090 原生脚本 gate |
 | project image static | 60K unique 数据和 2-pass formal 配置已准备 | 先过语义/原生 baseline 门禁，再运行交错 formal |
 | Snowflake/BigQuery/PolarDB/学术系统 | external/capability evidence | 仅在语义、质量、模型和计时边界可对齐时升级为数字比较 |

@@ -49,7 +49,7 @@ CLIP 是 embedding 模型，不是生成式 LLM，但当前 vLLM 已通过 pooli
 | **官方 803,580-row ResNet18 parity** | 固定 `Eventual-Inc/Daft@3f5bdd175b7de3dcdf35765e1ba604b5c1cb8e15` 的 `daft_main.py` / `ray_data_main.py` | 公开 file/object track 的 vendor-code baseline | pin/文件哈希已记录；待双 4090 原图 gate，仅做白名单环境/指标适配 |
 | **Ray Data native API graph** | SQL source → CPU `map_batches` → GPU callable class | Ray Data 拥有调度/backpressure；workload UDF 不得包含项目策略 | 旧 gate 仅证明 adapter 可运行；移除项目 inflight 后重做 native gate |
 | **项目自写 Daft fused/staged UDF** | 自写 `@daft.cls` 内核与阶段边界 | 暴露阶段耦合的 diagnostic reference，不是官方 baseline | 保留历史诊断，不进入主排名 |
-| **vLLM pooling (`--runner pooling`)** | encoded image 进入服务，processor + pooling 在服务内部 | 与文本统一运维的成熟服务 baseline；官方说明 pooling 目前以功能便利为主，不保证优于 Transformers | 必跑服务 baseline；也是部署默认候选 |
+| **vLLM pooling (`--runner pooling`)** | encoded image 进入服务，processor + pooling 在服务内部 | direct-service ceiling 候选；不属于数据库/框架原生 baseline | **当前环境 blocked**：0.25.1 两次 1-image offline gate 均 600s timeout、无 embedding；禁止继续在线/5K/60K |
 | **常驻 Ray CLIP GPU actor** | Daft/Ray CPU worker 做 decode/resize/normalize，GPU actor 只收 typed tensor batch 并 forward | 直接复用现有 Ray actor pool/backpressure；保留“CPU 准备与 GPU 推理分离”的可归因主路径 | **ours 主路径** |
 | Infinity / Ray Serve | encoded image 或服务内 preprocess，均自带 batching | 快速 smoke/补充 baseline；若使用必须冻结并记录隐藏 batching | 可选 |
 | Triton | tensor-input、成熟 metrics/dynamic batching | 生产级上界；AutoDL 当前无 Docker，不能作为第一实现 | 容器环境 optional |
@@ -57,8 +57,9 @@ CLIP 是 embedding 模型，不是生成式 LLM，但当前 vLLM 已通过 pooli
 **决定**：主路径不是自写一个不受控的 FastAPI serving engine，而是通过统一
 `ImageEmbeddingBackend` 接口接入**常驻 Ray GPU actor**。CPU worker 产出
 preprocessed tensor，GPU actor 只执行 CLIP forward；项目已有 actor pool、credit、
-backpressure 和 exactly-once 机制可以直接复用。vLLM pooling 作为统一部署默认候选
-和强服务 baseline；旧 Daft fused/staged UDF 只是一条项目自写诊断臂。正式框架结论
+backpressure 和 exactly-once 机制可以直接复用。vLLM pooling 只保留为未来隔离环境中的
+direct-service ceiling 候选，当前不能作为部署默认或已测 baseline；旧 Daft fused/staged
+UDF 只是一条项目自写诊断臂。正式框架结论
 必须来自 Daft 内置 AI Function、官方 ResNet18 parity 脚本和 Ray Data native graph。
 
 Daft built-in 校准只扫描其公开原生 `batch_size`；GPU concurrency/actor placement 由
@@ -66,7 +67,7 @@ Daft 根据 Ray 集群 GPU 自行推断，不额外包项目 actor 或 admission
 provider 当前使用模型默认 dtype，runner 必须记录 `provider_default`，不得把命令行
 `--dtype` 误记为已生效；公平比较同时报告相同默认精度控制和项目优化精度臂。
 
-**为什么不能只选 vLLM pooling**：它会把本轮 profile 中最重的
+**为什么即使未来门禁通过也不能只选 vLLM pooling**：它会把本轮 profile 中最重的
 decode/resize/normalize 移入服务端，无法直接验证“Daft/Ray 上游 CPU preprocess 与
 GPU embed overlap”这一机制。它并非不好，而是回答另一个问题：一个成熟黑盒图像
 服务的端到端上限。正式报告必须把两类预处理归属分别计时，不能混成同一 baseline。
@@ -75,7 +76,9 @@ GPU embed overlap”这一机制。它并非不好，而是回答另一个问题
 CPU 预处理、请求组织和提交；actor 仅常驻模型并执行 GPU forward，不再二次攒批。
 AutoDL runbook 明确不使用 Docker，而 Triton 官方推荐 NGC 容器部署；为了跑 Triton
 而在当前实例编译服务端会引入与研究问题无关的环境变量。Triton因此保留为有容器
-能力环境中的生产上界，不阻塞首版方法验证。
+能力环境中的生产上界，不阻塞首版方法验证。当前 pooling 的 blocker 只证明本机固定
+版本/容器组合不可运行，不能外推为“vLLM 不支持 CLIP”。证据见
+`../../feasibility/results/vllm_clip_pooling_gate_20260804/README.md`。
 
 **采用的官方/开源架构依据**：
 
