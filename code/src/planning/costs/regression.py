@@ -280,3 +280,68 @@ def _validated_arrays(
     if np.any(y < 0):
         raise ValueError("targets must be non-negative")
     return x, y
+
+
+def pairwise_accuracy(actual: np.ndarray, predicted: np.ndarray) -> float:
+    """Global pairwise accuracy: fraction of unequal candidate pairs ordered correctly.
+
+    Complements the context-internal ``pick_rate``/``surpassed_plans`` from
+    ``selection_metrics`` with the global ranking-quality view that Heinrich
+    SIGMOD 2025 and the project README flag as missing. O(n^2); fine for the
+    283-row profile, do not call per-query on large sets.
+    """
+    y = np.asarray(actual, dtype=float)
+    y_hat = np.asarray(predicted, dtype=float)
+    if y.ndim != 1 or y_hat.ndim != 1 or len(y) != len(y_hat) or len(y) < 2:
+        raise ValueError("actual and predicted must be equal vectors of length>=2")
+    correct = 0.0
+    total = 0
+    for i in range(len(y)):
+        for j in range(i + 1, len(y)):
+            if y[i] == y[j]:
+                continue
+            total += 1
+            if y_hat[i] == y_hat[j]:
+                # predicted tie on an unequal actual pair: undecided -> random chance.
+                correct += 0.5
+            elif (y[i] < y[j]) == (y_hat[i] < y_hat[j]):
+                correct += 1
+    return correct / total if total else float("nan")
+
+
+def top_k_precision(actual: np.ndarray, predicted: np.ndarray, k: int = 5) -> float:
+    """Of the predicted-K-smallest, the fraction also in the actual-K-smallest.
+
+    ``k`` is clamped to at most half the set so "top-K" stays meaningful on small
+    test slices. Returns NaN if fewer than 2 candidates.
+    """
+    y = np.asarray(actual, dtype=float)
+    y_hat = np.asarray(predicted, dtype=float)
+    if y.ndim != 1 or y_hat.ndim != 1 or len(y) != len(y_hat) or len(y) < 2:
+        raise ValueError("actual and predicted must be equal vectors of length>=2")
+    cap = max(1, min(k, len(y) // 2))
+    actual_top = set(np.argsort(y, kind="mergesort")[:cap].tolist())
+    predicted_top = set(np.argsort(y_hat, kind="mergesort")[:cap].tolist())
+    return len(actual_top & predicted_top) / cap
+
+
+def residual_interval_bounds(
+    residuals: np.ndarray,
+    confidence: float = 0.9,
+) -> tuple[float, float]:
+    """Empirical prediction-interval bounds from training residuals.
+
+    Returns ``(lower, upper)`` quantiles of the residual distribution so a
+    prediction ``y_hat`` has interval ``[y_hat + lower, y_hat + upper]``. Used with
+    held-out coverage/width reporting so a narrow interval that rarely contains the
+    truth is not mistaken for a good interval.
+    """
+    if not 0.0 < confidence < 1.0:
+        raise ValueError("confidence must be between 0 and 1")
+    r = np.asarray(residuals, dtype=float)
+    r = r[np.isfinite(r)]
+    if len(r) < 2:
+        return float("nan"), float("nan")
+    lower_q = (1.0 - confidence) / 2.0
+    upper_q = 1.0 - lower_q
+    return float(np.quantile(r, lower_q)), float(np.quantile(r, upper_q))
