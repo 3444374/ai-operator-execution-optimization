@@ -4023,3 +4023,16 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
   全量 639 tests 与图像专项 49 tests 均通过。clean 2026-08-03 12K schema-v11 数据和
   两份 60K×2 formal raw 已旁置验证派生计算；仓库归档 clean raw gzip、紧凑 summary
   与 README，完整 derived CSV/metric definitions 可用分析脚本重建，不重复保存。
+
+## 2026-08-04 算子代价估计 decision-context LOO 审计
+
+- 修复原 context-LOO 只打印平均表、无法独立复算的问题：现保存源 CSV/代码 SHA256、
+  逐 context 候选与 repeat、真实/预测均值、macro 分布和 pooled selection。
+- 服务器独立 analysis venv（LightGBM 4.7.0）复算 283 行、17 contexts，其中 13 个
+  multi-candidate：CE5 hybrid 的 MAE 7.69s、macro regret 2.14%、pooled regret
+  0.31%、pick 9/13；但预注册行级 pairwise 0.705 < 0.75，结论仍为不晋级。
+- repeat 聚合后的候选 pairwise 0.828、Top-K 0.821 是更贴近计划选择的新诊断口径，
+  只能在下一轮新数据前预注册，不能事后替换旧晋级指标。
+- 配置覆盖精算纠正为 38 个新 cells（现有 contexts 补齐 26 + 新增 3×4=12），按
+  1 warmup+3 formal 为 152 runs；总耗时必须先用 4-cell pilot 实测，不再沿用
+  “24 cells / 30–45 分钟”的无依据估计。

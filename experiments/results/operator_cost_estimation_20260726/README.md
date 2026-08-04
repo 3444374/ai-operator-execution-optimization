@@ -180,6 +180,13 @@ grouped holdout。完整表 + 区间见 `ce_hierarchy_table_20260804.md`。5-see
 **晋级门槛未达**：median regret ≤5% **且** pairwise ≥0.75——CE3 过 pairwise 不过
 regret；CE2 过 regret 不过 pairwise。无 estimator 能接管调度，仍是可行性阶段结果。
 
+**2026-08-04 decision-context LOO 审计**：完整留出 13 个 multi-candidate context 后，
+CE5 出现强正信号（MAE 7.69s、macro regret 2.14%、pooled regret 0.31%、9/13 pick）；
+但沿用预注册的行级 pairwise 只有 0.705，仍未达到 0.75，因此结论仍是**不晋级**。
+repeat 聚合后的候选 pairwise 为 0.828，属于更贴近计划选择语义的新诊断口径，必须在
+下一轮新数据前预注册，不能事后替换门槛。逐 fold 证据、候选不均衡和精确补测预算见
+`ce_context_loo_20260804.md`；机器可复算数据见 `ce_context_loo_20260804.json.gz`。
+
 **对用途的含义**：代价模型作**粗粒度容量/编排提示**（预测层，CE5/CE1）可用；作
 **优化器计划选择器**（选择层）尚不安全。下一步：补 ≥20 个 decision context（每个
 4–6 候选配置 × 1+3 formal）让 selection 指标稳，再上 state-aware（Track 2）。

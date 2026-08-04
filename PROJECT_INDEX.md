@@ -49,7 +49,7 @@
 | `experiments/results/adaptive_flush_cross_rate_20260726/README.md` | Fixed-25/fixed-50/adaptive cross-arrival-rate real GPU screen | Review why adaptive is not the current default |
 | `experiments/results/text_heldout_2048_20260726/README.md` | Natural-EOS 2048-request held-out validation | Review scale behavior, exact request audit, and tail-latency growth |
 | `experiments/results/prefix_aware_batching_20260726/README.md` | Controlled prefix-ratio workload and prefix-aware code/experiment audit | Review cache-off mechanism boundary and organizer fixes |
-| `experiments/results/operator_cost_estimation_20260726/README.md` | Grouped held-out operator E2E cost estimation | Review feature leakage boundary and five-split robustness |
+| `experiments/results/operator_cost_estimation_20260726/README.md` | Grouped holdout + 13-context LOO 的算子 E2E 代价估计，含逐 fold 压缩 JSON 证据 | 同时检查预测、候选 ranking、macro/pooled regret、晋级门槛与配置覆盖缺口 |
 | `experiments/results/row_cap_aware_packing_512_20260726/README.md` | Prefix-cache-corrected 512-row screening and repeated confirmation | Review why sequential remains default and how cache-enabled data was excluded |
 | `experiments/results/row_cap_aware_packing_512_20260726/nocache_repeats/summary_long.csv` | Plot-ready 512-row repeated metrics | Plot throughput, request tails/SLO, packing, energy, vLLM pressure, and MFU |
 | `experiments/results/row_cap_aware_packing_1024_20260726/README.md` | Held-out 1024-row mechanism decision | Review the SLO-goodput regression that blocks row-cap-first default adoption |
