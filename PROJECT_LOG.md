@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-08-04 文献 PDF 批量下载 + REFERENCE_INDEX 更新
+
+- 下载 15 篇此前缺失 PDF 的文献（knowledge_hub §3.8 新增 + REFERENCE_INDEX 已记录但实际缺失）：
+  LOTUS、VTC、Llumnix、Abacus、Palimpzest、SemBench、FairServe、DLPM、Autellix、Chiron、
+  TIE、Past-Future Scheduler、JITServe、Beyond Prediction (UniBoost)、FastServe (NSDI 2026)
+- 全部通过 arXiv OA 渠道下载，经过 `%PDF` 签名 + pypdf 页数验证
+- 更新 `research/reference/REFERENCE_INDEX.md`：PDF 总数 88（去重 87），精读笔记 49
+- 仍缺失：Learned Query Optimizer (Zhu et al.) SIGMOD 2024（ACM 付费墙）
+
 ## 2026-08-04 AI 算子论文与数据库产品场景矩阵补全
 
 - 在 `research/evaluation_metrics_survey_20260731.md` §9.1 为 LOTUS、Galois、
