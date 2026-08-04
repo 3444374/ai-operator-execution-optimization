@@ -8,14 +8,18 @@
   `images_per_cpu_core_second` / `first_output_fraction_of_e2e`）+ manifest
   `cross_scale_comparison_semantics` / `metric_definitions` 在真实 GPU 正确产出。
   单写 lease 根治了之前的并发双写 bug。
-- **3 臂 12K 一致性重跑**：supersede 受污染双写 run（已排除出 git）。Daft ~64s@12K
-  （187 img/s，/dev/shm 干净下无 OutOfDisk），fast arm setup-dominated（`min_steady=0`，
-  结构诊断非稳态排名）。
-- **2 臂 60K matched-resource schema-v12 重跑**：project 在 matched CPU 两档都快
-  （cpu8 −10.0%、cpu16 −18.5%），确认 step-8 结构性收益（~13–15% 区间；cpu16 偏高
-  是本轮 ray_data cpu16 方差 90s vs step-8 82s）。schema-v12 per-image 指标产出：
-  project 更省能（113 vs 121 J/1k@cpu16）、更早流式（fo_frac 0.33 vs 0.48）、
+- **3 臂 12K 一致性重跑**：supersede 受污染双写 run（已排除出 git）。12 个 run
+  （3 warmup + 9 formal）均 exactly-once；Daft ~65s@12K（约 185 img/s，/dev/shm
+  干净下无 OutOfDisk），fast arm setup-dominated（`min_steady=0`，结构诊断非稳态排名）。
+- **2 臂 60K matched-resource schema-v12 重跑**：16 个 run（4 warmup + 12 formal）
+  均 exactly-once，formal E2E 最低 73.52s。project 在 matched CPU 两档的 JCT 分别低
+  10.0%/18.5%，与 step-8 的 12.8%/15.1% 同向；四个对照的
+  观测范围是 10.0%–18.5%，不能把中点包装成更窄置信区间。schema-v12 per-image
+  指标显示 sampled energy 113 vs 121 J/1k@cpu16、首个完整 batch 24.2 vs 43.6s，
   GPU 仍饥饿 6–9%。raw 进 `experiments/results/image_ai_embed_operator_formal_20260803/raw/`。
+- **raw 归档修复**：`9c7c5fb` 中两份 schema-v12 CSV 在本地保存时各被附加 3 个
+  控制字节（`11 72 13`）；服务器权威 `runs.csv` 不含该尾部。已从服务器原件覆盖，
+  正常记录和统计值未变；正式报告同时纠正“12/12 formal”与过窄 headline。
 - **代价估计排序层补齐**：重跑 `estimate_operator_cost.py` ×5 seed（schema-v2
   `selection_metrics`）。**验证 Heinrich "精度≠选择"**：ridge 预测层显著优
   （MAE 11.68 vs 29.89s、Spearman 0.677 vs 0），但选择层 `decision_regret` 反而更高

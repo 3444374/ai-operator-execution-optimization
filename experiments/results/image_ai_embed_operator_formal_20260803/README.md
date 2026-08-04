@@ -223,37 +223,44 @@ single-writer matrix runner（`run_image_clip_matrix.py` + lease，根治并发�
 project-cpu16 steady-proxy ~61s 贴边、CV~2%，matrix 不能从 steady-gate fail 恢复，故降到 50 留余量，
 仍远过 ~9s setup）。commit `9879167`。
 
-**合规性**：12/12 formal `exactly_once=True`、`output_rows=120000`、`unique_images=60000`、steady-proxy
-全部 ≥50s（实测最低 ~65s，无 fail-close），0 incident。
+**合规性**：16 个 run（4 warmup + 12 formal）均 `exactly_once=True`、`output_rows=120000`、
+`unique_images=60000`；12 个 formal 的 operator E2E 最低为 73.52s，均超过 60s，0 incident。
 
-### 10.1 matched-resource 2×2（schema-v12，3 formal 中位 / CV）
+### 10.1 matched-resource 2×2（schema-v12，3 formal 中位 / population CV）
 
-| cell | operator_jct (s) | CV | images/s | CV | J/1k images | gpu_s/image | img/cpuCore_s | GPU busy% | first_out_frac |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| project cpu16 | **73.7** | 2.1% | 1629 | 2.1% | 113.2 | 0.00123 | 57.4 | 8.7 | 0.330 |
-| project cpu8 | **115.8** | 2.0% | 1037 | 2.0% | 160.3 | 0.00193 | 43.6 | 6.1 | 0.212 |
-| ray_data cpu16 | 90.4 | 1.6% | 1328 | 1.6% | 121.4 | 0.00151 | 48.3 | 8.2 | 0.482 |
-| ray_data cpu8 | 128.6 | 2.1% | 933 | 2.1% | 165.2 | 0.00214 | 41.4 | 5.9 | 0.325 |
+| cell | operator_jct (s) | CV | images/s | CV | first output (s) | first_out/E2E | J/1k images | gpu_s/image | img/cpuCore_s | GPU busy% |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| project cpu16 | **73.7** | 2.1% | 1629 | 2.1% | **24.2** | 0.330 | 113.2 | 0.00123 | 57.4 | 8.7 |
+| project cpu8 | **115.8** | 2.0% | 1037 | 2.0% | **24.5** | 0.212 | 160.3 | 0.00193 | 43.6 | 6.1 |
+| ray_data cpu16 | 90.4 | 1.6% | 1328 | 1.6% | 43.6 | 0.482 | 121.4 | 0.00151 | 48.3 | 8.2 |
+| ray_data cpu8 | 128.6 | 2.1% | 933 | 2.1% | 42.6 | 0.325 | 165.2 | 0.00214 | 41.4 | 5.9 |
 
-**matched-resource 优势**：project @cpu8 快 **10.0%**、@cpu16 快 **18.5%**——方向与 step-8 一致
-（step-8: 12.8% / 15.1%），**确认 ~13–15% 结构性收益**（cpu8 偏低、cpu16 偏高；本轮 ray_data cpu16
-90s vs step-8 82s 的方差驱动了 cpu16 数值）。CV 1.6–2.1%，稳态可靠。
+**matched-resource 观测（按 JCT 降幅）**：project @cpu8 的 JCT 低 **10.0%**、@cpu16 低
+**18.5%**；方向与 step-8
+一致（step-8: 12.8% / 15.1%）。四个 matched-CPU 对照均同向，观测优势范围为
+**10.0%–18.5%**；不能把中点包装成更窄的置信区间。单 cell CV 1.6%–2.1%，说明同一
+cell 重复较稳，但不消除跨 campaign 的环境漂移。
 
 ### 10.2 schema-v12 新增 per-image 指标（本次重跑的核心增量）
 
-- **能耗 J/1k images**：project @cpu16 = 113 vs ray_data 121（省 ~7%）；@cpu8 = 160 vs 165。project 单位吞吐更省能。
+- **能耗 J/1k images**：sampled estimate 中 project @cpu16 = 113 vs ray_data 121，
+  @cpu8 = 160 vs 165，两档均较低；这是低频 `nvidia-smi` 采样的辅助信号，没有独立置信区间，
+  不能表述为硬件级精确节能比例。
 - **gpu_seconds/image**：project 0.00123 vs ray_data 0.00151 @cpu16——project 单位 GPU 墙钟更低。
 - **images/cpu_core_second**：project 57.4 vs ray_data 48.3 @cpu16——project 单位 CPU 更高效。
-- **first_output_fraction_of_e2e**（streaming/materialization 信号）：project 0.33 vs ray_data 0.48 @cpu16
-  ——project 更早流式输出（显式 actor pipeline），ray_data 缓冲更多；@cpu8 同方向（0.21 vs 0.33）。
+- **first output**：project 为 24.2–24.5s，Ray Data 为 42.6–43.6s；同规模同资源下，
+  project 更早返回首个完整 Arrow record batch。`first_output/E2E` 仅表示首批返回发生在
+  job 生命周期的相对位置（project 0.21/0.33，Ray Data 0.33/0.48），不是 per-image latency，
+  也不能单凭该比例断言框架内部的具体缓冲机制。
 - **GPU busy%**：5.9–8.7%，两臂都饥饿（CPU 喂入瓶颈，与 §6/§9 一致）。
 
 ### 10.3 12K 三臂一致性（1 warmup + 3 formal，supersede 受污染双写 run）
 
 `deploy/autodl/image_3arm_12k_consistency.example.json`：3 arm（daft_builtin_embed / ray_data_staged /
-project_ray）@12K×1，`min_steady=0`（结构诊断：fast arm setup-dominated，非稳态排名）。12/12 formal
-`exactly_once=True`，0 incident。Daft ~64s@12K（187 img/s，/dev/shm 干净下无 OutOfDisk），ray_data ~17s、
-project ~15s（setup-dominated）。**作容量/结构诊断**，不进 matched-workload 排名（与 §8 一致：Daft
+project_ray）@12K×1，`min_steady=0`（结构诊断：fast arm setup-dominated，非稳态排名）。
+12 个 run（3 warmup + 9 formal）均 `exactly_once=True`，0 incident。Daft ~65s@12K
+（约 185 img/s，/dev/shm 干净下无 OutOfDisk），ray_data ~17.7s、
+project ~15.8s（setup-dominated）。**作容量/结构诊断**，不进 matched-workload 排名（与 §8 一致：Daft
 max ~12K 与 fast-arm 可靠测量规模无重叠）。raw：`raw/runs_3arm_12k_consistency_20260804.csv`。
 
 ### 10.4 不能声称

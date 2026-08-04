@@ -463,4 +463,3 @@ Operator 9 MapBatches(RayDataClipPredictor): 474 tasks executed, 474 blocks prod
 Dataset throughput:
 	* Ray Data throughput: 0.012299841630027602 rows/s
 ",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,l2_normalized,l2_normalized,True,model_actor,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,d2cc313628361b15279d43566bce52800ccc3cff
-r

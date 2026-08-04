@@ -1,5 +1,5 @@
-cell,arm,cpu,operator_jct_s,operator_jct_cv_pct,images_per_s,images_per_s_cv_pct,joules_per_1k_images,gpu_seconds_per_image,images_per_cpu_core_second,gpu_active_util_mean_pct,first_output_fraction_of_e2e
-P_16,project_ray,16,73.66,2.1,1629.0,2.1,113.2,0.00123,57.377,8.72,0.33
-P_8,project_ray,8,115.75,2.0,1037.0,2.0,160.3,0.00193,43.611,6.07,0.212
-RD_16,ray_data_staged,16,90.37,1.6,1328.0,1.6,121.4,0.00151,48.331,8.15,0.482
-RD_8,ray_data_staged,8,128.62,2.1,933.0,2.1,165.2,0.00214,41.431,5.89,0.325
+cell,arm,cpu,operator_jct_s,operator_jct_cv_pct,images_per_s,images_per_s_cv_pct,first_output_s,first_output_fraction_of_e2e,joules_per_1k_images,gpu_seconds_per_image,images_per_cpu_core_second,gpu_active_util_mean_pct
+P_16,project_ray,16,73.66,2.1,1629.05,2.1,24.24,0.329711,113.18,0.00122771,57.37667,8.72
+P_8,project_ray,8,115.75,2.0,1036.74,2.0,24.48,0.212058,160.33,0.00192912,43.61058,6.07
+RD_16,ray_data_staged,16,90.37,1.6,1327.82,1.6,43.60,0.482415,121.44,0.00150623,48.33140,8.15
+RD_8,ray_data_staged,8,128.62,2.1,932.96,2.1,42.62,0.324983,165.17,0.00214372,41.43072,5.89
