@@ -4084,3 +4084,6 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
   `PARKED`，后续由远端 agent 从 `main` 启动。
 - 本地门禁：scenario runner 26 tests、planning cost 21 tests 通过；正式配置测试锁定
   80 unique scenarios、20 contexts、5 个当前 workload 和每 context 四个 credit 候选。
+- 服务器 `49e1dd2` 完整依赖环境在清除外部 `RAY_ADDRESS` 干扰后通过 675/675 tests；
+  config loader 展开 80 个唯一 scenario。当前 runtime env 缺 `RAY_ADDRESS`，正式运行前
+  必须启动 Ray 并写入实际地址；模板保持 fail-closed，不以虚假默认值绕过。

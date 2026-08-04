@@ -80,8 +80,15 @@ directory；SSH 断开不应由不受监管的前台任务承担，正式启动�
 在仓库根目录先执行不触碰 GPU 的配置门禁：
 
 ```bash
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+set +a
+test -n "${RAY_ADDRESS:-}" || {
+  echo "RAY_ADDRESS is missing; start Ray and update the runtime env first" >&2
+  exit 2
+}
 /root/miniconda3/bin/python -c \
-  "import sys; sys.path.insert(0, 'code'); from scripts.experiments.run_ai_operator_scenarios import _load_config; c=_load_config('deploy/autodl/dual_gpu_cost_profile_formal.example.json'); assert len(c.scenarios)==80; assert len({x.scenario_id for x in c.scenarios})==80; print(c.experiment_id, len(c.scenarios))"
+  "import sys; from pathlib import Path; sys.path.insert(0, 'code'); from scripts.experiments.run_ai_operator_scenarios import _load_config; c=_load_config(Path('deploy/autodl/dual_gpu_cost_profile_formal.example.json')); assert len(c.scenarios)==80; assert len({x.scenario_id for x in c.scenarios})==80; print(c.experiment_id, len(c.scenarios))"
 ```
 
 再由远端 agent 在**新目录**启动；不要用 `/usr/bin/time` 包裹命令：
@@ -106,8 +113,12 @@ screen -dmS cost-formal bash -lc '
 启动前还必须确认 5 个 workload 各有至少 256 行、两个 health/metrics endpoint 正常、
 `prefix_caching=false` 与服务进程参数一致、Ray/runner 无重复实例。上述命令依赖已加载的
 `/root/autodl-tmp/ai-operator-runtime.env`；缺少任一环境变量时 config loader 会
-fail-closed，不允许手填
-默认值继续跑。
+fail-closed，不允许手填默认值继续跑。
+
+2026-08-04 门禁时服务器 runtime env 缺少 `RAY_ADDRESS`，因此远端 agent 必须先按
+`deploy/autodl/README.md` 启动 Ray，并把**实际地址**写回该机器自己的 runtime env；
+不能仅为了让模板展开而填入一个未监听的地址。门禁用临时地址只验证了 80-scenario
+配置结构，不代表 Ray service readiness。
 
 完成后结果进入 `experiments/results/operator_cost_profile_dual4090_formal_20260804/`，
 包含七步 README、compact summary、formal-only LOO JSON、raw archive SHA256 和不能声称的
