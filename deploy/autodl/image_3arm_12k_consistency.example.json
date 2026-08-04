@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "experiment_id": "image_3arm_12k_consistency_20260804",
+  "seed": 20260804,
+  "warmup_runs_per_scenario": 1,
+  "formal_repeats": 3,
+  "minimum_unique_rows": 12000,
+  "minimum_steady_state_s": 0.0,
+  "common_args": [
+    "--model", "/root/autodl-tmp/models/clip-vit-base-patch32",
+    "--workload-name", "coco_train2017_60k",
+    "--limit", "12000",
+    "--dataset-passes", "1",
+    "--warmup-rows", "256",
+    "--batch-size", "64",
+    "--gpu-workers", "2",
+    "--source-shards", "4",
+    "--source-cpu-threads", "4",
+    "--torch-intraop-threads", "1",
+    "--torch-interop-threads", "1",
+    "--embedding-output-contract", "l2_normalized"
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "daft_builtin_cw4",
+      "args": ["--arm", "daft_builtin_embed", "--cpu-workers", "4", "--max-active-batches", "8"]
+    },
+    {
+      "scenario_id": "ray_data_cw8",
+      "args": ["--arm", "ray_data_staged", "--cpu-workers", "8", "--max-active-batches", "8"]
+    },
+    {
+      "scenario_id": "project_cw16_a32",
+      "args": ["--arm", "project_ray", "--cpu-workers", "16", "--max-active-batches", "32"]
+    }
+  ]
+}
