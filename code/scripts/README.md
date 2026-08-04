@@ -355,6 +355,11 @@ If `--flush-trace-output` is omitted, replay writes
 vLLM metrics through a background sampler so metric I/O cannot block the hard
 maximum wait.
 
+`flush_trace_status` distinguishes an observed replay trace from a trace that
+is not applicable. Offline non-replay execution has no arrival-driven flush
+decision loop, so it records `not_applicable_non_replay`, an empty path, and
+zero events. Zero here must not be interpreted as an observed count of flushes.
+
 Formal runs should also set `--submission-trace-output` and
 `--resource-trace-output`. The first records one row per closed batch with
 an explicit `submission_id`, document identity, token counts, and service

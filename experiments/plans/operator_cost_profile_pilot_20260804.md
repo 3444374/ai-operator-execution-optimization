@@ -1,4 +1,4 @@
-# 双 4090 算子代价 profile 4-cell pilot（2026-08-04）
+# 双 4090 算子代价 profile 4-cell pilot v2（2026-08-04）
 
 ## 问题
 
@@ -6,6 +6,18 @@
 完整的四候选 decision context；每个 run 实际需要多久；152-run 全矩阵的时间和失败
 风险是否可接受。本 pilot 不用于宣布 estimator 晋级，也不与旧单 5070 的 283 行
 直接合并。
+
+### v1 诊断轮与 v2 修订
+
+第一轮 `dual_gpu_cost_profile_pilot_20260804` 完成 8/8 runs，但预注册门禁错误地
+要求 fixed-timeout、非 arrival-replay 路径也输出 flush trace。当前实现只有 arrival
+replay 存在显式关批决策循环；本轮离线请求已经由 organizer 完成组织，固定 flush 没有
+可记录的逐次决策事件。因此 v1 只作为运行合同诊断证据，不据此启动正式扩展。
+
+v2 在看到任何新结果前把 trace 合同修正为：所有 formal 必须保存 request、submission、
+resource trace；只有 `arrival_replay=true` 时才强制 flush trace。非 replay 的
+`flush_trace_path=""`、`flush_trace_events=0` 必须明确记录为 `not_applicable`，不能伪造
+空事件。v2 仍使用完全相同的 workload 和四个 candidate，重新采集独立证据。
 
 ## 固定项与唯一变量
 
@@ -20,8 +32,10 @@
 ## 通过门槛
 
 1. 8/8 runs `status=ok`，没有 incident；512 unique requests、exactly-once；
-2. 两个 endpoint 均有请求，vLLM counters 可用，服务 metadata 与配置一致；
-3. 每个 formal 保存 summary、request/submission/resource/flush trace；
+2. 两个 endpoint 均有请求，vLLM counters 可用；端点启动命令或等价进程快照证明
+   prefix cache、模型、端口、batched-token 和 max-seqs 与声明一致；
+3. 每个 formal 保存 summary、request/submission/resource trace；arrival replay 才要求
+   flush trace，非 replay 必须显式记录为不适用；
 4. 四个 candidate 的 23 项 pre-execution feature 不相同，且 decision-context ID 相同；
 5. 以实际 8-run 墙钟、每 run JCT 和端点空闲等待计算正式矩阵预计耗时，不沿用
    “30–45 分钟”的旧估计。

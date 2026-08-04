@@ -25,6 +25,10 @@
 
 ## 数据组织与调度解释字段
 
+- `flush_trace_status`：说明“关批决策 trace 是否适用”，不是性能值。arrival replay
+  存在逐次到达与关批决策时为 `ok`；离线、非 replay 路径的请求已由 organizer 组织，
+  因而写 `not_applicable_non_replay`，同时 `flush_trace_path` 为空、事件数为 0。后者
+  不能解释为“发生了 0 次 flush”，也不能用伪造的空 CSV 填补。
 - `packing_padding_waste_ratio`：每个组织 batch 按最长 prompt 补齐时，浪费 token
   slot 占总 padded slot 的比例。arrival-replay 若未保留逐行长度，状态明确不可用。
 - `scheduling_control_overhead_{s,pct}`：只计 `organizer_plan_s + submit_s`，再除以

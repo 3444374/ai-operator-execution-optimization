@@ -327,6 +327,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertLess(ready_index, timer_index)
         self.assertIn("actor_ready_s", profile.FORMAL_RESULT_FIELDS)
+        self.assertIn("flush_trace_status", profile.FORMAL_RESULT_FIELDS)
 
     def test_ray_task_worker_options_ignore_actor_only_concurrency(self) -> None:
         args = profile.parse_args(

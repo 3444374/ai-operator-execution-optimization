@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "experiment_id": "dual_gpu_cost_profile_pilot_20260804",
+  "experiment_id": "dual_gpu_cost_profile_pilot_v2_20260804",
   "seed": 20260804,
   "service_metadata": {
     "vllm_version": "0.25.1",

@@ -1844,6 +1844,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 args.flush_service_capacity_tokens_s_per_endpoint
             ),
             "flush_trace_output": args.flush_trace_output or "",
+            "flush_trace_status": (
+                "requested" if args.arrival_replay else "not_applicable_non_replay"
+            ),
             "flush_trace_path": (
                 args.flush_trace_output
                 or str(
@@ -2992,6 +2995,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 args.flush_service_capacity_tokens_s_per_endpoint
             ),
             "flush_trace_output": args.flush_trace_output or "",
+            "flush_trace_status": (
+                "ok" if args.arrival_replay else "not_applicable_non_replay"
+            ),
             "flush_trace_path": flush_trace_path,
             "flush_trace_events": len(flush_trace_events),
             "submission_trace_path": submission_trace_path,
