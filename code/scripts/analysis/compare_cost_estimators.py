@@ -75,16 +75,24 @@ def main() -> None:
         )
 
     def avg(arm: str, layer: str, key: str) -> float:
-        vals = [r[f"{arm}_{layer}_metrics"].get(key) for r in results]
+        dict_key = f"{arm}_metrics" if layer == "regression" else f"{arm}_selection_metrics"
+        vals = [r[dict_key].get(key) for r in results]
         vals = [v for v in vals if isinstance(v, (int, float))]
         return statistics.mean(vals) if vals else float("nan")
 
-    print("\n=== 5-seed averages (lower MAE/regret = better; higher Sρ/pick = better) ===")
-    print(f"  prediction: ridge MAE={avg('ridge','regression','mae'):.2f}s  vs  mean MAE={avg('mean_baseline','regression','mae'):.2f}s")
+    def median(arm: str, layer: str, key: str) -> float:
+        dict_key = f"{arm}_metrics" if layer == "regression" else f"{arm}_selection_metrics"
+        vals = [r[dict_key].get(key) for r in results]
+        vals = [v for v in vals if isinstance(v, (int, float))]
+        return statistics.median(vals) if vals else float("nan")
+
+    avg_ctx = statistics.mean([r["ridge_selection_metrics"].get("decision_contexts_evaluated", 0) for r in results])
+    print(f"\n=== 5-seed summary (contexts_evaluated avg={avg_ctx:.1f} -> selection metrics are noisy) ===")
+    print(f"  prediction: ridge MAE={avg('ridge','regression','mae'):.2f}s (med {median('ridge','regression','mae'):.2f})  vs  mean MAE={avg('mean_baseline','regression','mae'):.2f}s")
     print(f"  prediction: ridge Spearman={avg('ridge','regression','spearman_rho'):.3f}  vs  mean={avg('mean_baseline','regression','spearman_rho'):.3f}")
-    print(f"  selection:  ridge pick_rate={avg('ridge','selection','pick_rate'):.3f}  vs  mean={avg('mean_baseline','selection','pick_rate'):.3f}")
-    print(f"  selection:  ridge regret%={avg('ridge','selection','decision_regret_pct'):.2f}  vs  mean={avg('mean_baseline','selection','decision_regret_pct'):.2f}")
-    print(f"  selection:  ridge surpassed={avg('ridge','selection','surpassed_plans'):.2f}  vs  mean={avg('mean_baseline','selection','surpassed_plans'):.2f}")
+    print(f"  selection:  ridge pick_rate mean={avg('ridge','selection','pick_rate'):.3f} med={median('ridge','selection','pick_rate'):.3f}  vs  mean={avg('mean_baseline','selection','pick_rate'):.3f}")
+    print(f"  selection:  ridge regret% mean={avg('ridge','selection','decision_regret_pct'):.2f} med={median('ridge','selection','decision_regret_pct'):.2f}  vs  mean={avg('mean_baseline','selection','decision_regret_pct'):.2f}")
+    print(f"  selection:  ridge surpassed mean={avg('ridge','selection','surpassed_plans'):.2f}  vs  mean={avg('mean_baseline','selection','surpassed_plans'):.2f}")
     sel_status = results[0]["ridge_selection_metrics"].get("selection_status")
     print(f"\n  (selection_status={sel_status}; pairwise-accuracy & Top-K precision not yet implemented — needs selection_metrics extension)")
 
