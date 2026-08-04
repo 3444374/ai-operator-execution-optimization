@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import json
 import unittest
 from pathlib import Path
 
@@ -89,6 +90,7 @@ class CostEstimationTests(unittest.TestCase):
         self.assertEqual(first["decision_regret_pct"], second["decision_regret_pct"])
         self.assertEqual(first["predicted_best_tie_contexts"], 1)
         self.assertIn("candidate_id", str(first["tie_policy"]))
+        json.dumps(first, allow_nan=False)
 
     def test_feature_schema_excludes_post_execution_measurements(self) -> None:
         forbidden = ("actual", "e2e", "service_s", "vllm", "energy", "mfu")

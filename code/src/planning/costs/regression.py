@@ -227,15 +227,20 @@ def selection_metrics(
             key=lambda item: (aggregated[item][1], str(item)),
         )
         minimum_prediction = aggregated[selected][1]
-        predicted_best_tie_contexts += sum(
-            np.isclose(
-                predicted_value,
-                minimum_prediction,
-                rtol=1e-12,
-                atol=1e-12,
+        predicted_best_tie_contexts += int(
+            sum(
+                bool(
+                    np.isclose(
+                        predicted_value,
+                        minimum_prediction,
+                        rtol=1e-12,
+                        atol=1e-12,
+                    )
+                )
+                for _, predicted_value in aggregated.values()
             )
-            for _, predicted_value in aggregated.values()
-        ) > 1
+            > 1
+        )
         oracle_value = aggregated[oracle][0]
         selected_value = aggregated[selected][0]
         evaluated += 1
