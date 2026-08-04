@@ -46,7 +46,14 @@ def main() -> None:
 
     from vllm import LLM
 
-    llm = LLM(model=args.model, runner="pooling", limit_mm_per_prompt={"image": 1})
+    llm = LLM(
+        model=args.model,
+        runner="pooling",
+        limit_mm_per_prompt={"image": 1},
+        # Capability gate only: skip vLLM first-run inductor compile + the ~50-size
+        # cudagraph capture (hangs for minutes on a cold cache). Not used for formal runs.
+        enforce_eager=True,
+    )
     image_out = llm.embed(
         {"prompt": "", "multi_modal_data": {"image": Image.open(image_path).convert("RGB")}}
     )
