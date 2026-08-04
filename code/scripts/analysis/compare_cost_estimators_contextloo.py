@@ -22,6 +22,8 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from importlib.metadata import PackageNotFoundError, version
+
 import numpy as np
 
 CODE_ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir())
@@ -161,6 +163,13 @@ def _sha256(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _package_version(distribution: str) -> str:
+    try:
+        return version(distribution)
+    except PackageNotFoundError:
+        return "unavailable"
 
 
 def _source_evidence() -> list[dict[str, str]]:
@@ -377,12 +386,25 @@ def evaluate() -> dict[str, Any]:
         "target": TARGET,
         "interpretation": "unseen decision-context generalization; not necessarily unseen candidates",
         "source_reference": str(REF_JSON.relative_to(REPO_ROOT)),
+        "code_evidence": {
+            "context_loo_script_sha256": _sha256(Path(__file__).resolve()),
+            "full_driver_sha256": _sha256(
+                CODE_ROOT / "scripts" / "analysis" / "compare_cost_estimators_full.py"
+            ),
+            "estimator_module_sha256": _sha256(
+                CODE_ROOT / "src" / "planning" / "costs" / "estimators.py"
+            ),
+            "metric_module_sha256": _sha256(
+                CODE_ROOT / "src" / "planning" / "costs" / "regression.py"
+            ),
+        },
         "source_csvs": _source_evidence(),
         "dataset_coverage": _dataset_coverage(rows, contexts, candidates),
         "environment": {
             "python": sys.version.split()[0],
             "platform": platform.platform(),
             "numpy": np.__version__,
+            "lightgbm": _package_version("lightgbm"),
         },
         "estimators": estimators,
     }
