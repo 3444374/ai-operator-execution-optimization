@@ -34,7 +34,7 @@
     "--completion-endpoint-urls", "${COMPLETION_ENDPOINT_URLS}",
     "--completion-model", "${COMPLETION_MODEL}",
     "--completion-protocol", "completions",
-    "--completion-http-transport", "async",
+    "--completion-http-transport", "httpx_async",
     "--completion-max-tokens", "${COMPLETION_MAX_TOKENS}",
     "--completion-return-token-ids",
     "--completion-prompt-format", "${COMPLETION_PROMPT_FORMAT}",

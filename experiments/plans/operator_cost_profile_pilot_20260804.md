@@ -10,7 +10,7 @@
 ## 固定项与唯一变量
 
 - 固定：Qwen2.5-7B、2 个 vLLM Completions endpoint、512 行
-  `sharegpt_multiturn`、输出上限 256、async transport、request submission、
+  `sharegpt_multiturn`、输出上限 256、`httpx_async` transport、request submission、
   token budget 8192、1×256 actor/endpoint、fixed 50 ms flush、cache off。
 - 唯一变量：每 endpoint active-work credit = 32,768 / 49,152 / 65,536 / 98,304。
 - 编排：每臂 1 warmup + 1 formal，固定 seed 交错顺序，共 8 runs。
