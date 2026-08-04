@@ -153,6 +153,7 @@ class ExperimentScenarioTests(unittest.TestCase):
             "dual_gpu_endpoint_adaptive_gate.example.json": 2,
             "dual_gpu_service_quantum.example.json": 6,
             "dual_gpu_slo_ewma_flush.example.json": 6,
+            "dual_gpu_cost_profile_formal.example.json": 80,
         }
 
         with patch.dict(os.environ, env, clear=True):
@@ -231,6 +232,41 @@ class ExperimentScenarioTests(unittest.TestCase):
                     "work98304",
                     "work131072",
                 ],
+            )
+
+            formal = _load_config(
+                CODE_ROOT.parent
+                / "deploy"
+                / "autodl"
+                / "dual_gpu_cost_profile_formal.example.json"
+            )
+            contexts: dict[tuple[str, int, int], set[int]] = {}
+            for scenario in formal.scenarios:
+                arguments = dict(zip(scenario.args[::2], scenario.args[1::2]))
+                context = (
+                    arguments["--source-workload-name"],
+                    int(arguments["--total-rows"]),
+                    int(arguments["--completion-max-tokens"]),
+                )
+                contexts.setdefault(context, set()).add(
+                    int(arguments["--max-active-work-per-endpoint"])
+                )
+            self.assertEqual(
+                {context[0] for context in contexts},
+                {
+                    "short_prompt_lt50",
+                    "long_prompt_ge150",
+                    "sharegpt_concentrated",
+                    "sharegpt_multiturn",
+                    "lmcache_agent",
+                },
+            )
+            self.assertEqual(len(contexts), 20)
+            self.assertTrue(
+                all(
+                    candidates == {32768, 49152, 65536, 98304}
+                    for candidates in contexts.values()
+                )
             )
 
             actor_pool = _load_config(

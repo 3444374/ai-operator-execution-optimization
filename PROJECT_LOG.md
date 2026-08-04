@@ -4062,3 +4062,25 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
   环境身份一致，但 candidate 不同；5070 与 4090 不会静默合并。
 - 该修复只建立新数据的可比合同，不声称已有 15-feature 结论自动适用于 23-feature；
   必须在服务器独立 analysis venv 复算 LOO，再决定 pilot/formal。
+
+## 2026-08-04 代价估计 formal-only 收口与双 4090 门禁
+
+- 修复代价估计数据加载合同：只有 `status=ok, phase=formal` 的 profile 可进入模型、
+  candidate repeat 聚合和 context-LOO；缺失 phase fail-closed。旧 283-row all-phase
+  结果整体移至 `operator_cost_estimation_20260726/archive/allphases_pre_20260804/`。
+- 修复 selection exact tie 依赖 CSV 首行的问题：固定选择字典序最小 candidate ID，
+  同时保存 tie count/policy；修复 NumPy integer 导致证据 JSON 无法序列化的问题。
+- 服务器 formal-only 23-feature context-LOO 复算为 204 行、17 contexts、13 个
+  multi-candidate contexts。CE5：MAE 7.91s、candidate pairwise 0.800、macro/pooled/max
+  regret 4.58%/0.62%/26.23%、pick 7/13、row pairwise 0.684；未过既有门槛，不晋级。
+- 双 4090 四候选 cost-profile pilot v2 完成 8/8、0 incident；每个 formal 有 512 个
+  unique completed requests、双 endpoint 均活跃、23 维候选向量可区分。完整 v1/v2 raw、
+  SHA256、summary 和七步报告归档至 `operator_cost_profile_pilot_20260804/`；n=1 不排名。
+- 预注册独立双 4090 formal：5 workloads × 2 rows × 2 output caps × 4 active-work，
+  共 80 cells/320 runs。语义审计将 legacy `sharegpt_burstgpt` 替换为当前重建的
+  `sharegpt_concentrated`；服务器实查五个 workload 均不少于 256 行。
+- 按用户要求不由本地 agent 执行长实验。一次后台启动因服务器缺少 `/usr/bin/time`
+  在首个 run 前退出，仅产生失败日志/快照，空目录已清理；运行文档移除该依赖并标记
+  `PARKED`，后续由远端 agent 从 `main` 启动。
+- 本地门禁：scenario runner 26 tests、planning cost 21 tests 通过；正式配置测试锁定
+  80 unique scenarios、20 contexts、5 个当前 workload 和每 context 四个 credit 候选。

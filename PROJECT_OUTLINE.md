@@ -166,8 +166,11 @@ staged/fused 仅保留为诊断 reference；官方 ResNet18 仍需固定 upstrea
   相对 adaptive tokens/s +1.75%、request P99 -2.61%
 - ✅ Prefix 受控 workload 0/30/70/100% 与真实 vLLM 筛选；修复唯一 prefix
   哈希重排和隐式 length-align 耦合。prefix cache 关闭时无稳定收益
-- ✅ 算子 E2E 代价估计：283 条真实 profile、70 个配置组；五个 grouped
-  held-out seed 平均 MAE 11.68s、MAPE 50.60%、R² 0.776
+- ✅ 算子 E2E 代价估计审计：旧 283-row 结果混入 warmup，已归档；当前 formal-only
+  23-feature context-LOO 使用 204 条 formal、17 contexts。CE5 MAE 7.91s、candidate
+  pairwise 0.800、macro/pooled/max regret 4.58%/0.62%/26.23%，row pairwise 0.684
+  未过既有门槛，仍不晋级。双 4090 4-cell pilot 8/8 通过后，独立 20-context
+  formal 已完成预注册与配置门禁；按用户要求暂缓，由远端 agent 后续执行
 - ✅ vLLM eager vs CUDA Graph 同配置对照：512 请求、每侧 3 次 formal；
   CUDA Graph 的 E2E 均值 79.85s（-71.76%）、observed tokens/s
   2875.68（+254.05%）、MFU 14.51%（eager 4.02%）。该结果用于选定后续

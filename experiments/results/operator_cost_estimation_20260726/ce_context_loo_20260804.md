@@ -6,13 +6,21 @@
 
 ## 1. 实验设置
 
-- 输入：现有 AI_COMPLETE profile 的 283 条有效记录；目标为 `e2e_s`。
+- 输入：现有 AI_COMPLETE profile 的 204 条 `phase=formal` 有效记录；目标为 `e2e_s`。
 - 覆盖：17 个 decision context，其中 13 个至少有 2 个候选，可进入 LOO。
 - estimator：CE0 mean、CE1 analytical、CE2 lookup、CE3 ridge、CE4 LightGBM、
   CE5 analytical + residual hybrid；CE6 oracle 仅是上界，不参与拟合。
 - 服务器复算环境：独立 analysis venv，LightGBM 4.7.0、NumPy 2.5.1；不使用 GPU。
-- 可复算证据：`ce_context_loo_20260804.json.gz`。其中保存源 CSV SHA256、代码 SHA256、
+- 当前可复算证据：`ce_context_loo_formal_only_23feature_20260804.json.gz`。其中保存源 CSV SHA256、代码 SHA256、
   每个 context 的候选、repeat 数、真实/预测均值、逐 fold 指标和汇总指标。
+- 审计发现旧加载器把 warmup 混入“formal repeat”聚合。两份错误口径证据改名为
+  `ce_context_loo_{15feature,23feature}_allphases_audit_20260804.json.gz`，只用于追溯，
+  不再作为结果。当前加载器对 `phase` 缺失也 fail-closed。
+- 当前代码使用 23 个执行前特征，并把机器、数据库和 serving 协议纳入
+  decision-context identity。JSON 内部记录 context-LOO driver、full driver、estimator
+  和 metric module 的代码哈希。
+- 当前压缩证据 SHA256：
+  `59f1f2baec71657583a4f2536f47c2b749105befda4d80ef12c82058d59397cf`。
 
 decision context 固定模型、workload、行数、输出上限和 arrival 条件；候选配置改变 batching、
 token/work budget、inflight、actor workers 和 flush。这里测试的是 **unseen decision-context**，
@@ -24,7 +32,7 @@ token/work budget、inflight、actor workers 和 flush。这里测试的是 **un
 对 13 个 multi-candidate context 逐一执行：
 
 1. 留出该 context 的全部候选和全部 formal repeats；
-2. 用其余 282 行左右的数据拟合 estimator；
+2. 用其余 formal 行拟合 estimator，warmup 不进入训练、预测或 candidate 均值；
 3. 在被留出的完整候选集合上预测；
 4. 行级 MAE/pairwise 保留旧报告口径；
 5. 先按 candidate 合并 repeats，再计算 within-context pairwise/Top-K，作为更贴近优化器
@@ -40,11 +48,13 @@ token/work budget、inflight、actor workers 和 flush。这里测试的是 **un
 
 - 脚本对每 fold 断言 held-out context 不出现在训练集，避免 context leakage。
 - repeats 在候选 ranking 前取均值；不再把同一候选的重复运行当成不同计划。
+- 只有 `phase=formal` 且 `status=ok` 的行可以进入模型；warmup 和缺失 phase 的旧行均排除。
 - JSON 保存每 fold 原始候选均值，而不是只保存最终表格。
 - 13 个 context 仍很少，且候选数极不均衡：
   `19,13,7,5,3,3,3,3,2,2,2,2,2,1,1,1,1`。
-- CE0/lookup 等 estimator 存在 predicted-best tie；现有 `selection_metrics` 使用旧的
-  first-minimum 顺序消解，JSON 显式记录 tie count。含 tie 的 pick/regret 只能谨慎读取。
+- CE0/lookup 等 estimator 存在 predicted-best tie。当前合同固定为“最小候选平均预测；
+  exact tie 取字典序最小 candidate ID”，不再依赖 CSV 行顺序；JSON 显式记录 tie context
+  数。该规则可复现但没有业务最优含义，含 tie 的 pick/regret 仍只能谨慎读取。
 - scenario-group split 与 context-LOO 回答不同问题：前者偏向已见相近 context 的配置插值，
   后者测试新 context。不能因 LOO 数字更好就声称前者“低估”CE5。
 
@@ -55,15 +65,15 @@ runtime 分别求和后再计算比例。
 
 | estimator | MAE(s) | 行级 pairwise | 候选 pairwise | 候选 Top-K | pick | regret mean | regret median | regret max | pooled regret | 晋级 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| CE0 mean | 67.03 | 0.500 | 0.500 | 0.454 | 0.385 | 111.82% | 1.55% | 1210.52% | 7.71% | 否 |
-| CE1 analytical | 13.55 | 0.522 | 0.541 | 0.341 | 0.385 | 8.87% | 1.55% | 44.71% | 3.75% | 否 |
-| CE2 lookup | 43.47 | 0.445 | 0.352 | 0.454 | 0.231 | 98.12% | 1.74% | 1210.52% | 6.25% | 否 |
-| CE3 ridge | 1819.17 | 0.535 | 0.504 | 0.341 | 0.231 | 104.89% | 1.74% | 1210.52% | 9.69% | 否 |
-| CE4 LightGBM | 43.28 | 0.513 | 0.486 | 0.433 | 0.308 | 10.68% | 1.55% | 69.71% | 2.37% | 否 |
-| **CE5 hybrid** | **7.69** | **0.705** | **0.828** | **0.821** | **0.692** | **2.14%** | **0.00%** | **16.69%** | **0.31%** | **否** |
+| CE0 mean | 68.27 | 0.500 | 0.500 | 0.108 | 0.077 | 42.79% | 9.95% | 381.42% | 13.23% | 否 |
+| CE1 analytical | 13.39 | 0.533 | 0.558 | 0.367 | 0.231 | 22.45% | 1.74% | 168.67% | 4.82% | 否 |
+| CE2 lookup | 44.67 | 0.446 | 0.347 | 0.108 | 0.077 | 42.79% | 9.95% | 381.42% | 13.23% | 否 |
+| CE3 ridge | 1212.77 | 0.500 | 0.517 | 0.279 | 0.154 | 6.90% | 1.74% | 42.02% | 2.14% | 否 |
+| CE4 LightGBM | 37.91 | 0.473 | 0.524 | 0.418 | 0.308 | 4.98% | 1.74% | 21.02% | 1.84% | 否 |
+| **CE5 hybrid** | **7.91** | **0.684** | **0.800** | **0.744** | **0.538** | **4.58%** | **0.00%** | **26.23%** | **0.62%** | **否** |
 
-CE5 选对 9/13 context。`2.14%` 是 13 个 context regret 的简单平均，不是唯一可报数字；
-pooled regret 为 `0.31%`，而最差 context 为 `16.69%`。三个数字共同说明平均总体损失小，
+CE5 选对 7/13 context。`4.58%` 是 13 个 context regret 的简单平均，不是唯一可报数字；
+pooled regret 为 `0.62%`，而最差 context 为 `26.23%`。三个数字共同说明总量加权损失小，
 但仍存在明显的单场景回退。
 
 ## 5. 结果解释
@@ -71,9 +81,10 @@ pooled regret 为 `0.31%`，而最差 context 为 `16.69%`。三个数字共同�
 ### 实验事实
 
 1. CE5 在本轮的 MAE、候选聚合 pairwise、候选 Top-K、pick 和 regret 上均是最强正信号。
-2. CE5 的旧行级 pairwise 为 0.705，未达到 0.75；因此不满足现有双条件晋级合同。
-3. CE1 的 selected-rank mean 为 2.31，略好于 CE5 的 2.38；所以“CE5 每项指标都支配”
-   仍不是准确表述。
+2. CE5 的旧行级 pairwise 为 0.684，未达到 0.75；因此不满足现有双条件晋级合同。
+3. CE4 与 CE5 的 selected-rank mean 同为 2.69；CE4 的 pooled regret 1.84% 高于
+   CE5 的 0.62%，而 CE3 的 pooled regret 2.14% 也低于多数简单 baseline。因此不能把
+   单一 MAE、pick 或 regret 指标改写成“全面支配”。
 4. CE3 的 MAE 和 regret mean 被至少一个极端 fold 放大；当前数据能证明存在严重的
    unseen-context 外推不稳定，不能仅凭均值推断所有 context 都失败。
 
@@ -84,9 +95,11 @@ pooled regret 为 `0.31%`，而最差 context 为 `16.69%`。三个数字共同�
 
 ### 待确认
 
-- 候选聚合 pairwise 作为下一轮主 ranking 指标后，CE5 是否仍能超过 0.75；
+- 候选聚合 pairwise 作为下一轮主 ranking 指标后，CE5 是否仍能保持在 0.75 以上；
 - 独立时间段、新 workload 和自然 EOS 输出分布下是否保持低 regret；
 - state-aware correction 是否改善实际调度决策，而不恶化 P95/P99、SLO 和公平性。
+- 新增 8 个配置/硬件特征在新的双 4090 profile 上是否真正降低误差；旧 5070 行的这些
+  字段大多缺失并按 0 处理，本次复算只能验证 schema/隔离逻辑，不能证明新增特征有效。
 
 ### 不能声称
 

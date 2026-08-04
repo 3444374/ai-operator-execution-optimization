@@ -595,10 +595,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r128_o64_w32768",
+      "scenario_id": "concentrated_r128_o64_w32768",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "128",
         "--db-fetch-rows",
@@ -610,10 +610,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r128_o64_w49152",
+      "scenario_id": "concentrated_r128_o64_w49152",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "128",
         "--db-fetch-rows",
@@ -625,10 +625,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r128_o64_w65536",
+      "scenario_id": "concentrated_r128_o64_w65536",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "128",
         "--db-fetch-rows",
@@ -640,10 +640,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r128_o64_w98304",
+      "scenario_id": "concentrated_r128_o64_w98304",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "128",
         "--db-fetch-rows",
@@ -655,10 +655,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r128_o256_w32768",
+      "scenario_id": "concentrated_r128_o256_w32768",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "128",
         "--db-fetch-rows",
@@ -670,10 +670,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r128_o256_w49152",
+      "scenario_id": "concentrated_r128_o256_w49152",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "128",
         "--db-fetch-rows",
@@ -685,10 +685,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r128_o256_w65536",
+      "scenario_id": "concentrated_r128_o256_w65536",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "128",
         "--db-fetch-rows",
@@ -700,10 +700,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r128_o256_w98304",
+      "scenario_id": "concentrated_r128_o256_w98304",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "128",
         "--db-fetch-rows",
@@ -715,10 +715,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r256_o64_w32768",
+      "scenario_id": "concentrated_r256_o64_w32768",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "256",
         "--db-fetch-rows",
@@ -730,10 +730,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r256_o64_w49152",
+      "scenario_id": "concentrated_r256_o64_w49152",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "256",
         "--db-fetch-rows",
@@ -745,10 +745,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r256_o64_w65536",
+      "scenario_id": "concentrated_r256_o64_w65536",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "256",
         "--db-fetch-rows",
@@ -760,10 +760,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r256_o64_w98304",
+      "scenario_id": "concentrated_r256_o64_w98304",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "256",
         "--db-fetch-rows",
@@ -775,10 +775,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r256_o256_w32768",
+      "scenario_id": "concentrated_r256_o256_w32768",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "256",
         "--db-fetch-rows",
@@ -790,10 +790,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r256_o256_w49152",
+      "scenario_id": "concentrated_r256_o256_w49152",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "256",
         "--db-fetch-rows",
@@ -805,10 +805,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r256_o256_w65536",
+      "scenario_id": "concentrated_r256_o256_w65536",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "256",
         "--db-fetch-rows",
@@ -820,10 +820,10 @@
       ]
     },
     {
-      "scenario_id": "burst_r256_o256_w98304",
+      "scenario_id": "concentrated_r256_o256_w98304",
       "args": [
         "--source-workload-name",
-        "sharegpt_burstgpt",
+        "sharegpt_concentrated",
         "--total-rows",
         "256",
         "--db-fetch-rows",

@@ -49,7 +49,8 @@
 | `experiments/results/adaptive_flush_cross_rate_20260726/README.md` | Fixed-25/fixed-50/adaptive cross-arrival-rate real GPU screen | Review why adaptive is not the current default |
 | `experiments/results/text_heldout_2048_20260726/README.md` | Natural-EOS 2048-request held-out validation | Review scale behavior, exact request audit, and tail-latency growth |
 | `experiments/results/prefix_aware_batching_20260726/README.md` | Controlled prefix-ratio workload and prefix-aware code/experiment audit | Review cache-off mechanism boundary and organizer fixes |
-| `experiments/results/operator_cost_estimation_20260726/README.md` | Grouped holdout + 13-context LOO 的算子 E2E 代价估计，含逐 fold 压缩 JSON 证据 | 同时检查预测、候选 ranking、macro/pooled regret、晋级门槛与配置覆盖缺口 |
+| `experiments/results/operator_cost_estimation_20260726/README.md` | Formal-only 23-feature、13-context LOO 的算子 E2E 代价估计；all-phase 历史证据归档 | 检查 warmup 隔离、预测、候选 ranking、macro/pooled/max regret 与晋级门槛 |
+| `experiments/results/operator_cost_profile_pilot_20260804/` | 双 4090 四候选 v1/v2 cost-profile pilot，含完整压缩 raw、summary 和七步报告 | 审计新机器采样合同、23 维候选可区分性、trace 完整性和 formal 时间预算 |
 | `experiments/results/row_cap_aware_packing_512_20260726/README.md` | Prefix-cache-corrected 512-row screening and repeated confirmation | Review why sequential remains default and how cache-enabled data was excluded |
 | `experiments/results/row_cap_aware_packing_512_20260726/nocache_repeats/summary_long.csv` | Plot-ready 512-row repeated metrics | Plot throughput, request tails/SLO, packing, energy, vLLM pressure, and MFU |
 | `experiments/results/row_cap_aware_packing_1024_20260726/README.md` | Held-out 1024-row mechanism decision | Review the SLO-goodput regression that blocks row-cap-first default adoption |
@@ -431,8 +432,10 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_data_organization.example.json` | disjoint manifest、async multi-prompt、固定 active work/最佳预算的数据组织隔离模板 | 比较 fixed16、sequential、row-cap-aware 与 length-align，避免预算、transport、offered load 和 flush 混淆 |
 | `deploy/autodl/dual_gpu_request_replay.example.json` | batch barrier 与 request-level replenishment 模板 | 容量与组织阶段完成后运行，并按实际 batch rows 对齐 request K |
 | `deploy/autodl/dual_gpu_active_work_curve.example.json` | 第一优先级的 request-level per-endpoint active-token credit 容量曲线 | 先标定模型/负载相关的 offered-work 饱和区，避免按 batch K 暗中改变 request 并发 |
-| `deploy/autodl/dual_gpu_cost_profile_pilot.example.json` | 双 4090 算子代价新数据的 4-cell active-work pilot（1 warmup+1 formal） | 先实测运行合同与总耗时；通过后才扩到 152 runs |
+| `deploy/autodl/dual_gpu_cost_profile_pilot.example.json` | 双 4090 算子代价新数据的 4-cell active-work pilot v2（1 warmup+1 formal） | 实测运行合同与总耗时；非 replay flush 明确记为不适用 |
+| `deploy/autodl/dual_gpu_cost_profile_formal.example.json` | 5 workloads × 2 rows × 2 output caps × 4 active-work 的独立双 4090 formal | 320-run formal-only 数据集；不得与旧单 5070 静默合并 |
 | `experiments/plans/operator_cost_profile_pilot_20260804.md` | B 线新数据采集的固定项、唯一变量、门禁、三层指标和跨硬件隔离合同 | 启动任何新增 cost-profile GPU run 前读取 |
+| `experiments/plans/operator_cost_profile_dual4090_formal_20260804.md` | 双 4090 20-context formal 的 workload、候选、tie、门禁、指标和时间合同 | 启动/恢复 320-run formal 及分析前读取 |
 | `deploy/autodl/dual_gpu_actor_pool_shape.example.json` | 固定每 endpoint 256 个可见 slot/0.5 CPU 的 1/2/4/8/16 Ray actor 拓扑对照 | 在同协议饱和点选择达到峰值 97% 的最小 actor 数，不改变 offered-load 上限 |
 | `deploy/autodl/dual_gpu_service_quantum.example.json` | 固定 planning budget、active work 和 actor slots 的 batch/512/1024/2048/4096/request 完成粒度对照 | 量化批内 HOL、credit-held 空转与 completion-driven replenishment |
 | `deploy/autodl/dual_gpu_slo_ewma_flush.example.json` | 高压/临界到达率下 fixed、queue-adaptive 与 SLO-aware EWMA flush 对照 | 在固定 request-level、65K active work 和 1×256 actor pool 下验证动态关批是否改善吞吐、SLO-goodput或尾延迟 |

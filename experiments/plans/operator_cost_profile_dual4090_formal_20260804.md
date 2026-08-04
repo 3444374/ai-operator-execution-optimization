@@ -1,5 +1,10 @@
 # 双 4090 算子代价估计 formal profile（2026-08-04）
 
+> **状态：已预注册，暂缓执行。** 2026-08-04 按用户要求只完成门禁、语义审计和
+> `main` 推送；本地 agent 不运行 320-run formal。只有远端 agent 在确认 `main`、服务、
+> 数据和磁盘门禁后才可启动。此前一次启动因服务器没有 `/usr/bin/time` 在首个 run 前
+> 退出，未产生实验数据，空目录已清理；正式命令不再依赖该可选工具。
+
 ## 1. 研究问题
 
 在与旧单 5070 数据完全隔离的双 4090 环境中，现有 CE0–CE5 代价估计方法能否仅凭
@@ -20,7 +25,7 @@
 在不查看 formal 结果的前提下冻结以下笛卡尔积：
 
 - workload（5）：`short_prompt_lt50`、`long_prompt_ge150`、
-  `sharegpt_burstgpt`、`sharegpt_multiturn`、`lmcache_agent`；
+  `sharegpt_concentrated`、`sharegpt_multiturn`、`lmcache_agent`；
 - rows（2）：128 / 256；
 - completion cap（2）：64 / 256；
 - candidate（4）：上述 active-work credit。
@@ -71,6 +76,38 @@ candidate ID，并同时报告 tie-context 数；不允许依赖 CSV 行顺序�
 pilot 两次 8-run 墙钟为 312.719/317.620 s。线性外推 320 runs 约 3.5 小时；为服务
 启动、长 prompt、失败补跑和证据审计预留约 4 小时。使用 runner lease 和独立 output
 directory；SSH 断开不应由不受监管的前台任务承担，正式启动应进入 `screen` 或等价后台会话。
+
+在仓库根目录先执行不触碰 GPU 的配置门禁：
+
+```bash
+/root/miniconda3/bin/python -c \
+  "import sys; sys.path.insert(0, 'code'); from scripts.experiments.run_ai_operator_scenarios import _load_config; c=_load_config('deploy/autodl/dual_gpu_cost_profile_formal.example.json'); assert len(c.scenarios)==80; assert len({x.scenario_id for x in c.scenarios})==80; print(c.experiment_id, len(c.scenarios))"
+```
+
+再由远端 agent 在**新目录**启动；不要用 `/usr/bin/time` 包裹命令：
+
+```bash
+mkdir -p /root/autodl-tmp/experiment-artifacts/dual_gpu_cost_profile_formal_20260804
+screen -dmS cost-formal bash -lc '
+  cd /root/autodl-tmp/ai-operator &&
+  set -a && source /root/autodl-tmp/ai-operator-runtime.env && set +a &&
+  /root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scenarios.py \
+    --config deploy/autodl/dual_gpu_cost_profile_formal.example.json \
+    --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+    --python-executable /root/miniconda3/bin/python \
+    --output-dir /root/autodl-tmp/experiment-artifacts/dual_gpu_cost_profile_formal_20260804 \
+    --health-url http://127.0.0.1:8000/health \
+    --metrics-urls "$MODEL_METRICS_URLS" \
+    --idle-timeout-s 120 \
+    > /root/autodl-tmp/experiment-artifacts/dual_gpu_cost_profile_formal_20260804/runner.log 2>&1
+'
+```
+
+启动前还必须确认 5 个 workload 各有至少 256 行、两个 health/metrics endpoint 正常、
+`prefix_caching=false` 与服务进程参数一致、Ray/runner 无重复实例。上述命令依赖已加载的
+`/root/autodl-tmp/ai-operator-runtime.env`；缺少任一环境变量时 config loader 会
+fail-closed，不允许手填
+默认值继续跑。
 
 完成后结果进入 `experiments/results/operator_cost_profile_dual4090_formal_20260804/`，
 包含七步 README、compact summary、formal-only LOO JSON、raw archive SHA256 和不能声称的

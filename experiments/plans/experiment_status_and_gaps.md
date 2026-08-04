@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-03；Daft built-in embedding parity 与 baseline 合同同步）
+Date: 2026-07-20（最后更新：2026-08-04；代价估计 formal-only 审计与双 4090 formal 预注册）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -10,12 +10,20 @@ Date: 2026-07-20（最后更新：2026-08-03；Daft built-in embedding parity �
 
 - ✅ image 12K 三臂一致性（daft_builtin_embed + ray_data_staged + project_ray，1 warmup + 3 formal，schema-v12，single-writer matrix runner，0 incident；Daft ~64s@12K=187 img/s，fast arm setup-dominated，作结构诊断不进 matched-workload 排名）。
 - ✅ image 60K×2 matched-resource schema-v12 重跑（project vs ray_data × cpu8/16，1+3 formal，0 incident）：project 在 matched CPU 两档都快（cpu8 −10.0%、cpu16 −18.5%），**确认 step-8 ~13–15% 结构性收益**；schema-v12 per-image 指标（J/1k、gpu-s/img、img/cpuS、first_output_fraction）产出。结果见 `experiments/results/image_ai_embed_operator_formal_20260803/README.md` §10。
-- ✅ 算子代价估计 CE0–CE6 全 hierarchy 对照（283 行文本 profile，5 seed，3 层指标，`compare_cost_estimators_full.py`）：**全 hierarchy 验证 Heinrich "精度≠选择"**——CE5 hybrid MAE 最优(8.73)但 regret 16.6%，CE3 ridge pairwise 最优(0.774)但 regret 最差(22.8%)，CE2 lookup regret 最优(5.6%)+Spearman 最优。CE4 lightgbm 小数据下弱于简单模型。**无 estimator 过晋级门槛**（regret≤5% 且 pairwise≥0.75），可行性阶段。见 `operator_cost_estimation_20260726/ce_hierarchy_table_20260804.md`。
+- ✅ 算子代价估计 loader/LOO 审计：旧 283-row hierarchy 把 warmup 混入 formal，已移入
+  `operator_cost_estimation_20260726/archive/allphases_pre_20260804/`，不再用于 claim。
+  当前 23-feature formal-only context-LOO 为 204 行/17 contexts；CE5 MAE 7.91s、
+  candidate pairwise 0.800、macro/pooled/max regret 4.58%/0.62%/26.23%，row pairwise
+  0.684，仍不晋级。tie 已冻结为 candidate-ID 字典序，不依赖 CSV 顺序。
 
 **新下一步（两条并行线，共享 workload/观测/raw，执行控制隔离）**：
 
 - **A 线（系统 baseline）**：①vLLM pooling CLIP（capability gate→5K calib→60K×2 formal；回答"绕过 Daft/Ray 调度后成熟 CLIP 服务的可实现容量"，**前置：vLLM CLIP pooling 能力门禁未验**）→ ②Daft/Ray 官方 ResNet18 vendor-code parity（commit `3f5bdd17`，GPU 8→2，**阻塞于 ImageNet 数据 + Daft 0.6.2 独立环境 + 磁盘 27G**）→ ③Doris/ClickHouse（**阻塞于 AutoDL 无 Docker**，需独立 Docker/VM）→ ④system E2E + pgvector sink。
-- **B 线（代价估计）**：当前 283 行 / 3.6 context 让 selection 指标噪声大——补 ≥20 decision context（每个 4–6 候选静态配置 × 1+3 formal，固定 model/data/rows/SLO/硬件，只变 active-work/batch/actor/CPU/数据组织）让 selection 稳；再上 state-aware（Track 2，Ray/vLLM 运行时状态）；image 侧代价估计待 image profile 攒足。
+- **B 线（代价估计）**：双 4090 4-cell pilot v2 已 8/8、0 incident；独立机器轨道不能
+  与旧单 5070 静默合并。已冻结 5 workloads × 2 rows × 2 output caps × 4 active-work、
+  每 cell 1+3 的 320-run formal，预计约 3.5–4 小时；当前按用户要求暂缓，由远端 agent
+  在 `main` 上执行。完成后用 formal-only
+  candidate-aggregated LOO 对照 CE0–CE5，再决定是否进入 state-aware Track 2。
 - 上方 §0 "下一步运行 Daft 官方 ResNet18 parity 与 60 秒以上稳态 formal" 中，**60 秒稳态 formal 已由 60K×2 schema-v12 重跑闭合**；ResNet18 parity 仍待（A②）。
 
 ## 0. 当前优先级（2026-08-01 方向 pivot —— 取代 §4 / §10.3 / §13 的文本轨道强制顺序）
@@ -125,9 +133,11 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 
 ### 1.5 算子代价估计 & 写回
 
-算子代价估计已完成初版二次分析：283 条真实 profile、70 个配置组，五个
-grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。定位为补充
-讨论，不作为独立研究内容；写回继续使用 PostgreSQL + pgvector 工程 baseline。
+算子代价估计已完成 formal-only 方法学审计：旧 283-row grouped-holdout 混入 warmup，
+只保留为历史；当前权威样本为 204 条 formal、17 个 decision contexts。CE5 的 MAE
+为 7.91s、candidate pairwise 0.800、macro regret 4.58%，但最差 context regret
+26.23%、row pairwise 0.684，未达到晋级合同。定位为共同使能组件，不作为独立研究
+内容；写回继续使用 PostgreSQL + pgvector 工程 baseline。
 
 **两个预期用途**：
 1. **数据库优化编排**（主要）：为查询优化器提供 AI 算子代价估计，辅助
@@ -137,8 +147,8 @@ grouped held-out 切分平均 MAE 11.68s、MAPE 50.60%、R² 0.776。定位为�
    持续供给和 vLLM 反馈驱动的提交机制。
 
 **当前缺口**：
-- 排序能力未评估：R² 0.776 暗示排序大概率不错，但未计算 Spearman 秩相关、
-  pairwise accuracy 和 Top-K precision——这些是编排决策更关心的指标；
+- 排序能力已有正信号但 context 少且不均衡；需要双 4090 独立 20-context formal
+  验证 candidate-aggregated Spearman、pairwise、Top-K 与 regret；
 - 提交策略集成未经验证：代价估计能否将配置可靠地分为"轻/中/重"三档？
   分档后同档内 E2E 方差是否显著小于全局？决定了能否用于提交侧 workload
   分类；
