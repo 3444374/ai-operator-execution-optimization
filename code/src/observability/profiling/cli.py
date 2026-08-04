@@ -369,6 +369,30 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--mfu-precision", default="")
     parser.add_argument("--request-trace-output")
     parser.add_argument("--request-slo-ms", type=float, default=0.0)
+    parser.add_argument(
+        "--ttft-slo-ms",
+        type=float,
+        default=0.0,
+        help="Optional TTFT objective used to report observed P99 SLO scale.",
+    )
+    parser.add_argument(
+        "--itl-slo-ms",
+        type=float,
+        default=0.0,
+        help="Optional inter-token-latency objective for observed P99 SLO scale.",
+    )
+    parser.add_argument(
+        "--input-cost-per-million-tokens-usd",
+        type=float,
+        default=None,
+        help="Optional explicit input-token price; omitted prices stay unavailable.",
+    )
+    parser.add_argument(
+        "--output-cost-per-million-tokens-usd",
+        type=float,
+        default=None,
+        help="Optional explicit output-token price; omitted prices stay unavailable.",
+    )
     parser.add_argument("--scenario-id", default="manual")
     parser.add_argument("--random-seed", type=int, default=0)
     parser.add_argument(

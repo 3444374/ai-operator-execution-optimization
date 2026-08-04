@@ -21,6 +21,7 @@ from .evidence import (
     _validate_runner_topology,
 )
 from .metrics import (
+    cumulative_service_disparity,
     group_metric_delta,
     group_resource_summary,
     jain_fairness,

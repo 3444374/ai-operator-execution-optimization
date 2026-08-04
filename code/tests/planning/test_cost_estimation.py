@@ -19,6 +19,7 @@ from src.planning.costs.regression import (  # noqa: E402
     RidgeCostEstimator,
     grouped_train_test_split,
     regression_metrics,
+    selection_metrics,
 )
 
 
@@ -55,6 +56,20 @@ class CostEstimationTests(unittest.TestCase):
         self.assertEqual(metrics.count, 2)
         self.assertAlmostEqual(metrics.mae, 0.5)
         self.assertTrue(np.isfinite(metrics.mape_pct))
+        self.assertTrue(np.isfinite(metrics.q_error_p99))
+
+    def test_selection_metrics_reports_pick_rate_and_regret(self) -> None:
+        metrics = selection_metrics(
+            np.asarray([10.0, 20.0, 30.0, 15.0]),
+            np.asarray([11.0, 9.0, 29.0, 16.0]),
+            ["workload-a", "workload-a", "workload-b", "workload-b"],
+            ["plan-1", "plan-2", "plan-1", "plan-2"],
+        )
+
+        self.assertEqual(metrics["decision_contexts_evaluated"], 2)
+        self.assertEqual(metrics["pick_rate"], 0.5)
+        self.assertEqual(metrics["performance_regression_count"], 1)
+        self.assertGreater(metrics["decision_regret_pct"], 0.0)
 
     def test_feature_schema_excludes_post_execution_measurements(self) -> None:
         forbidden = ("actual", "e2e", "service_s", "vllm", "energy", "mfu")

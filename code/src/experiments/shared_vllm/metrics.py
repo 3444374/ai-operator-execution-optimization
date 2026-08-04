@@ -78,6 +78,84 @@ def normalized_job_service_rates(
         rates.append(predicted_work / jct_s / weight)
     return rates
 
+
+def cumulative_service_disparity(
+    job_evidence: list[dict[str, object]],
+    weights: tuple[int, ...],
+) -> dict[str, float | str]:
+    """Report the final weighted cumulative-service gap across jobs.
+
+    This is a descriptive trace-derived quantity, not a theoretical VTC/DRR
+    lag bound: completed jobs may have different offered work.  Keeping the
+    status explicit prevents it from being over-interpreted.
+    """
+
+    if len(job_evidence) != len(weights) or not job_evidence:
+        raise ValueError("job evidence and weights must be aligned and non-empty")
+    normalized = []
+    for evidence, weight in zip(job_evidence, weights):
+        actual_work = float(evidence["actual_work"])
+        if weight <= 0 or not math.isfinite(actual_work) or actual_work < 0:
+            raise ValueError("actual work must be finite and weights positive")
+        normalized.append(actual_work / weight)
+    disparity = max(normalized) - min(normalized)
+    mean_service = sum(normalized) / len(normalized)
+    cumulative = [0.0] * len(job_evidence)
+    events = sorted(
+        (
+            float(completion_epoch_s),
+            job_index,
+            float(work),
+        )
+        for job_index, evidence in enumerate(job_evidence)
+        for completion_epoch_s, work in evidence.get(
+            "service_completion_events",
+            (),
+        )
+    )
+    max_overlap_disparity = 0.0
+    max_overlap_ratio = 0.0
+    overlap_samples = 0
+    for completion_epoch_s, job_index, work in events:
+        cumulative[job_index] += work
+        active = [
+            index
+            for index, evidence in enumerate(job_evidence)
+            if float(evidence.get("arrival_start_epoch_s", float("inf")))
+            <= completion_epoch_s
+            <= float(evidence.get("completion_end_epoch_s", float("-inf")))
+        ]
+        if len(active) < 2:
+            continue
+        overlap_samples += 1
+        active_service = [cumulative[index] / weights[index] for index in active]
+        observed_disparity = max(active_service) - min(active_service)
+        observed_mean = sum(active_service) / len(active_service)
+        max_overlap_disparity = max(max_overlap_disparity, observed_disparity)
+        max_overlap_ratio = max(
+            max_overlap_ratio,
+            observed_disparity / observed_mean if observed_mean > 0 else 0.0,
+        )
+    return {
+        "service_disparity_status": (
+            "ok:overlapping_active_jobs_descriptive"
+            if overlap_samples
+            else "unavailable:no_overlapping_completion_samples"
+        ),
+        "service_disparity_bound_status": (
+            "unavailable:not_proven_for_current_credit_implementation"
+        ),
+        "normalized_cumulative_service_min": min(normalized),
+        "normalized_cumulative_service_max": max(normalized),
+        "normalized_cumulative_service_disparity": disparity,
+        "normalized_cumulative_service_disparity_ratio": (
+            disparity / mean_service if mean_service > 0 else 0.0
+        ),
+        "overlap_service_disparity_samples": overlap_samples,
+        "max_overlap_normalized_service_disparity": max_overlap_disparity,
+        "max_overlap_normalized_service_disparity_ratio": max_overlap_ratio,
+    }
+
 def group_resource_summary(
     samples: list[dict[str, object]],
     *,

@@ -1,8 +1,10 @@
 # 评估指标调研：AI 算子与推理服务文献 + 数据库厂商基准
 
-更新日期：2026-07-31
+首次整理：2026-07-31；最近更新：2026-08-04
 调研工具：`nature-academic-search` + `deep-research`（lit-review 口径），以一个后台工作流执行（15 个抽取 agent + 1 个综合 agent）。
-证据范围：项目已有 49 篇精读笔记 + 8 个数据库厂商/标准基准的 web 调研。
+证据范围：项目已有 49 篇精读笔记 + `baseline_reference.md` 已核验的数据库厂商官方
+文档与标准 benchmark；论文数字优先回到本地精读笔记和一手论文，产品场景优先回到
+厂商官方文档。
 
 ---
 
@@ -229,6 +231,14 @@
 | 11 | SLO Scale + Coefficient of Variation + Performance regression count | SLO Scale（DistServe，最紧可承受 SLO）与 CV（SABER，可预测性）是策略鲁棒性/稳定性附加维度；regression count（GRACEFUL）是安全性审计。策略晋级判定（5% 门禁）时提供更立体证据。 | 低：后处理。 |
 | 12 | 调度逻辑开销占比%（对照文献 <1% 基准） | 已有 `organizer_plan_s/collect_s/submit_s` 分量，归一化为占 `operator_wall_s` 的百分比，对照 SGLang(<0.3%)/SCORPIO(0.12–0.17%)/BucketServe(<1%) 基准，论证自适应控制工程可行性。 | 低：后处理。 |
 
+**2026-08-04 实现状态（代码事实，尚非新实验结果）**：上述 12 项已接入下一轮
+采集/后处理链路。P0 由 vLLM histogram bucket delta 与 prefix counter 直接采集；
+P1 的 token-goodput、padding、代价决策指标和多 job service disparity 已进入代码，
+Recall/nDCG 需要显式 relevance 真值；P2 由 SLO-scale 字段和 formal-repeat 后处理器
+输出。商业成本只有显式输入 input/output 单价才计算。理论 service-disparity bound、
+没有 ground truth 的检索质量、没有价格的 $/M tokens 均保持 `unavailable`，不生成
+替代数值。主 profiler schema 已变化，后续必须新建结果目录，不能向旧 CSV 追加。
+
 ---
 
 ## 6. 已核实的代码级事实（P0 三条的代码证据）
@@ -448,42 +458,94 @@ AI_COMPLETE 是**生成式**（输入文本 → LLM 生成 → 写回）。SemBe
 
 本节回答两个问题：已有工作究竟用什么指标评价数据库 AI 算子；本项目与它们比较时，哪些指标可以直接比较，哪些只能作功能或方法学对照。结论先行：**不能把不同模型、质量目标、资源和执行边界下的 wall time 放在一张表里比较**。本项目应采用“先保证语义/质量等价，再比较端到端性能；同时报告服务侧、上游调度侧和代价模型决策侧指标”的三层合同。
 
-### 9.1 学术论文：算子、指标与可比边界
+### 9.1 学术论文：真实场景、算子、指标与可比边界
 
-| 论文/系统 | 主要 AI 算子或任务 | 论文采用的核心指标 | 本项目应如何比较 |
+下表的“场景”不是装饰信息，而是决定指标是否可迁移的前提。例如语义 join 主要受
+候选对数量和模型调用费用支配，批量 AI_COMPLETE 则同时受输出长度、continuous
+batching 和队列状态支配；两者即使都调用 LLM，也不能只按 wall time 横向排名。
+
+#### 9.1.1 数据库 AI / semantic operator 论文
+
+| 论文/系统 | 论文实际场景与数据 | AI 算子、执行方式和优化对象 | 论文采用的核心指标 | 本项目应如何比较 |
+|---|---|---|---|---|
+| **LOTUS（PVLDB 2025）** | FEVER 事实验证（1,000 claims）、BioDEX 生物医学药物事件文档（250 docs）、SciFact 科学证据排序、HellaSwag 常识排序和 arXiv 文档分析 | 声明式 semantic filter/join/aggregate/top-k/group-by/map；在 embedding、小模型、LLM、cascade、join/ranking 实现之间选物理算法，并用抽样保证准确率 | accuracy、RP@5/RP@10、nDCG、执行时间、模型调用次数；目标准确率和 failure probability | 只选择能映射到同一 filter/map/classify/rank 语义的查询；统一模型、prompt、数据和质量阈值后比较 JCT、调用数、token 与成本。LOTUS 主要通过**少调用/换实现**降成本，本项目主要研究**相同 work 如何组织和提交**，必须把这两类收益分开。 |
+| **Galois（SIGMOD 2025）** | Flight/Geo/World/Scholar 等模型内知识表，以及 Movies/Presidents/Premier/Fortune 等把上下文放入 prompt 的小型表格构造任务；实验表规模较小 | 让 LLM 生成关系表，选择 Table-Scan、Key-Scan 等单查询内物理计划；每次模型调用基本是独立顺序 prompt | F1-Cell、Cardinality、Tuple Constraint、AVG-Score、token 数、执行时间、最优计划 pick rate | 仅在“从 LLM 生成同一张表”的语义下比较质量—token—时间。其场景不是数据库行批量送入外部服务，也没有并发、尾延迟或服务饱和实验，不能拿来证明 submission 调度优劣。 |
+| **GaussML（ICDE 2024）** | openGauss 内执行分类、回归、聚类等传统 ML 训练/推理，与 Apache MADlib 比较；公开材料对具体数据集和模型披露不足 | 将 20+ 传统 ML 算法做成数据库原生算子，优化 SQL+ML 计划并用 SIMD、预取和分布式并行加速 | 执行时间、speedup；质量和方差披露不足 | 作为“传统 ML 原生入库”路线参考，不与 LLM/VLM 外部 serving 数值排名。若复现必须补模型质量、数据集、训练/推理边界、资源和完整 E2E；不能直接引用 2–6× 到本项目。 |
+| **Smart（VLDB Journal 2025）** | JOB、TPC-H、SSB、Flight 查询中含决策树/SVM 等可分析 ML 谓词，例如 `WHERE classifier(x)=...` | 从传统分类器决策边界生成 sound SQL 过滤条件，配合渐进推理和成本选择，减少真正调用模型的行 | 查询执行时间、speedup；推理成本通常是可测/固定参数 | 用作“可符号化传统模型 + 静态 per-call cost”的边界对照。本项目的 LLM/embedding 决策边界不可改写，且 service cost 随输出长度和共享状态变化；只能比较优化思想，不能直接跑同一任务。 |
+| **SmartLite（PVLDB 2024）** | 资源受限 IoT/edge 上同时运行中小型 DNN；公开摘要没有充分给出具体数据集、模型和精度损失 | 把量化/剪枝后的 DNN 权重存成 DB 表，用表查找替代部分张量计算，与 TorchServe 比较 | 内存占用、推理速度/加速比；公开材料缺少充分 accuracy/F1 | 只作为 edge、压缩和 in-database execution 的资源—速度案例。若没有相同模型质量与设备，不能与双 4090 的 LLM/VLM 外部链路比较，也不能把内存节省解释为算子质量更好。 |
+| **InferDB（PVLDB 2024）** | NYC rides、Pollution 回归；Fraud、Hits 二分类；MNIST/Rice 多分类，共 6 个结构化/低维任务 | 以有监督离散化把“预处理+模型”近似成 embedding key，再用 PostgreSQL 索引查找聚合预测；本质上以索引替代在线模型推理 | 回归 RMSLE；分类 F1/Recall/Precision；推理延迟、训练/索引构建时间、存储大小、5-run 标准差 | 对 AI_CLASSIFY 可复用 F1/Recall/Precision + latency，但任务必须是同一标签预测。它会改变推理算法和近似质量；本项目固定模型的执行链路不能只按其毫秒延迟比较。索引构建与在线执行应分表。 |
+| **LEADS（PVLDB 2024）** | Payment、Credit、Census、Diabetes、Avazu（最高约 40M rows）上的结构化二分类；50-query SQL workload 用 WHERE 条件定义不同 subdataset | SQL-aware MoE gating 根据谓词激活专家切片；比较 PostgreSQL 内推理与导出到外部 runtime | Workload-AUC、Worst-AUC、FLOPs、response time；数据库内/外执行与模块消融 | 借鉴“平均质量 + 最坏子 workload 质量”与 matched semantics 消融。本项目可把 query predicate 换成 token/frame work 特征，但 LEADS 只覆盖结构化分类，不支持生成式输出或图像字节流水线。 |
+| **NeurDB（CIDR 2025）** | Avazu CTR 与 UCI Diabetes AI analytics；YCSB、STATS、TPC-C 用于 learned DB components 和数据/负载漂移 | 数据库内 training/inference/fine-tuning/model-selection 算子、流式数据协议和增量更新；研究整个 AI 生命周期 | E2E latency、训练吞吐、loss/漂移恢复曲线、事务吞吐 | 只作“数据/负载漂移 + 分阶段测量”的系统愿景参考。本项目当前是固定模型外部推理，不应把训练 loss、事务 TPS 混进 AI_COMPLETE/EMBED/CLASSIFY 主表。 |
+| **Cortex AISQL（SIGMOD 2026）** | Snowflake 2025 年生产 AI SQL workload，以及 Natural Questions 等分类/问答任务；交互与批量 AISQL 都通过独立 Cortex 多租户模型服务 | EMBED/COMPLETE/FILTER/CLASSIFY/JOIN/AGG；查询重排先缩小调用行数，并用 8B proxy→70B oracle 级联 | F1/precision/recall、执行时间、吞吐、模型调用数、delegation rate、推理 work/cost | 是强相关工业对照。相同任务上比较质量达标后的 calls/tokens/JCT；但谓词上拉和模型级联会改变 work，本项目 admission 不改变模型语义。应先单列逻辑 work reduction，再比较同 work 执行效率。 |
+| **Palimpzest（CIDR 2025）** | Real Estate Search：100 个房源、每项 3 张图片、23 个正例；按用户条件从文字+图像中筛选房源 | 声明式 AI pipeline 枚举模型、prompt、context reduction、代码合成和 filter pushdown；在约 5% workload 上跑 sentinel plans | runtime、货币成本、F1，以及 quality-cost-time Pareto | 可作为本项目多模态 classify/filter 的计划选择参考。若真正比较，需统一模型/API、输入和质量；否则它的商业 API Pareto 与本地固定 GPU throughput 只可并列展示，不能相除。 |
+| **Abacus（PVLDB 2026）** | BioDEX 生物医学事件抽取（250 test）、CUAD 法律合同条款抽取（100 test）、MMQA 多模态问答（100 test），每组 10 次试验 | 从约 3,000 个 semantic operator 物理实现中搜索模型选择、Mixture-of-Agents、缩减上下文、critique/refine、join 等 Pareto 计划；5–10 个 validation examples 可初始化估计 | 任务 quality、货币成本、latency、约束满足、验证样本预算与重复方差 | 借鉴“约束下选择”和小样本 profile，而非照搬其全局计划搜索。项目对应的是固定资源下选择 budget/active-work/route/submit；主指标应是 selected JCT/SLO goodput、regret 和约束违反率。 |
+| **SemBench（PVLDB 2026）** | Movies、E-Commerce、Cars、Wildlife、MMQA 五类真实语义查询场景，覆盖 text/image/audio，55 个 filter/join/map/rank/classify 查询 | 在统一 workload 上画像 LOTUS、Palimpzest、ThalamusDB、BigQuery；不同系统可使用不同内部优化和模型 | quality、execution time、money、memory、scaling、model calls、timeout/rate-limit/failure；5-run 方差 | 最适合跨数据库 AI 系统做功能与 quality-cost-time 对照。若纳入本项目，先选支持的 classify/map/filter 子集并固定模型；再额外记录 TTFT/TPOT、Ray/vLLM 队列、active work、GPU/CPU 和写回。不同默认模型的原榜只作系统画像。 |
+
+#### 9.1.2 推理服务与代价估计论文：场景不能和数据库算子论文混读
+
+| 论文/系统 | 论文实际场景与数据 | 主要指标 | 对本项目的正确用途 |
 |---|---|---|---|
-| **LOTUS（PVLDB 2025）** | semantic filter/join/aggregation/top-k/group-by/map | 任务质量（accuracy、RP@k、nDCG 等）、执行时间、模型调用次数；部分算子带准确率/失败概率约束 | 选择可落到 `map`/AI_COMPLETE 或分类任务的同一语义；冻结模型、prompt、输出约束和数据，只比较质量达标后的 JCT、吞吐、调用数、输入/输出 token 和成本。LOTUS 的逻辑算子优化不能直接等同于本项目的物理提交调度。 |
-| **Galois（SIGMOD 2025）** | 生成式数据集成/表格构造 | F1-Cell、Cardinality、Tuple Constraint、AVG-Score、token 数、执行时间 | 仅在相同生成任务上比较“质量—token—时间”；它没有并发、尾延迟、batching 或服务饱和指标，不能据此推断调度优劣。 |
-| **GaussML（ICDE 2024）** | 数据库内 ML 推理的算子/计划优化 | 执行时间、speedup | 必须补上模型质量与完整 E2E 边界；只可把其计划优化思想作 related work，不应跨模型引用 speedup。 |
-| **Smart（VLDB Journal 2025）** | SQL 中 ML 推理算子及计划选择 | 查询执行时间、speedup，推理成本常作为已知/固定输入 | 用作“传统优化器把推理代价视为静态参数”的对照；本项目重点检验动态 batch、服务状态和输出长度不确定性下该假设何时失效。 |
-| **SmartLite（PVLDB 2024）** | 轻量推理执行/模型压缩 | 内存占用、推理延迟或加速比 | 若比较必须锁定质量目标并补 F1/accuracy；否则只能说明资源—速度权衡，不能说明算子效果更好。 |
-| **InferDB（PVLDB 2024）** | 数据库内分类/回归推理 | 回归 RMSLE；分类 F1/Recall/Precision；推理延迟、训练/索引构建时间、存储大小；多次运行标准差 | 对 AI_CLASSIFY 可复用 F1/Recall/Precision + 延迟口径；训练/索引代价与本项目的外部执行调度不是同一阶段，应分表。 |
-| **LEADS（PVLDB 2024）** | 工作负载感知的数据库内学习/推理 | Workload-AUC、Worst-AUC、FLOPs、响应时间，含数据库内/外执行和消融 | 可借鉴“平均质量 + 最坏工作负载质量”和完整消融；本项目应将 FLOPs 扩展为实际 token/frame work、GPU 时间和能耗。 |
-| **NeurDB（CIDR 2025）** | AI 原生数据库中的训练与推理 | E2E latency、训练吞吐、loss 曲线、事务吞吐 | 只作系统愿景与分层测量参考；本项目不把训练吞吐或事务吞吐混入 AI 算子执行主表。 |
-| **Cortex AISQL（SIGMOD 2026）** | AI SQL 谓词/模型级联与运行时重排 | F1/precision/recall、执行时间、吞吐、模型调用次数、delegation rate | 是强相关对照。相同任务上比较质量达标后的调用数、token、JCT；但其线性 per-row cost/谓词重排与本项目的可变长生成、连续 batching、上游 admission 是不同控制层。 |
-| **Palimpzest（CIDR 2025）** | LLM 数据处理算子与物理计划搜索 | 时间、货币成本、质量/F1，输出 Pareto 计划；用少量 workload profile | 借鉴 Pareto 展示和小样本 profile；比较时统一 API/本地模型与并发，避免把单线程 API 账单和固定 GPU 的吞吐直接相除。 |
-| **Abacus（PVLDB 2026）** | 语义算子的模型/计划选择 | 质量、货币成本、延迟及约束满足，验证样本预算，多次试验 | 借鉴“约束下选择”而非只做点预测；本项目对应目标是固定资源下最大 SLO goodput/最小 JCT，报告选择 regret 和约束违反率。 |
-| **SemBench（PVLDB 2026）** | semantic filter/join/map 等跨系统基准 | 质量、执行时间、货币成本、内存、伸缩性、调用次数、失败/限流，多次重复 | 最适合承载跨系统功能对照。对 LOTUS/Palimpzest/托管 SQL 做质量—成本—时间比较；对本项目再追加 TTFT/TPOT、上游队列、active work、GPU 利用率和写回分段。 |
+| **Clipper（NSDI 2017）** | MNIST、CIFAR-10、ImageNet 图像分类和 TIMIT 语音识别；feed-forward DNN/SVM/HMM，显式 per-query latency SLO | QPS、mean/P99 latency、top-1/top-5 error；predict/queue/network 分段 | AIMD 与延迟分段的方法来源，但其一次前向、原子 batch 和较稳定最优 batch 假设不适用于自回归 continuous batching。可在 AI_CLASSIFY 上复用指标，不能直接迁移控制变量。 |
+| **Orca（OSDI 2022）** | 合成在线生成 trace：input 32–512 tokens、output cap 1–128、Poisson arrivals；最大模型到 GPT-3 175B | req/s、按输出 token 归一化的 median latency | 用于解释 iteration-level scheduling 的服务引擎背景。它没有数据库 source/sink、真实 trace、P99 或 token throughput，不能作为本项目完整 E2E baseline。 |
+| **vLLM（SOSP 2023）** | ShareGPT 对话、Alpaca 短指令、WMT16 翻译共享前缀；OPT/LLaMA，Poisson arrivals | normalized latency、可持续 request rate、batched requests、KV memory saving | 是部署平台与 direct service ceiling。项目应复用相同 request trace 报 tokens/s、TTFT/TPOT/E2E tail 和 capacity efficiency；不能声称上游策略改进 PagedAttention。 |
+| **Sarathi-Serve（OSDI 2024）** | OpenChat-ShareGPT4 对话（prompt 中位约 1,730 tokens）和 arXiv summarization（约 7,059），长 prefill 在线服务 | 满足 P99 TBT SLO 的最大 QPS、P50 TTFT、P99 TBT、strict/relaxed SLO capacity | 支撑 AI_COMPLETE 的长 prompt/SLO 指标；chunked prefill 属 vLLM 内部机制，不能作为上游数据组织实现。短 prompt classify/embed 场景优势可能消失。 |
+| **DistServe（OSDI 2024）** | ShareGPT chatbot、HumanEval code completion、LongBench summarization；多 GPU 在线自回归 serving | TTFT+TPOT SLO attainment、per-GPU goodput、SLO Scale、placement solve time | 只对 AI_COMPLETE 在线/SLO 轨道相关。prefill/decode 分离不适用于 AI_EMBED/CLASSIFY，且本项目固定 2×4090、不修改 vLLM，不能照搬其集群部署收益。 |
+| **SGLang（NeurIPS 2024）** | 12 类多调用 LM programs：few-shot、ReAct、Tree/Skeleton-of-Thought、LLM judge、JSON、multi-turn chat、RAG，以及 LLaVA 图像/ActivityNet 视频 | programs/s、单程序 latency、prefix-cache hit rate、调度开销 | 为 prefix-aware 组织提供机制依据；只有数据库 workload 真有固定 system prompt/精确 token 前缀时才可比较。AI_EMBED 图像 forward 无同类 KV prefix 复用。 |
+| **VTC（OSDI 2024）** | 合成多客户端与 LMSYS Chatbot Arena trace，多个 tenant 共享同一 LLM 服务 | service disparity/virtual-token counter、公平吞吐、请求延迟；含 prediction/oracle 对照 | 是多 job work accounting 的算法 baseline，不是数据库产品 baseline。项目应按真实 completion usage 校正预测 work，并同时报 Jain、service disparity、per-job JCT/P99。 |
+| **Heinrich et al.（SIGMOD 2025）** | JOB-Light/IMDB join ordering，Baseball/IMDB/TPC-H access path，三数据集物理 join 算子选择 | Q-error、Spearman/ranking、pick rate、surpassed plans、selected runtime、最大高估/低估 | 直接支撑“预测误差不等于决策质量”。本项目把候选计划换成 token budget/active-work/route 配置，必须报告排序与 oracle regret。 |
+| **GRACEFUL（ICDE 2025）** | 20 个数据库、90K+ 含 Python UDF 的 SPA queries；UDF 计算量、分支和 tuple cost 多档变化，并做 unseen database/UDF zero-shot | median/P95/P99 Q-error、zero-shot 误差、pull-up/push-down advisor speedup 和性能回退 | 方法上对应“黑盒算子 + 数据库基数 + 代码/输入特征”。项目没有可静态分析的 UDF CFG，但可把 prompt/frame work 与 endpoint state 作为特征；最终仍看调度决策收益。 |
+| **COSTREAM（ICDE 2024）** | IoT edge→cloud streaming DAG，在 CPU/RAM/网络带宽/延迟异构硬件上做 seen/unseen query/hardware placement | throughput、E2E/per-operator latency、backpressure、成功/OOM、Q-error/分类准确率、placement speedup | 可借鉴物理量特征、未见硬件/workload 留出和“预测可运行性”；它不是 AI 算子，也不直接提供 LLM service cost 模型。 |
+| **CONCERTO（arXiv 2024）** | ClickHouse 上 TPC-H/TPC-DS，包含 SIMD、并行 pipeline、资源竞争与动态执行；按 query template 留出 | mean/P50/P90/P95/P99/max Q-error、模型大小、4.2ms 级预测开销、消融 | 支撑“per-stage cost + concurrent resource competition + DAG aggregation”。本项目首版数据量不足，不应直接上 GNN；先验证简单解析+residual 是否已能降低 decision regret。 |
 
-由上表可见，论文通常分成三类：
+由两张表可见，相关论文至少分成五类：
 
 1. **语义/逻辑优化论文**关注质量、模型调用数、token 或货币成本以及总时间；
 2. **数据库内推理论文**关注单查询延迟、吞吐、内存、索引/训练开销；
-3. **LLM 数据处理系统**开始报告质量—成本—延迟 Pareto，但很少公开上游 submission、服务内部排队、active work、写回和多 job 公平性。
+3. **LLM 数据处理系统**开始报告质量—成本—延迟 Pareto，但很少公开上游 submission、服务内部排队、active work、写回和多 job 公平性；
+4. **推理服务系统**关注 TTFT/TPOT、goodput、KV/显存和服务调度，但通常从请求进入 endpoint 才开始计时；
+5. **代价估计论文**关注预测误差、排序和下游 plan/placement 决策，但其 SQL/UDF/streaming 场景不能自动代表可变长 LLM 请求。
 
 本项目的区别不应表述为“我们比所有 AI 算子系统更快”，而应表述为：**在相同算子语义和模型质量下，研究它们普遍未拆开的外部执行链路——数据组织、提交控制、模型服务、fan-in 与写回——并给出可解释的调度机制指标。**
 
-### 9.2 数据库/厂商系统：公开指标与合理对照方式
+### 9.2 数据库/厂商系统：业务场景、执行边界、公开指标与合理对照
 
-| 数据库/产品族 | 公开评测主要指标 | 对本项目的用途 | 不可直接声称 |
+数据库产品要先按“谁拥有模型调用与调度”分类。数据库内置/扩展函数、云端托管 AI
+SQL、单纯向量索引和用户自写 HTTP UDF 是四种不同系统；它们的业务名称可能都叫
+`AI_EMBED`，但不能默认属于同一执行边界。
+
+#### 9.2.1 可自托管、可争取同机同 endpoint 对照的系统
+
+| 数据库/产品 | 典型场景（输入 → AI 算子 → 输出） | 执行边界与公开评价现状 | 本项目正确对比方式 |
 |---|---|---|---|
-| **PolarDB Lakebase + Daft on Ray** | 多模态 workload 的 E2E wall time，和 Ray Data/Spark 的厂商对照 | 最近的同栈工业锚点；复现公开 workload 形状，并对齐硬件、模型、数据与计时边界后比较 | 公开结果未充分披露 warm-up、重复和原始脚本，不能直接引用厂商倍数；也不能由公开材料断言其内部没有服务状态感知。 |
-| **Snowflake Cortex/AISQL** | F1/precision/recall、执行时间、LLM 调用数、delegation rate | 借鉴强模型、动态级联、便宜 proxy 的多臂对照和质量门禁 | 闭源云环境数字不能与本地 2×4090 wall time 排名。 |
-| **BigQuery ML/AI functions** | rows/time、成功率、固定 token/QPM 条件下吞吐、账单成本 | 借鉴大规模行级成功率和成本归一化 | 内部 benchmark、配额和后端模型不透明，不能作性能 headline。 |
-| **Oracle AI Vector Search/LLM 服务** | TTFT、TPOT、latency、throughput、MBU/MFU；Recall@k、QPS | 采用成熟 LLM 服务指标分解与向量质量门禁 | 匿名或资源不对齐 baseline 不可采用；向量 read-side ANN 不能代替本项目的生成/写入侧链路。 |
-| **PostgresML** | rows/s、predictions/s、部分 p99、训练/推理时间 | 对数据库内本地推理给出功能锚点 | toy query 或单次计时不足以支撑系统对比。 |
-| **pgai/pgvector/pgvectorscale** | Recall@k–QPS Pareto、p50/p95/p99、目标 QPS 下成本 | 对 AI_EMBED 写回后的 read-side 质量和索引基线有用 | 主要评测 ANN 查询，不覆盖 embedding 生成、上游组织和写回吞吐。 |
-| **Databricks Lakehouse AI** | Recall@10、p50/p99、TTFT/TPOT/throughput、MBU/MFU、组件分段时间 | 借鉴服务指标和 per-component breakdown | 闭源系统只作方法学对齐，不作数值速度排名。 |
+| **Apache Doris 4.x** | 表中的评论/文档/文件引用 → `AI_GENERATE`、`AI_CLASSIFY`、`AI_EXTRACT`、`EMBED` → 文本、标签、结构化字段或向量；覆盖文本生成和多模态 embedding | 数据库 SQL 执行器调用 AI Resource；支持 local/OpenAI-compatible endpoint。官方资料以功能、语法和可部署性为主，缺少与本项目同 workload 的完整公开性能基准 | 首选同机产品 baseline：接同一 vLLM、同 manifest 和 source/sink，独立校准其并发；报 query JCT、tokens/rows/s、p95/p99、成功率、实际 calls/tokens 和数据库自身资源。没有质量与调用审计时不排名。 |
+| **ClickHouse 26.6** | 分析表列 → `aiGenerate/aiClassify/aiExtract/aiEmbed` → 生成结果、标签、字段或向量，适合批量 enrichment 和入库前处理 | 官方 SQL AI functions 调 OpenAI-compatible/Ollama；部分功能较新/experimental。当前主要是 capability 证据而非标准 benchmark | 与 Doris 同合同测试，但必须冻结 feature flag、named collection、版本、重试和缓存；“能运行”只算 gate，不能以单条查询 latency 当系统上限。 |
+| **StarRocks 4.1.1+** | 每行 prompt → `ai_query` → 文本/JSON，适合摘要、抽取和用 prompt 模拟分类 | 通用 OpenAI 风格 endpoint；没有独立的一等 classify/embed 语义，且存在 response cache、队列和并发配置 | 只进入 AI_COMPLETE/“prompt-emulated classify”分榜；关闭或固定 cache，记录 `llm_max_queue_size`/并发。不能与原生 embedding/classify 算子混称功能等价。 |
+| **OceanBase CE 4.5.x** | SQL 文本列 → `AI_COMPLETE`/`AI_PROMPT` 生成，或 `AI_EMBED`/`AI_RERANK` → 文本向量/重排结果 | 数据库调用可配置模型服务；官方已确认文本算子，未确认图像 classify/embed。当前 AutoDL 普通容器在 observer 初始化阶段受系统条件阻塞 | 获得 VM/特权容器后，先做一行协议、N 行 exactly-once 和 cache 门禁，再接同一 vLLM 跑文本产品 baseline；当前只能写 `blocked`，不得用安装失败推断性能。 |
+| **Oracle AI Database 26ai Free** | 表中文档/文本 → chainable `UTL_TO_GENERATE_TEXT`、`UTL_TO_EMBEDDING(S)`、summary/rerank → RAG/向量化/生成结果 | 数据库内链式函数可调用 OpenAI-compatible/vLLM；同时含 AI Vector Search。Free 版 CPU/RAM/数据量限制会影响 query 侧，但外部 GPU endpoint 可统一 | 文本生成/embedding 可做同 endpoint 对照；分开报告“生成/embedding 写入链路”和“ANN 检索 read-side”。Free 版资源限制必须显式列出，不外推企业版。 |
+| **IBM Db2 12.1.5 Community** | 注册 external model 后，SQL 文本列 → `TEXT_GENERATION`/`TO_EMBEDDING` → 文本/向量 | 数据库拥有 SQL 调用路径，OPENAI provider 面向兼容 REST；公开资料以能力为主，Community 镜像是否完整包含功能仍需 gate | 同机只比较 AI_COMPLETE/文本 AI_EMBED；先核验版本、TLS、payload 和调用计数。未通过镜像功能门禁前只作候选。 |
+| **SQL Server 2025 Developer** | 文本/文档 → `AI_GENERATE_CHUNKS` 切块 → `AI_GENERATE_EMBEDDINGS` → 向量，用于 RAG 索引构建 | 原生覆盖 embedding/chunk，不提供同等级 AI_COMPLETE；外部 endpoint 要求 HTTPS | 只进文本 embedding pipeline 分榜，并在 vLLM 前使用同一 TLS proxy；记录 chunk 数、embedding rows/s、JCT、失败与写回。不能补生成式产品 baseline。 |
+| **DuckDB + `ai` community extension** | 本地分析表/文件 → `ai_complete/classify/embed/...` → 文本、标签、向量 | 扩展调用 OpenAI-compatible/Ollama/llama.cpp；调度 owner 是社区扩展而非 DuckDB core | 作为低安装成本 extension control；固定扩展版本/commit 和签名，记录扩展并发/重试。结果必须标“community extension”，不能写 DuckDB 原生内核领先/落后。 |
+| **PostgreSQL + Timescale pgai 0.11.2** | PostgreSQL 行 → `ai.openai_chat_complete/embed` 或 Ollama 函数 → 文本/向量 | SQL 扩展到外部 API；仓库已经归档，是历史实现而非持续产品 | 可做历史 direct-SQL control，接同一 endpoint 并冻结最后版本；不投入大规模调参，也不作为长期产品 headline。 |
+| **PostgresML 2.10** | 关系特征/文本 → `pgml.predict/transform/embed/rank` → 预测、文本或向量 | 模型在数据库侧加载，改变模型副本、GPU 内存和 scheduler owner；不是“数据库调用同一外部 vLLM” | 作为 in-database inference 机制对照单列。只有同模型/精度/资源才比较 latency/rows/s；否则主要比较部署边界、数据移动、质量和资源占用。 |
+
+#### 9.2.2 托管数据库/数仓：产品场景与云端可观察指标
+
+| 数据库/产品 | 典型场景与公开 workload | 公开主要指标/限制 | 本项目如何使用 |
+|---|---|---|---|
+| **PolarDB PostgreSQL Polar_AI** | SQL 文本 → `AI_CallModel`、文本生成/分类/embedding；面向表内批量 enrichment、检索索引构建 | 云 AI node/商业服务；公开资料以功能和调用配置为主 | 有账号时只做云端 query E2E、质量、成本、错误/配额；不要把 PolarDB-X 本地 RPM 当作同一产品。 |
+| **PolarDB Lakebase + Daft on Ray** | `prompt/embed_text/classify_text/embed_image/classify_image`；官方 benchmark 还覆盖 113,800 音频转写、10,000 PDF embedding、803,580 图像分类和 1,000 视频目标检测 | 公开主指标是完整 job wall time，并与 Ray Data/Spark 对比；硬件为 8 workers×1 GPU，warm-up、重复和部分 pipeline 合同披露有限 | 是最接近本项目的同栈工业锚点。先复现公开 file/object workload，再跑 PostgreSQL database-operator track；只在同硬件、模型、输入表示和边界下排名。 |
+| **Hologres** | 数仓表内 `ai_gen/AI_EMBED/ai_classify/ai_rank/...`；含 CLIP 图像 embedding，面向素材检索、分类和批量内容处理 | 托管 AI node，不公开内部 GPU/queue；主要可观察 query E2E、质量、成本、配额和错误 | 是图像 CLIP 与数据库 AI 算子较贴近的国产产品参照。有账号时用相同图片/标签测 quality-cost-time；不比较 MFU/PCIe。 |
+| **AnalyticDB MySQL/PostgreSQL** | 数仓行 → generate/classify/embed 或 PAI-EAS/pgml 模型 → 文本、标签、向量 | 云模型与 endpoint 合同受控，产品线之间实现不同 | 只作云产品 capability 与 quality-cost-time 对照；不能把 MySQL、PG 两条产品线合并成一个速度数字。 |
+| **Snowflake Cortex/AISQL** | 表、图片、文档 → `AI_COMPLETE/AI_CLASSIFY/AI_FILTER/AI_EMBED/...`；典型为评论分类、文档抽取、图片标签、语义 join/aggregation | 文档强调输入 token、类别描述与样例会影响成本和准确率；Cortex AISQL 论文报告 F1/precision/recall、时间、calls、delegation | 用于质量—成本—时间及模型级联/谓词重排对照；保存实际 tokens、credits、calls、row errors。托管后端不透明，不能与本地 2×4090 wall time 或 MFU 排名。 |
+| **BigQuery AI/ML functions** | 百万级表行/对象表 → `AI.GENERATE*`、`AI.EMBED*`、`AI.CLASSIFY` 等 Vertex 模型调用；生成式函数公开说明约 1M–10M rows/6h job，容量随输入/输出 token 变化 | rows/job、rows/time、成功/row error、token 配额、动态 shared quota、BigQuery+模型两侧账单；公开说明采用动态 token-based batching | 借鉴大规模行级成功率、token-shaped workload 与 quota-aware reporting。有账号时单列云面板；模型、配额、region 和内部 batching 不可与本地 raw time 混排。 |
+| **Databricks SQL AI Functions** | Lakehouse 表 → `ai_query/ai_gen/ai_classify/ai_extract/...` → 批量 enrichment；可接托管或公网兼容 endpoint | 可观察 SQL query time、model serving latency/cost、失败与 serverless 资源；WAN、AI Gateway 和云 scheduler 进入边界 | 可做“同公网 endpoint”的云端执行链路对照，但必须单列网络/region 和 serverless 开销；不与同机 native arm 排名。 |
+| **TiDB Cloud / HeatWave / Aurora-Redshift / Azure PostgreSQL** | 分别面向 auto-embedding/vector search、生成/RAG、Bedrock/SageMaker 调用、Azure AI 生成/抽取/embedding | 均绑定特定托管模型、region、quota 和计费；self-managed 普通版本通常不含同一 AI SQL 能力 | 用作产品覆盖面、计费和可靠性证据。只有取得账号并冻结模型/region 后才报告 E2E/quality/cost；不把云服务合成一个“数据库 baseline”均值。 |
+
+#### 9.2.3 向量 read-side 系统不是 embedding 生成 baseline
+
+| 系统/场景 | 实际评价指标 | 与本项目的连接 |
+|---|---|---|
+| **pgvector/pgvectorscale、Oracle AI Vector Search、Milvus/DiskANN 类 ANN**：已有向量 → 建索引 → top-k 查询 | Recall@k、nDCG、QPS、p50/p95/p99、index build time、内存/磁盘、目标 recall 下成本 | 它们评价的是 AI_EMBED **之后**的检索质量和读取性能。本项目可把它们接在写回后做闭环，但不能用 ANN QPS 代替 embedding images/s、生成 JCT 或上游调度性能。 |
 
 ### 9.3 本项目的公平对比合同
 
@@ -614,7 +676,7 @@ operator JCT
 - LOTUS: [LOTUS: Enabling Semantic Queries with LLMs Over Tables of Unstructured and Structured Data](https://www.vldb.org/pvldb/vol18/p4171-patel.pdf)
 - Abacus: [Abacus: Cost-Effective and Quality-Aware Planning for Semantic Operators](https://www.vldb.org/pvldb/vol19/p1060-russo.pdf)
 - Learned cost model evaluation: [How Good are Learned Cost Models, Really?](https://arxiv.org/abs/2502.01229)
-- GRACEFUL: [Zero-Shot Cost Models for UDFs](https://arxiv.org/abs/2503.23863)
+- GRACEFUL: [GRACEFUL: A Learned Cost Estimator for UDFs](https://arxiv.org/abs/2503.23863)
 - COSTREAM: [Learned Cost Models for Distributed Stream Processing](https://arxiv.org/abs/2403.08444)
 - LLM serving simulation/routing: [Beyond Accuracy and Cost: Latency-Aware LLM Query Routing for Dynamic Workloads](https://arxiv.org/abs/2607.18253)
 - Output-length uncertainty: [Scheduling LLM Inference with Uncertainty-Aware Output Length Predictions](https://arxiv.org/abs/2604.00499)
@@ -622,3 +684,15 @@ operator JCT
 - Fairness work accounting: [VTC: Fairness Scheduling for Serving Large Language Models](https://www.usenix.org/conference/osdi24/presentation/sheng)
 - Chunked prefill/service metrics: [Sarathi-Serve](https://www.usenix.org/conference/osdi24/presentation/agrawal)
 - Prediction fragility and tail risk: [Beyond Prediction: Tail-Aware Scheduling for LLM Serving](https://arxiv.org/abs/2606.18431)
+
+产品场景和可安装性的一手入口统一维护在
+[`experiments/plans/baseline_reference.md` 的厂商清单](../experiments/plans/baseline_reference.md#数据库厂商-ai-算子与可安装性清单2026-08-04)，
+主要包括 [Doris AI Functions](https://doris.apache.org/docs/4.x/sql-manual/sql-functions/ai-functions/overview/)、
+[ClickHouse AI embedding](https://clickhouse.com/blog/clickhouse-release-26-06#aiembed)、
+[OceanBase AI Functions](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975)、
+[Oracle chainable AI functions](https://docs.oracle.com/en/database/oracle/oracle-database/23/vecse/chainable-utility-functions-and-common-use-cases.html)、
+[Db2 LLM integration](https://www.ibm.com/docs/en/db2/12.1.x?topic=sql-llm-integration-db2)、
+[SQL Server AI_GENERATE_EMBEDDINGS](https://learn.microsoft.com/en-us/sql/t-sql/functions/ai-generate-embeddings-transact-sql?view=sql-server-ver17)、
+[PolarDB Daft benchmark](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/daft-performance-benchmark)、
+[Snowflake Cortex AISQL](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql) 和
+[BigQuery Generative AI](https://docs.cloud.google.com/bigquery/docs/generative-ai-overview)。

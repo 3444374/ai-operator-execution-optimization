@@ -317,6 +317,12 @@ endpoint。只有三项都通过且完成同机 capability gate 的系统，才�
 正式性能 baseline。仅有 `VECTOR` 类型、向量索引、Python SDK 或可自写 HTTP UDF，均不
 等于数据库原生 AI 算子。
 
+各论文与数据库产品的**具体 workload 场景、数据模态、输入→算子→输出链路、论文实际
+指标及可比边界**统一维护在
+[`research/evaluation_metrics_survey_20260731.md` §9](../../research/evaluation_metrics_survey_20260731.md#9-按论文与数据库系统拆分的指标矩阵及本项目对比合同2026-08-04)。
+本文件只维护 baseline 身份、可安装性、准入和运行合同，避免在两处复制会随产品版本
+变化的场景说明。
+
 兼容性措辞固定如下：**direct** 表示官方明确支持 OpenAI-compatible/vLLM；**likely**
 表示 endpoint 可配置但 wire protocol 尚须一行请求验证；**prompt-emulated** 表示没有
 专用分类算子，只能用生成算子改写任务。下表“可安装”只表示官方存在公开本地安装路径，

@@ -134,6 +134,21 @@ def _validate_job_evidence(
     ]
     jct_s = max(completion) - min(arrival)
     completed_in_slo = sum(slo_met)
+    actual_work_by_request = [
+        int(row["prompt_tokens"])
+        + int(
+            row.get("actual_output_tokens")
+            or row.get("client_estimated_output_tokens")
+            or row["estimated_output_tokens"]
+        )
+        for row in request_rows
+    ]
+    actual_work = sum(actual_work_by_request)
+    slo_token_goodput = sum(
+        work
+        for work, met in zip(actual_work_by_request, slo_met)
+        if met
+    ) / jct_s
     predicted_work = sum(
         int(row["prompt_tokens"])
         + int(
@@ -154,7 +169,17 @@ def _validate_job_evidence(
         "completion_lag_s": max(completion) - max(arrival),
         "slo_violation_ratio": 1.0 - completed_in_slo / len(slo_met),
         "slo_goodput_per_s": completed_in_slo / jct_s,
+        "slo_token_goodput_per_s": slo_token_goodput,
         "predicted_work": predicted_work,
+        "actual_work": actual_work,
+        "actual_work_source": (
+            "prompt_plus_actual_or_client_estimate_fallback"
+        ),
+        "arrival_start_epoch_s": min(arrival),
+        "completion_end_epoch_s": max(completion),
+        "service_completion_events": sorted(
+            zip(completion, actual_work_by_request)
+        ),
         "endpoint_counts": endpoint_counts,
         "actor_worker_failures": _sum_semicolon_integers(
             summary.get("actor_worker_failures", "")
@@ -256,7 +281,7 @@ def _load_group_record(
 ) -> dict[str, object]:
     record = json.loads(path.read_text(encoding="utf-8"))
     expected = {
-        "schema_version": 1,
+        "schema_version": 2,
         "experiment_id": config.experiment_id,
         "scenario_id": scenario.scenario_id,
         "phase": identity.phase,

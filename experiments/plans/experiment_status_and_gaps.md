@@ -524,6 +524,16 @@ service P99 均值降低 8.010%。每轮 512 个文档 exactly-once。
 原始数据和七步解释见
 `experiments/results/request_lifecycle_gate_20260725/README.md`。
 
+### 2026-08-04 下一轮观测 schema
+
+文本 profiler 已增加 TTFT/ITL P50/P95/P99、prefix-cache hit、SLO input/output/total
+token goodput、显式单价成本、padding waste、P99 SLO scale 和调度控制开销；
+shared-vLLM 增加实际 work、SLO token goodput 与活跃重叠期间累计服务差；代价模型
+增加 Q-error/Spearman/pick-rate/selected-runtime/regret；AI_EMBED 增加基于显式相关
+真值的 Recall@K/MRR/nDCG 离线门禁。formal repeat 后处理统一输出 sample std、CV、
+Student-t 95% CI 和配对回退次数。代码单测通过不等于真实 vLLM histogram 已可用；
+下一次远端 gate 必须验证各 status 为 `ok`，并使用新结果目录，禁止追加旧 schema。
+
 ## 9. 2026-07-26 提交控制与联合实验闭环
 
 ### 已补齐

@@ -447,12 +447,17 @@ def organization_strategy_metrics(
 ]:
     policy = config.batching_policy
     token_spreads = []
+    padding_slots = 0
+    padding_capacity_slots = 0
     prefix_majority_rows = 0
     prefix_rows = 0
     for batch in batches:
         if "prompt_tokens" in batch.column_names and batch.num_rows:
             values = [_safe_int(value.as_py()) for value in batch.column("prompt_tokens")]
             token_spreads.append(max(values) - min(values))
+            batch_capacity = max(values, default=0) * len(values)
+            padding_capacity_slots += batch_capacity
+            padding_slots += max(0, batch_capacity - sum(values))
         if "prefix_key" in batch.column_names and batch.num_rows:
             prefixes = [str(value.as_py() or "") for value in batch.column("prefix_key")]
             counts: dict[str, int] = {}
@@ -495,6 +500,14 @@ def organization_strategy_metrics(
         ),
         "packing_budget_utilization_p95": round(
             packing.utilization_p95,
+            6,
+        ),
+        "packing_padding_slots": padding_slots,
+        "packing_padding_capacity_slots": padding_capacity_slots,
+        "packing_padding_waste_ratio": round(
+            padding_slots / padding_capacity_slots
+            if padding_capacity_slots > 0
+            else 0.0,
             6,
         ),
         "packing_oversized_rows": packing.oversized_rows,

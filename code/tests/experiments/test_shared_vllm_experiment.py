@@ -33,6 +33,7 @@ from src.experiments.shared_vllm import (  # noqa: E402
     _validate_runner_topology,
     _validate_final_credit,
     build_job_command,
+    cumulative_service_disparity,
     group_resource_summary,
     group_metric_delta,
     jain_fairness,
@@ -614,6 +615,37 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
         self.assertEqual(rates, [100.0, 50.0])
         self.assertAlmostEqual(jain_fairness(rates), 0.9)
+
+    def test_cumulative_service_disparity_uses_actual_weighted_work(self) -> None:
+        metrics = cumulative_service_disparity(
+            [
+                {
+                    "actual_work": 1000,
+                    "arrival_start_epoch_s": 0.0,
+                    "completion_end_epoch_s": 2.0,
+                    "service_completion_events": [(1.0, 1000)],
+                },
+                {
+                    "actual_work": 1500,
+                    "arrival_start_epoch_s": 0.0,
+                    "completion_end_epoch_s": 2.0,
+                    "service_completion_events": [(2.0, 1500)],
+                },
+            ],
+            (1, 2),
+        )
+
+        self.assertEqual(metrics["normalized_cumulative_service_min"], 750.0)
+        self.assertEqual(metrics["normalized_cumulative_service_max"], 1000.0)
+        self.assertEqual(
+            metrics["normalized_cumulative_service_disparity"],
+            250.0,
+        )
+        self.assertEqual(metrics["overlap_service_disparity_samples"], 2)
+        self.assertEqual(
+            metrics["max_overlap_normalized_service_disparity"],
+            1000.0,
+        )
 
     def test_replay_start_validation_rejects_late_or_skewed_jobs(self) -> None:
         evidence = [

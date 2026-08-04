@@ -230,12 +230,14 @@ def summarize_vllm_bench_latency_distribution(
     if ttfts:
         ttft_stats: dict[str, float | None] = {
             "ttft_mean_s": sum(ttfts) / len(ttfts),
+            "ttft_p50_s": _quantile(list(ttfts), 0.50),
             "ttft_p95_s": _quantile(list(ttfts), 0.95),
             "ttft_p99_s": _quantile(list(ttfts), 0.99),
         }
     else:
         ttft_stats = {
             "ttft_mean_s": None,
+            "ttft_p50_s": None,
             "ttft_p95_s": None,
             "ttft_p99_s": None,
         }
@@ -243,12 +245,14 @@ def summarize_vllm_bench_latency_distribution(
     if flat_itls:
         itl_stats: dict[str, float | None] = {
             "itl_mean_s": sum(flat_itls) / len(flat_itls),
+            "itl_p50_s": _quantile(flat_itls, 0.50),
             "itl_p95_s": _quantile(flat_itls, 0.95),
             "itl_p99_s": _quantile(flat_itls, 0.99),
         }
     else:
         itl_stats = {
             "itl_mean_s": None,
+            "itl_p50_s": None,
             "itl_p95_s": None,
             "itl_p99_s": None,
         }

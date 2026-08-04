@@ -144,9 +144,11 @@ class VllmBenchAdapterTests(unittest.TestCase):
         # TTFT aggregates across requests; ITL aggregates across every
         # per-token interval ([0.2, 0.1, 0.1]) — the strict TBT tail metric.
         self.assertAlmostEqual(stats["ttft_mean_s"], 0.15)
+        self.assertAlmostEqual(stats["ttft_p50_s"], 0.15)
         self.assertAlmostEqual(stats["ttft_p95_s"], 0.195)
         self.assertAlmostEqual(stats["ttft_p99_s"], 0.199)
         self.assertAlmostEqual(stats["itl_mean_s"], 0.4 / 3)
+        self.assertAlmostEqual(stats["itl_p50_s"], 0.1)
         self.assertAlmostEqual(stats["itl_p95_s"], 0.19)
         self.assertAlmostEqual(stats["itl_p99_s"], 0.198)
 
@@ -157,9 +159,11 @@ class VllmBenchAdapterTests(unittest.TestCase):
             stats,
             {
                 "ttft_mean_s": None,
+                "ttft_p50_s": None,
                 "ttft_p95_s": None,
                 "ttft_p99_s": None,
                 "itl_mean_s": None,
+                "itl_p50_s": None,
                 "itl_p95_s": None,
                 "itl_p99_s": None,
             },

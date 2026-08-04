@@ -23,9 +23,14 @@ from src.observability.metrics import (  # noqa: E402
     batch_result_stats,
     estimate_mfu,
     gpu_metadata,
+    observed_slo_scale_metrics,
     parse_prometheus_metrics,
+    paired_performance_regression_count,
     preflight_metrics_schema,
+    repeat_summary,
     resource_sample_stats,
+    retrieval_quality_metrics,
+    token_cost_metrics,
     vllm_metric_delta_stats,
 )
 
@@ -47,6 +52,80 @@ class MetricsTests(unittest.TestCase):
         with path.open(newline="", encoding="utf-8") as handle:
             rows = list(csv.DictReader(handle))
         self.assertEqual(rows, [{"status": "ok", "rows": "1"}])
+
+    def test_repeat_summary_and_regression_count(self) -> None:
+        summary = repeat_summary([10.0, 11.0, 9.0])
+
+        self.assertEqual(summary["status"], "ok")
+        self.assertEqual(summary["mean"], 10.0)
+        self.assertAlmostEqual(summary["coefficient_of_variation"], 0.1)
+        self.assertLess(summary["ci95_lower"], summary["mean"])
+        self.assertEqual(
+            paired_performance_regression_count(
+                [100.0, 100.0, 100.0],
+                [96.0, 89.0, 101.0],
+                higher_is_better=True,
+                tolerance_ratio=0.05,
+            ),
+            1,
+        )
+
+    def test_retrieval_metrics_use_explicit_relevance(self) -> None:
+        metrics = retrieval_quality_metrics(
+            {
+                "q1": ["a", "b", "c"],
+                "q2": ["x", "y", "z"],
+            },
+            {
+                "q1": {"b"},
+                "q2": {"x", "z"},
+            },
+            k_values=(1, 2),
+        )
+
+        self.assertEqual(metrics["retrieval_quality_status"], "ok")
+        self.assertAlmostEqual(metrics["recall_at_1"], 0.25)
+        self.assertAlmostEqual(metrics["recall_at_2"], 0.75)
+        self.assertAlmostEqual(metrics["mrr"], 0.75)
+
+    def test_slo_scale_and_token_cost_require_explicit_inputs(self) -> None:
+        stats = {
+            "vllm_metrics_status": "ok",
+            "vllm_prompt_tokens_delta": 750_000,
+            "vllm_generation_tokens_delta": 250_000,
+            "vllm_ttft_histogram_status": "ok",
+            "vllm_itl_histogram_status": "ok",
+            "vllm_time_to_first_token_p99_s": 0.4,
+            "vllm_inter_token_latency_p99_s": 0.08,
+        }
+
+        scale = observed_slo_scale_metrics(
+            stats,
+            ttft_target_ms=500.0,
+            itl_target_ms=100.0,
+        )
+        self.assertEqual(scale["observed_p99_slo_scale_status"], "ok")
+        self.assertAlmostEqual(scale["observed_p99_slo_scale"], 0.8)
+        unavailable = token_cost_metrics(
+            stats,
+            input_price=None,
+            output_price=None,
+        )
+        self.assertEqual(
+            unavailable["token_cost_status"],
+            "unavailable:prices_not_configured",
+        )
+        cost = token_cost_metrics(
+            stats,
+            input_price=1.0,
+            output_price=3.0,
+        )
+        self.assertEqual(cost["token_cost_status"], "ok")
+        self.assertAlmostEqual(cost["observed_total_token_cost_usd"], 1.5)
+        self.assertAlmostEqual(
+            cost["observed_cost_per_million_tokens_usd"],
+            1.5,
+        )
 
     def test_append_metrics_appends_when_schema_matches_exactly(self) -> None:
         path = self._metrics_path("metrics_matching_schema.csv")
@@ -172,6 +251,14 @@ vllm:request_queue_time_seconds_count{model_name="qwen2.5-1.5b"} 4
 vllm:request_queue_time_seconds_sum{model_name="qwen2.5-1.5b"} 0.2
 vllm:time_to_first_token_seconds_count{model_name="qwen2.5-1.5b"} 4
 vllm:time_to_first_token_seconds_sum{model_name="qwen2.5-1.5b"} 0.8
+vllm:time_to_first_token_seconds_bucket{model_name="qwen2.5-1.5b",le="0.1"} 1
+vllm:time_to_first_token_seconds_bucket{model_name="qwen2.5-1.5b",le="0.5"} 3
+vllm:time_to_first_token_seconds_bucket{model_name="qwen2.5-1.5b",le="+Inf"} 4
+vllm:inter_token_latency_seconds_count{model_name="qwen2.5-1.5b"} 4
+vllm:inter_token_latency_seconds_sum{model_name="qwen2.5-1.5b"} 0.2
+vllm:inter_token_latency_seconds_bucket{model_name="qwen2.5-1.5b",le="0.05"} 2
+vllm:inter_token_latency_seconds_bucket{model_name="qwen2.5-1.5b",le="0.1"} 4
+vllm:inter_token_latency_seconds_bucket{model_name="qwen2.5-1.5b",le="+Inf"} 4
 vllm:prefix_cache_queries_total{model_name="qwen2.5-1.5b"} 1000
 vllm:prefix_cache_hits_total{model_name="qwen2.5-1.5b"} 200
 vllm:num_requests_waiting{model_name="qwen2.5-1.5b"} 0
@@ -189,6 +276,14 @@ vllm:request_queue_time_seconds_count{model_name="qwen2.5-1.5b"} 8
 vllm:request_queue_time_seconds_sum{model_name="qwen2.5-1.5b"} 0.6
 vllm:time_to_first_token_seconds_count{model_name="qwen2.5-1.5b"} 8
 vllm:time_to_first_token_seconds_sum{model_name="qwen2.5-1.5b"} 2.4
+vllm:time_to_first_token_seconds_bucket{model_name="qwen2.5-1.5b",le="0.1"} 2
+vllm:time_to_first_token_seconds_bucket{model_name="qwen2.5-1.5b",le="0.5"} 6
+vllm:time_to_first_token_seconds_bucket{model_name="qwen2.5-1.5b",le="+Inf"} 8
+vllm:inter_token_latency_seconds_count{model_name="qwen2.5-1.5b"} 8
+vllm:inter_token_latency_seconds_sum{model_name="qwen2.5-1.5b"} 0.6
+vllm:inter_token_latency_seconds_bucket{model_name="qwen2.5-1.5b",le="0.05"} 4
+vllm:inter_token_latency_seconds_bucket{model_name="qwen2.5-1.5b",le="0.1"} 8
+vllm:inter_token_latency_seconds_bucket{model_name="qwen2.5-1.5b",le="+Inf"} 8
 vllm:prefix_cache_queries_total{model_name="qwen2.5-1.5b"} 2500
 vllm:prefix_cache_hits_total{model_name="qwen2.5-1.5b"} 500
 vllm:num_requests_waiting{model_name="qwen2.5-1.5b"} 1
@@ -216,6 +311,12 @@ vllm:estimated_flops_per_gpu_total{model_name="qwen2.5-1.5b"} 4000000000000
         self.assertAlmostEqual(stats["vllm_prefix_cache_hit_rate"], 0.2)
         # TTFT mean (P0#1): sum 0.8->2.4, count 4->8 => 1.6/4 = 0.4.
         self.assertAlmostEqual(stats["vllm_time_to_first_token_mean_s"], 0.4)
+        self.assertEqual(stats["vllm_latency_histogram_status"], "ok")
+        self.assertAlmostEqual(stats["vllm_time_to_first_token_p50_s"], 0.3)
+        self.assertAlmostEqual(stats["vllm_time_to_first_token_p95_s"], 0.5)
+        self.assertAlmostEqual(stats["vllm_inter_token_latency_mean_s"], 0.1)
+        self.assertAlmostEqual(stats["vllm_inter_token_latency_p50_s"], 0.05)
+        self.assertAlmostEqual(stats["vllm_inter_token_latency_p99_s"], 0.099)
 
     def test_vllm_metric_delta_stats_prefix_cache_hit_rate_guards_divide_by_zero(self) -> None:
         # When prefix caching is off / no queries land in the window, the

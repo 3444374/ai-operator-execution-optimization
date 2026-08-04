@@ -37,10 +37,12 @@ from src.observability.metrics import (
     batch_result_stats,
     estimate_mfu,
     gpu_metadata,
+    observed_slo_scale_metrics,
     percentile,
     preflight_metrics_schema,
     resource_sample_stats,
     scrape_prometheus_metrics,
+    token_cost_metrics,
     vllm_metric_delta_stats,
 )
 from src.serving.backends import (
@@ -405,6 +407,9 @@ def _packing_run_metrics(
     row_cap: int,
     packing_scope: str,
     packing_algorithm: str,
+    padding_slots: int = 0,
+    padding_capacity_slots: int = 0,
+    padding_observed: bool = False,
 ) -> dict[str, float | int | str]:
     summary = summarize_packing(
         batch_cost_units,
@@ -420,6 +425,15 @@ def _packing_run_metrics(
         ),
         "packing_budget_utilization_p95": round(
             summary.utilization_p95,
+            6,
+        ),
+        "packing_padding_waste_status": (
+            "ok" if padding_observed else "unavailable:row_lengths_not_captured"
+        ),
+        "packing_padding_waste_ratio": round(
+            padding_slots / padding_capacity_slots
+            if padding_capacity_slots > 0
+            else 0.0,
             6,
         ),
         "packing_oversized_rows": summary.oversized_rows,
@@ -935,6 +949,11 @@ def _request_trace_metrics(
     finish_reason_count = len(finish_reasons)
     slo_enabled = any(row.slo_target_s is not None for row in rows)
     slo_met_count = sum(row.slo_met is True for row in rows)
+    slo_met_rows = [row for row in rows if row.slo_met is True]
+    slo_input_tokens = sum(row.prompt_tokens for row in slo_met_rows)
+    slo_output_tokens = sum(
+        row.actual_output_tokens or 0 for row in slo_met_rows
+    )
     violation_ratio = (
         sum(row.slo_met is not True for row in rows) / len(rows)
         if rows and slo_enabled
@@ -950,6 +969,17 @@ def _request_trace_metrics(
         "request_slo_violation_ratio": violation_ratio,
         "request_slo_goodput_per_s": (
             slo_met_count / e2e_s if slo_enabled and e2e_s > 0 else 0.0
+        ),
+        "request_slo_input_tokens_goodput_per_s": (
+            slo_input_tokens / e2e_s if slo_enabled and e2e_s > 0 else 0.0
+        ),
+        "request_slo_output_tokens_goodput_per_s": (
+            slo_output_tokens / e2e_s if slo_enabled and e2e_s > 0 else 0.0
+        ),
+        "request_slo_total_tokens_goodput_per_s": (
+            (slo_input_tokens + slo_output_tokens) / e2e_s
+            if slo_enabled and e2e_s > 0
+            else 0.0
         ),
         "request_actual_output_tokens_observed": len(actual_output_tokens),
         "request_actual_output_tokens_p50": percentile(
@@ -1315,6 +1345,22 @@ def _validate_resource_efficiency_args(args: argparse.Namespace) -> None:
 
 
 def _validate_completion_observation_args(args: argparse.Namespace) -> None:
+    for name, value in (
+        ("ttft-slo-ms", args.ttft_slo_ms),
+        ("itl-slo-ms", args.itl_slo_ms),
+        (
+            "input-cost-per-million-tokens-usd",
+            args.input_cost_per_million_tokens_usd,
+        ),
+        (
+            "output-cost-per-million-tokens-usd",
+            args.output_cost_per_million_tokens_usd,
+        ),
+    ):
+        if value is not None and (
+            isinstance(value, bool) or not math.isfinite(value) or value < 0
+        ):
+            raise SystemExit(f"--{name} must be finite and non-negative")
     if (
         args.completion_temperature is not None
         and (
@@ -2110,6 +2156,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "organization_policy_family": "none",
             "batch_prompt_token_spread_mean": 0.0,
             "prefix_group_ratio": 0.0,
+            "packing_padding_slots": 0,
+            "packing_padding_capacity_slots": 0,
         }
         adaptive_config = None
         control_trace_events = []
@@ -2345,6 +2393,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             organizer_metrics["prefix_group_ratio"] = max(
                 float(organizer_metrics["prefix_group_ratio"]),
                 float(organized.metrics.get("prefix_group_ratio", 0.0)),
+            )
+            organizer_metrics["packing_padding_slots"] += int(
+                organized.metrics.get("packing_padding_slots", 0)
+            )
+            organizer_metrics["packing_padding_capacity_slots"] += int(
+                organized.metrics.get("packing_padding_capacity_slots", 0)
             )
             organizer_metrics["partition_effective"] = (
                 bool(organizer_metrics["partition_effective"])
@@ -2653,6 +2707,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         batch_stats = batch_result_stats(operator_results)
         http_transport_metrics = _http_transport_metrics(operator_results)
         vllm_stats = vllm_metric_delta_stats(vllm_metrics_before, vllm_metrics_after)
+        slo_scale_metrics = observed_slo_scale_metrics(
+            vllm_stats,
+            ttft_target_ms=args.ttft_slo_ms,
+            itl_target_ms=args.itl_slo_ms,
+        )
+        cost_metrics = token_cost_metrics(
+            vllm_stats,
+            input_price=args.input_cost_per_million_tokens_usd,
+            output_price=args.output_cost_per_million_tokens_usd,
+        )
         observed_tokens = (
             int(vllm_stats["vllm_prompt_tokens_delta"])
             + int(vllm_stats["vllm_generation_tokens_delta"])
@@ -2702,6 +2766,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             row_cap=args.ray_batch_rows,
             packing_scope=packing_scope,
             packing_algorithm=packing_algorithm,
+            padding_slots=int(organizer_metrics["packing_padding_slots"]),
+            padding_capacity_slots=int(
+                organizer_metrics["packing_padding_capacity_slots"]
+            ),
+            padding_observed=not args.arrival_replay,
         )
         service_quantum_metrics = _service_quantum_run_metrics(
             service_quanta,
@@ -2950,6 +3019,30 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "request_slo_goodput_per_s": round(
                 float(request_metrics["request_slo_goodput_per_s"]), 6
             ),
+            "request_slo_input_tokens_goodput_per_s": round(
+                float(
+                    request_metrics[
+                        "request_slo_input_tokens_goodput_per_s"
+                    ]
+                ),
+                6,
+            ),
+            "request_slo_output_tokens_goodput_per_s": round(
+                float(
+                    request_metrics[
+                        "request_slo_output_tokens_goodput_per_s"
+                    ]
+                ),
+                6,
+            ),
+            "request_slo_total_tokens_goodput_per_s": round(
+                float(
+                    request_metrics[
+                        "request_slo_total_tokens_goodput_per_s"
+                    ]
+                ),
+                6,
+            ),
             "request_actual_output_tokens_observed": int(
                 request_metrics["request_actual_output_tokens_observed"]
             ),
@@ -3038,7 +3131,41 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "vllm_prefix_cache_queries_delta": vllm_stats["vllm_prefix_cache_queries_delta"],
             "vllm_prefix_cache_hits_delta": vllm_stats["vllm_prefix_cache_hits_delta"],
             "vllm_prefix_cache_hit_rate": round(float(vllm_stats["vllm_prefix_cache_hit_rate"]), 6),
+            "vllm_latency_histogram_status": vllm_stats[
+                "vllm_latency_histogram_status"
+            ],
+            "vllm_ttft_histogram_status": vllm_stats[
+                "vllm_ttft_histogram_status"
+            ],
+            "vllm_itl_histogram_status": vllm_stats[
+                "vllm_itl_histogram_status"
+            ],
             "vllm_time_to_first_token_mean_s": round(float(vllm_stats["vllm_time_to_first_token_mean_s"]), 6),
+            "vllm_time_to_first_token_p50_s": round(
+                float(vllm_stats["vllm_time_to_first_token_p50_s"]), 6
+            ),
+            "vllm_time_to_first_token_p95_s": round(
+                float(vllm_stats["vllm_time_to_first_token_p95_s"]), 6
+            ),
+            "vllm_time_to_first_token_p99_s": round(
+                float(vllm_stats["vllm_time_to_first_token_p99_s"]), 6
+            ),
+            "vllm_inter_token_latency_mean_s": round(
+                float(vllm_stats["vllm_inter_token_latency_mean_s"]), 6
+            ),
+            "vllm_inter_token_latency_p50_s": round(
+                float(vllm_stats["vllm_inter_token_latency_p50_s"]), 6
+            ),
+            "vllm_inter_token_latency_p95_s": round(
+                float(vllm_stats["vllm_inter_token_latency_p95_s"]), 6
+            ),
+            "vllm_inter_token_latency_p99_s": round(
+                float(vllm_stats["vllm_inter_token_latency_p99_s"]), 6
+            ),
+            "ttft_slo_target_ms": args.ttft_slo_ms,
+            "itl_slo_target_ms": args.itl_slo_ms,
+            **slo_scale_metrics,
+            **cost_metrics,
             "db_fetch_s": round(db_fetch_s, 6),
             "arrow_build_s": round(arrow_build_s, 6),
             "source_fetch_s": round(db_fetch_s + arrow_build_s, 6),
@@ -3056,6 +3183,22 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "bounded_wait_s": round(submit_metrics["bounded_wait_s"], 6),
             "avg_bounded_wait_s": round(submit_metrics["avg_bounded_wait_s"], 6),
             "fanin_s": round(submit_metrics["fanin_s"], 6),
+            "scheduling_control_overhead_s": round(
+                float(organizer_metrics["organizer_plan_s"])
+                + float(submit_metrics["submit_s"]),
+                6,
+            ),
+            "scheduling_control_overhead_pct": round(
+                100.0
+                * (
+                    float(organizer_metrics["organizer_plan_s"])
+                    + float(submit_metrics["submit_s"])
+                )
+                / operator_wall_s
+                if operator_wall_s > 0
+                else 0.0,
+                6,
+            ),
             "writeback_s": round(writeback_s, 6),
             "e2e_s": round(e2e_s, 6),
             "rows_per_s": round(processed_rows / e2e_s, 3) if e2e_s else 0.0,

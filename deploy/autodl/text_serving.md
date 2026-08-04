@@ -92,6 +92,12 @@ nohup /root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scena
 ```
 - runner 把 config 里的 `${VAR}` 从 env 展开（所以 runtime env 要 source）。
 - 合同：K256 inflight / W65536 active-work / token_budget / request 粒度 / fixed-50ms flush / least_queued routing / 1 warmup + 3 formal（formal 交错）/ 喂饱门禁（E2E ≥95% of 同协议 bounded）。详见 `AGENTS.md` §7.5。
+- 下一轮 config 应显式传 `--ttft-slo-ms`、`--itl-slo-ms`；只有比较托管 API
+  费用时才传 `--input-cost-per-million-tokens-usd` 和
+  `--output-cost-per-million-tokens-usd`。未提供价格会记 unavailable，不使用默认价。
+  profiler summary schema 已于 2026-08-04 变化，必须使用新的 output directory，
+  不能向旧 `runs.csv` 追加。formal 完成后运行
+  `code/scripts/analysis/summarize_formal_repeats.py` 生成 CI/CV/regression 统计。
 
 ### 5.2 feeding-saturation 门禁（bounded baseline）
 文本侧的"喂饱 vLLM"参照 = 同协议 bounded HTTP client（`run_official_baseline_gate.py`，batched cells b16/b32）。2-ep/0.9 bounded 真上限 ~79,488 tok/s。注意：bounded gate 原硬限 2 endpoint，现已放宽 ≥2（`gate_runner.py` `!= 2` → `< 2`）。详见 `AGENTS.md` §7.5.C + `experiments/results/rc1_data_organization/`。

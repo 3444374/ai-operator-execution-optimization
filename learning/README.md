@@ -10,6 +10,9 @@
 - [`text_native_baseline_guide.md`](text_native_baseline_guide.md)：区分 vLLM 服务上限、
   bounded control、Daft/Ray Data/OceanBase 原生 baseline 和项目方法，并解释
   Chat/Completions 分轨与 64→512→4096 复测流程。
+- [`observability_metrics_guide.md`](observability_metrics_guide.md)：解释下一轮新增的
+  TTFT/ITL、token goodput、padding、成本、公平、重复统计、代价决策和检索质量字段，
+  以及哪些输入缺失时必须标 unavailable。
 
 学习材料只负责解释；正式 baseline 身份、状态和指标以
 [`../experiments/plans/baseline_reference.md`](../experiments/plans/baseline_reference.md)

@@ -26,6 +26,7 @@ from src.planning.costs.regression import (  # noqa: E402
     RidgeCostEstimator,
     grouped_train_test_split,
     regression_metrics,
+    selection_metrics,
 )
 
 
@@ -44,6 +45,28 @@ GROUP_FIELDS = (
     "flush_max_wait_ms",
     "arrival_replay",
     "arrival_time_scale",
+)
+
+DECISION_CONTEXT_FIELDS = (
+    "model_name",
+    "cost_model_id",
+    "source_workload_name",
+    "total_rows",
+    "completion_max_tokens",
+    "arrival_replay",
+    "arrival_time_scale",
+)
+
+CANDIDATE_FIELDS = (
+    "batching_policy",
+    "output_cost_mode",
+    "token_budget",
+    "max_inflight_limit",
+    "max_active_work_per_endpoint",
+    "actor_workers_per_endpoint",
+    "flush_policy",
+    "flush_timeout_ms",
+    "flush_max_wait_ms",
 )
 
 
@@ -92,13 +115,31 @@ def scenario_group(row: dict[str, str]) -> str:
     return hashlib.sha256(signature.encode("utf-8")).hexdigest()[:16]
 
 
+def _signature(row: dict[str, str], fields: tuple[str, ...]) -> str:
+    payload = json.dumps(
+        {field: row.get(field, "") for field in fields},
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
 def load_dataset(
     paths: list[Path],
     target: str,
-) -> tuple[np.ndarray, np.ndarray, list[str], int]:
+) -> tuple[
+    np.ndarray,
+    np.ndarray,
+    list[str],
+    int,
+    list[str],
+    list[str],
+]:
     features = []
     targets = []
     groups = []
+    decision_contexts = []
+    candidate_ids = []
     excluded = 0
     for path in paths:
         with path.open(encoding="utf-8", newline="") as handle:
@@ -118,6 +159,10 @@ def load_dataset(
                 features.append(vector)
                 targets.append(target_value)
                 groups.append(scenario_group(row))
+                decision_contexts.append(
+                    _signature(row, DECISION_CONTEXT_FIELDS)
+                )
+                candidate_ids.append(_signature(row, CANDIDATE_FIELDS))
     if not features:
         raise ValueError("no complete profile rows were loaded")
     return (
@@ -125,6 +170,8 @@ def load_dataset(
         np.asarray(targets, dtype=float),
         groups,
         excluded,
+        decision_contexts,
+        candidate_ids,
     )
 
 
@@ -136,7 +183,14 @@ def estimate(
     seed: int,
     alpha: float,
 ) -> dict[str, object]:
-    features, targets, groups, excluded = load_dataset(paths, target)
+    (
+        features,
+        targets,
+        groups,
+        excluded,
+        decision_contexts,
+        candidate_ids,
+    ) = load_dataset(paths, target)
     split = grouped_train_test_split(
         groups,
         test_fraction=test_fraction,
@@ -151,7 +205,7 @@ def estimate(
     predicted = estimator.predict(features[test])
     baseline = np.full(len(test), float(targets[train].mean()))
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "target": target,
         "feature_names": list(FEATURE_NAMES),
         "post_execution_features_used": [],
@@ -191,6 +245,18 @@ def estimate(
         ),
         "ridge_metrics": asdict(
             regression_metrics(targets[test], predicted)
+        ),
+        "mean_baseline_selection_metrics": selection_metrics(
+            targets[test],
+            baseline,
+            [decision_contexts[index] for index in test],
+            [candidate_ids[index] for index in test],
+        ),
+        "ridge_selection_metrics": selection_metrics(
+            targets[test],
+            predicted,
+            [decision_contexts[index] for index in test],
+            [candidate_ids[index] for index in test],
         ),
         "target_train_mean": float(targets[train].mean()),
         "target_test_mean": float(targets[test].mean()),

@@ -15,7 +15,7 @@
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子执行链路对比 |
 | `vllm_continuous_batching_reference.md` | vLLM continuous batching、KV/cache、metrics 和集成边界 |
 | `ray_actor_dynamic_batching_reference.md` | Ray actor/Serve 动态 batching 与路由机制 |
-| `evaluation_metrics_survey_20260731.md` | AI 算子/推理服务文献 + 数据库厂商评估指标来源证据；当前 baseline 身份与运行状态不在此维护 |
+| `evaluation_metrics_survey_20260731.md` | AI 算子/推理服务论文与数据库厂商的 workload 场景、执行边界、评估指标和公平对比合同；当前 baseline 身份与运行状态不在此维护 |
 | `daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：保留 Daft 三痛点与 offline-batch 候选，已按 08-01 审计撤回“传输瓶颈/结构性空白”预设，并要求 staged baseline |
 
 ## 文献分级

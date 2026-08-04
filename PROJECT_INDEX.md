@@ -104,6 +104,7 @@
 | `learning/archive/early_experiments_walkthrough.md` | 早期实验学习讲解（已归档） | pre-convergence 时期实验（组件可行性、fake/CPU、PG18.4 接入等）的历史参考 |
 | `learning/metric_selection_methodology.md` | AI_EMBED vs AI_COMPLETE 观察变量选择方法论 | 理解为什么从"阶段时延拆分"转向"多维分布表征" |
 | `learning/text_native_baseline_guide.md` | 文本 AI 算子 baseline 初学者讲解 | 理解 ceiling/control/native/project 的区别、请求链路、分轨与正式结果读法 |
+| `learning/observability_metrics_guide.md` | 新观测指标与 fail-closed 输入合同讲解 | 下一轮运行前确认 TTFT/ITL、goodput、成本、公平、CI/CV、代价模型与检索质量口径 |
 | `figures/architecture/runtime_strategy_rule_table.png` / `.svg` | 信号触发候选策略规则表 | 与闭环图配套使用，说明观测信号、候选动作和保护约束；不作为已验证结论 |
 | `figures/architecture/runtime_strategy_control_loop.png` / `.svg` | 运行时信号驱动的上游执行闭环图 | 当前首选策略机制图；用一个 AI_COMPLETE SQL 例子说明数据组织（token-budget/length-align/prefix-aware）、提交控制（queue-adaptive flush/K_max/routing）、vLLM 部署平台（观测不修改）的分工；不重切数据库侧已物化批次 |
 | `figures/scripts/generate_runtime_strategy_control_loop.py` | 运行时策略闭环图生成脚本 | 重新生成策略机制图 PNG/SVG，并执行边框、箭头和禁用术语自检 |
@@ -273,6 +274,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code_doc/superpowers/plans/2026-07-29-shared-vllm-fairness-implementation.md` | Shared-vLLM 1/2/4-job 实施计划 | 全局 credit 观测、group runner、双 GPU gate 与 formal 门槛 |
 | `code/src/planning/costs/regression.py` | Engine-independent grouped split, ridge cost model, and regression metrics | Build offline operator-cost estimates without post-execution feature leakage |
 | `code/scripts/analysis/estimate_operator_cost.py` | Reproducible profile-CSV cost-estimation CLI | Generate model schema, coefficients, splits, and held-out metrics |
+| `code/scripts/analysis/summarize_formal_repeats.py` | Formal repeat CI/CV and paired regression-count postprocessor | Run after every new-schema formal matrix before writing claims or figures |
+| `code/scripts/analysis/evaluate_embedding_retrieval.py` | Exact cosine AI_EMBED retrieval-quality evaluator using explicit relevance | Run on diagnostic saved embeddings; reports Recall@K/MRR/nDCG and excludes self |
 | `code/scripts/experiments/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `code/scripts/experiments/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
 | `code/scripts/baselines/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
@@ -330,7 +333,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/modalities/image/` | 图像 typed batch/result/semantics、lazy Daft source、CLIP preprocess、bounded Ray CPU→GPU pipeline 与输出审计；baseline 已隔离到 `baselines/image/` | 实现 image path-B、切换 backend 或审计 embedding/执行语义前读 |
 | `code/src/modalities/image/resource_sampling.py` | host per-core CPU、visible/active-device GPU 的低频采样与明确汇总语义 | 图像 E2E 资源采样；不能把低频 GPU util 当 MFU |
 | `code/src/data/sinks/postgres.py` | `none/json_text/pgvector` embedding 写回与 completion JSON-text 写回 | 修改写回路径或后续接 Lance sink 前读 |
-| `code/src/observability/metrics/` | timing/CSV/statistics/resources/vLLM 指标子模块及兼容包入口 | 修改 profiling 指标、资源效率、CSV 输出或计时边界前读 |
+| `code/src/observability/metrics/` | timing/CSV/statistics/resources/vLLM/retrieval 指标子模块及兼容包入口 | 修改 profiling 指标、资源效率、检索质量、CSV 输出或计时边界前读 |
 | `code/src/data/workloads/text.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
 | `code/src/experiments/scenarios/core.py` | 可复现的 warm-up / formal 场景交错顺序生成器 | 修改实验随机化与运行顺序前读 |
 | `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core；按 `core/`、`organization/`、`submission_control/`、`endpoint_routing/`、`runtime/` 分包，旧根级兼容模块已删除 | 实现或审查运行时策略前读 |

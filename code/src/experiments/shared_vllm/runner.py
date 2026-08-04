@@ -50,6 +50,7 @@ from .evidence import (
     _write_trace_rows_atomic,
 )
 from .metrics import (
+    cumulative_service_disparity,
     group_metric_delta,
     group_resource_summary,
     jain_fairness,
@@ -456,7 +457,7 @@ def _run_group(
             scenario.weights,
         )
         record = {
-            "schema_version": 1,
+            "schema_version": 2,
             "experiment_id": config.experiment_id,
             "scenario_id": scenario.scenario_id,
             "phase": identity.phase,
@@ -487,6 +488,10 @@ def _run_group(
             **resource_metrics,
             **mfu_metrics,
             "jain_fairness": jain_fairness(normalized_service),
+            **cumulative_service_disparity(
+                job_evidence,
+                scenario.weights,
+            ),
             "job_jct_s": json.dumps(
                 [evidence["jct_s"] for evidence in job_evidence]
             ),
@@ -511,11 +516,20 @@ def _run_group(
                     for evidence in job_evidence
                 ]
             ),
+            "job_slo_token_goodput_per_s": json.dumps(
+                [
+                    evidence["slo_token_goodput_per_s"]
+                    for evidence in job_evidence
+                ]
+            ),
             "job_predicted_work": json.dumps(
                 [
                     evidence["predicted_work"]
                     for evidence in job_evidence
                 ]
+            ),
+            "job_actual_work": json.dumps(
+                [evidence["actual_work"] for evidence in job_evidence]
             ),
             "job_normalized_service_rate": json.dumps(
                 normalized_service

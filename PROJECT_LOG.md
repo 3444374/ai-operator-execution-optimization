@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-08-04 AI 算子论文与数据库产品场景矩阵补全
+
+- 在 `research/evaluation_metrics_survey_20260731.md` §9.1 为 LOTUS、Galois、
+  GaussML、Smart、SmartLite、InferDB、LEADS、NeurDB、Cortex AISQL、Palimpzest、
+  Abacus 与 SemBench 补充论文实际数据集、数据模态、算子执行方式和优化对象，避免脱离
+  workload 只罗列指标或迁移 speedup。
+- 同节补充 Clipper、Orca、vLLM、Sarathi-Serve、DistServe、SGLang、VTC，以及
+  Heinrich learned-cost-model、GRACEFUL、COSTREAM、CONCERTO 的真实 trace/数据集、
+  部署层级和指标，明确 serving/cost-estimation 论文只提供相应层的机制与评价合同，
+  不能替代数据库 source→AI operator→sink 端到端 baseline。
+- 将数据库产品按“可自托管同机对照、托管云产品、向量 read-side”拆分，逐项说明
+  Doris、ClickHouse、StarRocks、OceanBase、Oracle、Db2、SQL Server、DuckDB 扩展、
+  pgai、PostgresML，以及 PolarDB、Hologres、AnalyticDB、Snowflake、BigQuery、
+  Databricks 等系统的输入→AI 算子→输出场景、scheduler/endpoint 边界和正确比较方式。
+- 明确向量 ANN benchmark 只评价 embedding 生成后的检索链路；云厂商产品只比较可观察
+  的质量—成本—时间、失败和配额；只有同机同模型同 source/sink 的自托管系统才进入
+  raw performance 主排名。
+- `experiments/plans/baseline_reference.md` 保持 baseline 身份、可安装性和运行合同的
+  权威入口，并新增到上述场景矩阵的导航，避免两处重复维护易漂移的产品描述。
+
 ## 2026-08-04 数据库厂商 AI 算子可安装性与 baseline 扩展
 
 - 使用厂商官方文档、官方仓库和 release notes 复核本地/云端数据库 AI 算子，按
@@ -3888,3 +3908,16 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
 测量规模（~100K），3-arm 同规模一致性 run 在 fast arm 侧可能太短——待 Daft max 定后评估可行性。
 
 报告 + summary + raw：`experiments/results/image_ai_embed_operator_formal_20260803/`。
+
+## 2026-08-04 观测指标缺口代码闭合
+
+- 文本 profiler schema 增加 vLLM TTFT/ITL histogram 分位、prefix cache、SLO token
+  goodput、显式 token 单价成本、prompt padding waste、P99 SLO scale 和调度开销占比。
+- shared-vLLM group schema 升至 v2，增加 actual token work、SLO token goodput、最终及
+  overlapping-active-job service disparity；理论公平上界未证明，字段明确 unavailable。
+- 代价估计增加 Q-error 多分位、Spearman、pick rate、selected/oracle runtime、regret、
+  selected rank/surpassed plans；新增 formal repeat CI/CV/regression 后处理器。
+- 新增 AI_EMBED 显式 relevance 的 Recall@K/MRR/nDCG evaluator；不以 checksum 代替
+  任务质量，不把 diagnostic capture 时间混入性能排名。
+- profiler schema 已变化，后续实验必须创建新结果目录；旧 CSV 继续作为历史证据，
+  不允许混入新字段行。

@@ -24,6 +24,7 @@ FORMAL_RESULT_FIELDS = tuple(
     output_cost_source packing_cost_unit
     cost_model_id cost_tokenizer_id packing_algorithm packing_scope
     packing_budget_utilization_mean packing_budget_utilization_p95
+    packing_padding_waste_status packing_padding_waste_ratio
     packing_oversized_rows packing_input_rows packing_batch_count
     batch_estimated_cost_units_p50 batch_estimated_cost_units_p95
     batch_estimated_cost_units_p99 batch_estimated_cost_units_max
@@ -74,6 +75,9 @@ FORMAL_RESULT_FIELDS = tuple(
     mfu_precision mfu_status mfu_estimate request_trace_path request_trace_events
     request_e2e_s_p50 request_e2e_s_p95 request_e2e_s_p99
     request_slo_target_ms request_slo_violation_ratio request_slo_goodput_per_s
+    request_slo_input_tokens_goodput_per_s
+    request_slo_output_tokens_goodput_per_s
+    request_slo_total_tokens_goodput_per_s
     request_actual_output_tokens_observed request_actual_output_tokens_p50
     request_actual_output_tokens_p95 request_actual_output_tokens_p99
     request_finish_reason_observed request_finish_reason_stop_ratio
@@ -91,12 +95,24 @@ FORMAL_RESULT_FIELDS = tuple(
     vllm_request_decode_time_mean_s vllm_num_requests_running_after
     vllm_num_requests_waiting_after vllm_kv_cache_usage_perc_after
     vllm_prefix_cache_queries_delta vllm_prefix_cache_hits_delta
-    vllm_prefix_cache_hit_rate vllm_time_to_first_token_mean_s db_fetch_s
+    vllm_prefix_cache_hit_rate vllm_latency_histogram_status
+    vllm_ttft_histogram_status vllm_itl_histogram_status
+    vllm_time_to_first_token_mean_s vllm_time_to_first_token_p50_s
+    vllm_time_to_first_token_p95_s vllm_time_to_first_token_p99_s
+    vllm_inter_token_latency_mean_s vllm_inter_token_latency_p50_s
+    vllm_inter_token_latency_p95_s vllm_inter_token_latency_p99_s
+    ttft_slo_target_ms itl_slo_target_ms observed_p99_slo_scale_status
+    observed_p99_slo_scale
+    token_cost_status input_cost_per_million_tokens_usd
+    output_cost_per_million_tokens_usd observed_input_token_cost_usd
+    observed_output_token_cost_usd observed_total_token_cost_usd
+    observed_cost_per_million_tokens_usd db_fetch_s
     arrow_build_s source_fetch_s organizer_from_arrow_s organizer_plan_s
     organizer_collect_s organization_policy_family
     batch_prompt_token_spread_mean prefix_group_ratio organizer_warnings
     model_service_s model_request_wall_s operator_wall_s submit_s bounded_wait_s
-    avg_bounded_wait_s fanin_s writeback_s e2e_s rows_per_s tokens_per_s
+    avg_bounded_wait_s fanin_s scheduling_control_overhead_s
+    scheduling_control_overhead_pct writeback_s e2e_s rows_per_s tokens_per_s
     model_request_tokens_per_s operator_tokens_per_s
     """.split()
 )

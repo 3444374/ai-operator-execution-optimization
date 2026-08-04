@@ -795,8 +795,20 @@ Without an exact match, the importer fails before the suffix is written.
 
 `analysis/estimate_operator_cost.py` fits a grouped held-out cost model from one or more
 profile CSVs. It uses only pre-execution features and writes the feature schema,
-split groups, coefficients, normalization values, and regression metrics to
-JSON.
+split groups, coefficients, normalization values, Q-error percentiles,
+Spearman correlation, and plan-selection pick-rate/runtime/regret to JSON.
+
+`analysis/summarize_formal_repeats.py` consumes a **new-schema** formal CSV and
+adds sample standard deviation, coefficient of variation, Student-t 95% confidence
+intervals, and optional paired performance-regression counts. Never append a new
+run to an older profiler CSV after the observability schema changes; start a new
+result directory so the fail-closed header check can protect the comparison.
+
+`analysis/evaluate_embedding_retrieval.py` consumes a diagnostic `.npz` produced
+by `run_image_clip_e2e.py --save-embeddings` plus an explicit
+`query_id,relevant_id` CSV. It excludes self matches and reports Recall@K, MRR,
+and nDCG@K. It is a quality gate, not a timed performance arm; checksum and norm
+checks are not substitutes for retrieval relevance.
 
 ## 2026-07-29 Shared-vLLM multi-job runner
 
