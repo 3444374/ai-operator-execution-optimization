@@ -183,18 +183,20 @@ class LightGBMCostEstimator:
 
         x = np.asarray(features, dtype=float)
         y = np.asarray(targets, dtype=float)
-        base = {
-            "verbose": -1,
-            "n_estimators": 200,
+        # Native API (lgb.train + Dataset) avoids the scikit-learn dependency that
+        # the LGBMRegressor sklearn wrapper requires.
+        params = {
+            "objective": "regression",
+            "metric": "rmse",
             "num_leaves": 15,
             "learning_rate": 0.05,
             "min_data_in_leaf": 3,
-            "subsample_for_bin": 64,
             "feature_fraction": 0.9,
+            "subsample_for_bin": 64,
+            "verbose": -1,
         }
-        base.update(self._params)
-        self._model = lgb.LGBMRegressor(**base)
-        self._model.fit(x, y)
+        params.update(self._params)
+        self._model = lgb.train(params, lgb.Dataset(x, label=y), num_boost_round=200)
         return self
 
     def predict(self, features) -> np.ndarray:
