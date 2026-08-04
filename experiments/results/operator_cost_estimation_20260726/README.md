@@ -147,13 +147,42 @@ ridge cost model 的预测层与排序/选择层（`code/scripts/analysis/compar
 （5-seed 平均 3.6 个），selection 指标噪声大、不应过度解读；预测层指标基于 39–87
 test 行，相对可靠。
 
-**仍未实现**：pairwise accuracy（全局）与 Top-K precision（K>1）需扩展
-`selection_metrics`；当前只有 context 内 pick_rate / surpassed_plans /
-selected_plan_rank_mean。
+**已实现（2026-08-04）**：pairwise accuracy（全局，predicted-tie 计 0.5）与
+Top-K precision（K=5）已加入 `regression.py`；prediction interval（empirical
+residual quantile）也已补。下方 CE0–CE6 统一对照用全 hierarchy 重跑，supersede
+上面的 mean-vs-ridge 初步。
 
-**对用途的含义**：代价模型作为**粗粒度容量/编排提示**（预测层）可用；作为
-**优化器计划选择器**（选择层）尚不安全——需要更多 decision context 数据 +
-pairwise/Top-K 指标后才能下结论。
+### CE0–CE6 统一对照（2026-08-04，全 hierarchy）
+
+`code/scripts/analysis/compare_cost_estimators_full.py` 在同样 283 行上跑全
+estimator hierarchy（CE0 mean / CE1 analytical / CE2 lookup / CE3 ridge /
+CE4 lightgbm / CE5 hybrid / CE6 oracle）× 3 层（预测 / 排序 / 决策）× 5 seed，
+grouped holdout。完整表 + 区间见 `ce_hierarchy_table_20260804.md`。5-seed mean：
+
+| estimator | MAE | Q95 | Spearman | pairwise | topK5 | pick | regret% |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| CE0 mean | 29.89 | 7.20 | 0.000 | 0.500 | 0.00 | 0.26 | 8.37 |
+| CE1 analytical | 10.37 | **3.42** | 0.561 | 0.709 | 0.52 | 0.09 | 16.10 |
+| CE2 lookup | 16.00 | 4.58 | **0.691** | 0.742 | 0.52 | 0.32 | **5.63** |
+| CE3 ridge | 11.68 | 4.42 | 0.677 | **0.774** | **0.60** | 0.38 | 22.76 |
+| CE4 lightgbm | 12.98 | 6.82 | 0.417 | 0.658 | 0.20 | 0.49 | 9.69 |
+| CE5 hybrid | **8.73** | 5.05 | 0.536 | 0.689 | 0.36 | **0.55** | 16.58 |
+| CE6 oracle | 0 | 1 | 1 | 1 | 1 | 1 | 0 |
+
+**全 hierarchy 验证 Heinrich "精度 ≠ 选择"**：
+- CE5 hybrid：MAE 最优 + pick 最优，但 regret 16.58%（高）。
+- CE3 ridge：pairwise + topK 最优，但 regret 最差（22.76%）。
+- CE2 lookup：MAE 最弱的 learned，但 decision regret 最优（5.63%）+ Spearman 最优。
+- CE1 analytical：Q95 尾误差最优 + 区间覆盖最优（0.91）。
+- CE4 lightgbm：在本小数据（283 行 / 3.6 context）下弱于简单模型（Spearman 0.417、
+  Q95 6.82、区间过窄覆盖仅 0.60），印证"小数据上简单模型足够"。
+
+**晋级门槛未达**：median regret ≤5% **且** pairwise ≥0.75——CE3 过 pairwise 不过
+regret；CE2 过 regret 不过 pairwise。无 estimator 能接管调度，仍是可行性阶段结果。
+
+**对用途的含义**：代价模型作**粗粒度容量/编排提示**（预测层，CE5/CE1）可用；作
+**优化器计划选择器**（选择层）尚不安全。下一步：补 ≥20 个 decision context（每个
+4–6 候选配置 × 1+3 formal）让 selection 指标稳，再上 state-aware（Track 2）。
 
 ## 后续工作
 
