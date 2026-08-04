@@ -4,6 +4,20 @@ Date: 2026-07-20（最后更新：2026-08-03；Daft built-in embedding parity �
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
+## 状态增量（2026-08-04，claude 增补 — 标记新完成项防重复运行）
+
+**新完成（不要重跑）**：
+
+- ✅ image 12K 三臂一致性（daft_builtin_embed + ray_data_staged + project_ray，1 warmup + 3 formal，schema-v12，single-writer matrix runner，0 incident；Daft ~64s@12K=187 img/s，fast arm setup-dominated，作结构诊断不进 matched-workload 排名）。
+- ✅ image 60K×2 matched-resource schema-v12 重跑（project vs ray_data × cpu8/16，1+3 formal，0 incident）：project 在 matched CPU 两档都快（cpu8 −10.0%、cpu16 −18.5%），**确认 step-8 ~13–15% 结构性收益**；schema-v12 per-image 指标（J/1k、gpu-s/img、img/cpuS、first_output_fraction）产出。结果见 `experiments/results/image_ai_embed_operator_formal_20260803/README.md` §10。
+- ✅ 算子代价估计 CE0–CE6 全 hierarchy 对照（283 行文本 profile，5 seed，3 层指标，`compare_cost_estimators_full.py`）：**全 hierarchy 验证 Heinrich "精度≠选择"**——CE5 hybrid MAE 最优(8.73)但 regret 16.6%，CE3 ridge pairwise 最优(0.774)但 regret 最差(22.8%)，CE2 lookup regret 最优(5.6%)+Spearman 最优。CE4 lightgbm 小数据下弱于简单模型。**无 estimator 过晋级门槛**（regret≤5% 且 pairwise≥0.75），可行性阶段。见 `operator_cost_estimation_20260726/ce_hierarchy_table_20260804.md`。
+
+**新下一步（两条并行线，共享 workload/观测/raw，执行控制隔离）**：
+
+- **A 线（系统 baseline）**：①vLLM pooling CLIP（capability gate→5K calib→60K×2 formal；回答"绕过 Daft/Ray 调度后成熟 CLIP 服务的可实现容量"，**前置：vLLM CLIP pooling 能力门禁未验**）→ ②Daft/Ray 官方 ResNet18 vendor-code parity（commit `3f5bdd17`，GPU 8→2，**阻塞于 ImageNet 数据 + Daft 0.6.2 独立环境 + 磁盘 27G**）→ ③Doris/ClickHouse（**阻塞于 AutoDL 无 Docker**，需独立 Docker/VM）→ ④system E2E + pgvector sink。
+- **B 线（代价估计）**：当前 283 行 / 3.6 context 让 selection 指标噪声大——补 ≥20 decision context（每个 4–6 候选静态配置 × 1+3 formal，固定 model/data/rows/SLO/硬件，只变 active-work/batch/actor/CPU/数据组织）让 selection 稳；再上 state-aware（Track 2，Ray/vLLM 运行时状态）；image 侧代价估计待 image profile 攒足。
+- 上方 §0 "下一步运行 Daft 官方 ResNet18 parity 与 60 秒以上稳态 formal" 中，**60 秒稳态 formal 已由 60K×2 schema-v12 重跑闭合**；ResNet18 parity 仍待（A②）。
+
 ## 0. 当前优先级（2026-08-01 方向 pivot —— 取代 §4 / §10.3 / §13 的文本轨道强制顺序）
 
 **方向决定（2026-08-01；本节为该决定的记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `image_clip_workload_lock_20260731.md` §0「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
