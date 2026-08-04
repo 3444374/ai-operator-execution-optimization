@@ -3921,3 +3921,18 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
   任务质量，不把 diagnostic capture 时间混入性能排名。
 - profiler schema 已变化，后续实验必须创建新结果目录；旧 CSV 继续作为历史证据，
   不允许混入新字段行。
+
+## 2026-08-04 图像跨规模观测口径闭合
+
+- 纠正“把文本 TTFT/ITL/token-goodput 直接用于 CLIP”的错误迁移：图像继续使用
+  `first_output_s`，并新增 first-output/E2E、post-first-output 与显式跨规模语义；
+  raw first output 只在同规模排名，比例只作物化/流式结构诊断。
+- 图像 runner 升至 schema v12，增加 60s duration gate、J/1K-images、
+  GPU-seconds/image、images/CPU-core-second 和 host disk/network bytes/image。这些是
+  已观测总量的零额外开销派生量；60s 只证明时长，不自动证明吞吐平台。
+- 新增历史 CSV 旁置增强器，使 12K Daft 三臂门禁与 60K×2 Ray/project formal 无需
+  为纯派生字段重跑。正式证据改为“Daft 最大可完成规模门禁 + Ray/project 长稳态 formal
+  + Daft 更大规模结构化失败”三层，不跨规模排名 absolute JCT/first output。
+- schema-v12 manifest 与历史增强 CSV 的旁置 `*.metrics.json` 统一保存指标字典，逐项
+  标明中文含义、单位、公式、直接/采样/派生来源、比较范围和误差边界，便于复核错误
+  字段、采样失真和跨规模误读。

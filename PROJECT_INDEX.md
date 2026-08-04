@@ -174,7 +174,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/analysis/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
 | `code/scripts/analysis/summarize_static_credit_workload_surface.py` | 跨 workload 审计 request/work credit 的中位数、CV、等价无压力臂、token-ID 覆盖与交叉 regret | 禁止用不稳定均值表直接给出动态 GO/NO-GO |
 | `code/scripts/profiling/profile_image_clip_preprocess_variants.py` | 交错比较当前 production-np、历史 legacy-pt 与 torchvision CLIP preprocessing，并经过同一 tensor actor 做 embedding parity gate | 复核 image motivation 是否能外推到当前代码边界；不是 E2E 方法结果 |
-| `code/scripts/experiments/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、模型/GPU 和输出审计下运行 Daft built-in、Ray Data native graph、诊断 reference 与 project arms | 跑 operator-E2E gate/formal；schema v11 记录 baseline provenance、scheduler owner 和计时内输出合同，并拒绝把项目自写 Daft UDF 当正式 native baseline |
+| `code/scripts/experiments/run_image_clip_e2e.py` | 同 PostgreSQL BYTEA、模型/GPU 和输出审计下运行 Daft built-in、Ray Data native graph、诊断 reference 与 project arms | 跑 operator-E2E gate/formal；schema v12 记录 baseline provenance、计时内输出合同、首输出结构信号和单位工作资源，并拒绝把项目自写 Daft UDF 当正式 native baseline |
+| `code/src/modalities/image/metrics.py` | 从图像 run 已观测总量派生 first-output/E2E、60s duration gate 和单位图片资源指标 | 跨规模只能比较独立达平台的速率/单位成本；不推断隐藏调度或逐图 latency |
+| `code/scripts/analysis/augment_image_observability.py` | 为历史 schema-v11 图像 CSV 生成不覆盖 raw 的派生指标副本 | 复用已有 12K/60K 数据，不为纯代数字段重跑；缺原始字段时 fail-closed |
 | `code/configs/image_vendor_baselines.json` | Daft 官方 803,580-row ResNet18 Daft/Ray Data 入口的仓库、commit、文件 SHA256、官方 workload 与允许适配范围 | 跑 vendor-code parity 前核对；禁止改写官方调度图 |
 | `code/scripts/experiments/run_image_clip_matrix.py` | 固定 seed 交错编排图像 warmup/formal，持有结果目录租约并校验 unique rows、exactly-once、稳态时长 | 防止手工顺序漂移、并发写结果和短作业误入 formal；输出 raw CSV、逐 run manifest/log 与外层 schedule |
 | `code/scripts/data/import_coco_images.py` | 从目录或 ZIP 流式导入 COCO 图像 BYTEA，保留 source doc_id，单事务替换指定 workload | 正式规模避免完整解压副本；失败回滚，不覆盖无关 workload |

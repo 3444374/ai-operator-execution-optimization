@@ -156,7 +156,11 @@ image_embeddings(doc_id BIGINT, workload_name TEXT, model_revision TEXT,
 
 ## 5. 指标（在项目标准指标集上加图像专属的）
 
-**项目已有（复用，§7.5 + 附录 B.4）**：rows/s、images/s、request P50/P95/P99、SLO-goodput、GPU util/MFU、能耗 J/1k-tokens→改 **J/1k-images**、capacity_efficiency、exactly-once 审计、control trace、Jain fairness（多 job）。
+**项目已有（复用，§7.5 + 附录 B.4）**：rows/s、images/s、operator JCT、first
+output、可观测 batch P50/P95/P99、GPU util/能耗、**J/1K images**、
+CPU-core-seconds/image、exactly-once 审计、control trace 和多 job Jain fairness。
+只有具备逐图提交与完成时间、并显式冻结 image SLO 的实验才报告 SLO-compliant
+images/s；不能把文本 request SLO/token goodput 直接改名后使用。
 
 **图像 workload 新增的关键指标**：
 
@@ -170,6 +174,24 @@ image_embeddings(doc_id BIGINT, workload_name TEXT, model_revision TEXT,
 | **index build time** | HNSW 构建墙钟 | pgvector 写回侧 baseline（厂商共识指标） |
 
 **TTFT/TPOT 不适用** CLIP（非自回归生成）——这是诚实的边界，说明哪些 LLM 指标可迁移、哪些不可。
+
+### 5.0 无法同规模长稳态时的三层证据
+
+Daft built-in 在当前机器上受物化/object-store/spill 容量限制，无法和流式 Ray Data/
+project 一起跑 60K×2 长稳态。正式材料不得用调小所有 arm 的方式掩盖 fast arm 只有
+十几秒、尚未进入稳态的问题，改用三层互补证据：
+
+1. **同规模兼容性门禁**：在 Daft 可完成的最大规模上跑三臂，比较 exactly-once、
+   输出合同和描述性 images/s；fast arm 未满 60 秒时只标 gate/screening。
+2. **长稳态两臂 formal**：Ray Data 与 project 在 60K unique×2、同 CPU/GPU、1+3
+   交错下比较 JCT、images/s、first output 和单位资源成本。
+3. **Daft 容量上界**：单列最大成功规模与更大规模的结构化 OutOfDisk/spill 失败，
+   这是可扩展性结果，不把失败 arm 的缺失吞吐填成 0。
+
+跨层联合表只比较已经归一化且每个 arm 独立达到平台的 `images/s`、images/J、
+J/1K-images、CPU-core-seconds/image、images/CPU-core-second、GPU-seconds/image 和
+host I/O bytes/image。绝对 JCT、总能耗、总 CPU 时间和 raw `first_output_s` 需要同规模
+才能排名。`first_output_fraction_of_e2e` 可描述物化/流式结构，但仍是跨规模描述性信号。
 
 ### 5.1 AI_CLASSIFY 的质量与公开 benchmark 对齐
 
@@ -286,8 +308,9 @@ runner 对 Ray Data native graph 和项目路径分别建立精确资源账本�
 Ray `num_cpus` 只是准入资源，不是线程 quota；schema v8 同时冻结并记录每 worker
 Torch intra-op/inter-op 线程，正式 matched-resource 默认 `1/1`。若 actor 实测线程
 合同不一致则 fail closed，actor 数扫描与 per-actor thread 扫描分开报告。
-正式 host-path 矩阵使用 schema v9：在上述 v8 资源字段之外，分开记录
-`unique_images`、`dataset_passes` 与 processed `rows`。当前锁定 60K COCO train
+正式 host-path 矩阵当前使用 schema v12：保留 v9 起分开的
+`unique_images`、`dataset_passes` 与 processed `rows`，并增加输出合同、来源身份、
+首输出结构信号和单位图片资源派生量。当前锁定 60K COCO train
 唯一图、2 logical passes（120K processed rows）；pass-qualified execution ID 保留
 exactly-once 门禁。重复 pass 只用于达到每 run 60 秒以上稳态，不得声称为更多唯一图。
 Ray cluster 外的 Daft native source threads 单列为 external CPU，并计入 host 总预算。

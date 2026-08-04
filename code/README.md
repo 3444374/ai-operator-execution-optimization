@@ -112,6 +112,9 @@ now lives under `code/src/`:
   The actor owns no hidden batching; organizer/scheduler remains the batching
   owner. Native framework baselines are deliberately separate under
   `baselines/image/frameworks/`.
+  `modalities/image/metrics.py` only derives scale-aware unit-resource and
+  streaming-onset fields from observed totals; it does not infer hidden engine
+  queues or relabel text TTFT/ITL as image metrics.
 - `infrastructure/runtime_env.py`: one shared contract for `PYTHONPATH` plus single-threaded
   OpenBLAS/MKL/OMP/NumExpr settings inherited by Ray workers and multi-job
   subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per

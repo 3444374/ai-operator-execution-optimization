@@ -113,6 +113,12 @@ class ImageRunnerSchemaTest(unittest.TestCase):
             "embedding_output_contract_effective",
             "embedding_normalization_in_timed_boundary",
             "embedding_normalization_owner",
+            "first_output_fraction_of_e2e",
+            "post_first_output_s",
+            "steady_state_duration_gate_met",
+            "joules_per_1k_images",
+            "gpu_seconds_per_image",
+            "images_per_cpu_core_second",
         }
 
         self.assertTrue(expected.issubset(set(RUNNER_MODULE.CSV_FIELDS)))

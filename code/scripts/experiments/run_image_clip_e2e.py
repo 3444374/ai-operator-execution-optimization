@@ -56,6 +56,10 @@ from src.modalities.image.execution import (  # noqa: E402
     run_project_ray_pipeline,
     stop_project_ray_worker_pool,
 )
+from src.modalities.image.metrics import (  # noqa: E402
+    IMAGE_METRIC_DEFINITIONS,
+    image_run_derived_metrics,
+)
 from src.baselines.image.frameworks.ray_data import (  # noqa: E402
     build_ray_data_clip_pipeline,
     run_ray_data_clip_baseline,
@@ -110,6 +114,14 @@ CSV_FIELDS = (
     "operator_e2e_s",
     "first_output_s",
     "first_output_semantics",
+    "image_derived_metrics_status",
+    "post_first_output_s",
+    "first_output_fraction_of_e2e",
+    "post_first_output_fraction_of_e2e",
+    "first_output_cross_scale_semantics",
+    "steady_state_min_s",
+    "steady_state_duration_gate_met",
+    "throughput_cross_scale_semantics",
     "images_per_s",
     "batch_service_p50_s",
     "batch_service_p95_s",
@@ -174,6 +186,7 @@ CSV_FIELDS = (
     "cpu_samples",
     "cpu_core_seconds_estimate",
     "cpu_core_seconds_per_image",
+    "images_per_cpu_core_second",
     "host_memory_mean_pct",
     "host_memory_peak_pct",
     "host_memory_available_min_mib",
@@ -202,8 +215,14 @@ CSV_FIELDS = (
     "gpu_samples",
     "gpu_per_device_json",
     "gpu_seconds",
+    "gpu_seconds_per_image",
     "images_per_gpu_s",
     "images_per_joule",
+    "joules_per_1k_images",
+    "host_disk_read_bytes_per_image",
+    "host_disk_write_bytes_per_image",
+    "host_net_recv_bytes_per_image",
+    "host_net_sent_bytes_per_image",
     "engine_stats_text",
     "engine_stats_semantics",
     "model_revision",
@@ -866,6 +885,18 @@ def main() -> None:
     cpu_core_seconds = float(cpu_metrics["cpu_busy_cores_mean"]) * operator_e2e_s
     gpu_seconds = args.gpu_workers * operator_e2e_s
     gpu_energy_j = float(gpu_metrics["gpu_energy_estimate_j"])
+    derived_metrics = image_run_derived_metrics(
+        rows=total_rows,
+        operator_e2e_s=operator_e2e_s,
+        first_output_s=first_output_s,
+        cpu_core_seconds=cpu_core_seconds,
+        gpu_seconds=gpu_seconds,
+        gpu_energy_j=gpu_energy_j,
+        host_disk_read_bytes=int(cpu_metrics["host_disk_read_bytes"]),
+        host_disk_write_bytes=int(cpu_metrics["host_disk_write_bytes"]),
+        host_net_recv_bytes=int(cpu_metrics["host_net_recv_bytes"]),
+        host_net_sent_bytes=int(cpu_metrics["host_net_sent_bytes"]),
+    )
     declared_source_cpus = cpu_budget.source_slots
     declared_preprocess_cpus = cpu_budget.preprocess_slots
     declared_model_cpus = cpu_budget.model_slots
@@ -913,6 +944,7 @@ def main() -> None:
         "operator_e2e_s": operator_e2e_s,
         "first_output_s": first_output_s,
         "first_output_semantics": "cold_setup_to_first_complete_arrow_record_batch",
+        **derived_metrics,
         "images_per_s": total_rows / operator_e2e_s,
         # Legacy aliases retained for old summarizers. These are not pure GPU
         # service times; the explicit semantics and replacement fields follow.
@@ -1021,7 +1053,7 @@ def main() -> None:
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 11,
+        "schema_version": 12,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,
@@ -1043,6 +1075,17 @@ def main() -> None:
         "detailed_stage_timing_intrusive": args.detailed_stage_timing,
         "bandwidth_semantics": "logical_bytes_over_stage_wall_not_pcie_counter",
         "mfu_semantics": "estimated_only_when_verified_flops_and_dtype_peak_are_supplied",
+        "cross_scale_comparison_semantics": {
+            "rate_and_unit_resource_metrics": (
+                "descriptive comparison allowed after each arm independently reaches "
+                "a steady throughput plateau"
+            ),
+            "absolute_jct_and_first_output": "matched workload scale required for ranking",
+            "first_output_fraction_of_e2e": (
+                "streaming/materialization diagnostic only; not normalized latency"
+            ),
+        },
+        "metric_definitions": IMAGE_METRIC_DEFINITIONS,
         "thread_budget_semantics": (
             "explicit_torch_intraop_and_interop_per_worker; "
             "ray_num_cpus_is_admission_not_os_quota"

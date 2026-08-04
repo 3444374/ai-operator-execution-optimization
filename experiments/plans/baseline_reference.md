@@ -472,9 +472,12 @@ mAP、micro/macro-F1、precision/recall；embedding 检索用 Recall@K、MRR、n
 
 #### 当前采集覆盖与缺口
 
-`code/scripts/experiments/run_image_clip_e2e.py` schema v9 已覆盖 operator E2E、first output、
+`code/scripts/experiments/run_image_clip_e2e.py` schema v12 已覆盖 operator E2E、first output、
 images/s、batch/stage P50/P95/P99、输入/输出 bytes、H2D/D2H、CPU-core-seconds、
-GPU util/power/energy/显存、exactly-once、digest/norm、资源版本与 CPU 预算。它仍然
+GPU util/power/energy/显存、exactly-once、digest/norm、资源版本与 CPU 预算，并增加
+first-output/E2E 流式比例、60s duration gate、J/1K images、GPU-seconds/image、
+images/CPU-core-second 和 host I/O bytes/image。历史 schema-v11 可旁置补算这些派生量，
+但不能事后构造 engine-internal batch、逐图 latency 或 object-store/spill。它仍然
 缺少或只部分覆盖以下正式指标：
 
 1. **任务质量**：当前 PostgreSQL COCO 表没有 annotations/captions，不能计算
@@ -487,8 +490,13 @@ GPU util/power/energy/显存、exactly-once、digest/norm、资源版本与 CPU 
    task retry 和资源清理后的残留审计。
 5. **请求级尾延迟**：当前主要是 batch latency；若产品语义是一行一个 AI 算子请求，
    需按 row ID 记录 submit→complete 分布，避免 batch P99 冒充 request P99。
-6. **扩展/成本派生量**：已有 CPU/GPU/energy 原始量，但仍需统一生成 scaling efficiency、
+6. **扩展/成本派生量**：schema v12 已补单位图片资源量；仍需生成 scaling efficiency、
    $/1K rows（仅在价格可比时）、failure rate 和 oracle regret summary。
+
+纯代数派生指标不触发历史性能实验重跑。可用
+`code/scripts/analysis/augment_image_observability.py` 从 schema-v11 raw CSV 生成旁置增强
+CSV；原始 CSV 保持不变。该工具缺字段时 fail closed，也不把 12K 与 60K 的 absolute
+JCT/first-output 伪装成 matched-workload 比较。
 
 上述缺口分两类处理：任务质量 evaluator、system sink 与失败记录是正式排名前的
 **阻断项**；object-store、逐行 latency、queue/bubble 等是策略或瓶颈归因需要时的
