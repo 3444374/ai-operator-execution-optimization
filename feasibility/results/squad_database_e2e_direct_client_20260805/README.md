@@ -17,7 +17,7 @@ direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（D
 |---|---|
 | 平台 | AutoDL 2×RTX 4090；vLLM 0.25.1，单 endpoint 8000，qwen2.5-7b，prefix-cache enabled |
 | arm | `direct_client`（httpx async + `asyncio.Semaphore(32)`，per-request，无项目 credit/backpressure） |
-| 请求体 | 共享 `build_completion_request_body`（chat_completions，temp 0.0，cap=64）——与 DuckDB-ai 语义等价 |
+| 请求体 | direct_client 用 `build_completion_request_body`（chat_completions，temp 0.0，cap=64）；`request_equivalence_gate_20260805/` 验证两路径关键请求字段语义等价（DuckDB-ai 不复用该 builder，它有自己的 `ai_completion_request_json`） |
 | 数据库 | PostgreSQL 18.4 + pgvector 0.8.5；workload `squad_v11_dev_short_answer`（10570） |
 | 合同 | 全集 10570（无 --limit）、`--strict-attribution`、`--service-config-hash 49cf2f803735b4a4`、`--metrics-settle-s 5` |
 | sink | `write_completions(..., "json_text")` → `document_completions`；content digest readback |
@@ -72,9 +72,10 @@ direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（D
   | E2E wall | 93.9s | 91.9s |
   | correct_rows/s | 90.42 | 92.29 |
 
-  **同一种截断事件（模型在某题生成 >64 token），两条路径给出不同的可靠性结论**：
-  DuckDB-ai 把它变成失败行（NULL），direct_client 把它变成截断但完成的行（partial text）。
-  EM 几乎相同（截断行两种口径都 0 分）；E2E wall direct 稍快（~2s，无扩展 barrier 开销）。
+  **同一 source row（`572700c8…`，见 `squad_truncation_diag_572700c8_20260805/`）在两次独立 full 中都触顶
+  cap=64**，两条路径给出不同的可靠性结论：DuckDB-ai 把它变成失败行（NULL），direct_client 把它变成
+  截断但完成的行（partial text）。注意这是两次独立运行的同一行，不是同一次事件。EM 几乎相同（截断行
+  两种口径都 0 分）；E2E wall direct 稍快约 2s（**单次观察，不能归因为"无扩展 barrier 开销"**）。
 - **状态字段（解耦）**：`single_run_valid=true` / `formal_run_gate_passed=false`（单次 runner 恒 false）/
   `comparison_admission=pending_formal_repeat`。单次 E2E 测量，**非数据库系统排名**。
 - **不能声称**：direct_client 比 DuckDB-ai 更快或更可靠（单次观测、偶发截断、不同语义口径）；
@@ -82,8 +83,9 @@ direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（D
 
 ## 7. 对课题含义 + 下一步
 
-- **含义**：direct_client 臂已可测、可归因、可复算、可读回。两臂的 E2E 拆分都 operator-dominated
-  （模型调用 >99%），scan/sink <1%。两臂的差异集中在"截断的产品语义"（NULL vs partial text）而非吞吐。
+- **含义**：direct_client 臂已可测、可归因、可复算、可读回。两臂的 E2E 拆分都 **adapter/operator-dominated**
+  （本 direct 臂 adapter 占 wall 99.26%，含 per-request HTTP+排队+模型服务，不能单独归因给"模型调用"），
+  scan/sink <1%。两臂的差异集中在"截断的产品语义"（NULL vs partial text）而非吞吐。
 - **下一步**：① 补 `project_static` 臂（项目冻结最佳静态）→ 三臂齐全；② 填全 deploy 配置的
   REPLACE_ME（真实 vLLM 配置）→ 重算 service-config-hash；③ 三臂 `1 warmup + 3 formal` 正式排名。
 
@@ -101,12 +103,13 @@ direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（D
   DuckDB 臂所有行共享 barrier 时间戳 → P50=P95=P99 = barrier span）。
 - **共享 timeout**：归档 direct 用 timeout=180s，DuckDB 用 120s（不一致）。订正后用共享 CLI
   `--request-timeout-s`（默认 120s），两臂必须冻结同一值。
-- **README §6 措辞订正**：
+- **README §2/§6/§7 措辞订正（已直接改正文）**：以下 4 处措辞 codex 复核后要求改正，现已直接修在
+  §2 请求体行、§6 对比段、§7 含义段，§8 仅留更正记录：
   - 是"同一 source row（`572700c8…`）在两次 full 中都触顶"，不是"同一个事件"（两次独立运行）。
   - 2s 差异只是**单次观察**，不能归因为"没有扩展 barrier 开销"。
   - 两臂是 **adapter/operator dominated**，不能写"模型调用 >99%"。
-  - DuckDB **不使用** direct 的 `build_completion_request_body`；只能说请求等价门禁（`request_equivalence_gate`）
-    验证了两路径关键字段语义等价。
+  - DuckDB **不使用** direct 的 `build_completion_request_body`；只能说请求等价门禁
+    （`request_equivalence_gate`）验证了两路径关键字段语义等价。
 - **sunk_status.csv**：本次跑（`535789d`）的服务器产出目录有 `sunk_status.csv`，但之前只取回了
   `report.json` + `per_row_evidence.csv`。现已补取（10570 行）。
 - **provenance**：direct_client 注册为 `comparison_role="direct_service_control"`（非 database product baseline），

@@ -44,9 +44,16 @@
     cap{64,128,256} × 3）。cap=64 孤立重放 3×3 全 `stop`/46 token/文本一致 → 截断不可复现，推翻
     「确定性 rambling」；记为偶发、机制未定。诊断专用，不回灌 cap=64。
 14. `squad_database_e2e_duckdb_ai_20260805/`：**database-E2E runner 单臂实测**（DuckDB-ai，全 10570）。
-    scan→construct→operator→统一 sink 计时墙：wall 93.9s，scan+construct+sink <1%（模型调用独占 99%）；
-    `correct_rows/s` 90.42（主 headline）、sunk 10570；状态 failure/false/eligible_with_documented_failure
-    （1 偶发截断）。单臂测量，非排名；`direct_client`/`project_static` 臂待补。
+    scan→construct→operator→统一 sink 计时墙：wall 93.9s，scan+construct+sink <1%（**adapter 占 wall 99.27%**，
+    含 setup+DuckDB 执行+HTTP+排队+模型服务，不归因给模型）；`correct_rows/s` 90.42（主 headline）、sunk 10570；
+    状态 `single_run_valid=false` / `formal_run_gate_passed=false`（单次恒 false） / `comparison_admission=pending_formal_repeat`
+    （1 偶发截断 → fail-closed）。机器原始文件不变，README §8 含 codex 订正。单臂测量，非排名。
+15. `squad_database_e2e_direct_client_20260805/`：**database-E2E runner 单臂实测**（direct_client，全 10570）。
+    同一计时墙：wall 91.9s，adapter 占 99.26%；`correct_rows/s` 92.29、sunk 10570、EM 80.22%；finish_reason
+    `{stop:10569, length:1}`——1 行截断返回 **partial text**（非 error）→ 0 error/0 NULL → `single_run_valid=true`。
+    与 DuckDB-ai 臂核心差异：同一 source row（`572700c8…`）两次独立 full 触顶 cap=64，DuckDB-ai 转 NULL→failure，
+    direct 返回 partial text→success（**截断的产品语义差异，非吞吐差异**）。机器原始文件不变，README §8 含 codex 订正
+    （truncation_count/per-row latency 列需正式 rerun 落盘）。单臂测量，非排名；`project_static` 臂待补。
 
 如果后续新增 GPU 环境验证，建议命名为：
 

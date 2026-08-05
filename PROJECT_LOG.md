@@ -4536,3 +4536,21 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 - **两臂核心差异确认**：不在吞吐（两臂都 operator-dominated，scan/sink <1%），而在**截断的产品语义**
   （NULL vs partial text → FAILURE vs success）。这是三臂对比要 surfacing 的关键维度。
 - 下一步：`project_static` 臂 → 三臂齐全 → 填全服务配置 → 三臂 `1w+3f` 正式排名。
+
+## 2026-08-05 direct_client 审计收尾：文档登记 + 正文措辞订正
+
+- 完成 direct_client 复核（DA）剩余两项：① 登记 `code/src/baselines/text/products/direct_client.py`、
+  `code/tests/baselines/text/test_direct_client.py` 与证据目录 `feasibility/results/squad_database_e2e_direct_client_20260805/`
+  进 PROJECT_INDEX / code/scripts/README / feasibility/results/README；② 按 codex 要求直接修 direct_client 证据
+  README §2/§6/§7 正文措辞（不只 §8 审计节）。
+- 订正的 4 处措辞：「同一种截断事件」→「同一 source row（`572700c8…`）在两次独立 full 中都触顶 cap=64」；
+  「E2E wall direct 稍快（~2s，无扩展 barrier 开销）」→「约 2s（单次观察，不能归因为没有扩展 barrier 开销）」；
+  「两臂 operator-dominated（模型调用 >99%）」→「adapter/operator-dominated（本 direct 臂 adapter 占 wall 99.26%，不能单独归因给模型调用）」；
+  「共享 build_completion_request_body——与 DuckDB-ai 语义等价」→「direct 用该 builder；request_equivalence_gate 验证两路径关键请求字段语义等价，DuckDB 不复用该 builder」。
+- 顺带修正同源陈旧口径：code/scripts/README 与 protocol spec（`bounded_output_duckdb_comparison_protocol_20260805.md`）
+  的状态字段名 `capability_gate_status` → `single_run_valid`（H 系列已改 runner 输出，文档遗留），并把两处
+  「direct_client/project_static 臂留 stub」更新为「direct_client 臂已实现，project_static 臂留 stub」。
+  feasibility/results/README 第 14 条同步去掉「模型调用独占 99%」与耦合状态字段。
+- 订正上一条 PROJECT_LOG 的措辞：「**同一事件不同结论**」应读作「**同一 source row 在两次独立 full 中触顶**，
+  给出不同可靠性结论」（两次独立运行，非同一次事件）。结论不变：差异在截断的产品语义（NULL vs partial text），非吞吐。
+- 纯文档提交，无代码改动、无重跑；机器原始 report.json/per_row_evidence.csv 全部保持不变。下一步：`project_static` 臂 → 三臂齐全。
