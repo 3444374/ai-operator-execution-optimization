@@ -1,6 +1,6 @@
 # 实验 Baseline 参考矩阵
 
-整理日期：2026-07-16；文献、官方 benchmark、厂商 AI 算子可安装性与指标合同复审：2026-08-04
+整理日期：2026-07-16；文献、官方 benchmark、厂商 AI 算子可安装性与指标合同复审：2026-08-05
 
 > **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
 用途：正式实验设计时，从正式论文、官方系统和可审计工程默认中提取 baseline，避免使用 strawman 对照
@@ -232,7 +232,7 @@ CSV 才是实验数字的权威来源。三者发生冲突时，不能自行拼�
 | vendor-code parity | Daft 官方 803,580-row ResNet18 benchmark 中的 Daft/Ray Data 原脚本 | 公开 file/object track；固定 upstream commit，只做环境适配 |
 | native API graph | Ray Data `read_sql → map_batches(CPU) → map_batches(GPU)` | 数据库输入轨道；Ray Data 自己调度，UDF 只定义 workload kernel |
 | diagnostic reference | 项目自写 Daft fused/staged UDF | 只作阶段边界与资源机制诊断，不进入 official/native 主排名 |
-| product-integrated data engine | PolarDB Daft AI Functions `classify_image` / `embed_image` | 同一 Daft/Ray 架构家族的工业集成，不冒充独立数据库内核执行方式 |
+| product-integrated data engine | PolarDB Lakebase / OceanBase Lakebase 的 Daft-on-Ray 多模态计算 | 同一 Daft/Ray 架构家族的工业集成；与数据库 SQL AI Function 分开，不冒充独立内核执行方式 |
 | managed product SQL | Snowflake / BigQuery image `AI_CLASSIFY` | 闭源托管路径只比较 E2E、成本、质量和失败率，不跨硬件比较 MFU |
 | project static | 冻结最佳 frame budget/active batches/actor shape | 动态策略的唯一主对照 |
 | project adaptive | state-aware request shaping/shared credit | 只报告相对 frozen static 的增量与 oracle regret |
@@ -242,11 +242,19 @@ CSV 才是实验数字的权威来源。三者发生冲突时，不能自行拼�
 流水线。每个系统同时报告 matched-resource 与 independently
 calibrated best-achievable；统一输入、模型、输出、生命周期、计时边界和 sink。
 
-OceanBase 4.5/4.6 官方 AI Function 当前确证的是文本 `AI_COMPLETE`、文本
-`AI_EMBED` 与 `AI_RERANK`，不把它冒充图像分类 baseline；其 CE 4.5.0 动态部署
-仍受当前 AutoDL 容器门禁阻塞。公开 ImageNet/ResNet18 系统 benchmark 只提供方法模板：
+OceanBase 需要拆成两条产品面：OceanBase Database 4.5/4.6 的 SQL AI Function 当前
+确证的是文本 `AI_COMPLETE`、文本 `AI_EMBED` 与 `AI_RERANK`；OceanBase AI Database /
+Lakebase 的公开架构另以共享对象存储、统一 catalog 和多模表为数据底座，由 **Daft on
+Ray 执行多模态 AI inference**。后者是产品集成架构证据，但当前没有公开的、可固定
+commit 并在本项目服务器运行的 OceanBase vendor benchmark，因此不能把 Lakebase 宣传页
+冒充同机数字 baseline，也不能据此把 SQL AI Function 写成图像分类算子。OceanBase CE
+4.5.0 动态部署仍受当前 AutoDL 容器门禁阻塞。公开 ImageNet/ResNet18 系统 benchmark 只提供方法模板：
 PolarDB 与 Ray 官方页面对 Daft/Ray Data 的 raw 排名方向并不一致，因此外部数字不跨
 硬件排名，必须在本项目机器上按同数据、同模型、同版本分别校准重跑。
+
+来源：[OceanBase AI Database Lakebase architecture](https://en.oceanbase.com/blog/oceanbase-ai-database-lakebase-architecture)、
+[OceanBase DataStudio Daft-on-Ray workflow](https://en.oceanbase.com/blog/oceanbase-datastudio-unified-ai-data-production)、
+[OceanBase AI Function](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975)。
 
 ### 外部多模态公开 benchmark：事实、冲突与复现合同
 
@@ -280,6 +288,42 @@ Ray 官方还报告同一 image-classification workload 的 Ray Data E2E 随单�
 来源：[Ray Data Benchmarks](https://docs.ray.io/en/master/data/benchmark.html)、
 [PolarDB Daft 性能报告](https://help.aliyun.com/en/polardb/polardb-for-postgresql/daft-performance-benchmark)。
 
+#### Daft / Ray 用户常测场景与可复用 workload
+
+官方示例和 benchmark 显示，Daft-on-Ray 与 Ray Data 最常用于“对象/表数据读取 → CPU
+解码或解析 → GPU 批推理 → 列式结果写出”的离线流水线，而不是只测一个模型 kernel。
+可复用场景按与本课题的接近程度排序如下：
+
+| 场景 | 官方 workload / 模型 | 对本项目的用途 | 边界 |
+|---|---|---|---|
+| 图像分类 | ImageNet、ResNet18，80,358 unique images 重复 10 次形成 803,580 rows | 当前最强 vendor-code parity；同时测 CPU decode、GPU inference 和写出 | 重复行可能放大缓存效应，必须另报 unique track |
+| 文档 embedding | 10K PDF、`all-MiniLM-L6-v2` | 文本解析重、输出固定，适合验证 CPU/GPU overlap | 不是生成式 AI_COMPLETE |
+| 音频转写 | Common Voice 17、Whisper-tiny | 变长输入、CPU decode 与 GPU 推理异质性 | 输出和错误指标需按 ASR 语义补 WER |
+| 视频检测 | Hollywood2、YOLO11n | frame-budget、多级 decode/inference、长对象 | 当前双 4090 本地存储不足时只做小门禁 |
+| 大图 embedding | 大型 Parquet/base64 image、ViT | 检验 source/decode/H2D/GPU 的木桶效应 | 公开规模可达 TiB，不能直接搬到当前 AutoDL |
+| LLM 离线推理 | OpenOrca/ShareGPT/SQuAD 等、vLLM | 对齐项目 AI_COMPLETE、变长 output、SLO 和 token-work | 与图像官方 benchmark 分轨，不混 raw throughput |
+
+Daft 官方四模态 benchmark 提供 Daft、Ray Data、Spark 的代码、集群配置和日志，适合作为
+可复现厂商代码轨；Ray Data 官方 batch-inference 合同则是 `load → map_batches → consume/write`。
+两者都不是独立第三方裁判。来源：[Daft Benchmarks](https://docs.getdaft.io/en/stable/benchmarks/)、
+[Daft image-classification source](https://github.com/Eventual-Inc/Daft/tree/main/benchmarking/ai/image_classification)、
+[Ray Data batch inference](https://docs.ray.io/en/latest/data/batch_inference.html)。
+
+#### 第三方标准的采用边界
+
+当前未找到一套被第三方维护、专门用于中立排名 Daft 与 Ray Data 的权威套件。正式证据
+采用“第三方任务/质量合同 + 双厂商原生代码同机复现”，而不是挑选某家更有利的网页数字：
+
+| 标准 | 可以复用 | 不能声称 |
+|---|---|---|
+| [MLPerf Inference](https://docs.mlcommons.org/inference/) | ImageNet/ResNet、SQuAD/BERT、OpenImages、Whisper 等数据/模型/质量阈值和 latency/throughput 定义 | 把 Daft/Ray wrapper 的结果称为官方 MLPerf submission；它不覆盖数据库 source/sink E2E |
+| [TPCx-AI](https://www.tpc.org/tpcx-ai/) | 数据管理、训练/评分/服务、性能价格和审计思想；可选 scoring 子集 | 只跑推理子集却称 TPCx-AI compliant；未审计的改编只能叫 TPCx-AI-inspired |
+| SemBench | 多模态 semantic operator 的 quality/time/cost/memory/failure/scale 协议 | 用 semantic query 结果替代固定-work 执行链路的同模型吞吐对照 |
+
+因此图像主轨使用 ImageNet/ResNet18 vendor-code parity + 本项目 PostgreSQL database-E2E；
+文本主轨使用 SQuAD/ShareGPT 等语义合同 + 数据库 AI_COMPLETE 原生算子。第三方标准负责
+任务与质量，Daft/Ray 官方代码负责框架原生性，本项目同机重跑负责性能可比性。
+
 正式复现分成两个输入轨道：
 
 1. **公开 file/object track**：尽量复用公开 ImageNet/ResNet18 数据、变换、模型、
@@ -296,6 +340,30 @@ best-achievable；后者允许各系统使用自己的 batch、actor/task 和 pi
 first-output、P95/P99、CPU-core-seconds、GPU utilization/starvation、host/device
 memory、失败率和 top-1/top-5 accuracy。
 
+#### 当前服务器的三次门禁与选型规则
+
+GPU 服务器规格不得仅凭“模型能放下”或一次峰值决定。当前 AutoDL 的只读审计只证明
+2×RTX 4090、约 32 个容器可用 CPU、约 240 GiB 内存和 120 GiB `/dev/shm` 可用于双
+endpoint 门禁；同时存在 `vm.max_map_count=65530`、数据盘余量有限、无 NVLink，以及
+审计时两卡被文本 vLLM 占用等约束。**尚未运行下列三次门禁，因此暂不下最终租机结论。**
+
+1. **能力门禁（256–1K unique rows）**：固定 upstream commit/依赖，验证 source、模型、
+   exactly-once、质量与 sink；只判可运行，不报性能结论。
+2. **饱和门禁（每 cell ≥60s，1 warmup + 3 interleaved repeats）**：分别扫描 workload
+   scale，再冻结规模扫描 native batch/source/preprocess/model worker；禁止两个维度同时上涨。
+   用 CPU busy/core-seconds、source/decode、H2D、GPU active/power、memory/spill 和 write
+   time 判定木桶，而不是只看 `nvidia-smi` 单点 util。
+3. **规模/稳健性门禁（50K–80,358 unique rows）**：真实写出，cold/warm 分轨，并把
+   80,358 unique 与 repeated-10× compatibility track 分开；记录结构化失败上界。
+
+门禁后按瓶颈选机：CPU/source 饥饿优先增加 CPU 与本地 NVMe，显存不足再升 48GB GPU，
+多 endpoint 实验优先增加独立 GPU 数；只有 tensor-parallel/VLM 才把 NVLink/NVSwitch
+作为硬要求。若目标是复现厂商 raw number，应复刻官方 8 个单 GPU worker（每节点
+4 vCPU/16GB/24GB GPU）及数据所在云区，而不是用更强单机直接比较。若目标是本项目
+2–4 endpoint 方法实验，候选环境为 2–4×24/48GB GPU、64–96 可用 CPU、256–512GB RAM、
+1–2TB NVMe、`/dev/shm≥128GB`、`vm.max_map_count≥262144`（建议 1048576）和 PCIe 4.0 x16；
+该候选只用于筛选租机，最终规格必须由前三次门禁的阶段数据决定。
+
 ### 不同技术栈的产品与学术比较
 
 Daft/Ray 是本项目实现手段，不是 baseline 准入条件。外部系统按算子语义入选：
@@ -305,7 +373,7 @@ Daft/Ray 是本项目实现手段，不是 baseline 准入条件。外部系统�
 | 同栈官方 runtime | Daft Native/Ray | 同机同模型严格排名，判断自定义调度相对官方实现的净收益 |
 | 不同栈开源 runtime | Ray Data；可运行时 Spark | 同机同模型严格排名，防止只赢同栈弱实现 |
 | 数据库调用外部 endpoint | OceanBase `AI_COMPLETE` / text `AI_EMBED` | 文本轨道同 endpoint 严格比较；当前容器门禁失败则保留工业参考 |
-| 工业同类集成 | PolarDB Daft AI Functions | 作为 Daft/Ray 架构家族的产品实现，不称为独立数据库内核方案 |
+| 工业同类集成 | PolarDB Lakebase / OceanBase Lakebase 的 Daft-on-Ray | 作为开放存储 + Daft/Ray 多模态计算的产品架构证据；无可运行 vendor code 时不进同机排名 |
 | 闭源托管 SQL | Snowflake / BigQuery image `AI_CLASSIFY` | 同数据/标签比较查询 E2E、$/1K rows、质量、错误率和配额；不比较内部 GPU/MFU |
 | 学术语义系统 | LOTUS、Palimpzest、ThalamusDB | 使用 SemBench 对齐 operator、数据、ground truth、runtime/cost/F1；不与固定-work CLIP 只比吞吐 |
 
