@@ -4201,3 +4201,35 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
   `feasibility/results/duckdb_ai_semantic_gate_20260805/`：不保存原始 prompt/输出文本，
   只保存 resolved config、退出状态、服务计数、逐分片摘要与失败日志；七步报告明确
   capability 数据不进入正式性能排名。
+
+## 2026-08-05 bounded-output 产品对比轨方法论（DuckDB-ai 兼容性三轨）
+
+DuckDB `ai` 把 `finish_reason=length` 当行级 error，与 ShareGPT fixed-cap 主轨（接受截断）
+语义不兼容；实测验证：≤10 词摘要即使强制单句禁列表仍有 ~9% 行超 cap 报错，句子计数
+（回一个整数、cap=16）64 行零错误。据此确定 DuckDB 对比走**独立 bounded-output 轨**，
+原 ShareGPT 实验全部保留不动（仍讲项目内部策略/服务上限/动静态对比）。三轨结构：
+
+1. **synthetic bounded-output capability track（句子计数）**：cap=16，**仅作能力/微基准**。
+   1-token 输出只测 SQL/框架调用开销、prompt prefill、请求并发与双 endpoint 利用、每行物化成本；
+   不测 decode/流式/长短输出差异/提交调度。即使项目更快，也只能声称"项目在短标量 LLM 调用链路
+   上执行效率优于 DuckDB `ai`"，**不能外推为 AI_COMPLETE 普遍优于 DuckDB**。要求全量 2048 行
+   零失败 + 确定性句子切分器 ground-truth exact-match accuracy + 整数正确性校验。
+2. **正式产品对比轨（主）**：**SQuAD 短答案**（cap 64/128，仍是文本生成、有公开 reference answer、
+   可算 Exact Match + token-level F1、输出天然短、语义真实）为主 bounded AI_COMPLETE 对比；AG News/SST-2
+   标签为可选扩展。完整协议见
+   `experiments/plans/bounded_output_duckdb_comparison_protocol_20260805.md`：从"数据库 AI_COMPLETE 实际
+   工作方式"出发（分类/摘要/问答都是 AI_COMPLETE workload，项目不实现独立分类引擎）、5 类共同指标
+   （headline = correct rows/s、SLO-compliant correct rows/s、cost/correct row，非 raw rows/s）、
+   **operator-only vs database-E2E 两个计时边界必须分开**（不可拿 DuckDB operator-only JCT 比项目含
+   PG/Daft 读取的 E2E）、请求等价门禁（`ai_completion_request_json()` + vLLM prompt-token 校验）。
+   句子计数在 ShareGPT 上 accuracy 仅 ~5%（对话歧义），只留 microbenchmark。
+3. **中等输出轨（可选，补 AI_COMPLETE 生成特性）**：短输入一句话摘要/短答案抽取，输入长度按规则
+   预筛（非按模型输出事后筛），cap 128/256，**必须全 manifest 零截断预检**；达不到零截断则诚实
+   记录 DuckDB 产品语义限制，**不继续抬 cap 直到"碰巧通过"**。
+
+三臂对照（每轨同 manifest）：DuckDB `ai` 原生 / bounded direct client / 项目冻结最佳静态
+（项目最终优化方案确定后再补）。正式实验**增加 unique 行数**而非重复同批（避免 prefix cache
+与重复 prompt 污染）。执行顺序：①句子计数 DuckDB 全量语义门禁（进行中）→ ②补公开分类
+workload → ③启动正式 DuckDB/bounded/project 三臂对照。新 importer
+`code/scripts/data/import_bounded_output_workload.py`（`--template` 支持任意 bounded wrap）、
+句子计数门禁脚本 `code/scripts/baselines/duckdb_ai_sentence_count_gate.py`。
