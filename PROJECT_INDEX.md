@@ -55,6 +55,10 @@
 | `experiments/results/operator_cost_profile_dual4090_formal_20260804/` | 双 4090 首次 320-run formal 的并发 runner、空 Ray 地址与整体排除证据 | 复核为什么两套表面完整数据均不能进入 CE0–CE6，以及修复后的重跑门禁 |
 | `feasibility/results/cost_profile_cacheon_gate_20260805/` | 已提交 main 的双 4090 cache-on + shared-Ray 真实两运行门禁 | 复核 cache 声明/命中计数、exactly-once、双 endpoint 与 0 local-Ray 启动；不作性能排名 |
 | `feasibility/results/duckdb_ai_semantic_gate_20260805/` | DuckDB community `ai` 双 endpoint capability 与 ShareGPT fixed-cap 语义门禁，含最小 raw 证据 | 复核 4 行可运行和 64 行截断错误，决定另建 bounded-output 产品轨；不作性能排名 |
+| `feasibility/results/squad_v11_dev_import_20260805/` | SQuAD v1.1 dev（10570 行）importer provenance：canonical SHA256 门禁、content_hash、多答案 JSONB、prompt 模板 hash | bounded-output 主对比轨的数据源合同；后续 gate 的 content_hash 校验基准 |
+| `feasibility/results/request_equivalence_gate_20260805/` | 三方请求等价门禁（canonical = DuckDB `ai_completion_request_json` = 项目 `build_completion_request_body`）+ 单请求 vLLM prompt-token delta 交叉核验 | PASSED（37=37 prompt tokens、无隐藏 system prompt、默认 temp 0.1）；证明三臂送进模型的请求一致 |
+| `feasibility/results/squad_capability_256_v2_20260805/` | SQuAD 256 行 DuckDB-ai capability gate v2（answers[0] 分桶、round 配额）；report.json 命令字段已脱敏 | v2 是过渡期有效 evidence；被 v3（更严谨抽样）取代，保留作历史 |
+| `feasibility/results/squad_capability_256_v3_20260805/` | SQuAD 256 行 DuckDB-ai capability gate v3（max-答案分桶 + largest-remainder、workload 完整性 fail-closed、vLLM counter 可归因、full-set exactly-once、脱敏、七步 README） | EM 80.86% / F1 89.86%、attribution=attributable、workload_integrity=verified；正式三臂对比前 DuckDB-ai 单臂能力已具备 |
 | `experiments/results/row_cap_aware_packing_512_20260726/README.md` | Prefix-cache-corrected 512-row screening and repeated confirmation | Review why sequential remains default and how cache-enabled data was excluded |
 | `experiments/results/row_cap_aware_packing_512_20260726/nocache_repeats/summary_long.csv` | Plot-ready 512-row repeated metrics | Plot throughput, request tails/SLO, packing, energy, vLLM pressure, and MFU |
 | `experiments/results/row_cap_aware_packing_1024_20260726/README.md` | Held-out 1024-row mechanism decision | Review the SLO-goodput regression that blocks row-cap-first default adoption |

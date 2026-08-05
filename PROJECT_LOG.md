@@ -1,5 +1,33 @@
 # 项目日志
 
+## 2026-08-05 SQuAD capability gate v3：codex 第六轮 review 全修 + 可归因重跑
+
+- codex 对 v2（`f82de93`）SQuAD 256 行 DuckDB-ai capability gate 提了第六轮 11 个问题：
+  report 泄漏连接凭据、full 模式不验证 10570 行、workload hash 非 importer canonical、
+  vLLM counter 不可归因、identity 缺 prefix-cache/vLLM version/GPU、分桶只用 answers[0]、
+  比例配额非 largest-remainder、sample hash 裸 ID 拼接、exactly-once 非集合比较、
+  output_len 误读为 token、失败运行不归档。
+- 全部修复（`51b92f0`）：抽出共享 `src/baselines/common/redact.py`
+  （`redact_argument_list`/`redact_database_url`/`redact_text`，gate 与 `run_ai_operator_scenarios`
+  共用，消除第三份拷贝）；full 模式 + 两种模式都跑的 workload 完整性 fail-closed（10570 行 +
+  unique doc_id/source_example_id + 非空 reference_answers + canonical content hash 对齐 importer）；
+  结构化 JSON-per-row SHA256（与 importer `compute_content_hash` 单测钉死一致）；vLLM counter 归因
+  门禁（endpoint 运行前后 idle + scrape 非空 + counter 单调 + request_success_delta==requests_sent）；
+  max-答案分桶 + largest-remainder 配额；full-set exactly-once；`output_chars`；失败结构化归档 +
+  非零退出；identity 扩充（prefix-cache、vLLM version、service config hash、GPU、metrics 状态）。
+- 4 审查员对抗审 workflow 又抓出 2 个 blocker/major（已提交 report.json 仍含 `postgres:postgres`；
+  failure_report 的 sanitized_error/traceback 未脱敏）+ 若干 minor（URL flag 泛化、`_vllm_version`
+  root 路径、gauge-missing 检测、reference 空串收紧、死参数、failure identity 充实）—— 全修。
+- 重跑（`fd4f8bf` 后，`squad_capability_256_v3_20260805/`）：256/256 成功、0 error/NULL/max_tokens，
+  EM 80.86% / F1 89.86%（v3 抽样用 max-答案分桶 + largest-remainder，与 v2 样本不同，故 EM 高于
+  v2 的 75.39%）；`workload_integrity=verified`（workload_content_hash == importer 2c2301f2…）；
+  `attribution=attributable`（运行前后 idle，request_success_delta==256）；avg 5.33 gen tokens/row、
+  prefix-cache hit-rate 0.3589；operator-only JCT 4.26s；command 已脱敏。
+- v2 report.json 命令字段的 `postgres:postgres` 已单独脱敏（`fd4f8bf`，evidence 不变）；v2 保留为
+  过渡期有效 evidence，被 v3 取代。`postgres` 是本地默认开发口令、仓库私有，未做 history 重写。
+- 结论：DuckDB-ai 单臂已具备进入 bounded-output 正式三臂对比的前提。下一步按协议 §5：
+  （可选）full 10570 → database-E2E 顶层 runner（结构性缺口）→ 三臂正式对比。
+
 ## 2026-08-05 正式 vLLM 性能主轨统一为 prefix cache-on
 
 - 双 4090 cost-profile pilot/formal 当前入口升级为 cache-on，并使用新 experiment ID；
