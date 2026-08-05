@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-08-05 SQuAD full 10570 gate：fail-closed 触发，cap=64 的 1/10570 截断边界
+
+- 先按 codex 八审补 fail-closed + per-row CSV 加 `server_version`/`pgvector_version` 列
+  （`d724edc`）：任何行级 error/NULL → status=failure + 非零退出（full report 仍写出便于审计）；
+  pgvector extversion 与 PG 版本一次拉取、CSV + identity 复用。63 gate/redact/scanner 测试通过
+  （含 3 个 fail-closed 集成测试）。
+- 全量 10570 重跑（`--mode full --strict-attribution --service-config-hash 49cf2f803735b4a4`
+  — 真实 hash = sha256(model+max_model_len+2×4090+prefix-cache+vLLM0.25.1)）：**fail-closed FAILURE**。
+  exactly-once 10570/10570、workload_integrity verified、三 content hash 一致（2c2301f2…）、
+  归因 attributable（request_success_delta==10570，`--strict-attribution` 通过），但 **1 行**（`572700c8…`）
+  在 cap=64 下模型生成 >64 token → DuckDB-ai 当 max_tokens error 返回 NULL → fail-closed 触发。
+- 失败行参考答案均为 5–7 词（"Europeans who were based in Britain" 等），正确答案远低于 cap；
+  是模型在该题（temp 0.0 确定性）rambling/loop 超长，不是 baseline/数据缺陷。整集（扣除该 missing 行）
+  EM **80.32%** / F1 **89.36%**（独立复算一致）；avg 5.71 gen tokens/row、prefix-cache hit-rate 0.7446；
+  operator-only JCT 88.5s；vLLM 0.25.1、pgvector not_installed（如实）。
+- **判断**：cap=64 对 SQuAD dev 的覆盖率 10569/10570（≈0.0095% 截断），是 DuckDB-ai
+  truncation-as-error 语义的真实边界。**按协议不抬 cap 去「碰巧通过」**。codex 的「0 error/NULL」过门
+  标准未达 → full gate 标 FAILURE，但能力（质量/归因/完整性）基本成立。
+- **待裁决**：(a) 接受 1/10570 边界、full 标为「capability with 1 documented truncation」；
+  (b) 单独诊断该行（更高 cap 单跑确认长度问题）；(c) 其它。
+
 ## 2026-08-05 SQuAD capability gate v4：codex 第七轮修复后 canonical 重跑
 
 - 用 codex `735751b`（SQuAD-normalize 分桶 + `sample_manifest.jsonl` + /version + 脱敏修复）在服务器重跑

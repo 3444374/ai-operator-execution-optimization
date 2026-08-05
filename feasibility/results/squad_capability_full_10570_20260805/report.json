@@ -1,0 +1,111 @@
+{
+  "arm": "duckdb_ai",
+  "attribution": {
+    "after_idle": true,
+    "attributable": true,
+    "before_idle": true,
+    "reasons": [],
+    "request_success_delta": 10570,
+    "requests_sent": 10570
+  },
+  "cap": 64,
+  "command": [
+    "code/scripts/baselines/squad_capability_gate.py",
+    "--database-url",
+    "postgresql://postgres:***@localhost:5432/ai_operator",
+    "--workload-name",
+    "squad_v11_dev_short_answer",
+    "--mode",
+    "full",
+    "--importer-provenance",
+    "feasibility/results/squad_v11_dev_import_20260805/provenance.json",
+    "--endpoint-url",
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "--metrics-url",
+    "http://127.0.0.1:8000/metrics",
+    "--model",
+    "qwen2.5-7b",
+    "--max-tokens",
+    "64",
+    "--service-prefix-caching",
+    "enabled",
+    "--service-config-hash",
+    "49cf2f803735b4a4",
+    "--metrics-settle-s",
+    "5",
+    "--strict-attribution",
+    "--output-dir",
+    "feasibility/results/squad_capability_full_10570_20260805",
+    "--force"
+  ],
+  "error_count": 1,
+  "evidence_files": {
+    "per_row_csv": "per_row_evidence.csv",
+    "sample_manifest_jsonl": "sample_manifest.jsonl"
+  },
+  "exactly_once": true,
+  "failure_reason": "1 row-level error(s), 1 NULL response(s) (of which 1 identifiable max_tokens error(s)); capability gate requires 0",
+  "finish_reason": "unavailable (DuckDB-ai extension does not expose finish_reason)",
+  "gate": "squad_v11_dev_capability",
+  "identity": {
+    "duckdb_ai_extension_source": "community",
+    "duckdb_ai_extension_version": "0.4.14",
+    "duckdb_version": "v1.5.4",
+    "endpoint": "http://127.0.0.1:8000/v1",
+    "git_commit": "d724edc89f02527d6ca1dc9ea41b0fdf2e9dc466",
+    "hostname": "autodl-container-a4884eab4c-22401421",
+    "metrics_snapshot": {
+      "after": "ok",
+      "before": "ok"
+    },
+    "model": "qwen2.5-7b",
+    "nvidia_smi": [
+      "0, NVIDIA GeForce RTX 4090, 24564 MiB, 595.58.03",
+      "1, NVIDIA GeForce RTX 4090, 24564 MiB, 595.58.03"
+    ],
+    "pg_server_version": "PostgreSQL 18.4 (Ubuntu 18.4-1.pgdg22.04+1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit",
+    "pgvector_version": "not_installed",
+    "service_config_hash": "49cf2f803735b4a4",
+    "service_prefix_caching": "enabled",
+    "vllm_version": "0.25.1",
+    "workload": "squad_v11_dev_short_answer"
+  },
+  "importer_content_hash": "2c2301f28f9eb2fea168bfda8e8011746defeb8120ae3ca7a8b113a5085a1173",
+  "max_tokens_error_count": 1,
+  "mode": "full",
+  "null_response_count": 1,
+  "result_count": 10570,
+  "role": "capability_NOT_formal_ranking",
+  "row_count": 10570,
+  "sample_content_hash": "2c2301f28f9eb2fea168bfda8e8011746defeb8120ae3ca7a8b113a5085a1173",
+  "squad_quality": {
+    "squad_evaluated_rows": 10570,
+    "squad_exact_match_percent": 80.32166508987702,
+    "squad_exact_match_rows": 8490,
+    "squad_missing_prediction_rows": 1,
+    "squad_prediction_rows": 10569,
+    "squad_quality_status": "partial:missing_predictions",
+    "squad_token_f1_percent": 89.36120269884813
+  },
+  "status": "failure",
+  "success_count": 10569,
+  "timing": {
+    "adapter_wall_s": 92.831,
+    "boundary": "operator-only (database-E2E runner not implemented; no E2E ranking)",
+    "operator_only_jct_s": 88.515,
+    "setup_s": 4.081
+  },
+  "truncation_claim": "On this 10570-row full selection, DuckDB-ai returned 10569 completed, 1 errors, 1 identifiable max_tokens errors. DuckDB-ai does not expose finish_reason, so truncation cannot be directly confirmed; the vLLM generation-token delta (when attributable) is the actual output workload signal.",
+  "unique_result_ids": 10570,
+  "vllm_metrics": {
+    "attribution": "attributable",
+    "avg_generation_tokens_per_row": 5.71,
+    "generation_tokens_delta": 60334,
+    "prefix_cache_hit_rate": 0.7446,
+    "prefix_cache_hits_delta": 1848064,
+    "prefix_cache_queries_delta": 2481860,
+    "prompt_tokens_delta": 2481860
+  },
+  "workload_content_hash": "2c2301f28f9eb2fea168bfda8e8011746defeb8120ae3ca7a8b113a5085a1173",
+  "workload_integrity": "verified"
+}
