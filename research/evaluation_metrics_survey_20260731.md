@@ -402,7 +402,24 @@ OceanBase 的公开材料覆盖了两条不同执行链路，不能合并成一�
 
 - OceanBase 的 Sysbench 测 QPS/latency，TPC-H 测 QphH@size/response time；它们验证 OLTP/OLAP 数据库引擎，不调用 `AI_COMPLETE`/`AI_EMBED`，不能支撑 AI 算子性能结论。
 - OceanBase 的 VectorDBBench 使用公开 `Performance768D1M` 等 case，按并发扫描最高 QPS，并考察 HNSW/IVF 参数；它验证**已有向量的检索侧**，可用于写回后的 retrieval closure，却不测 embedding 生成、模型服务排队或 Daft-on-Ray pipeline。
-- OceanBase 官方 publication list 已登记 **IMLane: Composable Framework for Efficient AI Function Execution in Database Engine**（PVLDB 2026 accepted），与本课题高度相关；但本次检索未找到公开论文正文，故 workload、baseline、指标和结果全部标为 `pending-publication`，禁止从标题推断。
+- OceanBase 官方 publication list 已登记 **IMLane: Composable Framework for Efficient AI Function Execution in Database Engine**（PVLDB 2026 Industry Track accepted），与本课题高度相关。OceanBase 官方账号转载的论文介绍已披露实验摘要，故不再把所有实验字段标为未知；但本次检索仍未找到论文正文、代码或 raw results，数字只按 `vendor-authored paper summary` 使用。
+
+**IMLane 已公开的实验摘要（不是完整论文复算）**：
+
+| 项目 | OceanBase 文章披露内容 | 本项目读法 |
+|---|---|---|
+| 系统 | OceanBase Paetica 4.3、DuckDB 0.10.1；C++ DBEnd 插件 + coordinator + 独立 backend executors；共享内存 ArrowLane；Python Executor 与可插拔 Ray Executor | 这是 database-engine-integrated AI Function framework，不是 OceanBase Lakebase/Daft，也不是普通 SQL→HTTP endpoint |
+| 硬件 | 本地 Intel Xeon Gold 6240R（48 cores）、128GB、Tesla V100；远程 4 节点，每节点 Xeon Gold 6248R + RTX A6000 | 与当前 2×4090 不同，raw wall time/倍数不跨硬件排名 |
+| workload | Q1–Q2：RF/GBDT、10GB、20–40M 行；Q3–Q4：SVM/NB、1M 增量行；Q5：本地 GPU DNN；Q6：远程 CPU RNN；Q7：远程 GPU Qwen3-1.7B LLM | 覆盖 classical ML、GPU、remote 和 LLM，但文章未给数据集名称、prompt/output 分布、质量门槛与逐查询配置 |
+| 内部消融 | default/原路径、`IMLane(exec)` 进程级并行、`IMLane(sched)` 解耦异步分批调度；对照 IMBridge | 可借鉴“执行机制 vs 调度机制”拆分；文章报 OceanBase 平均 5.47× + 1.37×、合计 7.48×，DuckDB 3.33× + 1.51×、合计 5.04×，均为 vendor summary |
+| 外部 baseline | pandas、SparkSQL、Ray.data；文章报 IMLane(OB) 相对三者 2.65×/1.87×/1.19×，IMLane(DuckDB) 为 4.02×/2.82×/1.8× | Ray.data 是外部执行 baseline，不是 Daft-vs-Ray 比较；缺版本、资源匹配、pipeline 代码、重复/CV 与 per-query raw time，不能直接对照本项目数字 |
+| 指标 | 文章以 query execution time / speedup 为主，并用 Q1/Q3 的 4h timeout 与分钟级完成说明鲁棒性 | 未见 TTFT、p95/p99、tokens/s、质量、能耗、成本、GPU/MFU、队列或公平性；这些仍是本项目必须补的维度 |
+
+IMLane 把“进程并行绕开 GIL、Arrow 共享内存、AI Function 与 DB scheduler 解耦、资源感知
+调度、异步分批、扫描/I/O 与推理重叠”做成了正式相关工作。因此本项目不得再把这些机制本身
+写成原创；可区分的研究问题必须落在 **endpoint runtime state（running/waiting/KV/prefix）
+感知的 request shaping/admission、token/frame work credit、多 job fairness/SLO 与完整
+database-E2E 可观测性**，并与冻结静态点做消融。
 
 来源：[OceanBase AI Function](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975)、
 [AI Function overview](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678978)、
@@ -411,7 +428,8 @@ OceanBase 的公开材料覆盖了两条不同执行链路，不能合并成一�
 [Lakebase architecture](https://en.oceanbase.com/blog/oceanbase-ai-database-lakebase-architecture)、
 [OceanBase performance testing](https://en.oceanbase.com/docs/common-oceanbase-cloud-10000000002694815)、
 [VectorDBBench guide](https://en.oceanbase.com/docs/common-oceanbase-database-10000000002164117)、
-[OceanBase publications](https://github.com/oceanbase/publications)。
+[OceanBase publications](https://github.com/oceanbase/publications)、
+[OceanBase IMLane/ScalePQO 论文介绍（墨天轮转载）](https://www.modb.pro/db/2082304455178522624)。
 
 ### B.3 其他 6 家逐家方法论
 
@@ -477,7 +495,7 @@ OceanBase 的公开材料覆盖了两条不同执行链路，不能合并成一�
 - **不引用任何厂商的提速倍数**（100x/30x/10x/100x/70%/4-10x/2.2-7.6x 全是闭源黑盒或匿名 baseline 营销）。跨厂商对比只能说"采用某厂商公开 tutorial 同款公开数据（如 bbc_news、Cohere 50M）与公开过程做可复现对照"，不能声称对标某厂商闭源数字。
 - PolarDB 的 scoop 核查状态为"**未见研究论文证据**"，非"确定不存在"——正式定稿新颖性前需补 VLDB/SIGMOD/ICDE 阿里云 Daft 团队学术文献检索。
 - 不得声称 OceanBase 已公开证明 Daft 优于 Ray Data/Spark；当前公开页只说明采用 Daft on Ray 的机制与产品链路。Sysbench、TPC-H、VectorDBBench 也不得替代 AI Function/Daft-on-Ray benchmark。
-- IMLane 目前只有 OceanBase 官方 publications 的 accepted 条目，本次检索未找到公开论文正文；在正文可登记为 watchlist，不得杜撰其 workload、baseline、指标或性能数字。
+- IMLane 已有 OceanBase 官方账号的论文介绍，可引用其中明确披露的系统、硬件、Q1–Q7 workload 类别、baseline 与汇总倍数，但必须标为 vendor-authored summary；本次仍未找到论文正文、代码、逐查询 raw results、重复/CV 和完整配置，禁止把汇总倍数包装成独立可复现实验。
 - 本附录厂商方法论为**厂商来源/官方文档**（非独立第三方）；PolarDB 同栈与开源 Daft 关系为**官方文档 + 开源仓库交叉核实**的**本地事实**；新颖性边界（PolarDB 不观测 vLLM 状态）为基于其公开文档未提及的**合理推断**（闭源内部无法确证）。
 
 ---
