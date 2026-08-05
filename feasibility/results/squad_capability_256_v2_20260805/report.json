@@ -1,7 +1,7 @@
 {
   "arm": "duckdb_ai",
   "cap": 64,
-  "command": "python code/scripts/baselines/squad_capability_gate.py --database-url postgresql://postgres:postgres@localhost:5432/ai_operator --workload-name squad_v11_dev_short_answer --mode sampled --sample-count 256 --endpoint-url http://127.0.0.1:8000/v1/chat/completions --metrics-url http://127.0.0.1:8000/metrics --model qwen2.5-7b --max-tokens 64 --output-dir feasibility/results/squad_capability_256_v2_20260805",
+  "command": "python code/scripts/baselines/squad_capability_gate.py --database-url postgresql://postgres:***@localhost:5432/ai_operator --workload-name squad_v11_dev_short_answer --mode sampled --sample-count 256 --endpoint-url http://127.0.0.1:8000/v1/chat/completions --metrics-url http://127.0.0.1:8000/metrics --model qwen2.5-7b --max-tokens 64 --output-dir feasibility/results/squad_capability_256_v2_20260805",
   "error_count": 0,
   "evidence_files": {
     "per_row_csv": "per_row_evidence.csv",
