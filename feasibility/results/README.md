@@ -26,6 +26,23 @@
 8. `duckdb_ai_semantic_gate_20260805/`：DuckDB community `ai` 的双 endpoint
    capability 与 ShareGPT fixed-cap 语义门禁；证明当前环境可执行，但该 workload
    会把截断作为行级错误，因此不进入正式吞吐排名。
+9. `request_equivalence_gate_20260805/`：三方请求等价门禁（canonical = DuckDB
+   `ai_completion_request_json` = 项目 `build_completion_request_body`）+ 单请求 vLLM
+   prompt-token delta 交叉核验；PASSED（37=37 prompt tokens），证明三臂送进模型的请求一致。
+10. `squad_v11_dev_import_20260805/`：SQuAD v1.1 dev（10570 行）importer provenance
+    （canonical SHA256 fail-closed、content_hash、多答案 JSONB、prompt 模板 hash）；
+    bounded-output 主对比轨的数据源合同。
+11. `squad_capability_256_v4_20260805/`：DuckDB-ai 256 行 capability gate（canonical：
+    SQuAD-normalize 分桶 + `sample_manifest.jsonl` + /version 修复后重跑）。EM 81.64% / F1 89.82%，
+    attribution=attributable，integrity=verified；当前 canonical 256 单臂样本。v2/v3 保留作历史。
+12. `squad_capability_full_10570_20260805/`：DuckDB-ai **全量 10570** gate（`--mode full` +
+    `--strict-attribution` + fail-closed）。**fail-closed FAILURE 维持**：10569/10570 成功、1 NULL
+    （full-set query、扩展并发 32 下的单次机制未定生成尾部事件，被 truncation-as-error 转 NULL）；
+    exactly-once/三 hash 一致/归因==10570 全通过；EM 80.32%/F1 89.36%。状态：`capability_gate_status=failure`、
+    `comparison_admission=eligible_with_documented_failure`、`formal_run_gate_passed=false`。
+13. `squad_truncation_diag_572700c8_20260805/`：full gate 失败行的定点诊断（direct + DuckDB ×
+    cap{64,128,256} × 3）。cap=64 孤立重放 3×3 全 `stop`/46 token/文本一致 → 截断不可复现，推翻
+    「确定性 rambling」；记为偶发、机制未定。诊断专用，不回灌 cap=64。
 
 如果后续新增 GPU 环境验证，建议命名为：
 

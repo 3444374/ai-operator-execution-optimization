@@ -1031,3 +1031,20 @@ python code/scripts/baselines/squad_capability_gate.py \
 失败时附 `partial_results.csv` + `failure_report.json`。修改 stratified_sample /
 integrity / attribution / redact 后运行
 `python -m unittest tests.baselines.test_squad_capability_gate tests.baselines.common.test_redact`。
+
+`baselines/squad_truncation_diagnostic.py` 是**单行定点截断诊断**（不是门禁、不进正式排名）：
+对某个 `source_example_id` 的归档 prompt，在 direct vLLM 与 DuckDB `ai_try_complete` 两条路径上、
+cap {64,128,256} × `--repeats` 次、cache/retry 关，重放并记录 `finish_reason`/completion_tokens/
+`{response,error}`，并用 `ai_completion_request_json` 证明两路径请求体语义等价（direct 多显式
+`stream=false`，非字节相同）。仅用于坐实/证伪某行的截断是稳定属性还是偶发；高 cap **绝不回灌**
+正式 cap=64 门禁。示例：
+
+```bash
+python code/scripts/baselines/squad_truncation_diagnostic.py \
+  --source-example-id 572700c8dd62a815002e976d \
+  --database-url "$DATABASE_URL" --workload-name squad_v11_dev_short_answer \
+  --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
+  --endpoint-base-url http://127.0.0.1:8000/v1 \
+  --model qwen2.5-7b --caps 64,128,256 --repeats 3 \
+  --output feasibility/results/squad_truncation_diag_<id>_<date>/diagnostic.json --force
+```

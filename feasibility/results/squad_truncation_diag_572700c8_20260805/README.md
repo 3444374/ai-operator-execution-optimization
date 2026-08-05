@@ -19,7 +19,8 @@ temperature 0.0。两条路径 × cap {64, 128, 256} × 重复 3 次：
 
 - **direct vLLM** `POST /v1/chat/completions`（暴露 `finish_reason` / `completion_tokens` / 文本）；
 - **DuckDB `ai_try_complete`**（暴露 `{response, error}` 产品语义）；并用
-  `ai_completion_request_json` 抓取扩展实际请求体，证明两条路径是同一个请求。
+  `ai_completion_request_json` 抓取扩展实际请求体，确认两条路径**语义等价**（model / messages /
+  temperature=0 / max_tokens 一致；direct 多一个显式 `stream=false`，**非字节完全相同**）。
 
 DuckDB `cache=false`、`retry_count=0`；高 cap（128/256）仅用于诊断，不回灌正式门禁（cap=64 锁定）。
 脚本：`code/scripts/baselines/squad_truncation_diagnostic.py`（`9aefeba`）。
@@ -36,20 +37,23 @@ DuckDB `cache=false`、`retry_count=0`；高 cap（128/256）仅用于诊断，�
 | DuckDB `ai_try_complete` | 256 | 3 次全部成功 |
 
 两条路径产出的文本完全相同：`"Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael
-Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini"`（46 token）。
-DuckDB 抓到的请求体与 direct 请求体逐字段一致（model / messages / temperature=0 / max_tokens）。
+Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini"`（46 token）。该 46-token 文本
+经共享 evaluator 对该行参考答案计算为 **EM=0 / F1=0（错答）**——即即使这行成功返回，对 SQuAD 质量也是 0 分。
 
 `decision.stable_length_at_cap64 = false`、`duckdb_cap64_null = false` → **cap=64 不能稳定复现截断**。
 
 ## 4. 解释
 
 - **事实**：cap=64 孤立重放该行（direct 与 DuckDB 各 3 次）全部 46 token 正常 `stop`，无截断、无 NULL。
-  即该行在低并发下**不会**超长。full-10570 跑里的那 1 次 max_tokens 截断**不可复现**。
-- **推断（机理）**：full gate 期间 10570 行以 `max_concurrent_requests=32` 灌入、vLLM 侧
-  continuous batching 同时服务大量请求；temp=0 下 vLLM 的批处理解码**并非严格确定**（批组合影响
-  规约的浮点累加，偶发 logit 翻转 → 不同 token → 发散 → 长度溢出）。该行在那次高并发批次里恰好发散
-  到 >64 token，vLLM 返回 `finish_reason=length`，DuckDB-ai 据产品语义把整行当 error 返回 NULL。
-- **不能声称**：该行「确定性 rambling」（已证伪）；该行本身需要 >64 token（实际 46）；cap=64 在
+  full-10570 跑里的那 1 次 max_tokens 截断**不可复现**——3 次孤立重放只能证明「不是该行的稳定属性」。
+- **根因（未定）**：该截断是**单次、机制未定的生成尾部事件**。full-set query（DuckDB concurrency=32）
+  与孤立单请求的差异（并发/批处理状态、prefix-cache 状态、请求顺序、扩展并发等）都是**候选解释**，
+  但**均未隔离验证**。本诊断不主张根因是 batching、浮点规约或 logit 翻转——这些是猜测，需要专门
+  消融才能确认或排除。
+- **对质量的影响**：该行不论 NULL 还是孤立重放的 46-token 文本，SQuAD 质量都是 0 分（EM=0/F1=0）。
+  因此这次截断**只影响可靠性指标**（failure rate、successful/correct rows/s），不改变该行的质量贡献。
+- **不能声称**：该行「确定性 rambling」（已证伪）；该行本身需要 >64 token（实际 46）；根因是「浮点
+  抖动/batching」（未验证，只说候选）；cap=64 在
   全集「必然」截断某行（单次观察，不可复现，应记为偶发）。
 - **正确措辞**：DuckDB-ai baseline 在统一 cap=64 + 全量并发服务下，存在**可测量的偶发生成尾部
   风险**（1/10570，单次），被 truncation-as-error 语义硬转成 NULL。这是 baseline 在负载下的可靠性

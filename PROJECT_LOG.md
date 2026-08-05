@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-08-05 SQuAD full/diagnosis 审计订正：收紧措辞 + 拆状态字段 + 登记新文件
+
+- codex 复核 `74552b3`：核心事实成立（观察到一次 max_tokens→NULL、孤立重放不可复现、full 维持 FAILURE、
+  DuckDB arm 可入失败感知比较），但定性需收紧。本提交是**纯审计/严谨性**，不动实验、不重跑 full、不抬 cap。
+- **收紧 1（根因）**：不归因到「高并发 vLLM 浮点抖动」。3 次孤立重放只证明「不是稳定单行属性」，不能
+  证明根因是 batching/浮点规约/logit。统一改为：full-set query（DuckDB concurrency=32）中观察到一次
+  截断；孤立重放未复现；**单次、机制未定的生成尾部事件**；并发/批状态是候选解释，未隔离验证。
+- **收紧 2（并发规模）**：不是 10570 同时并发；写「10570-row full-set query、扩展最大并发 32」。
+- **收紧 3（请求体）**：direct 多显式 `stream=false`，与 DuckDB 请求体**语义等价**、非字节相同。
+- **收紧 4（质量影响）**：孤立重放的 46-token 文本本身 EM=0/F1=0（错答，已用共享 evaluator 实算确认）；
+  故该行质量贡献不论 NULL 或该文本都 0 分——截断只影响可靠性指标，不改变质量。
+- **状态字段拆开**：`capability_gate_status=failure` / `comparison_admission=eligible_with_documented_failure`
+  / `formal_run_gate_passed=false`。失败 cell 完整保留并计 EM/F1、failure rate、successful/correct rows/s，
+  **不削弱 zero-error validity gate**，不得冒充其 headline。
+- **登记新文件**：`squad_truncation_diagnostic.py` 进 `code/scripts/README.md`；新结果目录
+  （request_equivalence_gate / squad importer / capability_256_v4 / full_10570 / truncation_diag）
+  进 `feasibility/results/README.md` 阅读顺序 + `PROJECT_INDEX.md`。
+- **下一步**：database-E2E runner 开工，边界 = 统一 PG source/prompt/cap=64/服务配置/sink；顶层只做静态
+  分片/计时/审计/写回；DuckDB 扩展继续拥有 batching/concurrency；不引入项目 credit/actor pool/动态 backpressure。
+
 ## 2026-08-05 SQuAD 截断定点诊断：推翻「确定性 rambling」，改记偶发尾部风险 + baseline eligibility
 
 - 用户裁决：选 (b) 做定点诊断 + (a) 接受产品边界；不重跑全量、不抬正式 cap=64。
