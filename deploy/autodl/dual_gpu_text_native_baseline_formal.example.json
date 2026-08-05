@@ -9,6 +9,11 @@
   "warmup_repeats": 1,
   "formal_repeats": 3,
   "schedule": "balanced_interleaved_random_order",
+  "service": {
+    "prefix_caching": "enabled",
+    "max_num_seqs": 256,
+    "max_num_batched_tokens": 8192
+  },
   "endpoint_urls": [
     "${COMPLETION_CHAT_ENDPOINT_URL_0}",
     "${COMPLETION_CHAT_ENDPOINT_URL_1}"
@@ -53,6 +58,20 @@
   ],
   "optional_arms": [
     {
+      "id": "duckdb_ai",
+      "adapter": "duckdb_ai",
+      "comparison_role": "database_product_native_baseline",
+      "python_executable": "${DUCKDB_AI_PYTHON}",
+      "configuration": "freeze_extension_concurrency_from_independent_calibration",
+      "requires": "passing_duckdb_ai_bounded_output_semantic_gate_and_same_bounded_output_manifest",
+      "fixed": {
+        "response_cache": false,
+        "prompt_cache_hints": false,
+        "retry_count": 0,
+        "min_request_interval_ms": 0
+      }
+    },
+    {
       "id": "oceanbase_ai_complete",
       "adapter": "oceanbase",
       "comparison_role": "database_product_native_baseline",
@@ -69,6 +88,7 @@
     "slo_goodput_when_request_level_observable",
     "first_output_or_ttft_when_observable",
     "vllm_running_waiting_kv_cache",
+    "vllm_prefix_cache_queries_hits_and_hit_rate",
     "gpu_utilization_memory_power_energy_mfu",
     "host_cpu_memory_network_io",
     "worker_actor_task_counts",

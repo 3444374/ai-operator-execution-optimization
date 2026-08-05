@@ -1,0 +1,6 @@
+{
+  "blocked_cells": [],
+  "completed_cells": [],
+  "error": "RuntimeError: cell duckdb_ai gate failed: ['endpoint_work_skew']",
+  "status": "failed"
+}

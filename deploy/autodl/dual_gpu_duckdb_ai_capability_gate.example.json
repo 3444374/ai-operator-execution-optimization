@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "experiment_id": "dual_gpu_duckdb_ai_bounded_output_capability_gate",
+  "formal": false,
+  "rows_total": 64,
+  "endpoint_urls": [
+    "${COMPLETION_CHAT_ENDPOINT_URL_0}",
+    "${COMPLETION_CHAT_ENDPOINT_URL_1}"
+  ],
+  "model": "${COMPLETION_MODEL}",
+  "completion_protocol": "chat_completions",
+  "temperature": 0.0,
+  "service": {
+    "prefix_caching": "enabled",
+    "max_num_seqs": 256,
+    "max_num_batched_tokens": 8192
+  },
+  "manifest": "${DUCKDB_AI_GATE_MANIFEST}",
+  "output_root": "${ARTIFACT_ROOT}/duckdb_ai_capability_gate_REPLACE_ME",
+  "cells": [
+    {
+      "id": "duckdb_ai",
+      "adapter": "duckdb_ai",
+      "python_executable": "${DUCKDB_AI_PYTHON}",
+      "concurrency_per_endpoint": 32,
+      "duckdb_ai": {
+        "database": ":memory:",
+        "max_concurrent_requests": 32,
+        "response_cache": false,
+        "prompt_cache_hints": false,
+        "retry_count": 0,
+        "retry_backoff_ms": 0,
+        "min_request_interval_ms": 0,
+        "timeout_seconds": 120
+      }
+    }
+  ],
+  "hard_gates": {
+    "provenance_fields_present": true,
+    "native_arms_have_no_project_scheduler": true,
+    "exactly_once": true,
+    "failed_rows": 0,
+    "worker_failures": 0,
+    "both_endpoints_used": true,
+    "service_counter_consistency": true,
+    "endpoint_predicted_work_skew_max": 0.02,
+    "vllm_running_final": 0,
+    "vllm_waiting_final": 0,
+    "same_model": true,
+    "same_protocol": true,
+    "same_service_config": true
+  }
+}

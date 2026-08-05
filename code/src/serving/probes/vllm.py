@@ -15,6 +15,7 @@ or disagreeing processes); callers should warn rather than fail in that case.
 from __future__ import annotations
 
 import re
+import shlex
 import subprocess
 
 # Full module path of the vLLM OpenAI server entry point. Using the full path
@@ -81,3 +82,50 @@ def probe_live_prefix_caching() -> bool | None:
     if len(set(flags)) == 1:
         return flags[0]
     return None
+
+
+def parse_int_flag(cmdline: str, flag: str) -> int | None:
+    """Return the last integer CLI value for ``flag`` from one cmdline."""
+
+    if not cmdline or not flag.startswith("--"):
+        return None
+    try:
+        tokens = shlex.split(cmdline)
+    except ValueError:
+        return None
+    result: int | None = None
+    for index, token in enumerate(tokens):
+        raw_value: str | None = None
+        if token == flag and index + 1 < len(tokens):
+            raw_value = tokens[index + 1]
+        elif token.startswith(flag + "="):
+            raw_value = token.split("=", 1)[1]
+        if raw_value is not None:
+            try:
+                result = int(raw_value)
+            except ValueError:
+                return None
+    return result
+
+
+def probe_live_vllm_limits() -> dict[str, int] | None:
+    """Return common max-seqs/token limits from co-located vLLM processes."""
+
+    observed: list[tuple[int, int]] = []
+    for line in _list_process_cmdlines():
+        if _VLLM_PROC_MARKER not in line:
+            continue
+        max_num_seqs = parse_int_flag(line, "--max-num-seqs")
+        max_num_batched_tokens = parse_int_flag(
+            line,
+            "--max-num-batched-tokens",
+        )
+        if max_num_seqs is not None and max_num_batched_tokens is not None:
+            observed.append((max_num_seqs, max_num_batched_tokens))
+    if not observed or len(set(observed)) != 1:
+        return None
+    max_num_seqs, max_num_batched_tokens = observed[0]
+    return {
+        "max_num_seqs": max_num_seqs,
+        "max_num_batched_tokens": max_num_batched_tokens,
+    }

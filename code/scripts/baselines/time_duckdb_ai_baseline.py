@@ -110,7 +110,8 @@ def _run_timing(args: argparse.Namespace) -> dict:
     metrics_after = scrape_prometheus_metrics(args.metrics_url)
 
     wall_s = run_finished - run_started
-    completed = sum(1 for r in results if r.status == "completed")
+    completed = sum(1 for r in results if r.status == "completed" and not r.error)
+    failed = len(results) - completed
     delta = vllm_metric_delta_stats(metrics_before, metrics_after)
     observed_tokens = (
         delta.get("vllm_prompt_tokens_delta", 0)
@@ -120,9 +121,12 @@ def _run_timing(args: argparse.Namespace) -> dict:
         sampler.samples,
         observed_tokens=observed_tokens,
     )
-    rate = (len(requests) / wall_s) if wall_s > 0 else 0.0
+    offered_rate = (len(requests) / wall_s) if wall_s > 0 else 0.0
+    successful_rate = (completed / wall_s) if wall_s > 0 else 0.0
     summary = {
-        "status": "completed" if run_error is None else "failed",
+        "status": (
+            "completed" if run_error is None and failed == 0 else "failed"
+        ),
         "error": run_error,
         "adapter": "duckdb_ai",
         "workload_name": args.workload_name,
@@ -131,8 +135,10 @@ def _run_timing(args: argparse.Namespace) -> dict:
         "endpoint_base_url": config.endpoint_base_url,
         "model": config.model,
         "wall_s": round(wall_s, 4),
-        "rows_per_s": round(rate, 4),
+        "offered_rows_per_s": round(offered_rate, 4),
+        "successful_rows_per_s": round(successful_rate, 4),
         "completed_count": completed,
+        "failed_count": failed,
         "exactly_once_ids_match": (
             {r.doc_id for r in results} == {req.doc_id for req in requests}
             if run_error is None
@@ -145,12 +151,12 @@ def _run_timing(args: argparse.Namespace) -> dict:
         "extrapolation": {
             "note": (
                 "linear scale from one single-endpoint shard; not a measurement "
-                "of the formal gate. Formal DuckDB-ai cell ~= this wall x "
-                "(1 warmup + N formal repeats), run per endpoint shard."
+                "of the formal gate. Two endpoint shards run concurrently, so "
+                "this estimate multiplies by repeat count, not endpoint count."
             ),
             "single_shard_wall_s": round(wall_s, 4),
             "estimated_two_endpoint_warmup_plus_3_formal_wall_s": round(
-                wall_s * 2 * 4,
+                wall_s * 4,
                 4,
             ),
         },

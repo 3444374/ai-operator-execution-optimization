@@ -7,6 +7,11 @@
   "calibration_rows": 512,
   "held_out_formal_rows": 2048,
   "minimum_formal_measurement_seconds": 60,
+  "service": {
+    "prefix_caching": "enabled",
+    "max_num_seqs": 256,
+    "max_num_batched_tokens": 8192
+  },
   "arms": {
     "vllm_bench": {
       "comparison_role": "service_ceiling",
@@ -49,6 +54,24 @@
         "ray_address": "${RAY_ADDRESS}",
         "actor_pool_shape": "fixed_n_n"
       }
+    },
+    "duckdb_ai": {
+      "comparison_role": "database_product_native_baseline",
+      "python_executable": "${DUCKDB_AI_PYTHON}",
+      "grid": {
+        "max_concurrent_requests": [8, 16, 32, 64]
+      },
+      "fixed": {
+        "database": ":memory:",
+        "response_cache": false,
+        "prompt_cache_hints": false,
+        "retry_count": 0,
+        "retry_backoff_ms": 0,
+        "min_request_interval_ms": 0,
+        "timeout_seconds": 120
+      },
+      "requires": "passing_duckdb_ai_bounded_output_semantic_gate",
+      "note": "Community extension baseline; response cache is disabled so every manifest row reaches vLLM. Server-side vLLM prefix caching remains enabled."
     },
     "oceanbase": {
       "comparison_role": "database_product_native_baseline",

@@ -53,6 +53,7 @@
 | `experiments/results/operator_cost_profile_pilot_20260804/` | 双 4090 四候选 v1/v2 cost-profile pilot，含完整压缩 raw、summary 和七步报告 | 审计新机器采样合同、23 维候选可区分性、trace 完整性和 formal 时间预算 |
 | `experiments/results/operator_cost_profile_dual4090_formal_20260804/` | 双 4090 首次 320-run formal 的并发 runner、空 Ray 地址与整体排除证据 | 复核为什么两套表面完整数据均不能进入 CE0–CE6，以及修复后的重跑门禁 |
 | `feasibility/results/cost_profile_cacheon_gate_20260805/` | 已提交 main 的双 4090 cache-on + shared-Ray 真实两运行门禁 | 复核 cache 声明/命中计数、exactly-once、双 endpoint 与 0 local-Ray 启动；不作性能排名 |
+| `feasibility/results/duckdb_ai_semantic_gate_20260805/` | DuckDB community `ai` 双 endpoint capability 与 ShareGPT fixed-cap 语义门禁，含最小 raw 证据 | 复核 4 行可运行和 64 行截断错误，决定另建 bounded-output 产品轨；不作性能排名 |
 | `experiments/results/row_cap_aware_packing_512_20260726/README.md` | Prefix-cache-corrected 512-row screening and repeated confirmation | Review why sequential remains default and how cache-enabled data was excluded |
 | `experiments/results/row_cap_aware_packing_512_20260726/nocache_repeats/summary_long.csv` | Plot-ready 512-row repeated metrics | Plot throughput, request tails/SLO, packing, energy, vLLM pressure, and MFU |
 | `experiments/results/row_cap_aware_packing_1024_20260726/README.md` | Held-out 1024-row mechanism decision | Review the SLO-goodput regression that blocks row-cap-first default adoption |
@@ -450,6 +451,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_static_credit_prompt_length_gate.example.json` | short/long prompt 的 K256、K256+W65K、K256+W98K async 等价臂门禁 | 在重建静态 credit surface 前验证 transport、token IDs、跨 workload 交错与未绑定臂 5% 等价性 |
 | `deploy/autodl/dual_gpu_endpoint_adaptive_gate.example.json` | 双 endpoint typed adaptive 256 行可运行性门禁 | 验证 endpoint-local state/metrics/action trace，禁止当作性能结果 |
 | `deploy/autodl/dual_gpu_official_baseline_gate.example.json` | 64 行双 GPU 文本 comparison validity gate（历史兼容文件名） | calibration 前验证 provenance、Chat 请求等价、exactly-once、endpoint 分片与空队列 |
+| `deploy/autodl/dual_gpu_duckdb_ai_capability_gate.example.json` | DuckDB `ai` community extension 双 GPU bounded-output capability gate | 行级 error/NULL fail-closed；response cache off、vLLM prefix cache on；只证明能力，不单独产生性能排名 |
 | `deploy/autodl/dual_gpu_official_baseline_calibration.example.json` | 文本 ceiling/control/native arm 独立标定网格 | 删除未接线 Daft partition_count；只扫描各 arm 真实暴露参数，不得直接当 formal |
 | `deploy/autodl/dual_gpu_text_native_baseline_formal.example.json` | 2,048 行文本原生 baseline held-out 正式合同（contract only） | 统一 formal runner 落地且 calibration 冻结后执行至少 60 秒、1 warmup + 3 interleaved repeats；若不足 60 秒，baseline/project 共同扩容 |
 | `deploy/autodl/dual_gpu_completions_baseline_gate.example.json` | 无 Ray fixed-row multi-prompt Completions 双 GPU transport ceiling | 在相同 Completions 协议下扫描 1/4/16/32 行 HTTP packing，保持每 endpoint 最多 256 active prompts |

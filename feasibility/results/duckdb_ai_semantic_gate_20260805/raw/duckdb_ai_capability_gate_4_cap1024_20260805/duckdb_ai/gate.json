@@ -1,0 +1,27 @@
+{
+  "incidents": [
+    "endpoint_work_skew"
+  ],
+  "metrics": {
+    "endpoint_work": {
+      "0": 737,
+      "1": 637
+    },
+    "endpoint_work_skew": 0.13568521031207598,
+    "group_service_generation_tokens": 1287,
+    "group_service_generation_tokens_per_s": 147.08686853185756,
+    "group_service_prompt_tokens": 319,
+    "group_service_prompt_tokens_per_s": 36.45742895234076,
+    "group_service_total_tokens": 1606,
+    "group_service_total_tokens_per_s": 183.5442974841983,
+    "group_service_wall_s": 8.749931335449219,
+    "manifest_rows": 4,
+    "result_endpoint_counts": {
+      "0": 1,
+      "1": 3
+    },
+    "result_rows": 4
+  },
+  "passed": false,
+  "status": "failed"
+}

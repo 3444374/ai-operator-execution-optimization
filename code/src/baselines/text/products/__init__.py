@@ -1,6 +1,10 @@
 """Database product-native text AI operator adapters."""
 
-from .duckdb_ai import DuckDBAiConfig, run_duckdb_ai_complete
+from .duckdb_ai import (
+    DuckDBAiConfig,
+    inspect_duckdb_ai_runtime,
+    run_duckdb_ai_complete,
+)
 from .oceanbase import (
     OceanBaseConfig,
     SqlStatement,
@@ -15,6 +19,7 @@ __all__ = [
     "SqlStatement",
     "build_ai_complete_sql",
     "build_register_model_sql",
+    "inspect_duckdb_ai_runtime",
     "run_duckdb_ai_complete",
     "run_oceanbase_ai_complete",
 ]

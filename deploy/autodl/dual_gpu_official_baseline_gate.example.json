@@ -11,6 +11,11 @@
   "tokenizer": "${MODEL_PATH}",
   "completion_protocol": "chat_completions",
   "temperature": 0.0,
+  "service": {
+    "prefix_caching": "enabled",
+    "max_num_seqs": 256,
+    "max_num_batched_tokens": 8192
+  },
   "manifest": "${OFFICIAL_BASELINE_GATE_MANIFEST}",
   "output_root": "${ARTIFACT_ROOT}/dual_gpu_official_baseline_gate_REPLACE_ME",
   "cells": [
@@ -44,6 +49,12 @@
     }
   ],
   "optional_fatal_flaw_cells": [
+    {
+      "id": "duckdb_ai_bounded_output",
+      "adapter": "duckdb_ai",
+      "required_before_duckdb_ai_formal": true,
+      "reason": "ShareGPT fixed-cap rows can return finish_reason=length, which DuckDB ai reports as row errors; use the dedicated bounded-output capability gate."
+    },
     {
       "id": "oceanbase_ai_complete_one_row",
       "adapter": "oceanbase",

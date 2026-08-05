@@ -14,8 +14,10 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.serving.probes.vllm import (  # noqa: E402
+    parse_int_flag,
     parse_prefix_caching_flag,
     probe_live_prefix_caching,
+    probe_live_vllm_limits,
 )
 from scripts.experiments.run_ai_operator_scenarios import (  # noqa: E402
     _verify_prefix_caching_matches_live,
@@ -114,6 +116,8 @@ class ProbeLivePrefixCachingTests(unittest.TestCase):
         with patch("src.serving.probes.vllm._list_process_cmdlines", return_value=[]):
             self.assertIsNone(probe_live_prefix_caching())
 
+
+class ProbeLivePrefixCachingProcessTests(unittest.TestCase):
     def test_agreeing_procs_return_common_flag(self) -> None:
         lines = [
             "python -m vllm.entrypoints.openai.api_server "
@@ -157,6 +161,45 @@ class ProbeLivePrefixCachingTests(unittest.TestCase):
         ]
         with patch("src.serving.probes.vllm._list_process_cmdlines", return_value=lines):
             self.assertIsNone(probe_live_prefix_caching())
+
+
+class ProbeLiveVllmLimitsTests(unittest.TestCase):
+    def test_parse_int_flag_supports_split_equals_and_last_wins(self) -> None:
+        self.assertEqual(parse_int_flag("--max-num-seqs 128", "--max-num-seqs"), 128)
+        self.assertEqual(
+            parse_int_flag(
+                "--max-num-seqs=128 --max-num-seqs 256",
+                "--max-num-seqs",
+            ),
+            256,
+        )
+        self.assertIsNone(parse_int_flag("--max-num-seqs nope", "--max-num-seqs"))
+
+    def test_agreeing_process_limits_are_returned(self) -> None:
+        lines = [
+            "python -m vllm.entrypoints.openai.api_server "
+            "--max-num-seqs 256 --max-num-batched-tokens=8192 --port 8000",
+            "python -m vllm.entrypoints.openai.api_server "
+            "--max-num-seqs=256 --max-num-batched-tokens 8192 --port 8001",
+        ]
+        with patch("src.serving.probes.vllm._list_process_cmdlines", return_value=lines):
+            self.assertEqual(
+                probe_live_vllm_limits(),
+                {"max_num_seqs": 256, "max_num_batched_tokens": 8192},
+            )
+
+    def test_disagreement_or_missing_limit_returns_none(self) -> None:
+        disagreeing = [
+            "python -m vllm.entrypoints.openai.api_server "
+            "--max-num-seqs 256 --max-num-batched-tokens 8192",
+            "python -m vllm.entrypoints.openai.api_server "
+            "--max-num-seqs 128 --max-num-batched-tokens 8192",
+        ]
+        with patch(
+            "src.serving.probes.vllm._list_process_cmdlines",
+            return_value=disagreeing,
+        ):
+            self.assertIsNone(probe_live_vllm_limits())
 
 
 if __name__ == "__main__":

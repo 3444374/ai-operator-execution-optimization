@@ -21,6 +21,11 @@ from src.baselines.common.manifests import read_manifest
 from src.baselines.common.provenance import adapter_provenance
 from src.baselines.common.results import summarize_group_service_counters
 from src.infrastructure.config_env import expand_structure
+from src.infrastructure.runner_lease import acquire_host_runner_lease
+from src.serving.probes.vllm import (
+    probe_live_prefix_caching,
+    probe_live_vllm_limits,
+)
 
 
 CORE_ADAPTERS = (
@@ -30,6 +35,7 @@ CORE_ADAPTERS = (
     "daft_native",
     "daft_ray",
     "ray_data_http",
+    "duckdb_ai",
 )
 BLOCKED_ADAPTER_REASONS = {
     "project_profiler": "requires_existing_project_profiler",
@@ -56,6 +62,8 @@ class CoreGateCell:
     concurrency: int
     batch_size: int
     ray_address: str | None
+    python_executable: str | None = None
+    adapter_args: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -71,6 +79,9 @@ class CoreGateConfig:
     cells: tuple[CoreGateCell, ...]
     blocked_cells: tuple[dict[str, str], ...]
     max_endpoint_work_skew: float
+    service_prefix_caching: str = "unknown"
+    service_max_num_seqs: int = -1
+    service_max_num_batched_tokens: int = -1
 
 
 _BOOLEAN_HARD_GATES = {
@@ -306,6 +317,47 @@ def load_core_gate_config(
         ray_address = raw_cell.get("ray_address")
         if adapter in {"daft_ray", "ray_data_http"} and not ray_address:
             raise ValueError(f"cell {cell_id} requires an explicit ray_address")
+        adapter_args: list[str] = []
+        python_executable = raw_cell.get("python_executable")
+        if python_executable is not None and (
+            not isinstance(python_executable, str)
+            or not python_executable.strip()
+            or "REPLACE_ME" in python_executable
+        ):
+            raise ValueError(f"cell {cell_id} has invalid python_executable")
+        if adapter == "duckdb_ai":
+            raw_options = raw_cell.get("duckdb_ai", {})
+            if not isinstance(raw_options, dict):
+                raise ValueError(f"cell {cell_id} duckdb_ai must be an object")
+            allowed_options = {
+                "database": "--duckdb-database",
+                "max_concurrent_requests": "--duckdb-max-concurrent-requests",
+                "retry_count": "--duckdb-retry-count",
+                "retry_backoff_ms": "--duckdb-retry-backoff-ms",
+                "min_request_interval_ms": "--duckdb-min-request-interval-ms",
+                "timeout_seconds": "--duckdb-timeout-seconds",
+            }
+            boolean_options = {
+                "response_cache": "--duckdb-response-cache",
+                "prompt_cache_hints": "--duckdb-prompt-cache-hints",
+            }
+            unknown_options = set(raw_options) - set(allowed_options) - set(boolean_options)
+            if unknown_options:
+                raise ValueError(
+                    f"cell {cell_id} has unsupported duckdb_ai options: "
+                    f"{sorted(unknown_options)}"
+                )
+            for option, flag in allowed_options.items():
+                if option in raw_options:
+                    adapter_args.extend([flag, str(raw_options[option])])
+            for option, flag in boolean_options.items():
+                value = raw_options.get(option, False)
+                if not isinstance(value, bool):
+                    raise ValueError(
+                        f"cell {cell_id} duckdb_ai.{option} must be boolean"
+                    )
+                if value:
+                    adapter_args.append(flag)
         cells.append(
             CoreGateCell(
                 cell_id=cell_id,
@@ -313,6 +365,12 @@ def load_core_gate_config(
                 concurrency=concurrency,
                 batch_size=batch_size,
                 ray_address=(str(ray_address) if ray_address is not None else None),
+                python_executable=(
+                    str(python_executable)
+                    if python_executable is not None
+                    else None
+                ),
+                adapter_args=tuple(adapter_args),
             )
         )
     if not cells:
@@ -323,6 +381,16 @@ def load_core_gate_config(
             raise ValueError("vllm_bench cell requires an explicit tokenizer local directory")
         if not Path(tokenizer).is_dir():
             raise ValueError("vllm_bench tokenizer must be an existing local directory")
+    service = payload.get("service", {})
+    if not isinstance(service, dict):
+        raise ValueError("service must be an object")
+    service_prefix_caching = str(service.get("prefix_caching", "unknown"))
+    if service_prefix_caching not in {"enabled", "disabled", "unknown"}:
+        raise ValueError("service.prefix_caching must be enabled, disabled, or unknown")
+    service_max_num_seqs = int(service.get("max_num_seqs", -1))
+    service_max_num_batched_tokens = int(
+        service.get("max_num_batched_tokens", -1)
+    )
     return CoreGateConfig(
         experiment_id=str(payload.get("experiment_id", "core_gate")),
         rows_total=rows_total,
@@ -335,6 +403,9 @@ def load_core_gate_config(
         cells=tuple(cells),
         blocked_cells=tuple(blocked_cells),
         max_endpoint_work_skew=max_endpoint_work_skew,
+        service_prefix_caching=service_prefix_caching,
+        service_max_num_seqs=service_max_num_seqs,
+        service_max_num_batched_tokens=service_max_num_batched_tokens,
     )
 
 
@@ -348,6 +419,14 @@ _TOKEN_COUNTER_PATTERNS = {
     ),
     "generation_tokens": re.compile(
         r"^vllm:generation_tokens_total(?:\{[^}]*\})?\s+([0-9.eE+-]+)$"
+    ),
+}
+_OPTIONAL_CACHE_COUNTER_PATTERNS = {
+    "prefix_cache_queries": re.compile(
+        r"^vllm:prefix_cache_queries_total(?:\{[^}]*\})?\s+([0-9.eE+-]+)$"
+    ),
+    "prefix_cache_hits": re.compile(
+        r"^vllm:prefix_cache_hits_total(?:\{[^}]*\})?\s+([0-9.eE+-]+)$"
     ),
 }
 
@@ -369,7 +448,7 @@ def parse_vllm_queue_metrics(text: str) -> dict[str, int]:
 
 
 def parse_vllm_token_counters(text: str) -> dict[str, int]:
-    """Parse and sum cumulative prompt/generation token counters."""
+    """Parse required token counters and optional prefix-cache counters."""
 
     parsed: dict[str, int] = {}
     lines = text.splitlines()
@@ -385,6 +464,21 @@ def parse_vllm_token_counters(text: str) -> dict[str, int]:
         if not total.is_integer():
             raise ValueError(f"vLLM {name} counter is not integral")
         parsed[name] = int(total)
+    optional_found: dict[str, int] = {}
+    for name, pattern in _OPTIONAL_CACHE_COUNTER_PATTERNS.items():
+        values = [
+            float(match.group(1))
+            for line in lines
+            if (match := pattern.match(line.strip()))
+        ]
+        if values:
+            total = sum(values)
+            if not total.is_integer():
+                raise ValueError(f"vLLM {name} counter is not integral")
+            optional_found[name] = int(total)
+    if optional_found and set(optional_found) != set(_OPTIONAL_CACHE_COUNTER_PATTERNS):
+        raise ValueError("vLLM metrics expose an incomplete prefix-cache counter pair")
+    parsed.update(optional_found)
     return parsed
 
 
@@ -428,7 +522,7 @@ def run_command_pair(
     commands: list[list[str]],
     log_paths: list[Path],
 ) -> tuple[int, ...]:
-    """Start every endpoint process before waiting for either one."""
+    """Start every endpoint process before waiting, with a bounded gate timeout."""
 
     if len(commands) != len(log_paths):
         raise ValueError("commands and log_paths must have equal length")
@@ -446,11 +540,36 @@ def run_command_pair(
             )
             for command, log in zip(commands, logs)
         ]
-        return tuple(process.wait() for process in processes)
+        deadline = time.monotonic() + 900.0
+        while any(process.poll() is None for process in processes):
+            if time.monotonic() >= deadline:
+                for process in processes:
+                    if process.poll() is None:
+                        process.terminate()
+                for process in processes:
+                    try:
+                        process.wait(timeout=10.0)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                raise TimeoutError("baseline gate shard pair exceeded 900 seconds")
+            time.sleep(0.1)
+        return tuple(int(process.returncode) for process in processes)
 
 
 def _metrics_url(endpoint_url: str) -> str:
     return endpoint_url.split("/v1/", maxsplit=1)[0] + "/metrics"
+
+
+def _baseline_cli_script() -> Path:
+    script = (
+        Path(__file__).resolve().parents[4]
+        / "scripts"
+        / "baselines"
+        / "run_official_baseline.py"
+    )
+    if not script.is_file():
+        raise FileNotFoundError(f"baseline CLI script does not exist: {script}")
+    return script
 
 
 def _shard_command(
@@ -462,9 +581,9 @@ def _shard_command(
     driver_python: str,
     vllm_python: str,
 ) -> list[str]:
-    script = Path(__file__).resolve().parents[4] / "scripts" / "run_official_baseline.py"
+    script = _baseline_cli_script()
     command = [
-        driver_python,
+        cell.python_executable or driver_python,
         str(script),
         "run-shard",
         "--adapter",
@@ -484,7 +603,14 @@ def _shard_command(
         "--output-dir",
         str(output_dir),
         "--disable-arrival-replay",
+        "--service-prefix-caching",
+        config.service_prefix_caching,
+        "--service-max-num-seqs",
+        str(config.service_max_num_seqs),
+        "--service-max-num-batched-tokens",
+        str(config.service_max_num_batched_tokens),
     ]
+    command.extend(cell.adapter_args)
     if cell.ray_address:
         command.extend(["--ray-address", cell.ray_address])
     if cell.adapter == "vllm_bench":
@@ -510,7 +636,7 @@ def _normalization_command(
     queue: Mapping[str, int],
     driver_python: str,
 ) -> list[str]:
-    script = Path(__file__).resolve().parents[4] / "scripts" / "run_official_baseline.py"
+    script = _baseline_cli_script()
     return [
         driver_python,
         str(script),
@@ -531,6 +657,12 @@ def _normalization_command(
         str(queue["running"]),
         "--vllm-waiting-final",
         str(queue["waiting"]),
+        "--service-prefix-caching",
+        config.service_prefix_caching,
+        "--service-max-num-seqs",
+        str(config.service_max_num_seqs),
+        "--service-max-num-batched-tokens",
+        str(config.service_max_num_batched_tokens),
     ]
 
 
@@ -632,6 +764,21 @@ def _stamp_service_counters(
                 ),
             }
         )
+        if "prefix_cache_queries" in endpoint_delta:
+            queries = endpoint_delta["prefix_cache_queries"]
+            hits = endpoint_delta["prefix_cache_hits"]
+            summary.update(
+                {
+                    "service_prefix_cache_metrics_status": "ok",
+                    "service_prefix_cache_queries_delta": queries,
+                    "service_prefix_cache_hits_delta": hits,
+                    "service_prefix_cache_hit_rate": (
+                        hits / queries if queries > 0 else 0.0
+                    ),
+                }
+            )
+        else:
+            summary["service_prefix_cache_metrics_status"] = "unavailable"
         _atomic_json(summary_path, summary)
 
 
@@ -679,6 +826,13 @@ def validate_service_counter_summary(
         incidents.append(
             f"endpoint {endpoint_index} unknown token accounting {accounting!r}"
         )
+    if (
+        summary.get("service_prefix_caching") == "enabled"
+        and summary.get("service_prefix_cache_metrics_status") != "ok"
+    ):
+        incidents.append(
+            f"endpoint {endpoint_index} missing enabled prefix-cache counters"
+        )
 
     return tuple(incidents)
 
@@ -688,6 +842,9 @@ def validate_configured_service_identity(
     *,
     model: str,
     completion_protocol: str,
+    prefix_caching: str = "unknown",
+    max_num_seqs: int = -1,
+    max_num_batched_tokens: int = -1,
 ) -> tuple[str, ...]:
     """Reject summaries that agree with each other but not with the config."""
 
@@ -699,6 +856,22 @@ def validate_configured_service_identity(
         for summary in summaries
     ):
         incidents.append("configured_protocol_mismatch")
+    if prefix_caching != "unknown" and any(
+        summary.get("service_prefix_caching") != prefix_caching
+        for summary in summaries
+    ):
+        incidents.append("configured_prefix_caching_mismatch")
+    if max_num_seqs >= 0 and any(
+        int(summary.get("service_max_num_seqs", -1)) != max_num_seqs
+        for summary in summaries
+    ):
+        incidents.append("configured_max_num_seqs_mismatch")
+    if max_num_batched_tokens >= 0 and any(
+        int(summary.get("service_max_num_batched_tokens", -1))
+        != max_num_batched_tokens
+        for summary in summaries
+    ):
+        incidents.append("configured_max_num_batched_tokens_mismatch")
     return tuple(incidents)
 
 
@@ -728,6 +901,9 @@ def _validate_cell(
         summaries,
         model=config.model,
         completion_protocol=config.completion_protocol,
+        prefix_caching=config.service_prefix_caching,
+        max_num_seqs=config.service_max_num_seqs,
+        max_num_batched_tokens=config.service_max_num_batched_tokens,
     )
     report = validate_gate(
         manifest=read_manifest(config.manifest),
@@ -792,6 +968,44 @@ def run_core_gate(
     if endpoints != {0, 1}:
         raise ValueError(f"manifest must use endpoint indexes 0 and 1: {endpoints}")
 
+    live_prefix_caching = probe_live_prefix_caching()
+    live_limits = probe_live_vllm_limits()
+    declared_prefix_caching = {
+        "enabled": True,
+        "disabled": False,
+        "unknown": None,
+    }[config.service_prefix_caching]
+    if (
+        live_prefix_caching is not None
+        and declared_prefix_caching is not None
+        and live_prefix_caching is not declared_prefix_caching
+    ):
+        raise ValueError(
+            "declared service prefix caching does not match live vLLM processes: "
+            f"declared={config.service_prefix_caching}, live={live_prefix_caching}"
+        )
+    if live_limits is not None:
+        if (
+            config.service_max_num_seqs >= 0
+            and live_limits["max_num_seqs"] != config.service_max_num_seqs
+        ):
+            raise ValueError(
+                "declared service max_num_seqs does not match live vLLM "
+                f"processes: declared={config.service_max_num_seqs}, "
+                f"live={live_limits['max_num_seqs']}"
+            )
+        if (
+            config.service_max_num_batched_tokens >= 0
+            and live_limits["max_num_batched_tokens"]
+            != config.service_max_num_batched_tokens
+        ):
+            raise ValueError(
+                "declared service max_num_batched_tokens does not match live "
+                "vLLM processes: "
+                f"declared={config.service_max_num_batched_tokens}, "
+                f"live={live_limits['max_num_batched_tokens']}"
+            )
+
     config.output_root.mkdir(parents=True)
     resolved = {
         "experiment_id": config.experiment_id,
@@ -802,6 +1016,13 @@ def run_core_gate(
         "model": config.model,
         "tokenizer": config.tokenizer,
         "max_endpoint_work_skew": config.max_endpoint_work_skew,
+        "service": {
+            "prefix_caching": config.service_prefix_caching,
+            "live_prefix_caching": live_prefix_caching,
+            "live_limits": live_limits,
+            "max_num_seqs": config.service_max_num_seqs,
+            "max_num_batched_tokens": config.service_max_num_batched_tokens,
+        },
         "manifest": str(config.manifest),
         "output_root": str(config.output_root),
         "driver_python": driver_python,
@@ -813,6 +1034,8 @@ def run_core_gate(
                 "concurrency_per_endpoint": cell.concurrency,
                 "batch_size": cell.batch_size,
                 "ray_address": cell.ray_address,
+                "python_executable": cell.python_executable or driver_python,
+                "adapter_args": list(cell.adapter_args),
                 **adapter_provenance(cell.adapter).summary_fields(),
             }
             for cell in config.cells
@@ -823,96 +1046,31 @@ def run_core_gate(
     metrics_urls = tuple(_metrics_url(url) for url in config.endpoint_urls)
     completed_cells: list[str] = []
 
+    repository_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).resolve().parents[5],
+    ).stdout.strip()
     try:
-        for cell in config.cells:
-            cell_root = config.output_root / cell.cell_id
-            cell_root.mkdir()
-            raw_dirs = tuple(
-                cell_root
-                / (
-                    f"raw_shard_{endpoint_index}"
-                    if cell.adapter == "vllm_bench"
-                    else f"shard_{endpoint_index}"
-                )
-                for endpoint_index in (0, 1)
-            )
-            commands = [
-                _shard_command(
+        with acquire_host_runner_lease(
+            config.output_root.parent,
+            repository_commit=repository_commit,
+        ):
+            for cell in config.cells:
+                _run_core_gate_cell(
                     config=config,
                     cell=cell,
-                    endpoint_index=endpoint_index,
-                    output_dir=raw_dirs[endpoint_index],
+                    metrics_urls=metrics_urls,
+                    completed_cells=completed_cells,
                     driver_python=driver_python,
                     vllm_python=vllm_python,
+                    idle_timeout_s=idle_timeout_s,
+                    pair_runner=pair_runner,
+                    idle_waiter=idle_waiter,
+                    counter_sampler=counter_sampler,
                 )
-                for endpoint_index in (0, 1)
-            ]
-            _atomic_json(cell_root / "commands.json", commands)
-            counters_before = counter_sampler(metrics_urls)
-            return_codes = pair_runner(
-                commands,
-                [
-                    cell_root / "shard_0.log",
-                    cell_root / "shard_1.log",
-                ],
-            )
-            if return_codes != (0, 0):
-                raise RuntimeError(f"cell {cell.cell_id} shard exits: {return_codes}")
-            queues = idle_waiter(metrics_urls, idle_timeout_s)
-            counter_evidence = _service_counter_evidence(
-                counters_before,
-                counter_sampler(metrics_urls),
-            )
-            _atomic_json(
-                cell_root / "service_counters.json",
-                counter_evidence,
-            )
-
-            output_dirs = raw_dirs
-            if cell.adapter == "vllm_bench":
-                output_dirs = tuple(
-                    cell_root / f"shard_{endpoint_index}" for endpoint_index in (0, 1)
-                )
-                normalize_commands = [
-                    _normalization_command(
-                        config=config,
-                        endpoint_index=endpoint_index,
-                        raw_output_dir=raw_dirs[endpoint_index],
-                        output_dir=output_dirs[endpoint_index],
-                        queue=queues[endpoint_index],
-                        driver_python=driver_python,
-                    )
-                    for endpoint_index in (0, 1)
-                ]
-                _atomic_json(
-                    cell_root / "normalize_commands.json",
-                    normalize_commands,
-                )
-                normalize_codes = pair_runner(
-                    normalize_commands,
-                    [
-                        cell_root / "normalize_0.log",
-                        cell_root / "normalize_1.log",
-                    ],
-                )
-                if normalize_codes != (0, 0):
-                    raise RuntimeError(
-                        f"cell {cell.cell_id} normalization exits: {normalize_codes}"
-                    )
-            _stamp_final_queues(output_dirs, queues)
-            _stamp_service_counters(
-                output_dirs,
-                counter_evidence["delta"],
-            )
-
-            gate = _validate_cell(
-                config,
-                output_dirs,
-                cell_root / "gate.json",
-            )
-            if gate["status"] != "passed":
-                raise RuntimeError(f"cell {cell.cell_id} gate failed: {gate['incidents']}")
-            completed_cells.append(cell.cell_id)
     except Exception as exc:
         failed = {
             "status": "failed",
@@ -931,6 +1089,94 @@ def run_core_gate(
     }
     _atomic_json(config.output_root / "run_status.json", passed)
     return passed
+
+
+def _run_core_gate_cell(
+    *,
+    config: CoreGateConfig,
+    cell: CoreGateCell,
+    metrics_urls: tuple[str, ...],
+    completed_cells: list[str],
+    driver_python: str,
+    vllm_python: str,
+    idle_timeout_s: float,
+    pair_runner: PairRunner,
+    idle_waiter: IdleWaiter,
+    counter_sampler: CounterSampler,
+) -> None:
+    """Run one isolated cell after proving the shared service is idle."""
+
+    cell_root = config.output_root / cell.cell_id
+    cell_root.mkdir()
+    raw_dirs = tuple(
+        cell_root
+        / (
+            f"raw_shard_{endpoint_index}"
+            if cell.adapter == "vllm_bench"
+            else f"shard_{endpoint_index}"
+        )
+        for endpoint_index in (0, 1)
+    )
+    commands = [
+        _shard_command(
+            config=config,
+            cell=cell,
+            endpoint_index=endpoint_index,
+            output_dir=raw_dirs[endpoint_index],
+            driver_python=driver_python,
+            vllm_python=vllm_python,
+        )
+        for endpoint_index in (0, 1)
+    ]
+    _atomic_json(cell_root / "commands.json", commands)
+    # Pre-idle is essential: otherwise the before counter snapshot may include a
+    # previous experiment and the current cell receives contaminated deltas.
+    idle_waiter(metrics_urls, idle_timeout_s)
+    counters_before = counter_sampler(metrics_urls)
+    return_codes = pair_runner(
+        commands,
+        [cell_root / "shard_0.log", cell_root / "shard_1.log"],
+    )
+    if return_codes != (0, 0):
+        raise RuntimeError(f"cell {cell.cell_id} shard exits: {return_codes}")
+    queues = idle_waiter(metrics_urls, idle_timeout_s)
+    counter_evidence = _service_counter_evidence(
+        counters_before,
+        counter_sampler(metrics_urls),
+    )
+    _atomic_json(cell_root / "service_counters.json", counter_evidence)
+
+    output_dirs = raw_dirs
+    if cell.adapter == "vllm_bench":
+        output_dirs = tuple(
+            cell_root / f"shard_{endpoint_index}" for endpoint_index in (0, 1)
+        )
+        normalize_commands = [
+            _normalization_command(
+                config=config,
+                endpoint_index=endpoint_index,
+                raw_output_dir=raw_dirs[endpoint_index],
+                output_dir=output_dirs[endpoint_index],
+                queue=queues[endpoint_index],
+                driver_python=driver_python,
+            )
+            for endpoint_index in (0, 1)
+        ]
+        _atomic_json(cell_root / "normalize_commands.json", normalize_commands)
+        normalize_codes = pair_runner(
+            normalize_commands,
+            [cell_root / "normalize_0.log", cell_root / "normalize_1.log"],
+        )
+        if normalize_codes != (0, 0):
+            raise RuntimeError(
+                f"cell {cell.cell_id} normalization exits: {normalize_codes}"
+            )
+    _stamp_final_queues(output_dirs, queues)
+    _stamp_service_counters(output_dirs, counter_evidence["delta"])
+    gate = _validate_cell(config, output_dirs, cell_root / "gate.json")
+    if gate["status"] != "passed":
+        raise RuntimeError(f"cell {cell.cell_id} gate failed: {gate['incidents']}")
+    completed_cells.append(cell.cell_id)
 
 
 def _parser() -> argparse.ArgumentParser:

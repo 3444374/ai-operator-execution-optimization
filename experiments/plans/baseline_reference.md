@@ -363,11 +363,21 @@ digest、官方 URL/commit 和最小 SQL，再决定是否投入正式 calibrati
 `SET duckdb_ai_provider='openai_compatible'` + `CREATE SECRET (TYPE duckdb_ai, AI_PROVIDER 'openai_compatible',
 BASE_URL 'http://host/v1', API_KEY 'EMPTY')`，再 `SET duckdb_ai_model`。已接入 baseline 框架为
 `duckdb_ai` adapter（`code/src/baselines/text/products/duckdb_ai.py`，set-oriented
-`SELECT ai_complete(prompt, max_tokens => N, temperature => 0.0)`，原生扩展调度，不注入项目 credit/router；
-provenance 标 `database_product_native_baseline` / `duckdb_ai_community_extension`，observability
-`query_barrier`/`unavailable`，与 OceanBase 同形）。计时与观测脚本
+`ai_try_complete` 并同时保留 `{response,error}`；任一 error 或 NULL response 均按失败处理，
+不再把截断行伪装为 completed）。扩展原生拥有行内 HTTP 并发；实验 harness 只做与其余
+双 endpoint arm 相同的预注册分片，不注入项目 credit/router。provenance 标
+`database_product_native_baseline` / `duckdb_community_ai_extension`，不得写成 DuckDB core
+或官方 DuckDB benchmark。observability 为 `query_barrier`/`unavailable`，与 OceanBase
+同形。计时与观测脚本
 `code/scripts/baselines/time_duckdb_ai_baseline.py` 复用 `PeriodicSampler` + vLLM counter delta + nvidia-smi，
-用于在投入 formal gate 前估测 DuckDB-ai cell 时长。LOTUS 是语义算子 SDK，政策上不进 chat-track 吞吐榜，
+其中 `successful_rows_per_s` 只统计无 error 的非 NULL 输出；双 endpoint 并行耗时估计不得
+再乘 endpoint 数。same-work 主轨固定 response cache=false、retry=0、rate limit=0，
+同时保持 vLLM 服务端 prefix cache=on；产品优化的 response-cache-on 只能另列轨道。
+服务器 capability probe 确认 DuckDB 1.5.4 / `ai` 0.4.14 可通过双 endpoint 完成 4 行、
+1024-cap 请求；但同一 ShareGPT workload 的 64 行在 256 和 1024 cap 均出现 length error。
+因此 DuckDB 当前只进入独立 bounded-output 产品轨，不进入默认 ShareGPT fixed-cap 主排名；
+不得把少量 capability 成功外推为正式吞吐。
+LOTUS 是语义算子 SDK，政策上不进 chat-track 吞吐榜，
 需独立质量-成本-时间轨，本轮不提交。
 
 官方依据：[Doris AI Functions](https://doris.apache.org/docs/4.x/sql-manual/sql-functions/ai-functions/overview/)、

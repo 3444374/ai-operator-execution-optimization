@@ -4172,3 +4172,32 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
   正文+飞书镜像第 71 行（"37.5× 的端到端差异"→"推理执行阶段差异 37.5×，端到端约 13.4×"）、
   报告/飞书第 270/279 行结论句、`opening/slides/build_ppt.py` 第 524 行 PPT 源（只改源、不重生成
   .pptx，保护手动调整）。来源 `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`。
+
+## 2026-08-05 文本数据库原生 baseline fail-closed 修订
+
+- 修复 DuckDB `ai_try_complete` 语义错误：旧 adapter 只读取 `response`，丢弃行级
+  `error`，并把截断产生的 NULL response 标为 completed。新实现以 materialized CTE
+  单次调用函数并同时保留 `{response,error}`；error 或无解释 NULL 均为 failed，旧 probe
+  数字不得作为有效吞吐结果。
+- 同条件 DuckDB 主轨显式冻结扩展自有控制：response cache=false、provider prompt-cache
+  hints=false、retry=0、rate limit=0、timeout=120s；仅独立校准
+  `duckdb_ai_max_concurrent_requests`。这里不关闭 vLLM prefix cache，主服务继续 cache-on。
+- DuckDB cell 正式接入 64-row validity gate，并使用锁定 `duckdb==1.5.4` 的 cell 级 Python
+  runtime。gate 现在在每个 cell 前等待服务空闲、使用 host-scope runner lease、双 shard
+  最长 900s，并记录声明的 vLLM prefix-cache/max-seqs/max-batched-tokens 身份与可用的
+  prefix query/hit counter。
+- calibration/formal 文件仍是预注册合同而非统一 matrix runner；新增 DuckDB 独立校准和
+  formal 冻结项不代表已完成正式实验。后续只允许 validity gate 通过后再启动 calibration。
+- 服务器最小验证进一步收紧准入：4 行、1024-cap capability 请求本身 4/4 成功，记录
+  DuckDB v1.5.4、`ai` v0.4.14、双 endpoint 与 prefix-cache counters；但 64 行 ShareGPT
+  在 256-cap 和 1024-cap 均出现 `finish_reason=length` 行级错误。因此 DuckDB 从默认
+  ShareGPT core gate/formal 主排名移至独立 bounded-output 产品轨；新配置为
+  `dual_gpu_duckdb_ai_capability_gate.example.json`，只有同轨所有 comparator 共享同一
+  bounded-output manifest 时才能做性能比较。
+- 短门禁同时发现并修复 gate runner 的历史路径错误：命令曾指向不存在的
+  `code/scripts/run_official_baseline.py`，现统一解析并验证实际
+  `code/scripts/baselines/run_official_baseline.py`；新增文件存在性回归测试。
+- 三次短门禁的最小证据已归档到
+  `feasibility/results/duckdb_ai_semantic_gate_20260805/`：不保存原始 prompt/输出文本，
+  只保存 resolved config、退出状态、服务计数、逐分片摘要与失败日志；七步报告明确
+  capability 数据不进入正式性能排名。

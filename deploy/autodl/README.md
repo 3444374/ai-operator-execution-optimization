@@ -547,7 +547,7 @@ bash deploy/autodl/start_endpoints.sh /root/autodl-tmp/ai-operator-runtime.env
    ```bash
    VLLM_MAX_NUM_BATCHED_TOKENS=8192
    VLLM_MAX_NUM_SEQS=256
-   VLLM_EXTRA_ARGS="--no-enable-prefix-caching --enable-mfu-metrics \
+   VLLM_EXTRA_ARGS="--enable-prefix-caching --enable-mfu-metrics \
    --max-num-batched-tokens 8192 --max-num-seqs 256"
    ```
 
@@ -992,14 +992,15 @@ source /root/autodl-tmp/venvs/vllm-4090/bin/activate
 export PATH="/root/autodl-tmp/venvs/vllm-4090/lib/python3.12/site-packages/nvidia/cuda_nvcc/bin:$PATH"
 
 # 注意：以下为 legacy 2-endpoint 调试基线（每 GPU 1 副本、--gpu-memory-utilization 0.9、
-# --max-model-len 2048）。当前 4-endpoint 部署需按 runtime env 的 $PORTS /
+# --max-model-len 2048）。当前主 baseline 必须开启 prefix cache；cache-off 仅在独立机制
+# 消融中使用。当前 4-endpoint 部署需按 runtime env 的 $PORTS /
 # $VLLM_GPU_MEMORY_UTILIZATION / $VLLM_MAX_MODEL_LEN 调整后再用；标准启动应改用
 # start_endpoints.sh，本节仅作手动分步调试参考。
 CUDA_VISIBLE_DEVICES=0 nohup python -m vllm.entrypoints.openai.api_server \
   --model /root/autodl-tmp/models/Qwen2.5-1.5B-Instruct \
   --served-model-name qwen2.5-1.5b --dtype auto \
   --max-model-len 2048 --gpu-memory-utilization 0.9 \
-  --no-enable-prefix-caching --enable-mfu-metrics \
+  --enable-prefix-caching --enable-mfu-metrics \
   --port 8000 --host 127.0.0.1 \
   </dev/null >/root/autodl-tmp/vllm_logs/ep_8000.log 2>&1 &
 
@@ -1007,7 +1008,7 @@ CUDA_VISIBLE_DEVICES=1 nohup python -m vllm.entrypoints.openai.api_server \
   --model /root/autodl-tmp/models/Qwen2.5-1.5B-Instruct \
   --served-model-name qwen2.5-1.5b --dtype auto \
   --max-model-len 2048 --gpu-memory-utilization 0.9 \
-  --no-enable-prefix-caching --enable-mfu-metrics \
+  --enable-prefix-caching --enable-mfu-metrics \
   --port 8001 --host 127.0.0.1 \
   </dev/null >/root/autodl-tmp/vllm_logs/ep_8001.log 2>&1 &
 
@@ -1150,7 +1151,10 @@ control 与 vendor-native 适配器
 合同，不是 gate runner 可直接执行的配置。gate 未通过禁止做任何 calibration screening；
 统一 matrix runner 未落地前不得声称 calibration/formal 已完成。
 `vLLM Bench` 只作 ceiling，`bounded_*` 只作项目自写 control；Daft built-in prompt、
-Ray Data Processor 和通过部署门禁的 OceanBase 才称 native baseline。正式 held-out
+Ray Data Processor 和通过部署门禁的 OceanBase 才进入默认 ShareGPT native ranking。
+DuckDB `ai` community extension 必须先用
+`dual_gpu_duckdb_ai_capability_gate.example.json` 跑 bounded-output 独立轨；不得写成
+DuckDB core 或官方 benchmark，也不得因 ShareGPT length error 放宽失败规则。正式 held-out
 合同在 `dual_gpu_text_native_baseline_formal.example.json`，详细解释见
 `experiments/plans/text_native_baseline_rerun_20260802.md`。
 
@@ -1168,6 +1172,8 @@ Ray Data Processor 和通过部署门禁的 OceanBase 才称 native baseline。�
    `from ray.data.llm import HttpRequestProcessorConfig`；缺少 Serve 依赖时
    按已安装 Ray 的相同版本补 `ray[data,serve]`，不能只补报错中的单个
    `starlette`。
+   DuckDB cell 使用独立 `${DUCKDB_AI_PYTHON}`，该解释器必须固定 `duckdb==1.5.4`
+   且 `LOAD ai` 成功；不得为了省 venv 把 base/Daft/Ray 环境整体降级。
 4. 从正式 workload 导出 64 行 immutable manifest；hash、行数、模型、
    Chat protocol、temperature、输出上限和服务启动参数写入 gate 证据。
    两 endpoint 采用 manifest 中固定分片，不由 adapter 再路由。
@@ -1190,6 +1196,12 @@ Ray Data Processor 和通过部署门禁的 OceanBase 才称 native baseline。�
 7. 每个 cell 运行 `validate-gate`。必须满足 64/64 exactly-once、0 failed、
    两 endpoint 均使用、预测 work skew ≤2%、0 worker failure、相同服务
    元数据且最终 running/waiting 均为 0。
+   主轨还必须声明并核对 vLLM prefix cache=enabled；DuckDB extension response cache=false、
+   retry=0。DuckDB `ai_try_complete.error` 或 NULL response 任一出现即 gate 失败。
+
+DuckDB 独立门禁还要求 `${DUCKDB_AI_GATE_MANIFEST}`：64 行、双 endpoint work skew≤2%，
+且 prompt 明确约束短输出并实际自然 EOS。该 manifest 也必须提供给同轨其它 comparator；
+只跑 DuckDB 的 capability gate 不产生性能排名。
 
 `project_static` 与 `project_token_work` 不在 core gate JSON 中；它们仍由现有
 profiler/scenario runner 运行并保留完整 request/submission/resource trace。本节薄 CLI

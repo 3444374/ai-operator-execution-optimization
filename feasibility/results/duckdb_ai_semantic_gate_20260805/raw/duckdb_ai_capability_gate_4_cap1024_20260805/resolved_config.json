@@ -1,0 +1,56 @@
+{
+  "blocked_cells": [],
+  "cells": [
+    {
+      "adapter": "duckdb_ai",
+      "adapter_args": [
+        "--duckdb-database",
+        ":memory:",
+        "--duckdb-max-concurrent-requests",
+        "32",
+        "--duckdb-retry-count",
+        "0",
+        "--duckdb-retry-backoff-ms",
+        "0",
+        "--duckdb-min-request-interval-ms",
+        "0",
+        "--duckdb-timeout-seconds",
+        "120"
+      ],
+      "batch_size": 1,
+      "comparison_role": "database_product_native_baseline",
+      "concurrency_per_endpoint": 32,
+      "custom_scheduling_code": false,
+      "formal_baseline_eligible": true,
+      "formal_control_eligible": true,
+      "id": "duckdb_ai",
+      "implementation_provenance": "duckdb_community_ai_extension",
+      "python_executable": "/root/autodl-tmp/venvs/text-baselines/bin/python",
+      "qualification_gate": "duckdb_ai_extension_version_pinned_and_same_endpoint",
+      "ray_address": null,
+      "scheduler_owner": "duckdb_ai_community_extension",
+      "upstream_source": "https://duckdb.org/community_extensions/extensions/ai.html"
+    }
+  ],
+  "completion_protocol": "chat_completions",
+  "driver_python": "/root/miniconda3/bin/python",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "experiment_id": "dual_gpu_text_comparison_validity_gate",
+  "formal": false,
+  "manifest": "/root/autodl-tmp/gates/duckdb_ai_capability_gate_4_cap1024_20260805.jsonl",
+  "max_endpoint_work_skew": 0.02,
+  "model": "qwen2.5-7b",
+  "output_root": "/root/autodl-tmp/experiment-artifacts/duckdb_ai_capability_gate_4_cap1024_20260805",
+  "rows_total": 4,
+  "service": {
+    "live_prefix_caching": true,
+    "max_num_batched_tokens": 8192,
+    "max_num_seqs": 256,
+    "prefix_caching": "enabled"
+  },
+  "tokenizer": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
+  "vllm_python": "/root/autodl-tmp/venvs/vllm-4090/bin/python"
+}

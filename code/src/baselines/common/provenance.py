@@ -113,7 +113,7 @@ _ADAPTER_PROVENANCE = {
     "duckdb_ai": AdapterProvenance(
         comparison_role="database_product_native_baseline",
         implementation_provenance="duckdb_community_ai_extension",
-        scheduler_owner="duckdb_ai_community_extension",
+        scheduler_owner="duckdb_sql_executor_and_ai_community_extension",
         custom_scheduling_code=False,
         formal_baseline_eligible=True,
         formal_control_eligible=True,
@@ -121,7 +121,7 @@ _ADAPTER_PROVENANCE = {
             "https://duckdb.org/community_extensions/extensions/ai.html"
         ),
         qualification_gate=(
-            "duckdb_ai_extension_version_pinned_and_same_endpoint"
+            "bounded_output_zero_error_extension_version_and_same_endpoint"
         ),
     ),
 }

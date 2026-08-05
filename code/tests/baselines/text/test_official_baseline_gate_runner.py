@@ -92,6 +92,8 @@ class OfficialBaselineGateRunnerTests(unittest.TestCase):
                 "MODEL_PATH": str(tokenizer),
                 "OFFICIAL_BASELINE_GATE_MANIFEST": str(manifest),
                 "RAY_ADDRESS": "ray://127.0.0.1:10001",
+                "DUCKDB_AI_PYTHON": str(root / "duckdb-ai-python"),
+                "DUCKDB_AI_GATE_MANIFEST": str(manifest),
             }
             config_path = (
                 CODE_ROOT.parent
@@ -102,10 +104,23 @@ class OfficialBaselineGateRunnerTests(unittest.TestCase):
                     config_path,
                     output_root_override=root / "output",
                 )
+                duckdb_config = load_core_gate_config(
+                    CODE_ROOT.parent
+                    / "deploy/autodl/dual_gpu_duckdb_ai_capability_gate.example.json",
+                    output_root_override=root / "duckdb-output",
+                )
 
         self.assertEqual(config.model, "qwen")
         self.assertEqual(config.max_endpoint_work_skew, 0.02)
         self.assertEqual(len(config.cells), 5)
+        duckdb_cell = duckdb_config.cells[0]
+        self.assertIn("--duckdb-max-concurrent-requests", duckdb_cell.adapter_args)
+        self.assertNotIn("--duckdb-response-cache", duckdb_cell.adapter_args)
+        self.assertEqual(
+            duckdb_cell.python_executable,
+            str(root / "duckdb-ai-python"),
+        )
+        self.assertEqual(duckdb_config.service_prefix_caching, "enabled")
         self.assertEqual(config.blocked_cells, ())
 
     def test_config_expands_machine_environment(self) -> None:
@@ -259,11 +274,18 @@ vllm:num_requests_waiting{model_name="qwen"} 3.0
         metrics = """
 vllm:prompt_tokens_total{engine="0",model_name="qwen"} 1.2e+02
 vllm:generation_tokens_total{engine="0",model_name="qwen"} 80
+vllm:prefix_cache_queries_total{engine="0",model_name="qwen"} 40
+vllm:prefix_cache_hits_total{engine="0",model_name="qwen"} 10
 """
 
         self.assertEqual(
             parse_vllm_token_counters(metrics),
-            {"prompt_tokens": 120, "generation_tokens": 80},
+            {
+                "prompt_tokens": 120,
+                "generation_tokens": 80,
+                "prefix_cache_queries": 40,
+                "prefix_cache_hits": 10,
+            },
         )
         with self.assertRaisesRegex(ValueError, "generation_tokens"):
             parse_vllm_token_counters(
@@ -282,6 +304,25 @@ vllm:generation_tokens_total{engine="0",model_name="qwen"} 80
         self.assertEqual(
             validate_service_counter_summary(summary, 0),
             (),
+        )
+        self.assertEqual(
+            validate_configured_service_identity(
+                (
+                    {
+                        "model_name": "qwen",
+                        "completion_protocol": "chat_completions",
+                        "service_prefix_caching": "disabled",
+                        "service_max_num_seqs": 256,
+                        "service_max_num_batched_tokens": 8192,
+                    },
+                ),
+                model="qwen",
+                completion_protocol="chat_completions",
+                prefix_caching="enabled",
+                max_num_seqs=256,
+                max_num_batched_tokens=8192,
+            ),
+            ("configured_prefix_caching_mismatch",),
         )
         self.assertIn(
             "generation",
@@ -781,6 +822,11 @@ vllm:generation_tokens_total{engine="0",model_name="qwen"} 80
             )
             self.assertEqual(len(seen_commands), 1)
             self.assertEqual(len(seen_commands[0]), 2)
+            self.assertTrue(Path(seen_commands[0][0][1]).is_file())
+            self.assertEqual(
+                Path(seen_commands[0][0][1]).parent.name,
+                "baselines",
+            )
             self.assertIn("--disable-arrival-replay", seen_commands[0][0])
             self.assertTrue((output_root / "bounded_http" / "gate.json").exists())
             service_counters = json.loads(

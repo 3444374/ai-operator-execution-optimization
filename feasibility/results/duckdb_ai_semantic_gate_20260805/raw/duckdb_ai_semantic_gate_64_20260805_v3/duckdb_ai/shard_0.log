@@ -1,0 +1,1 @@
+{"status": "failed", "error": "failed request result for doc_id=0: {\"exception_type\":\"IO\",\"exception_message\":\"AI provider response stopped because max_tokens was reached; raise max_tokens or request a shorter response\"}"}

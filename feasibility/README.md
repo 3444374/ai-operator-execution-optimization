@@ -66,6 +66,15 @@ feasibility/results/vllm_clip_pooling_gate_20260804/
 该结果只说明当前 vLLM/PyTorch/CUDA/容器组合未在 600 秒内返回 embedding；不代表
 vLLM 普遍不支持 CLIP，也不产生可进入系统排名的吞吐数据。
 
+DuckDB `ai` 文本算子语义门禁：
+
+```text
+feasibility/results/duckdb_ai_semantic_gate_20260805/
+```
+
+该结果证明 DuckDB community `ai` 在当前双 endpoint 环境可执行，同时确认现有
+ShareGPT fixed-cap 与扩展的截断错误语义不兼容；它只决定 baseline 轨道边界，不作排名。
+
 ## 运行示例
 
 ```bash

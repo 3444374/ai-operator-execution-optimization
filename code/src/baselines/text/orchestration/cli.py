@@ -38,6 +38,7 @@ from src.baselines.common.manifests import (
 from ..products import (
     DuckDBAiConfig,
     OceanBaseConfig,
+    inspect_duckdb_ai_runtime,
     run_duckdb_ai_complete,
     run_oceanbase_ai_complete,
 )
@@ -115,6 +116,9 @@ def _service_fingerprint(
             "model": args.model,
             "protocol": completion_protocol,
             "temperature": 0.0,
+            "service_prefix_caching": args.service_prefix_caching,
+            "service_max_num_seqs": args.service_max_num_seqs,
+            "service_max_num_batched_tokens": args.service_max_num_batched_tokens,
         },
         sort_keys=True,
         separators=(",", ":"),
@@ -245,6 +249,14 @@ def _run_adapter(
                 model=args.model,
                 api_key=args.api_key or "EMPTY",
                 max_tokens=requests[0].max_output_tokens,
+                database_path=args.duckdb_database,
+                max_concurrent_requests=args.duckdb_max_concurrent_requests,
+                response_cache=args.duckdb_response_cache,
+                provider_prompt_cache_hints=args.duckdb_prompt_cache_hints,
+                retry_count=args.duckdb_retry_count,
+                retry_backoff_ms=args.duckdb_retry_backoff_ms,
+                min_request_interval_ms=args.duckdb_min_request_interval_ms,
+                timeout_seconds=args.duckdb_timeout_seconds,
             ),
         )
     raise ValueError("vllm_bench is prepared and executed by its dedicated branch")
@@ -276,6 +288,9 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
         "predicted_work": sum(request.estimated_work for request in requests),
         "model_name": args.model,
         "completion_protocol": completion_protocol,
+        "service_prefix_caching": args.service_prefix_caching,
+        "service_max_num_seqs": args.service_max_num_seqs,
+        "service_max_num_batched_tokens": args.service_max_num_batched_tokens,
         "http_batch_rows": (
             args.batch_size
             if args.adapter == "bounded_completions"
@@ -286,6 +301,23 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
             completion_protocol,
         ),
     }
+    if args.adapter == "duckdb_ai":
+        base_summary.update(
+            {
+                "duckdb_database": args.duckdb_database,
+                "duckdb_ai_max_concurrent_requests": (
+                    args.duckdb_max_concurrent_requests
+                ),
+                "duckdb_ai_response_cache": args.duckdb_response_cache,
+                "duckdb_ai_prompt_cache_hints": args.duckdb_prompt_cache_hints,
+                "duckdb_ai_retry_count": args.duckdb_retry_count,
+                "duckdb_ai_retry_backoff_ms": args.duckdb_retry_backoff_ms,
+                "duckdb_ai_min_request_interval_ms": (
+                    args.duckdb_min_request_interval_ms
+                ),
+                "duckdb_ai_timeout_seconds": args.duckdb_timeout_seconds,
+            }
+        )
     if args.dry_run:
         return base_summary
 
@@ -331,6 +363,18 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
         return prepared
 
     try:
+        if args.adapter == "duckdb_ai":
+            base_summary.update(
+                inspect_duckdb_ai_runtime(
+                    DuckDBAiConfig(
+                        endpoint_base_url=_chat_base_url(args.endpoint_url),
+                        model=args.model,
+                        api_key=args.api_key or "EMPTY",
+                        max_tokens=requests[0].max_output_tokens,
+                        database_path=args.duckdb_database,
+                    )
+                )
+            )
         results = _run_adapter(requests, args)
     except Exception as exc:
         _atomic_json(
@@ -526,6 +570,9 @@ def _normalize_vllm_bench(
         "predicted_work": sum(request.estimated_work for request in requests),
         "model_name": args.model,
         "completion_protocol": "chat_completions",
+        "service_prefix_caching": args.service_prefix_caching,
+        "service_max_num_seqs": args.service_max_num_seqs,
+        "service_max_num_batched_tokens": args.service_max_num_batched_tokens,
         "service_config_sha256": _service_fingerprint(
             args,
             "chat_completions",
@@ -616,6 +663,21 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--output-dir", required=True)
     run.add_argument("--vllm-running-final", type=int, default=-1)
     run.add_argument("--vllm-waiting-final", type=int, default=-1)
+    run.add_argument(
+        "--service-prefix-caching",
+        choices=("enabled", "disabled", "unknown"),
+        default="unknown",
+    )
+    run.add_argument("--service-max-num-seqs", type=int, default=-1)
+    run.add_argument("--service-max-num-batched-tokens", type=int, default=-1)
+    run.add_argument("--duckdb-database", default=":memory:")
+    run.add_argument("--duckdb-max-concurrent-requests", type=int, default=32)
+    run.add_argument("--duckdb-response-cache", action="store_true")
+    run.add_argument("--duckdb-prompt-cache-hints", action="store_true")
+    run.add_argument("--duckdb-retry-count", type=int, default=0)
+    run.add_argument("--duckdb-retry-backoff-ms", type=int, default=0)
+    run.add_argument("--duckdb-min-request-interval-ms", type=int, default=0)
+    run.add_argument("--duckdb-timeout-seconds", type=int, default=120)
     run.add_argument("--oceanbase-host", default="127.0.0.1")
     run.add_argument("--oceanbase-port", type=int, default=2881)
     run.add_argument("--oceanbase-user")
@@ -642,6 +704,17 @@ def _parser() -> argparse.ArgumentParser:
     normalize.add_argument("--output-dir", required=True)
     normalize.add_argument("--vllm-running-final", type=int, required=True)
     normalize.add_argument("--vllm-waiting-final", type=int, required=True)
+    normalize.add_argument(
+        "--service-prefix-caching",
+        choices=("enabled", "disabled", "unknown"),
+        default="unknown",
+    )
+    normalize.add_argument("--service-max-num-seqs", type=int, default=-1)
+    normalize.add_argument(
+        "--service-max-num-batched-tokens",
+        type=int,
+        default=-1,
+    )
 
     gate = commands.add_parser("validate-gate")
     gate.add_argument("--manifest", required=True)
