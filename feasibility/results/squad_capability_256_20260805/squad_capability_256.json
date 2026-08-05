@@ -1,0 +1,34 @@
+{
+  "arm": "duckdb_ai",
+  "cap": 64,
+  "error_count": 0,
+  "exactly_once": true,
+  "finish_reason": "unavailable (DuckDB-ai extension does not expose finish_reason)",
+  "gate": "squad_v11_dev_capability_256",
+  "identity": {
+    "duckdb_ai_extension_version": "0.4.14",
+    "duckdb_version": "v1.5.4",
+    "endpoint": "http://127.0.0.1:8000/v1",
+    "model": "qwen2.5-7b",
+    "workload": "squad_v11_dev_short_answer"
+  },
+  "note": "Capability gate: verifies DuckDB-ai output parsing, example-ID alignment, and squad_quality_metrics wiring. Direct-client and project arms share the same evaluator + manifest (alignment structurally identical); not ranked here.",
+  "null_response_count": 0,
+  "operator_only_jct_s": 5.5,
+  "role": "capability_NOT_formal_ranking",
+  "row_count": 256,
+  "setup_s": 0.513,
+  "squad_quality": {
+    "squad_evaluated_rows": 256,
+    "squad_exact_match_percent": 79.6875,
+    "squad_exact_match_rows": 204,
+    "squad_missing_prediction_rows": 0,
+    "squad_prediction_rows": 256,
+    "squad_quality_status": "ok",
+    "squad_token_f1_percent": 90.39181050966837
+  },
+  "success_count": 256,
+  "timing_boundary": "operator-only (database-E2E runner not implemented; no E2E ranking)",
+  "truncation_error_count": 0,
+  "wall_s": 6.199
+}
