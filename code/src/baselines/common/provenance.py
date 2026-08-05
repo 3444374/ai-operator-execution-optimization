@@ -110,6 +110,20 @@ _ADAPTER_PROVENANCE = {
         ),
         qualification_gate="oceanbase_ai_function_capability_and_same_endpoint",
     ),
+    "duckdb_ai": AdapterProvenance(
+        comparison_role="database_product_native_baseline",
+        implementation_provenance="duckdb_community_ai_extension",
+        scheduler_owner="duckdb_ai_community_extension",
+        custom_scheduling_code=False,
+        formal_baseline_eligible=True,
+        formal_control_eligible=True,
+        upstream_source=(
+            "https://duckdb.org/community_extensions/extensions/ai.html"
+        ),
+        qualification_gate=(
+            "duckdb_ai_extension_version_pinned_and_same_endpoint"
+        ),
+    ),
 }
 
 

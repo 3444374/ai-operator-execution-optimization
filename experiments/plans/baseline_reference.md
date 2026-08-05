@@ -44,7 +44,7 @@
 | StarRocks `ai_query` | 4.1.1 已修复函数注册；独立函数文档和稳定性仍不足 | 固定 4.1.1+，关闭响应缓存后做一行 vLLM gate |
 | Oracle / Db2 AI SQL | 官方确认本地版本与文本生成/embedding；尚未在本机安装 | 核对 Free/Community 镜像是否含功能、TLS/endpoint 协议和资源限制 |
 | SQL Server AI embedding | 2025 可本地 Docker；仅 embedding，远端 endpoint 要求 HTTPS | TLS reverse proxy + 一行 embedding gate |
-| DuckDB `ai` / PostgreSQL pgai | 可安装，但分别是社区扩展和已归档历史扩展 | 固定扩展版本/commit，单列 extension baseline，不冒充数据库 core |
+| DuckDB `ai`（已安装 + 接入框架）/ PostgreSQL pgai | DuckDB `ai` 已装 **duckdb 1.5.4**（1.5.5 无 ai 扩展二进制）+ `INSTALL ai FROM community`，adapter `duckdb_ai` 已接入 baseline 框架原生执行（`code/src/baselines/text/products/duckdb_ai.py`）；pgai 仍是已归档历史扩展 | DuckDB：固定 duckdb 版本 + ai 扩展版本/commit，记 `duckdb_ai_max_concurrent_requests` 等扩展自有旋钮，用 `openai_compatible` provider 指向 vLLM；单列 extension baseline，不冒充数据库 core |
 | Daft built-in image embedding | 256-row gate 与逐行语义 parity 已通过；主要差异为 L2 归一化 | 按统一 normalized contract 独立 calibration → formal |
 | Ray Data native image graph | 256-row resource/deadlock gate 已通过 | 独立 batch/actor calibration → formal |
 | vLLM CLIP pooling | 当前 0.25.1 环境两次 1-image offline gate 均 600s timeout，无 embedding 输出 | `blocked`；不运行在线/5K/60K，只在新隔离环境重新做 capability gate |
@@ -355,9 +355,20 @@ endpoint。只有三项都通过且完成同机 capability gate 的系统，才�
 | **PostgresML 2.10.0** | `pgml.transform`、`pgml.embed`、`pgml.rank`、`pgml.predict` | Docker 可装；模型加载在数据库侧，不直接复用外部 vLLM | **不同机制对照**。改变模型副本、GPU 内存和 scheduler owner，只能单独报告 in-database inference |
 
 本地安装执行顺序为：Doris → ClickHouse → StarRocks 一行门禁 → Oracle/Db2 → SQL Server
-embedding；OceanBase 在获得合适 VM/特权容器后恢复。DuckDB `ai` 用作低安装成本的扩展
-control，pgai 只补历史机制。安装动作不在本轮调研中执行；每个系统必须先保存版本、镜像
+embedding；OceanBase 在获得合适 VM/特权容器后恢复。pgai 只补历史机制。每个系统必须先保存版本、镜像
 digest、官方 URL/commit 和最小 SQL，再决定是否投入正式 calibration。
+
+**DuckDB `ai` 已落地（2026-08-05）**：driver venv 装 `duckdb==1.5.4`（1.5.5 的 ai 扩展二进制尚未构建，
+`INSTALL ai FROM community` 会 404），扩展默认 provider 是 ollama，指向 vLLM 必须显式
+`SET duckdb_ai_provider='openai_compatible'` + `CREATE SECRET (TYPE duckdb_ai, AI_PROVIDER 'openai_compatible',
+BASE_URL 'http://host/v1', API_KEY 'EMPTY')`，再 `SET duckdb_ai_model`。已接入 baseline 框架为
+`duckdb_ai` adapter（`code/src/baselines/text/products/duckdb_ai.py`，set-oriented
+`SELECT ai_complete(prompt, max_tokens => N, temperature => 0.0)`，原生扩展调度，不注入项目 credit/router；
+provenance 标 `database_product_native_baseline` / `duckdb_ai_community_extension`，observability
+`query_barrier`/`unavailable`，与 OceanBase 同形）。计时与观测脚本
+`code/scripts/baselines/time_duckdb_ai_baseline.py` 复用 `PeriodicSampler` + vLLM counter delta + nvidia-smi，
+用于在投入 formal gate 前估测 DuckDB-ai cell 时长。LOTUS 是语义算子 SDK，政策上不进 chat-track 吞吐榜，
+需独立质量-成本-时间轨，本轮不提交。
 
 官方依据：[Doris AI Functions](https://doris.apache.org/docs/4.x/sql-manual/sql-functions/ai-functions/overview/)、
 [Doris EMBED](https://doris.apache.org/docs/dev/key-features/embedding/)、

@@ -4138,3 +4138,31 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
 - 未提交改动先同步到服务器临时 detached worktree 做完整依赖验证；JSON/py_compile
   门禁与最终 679/679 tests 全部通过。临时 worktree 随后删除，服务器主 worktree 保持
   `c8d1d92`、无实验 runner，不触碰历史未跟踪原始数据。
+
+## 2026-08-05 DuckDB-ai 接入 baseline 框架 + 320-run 审计
+
+- 审计 320-run formal：codex 已定位 8-04 双 runner 并发 + 空 `--ray-address` 各起 local Ray
+  两类根因，修正真实落地且有测试——host-scope lease（`runner_lease.acquire_host_runner_lease`，
+  artifact_root 级互斥，防不同输出目录 runner 并发）+ runner 的 `_validate_runtime_endpoints`
+  拒绝 `--ray-address` 等关键 flag 存在但为空 + live prefix-caching 探测 fail-closed
+  （`config_env.py` 仍只拒缺失变量，未改；空值门禁正确落在 runner 校验层）。cache-on gate
+  已验证 0 个 local-Ray、共享 Ray、exactly-once、cache counter 一致；修正后 320-run 可开跑
+  （按优先级，先完成 baseline 再跑）。
+- DuckDB `ai` 社区扩展已安装到 driver 隔离 venv（`duckdb==1.5.4`；1.5.5 的 ai 扩展二进制未构建，
+  `INSTALL ai FROM community` 会 404，已实测 v1.5.4 二进制 200）。扩展默认 provider 是 ollama，
+  指向 vLLM 必须显式 `SET duckdb_ai_provider='openai_compatible'` + `CREATE SECRET (TYPE duckdb_ai,
+  AI_PROVIDER 'openai_compatible', BASE_URL 'http://host/v1', API_KEY 'EMPTY')`，再 `SET duckdb_ai_model`。
+- DuckDB-ai 接入 baseline 框架为新 adapter `duckdb_ai`（`code/src/baselines/text/products/duckdb_ai.py`）：
+  set-oriented `SELECT ai_complete(prompt, max_tokens => N, temperature => 0.0)`，原生扩展调度
+  （扩展自有 `duckdb_ai_max_concurrent_requests` 等），不注入项目 credit/router；provenance 标
+  `database_product_native_baseline` / `duckdb_ai_community_extension`，`formal_baseline_eligible=True`，
+  observability 与 OceanBase 同形（`query_barrier`/`unavailable`）。CLI 复用现有 `--endpoint-url`/
+  `--model`/`--api-key`，不新增参数。新增 6 个单元测试，全绿；oceanbase/provenance 回归测试不受影响。
+- 计时观测脚本 `code/scripts/baselines/time_duckdb_ai_baseline.py` 复用 `PeriodicSampler` +
+  vLLM counter delta + nvidia-smi + `load_postgres_requests`，在投入 formal gate 前估测 DuckDB-ai
+  cell 时长，供 codex 评判可行性。
+- LOTUS 已在服务器 smoke 验证（`pip install lotus-ai` + LiteLLM `api_base` 指向 vLLM，
+  `sem_map` 返回 DataFrame 输出在 `_map` 列），但政策上 LOTUS 是语义算子 SDK、不进 chat-track
+  吞吐榜，需独立质量-成本-时间轨；本轮只提交 DuckDB-ai，LOTUS 留作后续独立轨。
+- 写回方向：用户预告后续写回改用 Lance（替换/并行范围待定），当前 image runner 仍无写回代码、
+  文本历史用 pgvector；细节在进入写回实现阶段再定。

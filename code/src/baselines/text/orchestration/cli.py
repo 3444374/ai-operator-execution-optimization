@@ -35,7 +35,12 @@ from src.baselines.common.manifests import (
     read_manifest,
     write_manifest,
 )
-from ..products import OceanBaseConfig, run_oceanbase_ai_complete
+from ..products import (
+    DuckDBAiConfig,
+    OceanBaseConfig,
+    run_duckdb_ai_complete,
+    run_oceanbase_ai_complete,
+)
 from .postgres_manifest import load_postgres_requests
 from src.baselines.common.provenance import adapter_provenance, registered_adapters
 from src.baselines.common.results import summarize_results
@@ -56,6 +61,7 @@ _OBSERVABILITY_BY_ADAPTER = {
     "daft_ray": ("shard_barrier", "manifest_prompt_only"),
     "ray_data_http": ("shard_barrier", "server_usage"),
     "oceanbase": ("query_barrier", "unavailable"),
+    "duckdb_ai": ("query_barrier", "unavailable"),
 }
 
 
@@ -229,6 +235,16 @@ def _run_adapter(
                 source_table=(f"baseline_requests_ep{args.endpoint_index}"),
                 result_table=(f"baseline_results_ep{args.endpoint_index}"),
                 register_model=args.oceanbase_register_model,
+            ),
+        )
+    if args.adapter == "duckdb_ai":
+        return run_duckdb_ai_complete(
+            requests,
+            DuckDBAiConfig(
+                endpoint_base_url=_chat_base_url(args.endpoint_url),
+                model=args.model,
+                api_key=args.api_key or "EMPTY",
+                max_tokens=requests[0].max_output_tokens,
             ),
         )
     raise ValueError("vllm_bench is prepared and executed by its dedicated branch")
