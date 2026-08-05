@@ -48,3 +48,5 @@ AGENTS.md §9 包含相同的清单——在 codex 中做变更时，按同样�
 ## Git 规则
 
 **禁止在 commit message 中添加 Co-Authored-By 或任何形式的 AI 署名。** 所有 commit 的用户署名只能是项目开发者本人，不允许将 Claude、codex 或任何 AI 工具写入 contributor。
+
+**禁止把隐私数据提交进 Git**（API key、token、外部服务器 IP/host、非 localhost 用户名/口令、私钥、`sshpass -p <pw>`）。新代码连接串用环境变量引用；evidence 经 `src/baselines/common/redact.py` 脱敏；commit 前跑 `python code/scripts/environment/scan_git_secrets.py`（建议 `git config core.hooksPath .githooks`）。完整规则与本地默认放行口径见根 `AGENTS.md` §10。

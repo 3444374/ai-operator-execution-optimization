@@ -190,6 +190,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/runtime/profiles/*.json` | 双 4090、单 5070 和通用 Linux NVIDIA GPU 的自动匹配与最低机器能力合同 | 检查 CPU/GPU/显存/磁盘/命令，不承诺性能最优 |
 | `deploy/runtime/runtime.env.example` | 与平台无关的仓库外环境变量模板 | 新机器集中设置五个根目录、模型、endpoint、数据库和 MFU 口径 |
 | `code/scripts/environment/manage_environment.py` | 自动硬件/profile 识别、只读 check + 显式 install-python/download CLI | 保存匿名 machine ID/能力报告；默认不改变环境，受许可资产 fail closed |
+| `code/scripts/environment/scan_git_secrets.py` | 高精度 Git 隐私扫描器（私钥 / api token / `sshpass -p` / 外部 `user:pw@<真实host或IP>`）；默认扫暂存区，`--all` 扫全仓 | commit 前跑；配 `.githooks/pre-commit` 自动拦截；本地默认 `postgres:postgres@localhost` 与模板 host 放行 |
+| `code/scripts/environment/secret_scan_baseline.txt` | scan_git_secrets 的 reviewed 误报 allowlist（每行一个正则，附原因）| 当前仅放行模型生成证据里的占位符 `ondigitalocean.com` URL；保持精简，新增需写明理由 |
+| `.githooks/pre-commit` | commit 前自动跑 scan_git_secrets | 一次性启用：`git config core.hooksPath .githooks`；`--no-verify` 仅限已验证误报 |
 | `code/requirements/*.txt` | 通用下载与 learned estimator 等可选能力依赖 | 只装进明确指定的 driver/analysis Python，不装进所有环境 |
 | `code/scripts/analysis/select_strategy_calibration.py` | 从 feeding/direct/token-budget/actor-shape 证据生成冻结校准合同和环境覆盖 | 同协议 actor 曲线完成后、启动数据组织/提交策略/多 job formal 前执行 |
 | `code/scripts/analysis/summarize_static_k_workload_surface.py` | 判定不同 workload 的静态 K 最优点迁移和错配代价是否足以支持动态控制 | static-K workload surface 后 fail-closed 决定是否继续 adaptive formal |
@@ -407,6 +410,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/baselines/test_duckdb_ai_sentence_count_gate.py` | 句子计数 gate 纯函数单测（句子切分/整数 fullmatch/行数门禁/dist）| 修改 sentence-count gate 后运行 |
 | `code/tests/baselines/test_squad_capability_gate.py` | SQuAD capability gate 纯函数单测（largest-remainder 配额/多答案桶/确定性分层/order 不变/structured hash 对齐 importer/workload 完整性/归因/脱敏 wiring）| 修改 stratified_sample / integrity / attribution / redact 后运行 |
 | `code/tests/baselines/common/test_redact.py` | 共享脱敏模块单测（DB-URL/arg list/URL flag/redact_text）| 修改 `src/baselines/common/redact.py` 后运行 |
+| `code/tests/environment/test_scan_git_secrets.py` | Git 隐私扫描器纯函数单测（私钥/token/sshpass/外部 host 拦截；localhost/模板/example host 放行）| 修改 `scan_git_secrets.py` 拦截规则后运行 |
 | `code/tests/scheduling/test_scheduling_models.py` | scheduling request/endpoint/topology schema 单元测试 | 修改 typed scheduling metadata 前运行 |
 | `code/tests/scheduling/test_scheduling_policies.py` | static admission 与 round-robin routing 单元测试 | 修改 admission/routing baseline 前运行 |
 | `code/tests/scheduling/test_scheduler.py` | bounded-inflight 与 exactly-once deterministic scheduler 测试 | 修改 scheduler orchestration 前运行 |

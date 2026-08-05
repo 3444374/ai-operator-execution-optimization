@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-08-05 新增 Git 隐私数据禁令 + 高精度 secret scanner
+
+- 用户要求：api key、服务器 IP/host、口令、私钥等隐私数据禁止提交进 Git，并写入项目规则。
+- **审计**（全仓 + `git log --all -S` pickaxe）：真实密钥确认**从未进仓库**——SSH 密码、HF token、
+  真实主机 `connect.bjb1.seetacloud.com` 均无命中；`.gitignore` 已覆盖 `*.env`/`*.env.local`。
+  api-key 在 SQuAD gate 一直是本地默认 `EMPTY`（非真 key），且新 `redact` 模块把任何 `--api-key`→`***`。
+- **规则**：写入根 `AGENTS.md` §10（CLAUDE.md `@AGENTS.md` 自动同步，并在自身 Git 规则加了一行指针）。
+  禁止提交 key/token/外部 IP-host/非 localhost 口令/私钥/`sshpass -p <pw>`；新代码连接串用环境变量引用；
+  evidence 经 `src/baselines/common/redact.py` 脱敏；commit 前跑 scanner。
+- **落地**：`code/scripts/environment/scan_git_secrets.py`（高精度：私钥 + hf_/sk-/ghp_/github_pat_/xox*/AIza token
+  + `sshpass -p` + 外部 `user:pw@<真实 TLD 或 IPv4 host>`；localhost 任意凭据放行、模板 host 放行、
+  example/fake host 放行）+ `code/scripts/environment/secret_scan_baseline.txt`（reviewed 误报 allowlist）
+  + `.githooks/pre-commit`（一次性 `git config core.hooksPath .githooks` 启用）+ 10 个单测。
+- **历史 `postgres:postgres@localhost`（60+ 处）不批量改写**：公开 PostgreSQL 默认、只连 localhost、非外部凭据，
+  按"没泄漏就不动"原则保留；scanner 放行该本地默认。新文件仍优先用 `$DATABASE_URL` 引用。
+- 唯一非默认发现：`experiments/results/rc1_data_organization/**/raw/**/requests.csv` 里 4 处
+  LLM 生成的 YAML 示例 `user:password@ips-backend-db-...ondigitalocean.com`（占位符凭据 + 第三方 host，
+  非我们的基础设施、非真实口令）→ 记入 baseline 放行，不修改证据。
+- 全仓验证：3310 文件 0 violation（4 baseline-suppressed）。
+
 ## 2026-08-05 SQuAD capability gate v3：codex 第六轮 review 全修 + 可归因重跑
 
 - codex 对 v2（`f82de93`）SQuAD 256 行 DuckDB-ai capability gate 提了第六轮 11 个问题：

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Pre-commit secret scan.
+# Block real private data (API keys/tokens, external server IP/host
+# credentials, private keys, sshpass passwords) from entering the repo.
+# Enable once per clone:
+#   git config core.hooksPath .githooks
+# Bypass temporarily with `git commit --no-verify` (only for verified
+# false positives; prefer extending secret_scan_baseline.txt instead).
+# See AGENTS.md §10 for the full policy.
+
+set -u
+python code/scripts/environment/scan_git_secrets.py
+status=$?
+if [ "$status" -ne 0 ]; then
+  echo "" >&2
+  echo "commit BLOCKED by scan_git_secrets (see AGENTS.md §10)." >&2
+  echo "If this is a verified false positive, add a narrow regex to" >&2
+  echo "code/scripts/environment/secret_scan_baseline.txt with a reason." >&2
+  exit 1
+fi
+exit 0

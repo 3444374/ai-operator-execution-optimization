@@ -207,6 +207,15 @@ batch/K/actor；禁止把两个维度同时上涨后归因。
 
 **禁止在 commit message 中添加 Co-Authored-By 或任何形式的 AI 署名。** 所有 commit 的用户署名只能是项目开发者本人。
 
+**禁止把隐私数据提交进 Git。** 包括但不限于：API key、token（HuggingFace `hf_`、OpenAI `sk-`、GitHub `ghp_`/`github_pat_`、Slack `xox*`、Google `AIza` 等）、外部服务器 IP/host、非 localhost 的用户名/口令、私钥（`-----BEGIN ... PRIVATE KEY-----`）、`sshpass -p <pw>` 形式的密码。要求：
+
+- 真实密钥/口令只放在仓库外的 runtime env 文件（`.gitignore` 已覆盖 `*.env` / `*.env.local`，`!*.env.example` 例外）；
+- 新代码/配置/文档/脚本里的连接串一律用环境变量引用（如 `$DATABASE_URL`、`${DATABASE_URL}`），不写明文；需要给默认值时只给 `postgresql://postgres:postgres@localhost:5432/...`（公开本地默认，仅绑 localhost，非外部凭据）或 `<DB_URL>` 占位符；
+- 实验报告/evidence（`command` 字段、异常文本、traceback）必须经 `src/baselines/common/redact.py` 脱敏后再落盘；
+- commit 前跑 `python code/scripts/environment/scan_git_secrets.py`（默认扫暂存区；高精度拦截 key/token/私钥/外部 `user:pw@<真实host或IP>`），建议启用 `git config core.hooksPath .githooks` 作为 pre-commit 自动拦截；
+- 命中真·隐私必须立即轮换该密钥；review 过的误报（如模型生成文本里的占位符 URL）记入 `code/scripts/environment/secret_scan_baseline.txt`（每条一个正则，附原因，保持精简）。
+- **本地默认 `postgres:postgres@localhost` 的历史存在不批量改写**：它是公开 PostgreSQL 默认口令、只连 localhost、非外部凭据；scanner 把它放行。新增文件仍优先用环境变量引用。
+
 ## 11. 知识库同步
 
 项目有平级 Obsidian LLM Wiki 知识库（`../ai-operator-wiki/`）。项目是知识唯一来源，知识库是编译查询界面。
