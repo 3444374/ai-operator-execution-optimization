@@ -74,6 +74,7 @@ from src.baselines.text.products.duckdb_ai import (  # noqa: E402
     run_duckdb_ai_complete,
 )
 from src.observability.metrics import (  # noqa: E402
+    normalize_squad_answer,
     scrape_prometheus_metrics,
     squad_quality_metrics,
 )
@@ -101,7 +102,9 @@ def _answer_bucket(answers: list[str]) -> str:
 
     if not answers:
         return "short"
-    max_words = max(len(answer.split()) for answer in answers)
+    max_words = max(
+        len(normalize_squad_answer(answer).split()) for answer in answers
+    )
     if max_words <= 1:
         return "short"
     if max_words <= 4:
@@ -354,8 +357,9 @@ def _assess_attribution(
 def _vllm_version(base_url: str) -> str:
     from urllib import error, request
     # vLLM serves /version at the ROOT (http://host:port/version), not under
-    # /v1; _endpoint_base_url leaves a trailing /v1, so probe the root first.
-    root = base_url[:-2] if base_url.endswith("/v1") else base_url
+    # /v1. Remove the full suffix; removing only ``v1`` leaves a trailing slash
+    # and produces ``//version``, which some servers do not normalize.
+    root = base_url.removesuffix("/v1").rstrip("/")
     for candidate in (f"{root}/version", f"{base_url}/version"):
         try:
             with request.urlopen(candidate, timeout=3.0) as response:
@@ -390,7 +394,7 @@ def _pg_server_identity(database_url: str) -> dict[str, str]:
                 cur.execute("SELECT version()")
                 identity["pg_server_version"] = str(cur.fetchone()[0])
     except Exception as exc:
-        identity["pg_error"] = str(exc)[:120]
+        identity["pg_error"] = redact_text(str(exc)[:120])
     return identity
 
 
@@ -469,6 +473,41 @@ def _write_json(path: Path, payload: dict) -> None:
     )
 
 
+_GENERATED_EVIDENCE_FILES = (
+    "failure_report.json",
+    "partial_results.csv",
+    "per_row_evidence.csv",
+    "report.json",
+    "sample_manifest.jsonl",
+)
+
+
+def _prepare_output_dir(output_dir: Path, *, force: bool) -> None:
+    """Create a clean evidence target without deleting unrelated files."""
+
+    if output_dir.exists() and not force:
+        raise SystemExit(f"output dir {output_dir} exists; pass --force to overwrite")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if force:
+        for name in _GENERATED_EVIDENCE_FILES:
+            (output_dir / name).unlink(missing_ok=True)
+
+
+def _write_sample_manifest(path: Path, rows: list[dict]) -> None:
+    """Archive the exact structured rows needed to recompute the sample hash."""
+
+    with path.open("w", encoding="utf-8") as handle:
+        for row in sorted(rows, key=lambda item: item["source_example_id"]):
+            payload = {
+                "id": row["source_example_id"],
+                "prompt": row["text"],
+                "references": list(row["answers"]),
+            }
+            handle.write(
+                json.dumps(payload, sort_keys=True, ensure_ascii=False) + "\n"
+            )
+
+
 def _write_failure_report(
     output_dir: Path, args: argparse.Namespace, stage: str, exc: BaseException,
     started_at: float,
@@ -528,6 +567,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         selected = stratified_sample(all_rows, args.sample_count)
     workload_content_hash = _structured_content_hash(all_rows)
     sample_content_hash = _structured_content_hash(selected)
+    _write_sample_manifest(output_dir / "sample_manifest.jsonl", selected)
 
     requests = tuple(
         ChatRequest(
@@ -586,7 +626,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         evidence_rows.append({
             "source_example_id": source_id,
             "status": r.status,
-            "error": r.error or "",
+            "error": redact_text(r.error or ""),
             "output_chars": len(r.output_text) if r.output_text else 0,
             "prediction": r.output_text or "",
             "reference_answers": json.dumps(
@@ -710,6 +750,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         },
         "evidence_files": {
             "per_row_csv": "per_row_evidence.csv",
+            "sample_manifest_jsonl": "sample_manifest.jsonl",
         },
         "command": redact_argument_list(list(sys.argv)),
     }
@@ -730,7 +771,7 @@ def _archive_partial_evidence(
             "doc_id": r.doc_id,
             "source_example_id": doc_to_source.get(r.doc_id),
             "status": r.status,
-            "error": r.error or "",
+            "error": redact_text(r.error or ""),
             "output_chars": len(r.output_text) if r.output_text else 0,
         })
     with (output_dir / "partial_results.csv").open("w", encoding="utf-8", newline="") as f:
@@ -744,9 +785,7 @@ def _archive_partial_evidence(
 def main(argv=None) -> int:
     args = _parse(sys.argv[1:] if argv is None else argv)
     output_dir = Path(args.output_dir)
-    if output_dir.exists() and not args.force:
-        raise SystemExit(f"output dir {output_dir} exists; pass --force to overwrite")
-    output_dir.mkdir(parents=True, exist_ok=True)
+    _prepare_output_dir(output_dir, force=args.force)
     started_at = time.time()
     try:
         return _run(args, output_dir)

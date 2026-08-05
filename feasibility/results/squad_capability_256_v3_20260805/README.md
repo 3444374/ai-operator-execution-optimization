@@ -44,10 +44,11 @@
 ## 4. 实验设计
 
 `--mode sampled --sample-count 256`：对全 10570 行做**确定性分层抽样**——按参考答案的
-**最长**答案词数分桶（short≤1 / medium≤4 / long>4，多答案取 max 而非 answers[0]），
+**最长**答案的原始 whitespace 词数分桶（short≤1 / medium≤4 / long>4，多答案取 max 而非 answers[0]），
 **largest-remainder** 配额（各桶配额之和严格等于 256，每桶至多补 1 席），桶内按
 source_example_id 排序后均匀间距选取。sample 内容哈希为结构化 JSON-per-row SHA256，
-记入 report.json（`sample_content_hash = b154c46a…`），可独立复算。
+记入 report.json（`sample_content_hash = b154c46a…`）。本目录当时未归档 prompt-bearing
+sample manifest，因此该 sample hash **不能只靠已提交文件独立复算**；这是 v3 的证据边界。
 
 单臂、同 manifest、同 model、同 cap、同 endpoint、prefix-cache on。无对照臂
 （capability gate 不做跨臂对比；跨臂对比在 database-E2E runner 就绪后的正式三臂门禁进行）。
@@ -85,6 +86,10 @@ reference_answers），EM/F1 可用共享 `squad_quality_metrics` 独立复算�
 - **与 v2 的差异**：v3 EM 80.86% 高于 v2 的 75.39%，原因是抽样规则变了（v3 用**最长**答案词数分桶
   + largest-remainder，v2 用 answers[0] + round 配额），选中的 256 行不同；两者都是有效 capability
   evidence，v3 抽样更严谨（多答案 max + 配额精确）。
+- **后续审计修正**：v3 分桶实现使用 `answer.split()`，并非报告早先写的
+  “SQuAD-normalized token count”。这不改变本目录 256 行输出、EM/F1 和能力门禁事实，但意味着
+  v3 不能作为最终冻结的 canonical sample；后续重跑改用 SQuAD 官方 normalize 后的词数，并归档
+  `sample_manifest.jsonl`。
 
 ## 7. 对课题含义 + 下一步
 

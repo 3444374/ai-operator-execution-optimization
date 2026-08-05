@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 CODE_ROOT = next(
     parent
@@ -50,8 +53,13 @@ def _fixture() -> list[dict]:
 class AnswerBucketTests(unittest.TestCase):
     def test_single_answer_buckets(self) -> None:
         self.assertEqual(gate._answer_bucket(["yes"]), "short")
-        self.assertEqual(gate._answer_bucket(["the answer"]), "medium")
+        self.assertEqual(gate._answer_bucket(["answer in Paris"]), "medium")
         self.assertEqual(gate._answer_bucket(["one two three four five"]), "long")
+
+    def test_bucket_uses_squad_normalization(self) -> None:
+        # Articles and punctuation do not count toward the SQuAD-normalized
+        # reference length used for stratification.
+        self.assertEqual(gate._answer_bucket(["The answer!"]), "short")
 
     def test_multi_answer_uses_max_not_first(self) -> None:
         # codex #6: bucket must not depend on answer array order.
@@ -186,6 +194,79 @@ class StructuredContentHashTests(unittest.TestCase):
             gate._structured_content_hash(rows_dict),
             importer.compute_content_hash(importer_rows),
         )
+
+    def test_sample_manifest_recomputes_archived_hash(self) -> None:
+        rows = _fixture()[:12]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "sample_manifest.jsonl"
+            gate._write_sample_manifest(path, rows)
+            decoded = [
+                json.loads(line)
+                for line in path.read_text(encoding="utf-8").splitlines()
+            ]
+        reconstructed = [
+            {
+                "source_example_id": row["id"],
+                "text": row["prompt"],
+                "answers": row["references"],
+            }
+            for row in decoded
+        ]
+        self.assertEqual(
+            gate._structured_content_hash(reconstructed),
+            gate._structured_content_hash(rows),
+        )
+
+
+class EvidenceDirectoryTests(unittest.TestCase):
+    def test_force_removes_only_known_stale_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir) / "result"
+            output_dir.mkdir()
+            for name in gate._GENERATED_EVIDENCE_FILES:
+                (output_dir / name).write_text("stale", encoding="utf-8")
+            unrelated = output_dir / "README.md"
+            unrelated.write_text("keep", encoding="utf-8")
+
+            gate._prepare_output_dir(output_dir, force=True)
+
+            self.assertTrue(unrelated.exists())
+            self.assertFalse(
+                any((output_dir / name).exists() for name in gate._GENERATED_EVIDENCE_FILES)
+            )
+
+    def test_existing_output_requires_force(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir) / "result"
+            output_dir.mkdir()
+            with self.assertRaises(SystemExit):
+                gate._prepare_output_dir(output_dir, force=False)
+
+
+class ServiceIdentityTests(unittest.TestCase):
+    def test_vllm_version_probes_single_slash_root(self) -> None:
+        requested: list[str] = []
+
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return b'{"version":"0.25.1"}'
+
+        def fake_urlopen(url, timeout):
+            requested.append(url)
+            self.assertEqual(timeout, 3.0)
+            return Response()
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            version = gate._vllm_version("http://127.0.0.1:8000/v1")
+
+        self.assertEqual(version, "0.25.1")
+        self.assertEqual(requested, ["http://127.0.0.1:8000/version"])
 
 
 class WorkloadIntegrityTests(unittest.TestCase):

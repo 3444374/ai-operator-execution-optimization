@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-08-05 SQuAD capability gate 七审：v3 证据边界纠正与门禁复算能力补齐
+
+- 独立复算 v3 `per_row_evidence.csv`：256 个唯一 source id，EM 207/256 = 80.859375%、
+  token-F1 89.861139%，与 `report.json` 完全一致；相关 95 个 gate/redact/adapter/metrics/importer
+  测试与 28 个 scenario-runner 测试通过。
+- 发现 v3 仍有两个审计缺口：分桶 docstring/README 声称 “normalized token count”，实现却是
+  `answer.split()`；目录也未归档 prompt-bearing sample manifest，故 `sample_content_hash` 不能只靠
+  已提交文件独立复算。v3 保留为有效单臂 capability evidence，但不再称最终 canonical sample。
+- 修正版门禁改用共享 SQuAD official normalize 后的多答案最大词数，输出
+  `sample_manifest.jsonl`（id/prompt/references），并修复 vLLM `/version` 根路径双斜杠、`--force`
+  旧成功/新失败证据混存、逐行/PG 错误脱敏。修正版须先重跑 256 行门禁，才允许启动 full 10570。
+
 ## 2026-08-05 新增 Git 隐私数据禁令 + 高精度 secret scanner
 
 - 用户要求：api key、服务器 IP/host、口令、私钥等隐私数据禁止提交进 Git，并写入项目规则。

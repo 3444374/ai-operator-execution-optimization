@@ -999,9 +999,10 @@ capability gate：验证 DuckDB community `ai` 扩展在固定 cap 下能正确�
 - `--mode {sampled,full}`：full 模式 fail-closed 校验 10570 行 + unique doc_id +
   unique source_example_id + 非空 reference_answers + canonical content hash 对齐
   importer provenance（两种模式都校验 workload 完整性）。
-- sampled 模式用 largest-remainder 配额 + 多答案 max 词数分桶 + 桶内均匀间距的
+- sampled 模式用 largest-remainder 配额 + 多答案 max **SQuAD-normalized** 词数分桶 + 桶内均匀间距的
   确定性分层抽样；sample/workload hash 均为结构化 JSON-per-row SHA256（与 importer
-  `compute_content_hash` 同定义，单测钉死一致）。
+  `compute_content_hash` 同定义，单测钉死一致），并写出包含 id/prompt/references 的
+  `sample_manifest.jsonl`，使 sample hash 可离线复算。
 - vLLM counter 归因门禁：endpoint 运行前/后必须 idle（running==waiting==0）、scrape
   非空、counter 单调、`request_success_delta == requests_sent`；任一不满足则 token/cache
   指标标记 `attribution=unavailable`（`--strict-attribution` 则整轮失败）。
@@ -1024,7 +1025,8 @@ python code/scripts/baselines/squad_capability_gate.py \
   --output-dir feasibility/results/squad_capability_256_v3_20260805 --force
 ```
 
-输出：`report.json`（完整指标 + identity + 归因块）、`per_row_evidence.csv`
+输出：`report.json`（完整指标 + identity + 归因块）、`sample_manifest.jsonl`
+（精确样本与 hash 复算输入）、`per_row_evidence.csv`
 （source_example_id/status/error/output_chars/prediction/reference_answers，EM/F1 可复算）、
 失败时附 `partial_results.csv` + `failure_report.json`。修改 stratified_sample /
 integrity / attribution / redact 后运行
