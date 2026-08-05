@@ -58,11 +58,12 @@ def _row(doc_id: int, sid: str, text: str = "prompt", answers: list[str] | None 
 
 
 def _result(req_doc_id: int, *, output_text="ok", error=None, status="completed",
-            submitted=1.0, started=1.0, completed=2.0):
+            submitted=1.0, started=1.0, completed=2.0, finish_reason=None):
     return BaselineRequestResult(
         doc_id=req_doc_id, endpoint_index=0, status=status, error=error,
         submitted_at_s=submitted, started_at_s=started, completed_at_s=completed,
-        input_tokens=4, output_tokens=0, output_text=output_text, finish_reason=None,
+        input_tokens=4, output_tokens=0, output_text=output_text,
+        finish_reason=finish_reason,
     )
 
 
@@ -152,7 +153,8 @@ class OperatorSpanTests(unittest.TestCase):
 class DatabaseE2EBarrierTests(unittest.TestCase):
     """Mocked end-to-end main() run: assert E2E timing block + decoupled state."""
 
-    def _run_main(self, fail_one: bool, readback_matched: bool = True) -> tuple[int, dict, list[str]]:
+    def _run_main(self, fail_one: bool = False, readback_matched: bool = True,
+                  arm: str = "duckdb_ai") -> tuple[int, dict, list[str]]:
         rows_sidecar = [_row(i, f"id{i}", text=f"p{i}") for i in range(1, 5)]
         rows = [r for r, _ in rows_sidecar]
         sidecar = {r["doc_id"]: tc for r, tc in rows_sidecar}
@@ -165,7 +167,7 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
                 encoding="utf-8",
             )
             argv = [
-                "--arm", "duckdb_ai",
+                "--arm", arm,
                 "--database-url", "postgresql://u:p@localhost:5432/d",
                 "--workload-name", "squad_v11_dev_short_answer",
                 "--importer-provenance", str(prov),
@@ -180,10 +182,13 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
                 return rows, sidecar, 0.05
 
             def fake_complete(requests, config):
+                # direct_client exposes finish_reason; duckdb_ai does not (None).
+                fr = "stop" if arm == "direct_client" else None
                 return tuple(
                     _result(r.doc_id, output_text=None if (fail_one and i == 1) else "ok",
                             error=("max_tokens reached" if (fail_one and i == 1) else None),
-                            status=("failed" if (fail_one and i == 1) else "completed"))
+                            status=("failed" if (fail_one and i == 1) else "completed"),
+                            finish_reason=fr)
                     for i, r in enumerate(requests)
                 )
 
@@ -206,6 +211,7 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
                  patch("squad_database_e2e_runner._sink_readback",
                        return_value={"matched": readback_matched}), \
                  patch("squad_database_e2e_runner.run_duckdb_ai_complete", side_effect=fake_complete), \
+                 patch("squad_database_e2e_runner.run_direct_client", side_effect=fake_complete), \
                  patch("squad_database_e2e_runner.scrape_prometheus_metrics", side_effect=fake_scrape), \
                  patch("squad_database_e2e_runner.inspect_duckdb_ai_runtime",
                        return_value={"duckdb_version": "v1.5.4",
@@ -273,6 +279,22 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
         # operator itself was clean (0 error/NULL) -- the failure is readback-only
         self.assertEqual(report["error_count"], 0)
         self.assertEqual(report["null_response_count"], 0)
+
+    def test_direct_client_arm_dispatch_and_identity(self) -> None:
+        # direct_client arm: arm-aware identity (no duckdb fields), finish_reason
+        # exposed per-row (summary dict, not the duckdb "unavailable" string).
+        rc, report, _ = self._run_main(arm="direct_client")
+        self.assertEqual(rc, 0)
+        self.assertEqual(report["arm"], "direct_client")
+        self.assertEqual(report["identity"]["arm_protocol"], "direct_http_per_request")
+        self.assertEqual(report["identity"]["transport"], "httpx_async")
+        self.assertEqual(report["identity"]["concurrency"], 32)
+        # duckdb fields absent for direct_client
+        self.assertNotIn("duckdb_version", report["identity"])
+        # finish_reason is a per-row summary dict (direct exposes it), not the
+        # duckdb "unavailable" string
+        self.assertIsInstance(report["finish_reason"], dict)
+        self.assertIn("stop", report["finish_reason"])
 
 
 class ReadbackOkTests(unittest.TestCase):

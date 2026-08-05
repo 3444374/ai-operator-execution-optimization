@@ -76,6 +76,10 @@ from src.baselines.common.squad_identity import (  # noqa: E402
     _validate_workload_integrity,
     _vllm_version,
 )
+from src.baselines.text.products.direct_client import (  # noqa: E402
+    DirectClientConfig,
+    run_direct_client,
+)
 from src.baselines.text.products.duckdb_ai import (  # noqa: E402
     DuckDBAiConfig,
     inspect_duckdb_ai_runtime,
@@ -260,6 +264,22 @@ def _operator_span(results) -> tuple[float, float]:
     return (max(completed) - min(started)), (min(started) - min(submitted))
 
 
+def _finish_reason_summary(results, arm: str):
+    """Per-arm finish_reason summary at the report level.
+
+    DuckDB-ai hides finish_reason (returns the unavailable note); direct_client
+    exposes it per row, so summarize its distribution (stop/length/...).
+    """
+
+    if arm == "duckdb_ai":
+        return "unavailable (DuckDB-ai extension does not expose finish_reason)"
+    counts: dict[str, int] = {}
+    for r in results:
+        key = r.finish_reason or "none"
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
 def _write_json(path: Path, payload: dict) -> None:
     path.write_text(
         json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
@@ -322,9 +342,9 @@ def _parse(argv: list[str]) -> argparse.Namespace:
 
 
 def _run(args: argparse.Namespace, output_dir: Path) -> int:
-    if args.arm != "duckdb_ai":
+    if args.arm not in ("duckdb_ai", "direct_client"):
         raise NotImplementedError(
-            f"arm {args.arm!r} not implemented; only duckdb_ai in this pass"
+            f"arm {args.arm!r} not implemented (duckdb_ai, direct_client available)"
         )
     importer = _load_importer_provenance(args.importer_provenance)
     expected_content_hash = importer["content_hash"]
@@ -336,12 +356,32 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
     pgvector_version = pg_identity.get("pgvector_version", "unknown")
     conn = psycopg.connect(args.database_url)
 
-    config = DuckDBAiConfig(
-        endpoint_base_url=_endpoint_base_url(args.endpoint_url),
-        model=args.model, api_key=args.api_key, max_tokens=args.max_tokens,
-        max_concurrent_requests=args.max_concurrent_requests,
-    )
-    runtime_id = inspect_duckdb_ai_runtime(config)
+    # Arm config + identity (arm-aware). Both arms share the same endpoint /
+    # model / cap / concurrency so the only difference is the execution model:
+    # duckdb_ai = set-oriented barrier (extension owns batching); direct_client
+    # = per-request HTTP at fixed concurrency (exposes finish_reason/tokens/latency).
+    endpoint_base = _endpoint_base_url(args.endpoint_url)
+    if args.arm == "duckdb_ai":
+        arm_config = DuckDBAiConfig(
+            endpoint_base_url=endpoint_base,
+            model=args.model, api_key=args.api_key, max_tokens=args.max_tokens,
+            max_concurrent_requests=args.max_concurrent_requests,
+        )
+        arm_identity = {
+            "arm_protocol": "duckdb_ai_barrier",
+            **inspect_duckdb_ai_runtime(arm_config),
+        }
+    else:  # direct_client
+        arm_config = DirectClientConfig(
+            endpoint_url=args.endpoint_url,
+            model=args.model, api_key=args.api_key, max_tokens=args.max_tokens,
+            max_concurrent_requests=args.max_concurrent_requests,
+        )
+        arm_identity = {
+            "arm_protocol": "direct_http_per_request",
+            "transport": "httpx_async",
+            "concurrency": args.max_concurrent_requests,
+        }
 
     # ---- database-E2E timed barrier ----
     t0 = time.time()
@@ -369,7 +409,10 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
     metrics_before = scrape_prometheus_metrics(args.metrics_url)
     metrics_before_idle, _ = _endpoint_idle(metrics_before)
     op0 = time.time()
-    results = run_duckdb_ai_complete(requests, config)
+    if args.arm == "duckdb_ai":
+        results = run_duckdb_ai_complete(requests, arm_config)
+    else:
+        results = run_direct_client(requests, arm_config)
     adapter_wall_s = time.time() - op0
     operator_only_jct, setup_s = _operator_span(results)
 
@@ -430,6 +473,8 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             "reference_answers": json.dumps(
                 references.get(source_id, []), ensure_ascii=False
             ),
+            "finish_reason": r.finish_reason or "",
+            "output_tokens": r.output_tokens,
             "server_version": server_version,
             "pgvector_version": pgvector_version,
         })
@@ -449,6 +494,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             f,
             fieldnames=["source_example_id", "status", "error", "output_chars",
                         "prediction", "reference_answers",
+                        "finish_reason", "output_tokens",
                         "server_version", "pgvector_version"],
         )
         writer.writeheader()
@@ -581,16 +627,14 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             # distinct from the sunk_status.csv execution-status sidecar.
             "readback": sink_readback,
         },
-        "finish_reason": "unavailable (DuckDB-ai extension does not expose finish_reason)",
+        "finish_reason": _finish_reason_summary(results, args.arm),
         "identity": {
             "git_commit": _git_commit(CODE_ROOT),
             "model": args.model,
-            "endpoint": redact_database_url(config.endpoint_base_url),
+            "endpoint": redact_database_url(endpoint_base),
             "workload": args.workload_name,
-            "duckdb_version": runtime_id.get("duckdb_version"),
-            "duckdb_ai_extension_version": runtime_id.get("duckdb_ai_extension_version"),
-            "duckdb_ai_extension_source": runtime_id.get("duckdb_ai_extension_source"),
-            "vllm_version": _vllm_version(config.endpoint_base_url),
+            **arm_identity,
+            "vllm_version": _vllm_version(endpoint_base),
             "service_prefix_caching": args.service_prefix_caching,
             "service_config_hash": args.service_config_hash or "not_provided",
             **pg_identity,
