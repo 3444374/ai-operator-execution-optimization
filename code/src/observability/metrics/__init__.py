@@ -9,6 +9,13 @@ from .statistics import (
     percentile,
     repeat_summary,
 )
+from .squad import (
+    normalize_squad_answer,
+    squad_exact_match_score,
+    squad_example_scores,
+    squad_quality_metrics,
+    squad_token_f1_score,
+)
 from .timing import PeriodicSampler, StageTimer
 from .vllm import (
     aggregate_model_metric_snapshots,
@@ -36,6 +43,11 @@ __all__ = [
     "retrieval_quality_metrics",
     "repeat_summary",
     "scrape_prometheus_metrics",
+    "normalize_squad_answer",
+    "squad_exact_match_score",
+    "squad_example_scores",
+    "squad_quality_metrics",
+    "squad_token_f1_score",
     "token_cost_metrics",
     "vllm_metric_delta_stats",
 ]

@@ -27,6 +27,26 @@
 - `token_cost_*`：只有显式传入 input/output 的每百万 token 单价才计算。自建 GPU
   不应伪装成云 API 单价；未配置时状态为 `unavailable:prices_not_configured`。
 
+### SQuAD 短答案质量字段
+
+DuckDB/direct/project 的 bounded-output 主轨统一调用
+`src.observability.metrics.squad_quality_metrics`，不能各自清洗输出或另算一套分数。
+归一化严格采用 SQuAD v1.1 英文合同：转小写、删除 ASCII 标点、删除 `a/an/the`、
+折叠空白；每行分别对全部 reference answer 取最高 Exact Match 和最高 token-F1。
+
+- `squad_exact_match_rows`：归一化后与任一 reference 完全相同的行数，是
+  `correct rows/s` 的正确性分子；指标模块本身不混入 operator/E2E 时间。
+- `squad_exact_match_percent`：`exact_match_rows / 全部 reference 行 × 100`。
+- `squad_token_f1_percent`：逐行最高 token-overlap F1 的宏平均，取值 0–100。
+- `squad_prediction_rows` / `squad_missing_prediction_rows`：真实观察到输出的行数和
+  缺失/失败行数。缺失行以 0 分进入 EM/F1 分母，不能从质量统计中删除。
+- `squad_quality_status`：无缺失为 `ok`；存在缺失为
+  `partial:missing_predictions`。额外 example ID 或空 reference 数组属于 manifest
+  join/数据合同错误，评估器直接拒绝，不能当作普通低质量样本。
+
+这里的 token-F1 是**答案词项重合质量**，不是服务端 token throughput；EM/F1 也不替代
+HTTP success、NULL、truncation、finish reason 和 exactly-once 审计。
+
 ## 数据组织与调度解释字段
 
 - `flush_trace_status`：说明“关批决策 trace 是否适用”，不是性能值。arrival replay

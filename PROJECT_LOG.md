@@ -4231,8 +4231,9 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 
 三臂对照（每轨同 manifest）：DuckDB `ai` 原生 / bounded direct client / 项目冻结最佳静态
 （项目最终优化方案确定后再补）。正式实验**增加 unique 行数**而非重复同批（避免 prefix cache
-与重复 prompt 污染）。执行顺序（已统一）：①句子计数 micro gate（须先归档证据）→ ②SQuAD
-短答案导入与语义 gate → ③三臂校准 → ④正式 DuckDB/bounded/project 三臂对照。新 importer
+与重复 prompt 污染）。SQuAD 主路径不等待句子计数：①SQuAD 短答案导入与语义 gate →
+②三臂校准 → ③operator-only 对照；database-E2E runner 完成后才能发布数据库系统正式排名。
+句子计数仅为可并行补做的非阻塞 microbenchmark。新 importer
 `code/scripts/data/import_bounded_output_workload.py`（`--template` 支持任意 bounded wrap）、
 句子计数门禁脚本 `code/scripts/baselines/duckdb_ai_sentence_count_gate.py`。
 
@@ -4247,11 +4248,10 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 - **无隐藏 system prompt**（messages 仅 `{role:user, content:prompt}`）。
 - **默认 temperature=0.1（非 0）**：不显式传时 DuckDB-ai 发 0.1；adapter 显式 `temperature => 0.0`
   才发 0。故请求等价门禁**必须校验 temperature 被显式设成 0.0**，否则与项目路径不一致。
-- 待建门禁（codex 步骤 3-6）：canonical 请求规范（model/messages(role+content)/temperature=0.0/
-  max_tokens/无 stop·stream·response_format）+ DuckDB 侧 `ai_completion_request_json` 比对 +
-  隔离单请求 vLLM logical prompt-token 交叉校验 + 证据（脱敏请求 JSON、canonical diff、DuckDB/
-  扩展版本、服务配置 hash、命令、退出码）落 `feasibility/results/`。项目侧 payload 比对依赖
-  bounded-output 三臂 harness（项目 arm 须用 chat_completions + 同 messages 格式）。
+- 门禁已在 `feasibility/results/request_equivalence_gate_20260805/` 完成并归档：canonical、
+  DuckDB `ai_completion_request_json` 与项目生产 `build_completion_request_body` 逐字段相等；
+  隔离单请求 vLLM prompt-token delta 为 37=37，`passed=True`。这只证明请求语义等价，
+  不构成吞吐或 database-E2E 结果。
 
 ## 2026-08-05 Daft/Ray benchmark 来源分层与服务器选型门禁
 
@@ -4301,3 +4301,14 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 - 新颖性边界收紧：进程并行绕 GIL、Arrow 共享内存、decoupled resource-aware scheduling、
   async batching 与 scan/inference overlap 已有强相关工作；项目贡献必须聚焦 endpoint runtime
   state 感知、token/frame work credit、多 job fairness/SLO 和开放 database-E2E 消融。
+
+## 2026-08-05 SQuAD EM/F1 统一评估器
+
+- 新增 `code/src/observability/metrics/squad.py`，以纯函数实现 SQuAD v1.1 官方式
+  normalize、Exact Match、token-F1 和多参考答案 max；DuckDB/direct/project 后续共用，
+  禁止 comparator-specific 后处理。
+- 聚合分母固定为完整 reference manifest；缺失/失败预测计 0 分并显式记录，额外 example ID
+  与空 reference fail-closed。输出百分比明确使用 0–100，`squad_exact_match_rows` 留作
+  runner 按 operator-only 或 database-E2E 边界计算 correct rows/s。
+- 本提交只完成离线质量组件与单元测试，不调用 endpoint、不产生 256 行 capability 或正式
+  性能结论；下一步由 gate 负责输出解析、错误/truncation/finish-reason 和 EM/F1 联合审计。

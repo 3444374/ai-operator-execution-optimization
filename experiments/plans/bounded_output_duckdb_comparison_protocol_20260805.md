@@ -55,6 +55,13 @@ Exact Match 与 token-level F1、输出天然较短、比"数句子"有真实语
 输入行数、输出行数；exactly-once；success/error/NULL/truncation 计数；`finish_reason=stop` 比例；
 无效格式比例；SQuAD EM/F1（或分类 accuracy/macro-F1）。输出 digest 只查执行一致性，**不能代替任务质量**。
 
+SQuAD 三臂必须共用 `src.observability.metrics.squad_quality_metrics`：官方式英文归一化
+（lowercase / ASCII punctuation / `a|an|the` / whitespace）、多答案分别取 max；缺失/失败行
+以 0 分进入全 manifest 分母。统一输出 `squad_exact_match_rows`、
+`squad_exact_match_percent`、`squad_token_f1_percent`、prediction/missing 行数和状态。
+评估模块不含时间；`correct rows/s` 必须由同一计时边界的 JCT 与
+`squad_exact_match_rows` 在 runner 汇总层计算。
+
 **真正有意义的 headline**：
 
 ```text

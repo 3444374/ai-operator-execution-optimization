@@ -150,8 +150,9 @@ now lives under `code/src/`:
   credit/router；`provenance.py` 防止 control/ceiling 被误报为原生 baseline。
 - `data/sinks/postgres.py`: existing PostgreSQL embedding writeback modes plus `document_completions` JSON-text writeback.
 - `observability/metrics/`: `timing.py`、`csv.py`、`statistics.py`、`resources.py`、
-  `vllm.py`、`retrieval.py` 分别负责计时、schema-safe CSV、重复统计、GPU/能耗/MFU、
-  vLLM TTFT/ITL/cache 指标和显式真值检索质量；
+  `vllm.py`、`retrieval.py`、`squad.py` 分别负责计时、schema-safe CSV、重复统计、
+  GPU/能耗/MFU、vLLM TTFT/ITL/cache 指标、显式真值检索质量和 SQuAD v1.1
+  Exact Match/token-F1；
   包入口保持原公开 import 不变。Formal runs preflight the main
   output against dry-run keys before database or GPU work. Empty files receive
   a header; non-empty files reject appended rows whose ordered keys do not

@@ -359,7 +359,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/modalities/image/` | 图像 typed batch/result/semantics、lazy Daft source、CLIP preprocess、bounded Ray CPU→GPU pipeline 与输出审计；baseline 已隔离到 `baselines/image/` | 实现 image path-B、切换 backend 或审计 embedding/执行语义前读 |
 | `code/src/modalities/image/resource_sampling.py` | host per-core CPU、visible/active-device GPU 的低频采样与明确汇总语义 | 图像 E2E 资源采样；不能把低频 GPU util 当 MFU |
 | `code/src/data/sinks/postgres.py` | `none/json_text/pgvector` embedding 写回与 completion JSON-text 写回 | 修改写回路径或后续接 Lance sink 前读 |
-| `code/src/observability/metrics/` | timing/CSV/statistics/resources/vLLM/retrieval 指标子模块及兼容包入口 | 修改 profiling 指标、资源效率、检索质量、CSV 输出或计时边界前读 |
+| `code/src/observability/metrics/` | timing/CSV/statistics/resources/vLLM/retrieval/SQuAD EM-F1 指标子模块及兼容包入口 | 修改 profiling 指标、资源效率、检索/问答质量、CSV 输出或计时边界前读 |
 | `code/src/data/workloads/text.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
 | `code/src/experiments/scenarios/core.py` | 可复现的 warm-up / formal 场景交错顺序生成器 | 修改实验随机化与运行顺序前读 |
 | `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core；按 `core/`、`organization/`、`submission_control/`、`endpoint_routing/`、`runtime/` 分包，旧根级兼容模块已删除 | 实现或审查运行时策略前读 |
@@ -408,7 +408,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/scheduling/test_runtime_batching.py` | pending batch、token membership、单调 arrival replay 与 flush deadline 单元测试 | 修改回放事件循环或 batch builder 前运行 |
 | `code/tests/scheduling/test_ray_adapter.py` | 通用 Ray submission adapter 的 request identity 与 endpoint 映射测试 | 修改 Ray adapter 前运行 |
 | `code/tests/observability/test_postgres_profile_scheduling.py` | profiler 静态 Ray task/actor 接线、路由与旧指标兼容测试 | 修改 profiler 提交路径前运行 |
-| `code/tests/observability/test_metrics.py` | 资源/MFU 汇总与 CSV header/schema-safe append 测试 | 修改指标输出或追加契约前运行 |
+| `code/tests/observability/test_metrics.py` | 资源/MFU、检索/SQuAD 质量汇总与 CSV header/schema-safe append 测试 | 修改指标输出、质量评估或追加契约前运行 |
 | `code/tests/experiments/test_kmax_interference_script.py` | shared-vLLM K_max runner 默认输出 schema 版本测试 | 修改干扰实验默认输出路径前运行 |
 | `code/tests/scheduling/test_scheduling_daft_ray_contract.py` | 真实 DaftOrganizer→Arrow RecordBatch→arrival replay→单节点 Ray task/actor exactly-once contract | 修改 Daft/Ray/replay adapter boundary 前运行 |
 | `code/tests/scheduling/test_request_lifecycle.py` | request/submission exactly-once join、时钟域与 SLO 语义测试 | 修改逐请求 lifecycle schema 或计时边界前运行 |

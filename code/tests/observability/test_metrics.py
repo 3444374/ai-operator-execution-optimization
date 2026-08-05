@@ -30,6 +30,10 @@ from src.observability.metrics import (  # noqa: E402
     repeat_summary,
     resource_sample_stats,
     retrieval_quality_metrics,
+    normalize_squad_answer,
+    squad_example_scores,
+    squad_quality_metrics,
+    squad_token_f1_score,
     token_cost_metrics,
     vllm_metric_delta_stats,
 )
@@ -87,6 +91,55 @@ class MetricsTests(unittest.TestCase):
         self.assertAlmostEqual(metrics["recall_at_1"], 0.25)
         self.assertAlmostEqual(metrics["recall_at_2"], 0.75)
         self.assertAlmostEqual(metrics["mrr"], 0.75)
+
+    def test_squad_normalization_matches_official_contract(self) -> None:
+        self.assertEqual(
+            normalize_squad_answer("  The, QUICK!  brown fox. "),
+            "quick brown fox",
+        )
+
+    def test_squad_multi_answer_scores_take_independent_maxima(self) -> None:
+        exact_match, token_f1 = squad_example_scores(
+            "Denver Broncos",
+            ("the Broncos", "Denver Broncos", "Broncos"),
+        )
+
+        self.assertEqual(exact_match, 1.0)
+        self.assertEqual(token_f1, 1.0)
+
+    def test_squad_token_f1_handles_overlap_and_empty_answers(self) -> None:
+        self.assertAlmostEqual(
+            squad_token_f1_score("red green", "green blue"),
+            0.5,
+        )
+        self.assertEqual(squad_token_f1_score("", ""), 1.0)
+        self.assertEqual(squad_token_f1_score("answer", ""), 0.0)
+
+    def test_squad_quality_counts_missing_predictions_in_denominator(self) -> None:
+        metrics = squad_quality_metrics(
+            {"q1": "the beach", "q2": None},
+            {"q1": ("beach",), "q2": ("Denver", "Denver Broncos")},
+        )
+
+        self.assertEqual(
+            metrics["squad_quality_status"],
+            "partial:missing_predictions",
+        )
+        self.assertEqual(metrics["squad_evaluated_rows"], 2)
+        self.assertEqual(metrics["squad_prediction_rows"], 1)
+        self.assertEqual(metrics["squad_missing_prediction_rows"], 1)
+        self.assertEqual(metrics["squad_exact_match_rows"], 1)
+        self.assertEqual(metrics["squad_exact_match_percent"], 50.0)
+        self.assertEqual(metrics["squad_token_f1_percent"], 50.0)
+
+    def test_squad_quality_rejects_manifest_join_errors(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unknown example IDs"):
+            squad_quality_metrics(
+                {"q1": "answer", "unexpected": "answer"},
+                {"q1": ("answer",)},
+            )
+        with self.assertRaisesRegex(ValueError, "no accepted answers"):
+            squad_quality_metrics({"q1": "answer"}, {"q1": ()})
 
     def test_slo_scale_and_token_cost_require_explicit_inputs(self) -> None:
         stats = {
