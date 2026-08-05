@@ -1,5 +1,28 @@
 # 项目日志
 
+## 2026-08-05 database-E2E runner codex 复核：6 项口径修复（不重跑、不覆写原始证据）
+
+- codex 复核 `79a9d6c` 的 E2E runner，6 项问题全部修复（纯口径/审计，不重跑 DuckDB 全量、不覆写
+  `squad_database_e2e_duckdb_ai_20260805/` 的机器原始文件；订正写在该目录 README §8）：
+  1. **状态字段解耦**：`single_run_valid`（本次 0 error/NULL）/ `formal_run_gate_passed`（单次 runner
+     恒 false；1w+3f 是另一协议）/ `comparison_admission`（`pending_formal_repeat`——单次不授予/排除
+     准入）。不再"单次 clean 即 formal pass、失败即自动 eligible"。
+  2. **failure_rate 去重**：原 `(error+null)/row` 把同一失败行计两次（报告 0.000189）→ 改
+     `(row-success)/row`（正确 0.0000946），另分列 `error_rate`/`null_rate`/`max_tokens_rate`（允许重叠）。
+  3. **operator_only_jct 用整体 span**：`max(completed)-min(started)`（原取 `results[0]`，对 DuckDB barrier
+     碰巧正确，对 direct_client 会错）。抽纯函数 `_operator_span` 供单测。
+  4. **"模型调用 99%"措辞**：E2E README §8 订正——adapter 占 wall 99.27%、operator query barrier 占
+     93.54%，不能单独归因给模型（adapter 含 setup+DuckDB 执行+HTTP+排队+模型）。
+  5. **sink 可读回性**：runner 新增 `sink_audit.csv`（doc_id/source_example_id/status/error/output_chars），
+     把 sink 里的空串（失败行 NULL→""）回连到真实 status（不动 `write_completions` 共享合同）。
+  6. **diagnostic 脚本技术债**：DuckDB 每个 cap 恰好 `repeats` 次（原 repeats+1）；`all()` 判据对全 HTTP
+     失败防真空（加 `direct_http_200_at_cap64`）；**不重跑**历史诊断。
+- 测试：runner 单测加 failure_rate 去重回归 + `_operator_span`（barrier/per-request/空）+ 解耦状态字段
+  断言 + sink_audit 表头；集成测试改 repo-local tmp fallback（codex Windows 沙箱可跑）。**74 测试 + 28
+  scenario 测试通过**（codex 本机此前 2 项因沙箱拒写 temp 未能跑——已修）。
+- `79a9d6c` 保留为单臂 runner 可行性证据；指标订正写在 README §8，机器原始文件不动。下一步按 codex
+  顺序：实现 `direct_client` 臂 → 冻结完整服务配置 → 三臂 1w+3f 正式。
+
 ## 2026-08-05 database-E2E runner 落地 + DuckDB-ai 臂实测
 
 - 实现 `code/scripts/baselines/squad_database_e2e_runner.py`（`08d061c`）：一个计时墙包住 scan→construct→

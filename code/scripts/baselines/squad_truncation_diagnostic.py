@@ -181,23 +181,35 @@ def main(argv=None) -> int:
     for cap in caps:
         direct[cap] = [_direct_vllm(args.endpoint_url, args.model, args.api_key, prompt, cap)
                        for _ in range(args.repeats)]
-        first = _duckdb_once(args.endpoint_base_url, args.model, args.api_key, prompt, cap)
-        duckdb_req_body[cap] = first.get("request_body_json")
+        # Exactly `repeats` DuckDB calls per cap (a previous version did an
+        # extra 1 call just to capture the request body; now capture it from
+        # the first repeat).
         duckdb_runs[cap] = [_duckdb_once(args.endpoint_base_url, args.model, args.api_key, prompt, cap)
                             for _ in range(args.repeats)]
+        duckdb_req_body[cap] = (
+            duckdb_runs[cap][0].get("request_body_json") if duckdb_runs[cap] else None
+        )
 
-    # Decision summary.
+    # Decision summary. Guard every all() against the all-HTTP-failed case
+    # (an empty filtered list would make all() vacuously True); require >=1
+    # HTTP-200 direct call before claiming a stable finish_reason.
+    def _direct_ok(direct_runs: list[dict], want: str) -> bool:
+        ok_runs = [r for r in direct_runs if r.get("http_status") == 200]
+        return bool(ok_runs) and all(r.get("finish_reason") == want for r in ok_runs)
+
     d64 = direct.get(64, [])
-    stable_length_at_64 = bool(d64) and all(r.get("finish_reason") == "length" for r in d64 if r.get("http_status") == 200)
+    d64_ok = [r for r in d64 if r.get("http_status") == 200]
+    stable_length_at_64 = bool(d64_ok) and all(
+        r.get("finish_reason") == "length" for r in d64_ok
+    )
     higher_stop = False
     for cap in caps:
         if cap <= 64:
             continue
-        dh = direct.get(cap, [])
-        if dh and all(r.get("finish_reason") == "stop" for r in dh if r.get("http_status") == 200):
+        if _direct_ok(direct.get(cap, []), "stop"):
             higher_stop = True
             break
-    duckdb_64_null = bool(duckdb_runs.get(64)) and all(
+    duckdb_64_null = bool(duckdb_runs.get(64)) and duckdb_runs[64] and all(
         (r.get("response") is None) for r in duckdb_runs[64]
     )
 
@@ -213,12 +225,16 @@ def main(argv=None) -> int:
         "duckdb_ai_try_complete": duckdb_runs,
         "duckdb_request_body_per_cap": duckdb_req_body,
         "decision": {
+            "direct_http_200_at_cap64": len(d64_ok),
+            "direct_http_all_failed_at_cap64": len(d64_ok) == 0,
             "stable_length_at_cap64": stable_length_at_64,
             "higher_cap_stop": higher_stop,
             "duckdb_cap64_null": duckdb_64_null,
             "interpretation": (
                 "model output genuinely overlong (stable) + DuckDB maps to NULL"
                 if (stable_length_at_64 and higher_stop and duckdb_64_null)
+                else "no successful direct call at cap=64 -- cannot decide stability"
+                if not d64_ok
                 else "see per-run finish_reasons; cap=64 not stably length -> occasional tail risk"
                 if not stable_length_at_64
                 else "partial -- inspect runs"

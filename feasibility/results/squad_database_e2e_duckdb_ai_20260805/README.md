@@ -80,3 +80,32 @@ exactly-once True｜success 10569 / error 1 / NULL 1 / max_tokens 1。
 - **下一步**：① 补 `direct_client` 臂（直连 vLLM，无 DuckDB 扩展）→ 看 E2E 拆分差异；② 补 `project_static`
   臂（项目冻结最佳静态）→ 形成三臂 E2E 正式排名；③ 正式前填全 `dual_gpu_squad_database_e2e.example.json`
   的 REPLACE_ME（vLLM launch cmd / revision / dtype / parallelism / VRAM / env），重算 `service-config-hash`。
+
+## 8. 审计订正（codex 复核；不覆写机器原始文件）
+
+> 本节的 `report.json` / `per_row_evidence.csv` 是 `79a9d6c` 当时机器原始输出，**保持不变**；以下订正
+> 只写在 README，反映 `79a9d6c` 之后的 runner 口径修复。重新跑（未来）会直接产出订正后的字段。
+
+- **failure_rate 双计订正**：`report.json` 的 `runner_metrics.failure_rate = 0.000189` 是把同一失败行的
+  error 与 NULL 各计一次（`(error+null)/row = 2/10570`）。**正确行级失败率 = 1/10570 = 0.0000946
+  （≈0.00946%）**，即"去重后的失败行 / 总行"。订正后的 runner 另分列 `error_rate` / `null_rate` /
+  `max_tokens_rate`（本行同时是 error+NULL+max_tokens，三者各 0.0000946，允许重叠）。
+- **"模型调用独占 99%"措辞订正**：原文 §5/§6 把 adapter wall 归给"模型调用"证据不足。`adapter_wall 93.212s`
+  含 setup（≈5.273s）+ DuckDB 执行 + HTTP + 排队 + 模型服务。可声称：**adapter 占 wall 的 99.27%
+  （93.212/93.899）；其中 operator query barrier（min started → max completed）占 93.54%
+  （87.835/93.899）**——不能单独归因给模型。
+- **状态字段解耦订正**：`report.json` 的 `capability_gate_status` / `formal_run_gate_passed` /
+  `comparison_admission` 三者当时是耦合的（单次 clean 即 formal pass、失败即自动 eligible）。订正后
+  拆为正交三字段：`single_run_valid`（本次 0 error/NULL）、`formal_run_gate_passed`（**单次 runner 恒
+  False**；1w+3f 正式重复门禁是另一协议）、`comparison_admission`（**`pending_formal_repeat`**——单次
+  跑不授予/排除正式准入）。本次实测按订正口径应为：`single_run_valid=false` / `formal_run_gate_passed=false`
+  / `comparison_admission=pending_formal_repeat`。
+- **operator_only_jct 口径订正**：`report.json` 取 `results[0]` 的时间，对 DuckDB barrier 臂碰巧正确；
+  订正后改为整体 `min(started) → max(completed)`，对 per-request 臂（direct_client）也正确。本次实测值
+  不变（barrier 臂所有行共用边界）。
+- **sink 可读回性**：本次跑（`79a9d6c`）未产出 `sink_audit.csv`；失败行在 `document_completions` 里是
+  空 `completion_text`，无法直接区分真实空输出与失败单元。订正后的 runner 写 `sink_audit.csv`
+  （doc_id / source_example_id / status / error / output_chars），可按 doc_id 把 sink 里的空串回连到
+  真实 status（本目录 `per_row_evidence.csv` 同样可按 source_example_id 查到该行 status=failed）。
+- **diagnostic 脚本技术债**：`squad_truncation_diagnostic.py` 已修（DuckDB 每个 cap 恰好 `repeats` 次调用、
+  `all()` 判据对全 HTTP 失败防真空）；**不重跑**历史诊断 `squad_truncation_diag_572700c8_20260805/`。

@@ -71,3 +71,16 @@ fail-closed 正确拦住假 pass、10569 成功 + 1 NULL），但 1 行 NULL 的
 接受该产品边界（不抬 cap、不重跑全量）；进入 database-E2E runner；正式三臂比较对所有 arm 统一报
 success/error/NULL/truncation rate、全 manifest EM/F1（失败行 0 分）、successful_rows/s、
 correct_rows/s、exactly-once 与完整失败证据；不以 raw rows/s 单独排名。
+
+## 7. 脚本技术债审计说明（2026-08-05；不重跑本诊断）
+
+本归档 `diagnostic.json` 由 `9aefeba` 版 `squad_truncation_diagnostic.py` 产出，该版脚本有两处已在后续
+修复的技术债（**不重跑**历史诊断，结论不变）：
+
+- **DuckDB 调用次数**：旧版每个 cap 实际调用 `repeats+1` 次（多 1 次仅为抓 `ai_completion_request_json`）。
+  已修为恰好 `repeats` 次（从首个 repeat 抓请求体）。本诊断 `repeats=3`，旧版实际 4 次/cap——不影响
+  `decision`（基于 direct 的 finish_reason 与 DuckDB 的 response/error，与调用次数无关）。
+- **`all()` 真空风险**：旧版 `decision` 的 `stable_length_at_cap64` / `higher_cap_stop` 在 direct 全 HTTP
+  失败时会空真空成立。已加 `direct_http_200_at_cap64` 计数与"无成功直连则不可判定"分支。
+
+本次诊断 direct 调用全部 HTTP 200（3×3 成功），故**结论不受影响**：cap=64 不可复现截断，记为偶发、机制未定。

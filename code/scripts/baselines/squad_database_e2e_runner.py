@@ -21,10 +21,15 @@ Timing contract: E2E timing is summary-level (the report's `timing` block) --
 intact for the per-row CSV). ``database_e2e_wall_s = scan_s + construct_s +
 adapter_wall_s + sink_s`` (metrics settle + after-scrape are outside the wall).
 
-State fields are separated per codex: ``capability_gate_status`` (zero-error
-validity / fail-closed), ``formal_run_gate_passed``, ``comparison_admission``
-(``eligible_with_documented_failure`` lets the arm enter failure-aware
-comparison without masquerading as a passed validity gate). The zero-error
+State fields are DECOUPLED per codex audit: ``single_run_valid`` (this shot:
+0 error/NULL), ``formal_run_gate_passed`` (always False from this single-shot
+runner -- the 1-warmup+3-formal repeat gate is a separate protocol),
+``comparison_admission`` ("pending_formal_repeat" -- a single shot cannot
+confer/exclude formal admission). ``failure_rate`` is the de-duplicated
+row-level rate (a row that is both error AND NULL counts once); error/null/
+max_tokens rates are reported separately and may overlap. ``operator_only_jct``
+is the full result span (min started -> max completed), correct for both
+barrier arms (DuckDB-ai) and per-request arms (direct_client). The zero-error
 validity check is NOT weakened -- failed cells are fully retained and still
 feed EM/F1, failure rate, and successful/correct rows/s.
 
@@ -154,22 +159,53 @@ def _sink_write(
 
 def _runner_metrics(
     em_rows: int, success_count: int, row_count: int,
-    error_count: int, null_count: int, wall_s: float, sunk_rows: int,
+    error_count: int, null_count: int, max_tokens_errors: int,
+    wall_s: float, sunk_rows: int,
 ) -> dict[str, float]:
     """Runner-layer headline metrics (division here, NOT in metrics.squad).
 
     ``correct_rows_per_s`` is the primary headline; ``raw_rows_per_s`` is
     reported for transparency but is never the ranking key.
+
+    ``failure_rate`` is the **de-duplicated row-level** failure rate
+    (``row_count - success_count``): a row that is both an error AND a NULL
+    response is one failed row, not two. ``error_rate`` / ``null_rate`` /
+    ``max_tokens_rate`` are reported separately and MAY overlap with each other
+    (a single failed row can carry both an error and a NULL output).
     """
 
     wall = wall_s if wall_s > 0 else 0.0
+    failed_rows = max(0, row_count - success_count)
+    def _rate(num: int) -> float:
+        return round(num / row_count, 6) if row_count else 0.0
     return {
         "correct_rows_per_s": round(em_rows / wall, 4) if wall else 0.0,
         "successful_rows_per_s": round(success_count / wall, 4) if wall else 0.0,
         "raw_rows_per_s": round(row_count / wall, 4) if wall else 0.0,
-        "failure_rate": round((error_count + null_count) / row_count, 6) if row_count else 0.0,
+        "failure_rate": _rate(failed_rows),
+        "error_rate": _rate(error_count),
+        "null_rate": _rate(null_count),
+        "max_tokens_rate": _rate(max_tokens_errors),
+        "failed_rows": failed_rows,
         "sunk_rows": sunk_rows,
     }
+
+
+def _operator_span(results) -> tuple[float, float]:
+    """Operator-only JCT + setup as the full result span (not results[0]).
+
+    ``operator_only_jct`` = max(completed) - min(started); ``setup_s`` =
+    min(started) - min(submitted). Correct for BOTH barrier arms (DuckDB-ai:
+    every row shares the barrier boundaries, so this == results[0]'s span) and
+    per-request arms (direct_client: each row has its own started/completed).
+    """
+
+    if not results:
+        return 0.0, 0.0
+    started = [r.started_at_s for r in results]
+    completed = [r.completed_at_s for r in results]
+    submitted = [r.submitted_at_s for r in results]
+    return (max(completed) - min(started)), (min(started) - min(submitted))
 
 
 def _write_json(path: Path, payload: dict) -> None:
@@ -283,10 +319,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
     op0 = time.time()
     results = run_duckdb_ai_complete(requests, config)
     adapter_wall_s = time.time() - op0
-    operator_only_jct = (
-        results[0].completed_at_s - results[0].started_at_s if results else 0.0
-    )
-    setup_s = results[0].started_at_s - results[0].submitted_at_s if results else 0.0
+    operator_only_jct, setup_s = _operator_span(results)
 
     written, sink_s = _sink_write(
         conn, results, sidecar, args.writeback_mode, args.write_batch_rows,
@@ -319,6 +352,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
 
     doc_to_source = {row["doc_id"]: row["source_example_id"] for row in all_rows}
     evidence_rows = []
+    sink_audit_rows = []
     predictions: dict[str, str | None] = {}
     for r in results:
         source_id = doc_to_source.get(r.doc_id)
@@ -336,6 +370,17 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             "server_version": server_version,
             "pgvector_version": pgvector_version,
         })
+        # Run-scoped sink audit: link each sunk doc_id to its execution status so
+        # the unified sink's empty completion_text (NULL->"" for failed rows) can
+        # be cross-referenced back to the real status/error (not overwriting the
+        # shared document_completions contract).
+        sink_audit_rows.append({
+            "doc_id": r.doc_id,
+            "source_example_id": source_id,
+            "status": r.status,
+            "error": redact_text(r.error or ""),
+            "output_chars": len(r.output_text) if r.output_text else 0,
+        })
     with (output_dir / "per_row_evidence.csv").open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(
             f,
@@ -345,6 +390,12 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         )
         writer.writeheader()
         writer.writerows(evidence_rows)
+    with (output_dir / "sink_audit.csv").open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(
+            f, fieldnames=["doc_id", "source_example_id", "status", "error", "output_chars"],
+        )
+        writer.writeheader()
+        writer.writerows(sink_audit_rows)
 
     quality = squad_quality_metrics(predictions, references)
     success_count = sum(
@@ -395,6 +446,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         row_count=len(all_rows),
         error_count=error_count,
         null_count=null_response,
+        max_tokens_errors=max_tokens_errors,
         wall_s=database_e2e_wall_s,
         sunk_rows=written,
     )
@@ -405,11 +457,20 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         "arm": args.arm,
         "status": "success" if passed else "failure",
         "failure_reason": failure_reason,
-        "capability_gate_status": "success" if passed else "failure",
-        "formal_run_gate_passed": bool(passed),
-        "comparison_admission": (
-            "eligible_unconditional" if passed else "eligible_with_documented_failure"
+        # Three DECOUPLED judgments (per codex audit):
+        #  - single_run_valid: THIS single shot had 0 error/NULL.
+        #  - formal_run_gate_passed: ALWAYS False here -- this is a single-shot
+        #    runner; the 1-warmup+3-formal repeat gate (CV/CI checks) is a
+        #    separate protocol that only a formal repeat runner can set True.
+        #  - comparison_admission: a single shot cannot confer or exclude
+        #    formal comparison admission; it stays pending the formal repeat.
+        "single_run_valid": bool(passed),
+        "formal_run_gate_passed": False,
+        "formal_run_gate_note": (
+            "single-shot runner; the 1-warmup+3-formal repeat gate is a "
+            "separate protocol not implemented here"
         ),
+        "comparison_admission": "pending_formal_repeat",
         "cap": args.max_tokens,
         "row_count": len(all_rows),
         "exactly_once": exactly_once,
@@ -462,7 +523,10 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
                 "after": _scrape_status(metrics_after),
             },
         },
-        "evidence_files": {"per_row_csv": "per_row_evidence.csv"},
+        "evidence_files": {
+            "per_row_csv": "per_row_evidence.csv",
+            "sink_audit_csv": "sink_audit.csv",
+        },
         "command": redact_argument_list(list(sys.argv)),
     }
     _write_json(output_dir / "report.json", report)

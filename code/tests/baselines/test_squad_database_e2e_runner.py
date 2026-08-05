@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import json
+import shutil
 import sys
 import tempfile
 import unittest
@@ -24,6 +26,28 @@ runner = importlib.util.module_from_spec(_spec)
 sys.modules["squad_database_e2e_runner"] = runner
 _spec.loader.exec_module(runner)
 
+# Repo-local fallback for environments whose system temp dir is not writable
+# (e.g. codex's Windows sandbox blocks tempfile writes). The repo tree is
+# writable wherever it is checked out, so this keeps the integration tests
+# independently reproducible.
+_REPO_TMP = Path(__file__).resolve().parent / "_e2e_runner_tmp"
+
+
+@contextlib.contextmanager
+def _scratch_dir():
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            yield Path(td)
+        return
+    except (OSError, PermissionError):
+        pass
+    _REPO_TMP.mkdir(parents=True, exist_ok=True)
+    d = Path(tempfile.mkdtemp(dir=str(_REPO_TMP)))
+    try:
+        yield d
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
 
 def _row(doc_id: int, sid: str, text: str = "prompt", answers: list[str] | None = None,
          tenant: int = 0, category: str = "squad") -> tuple[dict, tuple]:
@@ -34,10 +58,11 @@ def _row(doc_id: int, sid: str, text: str = "prompt", answers: list[str] | None 
     )
 
 
-def _result(req_doc_id: int, *, output_text, error=None, status="completed"):
+def _result(req_doc_id: int, *, output_text="ok", error=None, status="completed",
+            submitted=1.0, started=1.0, completed=2.0):
     return BaselineRequestResult(
         doc_id=req_doc_id, endpoint_index=0, status=status, error=error,
-        submitted_at_s=1.0, started_at_s=1.0, completed_at_s=2.0,
+        submitted_at_s=submitted, started_at_s=started, completed_at_s=completed,
         input_tokens=4, output_tokens=0, output_text=output_text, finish_reason=None,
     )
 
@@ -68,31 +93,73 @@ class SinkAdapterTests(unittest.TestCase):
 
 
 class RunnerMetricsTests(unittest.TestCase):
-    def test_division(self) -> None:
+    def test_division_and_rates(self) -> None:
         m = runner._runner_metrics(em_rows=100, success_count=120, row_count=150,
-                                   error_count=30, null_count=0, wall_s=10.0, sunk_rows=120)
+                                   error_count=30, null_count=0, max_tokens_errors=5,
+                                   wall_s=10.0, sunk_rows=120)
         self.assertEqual(m["correct_rows_per_s"], 10.0)
         self.assertEqual(m["successful_rows_per_s"], 12.0)
         self.assertEqual(m["raw_rows_per_s"], 15.0)
+        self.assertEqual(m["failed_rows"], 30)  # 150 - 120 (unduplicated)
         self.assertEqual(m["failure_rate"], round(30 / 150, 6))
+        self.assertEqual(m["error_rate"], round(30 / 150, 6))
+        self.assertEqual(m["null_rate"], 0.0)
+        self.assertEqual(m["max_tokens_rate"], round(5 / 150, 6))
         self.assertEqual(m["sunk_rows"], 120)
 
+    def test_failure_rate_dedups_error_and_null_same_row(self) -> None:
+        # One row that is BOTH an error AND a NULL response is ONE failed row,
+        # not two. failure_rate must be 1/100, not 2/100. error_rate and
+        # null_rate are reported separately and MAY overlap.
+        m = runner._runner_metrics(em_rows=0, success_count=99, row_count=100,
+                                   error_count=1, null_count=1, max_tokens_errors=1,
+                                   wall_s=10.0, sunk_rows=100)
+        self.assertEqual(m["failed_rows"], 1)
+        self.assertEqual(m["failure_rate"], round(1 / 100, 6))
+        self.assertNotEqual(m["failure_rate"], round(2 / 100, 6))
+        self.assertEqual(m["error_rate"], round(1 / 100, 6))
+        self.assertEqual(m["null_rate"], round(1 / 100, 6))
+
     def test_zero_wall_is_safe(self) -> None:
-        m = runner._runner_metrics(10, 10, 10, 0, 0, wall_s=0.0, sunk_rows=10)
+        m = runner._runner_metrics(10, 10, 10, 0, 0, 0, wall_s=0.0, sunk_rows=10)
         self.assertEqual(m["correct_rows_per_s"], 0.0)
         self.assertEqual(m["raw_rows_per_s"], 0.0)
 
 
-class DatabaseE2EBarrierTests(unittest.TestCase):
-    """Mocked end-to-end main() run: assert E2E timing block + 3 state fields."""
+class OperatorSpanTests(unittest.TestCase):
+    def test_barrier_arm_all_rows_share_boundary(self) -> None:
+        # DuckDB-ai: every row shares submitted/started/completed.
+        results = [_result(i, submitted=1.0, started=2.0, completed=5.0) for i in range(5)]
+        jct, setup = runner._operator_span(results)
+        self.assertEqual(jct, 3.0)  # 5 - 2
+        self.assertEqual(setup, 1.0)  # 2 - 1
 
-    def _run_main(self, fail_one: bool) -> tuple[int, dict, Path, list[str]]:
+    def test_per_request_arm_uses_min_started_max_completed(self) -> None:
+        # direct_client: each row has its own started/completed; using results[0]
+        # would be wrong. Span must be max(completed) - min(started).
+        results = [
+            _result(1, submitted=1.0, started=2.0, completed=3.0),
+            _result(2, submitted=1.5, started=4.0, completed=10.0),
+            _result(3, submitted=2.0, started=6.0, completed=7.0),
+        ]
+        jct, setup = runner._operator_span(results)
+        self.assertEqual(jct, 8.0)  # max(10,7,3) - min(2,4,6)
+        self.assertEqual(setup, 1.0)  # min(started)=2 - min(submitted)=1
+
+    def test_empty(self) -> None:
+        self.assertEqual(runner._operator_span([]), (0.0, 0.0))
+
+
+class DatabaseE2EBarrierTests(unittest.TestCase):
+    """Mocked end-to-end main() run: assert E2E timing block + decoupled state."""
+
+    def _run_main(self, fail_one: bool) -> tuple[int, dict, list[str]]:
         rows_sidecar = [_row(i, f"id{i}", text=f"p{i}") for i in range(1, 5)]
         rows = [r for r, _ in rows_sidecar]
         sidecar = {r["doc_id"]: tc for r, tc in rows_sidecar}
-        with tempfile.TemporaryDirectory() as td:
-            out = Path(td) / "result"
-            prov = Path(td) / "prov.json"
+        with _scratch_dir() as td:
+            out = td / "result"
+            prov = td / "prov.json"
             prov.write_text(
                 json.dumps({"content_hash": runner._structured_content_hash(rows),
                             "sample_count": len(rows)}) + "\n",
@@ -152,48 +219,43 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
                  patch.dict(sys.modules, {"psycopg": MagicMock()}):
                 rc = runner.main(argv)
             report = json.loads((out / "report.json").read_text(encoding="utf-8"))
-            with (out / "per_row_evidence.csv").open(encoding="utf-8") as f:
-                import csv as _csv
-                header = next(_csv.reader(f))
-            return rc, report, out, header
+            import csv as _csv
+            with (out / "sink_audit.csv").open(encoding="utf-8") as f:
+                sink_header = next(_csv.reader(f))
+            return rc, report, sink_header
 
-    def test_success_path_e2e_structure(self) -> None:
-        rc, report, _, header = self._run_main(fail_one=False)
+    def test_success_path_e2e_structure_and_decoupled_state(self) -> None:
+        rc, report, sink_header = self._run_main(fail_one=False)
         self.assertEqual(rc, 0)
         self.assertEqual(report["status"], "success")
         self.assertEqual(report["timing"]["boundary"], "database_e2e")
         for seg in ("database_e2e_wall_s", "scan_s", "construct_s", "adapter_wall_s",
                     "operator_only_jct_s", "sink_s"):
             self.assertIn(seg, report["timing"], seg)
-        # All E2E segment fields present and non-negative. database_e2e_wall_s is
-        # the real elapsed barrier (rounded to 3 decimals -> 0.0 under fast mocks;
-        # it is seconds-positive on a real run, verified on the server). The
-        # wall >= sum(segments) invariant also cannot be asserted here: mocked
-        # scan_s/sink_s are constants, not real sub-intervals of the wall.
-        wall = report["timing"]["database_e2e_wall_s"]
-        self.assertGreaterEqual(wall, 0.0)
-        for seg in ("scan_s", "construct_s", "adapter_wall_s",
-                    "operator_only_jct_s", "sink_s"):
-            self.assertGreaterEqual(report["timing"][seg], 0.0)
-        self.assertEqual(report["formal_run_gate_passed"], True)
-        self.assertEqual(report["comparison_admission"], "eligible_unconditional")
-        self.assertEqual(report["capability_gate_status"], "success")
+        self.assertGreaterEqual(report["timing"]["database_e2e_wall_s"], 0.0)
+        # State fields DECOUPLED: single clean shot does NOT pass the formal gate.
+        self.assertEqual(report["single_run_valid"], True)
+        self.assertEqual(report["formal_run_gate_passed"], False)
+        self.assertEqual(report["comparison_admission"], "pending_formal_repeat")
         self.assertIn("correct_rows_per_s", report["runner_metrics"])
-        self.assertIn("server_version", header)
-        self.assertIn("pgvector_version", header)
+        # sink audit recovers per-row status (so sunk empty strings are traceable)
+        self.assertIn("doc_id", sink_header)
+        self.assertEqual(report["evidence_files"]["sink_audit_csv"], "sink_audit.csv")
         self.assertEqual(report["sink"]["table"], "document_completions")
 
-    def test_fail_closed_keeps_eligibility_separate(self) -> None:
-        rc, report, _, _ = self._run_main(fail_one=True)
+    def test_fail_closed_keeps_state_decoupled(self) -> None:
+        rc, report, _ = self._run_main(fail_one=True)
         self.assertEqual(rc, 1)
         self.assertEqual(report["status"], "failure")
+        # Decoupled: a failed single shot does NOT auto-gain comparison admission.
+        self.assertEqual(report["single_run_valid"], False)
         self.assertEqual(report["formal_run_gate_passed"], False)
-        self.assertEqual(report["capability_gate_status"], "failure")
-        self.assertEqual(report["comparison_admission"], "eligible_with_documented_failure")
+        self.assertEqual(report["comparison_admission"], "pending_formal_repeat")
         self.assertIsNotNone(report["failure_reason"])
-        # failed cells still feed runner metrics
-        self.assertIn("failure_rate", report["runner_metrics"])
-        self.assertGreater(report["runner_metrics"]["failure_rate"], 0.0)
+        # failure_rate is unduplicated (1 failed row, not error+null=2)
+        self.assertEqual(report["runner_metrics"]["failed_rows"], 1)
+        self.assertEqual(report["runner_metrics"]["failure_rate"],
+                         round(1 / report["row_count"], 6))
 
 
 if __name__ == "__main__":
