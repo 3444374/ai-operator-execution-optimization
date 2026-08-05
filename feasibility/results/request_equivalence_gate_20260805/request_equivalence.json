@@ -1,0 +1,146 @@
+{
+  "canonical_normalized": {
+    "max_tokens": 16,
+    "messages": [
+      {
+        "content": "Reply with only the single word: ready",
+        "role": "user"
+      }
+    ],
+    "model": "qwen2.5-7b",
+    "temperature": 0.0
+  },
+  "canonical_temperature": 0.0,
+  "duckdb": {
+    "default_temperature_probe": {
+      "note": "default temperature is 0.1, NOT 0.0 -- gate requires explicit 0.0",
+      "raw_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with only the single word: ready\"}],\"temperature\":0.1}",
+      "temperature": 0.1
+    },
+    "extra_keys": [],
+    "field_diff_vs_canonical": {
+      "max_tokens": {
+        "actual": 16,
+        "canonical": 16,
+        "match": true
+      },
+      "messages": {
+        "actual": [
+          {
+            "content": "Reply with only the single word: ready",
+            "role": "user"
+          }
+        ],
+        "canonical": [
+          {
+            "content": "Reply with only the single word: ready",
+            "role": "user"
+          }
+        ],
+        "match": true
+      },
+      "model": {
+        "actual": "qwen2.5-7b",
+        "canonical": "qwen2.5-7b",
+        "match": true
+      },
+      "temperature": {
+        "actual": 0,
+        "canonical": 0.0,
+        "match": true
+      }
+    },
+    "messages_check": {
+      "note": "messages identical (role+content)",
+      "ok": true
+    },
+    "missing_keys": [],
+    "normalized": {
+      "max_tokens": 16,
+      "messages": [
+        {
+          "content": "Reply with only the single word: ready",
+          "role": "user"
+        }
+      ],
+      "model": "qwen2.5-7b",
+      "temperature": 0
+    },
+    "payload_matches_canonical": true,
+    "raw_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with only the single word: ready\"}],\"temperature\":0,\"max_tokens\":16}"
+  },
+  "failure_reasons": [],
+  "gate": "bounded_output_request_equivalence",
+  "identity": {
+    "duckdb_ai_extension_version": "0.4.14",
+    "duckdb_ai_installed_from": "community",
+    "duckdb_version": "v1.5.4",
+    "git_commit": "96aeb6cfc630a51b7f94678d8b395d664c6fe8db",
+    "service_config_sha256": "875bae8d8c610a3ee87caf634da7a2cd76602a04bedbd84a136317af69dda417"
+  },
+  "isolated_single_request": {
+    "duckdb_path": "duckdb_ai_try_complete",
+    "duckdb_prompt_token_delta": 37,
+    "endpoint_idle_enforced": true,
+    "project_path": "project_build_completion_request_body",
+    "project_prompt_token_delta": 37,
+    "token_delta_match": true
+  },
+  "max_tokens": 16,
+  "passed": true,
+  "project": {
+    "extra_keys": [],
+    "field_diff_vs_canonical": {
+      "max_tokens": {
+        "actual": 16,
+        "canonical": 16,
+        "match": true
+      },
+      "messages": {
+        "actual": [
+          {
+            "content": "Reply with only the single word: ready",
+            "role": "user"
+          }
+        ],
+        "canonical": [
+          {
+            "content": "Reply with only the single word: ready",
+            "role": "user"
+          }
+        ],
+        "match": true
+      },
+      "model": {
+        "actual": "qwen2.5-7b",
+        "canonical": "qwen2.5-7b",
+        "match": true
+      },
+      "temperature": {
+        "actual": 0.0,
+        "canonical": 0.0,
+        "match": true
+      }
+    },
+    "messages_check": {
+      "note": "messages identical (role+content)",
+      "ok": true
+    },
+    "missing_keys": [],
+    "normalized": {
+      "max_tokens": 16,
+      "messages": [
+        {
+          "content": "Reply with only the single word: ready",
+          "role": "user"
+        }
+      ],
+      "model": "qwen2.5-7b",
+      "temperature": 0.0
+    },
+    "payload_matches_canonical": true,
+    "raw_json": "{\"max_tokens\": 16, \"messages\": [{\"content\": \"Reply with only the single word: ready\", \"role\": \"user\"}], \"model\": \"qwen2.5-7b\", \"temperature\": 0.0}"
+  },
+  "prompt": "Reply with only the single word: ready",
+  "redacted_note": "raw_json redacts message content length only; full prompt is in args.prompt"
+}

@@ -1,0 +1,2 @@
+python code/scripts/baselines/request_equivalence_gate.py --endpoint-url http://127.0.0.1:8000/v1/chat/completions --metrics-url http://127.0.0.1:8000/metrics --model qwen2.5-7b --max-tokens 16 --output-dir feasibility/results/request_equivalence_gate_20260805
+exit_code=0
