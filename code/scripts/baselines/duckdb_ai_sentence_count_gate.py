@@ -72,6 +72,23 @@ def _recover_original(wrapped: str) -> str:
     return wrapped[idx + len(_WRAP_PREFIX):] if idx >= 0 else wrapped
 
 
+def _validate_exact_row_count(rows: list, expected: int, workload_name: str) -> None:
+    """Fail closed unless exactly ``expected`` rows were read.
+
+    Callers MUST query with ``LIMIT expected + 1`` so that a workload with MORE
+    rows than expected is caught (a bare ``LIMIT expected`` would silently hide
+    the extra row and pass).
+    """
+
+    if len(rows) != expected:
+        comparison = "more than" if len(rows) > expected else "fewer than"
+        raise SystemExit(
+            f"FAIL: workload {workload_name!r} has {comparison} {expected} rows "
+            f"(read {len(rows)} with LIMIT {expected + 1}); refusing run — "
+            "use exactly the pre-registered row count"
+        )
+
+
 def _git_commit() -> str:
     try:
         return subprocess.run(
@@ -122,14 +139,7 @@ def main(argv: list[str] | None = None) -> int:
                 (args.workload_name, args.row_count + 1),
             )
             rows = cursor.fetchall()
-    if len(rows) != args.row_count:
-        comparison = "more than" if len(rows) > args.row_count else "fewer than"
-        raise SystemExit(
-            f"FAIL: workload {args.workload_name!r} has {comparison} "
-            f"{args.row_count} rows (read {len(rows)} with LIMIT "
-            f"{args.row_count + 1}); refusing run — use exactly the "
-            "pre-registered row count"
-        )
+    _validate_exact_row_count(rows, args.row_count, args.workload_name)
 
     suffix = "/chat/completions"
     if not args.endpoint_url.endswith(suffix):

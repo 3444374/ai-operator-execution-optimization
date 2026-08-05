@@ -52,6 +52,16 @@ class SentenceCountGateHelperTests(unittest.TestCase):
         self.assertEqual(distribution["6-10"], 1)
         self.assertEqual(distribution["11+"], 1)
 
+    def test_validate_exact_row_count_catches_too_many_and_too_few(self) -> None:
+        # exact count passes (no raise)
+        gate._validate_exact_row_count(list(range(2048)), 2048, "wl")
+        # a workload with 2049 rows must be caught even though LIMIT 2048 would
+        # silently hide the extra row -- the caller queries LIMIT expected+1.
+        with self.assertRaisesRegex(SystemExit, "more than"):
+            gate._validate_exact_row_count(list(range(2049)), 2048, "wl")
+        with self.assertRaisesRegex(SystemExit, "fewer than"):
+            gate._validate_exact_row_count(list(range(2047)), 2048, "wl")
+
 
 if __name__ == "__main__":
     unittest.main()

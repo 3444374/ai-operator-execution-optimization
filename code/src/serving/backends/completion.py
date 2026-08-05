@@ -36,29 +36,48 @@ def format_completion_prompts(
         ]
     raise ValueError(f"Unknown completion prompt format: {prompt_format}")
 
-def _completion_request_body(
+def build_completion_request_body(
     model_name: str,
-    prompts: list[str],
+    formatted_prompts: list[str],
     max_tokens: int,
     protocol: CompletionProtocol,
+    *,
+    temperature: float | None = None,
+    return_token_ids: bool = False,
 ) -> dict:
+    """Build the exact vLLM completion request body the project path sends.
+
+    Public + complete (base body + optional temperature/return_token_ids) so the
+    bounded-output request-equivalence gate can compare the real project payload
+    against the DuckDB ``ai`` payload and the canonical contract without
+    re-deriving it. Both sync and async HTTP completion paths call this; do not
+    duplicate the logic elsewhere.
+    """
     if protocol == "completions":
-        return {
+        body: dict = {
             "model": model_name,
-            "prompt": prompts,
+            "prompt": formatted_prompts,
             "max_tokens": max_tokens,
         }
-    if protocol == "chat_completions":
-        if len(prompts) != 1:
+    elif protocol == "chat_completions":
+        if len(formatted_prompts) != 1:
             raise ValueError(
                 "Chat Completions requires one complete prompt per HTTP request"
             )
-        return {
+        body = {
             "model": model_name,
-            "messages": [{"role": "user", "content": prompts[0]}],
+            "messages": [{"role": "user", "content": formatted_prompts[0]}],
             "max_tokens": max_tokens,
         }
-    raise ValueError(f"Unknown completion protocol: {protocol}")
+    else:
+        raise ValueError(f"Unknown completion protocol: {protocol}")
+    if return_token_ids:
+        body["return_token_ids"] = True
+    if temperature is not None:
+        if not math.isfinite(temperature) or temperature < 0:
+            raise ValueError("temperature must be finite and non-negative")
+        body["temperature"] = temperature
+    return body
 
 def call_compatible_completion_endpoint(
     endpoint_url: str,
@@ -73,18 +92,14 @@ def call_compatible_completion_endpoint(
     temperature: float | None = None,
     protocol: CompletionProtocol = "completions",
 ) -> CompletionEndpointResult:
-    request_body = _completion_request_body(
+    request_body = build_completion_request_body(
         model_name,
         format_completion_prompts(prompts, prompt_format),
         max_tokens,
         protocol,
+        temperature=temperature,
+        return_token_ids=return_token_ids,
     )
-    if return_token_ids:
-        request_body["return_token_ids"] = True
-    if temperature is not None:
-        if not math.isfinite(temperature) or temperature < 0:
-            raise ValueError("temperature must be finite and non-negative")
-        request_body["temperature"] = temperature
     payload = json.dumps(request_body).encode("utf-8")
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -364,23 +379,14 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
         self,
         prompts: list[str],
     ) -> CompletionEndpointResult:
-        request_body = _completion_request_body(
+        request_body = build_completion_request_body(
             self.model_name,
             format_completion_prompts(prompts, self.prompt_format),
             self.max_tokens,
             self.protocol,
+            temperature=self.temperature,
+            return_token_ids=self.return_token_ids,
         )
-        if self.return_token_ids:
-            request_body["return_token_ids"] = True
-        if self.temperature is not None:
-            if (
-                not math.isfinite(self.temperature)
-                or self.temperature < 0
-            ):
-                raise ValueError(
-                    "temperature must be finite and non-negative"
-                )
-            request_body["temperature"] = self.temperature
         http_request_start_epoch_s = time.time()
         http_request_start_s = time.perf_counter()
         try:
