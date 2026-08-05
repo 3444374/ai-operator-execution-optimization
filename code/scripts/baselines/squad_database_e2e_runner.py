@@ -226,7 +226,7 @@ def _readback_ok(readback: dict, writeback_mode: str) -> bool:
 def _runner_metrics(
     em_rows: int, success_count: int, row_count: int,
     error_count: int, null_count: int, max_tokens_errors: int,
-    wall_s: float, sunk_rows: int,
+    truncation_count: int, wall_s: float, sunk_rows: int,
 ) -> dict[str, float]:
     """Runner-layer headline metrics (division here, NOT in metrics.squad).
 
@@ -238,6 +238,12 @@ def _runner_metrics(
     response is one failed row, not two. ``error_rate`` / ``null_rate`` /
     ``max_tokens_rate`` are reported separately and MAY overlap with each other
     (a single failed row can carry both an error and a NULL output).
+
+    ``truncation_count`` / ``truncation_rate`` are the **unified, arm-agnostic**
+    cap-hit metrics: direct_client exposes ``finish_reason=length``; duckdb_ai
+    maps truncation to a ``max_tokens`` error. Both count as "the model hit cap"
+    so the 3-arm comparison doesn't misread direct's 0 failure_rate as "no
+    truncation" when it actually had length-truncated rows.
     """
 
     wall = wall_s if wall_s > 0 else 0.0
@@ -252,6 +258,8 @@ def _runner_metrics(
         "error_rate": _rate(error_count),
         "null_rate": _rate(null_count),
         "max_tokens_rate": _rate(max_tokens_errors),
+        "truncation_count": truncation_count,
+        "truncation_rate": _rate(truncation_count),
         "failed_rows": failed_rows,
         "sunk_rows": sunk_rows,
     }
@@ -280,6 +288,8 @@ def _smoke_integrity(rows: list[dict]) -> tuple[bool, list[str]]:
     limited scan's hash cannot match the importer's full-workload hash)."""
 
     problems: list[str] = []
+    if not rows:
+        problems.append("no rows scanned (empty result)")
     if len({r["doc_id"] for r in rows}) != len(rows):
         problems.append("duplicate doc_id present")
     source_ids = [r["source_example_id"] for r in rows]
@@ -353,6 +363,10 @@ def _parse(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--api-key", default="EMPTY")
     p.add_argument("--max-tokens", type=int, default=64)
     p.add_argument("--max-concurrent-requests", type=int, default=32)
+    p.add_argument("--request-timeout-s", type=float, default=120.0,
+                   help="shared per-request timeout for BOTH arms (formal comparison "
+                        "must freeze the same value); default 120 matches DuckDB's "
+                        "extension default.")
     p.add_argument("--service-prefix-caching", choices=("enabled", "disabled"),
                    default="enabled")
     p.add_argument("--service-config-hash", default=None)
@@ -398,6 +412,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             endpoint_base_url=endpoint_base,
             model=args.model, api_key=args.api_key, max_tokens=args.max_tokens,
             max_concurrent_requests=args.max_concurrent_requests,
+            timeout_seconds=args.request_timeout_s,
         )
         arm_identity = {
             "arm_protocol": "duckdb_ai_barrier",
@@ -408,6 +423,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             endpoint_url=args.endpoint_url,
             model=args.model, api_key=args.api_key, max_tokens=args.max_tokens,
             max_concurrent_requests=args.max_concurrent_requests,
+            timeout_s=args.request_timeout_s,
         )
         arm_identity = {
             "arm_protocol": "direct_http_per_request",
@@ -513,6 +529,11 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             ),
             "finish_reason": r.finish_reason or "",
             "output_tokens": r.output_tokens,
+            "submitted_at_s": round(r.submitted_at_s, 6),
+            "started_at_s": round(r.started_at_s, 6),
+            "completed_at_s": round(r.completed_at_s, 6),
+            "queue_wait_s": round(r.started_at_s - r.submitted_at_s, 6),
+            "latency_s": round(r.completed_at_s - r.started_at_s, 6),
             "server_version": server_version,
             "pgvector_version": pgvector_version,
         })
@@ -533,6 +554,8 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             fieldnames=["source_example_id", "status", "error", "output_chars",
                         "prediction", "reference_answers",
                         "finish_reason", "output_tokens",
+                        "submitted_at_s", "started_at_s", "completed_at_s",
+                        "queue_wait_s", "latency_s",
                         "server_version", "pgvector_version"],
         )
         writer.writeheader()
@@ -553,6 +576,12 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
     error_count = sum(1 for r in results if r.status != "completed" or r.error)
     max_tokens_errors = sum(
         1 for r in results if r.error and "max_tokens" in (r.error or "")
+    )
+    # UNIFIED truncation count across arms: direct_client exposes finish_reason=length;
+    # duckdb_ai maps truncation to a max_tokens error. Both are "the model hit cap".
+    truncation_count = sum(
+        1 for r in results
+        if r.finish_reason == "length" or (r.error and "max_tokens" in (r.error or ""))
     )
     # single_run_valid = 0 error/NULL AND the sink readback matched (when sinking).
     # A readback mismatch (rows did not persist with expected content, or the
@@ -606,6 +635,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         error_count=error_count,
         null_count=null_response,
         max_tokens_errors=max_tokens_errors,
+        truncation_count=truncation_count,
         wall_s=database_e2e_wall_s,
         sunk_rows=written,
     )
@@ -637,6 +667,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         "null_response_count": null_response,
         "error_count": error_count,
         "max_tokens_error_count": max_tokens_errors,
+        "truncation_count": truncation_count,
         "workload_integrity": integrity_label,
         "workload_content_hash": _structured_content_hash(all_rows),
         "importer_content_hash": expected_content_hash,

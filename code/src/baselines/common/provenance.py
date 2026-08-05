@@ -124,6 +124,16 @@ _ADAPTER_PROVENANCE = {
             "bounded_output_zero_error_extension_version_and_same_endpoint"
         ),
     ),
+    "direct_client": AdapterProvenance(
+        comparison_role="direct_service_control",
+        implementation_provenance="project_httpx_async_client",
+        scheduler_owner="asyncio_semaphore_fixed_concurrency_no_project_scheduling",
+        custom_scheduling_code=False,
+        formal_baseline_eligible=False,
+        formal_control_eligible=True,
+        upstream_source="project_implemented (code/src/baselines/text/products/direct_client.py)",
+        qualification_gate="request_equivalence_gate_and_same_endpoint_model_cap",
+    ),
 }
 
 

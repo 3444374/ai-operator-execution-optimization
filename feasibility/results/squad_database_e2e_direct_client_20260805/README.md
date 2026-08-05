@@ -86,3 +86,30 @@ direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（D
   （模型调用 >99%），scan/sink <1%。两臂的差异集中在"截断的产品语义"（NULL vs partial text）而非吞吐。
 - **下一步**：① 补 `project_static` 臂（项目冻结最佳静态）→ 三臂齐全；② 填全 deploy 配置的
   REPLACE_ME（真实 vLLM 配置）→ 重算 service-config-hash；③ 三臂 `1 warmup + 3 formal` 正式排名。
+
+## 8. 审计订正（codex direct_client 复核；不重跑、不覆写原始文件）
+
+> 本节 `report.json` / `per_row_evidence.csv` 是 `535789d` 当时的原始输出，**保持不变**。以下订正
+> 反映后续 runner 口径修复；正式三臂 rerun 时会直接产出订正后字段。
+
+- **统一截断口径**：归档 `report.json` 的 `runner_metrics` 没有 `truncation_count`/`truncation_rate`；
+  但从 `per_row_evidence.csv` 可复算（finish_reason=='length' 的行数 = 1）。订正后的 runner 对所有臂
+  统一报 `truncation_count = count(finish_reason=='length' OR error contains 'max_tokens')`，
+  使三臂比较不会误读 direct 的 `failure_rate=0` 为"无截断"。
+- **per-request latency**：归档 CSV 没有 `submitted_at_s` / `started_at_s` / `completed_at_s` / `queue_wait_s` /
+  `latency_s` 列。订正后的 runner 对每行记录这些时间戳，可算 P50/P95/P99（direct 臂是真正的 per-request；
+  DuckDB 臂所有行共享 barrier 时间戳 → P50=P95=P99 = barrier span）。
+- **共享 timeout**：归档 direct 用 timeout=180s，DuckDB 用 120s（不一致）。订正后用共享 CLI
+  `--request-timeout-s`（默认 120s），两臂必须冻结同一值。
+- **README §6 措辞订正**：
+  - 是"同一 source row（`572700c8…`）在两次 full 中都触顶"，不是"同一个事件"（两次独立运行）。
+  - 2s 差异只是**单次观察**，不能归因为"没有扩展 barrier 开销"。
+  - 两臂是 **adapter/operator dominated**，不能写"模型调用 >99%"。
+  - DuckDB **不使用** direct 的 `build_completion_request_body`；只能说请求等价门禁（`request_equivalence_gate`）
+    验证了两路径关键字段语义等价。
+- **sunk_status.csv**：本次跑（`535789d`）的服务器产出目录有 `sunk_status.csv`，但之前只取回了
+  `report.json` + `per_row_evidence.csv`。现已补取（10570 行）。
+- **provenance**：direct_client 注册为 `comparison_role="direct_service_control"`（非 database product baseline），
+  `scheduler_owner="asyncio_semaphore_fixed_concurrency_no_project_scheduling"`，
+  `formal_baseline_eligible=False`，`formal_control_eligible=True`。
+- **smoke 空集**：`--limit` smoke 的 `_smoke_integrity` 已加空集拒绝（`all([])` 不再真空通过）。

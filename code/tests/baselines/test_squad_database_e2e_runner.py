@@ -96,7 +96,7 @@ class RunnerMetricsTests(unittest.TestCase):
     def test_division_and_rates(self) -> None:
         m = runner._runner_metrics(em_rows=100, success_count=120, row_count=150,
                                    error_count=30, null_count=0, max_tokens_errors=5,
-                                   wall_s=10.0, sunk_rows=120)
+                                   truncation_count=5, wall_s=10.0, sunk_rows=120)
         self.assertEqual(m["correct_rows_per_s"], 10.0)
         self.assertEqual(m["successful_rows_per_s"], 12.0)
         self.assertEqual(m["raw_rows_per_s"], 15.0)
@@ -113,7 +113,7 @@ class RunnerMetricsTests(unittest.TestCase):
         # null_rate are reported separately and MAY overlap.
         m = runner._runner_metrics(em_rows=0, success_count=99, row_count=100,
                                    error_count=1, null_count=1, max_tokens_errors=1,
-                                   wall_s=10.0, sunk_rows=100)
+                                   truncation_count=1, wall_s=10.0, sunk_rows=100)
         self.assertEqual(m["failed_rows"], 1)
         self.assertEqual(m["failure_rate"], round(1 / 100, 6))
         self.assertNotEqual(m["failure_rate"], round(2 / 100, 6))
@@ -121,7 +121,7 @@ class RunnerMetricsTests(unittest.TestCase):
         self.assertEqual(m["null_rate"], round(1 / 100, 6))
 
     def test_zero_wall_is_safe(self) -> None:
-        m = runner._runner_metrics(10, 10, 10, 0, 0, 0, wall_s=0.0, sunk_rows=10)
+        m = runner._runner_metrics(10, 10, 10, 0, 0, 0, 0, wall_s=0.0, sunk_rows=10)
         self.assertEqual(m["correct_rows_per_s"], 0.0)
         self.assertEqual(m["raw_rows_per_s"], 0.0)
 
