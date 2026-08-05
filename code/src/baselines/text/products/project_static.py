@@ -6,9 +6,10 @@ This is the ``project_static`` arm of the SQuAD database-E2E runner. Unlike the
 THIN WRAPPER that subprocess-calls ``postgres_ai_operator_profile.py`` with the
 project's frozen-best static-K configuration. The profiler owns the full chain
 end-to-end -- PG scan of the workload -> Daft token-budget organizer -> Ray actor
-executor -> static per-endpoint K admission + active-work -> vLLM -> unified sink
+executor -> static per-endpoint K admission -> vLLM -> unified sink
 (``document_completions``). The wrapper does NOT scan or sink; it only invokes,
-then assembles evidence.
+then assembles evidence. It is connection-free: all per-doc evidence comes from
+profiler output files.
 
 Why shell out (codex ruling + codebase precedent): the gate runner deliberately
 BLOCKS an inline ``project_profiler`` ("requires_existing_project_profiler") rather
@@ -17,24 +18,40 @@ method IS the profiler path; re-implementing its Ray init + actor pool + organiz
 + scheduler inline would risk diverging from the real method under test. So
 ``run_project_static`` runs the real profiler.
 
-Evidence merge (BaselineRequestResult has no single profiler file source):
-* The request-trace CSV (``--request-trace-output``) carries per-doc timestamps,
-  status, error, finish_reason, output tokens -- but NOT output_text.
-* ``output_text`` is written only to ``document_completions.completion_text`` by
-  the profiler's sink. The wrapper reads it back by ``doc_id`` (the profiler just
-  sank it) and merges it with the request-trace row by ``doc_id``.
+Effective K (contract): the profiler's per-endpoint in-flight ceiling is
+``min(max_inflight, actor_workers_per_endpoint * ray_actor_max_concurrency)``. The
+config REQUIRES ``actor_workers_per_endpoint * ray_actor_max_concurrency >=
+max_inflight`` so the declared K is the EFFECTIVE K (no silent clamp) -- the argv
+records both and the run surfaces ``effective_k``.
+
+Request semantics (frozen for parity with the direct arm): ``temperature=0``,
+``http_transport=httpx_async`` (default urllib would break request parity), and the
+``service-prefix-caching`` label. The cryptographically pinned request-set manifest
+guard is a 2-endpoint pinned-comparison mechanism (it requires endpoint_count >= 2)
+and is NOT applicable to this single-endpoint arm; workload integrity is verified
+by the runner via an independent content hash of the scanned workload.
+
+Evidence (non-circular readback): the profiler emits a run-scoped completion
+evidence CSV (``--completion-evidence-output``) carrying per-doc ``output_text``
+flattened from in-process ``operator_results`` -- INDEPENDENT of the
+``document_completions`` sink. The wrapper builds ``BaselineRequestResult`` +
+``sunk_pairs`` from this file; the runner then compares ``sunk_pairs`` against
+``document_completions`` (two independent sources) so a stale residual row with
+the same doc_id is caught instead of self-proving.
 
 Timing: segment timing lives in the profiler ``--output`` CSV row (one formal row).
-The wrapper surfaces the raw profiler timing fields; the runner maps them to its
-report timing block (``e2e_s``->``database_e2e_wall_s`` etc.). Note the
-``construct_s`` field has no clean profiler analog (the runner's construct_s is
-ChatRequest-object building; the profiler has organizer stages instead) -- the
-runner synthesizes/notes this asymmetry, and the primary headline
-``correct_rows_per_s`` divides EM rows by the comparable ``e2e_s`` wall.
+``database_e2e_wall_s`` is the profiler's ``e2e_s`` -- which is a STRICTLY BROADER
+boundary than the in-process arms' runner-measured wall (it includes the post-loop
+vLLM metrics scrape + trace-CSV IO + finish_job, and excludes actor-ready/Ray-init
+which the in-process arms do not perform). It is therefore NOT directly comparable
+to the in-process arms' ``database_e2e_wall_s``; the report records this asymmetry
+and also surfaces ``operator_wall_s`` (the tighter adapter-equivalent span) +
+``wrapper_wall_s`` (the subprocess wall). Cross-arm absolute-wall comparison
+requires a future unified boundary.
 
 Success detection: subprocess exit 0 AND a formal CSV row with ``status=="ok"``.
-Per-doc failures (status=="failed" in the request trace) become individual
-``BaselineRequestResult(status="failed")``; they do NOT fail the whole run.
+Per-doc failures become individual ``BaselineRequestResult(status="failed")``; they
+do NOT fail the whole run.
 """
 
 from __future__ import annotations
@@ -52,9 +69,12 @@ from src.baselines.common.contracts import BaselineRequestResult
 class ProjectStaticConfig:
     """Frozen project static-K pipeline config (paper method, run via profiler).
 
-    ``token_budget`` and ``max_inflight`` are the frozen text-track static values
-    (sequential token-budget organizer + static per-endpoint K). They are REQUIRED
-    (no default) so a caller can never silently run an un-frozen guess.
+    ``token_budget``, ``max_inflight``, ``actor_workers_per_endpoint``, and
+    ``ray_actor_max_concurrency`` are the frozen text-track static values. They are
+    REQUIRED (no default) so a caller can never silently run an un-frozen guess.
+    ``actor_workers_per_endpoint * ray_actor_max_concurrency`` must be >=
+    ``max_inflight`` so the declared K is the EFFECTIVE K (the profiler would
+    otherwise silently clamp per-endpoint inflight to the actor-pool slot count).
     """
 
     database_url: str
@@ -64,13 +84,17 @@ class ProjectStaticConfig:
     max_tokens: int
     token_budget: int
     max_inflight: int
+    actor_workers_per_endpoint: int
+    ray_actor_max_concurrency: int
     api_key: str = "EMPTY"
     writeback_mode: str = "json_text"
     write_batch_rows: int = 500
-    sink_category: str = "squad"
     total_rows: int = 0
     ray_batch_rows: int = 64
     request_timeout_s: float = 120.0
+    completion_temperature: float = 0.0
+    completion_http_transport: str = "httpx_async"
+    service_prefix_caching: str = "enabled"
     python_executable: str = ""
     profiler_script: str = (
         "code/scripts/profiling/postgres_ai_operator_profile.py"
@@ -92,10 +116,35 @@ class ProjectStaticConfig:
             raise ValueError("token_budget must be positive (frozen static value)")
         if self.max_inflight <= 0:
             raise ValueError("max_inflight must be positive (frozen per-endpoint K)")
+        if self.actor_workers_per_endpoint <= 0:
+            raise ValueError("actor_workers_per_endpoint must be positive")
+        if self.ray_actor_max_concurrency <= 0:
+            raise ValueError("ray_actor_max_concurrency must be positive")
+        slots = self.actor_workers_per_endpoint * self.ray_actor_max_concurrency
+        if slots < self.max_inflight:
+            raise ValueError(
+                f"actor_workers_per_endpoint * ray_actor_max_concurrency "
+                f"({slots}) < max_inflight ({self.max_inflight}): the profiler "
+                f"would silently clamp effective per-endpoint K to {slots}. Raise "
+                f"the actor topology so effective K == declared K."
+            )
         if self.writeback_mode not in ("none", "json_text"):
             raise ValueError("project_static writeback_mode must be none or json_text")
+        if self.completion_http_transport not in ("urllib", "httpx_async"):
+            raise ValueError("completion_http_transport must be urllib or httpx_async")
+        if self.service_prefix_caching not in ("enabled", "disabled", "unknown"):
+            raise ValueError("service_prefix_caching must be enabled/disabled/unknown")
         if not self.scenario_id:
             raise ValueError("scenario_id must be non-empty (profiler requires it)")
+
+    @property
+    def effective_k(self) -> int:
+        """The profiler's actual per-endpoint in-flight ceiling."""
+
+        return min(
+            self.max_inflight,
+            self.actor_workers_per_endpoint * self.ray_actor_max_concurrency,
+        )
 
 
 @dataclass(frozen=True)
@@ -105,14 +154,15 @@ class ProjectStaticRun:
     results: tuple[BaselineRequestResult, ...]
     sunk_pairs: tuple[tuple[int, str], ...]
     timing: dict[str, float]
+    effective_k: int
+    actor_workers_per_endpoint: int
+    ray_actor_max_concurrency: int
     exit_code: int
     formal_row_found: bool
     stderr_tail: str
 
 
 def _to_float(value: str) -> float:
-    """Parse a profiler CSV numeric cell that may be empty for failed rows."""
-
     if value is None or value == "":
         return 0.0
     try:
@@ -130,24 +180,18 @@ def _to_int(value: str, default: int = 0) -> int:
         return default
 
 
-def _parse_endpoint_index(value: str) -> int:
-    """Profiler request-trace ``endpoint_id`` is ``endpoint-{i}``; parse to int."""
-
-    if not value:
-        return 0
-    text = value.strip()
-    if text.startswith("endpoint-"):
-        text = text[len("endpoint-"):]
-    return _to_int(text, 0)
-
-
 def build_profiler_argv(
-    config: ProjectStaticConfig, trace_path: str, summary_path: str,
+    config: ProjectStaticConfig,
+    trace_path: str,
+    evidence_path: str,
+    summary_path: str,
 ) -> list[str]:
     """The frozen static-K argv for ``postgres_ai_operator_profile.py``.
 
-    Pure (no I/O) so a unit test can assert the exact flags. Single formal run
-    (``--run-phase formal --run-repeat-index 1``) emits exactly one formal row.
+    Pure (no I/O) so a unit test can assert the exact flags + that effective K is
+    self-consistent. Single formal run (``--run-phase formal --run-repeat-index 1``)
+    emits exactly one formal row. ``--request-trace-output`` is required to populate
+    the lifecycle events the completion-evidence emit joins on.
     """
 
     argv = [
@@ -164,6 +208,9 @@ def build_profiler_argv(
         "--completion-max-tokens", str(config.max_tokens),
         "--completion-protocol", "chat_completions",
         "--completion-request-timeout-s", str(config.request_timeout_s),
+        "--completion-temperature", str(config.completion_temperature),
+        "--completion-http-transport", config.completion_http_transport,
+        "--service-prefix-caching", config.service_prefix_caching,
         "--batching-policy", "token_budget",
         "--token-budget", str(config.token_budget),
         "--token-budget-policy", "static",
@@ -171,6 +218,8 @@ def build_profiler_argv(
         "--scheduling-policy", "static",
         "--admission-scope", "per_endpoint",
         "--max-inflight", str(config.max_inflight),
+        "--actor-workers-per-endpoint", str(config.actor_workers_per_endpoint),
+        "--ray-actor-max-concurrency", str(config.ray_actor_max_concurrency),
         "--executor", "ray_actor",
         "--submission-granularity", "request",
         "--writeback-mode", config.writeback_mode,
@@ -182,6 +231,7 @@ def build_profiler_argv(
         "--scenario-id", config.scenario_id,
         "--experiment-id", "project_static_squad",
         "--request-trace-output", trace_path,
+        "--completion-evidence-output", evidence_path,
         "--output", summary_path,
     ]
     if config.total_rows > 0:
@@ -189,10 +239,12 @@ def build_profiler_argv(
     return argv
 
 
-def read_request_trace(path: Path) -> dict[int, dict]:
-    """Read the request-trace CSV -> ``{doc_id: row}`` (last row wins per doc_id).
+def read_completion_evidence(path: Path) -> dict[int, dict]:
+    """Read the completion-evidence CSV -> ``{doc_id: row}``.
 
-    Pure (file read). Returns only the fields the merge needs, keyed by doc_id.
+    Pure (file read). The evidence file is the single per-doc source: it carries
+    output_text (independent of the sink) plus the timestamps/status/finish_reason/
+    tokens the wrapper needs to build ``BaselineRequestResult``.
     """
 
     by_doc: dict[int, dict] = {}
@@ -228,8 +280,6 @@ def read_summary_timing(path: Path, scenario_id: str) -> tuple[dict, bool]:
         for row in csv.DictReader(f):
             if row.get("status") != "ok" or row.get("phase") != "formal":
                 continue
-            # Empty scenario_id is a non-match (defensive; the wrapper always
-            # passes a non-empty scenario_id and the profiler writes it through).
             if row.get("scenario_id", "") != scenario_id:
                 continue
             found = {k: _to_float(row.get(k, "")) for k in timing_fields}
@@ -237,131 +287,94 @@ def read_summary_timing(path: Path, scenario_id: str) -> tuple[dict, bool]:
     return (found, found_row)
 
 
-def read_output_text(conn, doc_ids: list[int], category: str) -> dict[int, str]:
-    """Read ``document_completions.completion_text`` back by doc_id.
+def merge_results(evidence_by_doc: dict[int, dict]) -> tuple[BaselineRequestResult, ...]:
+    """Build ``BaselineRequestResult`` from the completion-evidence rows.
 
-    The profiler's own sink wrote these rows; this is the only source of per-doc
-    ``output_text`` (no profiler file carries it). Failed rows have empty
-    completion_text (NULL->"" at sink). If a doc_id appears more than once
-    (stale residual from a prior run), the sink readback in the runner catches
-    the content-digest mismatch and fails closed.
-    """
-
-    if not doc_ids:
-        return {}
-    with conn.cursor() as cur:
-        cur.execute(
-            "SELECT doc_id, completion_text FROM document_completions "
-            "WHERE doc_id = ANY(%s) AND category = %s",
-            (doc_ids, category),
-        )
-        fetched = cur.fetchall()
-    out: dict[int, str] = {}
-    for doc_id, text in fetched:
-        out[int(doc_id)] = "" if text is None else str(text)
-    return out
-
-
-def merge_results(
-    trace_by_doc: dict[int, dict], output_text_by_doc: dict[int, str],
-) -> tuple[BaselineRequestResult, ...]:
-    """Merge request-trace rows + output_text -> ``BaselineRequestResult`` tuple.
-
-    Pure. ``started_at_s`` falls back to ``submitted`` for failed rows (the
-    profiler leaves ``service_start_epoch_s`` empty when a submission never
-    reached the service). ``output_tokens`` falls back to 0 when the backend did
-    not return per-choice token counts.
+    Pure. ``started_at_s`` falls back to ``completed`` for failed rows (the
+    evidence leaves ``service_start_epoch_s`` empty when a submission never
+    reached the service) so a failed row's queue time does not pull down
+    ``min(started)`` and overstate the runner's operator span. ``endpoint_index``
+    is 0 (this is a single-endpoint arm).
     """
 
     results: list[BaselineRequestResult] = []
-    for doc_id, row in sorted(trace_by_doc.items()):
+    for doc_id, row in sorted(evidence_by_doc.items()):
         submitted = _to_float(row.get("submit_epoch_s", ""))
         completed = _to_float(row.get("completion_epoch_s", "")) or submitted
-        # Failed rows have empty service_start_epoch_s (the submission never
-        # reached the service). Fall back to ``completed`` (NOT ``submitted``) so
-        # a failed row's queue time does not pull down min(started) and overstate
-        # the runner's operator span; the row still contributes its completion.
         started = _to_float(row.get("service_start_epoch_s", "")) or completed
         status = row.get("status") or "failed"
+        output_text = row.get("output_text")
         results.append(BaselineRequestResult(
             doc_id=doc_id,
-            endpoint_index=_parse_endpoint_index(row.get("endpoint_id", "")),
+            endpoint_index=0,
             status="completed" if status == "completed" else "failed",
             error=(row.get("error_type") or None),
             submitted_at_s=submitted,
             started_at_s=started,
             completed_at_s=completed,
             input_tokens=_to_int(row.get("prompt_tokens", "")),
-            output_tokens=_to_int(row.get("actual_output_tokens", "")),
-            output_text=output_text_by_doc.get(doc_id),
+            output_tokens=_to_int(row.get("output_tokens", "")),
+            output_text=(output_text if output_text else None),
             finish_reason=(row.get("finish_reason") or None),
         ))
     return tuple(results)
 
 
 def run_project_static(
-    config: ProjectStaticConfig, work_dir: Path, conn,
+    config: ProjectStaticConfig, work_dir: Path,
 ) -> ProjectStaticRun:
     """Invoke the profiler (frozen static-K) and assemble BaselineRequestResult.
 
-    ``work_dir`` receives the profiler's request-trace + summary CSV (temporary,
-    caller-managed) and is CLEARED per invocation so a ``--force`` re-run into the
-    same dir can never merge fresh results with stale append-mode profiler output.
-    ``conn`` is used ONLY for the post-run ``output_text`` readback from
-    ``document_completions`` (the profiler's sink output); the profiler owns scan
-    + sink. Raises if the profiler exits non-zero or no formal ok row was produced.
+    Connection-free: all per-doc evidence comes from the profiler's completion
+    -evidence CSV (output_text, independent of the sink) + the summary CSV (timing).
+    ``work_dir`` is CLEARED per invocation so a ``--force`` re-run can never merge
+    fresh results with stale append-mode profiler output. Raises (returns a failed
+    ``ProjectStaticRun``) if the profiler exits non-zero or no formal ok row was
+    produced.
     """
 
-    # Clear stale append-mode output from any prior run into this dir: the
-    # profiler's --output/--request-trace CSVs open in append mode, and
-    # read_summary_timing/read_request_trace must see ONLY this invocation's rows.
     shutil.rmtree(work_dir, ignore_errors=True)
     work_dir.mkdir(parents=True, exist_ok=True)
     trace_path = work_dir / "project_static_request_trace.csv"
+    evidence_path = work_dir / "project_static_completion_evidence.csv"
     summary_path = work_dir / "project_static_summary.csv"
 
     python = config.python_executable or "python"
     cmd = [python, config.profiler_script] + build_profiler_argv(
-        config, str(trace_path), str(summary_path),
+        config, str(trace_path), str(evidence_path), str(summary_path),
     )
-    completed = subprocess.run(
-        cmd, capture_output=True, text=True,
-    )
+    completed = subprocess.run(cmd, capture_output=True, text=True)
     stderr_tail = (completed.stderr or "")[-1600:]
 
+    def _failed(timing: dict, formal_ok: bool, note: str = "") -> ProjectStaticRun:
+        return ProjectStaticRun(
+            results=(), sunk_pairs=(), timing=timing, formal_row_found=formal_ok,
+            effective_k=config.effective_k,
+            actor_workers_per_endpoint=config.actor_workers_per_endpoint,
+            ray_actor_max_concurrency=config.ray_actor_max_concurrency,
+            exit_code=completed.returncode,
+            stderr_tail=stderr_tail + (("\n" + note) if note else ""),
+        )
+
     if completed.returncode != 0:
-        return ProjectStaticRun(
-            results=(), sunk_pairs=(), timing={}, exit_code=completed.returncode,
-            formal_row_found=False, stderr_tail=stderr_tail,
-        )
-    if not trace_path.exists() or not summary_path.exists():
-        return ProjectStaticRun(
-            results=(), sunk_pairs=(), timing={}, exit_code=completed.returncode,
-            formal_row_found=False,
-            stderr_tail=stderr_tail + "\nprofiler did not emit trace/summary files",
-        )
+        return _failed({}, False)
+    if not evidence_path.exists() or not summary_path.exists():
+        return _failed({}, False, "profiler did not emit evidence/summary files")
 
     timing, formal_ok = read_summary_timing(summary_path, config.scenario_id)
     if not formal_ok:
-        return ProjectStaticRun(
-            results=(), sunk_pairs=(), timing=timing, exit_code=completed.returncode,
-            formal_row_found=False,
-            stderr_tail=stderr_tail + "\nno formal status==ok row in profiler summary",
-        )
+        return _failed(timing, False, "no formal status==ok row in profiler summary")
 
-    trace_by_doc = read_request_trace(trace_path)
-    doc_ids = sorted(trace_by_doc)
-    output_text_by_doc = (
-        read_output_text(conn, doc_ids, config.sink_category)
-        if config.writeback_mode != "none" else {}
-    )
-    results = merge_results(trace_by_doc, output_text_by_doc)
+    evidence_by_doc = read_completion_evidence(evidence_path)
+    results = merge_results(evidence_by_doc)
     sunk_pairs = tuple(
-        (doc_id, output_text_by_doc.get(doc_id, ""))
-        for doc_id in doc_ids
+        (doc_id, (row.get("output_text") or ""))
+        for doc_id, row in sorted(evidence_by_doc.items())
     )
     return ProjectStaticRun(
-        results=results, sunk_pairs=sunk_pairs, timing=timing,
-        exit_code=completed.returncode, formal_row_found=True,
-        stderr_tail=stderr_tail,
+        results=results, sunk_pairs=sunk_pairs, timing=timing, formal_row_found=True,
+        effective_k=config.effective_k,
+        actor_workers_per_endpoint=config.actor_workers_per_endpoint,
+        ray_actor_max_concurrency=config.ray_actor_max_concurrency,
+        exit_code=completed.returncode, stderr_tail=stderr_tail,
     )

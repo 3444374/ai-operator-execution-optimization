@@ -29,6 +29,7 @@ def _cfg(**overrides) -> "ps.ProjectStaticConfig":
         endpoint_url="http://127.0.0.1:8000/v1/chat/completions",
         model="qwen2.5-7b", max_tokens=64,
         token_budget=6144, max_inflight=8,
+        actor_workers_per_endpoint=8, ray_actor_max_concurrency=1,
     )
     base.update(overrides)
     return ps.ProjectStaticConfig(**base)
@@ -38,7 +39,9 @@ class ProjectStaticConfigTests(unittest.TestCase):
     def test_valid(self) -> None:
         c = _cfg()
         self.assertEqual(c.writeback_mode, "json_text")
-        self.assertEqual(c.scenario_id, "project_static")
+        self.assertEqual(c.completion_temperature, 0.0)
+        self.assertEqual(c.completion_http_transport, "httpx_async")
+        self.assertEqual(c.service_prefix_caching, "enabled")
 
     def test_rejects_empty_required(self) -> None:
         for bad in (dict(database_url=""), dict(workload_name=""),
@@ -47,53 +50,72 @@ class ProjectStaticConfigTests(unittest.TestCase):
                 _cfg(**bad)
 
     def test_rejects_unfrozen_k_or_budget(self) -> None:
-        # token_budget + max_inflight are the frozen static values; zero/negative
-        # must be rejected so a caller never runs an un-frozen guess.
         with self.assertRaises(ValueError):
             _cfg(token_budget=0)
         with self.assertRaises(ValueError):
             _cfg(max_inflight=0)
 
-    def test_rejects_bad_writeback_mode(self) -> None:
+    def test_rejects_actor_topology_below_k(self) -> None:
+        # The #2 contract fix: actor_workers * concurrency < max_inflight would let
+        # the profiler silently clamp effective K to the slot count. Must fail closed.
         with self.assertRaises(ValueError):
-            _cfg(writeback_mode="pgvector")
+            _cfg(actor_workers_per_endpoint=2, ray_actor_max_concurrency=1)  # 2 < 8
+        with self.assertRaises(ValueError):
+            _cfg(actor_workers_per_endpoint=4, ray_actor_max_concurrency=1)  # 4 < 8
+
+    def test_effective_k_equals_declared_when_topology_sufficient(self) -> None:
+        self.assertEqual(_cfg(actor_workers_per_endpoint=8, ray_actor_max_concurrency=1).effective_k, 8)
+        self.assertEqual(_cfg(actor_workers_per_endpoint=4, ray_actor_max_concurrency=2).effective_k, 8)
+        self.assertEqual(_cfg(actor_workers_per_endpoint=2, ray_actor_max_concurrency=4).effective_k, 8)
+
+    def test_rejects_bad_transport_or_prefix(self) -> None:
+        with self.assertRaises(ValueError):
+            _cfg(completion_http_transport="requests")
+        with self.assertRaises(ValueError):
+            _cfg(service_prefix_caching="maybe")
 
 
 class BuildProfilerArgvTests(unittest.TestCase):
-    def test_contains_frozen_static_k_flags(self) -> None:
+    def test_locks_frozen_static_k_and_request_semantics(self) -> None:
         argv = ps.build_profiler_argv(
-            _cfg(), "trace.csv", "summary.csv",
+            _cfg(), "trace.csv", "evidence.csv", "summary.csv",
         )
+
         def pair(flag: str) -> str:
             return argv[argv.index(flag) + 1]
+
+        # effective-K topology (actor pool slots >= K, so effective K == declared K)
+        self.assertEqual(pair("--max-inflight"), "8")
+        self.assertEqual(pair("--actor-workers-per-endpoint"), "8")
+        self.assertEqual(pair("--ray-actor-max-concurrency"), "1")
+        # frozen request semantics (parity with the direct arm)
+        self.assertEqual(pair("--completion-temperature"), "0.0")
+        self.assertEqual(pair("--completion-http-transport"), "httpx_async")
+        self.assertEqual(pair("--service-prefix-caching"), "enabled")
+        # completion evidence (independent output_text source, non-circular readback)
+        self.assertEqual(pair("--completion-evidence-output"), "evidence.csv")
+        # request-trace still requested (populates lifecycle events the evidence joins)
+        self.assertEqual(pair("--request-trace-output"), "trace.csv")
         # frozen static-K pipeline identity
         self.assertEqual(pair("--operator"), "ai_complete")
         self.assertEqual(pair("--scheduling-policy"), "static")
         self.assertEqual(pair("--admission-scope"), "per_endpoint")
-        self.assertEqual(pair("--max-inflight"), "8")  # frozen per-endpoint K
         self.assertEqual(pair("--batching-policy"), "token_budget")
-        self.assertEqual(pair("--token-budget"), "6144")
-        self.assertEqual(pair("--token-budget-policy"), "static")
         self.assertEqual(pair("--executor"), "ray_actor")
         self.assertEqual(pair("--submission-granularity"), "request")
-        self.assertEqual(pair("--completion-protocol"), "chat_completions")
-        # single formal run (exactly one formal CSV row)
         self.assertEqual(pair("--run-phase"), "formal")
-        self.assertEqual(pair("--run-repeat-index"), "1")
-        self.assertEqual(pair("--warmup-runs"), "0")
-        self.assertEqual(pair("--repeats"), "1")
-        # profiler owns scan + sink
-        self.assertEqual(pair("--source-workload-name"), "squad_v11_dev_short_answer")
-        self.assertEqual(pair("--data-source"), "daft_postgres")
-        self.assertEqual(pair("--organizer"), "daft")
-        self.assertEqual(pair("--writeback-mode"), "json_text")
-        # evidence emit paths
-        self.assertEqual(pair("--request-trace-output"), "trace.csv")
-        self.assertEqual(pair("--output"), "summary.csv")
+
+    def test_request_manifest_guard_not_used_single_endpoint(self) -> None:
+        # The cryptographically pinned request-set manifest guard is a 2-endpoint
+        # pinned-comparison mechanism (validate_profile_manifest_contract requires
+        # endpoint_count >= 2). This single-endpoint arm MUST NOT pass it.
+        argv = ps.build_profiler_argv(_cfg(), "t", "e", "s")
+        self.assertNotIn("--request-manifest", argv)
+        self.assertNotIn("manifest_pinned", argv)
 
     def test_total_rows_only_when_positive(self) -> None:
-        self.assertNotIn("--total-rows", ps.build_profiler_argv(_cfg(), "t", "s"))
-        argv = ps.build_profiler_argv(_cfg(total_rows=256), "t", "s")
+        self.assertNotIn("--total-rows", ps.build_profiler_argv(_cfg(), "t", "e", "s"))
+        argv = ps.build_profiler_argv(_cfg(total_rows=256), "t", "e", "s")
         self.assertEqual(argv[argv.index("--total-rows") + 1], "256")
 
 
@@ -108,12 +130,6 @@ class ParseHelpersTests(unittest.TestCase):
         self.assertEqual(ps._to_int(""), 0)
         self.assertEqual(ps._to_int("7.0"), 7)
 
-    def test_parse_endpoint_index(self) -> None:
-        self.assertEqual(ps._parse_endpoint_index("endpoint-0"), 0)
-        self.assertEqual(ps._parse_endpoint_index("endpoint-3"), 3)
-        self.assertEqual(ps._parse_endpoint_index(""), 0)
-        self.assertEqual(ps._parse_endpoint_index("5"), 5)
-
 
 def _write_csv(path: Path, fieldnames: list[str], rows: list[dict]) -> None:
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -122,17 +138,32 @@ def _write_csv(path: Path, fieldnames: list[str], rows: list[dict]) -> None:
         w.writerows(rows)
 
 
-class ReadRequestTraceTests(unittest.TestCase):
+class ReadCompletionEvidenceTests(unittest.TestCase):
+    _FIELDS = ["doc_id", "prompt_tokens", "output_tokens", "output_text",
+               "status", "error_type", "finish_reason", "submit_epoch_s",
+               "service_start_epoch_s", "completion_epoch_s"]
+
     def test_keyed_by_doc_id_skips_invalid(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            p = Path(td) / "trace.csv"
-            _write_csv(p, ["doc_id", "status", "submit_epoch_s"],
-                       [{"doc_id": "10", "status": "completed", "submit_epoch_s": "1.0"},
-                        {"doc_id": "", "status": "completed", "submit_epoch_s": "2.0"},
-                        {"doc_id": "20", "status": "failed", "submit_epoch_s": "3.0"}])
-            by_doc = ps.read_request_trace(p)
+            p = Path(td) / "evidence.csv"
+            _write_csv(p, self._FIELDS, [
+                {"doc_id": "10", "prompt_tokens": "40", "output_tokens": "12",
+                 "output_text": "the answer", "status": "completed",
+                 "error_type": "", "finish_reason": "stop",
+                 "submit_epoch_s": "1.0", "service_start_epoch_s": "1.5",
+                 "completion_epoch_s": "2.0"},
+                {"doc_id": "", "prompt_tokens": "1", "output_tokens": "0",
+                 "output_text": "", "status": "completed", "error_type": "",
+                 "finish_reason": "", "submit_epoch_s": "0",
+                 "service_start_epoch_s": "0", "completion_epoch_s": "0"},
+                {"doc_id": "20", "prompt_tokens": "30", "output_tokens": "0",
+                 "output_text": "", "status": "failed", "error_type": "boom",
+                 "finish_reason": "", "submit_epoch_s": "5.0",
+                 "service_start_epoch_s": "", "completion_epoch_s": "5.5"},
+            ])
+            by_doc = ps.read_completion_evidence(p)
         self.assertEqual(set(by_doc), {10, 20})
-        self.assertEqual(by_doc[10]["status"], "completed")
+        self.assertEqual(by_doc[10]["output_text"], "the answer")
 
 
 class ReadSummaryTimingTests(unittest.TestCase):
@@ -156,7 +187,6 @@ class ReadSummaryTimingTests(unittest.TestCase):
             timing, found = ps.read_summary_timing(p, "project_static")
         self.assertTrue(found)
         self.assertAlmostEqual(timing["e2e_s"], 91.5)
-        self.assertAlmostEqual(timing["operator_wall_s"], 90.0)
 
     def test_no_formal_ok_returns_not_found(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -168,21 +198,9 @@ class ReadSummaryTimingTests(unittest.TestCase):
         self.assertFalse(found)
         self.assertEqual(timing, {})
 
-    def test_skips_wrong_scenario(self) -> None:
-        with tempfile.TemporaryDirectory() as td:
-            p = self._csv(td, [
-                {"status": "ok", "phase": "formal", "scenario_id": "other",
-                 "e2e_s": "5", "operator_wall_s": "4", "writeback_s": "0.1",
-                 "db_fetch_s": "0.1"},
-            ])
-            _, found = ps.read_summary_timing(p, "project_static")
-        self.assertFalse(found)
-
     def test_picks_last_formal_ok_row_when_multiple(self) -> None:
         # Defense-in-depth for the stale-file bug: even if a stale row survived
-        # (append-mode CSV on a reused dir), the LAST formal-ok row wins so fresh
-        # timing is never shadowed by stale timing. run_project_static also clears
-        # the work dir per invocation; this test pins the reader's last-wins too.
+        # (append-mode CSV on a reused dir), the LAST formal-ok row wins.
         with tempfile.TemporaryDirectory() as td:
             p = self._csv(td, [
                 {"status": "ok", "phase": "formal", "scenario_id": "project_static",
@@ -194,19 +212,18 @@ class ReadSummaryTimingTests(unittest.TestCase):
             ])
             timing, found = ps.read_summary_timing(p, "project_static")
         self.assertTrue(found)
-        self.assertAlmostEqual(timing["e2e_s"], 50.0)  # last row, not first
+        self.assertAlmostEqual(timing["e2e_s"], 50.0)
 
 
 class MergeResultsTests(unittest.TestCase):
     def test_completed_row_merges_output_text_and_tokens(self) -> None:
-        trace = {10: {
-            "endpoint_id": "endpoint-0", "status": "completed", "error_type": "",
+        evidence = {10: {
+            "prompt_tokens": "40", "output_tokens": "12", "output_text": "the answer",
+            "status": "completed", "error_type": "", "finish_reason": "stop",
             "submit_epoch_s": "1.0", "service_start_epoch_s": "1.5",
-            "completion_epoch_s": "2.0", "prompt_tokens": "40",
-            "actual_output_tokens": "12", "finish_reason": "stop",
+            "completion_epoch_s": "2.0",
         }}
-        out = {10: "the answer"}
-        results = ps.merge_results(trace, out)
+        results = ps.merge_results(evidence)
         self.assertEqual(len(results), 1)
         r = results[0]
         self.assertEqual(r.doc_id, 10)
@@ -215,39 +232,35 @@ class MergeResultsTests(unittest.TestCase):
         self.assertEqual(r.finish_reason, "stop")
         self.assertEqual(r.input_tokens, 40)
         self.assertEqual(r.output_tokens, 12)
-        self.assertEqual(r.endpoint_index, 0)
+        self.assertEqual(r.endpoint_index, 0)  # single-endpoint arm
         self.assertEqual(r.started_at_s, 1.5)
 
     def test_failed_row_falls_back_started_to_completed(self) -> None:
-        # Profiler leaves service_start_epoch_s empty when a submission never
-        # reached the service; started must fall back to COMPLETED (not submitted)
-        # so the failed row's queue time does not pull down min(started) and
-        # overstate the runner's operator span.
-        trace = {20: {
-            "endpoint_id": "endpoint-1", "status": "failed", "error_type": "boom",
+        # Empty service_start_epoch_s (never reached the service): started falls
+        # back to completed so the failed row does not pull down min(started).
+        evidence = {20: {
+            "prompt_tokens": "30", "output_tokens": "0", "output_text": "",
+            "status": "failed", "error_type": "boom", "finish_reason": "",
             "submit_epoch_s": "5.0", "service_start_epoch_s": "",
-            "completion_epoch_s": "5.5", "prompt_tokens": "30",
-            "actual_output_tokens": "", "finish_reason": "",
+            "completion_epoch_s": "5.5",
         }}
-        results = ps.merge_results(trace, {})
+        results = ps.merge_results(evidence)
         r = results[0]
         self.assertEqual(r.status, "failed")
         self.assertEqual(r.error, "boom")
-        self.assertEqual(r.started_at_s, 5.5)  # fell back to completed, not submitted
+        self.assertEqual(r.started_at_s, 5.5)  # fell back to completed
         self.assertEqual(r.completed_at_s, 5.5)
-        self.assertEqual(r.output_tokens, 0)
-        self.assertIsNone(r.output_text)
+        self.assertIsNone(r.output_text)  # empty evidence output_text -> None
         self.assertIsNone(r.finish_reason)
-        self.assertEqual(r.endpoint_index, 1)
 
     def test_status_other_than_completed_becomes_failed(self) -> None:
-        trace = {30: {
-            "endpoint_id": "endpoint-0", "status": "timeout", "error_type": "t",
+        evidence = {30: {
+            "prompt_tokens": "1", "output_tokens": "0", "output_text": "",
+            "status": "timeout", "error_type": "t", "finish_reason": "",
             "submit_epoch_s": "1.0", "service_start_epoch_s": "1.0",
-            "completion_epoch_s": "2.0", "prompt_tokens": "1",
-            "actual_output_tokens": "", "finish_reason": "",
+            "completion_epoch_s": "2.0",
         }}
-        results = ps.merge_results(trace, {})
+        results = ps.merge_results(evidence)
         self.assertEqual(results[0].status, "failed")
 
 

@@ -4605,3 +4605,32 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
   strict-attribution SystemExit vs sink-readback status=failure 的产物不对称是有意设计。
 - 本地：6 文件 py_compile 通过；provenance 5/5 + project_static 纯函数 17/17 绿。runner 集成测试需服务器
   （psycopg/duckdb）。下一步：服务器 smoke（`--limit` 小规模）→ 再决定 full/三臂 1w+3f。
+
+## 2026-08-06 project_static 7 项契约修复（PS6，codex 复核 13a8746 后）
+
+- codex 复核 `13a8746` 暂不批准 256 smoke，列 7 项阻断。本轮按裁决全修，未跑 smoke、未跑 full、未改 cap。
+- **#1 测试**：2 个 project_static 测试错误 `assertRaises(SystemExit)`，但 `main()` 捕获 BaseException 返回 1 +
+  写 `failure_report.json`。改为断言返回码（rc==1）+ failure_report，不断言异常。
+- **#2 effective K**：wrapper 只传 `--max-inflight=8`，未传 actor 拓扑，profiler 默认 2 actors×1 → 有效 K 被静默
+  夹到 2。修复：`ProjectStaticConfig` 必填 `actor_workers_per_endpoint`/`ray_actor_max_concurrency`，且强制
+  `actor_workers × concurrency >= max_inflight`（fail-closed），argv 显式传两者，report identity 记 `effective_k`/`declared_max_inflight`/拓扑。
+- **#3 请求语义**：argv 未冻结 temperature/transport/prefix-caching。修复：显式传 `--completion-temperature 0`、
+  `--completion-http-transport httpx_async`（默认 urllib 会破坏与 direct 臂的请求等价）、`--service-prefix-caching`。
+  **请求 manifest guard 是 2-endpoint pinned-comparison 机制（`validate_profile_manifest_contract` 要求 endpoint_count>=2），
+  单 endpoint 臂不用**；argv 单测锁定 transport/temperature/prefix-caching 并断言 `--request-manifest` 不出现。
+- **#4 sink readback 循环自证**：wrapper 先从 `document_completions` 读 output_text，又把同一内容当 expected digest
+  核对同表。修复：profiler 新增 opt-in `--completion-evidence-output`（`traces.write_completion_evidence`，从 in-process
+  `operator_results` 展平 output_text，独立于 sink；zero behavior change when unset），wrapper 从该 evidence 文件取
+  output_text，runner 的 `_sink_readback` 比较 evidence vs `document_completions`（两个独立来源）。wrapper 变无连接。
+- **#5 workload integrity 高估**：原把 importer hash 直接填入 `workload_content_hash`，未散列 profiler 实际扫描内容。
+  修复：runner 读取 workload（doc_id/text/source_example_id/answers，NOT operator scan），`_structured_content_hash`
+  计算，full 用 `_validate_workload_integrity` fail-closed 核对 importer，smoke 记 subset hash；`workload_content_hash`
+  填实际 hash；source_example_id 唯一性 fail-closed。
+- **#6 计时不可比**：profiler `e2e_s` 含 metrics scrape + trace IO + finish_job、排除 actor-ready，比进程内臂 wall 更宽。
+  撤回「IS comparable」声明：report timing note + docs 明确「NOT directly comparable」，改荐 `operator_wall_s`/`wrapper_wall_s`，
+  跨臂绝对 wall 比较需未来统一边界。
+- **#7 provenance 与执行不一致**：`scheduler_owner` 声称 `active_work` 但未传 `--max-active-work-per-endpoint`（默认 0=禁用）。
+  诚实化：重命名为 `project_ray_static_k`（去掉 active_work）；argv 不冻结 active-work credit（正式 ranking 若需再冻结）。
+- 本地：全 py_compile 通过；provenance 5/5 + project_static unit 18/18 + completion-evidence emit 3/3 绿；
+  runner 集成测试（含 #1 rc==1 + workload-integrity fail-closed + 6 个 project_static 用例）需服务器跑 196/196。
+- 下一步：服务器验 196/196 + argv 锁定后，才允许 256 smoke；仍不跑 full、不改 cap。

@@ -140,14 +140,17 @@ _ADAPTER_PROVENANCE = {
         # neither a vendor/product baseline nor a project control. Distinct from
         # direct_client_control (a bare-client control that isolates framework/
         # scheduling overhead): project_static IS the paper's frozen static
-        # scheduler (Ray actor + static K/active-work + token-budget organizer)
-        # run via the existing profiler. formal_control_eligible=True here follows
-        # this codebase's operational meaning ("eligible to enter the formal
-        # comparison matrix"), NOT "is a control arm"; the project_scheduled_method
-        # role is the discriminator that keeps it out of control/baseline groupings.
+        # scheduler (Ray actor + static per-endpoint K + token-budget organizer)
+        # run via the existing profiler. scheduler_owner names ONLY what is
+        # actually frozen and passed: static per-endpoint K + token-budget (no
+        # active-work credit is passed, so it is NOT claimed). formal_control_
+        # eligible=True follows this codebase's operational meaning ("eligible to
+        # enter the formal comparison matrix"), NOT "is a control arm"; the
+        # project_scheduled_method role is the discriminator that keeps it out of
+        # control/baseline groupings.
         comparison_role="project_scheduled_method",
         implementation_provenance="project_frozen_static_profiler",
-        scheduler_owner="project_ray_static_k_and_active_work",
+        scheduler_owner="project_ray_static_k",
         custom_scheduling_code=True,
         formal_baseline_eligible=False,
         formal_control_eligible=True,

@@ -354,8 +354,9 @@ class ProjectStaticArmTests(unittest.TestCase):
 
     def _run_ps_main(
         self, *, profiler_ok: bool = True, readback_matched: bool = True,
-        token_budget: int = 6144, max_inflight: int = 8,
-    ) -> tuple[int, dict, object]:
+        integrity_ok: bool = True, token_budget: int = 6144, max_inflight: int = 8,
+        actor_workers: int = 8, ray_concurrency: int = 1,
+    ) -> tuple[int, dict, object, bool]:
         with _scratch_dir() as td:
             out = td / "result"
             prov = td / "prov.json"
@@ -373,6 +374,8 @@ class ProjectStaticArmTests(unittest.TestCase):
                 "--model", "m", "--max-tokens", "64",
                 "--token-budget", str(token_budget),
                 "--project-max-inflight", str(max_inflight),
+                "--project-actor-workers", str(actor_workers),
+                "--project-ray-actor-max-concurrency", str(ray_concurrency),
                 "--metrics-settle-s", "0",
                 "--writeback-mode", "json_text", "--write-batch-rows", "10",
                 "--output-dir", str(out), "--force",
@@ -388,6 +391,9 @@ class ProjectStaticArmTests(unittest.TestCase):
                         "organizer_from_arrow_s": 0.02, "organizer_plan_s": 0.03,
                         "organizer_collect_s": 0.01, "operator_wall_s": 49.0,
                         "writeback_s": 0.2},
+                effective_k=max_inflight,
+                actor_workers_per_endpoint=actor_workers,
+                ray_actor_max_concurrency=ray_concurrency,
                 exit_code=0 if profiler_ok else 1,
                 formal_row_found=profiler_ok,
                 stderr_tail="" if profiler_ok else "boom",
@@ -399,8 +405,11 @@ class ProjectStaticArmTests(unittest.TestCase):
             with patch("squad_database_e2e_runner._scan_workload", side_effect=scan_mock), \
                  patch("squad_database_e2e_runner._sink_write", side_effect=MagicMock()), \
                  patch("squad_database_e2e_runner.run_project_static", return_value=fake_run), \
-                 patch("squad_database_e2e_runner._fetch_scoring_ground_truth",
-                       return_value=(doc_to_source, references)), \
+                 patch("squad_database_e2e_runner._fetch_workload_integrity_and_scoring",
+                       return_value=(doc_to_source, references, "actualhash",
+                                     "verified" if integrity_ok else "failed",
+                                     integrity_ok,
+                                     [] if integrity_ok else ["integrity fail"])), \
                  patch("squad_database_e2e_runner._sink_readback",
                        return_value={"matched": readback_matched}), \
                  patch("squad_database_e2e_runner.scrape_prometheus_metrics",
@@ -419,20 +428,24 @@ class ProjectStaticArmTests(unittest.TestCase):
                 rc = runner.main(argv)
             report_path = out / "report.json"
             report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else {}
-            return rc, report, scan_mock
+            had_failure_report = (out / "failure_report.json").exists()
+            return rc, report, scan_mock, had_failure_report
 
     def test_dispatches_to_profiler_no_double_scan(self) -> None:
-        rc, report, scan_mock = self._run_ps_main()
+        rc, report, scan_mock, _ = self._run_ps_main()
         self.assertEqual(rc, 0)
         self.assertEqual(report["arm"], "project_static")
-        # NO double scan: the runner must not scan the operator workload (the
-        # profiler owns scan+sink). _scan_workload is the in-process arm path.
+        # NO double scan: the runner must not scan the operator workload.
         self.assertFalse(scan_mock.called, "project_static must not call _scan_workload")
-        self.assertEqual(report["identity"]["arm_protocol"], "project_ray_static_k")
-        self.assertEqual(report["identity"]["transport"], "ray_actor")
-        self.assertEqual(report["identity"]["concurrency"], 8)
-        self.assertEqual(report["identity"]["token_budget"], 6144)
-        self.assertNotIn("duckdb_version", report["identity"])
+        ident = report["identity"]
+        self.assertEqual(ident["arm_protocol"], "project_ray_static_k")
+        self.assertEqual(ident["transport"], "ray_actor")
+        self.assertEqual(ident["effective_k"], 8)
+        self.assertEqual(ident["declared_max_inflight"], 8)
+        self.assertEqual(ident["actor_workers_per_endpoint"], 8)
+        self.assertEqual(ident["http_transport"], "httpx_async")
+        self.assertEqual(ident["temperature"], 0.0)
+        self.assertNotIn("duckdb_version", ident)
 
     def test_provenance_is_project_scheduled_method(self) -> None:
         rc, report, _ = self._run_ps_main()
@@ -440,31 +453,46 @@ class ProjectStaticArmTests(unittest.TestCase):
         self.assertEqual(prov["comparison_role"], "project_scheduled_method")
         self.assertTrue(prov["custom_scheduling_code"])
         self.assertFalse(prov["formal_baseline_eligible"])
-        self.assertEqual(prov["scheduler_owner"], "project_ray_static_k_and_active_work")
+        # scheduler_owner names ONLY what is frozen (static K; no active-work claim)
+        self.assertEqual(prov["scheduler_owner"], "project_ray_static_k")
 
-    def test_timing_sourced_from_profiler_e2e(self) -> None:
+    def test_timing_sourced_from_profiler_and_not_comparable(self) -> None:
         rc, report, _ = self._run_ps_main()
-        # database_e2e_wall_s comes from the profiler's e2e_s (50.0), NOT a
-        # runner-measured wall; scan/sink from the profiler's db_fetch_s/writeback_s.
+        # database_e2e_wall_s = profiler e2e_s (50.0); scan/sink from profiler CSV.
         self.assertAlmostEqual(report["timing"]["database_e2e_wall_s"], 50.0)
         self.assertAlmostEqual(report["timing"]["scan_s"], 0.1)
         self.assertAlmostEqual(report["timing"]["sink_s"], 0.2)
-        # decoupled state still holds for the shell-out arm
+        # the note MUST retract cross-arm comparability (the #6 fix)
+        self.assertIn("NOT directly comparable", report["timing"]["note"])
+        # workload_content_hash is the runner-computed actual hash (#5), not importer
+        self.assertEqual(report["workload_content_hash"], "actualhash")
+        self.assertEqual(report["importer_content_hash"], "abc123")
         self.assertEqual(report["formal_run_gate_passed"], False)
         self.assertEqual(report["comparison_admission"], "pending_formal_repeat")
         self.assertIn("per_row_csv", report["evidence_files"])
 
     def test_rejects_missing_frozen_static_args(self) -> None:
-        # --arm project_static without frozen --token-budget / --project-max-inflight
-        # must fail closed (never run an un-frozen guess).
-        with self.assertRaises(SystemExit):
-            self._run_ps_main(token_budget=0)
-        with self.assertRaises(SystemExit):
-            self._run_ps_main(max_inflight=0)
+        # main() catches the SystemExit and returns 1 + failure_report.json (NOT
+        # report.json). Assert the return contract, not the exception.
+        rc, report, _, fail = self._run_ps_main(token_budget=0)
+        self.assertEqual(rc, 1)
+        self.assertTrue(fail)
+        self.assertEqual(report, {})
+        rc, report, _, fail = self._run_ps_main(actor_workers=0)
+        self.assertEqual(rc, 1)
+        self.assertTrue(fail)
 
     def test_profiler_nonzero_exit_fails_closed(self) -> None:
-        with self.assertRaises(SystemExit):
-            self._run_ps_main(profiler_ok=False)
+        rc, report, _, fail = self._run_ps_main(profiler_ok=False)
+        self.assertEqual(rc, 1)
+        self.assertTrue(fail)
+        self.assertEqual(report, {})
+
+    def test_workload_integrity_fail_closes(self) -> None:
+        # A workload hash mismatch (integrity_ok=False) must fail the run.
+        rc, _, _, fail = self._run_ps_main(integrity_ok=False)
+        self.assertEqual(rc, 1)
+        self.assertTrue(fail)
 
 
 class ReadbackOkTests(unittest.TestCase):

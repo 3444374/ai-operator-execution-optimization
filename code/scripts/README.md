@@ -1086,9 +1086,16 @@ python code/scripts/baselines/squad_database_e2e_runner.py --arm duckdb_ai \
 `python -m unittest tests.baselines.test_squad_database_e2e_runner`。
 
 `--arm project_static` 结构不同：runner 在通用 scan 前分流，子进程调用 `postgres_ai_operator_profile.py`
-跑冻结最佳静态 K，profiler 独占 scan+sink；wrapper 合并 request-trace + `document_completions` readback。
-必须传冻结值 `--token-budget`/`--project-max-inflight`、带项目依赖的 `--project-python`、`--writeback-mode json_text`
-（output_text 只能从 profiler 的 sink 读回）。示例（smoke 用 `--limit`）：
+跑冻结最佳静态 K，profiler 独占 scan+organize+model+sink。wrapper 无连接——所有 per-doc 证据来自 profiler
+输出文件（run-scoped completion-evidence CSV，`output_text` 从 in-process `operator_results` 展平，独立于
+`document_completions` sink，因此 sink readback 是两个独立来源的核对，不是循环自证）。必须传冻结值
+`--token-budget`/`--project-max-inflight`/`--project-actor-workers`/`--project-ray-actor-max-concurrency`
+（且 `actor_workers × ray_actor_max_concurrency >= max-inflight`，否则有效 K 会被静默夹到 slot 数——config
+会 fail-closed）、带项目依赖的 `--project-python`、`--writeback-mode json_text`（output_text 只在 profiler
+sink 后由 completion evidence 产出）。请求语义被冻结为 `temperature=0`/`http_transport=httpx_async`
+（默认 urllib 会破坏与 direct 臂的请求等价）/`--service-prefix-caching`。**请求 manifest guard 是 2-endpoint
+pinned-comparison 机制（要求 endpoint_count>=2），单 endpoint 臂不用**；workload 完整性由 runner 对扫描
+workload 独立计算结构 content hash 核对 importer（full）/记录 subset hash（smoke）。示例（smoke 用 `--limit`）：
 
 ```bash
 python code/scripts/baselines/squad_database_e2e_runner.py --arm project_static \
@@ -1098,6 +1105,7 @@ python code/scripts/baselines/squad_database_e2e_runner.py --arm project_static 
   --metrics-url http://127.0.0.1:8000/metrics \
   --model qwen2.5-7b --max-tokens 64 \
   --token-budget <frozen-token-budget> --project-max-inflight 8 \
+  --project-actor-workers 8 --project-ray-actor-max-concurrency 1 \
   --project-python /root/miniconda3/bin/python \
   --service-prefix-caching enabled --service-config-hash <vllm_config_hash> \
   --metrics-settle-s 5 --strict-attribution \
@@ -1106,8 +1114,12 @@ python code/scripts/baselines/squad_database_e2e_runner.py --arm project_static 
   --output-dir feasibility/results/squad_database_e2e_project_static_smoke_REPLACE_ME --force
 ```
 
-project_static 的 `report.json` 计时段来自 profiler `--output` CSV（`e2e_s`→`database_e2e_wall_s`、
-`db_fetch_s`→`scan_s`、`operator_wall_s`→`adapter_wall_s`、`writeback_s`→`sink_s`；`construct_s` 由 Arrow build
-+ organizer 段合成，与进程内臂结构不同）；`_profiler_work/` 子目录存 profiler 的 request-trace + summary CSV。
-修改 `project_static.py` 的 argv 或 CSV 合并后运行
-`python -m unittest tests.baselines.text.test_project_static tests.baselines.text.test_baseline_provenance`。
+**计时段不可跨臂直接比较**：project_static 的 `database_e2e_wall_s` = profiler `e2e_s`，是比进程内臂
+runner-measured wall **更宽**的边界（含 post-loop vLLM metrics scrape + trace CSV IO + finish_job，排除
+actor-ready/Ray-init）。`scan_s`←`db_fetch_s`、`adapter_wall_s`←`operator_wall_s`（最紧的 adapter 等价段）、
+`sink_s`←`writeback_s`；`construct_s` 由 Arrow build + organizer 合成；`wrapper_wall_s` 是完整子进程墙。
+跨臂绝对 wall 比较需未来统一边界。`report.json` 的 `identity` 记录 `effective_k`（= `min(max-inflight,
+actor_workers × concurrency)`，因 config 强制 `>= max-inflight` 故 == 声明 K）、`declared_max_inflight`、
+actor 拓扑、`http_transport`、`temperature`。`_profiler_work/` 子目录存 profiler 的 request-trace +
+completion-evidence + summary CSV。修改 `project_static.py` 的 argv 或 CSV 合并后运行
+`python -m unittest tests.baselines.text.test_project_static tests.baselines.text.test_baseline_provenance tests.observability.test_completion_evidence_trace`。

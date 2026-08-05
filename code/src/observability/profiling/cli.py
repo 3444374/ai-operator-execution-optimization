@@ -377,6 +377,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--gpu-peak-tflops", type=float, default=0.0)
     parser.add_argument("--mfu-precision", default="")
     parser.add_argument("--request-trace-output")
+    parser.add_argument(
+        "--completion-evidence-output",
+        help=(
+            "Opt-in per-doc completion evidence CSV (doc_id, prompt_tokens, "
+            "output_tokens, output_text, status, error_type, finish_reason, "
+            "timestamps). output_text is flattened from in-process "
+            "operator_results, independent of the document_completions sink. "
+            "Only emitted when set; zero behavior change otherwise. Requires "
+            "--request-trace-output (to populate the lifecycle events)."
+        ),
+    )
     parser.add_argument("--request-slo-ms", type=float, default=0.0)
     parser.add_argument(
         "--ttft-slo-ms",

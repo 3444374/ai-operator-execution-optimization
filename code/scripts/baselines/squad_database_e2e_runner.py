@@ -151,51 +151,66 @@ def _scan_workload(conn, workload: str, limit: int = 0) -> tuple[list[dict], dic
     return rows, sidecar, time.time() - t0
 
 
-def _fetch_scoring_ground_truth(
-    conn, workload: str, limit: int, importer_count: int,
-) -> tuple[dict[int, str], dict[str, list[str]]]:
-    """Lightweight scoring-only read for the project_static arm.
+def _fetch_workload_integrity_and_scoring(
+    conn, workload: str, limit: int, importer_count: int, expected_hash: str,
+) -> tuple[dict[int, str], dict[str, list[str]], str, str, bool, list[str]]:
+    """Read the workload ONCE for integrity + scoring (project_static arm).
 
-    Returns ``(doc_id -> source_example_id, source_example_id -> reference_answers)``.
-    This is NOT the operator prompt scan (the profiler owns that); it only fetches
-    the ground truth the runner needs to score EM/F1 and verify exactly-once for
-    the arm whose execution it did not perform itself. ``limit > 0`` bounds the read
-    to match the profiler's ``--total-rows`` smoke scan.
+    Returns ``(doc_id -> source_example_id, source_example_id -> reference_answers,
+    structured_content_hash, integrity_label, integrity_ok, problems)``. This is
+    NOT the operator scan (the profiler owns operator-scan + model feeding); it
+    reads the workload the profiler scanned and computes its structured content
+    hash so a full run can be fail-closed against the importer hash (the #5 fix --
+    the prior code blindly copied the importer hash without hashing the scanned
+    content). It also fetches reference answers for EM/F1. For full runs the hash
+    MUST equal the importer's; for ``--limit`` smoke it is the subset hash (not
+    comparable to the importer, recorded as such).
     """
 
     with conn.cursor() as cur:
         if limit > 0:
             cur.execute(
-                "SELECT doc_id, source_example_id, reference_answers "
+                "SELECT doc_id, text, source_example_id, reference_answers "
                 "FROM documents WHERE workload_name = %s "
                 "ORDER BY doc_id LIMIT %s",
                 (workload, min(limit, importer_count)),
             )
         else:
             cur.execute(
-                "SELECT doc_id, source_example_id, reference_answers "
+                "SELECT doc_id, text, source_example_id, reference_answers "
                 "FROM documents WHERE workload_name = %s ORDER BY doc_id",
                 (workload,),
             )
         fetched = cur.fetchall()
+    rows: list[dict] = []
     doc_to_source: dict[int, str] = {}
     references: dict[str, list[str]] = {}
-    for doc_id, source_id, reference_answers in fetched:
+    for doc_id, text, source_id, reference_answers in fetched:
         answers = reference_answers
         if isinstance(answers, str):
             answers = json.loads(answers)
+        rows.append({
+            "doc_id": doc_id, "text": text,
+            "source_example_id": source_id, "answers": list(answers),
+        })
         doc_to_source[int(doc_id)] = source_id
         references[source_id] = list(answers)
-    # Defense-in-depth (mirrors _smoke_integrity for the in-process arms): if two
-    # doc_ids share a source_example_id, the predictions dict (keyed by source_id)
-    # would silently overwrite one row and EM/F1 would be scored against the wrong
-    # reference. SQuAD source_ids are unique by construction; fail closed otherwise.
-    if len(set(doc_to_source.values())) != len(doc_to_source):
-        raise SystemExit(
-            "FAIL: scoring ground truth has duplicate source_example_id across "
-            "doc_ids (would mis-key EM/F1 predictions)"
+    content_hash = _structured_content_hash(rows)
+    if limit > 0:
+        integrity_ok, problems = _smoke_integrity(rows, limit, importer_count)
+        label = f"verified_smoke_limit_{limit}" if integrity_ok else "failed"
+    else:
+        integrity_ok, problems = _validate_workload_integrity(
+            rows, importer_count, expected_hash,
         )
-    return doc_to_source, references
+        label = "verified" if integrity_ok else "failed"
+    # source_example_id uniqueness (predictions are keyed by source_id; a dup would
+    # silently overwrite and mis-score). Mirrors _smoke_integrity for in-process arms.
+    if len(set(doc_to_source.values())) != len(doc_to_source):
+        integrity_ok = False
+        problems.append("duplicate source_example_id across doc_ids")
+        label = "failed"
+    return doc_to_source, references, content_hash, label, integrity_ok, problems
 
 
 def _results_to_sink_payload(
@@ -475,6 +490,13 @@ def _parse(argv: list[str]) -> argparse.Namespace:
                    help="project_static only: frozen token-budget organizer value.")
     p.add_argument("--project-max-inflight", type=int, default=0,
                    help="project_static only: frozen per-endpoint static K (admission scope per_endpoint).")
+    p.add_argument("--project-actor-workers", type=int, default=0,
+                   help="project_static only: frozen Ray HTTP actors per endpoint. "
+                        "actor_workers x ray_actor_max_concurrency must be >= "
+                        "--project-max-inflight so effective K == declared K.")
+    p.add_argument("--project-ray-actor-max-concurrency", type=int, default=0,
+                   help="project_static only: frozen per-actor max concurrency "
+                        "(pairs with --project-actor-workers to set the slot count).")
     p.add_argument("--project-ray-batch-rows", type=int, default=64,
                    help="project_static only: hard per-submission row cap under token_budget.")
     p.add_argument("--project-python", default="",
@@ -867,32 +889,31 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
     / double-writeback).
     """
 
-    if args.token_budget <= 0 or args.project_max_inflight <= 0:
+    if (args.token_budget <= 0 or args.project_max_inflight <= 0
+            or args.project_actor_workers <= 0
+            or args.project_ray_actor_max_concurrency <= 0):
         raise SystemExit(
-            "FAIL: --arm project_static requires --token-budget > 0 and "
-            "--project-max-inflight > 0 (the frozen static-K values)"
+            "FAIL: --arm project_static requires the frozen static values "
+            "--token-budget, --project-max-inflight, --project-actor-workers, "
+            "--project-ray-actor-max-concurrency (all > 0; actor_workers x "
+            "concurrency must be >= max-inflight so effective K == declared K)"
         )
     if args.writeback_mode == "none":
-        # output_text is only recoverable from the profiler's sink readback; with
-        # writeback_mode=none every output_text would be NULL and the run would
-        # fail with a misleading reason. The sink is part of the database-E2E
-        # boundary, so project_static requires json_text.
+        # output_text is recovered from the profiler's run-scoped completion
+        # evidence (which requires the sink to have run); with writeback_mode=none
+        # every output_text would be empty and the run would fail misleadingly.
+        # The sink is part of the database-E2E boundary, so project_static
+        # requires json_text.
         raise SystemExit(
             "FAIL: --arm project_static requires --writeback-mode json_text "
-            "(output_text is only recoverable from the profiler's sink; "
-            "writeback_mode=none leaves every output_text=NULL and violates "
-            "the database-E2E sink boundary)"
+            "(the completion-evidence output_text is only produced when the "
+            "profiler sinks; writeback_mode=none leaves every output_text empty "
+            "and violates the database-E2E sink boundary)"
         )
     arm_provenance = adapter_provenance("project_static")
     importer = _load_importer_provenance(args.importer_provenance)
     expected_content_hash = importer["content_hash"]
     expected_count = int(importer.get("sample_count", EXPECTED_DEV_COUNT))
-
-    import psycopg  # noqa: F401
-    pg_identity = _pg_server_identity(args.database_url)
-    server_version = pg_identity.get("pg_server_version", "unknown")
-    pgvector_version = pg_identity.get("pgvector_version", "unknown")
-    conn = psycopg.connect(args.database_url)
     endpoint_base = _endpoint_base_url(args.endpoint_url)
 
     config = ProjectStaticConfig(
@@ -902,34 +923,57 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         model=args.model, max_tokens=args.max_tokens,
         token_budget=args.token_budget,
         max_inflight=args.project_max_inflight,
+        actor_workers_per_endpoint=args.project_actor_workers,
+        ray_actor_max_concurrency=args.project_ray_actor_max_concurrency,
         api_key=args.api_key,
         writeback_mode=args.writeback_mode,
         write_batch_rows=args.write_batch_rows,
-        sink_category=args.sink_category,
         total_rows=args.limit if args.limit > 0 else expected_count,
         ray_batch_rows=args.project_ray_batch_rows,
         request_timeout_s=args.request_timeout_s,
+        completion_temperature=0.0,
+        completion_http_transport="httpx_async",
+        service_prefix_caching=args.service_prefix_caching,
         python_executable=args.project_python,
     )
     arm_identity = {
         "arm_protocol": "project_ray_static_k",
         "transport": "ray_actor",
-        "concurrency": args.project_max_inflight,
+        "http_transport": "httpx_async",
+        "temperature": 0.0,
+        "declared_max_inflight": args.project_max_inflight,
+        "effective_k": config.effective_k,
+        "actor_workers_per_endpoint": args.project_actor_workers,
+        "ray_actor_max_concurrency": args.project_ray_actor_max_concurrency,
         "token_budget": args.token_budget,
         "admission_scope": "per_endpoint",
         "profiler_script": config.profiler_script,
     }
+    # ProjectStaticConfig validates actor_workers x concurrency >= max_inflight,
+    # so effective_k == declared K (no silent clamp). Surface any config error as
+    # a fail-closed SystemExit (main() writes failure_report.json).
+    if config.effective_k != args.project_max_inflight:
+        raise SystemExit(
+            f"FAIL: project_static effective_k ({config.effective_k}) != declared "
+            f"max_inflight ({args.project_max_inflight}); actor topology must cover K"
+        )
+
+    pg_identity = _pg_server_identity(args.database_url)
+    server_version = pg_identity.get("pg_server_version", "unknown")
+    pgvector_version = pg_identity.get("pgvector_version", "unknown")
 
     metrics_before = scrape_prometheus_metrics(args.metrics_url)
     metrics_before_idle, _ = _endpoint_idle(metrics_before)
     wrapper_t0 = time.time()
-    run = run_project_static(config, output_dir / "_profiler_work", conn)
+    # Connection-free: the wrapper reads all per-doc evidence from profiler output
+    # files (completion-evidence CSV + summary CSV). The conn is opened only AFTER
+    # the subprocess, for the integrity read + sink readback.
+    run = run_project_static(config, output_dir / "_profiler_work")
     wrapper_wall_s = time.time() - wrapper_t0
     time.sleep(max(0.0, args.metrics_settle_s))
     metrics_after = scrape_prometheus_metrics(args.metrics_url)
 
     if run.exit_code != 0 or not run.formal_row_found:
-        conn.close()
         raise SystemExit(
             f"FAIL: project_static profiler did not produce a formal ok run "
             f"(exit={run.exit_code}, formal_ok={run.formal_row_found}); "
@@ -938,11 +982,24 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
     results = run.results
     operator_only_jct, setup_s = _operator_span(results)
 
-    # Scoring ground truth (lightweight; NOT the operator scan the profiler owns)
-    # + count/exactly-once verification against the workload doc_id set.
-    doc_to_source, references = _fetch_scoring_ground_truth(
-        conn, args.workload_name, args.limit, expected_count,
+    # Workload integrity + scoring ground truth (one read; NOT the operator scan
+    # the profiler owns -- this reads no model-feeding prompts of its own, it
+    # only hashes the workload the profiler scanned and fetches reference answers
+    # for EM/F1). For full runs the structured content hash must match the
+    # importer; for --limit smoke it records the subset hash (not comparable).
+    import psycopg  # noqa: F401
+    conn = psycopg.connect(args.database_url)
+    doc_to_source, references, workload_content_hash, integrity_label, integrity_ok, integrity_problems = (
+        _fetch_workload_integrity_and_scoring(
+            conn, args.workload_name, args.limit, expected_count, expected_content_hash,
+        )
     )
+    if not integrity_ok:
+        conn.close()
+        raise SystemExit(
+            "FAIL: project_static workload integrity failed: "
+            + "; ".join(integrity_problems)
+        )
     input_doc_ids = set(doc_to_source)
     result_doc_ids = {r.doc_id for r in results}
     expected_rows = min(args.limit, expected_count) if args.limit > 0 else expected_count
@@ -960,12 +1017,11 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
             f"(got {len(results)} results, expected {expected_rows}; "
             f"result_doc_ids==workload_doc_ids: {result_doc_ids == input_doc_ids})"
         )
-    integrity_label = (
-        f"verified_smoke_limit_{args.limit}_via_profiler_scan"
-        if args.limit > 0 else "verified_via_profiler_scan_count"
-    )
 
-    # Verify the profiler's sink persisted expected content (content-digest readback).
+    # Verify the profiler's sink persisted the evidence output_text (content-digest
+    # readback). sunk_pairs come from the profiler's run-scoped completion evidence
+    # (independent of document_completions), so this compares TWO independent
+    # sources -- a stale residual row with the same doc_id cannot self-prove.
     sink_readback = (
         _sink_readback(conn, list(run.sunk_pairs), args.sink_category)
         if args.writeback_mode != "none"
@@ -1102,10 +1158,11 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         "max_tokens_error_count": max_tokens_errors,
         "truncation_count": truncation_count,
         "workload_integrity": integrity_label,
-        # The profiler scanned; the runner verifies via count + exactly-once. The
-        # importer content_hash is recorded for reference (the runner did not
-        # re-hash the operator scan for this arm -- the profiler owns it).
-        "workload_content_hash": expected_content_hash,
+        # Actual structured content hash of the workload the profiler scanned,
+        # computed by the runner's integrity read. For full runs this MUST equal
+        # importer_content_hash (verified by _validate_workload_integrity); for
+        # --limit smoke it is the subset hash (not comparable, per integrity_label).
+        "workload_content_hash": workload_content_hash,
         "importer_content_hash": expected_content_hash,
         "timing": {
             "boundary": "database_e2e",
@@ -1118,11 +1175,15 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
             "sink_s": round(t.get("writeback_s", 0.0), 3),
             "wrapper_wall_s": round(wrapper_wall_s, 3),
             "note": (
-                "project_static timing sourced from the profiler --output CSV row. "
-                "construct_s is synthesized (Arrow build + organizer stages) because "
-                "the profiler has no ChatRequest-construction step; the profiler owns "
-                "scan+sink, so segments are structurally different from the in-process "
-                "arms. database_e2e_wall_s (profiler e2e_s) IS comparable across arms."
+                "project_static timing sourced from the profiler --output CSV row; "
+                "NOT directly comparable to the in-process arms' database_e2e_wall_s. "
+                "The profiler e2e_s is a STRICTLY BROADER boundary: it includes the "
+                "post-loop vLLM metrics scrape + trace-CSV IO + finish_job, and "
+                "excludes actor-ready/Ray-init (which the in-process arms do not run). "
+                "construct_s is synthesized (Arrow build + organizer stages). For the "
+                "tightest adapter-equivalent span see adapter_wall_s (profiler "
+                "operator_wall_s); wrapper_wall_s is the full subprocess wall. "
+                "Cross-arm absolute-wall comparison requires a future unified boundary."
             ),
         },
         "runner_metrics": runner_metrics,

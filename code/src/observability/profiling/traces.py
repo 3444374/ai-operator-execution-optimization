@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -329,6 +330,63 @@ def write_request_trace(
                 "slo_met": row.slo_met if row.slo_met is not None else "",
             },
         )
+
+
+_COMPLETION_EVIDENCE_FIELDS = (
+    "doc_id", "prompt_tokens", "output_tokens", "output_text",
+    "status", "error_type", "finish_reason",
+    "submit_epoch_s", "service_start_epoch_s", "completion_epoch_s",
+)
+
+
+def write_completion_evidence(
+    output_path: Path,
+    *,
+    rows: Sequence[RequestTraceRow],
+    operator_results: Sequence[dict],
+) -> None:
+    """Write a run-scoped per-doc completion evidence CSV (``output_text`` included).
+
+    Independent of the ``document_completions`` sink: ``output_text`` is flattened
+    from the in-process ``operator_results`` (per-batch ``doc_id``/``output_text``
+    lists, mirroring ``_build_profiler_request_rows``) so a downstream reader can
+    compare this file against the sink to detect stale residual rows -- breaking
+    the circular self-reference of reading output_text FROM the sink and then
+    digesting the sink against itself. One row per doc; doc_id is unique across
+    the trace rows (enforced by ``build_request_trace_rows``).
+    """
+
+    output_text_by_doc_id: dict[str, str] = {}
+    for result in operator_results:
+        doc_ids = [str(value) for value in result.get("doc_id", [])]
+        outputs = result.get("output_text", [])
+        if len(outputs) != len(doc_ids):
+            continue
+        for doc_id, output in zip(doc_ids, outputs):
+            output_text_by_doc_id[doc_id] = "" if output is None else str(output)
+
+    with output_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(_COMPLETION_EVIDENCE_FIELDS))
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({
+                "doc_id": row.doc_id,
+                "prompt_tokens": row.prompt_tokens,
+                "output_tokens": (
+                    row.actual_output_tokens
+                    if row.actual_output_tokens is not None else 0
+                ),
+                "output_text": output_text_by_doc_id.get(str(row.doc_id), ""),
+                "status": row.status,
+                "error_type": row.error_type or "",
+                "finish_reason": row.finish_reason or "",
+                "submit_epoch_s": row.submit_epoch_s,
+                "service_start_epoch_s": (
+                    row.service_start_epoch_s
+                    if row.service_start_epoch_s is not None else ""
+                ),
+                "completion_epoch_s": row.completion_epoch_s,
+            })
 
 
 def write_resource_trace(

@@ -78,6 +78,7 @@ from src.observability.profiling.config import (
     resolve_actor_workers_per_endpoint as _resolve_actor_workers_per_endpoint,
 )
 from src.observability.profiling.traces import (
+    write_completion_evidence as _write_completion_evidence,
     write_control_trace as _write_control_trace,
     write_flush_trace as _write_flush_trace,
     write_request_trace as _write_request_trace,
@@ -2562,6 +2563,15 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 pgvector_version=db_metadata["pgvector_version"],
                 rows=request_trace_rows,
             )
+            if args.completion_evidence_output:
+                # Run-scoped per-doc completion evidence (output_text included),
+                # flattened from in-process operator_results. Independent of the
+                # document_completions sink so a reader can detect stale residuals.
+                _write_completion_evidence(
+                    Path(args.completion_evidence_output),
+                    rows=request_trace_rows,
+                    operator_results=operator_results,
+                )
 
         resource_samples = []
         if resource_sampler is not None:
