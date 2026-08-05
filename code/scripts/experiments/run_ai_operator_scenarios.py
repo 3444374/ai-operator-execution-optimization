@@ -15,7 +15,7 @@ import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable
-from urllib import error, parse, request
+from urllib import error, request
 
 CODE_ROOT = next(
     parent
@@ -36,6 +36,10 @@ from src.experiments.scenarios.core import (  # noqa: E402
     validate_service_metadata,
 )
 from src.observability.metrics import parse_prometheus_metrics  # noqa: E402
+from src.baselines.common.redact import (  # noqa: E402
+    redact_argument_list as _redact_argument_list,
+    redact_database_url as _redact_database_url,
+)
 from src.infrastructure.config_env import ENV_REFERENCE, expand_text  # noqa: E402
 from src.infrastructure.runner_lease import (  # noqa: E402
     acquire_host_runner_lease,
@@ -895,56 +899,6 @@ def _redact_service_metadata(
         )
         for key, value in values
     }
-
-
-def _redact_argument_list(values: list[str]) -> list[str]:
-    redacted = []
-    redact_next = False
-    database_url_next = False
-    for value in values:
-        if redact_next:
-            redacted.append("***")
-            redact_next = False
-            continue
-        if database_url_next:
-            redacted.append(_redact_database_url(value))
-            database_url_next = False
-            continue
-        normalized = value.lower()
-        flag = normalized.split("=", 1)[0]
-        if flag == "--database-url":
-            if "=" in value:
-                name, raw = value.split("=", 1)
-                redacted.append(f"{name}={_redact_database_url(raw)}")
-            else:
-                redacted.append(value)
-                database_url_next = True
-            continue
-        if any(
-            marker in flag
-            for marker in ("api-key", "auth-token", "secret", "password")
-        ):
-            if "=" in value:
-                redacted.append(f"{value.split('=', 1)[0]}=***")
-            else:
-                redacted.append(value)
-                redact_next = True
-            continue
-        redacted.append(value)
-    return redacted
-
-
-def _redact_database_url(value: str) -> str:
-    parsed = parse.urlsplit(value)
-    if parsed.password is None:
-        return value
-    username = parse.quote(parsed.username or "", safe="")
-    hostname = parsed.hostname or ""
-    port = f":{parsed.port}" if parsed.port is not None else ""
-    netloc = f"{username}:***@{hostname}{port}"
-    return parse.urlunsplit(
-        (parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment)
-    )
 
 
 def _write_json_atomic(path: Path, value: dict) -> None:

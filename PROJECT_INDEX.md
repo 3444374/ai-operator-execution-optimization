@@ -303,7 +303,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/experiments/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `code/scripts/experiments/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
 | `code/scripts/baselines/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
-| `code/scripts/baselines/squad_capability_gate.py` | SQuAD v1.1 dev capability gate（DuckDB-ai arm）；全量/分层双模式、确定性分层抽样、逐行证据 CSV（EM/F1 可复算）、vLLM token delta、3-way exactly-once、收紧的截断措辞、七步 identity | 验证 SQuAD bounded-output 管线（输出解析/EM-F1/错误统计），不发布排名 |
+| `code/scripts/baselines/squad_capability_gate.py` | SQuAD v1.1 dev capability gate（DuckDB-ai arm）；全量/分层双模式、确定性分层抽样（largest-remainder + 多答案 max 桶）、逐行证据 CSV（EM/F1 可复算）、canonical content hash 对齐 importer provenance、workload 完整性 fail-closed、vLLM counter 归因门禁、full-set exactly-once、命令/异常脱敏、失败结构化归档 | 验证 SQuAD bounded-output 管线（输出解析/EM-F1/错误统计），不发布排名 |
+| `code/src/baselines/common/redact.py` | 命令行与连接串脱敏共享模块（`redact_argument_list`/`redact_database_url`/`redact_text`）| 任何把 sys.argv / DSN / 异常文本写入 evidence 的 gate 或 runner 复用，禁止第三份拷贝 |
 | `code/src/baselines/text/orchestration/postgres_manifest.py` | 正式 PostgreSQL workload 的不可变 baseline manifest 导出核心 | 按 workload/doc_id/limit/offset 读取完整行，固定 output 代价语义、source hash 与 endpoint 分片前输入 |
 | `code/src/baselines/text/controls/batched_completions.py` | 无 Ray 的持久异步 fixed-row multi-prompt Completions control | 同协议标定 HTTP packing 上限，验证每个完整 prompt exactly-once 后再测试项目 token-budget；不作为 native baseline |
 | `code/src/baselines/README.md` | 文本 comparison harness 分层与代码归属 | 修改 baseline adapter 或调度归属前读取，防止 control/native 混写 |
@@ -400,7 +401,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/data/test_import_ai_complete_workload.py` | ShareGPT/BurstGPT importer 单元测试 | 修改 importer 或 trace 过滤逻辑后运行 |
 | `code/tests/data/test_import_squad_workload.py` | SQuAD v1.1 dev importer 单元测试（多答案/特殊字符/重复 ID/缺答案/content hash/行数门禁/canonical SHA256 门禁/模板）| 修改 SQuAD importer 后运行 |
 | `code/tests/baselines/test_duckdb_ai_sentence_count_gate.py` | 句子计数 gate 纯函数单测（句子切分/整数 fullmatch/行数门禁/dist）| 修改 sentence-count gate 后运行 |
-| `code/tests/baselines/test_squad_capability_gate.py` | SQuAD capability gate 纯函数单测（确定性分层/精确计数/桶覆盖/hash 稳定）| 修改 stratified_sample 后运行 |
+| `code/tests/baselines/test_squad_capability_gate.py` | SQuAD capability gate 纯函数单测（largest-remainder 配额/多答案桶/确定性分层/order 不变/structured hash 对齐 importer/workload 完整性/归因/脱敏 wiring）| 修改 stratified_sample / integrity / attribution / redact 后运行 |
+| `code/tests/baselines/common/test_redact.py` | 共享脱敏模块单测（DB-URL/arg list/URL flag/redact_text）| 修改 `src/baselines/common/redact.py` 后运行 |
 | `code/tests/scheduling/test_scheduling_models.py` | scheduling request/endpoint/topology schema 单元测试 | 修改 typed scheduling metadata 前运行 |
 | `code/tests/scheduling/test_scheduling_policies.py` | static admission 与 round-robin routing 单元测试 | 修改 admission/routing baseline 前运行 |
 | `code/tests/scheduling/test_scheduler.py` | bounded-inflight 与 exactly-once deterministic scheduler 测试 | 修改 scheduler orchestration 前运行 |

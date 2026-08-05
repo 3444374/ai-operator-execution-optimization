@@ -988,3 +988,44 @@ SLO goodput/JCT、observed/configured limit、无准入压力标志和交叉 reg
 如果候选臂 CV 超过 5%、未绑定等价臂相差超过 5%，或缺少 per-request output
 token IDs，结果固定为 `inconclusive`，不能用算术平均表触发 adaptive
 GO/NO-GO。07-30 short/long screening 正是因这些审计失败而被降级。
+
+## 2026-08-05 SQuAD v1.1 dev capability gate（DuckDB-ai arm）
+
+`baselines/squad_capability_gate.py` 是 bounded-output 主对比轨的 DuckDB-ai 单臂
+capability gate：验证 DuckDB community `ai` 扩展在固定 cap 下能正确跑通 SQuAD 短答案
+（EM/F1 可独立复算），**不是性能排名**（operator-only 计时边界，database-E2E runner
+尚未实现）。修复过六轮 codex review 后的合同：
+
+- `--mode {sampled,full}`：full 模式 fail-closed 校验 10570 行 + unique doc_id +
+  unique source_example_id + 非空 reference_answers + canonical content hash 对齐
+  importer provenance（两种模式都校验 workload 完整性）。
+- sampled 模式用 largest-remainder 配额 + 多答案 max 词数分桶 + 桶内均匀间距的
+  确定性分层抽样；sample/workload hash 均为结构化 JSON-per-row SHA256（与 importer
+  `compute_content_hash` 同定义，单测钉死一致）。
+- vLLM counter 归因门禁：endpoint 运行前/后必须 idle（running==waiting==0）、scrape
+  非空、counter 单调、`request_success_delta == requests_sent`；任一不满足则 token/cache
+  指标标记 `attribution=unavailable`（`--strict-attribution` 则整轮失败）。
+- full-set exactly-once（result id set == input id set）、`output_chars`（字符数非 token）、
+  失败结构化归档（`failure_report.json` + 非零退出）、命令与异常文本经
+  `src/baselines/common/redact.py` 脱敏。
+
+示例（服务器 text-baselines venv，单 endpoint idle 时跑）：
+
+```bash
+python code/scripts/baselines/squad_capability_gate.py \
+  --database-url "$DATABASE_URL" \
+  --workload-name squad_v11_dev_short_answer \
+  --mode sampled --sample-count 256 \
+  --importer-provenance feasibility/results/squad_v11_dev_import_20260805/provenance.json \
+  --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
+  --metrics-url http://127.0.0.1:8000/metrics \
+  --model qwen2.5-7b-instruct --max-tokens 64 \
+  --service-prefix-caching enabled \
+  --output-dir feasibility/results/squad_capability_256_v3_20260805 --force
+```
+
+输出：`report.json`（完整指标 + identity + 归因块）、`per_row_evidence.csv`
+（source_example_id/status/error/output_chars/prediction/reference_answers，EM/F1 可复算）、
+失败时附 `partial_results.csv` + `failure_report.json`。修改 stratified_sample /
+integrity / attribution / redact 后运行
+`python -m unittest tests.baselines.test_squad_capability_gate tests.baselines.common.test_redact`。
