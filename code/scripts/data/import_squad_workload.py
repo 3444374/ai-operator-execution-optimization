@@ -46,6 +46,19 @@ SQUAD_DEV_URL = "https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v1.1.jso
 SQUAD_VERSION = "1.1"
 SQUAD_SPLIT = "validation/dev"
 EXPECTED_DEV_COUNT = 10570
+# Canonical dev-v1.1.json SHA256 (verified from the official rajpurkar/SQuAD-explorer
+# GitHub repo). The importer fail-closes if the input file does not match, so a
+# tampered file with the right row count is still rejected.
+EXPECTED_DEV_SHA256 = "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9"
+SQUAD_SOURCE_REPO = "rajpurkar/SQuAD-explorer"
+SQUAD_SOURCE_URL = "https://github.com/rajpurkar/SQuAD-explorer/blob/master/dataset/dev-v1.1.json"
+SQUAD_SOURCE_REVISION = "master"
+SQUAD_SOURCE_DOWNLOAD_METHOD = (
+    "git sparse clone (--depth 1 --filter=blob:none --sparse) of "
+    "rajpurkar/SQuAD-explorer, then sparse-checkout dataset/dev-v1.1.json "
+    "(turbo accelerates github.com; rajpurkar.github.io is ~5KB/s and infeasible "
+    "from AutoDL)"
+)
 
 PROMPT_TEMPLATE = (
     "Answer the question using only the context.\n"
@@ -153,6 +166,19 @@ def _validate_dev_count(row_count: int, expected: int = EXPECTED_DEV_COUNT) -> N
         )
 
 
+def _validate_dev_sha256(sha256: str, expected: str = EXPECTED_DEV_SHA256) -> None:
+    """Fail closed unless the input file matches the canonical dev-v1.1.json SHA256.
+
+    A tampered file that happens to have 10570 rows still fails this check.
+    """
+
+    if sha256 != expected:
+        raise SystemExit(
+            f"FAIL: input SHA256 {sha256} != canonical dev-v1.1.json {expected}; "
+            "refusing unexpected/tampered file"
+        )
+
+
 def download_dev(url: str) -> tuple[bytes, str]:
     with request.urlopen(url, timeout=60) as response:
         raw = response.read()
@@ -231,11 +257,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.input:
         raw = Path(args.input).read_bytes()
         source_sha256 = hashlib.sha256(raw).hexdigest()
-        source_url = f"local:{args.input}"
+        source_local_path = args.input
     else:
         print(f"downloading {args.url}", flush=True)
         raw, source_sha256 = download_dev(args.url)
-        source_url = args.url
+        source_local_path = None
+    _validate_dev_sha256(source_sha256)
     parsed = json.loads(raw.decode("utf-8"))
     rows = parse_squad_dev(parsed)
     _validate_dev_count(len(rows))
@@ -255,8 +282,13 @@ def main(argv: list[str] | None = None) -> int:
         "dataset": "SQuAD",
         "version": SQUAD_VERSION,
         "split": SQUAD_SPLIT,
-        "source_url": source_url,
+        "source_repo": SQUAD_SOURCE_REPO,
+        "source_url": SQUAD_SOURCE_URL,
+        "source_revision": SQUAD_SOURCE_REVISION,
+        "source_download_method": SQUAD_SOURCE_DOWNLOAD_METHOD,
+        "source_local_path": source_local_path,
         "source_file_sha256": source_sha256,
+        "source_file_sha256_expected": EXPECTED_DEV_SHA256,
         "sample_count": len(rows),
         "imported_rows": inserted,
         "workload_name": args.workload_name,

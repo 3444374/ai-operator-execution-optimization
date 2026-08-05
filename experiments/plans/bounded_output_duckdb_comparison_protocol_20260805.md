@@ -38,7 +38,7 @@ workload**"，**不能**说成实现了独立 `AI_CLASSIFY` 算子。
 |---|---|---|
 | ShareGPT 多轮生成 | 项目内部策略、长输出、服务容量 | 是，但**不含 DuckDB** |
 | 句子计数 cap=16 | DuckDB 能力 + 极短输出调用开销 | **仅 microbenchmark** |
-| **SQuAD 短答案 cap=64/128** | DuckDB / direct / 项目的**主 bounded AI_COMPLETE 对比** | **是（主）** |
+| **SQuAD 短答案 cap=64（固定）** | DuckDB / direct / 项目的**主 bounded AI_COMPLETE 对比** | **是（主）** |
 | SST-2 / AG News 标签输出 | 数据库批量文本分析扩展验证 | 可选 |
 
 **主对比用 SQuAD 短答案**，因为：仍是文本生成（不改变项目方向）、有公开 reference answer、可统计
@@ -116,13 +116,23 @@ temperature、max_tokens、消息角色一致；再用 **vLLM prompt-token count
 
 ## 5. 执行顺序
 
-1. 句子计数 capability：**64 行 screening 的对话外观察尚未归档；2048 行门禁未完成**（归档证据目前
-   只到 `feasibility/results/duckdb_ai_semantic_gate_20260805/` 的 ShareGPT cap=256 43/64 失败 /
-   cap=1024 1/64 失败 / 4 行 4/4 成功）。须先归档完整 2048 行零失败 + ground-truth accuracy 证据。
-2. **SQuAD 短答案 workload**（主 bounded 对比）：导入 SQuAD → prompt(context+question) + reference answer
+主路径（SQuAD，**不等待句子计数门禁**）：
+
+1. **SQuAD 短答案 workload**（主 bounded 对比）：导入 SQuAD → prompt(context+question) + reference answer
    → manifest → 三个 comparator（DuckDB `ai` / direct client / 项目冻结最佳静态）。
-3. 三臂同 manifest、同 model、双 GPU、vLLM 同配置、prefix cache、同 cap、同计时边界，按 §2 五类指标 +
-   §3 两边界 + §4 请求等价门禁执行。
-4. 项目最终优化方案确定后补第四臂。
-5. （可选）SST-2/AG News 标签轨、中等输出轨（短输入摘要 cap 128/256，须全 manifest 零截断预检；达不到
-   则诚实记录 DuckDB 产品语义限制，**不继续抬 cap 直到"碰巧通过"**）。
+2. 三臂同 manifest、同 model、双 GPU、vLLM 同配置、prefix cache、**同 cap=64**、同计时边界，按 §2 五类指标
+   + §3 两边界 + §4 请求等价门禁执行。
+3. 项目最终优化方案确定后补第四臂。
+4. **database-E2E 顶层 runner（结构性缺口，§3 已标明）**：正式数据库系统排名前必须实现；在此之前只能跑
+   operator-only 门禁，**不能发布完整数据库系统排名**。
+
+非阻塞 microbenchmark（可与主路径并行，**不是 SQuAD 的前置门禁**）：
+
+- 句子计数 capability：64 行 screening 的对话外观察尚未归档；2048 行门禁未完成（归档证据目前只到
+  `feasibility/results/duckdb_ai_semantic_gate_20260805/`）。因其 accuracy 在 ShareGPT 对话语料上是噪声，
+  只作链路开销 microbenchmark；想补完时再补，不阻塞 SQuAD 主路径。
+
+可选扩展：
+
+- SST-2/AG News 标签轨、中等输出轨（短输入摘要，须全 manifest 零截断预检；达不到则诚实记录 DuckDB 产品
+  语义限制，**不继续抬 cap 直到"碰巧通过"**）。

@@ -4216,7 +4216,7 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
    不测 decode/流式/长短输出差异/提交调度。即使项目更快，也只能声称"项目在短标量 LLM 调用链路
    上执行效率优于 DuckDB `ai`"，**不能外推为 AI_COMPLETE 普遍优于 DuckDB**。要求全量 2048 行
    零失败 + 确定性句子切分器 ground-truth exact-match accuracy + 整数正确性校验。
-2. **正式产品对比轨（主）**：**SQuAD 短答案**（cap 64/128，仍是文本生成、有公开 reference answer、
+2. **正式产品对比轨（主）**：**SQuAD 短答案**（cap=64 固定，仍是文本生成、有公开 reference answer、
    可算 Exact Match + token-level F1、输出天然短、语义真实）为主 bounded AI_COMPLETE 对比；AG News/SST-2
    标签为可选扩展。完整协议见
    `experiments/plans/bounded_output_duckdb_comparison_protocol_20260805.md`：从"数据库 AI_COMPLETE 实际

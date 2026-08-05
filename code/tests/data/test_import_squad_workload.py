@@ -115,6 +115,18 @@ class SquadImportCountGateTests(unittest.TestCase):
             importer._validate_dev_count(10571)
 
 
+class SquadImportSha256GateTests(unittest.TestCase):
+    def test_canonical_sha256_passes(self) -> None:
+        importer._validate_dev_sha256(
+            "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9"
+        )
+
+    def test_tampered_sha256_fail_closes(self) -> None:
+        # a tampered file that happens to have 10570 rows still fails the SHA256 gate
+        with self.assertRaisesRegex(SystemExit, "canonical dev-v1.1.json"):
+            importer._validate_dev_sha256("0" * 64)
+
+
 class SquadImportTemplateTests(unittest.TestCase):
     def test_build_prompt_is_exact_locked_template(self) -> None:
         prompt = importer.build_prompt("CXT", "QST")

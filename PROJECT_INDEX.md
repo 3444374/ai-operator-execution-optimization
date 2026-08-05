@@ -370,6 +370,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/scheduling/endpoint_routing/` | round-robin、least-queued、least-work、manifest-pinned、prefix-affinity 路由 | 修改多 endpoint 选择策略前读 |
 | `code/src/scheduling/runtime/` | 有界 Ray actor worker pool、submit/complete adapter、worker contract、metrics observation cache 与 named credit actor | 修改 Ray worker slots、worker routing、completion cleanup 或服务观测接线前读 |
 | `code/scripts/data/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本；支持显式 prompt-token eligibility、按过滤后 offset 选择不重叠 suffix、逐字段核验既有 prefix 和 append-only 防覆盖 | 构造最终可比 `AI_COMPLETE` baseline workload 或补 held-out 行前运行 |
+| `code/scripts/data/import_squad_workload.py` | SQuAD v1.1 validation/dev 专用 importer（bounded-output AI_COMPLETE 主对比轨）；锁定 prompt 模板、cap=64、fail-closed 校验 canonical SHA256 + 行数，reference_answers JSONB 多答案 + source_example_id；写 provenance（版本/split/SHA256/官方 repo/revision/下载方式/content hash/importer commit） | 跑 SQuAD bounded-output 三臂对照前导入；篡改文件会被 SHA256 门禁拒。配合 `code/tests/data/test_import_squad_workload.py` |
+| `code/scripts/data/import_bounded_output_workload.py` | 通用 bounded-output 包装 importer（`--template` 支持任意 wrap，把源 workload 包成短输出 workload）；幂等、新 doc_id base 避 PK 冲突 | 构造句子计数等 microbenchmark workload |
 | `code/scripts/experiments/run_ai_operator_scenarios.py` | 带空闲门禁、失败审计和原子 manifest 的 seeded 场景运行器 | 执行随机化策略对比或真实基础设施门禁前运行 |
 | `code/tests/infrastructure/test_runner_lease.py` | runner 活跃 owner、stale recovery、fingerprint 与租约释放测试 | 修改场景 runner 恢复或单写者边界后运行 |
 | `code/scripts/analysis/summarize_output_aware_bfd.py` | output-aware BFD 重复实验的长表统计汇总 | 汇总吞吐、E2E、packing、GPU、能耗与 MFU 正式结果时运行 |
@@ -395,6 +397,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/scheduling/test_shared_credit_ray.py` | named Ray actor 复用与配置一致性边界测试 | 修改共享 credit 的 Ray ownership 接线后运行 |
 | `code/tests/experiments/test_shared_vllm_experiment.py` | Shared-vLLM 配置、容量语义、组级指标与公平性测试 | 修改多 job runner 后运行 |
 | `code/tests/data/test_import_ai_complete_workload.py` | ShareGPT/BurstGPT importer 单元测试 | 修改 importer 或 trace 过滤逻辑后运行 |
+| `code/tests/data/test_import_squad_workload.py` | SQuAD v1.1 dev importer 单元测试（多答案/特殊字符/重复 ID/缺答案/content hash/行数门禁/canonical SHA256 门禁/模板）| 修改 SQuAD importer 后运行 |
+| `code/tests/baselines/test_duckdb_ai_sentence_count_gate.py` | 句子计数 gate 纯函数单测（句子切分/整数 fullmatch/行数门禁/dist）| 修改 sentence-count gate 后运行 |
 | `code/tests/scheduling/test_scheduling_models.py` | scheduling request/endpoint/topology schema 单元测试 | 修改 typed scheduling metadata 前运行 |
 | `code/tests/scheduling/test_scheduling_policies.py` | static admission 与 round-robin routing 单元测试 | 修改 admission/routing baseline 前运行 |
 | `code/tests/scheduling/test_scheduler.py` | bounded-inflight 与 exactly-once deterministic scheduler 测试 | 修改 scheduler orchestration 前运行 |
