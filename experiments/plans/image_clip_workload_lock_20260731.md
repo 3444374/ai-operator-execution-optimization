@@ -46,7 +46,7 @@ CLIP 是 embedding 模型，不是生成式 LLM，但当前 vLLM 已通过 pooli
 | 选项 | 输入和预处理边界 | 角色 | 采纳 |
 |---|---|---|---|
 | **Daft built-in `embed_image`** | Daft `decode_image` → 内置 Transformers provider | Daft 自己拥有 batching/concurrency/backpressure 的主 native baseline | 256 图 gate 与逐行 parity 已通过；待独立 calibration/formal |
-| **官方 803,580-row ResNet18 parity** | 固定 `Eventual-Inc/Daft@3f5bdd175b7de3dcdf35765e1ba604b5c1cb8e15` 的 `daft_main.py` / `ray_data_main.py` | 公开 file/object track 的 vendor-code baseline | pin/文件哈希已记录；待双 4090 原图 gate，仅做白名单环境/指标适配 |
+| **官方 803,580-row ResNet18 parity** | 固定 `Eventual-Inc/Daft@3f5bdd175b7de3dcdf35765e1ba604b5c1cb8e15` 的 `daft_main.py` / `ray_data_main.py` | 公开 file/object track 的 vendor-code baseline | pin/文件哈希已记录；upstream S3 数据路径可访问但 AutoDL 吞吐门禁未过，Daft 0.6.2 venv 的 Ray 仍为 2.56.1 而非官方 2.49.2；版本/数据小门禁通过前不跑 GPU |
 | **Ray Data native API graph** | SQL source → CPU `map_batches` → GPU callable class | Ray Data 拥有调度/backpressure；workload UDF 不得包含项目策略 | 旧 gate 仅证明 adapter 可运行；移除项目 inflight 后重做 native gate |
 | **项目自写 Daft fused/staged UDF** | 自写 `@daft.cls` 内核与阶段边界 | 暴露阶段耦合的 diagnostic reference，不是官方 baseline | 保留历史诊断，不进入主排名 |
 | **vLLM pooling (`--runner pooling`)** | encoded image 进入服务，processor + pooling 在服务内部 | direct-service ceiling 候选；不属于数据库/框架原生 baseline | **当前环境 blocked**：0.25.1 两次 1-image offline gate 均 600s timeout、无 embedding；禁止继续在线/5K/60K |

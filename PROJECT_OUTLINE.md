@@ -139,7 +139,8 @@ schema v2 复测。R0–R2 已把 pageable FP32 ownership copy/dtype conversion 
 preprocess/喂入是当前候选限制，但不把 `nvidia-smi` util 写成 MFU 或硬件因果证明。
 Daft built-in 与 Ray Data 均已独立校准，schema v11 计时内 normalized contract parity
 已通过；下一步是同 60K×2、1+3 的原生 baseline/project 正式排名。项目自写 Daft
-staged/fused 仅保留为诊断 reference；官方 ResNet18 仍需固定 upstream commit 与数据许可。
+staged/fused 仅保留为诊断 reference；官方 ResNet18 已固定 upstream commit/SHA，但
+AutoDL 仍需通过 exact S3 workload 带宽、Ray 2.49.2 隔离环境和 adapter diff 门禁。
 
 **已完成**：
 - ✅ vLLM + Qwen2.5-1.5B baseline 建立（07-18）
@@ -169,8 +170,9 @@ staged/fused 仅保留为诊断 reference；官方 ResNet18 仍需固定 upstrea
 - ✅ 算子 E2E 代价估计审计：旧 283-row 结果混入 warmup，已归档；当前 formal-only
   23-feature context-LOO 使用 204 条 formal、17 contexts。CE5 MAE 7.91s、candidate
   pairwise 0.800、macro/pooled/max regret 4.58%/0.62%/26.23%，row pairwise 0.684
-  未过既有门槛，仍不晋级。双 4090 4-cell pilot 8/8 通过后，独立 20-context
-  formal 已完成预注册与配置门禁；按用户要求暂缓，由远端 agent 后续执行
+  未过既有门槛，仍不晋级。双 4090 4-cell pilot 8/8 通过；首次独立 20-context
+  formal 因两个 runner 几乎全程重叠且 640/640 子运行启动 local Ray 而整体无效。
+  已增加 host-scope lease 和空 Ray 地址门禁，最小共享-Ray gate 通过前不重跑 formal
 - ✅ vLLM eager vs CUDA Graph 同配置对照：512 请求、每侧 3 次 formal；
   CUDA Graph 的 E2E 均值 79.85s（-71.76%）、observed tokens/s
   2875.68（+254.05%）、MFU 14.51%（eager 4.02%）。该结果用于选定后续

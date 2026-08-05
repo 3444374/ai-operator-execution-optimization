@@ -659,6 +659,32 @@ class ExperimentScenarioTests(unittest.TestCase):
 
 
 class ScenarioRunnerTests(unittest.TestCase):
+    def test_config_rejects_empty_ray_address_before_execution(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = self._write_config(
+                root,
+                scenario_ids=["fixed"],
+                formal_repeats=1,
+                seed=7,
+            )
+            decoded = json.loads(config_path.read_text(encoding="utf-8"))
+            decoded["common_args"] = [
+                "--executor",
+                "ray_actor",
+                "--ray-address",
+                "${EMPTY_RAY_ADDRESS}",
+            ]
+            config_path.write_text(json.dumps(decoded), encoding="utf-8")
+
+            with patch.dict(
+                os.environ,
+                {"EMPTY_RAY_ADDRESS": ""},
+                clear=False,
+            ):
+                with self.assertRaisesRegex(ValueError, "empty required"):
+                    _load_config(config_path)
+
     def test_parse_recover_stale_lease_requires_resume(self) -> None:
         common = [
             "--config",

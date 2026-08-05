@@ -14,6 +14,8 @@ from pathlib import Path
 
 
 LEASE_NAME = ".runner-lease.json"
+HOST_SCOPE_DIR_NAME = ".host-runner-scope"
+HOST_SCOPE_FINGERPRINT = "host-exclusive-experiment-runner-v1"
 _REQUIRED_FIELDS = {
     "hostname",
     "pid",
@@ -122,6 +124,32 @@ def acquire_runner_lease(
         lease_path,
         resolved_owner,
         recovered_owner=existing,
+    )
+
+
+def acquire_host_runner_lease(
+    artifact_root: Path,
+    *,
+    repository_commit: str,
+    owner: RunnerOwner | None = None,
+    process_alive: Callable[[int], bool] | None = None,
+) -> RunnerLease:
+    """Acquire one host-local experiment slot shared by sibling output dirs.
+
+    Output-directory leases prevent two writers from corrupting one directory.
+    This host-scope lease additionally prevents independent runners in sibling
+    directories from concurrently contaminating the same Ray/vLLM/GPU service.
+    A dead owner's host lease is recovered automatically; the per-output lease
+    keeps its stricter explicit-recovery semantics for experiment evidence.
+    """
+
+    return acquire_runner_lease(
+        artifact_root / HOST_SCOPE_DIR_NAME,
+        config_fingerprint=HOST_SCOPE_FINGERPRINT,
+        repository_commit=repository_commit,
+        recover_stale=True,
+        owner=owner,
+        process_alive=process_alive,
     )
 
 

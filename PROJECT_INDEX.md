@@ -51,6 +51,7 @@
 | `experiments/results/prefix_aware_batching_20260726/README.md` | Controlled prefix-ratio workload and prefix-aware code/experiment audit | Review cache-off mechanism boundary and organizer fixes |
 | `experiments/results/operator_cost_estimation_20260726/README.md` | Formal-only 23-feature、13-context LOO 的算子 E2E 代价估计；all-phase 历史证据归档 | 检查 warmup 隔离、预测、候选 ranking、macro/pooled/max regret 与晋级门槛 |
 | `experiments/results/operator_cost_profile_pilot_20260804/` | 双 4090 四候选 v1/v2 cost-profile pilot，含完整压缩 raw、summary 和七步报告 | 审计新机器采样合同、23 维候选可区分性、trace 完整性和 formal 时间预算 |
+| `experiments/results/operator_cost_profile_dual4090_formal_20260804/` | 双 4090 首次 320-run formal 的并发 runner、空 Ray 地址与整体排除证据 | 复核为什么两套表面完整数据均不能进入 CE0–CE6，以及修复后的重跑门禁 |
 | `experiments/results/row_cap_aware_packing_512_20260726/README.md` | Prefix-cache-corrected 512-row screening and repeated confirmation | Review why sequential remains default and how cache-enabled data was excluded |
 | `experiments/results/row_cap_aware_packing_512_20260726/nocache_repeats/summary_long.csv` | Plot-ready 512-row repeated metrics | Plot throughput, request tails/SLO, packing, energy, vLLM pressure, and MFU |
 | `experiments/results/row_cap_aware_packing_1024_20260726/README.md` | Held-out 1024-row mechanism decision | Review the SLO-goodput regression that blocks row-cap-first default adoption |

@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-08-05 双 4090 cost-profile formal 无效性审计与运行互斥修复
+
+- 复核服务器两套各 320 行的 cost-profile 输出：行数和子进程状态虽然完整，但两个
+  launcher 几乎全程重叠，共同竞争同一 vLLM/GPU；两份 manifest 还记录了空
+  `--ray-address`，640/640 子运行日志均显示启动 local Ray。两套数据整体排除，不运行
+  CE0–CE6，不挑选局部结果。
+- `runner_lease` 新增 artifact-root host-scope 互斥，阻止不同输出目录的 runner 并发；
+  scenario config loader 新增显式空 endpoint/model/database/metrics/Ray 参数门禁。
+- 新增七步事故报告和紧凑哈希证据；正式计划增加“单 host runner + 共享 Ray + local-Ray
+  启动计数为 0”门禁。修复后的最小 gate 通过前不启动下一轮 320-run。
+- 复核 ResNet18 vendor-code parity：HF ImageNet token/许可不是 upstream S3 parquet
+  workload 的准备证明；当前 Daft 0.6.2 venv 实际搭配 Ray 2.56.1，不符合冻结的
+  Ray 2.49.2，服务器也未保留三份 pin 文件。状态修正为 `blocked-before-gate`，先验证
+  exact object 带宽、版本和 SHA；必要时只镜像相同 upstream objects，不换数据语义。
+
 ## 2026-08-04 多机器自动识别与按签名校准
 
 - `manage_environment.py check` 不再要求手工选择 profile：自动采集 CPU、GPU 型号/显存、

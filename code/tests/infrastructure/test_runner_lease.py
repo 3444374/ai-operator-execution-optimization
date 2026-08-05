@@ -14,10 +14,33 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.infrastructure.runner_lease import RunnerOwner, acquire_runner_lease  # noqa: E402
+from src.infrastructure.runner_lease import (  # noqa: E402
+    RunnerOwner,
+    acquire_host_runner_lease,
+    acquire_runner_lease,
+)
 
 
 class RunnerLeaseTests(unittest.TestCase):
+    def test_host_scope_rejects_runner_with_different_output_dir(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            artifact_root = Path(temp_dir)
+            first = acquire_host_runner_lease(
+                artifact_root,
+                repository_commit="abc123",
+                owner=RunnerOwner("host-a", 11, "start-a", "owner-a"),
+                process_alive=lambda pid: pid == 11,
+            )
+            self.addCleanup(first.release)
+
+            with self.assertRaisesRegex(RuntimeError, "active runner"):
+                acquire_host_runner_lease(
+                    artifact_root,
+                    repository_commit="abc123",
+                    owner=RunnerOwner("host-a", 12, "start-b", "owner-b"),
+                    process_alive=lambda pid: pid == 11,
+                )
+
     def test_live_owner_rejects_second_runner(self) -> None:
         with TemporaryDirectory() as temp_dir:
             output = Path(temp_dir)

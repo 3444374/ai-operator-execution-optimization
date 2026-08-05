@@ -37,7 +37,10 @@ from src.experiments.scenarios.core import (  # noqa: E402
 )
 from src.observability.metrics import parse_prometheus_metrics  # noqa: E402
 from src.infrastructure.config_env import ENV_REFERENCE, expand_text  # noqa: E402
-from src.infrastructure.runner_lease import acquire_runner_lease  # noqa: E402
+from src.infrastructure.runner_lease import (  # noqa: E402
+    acquire_host_runner_lease,
+    acquire_runner_lease,
+)
 from src.serving.probes.vllm import probe_live_prefix_caching  # noqa: E402
 
 
@@ -205,19 +208,26 @@ def run_experiment(
     )
     fingerprint = _config_fingerprint(config, schedule)
     repository_commit = _repository_commit()
-    with acquire_runner_lease(
-        options.output_dir,
-        config_fingerprint=fingerprint,
+    with acquire_host_runner_lease(
+        options.output_dir.parent,
         repository_commit=repository_commit,
-        recover_stale=options.recover_stale_lease,
-    ) as lease:
-        return _run_experiment_locked(
-            options,
-            config=config,
-            schedule=schedule,
-            recovered_owner=lease.recovered_owner,
-            idle_gate=idle_gate,
-        )
+    ) as host_lease:
+        with acquire_runner_lease(
+            options.output_dir,
+            config_fingerprint=fingerprint,
+            repository_commit=repository_commit,
+            recover_stale=options.recover_stale_lease,
+        ) as output_lease:
+            recovered_owner = (
+                output_lease.recovered_owner or host_lease.recovered_owner
+            )
+            return _run_experiment_locked(
+                options,
+                config=config,
+                schedule=schedule,
+                recovered_owner=recovered_owner,
+                idle_gate=idle_gate,
+            )
 
 
 def _run_experiment_locked(
@@ -605,6 +615,7 @@ def _load_config(path: Path) -> ScenarioExperimentConfig:
                 ),
             )
         )
+    _validate_runtime_arguments(common_args, tuple(scenarios))
     return ScenarioExperimentConfig(
         experiment_id=experiment_id,
         seed=seed,
@@ -677,6 +688,51 @@ def _validate_argument_list(values, label: str) -> tuple[str, ...]:
         if flag in _RUNNER_OWNED_FLAGS:
             raise ValueError(f"{label} contains runner-owned flag {flag}")
     return expanded
+
+
+def _validate_runtime_arguments(
+    common_args: tuple[str, ...],
+    scenarios: tuple[ScenarioDefinition, ...],
+) -> None:
+    """Fail before execution when required runtime endpoints expand to empty."""
+
+    nonempty_if_present = (
+        "--completion-endpoint-urls",
+        "--completion-model",
+        "--database-url",
+        "--model-metrics-urls",
+        "--ray-address",
+    )
+    for scenario in scenarios:
+        arguments = (*common_args, *scenario.args)
+        values = {
+            flag: _last_option_value(arguments, flag)
+            for flag in nonempty_if_present
+        }
+        empty = [
+            flag
+            for flag, value in values.items()
+            if value is not None and not value.strip()
+        ]
+        if empty:
+            raise ValueError(
+                f"scenario {scenario.scenario_id} has empty required option(s): "
+                + ", ".join(empty)
+            )
+
+
+def _last_option_value(arguments: tuple[str, ...], flag: str) -> str | None:
+    value: str | None = None
+    for index, argument in enumerate(arguments):
+        if argument.startswith(flag + "="):
+            value = argument.split("=", 1)[1]
+        elif argument == flag:
+            if index + 1 >= len(arguments) or arguments[index + 1].startswith(
+                "--"
+            ):
+                raise ValueError(f"option {flag} requires a value")
+            value = arguments[index + 1]
+    return value
 
 
 def _expand_environment_references(value: str, label: str) -> str:

@@ -1,9 +1,11 @@
 # 双 4090 算子代价估计 formal profile（2026-08-04）
 
-> **状态：已预注册，暂缓执行。** 2026-08-04 按用户要求只完成门禁、语义审计和
-> `main` 推送；本地 agent 不运行 320-run formal。只有远端 agent 在确认 `main`、服务、
-> 数据和磁盘门禁后才可启动。此前一次启动因服务器没有 `/usr/bin/time` 在首个 run 前
-> 退出，未产生实验数据，空目录已清理；正式命令不再依赖该可选工具。
+> **状态：首次运行无效，等待修复后重跑。** 2026-08-04 的两套 320-run 输出几乎全程
+> 并发使用同一组 vLLM/GPU，且空 `--ray-address` 使每个子运行启动 local Ray；两套数据
+> 均排除出 CE0–CE6 分析。事故证据见
+> [`../results/operator_cost_profile_dual4090_formal_20260804/README.md`](../results/operator_cost_profile_dual4090_formal_20260804/README.md)。
+> 只有 host-scope lease、非空共享 Ray 门禁和最小复跑通过后，远端 agent 才可在单一
+> 新目录重跑；不得从无效目录 resume 或挑选部分结果。
 
 ## 1. 研究问题
 
@@ -44,6 +46,10 @@ length。五个 workload 在运行前均需验证可提供至少 256 行。
 6. 每个 context 的四个 23 维特征向量与 candidate ID 均不同，机器/协议 context 一致；
 7. 服务进程快照证明模型、端口、cache、max batched tokens 和 max seqs；
 8. 任一 cell CV>5%、输出 token 或 endpoint 分布异常时单列并补跑，不静默删除离群值。
+9. artifact root 的 host-scope lease 证明同一时刻只有一个实验 runner；启动前和完成后
+   均检查没有 sibling output runner。
+10. `--ray-address` 必须为非空共享 Ray 地址，且全部 stdout/stderr 中
+    `Started a local Ray instance` 计数必须为 0。
 
 ## 5. 预注册评价指标
 
@@ -118,10 +124,10 @@ screen -dmS cost-formal bash -lc '
 `/root/autodl-tmp/ai-operator-runtime.env`；缺少任一环境变量时 config loader 会
 fail-closed，不允许手填默认值继续跑。
 
-2026-08-04 门禁时服务器 runtime env 缺少 `RAY_ADDRESS`，因此远端 agent 必须先按
-`deploy/autodl/README.md` 启动 Ray，并把**实际地址**写回该机器自己的 runtime env；
-不能仅为了让模板展开而填入一个未监听的地址。门禁用临时地址只验证了 80-scenario
-配置结构，不代表 Ray service readiness。
+2026-08-04 首次 formal 已证实：仅检查变量“存在”不够，变量可能存在但为空。远端
+agent 必须先按 `deploy/autodl/README.md` 启动 Ray，把**实际非空地址**写回该机器自己的
+runtime env，并做连接门禁；不能仅为模板展开填入未监听地址。config loader 现在拒绝
+显式空值，host-scope lease 拒绝不同输出目录上的并发 runner。
 
 完成后结果进入 `experiments/results/operator_cost_profile_dual4090_formal_20260804/`，
 包含七步 README、compact summary、formal-only LOO JSON、raw archive SHA256 和不能声称的

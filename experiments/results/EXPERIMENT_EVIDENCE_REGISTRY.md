@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-更新日期：2026-08-01
+更新日期：2026-08-05
 
 本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。2026-08-01 起内部执行方向转为 image-first A+B；文本遗留 formal 为 `parked-conditional`，状态以 `experiments/plans/experiment_status_and_gaps.md` §0 为准。
 
@@ -39,7 +39,7 @@
 | Shared-vLLM endpoint credit 与 DRR | `code/src/shared_vllm_experiment.py`、named shared-credit actor、group runner 与测试 | `dual_gpu_shared_vllm_formal_20260729_1135/` | 双 4090 36/36 group run、0 incident；全局 256 request/65,536 work 安全与归零通过。2-job 无增量；4-job 聚合吞吐 +9.57%、max P99 -22.52%，但逐 repeat 不稳定，暂作高竞争条件性候选。 |
 | Batching × submission 联合搜索 | scenario runner 与汇总工具 | `joint_batching_submission_512_20260726/` | 18 单元筛选和候选重复完成；当前单 GPU 下联合候选未显著优于独立拼接。 |
 | vLLM CUDA Graph | 服务配置与相同 profiler 路径 | `vllm_cuda_graph_512_20260726/` | 重复真实对照显著优于 eager；作为本地部署 baseline，不作为上游调度研究贡献。 |
-| 算子代价估计 | `code/src/planning/costs/`、`code/scripts/analysis/estimate_operator_cost.py`、context-LOO driver 及测试 | `operator_cost_estimation_20260726/`、`operator_cost_profile_pilot_20260804/` | 当前 formal-only 204 行/17 context；CE5 candidate pairwise 0.800、macro regret 4.58% 但 max 26.23%、row pairwise 0.684，未晋级。旧 283-row all-phase 结果已归档；双 4090 pilot 只证明新数据采样合同。 |
+| 算子代价估计 | `code/src/planning/costs/`、`code/scripts/analysis/estimate_operator_cost.py`、context-LOO driver 及测试 | `operator_cost_estimation_20260726/`、`operator_cost_profile_pilot_20260804/`、`operator_cost_profile_dual4090_formal_20260804/` | 当前有效 formal-only 仍为 204 行/17 context；CE5 candidate pairwise 0.800、macro regret 4.58% 但 max 26.23%、row pairwise 0.684，未晋级。双 4090 pilot 只证明采样合同；首次 320-run 因两个 runner 重叠和 640/640 local-Ray 启动而整体排除，未产生新模型证据。 |
 | 多模态 cost adapter / image path | 中性 `work_units` + lazy Daft image source + typed CLIP tensor actor 已实现基础合同；两个 CLIP profiler；`import_coco_images.py` | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`（历史 slow-pt）；`image_clip_preprocess_variants_20260801/`（当前实现边界，720 raw rows）；`feasibility/results/vllm_clip_pooling_gate_20260804/` | 四变体质量门禁通过；tensor fast path 相对 production-np 串行 profile 1.14–1.22×，CPU prepare 仍为 actor 13.8–31.2×。这只保留 E2E build 动机；写回和相对 Daft Native 的正式方法对照尚未完成。vLLM pooling 是 direct-service ceiling 候选，当前 0.25.1 两次 1-image offline gate 均 600s 超时且无 embedding，状态 blocked，不能生成性能排名。 |
 | 多 endpoint/多 GPU 调度 | endpoint/pool 配置与 routing contract | request replay、active-work saturation、Actor Pool 与 Shared-vLLM formal | 真实双 4090 容量、admission、worker identity 与 equal-weight 1/2/4-job 公平性证据已建立；尚不能声称 staggered/weighted、路由增量或故障迁移有效。 |
 | Ray task/actor 与 vLLM capacity 调优 | 执行接口、参数字段和实验设计 | CUDA Graph、双 GPU request replay、active-work、Actor Pool 与 service quantum | 已固定 vLLM 8192 batched-token/256 seq capacity，并标定上游 65K work 饱和点；增加 actor 或固定 quantum 均未过 5% 门槛。 |

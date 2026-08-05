@@ -150,6 +150,16 @@ images/s 不能构成完整的数据库 AI 算子评价。
 `code/configs/image_vendor_baselines.json`；该 pin 尚未在本项目双 4090 上执行，不能把
 Daft README 中的 AWS 8×g6.xlarge 数字与本机结果直接排名。
 
+2026-08-05 AutoDL 能力审计更新：upstream 脚本读取的是公开
+`s3://daft-oss-public-datasets/imagenet/benchmark` parquet，而不是项目本地 COCO 或
+Hugging Face imagefolder；HF token/许可通过不等于该 official workload 已准备好。
+短下载仅证明对象公开且返回 parquet 字节，尚不能证明全 workload 的可用带宽。当前
+`daft-062` venv 实测为 Daft 0.6.2 + Ray 2.56.1，未满足冻结的 Ray 2.49.2；服务器也未
+保留三份已校验 upstream 脚本。因此状态是 `blocked-before-gate`，不是“环境/代码/数据
+全部就绪”。下一步只运行版本隔离、三文件 SHA 和一个完整 parquet object 的计时门禁；
+若 AutoDL 带宽不足，可在不改变 rows/labels/transforms 的前提下镜像 exact upstream
+objects 到本地路径，并将该输入路径改动写入 adapter diff，不能用不同 HF 子集替代。
+
 文本轨道采用同一 fail-closed 规则：每个 summary 由
 `code/src/baselines/provenance.py` 写入 comparison role、implementation provenance、
 scheduler owner、custom scheduling、formal eligibility、upstream source 和资格门禁。

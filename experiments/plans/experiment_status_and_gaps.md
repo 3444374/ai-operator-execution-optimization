@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-04；代价估计 formal-only 审计与双 4090 formal 预注册）
+Date: 2026-07-20（最后更新：2026-08-05；双 4090 cost-profile 首次 formal 无效性审计）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -22,14 +22,15 @@ Date: 2026-07-20（最后更新：2026-08-04；代价估计 formal-only 审计�
   候选；当前 vLLM 0.25.1 两次 1-image offline gate 均在 600s 超时且没有 embedding
   结果，状态为 **blocked**，禁止继续在线、5K 或 60K。它不是数据库/框架原生
   baseline，也不能据此声称 vLLM 普遍不支持 CLIP → ②Daft/Ray 官方 ResNet18
-  vendor-code parity（commit `3f5bdd17`，GPU 8→2，**阻塞于 ImageNet 数据 + Daft
-  0.6.2 独立环境 + 磁盘 27G**）→ ③Doris/ClickHouse（**阻塞于 AutoDL 无
+  vendor-code parity（commit `3f5bdd17`，GPU 8→2；upstream 使用公开 S3 parquet，
+  AutoDL 小样本访问很慢；现有 venv 为 Daft 0.6.2 但 Ray 2.56.1，尚未满足官方
+  Ray 2.49.2 合同，故状态仍为 **blocked-before-gate**）→ ③Doris/ClickHouse（**阻塞于 AutoDL 无
   Docker**，需独立 Docker/VM）→ ④system E2E + pgvector sink。
-- **B 线（代价估计）**：双 4090 4-cell pilot v2 已 8/8、0 incident；独立机器轨道不能
-  与旧单 5070 静默合并。已冻结 5 workloads × 2 rows × 2 output caps × 4 active-work、
-  每 cell 1+3 的 320-run formal，预计约 3.5–4 小时；当前按用户要求暂缓，由远端 agent
-  在 `main` 上执行。完成后用 formal-only
-  candidate-aggregated LOO 对照 CE0–CE5，再决定是否进入 state-aware Track 2。
+- **B 线（代价估计）**：双 4090 4-cell pilot v2 已 8/8；首次 320-run formal 产生两套
+  表面完整结果，但两 runner 几乎全程并发，且 640/640 子运行因空 Ray 地址启动 local
+  Ray，故全部判为无效并禁止进入 CE0–CE5。host-scope lease 与空参数门禁修复后，先跑
+  共享 Ray 最小 gate，再由远端 agent 在单一新目录重跑 5 workloads × 2 rows ×
+  2 output caps × 4 active-work、每 cell 1+3。详见结果事故报告。
 - 上方 §0 "下一步运行 Daft 官方 ResNet18 parity 与 60 秒以上稳态 formal" 中，**60 秒稳态 formal 已由 60K×2 schema-v12 重跑闭合**；ResNet18 parity 仍待（A②）。
 
 ## 0. 当前优先级（2026-08-01 方向 pivot —— 取代 §4 / §10.3 / §13 的文本轨道强制顺序）
