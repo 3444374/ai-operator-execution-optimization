@@ -157,29 +157,56 @@ def _sink_write(
     return written, time.time() - t0
 
 
-def _sink_readback(conn, doc_ids, category: str) -> dict:
-    """Post-wall verification that the rows actually persisted in the sink.
+def _sink_readback(conn, sunk_pairs: list[tuple], category: str) -> dict:
+    """Post-wall verification that the sunk rows persisted WITH EXPECTED CONTENT.
 
-    Counts how many of the just-sunk ``doc_ids`` are present in
-    ``document_completions`` (by PK) and compares to the sunk count. This is an
-    actual DB readback, distinct from the execution-status sidecar
-    (``sunk_status.csv``), so a silent sink failure cannot hide behind the sidecar.
+    Digests ``(doc_id, completion_text)`` for the sunk pairs and compares to what
+    is read back from ``document_completions``. A count-only check would let
+    historical residual rows with the same doc_id (but stale text) pass; the
+    content digest catches that. ``matched`` is True only when both the row count
+    AND the content digest agree.
     """
 
+    import hashlib
+
+    def _digest(pairs: list[tuple]) -> str:
+        canon = sorted(([str(d), t]) for d, t in pairs)
+        return hashlib.sha256(
+            json.dumps(canon, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+
+    expected_digest = _digest(sunk_pairs)
+    expected_n = len(sunk_pairs)
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT COUNT(*) FROM document_completions "
+                "SELECT doc_id, completion_text FROM document_completions "
                 "WHERE doc_id = ANY(%s) AND category = %s",
-                (list(doc_ids), category),
+                ([d for d, _ in sunk_pairs], category),
             )
-            present = int(cur.fetchone()[0])
+            rows = [(int(d), str(t)) for d, t in cur.fetchall()]
+        actual_digest = _digest(rows)
+        actual_n = len(rows)
         return {
-            "expected": len(doc_ids), "present": present,
-            "matched": present == len(doc_ids),
+            "expected_rows": expected_n, "present_rows": actual_n,
+            "expected_digest": expected_digest, "actual_digest": actual_digest,
+            "matched": (actual_n == expected_n and actual_digest == expected_digest),
         }
     except Exception as exc:
-        return {"expected": len(doc_ids), "error": redact_text(str(exc)[:160])}
+        return {"expected_rows": expected_n, "error": redact_text(str(exc)[:160]),
+                "matched": False}
+
+
+def _readback_ok(readback: dict, writeback_mode: str) -> bool:
+    """A run is single-run-valid only if the sink readback matched (when sinking).
+
+    Pure -- unit-testable. ``writeback_mode='none'`` sinks nothing, so there is
+    nothing to verify (vacuously ok).
+    """
+
+    if writeback_mode == "none":
+        return True
+    return readback.get("matched") is True
 
 
 def _runner_metrics(
@@ -358,7 +385,11 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
     time.sleep(max(0.0, args.metrics_settle_s))
     metrics_after = scrape_prometheus_metrics(args.metrics_url)
     sink_readback = (
-        _sink_readback(conn, [r.doc_id for r in results], args.sink_category)
+        _sink_readback(
+            conn,
+            [(r.doc_id, r.output_text if r.output_text is not None else "") for r in results],
+            args.sink_category,
+        )
         if args.writeback_mode != "none"
         else {"skipped": "writeback_mode=none"}
     )
@@ -439,12 +470,24 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
     max_tokens_errors = sum(
         1 for r in results if r.error and "max_tokens" in (r.error or "")
     )
-    passed = error_count == 0 and null_response == 0
-    failure_reason = (
-        None if passed
-        else (f"{error_count} row-level error(s), {null_response} NULL response(s) "
-              f"(of which {max_tokens_errors} identifiable max_tokens error(s))")
-    )
+    # single_run_valid = 0 error/NULL AND the sink readback matched (when sinking).
+    # A readback mismatch (rows did not persist with expected content, or the
+    # readback query itself errored) FAILS the run -- a silent sink failure
+    # cannot hide behind a clean operator result.
+    readback_ok = _readback_ok(sink_readback, args.writeback_mode)
+    passed = error_count == 0 and null_response == 0 and readback_ok
+    _reasons: list[str] = []
+    if error_count or null_response:
+        _reasons.append(
+            f"{error_count} row-level error(s), {null_response} NULL response(s) "
+            f"(of which {max_tokens_errors} identifiable max_tokens error(s))"
+        )
+    if not readback_ok:
+        _reasons.append(
+            "sink readback failed: "
+            + (sink_readback.get("error") or "content/count mismatch")
+        )
+    failure_reason = "; ".join(_reasons) if _reasons else None
 
     attribution, attribution_ok = _assess_attribution(
         metrics_before, metrics_after, requests_sent=len(all_rows)

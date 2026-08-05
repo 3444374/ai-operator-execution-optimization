@@ -1,5 +1,24 @@
 # 项目日志
 
+## 2026-08-05 database-E2E runner H7：scratch_dir 永久 repo-local + sink readback 内容核验 & fail-closed
+
+- codex H6 复核后仍两阻断，本轮 H7 修完（不重跑 DuckDB full、不动原始机器证据）：
+  1. **`_scratch_dir` 永久 repo-local**：原 `mkdtemp()` 在 codex Windows 沙箱成功、但往里写 `prov.json`
+     被拒（PermissionError），fallback 只在 mkdtemp 自身抛错时触发→不够。改为**始终**在
+     `code/tests/baselines/_e2e_runner_tmp/scratch_<n>`（`Path.mkdir` + 计数唯一 + `rmtree`）创建 scratch，
+     完全不依赖系统 temp——repo 树在哪 checkout 哪就可写。
+  2. **sink readback 内容核验 + fail-closed**：原只数 doc-id 数量（历史残留同 doc-id 也能过）且 mismatch
+     不影响 `passed`。改为对 `(doc_id, completion_text)` 取 digest 核验（expected vs 实际读回），`matched`
+     要求行数+内容都一致；新增 `_readback_ok`，纳入 `single_run_valid`/`passed`/EXIT——readback mismatch
+     或查询报错 → status=failure、EXIT=1（即使 0 error/NULL）。`writeback_mode=none` 时跳过（vacuously ok）。
+- 测试：加 `_readback_ok`（matched/mismatch/error/none）、`_scratch_dir`（repo-local 可写+清理）、
+  readback-mismatch 集成（0 error/NULL 但 readback 失败 → EXIT 1）。**114 测试通过**（74 runner/gate/redact/
+  scanner + 6 diagnostic + 28 scenario + 6 新）。
+- **Wiki 同步记录**：`bounded_output_duckdb_comparison_protocol_20260805.md`（08d061c 协议更新）已于
+  **本地机器** `C:\Users\ays\Desktop\ai-operator-wiki`（`sync-wiki.sh`，非服务器侧）同步到 wiki 的
+  `experiments/plans/`，diff 与项目**完全一致**。wiki 是独立 repo、不在项目 GitHub；**canonical 源是项目
+  git 里的 `experiments/plans/` 文件**（codex 可据此核验），wiki 仅作镜像。
+
 ## 2026-08-05 database-E2E runner codex 复核：6 项口径修复（不重跑、不覆写原始证据）
 
 - codex 复核 `79a9d6c` 的 E2E runner，6 项问题全部修复（纯口径/审计，不重跑 DuckDB 全量、不覆写

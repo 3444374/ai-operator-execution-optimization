@@ -5,7 +5,6 @@ import importlib.util
 import json
 import shutil
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -26,29 +25,23 @@ runner = importlib.util.module_from_spec(_spec)
 sys.modules["squad_database_e2e_runner"] = runner
 _spec.loader.exec_module(runner)
 
-# Repo-local fallback for environments whose system temp dir is not writable
-# (e.g. codex's Windows sandbox blocks tempfile writes). The repo tree is
-# writable wherever it is checked out, so this keeps the integration tests
-# independently reproducible.
+# ALWAYS repo-local scratch dir. The system temp is not reliably writable on
+# every host (e.g. codex's Windows sandbox allows mkdtemp() but then denies
+# file creation inside it), so depending on tempfile.mkdtemp + a fallback that
+# only triggers when mkdtemp itself raises is insufficient. The repo tree is
+# writable wherever the repo is checked out, which is the one guarantee we have.
 _REPO_TMP = Path(__file__).resolve().parent / "_e2e_runner_tmp"
+_scratch_counter = 0
 
 
 @contextlib.contextmanager
 def _scratch_dir():
-    """A scratch dir that also works when the system temp is not writable.
+    """A repo-local scratch dir, unique per call, cleaned up in ``finally``."""
 
-    Decide the directory BEFORE yielding (so a PermissionError from the system
-    temp is handled once, at mkdtemp time) and clean up in ``finally`` -- never
-    catch test-body exceptions after ``yield``, otherwise a test that raises
-    PermissionError inside the ``with`` would be caught by an outer except and
-    trigger a second yield (``RuntimeError: generator didn't stop after throw``).
-    """
-
-    try:
-        path = Path(tempfile.mkdtemp())
-    except (OSError, PermissionError):
-        _REPO_TMP.mkdir(parents=True, exist_ok=True)
-        path = Path(tempfile.mkdtemp(dir=str(_REPO_TMP)))
+    global _scratch_counter
+    _scratch_counter += 1
+    path = _REPO_TMP / f"scratch_{_scratch_counter}"
+    path.mkdir(parents=True, exist_ok=True)
     try:
         yield path
     finally:
@@ -159,7 +152,7 @@ class OperatorSpanTests(unittest.TestCase):
 class DatabaseE2EBarrierTests(unittest.TestCase):
     """Mocked end-to-end main() run: assert E2E timing block + decoupled state."""
 
-    def _run_main(self, fail_one: bool) -> tuple[int, dict, list[str]]:
+    def _run_main(self, fail_one: bool, readback_matched: bool = True) -> tuple[int, dict, list[str]]:
         rows_sidecar = [_row(i, f"id{i}", text=f"p{i}") for i in range(1, 5)]
         rows = [r for r, _ in rows_sidecar]
         sidecar = {r["doc_id"]: tc for r, tc in rows_sidecar}
@@ -211,7 +204,7 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
             with patch("squad_database_e2e_runner._scan_workload", side_effect=fake_scan), \
                  patch("squad_database_e2e_runner._sink_write", side_effect=fake_sink), \
                  patch("squad_database_e2e_runner._sink_readback",
-                       return_value={"expected": 4, "present": 4, "matched": True}), \
+                       return_value={"matched": readback_matched}), \
                  patch("squad_database_e2e_runner.run_duckdb_ai_complete", side_effect=fake_complete), \
                  patch("squad_database_e2e_runner.scrape_prometheus_metrics", side_effect=fake_scrape), \
                  patch("squad_database_e2e_runner.inspect_duckdb_ai_runtime",
@@ -266,6 +259,47 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
         self.assertEqual(report["runner_metrics"]["failed_rows"], 1)
         self.assertEqual(report["runner_metrics"]["failure_rate"],
                          round(1 / report["row_count"], 6))
+
+
+    def test_readback_mismatch_fails_even_with_no_errors(self) -> None:
+        # 0 error/NULL but sink readback mismatch -> still FAILURE / EXIT 1.
+        rc, report, _ = self._run_main(fail_one=False, readback_matched=False)
+        self.assertEqual(rc, 1)
+        self.assertEqual(report["status"], "failure")
+        self.assertEqual(report["single_run_valid"], False)
+        self.assertEqual(report["formal_run_gate_passed"], False)
+        self.assertEqual(report["comparison_admission"], "pending_formal_repeat")
+        self.assertIn("sink readback", report["failure_reason"])
+        # operator itself was clean (0 error/NULL) -- the failure is readback-only
+        self.assertEqual(report["error_count"], 0)
+        self.assertEqual(report["null_response_count"], 0)
+
+
+class ReadbackOkTests(unittest.TestCase):
+    def test_matched_json_text_ok(self) -> None:
+        self.assertTrue(runner._readback_ok({"matched": True}, "json_text"))
+
+    def test_mismatch_not_ok(self) -> None:
+        self.assertFalse(runner._readback_ok({"matched": False}, "json_text"))
+
+    def test_error_no_matched_key_not_ok(self) -> None:
+        self.assertFalse(runner._readback_ok({"error": "boom"}, "json_text"))
+
+    def test_none_mode_always_ok(self) -> None:
+        # nothing sunk -> nothing to verify
+        self.assertTrue(runner._readback_ok({}, "none"))
+        self.assertTrue(runner._readback_ok({"matched": False}, "none"))
+
+
+class ScratchDirTests(unittest.TestCase):
+    def test_yields_writable_repo_local_dir_cleaned_up(self) -> None:
+        seen: list[Path] = []
+        with _scratch_dir() as d:
+            self.assertTrue(d.is_dir())
+            self.assertTrue(d.is_relative_to(_REPO_TMP))
+            (d / "probe.txt").write_text("ok", encoding="utf-8")
+            seen.append(d)
+        self.assertFalse(seen[0].exists())  # cleaned up after the with-block
 
 
 if __name__ == "__main__":
