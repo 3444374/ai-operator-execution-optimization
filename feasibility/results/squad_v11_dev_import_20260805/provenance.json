@@ -1,0 +1,15 @@
+{
+  "cap_max_output_tokens": 64,
+  "content_hash": "2c2301f28f9eb2fea168bfda8e8011746defeb8120ae3ca7a8b113a5085a1173",
+  "dataset": "SQuAD",
+  "doc_id_base": 60000000,
+  "imported_rows": 10570,
+  "importer_commit": "4c447fb7adfce4f35cb2b7d4400ca6baf3187f18",
+  "prompt_template_sha256": "b2cd71d5aeddf1f59ade71f3a5cbcc5db97407ec2694363312154805cc65e9b8",
+  "sample_count": 10570,
+  "source_file_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "source_url": "local:/root/autodl-tmp/SQuAD-explorer/dataset/dev-v1.1.json",
+  "split": "validation/dev",
+  "version": "1.1",
+  "workload_name": "squad_v11_dev_short_answer"
+}
