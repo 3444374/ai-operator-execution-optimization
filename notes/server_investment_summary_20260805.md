@@ -12,31 +12,31 @@
 
 | 需求 | 本地单 5070 | 租赁双 4090 |
 |---|---|---|
-| 多 endpoint 调度（研究内容二的核心） | ❌ 单卡只能 1 endpoint，无法研究多 endpoint 路由/公平/credit | ✅ 2 卡可做 2-endpoint 干净基线 + 4-endpoint 合并两个 regime |
-| 显存（7B 服务 + CLIP + KV 饱和实验） | ⚠️ 12GB 紧张，7B+prefix-cache 难以饱和 | ✅ 2×24GB，可构造 KV 饱和 regime |
+| 多 endpoint 调度（研究内容二的核心） | ❌ 单卡只能 1 endpoint，无法研究多 endpoint 路由/公平/credit | ✅ 2 卡可做 2-endpoint 干净基线 + 4-endpoint 合并两种运行条件 |
+| 显存（7B 服务 + CLIP + KV 饱和实验） | ⚠️ 12GB 紧张，7B+prefix-cache 难以饱和 | ✅ 2×24GB，可构造 KV 缓存满载运行条件 |
 | 持续多小时正式实验 | ❌ 320-run 代价估计 ~3.5–4h、图像 60K×2 数十分钟，不能占用个人机 | ✅ 独占、可长跑 |
 | 隔离可复现环境 | ⚠️ 个人机环境漂移 | ✅ codex/Claude 双环境 + 共享 Ray + host-scope lease + 校准签名 |
 
-本地 5070 仅用于 smoke 与单 endpoint 预演；课题主线证据（多 endpoint regime 下的调度分化）
+本地 5070 仅用于 smoke 与单 endpoint 预演；课题主线证据（不同容量压力下的调度分化）
 在单卡上**根本无法产生**。
 
-## 2. 为什么是双 GPU（不是单卡、也不是更多卡）
+## 2. 为什么是双 GPU（不是 1 张、也不是更多）
 
-双卡是支撑课题两个核心 regime 的**最小配置**，多了浪费、少了缺 regime：
+双卡是支撑课题两组核心运行条件的**最小配置**，多了浪费、少了缺其中一组：
 
-- **2-endpoint 干净基线 regime**：每个 endpoint 独占一张 4090（gpu-memory-utilization 0.9），
-  KV 池无压力，是干净对照。
-- **4-endpoint 合并 regime**：每张 4090 放 2 个 endpoint（各 0.43 util），KV 池饱和
-  （max 98–100%），模拟真实部署的容量竞争。
+- **条件一：2 个 endpoint、容量无压力**——每个 endpoint 独占一张 4090（gpu-memory-utilization 0.9），
+  KV 缓存池很空，是干净对照。
+- **条件二：4 个 endpoint、KV 缓存满载、容量互相抢**——每张 4090 放 2 个 endpoint（各 0.43 util），
+  KV 缓存池饱和（max 98–100%），模拟真实部署的容量竞争。
 
-课题当前**最强的主线证据**正是在这两个 regime 之间出现的**质变**：
+课题当前**最强的主线证据**正是在这两组运行条件之间出现的**质变**：
 
-> 数据组织策略在 2-endpoint 无压力 regime 下近似中性（5 策略 50–56k），但在 4-endpoint
-> KV 饱和 regime 下分化达 27%、且**排名反转**（sequential > fixed >> row_cap ≈ best_fit
+> 数据组织策略在"2 endpoint、容量无压力"时近似中性（5 策略 50–56k），但在"4 endpoint、
+> KV 缓存满载"时分化达 27%、且**排名反转**（sequential > fixed >> row_cap ≈ best_fit
 > > length_align），机制是重排序类 organizer 打散 prefix 组导致命中率从 0.60–0.76 塌到
 > 0.06–0.07。
 
-这个"regime-dependent"结论**只能在多 endpoint 多卡环境观察到**，是单卡实验永远无法发现的，
+这个"效果随容量压力而变"的结论**只能在多 endpoint 多卡环境观察到**，是单卡实验永远无法发现的，
 也正是课题"上游调度价值在什么条件下显现"的核心回答。同理，prefix-affinity routing 的
 +5.9%（4-ep/1.5B，跨门禁）也只能在多 endpoint 上测出。
 
@@ -68,7 +68,7 @@
 - OceanBase CE `AI_COMPLETE` 能力 gate、vLLM CLIP pooling capability gate、ImageNet/ResNet18
   vendor-code parity 准备（代码 SHA + Daft 0.6.2 venv + S3 接入确认）。
 
-### 3.4 文本轨多 endpoint 调度证据（regime-dependent）
+### 3.4 文本轨多 endpoint 调度证据（随容量压力而变）
 
 - RC1 数据组织 5 策略对照（2-ep 中性 vs 4-ep 27% 分化 + 排名反转，机制 `prefix_group_ratio`）。
 - prefix-affinity routing（2-ep/7B 中性 −0.1%、4-ep/1.5B **+5.9%** 跨门禁）。
@@ -89,7 +89,7 @@
 
 - **~50 个结果目录**：`experiments/results/` 40+、`motivation/results/gpu/` 9、`feasibility/results/` 3，
   每个含 README + 原始 CSV/manifest，可在仓库中追溯。
-- **多张可投稿图**（per-image 资源效率、regime 对比、prefix 命中率归因等）。
+- **多张可投稿图**（per-image 资源效率、容量压力对比、prefix 命中率归因等）。
 - **可复现的 runner + gate + 观测 pipeline**：matrix runner（single-writer lease + fail-closed gate）、
   baseline gate runner（双 endpoint 公平性 + exactly-once + service-counter 一致性）、
   观测采样器（vLLM Prometheus + nvidia-smi + MFU）。
@@ -104,6 +104,6 @@
 ## 6. 一句话结论
 
 本地单卡只能做"单 endpoint 能跑通"的 smoke；课题的**核心证据**——上游调度策略在多 endpoint、
-KV 饱和 regime 下的显著分化与排名反转——**只在双卡多 endpoint 环境才会出现**。租赁双 4090
+KV 满载运行条件下的显著分化与排名反转——**只在双卡多 endpoint 环境才会出现**。租赁双 4090
 是把课题从"能跑"推进到"能产出可发表证据"的必要投入，产出已覆盖主动机、正式实验、厂商原生
 baseline 与可复现部署合同四个层面。
