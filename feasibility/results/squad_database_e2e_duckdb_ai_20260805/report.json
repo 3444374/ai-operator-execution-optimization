@@ -1,0 +1,132 @@
+{
+  "arm": "duckdb_ai",
+  "attribution": {
+    "after_idle": true,
+    "attributable": true,
+    "before_idle": true,
+    "reasons": [],
+    "request_success_delta": 10570,
+    "requests_sent": 10570
+  },
+  "cap": 64,
+  "capability_gate_status": "failure",
+  "command": [
+    "code/scripts/baselines/squad_database_e2e_runner.py",
+    "--arm",
+    "duckdb_ai",
+    "--database-url",
+    "postgresql://postgres:***@localhost:5432/ai_operator",
+    "--workload-name",
+    "squad_v11_dev_short_answer",
+    "--importer-provenance",
+    "feasibility/results/squad_v11_dev_import_20260805/provenance.json",
+    "--endpoint-url",
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "--metrics-url",
+    "http://127.0.0.1:8000/metrics",
+    "--model",
+    "qwen2.5-7b",
+    "--max-tokens",
+    "64",
+    "--max-concurrent-requests",
+    "32",
+    "--service-prefix-caching",
+    "enabled",
+    "--service-config-hash",
+    "49cf2f803735b4a4",
+    "--metrics-settle-s",
+    "5",
+    "--strict-attribution",
+    "--writeback-mode",
+    "json_text",
+    "--write-batch-rows",
+    "500",
+    "--output-dir",
+    "feasibility/results/squad_database_e2e_duckdb_ai_20260805",
+    "--force"
+  ],
+  "comparison_admission": "eligible_with_documented_failure",
+  "error_count": 1,
+  "evidence_files": {
+    "per_row_csv": "per_row_evidence.csv"
+  },
+  "exactly_once": true,
+  "failure_reason": "1 row-level error(s), 1 NULL response(s) (of which 1 identifiable max_tokens error(s))",
+  "finish_reason": "unavailable (DuckDB-ai extension does not expose finish_reason)",
+  "formal_run_gate_passed": false,
+  "identity": {
+    "duckdb_ai_extension_source": "community",
+    "duckdb_ai_extension_version": "0.4.14",
+    "duckdb_version": "v1.5.4",
+    "endpoint": "http://127.0.0.1:8000/v1",
+    "git_commit": "08d061cff106734cad3d1e9ef9412eeef9b3e7b2",
+    "hostname": "autodl-container-a4884eab4c-22401421",
+    "metrics_snapshot": {
+      "after": "ok",
+      "before": "ok",
+      "before_idle": true
+    },
+    "model": "qwen2.5-7b",
+    "nvidia_smi": [
+      "0, NVIDIA GeForce RTX 4090, 24564 MiB, 595.58.03",
+      "1, NVIDIA GeForce RTX 4090, 24564 MiB, 595.58.03"
+    ],
+    "pg_server_version": "PostgreSQL 18.4 (Ubuntu 18.4-1.pgdg22.04+1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit",
+    "pgvector_version": "0.8.5",
+    "service_config_hash": "49cf2f803735b4a4",
+    "service_prefix_caching": "enabled",
+    "vllm_version": "0.25.1",
+    "workload": "squad_v11_dev_short_answer"
+  },
+  "importer_content_hash": "2c2301f28f9eb2fea168bfda8e8011746defeb8120ae3ca7a8b113a5085a1173",
+  "max_tokens_error_count": 1,
+  "null_response_count": 1,
+  "role": "database_e2e_boundary",
+  "row_count": 10570,
+  "runner": "squad_database_e2e",
+  "runner_metrics": {
+    "correct_rows_per_s": 90.4165,
+    "failure_rate": 0.000189,
+    "raw_rows_per_s": 112.568,
+    "successful_rows_per_s": 112.5573,
+    "sunk_rows": 10570
+  },
+  "sink": {
+    "rows_written": 10570,
+    "table": "document_completions",
+    "write_batch_rows": 500,
+    "writeback_mode": "json_text"
+  },
+  "squad_quality": {
+    "squad_evaluated_rows": 10570,
+    "squad_exact_match_percent": 80.32166508987702,
+    "squad_exact_match_rows": 8490,
+    "squad_missing_prediction_rows": 1,
+    "squad_prediction_rows": 10569,
+    "squad_quality_status": "partial:missing_predictions",
+    "squad_token_f1_percent": 89.41832377463686
+  },
+  "status": "failure",
+  "success_count": 10569,
+  "timing": {
+    "adapter_wall_s": 93.212,
+    "boundary": "database_e2e",
+    "construct_s": 0.231,
+    "database_e2e_wall_s": 93.899,
+    "note": "database_e2e_wall_s = scan + construct + adapter(operator) + sink; metrics settle + after-scrape are outside the wall",
+    "operator_only_jct_s": 87.835,
+    "scan_s": 0.143,
+    "setup_s": 5.273,
+    "sink_s": 0.258
+  },
+  "vllm_metrics": {
+    "attribution": "attributable",
+    "generation_tokens_delta": 60489,
+    "prefix_cache_hit_rate": 0.7497,
+    "prefix_cache_hits_delta": 1860704,
+    "prefix_cache_queries_delta": 2481860,
+    "prompt_tokens_delta": 2481860
+  },
+  "workload_content_hash": "2c2301f28f9eb2fea168bfda8e8011746defeb8120ae3ca7a8b113a5085a1173",
+  "workload_integrity": "verified"
+}

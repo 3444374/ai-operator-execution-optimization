@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-08-05 database-E2E runner 落地 + DuckDB-ai 臂实测
+
+- 实现 `code/scripts/baselines/squad_database_e2e_runner.py`（`08d061c`）：一个计时墙包住 scan→construct→
+  `run_duckdb_ai_complete`（operator-only 时间戳保留）→ 统一 sink（`write_completions`→`document_completions`）；
+  抽出共享 helper 到 `code/src/baselines/common/squad_identity.py`（capability gate 与 runner 共用，行为不变，
+  70 测试通过）；runner 层算 `correct_rows_per_s`（主 headline）/`successful_rows_per_s`/failure rate；状态字段
+  拆 `capability_gate_status`/`formal_run_gate_passed`/`comparison_admission`，不削弱 zero-error validity。
+  DuckDB 扩展继续拥有 batching/concurrency，不注入项目 credit/actor/backpressure。
+- 服务器实测（DuckDB-ai 臂，全 10570，cap=64，strict-attribution）：**database-E2E wall 93.9s = scan 0.14 +
+  construct 0.23 + adapter 93.2（op_jct 87.8）+ sink 0.26**。**关键观察**：本臂 database 开销（scan+construct+sink
+  ≈0.63s）< wall 的 1%——模型调用独占 99%（DuckDB-ai barrier 执行一条 set-oriented SELECT 跑 10570 次调用，
+  scan/sink 可忽略）。`correct_rows/s` 90.42、succ_rows/s 112.56、sunk 10570（psql COUNT 复核）；EM 80.32% /
+  F1 89.42%（独立复算一致）；attribution attributable；pgvector 0.8.5（探针修后正确）；command 脱敏。
+- fail-closed 触发（1 偶发 max_tokens 截断，与 full capability gate 同源、机制未定）→ 状态 `failure`/`false`/
+  `eligible_with_documented_failure`。这是单臂 E2E 测量，**不是数据库系统排名**（direct_client/project 臂未实现）。
+- 边界口径：PG 连接建立算 setup（不计入墙）；DuckDB 连接+扩展加载在 adapter 内、计入 adapter 段；metrics
+  settle + after-scrape 在墙外。
+- 下一步：补 `direct_client` 臂（直连 vLLM）→ 看 E2E 拆分差异；补 `project_static` 臂 → 三臂 E2E 正式排名；
+  正式前填全 `dual_gpu_squad_database_e2e.example.json` 的 REPLACE_ME（vLLM launch cmd/revision/dtype/parallelism/
+  VRAM/env）并重算 service-config-hash。
+
 ## 2026-08-05 SQuAD full/diagnosis 审计订正：收紧措辞 + 拆状态字段 + 登记新文件
 
 - codex 复核 `74552b3`：核心事实成立（观察到一次 max_tokens→NULL、孤立重放不可复现、full 维持 FAILURE、

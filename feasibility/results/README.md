@@ -43,6 +43,10 @@
 13. `squad_truncation_diag_572700c8_20260805/`：full gate 失败行的定点诊断（direct + DuckDB ×
     cap{64,128,256} × 3）。cap=64 孤立重放 3×3 全 `stop`/46 token/文本一致 → 截断不可复现，推翻
     「确定性 rambling」；记为偶发、机制未定。诊断专用，不回灌 cap=64。
+14. `squad_database_e2e_duckdb_ai_20260805/`：**database-E2E runner 单臂实测**（DuckDB-ai，全 10570）。
+    scan→construct→operator→统一 sink 计时墙：wall 93.9s，scan+construct+sink <1%（模型调用独占 99%）；
+    `correct_rows/s` 90.42（主 headline）、sunk 10570；状态 failure/false/eligible_with_documented_failure
+    （1 偶发截断）。单臂测量，非排名；`direct_client`/`project_static` 臂待补。
 
 如果后续新增 GPU 环境验证，建议命名为：
 
