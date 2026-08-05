@@ -399,5 +399,176 @@ class RedactionWiringTests(unittest.TestCase):
         self.assertIn("***", joined)
 
 
+class FailClosedIntegrationTests(unittest.TestCase):
+    """The gate must fail (non-zero exit, status=failure) on any row-level error/NULL.
+
+    Mocks the DB / vLLM / DuckDB boundaries so the full main()->_run path is
+    exercised against a tiny in-memory workload.
+    """
+
+    def _rows(self) -> list[dict]:
+        return [
+            {"doc_id": i, "text": f"prompt {i}", "source_example_id": f"id{i}",
+             "answers": ["ans"]}
+            for i in (1, 2, 3, 4)
+        ]
+
+    @staticmethod
+    def _result(req, *, output_text, error=None, status="completed"):
+        from src.baselines.common.contracts import BaselineRequestResult
+        return BaselineRequestResult(
+            doc_id=req.doc_id, endpoint_index=req.endpoint_index, status=status,
+            error=error, submitted_at_s=1.0, started_at_s=1.0, completed_at_s=2.0,
+            input_tokens=req.prompt_tokens, output_tokens=0, output_text=output_text,
+            finish_reason=None,
+        )
+
+    def _run_gate(self, fail_indices: set[int]) -> tuple[int, dict, list[str]]:
+        import csv as _csv
+        rows = self._rows()
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td) / "result"
+            prov = Path(td) / "prov.json"
+            prov.write_text(
+                json.dumps({"content_hash": gate._structured_content_hash(rows),
+                            "sample_count": len(rows)}) + "\n",
+                encoding="utf-8",
+            )
+            argv = [
+                "--database-url", "postgresql://u:p@localhost:5432/d",
+                "--mode", "full", "--metrics-settle-s", "0",
+                "--importer-provenance", str(prov),
+                "--endpoint-url", "http://127.0.0.1:8000/v1/chat/completions",
+                "--metrics-url", "http://127.0.0.1:8000/metrics",
+                "--model", "m", "--service-prefix-caching", "enabled",
+                "--output-dir", str(out), "--force",
+            ]
+
+            def fake_complete(requests, config):
+                return tuple(
+                    self._result(
+                        r,
+                        output_text=None if i in fail_indices else "ok",
+                        error=("max_tokens reached" if i in fail_indices else None),
+                        status=("failed" if i in fail_indices else "completed"),
+                    )
+                    for i, r in enumerate(requests)
+                )
+
+            scrape_state = {"n": 0}
+
+            def fake_scrape(url, timeout_s=5.0):
+                scrape_state["n"] += 1
+                base = {"vllm:num_requests_running": 0.0,
+                        "vllm:num_requests_waiting": 0.0,
+                        "vllm:request_success_total": 100.0}
+                if scrape_state["n"] == 2:  # after
+                    base["vllm:request_success_total"] = 100.0 + len(rows)
+                return base
+
+            with patch("squad_capability_gate._load_workload", return_value=rows), \
+                 patch("squad_capability_gate._pg_server_identity",
+                       return_value={"pg_server_version": "PostgreSQL 99.0",
+                                     "pgvector_version": "0.8.0"}), \
+                 patch("squad_capability_gate.scrape_prometheus_metrics",
+                       side_effect=fake_scrape), \
+                 patch("squad_capability_gate.inspect_duckdb_ai_runtime",
+                       return_value={"duckdb_version": "v1.5.4",
+                                     "duckdb_ai_extension_version": "0.4.14",
+                                     "duckdb_ai_extension_source": "community"}), \
+                 patch("squad_capability_gate.run_duckdb_ai_complete",
+                       side_effect=fake_complete), \
+                 patch("squad_capability_gate._vllm_version", return_value="0.25.1"), \
+                 patch("squad_capability_gate._gpu_identity",
+                       return_value={"nvidia_smi": [], "hostname": "h"}), \
+                 patch("squad_capability_gate._git_commit", return_value="deadbeef"):
+                rc = gate.main(argv)
+            report = json.loads((out / "report.json").read_text(encoding="utf-8"))
+            with (out / "per_row_evidence.csv").open(encoding="utf-8") as f:
+                csv_header = next(_csv.reader(f))
+            return rc, report, csv_header
+
+    def test_all_success_passes_and_csv_has_version_columns(self) -> None:
+        rc, report, csv_header = self._run_gate(fail_indices=set())
+        self.assertEqual(rc, 0)
+        self.assertEqual(report["status"], "success")
+        self.assertIsNone(report["failure_reason"])
+        self.assertIn("server_version", csv_header)
+        self.assertIn("pgvector_version", csv_header)
+
+    def test_any_row_error_fails_closed(self) -> None:
+        rc, report, _ = self._run_gate(fail_indices={1})
+        self.assertEqual(rc, 1)
+        self.assertEqual(report["status"], "failure")
+        self.assertIsNotNone(report["failure_reason"])
+        self.assertIn("row-level error", report["failure_reason"])
+
+    def test_any_null_response_fails_closed(self) -> None:
+        # NULL without an explicit error string still fails (DuckDB-ai can
+        # return NULL response without an error field on truncation).
+        rows = self._rows()
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td) / "result"
+            prov = Path(td) / "prov.json"
+            prov.write_text(
+                json.dumps({"content_hash": gate._structured_content_hash(rows),
+                            "sample_count": len(rows)}) + "\n",
+                encoding="utf-8",
+            )
+            argv = [
+                "--database-url", "postgresql://u:p@localhost:5432/d",
+                "--mode", "full", "--metrics-settle-s", "0",
+                "--importer-provenance", str(prov),
+                "--endpoint-url", "http://127.0.0.1:8000/v1/chat/completions",
+                "--metrics-url", "http://127.0.0.1:8000/metrics",
+                "--model", "m", "--service-prefix-caching", "enabled",
+                "--output-dir", str(out), "--force",
+            ]
+
+            def fake_complete(requests, config):
+                out_results = []
+                for i, r in enumerate(requests):
+                    # row 2: completed but output_text=None and no error -> NULL
+                    is_null = (i == 2)
+                    out_results.append(self._result(
+                        r, output_text=None if is_null else "ok",
+                        error=None, status="completed",
+                    ))
+                return tuple(out_results)
+
+            scrape_state = {"n": 0}
+
+            def fake_scrape(url, timeout_s=5.0):
+                scrape_state["n"] += 1
+                base = {"vllm:num_requests_running": 0.0,
+                        "vllm:num_requests_waiting": 0.0,
+                        "vllm:request_success_total": 100.0}
+                if scrape_state["n"] == 2:
+                    base["vllm:request_success_total"] = 100.0 + len(rows)
+                return base
+
+            with patch("squad_capability_gate._load_workload", return_value=rows), \
+                 patch("squad_capability_gate._pg_server_identity",
+                       return_value={"pg_server_version": "PostgreSQL 99.0",
+                                     "pgvector_version": "0.8.0"}), \
+                 patch("squad_capability_gate.scrape_prometheus_metrics",
+                       side_effect=fake_scrape), \
+                 patch("squad_capability_gate.inspect_duckdb_ai_runtime",
+                       return_value={"duckdb_version": "v1.5.4",
+                                     "duckdb_ai_extension_version": "0.4.14",
+                                     "duckdb_ai_extension_source": "community"}), \
+                 patch("squad_capability_gate.run_duckdb_ai_complete",
+                       side_effect=fake_complete), \
+                 patch("squad_capability_gate._vllm_version", return_value="0.25.1"), \
+                 patch("squad_capability_gate._gpu_identity",
+                       return_value={"nvidia_smi": [], "hostname": "h"}), \
+                 patch("squad_capability_gate._git_commit", return_value="deadbeef"):
+                rc = gate.main(argv)
+            report = json.loads((out / "report.json").read_text(encoding="utf-8"))
+        self.assertEqual(rc, 1)
+        self.assertEqual(report["status"], "failure")
+        self.assertEqual(report["null_response_count"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

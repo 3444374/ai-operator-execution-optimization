@@ -393,6 +393,14 @@ def _pg_server_identity(database_url: str) -> dict[str, str]:
             with conn.cursor() as cur:
                 cur.execute("SELECT version()")
                 identity["pg_server_version"] = str(cur.fetchone()[0])
+                # pgvector is optional (only present when the extension is
+                # installed); record extversion so per-row evidence satisfies
+                # AGENTS.md §5 (every CSV records server + pgvector version).
+                cur.execute(
+                    "SELECT extversion FROM pg_extension WHERE extname = 'pgvector'"
+                )
+                row = cur.fetchone()
+                identity["pgvector_version"] = str(row[0]) if row else "not_installed"
     except Exception as exc:
         identity["pg_error"] = redact_text(str(exc)[:120])
     return identity
@@ -616,6 +624,11 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
 
     doc_to_source = {row["doc_id"]: row["source_example_id"] for row in selected}
     references = {row["source_example_id"]: row["answers"] for row in selected}
+    # Fetch DB identity once; reused for the per-row CSV (AGENTS.md §5: every
+    # CSV records server_version + pgvector_version) and the report identity.
+    pg_identity = _pg_server_identity(args.database_url)
+    server_version = pg_identity.get("pg_server_version", "unknown")
+    pgvector_version = pg_identity.get("pgvector_version", "unknown")
 
     evidence_rows = []
     predictions: dict[str, str | None] = {}
@@ -632,12 +645,15 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             "reference_answers": json.dumps(
                 references.get(source_id, []), ensure_ascii=False
             ),
+            "server_version": server_version,
+            "pgvector_version": pgvector_version,
         })
     with (output_dir / "per_row_evidence.csv").open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(
             f,
             fieldnames=["source_example_id", "status", "error", "output_chars",
-                        "prediction", "reference_answers"],
+                        "prediction", "reference_answers",
+                        "server_version", "pgvector_version"],
         )
         writer.writeheader()
         writer.writerows(evidence_rows)
@@ -651,6 +667,18 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
     error_count = sum(1 for r in results if r.status != "completed" or r.error)
     max_tokens_errors = sum(
         1 for r in results if r.error and "max_tokens" in (r.error or "")
+    )
+    # Fail-closed: a capability gate must demonstrate 100% success. Any
+    # row-level error or NULL (truncation-as-error under cap, HTTP failure,
+    # etc.) means the baseline could not handle that row, so the gate FAILS
+    # with a non-zero exit even though exactly-once holds. The full report is
+    # still written (with status=failure) so hashes/quality remain auditable.
+    passed = error_count == 0 and null_response == 0
+    failure_reason = (
+        None if passed
+        else (f"{error_count} row-level error(s), {null_response} NULL response(s) "
+              f"(of which {max_tokens_errors} identifiable max_tokens error(s)); "
+              f"capability gate requires 0")
     )
 
     attribution, attribution_ok = _assess_attribution(
@@ -697,7 +725,8 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
     report = {
         "gate": "squad_v11_dev_capability",
         "role": "capability_NOT_formal_ranking",
-        "status": "success",
+        "status": "success" if passed else "failure",
+        "failure_reason": failure_reason,
         "arm": "duckdb_ai",
         "mode": args.mode,
         "row_count": len(selected),
@@ -741,7 +770,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             "vllm_version": _vllm_version(config.endpoint_base_url),
             "service_prefix_caching": args.service_prefix_caching,
             "service_config_hash": args.service_config_hash or "not_provided",
-            **_pg_server_identity(args.database_url),
+            **pg_identity,
             **_gpu_identity(),
             "metrics_snapshot": {
                 "before": _scrape_status(metrics_before),
@@ -756,7 +785,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
     }
     _write_json(output_dir / "report.json", report)
     print(json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False))
-    return 0
+    return 0 if passed else 1
 
 
 def _archive_partial_evidence(
