@@ -4287,3 +4287,17 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
   只列为 `pending-publication` watchlist，不杜撰其 workload、baseline、指标或结果。
 - 同步更新 `research/evaluation_metrics_survey_20260731.md`、
   `research/existing_ai_operator_execution_chains.md` 与 baseline 唯一入口。
+
+## 2026-08-05 IMLane vendor paper summary 补证与新颖性边界修正
+
+- 用户提供 OceanBase 官方账号转载的论文介绍，补齐 IMLane 的系统、硬件、Q1–Q7 workload、
+  internal ablation 和外部 baseline 摘要；纠正上一轮“除标题外实验字段均未知”的过度保守表述。
+- IMLane 在 OceanBase Paetica 4.3 与 DuckDB 0.10.1 上验证 C++ DBEnd、ArrowLane shared
+  memory、process-level Python execution、decoupled resource-aware coordinator 和 async
+  batched scheduling；可插拔 Ray Executor，并以 IMBridge、pandas、SparkSQL、Ray.data 对照。
+- 文章披露 OceanBase/DuckDB 平均汇总加速和相对 Ray.data 的倍数，但仍缺论文正文、代码、
+  数据集名称、per-query raw results、重复/CV、质量和尾延迟，统一标为
+  `vendor-authored paper summary`，不与本项目 2×4090 数字混排。
+- 新颖性边界收紧：进程并行绕 GIL、Arrow 共享内存、decoupled resource-aware scheduling、
+  async batching 与 scan/inference overlap 已有强相关工作；项目贡献必须聚焦 endpoint runtime
+  state 感知、token/frame work credit、多 job fairness/SLO 和开放 database-E2E 消融。

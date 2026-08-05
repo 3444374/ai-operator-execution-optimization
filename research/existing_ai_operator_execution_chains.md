@@ -161,9 +161,21 @@ OceanBase 当前公开了三组彼此不同的评价材料：
 同模型、同输入、同质量门槛和同 source/sink 下重跑；OceanBase 材料负责证明工业场景和
 机制选择，不负责提供可直接引用的 raw ranking。
 
-OceanBase 官方 publications 已登记 PVLDB 2026 accepted 的 **IMLane: Composable
-Framework for Efficient AI Function Execution in Database Engine**。本次检索未找到公开
-正文，故仅列为高优先级 watchlist；在论文公开前不得推断其 workload、baseline、指标或结果。
+OceanBase 官方 publications 已登记 PVLDB 2026 Industry Track accepted 的 **IMLane:
+Composable Framework for Efficient AI Function Execution in Database Engine**。OceanBase
+官方账号转载的论文介绍已经披露：IMLane 以 C++ DBEnd 插件、独立 coordinator/backend
+executor、共享内存 ArrowLane、进程级 Python 并行和异步分批资源感知调度集成 OceanBase
+Paetica 4.3 与 DuckDB 0.10.1；Ray Executor 是可插拔后端，并另以 Ray.data、SparkSQL、
+pandas、IMBridge 作 baseline。其 Q1–Q7 覆盖 RF/GBDT、SVM/NB、本地 GPU DNN、远程 CPU
+RNN 和远程 Qwen3-1.7B GPU LLM。
+
+这条证据把 IMLane 从纯 watchlist 升为**强相关论文 baseline**，但尚不是可运行 baseline：
+本次仍未找到论文正文、代码、数据集名称、逐查询配置/raw time、重复/CV 和质量/SLO 指标。
+文章中的 7.48×/5.04× 与相对 Ray.data 的 1.19×/1.8×只能标作 OceanBase vendor summary，
+不得与当前 2×4090 raw results 混排。更重要的是，进程级并行、Arrow shared memory、
+decoupled resource-aware scheduling、异步分批和 scan/inference overlap 已不是本项目可主张
+的新机制；项目差异必须落在模型服务状态感知、token/frame work credit、多 job fairness、
+SLO 与开放的 database-E2E 消融。
 
 ## 对方向的微调
 

@@ -269,13 +269,19 @@ OceanBase 公开材料对实验合同的可用部分与禁用部分如下：
 operator/database-E2E JCT、TTFT、request p50/p95/p99、row success/error/truncation、EM/F1、
 实际调用/token、成本与数据库 CPU；endpoint 侧同步采集 running/waiting/KV/prefix-cache、
 GPU/MFU/能耗。OceanBase Lakebase 不设未经证实的性能臂，Daft/Ray 性能由两方官方代码
-同机复现。OceanBase 官方 publications 中的 PVLDB 2026 accepted **IMLane** 在本次检索中
-未找到公开正文，登记为 `pending-publication`，不预填其 benchmark 或数字。
+同机复现。OceanBase 官方 publications 中的 PVLDB 2026 Industry Track accepted
+**IMLane** 已由 OceanBase 官方账号论文介绍披露实验摘要：OceanBase Paetica 4.3、DuckDB
+0.10.1；Q1–Q7 覆盖 classical ML/local GPU/remote CPU/remote Qwen3-1.7B GPU；内部消融为
+process-level execution 与 decoupled async scheduling；外部 baseline 为 IMBridge、pandas、
+SparkSQL、Ray.data。该文章把 IMLane 升为强相关论文 baseline，但本次仍未找到 paper/code/
+per-query raw results/repeats，故只登记 vendor-summary 数字，不进入当前同机排名；代码或正文
+公开后优先复核其合同，再决定是否新增可运行 arm。
 
 补充来源：[OceanBase Cloud AI Services release notes](https://en.oceanbase.com/docs/common-oceanbase-cloud-10000000003353421)、
 [OceanBase performance testing](https://en.oceanbase.com/docs/common-oceanbase-cloud-10000000002694815)、
 [VectorDBBench guide](https://en.oceanbase.com/docs/common-oceanbase-database-10000000002164117)、
-[OceanBase publications](https://github.com/oceanbase/publications)。
+[OceanBase publications](https://github.com/oceanbase/publications)、
+[OceanBase IMLane/ScalePQO 论文介绍（墨天轮转载）](https://www.modb.pro/db/2082304455178522624)。
 
 ### 外部多模态公开 benchmark：事实、冲突与复现合同
 
