@@ -12,6 +12,15 @@
   `sample_manifest.jsonl`（id/prompt/references），并修复 vLLM `/version` 根路径双斜杠、`--force`
   旧成功/新失败证据混存、逐行/PG 错误脱敏。修正版须先重跑 256 行门禁，才允许启动 full 10570。
 
+## 2026-08-05 secret scanner 全仓自检误报修复
+
+- 在最新 `main` 复跑 `scan_git_secrets.py --all` 时发现扫描器源码和 6 条 detector 单测 fixture
+  被自身判为 7 个 violation，故此前“全仓 0 violation”无法按公开命令复现。
+- 在 `secret_scan_baseline.txt` 增加 7 条**精确到 fixture 行**的正则，不按整个测试路径放行；不同 token、
+  私钥或外部 credential URL 仍会阻断。修复后须同时满足 scanner 单测与全仓扫描。
+- 复验：全仓 3315 个 tracked files 为 0 violation（14 次 baseline suppression，含历史 4 条、
+  7 条 fixture 以及 baseline 文件中 3 条自匹配），scanner 相关测试随本轮 111 个测试全部通过。
+
 ## 2026-08-05 新增 Git 隐私数据禁令 + 高精度 secret scanner
 
 - 用户要求：api key、服务器 IP/host、口令、私钥等隐私数据禁止提交进 Git，并写入项目规则。
