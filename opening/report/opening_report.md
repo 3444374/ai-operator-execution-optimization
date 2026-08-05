@@ -68,7 +68,7 @@ PostgreSQL 生态中，pgvector[4] 负责向量类型、索引和相似度检索
 
 **第四，数据库 AI workload 的场景差异被忽视。** Snowflake 的生产数据[1] 已经证实了 `AI_EMBED`、`AI_FILTER/AI_CLASSIFY` 和 `AI_COMPLETE` 三类算子的并存需求。Embedding 产生高维向量并对写回压力敏感，AI predicate 受 selectivity 影响，LLM 类 workload 受 token 长度和共享 prefix 影响。现有系统大多以单一算子为优化目标，没有在三类 workload 上验证方法的一般性。
 
-**第五，已有本地预研和 GPU-backed 复测**显示，在同一 GPU-backed `AI_EMBED` 链路中，batch 粒度（fine vs coalesced）可导致 37.5× 的端到端差异；多 endpoint 路由可降低 operator wall time 但 writeback 基本不变（1.585s → 1.541s）。这些信号表明数据组织与调度执行是当前应优先调优的上游阶段，同时写回可能限制端到端收益。仅把问题写成 object/fan-in 或仅写成 Ray 调度都过窄。持久化写回（JSON text 1.567s、pgvector 0.897s）在当前规模下是可见成本但不是主导瓶颈，本文将其纳入端到端效果评价，而不是作为独立方法贡献。
+**第五，已有本地预研和 GPU-backed 复测**显示，在同一 GPU-backed 文本 `AI_EMBED` 链路（2026-07-12 预研，非图像 CLIP）中，batch 粒度（fine vs coalesced）可导致 37.5× 的推理执行阶段差异（端到端约 13.4×）；多 endpoint 路由可降低 operator wall time 但 writeback 基本不变（1.585s → 1.541s）。这些信号表明数据组织与调度执行是当前应优先调优的上游阶段，同时写回可能限制端到端收益。仅把问题写成 object/fan-in 或仅写成 Ray 调度都过窄。持久化写回（JSON text 1.567s、pgvector 0.897s）在当前规模下是可见成本但不是主导瓶颈，本文将其纳入端到端效果评价，而不是作为独立方法贡献。
 
 综合以上分析，本课题的核心研究空白在于：面向数据库 AI workload 的数据组织与运行层调度/模型服务批处理之间缺少可观测、可拆分、可调优的上游执行链路研究，持久化写回需要纳入端到端效果评价。现有工作无论是 Ray/Daft 的数据流组织、vLLM/Orca 的 GPU 内部调度，还是 DB4AI 路线的数据库内 ML，都没有系统考察"数据库表数据如何被组织为 batch、如何根据模型服务状态调节提交与反压、以及这些上游决策在加入写回后是否仍然改善端到端效果"。
 
@@ -276,7 +276,7 @@ Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / pre
 
 图 4-7 arrow_postgres（AI_EMBED coalesced，psycopg2 + 手动 Arrow RecordBatch）与 daft_postgres（AI_COMPLETE batch=8，daft.read_sql + Daft Organizer）的阶段耗时对比。两种路径下数据管线开销（DB Read + Build/Organize）均 < 0.1s，Operator Wall（Ray + 模型推理）占主导。两个 workload 不同（BGE embedding 5939 行 vs Qwen2.5-1.5B 512 行），推理时间不直接可比；本图仅对比管线开销。写回阶段已排除。数据来源：ai_embed_chain_breakdown_20260712.csv / sharegpt_burstgpt_ray_task_batch128_token_sweep_20260719.csv。
 
-综合四组实验证据（图 4-3 至 4-6）和工程验证（图 4-7），当前可行性结论有三点。第一，数据库 AI 负载 的端到端画像链路已在 AI_EMBED 预研中跑通，阶段计时方法和指标（operator_wall_s、model_request_wall_s、fanin_s、writeback_s）可复现。第二，batch 粒度是端到端性能的一阶变量（37.5× 差异），多 endpoint routing 可降低模型调用时间但 writeback 独立于此收益——数据组织和提交控制是当前应优先调优的上游阶段，writeback 作为端到端检查点。第三，论文主体实验将在 vLLM + AI_COMPLETE 平台上进行，AI_EMBED 预研仅支撑实验框架可行性，Daft 作为数据引擎不引入管线瓶颈。
+综合四组实验证据（图 4-3 至 4-6）和工程验证（图 4-7），当前可行性结论有三点。第一，数据库 AI 负载 的端到端画像链路已在 AI_EMBED 预研中跑通，阶段计时方法和指标（operator_wall_s、model_request_wall_s、fanin_s、writeback_s）可复现。第二，batch 粒度是端到端性能的一阶变量（推理执行阶段 37.5×、端到端约 13.4×），多 endpoint routing 可降低模型调用时间但 writeback 独立于此收益——数据组织和提交控制是当前应优先调优的上游阶段，writeback 作为端到端检查点。第三，论文主体实验将在 vLLM + AI_COMPLETE 平台上进行，AI_EMBED 预研仅支撑实验框架可行性，Daft 作为数据引擎不引入管线瓶颈。
 
 当前已完成的环节：vLLM + Qwen2.5-1.5B baseline 已建立（2026-07-18）；Daft 数据引擎已接入并验证管线开销（<0.1s）；token-tail revision 实验已完成。后续关键环节：8 月至 9 月在 AI_COMPLETE 场景下完成动态 batching 和自适应提交消融；9 月至 10 月完成耦合验证和写回瓶颈判定。
 

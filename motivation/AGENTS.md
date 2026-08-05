@@ -26,7 +26,7 @@
 
 真实 GPU-backed E2E 主动机已完成（`motivation/results/gpu/`），已说明"为什么值得做"：
 
-- AI_EMBED 真实链路：1024 行下 fine/coalesced 端到端约 `13.4x`；16384 行下 operator 与 writeback 均为大块成本（`ai_embed_chain_breakdown_20260712.md`）。
+- 文本 AI_EMBED 真实链路（2026-07-12，文本向量，**非图像 CLIP**）：1024 行下 fine/coalesced 端到端约 `13.4x`、推理执行阶段约 `37.5x`；16384 行下 operator 与 writeback 均为大块成本（`ai_embed_chain_breakdown_20260712.md`）。图像 CLIP 的动机另见 `motivation/results/gpu/image_*`（GPU 利用率仅 1–4%、瓶颈在 CPU 预处理）。
 - 双 endpoint 下 Ray task/actor 体现并发 routing 价值，端到端收益仍受 writeback 约束（`multi_endpoint_ray_motivation_20260712.md`）。
 - 方向已收敛（2026-07-16）到上游调度优化：数据组织 + 提交控制（详见根 `AGENTS.md` §1、`PROJECT_OUTLINE.md`）。
 

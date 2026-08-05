@@ -521,7 +521,7 @@ def build(prs):
 
     n += 1
     s = layout_content_img(prs, "02", "预研关键结果：三组动机信号",
-        ["① Batch粒度：1024行fine vs coalesced→端到端差异37.5×——调用粒度是一阶执行成本，非GPU kernel优化问题",
+        ["① Batch粒度：1024行fine vs coalesced→推理执行阶段差异37.5×（端到端约13.4×）——调用粒度是一阶执行成本，非GPU kernel优化问题",
          "② Writeback成本：4096行JSON 1.567s，pgvector(384) 0.897s——写回已是可见成本，当前不主导端到端",
          "③ Ray价值边界：单endpoint下Ray actor(3.62s)不优于Python(3.42s)；双endpoint降至2.86s——调度价值依赖并行条件"],
         img_name="10_e2e_operator_writeback_breakdown.png", cropped=True,

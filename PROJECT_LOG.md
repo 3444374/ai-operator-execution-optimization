@@ -4166,3 +4166,9 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
   吞吐榜，需独立质量-成本-时间轨；本轮只提交 DuckDB-ai，LOTUS 留作后续独立轨。
 - 写回方向：用户预告后续写回改用 Lance（替换/并行范围待定），当前 image runner 仍无写回代码、
   文本历史用 pgvector；细节在进入写回实现阶段再定。
+- 证据精度勘误：fine vs coalesced **37.5×（推理执行阶段）/ 13.4×（端到端）是 2026-07-12 文本
+  AI_EMBED 预研的数字，不是图像 CLIP 的**（图像动机是 GPU 利用率 1–4%、CPU 预处理瓶颈，另见
+  `motivation/results/gpu/image_*`）。已纠正根 `AGENTS.md` §3、`motivation/AGENTS.md`、开题报告
+  正文+飞书镜像第 71 行（"37.5× 的端到端差异"→"推理执行阶段差异 37.5×，端到端约 13.4×"）、
+  报告/飞书第 270/279 行结论句、`opening/slides/build_ppt.py` 第 524 行 PPT 源（只改源、不重生成
+  .pptx，保护手动调整）。来源 `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`。

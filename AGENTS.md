@@ -41,7 +41,7 @@ PostgreSQL 18.3
 
 ## 3. 当前证据与下一步
 
-已有实验：GPU-backed AI_EMBED 预研链路（fine vs coalesced：operator/推理执行阶段约 37.5×、端到端约 13.4×；pgvector writeback 0.897s vs JSON 1.567s）+ vLLM + Qwen2.5-1.5B AI_COMPLETE baseline（已建立，详见 `experiments/results/local_vllm_qwen15b_baseline/`）。详细数据见 `motivation/results/gpu/`。CPU/fake 实验仅历史参考。
+已有实验：GPU-backed 文本 AI_EMBED 预研链路（2026-07-12，文本向量，非图像 CLIP；fine vs coalesced：推理执行阶段约 37.5×、端到端约 13.4×；pgvector writeback 0.897s vs JSON 1.567s）+ vLLM + Qwen2.5-1.5B AI_COMPLETE baseline（已建立，详见 `experiments/results/local_vllm_qwen15b_baseline/`）。图像 CLIP 的动机是另一套（GPU 利用率仅 1–4%、瓶颈在 CPU 预处理，见 `motivation/results/gpu/image_*`）。详细数据见 `motivation/results/gpu/`。CPU/fake 实验仅历史参考。
 
 **2026-08-01 当前执行顺序**：内部已锁定 A（模型服务状态感知的请求成形/提交）+
 B（算子代价估计），首个 workload 为 image AI_EMBED (CLIP)；文本遗留实验统一
