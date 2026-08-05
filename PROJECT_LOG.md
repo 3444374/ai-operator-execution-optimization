@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-08-05 SQuAD capability gate v4：codex 第七轮修复后 canonical 重跑
+
+- 用 codex `735751b`（SQuAD-normalize 分桶 + `sample_manifest.jsonl` + /version + 脱敏修复）在服务器重跑
+  256 行门禁，产出去 v4（取代 v3 的 canonical 样本）。
+- **服务器同步**：`fd4f8bf..735751b` 的 ff-only pull 被服务器上未跟踪的 v3 证据目录（生成后未在服务器提交）
+  阻塞；精确移除冲突的未跟踪 v3（已由 `4dca4fa` 提交 canonical 版）+ 废弃 v4（旧码首跑）后拉取成功。
+- **结果**（`feasibility/results/squad_capability_256_v4_20260805/`，gate @ `735751b`）：256/256 成功、
+  0 error/NULL/max_tokens；EM **81.640625%** / F1 **89.82133685%**（209/256）。sample_hash
+  `d0e0e987…` **≠ v3** `b154c46a…`（SQuAD-normalize 分桶改变样本）。workload_integrity=verified、
+  attribution=attributable（运行前后 idle，request_success_delta==256）、vLLM **0.25.1**（/version 修复后
+  首次拿到）、avg 5.62 gen tokens/row、prefix-cache hit-rate 0.3619；operator-only JCT 4.209s；command 已脱敏。
+- **独立复算**：从 `per_row_evidence.csv` 经共享 `squad_quality_metrics` 重算 EM/F1 = 报告值（完全一致）。
+- v4 是当前 canonical 256 单臂样本；v3 保留作历史。下一步：① `--mode full` 全 10570；② database-E2E
+  顶层 runner（结构性缺口）；③ 三臂正式对比。
+
 ## 2026-08-05 SQuAD capability gate 七审：v3 证据边界纠正与门禁复算能力补齐
 
 - 独立复算 v3 `per_row_evidence.csv`：256 个唯一 source id，EM 207/256 = 80.859375%、

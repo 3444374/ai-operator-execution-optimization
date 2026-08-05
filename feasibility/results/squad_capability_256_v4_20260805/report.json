@@ -1,0 +1,106 @@
+{
+  "arm": "duckdb_ai",
+  "attribution": {
+    "after_idle": true,
+    "attributable": true,
+    "before_idle": true,
+    "reasons": [],
+    "request_success_delta": 256,
+    "requests_sent": 256
+  },
+  "cap": 64,
+  "command": [
+    "code/scripts/baselines/squad_capability_gate.py",
+    "--database-url",
+    "postgresql://postgres:***@localhost:5432/ai_operator",
+    "--workload-name",
+    "squad_v11_dev_short_answer",
+    "--mode",
+    "sampled",
+    "--sample-count",
+    "256",
+    "--importer-provenance",
+    "feasibility/results/squad_v11_dev_import_20260805/provenance.json",
+    "--endpoint-url",
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "--metrics-url",
+    "http://127.0.0.1:8000/metrics",
+    "--model",
+    "qwen2.5-7b",
+    "--max-tokens",
+    "64",
+    "--service-prefix-caching",
+    "enabled",
+    "--output-dir",
+    "feasibility/results/squad_capability_256_v4_20260805",
+    "--force"
+  ],
+  "error_count": 0,
+  "evidence_files": {
+    "per_row_csv": "per_row_evidence.csv",
+    "sample_manifest_jsonl": "sample_manifest.jsonl"
+  },
+  "exactly_once": true,
+  "finish_reason": "unavailable (DuckDB-ai extension does not expose finish_reason)",
+  "gate": "squad_v11_dev_capability",
+  "identity": {
+    "duckdb_ai_extension_source": "community",
+    "duckdb_ai_extension_version": "0.4.14",
+    "duckdb_version": "v1.5.4",
+    "endpoint": "http://127.0.0.1:8000/v1",
+    "git_commit": "735751b2ec48db1868645b47cc0d68ccd1b5fa9e",
+    "hostname": "autodl-container-a4884eab4c-22401421",
+    "metrics_snapshot": {
+      "after": "ok",
+      "before": "ok"
+    },
+    "model": "qwen2.5-7b",
+    "nvidia_smi": [
+      "0, NVIDIA GeForce RTX 4090, 24564 MiB, 595.58.03",
+      "1, NVIDIA GeForce RTX 4090, 24564 MiB, 595.58.03"
+    ],
+    "pg_server_version": "PostgreSQL 18.4 (Ubuntu 18.4-1.pgdg22.04+1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit",
+    "service_config_hash": "not_provided",
+    "service_prefix_caching": "enabled",
+    "vllm_version": "0.25.1",
+    "workload": "squad_v11_dev_short_answer"
+  },
+  "importer_content_hash": "2c2301f28f9eb2fea168bfda8e8011746defeb8120ae3ca7a8b113a5085a1173",
+  "max_tokens_error_count": 0,
+  "mode": "sampled",
+  "null_response_count": 0,
+  "result_count": 256,
+  "role": "capability_NOT_formal_ranking",
+  "row_count": 256,
+  "sample_content_hash": "d0e0e9879a60ea00dd6d7df722b3851a89180b76a9f23a745804749a804fce5f",
+  "squad_quality": {
+    "squad_evaluated_rows": 256,
+    "squad_exact_match_percent": 81.640625,
+    "squad_exact_match_rows": 209,
+    "squad_missing_prediction_rows": 0,
+    "squad_prediction_rows": 256,
+    "squad_quality_status": "ok",
+    "squad_token_f1_percent": 89.82133685484838
+  },
+  "status": "success",
+  "success_count": 256,
+  "timing": {
+    "adapter_wall_s": 5.072,
+    "boundary": "operator-only (database-E2E runner not implemented; no E2E ranking)",
+    "operator_only_jct_s": 4.209,
+    "setup_s": 0.668
+  },
+  "truncation_claim": "On this 256-row sampled selection, DuckDB-ai returned 256 completed, 0 errors, 0 identifiable max_tokens errors. DuckDB-ai does not expose finish_reason, so truncation cannot be directly confirmed; the vLLM generation-token delta (when attributable) is the actual output workload signal.",
+  "unique_result_ids": 256,
+  "vllm_metrics": {
+    "attribution": "attributable",
+    "avg_generation_tokens_per_row": 5.62,
+    "generation_tokens_delta": 1438,
+    "prefix_cache_hit_rate": 0.3619,
+    "prefix_cache_hits_delta": 21648,
+    "prefix_cache_queries_delta": 59811,
+    "prompt_tokens_delta": 59811
+  },
+  "workload_content_hash": "2c2301f28f9eb2fea168bfda8e8011746defeb8120ae3ca7a8b113a5085a1173",
+  "workload_integrity": "verified"
+}
