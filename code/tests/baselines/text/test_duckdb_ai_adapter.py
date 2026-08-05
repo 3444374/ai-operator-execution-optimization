@@ -284,6 +284,41 @@ class DuckDbAiAdapterTests(unittest.TestCase):
                 connection_factory=factory,
             )
 
+    def test_timing_splits_setup_and_operator_only(self) -> None:
+        requests = tuple(sample_request(i) for i in range(2))
+        rows = [
+            (request.doc_id, f"answer-{request.doc_id}", None)
+            for request in requests
+        ]
+        captured: dict[str, FakeConnection] = {}
+
+        def factory(_config):
+            connection = FakeConnection(rows)
+            captured["conn"] = connection
+            return connection
+
+        results = run_duckdb_ai_complete(
+            requests,
+            DuckDBAiConfig(
+                endpoint_base_url="http://127.0.0.1:8000/v1",
+                model="qwen2.5-7b",
+                api_key="EMPTY",
+                max_tokens=128,
+            ),
+            connection_factory=factory,
+        )
+        statements = captured["conn"].statements
+        # setup (load prompts) is recorded before the operator (AI SELECT)
+        insert_idx = next(
+            i for i, s in enumerate(statements) if "INSERT INTO duckdb_ai_source_ep0" in s
+        )
+        select_idx = next(i for i, s in enumerate(statements) if "ai_try_complete" in s)
+        self.assertLess(insert_idx, select_idx)
+        # operator-only timing invariant on every result
+        for result in results:
+            self.assertLessEqual(result.submitted_at_s, result.started_at_s)
+            self.assertLessEqual(result.started_at_s, result.completed_at_s)
+
 
 if __name__ == "__main__":
     unittest.main()

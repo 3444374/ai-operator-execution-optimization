@@ -103,6 +103,10 @@ Joules/correct row；successful rows/CPU-core-second；GPU seconds/correct row�
 
 **不能**拿 DuckDB operator-only JCT 与旧项目（含 PostgreSQL/Daft 数据读取的 E2E）直接比较。
 
+> **实现状态（2026-08-05）**：operator-only 计时已在 DuckDB adapter 实现（`submitted→started` = setup、
+> `started→completed` = operator-only）；**database-E2E 尚未实现**——连接创建/扩展加载、持久表扫描、
+> Daft/DuckDB 读取、统一 sink 都属**顶层 runner** 职责，目前无代码。
+
 ## 4. 请求等价门禁
 
 利用 DuckDB 的 `ai_completion_request_json()` 保存**实际请求体**，核对它与项目路径的 model、prompt、

@@ -238,11 +238,14 @@ def run_duckdb_ai_complete(
         if connection_factory is not None
         else _connect(config)
     )
-    # Timing follows the bounded-output protocol's two-boundary contract:
+    # Timing implements the bounded-output protocol's OPERATOR-ONLY boundary:
     #   submitted_at_s -> started_at_s = setup (configure endpoint + load prompts)
     #   started_at_s   -> completed_at_s = operator-only (AI op on ready prompts)
     # started_at_s is set AFTER prompt loading, so (completed - started) is the
     # operator-only JCT, not the full adapter wall; setup is (started - submitted).
+    # The DATABASE-E2E boundary (connection/extension load + persistent-table scan
+    # + Daft/DuckDB read + unified sink) is measured by the TOP-LEVEL RUNNER, not
+    # here — this adapter receives ready prompts and reports operator-only only.
     submitted_at_s = time.time()
     try:
         configure_ai_endpoint(connection, config)

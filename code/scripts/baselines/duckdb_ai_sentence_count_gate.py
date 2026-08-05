@@ -3,8 +3,11 @@
 
 Single verifiable goal: confirm DuckDB-ai can execute the full 2048-row
 sentence-count workload with **zero row-level failures AND zero invalid-format
-outputs** (every row a bare integer, finish_reason=stop), and report exact-match
-accuracy against a deterministic sentence-splitter ground truth.
+outputs** (every row a bare integer; DuckDB-ai reports no truncation/NULL error),
+and report exact-match accuracy against a deterministic sentence-splitter ground
+truth. The DuckDB-ai extension does not expose ``finish_reason``, so this gate
+proves "no truncation error reported", NOT an explicitly observed
+``finish_reason=stop``.
 
 Capability / microbenchmark only, NOT a formal product ranking: 1-token output
 exercises only SQL/framework call overhead, prompt prefill, request concurrency
@@ -41,11 +44,6 @@ CODE_ROOT = next(
 )
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
-
-try:
-    import psycopg
-except ImportError as exc:  # pragma: no cover
-    raise SystemExit("requires psycopg; run inside the driver venv") from exc
 
 from src.baselines.common.contracts import ChatRequest  # noqa: E402
 from src.baselines.text.products.duckdb_ai import (  # noqa: E402
@@ -111,19 +109,26 @@ def main(argv: list[str] | None = None) -> int:
             "(pass --force to replace)"
         )
 
+    try:
+        import psycopg
+    except ImportError as exc:  # pragma: no cover
+        raise SystemExit("requires psycopg; run inside the driver venv") from exc
     with psycopg.connect(args.database_url) as connection:
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT doc_id, text, prompt_tokens, arrival_time_s "
                 "FROM documents WHERE workload_name = %s "
                 "ORDER BY doc_id LIMIT %s",
-                (args.workload_name, args.row_count),
+                (args.workload_name, args.row_count + 1),
             )
             rows = cursor.fetchall()
     if len(rows) != args.row_count:
+        comparison = "more than" if len(rows) > args.row_count else "fewer than"
         raise SystemExit(
-            f"FAIL: workload {args.workload_name!r} has {len(rows)} rows, "
-            f"expected exactly {args.row_count}; refusing partial run"
+            f"FAIL: workload {args.workload_name!r} has {comparison} "
+            f"{args.row_count} rows (read {len(rows)} with LIMIT "
+            f"{args.row_count + 1}); refusing run — use exactly the "
+            "pre-registered row count"
         )
 
     suffix = "/chat/completions"
