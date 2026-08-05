@@ -1,6 +1,6 @@
 # Existing AI Operator Execution Chains
 
-更新日期：2026-08-01
+更新日期：2026-08-05
 
 ## 结论
 
@@ -11,6 +11,7 @@
 | Snowflake Cortex AISQL | SQL / Python AI functions，如 `AI_COMPLETE`、`AI_FILTER`、`AI_EMBED` | 托管在 Snowflake Service perimeter 内的 AI functions；官方强调 throughput 与 batch processing | 未见公开证据 | 证明数据库 AI SQL 算子是真实工业问题，但不能复现其闭源内部链路 |
 | pgai Vectorizer | PostgreSQL 中声明 vectorizer pipeline | PostgreSQL + stateless vectorizer workers；worker 读取队列、调用 embedding endpoint、写回数据库 | 否 | 与本项目“外部 worker + 模型服务 + 写回”最接近 |
 | OceanBase AI Function | SQL `AI_COMPLETE` / `AI_PROMPT` / `AI_EMBED` / `AI_RERANK` | 数据库内注册模型与 HTTP endpoint，由 SQL 表达式调用 OpenAI-compatible 模型服务 | 否 | 无 Daft/Ray 的产品级 SQL→endpoint baseline；当前 AutoDL 容器不可部署 observer，只能等待合适环境 |
+| OceanBase Lakebase / DataStudio | 多模表/Volumes 上的 splitting、frame extraction、embedding、tagging 和 AI 列回填 | 共享对象存储与统一 catalog 上，由 Daft on Ray 以常驻 actor、micro-partition 和 CPU/GPU pipeline 执行多模态计算 | 是 | 同栈工业架构证据；官方未公开可运行 benchmark、数据/硬件合同或性能数字，不进入本机数值排名 |
 | PolarDB Polar_AI + EAS | SQL 函数调用自定义模型 | PolarDB 将 SQL 数据转换为服务协议，调用 EAS endpoint，再转回数据库类型 | 否 | 与 OceanBase 同属 SQL→remote endpoint 路线；云端硬件不同，只作工业参考，除非能锁定同物理环境 |
 | PolarDB Daft on Ray | DataFrame / 多模态异构算子 | CPU 下载、解码、缩放与 GPU 类 UDF 在同一 Daft 流水线中按算子声明资源，并由 Ray runner 执行 | 是 | 与本项目图像链路最接近；其 staged CPU→GPU 形态是必须补的强系统 baseline，不可由 fused UDF 代替 |
 | PostgresML | PostgreSQL 扩展中的 `pgml.embed`、`pgml.transform` 等 | 模型靠近数据库或在数据库内/近数据库执行，强调减少数据搬运 | 否 | 代表“把模型移到数据附近”的对照路线 |
@@ -32,10 +33,11 @@
 | in-database inference | PostgresML、Oracle ONNX 类路线 | 模型在数据库进程内或近数据库执行 | 只在同模型/同硬件可部署时做严格性能臂，否则作架构参照 |
 | SQL→remote endpoint | OceanBase AI Function、Polar_AI + EAS | 数据库序列化请求并调用外部模型服务 | 指向同一 endpoint、同协议、同并发和同输出语义；否则仅作工业参考 |
 | queue-worker | pgai Vectorizer | 数据库触发/队列，外部 worker 异步调用并写回 | 比较 JCT、freshness、重试、写回和多 job，而非只比模型 tokens/s |
-| distributed data pipeline | PolarDB Daft on Ray、Ray Data、本项目 | CPU 数据准备与 GPU 推理按 stage/actor 流水化 | 图像主战场；必须比较 fused 与 staged，并分别做 matched-resource 和 independently calibrated best |
+| distributed data pipeline | PolarDB/OceanBase Lakebase Daft on Ray、Ray Data、本项目 | CPU 数据准备与 GPU 推理按 stage/actor 流水化 | 图像主战场；必须比较 fused 与 staged，并分别做 matched-resource 和 independently calibrated best |
 
 这四类不是互斥产品标签，而是执行路径抽象。同一产品可能提供多条路线，例如 PolarDB
-同时存在 Polar_AI→EAS 和 Daft-on-Ray 异构流水线。
+同时存在 Polar_AI→EAS 和 Daft-on-Ray 异构流水线；OceanBase 也同时存在 Database SQL
+AI Function 和 Lakebase Daft-on-Ray 两条产品面。
 
 ## 严格 baseline 的比较层级
 
@@ -140,6 +142,28 @@ AsyncIO 强 baseline，才能把数据库种类差异与 Daft/Ray 的净贡献�
 3. Chat messages、输出上限和真实 token 工作量等价；
 4. 独立标定 OceanBase 原生并行/多 session 能力，避免串行 strawman；
 5. exactly-once、失败和完成时间可审计。
+
+### OceanBase 公开性能证据的边界
+
+OceanBase 当前公开了三组彼此不同的评价材料：
+
+1. **SQL AI Function 功能合同**：生成、摘要、问答、分类、文本 embedding 和 rerank，
+   但未公开固定 AI workload、硬件、warm-up/repeats 或 raw performance results。
+2. **OceanBase Cloud 模型服务观测**：24 小时成功率、TTFT、token output rate，外加
+   token/request 的配额和限流。这些指标应被本项目采用，但它们只覆盖模型服务视角。
+3. **Lakebase/DataStudio Daft-on-Ray 架构**：常驻 Ray actor 避免重复加载模型，
+   micro-partition 串联 CPU/GPU stage，并用于多模态 feature backfill；没有公开
+   OceanBase-owned runner 或可审计的 Daft-vs-Ray Data 数字。
+
+因此 OceanBase 的 Sysbench/TPC-H（OLTP/OLAP）和 VectorDBBench（已有向量的 ANN
+检索）都只属于相邻证据，不能代替 AI Function 或 Daft-on-Ray pipeline benchmark。
+若要评价 Daft/Ray 性能，仍应使用 Daft 与 Ray Data 各自官方 workload/runner，在同机、
+同模型、同输入、同质量门槛和同 source/sink 下重跑；OceanBase 材料负责证明工业场景和
+机制选择，不负责提供可直接引用的 raw ranking。
+
+OceanBase 官方 publications 已登记 PVLDB 2026 accepted 的 **IMLane: Composable
+Framework for Efficient AI Function Execution in Database Engine**。本次检索未找到公开
+正文，故仅列为高优先级 watchlist；在论文公开前不得推断其 workload、baseline、指标或结果。
 
 ## 对方向的微调
 

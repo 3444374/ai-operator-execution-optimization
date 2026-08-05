@@ -256,6 +256,27 @@ PolarDB 与 Ray 官方页面对 Daft/Ray Data 的 raw 排名方向并不一致�
 [OceanBase DataStudio Daft-on-Ray workflow](https://en.oceanbase.com/blog/oceanbase-datastudio-unified-ai-data-production)、
 [OceanBase AI Function](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975)。
 
+OceanBase 公开材料对实验合同的可用部分与禁用部分如下：
+
+| 公开证据 | 可采用的评价项 | 不得替代的实验 |
+|---|---|---|
+| Cloud AI Services | 24h success rate、TTFT、token output rate、token/request quota 与 rate limit | database-E2E、DB fetch/queue/writeback、exactly-once |
+| SQL AI Function | `AI_COMPLETE`/`AI_EMBED`/`AI_RERANK` 的真实 SQL 语义、endpoint 与批量表列调用形态 | 没有公开性能报告，不能从语法示例推导吞吐或延迟 |
+| Lakebase/DataStudio | 常驻 Ray actor、micro-partition 调度、CPU/GPU pipeline、多模态回填场景 | 没有公开 OceanBase runner/数据/硬件/raw logs，不能声称其 Daft 快于 Ray Data |
+| Sysbench/TPC-H/VectorDBBench | 分别作 DB 引擎与 retrieval closure 的相邻门禁 | 不能充当 AI Function 或 Daft-on-Ray AI pipeline benchmark |
+
+因此 OceanBase 文本产品臂若恢复，应至少报告 correct rows/s、input/output/total tokens/s、
+operator/database-E2E JCT、TTFT、request p50/p95/p99、row success/error/truncation、EM/F1、
+实际调用/token、成本与数据库 CPU；endpoint 侧同步采集 running/waiting/KV/prefix-cache、
+GPU/MFU/能耗。OceanBase Lakebase 不设未经证实的性能臂，Daft/Ray 性能由两方官方代码
+同机复现。OceanBase 官方 publications 中的 PVLDB 2026 accepted **IMLane** 在本次检索中
+未找到公开正文，登记为 `pending-publication`，不预填其 benchmark 或数字。
+
+补充来源：[OceanBase Cloud AI Services release notes](https://en.oceanbase.com/docs/common-oceanbase-cloud-10000000003353421)、
+[OceanBase performance testing](https://en.oceanbase.com/docs/common-oceanbase-cloud-10000000002694815)、
+[VectorDBBench guide](https://en.oceanbase.com/docs/common-oceanbase-database-10000000002164117)、
+[OceanBase publications](https://github.com/oceanbase/publications)。
+
 ### 外部多模态公开 benchmark：事实、冲突与复现合同
 
 这组公开结果必须保留，因为它同时提供了行业参照和“为什么必须同机重跑”的直接证据，
