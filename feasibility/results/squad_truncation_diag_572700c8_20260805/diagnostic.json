@@ -1,0 +1,284 @@
+{
+  "source_example_id": "572700c8dd62a815002e976d",
+  "prompt_sha256": "7342945119862b4e3df23efe91c4cec04aef2975f301417fdf00bf72c81f6ab5",
+  "prompt_len": 775,
+  "model": "qwen2.5-7b",
+  "temperature": 0.0,
+  "repeats": 3,
+  "caps": [
+    64,
+    128,
+    256
+  ],
+  "direct_vllm": {
+    "64": [
+      {
+        "http_status": 200,
+        "elapsed_s": 0.841,
+        "finish_reason": "stop",
+        "completion_tokens": 46,
+        "prompt_tokens": 216,
+        "text": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "request_body": {
+          "model": "qwen2.5-7b",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Answer the question using only the context.\nReturn only the shortest answer span. Do not explain.\n\nContext:\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\n\nQuestion:\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\n\nAnswer:\n"
+            }
+          ],
+          "temperature": 0.0,
+          "max_tokens": 64,
+          "stream": false
+        }
+      },
+      {
+        "http_status": 200,
+        "elapsed_s": 0.772,
+        "finish_reason": "stop",
+        "completion_tokens": 46,
+        "prompt_tokens": 216,
+        "text": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "request_body": {
+          "model": "qwen2.5-7b",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Answer the question using only the context.\nReturn only the shortest answer span. Do not explain.\n\nContext:\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\n\nQuestion:\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\n\nAnswer:\n"
+            }
+          ],
+          "temperature": 0.0,
+          "max_tokens": 64,
+          "stream": false
+        }
+      },
+      {
+        "http_status": 200,
+        "elapsed_s": 0.771,
+        "finish_reason": "stop",
+        "completion_tokens": 46,
+        "prompt_tokens": 216,
+        "text": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "request_body": {
+          "model": "qwen2.5-7b",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Answer the question using only the context.\nReturn only the shortest answer span. Do not explain.\n\nContext:\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\n\nQuestion:\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\n\nAnswer:\n"
+            }
+          ],
+          "temperature": 0.0,
+          "max_tokens": 64,
+          "stream": false
+        }
+      }
+    ],
+    "128": [
+      {
+        "http_status": 200,
+        "elapsed_s": 0.771,
+        "finish_reason": "stop",
+        "completion_tokens": 46,
+        "prompt_tokens": 216,
+        "text": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "request_body": {
+          "model": "qwen2.5-7b",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Answer the question using only the context.\nReturn only the shortest answer span. Do not explain.\n\nContext:\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\n\nQuestion:\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\n\nAnswer:\n"
+            }
+          ],
+          "temperature": 0.0,
+          "max_tokens": 128,
+          "stream": false
+        }
+      },
+      {
+        "http_status": 200,
+        "elapsed_s": 0.772,
+        "finish_reason": "stop",
+        "completion_tokens": 46,
+        "prompt_tokens": 216,
+        "text": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "request_body": {
+          "model": "qwen2.5-7b",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Answer the question using only the context.\nReturn only the shortest answer span. Do not explain.\n\nContext:\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\n\nQuestion:\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\n\nAnswer:\n"
+            }
+          ],
+          "temperature": 0.0,
+          "max_tokens": 128,
+          "stream": false
+        }
+      },
+      {
+        "http_status": 200,
+        "elapsed_s": 0.772,
+        "finish_reason": "stop",
+        "completion_tokens": 46,
+        "prompt_tokens": 216,
+        "text": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "request_body": {
+          "model": "qwen2.5-7b",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Answer the question using only the context.\nReturn only the shortest answer span. Do not explain.\n\nContext:\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\n\nQuestion:\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\n\nAnswer:\n"
+            }
+          ],
+          "temperature": 0.0,
+          "max_tokens": 128,
+          "stream": false
+        }
+      }
+    ],
+    "256": [
+      {
+        "http_status": 200,
+        "elapsed_s": 0.771,
+        "finish_reason": "stop",
+        "completion_tokens": 46,
+        "prompt_tokens": 216,
+        "text": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "request_body": {
+          "model": "qwen2.5-7b",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Answer the question using only the context.\nReturn only the shortest answer span. Do not explain.\n\nContext:\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\n\nQuestion:\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\n\nAnswer:\n"
+            }
+          ],
+          "temperature": 0.0,
+          "max_tokens": 256,
+          "stream": false
+        }
+      },
+      {
+        "http_status": 200,
+        "elapsed_s": 0.771,
+        "finish_reason": "stop",
+        "completion_tokens": 46,
+        "prompt_tokens": 216,
+        "text": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "request_body": {
+          "model": "qwen2.5-7b",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Answer the question using only the context.\nReturn only the shortest answer span. Do not explain.\n\nContext:\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\n\nQuestion:\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\n\nAnswer:\n"
+            }
+          ],
+          "temperature": 0.0,
+          "max_tokens": 256,
+          "stream": false
+        }
+      },
+      {
+        "http_status": 200,
+        "elapsed_s": 0.779,
+        "finish_reason": "stop",
+        "completion_tokens": 46,
+        "prompt_tokens": 216,
+        "text": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "request_body": {
+          "model": "qwen2.5-7b",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Answer the question using only the context.\nReturn only the shortest answer span. Do not explain.\n\nContext:\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\n\nQuestion:\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\n\nAnswer:\n"
+            }
+          ],
+          "temperature": 0.0,
+          "max_tokens": 256,
+          "stream": false
+        }
+      }
+    ]
+  },
+  "duckdb_ai_try_complete": {
+    "64": [
+      {
+        "elapsed_s": 0.74,
+        "response": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "error": null,
+        "response_chars": 140,
+        "request_body_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":64}"
+      },
+      {
+        "elapsed_s": 0.742,
+        "response": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "error": null,
+        "response_chars": 140,
+        "request_body_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":64}"
+      },
+      {
+        "elapsed_s": 0.741,
+        "response": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "error": null,
+        "response_chars": 140,
+        "request_body_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":64}"
+      }
+    ],
+    "128": [
+      {
+        "elapsed_s": 0.742,
+        "response": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "error": null,
+        "response_chars": 140,
+        "request_body_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":128}"
+      },
+      {
+        "elapsed_s": 0.741,
+        "response": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "error": null,
+        "response_chars": 140,
+        "request_body_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":128}"
+      },
+      {
+        "elapsed_s": 0.741,
+        "response": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "error": null,
+        "response_chars": 140,
+        "request_body_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":128}"
+      }
+    ],
+    "256": [
+      {
+        "elapsed_s": 0.739,
+        "response": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "error": null,
+        "response_chars": 140,
+        "request_body_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":256}"
+      },
+      {
+        "elapsed_s": 0.741,
+        "response": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "error": null,
+        "response_chars": 140,
+        "request_body_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":256}"
+      },
+      {
+        "elapsed_s": 0.741,
+        "response": "Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Agostino Carlini",
+        "error": null,
+        "response_chars": 140,
+        "request_body_json": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":256}"
+      }
+    ]
+  },
+  "duckdb_request_body_per_cap": {
+    "64": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":64}",
+    "128": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":128}",
+    "256": "{\"model\":\"qwen2.5-7b\",\"messages\":[{\"role\":\"user\",\"content\":\"Answer the question using only the context.\\nReturn only the shortest answer span. Do not explain.\\n\\nContext:\\nSculptors both British and Europeans who were based in Britain and whose work is in the collection include Nicholas Stone, Caius Gabriel Cibber, Grinling Gibbons, John Michael Rysbrack, Louis-François Roubiliac, Peter Scheemakers, Sir Henry Cheere, Agostino Carlini, Thomas Banks, Joseph Nollekens, Joseph Wilton, John Flaxman, Sir Francis Chantrey, John Gibson, Edward Hodges Baily, Lord Leighton, Alfred Stevens, Thomas Brock, Alfred Gilbert, George Frampton, and Eric Gill. A sample of some of these sculptors' work is on display in the British Galleries.\\n\\nQuestion:\\nWhat sort of continental sculptors are represented in the British Galleries of the V&A?\\n\\nAnswer:\\n\"}],\"temperature\":0,\"max_tokens\":256}"
+  },
+  "decision": {
+    "stable_length_at_cap64": false,
+    "higher_cap_stop": true,
+    "duckdb_cap64_null": false,
+    "interpretation": "see per-run finish_reasons; cap=64 not stably length -> occasional tail risk"
+  },
+  "note": "High caps are DIAGNOSTIC ONLY; the formal gate is locked at cap=64. Response cache and retries are OFF."
+}

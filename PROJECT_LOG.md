@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-08-05 SQuAD 截断定点诊断：推翻「确定性 rambling」，改记偶发尾部风险 + baseline eligibility
+
+- 用户裁决：选 (b) 做定点诊断 + (a) 接受产品边界；不重跑全量、不抬正式 cap=64。
+- **先修 pgvector 探针**（`9aefeba`）：原查 `extname='pgvector'` 错（实际扩展名 `vector`），故 full
+  报告 `pgvector_version="not_installed"` 不可信；服务器实测 `vector 0.8.5`。已修查询；**不覆写已提交的
+  full 原始证据**，仅 README §8 审计订正。不影响 SQuAD/EM-F1/截断结论。
+- **定点诊断**（新脚本 `code/scripts/baselines/squad_truncation_diagnostic.py`，`9aefeba`）：对失败行
+  `572700c8…` 的归档 prompt，direct vLLM + DuckDB `ai_try_complete` × cap{64,128,256} × 3 重复，cache/retry
+  off，并用 `ai_completion_request_json` 证明两路径同请求。**结果：cap=64 孤立重放 3×3 全部 `stop`/46 token/
+  文本一致；截断不可复现** → 推翻 `c20240e` README 的「模型 rambling/loop、temp=0 确定性」。
+- **正确归因**：全量并发服务下 vLLM 批处理解码在 temp=0 的非确定性偶发把该行推过 64 token，DuckDB-ai
+  truncation-as-error 语义硬转成 NULL。这是 DuckDB-ai baseline 在 cap=64 + 全量并发下的**可测量可靠性行为**，
+  不是基础设施/数据故障，也不是「非 baseline 缺陷」（这正是要评价的 baseline 行为）。
+- **定性**：full zero-error gate 维持 `FAILURE`（不改写为 pass）；baseline 标
+  `eligible_with_documented_failure`，进入**失败感知**的系统比较。正式三臂比较对所有 arm 统一报
+  success/error/NULL/truncation rate、全 manifest EM/F1（失败行 0 分）、`successful_rows/s`、
+  `correct_rows/s`、exactly-once 与完整失败证据；不以 raw rows/s 单独排名。
+- **待办**：service-config-hash `49cf2f…` 只是手填字段摘要，正式实验前须归档实际 vLLM 启动命令、模型
+  revision、dtype、并行配置、显存比例、环境快照。database-E2E runner 可继续建设。
+
 ## 2026-08-05 SQuAD full 10570 gate：fail-closed 触发，cap=64 的 1/10570 截断边界
 
 - 先按 codex 八审补 fail-closed + per-row CSV 加 `server_version`/`pgvector_version` 列

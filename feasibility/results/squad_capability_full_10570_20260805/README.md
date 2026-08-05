@@ -45,9 +45,9 @@
 
 - **行级**：success 10569 / error 1 / NULL 1 / max_tokens error 1；exactly-once True
 - **失败行**：`source_example_id = 572700c8dd62a815002e976d`，error `"AI provider response stopped
-  because max_tokens was reached"`，output_chars 0（NULL）。参考答案均为 5–7 词（"Europeans who were
-  based in Britain" 等）—— 正确答案远低于 64 token，模型在该题（temp 0.0 确定性）生成了 >64 token
-  （rambling/loop），触发 DuckDB-ai 把 finish_reason=length 当行级 error → NULL。
+  because max_tokens was reached"`，output_chars 0（NULL）。**归因见 §8 审计订正**：定点诊断证明该行
+  在 cap=64 孤立重放时正常完成（46 token，`stop`），故全量跑里的这次截断是**高并发下的偶发生成尾部
+  风险**（非确定性、非该行固有），被 DuckDB-ai truncation-as-error 语义硬转成 NULL。
 - **语义质量（10569 成功 + 1 NULL 计 missing→0 进分母）**：EM **8490/10570 = 80.32166509%**、
   token-F1 **89.36120270%**、missing 1
 - **vLLM 工作量（attributable）**：avg 5.71 gen tokens/row、prefix-cache hit-rate **0.7446**
@@ -60,19 +60,38 @@
 - **事实**：全量 10570 在 cap=64 下，DuckDB-ai 对 **1 行**（572700c8…）返回 max_tokens 截断 NULL；
   其余 10569 行成功。fail-closed 据此将门禁标为 failure（EXIT=1）。整集 EM 80.32%、F1 89.36%
   （独立复算一致）。归因严格通过（request_success_delta==10570，endpoint 独占）。
-- **判断**：这是 DuckDB-ai「truncation-as-error」产品语义在 SQuAD dev 上的真实边界——cap=64 不能
-  100% 覆盖整集（1/10570 ≈ 0.0095% 截断率）。失败行不是 baseline 缺陷、不是数据问题，而是模型在该题
-  生成超长（确定性）。整集质量信号（EM/F1）在扣除该 missing 行的口径下仍强劲。
-- **不能声称**：full gate 「通过」（codex 的 0 error/NULL 标准未达）；cap=64 全集零截断；
-  DuckDB-ai 比直连/项目更快或更慢；database-E2E 性能。
-- **按协议**：不抬 cap 到 128 去「碰巧通过」（协议明令）；如实记录该 1 行边界。
+- **定性（经定点诊断订正）**：**不是基础设施或数据故障，而是 DuckDB-ai baseline 在统一 cap=64 + 全量
+  并发服务下可测量的产品语义限制。** cap=64 孤立重放该行正常（见
+  `feasibility/results/squad_truncation_diag_572700c8_20260805/`）；全量并发下 vLLM 批处理解码在
+  temp=0 的非确定性偶发把该行推过 64 token，DuckDB-ai 把 `finish_reason=length` 当行级 error → NULL。
+  这是 baseline 在负载下的可靠性行为（1/10570，单次、不可复现），需要被评价，而非掩盖。
+- **不能声称**：full gate「通过」（codex 的 0 error/NULL 标准未达）；cap=64 全集零截断；该行「确定性
+  rambling」（已证伪）；DuckDB-ai 比直连/项目更快或更慢；database-E2E 性能。
+- **按协议**：不抬 cap 到 128 去「碰巧通过」（协议明令）；接受该产品边界。
 
-## 7. 对课题含义 + 下一步
+## 7. 对课题含义 + 下一步（已裁决：接受边界）
 
-- **含义**：DuckDB-ai 单臂在 cap=64 下对 SQuAD dev 的覆盖率是 10569/10570；fail-closed 机制有效
-  拦住了「带 1 个 NULL 当成功」的假象。整集能力（质量 + 归因 + 完整性）基本成立，唯一边界是 1 行
-  模型超长生成。
-- **待定（交 codex/用户裁决）**：(a) 接受 cap=64 的 1/10570 截断边界，把 full 标为「capability
-  demonstrated with 1 documented truncation」；(b) 单独诊断该 1 行（更高 cap 单跑确认是长度问题）；
-  (c) 其它。协议禁止靠抬 cap 过门禁。
-- **更后**：database-E2E 顶层 runner（结构性缺口）→ 三臂正式对比。
+- **含义**：DuckDB-ai 单臂在 cap=64 下对 SQuAD dev 的成功率 10569/10570；fail-closed 有效拦住
+  「带 1 个 NULL 当成功」的假象。整集能力（质量 + 归因 + 完整性）成立，唯一边界是高并发下 1 行偶发
+  截断（产品语义）。
+- **裁决（用户 + codex）**：**(a) 接受并保留该产品边界**——full zero-error gate 维持 `FAILURE`（不改写
+  为 pass）；baseline 标 `eligible_with_documented_failure`，允许进入**失败感知**的系统比较。
+- **database-E2E 可继续建设**。正式三臂比较对所有 arm 统一报：success/error/NULL/truncation rate、
+  全 manifest EM/F1（失败行按 0 分）、`successful_rows/s`、`correct_rows/s`、exactly-once 与完整失败
+  证据；**不以 raw rows/s 单独排名**。
+
+## 8. 审计订正与 provenance 说明（不覆写原始证据）
+
+> 本节的 `report.json` / `per_row_evidence.csv` / `sample_manifest.jsonl` 是 `c20240e` 当时的机器原始
+> 输出，**保持不变**；以下订正只写在 README，供读者校准。
+
+- **失败行归因订正**：§5/§6 原写「模型 rambling/loop、temp=0 确定性」**不成立**。定点诊断
+  （`feasibility/results/squad_truncation_diag_572700c8_20260805/`，`9aefeba`）证明 cap=64 孤立重放
+  该行 3×3（direct vLLM + DuckDB `ai_try_complete`）全部 `stop`、46 token、文本一致；DuckDB 抓到的
+  请求体与 direct 逐字段一致。截断不可复现 → 改为「高并发下偶发生成尾部风险」。
+- **pgvector 版本字段不可信**：`report.json` 里 `pgvector_version="not_installed"` 是探针 bug（当时
+  查 `extname='pgvector'`，实际扩展名是 `vector`）。已修（`9aefeba`）；服务器实测 `vector 0.8.5`。
+  不影响 SQuAD/EM-F1/截断结论，仅环境 provenance。
+- **service-config-hash 不完整**：`49cf2f803735b4a4` 是若干手填字段（model/max_model_len/2×4090/
+  prefix-cache/vLLM 版本）的摘要，**不是完整可反演的服务配置**。正式实验前须归档：实际 vLLM 启动
+  命令、模型 revision、dtype、并行配置（max_num_seqs 等）、显存比例、环境快照。
