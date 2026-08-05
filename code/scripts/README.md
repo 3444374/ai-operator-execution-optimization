@@ -1048,3 +1048,32 @@ python code/scripts/baselines/squad_truncation_diagnostic.py \
   --model qwen2.5-7b --caps 64,128,256 --repeats 3 \
   --output feasibility/results/squad_truncation_diag_<id>_<date>/diagnostic.json --force
 ```
+
+`baselines/squad_database_e2e_runner.py` 是 SQuAD bounded-output 的 **database-E2E 顶层 runner**
+（DuckDB-ai 臂；`direct_client`/`project_static` 臂留 stub）。它把 operator-only 的 DuckDB adapter
+包进一个 E2E 计时墙：持久表扫描 → prompt 构造 → `run_duckdb_ai_complete`（operator-only 时间戳保留）
+→ 统一 sink（`write_completions` → `document_completions`，`json_text`）。runner 层算主 headline
+`correct_rows_per_s`（= EM 行 ÷ `database_e2e_wall_s`）、`successful_rows_per_s`、`failure_rate`；
+状态字段拆 `capability_gate_status` / `formal_run_gate_passed` / `comparison_admission`
+（失败时 `eligible_with_documented_failure`，不削弱 zero-error validity）。不注入项目 credit/actor/
+backpressure；DuckDB 扩展继续拥有 batching/concurrency。冻结服务配置见
+`deploy/autodl/dual_gpu_squad_database_e2e.example.json`（含支撑 `--service-config-hash` 的真实 vLLM
+配置，REPLACE_ME 字段正式前填）。示例：
+
+```bash
+python code/scripts/baselines/squad_database_e2e_runner.py --arm duckdb_ai \
+  --database-url "$DATABASE_URL" --workload-name squad_v11_dev_short_answer \
+  --importer-provenance feasibility/results/squad_v11_dev_import_20260805/provenance.json \
+  --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
+  --metrics-url http://127.0.0.1:8000/metrics \
+  --model qwen2.5-7b --max-tokens 64 --max-concurrent-requests 32 \
+  --service-prefix-caching enabled --service-config-hash <vllm_config_hash> \
+  --metrics-settle-s 5 --strict-attribution \
+  --writeback-mode json_text --write-batch-rows 500 \
+  --output-dir feasibility/results/squad_database_e2e_duckdb_ai_REPLACE_ME --force
+```
+
+输出：`report.json`（E2E timing 块 + runner 指标 + identity + 3 状态字段）、`per_row_evidence.csv`
+（含 `server_version`/`pgvector_version`，EM/F1 可复算）、失败时 `failure_report.json`。修改 runner
+或 `_results_to_sink_payload`/`_runner_metrics` 后运行
+`python -m unittest tests.baselines.test_squad_database_e2e_runner`。

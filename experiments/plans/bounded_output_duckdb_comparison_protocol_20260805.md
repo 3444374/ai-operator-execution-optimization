@@ -111,8 +111,15 @@ Joules/correct row；successful rows/CPU-core-second；GPU seconds/correct row�
 **不能**拿 DuckDB operator-only JCT 与旧项目（含 PostgreSQL/Daft 数据读取的 E2E）直接比较。
 
 > **实现状态（2026-08-05）**：operator-only 计时已在 DuckDB adapter 实现（`submitted→started` = setup、
-> `started→completed` = operator-only）；**database-E2E 尚未实现**——连接创建/扩展加载、持久表扫描、
-> Daft/DuckDB 读取、统一 sink 都属**顶层 runner** 职责，目前无代码。
+> `started→completed` = operator-only）。**database-E2E 顶层 runner 已实现**
+> （`code/scripts/baselines/squad_database_e2e_runner.py`，DuckDB-ai 臂）：一个计时墙包住持久表扫描 →
+> prompt 构造 → 模型调用（adapter，operator-only 时间戳保留）→ 统一 sink（`write_completions`，
+> `document_completions`，`json_text`），报告层记 `database_e2e_wall_s` 与 scan/construct/adapter/sink
+> 分段；runner 层算 `correct_rows_per_s`（主 headline）、`successful_rows_per_s`、failure rate；状态字段
+> 拆 `capability_gate_status` / `formal_run_gate_passed` / `comparison_admission`。DuckDB 扩展继续拥有
+> batching/concurrency，runner 不注入项目 credit/actor pool/动态 backpressure。`direct_client`/`project_static`
+> 臂留 NotImplementedError，后续补。**注**：PG 连接建立按连接池惯例算 setup（不计入 E2E 墙）；DuckDB
+> 连接+扩展加载在 adapter 内、计入 operator 段。
 
 ## 4. 请求等价门禁
 
@@ -130,8 +137,9 @@ temperature、max_tokens、消息角色一致；再用 **vLLM prompt-token count
 2. 三臂同 manifest、同 model、双 GPU、vLLM 同配置、prefix cache、**同 cap=64**、同计时边界，按 §2 五类指标
    + §3 两边界 + §4 请求等价门禁执行。
 3. 项目最终优化方案确定后补第四臂。
-4. **database-E2E 顶层 runner（结构性缺口，§3 已标明）**：正式数据库系统排名前必须实现；在此之前只能跑
-   operator-only 门禁，**不能发布完整数据库系统排名**。
+4. **database-E2E 顶层 runner（已实现，DuckDB-ai 臂；§3）**：`code/scripts/baselines/squad_database_e2e_runner.py`
+   已覆盖 scan→construct→operator→unified sink 的 E2E 计时墙与 runner 层指标；`direct_client`/`project_static`
+   臂与多臂正式排名仍待补——**多臂齐全前不发布完整数据库系统排名**。
 
 非阻塞 microbenchmark（可与主路径并行，**不是 SQuAD 的前置门禁**）：
 

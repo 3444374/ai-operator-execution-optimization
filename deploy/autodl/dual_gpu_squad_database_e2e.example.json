@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "runner": "squad_database_e2e",
+  "timing_boundary": "database_e2e",
+  "arm": "duckdb_ai",
+  "formal": false,
+  "_doc": "Frozen service + run contract for the SQuAD bounded-output database-E2E runner (DuckDB-ai arm). The runner is CLI-driven; this JSON archives the service configuration that backs --service-config-hash so the run is reproducible. Fields marked REPLACE_ME MUST be filled (and the vllm_config_hash recomputed) before any formal run; the service-config-hash is otherwise only a hand-field summary (not a full reversible config).",
+
+  "workload": {
+    "database_url": "${DATABASE_URL}",
+    "workload_name": "squad_v11_dev_short_answer",
+    "importer_provenance": "feasibility/results/squad_v11_dev_import_20260805/provenance.json",
+    "expected_count": 10570
+  },
+
+  "endpoint": {
+    "endpoint_url": "http://127.0.0.1:8000/v1/chat/completions",
+    "metrics_url": "http://127.0.0.1:8000/metrics",
+    "model": "qwen2.5-7b",
+    "api_key": "EMPTY",
+    "max_tokens": 64
+  },
+
+  "duckdb_extension": {
+    "max_concurrent_requests": 32,
+    "response_cache": false,
+    "retry_count": 0,
+    "temperature": 0.0,
+    "note": "The DuckDB ai community extension OWNS batching/concurrency/retry/cache; the runner injects NO project credit / actor pool / dynamic backpressure."
+  },
+
+  "service": {
+    "prefix_caching": "enabled",
+    "vllm_version": "0.25.1",
+    "model_path": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
+    "model_revision": "REPLACE_ME",
+    "dtype": "REPLACE_ME",
+    "max_model_len": 8192,
+    "max_num_seqs": 256,
+    "max_num_batched_tokens": 8192,
+    "gpu_memory_utilization": "REPLACE_ME",
+    "tensor_parallel_size": 1,
+    "endpoints": ["http://127.0.0.1:8000", "http://127.0.0.1:8001"],
+    "gpus": ["NVIDIA RTX 4090", "NVIDIA RTX 4090"],
+    "launch_command": "REPLACE_ME: actual `vllm serve ...` command (archive before formal)",
+    "env_snapshot": "REPLACE_ME: CUDA / driver / OS snapshot ref",
+    "vllm_config_hash": "REPLACE_ME: sha256[:16] over the JSON of the fields above (this is what --service-config-hash reports)"
+  },
+
+  "sink": {
+    "writeback_mode": "json_text",
+    "write_batch_rows": 500,
+    "table": "document_completions",
+    "fallback_tenant_id": 0,
+    "fallback_category": "squad"
+  },
+
+  "attribution": {
+    "metrics_settle_s": 5.0,
+    "strict_attribution": true
+  },
+
+  "run_command_template": "python code/scripts/baselines/squad_database_e2e_runner.py --arm duckdb_ai --database-url $DATABASE_URL --workload-name squad_v11_dev_short_answer --importer-provenance feasibility/results/squad_v11_dev_import_20260805/provenance.json --endpoint-url http://127.0.0.1:8000/v1/chat/completions --metrics-url http://127.0.0.1:8000/metrics --model qwen2.5-7b --max-tokens 64 --max-concurrent-requests 32 --service-prefix-caching enabled --service-config-hash <vllm_config_hash> --metrics-settle-s 5 --strict-attribution --writeback-mode json_text --write-batch-rows 500 --output-dir feasibility/results/squad_database_e2e_duckdb_ai_REPLACE_ME --force",
+
+  "ranking_contract": {
+    "primary_headline": "correct_rows_per_s (= squad_exact_match_rows / database_e2e_wall_s)",
+    "also_report": ["successful_rows_per_s", "raw_rows_per_s (NOT a ranking key)", "failure_rate", "full_manifest_EM/F1 (failed rows scored 0)", "exactly_once"],
+    "state_fields": ["capability_gate_status", "formal_run_gate_passed", "comparison_admission"],
+    "note": "Single-arm E2E measurement, not yet a ranking; direct_client / project_static arms are added in later passes."
+  }
+}
