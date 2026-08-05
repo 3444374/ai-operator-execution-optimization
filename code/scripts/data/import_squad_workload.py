@@ -99,8 +99,15 @@ def parse_squad_dev(parsed: dict) -> list[SquadRow]:
                 if qa_id in seen_ids:
                     raise ValueError(f"duplicate SQuAD qa id: {qa_id!r}")
                 seen_ids.add(qa_id)
-                answers = qa.get("answers", {})
-                texts = tuple(answers.get("text", []))
+                answers = qa.get("answers", [])
+                if isinstance(answers, dict):
+                    # HF/datasets collapsed format {answer_start:[...], text:[...]}
+                    texts = tuple(answers.get("text", []))
+                elif isinstance(answers, list):
+                    # raw dev-v1.1.json format: [{answer_start, text}, ...]
+                    texts = tuple(a.get("text", "") for a in answers if isinstance(a, dict))
+                else:
+                    texts = ()
                 if not texts:
                     raise ValueError(f"SQuAD qa {qa_id!r} has no reference answers")
                 rows.append(

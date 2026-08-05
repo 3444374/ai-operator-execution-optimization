@@ -31,12 +31,25 @@ class SquadImportParseTests(unittest.TestCase):
     def test_parse_preserves_multi_answer_array(self) -> None:
         parsed = _dev([{
             "id": "q1", "question": "Q1?",
-            "answers": {"answer_start": [0, 0, 0], "text": ["a1", "a2", "a3"]},
+            "answers": [
+                {"answer_start": 0, "text": "a1"},
+                {"answer_start": 0, "text": "a2"},
+                {"answer_start": 0, "text": "a3"},
+            ],
         }])
         rows = importer.parse_squad_dev(parsed)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].reference_answers, ("a1", "a2", "a3"))
         self.assertEqual(rows[0].source_example_id, "q1")
+
+    def test_parse_accepts_hf_collapsed_answers_dict(self) -> None:
+        # the HF/datasets format collapses the answer list into {answer_start:[...], text:[...]}
+        parsed = _dev([{
+            "id": "q2", "question": "Q?",
+            "answers": {"answer_start": [0, 0], "text": ["b1", "b2"]},
+        }])
+        rows = importer.parse_squad_dev(parsed)
+        self.assertEqual(rows[0].reference_answers, ("b1", "b2"))
 
     def test_parse_preserves_special_characters_and_newlines(self) -> None:
         context = "Café résumé 🎉 with\ntwo\nlines"
@@ -48,7 +61,7 @@ class SquadImportParseTests(unittest.TestCase):
                 "paragraphs": [{
                     "context": context,
                     "qas": [{"id": "q9", "question": question,
-                             "answers": {"answer_start": [0], "text": ["α"]}}],
+                             "answers": [{"answer_start": 0, "text": "α"}]}],
                 }],
             }],
         }
@@ -59,14 +72,14 @@ class SquadImportParseTests(unittest.TestCase):
 
     def test_parse_rejects_duplicate_qa_id(self) -> None:
         parsed = _dev([
-            {"id": "dup", "question": "a?", "answers": {"answer_start": [0], "text": ["x"]}},
-            {"id": "dup", "question": "b?", "answers": {"answer_start": [0], "text": ["y"]}},
+            {"id": "dup", "question": "a?", "answers": [{"answer_start": 0, "text": "x"}]},
+            {"id": "dup", "question": "b?", "answers": [{"answer_start": 0, "text": "y"}]},
         ])
         with self.assertRaisesRegex(ValueError, "duplicate SQuAD qa id"):
             importer.parse_squad_dev(parsed)
 
     def test_parse_rejects_missing_reference_answers(self) -> None:
-        parsed = _dev([{"id": "q1", "question": "Q?", "answers": {"answer_start": [], "text": []}}])
+        parsed = _dev([{"id": "q1", "question": "Q?", "answers": []}])
         with self.assertRaisesRegex(ValueError, "no reference answers"):
             importer.parse_squad_dev(parsed)
 
