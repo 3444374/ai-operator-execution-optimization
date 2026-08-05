@@ -59,7 +59,7 @@ class FakeConnection:
 
     def execute(self, statement, *_args, **_kwargs):
         self.statements.append(statement)
-        if "ai_complete" in statement:
+        if "ai_try_complete" in statement:
             return _FakeResult(self._completion_rows)
         return None
 
@@ -114,8 +114,9 @@ class DuckDbAiAdapterTests(unittest.TestCase):
 
     def test_build_query_uses_named_args_and_identifier_guard(self) -> None:
         query = build_ai_complete_query("duckdb_ai_source_ep0", max_tokens=96)
-        self.assertIn("ai_complete(prompt, max_tokens => 96", query)
+        self.assertIn("ai_try_complete(prompt, max_tokens => 96", query)
         self.assertIn("temperature => 0.0", query)
+        self.assertIn(".response AS output_text", query)
         self.assertIn("FROM duckdb_ai_source_ep0", query)
         with self.assertRaisesRegex(ValueError, "invalid source table"):
             build_ai_complete_query("duckdb_ai_source_ep0; DROP", max_tokens=1)
