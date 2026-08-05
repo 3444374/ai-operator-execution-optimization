@@ -8,6 +8,11 @@
   `service_metadata.prefix_caching`，live runner 继续核对真实 vLLM 进程参数。
 - cost estimator 将 cache 状态加入 decision-context 身份，禁止把执行后才能观测的
   hit rate 输入同一次 pre-execution 预测；formal 额外审计 query/hit delta 合法性。
+- 提交后 AutoDL 真实门禁在 `2b7da6c` 上完成 2/2、0 incident：每 run 512/512
+  exactly-once、双 endpoint、shared Ray，CSV 均为 cache enabled，hit rate
+  33.69%–34.51%，local-Ray 启动计数 0。首次 PostgreSQL 未启动的失败门禁单独保留。
+- 正式计划示例输出目录改为全新 `formal_v2_cache_on` 路径；旧 2026-08-04 无效运行目录
+  只保留事故证据，禁止 resume、覆盖或与有效重跑结果混合。
 
 ## 2026-08-05 双 4090 cost-profile formal 无效性审计与运行互斥修复
 

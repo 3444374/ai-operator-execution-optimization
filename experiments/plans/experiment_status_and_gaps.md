@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-05；双 4090 cost-profile 首次 formal 无效性审计）
+Date: 2026-07-20（最后更新：2026-08-05；双 4090 cost-profile cache-on 最小门禁通过）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -28,9 +28,11 @@ Date: 2026-07-20（最后更新：2026-08-05；双 4090 cost-profile 首次 form
   Docker**，需独立 Docker/VM）→ ④system E2E + pgvector sink。
 - **B 线（代价估计）**：双 4090 4-cell pilot v2 已 8/8；首次 320-run formal 产生两套
   表面完整结果，但两 runner 几乎全程并发，且 640/640 子运行因空 Ray 地址启动 local
-  Ray，故全部判为无效并禁止进入 CE0–CE5。host-scope lease 与空参数门禁修复后，先跑
-  共享 Ray 最小 gate，再由远端 agent 在单一新目录重跑 5 workloads × 2 rows ×
-  2 output caps × 4 active-work、每 cell 1+3。详见结果事故报告。
+  Ray，故全部判为无效并禁止进入 CE0–CE5。host-scope lease 与空参数门禁修复后，
+  cache-on + shared-Ray 最小 gate 已在 `2b7da6c` 上完成 2/2、0 incident、0 local-Ray
+  启动；该结果只证明运行合同可执行，不提供性能排名。长实验尚未启动，后续由远端 agent
+  在单一新目录重跑 5 workloads × 2 rows × 2 output caps × 4 active-work、每 cell 1+3。
+  事故证据与门禁证据分别见对应 results/feasibility 报告。
   2026-08-05 起主合同统一为真实部署的 prefix cache-on；cache-off 仅作独立机制消融，
   `service_prefix_caching` 纳入 context 身份，执行后 hit rate 禁止用作预测特征。
 - 上方 §0 "下一步运行 Daft 官方 ResNet18 parity 与 60 秒以上稳态 formal" 中，**60 秒稳态 formal 已由 60K×2 schema-v12 重跑闭合**；ResNet18 parity 仍待（A②）。

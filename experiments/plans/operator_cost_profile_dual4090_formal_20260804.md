@@ -1,11 +1,14 @@
 # 双 4090 算子代价估计 formal profile（2026-08-04）
 
-> **状态：首次运行无效，等待修复后重跑。** 2026-08-04 的两套 320-run 输出几乎全程
+> **状态：首次运行无效；修复后的 cache-on 最小门禁已通过，长实验尚未启动。**
+> 2026-08-04 的两套 320-run 输出几乎全程
 > 并发使用同一组 vLLM/GPU，且空 `--ray-address` 使每个子运行启动 local Ray；两套数据
 > 均排除出 CE0–CE6 分析。事故证据见
 > [`../results/operator_cost_profile_dual4090_formal_20260804/README.md`](../results/operator_cost_profile_dual4090_formal_20260804/README.md)。
-> 只有 host-scope lease、非空共享 Ray 门禁和最小复跑通过后，远端 agent 才可在单一
-> 新目录重跑；不得从无效目录 resume 或挑选部分结果。
+> host-scope lease、非空共享 Ray 门禁和 cache-on 最小复跑已在提交 `2b7da6c` 上通过；
+> 远端 agent 可在完成本页全部 preflight 后，于单一新目录重跑。不得从无效目录 resume
+> 或挑选部分结果。门禁证据见
+> [`../../feasibility/results/cost_profile_cacheon_gate_20260805/README.md`](../../feasibility/results/cost_profile_cacheon_gate_20260805/README.md)。
 > 2026-08-05 按真实部署口径把 v2 主合同冻结为 **prefix cache on**；cache-off 只作
 > 单独机制消融，不进入主性能排名，也不与 cache-on 行混合训练。
 
@@ -109,19 +112,19 @@ test -n "${RAY_ADDRESS:-}" || {
 再由远端 agent 在**新目录**启动；不要用 `/usr/bin/time` 包裹命令：
 
 ```bash
-mkdir -p /root/autodl-tmp/experiment-artifacts/dual_gpu_cost_profile_formal_20260804
-screen -dmS cost-formal bash -lc '
+mkdir -p /root/autodl-tmp/experiment-artifacts/dual_gpu_cost_profile_formal_v2_cache_on_20260805
+screen -dmS cost-formal-cache-on-v2 bash -lc '
   cd /root/autodl-tmp/ai-operator &&
   set -a && source /root/autodl-tmp/ai-operator-runtime.env && set +a &&
   /root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scenarios.py \
     --config deploy/autodl/dual_gpu_cost_profile_formal.example.json \
     --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
     --python-executable /root/miniconda3/bin/python \
-    --output-dir /root/autodl-tmp/experiment-artifacts/dual_gpu_cost_profile_formal_20260804 \
+    --output-dir /root/autodl-tmp/experiment-artifacts/dual_gpu_cost_profile_formal_v2_cache_on_20260805 \
     --health-url http://127.0.0.1:8000/health \
     --metrics-urls "$MODEL_METRICS_URLS" \
     --idle-timeout-s 120 \
-    > /root/autodl-tmp/experiment-artifacts/dual_gpu_cost_profile_formal_20260804/runner.log 2>&1
+    > /root/autodl-tmp/experiment-artifacts/dual_gpu_cost_profile_formal_v2_cache_on_20260805/runner.log 2>&1
 '
 ```
 
@@ -135,6 +138,8 @@ agent 必须先按 `deploy/autodl/README.md` 启动 Ray，把**实际非空地�
 runtime env，并做连接门禁；不能仅为模板展开填入未监听地址。config loader 现在拒绝
 显式空值，host-scope lease 拒绝不同输出目录上的并发 runner。
 
-完成后结果进入 `experiments/results/operator_cost_profile_dual4090_formal_20260804/`，
-包含七步 README、compact summary、formal-only LOO JSON、raw archive SHA256 和不能声称的
+完成后有效重跑结果进入新的
+`experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_<date>/`，不得覆盖或
+混入保存首次无效运行证据的 `operator_cost_profile_dual4090_formal_20260804/`。新目录应包含
+七步 README、compact summary、formal-only LOO JSON、raw archive SHA256 和不能声称的
 结论。若门禁失败，保留 incident，不生成性能排名。

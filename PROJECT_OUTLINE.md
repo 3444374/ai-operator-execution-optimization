@@ -173,7 +173,8 @@ AutoDL 仍需通过 exact S3 workload 带宽、Ray 2.49.2 隔离环境和 adapte
   未过既有门槛，仍不晋级。双 4090 4-cell pilot 8/8 通过；首次独立 20-context
   formal 因两个 runner 几乎全程重叠且 640/640 子运行启动 local Ray 而整体无效。
   已增加 host-scope lease 和空 Ray 地址门禁；重跑主合同改为实际部署的 cache-on，
-  cache 状态写入 CSV/context，最小共享-Ray gate 通过前不重跑 formal
+  cache 状态写入 CSV/context。提交后最小共享-Ray gate 已完成 2/2、0 incident、
+  0 local-Ray 启动并观测到 33.69%–34.51% 命中率；它只放行运行合同，长 formal 尚未启动
 - ✅ vLLM eager vs CUDA Graph 同配置对照：512 请求、每侧 3 次 formal；
   CUDA Graph 的 E2E 均值 79.85s（-71.76%）、observed tokens/s
   2875.68（+254.05%）、MFU 14.51%（eager 4.02%）。该结果用于选定后续

@@ -1,0 +1,3 @@
+phase,scenario_id,total_rows,unique_doc_ids,completed_requests,endpoints,service_prefix_caching,vllm_prefix_cache_queries_delta,vllm_prefix_cache_hits_delta,vllm_prefix_cache_hit_rate,vllm_metrics_status,local_ray_start_logs,status
+warmup,work32768,512,512,512,"endpoint-0;endpoint-1",enabled,282504,97488,0.345085,ok,0,ok
+formal,work32768,512,512,512,"endpoint-0;endpoint-1",enabled,282695,95248,0.336928,ok,0,ok

@@ -651,7 +651,14 @@ python code/scripts/profiling/postgres_ai_operator_profile.py ... \
 
 ### 9.1 双 GPU 分阶段诊断模板
 
-八个模板按因果问题分阶段运行，不能合成一个大矩阵：
+> **缓存口径（2026-08-05）**：新的 vLLM 性能主基线默认启用 prefix cache，并要求
+> manifest、CSV 与 live 服务进程三处一致。下列部分旧模板中的
+> `prefix_caching=false` 是为复现既有 cache-off 容量/机制实验而冻结的历史合同，不是
+> 当前生产式 baseline；不得直接拿它们在 cache-on 服务上运行，也不得原地改值后与旧结果
+> 混排。若恢复某项性能实验，应复制为带新 experiment ID 的 cache-on 配置，重新校准后再
+> 比较。cache-off 仅保留为明确命名、单独报告的机制消融。
+
+十二个模板按因果问题分阶段运行，不能合成一个大矩阵：
 
 1. `dual_gpu_capacity_scaling.example.json`：相同 per-GPU K 下比较单/双
    endpoint，只回答硬件扩展效率，不作为上游策略容量标定。

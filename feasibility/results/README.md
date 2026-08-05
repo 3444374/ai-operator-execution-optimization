@@ -21,6 +21,8 @@
 5. 组件级 benchmark（`ray_*`、`arrow_serialization.csv`、`shuffle_simulation.csv`）：只用于判断是否存在可观测系统信号，作为历史组件参考。
 6. `vllm_clip_pooling_gate_20260804/`：当前 AutoDL 软件组合上的 CLIP pooling
    capability blocker；两次 600 秒门禁均未返回 embedding，不含性能结果。
+7. `cost_profile_cacheon_gate_20260805/`：已提交 main 上的双 4090 cache-on + shared-Ray
+   两运行门禁；验证 cache 声明/命中观测、exactly-once 和双 endpoint，不作性能排名。
 
 如果后续新增 GPU 环境验证，建议命名为：
 
@@ -48,6 +50,7 @@ gpu_model_service_smoke.csv
 | `pg18_4_script_dryrun.csv` | 画像脚本 dry-run 展开验证 CSV |
 | `image_staged_resource_gate_20260802/` | 2×4090 上 Daft/Ray Data staged 256-row 显式 source+stage+model CPU 资源门禁；报告、45 列摘要和原始 CSV/manifest 均已归档；只证明可运行和输出等价，不作性能排名 |
 | `vllm_clip_pooling_gate_20260804/` | vLLM 0.25.1 CLIP pooling 两次离线 capability gate；保存退出码、超时、环境、完整日志与七步报告；结论是当前环境 blocked，不是服务性能排名 |
+| `cost_profile_cacheon_gate_20260805/` | 双 4090 上 cost-profile cache-on 主合同的 1 warmup + 1 formal 提交后门禁；2/2、0 incident、共享 Ray、缓存命中与 exactly-once 通过，不作性能排名 |
 
 PG18.4 系统画像与瓶颈定位实验已经移动到：
 
