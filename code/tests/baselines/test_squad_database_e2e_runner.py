@@ -178,7 +178,7 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
                 "--output-dir", str(out), "--force",
             ]
 
-            def fake_scan(conn, workload):
+            def fake_scan(conn, workload, limit=0):
                 return rows, sidecar, 0.05
 
             def fake_complete(requests, config):
