@@ -4252,3 +4252,38 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
   隔离单请求 vLLM logical prompt-token 交叉校验 + 证据（脱敏请求 JSON、canonical diff、DuckDB/
   扩展版本、服务配置 hash、命令、退出码）落 `feasibility/results/`。项目侧 payload 比对依赖
   bounded-output 三臂 harness（项目 arm 须用 chat_completions + 同 messages 格式）。
+
+## 2026-08-05 Daft/Ray benchmark 来源分层与服务器选型门禁
+
+- 在 baseline 唯一入口补齐 Daft-on-Ray / Ray Data 常见 AI workload：ImageNet/ResNet18
+  image classification、PDF/MiniLM embedding、Common Voice/Whisper transcription、
+  Hollywood2/YOLO detection、大图 embedding 与 LLM offline inference；明确官方
+  803,580-row image workload 是 80,358 unique images 重复 10 次。
+- 权威性分层修正：Daft 与 Ray 官方页面是两条 vendor-code evidence，公开排名方向可反转，
+  不存在专门中立排名二者的第三方套件；MLPerf/TPCx-AI 只复用任务、质量和审计合同，改编
+  runner 不得冒充正式 submission/compliant result。同机性能采用“双厂商原生代码 + 第三方
+  质量合同 + database-E2E”三层证据。
+- 核实 OceanBase 也公开采用 Daft on Ray：OceanBase AI Database/Lakebase 以共享对象存储、
+  统一 catalog 和多模表为底座，由 Daft on Ray 执行多模态 inference；这与 OceanBase Database
+  `AI_COMPLETE/AI_EMBED/AI_RERANK` SQL Function 是两条产品面。当前无公开可运行的 OceanBase
+  vendor benchmark runner，故只作工业集成/capability evidence，不进入本机数字排名。
+- 服务器选型改为 fail-closed：先做 256–1K capability、≥60s 饱和曲线、50K–80,358 unique
+  规模/稳健性三次门禁，再根据 CPU/source、H2D、GPU、memory/spill、sink 的实际木桶选择机器；
+  当前双 4090 审计只形成候选规格，不提前得出“需要更多 GPU”的结论。
+
+## 2026-08-05 OceanBase AI 算子与 Daft-on-Ray 评价口径审计
+
+- 将 OceanBase 拆为 Database SQL AI Function、Cloud AI Services/MaaS 与
+  Lakebase/DataStudio Daft-on-Ray 三条证据线；前者提供真实 SQL 算子语义，中者公开
+  24h success rate、TTFT、token output rate 和配额/限流，后者提供常驻 actor、
+  micro-partition、CPU/GPU pipeline 的工业架构证据。
+- 截至本次审计，未找到 OceanBase 公开的 AI Function 性能报告或 Lakebase-owned
+  Daft-vs-Ray Data benchmark runner、数据/硬件合同、warm-up/repeats 和 raw logs；因此
+  不从产品博客推导性能数字，Daft/Ray 排名仍采用双方官方代码同机复现。
+- 明确 Sysbench/TPC-H 是数据库引擎 benchmark，VectorDBBench 是已有向量的检索侧
+  benchmark，均不能替代 AI Function 或 Daft-on-Ray pipeline benchmark；VectorDBBench
+  只可用于 AI_EMBED 写回后的 retrieval closure。
+- OceanBase 官方 publications 已登记 PVLDB 2026 accepted 的 IMLane，但本次检索未找到公开正文；
+  只列为 `pending-publication` watchlist，不杜撰其 workload、baseline、指标或结果。
+- 同步更新 `research/evaluation_metrics_survey_20260731.md`、
+  `research/existing_ai_operator_execution_chains.md` 与 baseline 唯一入口。

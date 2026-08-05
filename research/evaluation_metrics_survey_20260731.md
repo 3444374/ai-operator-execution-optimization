@@ -1,6 +1,6 @@
 # 评估指标调研：AI 算子与推理服务文献 + 数据库厂商基准
 
-首次整理：2026-07-31；最近更新：2026-08-04
+首次整理：2026-07-31；最近更新：2026-08-05
 调研工具：`nature-academic-search` + `deep-research`（lit-review 口径），以一个后台工作流执行（15 个抽取 agent + 1 个综合 agent）。
 证据范围：项目已有 49 篇精读笔记 + `baseline_reference.md` 已核验的数据库厂商官方
 文档与标准 benchmark；论文数字优先回到本地精读笔记和一手论文，产品场景优先回到
@@ -366,7 +366,7 @@ AI_COMPLETE 是**生成式**（输入文本 → LLM 生成 → 写回）。SemBe
 
 回答"别的数据库厂商怎么测自己的 AI 算子"——逐家方法论 + 跨厂商共识 + 对本项目的启示。来自一个后台工作流（6 家厂商 × 测试方法论 web 抽取 + 综合）加一个 PolarDB 专项核查 agent。
 
-**覆盖 7 家**：PolarDB Lakebase、Snowflake Cortex、BigQuery ML、Oracle AI Vector Search、PostgresML、pgai/pgvector/pgvectorscale、Databricks Lakehouse AI。
+**覆盖 8 家**：PolarDB Lakebase、OceanBase、Snowflake Cortex、BigQuery ML、Oracle AI Vector Search、PostgresML、pgai/pgvector/pgvectorscale、Databricks Lakehouse AI。
 
 **证据分级**：官方文档 / 工程博客 / 基准规范 / 论文 / 营销——每条标注。厂商自报数字一律视作**厂商来源**，非独立第三方。
 
@@ -388,7 +388,32 @@ AI_COMPLETE 是**生成式**（输入文本 → LLM 生成 → 写回）。SemBe
 - 🎯 **新颖性边界因此切得很清**：PolarDB 的背压是**纯数据流背压**（下游慢→减缓上游），**不观测 vLLM 内部状态**（KV/prefix/queue）。项目能占的切片 = **模型服务状态感知的请求成形 + 闭源产品未公开的上游调度策略开放消融**。
 - ❓ **Scoop 待确认**：未见阿里云/Daft 团队声称做"模型服务状态感知调度"的**研究论文**（产品闭源、调度细节未披露）；但**未穷尽搜 VLDB/SIGMOD/ICDE 学术文献**，正式定稿新颖性前需补一轮专门学术检索。
 
-### B.2 其他 6 家逐家方法论
+### B.2 OceanBase：SQL AI Function 与 Lakebase Daft-on-Ray 必须分轨
+
+OceanBase 的公开材料覆盖了两条不同执行链路，不能合并成一个“OceanBase AI benchmark”：
+
+| 产品面 | 公开场景与链路 | 公开指标 / benchmark | 可复现性与本项目用法 |
+|---|---|---|---|
+| **OceanBase Database SQL AI Function** | `AI_COMPLETE` 做生成、摘要、问答和分类；`AI_EMBED` 做文本向量化；`AI_RERANK` 做 RAG 重排。数据库注册 OpenAI-compatible endpoint，由 SQL 表达式逐行或按表调用模型 | 官方语法、quick start 和批量表列示例完整，但截至 2026-08-05 **未找到**公开的 AI Function 性能报告、固定 workload、硬件、warm-up/repeats 或 raw data | 获得可部署 VM 后接同一 vLLM endpoint，按 SQuAD bounded-output 与 ShareGPT 两轨测试；独立校准 session/concurrency，比较 correct rows/s、tokens/s、JCT、TTFT/p95/p99、错误/截断、EM/F1 和成本。功能示例不能当性能结果 |
+| **OceanBase Cloud AI Services / MaaS** | API 或 SQL 调用托管模型，按供应商通道和配额管理 | 官方控制台公开 **24h success rate、TTFT、token output rate**，并支持 token/request 的月、日、分钟配额与分钟限流 | 这些是用户可见模型服务指标，不是数据库算子 E2E benchmark；本项目应采用同名指标，并另加 DB fetch、排队、写回和 exactly-once |
+| **OceanBase AI Database / Lakebase / DataStudio** | 多模表与 Volumes → Daft on Ray 做 splitting、frame extraction、embedding、tagging → AI 列回填、lineage、subset 发布；Ray actor 常驻模型，按 micro-partition 动态调度 CPU/GPU stage | 官方材料公开架构和动机，但**没有**可固定 commit 的 OceanBase runner、数据集、硬件、数值结果、warm-up/repeats 或 raw logs；页面提到 Daft TPC-H 更快时也明确标为 vendor-reported、需独立验证 | 只能作为工业架构/capability evidence。Daft/Ray 数字 baseline 仍须运行 Daft 与 Ray Data 各自官方代码并在同机同模型复现，不能把 OceanBase 产品博客冒充性能对照 |
+
+**相邻 benchmark 不得替代 AI 算子 benchmark**：
+
+- OceanBase 的 Sysbench 测 QPS/latency，TPC-H 测 QphH@size/response time；它们验证 OLTP/OLAP 数据库引擎，不调用 `AI_COMPLETE`/`AI_EMBED`，不能支撑 AI 算子性能结论。
+- OceanBase 的 VectorDBBench 使用公开 `Performance768D1M` 等 case，按并发扫描最高 QPS，并考察 HNSW/IVF 参数；它验证**已有向量的检索侧**，可用于写回后的 retrieval closure，却不测 embedding 生成、模型服务排队或 Daft-on-Ray pipeline。
+- OceanBase 官方 publication list 已登记 **IMLane: Composable Framework for Efficient AI Function Execution in Database Engine**（PVLDB 2026 accepted），与本课题高度相关；但本次检索未找到公开论文正文，故 workload、baseline、指标和结果全部标为 `pending-publication`，禁止从标题推断。
+
+来源：[OceanBase AI Function](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678975)、
+[AI Function overview](https://en.oceanbase.com/docs/common-oceanbase-database-10000000003678978)、
+[OceanBase Cloud AI Services release notes](https://en.oceanbase.com/docs/common-oceanbase-cloud-10000000003353421)、
+[OceanBase DataStudio](https://en.oceanbase.com/blog/oceanbase-datastudio-unified-ai-data-production)、
+[Lakebase architecture](https://en.oceanbase.com/blog/oceanbase-ai-database-lakebase-architecture)、
+[OceanBase performance testing](https://en.oceanbase.com/docs/common-oceanbase-cloud-10000000002694815)、
+[VectorDBBench guide](https://en.oceanbase.com/docs/common-oceanbase-database-10000000002164117)、
+[OceanBase publications](https://github.com/oceanbase/publications)。
+
+### B.3 其他 6 家逐家方法论
 
 | 厂商 | 怎么测（一句话） | benchmark / workload | 指标 | 对照 baseline | 可复现性 |
 |---|---|---|---|---|---|
@@ -399,7 +424,7 @@ AI_COMPLETE 是**生成式**（输入文本 → LLM 生成 → 写回）。SemBe
 | **pgai/pgvector/pgvectorscale** | 全聚焦 read-side ANN：ANN-Benchmarks fork（修了多线程 QPS + warmup/test 分离：29k 预热 + 1000 disjoint 测试）画 recall@k vs QPS Pareto | 50M Cohere Wikipedia 768d；LAION 5M/100M；ann-benchmarks glove/sift；OpenAI ada-002/3-small | **recall@k vs QPS**（recall-defined throughput）+ p50/p95/p99 + $/month-for-target-QPS | Pinecone s1、Qdrant、pgvector HNSW/IVFFlat、pgvectorscale StreamingDiskANN、VectorChord、exact | 协议+数据+OSS 扩展公开（**最可复现**之一）；但 YDB/wasowski 第三方复现发现 harness/单节点竞争主导差距 |
 | **Databricks Lakehouse AI** | 分层：(1) AI/Vector Search 最透明（Locust 逐步并发 + 二分搜索 max sustainable QPS + per-component 计时）；(2) LLM 推理指标框架最成熟（MosaicML TTFT/TPOT/Latency/Throughput+MBU+MFU）；(3) AI Functions 最不透明（10x/100x 营销） | 10亿向量 768d（Standard 320M / Storage-Opt 1B+）；2048/256 RAG summarization；512/64 静态批 | recall@10 + p50/p99；TTFT/TPOT/MBU/MFU；ann_time/embedding_gen_time/reranker_time/response_time 分解 | Standard AI Search、FasterTransformers+TensorRT-LLM、旧版自比 | 协议层公开（Locust notebook、benchmarking notebook、Eval Gauntlet PDF）；被测系统闭源云 |
 
-### B.3 跨厂商共识与惯例
+### B.4 跨厂商共识与惯例
 
 **benchmark 使用（核心发现）**：**数据库 AI 算子层目前没有任何被主流厂商采纳的现成标准 benchmark。** TPC-DS/TPC-H 仅作数据仓库语境或 Marketplace 数据，**从未用于 AI 算子基准**；MTEB 只被 PostgresML 外部引用、Databricks 明确不用；ann-benchmarks 的标准 harness 无厂商直接跑（但数据集 SIFT/GIST/Fashion-MNIST 被 Oracle/pgai 私有协议复用）；MLPerf、Spider/BIRD 全无人用。厂商实际复用的"准标准"来自三个相邻社区：NLP/HuggingFace 公开集、IR/向量检索公开语料、经典 DB-ML 公开数据。**→ 本项目没有现成 DB-AI benchmark 可套，必须自定干净合同（§7.5 已做）+ 引用上述公开数据集作 workload 锚点。**
 
@@ -415,11 +440,11 @@ AI_COMPLETE 是**生成式**（输入文本 → LLM 生成 → 写回）。SemBe
 
 **baseline 惯例**：两种公认做法——(1) 命名的同协议外部竞品（pgai 的 Pinecone/Qdrant、PostgresML 的 OpenAI/MindsDB）；(2) 多臂同系统对照（Snowflake 三臂、PostgresML 1/2/5 副本自比）。**反模式**（被社区批评）：Oracle 匿名+不对齐资源、PostgresML Python baseline 多跳、"自比旧版 + 无外部锚点"营销（BigQuery 100x/30x、Snowflake 70%、Databricks 10x/100x）。共识：baseline 必须共享数据读取/写回路径 + 对齐资源。
 
-**可复现性缺口（5 层）**：① 被测系统几乎全闭源云黑盒（Snowflake/BigQuery/Oracle/Databricks）；② public-data-no-code（放数据不放 harness）；③ 营销数字无协议；④ 匿名+不对齐资源 baseline；⑤ 单次计时无 warm-up/repeats/CV。**最可复现的也只到 public-data-no-code 级，无人达全栈可复现。→ 本项目全开源 vLLM+Ray+Daft 栈 + 公开数据 + 全量 CSV 进 README，可复现性严格优于全部 7 家，是天然差异化卖点。**
+**可复现性缺口（5 层）**：① 被测系统几乎全闭源云黑盒（Snowflake/BigQuery/Oracle/Databricks）；② public-data-no-code（放数据不放 harness）；③ 营销数字无协议；④ 匿名+不对齐资源 baseline；⑤ 单次计时无 warm-up/repeats/CV。**本项目采用开源 vLLM+Ray+Daft 栈 + 公开数据 + 全量 CSV/manifest/raw traces，可在“完整执行链路证据开放”这一维度形成明确优势；但不能把这一点泛化成对每家产品整体可复现性的绝对排名。**
 
 **独特空白（最重要）**：**没有任何厂商公开 benchmark "写入侧/上游调度 pipeline"**（embedding 生成吞吐、ingestion、writeback、批合并、提交节奏）——pgai 只测并发写回正确性不测吞吐，其余完全忽略。**本项目的主战场（数据组织 + 提交控制 + 写回）正好填这个洞。**
 
-### B.4 对本项目的具体启示
+### B.5 对本项目的具体启示
 
 **应采纳（让评估被社区认可）**：
 1. **公开数据集作 workload 锚点**：文本分类/过滤用 Snowflake HF 集（NQ/BOOLQ/IMDB/SST2/QUORA/FARL + entity-matching）；embedding/向量用 pgai Cohere 50M + LAION 5M/100M 或 Oracle SIFT/GIST/Fashion-MNIST；文本生成用 BigQuery bbc_news 或 Databricks 2048/256 形状——多家交叉复用的"准标准"。
@@ -443,13 +468,16 @@ AI_COMPLETE 是**生成式**（输入文本 → LLM 生成 → 写回）。SemBe
 15. 禁止单次 `psql \timing` 或 toy 2-文档 RAG（PostgresML 反模式）——必须 formal repeats + 真实规模。
 
 **定位（项目独特贡献）**：
-16. **"写入侧/上游调度 pipeline benchmark"是 7 家厂商留下的空白**——本项目主战场（数据组织 + 提交控制 + 写回）正填此洞，评估 framing 中明确点出。
+16. **"写入侧/上游调度 pipeline benchmark"是本附录审查的 8 家厂商共同留下的空白**——本项目主战场（数据组织 + 提交控制 + 写回）正填此洞，评估 framing 中明确点出。
 17. **PolarDB Lakebase 是最近、最同栈的工业系统**——Related Work 必须点名，项目差异 = 模型服务状态感知 vs 通用数据流 backpressure + 闭源产品未公开的调度消融。
+18. **OceanBase 提供第二个同栈工业架构证据，但不提供 Daft/Ray 数值 baseline**——采用其 success rate、TTFT、token output rate 和配额口径；性能排名只接受同机原生 runner。SQL AI Function 与 Lakebase Daft-on-Ray 分榜。
 
-### B.5 不能声称
+### B.6 不能声称
 
 - **不引用任何厂商的提速倍数**（100x/30x/10x/100x/70%/4-10x/2.2-7.6x 全是闭源黑盒或匿名 baseline 营销）。跨厂商对比只能说"采用某厂商公开 tutorial 同款公开数据（如 bbc_news、Cohere 50M）与公开过程做可复现对照"，不能声称对标某厂商闭源数字。
 - PolarDB 的 scoop 核查状态为"**未见研究论文证据**"，非"确定不存在"——正式定稿新颖性前需补 VLDB/SIGMOD/ICDE 阿里云 Daft 团队学术文献检索。
+- 不得声称 OceanBase 已公开证明 Daft 优于 Ray Data/Spark；当前公开页只说明采用 Daft on Ray 的机制与产品链路。Sysbench、TPC-H、VectorDBBench 也不得替代 AI Function/Daft-on-Ray benchmark。
+- IMLane 目前只有 OceanBase 官方 publications 的 accepted 条目，本次检索未找到公开论文正文；在正文可登记为 watchlist，不得杜撰其 workload、baseline、指标或性能数字。
 - 本附录厂商方法论为**厂商来源/官方文档**（非独立第三方）；PolarDB 同栈与开源 Daft 关系为**官方文档 + 开源仓库交叉核实**的**本地事实**；新颖性边界（PolarDB 不观测 vLLM 状态）为基于其公开文档未提及的**合理推断**（闭源内部无法确证）。
 
 ---

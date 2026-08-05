@@ -28,7 +28,7 @@ baseline 的公共分层、原生性、证据等级和最低指标合同只以
 
 三条理由（来自学长反馈 + PolarDB 核查 + 项目证据）：
 
-1. **体现异构资源调度**——学长判断当前纯文本单 job 场景"GPU 不慢、数据未到"，项目 feeding 95–98% 已证实。要让"CPU 准备 vs GPU 推理"的异构调度成为真实变量，workload 的**每行 CPU 准备成本必须重**。图像 AI_EMBED 是教科书级拆分：CPU 做 JPEG decode + resize + normalize（每图毫秒级，常重于 GPU CLIP forward），GPU 做 CLIP embedding。这正是 PolarDB Lakebase benchmark 用的形态（image 803,580 张）。
+1. **体现异构资源调度**——学长判断当前纯文本单 job 场景"GPU 不慢、数据未到"，项目 feeding 95–98% 已证实。要让"CPU 准备 vs GPU 推理"的异构调度成为真实变量，workload 的**每行 CPU 准备成本必须重**。图像 AI_EMBED 是教科书级拆分：CPU 做 JPEG decode + resize + normalize（每图毫秒级，常重于 GPU CLIP forward），GPU 做 CLIP embedding。这正是公开 Daft/Ray image-classification benchmark 使用的形态（80,358 张 ImageNet unique images 重复 10 次，形成 803,580 rows）；PolarDB 与 OceanBase Lakebase 均把 Daft-on-Ray 定位为多模态 AI compute，但只有前者当前提供可核验性能页，不能把 OceanBase 产品架构说明当成 benchmark 数字。
 2. **多模态泛化验证（§5.3 既定路线）**——验证 token-budget → frame-budget、queue-adaptive flush → 完全复用的模态无关性。策略接口和中性 `cost_units` 已具备（INFRA_STATUS §6），只缺图像 source + CLIP workload。
 3. **"数据库 AI 算子"定位锚点**——AI_EMBED/AI_CLASSIFY 是 Snowflake Cortex / PolarDB / Oracle 都有的正经数据库 AI 算子；写回 pgvector 是数据库 sink。采用它能强化"数据库 AI 算子"定位（对学长/导师/审稿人）。
 
@@ -97,6 +97,11 @@ AutoDL runbook 明确不使用 Docker，而 Triton 官方推荐 NGC 容器部署
 - PolarDB 官方 [CPU/GPU 异构算子编排和调度](https://help.aliyun.com/en/polardb/polardb-for-postgresql/heterogeneous-operator-scheduling)：
   CPU decode/resize 与 GPU 类 UDF 可在同一 Daft-on-Ray pipeline 中按算子声明资源并
   流式重叠；因此不能用 fused `@daft.cls` 代表完整 Daft/PolarDB-style baseline。
+- OceanBase 官方 [Lakebase architecture](https://en.oceanbase.com/blog/oceanbase-ai-database-lakebase-architecture)
+  与 [DataStudio workflow](https://en.oceanbase.com/blog/oceanbase-datastudio-unified-ai-data-production)：
+  公开架构明确由 Daft on Ray 执行共享对象存储/多模表上的多模态 AI inference；当前未公开
+  可固定 commit 的 OceanBase benchmark runner，因此只作工业集成/capability evidence，
+  不冒充 OceanBase SQL AI Function，也不进入同机 raw throughput 排名。
 - Ray 官方 [offline batch inference](https://docs.ray.io/en/latest/data/batch_inference.html)：
   重 CPU preprocess 与 GPU inference 应拆成两个 operation 以实现跨 batch overlap；
   这与 path-B 阶段划分一致，Ray Data 同时作为强 baseline。
