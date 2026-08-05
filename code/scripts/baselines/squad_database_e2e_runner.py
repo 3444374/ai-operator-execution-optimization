@@ -92,23 +92,33 @@ from src.observability.metrics import (  # noqa: E402
 )
 
 
-def _scan_workload(conn, workload: str) -> tuple[list[dict], dict[int, tuple], float]:
+def _scan_workload(conn, workload: str, limit: int = 0) -> tuple[list[dict], dict[int, tuple], float]:
     """Timed persistent-table scan. Returns (rows, doc_id->(tenant,category), scan_s).
 
     Rows carry everything downstream needs: ChatRequest build (doc_id/text),
     quality (source_example_id/reference_answers), and the sink sidecar
     (tenant_id/category). The scan is the unified front-end for every arm.
+    ``limit > 0`` scans only that many rows (smoke / small-scale gate); the
+    full-workload integrity check is then relaxed by the caller.
     """
 
     import psycopg
     t0 = time.time()
     with conn.cursor() as cur:
-        cur.execute(
-            "SELECT doc_id, text, tenant_id, category, source_example_id, "
-            "reference_answers FROM documents WHERE workload_name = %s "
-            "ORDER BY doc_id",
-            (workload,),
-        )
+        if limit > 0:
+            cur.execute(
+                "SELECT doc_id, text, tenant_id, category, source_example_id, "
+                "reference_answers FROM documents WHERE workload_name = %s "
+                "ORDER BY doc_id LIMIT %s",
+                (workload, limit),
+            )
+        else:
+            cur.execute(
+                "SELECT doc_id, text, tenant_id, category, source_example_id, "
+                "reference_answers FROM documents WHERE workload_name = %s "
+                "ORDER BY doc_id",
+                (workload,),
+            )
         fetched = cur.fetchall()
     rows: list[dict] = []
     sidecar: dict[int, tuple] = {}
@@ -264,6 +274,24 @@ def _operator_span(results) -> tuple[float, float]:
     return (max(completed) - min(started)), (min(started) - min(submitted))
 
 
+def _smoke_integrity(rows: list[dict]) -> tuple[bool, list[str]]:
+    """Relaxed integrity for --limit smoke runs: row-local uniqueness + non-empty,
+    WITHOUT the full-workload count or canonical content-hash comparison (a
+    limited scan's hash cannot match the importer's full-workload hash)."""
+
+    problems: list[str] = []
+    if len({r["doc_id"] for r in rows}) != len(rows):
+        problems.append("duplicate doc_id present")
+    source_ids = [r["source_example_id"] for r in rows]
+    if len(set(source_ids)) != len(source_ids):
+        problems.append("duplicate source_example_id present")
+    if not all(r["source_example_id"] for r in rows):
+        problems.append("empty source_example_id present")
+    if not all(r["answers"] and all(s.strip() for s in r["answers"]) for r in rows):
+        problems.append("empty/blank reference_answers present")
+    return (not problems), problems
+
+
 def _finish_reason_summary(results, arm: str):
     """Per-arm finish_reason summary at the report level.
 
@@ -336,6 +364,10 @@ def _parse(argv: list[str]) -> argparse.Namespace:
                    help="fallback tenant_id when the scanned row lacks one")
     p.add_argument("--sink-category", default="squad",
                    help="fallback category when the scanned row lacks one")
+    p.add_argument("--limit", type=int, default=0,
+                   help="scan only N rows (smoke / small-scale gate); 0 = full workload. "
+                        "When >0 the full-workload count+hash integrity is relaxed to a "
+                        "row-local uniqueness/non-empty smoke check.")
     p.add_argument("--output-dir", required=True)
     p.add_argument("--force", action="store_true")
     return p.parse_args(argv)
@@ -385,11 +417,17 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
 
     # ---- database-E2E timed barrier ----
     t0 = time.time()
-    all_rows, sidecar, scan_s = _scan_workload(conn, args.workload_name)
+    all_rows, sidecar, scan_s = _scan_workload(conn, args.workload_name, args.limit)
     tc0 = time.time()
-    integrity_ok, integrity_problems = _validate_workload_integrity(
-        all_rows, expected_count, expected_content_hash
-    )
+    if args.limit > 0:
+        # smoke / small-scale gate: relax full-workload count+hash to row-local check
+        integrity_ok, integrity_problems = _smoke_integrity(all_rows)
+        integrity_label = f"verified_smoke_limit_{args.limit}"
+    else:
+        integrity_ok, integrity_problems = _validate_workload_integrity(
+            all_rows, expected_count, expected_content_hash
+        )
+        integrity_label = "verified" if integrity_ok else "failed"
     if not integrity_ok:
         raise SystemExit(
             "FAIL: workload integrity check failed: " + "; ".join(integrity_problems)
@@ -599,7 +637,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         "null_response_count": null_response,
         "error_count": error_count,
         "max_tokens_error_count": max_tokens_errors,
-        "workload_integrity": "verified" if integrity_ok else "failed",
+        "workload_integrity": integrity_label,
         "workload_content_hash": _structured_content_hash(all_rows),
         "importer_content_hash": expected_content_hash,
         "timing": {
