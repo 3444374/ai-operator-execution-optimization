@@ -31,6 +31,8 @@ Date: 2026-07-20（最后更新：2026-08-05；双 4090 cost-profile 首次 form
   Ray，故全部判为无效并禁止进入 CE0–CE5。host-scope lease 与空参数门禁修复后，先跑
   共享 Ray 最小 gate，再由远端 agent 在单一新目录重跑 5 workloads × 2 rows ×
   2 output caps × 4 active-work、每 cell 1+3。详见结果事故报告。
+  2026-08-05 起主合同统一为真实部署的 prefix cache-on；cache-off 仅作独立机制消融，
+  `service_prefix_caching` 纳入 context 身份，执行后 hit rate 禁止用作预测特征。
 - 上方 §0 "下一步运行 Daft 官方 ResNet18 parity 与 60 秒以上稳态 formal" 中，**60 秒稳态 formal 已由 60K×2 schema-v12 重跑闭合**；ResNet18 parity 仍待（A②）。
 
 ## 0. 当前优先级（2026-08-01 方向 pivot —— 取代 §4 / §10.3 / §13 的文本轨道强制顺序）

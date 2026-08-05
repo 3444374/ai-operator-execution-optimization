@@ -426,7 +426,9 @@ digest、官方 URL/commit 和最小 SQL，再决定是否投入正式 calibrati
 #### 厂商 baseline 的统一准入与报告合同
 
 1. **先过四道 capability gate**：安装并记录精确版本；一行调用返回正确 schema；N 行
-   exactly-once 且调用数可审计；关闭或冻结响应/prefix/result cache 后再测并发。
+   exactly-once 且调用数可审计；冻结并验证响应/prefix/result cache 状态后再测并发。
+   vLLM 正式性能主轨使用 cache-on；cache-off 仅作独立机制消融。任何系统之间只有
+   cache 配置、预热规则和输入前缀分布一致时才能排名。
 2. **同机主排名只收可复现系统**：相同输入、模型权重、endpoint、输出上限、source/sink、
    CPU/GPU 上限和 warm/cold 生命周期；各系统独立 calibration，不能把同一 Ray 参数强塞
    给不同数据库。

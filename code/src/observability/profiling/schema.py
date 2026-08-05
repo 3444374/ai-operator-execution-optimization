@@ -14,7 +14,8 @@ FORMAL_RESULT_FIELDS = tuple(
     request_manifest_validated_rows request_manifest_validation_status organizer
     organizer_partition_mode organizer_partitions daft_runner
     organizer_partition_effective model_backend model_endpoint_url model_name
-    model_request_timeout_s total_rows written_rows db_fetch_rows ray_batch_rows
+    model_request_timeout_s service_prefix_caching total_rows written_rows
+    db_fetch_rows ray_batch_rows
     batching_policy token_budget token_budget_policy token_budget_candidates
     token_budget_target_service_ms token_budget_arrival_ewma_alpha
     embedding_dim embedding_vector_dim

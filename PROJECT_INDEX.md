@@ -433,8 +433,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_data_organization.example.json` | disjoint manifest、async multi-prompt、固定 active work/最佳预算的数据组织隔离模板 | 比较 fixed16、sequential、row-cap-aware 与 length-align，避免预算、transport、offered load 和 flush 混淆 |
 | `deploy/autodl/dual_gpu_request_replay.example.json` | batch barrier 与 request-level replenishment 模板 | 容量与组织阶段完成后运行，并按实际 batch rows 对齐 request K |
 | `deploy/autodl/dual_gpu_active_work_curve.example.json` | 第一优先级的 request-level per-endpoint active-token credit 容量曲线 | 先标定模型/负载相关的 offered-work 饱和区，避免按 batch K 暗中改变 request 并发 |
-| `deploy/autodl/dual_gpu_cost_profile_pilot.example.json` | 双 4090 算子代价新数据的 4-cell active-work pilot v2（1 warmup+1 formal） | 实测运行合同与总耗时；非 replay flush 明确记为不适用 |
-| `deploy/autodl/dual_gpu_cost_profile_formal.example.json` | 5 workloads × 2 rows × 2 output caps × 4 active-work 的独立双 4090 formal | 320-run formal-only 数据集；不得与旧单 5070 静默合并 |
+| `deploy/autodl/dual_gpu_cost_profile_pilot.example.json` | 双 4090 算子代价新数据的 4-cell cache-on active-work pilot v3（1 warmup+1 formal） | 验证单 runner、共享 Ray、cache 声明/命中观测和总耗时；不作性能排名 |
+| `deploy/autodl/dual_gpu_cost_profile_formal.example.json` | 5 workloads × 2 rows × 2 output caps × 4 active-work 的 cache-on 双 4090 formal v2 | 320-run formal-only 数据集；不得与旧单 5070 或 cache-off 样本静默合并 |
 | `experiments/plans/operator_cost_profile_pilot_20260804.md` | B 线新数据采集的固定项、唯一变量、门禁、三层指标和跨硬件隔离合同 | 启动任何新增 cost-profile GPU run 前读取 |
 | `experiments/plans/operator_cost_profile_dual4090_formal_20260804.md` | 双 4090 20-context formal 的 workload、候选、tie、门禁、指标和时间合同 | 启动/恢复 320-run formal 及分析前读取 |
 | `deploy/autodl/dual_gpu_actor_pool_shape.example.json` | 固定每 endpoint 256 个可见 slot/0.5 CPU 的 1/2/4/8/16 Ray actor 拓扑对照 | 在同协议饱和点选择达到峰值 97% 的最小 actor 数，不改变 offered-load 上限 |

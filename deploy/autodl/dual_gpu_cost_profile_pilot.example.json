@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "experiment_id": "dual_gpu_cost_profile_pilot_v2_20260804",
+  "experiment_id": "dual_gpu_cost_profile_pilot_v3_cache_on_20260805",
   "seed": 20260804,
   "service_metadata": {
     "vllm_version": "0.25.1",
@@ -10,7 +10,7 @@
     "max_num_batched_tokens": "${VLLM_MAX_NUM_BATCHED_TOKENS}",
     "max_num_seqs": "${VLLM_MAX_NUM_SEQS}",
     "gpu_memory_utilization": 0.9,
-    "prefix_caching": false,
+    "prefix_caching": true,
     "mfu_metrics": true
   },
   "require_complete_service_metadata": true,
@@ -41,6 +41,7 @@
     "--completion-temperature", "0",
     "--completion-request-timeout-s", "300",
     "--model-metrics-urls", "${MODEL_METRICS_URLS}",
+    "--service-prefix-caching", "enabled",
     "--endpoint-gpu-ids", "0,1",
     "--batching-policy", "token_budget",
     "--token-budget", "8192",

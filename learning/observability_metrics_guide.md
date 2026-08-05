@@ -15,6 +15,10 @@
   用于区分“首 token 慢”和“生成过程卡顿”。
 - `vllm_prefix_cache_{queries,hits}_delta` 与 `hit_rate`：prefix 策略是否真的减少
   prefill 重算的直接机制证据。
+- `service_prefix_caching`：该 CSV 行声明的服务配置，值为 `enabled`、`disabled` 或
+  `unknown`。正式 runner 会把它与 manifest 的 `service_metadata.prefix_caching` 以及
+  live vLLM 进程参数交叉校验。它说明“缓存是否开启”；queries/hits/hit-rate 才说明
+  “本轮是否实际命中”。主性能轨固定 `enabled`，`disabled` 只用于单独消融。
 - `request_slo_{input,output,total}_tokens_goodput_per_s`：只统计 E2E SLO 内完成的
   token。它与普通 `tokens_per_s` 的区别是：迟到的工作不算有效产出。
 - `observed_p99_slo_scale`：配置 `--ttft-slo-ms`/`--itl-slo-ms` 后，报告观测 P99
@@ -57,6 +61,8 @@ python code/scripts/analysis/summarize_formal_repeats.py \
 P50/P90/P95/P99/max、Spearman ρ，以及同一 workload 多候选配置中的 pick rate、
 selected runtime、oracle runtime、regret、selected-plan rank 和 surpassed plans。
 没有至少两个候选配置的 decision context 会被排除，不计作“选对”。
+`service_prefix_caching` 属于 decision-context 身份，防止 cache-on/off 样本静默合并；
+本轮执行结束后才观测到的 cache hit rate 不得作为同一行的预测输入，否则构成特征泄漏。
 
 ## AI_EMBED 质量门禁
 

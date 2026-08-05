@@ -90,7 +90,8 @@ scenario 4 行，全部 `status=ok`；各自 manifest 均写为 `completed_count
 ## 7. 下一步
 
 1. 本地和服务器验证 host-scope runner lease，以及空 `--ray-address` 的配置门禁；
-2. 使用共享 Ray 运行一个最小的 4-run gate，并检查日志中 local-Ray 启动计数必须为 0；
+2. 使用 cache-on vLLM 与共享 Ray 运行最小 gate，并检查 CSV cache 状态、hit/query
+   counters，以及日志中 local-Ray 启动计数必须为 0；
 3. 只有 gate 通过后，由远端 agent 在单一新目录重跑 320 runs；
 4. 完成后先做独立性、exactly-once、trace 和 repeat 审计，再运行 formal-only
    context-LOO；审计未通过时不生成性能排名。

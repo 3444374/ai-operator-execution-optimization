@@ -1,4 +1,9 @@
-# 双 4090 算子代价 profile 4-cell pilot v2（2026-08-04）
+# 双 4090 算子代价 profile 4-cell pilot（2026-08-04/05）
+
+> **当前入口：v3 cache-on gate。** 2026-08-04 的 v1/v2 是 cache-off 历史采样合同
+> 门禁；其冻结配置保存在结果 raw manifest 中。按项目真实部署口径，当前
+> `dual_gpu_cost_profile_pilot.example.json` 已升级为 cache-on v3。cache-off 只保留为
+> 独立消融，不再承担正式性能 baseline。
 
 ## 问题
 
@@ -23,7 +28,7 @@ resource trace；只有 `arrival_replay=true` 时才强制 flush trace。非 rep
 
 - 固定：Qwen2.5-7B、2 个 vLLM Completions endpoint、512 行
   `sharegpt_multiturn`、输出上限 256、`httpx_async` transport、request submission、
-  token budget 8192、1×256 actor/endpoint、fixed 50 ms flush、cache off。
+  token budget 8192、1×256 actor/endpoint、fixed 50 ms flush、prefix cache on。
 - 唯一变量：每 endpoint active-work credit = 32,768 / 49,152 / 65,536 / 98,304。
 - 编排：每臂 1 warmup + 1 formal，固定 seed 交错顺序，共 8 runs。
 
@@ -32,13 +37,16 @@ resource trace；只有 `arrival_replay=true` 时才强制 flush trace。非 rep
 ## 通过门槛
 
 1. 8/8 runs `status=ok`，没有 incident；512 unique requests、exactly-once；
-2. 两个 endpoint 均有请求，vLLM counters 可用；端点启动命令或等价进程快照证明
-   prefix cache、模型、端口、batched-token 和 max-seqs 与声明一致；
+2. 两个 endpoint 均有请求，vLLM counters 可用；端点启动命令和 live probe 均证明
+   prefix cache on、模型、端口、batched-token 和 max-seqs 与声明一致；每行 CSV
+   `service_prefix_caching=enabled`；
 3. 每个 formal 保存 summary、request/submission/resource trace；arrival replay 才要求
    flush trace，非 replay 必须显式记录为不适用；
 4. 四个 candidate 的 23 项 pre-execution feature 不相同，且 decision-context ID 相同；
 5. 以实际 8-run 墙钟、每 run JCT 和端点空闲等待计算正式矩阵预计耗时，不沿用
    “30–45 分钟”的旧估计。
+6. cache query/hit delta 非负、hits 不超过 queries、hit rate 位于 [0,1]；这些是机制
+   解释字段，不可作为执行后泄漏特征输入 pre-execution cost estimator。
 
 若任一门槛失败，停止，不扩成 152 runs。n=1 formal 只能校验运行合同和粗略耗时，不能
 报告性能差异或 CV/CI。

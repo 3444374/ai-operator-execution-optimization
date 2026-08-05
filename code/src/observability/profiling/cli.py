@@ -157,6 +157,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--cost-tokenizer-id", default="")
     parser.add_argument("--model-metrics-url")
     parser.add_argument("--model-metrics-urls")
+    parser.add_argument(
+        "--service-prefix-caching",
+        choices=["enabled", "disabled", "unknown"],
+        default="unknown",
+        help=(
+            "Declared vLLM prefix-cache state recorded in every CSV row. "
+            "Formal scenario runners must match this to live service flags."
+        ),
+    )
     parser.add_argument("--model-workers", type=int, default=2)
     parser.add_argument(
         "--actor-workers-per-endpoint",

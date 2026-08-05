@@ -16,7 +16,9 @@
 - 数据：PostgreSQL `sharegpt_multiturn`，固定 512 行、按 `doc_id`，输出上限 256。
 - 执行：Daft PostgreSQL source → token-budget organizer → Ray actor → 两个 vLLM endpoint；
   request-level submission，1×256 actor/endpoint，fixed 50 ms，no writeback。
-- 复现配置：`deploy/autodl/dual_gpu_cost_profile_pilot.example.json`。
+- 历史 v2 冻结配置位于 `v2_raw.tar.gz` 的 manifest；当前
+  `deploy/autodl/dual_gpu_cost_profile_pilot.example.json` 已升级为 cache-on v3，不能
+  用来冒充复现本目录的 cache-off 数字。
 
 ## 2. 实验设计
 

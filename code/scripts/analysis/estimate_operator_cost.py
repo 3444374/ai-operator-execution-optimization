@@ -43,6 +43,7 @@ DECISION_CONTEXT_FIELDS = (
     "model_backend",
     "completion_protocol",
     "completion_http_transport",
+    "service_prefix_caching",
 )
 
 CANDIDATE_FIELDS = (

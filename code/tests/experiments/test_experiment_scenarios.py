@@ -240,6 +240,17 @@ class ExperimentScenarioTests(unittest.TestCase):
                 / "autodl"
                 / "dual_gpu_cost_profile_formal.example.json"
             )
+            self.assertIs(
+                dict(formal.service_metadata)["prefix_caching"],
+                True,
+            )
+            prefix_index = formal.common_args.index(
+                "--service-prefix-caching"
+            )
+            self.assertEqual(
+                formal.common_args[prefix_index + 1],
+                "enabled",
+            )
             contexts: dict[tuple[str, int, int], set[int]] = {}
             for scenario in formal.scenarios:
                 arguments = dict(zip(scenario.args[::2], scenario.args[1::2]))
@@ -659,6 +670,28 @@ class ExperimentScenarioTests(unittest.TestCase):
 
 
 class ScenarioRunnerTests(unittest.TestCase):
+    def test_config_rejects_prefix_cache_row_metadata_mismatch(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = self._write_config(
+                root,
+                scenario_ids=["fixed"],
+                formal_repeats=1,
+                seed=7,
+            )
+            decoded = json.loads(config_path.read_text(encoding="utf-8"))
+            decoded["service_metadata"]["prefix_caching"] = True
+            decoded["common_args"].extend(
+                ["--service-prefix-caching", "disabled"]
+            )
+            config_path.write_text(json.dumps(decoded), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "service_metadata.prefix_caching=True",
+            ):
+                _load_config(config_path)
+
     def test_config_rejects_empty_ray_address_before_execution(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

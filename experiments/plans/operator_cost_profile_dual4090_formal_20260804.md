@@ -6,6 +6,8 @@
 > [`../results/operator_cost_profile_dual4090_formal_20260804/README.md`](../results/operator_cost_profile_dual4090_formal_20260804/README.md)。
 > 只有 host-scope lease、非空共享 Ray 门禁和最小复跑通过后，远端 agent 才可在单一
 > 新目录重跑；不得从无效目录 resume 或挑选部分结果。
+> 2026-08-05 按真实部署口径把 v2 主合同冻结为 **prefix cache on**；cache-off 只作
+> 单独机制消融，不进入主性能排名，也不与 cache-on 行混合训练。
 
 ## 1. 研究问题
 
@@ -18,7 +20,7 @@
 - PostgreSQL 18.4 → Daft PostgreSQL source → token-budget organizer → Ray actor →
   2× vLLM 0.25.1/Qwen2.5-7B Completions；
 - `httpx_async`、request submission、1×256 actor/endpoint、token budget 8192、fixed
-  50 ms、prefix cache off、no writeback；
+  50 ms、prefix cache on、no writeback；
 - active-work 是唯一候选变量：32,768 / 49,152 / 65,536 / 98,304 per endpoint；
 - 运行配置：`deploy/autodl/dual_gpu_cost_profile_formal.example.json`。
 
@@ -50,6 +52,8 @@ length。五个 workload 在运行前均需验证可提供至少 256 行。
    均检查没有 sibling output runner。
 10. `--ray-address` 必须为非空共享 Ray 地址，且全部 stdout/stderr 中
     `Started a local Ray instance` 计数必须为 0。
+11. manifest/live process/CSV 三处 cache 状态必须一致为 enabled；每条 formal 的
+    cache query/hit delta 必须可用且满足 `0 ≤ hits ≤ queries`、hit rate∈[0,1]。
 
 ## 5. 预注册评价指标
 
@@ -75,6 +79,8 @@ candidate ID，并同时报告 tie-context 数；不允许依赖 CSV 行顺序�
   只共享 workload 与观测字段，不共享比较结论。
 - CE0：训练集均值；CE1：解析模型；CE2：lookup；CE3：Ridge；CE4：LightGBM；
   CE5：解析模型 + residual correction；CE6 oracle 只作上界。
+- `service_prefix_caching` 是 decision-context 身份字段，不是执行后特征。cache hit rate
+  只用于解释误差和机制；禁止将本 run 的 hit rate 输入同一 run 的 pre-execution 预测。
 - 新数据的候选主门槛在运行前冻结为：candidate pairwise ≥0.75、median regret ≤5%、
   macro mean regret ≤5%、max regret ≤15%。任何一项失败都不能接管计划选择。
 - “CE5 优于 baseline”必须同时列 CE1/CE2/CE4，不只选一个弱对照；如果不同指标各有
@@ -120,7 +126,7 @@ screen -dmS cost-formal bash -lc '
 ```
 
 启动前还必须确认 5 个 workload 各有至少 256 行、两个 health/metrics endpoint 正常、
-`prefix_caching=false` 与服务进程参数一致、Ray/runner 无重复实例。上述命令依赖已加载的
+`prefix_caching=true` 与两个服务进程的 `--enable-prefix-caching` 一致、Ray/runner 无重复实例。上述命令依赖已加载的
 `/root/autodl-tmp/ai-operator-runtime.env`；缺少任一环境变量时 config loader 会
 fail-closed，不允许手填默认值继续跑。
 

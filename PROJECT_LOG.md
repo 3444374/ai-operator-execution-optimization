@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-08-05 正式 vLLM 性能主轨统一为 prefix cache-on
+
+- 双 4090 cost-profile pilot/formal 当前入口升级为 cache-on，并使用新 experiment ID；
+  cache-off 仅保留为独立机制消融，不再定义主 baseline。
+- profiler CSV 新增 `service_prefix_caching`；scenario loader 交叉校验它与 manifest
+  `service_metadata.prefix_caching`，live runner 继续核对真实 vLLM 进程参数。
+- cost estimator 将 cache 状态加入 decision-context 身份，禁止把执行后才能观测的
+  hit rate 输入同一次 pre-execution 预测；formal 额外审计 query/hit delta 合法性。
+
 ## 2026-08-05 双 4090 cost-profile formal 无效性审计与运行互斥修复
 
 - 复核服务器两套各 320 行的 cost-profile 输出：行数和子进程状态虽然完整，但两个

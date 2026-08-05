@@ -615,7 +615,11 @@ def _load_config(path: Path) -> ScenarioExperimentConfig:
                 ),
             )
         )
-    _validate_runtime_arguments(common_args, tuple(scenarios))
+    _validate_runtime_arguments(
+        common_args,
+        tuple(scenarios),
+        service_metadata=service_metadata,
+    )
     return ScenarioExperimentConfig(
         experiment_id=experiment_id,
         seed=seed,
@@ -693,6 +697,8 @@ def _validate_argument_list(values, label: str) -> tuple[str, ...]:
 def _validate_runtime_arguments(
     common_args: tuple[str, ...],
     scenarios: tuple[ScenarioDefinition, ...],
+    *,
+    service_metadata: tuple[tuple[str, object], ...],
 ) -> None:
     """Fail before execution when required runtime endpoints expand to empty."""
 
@@ -702,6 +708,7 @@ def _validate_runtime_arguments(
         "--database-url",
         "--model-metrics-urls",
         "--ray-address",
+        "--service-prefix-caching",
     )
     for scenario in scenarios:
         arguments = (*common_args, *scenario.args)
@@ -719,6 +726,18 @@ def _validate_runtime_arguments(
                 f"scenario {scenario.scenario_id} has empty required option(s): "
                 + ", ".join(empty)
             )
+        declared_prefix_caching = dict(service_metadata).get("prefix_caching")
+        recorded_prefix_caching = values["--service-prefix-caching"]
+        if recorded_prefix_caching is not None and isinstance(
+            declared_prefix_caching, bool
+        ):
+            expected = "enabled" if declared_prefix_caching else "disabled"
+            if recorded_prefix_caching != expected:
+                raise ValueError(
+                    f"scenario {scenario.scenario_id} records "
+                    f"--service-prefix-caching={recorded_prefix_caching} "
+                    f"but service_metadata.prefix_caching={declared_prefix_caching}"
+                )
 
 
 def _last_option_value(arguments: tuple[str, ...], flag: str) -> str | None:
