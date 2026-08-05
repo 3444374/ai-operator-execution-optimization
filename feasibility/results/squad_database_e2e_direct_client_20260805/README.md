@@ -1,0 +1,88 @@
+# SQuAD database-E2E runner — direct_client arm（2026-08-05，单臂 E2E 测量）
+
+> **角色：database-E2E 边界测量（direct_client 臂，单次 full single-shot，非正式排名）。**
+> `direct_client` = 直连 vLLM `/v1/chat/completions`（httpx async + 固定并发 32），无 DuckDB 扩展。
+> 与 DuckDB-ai 臂共享 PG scan / prompt / cap=64 / 模型配置 / 统一 sink。`formal_run_gate_passed=false`（单次 runner）。
+
+## 1. 实验目的
+
+补上 `bounded_output_duckdb_comparison_protocol_20260805.md` 三臂对比的第二臂：direct_client。
+与 DuckDB-ai 的唯一差异 = 执行模型（per-request HTTP vs set-oriented barrier）；相同 endpoint/model/cap/concurrency/sink。
+direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（DuckDB-ai 不暴露），
+用于揭示两条路径对同一种截断事件的不同产品语义。
+
+## 2. 实验设置
+
+| 项 | 值 |
+|---|---|
+| 平台 | AutoDL 2×RTX 4090；vLLM 0.25.1，单 endpoint 8000，qwen2.5-7b，prefix-cache enabled |
+| arm | `direct_client`（httpx async + `asyncio.Semaphore(32)`，per-request，无项目 credit/backpressure） |
+| 请求体 | 共享 `build_completion_request_body`（chat_completions，temp 0.0，cap=64）——与 DuckDB-ai 语义等价 |
+| 数据库 | PostgreSQL 18.4 + pgvector 0.8.5；workload `squad_v11_dev_short_answer`（10570） |
+| 合同 | 全集 10570（无 --limit）、`--strict-attribution`、`--service-config-hash 49cf2f803735b4a4`、`--metrics-settle-s 5` |
+| sink | `write_completions(..., "json_text")` → `document_completions`；content digest readback |
+| 代码 | runner @ `28050e6`（`direct_client.py` + arm dispatch + arm-aware identity + --limit smoke） |
+
+## 3. 合规性自检
+
+| 检查 | 结果 |
+|---|---|
+| workload 完整性 + 三 hash 一致 | ✅ verified；`workload_content_hash == importer_content_hash == 2c2301f2…` |
+| exactly-once | ✅ 10570/10570/10570 |
+| 归因（`--strict-attribution`） | ✅ attributable；运行前后 idle，`request_success_delta == 10570` |
+| **行级 fail-closed** | ✅ **0 error / 0 NULL → status=success**（截断行返回 partial text，非 error） |
+| sink content readback | ✅ matched=True（10570 行 `(doc_id, completion_text)` digest 一致） |
+| EM/F1 独立复算 | ✅ 从 `per_row_evidence.csv` 复算 = 报告值（80.21759697% / 89.32531727%） |
+| 命令脱敏 | ✅ `postgres:***@` |
+
+## 4. 实验设计
+
+单臂（direct_client）、全集 10570、cap=64、prefix-cache on、temp 0.0、并发 32、`--strict-attribution`。
+计时墙与 DuckDB-ai 臂完全一致：`t0 → scan → construct → scrape_before → run_direct_client → sink → t1`。
+`run_direct_client` 用 `asyncio.Semaphore(32)` 固定并发，per-request `POST /v1/chat/completions`，
+记录 `submitted`（队列前）→ `started`（获得 slot）→ `completed`（HTTP 响应）。
+`_operator_span = max(completed) - min(started)`。
+
+## 5. 实验数据
+
+**finish_reason 分布**（direct_client 独有——DuckDB-ai 不暴露）：`{stop: 10569, length: 1}`。
+**1 行 `finish_reason=length`**（截断），但 direct_client 返回 partial text（status=completed）→ 不触发 fail-closed。
+
+**database-E2E 计时（秒）**：wall **91.872** = scan 0.133 + construct 0.228 + adapter 91.189（op_jct 90.909）+ sink 0.262。
+
+**runner 层指标**：`correct_rows_per_s` **92.2913**（主 headline）｜`successful_rows_per_s` 115.0512｜
+`raw_rows_per_s` 115.0512｜`failure_rate` **0.0**｜sunk 10570（readback matched）。
+
+**正确性/语义**：EM **80.21759697%**（8479/10570）｜token-F1 **89.32531727%**｜exactly-once True。
+
+## 6. 结果解释
+
+- **事实**：direct_client 全量 10570 在 cap=64 下 **0 error / 0 NULL → status=success**。
+  finish_reason 分布 `{stop: 10569, length: 1}`——1 行截断（length），但 direct_client 返回 partial text
+  而非 NULL。E2E wall 91.9s（adapter 99.26%），`correct_rows/s = 92.29`，EM 80.22%（独立复算一致）。
+  sink content readback matched=True。
+- **与 DuckDB-ai 臂的对比**（核心发现）：
+
+  | | DuckDB-ai full（c20240e） | direct_client full（本次） |
+  |---|---|---|
+  | status | **FAILURE**（1 NULL） | **success**（0 error/NULL） |
+  | finish_reason | unavailable | `{stop: 10569, length: 1}` |
+  | 截断处理 | `finish_reason=length` → DuckDB 扩展当 error → **NULL** → fail-closed | `finish_reason=length` → **partial text** → 非 error |
+  | EM / F1 | 80.32% / 89.42% | 80.22% / 89.33% |
+  | E2E wall | 93.9s | 91.9s |
+  | correct_rows/s | 90.42 | 92.29 |
+
+  **同一种截断事件（模型在某题生成 >64 token），两条路径给出不同的可靠性结论**：
+  DuckDB-ai 把它变成失败行（NULL），direct_client 把它变成截断但完成的行（partial text）。
+  EM 几乎相同（截断行两种口径都 0 分）；E2E wall direct 稍快（~2s，无扩展 barrier 开销）。
+- **状态字段（解耦）**：`single_run_valid=true` / `formal_run_gate_passed=false`（单次 runner 恒 false）/
+  `comparison_admission=pending_formal_repeat`。单次 E2E 测量，**非数据库系统排名**。
+- **不能声称**：direct_client 比 DuckDB-ai 更快或更可靠（单次观测、偶发截断、不同语义口径）；
+  scan/sink 在所有臂都可忽略（仅本臂观测）。
+
+## 7. 对课题含义 + 下一步
+
+- **含义**：direct_client 臂已可测、可归因、可复算、可读回。两臂的 E2E 拆分都 operator-dominated
+  （模型调用 >99%），scan/sink <1%。两臂的差异集中在"截断的产品语义"（NULL vs partial text）而非吞吐。
+- **下一步**：① 补 `project_static` 臂（项目冻结最佳静态）→ 三臂齐全；② 填全 deploy 配置的
+  REPLACE_ME（真实 vLLM 配置）→ 重算 service-config-hash；③ 三臂 `1 warmup + 3 formal` 正式排名。

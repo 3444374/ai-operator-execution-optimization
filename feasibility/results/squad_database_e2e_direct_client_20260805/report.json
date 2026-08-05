@@ -1,0 +1,148 @@
+{
+  "arm": "direct_client",
+  "attribution": {
+    "after_idle": true,
+    "attributable": true,
+    "before_idle": true,
+    "reasons": [],
+    "request_success_delta": 10570,
+    "requests_sent": 10570
+  },
+  "cap": 64,
+  "command": [
+    "code/scripts/baselines/squad_database_e2e_runner.py",
+    "--arm",
+    "direct_client",
+    "--database-url",
+    "postgresql://postgres:***@localhost:5432/ai_operator",
+    "--workload-name",
+    "squad_v11_dev_short_answer",
+    "--importer-provenance",
+    "feasibility/results/squad_v11_dev_import_20260805/provenance.json",
+    "--endpoint-url",
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "--metrics-url",
+    "http://127.0.0.1:8000/metrics",
+    "--model",
+    "qwen2.5-7b",
+    "--max-tokens",
+    "64",
+    "--max-concurrent-requests",
+    "32",
+    "--service-prefix-caching",
+    "enabled",
+    "--service-config-hash",
+    "49cf2f803735b4a4",
+    "--metrics-settle-s",
+    "5",
+    "--strict-attribution",
+    "--writeback-mode",
+    "json_text",
+    "--write-batch-rows",
+    "500",
+    "--output-dir",
+    "feasibility/results/squad_database_e2e_direct_client_20260805",
+    "--force"
+  ],
+  "comparison_admission": "pending_formal_repeat",
+  "error_count": 0,
+  "evidence_files": {
+    "per_row_csv": "per_row_evidence.csv",
+    "sunk_status_csv": "sunk_status.csv"
+  },
+  "exactly_once": true,
+  "failure_reason": null,
+  "finish_reason": {
+    "length": 1,
+    "stop": 10569
+  },
+  "formal_run_gate_note": "single-shot runner; the 1-warmup+3-formal repeat gate is a separate protocol not implemented here",
+  "formal_run_gate_passed": false,
+  "identity": {
+    "arm_protocol": "direct_http_per_request",
+    "concurrency": 32,
+    "endpoint": "http://127.0.0.1:8000/v1",
+    "git_commit": "28050e68e715325b3b375f2b44bb46632ad934ac",
+    "hostname": "autodl-container-a4884eab4c-22401421",
+    "metrics_snapshot": {
+      "after": "ok",
+      "before": "ok",
+      "before_idle": true
+    },
+    "model": "qwen2.5-7b",
+    "nvidia_smi": [
+      "0, NVIDIA GeForce RTX 4090, 24564 MiB, 595.58.03",
+      "1, NVIDIA GeForce RTX 4090, 24564 MiB, 595.58.03"
+    ],
+    "pg_server_version": "PostgreSQL 18.4 (Ubuntu 18.4-1.pgdg22.04+1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit",
+    "pgvector_version": "0.8.5",
+    "service_config_hash": "49cf2f803735b4a4",
+    "service_prefix_caching": "enabled",
+    "transport": "httpx_async",
+    "vllm_version": "0.25.1",
+    "workload": "squad_v11_dev_short_answer"
+  },
+  "importer_content_hash": "2c2301f28f9eb2fea168bfda8e8011746defeb8120ae3ca7a8b113a5085a1173",
+  "max_tokens_error_count": 0,
+  "null_response_count": 0,
+  "role": "database_e2e_boundary",
+  "row_count": 10570,
+  "runner": "squad_database_e2e",
+  "runner_metrics": {
+    "correct_rows_per_s": 92.2913,
+    "error_rate": 0.0,
+    "failed_rows": 0,
+    "failure_rate": 0.0,
+    "max_tokens_rate": 0.0,
+    "null_rate": 0.0,
+    "raw_rows_per_s": 115.0512,
+    "successful_rows_per_s": 115.0512,
+    "sunk_rows": 10570
+  },
+  "single_run_valid": true,
+  "sink": {
+    "readback": {
+      "actual_digest": "8c69fbe115420d07066d91f45a5745a3bd5ef7f8cb6fc6e86f67477cb049ff3f",
+      "expected_digest": "8c69fbe115420d07066d91f45a5745a3bd5ef7f8cb6fc6e86f67477cb049ff3f",
+      "expected_rows": 10570,
+      "matched": true,
+      "present_rows": 10570
+    },
+    "rows_written": 10570,
+    "table": "document_completions",
+    "write_batch_rows": 500,
+    "writeback_mode": "json_text"
+  },
+  "squad_quality": {
+    "squad_evaluated_rows": 10570,
+    "squad_exact_match_percent": 80.21759697256385,
+    "squad_exact_match_rows": 8479,
+    "squad_missing_prediction_rows": 0,
+    "squad_prediction_rows": 10570,
+    "squad_quality_status": "ok",
+    "squad_token_f1_percent": 89.3253176992722
+  },
+  "status": "success",
+  "success_count": 10570,
+  "timing": {
+    "adapter_wall_s": 91.189,
+    "boundary": "database_e2e",
+    "construct_s": 0.228,
+    "database_e2e_wall_s": 91.872,
+    "note": "database_e2e_wall_s = scan + construct + adapter(operator) + sink; metrics settle + after-scrape are outside the wall",
+    "operator_only_jct_s": 90.909,
+    "scan_s": 0.133,
+    "setup_s": 0.0,
+    "sink_s": 0.262
+  },
+  "vllm_metrics": {
+    "attribution": "attributable",
+    "generation_tokens_delta": 60401,
+    "prefix_cache_hit_rate": 0.747,
+    "prefix_cache_hits_delta": 1853968,
+    "prefix_cache_queries_delta": 2481860,
+    "prompt_tokens_delta": 2481860
+  },
+  "workload_content_hash": "2c2301f28f9eb2fea168bfda8e8011746defeb8120ae3ca7a8b113a5085a1173",
+  "workload_integrity": "verified"
+}

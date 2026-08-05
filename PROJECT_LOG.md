@@ -4520,3 +4520,19 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
   runner 按 operator-only 或 database-E2E 边界计算 correct rows/s。
 - 本提交只完成离线质量组件与单元测试，不调用 endpoint、不产生 256 行 capability 或正式
   性能结论；下一步由 gate 负责输出解析、错误/truncation/finish-reason 和 EM/F1 联合审计。
+
+## 2026-08-05 direct_client 臂实现 + full single-shot：截断语义差异首次可比
+
+- 实现 `code/src/baselines/text/products/direct_client.py`（`ff50c8b`）：httpx async + `asyncio.Semaphore(32)`
+  固定并发、per-request `/v1/chat/completions`（共享 `build_completion_request_body`）、记录 finish_reason +
+  completion_tokens + per-request latency。runner 加 arm dispatch（duckdb_ai | direct_client）、arm-aware identity
+  （direct 无 duckdb 字段）、finish_reason 摘要、per_row_evidence 加 finish_reason/output_tokens 列、--limit smoke。
+  96 测试通过（+9 direct_client）。`pyarrow` lazy-import 解决本地 import 问题。
+- **256 行 smoke gate 通过**（8s）：finish_reason 全 stop（256/256）、0 error/NULL、readback matched。
+- **full 10570 single-shot 通过**（99s）：**status=success，0 error/0 NULL**。finish_reason `{stop: 10569, length: 1}`
+  ——1 行截断但 direct_client 返回 partial text（非 error），与 DuckDB-ai（把截断当 NULL → fail-closed FAILURE）
+  **同一事件不同结论**。E2E wall 91.9s（vs DuckDB 93.9s），correct_rows/s 92.29（vs 90.42），EM 80.22%（vs 80.32%）。
+  readback matched=True；state `single_run_valid=true` / `formal_run_gate_passed=false` / `pending_formal_repeat`。
+- **两臂核心差异确认**：不在吞吐（两臂都 operator-dominated，scan/sink <1%），而在**截断的产品语义**
+  （NULL vs partial text → FAILURE vs success）。这是三臂对比要 surfacing 的关键维度。
+- 下一步：`project_static` 臂 → 三臂齐全 → 填全服务配置 → 三臂 `1w+3f` 正式排名。
