@@ -394,10 +394,12 @@ def _pg_server_identity(database_url: str) -> dict[str, str]:
                 cur.execute("SELECT version()")
                 identity["pg_server_version"] = str(cur.fetchone()[0])
                 # pgvector is optional (only present when the extension is
-                # installed); record extversion so per-row evidence satisfies
-                # AGENTS.md §5 (every CSV records server + pgvector version).
+                # installed); the extension ships under the name ``vector``
+                # (not ``pgvector``), so filter by extname='vector'. Recorded
+                # as pgvector_version so per-row evidence satisfies AGENTS.md §5
+                # (every CSV records server + pgvector version).
                 cur.execute(
-                    "SELECT extversion FROM pg_extension WHERE extname = 'pgvector'"
+                    "SELECT extversion FROM pg_extension WHERE extname = 'vector'"
                 )
                 row = cur.fetchone()
                 identity["pgvector_version"] = str(row[0]) if row else "not_installed"
