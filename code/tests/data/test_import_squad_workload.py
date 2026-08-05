@@ -21,7 +21,10 @@ _spec.loader.exec_module(importer)
 
 
 def _dev(qas):
-    return {"version": "1.1", "data": [{"title": "t", "id": "p", "context": "CTX", "qas": qas}]}
+    return {
+        "version": "1.1",
+        "data": [{"title": "t", "id": "p", "paragraphs": [{"context": "CTX", "qas": qas}]}],
+    }
 
 
 class SquadImportParseTests(unittest.TestCase):
@@ -41,9 +44,12 @@ class SquadImportParseTests(unittest.TestCase):
         parsed = {
             "version": "1.1",
             "data": [{
-                "title": "t", "id": "p", "context": context,
-                "qas": [{"id": "q9", "question": question,
-                         "answers": {"answer_start": [0], "text": ["α"]}}],
+                "title": "t", "id": "p",
+                "paragraphs": [{
+                    "context": context,
+                    "qas": [{"id": "q9", "question": question,
+                             "answers": {"answer_start": [0], "text": ["α"]}}],
+                }],
             }],
         }
         rows = importer.parse_squad_dev(parsed)

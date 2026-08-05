@@ -89,28 +89,29 @@ def parse_squad_dev(parsed: dict) -> list[SquadRow]:
 
     rows: list[SquadRow] = []
     seen_ids: set[str] = set()
-    for paragraph in parsed.get("data", []):
-        context = paragraph.get("context", "")
-        for qa in paragraph.get("qas", []):
-            qa_id = qa.get("id")
-            if not qa_id:
-                raise ValueError("SQuAD qa missing id")
-            if qa_id in seen_ids:
-                raise ValueError(f"duplicate SQuAD qa id: {qa_id!r}")
-            seen_ids.add(qa_id)
-            answers = qa.get("answers", {})
-            texts = tuple(answers.get("text", []))
-            if not texts:
-                raise ValueError(f"SQuAD qa {qa_id!r} has no reference answers")
-            rows.append(
-                SquadRow(
-                    source_example_id=qa_id,
-                    context=context,
-                    question=qa.get("question", ""),
-                    reference_answers=texts,
-                    prompt=build_prompt(context, qa.get("question", "")),
+    for article in parsed.get("data", []):
+        for paragraph in article.get("paragraphs", []):
+            context = paragraph.get("context", "")
+            for qa in paragraph.get("qas", []):
+                qa_id = qa.get("id")
+                if not qa_id:
+                    raise ValueError("SQuAD qa missing id")
+                if qa_id in seen_ids:
+                    raise ValueError(f"duplicate SQuAD qa id: {qa_id!r}")
+                seen_ids.add(qa_id)
+                answers = qa.get("answers", {})
+                texts = tuple(answers.get("text", []))
+                if not texts:
+                    raise ValueError(f"SQuAD qa {qa_id!r} has no reference answers")
+                rows.append(
+                    SquadRow(
+                        source_example_id=qa_id,
+                        context=context,
+                        question=qa.get("question", ""),
+                        reference_answers=texts,
+                        prompt=build_prompt(context, qa.get("question", "")),
+                    )
                 )
-            )
     return rows
 
 
