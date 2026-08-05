@@ -238,6 +238,11 @@ def run_duckdb_ai_complete(
         if connection_factory is not None
         else _connect(config)
     )
+    # Timing follows the bounded-output protocol's two-boundary contract:
+    #   submitted_at_s -> started_at_s = setup (configure endpoint + load prompts)
+    #   started_at_s   -> completed_at_s = operator-only (AI op on ready prompts)
+    # started_at_s is set AFTER prompt loading, so (completed - started) is the
+    # operator-only JCT, not the full adapter wall; setup is (started - submitted).
     submitted_at_s = time.time()
     try:
         configure_ai_endpoint(connection, config)
@@ -249,11 +254,12 @@ def run_duckdb_ai_complete(
             f"INSERT INTO {source_table} VALUES (?, ?)",
             tuple((request.doc_id, request.prompt) for request in materialized),
         )
+        started_at_s = time.time()
         query = build_ai_complete_query(source_table, max_tokens=config.max_tokens)
         rows = connection.execute(query).fetchall()
+        completed_at_s = time.time()
     finally:
         connection.close()
-    completed_at_s = time.time()
 
     expected_ids = [request.doc_id for request in materialized]
     observed_ids = [int(row[0]) for row in rows]
@@ -283,7 +289,7 @@ def run_duckdb_ai_complete(
             status="failed" if error is not None else "completed",
             error=error,
             submitted_at_s=submitted_at_s,
-            started_at_s=submitted_at_s,
+            started_at_s=started_at_s,
             completed_at_s=completed_at_s,
             input_tokens=request.prompt_tokens,
             output_tokens=0,

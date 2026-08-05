@@ -44,7 +44,8 @@ workload**"，**不能**说成实现了独立 `AI_CLASSIFY` 算子。
 **主对比用 SQuAD 短答案**，因为：仍是文本生成（不改变项目方向）、有公开 reference answer、可统计
 Exact Match 与 token-level F1、输出天然较短、比"数句子"有真实语义。
 
-> 已验证：句子计数在 ShareGPT 多轮对话上 accuracy 仅 ~5%（regex 数出 11+ 句、模型从不输出 11+），
+> 未归档的 64 行 screening 观察：句子计数在 ShareGPT 多轮对话上 accuracy 仅 ~5%（regex 数出 11+ 句、
+> 模型从不输出 11+），
 > 因对话里"句子数"本身歧义——故只作 microbenchmark，accuracy 信号在该语料上无意义。
 
 ## 2. 共同指标（5 类，所有 comparator 同口径）
@@ -111,7 +112,9 @@ temperature、max_tokens、消息角色一致；再用 **vLLM prompt-token count
 
 ## 5. 执行顺序
 
-1. ✅ 句子计数 capability（已证 DuckDB-ai bounded 链路可跑通、不截断；accuracy 在 ShareGPT 上是噪声）。
+1. 句子计数 capability：**64 行 screening 的对话外观察尚未归档；2048 行门禁未完成**（归档证据目前
+   只到 `feasibility/results/duckdb_ai_semantic_gate_20260805/` 的 ShareGPT cap=256 43/64 失败 /
+   cap=1024 1/64 失败 / 4 行 4/4 成功）。须先归档完整 2048 行零失败 + ground-truth accuracy 证据。
 2. **SQuAD 短答案 workload**（主 bounded 对比）：导入 SQuAD → prompt(context+question) + reference answer
    → manifest → 三个 comparator（DuckDB `ai` / direct client / 项目冻结最佳静态）。
 3. 三臂同 manifest、同 model、双 GPU、vLLM 同配置、prefix cache、同 cap、同计时边界，按 §2 五类指标 +

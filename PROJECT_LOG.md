@@ -4205,8 +4205,10 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
 ## 2026-08-05 bounded-output 产品对比轨方法论（DuckDB-ai 兼容性三轨）
 
 DuckDB `ai` 把 `finish_reason=length` 当行级 error，与 ShareGPT fixed-cap 主轨（接受截断）
-语义不兼容；实测验证：≤10 词摘要即使强制单句禁列表仍有 ~9% 行超 cap 报错，句子计数
-（回一个整数、cap=16）64 行零错误。据此确定 DuckDB 对比走**独立 bounded-output 轨**，
+语义不兼容。归档证据（`feasibility/results/duckdb_ai_semantic_gate_20260805/`）只证明：ShareGPT
+cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 成功；**句子计数 64 行零错误、
+≤10 词摘要 ~9% 失败仅为服务器临时 screening，尚未归档，2048 行门禁未完成**。据此确定 DuckDB
+对比走**独立 bounded-output 轨**，
 原 ShareGPT 实验全部保留不动（仍讲项目内部策略/服务上限/动静态对比）。三轨结构：
 
 1. **synthetic bounded-output capability track（句子计数）**：cap=16，**仅作能力/微基准**。
@@ -4222,14 +4224,14 @@ DuckDB `ai` 把 `finish_reason=length` 当行级 error，与 ShareGPT fixed-cap 
    （headline = correct rows/s、SLO-compliant correct rows/s、cost/correct row，非 raw rows/s）、
    **operator-only vs database-E2E 两个计时边界必须分开**（不可拿 DuckDB operator-only JCT 比项目含
    PG/Daft 读取的 E2E）、请求等价门禁（`ai_completion_request_json()` + vLLM prompt-token 校验）。
-   句子计数在 ShareGPT 上 accuracy 仅 ~5%（对话歧义），只留 microbenchmark。
+   句子计数在 ShareGPT 上 accuracy 仅 ~5%（对话歧义；来自未归档的 64 行 screening），只留 microbenchmark。
 3. **中等输出轨（可选，补 AI_COMPLETE 生成特性）**：短输入一句话摘要/短答案抽取，输入长度按规则
    预筛（非按模型输出事后筛），cap 128/256，**必须全 manifest 零截断预检**；达不到零截断则诚实
    记录 DuckDB 产品语义限制，**不继续抬 cap 直到"碰巧通过"**。
 
 三臂对照（每轨同 manifest）：DuckDB `ai` 原生 / bounded direct client / 项目冻结最佳静态
 （项目最终优化方案确定后再补）。正式实验**增加 unique 行数**而非重复同批（避免 prefix cache
-与重复 prompt 污染）。执行顺序：①句子计数 DuckDB 全量语义门禁（进行中）→ ②补公开分类
-workload → ③启动正式 DuckDB/bounded/project 三臂对照。新 importer
+与重复 prompt 污染）。执行顺序（已统一）：①句子计数 micro gate（须先归档证据）→ ②SQuAD
+短答案导入与语义 gate → ③三臂校准 → ④正式 DuckDB/bounded/project 三臂对照。新 importer
 `code/scripts/data/import_bounded_output_workload.py`（`--template` 支持任意 bounded wrap）、
 句子计数门禁脚本 `code/scripts/baselines/duckdb_ai_sentence_count_gate.py`。
