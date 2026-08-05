@@ -112,7 +112,10 @@ direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（D
     （`request_equivalence_gate`）验证了两路径关键字段语义等价。
 - **sunk_status.csv**：本次跑（`535789d`）的服务器产出目录有 `sunk_status.csv`，但之前只取回了
   `report.json` + `per_row_evidence.csv`。现已补取（10570 行）。
-- **provenance**：direct_client 注册为 `comparison_role="direct_service_control"`（非 database product baseline），
-  `scheduler_owner="asyncio_semaphore_fixed_concurrency_no_project_scheduling"`，
-  `formal_baseline_eligible=False`，`formal_control_eligible=True`。
+- **provenance（订正）**：direct_client 复用已有角色 `comparison_role="direct_client_control"`（非 database product
+  baseline）；因为它使用项目自写的 `asyncio.Semaphore(32)` 固定并发，`custom_scheduling_code=True`、
+  `scheduler_owner="project_asyncio_semaphore_control"`、`formal_baseline_eligible=False`、`formal_control_eligible=True`。
+  上一版误登记为不存在于 `ComparisonRole` Literal 的 `"direct_service_control"` 且 `custom_scheduling_code=False`
+  （掩盖了项目调度代码），已订正。runner 现在对每个 arm 调 `adapter_provenance()` 并把 `summary_fields()` 写进
+  每次 `report.json`；归档 `report.json`（`535789d`）早于此修复、无 `provenance` 字段，需正式 rerun 落盘。
 - **smoke 空集**：`--limit` smoke 的 `_smoke_integrity` 已加空集拒绝（`all([])` 不再真空通过）。

@@ -125,10 +125,10 @@ _ADAPTER_PROVENANCE = {
         ),
     ),
     "direct_client": AdapterProvenance(
-        comparison_role="direct_service_control",
+        comparison_role="direct_client_control",
         implementation_provenance="project_httpx_async_client",
-        scheduler_owner="asyncio_semaphore_fixed_concurrency_no_project_scheduling",
-        custom_scheduling_code=False,
+        scheduler_owner="project_asyncio_semaphore_control",
+        custom_scheduling_code=True,
         formal_baseline_eligible=False,
         formal_control_eligible=True,
         upstream_source="project_implemented (code/src/baselines/text/products/direct_client.py)",

@@ -44,3 +44,20 @@ class BaselineProvenanceTests(unittest.TestCase):
     def test_unclassified_adapter_fails_closed(self) -> None:
         with self.assertRaisesRegex(ValueError, "no provenance"):
             adapter_provenance("custom_actor_pool")
+
+    def test_direct_client_is_honestly_classified_as_project_scheduled_control(
+        self,
+    ) -> None:
+        # direct_client runs the project's own asyncio.Semaphore concurrency cap,
+        # so it MUST be marked custom_scheduling_code=True (project scheduling),
+        # reuse the existing direct_client_control role (NOT an ad-hoc role
+        # outside the ComparisonRole Literal), and stay a control (not a formal
+        # baseline). Regression: an earlier entry used the invalid role
+        # "direct_service_control" and lied custom_scheduling_code=False.
+        provenance = adapter_provenance("direct_client")
+        self.assertEqual(provenance.comparison_role, "direct_client_control")
+        self.assertTrue(provenance.custom_scheduling_code)
+        self.assertFalse(provenance.formal_baseline_eligible)
+        self.assertTrue(provenance.formal_control_eligible)
+        self.assertEqual(provenance.scheduler_owner,
+                         "project_asyncio_semaphore_control")

@@ -126,6 +126,42 @@ class RunnerMetricsTests(unittest.TestCase):
         self.assertEqual(m["raw_rows_per_s"], 0.0)
 
 
+class SmokeIntegrityTests(unittest.TestCase):
+    """_smoke_integrity must reject a short read, not just an empty one."""
+
+    def _rows(self, n: int) -> list[dict]:
+        return [{"doc_id": i, "text": "t", "source_example_id": f"id{i}",
+                 "answers": ["a"]} for i in range(n)]
+
+    def test_exact_count_passes(self) -> None:
+        ok, problems = runner._smoke_integrity(
+            self._rows(256), limit=256, importer_count=10570)
+        self.assertTrue(ok)
+        self.assertEqual(problems, [])
+
+    def test_short_read_rejected(self) -> None:
+        # DB returned 100 rows under --limit 256 (importer has 10570): the scan
+        # is short and must NOT be labelled verified_smoke_limit_256.
+        ok, problems = runner._smoke_integrity(
+            self._rows(100), limit=256, importer_count=10570)
+        self.assertFalse(ok)
+        self.assertTrue(any("expected 256" in p for p in problems), problems)
+
+    def test_limit_above_workload_clamps_to_importer_count(self) -> None:
+        # --limit 20000 on a 10570-row workload legitimately returns 10570.
+        ok, _ = runner._smoke_integrity(
+            self._rows(10570), limit=20000, importer_count=10570)
+        self.assertTrue(ok)
+
+    def test_empty_rejected_even_if_count_incidentally_matches(self) -> None:
+        # limit 0 would make expected=0 and mask an empty scan; smoke always has
+        # limit>0 (the caller only invokes _smoke_integrity when args.limit>0),
+        # so an empty scan under a real limit must fail on the count check.
+        ok, problems = runner._smoke_integrity(
+            [], limit=256, importer_count=10570)
+        self.assertFalse(ok)
+
+
 class OperatorSpanTests(unittest.TestCase):
     def test_barrier_arm_all_rows_share_boundary(self) -> None:
         # DuckDB-ai: every row shares submitted/started/completed.
@@ -245,6 +281,13 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
         self.assertEqual(report["formal_run_gate_passed"], False)
         self.assertEqual(report["comparison_admission"], "pending_formal_repeat")
         self.assertIn("correct_rows_per_s", report["runner_metrics"])
+        # provenance is written into every report: who owned execution+scheduling.
+        # duckdb_ai: the community extension owns batching/concurrency, so it is
+        # a database_product_native_baseline with NO custom project scheduling.
+        prov = report["provenance"]
+        self.assertEqual(prov["comparison_role"], "database_product_native_baseline")
+        self.assertFalse(prov["custom_scheduling_code"])
+        self.assertIn("scheduler_owner", prov)
         # sink audit recovers per-row status (so sunk empty strings are traceable)
         self.assertIn("doc_id", sink_header)
         self.assertEqual(report["evidence_files"]["sunk_status_csv"], "sunk_status.csv")
@@ -295,6 +338,14 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
         # duckdb "unavailable" string
         self.assertIsInstance(report["finish_reason"], dict)
         self.assertIn("stop", report["finish_reason"])
+        # direct_client provenance: the project's asyncio.Semaphore concurrency
+        # cap IS project scheduling, so it is a direct_client_control marked
+        # custom_scheduling_code=True (NOT a formal baseline, NOT vendor-native).
+        prov = report["provenance"]
+        self.assertEqual(prov["comparison_role"], "direct_client_control")
+        self.assertTrue(prov["custom_scheduling_code"])
+        self.assertEqual(prov["scheduler_owner"],
+                         "project_asyncio_semaphore_control")
 
 
 class ReadbackOkTests(unittest.TestCase):

@@ -56,6 +56,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.baselines.common.contracts import ChatRequest  # noqa: E402
+from src.baselines.common.provenance import adapter_provenance  # noqa: E402
 from src.baselines.common.redact import (  # noqa: E402
     redact_argument_list,
     redact_database_url,
@@ -282,12 +283,27 @@ def _operator_span(results) -> tuple[float, float]:
     return (max(completed) - min(started)), (min(started) - min(submitted))
 
 
-def _smoke_integrity(rows: list[dict]) -> tuple[bool, list[str]]:
-    """Relaxed integrity for --limit smoke runs: row-local uniqueness + non-empty,
-    WITHOUT the full-workload count or canonical content-hash comparison (a
-    limited scan's hash cannot match the importer's full-workload hash)."""
+def _smoke_integrity(
+    rows: list[dict], limit: int, importer_count: int,
+) -> tuple[bool, list[str]]:
+    """Relaxed integrity for --limit smoke runs: row-local uniqueness + non-empty
+    + the scan actually returned the requested number of rows, WITHOUT the
+    full-workload canonical content-hash comparison (a limited scan's hash cannot
+    match the importer's full-workload hash).
+
+    ``len(rows)`` must equal ``min(limit, importer_count)``: a short read (the DB
+    returned fewer rows than requested, e.g. the workload is smaller than
+    ``--limit`` silently implies) must NOT be labelled ``verified_smoke_limit_N``
+    -- otherwise a 100-row scan hides behind a ``--limit 256`` label.
+    """
 
     problems: list[str] = []
+    expected = min(limit, importer_count)
+    if len(rows) != expected:
+        problems.append(
+            f"expected {expected} rows (min(limit={limit}, "
+            f"importer_count={importer_count})), got {len(rows)}"
+        )
     if not rows:
         problems.append("no rows scanned (empty result)")
     if len({r["doc_id"] for r in rows}) != len(rows):
@@ -392,6 +408,11 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         raise NotImplementedError(
             f"arm {args.arm!r} not implemented (duckdb_ai, direct_client available)"
         )
+    # Per-arm provenance (scheduler owner / implementation source / formal
+    # eligibility) is written into EVERY report so a reader can audit who owned
+    # execution+scheduling without re-reading the adapter source. project_static
+    # is rejected above before this lookup (it has no provenance entry yet).
+    arm_provenance = adapter_provenance(args.arm)
     importer = _load_importer_provenance(args.importer_provenance)
     expected_content_hash = importer["content_hash"]
     expected_count = int(importer.get("sample_count", EXPECTED_DEV_COUNT))
@@ -436,8 +457,12 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
     all_rows, sidecar, scan_s = _scan_workload(conn, args.workload_name, args.limit)
     tc0 = time.time()
     if args.limit > 0:
-        # smoke / small-scale gate: relax full-workload count+hash to row-local check
-        integrity_ok, integrity_problems = _smoke_integrity(all_rows)
+        # smoke / small-scale gate: relax full-workload count+hash to row-local
+        # check, but still require the scan returned exactly min(limit, importer
+        # count) rows (a short read must not hide behind a --limit N label).
+        integrity_ok, integrity_problems = _smoke_integrity(
+            all_rows, args.limit, expected_count
+        )
         integrity_label = f"verified_smoke_limit_{args.limit}"
     else:
         integrity_ok, integrity_problems = _validate_workload_integrity(
@@ -644,6 +669,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         "runner": "squad_database_e2e",
         "role": "database_e2e_boundary",
         "arm": args.arm,
+        "provenance": arm_provenance.summary_fields(),
         "status": "success" if passed else "failure",
         "failure_reason": failure_reason,
         # Three DECOUPLED judgments (per codex audit):

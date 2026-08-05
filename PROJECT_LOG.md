@@ -4554,3 +4554,25 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 - 订正上一条 PROJECT_LOG 的措辞：「**同一事件不同结论**」应读作「**同一 source row 在两次独立 full 中触顶**，
   给出不同可靠性结论」（两次独立运行，非同一次事件）。结论不变：差异在截断的产品语义（NULL vs partial text），非吞吐。
 - 纯文档提交，无代码改动、无重跑；机器原始 report.json/per_row_evidence.csv 全部保持不变。下一步：`project_static` 臂 → 三臂齐全。
+
+## 2026-08-05 direct_client provenance 诚实化 + smoke 短读校验（DA3）
+
+- codex 指出两个代码问题，本轮合并一个提交修复（无 rerun，纯代码+测试+文档）。
+- **provenance 诚实化**：direct_client 上一版登记为 `comparison_role="direct_service_control"`
+  —— 该值根本不在 `ComparisonRole` Literal 里（只有 service_ceiling / direct_client_control /
+  framework_native_baseline / database_product_native_baseline），且 `custom_scheduling_code=False`
+  撒了谎（`asyncio.Semaphore(32)` 就是项目自写调度代码）。订正为复用已有 `direct_client_control` 角色、
+  `custom_scheduling_code=True`、`scheduler_owner="project_asyncio_semaphore_control"`。
+  invariant 仍通过（`formal_baseline_eligible=False` 与 `custom_scheduling_code=True` 不触发 native+custom 冲突）。
+- **runner 写 provenance 进 report**：runner 之前完全不调 `adapter_provenance()`，导致 report 缺 scheduler owner /
+  implementation source 等审计字段。现 `_run` 在 arm 守卫后调 `adapter_provenance(args.arm)`，把 `summary_fields()`
+  写进每次 `report.json` 的 `provenance` 键。归档 direct/DuckDB full 的 report.json 早于此修复、无该字段，需正式 rerun 落盘。
+- **smoke 短读校验**：`_smoke_integrity` 之前只拒空集，不校验返回行数。要求 256、DB 只返回 100 行也会标
+  `verified_smoke_limit_256`。订正为 `_smoke_integrity(rows, limit, importer_count)`，要求
+  `len(rows) == min(limit, importer_count)`（`--limit` 超过 workload 规模时 clamp 到 importer_count）。
+- **回归测试**：`test_baseline_provenance` 加 direct_client 诚实性断言（角色/custom_scheduling/scheduler_owner）；
+  `test_squad_database_e2e_runner` 加 `SmokeIntegrityTests`（短读拒、精确通过、limit 超规模 clamp、空集拒）
+  并在两个集成测试里断言 `report["provenance"]`（duckdb_ai=database_product_native_baseline/custom=False；
+  direct_client=direct_client_control/custom=True）。
+- 本地无 psycopg/duckdb，已 `py_compile` 四文件通过、纯 provenance 单测 4/4 通过；runner 全套需服务器跑。
+- 同步订正文档里残留的旧 provenance 字串：PROJECT_INDEX 两行 + direct_client README §8。
