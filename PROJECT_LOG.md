@@ -4235,3 +4235,20 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 短答案导入与语义 gate → ③三臂校准 → ④正式 DuckDB/bounded/project 三臂对照。新 importer
 `code/scripts/data/import_bounded_output_workload.py`（`--template` 支持任意 bounded wrap）、
 句子计数门禁脚本 `code/scripts/baselines/duckdb_ai_sentence_count_gate.py`。
+
+### #5 请求等价门禁：`ai_completion_request_json()` capability probe（2026-08-05）
+
+按 codex 二审"先查实际签名与返回结构、禁止猜测"执行服务器单请求探查，结论：
+- DuckDB `ai` 扩展 `ai_completion_request_json(prompt, ...命名参数)` 是 scalar 函数，返回 `VARCHAR`
+  （JSON 串），官方描述 **"Returns the completion request JSON without making a network call"**——
+  纯本地构造、不实际请求，适合做确定性请求等价门禁。
+- 实际返回体：`{"model":"qwen2.5-7b","messages":[{"role":"user","content":"..."}],`
+  `"temperature":0,"max_tokens":16}`。
+- **无隐藏 system prompt**（messages 仅 `{role:user, content:prompt}`）。
+- **默认 temperature=0.1（非 0）**：不显式传时 DuckDB-ai 发 0.1；adapter 显式 `temperature => 0.0`
+  才发 0。故请求等价门禁**必须校验 temperature 被显式设成 0.0**，否则与项目路径不一致。
+- 待建门禁（codex 步骤 3-6）：canonical 请求规范（model/messages(role+content)/temperature=0.0/
+  max_tokens/无 stop·stream·response_format）+ DuckDB 侧 `ai_completion_request_json` 比对 +
+  隔离单请求 vLLM logical prompt-token 交叉校验 + 证据（脱敏请求 JSON、canonical diff、DuckDB/
+  扩展版本、服务配置 hash、命令、退出码）落 `feasibility/results/`。项目侧 payload 比对依赖
+  bounded-output 三臂 harness（项目 arm 须用 chat_completions + 同 messages 格式）。
