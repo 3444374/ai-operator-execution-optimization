@@ -61,3 +61,25 @@ class BaselineProvenanceTests(unittest.TestCase):
         self.assertTrue(provenance.formal_control_eligible)
         self.assertEqual(provenance.scheduler_owner,
                          "project_asyncio_semaphore_control")
+
+    def test_project_static_is_method_under_test_not_baseline_or_control(
+        self,
+    ) -> None:
+        # Regression (codex): project_static is the paper's frozen-best static
+        # method -- the METHOD UNDER TEST. Three honesty constraints hold.
+        provenance = adapter_provenance("project_static")
+        # (1) the project method owns scheduling (Ray actor + static K/active-work
+        #     + token-budget organizer) -> custom_scheduling_code MUST be True.
+        self.assertTrue(provenance.custom_scheduling_code)
+        # (2) the project method is NOT a vendor/product baseline.
+        self.assertFalse(provenance.formal_baseline_eligible)
+        # (3) its role is the dedicated project_scheduled_method, NOT any baseline
+        #     or control role. Conflating it with direct_client_control would mix
+        #     the method under test with a bare-client control in later grouping,
+        #     figures, and audit.
+        self.assertEqual(provenance.comparison_role, "project_scheduled_method")
+        self.assertNotIn(
+            provenance.comparison_role,
+            {"direct_client_control", "framework_native_baseline",
+             "database_product_native_baseline", "service_ceiling"},
+        )

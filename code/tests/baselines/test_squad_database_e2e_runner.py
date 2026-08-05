@@ -18,6 +18,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.baselines.common.contracts import BaselineRequestResult  # noqa: E402
+from src.baselines.text.products.project_static import ProjectStaticRun  # noqa: E402
 
 _RUNNER_PATH = CODE_ROOT / "scripts" / "baselines" / "squad_database_e2e_runner.py"
 _spec = importlib.util.spec_from_file_location("squad_database_e2e_runner", _RUNNER_PATH)
@@ -346,6 +347,124 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
         self.assertTrue(prov["custom_scheduling_code"])
         self.assertEqual(prov["scheduler_owner"],
                          "project_asyncio_semaphore_control")
+
+
+class ProjectStaticArmTests(unittest.TestCase):
+    """project_static delegates scan+operator+sink to the profiler (no double scan)."""
+
+    def _run_ps_main(
+        self, *, profiler_ok: bool = True, readback_matched: bool = True,
+        token_budget: int = 6144, max_inflight: int = 8,
+    ) -> tuple[int, dict, object]:
+        with _scratch_dir() as td:
+            out = td / "result"
+            prov = td / "prov.json"
+            prov.write_text(
+                json.dumps({"content_hash": "abc123", "sample_count": 4}) + "\n",
+                encoding="utf-8",
+            )
+            argv = [
+                "--arm", "project_static",
+                "--database-url", "postgresql://u:p@localhost:5432/d",
+                "--workload-name", "squad_v11_dev_short_answer",
+                "--importer-provenance", str(prov),
+                "--endpoint-url", "http://127.0.0.1:8000/v1/chat/completions",
+                "--metrics-url", "http://127.0.0.1:8000/metrics",
+                "--model", "m", "--max-tokens", "64",
+                "--token-budget", str(token_budget),
+                "--project-max-inflight", str(max_inflight),
+                "--metrics-settle-s", "0",
+                "--writeback-mode", "json_text", "--write-batch-rows", "10",
+                "--output-dir", str(out), "--force",
+            ]
+            results = tuple(
+                _result(i, output_text=f"ok{i}", finish_reason="stop")
+                for i in (1, 2, 3, 4)
+            )
+            fake_run = ProjectStaticRun(
+                results=results if profiler_ok else (),
+                sunk_pairs=tuple((i, f"ok{i}") for i in (1, 2, 3, 4)),
+                timing={"e2e_s": 50.0, "db_fetch_s": 0.1, "arrow_build_s": 0.05,
+                        "organizer_from_arrow_s": 0.02, "organizer_plan_s": 0.03,
+                        "organizer_collect_s": 0.01, "operator_wall_s": 49.0,
+                        "writeback_s": 0.2},
+                exit_code=0 if profiler_ok else 1,
+                formal_row_found=profiler_ok,
+                stderr_tail="" if profiler_ok else "boom",
+            )
+            doc_to_source = {1: "id1", 2: "id2", 3: "id3", 4: "id4"}
+            references = {f"id{i}": ["ans"] for i in (1, 2, 3, 4)}
+            scan_mock = MagicMock()
+
+            with patch("squad_database_e2e_runner._scan_workload", side_effect=scan_mock), \
+                 patch("squad_database_e2e_runner._sink_write", side_effect=MagicMock()), \
+                 patch("squad_database_e2e_runner.run_project_static", return_value=fake_run), \
+                 patch("squad_database_e2e_runner._fetch_scoring_ground_truth",
+                       return_value=(doc_to_source, references)), \
+                 patch("squad_database_e2e_runner._sink_readback",
+                       return_value={"matched": readback_matched}), \
+                 patch("squad_database_e2e_runner.scrape_prometheus_metrics",
+                       return_value={"vllm:num_requests_running": 0.0,
+                                     "vllm:num_requests_waiting": 0.0}), \
+                 patch("squad_database_e2e_runner._assess_attribution",
+                       return_value=({"reasons": []}, True)), \
+                 patch("squad_database_e2e_runner._pg_server_identity",
+                       return_value={"pg_server_version": "PG 99",
+                                     "pgvector_version": "0.8.5"}), \
+                 patch("squad_database_e2e_runner._vllm_version", return_value="0.25.1"), \
+                 patch("squad_database_e2e_runner._gpu_identity",
+                       return_value={"nvidia_smi": [], "hostname": "h"}), \
+                 patch("squad_database_e2e_runner._git_commit", return_value="deadbeef"), \
+                 patch.dict(sys.modules, {"psycopg": MagicMock()}):
+                rc = runner.main(argv)
+            report_path = out / "report.json"
+            report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else {}
+            return rc, report, scan_mock
+
+    def test_dispatches_to_profiler_no_double_scan(self) -> None:
+        rc, report, scan_mock = self._run_ps_main()
+        self.assertEqual(rc, 0)
+        self.assertEqual(report["arm"], "project_static")
+        # NO double scan: the runner must not scan the operator workload (the
+        # profiler owns scan+sink). _scan_workload is the in-process arm path.
+        self.assertFalse(scan_mock.called, "project_static must not call _scan_workload")
+        self.assertEqual(report["identity"]["arm_protocol"], "project_ray_static_k")
+        self.assertEqual(report["identity"]["transport"], "ray_actor")
+        self.assertEqual(report["identity"]["concurrency"], 8)
+        self.assertEqual(report["identity"]["token_budget"], 6144)
+        self.assertNotIn("duckdb_version", report["identity"])
+
+    def test_provenance_is_project_scheduled_method(self) -> None:
+        rc, report, _ = self._run_ps_main()
+        prov = report["provenance"]
+        self.assertEqual(prov["comparison_role"], "project_scheduled_method")
+        self.assertTrue(prov["custom_scheduling_code"])
+        self.assertFalse(prov["formal_baseline_eligible"])
+        self.assertEqual(prov["scheduler_owner"], "project_ray_static_k_and_active_work")
+
+    def test_timing_sourced_from_profiler_e2e(self) -> None:
+        rc, report, _ = self._run_ps_main()
+        # database_e2e_wall_s comes from the profiler's e2e_s (50.0), NOT a
+        # runner-measured wall; scan/sink from the profiler's db_fetch_s/writeback_s.
+        self.assertAlmostEqual(report["timing"]["database_e2e_wall_s"], 50.0)
+        self.assertAlmostEqual(report["timing"]["scan_s"], 0.1)
+        self.assertAlmostEqual(report["timing"]["sink_s"], 0.2)
+        # decoupled state still holds for the shell-out arm
+        self.assertEqual(report["formal_run_gate_passed"], False)
+        self.assertEqual(report["comparison_admission"], "pending_formal_repeat")
+        self.assertIn("per_row_csv", report["evidence_files"])
+
+    def test_rejects_missing_frozen_static_args(self) -> None:
+        # --arm project_static without frozen --token-budget / --project-max-inflight
+        # must fail closed (never run an un-frozen guess).
+        with self.assertRaises(SystemExit):
+            self._run_ps_main(token_budget=0)
+        with self.assertRaises(SystemExit):
+            self._run_ps_main(max_inflight=0)
+
+    def test_profiler_nonzero_exit_fails_closed(self) -> None:
+        with self.assertRaises(SystemExit):
+            self._run_ps_main(profiler_ok=False)
 
 
 class ReadbackOkTests(unittest.TestCase):

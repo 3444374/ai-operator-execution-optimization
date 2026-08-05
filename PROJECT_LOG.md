@@ -4576,3 +4576,32 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
   direct_client=direct_client_control/custom=True）。
 - 本地无 psycopg/duckdb，已 `py_compile` 四文件通过、纯 provenance 单测 4/4 通过；runner 全套需服务器跑。
 - 同步订正文档里残留的旧 provenance 字串：PROJECT_INDEX 两行 + direct_client README §8。
+
+## 2026-08-05 project_static 臂实现（shell-out profiler + 诚实 provenance）
+
+- SQuAD bounded-output database-E2E runner 第三臂 `project_static` 实现完成（三臂齐全）。经 codex/用户裁决：
+  **shell-out**（不是进程内重写）——`code/src/baselines/text/products/project_static.py` 子进程调用
+  `postgres_ai_operator_profile.py` 跑冻结最佳静态 K，profiler 独占 scan+organize+model+sink；wrapper 合并
+  request-trace(时间戳/status/finish_reason) + `document_completions` readback(output_text) → `BaselineRequestResult`。
+  runner 在通用 scan 前分流 `_run_project_static`，避免重复 scan/写回。
+- **诚实 provenance**：`ComparisonRole` 新增 `project_scheduled_method`（项目方法 under test，区别于 baseline/control）。
+  `project_static` 登记 `custom_scheduling_code=True` / `formal_baseline_eligible=False` /
+  `scheduler_owner=project_ray_static_k_and_active_work`；`formal_control_eligible=True` 按本仓库语义=可进正式比较矩阵
+  （非 control arm，`project_scheduled_method` 角色是判别器）。补 3 条回归约束（项目方法必须 custom_scheduling=True、
+  不得 formal_baseline_eligible=True、不得标为 direct_client_control 或任何 native baseline）。
+- **计时段**：project_static 的 timing 来自 profiler `--output` CSV（`e2e_s`→`database_e2e_wall_s`、`db_fetch_s`→`scan_s`、
+  `operator_wall_s`→`adapter_wall_s`、`writeback_s`→`sink_s`；`construct_s` 由 Arrow build + organizer 合成，与进程内臂
+  结构不同）。headline `correct_rows_per_s` = EM 行 ÷ `e2e_s`，跨臂可比。
+- **对抗式验证 workflow**（3 lens：profiler flag 名 / no-double-scan + fail-closed / output_text readback + doc_id join）：
+  flag lens 全绿（33 flag 全部正确，20 必填齐全）；抓到 **1 个 major 静默正确性 bug**——`--force` 重跑同一 output_dir
+  时 profiler 的 append-mode summary CSV 不清空，`read_summary_timing` 返回**陈旧**首行 formal-ok → 新结果混旧计时，
+  `correct_rows_per_s` 静默错误，无门禁拦截。已修：wrapper 每次 invoke 前 `rmtree(work_dir)`，且 `read_summary_timing`
+  改取**最后**一个 formal-ok 行（defense-in-depth）。
+- 同时修了 workflow 报的 minor：`writeback_mode=none` 对 project_static 自毁（output_text 无来源）→ 前置拒绝；
+  `sink_category` 经 config 透传（消除 wrapper 硬编码 'squad' 与 runner `--sink-category` 双源）；failed-row `started`
+  回退到 `completed`（不拉低 min(started) 灌水 operator span）；`_fetch_scoring_ground_truth` 加 source_example_id
+  唯一性 fail-closed；模块 docstring「does NOT scan」精确化为「不做 OPERATOR scan / 不 sink 自己」。
+- 未修（minor，非回归）：conn 单 close 模式与进程内臂一致，runner-wide try/finally 连接管理留作单独 refactor；
+  strict-attribution SystemExit vs sink-readback status=failure 的产物不对称是有意设计。
+- 本地：6 文件 py_compile 通过；provenance 5/5 + project_static 纯函数 17/17 绿。runner 集成测试需服务器
+  （psycopg/duckdb）。下一步：服务器 smoke（`--limit` 小规模）→ 再决定 full/三臂 1w+3f。

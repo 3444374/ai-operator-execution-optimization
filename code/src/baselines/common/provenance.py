@@ -11,6 +11,7 @@ ComparisonRole = Literal[
     "direct_client_control",
     "framework_native_baseline",
     "database_product_native_baseline",
+    "project_scheduled_method",
 ]
 
 
@@ -133,6 +134,30 @@ _ADAPTER_PROVENANCE = {
         formal_control_eligible=True,
         upstream_source="project_implemented (code/src/baselines/text/products/direct_client.py)",
         qualification_gate="request_equivalence_gate_and_same_endpoint_model_cap",
+    ),
+    "project_static": AdapterProvenance(
+        # The project's own frozen-best static-K method -- the METHOD UNDER TEST,
+        # neither a vendor/product baseline nor a project control. Distinct from
+        # direct_client_control (a bare-client control that isolates framework/
+        # scheduling overhead): project_static IS the paper's frozen static
+        # scheduler (Ray actor + static K/active-work + token-budget organizer)
+        # run via the existing profiler. formal_control_eligible=True here follows
+        # this codebase's operational meaning ("eligible to enter the formal
+        # comparison matrix"), NOT "is a control arm"; the project_scheduled_method
+        # role is the discriminator that keeps it out of control/baseline groupings.
+        comparison_role="project_scheduled_method",
+        implementation_provenance="project_frozen_static_profiler",
+        scheduler_owner="project_ray_static_k_and_active_work",
+        custom_scheduling_code=True,
+        formal_baseline_eligible=False,
+        formal_control_eligible=True,
+        upstream_source=(
+            "project_implemented (postgres_ai_operator_profile.py frozen "
+            "static-K + token-budget path, called via wrapper)"
+        ),
+        qualification_gate=(
+            "request_equivalence_gate_and_same_endpoint_model_cap_and_frozen_static_k"
+        ),
     ),
 }
 

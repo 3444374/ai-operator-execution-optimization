@@ -33,8 +33,16 @@ barrier arms (DuckDB-ai) and per-request arms (direct_client). The zero-error
 validity check is NOT weakened -- failed cells are fully retained and still
 feed EM/F1, failure rate, and successful/correct rows/s.
 
-Arms: ``duckdb_ai`` is implemented (reuses ``run_duckdb_ai_complete``); ``direct_client``
-and ``project_static`` raise NotImplementedError (added in later passes).
+Arms: ``duckdb_ai`` (in-process, reuses ``run_duckdb_ai_complete``) and
+``direct_client`` (in-process per-request HTTP) are implemented. ``project_static``
+is implemented as a SHELL-OUT: ``_run_project_static`` branches before the common
+scan and delegates scan+operator+sink to ``postgres_ai_operator_profile.py`` (the
+project's frozen-best static-K method), then merges the profiler's request-trace
+(timestamps/status/finish_reason) with a ``document_completions`` readback
+(output_text) into ``BaselineRequestResult``. It does not perform the OPERATOR scan
+(text/prompt -> model) or the sink itself; the runner performs only a
+scoring-only ground-truth read (doc_id, source_example_id, reference_answers)
+for EM/F1 and exactly-once verification.
 """
 
 from __future__ import annotations
@@ -80,6 +88,10 @@ from src.baselines.common.squad_identity import (  # noqa: E402
 from src.baselines.text.products.direct_client import (  # noqa: E402
     DirectClientConfig,
     run_direct_client,
+)
+from src.baselines.text.products.project_static import (  # noqa: E402
+    ProjectStaticConfig,
+    run_project_static,
 )
 from src.baselines.text.products.duckdb_ai import (  # noqa: E402
     DuckDBAiConfig,
@@ -137,6 +149,53 @@ def _scan_workload(conn, workload: str, limit: int = 0) -> tuple[list[dict], dic
         )
         sidecar[doc_id] = (tenant_id, category)
     return rows, sidecar, time.time() - t0
+
+
+def _fetch_scoring_ground_truth(
+    conn, workload: str, limit: int, importer_count: int,
+) -> tuple[dict[int, str], dict[str, list[str]]]:
+    """Lightweight scoring-only read for the project_static arm.
+
+    Returns ``(doc_id -> source_example_id, source_example_id -> reference_answers)``.
+    This is NOT the operator prompt scan (the profiler owns that); it only fetches
+    the ground truth the runner needs to score EM/F1 and verify exactly-once for
+    the arm whose execution it did not perform itself. ``limit > 0`` bounds the read
+    to match the profiler's ``--total-rows`` smoke scan.
+    """
+
+    with conn.cursor() as cur:
+        if limit > 0:
+            cur.execute(
+                "SELECT doc_id, source_example_id, reference_answers "
+                "FROM documents WHERE workload_name = %s "
+                "ORDER BY doc_id LIMIT %s",
+                (workload, min(limit, importer_count)),
+            )
+        else:
+            cur.execute(
+                "SELECT doc_id, source_example_id, reference_answers "
+                "FROM documents WHERE workload_name = %s ORDER BY doc_id",
+                (workload,),
+            )
+        fetched = cur.fetchall()
+    doc_to_source: dict[int, str] = {}
+    references: dict[str, list[str]] = {}
+    for doc_id, source_id, reference_answers in fetched:
+        answers = reference_answers
+        if isinstance(answers, str):
+            answers = json.loads(answers)
+        doc_to_source[int(doc_id)] = source_id
+        references[source_id] = list(answers)
+    # Defense-in-depth (mirrors _smoke_integrity for the in-process arms): if two
+    # doc_ids share a source_example_id, the predictions dict (keyed by source_id)
+    # would silently overwrite one row and EM/F1 would be scored against the wrong
+    # reference. SQuAD source_ids are unique by construction; fail closed otherwise.
+    if len(set(doc_to_source.values())) != len(doc_to_source):
+        raise SystemExit(
+            "FAIL: scoring ground truth has duplicate source_example_id across "
+            "doc_ids (would mis-key EM/F1 predictions)"
+        )
+    return doc_to_source, references
 
 
 def _results_to_sink_payload(
@@ -341,6 +400,33 @@ def _write_json(path: Path, payload: dict) -> None:
     )
 
 
+# The two CSV writers below mirror the inline fieldnames in _run. _run_project_static
+# uses them; _run keeps its inline blocks (untouched). A future cleanup could unify.
+_PER_ROW_FIELDS = [
+    "source_example_id", "status", "error", "output_chars",
+    "prediction", "reference_answers",
+    "finish_reason", "output_tokens",
+    "submitted_at_s", "started_at_s", "completed_at_s",
+    "queue_wait_s", "latency_s",
+    "server_version", "pgvector_version",
+]
+_SUNK_STATUS_FIELDS = ["doc_id", "source_example_id", "status", "error", "output_chars"]
+
+
+def _write_per_row_evidence(output_dir: Path, evidence_rows: list[dict]) -> None:
+    with (output_dir / "per_row_evidence.csv").open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=_PER_ROW_FIELDS)
+        writer.writeheader()
+        writer.writerows(evidence_rows)
+
+
+def _write_sunk_status(output_dir: Path, sunk_status_rows: list[dict]) -> None:
+    with (output_dir / "sunk_status.csv").open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=_SUNK_STATUS_FIELDS)
+        writer.writeheader()
+        writer.writerows(sunk_status_rows)
+
+
 def _write_failure_report(output_dir, args, stage, exc, started_at) -> None:
     existing = sorted(p.name for p in output_dir.iterdir()) if output_dir.exists() else []
     endpoint_base = _endpoint_base_url(args.endpoint_url)
@@ -383,6 +469,17 @@ def _parse(argv: list[str]) -> argparse.Namespace:
                    help="shared per-request timeout for BOTH arms (formal comparison "
                         "must freeze the same value); default 120 matches DuckDB's "
                         "extension default.")
+    # project_static-only args (the frozen text-track static values). Required only
+    # when --arm project_static; ignored otherwise. The wrapper rejects zero/negative.
+    p.add_argument("--token-budget", type=int, default=0,
+                   help="project_static only: frozen token-budget organizer value.")
+    p.add_argument("--project-max-inflight", type=int, default=0,
+                   help="project_static only: frozen per-endpoint static K (admission scope per_endpoint).")
+    p.add_argument("--project-ray-batch-rows", type=int, default=64,
+                   help="project_static only: hard per-submission row cap under token_budget.")
+    p.add_argument("--project-python", default="",
+                   help="project_static only: python executable with project deps (ray/daft) "
+                        "to run postgres_ai_operator_profile.py; empty = sys.executable.")
     p.add_argument("--service-prefix-caching", choices=("enabled", "disabled"),
                    default="enabled")
     p.add_argument("--service-config-hash", default=None)
@@ -404,14 +501,19 @@ def _parse(argv: list[str]) -> argparse.Namespace:
 
 
 def _run(args: argparse.Namespace, output_dir: Path) -> int:
+    if args.arm == "project_static":
+        # project_static delegates scan + operator + sink to the profiler
+        # (run_project_static); it must branch BEFORE this runner's common scan
+        # path to avoid double-scan / double-writeback.
+        return _run_project_static(args, output_dir)
     if args.arm not in ("duckdb_ai", "direct_client"):
         raise NotImplementedError(
-            f"arm {args.arm!r} not implemented (duckdb_ai, direct_client available)"
+            f"arm {args.arm!r} not implemented (duckdb_ai, direct_client, project_static available)"
         )
     # Per-arm provenance (scheduler owner / implementation source / formal
     # eligibility) is written into EVERY report so a reader can audit who owned
-    # execution+scheduling without re-reading the adapter source. project_static
-    # is rejected above before this lookup (it has no provenance entry yet).
+    # execution+scheduling without re-re-reading the adapter source. project_static
+    # is handled above via _run_project_static (which looks up its own provenance).
     arm_provenance = adapter_provenance(args.arm)
     importer = _load_importer_provenance(args.importer_provenance)
     expected_content_hash = importer["content_hash"]
@@ -723,6 +825,318 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             "readback": sink_readback,
         },
         "finish_reason": _finish_reason_summary(results, args.arm),
+        "identity": {
+            "git_commit": _git_commit(CODE_ROOT),
+            "model": args.model,
+            "endpoint": redact_database_url(endpoint_base),
+            "workload": args.workload_name,
+            **arm_identity,
+            "vllm_version": _vllm_version(endpoint_base),
+            "service_prefix_caching": args.service_prefix_caching,
+            "service_config_hash": args.service_config_hash or "not_provided",
+            **pg_identity,
+            **_gpu_identity(),
+            "metrics_snapshot": {
+                "before": _scrape_status(metrics_before),
+                "before_idle": metrics_before_idle,
+                "after": _scrape_status(metrics_after),
+            },
+        },
+        "evidence_files": {
+            "per_row_csv": "per_row_evidence.csv",
+            "sunk_status_csv": "sunk_status.csv",
+        },
+        "command": redact_argument_list(list(sys.argv)),
+    }
+    _write_json(output_dir / "report.json", report)
+    print(json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False))
+    return 0 if passed else 1
+
+
+def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
+    """project_static arm: shell out to the profiler (frozen static-K), assemble.
+
+    The profiler owns PG scan -> Daft token-budget organizer -> Ray actor ->
+    static per-endpoint K admission + active-work -> vLLM -> unified sink
+    (``document_completions``). This function invokes ``run_project_static`` (which
+    subprocess-calls ``postgres_ai_operator_profile.py``), then merges the profiler's
+    request-trace (timestamps/status/finish_reason) with a ``document_completions``
+    readback (output_text) into ``BaselineRequestResult`` and assembles the SAME
+    report shape as the in-process arms. It does NOT scan prompts or sink itself --
+    the profiler did both (branching here before the common scan avoids double-scan
+    / double-writeback).
+    """
+
+    if args.token_budget <= 0 or args.project_max_inflight <= 0:
+        raise SystemExit(
+            "FAIL: --arm project_static requires --token-budget > 0 and "
+            "--project-max-inflight > 0 (the frozen static-K values)"
+        )
+    if args.writeback_mode == "none":
+        # output_text is only recoverable from the profiler's sink readback; with
+        # writeback_mode=none every output_text would be NULL and the run would
+        # fail with a misleading reason. The sink is part of the database-E2E
+        # boundary, so project_static requires json_text.
+        raise SystemExit(
+            "FAIL: --arm project_static requires --writeback-mode json_text "
+            "(output_text is only recoverable from the profiler's sink; "
+            "writeback_mode=none leaves every output_text=NULL and violates "
+            "the database-E2E sink boundary)"
+        )
+    arm_provenance = adapter_provenance("project_static")
+    importer = _load_importer_provenance(args.importer_provenance)
+    expected_content_hash = importer["content_hash"]
+    expected_count = int(importer.get("sample_count", EXPECTED_DEV_COUNT))
+
+    import psycopg  # noqa: F401
+    pg_identity = _pg_server_identity(args.database_url)
+    server_version = pg_identity.get("pg_server_version", "unknown")
+    pgvector_version = pg_identity.get("pgvector_version", "unknown")
+    conn = psycopg.connect(args.database_url)
+    endpoint_base = _endpoint_base_url(args.endpoint_url)
+
+    config = ProjectStaticConfig(
+        database_url=args.database_url,
+        workload_name=args.workload_name,
+        endpoint_url=args.endpoint_url,
+        model=args.model, max_tokens=args.max_tokens,
+        token_budget=args.token_budget,
+        max_inflight=args.project_max_inflight,
+        api_key=args.api_key,
+        writeback_mode=args.writeback_mode,
+        write_batch_rows=args.write_batch_rows,
+        sink_category=args.sink_category,
+        total_rows=args.limit if args.limit > 0 else expected_count,
+        ray_batch_rows=args.project_ray_batch_rows,
+        request_timeout_s=args.request_timeout_s,
+        python_executable=args.project_python,
+    )
+    arm_identity = {
+        "arm_protocol": "project_ray_static_k",
+        "transport": "ray_actor",
+        "concurrency": args.project_max_inflight,
+        "token_budget": args.token_budget,
+        "admission_scope": "per_endpoint",
+        "profiler_script": config.profiler_script,
+    }
+
+    metrics_before = scrape_prometheus_metrics(args.metrics_url)
+    metrics_before_idle, _ = _endpoint_idle(metrics_before)
+    wrapper_t0 = time.time()
+    run = run_project_static(config, output_dir / "_profiler_work", conn)
+    wrapper_wall_s = time.time() - wrapper_t0
+    time.sleep(max(0.0, args.metrics_settle_s))
+    metrics_after = scrape_prometheus_metrics(args.metrics_url)
+
+    if run.exit_code != 0 or not run.formal_row_found:
+        conn.close()
+        raise SystemExit(
+            f"FAIL: project_static profiler did not produce a formal ok run "
+            f"(exit={run.exit_code}, formal_ok={run.formal_row_found}); "
+            f"stderr tail: {redact_text(run.stderr_tail)}"
+        )
+    results = run.results
+    operator_only_jct, setup_s = _operator_span(results)
+
+    # Scoring ground truth (lightweight; NOT the operator scan the profiler owns)
+    # + count/exactly-once verification against the workload doc_id set.
+    doc_to_source, references = _fetch_scoring_ground_truth(
+        conn, args.workload_name, args.limit, expected_count,
+    )
+    input_doc_ids = set(doc_to_source)
+    result_doc_ids = {r.doc_id for r in results}
+    expected_rows = min(args.limit, expected_count) if args.limit > 0 else expected_count
+    count_ok = len(results) == expected_rows
+    exactly_once = (
+        len(results) == len(result_doc_ids)
+        and result_doc_ids == input_doc_ids
+        and len(doc_to_source) == len(input_doc_ids)
+        and all(doc_to_source.values())
+    )
+    if not (count_ok and exactly_once):
+        conn.close()
+        raise SystemExit(
+            f"FAIL: project_static count/exactly-once violated "
+            f"(got {len(results)} results, expected {expected_rows}; "
+            f"result_doc_ids==workload_doc_ids: {result_doc_ids == input_doc_ids})"
+        )
+    integrity_label = (
+        f"verified_smoke_limit_{args.limit}_via_profiler_scan"
+        if args.limit > 0 else "verified_via_profiler_scan_count"
+    )
+
+    # Verify the profiler's sink persisted expected content (content-digest readback).
+    sink_readback = (
+        _sink_readback(conn, list(run.sunk_pairs), args.sink_category)
+        if args.writeback_mode != "none"
+        else {"skipped": "writeback_mode=none"}
+    )
+    conn.close()
+
+    predictions: dict[str, str | None] = {}
+    evidence_rows = []
+    sunk_status_rows = []
+    for r in results:
+        source_id = doc_to_source.get(r.doc_id)
+        is_ok = r.status == "completed" and not r.error and r.output_text is not None
+        predictions[source_id] = r.output_text if is_ok else None
+        evidence_rows.append({
+            "source_example_id": source_id,
+            "status": r.status,
+            "error": redact_text(r.error or ""),
+            "output_chars": len(r.output_text) if r.output_text else 0,
+            "prediction": r.output_text or "",
+            "reference_answers": json.dumps(
+                references.get(source_id, []), ensure_ascii=False
+            ),
+            "finish_reason": r.finish_reason or "",
+            "output_tokens": r.output_tokens,
+            "submitted_at_s": round(r.submitted_at_s, 6),
+            "started_at_s": round(r.started_at_s, 6),
+            "completed_at_s": round(r.completed_at_s, 6),
+            "queue_wait_s": round(r.started_at_s - r.submitted_at_s, 6),
+            "latency_s": round(r.completed_at_s - r.started_at_s, 6),
+            "server_version": server_version,
+            "pgvector_version": pgvector_version,
+        })
+        sunk_status_rows.append({
+            "doc_id": r.doc_id,
+            "source_example_id": source_id,
+            "status": r.status,
+            "error": redact_text(r.error or ""),
+            "output_chars": len(r.output_text) if r.output_text else 0,
+        })
+    _write_per_row_evidence(output_dir, evidence_rows)
+    _write_sunk_status(output_dir, sunk_status_rows)
+
+    quality = squad_quality_metrics(predictions, references)
+    success_count = sum(
+        1 for r in results
+        if r.status == "completed" and not r.error and r.output_text is not None
+    )
+    null_response = sum(1 for r in results if r.output_text is None)
+    error_count = sum(1 for r in results if r.status != "completed" or r.error)
+    max_tokens_errors = sum(
+        1 for r in results if r.error and "max_tokens" in (r.error or "")
+    )
+    truncation_count = sum(
+        1 for r in results
+        if r.finish_reason == "length" or (r.error and "max_tokens" in (r.error or ""))
+    )
+    readback_ok = _readback_ok(sink_readback, args.writeback_mode)
+    passed = error_count == 0 and null_response == 0 and readback_ok
+    _reasons: list[str] = []
+    if error_count or null_response:
+        _reasons.append(
+            f"{error_count} row-level error(s), {null_response} NULL response(s) "
+            f"(of which {max_tokens_errors} identifiable max_tokens error(s))"
+        )
+    if not readback_ok:
+        _reasons.append(
+            "sink readback failed: "
+            + (sink_readback.get("error") or "content/count mismatch")
+        )
+    failure_reason = "; ".join(_reasons) if _reasons else None
+
+    attribution, attribution_ok = _assess_attribution(
+        metrics_before, metrics_after, requests_sent=len(results)
+    )
+    if args.strict_attribution and not attribution_ok:
+        raise SystemExit(
+            "FAIL: --strict-attribution and vLLM counter attribution failed: "
+            + "; ".join(attribution["reasons"])
+        )
+    if attribution_ok:
+        prompt_delta = int(_delta(metrics_before, metrics_after, "vllm:prompt_tokens_total"))
+        gen_delta = int(_delta(metrics_before, metrics_after, "vllm:generation_tokens_total"))
+        pc_queries = int(_delta(metrics_before, metrics_after, "vllm:prefix_cache_queries_total"))
+        pc_hits = int(_delta(metrics_before, metrics_after, "vllm:prefix_cache_hits_total"))
+        vllm_metrics = {
+            "attribution": "attributable",
+            "prompt_tokens_delta": prompt_delta,
+            "generation_tokens_delta": gen_delta,
+            "prefix_cache_queries_delta": pc_queries,
+            "prefix_cache_hits_delta": pc_hits,
+            "prefix_cache_hit_rate": round(pc_hits / pc_queries, 4) if pc_queries else 0.0,
+        }
+    else:
+        vllm_metrics = {"attribution": "unavailable", "reasons": attribution["reasons"]}
+
+    t = run.timing
+    construct_s = (
+        t.get("arrow_build_s", 0.0) + t.get("organizer_from_arrow_s", 0.0)
+        + t.get("organizer_plan_s", 0.0) + t.get("organizer_collect_s", 0.0)
+    )
+    database_e2e_wall_s = t.get("e2e_s") or wrapper_wall_s
+    runner_metrics = _runner_metrics(
+        em_rows=quality["squad_exact_match_rows"],
+        success_count=success_count,
+        row_count=len(results),
+        error_count=error_count, null_count=null_response,
+        max_tokens_errors=max_tokens_errors,
+        truncation_count=truncation_count,
+        wall_s=database_e2e_wall_s,
+        sunk_rows=len(run.sunk_pairs),
+    )
+
+    report = {
+        "runner": "squad_database_e2e",
+        "role": "database_e2e_boundary",
+        "arm": "project_static",
+        "provenance": arm_provenance.summary_fields(),
+        "status": "success" if passed else "failure",
+        "failure_reason": failure_reason,
+        "single_run_valid": bool(passed),
+        "formal_run_gate_passed": False,
+        "formal_run_gate_note": (
+            "single-shot runner; the 1-warmup+3-formal repeat gate is a "
+            "separate protocol not implemented here"
+        ),
+        "comparison_admission": "pending_formal_repeat",
+        "cap": args.max_tokens,
+        "row_count": len(results),
+        "exactly_once": exactly_once,
+        "success_count": success_count,
+        "null_response_count": null_response,
+        "error_count": error_count,
+        "max_tokens_error_count": max_tokens_errors,
+        "truncation_count": truncation_count,
+        "workload_integrity": integrity_label,
+        # The profiler scanned; the runner verifies via count + exactly-once. The
+        # importer content_hash is recorded for reference (the runner did not
+        # re-hash the operator scan for this arm -- the profiler owns it).
+        "workload_content_hash": expected_content_hash,
+        "importer_content_hash": expected_content_hash,
+        "timing": {
+            "boundary": "database_e2e",
+            "database_e2e_wall_s": round(database_e2e_wall_s, 3),
+            "scan_s": round(t.get("db_fetch_s", 0.0), 3),
+            "construct_s": round(construct_s, 3),
+            "adapter_wall_s": round(t.get("operator_wall_s", 0.0), 3),
+            "operator_only_jct_s": round(operator_only_jct, 3),
+            "setup_s": round(setup_s, 3),
+            "sink_s": round(t.get("writeback_s", 0.0), 3),
+            "wrapper_wall_s": round(wrapper_wall_s, 3),
+            "note": (
+                "project_static timing sourced from the profiler --output CSV row. "
+                "construct_s is synthesized (Arrow build + organizer stages) because "
+                "the profiler has no ChatRequest-construction step; the profiler owns "
+                "scan+sink, so segments are structurally different from the in-process "
+                "arms. database_e2e_wall_s (profiler e2e_s) IS comparable across arms."
+            ),
+        },
+        "runner_metrics": runner_metrics,
+        "squad_quality": quality,
+        "vllm_metrics": vllm_metrics,
+        "attribution": attribution,
+        "sink": {
+            "writeback_mode": args.writeback_mode,
+            "write_batch_rows": args.write_batch_rows,
+            "table": "document_completions",
+            "rows_written": len(run.sunk_pairs),
+            "readback": sink_readback,
+        },
+        "finish_reason": _finish_reason_summary(results, "project_static"),
         "identity": {
             "git_commit": _git_commit(CODE_ROOT),
             "model": args.model,

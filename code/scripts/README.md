@@ -1050,16 +1050,20 @@ python code/scripts/baselines/squad_truncation_diagnostic.py \
 ```
 
 `baselines/squad_database_e2e_runner.py` 是 SQuAD bounded-output 的 **database-E2E 顶层 runner**
-（DuckDB-ai 臂 + `direct_client` 臂已实现；`project_static` 臂留 stub）。它把 operator-only 的 adapter
-包进一个 E2E 计时墙：持久表扫描 → prompt 构造 → adapter 调用（DuckDB-ai 用 `run_duckdb_ai_complete`，
-direct_client 用 `code/src/baselines/text/products/direct_client.py` 的 `run_direct_client`；operator-only
-时间戳保留）→ 统一 sink（`write_completions` → `document_completions`，`json_text`）。runner 层算主 headline
-`correct_rows_per_s`（= EM 行 ÷ `database_e2e_wall_s`）、`successful_rows_per_s`、`failure_rate`，并对所有臂统一
-报 `truncation_count`/`truncation_rate`（`finish_reason=='length'` 或 error 含 `max_tokens`，arm-agnostic）；
+（三臂均已实现：duckdb_ai/direct_client 进程内，project_static 经 profiler 子进程）。duckdb_ai/direct_client 把
+operator-only 的 adapter 包进一个 E2E 计时墙：持久表扫描 → prompt 构造 → adapter 调用（DuckDB-ai 用
+`run_duckdb_ai_complete`，direct_client 用 `code/src/baselines/text/products/direct_client.py` 的 `run_direct_client`；
+operator-only 时间戳保留）→ 统一 sink（`write_completions` → `document_completions`，`json_text`）。
+**`project_static` 臂结构不同**：runner 在通用 scan 前分流，子进程调用 `postgres_ai_operator_profile.py` 跑冻结最佳
+静态 K（`--token-budget`/`--project-max-inflight`/`--admission-scope per_endpoint`），profiler 独占 scan+organize+
+model+sink；wrapper（`code/src/baselines/text/products/project_static.py`）合并 request-trace(时间戳/status/finish_reason)
++ `document_completions` readback(output_text) → `BaselineRequestResult`，计时段来自 profiler `--output` CSV。
+runner 层算主 headline `correct_rows_per_s`（= EM 行 ÷ `database_e2e_wall_s`）、`successful_rows_per_s`、`failure_rate`，
+并对所有臂统一报 `truncation_count`/`truncation_rate`（`finish_reason=='length'` 或 error 含 `max_tokens`，arm-agnostic）；
 状态字段解耦为 `single_run_valid` / `formal_run_gate_passed`（单次 runner 恒 false）/ `comparison_admission`
 （`pending_formal_repeat`，单次跑不授予/排除正式准入），不削弱 zero-error validity。两臂共享 `--request-timeout-s`
-（默认 120s），sink 失败或 readback 不匹配即 fail-closed。不注入项目 credit/actor/
-backpressure；DuckDB 扩展继续拥有 batching/concurrency。冻结服务配置见
+（默认 120s），sink 失败或 readback 不匹配即 fail-closed。进程内臂不注入项目 credit/actor/backpressure；
+project_static IS 项目调度（经 profiler）。冻结服务配置见
 `deploy/autodl/dual_gpu_squad_database_e2e.example.json`（含支撑 `--service-config-hash` 的真实 vLLM
 配置，REPLACE_ME 字段正式前填）。示例：
 
@@ -1080,3 +1084,30 @@ python code/scripts/baselines/squad_database_e2e_runner.py --arm duckdb_ai \
 （含 `server_version`/`pgvector_version`，EM/F1 可复算）、失败时 `failure_report.json`。修改 runner
 或 `_results_to_sink_payload`/`_runner_metrics` 后运行
 `python -m unittest tests.baselines.test_squad_database_e2e_runner`。
+
+`--arm project_static` 结构不同：runner 在通用 scan 前分流，子进程调用 `postgres_ai_operator_profile.py`
+跑冻结最佳静态 K，profiler 独占 scan+sink；wrapper 合并 request-trace + `document_completions` readback。
+必须传冻结值 `--token-budget`/`--project-max-inflight`、带项目依赖的 `--project-python`、`--writeback-mode json_text`
+（output_text 只能从 profiler 的 sink 读回）。示例（smoke 用 `--limit`）：
+
+```bash
+python code/scripts/baselines/squad_database_e2e_runner.py --arm project_static \
+  --database-url "$DATABASE_URL" --workload-name squad_v11_dev_short_answer \
+  --importer-provenance feasibility/results/squad_v11_dev_import_20260805/provenance.json \
+  --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
+  --metrics-url http://127.0.0.1:8000/metrics \
+  --model qwen2.5-7b --max-tokens 64 \
+  --token-budget <frozen-token-budget> --project-max-inflight 8 \
+  --project-python /root/miniconda3/bin/python \
+  --service-prefix-caching enabled --service-config-hash <vllm_config_hash> \
+  --metrics-settle-s 5 --strict-attribution \
+  --writeback-mode json_text --write-batch-rows 500 \
+  --limit 256 \
+  --output-dir feasibility/results/squad_database_e2e_project_static_smoke_REPLACE_ME --force
+```
+
+project_static 的 `report.json` 计时段来自 profiler `--output` CSV（`e2e_s`→`database_e2e_wall_s`、
+`db_fetch_s`→`scan_s`、`operator_wall_s`→`adapter_wall_s`、`writeback_s`→`sink_s`；`construct_s` 由 Arrow build
++ organizer 段合成，与进程内臂结构不同）；`_profiler_work/` 子目录存 profiler 的 request-trace + summary CSV。
+修改 `project_static.py` 的 argv 或 CSV 合并后运行
+`python -m unittest tests.baselines.text.test_project_static tests.baselines.text.test_baseline_provenance`。
