@@ -35,18 +35,24 @@ _REPO_TMP = Path(__file__).resolve().parent / "_e2e_runner_tmp"
 
 @contextlib.contextmanager
 def _scratch_dir():
+    """A scratch dir that also works when the system temp is not writable.
+
+    Decide the directory BEFORE yielding (so a PermissionError from the system
+    temp is handled once, at mkdtemp time) and clean up in ``finally`` -- never
+    catch test-body exceptions after ``yield``, otherwise a test that raises
+    PermissionError inside the ``with`` would be caught by an outer except and
+    trigger a second yield (``RuntimeError: generator didn't stop after throw``).
+    """
+
     try:
-        with tempfile.TemporaryDirectory() as td:
-            yield Path(td)
-        return
+        path = Path(tempfile.mkdtemp())
     except (OSError, PermissionError):
-        pass
-    _REPO_TMP.mkdir(parents=True, exist_ok=True)
-    d = Path(tempfile.mkdtemp(dir=str(_REPO_TMP)))
+        _REPO_TMP.mkdir(parents=True, exist_ok=True)
+        path = Path(tempfile.mkdtemp(dir=str(_REPO_TMP)))
     try:
-        yield d
+        yield path
     finally:
-        shutil.rmtree(d, ignore_errors=True)
+        shutil.rmtree(path, ignore_errors=True)
 
 
 def _row(doc_id: int, sid: str, text: str = "prompt", answers: list[str] | None = None,
@@ -204,6 +210,8 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
 
             with patch("squad_database_e2e_runner._scan_workload", side_effect=fake_scan), \
                  patch("squad_database_e2e_runner._sink_write", side_effect=fake_sink), \
+                 patch("squad_database_e2e_runner._sink_readback",
+                       return_value={"expected": 4, "present": 4, "matched": True}), \
                  patch("squad_database_e2e_runner.run_duckdb_ai_complete", side_effect=fake_complete), \
                  patch("squad_database_e2e_runner.scrape_prometheus_metrics", side_effect=fake_scrape), \
                  patch("squad_database_e2e_runner.inspect_duckdb_ai_runtime",
@@ -220,7 +228,7 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
                 rc = runner.main(argv)
             report = json.loads((out / "report.json").read_text(encoding="utf-8"))
             import csv as _csv
-            with (out / "sink_audit.csv").open(encoding="utf-8") as f:
+            with (out / "sunk_status.csv").open(encoding="utf-8") as f:
                 sink_header = next(_csv.reader(f))
             return rc, report, sink_header
 
@@ -240,7 +248,9 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
         self.assertIn("correct_rows_per_s", report["runner_metrics"])
         # sink audit recovers per-row status (so sunk empty strings are traceable)
         self.assertIn("doc_id", sink_header)
-        self.assertEqual(report["evidence_files"]["sink_audit_csv"], "sink_audit.csv")
+        self.assertEqual(report["evidence_files"]["sunk_status_csv"], "sunk_status.csv")
+        # post-wall DB readback verifies the sink actually persisted
+        self.assertTrue(report["sink"]["readback"]["matched"])
         self.assertEqual(report["sink"]["table"], "document_completions")
 
     def test_fail_closed_keeps_state_decoupled(self) -> None:

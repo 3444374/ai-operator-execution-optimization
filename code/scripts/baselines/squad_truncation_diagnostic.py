@@ -144,6 +144,21 @@ def _duckdb_once(endpoint_base_url: str, model: str, api_key: str, prompt: str,
         conn.close()
 
 
+def _direct_all_match(direct_runs: list[dict], want: str) -> bool:
+    """True iff EVERY repeat is HTTP 200 AND all finish with ``want``.
+
+    Stability requires unanimity: a partial run (e.g. 1 success + 2 HTTP
+    failures) must NOT be judged stable -- an earlier version that filtered to
+    HTTP-200 rows and all()-ed those would accept a single survivor. Pure.
+    """
+
+    return (
+        len(direct_runs) > 0
+        and all(r.get("http_status") == 200 for r in direct_runs)
+        and all(r.get("finish_reason") == want for r in direct_runs)
+    )
+
+
 def _parse(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--source-example-id", required=True)
@@ -190,25 +205,16 @@ def main(argv=None) -> int:
             duckdb_runs[cap][0].get("request_body_json") if duckdb_runs[cap] else None
         )
 
-    # Decision summary. Guard every all() against the all-HTTP-failed case
-    # (an empty filtered list would make all() vacuously True); require >=1
-    # HTTP-200 direct call before claiming a stable finish_reason.
-    def _direct_ok(direct_runs: list[dict], want: str) -> bool:
-        ok_runs = [r for r in direct_runs if r.get("http_status") == 200]
-        return bool(ok_runs) and all(r.get("finish_reason") == want for r in ok_runs)
-
+    # Decision summary. Stability requires EVERY repeat to be HTTP 200 AND the
+    # same finish_reason (unanimity), not just >=1 survivor. A partial run
+    # (1 success + N failures) or an all-HTTP-failed run is "cannot decide".
     d64 = direct.get(64, [])
-    d64_ok = [r for r in d64 if r.get("http_status") == 200]
-    stable_length_at_64 = bool(d64_ok) and all(
-        r.get("finish_reason") == "length" for r in d64_ok
+    d64_200 = [r for r in d64 if r.get("http_status") == 200]
+    stable_length_at_64 = _direct_all_match(d64, "length")
+    higher_stop = any(
+        cap > 64 and _direct_all_match(direct.get(cap, []), "stop") for cap in caps
     )
-    higher_stop = False
-    for cap in caps:
-        if cap <= 64:
-            continue
-        if _direct_ok(direct.get(cap, []), "stop"):
-            higher_stop = True
-            break
+    direct_failures_at_cap64 = len(d64) - len(d64_200)
     duckdb_64_null = bool(duckdb_runs.get(64)) and duckdb_runs[64] and all(
         (r.get("response") is None) for r in duckdb_runs[64]
     )
@@ -225,8 +231,9 @@ def main(argv=None) -> int:
         "duckdb_ai_try_complete": duckdb_runs,
         "duckdb_request_body_per_cap": duckdb_req_body,
         "decision": {
-            "direct_http_200_at_cap64": len(d64_ok),
-            "direct_http_all_failed_at_cap64": len(d64_ok) == 0,
+            "direct_http_200_at_cap64": len(d64_200),
+            "direct_http_failures_at_cap64": direct_failures_at_cap64,
+            "direct_http_all_failed_at_cap64": len(d64_200) == 0,
             "stable_length_at_cap64": stable_length_at_64,
             "higher_cap_stop": higher_stop,
             "duckdb_cap64_null": duckdb_64_null,
@@ -234,7 +241,9 @@ def main(argv=None) -> int:
                 "model output genuinely overlong (stable) + DuckDB maps to NULL"
                 if (stable_length_at_64 and higher_stop and duckdb_64_null)
                 else "no successful direct call at cap=64 -- cannot decide stability"
-                if not d64_ok
+                if not d64_200
+                else "partial direct HTTP failure at cap=64 -- cannot decide stability"
+                if direct_failures_at_cap64 > 0
                 else "see per-run finish_reasons; cap=64 not stably length -> occasional tail risk"
                 if not stable_length_at_64
                 else "partial -- inspect runs"

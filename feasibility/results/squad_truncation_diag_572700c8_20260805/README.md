@@ -80,7 +80,10 @@ correct_rows/s、exactly-once 与完整失败证据；不以 raw rows/s 单独�
 - **DuckDB 调用次数**：旧版每个 cap 实际调用 `repeats+1` 次（多 1 次仅为抓 `ai_completion_request_json`）。
   已修为恰好 `repeats` 次（从首个 repeat 抓请求体）。本诊断 `repeats=3`，旧版实际 4 次/cap——不影响
   `decision`（基于 direct 的 finish_reason 与 DuckDB 的 response/error，与调用次数无关）。
-- **`all()` 真空风险**：旧版 `decision` 的 `stable_length_at_cap64` / `higher_cap_stop` 在 direct 全 HTTP
-  失败时会空真空成立。已加 `direct_http_200_at_cap64` 计数与"无成功直连则不可判定"分支。
+- **`all()` 真空 + partial-failure 误判**：旧版 `decision` 的 `stable_length_at_cap64` /
+  `higher_cap_stop` 先是只过滤 HTTP-200 行再 `all()`（全失败时空真空），后又只要求"≥1 成功"——
+  1 成功 + 2 失败仍会被误判 stable。已改为 **要求全部 repeats 都 HTTP 200 且 finish_reason 一致**
+  （纯函数 `_direct_all_match`，单测覆盖 partial/all-fail/mixed），并加 `direct_http_failures_at_cap64`
+  与"partial direct HTTP failure / 无成功直连 → 不可判定"分支。
 
 本次诊断 direct 调用全部 HTTP 200（3×3 成功），故**结论不受影响**：cap=64 不可复现截断，记为偶发、机制未定。

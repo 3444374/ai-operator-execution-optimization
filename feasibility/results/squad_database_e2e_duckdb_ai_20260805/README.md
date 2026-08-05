@@ -49,12 +49,16 @@ PG 连接建立按连接池惯例算 setup（不计入墙）；DuckDB 连接+扩
 |---|---|---|---|---|---|
 | **93.899** | 0.143 | 0.231 | 93.212 | 87.835 | 0.258 |
 
-> **关键观察**：DuckDB-ai 臂的 database 开销（scan+construct+sink ≈ **0.63s**）< E2E wall 的 **1%**——
-> 模型调用（adapter）独占 99%。这是 DuckDB-ai 的 barrier 执行模型决定的（一条 set-oriented SELECT 跑完
+> **关键观察**：DuckDB-ai 臂的 database 开销（scan+construct+sink ≈ **0.63s**）< E2E wall 的 **1%**。
+> **adapter 段占 wall 的 99.27%（93.212/93.899），其中 operator query barrier（min started → max completed）
+> 占 93.54%（87.835/93.899）**——adapter 含 setup（≈5.273s）+ DuckDB 执行 + HTTP + 排队 + 模型服务，
+> **不能单独归因给"模型调用"**。这是 DuckDB-ai 的 barrier 执行模型决定的（一条 set-oriented SELECT 跑完
 > 10570 次模型调用，scan/sink 相对可忽略）。direct_client/project 臂的 E2E 拆分可能不同（待补）。
 
 **runner 层指标**：`correct_rows_per_s` **90.4165**（主 headline）｜`successful_rows_per_s` 112.5573｜
-`raw_rows_per_s` 112.568（不作排名键）｜`failure_rate` 0.000189｜sunk 10570。
+`raw_rows_per_s` 112.568（不作排名键）｜`failure_rate` **0.0000946**（去重失败行 1/10570；
+`error_rate`/`null_rate`/`max_tokens_rate` 各 0.0000946，允许重叠）｜sunk 10570（`report.json` 原值
+0.000189 为双计，已订正，见 §8）。
 
 **正确性/语义**：EM **80.32166509%**（8490/10570，missing 1）｜token-F1 **89.41832377%**｜
 exactly-once True｜success 10569 / error 1 / NULL 1 / max_tokens 1。
@@ -63,12 +67,15 @@ exactly-once True｜success 10569 / error 1 / NULL 1 / max_tokens 1。
 
 ## 6. 结果解释
 
-- **事实**：DuckDB-ai 臂全量 10570 的 database-E2E wall 93.9s，其中模型调用 93.2s（99%），scan/construct/sink
-  合计 0.63s（<1%）。整集 `correct_rows/s = 90.42`、EM 80.32%（独立复算一致）。1 行偶发 max_tokens 截断
-  → fail-closed 标 failure（与 full capability gate 同源、机制未定的生成尾部事件）。
-- **状态字段（分开）**：`capability_gate_status=failure` / `formal_run_gate_passed=false` /
-  `comparison_admission=eligible_with_documented_failure`。zero-error validity gate **未被削弱**；失败 cell
-  完整保留并仍计入 EM/F1、failure rate、successful/correct rows/s，但不冒充通过 validity gate 的 headline。
+- **事实**：DuckDB-ai 臂全量 10570 的 database-E2E wall 93.9s；**adapter 段 93.2s（占 wall 99.27%，
+  含 setup+DuckDB 执行+HTTP+排队+模型服务，不能单独归因给"模型调用"）**，其中 operator query barrier
+  87.8s（93.54%）；scan/construct/sink 合计 0.63s（<1%）。整集 `correct_rows/s = 90.42`、EM 80.32%（独立
+  复算一致）。1 行偶发 max_tokens 截断 → fail-closed 标 failure（与 full capability gate 同源、机制未定）。
+- **状态字段（订正后解耦，见 §8）**：`single_run_valid=false`（本次 1 失败行）/ `formal_run_gate_passed=false`
+  （单次 runner 恒 false；1w+3f 正式重复门禁是另一协议）/ `comparison_admission=pending_formal_repeat`（单次
+  跑不授予/排除正式准入）。`report.json` 原 `capability_gate_status`/`comparison_admission=eligible_*` 是耦合
+  旧口径，已订正。zero-error validity gate **未被削弱**；失败 cell 完整保留并仍计入 EM/F1、failure rate、
+  successful/correct rows/s，但不冒充通过 validity gate 的 headline。
 - **不能声称**：数据库系统排名（单臂）；DuckDB-ai 比直连/项目更快或更慢（无对照）；scan/sink 在所有臂都
   可忽略（仅本臂观测）；该 1 行截断「确定性」（已证伪，偶发）。
 
@@ -103,9 +110,10 @@ exactly-once True｜success 10569 / error 1 / NULL 1 / max_tokens 1。
 - **operator_only_jct 口径订正**：`report.json` 取 `results[0]` 的时间，对 DuckDB barrier 臂碰巧正确；
   订正后改为整体 `min(started) → max(completed)`，对 per-request 臂（direct_client）也正确。本次实测值
   不变（barrier 臂所有行共用边界）。
-- **sink 可读回性**：本次跑（`79a9d6c`）未产出 `sink_audit.csv`；失败行在 `document_completions` 里是
-  空 `completion_text`，无法直接区分真实空输出与失败单元。订正后的 runner 写 `sink_audit.csv`
-  （doc_id / source_example_id / status / error / output_chars），可按 doc_id 把 sink 里的空串回连到
-  真实 status（本目录 `per_row_evidence.csv` 同样可按 source_example_id 查到该行 status=failed）。
+- **sink 可读回性**：本次跑（`79a9d6c`）未产出 `sunk_status.csv`（原命名 `sink_audit.csv`，已改名）也未做 DB
+  readback；失败行在 `document_completions` 里是空 `completion_text`，无法直接区分真实空输出与失败单元。订正后
+  的 runner 写 `sunk_status.csv`（**执行状态 sidecar**，doc_id/source_example_id/status/error/output_chars）
+  **并在 E2E 墙外做 `_sink_readback`**（SELECT COUNT 复核这些 doc_id 真的落盘，记录到 `report.sink.readback`），
+  两者互补：sidecar 给执行状态、readback 验持久化（本目录 `per_row_evidence.csv` 亦可按 source_example_id 查该行 status=failed）。
 - **diagnostic 脚本技术债**：`squad_truncation_diagnostic.py` 已修（DuckDB 每个 cap 恰好 `repeats` 次调用、
   `all()` 判据对全 HTTP 失败防真空）；**不重跑**历史诊断 `squad_truncation_diag_572700c8_20260805/`。

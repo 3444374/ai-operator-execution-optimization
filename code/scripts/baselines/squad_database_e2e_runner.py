@@ -157,6 +157,31 @@ def _sink_write(
     return written, time.time() - t0
 
 
+def _sink_readback(conn, doc_ids, category: str) -> dict:
+    """Post-wall verification that the rows actually persisted in the sink.
+
+    Counts how many of the just-sunk ``doc_ids`` are present in
+    ``document_completions`` (by PK) and compares to the sunk count. This is an
+    actual DB readback, distinct from the execution-status sidecar
+    (``sunk_status.csv``), so a silent sink failure cannot hide behind the sidecar.
+    """
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM document_completions "
+                "WHERE doc_id = ANY(%s) AND category = %s",
+                (list(doc_ids), category),
+            )
+            present = int(cur.fetchone()[0])
+        return {
+            "expected": len(doc_ids), "present": present,
+            "matched": present == len(doc_ids),
+        }
+    except Exception as exc:
+        return {"expected": len(doc_ids), "error": redact_text(str(exc)[:160])}
+
+
 def _runner_metrics(
     em_rows: int, success_count: int, row_count: int,
     error_count: int, null_count: int, max_tokens_errors: int,
@@ -326,11 +351,18 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         args.sink_tenant, args.sink_category,
     )
     database_e2e_wall_s = time.time() - t0
-    conn.close()
 
-    # metrics settle + after-scrape are OUTSIDE the E2E wall
+    # metrics settle + after-scrape + sink readback are OUTSIDE the E2E wall.
+    # Keep the PG connection open for the post-wall sink readback (actual DB
+    # verification that rows persisted), then close.
     time.sleep(max(0.0, args.metrics_settle_s))
     metrics_after = scrape_prometheus_metrics(args.metrics_url)
+    sink_readback = (
+        _sink_readback(conn, [r.doc_id for r in results], args.sink_category)
+        if args.writeback_mode != "none"
+        else {"skipped": "writeback_mode=none"}
+    )
+    conn.close()
 
     # exactly-once (full set)
     input_doc_ids = {r.doc_id for r in requests}
@@ -352,7 +384,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
 
     doc_to_source = {row["doc_id"]: row["source_example_id"] for row in all_rows}
     evidence_rows = []
-    sink_audit_rows = []
+    sunk_status_rows = []
     predictions: dict[str, str | None] = {}
     for r in results:
         source_id = doc_to_source.get(r.doc_id)
@@ -370,11 +402,11 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             "server_version": server_version,
             "pgvector_version": pgvector_version,
         })
-        # Run-scoped sink audit: link each sunk doc_id to its execution status so
-        # the unified sink's empty completion_text (NULL->"" for failed rows) can
-        # be cross-referenced back to the real status/error (not overwriting the
-        # shared document_completions contract).
-        sink_audit_rows.append({
+        # Execution-status sidecar (NOT a DB readback): links each sunk doc_id to
+        # its execution status so the unified sink's empty completion_text
+        # (NULL->"" for failed rows) can be cross-referenced to the real status.
+        # The actual sink persistence is verified separately by _sink_readback.
+        sunk_status_rows.append({
             "doc_id": r.doc_id,
             "source_example_id": source_id,
             "status": r.status,
@@ -390,12 +422,12 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         )
         writer.writeheader()
         writer.writerows(evidence_rows)
-    with (output_dir / "sink_audit.csv").open("w", encoding="utf-8", newline="") as f:
+    with (output_dir / "sunk_status.csv").open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(
             f, fieldnames=["doc_id", "source_example_id", "status", "error", "output_chars"],
         )
         writer.writeheader()
-        writer.writerows(sink_audit_rows)
+        writer.writerows(sunk_status_rows)
 
     quality = squad_quality_metrics(predictions, references)
     success_count = sum(
@@ -502,6 +534,9 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             "write_batch_rows": args.write_batch_rows,
             "table": "document_completions",
             "rows_written": written,
+            # Post-wall DB readback: verifies the sunk rows actually persisted,
+            # distinct from the sunk_status.csv execution-status sidecar.
+            "readback": sink_readback,
         },
         "finish_reason": "unavailable (DuckDB-ai extension does not expose finish_reason)",
         "identity": {
@@ -525,7 +560,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
         },
         "evidence_files": {
             "per_row_csv": "per_row_evidence.csv",
-            "sink_audit_csv": "sink_audit.csv",
+            "sunk_status_csv": "sunk_status.csv",
         },
         "command": redact_argument_list(list(sys.argv)),
     }
