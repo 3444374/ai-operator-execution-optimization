@@ -104,6 +104,13 @@ class RampConfig:
     project_actor_workers: int
     project_ray_concurrency: int
     lb_endpoint_url: str = ""  # nginx LB URL for the lb_rr arm (1 DuckDB -> LB -> 2 backends)
+    # Cache control (deploy §9.1 / AGENTS §7.5 point #4): run a uniform cache-hot
+    # warmup before each measured cell so arm/scale/order don't contaminate via the
+    # shared prefix cache. Warmup = bounded_http on the cell's manifest at
+    # warmup_concurrency (both endpoints) -- prefix cache is prompt-keyed, so this
+    # warms every arm to the same state regardless of which adapter is measured next.
+    warmup_per_cell: bool = False
+    warmup_concurrency: int = 32
     idle_timeout_s: float = 120.0
 
 
@@ -154,6 +161,8 @@ def _load_ramp_config(path: str | Path, *, driver_python: str, vllm_python: str)
         project_actor_workers=int(payload["project_actor_workers"]),
         project_ray_concurrency=int(payload["project_ray_concurrency"]),
         lb_endpoint_url=str(payload.get("lb_endpoint_url", "")),
+        warmup_per_cell=bool(payload.get("warmup_per_cell", False)),
+        warmup_concurrency=int(payload.get("warmup_concurrency", 32)),
         idle_timeout_s=float(payload.get("idle_timeout_s", 120.0)),
     )
 
@@ -414,6 +423,40 @@ def _ensure_ray_head() -> None:
         )
 
 
+def _warmup_cache(ramp: RampConfig, scale: RampScale) -> None:
+    """Uniform cache-hot warmup before a measured cell (deploy §9.1 point #4).
+
+    Runs bounded_http on the cell's manifest at ``warmup_concurrency`` on BOTH
+    endpoints (output discarded). The vLLM prefix cache is prompt-keyed, so this
+    puts every arm's following measured cell into the same cache-hot state
+    regardless of which adapter is measured, removing run-order contamination.
+    Caveat: for an endpoint_count=1 (lb_rr) manifest only endpoint 0's rows exist,
+    so backend 1 is warmed indirectly via shared prefix -- acceptable for screening;
+    the formal 1w+3f per arm is the rigorous cache control.
+    """
+    import subprocess
+    import tempfile
+    script = Path(__file__).resolve().parent / "run_official_baseline.py"
+    with tempfile.TemporaryDirectory(prefix="ramp_warmup_") as tmp:
+        procs = []
+        for ep_index, url in enumerate(ramp.endpoint_urls):
+            shard_dir = Path(tmp) / f"shard_{ep_index}"
+            cmd = [ramp.driver_python, str(script), "run-shard",
+                   "--adapter", "bounded_http", "--manifest", str(scale.manifest),
+                   "--endpoint-index", str(ep_index), "--endpoint-url", url,
+                   "--model", ramp.model, "--concurrency", str(ramp.warmup_concurrency),
+                   "--batch-size", "1", "--output-dir", str(shard_dir),
+                   "--disable-arrival-replay", "--service-prefix-caching", ramp.service_prefix_caching,
+                   "--service-max-num-seqs", str(ramp.service_max_num_seqs),
+                   "--service-max-num-batched-tokens", str(ramp.service_max_num_batched_tokens)]
+            procs.append(subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+        for p in procs:
+            try:
+                p.wait(timeout=900)
+            except subprocess.TimeoutExpired:
+                p.kill()
+
+
 def run_ramp(ramp: RampConfig) -> dict:
     ramp.output_root.mkdir(parents=True, exist_ok=True)
     if any(arm.arm == "project_static" for arm in ramp.arms):
@@ -423,6 +466,9 @@ def run_ramp(ramp: RampConfig) -> dict:
     for scale in ramp.scales:
         for arm in ramp.arms:
             for rep in range(1, arm.reps + 1):
+                if ramp.warmup_per_cell:
+                    print(f"[ramp] warmup scale={scale.rows} (bounded_http c={ramp.warmup_concurrency})", flush=True)
+                    _warmup_cache(ramp, scale)
                 print(f"[ramp] scale={scale.rows} arm={arm.arm} "
                       f"{'c' if arm.arm in GATE_ARMS else 'K'}={arm.concurrency} rep={rep}", flush=True)
                 if arm.arm in GATE_ARMS:
