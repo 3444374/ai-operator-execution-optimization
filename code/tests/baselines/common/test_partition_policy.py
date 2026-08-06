@@ -29,6 +29,8 @@ from src.baselines.common.manifests import (  # noqa: E402
     assign_endpoint_equal_rows,
     assign_endpoints,
     partition_summary,
+    read_manifest_metadata,
+    write_manifest_metadata,
 )
 from src.baselines.common.provenance import adapter_provenance  # noqa: E402
 from src.baselines.text.orchestration.cli import _export_manifest  # noqa: E402
@@ -207,6 +209,119 @@ class PolicyAwareGateTests(unittest.TestCase):
         )
         self.assertIn("endpoint_work_skew", report.incidents)
         self.assertFalse(report.passed)
+
+
+class AssignGateIntegrationTests(unittest.TestCase):
+    """Bug C: an assignment's OUTPUT must satisfy its OWN policy's gate end-to-end."""
+
+    def test_equal_rows_output_passes_equal_rows_gate(self) -> None:
+        assigned = assign_endpoint_equal_rows(
+            [_req(i, prompt_tokens=10 + i) for i in range(8)], 2, seed=0
+        )
+        ep_work = {0: 0, 1: 0}
+        for r in assigned:
+            ep_work[r.endpoint_index] += r.estimated_work
+        report = validate_gate(
+            manifest=assigned,
+            summaries=[_gsummary(0, ep_work[0]), _gsummary(1, ep_work[1])],
+            request_results=tuple(_gresult(r.doc_id, r.endpoint_index) for r in assigned),
+            partition_policy="equal_rows",
+        )
+        self.assertTrue(report.passed, report.incidents)
+        self.assertEqual(report.metrics["endpoint_row_counts"], {0: 4, 1: 4})
+
+    def test_work_balanced_output_passes_work_balanced_gate(self) -> None:
+        assigned = assign_endpoints(
+            [_req(i, prompt_tokens=10 + i) for i in range(8)], 2,
+            policy="preexecution_token_work_balanced",
+        )
+        ep_work = {0: 0, 1: 0}
+        for r in assigned:
+            ep_work[r.endpoint_index] += r.estimated_work
+        report = validate_gate(
+            manifest=assigned,
+            summaries=[_gsummary(0, ep_work[0]), _gsummary(1, ep_work[1])],
+            request_results=tuple(_gresult(r.doc_id, r.endpoint_index) for r in assigned),
+            partition_policy="preexecution_token_work_balanced",
+        )
+        self.assertTrue(report.passed, report.incidents)
+
+
+class ManifestMetadataTests(unittest.TestCase):
+    """Bug B: endpoint_work alias + Bug A: sidecar round-trip."""
+
+    _SUMMARY = {
+        "endpoint_row_counts": {0: 128, 1: 128},
+        "endpoint_prompt_tokens": {0: 0, 1: 0},
+        "endpoint_estimated_output_work": {0: 0, 1: 0},
+        "endpoint_total_estimated_work": {0: 0, 1: 0},
+        "endpoint_work": {0: 0, 1: 0},
+        "endpoint_row_count_diff": 0,
+        "endpoint_work_skew": 0.0,
+    }
+
+    def test_sidecar_roundtrip_and_alias(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "m.jsonl"
+            p.write_text("dummy\n", encoding="utf-8")
+            write_manifest_metadata(
+                p, partition_policy="equal_rows", partition_seed=7,
+                row_count=256, manifest_sha256="abc",
+                partition_summary_dict=self._SUMMARY,
+            )
+            meta = read_manifest_metadata(p)
+        self.assertIsNotNone(meta)
+        self.assertEqual(meta["partition_policy"], "equal_rows")
+        self.assertEqual(meta["partition_seed"], 7)
+        # JSON stringifies int dict keys -> "0"/"1" after round-trip
+        self.assertEqual(meta["endpoint_row_counts"], {"0": 128, "1": 128})
+        self.assertIn("endpoint_work", meta)  # backward-compat alias kept
+
+    def test_partition_summary_emits_endpoint_work_alias(self) -> None:
+        assigned = assign_endpoint_equal_rows([_req(i) for i in range(4)], 2, seed=0)
+        summary = partition_summary(assigned, 2)
+        self.assertEqual(summary["endpoint_work"], summary["endpoint_total_estimated_work"])
+
+    def test_read_metadata_none_for_legacy_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "lonely.jsonl"
+            p.write_text("x\n", encoding="utf-8")
+            self.assertIsNone(read_manifest_metadata(p))
+
+
+class PartitionPolicyCrossCheckTests(unittest.TestCase):
+    """Bug A: the gate uses the manifest's ACTUAL policy and fails closed on mismatch."""
+
+    @staticmethod
+    def _write_sidecar(path: Path, policy: str) -> None:
+        write_manifest_metadata(
+            path, partition_policy=policy, partition_seed=0, row_count=4,
+            manifest_sha256="x", partition_summary_dict=ManifestMetadataTests._SUMMARY,
+        )
+
+    def test_config_manifest_mismatch_fails_closed(self) -> None:
+        from src.baselines.text.orchestration.gate_runner import _resolve_partition_policy
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "m.jsonl"
+            p.write_text("x\n", encoding="utf-8")
+            self._write_sidecar(p, "equal_rows")
+            with self.assertRaisesRegex(ValueError, "disagrees"):
+                _resolve_partition_policy(p, "preexecution_token_work_balanced")
+
+    def test_manifest_policy_used_when_config_undeclared(self) -> None:
+        from src.baselines.text.orchestration.gate_runner import _resolve_partition_policy
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "m.jsonl"
+            p.write_text("x\n", encoding="utf-8")
+            self._write_sidecar(p, "equal_rows")
+            self.assertEqual(_resolve_partition_policy(p, None), "equal_rows")
+
+    def test_legacy_manifest_falls_back_to_declared(self) -> None:
+        from src.baselines.text.orchestration.gate_runner import _resolve_partition_policy
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "no_sidecar.jsonl"
+            p.write_text("x\n", encoding="utf-8")
+            self.assertEqual(_resolve_partition_policy(p, "equal_rows"), "equal_rows")
 
 
 if __name__ == "__main__":

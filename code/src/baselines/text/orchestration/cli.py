@@ -36,6 +36,7 @@ from src.baselines.common.manifests import (
     partition_summary,
     read_manifest,
     write_manifest,
+    write_manifest_metadata,
 )
 from ..products import (
     DuckDBAiConfig,
@@ -437,13 +438,22 @@ def _export_manifest(args: argparse.Namespace) -> dict[str, object]:
         seed=args.partition_seed,
     )
     metadata = write_manifest(args.output, assigned)
+    summary = partition_summary(assigned, args.endpoint_count)
+    write_manifest_metadata(
+        args.output,
+        partition_policy=args.partition_policy,
+        partition_seed=args.partition_seed,
+        row_count=metadata.row_count,
+        manifest_sha256=metadata.sha256,
+        partition_summary_dict=summary,
+    )
     return {
         "status": "completed",
         "row_count": metadata.row_count,
         "sha256": metadata.sha256,
         "partition_policy": args.partition_policy,
         "partition_seed": args.partition_seed,
-        **partition_summary(assigned, args.endpoint_count),
+        **summary,
     }
 
 
@@ -474,6 +484,15 @@ def _export_postgres_manifest(
         seed=args.partition_seed,
     )
     metadata = write_manifest(args.output, assigned)
+    summary = partition_summary(assigned, args.endpoint_count)
+    write_manifest_metadata(
+        args.output,
+        partition_policy=args.partition_policy,
+        partition_seed=args.partition_seed,
+        row_count=metadata.row_count,
+        manifest_sha256=metadata.sha256,
+        partition_summary_dict=summary,
+    )
     return {
         "status": "completed",
         "row_count": metadata.row_count,
@@ -484,7 +503,7 @@ def _export_postgres_manifest(
         "estimated_output_mode": args.estimated_output_mode,
         "partition_policy": args.partition_policy,
         "partition_seed": args.partition_seed,
-        **partition_summary(assigned, args.endpoint_count),
+        **summary,
     }
 
 

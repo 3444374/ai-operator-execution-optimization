@@ -17,7 +17,11 @@ from typing import Callable, Mapping, Sequence
 
 from src.baselines.common.contracts import BaselineRequestResult
 from src.baselines.common.gate import validate_gate
-from src.baselines.common.manifests import PARTITION_POLICIES, read_manifest
+from src.baselines.common.manifests import (
+    PARTITION_POLICIES,
+    read_manifest,
+    read_manifest_metadata,
+)
 from src.baselines.common.provenance import adapter_provenance
 from src.baselines.common.results import summarize_group_service_counters
 from src.infrastructure.config_env import expand_structure
@@ -885,6 +889,32 @@ def validate_configured_service_identity(
     return tuple(incidents)
 
 
+def _resolve_partition_policy(
+    manifest_path: Path,
+    declared_policy: str | None,
+) -> str | None:
+    """Ground-truth partition policy from the manifest sidecar.
+
+    The manifest records the policy it was ACTUALLY built with; the gate config
+    only DECLARES one. If the sidecar exists, its policy is the ground truth and
+    the gate uses it. If the config also declares a policy and the two disagree,
+    fail closed (operator mis-declared -> refuse to apply the wrong hard gate).
+    Legacy manifests without a sidecar fall back to the declared policy.
+    """
+
+    metadata = read_manifest_metadata(manifest_path)
+    if metadata and metadata.get("partition_policy") is not None:
+        manifest_policy = str(metadata["partition_policy"])
+        if declared_policy is not None and declared_policy != manifest_policy:
+            raise ValueError(
+                f"gate config partition_policy {declared_policy!r} disagrees with "
+                f"the manifest sidecar policy {manifest_policy!r} -- refusing to "
+                f"apply the wrong hard gate"
+            )
+        return manifest_policy
+    return declared_policy
+
+
 def _validate_cell(
     config: CoreGateConfig,
     output_dirs: tuple[Path, ...],
@@ -920,7 +950,9 @@ def _validate_cell(
         summaries=summaries,
         request_results=results,
         max_endpoint_work_skew=config.max_endpoint_work_skew,
-        partition_policy=config.partition_policy,
+        partition_policy=_resolve_partition_policy(
+            config.manifest, config.partition_policy
+        ),
     )
     payload = {
         "status": (

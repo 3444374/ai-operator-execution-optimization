@@ -6,7 +6,7 @@ import hashlib
 import json
 from dataclasses import asdict, replace
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Mapping
 
 from .contracts import ChatRequest, ManifestMetadata
 
@@ -217,6 +217,54 @@ def partition_summary(
             i: output_work[i] for i in range(endpoint_count)
         },
         "endpoint_total_estimated_work": {i: total_work[i] for i in range(endpoint_count)},
+        # Backward-compatible alias (pre-existing consumers read "endpoint_work").
+        "endpoint_work": {i: total_work[i] for i in range(endpoint_count)},
         "endpoint_row_count_diff": row_diff,
         "endpoint_work_skew": work_skew,
     }
+
+
+def manifest_metadata_path(manifest_path: str | Path) -> Path:
+    """The sidecar that records a manifest's partition provenance."""
+
+    return Path(str(manifest_path) + ".meta.json")
+
+
+def write_manifest_metadata(
+    manifest_path: str | Path,
+    *,
+    partition_policy: str | None,
+    partition_seed: int,
+    row_count: int,
+    manifest_sha256: str,
+    partition_summary_dict: Mapping[str, object],
+) -> Path:
+    """Write ``<manifest>.meta.json`` recording the partition policy actually used.
+
+    The gate reads this to verify the manifest's REAL policy matches the policy the
+    gate config declares (closes the config-vs-manifest mismatch hole: an operator can
+    no longer silently apply the wrong hard gate by mis-declaring the policy). The
+    manifest JSONL itself stays canonical (ChatRequest-per-line, unchanged).
+    """
+
+    meta_path = manifest_metadata_path(manifest_path)
+    payload = {
+        "partition_policy": partition_policy,
+        "partition_seed": partition_seed,
+        "row_count": row_count,
+        "manifest_sha256": manifest_sha256,
+        **partition_summary_dict,
+    }
+    meta_path.write_text(
+        json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return meta_path
+
+
+def read_manifest_metadata(manifest_path: str | Path) -> dict[str, object] | None:
+    """Read the partition-provenance sidecar, or None if absent (legacy manifest)."""
+
+    meta_path = manifest_metadata_path(manifest_path)
+    if not meta_path.is_file():
+        return None
+    return json.loads(meta_path.read_text(encoding="utf-8"))

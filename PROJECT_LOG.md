@@ -4700,3 +4700,12 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 - **gate_runner.py**：`CoreGateConfig.partition_policy`（默认 None=向后兼容）+ load 校验 ∈ PARTITION_POLICIES + `_validate_cell` 传给 `validate_gate`。
 - 测试 `test_partition_policy.py` 11 例（用户要求的 9 项全覆盖 + dispatch 路由/拒未知 policy）：256→128:128、奇数差≤1、输入顺序不变、同 seed 同结果、duplicate fail-closed、CLI 两 policy 路由 + 元数据、equal_rows 不因 work-skew 失败、work-balanced 在 skew>2% 失败。本地全绿；现有 gate/contracts/manifest/cli 测试无回归。
 - 下一步：服务器 4/16 行 export capability 验证 → equal_rows 256 DuckDB-ai 2×1 smoke → preexec_balanced 256 smoke。`run_command_pair` 是 popen-pair 近并发（非真 barrier），smoke 报告标 `launch_mode=popen_pair_near_concurrent, start_barrier=false, formal=false`。
+
+## 2026-08-06 修 code-review + nature-reviewer 指出的 3 个代码 bug（A/B/C）
+
+- nature-reviewer 方向建议（3 reviewer + 综合）：当前 4 臂 256 单次结果**不能下结论**——三套计时边界不可比、项目用了错的 static 臂、SQuAD 均匀长度测不出调度价值、缺路由隔离对照。优先级：①统一 database-E2E 计时边界（fatal）②双 workload（SQuAD 质量 + 倾斜长度调度）③路由隔离表 T1（bounded_http×路由）与全栈表 T2 分开 ④规模 ≥2048 + 1w+3f ⑤修 bug A ⑥修 B/C。policy-aware gate 设计**确认正确**（不改为中性 gate），但要上报软量。
+- **Bug A（validity-breaking）修**：gate 的 partition_policy 之前只信 config 声明，不与 manifest 实际策略交叉校验。修：manifests 新增 `write_manifest_metadata`/`read_manifest_metadata`/`manifest_metadata_path`——export 时写 `<manifest>.meta.json` sidecar 记录真实 partition_policy/seed/sha256/分布；gate_runner `_resolve_partition_policy` 读 sidecar 作 ground truth，config 声明 ≠ manifest sidecar 即 fail-closed；legacy manifest（无 sidecar）回退到 config 声明。`_validate_cell` 用解析后的 manifest policy 喂 `validate_gate`。
+- **Bug B（compatibility）修**：`partition_summary` 保留 `endpoint_work` 作 `endpoint_total_estimated_work` 的别名（两个都 emit），不破坏读旧 key 的消费方。
+- **Bug C（coverage）修**：`test_partition_policy` 加 7 个测试——assign→gate 集成（equal_rows/work_balanced 输出必过各自 policy gate）、sidecar roundtrip + endpoint_work 别名、legacy manifest 无 sidecar 回退、**config↔manifest policy 不一致 fail-closed**、manifest policy 优先于 config 声明。
+- 本地：partition-policy 19/19（原 11 + 新 7 + 1 roundtrip）+ 现有 gate/cli/contracts/manifest 21 全过，无回归。py_compile 全过。
+- 下一步（实验，待统一计时边界 + 双 workload 设计）：项目对比需 project_smart（非 static）+ 倾斜长度 workload + 规模 ≥2048 + 喂饱 GPU（feeding-saturation 门禁）+ 1w+3f。这些是 codex 的方向/计划领域。
