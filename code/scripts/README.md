@@ -1065,8 +1065,9 @@ runner 层算主 headline `correct_rows_per_s`（= EM 行 ÷ `database_e2e_wall_
 这不削弱 zero-error validity。各臂共享 `--request-timeout-s`
 （默认 120s），sink 失败或 readback 不匹配即 fail-closed。进程内臂不注入项目 credit/actor/backpressure；
 project_static IS 项目调度（经 profiler）。冻结服务配置见
-`deploy/autodl/dual_gpu_squad_database_e2e.example.json`（含支撑 `--service-config-hash` 的真实 vLLM
-配置，REPLACE_ME 字段正式前填）。示例：
+`deploy/autodl/single_endpoint_squad_database_e2e.example.json`（含支撑 `--service-config-hash` 的单 endpoint
+vLLM 配置，REPLACE_ME 字段正式前填）。该 runner 只有一个 `--endpoint-url`；报告显式记录
+`active_endpoint_count=1`、`multi_endpoint_method_exercised=false`。它不能作为双 GPU 项目方法证据。示例：
 
 ```bash
 python code/scripts/baselines/squad_database_e2e_runner.py --arm duckdb_ai \

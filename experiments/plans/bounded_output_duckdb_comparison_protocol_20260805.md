@@ -96,7 +96,25 @@ Joules/correct row；successful rows/CPU-core-second；GPU seconds/correct row�
 ### 2.5 稳定性与扩展性
 
 独立并发校准；1 warmup + 3 个交错 formal repeats；CV、95% CI；单次稳态**至少 60 秒**；
-单 endpoint → 双 endpoint 扩展效率；双 endpoint 工作量偏斜；retry/timeout/rate-limit/cache 状态。
+单 endpoint 产品轨稳定性；双 endpoint 系统轨扩展效率与工作量偏斜；retry/timeout/rate-limit/cache 状态。
+
+### 2.6 endpoint 拓扑必须分轨，不能用“主机有两张 GPU”代替“实际用了两个 endpoint”
+
+DuckDB `ai` 的公开配置是一个全局或 secret 级 `BASE_URL`；官方扩展页没有 endpoint-list、
+round-robin 或 least-loaded 路由设置。上游 README 对多后端部署的建议是把这个单一 URL 指向用户自己的
+gateway。依据：[DuckDB community `ai` 扩展页](https://duckdb.org/community_extensions/extensions/ai)、
+[duckdb-ai 上游 README](https://github.com/leonardovida/duckdb-ai)。因此以下三条证据轨必须分开：
+
+| 轨道 | 实际拓扑 | comparator | 回答的问题 | 允许的结论 |
+|---|---|---|---|---|
+| **单 endpoint 产品语义轨** | 三臂都只访问一个 vLLM endpoint；另一张 GPU 即使存在也不算已使用 | DuckDB `ai` 原生 SQL；direct control；单 endpoint project diagnostic | 数据库 AI_COMPLETE 的正确性、质量、失败语义和单 endpoint 集成开销 | 可比较产品语义/单 endpoint E2E；**不能**验证项目多 endpoint 方法 |
+| **双 endpoint 方法/control 轨** | direct/bounded control 与所有 project arms 都访问同一对 endpoint | 强 direct control；冻结最佳项目静态 control；per-endpoint credit/路由/共享信用等候选策略；动态臂仅在预门禁通过后加入 | endpoint-aware 方法是否有增益 | 这是项目方法贡献的主证据；direct 是 causal control，不冒充数据库产品 baseline |
+| **可选 gateway 完整系统轨** | DuckDB `ai` 以一个 `BASE_URL` 访问冻结的第三方 gateway，再由 gateway 访问两个 vLLM endpoint；项目直接访问两个 endpoint | DuckDB+gateway vs project multi-endpoint | 现实部署下完整系统的容量、成本和 SLO | 只能下系统级结论；gateway 版本、算法、开销和 scheduler owner 必须计入，不属于 DuckDB 原生 baseline，也不是当前 formal 前置 |
+
+禁止为了凑“双 GPU 三臂”而在 Python/SQL harness 中把 DuckDB 输入行预切两半并并行跑两个独立
+DuckDB 查询，再把它称为产品原生多 endpoint。该做法只能标作
+`harness_sharded_diagnostic`，scheduler owner 是实验 harness，不进产品原生主排名。也不能让三臂都经过
+同一个 gateway 后声称验证了项目 endpoint-aware 路由——那会再次把项目方法旁路掉。
 
 ## 3. 两个计时边界（必须分开，不可混比）
 
@@ -139,13 +157,21 @@ temperature、max_tokens、消息角色一致；再用 **vLLM prompt-token count
 
 1. **SQuAD 短答案 workload**（主 bounded 对比）：导入 SQuAD → prompt(context+question) + reference answer
    → manifest → 三个 comparator（DuckDB `ai` / direct client / 项目冻结最佳静态）。
-2. 三臂同 manifest、同 model、双 GPU、vLLM 同配置、prefix cache、**同 cap=64**、同计时边界，按 §2 五类指标
-   + §3 两边界 + §4 请求等价门禁执行。
+2. 先完成**单 endpoint 产品语义轨**：三臂同 manifest、同 model、同一个 vLLM endpoint、prefix cache、
+   **同 cap=64**、同计时边界，按 §2 五类指标 + §3 两边界 + §4 请求等价门禁执行。这里的
+   `project_static` 只作正确性/管线开销 diagnostic；`per_endpoint` 在一个 endpoint 时退化为 global，
+   不授予方法结论。
 3. 项目最终优化方案确定后补第四臂。
 4. **database-E2E 顶层 runner（三臂可执行；§3）**：`code/scripts/baselines/squad_database_e2e_runner.py`
    已覆盖 scan→construct→operator→unified sink 的 E2E 计时墙与 runner 层指标（duckdb_ai/direct_client 进程内，
    project_static 经 profiler 子进程）；**project_static 统一计时墙 + 同运行签名静态校准完成后**，才能进入多臂
-   `1w+3f` 正式排名。此前不发布完整数据库系统排名。
+   `1w+3f` 单 endpoint 正式结果。该 runner 只有 singular `--endpoint-url`，证据必须写
+   `active_endpoint_count=1`、`multi_endpoint_method_exercised=false`；此前不发布完整数据库系统排名。
+5. 双 endpoint 方法/control 轨使用现有多 endpoint project/control runner，先独立校准冻结静态 control，再比较
+   per-endpoint credit、路由、共享信用等候选策略；动态臂只有通过既有晋级门禁才加入。不等待 DuckDB
+   单 endpoint 轨即可做 correctness gate，但最终报告必须分表，不能把 DuckDB 单卡数与双卡数直接排名。
+6. 第三方 gateway 完整系统轨是可选扩展：只有在需要研究现实部署组合时才先做 capability/请求等价/
+   故障归因门禁并冻结 gateway；它不是 DuckDB 原生 baseline，也不阻塞 A/B 两条主证据轨。
 
 非阻塞 microbenchmark（可与主路径并行，**不是 SQuAD 的前置门禁**）：
 

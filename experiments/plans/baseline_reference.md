@@ -459,17 +459,33 @@ digest、官方 URL/commit 和最小 SQL，再决定是否投入正式 calibrati
 BASE_URL 'http://host/v1', API_KEY 'EMPTY')`，再 `SET duckdb_ai_model`。已接入 baseline 框架为
 `duckdb_ai` adapter（`code/src/baselines/text/products/duckdb_ai.py`，set-oriented
 `ai_try_complete` 并同时保留 `{response,error}`；任一 error 或 NULL response 均按失败处理，
-不再把截断行伪装为 completed）。扩展原生拥有行内 HTTP 并发；实验 harness 只做与其余
-双 endpoint arm 相同的预注册分片，不注入项目 credit/router。provenance 标
+不再把截断行伪装为 completed）。扩展原生拥有行内 HTTP 并发；**产品原生主轨只配置一个
+`BASE_URL`，不由实验 harness 做跨 endpoint 分片**。provenance 标
 `database_product_native_baseline` / `duckdb_community_ai_extension`，不得写成 DuckDB core
 或官方 DuckDB benchmark。observability 为 `query_barrier`/`unavailable`，与 OceanBase
 同形。计时与观测脚本
 `code/scripts/baselines/time_duckdb_ai_baseline.py` 复用 `PeriodicSampler` + vLLM counter delta + nvidia-smi，
-其中 `successful_rows_per_s` 只统计无 error 的非 NULL 输出；双 endpoint 并行耗时估计不得
-再乘 endpoint 数。same-work 主轨固定 response cache=false、retry=0、rate limit=0，
+其中 `successful_rows_per_s` 只统计无 error 的非 NULL 输出。历史 harness-sharded diagnostic 的并行 wall
+不得乘 endpoint 数，但该数字也不得进入产品原生排名。same-work 主轨固定 response cache=false、retry=0、rate limit=0，
 同时保持 vLLM 服务端 prefix cache=on；产品优化的 response-cache-on 只能另列轨道。
-服务器 capability probe 确认 DuckDB 1.5.4 / `ai` 0.4.14 可通过双 endpoint 完成 4 行、
-1024-cap 请求；但同一 ShareGPT workload 的 64 行在 256 和 1024 cap 均出现 length error。
+服务器 capability probe 曾由实验 harness 预切 4 行并对两个单 endpoint shard 各跑一次；这只证明
+DuckDB 1.5.4 / `ai` 0.4.14 的**两个独立单 endpoint 查询**可完成 1024-cap 请求，不能证明扩展自身拥有
+多 endpoint 路由，现降级标为 `harness_sharded_diagnostic`。官方扩展页只公开一个
+`duckdb_ai_base_url` / secret `BASE_URL`；上游 README 建议多后端时接用户自己的 gateway。因此双 GPU
+产品部署若要测试，必须另列“DuckDB-ai + 第三方 gateway”完整系统轨，记录 gateway scheduler owner，
+不能注入项目 router，也不能冒充 DuckDB 原生能力。当前同一 ShareGPT workload 的 64 行在 256 和 1024
+cap 均出现 length error。
+
+服务器安装的 v0.4.14 capability probe 进一步观察到：`secret => CASE ...` 与 `base_url => CASE ...` 均报
+“must be a constant expression”，即单条查询不能按行选择本地 endpoint。两条固定 `base_url` 的
+`ai_complete` 配 `WHERE`/`UNION` 属于 SQL 作者人工静态切分，不是扩展调度。该 probe 当前只有运行侧汇报，
+原始 SQL、版本输出和错误文本归档前只能作为**实测待归档**证据；正式依据仍以公开单 `BASE_URL` 接口为准。
+
+还要避免另一种常见误读：当前 community `ai` extension 不是把 llama.cpp/CUDA runtime 嵌进 DuckDB 后
+默认在 `cuda:0` 加载 GGUF。上游 provider 表写的是 `llamacpp` → 外部 `llama-server`、
+`openai_compatible` → 外部 vLLM/LM Studio/LiteLLM/gateway；本项目使用后者访问 vLLM。因此 llama.cpp 的
+tensor parallel、`CUDA_VISIBLE_DEVICES` 或多个 DuckDB 进程绑定 GPU 都属于**外部服务/业务部署层**，不是
+DuckDB-ai 原生 GPU 调度能力。多进程把行分给不同 `BASE_URL` 仍须标作 harness/application sharding。
 因此 DuckDB 当前只进入独立 bounded-output 产品轨，不进入默认 ShareGPT fixed-cap 主排名；
 不得把少量 capability 成功外推为正式吞吐。
 LOTUS 是语义算子 SDK，政策上不进 chat-track 吞吐榜，

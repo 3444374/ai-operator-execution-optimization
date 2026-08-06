@@ -10,7 +10,7 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 |---|---|
 | 比谁、为什么比、能否进入数字排名、必须记录什么 | `baseline_reference.md` |
 | 文本 Chat/Completions 怎么运行 | `text_native_baseline_rerun_20260802.md` |
-| DuckDB bounded-output 怎么对比（任务/指标/operator-only vs database-E2E 两计时边界/请求等价门禁） | `bounded_output_duckdb_comparison_protocol_20260805.md` |
+| DuckDB bounded-output 怎么对比（任务/指标/两计时边界/请求等价门禁；单 endpoint 产品语义、双 endpoint project/control 方法轨、可选 gateway 系统轨分开） | `bounded_output_duckdb_comparison_protocol_20260805.md` |
 | 图像 workload、质量语义和执行矩阵怎么运行 | `image_clip_workload_lock_20260731.md` |
 | 当前做完什么、下一步是什么 | `experiment_status_and_gaps.md` §0 |
 | 厂商/论文为什么采用这些指标 | `../../research/evaluation_metrics_survey_20260731.md` |

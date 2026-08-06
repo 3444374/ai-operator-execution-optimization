@@ -1,7 +1,11 @@
 {
   "schema_version": 1,
-  "experiment_id": "dual_gpu_duckdb_ai_bounded_output_capability_gate",
+  "experiment_id": "harness_sharded_duckdb_ai_bounded_output_capability_gate",
   "formal": false,
+  "comparison_role": "harness_sharded_diagnostic",
+  "scheduler_owner": "experiment_harness_static_partition",
+  "formal_baseline_eligible": false,
+  "_doc": "Historical filename. The harness pre-partitions one manifest and launches one native DuckDB-ai query per endpoint. DuckDB-ai itself still sees one BASE_URL per query; this is NOT product-native multi-endpoint routing and must not enter the native baseline ranking.",
   "rows_total": 64,
   "endpoint_urls": [
     "${COMPLETION_CHAT_ENDPOINT_URL_0}",

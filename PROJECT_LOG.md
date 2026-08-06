@@ -1,5 +1,30 @@
 # 项目日志
 
+## 2026-08-06 SQuAD endpoint 拓扑审计：单 endpoint 证据与双 endpoint 方法验证分轨
+
+- 复核当前 `squad_database_e2e_runner.py`、DuckDB-ai adapter 和运行模板：runner 只有 singular
+  `--endpoint-url`，adapter 每次只接受一个 endpoint shard；已归档 DuckDB/direct full 与远端 project_static
+  256 gate 实际都只访问 endpoint 8000 / GPU 0。主机有两张 4090 不等于本次使用双 GPU。
+- 官方 DuckDB community `ai` 页面只公开一个 `duckdb_ai_base_url` / secret `BASE_URL`；上游 README 对多后端
+  部署建议接用户自己的 gateway，未发现 endpoint-list、round-robin 或 least-loaded 原生设置。历史
+  `dual_gpu_duckdb_ai_capability_gate` 实际由实验 harness 预切 manifest 并各跑一个单 endpoint DuckDB 查询，
+  现诚实降级为 `harness_sharded_diagnostic`，不再写成 DuckDB-ai 原生双 endpoint。
+- 协议改为三轨：① 单 endpoint 产品语义轨（DuckDB 原生 SQL + direct/project controls，project 方法退化）；
+  ② direct/bounded 强 control vs project 冻结静态与 endpoint-aware 候选策略的双 endpoint 方法轨（项目方法
+  主证据，direct 只作 causal control）；③ DuckDB 经第三方 gateway 的可选完整系统轨（只能下系统级结论，
+  不属于 DuckDB 原生 baseline，也不阻塞前两轨）。
+  禁止自写 DuckDB 跨 endpoint
+  分流进入产品原生 baseline，也禁止三臂都过同一 gateway 后声称验证项目路由。
+- 单 endpoint runner 新增强制 topology evidence：endpoint_count=1、multi_endpoint_method_exercised=false；
+  project_static 另记 `method_claim_admission=blocked_single_endpoint_degenerate`。误导性的
+  `dual_gpu_squad_database_e2e.example.json` 更名并重写为
+  `single_endpoint_squad_database_e2e.example.json`。
+- 服务器 DuckDB-ai v0.4.14 进一步做常量性 probe：`secret => CASE ...` 与 `base_url => CASE ...` 均被拒为
+  “must be a constant expression”，证实每条查询只能固定一个本地 `BASE_URL`。even/odd `WHERE` + 两条
+  `ai_complete` + `UNION` 仍是人工静态切分，继续只允许作 diagnostic；probe 的原始 SQL/错误文本尚待归档。
+- direct_client 服务器备份与 Git CSV 的 SHA 异常复核完成：两侧 `csv.DictReader` 均为 10,570 行且逐字段
+  0 差异，仅 CRLF/LF 不同；不是运行/provenance 不一致，不需为此重跑。
+
 ## 2026-08-06 project_static 合同复审：撤回过早 GO，补 active-work 与实际扫描证据
 
 - 基于 `0795216` 复跑目标测试，发现远端声称的“全部通过”不成立：组合测试仍有 2 个
@@ -77,7 +102,8 @@
 - 边界口径：PG 连接建立算 setup（不计入墙）；DuckDB 连接+扩展加载在 adapter 内、计入 adapter 段；metrics
   settle + after-scrape 在墙外。
 - 下一步：补 `direct_client` 臂（直连 vLLM）→ 看 E2E 拆分差异；补 `project_static` 臂 → 三臂 E2E 正式排名；
-  正式前填全 `dual_gpu_squad_database_e2e.example.json` 的 REPLACE_ME（vLLM launch cmd/revision/dtype/parallelism/
+  正式前填全当时名为 `dual_gpu_squad_database_e2e.example.json`、现已更正为
+  `single_endpoint_squad_database_e2e.example.json` 的 REPLACE_ME（vLLM launch cmd/revision/dtype/parallelism/
   VRAM/env）并重算 service-config-hash。
 
 ## 2026-08-05 SQuAD full/diagnosis 审计订正：收紧措辞 + 拆状态字段 + 登记新文件

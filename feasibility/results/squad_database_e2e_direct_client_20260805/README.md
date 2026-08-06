@@ -15,7 +15,7 @@ direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（D
 
 | 项 | 值 |
 |---|---|
-| 平台 | AutoDL 2×RTX 4090；vLLM 0.25.1，单 endpoint 8000，qwen2.5-7b，prefix-cache enabled |
+| 平台 | AutoDL 主机有 2×RTX 4090；本臂**只激活 endpoint 8000 / GPU 0**，GPU 1 不属于本次实验资源；vLLM 0.25.1，qwen2.5-7b，prefix-cache enabled |
 | arm | `direct_client`（httpx async + `asyncio.Semaphore(32)`，per-request，无项目 credit/backpressure） |
 | 请求体 | direct_client 用 `build_completion_request_body`（chat_completions，temp 0.0，cap=64）；`request_equivalence_gate_20260805/` 验证两路径关键请求字段语义等价（DuckDB-ai 不复用该 builder，它有自己的 `ai_completion_request_json`） |
 | 数据库 | PostgreSQL 18.4 + pgvector 0.8.5；workload `squad_v11_dev_short_answer`（10570） |
@@ -86,8 +86,11 @@ direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（D
 - **含义**：direct_client 臂已可测、可归因、可复算、可读回。两臂的 E2E 拆分都 **adapter/operator-dominated**
   （本 direct 臂 adapter 占 wall 99.26%，含 per-request HTTP+排队+模型服务，不能单独归因给"模型调用"），
   scan/sink <1%。两臂的差异集中在"截断的产品语义"（NULL vs partial text）而非吞吐。
-- **下一步**：① 补 `project_static` 臂（项目冻结最佳静态）→ 三臂齐全；② 填全 deploy 配置的
-  REPLACE_ME（真实 vLLM 配置）→ 重算 service-config-hash；③ 三臂 `1 warmup + 3 formal` 正式排名。
+- **拓扑边界**：本报告属于**单 endpoint 产品语义轨**。它不能验证 per-endpoint credit、跨 endpoint 路由或
+  双 GPU 扩展；主机上存在第二张 GPU 不等于实验使用了它。
+- **下一步**：① 用 `single_endpoint_squad_database_e2e.example.json` 补齐同轨冻结配置与统一计时边界；
+  ② 项目方法贡献在双 endpoint direct/bounded control vs 冻结静态/endpoint-aware 策略轨独立验证，不能由
+  本报告外推；③ 第三方 gateway 只作可选完整系统轨，不是 DuckDB 原生 baseline 的前置。
 
 ## 8. 审计订正（codex direct_client 复核；不重跑、不覆写原始文件）
 
@@ -119,3 +122,16 @@ direct_client 暴露 `finish_reason` + `output_tokens` + per-request latency（D
   （掩盖了项目调度代码），已订正。runner 现在对每个 arm 调 `adapter_provenance()` 并把 `summary_fields()` 写进
   每次 `report.json`；归档 `report.json`（`535789d`）早于此修复、无 `provenance` 字段，需正式 rerun 落盘。
 - **smoke 空集**：`--limit` smoke 的 `_smoke_integrity` 已加空集拒绝（`all([])` 不再真空通过）。
+
+## 9. 服务器副本 SHA 差异复核（2026-08-06）
+
+- 服务器仓库受控文件 SHA256：`report.json=97dd6094…`、`per_row_evidence.csv=249aea93…`、
+  `sunk_status.csv=8d00b78b…`。仓库外备份 `/root/autodl-tmp/evidence_backup_direct_client_1785981777/`
+  中 `report.json` 字节 SHA 相同；两个 CSV 的原始字节 SHA 分别以 `9532…`、`fc05…` 开头，因而最初被误报为
+  “不是同一次产出”。
+- 复核同时用 Python `csv.DictReader` 解析两份 CSV：两侧均为 **10,570 行**，逐行字典完全相等，字段差异数
+  **0**。唯一差异是服务器备份使用 CRLF 记录分隔符，Git 受控版本使用 LF；带引号字段里的内嵌换行不影响
+  CSV 语义。
+- **判决**：这是换行规范化导致的 byte-level SHA 差异，不是结果、顺序或 provenance 差异；不需要为此重跑。
+  后续证据审计同时保存 `raw_file_sha256` 与基于解析记录的 `semantic_record_sha256`，禁止只凭原始文件 SHA
+  推断运行身份。

@@ -9,12 +9,20 @@ one timed wall around persistent-table scan → prompt construction → model ca
 → **unified sink**. It is the prerequisite for any formal database-system
 ranking (protocol §5 step 4).
 
-Scope (codex ruling): the runner unifies PostgreSQL source / prompt / cap=64 /
-model service config / sink across arms; it does ONLY static sharding, timing
-(both boundaries), audit, writeback. The DuckDB `ai` extension keeps owning
+Scope (codex ruling): this runner is deliberately a **single-endpoint** product-
+semantics path. It unifies PostgreSQL source / prompt / cap=64 / model service
+config / sink across arms and does only timing (both boundaries), audit, and
+writeback. The DuckDB `ai` extension keeps owning
 batching/concurrency/retry/cache. NO project credit / actor pool / dynamic
 backpressure is injected. `correct rows/s` (not raw `rows/s`) is the primary
 headline; raw `rows/s` is reported but never the ranking key.
+
+Because the CLI accepts exactly one ``--endpoint-url``, ``project_static`` in
+this runner does **not** exercise multi-endpoint routing or per-endpoint credit
+allocation: with one endpoint, per-endpoint admission degenerates to global
+admission. Its output is therefore a correctness/pipeline-overhead diagnostic,
+not evidence for the project's multi-endpoint method. Dual-endpoint method
+experiments use the dedicated project experiment runner instead.
 
 Timing contract: E2E timing is summary-level (the report's `timing` block) --
 `BaselineRequestResult` is NOT extended (its operator-only timestamps stay
@@ -436,6 +444,31 @@ _PER_ROW_FIELDS = [
 _SUNK_STATUS_FIELDS = ["doc_id", "source_example_id", "status", "error", "output_chars"]
 
 
+def _single_endpoint_topology(arm: str) -> dict[str, object]:
+    """Return the non-negotiable topology contract for this runner.
+
+    Keeping this as evidence instead of inferring it from the host GPU count
+    prevents a two-GPU host with one active endpoint from being reported as a
+    dual-endpoint experiment.
+    """
+
+    project_arm = arm == "project_static"
+    return {
+        "comparison_track": "single_endpoint_product_semantics",
+        "declared_endpoint_count": 1,
+        "active_endpoint_count": 1,
+        "endpoint_routing_owner": "none_single_endpoint",
+        "multi_endpoint_method_exercised": False,
+        "method_claim_admission": (
+            "blocked_single_endpoint_degenerate" if project_arm else "not_applicable_control"
+        ),
+        "note": (
+            "This runner accepts one endpoint URL. For project_static, per-endpoint "
+            "admission equals global admission and cross-endpoint routing is absent."
+        ),
+    }
+
+
 def _write_per_row_evidence(output_dir: Path, evidence_rows: list[dict]) -> None:
     with (output_dir / "per_row_evidence.csv").open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=_PER_ROW_FIELDS)
@@ -469,6 +502,7 @@ def _write_failure_report(output_dir, args, stage, exc, started_at) -> None:
             "arm": args.arm,
             "database_url": redact_database_url(args.database_url),
         },
+        "topology": _single_endpoint_topology(args.arm),
         "partial_files": existing,
     }
     _write_json(output_dir / "failure_report.json", report)
@@ -821,6 +855,7 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             "separate protocol not implemented here"
         ),
         "comparison_admission": "pending_formal_repeat",
+        "topology": _single_endpoint_topology(args.arm),
         "cap": args.max_tokens,
         "row_count": len(all_rows),
         "exactly_once": exactly_once,
@@ -955,6 +990,7 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         "ray_actor_max_concurrency": args.project_ray_actor_max_concurrency,
         "token_budget": args.token_budget,
         "admission_scope": "per_endpoint",
+        "admission_scope_effective": "global_equivalent_single_endpoint",
         "profiler_script": config.profiler_script,
     }
     # ProjectStaticConfig validates actor_workers x concurrency >= max_inflight,
@@ -1165,9 +1201,11 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         "formal_run_gate_note": (
             "single-shot runner; project_static additionally lacks a timing wall "
             "identical to the in-process arms, so it cannot enter cross-arm formal "
-            "ranking until that boundary is implemented"
+            "ranking until that boundary is implemented. Independently, this runner "
+            "has one endpoint, so it cannot support a multi-endpoint method claim"
         ),
         "comparison_admission": "blocked_unified_timing_boundary",
+        "topology": _single_endpoint_topology("project_static"),
         "cap": args.max_tokens,
         "row_count": len(results),
         "exactly_once": exactly_once,

@@ -5,13 +5,13 @@
 
 ## 1. 实验设置
 
-- 硬件：AutoDL，2×RTX 4090；两个独立 vLLM endpoint。
+- 硬件：AutoDL，2×RTX 4090；实验 harness 把输入预切成两份，每份各访问一个独立 vLLM endpoint。
 - 模型与协议：Qwen2.5-7B，Chat Completions。
 - 服务配置：prefix cache 开启，`max_num_seqs=256`，
   `max_num_batched_tokens=8192`。
 - 数据库算子：DuckDB v1.5.4 + community `ai` v0.4.14，调用
-  `ai_try_complete`；调度归 DuckDB SQL executor 和 `ai` 扩展所有，没有注入项目
-  credit、router 或 actor pool。
+  `ai_try_complete`；**每个 shard 内**的并发/重试/缓存归 DuckDB SQL executor 和 `ai` 扩展所有，没有注入
+  项目 credit、router 或 actor pool；但**跨 endpoint 的二分由实验 harness 完成**，不是 DuckDB-ai 原生路由。
 - 扩展控制：response cache 关闭、provider prompt-cache hints 关闭、retry=0、
   request interval=0、timeout=120s、max concurrent requests=32。
 - 原始 prompt 未入库；`raw/` 只保存配置、命令、退出状态、服务计数、逐分片摘要和
@@ -21,7 +21,7 @@
 
 本轮只回答两个问题：
 
-1. DuckDB `ai` 能否在当前双 endpoint 环境执行真实 Chat Completion，并被 runner
+1. 两个独立 DuckDB `ai` 单 endpoint shard 能否在当前双 GPU 主机执行真实 Chat Completion，并被 runner
    记录为 exactly-once、零行级错误？
 2. DuckDB `ai` 对 `finish_reason=length` 的语义是否与现有 ShareGPT fixed-cap 主轨
    兼容？
@@ -31,7 +31,7 @@
 | 门禁 | 行数 | `max_tokens` | 目的 |
 |---|---:|---:|---|
 | `duckdb_ai_semantic_gate_64_20260805_v3` | 64 | 256 | 检查现有主轨输出上限的行级语义 |
-| `duckdb_ai_capability_gate_4_cap1024_20260805` | 4 | 1024 | 用极小样本确认扩展、双 endpoint 和观测链路可运行 |
+| `duckdb_ai_capability_gate_4_cap1024_20260805` | 4 | 1024 | 用极小样本确认扩展、两份 harness shard 和观测链路可运行；不证明扩展原生多 endpoint |
 | `duckdb_ai_semantic_gate_64_cap1024_20260805` | 64 | 1024 | 检查提高上限后能否消除 ShareGPT 语义失败 |
 
 ## 3. 严谨性自检
@@ -41,6 +41,8 @@
 - runner 在 cell 前等待 endpoint 空闲，采集前后 vLLM token/prefix-cache counters，
   并核对运行中服务的 cache、sequence 与 batched-token 配置。
 - 4 行门禁不是稳定性能实验；其工作量偏斜阈值也不适合这么小的样本。
+- 本目录是 `harness_sharded_diagnostic`：只能证明两个独立单 endpoint 查询可并行运行，不能进入
+  DuckDB-ai 产品原生 baseline 主排名，也不能据此声称扩展支持 endpoint-list/负载均衡。
 - 64 行测试没有 warmup + 交错三重复，因此即便语义通过，也不能成为 formal 数字。
 - DuckDB 扩展不暴露逐行 output-token accounting；摘要中的
   `token_accounting=unavailable` 和 `output_tokens=0` 不能解释为模型没有生成 token，
@@ -105,5 +107,6 @@ DuckDB 只有在独立 bounded-output 门禁通过后，才进入校准与正式
 1. 构造并冻结 bounded-output manifest；同轨所有 comparator 使用完全相同的 prompt、
    model、protocol、output cap、cache-on 服务和计时边界。
 2. 先运行独立 capability gate，要求零行级错误、exactly-once、服务身份一致。
-3. 门禁通过后，仅校准 DuckDB 原生 `max_concurrent_requests`（8/16/32/64）；不加入项目调度。
+3. 门禁通过后，在**单 endpoint 产品原生轨**仅校准 DuckDB 原生 `max_concurrent_requests`（8/16/32/64）；
+   不加入项目调度。双 endpoint 另走第三方 gateway 完整系统轨。
 4. 只有 1 warmup + 3 formal repeats、稳定性与语义门禁全部通过，才生成正式排名。

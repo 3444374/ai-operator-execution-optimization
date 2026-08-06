@@ -84,9 +84,11 @@ exactly-once True｜success 10569 / error 1 / NULL 1 / max_tokens 1。
 - **含义**：database-E2E 边界在 DuckDB-ai 臂已可测、可归因、可复算；对本臂，E2E ≈ operator-dominated，
   上游 scan/sink 不是瓶颈。这给后续 direct_client/project 臂一个明确的对照基线（它们的 E2E 拆分是否也
   operator-dominated，还是会暴露 scan/sink/排队开销）。
-- **下一步**：① 补 `direct_client` 臂（直连 vLLM，无 DuckDB 扩展）→ 看 E2E 拆分差异；② 补 `project_static`
-  臂（项目冻结最佳静态）→ 形成三臂 E2E 正式排名；③ 正式前填全 `dual_gpu_squad_database_e2e.example.json`
-  的 REPLACE_ME（vLLM launch cmd / revision / dtype / parallelism / VRAM / env），重算 `service-config-hash`。
+- **拓扑边界**：本报告只访问 endpoint 8000 / GPU 0，属于**单 endpoint 产品语义轨**；主机虽有两张 GPU，
+  本次不能称为双 GPU 或多 endpoint 实验。
+- **下一步**：① 补齐 `single_endpoint_squad_database_e2e.example.json` 的 REPLACE_ME 与统一计时边界；
+  ② 项目多 endpoint 方法在独立 direct/bounded control vs 冻结静态/endpoint-aware 策略轨验证；③ 第三方
+  gateway 仅作可选完整系统轨。不能用 Python/SQL 预切两个 DuckDB shard 冒充扩展原生路由。
 
 ## 8. 审计订正（codex 复核；不覆写机器原始文件）
 

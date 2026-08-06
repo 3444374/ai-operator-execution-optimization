@@ -281,6 +281,11 @@ class DatabaseE2EBarrierTests(unittest.TestCase):
         self.assertEqual(report["single_run_valid"], True)
         self.assertEqual(report["formal_run_gate_passed"], False)
         self.assertEqual(report["comparison_admission"], "pending_formal_repeat")
+        self.assertEqual(report["topology"]["active_endpoint_count"], 1)
+        self.assertFalse(report["topology"]["multi_endpoint_method_exercised"])
+        self.assertEqual(
+            report["topology"]["method_claim_admission"], "not_applicable_control"
+        )
         self.assertIn("correct_rows_per_s", report["runner_metrics"])
         # provenance is written into every report: who owned execution+scheduling.
         # duckdb_ai: the community extension owns batching/concurrency, so it is
@@ -457,6 +462,9 @@ class ProjectStaticArmTests(unittest.TestCase):
         self.assertEqual(ident["max_active_work_per_endpoint"], 65536)
         self.assertEqual(ident["declared_max_inflight"], 8)
         self.assertEqual(ident["actor_workers_per_endpoint"], 8)
+        self.assertEqual(
+            ident["admission_scope_effective"], "global_equivalent_single_endpoint"
+        )
         self.assertEqual(ident["http_transport"], "httpx_async")
         self.assertEqual(ident["temperature"], 0.0)
         self.assertNotIn("duckdb_version", ident)
@@ -484,6 +492,11 @@ class ProjectStaticArmTests(unittest.TestCase):
         self.assertEqual(
             report["comparison_admission"], "blocked_unified_timing_boundary"
         )
+        self.assertEqual(
+            report["topology"]["method_claim_admission"],
+            "blocked_single_endpoint_degenerate",
+        )
+        self.assertFalse(report["topology"]["multi_endpoint_method_exercised"])
         self.assertFalse(report["timing"]["cross_arm_comparable"])
         self.assertIn("per_row_csv", report["evidence_files"])
 
@@ -544,6 +557,33 @@ class ScratchDirTests(unittest.TestCase):
             (d / "probe.txt").write_text("ok", encoding="utf-8")
             seen.append(d)
         self.assertFalse(seen[0].exists())  # cleaned up after the with-block
+
+
+class FrozenSingleEndpointConfigTests(unittest.TestCase):
+    def test_config_cannot_be_misread_as_dual_endpoint(self) -> None:
+        path = (
+            CODE_ROOT.parent
+            / "deploy"
+            / "autodl"
+            / "single_endpoint_squad_database_e2e.example.json"
+        )
+        config = json.loads(path.read_text(encoding="utf-8"))
+        topology = config["topology"]
+        self.assertEqual(topology["active_endpoint_count"], 1)
+        self.assertEqual(topology["active_gpu_ids"], [0])
+        self.assertFalse(topology["multi_endpoint_method_exercised"])
+        self.assertEqual(
+            topology["project_method_claim_admission"],
+            "blocked_single_endpoint_degenerate",
+        )
+        for key in (
+            "duckdb_ai_command_template",
+            "direct_client_command_template",
+            "project_gate_command_template",
+        ):
+            self.assertIn("127.0.0.1:8000", config[key])
+            self.assertNotIn("127.0.0.1:8001", config[key])
+
 
 
 if __name__ == "__main__":
