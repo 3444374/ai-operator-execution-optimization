@@ -4709,3 +4709,16 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 - **Bug C（coverage）修**：`test_partition_policy` 加 7 个测试——assign→gate 集成（equal_rows/work_balanced 输出必过各自 policy gate）、sidecar roundtrip + endpoint_work 别名、legacy manifest 无 sidecar 回退、**config↔manifest policy 不一致 fail-closed**、manifest policy 优先于 config 声明。
 - 本地：partition-policy 19/19（原 11 + 新 7 + 1 roundtrip）+ 现有 gate/cli/contracts/manifest 21 全过，无回归。py_compile 全过。
 - 下一步（实验，待统一计时边界 + 双 workload 设计）：项目对比需 project_smart（非 static）+ 倾斜长度 workload + 规模 ≥2048 + 喂饱 GPU（feeding-saturation 门禁）+ 1w+3f。这些是 codex 的方向/计划领域。
+
+## 2026-08-06 复审 P1 修复 + Phase 2 并发扫描 + lb_rr 规模爬坡（5 commit，全 push）
+
+- **Phase 2 并发扫描**（`experiments/results/multicard_concurrency_sweep/phase2_2048_tb/`，2048，c=1..64，text-baselines venv）：duckdb 修复（DuckDB 1.5.4 + ai extension 0.4.14；首跑 base conda 1.5.5 全失败——ai extension 在 v1.5.4 路径）。完整并发曲线（group 口径）：bounded c32=**87393** 峰 / duckdb c2=79008（**c 无关 set-oriented**）/ project K32=77381；C_total=64 顺序 **bounded>project>duckdb**（旧 total/max_jct 口径误排 bounded>duckdb>project）。bounded c64（C_total=128）failed（vLLM 过载）。1 rep/cell diagnostic。
+- **lb_rr 规模爬坡**（`experiments/results/multicard_lbrr_scale_ramp/`，64..10570，C_total=64，warmup_per_cell=false）：9/9 passed（含 8192/10570，**不像 duckdb_sharded 大尺度 cap-64 失败**）。ttft 口径峰值 **72934@2048**，4096+ 坍塌（同三臂 regime）。256 门禁全过（exactly-once + finish_reason=length=0 + nginx 8000/8001 完美对称 round-robin）。**uncontrolled-cache**（warmup false + 规模嵌套继承）+ provenance（旧 runner database_product_native_baseline，报告层标 harness_sharded_diagnostic，重跑才写 identity sidecar）。
+- **复审 P1 修复**（codex 第二轮只读复审 5 code-comment + 7 阻塞点）：
+  - **A 聚合口径**：gate 臂用 gate.json `group_service_total_tokens/group_service_wall_s`（复审 #2，旧 total/max_jct 高估 + 误排）；lb_rr 用 ttft 两后端 `Σ(prompt+gen delta)`（复审 #5，旧 duckdb 输入 token 估算漏 generation/chat-template，~5% 低）。12 tests。
+  - **B lb_rr warmup**：单端点 manifest（endpoint_count=1）两后端全 prompt（复审 #4，旧 ep1 空 bug——独立 vLLM cache 不共享）。
+  - **C lb_rr backend-balance fail-closed gate**：`vllm_request_success_delta` skew>10% fail cell（复审 #6，旧仅事后人工）。
+  - **D raw 归档**：Phase 2 + lb_rr + 256 gate 裁剪 raw（requests.csv 排除，239 files，6f6ef75）——复审 #1（Phase 2 只 README 不可复现）解决。
+  - **#7 文档**：saturated p=**0.0284**（非 0.127 rich 误用）+ sample stdev(n-1) + project **显著高于 duckdb harness**（≠ 优于产品）；ADDENDUM **ps8_collapse 已提交**（非未提交，114 files）+ collapse group 口径 36560/24836 + c256 shard 级表述 + c64_f0 `ValueError ReadError`（非 vLLM 崩溃）+ 强结论软化；Phase 2/lb_rr README group/ttft 口径 + project prefix-hit K1 0.91（非全 0.96，路由独立）+ raw 已提交 + uncontrolled-cache + provenance。
+- **commit 链**：6d1c263（codex 第一轮 7 点修复 + Phase 2）/ 1cd52be（identity sidecar，#1 根本）/ 565726e（lb_rr README）/ 6f6ef75（raw 归档）/ 0459d72（复审 P1 修复 + ramp_aggregate 重生成）。
+- **仍待**：driver 测试覆盖（warmup/balance/atomic/Ray/config 仅 py_compile，复审工程缺口）+ PROJECT_INDEX 登记 + project same-manifest（复审 #3 根治，warmup 按 manifest 预热但 project 自有路由）+ ADDENDUM §C/诚实边界清理 + 60s 稳态重扫（#9）。**复审裁决**：先修聚合口径/LB warmup/provenance/gate/归档（done），再决定重跑。
