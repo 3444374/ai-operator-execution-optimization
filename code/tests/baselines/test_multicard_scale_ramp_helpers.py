@@ -68,5 +68,51 @@ class ManifestSingleEndpointTests(unittest.TestCase):
             self.assertFalse(drv._manifest_is_single_endpoint(m))
 
 
+class WriteIdentityTests(unittest.TestCase):
+    """复审 #2/#3: _write_identity must emit ComparisonRole Literal values
+    only, use system_comparison_role as the authoritative primary role, and
+    name ALL scheduling parties in scheduler_owner."""
+
+    def test_all_roles_are_valid_comparison_role_literal(self) -> None:
+        import typing
+        from src.baselines.common.provenance import ComparisonRole
+        valid = set(typing.get_args(ComparisonRole))
+        with tempfile.TemporaryDirectory() as td:
+            for arm in ("bounded_http", "duckdb_ai", "lb_rr", "project_static"):
+                cell = Path(td) / arm
+                cell.mkdir()
+                drv._write_identity(arm, cell)
+                ident = json.loads((cell / "identity.json").read_text(encoding="utf-8"))
+                self.assertIn(ident["comparison_role"], valid,
+                              f"{arm} comparison_role {ident['comparison_role']!r} not in ComparisonRole Literal")
+                self.assertIn(ident["system_comparison_role"], valid,
+                              f"{arm} system_comparison_role {ident['system_comparison_role']!r} not in Literal")
+                self.assertFalse(ident["formal_baseline_eligible"], f"{arm} must not be formal-eligible at ramp layer")
+
+    def test_system_comparison_role_per_arm(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cases = {"bounded_http": "direct_client_control",
+                     "duckdb_ai": "harness_pre_split_diagnostic",
+                     "lb_rr": "gateway_system_diagnostic",  # protocol §2.6 gateway, NOT harness
+                     "project_static": "project_scheduled_method"}
+            for arm, expected in cases.items():
+                cell = Path(td) / arm
+                cell.mkdir()
+                drv._write_identity(arm, cell)
+                ident = json.loads((cell / "identity.json").read_text(encoding="utf-8"))
+                self.assertEqual(ident["system_comparison_role"], expected, f"{arm}")
+
+    def test_lb_rr_scheduler_owner_names_all_parties(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cell = Path(td) / "lbrr"
+            cell.mkdir()
+            drv._write_identity("lb_rr", cell)
+            ident = json.loads((cell / "identity.json").read_text(encoding="utf-8"))
+            owner = ident["scheduler_owner"].lower()
+            self.assertIn("duckdb", owner, "scheduler_owner must name DuckDB extension")
+            self.assertIn("nginx", owner, "scheduler_owner must name nginx round-robin")
+            self.assertIn("vllm", owner, "scheduler_owner must name vLLM")
+
+
 if __name__ == "__main__":
     unittest.main()

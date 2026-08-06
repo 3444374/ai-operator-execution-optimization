@@ -97,6 +97,23 @@ def _parse_cell_name(name: str) -> tuple[str, int, int]:
     return name[: m.start()], int(m.group(1)), int(m.group(2))
 
 
+def _identity_role_fields(cell: Path) -> dict:
+    """Spread ramp-layer identity role fields into a cell-metrics dict.
+
+    ``system_comparison_role`` is the AUTHORITATIVE primary role of the composed
+    system under test (复审 #1); ``comparison_role`` is the single-shard component
+    role. All None when no identity.json (old raw) -- the aggregate then shows
+    None rather than a misleading product-native component role.
+    """
+    ident = _identity(cell)
+    return {
+        "comparison_role": ident.get("comparison_role"),
+        "system_comparison_role": ident.get("system_comparison_role"),
+        "formal_baseline_eligible": ident.get("formal_baseline_eligible"),
+        "scheduler_owner": ident.get("scheduler_owner"),
+    }
+
+
 def _completed_rows(shard_dirs: list[Path], gate_dir: Path | None = None) -> int:
     """Count completed request rows, robust to ``requests.csv`` pruning.
 
@@ -175,9 +192,12 @@ def _gate_cell_metrics(cell: Path) -> dict:
         unified_tps = ttft_service_tokens / max_jct
         service_total, service_wall, token_source = int(ttft_service_tokens), max_jct, "ttft_vllm_counters"
     else:
-        total_tokens = sum(s.get("service_total_tokens_delta", 0) or s.get("total_tokens", 0) for s in summaries)
-        unified_tps = total_tokens / max_jct if max_jct > 0 else 0.0
-        service_total, service_wall, token_source = int(total_tokens), max_jct, "summary_total_tokens_fallback"
+        # 复审 #5: summary.total_tokens/max_jct is a FORBIDDEN 口径 (duckdb
+        # total_tokens misses generation/chat-template; max_jct != group wall).
+        # Do NOT emit a rankable number -- mark metric unavailable so the cell
+        # cannot enter a ranking with a wrong-metric number.
+        unified_tps = None
+        service_total, service_wall, token_source = 0, max_jct, "metric_unavailable"
     # Authoritative status: run_status.json (gate arms) / run_error.json (any).
     run_status_path = cell / "gate_output" / "run_status.json"
     status = "unknown"
@@ -203,7 +223,7 @@ def _gate_cell_metrics(cell: Path) -> dict:
             prefix_hit = statistics.mean(hits)
     return {
         "status": status,
-        "service_tokens_per_s": round(unified_tps, 1),
+        "service_tokens_per_s": round(unified_tps, 1) if unified_tps is not None else None,
         "service_total_tokens": service_total,
         "model_serving_wall_s": round(service_wall, 3),
         "service_tokens_source": token_source,
@@ -217,8 +237,7 @@ def _gate_cell_metrics(cell: Path) -> dict:
         "ttft_s_p99": round(ttft["p99"], 4) if ttft["p99"] else None,
         "prefix_cache_hit_rate": round(prefix_hit, 4) if prefix_hit is not None else None,
         "gpu": _gpu_csv_summary(cell / "gpu_resource.csv"),
-        "comparison_role": _identity(cell).get("comparison_role"),
-        "formal_baseline_eligible": _identity(cell).get("formal_baseline_eligible"),
+        **_identity_role_fields(cell),
     }
 
 
@@ -253,8 +272,7 @@ def _project_cell_metrics(cell: Path) -> dict:
         "scheduling_overhead_pct": round(_f(prof.get("scheduling_control_overhead_pct")), 2) or None,
         "submit_s": round(_f(prof.get("submit_s")), 3) or None,
         "gpu": _gpu_csv_summary(resource),
-        "comparison_role": _identity(cell).get("comparison_role"),
-        "formal_baseline_eligible": _identity(cell).get("formal_baseline_eligible"),
+        **_identity_role_fields(cell),
     }
     if evidence.is_file():
         out["n_evidence_rows"] = sum(1 for _ in csv.DictReader(evidence.open(encoding="utf-8")))
@@ -290,7 +308,7 @@ def _mean_cv(values: list[float]) -> tuple[float | None, float | None]:
     if not vals:
         return (None, None)
     mean = statistics.mean(vals)
-    cv = (statistics.pstdev(vals) / mean) if (len(vals) > 1 and mean) else 0.0
+    cv = (statistics.stdev(vals) / mean) if (len(vals) > 1 and mean) else 0.0  # sample stdev (n-1), 复审 #5
     return (round(mean, 4), round(cv * 100, 2))
 
 
@@ -316,7 +334,9 @@ def _aggregate_reps(reps: list[dict]) -> dict:
         agg["service_total_tokens"] = passed[0].get("service_total_tokens")
         agg["completed_rows"] = passed[0].get("completed_rows")
         agg["comparison_role"] = passed[0].get("comparison_role")
+        agg["system_comparison_role"] = passed[0].get("system_comparison_role")
         agg["formal_baseline_eligible"] = passed[0].get("formal_baseline_eligible")
+        agg["scheduler_owner"] = passed[0].get("scheduler_owner")
         agg["service_tokens_source"] = passed[0].get("service_tokens_source")
         if "scheduling_overhead_pct" in passed[0]:
             agg["scheduling_overhead_pct_mean"] = passed[0].get("scheduling_overhead_pct")

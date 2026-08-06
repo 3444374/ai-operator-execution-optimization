@@ -1,6 +1,6 @@
 # 多卡 rich-metric 饱和 screening（2×4090，SQuAD 2048，1w+3f）
 
-> **定位**：3 臂（bounded_http 天花板 + **duckdb_ai 2×1 sharded〔身份订正：`harness_sharded_diagnostic`——harness 预切 manifest + 2 独立 DuckDB 进程，DuckDB `ai` 单 BASE_URL，按协议 §2.6 不算产品原生多 endpoint、不进产品主排名〕** + project_static 2-endpoint）在饱和配置（c=32/K=32）下的 cache-hot 饱和 screening/gate 证据。
+> **定位**：3 臂（bounded_http 天花板 + **duckdb_ai 2×1 sharded〔身份订正：`harness_pre_split_diagnostic`——harness 预切 manifest + 2 独立 DuckDB 进程，DuckDB `ai` 单 BASE_URL，按协议 §2.6 不算产品原生多 endpoint、不进产品主排名〕** + project_static 2-endpoint）在饱和配置（c=32/K=32）下的 cache-hot 饱和 screening/gate 证据。
 
 > **vLLM effective config（诚实）**：`max_num_seqs=256/max_num_batched_tokens=8192` 是 adapter 声明；vLLM cmdline 无这些 flag，用 vllm 0.25.1 默认；`enable_prefix_caching` 默认 ON（= 声明，巧合）。数据有效，service config 字段是声明非 effective。**不是项目定义的 formal ranking**（gate 代码拒绝 `formal=true`）。本报告由**已提交的可复现聚合器** `code/scripts/analysis/multicard_rich_aggregate.py` 从原始证据重算，**取代** ad-hoc `rich_results.json`（后者未提交、且含三处报告错误，见 §6 修订记录）。
 
@@ -117,7 +117,7 @@
 
 ## 8. 结果解释（事实 / 推断 / 不能声称）
 
-- **事实**：饱和配置下 project_static（79111）与 duckdb_ai harness_sharded_diagnostic（77764）service tokens/s 接近（项目高 1.7%，3 reps），CV<1%；bounded 天花板 89420。三臂 EM ~82.3%、correct_rows ~1685。project 真实 TTFT P50 52ms；调度开销 35–37%。
+- **事实**：饱和配置下 project_static（79111）与 duckdb_ai harness_pre_split_diagnostic（77764）service tokens/s 接近（项目高 1.7%，3 reps），CV<1%；bounded 天花板 89420。三臂 EM ~82.3%、correct_rows ~1685。project 真实 TTFT P50 52ms；调度开销 35–37%。
 - **推断**：SQuAD 均匀短答案 + 饱和配置下，项目静态调度的服务吞吐与 DuckDB-ai harness 诊断**未检出显著差异**（无预注册 equivalence margin/TOST，3 reps；"未检出"≠"证明等价"）；项目未达天花板的主要可归因线索是**上游调度控制开销（35–37%）**，而非写回（0.05s）。
 - **不能声称**：
   - 项目"优于"DuckDB-ai（1.7% 在 CV 内，非显著）。

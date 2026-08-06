@@ -230,46 +230,45 @@ def _metrics_urls(endpoint_urls: Sequence[str]) -> tuple[str, ...]:
 
 
 def _write_identity(arm: str, cell_output: Path) -> None:
-    """Write a ramp-layer identity sidecar (codex audit #1 / 复审 #3).
+    """Write a ramp-layer identity sidecar -- DOUBLE-LAYER schema (复审 #1/#3).
 
-    raw ``summary.json::comparison_role`` is the runner's SINGLE-SHARD role and
-    is always a value from ``provenance.ComparisonRole`` Literal
-    (service_ceiling / direct_client_control / framework_native_baseline /
-    database_product_native_baseline / project_scheduled_method). The ramp layer
-    then COMPOSES shards or routes via a gateway, which the single-shard role
-    does not capture. This sidecar keeps ``comparison_role`` = the Literal
-    single-shard value (so it stays a valid ComparisonRole) and adds:
-    - ``ramp_layer_classification``: harness_pre_split / gateway_system / project
-      (NOT a ComparisonRole -- a ramp-layer tag; protocol §2.6 distinguishes
-      harness pre-split from gateway 完整系统轨);
-    - ``formal_baseline_eligible``: false at the ramp layer (composition does
-      not enter product-native formal ranking);
-    - ``scheduler_owner``: ALL scheduling parties (DuckDB extension + nginx +
-      vLLM for lb_rr), not just one.
-    See experiments/plans/experiment_report_honesty_checklist.md §2.
+    Two layers (复审 #1: comparison_role=database_product_native_baseline
+    describes the COMPONENT duckdb_ai, not the composed system under test, so
+    letting the aggregate show it as the primary role is misleading):
+    - ``comparison_role``: the single-shard COMPONENT role, a
+      ``provenance.ComparisonRole`` Literal value (e.g.
+      database_product_native_baseline for duckdb_ai one shard).
+    - ``system_comparison_role``: the AUTHORITATIVE role of the composed system
+      under test at the ramp layer -- ``harness_pre_split_diagnostic`` (2
+      independent DuckDB processes, harness pre-split) or
+      ``gateway_system_diagnostic`` (single DuckDB process via nginx gateway,
+      protocol §2.6). Both are now in the ComparisonRole Literal. The aggregator
+      surfaces ``system_comparison_role`` as the PRIMARY role, so the aggregate
+      never shows product-native for a harness/gateway composition.
+    ``scheduler_owner`` lists ALL scheduling parties;
+    ``formal_baseline_eligible=false`` (ramp-layer composition does not enter
+    product-native formal ranking). See experiment_report_honesty_checklist.md §2.
     """
     if arm == "bounded_http":
         ident = {"comparison_role": "direct_client_control",
-                 "ramp_layer_classification": "direct_client_control",
+                 "system_comparison_role": "direct_client_control",
                  "formal_baseline_eligible": False, "formal_control_eligible": True,
                  "scheduler_owner": "project_asyncio_control"}
     elif arm == "duckdb_ai":
-        # 2 independent DuckDB processes, harness pre-split manifest
-        ident = {"comparison_role": "database_product_native_baseline",  # single-shard Literal
-                 "ramp_layer_classification": "harness_pre_split_diagnostic",
+        ident = {"comparison_role": "database_product_native_baseline",  # component (single shard)
+                 "system_comparison_role": "harness_pre_split_diagnostic",  # authoritative system role
                  "formal_baseline_eligible": False,
                  "scheduler_owner": "experiment_harness + duckdb_ai_extension + vllm",
-                 "reason": "harness pre-split manifest + 2 independent DuckDB processes; DuckDB ai single BASE_URL; protocol §2.6 -> not product-native multi-endpoint, not formal-eligible at ramp layer"}
+                 "reason": "harness pre-split manifest + 2 independent DuckDB processes; DuckDB ai single BASE_URL; protocol §2.6 -> not product-native multi-endpoint"}
     elif arm == "lb_rr":
-        # single DuckDB process via nginx gateway -> protocol §2.6 gateway 完整系统轨
-        ident = {"comparison_role": "database_product_native_baseline",  # single-shard Literal
-                 "ramp_layer_classification": "gateway_system_diagnostic",
+        ident = {"comparison_role": "database_product_native_baseline",  # component
+                 "system_comparison_role": "gateway_system_diagnostic",  # protocol §2.6 gateway 完整系统轨
                  "formal_baseline_eligible": False,
                  "scheduler_owner": "duckdb_ai_extension + nginx_round_robin + vllm",
-                 "reason": "single DuckDB process (single BASE_URL) via nginx third-party gateway to 2 vLLM endpoints; protocol §2.6 gateway 完整系统轨 (line 112) -> system-level only, not DuckDB-native baseline, not formal-eligible"}
+                 "reason": "single DuckDB process (single BASE_URL) via nginx third-party gateway to 2 vLLM endpoints; protocol §2.6 gateway 完整系统轨 (line 112) -> system-level only, not DuckDB-native, not formal-eligible"}
     elif arm == "project_static":
-        ident = {"comparison_role": "project_scheduled_method",  # Literal (was wrongly project_method_diagnostic)
-                 "ramp_layer_classification": "project_scheduled_method",
+        ident = {"comparison_role": "project_scheduled_method",
+                 "system_comparison_role": "project_scheduled_method",
                  "formal_baseline_eligible": False,
                  "scheduler_owner": "project_scheduler",
                  "reason": "project Ray-actor multi-endpoint scheduled method; not a product baseline"}
@@ -430,29 +429,38 @@ def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) 
                            indent=2, ensure_ascii=False, sort_keys=True),
                 encoding="utf-8",
             )
-        # backend-balance fail-closed gate (复审 #6): nginx round-robin must split
-        # requests ~50/50 across the two backends; a large skew on
-        # vllm_request_success_delta signals routing/LB failure and the cell must
-        # NOT pass (previously balance was only checked after-the-fact by hand).
-        if instr.ttft_deltas:
-            succ = {}
-            for ep, d in instr.ttft_deltas.items():
-                try:
-                    v = float(d.get("vllm_request_success_delta", 0) or 0)
-                except (TypeError, ValueError):
-                    v = 0.0
-                if v > 0:
-                    succ[ep] = v
-            if len(succ) < 2:
-                raise RuntimeError(
-                    f"lb_rr backend-balance gate FAILED: only {len(succ)} backend has successful "
-                    f"requests {succ} -- nginx sent everything to one backend?")
-            skew = _backend_skew(succ)
-            record["backend_request_skew"] = round(skew, 4)
-            if skew > 0.10:
-                raise RuntimeError(
-                    f"lb_rr backend-balance gate FAILED: vllm_request_success_delta "
-                    f"skew {skew:.1%} ({succ}) > 10% -- nginx round-robin broken?")
+        # backend-balance fail-closed gate (复审 #3/#6): nginx round-robin must
+        # split ~50/50; a large skew on request_count OR token-work signals
+        # routing failure. Missing ttft_deltas = metrics scrape failed -> the
+        # cell must NOT pass (previously FAIL-OPEN: missing -> silently passed).
+        if not instr.ttft_deltas:
+            raise RuntimeError(
+                "lb_rr backend-balance gate FAILED: ttft_metrics missing -- cannot "
+                "verify backend balance; cell must not pass (fail-closed).")
+        succ, work = {}, {}
+        for ep, d in instr.ttft_deltas.items():
+            try:
+                rs = float(d.get("vllm_request_success_delta", 0) or 0)
+                tw = (float(d.get("vllm_prompt_tokens_delta", 0) or 0)
+                      + float(d.get("vllm_generation_tokens_delta", 0) or 0))
+            except (TypeError, ValueError):
+                rs, tw = 0.0, 0.0
+            if rs > 0:
+                succ[ep] = rs
+            if tw > 0:
+                work[ep] = tw
+        if len(succ) < 2:
+            raise RuntimeError(f"lb_rr balance gate FAILED: only {len(succ)} backend has successful requests {succ}")
+        if len(work) < 2:
+            raise RuntimeError(f"lb_rr balance gate FAILED: only {len(work)} backend has token-work {work}")
+        req_skew = _backend_skew(succ)
+        work_skew = _backend_skew(work)
+        record["backend_request_skew"] = round(req_skew, 4)
+        record["backend_token_work_skew"] = round(work_skew, 4)
+        if req_skew > 0.10 or work_skew > 0.10:
+            raise RuntimeError(
+                f"lb_rr backend-balance gate FAILED: request_skew {req_skew:.1%} "
+                f"({succ}) / token_work_skew {work_skew:.1%} ({work}) > 10%")
         record["status"] = "passed"
         record["gpu_summary"] = instr.gpu_summary
         record["ttft_metrics"] = str(ttft_path) if ttft_path.is_file() else None

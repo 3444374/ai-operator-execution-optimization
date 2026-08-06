@@ -32,7 +32,9 @@
                 "gpu1_power_mean": 269.9
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -68,7 +70,9 @@
           "service_total_tokens": 232242,
           "completed_rows": 1024,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "ttft_vllm_counters"
         }
       }
@@ -107,7 +111,9 @@
                 "gpu1_power_mean": 397.1
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -143,7 +149,9 @@
           "service_total_tokens": 2542250,
           "completed_rows": 10570,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "ttft_vllm_counters"
         }
       }
@@ -182,7 +190,9 @@
                 "gpu1_power_mean": 118.6
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -218,7 +228,9 @@
           "service_total_tokens": 22804,
           "completed_rows": 128,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "ttft_vllm_counters"
         }
       }
@@ -257,7 +269,9 @@
                 "gpu1_power_mean": 274.5
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -293,7 +307,9 @@
           "service_total_tokens": 433328,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "ttft_vllm_counters"
         }
       }
@@ -332,7 +348,9 @@
                 "gpu1_power_mean": 156.7
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -368,7 +386,9 @@
           "service_total_tokens": 56866,
           "completed_rows": 256,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "ttft_vllm_counters"
         }
       }
@@ -407,7 +427,9 @@
                 "gpu1_power_mean": 368.7
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -443,7 +465,9 @@
           "service_total_tokens": 894824,
           "completed_rows": 4096,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "ttft_vllm_counters"
         }
       }
@@ -482,7 +506,9 @@
                 "gpu1_power_mean": 203.5
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -518,7 +544,9 @@
           "service_total_tokens": 111758,
           "completed_rows": 512,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "ttft_vllm_counters"
         }
       }
@@ -557,7 +585,9 @@
                 "gpu1_power_mean": 38.0
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -593,7 +623,9 @@
           "service_total_tokens": 13757,
           "completed_rows": 64,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "ttft_vllm_counters"
         }
       }
@@ -632,7 +664,9 @@
                 "gpu1_power_mean": 396.9
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -668,7 +702,9 @@
           "service_total_tokens": 1975913,
           "completed_rows": 8192,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "ttft_vllm_counters"
         }
       }

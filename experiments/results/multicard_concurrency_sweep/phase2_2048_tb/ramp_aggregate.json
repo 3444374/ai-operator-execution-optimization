@@ -32,7 +32,9 @@
                 "gpu1_power_mean": 355.8
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -68,7 +70,9 @@
           "service_total_tokens": 433315,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c1": {
@@ -100,7 +104,9 @@
                 "gpu1_power_mean": 319.0
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -136,7 +142,9 @@
           "service_total_tokens": 433331,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c2": {
@@ -168,7 +176,9 @@
                 "gpu1_power_mean": 325.6
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -204,7 +214,9 @@
           "service_total_tokens": 433327,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c32": {
@@ -236,7 +248,9 @@
                 "gpu1_power_mean": 363.2
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -272,7 +286,9 @@
           "service_total_tokens": 433321,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c4": {
@@ -304,7 +320,9 @@
                 "gpu1_power_mean": 328.6
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -340,7 +358,9 @@
           "service_total_tokens": 433317,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c64": {
@@ -350,10 +370,10 @@
           "reps": [
             {
               "status": "failed",
-              "service_tokens_per_s": 18867.8,
-              "service_total_tokens": 217373,
+              "service_tokens_per_s": null,
+              "service_total_tokens": 0,
               "model_serving_wall_s": 11.521,
-              "service_tokens_source": "summary_total_tokens_fallback",
+              "service_tokens_source": "metric_unavailable",
               "completed_rows": 1024,
               "rows_per_s": 88.88,
               "request_e2e_s_p50": 5.75,
@@ -372,7 +392,9 @@
                 "gpu1_power_mean": 346.3
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "RuntimeError: cell bounded_http_c64 shard exits: (2, 0)",
               "rep": 1
             }
@@ -410,7 +432,9 @@
                 "gpu1_power_mean": 338.6
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -446,7 +470,9 @@
           "service_total_tokens": 433312,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         }
       },
@@ -480,7 +506,9 @@
                 "gpu1_power_mean": 326.9
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -516,7 +544,9 @@
           "service_total_tokens": 433322,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c1": {
@@ -548,7 +578,9 @@
                 "gpu1_power_mean": 315.9
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -584,7 +616,9 @@
           "service_total_tokens": 433316,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c2": {
@@ -616,7 +650,9 @@
                 "gpu1_power_mean": 300.4
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -652,7 +688,9 @@
           "service_total_tokens": 433322,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c32": {
@@ -684,7 +722,9 @@
                 "gpu1_power_mean": 311.6
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -720,7 +760,9 @@
           "service_total_tokens": 433323,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c4": {
@@ -752,7 +794,9 @@
                 "gpu1_power_mean": 314.0
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -788,7 +832,9 @@
           "service_total_tokens": 433325,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c64": {
@@ -820,7 +866,9 @@
                 "gpu1_power_mean": 322.0
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -856,7 +904,9 @@
           "service_total_tokens": 433324,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         },
         "c8": {
@@ -888,7 +938,9 @@
                 "gpu1_power_mean": 318.1
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "error": "",
               "rep": 1
             }
@@ -924,7 +976,9 @@
           "service_total_tokens": 433332,
           "completed_rows": 2048,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": "gate_group"
         }
       },
@@ -956,7 +1010,9 @@
                 "gpu_aggregated_power_mean": 530.0
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "n_evidence_rows": 2048,
               "error": "",
               "rep": 1
@@ -993,7 +1049,9 @@
           "service_total_tokens": 433300,
           "completed_rows": null,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": null
         },
         "c1": {
@@ -1023,7 +1081,9 @@
                 "gpu_aggregated_power_mean": 650.4
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "n_evidence_rows": 2048,
               "error": "",
               "rep": 1
@@ -1060,7 +1120,9 @@
           "service_total_tokens": 433322,
           "completed_rows": null,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": null
         },
         "c2": {
@@ -1090,7 +1152,9 @@
                 "gpu_aggregated_power_mean": 620.9
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "n_evidence_rows": 2048,
               "error": "",
               "rep": 1
@@ -1127,7 +1191,9 @@
           "service_total_tokens": 433290,
           "completed_rows": null,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": null
         },
         "c32": {
@@ -1157,7 +1223,9 @@
                 "gpu_aggregated_power_mean": 510.3
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "n_evidence_rows": 2048,
               "error": "",
               "rep": 1
@@ -1194,7 +1262,9 @@
           "service_total_tokens": 433299,
           "completed_rows": null,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": null
         },
         "c4": {
@@ -1224,7 +1294,9 @@
                 "gpu_aggregated_power_mean": 624.4
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "n_evidence_rows": 2048,
               "error": "",
               "rep": 1
@@ -1261,7 +1333,9 @@
           "service_total_tokens": 433318,
           "completed_rows": null,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": null
         },
         "c8": {
@@ -1291,7 +1365,9 @@
                 "gpu_aggregated_power_mean": 567.8
               },
               "comparison_role": null,
+              "system_comparison_role": null,
               "formal_baseline_eligible": null,
+              "scheduler_owner": null,
               "n_evidence_rows": 2048,
               "error": "",
               "rep": 1
@@ -1328,7 +1404,9 @@
           "service_total_tokens": 433308,
           "completed_rows": null,
           "comparison_role": null,
+          "system_comparison_role": null,
           "formal_baseline_eligible": null,
+          "scheduler_owner": null,
           "service_tokens_source": null
         }
       }

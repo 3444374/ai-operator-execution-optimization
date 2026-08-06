@@ -48,22 +48,22 @@
 - **峰值 72,934 tok/s @ 2048**（ttft 口径）——与三臂峰值区一致（bounded 87k / project 77k / duckdb 76k@2048，group 口径）。
 - **4096+ 坍塌**：72,934 → 50,013 → 39,898 → 37,966（峰值 52%），TTFT 51→158ms（3×），prefix-hit 0.96→0.60。与三臂同坍塌点、同信号。
 - **lb_rr 峰值最低**：73k vs 三臂 76-87k（group 口径）。单进程经 nginx 欠喂（ADDENDUM 推断 avg ~10/backend << 32 饱和点，**per-run lbrr64 未审计**）。
-- **全 9 格 passed（含 8192/10570）**——不像 duckdb_sharded 在大尺度 cap-64 失败（lb_rr 单进程经 nginx，finish_reason=length=0 已门禁证）。
-- **GPU util**：64 时 GPU1 仅 12.5%（单进程欠喂，请求未填满两卡）；2048 时 70%（接近饱和）；10570 时 90%（坍塌区 GPU 满 但吞吐低 = cache thrash，非算力不足）。
+- **全 9 格 passed（含 8192/10570）**——不像 duckdb_sharded 在大尺度 cap-64 失败（lb_rr 单进程经 nginx，256 门禁 0 error / 未观察到 max_tokens-truncation；注 `finish_reason` 字段空，**空 ≠ 已审计为非 length**，仅"无 length 报错"）。
+- **GPU util**：64 时 GPU1 仅 12.5%；2048 时 70%；10570 时 90%（坍塌区 GPU 利用率高但吞吐低——**只能观察，不能归因 cache thrash**：无 service-counter 因果证据，且本跑 cache 控制不统一，见 §5）。
 
 **推断**：
 - lb_rr 本次 run 在 2048 附近峰值、4096+ 下降，**形态上**与三臂相似；但**不能声称"跨执行路径 cache-thrash regime"**——lb_rr `warmup_per_cell=false`（uncontrolled-cache，规模嵌套继承）+ 三臂 warmup 方式不同，cache 控制不统一。只能下：**本次 run 内吞吐下降与 prefix-hit 下降（0.96→0.60）相关**（相关，非因果）。
-- lb_rr 峰值最低是**架构特性**（单入口欠喂），非 cache/调度问题。
+- lb_rr 峰值最低（73k vs 三臂 76-87k）：**推断**单进程经 nginx 的持续并发有限（per-run lbrr64 未审计，机制待证）；**不能声称"单入口欠喂是已证架构特性"**。
 
 **不能声称**：
-- lb_rr"优于/劣于"三臂（1 rep/cell，无 TOST；绝对值差是单入口欠喂的已知架构效应）。
+- lb_rr"优于/劣于"三臂（1 rep/cell，无 TOST；绝对值差机制未证，per-run lbrr64 未审计）。
 - 坍塌"根因是 vLLM KV/调度"（无 service-counter 证据，疑似；见 ADDENDUM 订正）。
 - vLLM effective max_num_seqs 具体值（cmdline 无 flag，默认）。
 
 ## 5. 对课题含义
 
 - **4-臂规模曲线（各自 run）**：bounded/project/duckdb/lb_rr 都在 2048 附近峰值、4096+ 下降。**但当前标 `diagnostic_observation_pending_evidence_fix`，不引用"跨四臂 clean cache-thrash finding"**——4 臂 cache 控制不统一（lb_rr uncontrolled + 三臂不同 warmup + 规模嵌套继承）。要把"跨四臂 cache regime"写进论文，**必须另做**：统一 cache reset / 双后端 warmup / 随机化 scale 顺序 / ≥1w+3f 的受控重跑。
-- lb_rr 单入口欠喂（峰值最低）是现实部署基线（"1 个 DuckDB 进程喂不饱多卡"），对照多进程/多 endpoint 方法。
+- lb_rr 峰值最低**形态上**对照多进程/多 endpoint 方法（"1 个 DuckDB 进程喂不饱多卡"是**推断/待证**，非已证结论；per-run lbrr64 未审计）。
 
 ## 6. 证据 + 诚实边界
 
@@ -71,4 +71,4 @@
 - `ramp_aggregate.{json,md}`：aggregator 重算（rows fallback + status from ramp_run）。
 - 代码：`multicard_scale_ramp.py`（lb_rr cell + identity sidecar）。
 
-> **诚实边界**：**1 rep/cell diagnostic**（非 formal）；**身份 harness_sharded_diagnostic**（DuckDB 单 BASE_URL 经 nginx，非产品原生多 endpoint）；**uncontrolled-cache**（`warmup_per_cell=false` + 规模嵌套 + 前跑 Phase 2 → 缓存继承，**不能 vs bounded ramp 直接比、非 cache-controlled scale curve**；复审 #4。lb_rr warmup bug 已修——单端点 manifest 两后端全 prompt，但本跑用旧 driver 未启用）；**ttft 口径**（shard summary 无 service counter，用 ttft 两后端 Σ delta）；**raw 已提交裁剪版**（commit 6f6ef75，requests.csv 排除）；**vLLM effective config = 默认**；**坍塌归因未证实**（疑似 cache thrash，无 service-counter）；**provenance**：lb_rr 256 gate summary 仍写 `database_product_native_baseline`（旧 runner，未用 identity sidecar；报告层标 harness_sharded_diagnostic，重跑才写 sidecar override）。
+> **诚实边界**：**1 rep/cell diagnostic**（非 formal）；**身份** `system_comparison_role=gateway_system_diagnostic`（协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx → 2 vLLM；component comparison_role=database_product_native_baseline；scheduler_owner=duckdb_ai_extension+nginx_round_robin+vllm）；**uncontrolled-cache**（`warmup_per_cell=false` + 规模嵌套 + 前跑 Phase 2 → 缓存继承，**不能 vs bounded ramp 直接比、非 cache-controlled scale curve、不引用跨四臂 cache-thrash**）；**ttft 口径**（shard summary 无 service counter，用 ttft 两后端 Σ delta）；**raw 已提交裁剪版**（6f6ef75，summary/ramp_run/ttft，requests.csv 排除）；**vLLM effective config = 默认**（cmdline 无 max_num_seqs/8192 flag）；**坍塌归因未证实**（疑似，无 service-counter）；**身份机器闭环**：identity sidecar 由新 driver（本轮 commit）写 system_comparison_role，历史 raw（6f6ef75）无 sidecar → aggregate `system_comparison_role=null`，报告层身份标注 standalone，重跑才机器闭环。

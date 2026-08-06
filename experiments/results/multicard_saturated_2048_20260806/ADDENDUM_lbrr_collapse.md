@@ -4,7 +4,7 @@
 > - **`ps8_collapse/`（bounded c=64/128/256）已提交**（114 files，raw 可复算）→ bounded 过订阅塌陷曲线**可独立审计**。group 口径复算：c64=**36560**（n=2）/ c128=**24836**（n=1）/ c256=**N/A**（0/3 完整 2-shard rep，每 formal ≥1 shard 失败）；正文旧的 37341/25026 是 sum-of-per-shard 不同公式（已订正，见 §B）。
 > - **`collapse.log` + `lbrr64_*/`（lb_rr @64 per-run）仍未提交** → **duckdb_ai_lb_rr @64 = 72480 tok/s 仍无法独立审计**（仅 collapse.log 汇总数字，无 per-run 证据）。
 > - **塌陷归因**：c64_f0 shard_1 是 `ValueError ReadError`（网络/读取层，非 vLLM 崩溃）；机制归因 vLLM KV/调度**疑似、无 service-counter 证据、未证实**。
-> - lb_rr 身份 = `harness_sharded_diagnostic`（DuckDB 单 BASE_URL 经 nginx），非 DuckDB 产品原生多 endpoint。
+> - lb_rr 身份 = `system_comparison_role=gateway_system_diagnostic`（协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx；component comparison_role=database_product_native_baseline；scheduler_owner=duckdb_ai_extension+nginx_round_robin+vllm），非 DuckDB 产品原生多 endpoint。
 
 > 补充主 README 的饱和三臂 formal。两块数据：(1) **duckdb_ai_lb_rr @64**（`lbrr64_*/` + `collapse.log` **未提交** → 72480 **不可独立审计**）；(2) **bounded_http 过订阅塌陷曲线**（`ps8_collapse/` **已提交** → group 口径可复算）。同设置：2048 SQuAD，2×4090，cap=64，temp=0，prefix-on。§A（lb_rr）数字基于 collapse.log 汇总、per-run 未审计；§B（bounded）已按 group 口径复算。
 

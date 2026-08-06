@@ -2,7 +2,7 @@
 
 > **定位**：bounded_http / duckdb_ai / project_static 三臂在固定规模 2048 下，从 **C_total=2（c/K=1）到 C_total=128（c=64）的完整并发曲线**，回答"上游并发如何喂饱 GPU、各臂形态如何"。**这是 1 rep/cell 的 diagnostic screening，不是 formal ranking**（无 TOST/equivalence margin/CV，"未检出差异"≠"证明等价"）。
 >
-> **身份（订正）**：`duckdb_ai` 是测试 harness 预切 manifest + 2 个独立 DuckDB 进程（DuckDB `ai` 单 BASE_URL），按 [协议 §2.6](../../../plans/bounded_output_duckdb_comparison_protocol_20260805.md) 标 **`harness_sharded_diagnostic`**，scheduler owner = 实验 harness，**不进 DuckDB 产品原生主排名**。lb_rr 臂（单进程经 nginx）未纳入本跑，见 §7。
+> **身份（订正）**：`duckdb_ai` 是测试 harness 预切 manifest + 2 个独立 DuckDB 进程（DuckDB `ai` 单 BASE_URL），按 [协议 §2.6](../../../plans/bounded_output_duckdb_comparison_protocol_20260805.md) 标 **`harness_pre_split_diagnostic`**，scheduler owner = 实验 harness，**不进 DuckDB 产品原生主排名**。lb_rr 臂（单进程经 nginx）未纳入本跑，见 §7。
 >
 > **duckdb 修复验证**：首跑（base conda，DuckDB 1.5.5）duckdb 全 7 格失败（ai extension 在 v1.5.4 路径不匹配）；本跑切 **text-baselines venv（DuckDB 1.5.4 + ai extension 0.4.14）** 后 duckdb 全 passed。deploy README:1175 规定 duckdb 必须用固定 1.5.4 的独立解释器。
 
@@ -33,7 +33,7 @@
 
 ## 4. 实验数据（完整并发曲线，service tokens/s）
 
-| C_total | bounded_http (c) | duckdb_ai (c)〔harness_sharded_diagnostic〕| project_static (K) |
+| C_total | bounded_http (c) | duckdb_ai (c)〔harness_pre_split_diagnostic〕| project_static (K) |
 |---|---|---|---|
 | 2 | 4,277 (c1) | 77,862 (c1) | 4,226 (K1) |
 | 4 | 7,642 (c2) | **79,088** ←峰 (c2) | 7,371 (K2) |
@@ -56,7 +56,7 @@ TTFT P50：c/K=1 约 30ms → c/K=32 约 52-57ms（随并发轻微恶化）。GP
 - **C_total=64 三臂排序（group 口径）**：**bounded 87,393 > project 77,381 > duckdb 76,449**（旧 total/max_jct 口径误排 bounded>duckdb>project；group 口径下 project 略高于 duckdb harness 诊断）。
 
 **推断**：
-- 上游调度（bounded/project）的并发控制有意义（线性喂饱到 c32/K32）；DuckDB-ai 的集合语义绕过了 client 并发（c 无关）。**所以 duckdb 的 c 横轴与 bounded/project 不同语义，不能直接横比 c**——这是它该标 `harness_sharded_diagnostic` 的又一证据。
+- 上游调度（bounded/project）的并发控制有意义（线性喂饱到 c32/K32）；DuckDB-ai 的集合语义绕过了 client 并发（c 无关）。**所以 duckdb 的 c 横轴与 bounded/project 不同语义，不能直接横比 c**——这是它该标 `harness_pre_split_diagnostic` 的又一证据。
 - duckdb GPU ~69% 未满但 tok/s plateau → 瓶颈在 DuckDB 进程内部（SQL 执行/网络/set 聚合），不在 GPU。
 
 **不能声称**：
@@ -84,4 +84,4 @@ TTFT P50：c/K=1 约 30ms → c/K=32 约 52-57ms（随并发轻微恶化）。GP
 - `ramp_aggregate.{json,md}`：committed aggregator 重算（**group 口径 + rows fallback + identity sidecar**）。
 - 代码：`multicard_scale_ramp.py`（concurrency-sweep + warmup fail-closed + 单端点 warmup + 原子 ramp_run + clean-Ray + vLLM config preflight + lb_rr backend-balance gate）。
 
-> **诚实边界**：**1 rep/cell diagnostic**（非 formal，无 TOST/CV）；**duckdb/lb_rr = harness_sharded_diagnostic**（非产品原生排名）；**group 口径**（gate 臂 gate.json group_service_wall_s；旧 total/max_jct 已弃）；**project prefix-hit 随 K 升温**（K1 0.91→K32 0.96，非全 0.96，project 路由独立于 manifest）；**vLLM effective config = 默认**（cmdline 无 max_num_seqs/8192 flag）；**bounded c64 failed**（C_total=128 过载）；**未达 feeding-parity ≥95% 门禁**（duckdb/project ~87-89%）。
+> **诚实边界**：**1 rep/cell diagnostic**（非 formal，无 TOST/CV）；**duckdb/lb_rr = harness_pre_split_diagnostic**（非产品原生排名）；**group 口径**（gate 臂 gate.json group_service_wall_s；旧 total/max_jct 已弃）；**project prefix-hit 随 K 升温**（K1 0.91→K32 0.96，非全 0.96，project 路由独立于 manifest）；**vLLM effective config = 默认**（cmdline 无 max_num_seqs/8192 flag）；**bounded c64 failed**（C_total=128 过载）；**未达 feeding-parity ≥95% 门禁**（duckdb/project ~87-89%）。

@@ -57,8 +57,10 @@ def _gate_cell(root: Path, scale: int, arm: str, *, total_tokens: int, jct: floa
             w.writerow({"doc_id": 999, "status": "failed"})
     _write(cell / "gate_output" / "run_status.json", json.dumps({"status": status}))
     _write(cell / "ttft_metrics.json", json.dumps({
-        "0": {"vllm_time_to_first_token_p50_s": ttft_p50, "vllm_prefix_cache_hit_rate": prefix_hit},
-        "1": {"vllm_time_to_first_token_p50_s": ttft_p50, "vllm_prefix_cache_hit_rate": prefix_hit},
+        "0": {"vllm_time_to_first_token_p50_s": ttft_p50, "vllm_prefix_cache_hit_rate": prefix_hit,
+              "vllm_prompt_tokens_delta": total_tokens // 2, "vllm_generation_tokens_delta": 0},
+        "1": {"vllm_time_to_first_token_p50_s": ttft_p50, "vllm_prefix_cache_hit_rate": prefix_hit,
+              "vllm_prompt_tokens_delta": total_tokens // 2, "vllm_generation_tokens_delta": 0},
     }))
     with (cell / "gpu_resource.csv").open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["sample_index", "gpu_index", "gpu_utilization_pct", "gpu_power_w"])
@@ -248,12 +250,16 @@ class RobustRowsTests(unittest.TestCase):
                 }))
             _write(cell / "gate_output" / "run_status.json", json.dumps({"status": "passed"}))
             _write(cell / "identity.json", json.dumps({  # ramp-layer sidecar (authoritative)
-                "comparison_role": "harness_sharded_diagnostic",
-                "formal_baseline_eligible": False}))
+                "comparison_role": "database_product_native_baseline",  # component (Literal)
+                "system_comparison_role": "harness_pre_split_diagnostic",  # authoritative primary (Literal, extended)
+                "formal_baseline_eligible": False,
+                "scheduler_owner": "experiment_harness + duckdb_ai_extension + vllm"}))
             result = agg.aggregate(root)
         m = result["scale_2048"]["arms"]["duckdb_ai"]["c32"]
-        self.assertEqual(m["comparison_role"], "harness_sharded_diagnostic")
+        self.assertEqual(m["comparison_role"], "database_product_native_baseline")  # component preserved
+        self.assertEqual(m["system_comparison_role"], "harness_pre_split_diagnostic")  # authoritative primary
         self.assertFalse(m["formal_baseline_eligible"])
+        self.assertEqual(m["scheduler_owner"], "experiment_harness + duckdb_ai_extension + vllm")
 
     def test_gate_group_wall_overrides_summary_max_jct(self) -> None:
         """gate.json group_service_total_tokens/group_service_wall_s is authoritative
