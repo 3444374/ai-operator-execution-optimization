@@ -1,0 +1,7 @@
+{
+  "comparison_role": "harness_pre_split_diagnostic",
+  "component_comparison_role": "database_product_native_baseline",
+  "formal_baseline_eligible": false,
+  "scheduler_owner": "experiment_harness + duckdb_ai_extension + vllm",
+  "reason": "harness pre-split manifest + 2 independent DuckDB processes; DuckDB ai single BASE_URL; protocol §2.6 -> not product-native multi-endpoint"
+}

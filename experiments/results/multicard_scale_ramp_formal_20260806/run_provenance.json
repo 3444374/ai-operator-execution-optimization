@@ -1,0 +1,24 @@
+{
+  "vllm_cmdlines": {
+    "478170": "/root/autodl-tmp/venvs/vllm-4090/bin/python -m vllm.entrypoints.openai.api_server --model /root/autodl-tmp/models/Qwen2.5-7B-Instruct --served-model-name qwen2.5-7b --dtype auto --max-model-len 8192 --gpu-memory-utilization 0.90 --port 8000 --host 127.0.0.1 --enable-prefix-caching --enable-mfu-metrics --max-num-batched-tokens 8192 --max-num-seqs 256 ",
+    "478172": "/root/autodl-tmp/venvs/vllm-4090/bin/python -m vllm.entrypoints.openai.api_server --model /root/autodl-tmp/models/Qwen2.5-7B-Instruct --served-model-name qwen2.5-7b --dtype auto --max-model-len 8192 --gpu-memory-utilization 0.90 --port 8001 --host 127.0.0.1 --enable-prefix-caching --enable-mfu-metrics --max-num-batched-tokens 8192 --max-num-seqs 256 ",
+    "518877": "python3 -c \nimport json, pathlib, subprocess, hashlib\n# provenance (same vLLM procs served both runs)\npids=subprocess.run(['pgrep','-f','vllm.entrypoints'],capture_output=True,text=True).stdout.split()\ncmdlines={}\nfor p in pids:\n    try:\n        c=pathlib.Path(f'/proc/{p}/cmdline').read_bytes().replace(b'\\0',b' ').decode('utf-8','replace')\n        port=[w for w in c.split() if '--port' in w] or ['?']\n        cmdlines[p]=c\n    except: pass\nnginx_conf='/etc/nginx/conf.d/vllm_lb.conf'\ntry: nginx_sha=hashlib.sha256(open(nginx_conf,'rb').read()).hexdigest()\nexcept: nginx_sha='unreadable'\nsweep_out=pathlib.Path('/tmp/formal_sweep.out').read_text('utf-8','replace') if pathlib.Path('/tmp/formal_sweep.out').exists() else ''\nstrict_lines=[l for l in sweep_out.splitlines() if '[ramp][preflight]' in l]\nprov={'vllm_cmdlines':cmdlines,'strict_preflight_output':strict_lines,'nginx_conf_path':nginx_conf,'nginx_conf_sha256':nginx_sha,'note':'same 2 vLLM procs (8000@GPU0,8001@GPU1) served both lb_rr and scale runs; dtype auto; tensor_parallel=1 (no --tensor-parallel-size); gpu_memory_utilization=0.90; max-model-len 8192; max-num-seqs 256; max-num-batched-tokens 8192; prefix-caching ON'}\nfor d in ['experiments/results/multicard_lbrr_scale_ramp_formal_20260806','experiments/results/multicard_scale_ramp_formal_20260806']:\n    pathlib.Path(d,'run_provenance.json').write_text(json.dumps(prov,indent=2,ensure_ascii=False),'utf-8')\nprint('provenance written; nginx_sha',nginx_sha[:12],'vllm_pids',list(cmdlines))\n "
+  },
+  "strict_preflight_output": [
+    "[ramp][preflight] port 8000 cmdline carries --max-num-seqs 256 (declared == effective)",
+    "[ramp][preflight] port 8000 cmdline carries --max-num-batched-tokens 8192 (declared == effective)",
+    "[ramp][preflight] port 8000 cmdline has --enable-prefix-caching (effective ON)",
+    "[ramp][preflight] port 8001 cmdline carries --max-num-seqs 256 (declared == effective)",
+    "[ramp][preflight] port 8001 cmdline carries --max-num-batched-tokens 8192 (declared == effective)",
+    "[ramp][preflight] port 8001 cmdline has --enable-prefix-caching (effective ON)",
+    "[ramp][preflight] port 8000 cmdline carries --max-num-seqs 256 (declared == effective)",
+    "[ramp][preflight] port 8000 cmdline carries --max-num-batched-tokens 8192 (declared == effective)",
+    "[ramp][preflight] port 8000 cmdline has --enable-prefix-caching (effective ON)",
+    "[ramp][preflight] port 8001 cmdline carries --max-num-seqs 256 (declared == effective)",
+    "[ramp][preflight] port 8001 cmdline carries --max-num-batched-tokens 8192 (declared == effective)",
+    "[ramp][preflight] port 8001 cmdline has --enable-prefix-caching (effective ON)"
+  ],
+  "nginx_conf_path": "/etc/nginx/conf.d/vllm_lb.conf",
+  "nginx_conf_sha256": "ed09a37634eb8a23e7117a88bfdf7ea8c0dc9dab64230d0d4832b0c80bae21c7",
+  "note": "same 2 vLLM procs (8000@GPU0,8001@GPU1) served both lb_rr and scale runs; dtype auto; tensor_parallel=1 (no --tensor-parallel-size); gpu_memory_utilization=0.90; max-model-len 8192; max-num-seqs 256; max-num-batched-tokens 8192; prefix-caching ON"
+}

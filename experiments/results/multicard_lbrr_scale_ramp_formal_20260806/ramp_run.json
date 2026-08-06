@@ -1,0 +1,520 @@
+{
+  "experiment_id": "multicard_lbrr_scale_ramp_formal",
+  "records": [
+    {
+      "arm": "lb_rr",
+      "scale": 64,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_64/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0177,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 25.0,
+        "gpu0_power_mean": 110.0425,
+        "gpu1_util_mean": 25.0,
+        "gpu1_power_mean": 107.065,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_64/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 64,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_64/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0606,
+      "backend_token_work_skew": 0.047,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 25.0,
+        "gpu0_power_mean": 149.965,
+        "gpu1_util_mean": 20.5,
+        "gpu1_power_mean": 148.2825,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_64/lb_rr_c64_rep2/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 64,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_64/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0111,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 25.0,
+        "gpu0_power_mean": 153.49,
+        "gpu1_util_mean": 25.0,
+        "gpu1_power_mean": 134.92000000000002,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_64/lb_rr_c64_rep3/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 128,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_128/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0308,
+      "backend_token_work_skew": 0.0418,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 20.0,
+        "gpu0_power_mean": 188.136,
+        "gpu1_util_mean": 24.6,
+        "gpu1_power_mean": 177.566,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_128/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 128,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_128/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0308,
+      "backend_token_work_skew": 0.0245,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 25.0,
+        "gpu0_power_mean": 187.6575,
+        "gpu1_util_mean": 25.0,
+        "gpu1_power_mean": 173.8975,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_128/lb_rr_c64_rep2/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 128,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_128/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0606,
+      "backend_token_work_skew": 0.0395,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 33.333333333333336,
+        "gpu0_power_mean": 221.87333333333333,
+        "gpu1_util_mean": 33.333333333333336,
+        "gpu1_power_mean": 215.73333333333335,
+        "n_samples": 3.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_128/lb_rr_c64_rep3/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 256,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_256/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0155,
+      "backend_token_work_skew": 0.0177,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 35.6,
+        "gpu0_power_mean": 212.99599999999998,
+        "gpu1_util_mean": 39.0,
+        "gpu1_power_mean": 190.286,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_256/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 256,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_256/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0005,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 38.2,
+        "gpu0_power_mean": 203.37,
+        "gpu1_util_mean": 39.4,
+        "gpu1_power_mean": 196.544,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_256/lb_rr_c64_rep2/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 256,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_256/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0155,
+      "backend_token_work_skew": 0.0277,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 20.0,
+        "gpu0_power_mean": 217.226,
+        "gpu1_util_mean": 28.4,
+        "gpu1_power_mean": 198.19,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_256/lb_rr_c64_rep3/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 512,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_512/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0078,
+      "backend_token_work_skew": 0.0121,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 42.0,
+        "gpu0_power_mean": 249.18428571428572,
+        "gpu1_util_mean": 42.857142857142854,
+        "gpu1_power_mean": 226.93428571428572,
+        "n_samples": 7.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_512/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 512,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_512/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0073,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 42.857142857142854,
+        "gpu0_power_mean": 238.77142857142857,
+        "gpu1_util_mean": 42.857142857142854,
+        "gpu1_power_mean": 228.69142857142856,
+        "n_samples": 7.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_512/lb_rr_c64_rep2/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 512,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_512/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0078,
+      "backend_token_work_skew": 0.0157,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 41.0,
+        "gpu0_power_mean": 255.75428571428571,
+        "gpu1_util_mean": 42.142857142857146,
+        "gpu1_power_mean": 225.1614285714286,
+        "n_samples": 7.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_512/lb_rr_c64_rep3/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 1024,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_1024/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0039,
+      "backend_token_work_skew": 0.01,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 58.7,
+        "gpu0_power_mean": 294.371,
+        "gpu1_util_mean": 69.5,
+        "gpu1_power_mean": 279.225,
+        "n_samples": 10.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_1024/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 1024,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_1024/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0017,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 57.18181818181818,
+        "gpu0_power_mean": 291.35,
+        "gpu1_util_mean": 58.90909090909091,
+        "gpu1_power_mean": 278.2518181818182,
+        "n_samples": 11.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_1024/lb_rr_c64_rep2/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 1024,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_1024/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0028,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 59.6,
+        "gpu0_power_mean": 306.38599999999997,
+        "gpu1_util_mean": 60.1,
+        "gpu1_power_mean": 273.227,
+        "n_samples": 10.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_1024/lb_rr_c64_rep3/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 2048,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_2048/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.002,
+      "backend_token_work_skew": 0.0067,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 75.0,
+        "gpu0_power_mean": 337.28375,
+        "gpu1_util_mean": 75.0,
+        "gpu1_power_mean": 328.383125,
+        "n_samples": 16.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_2048/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 2048,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_2048/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0039,
+      "backend_token_work_skew": 0.0053,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 61.94444444444444,
+        "gpu0_power_mean": 314.42333333333335,
+        "gpu1_util_mean": 63.05555555555556,
+        "gpu1_power_mean": 302.09055555555557,
+        "n_samples": 18.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_2048/lb_rr_c64_rep2/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 2048,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_2048/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.002,
+      "backend_token_work_skew": 0.0003,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 65.70588235294117,
+        "gpu0_power_mean": 330.0664705882353,
+        "gpu1_util_mean": 70.58823529411765,
+        "gpu1_power_mean": 320.3135294117647,
+        "n_samples": 17.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_2048/lb_rr_c64_rep3/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 4096,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_4096/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.001,
+      "backend_token_work_skew": 0.0058,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 86.59016393442623,
+        "gpu0_power_mean": 401.7693442622951,
+        "gpu1_util_mean": 86.04918032786885,
+        "gpu1_power_mean": 386.8511475409836,
+        "n_samples": 61.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_4096/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 4096,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_4096/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.001,
+      "backend_token_work_skew": 0.0048,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 85.24590163934427,
+        "gpu0_power_mean": 401.4739344262295,
+        "gpu1_util_mean": 86.70491803278688,
+        "gpu1_power_mean": 389.7093442622951,
+        "n_samples": 61.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_4096/lb_rr_c64_rep2/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 4096,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_4096/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0021,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 88.3,
+        "gpu0_power_mean": 407.12166666666667,
+        "gpu1_util_mean": 87.88333333333334,
+        "gpu1_power_mean": 396.33733333333333,
+        "n_samples": 60.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_4096/lb_rr_c64_rep3/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 8192,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_8192/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0005,
+      "backend_token_work_skew": 0.0012,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 90.49618320610686,
+        "gpu0_power_mean": 408.91832061068703,
+        "gpu1_util_mean": 90.92366412213741,
+        "gpu1_power_mean": 405.21717557251907,
+        "n_samples": 131.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_8192/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 8192,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_8192/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0005,
+      "backend_token_work_skew": 0.0036,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 89.54887218045113,
+        "gpu0_power_mean": 408.60616541353386,
+        "gpu1_util_mean": 90.54135338345864,
+        "gpu1_power_mean": 403.760977443609,
+        "n_samples": 133.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_8192/lb_rr_c64_rep2/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 8192,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_8192/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0005,
+      "backend_token_work_skew": 0.0003,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 91.16030534351145,
+        "gpu0_power_mean": 414.1037404580153,
+        "gpu1_util_mean": 89.42748091603053,
+        "gpu1_power_mean": 403.17687022900765,
+        "n_samples": 131.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_8192/lb_rr_c64_rep3/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 10570,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_10570/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0004,
+      "backend_token_work_skew": 0.0016,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 91.73684210526316,
+        "gpu0_power_mean": 416.96409356725144,
+        "gpu1_util_mean": 91.6374269005848,
+        "gpu1_power_mean": 406.6897076023392,
+        "n_samples": 171.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_10570/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 10570,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_10570/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0024,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 89.71428571428571,
+        "gpu0_power_mean": 410.3010857142857,
+        "gpu1_util_mean": 89.89142857142858,
+        "gpu1_power_mean": 400.98594285714285,
+        "n_samples": 175.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_10570/lb_rr_c64_rep2/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 10570,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_10570/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0004,
+      "backend_token_work_skew": 0.0031,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 89.56896551724138,
+        "gpu0_power_mean": 411.9210344827586,
+        "gpu1_util_mean": 88.86781609195403,
+        "gpu1_power_mean": 399.5811494252874,
+        "n_samples": 174.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_formal_20260806/scale_10570/lb_rr_c64_rep3/ttft_metrics.json"
+    }
+  ],
+  "n_passed": 27,
+  "n_failed": 0
+}

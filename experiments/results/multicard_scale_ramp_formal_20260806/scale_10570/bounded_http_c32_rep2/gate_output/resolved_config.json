@@ -1,0 +1,47 @@
+{
+  "blocked_cells": [],
+  "cells": [
+    {
+      "adapter": "bounded_http",
+      "adapter_args": [],
+      "batch_size": 1,
+      "comparison_role": "direct_client_control",
+      "concurrency_per_endpoint": 32,
+      "custom_scheduling_code": true,
+      "formal_baseline_eligible": false,
+      "formal_control_eligible": true,
+      "id": "bounded_http_c32",
+      "implementation_provenance": "project_bounded_async_client",
+      "python_executable": "/root/autodl-tmp/venvs/text-baselines/bin/python",
+      "qualification_gate": "same_manifest_model_protocol_and_endpoints",
+      "ray_address": null,
+      "scheduler_owner": "project_asyncio_control",
+      "upstream_source": "local_project_control"
+    }
+  ],
+  "completion_protocol": "chat_completions",
+  "driver_python": "/root/autodl-tmp/venvs/text-baselines/bin/python",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "experiment_id": "multicard_scale_ramp_formal_bounded_http_10570r",
+  "formal": false,
+  "manifest": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp/manifests/squad_dev_10570.jsonl",
+  "max_endpoint_work_skew": 0.02,
+  "model": "qwen2.5-7b",
+  "output_root": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_formal_20260806/scale_10570/bounded_http_c32_rep2/gate_output",
+  "rows_total": 10570,
+  "service": {
+    "live_limits": {
+      "max_num_batched_tokens": 8192,
+      "max_num_seqs": 256
+    },
+    "live_prefix_caching": true,
+    "max_num_batched_tokens": 8192,
+    "max_num_seqs": 256,
+    "prefix_caching": "enabled"
+  },
+  "tokenizer": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
+  "vllm_python": "/root/autodl-tmp/venvs/vllm-4090/bin/python"
+}

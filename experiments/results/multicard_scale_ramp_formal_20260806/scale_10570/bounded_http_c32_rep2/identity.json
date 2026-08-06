@@ -1,0 +1,7 @@
+{
+  "comparison_role": "direct_client_control",
+  "component_comparison_role": "direct_client_control",
+  "formal_baseline_eligible": false,
+  "formal_control_eligible": true,
+  "scheduler_owner": "project_asyncio_control"
+}

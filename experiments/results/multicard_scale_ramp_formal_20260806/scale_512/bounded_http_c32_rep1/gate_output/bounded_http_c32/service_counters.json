@@ -1,0 +1,44 @@
+{
+  "after": {
+    "0": {
+      "generation_tokens": 671673,
+      "prefix_cache_hits": 21027776,
+      "prefix_cache_queries": 28360468,
+      "prompt_tokens": 28360468
+    },
+    "1": {
+      "generation_tokens": 671365,
+      "prefix_cache_hits": 21031024,
+      "prefix_cache_queries": 28365750,
+      "prompt_tokens": 28365750
+    }
+  },
+  "before": {
+    "0": {
+      "generation_tokens": 670620,
+      "prefix_cache_hits": 20974768,
+      "prefix_cache_queries": 28305399,
+      "prompt_tokens": 28305399
+    },
+    "1": {
+      "generation_tokens": 670331,
+      "prefix_cache_hits": 20978688,
+      "prefix_cache_queries": 28311164,
+      "prompt_tokens": 28311164
+    }
+  },
+  "delta": {
+    "0": {
+      "generation_tokens": 1053,
+      "prefix_cache_hits": 53008,
+      "prefix_cache_queries": 55069,
+      "prompt_tokens": 55069
+    },
+    "1": {
+      "generation_tokens": 1034,
+      "prefix_cache_hits": 52336,
+      "prefix_cache_queries": 54586,
+      "prompt_tokens": 54586
+    }
+  }
+}

@@ -34,6 +34,7 @@ stdout
 
 # Machine-local SSH/remote helpers may embed external server hosts (AGENTS.md §10) -- never commit.
 rd.py
+rd_get.py
 
 # Local model checkpoints and downloaded weights.
 models/
