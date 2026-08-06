@@ -32,3 +32,12 @@
 - 修改本目录后，同步检查 `README.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、`opening/report/opening_report.md` 和 `figures/README.md` 是否需要更新。
 - 实验设计和结论遵循 `karpathy-guidelines`：不确定就标注不确定，先定义可验证目标，做最小实验，每个结论区分事实/推断/待确认。
 - 实验图统一放在 `figures/`；做图前先读 `figures/AGENTS.md`。设计论文级核心图时参考 `figure-designer`，投稿级质检参考 `nature-figure`。
+
+## 结果边界与归档（多路径 scale/calibration sweep）
+
+下列是正式 run 在**报告措辞**与**落盘归档**上的硬性边界（复审第四轮确立；违反 = 过强结论 / 证据不可复现）。可勾选投影见 `experiments/plans/experiment_report_honesty_checklist.md` §8。
+
+- **缺臂如实命名**：sweep 未含全部对照臂（如缺 `project_static`）时，称"N 条系统路径的 scale/calibration sweep"，**不**称"完整三臂正式排名"；只答所含路径的容量曲线/稳定性/规模拐点差异，**不**答"项目方法是否优于 baseline"（须补齐缺臂、同合同重跑后才能）。
+- **指标必附代码公式 + 行号**：报任何派生指标（skew/CV/ratio）写明代码精确公式与行号，不给裸数字。例：后端平衡 skew = `_backend_skew` = `abs(a-b)/max(a,b)` = (max-min)/max（`code/scripts/baselines/multicard_scale_ramp.py:366`），127:129 = 1.55%；**不**用 (max-min)/sum（=0.781%，代码不用）。gate 阈值 10% 也对 /max。
+- **finish_reason 措辞**：DuckDB-ai 扩展该字段为空 → 写"0 error/NULL、未观察到 max_tokens truncation error"，**不**写"已审计 0 length"（空 ≠ 审计非 length）。
+- **跑完归档清单**（每次正式 run 落盘到 results 目录）：两个 vLLM 进程的完整 cmdline + strict-preflight 输出（证 declared==effective）；vLLM/model revision、dtype、tensor-parallel、gpu-memory-utilization；nginx conf SHA（gateway 轨）；每 cell warmup/formal 身份 + service counters + request-skew + token-work-skew（均 (max-min)/max）；query JCT 与 request E2E **分列**；失败 cell 完整落盘；reps≥3 用 sample CV(n-1) + 报告**全部单次值**（不只 mean）。

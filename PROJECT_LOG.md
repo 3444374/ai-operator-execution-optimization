@@ -4733,3 +4733,12 @@ codex 第四轮只读复审确认 a22cdf6 六项核心修复大体正确、27/27
 - **前向说明（不重生成历史 diagnostic）**：query timing 改名为前向——committed lbrr/concurrency raw 早于 `timing_granularity` 字段（raw summary 无该字段），重生成 aggregate 是 no-op（request 语义，`model_serving_wall_s` 保留=旧名的 query-barrier JCT）；scale_ramp raw 带该字段。**正式重跑**用新 driver 会为 lb_rr 写 `timing_granularity=query_barrier` → 正确产出 `query_jct_s`，取代历史 diagnostic。
 - **测试**：42/42 通过（27→42：+15 strict +3 timing）。py_compile 全过。
 - **下一步（冻结 driver，上服务器正式重跑）**：服务器 git pull → vLLM 重启带 `--max-num-seqs 256 --max-num-batched-tokens 8192 --enable-prefix-caching` → **strict preflight 在服务器真实通过为先决** → 冻结正式合同（vllm_config_strict=true + warmup_per_cell=true + reps=3=1w+3f + identity sidecar + group/ttft 口径）→ 重跑 lb_rr + duckdb 两臂 → 不边跑边改。
+
+## 2026-08-06 规则固化：多路径 sweep 结果边界 + 跑完归档清单（写入 AGENTS.md）
+
+用户指出本轮 lb_rr→bounded+duckdb sweep（缺 project_static）的报告边界与归档要求须从"会话内提醒/记忆"升级为项目规则，落进 AGENTS.md。已写入：
+
+- **`experiments/AGENTS.md`** 新增 `## 结果边界与归档（多路径 scale/calibration sweep）`：① 缺臂如实命名——缺臂 sweep 称"N 条系统路径 scale/calibration sweep"，**非**"完整三臂正式排名"，只答容量曲线/稳定性/拐点差异，不答"项目方法优于 baseline"（须补齐同合同重跑）；② 指标必附代码公式+行号——后端 skew = `_backend_skew`=`abs(a-b)/max(a,b)`=(max-min)/max（`multicard_scale_ramp.py:366`），127:129=1.55%，**不**用 /sum(0.781%)；③ finish_reason 空→写"0 error/NULL、未观察到 max_tokens truncation error"，不写"已审计 0 length"；④ 跑完归档清单（vLLM 完整 cmdline+strict 输出 / revision·dtype·TP·gpu-mem / nginx SHA / 每 cell warmup-formal 身份+counters+skew / query JCT 与 request E2E 分列 / 失败 cell 完整 / sample CV(n-1)+全单次值）。
+- **`experiments/plans/experiment_report_honesty_checklist.md`**：新增 §8（同源详细可勾选投影 + 归档清单）、勾选流程加第 9 步（边界+归档）、§7.1 "待补"→"已实现（复审第四轮 query_barrier→query_jct_s）"。
+- 同步更新 Claude 记忆 `feedback-evidence-precision.md` ⑤：报指标必附代码精确公式+行号（skew 教训）。
+- 正式 sweep 仍由 supervisor pid 482476 跑（lb_rr 36 cell → scale 72 cell，reps=3）；cron `2b470dd4`（:09/:34）带上述边界+归档清单自动监视，ALL DONE 时按 §8.3 归档并出三条路径对比简报。

@@ -59,10 +59,25 @@
 
 下列四项不只人工对照，要在**代码/落盘层**强制（本仓库已部分实现，剩余标注）：
 
-- **7.1 计时粒度不混名**（复审 #5）：`request-level` / `query_barrier` / `group wall` 是不同边界。DuckDB-ai `timing_granularity=query_barrier`，summary 的 `latency_p50/p95/p99` 全等于整条 SQL JCT，**不是 per-request E2E**——aggregator 输出 `timing_granularity` 字段，不把 query_barrier JCT 标成 `request_e2e`。（**待补**：aggregator 加 timing_granularity 透传。）
+- **7.1 计时粒度不混名**（复审 #5）：`request-level` / `query_barrier` / `group wall` 是不同边界。DuckDB-ai `timing_granularity=query_barrier`，summary 的 `latency_p50/p95/p99` 全等于整条 SQL JCT，**不是 per-request E2E**——aggregator 输出 `timing_granularity` 字段，不把 query_barrier JCT 标成 `request_e2e`。**已实现（复审第四轮）**：query_barrier → `query_jct_s`（`model_serving_wall_s=None`）；request → `model_serving_wall_s` + `request_e2e_*`；两 shard 粒度不一致 → fail-closed。
 - **7.2 fail-closed 优先**（复审 #3/#5/#1）：缺 service counter（无 group gate.json + 无 ttft）→ `metric_unavailable`（不生成可排名数字）；缺 balance 指标（ttft_deltas 空）→ cell fail（不 passed）；缺 identity sidecar → aggregate 主角色 = null（不回退 product-native component role）。**已实现**。
 - **7.3 同源文档传播**（复审 #4）：改一处结论必须全局 grep 同步——`experiments/results/multicard_*/README.md` + ADDENDUM + `PROJECT_INDEX.md` + `PROJECT_LOG.md` + `overview/`。本次教训：只改 lb_rr 正文，INDEX/LOG/其他 README 残留旧结论（harness_sharded_diagnostic/length=0/regime）。改前 grep，改后再 grep 残留=0。
 - **7.4 证据运行身份**（复审 #6）：报告引的"可复现"必须落到**真实存在的文件**——actual_run_config.json（非 example，warmup_per_cell 实际值）+ commit hash + gateway version（nginx 1.18.0）+ 配置 sha256 + identity sidecar（comparison_role 主 + component_comparison_role）。不能"未来代码已支持"当已闭环——历史 raw 无 sidecar 则 aggregate null，报告必须标"未机器闭环"。
+
+## 8. 结果边界与归档清单（复审第四轮：多路径 sweep 命名 + 跑完归档）
+
+下列是正式 run 在**报告措辞**与**落盘归档**上的硬性边界，违反 = 过强结论 / 证据不可复现。与 `experiments/AGENTS.md §结果边界与归档` 同源。
+
+- **8.1 缺臂命名**：sweep 未含全部对照臂 → 称"N 条系统路径的 scale/calibration sweep"，**非**"完整 N 臂正式排名"。只答所含路径的容量曲线/稳定性/规模拐点；"项目方法是否优于 baseline"须补齐缺臂（如 project_static）同合同重跑后才能答。
+- **8.2 指标附公式+行号**（复审第四轮）：派生指标必写代码精确公式与行号，不给裸数字——否则分母/口径模糊，自己与读者都无法核对。后端平衡 skew = `_backend_skew` = `abs(a-b)/max(a,b)` = (max-min)/max（`code/scripts/baselines/multicard_scale_ramp.py:366`），127:129 = 1.55%；gate 阈值 10% 也对 /max。**不**用 (max-min)/sum（=0.781%，代码不用）。
+- **8.3 跑完归档清单**（每次正式 run 必落盘到 results 目录）：
+  - 两 vLLM 进程的**完整 cmdline** + strict-preflight 输出（证 declared==effective：`--max-num-seqs/--max-num-batched-tokens/--enable-prefix-caching` 实际在 cmdline 上）；
+  - vLLM/model revision、dtype、tensor-parallel、gpu-memory-utilization；
+  - nginx conf SHA（gateway 轨）；
+  - 每 cell warmup/formal 身份 + service counters + request-skew + token-work-skew（均 (max-min)/max）；
+  - query JCT 与 request E2E **分列**（query_barrier→`query_jct_s`；request→`model_serving_wall_s`+`request_e2e_*`）；
+  - 失败 cell 完整落盘（run_error.json + traceback）；
+  - reps≥3：sample CV（n-1）+ 报告**全部单次值**（不只 mean）。
 
 ## 写每个新报告/数据 cell 前的勾选流程
 
@@ -74,6 +89,7 @@
 6. ☐ 计时粒度：timing_granularity 输出？query_barrier JCT ≠ request_e2e？
 7. ☐ 同源传播：改后 grep 全局残留（README + INDEX + LOG + OUTLINE）= 0？
 8. ☐ 文档：读了 §7.5/§6/协议/provenance/deploy + 本 checklist 才下笔？
+9. ☐ 边界与归档（§8）：缺臂命名"N 条路径 sweep"非"完整排名"？指标附公式+行号（skew (max-min)/max）？归档清单（两 vLLM cmdline+strict 输出/revision·dtype·TP·gpu-mem/nginx SHA/per-cell warmup-formal 身份+counters+skew/query JCT 与 request E2E 分列/失败 cell/全单次值）落盘并被报告引用？
 
 > **登记**：本 checklist 是 `AGENTS.md §7.5`/`§6` + `bounded_output_duckdb_comparison_protocol_20260805.md` + `provenance.py::ComparisonRole` 的可勾选投影，登记于 `PROJECT_INDEX.md` 与 `experiments/plans/README.md`；写多卡/吞吐/身份/统计报告前强制对照（人工），代码层 fail-closed 由 aggregator/driver 强制（§7.2）。
 
