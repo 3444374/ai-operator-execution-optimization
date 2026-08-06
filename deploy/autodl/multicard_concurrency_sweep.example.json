@@ -47,5 +47,6 @@
   "project_ray_concurrency": 4,
   "warmup_per_cell": true,
   "warmup_concurrency": 32,
-  "idle_timeout_s": 120.0
+  "idle_timeout_s": 120.0,
+  "vllm_config_strict": true
 }

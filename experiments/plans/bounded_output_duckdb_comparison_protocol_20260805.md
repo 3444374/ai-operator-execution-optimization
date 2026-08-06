@@ -113,7 +113,7 @@ gateway。依据：[DuckDB community `ai` 扩展页](https://duckdb.org/communit
 
 禁止为了凑“双 GPU 三臂”而在 Python/SQL harness 中把 DuckDB 输入行预切两半并并行跑两个独立
 DuckDB 查询，再把它称为产品原生多 endpoint。该做法只能标作
-`harness_sharded_diagnostic`，scheduler owner 是实验 harness，不进产品原生主排名。也不能让三臂都经过
+`harness_pre_split_diagnostic`，scheduler owner 是实验 harness，不进产品原生主排名。也不能让三臂都经过
 同一个 gateway 后声称验证了项目 endpoint-aware 路由——那会再次把项目方法旁路掉。
 
 ## 3. 两个计时边界（必须分开，不可混比）

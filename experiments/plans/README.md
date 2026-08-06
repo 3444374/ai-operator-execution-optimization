@@ -16,6 +16,7 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | 厂商/论文为什么采用这些指标 | `../../research/evaluation_metrics_survey_20260731.md` |
 | 初学者如何理解四类 baseline | `../../learning/text_native_baseline_guide.md` |
 | 真实数字与结论 | 对应 `../results/` 或 `../../motivation/results/` |
+| 写多卡/吞吐/身份/统计报告前必读的诚实性检查清单（6 类反复错误 + §7 gate 4 项 + 8 步勾选） | `experiment_report_honesty_checklist.md` |
 
 2026-07-29 的数据库 AI 算子矩阵混有预注册和逐日执行日志，现完整保存在
 `archive/database_ai_operator_baseline_matrix_20260729.md`，仅用于历史追溯，不再指导

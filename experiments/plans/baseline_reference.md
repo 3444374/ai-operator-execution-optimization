@@ -470,7 +470,7 @@ BASE_URL 'http://host/v1', API_KEY 'EMPTY')`，再 `SET duckdb_ai_model`。已�
 同时保持 vLLM 服务端 prefix cache=on；产品优化的 response-cache-on 只能另列轨道。
 服务器 capability probe 曾由实验 harness 预切 4 行并对两个单 endpoint shard 各跑一次；这只证明
 DuckDB 1.5.4 / `ai` 0.4.14 的**两个独立单 endpoint 查询**可完成 1024-cap 请求，不能证明扩展自身拥有
-多 endpoint 路由，现降级标为 `harness_sharded_diagnostic`。官方扩展页只公开一个
+多 endpoint 路由，现降级标为 `harness_pre_split_diagnostic`。官方扩展页只公开一个
 `duckdb_ai_base_url` / secret `BASE_URL`；上游 README 建议多后端时接用户自己的 gateway。因此双 GPU
 产品部署若要测试，必须另列“DuckDB-ai + 第三方 gateway”完整系统轨，记录 gateway scheduler owner，
 不能注入项目 router，也不能冒充 DuckDB 原生能力。当前同一 ShareGPT workload 的 64 行在 256 和 1024

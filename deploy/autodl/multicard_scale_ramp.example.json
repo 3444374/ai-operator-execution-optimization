@@ -30,5 +30,6 @@
   "project_active_work": 65536,
   "project_actor_workers": 8,
   "project_ray_concurrency": 4,
-  "idle_timeout_s": 120.0
+  "idle_timeout_s": 120.0,
+  "vllm_config_strict": true
 }
