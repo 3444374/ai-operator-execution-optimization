@@ -9,7 +9,21 @@
 # See AGENTS.md §10 for the full policy.
 
 set -u
-python code/scripts/environment/scan_git_secrets.py
+
+if [ -n "${PYTHON_BIN:-}" ]; then
+  scanner_python="$PYTHON_BIN"
+elif [ -x ".venv/bin/python" ]; then
+  scanner_python=".venv/bin/python"
+elif command -v python3 >/dev/null 2>&1; then
+  scanner_python="$(command -v python3)"
+elif command -v python >/dev/null 2>&1; then
+  scanner_python="$(command -v python)"
+else
+  echo "commit BLOCKED: no Python interpreter found for secret scan." >&2
+  exit 1
+fi
+
+"$scanner_python" code/scripts/environment/scan_git_secrets.py
 status=$?
 if [ "$status" -ne 0 ]; then
   echo "" >&2
