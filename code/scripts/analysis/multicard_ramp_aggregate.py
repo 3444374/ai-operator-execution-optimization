@@ -79,24 +79,24 @@ def _completed_rows(shard_dirs: list[Path]) -> int:
 
 
 def _gate_cell_metrics(cell: Path) -> dict:
-    """bounded_http/duckdb_ai cell -> ramp metrics."""
+    """bounded_http/duckdb_ai (2 shards) OR lb_rr (1 shard) -> ramp metrics."""
     gate_dir = next((c for c in (cell / "gate_output").iterdir() if c.is_dir()), None)
     if gate_dir is None:
         return {"status": "missing_gate_output"}
-    shard_dirs = [gate_dir / "shard_0", gate_dir / "shard_1"]
+    shard_dirs = sorted(gate_dir.glob("shard_*"))
     summaries = [_read_json(s / "summary.json") for s in shard_dirs if (s / "summary.json").is_file()]
-    if len(summaries) != 2:
-        return {"status": f"missing_shards ({len(summaries)}/2)"}
-    # Authoritative status: run_status.json (written by run_core_gate on pass/fail).
+    if not summaries:
+        return {"status": "missing_shards"}
+    total_tokens = sum(s.get("service_total_tokens_delta", 0) for s in summaries)
+    max_jct = max(_f(s.get("jct_s")) for s in summaries)
+    unified_tps = total_tokens / max_jct if max_jct > 0 else 0.0
+    # Authoritative status: run_status.json (gate arms) / run_error.json (any).
     run_status_path = cell / "gate_output" / "run_status.json"
     status = "unknown"
     if run_status_path.is_file():
         status = str(_read_json(run_status_path).get("status", "unknown"))
     if (cell / "run_error.json").is_file():
         status = "failed"
-    total_tokens = sum(s.get("service_total_tokens_delta", 0) for s in summaries)
-    max_jct = max(_f(s.get("jct_s")) for s in summaries)
-    unified_tps = total_tokens / max_jct if max_jct > 0 else 0.0
     completed = _completed_rows(shard_dirs)
     rows_per_s = completed / max_jct if max_jct > 0 else 0.0
     latency = {q: max(_f(s.get(f"latency_{q}_s")) for s in summaries) for q in ("p50", "p95", "p99")}
@@ -259,7 +259,7 @@ def aggregate(ramp_root: Path) -> dict:
                 rep = int(name.rsplit("_rep", 1)[1])
             except (IndexError, ValueError):
                 rep = 1
-            if arm in GATE_ARMS:
+            if arm in GATE_ARMS or arm == "lb_rr":
                 metrics = _gate_cell_metrics(cell)
             elif arm == "project_static":
                 metrics = _project_cell_metrics(cell)

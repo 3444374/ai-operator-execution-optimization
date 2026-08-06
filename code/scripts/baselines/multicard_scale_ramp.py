@@ -103,6 +103,7 @@ class RampConfig:
     project_active_work: int
     project_actor_workers: int
     project_ray_concurrency: int
+    lb_endpoint_url: str = ""  # nginx LB URL for the lb_rr arm (1 DuckDB -> LB -> 2 backends)
     idle_timeout_s: float = 120.0
 
 
@@ -127,8 +128,8 @@ def _load_ramp_config(path: str | Path, *, driver_python: str, vllm_python: str)
         for a in payload["arms"]
     )
     for a in arms:
-        if a.arm not in GATE_ARMS and a.arm != "project_static":
-            raise ValueError(f"unsupported arm {a.arm!r}; expected {GATE_ARMS} or project_static")
+        if a.arm not in GATE_ARMS and a.arm not in ("project_static", "lb_rr"):
+            raise ValueError(f"unsupported arm {a.arm!r}; expected {GATE_ARMS}, project_static, or lb_rr")
         if a.concurrency <= 0 or a.reps <= 0:
             raise ValueError(f"arm {a.arm} concurrency/reps must be positive")
     return RampConfig(
@@ -152,6 +153,7 @@ def _load_ramp_config(path: str | Path, *, driver_python: str, vllm_python: str)
         project_active_work=int(payload["project_active_work"]),
         project_actor_workers=int(payload["project_actor_workers"]),
         project_ray_concurrency=int(payload["project_ray_concurrency"]),
+        lb_endpoint_url=str(payload.get("lb_endpoint_url", "")),
         idle_timeout_s=float(payload.get("idle_timeout_s", 120.0)),
     )
 
@@ -295,28 +297,120 @@ def _run_project_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int
     return record
 
 
+def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) -> dict:
+    """lb_rr: ONE duckdb_ai shard via the nginx LB (1 process -> LB -> 2 backends).
+
+    Not a gate arm (gate requires 2 direct endpoints). Concurrency here is the
+    DuckDB process's TOTAL in-flight (nginx round-robins to the 2 backends), so
+    arm.concurrency for lb_rr is total, not per-endpoint. The instrumented_cell
+    scrapes /metrics on BOTH backend endpoints (8000/8001) since the LB splits
+    load across them. Uses the endpoint_count=1 manifest (all rows -> LB).
+    """
+    import subprocess
+    if not ramp.lb_endpoint_url:
+        raise ValueError("lb_rr arm requires lb_endpoint_url in the ramp config")
+    cell_output = ramp.output_root / f"scale_{scale.rows}" / f"{arm.arm}_c{arm.concurrency}_rep{rep}"
+    if cell_output.exists():
+        raise FileExistsError(f"cell output already exists: {cell_output}")
+    cell_output.mkdir(parents=True)
+    shard_dir = cell_output / "gate_output" / f"{arm.arm}_c{arm.concurrency}" / "shard_0"
+    shard_dir.mkdir(parents=True, exist_ok=True)
+    script = Path(__file__).resolve().parent / "run_official_baseline.py"
+    cmd = [
+        ramp.driver_python, str(script), "run-shard",
+        "--adapter", "duckdb_ai",
+        "--manifest", str(scale.manifest),
+        "--endpoint-index", "0",
+        "--endpoint-url", ramp.lb_endpoint_url,
+        "--model", ramp.model,
+        "--concurrency", str(arm.concurrency),
+        "--batch-size", "1",
+        "--output-dir", str(shard_dir),
+        "--disable-arrival-replay",
+        "--service-prefix-caching", ramp.service_prefix_caching,
+        "--service-max-num-seqs", str(ramp.service_max_num_seqs),
+        "--service-max-num-batched-tokens", str(ramp.service_max_num_batched_tokens),
+        "--duckdb-max-concurrent-requests", str(arm.concurrency),
+    ]
+    metrics_urls = _metrics_urls(ramp.endpoint_urls)
+    record = {"arm": "lb_rr", "scale": scale.rows, "concurrency": arm.concurrency,
+              "rep": rep, "cell": str(cell_output), "kind": "lb_rr"}
+    try:
+        with instrumented_cell(
+            metrics_urls, cell_output / "gpu_resource.csv", interval_s=0.3,
+        ) as instr:
+            completed = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+        if completed.returncode != 0:
+            raise RuntimeError(
+                f"lb_rr shard rc={completed.returncode}: {(completed.stderr or '')[-400:]}"
+            )
+        ttft_path = cell_output / "ttft_metrics.json"
+        if instr.ttft_deltas is not None:
+            ttft_path.write_text(
+                json.dumps({str(ep): d for ep, d in instr.ttft_deltas.items()},
+                           indent=2, ensure_ascii=False, sort_keys=True),
+                encoding="utf-8",
+            )
+        record["status"] = "passed"
+        record["gpu_summary"] = instr.gpu_summary
+        record["ttft_metrics"] = str(ttft_path) if ttft_path.is_file() else None
+    except Exception as exc:
+        record["status"] = "failed"
+        record["error"] = f"{type(exc).__name__}: {exc}"
+        record["traceback"] = traceback.format_exc()
+        (cell_output / "run_error.json").write_text(
+            json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    return record
+
+
 def _ensure_ray_head() -> None:
-    """Start a Ray head if project_static is an arm and none is running.
+    """Start a Ray head + clear the stale cluster pointer (deploy §10.5).
 
     project_static uses --executor ray_actor, so ray.init() must connect to a
-    live head. The runtime env sets RAY_ADDRESS=127.0.0.1:6380; if no head runs
-    there, ray.init() hangs ~forever retrying the dead GCS (deploy/autodl/README.md
-    §10.5 stale-cluster failure). The gate arms (bounded_http/duckdb_ai) don't use
-    Ray, so they're unaffected -- this is why an earlier run saw project hang while
-    bounded/duckdb passed. Idempotent: ``ray start --head`` reconnects if a head
-    already exists.
+    live head. Two deploy-documented failure modes:
+    1. /tmp/ray/ray_current_cluster left behind by a killed Ray process points at
+       a dead GCS; a subsequent ray.init() WITHOUT an explicit address reads it
+       and hangs ~14 min. This is the exact "project hangs, gate arms pass"
+       symptom (confirmed: after rm-ing the pointer, the 2-endpoint project
+       isolation completed rc=0 in 15s).
+    2. No head running at RAY_ADDRESS -> ray.init() retries forever.
+
+    So: remove the stale pointer, start a head on 127.0.0.1:6380, and verify it
+    is reachable. Failures are raised (fail-closed) -- proceeding would hang.
     """
+    import os
     import shutil
     import subprocess
-    ray_cli = shutil.which("ray") or "/root/miniconda3/bin/ray"
+    # 1) clear stale cluster pointer (deploy §10.5)
     try:
-        subprocess.run(
-            [ray_cli, "start", "--head", "--node-ip-address=127.0.0.1",
-             "--port=6380", "--disable-usage-stats"],
-            capture_output=True, text=True, timeout=60,
+        Path("/tmp/ray/ray_current_cluster").unlink(missing_ok=True)
+    except OSError:
+        pass
+    # 2) start head (idempotent -- reconnects if one exists)
+    ray_cli = shutil.which("ray") or "/root/miniconda3/bin/ray"
+    result = subprocess.run(
+        [ray_cli, "start", "--head", "--node-ip-address=127.0.0.1",
+         "--port=6380", "--disable-usage-stats"],
+        capture_output=True, text=True, timeout=60,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"ray start --head failed (rc={result.returncode}): "
+            f"{(result.stderr or result.stdout or '')[-400:]}"
         )
-    except (OSError, subprocess.SubprocessError) as exc:
-        print(f"[ramp] WARNING: could not ensure Ray head: {exc}", flush=True)
+    # 3) health check via python (connect + cluster_resources)
+    os.environ.setdefault("RAY_ADDRESS", "127.0.0.1:6380")
+    check = subprocess.run(
+        ["/root/miniconda3/bin/python", "-c",
+         "import ray; ray.init(address='127.0.0.1:6380', ignore_reinit_error=True); "
+         "print(ray.cluster_resources()); ray.shutdown()"],
+        capture_output=True, text=True, timeout=60,
+    )
+    if check.returncode != 0:
+        raise RuntimeError(
+            f"Ray head health check failed: {(check.stderr or '')[-400:]}"
+        )
 
 
 def run_ramp(ramp: RampConfig) -> dict:
@@ -332,6 +426,8 @@ def run_ramp(ramp: RampConfig) -> dict:
                       f"{'c' if arm.arm in GATE_ARMS else 'K'}={arm.concurrency} rep={rep}", flush=True)
                 if arm.arm in GATE_ARMS:
                     record = _run_gate_cell(ramp, scale, arm, rep)
+                elif arm.arm == "lb_rr":
+                    record = _run_lb_rr_cell(ramp, scale, arm, rep)
                 else:
                     record = _run_project_cell(ramp, scale, arm, rep)
                 records.append(record)
