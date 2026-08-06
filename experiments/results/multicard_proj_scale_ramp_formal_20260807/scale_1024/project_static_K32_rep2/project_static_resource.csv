@@ -1,0 +1,10 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,project_static_squad,formal,1,1905,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,0,1786037089.8715024,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,121.61,ok,0,0,0.0
+1,project_static_squad,formal,1,1905,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,1,1786037090.410812,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,120.53,ok,0,0,0.0
+1,project_static_squad,formal,1,1905,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,2,1786037090.8680096,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,231.94,ok,26,0,0.011165698972755655
+1,project_static_squad,formal,1,1905,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,3,1786037091.2475011,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,394.92,ok,37,0,0.017716242370105717
+1,project_static_squad,formal,1,1905,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,4,1786037091.6651268,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,748.95,ok,43,0,0.016376358493375043
+1,project_static_squad,formal,1,1905,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,5,1786037092.0843043,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,786.56,ok,33,0,0.019651630192050074
+1,project_static_squad,formal,1,1905,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,6,1786037092.528211,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,810.88,ok,47,0,0.0321572130415364
+1,project_static_squad,formal,1,1905,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,7,1786037092.9330323,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,805.6500000000001,ok,4,0,0.008039303260384045
+1,project_static_squad,formal,1,1905,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,8,1786037093.357155,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,1.5,46558.0,49128.0,642.29,ok,0,0,0.0

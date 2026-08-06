@@ -1,0 +1,9 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,project_static_squad,formal,1,1902,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,0,1786037044.285565,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.91,ok,0,0,0.0
+1,project_static_squad,formal,1,1902,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,1,1786037044.7557929,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.9,ok,0,0,0.0
+1,project_static_squad,formal,1,1902,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,2,1786037045.158409,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.9,ok,0,0,0.0
+1,project_static_squad,formal,1,1902,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,3,1786037045.5801978,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.75999999999999,ok,0,0,0.0
+1,project_static_squad,formal,1,1902,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,4,1786037045.9462268,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.75999999999999,ok,0,0,0.0
+1,project_static_squad,formal,1,1902,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,5,1786037046.378485,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,160.0,ok,51,0,0.01265445883578975
+1,project_static_squad,formal,1,1902,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,6,1786037046.8987203,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,379.6,ok,1,0,0.004912907548012546
+1,project_static_squad,formal,1,1902,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,7,1786037047.315951,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,750.09,ok,7,0,0.0055084114932261175

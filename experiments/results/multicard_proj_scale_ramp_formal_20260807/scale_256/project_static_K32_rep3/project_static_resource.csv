@@ -1,0 +1,10 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,project_static_squad,formal,1,1900,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,0,1786037017.8020508,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.22,ok,0,0,0.0
+1,project_static_squad,formal,1,1900,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,1,1786037018.2286708,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.22,ok,0,0,0.0
+1,project_static_squad,formal,1,1900,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,2,1786037018.6150723,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.22,ok,0,0,0.0
+1,project_static_squad,formal,1,1900,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,3,1786037018.998261,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.21000000000001,ok,0,0,0.0
+1,project_static_squad,formal,1,1900,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,4,1786037019.3651428,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.21000000000001,ok,0,0,0.0
+1,project_static_squad,formal,1,1900,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,5,1786037019.769336,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.12,ok,0,0,0.0
+1,project_static_squad,formal,1,1900,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,6,1786037020.1489692,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,116.12,ok,0,0,0.0
+1,project_static_squad,formal,1,1900,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,7,1786037020.5878315,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,209.55,ok,35,0,0.010719071013845505
+1,project_static_squad,formal,1,1900,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,8,1786037021.0076866,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,30.0,46558.0,49128.0,426.05,ok,0,0,0.0
