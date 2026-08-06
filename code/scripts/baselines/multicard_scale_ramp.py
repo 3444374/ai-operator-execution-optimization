@@ -112,6 +112,11 @@ class RampConfig:
     warmup_per_cell: bool = False
     warmup_concurrency: int = 32
     idle_timeout_s: float = 120.0
+    # strict vLLM config preflight: fail-closed (raise) when a declared service
+    # param is absent from the vLLM cmdline, instead of WARN. 复审: default WARN
+    # lets screening runs proceed on vLLM defaults; formal runs set true to force
+    # declared == effective.
+    vllm_config_strict: bool = False
 
 
 def _load_ramp_config(path: str | Path, *, driver_python: str, vllm_python: str) -> RampConfig:
@@ -164,6 +169,7 @@ def _load_ramp_config(path: str | Path, *, driver_python: str, vllm_python: str)
         warmup_per_cell=bool(payload.get("warmup_per_cell", False)),
         warmup_concurrency=int(payload.get("warmup_concurrency", 32)),
         idle_timeout_s=float(payload.get("idle_timeout_s", 120.0)),
+        vllm_config_strict=bool(payload.get("vllm_config_strict", False)),
     )
 
 
@@ -345,6 +351,16 @@ def _run_project_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int
     return record
 
 
+def _backend_skew(success_deltas: dict) -> float:
+    """Relative skew between two backends' request_success_delta (0 = perfect
+    round-robin, 1 = one backend idle). Pure function (no I/O) so the lb_rr
+    balance gate can be unit-tested without nginx/vLLM."""
+    vals = [v for v in success_deltas.values() if v > 0]
+    if len(vals) < 2:
+        return 0.0
+    return abs(vals[0] - vals[1]) / max(vals)
+
+
 def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) -> dict:
     """lb_rr: ONE duckdb_ai shard via the nginx LB (1 process -> LB -> 2 backends).
 
@@ -414,14 +430,16 @@ def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) 
                     v = 0.0
                 if v > 0:
                     succ[ep] = v
-            if len(succ) >= 2:
-                vals = list(succ.values())
-                skew = abs(vals[0] - vals[1]) / max(vals)
-                record["backend_request_skew"] = round(skew, 4)
-                if skew > 0.10:
-                    raise RuntimeError(
-                        f"lb_rr backend-balance gate FAILED: vllm_request_success_delta "
-                        f"skew {skew:.1%} ({succ}) > 10% -- nginx round-robin broken?")
+            if len(succ) < 2:
+                raise RuntimeError(
+                    f"lb_rr backend-balance gate FAILED: only {len(succ)} backend has successful "
+                    f"requests {succ} -- nginx sent everything to one backend?")
+            skew = _backend_skew(succ)
+            record["backend_request_skew"] = round(skew, 4)
+            if skew > 0.10:
+                raise RuntimeError(
+                    f"lb_rr backend-balance gate FAILED: vllm_request_success_delta "
+                    f"skew {skew:.1%} ({succ}) > 10% -- nginx round-robin broken?")
         record["status"] = "passed"
         record["gpu_summary"] = instr.gpu_summary
         record["ttft_metrics"] = str(ttft_path) if ttft_path.is_file() else None
@@ -464,6 +482,10 @@ def _verify_vllm_config(ramp: RampConfig) -> None:
         present = any(f"{flag} {val}" in c or f"{flag}={val}" in c for c in cmdlines)
         if present:
             print(f"[ramp][preflight] vLLM cmdline carries {flag} {val} (declared == effective)", flush=True)
+        elif ramp.vllm_config_strict:
+            raise RuntimeError(
+                f"vLLM cmdline missing {flag} {val} (vllm_config_strict=true; declared != effective). "
+                f"Either start vLLM with the flag or set vllm_config_strict=false for screening.")
         else:
             print(f"[ramp][preflight] WARN: {flag} {val} declared in ramp config but NOT on vLLM cmdline; "
                   f"vLLM uses its DEFAULT (effective != declared). Report must say 'declared', not 'effective'.", flush=True)
@@ -504,7 +526,10 @@ def _ensure_ray_head() -> None:
          "import ray; ray.init(address='127.0.0.1:6380', ignore_reinit_error=True); "
          "assert ray.nodes(), 'no nodes'; "
          "named = ray.util.list_named_actors(); "
-         "assert not named, f'leftover named actors (cluster not clean): {named}'; "
+         "assert not named, f'leftover named actors: {named}'; "
+         "cluster = ray.cluster_resources(); avail = ray.available_resources(); "
+         "held = {k: cluster[k]-avail.get(k,0) for k in cluster if cluster[k]-avail.get(k,0) > 0.5}; "
+         "assert not held, f'cluster has held resources (unnamed actors/tasks): {held}'; "
          "ray.shutdown()"],
         capture_output=True, text=True, timeout=60,
     )
@@ -554,7 +579,7 @@ def _manifest_is_single_endpoint(manifest_path: Path) -> bool:
     meta = manifest_path.with_suffix(manifest_path.suffix + ".meta.json")
     if meta.is_file():
         try:
-            d = _read_json(meta)
+            d = json.loads(meta.read_text(encoding="utf-8"))
             return len(d.get("endpoint_row_counts", {})) <= 1
         except (json.JSONDecodeError, ValueError, TypeError):
             pass
@@ -595,12 +620,22 @@ def _warmup_cache(ramp: RampConfig, scale: RampScale) -> None:
                    "--service-max-num-seqs", str(ramp.service_max_num_seqs),
                    "--service-max-num-batched-tokens", str(ramp.service_max_num_batched_tokens)]
             procs.append(subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+        import time
+        # Shared deadline across siblings: a per-shard timeout previously killed
+        # only the expired shard and raised, leaving sibling warmup procs running
+        # (leak). On any timeout kill ALL siblings before raising.
+        deadline = time.time() + 900
         for p in procs:
+            remaining = max(1.0, deadline - time.time())
             try:
-                p.wait(timeout=900)
+                p.wait(timeout=remaining)
             except subprocess.TimeoutExpired:
-                p.kill()
-                raise RuntimeError("cache warmup shard timed out (>900s)")
+                for q in procs:
+                    try:
+                        q.kill()
+                    except Exception:
+                        pass
+                raise RuntimeError("cache warmup timed out (>900s total); all sibling shards killed")
         # fail-closed (codex audit #4): a failed warmup leaves the prefix cache
         # in an unknown state -- do NOT proceed to the measured cell.
         failed = [i for i, p in enumerate(procs) if p.returncode != 0]
