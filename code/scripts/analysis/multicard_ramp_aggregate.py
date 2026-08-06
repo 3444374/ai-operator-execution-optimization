@@ -65,6 +65,23 @@ def _read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _identity(cell: Path) -> dict:
+    """Ramp-layer identity sidecar (authoritative comparison_role; codex #1).
+
+    Empty when absent (old raw without sidecar) -> aggregator reports None and
+    the report's harness_sharded_diagnostic label stands on its own. When
+    present, this OVERRIDES the single-shard ``summary.json::comparison_role``
+    (which still says database_product_native_baseline for duckdb_ai).
+    """
+    ij = cell / "identity.json"
+    if ij.is_file():
+        try:
+            return _read_json(ij)
+        except (json.JSONDecodeError, ValueError, TypeError):
+            pass
+    return {}
+
+
 def _parse_cell_name(name: str) -> tuple[str, int, int]:
     """Parse a cell directory name into (arm, concurrency, rep).
 
@@ -178,6 +195,8 @@ def _gate_cell_metrics(cell: Path) -> dict:
         "ttft_s_p99": round(ttft["p99"], 4) if ttft["p99"] else None,
         "prefix_cache_hit_rate": round(prefix_hit, 4) if prefix_hit is not None else None,
         "gpu": _gpu_csv_summary(cell / "gpu_resource.csv"),
+        "comparison_role": _identity(cell).get("comparison_role"),
+        "formal_baseline_eligible": _identity(cell).get("formal_baseline_eligible"),
     }
 
 
@@ -212,6 +231,8 @@ def _project_cell_metrics(cell: Path) -> dict:
         "scheduling_overhead_pct": round(_f(prof.get("scheduling_control_overhead_pct")), 2) or None,
         "submit_s": round(_f(prof.get("submit_s")), 3) or None,
         "gpu": _gpu_csv_summary(resource),
+        "comparison_role": _identity(cell).get("comparison_role"),
+        "formal_baseline_eligible": _identity(cell).get("formal_baseline_eligible"),
     }
     if evidence.is_file():
         out["n_evidence_rows"] = sum(1 for _ in csv.DictReader(evidence.open(encoding="utf-8")))
@@ -272,6 +293,8 @@ def _aggregate_reps(reps: list[dict]) -> dict:
         agg["gpu"] = passed[0].get("gpu", {})
         agg["service_total_tokens"] = passed[0].get("service_total_tokens")
         agg["completed_rows"] = passed[0].get("completed_rows")
+        agg["comparison_role"] = passed[0].get("comparison_role")
+        agg["formal_baseline_eligible"] = passed[0].get("formal_baseline_eligible")
         if "scheduling_overhead_pct" in passed[0]:
             agg["scheduling_overhead_pct_mean"] = passed[0].get("scheduling_overhead_pct")
     if any(r.get("status") != "passed" for r in reps):

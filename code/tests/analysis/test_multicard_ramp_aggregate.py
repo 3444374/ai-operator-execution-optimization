@@ -229,6 +229,32 @@ class RobustRowsTests(unittest.TestCase):
         m = result["scale_10570"]["arms"]["duckdb_ai"]["c32"]
         self.assertEqual(m["completed_rows"], 10570)  # gate.json result_rows fallback
 
+    def test_identity_sidecar_overrides_raw_comparison_role(self) -> None:
+        """identity.json (ramp layer) overrides raw single-shard comparison_role.
+
+        codex #1: raw summary says database_product_native_baseline but the ramp
+        layer (harness pre-split) is harness_sharded_diagnostic; the sidecar is
+        authoritative so a recompute does not resurrect the product-native label.
+        """
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            cell, gate_dir = self._bare_cell(root, 2048, "duckdb_ai")
+            for i in (0, 1):
+                _write(gate_dir / f"shard_{i}" / "summary.json", json.dumps({
+                    "service_total_tokens_delta": 400000, "jct_s": 10.0,
+                    "latency_p50_s": 2.0, "latency_p95_s": 4.0, "latency_p99_s": 5.0,
+                    "completed_count": 1024,
+                    "comparison_role": "database_product_native_baseline",  # raw single-shard (wrong at ramp layer)
+                }))
+            _write(cell / "gate_output" / "run_status.json", json.dumps({"status": "passed"}))
+            _write(cell / "identity.json", json.dumps({  # ramp-layer sidecar (authoritative)
+                "comparison_role": "harness_sharded_diagnostic",
+                "formal_baseline_eligible": False}))
+            result = agg.aggregate(root)
+        m = result["scale_2048"]["arms"]["duckdb_ai"]["c32"]
+        self.assertEqual(m["comparison_role"], "harness_sharded_diagnostic")
+        self.assertFalse(m["formal_baseline_eligible"])
+
 
 if __name__ == "__main__":
     unittest.main()

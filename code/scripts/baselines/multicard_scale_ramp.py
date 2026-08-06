@@ -223,11 +223,49 @@ def _metrics_urls(endpoint_urls: Sequence[str]) -> tuple[str, ...]:
     return tuple(u.split("/v1/", maxsplit=1)[0] + "/metrics" for u in endpoint_urls)
 
 
+def _write_identity(arm: str, cell_output: Path) -> None:
+    """Write a ramp-layer identity sidecar (codex audit #1 / workflow PARTIAL).
+
+    raw ``summary.json::comparison_role`` is the runner's SINGLE-SHARD role
+    (e.g. duckdb_ai single-endpoint = database_product_native_baseline), but
+    the ramp layer composes 2 shards (harness pre-split) or routes via nginx
+    LB, which makes the arm harness_sharded_diagnostic. This sidecar is the
+    AUTHORITATIVE ramp-layer identity; the aggregator/recompute should prefer
+    it over the single-shard role when deciding formal-native-ranking
+    eligibility. Without it, a recompute resurrects the product-native
+    classification the reports disclaim.
+    """
+    if arm == "bounded_http":
+        ident = {"comparison_role": "direct_client_control",
+                 "formal_baseline_eligible": False, "formal_control_eligible": True,
+                 "scheduler_owner": "project_asyncio_control"}
+    elif arm == "duckdb_ai":
+        ident = {"comparison_role": "harness_sharded_diagnostic",
+                 "formal_baseline_eligible": False,
+                 "scheduler_owner": "experiment_harness",
+                 "reason": "harness pre-split manifest + 2 independent DuckDB processes; DuckDB ai single BASE_URL; protocol 2.6 -> not product-native multi-endpoint"}
+    elif arm == "lb_rr":
+        ident = {"comparison_role": "harness_sharded_diagnostic",
+                 "formal_baseline_eligible": False,
+                 "scheduler_owner": "experiment_harness",
+                 "reason": "single DuckDB process via nginx LB; DuckDB ai single BASE_URL; not product-native multi-endpoint"}
+    elif arm == "project_static":
+        ident = {"comparison_role": "project_method_diagnostic",
+                 "formal_baseline_eligible": False,
+                 "scheduler_owner": "project_scheduler",
+                 "reason": "project Ray-actor multi-endpoint method; not a product baseline"}
+    else:
+        return
+    (cell_output / "identity.json").write_text(
+        json.dumps(ident, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
 def _run_gate_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) -> dict:
     cell_output = ramp.output_root / f"scale_{scale.rows}" / f"{arm.arm}_c{arm.concurrency}_rep{rep}"
     if cell_output.exists():
         raise FileExistsError(f"cell output already exists: {cell_output}")
     cell_output.mkdir(parents=True)
+    _write_identity(arm.arm, cell_output)
     cfg_path, _core = _gate_config_for_cell(ramp, scale, arm, cell_output)
     metrics_urls = _metrics_urls(ramp.endpoint_urls)
     record = {"arm": arm.arm, "scale": scale.rows, "concurrency": arm.concurrency, "rep": rep,
@@ -277,6 +315,7 @@ def _run_project_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int
     if cell_output.exists():
         raise FileExistsError(f"cell output already exists: {cell_output}")
     cell_output.mkdir(parents=True)
+    _write_identity("project_static", cell_output)
     cfg = ProjectStaticConfig(
         database_url=ramp.database_url,
         workload_name=ramp.workload_name,
@@ -322,6 +361,7 @@ def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) 
     if cell_output.exists():
         raise FileExistsError(f"cell output already exists: {cell_output}")
     cell_output.mkdir(parents=True)
+    _write_identity("lb_rr", cell_output)
     shard_dir = cell_output / "gate_output" / f"{arm.arm}_c{arm.concurrency}" / "shard_0"
     # NOTE: do NOT pre-create shard_dir -- run_official_baseline.py run-shard refuses
     # to write to an existing output-dir (it creates it itself).
