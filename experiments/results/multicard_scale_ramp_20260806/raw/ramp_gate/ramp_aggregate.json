@@ -1,0 +1,155 @@
+{
+  "scale_10570": {
+    "rows": 10570,
+    "arms": {
+      "bounded_http": {
+        "status": "passed",
+        "service_tokens_per_s": 41779.1,
+        "service_total_tokens": 2542239,
+        "model_serving_wall_s": 60.85,
+        "rows_per_s": 992.3,
+        "request_e2e_s_p50": 28.929,
+        "request_e2e_s_p95": 57.504,
+        "request_e2e_s_p99": 60.236,
+        "ttft_s_p50": 0.1638,
+        "ttft_s_p95": 0.2448,
+        "ttft_s_p99": 0.3813,
+        "prefix_cache_hit_rate": 0.6116,
+        "gpu": {
+          "status": "ok",
+          "n_samples": 324,
+          "gpu0_util_mean": 95.1,
+          "gpu0_power_mean": 431.6,
+          "gpu1_util_mean": 96.9,
+          "gpu1_power_mean": 422.9
+        },
+        "cell": "bounded_http_c32_rep1"
+      },
+      "duckdb_ai": {
+        "status": "passed",
+        "service_tokens_per_s": 0.0,
+        "service_total_tokens": 0,
+        "model_serving_wall_s": 61.4,
+        "rows_per_s": 0.0,
+        "request_e2e_s_p50": 61.4,
+        "request_e2e_s_p95": 61.4,
+        "request_e2e_s_p99": 61.4,
+        "ttft_s_p50": null,
+        "ttft_s_p95": null,
+        "ttft_s_p99": null,
+        "prefix_cache_hit_rate": null,
+        "gpu": {
+          "status": "ok",
+          "n_samples": 324,
+          "gpu0_util_mean": 93.0,
+          "gpu0_power_mean": 422.0,
+          "gpu1_util_mean": 93.8,
+          "gpu1_power_mean": 413.0
+        },
+        "cell": "duckdb_ai_c32_rep1"
+      }
+    }
+  },
+  "scale_4096": {
+    "rows": 4096,
+    "arms": {
+      "bounded_http": {
+        "status": "passed",
+        "service_tokens_per_s": 43877.7,
+        "service_total_tokens": 894817,
+        "model_serving_wall_s": 20.393,
+        "rows_per_s": 1047.1,
+        "request_e2e_s_p50": 9.106,
+        "request_e2e_s_p95": 19.079,
+        "request_e2e_s_p99": 19.991,
+        "ttft_s_p50": 0.1538,
+        "ttft_s_p95": 0.2412,
+        "ttft_s_p99": 0.249,
+        "prefix_cache_hit_rate": 0.632,
+        "gpu": {
+          "status": "ok",
+          "n_samples": 112,
+          "gpu0_util_mean": 94.6,
+          "gpu0_power_mean": 409.4,
+          "gpu1_util_mean": 92.9,
+          "gpu1_power_mean": 407.8
+        },
+        "cell": "bounded_http_c32_rep1"
+      },
+      "duckdb_ai": {
+        "status": "passed",
+        "service_tokens_per_s": 42056.9,
+        "service_total_tokens": 894862,
+        "model_serving_wall_s": 21.277,
+        "rows_per_s": 0.0,
+        "request_e2e_s_p50": 21.277,
+        "request_e2e_s_p95": 21.277,
+        "request_e2e_s_p99": 21.277,
+        "ttft_s_p50": 0.1499,
+        "ttft_s_p95": 0.2407,
+        "ttft_s_p99": 0.2487,
+        "prefix_cache_hit_rate": 0.632,
+        "gpu": {
+          "status": "ok",
+          "n_samples": 118,
+          "gpu0_util_mean": 91.5,
+          "gpu0_power_mean": 411.5,
+          "gpu1_util_mean": 91.4,
+          "gpu1_power_mean": 400.9
+        },
+        "cell": "duckdb_ai_c32_rep1"
+      }
+    }
+  },
+  "scale_8192": {
+    "rows": 8192,
+    "arms": {
+      "bounded_http": {
+        "status": "passed",
+        "service_tokens_per_s": 42871.3,
+        "service_total_tokens": 1975948,
+        "model_serving_wall_s": 46.09,
+        "rows_per_s": 985.8,
+        "request_e2e_s_p50": 21.08,
+        "request_e2e_s_p95": 43.693,
+        "request_e2e_s_p99": 45.607,
+        "ttft_s_p50": 0.1625,
+        "ttft_s_p95": 0.246,
+        "ttft_s_p99": 0.3775,
+        "prefix_cache_hit_rate": 0.6218,
+        "gpu": {
+          "status": "ok",
+          "n_samples": 250,
+          "gpu0_util_mean": 96.3,
+          "gpu0_power_mean": 435.2,
+          "gpu1_util_mean": 96.5,
+          "gpu1_power_mean": 418.0
+        },
+        "cell": "bounded_http_c32_rep1"
+      },
+      "duckdb_ai": {
+        "status": "passed",
+        "service_tokens_per_s": 0.0,
+        "service_total_tokens": 0,
+        "model_serving_wall_s": 46.673,
+        "rows_per_s": 0.0,
+        "request_e2e_s_p50": 46.673,
+        "request_e2e_s_p95": 46.673,
+        "request_e2e_s_p99": 46.673,
+        "ttft_s_p50": null,
+        "ttft_s_p95": null,
+        "ttft_s_p99": null,
+        "prefix_cache_hit_rate": null,
+        "gpu": {
+          "status": "ok",
+          "n_samples": 252,
+          "gpu0_util_mean": 93.0,
+          "gpu0_power_mean": 421.4,
+          "gpu1_util_mean": 92.8,
+          "gpu1_power_mean": 410.6
+        },
+        "cell": "duckdb_ai_c32_rep1"
+      }
+    }
+  }
+}
