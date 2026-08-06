@@ -2,7 +2,9 @@
 
 > **定位**：lb_rr（1 DuckDB → nginx:8500 round-robin → 2 vLLM backend）规模爬坡，C_total=64 固定，扫 64→10570，看 lb_rr 吞吐随规模形态、是否与三臂（bounded/project/duckdb）同形态。
 >
-> **身份**：`harness_sharded_diagnostic`（DuckDB 单 BASE_URL 经 nginx，非产品原生多 endpoint；协议 §2.6）。256 门禁已过：exactly-once（256 unique completed）+ finish_reason=length=0（256 行正常完成，duckdb length→error 但 failed=0）+ nginx upstream **8000=200 / 8001=200 完美 round-robin 对称**。
+> **⚠️ 状态**：`diagnostic_observation_pending_evidence_fix`——本次 lb_rr run 有效（9/9、0 error、均衡分流、2048 观察峰值），但**不引用"跨四臂 clean cache-thrash finding"**（4 臂 cache 控制不统一；见 §5）。
+>
+> **身份**：`comparison_role=database_product_native_baseline`（单 shard Literal）+ **ramp_layer_classification=`gateway_system_diagnostic`**（协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx 第三方 gateway → 2 vLLM endpoint；system-level only，非 DuckDB 原生 baseline，不进 formal；scheduler_owner = duckdb_ai_extension + nginx_round_robin + vllm）。256 门禁：exactly-once（256 unique completed）+ **0 error / 未观察到 max_tokens-truncation**（256 行正常完成，duckdb length→error 但 failed=0；注：requests.csv `finish_reason` 字段空，**空 ≠ 已审计为非 length**，仅"无 length 报错"）+ nginx upstream **8000=200 / 8001=200 完美 round-robin 对称**。
 >
 > **1 rep/cell diagnostic**（非 formal）。`warmup_per_cell=false`（lb_rr 单端点 manifest 不适合 warmup；prefix-hit 由规模嵌套残留 + cell 自热，机制不同于三臂的真 warmup，数值可比）。
 
@@ -50,7 +52,7 @@
 - **GPU util**：64 时 GPU1 仅 12.5%（单进程欠喂，请求未填满两卡）；2048 时 70%（接近饱和）；10570 时 90%（坍塌区 GPU 满 但吞吐低 = cache thrash，非算力不足）。
 
 **推断**：
-- lb_rr 与三臂**同形态**（2048 峰 + 4096 坍塌）→ **prefix-cache working-set thrash 是 regime 效应**（与执行路径无关，所有臂共同），印证 Phase 1a 的归因。
+- lb_rr 本次 run 在 2048 附近峰值、4096+ 下降，**形态上**与三臂相似；但**不能声称"跨执行路径 cache-thrash regime"**——lb_rr `warmup_per_cell=false`（uncontrolled-cache，规模嵌套继承）+ 三臂 warmup 方式不同，cache 控制不统一。只能下：**本次 run 内吞吐下降与 prefix-hit 下降（0.96→0.60）相关**（相关，非因果）。
 - lb_rr 峰值最低是**架构特性**（单入口欠喂），非 cache/调度问题。
 
 **不能声称**：
@@ -60,7 +62,7 @@
 
 ## 5. 对课题含义
 
-- **完整 4-臂规模曲线拿到**（用户目标）：bounded/project/duckdb/lb_rr 都 2048 峰值 + 4096+ 坍塌。**regime 效应（prefix-cache thrash）跨执行路径一致**——这是干净的系统级发现，支持"上游策略价值只在特定 regime 显现"的主线。
+- **4-臂规模曲线（各自 run）**：bounded/project/duckdb/lb_rr 都在 2048 附近峰值、4096+ 下降。**但当前标 `diagnostic_observation_pending_evidence_fix`，不引用"跨四臂 clean cache-thrash finding"**——4 臂 cache 控制不统一（lb_rr uncontrolled + 三臂不同 warmup + 规模嵌套继承）。要把"跨四臂 cache regime"写进论文，**必须另做**：统一 cache reset / 双后端 warmup / 随机化 scale 顺序 / ≥1w+3f 的受控重跑。
 - lb_rr 单入口欠喂（峰值最低）是现实部署基线（"1 个 DuckDB 进程喂不饱多卡"），对照多进程/多 endpoint 方法。
 
 ## 6. 证据 + 诚实边界

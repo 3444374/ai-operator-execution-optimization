@@ -230,36 +230,49 @@ def _metrics_urls(endpoint_urls: Sequence[str]) -> tuple[str, ...]:
 
 
 def _write_identity(arm: str, cell_output: Path) -> None:
-    """Write a ramp-layer identity sidecar (codex audit #1 / workflow PARTIAL).
+    """Write a ramp-layer identity sidecar (codex audit #1 / 复审 #3).
 
-    raw ``summary.json::comparison_role`` is the runner's SINGLE-SHARD role
-    (e.g. duckdb_ai single-endpoint = database_product_native_baseline), but
-    the ramp layer composes 2 shards (harness pre-split) or routes via nginx
-    LB, which makes the arm harness_sharded_diagnostic. This sidecar is the
-    AUTHORITATIVE ramp-layer identity; the aggregator/recompute should prefer
-    it over the single-shard role when deciding formal-native-ranking
-    eligibility. Without it, a recompute resurrects the product-native
-    classification the reports disclaim.
+    raw ``summary.json::comparison_role`` is the runner's SINGLE-SHARD role and
+    is always a value from ``provenance.ComparisonRole`` Literal
+    (service_ceiling / direct_client_control / framework_native_baseline /
+    database_product_native_baseline / project_scheduled_method). The ramp layer
+    then COMPOSES shards or routes via a gateway, which the single-shard role
+    does not capture. This sidecar keeps ``comparison_role`` = the Literal
+    single-shard value (so it stays a valid ComparisonRole) and adds:
+    - ``ramp_layer_classification``: harness_pre_split / gateway_system / project
+      (NOT a ComparisonRole -- a ramp-layer tag; protocol §2.6 distinguishes
+      harness pre-split from gateway 完整系统轨);
+    - ``formal_baseline_eligible``: false at the ramp layer (composition does
+      not enter product-native formal ranking);
+    - ``scheduler_owner``: ALL scheduling parties (DuckDB extension + nginx +
+      vLLM for lb_rr), not just one.
+    See experiments/plans/experiment_report_honesty_checklist.md §2.
     """
     if arm == "bounded_http":
         ident = {"comparison_role": "direct_client_control",
+                 "ramp_layer_classification": "direct_client_control",
                  "formal_baseline_eligible": False, "formal_control_eligible": True,
                  "scheduler_owner": "project_asyncio_control"}
     elif arm == "duckdb_ai":
-        ident = {"comparison_role": "harness_sharded_diagnostic",
+        # 2 independent DuckDB processes, harness pre-split manifest
+        ident = {"comparison_role": "database_product_native_baseline",  # single-shard Literal
+                 "ramp_layer_classification": "harness_pre_split_diagnostic",
                  "formal_baseline_eligible": False,
-                 "scheduler_owner": "experiment_harness",
-                 "reason": "harness pre-split manifest + 2 independent DuckDB processes; DuckDB ai single BASE_URL; protocol 2.6 -> not product-native multi-endpoint"}
+                 "scheduler_owner": "experiment_harness + duckdb_ai_extension + vllm",
+                 "reason": "harness pre-split manifest + 2 independent DuckDB processes; DuckDB ai single BASE_URL; protocol §2.6 -> not product-native multi-endpoint, not formal-eligible at ramp layer"}
     elif arm == "lb_rr":
-        ident = {"comparison_role": "harness_sharded_diagnostic",
+        # single DuckDB process via nginx gateway -> protocol §2.6 gateway 完整系统轨
+        ident = {"comparison_role": "database_product_native_baseline",  # single-shard Literal
+                 "ramp_layer_classification": "gateway_system_diagnostic",
                  "formal_baseline_eligible": False,
-                 "scheduler_owner": "experiment_harness",
-                 "reason": "single DuckDB process via nginx LB; DuckDB ai single BASE_URL; not product-native multi-endpoint"}
+                 "scheduler_owner": "duckdb_ai_extension + nginx_round_robin + vllm",
+                 "reason": "single DuckDB process (single BASE_URL) via nginx third-party gateway to 2 vLLM endpoints; protocol §2.6 gateway 完整系统轨 (line 112) -> system-level only, not DuckDB-native baseline, not formal-eligible"}
     elif arm == "project_static":
-        ident = {"comparison_role": "project_method_diagnostic",
+        ident = {"comparison_role": "project_scheduled_method",  # Literal (was wrongly project_method_diagnostic)
+                 "ramp_layer_classification": "project_scheduled_method",
                  "formal_baseline_eligible": False,
                  "scheduler_owner": "project_scheduler",
-                 "reason": "project Ray-actor multi-endpoint method; not a product baseline"}
+                 "reason": "project Ray-actor multi-endpoint scheduled method; not a product baseline"}
     else:
         return
     (cell_output / "identity.json").write_text(
