@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import statistics
 import sys
 from pathlib import Path
@@ -64,9 +65,46 @@ def _read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _completed_rows(shard_dirs: list[Path]) -> int:
-    """Count request rows with status=completed across both shards."""
-    n = 0
+def _parse_cell_name(name: str) -> tuple[str, int, int]:
+    """Parse a cell directory name into (arm, concurrency, rep).
+
+    Handles both the gate/lb_rr form ``<arm>_c<K>_rep<R>`` (e.g.
+    ``bounded_http_c32_rep1``, ``lb_rr_c128_rep1``) and the project form
+    ``project_static_K<K>_rep<R>``. ``_c``/``_K`` is the concurrency marker
+    -- arm names (bounded_http, duckdb_ai, lb_rr, project_static) contain no
+    such substring, so the first match is the real concurrency.
+    """
+    m = re.search(r"_c(\d+)_rep(\d+)$", name) or re.search(r"_K(\d+)_rep(\d+)$", name)
+    if not m:
+        raise ValueError(f"cannot parse cell name {name!r}")
+    return name[: m.start()], int(m.group(1)), int(m.group(2))
+
+
+def _completed_rows(shard_dirs: list[Path], gate_dir: Path | None = None) -> int:
+    """Count completed request rows, robust to ``requests.csv`` pruning.
+
+    The ramp's ``requests.csv`` is large and gets pruned before commit; a
+    previous version counted only ``requests.csv`` status=completed, which
+    silently yielded 0 (and thus ``rows_per_s=0``) on pruned evidence even for
+    passed cells. Prefer the structured ``summary.json::completed_count``
+    (always present), then count ``requests.csv`` if summaries are missing,
+    then fall back to ``gate.json::metrics.result_rows``.
+    """
+    # 1) summary.json.completed_count (structured, survives pruning)
+    n, have_summary = 0, False
+    for shard in shard_dirs:
+        sj = shard / "summary.json"
+        if sj.is_file():
+            try:
+                cc = _read_json(sj).get("completed_count")
+            except (json.JSONDecodeError, ValueError, TypeError):
+                cc = None
+            if cc is not None:
+                have_summary = True
+                n += int(cc)
+    if have_summary:
+        return n
+    # 2) requests.csv status=completed (when summaries are missing)
     for shard in shard_dirs:
         req = shard / "requests.csv"
         if not req.is_file():
@@ -75,6 +113,16 @@ def _completed_rows(shard_dirs: list[Path]) -> int:
             for row in csv.DictReader(handle):
                 if (row.get("status") or "").lower() == "completed":
                     n += 1
+    if n > 0:
+        return n
+    # 3) final fallback: gate.json metrics.result_rows
+    if gate_dir is not None:
+        gj = gate_dir / "gate.json"
+        if gj.is_file():
+            try:
+                return int(_read_json(gj).get("metrics", {}).get("result_rows", 0))
+            except (json.JSONDecodeError, ValueError, TypeError):
+                pass
     return n
 
 
@@ -97,7 +145,7 @@ def _gate_cell_metrics(cell: Path) -> dict:
         status = str(_read_json(run_status_path).get("status", "unknown"))
     if (cell / "run_error.json").is_file():
         status = "failed"
-    completed = _completed_rows(shard_dirs)
+    completed = _completed_rows(shard_dirs, gate_dir)
     rows_per_s = completed / max_jct if max_jct > 0 else 0.0
     latency = {q: max(_f(s.get(f"latency_{q}_s")) for s in summaries) for q in ("p50", "p95", "p99")}
     ttft_path = cell / "ttft_metrics.json"
@@ -232,13 +280,17 @@ def _aggregate_reps(reps: list[dict]) -> dict:
 
 
 def aggregate(ramp_root: Path) -> dict:
-    # Authoritative per-cell status from the driver's run log.
-    status_map: dict[tuple[int, str, int], tuple[str, str]] = {}
+    # Authoritative per-cell status from the driver's run log. Keyed by
+    # (scale, arm, concurrency, rep) so that a concurrency-sweep (one arm at
+    # many concurrencies on a fixed scale) does not collapse distinct cells
+    # into one -- previously the key dropped concurrency, so bounded@c1 and
+    # bounded@c64 at scale 2048 were mis-grouped as two reps of the same cell.
+    status_map: dict[tuple[int, str, int, int], tuple[str, str]] = {}
     run_json = ramp_root / "ramp_run.json"
     if run_json.is_file():
         for r in _read_json(run_json).get("records", []):
             try:
-                status_map[(int(r["scale"]), str(r["arm"]), int(r["rep"]))] = (
+                status_map[(int(r["scale"]), str(r["arm"]), int(r["concurrency"]), int(r["rep"]))] = (
                     str(r.get("status", "unknown")), str(r.get("error", "")),
                 )
             except (KeyError, ValueError, TypeError):
@@ -249,16 +301,17 @@ def aggregate(ramp_root: Path) -> dict:
             rows = int(scale_dir.name.split("_")[1])
         except (IndexError, ValueError):
             continue
-        per_arm_reps: dict[str, list[dict]] = {}
+        # Group reps by (arm, concurrency). Under a concurrency-sweep the same
+        # arm appears at many concurrencies on one scale; concurrency is a real
+        # grouping key, not noise in the cell name.
+        per_key_reps: dict[tuple[str, int], list[dict]] = {}
         for cell in sorted(scale_dir.iterdir()):
             if not cell.is_dir():
                 continue
-            name = cell.name
-            arm = "project_static" if name.startswith("project_static") else name.split("_c")[0]
             try:
-                rep = int(name.rsplit("_rep", 1)[1])
-            except (IndexError, ValueError):
-                rep = 1
+                arm, conc, rep = _parse_cell_name(cell.name)
+            except ValueError:
+                continue
             if arm in GATE_ARMS or arm == "lb_rr":
                 metrics = _gate_cell_metrics(cell)
             elif arm == "project_static":
@@ -266,13 +319,15 @@ def aggregate(ramp_root: Path) -> dict:
             else:
                 continue
             # Driver's run log is authoritative for status.
-            key = (rows, arm, rep)
+            key = (rows, arm, conc, rep)
             if key in status_map:
                 metrics["status"], metrics["error"] = status_map[key]
             metrics["rep"] = rep
-            per_arm_reps.setdefault(arm, []).append(metrics)
-        arms = {arm: _aggregate_reps(reps) for arm, reps in per_arm_reps.items() if reps}
-        result[f"scale_{rows}"] = {"rows": rows, "arms": arms}
+            per_key_reps.setdefault((arm, conc), []).append(metrics)
+        arms_tree: dict[str, dict] = {}
+        for (arm, conc), reps in per_key_reps.items():
+            arms_tree.setdefault(arm, {})[f"c{conc}"] = _aggregate_reps(reps)
+        result[f"scale_{rows}"] = {"rows": rows, "arms": arms_tree}
     return result
 
 
@@ -283,25 +338,27 @@ def _fmt(v) -> str:
 def _md(result: dict) -> str:
     scales = sorted(int(k.split("_")[1]) for k in result)
     title_range = f"{scales[0]}→{scales[-1]}" if scales else "?"
-    lines = [f"# 多卡 scale-ramp 聚合（规模 {title_range}，mean across passed reps）", ""]
-    lines.append("| scale | arm | status | tok/s mean | tok/s CV | rows/s | TTFT P50 | E2E P50 | prefix-hit | GPU0 util | GPU1 util | n_passed/n |")
-    lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
+    lines = [f"# 多卡 ramp 聚合（规模 {title_range}，mean across passed reps）", ""]
+    lines.append("| scale | arm | conc | status | tok/s mean | tok/s CV | rows/s | TTFT P50 | E2E P50 | prefix-hit | GPU0 util | GPU1 util | n_passed/n |")
+    lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for key in sorted(result, key=lambda k: int(k.split("_")[1])):
         scale = result[key]
-        for arm, m in sorted(scale["arms"].items()):
-            ttft = m.get("ttft_s_p50_mean")
-            ttft_s = f"{ttft*1000:.1f}ms" if ttft else "—"
-            gpu = m.get("gpu", {})
-            g0 = gpu.get("gpu0_util_mean") or gpu.get("gpu_aggregated_util_mean") or "—"
-            g1 = gpu.get("gpu1_util_mean", "—")
-            hit = m.get("prefix_cache_hit_rate_mean")
-            hit_s = f"{hit:.2f}" if hit is not None else "—"
-            lines.append(
-                f"| {scale['rows']} | {arm} | {m.get('status','—')} | "
-                f"{_fmt(m.get('service_tokens_per_s_mean'))} | {m.get('service_tokens_per_s_cv_pct','—')}% | "
-                f"{_fmt(m.get('rows_per_s_mean'))} | {ttft_s} | {_fmt(m.get('request_e2e_s_p50_mean'))} | "
-                f"{hit_s} | {g0} | {g1} | {m.get('n_passed','?')}/{m.get('n_reps','?')} |"
-            )
+        for arm in sorted(scale["arms"]):
+            for conc_key in sorted(scale["arms"][arm], key=lambda c: int(c[1:])):
+                m = scale["arms"][arm][conc_key]
+                ttft = m.get("ttft_s_p50_mean")
+                ttft_s = f"{ttft*1000:.1f}ms" if ttft else "—"
+                gpu = m.get("gpu", {})
+                g0 = gpu.get("gpu0_util_mean") or gpu.get("gpu_aggregated_util_mean") or "—"
+                g1 = gpu.get("gpu1_util_mean", "—")
+                hit = m.get("prefix_cache_hit_rate_mean")
+                hit_s = f"{hit:.2f}" if hit is not None else "—"
+                lines.append(
+                    f"| {scale['rows']} | {arm} | {conc_key} | {m.get('status','—')} | "
+                    f"{_fmt(m.get('service_tokens_per_s_mean'))} | {m.get('service_tokens_per_s_cv_pct','—')}% | "
+                    f"{_fmt(m.get('rows_per_s_mean'))} | {ttft_s} | {_fmt(m.get('request_e2e_s_p50_mean'))} | "
+                    f"{hit_s} | {g0} | {g1} | {m.get('n_passed','?')}/{m.get('n_reps','?')} |"
+                )
     return "\n".join(lines) + "\n"
 
 

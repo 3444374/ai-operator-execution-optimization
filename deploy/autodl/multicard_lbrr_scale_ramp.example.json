@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "experiment_id": "multicard_lbrr_scale_ramp",
+  "_note": "lb_rr scale-ramp: ONE DuckDB process -> nginx LB (8500, round-robin, proxy_next_upstream off) -> 2 vLLM backends (8000/8001). Scale is the only moving variable (calibration rule); concurrency frozen at C_total=64, which aligns with the 3-arm saturation point (gate c=32 per-endpoint = C_total 64; project K=32 per-endpoint = C_total 64). Uses the endpoint_count=1 lbrr_dev manifests (all rows -> LB; nginx splits across backends). The 3 gate arms are NOT included here -- they use the 2-endpoint squad_dev manifests and run in their own ramp; lb_rr is a separate manifest line so it cannot share a scale block. warmup_per_cell warms via bounded_http on the lbrr_dev manifest -- CAVEAT: a single-endpoint manifest only directly warms backend 0; backend 1 is warmed indirectly via the shared prefix cache, so lb_rr prefix-hit may read asymmetric across backends (report per-backend from X-Upstream-Addr / per-backend /metrics). PREREQUISITE: run the 256-row correctness gate FIRST (exactly-once, finish_reason=length=0, per-backend request-count + token-work skew) before trusting any lb_rr throughput number.",
+  "lb_endpoint_url": "http://127.0.0.1:8500/v1/chat/completions",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "completion_protocol": "chat_completions",
+  "model": "${COMPLETION_MODEL}",
+  "tokenizer": "${MODEL_PATH}",
+  "service_prefix_caching": "enabled",
+  "service_max_num_seqs": 256,
+  "service_max_num_batched_tokens": 8192,
+  "scales": [
+    {"rows": 64,    "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/lbrr_dev_64.jsonl"},
+    {"rows": 128,   "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/lbrr_dev_128.jsonl"},
+    {"rows": 256,   "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/lbrr_dev_256.jsonl"},
+    {"rows": 512,   "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/lbrr_dev_512.jsonl"},
+    {"rows": 1024,  "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/lbrr_dev_1024.jsonl"},
+    {"rows": 2048,  "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/lbrr_dev_2048.jsonl"},
+    {"rows": 4096,  "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/lbrr_dev_4096.jsonl"},
+    {"rows": 8192,  "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/lbrr_dev_8192.jsonl"},
+    {"rows": 10570, "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/lbrr_dev_10570.jsonl"}
+  ],
+  "arms": [
+    {"arm": "lb_rr", "concurrency": 64, "reps": 1}
+  ],
+  "output_root": "${ARTIFACT_ROOT}/multicard_lbrr_scale_ramp_REPLACE_ME",
+  "database_url": "${DATABASE_URL}",
+  "workload_name": "squad_v11_dev_short_answer",
+  "max_tokens": 64,
+  "project_token_budget": 6144,
+  "project_active_work": 65536,
+  "project_actor_workers": 8,
+  "project_ray_concurrency": 4,
+  "warmup_per_cell": true,
+  "warmup_concurrency": 32,
+  "idle_timeout_s": 120.0
+}

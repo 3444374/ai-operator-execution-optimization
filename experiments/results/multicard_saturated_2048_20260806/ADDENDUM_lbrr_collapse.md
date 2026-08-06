@@ -1,6 +1,13 @@
-# Addendum：lb_rr 单入口数据点 + 过订阅塌陷曲线（formal 1w+3f）
+# Addendum：lb_rr 单入口数据点 + 过订阅塌陷曲线——**raw 证据未提交，数字当前不可独立审计**
 
-> 补充主 README 的饱和三臂 formal。两块新 formal 数据：(1) **duckdb_ai_lb_rr @64**——现实单入口部署（1 DuckDB → nginx → 2 backend），作为"单入口喂不饱多卡"的对照数据点（**不在饱和排名里**，因单进程固有欠喂）；(2) **bounded_http 过订阅塌陷曲线**（c=64/128/256）——系统越过饱和点后的吞吐塌陷 + 失败率上升。同设置：2048 SQuAD，2×4090，cap=64，temp=0，prefix-on。
+> **⚠️ 订正注（2026-08-06，codex 审计）**：本附录引用的 `collapse.log`、`lbrr64_*/`（lb_rr per-run 请求/gate/service counter）、`ps8_collapse/`（bounded c=64/128/256 shard summary）**均未提交到 git**（`raw/` 下找不到）。因此：
+> - **duckdb_ai_lb_rr @64 = 72480 tok/s 当前无法独立审计**（无 per-run 证据可复算）。
+> - **bounded 过订阅塌陷曲线（c=64/128/256）无法复算**。
+> - "多个 warmup 本身失败、正式运行仍继续"也因无 raw 无法核实。
+>
+> 在 raw 证据补提交前（见任务清单 #8），本附录数字**只能作过载现象的线索，不能作为可审计结论**；尤其不能把塌陷机制直接归因为 vLLM KV/调度问题（无 service-counter 证据支撑）。lb_rr 身份同样是 harness 诊断（DuckDB 单 BASE_URL 经 nginx），非 DuckDB 产品原生多 endpoint。
+
+> 补充主 README 的饱和三臂 formal。两块 formal 数据：(1) **duckdb_ai_lb_rr @64**——现实单入口部署（1 DuckDB → nginx → 2 backend），作为"单入口喂不饱多卡"的对照数据点（**不在饱和排名里**，因单进程固有欠喂）；(2) **bounded_http 过订阅塌陷曲线**（c=64/128/256）——系统越过饱和点后的吞吐塌陷 + 失败率上升。同设置：2048 SQuAD，2×4090，cap=64，temp=0，prefix-on。**两者 raw 均未提交，见上订正注；以下数字暂不可独立审计。**
 
 ## A. duckdb_ai_lb_rr @64（现实单入口，固有欠喂）
 
@@ -29,11 +36,11 @@ c=32 是饱和峰值（89287，主 formal）。越过饱和点（更高并发）
 
 **事实**：越过饱和点后，吞吐**单调塌陷**（100%→42%→28%→全失败），**失败率随并发上升**（0%→33%→67%→100%）。c=256 三次 formal 全失败（shard 崩溃）。
 
-**机制**：2×4090 + Qwen2.5-7B + SQuAD（max_model_len 8192），vLLM 在 ~64 总并发（32/endpoint）达饱和；更高并发 → KV/调度过载 → 吞吐塌陷 + 不稳定（部分 run 崩溃）。
+**机制（疑似，无 service-counter 证据，未证实）**：2×4090 + Qwen2.5-7B + SQuAD（max_model_len 8192），vLLM 在 ~64 总并发（32/endpoint）达饱和；更高并发 → 吞吐塌陷 + 不稳定（部分 run 崩溃）。**疑似** vLLM KV/调度过载，但无 service-counter 证据，未证实（见订正注：不能直接归因 vLLM KV/调度）。
 
 **对课题含义**：
 - **饱和点是真实约束**：多卡 baseline 必须**校准到饱和点**（~32/endpoint），不能盲目堆并发——越过即塌陷。这印证 AGENTS §7.5C 的 feeding-saturation 门禁（先找饱和点，固定，不在线调参）。
-- **过订阅塌陷是系统属性**，不是某个臂的 bug——bounded_http（最 lean 的客户端）也塌陷，说明是 vLLM 服务侧的过载，与上游臂无关。
+- **过订阅塌陷是系统属性**，不是某个臂的 bug——bounded_http（最 lean 的客户端）也塌陷，说明是服务侧过载（**疑似 vLLM，无 service-counter 证据，未证实**），与上游臂无关。
 
 ## C. 证据
 

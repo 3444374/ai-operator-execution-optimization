@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "experiment_id": "multicard_concurrency_sweep",
+  "_note": "Concurrency-sweep at FIXED scale (the scale-ramp's peak operating region). Concurrency is the only moving variable (per the calibration rule: scale ramp first -> freeze the plateau scale -> sweep concurrency here). ARMS semantics: bounded_http/duckdb_ai 'concurrency' is PER-ENDPOINT (gate concurrency_per_endpoint; C_total = 2*concurrency); project_static 'concurrency' is the per-endpoint K (max_inflight; C_total = 2*K) and is capped by actor_workers_per_endpoint*ray_actor_max_concurrency (= slots; K must be <= slots). lb_rr is NOT swept here -- it needs the endpoint_count=1 manifest + C_total semantics and is done in the lb_rr scale-ramp (Phase 1b). Run AFTER the cap gate (cap=64 frozen) and AFTER the scale ramp picked this scale as the peak region. warmup_per_cell runs bounded_http on the manifest at warmup_concurrency on BOTH endpoints before each measured cell so the shared prefix cache is hot regardless of arm/order (deploy 9.1 #4).",
+  "endpoint_urls": [
+    "${COMPLETION_CHAT_ENDPOINT_URL_0}",
+    "${COMPLETION_CHAT_ENDPOINT_URL_1}"
+  ],
+  "completion_protocol": "chat_completions",
+  "model": "${COMPLETION_MODEL}",
+  "tokenizer": "${MODEL_PATH}",
+  "service_prefix_caching": "enabled",
+  "service_max_num_seqs": 256,
+  "service_max_num_batched_tokens": 8192,
+  "scales": [
+    {"rows": 2048, "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/squad_dev_2048.jsonl"}
+  ],
+  "arms": [
+    {"arm": "bounded_http", "concurrency": 1, "reps": 1},
+    {"arm": "bounded_http", "concurrency": 2, "reps": 1},
+    {"arm": "bounded_http", "concurrency": 4, "reps": 1},
+    {"arm": "bounded_http", "concurrency": 8, "reps": 1},
+    {"arm": "bounded_http", "concurrency": 16, "reps": 1},
+    {"arm": "bounded_http", "concurrency": 32, "reps": 1},
+    {"arm": "bounded_http", "concurrency": 64, "reps": 1},
+    {"arm": "duckdb_ai", "concurrency": 1, "reps": 1},
+    {"arm": "duckdb_ai", "concurrency": 2, "reps": 1},
+    {"arm": "duckdb_ai", "concurrency": 4, "reps": 1},
+    {"arm": "duckdb_ai", "concurrency": 8, "reps": 1},
+    {"arm": "duckdb_ai", "concurrency": 16, "reps": 1},
+    {"arm": "duckdb_ai", "concurrency": 32, "reps": 1},
+    {"arm": "duckdb_ai", "concurrency": 64, "reps": 1},
+    {"arm": "project_static", "concurrency": 1, "reps": 1},
+    {"arm": "project_static", "concurrency": 2, "reps": 1},
+    {"arm": "project_static", "concurrency": 4, "reps": 1},
+    {"arm": "project_static", "concurrency": 8, "reps": 1},
+    {"arm": "project_static", "concurrency": 16, "reps": 1},
+    {"arm": "project_static", "concurrency": 32, "reps": 1}
+  ],
+  "output_root": "${ARTIFACT_ROOT}/multicard_concurrency_sweep_REPLACE_ME",
+  "database_url": "${DATABASE_URL}",
+  "workload_name": "squad_v11_dev_short_answer",
+  "max_tokens": 64,
+  "project_token_budget": 6144,
+  "project_active_work": 65536,
+  "project_actor_workers": 8,
+  "project_ray_concurrency": 4,
+  "warmup_per_cell": true,
+  "warmup_concurrency": 32,
+  "idle_timeout_s": 120.0
+}

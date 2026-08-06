@@ -1,4 +1,11 @@
-# 多卡 scale-ramp（2×4090，SQuAD dev，c=32/K=32 固定，规模 4096→8192→10570）
+# 多卡 scale-ramp（2×4090，SQuAD dev，c=32/K=32 固定，规模 4096→8192→10570）——已订正
+
+> **⚠️ 订正注（2026-08-06，codex 审计）**：
+> 1. **身份**：duckdb_ai 是 harness 预切 + 2 独立 DuckDB 进程（DuckDB `ai` 单 BASE_URL），应标 **`harness_sharded_diagnostic`**（[协议 §2.6](../../plans/bounded_output_duckdb_comparison_protocol_20260805.md)，非产品原生多 endpoint、不进产品主排名）。
+> 2. **8192/10570 归因收紧**：原 §5 称"某行答案 >64 token / 不是系统 bug / 不可用"过强——cap=64 门禁已证模型最大输出 57<64，故不能声称该行必然超长；单次观察不能声称确定性/非 bug/不可用。可声称"本次 cap=64 合同下未满足零错误门禁"；更像并发批处理偶发生成尾部风险。
+> 3. **aggregate 证据（已修正）**：aggregator 已加 rows_per_s fallback（summary.completed_count → requests.csv → gate.json result_rows）+ status 从 ramp_run.json；`ramp_aggregate.json` 已重新生成——duckdb 8192/10570 现正确标 **failed**，rows_per_s 恢复（87.76 / 86.07，不再 0）。本 README §4 的 failed 标注与之一致。
+> 4. **措辞**："统计等价"→"未检出显著差异"（1 rep/cell，无 TOST）。
+> 5. **vLLM effective config（诚实）**：`max_num_seqs=256/max_num_batched_tokens=8192` 是 adapter 声明；vLLM cmdline 无这些 flag，用 vllm 0.25.1 默认；`enable_prefix_caching` 默认 ON（= 声明，巧合）。数据有效，service config 字段是声明非 effective。
 
 > **定位**：在已校准的饱和操作点 **c=32/K=32 per endpoint** 固定不变的前提下，只移动 **workload 规模**（4096→8192→10570 行 SQuAD dev 全集），观察吞吐是否进入平台、GPU 是否稳定饱和、TTFT 是否随规模恶化、三臂排序是否稳定。这是对 2048 行 screening（operator wall ~5s、GPU 仅 16–22 采样）的**规模延伸**，回答"短时吞吐是否代表稳态"。2048 行 screening 见 `../multicard_rich_metric_2048_20260806/`。
 
@@ -16,7 +23,7 @@
 | workload | SQuAD v1.1 dev short-answer，**4096 / 8192 / 10570 行**（doc_id 升序嵌套子集，equal_rows 分片：4096=2048:2048 / 8192=4096:4096 / 10570=5285:5285，见 manifest `.meta.json`） |
 | 饱和配置 | **c=32 per endpoint 固定**（bounded sweep 校准的饱和峰值，不随规模变） |
 | bounded_http | concurrency_per_endpoint=32（服务天花板） |
-| duckdb_ai | 2 独立进程各绑一 endpoint，max_concurrent_requests=32 |
+| duckdb_ai〔**harness_sharded_diagnostic**〕| 2 独立进程各绑一 endpoint（harness 预切，DuckDB 单 BASE_URL；非产品原生多 endpoint，见顶部订正），max_concurrent_requests=32 |
 | 度量 | service tokens/s（unified = vLLM 服务计数器 token delta ÷ model serving wall，跨臂同口径）+ TTFT（`/metrics` 直方图 delta）+ GPU util/power（per-GPU 时序）+ prefix-cache hit |
 | 重复 | 每规模 1 rep（爬坡看趋势；2048 已有 1w+3f） |
 | 驱动 | `code/scripts/baselines/multicard_scale_ramp.py`（committed）+ `cell_instrumentation`（TTFT/GPU 包装）；本目录是 `ramp_gate/`（gate 臂）输出 |
@@ -52,13 +59,17 @@
 - **GPU 稳态饱和**：bounded GPU util 93–97%（所有规模），**远高于 2048 screening 的 75–80%**。→ 2048 的低 GPU 是 5s 短 wall 的启动/采样瞬态假象，**不是系统未饱和**。规模上去后进入稳态饱和。
 - **10570 达 ~61s wall**——接近 60s 稳态建议；GPU 采样 324 点（vs 2048 的 16–22），统计可靠。
 - **TTFT 轻微恶化**：154→162→164ms（+6%，规模 2.6×）。prefix-cache hit 0.63→0.61（working-set 增大，轻微下降）。
-- **duckdb @4096 与 bounded 持平**：42057 vs 43878（duckdb 是 bounded 的 96%），TTFT 150 vs 154ms，GPU 92% vs 95%。→ 4096 规模下 DuckDB-ai 扩展与 lean httpx **统计等价**。
+- **duckdb @4096 与 bounded 接近**：42057 vs 43878（duckdb 是 bounded 的 96%），TTFT 150 vs 154ms，GPU 92% vs 95%。→ 4096 规模下 DuckDB-ai harness 诊断与 lean httpx **未检出显著差异**（单次观察，无 TOST）。
 
-**DuckDB cap-64 失败（重要 arm 差异）**：duckdb 在 8192/10570 **失败**——DuckDB-ai 扩展把 `finish_reason=length`（达到 cap=64）当作**行错误**（deploy doc 记载行为），8192 起出现某行答案 >64 token → 0-failure 门禁失败。bounded_http 把 length 当成功。→ **这是 DuckDB-ai 的严格 max_tokens 语义，不是系统 bug**；它使 DuckDB-ai 在变长输出 workload + 紧 cap 下不可用（需更大 cap 或 dedicated bounded-output gate）。
+**DuckDB cap-64 失败（重要 arm 差异）**：duckdb 在 8192/10570 **未通过零错误门禁**——shard summary 能定位到某 source row 在该次达到 max_tokens=64，DuckDB-ai 扩展将其作为行错误处理（deploy doc 记载语义），bounded_http 则把 length 当成功。
+
+**可声称**：在本次运行 + cap=64 合同下，DuckDB 路径**未满足零错误门禁**。
+
+**不能声称**（归因收紧，见顶部订正注 2）："参考答案必然 >64 token"（cap=64 门禁已证模型最大输出 57<64，该行未必超长）、"确定性问题"（单次观察）、"不是系统 bug"、"DuckDB 在该规模不可用"。孤立重放已说明该行可能正常完成，因此更像**并发批处理条件下的偶发生成尾部风险**，需 dedicated bounded-output 轨或多次重复隔离。
 
 **推断**：
 - 在 SQuAD dev + 饱和配置下，**bounded_http 的服务吞吐在 4096–10570 近平台**，GPU 稳态饱和；2048 screening 的"GPU 未饱和"是短 wall 假象，**不应作为系统饱和能力的判据**。
-- duckdb 与 bounded 在 4096 规模统计等价；更大规模受 cap-64 阻断（DuckDB-ai 严格语义），需独立 bounded-output 轨。
+- duckdb 与 bounded 在 4096 规模未检出显著差异（单次）；更大规模未满足零错误门禁（见 §5 归因收紧），需 dedicated bounded-output 轨。
 
 **不能声称**：
 - 这是 **1 rep screening 爬坡**，不是 1w+3f formal（2048 已有 1w+3f，大规模只 1 rep）。
@@ -69,7 +80,7 @@
 ## 6. 对课题含义
 
 - **方法学纠偏**：2048/5s screening 不能判稳态饱和——本爬坡证明规模上去后 GPU 稳态 ~95%，bounded 吞吐近平台。后续正式实验应直接用**更大规模 + ≥60s**（如 SQuAD train 20K+），不再用 2048 代表系统上限。
-- **DuckDB-ai 边界**：紧 cap + 变长输出下 DuckDB-ai 严格 max_tokens 会失败——这是产品语义边界，写进 baseline 对照的诚实口径。
+- **DuckDB-ai 边界**：紧 cap 下 DuckDB-ai 的 max_tokens 错误语义会导致零错误门禁失败（归因见 §5，不声称超长/非 bug/不可用）——写进 baseline 对照的诚实口径。
 - **项目 2-endpoint 挂死**：项目 static-K 的 2-endpoint 路径（ray_actor + per_endpoint admission）设置阶段死锁——这是项目调度实现的真实 bug，需修（课题核心 claim 是多 endpoint 路由，不能挂死）。
 
 ## 7. 仍缺 / 下一步
@@ -86,7 +97,7 @@
 
 `raw/ramp_gate/` 下（committed，已剪枝大文件）：
 - `ramp_run.json`：6 cell pass/fail（4 passed，2 failed）。
-- `ramp_aggregate.json`：committed aggregator 重算的全指标。
+- `ramp_aggregate.json`：aggregator 重算（rows_per_s fallback + status from ramp_run.json）；duckdb 8192/10570=**failed**，rows_per_s=87.76/86.07（已修正旧 status bug + rows=0）。
 - `scale_<S>/<arm>_c32_rep1/`：每 cell `gate_output/<cell>/{shard_0,shard_1}/summary.json` + `gate.json` + `run_status.json`；`ttft_metrics.json`（`/metrics` 直方图 delta）；`gpu_resource.csv`（per-sample gpu0+gpu1）。
 - `manifests/*.meta.json`：4096/8192/10570 equal-rows 分片 provenance（row_count/SHA/work skew）。**完整 `.jsonl` 未提交（26MB，可由 `run_official_baseline.py export-postgres-manifest --row-count N --row-offset 0 --partition-policy equal_rows` 重新生成）**。
 - `requests.csv`（per-shard 预测）未提交（质量评估时再拉）。

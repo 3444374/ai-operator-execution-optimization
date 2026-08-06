@@ -374,6 +374,40 @@ def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) 
     return record
 
 
+def _verify_vllm_config(ramp: RampConfig) -> None:
+    """Preflight: check the vLLM startup cmdline carries the service params the
+    config declares (codex server audit: the ramp config declared max_num_seqs
+    / max_num_batched_tokens but the vLLM processes did not carry them on the
+    cmdline, so they were vLLM defaults -- reports must not present declared as
+    effective). Warns (not fails) when a flag is absent, since vLLM defaults
+    still run; surfaces the mismatch so the report says "declared", not
+    "effective", until the flag is confirmed on the cmdline.
+    """
+    import subprocess
+    pg = subprocess.run(["pgrep", "-f", "vllm.entrypoints"], capture_output=True, text=True)
+    pids = [p for p in pg.stdout.split() if p]
+    if not pids:
+        print("[ramp][preflight] WARN: no vllm.entrypoints process (pgrep); skipping config verify", flush=True)
+        return
+    cmdlines = []
+    for pid in pids:
+        try:
+            cmdlines.append(Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace"))
+        except OSError:
+            pass
+    declared = {
+        "--max-num-seqs": str(ramp.service_max_num_seqs),
+        "--max-num-batched-tokens": str(ramp.service_max_num_batched_tokens),
+    }
+    for flag, val in declared.items():
+        present = any(f"{flag} {val}" in c or f"{flag}={val}" in c for c in cmdlines)
+        if present:
+            print(f"[ramp][preflight] vLLM cmdline carries {flag} {val} (declared == effective)", flush=True)
+        else:
+            print(f"[ramp][preflight] WARN: {flag} {val} declared in ramp config but NOT on vLLM cmdline; "
+                  f"vLLM uses its DEFAULT (effective != declared). Report must say 'declared', not 'effective'.", flush=True)
+
+
 def _ensure_ray_head() -> None:
     """Start a Ray head + clear the stale cluster pointer (deploy §10.5).
 
@@ -392,13 +426,40 @@ def _ensure_ray_head() -> None:
     import os
     import shutil
     import subprocess
-    # 1) clear stale cluster pointer (deploy §10.5)
+    os.environ.setdefault("RAY_ADDRESS", "127.0.0.1:6380")
+    # 0) reuse an existing healthy head if present. A previous ramp leaves its
+    # head running, and ``ray start --head`` again fails with a session-name KV
+    # assertion against the persisted session. ray.init to 127.0.0.1:6380
+    # succeeds iff a healthy head is already there (confirmed: REUSE_OK on the
+    # leftover Phase-1a head), so prefer reuse and only fall back to a fresh
+    # start when nothing answers.
+    # reuse ONLY if a healthy head exists AND it is clean (no leftover named
+    # actors from a prior run). codex server audit: previously reused any head
+    # that answered ray.nodes(), without verifying the cluster was idle/clean --
+    # a prior project_static run that leaked actors would contaminate the next
+    # run. A non-clean or absent head falls through to stop + fresh start.
+    reuse = subprocess.run(
+        ["/root/miniconda3/bin/python", "-c",
+         "import ray; ray.init(address='127.0.0.1:6380', ignore_reinit_error=True); "
+         "assert ray.nodes(), 'no nodes'; "
+         "named = ray.util.list_named_actors(); "
+         "assert not named, f'leftover named actors (cluster not clean): {named}'; "
+         "ray.shutdown()"],
+        capture_output=True, text=True, timeout=60,
+    )
+    if reuse.returncode == 0:
+        print("[ramp] reusing CLEAN Ray head at 127.0.0.1:6380", flush=True)
+        return
+    print(f"[ramp] head not reusable/clean ({(reuse.stderr or reuse.stdout or '')[-200:]}); fresh start", flush=True)
+    # No healthy head -> clean slate (deploy §10.5): clear the stale pointer,
+    # stop any half-dead head so its session name is gone from the in-GCS KV,
+    # then start a fresh head.
     try:
         Path("/tmp/ray/ray_current_cluster").unlink(missing_ok=True)
     except OSError:
         pass
-    # 2) start head (idempotent -- reconnects if one exists)
     ray_cli = shutil.which("ray") or "/root/miniconda3/bin/ray"
+    subprocess.run([ray_cli, "stop", "--force"], capture_output=True, text=True, timeout=60)
     result = subprocess.run(
         [ray_cli, "start", "--head", "--node-ip-address=127.0.0.1",
          "--port=6380", "--disable-usage-stats"],
@@ -455,10 +516,35 @@ def _warmup_cache(ramp: RampConfig, scale: RampScale) -> None:
                 p.wait(timeout=900)
             except subprocess.TimeoutExpired:
                 p.kill()
+                raise RuntimeError("cache warmup shard timed out (>900s)")
+        # fail-closed (codex audit #4): a failed warmup leaves the prefix cache
+        # in an unknown state -- do NOT proceed to the measured cell.
+        failed = [i for i, p in enumerate(procs) if p.returncode != 0]
+        if failed:
+            raise RuntimeError(
+                f"cache warmup shard(s) rc!=0 on endpoint index(es) {failed}; "
+                f"aborting before measured cell -- prefix cache state unknown")
+
+
+def _write_run_log(output_root: Path, experiment_id: str, records: list[dict]) -> None:
+    """Atomically write ``ramp_run.json`` (tmp + rename) after every cell.
+
+    A crash or kill mid-ramp still leaves an authoritative per-cell status on
+    disk (codex server audit: previously ramp_run.json was written once at the
+    end, so a mid-ramp abort lost all cell status -- ramp_run.json records
+    stayed empty while 100s of cell files existed).
+    """
+    summary = {"experiment_id": experiment_id, "records": records,
+               "n_passed": sum(1 for r in records if r.get("status") == "passed"),
+               "n_failed": sum(1 for r in records if r.get("status") != "passed")}
+    tmp = output_root / "ramp_run.json.tmp"
+    tmp.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(output_root / "ramp_run.json")
 
 
 def run_ramp(ramp: RampConfig) -> dict:
     ramp.output_root.mkdir(parents=True, exist_ok=True)
+    _verify_vllm_config(ramp)
     if any(arm.arm == "project_static" for arm in ramp.arms):
         print("[ramp] project_static arm present -- ensuring Ray head", flush=True)
         _ensure_ray_head()
@@ -478,14 +564,11 @@ def run_ramp(ramp: RampConfig) -> dict:
                 else:
                     record = _run_project_cell(ramp, scale, arm, rep)
                 records.append(record)
+                _write_run_log(ramp.output_root, ramp.experiment_id, records)
                 print(f"  -> {record['status']}", flush=True)
-    summary = {"experiment_id": ramp.experiment_id, "records": records,
-               "n_passed": sum(1 for r in records if r.get("status") == "passed"),
-               "n_failed": sum(1 for r in records if r.get("status") != "passed")}
-    (ramp.output_root / "ramp_run.json").write_text(
-        json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
-    return summary
+    return {"experiment_id": ramp.experiment_id, "records": records,
+            "n_passed": sum(1 for r in records if r.get("status") == "passed"),
+            "n_failed": sum(1 for r in records if r.get("status") != "passed")}
 
 
 def main() -> int:
