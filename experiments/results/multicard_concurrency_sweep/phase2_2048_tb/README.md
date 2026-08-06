@@ -26,7 +26,7 @@
 
 ## 3. 合规性自检
 
-- **prefix cache**：全臂 prefix-hit **0.96**（cache-hot warmup 后稳定）。
+- **prefix cache**：bounded/duckdb **0.96**；**project 随 K 逐步升温** K1 0.91→K32 0.96（复审 #3：project 按自有 round-robin 路由，不共享 gate manifest 的 endpoint 分配，低 K 时 cache 未完全热——warmup 按 manifest 分片预热但 project 路由独立，prompt 可能落另一 GPU 独立 prefix cache）。
 - **feeding-saturation**：duckdb/project 在 C_total=64 达 bounded 的 ~87-89%（<95% 门禁，同 saturated/rich 报告，未达 formal feeding-parity）。
 - **GPU**：bounded 80-97%、project 60-94%、duckdb **~69%**（未满但 tok/s 已 plateau → duckdb 瓶颈不在 GPU，见 §6）。
 - **exactly-once + 0 error**：passed cell 全通过（duckdb c1-c64 全 passed；bounded c1-c32 passed；project K1-K32 passed）。
@@ -35,23 +35,25 @@
 
 | C_total | bounded_http (c) | duckdb_ai (c)〔harness_sharded_diagnostic〕| project_static (K) |
 |---|---|---|---|
-| 2 | 4,279 (c1) | **77,862** (c1) | 4,226 (K1) |
-| 4 | 7,642 (c2) | **79,323** ←峰 (c2) | 7,371 (K2) |
-| 8 | 14,871 (c4) | 78,455 (c4) | 14,072 (K4) |
-| 16 | 28,525 (c8) | 79,174 (c8) | 27,023 (K8) |
-| 32 | 51,656 (c16) | 78,933 (c16) | 48,164 (K16) |
-| **64** | **88,493** ←峰 (c32) | 79,070 (c32) | **77,382** ←峰 (K32) |
+| 2 | 4,277 (c1) | 77,862 (c1) | 4,226 (K1) |
+| 4 | 7,642 (c2) | **79,088** ←峰 (c2) | 7,371 (K2) |
+| 8 | 14,838 (c4) | 77,032 (c4) | 14,072 (K4) |
+| 16 | 28,410 (c8) | 79,161 (c8) | 27,023 (K8) |
+| 32 | 51,287 (c16) | 78,933 (c16) | 48,164 (K16) |
+| **64** | **87,393** ←峰 (c32) | 76,449 (c32) | **77,381** ←峰 (K32) |
 | 128 | **failed** (c64) | 78,817 (c64) | — (actor slots=32) |
+
+> **group 口径**（复审 #2）：bounded/duckdb = gate.json `group_service_total_tokens / group_service_wall_s`；project = profiler `model_request_tokens_per_s`（本身 group 语义）。旧 `total_tokens/max_jct` 口径高估 gate 臂（bounded 88493 / duckdb 79070 → group 87393 / 76449），且把 duckdb 排在 project 之前（误）；group 口径下 **project 77,381 > duckdb 76,449**。
 
 TTFT P50：c/K=1 约 30ms → c/K=32 约 52-57ms（随并发轻微恶化）。GPU util / rows/s / E2E 见 `ramp_aggregate.md`。
 
 ## 5. 结果解释（事实 / 推断 / 不能声称）
 
 **事实**：
-- **bounded/project：client inflight 线性喂饱**——tok/s 随 c/K 近线性增长（4k→88k / 4k→77k），C_total=64 见顶。两者同形态，project 略低（K32 77k = bounded c32 88k 的 87.5%，调度开销，rich 报告定位 35-37%）。
+- **bounded/project：client inflight 线性喂饱**——tok/s 随 c/K 近线性增长（4k→87k / 4k→77k，group 口径），C_total=64 见顶。两者同形态，project 略低（K32 77k ≈ bounded c32 87k 的 89%，调度开销，rich 报告定位 35-37%）。
 - **duckdb：c 轴无关——c=1（C_total=2）就 78k plateau**，c1-c64 全在 78-79k。这是 DuckDB-ai 的 **set-oriented SQL 语义**：client concurrency=1 但 SQL 一次集合提交多行，内部 batch 即使 c=1 也喂饱 GPU。
 - **bounded c64（C_total=128）failed**（shard exit 2）——两 venv 都失败，是 vLLM 过载塌陷（与 saturated ADDENDUM 的 c=64 塌陷一致），非 venv 问题。duckdb c64 反而 passed（78k，因 c 无关）。
-- **C_total=64 三臂排序**：bounded 88k > duckdb 79k > project 77k。
+- **C_total=64 三臂排序（group 口径）**：**bounded 87,393 > project 77,381 > duckdb 76,449**（旧 total/max_jct 口径误排 bounded>duckdb>project；group 口径下 project 略高于 duckdb harness 诊断）。
 
 **推断**：
 - 上游调度（bounded/project）的并发控制有意义（线性喂饱到 c32/K32）；DuckDB-ai 的集合语义绕过了 client 并发（c 无关）。**所以 duckdb 的 c 横轴与 bounded/project 不同语义，不能直接横比 c**——这是它该标 `harness_sharded_diagnostic` 的又一证据。
@@ -78,8 +80,8 @@ TTFT P50：c/K=1 约 30ms → c/K=32 约 52-57ms（随并发轻微恶化）。GP
 
 ## 8. 证据 + 诚实边界
 
-- **raw**：`experiments/results/multicard_concurrency_sweep/phase2_2048_tb/`（服务器；`ramp_run.json` + 每 cell `gate_output/<cell>/{shard_0,shard_1}/summary.json` + `gate.json` + `ttft_metrics.json` + `gpu_resource.csv`；project `project_static_*.csv`）。**raw 在服务器，commit 时提交裁剪版（summary/gate/ramp_run，不含大 requests.csv）**。
-- `ramp_aggregate.{json,md}`：committed aggregator 重算（concurrency 维度 + rows fallback）。
-- 代码：`multicard_scale_ramp.py`（concurrency-sweep + warmup fail-closed + 原子 ramp_run + clean-Ray + vLLM config preflight）。
+- **raw**：已提交裁剪版（commit 6f6ef75：`ramp_run.json` + 每 cell `gate_output/<cell>/{shard_0,shard_1}/summary.json` + `gate.json` + `ttft_metrics.json` + `gpu_resource.csv` + `service_counters.json`；`requests.csv` 排除）。可由 committed aggregator 完整复算。
+- `ramp_aggregate.{json,md}`：committed aggregator 重算（**group 口径 + rows fallback + identity sidecar**）。
+- 代码：`multicard_scale_ramp.py`（concurrency-sweep + warmup fail-closed + 单端点 warmup + 原子 ramp_run + clean-Ray + vLLM config preflight + lb_rr backend-balance gate）。
 
-> **诚实边界**：**1 rep/cell diagnostic**（非 formal，无 TOST/CV）；**duckdb = harness_sharded_diagnostic**（非产品原生排名）；**vLLM effective config = 默认**（cmdline 无 max_num_seqs/8192 flag，声明值非 effective；prefix_caching 默认 ON 恰同声明）；**bounded c64 failed**（C_total=128 过载）；**raw 在服务器待提交裁剪版**；**未达 feeding-parity ≥95% 门禁**（duckdb/project 87-89%）。
+> **诚实边界**：**1 rep/cell diagnostic**（非 formal，无 TOST/CV）；**duckdb/lb_rr = harness_sharded_diagnostic**（非产品原生排名）；**group 口径**（gate 臂 gate.json group_service_wall_s；旧 total/max_jct 已弃）；**project prefix-hit 随 K 升温**（K1 0.91→K32 0.96，非全 0.96，project 路由独立于 manifest）；**vLLM effective config = 默认**（cmdline 无 max_num_seqs/8192 flag）；**bounded c64 failed**（C_total=128 过载）；**未达 feeding-parity ≥95% 门禁**（duckdb/project ~87-89%）。

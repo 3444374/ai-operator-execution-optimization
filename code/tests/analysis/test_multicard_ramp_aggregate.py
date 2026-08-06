@@ -255,6 +255,58 @@ class RobustRowsTests(unittest.TestCase):
         self.assertEqual(m["comparison_role"], "harness_sharded_diagnostic")
         self.assertFalse(m["formal_baseline_eligible"])
 
+    def test_gate_group_wall_overrides_summary_max_jct(self) -> None:
+        """gate.json group_service_total_tokens/group_service_wall_s is authoritative
+        (复审 #2): NOT summary total_tokens/max_jct. group wall > max shard jct
+        (unaligned shards), so the two differ -- must use group."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            cell, gate_dir = self._bare_cell(root, 4096, "bounded_http")
+            for i in (0, 1):
+                _write(gate_dir / f"shard_{i}" / "summary.json", json.dumps({
+                    "service_total_tokens_delta": 400000, "jct_s": 10.0,  # summary: 800000/10=80000
+                    "latency_p50_s": 2.0, "latency_p95_s": 4.0, "latency_p99_s": 5.0,
+                    "completed_count": 2048,
+                }))
+            _write(cell / "gate_output" / "run_status.json", json.dumps({"status": "passed"}))
+            # group wall 12.0 > max shard jct 10.0 (unaligned); group tokens 900000
+            _write(gate_dir / "gate.json", json.dumps({"metrics": {
+                "group_service_total_tokens": 900000, "group_service_wall_s": 12.0, "result_rows": 4096}}))
+            result = agg.aggregate(root)
+        m = result["scale_4096"]["arms"]["bounded_http"]["c32"]
+        self.assertEqual(m["service_tokens_source"], "gate_group")
+        self.assertAlmostEqual(m["service_tokens_per_s_mean"], 75000.0, delta=1)  # 900000/12, not 80000
+
+    def test_lb_rr_ttft_counters_overrides_duckdb_total_tokens(self) -> None:
+        """lb_rr (no gate.json) uses ttft vLLM counters Σ(prompt+gen delta), not
+        duckdb summary total_tokens (复审 #5: misses generation/chat-template)."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            cell = root / "scale_256" / "lb_rr_c64_rep1"
+            gate_dir = cell / "gate_output" / "lb_rr_c64"
+            (gate_dir / "shard_0").mkdir(parents=True)
+            _write(gate_dir / "shard_0" / "summary.json", json.dumps({
+                "service_total_tokens_delta": 0, "total_tokens": 400000,  # duckdb input-token est (wrong)
+                "jct_s": 8.0, "completed_count": 256,
+                "latency_p50_s": 1.0, "latency_p95_s": 2.0, "latency_p99_s": 3.0,
+            }))
+            _write(cell / "gate_output" / "run_status.json", json.dumps({"status": "passed"}))
+            _write(cell / "ttft_metrics.json", json.dumps({
+                "0": {"vllm_prompt_tokens_delta": 200000, "vllm_generation_tokens_delta": 8000,
+                      "vllm_time_to_first_token_p50_s": 0.05, "vllm_prefix_cache_hit_rate": 0.95},
+                "1": {"vllm_prompt_tokens_delta": 204000, "vllm_generation_tokens_delta": 8000,
+                      "vllm_time_to_first_token_p50_s": 0.05, "vllm_prefix_cache_hit_rate": 0.95},
+            }))
+            with (cell / "gpu_resource.csv").open("w", encoding="utf-8", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=["sample_index", "gpu_index", "gpu_utilization_pct", "gpu_power_w"])
+                w.writeheader()
+                w.writerow({"sample_index": 0, "gpu_index": "0", "gpu_utilization_pct": 70.0, "gpu_power_w": 300.0})
+            result = agg.aggregate(root)
+        m = result["scale_256"]["arms"]["lb_rr"]["c64"]
+        self.assertEqual(m["service_tokens_source"], "ttft_vllm_counters")
+        # 420000 / 8.0 = 52500, not 400000/8=50000 (duckdb est misses generation)
+        self.assertAlmostEqual(m["service_tokens_per_s_mean"], 52500.0, delta=1)
+
 
 if __name__ == "__main__":
     unittest.main()

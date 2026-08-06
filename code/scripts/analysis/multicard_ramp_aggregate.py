@@ -152,9 +152,32 @@ def _gate_cell_metrics(cell: Path) -> dict:
     summaries = [_read_json(s / "summary.json") for s in shard_dirs if (s / "summary.json").is_file()]
     if not summaries:
         return {"status": "missing_shards"}
-    total_tokens = sum(s.get("service_total_tokens_delta", 0) or s.get("total_tokens", 0) for s in summaries)
     max_jct = max(_f(s.get("jct_s")) for s in summaries)
-    unified_tps = total_tokens / max_jct if max_jct > 0 else 0.0
+    # Authoritative service tokens/s (复审 #2/#5): previously total_tokens/max_jct
+    # used the wrong wall and, for lb_rr, the wrong numerator.
+    # Priority: (1) gate.json group 口径 (bounded/duckdb gate arms):
+    #   group_service_total_tokens / group_service_wall_s;
+    # (2) ttft_metrics vLLM counters (lb_rr, no gate.json): Σ(后端 prompt+gen delta) / shard wall;
+    # (3) fallback summary total_tokens/max_jct (duckdb input-token est, misses gen/chat-template).
+    gate_json = _read_json(gate_dir / "gate.json") if (gate_dir / "gate.json").is_file() else {}
+    gmetrics = gate_json.get("metrics", {}) if isinstance(gate_json, dict) else {}
+    group_wall = _f(gmetrics.get("group_service_wall_s"))
+    group_tokens = _f(gmetrics.get("group_service_total_tokens"))
+    ttft_path = cell / "ttft_metrics.json"
+    ttft_data = _read_json(ttft_path) if ttft_path.is_file() else {}
+    ttft_eps = [ttft_data[str(i)] for i in range(len(ttft_data)) if str(i) in ttft_data]
+    ttft_service_tokens = sum(
+        _f(e.get("vllm_prompt_tokens_delta")) + _f(e.get("vllm_generation_tokens_delta")) for e in ttft_eps)
+    if group_wall > 0 and group_tokens > 0:
+        unified_tps = group_tokens / group_wall
+        service_total, service_wall, token_source = int(group_tokens), group_wall, "gate_group"
+    elif ttft_service_tokens > 0 and max_jct > 0:
+        unified_tps = ttft_service_tokens / max_jct
+        service_total, service_wall, token_source = int(ttft_service_tokens), max_jct, "ttft_vllm_counters"
+    else:
+        total_tokens = sum(s.get("service_total_tokens_delta", 0) or s.get("total_tokens", 0) for s in summaries)
+        unified_tps = total_tokens / max_jct if max_jct > 0 else 0.0
+        service_total, service_wall, token_source = int(total_tokens), max_jct, "summary_total_tokens_fallback"
     # Authoritative status: run_status.json (gate arms) / run_error.json (any).
     run_status_path = cell / "gate_output" / "run_status.json"
     status = "unknown"
@@ -163,28 +186,27 @@ def _gate_cell_metrics(cell: Path) -> dict:
     if (cell / "run_error.json").is_file():
         status = "failed"
     completed = _completed_rows(shard_dirs, gate_dir)
-    rows_per_s = completed / max_jct if max_jct > 0 else 0.0
+    rows_per_s = completed / service_wall if service_wall > 0 else 0.0
     latency = {q: max(_f(s.get(f"latency_{q}_s")) for s in summaries) for q in ("p50", "p95", "p99")}
-    ttft_path = cell / "ttft_metrics.json"
+    # ttft/prefix_hit reuse ttft_eps read above (vLLM /metrics per-backend deltas)
     ttft = {"p50": None, "p95": None, "p99": None}
     prefix_hit = None
-    if ttft_path.is_file():
-        deltas = _read_json(ttft_path)
-        eps = [deltas[str(i)] for i in range(len(deltas)) if str(i) in deltas]
+    if ttft_eps:
         for q in ttft:
-            vals = [_f(e.get(f"vllm_time_to_first_token_{q}_s")) for e in eps]
+            vals = [_f(e.get(f"vllm_time_to_first_token_{q}_s")) for e in ttft_eps]
             vals = [v for v in vals if v > 0]
             if vals:
                 ttft[q] = statistics.mean(vals)
-        hits = [_f(e.get("vllm_prefix_cache_hit_rate")) for e in eps]
+        hits = [_f(e.get("vllm_prefix_cache_hit_rate")) for e in ttft_eps]
         hits = [h for h in hits if h > 0]
         if hits:
             prefix_hit = statistics.mean(hits)
     return {
         "status": status,
         "service_tokens_per_s": round(unified_tps, 1),
-        "service_total_tokens": int(total_tokens),
-        "model_serving_wall_s": round(max_jct, 3),
+        "service_total_tokens": service_total,
+        "model_serving_wall_s": round(service_wall, 3),
+        "service_tokens_source": token_source,
         "completed_rows": completed,
         "rows_per_s": round(rows_per_s, 2),
         "request_e2e_s_p50": round(latency["p50"], 3),
@@ -295,6 +317,7 @@ def _aggregate_reps(reps: list[dict]) -> dict:
         agg["completed_rows"] = passed[0].get("completed_rows")
         agg["comparison_role"] = passed[0].get("comparison_role")
         agg["formal_baseline_eligible"] = passed[0].get("formal_baseline_eligible")
+        agg["service_tokens_source"] = passed[0].get("service_tokens_source")
         if "scheduling_overhead_pct" in passed[0]:
             agg["scheduling_overhead_pct_mean"] = passed[0].get("scheduling_overhead_pct")
     if any(r.get("status") != "passed" for r in reps):

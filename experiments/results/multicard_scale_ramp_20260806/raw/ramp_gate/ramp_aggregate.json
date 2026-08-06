@@ -10,9 +10,10 @@
           "reps": [
             {
               "status": "passed",
-              "service_tokens_per_s": 41779.1,
+              "service_tokens_per_s": 41778.9,
               "service_total_tokens": 2542239,
               "model_serving_wall_s": 60.85,
+              "service_tokens_source": "gate_group",
               "completed_rows": 10570,
               "rows_per_s": 173.71,
               "request_e2e_s_p50": 28.929,
@@ -30,11 +31,13 @@
                 "gpu1_util_mean": 96.9,
                 "gpu1_power_mean": 422.9
               },
+              "comparison_role": null,
+              "formal_baseline_eligible": null,
               "error": "",
               "rep": 1
             }
           ],
-          "service_tokens_per_s_mean": 41779.1,
+          "service_tokens_per_s_mean": 41778.9,
           "service_tokens_per_s_cv_pct": 0.0,
           "rows_per_s_mean": 173.71,
           "rows_per_s_cv_pct": 0.0,
@@ -63,7 +66,10 @@
             "gpu1_power_mean": 422.9
           },
           "service_total_tokens": 2542239,
-          "completed_rows": 10570
+          "completed_rows": 10570,
+          "comparison_role": null,
+          "formal_baseline_eligible": null,
+          "service_tokens_source": "gate_group"
         }
       },
       "duckdb_ai": {
@@ -77,6 +83,7 @@
               "service_tokens_per_s": 20741.7,
               "service_total_tokens": 1273548,
               "model_serving_wall_s": 61.4,
+              "service_tokens_source": "summary_total_tokens_fallback",
               "completed_rows": 5285,
               "rows_per_s": 86.07,
               "request_e2e_s_p50": 61.4,
@@ -94,6 +101,8 @@
                 "gpu1_util_mean": 93.8,
                 "gpu1_power_mean": 413.0
               },
+              "comparison_role": null,
+              "formal_baseline_eligible": null,
               "error": "RuntimeError: cell duckdb_ai_c32 shard exits: (0, 2)",
               "rep": 1
             }
@@ -116,11 +125,12 @@
           "reps": [
             {
               "status": "passed",
-              "service_tokens_per_s": 43877.7,
+              "service_tokens_per_s": 43786.3,
               "service_total_tokens": 894817,
-              "model_serving_wall_s": 20.393,
+              "model_serving_wall_s": 20.436,
+              "service_tokens_source": "gate_group",
               "completed_rows": 4096,
-              "rows_per_s": 200.85,
+              "rows_per_s": 200.43,
               "request_e2e_s_p50": 9.106,
               "request_e2e_s_p95": 19.079,
               "request_e2e_s_p99": 19.991,
@@ -136,15 +146,17 @@
                 "gpu1_util_mean": 92.9,
                 "gpu1_power_mean": 407.8
               },
+              "comparison_role": null,
+              "formal_baseline_eligible": null,
               "error": "",
               "rep": 1
             }
           ],
-          "service_tokens_per_s_mean": 43877.7,
+          "service_tokens_per_s_mean": 43786.3,
           "service_tokens_per_s_cv_pct": 0.0,
-          "rows_per_s_mean": 200.85,
+          "rows_per_s_mean": 200.43,
           "rows_per_s_cv_pct": 0.0,
-          "model_serving_wall_s_mean": 20.393,
+          "model_serving_wall_s_mean": 20.436,
           "model_serving_wall_s_cv_pct": 0.0,
           "request_e2e_s_p50_mean": 9.106,
           "request_e2e_s_p50_cv_pct": 0.0,
@@ -169,7 +181,10 @@
             "gpu1_power_mean": 407.8
           },
           "service_total_tokens": 894817,
-          "completed_rows": 4096
+          "completed_rows": 4096,
+          "comparison_role": null,
+          "formal_baseline_eligible": null,
+          "service_tokens_source": "gate_group"
         }
       },
       "duckdb_ai": {
@@ -183,6 +198,7 @@
               "service_tokens_per_s": 42056.9,
               "service_total_tokens": 894862,
               "model_serving_wall_s": 21.277,
+              "service_tokens_source": "gate_group",
               "completed_rows": 4096,
               "rows_per_s": 192.5,
               "request_e2e_s_p50": 21.277,
@@ -200,6 +216,8 @@
                 "gpu1_util_mean": 91.4,
                 "gpu1_power_mean": 400.9
               },
+              "comparison_role": null,
+              "formal_baseline_eligible": null,
               "error": "",
               "rep": 1
             }
@@ -233,7 +251,10 @@
             "gpu1_power_mean": 400.9
           },
           "service_total_tokens": 894862,
-          "completed_rows": 4096
+          "completed_rows": 4096,
+          "comparison_role": null,
+          "formal_baseline_eligible": null,
+          "service_tokens_source": "gate_group"
         }
       }
     }
@@ -252,6 +273,7 @@
               "service_tokens_per_s": 42871.3,
               "service_total_tokens": 1975948,
               "model_serving_wall_s": 46.09,
+              "service_tokens_source": "gate_group",
               "completed_rows": 8192,
               "rows_per_s": 177.74,
               "request_e2e_s_p50": 21.08,
@@ -269,6 +291,8 @@
                 "gpu1_util_mean": 96.5,
                 "gpu1_power_mean": 418.0
               },
+              "comparison_role": null,
+              "formal_baseline_eligible": null,
               "error": "",
               "rep": 1
             }
@@ -302,7 +326,10 @@
             "gpu1_power_mean": 418.0
           },
           "service_total_tokens": 1975948,
-          "completed_rows": 8192
+          "completed_rows": 8192,
+          "comparison_role": null,
+          "formal_baseline_eligible": null,
+          "service_tokens_source": "gate_group"
         }
       },
       "duckdb_ai": {
@@ -316,6 +343,7 @@
               "service_tokens_per_s": 21278.2,
               "service_total_tokens": 993120,
               "model_serving_wall_s": 46.673,
+              "service_tokens_source": "summary_total_tokens_fallback",
               "completed_rows": 4096,
               "rows_per_s": 87.76,
               "request_e2e_s_p50": 46.673,
@@ -333,6 +361,8 @@
                 "gpu1_util_mean": 92.8,
                 "gpu1_power_mean": 410.6
               },
+              "comparison_role": null,
+              "formal_baseline_eligible": null,
               "error": "RuntimeError: cell duckdb_ai_c32 shard exits: (2, 0)",
               "rep": 1
             }

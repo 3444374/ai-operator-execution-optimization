@@ -401,6 +401,27 @@ def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) 
                            indent=2, ensure_ascii=False, sort_keys=True),
                 encoding="utf-8",
             )
+        # backend-balance fail-closed gate (复审 #6): nginx round-robin must split
+        # requests ~50/50 across the two backends; a large skew on
+        # vllm_request_success_delta signals routing/LB failure and the cell must
+        # NOT pass (previously balance was only checked after-the-fact by hand).
+        if instr.ttft_deltas:
+            succ = {}
+            for ep, d in instr.ttft_deltas.items():
+                try:
+                    v = float(d.get("vllm_request_success_delta", 0) or 0)
+                except (TypeError, ValueError):
+                    v = 0.0
+                if v > 0:
+                    succ[ep] = v
+            if len(succ) >= 2:
+                vals = list(succ.values())
+                skew = abs(vals[0] - vals[1]) / max(vals)
+                record["backend_request_skew"] = round(skew, 4)
+                if skew > 0.10:
+                    raise RuntimeError(
+                        f"lb_rr backend-balance gate FAILED: vllm_request_success_delta "
+                        f"skew {skew:.1%} ({succ}) > 10% -- nginx round-robin broken?")
         record["status"] = "passed"
         record["gpu_summary"] = instr.gpu_summary
         record["ttft_metrics"] = str(ttft_path) if ttft_path.is_file() else None
@@ -524,6 +545,22 @@ def _ensure_ray_head() -> None:
         )
 
 
+def _manifest_is_single_endpoint(manifest_path: Path) -> bool:
+    """A manifest whose meta ``endpoint_row_counts`` has a single key assigns all
+    rows to endpoint 0 (e.g. lb_rr's lbrr_dev). Used by warmup to send the full
+    prompt set to BOTH backends (independent vLLM prefix caches do not share, so
+    warming only ep_index 0 leaves backend 1 cold). 复审 #4.
+    """
+    meta = manifest_path.with_suffix(manifest_path.suffix + ".meta.json")
+    if meta.is_file():
+        try:
+            d = _read_json(meta)
+            return len(d.get("endpoint_row_counts", {})) <= 1
+        except (json.JSONDecodeError, ValueError, TypeError):
+            pass
+    return False
+
+
 def _warmup_cache(ramp: RampConfig, scale: RampScale) -> None:
     """Uniform cache-hot warmup before a measured cell (deploy §9.1 point #4).
 
@@ -538,13 +575,20 @@ def _warmup_cache(ramp: RampConfig, scale: RampScale) -> None:
     import subprocess
     import tempfile
     script = Path(__file__).resolve().parent / "run_official_baseline.py"
+    # 复审 #4: an endpoint_count=1 manifest (lb_rr lbrr_dev) assigns every row to
+    # endpoint 0; warming ep_index 0/1 sends 0 rows to backend 1, and the two
+    # independent vLLM processes do NOT share prefix caches -> backend 1 stays cold.
+    # For single-endpoint manifests warm BOTH backends with the full prompt set
+    # (endpoint_index=0); for 2-endpoint manifests warm each backend's own shard.
+    single_endpoint = _manifest_is_single_endpoint(scale.manifest)
     with tempfile.TemporaryDirectory(prefix="ramp_warmup_") as tmp:
         procs = []
         for ep_index, url in enumerate(ramp.endpoint_urls):
             shard_dir = Path(tmp) / f"shard_{ep_index}"
+            warmup_ei = 0 if single_endpoint else ep_index
             cmd = [ramp.driver_python, str(script), "run-shard",
                    "--adapter", "bounded_http", "--manifest", str(scale.manifest),
-                   "--endpoint-index", str(ep_index), "--endpoint-url", url,
+                   "--endpoint-index", str(warmup_ei), "--endpoint-url", url,
                    "--model", ramp.model, "--concurrency", str(ramp.warmup_concurrency),
                    "--batch-size", "1", "--output-dir", str(shard_dir),
                    "--disable-arrival-replay", "--service-prefix-caching", ramp.service_prefix_caching,

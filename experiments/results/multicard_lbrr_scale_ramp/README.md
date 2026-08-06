@@ -26,24 +26,26 @@
 
 ## 3. 实验数据（9 scale，service tokens/s）
 
-| scale | tok/s | TTFT P50 | prefix-hit | GPU0/GPU1 util | rows/s |
+| scale | tok/s（**ttft 口径**） | TTFT P50 | prefix-hit | GPU0/GPU1 util | rows/s |
 |---|---|---|---|---|---|
-| 64 | 16,983 | 68ms | 0.95 | —/12.5 | 81 |
-| 128 | 25,007 | 53ms | 0.94 | 28.5/25.0 | 150 |
-| 256 | 47,708 | 55ms | 0.96 | 26.6/29.8 | 226 |
-| 512 | 59,172 | 52ms | 0.96 | 31.6/38.3 | 282 |
-| 1024 | 65,637 | 51ms | 0.96 | 54.5/57.5 | 304 |
-| **2048** | **70,697** ←峰 | 51ms | 0.96 | 70.6/70.6 | 345 |
-| 4096 | 48,954 ↓ | 76ms | 0.76 | 84.8/83.6 | 229 |
-| 8192 | 40,009 | 158ms | 0.61 | 91.3/90.9 | 165 |
-| 10570 | 38,181 | 162ms | 0.60 | 90.1/88.8 | 158 |
+| 64 | 17,452 | 68ms | 0.95 | —/12.5 | 81 |
+| 128 | 26,774 | 53ms | 0.94 | 28.5/25.0 | 150 |
+| 256 | 50,186 | 55ms | 0.96 | 26.6/29.8 | 226 |
+| 512 | 61,658 | 52ms | 0.96 | 31.6/38.3 | 282 |
+| 1024 | 68,939 | 51ms | 0.96 | 54.5/57.5 | 304 |
+| **2048** | **72,934** ←峰 | 51ms | 0.96 | 70.6/70.6 | 345 |
+| 4096 | 50,013 ↓ | 76ms | 0.76 | 84.8/83.6 | 229 |
+| 8192 | 39,898 | 158ms | 0.61 | 91.3/90.9 | 165 |
+| 10570 | 37,966 | 162ms | 0.60 | 90.1/88.8 | 158 |
+
+> **ttft 口径**（复审 #5）：lb_rr shard summary 无 `service_total_tokens_delta`（duckdb 输入 token 估算漏 generation/chat-template），改用 ttft_metrics 两后端 `Σ(vllm_prompt_tokens_delta + vllm_generation_tokens_delta) / shard wall`。旧 summary 口径低估（例 256: 47708 → ttft 50186，+5.2%）。
 
 ## 4. 结果解释（事实 / 推断 / 不能声称）
 
 **事实**：
-- **峰值 70,697 tok/s @ 2048**——与三臂峰值区完全一致（bounded 90k@512/2048、project 88k@256、duckdb 77k@2048）。
-- **4096+ 坍塌**：70,697 → 48,954 → 40,009 → 38,181（峰值 55%），TTFT 51→158ms（3×），prefix-hit 0.96→0.60。与三臂同坍塌点、同信号。
-- **lb_rr 峰值最低**：71k vs 三臂 77-90k。单进程经 nginx 欠喂（ADDENDUM 已述 avg ~10/backend << 32 饱和点）。
+- **峰值 72,934 tok/s @ 2048**（ttft 口径）——与三臂峰值区一致（bounded 87k / project 77k / duckdb 76k@2048，group 口径）。
+- **4096+ 坍塌**：72,934 → 50,013 → 39,898 → 37,966（峰值 52%），TTFT 51→158ms（3×），prefix-hit 0.96→0.60。与三臂同坍塌点、同信号。
+- **lb_rr 峰值最低**：73k vs 三臂 76-87k（group 口径）。单进程经 nginx 欠喂（ADDENDUM 推断 avg ~10/backend << 32 饱和点，**per-run lbrr64 未审计**）。
 - **全 9 格 passed（含 8192/10570）**——不像 duckdb_sharded 在大尺度 cap-64 失败（lb_rr 单进程经 nginx，finish_reason=length=0 已门禁证）。
 - **GPU util**：64 时 GPU1 仅 12.5%（单进程欠喂，请求未填满两卡）；2048 时 70%（接近饱和）；10570 时 90%（坍塌区 GPU 满 但吞吐低 = cache thrash，非算力不足）。
 
@@ -67,4 +69,4 @@
 - `ramp_aggregate.{json,md}`：aggregator 重算（rows fallback + status from ramp_run）。
 - 代码：`multicard_scale_ramp.py`（lb_rr cell + identity sidecar）。
 
-> **诚实边界**：**1 rep/cell diagnostic**（非 formal，无 TOST/CV）；**身份 harness_sharded_diagnostic**（非产品原生排名）；**warmup_per_cell=false**（prefix-hit 由规模嵌套残留 + cell 自热，机制 ≠ 三臂真 warmup，数值可比）；**vLLM effective config = 默认**（声明非 effective）；**坍塌归因未证实**（疑似 cache thrash，无 service-counter）。
+> **诚实边界**：**1 rep/cell diagnostic**（非 formal）；**身份 harness_sharded_diagnostic**（DuckDB 单 BASE_URL 经 nginx，非产品原生多 endpoint）；**uncontrolled-cache**（`warmup_per_cell=false` + 规模嵌套 + 前跑 Phase 2 → 缓存继承，**不能 vs bounded ramp 直接比、非 cache-controlled scale curve**；复审 #4。lb_rr warmup bug 已修——单端点 manifest 两后端全 prompt，但本跑用旧 driver 未启用）；**ttft 口径**（shard summary 无 service counter，用 ttft 两后端 Σ delta）；**raw 已提交裁剪版**（commit 6f6ef75，requests.csv 排除）；**vLLM effective config = 默认**；**坍塌归因未证实**（疑似 cache thrash，无 service-counter）；**provenance**：lb_rr 256 gate summary 仍写 `database_product_native_baseline`（旧 runner，未用 identity sidecar；报告层标 harness_sharded_diagnostic，重跑才写 sidecar override）。
