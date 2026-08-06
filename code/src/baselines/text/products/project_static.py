@@ -90,6 +90,7 @@ class ProjectStaticConfig:
     actor_workers_per_endpoint: int
     ray_actor_max_concurrency: int
     api_key: str = "EMPTY"
+    endpoint_urls: tuple[str, ...] = ()
     writeback_mode: str = "json_text"
     write_batch_rows: int = 500
     total_rows: int = 0
@@ -111,6 +112,9 @@ class ProjectStaticConfig:
             raise ValueError("workload_name must be non-empty")
         if not self.endpoint_url:
             raise ValueError("endpoint_url must be non-empty")
+        for url in self.endpoint_urls:
+            if not url:
+                raise ValueError("endpoint_urls must contain non-empty URLs")
         if not self.model:
             raise ValueError("model must be non-empty")
         if self.max_tokens <= 0:
@@ -152,6 +156,20 @@ class ProjectStaticConfig:
             self.max_inflight,
             self.actor_workers_per_endpoint * self.ray_actor_max_concurrency,
         )
+
+    @property
+    def resolved_endpoint_urls(self) -> tuple[str, ...]:
+        """The endpoint URL list passed to the profiler (plural CLI, comma-joined).
+
+        ``endpoint_urls`` (multi) takes precedence; otherwise the single
+        ``endpoint_url`` is wrapped as a 1-tuple. The profiler round-robins
+        across the list, so a 2-element tuple makes project_static hit both
+        endpoints (comparable to the 2-endpoint gate arms).
+        """
+
+        if self.endpoint_urls:
+            return tuple(self.endpoint_urls)
+        return (self.endpoint_url,)
 
 
 @dataclass(frozen=True)
@@ -211,7 +229,7 @@ def build_profiler_argv(
         "--data-source", "daft_postgres",
         "--organizer", "daft",
         "--model-backend", "compatible_http",
-        "--completion-endpoint-url", config.endpoint_url,
+        "--completion-endpoint-urls", ",".join(config.resolved_endpoint_urls),
         "--completion-model", config.model,
         "--completion-api-key", config.api_key,
         "--completion-max-tokens", str(config.max_tokens),

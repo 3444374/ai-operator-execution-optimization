@@ -123,6 +123,38 @@ class BuildProfilerArgvTests(unittest.TestCase):
         argv = ps.build_profiler_argv(_cfg(total_rows=256), "t", "e", "source", "s")
         self.assertEqual(argv[argv.index("--total-rows") + 1], "256")
 
+    def test_single_endpoint_uses_plural_flag_with_one_url(self) -> None:
+        # The profiler reads --completion-endpoint-urls (comma-split); a single
+        # URL still goes through the plural flag so resolved_endpoint_urls is the
+        # single 1-tuple and the profiler round-robins over one endpoint.
+        argv = ps.build_profiler_argv(_cfg(), "t", "e", "source", "s")
+        self.assertEqual(
+            argv[argv.index("--completion-endpoint-urls") + 1],
+            "http://127.0.0.1:8000/v1/chat/completions",
+        )
+        self.assertNotIn("--completion-endpoint-url,", ",".join(argv))
+        cfg = _cfg()
+        self.assertEqual(cfg.resolved_endpoint_urls, (cfg.endpoint_url,))
+
+    def test_multi_endpoint_emits_comma_joined_urls(self) -> None:
+        # The ramp needs project_static to hit BOTH endpoints (comparable to the
+        # 2-endpoint gate arms). endpoint_urls overrides endpoint_url.
+        cfg = _cfg(endpoint_urls=(
+            "http://127.0.0.1:8000/v1/chat/completions",
+            "http://127.0.0.1:8001/v1/chat/completions",
+        ))
+        argv = ps.build_profiler_argv(cfg, "t", "e", "source", "s")
+        self.assertEqual(
+            argv[argv.index("--completion-endpoint-urls") + 1],
+            "http://127.0.0.1:8000/v1/chat/completions,"
+            "http://127.0.0.1:8001/v1/chat/completions",
+        )
+        self.assertEqual(len(cfg.resolved_endpoint_urls), 2)
+
+    def test_multi_endpoint_rejects_empty_url_in_list(self) -> None:
+        with self.assertRaises(ValueError):
+            _cfg(endpoint_urls=("http://127.0.0.1:8000/v1/chat/completions", ""))
+
 
 class ParseHelpersTests(unittest.TestCase):
     def test_to_float_empty_is_zero(self) -> None:
