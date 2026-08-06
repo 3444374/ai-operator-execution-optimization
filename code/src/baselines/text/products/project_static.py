@@ -212,6 +212,7 @@ def build_profiler_argv(
     evidence_path: str,
     source_scan_path: str,
     summary_path: str,
+    resource_path: str | None = None,
 ) -> list[str]:
     """The frozen static-K argv for ``postgres_ai_operator_profile.py``.
 
@@ -265,6 +266,14 @@ def build_profiler_argv(
         "--source-scan-evidence-output", source_scan_path,
         "--output", summary_path,
     ]
+    if resource_path:
+        # Emit a per-sample GPU resource trace (gpu0 AND gpu1) so the project arm
+        # has raw GPU util/power time-series comparable to the gate arms' wrapped
+        # gpu_resource.csv. Without this the project arm only has sparse summary
+        # aggregates and no recomputable raw GPU CSV.
+        argv.extend(
+            ["--resource-trace-output", resource_path, "--resource-sample-interval-s", "0.3"]
+        )
     if config.total_rows > 0:
         argv.extend(["--total-rows", str(config.total_rows)])
     return argv
@@ -392,11 +401,12 @@ def run_project_static(
     evidence_path = work_dir / "project_static_completion_evidence.csv"
     source_scan_path = work_dir / "project_static_source_scan.csv"
     summary_path = work_dir / "project_static_summary.csv"
+    resource_path = work_dir / "project_static_resource.csv"
 
     python = config.python_executable or "python"
     cmd = [python, config.profiler_script] + build_profiler_argv(
         config, str(trace_path), str(evidence_path), str(source_scan_path),
-        str(summary_path),
+        str(summary_path), str(resource_path),
     )
     completed = subprocess.run(cmd, capture_output=True, text=True)
     stderr_tail = (completed.stderr or "")[-1600:]

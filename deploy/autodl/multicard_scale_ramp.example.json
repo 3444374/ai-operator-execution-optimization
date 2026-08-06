@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "experiment_id": "multicard_scale_ramp",
+  "_note": "Scale ramp at FIXED c=32/K=32 (calibrated saturation point). Scale is the only moving variable. Generate the per-scale manifests FIRST via export-postgres-manifest --row-count N --row-offset 0 --partition-policy equal_rows (nested doc_id-ordered subsets), then point each scale.manifest at the generated file. bounded_http/duckdb_ai run via run_core_gate wrapped in cell_instrumentation (TTFT + per-GPU sampler); project_static runs via run_project_static (2-endpoint via endpoint_urls, resource trace via --resource-trace-output). 2048 already exists as screening; this ramp adds 4096/8192/10570.",
+  "endpoint_urls": [
+    "${COMPLETION_CHAT_ENDPOINT_URL_0}",
+    "${COMPLETION_CHAT_ENDPOINT_URL_1}"
+  ],
+  "completion_protocol": "chat_completions",
+  "model": "${COMPLETION_MODEL}",
+  "tokenizer": "${MODEL_PATH}",
+  "service_prefix_caching": "enabled",
+  "service_max_num_seqs": 256,
+  "service_max_num_batched_tokens": 8192,
+  "scales": [
+    {"rows": 4096, "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/squad_dev_4096.jsonl"},
+    {"rows": 8192, "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/squad_dev_8192.jsonl"},
+    {"rows": 10570, "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/squad_dev_10570.jsonl"}
+  ],
+  "arms": [
+    {"arm": "bounded_http", "concurrency": 32, "reps": 1},
+    {"arm": "duckdb_ai", "concurrency": 32, "reps": 1},
+    {"arm": "project_static", "concurrency": 32, "reps": 1}
+  ],
+  "output_root": "${ARTIFACT_ROOT}/multicard_scale_ramp_REPLACE_ME",
+  "database_url": "${DATABASE_URL}",
+  "workload_name": "squad_v11_dev_short_answer",
+  "max_tokens": 64,
+  "project_token_budget": 6144,
+  "project_active_work": 65536,
+  "project_actor_workers": 8,
+  "project_ray_concurrency": 4,
+  "idle_timeout_s": 120.0
+}

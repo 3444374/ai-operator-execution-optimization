@@ -155,6 +155,16 @@ class BuildProfilerArgvTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _cfg(endpoint_urls=("http://127.0.0.1:8000/v1/chat/completions", ""))
 
+    def test_resource_trace_flag_only_when_resource_path_given(self) -> None:
+        # Without resource_path: no resource flag (backward compatible).
+        argv = ps.build_profiler_argv(_cfg(), "t", "e", "source", "s")
+        self.assertNotIn("--resource-trace-output", argv)
+        # With resource_path: emit both the output + interval so the project arm
+        # produces a raw per-sample GPU CSV comparable to the gate arms' wrapper.
+        argv = ps.build_profiler_argv(_cfg(), "t", "e", "source", "s", "res.csv")
+        self.assertEqual(argv[argv.index("--resource-trace-output") + 1], "res.csv")
+        self.assertEqual(argv[argv.index("--resource-sample-interval-s") + 1], "0.3")
+
 
 class ParseHelpersTests(unittest.TestCase):
     def test_to_float_empty_is_zero(self) -> None:
