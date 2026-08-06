@@ -467,66 +467,70 @@ def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) 
     return record
 
 
-def _verify_vllm_config(ramp: RampConfig) -> None:
-    """Preflight: check the vLLM startup cmdline carries the service params the
-    config declares (codex server audit: the ramp config declared max_num_seqs
-    / max_num_batched_tokens but the vLLM processes did not carry them on the
-    cmdline, so they were vLLM defaults -- reports must not present declared as
-    effective). Warns (not fails) when a flag is absent, since vLLM defaults
-    still run; surfaces the mismatch so the report says "declared", not
-    "effective", until the flag is confirmed on the cmdline.
+def _cmdline_for_port(cmdlines, port):
+    """Return the cmdline carrying ``--port <port>`` / ``--port=<port>``, else None.
+
+    Pure (no /proc I/O) so it is unit-testable with synthetic cmdline strings.
     """
-    import subprocess
-    pg = subprocess.run(["pgrep", "-f", "vllm.entrypoints"], capture_output=True, text=True)
-    pids = [p for p in pg.stdout.split() if p]
-    if not pids:
-        msg = "[ramp][preflight] no vllm.entrypoints process (pgrep)"
-        if ramp.vllm_config_strict:
-            raise RuntimeError(f"{msg} -- strict mode: cannot verify effective config")
-        print(f"{msg} WARN; skipping config verify", flush=True)
-        return
-    # map each endpoint port -> its vLLM process cmdline (per-endpoint verify, 复审 #7:
-    # previously a flag on ANY process passed, missing a per-endpoint mismatch)
-    cmdlines = {}
-    for pid in pids:
-        try:
-            cmdlines[pid] = Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace")
-        except OSError:
-            pass
-    def _cmdline_for_port(port):
-        for c in cmdlines.values():
-            if f"--port {port}" in c or f"--port={port}" in c:
-                return c
+    needles = (f"--port {port}", f"--port={port}")
+    for c in cmdlines:
+        if any(n in c for n in needles):
+            return c
+    return None
+
+
+def _flag_value_present(cmdline, flag, value):
+    """True iff cmdline carries ``<flag> <value>`` or ``<flag>=<value>`` (codex
+    preflight). Pure for unit testing."""
+    return f"{flag} {value}" in cmdline or f"{flag}={value}" in cmdline
+
+
+def _prefix_cache_flag_enabled(cmdline):
+    """Prefix-cache effective state from the cmdline.
+
+    Returns True (ON) / False (OFF) / None (absent -> vLLM default, unverified
+    from cmdline). TOKEN-based so ``--enable-prefix-caching=false`` is NOT
+    misread as ON by a naive substring test (codex #8). Pure for unit testing.
+    """
+    tokens = cmdline.split()
+    flagged = [t for t in tokens if t == "--enable-prefix-caching" or t.startswith("--enable-prefix-caching=")]
+    if not flagged:
         return None
-    declared = {
-        "--max-num-seqs": str(ramp.service_max_num_seqs),
-        "--max-num-batched-tokens": str(ramp.service_max_num_batched_tokens),
-    }
-    for url in ramp.endpoint_urls:
+    val = flagged[-1]
+    if "=" not in val:
+        return True  # bare flag == ON
+    return val.split("=", 1)[1].strip().lower() not in ("false", "0", "off", "no")
+
+
+def _verify_endpoint_cmdlines(cmdline_pool, endpoint_urls, declared_flags, strict):
+    """Pure verifier: raise (strict) or WARN (non-strict) on per-endpoint cmdline
+    mismatches. ``declared_flags``: {flag: value_str}. Raises RuntimeError on any
+    strict failure (codex #1/#3/#7/#8); non-strict only prints WARNs. Unit-tested
+    directly with synthetic cmdline strings -- no /proc, no subprocess."""
+    for url in endpoint_urls:
         port = url.rsplit(":", 1)[-1].split("/")[0]
-        c = _cmdline_for_port(port)
+        c = _cmdline_for_port(cmdline_pool, port)
         if c is None:
             msg = f"port {port} ({url}): no matching vLLM process cmdline"
-            if ramp.vllm_config_strict:
+            if strict:
                 raise RuntimeError(f"[ramp][preflight] {msg} (strict)")
             print(f"[ramp][preflight] WARN: {msg}", flush=True)
             continue
-        for flag, val in declared.items():
-            present = f"{flag} {val}" in c or f"{flag}={val}" in c
-            if present:
+        for flag, val in declared_flags.items():
+            if _flag_value_present(c, flag, val):
                 print(f"[ramp][preflight] port {port} cmdline carries {flag} {val} (declared == effective)", flush=True)
-            elif ramp.vllm_config_strict:
+            elif strict:
                 raise RuntimeError(
                     f"port {port} cmdline missing {flag} {val} (vllm_config_strict=true; declared != effective). "
                     f"Start vLLM with the flag or set vllm_config_strict=false for screening.")
             else:
                 print(f"[ramp][preflight] WARN: port {port} missing {flag} {val}; vLLM DEFAULT (effective != declared)", flush=True)
-        # prefix-cache effective (复审 #7): cmdline --enable-prefix-caching absent -> vLLM default;
-        # effective ON/OFF cannot be confirmed from cmdline alone (check EngineCore log for
-        # enable_prefix_caching=True); this line surfaces that the cmdline is silent on it.
-        if "--enable-prefix-caching" in c:
+        pc = _prefix_cache_flag_enabled(c)
+        if pc is True:
             print(f"[ramp][preflight] port {port} cmdline has --enable-prefix-caching (effective ON)", flush=True)
-        elif ramp.vllm_config_strict:
+        elif pc is False:
+            print(f"[ramp][preflight] port {port} cmdline has --enable-prefix-caching=false (effective OFF)", flush=True)
+        elif strict:
             raise RuntimeError(
                 f"port {port}: --enable-prefix-caching NOT on cmdline; effective prefix-cache UNVERIFIED "
                 f"(strict mode requires a verifiable prefix-cache; add the flag or confirm via EngineCore log "
@@ -534,6 +538,38 @@ def _verify_vllm_config(ramp: RampConfig) -> None:
         else:
             print(f"[ramp][preflight] port {port}: --enable-prefix-caching NOT on cmdline -> vLLM DEFAULT "
                   f"(effective unverified from cmdline; check EngineCore log)", flush=True)
+
+
+def _verify_vllm_config(ramp: RampConfig) -> None:
+    """Preflight: each endpoint's vLLM cmdline must carry the declared service
+    params (codex server audit: the ramp config declared max_num_seqs /
+    max_num_batched_tokens but the vLLM processes did not carry them on the
+    cmdline, so they were vLLM defaults -- reports must not present declared as
+    effective). Per-endpoint (复审 #7: previously a flag on ANY process passed,
+    missing a per-endpoint mismatch). ``vllm_config_strict=true`` fail-closes on
+    any missing flag / unverifiable prefix-cache; false only WARNs. The matching
+    logic lives in the unit-tested pure helpers above (_verify_endpoint_cmdlines).
+    """
+    import subprocess
+    pg = subprocess.run(["pgrep", "-f", "vllm.entrypoints"], capture_output=True, text=True)
+    pids = [p for p in pg.stdout.split() if p]
+    if not pids:
+        msg = "[ramp][preflight] no vllm.entrypoints process (pgrep)"
+        if ramp.vllm_config_strict:
+            raise RuntimeError(f"{msg} -- strict mode: cannot verify effective config (codex #1)")
+        print(f"{msg} WARN; skipping config verify", flush=True)
+        return
+    cmdlines = {}
+    for pid in pids:
+        try:
+            cmdlines[pid] = Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace")
+        except OSError:
+            pass
+    declared = {
+        "--max-num-seqs": str(ramp.service_max_num_seqs),
+        "--max-num-batched-tokens": str(ramp.service_max_num_batched_tokens),
+    }
+    _verify_endpoint_cmdlines(list(cmdlines.values()), ramp.endpoint_urls, declared, ramp.vllm_config_strict)
 
 
 def _ensure_ray_head() -> None:
@@ -631,6 +667,17 @@ def _manifest_is_single_endpoint(manifest_path: Path) -> bool:
     return False
 
 
+def _warmup_endpoint_indices(single_endpoint: bool, n_endpoints: int) -> tuple[int, ...]:
+    """Per-backend endpoint_index for cache warmup (pure fn, 复审 rerun-contract (b)).
+
+    Single-endpoint manifest (lb_rr lbrr_dev): ALL backends warm with the full
+    prompt set (endpoint_index=0), because independent vLLM prefix caches do NOT
+    share -- warming only one leaves the other cold. 2-endpoint manifest: each
+    backend warms its own shard (endpoint_index = backend index).
+    """
+    return tuple(0 for _ in range(n_endpoints)) if single_endpoint else tuple(range(n_endpoints))
+
+
 def _warmup_cache(ramp: RampConfig, scale: RampScale) -> None:
     """Uniform cache-hot warmup before a measured cell (deploy §9.1 point #4).
 
@@ -651,9 +698,10 @@ def _warmup_cache(ramp: RampConfig, scale: RampScale) -> None:
     # For single-endpoint manifests warm BOTH backends with the full prompt set
     # (endpoint_index=0); for 2-endpoint manifests warm each backend's own shard.
     single_endpoint = _manifest_is_single_endpoint(scale.manifest)
+    warmup_eis = _warmup_endpoint_indices(single_endpoint, len(ramp.endpoint_urls))
     with tempfile.TemporaryDirectory(prefix="ramp_warmup_") as tmp:
         procs = []
-        for ep_index, url in enumerate(ramp.endpoint_urls):
+        for ep_index, (url, warmup_ei) in enumerate(zip(ramp.endpoint_urls, warmup_eis)):
             shard_dir = Path(tmp) / f"shard_{ep_index}"
             warmup_ei = 0 if single_endpoint else ep_index
             cmd = [ramp.driver_python, str(script), "run-shard",

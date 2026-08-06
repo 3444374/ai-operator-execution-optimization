@@ -25,7 +25,7 @@
     {"rows": 10570, "manifest": "${ARTIFACT_ROOT}/multicard_scale_ramp/manifests/lbrr_dev_10570.jsonl"}
   ],
   "arms": [
-    {"arm": "lb_rr", "concurrency": 64, "reps": 1}
+    {"arm": "lb_rr", "concurrency": 64, "reps": 3}
   ],
   "output_root": "${ARTIFACT_ROOT}/multicard_lbrr_scale_ramp_REPLACE_ME",
   "database_url": "${DATABASE_URL}",

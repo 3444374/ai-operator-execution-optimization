@@ -12,12 +12,13 @@ ComparisonRole = Literal[
     "framework_native_baseline",
     "database_product_native_baseline",
     "project_scheduled_method",
-    # ramp-layer composed-system roles (复审 #1/#3): the component role above
+    # ramp-layer composed-system roles (复审 #1/#3/#4): the component role above
     # (e.g. database_product_native_baseline for duckdb_ai single shard) describes
     # the COMPONENT, not the composed system under test. These two name the
-    # authoritative ramp-layer system role -- used by multicard_scale_ramp's
-    # identity sidecar as system_comparison_role so the aggregate never shows
-    # product-native for a harness/gateway composition.
+    # authoritative ramp-layer system role -- multicard_scale_ramp's identity
+    # sidecar stores it in the STANDARD primary field ``comparison_role`` (复审 #1
+    # removed a misleading side field) so the aggregate never shows product-native
+    # for a harness/gateway composition.
     "harness_pre_split_diagnostic",  # 2 independent processes, harness pre-split manifest
     "gateway_system_diagnostic",     # single process via 3rd-party gateway (protocol §2.6)
 ]

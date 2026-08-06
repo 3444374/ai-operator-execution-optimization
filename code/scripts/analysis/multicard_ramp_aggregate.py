@@ -47,7 +47,7 @@ if str(CODE_ROOT) not in sys.path:
 GATE_ARMS = ("bounded_http", "duckdb_ai")
 # Headline numeric metrics aggregated across reps with mean + CV.
 _MEAN_CV_METRICS = (
-    "service_tokens_per_s", "rows_per_s", "model_serving_wall_s",
+    "service_tokens_per_s", "rows_per_s", "model_serving_wall_s", "query_jct_s",
     "request_e2e_s_p50", "request_e2e_s_p95", "request_e2e_s_p99",
     "ttft_s_p50", "ttft_s_p95", "ttft_s_p99", "prefix_cache_hit_rate",
     "scheduling_overhead_pct",
@@ -100,10 +100,11 @@ def _parse_cell_name(name: str) -> tuple[str, int, int]:
 def _identity_role_fields(cell: Path) -> dict:
     """Spread ramp-layer identity role fields into a cell-metrics dict.
 
-    ``system_comparison_role`` is the AUTHORITATIVE primary role of the composed
-    system under test (复审 #1); ``comparison_role`` is the single-shard component
-    role. All None when no identity.json (old raw) -- the aggregate then shows
-    None rather than a misleading product-native component role.
+    ``comparison_role`` (the STANDARD primary field every consumer reads) IS the
+    AUTHORITATIVE role of the composed system under test (复审 #1/#4);
+    ``component_comparison_role`` is the single-shard component role. All None
+    when no identity.json (old raw) -- the aggregate then shows None rather than
+    a misleading product-native role.
     """
     ident = _identity(cell)
     return {
@@ -210,7 +211,15 @@ def _gate_cell_metrics(cell: Path) -> dict:
     latency = {q: max(_f(s.get(f"latency_{q}_s")) for s in summaries) for q in ("p50", "p95", "p99")}
     # 复审 #5: duckdb_ai timing_granularity=query_barrier -> latency_*_s is the whole-SQL JCT,
     # NOT per-request E2E; surface the granularity so callers do not misread it as request E2E.
+    granularities = {s.get("timing_granularity") for s in summaries}
     timing_granularity = summaries[0].get("timing_granularity") if summaries else None
+    if len(granularities) > 1:
+        # 复审 #4 (codex timing): shards disagree on timing granularity -> the aggregate
+        # cannot be read under one timing semantics (one shard's JCT is a query barrier,
+        # another's is per-request E2E). Fail closed; do NOT emit a rankable number.
+        return {"status": "failed",
+                "error": f"mixed timing_granularity across shards: {sorted(str(g) for g in granularities)}",
+                "timing_granularity": "mixed"}
     # ttft/prefix_hit reuse ttft_eps read above (vLLM /metrics per-backend deltas)
     ttft = {"p50": None, "p95": None, "p99": None}
     prefix_hit = None
@@ -228,7 +237,13 @@ def _gate_cell_metrics(cell: Path) -> dict:
         "status": status,
         "service_tokens_per_s": round(unified_tps, 1) if unified_tps is not None else None,
         "service_total_tokens": service_total,
-        "model_serving_wall_s": round(service_wall, 3),
+        # 复审 #2/#4 (codex timing): at query_barrier granularity service_wall IS the whole-SQL
+        # query barrier (operator wall), NOT pure model serving -- emit it as query_jct_s and
+        # leave model_serving_wall_s None so consumers do not misread the query barrier as a
+        # model-serving wall. At request granularity (bounded) service_wall is the model-serving
+        # wall; query_jct_s is None (no SQL barrier).
+        "model_serving_wall_s": None if timing_granularity == "query_barrier" else round(service_wall, 3),
+        "query_jct_s": round(service_wall, 3) if timing_granularity == "query_barrier" else None,
         "service_tokens_source": token_source,
         "completed_rows": completed,
         "rows_per_s": round(rows_per_s, 2),
@@ -236,8 +251,6 @@ def _gate_cell_metrics(cell: Path) -> dict:
         # 复审 #2: when timing_granularity=query_barrier the latency_*_s is the whole-SQL JCT,
         # NOT per-request E2E -- do NOT emit it under the request_e2e name (a separate
         # timing_granularity field is not enough; the misnamed field itself must be absent).
-        # Emit None so md/consumers show no value instead of a misnamed one; the JCT is still
-        # available via model_serving_wall_s.
         "request_e2e_s_p50": None if timing_granularity == "query_barrier" else round(latency["p50"], 3),
         "request_e2e_s_p95": None if timing_granularity == "query_barrier" else round(latency["p95"], 3),
         "request_e2e_s_p99": None if timing_granularity == "query_barrier" else round(latency["p99"], 3),
@@ -270,6 +283,8 @@ def _project_cell_metrics(cell: Path) -> dict:
         "service_tokens_per_s": round(_f(prof.get("model_request_tokens_per_s")), 1),
         "service_total_tokens": int(_f(prof.get("vllm_prompt_tokens_delta")) + _f(prof.get("vllm_generation_tokens_delta"))),
         "model_serving_wall_s": round(_f(prof.get("model_request_wall_s")), 3),
+        "query_jct_s": None,  # project arm submits via Ray actors (request granularity, no SQL barrier)
+        "timing_granularity": "request",
         "rows_per_s": round(_f(prof.get("rows_per_s")), 2),
         "request_e2e_s_p50": round(_f(prof.get("request_e2e_s_p50")), 3),
         "request_e2e_s_p95": round(_f(prof.get("request_e2e_s_p95")), 3),

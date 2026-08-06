@@ -39,7 +39,8 @@ def _write(path: Path, text: str) -> None:
 
 def _gate_cell(root: Path, scale: int, arm: str, *, total_tokens: int, jct: float,
                ttft_p50: float, prefix_hit: float, completed: int = 10, rep: int = 1,
-               conc: int = 32, status: str = "passed") -> None:
+               conc: int = 32, status: str = "passed",
+               timing_granularity: str | None = None) -> None:
     cell = root / f"scale_{scale}" / f"{arm}_c{conc}_rep{rep}"
     shard_dir = cell / "gate_output" / f"{arm}_c{conc}"
     for i in (0, 1):
@@ -47,6 +48,7 @@ def _gate_cell(root: Path, scale: int, arm: str, *, total_tokens: int, jct: floa
             "service_total_tokens_delta": total_tokens // 2, "jct_s": jct,
             "latency_p50_s": 2.0, "latency_p95_s": 4.0, "latency_p99_s": 5.0,
             "completed_count": completed,
+            "timing_granularity": timing_granularity,
         }))
         # requests.csv with `completed` completed rows + 1 failed row
         with (shard_dir / f"shard_{i}" / "requests.csv").open("w", encoding="utf-8", newline="") as f:
@@ -313,6 +315,47 @@ class RobustRowsTests(unittest.TestCase):
         self.assertEqual(m["service_tokens_source"], "ttft_vllm_counters")
         # 420000 / 8.0 = 52500, not 400000/8=50000 (duckdb est misses generation)
         self.assertAlmostEqual(m["service_tokens_per_s_mean"], 52500.0, delta=1)
+
+
+class TimingGranularityTests(unittest.TestCase):
+    """复审 #4 (codex timing): query_barrier JCT must NOT be emitted as
+    request_e2e or model_serving_wall_s -- it lands in query_jct_s. Request
+    granularity keeps request_e2e + model_serving_wall_s. Mixed granularity
+    across shards fails closed (no rankable number)."""
+
+    def test_request_granularity_keeps_request_e2e_and_model_wall(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            _gate_cell(Path(td), 2048, "bounded_http", total_tokens=800000, jct=4.0,
+                       ttft_p50=0.05, prefix_hit=0.77, timing_granularity="request")
+            m = agg.aggregate(Path(td))["scale_2048"]["arms"]["bounded_http"]["c32"]
+        self.assertIsNotNone(m["request_e2e_s_p50_mean"])  # per-request E2E is real here
+        self.assertIsNotNone(m["model_serving_wall_s_mean"])  # service_wall IS the model-serving wall
+        self.assertNotIn("query_jct_s_mean", m)  # no SQL barrier at request granularity
+
+    def test_query_barrier_emits_query_jct_and_nulls_request_e2e_and_model_wall(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            _gate_cell(Path(td), 2048, "duckdb_ai", total_tokens=800000, jct=16.0,
+                       ttft_p50=0.05, prefix_hit=0.77, timing_granularity="query_barrier")
+            m = agg.aggregate(Path(td))["scale_2048"]["arms"]["duckdb_ai"]["c32"]
+        self.assertNotIn("request_e2e_s_p50_mean", m)  # latency is whole-SQL JCT, not per-request E2E -> nulled, absent from agg
+        self.assertNotIn("model_serving_wall_s_mean", m)  # query barrier is NOT a model-serving wall -> nulled, absent
+        self.assertEqual(m["query_jct_s_mean"], 16.0)  # the SQL query barrier JCT lands here
+        self.assertEqual(m["timing_granularity"], "query_barrier")
+
+    def test_mixed_granularity_across_shards_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _gate_cell(root, 2048, "duckdb_ai", total_tokens=800000, jct=16.0,
+                       ttft_p50=0.05, prefix_hit=0.77, timing_granularity="query_barrier")
+            # overwrite shard_1 to disagree on granularity (shard_0=query_barrier, shard_1=request)
+            cell = root / "scale_2048" / "duckdb_ai_c32_rep1"
+            s1path = cell / "gate_output" / "duckdb_ai_c32" / "shard_1" / "summary.json"
+            s1 = json.loads(s1path.read_text(encoding="utf-8"))
+            s1["timing_granularity"] = "request"
+            s1path.write_text(json.dumps(s1), encoding="utf-8")
+            m = agg.aggregate(root)["scale_2048"]["arms"]["duckdb_ai"]["c32"]
+        self.assertEqual(m["status"], "failed")
+        self.assertTrue(any("mixed" in str(e) for e in m.get("failed_rep_errors", [])))
 
 
 if __name__ == "__main__":
