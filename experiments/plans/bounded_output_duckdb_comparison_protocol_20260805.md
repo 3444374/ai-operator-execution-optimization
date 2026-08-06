@@ -115,13 +115,16 @@ Joules/correct row；successful rows/CPU-core-second；GPU seconds/correct row�
 > （`code/scripts/baselines/squad_database_e2e_runner.py`）：duckdb_ai/direct_client 是进程内臂（一个计时墙包住
 > 持久表扫描 → prompt 构造 → 模型调用 → 统一 sink `document_completions`），DuckDB 扩展拥有 batching/concurrency，
 > runner 不注入项目 credit/actor/backpressure；**project_static 是 shell-out 臂**——runner 在通用 scan 前分流，
-> 子进程调用 `postgres_ai_operator_profile.py` 跑冻结最佳静态 K（profiler 独占 scan+organize+model+sink），
-> wrapper 合并 request-trace(时间戳) + `document_completions` readback(output_text) → `BaselineRequestResult`。
+> 子进程调用 `postgres_ai_operator_profile.py` 跑显式冻结的静态合同（token budget、per-endpoint K、
+> per-endpoint active-work、actor topology；profiler 独占 scan+organize+model+sink）。profiler 另行输出
+> completion evidence 与实际 source-scan fingerprints，runner 用独立 DB 完整性/评分读取核对 scan 身份及 sink。
 > 报告层记 `database_e2e_wall_s` 与 scan/construct/adapter/sink 分段；runner 层算 `correct_rows_per_s`（主 headline）、
 > `successful_rows_per_s`、failure rate，并对所有臂统一报 `truncation_count`/`truncation_rate`；状态字段解耦为
 > `single_run_valid` / `formal_run_gate_passed`（单次 runner 恒 false）/ `comparison_admission`（`pending_formal_repeat`）。
 > **注**：PG 连接建立按连接池惯例算 setup（不计入 E2E 墙）；DuckDB 连接+扩展加载在 adapter 内、计入 operator 段；
 > project_static 的计时段来自 profiler `--output` CSV（`e2e_s`→`database_e2e_wall_s` 等），与进程内臂结构不同。
+> 当前该段包含 trace IO / metrics scrape / finish_job，不能与进程内臂的 wall 直接排名；在统一计时边界落地前，
+> project_static 只能通过正确性/可运行性门禁，`comparison_admission=blocked_unified_timing_boundary`。
 
 ## 4. 请求等价门禁
 
@@ -139,9 +142,10 @@ temperature、max_tokens、消息角色一致；再用 **vLLM prompt-token count
 2. 三臂同 manifest、同 model、双 GPU、vLLM 同配置、prefix cache、**同 cap=64**、同计时边界，按 §2 五类指标
    + §3 两边界 + §4 请求等价门禁执行。
 3. 项目最终优化方案确定后补第四臂。
-4. **database-E2E 顶层 runner（三臂已实现；§3）**：`code/scripts/baselines/squad_database_e2e_runner.py`
+4. **database-E2E 顶层 runner（三臂可执行；§3）**：`code/scripts/baselines/squad_database_e2e_runner.py`
    已覆盖 scan→construct→operator→unified sink 的 E2E 计时墙与 runner 层指标（duckdb_ai/direct_client 进程内，
-   project_static 经 profiler 子进程）；**多臂 `1w+3f` 正式排名仍待补——多臂齐全前不发布完整数据库系统排名**。
+   project_static 经 profiler 子进程）；**project_static 统一计时墙 + 同运行签名静态校准完成后**，才能进入多臂
+   `1w+3f` 正式排名。此前不发布完整数据库系统排名。
 
 非阻塞 microbenchmark（可与主路径并行，**不是 SQuAD 的前置门禁**）：
 

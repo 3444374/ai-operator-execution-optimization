@@ -378,6 +378,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--mfu-precision", default="")
     parser.add_argument("--request-trace-output")
     parser.add_argument(
+        "--source-scan-evidence-output",
+        help=(
+            "Opt-in CSV of privacy-preserving fingerprints for the exact source "
+            "rows handed to the organizer (doc_id + text SHA256 + source metadata)."
+        ),
+    )
+    parser.add_argument(
         "--completion-evidence-output",
         help=(
             "Opt-in per-doc completion evidence CSV (doc_id, prompt_tokens, "

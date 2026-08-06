@@ -401,6 +401,15 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         ):
             profile._validate_completion_observation_args(invalid)
 
+    def test_completion_evidence_requires_request_trace(self) -> None:
+        invalid = profile.parse_args(
+            ["--completion-evidence-output", "completion.csv"]
+        )
+        with self.assertRaisesRegex(
+            SystemExit, "requires --request-trace-output"
+        ):
+            profile._validate_completion_observation_args(invalid)
+
     def test_http_actor_definition_receives_safe_ray_options(self) -> None:
         ray = _RecordingRay()
         options = RayWorkerOptions(0.25, actor_max_concurrency=4)

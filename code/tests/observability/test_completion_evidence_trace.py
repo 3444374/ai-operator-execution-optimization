@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pyarrow as pa
+
 CODE_ROOT = next(
     parent
     for parent in Path(__file__).resolve().parents
@@ -85,17 +87,66 @@ class WriteCompletionEvidenceTests(unittest.TestCase):
         self.assertEqual(out[20]["error_type"], "boom")
         self.assertEqual(out[20]["service_start_epoch_s"], "")
 
-    def test_mismatched_batch_counts_skipped_not_raised(self) -> None:
-        # A malformed batch (output count != doc_id count) is skipped, not raised;
-        # the affected doc_ids fall back to empty output_text.
+    def test_mismatched_batch_counts_fail_closed(self) -> None:
         rows = (_trace_row(10),)
         operator_results = [{"doc_id": [10, 11], "output_text": ["only_one"]}]
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "evidence.csv"
-            traces.write_completion_evidence(path, rows=rows, operator_results=operator_results)
+            with self.assertRaises(ValueError):
+                traces.write_completion_evidence(
+                    path, rows=rows, operator_results=operator_results
+                )
+
+    def test_missing_completed_output_fails_closed(self) -> None:
+        rows = (_trace_row(10),)
+        with tempfile.TemporaryDirectory() as td:
+            with self.assertRaises(ValueError):
+                traces.write_completion_evidence(
+                    Path(td) / "evidence.csv", rows=rows, operator_results=[]
+                )
+
+
+class SourceScanEvidenceTests(unittest.TestCase):
+    def test_missing_prompt_text_fails_closed_with_contract_error(self) -> None:
+        table = pa.table({
+            "doc_id": [1],
+            "prompt_tokens": [3],
+            "tenant_id": [0],
+            "category": ["squad"],
+        })
+        with self.assertRaisesRegex(ValueError, "text"):
+            traces.source_scan_fingerprint_rows(table)
+
+    def test_fingerprints_exact_source_rows_without_persisting_prompt(self) -> None:
+        table = pa.table({
+            "doc_id": [2, 1],
+            "text": ["secret prompt two", "secret prompt one"],
+            "prompt_tokens": [3, 3],
+            "tenant_id": [0, 0],
+            "category": ["squad", "squad"],
+        })
+        rows = traces.source_scan_fingerprint_rows(table)
+        self.assertEqual([row["doc_id"] for row in rows], [2, 1])
+        self.assertNotIn("text", rows[0])
+        self.assertEqual(len(rows[0]["text_sha256"]), 64)
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "source.csv"
+            traces.write_source_scan_evidence(path, rows=rows)
             with path.open(encoding="utf-8") as f:
-                out = {int(r["doc_id"]): r for r in csv.DictReader(f)}
-        self.assertEqual(out[10]["output_text"], "")
+                written = list(csv.DictReader(f))
+        self.assertEqual(len(written), 2)
+        self.assertEqual(written[0]["doc_id"], "2")
+
+    def test_duplicate_source_doc_id_fails_closed(self) -> None:
+        row = {
+            "doc_id": 1, "text_sha256": "a" * 64, "prompt_tokens": 1,
+            "tenant_id": 0, "category": "squad",
+        }
+        with tempfile.TemporaryDirectory() as td:
+            with self.assertRaises(ValueError):
+                traces.write_source_scan_evidence(
+                    Path(td) / "source.csv", rows=[row, row]
+                )
 
 
 if __name__ == "__main__":

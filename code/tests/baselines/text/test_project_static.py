@@ -29,6 +29,7 @@ def _cfg(**overrides) -> "ps.ProjectStaticConfig":
         endpoint_url="http://127.0.0.1:8000/v1/chat/completions",
         model="qwen2.5-7b", max_tokens=64,
         token_budget=6144, max_inflight=8,
+        max_active_work_per_endpoint=65536,
         actor_workers_per_endpoint=8, ray_actor_max_concurrency=1,
     )
     base.update(overrides)
@@ -78,7 +79,7 @@ class ProjectStaticConfigTests(unittest.TestCase):
 class BuildProfilerArgvTests(unittest.TestCase):
     def test_locks_frozen_static_k_and_request_semantics(self) -> None:
         argv = ps.build_profiler_argv(
-            _cfg(), "trace.csv", "evidence.csv", "summary.csv",
+            _cfg(), "trace.csv", "evidence.csv", "source.csv", "summary.csv",
         )
 
         def pair(flag: str) -> str:
@@ -86,16 +87,20 @@ class BuildProfilerArgvTests(unittest.TestCase):
 
         # effective-K topology (actor pool slots >= K, so effective K == declared K)
         self.assertEqual(pair("--max-inflight"), "8")
+        self.assertEqual(pair("--max-active-work-per-endpoint"), "65536")
         self.assertEqual(pair("--actor-workers-per-endpoint"), "8")
         self.assertEqual(pair("--ray-actor-max-concurrency"), "1")
         # frozen request semantics (parity with the direct arm)
         self.assertEqual(pair("--completion-temperature"), "0.0")
         self.assertEqual(pair("--completion-http-transport"), "httpx_async")
+        self.assertEqual(pair("--completion-prompt-format"), "raw")
+        self.assertEqual(pair("--output-cost-mode"), "fixed_output_cap")
         self.assertEqual(pair("--service-prefix-caching"), "enabled")
         # completion evidence (independent output_text source, non-circular readback)
         self.assertEqual(pair("--completion-evidence-output"), "evidence.csv")
         # request-trace still requested (populates lifecycle events the evidence joins)
         self.assertEqual(pair("--request-trace-output"), "trace.csv")
+        self.assertEqual(pair("--source-scan-evidence-output"), "source.csv")
         # frozen static-K pipeline identity
         self.assertEqual(pair("--operator"), "ai_complete")
         self.assertEqual(pair("--scheduling-policy"), "static")
@@ -109,13 +114,13 @@ class BuildProfilerArgvTests(unittest.TestCase):
         # The cryptographically pinned request-set manifest guard is a 2-endpoint
         # pinned-comparison mechanism (validate_profile_manifest_contract requires
         # endpoint_count >= 2). This single-endpoint arm MUST NOT pass it.
-        argv = ps.build_profiler_argv(_cfg(), "t", "e", "s")
+        argv = ps.build_profiler_argv(_cfg(), "t", "e", "source", "s")
         self.assertNotIn("--request-manifest", argv)
         self.assertNotIn("manifest_pinned", argv)
 
     def test_total_rows_only_when_positive(self) -> None:
-        self.assertNotIn("--total-rows", ps.build_profiler_argv(_cfg(), "t", "e", "s"))
-        argv = ps.build_profiler_argv(_cfg(total_rows=256), "t", "e", "s")
+        self.assertNotIn("--total-rows", ps.build_profiler_argv(_cfg(), "t", "e", "source", "s"))
+        argv = ps.build_profiler_argv(_cfg(total_rows=256), "t", "e", "source", "s")
         self.assertEqual(argv[argv.index("--total-rows") + 1], "256")
 
 
@@ -143,7 +148,7 @@ class ReadCompletionEvidenceTests(unittest.TestCase):
                "status", "error_type", "finish_reason", "submit_epoch_s",
                "service_start_epoch_s", "completion_epoch_s"]
 
-    def test_keyed_by_doc_id_skips_invalid(self) -> None:
+    def test_keyed_by_doc_id(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             p = Path(td) / "evidence.csv"
             _write_csv(p, self._FIELDS, [
@@ -152,10 +157,6 @@ class ReadCompletionEvidenceTests(unittest.TestCase):
                  "error_type": "", "finish_reason": "stop",
                  "submit_epoch_s": "1.0", "service_start_epoch_s": "1.5",
                  "completion_epoch_s": "2.0"},
-                {"doc_id": "", "prompt_tokens": "1", "output_tokens": "0",
-                 "output_text": "", "status": "completed", "error_type": "",
-                 "finish_reason": "", "submit_epoch_s": "0",
-                 "service_start_epoch_s": "0", "completion_epoch_s": "0"},
                 {"doc_id": "20", "prompt_tokens": "30", "output_tokens": "0",
                  "output_text": "", "status": "failed", "error_type": "boom",
                  "finish_reason": "", "submit_epoch_s": "5.0",
@@ -164,6 +165,38 @@ class ReadCompletionEvidenceTests(unittest.TestCase):
             by_doc = ps.read_completion_evidence(p)
         self.assertEqual(set(by_doc), {10, 20})
         self.assertEqual(by_doc[10]["output_text"], "the answer")
+
+    def test_malformed_doc_id_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "evidence.csv"
+            base = {field: "" for field in self._FIELDS}
+            _write_csv(p, self._FIELDS, [{**base, "doc_id": ""}])
+            with self.assertRaises(ValueError):
+                ps.read_completion_evidence(p)
+
+    def test_duplicate_doc_id_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "evidence.csv"
+            base = {field: "" for field in self._FIELDS}
+            _write_csv(p, self._FIELDS, [
+                {**base, "doc_id": "10"}, {**base, "doc_id": "10"},
+            ])
+            with self.assertRaises(ValueError):
+                ps.read_completion_evidence(p)
+
+
+class ReadSourceScanEvidenceTests(unittest.TestCase):
+    def test_valid_and_duplicate_rejected(self) -> None:
+        fields = ["doc_id", "text_sha256", "prompt_tokens", "tenant_id", "category"]
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "source.csv"
+            row = {"doc_id": "1", "text_sha256": "a" * 64,
+                   "prompt_tokens": "3", "tenant_id": "0", "category": "squad"}
+            _write_csv(p, fields, [row])
+            self.assertEqual(ps.read_source_scan_evidence(p), ((1, "a" * 64),))
+            _write_csv(p, fields, [row, row])
+            with self.assertRaises(ValueError):
+                ps.read_source_scan_evidence(p)
 
 
 class ReadSummaryTimingTests(unittest.TestCase):

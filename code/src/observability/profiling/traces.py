@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -338,6 +339,55 @@ _COMPLETION_EVIDENCE_FIELDS = (
     "submit_epoch_s", "service_start_epoch_s", "completion_epoch_s",
 )
 
+_SOURCE_SCAN_EVIDENCE_FIELDS = (
+    "doc_id", "text_sha256", "prompt_tokens", "tenant_id", "category",
+)
+
+
+def source_scan_fingerprint_rows(table) -> list[dict]:
+    """Return privacy-preserving identities for rows in an actual source batch.
+
+    The fingerprint is computed from the exact Arrow table handed to the
+    organizer, not from a later database reread.  Raw prompts are deliberately
+    not persisted in evidence artifacts.
+    """
+
+    required = {"doc_id", "text", "prompt_tokens", "tenant_id", "category"}
+    missing = required - set(table.column_names)
+    if missing:
+        raise ValueError(
+            "source scan evidence requires columns: " + ", ".join(sorted(missing))
+        )
+    columns = {
+        name: table.column(name).to_pylist()
+        for name in ("doc_id", "text", "prompt_tokens", "tenant_id", "category")
+    }
+    rows: list[dict] = []
+    for index, doc_id in enumerate(columns["doc_id"]):
+        text = columns["text"][index]
+        if doc_id is None or text is None:
+            raise ValueError("source scan evidence cannot contain NULL doc_id/text")
+        rows.append({
+            "doc_id": int(doc_id),
+            "text_sha256": hashlib.sha256(str(text).encode("utf-8")).hexdigest(),
+            "prompt_tokens": columns["prompt_tokens"][index],
+            "tenant_id": columns["tenant_id"][index],
+            "category": columns["category"][index],
+        })
+    return rows
+
+
+def write_source_scan_evidence(output_path: Path, *, rows: Sequence[dict]) -> None:
+    """Write exact source-scan fingerprints, rejecting duplicate document IDs."""
+
+    doc_ids = [int(row["doc_id"]) for row in rows]
+    if len(doc_ids) != len(set(doc_ids)):
+        raise ValueError("source scan evidence contains duplicate doc_id")
+    with output_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(_SOURCE_SCAN_EVIDENCE_FIELDS))
+        writer.writeheader()
+        writer.writerows(rows)
+
 
 def write_completion_evidence(
     output_path: Path,
@@ -356,14 +406,41 @@ def write_completion_evidence(
     the trace rows (enforced by ``build_request_trace_rows``).
     """
 
+    trace_doc_ids = [str(row.doc_id) for row in rows]
+    if len(trace_doc_ids) != len(set(trace_doc_ids)):
+        raise ValueError("completion evidence trace contains duplicate doc_id")
+
     output_text_by_doc_id: dict[str, str] = {}
     for result in operator_results:
         doc_ids = [str(value) for value in result.get("doc_id", [])]
         outputs = result.get("output_text", [])
         if len(outputs) != len(doc_ids):
-            continue
+            raise ValueError(
+                "completion evidence operator result has mismatched doc_id/output_text counts"
+            )
         for doc_id, output in zip(doc_ids, outputs):
+            if doc_id in output_text_by_doc_id:
+                raise ValueError(
+                    f"completion evidence operator results contain duplicate doc_id {doc_id}"
+                )
             output_text_by_doc_id[doc_id] = "" if output is None else str(output)
+
+    unexpected = set(output_text_by_doc_id) - set(trace_doc_ids)
+    if unexpected:
+        raise ValueError(
+            "completion evidence operator results contain doc_ids absent from trace: "
+            + ", ".join(sorted(unexpected)[:5])
+        )
+    missing_completed = {
+        str(row.doc_id)
+        for row in rows
+        if row.status == "completed" and str(row.doc_id) not in output_text_by_doc_id
+    }
+    if missing_completed:
+        raise ValueError(
+            "completion evidence is missing output_text for completed doc_ids: "
+            + ", ".join(sorted(missing_completed)[:5])
+        )
 
     with output_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(_COMPLETION_EVIDENCE_FIELDS))

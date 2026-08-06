@@ -1,19 +1,19 @@
-"""Project frozen-best static-K AI_COMPLETE arm (the paper method, run via profiler).
+"""Project frozen-static AI_COMPLETE arm (the paper method, run via profiler).
 
 This is the ``project_static`` arm of the SQuAD database-E2E runner. Unlike the
 ``duckdb_ai`` and ``direct_client`` arms (in-process adapters that take a
 ``tuple[ChatRequest, ...]`` and return ``BaselineRequestResult``), this arm is a
 THIN WRAPPER that subprocess-calls ``postgres_ai_operator_profile.py`` with the
-project's frozen-best static-K configuration. The profiler owns the full chain
+project's explicit frozen static contract. The profiler owns the full chain
 end-to-end -- PG scan of the workload -> Daft token-budget organizer -> Ray actor
-executor -> static per-endpoint K admission -> vLLM -> unified sink
+executor -> static per-endpoint K + token-work admission -> vLLM -> unified sink
 (``document_completions``). The wrapper does NOT scan or sink; it only invokes,
 then assembles evidence. It is connection-free: all per-doc evidence comes from
 profiler output files.
 
 Why shell out (codex ruling + codebase precedent): the gate runner deliberately
 BLOCKS an inline ``project_profiler`` ("requires_existing_project_profiler") rather
-than approximate the project's execution inline. The project's frozen-best static
+than approximate the project's execution inline. The project's frozen static
 method IS the profiler path; re-implementing its Ray init + actor pool + organizer
 + scheduler inline would risk diverging from the real method under test. So
 ``run_project_static`` runs the real profiler.
@@ -24,12 +24,14 @@ config REQUIRES ``actor_workers_per_endpoint * ray_actor_max_concurrency >=
 max_inflight`` so the declared K is the EFFECTIVE K (no silent clamp) -- the argv
 records both and the run surfaces ``effective_k``.
 
-Request semantics (frozen for parity with the direct arm): ``temperature=0``,
-``http_transport=httpx_async`` (default urllib would break request parity), and the
+Request semantics (frozen for parity with the direct arm): raw chat prompts,
+``temperature=0``, ``http_transport=httpx_async`` (default urllib would break
+request parity), fixed-output-cap cost accounting, and the
 ``service-prefix-caching`` label. The cryptographically pinned request-set manifest
 guard is a 2-endpoint pinned-comparison mechanism (it requires endpoint_count >= 2)
 and is NOT applicable to this single-endpoint arm; workload integrity is verified
-by the runner via an independent content hash of the scanned workload.
+by comparing profiler-emitted fingerprints of the exact source scan with an
+independent database integrity/scoring read.
 
 Evidence (non-circular readback): the profiler emits a run-scoped completion
 evidence CSV (``--completion-evidence-output``) carrying per-doc ``output_text``
@@ -84,6 +86,7 @@ class ProjectStaticConfig:
     max_tokens: int
     token_budget: int
     max_inflight: int
+    max_active_work_per_endpoint: int
     actor_workers_per_endpoint: int
     ray_actor_max_concurrency: int
     api_key: str = "EMPTY"
@@ -116,6 +119,10 @@ class ProjectStaticConfig:
             raise ValueError("token_budget must be positive (frozen static value)")
         if self.max_inflight <= 0:
             raise ValueError("max_inflight must be positive (frozen per-endpoint K)")
+        if self.max_active_work_per_endpoint <= 0:
+            raise ValueError(
+                "max_active_work_per_endpoint must be positive (frozen token-work credit)"
+            )
         if self.actor_workers_per_endpoint <= 0:
             raise ValueError("actor_workers_per_endpoint must be positive")
         if self.ray_actor_max_concurrency <= 0:
@@ -154,6 +161,7 @@ class ProjectStaticRun:
     results: tuple[BaselineRequestResult, ...]
     sunk_pairs: tuple[tuple[int, str], ...]
     timing: dict[str, float]
+    source_scan_fingerprints: tuple[tuple[int, str], ...]
     effective_k: int
     actor_workers_per_endpoint: int
     ray_actor_max_concurrency: int
@@ -184,6 +192,7 @@ def build_profiler_argv(
     config: ProjectStaticConfig,
     trace_path: str,
     evidence_path: str,
+    source_scan_path: str,
     summary_path: str,
 ) -> list[str]:
     """The frozen static-K argv for ``postgres_ai_operator_profile.py``.
@@ -207,9 +216,11 @@ def build_profiler_argv(
         "--completion-api-key", config.api_key,
         "--completion-max-tokens", str(config.max_tokens),
         "--completion-protocol", "chat_completions",
+        "--completion-prompt-format", "raw",
         "--completion-request-timeout-s", str(config.request_timeout_s),
         "--completion-temperature", str(config.completion_temperature),
         "--completion-http-transport", config.completion_http_transport,
+        "--output-cost-mode", "fixed_output_cap",
         "--service-prefix-caching", config.service_prefix_caching,
         "--batching-policy", "token_budget",
         "--token-budget", str(config.token_budget),
@@ -218,6 +229,7 @@ def build_profiler_argv(
         "--scheduling-policy", "static",
         "--admission-scope", "per_endpoint",
         "--max-inflight", str(config.max_inflight),
+        "--max-active-work-per-endpoint", str(config.max_active_work_per_endpoint),
         "--actor-workers-per-endpoint", str(config.actor_workers_per_endpoint),
         "--ray-actor-max-concurrency", str(config.ray_actor_max_concurrency),
         "--executor", "ray_actor",
@@ -232,11 +244,32 @@ def build_profiler_argv(
         "--experiment-id", "project_static_squad",
         "--request-trace-output", trace_path,
         "--completion-evidence-output", evidence_path,
+        "--source-scan-evidence-output", source_scan_path,
         "--output", summary_path,
     ]
     if config.total_rows > 0:
         argv.extend(["--total-rows", str(config.total_rows)])
     return argv
+
+
+def read_source_scan_evidence(path: Path) -> tuple[tuple[int, str], ...]:
+    """Read exact-scan fingerprints, rejecting malformed or duplicate rows."""
+
+    rows: list[tuple[int, str]] = []
+    seen: set[int] = set()
+    with path.open(encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            doc_id = _to_int(row.get("doc_id", ""), default=-1)
+            text_sha256 = (row.get("text_sha256") or "").strip().lower()
+            if doc_id < 0 or len(text_sha256) != 64 or any(
+                char not in "0123456789abcdef" for char in text_sha256
+            ):
+                raise ValueError("malformed source scan evidence row")
+            if doc_id in seen:
+                raise ValueError(f"duplicate source scan doc_id {doc_id}")
+            seen.add(doc_id)
+            rows.append((doc_id, text_sha256))
+    return tuple(rows)
 
 
 def read_completion_evidence(path: Path) -> dict[int, dict]:
@@ -252,7 +285,9 @@ def read_completion_evidence(path: Path) -> dict[int, dict]:
         for row in csv.DictReader(f):
             doc_id = _to_int(row.get("doc_id", ""), default=-1)
             if doc_id < 0:
-                continue
+                raise ValueError("completion evidence contains malformed doc_id")
+            if doc_id in by_doc:
+                raise ValueError(f"completion evidence contains duplicate doc_id {doc_id}")
             by_doc[doc_id] = row
     return by_doc
 
@@ -337,18 +372,21 @@ def run_project_static(
     work_dir.mkdir(parents=True, exist_ok=True)
     trace_path = work_dir / "project_static_request_trace.csv"
     evidence_path = work_dir / "project_static_completion_evidence.csv"
+    source_scan_path = work_dir / "project_static_source_scan.csv"
     summary_path = work_dir / "project_static_summary.csv"
 
     python = config.python_executable or "python"
     cmd = [python, config.profiler_script] + build_profiler_argv(
-        config, str(trace_path), str(evidence_path), str(summary_path),
+        config, str(trace_path), str(evidence_path), str(source_scan_path),
+        str(summary_path),
     )
     completed = subprocess.run(cmd, capture_output=True, text=True)
     stderr_tail = (completed.stderr or "")[-1600:]
 
     def _failed(timing: dict, formal_ok: bool, note: str = "") -> ProjectStaticRun:
         return ProjectStaticRun(
-            results=(), sunk_pairs=(), timing=timing, formal_row_found=formal_ok,
+            results=(), sunk_pairs=(), timing=timing,
+            source_scan_fingerprints=(), formal_row_found=formal_ok,
             effective_k=config.effective_k,
             actor_workers_per_endpoint=config.actor_workers_per_endpoint,
             ray_actor_max_concurrency=config.ray_actor_max_concurrency,
@@ -358,21 +396,24 @@ def run_project_static(
 
     if completed.returncode != 0:
         return _failed({}, False)
-    if not evidence_path.exists() or not summary_path.exists():
-        return _failed({}, False, "profiler did not emit evidence/summary files")
+    if not evidence_path.exists() or not source_scan_path.exists() or not summary_path.exists():
+        return _failed({}, False, "profiler did not emit evidence/source-scan/summary files")
 
     timing, formal_ok = read_summary_timing(summary_path, config.scenario_id)
     if not formal_ok:
         return _failed(timing, False, "no formal status==ok row in profiler summary")
 
     evidence_by_doc = read_completion_evidence(evidence_path)
+    source_scan_fingerprints = read_source_scan_evidence(source_scan_path)
     results = merge_results(evidence_by_doc)
     sunk_pairs = tuple(
         (doc_id, (row.get("output_text") or ""))
         for doc_id, row in sorted(evidence_by_doc.items())
     )
     return ProjectStaticRun(
-        results=results, sunk_pairs=sunk_pairs, timing=timing, formal_row_found=True,
+        results=results, sunk_pairs=sunk_pairs, timing=timing,
+        source_scan_fingerprints=source_scan_fingerprints,
+        formal_row_found=True,
         effective_k=config.effective_k,
         actor_workers_per_endpoint=config.actor_workers_per_endpoint,
         ray_actor_max_concurrency=config.ray_actor_max_concurrency,

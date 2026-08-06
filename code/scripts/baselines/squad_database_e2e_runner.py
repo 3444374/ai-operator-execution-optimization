@@ -36,19 +36,18 @@ feed EM/F1, failure rate, and successful/correct rows/s.
 Arms: ``duckdb_ai`` (in-process, reuses ``run_duckdb_ai_complete``) and
 ``direct_client`` (in-process per-request HTTP) are implemented. ``project_static``
 is implemented as a SHELL-OUT: ``_run_project_static`` branches before the common
-scan and delegates scan+operator+sink to ``postgres_ai_operator_profile.py`` (the
-project's frozen-best static-K method), then merges the profiler's request-trace
-(timestamps/status/finish_reason) with a ``document_completions`` readback
-(output_text) into ``BaselineRequestResult``. It does not perform the OPERATOR scan
-(text/prompt -> model) or the sink itself; the runner performs only a
-scoring-only ground-truth read (doc_id, source_example_id, reference_answers)
-for EM/F1 and exactly-once verification.
+scan and delegates scan+operator+sink to ``postgres_ai_operator_profile.py``. The
+profiler emits independent completion evidence and fingerprints of the exact
+source rows handed to the organizer. The runner's post-run database read supplies
+references, checks importer integrity, and must match those exact-scan fingerprints;
+it never feeds a second scan to the model or performs a second sink.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import sys
 import time
@@ -153,16 +152,18 @@ def _scan_workload(conn, workload: str, limit: int = 0) -> tuple[list[dict], dic
 
 def _fetch_workload_integrity_and_scoring(
     conn, workload: str, limit: int, importer_count: int, expected_hash: str,
-) -> tuple[dict[int, str], dict[str, list[str]], str, str, bool, list[str]]:
+) -> tuple[
+    dict[int, str], dict[str, list[str]], dict[int, str], str, str, bool, list[str]
+]:
     """Read the workload ONCE for integrity + scoring (project_static arm).
 
     Returns ``(doc_id -> source_example_id, source_example_id -> reference_answers,
-    structured_content_hash, integrity_label, integrity_ok, problems)``. This is
-    NOT the operator scan (the profiler owns operator-scan + model feeding); it
-    reads the workload the profiler scanned and computes its structured content
-    hash so a full run can be fail-closed against the importer hash (the #5 fix --
-    the prior code blindly copied the importer hash without hashing the scanned
-    content). It also fetches reference answers for EM/F1. For full runs the hash
+    doc_id -> text_sha256, structured_content_hash, integrity_label, integrity_ok,
+    problems)``. This post-run read is NOT the operator scan. Its prompt
+    fingerprints are compared with profiler evidence captured from the exact
+    Arrow rows handed to the organizer; the structured hash independently checks
+    the database snapshot (including references) against importer provenance.
+    For full runs the hash
     MUST equal the importer's; for ``--limit`` smoke it is the subset hash (not
     comparable to the importer, recorded as such).
     """
@@ -185,6 +186,7 @@ def _fetch_workload_integrity_and_scoring(
     rows: list[dict] = []
     doc_to_source: dict[int, str] = {}
     references: dict[str, list[str]] = {}
+    prompt_fingerprints: dict[int, str] = {}
     for doc_id, text, source_id, reference_answers in fetched:
         answers = reference_answers
         if isinstance(answers, str):
@@ -195,6 +197,9 @@ def _fetch_workload_integrity_and_scoring(
         })
         doc_to_source[int(doc_id)] = source_id
         references[source_id] = list(answers)
+        prompt_fingerprints[int(doc_id)] = hashlib.sha256(
+            str(text).encode("utf-8")
+        ).hexdigest()
     content_hash = _structured_content_hash(rows)
     if limit > 0:
         integrity_ok, problems = _smoke_integrity(rows, limit, importer_count)
@@ -210,7 +215,10 @@ def _fetch_workload_integrity_and_scoring(
         integrity_ok = False
         problems.append("duplicate source_example_id across doc_ids")
         label = "failed"
-    return doc_to_source, references, content_hash, label, integrity_ok, problems
+    return (
+        doc_to_source, references, prompt_fingerprints, content_hash,
+        label, integrity_ok, problems,
+    )
 
 
 def _results_to_sink_payload(
@@ -490,6 +498,9 @@ def _parse(argv: list[str]) -> argparse.Namespace:
                    help="project_static only: frozen token-budget organizer value.")
     p.add_argument("--project-max-inflight", type=int, default=0,
                    help="project_static only: frozen per-endpoint static K (admission scope per_endpoint).")
+    p.add_argument("--project-max-active-work-per-endpoint", type=int, default=0,
+                   help="project_static only: frozen per-endpoint token-work credit; "
+                        "the established text-track point is 65536.")
     p.add_argument("--project-actor-workers", type=int, default=0,
                    help="project_static only: frozen Ray HTTP actors per endpoint. "
                         "actor_workers x ray_actor_max_concurrency must be >= "
@@ -876,39 +887,34 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
 
 
 def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
-    """project_static arm: shell out to the profiler (frozen static-K), assemble.
+    """Run the frozen project path and assemble independently auditable evidence.
 
     The profiler owns PG scan -> Daft token-budget organizer -> Ray actor ->
-    static per-endpoint K admission + active-work -> vLLM -> unified sink
+    static per-endpoint K + token-work admission -> vLLM -> unified sink
     (``document_completions``). This function invokes ``run_project_static`` (which
-    subprocess-calls ``postgres_ai_operator_profile.py``), then merges the profiler's
-    request-trace (timestamps/status/finish_reason) with a ``document_completions``
-    readback (output_text) into ``BaselineRequestResult`` and assembles the SAME
-    report shape as the in-process arms. It does NOT scan prompts or sink itself --
-    the profiler did both (branching here before the common scan avoids double-scan
-    / double-writeback).
+    subprocess-calls ``postgres_ai_operator_profile.py``), then reads its independent
+    completion and exact-source-scan evidence. A post-run DB read supplies references
+    and verifies that the scanned prompt fingerprints still match the imported
+    workload. The runner does not execute a second model-feeding scan or sink.
     """
 
     if (args.token_budget <= 0 or args.project_max_inflight <= 0
+            or args.project_max_active_work_per_endpoint <= 0
             or args.project_actor_workers <= 0
             or args.project_ray_actor_max_concurrency <= 0):
         raise SystemExit(
             "FAIL: --arm project_static requires the frozen static values "
-            "--token-budget, --project-max-inflight, --project-actor-workers, "
+            "--token-budget, --project-max-inflight, "
+            "--project-max-active-work-per-endpoint, --project-actor-workers, "
             "--project-ray-actor-max-concurrency (all > 0; actor_workers x "
             "concurrency must be >= max-inflight so effective K == declared K)"
         )
     if args.writeback_mode == "none":
-        # output_text is recovered from the profiler's run-scoped completion
-        # evidence (which requires the sink to have run); with writeback_mode=none
-        # every output_text would be empty and the run would fail misleadingly.
-        # The sink is part of the database-E2E boundary, so project_static
-        # requires json_text.
+        # Completion evidence is independent of the sink, but this runner's stated
+        # boundary is database E2E and therefore requires a real unified sink.
         raise SystemExit(
             "FAIL: --arm project_static requires --writeback-mode json_text "
-            "(the completion-evidence output_text is only produced when the "
-            "profiler sinks; writeback_mode=none leaves every output_text empty "
-            "and violates the database-E2E sink boundary)"
+            "because the database-E2E comparison contract includes the unified sink"
         )
     arm_provenance = adapter_provenance("project_static")
     importer = _load_importer_provenance(args.importer_provenance)
@@ -923,6 +929,7 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         model=args.model, max_tokens=args.max_tokens,
         token_budget=args.token_budget,
         max_inflight=args.project_max_inflight,
+        max_active_work_per_endpoint=args.project_max_active_work_per_endpoint,
         actor_workers_per_endpoint=args.project_actor_workers,
         ray_actor_max_concurrency=args.project_ray_actor_max_concurrency,
         api_key=args.api_key,
@@ -937,12 +944,13 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         python_executable=args.project_python,
     )
     arm_identity = {
-        "arm_protocol": "project_ray_static_k",
+        "arm_protocol": "project_ray_frozen_static",
         "transport": "ray_actor",
         "http_transport": "httpx_async",
         "temperature": 0.0,
         "declared_max_inflight": args.project_max_inflight,
         "effective_k": config.effective_k,
+        "max_active_work_per_endpoint": args.project_max_active_work_per_endpoint,
         "actor_workers_per_endpoint": args.project_actor_workers,
         "ray_actor_max_concurrency": args.project_ray_actor_max_concurrency,
         "token_budget": args.token_budget,
@@ -989,7 +997,10 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
     # importer; for --limit smoke it records the subset hash (not comparable).
     import psycopg  # noqa: F401
     conn = psycopg.connect(args.database_url)
-    doc_to_source, references, workload_content_hash, integrity_label, integrity_ok, integrity_problems = (
+    (
+        doc_to_source, references, prompt_fingerprints, workload_content_hash,
+        integrity_label, integrity_ok, integrity_problems,
+    ) = (
         _fetch_workload_integrity_and_scoring(
             conn, args.workload_name, args.limit, expected_count, expected_content_hash,
         )
@@ -999,6 +1010,13 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         raise SystemExit(
             "FAIL: project_static workload integrity failed: "
             + "; ".join(integrity_problems)
+        )
+    actual_scan_fingerprints = dict(run.source_scan_fingerprints)
+    if actual_scan_fingerprints != prompt_fingerprints:
+        conn.close()
+        raise SystemExit(
+            "FAIL: profiler actual source-scan fingerprints do not match the "
+            "post-run imported workload snapshot"
         )
     input_doc_ids = set(doc_to_source)
     result_doc_ids = {r.doc_id for r in results}
@@ -1145,10 +1163,11 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         "single_run_valid": bool(passed),
         "formal_run_gate_passed": False,
         "formal_run_gate_note": (
-            "single-shot runner; the 1-warmup+3-formal repeat gate is a "
-            "separate protocol not implemented here"
+            "single-shot runner; project_static additionally lacks a timing wall "
+            "identical to the in-process arms, so it cannot enter cross-arm formal "
+            "ranking until that boundary is implemented"
         ),
-        "comparison_admission": "pending_formal_repeat",
+        "comparison_admission": "blocked_unified_timing_boundary",
         "cap": args.max_tokens,
         "row_count": len(results),
         "exactly_once": exactly_once,
@@ -1158,14 +1177,16 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         "max_tokens_error_count": max_tokens_errors,
         "truncation_count": truncation_count,
         "workload_integrity": integrity_label,
-        # Actual structured content hash of the workload the profiler scanned,
-        # computed by the runner's integrity read. For full runs this MUST equal
+        # Structured hash of the post-run database integrity/scoring read. The
+        # separately archived source_scan_csv proves which prompts the profiler
+        # actually handed to the organizer. For full runs this hash MUST equal
         # importer_content_hash (verified by _validate_workload_integrity); for
         # --limit smoke it is the subset hash (not comparable, per integrity_label).
         "workload_content_hash": workload_content_hash,
         "importer_content_hash": expected_content_hash,
         "timing": {
             "boundary": "database_e2e",
+            "cross_arm_comparable": False,
             "database_e2e_wall_s": round(database_e2e_wall_s, 3),
             "scan_s": round(t.get("db_fetch_s", 0.0), 3),
             "construct_s": round(construct_s, 3),
@@ -1218,6 +1239,7 @@ def _run_project_static(args: argparse.Namespace, output_dir: Path) -> int:
         "evidence_files": {
             "per_row_csv": "per_row_evidence.csv",
             "sunk_status_csv": "sunk_status.csv",
+            "profiler_source_scan_csv": "_profiler_work/project_static_source_scan.csv",
         },
         "command": redact_argument_list(list(sys.argv)),
     }

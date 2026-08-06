@@ -78,12 +78,14 @@ from src.observability.profiling.config import (
     resolve_actor_workers_per_endpoint as _resolve_actor_workers_per_endpoint,
 )
 from src.observability.profiling.traces import (
+    source_scan_fingerprint_rows as _source_scan_fingerprint_rows,
     write_completion_evidence as _write_completion_evidence,
     write_control_trace as _write_control_trace,
     write_flush_trace as _write_flush_trace,
     write_request_trace as _write_request_trace,
     write_resource_trace as _write_resource_trace,
     write_submission_trace as _write_submission_trace,
+    write_source_scan_evidence as _write_source_scan_evidence,
 )
 from src.observability.profiling.schema import (
     FORMAL_RESULT_FIELDS,
@@ -1346,6 +1348,10 @@ def _validate_resource_efficiency_args(args: argparse.Namespace) -> None:
 
 
 def _validate_completion_observation_args(args: argparse.Namespace) -> None:
+    if args.completion_evidence_output and not args.request_trace_output:
+        raise SystemExit(
+            "--completion-evidence-output requires --request-trace-output"
+        )
     for name, value in (
         ("ttft-slo-ms", args.ttft_slo_ms),
         ("itl-slo-ms", args.itl_slo_ms),
@@ -2091,6 +2097,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         arrow_build_s = 0.0
         db_fetch_s = 0.0
         operator_results = []
+        source_scan_evidence_rows: list[dict] = []
         request_lifecycle_seeds: list[RequestLifecycleSeed] = []
         submission_lifecycle_events: list[SubmissionLifecycleEvent] = []
         request_trace_rows: tuple[RequestTraceRow, ...] = ()
@@ -2370,6 +2377,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             remaining = args.total_rows - processed_rows
             if table.num_rows > remaining:
                 table = table.slice(0, remaining)
+            if args.source_scan_evidence_output:
+                source_scan_evidence_rows.extend(
+                    _source_scan_fingerprint_rows(table)
+                )
             if request_manifest_guard is not None:
                 table = request_manifest_guard.validate_and_annotate(table)
             if args.arrival_replay:
@@ -2572,6 +2583,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     rows=request_trace_rows,
                     operator_results=operator_results,
                 )
+        if args.source_scan_evidence_output:
+            _write_source_scan_evidence(
+                Path(args.source_scan_evidence_output),
+                rows=source_scan_evidence_rows,
+            )
 
         resource_samples = []
         if resource_sampler is not None:

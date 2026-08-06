@@ -29,6 +29,21 @@
     "note": "The DuckDB ai community extension OWNS batching/concurrency/retry/cache; the runner injects NO project credit / actor pool / dynamic backpressure."
   },
 
+  "project_static": {
+    "status": "gate_only_until_unified_timing_boundary",
+    "token_budget": "REPLACE_ME_FROM_SAME_SIGNATURE_CALIBRATION",
+    "max_inflight_per_endpoint": 8,
+    "max_active_work_per_endpoint": 65536,
+    "actor_workers_per_endpoint": 8,
+    "ray_actor_max_concurrency": 1,
+    "completion_prompt_format": "raw",
+    "completion_protocol": "chat_completions",
+    "completion_http_transport": "httpx_async",
+    "temperature": 0.0,
+    "output_cost_mode": "fixed_output_cap",
+    "note": "The runner requires explicit static values. 65536 is the established text-track active-work point, but token_budget and the full contract still require a same machine/model/service/workload-signature calibration before formal ranking."
+  },
+
   "service": {
     "prefix_caching": "enabled",
     "vllm_version": "0.25.1",
@@ -62,10 +77,12 @@
 
   "run_command_template": "python code/scripts/baselines/squad_database_e2e_runner.py --arm duckdb_ai --database-url $DATABASE_URL --workload-name squad_v11_dev_short_answer --importer-provenance feasibility/results/squad_v11_dev_import_20260805/provenance.json --endpoint-url http://127.0.0.1:8000/v1/chat/completions --metrics-url http://127.0.0.1:8000/metrics --model qwen2.5-7b --max-tokens 64 --max-concurrent-requests 32 --service-prefix-caching enabled --service-config-hash <vllm_config_hash> --metrics-settle-s 5 --strict-attribution --writeback-mode json_text --write-batch-rows 500 --output-dir feasibility/results/squad_database_e2e_duckdb_ai_REPLACE_ME --force",
 
+  "project_gate_command_template": "python code/scripts/baselines/squad_database_e2e_runner.py --arm project_static --database-url $DATABASE_URL --workload-name squad_v11_dev_short_answer --importer-provenance feasibility/results/squad_v11_dev_import_20260805/provenance.json --endpoint-url http://127.0.0.1:8000/v1/chat/completions --metrics-url http://127.0.0.1:8000/metrics --model qwen2.5-7b --max-tokens 64 --token-budget <same_signature_calibrated_value> --project-max-inflight 8 --project-max-active-work-per-endpoint 65536 --project-actor-workers 8 --project-ray-actor-max-concurrency 1 --project-python /root/miniconda3/bin/python --service-prefix-caching enabled --service-config-hash <vllm_config_hash> --metrics-settle-s 5 --strict-attribution --writeback-mode json_text --write-batch-rows 500 --limit 256 --output-dir feasibility/results/squad_database_e2e_project_static_gate_REPLACE_ME --force",
+
   "ranking_contract": {
     "primary_headline": "correct_rows_per_s (= squad_exact_match_rows / database_e2e_wall_s)",
     "also_report": ["successful_rows_per_s", "raw_rows_per_s (NOT a ranking key)", "failure_rate", "full_manifest_EM/F1 (failed rows scored 0)", "exactly_once"],
     "state_fields": ["capability_gate_status", "formal_run_gate_passed", "comparison_admission"],
-    "note": "Single-arm E2E measurement, not yet a ranking; direct_client / project_static arms are added in later passes."
+    "note": "Single-arm E2E measurement, not yet a ranking. direct_client is pending formal repeats; project_static is gate-only until a unified timing boundary and same-signature static calibration are archived."
   }
 }

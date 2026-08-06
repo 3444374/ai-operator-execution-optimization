@@ -1,5 +1,22 @@
 # 项目日志
 
+## 2026-08-06 project_static 合同复审：撤回过早 GO，补 active-work 与实际扫描证据
+
+- 基于 `0795216` 复跑目标测试，发现远端声称的“全部通过”不成立：组合测试仍有 2 个
+  tuple-unpack 错误；同时 `project_static` 漏掉文本轨已标定的 per-endpoint active-work，
+  “actual-scan hash”实际只是跑后第二次 DB 读取，completion evidence 对畸形/重复/缺失输出会静默吞掉。
+- 修复冻结合同：新增必填 `--project-max-active-work-per-endpoint`（正式候选当前 65,536），显式锁定
+  raw chat、temperature=0、httpx async、fixed-output-cap、per-endpoint K、actor topology；provenance 改为
+  `project_ray_frozen_static`，不再把仅 static-K 的不完整路径称作 frozen-best。
+- profiler 新增 opt-in `--source-scan-evidence-output`，从**实际交给 organizer 的 Arrow table**生成
+  doc_id + prompt SHA256（不落原文）；runner 将其与跑后 DB 完整性/评分读取逐行核对，再用 importer
+  structured hash 校验 references，区分“实际扫描身份”和“跑后数据库快照”。
+- completion evidence 改为 fail-closed：完成行缺输出、doc/output 数量不等、重复或 trace 外 doc_id
+  直接失败；CLI 强制 completion evidence 必须同时启用 request trace。
+- 计时问题尚未伪装解决：profiler `e2e_s` 与进程内臂 wall 不同，project_static 明确
+  `comparison_admission=blocked_unified_timing_boundary`。本轮只允许本地单测及远端 256 行正确性门禁，
+  统一计时墙和同运行签名静态校准归档完成前，不启动三臂正式排名。
+
 ## 2026-08-05 database-E2E runner H7：scratch_dir 永久 repo-local + sink readback 内容核验 & fail-closed
 
 - codex H6 复核后仍两阻断，本轮 H7 修完（不重跑 DuckDB full、不动原始机器证据）：

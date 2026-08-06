@@ -85,4 +85,4 @@ class BaselineProvenanceTests(unittest.TestCase):
         )
         # scheduler_owner names ONLY what is frozen and passed (static K +
         # token-budget); active-work is NOT passed, so it must not be claimed.
-        self.assertEqual(provenance.scheduler_owner, "project_ray_static_k")
+        self.assertEqual(provenance.scheduler_owner, "project_ray_frozen_static")

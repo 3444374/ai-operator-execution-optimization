@@ -354,8 +354,9 @@ class ProjectStaticArmTests(unittest.TestCase):
 
     def _run_ps_main(
         self, *, profiler_ok: bool = True, readback_matched: bool = True,
-        integrity_ok: bool = True, token_budget: int = 6144, max_inflight: int = 8,
-        actor_workers: int = 8, ray_concurrency: int = 1,
+        integrity_ok: bool = True, scan_match: bool = True,
+        token_budget: int = 6144, max_inflight: int = 8,
+        active_work: int = 65536, actor_workers: int = 8, ray_concurrency: int = 1,
     ) -> tuple[int, dict, object, bool]:
         with _scratch_dir() as td:
             out = td / "result"
@@ -374,6 +375,7 @@ class ProjectStaticArmTests(unittest.TestCase):
                 "--model", "m", "--max-tokens", "64",
                 "--token-budget", str(token_budget),
                 "--project-max-inflight", str(max_inflight),
+                "--project-max-active-work-per-endpoint", str(active_work),
                 "--project-actor-workers", str(actor_workers),
                 "--project-ray-actor-max-concurrency", str(ray_concurrency),
                 "--metrics-settle-s", "0",
@@ -391,6 +393,10 @@ class ProjectStaticArmTests(unittest.TestCase):
                         "organizer_from_arrow_s": 0.02, "organizer_plan_s": 0.03,
                         "organizer_collect_s": 0.01, "operator_wall_s": 49.0,
                         "writeback_s": 0.2},
+                source_scan_fingerprints=tuple(
+                    (i, runner.hashlib.sha256(f"prompt{i}".encode()).hexdigest())
+                    for i in (1, 2, 3, 4)
+                ),
                 effective_k=max_inflight,
                 actor_workers_per_endpoint=actor_workers,
                 ray_actor_max_concurrency=ray_concurrency,
@@ -400,13 +406,20 @@ class ProjectStaticArmTests(unittest.TestCase):
             )
             doc_to_source = {1: "id1", 2: "id2", 3: "id3", 4: "id4"}
             references = {f"id{i}": ["ans"] for i in (1, 2, 3, 4)}
+            prompt_fingerprints = {
+                i: runner.hashlib.sha256(f"prompt{i}".encode()).hexdigest()
+                for i in (1, 2, 3, 4)
+            }
+            if not scan_match:
+                prompt_fingerprints[4] = "f" * 64
             scan_mock = MagicMock()
 
             with patch("squad_database_e2e_runner._scan_workload", side_effect=scan_mock), \
                  patch("squad_database_e2e_runner._sink_write", side_effect=MagicMock()), \
                  patch("squad_database_e2e_runner.run_project_static", return_value=fake_run), \
                  patch("squad_database_e2e_runner._fetch_workload_integrity_and_scoring",
-                       return_value=(doc_to_source, references, "actualhash",
+                       return_value=(doc_to_source, references, prompt_fingerprints,
+                                     "actualhash",
                                      "verified" if integrity_ok else "failed",
                                      integrity_ok,
                                      [] if integrity_ok else ["integrity fail"])), \
@@ -438,9 +451,10 @@ class ProjectStaticArmTests(unittest.TestCase):
         # NO double scan: the runner must not scan the operator workload.
         self.assertFalse(scan_mock.called, "project_static must not call _scan_workload")
         ident = report["identity"]
-        self.assertEqual(ident["arm_protocol"], "project_ray_static_k")
+        self.assertEqual(ident["arm_protocol"], "project_ray_frozen_static")
         self.assertEqual(ident["transport"], "ray_actor")
         self.assertEqual(ident["effective_k"], 8)
+        self.assertEqual(ident["max_active_work_per_endpoint"], 65536)
         self.assertEqual(ident["declared_max_inflight"], 8)
         self.assertEqual(ident["actor_workers_per_endpoint"], 8)
         self.assertEqual(ident["http_transport"], "httpx_async")
@@ -448,16 +462,15 @@ class ProjectStaticArmTests(unittest.TestCase):
         self.assertNotIn("duckdb_version", ident)
 
     def test_provenance_is_project_scheduled_method(self) -> None:
-        rc, report, _ = self._run_ps_main()
+        rc, report, _, _ = self._run_ps_main()
         prov = report["provenance"]
         self.assertEqual(prov["comparison_role"], "project_scheduled_method")
         self.assertTrue(prov["custom_scheduling_code"])
         self.assertFalse(prov["formal_baseline_eligible"])
-        # scheduler_owner names ONLY what is frozen (static K; no active-work claim)
-        self.assertEqual(prov["scheduler_owner"], "project_ray_static_k")
+        self.assertEqual(prov["scheduler_owner"], "project_ray_frozen_static")
 
     def test_timing_sourced_from_profiler_and_not_comparable(self) -> None:
-        rc, report, _ = self._run_ps_main()
+        rc, report, _, _ = self._run_ps_main()
         # database_e2e_wall_s = profiler e2e_s (50.0); scan/sink from profiler CSV.
         self.assertAlmostEqual(report["timing"]["database_e2e_wall_s"], 50.0)
         self.assertAlmostEqual(report["timing"]["scan_s"], 0.1)
@@ -468,7 +481,10 @@ class ProjectStaticArmTests(unittest.TestCase):
         self.assertEqual(report["workload_content_hash"], "actualhash")
         self.assertEqual(report["importer_content_hash"], "abc123")
         self.assertEqual(report["formal_run_gate_passed"], False)
-        self.assertEqual(report["comparison_admission"], "pending_formal_repeat")
+        self.assertEqual(
+            report["comparison_admission"], "blocked_unified_timing_boundary"
+        )
+        self.assertFalse(report["timing"]["cross_arm_comparable"])
         self.assertIn("per_row_csv", report["evidence_files"])
 
     def test_rejects_missing_frozen_static_args(self) -> None:
@@ -481,6 +497,9 @@ class ProjectStaticArmTests(unittest.TestCase):
         rc, report, _, fail = self._run_ps_main(actor_workers=0)
         self.assertEqual(rc, 1)
         self.assertTrue(fail)
+        rc, report, _, fail = self._run_ps_main(active_work=0)
+        self.assertEqual(rc, 1)
+        self.assertTrue(fail)
 
     def test_profiler_nonzero_exit_fails_closed(self) -> None:
         rc, report, _, fail = self._run_ps_main(profiler_ok=False)
@@ -491,6 +510,11 @@ class ProjectStaticArmTests(unittest.TestCase):
     def test_workload_integrity_fail_closes(self) -> None:
         # A workload hash mismatch (integrity_ok=False) must fail the run.
         rc, _, _, fail = self._run_ps_main(integrity_ok=False)
+        self.assertEqual(rc, 1)
+        self.assertTrue(fail)
+
+    def test_actual_profiler_scan_mismatch_fail_closes(self) -> None:
+        rc, _, _, fail = self._run_ps_main(scan_match=False)
         self.assertEqual(rc, 1)
         self.assertTrue(fail)
 
