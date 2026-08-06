@@ -56,7 +56,7 @@ def _read_json(path: Path) -> dict:
 
 def _gate_cell_metrics(cell: Path) -> dict:
     """bounded_http/duckdb_ai cell -> ramp metrics."""
-    gate_dir = next((cell / "gate_output").iterdir(), None)  # the cell_id dir
+    gate_dir = next((c for c in (cell / "gate_output").iterdir() if c.is_dir()), None)  # the cell_id dir (not resolved_config.json/run_status.json files)
     if gate_dir is None:
         return {"status": "missing_gate_output"}
     shards = [gate_dir / "shard_0", gate_dir / "shard_1"]
