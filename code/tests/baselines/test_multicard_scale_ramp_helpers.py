@@ -85,22 +85,26 @@ class WriteIdentityTests(unittest.TestCase):
                 ident = json.loads((cell / "identity.json").read_text(encoding="utf-8"))
                 self.assertIn(ident["comparison_role"], valid,
                               f"{arm} comparison_role {ident['comparison_role']!r} not in ComparisonRole Literal")
-                self.assertIn(ident["system_comparison_role"], valid,
-                              f"{arm} system_comparison_role {ident['system_comparison_role']!r} not in Literal")
+                self.assertIn(ident["component_comparison_role"], valid,
+                              f"{arm} component_comparison_role {ident['component_comparison_role']!r} not in Literal")
+                self.assertNotIn("system_comparison_role", ident, f"{arm} stale system_comparison_role field")
                 self.assertFalse(ident["formal_baseline_eligible"], f"{arm} must not be formal-eligible at ramp layer")
 
-    def test_system_comparison_role_per_arm(self) -> None:
+    def test_comparison_role_primary_is_system_role(self) -> None:
+        # 复审 #1: comparison_role (STANDARD primary field) must BE the system role,
+        # NOT the single-shard component; component moves to component_comparison_role.
         with tempfile.TemporaryDirectory() as td:
-            cases = {"bounded_http": "direct_client_control",
-                     "duckdb_ai": "harness_pre_split_diagnostic",
-                     "lb_rr": "gateway_system_diagnostic",  # protocol §2.6 gateway, NOT harness
-                     "project_static": "project_scheduled_method"}
-            for arm, expected in cases.items():
+            cases = {"bounded_http": ("direct_client_control", "direct_client_control"),
+                     "duckdb_ai": ("harness_pre_split_diagnostic", "database_product_native_baseline"),
+                     "lb_rr": ("gateway_system_diagnostic", "database_product_native_baseline"),
+                     "project_static": ("project_scheduled_method", "project_scheduled_method")}
+            for arm, (sys_role, comp_role) in cases.items():
                 cell = Path(td) / arm
                 cell.mkdir()
                 drv._write_identity(arm, cell)
                 ident = json.loads((cell / "identity.json").read_text(encoding="utf-8"))
-                self.assertEqual(ident["system_comparison_role"], expected, f"{arm}")
+                self.assertEqual(ident["comparison_role"], sys_role, f"{arm} primary not system role")
+                self.assertEqual(ident["component_comparison_role"], comp_role, f"{arm} component mismatch")
 
     def test_lb_rr_scheduler_owner_names_all_parties(self) -> None:
         with tempfile.TemporaryDirectory() as td:

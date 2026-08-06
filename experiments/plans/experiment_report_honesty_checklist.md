@@ -15,13 +15,13 @@
 
 ## 2. 身份 / provenance —— 必须读 Literal + 协议，不凭印象
 
-- **读** `code/src/baselines/common/provenance.py::ComparisonRole` Literal，现有值：`service_ceiling / direct_client_control / framework_native_baseline / database_product_native_baseline / project_scheduled_method`。
-- **不存在的值（别写）**：`harness_sharded_diagnostic`、`gateway_system_diagnostic`、`project_method_diagnostic`——协议里有这些**描述**，但 ComparisonRole Literal 里没有；要加先改 Literal + 测试，不要偷偷写。
+- **读** `code/src/baselines/common/provenance.py::ComparisonRole` Literal，现有值（**7**）：`service_ceiling / direct_client_control / framework_native_baseline / database_product_native_baseline / project_scheduled_method / harness_pre_split_diagnostic / gateway_system_diagnostic`（后两个是 ramp 层 composed-system 角色，复审第三轮扩展）。
+- **不存在的值（别写）**：`harness_sharded_diagnostic`、`project_method_diagnostic`——协议/旧文档有这些**描述**，但 Literal 里没有（harness 预切写 `harness_pre_split_diagnostic`，gateway 写 `gateway_system_diagnostic`）。要加新值先改 Literal + 测试。
 - **读** `bounded_output_duckdb_comparison_protocol_20260805.md §2.6` 三轨：① 单 endpoint 产品语义轨 ② 双 endpoint 方法/control 轨 ③ **可选 gateway 完整系统轨**（DuckDB 单 BASE_URL 经第三方 gateway → 多 endpoint）。
-- **harness 预切 ≠ gateway 轨**：2 个独立 DuckDB 进程（harness 预切 manifest）是 `harness_sharded_diagnostic`；1 个 DuckDB 进程经 nginx round-robin 是 **gateway 完整系统轨**（§2.6 line 112）。lb_rr 是后者。
+- **harness 预切 ≠ gateway 轨**：2 个独立 DuckDB 进程（harness 预切 manifest）= `harness_pre_split_diagnostic`；1 个 DuckDB 进程经 nginx round-robin = `gateway_system_diagnostic`（gateway 完整系统轨，§2.6 line 112）。lb_rr 是后者。
 - `scheduler_owner` 纳入**所有**调度方：lb_rr = `duckdb_ai_extension + nginx_round_robin + vllm`；2-shard duckdb = `experiment_harness + duckdb_ai_extension + vllm`。不要只写一个。
-- ramp 层 identity sidecar：`comparison_role` 用单 shard 角色（Literal 内）+ `ramp_layer_classification`（harness_pre_split / gateway_system）+ `formal_baseline_eligible=false`（ramp 层编排不进产品原生 formal）。
-- **反例**：1cd52be 写 `project_method_diagnostic`（不在 Literal，应 `project_scheduled_method`）+ lb_rr 标 `harness_sharded_diagnostic`（lb_rr 是 gateway 轨）。
+- ramp 层 identity sidecar：`comparison_role`（**STANDARD 主字段**）= 系统角色（harness_pre_split / gateway_system / project_scheduled / direct_client）；`component_comparison_role` = 单 shard 组件（database_product_native_baseline）；`formal_baseline_eligible=false`（ramp 层编排不进产品原生 formal）。**复审 #1：comparison_role 主字段必须 = 系统角色，不能留 component**（否则通用消费者读主字段误判产品原生）。
+- **反例（已修）**：曾写 `project_method_diagnostic`（不在 Literal，应 `project_scheduled_method`）+ comparison_role 留 `database_product_native_baseline` 而系统角色只放侧字段 `system_comparison_role`/`ramp_layer_classification`（通用消费者读主字段仍误判 → 现主字段 = 系统角色，component 移 `component_comparison_role`）。
 
 ## 3. 结论强度（cache / finish / 统计 / 根因）—— 不过头
 

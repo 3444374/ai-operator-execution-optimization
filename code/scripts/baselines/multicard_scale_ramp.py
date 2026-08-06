@@ -230,45 +230,38 @@ def _metrics_urls(endpoint_urls: Sequence[str]) -> tuple[str, ...]:
 
 
 def _write_identity(arm: str, cell_output: Path) -> None:
-    """Write a ramp-layer identity sidecar -- DOUBLE-LAYER schema (复审 #1/#3).
+    """Write a ramp-layer identity sidecar (复审 #1: STANDARD 主字段 = 系统角色).
 
-    Two layers (复审 #1: comparison_role=database_product_native_baseline
-    describes the COMPONENT duckdb_ai, not the composed system under test, so
-    letting the aggregate show it as the primary role is misleading):
-    - ``comparison_role``: the single-shard COMPONENT role, a
-      ``provenance.ComparisonRole`` Literal value (e.g.
-      database_product_native_baseline for duckdb_ai one shard).
-    - ``system_comparison_role``: the AUTHORITATIVE role of the composed system
-      under test at the ramp layer -- ``harness_pre_split_diagnostic`` (2
-      independent DuckDB processes, harness pre-split) or
-      ``gateway_system_diagnostic`` (single DuckDB process via nginx gateway,
-      protocol §2.6). Both are now in the ComparisonRole Literal. The aggregator
-      surfaces ``system_comparison_role`` as the PRIMARY role, so the aggregate
-      never shows product-native for a harness/gateway composition.
-    ``scheduler_owner`` lists ALL scheduling parties;
-    ``formal_baseline_eligible=false`` (ramp-layer composition does not enter
-    product-native formal ranking). See experiment_report_honesty_checklist.md §2.
+    ``comparison_role`` (the STANDARD primary field that every consumer reads)
+    = the AUTHORITATIVE role of the composed system under test at the ramp layer
+    -- NOT the single-shard component. 复审第四轮 #1: previously comparison_role
+    held the component role (database_product_native_baseline) with the system
+    role only in a side ``system_comparison_role`` field, so any general consumer
+    reading the standard field still misjudged gateway/harness as product-native.
+    Now comparison_role IS the system role; the single-shard component role moves
+    to ``component_comparison_role``. scheduler_owner lists ALL scheduling parties;
+    formal_baseline_eligible=false. See experiment_report_honesty_checklist.md §2.
     """
     if arm == "bounded_http":
         ident = {"comparison_role": "direct_client_control",
-                 "system_comparison_role": "direct_client_control",
+                 "component_comparison_role": "direct_client_control",
                  "formal_baseline_eligible": False, "formal_control_eligible": True,
                  "scheduler_owner": "project_asyncio_control"}
     elif arm == "duckdb_ai":
-        ident = {"comparison_role": "database_product_native_baseline",  # component (single shard)
-                 "system_comparison_role": "harness_pre_split_diagnostic",  # authoritative system role
+        ident = {"comparison_role": "harness_pre_split_diagnostic",  # system role (PRIMARY, 复审 #1)
+                 "component_comparison_role": "database_product_native_baseline",  # single-shard component
                  "formal_baseline_eligible": False,
                  "scheduler_owner": "experiment_harness + duckdb_ai_extension + vllm",
                  "reason": "harness pre-split manifest + 2 independent DuckDB processes; DuckDB ai single BASE_URL; protocol §2.6 -> not product-native multi-endpoint"}
     elif arm == "lb_rr":
-        ident = {"comparison_role": "database_product_native_baseline",  # component
-                 "system_comparison_role": "gateway_system_diagnostic",  # protocol §2.6 gateway 完整系统轨
+        ident = {"comparison_role": "gateway_system_diagnostic",  # system role (PRIMARY), protocol §2.6 gateway
+                 "component_comparison_role": "database_product_native_baseline",  # single-shard component
                  "formal_baseline_eligible": False,
                  "scheduler_owner": "duckdb_ai_extension + nginx_round_robin + vllm",
                  "reason": "single DuckDB process (single BASE_URL) via nginx third-party gateway to 2 vLLM endpoints; protocol §2.6 gateway 完整系统轨 (line 112) -> system-level only, not DuckDB-native, not formal-eligible"}
     elif arm == "project_static":
         ident = {"comparison_role": "project_scheduled_method",
-                 "system_comparison_role": "project_scheduled_method",
+                 "component_comparison_role": "project_scheduled_method",
                  "formal_baseline_eligible": False,
                  "scheduler_owner": "project_scheduler",
                  "reason": "project Ray-actor multi-endpoint scheduled method; not a product baseline"}
@@ -533,6 +526,11 @@ def _verify_vllm_config(ramp: RampConfig) -> None:
         # enable_prefix_caching=True); this line surfaces that the cmdline is silent on it.
         if "--enable-prefix-caching" in c:
             print(f"[ramp][preflight] port {port} cmdline has --enable-prefix-caching (effective ON)", flush=True)
+        elif ramp.vllm_config_strict:
+            raise RuntimeError(
+                f"port {port}: --enable-prefix-caching NOT on cmdline; effective prefix-cache UNVERIFIED "
+                f"(strict mode requires a verifiable prefix-cache; add the flag or confirm via EngineCore log "
+                f"then relax vllm_config_strict). 复审 #3.")
         else:
             print(f"[ramp][preflight] port {port}: --enable-prefix-caching NOT on cmdline -> vLLM DEFAULT "
                   f"(effective unverified from cmdline; check EngineCore log)", flush=True)

@@ -107,8 +107,8 @@ def _identity_role_fields(cell: Path) -> dict:
     """
     ident = _identity(cell)
     return {
-        "comparison_role": ident.get("comparison_role"),
-        "system_comparison_role": ident.get("system_comparison_role"),
+        "comparison_role": ident.get("comparison_role"),  # system role (PRIMARY, 复审 #1)
+        "component_comparison_role": ident.get("component_comparison_role"),  # single-shard component
         "formal_baseline_eligible": ident.get("formal_baseline_eligible"),
         "scheduler_owner": ident.get("scheduler_owner"),
     }
@@ -233,9 +233,14 @@ def _gate_cell_metrics(cell: Path) -> dict:
         "completed_rows": completed,
         "rows_per_s": round(rows_per_s, 2),
         "timing_granularity": timing_granularity,
-        "request_e2e_s_p50": round(latency["p50"], 3),  # =JCT (not per-req E2E) when timing_granularity=query_barrier
-        "request_e2e_s_p95": round(latency["p95"], 3),
-        "request_e2e_s_p99": round(latency["p99"], 3),
+        # 复审 #2: when timing_granularity=query_barrier the latency_*_s is the whole-SQL JCT,
+        # NOT per-request E2E -- do NOT emit it under the request_e2e name (a separate
+        # timing_granularity field is not enough; the misnamed field itself must be absent).
+        # Emit None so md/consumers show no value instead of a misnamed one; the JCT is still
+        # available via model_serving_wall_s.
+        "request_e2e_s_p50": None if timing_granularity == "query_barrier" else round(latency["p50"], 3),
+        "request_e2e_s_p95": None if timing_granularity == "query_barrier" else round(latency["p95"], 3),
+        "request_e2e_s_p99": None if timing_granularity == "query_barrier" else round(latency["p99"], 3),
         "ttft_s_p50": round(ttft["p50"], 4) if ttft["p50"] else None,
         "ttft_s_p95": round(ttft["p95"], 4) if ttft["p95"] else None,
         "ttft_s_p99": round(ttft["p99"], 4) if ttft["p99"] else None,
@@ -337,8 +342,8 @@ def _aggregate_reps(reps: list[dict]) -> dict:
         agg["gpu"] = passed[0].get("gpu", {})
         agg["service_total_tokens"] = passed[0].get("service_total_tokens")
         agg["completed_rows"] = passed[0].get("completed_rows")
-        agg["comparison_role"] = passed[0].get("comparison_role")
-        agg["system_comparison_role"] = passed[0].get("system_comparison_role")
+        agg["comparison_role"] = passed[0].get("comparison_role")  # system role (PRIMARY)
+        agg["component_comparison_role"] = passed[0].get("component_comparison_role")
         agg["formal_baseline_eligible"] = passed[0].get("formal_baseline_eligible")
         agg["scheduler_owner"] = passed[0].get("scheduler_owner")
         agg["service_tokens_source"] = passed[0].get("service_tokens_source")

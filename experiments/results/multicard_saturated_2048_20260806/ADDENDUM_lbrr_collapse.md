@@ -4,11 +4,11 @@
 > - **`ps8_collapse/`（bounded c=64/128/256）已提交**（114 files，raw 可复算）→ bounded 过订阅塌陷曲线**可独立审计**。group 口径复算：c64=**36560**（n=2）/ c128=**24836**（n=1）/ c256=**N/A**（0/3 完整 2-shard rep，每 formal ≥1 shard 失败）；正文旧的 37341/25026 是 sum-of-per-shard 不同公式（已订正，见 §B）。
 > - **`collapse.log` + `lbrr64_*/`（lb_rr @64 per-run）仍未提交** → **duckdb_ai_lb_rr @64 = 72480 tok/s 仍无法独立审计**（仅 collapse.log 汇总数字，无 per-run 证据）。
 > - **塌陷归因**：c64_f0 shard_1 是 `ValueError ReadError`（网络/读取层，非 vLLM 崩溃）；机制归因 vLLM KV/调度**疑似、无 service-counter 证据、未证实**。
-> - lb_rr 身份 = `system_comparison_role=gateway_system_diagnostic`（协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx；component comparison_role=database_product_native_baseline；scheduler_owner=duckdb_ai_extension+nginx_round_robin+vllm），非 DuckDB 产品原生多 endpoint。
+> - lb_rr 身份 = `comparison_role=gateway_system_diagnostic`（**主字段=系统角色**，协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx；`component_comparison_role=database_product_native_baseline`；scheduler_owner=duckdb_ai_extension+nginx_round_robin+vllm），非 DuckDB 产品原生多 endpoint。
 
 > 补充主 README 的饱和三臂 formal。两块数据：(1) **duckdb_ai_lb_rr @64**（`lbrr64_*/` + `collapse.log` **未提交** → 72480 **不可独立审计**）；(2) **bounded_http 过订阅塌陷曲线**（`ps8_collapse/` **已提交** → group 口径可复算）。同设置：2048 SQuAD，2×4090，cap=64，temp=0，prefix-on。§A（lb_rr）数字基于 collapse.log 汇总、per-run 未审计；§B（bounded）已按 group 口径复算。
 
-## A. duckdb_ai_lb_rr @64（现实单入口，固有欠喂）
+## A. duckdb_ai_lb_rr @64（现实单入口，推断欠喂待证）
 
 | 臂 | mean tok/s | CV | n | % of ceiling（group 88847） |
 |---|---|---|---|---|
@@ -20,7 +20,7 @@
 
 **观察（非审计结论）**：lb_rr @64 collapse.log 汇总 = 72480（group ceiling 88847 的 81.5%）。比饱和三臂（sharded/project ~88%）低 ~7pp。**推断**（per-run 未审计、机制待证）：单进程 nginx 路由下 DuckDB-ai 持续 in-flight ~20 → 每 backend ~10，欠喂（<< 32 饱和点）。**不能声称**"单入口固有极限"为已证结论（lbrr64 per-run 未审计；sharded 旧分片求和口径也需 group 重算后才同基线可比）。
 
-**不能声称**：lb_rr 是"饱和竞争臂"——它**固有欠喂**（单进程限制），与饱和三臂不在同一基线。它的价值是**对照**："现实单入口部署在多卡上喂不饱"。
+**不能声称**：lb_rr 是"饱和竞争臂"——**推断**单进程持续并发有限（per-run lbrr64 未审计，机制待证），与饱和三臂不在同一基线。它的价值是**对照线索**（非已证结论）：现实单入口部署在多卡上**可能**喂不饱。
 
 **sharded > lb_rr 的推断**（per-run 未审计）：sharded 用 2 个 DuckDB 进程（每 backend ~32，饱和）；lb_rr 用 1 进程（持续 in-flight ~20 → 每 backend ~10，欠喂）。**"多进程是喂饱多卡的必要条件"是推断，非已证结论**（需 lbrr64 per-run 审计 + sharded group 口径同基线对比）。
 
@@ -52,4 +52,4 @@ c=32 是饱和峰值（89287，主 formal）。越过饱和点（更高并发）
 - `lbrr64_*/`：lb_rr 每 repeat 的 runner report。
 - 主 formal（饱和三臂）见上一级 README + `ps8_formal/`。
 
-> **诚实边界**：lb_rr@64 是现实单入口的**固有欠喂**数据点（81% ceiling，单进程限制），不进饱和排名；塌陷曲线是系统过订阅行为（c≥64 塌陷 + 失败率升），c=256 全失败。两者都是 formal 1w+3f（CV<1% where n≥2），数据干净。
+> **诚实边界**：lb_rr@64 是现实单入口的**推断欠喂**数据点（81% ceiling，单进程限制**机制待证**，per-run lbrr64 未审计），不进饱和排名；塌陷曲线是系统过订阅行为（c≥64 塌陷 + 失败率升），c=256 全失败。lb_rr@64 数字基于 collapse.log 汇总（lbrr64 per-run 未提交，**不可独立审计**）。

@@ -4,9 +4,9 @@
 >
 > **⚠️ 状态**：`diagnostic_observation_pending_evidence_fix`——本次 lb_rr run 有效（9/9、0 error、均衡分流、2048 观察峰值），但**不引用"跨四臂 clean cache-thrash finding"**（4 臂 cache 控制不统一；见 §5）。
 >
-> **身份**：`comparison_role=database_product_native_baseline`（单 shard Literal）+ **ramp_layer_classification=`gateway_system_diagnostic`**（协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx 第三方 gateway → 2 vLLM endpoint；system-level only，非 DuckDB 原生 baseline，不进 formal；scheduler_owner = duckdb_ai_extension + nginx_round_robin + vllm）。256 门禁：exactly-once（256 unique completed）+ **0 error / 未观察到 max_tokens-truncation**（256 行正常完成，duckdb length→error 但 failed=0；注：requests.csv `finish_reason` 字段空，**空 ≠ 已审计为非 length**，仅"无 length 报错"）+ nginx upstream **8000=200 / 8001=200 完美 round-robin 对称**。
+> **身份**：`comparison_role=gateway_system_diagnostic`（**主字段 = 系统角色**，协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx 第三方 gateway → 2 vLLM endpoint；system-level only，非 DuckDB 原生，不进 formal；scheduler_owner = duckdb_ai_extension + nginx_round_robin + vllm）+ `component_comparison_role=database_product_native_baseline`（单 shard 组件）。256 门禁：exactly-once（256 unique completed）+ **0 error / 未观察到 max_tokens-truncation**（256 行正常完成，duckdb length→error 但 failed=0；注：requests.csv `finish_reason` 字段空，**空 ≠ 已审计为非 length**，仅"无 length 报错"）+ nginx upstream **8000=200 / 8001=200 完美 round-robin 对称**。
 >
-> **1 rep/cell diagnostic**（非 formal）。`warmup_per_cell=false`（lb_rr 单端点 manifest 不适合 warmup；prefix-hit 由规模嵌套残留 + cell 自热，机制不同于三臂的真 warmup，数值可比）。
+> **1 rep/cell diagnostic**（非 formal）。`warmup_per_cell=false`（lb_rr 单端点 manifest 不适合 warmup；prefix-hit 由规模嵌套残留 + cell 自热，机制不同于三臂的真 warmup，**不能 vs 三臂直接比、非 cache-controlled**）。
 
 ## 1. 实验目的
 
@@ -71,4 +71,4 @@
 - `ramp_aggregate.{json,md}`：aggregator 重算（rows fallback + status from ramp_run）。
 - 代码：`multicard_scale_ramp.py`（lb_rr cell + identity sidecar）。
 
-> **诚实边界**：**1 rep/cell diagnostic**（非 formal）；**身份** `system_comparison_role=gateway_system_diagnostic`（协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx → 2 vLLM；component comparison_role=database_product_native_baseline；scheduler_owner=duckdb_ai_extension+nginx_round_robin+vllm）；**uncontrolled-cache**（`warmup_per_cell=false` + 规模嵌套 + 前跑 Phase 2 → 缓存继承，**不能 vs bounded ramp 直接比、非 cache-controlled scale curve、不引用跨四臂 cache-thrash**）；**ttft 口径**（shard summary 无 service counter，用 ttft 两后端 Σ delta）；**raw 已提交裁剪版**（6f6ef75，summary/ramp_run/ttft，requests.csv 排除）；**vLLM effective config = 默认**（cmdline 无 max_num_seqs/8192 flag）；**坍塌归因未证实**（疑似，无 service-counter）；**身份机器闭环**：identity sidecar 由新 driver（本轮 commit）写 system_comparison_role，历史 raw（6f6ef75）无 sidecar → aggregate `system_comparison_role=null`，报告层身份标注 standalone，重跑才机器闭环。
+> **诚实边界**：**1 rep/cell diagnostic**（非 formal）；**身份** `comparison_role=gateway_system_diagnostic`（**主字段=系统角色**，协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx → 2 vLLM；`component_comparison_role=database_product_native_baseline`；scheduler_owner=duckdb_ai_extension+nginx_round_robin+vllm）；**uncontrolled-cache**（`warmup_per_cell=false` + 规模嵌套 + 前跑 Phase 2 → 缓存继承，**不能 vs bounded ramp 直接比、非 cache-controlled scale curve、不引用跨四臂 cache-thrash**）；**ttft 口径**（shard summary 无 service counter，用 ttft 两后端 Σ delta）；**raw 已提交裁剪版**（6f6ef75，summary/ramp_run/ttft，requests.csv 排除）；**vLLM effective config = 默认**（cmdline 无 max_num_seqs/8192 flag）；**坍塌归因未证实**（疑似，无 service-counter）；**身份机器闭环**：identity sidecar 由新 driver（本轮 commit）写 `comparison_role`（系统主）+ `component_comparison_role`，历史 raw（6f6ef75）无 sidecar → aggregate `comparison_role=null`，报告层身份标注 standalone，重跑才机器闭环。

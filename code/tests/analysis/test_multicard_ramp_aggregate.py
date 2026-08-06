@@ -249,15 +249,16 @@ class RobustRowsTests(unittest.TestCase):
                     "comparison_role": "database_product_native_baseline",  # raw single-shard (wrong at ramp layer)
                 }))
             _write(cell / "gate_output" / "run_status.json", json.dumps({"status": "passed"}))
-            _write(cell / "identity.json", json.dumps({  # ramp-layer sidecar (authoritative)
-                "comparison_role": "database_product_native_baseline",  # component (Literal)
-                "system_comparison_role": "harness_pre_split_diagnostic",  # authoritative primary (Literal, extended)
+            _write(cell / "identity.json", json.dumps({  # ramp-layer sidecar
+                "comparison_role": "harness_pre_split_diagnostic",  # system role (PRIMARY, 复审 #1)
+                "component_comparison_role": "database_product_native_baseline",  # single-shard component
                 "formal_baseline_eligible": False,
                 "scheduler_owner": "experiment_harness + duckdb_ai_extension + vllm"}))
             result = agg.aggregate(root)
         m = result["scale_2048"]["arms"]["duckdb_ai"]["c32"]
-        self.assertEqual(m["comparison_role"], "database_product_native_baseline")  # component preserved
-        self.assertEqual(m["system_comparison_role"], "harness_pre_split_diagnostic")  # authoritative primary
+        self.assertEqual(m["comparison_role"], "harness_pre_split_diagnostic")  # PRIMARY = system role
+        self.assertEqual(m["component_comparison_role"], "database_product_native_baseline")  # component preserved
+        self.assertNotIn("system_comparison_role", m, "stale system_comparison_role in aggregate")
         self.assertFalse(m["formal_baseline_eligible"])
         self.assertEqual(m["scheduler_owner"], "experiment_harness + duckdb_ai_extension + vllm")
 
