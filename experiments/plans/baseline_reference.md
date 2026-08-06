@@ -749,6 +749,20 @@ work-conserving borrowing 和每 job service/JCT/fairness。Llumnix（OSDI 2024�
 
 训练/验证至少采用配置组留出、独立时间段和 workload 留出；自然 EOS 场景另做长度分布漂移与 burst 留出。动态估计器只有显著优于**同最大 work/credit 上限的强静态策略**，且 P95/P99、公平性和失败率无明显回退，才进入正文主结果。Beyond Prediction 提供的反例要求保留 prediction-free 静态 arm，不能把 oracle output length 当作调度最优的充分条件。
 
+### 条件性计划级验证：TPC-H-derived AI operator plans
+
+TPC-H 原始 benchmark 不包含 AI 算子，因此当前 320-run 不使用 TPC-H，也不把 TPC-H raw
+query time 当 AI cost baseline。项目保留一条 `planned-conditional` 计划级 held-out：只有
+formal-only 局部代价模型通过 candidate ranking/regret 晋级门槛后，才在 TPC-H comment 列上
+构造 bounded AI_COMPLETE，并比较 filter/join/materialize 位置与冻结运行配置的等价候选计划。
+
+该轨只允许称 `TPC-H-derived`/`TPC-H-inspired`，不得声称 TPC-H compliant；TPCx-AI 仍只复用
+scoring、质量、性能价格和审计合同。计划级 baseline 包括关系优化器原生 cost + 固定每行 AI
+常数、token/output-cap 解析模型、profile lookup、Ridge/LightGBM、解析 + residual，以及
+actual-runtime oracle 上界。主评价从点误差扩展到 whole-query Q-error、plan ranking/pick rate、
+selected/oracle JCT 与 plan regret。完整启动条件、语义等价门禁和停止条件见
+`operator_cost_profile_dual4090_formal_20260804.md` §8。
+
 ---
 
 ## 五、端到端流程调优增强对照矩阵

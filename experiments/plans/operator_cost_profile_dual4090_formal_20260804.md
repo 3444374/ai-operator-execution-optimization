@@ -143,3 +143,65 @@ runtime env，并做连接门禁；不能仅为模板展开填入未监听地址
 混入保存首次无效运行证据的 `operator_cost_profile_dual4090_formal_20260804/`。新目录应包含
 七步 README、compact summary、formal-only LOO JSON、raw archive SHA256 和不能声称的
 结论。若门禁失败，保留 incident，不生成性能排名。
+
+## 8. 条件性后续：TPC-H-derived AI 查询计划代价验证
+
+### 8.1 定位与启动门禁
+
+本方向保留为 `planned-conditional`：验证代价估计能否从“为 active-work 候选排序”继续
+泛化到“为包含 AI 算子的数据库查询计划排序”。它仍是两项策略的共同使能组件，不新增第三项
+研究内容，也**不改变或扩展本页 320-run 合同**。
+
+只有本页重跑产生一套完全有效的数据，并且至少一个可部署估计器同时满足 §6 已冻结的
+candidate pairwise、median/macro/max regret 门槛，才允许进入计划级 capability；否则先修复
+局部估计器，不启动 TPC-H-derived GPU 长实验。
+
+### 8.2 名称与合规边界
+
+- 只能称 `TPC-H-derived AI operator plan validation` 或 `TPC-H-inspired`，不得称官方 TPC-H
+  result/compliant benchmark；TPC-H 原始 schema/query 没有 AI 算子，本实验会增加 AI 调用和
+  新的候选计划。
+- TPCx-AI 仅提供数据管理、scoring、质量、性能价格和审计合同；除非完整满足官方规范，任何
+  推理子集都只能称 `TPCx-AI-inspired`。
+- TPC-H 原生查询只作关系执行与 cardinality/cost 采集的相邻控制，不能替代数据库 AI Function
+  或本项目 AI pipeline baseline。
+
+### 8.3 最小可验证设计
+
+从 TPC-H 的 `orders`/`lineitem`/`part` 等 comment 字段构造 bounded AI_COMPLETE，所有候选
+计划必须产生相同的最终关系结果和相同模型请求集合（除非实验变量就是减少 AI 调用数）。首个
+capability 只覆盖三类等价计划对：
+
+1. 独立关系 filter 在 AI 前执行 vs AI 后执行；
+2. 对可复用维表文本先做 AI 并物化再 join vs join 后对重复行做 AI；
+3. 同一关系计划下选择不同的冻结 active-work/endpoint 配置。
+
+先运行小 scale-factor correctness/cost decomposition gate，再做 scale ramp；正式规模由至少
+60 秒稳态、无 spill/资源死锁和模型服务饱和门禁决定，禁止凭机器名称预设 SF1/SF10 为正式点。
+
+### 8.4 Baseline 与特征边界
+
+计划级至少比较：关系优化器原生 cost + 固定每行 AI 常数、输入 token/output cap 解析模型、
+profile lookup、Ridge/LightGBM、解析模型 + residual correction，以及 actual runtime oracle
+（不可部署上界）。GRACEFUL/COSTREAM/Abacus 作为方法与指标依据；只有拿到可运行官方实现并
+通过适配审计，才能进入数字排名，不能按论文描述自写近似实现后冒充原系统。
+
+可部署预测只能使用提交前已知的 relation cardinality/selectivity estimate、prompt/token/frame
+特征、模型/硬件/服务配置和候选 action。实际 output length、当前 run 的 cache hit、实际 service
+time、最终 queue trace 均属于执行后信息，只能作误差解释或 oracle。
+
+### 8.5 评价与停止条件
+
+除 §5 三层指标外，计划级必须报告 relation/cardinality error、operator-level 与 whole-query
+Q-error、plan pairwise accuracy/pick rate、selected/oracle query JCT、plan regret、AI invocation/
+token work、估计器开销和最终结果集合一致性。若简单固定每行 cost 已与学习模型持平，或加入 AI
+代价后仍不能稳定改善 plan regret，则把结果保留为负结果并停止扩矩阵，不把本方向包装成已实现的
+查询优化器贡献。
+
+### 8.6 Fatal-flaw 预注册
+
+1. **Scope creep**：同时做调度系统、通用查询优化器和新 benchmark 会使贡献失焦。防御方式是
+   仅在局部估计器过门槛后做最小 held-out 计划选择验证，并保持“共同使能组件”定位。
+2. **不可归因/语义不等价**：关系计划可能改变 AI 调用集合、cache locality 和结果质量。防御方式是
+   保存 canonical request manifest、关系结果 digest、阶段计时和 actual invocation/token work；
+   不等价候选进入 system-level quality/cost track，不与 fixed-work runtime 排名混读。

@@ -468,7 +468,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/dual_gpu_cost_profile_pilot.example.json` | 双 4090 算子代价新数据的 4-cell cache-on active-work pilot v3（1 warmup+1 formal） | 验证单 runner、共享 Ray、cache 声明/命中观测和总耗时；不作性能排名 |
 | `deploy/autodl/dual_gpu_cost_profile_formal.example.json` | 5 workloads × 2 rows × 2 output caps × 4 active-work 的 cache-on 双 4090 formal v2 | 320-run formal-only 数据集；不得与旧单 5070 或 cache-off 样本静默合并 |
 | `experiments/plans/operator_cost_profile_pilot_20260804.md` | B 线新数据采集的固定项、唯一变量、门禁、三层指标和跨硬件隔离合同 | 启动任何新增 cost-profile GPU run 前读取 |
-| `experiments/plans/operator_cost_profile_dual4090_formal_20260804.md` | 双 4090 20-context formal 的 workload、候选、tie、门禁、指标和时间合同 | 启动/恢复 320-run formal 及分析前读取 |
+| `experiments/plans/operator_cost_profile_dual4090_formal_20260804.md` | 双 4090 20-context formal 合同；§8 为局部估计过门槛后才启动的 TPC-H-derived AI 查询计划条件验证 | 启动/恢复 320-run，或评审代价模型是否进入计划级 held-out 前读取 |
 | `deploy/autodl/dual_gpu_actor_pool_shape.example.json` | 固定每 endpoint 256 个可见 slot/0.5 CPU 的 1/2/4/8/16 Ray actor 拓扑对照 | 在同协议饱和点选择达到峰值 97% 的最小 actor 数，不改变 offered-load 上限 |
 | `deploy/autodl/dual_gpu_service_quantum.example.json` | 固定 planning budget、active work 和 actor slots 的 batch/512/1024/2048/4096/request 完成粒度对照 | 量化批内 HOL、credit-held 空转与 completion-driven replenishment |
 | `deploy/autodl/dual_gpu_slo_ewma_flush.example.json` | 高压/临界到达率下 fixed、queue-adaptive 与 SLO-aware EWMA flush 对照 | 在固定 request-level、65K active work 和 1×256 actor pool 下验证动态关批是否改善吞吐、SLO-goodput或尾延迟 |

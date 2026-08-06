@@ -31,7 +31,9 @@
 2. **调度与提交控制**：active-work、request-level credit、共享 credit、idle borrowing 和多 job 公平队列。
 
 图像 workload 用于正文的多模态泛化验证；算子代价估计是两项策略的共同使能组件，不独立扩张为
-第三项研究内容。写回使用 PostgreSQL + pgvector 工程 baseline。
+第三项研究内容。局部代价估计通过 ranking/regret 晋级门槛后，保留 TPC-H-derived AI 查询计划
+held-out 验证其计划选择价值；该项为 `planned-conditional`，不改变当前 320-run。写回使用
+PostgreSQL + pgvector 工程 baseline。
 
 ## 3. 当前技术路径
 

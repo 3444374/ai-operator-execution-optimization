@@ -23,7 +23,7 @@
 1. **AI workload 感知的动态数据组织与批处理构造策略**（研究内容一）：对比 token-budget batching 与固定 batch_size 在端到端吞吐和 P99 延迟上的差异，以及 length-aligned/prefix-aware 分组与随机分组的效果差异。利用 Ray actor 异构化实现。引擎级参数（Daft `into_batches`、`batch_size`、`repartition`）与策略级决策共同构成优化空间。
 2. **运行层调度与提交控制策略**（研究内容二）：利用 Ray actor 的 stateful + async 能力，研究固定资源下的最小饱和 active work、request-level replenishment、endpoint-shared request/work credit、work-conserving idle borrowing 和多 job fair queue。固定静态 credit 是强 baseline；动态候选只有显著优于同上限静态策略才晋级。
 3. **多模态泛化验证**（正文实验，§5.3）：在图像 workload 上使用同一套策略代码和配置逻辑，验证 token-budget → frame-budget、queue-adaptive flush → 完全复用的模态无关性。
-4. **算子代价估计**（共同使能组件，不作为独立研究内容）：预测 prompt/output work、operator service time、JCT、remaining work 和 SLO slack；初始化不同 GPU/模型/workload 的 active-work/K，并辅助数据组织、endpoint 路由和提交策略。除误差外报告配置 ranking、决策 regret 和预测区间。
+4. **算子代价估计**（共同使能组件，不作为独立研究内容）：预测 prompt/output work、operator service time、JCT、remaining work 和 SLO slack；初始化不同 GPU/模型/workload 的 active-work/K，并辅助数据组织、endpoint 路由和提交策略。除误差外报告配置 ranking、决策 regret 和预测区间。若修复后的双 4090 formal 通过既有 ranking/regret 门槛，再以 `planned-conditional` 的 TPC-H-derived AI 查询验证能否辅助包含 AI 算子的计划选择；不修改当前 320-run，也不冒充官方 TPC-H/TPCx-AI 结果。
 
 两项方法下收敛为三个研究问题：
 

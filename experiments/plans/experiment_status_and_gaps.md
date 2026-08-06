@@ -166,6 +166,11 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 - 无独立 workload/时间留出验证：所有数据来自 07-18 至 07-26，外推退化
   程度未知；
 - 点估计无预测区间：编排决策仅靠一个数字，无法评估风险。
+- 计划级用途尚无实证：保留 `TPC-H-derived AI operator plan validation` 为
+  `planned-conditional`。只有修复后的双 4090 320-run 完全有效，且可部署估计器通过既有
+  ranking/regret 门槛，才做 filter/join/materialize 位置与冻结运行配置的最小 held-out；
+  不修改当前 320-run，不称官方 TPC-H/TPCx-AI 结果。完整合同见
+  `operator_cost_profile_dual4090_formal_20260804.md` §8。
 
 详见 `experiments/results/operator_cost_estimation_20260726/README.md`。
 

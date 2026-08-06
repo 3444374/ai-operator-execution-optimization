@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-08-06 保留 TPC-H-derived AI 查询计划代价验证（条件性）
+
+- 用户确认希望代价估计最终能够辅助数据库优化器选择包含 AI 算子的执行计划；该方向正式登记为
+  `planned-conditional`，仍属于数据组织与提交控制的共同使能组件，不扩张为第三项研究内容。
+- 当前 cache-on 双 4090 320-run 合同保持不变。只有重跑数据完全有效，且至少一个可部署估计器通过
+  已冻结的 candidate pairwise 与 median/macro/max regret 门槛，才进入计划级 capability。
+- 条件实验只称 `TPC-H-derived`/`TPC-H-inspired`：比较 filter/join/materialize 位置与冻结运行配置，
+  报告 whole-query Q-error、plan ranking/pick rate、selected/oracle JCT 与 regret；不得称官方 TPC-H
+  或 TPCx-AI compliant。
+- `idea-evaluator` 结论为 Accept with Revisions。主要风险是 scope creep 和候选计划语义/请求集合不等价；
+  已通过分阶段启动、canonical request/result digest、阶段计时、actual invocation/token work 与负结果
+  停止条件预注册防御。完整合同在 `experiments/plans/operator_cost_profile_dual4090_formal_20260804.md` §8。
+
 ## 2026-08-06 SQuAD endpoint 拓扑审计：单 endpoint 证据与双 endpoint 方法验证分轨
 
 - 复核当前 `squad_database_e2e_runner.py`、DuckDB-ai adapter 和运行模板：runner 只有 singular
