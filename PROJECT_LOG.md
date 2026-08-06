@@ -4761,3 +4761,24 @@ codex 第四轮只读复审确认 a22cdf6 六项核心修复大体正确、27/27
 **边界（§6）**：网格能答 4 路径容量/稳定性/拐点 + feeding-saturation 门禁；**不能**答"项目方法优于 baseline"（须 §1 修复+256 门后）或 lb_rr 同柱排名或 per-row E2E 四臂横比。
 
 **下一步由用户决定执行时机**：先修 §1 层1+2 → 256 门 → 补 project K32×9×3 → 十字切片。本轮 ramp 继续（cron 监视）。
+
+## 2026-08-07 执行：project_static hang 修复落地 + 256 门通过 → project 臂 UNBLOCKED → #19 ramp 在跑
+
+用户授权自主推进（环境确认干净后修 project hang → 复审 → 补未完成实验 → 全部扫完后启动 320-run 算子代价实验；全程不询问、严守规则、老实记录）。
+
+- **环境确认干净**：服务器无 screen/无 ramp/supervisor 进程；两 vLLM(8000/8001) 运行且带 strict 三 flag（前轮正式 sweep 前重启的那对）；Ray head 活着；GPU 0% idle。
+- **修复（commit `e49ac53`，4 文件 +231/-9）**：
+  - 层1 `ray_adapter.py` `wait_until_ready`：无界 `ray.get(ready_refs)` → 有界 `ray.wait(num_returns=all, timeout=90s)`，超时 raise RuntimeError 报 un-ready actor 名 + `cluster_resources`/`available_resources`；`timeout_s=None` 保留 legacy 无界；空 pool guard。新模块常量 `ACTOR_READY_BARRIER_TIMEOUT_S=90` + `_describe_ray_resources` 诊断 helper。
+  - 层2 `project_static.py` `run_project_static`：`subprocess.run(..., timeout=profiler_timeout_s)`，默认 900s（= lb_rr cell 对等，F3）；`TimeoutExpired` → 返回 failed `ProjectStaticRun`(exit_code=124, formal_row_found=False)，cell 记 failed 不挂。新 config 字段 `profiler_timeout_s` + `>0` 校验。
+  - 测试 47 通过（+3 ray_adapter：timeout diagnostics / None 无界 / happy-path wait+get；+4 project_static：默认 900 / reject≤0 / timeout fail-closed / kwarg-到-subprocess 守卫）。440 scheduling+baselines 全过无回归。生产 caller `postgres_ai_operator_profile.py:2091`（位置 ray_module + 2-tuple 解包）签名兼容、且默认即获有界 barrier。
+  - 复审（codex 严格度）：py_compile / 调用方核对 / 空 pool 守卫 / 诊断 helper getattr+try / monkeypatch try-finally 还原 / evidence count 校验保留。scan_git_secrets 0 violation。无 AI 署名（§10）。
+- **256 go/no-go 门通过（commit `6d3f59b`，2-endpoint gate + 1-endpoint parity）**：scale=256/K=32/reps=3，§1.4 a–f 全过——3/3 passed exit0 K=32；formal status=ok；GPU max=100%；exactly-once 256 行 0 failed；两 endpoint 125/131·128/128·125/131（skew≤4.6%）；e2e<4s。1-endpoint parity 也 3/3 passed。**未触发**任一 timeout（90s barrier/900s subprocess）→ 触发层(140eefd)+症状层(e49ac53)共同闭合，task #119 关闭。**project_static 整臂 UNBLOCKED**（§0 非目标解除）。归档标为"修复验证门，非正式排名；256 行未饱和，不声称吞吐排序"。
+- **#19 project K32×9×3 ramp 在跑**（screen `proj-ramp`，2-endpoint，全 9 scales，reps=3，warmup_per_cell=true，vllm_config_strict=true）：补全 4 臂峰值并发规模 ramp（与 multicard_scale_ramp_formal_20260806 bounded+duckdb + multicard_lbrr_scale_ramp_formal_20260806 拼成 4 路径对比）。2048 cell 兼作 256 门的回归项。~0.3–0.5h。
+- **后续**：#20 并发前置（bounded httpx Limits / duckdb effective==c 核验 / manifest SHA 冻结）→ #21 十字切片（并发@2048×4 臂 + 规模@C64 project）→ #22 可选切片 C + duckdb 崩溃根因 → 全部扫完后启动 320-run 算子代价实验（`operator_cost_profile_dual4090_formal_20260804.md`，独立 screen，~3.5h+reserve，与 ramp 同 GPU 故串行）。
+
+## 2026-08-07 #19 收尾（4 路径规模 ramp 闭环）+ 320-run 算子代价实验启动
+
+- **#19 完成（commit `5026c76`）**：project_static K32×9×3 全 **27/27 passed**（含 8192/10570 全 3/3，对照 duckdb 10570 全 fail）。与前序 bounded/duckdb/lb_rr 拼成同冻结合同 4 路径峰值并发规模 ramp。**事实**：4 路径均 2048→4096 tok/s 腰斩后平台（bounded 88k→42k、duckdb 77k→42k、lb_rr 74k→39k、project 76k→42k）→ 瓶颈在 vLLM 服务端（大规模 prefix-hit 0.95→0.64 + TTFT 53→155ms 佐证 KV 饱和）；project ≈ bounded（同 offered-load ordering，method 非 baseline 分轨）；project 大规模稳健。60s 稳态门仅 10570（operator_wall 59s）满足；4096 拐点靠 4 臂一致 + 饱和规模交叉印证。归档 `experiments/results/multicard_proj_scale_ramp_formal_20260807/`（README 全指标 + 边界；raw per-request evidence 留服务器端）。
+- **#20 复审降级为文档项**：经查 `async_http.py:167` `connection_capacity=c×endpoints` 显式设 httpx Limits（随 c 缩放，"默认 100" 顾虑失效；c=64 塌陷是 vLLM overload 非连接数）；`duckdb_ai.py:138` SQL 设 `max_concurrent_requests=c`（1..64 校验，c≤32 无 clamp）。故并发扫掠（C_total≤64）无需代码修复，#20 仅剩 manifest SHA 记录 + scope 文档。
+- **决策：优先 320-run，#21 并发扫掠列为 next-step**。依据：用户明确强调"那个未完成的算子代价测试实验"为最终目标；#19 已闭环"未完成"的 project 臂 + 规模 ramp（scale 轴已答 4096 拐点）；并发扫掠（饱和/过载点）是可选扩展，非"未完成"补全，且会推迟 ~1.5h 的显式目标。
+- **320-run 启动（screen `cost-formal-v2`，`dual_gpu_cost_profile_formal_v2_cache_on_20260807`）**：preflight 全过（RAY_ADDRESS 非空共享 / 无并发 runner lease / 两 endpoint 200 / config 80 scenarios / 5 workload 各 ≥256 行：short_prompt_lt50=512·long_prompt_ge150=325·concentrated/multiturn=2048·lmcache_agent=851 / prefix_caching 一致）。用 text-baselines python（#19 证实可跑 profiler）。**gate 10 关键验证**：已跑 12 run，0 个 stdout 含 "Started a local Ray instance"（每 run 连 172.17.0.3:6380 共享 Ray）——正是 v2 对 2026-08-04 首次无效 run（空 --ray-address → local Ray）的修复闭环。~2–3h（短 prompt 快，长 prompt/lmcache 慢）。完成后按 §4 门禁（320/320 + exactly-once + 两 endpoint + cache 一致 + hit∈[0,1]）验证 + 归档到 `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/`。
