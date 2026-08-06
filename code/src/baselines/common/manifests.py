@@ -73,7 +73,15 @@ def assign_endpoint_shards(
     requests: Iterable[ChatRequest],
     endpoint_count: int,
 ) -> tuple[ChatRequest, ...]:
-    """Assign work using stable largest-work-first while preserving row order."""
+    """Assign work using stable largest-work-first while preserving row order.
+
+    This is the ``preexecution_token_work_balanced`` policy: it balances
+    ``estimated_work = prompt_tokens + estimated_output_tokens`` -- a value
+    computable BEFORE execution (``estimated_output_tokens`` is a pre-submission
+    estimate such as the fixed output cap, NOT the real generation length). It is
+    therefore a static baseline, NOT an oracle (a real oracle would need the
+    actual output/service time, which is future-leakage).
+    """
 
     if endpoint_count <= 0:
         raise ValueError("endpoint_count must be positive")
@@ -97,3 +105,118 @@ def assign_endpoint_shards(
         )
         for request in materialized
     )
+
+
+# Stable partition-policy names. ``preexecution_token_work_balanced`` is the
+# largest-work-first policy above (kept spelled out -- not "prompt_token" and not
+# "oracle"; for SQuAD fixed-cap it balances prompt_tokens + the fixed cap).
+PARTITION_POLICIES = ("equal_rows", "preexecution_token_work_balanced")
+
+
+def assign_endpoint_equal_rows(
+    requests: Iterable[ChatRequest],
+    endpoint_count: int,
+    seed: int = 0,
+) -> tuple[ChatRequest, ...]:
+    """Deterministic equal-rows sharding (stable SHA256 sort + round-robin).
+
+    Does NOT use Python ``hash()`` (process-randomized via PYTHONHASHSEED). Sorts
+    doc_ids by ``sha256(f"{seed}:{doc_id}")`` -- a stable, seed-controlled key
+    (doc_id as a deterministic tie-break) -- then round-robin assigns that sorted
+    stream to endpoints. Guarantees ``|rows_i - rows_j| <= 1`` for any input
+    (exact 128:128 for 256 rows / 2 endpoints). Input order does NOT change the
+    doc_id -> endpoint mapping; the returned tuple preserves the original manifest
+    row order. Represents the simplest no-cost-estimate static database sharding.
+    """
+
+    if endpoint_count <= 0:
+        raise ValueError("endpoint_count must be positive")
+    materialized = _validated_requests(requests)
+
+    def sort_key(request: ChatRequest) -> tuple[str, int]:
+        digest = hashlib.sha256(
+            f"{seed}:{request.doc_id}".encode("utf-8")
+        ).hexdigest()
+        return (digest, request.doc_id)
+
+    hash_sorted = sorted(materialized, key=sort_key)
+    assignments = {
+        request.doc_id: position % endpoint_count
+        for position, request in enumerate(hash_sorted)
+    }
+    return tuple(
+        replace(request, endpoint_index=assignments[request.doc_id])
+        for request in materialized
+    )
+
+
+def assign_endpoints(
+    requests: Iterable[ChatRequest],
+    endpoint_count: int,
+    *,
+    policy: str,
+    seed: int = 0,
+) -> tuple[ChatRequest, ...]:
+    """Dispatch to the named partition policy (single route point for the CLI)."""
+
+    if policy == "equal_rows":
+        return assign_endpoint_equal_rows(requests, endpoint_count, seed)
+    if policy == "preexecution_token_work_balanced":
+        return assign_endpoint_shards(requests, endpoint_count)
+    raise ValueError(
+        f"unsupported partition policy {policy!r}; "
+        f"expected one of {PARTITION_POLICIES}"
+    )
+
+
+def partition_summary(
+    assigned: Iterable[ChatRequest],
+    endpoint_count: int,
+) -> dict[str, object]:
+    """Per-endpoint row/token-work distribution + row-count diff + work skew.
+
+    Pure; used by the manifest exporter metadata AND auditable independently of
+    the gate. ``endpoint_row_count_diff`` is an absolute count (the equal-rows
+    gate hard-checks ``<= 1``); ``endpoint_work_skew`` is a ratio in [0, 1) (the
+    work-balanced gate hard-checks ``<= max_endpoint_work_skew``).
+    """
+
+    if endpoint_count <= 0:
+        raise ValueError("endpoint_count must be positive")
+    rows = [0] * endpoint_count
+    prompt_tokens = [0] * endpoint_count
+    output_work = [0] * endpoint_count
+    total_work = [0] * endpoint_count
+    observed_endpoints: set[int] = set()
+    for request in assigned:
+        if not 0 <= request.endpoint_index < endpoint_count:
+            raise ValueError(
+                f"endpoint_index {request.endpoint_index} outside "
+                f"[0, {endpoint_count})"
+            )
+        observed_endpoints.add(request.endpoint_index)
+        index = request.endpoint_index
+        rows[index] += 1
+        prompt_tokens[index] += request.prompt_tokens
+        output_work[index] += request.estimated_output_tokens
+        total_work[index] += request.estimated_work
+    if observed_endpoints != set(range(endpoint_count)):
+        raise ValueError(
+            f"assignment did not use every endpoint: used {sorted(observed_endpoints)}"
+        )
+    row_diff = max(rows) - min(rows) if rows else 0
+    work_skew = (
+        (max(total_work) - min(total_work)) / max(total_work)
+        if total_work and max(total_work) > 0
+        else 0.0
+    )
+    return {
+        "endpoint_row_counts": {i: rows[i] for i in range(endpoint_count)},
+        "endpoint_prompt_tokens": {i: prompt_tokens[i] for i in range(endpoint_count)},
+        "endpoint_estimated_output_work": {
+            i: output_work[i] for i in range(endpoint_count)
+        },
+        "endpoint_total_estimated_work": {i: total_work[i] for i in range(endpoint_count)},
+        "endpoint_row_count_diff": row_diff,
+        "endpoint_work_skew": work_skew,
+    }

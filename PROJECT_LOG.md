@@ -4690,3 +4690,13 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 - 本地：全 py_compile 通过；provenance 5/5 + project_static unit 18/18 + completion-evidence emit 3/3 绿；
   runner 集成测试（含 #1 rc==1 + workload-integrity fail-closed + 6 个 project_static 用例）需服务器跑 196/196。
 - 下一步：服务器验 196/196 + argv 锁定后，才允许 256 smoke；仍不跑 full、不改 cap。
+
+## 2026-08-06 manifest partition-policy（equal_rows + preexecution_token_work_balanced）+ policy-aware gate
+
+- 多卡静态分片 baseline 的分片策略活在 manifest 的 endpoint_index 分配里（core gate 强制 endpoint∈{0,1}）。本次给现有 export 入口加可选分片策略，不新建 harness、不新建 SQuAD generator。
+- **manifests.py**：新增 `assign_endpoint_equal_rows(requests, n, seed)`——用 `sha256(f"{seed}:{doc_id}")` 排序后 round-robin（**非** Python `hash()`，避免 hash-seed 随机），256/2 严格 128:128、奇数差≤1、输入顺序不变映射不变、同 seed 同结果；原 `assign_endpoint_shards` 重新标注意图为 `preexecution_token_work_balanced`（largest-work-first on `estimated_work = prompt+est_output`，est_output 是提交前估计如 fixed_cap，**不是 oracle**）。新增 `assign_endpoints(*, policy, seed)` 分发 + `partition_summary` 元数据（per-endpoint rows/prompt_tokens/est_output_work/total_work + row_diff + work_skew）。
+- **cli.py**：`export-manifest` + `export-postgres-manifest` 加 `--partition-policy {equal_rows, preexecution_token_work_balanced}`（默认后者=旧行为，向后兼容）+ `--partition-seed`；走 `assign_endpoints`，返回 metadata 含 policy/seed/完整 partition_summary/sha256。
+- **gate.py**：`validate_gate` 加 `partition_policy` + `max_endpoint_row_skew`，policy-aware 硬门禁——`equal_rows` 硬卡 endpoint 行数差（work-skew 只记录，因那是该 baseline 要暴露的问题）、`preexecution_token_work_balanced` 硬卡 work-skew（行数只记录）；无 policy 时保留旧 work-skew 硬门禁（向后兼容）。metrics 加 endpoint_row_counts/row_count_diff/partition_policy。
+- **gate_runner.py**：`CoreGateConfig.partition_policy`（默认 None=向后兼容）+ load 校验 ∈ PARTITION_POLICIES + `_validate_cell` 传给 `validate_gate`。
+- 测试 `test_partition_policy.py` 11 例（用户要求的 9 项全覆盖 + dispatch 路由/拒未知 policy）：256→128:128、奇数差≤1、输入顺序不变、同 seed 同结果、duplicate fail-closed、CLI 两 policy 路由 + 元数据、equal_rows 不因 work-skew 失败、work-balanced 在 skew>2% 失败。本地全绿；现有 gate/contracts/manifest/cli 测试无回归。
+- 下一步：服务器 4/16 行 export capability 验证 → equal_rows 256 DuckDB-ai 2×1 smoke → preexec_balanced 256 smoke。`run_command_pair` 是 popen-pair 近并发（非真 barrier），smoke 报告标 `launch_mode=popen_pair_near_concurrent, start_barrier=false, formal=false`。

@@ -31,7 +31,9 @@ from ..controls import (
 from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.common.gate import validate_gate
 from src.baselines.common.manifests import (
-    assign_endpoint_shards,
+    PARTITION_POLICIES,
+    assign_endpoints,
+    partition_summary,
     read_manifest,
     write_manifest,
 )
@@ -428,12 +430,20 @@ def _export_manifest(args: argparse.Namespace) -> dict[str, object]:
         )
         for row in rows
     )
-    assigned = assign_endpoint_shards(requests, args.endpoint_count)
+    assigned = assign_endpoints(
+        requests,
+        args.endpoint_count,
+        policy=args.partition_policy,
+        seed=args.partition_seed,
+    )
     metadata = write_manifest(args.output, assigned)
     return {
         "status": "completed",
         "row_count": metadata.row_count,
         "sha256": metadata.sha256,
+        "partition_policy": args.partition_policy,
+        "partition_seed": args.partition_seed,
+        **partition_summary(assigned, args.endpoint_count),
     }
 
 
@@ -457,22 +467,13 @@ def _export_postgres_manifest(
             max_output_tokens=args.max_output_tokens,
             estimated_output_mode=args.estimated_output_mode,
         )
-    assigned = assign_endpoint_shards(
+    assigned = assign_endpoints(
         requests,
         args.endpoint_count,
+        policy=args.partition_policy,
+        seed=args.partition_seed,
     )
     metadata = write_manifest(args.output, assigned)
-    endpoint_work: dict[int, int] = {}
-    for request in assigned:
-        endpoint_work[request.endpoint_index] = (
-            endpoint_work.get(request.endpoint_index, 0) + request.estimated_work
-        )
-    work_values = list(endpoint_work.values())
-    work_skew = (
-        (max(work_values) - min(work_values)) / max(work_values)
-        if work_values and max(work_values) > 0
-        else 0.0
-    )
     return {
         "status": "completed",
         "row_count": metadata.row_count,
@@ -481,8 +482,9 @@ def _export_postgres_manifest(
         "row_offset": args.row_offset,
         "max_output_tokens": args.max_output_tokens,
         "estimated_output_mode": args.estimated_output_mode,
-        "endpoint_work": dict(sorted(endpoint_work.items())),
-        "endpoint_work_skew": work_skew,
+        "partition_policy": args.partition_policy,
+        "partition_seed": args.partition_seed,
+        **partition_summary(assigned, args.endpoint_count),
     }
 
 
@@ -609,6 +611,27 @@ def _validate_gate_command(
     return payload
 
 
+def _add_partition_policy_args(subparser: argparse.ArgumentParser) -> None:
+    """Add the manifest partition-policy flags to an export subparser."""
+
+    subparser.add_argument(
+        "--partition-policy",
+        choices=PARTITION_POLICIES,
+        default="preexecution_token_work_balanced",
+        help=(
+            "equal_rows = stable SHA256 sort + round-robin (strict 128:128 at 256/2);"
+            " preexecution_token_work_balanced = largest-work-first on pre-submission"
+            " estimated_work (prompt_tokens + estimated_output_tokens). NOT an oracle."
+        ),
+    )
+    subparser.add_argument(
+        "--partition-seed",
+        type=int,
+        default=0,
+        help="fixed seed for the equal_rows SHA256 sort (ignored by work-balanced)",
+    )
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
@@ -622,6 +645,7 @@ def _parser() -> argparse.ArgumentParser:
     export.add_argument("--input", required=True)
     export.add_argument("--output", required=True)
     export.add_argument("--endpoint-count", type=int, required=True)
+    _add_partition_policy_args(export)
 
     postgres_export = commands.add_parser("export-postgres-manifest")
     postgres_export.add_argument("--database-url", required=True)
@@ -644,6 +668,7 @@ def _parser() -> argparse.ArgumentParser:
         required=True,
     )
     postgres_export.add_argument("--output", required=True)
+    _add_partition_policy_args(postgres_export)
 
     run = commands.add_parser("run-shard")
     run.add_argument("--adapter", choices=ADAPTERS, required=True)

@@ -17,7 +17,7 @@ from typing import Callable, Mapping, Sequence
 
 from src.baselines.common.contracts import BaselineRequestResult
 from src.baselines.common.gate import validate_gate
-from src.baselines.common.manifests import read_manifest
+from src.baselines.common.manifests import PARTITION_POLICIES, read_manifest
 from src.baselines.common.provenance import adapter_provenance
 from src.baselines.common.results import summarize_group_service_counters
 from src.infrastructure.config_env import expand_structure
@@ -82,6 +82,7 @@ class CoreGateConfig:
     service_prefix_caching: str = "unknown"
     service_max_num_seqs: int = -1
     service_max_num_batched_tokens: int = -1
+    partition_policy: str | None = None
 
 
 _BOOLEAN_HARD_GATES = {
@@ -391,6 +392,14 @@ def load_core_gate_config(
     service_max_num_batched_tokens = int(
         service.get("max_num_batched_tokens", -1)
     )
+    partition_policy = payload.get("partition_policy")
+    if partition_policy is not None:
+        if not isinstance(partition_policy, str):
+            raise ValueError("partition_policy must be a string or null")
+        if partition_policy not in PARTITION_POLICIES:
+            raise ValueError(
+                f"partition_policy must be one of {PARTITION_POLICIES} or null"
+            )
     return CoreGateConfig(
         experiment_id=str(payload.get("experiment_id", "core_gate")),
         rows_total=rows_total,
@@ -406,6 +415,7 @@ def load_core_gate_config(
         service_prefix_caching=service_prefix_caching,
         service_max_num_seqs=service_max_num_seqs,
         service_max_num_batched_tokens=service_max_num_batched_tokens,
+        partition_policy=partition_policy,
     )
 
 
@@ -910,6 +920,7 @@ def _validate_cell(
         summaries=summaries,
         request_results=results,
         max_endpoint_work_skew=config.max_endpoint_work_skew,
+        partition_policy=config.partition_policy,
     )
     payload = {
         "status": (

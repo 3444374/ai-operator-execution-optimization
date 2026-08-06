@@ -22,8 +22,19 @@ def validate_gate(
     summaries: Iterable[Mapping[str, object]],
     request_results: Iterable[BaselineRequestResult],
     max_endpoint_work_skew: float = 0.02,
+    partition_policy: str | None = None,
+    max_endpoint_row_skew: int = 1,
 ) -> GateReport:
-    """Report every hard incident without deleting or retrying evidence."""
+    """Report every hard incident without deleting or retrying evidence.
+
+    The endpoint-balance hard gate is ``partition_policy``-aware so each policy is
+    judged on the quantity it claims to balance (not the one it knowingly leaves
+    skewed): ``equal_rows`` hard-gates the endpoint row-count diff (work skew is
+    the finding it exists to expose, so it is recorded, not failed on);
+    ``preexecution_token_work_balanced`` hard-gates the pre-execution work skew
+    (row counts may legitimately differ). With no policy (legacy manifests) the
+    work-skew hard gate is kept for backward compatibility.
+    """
 
     requests = tuple(manifest)
     summary_rows = tuple(summaries)
@@ -31,16 +42,27 @@ def validate_gate(
     incidents: list[str] = []
 
     endpoint_work: dict[int, int] = defaultdict(int)
+    endpoint_rows: dict[int, int] = defaultdict(int)
     for request in requests:
         endpoint_work[request.endpoint_index] += request.estimated_work
+        endpoint_rows[request.endpoint_index] += 1
     work_values = list(endpoint_work.values())
     work_skew = (
         (max(work_values) - min(work_values)) / max(work_values)
         if work_values and max(work_values) > 0
         else 0.0
     )
-    if work_skew > max_endpoint_work_skew:
-        incidents.append("endpoint_work_skew")
+    row_values = list(endpoint_rows.values())
+    row_count_diff = (max(row_values) - min(row_values)) if row_values else 0
+    if partition_policy == "equal_rows":
+        if row_count_diff > max_endpoint_row_skew:
+            incidents.append("endpoint_row_skew")
+    elif partition_policy == "preexecution_token_work_balanced":
+        if work_skew > max_endpoint_work_skew:
+            incidents.append("endpoint_work_skew")
+    else:
+        if work_skew > max_endpoint_work_skew:
+            incidents.append("endpoint_work_skew")
 
     expected_ids = [request.doc_id for request in requests]
     observed_ids = [result.doc_id for result in results]
@@ -137,6 +159,9 @@ def validate_gate(
             "result_rows": len(results),
             "endpoint_work": dict(sorted(endpoint_work.items())),
             "endpoint_work_skew": work_skew,
+            "endpoint_row_counts": dict(sorted(endpoint_rows.items())),
+            "endpoint_row_count_diff": row_count_diff,
+            "partition_policy": partition_policy,
             "result_endpoint_counts": dict(
                 sorted(
                     Counter(
