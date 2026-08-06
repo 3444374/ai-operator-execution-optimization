@@ -71,6 +71,10 @@ class RaySubmissionAdapterTests(unittest.TestCase):
 
         class ReadyRay:
             @staticmethod
+            def wait(refs, num_returns=None, timeout=None):
+                return list(refs), []
+
+            @staticmethod
             def get(refs):
                 return [ref.value for ref in refs]
 
@@ -83,6 +87,74 @@ class RaySubmissionAdapterTests(unittest.TestCase):
         self.assertEqual(evidence, (None, None))
         self.assertEqual(actors[0].ready.payloads, [None])
         self.assertEqual(actors[1].ready.payloads, [None])
+
+    def test_actor_submission_state_ready_barrier_times_out_with_diagnostics(
+        self,
+    ) -> None:
+        # Layer-1 fix: a stuck actor.ready() must fail closed (RuntimeError naming
+        # the un-ready actors + cluster/available resources) instead of hanging the
+        # ramp on an unbounded ray.get.
+        actors = [RecordingActor(), RecordingActor()]
+        state = ActorSubmissionState({"endpoint-0": actors}, "complete")
+
+        class StuckRay:
+            def __init__(self) -> None:
+                self.cluster_calls = 0
+                self.available_calls = 0
+
+            def wait(self, refs, num_returns=None, timeout=None):
+                return [], list(refs)  # nothing ever ready -> barrier times out
+
+            def get(self, refs):
+                raise AssertionError(
+                    "get must not run when the ready barrier times out",
+                )
+
+            def cluster_resources(self):
+                self.cluster_calls += 1
+                return {"CPU": 8.0, "GPU": 2.0}
+
+            def available_resources(self):
+                self.available_calls += 1
+                return {"CPU": 0.25, "GPU": 0.0}
+
+        ray = StuckRay()
+        with self.assertRaises(RuntimeError) as cm:
+            state.wait_until_ready(ray, timeout_s=0.01)
+        msg = str(cm.exception)
+        self.assertIn("timed out", msg)
+        self.assertIn("2/2 actors not ready", msg)
+        self.assertIn("endpoint-0[0]", msg)
+        self.assertIn("endpoint-0[1]", msg)
+        self.assertIn("cluster_resources", msg)
+        self.assertIn("available_resources", msg)
+        self.assertEqual(ray.cluster_calls, 1)
+        self.assertEqual(ray.available_calls, 1)
+
+    def test_actor_submission_state_ready_barrier_none_timeout_is_unbounded(
+        self,
+    ) -> None:
+        # ``timeout_s=None`` preserves the legacy unbounded wait (no timeout kwarg
+        # reaches ray.wait) for callers that opt out of the fail-fast bound.
+        actors = [RecordingActor(), RecordingActor()]
+        state = ActorSubmissionState({"endpoint-0": actors}, "complete")
+
+        class ProbingRay:
+            def __init__(self) -> None:
+                self.seen_timeout = "sentinel"
+
+            def wait(self, refs, num_returns=None, timeout=None):
+                self.seen_timeout = timeout
+                return list(refs), []
+
+            def get(self, refs):
+                return [ref.value for ref in refs]
+
+        ray = ProbingRay()
+        duration_s, evidence = state.wait_until_ready(ray, timeout_s=None)
+        self.assertIsNone(ray.seen_timeout)
+        self.assertGreaterEqual(duration_s, 0.0)
+        self.assertEqual(evidence, (None, None))
 
     def test_actor_worker_pool_rotates_inside_one_endpoint(self) -> None:
         actors = [RecordingActor(), RecordingActor()]

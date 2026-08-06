@@ -75,6 +75,18 @@ class ProjectStaticConfigTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _cfg(service_prefix_caching="maybe")
 
+    def test_default_profiler_timeout_matches_lbrr_cell_budget(self) -> None:
+        # 900s = lb_rr's ``subprocess.run(..., timeout=900)`` (multicard_scale_ramp
+        # F3). The project arm gets the same cell wall budget so a hang fails fast
+        # at parity with the lb_rr arm instead of hanging the whole ramp.
+        self.assertEqual(_cfg().profiler_timeout_s, 900.0)
+
+    def test_rejects_nonpositive_profiler_timeout(self) -> None:
+        with self.assertRaises(ValueError):
+            _cfg(profiler_timeout_s=0)
+        with self.assertRaises(ValueError):
+            _cfg(profiler_timeout_s=-1)
+
 
 class BuildProfilerArgvTests(unittest.TestCase):
     def test_locks_frozen_static_k_and_request_semantics(self) -> None:
@@ -337,6 +349,56 @@ class MergeResultsTests(unittest.TestCase):
         }}
         results = ps.merge_results(evidence)
         self.assertEqual(results[0].status, "failed")
+
+
+class RunProjectStaticTimeoutTests(unittest.TestCase):
+    """Layer-2 fix: a hung profiler subprocess fails closed instead of hanging."""
+
+    def _patch_run_to_timeout(self):
+        original = ps.subprocess.run
+
+        def fake_run(cmd, **kwargs):
+            raise ps.subprocess.TimeoutExpired(
+                cmd=cmd, timeout=kwargs.get("timeout"),
+            )
+
+        ps.subprocess.run = fake_run
+        return original
+
+    def test_profiler_timeout_marks_cell_failed_not_hang(self) -> None:
+        original = self._patch_run_to_timeout()
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                run = ps.run_project_static(
+                    _cfg(profiler_timeout_s=900.0), Path(td),
+                )
+        finally:
+            ps.subprocess.run = original
+        self.assertFalse(run.formal_row_found)
+        self.assertEqual(run.exit_code, 124)  # POSIX timeout(1) convention
+        self.assertIn("timed out", run.stderr_tail)
+        self.assertIn("900", run.stderr_tail)
+        self.assertEqual(run.results, ())
+
+    def test_profiler_timeout_kwarg_actually_reaches_subprocess_run(self) -> None:
+        # Defense against a future refactor that drops the kwarg and silently
+        # re-introduces the unbounded hang.
+        captured: dict = {}
+        original = ps.subprocess.run
+
+        def fake_run(cmd, **kwargs):
+            captured["timeout"] = kwargs.get("timeout")
+            raise ps.subprocess.TimeoutExpired(
+                cmd=cmd, timeout=kwargs.get("timeout"),
+            )
+
+        ps.subprocess.run = fake_run
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                ps.run_project_static(_cfg(profiler_timeout_s=123.0), Path(td))
+        finally:
+            ps.subprocess.run = original
+        self.assertEqual(captured["timeout"], 123.0)
 
 
 if __name__ == "__main__":

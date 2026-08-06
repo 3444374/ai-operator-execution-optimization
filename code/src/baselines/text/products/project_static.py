@@ -96,6 +96,7 @@ class ProjectStaticConfig:
     total_rows: int = 0
     ray_batch_rows: int = 64
     request_timeout_s: float = 120.0
+    profiler_timeout_s: float = 900.0
     completion_temperature: float = 0.0
     completion_http_transport: str = "httpx_async"
     service_prefix_caching: str = "enabled"
@@ -131,6 +132,8 @@ class ProjectStaticConfig:
             raise ValueError("actor_workers_per_endpoint must be positive")
         if self.ray_actor_max_concurrency <= 0:
             raise ValueError("ray_actor_max_concurrency must be positive")
+        if self.profiler_timeout_s <= 0:
+            raise ValueError("profiler_timeout_s must be positive (cell wall budget)")
         slots = self.actor_workers_per_endpoint * self.ray_actor_max_concurrency
         if slots < self.max_inflight:
             raise ValueError(
@@ -408,7 +411,31 @@ def run_project_static(
         config, str(trace_path), str(evidence_path), str(source_scan_path),
         str(summary_path), str(resource_path),
     )
-    completed = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        completed = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=config.profiler_timeout_s,
+        )
+    except subprocess.TimeoutExpired as exc:
+        # Layer-2 fix: a hung profiler must fail closed (cell recorded as failed)
+        # instead of hanging the whole ramp -- parity with lb_rr's bounded
+        # ``subprocess.run(..., timeout=900)`` (``multicard_scale_ramp.py:413``).
+        # subprocess.run kills the child (SIGKILL) on timeout, so no GPU leak.
+        partial = exc.stderr if isinstance(exc.stderr, str) else ""
+        return ProjectStaticRun(
+            results=(), sunk_pairs=(), timing={},
+            source_scan_fingerprints=(), formal_row_found=False,
+            effective_k=config.effective_k,
+            actor_workers_per_endpoint=config.actor_workers_per_endpoint,
+            ray_actor_max_concurrency=config.ray_actor_max_concurrency,
+            exit_code=124,
+            stderr_tail=(
+                f"profiler subprocess timed out after {config.profiler_timeout_s}s"
+                + (("\n" + partial[-1600:]) if partial else "")
+            ),
+        )
     stderr_tail = (completed.stderr or "")[-1600:]
 
     def _failed(timing: dict, formal_ok: bool, note: str = "") -> ProjectStaticRun:

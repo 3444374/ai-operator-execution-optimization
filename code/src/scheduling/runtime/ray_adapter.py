@@ -10,6 +10,37 @@ from typing import Literal
 from ..core.models import CollectedSubmission, PayloadEnvelope, SubmissionCompletion
 
 
+# Bounds the actor-ready barrier in ``ActorSubmissionState.wait_until_ready`` so a
+# stuck actor fails fast with cluster-resource diagnostics instead of hanging the
+# whole ramp. lb_rr cells already bound their ``subprocess.run``
+# (``multicard_scale_ramp.py:413``); this removes the structural asymmetry that let
+# ``project_static`` hang a 2-endpoint ramp indefinitely (F1 unbounded ``ray.get``
+# vs F3 bounded lb_rr subprocess).
+ACTOR_READY_BARRIER_TIMEOUT_S = 90.0
+
+
+def _describe_ray_resources(ray_module) -> dict[str, object]:
+    """Best-effort cluster/available resource snapshot for ready-barrier timeouts.
+
+    Diagnostic only: never raises -- a resource-query failure must not mask the
+    timeout that prompted it.
+    """
+
+    snapshot: dict[str, object] = {}
+    for key, fn_name in (
+        ("cluster_resources", "cluster_resources"),
+        ("available_resources", "available_resources"),
+    ):
+        fn = getattr(ray_module, fn_name, None)
+        if not callable(fn):
+            continue
+        try:
+            snapshot[key] = dict(fn())
+        except Exception as exc:  # diagnostic only; never mask the timeout
+            snapshot[key] = f"<unavailable: {exc}>"
+    return snapshot
+
+
 @dataclass(frozen=True)
 class ActorWorkerAssignment:
     endpoint_id: str
@@ -261,17 +292,47 @@ class ActorSubmissionState:
         ray_module,
         *,
         clock: Callable[[], float] = time.perf_counter,
+        timeout_s: float | None = ACTOR_READY_BARRIER_TIMEOUT_S,
     ) -> tuple[float, tuple[object, ...]]:
-        """Resolve every actor's explicit ready method before measurement."""
+        """Resolve every actor's explicit ready method before measurement.
+
+        The readiness barrier is bounded by a ``ray.wait`` timeout so a stuck actor
+        fails fast with cluster-resource diagnostics instead of hanging the ramp.
+        ``timeout_s=None`` preserves the legacy unbounded wait (do not use for ramp
+        cells; a stuck actor would hang the whole driver).
+        """
 
         started_at_s = clock()
-        ready_refs = [
-            actor.ready.remote()
-            for actors in self._actor_pools.values()
-            for actor in actors
-        ]
-        evidence = tuple(ray_module.get(ready_refs))
-        if len(evidence) != len(ready_refs):
+        refs: list = []
+        labels: list[tuple[object, str, int]] = []
+        for endpoint_id, actors in self._actor_pools.items():
+            for actor_index, actor in enumerate(actors):
+                ref = actor.ready.remote()
+                refs.append(ref)
+                labels.append((ref, endpoint_id, actor_index))
+
+        if not refs:
+            return max(0.0, clock() - started_at_s), ()
+
+        wait_kwargs: dict = {"num_returns": len(refs)}
+        if timeout_s is not None:
+            wait_kwargs["timeout"] = timeout_s
+        ready, not_ready = ray_module.wait(refs, **wait_kwargs)
+        if len(ready) != len(refs):
+            stuck = [
+                f"{endpoint_id}[{actor_index}]"
+                for ref, endpoint_id, actor_index in labels
+                if ref in not_ready
+            ]
+            raise RuntimeError(
+                f"actor ready barrier timed out after {timeout_s}s: "
+                f"{len(not_ready)}/{len(refs)} actors not ready "
+                f"({', '.join(stuck) if stuck else 'unknown'}); "
+                f"{_describe_ray_resources(ray_module)}"
+            )
+
+        evidence = tuple(ray_module.get(refs))
+        if len(evidence) != len(refs):
             raise RuntimeError("actor ready barrier returned incomplete evidence")
         return max(0.0, clock() - started_at_s), evidence
 
