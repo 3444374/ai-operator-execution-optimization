@@ -1,0 +1,40 @@
+{
+  "experiment_id": "multicard_proj256_parity_1ep",
+  "records": [
+    {
+      "arm": "project_static",
+      "scale": 256,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_proj256_parity_1ep_20260807/scale_256/project_static_K32_rep1",
+      "kind": "project",
+      "status": "passed",
+      "exit_code": 0,
+      "effective_k": 32
+    },
+    {
+      "arm": "project_static",
+      "scale": 256,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_proj256_parity_1ep_20260807/scale_256/project_static_K32_rep2",
+      "kind": "project",
+      "status": "passed",
+      "exit_code": 0,
+      "effective_k": 32
+    },
+    {
+      "arm": "project_static",
+      "scale": 256,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_proj256_parity_1ep_20260807/scale_256/project_static_K32_rep3",
+      "kind": "project",
+      "status": "passed",
+      "exit_code": 0,
+      "effective_k": 32
+    }
+  ],
+  "n_passed": 3,
+  "n_failed": 0
+}

@@ -1,0 +1,10 @@
+schema_version,experiment_id,phase,repeat_index,job_id,server_version,pgvector_version,sample_index,sample_epoch_s,gpu_metrics_status,gpu_name,gpu_utilization_pct,gpu_memory_used_mib,gpu_memory_total_mib,gpu_power_w,vllm_metrics_status,vllm_num_requests_running,vllm_num_requests_waiting,vllm_kv_cache_usage_perc
+1,project_static_squad,formal,1,1886,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,0,1786036362.0239992,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,114.15,ok,0,0,0.0
+1,project_static_squad,formal,1,1886,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,1,1786036362.4597056,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,113.95,ok,0,0,0.0
+1,project_static_squad,formal,1,1886,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,2,1786036362.8594422,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,113.95,ok,0,0,0.0
+1,project_static_squad,formal,1,1886,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,3,1786036363.2421887,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,113.84,ok,0,0,0.0
+1,project_static_squad,formal,1,1886,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,4,1786036363.6432827,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,113.84,ok,0,0,0.0
+1,project_static_squad,formal,1,1886,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,5,1786036364.045165,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,113.68,ok,0,0,0.0
+1,project_static_squad,formal,1,1886,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,6,1786036364.4275103,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,0.0,46558.0,49128.0,113.68,ok,0,0,0.0
+1,project_static_squad,formal,1,1886,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,7,1786036364.8253555,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,100.0,46558.0,49128.0,173.11,ok,49,0,0.012952210808396591
+1,project_static_squad,formal,1,1886,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,8,1786036365.2328653,snapshot,NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4090,80.5,46558.0,49128.0,438.97,ok,0,0,0.0
