@@ -4742,3 +4742,22 @@ codex 第四轮只读复审确认 a22cdf6 六项核心修复大体正确、27/27
 - **`experiments/plans/experiment_report_honesty_checklist.md`**：新增 §8（同源详细可勾选投影 + 归档清单）、勾选流程加第 9 步（边界+归档）、§7.1 "待补"→"已实现（复审第四轮 query_barrier→query_jct_s）"。
 - 同步更新 Claude 记忆 `feedback-evidence-precision.md` ⑤：报指标必附代码精确公式+行号（skew 教训）。
 - 正式 sweep 仍由 supervisor pid 482476 跑（lb_rr 36 cell → scale 72 cell，reps=3）；cron `2b470dd4`（:09/:34）带上述边界+归档清单自动监视，ALL DONE 时按 §8.3 归档并出三条路径对比简报。
+
+## 2026-08-07 全网格扫掠 DESIGN 计划（含 project_static hang 根因/修复）——纯规划未执行
+
+用户要求规划 4 臂（bounded/duckdb/lb_rr/project）× 规模 × 并发全网格（含先修 project_static 2-endpoint hang），但**先不执行**，待本轮 3-path scale-ramp 收尾取有效数据。起 workflow（5 agent：hang 根因 / 网格矩阵 / 校准合同 / 成本排序 / 综合，~12 min）产出 `experiments/plans/full_grid_sweep_plan.md`（已审、已注册）。
+
+**project_static hang 根因（已亲自 Read 验证 crux 两点）**：
+- F1 `code/src/scheduling/runtime/ray_adapter.py:273` `wait_until_ready` 的 `ray.get(ready_refs)` **无 timeout**（任一 actor ready 不返回 → 无限挂）；
+- F2 `code/src/baselines/text/products/project_static.py:411` `subprocess.run(cmd, capture_output=True, text=True)` **无 timeout**（对照 lb_rr `multicard_scale_ramp.py:413` 有 `timeout=900` 能 fail-fast）；
+- F3 触发层：stale `/tmp/ray/ray_current_cluster` 指针 → project `ray.init()` 卡死（gate 臂不经 Ray 故不受影响 = "project 挂、gate 过"症状）；`_ensure_ray_head`（commit 140eefd）已修触发层但未修 F1/F2 症状层。
+- **提议修复三层**：层1 把 F1 改有界 `ray.wait(...timeout=READY_TIMEOUT_S)` 循环 + 超时输出 un-ready actor + `ray.cluster_resources()`；层2 给 F2 加 `timeout=`（与 lb_rr 对等）；层3（视 256 门）per-cell 重跑干净 Ray head。层1+层2 **无论触发为何都必须做**（结构性，非可选）。
+- **256 go/no-go 门**：scale=256/K=32/2-endpoint/reps=3，须 3/3 passed + GPU util>0 + exactly-once + 两 backend 均用 + cell wall<60s；另 1-endpoint parity cell 隔离。门通过前 project_static 整臂 BLOCKED。
+
+**网格推荐**：**十字切片**（并发@峰值 scale 2048 × 4 臂 + 规模@峰值并发 C_total=64 × 4 臂 ≈ 59 cells，~6× phase2），**非**完整 729-execution 矩形（~17–21h，交互项预期弱故 largely 冗余）。**最廉价下一步**（门过后）：现 ramp 已覆盖 81/108，仅缺 project_static K32×9×3 ≈ 27 cells (~0.32h) → 产出干净 4 臂峰值并发规模 ramp 回答核心对比。
+
+**校准合同要点**：frozen = vLLM 三 flag（strict=true）+ warmup_per_cell=true + manifests SHA + model/protocol/cap + project 8×4=32 actor 拓扑；swept = scale 或 concurrency（归因必须拆成正交两条单变量 sweep，对角 cell 不可独立归因）；可比性 = 只有 tokens/s 与 rows/s 四臂同口径（timing_granularity 不兼容：bounded/project=request，duckdb/lb_rr=query_barrier），lb_rr 分轨（gateway），project 分轨（非 baseline）。
+
+**边界（§6）**：网格能答 4 路径容量/稳定性/拐点 + feeding-saturation 门禁；**不能**答"项目方法优于 baseline"（须 §1 修复+256 门后）或 lb_rr 同柱排名或 per-row E2E 四臂横比。
+
+**下一步由用户决定执行时机**：先修 §1 层1+2 → 256 门 → 补 project K32×9×3 → 十字切片。本轮 ramp 继续（cron 监视）。

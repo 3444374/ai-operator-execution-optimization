@@ -17,6 +17,7 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | 初学者如何理解四类 baseline | `../../learning/text_native_baseline_guide.md` |
 | 真实数字与结论 | 对应 `../results/` 或 `../../motivation/results/` |
 | 写多卡/吞吐/身份/统计报告前必读的诚实性检查清单（6 类反复错误 + §7 gate 4 项 + 8 步勾选） | `experiment_report_honesty_checklist.md` |
+| 4 臂（bounded/duckdb/lb_rr/project）× 规模 × 并发全网格怎么规划（含 project_static 2-endpoint hang 根因+修复+256 门、十字切片 vs 完整矩形、成本排序、能/不能回答） | `full_grid_sweep_plan.md` |
 
 2026-07-29 的数据库 AI 算子矩阵混有预注册和逐日执行日志，现完整保存在
 `archive/database_ai_operator_baseline_matrix_20260729.md`，仅用于历史追溯，不再指导
