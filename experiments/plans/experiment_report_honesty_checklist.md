@@ -55,11 +55,25 @@
 - `experiments/plans/baseline_reference.md`（数据库 AI 算子评价指标合同）。
 - **不凭印象写身份/口径/角色/统计**——读 Literal/协议/§7.5 确认后再下笔。
 
+## 7. Gate 性补充（复审第三轮：从"人工提醒"升级为可靠 gate）
+
+下列四项不只人工对照，要在**代码/落盘层**强制（本仓库已部分实现，剩余标注）：
+
+- **7.1 计时粒度不混名**（复审 #5）：`request-level` / `query_barrier` / `group wall` 是不同边界。DuckDB-ai `timing_granularity=query_barrier`，summary 的 `latency_p50/p95/p99` 全等于整条 SQL JCT，**不是 per-request E2E**——aggregator 输出 `timing_granularity` 字段，不把 query_barrier JCT 标成 `request_e2e`。（**待补**：aggregator 加 timing_granularity 透传。）
+- **7.2 fail-closed 优先**（复审 #3/#5/#1）：缺 service counter（无 group gate.json + 无 ttft）→ `metric_unavailable`（不生成可排名数字）；缺 balance 指标（ttft_deltas 空）→ cell fail（不 passed）；缺 identity sidecar → aggregate 主角色 = null（不回退 product-native component role）。**已实现**。
+- **7.3 同源文档传播**（复审 #4）：改一处结论必须全局 grep 同步——`experiments/results/multicard_*/README.md` + ADDENDUM + `PROJECT_INDEX.md` + `PROJECT_LOG.md` + `overview/`。本次教训：只改 lb_rr 正文，INDEX/LOG/其他 README 残留旧结论（harness_sharded_diagnostic/length=0/regime）。改前 grep，改后再 grep 残留=0。
+- **7.4 证据运行身份**（复审 #6）：报告引的"可复现"必须落到**真实存在的文件**——actual_run_config.json（非 example，warmup_per_cell 实际值）+ commit hash + gateway version（nginx 1.18.0）+ 配置 sha256 + identity sidecar（system_comparison_role）。不能"未来代码已支持"当已闭环——历史 raw 无 sidecar 则 aggregate null，报告必须标"未机器闭环"。
+
 ## 写每个新报告/数据 cell 前的勾选流程
 
-1. ☐ 吞吐：vLLM counter Σ(prompt+gen) / group_service_wall_s？（lb_rr: ttft 两后端）—— 不是 total_tokens/max_jct/分片求和。
-2. ☐ 身份：ComparisonRole Literal 内的值？协议 §2.6 哪轨？scheduler_owner 全（DuckDB+nginx+vLLM/harness）？
+1. ☐ 吞吐：vLLM counter Σ(prompt+gen)/group_service_wall_s？（lb_rr: ttft 两后端）—— 非 total_tokens/max_jct/分片求和；缺 counter → metric_unavailable（不排名）。
+2. ☐ 身份：ComparisonRole Literal 内的值（含 harness_pre_split/gateway_system）？协议 §2.6 哪轨？system_comparison_role（主）+ comparison_role（component）+ scheduler_owner 全？identity sidecar 真实存在（非"未来支持"）？
 3. ☐ 结论：cache 统一才 regime？finish 空≠审计？n+TOST？根因有 service-counter 证据？
 4. ☐ 统计：sample stdev(n-1)？p 用对 reps（不跨实验）？
-5. ☐ 证据：raw `git ls-files` tracked？引用文件确认提交？
-6. ☐ 文档：读了 §7.5/§6/协议/provenance/deploy 才下笔？
+5. ☐ 证据：raw `git ls-files` tracked + actual_run_config + gateway version/sha + identity sidecar 真实存在？
+6. ☐ 计时粒度：timing_granularity 输出？query_barrier JCT ≠ request_e2e？
+7. ☐ 同源传播：改后 grep 全局残留（README + INDEX + LOG + OUTLINE）= 0？
+8. ☐ 文档：读了 §7.5/§6/协议/provenance/deploy + 本 checklist 才下笔？
+
+> **登记**：本 checklist 是 `AGENTS.md §7.5`/`§6` + `bounded_output_duckdb_comparison_protocol_20260805.md` + `provenance.py::ComparisonRole` 的可勾选投影，登记于 `PROJECT_INDEX.md` 与 `experiments/plans/README.md`；写多卡/吞吐/身份/统计报告前强制对照（人工），代码层 fail-closed 由 aggregator/driver 强制（§7.2）。
+

@@ -16,6 +16,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 10570,
               "rows_per_s": 173.71,
+              "timing_granularity": "request",
               "request_e2e_s_p50": 28.929,
               "request_e2e_s_p95": 57.504,
               "request_e2e_s_p99": 60.236,
@@ -73,7 +74,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "request"
         }
       },
       "duckdb_ai": {
@@ -90,6 +92,7 @@
               "service_tokens_source": "metric_unavailable",
               "completed_rows": 5285,
               "rows_per_s": 86.07,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 61.4,
               "request_e2e_s_p95": 61.4,
               "request_e2e_s_p99": 61.4,
@@ -137,6 +140,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 4096,
               "rows_per_s": 200.43,
+              "timing_granularity": "request",
               "request_e2e_s_p50": 9.106,
               "request_e2e_s_p95": 19.079,
               "request_e2e_s_p99": 19.991,
@@ -194,7 +198,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "request"
         }
       },
       "duckdb_ai": {
@@ -211,6 +216,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 4096,
               "rows_per_s": 192.5,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 21.277,
               "request_e2e_s_p95": 21.277,
               "request_e2e_s_p99": 21.277,
@@ -268,7 +274,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "query_barrier"
         }
       }
     }
@@ -290,6 +297,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 8192,
               "rows_per_s": 177.74,
+              "timing_granularity": "request",
               "request_e2e_s_p50": 21.08,
               "request_e2e_s_p95": 43.693,
               "request_e2e_s_p99": 45.607,
@@ -347,7 +355,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "request"
         }
       },
       "duckdb_ai": {
@@ -364,6 +373,7 @@
               "service_tokens_source": "metric_unavailable",
               "completed_rows": 4096,
               "rows_per_s": 87.76,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 46.673,
               "request_e2e_s_p95": 46.673,
               "request_e2e_s_p99": 46.673,

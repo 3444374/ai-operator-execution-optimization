@@ -16,6 +16,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 242.4,
+              "timing_granularity": "request",
               "request_e2e_s_p50": 4.027,
               "request_e2e_s_p95": 7.95,
               "request_e2e_s_p99": 8.269,
@@ -73,7 +74,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "request"
         },
         "c1": {
           "status": "passed",
@@ -88,6 +90,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 20.21,
+              "timing_granularity": "request",
               "request_e2e_s_p50": 48.419,
               "request_e2e_s_p95": 96.719,
               "request_e2e_s_p99": 100.359,
@@ -145,7 +148,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "request"
         },
         "c2": {
           "status": "passed",
@@ -160,6 +164,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 36.12,
+              "timing_granularity": "request",
               "request_e2e_s_p50": 27.161,
               "request_e2e_s_p95": 54.127,
               "request_e2e_s_p99": 56.177,
@@ -217,7 +222,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "request"
         },
         "c32": {
           "status": "passed",
@@ -232,6 +238,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 413.04,
+              "timing_granularity": "request",
               "request_e2e_s_p50": 2.397,
               "request_e2e_s_p95": 4.556,
               "request_e2e_s_p99": 4.746,
@@ -289,7 +296,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "request"
         },
         "c4": {
           "status": "passed",
@@ -304,6 +312,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 70.13,
+              "timing_granularity": "request",
               "request_e2e_s_p50": 14.038,
               "request_e2e_s_p95": 27.822,
               "request_e2e_s_p99": 28.879,
@@ -361,7 +370,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "request"
         },
         "c64": {
           "status": "failed",
@@ -376,6 +386,7 @@
               "service_tokens_source": "metric_unavailable",
               "completed_rows": 1024,
               "rows_per_s": 88.88,
+              "timing_granularity": "request",
               "request_e2e_s_p50": 5.75,
               "request_e2e_s_p95": 11.156,
               "request_e2e_s_p99": 11.324,
@@ -416,6 +427,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 134.27,
+              "timing_granularity": "request",
               "request_e2e_s_p50": 7.361,
               "request_e2e_s_p95": 14.491,
               "request_e2e_s_p99": 15.048,
@@ -473,7 +485,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "request"
         }
       },
       "duckdb_ai": {
@@ -490,6 +503,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 373.06,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 5.49,
               "request_e2e_s_p95": 5.49,
               "request_e2e_s_p99": 5.49,
@@ -547,7 +561,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "query_barrier"
         },
         "c1": {
           "status": "passed",
@@ -562,6 +577,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 368.0,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 5.565,
               "request_e2e_s_p95": 5.565,
               "request_e2e_s_p99": 5.565,
@@ -619,7 +635,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "query_barrier"
         },
         "c2": {
           "status": "passed",
@@ -634,6 +651,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 373.79,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 5.463,
               "request_e2e_s_p95": 5.463,
               "request_e2e_s_p99": 5.463,
@@ -691,7 +709,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "query_barrier"
         },
         "c32": {
           "status": "passed",
@@ -706,6 +725,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 361.32,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 5.48,
               "request_e2e_s_p95": 5.48,
               "request_e2e_s_p99": 5.48,
@@ -763,7 +783,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "query_barrier"
         },
         "c4": {
           "status": "passed",
@@ -778,6 +799,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 364.07,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 5.523,
               "request_e2e_s_p95": 5.523,
               "request_e2e_s_p99": 5.523,
@@ -835,7 +857,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "query_barrier"
         },
         "c64": {
           "status": "passed",
@@ -850,6 +873,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 372.51,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 5.498,
               "request_e2e_s_p95": 5.498,
               "request_e2e_s_p99": 5.498,
@@ -907,7 +931,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "query_barrier"
         },
         "c8": {
           "status": "passed",
@@ -922,6 +947,7 @@
               "service_tokens_source": "gate_group",
               "completed_rows": 2048,
               "rows_per_s": 374.13,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 5.473,
               "request_e2e_s_p95": 5.473,
               "request_e2e_s_p99": 5.473,
@@ -979,7 +1005,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "gate_group"
+          "service_tokens_source": "gate_group",
+          "timing_granularity": "query_barrier"
         }
       },
       "project_static": {
@@ -1052,7 +1079,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": null
+          "service_tokens_source": null,
+          "timing_granularity": null
         },
         "c1": {
           "status": "passed",
@@ -1123,7 +1151,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": null
+          "service_tokens_source": null,
+          "timing_granularity": null
         },
         "c2": {
           "status": "passed",
@@ -1194,7 +1223,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": null
+          "service_tokens_source": null,
+          "timing_granularity": null
         },
         "c32": {
           "status": "passed",
@@ -1265,7 +1295,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": null
+          "service_tokens_source": null,
+          "timing_granularity": null
         },
         "c4": {
           "status": "passed",
@@ -1336,7 +1367,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": null
+          "service_tokens_source": null,
+          "timing_granularity": null
         },
         "c8": {
           "status": "passed",
@@ -1407,7 +1439,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": null
+          "service_tokens_source": null,
+          "timing_granularity": null
         }
       }
     }

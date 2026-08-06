@@ -208,6 +208,9 @@ def _gate_cell_metrics(cell: Path) -> dict:
     completed = _completed_rows(shard_dirs, gate_dir)
     rows_per_s = completed / service_wall if service_wall > 0 else 0.0
     latency = {q: max(_f(s.get(f"latency_{q}_s")) for s in summaries) for q in ("p50", "p95", "p99")}
+    # 复审 #5: duckdb_ai timing_granularity=query_barrier -> latency_*_s is the whole-SQL JCT,
+    # NOT per-request E2E; surface the granularity so callers do not misread it as request E2E.
+    timing_granularity = summaries[0].get("timing_granularity") if summaries else None
     # ttft/prefix_hit reuse ttft_eps read above (vLLM /metrics per-backend deltas)
     ttft = {"p50": None, "p95": None, "p99": None}
     prefix_hit = None
@@ -229,7 +232,8 @@ def _gate_cell_metrics(cell: Path) -> dict:
         "service_tokens_source": token_source,
         "completed_rows": completed,
         "rows_per_s": round(rows_per_s, 2),
-        "request_e2e_s_p50": round(latency["p50"], 3),
+        "timing_granularity": timing_granularity,
+        "request_e2e_s_p50": round(latency["p50"], 3),  # =JCT (not per-req E2E) when timing_granularity=query_barrier
         "request_e2e_s_p95": round(latency["p95"], 3),
         "request_e2e_s_p99": round(latency["p99"], 3),
         "ttft_s_p50": round(ttft["p50"], 4) if ttft["p50"] else None,
@@ -338,6 +342,7 @@ def _aggregate_reps(reps: list[dict]) -> dict:
         agg["formal_baseline_eligible"] = passed[0].get("formal_baseline_eligible")
         agg["scheduler_owner"] = passed[0].get("scheduler_owner")
         agg["service_tokens_source"] = passed[0].get("service_tokens_source")
+        agg["timing_granularity"] = passed[0].get("timing_granularity")
         if "scheduling_overhead_pct" in passed[0]:
             agg["scheduling_overhead_pct_mean"] = passed[0].get("scheduling_overhead_pct")
     if any(r.get("status") != "passed" for r in reps):

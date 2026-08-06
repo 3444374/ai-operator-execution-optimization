@@ -487,29 +487,55 @@ def _verify_vllm_config(ramp: RampConfig) -> None:
     pg = subprocess.run(["pgrep", "-f", "vllm.entrypoints"], capture_output=True, text=True)
     pids = [p for p in pg.stdout.split() if p]
     if not pids:
-        print("[ramp][preflight] WARN: no vllm.entrypoints process (pgrep); skipping config verify", flush=True)
+        msg = "[ramp][preflight] no vllm.entrypoints process (pgrep)"
+        if ramp.vllm_config_strict:
+            raise RuntimeError(f"{msg} -- strict mode: cannot verify effective config")
+        print(f"{msg} WARN; skipping config verify", flush=True)
         return
-    cmdlines = []
+    # map each endpoint port -> its vLLM process cmdline (per-endpoint verify, 复审 #7:
+    # previously a flag on ANY process passed, missing a per-endpoint mismatch)
+    cmdlines = {}
     for pid in pids:
         try:
-            cmdlines.append(Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace"))
+            cmdlines[pid] = Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace")
         except OSError:
             pass
+    def _cmdline_for_port(port):
+        for c in cmdlines.values():
+            if f"--port {port}" in c or f"--port={port}" in c:
+                return c
+        return None
     declared = {
         "--max-num-seqs": str(ramp.service_max_num_seqs),
         "--max-num-batched-tokens": str(ramp.service_max_num_batched_tokens),
     }
-    for flag, val in declared.items():
-        present = any(f"{flag} {val}" in c or f"{flag}={val}" in c for c in cmdlines)
-        if present:
-            print(f"[ramp][preflight] vLLM cmdline carries {flag} {val} (declared == effective)", flush=True)
-        elif ramp.vllm_config_strict:
-            raise RuntimeError(
-                f"vLLM cmdline missing {flag} {val} (vllm_config_strict=true; declared != effective). "
-                f"Either start vLLM with the flag or set vllm_config_strict=false for screening.")
+    for url in ramp.endpoint_urls:
+        port = url.rsplit(":", 1)[-1].split("/")[0]
+        c = _cmdline_for_port(port)
+        if c is None:
+            msg = f"port {port} ({url}): no matching vLLM process cmdline"
+            if ramp.vllm_config_strict:
+                raise RuntimeError(f"[ramp][preflight] {msg} (strict)")
+            print(f"[ramp][preflight] WARN: {msg}", flush=True)
+            continue
+        for flag, val in declared.items():
+            present = f"{flag} {val}" in c or f"{flag}={val}" in c
+            if present:
+                print(f"[ramp][preflight] port {port} cmdline carries {flag} {val} (declared == effective)", flush=True)
+            elif ramp.vllm_config_strict:
+                raise RuntimeError(
+                    f"port {port} cmdline missing {flag} {val} (vllm_config_strict=true; declared != effective). "
+                    f"Start vLLM with the flag or set vllm_config_strict=false for screening.")
+            else:
+                print(f"[ramp][preflight] WARN: port {port} missing {flag} {val}; vLLM DEFAULT (effective != declared)", flush=True)
+        # prefix-cache effective (复审 #7): cmdline --enable-prefix-caching absent -> vLLM default;
+        # effective ON/OFF cannot be confirmed from cmdline alone (check EngineCore log for
+        # enable_prefix_caching=True); this line surfaces that the cmdline is silent on it.
+        if "--enable-prefix-caching" in c:
+            print(f"[ramp][preflight] port {port} cmdline has --enable-prefix-caching (effective ON)", flush=True)
         else:
-            print(f"[ramp][preflight] WARN: {flag} {val} declared in ramp config but NOT on vLLM cmdline; "
-                  f"vLLM uses its DEFAULT (effective != declared). Report must say 'declared', not 'effective'.", flush=True)
+            print(f"[ramp][preflight] port {port}: --enable-prefix-caching NOT on cmdline -> vLLM DEFAULT "
+                  f"(effective unverified from cmdline; check EngineCore log)", flush=True)
 
 
 def _ensure_ray_head() -> None:

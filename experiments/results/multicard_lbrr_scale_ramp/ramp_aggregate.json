@@ -16,6 +16,7 @@
               "service_tokens_source": "ttft_vllm_counters",
               "completed_rows": 1024,
               "rows_per_s": 303.96,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 3.369,
               "request_e2e_s_p95": 3.369,
               "request_e2e_s_p99": 3.369,
@@ -73,7 +74,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "ttft_vllm_counters"
+          "service_tokens_source": "ttft_vllm_counters",
+          "timing_granularity": "query_barrier"
         }
       }
     }
@@ -95,6 +97,7 @@
               "service_tokens_source": "ttft_vllm_counters",
               "completed_rows": 10570,
               "rows_per_s": 157.85,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 66.96,
               "request_e2e_s_p95": 66.96,
               "request_e2e_s_p99": 66.96,
@@ -152,7 +155,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "ttft_vllm_counters"
+          "service_tokens_source": "ttft_vllm_counters",
+          "timing_granularity": "query_barrier"
         }
       }
     }
@@ -174,6 +178,7 @@
               "service_tokens_source": "ttft_vllm_counters",
               "completed_rows": 128,
               "rows_per_s": 150.28,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 0.852,
               "request_e2e_s_p95": 0.852,
               "request_e2e_s_p99": 0.852,
@@ -231,7 +236,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "ttft_vllm_counters"
+          "service_tokens_source": "ttft_vllm_counters",
+          "timing_granularity": "query_barrier"
         }
       }
     }
@@ -253,6 +259,7 @@
               "service_tokens_source": "ttft_vllm_counters",
               "completed_rows": 2048,
               "rows_per_s": 344.7,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 5.941,
               "request_e2e_s_p95": 5.941,
               "request_e2e_s_p99": 5.941,
@@ -310,7 +317,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "ttft_vllm_counters"
+          "service_tokens_source": "ttft_vllm_counters",
+          "timing_granularity": "query_barrier"
         }
       }
     }
@@ -332,6 +340,7 @@
               "service_tokens_source": "ttft_vllm_counters",
               "completed_rows": 256,
               "rows_per_s": 225.93,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 1.133,
               "request_e2e_s_p95": 1.133,
               "request_e2e_s_p99": 1.133,
@@ -389,7 +398,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "ttft_vllm_counters"
+          "service_tokens_source": "ttft_vllm_counters",
+          "timing_granularity": "query_barrier"
         }
       }
     }
@@ -411,6 +421,7 @@
               "service_tokens_source": "ttft_vllm_counters",
               "completed_rows": 4096,
               "rows_per_s": 228.93,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 17.892,
               "request_e2e_s_p95": 17.892,
               "request_e2e_s_p99": 17.892,
@@ -468,7 +479,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "ttft_vllm_counters"
+          "service_tokens_source": "ttft_vllm_counters",
+          "timing_granularity": "query_barrier"
         }
       }
     }
@@ -490,6 +502,7 @@
               "service_tokens_source": "ttft_vllm_counters",
               "completed_rows": 512,
               "rows_per_s": 282.47,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 1.813,
               "request_e2e_s_p95": 1.813,
               "request_e2e_s_p99": 1.813,
@@ -547,7 +560,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "ttft_vllm_counters"
+          "service_tokens_source": "ttft_vllm_counters",
+          "timing_granularity": "query_barrier"
         }
       }
     }
@@ -569,6 +583,7 @@
               "service_tokens_source": "ttft_vllm_counters",
               "completed_rows": 64,
               "rows_per_s": 81.19,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 0.788,
               "request_e2e_s_p95": 0.788,
               "request_e2e_s_p99": 0.788,
@@ -626,7 +641,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "ttft_vllm_counters"
+          "service_tokens_source": "ttft_vllm_counters",
+          "timing_granularity": "query_barrier"
         }
       }
     }
@@ -648,6 +664,7 @@
               "service_tokens_source": "ttft_vllm_counters",
               "completed_rows": 8192,
               "rows_per_s": 165.41,
+              "timing_granularity": "query_barrier",
               "request_e2e_s_p50": 49.524,
               "request_e2e_s_p95": 49.524,
               "request_e2e_s_p99": 49.524,
@@ -705,7 +722,8 @@
           "system_comparison_role": null,
           "formal_baseline_eligible": null,
           "scheduler_owner": null,
-          "service_tokens_source": "ttft_vllm_counters"
+          "service_tokens_source": "ttft_vllm_counters",
+          "timing_granularity": "query_barrier"
         }
       }
     }

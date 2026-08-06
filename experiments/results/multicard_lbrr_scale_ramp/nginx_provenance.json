@@ -1,0 +1,13 @@
+{
+  "_note": "Gateway provenance for the lb_rr ramp (协议 §2.6 gateway 完整系统轨 requires archiving gateway version, algorithm, overhead, scheduler owner). 复审 #6.",
+  "gateway": "nginx",
+  "nginx_version": "1.18.0 (Ubuntu)",
+  "conf_path_on_run_server": "/etc/nginx/conf.d/vllm_lb.conf",
+  "conf_sha256": "ed09a37634eb8a23e7117a88bfdf7ea8c0dc9dab64230d0d4832b0c80bae21c7",
+  "snapshot_file": "nginx_vllm_lb.conf.snapshot",
+  "algorithm": "round_robin (upstream vllm_pool {127.0.0.1:8000, 127.0.0.1:8001}; proxy_next_upstream off; keepalive 64)",
+  "scheduler_owner_contribution": "nginx_round_robin",
+  "system_comparison_role": "gateway_system_diagnostic",
+  "component_comparison_role": "database_product_native_baseline",
+  "caveat": "nginx proxy overhead not measured separately in this run (no per-hop timing); system-level tok/s includes it. protocol §2.6: gateway track is system-level only, not DuckDB-native baseline, not formal-eligible."
+}
