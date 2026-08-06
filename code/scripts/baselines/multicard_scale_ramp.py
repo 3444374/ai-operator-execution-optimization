@@ -295,8 +295,35 @@ def _run_project_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int
     return record
 
 
+def _ensure_ray_head() -> None:
+    """Start a Ray head if project_static is an arm and none is running.
+
+    project_static uses --executor ray_actor, so ray.init() must connect to a
+    live head. The runtime env sets RAY_ADDRESS=127.0.0.1:6380; if no head runs
+    there, ray.init() hangs ~forever retrying the dead GCS (deploy/autodl/README.md
+    §10.5 stale-cluster failure). The gate arms (bounded_http/duckdb_ai) don't use
+    Ray, so they're unaffected -- this is why an earlier run saw project hang while
+    bounded/duckdb passed. Idempotent: ``ray start --head`` reconnects if a head
+    already exists.
+    """
+    import shutil
+    import subprocess
+    ray_cli = shutil.which("ray") or "/root/miniconda3/bin/ray"
+    try:
+        subprocess.run(
+            [ray_cli, "start", "--head", "--node-ip-address=127.0.0.1",
+             "--port=6380", "--disable-usage-stats"],
+            capture_output=True, text=True, timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"[ramp] WARNING: could not ensure Ray head: {exc}", flush=True)
+
+
 def run_ramp(ramp: RampConfig) -> dict:
     ramp.output_root.mkdir(parents=True, exist_ok=True)
+    if any(arm.arm == "project_static" for arm in ramp.arms):
+        print("[ramp] project_static arm present -- ensuring Ray head", flush=True)
+        _ensure_ray_head()
     records: list[dict] = []
     for scale in ramp.scales:
         for arm in ramp.arms:
