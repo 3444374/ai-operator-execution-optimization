@@ -87,7 +87,7 @@ def _gate_cell_metrics(cell: Path) -> dict:
     summaries = [_read_json(s / "summary.json") for s in shard_dirs if (s / "summary.json").is_file()]
     if not summaries:
         return {"status": "missing_shards"}
-    total_tokens = sum(s.get("service_total_tokens_delta", 0) for s in summaries)
+    total_tokens = sum(s.get("service_total_tokens_delta", 0) or s.get("total_tokens", 0) for s in summaries)
     max_jct = max(_f(s.get("jct_s")) for s in summaries)
     unified_tps = total_tokens / max_jct if max_jct > 0 else 0.0
     # Authoritative status: run_status.json (gate arms) / run_error.json (any).

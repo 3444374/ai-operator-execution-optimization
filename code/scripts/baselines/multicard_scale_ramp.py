@@ -314,7 +314,8 @@ def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) 
         raise FileExistsError(f"cell output already exists: {cell_output}")
     cell_output.mkdir(parents=True)
     shard_dir = cell_output / "gate_output" / f"{arm.arm}_c{arm.concurrency}" / "shard_0"
-    shard_dir.mkdir(parents=True, exist_ok=True)
+    # NOTE: do NOT pre-create shard_dir -- run_official_baseline.py run-shard refuses
+    # to write to an existing output-dir (it creates it itself).
     script = Path(__file__).resolve().parent / "run_official_baseline.py"
     cmd = [
         ramp.driver_python, str(script), "run-shard",
