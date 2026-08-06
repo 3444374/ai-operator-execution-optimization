@@ -32,6 +32,9 @@ stdout
 *.env.local
 !*.env.example
 
+# Machine-local SSH/remote helpers may embed external server hosts (AGENTS.md §10) -- never commit.
+rd.py
+
 # Local model checkpoints and downloaded weights.
 models/
 
