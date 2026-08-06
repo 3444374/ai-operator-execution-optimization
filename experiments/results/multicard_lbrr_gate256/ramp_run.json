@@ -1,0 +1,24 @@
+{
+  "experiment_id": "multicard_lbrr_gate256",
+  "records": [
+    {
+      "arm": "lb_rr",
+      "scale": 256,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_gate256/scale_256/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 38.6,
+        "gpu0_power_mean": 42.974000000000004,
+        "gpu1_util_mean": 38.4,
+        "gpu1_power_mean": 42.726,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_gate256/scale_256/lb_rr_c64_rep1/ttft_metrics.json"
+    }
+  ],
+  "n_passed": 1,
+  "n_failed": 0
+}

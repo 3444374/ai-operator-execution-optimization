@@ -1,0 +1,6 @@
+{
+  "blocked_cells": [],
+  "completed_cells": [],
+  "error": "RuntimeError: cell bounded_http_c64 shard exits: (2, 0)",
+  "status": "failed"
+}

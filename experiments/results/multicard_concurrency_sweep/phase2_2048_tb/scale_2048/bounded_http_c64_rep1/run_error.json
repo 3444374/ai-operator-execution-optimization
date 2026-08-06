@@ -1,0 +1,11 @@
+{
+  "arm": "bounded_http",
+  "scale": 2048,
+  "concurrency": 64,
+  "rep": 1,
+  "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_concurrency_sweep/phase2_2048_tb/scale_2048/bounded_http_c64_rep1",
+  "kind": "gate",
+  "status": "failed",
+  "error": "RuntimeError: cell bounded_http_c64 shard exits: (2, 0)",
+  "traceback": "Traceback (most recent call last):\n  File \"/root/autodl-tmp/ai-operator/code/scripts/baselines/multicard_scale_ramp.py\", line 241, in _run_gate_cell\n    run_core_gate(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1105, in run_core_gate\n    _run_core_gate_cell(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1184, in _run_core_gate_cell\n    raise RuntimeError(f\"cell {cell.cell_id} shard exits: {return_codes}\")\nRuntimeError: cell bounded_http_c64 shard exits: (2, 0)\n"
+}

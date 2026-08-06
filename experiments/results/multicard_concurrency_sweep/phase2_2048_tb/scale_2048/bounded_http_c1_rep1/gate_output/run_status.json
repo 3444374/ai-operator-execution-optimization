@@ -1,0 +1,8 @@
+{
+  "blocked_cells": [],
+  "completed_cells": [
+    "bounded_http_c1"
+  ],
+  "scope": "text_comparison_validity_gate",
+  "status": "passed"
+}

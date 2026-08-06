@@ -1,0 +1,160 @@
+{
+  "experiment_id": "multicard_lbrr_scale_ramp",
+  "records": [
+    {
+      "arm": "lb_rr",
+      "scale": 64,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_64/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 0.0,
+        "gpu0_power_mean": 37.8475,
+        "gpu1_util_mean": 12.5,
+        "gpu1_power_mean": 37.96,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_64/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 128,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_128/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 28.5,
+        "gpu0_power_mean": 118.98,
+        "gpu1_util_mean": 25.0,
+        "gpu1_power_mean": 118.6,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_128/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 256,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_256/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 26.6,
+        "gpu0_power_mean": 171.482,
+        "gpu1_util_mean": 29.8,
+        "gpu1_power_mean": 156.742,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_256/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 512,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_512/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 31.571428571428573,
+        "gpu0_power_mean": 211.0557142857143,
+        "gpu1_util_mean": 38.285714285714285,
+        "gpu1_power_mean": 203.50571428571428,
+        "n_samples": 7.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_512/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 1024,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_1024/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 54.54545454545455,
+        "gpu0_power_mean": 274.73545454545456,
+        "gpu1_util_mean": 57.54545454545455,
+        "gpu1_power_mean": 269.90181818181816,
+        "n_samples": 11.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_1024/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 2048,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_2048/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 70.58823529411765,
+        "gpu0_power_mean": 285.7182352941176,
+        "gpu1_util_mean": 70.58823529411765,
+        "gpu1_power_mean": 274.5247058823529,
+        "n_samples": 17.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_2048/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 4096,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_4096/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 84.8125,
+        "gpu0_power_mean": 374.20125,
+        "gpu1_util_mean": 83.625,
+        "gpu1_power_mean": 368.7114583333333,
+        "n_samples": 48.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_4096/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 8192,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_8192/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 91.27131782945736,
+        "gpu0_power_mean": 417.80612403100776,
+        "gpu1_util_mean": 90.86821705426357,
+        "gpu1_power_mean": 396.8581395348837,
+        "n_samples": 129.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_8192/lb_rr_c64_rep1/ttft_metrics.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 10570,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_10570/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 90.14204545454545,
+        "gpu0_power_mean": 412.88022727272727,
+        "gpu1_util_mean": 88.8465909090909,
+        "gpu1_power_mean": 397.11551136363636,
+        "n_samples": 176.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp/scale_10570/lb_rr_c64_rep1/ttft_metrics.json"
+    }
+  ],
+  "n_passed": 9,
+  "n_failed": 0
+}
