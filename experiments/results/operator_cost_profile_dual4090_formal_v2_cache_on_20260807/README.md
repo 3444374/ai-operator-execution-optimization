@@ -1,7 +1,7 @@
 # 双 4090 算子代价估计 v2 cache-on formal profile（320 runs，2026-08-07）
 
-> **状态（plan §7）：本目录是 v2 cache-on 重跑的**有效数据 + 归档**。2026-08-04 首次 run 因并发共用 GPU + 空 `--ray-address`（每子 run local Ray）而**无效**（见 `../operator_cost_profile_dual4090_formal_20260804/`）；本轮 v2 修复后重跑，**320/320 有效、0 incident、gate 10（0 local-Ray）通过**——正是对首次无效的闭环。**
-> **本归档只含数据采集 + §4 门禁 + CE 信号 headline；CE0–CE6 估计器 context-LOO 评估（regret/ranking，plan §5）是紧接的下一步**（估计器 + LOO harness 已实现：`code/scripts/analysis/compare_cost_estimators_contextloo.py` 等，需把 `load_rows` 数据源指向本 runs.csv）。
+> **状态（plan §7）：本目录是 v2 cache-on 重跑的**有效数据 + 归档 + CE0–CE6 context-LOO 评估**。2026-08-04 首次 run 因并发共用 GPU + 空 `--ray-address`（每子 run local Ray）而**无效**（见 `../operator_cost_profile_dual4090_formal_20260804/`）；本轮 v2 修复后重跑，**320/320 有效、0 incident、gate 10（0 local-Ray）通过**——正是对首次无效的闭环。**
+> **CE LOO 主结果（§5.3）**：CE3_ridge 与 CE5_hybrid 决策 regret **3.70%**（过 5% 门槛），pick_rate 0.55，selected rank 1.7；但**无估计器过完整 promotion contract**（行级 pairwise <0.75）。CE0/CE2 退化（全 tie，regret 49.7%）；CE1 解析 12.1%；CE4 LightGBM skipped（依赖未装）。
 
 ## 1. 实验目的（plan §1）
 
@@ -70,25 +70,42 @@
 - 20/20 context 全有 4 candidate；**0 退化**（spread 全 >5%，min 12% / median 44% / max 86.5%）→ 每个 context candidate 选择都 matter，选错最多付 86% e2e。
 - **oracle 分布**：98304 → 11/20，65536 → 5/20，49152 → 3/20，32768 → 1/20。最优 active-work **context-dependent**（大 workload/rows/cap 倾向大 active-work，但 9/20 context 反例）——这正是估计器须捕获的非平凡信号。
 
+### 5.3 CE0–CE6 context-LOO 评估（plan §5；leave-one-decision-context-out，240 formal 行 / 20 context / 每 context 4 candidate）
+
+`ce_context_loo_20260807.json`（folds=20）。决策层 pooled 指标（oracle_runtime=199.53s 跨 20 context 求和）：
+
+| 估计器 | decision_regret_% | pick_rate | selected_rank_mean | regret≤5% 门槛 | row pairwise≥0.75 门槛 | promotion contract |
+|---|---|---|---|---|---|---|
+| CE0_mean | 49.71 | 0.05 | 3.45 | ✗ | ✗ | **FAIL** |
+| CE1_analytical | 12.11 | 0.35 | 2.00 | ✗ | ✗ | **FAIL** |
+| CE2_lookup | 49.71 | 0.05 | 3.45 | ✗ | ✗ | **FAIL**（全 tie 退化，20 tie-context） |
+| **CE3_ridge** | **3.70** | 0.55 | 1.70 | **✓** | ✗ | **FAIL**（regret 过、pairwise 不过） |
+| CE4_lightgbm | — | — | — | — | — | skipped（依赖未装） |
+| **CE5_hybrid**（解析+残差） | **3.70** | 0.55 | 1.70 | **✓** | ✗ | **FAIL**（regret 过、pairwise 不过） |
+
+CE6 oracle 仅作上界（不计）。promotion contract 见 plan §6（pairwise ≥0.75 / median regret ≤5% / macro ≤5% / max ≤15%）；本 harness 用行级 pairwise（`metric_contract_note`: candidate-aggregated pairwise 另报，不替代）。单 fold 层：CE5 典型 fold 的 candidate_ranking spearman≈0.80、pairwise≈0.83、selection regret 0（见该 context），跨 20 fold 汇总 regret 3.70%。
+
 ### 5.2 全指标（per-run 296 列）
 
 见 `runs.csv`（320 行 × 296 列：吞吐/E2E 分位/TTFT-ITL/prefix-cache hit/vLLM running·waiting·KV/GPU util·mem·power·energy·MFU/pipeline 阶段计时/packing·service-quantum cost/actor 调度/SLO goodput/cost per M tok）。CE 特征向量（23 维）在其中。
 
 ## 6. 结果解释（事实 / 推断 / 不能声称）
 
-- **事实**：320-run 数据有效（§3 全门禁）；4 candidate 在每 context 产生 12–86% e2e 差异；最优 active-work 随 context 变（非固定）。
-- **推断**：数据含**强排序信号**（0 退化 context），CE0–CE6 估计器有可学习的目标；大 workload（lmcache_agent、长 prompt、大 cap）倾向大 active-work（98304），小/短 workload 最优点分散——机制上大 active-work 提供更多在飞行 slot，在需要饱和的 context 受益，在短 run 受限于固定开销。
-- **不能声称**：CE5（或任一估计器）的 regret/ranking/decision 指标——**尚未跑 context-LOO 评估**（plan §5），是下一步；"某估计器优于 baseline"（须 §6 同时列 CE1/2/4 + Pareto 口径，未跑）；short-fast cell 的高 CV 是**短 run 固有抖动非离群**，不能当数据质量失败丢弃，CE 用 3-rep mean。
+- **事实**：320-run 数据有效（§3 全门禁）；4 candidate 在每 context 产生 12–86% e2e 差异；最优 active-work 随 context 变（非固定）；CE LOO（§5.3）CE3_ridge / CE5_hybrid 决策 regret 3.70%（过 5%），CE0/CE2 退化 49.7%，CE1 12.1%。
+- **推断**：数据含**强排序信号**（0 退化 context），可学习估计器（Ridge / 解析+残差）能把 active-work 选到近 oracle（regret 3.7% < 5%）；CE3 ≈ CE5 表明本数据上**残差校正未在 Ridge 之上再增益**（解析模型的偏差已被 Ridge 的线性项吸收）。大 workload（lmcache_agent、长 prompt、大 cap）倾向大 active-work（98304），小/短 workload 最优点分散——机制上大 active-work 提供更多在飞行 slot，在需要饱和的 context 受益。
+- **不能声称**：任一估计器"过完整 promotion contract 可接管计划选择"——**全部 FAIL**（行级 pairwise <0.75，plan §6）；CE4 LightGBM 未跑（skipped，依赖未装），CE3/CE5 vs CE4 的对比待补；CE5"优于 baseline"不成立（与 CE3 持平，须 §6 同时列 CE1/CE2/CE3 + Pareto 口径，本结果是 CE3≈CE5 > CE1 > CE0/CE2，非 Pareto 全胜）。short-fast cell 高 CV 是**短 run 固有抖动非离群**，不能当数据质量失败丢弃，CE 用 3-rep mean。
 
 ## 7. 对课题含义
 
-算子代价估计（共同使能组件）有了第一份**有效**双 4090 数据：4 active-work 候选在同 context 内有强 e2e 差异（最高 86%），且最优点 context-dependent → 估计器有实际价值空间（选错代价大）。这支持继续 CE0–CE6 LOO 评估；若某可部署估计器过 plan §6 门槛（pairwise ≥0.75 / median regret ≤5% / macro ≤5% / max ≤15%），才进入 plan §8 TPC-H-derived 计划级 capability。
+算子代价估计（共同使能组件）有了第一份**有效**双 4090 数据 + 首次 LOO 评估：4 active-work 候选在同 context 内有强 e2e 差异（最高 86%），最优点 context-dependent；可部署估计器（Ridge、解析+残差）能把决策 regret 压到 3.7%（近 oracle），**但行级 pairwise 未达 0.75**，按 plan §6 不接管计划选择。即：候选"选对最优"已接近 oracle，但"对所有候选对稳定排序"还差。下一步若补 CE4（LightGBM）+ 改进 pairwise，或放宽到 candidate-aggregated pairwise，才可能过 contract → 进入 plan §8 TPC-H-derived 计划级 capability。
 
 ## 8. 下一步
 
-1. **CE0–CE6 context-LOO 评估**（plan §5）：把 `compare_cost_estimators_contextloo.py` 的 `load_rows` 数据源指向本 `runs.csv`（当前指向历史 `operator_cost_estimation_20260726/e2e_cost_model.json`），产 formal-only LOO JSON + 三层指标（MAE/RMSE/Q-error、within-context Spearman/pairwise/Top-K、pick-rate/regret）。评估候选门槛 plan §6。
-2. short-fast cell 高 CV：CE 用 3-rep mean（稳健）；若 LOO 显示这些 context 主导误差，考虑补跑或降权。
-3. 数据已就绪供估计器训练/评估；raw（含 output_text 的 requests.csv 等 66MB）留服务器，SHA 见 provenance。
+1. **CE4 LightGBM 补跑**：装 lightgbm 到 text-baselines venv，重跑 context-LOO（数据已就绪，harness 已验证可加载本 runs.csv）。LightGBM 可能改善 pairwise（非线性）。
+2. **pairwise 改进诊断**：行级 pairwise 为何 <0.75（是否 short-fast cell 高 CV 主导？候选间 e2e 差异小时 pairwise 信号弱？）；评估 candidate-aggregated pairwise（plan §6 允许另报）是否更稳。
+3. **harness 路径硬编码修复**：`compare_cost_estimators_contextloo.py` 的 `load_rows`/`_source_evidence` 假设 REF_JSON + source_csv 在 REPO_ROOT 下（本评估用 wrapper 临时 patch + 把 runs.csv 拷进 repo 树）；改为 `--data-csv` 参数化，避免每 run 手动 patch。
+4. short-fast cell 高 CV：CE 用 3-rep mean（稳健）；若 LOO 误差集中这些 context，考虑补跑或降权。
+5. plan §8 TPC-H-derived 计划级 capability 仍 `planned-conditional`：须先有估计器过 §6 完整 contract。
 
 ## provenance
 
