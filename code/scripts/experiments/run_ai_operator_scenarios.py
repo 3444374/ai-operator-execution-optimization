@@ -192,6 +192,49 @@ def _verify_prefix_caching_matches_live(config) -> None:
         )
 
 
+def _verify_service_flags_match_live(config) -> None:
+    """Fail-closed when declared ``max_num_seqs`` / ``max_num_batched_tokens`` disagree with the
+    live vLLM cmdline (audit F8: prefix_caching was already live-verified, but the two capacity
+    flags were declared-only, so a stale vLLM process on vLLM defaults would silently record the
+    declared value as effective). Best-effort: if no co-located vLLM process is probeable (non-Linux
+    host, dry-run) or COMPLETION_ENDPOINT_URLS is unset, warn + rely on declared, matching
+    ``_verify_prefix_caching_matches_live``. When vLLM IS up, any per-endpoint missing/mismatched
+    flag is fail-closed (strict)."""
+    from src.infrastructure.vllm_preflight import _read_live_cmdlines, verify_endpoint_cmdlines
+
+    declared_meta = dict(config.service_metadata)
+    seqs = declared_meta.get("max_num_seqs")
+    batched = declared_meta.get("max_num_batched_tokens")
+    if seqs is None and batched is None:
+        return  # nothing declared to verify
+    endpoint_urls_csv = os.environ.get("COMPLETION_ENDPOINT_URLS", "")
+    endpoint_urls = [u.strip() for u in endpoint_urls_csv.split(",") if u.strip()]
+    if not endpoint_urls:
+        sys.stderr.write(
+            "[runner] warning: COMPLETION_ENDPOINT_URLS unset; cannot live-verify "
+            "max_num_seqs/max_num_batched_tokens\n"
+        )
+        return
+    try:
+        cmdlines = _read_live_cmdlines()
+    except Exception:
+        cmdlines = {}
+    if not cmdlines:
+        sys.stderr.write(
+            "[runner] warning: no live vllm.entrypoints process probeable; cannot verify "
+            "max_num_seqs/max_num_batched_tokens, relying on declared service_metadata\n"
+        )
+        return
+    declared: dict[str, str] = {}
+    if seqs is not None:
+        declared["--max-num-seqs"] = str(seqs)
+    if batched is not None:
+        declared["--max-num-batched-tokens"] = str(batched)
+    verify_endpoint_cmdlines(
+        list(cmdlines.values()), endpoint_urls, declared, strict=True, tag="cost-profile"
+    )
+
+
 def run_experiment(
     options: RunnerOptions,
     *,
@@ -918,6 +961,7 @@ def main() -> None:
     # than in ``run_experiment`` so unit tests that drive ``run_experiment``
     # directly stay hermetic (no dependence on host vLLM state).
     _verify_prefix_caching_matches_live(_load_config(options.config_path))
+    _verify_service_flags_match_live(_load_config(options.config_path))
     raise SystemExit(run_experiment(options))
 
 
