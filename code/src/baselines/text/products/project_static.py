@@ -419,10 +419,13 @@ def run_project_static(
             timeout=config.profiler_timeout_s,
         )
     except subprocess.TimeoutExpired as exc:
-        # Layer-2 fix: a hung profiler must fail closed (cell recorded as failed)
-        # instead of hanging the whole ramp -- parity with lb_rr's bounded
-        # ``subprocess.run(..., timeout=900)`` (``multicard_scale_ramp.py:413``).
-        # subprocess.run kills the child (SIGKILL) on timeout, so no GPU leak.
+        # Layer-2 fix: a hung profiler must fail closed (cell recorded as failed) instead of
+        # hanging the whole ramp -- parity with lb_rr's bounded ``subprocess.run(timeout=900)``
+        # (``multicard_scale_ramp.py:413``). GPU-safety note (audit F17): subprocess.run kills
+        # only the direct child on timeout, NOT grandchildren -- but this is GPU-safe here
+        # because the text-track profiler actors are num_gpus=0 (they reach vLLM over HTTP)
+        # and the GPU-holding vLLM is a separate, non-descendant process, so the killed
+        # subtree holds no GPU state.
         partial = exc.stderr if isinstance(exc.stderr, str) else ""
         return ProjectStaticRun(
             results=(), sunk_pairs=(), timing={},

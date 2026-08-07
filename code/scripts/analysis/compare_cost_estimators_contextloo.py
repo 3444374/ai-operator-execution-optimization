@@ -71,7 +71,72 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--overwrite", action="store_true")
+    # Reproducibility (audit F3/F6): the historical REF_JSON points at a deleted ref + REPO_ROOT-
+    # relative source_csvs, so the committed LOO JSON was not regenerable. --data-csv lets the
+    # evaluator consume any runs.csv directly; --ref-json overrides the ref-json path. Both make
+    # _source_evidence / source_reference robust to out-of-repo paths (no more relative_to crash).
+    parser.add_argument(
+        "--data-csv",
+        type=Path,
+        default=None,
+        help="runs.csv to evaluate (e.g. the v2 cost-profile runs.csv); overrides REF_JSON",
+    )
+    parser.add_argument(
+        "--ref-json",
+        type=Path,
+        default=None,
+        help="ref-json to read source_csvs from (defaults to the historical REF_JSON)",
+    )
     return parser.parse_args()
+
+
+def _repo_relpath(path: Path) -> str:
+    """path.relative_to(REPO_ROOT) when possible, else the absolute string (out-of-repo inputs)."""
+
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path.resolve())
+
+
+def _apply_data_source(args: argparse.Namespace) -> Callable[[], None] | None:
+    """Point _full.REF_JSON + this module's REF_JSON at the requested data source.
+
+    Returns an atexit cleanup for any temp ref created, or None. With neither --data-csv nor
+    --ref-json given, leaves the historical REF_JSON untouched (legacy behavior).
+    """
+
+    global REF_JSON
+    cleanup: Callable[[], None] | None = None
+    ref_path: Path | None = args.ref_json
+    if args.data_csv is not None:
+        if not args.data_csv.is_file():
+            raise SystemExit(f"--data-csv not found: {args.data_csv}")
+        import tempfile
+
+        tmp = Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
+        tmp.write_text(
+            json.dumps(
+                {
+                    "source_csvs": [str(args.data_csv.resolve())],
+                    "experiment_id": args.data_csv.stem,
+                }
+            ),
+            encoding="utf-8",
+        )
+        ref_path = tmp
+
+        def _cleanup(tmp: Path = tmp) -> None:
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+
+        cleanup = _cleanup
+    if ref_path is not None:
+        REF_JSON = ref_path
+        _full.REF_JSON = ref_path  # _full.load_rows reads this at call time
+    return cleanup
 
 
 def aggregate_candidate_repeats(
@@ -178,10 +243,11 @@ def _package_version(distribution: str) -> str:
 
 def _source_evidence() -> list[dict[str, str]]:
     reference = json.loads(REF_JSON.read_text(encoding="utf-8"))
-    paths = [REPO_ROOT / value.replace("\\", "/") for value in reference["source_csvs"]]
+    paths = [Path(value).resolve() if Path(value).is_absolute() else (REPO_ROOT / value.replace("\\", "/"))
+             for value in reference["source_csvs"]]
     return [
         {
-            "path": str(path.relative_to(REPO_ROOT)),
+            "path": _repo_relpath(path),
             "sha256": _sha256(path),
         }
         for path in paths
@@ -216,6 +282,39 @@ def _dataset_coverage(rows: list[dict[str, str]], contexts: list[str], candidate
             "runs_at_one_warmup_plus_three_formal": (existing_deficit + new_context_cells) * 4,
             "duration_status": "requires measured pilot; no wall-clock estimate inferred",
         },
+    }
+
+
+def _promotion_contract(metrics: dict[str, list[float]]) -> dict[str, object]:
+    """Plan §6 frozen gates (operator_cost_profile_dual4090_formal_20260804.md §6 lines 87-88).
+
+    candidate pairwise >= 0.75, median regret <= 5%, macro-MEAN regret <= 5%, MAX regret <= 15%.
+    Any single failure blocks plan selection. Pure (no I/O) so the contract logic is unit-testable.
+    Note: pooled regret + row-level pairwise are reported separately and are NOT gates (audit F1).
+    """
+
+    regret = metrics["decision_regret_pct"]
+    candidate_pairwise = metrics["candidate_pairwise_accuracy"]
+    median_pass = statistics.median(regret) <= 5.0
+    macro_mean_pass = statistics.mean(regret) <= 5.0
+    max_pass = max(regret) <= 15.0
+    pairwise_pass = statistics.mean(candidate_pairwise) >= 0.75
+    regret_pass = bool(median_pass and macro_mean_pass and max_pass)
+    return {
+        "candidate_pairwise_accuracy_at_least": 0.75,
+        "median_decision_regret_pct_at_most": 5.0,
+        "macro_mean_decision_regret_pct_at_most": 5.0,
+        "max_decision_regret_pct_at_most": 15.0,
+        "metric_contract_note": (
+            "plan §6 frozen gates: candidate-aggregated pairwise + median + macro-mean + max "
+            "regret. Pooled regret + row-level pairwise are reported separately, NOT gates."
+        ),
+        "regret_median_pass": median_pass,
+        "regret_macro_mean_pass": macro_mean_pass,
+        "regret_max_pass": max_pass,
+        "pairwise_pass": pairwise_pass,
+        "regret_pass": regret_pass,
+        "passed": bool(regret_pass and pairwise_pass),
     }
 
 
@@ -370,26 +469,15 @@ def evaluate() -> dict[str, Any]:
                 metric: summarize(values) for metric, values in metrics.items()
             },
             "pooled_selection": pooled_selection,
-            "promotion_contract": {
-                "median_decision_regret_pct_at_most": 5.0,
-                "macro_row_pairwise_accuracy_at_least": 0.75,
-                "metric_contract_note": (
-                    "uses the pre-existing row-level pairwise metric; candidate-aggregated "
-                    "pairwise is reported separately and is not substituted post hoc"
-                ),
-                "regret_pass": statistics.median(metrics["decision_regret_pct"]) <= 5.0,
-                "pairwise_pass": statistics.mean(metrics["row_pairwise_accuracy"]) >= 0.75,
-            },
+            "promotion_contract": _promotion_contract(metrics),
         }
-        contract = result["summary"]["promotion_contract"]
-        contract["passed"] = bool(contract["regret_pass"] and contract["pairwise_pass"])
 
     return {
         "schema_version": 1,
         "evaluation": "leave_one_decision_context_out",
         "target": TARGET,
         "interpretation": "unseen decision-context generalization; not necessarily unseen candidates",
-        "source_reference": str(REF_JSON.relative_to(REPO_ROOT)),
+        "source_reference": _repo_relpath(REF_JSON),
         "code_evidence": {
             "context_loo_script_sha256": _sha256(Path(__file__).resolve()),
             "full_driver_sha256": _sha256(
@@ -428,7 +516,12 @@ def _write_output(path: Path, payload: dict[str, Any], overwrite: bool) -> None:
 
 def main() -> None:
     args = parse_args()
-    payload = evaluate()
+    cleanup = _apply_data_source(args)
+    try:
+        payload = evaluate()
+    finally:
+        if cleanup is not None:
+            cleanup()
     _write_output(args.output, payload, args.overwrite)
     print(
         f"rows={payload['dataset_coverage']['row_count']} "

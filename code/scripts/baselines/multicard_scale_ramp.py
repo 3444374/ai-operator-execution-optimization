@@ -346,9 +346,20 @@ def _run_project_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int
               "rep": rep, "cell": str(cell_output), "kind": "project"}
     try:
         run_result = run_project_static(cfg, cell_output)
-        record["status"] = "passed" if run_result.exit_code == 0 else "failed"
+        # Gate the cell on BOTH exit_code==0 AND a formal status==ok row (audit F16): exit 0 alone
+        # does not strictly guarantee the profiler produced a formal-ok row, so a future code path
+        # that exits 0 without one would otherwise be a silent false-pass.
+        record["status"] = (
+            "passed" if (run_result.exit_code == 0 and run_result.formal_row_found) else "failed"
+        )
         record["exit_code"] = run_result.exit_code
+        record["formal_row_found"] = run_result.formal_row_found
         record["effective_k"] = run_result.effective_k
+        if record["status"] == "failed" and not run_result.formal_row_found:
+            record["error"] = (
+                f"project_static cell not passed: exit={run_result.exit_code}, "
+                f"formal_row_found=False; stderr_tail={run_result.stderr_tail[-200:]!r}"
+            )
     except Exception as exc:
         record["status"] = "failed"
         record["error"] = f"{type(exc).__name__}: {exc}"
