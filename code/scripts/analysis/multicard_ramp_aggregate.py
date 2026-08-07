@@ -58,6 +58,9 @@ _MEAN_CV_METRICS = (
     "prefix_cache_hit_rate", "scheduling_overhead_pct",
     # mfu_fraction is a [0,1] FRACTION (not %; §7.5F + the unit-lesson); the .md header says so.
     "mfu_fraction", "energy_j_per_1k_tokens",
+    # §7.5C(1) feeding-saturation gauges (during-cell, Σ endpoints); None for old raw w/o sampler.
+    "vllm_running_total_mean", "vllm_running_total_max", "vllm_waiting_total_max",
+    "vllm_kv_cache_usage_max",
 )
 
 
@@ -317,6 +320,10 @@ def _gate_cell_metrics(cell: Path) -> dict:
         service_wall_s=service_wall,
         gpu_power_mean_by_gpu=gpu_power_by_gpu,
     )
+    # §7.5C(1) feeding-saturation: during-cell vLLM gauges (running/waiting/KV mean/max), written
+    # by the ramp when the VllmGaugeSampler ran. Absent for old raw (before the sampler) -> None.
+    gauge_path = cell / "vllm_gauges.json"
+    gauge = _read_json(gauge_path) if gauge_path.is_file() else {}
     return {
         "status": status,
         "service_tokens_per_s": round(unified_tps, 1) if unified_tps is not None else None,
@@ -351,6 +358,14 @@ def _gate_cell_metrics(cell: Path) -> dict:
         "mfu_fraction": round(efficiency["mfu_fraction"], 4) if efficiency["mfu_fraction"] is not None else None,
         "energy_j": round(efficiency["energy_j"], 1) if efficiency["energy_j"] is not None else None,
         "energy_j_per_1k_tokens": round(efficiency["energy_j_per_1k_tokens"], 2) if efficiency["energy_j_per_1k_tokens"] is not None else None,
+        # §7.5C(1) feeding-saturation: during-cell gauge mean/max (None if old raw w/o sampler).
+        # vllm_running_total_* = Σ across endpoints; KV is [0,1] fraction (§7.5F).
+        "vllm_running_total_mean": round(gauge["vllm_running_mean"], 1) if gauge.get("vllm_running_mean") is not None else None,
+        "vllm_running_total_max": round(gauge["vllm_running_max"], 1) if gauge.get("vllm_running_max") is not None else None,
+        "vllm_waiting_total_mean": round(gauge["vllm_waiting_mean"], 1) if gauge.get("vllm_waiting_mean") is not None else None,
+        "vllm_waiting_total_max": round(gauge["vllm_waiting_max"], 1) if gauge.get("vllm_waiting_max") is not None else None,
+        "vllm_kv_cache_usage_mean": round(gauge["vllm_kv_cache_usage_mean"], 3) if gauge.get("vllm_kv_cache_usage_mean") is not None else None,
+        "vllm_kv_cache_usage_max": round(gauge["vllm_kv_cache_usage_max"], 3) if gauge.get("vllm_kv_cache_usage_max") is not None else None,
         "gpu": gpu_summary,
         **_identity_role_fields(cell),
     }

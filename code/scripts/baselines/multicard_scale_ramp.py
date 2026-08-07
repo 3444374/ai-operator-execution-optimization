@@ -314,6 +314,11 @@ def _run_gate_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) -
     record["status"] = "passed"
     record["gpu_summary"] = instr.gpu_summary
     record["ttft_metrics"] = str(ttft_path) if ttft_path.is_file() else None
+    # §7.5C(1) feeding-saturation evidence: during-cell vLLM gauges (running/waiting/KV mean/max).
+    gauge_path = cell_output / "vllm_gauges.json"
+    if instr.gauge_summary:
+        gauge_path.write_text(json.dumps(instr.gauge_summary, indent=2), encoding="utf-8")
+    record["gauge_metrics"] = str(gauge_path) if gauge_path.is_file() else None
     return record
 
 
@@ -468,6 +473,11 @@ def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) 
         record["status"] = "passed"
         record["gpu_summary"] = instr.gpu_summary
         record["ttft_metrics"] = str(ttft_path) if ttft_path.is_file() else None
+        # §7.5C(1) feeding-saturation evidence: during-cell vLLM gauges (running/waiting/KV mean/max).
+        gauge_path = cell_output / "vllm_gauges.json"
+        if instr.gauge_summary:
+            gauge_path.write_text(json.dumps(instr.gauge_summary, indent=2), encoding="utf-8")
+        record["gauge_metrics"] = str(gauge_path) if gauge_path.is_file() else None
     except Exception as exc:
         record["status"] = "failed"
         record["error"] = f"{type(exc).__name__}: {exc}"

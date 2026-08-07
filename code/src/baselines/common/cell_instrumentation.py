@@ -199,12 +199,92 @@ class GpuResourceSampler:
 
 
 @dataclass
+class VllmGaugeSampler:
+    """Background thread that polls vLLM gauge metrics (running/waiting/KV) during a cell.
+
+    §7.5C(1) "feed vLLM" gate needs running sustained-high + waiting low DURING the cell; the
+    before/after /metrics snapshots are both idle (gauges return to 0), so they cannot evidence
+    saturation. This sampler polls the instantaneous gauges at ``interval_s`` across all
+    endpoints, then ``summary`` reports the per-instant SUM across endpoints (total running
+    across the 2 vLLM instances) mean/max -- the direct feeding-saturation signal. Injectable
+    ``snapshotter``/``sleep``/``monotonic`` for unit tests.
+
+    NOTE: kv_cache_usage_perc is a [0,1] FRACTION (§7.5F), not percent; surfaced unchanged.
+    """
+
+    interval_s: float = 0.5
+    metrics_urls: tuple[str, ...] = ()
+    snapshotter: MetricsSnapshotter = default_metrics_snapshotter
+    sleep: Callable[[float], None] = time.sleep
+    monotonic: Callable[[], float] = time.monotonic
+    samples: list[dict[str, float]] = field(default_factory=list)
+    _stop: threading.Event = field(default_factory=threading.Event)
+    _thread: threading.Thread | None = None
+
+    def start(self, *, base_epoch_s: float) -> None:
+        self._stop.clear()
+        self.samples = []
+        self._thread = threading.Thread(target=self._loop, args=(base_epoch_s,), daemon=True)
+        self._thread.start()
+
+    def _loop(self, base_epoch_s: float) -> None:
+        sample_index = 0
+        while not self._stop.is_set():
+            t = self.monotonic() - base_epoch_s
+            running_sum = waiting_sum = kv_sum = 0.0
+            n_eps = 0
+            for url in self.metrics_urls:
+                try:
+                    snap = self.snapshotter(url)
+                except Exception:
+                    snap = {}
+                if snap:
+                    n_eps += 1
+                    running_sum += float(snap.get("vllm:num_requests_running", 0.0))
+                    waiting_sum += float(snap.get("vllm:num_requests_waiting", 0.0))
+                    kv_sum += float(snap.get("vllm:kv_cache_usage_perc", 0.0))
+            self.samples.append({
+                "sample_epoch_s": t,
+                "sample_index": sample_index,
+                "running_sum": running_sum,
+                "waiting_sum": waiting_sum,
+                # KV is a per-instance fraction; report the mean across endpoints (not sum).
+                "kv_mean": kv_sum / n_eps if n_eps else 0.0,
+                "n_endpoints": n_eps,
+            })
+            sample_index += 1
+            self._stop.wait(self.interval_s)
+
+    def stop(self) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+            self._thread = None
+
+    def summary(self) -> dict[str, float]:
+        """Mean/max of total-running/waiting (Σ endpoints) + KV mean, across during-cell samples."""
+        out: dict[str, float] = {"n_gauge_samples": float(len(self.samples))}
+        if not self.samples:
+            return out
+        for key, src in (
+            ("vllm_running", "running_sum"),
+            ("vllm_waiting", "waiting_sum"),
+            ("vllm_kv_cache_usage", "kv_mean"),
+        ):
+            vals = [s[src] for s in self.samples]
+            out[f"{key}_mean"] = statistics.mean(vals)
+            out[f"{key}_max"] = max(vals)
+        return out
+
+
+@dataclass
 class CellInstrumentation:
     """Result of an instrumented cell -- what the sweep driver writes per cell."""
 
     ttft_deltas: dict[int, dict] | None
     gpu_summary: dict[str, float]
     gpu_csv_path: Path | None
+    gauge_summary: dict[str, float] | None = None
 
 
 @contextmanager
@@ -231,6 +311,14 @@ def instrumented_cell(
             snapshotter=gpu_snapshotter,
         )
         sampler.start(base_epoch_s=time.monotonic())
+    # §7.5C(1) feeding-saturation evidence: poll vLLM gauges (running/waiting/KV) DURING the
+    # cell so we get the active-state mean/max (before/after are idle=0, useless for the gate).
+    gauge_sampler = VllmGaugeSampler(
+        interval_s=max(interval_s, 0.5),  # /metrics is heavier than nvidia-smi; poll slower
+        metrics_urls=metrics_urls,
+        snapshotter=metrics_snapshotter,
+    )
+    gauge_sampler.start(base_epoch_s=time.monotonic())
     instrumentation = CellInstrumentation(
         ttft_deltas=None, gpu_summary={}, gpu_csv_path=gpu_csv_path
     )
@@ -241,6 +329,8 @@ def instrumented_cell(
             sampler.stop()
             sampler.write_csv(gpu_csv_path)  # type: ignore[arg-type]
             instrumentation.gpu_summary = sampler.summary()
+        gauge_sampler.stop()
+        instrumentation.gauge_summary = gauge_sampler.summary()
         after = snapshot_all_endpoints(metrics_urls, snapshotter=metrics_snapshotter)
         try:
             instrumentation.ttft_deltas = endpoint_latency_deltas(before, after)
