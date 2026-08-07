@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-08-07 数据存放政策修订 + raw 全量下载到本地（撤回 git raw tarball）
+
+- 用户修订政策：**raw 实验数据存本地磁盘 + AutoDL 服务器，不进 git；git 只放 aggregated CSV / summary / README / 代码 / 计划**。
+  此前同日早些提交的 7 个 `<exp>_raw.tar.gz`（commit 40471bf，43.6M）按新政策**从 git 撤回**：reset 回 c250e19
+  并 force-push（raw 已先全量下载到本地，无丢失；commit 是 <1h 前的 tip，仅本机本地库有，codex 仍在 c250e19）。
+- **raw 全量下载**到开发者机 `C:\Users\ays\Desktop\results\`：experiments/results 917M + motivation/results 2.5M
+  + experiment-artifacts 308M（去 retired-worktrees 代码快照）。3 个 transport tar.gz 的 sha256 与服务器逐一校验一致
+  （见 `experiments/results/RAW_ARCHIVAL_20260807.md`）。git 远程因此不再承载 raw。
+- **订正早先错误**：同日早些曾称"320-run per-request raw 已被服务器清理"——**错误**。该 raw 实际在
+  `experiment-artifacts/dual_gpu_cost_profile_formal_v2_cache_on_20260807/`（67M），已随 experiment_artifacts.tar.gz 落本地。
+- **仍保留在 git 的 aggregated summary**（属"整理汇总"，符合新政策）：enhanced ramps 的 ramp_aggregate.{json,md} +
+  ramp_run.json（c250e19 已 track）、各实验 runs.csv / manifest / formal_summary / README。
+- **下载方法**（可复用）：AutoDL 服务器 SSH 仅 exec 通道可用（SFTP 被 container 禁用），用 `rd.py recv`
+  （`dd|base64 -w0` 分块 + Python 二进制解码 + 单连接多 chunk）下载，配 `MSYS_NO_PATHCONV=1`
+  防 Git Bash 把 `/root/...` 转译成 Windows 路径；exec 通道有 \n→\r\n 换行转译，故必须 `base64 -w0`（无换行）。
+- **仍残留在 git 的 raw tarball（待用户定夺）**：`operator_cost_profile_pilot_20260804/v1_diagnostic_raw.tar.gz` +
+  `v2_raw.tar.gz` 是更早 commit 的 pilot/diagnostic raw，被该实验 README 引用；按新政策属应迁出项，但非本次新增，
+  未单方面删除，待确认。
+
+
 ## 2026-08-06 保留 TPC-H-derived AI 查询计划代价验证（条件性）
 
 - 用户确认希望代价估计最终能够辅助数据库优化器选择包含 AI 算子的执行计划；该方向正式登记为
