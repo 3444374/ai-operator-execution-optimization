@@ -84,3 +84,30 @@ scale ramp @ 冻结峰值并发 C_total=64；project_static × 9 scales × reps=
 - 本目录：`ramp_run.json`（27 cell status/exit/effective_k）+ `ramp_aggregate.{json,md}`（全指标 mean/CV/reps 单次值）+ 每 cell `project_static_{summary,resource}.csv`。
 - **raw per-request evidence**（completion_evidence/request_trace/source_scan，含 output_text + 指纹，8192/10570 行数大）保留服务器端 `experiments/results/multicard_proj_scale_ramp_formal_20260807/`，未进 git（体积，同 formal sweep raw 排除口径）；可在服务器复核。
 - 身份：`comparison_role=project_scheduled_method`（主字段=系统角色）；`scheduler_owner=project_token_budget_organizer + ray_actor_pool + per_endpoint_active_work_credit + vllm`。
+
+## 9. 增强 §7.5D 观测（2026-08-07，ramp-enhanced 重跑，task #33）
+
+bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` during-cell 轮询）重跑，补原 ramp 缺的 §7.5D 观测；project 不需重跑（其 profiler 已采样 gauges，aggregator 现已 surface）。aggregate 见 `../multicard_scale_ramp_enhanced_20260807/ramp_aggregate.{json,md}`（bounded+duckdb）、`../multicard_lbrr_scale_ramp_enhanced_20260807/`（lb_rr）、本目录 re-aggregate（project）。
+
+**4 臂 §7.5D 关键指标**（reps=3 mean；MFU = `[0,1]` **分数非 %**，per `_compute_efficiency` = mean(per-GPU estimated_flops)/(`GPU_PEAK_TFLOPS_BF16=165`×1e12×service_wall)，`multicard_ramp_aggregate.py:GPU_PEAK_TFLOPS_BF16`；KV = 分数 §7.5F）：
+
+| scale | arm | MFU(frac) | run_max | KV_max | ITL p99 | J/1k-tok |
+|---|---|---|---|---|---|---|
+| 2048 | bounded | 0.230 | 52 | 0.036 | 24.9ms | 8.4 |
+| 2048 | duckdb | 0.195 | 48 | 0.033 | 24.9ms | 8.6 |
+| 2048 | lb_rr | 0.188 | 50 | 0.035 | 24.9ms | 8.7 |
+| 2048 | project | 0.244 | — (prof 口径) | — | — | 6.5 |
+| 10570 | bounded | **0.678** | 58 | 0.061 | 142ms | 20.3 |
+| 10570 | duckdb | FAILED（崩溃）| — | — | — | — |
+| 10570 | lb_rr | 0.640 | 62 | 0.067 | 124ms | 21.1 |
+| 10570 | project | 0.618 | — (prof 口径) | — | — | 19.5 |
+
+**口径警告（不可混比）**：bounded/duckdb/lb_rr 的 `run_max` = `vllm_running_total_max`（**Σ 两 endpoint**，VllmGaugeSampler during-cell 轮询）；project 的对应量是 `vllm_running_prof_max`（profiler per-run，** caliber 不同**，分列不并排比）。waiting_max ~0（四臂均无显著排队）。ITL 仅 gate 臂有（project summary 无 ITL histogram）。
+
+**新观测（原 ramp 缺、本次补齐）**：
+- **MFU 4 臂横比（首次）**：2048（未饱和）MFU 0.19–0.24（memory-bound，util% 高但 FLOP 密度低）；10570（饱和）MFU 0.62–0.68（compute-bound）。**util% ≠ MFU** 教科书特征再现。project MFU 0.244 @ 2048（与 bounded 0.230 接近）。
+- **during-cell running_max 52–62（Σ≈64 inflight 的 81–97%）**——**§7.5C(1) 喂饱门证据**（原 ramp 只有 before/after idle=0）。bounded 52/64、lb_rr 62/64：vLLM 持续被喂近满，**feeding-saturation 成立**。
+- **KV_max 0.033–0.067**（低，working set 只占 KV 3–7%）；4096+ 的 prefix-hit 塌（0.96→0.62）是 cache **多样性驱逐**非 KV 容量饱和。
+- **能耗 J/1k-tok 8→21**（2048→10570，随 prefix-hit 降而升，更多真实 prefill FLOP/token）。
+
+**不能声称**：project vs bounded 的 running 横比（caliber 不同）；MFU 绝对值跨论文比（vLLM estimated_flops 启发式，保守）。

@@ -11,3 +11,17 @@
 | 4096 | project_static | c32 | passed | 42402.9 | 0.78% | 170.2367 | 141.1ms | 11.7727 | 0.66 | 88.2 | — | 3/3 |
 | 8192 | project_static | c32 | passed | 42287.5 | 0.31% | 161.2833 | 153.9ms | 23.5927 | 0.65 | 86.8 | — | 3/3 |
 | 10570 | project_static | c32 | passed | 41146.0 | 0.26% | 160.4033 | 155.1ms | 31.435 | 0.64 | 88.6 | — | 3/3 |
+
+## 效率与尾延迟（§7.5D 补齐；MFU=[0,1] 分数，非 %；vLLM estimated_flops 保守估计）
+
+| scale | arm | conc | MFU(frac) | ITL p95 | ITL p99 | TTFT p99 | decode | prefill | J/1k-tok |
+|---|---|---|---|---|---|---|---|---|---|
+| 64 | project_static | c32 | 0.134 | — | — | 98.9ms | 50.5ms | 41ms | 2.5433 |
+| 128 | project_static | c32 | 0.155 | — | — | 98.3ms | 54ms | 41.1ms | 2.7467 |
+| 256 | project_static | c32 | 0.222 | — | — | 81.7ms | 59.3ms | 38.7ms | 1.64 |
+| 512 | project_static | c32 | 0.245 | — | — | 79.4ms | 60ms | 39.7ms | 2.6833 |
+| 1024 | project_static | c32 | 0.242 | — | — | 82.8ms | 71.8ms | 39.7ms | 5.53 |
+| 2048 | project_static | c32 | 0.244 | — | — | 82.9ms | 78ms | 39.7ms | 6.5067 |
+| 4096 | project_static | c32 | 0.611 | — | — | 340.6ms | 158.5ms | 87.1ms | 17.7167 |
+| 8192 | project_static | c32 | 0.624 | — | — | 413.9ms | 182.2ms | 94.7ms | 18.6367 |
+| 10570 | project_static | c32 | 0.618 | — | — | 414.5ms | 187.7ms | 94.8ms | 19.45 |

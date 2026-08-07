@@ -4791,3 +4791,16 @@ codex 第四轮只读复审确认 a22cdf6 六项核心修复大体正确、27/27
 - **假设证实**：6-rep tighten mean 把 CE5 max regret **39.77%→14.72%（−63%）**——高 CV 噪声确是先前 max regret 过高的根因。CE5 的残差校正在紧数据上现增益（max 14.72 vs CE3 22.71；3-rep 时 CE3≈CE5）。CE5 row MAE 3.98 > CE3 3.23 但 regret 更低 → accuracy≠selection。CE4 LightGBM 未增益（20 context 小数据）。
 - **⚠️ 边际警告**：CE5 max 14.72% **贴 15% 线，marginal pass**，非稳健通过；换 split/更多 context 可能翻转。**不能声称** CE5 稳健过门 / 优于系统 baseline（本实验无系统 baseline）。
 - 归档：`merged_runs_6rep_20260807.csv` + `ce_context_loo_rerun_20260807.json` 入 `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/`，README §3(gate 8 ✅)/§5.3(6-rep 表含 CE4)/§6/§7/§9.1 全更新。条件性下一步：CE5 过 §6 满足 plan §8 TPC-H-derived 计划级 capability 前置（须计划级再验证 + max marginal 程度确认）。
+
+## 2026-08-07 ramp-enhanced 重跑：补齐 §7.5D during-cell 观测（task #33 完成）
+
+bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s during-cell 轮询 vLLM gauges）重跑 scale ramp（bounded 27/27、duckdb 22/27 带 5 个预期大规模崩溃、lb_rr 27/27、0 error）。project 不需重跑（profiler 已采样 gauges，aggregator 现已 surface `vllm_running_prof_*`）。三目录用增强 aggregator re-aggregate。
+
+**新观测（原 ramp 缺，本次补齐）**：
+- **MFU 4 臂横比（首次）**：2048（未饱和）0.19–0.24（memory-bound），10570（饱和）0.62–0.68（compute-bound）。util% ≠ MFU 教科书特征。project 0.244 @ 2048 ≈ bounded 0.230。
+- **during-cell running_max 52–62（Σ≈64 inflight 的 81–97%）**——**§7.5C(1) 喂饱门证据**（原 ramp 只有 before/after idle=0）。feeding-saturation 成立。
+- **KV_max 0.033–0.067**（低，working set 只占 3–7%）；4096+ prefix-hit 塌是多样性驱逐非 KV 容量饱和。
+- **能耗 8→21 J/1k-tok**（2048→10570）。
+- **口径**：bounded/duckdb/lb_rr `vllm_running_*_total_*` = Σ 两 endpoint（VllmGaugeSampler）；project `vllm_running_prof_*` = profiler per-run，**caliber 不同分列不混比**。MFU = `[0,1]` 分数（`_compute_efficiency`，peak=165 TFLOPS bf16）。
+
+归档：`multicard_scale_ramp_enhanced_20260807/` + `multicard_lbrr_scale_ramp_enhanced_20260807/`（ramp_run+aggregate）+ proj re-aggregate + 4-path ramp README §9（完整 §7.5D 4 臂表）。**正式 raw 归档**（服务器侧 git，只正式结果、控大小）待下一步。

@@ -1,0 +1,547 @@
+{
+  "experiment_id": "multicard_lbrr_scale_ramp_formal",
+  "records": [
+    {
+      "arm": "lb_rr",
+      "scale": 64,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_64/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0456,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 24.0,
+        "gpu0_power_mean": 193.77,
+        "gpu1_util_mean": 13.5,
+        "gpu1_power_mean": 205.3375,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_64/lb_rr_c64_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_64/lb_rr_c64_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 64,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_64/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0606,
+      "backend_token_work_skew": 0.0409,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 0.0,
+        "gpu0_power_mean": 166.47,
+        "gpu1_util_mean": 28.0,
+        "gpu1_power_mean": 188.8625,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_64/lb_rr_c64_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_64/lb_rr_c64_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 64,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_64/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0606,
+      "backend_token_work_skew": 0.0575,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 24.25,
+        "gpu0_power_mean": 152.7125,
+        "gpu1_util_mean": 23.75,
+        "gpu1_power_mean": 164.395,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_64/lb_rr_c64_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_64/lb_rr_c64_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 128,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_128/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0115,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 44.5,
+        "gpu0_power_mean": 225.5975,
+        "gpu1_util_mean": 27.25,
+        "gpu1_power_mean": 216.89000000000001,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_128/lb_rr_c64_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_128/lb_rr_c64_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 128,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_128/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0308,
+      "backend_token_work_skew": 0.0047,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 25.0,
+        "gpu0_power_mean": 226.3375,
+        "gpu1_util_mean": 25.0,
+        "gpu1_power_mean": 208.58249999999998,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_128/lb_rr_c64_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_128/lb_rr_c64_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 128,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_128/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0073,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 0.0,
+        "gpu0_power_mean": 184.13,
+        "gpu1_util_mean": 27.0,
+        "gpu1_power_mean": 200.655,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_128/lb_rr_c64_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_128/lb_rr_c64_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 256,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_256/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0002,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 66.0,
+        "gpu0_power_mean": 315.474,
+        "gpu1_util_mean": 23.2,
+        "gpu1_power_mean": 227.132,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_256/lb_rr_c64_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_256/lb_rr_c64_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 256,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_256/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0002,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 74.4,
+        "gpu0_power_mean": 250.91,
+        "gpu1_util_mean": 40.0,
+        "gpu1_power_mean": 206.94,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_256/lb_rr_c64_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_256/lb_rr_c64_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 256,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_256/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0606,
+      "backend_token_work_skew": 0.0568,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 40.0,
+        "gpu0_power_mean": 232.114,
+        "gpu1_util_mean": 40.0,
+        "gpu1_power_mean": 211.764,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_256/lb_rr_c64_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_256/lb_rr_c64_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 512,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_512/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0078,
+      "backend_token_work_skew": 0.0018,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 56.142857142857146,
+        "gpu0_power_mean": 263.12571428571425,
+        "gpu1_util_mean": 47.57142857142857,
+        "gpu1_power_mean": 239.96571428571428,
+        "n_samples": 7.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_512/lb_rr_c64_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_512/lb_rr_c64_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 512,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_512/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0078,
+      "backend_token_work_skew": 0.0037,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 47.142857142857146,
+        "gpu0_power_mean": 267.9442857142857,
+        "gpu1_util_mean": 45.142857142857146,
+        "gpu1_power_mean": 243.49285714285713,
+        "n_samples": 7.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_512/lb_rr_c64_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_512/lb_rr_c64_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 512,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_512/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0078,
+      "backend_token_work_skew": 0.0088,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 42.857142857142854,
+        "gpu0_power_mean": 244.00285714285715,
+        "gpu1_util_mean": 31.0,
+        "gpu1_power_mean": 233.09285714285716,
+        "n_samples": 7.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_512/lb_rr_c64_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_512/lb_rr_c64_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 1024,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_1024/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0078,
+      "backend_token_work_skew": 0.0145,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 57.0,
+        "gpu0_power_mean": 292.995,
+        "gpu1_util_mean": 68.8,
+        "gpu1_power_mean": 273.796,
+        "n_samples": 10.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_1024/lb_rr_c64_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_1024/lb_rr_c64_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 1024,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_1024/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0039,
+      "backend_token_work_skew": 0.0139,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 54.54545454545455,
+        "gpu0_power_mean": 293.1872727272727,
+        "gpu1_util_mean": 57.90909090909091,
+        "gpu1_power_mean": 279.92,
+        "n_samples": 11.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_1024/lb_rr_c64_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_1024/lb_rr_c64_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 1024,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_1024/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0039,
+      "backend_token_work_skew": 0.0023,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 54.18181818181818,
+        "gpu0_power_mean": 284.6363636363636,
+        "gpu1_util_mean": 63.63636363636363,
+        "gpu1_power_mean": 262.90363636363634,
+        "n_samples": 11.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_1024/lb_rr_c64_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_1024/lb_rr_c64_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 2048,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_2048/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0047,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 66.66666666666667,
+        "gpu0_power_mean": 314.02,
+        "gpu1_util_mean": 66.66666666666667,
+        "gpu1_power_mean": 307.4711111111111,
+        "n_samples": 18.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_2048/lb_rr_c64_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_2048/lb_rr_c64_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 2048,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_2048/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0039,
+      "backend_token_work_skew": 0.0034,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 64.70588235294117,
+        "gpu0_power_mean": 325.6194117647059,
+        "gpu1_util_mean": 64.70588235294117,
+        "gpu1_power_mean": 308.74882352941177,
+        "n_samples": 17.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_2048/lb_rr_c64_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_2048/lb_rr_c64_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 2048,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_2048/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0011,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 64.70588235294117,
+        "gpu0_power_mean": 319.24411764705883,
+        "gpu1_util_mean": 64.70588235294117,
+        "gpu1_power_mean": 309.7970588235294,
+        "n_samples": 17.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_2048/lb_rr_c64_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_2048/lb_rr_c64_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 4096,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_4096/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.001,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 85.48387096774194,
+        "gpu0_power_mean": 400.6391935483871,
+        "gpu1_util_mean": 85.48387096774194,
+        "gpu1_power_mean": 389.13516129032257,
+        "n_samples": 62.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_4096/lb_rr_c64_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_4096/lb_rr_c64_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 4096,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_4096/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.001,
+      "backend_token_work_skew": 0.0012,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 87.01612903225806,
+        "gpu0_power_mean": 403.15032258064514,
+        "gpu1_util_mean": 87.09677419354838,
+        "gpu1_power_mean": 388.5340322580645,
+        "n_samples": 62.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_4096/lb_rr_c64_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_4096/lb_rr_c64_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 4096,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_4096/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0029,
+      "backend_token_work_skew": 0.0027,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 85.45161290322581,
+        "gpu0_power_mean": 402.2229032258065,
+        "gpu1_util_mean": 86.04838709677419,
+        "gpu1_power_mean": 385.17,
+        "n_samples": 62.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_4096/lb_rr_c64_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_4096/lb_rr_c64_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 8192,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_8192/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0005,
+      "backend_token_work_skew": 0.0022,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 90.78625954198473,
+        "gpu0_power_mean": 418.4951145038168,
+        "gpu1_util_mean": 90.29007633587786,
+        "gpu1_power_mean": 400.6159541984733,
+        "n_samples": 131.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_8192/lb_rr_c64_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_8192/lb_rr_c64_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 8192,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_8192/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0005,
+      "backend_token_work_skew": 0.0049,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 90.6969696969697,
+        "gpu0_power_mean": 413.76810606060604,
+        "gpu1_util_mean": 90.47727272727273,
+        "gpu1_power_mean": 396.69954545454544,
+        "n_samples": 132.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_8192/lb_rr_c64_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_8192/lb_rr_c64_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 8192,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_8192/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0006,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 91.0,
+        "gpu0_power_mean": 414.5293233082707,
+        "gpu1_util_mean": 90.18045112781955,
+        "gpu1_power_mean": 396.1999248120301,
+        "n_samples": 133.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_8192/lb_rr_c64_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_8192/lb_rr_c64_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 10570,
+      "concurrency": 64,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_10570/lb_rr_c64_rep1",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0008,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 90.95953757225433,
+        "gpu0_power_mean": 415.96017341040465,
+        "gpu1_util_mean": 90.97687861271676,
+        "gpu1_power_mean": 397.8254335260116,
+        "n_samples": 173.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_10570/lb_rr_c64_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_10570/lb_rr_c64_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 10570,
+      "concurrency": 64,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_10570/lb_rr_c64_rep2",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0022,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 92.32558139534883,
+        "gpu0_power_mean": 418.25523255813954,
+        "gpu1_util_mean": 91.81395348837209,
+        "gpu1_power_mean": 401.94616279069766,
+        "n_samples": 172.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_10570/lb_rr_c64_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_10570/lb_rr_c64_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "lb_rr",
+      "scale": 10570,
+      "concurrency": 64,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_10570/lb_rr_c64_rep3",
+      "kind": "lb_rr",
+      "backend_request_skew": 0.0,
+      "backend_token_work_skew": 0.0002,
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 91.18497109826589,
+        "gpu0_power_mean": 416.8171676300578,
+        "gpu1_util_mean": 90.1907514450867,
+        "gpu1_power_mean": 397.2148554913295,
+        "n_samples": 173.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_10570/lb_rr_c64_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_lbrr_scale_ramp_enhanced_20260807/scale_10570/lb_rr_c64_rep3/vllm_gauges.json"
+    }
+  ],
+  "n_passed": 27,
+  "n_failed": 0
+}

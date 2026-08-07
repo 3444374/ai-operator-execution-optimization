@@ -1,0 +1,944 @@
+{
+  "experiment_id": "multicard_scale_ramp_formal",
+  "records": [
+    {
+      "arm": "bounded_http",
+      "scale": 64,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/bounded_http_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 28.666666666666668,
+        "gpu0_power_mean": 137.51666666666665,
+        "gpu1_util_mean": 0.0,
+        "gpu1_power_mean": 103.47,
+        "n_samples": 3.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/bounded_http_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/bounded_http_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 64,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/bounded_http_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 9.0,
+        "gpu0_power_mean": 161.9,
+        "gpu1_util_mean": 18.5,
+        "gpu1_power_mean": 122.78,
+        "n_samples": 2.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/bounded_http_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/bounded_http_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 64,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/bounded_http_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 0.3333333333333333,
+        "gpu0_power_mean": 144.58,
+        "gpu1_util_mean": 11.333333333333334,
+        "gpu1_power_mean": 146.95666666666665,
+        "n_samples": 3.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/bounded_http_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/bounded_http_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 64,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/duckdb_ai_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 25.25,
+        "gpu0_power_mean": 145.625,
+        "gpu1_util_mean": 25.0,
+        "gpu1_power_mean": 115.3175,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/duckdb_ai_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/duckdb_ai_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 64,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/duckdb_ai_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 0.0,
+        "gpu0_power_mean": 131.1525,
+        "gpu1_util_mean": 4.25,
+        "gpu1_power_mean": 135.6925,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/duckdb_ai_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/duckdb_ai_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 64,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/duckdb_ai_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 17.75,
+        "gpu0_power_mean": 146.14499999999998,
+        "gpu1_util_mean": 0.0,
+        "gpu1_power_mean": 108.66499999999999,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/duckdb_ai_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_64/duckdb_ai_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 128,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/bounded_http_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 25.666666666666668,
+        "gpu0_power_mean": 230.93,
+        "gpu1_util_mean": 22.0,
+        "gpu1_power_mean": 178.85666666666668,
+        "n_samples": 3.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/bounded_http_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/bounded_http_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 128,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/bounded_http_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 33.333333333333336,
+        "gpu0_power_mean": 200.15666666666667,
+        "gpu1_util_mean": 14.333333333333334,
+        "gpu1_power_mean": 158.87666666666667,
+        "n_samples": 3.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/bounded_http_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/bounded_http_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 128,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/bounded_http_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 33.333333333333336,
+        "gpu0_power_mean": 200.37,
+        "gpu1_util_mean": 9.666666666666666,
+        "gpu1_power_mean": 161.33333333333334,
+        "n_samples": 3.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/bounded_http_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/bounded_http_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 128,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/duckdb_ai_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 25.0,
+        "gpu0_power_mean": 168.1975,
+        "gpu1_util_mean": 25.0,
+        "gpu1_power_mean": 138.585,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/duckdb_ai_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/duckdb_ai_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 128,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/duckdb_ai_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 20.0,
+        "gpu0_power_mean": 171.648,
+        "gpu1_util_mean": 9.2,
+        "gpu1_power_mean": 137.30599999999998,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/duckdb_ai_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/duckdb_ai_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 128,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/duckdb_ai_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 33.2,
+        "gpu0_power_mean": 167.866,
+        "gpu1_util_mean": 20.0,
+        "gpu1_power_mean": 142.732,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/duckdb_ai_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_128/duckdb_ai_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 256,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/bounded_http_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 25.0,
+        "gpu0_power_mean": 258.725,
+        "gpu1_util_mean": 25.0,
+        "gpu1_power_mean": 243.0475,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/bounded_http_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/bounded_http_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 256,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/bounded_http_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 25.0,
+        "gpu0_power_mean": 238.52249999999998,
+        "gpu1_util_mean": 25.0,
+        "gpu1_power_mean": 211.66750000000002,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/bounded_http_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/bounded_http_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 256,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/bounded_http_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 26.5,
+        "gpu0_power_mean": 240.765,
+        "gpu1_util_mean": 25.0,
+        "gpu1_power_mean": 211.47750000000002,
+        "n_samples": 4.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/bounded_http_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/bounded_http_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 256,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/duckdb_ai_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 43.4,
+        "gpu0_power_mean": 199.622,
+        "gpu1_util_mean": 35.2,
+        "gpu1_power_mean": 183.222,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/duckdb_ai_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/duckdb_ai_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 256,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/duckdb_ai_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 20.0,
+        "gpu0_power_mean": 202.56,
+        "gpu1_util_mean": 20.0,
+        "gpu1_power_mean": 189.14,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/duckdb_ai_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/duckdb_ai_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 256,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/duckdb_ai_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 21.0,
+        "gpu0_power_mean": 216.184,
+        "gpu1_util_mean": 27.6,
+        "gpu1_power_mean": 183.12800000000001,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/duckdb_ai_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/duckdb_ai_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 512,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/bounded_http_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 60.0,
+        "gpu0_power_mean": 304.822,
+        "gpu1_util_mean": 60.0,
+        "gpu1_power_mean": 284.908,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/bounded_http_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/bounded_http_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 512,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/bounded_http_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 60.0,
+        "gpu0_power_mean": 297.65,
+        "gpu1_util_mean": 60.0,
+        "gpu1_power_mean": 276.51800000000003,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/bounded_http_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/bounded_http_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 512,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/bounded_http_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 63.2,
+        "gpu0_power_mean": 302.038,
+        "gpu1_util_mean": 66.8,
+        "gpu1_power_mean": 284.234,
+        "n_samples": 5.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/bounded_http_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/bounded_http_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 512,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/duckdb_ai_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 50.0,
+        "gpu0_power_mean": 248.77666666666667,
+        "gpu1_util_mean": 50.0,
+        "gpu1_power_mean": 231.935,
+        "n_samples": 6.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/duckdb_ai_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/duckdb_ai_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 512,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/duckdb_ai_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 42.857142857142854,
+        "gpu0_power_mean": 255.55714285714285,
+        "gpu1_util_mean": 42.857142857142854,
+        "gpu1_power_mean": 229.28857142857143,
+        "n_samples": 7.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/duckdb_ai_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/duckdb_ai_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 512,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/duckdb_ai_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 51.42857142857143,
+        "gpu0_power_mean": 251.97285714285715,
+        "gpu1_util_mean": 42.857142857142854,
+        "gpu1_power_mean": 250.6185714285714,
+        "n_samples": 7.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/duckdb_ai_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_512/duckdb_ai_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 1024,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/bounded_http_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 66.66666666666667,
+        "gpu0_power_mean": 344.2266666666667,
+        "gpu1_util_mean": 77.11111111111111,
+        "gpu1_power_mean": 331.0422222222222,
+        "n_samples": 9.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/bounded_http_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/bounded_http_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 1024,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/bounded_http_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 66.55555555555556,
+        "gpu0_power_mean": 331.50444444444446,
+        "gpu1_util_mean": 77.77777777777777,
+        "gpu1_power_mean": 325.13444444444445,
+        "n_samples": 9.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/bounded_http_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/bounded_http_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 1024,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/bounded_http_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 66.66666666666667,
+        "gpu0_power_mean": 329.19888888888886,
+        "gpu1_util_mean": 66.66666666666667,
+        "gpu1_power_mean": 321.93444444444447,
+        "n_samples": 9.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/bounded_http_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/bounded_http_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 1024,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/duckdb_ai_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 54.54545454545455,
+        "gpu0_power_mean": 271.9327272727273,
+        "gpu1_util_mean": 56.27272727272727,
+        "gpu1_power_mean": 282.8545454545455,
+        "n_samples": 11.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/duckdb_ai_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/duckdb_ai_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 1024,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/duckdb_ai_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 63.18181818181818,
+        "gpu0_power_mean": 304.3963636363636,
+        "gpu1_util_mean": 63.63636363636363,
+        "gpu1_power_mean": 291.05454545454546,
+        "n_samples": 11.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/duckdb_ai_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/duckdb_ai_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 1024,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/duckdb_ai_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 60.0,
+        "gpu0_power_mean": 305.291,
+        "gpu1_util_mean": 68.6,
+        "gpu1_power_mean": 303.075,
+        "n_samples": 10.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/duckdb_ai_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_1024/duckdb_ai_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 2048,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/bounded_http_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 85.71428571428571,
+        "gpu0_power_mean": 369.24571428571426,
+        "gpu1_util_mean": 85.71428571428571,
+        "gpu1_power_mean": 366.62928571428574,
+        "n_samples": 14.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/bounded_http_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/bounded_http_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 2048,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/bounded_http_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 80.0,
+        "gpu0_power_mean": 377.69933333333336,
+        "gpu1_util_mean": 80.0,
+        "gpu1_power_mean": 366.67266666666666,
+        "n_samples": 15.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/bounded_http_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/bounded_http_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 2048,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/bounded_http_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 80.0,
+        "gpu0_power_mean": 378.0333333333333,
+        "gpu1_util_mean": 80.0,
+        "gpu1_power_mean": 365.9766666666667,
+        "n_samples": 15.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/bounded_http_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/bounded_http_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 2048,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/duckdb_ai_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 66.88235294117646,
+        "gpu0_power_mean": 328.11882352941177,
+        "gpu1_util_mean": 70.58823529411765,
+        "gpu1_power_mean": 301.3058823529412,
+        "n_samples": 17.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/duckdb_ai_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/duckdb_ai_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 2048,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/duckdb_ai_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 64.88235294117646,
+        "gpu0_power_mean": 333.49,
+        "gpu1_util_mean": 69.76470588235294,
+        "gpu1_power_mean": 318.0147058823529,
+        "n_samples": 17.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/duckdb_ai_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/duckdb_ai_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 2048,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/duckdb_ai_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 67.76470588235294,
+        "gpu0_power_mean": 345.6370588235294,
+        "gpu1_util_mean": 67.3529411764706,
+        "gpu1_power_mean": 313.6341176470588,
+        "n_samples": 17.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/duckdb_ai_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_2048/duckdb_ai_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 4096,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/bounded_http_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 94.12280701754386,
+        "gpu0_power_mean": 425.3491228070175,
+        "gpu1_util_mean": 94.73684210526316,
+        "gpu1_power_mean": 403.0538596491228,
+        "n_samples": 57.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/bounded_http_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/bounded_http_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 4096,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/bounded_http_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 96.2909090909091,
+        "gpu0_power_mean": 427.5207272727273,
+        "gpu1_util_mean": 94.54545454545455,
+        "gpu1_power_mean": 412.3498181818182,
+        "n_samples": 55.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/bounded_http_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/bounded_http_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 4096,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/bounded_http_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 94.44444444444444,
+        "gpu0_power_mean": 428.2788888888889,
+        "gpu1_util_mean": 94.44444444444444,
+        "gpu1_power_mean": 411.7696296296296,
+        "n_samples": 54.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/bounded_http_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/bounded_http_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 4096,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/duckdb_ai_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 86.66666666666667,
+        "gpu0_power_mean": 399.942,
+        "gpu1_util_mean": 86.66666666666667,
+        "gpu1_power_mean": 391.963,
+        "n_samples": 60.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/duckdb_ai_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/duckdb_ai_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 4096,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/duckdb_ai_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 86.12068965517241,
+        "gpu0_power_mean": 403.28344827586204,
+        "gpu1_util_mean": 86.20689655172414,
+        "gpu1_power_mean": 389.0787931034483,
+        "n_samples": 58.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/duckdb_ai_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/duckdb_ai_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 4096,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/duckdb_ai_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 88.13559322033899,
+        "gpu0_power_mean": 410.24118644067795,
+        "gpu1_util_mean": 89.1864406779661,
+        "gpu1_power_mean": 392.48728813559325,
+        "n_samples": 59.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/duckdb_ai_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_4096/duckdb_ai_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 8192,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/bounded_http_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 96.37288135593221,
+        "gpu0_power_mean": 436.2014406779661,
+        "gpu1_util_mean": 95.76271186440678,
+        "gpu1_power_mean": 414.1913559322034,
+        "n_samples": 118.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/bounded_http_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/bounded_http_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 8192,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/bounded_http_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 95.87179487179488,
+        "gpu0_power_mean": 433.8602564102564,
+        "gpu1_util_mean": 95.72649572649573,
+        "gpu1_power_mean": 412.89307692307693,
+        "n_samples": 117.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/bounded_http_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/bounded_http_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 8192,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/bounded_http_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 97.15,
+        "gpu0_power_mean": 438.47825,
+        "gpu1_util_mean": 96.68333333333334,
+        "gpu1_power_mean": 416.9865,
+        "n_samples": 120.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/bounded_http_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/bounded_http_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 8192,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/duckdb_ai_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 90.40944881889764,
+        "gpu0_power_mean": 415.3790551181102,
+        "gpu1_util_mean": 90.55118110236221,
+        "gpu1_power_mean": 399.0561417322835,
+        "n_samples": 127.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/duckdb_ai_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/duckdb_ai_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 8192,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/duckdb_ai_c32_rep2",
+      "kind": "gate",
+      "status": "failed",
+      "error": "RuntimeError: cell duckdb_ai_c32 shard exits: (2, 0)",
+      "traceback": "Traceback (most recent call last):\n  File \"/root/autodl-tmp/ai-operator/code/scripts/baselines/multicard_scale_ramp.py\", line 290, in _run_gate_cell\n    run_core_gate(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1105, in run_core_gate\n    _run_core_gate_cell(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1184, in _run_core_gate_cell\n    raise RuntimeError(f\"cell {cell.cell_id} shard exits: {return_codes}\")\nRuntimeError: cell duckdb_ai_c32 shard exits: (2, 0)\n"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 8192,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_8192/duckdb_ai_c32_rep3",
+      "kind": "gate",
+      "status": "failed",
+      "error": "RuntimeError: cell duckdb_ai_c32 shard exits: (2, 0)",
+      "traceback": "Traceback (most recent call last):\n  File \"/root/autodl-tmp/ai-operator/code/scripts/baselines/multicard_scale_ramp.py\", line 290, in _run_gate_cell\n    run_core_gate(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1105, in run_core_gate\n    _run_core_gate_cell(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1184, in _run_core_gate_cell\n    raise RuntimeError(f\"cell {cell.cell_id} shard exits: {return_codes}\")\nRuntimeError: cell duckdb_ai_c32 shard exits: (2, 0)\n"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 10570,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/bounded_http_c32_rep1",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 96.27329192546584,
+        "gpu0_power_mean": 434.43453416149066,
+        "gpu1_util_mean": 96.8944099378882,
+        "gpu1_power_mean": 417.5227329192547,
+        "n_samples": 161.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/bounded_http_c32_rep1/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/bounded_http_c32_rep1/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 10570,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/bounded_http_c32_rep2",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 96.28301886792453,
+        "gpu0_power_mean": 435.80974842767296,
+        "gpu1_util_mean": 97.48427672955975,
+        "gpu1_power_mean": 419.1263522012579,
+        "n_samples": 159.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/bounded_http_c32_rep2/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/bounded_http_c32_rep2/vllm_gauges.json"
+    },
+    {
+      "arm": "bounded_http",
+      "scale": 10570,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/bounded_http_c32_rep3",
+      "kind": "gate",
+      "status": "passed",
+      "gpu_summary": {
+        "gpu0_util_mean": 96.25,
+        "gpu0_power_mean": 432.9074375,
+        "gpu1_util_mean": 97.5,
+        "gpu1_power_mean": 418.247,
+        "n_samples": 160.0
+      },
+      "ttft_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/bounded_http_c32_rep3/ttft_metrics.json",
+      "gauge_metrics": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/bounded_http_c32_rep3/vllm_gauges.json"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 10570,
+      "concurrency": 32,
+      "rep": 1,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/duckdb_ai_c32_rep1",
+      "kind": "gate",
+      "status": "failed",
+      "error": "RuntimeError: cell duckdb_ai_c32 shard exits: (0, 2)",
+      "traceback": "Traceback (most recent call last):\n  File \"/root/autodl-tmp/ai-operator/code/scripts/baselines/multicard_scale_ramp.py\", line 290, in _run_gate_cell\n    run_core_gate(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1105, in run_core_gate\n    _run_core_gate_cell(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1184, in _run_core_gate_cell\n    raise RuntimeError(f\"cell {cell.cell_id} shard exits: {return_codes}\")\nRuntimeError: cell duckdb_ai_c32 shard exits: (0, 2)\n"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 10570,
+      "concurrency": 32,
+      "rep": 2,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/duckdb_ai_c32_rep2",
+      "kind": "gate",
+      "status": "failed",
+      "error": "RuntimeError: cell duckdb_ai_c32 shard exits: (0, 2)",
+      "traceback": "Traceback (most recent call last):\n  File \"/root/autodl-tmp/ai-operator/code/scripts/baselines/multicard_scale_ramp.py\", line 290, in _run_gate_cell\n    run_core_gate(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1105, in run_core_gate\n    _run_core_gate_cell(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1184, in _run_core_gate_cell\n    raise RuntimeError(f\"cell {cell.cell_id} shard exits: {return_codes}\")\nRuntimeError: cell duckdb_ai_c32 shard exits: (0, 2)\n"
+    },
+    {
+      "arm": "duckdb_ai",
+      "scale": 10570,
+      "concurrency": 32,
+      "rep": 3,
+      "cell": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_10570/duckdb_ai_c32_rep3",
+      "kind": "gate",
+      "status": "failed",
+      "error": "RuntimeError: cell duckdb_ai_c32 shard exits: (0, 2)",
+      "traceback": "Traceback (most recent call last):\n  File \"/root/autodl-tmp/ai-operator/code/scripts/baselines/multicard_scale_ramp.py\", line 290, in _run_gate_cell\n    run_core_gate(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1105, in run_core_gate\n    _run_core_gate_cell(\n  File \"/root/autodl-tmp/ai-operator/code/src/baselines/text/orchestration/gate_runner.py\", line 1184, in _run_core_gate_cell\n    raise RuntimeError(f\"cell {cell.cell_id} shard exits: {return_codes}\")\nRuntimeError: cell duckdb_ai_c32 shard exits: (0, 2)\n"
+    }
+  ],
+  "n_passed": 49,
+  "n_failed": 5
+}
