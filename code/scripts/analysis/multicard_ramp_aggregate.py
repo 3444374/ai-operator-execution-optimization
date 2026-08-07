@@ -434,6 +434,17 @@ def _project_cell_metrics(cell: Path) -> dict:
         "mfu_fraction": round(efficiency["mfu_fraction"], 4) if efficiency["mfu_fraction"] is not None else None,
         "energy_j": round(efficiency["energy_j"], 1) if efficiency["energy_j"] is not None else None,
         "energy_j_per_1k_tokens": round(efficiency["energy_j_per_1k_tokens"], 2) if efficiency["energy_j_per_1k_tokens"] is not None else None,
+        # §7.5C(1) project feeding-saturation: the project profiler ALREADY samples gauges
+        # during the run (unlike gate arms' before/after). Surface vllm_running/waiting/kv
+        # mean/max from the summary. NOTE caliber: project's vllm_running_mean is the prof's
+        # per-run scrape (per-endpoint, NOT Σ-endpoints like the gate arms' _total_); kept
+        # under distinct names so the aggregate does not silently mix the two calibers.
+        "vllm_running_prof_mean": round(_f(prof.get("vllm_running_mean")), 1) or None,
+        "vllm_running_prof_max": round(_f(prof.get("vllm_running_max")), 1) or None,
+        "vllm_waiting_prof_mean": round(_f(prof.get("vllm_waiting_mean")), 1) or None,
+        "vllm_waiting_prof_max": round(_f(prof.get("vllm_waiting_max")), 1) or None,
+        "vllm_kv_cache_usage_prof_mean": round(_f(prof.get("vllm_kv_cache_usage_mean")), 3) or None,
+        "vllm_kv_cache_usage_prof_max": round(_f(prof.get("vllm_kv_cache_usage_max")), 3) or None,
         "gpu": gpu_summary,
         **_identity_role_fields(cell),
     }
