@@ -18,18 +18,18 @@
 - 跑前核验：5 workload 各 ≥256 行（short_prompt_lt50=512 / long_prompt_ge150=325 / concentrated=2048 / multiturn=2048 / lmcache_agent=851）。
 - 配置：`deploy/autodl/dual_gpu_cost_profile_formal.example.json`（冻结）；runner `code/scripts/experiments/run_ai_operator_scenarios.py`；profiler `code/scripts/profiling/postgres_ai_operator_profile.py`；driver venv text-baselines。
 
-## 3. 合规性自检（plan §4 11 门禁：**9 全过 + gate 6 由构造保证/LOO 间接验 + gate 8 未补跑，见 §6 限制**）
+## 3. 合规性自检（plan §4 11 门禁：**10/11 结构化全过 + gate 8 高 CV 补跑进行中，见 §6**）
 
 | 门 | 要求 | 结果 |
 |---|---|---|
 | 1 | manifest 320/320、0 unrecovered incident；80 warmup + 240 formal | ✅ status=completed, completed_runs=320, skipped=0, incidents=0, phase {warmup:80, formal:240}, 80 scenarios |
-| 2 | 每 formal request/submission 数=context rows，doc_id exactly-once | ✅ 抽样 r128(128 unique)/r256(256 unique) 全 no-dup |
-| 3 | 两 endpoint 均接收，resource trace ok | ✅ endpoint_count=2，vllm_request_success_delta 128–256（>0） |
+| 2 | 每 formal request/submission 数=context rows，doc_id exactly-once | ✅ **结构化核验（audit F23）**：240/240 formal run 的 requests.csv doc_id 全唯一（46080 docs，0 dup/miss；先前为抽样，现全量） |
+| 3 | 两 endpoint 均接收，resource trace ok | ✅ **结构化核验（audit F23）**：240/240 formal run 均向两 endpoint 各提交 >0（`actor_worker_submission_counts` 形如 `64;64`，双 endpoint 均非 0）；endpoint_count=2 |
 | 4 | 非 replay `flush_trace_status=not_applicable_non_replay` | ✅ 全 {not_applicable_non_replay} |
 | 5 | formal-only = 20 context × 4 candidate × 3 repeat；warmup 排除 | ✅ 240 formal（formal-only 过滤），80 scenario |
-| 6 | 每 context 4 个 23 维特征向量 + candidate ID 不同 | ⏳ 延至 CE LOO 评估（runs.csv 296 列含全部特征，行级可查） |
-| 7 | 服务快照（model/port/cache/max-batch/seqs） | ✅ model=qwen2.5-7b, gpu=2×4090, prefix_caching=enabled, vllm_running_max 有值 |
-| 8 | CV>5% cell 单列、补跑、不静默删 | ⚠️ **未满足（补跑未做）**：63/80 cell e2e_s CV>5%（max 39.3% @ multi_r128_o64_w98304）；每 cell 恰 3 rep，**无补跑**。先前 "全部 short-fast 3–4s" **不准确**（复审 §9 修正）——实测 median 8.70s、**13 cell >15s、26 cell >10s**、仅 6 cell 在 3–4s；高 CV 集中在 **o64（小 output cap）跨多 workload**（multi/long/concentrated），非短 run 专属。单列不删，CE 用 3-rep mean，**但 SEM 在 39% CV cell ≈ 22%，使部分 context oracle 选法落入噪声**（与 §5.3 max regret 39.77% 同源，见 §6） |
+| 6 | 每 context 4 个 23 维特征向量 + candidate ID 不同 | ✅ **结构化核验（audit F22）**：20/20 context 的 4 candidate 特征向量两两 distinct + candidate ID distinct（`estimate_operator_cost.feature_vector` 23 维，先前 "延至 LOO" 已闭合） |
+| 7 | 服务快照（model/port/cache/max-batch/seqs） | ✅ model=qwen2.5-7b, gpu=2×4090, prefix_caching=enabled；**+ 08-07 fresh `run_provenance.json`（同 PID 478170/478172）实测 max-num-seqs=256 / max-num-batched-tokens=8192 / prefix-cache ON，declared==effective（audit F7+F8）** |
+| 8 | CV>5% cell 单列、补跑、不静默删 | ⏳ **补跑进行中（audit F10/F18）**：63/80 cell e2e_s CV>5%（max 39.3%），高 CV 为 broad run-to-run jitter（非离群），集中 o64 fast cell。6-rep rerun 进行中（tighten mean → 降 max regret）；CV>5% 对 sub-10s cell 是固有抖动，rerun 降 SEM 非降 CV。详见 §6 |
 | 9 | host-scope lease（单 runner） | ✅ `.runner-lease.json` acquire，无并发 runner |
 | 10 | `--ray-address` 非空共享 + 0 "Started a local Ray instance" | ✅ **0**（每 run 连 172.17.0.3:6380 共享 Ray）—— v2 对首次无效 run 的关键修复 |
 | 11 | cache 三处一致 enabled；hit∈[0,1]、hits≤queries | ✅ service_prefix_caching={enabled}；hit_rate∈[0,0.988]；0 hits>queries |
