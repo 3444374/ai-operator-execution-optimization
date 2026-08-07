@@ -93,6 +93,18 @@
 
 见 `runs.csv`（320 行 × 296 列：吞吐/E2E 分位/TTFT-ITL/prefix-cache hit/vLLM running·waiting·KV/GPU util·mem·power·energy·MFU/pipeline 阶段计时/packing·service-quantum cost/actor 调度/SLO goodput/cost per M tok）。CE 特征向量（23 维）在其中。
 
+### 5.4 MFU（Model FLOPs Utilization）— 复审 `mfu-audit` 验证（2026-08-07）
+
+> ⚠️ **单位**：`mfu_estimate` 是 **[0,1] 分数，不是百分比**（代码 `code/src/observability/metrics/resources.py:213-218`，status check `ok if estimate <= 1.0`）。先前版本曾误读成 "0.4%"——实际是 **40%**。
+
+- **公式（对 240 formal 行逐一复算，最大误差 1.04e-7）**：`mfu_estimate = vllm_estimated_flops_per_gpu_delta / (gpu_peak_tflops × 1e12 × operator_wall_s)`。
+- **常数**：`gpu_peak_tflops=165`（RTX 4090 bf16 dense fp32-accumulate，正确）；`mfu_time_basis=operator_wall_s`（≈ model_request_wall_s，比值 1.003，**未被 db_fetch/writeback 稀释**）；`model_flops_per_token=0.0`（此方法下未用，vLLM 直接给 FLOPs）。⚠️ 切勿用 `model_service_s`（788s，跨 actor/请求累积和，非 wall）做分母——会得假 ~0.55%。
+- **真值分布**：均值 **40.78%** / 中位 39.63%，范围 **11.78%–78.78%**。按切片：output cap（o64 **48.9%** > o256 32.7%，decode 越多越 memory-bound，r=−0.508）；rows（128: 35.9% < 256: 45.7%）；active-work（W32k 33.8% < W98k 47.3% 单调）；workload（long_prompt 50.8% > multiturn 44.4% > concentrated 39.7% > agent 35.0% ≈ short 34.0%）。极值 cell：MAX long×256×o64 = 67.75%（单次 78.78%）；MIN agent×128×o256 = 17.33%（单次 11.78%）。
+- **util ≠ MFU（关键洞察）**：MFU 与 `gpu_util_pct` **几乎不相关（r=−0.061）**——最低 MFU cell（11.8–17.1%）反而 gpu_util 73–97%（GPU "忙"但卡在 HBM，长 decode memory-bound）；最高 MFU cell（71–79%）gpu_util 65–90%（compute-bound prefill）。这是教科书式 LLM 推理特征：**util%（SM 占用）≠ MFU（有用 FLOP 率），低 MFU + 高 util = memory-bound decode，不是 GPU 没干活**。
+- **合理性**：7B / 128–256 行 / cap 64–256 / vLLM 连续批处理，均值 ~40% MFU 健康；naive 2N 上界约是实测 1.86×（decode 远低于 2N/token 峰值，方向对）。vLLM FLOP 估计可能对 decode token 打折（推断 N≈4.1B vs 实际 7.6B）→ 保守方向。
+- **缺口**：4 路径 ramp（bounded/duckdb/lb_rr/project 规模 ramp）**完全没记 MFU**——bounded/duckdb/lb_rr raw 从没读 vLLM FLOP counter，project raw 有 counter 但被 `gpu_peak_tflops=0.0` 挡住。**4 臂 MFU 横比需 ramp 重跑加 FLOP counter + 配 peak=165**（见 §8）。
+
+
 ## 6. 结果解释（事实 / 推断 / 不能声称）
 
 - **事实**：320-run 数据有效（§3：9/11 门禁全过 + gate 6 由构造保证/LOO 间接验 + gate 8 补跑未做）；4 candidate 在每 context 产生 12–86% e2e 差异；最优 active-work 随 context 变；CE LOO（§5.3）CE3/CE5 pooled regret 3.70%、candidate pairwise 0.758（过 §6）、median fold regret 0%，**但 macro-mean 6.42% + max 39.77% 不过 §6**；CE0/CE2 退化（pooled 49.7%），CE1 12.1%。
