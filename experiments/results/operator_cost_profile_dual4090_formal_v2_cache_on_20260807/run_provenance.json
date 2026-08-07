@@ -1,0 +1,39 @@
+{
+  "vllm_processes": [
+    {
+      "pid": "478170",
+      "cmdline_flags": {
+        "--port": "8000",
+        "--max-num-seqs": "256",
+        "--max-num-batched-tokens": "8192",
+        "--enable-prefix-caching": "--enable-mfu-metrics",
+        "--gpu-memory-utilization": "0.90",
+        "--max-model-len": "8192",
+        "--model": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct"
+      },
+      "cmdline_full": "/root/autodl-tmp/venvs/vllm-4090/bin/python -m vllm.entrypoints.openai.api_server --model /root/autodl-tmp/models/Qwen2.5-7B-Instruct --served-model-name qwen2.5-7b --dtype auto --max-model-len 8192 --gpu-memory-utilization 0.90 --port 8000 --host 127.0.0.1 --enable-prefix-caching --enable-mfu-metrics --max-num-batched-tokens 8192 --max-num-seqs 256 "
+    },
+    {
+      "pid": "478172",
+      "cmdline_flags": {
+        "--port": "8001",
+        "--max-num-seqs": "256",
+        "--max-num-batched-tokens": "8192",
+        "--enable-prefix-caching": "--enable-mfu-metrics",
+        "--gpu-memory-utilization": "0.90",
+        "--max-model-len": "8192",
+        "--model": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct"
+      },
+      "cmdline_full": "/root/autodl-tmp/venvs/vllm-4090/bin/python -m vllm.entrypoints.openai.api_server --model /root/autodl-tmp/models/Qwen2.5-7B-Instruct --served-model-name qwen2.5-7b --dtype auto --max-model-len 8192 --gpu-memory-utilization 0.90 --port 8001 --host 127.0.0.1 --enable-prefix-caching --enable-mfu-metrics --max-num-batched-tokens 8192 --max-num-seqs 256 "
+    }
+  ],
+  "declared": {
+    "max_num_seqs": "256",
+    "max_num_batched_tokens": "8192",
+    "endpoint_urls": [
+      "http://127.0.0.1:8000/v1/completions",
+      "http://127.0.0.1:8001/v1/completions"
+    ]
+  },
+  "verify": "declared==effective PASS (strict, 08-07 capture)"
+}
