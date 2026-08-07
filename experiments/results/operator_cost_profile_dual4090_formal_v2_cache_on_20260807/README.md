@@ -1,7 +1,8 @@
 # 双 4090 算子代价估计 v2 cache-on formal profile（320 runs，2026-08-07）
 
 > **状态（plan §7）：本目录是 v2 cache-on 重跑的**有效数据 + 归档 + CE0–CE6 context-LOO 评估**。2026-08-04 首次 run 因并发共用 GPU + 空 `--ray-address`（每子 run local Ray）而**无效**（见 `../operator_cost_profile_dual4090_formal_20260804/`）；本轮 v2 修复后重跑，**320/320 有效、0 incident、gate 10（0 local-Ray）通过**——正是对首次无效的闭环。**
-> **CE LOO 主结果（§5.3）**：CE3_ridge 与 CE5_hybrid 决策 regret **3.70%**（过 5% 门槛），pick_rate 0.55，selected rank 1.7；但**无估计器过完整 promotion contract**（行级 pairwise <0.75）。CE0/CE2 退化（全 tie，regret 49.7%）；CE1 解析 12.1%；CE4 LightGBM skipped（依赖未装）。
+> **CE LOO 主结果（§5.3）**：CE3_ridge 与 CE5_hybrid pooled 决策 regret 3.70%、candidate pairwise 0.758、median fold regret 0%——但 **plan §6 contract 的 macro-mean regret 6.42%（>5%）+ max regret 39.77%（>15%）FAIL**，故**无估计器过完整 promotion contract**。
+> ⚠️ **本节经 6-dimension 对抗式复审修正**（见文末 §9 erratum）：先前版本两处误——(a) 把 **pooled** 3.70% 当 "过 5% 门槛"，实际 contract 用 median/macro/max，其中 macro 6.42% + max 39.77% 不过；(b) 把 **行级** pairwise（0.692）当 contract 阻塞点，实际 plan §6 指 **candidate-aggregated** pairwise，CE3/CE5 = 0.758 **实际 PASS**——真正 blocker 是 macro/max **regret**（非 pairwise）。CE0/CE2 退化（regret 49.7%）；CE1 12.1%；CE4 LightGBM skipped。
 
 ## 1. 实验目的（plan §1）
 
@@ -17,7 +18,7 @@
 - 跑前核验：5 workload 各 ≥256 行（short_prompt_lt50=512 / long_prompt_ge150=325 / concentrated=2048 / multiturn=2048 / lmcache_agent=851）。
 - 配置：`deploy/autodl/dual_gpu_cost_profile_formal.example.json`（冻结）；runner `code/scripts/experiments/run_ai_operator_scenarios.py`；profiler `code/scripts/profiling/postgres_ai_operator_profile.py`；driver venv text-baselines。
 
-## 3. 合规性自检（plan §4 11 门禁，全过）
+## 3. 合规性自检（plan §4 11 门禁：**9 全过 + gate 6 由构造保证/LOO 间接验 + gate 8 未补跑，见 §6 限制**）
 
 | 门 | 要求 | 结果 |
 |---|---|---|
@@ -28,7 +29,7 @@
 | 5 | formal-only = 20 context × 4 candidate × 3 repeat；warmup 排除 | ✅ 240 formal（formal-only 过滤），80 scenario |
 | 6 | 每 context 4 个 23 维特征向量 + candidate ID 不同 | ⏳ 延至 CE LOO 评估（runs.csv 296 列含全部特征，行级可查） |
 | 7 | 服务快照（model/port/cache/max-batch/seqs） | ✅ model=qwen2.5-7b, gpu=2×4090, prefix_caching=enabled, vllm_running_max 有值 |
-| 8 | CV>5% cell 单列、补跑、不静默删 | ⚠️ 63/80 cell e2e_s CV>5%，**全部是 short-fast cell**（e2e 3–4s，固有短 run 抖动，§7.5 同现象）；非离群单点，**单列不删**，CE 用 3-rep mean（稳健） |
+| 8 | CV>5% cell 单列、补跑、不静默删 | ⚠️ **未满足（补跑未做）**：63/80 cell e2e_s CV>5%（max 39.3% @ multi_r128_o64_w98304）；每 cell 恰 3 rep，**无补跑**。先前 "全部 short-fast 3–4s" **不准确**（复审 §9 修正）——实测 median 8.70s、**13 cell >15s、26 cell >10s**、仅 6 cell 在 3–4s；高 CV 集中在 **o64（小 output cap）跨多 workload**（multi/long/concentrated），非短 run 专属。单列不删，CE 用 3-rep mean，**但 SEM 在 39% CV cell ≈ 22%，使部分 context oracle 选法落入噪声**（与 §5.3 max regret 39.77% 同源，见 §6） |
 | 9 | host-scope lease（单 runner） | ✅ `.runner-lease.json` acquire，无并发 runner |
 | 10 | `--ray-address` 非空共享 + 0 "Started a local Ray instance" | ✅ **0**（每 run 连 172.17.0.3:6380 共享 Ray）—— v2 对首次无效 run 的关键修复 |
 | 11 | cache 三处一致 enabled；hit∈[0,1]、hits≤queries | ✅ service_prefix_caching={enabled}；hit_rate∈[0,0.988]；0 hits>queries |
@@ -72,18 +73,21 @@
 
 ### 5.3 CE0–CE6 context-LOO 评估（plan §5；leave-one-decision-context-out，240 formal 行 / 20 context / 每 context 4 candidate）
 
-`ce_context_loo_20260807.json`（folds=20）。决策层 pooled 指标（oracle_runtime=199.53s 跨 20 context 求和）：
+`ce_context_loo_20260807.json`（folds=20）。下表为**完整 plan §6 contract 矩阵**（复审 §9 修正：先前版本只报 pooled regret + 行级 pairwise，掩盖了真正的 blocker）：
 
-| 估计器 | decision_regret_% | pick_rate | selected_rank_mean | regret≤5% 门槛 | row pairwise≥0.75 门槛 | promotion contract |
-|---|---|---|---|---|---|---|
-| CE0_mean | 49.71 | 0.05 | 3.45 | ✗ | ✗ | **FAIL** |
-| CE1_analytical | 12.11 | 0.35 | 2.00 | ✗ | ✗ | **FAIL** |
-| CE2_lookup | 49.71 | 0.05 | 3.45 | ✗ | ✗ | **FAIL**（全 tie 退化，20 tie-context） |
-| **CE3_ridge** | **3.70** | 0.55 | 1.70 | **✓** | ✗ | **FAIL**（regret 过、pairwise 不过） |
-| CE4_lightgbm | — | — | — | — | — | skipped（依赖未装） |
-| **CE5_hybrid**（解析+残差） | **3.70** | 0.55 | 1.70 | **✓** | ✗ | **FAIL**（regret 过、pairwise 不过） |
+| 估计器 | pooled regret% | §6 regret：median / macro / max（门槛 5/5/15%） | candidate pairwise（§6，≥0.75） | row MAE s（mean） | promotion contract |
+|---|---|---|---|---|---|
+| CE0_mean | 49.71 | 41.6 / 41.5 / 86.5（median/macro/max 全 FAIL） | 0.50 ✗ | — | **FAIL** |
+| CE1_analytical | 12.11 | 9.8 / 12.1 / 41.2（全 FAIL） | 0.60 ✗ | 3.51 | **FAIL** |
+| CE2_lookup | 49.71 | 41.6 / 41.5 / 86.5（全 FAIL） | 0.50 ✗ | — | **FAIL**（全 tie 退化） |
+| **CE3_ridge** | 3.70（pooled） | **0.0 ✓ / 6.42 ✗ / 39.77 ✗** | **0.758 ✓** | 3.41 | **FAIL**（median 过；macro+max regret 不过） |
+| CE4_lightgbm | — | — | — | — | skipped（lightgbm 依赖未装） |
+| **CE5_hybrid**（解析+残差） | 3.70（pooled） | **0.0 ✓ / 6.42 ✗ / 39.77 ✗** | **0.758 ✓** | 4.24 | **FAIL**（macro+max regret 不过） |
 
-CE6 oracle 仅作上界（不计）。promotion contract 见 plan §6（pairwise ≥0.75 / median regret ≤5% / macro ≤5% / max ≤15%）；本 harness 用行级 pairwise（`metric_contract_note`: candidate-aggregated pairwise 另报，不替代）。单 fold 层：CE5 典型 fold 的 candidate_ranking spearman≈0.80、pairwise≈0.83、selection regret 0（见该 context），跨 20 fold 汇总 regret 3.70%。
+- **pooled regret 3.70% 不是 plan §6 contract 指标**（它是 selected/oracle runtime 跨 20 context 求和比）。§6 freeze 的是 **median / macro-mean / max** fold regret；CE3/CE5 median 0% 过，但 **macro 6.42% > 5%、max 39.77% > 15%（2.6×）不过**。
+- **pairwise 门槛 plan §6 指 candidate-aggregated**：CE3/CE5 candidate pairwise 0.758 **实际过 0.75**（harness 另报的行级 pairwise 0.692 不是 §6 gate；先前版本误把行级当 contract 是错的）。
+- **故 CE3/CE5 真正的 blocker 是 macro/max regret，不是 pairwise**。CE6 oracle 仅作上界。CE3≈CE5（pooled/macro/max/MAE 几近一致 → 本数据上残差校正未在 Ridge 之上再增益；CE5 MAE 4.24 略高于 CE3 3.41）。
+- **max regret 39.77% 与 §3 gate 8 同源**：高 CV（o64 cell）使个别 fold 的 oracle 选法落入噪声，estimator 选错 → 单 fold regret 飙高 → max 被拉大。补跑高 CV cell（gate 8）是最可能降低 max regret 的手段。
 
 ### 5.2 全指标（per-run 296 列）
 
@@ -91,21 +95,31 @@ CE6 oracle 仅作上界（不计）。promotion contract 见 plan §6（pairwise
 
 ## 6. 结果解释（事实 / 推断 / 不能声称）
 
-- **事实**：320-run 数据有效（§3 全门禁）；4 candidate 在每 context 产生 12–86% e2e 差异；最优 active-work 随 context 变（非固定）；CE LOO（§5.3）CE3_ridge / CE5_hybrid 决策 regret 3.70%（过 5%），CE0/CE2 退化 49.7%，CE1 12.1%。
-- **推断**：数据含**强排序信号**（0 退化 context），可学习估计器（Ridge / 解析+残差）能把 active-work 选到近 oracle（regret 3.7% < 5%）；CE3 ≈ CE5 表明本数据上**残差校正未在 Ridge 之上再增益**（解析模型的偏差已被 Ridge 的线性项吸收）。大 workload（lmcache_agent、长 prompt、大 cap）倾向大 active-work（98304），小/短 workload 最优点分散——机制上大 active-work 提供更多在飞行 slot，在需要饱和的 context 受益。
-- **不能声称**：任一估计器"过完整 promotion contract 可接管计划选择"——**全部 FAIL**（行级 pairwise <0.75，plan §6）；CE4 LightGBM 未跑（skipped，依赖未装），CE3/CE5 vs CE4 的对比待补；CE5"优于 baseline"不成立（与 CE3 持平，须 §6 同时列 CE1/CE2/CE3 + Pareto 口径，本结果是 CE3≈CE5 > CE1 > CE0/CE2，非 Pareto 全胜）。short-fast cell 高 CV 是**短 run 固有抖动非离群**，不能当数据质量失败丢弃，CE 用 3-rep mean。
+- **事实**：320-run 数据有效（§3：9/11 门禁全过 + gate 6 由构造保证/LOO 间接验 + gate 8 补跑未做）；4 candidate 在每 context 产生 12–86% e2e 差异；最优 active-work 随 context 变；CE LOO（§5.3）CE3/CE5 pooled regret 3.70%、candidate pairwise 0.758（过 §6）、median fold regret 0%，**但 macro-mean 6.42% + max 39.77% 不过 §6**；CE0/CE2 退化（pooled 49.7%），CE1 12.1%。
+- **推断**：数据含**强排序信号**（0 退化 context）；Ridge/解析+残差能把"选中候选"做到 candidate pairwise 0.758 + median regret 0%（多数 fold 选对），**但 macro/max regret 被 ~9 个高 CV（o64）fold 拉大**——这些 fold 的 oracle 选法落入 3-rep 噪声，estimator 选错即单 fold regret 飙高。CE3≈CE5（残差校正未在 Ridge 之上再增益）。大 workload（lmcache_agent、长 prompt、大 cap）倾向大 active-work（98304）。
+- **不能声称**：任一估计器"过完整 promotion contract 可接管计划选择"——**全部 FAIL**（CE3/CE5 因 macro/max regret，非 pairwise；CE0/CE1/CE2 全维度不过）；CE4 LightGBM 未跑（skipped），CE3/CE5 vs CE4 对比待补；CE5"优于 baseline"不成立（与 CE3 持平）。**高 CV cell（63/80）非 "全 short-fast"**（实测 13 cell >15s），不能当数据质量失败丢弃，但也不能谎称已补跑——gate 8 未满足是**已记录的限制**，CE 用 3-rep mean 是 pragmatic 替代非门禁豁免。
 
 ## 7. 对课题含义
 
-算子代价估计（共同使能组件）有了第一份**有效**双 4090 数据 + 首次 LOO 评估：4 active-work 候选在同 context 内有强 e2e 差异（最高 86%），最优点 context-dependent；可部署估计器（Ridge、解析+残差）能把决策 regret 压到 3.7%（近 oracle），**但行级 pairwise 未达 0.75**，按 plan §6 不接管计划选择。即：候选"选对最优"已接近 oracle，但"对所有候选对稳定排序"还差。下一步若补 CE4（LightGBM）+ 改进 pairwise，或放宽到 candidate-aggregated pairwise，才可能过 contract → 进入 plan §8 TPC-H-derived 计划级 capability。
+算子代价估计（共同使能组件）有了第一份**有效**双 4090 数据 + 首次 LOO 评估：4 active-work 候选在同 context 内有强 e2e 差异（最高 86%），最优点 context-dependent；可部署估计器（Ridge、解析+残差）在多数 fold 选对候选（candidate pairwise 0.758 过 §6、median fold regret 0%），**但 macro-mean 6.42% + max 39.77% regret 未达 §6**，主因是高 CV（o64）fold 的 oracle 落入噪声。按 §6 不接管计划选择。下一步若**补跑高 CV cell（gate 8）降低 max regret** + 补 CE4（LightGBM），可能过 contract → 进入 plan §8 TPC-H-derived 计划级 capability。
 
 ## 8. 下一步
 
-1. **CE4 LightGBM 补跑**：装 lightgbm 到 text-baselines venv，重跑 context-LOO（数据已就绪，harness 已验证可加载本 runs.csv）。LightGBM 可能改善 pairwise（非线性）。
-2. **pairwise 改进诊断**：行级 pairwise 为何 <0.75（是否 short-fast cell 高 CV 主导？候选间 e2e 差异小时 pairwise 信号弱？）；评估 candidate-aggregated pairwise（plan §6 允许另报）是否更稳。
-3. **harness 路径硬编码修复**：`compare_cost_estimators_contextloo.py` 的 `load_rows`/`_source_evidence` 假设 REF_JSON + source_csv 在 REPO_ROOT 下（本评估用 wrapper 临时 patch + 把 runs.csv 拷进 repo 树）；改为 `--data-csv` 参数化，避免每 run 手动 patch。
-4. short-fast cell 高 CV：CE 用 3-rep mean（稳健）；若 LOO 误差集中这些 context，考虑补跑或降权。
+1. **gate 8 补跑（最高优先，直接降 max regret）**：补跑 63 个 CV>5% cell（尤其 13 个 mean>15s 的 o64 cell）至 CV≤5% 或预注 reps floor；这是 max regret 39.77% 的根因。
+2. **CE4 LightGBM 补跑**：装 lightgbm 到 text-baselines venv，重跑 context-LOO（数据已就绪）。
+3. **harness 路径硬编码修复**：`compare_cost_estimators_contextloo.py` 的 `load_rows`/`_source_evidence` 假设 REF_JSON + source_csv 在 REPO_ROOT 下（本评估用 wrapper 临时 patch + 把 runs.csv 拷进 repo 树）；改为 `--data-csv` 参数化。
+4. **contract 口径澄清**：harness 的 promotion_contract 用行级 pairwise，但 plan §6 指 candidate-aggregated（CE3/CE5 0.758 实际过）——harness 应改用 candidate pairwise 作 gate，避免误判。
 5. plan §8 TPC-H-derived 计划级 capability 仍 `planned-conditional`：须先有估计器过 §6 完整 contract。
+
+## 9. Erratum（2026-08-07 复审修正）
+
+经 6-dimension 对抗式复审（6 reviewer × 每发现 1 skeptic 验证；23 finding / 18 confirmed / 5 refuted），本 README 先前版本有 **2 处 HIGH 口径错误，已在上文修正**：
+
+1. **CE regret 口径**（§5.3/§6/banner）：先前把 **pooled** decision_regret 3.70% 当作 "过 plan §6 的 5% 门槛"。实际 §6 freeze median/macro/max；CE3/CE5 macro 6.42% + max 39.77% **FAIL**。修正：§5.3 表现完整 median/macro/max 矩阵。
+2. **CE pairwise 口径**（§5.3/§6）：先前把 **行级** pairwise（0.692）当 contract 阻塞点。实际 plan §6 指 **candidate-aggregated** pairwise；CE3/CE5 = 0.758 **PASS**。真正 blocker 是 macro/max regret（非 pairwise）。修正：§5.3 改报 candidate pairwise + §6/§7 重述 blocker。
+3. **Gate 8 归因**（§3）：先前 "全部 short-fast cell（3–4s）" **不实**——实测 median 8.70s、13 cell >15s、26 cell >10s，高 CV 集中在 o64 跨 workload。修正：§3 gate 8 行重述 + 标"未满足（补跑未做）"。
+
+**结论方向不变**（无估计器过完整 contract），但 blocker 从 "pairwise" 改为 "macro/max regret（高 CV fold 驱动）"。其余 confirmed medium finding（60s 门用 operator_wall 而非 model_serving_wall、§provenance comparison_role 机器闭合缺失、prediction 层指标原未列表等）记录在案、低风险。复审 workflow 脚本留 `journal.jsonl` 可追溯。
 
 ## provenance
 
