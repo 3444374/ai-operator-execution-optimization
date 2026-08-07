@@ -358,5 +358,49 @@ class TimingGranularityTests(unittest.TestCase):
         self.assertTrue(any("mixed" in str(e) for e in m.get("failed_rep_errors", [])))
 
 
+class ComputeEfficiencyTests(unittest.TestCase):
+    """§7.5D 补齐: MFU + energy computation. MFU is a [0,1] FRACTION (not %), per-GPU,
+    basis=service_wall -- the unit-lesson from the 320-run MFU misread (0.4 vs 40%)."""
+
+    def test_mfu_is_per_gpu_fraction_not_percent(self) -> None:
+        # 2 GPUs each 9.075e13 FLOPs over a 2.782s wall, peak=165 TFLOPS.
+        # MFU = mean(9.075e13) / (165e12 × 2.782) = 9.075e13 / 4.5903e14 = 0.1977 (FRACTION).
+        out = agg._compute_efficiency(
+            [9.075e13, 9.075e13],
+            service_total_tokens=232246,
+            service_wall_s=2.782,
+            gpu_power_mean_by_gpu={"gpu0": 350.0, "gpu1": 325.0},
+        )
+        self.assertIsNotNone(out["mfu_fraction"])
+        self.assertAlmostEqual(out["mfu_fraction"], 0.1977, places=3)
+        self.assertLess(out["mfu_fraction"], 1.0)  # it is a fraction, not a percent
+
+    def test_energy_joules_and_per_1k_tokens(self) -> None:
+        # 2 GPUs drawing 350+325=675 W over 2.782s -> 1877.85 J.
+        out = agg._compute_efficiency(
+            [9.075e13, 9.075e13],
+            service_total_tokens=232246,
+            service_wall_s=2.782,
+            gpu_power_mean_by_gpu={"gpu0": 350.0, "gpu1": 325.0},
+        )
+        self.assertAlmostEqual(out["energy_j"], 675.0 * 2.782, places=1)
+        # J/1k-tok = 1877.85 / (232246/1000) = 8.085
+        self.assertAlmostEqual(out["energy_j_per_1k_tokens"], 8.085, places=2)
+
+    def test_returns_none_when_flops_or_wall_missing(self) -> None:
+        out = agg._compute_efficiency(
+            [], service_total_tokens=100, service_wall_s=2.0,
+            gpu_power_mean_by_gpu={"gpu0": 300.0},
+        )
+        self.assertIsNone(out["mfu_fraction"])  # no flops -> MFU unavailable
+        self.assertIsNotNone(out["energy_j"])  # energy still computable from power
+        out2 = agg._compute_efficiency(
+            [1e14], service_total_tokens=100, service_wall_s=0.0,
+            gpu_power_mean_by_gpu={"gpu0": 300.0},
+        )
+        self.assertIsNone(out2["mfu_fraction"])  # zero wall -> div-by-zero guarded
+        self.assertIsNone(out2["energy_j"])  # zero wall -> no energy
+
+
 if __name__ == "__main__":
     unittest.main()

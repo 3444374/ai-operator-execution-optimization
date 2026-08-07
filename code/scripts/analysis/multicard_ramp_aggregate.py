@@ -46,11 +46,18 @@ if str(CODE_ROOT) not in sys.path:
 
 GATE_ARMS = ("bounded_http", "duckdb_ai")
 # Headline numeric metrics aggregated across reps with mean + CV.
+# 补齐 §7.5D (audit-followup): ITL tail + MFU + energy now surfaced from the already-captured
+# per-cell vLLM /metrics delta (estimated_flops for MFU) + GPU power samples (energy).
 _MEAN_CV_METRICS = (
     "service_tokens_per_s", "rows_per_s", "model_serving_wall_s", "query_jct_s",
     "request_e2e_s_p50", "request_e2e_s_p95", "request_e2e_s_p99",
-    "ttft_s_p50", "ttft_s_p95", "ttft_s_p99", "prefix_cache_hit_rate",
-    "scheduling_overhead_pct",
+    "ttft_s_p50", "ttft_s_p95", "ttft_s_p99",
+    "itl_s_p50", "itl_s_p95", "itl_s_p99",
+    "request_decode_time_mean_s", "request_prefill_time_mean_s", "request_inference_time_mean_s",
+    "request_queue_time_mean_s",
+    "prefix_cache_hit_rate", "scheduling_overhead_pct",
+    # mfu_fraction is a [0,1] FRACTION (not %; §7.5F + the unit-lesson); the .md header says so.
+    "mfu_fraction", "energy_j_per_1k_tokens",
 )
 
 
@@ -59,6 +66,55 @@ def _f(value, default=0.0):
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+# RTX 4090 dense peak for MFU (NVIDIA spec: 82.58 FP32, 165.2 FP16/BF16 dense fp32-accumulate,
+# 330 FP8). The ramp runs qwen2.5-7b in dtype auto (bf16), so 165 TFLOPS is the correct MFU
+# denominator -- matches operator_cost_profile_dual4090_formal's gpu_peak_tflops + §7.5D.
+# NOTE: the ramp project arm's per-run gpu_peak_tflops column was 0.0 (a config wiring gap that
+# blocked the profiler's own MFU), so the aggregator overrides with this constant.
+GPU_PEAK_TFLOPS_BF16 = 165.0
+
+
+def _compute_efficiency(
+    per_gpu_flops: list[float],
+    *,
+    service_total_tokens: float,
+    service_wall_s: float,
+    gpu_power_mean_by_gpu: dict[str, float],
+    n_gpus: int = 2,
+    gpu_peak_tflops: float = GPU_PEAK_TFLOPS_BF16,
+) -> dict[str, float | None]:
+    """MFU + energy per cell (audit-followup: 补齐 ramp 到 §7.5D).
+
+    Pure (no I/O) so it is unit-testable. All inputs are per-cell means/deltas.
+    - ``per_gpu_flops``: ``vllm_estimated_flops_per_gpu_delta`` per GPU (one entry per GPU).
+      MFU is the per-GPU fraction (matches operator_cost_profile: ``mean(per_gpu_flops) /
+      (gpu_peak_tflops × 1e12 × wall)``); returned as a [0,1] FRACTION, not %.
+    - ``gpu_power_mean_by_gpu``: e.g. {"gpu0": 380.0, "gpu1": 375.0}; energy = Σpower × wall.
+    - ``service_total_tokens`` / ``service_wall_s``: same caliber as service_tokens_per_s
+      (tokens = Σ(prompt+gen) delta; wall = model_serving_wall_s for request arms,
+      query_jct_s for query_barrier arms -- documented per cell via timing_granularity).
+
+    NOTE (§7.5F + the MFU unit-lesson): mfu is a [0,1] fraction; do NOT multiply by 100.
+    energy_j_per_1k_tokens uses service_total_tokens (prompt+gen), the project's caliber.
+    """
+    out: dict[str, float | None] = {
+        "mfu_fraction": None,
+        "energy_j": None,
+        "energy_j_per_1k_tokens": None,
+    }
+    flops = [f for f in per_gpu_flops if f and f > 0]
+    if flops and service_wall_s and service_wall_s > 0 and gpu_peak_tflops and gpu_peak_tflops > 0:
+        out["mfu_fraction"] = (
+            sum(flops) / len(flops) / (gpu_peak_tflops * 1e12 * service_wall_s)
+        )
+    powers = [p for p in gpu_power_mean_by_gpu.values() if isinstance(p, (int, float)) and p == p and p > 0]
+    if powers and service_wall_s and service_wall_s > 0:
+        out["energy_j"] = sum(powers) * service_wall_s
+        if service_total_tokens and service_total_tokens > 0:
+            out["energy_j_per_1k_tokens"] = out["energy_j"] / (service_total_tokens / 1000.0)
+    return out
 
 
 def _read_json(path: Path) -> dict:
@@ -220,19 +276,47 @@ def _gate_cell_metrics(cell: Path) -> dict:
         return {"status": "failed",
                 "error": f"mixed timing_granularity across shards: {sorted(str(g) for g in granularities)}",
                 "timing_granularity": "mixed"}
-    # ttft/prefix_hit reuse ttft_eps read above (vLLM /metrics per-backend deltas)
+    # ttft/itl/prefix_hit/per_gpu_flops/phase-times reuse ttft_eps (vLLM /metrics per-backend deltas).
+    # 补齐 (audit-followup §7.5D): the per-cell ttft_metrics.json already carries estimated_flops
+    # (for MFU), ITL p50/p95/p99, decode/prefill/inference/queue means -- surface them, don't recollect.
     ttft = {"p50": None, "p95": None, "p99": None}
+    itl = {"p50": None, "p95": None, "p99": None}
     prefix_hit = None
+    per_gpu_flops: list[float] = []
+    phase_times: dict[str, float] = {}
     if ttft_eps:
         for q in ttft:
             vals = [_f(e.get(f"vllm_time_to_first_token_{q}_s")) for e in ttft_eps]
             vals = [v for v in vals if v > 0]
             if vals:
                 ttft[q] = statistics.mean(vals)
+            itl_vals = [_f(e.get(f"vllm_inter_token_latency_{q}_s")) for e in ttft_eps]
+            itl_vals = [v for v in itl_vals if v > 0]
+            if itl_vals:
+                itl[q] = statistics.mean(itl_vals)
         hits = [_f(e.get("vllm_prefix_cache_hit_rate")) for e in ttft_eps]
         hits = [h for h in hits if h > 0]
         if hits:
             prefix_hit = statistics.mean(hits)
+        per_gpu_flops = [_f(e.get("vllm_estimated_flops_per_gpu_delta")) for e in ttft_eps]
+        for phase in ("decode", "prefill", "inference", "queue"):
+            vals = [_f(e.get(f"vllm_request_{phase}_time_mean_s")) for e in ttft_eps]
+            vals = [v for v in vals if v > 0]
+            if vals:
+                phase_times[f"request_{phase}_time_mean_s"] = statistics.mean(vals)
+    gpu_summary = _gpu_csv_summary(cell / "gpu_resource.csv")
+    gpu_power_by_gpu = {
+        k: v for k, v in {
+            "gpu0": gpu_summary.get("gpu0_power_mean") if isinstance(gpu_summary, dict) else None,
+            "gpu1": gpu_summary.get("gpu1_power_mean") if isinstance(gpu_summary, dict) else None,
+        }.items()
+    }
+    efficiency = _compute_efficiency(
+        per_gpu_flops,
+        service_total_tokens=service_total,
+        service_wall_s=service_wall,
+        gpu_power_mean_by_gpu=gpu_power_by_gpu,
+    )
     return {
         "status": status,
         "service_tokens_per_s": round(unified_tps, 1) if unified_tps is not None else None,
@@ -257,8 +341,17 @@ def _gate_cell_metrics(cell: Path) -> dict:
         "ttft_s_p50": round(ttft["p50"], 4) if ttft["p50"] else None,
         "ttft_s_p95": round(ttft["p95"], 4) if ttft["p95"] else None,
         "ttft_s_p99": round(ttft["p99"], 4) if ttft["p99"] else None,
+        # 补齐 §7.5D: inter-token latency (gate arms only -- project summary has no ITL histogram).
+        "itl_s_p50": round(itl["p50"], 4) if itl["p50"] else None,
+        "itl_s_p95": round(itl["p95"], 4) if itl["p95"] else None,
+        "itl_s_p99": round(itl["p99"], 4) if itl["p99"] else None,
+        **phase_times,
         "prefix_cache_hit_rate": round(prefix_hit, 4) if prefix_hit is not None else None,
-        "gpu": _gpu_csv_summary(cell / "gpu_resource.csv"),
+        # 补齐 §7.5D: MFU (FRACTION [0,1], not %; per-GPU, basis=service_wall) + energy.
+        "mfu_fraction": round(efficiency["mfu_fraction"], 4) if efficiency["mfu_fraction"] is not None else None,
+        "energy_j": round(efficiency["energy_j"], 1) if efficiency["energy_j"] is not None else None,
+        "energy_j_per_1k_tokens": round(efficiency["energy_j_per_1k_tokens"], 2) if efficiency["energy_j_per_1k_tokens"] is not None else None,
+        "gpu": gpu_summary,
         **_identity_role_fields(cell),
     }
 
@@ -278,6 +371,27 @@ def _project_cell_metrics(cell: Path) -> dict:
         return {"status": "missing_project_summary"}
     with summary.open(encoding="utf-8") as handle:
         prof = next(csv.DictReader(handle))
+    gpu_summary = _gpu_csv_summary(resource)
+    # 补齐 §7.5D: project MFU + energy. prof has vllm_estimated_flops_per_gpu_delta (per-GPU)
+    # + model_request_wall_s; gpu_power from the resource csv. (project summary has no ITL
+    # histogram, so itl_* stay None for this arm -- only the gate arms carry ITL.) Use the
+    # aggregator's GPU_PEAK_TFLOPS_BF16 (165) because the ramp project arm's own gpu_peak_tflops
+    # column was 0.0 (config gap); prefer the prof value only if it is a positive, finite peak.
+    prof_peak = _f(prof.get("gpu_peak_tflops"))
+    gpu_peak = prof_peak if prof_peak and prof_peak > 0 else GPU_PEAK_TFLOPS_BF16
+    efficiency = _compute_efficiency(
+        [_f(prof.get("vllm_estimated_flops_per_gpu_delta"))],
+        service_total_tokens=_f(prof.get("vllm_prompt_tokens_delta")) + _f(prof.get("vllm_generation_tokens_delta")),
+        service_wall_s=_f(prof.get("model_request_wall_s")),
+        gpu_power_mean_by_gpu={
+            k: v for k, v in {
+                "gpu0": gpu_summary.get("gpu0_power_mean") if isinstance(gpu_summary, dict) else None,
+                "gpu1": gpu_summary.get("gpu1_power_mean") if isinstance(gpu_summary, dict) else None,
+                "gpu_aggregated": gpu_summary.get("gpu_aggregated_power_mean") if isinstance(gpu_summary, dict) else None,
+            }.items()
+        },
+        gpu_peak_tflops=gpu_peak,
+    )
     out = {
         "status": "passed",
         "service_tokens_per_s": round(_f(prof.get("model_request_tokens_per_s")), 1),
@@ -292,10 +406,20 @@ def _project_cell_metrics(cell: Path) -> dict:
         "ttft_s_p50": round(_f(prof.get("vllm_time_to_first_token_p50_s")), 4) or None,
         "ttft_s_p95": round(_f(prof.get("vllm_time_to_first_token_p95_s")), 4) or None,
         "ttft_s_p99": round(_f(prof.get("vllm_time_to_first_token_p99_s")), 4) or None,
+        # project summary has no ITL histogram -> None (gate arms carry ITL).
+        "itl_s_p50": None, "itl_s_p95": None, "itl_s_p99": None,
+        "request_decode_time_mean_s": round(_f(prof.get("vllm_request_decode_time_mean_s")), 4) or None,
+        "request_prefill_time_mean_s": round(_f(prof.get("vllm_request_prefill_time_mean_s")), 4) or None,
+        "request_inference_time_mean_s": round(_f(prof.get("vllm_request_inference_time_mean_s")), 4) or None,
+        "request_queue_time_mean_s": round(_f(prof.get("vllm_request_queue_time_mean_s")), 4) or None,
         "prefix_cache_hit_rate": round(_f(prof.get("vllm_prefix_cache_hit_rate")), 4) or None,
         "scheduling_overhead_pct": round(_f(prof.get("scheduling_control_overhead_pct")), 2) or None,
         "submit_s": round(_f(prof.get("submit_s")), 3) or None,
-        "gpu": _gpu_csv_summary(resource),
+        # 补齐 §7.5D: MFU (FRACTION [0,1], per-GPU, basis=model_request_wall_s) + energy.
+        "mfu_fraction": round(efficiency["mfu_fraction"], 4) if efficiency["mfu_fraction"] is not None else None,
+        "energy_j": round(efficiency["energy_j"], 1) if efficiency["energy_j"] is not None else None,
+        "energy_j_per_1k_tokens": round(efficiency["energy_j_per_1k_tokens"], 2) if efficiency["energy_j_per_1k_tokens"] is not None else None,
+        "gpu": gpu_summary,
         **_identity_role_fields(cell),
     }
     if evidence.is_file():
@@ -449,6 +573,33 @@ def _md(result: dict) -> str:
                     f"{_fmt(m.get('service_tokens_per_s_mean'))} | {m.get('service_tokens_per_s_cv_pct','—')}% | "
                     f"{_fmt(m.get('rows_per_s_mean'))} | {ttft_s} | {_fmt(m.get('request_e2e_s_p50_mean'))} | "
                     f"{hit_s} | {g0} | {g1} | {m.get('n_passed','?')}/{m.get('n_reps','?')} |"
+                )
+    # 补齐 §7.5D efficiency table (audit-followup): MFU + ITL tail + decode/prefill + energy.
+    # MFU is a [0,1] FRACTION (vLLM estimated_flops heuristic, conservative -- NOT theoretical
+    # 2N; see operator_cost_profile §5.4). ITL is gate-arms-only (project summary has no ITL).
+    lines += [
+        "",
+        "## 效率与尾延迟（§7.5D 补齐；MFU=[0,1] 分数，非 %；vLLM estimated_flops 保守估计）",
+        "",
+        "| scale | arm | conc | MFU(frac) | ITL p95 | ITL p99 | TTFT p99 | decode | prefill | J/1k-tok |",
+        "|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for key in sorted(result, key=lambda k: int(k.split("_")[1])):
+        scale = result[key]
+        for arm in sorted(scale["arms"]):
+            for conc_key in sorted(scale["arms"][arm], key=lambda c: int(c[1:])):
+                m = scale["arms"][arm][conc_key]
+                def _ms(field, mul=1, unit=""):
+                    v = m.get(f"{field}_mean")
+                    return f"{v*mul:.4g}{unit}" if isinstance(v, (int, float)) and v == v and v > 0 else "—"
+                mfu = m.get("mfu_fraction_mean")
+                mfu_s = f"{mfu:.3f}" if isinstance(mfu, (int, float)) and mfu == mfu and mfu >= 0 else "—"
+                lines.append(
+                    f"| {scale['rows']} | {arm} | {conc_key} | {mfu_s} | "
+                    f"{_ms('itl_s_p95', 1000, 'ms')} | {_ms('itl_s_p99', 1000, 'ms')} | "
+                    f"{_ms('ttft_s_p99', 1000, 'ms')} | {_ms('request_decode_time_mean_s', 1000, 'ms')} | "
+                    f"{_ms('request_prefill_time_mean_s', 1000, 'ms')} | "
+                    f"{_fmt(m.get('energy_j_per_1k_tokens_mean'))} |"
                 )
     return "\n".join(lines) + "\n"
 
