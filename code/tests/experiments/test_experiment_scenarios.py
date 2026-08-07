@@ -24,10 +24,41 @@ from src.experiments.scenarios.core import (  # noqa: E402
 from scripts.experiments.run_ai_operator_scenarios import (  # noqa: E402
     RunnerOptions,
     _load_config,
+    _verify_service_flags_match_live,
     parse_args,
     run_experiment,
     wait_for_idle,
 )
+
+
+class VerifyServiceFlagsMatchLiveTests(unittest.TestCase):
+    """Audit F8 regression: _verify_service_flags_match_live must run main()'s preflight path
+    without a NameError (an earlier fix used os.environ without importing os; the hermetic
+    run_experiment tests missed it because main() was never exercised)."""
+
+    def _config(self):
+        # minimal config carrying the two declared capacity flags
+        return type(
+            "_Cfg",
+            (),
+            {"service_metadata": (("max_num_seqs", 256), ("max_num_batched_tokens", 8192))},
+        )()
+
+    def test_returns_cleanly_when_no_live_vllm_or_unsupported_host(self):
+        # On a non-Linux test host (or with no vllm process), _read_live_cmdlines yields {} ->
+        # the verifier warns + returns (it must NOT raise NameError on os.environ, and must NOT
+        # fail-closed just because there is no live process to probe).
+        import os as _os
+
+        _os.environ["COMPLETION_ENDPOINT_URLS"] = "http://127.0.0.1:8000/v1/completions"
+        try:
+            _verify_service_flags_match_live(self._config())  # no exception
+        finally:
+            _os.environ.pop("COMPLETION_ENDPOINT_URLS", None)
+
+    def test_skips_when_nothing_declared(self):
+        cfg = type("_Cfg", (), {"service_metadata": ()})()
+        _verify_service_flags_match_live(cfg)  # returns immediately, no env read
 
 
 class ExperimentScenarioTests(unittest.TestCase):
