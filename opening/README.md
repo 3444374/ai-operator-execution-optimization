@@ -56,6 +56,7 @@
 | 材料 | 主文件 | 状态 |
 |---|---|---|
 | 开题报告 | `report/opening_report.md` | 初稿已补 |
+| 开题叙事与 Claim Matrix | `claim_matrix.md` | **2026-08-07 已冻结，报告/PPT/实验准入的当前依据** |
 | 开题 PPT 源稿 | `slides/opening_ppt.md` | 当前内容和形式先作废，仅保留版式经验，下一版需重写 |
 | 开题 PPTX | `slides/opening_defense_20260720_v5.pptx` | 当前 v5 增量版：基于 v4 拷贝，加入数据组织三张机制图页；未重跑全量生成脚本 |
 | 开题飞书源稿 | `feishu/opening_report_wiki.md` | 已用于同步新版飞书 docx |
@@ -80,10 +81,10 @@
 
 ## 下一步
 
-1. 继续以 `report/opening_report.md` 和 `feishu/opening_report_wiki.md` 作为本地源稿，修改后同步新版飞书 docx。
-2. 基于确认后的报告和 `figures/` 正式图重做 PPT 内容；旧 PPT 只保留页面布局经验。
-3. 后续补充更正式的 GPU-backed 图表和实验结果时，同步更新开题报告、飞书文档和 PPT。
-4. 最后生成 DOCX。DOCX 必须使用学校 Word 模板，继承模板里的章节样式、字体、行间距、图表标注和参考文献格式。
+1. 以 `claim_matrix.md` 为当前冻结口径，先完成两组 P0 文本三臂统一 database-E2E。
+2. 两组数据后停止新增开题 baseline，生成四组 headline evidence。
+3. 依据 Claim Matrix 和四组图重构 `report/opening_report.md`、PPT 源稿与答辩问答。
+4. 本地材料通过逐页一致性审计后，再同步飞书并生成学校模板 DOCX。
 ## 飞书同步目标
 
 后续需要写入飞书的主要目标：

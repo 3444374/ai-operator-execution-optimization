@@ -1470,6 +1470,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         request_manifest_guard = ProfileManifestGuard.from_path(
             request_manifest_path,
             endpoint_ids,
+            output_cost_mode=args.output_cost_mode,
         )
         validate_profile_manifest_contract(
             request_manifest_guard.requests,
@@ -2549,6 +2550,51 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             )
             request_manifest_validation_status = "ok"
 
+        # The opening database-E2E comparison needs the same external wall for
+        # every arm: source scan -> model execution -> unified database sink.
+        # Historically the profiler wrote trace/evidence files and scraped the
+        # service before writeback, so its e2e_s was strictly broader. Keep that
+        # default intact and expose the clean boundary only through the opt-in
+        # flag. Result completeness is checked before the early sink so a broken
+        # cell cannot persist a partial result set as if it were comparable.
+        database_e2e_boundary_complete = False
+        if args.database_e2e_timing_boundary:
+            missing_result_count = sum(
+                not isinstance(result, dict) for result in operator_results
+            )
+            if missing_result_count:
+                lifecycle_errors = [
+                    event.error
+                    for event in submission_lifecycle_events
+                    if event.error
+                ]
+                detail = lifecycle_errors[0] if lifecycle_errors else "unavailable"
+                raise RuntimeError(
+                    "model submission produced "
+                    f"{missing_result_count} missing result(s); "
+                    f"first lifecycle error: {detail}"
+                )
+            if resource_sampler is not None:
+                resource_sampler.close()
+            write_timer = StageTimer.start("writeback")
+            if args.operator == "ai_complete":
+                written_rows = write_completions(
+                    conn,
+                    operator_results,
+                    args.writeback_mode,
+                    args.write_batch_rows,
+                )
+            else:
+                written_rows = write_embeddings(
+                    conn,
+                    operator_results,
+                    args.writeback_mode,
+                    args.write_batch_rows,
+                )
+            writeback_s = write_timer.stop()
+            e2e_s = e2e_timer.stop()
+            database_e2e_boundary_complete = True
+
         request_trace_path = args.request_trace_output or ""
         if request_trace_path:
             request_trace_rows = _build_profiler_request_rows(
@@ -2714,19 +2760,26 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             )
 
         vllm_metrics_after = _scrape_model_metrics(resolved_metrics_urls)
-        write_timer = StageTimer.start("writeback")
-        if args.operator == "ai_complete":
-            written_rows = write_completions(conn, operator_results, args.writeback_mode, args.write_batch_rows)
-        else:
-            written_rows = write_embeddings(
-                conn,
-                operator_results,
-                args.writeback_mode,
-                args.write_batch_rows,
-            )
-        writeback_s = write_timer.stop()
+        if not database_e2e_boundary_complete:
+            write_timer = StageTimer.start("writeback")
+            if args.operator == "ai_complete":
+                written_rows = write_completions(
+                    conn,
+                    operator_results,
+                    args.writeback_mode,
+                    args.write_batch_rows,
+                )
+            else:
+                written_rows = write_embeddings(
+                    conn,
+                    operator_results,
+                    args.writeback_mode,
+                    args.write_batch_rows,
+                )
+            writeback_s = write_timer.stop()
         finish_job(conn, job_id)
-        e2e_s = e2e_timer.stop()
+        if not database_e2e_boundary_complete:
+            e2e_s = e2e_timer.stop()
         request_metrics = _request_trace_metrics(
             request_trace_rows,
             e2e_s=e2e_s,

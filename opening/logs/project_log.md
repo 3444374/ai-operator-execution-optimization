@@ -412,3 +412,9 @@
 - 按用户反馈修正 v5 的目录导航与底部注释条：纯目录页不再显示章节高亮竖线，章节目录页删除额外绘制的横线并保留模板横线层次；所有底部注释条统一贴近左下角，竖线与注释文字按视觉中心对齐，减少与正文内容重叠的风险。
 - 继续修正底部注释条的竖线/文字对齐：将所有底部注释的竖线与文字框设置为相同 top 和 height，文字框垂直居中，段前段后与行距归一化，避免不同颜色/不同字体注释在 PowerPoint 渲染时出现基线错位。
 - 按用户反馈新增 v5 第 22 页“后续工作：多模态泛化验证”，插入在“可行性与创新点”和“进度安排”之间。页面使用 `figures/ppt_cropped/b26_arrow_vs_daft_stage_breakdown.png`，说明 Daft 接入后的 DB 读取与组织开销仍小于 0.1s，从而支撑后续将同一套 Daft/Ray pipeline 从 prompt 列扩展到 image/frame 列；该页明确多模态是后续验证目标，不声称已经完成。
+## 2026-08-07 开题叙事与证据边界冻结
+
+- 新增 `opening/claim_matrix.md`，作为报告、PPT、答辩问答和开题实验准入的当前内部依据。
+- 题目保持“数据库 AI 负载的执行优化与调度研究”。统一抽象为 Database、AI Data Execution Layer、Model Service / GPU Executor、Database / Vector Sink。
+- 两项研究内容固定为 workload 感知的 work-unit 构造，以及容量感知的提交、路由和多 job 调度。代价估计仍是共同使能组件，state-aware 性能增量仍是待验证项。
+- 开题前只补 SQuAD 均匀控制组和 ShareGPT controlled-skew 异质组三臂统一 database-E2E，完成后转入四图、报告/PPT 和答辩一致性审计。

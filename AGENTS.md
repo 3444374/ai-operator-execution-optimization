@@ -43,7 +43,15 @@ PostgreSQL 18.3
 
 已有实验：GPU-backed 文本 AI_EMBED 预研链路（2026-07-12，文本向量，非图像 CLIP；fine vs coalesced：推理执行阶段约 37.5×、端到端约 13.4×；pgvector writeback 0.897s vs JSON 1.567s）+ vLLM + Qwen2.5-1.5B AI_COMPLETE baseline（已建立，详见 `experiments/results/local_vllm_qwen15b_baseline/`）。图像 CLIP 的动机是另一套（GPU 利用率仅 1–4%、瓶颈在 CPU 预处理，见 `motivation/results/gpu/image_*`）。详细数据见 `motivation/results/gpu/`。CPU/fake 实验仅历史参考。
 
-**2026-08-01 当前执行顺序**：内部已锁定 A（模型服务状态感知的请求成形/提交）+
+**2026-08-07 开题冻结顺序**：开题材料冻结前，先统一研究 framing 与
+`opening/claim_matrix.md`，再只补 SQuAD 均匀控制组和 ShareGPT 受控异质组两套
+三臂 database-E2E 正式实验。两组均比较 direct static-sharded、DuckDB AI
+static-sharded 和 project frozen-static，统一 PostgreSQL source/sink、外部
+database-E2E、质量和资源指标。完成后停止新增开题 baseline，转入四组核心证据图、
+报告/PPT 重构和答辩一致性审计。开题冻结后才恢复 state-aware proposed 主实验。
+本顺序覆盖下述 2026-08-01 工程优先级，但不撤销已有 image-first 证据和论文阶段计划。
+
+**2026-08-01 工程优先级（开题冻结后恢复）**：内部已锁定 A（模型服务状态感知的请求成形/提交）+
 B（算子代价估计），首个 workload 为 image AI_EMBED (CLIP)；文本遗留实验统一
 `parked-conditional`。外部“DB↔GPU 经 Daft 桥接”scope 是否进入正式题目仍待
 导师/学长确认。CLIP 5K 规范画像已通过门禁：实用 batch（≥16）CPU 准备/GPU

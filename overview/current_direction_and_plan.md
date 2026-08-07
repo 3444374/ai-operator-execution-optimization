@@ -1,24 +1,22 @@
 # 当前方向与计划
 
-最后更新：2026-08-02
+最后更新：2026-08-07
 
 > 本文是两分钟快速参考卡片。完整定义以 `PROJECT_OUTLINE.md` 为准；当前执行顺序以
-> `experiments/plans/experiment_status_and_gaps.md` §0 为准；实验数字以各结果目录的
+> `opening/claim_matrix.md` 与 `experiments/plans/experiment_status_and_gaps.md` 顶部
+> 开题冻结优先级为准；实验数字以各结果目录的
 > README、manifest 和 CSV 为准。
 
 ## 1. 当前重点
 
-- **内部执行方向已锁定**：A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，
-  首个 workload 为图像 `AI_EMBED (CLIP)`。
-- **外部 framing 尚待确认**：是否把“数据库↔GPU 经 Daft 桥接”作为最终题目/scope，仍待
-  导师和学长确认；这不阻塞已经锁定的 image workload 与 path-B 工程验证。
-- **文本轨道不是废弃**：vLLM 文本实验已完成 regime-dependent 机制闭环，遗留 formal
-  统一标为 `parked-conditional`，仅在论文正文需要文本结果时恢复。
-- **CLIP 诊断门禁已通过，但 native baseline 待重跑**：COCO val 5K×3 中项目静态
-  阶段拆分相对项目自写 fused Daft UDF 单/双卡为 1.296×/1.138×；这只作机制诊断。
-  当前已接入 Daft 内置 `embed_image`，Ray Data graph 也已移除项目式 inflight；下一步
-  重做 native gate，并直接复用官方 ResNet18 benchmark 代码，再补统一 pgvector sink、
-  direct ceiling 和资源归一化。
+- **开题 framing 已冻结**：题目保持“数据库 AI 负载的执行优化与调度研究”，统一对象是
+  Database 与 Model Service 之间的 AI Data Execution Layer。
+- **两项内容不变**：workload 感知的 work-unit 构造；容量感知的提交、路由与多 job 调度。
+  cost estimator 是共同使能组件，文本和图像是跨模态证据轨道。
+- **开题只补两组数据**：SQuAD 均匀控制组和 ShareGPT controlled-skew 实验组，均为
+  direct、DuckDB AI、project frozen-static 三臂统一 database-E2E。完成后停止加 baseline。
+- **state-aware 仍是拟研究方法**：现有证据支持 strong static、regime dependence、图像
+  matched-resource 结构收益和代价估计可行性，但没有证明 state-aware 优于冻结静态点。
 
 ## 2. 课题定位
 
@@ -64,6 +62,8 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 | matched-KV：2-ep 中性、4-ep prefix routing +5.9% | 目前更支持 endpoint consolidation，而非单纯 per-endpoint KV 大小是驱动；仍有饱和深度混淆 |
 | CLIP 5K 串行画像：CPU 准备/actor forward=`13.8–18.3` | 图像链路存在异构流水线候选空间；尚未证明 CPU、Ray/host copy 或 PCIe 谁是主瓶颈 |
 | CLIP operator-E2E：project/fused-Daft=单卡 1.296×、双卡 1.138× | 独立校准后，静态阶段拆分优于 fused UDF；staged 两臂仅通过小规模 gate、尚无正式排名，故不能声称优于主流异构流水线 |
+| Ray Data vs project matched-resource 两轮正式实验 | 相同 CPU 下 project 方向一致；开题 headline 冻结为约 13% 到 15% operator-JCT 改善，不使用旧 45.7% |
+| 429 formal cost-model LOO | CE5 pooled/macro/max regret 为 1.67%/2.90%/14.72%，candidate pairwise 0.808；只算 marginal pass |
 
 CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path 约
 4.4–4.8ms/image）；子阶段实验只直接测得 resize 约 1.3ms，剩余时间尚未充分归因，
@@ -72,16 +72,12 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 
 ## 5. 当前实施顺序
 
-1. ✅ 项目自写 fused Daft UDF actor-shape 校准与 bounded project-Ray COCO 5K×3
-   operator-E2E formal 已完成。
-2. 先跑 `motivation/plans/image_host_data_path_bottleneck.md` 的 R0→R4 表示阶梯，
-   再给三臂接统一 pgvector sink，并补 bounded direct CLIP、CPU-budget-normalized
-   curve、Daft built-in/官方 ResNet18 parity/Ray Data native graph 的独立校准与 formal、vLLM pooling、naive 等完整 baseline；
-   OceanBase `AI_EMBED` 等待可部署环境。
-3. 在同 workload、同硬件、同计时边界下校准 frame budget、K、actor/endpoint 形状和静态 active work。
-4. 实现 A：读取 CLIP endpoint queue/active-work 的状态感知请求成形与提交。
-5. 实现 B：首版 `<100 LOC` 的解析代价模型 + profile 校准 + residual correction。
-6. 用吞吐、JCT、P95/P99、SLO goodput、GPU busy ratio、能耗和 Recall@10 做正式消融。
+1. 冻结 Claim Matrix、四级 claim 边界和开题唯一系统抽象。
+2. 冻结 SQuAD 三臂合同并完成 1 warmup + 3 formal。
+3. 冻结 ShareGPT controlled-skew workload 并完成同合同三臂实验。
+4. 停止新增开题 baseline，生成四组 headline evidence。
+5. 重构报告/PPT，完成答辩攻击面和逐页数据来源审计。
+6. 开题材料冻结后恢复 image state-aware A+B、system-E2E 和论文阶段 backlog。
 
 晋级门槛：相对各自独立标定的强静态/系统 baseline 至少改善约 5%，重复方向一致，且质量不退化。
 
@@ -101,6 +97,7 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 | 内容 | 权威入口 |
 |---|---|
 | 项目总纲 | `PROJECT_OUTLINE.md` |
+| 开题 Claim Matrix 与停止规则 | `opening/claim_matrix.md` |
 | 当前执行状态与 parked 项 | `experiments/plans/experiment_status_and_gaps.md` §0 |
 | 图像 workload、baseline 与门禁 | `experiments/plans/image_clip_workload_lock_20260731.md` |
 | 5K CLIP 初始画像 | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.md` |

@@ -163,6 +163,30 @@ class BuildProfilerArgvTests(unittest.TestCase):
         )
         self.assertEqual(len(cfg.resolved_endpoint_urls), 2)
 
+    def test_opening_comparison_emits_manifest_and_clean_timing_boundary(self) -> None:
+        cfg = _cfg(
+            endpoint_urls=(
+                "http://127.0.0.1:8000/v1/chat/completions",
+                "http://127.0.0.1:8001/v1/chat/completions",
+            ),
+            request_manifest="/tmp/frozen.jsonl",
+            database_e2e_timing_boundary=True,
+        )
+        argv = ps.build_profiler_argv(cfg, "t", "e", "source", "s")
+        self.assertEqual(
+            argv[argv.index("--request-manifest") + 1],
+            "/tmp/frozen.jsonl",
+        )
+        self.assertEqual(
+            argv[argv.index("--endpoint-routing") + 1],
+            "manifest_pinned",
+        )
+        self.assertIn("--database-e2e-timing-boundary", argv)
+
+    def test_request_manifest_rejects_single_endpoint(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at least two endpoints"):
+            _cfg(request_manifest="/tmp/frozen.jsonl")
+
     def test_multi_endpoint_rejects_empty_url_in_list(self) -> None:
         with self.assertRaises(ValueError):
             _cfg(endpoint_urls=("http://127.0.0.1:8000/v1/chat/completions", ""))

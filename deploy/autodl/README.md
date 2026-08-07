@@ -66,6 +66,13 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
 | 临时 gate 配置 | `/root/autodl-tmp/gates/` | 仓库外机械缩小正式模板，不作为正式结果 |
 | 运行时结果 | `/root/autodl-tmp/experiment-artifacts/<unique_run_id>/` | 仓库外保存；审计后只把摘要和报告纳入 Git |
 
+开题统一 database-E2E 文本三臂使用
+`opening_database_e2e_p0.example.json`。它只负责 SQuAD 均匀控制组和 ShareGPT
+controlled-skew 的冻结合同；复制到仓库外 artifact/config 目录后由 runtime env 展开。
+运行前仍须完成 `deploy/runtime/README.md` 的环境 preflight，并先用
+`export-postgres-manifest --partition-policy equal_rows --partition-seed 20260807`
+生成两份 immutable manifest。不要在模板中写入真实连接串或服务器地址。
+
 ### 全新实例从零准备
 
 以下步骤只做一次；纯下载/安装优先在无卡模式完成：

@@ -525,6 +525,13 @@ Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属�
 算子；bounded HTTP 是强因果对照，不冒充已有产品；OceanBase 缺少 AI Function
 能力时记为 capability failure，不阻塞 bounded HTTP 与官方 runtime 主矩阵。
 
+开题前的两个文本证据缺口使用 `scripts/baselines/opening_database_e2e_matrix.py`。
+它只运行 direct static sharded、DuckDB AI static sharded 和 project frozen static
+三臂，统一 PostgreSQL source、immutable manifest、双 endpoint、数据库 sink、质量与
+资源口径，并按确定性随机顺序执行 1 warmup + 3 formal。冻结合同以
+`../experiments/plans/opening_database_e2e_p0_20260807.md` 为准；该 runner 不作为新增
+通用 baseline 框架，也不允许加入 adaptive arm 或参数扫描。
+
 `src/calibration.py` 与 `scripts/analysis/select_strategy_calibration.py` 负责把 feeding、
 token-budget 和同协议 actor-shape 校准结果冻结为后续策略实验的机器可校验
 合同，避免示例环境中的历史默认值静默进入正式 data-organization、

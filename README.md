@@ -4,12 +4,12 @@
 
 > 数据库 AI 负载的执行优化与调度研究方向。
 
-> **当前状态（2026-08-03）**：研究内容仍是数据组织与提交控制；文本
-> `AI_COMPLETE + vLLM` 保留为已建立的主证据轨道，当前工程验证优先推进图像
-> `AI_EMBED/AI_CLASSIFY`，检验同一套 work-unit、credit、routing 与观测抽象能否跨模态
-> 复用。图像正式 baseline 必须运行框架内置函数、官方 API graph 或固定 upstream
-> vendor code；项目自写 Daft UDF 只作为诊断参考。最终题目是否采用“数据库↔GPU 经
-> Daft 桥接”的外部 framing 仍待导师确认，不影响当前实现顺序。
+> **当前状态（2026-08-07）**：开题阶段先冻结统一的 AI Data Execution Layer 叙事和
+> `opening/claim_matrix.md`，再补两组统一 database-E2E 文本三臂实验。文本
+> `AI_COMPLETE` 与图像 `AI_EMBED/AI_CLASSIFY` 都是统一 work-unit、credit、routing
+> 抽象的证据轨道。Daft/Ray 是实现与 baseline，cost estimator 是共同使能组件，
+> state-aware 方法仍是待验证方案。两组实验完成后停止新增开题 baseline，转入四图、
+> 报告/PPT 和答辩审计；图像 A+B 工程主实验在开题材料冻结后恢复。
 
 当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。研究对象是数据库
 触发后的外部链路：数据读取与物化、代价估计与组织、准入/路由/提交、模型执行、观测
@@ -167,22 +167,19 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 
 ## 近期目标
 
-当前执行顺序以 `experiments/plans/experiment_status_and_gaps.md` §0 为准：
+当前执行顺序以 `opening/claim_matrix.md` 和
+`experiments/plans/experiment_status_and_gaps.md` 顶部的 2026-08-07 开题冻结优先级为准：
 
-1. 完成图像 R0→R4 表示/传输阶梯，明确 source、decode/preprocess、host copy、H2D、
-   GPU forward、D2H、写回和未归因等待，不能先验指定 PCIe 为瓶颈。
-2. 分别校准 Daft built-in、Ray Data native graph、官方 ResNet18 vendor code、bounded
-   direct、naive 与 frozen project static，再做同硬件、同质量、同计时边界的稳态交错
-   重复；项目自写 diagnostic 不进入 native baseline 主排名。vLLM pooling 目前只是
-   blocked 的 direct-service ceiling 候选，不进入当前正式队列。
-3. 给正式系统臂接统一 PostgreSQL + pgvector sink，补完整 system-E2E、质量门禁与资源
-   账本。AI_CLASSIFY 报 accuracy/F1/mAP；embedding 正确性先用 digest/norm，检索任务再
-   报 Recall@K、MRR/nDCG。
-4. 只有 workload 变化会让最佳静态点稳定分离且错配代价约超过 5%，才继续复杂动态
-   控制；否则保留固定 token/frame-aware credit。多 job 异质竞争单独验证 shared credit、
-   idle borrowing、JCT/SLO 与公平性。
-5. 文本遗留 formal 保持 `parked-conditional`；需要进入论文时按新的原生 baseline 与
-   provenance 合同复测。
+1. 冻结题目、系统抽象、Claim Matrix 和不能声称边界。
+2. 冻结并运行 SQuAD short-answer 三臂统一 database-E2E，1 warmup + 3 formal。
+3. 冻结并运行一个 ShareGPT controlled-skew 三臂实验，完成后停止增加开题 baseline。
+4. 用现有正式结果生成 serving capacity、work-aware 组织、图像 matched-resource、
+   cost-model decision quality 四组核心图。
+5. 重构同步总纲、开题报告和 PPT，完成逐页 claim 绑定与答辩攻击面审计。
+
+开题前不做第二数据库、文本 Daft/Ray Data 全矩阵、multi-job 五 baseline、TPC-H cost
+planning 或完整 scale×concurrency grid。图像 state-aware A+B、统一 pgvector system-E2E
+和 held-out robustness 均进入开题后的论文实验 backlog。
 
 写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立实验阶段。
 

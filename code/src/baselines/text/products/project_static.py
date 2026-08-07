@@ -105,6 +105,8 @@ class ProjectStaticConfig:
         "code/scripts/profiling/postgres_ai_operator_profile.py"
     )
     scenario_id: str = "project_static"
+    request_manifest: str = ""
+    database_e2e_timing_boundary: bool = False
 
     def __post_init__(self) -> None:
         if not self.database_url:
@@ -150,6 +152,8 @@ class ProjectStaticConfig:
             raise ValueError("service_prefix_caching must be enabled/disabled/unknown")
         if not self.scenario_id:
             raise ValueError("scenario_id must be non-empty (profiler requires it)")
+        if self.request_manifest and len(self.resolved_endpoint_urls) < 2:
+            raise ValueError("request_manifest requires at least two endpoints")
 
     @property
     def effective_k(self) -> int:
@@ -279,6 +283,15 @@ def build_profiler_argv(
         )
     if config.total_rows > 0:
         argv.extend(["--total-rows", str(config.total_rows)])
+    if config.request_manifest:
+        argv.extend(
+            [
+                "--request-manifest", config.request_manifest,
+                "--endpoint-routing", "manifest_pinned",
+            ]
+        )
+    if config.database_e2e_timing_boundary:
+        argv.append("--database-e2e-timing-boundary")
     return argv
 
 

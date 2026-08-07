@@ -37,7 +37,21 @@ Date: 2026-07-20（最后更新：2026-08-05；双 4090 cost-profile cache-on �
   `service_prefix_caching` 纳入 context 身份，执行后 hit rate 禁止用作预测特征。
 - 上方 §0 "下一步运行 Daft 官方 ResNet18 parity 与 60 秒以上稳态 formal" 中，**60 秒稳态 formal 已由 60K×2 schema-v12 重跑闭合**；ResNet18 parity 仍待（A②）。
 
-## 0. 当前优先级（2026-08-01 方向 pivot —— 取代 §4 / §10.3 / §13 的文本轨道强制顺序）
+## 开题冻结优先级（2026-08-07，材料冻结前覆盖下方工程优先级）
+
+开题题目与研究内容按 `opening/claim_matrix.md` 冻结。开题前只补两个缺口：
+
+1. SQuAD short-answer/cap=64 的 direct static-sharded、DuckDB AI static-sharded、
+   project frozen-static 三臂统一 database-E2E，1 warmup + 3 formal。
+2. 一个冻结 short/medium/long histogram 的 ShareGPT controlled-skew 三臂实验，复用
+   同一 source/sink、模型、endpoint、质量、计时和资源合同。
+
+两组实验后停止增加开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
+granularity 不同，只用于 serving capacity/overload 证据，不替代上述统一 database-E2E。
+差异不足 5% 不触发换 workload、模型、数据库或扩大参数扫描。随后只做四组核心图、
+报告/PPT 重构和答辩一致性审计。下方 image-first A+B 顺序在开题材料冻结后恢复。
+
+## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 
 **方向决定（2026-08-01；本节为该决定的记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `image_clip_workload_lock_20260731.md` §0「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
 

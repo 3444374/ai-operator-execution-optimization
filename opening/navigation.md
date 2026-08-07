@@ -9,7 +9,8 @@
 1. `AGENTS.md`：本目录长期规则。
 2. `README.md`：开题工作区总入口。
 3. `navigation.md`：查找材料和同步关系。
-4. 当前任务对应文件：报告、PPT、飞书、文献或素材。
+4. `claim_matrix.md`：开题 framing、证据等级、P0 实验和停止规则。
+5. 当前任务对应文件：报告、PPT、飞书、文献或素材。
 
 如果需要项目整体背景，先回到根目录：
 
@@ -41,6 +42,7 @@ AGENTS.md
 | 需要的内容 | 优先读取 |
 |---|---|
 | 开题统一口径和页序 | `report/opening_report.md` |
+| Claim 边界和实验准入 | `claim_matrix.md` |
 | 开题报告正文 | `report/opening_report.md` |
 | 开题 PPT 源稿 | `slides/opening_ppt.md`，当前内容和形式先作废，仅保留版式经验 |
 | PPT 制作规则 | `ppt_rules.md` |

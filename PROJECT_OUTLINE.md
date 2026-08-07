@@ -35,6 +35,16 @@
 
 **主场景：AI_COMPLETE**（生成式 LLM 推理，文本）+ **AI_EMBED/AI_CLASSIFY**（图像，多模态泛化验证）。AI_EMBED 文本预研已完成（真实 GPU-backed 链路）。
 
+### 2026-08-07 开题 framing 冻结
+
+题目保持“数据库 AI 负载的执行优化与调度研究”。开题统一使用 Database → AI Data
+Execution Layer → Model Service / GPU Executor → Database / Vector Sink 的抽象。AI
+Data Execution Layer 包含 work-unit construction、cost estimation、admission/routing、
+resource-aware scheduling 和 multi-job coordination。两项研究内容分别是 workload
+感知的 work-unit 构造，以及容量感知的提交、路由与多 job 调度；代价估计仍是共同使能
+组件，文本与图像用于跨模态验证。完整 Claim Matrix 和停止规则见
+`opening/claim_matrix.md`。
+
 阶段划分、执行画像和瓶颈归因不是独立研究内容，而是动机测试、方案设计和评价依据。
 
 ## 实验主线
@@ -131,16 +141,23 @@
 
 ## 近期优先级
 
-图像轨道在继续策略实验前，先按
-`motivation/plans/image_host_data_path_bottleneck.md` 完成 R0→R4 表示阶梯与
-schema v2 复测。R0–R2 已把 pageable FP32 ownership copy/dtype conversion 与 pinned H2D
-分开；Ray Data 60K×2 原生长稳态复核冻结 `batch64/cpu8/gpu2/source4`（957.100 img/s，
-2 repeats，CV 0.347%），batch512 相对慢 7.719%，不继续扫 1024。该结果支持 CPU
-preprocess/喂入是当前候选限制，但不把 `nvidia-smi` util 写成 MFU 或硬件因果证明。
-Daft built-in 与 Ray Data 均已独立校准，schema v11 计时内 normalized contract parity
-已通过；下一步是同 60K×2、1+3 的原生 baseline/project 正式排名。项目自写 Daft
-staged/fused 仅保留为诊断 reference；官方 ResNet18 已固定 upstream commit/SHA，但
-AutoDL 仍需通过 exact S3 workload 带宽、Ray 2.49.2 隔离环境和 adapter diff 门禁。
+开题材料冻结前只执行以下顺序：
+
+1. 冻结 `opening/claim_matrix.md`，统一总纲、报告、PPT 和答辩口径。
+2. 运行 SQuAD short-answer 的 direct static-sharded、DuckDB AI static-sharded、project
+   frozen-static 三臂统一 database-E2E，1 warmup + 3 formal。
+3. 运行一个预先冻结 histogram 的 ShareGPT controlled-skew 三臂实验，合同与 SQuAD 一致。
+4. 两组实验后停止增加开题 baseline，生成 serving capacity、work-aware 组织及局限、
+   图像 matched-resource、cost-model decision quality 四组核心证据。
+5. 重构开题报告/PPT并完成逐页 claim、数据来源和不能声称边界审计。
+
+这两组实验的目的分别是建立均匀控制组和确认 heterogeneity 是否留下可优化空间，不用于
+证明 proposed state-aware 已经胜出。差异小于 5% 不触发更换 workload、模型、数据库或
+扩大扫描。开题冻结后恢复 image state-aware A+B、统一 pgvector system-E2E、multi-job
+和 held-out robustness。第二数据库、文本全框架矩阵和 TPC-H-derived planning 不阻塞开题。
+
+最新 cost-model 正式证据已更新为 429 formal：CE5 pooled regret 1.67%、macro 2.90%、
+max 14.72%、candidate pairwise 0.808。该结果是 marginal pass，不得写成稳健通过。
 
 **已完成**：
 - ✅ vLLM + Qwen2.5-1.5B baseline 建立（07-18）

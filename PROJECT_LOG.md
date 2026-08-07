@@ -4824,3 +4824,16 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - **口径**：bounded/duckdb/lb_rr `vllm_running_*_total_*` = Σ 两 endpoint（VllmGaugeSampler）；project `vllm_running_prof_*` = profiler per-run，**caliber 不同分列不混比**。MFU = `[0,1]` 分数（`_compute_efficiency`，peak=165 TFLOPS bf16）。
 
 归档：`multicard_scale_ramp_enhanced_20260807/` + `multicard_lbrr_scale_ramp_enhanced_20260807/`（ramp_run+aggregate）+ proj re-aggregate + 4-path ramp README §9（完整 §7.5D 4 臂表）。**正式 raw 归档**（服务器侧 git，只正式结果、控大小）待下一步。
+## 2026-08-07 开题 framing 与 Claim Matrix 冻结
+
+- 新增 `opening/claim_matrix.md`，冻结题目、AI Data Execution Layer 系统抽象、两项研究内容、共同使能组件、跨模态边界和四级 claim 状态。
+- 开题前新增数据收敛为两组统一 database-E2E 文本三臂：SQuAD short-answer 均匀控制组和 ShareGPT controlled-skew 异质组。两组完成后停止增加开题 baseline。
+- 明确现有 scale-ramp 的 request/query-barrier timing granularity 不一致，只用于 serving capacity 与 overload 证据，不能替代三臂统一 per-row database-E2E 排名。
+- 同步 `AGENTS.md`、根 `README.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、`experiments/plans/experiment_status_and_gaps.md`、`opening/README.md`、`opening/navigation.md` 和 `PROJECT_INDEX.md`。
+- cost-model 最新口径更新为 429 formal；CE5 pooled/macro/max regret 为 1.67%/2.90%/14.72%，candidate pairwise 0.808，定性为 marginal pass。
+
+## 2026-08-07 开题统一 database-E2E 合同与 runner
+
+- 新增 `experiments/plans/opening_database_e2e_p0_20260807.md`，把 SQuAD 均匀控制组与 ShareGPT controlled-skew 的三臂、source、manifest、sink、计时、质量、资源和停止规则冻结为单一合同。
+- 新增 `code/scripts/baselines/opening_database_e2e_matrix.py` 与 AutoDL 配置模板。runner 只暴露 direct static sharded、DuckDB AI static sharded、project frozen static 三臂，按确定性随机顺序执行 1 warmup + 3 formal。
+- project profiler 增加 opt-in clean database-E2E timing boundary；默认历史计时语义不变。request-manifest guard 同时支持无未来信息的 `fixed_output_cap`。

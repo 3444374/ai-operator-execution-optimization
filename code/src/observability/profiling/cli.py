@@ -453,6 +453,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=["none", "json_text", "pgvector"],
         default="json_text",
     )
+    parser.add_argument(
+        "--database-e2e-timing-boundary",
+        action="store_true",
+        help=(
+            "Stop e2e_s immediately after the unified database sink write, "
+            "before trace/evidence serialization and the after-service metrics "
+            "scrape. Opt-in only; the historical profiler boundary is unchanged."
+        ),
+    )
     parser.add_argument("--write-batch-rows", type=int, default=0)
     parser.add_argument("--warmup-runs", type=int, default=0)
     parser.add_argument("--repeats", type=int, default=1)

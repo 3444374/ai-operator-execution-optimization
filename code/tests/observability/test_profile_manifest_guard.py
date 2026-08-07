@@ -232,6 +232,50 @@ class ProfileManifestGuardTests(unittest.TestCase):
             arrival_replay=False,
         )
 
+    def test_fixed_cap_manifest_ignores_target_output_for_cost_but_keeps_hash(self) -> None:
+        fixed = request(
+            1,
+            prompt="one",
+            prompt_tokens=3,
+            output_tokens=256,
+            endpoint_index=1,
+            raw_output_tokens=7,
+        )
+        guard = ProfileManifestGuard(
+            requests=(fixed,),
+            manifest_sha256="a" * 64,
+            endpoint_ids=("endpoint-0", "endpoint-1"),
+            output_cost_mode="fixed_output_cap",
+        )
+        annotated = guard.validate_and_annotate(
+            table(
+                doc_ids=[1],
+                prompts=["one"],
+                prompt_tokens=[3],
+                output_tokens=[7],
+            )
+        )
+        self.assertEqual(annotated.num_rows, 1)
+        self.assertEqual(guard.finish().validated_rows, 1)
+
+        validate_profile_manifest_contract(
+            (fixed,),
+            total_rows=1,
+            operator="ai_complete",
+            model_backend="compatible_http",
+            endpoint_count=2,
+            completion_protocol="chat_completions",
+            completion_prompt_format="raw",
+            completion_temperature=0.0,
+            completion_max_tokens=256,
+            output_cost_mode="fixed_output_cap",
+            source_order="doc_id",
+            executor="ray_actor",
+            submission_granularity="request",
+            endpoint_routing="manifest_pinned",
+            arrival_replay=False,
+        )
+
     def test_profile_manifest_contract_accepts_multi_prompt_completions(
         self,
     ) -> None:
@@ -282,7 +326,11 @@ class ProfileManifestGuardTests(unittest.TestCase):
             ("completion_temperature", None, "temperature=0"),
             ("completion_temperature", 0.7, "temperature=0"),
             ("completion_max_tokens", 128, "max output"),
-            ("output_cost_mode", "fixed_output_cap", "trace_target_output"),
+            (
+                "output_cost_mode",
+                "actual_output_tokens",
+                "trace_target_output or fixed_output_cap",
+            ),
             ("source_order", "arrival_time", "doc_id"),
             ("executor", "ray_task", "ray_actor"),
             ("submission_granularity", "batch", "request"),

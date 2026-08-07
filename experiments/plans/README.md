@@ -54,6 +54,7 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | `cross_layer_killer_experiment.md` | **耦合验证** | 独立最优拼接 vs 联合 grid search（含策略级 + 引擎级参数）|
 | `sink_writeback_coordination.md` | **写回工程参考**（已降级为实验设置，不作为独立实验阶段） | COPY + deferred index baseline，仅在实验设置中说明 |
 | `operator_cost_profile_dual4090_formal_20260804.md` | **算子代价估计共同使能组件** | 当前 320-run formal 合同；§8 保留通过晋级门槛后才启动的 TPC-H-derived AI 查询计划 held-out |
+| `opening_database_e2e_p0_20260807.md` | **开题前证据闭环** | 仅允许的两组文本三臂统一 database-E2E：SQuAD 均匀控制组与 ShareGPT controlled-skew；冻结 source/manifest/sink/计时/质量/资源合同和停止规则 |
 
 双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
 相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭

@@ -73,8 +73,10 @@ def validate_profile_manifest_contract(
         raise ValueError(
             "profile max output does not match manifest max output"
         )
-    if output_cost_mode != "trace_target_output":
-        raise ValueError("request manifest requires trace_target_output")
+    if output_cost_mode not in {"trace_target_output", "fixed_output_cap"}:
+        raise ValueError(
+            "request manifest requires trace_target_output or fixed_output_cap"
+        )
     if source_order != "doc_id":
         raise ValueError("request manifest requires doc_id source order")
     if executor != "ray_actor":
@@ -118,6 +120,7 @@ class ProfileManifestGuard:
         requests: Sequence[ChatRequest],
         manifest_sha256: str,
         endpoint_ids: Sequence[str],
+        output_cost_mode: str = "trace_target_output",
     ) -> None:
         if len(manifest_sha256) != 64:
             raise ValueError("manifest_sha256 must be a SHA-256 digest")
@@ -137,6 +140,9 @@ class ProfileManifestGuard:
         self._by_doc_id = by_doc_id
         self._manifest_sha256 = manifest_sha256
         self._endpoint_ids = tuple(endpoint_ids)
+        if output_cost_mode not in {"trace_target_output", "fixed_output_cap"}:
+            raise ValueError("unsupported manifest output_cost_mode")
+        self._output_cost_mode = output_cost_mode
         self._seen: set[int] = set()
 
     @property
@@ -152,6 +158,7 @@ class ProfileManifestGuard:
         cls,
         path: str | Path,
         endpoint_ids: Sequence[str],
+        output_cost_mode: str = "trace_target_output",
     ) -> "ProfileManifestGuard":
         source = Path(path)
         payload = source.read_bytes()
@@ -159,6 +166,7 @@ class ProfileManifestGuard:
             requests=read_manifest(source),
             manifest_sha256=hashlib.sha256(payload).hexdigest(),
             endpoint_ids=endpoint_ids,
+            output_cost_mode=output_cost_mode,
         )
 
     def validate_and_annotate(
@@ -203,7 +211,7 @@ class ProfileManifestGuard:
                 row_index
             ].as_py()
             effective_output_tokens = resolve_output_tokens(
-                "trace_target_output",
+                self._output_cost_mode,
                 completion_max_tokens=request.max_output_tokens,
                 target_output_tokens=target_output_tokens,
             )

@@ -192,6 +192,10 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `AGENTS.md` | 项目长期规则、用户真实目标、当前选题边界 | 每次开始任务先读 |
 | `PROJECT_INDEX.md` | 文件索引和阅读顺序 | 不知道材料在哪里时读 |
 | `PROJECT_OUTLINE.md` | 项目总纲：当前题目、研究内容、关键证据、近期优先级 | 快速了解最新进展 |
+| `opening/claim_matrix.md` | 开题 framing、证据等级、两组 P0 实验与停止规则 | 修改报告/PPT、启动开题实验或准备答辩前读 |
+| `experiments/plans/opening_database_e2e_p0_20260807.md` | 开题前仅允许的 SQuAD/ShareGPT 三臂统一 database-E2E 合同 | 运行开题证据闭环实验前读 |
+| `code/scripts/baselines/opening_database_e2e_matrix.py` | 双 endpoint、三静态臂、统一 source/sink/质量/资源的 1 warmup + 3 formal runner | 只用于上述冻结开题合同 |
+| `deploy/autodl/opening_database_e2e_p0.example.json` | AutoDL 开题三臂 runner 配置模板 | 复制到服务器 artifact root 后以 runtime env 展开 |
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |
