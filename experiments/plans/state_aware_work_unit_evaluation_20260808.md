@@ -150,7 +150,7 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 |---|---|---|---|---|
 | 原生单 job（已完成） | ShareGPT controlled-skew held-out Chat manifest；同 model/service/output cap | bounded Chat、Daft Native、Daft Ray、Ray Data | 每臂 1+3，平衡交错 | 已冻结 underfeed/minimum-saturation/overqueue 三类外部状态；见 `opening_text_native_single_job_formal_20260808/` |
 | 原生两 job 观察（已完成） | 两个 512 行 short/long job；offset=5 s；互斥且 endpoint-work-balanced manifest | Daft Native、Daft Ray、Ray Data 各自启动两个独立 job；不注入项目 credit。bounded 多进程 client 因可复现 CLOSE_WAIT 生命周期问题排除，单 job C128 仅作容量参照 | 每臂 1+3 | 三臂均产生真实 overlap，short JCT 相对各自 single +82.42%/+104.84%/+32.76%；只作外部竞争观察 |
-| 两作业（已完成） | 两个 512 行 short/long job；5 s stagger；互斥 manifest-selected doc_id 集合 | static partition 与 shared work-credit/fair queue 成对比较；相同 endpoint 总 K/work | 每场景 1+3 group runs | quota-only≈0；shared 提高总吞吐并缩短 long JCT，但恶化 short JCT/Jain；weighted 留论文阶段 |
+| 两作业（已完成） | 两个512行short/long job；5s stagger；互斥manifest-selected doc_id集合 | online replay与eager两种arrival regime；各自使用full/half single、static partition、shared work-credit/fair queue匹配对照 | 每场景1+3 group runs | online下quota-only≈0、shared提高总吞吐但伤short/Jain；eager下quota-only short JCT +59.00%，shared相对static使short JCT −48.94%、总吞吐+31.85%、Jain 0.894→0.972；冻结为arrival-regime dependence，weighted留论文阶段 |
 
 两作业必须使用冻结的 short/long manifest 直接过滤互斥 doc_id，source offset 固定为 0。
 项目 A/B 按原始 `arrival_time_s` 做 request-level replay；原生 Daft/Ray Data 观察只按
@@ -191,12 +191,12 @@ Daft Ray、Ray Data 和 project frozen-static。workload 先扩到每个 formal 
 各框架拥有自身 scheduling；correctness、feeding-saturation 和稳定性门通过后才允许
 容量排名。该轨只回答平台容量，不与轨道 A 的在线 JCT 混表。
 
-在扩展成全框架容量轨前，先用
-`deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json` 只运行项目
-512-row 1+3。它是最小诊断：若项目相对现有同签名 bounded all-at-t0 control 达到
-95% feeding，立即停止且不改代码；若失败，才补 matched bounded 或逐项隔离项目阶段。
+最小诊断已经完成：`deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json`
+的Project 512-row 1+3将arrival span压到微秒级；T3/service throughput/MFU与现有
+Daft Native同边界只差约2.5%–2.7%。它回答的是“此前71.24s是否来自模型请求路径”，
+不是≥60s容量排名，因此无需人为扩short，也不触发K256/K512或项目代码调优。
 
 现有 `Short@0s → Long@5s` 继续回答“活跃 Job 集变化是否产生效率—隔离—公平权衡”，
-不承担单系统最优容量排名。full/half project single-short 的 JCT 近似相等已排除当前
-K128/W65536 静态额度是 71 s 的主因，因此在轨道 A 证实项目侧额外 lag 前，不扫
-K256/K512。
+不承担单系统最优容量排名。online full/half single-short近似相等，而eager full→half
+使short JCT +59.00%，说明quota效应依赖arrival regime；两者必须分轨保留。当前
+all-at-t0诊断已经排除“项目模型请求路径慢6.4×”，因此不扫K256/K512。

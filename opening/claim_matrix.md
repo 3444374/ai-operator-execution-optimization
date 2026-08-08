@@ -59,7 +59,7 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 文本原生路径在同环境下呈现稳定但不同的服务压力形态 | 已证明（外部现象） | `experiments/results/opening_text_native_single_job_formal_20260808/README.md`：16/16 cells、12 formal；bounded/Daft Native/Daft Ray/Ray Data tok/s=17,800/17,286/16,747/3,551，CV<0.6%。Daft waiting mean=783/742、KV max≈1；Ray Data running=17.3、MFU=0.112 | 同一任务可落入最小饱和、过量排队或欠供给；状态感知需联合 work rate/MFU、running/waiting、KV 与 tail | 只证明当前官方 graph/冻结点的外部现象；不能归因内部算法或称项目方法胜出 |
 | 现有原生路径在多 job 共享服务时呈现前台干扰与不同压力形态 | 已证明（外部现象） | `opening_multijob_interference_20260809/`：统一 Job 级5s offset、各1+3；Daft Native/Ray/Ray Data short JCT 相对各自 single +82.42%/+104.84%/+32.76%，Project eager static/shared 的 matched增量为+58.77%/+28.90%。Daft 两臂 high waiting/KV，Ray Data low running/no waiting/low MFU | 同一“两个 Job”可落入不同服务状态且前台均受影响，因此需要全局 work/state 观测；不归因框架内部算法，也不把 normalized delta 当跨框架性能排名 | 原生 adapter 无 request P99；Project 与原生虽都为eager offered-work，但T0准备边界不同，short cell不作≥60s容量或绝对排名，不称项目优于框架 |
 
-## 3. 待最终冻结的统一实验组
+## 3. 已完成的统一实验组与可排名边界
 
 ### 均匀控制组
 
@@ -74,7 +74,7 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 - arms、source/sink、模型和重复合同与均匀控制组相同。
 - 追加报告 work CV、token P50/P95/P99、estimated service work、endpoint work imbalance、TTFT/JCT/tail、cache/locality、active work 和 serving pressure。
 
-首轮两组实验因项目臂未喂饱而只作历史诊断；K128 replacement 的 correctness 护栏有效，但 ShareGPT 的 C32 direct 后续证实仍欠供给，故三臂性能口径降级。原生单 job 已用 bounded C128 完成 1+3，稳定观察到 Daft 两臂过量排队与 Ray Data 当前路径欠供给。5s guaranteed-overlap 的原生观察与项目 static/shared 因果 A/B 已于 2026-08-09 闭环；开题前停止增加 offset、weight、4-job 或框架臂，转入数据整理和图表合同。
+两组replacement均已完成。SQuAD通过correctness、feeding与稳定性门，可作三条静态路径的均匀控制地基；ShareGPT通过correctness、sink、identity与稳定性门，但C32 direct后续证实只达已测峰值52.07%，且DuckDB fixed-cap语义失败，因此只作容量校准/产品语义护栏，不作三臂性能排名。原生单job已用bounded C128完成1+3，稳定观察到Daft两臂过量排队与Ray Data当前路径欠供给。5s guaranteed-overlap的原生观察与项目online/eager matched A/B已于2026-08-09闭环；开题前停止增加offset、weight、4-job或框架臂，转入数据整理和待画图合同。
 
 ## 4. 新实验准入问题
 

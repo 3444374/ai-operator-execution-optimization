@@ -40,7 +40,7 @@
 
 ### 四个等权部件各自最强的动机证据是什么？
 
-> 第一，Work Unit：固定 16 行的 batch token 最小/最大为 474/6,793，相差 14.3 倍；图像的 CPU prepare/GPU actor 又相差 13.8–31.2 倍，因此需要 staged work 表达。第二，状态感知：相同 W65K 上限下，high 和 arrival-limited 的 MFU 约为 35%/7%，原生单 Job 又呈现 overqueue/underfeed 两种形态，证明静态配置不是当前状态。第三，动态与多作业调度：5 s guaranteed-overlap 证明后到 long 会伤害 short，shared 又同时改善总吞吐/长 Job 却损害 short 和 Jain fairness，证明需要显式权衡效率、隔离和公平。第四，算子代价估计：20 个 context 中候选配置选错代价为 12.0%–86.5%，简单 proxy 的 selection regret 很高，CE5 才勉强跨过预注册决策门。四条都是“为什么这样设计”的证据，不是“最终方法已完成”的证据。
+> 第一，Work Unit：固定16行的batch token最小/最大为474/6,793，相差14.3倍；图像的CPU prepare/GPU actor又相差13.8–31.2倍，因此需要staged work表达。第二，状态感知：相同W65K上限下，high和arrival-limited的MFU约为35%/7%，原生单Job又呈现overqueue/underfeed两种形态，证明静态配置不是当前状态。第三，动态与多作业调度：5s guaranteed-overlap证明后到long会伤害short；online中shared提高总吞吐却损害short/Jain，eager中shared相对static同时改善short、long、吞吐和Jain，方向反转证明必须感知arrival regime并显式约束效率、隔离和公平。第四，算子代价估计：20个context中候选配置选错代价为12.0%–86.5%，简单proxy的selection regret很高，CE5才勉强跨过预注册决策门。四条都是“为什么这样设计”的证据，不是“最终方法已完成”的证据。
 
 ### 为什么不是“动态策略已经有效”？
 

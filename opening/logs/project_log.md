@@ -1,5 +1,14 @@
 # 开题材料 project log
 
+## 2026-08-09 开题证据完成审计
+
+- 复核两组database-E2E replacement：SQuAD可作静态均匀控制地基；ShareGPT只保留
+  correctness/sink/产品语义护栏，因C32 direct仅达已测峰值52.07%而不作性能排名。
+- 将Claim Matrix“待冻结实验组”改为“已完成实验组与可排名边界”，并把实验状态、方法
+  合同和问答统一到online/eager两种arrival regime；动态策略仍不得写成普遍胜出。
+- 回读全部待画图权威输入，修正三份最终eager多Job CSV的SHA前缀；headline未改变。
+- 本轮未新增实验、图片、PPT、飞书或Wiki内容。
+
 ## 2026-08-09 Project eager 多 Job 匹配重测
 
 - 统一报告、Claim Matrix、开题报告、答辩大纲和问答口径：Project eager 的 full/half

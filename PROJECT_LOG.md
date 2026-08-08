@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-08-09 开题完成审计：eager 多 Job 与权威状态对齐
+
+- 逐项复核两组database-E2E replacement：24/24 cells、18 formal的correctness、
+  source/sink、identity、exactly-once与稳定性证据有效；SQuAD可作静态均匀控制地基。
+  ShareGPT C32 direct后续只达已测峰值52.07%，因此该组三臂只保留容量校准和DuckDB
+  fixed-cap语义护栏，不作matched-saturation性能排名。
+- 将Project eager多Job的full/half matched control写回当前实验状态和方法总合同：
+  quota-only使short JCT +59.00%，matched static long competition再+58.77%；shared相对
+  static使short JCT −48.94%、总吞吐+31.85%、long JCT−25.75%、Jain 0.894→0.972。
+  online方向相反，冻结为arrival-regime dependence，不称dynamic普遍胜出。
+- 将代价估计当前权威口径统一为429 formal/20 contexts：CE5 pooled/macro/max regret
+  1.67%/2.90%/14.72%、candidate pairwise0.808，仅为marginal pass；旧204-row失败口径
+  只保留在明确标注的历史快照。
+- 重新回读A–F/H及附录全部权威输入；三份eager多Job CSV在最终聚合后hash已变化但
+  headline未变，已将待画图合同更新为当前SHA256前16位，防止后续静默读到旧版本。
+- 本轮不新增实验、不生成图/PPT、不覆盖飞书或Wiki；只修正状态、Claim Matrix、问答与
+  待画图合同的一致性。
+
 ## 2026-08-09 项目 single-short 与 long 干扰的逐请求时间归因
 
 - 从服务器只读回收四份已归档 raw，SHA256 与服务器归档一致；新增汇总器回归并验证

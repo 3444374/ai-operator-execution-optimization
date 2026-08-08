@@ -42,9 +42,9 @@
 | F | `opening_text_native_single_job_formal_20260808/formal_summary.csv` | 4 arm × 3 formal | `bd0fd0fa502f50a6` | bounded/Daft Native/Daft Ray/Ray Data=17,800/17,286/16,747/3,551 tok/s |
 | H | `opening_multijob_interference_20260809/data/combined/summary.csv` | 10 汇总行，源自 30 formal | `3622732cf88b4fee` | 所有 two-job overlap>0；原生 short JCT +82.42%/+104.84%/+32.76% |
 | H | `opening_multijob_interference_20260809/data/combined/comparisons.csv` | 6 个预注册对比 | `33701106d0f8bda8` | project shared vs static：吞吐 +21.03%，short JCT +4.98% |
-| H | `opening_multijob_interference_20260809/data/eager_project/scenario_summary.csv` | 4场景×3 formal | `91124f173c47912d` | quota-only short JCT +59.00%；matched static/shared competition +58.77%/+28.90% |
-| H | `opening_multijob_interference_20260809/data/eager_project/phase_state_summary.csv` | 2策略×3阶段 | `7d0519a962cf622b` | pre-long running总和 static/shared=120.6/230.1 |
-| H | `opening_multijob_interference_20260809/data/eager_project/cross_system_short_impact.csv` | 5个系统内normalized对比 | `ca4426f4695298f1` | 只画within-track影响；禁止跨轨绝对JCT排名 |
+| H | `opening_multijob_interference_20260809/data/eager_project/scenario_summary.csv` | 4场景×3 formal | `16c4bbcb637c0263` | quota-only short JCT +59.00%；matched static/shared competition +58.77%/+28.90% |
+| H | `opening_multijob_interference_20260809/data/eager_project/phase_state_summary.csv` | 2策略×3阶段 | `0d9b3ef1478de403` | pre-long running总和 static/shared=120.6/230.1 |
+| H | `opening_multijob_interference_20260809/data/eager_project/cross_system_short_impact.csv` | 5个系统内normalized对比 | `5df6a348efe95a93` | 只画within-track影响；禁止跨轨绝对JCT排名 |
 | Appendix | `opening_database_e2e_text_refeed_20260808/summary/formal_summary.csv` | 6 cell × 3 formal | `6e9d731dff3c5bde` | SQuAD correct rows/s=136.63/136.68/137.77；ShareGPT DuckDB cap failure=4,921 |
 
 完整数据门禁另由各结果目录的 `audit.json` 和 README 承担；本表不是替代审计器。

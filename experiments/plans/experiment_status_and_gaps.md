@@ -15,9 +15,10 @@ Date: 2026-07-20（最后更新：2026-08-09；开题三臂 replacement、原生
 - ✅ image 60K×2 matched-resource schema-v12 重跑（project vs ray_data × cpu8/16，1+3 formal，0 incident）：project 在 matched CPU 两档都快（cpu8 −10.0%、cpu16 −18.5%），**确认 step-8 ~13–15% 结构性收益**；schema-v12 per-image 指标（J/1k、gpu-s/img、img/cpuS、first_output_fraction）产出。结果见 `experiments/results/image_ai_embed_operator_formal_20260803/README.md` §10。
 - ✅ 算子代价估计 loader/LOO 审计：旧 283-row hierarchy 把 warmup 混入 formal，已移入
   `operator_cost_estimation_20260726/archive/allphases_pre_20260804/`，不再用于 claim。
-  当前 23-feature formal-only context-LOO 为 204 行/17 contexts；CE5 MAE 7.91s、
+  当时的 23-feature formal-only context-LOO 为 204 行/17 contexts；CE5 MAE 7.91s、
   candidate pairwise 0.800、macro/pooled/max regret 4.58%/0.62%/26.23%，row pairwise
-  0.684，仍不晋级。tie 已冻结为 candidate-ID 字典序，不依赖 CSV 顺序。
+  0.684，仍不晋级。该口径已被后续 429-formal/20-context 的 6-rep closure 取代；
+  当前权威结论见 §1.5。tie 已冻结为 candidate-ID 字典序，不依赖 CSV 顺序。
 
 **新下一步（两条并行线，共享 workload/观测/raw，执行控制隔离）**：
 
@@ -65,19 +66,24 @@ granularity 不同，只用于 serving capacity/overload 证据，不替代上�
 云文档覆盖和 Wiki。2026-08-08 原生单 job 1+3 已完成（结果见
 `opening_text_native_single_job_formal_20260808/`）；2026-08-09 又完成统一 5s offset 的
 原生 short/long 两 job 观察和项目 static-partition vs shared-work-credit 同上限 A/B，
-结果见 `opening_multijob_interference_20260809/`。三条原生路径都有真实 overlap；项目
-quota-only 控制近似为零，shared 相对 static 提高总吞吐、缩短 long JCT，但恶化 short
-JCT 与 Jain fairness。因此该实验闭合的是“多 Job 存在效率—隔离—公平权衡”，不是
-“动态全面胜出”。开题前停止新增 offset、weight、4+ job 或框架臂；phase-change、weighted、
-图像新动态策略、cost held-out 与完整 image-first A+B 矩阵均留开题后。
+结果见 `opening_multijob_interference_20260809/`。三条原生路径都有真实 overlap。项目在线
+replay 下 quota-only 近似为零，shared 提高总吞吐并缩短 long JCT，但恶化 short/Jain；
+统一 eager 到达后，full→half quota-only 使 short JCT +59.00%，matched
+half→static+long 再 +58.77%，而 shared 相对 static 使 short JCT −48.94%、总吞吐
++31.85%、long JCT −25.75%、Jain 0.894→0.972。两种 arrival regime 方向不同，故冻结
+结论是“需要显式感知 arrival/active/drain、支持 idle borrowing 并受 SLO/fairness 约束”，
+不是“动态全面胜出”。开题前停止新增 offset、weight、4+ job 或框架臂；phase-change、
+weighted、图像新动态策略、cost held-out 与完整 image-first A+B 矩阵均留开题后。
 
 上述多 Job 结果含两种不同输入可见性合同：项目 A/B 按 manifest 中
 `arrival_time_s` 逐请求 replay；Daft Native/Ray 与 Ray Data 只统一 Job 的 0/5 s
 启动，Job 启动后由原生 graph 看到完整 manifest。因此项目 single-short 约 71 s 与
-Daft Native 约 11 s 不得解释为框架性能排名。开题后若诊断项目性能，先做同 manifest、
-同 request replay 的 bounded HTTP vs project 两臂；只有 completion drain/P99 仍差约
-5% 才逐因子检查 source/organizer、flush、Ray actor 和 routing。随后另做所有 rows 在
-`t=0` 可见、每 formal ≥60 s 的离线容量矩阵。两条轨道不混表，且都不阻塞本轮开题。
+Daft Native 约 11 s 不得解释为框架性能排名。同 manifest 的 Project all-at-t0 1+3
+诊断与 eager 多 Job full/half matched control 均已完成：Project 与 Daft Native 对齐到
+最早模型提交→最晚响应完成的 T3 分别为 11.354/11.059s，service throughput/MFU 仅差
+约2.5%–2.7%；这排除了“项目模型请求路径慢6.4×”，也停止了K256/K512扫描。若论文阶段
+需要绝对框架容量排名，才另起所有 rows 在`t=0`可见、统一完整T0、每formal≥60s的矩阵；
+该轨不与在线JCT混表，也不阻塞本轮开题。
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 
@@ -98,13 +104,21 @@ exactly-once、双 GPU 可运行门禁，但只能证明 adapter 能力。当前
 `embed_image`，并从 Ray Data arm 移除项目 `max_active_batches`。Daft built-in 的 256 图
 gate 与逐行 parity 已闭合：离线 L2 normalize 后 cosine P1=0.999788、非自身
 overlap@10 mean=0.9949，正式比较采用统一 normalized contract 且把归一化计入各臂
-E2E。下一步运行 Daft 官方 ResNet18 vendor-code parity 与 60 秒以上稳态 formal，补统一 pgvector sink、bounded
-direct ceiling 与 CPU-budget-normalized curve。
+E2E。后续正式结果已取代本段的“下一步”措辞：Daft built-in 在12K规模完成1+3/约
+185 img/s，但60K×2因其物化结构触发object-store容量门禁；Ray Data native与project在
+60K×2、cpu8/16 matched-resource完成1+3，project JCT同向改善10.0%/18.5%。这些只构成
+静态阶段拆分的preliminary signal，不证明动态或图像proposed已胜出。
 实现边界复测见 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`，
 operator-E2E 原始数据和七步报告见
 `motivation/results/gpu/image_clip_native_baseline_20260801/`。
 
-**过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + fused Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② ✅ staged runner/resource gate；✅ 原生 baseline 独立校准已完成（Daft built-in batch64≈177 img/s@5K、Ray Data native batch64/cpu8≈957 img/s@60K×2，见 `motivation/results/gpu/{daft_builtin,ray_data}_calibration_20260803/`）；✅ project 静态点已冻结 `cpu16/active32/batch64`（两轮 1701/1681 img/s，**旧 schema，只用于选点**，见 `motivation/results/gpu/image_project_static_60k_x2_20260803/`）；✅ 统一 `l2_normalized` 输出合同（`03b815d`/`6f0954b`）。下一步：Daft built-in 60K 长门禁 → 四臂同机 formal 排名（**当前 commit + 统一合同**，不复用旧 schema 行）→ 再接统一 pgvector sink，并扩展 bounded direct CLIP、CPU-normalized curve 和 naive；vLLM pooling 当前保持 blocked，不进入队列（+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
+**image build 当前状态**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor；
+② ✅ Daft built-in、Ray Data native 与 project frozen-static 的 provenance、语义、exactly-once
+和 matched-resource 正式证据已完成，权威结果为
+`experiments/results/image_ai_embed_operator_formal_20260803/`；Daft 60K 容量失败单列，
+不与12K结果横向排名；③ vLLM pooling gate仍blocked，不继续在线/5K/60K；④ 下一研究动作
+是开题后在冻结最佳静态点上做 **A**（state-aware请求成形/提交）+ **B**（代价估计），而不是
+继续增加图像开题baseline、sink或参数扫描。
 
 **开题冻结后的动态主实验边界（2026-08-08 再确认）**：上述四臂同机 image formal
 先建立官方框架与项目 **best frozen-static** 强基线；项目最终 proposed 不能停在静态点。
@@ -170,7 +184,7 @@ frozen-static。
 | **Per-endpoint active-work capacity** | ✅ 07-29 扩展曲线完成 | 双 4090 八档各三次 formal；32/32 成功，65K 达最大吞吐 97.80%，下一档 +0.92% | 按预注册规则选择 65,536；98K→131K 吞吐持平而 P99/SLO 更差 |
 | **Short/long static credit existence screen** | ⚠️ 07-30 screening 完成，正式判决阻塞 | 48/48 run 成功；long 的 W65K 信号稳定，K256 在短/长两侧均造成明显 SLO 退化 | 实际为 urllib、无 output token IDs、非 K×work factorial；short 未绑定等价臂分裂 48.5%，均值/中位数选点相反。审计=`inconclusive`，必须先重跑 async 等价臂 gate |
 | **SLO-aware EWMA flush** | ✅ 07-29 | 双 4090 high/arrival-limited 各 3 次 formal；相对 fixed-50 吞吐 -0.52%/+0.10%，P99 -0.94%/-0.49%，30s SLO 全部零违约 | 25–50ms 动作相对 5.6–17.4s P99 缺少一阶杠杆；`near_*` 实测为 arrival-limited，不晋升动态策略 |
-| **多 job/多 foreground size 扩展** | ✅ 07-29 equal-workload + ✅ 08-09 guaranteed-overlap | equal-workload 36/36、0 incident；4-job 条件性 +9.57% throughput。5s short/long 中 quota-only≈0；shared vs static 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、Jain 0.759→0.707 | 已证明两作业效率—隔离—公平权衡；held-out 4-job、weighted/SLO、异构 mix 与图像 phase-change 仍待验证 |
+| **多 job/多 foreground size 扩展** | ✅ 07-29 equal-workload + ✅ 08-09 guaranteed-overlap/eager matched control | equal-workload 36/36、0 incident；4-job 条件性 +9.57% throughput。在线5s中 quota-only≈0、shared提高总吞吐但伤short/Jain；eager中quota-only short JCT +59.00%，shared相对static short JCT −48.94%、总吞吐 +31.85%、Jain 0.894→0.972 | 已证明arrival-regime dependence、idle borrowing与效率—隔离—公平权衡；held-out 4-job、weighted/SLO、异构mix与图像phase-change仍待验证 |
 
 **RC2 当前状态**：✅ static K8 guardrail 与 fixed 50ms coalescing 均有真实
 证据。跨 arrival-rate、2048 held-out 和 shared-vLLM 双作业均未显示
@@ -206,10 +220,13 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 ### 1.5 算子代价估计 & 写回
 
 算子代价估计已完成 formal-only 方法学审计：旧 283-row grouped-holdout 混入 warmup，
-只保留为历史；当前权威样本为 204 条 formal、17 个 decision contexts。CE5 的 MAE
-为 7.91s、candidate pairwise 0.800、macro regret 4.58%，但最差 context regret
-26.23%、row pairwise 0.684，未达到晋级合同。定位为共同使能组件，不作为独立研究
-内容；写回继续使用 PostgreSQL + pgvector 工程 baseline。
+只保留为历史；当前权威样本为429条formal、20个decision contexts、每context 4个
+active-work candidate。CE5的pooled/macro/max selection regret为
+1.67%/2.90%/14.72%，candidate pairwise 0.808，刚过预注册max<15%合同；但只有
+0.28个百分点裕量，冻结为`marginal pass`。其row MAE 3.98s还高于Ridge的3.23s，
+说明评价重点是配置选择regret，而非逐行误差。定位为共同使能组件，不作为独立研究内容；
+尚未在线驱动organization/routing/credit，也未验证跨模态或跨硬件泛化。写回继续使用
+PostgreSQL + pgvector工程baseline。
 
 **两个预期用途**：
 1. **数据库优化编排**（主要）：为查询优化器提供 AI 算子代价估计，辅助
