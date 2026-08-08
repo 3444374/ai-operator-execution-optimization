@@ -211,9 +211,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_short_job_controls.example.json` | 同一 512-row short manifest 的项目 full-pool 与 reserved-half-pool 单 Job 1+3 匹配控制 | 分离正常单 Job、静态配额减半和 long 服务竞争，不启动 synthetic competing job |
 | `deploy/autodl/opening_short_job_native_controls.example.json` | Daft Native/Ray、Ray Data 同一 short manifest 的 1+3 原生匹配控制 | 补 short-only JCT/MFU/GPU/vLLM 状态；短 cell 仅作表征，不作稳态容量排名 |
 | `deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json` | 同一 512-row short manifest 的项目 all-at-t0 静态 1+3 诊断；复用 K128/W65536、8×32 actor 和 token-budget 6144，但关闭逐请求 arrival replay | 判断项目能否在完整输入可见时喂满服务；不属于开题 baseline，不替换在线多 Job 结论，成功即停止且不扫 K256/K512 |
-| `deploy/autodl/opening_project_multijob_all_at_t0_diagnostic.example.json` | Project-only eager single、static+long、shared+long 配对矩阵；各 Job 使用 arrival 全零的审计 manifest，保持 Short@0s→Long@5s | 公平重测 eager 条件下 long 对 short 的影响；复用原生数据，不重跑 Daft/Ray Data，不替换在线 replay 结论 |
+| `deploy/autodl/opening_project_multijob_all_at_t0_diagnostic.example.json` | Project-only eager single、static+long、shared+long 配对矩阵；把 DB arrival span 压缩至约66.9µs，保持 Short@0s→Long@5s | 公平重测 eager 条件下 long 对 short 的影响；复用原生数据，不重跑 Daft/Ray Data，不替换在线 replay 结论 |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥、等行数的 short/long job manifest，并输出 token 分布与 SHA 审计 | 运行开题两作业实验前生成 512+512 行异质工作证据 |
-| `code/scripts/data/build_eager_manifest_variant.py` | 只把冻结 request manifest 的 `arrival_time_s` 置零并按 doc_id 排序，输出 source/output SHA、行数、endpoint 和 work 审计 | 需要同 payload/work 的 Job-level all-at-t0 配对实验时使用；不得覆盖原 manifest |
 | `code/scripts/analysis/summarize_project_short_all_at_t0.py` | 从服务器 raw 重算 Project eager single 的 T0–T4 时间、吞吐、MFU、状态和 Daft 对齐边界 | 回答“项目为何比 Daft 慢”时使用；T0 缺失不补造，T3/T4 只作 short 诊断 |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
 | `code/tests/analysis/test_summarize_opening_database_e2e.py` | 开题矩阵汇总器的项目 feeding/GPU 与 correctness fail-closed 回归测试 | 修改正式审计退出条件时运行；产品 baseline feeding 不得误作项目门禁 |

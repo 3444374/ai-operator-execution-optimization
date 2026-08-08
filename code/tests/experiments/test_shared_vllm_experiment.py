@@ -75,8 +75,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "VLLM_MAX_NUM_SEQS": "256",
                 "COMPLETION_MODEL": "qwen2.5-7b",
                 "MODEL_PATH": "/models/qwen2.5-7b",
-                "OPENING_SHORT_JOB_EAGER_MANIFEST": "/tmp/short-eager.jsonl",
-                "OPENING_LONG_JOB_EAGER_MANIFEST": "/tmp/long-eager.jsonl",
+                "OPENING_SHORT_JOB_MANIFEST": "/tmp/short.jsonl",
+                "OPENING_LONG_JOB_MANIFEST": "/tmp/long.jsonl",
                 "OPENING_MULTIJOB_OFFSET_S": "5",
                 "SHAREGPT_PROJECT_K": "128",
                 "SHAREGPT_PROJECT_CALIBRATION_CONTRACT": str(selection),
@@ -93,7 +93,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertEqual(config.work_limit_per_endpoint, 65536)
         self.assertIn("--arrival-replay", config.common_args)
         scale = config.common_args.index("--arrival-time-scale")
-        self.assertEqual(config.common_args[scale + 1], "1.0")
+        self.assertEqual(config.common_args[scale + 1], "0.000000001")
         self.assertEqual(
             [scenario.scenario_id for scenario in config.scenarios],
             [

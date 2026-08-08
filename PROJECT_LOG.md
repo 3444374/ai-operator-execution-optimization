@@ -5191,3 +5191,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 现有多 Job 系统内 single→overlap 反事实继续有效；为回答 eager 条件下 long 对 Project
   short 的影响，新增 Project-only eager single/static/shared 配对模板和 arrival-zero
   manifest builder。只补 Project，不重跑原生三臂；在线 replay 与 eager 结果分轨保留。
+- 首轮 eager 多Job gate 暴露 request manifest 不覆盖 PostgreSQL `arrival_time_s`：全零
+  manifest未改变实际 replay，误设scale=1.0反而把等待放大1000倍。v1/v2均在64-row
+  shared cell中止并完整保留，不进入均值。删除无效manifest转换工具，改用原manifest与
+  `arrival_time_scale=1e-9`，把66.875s压缩至约66.9µs后另建v3 gate。

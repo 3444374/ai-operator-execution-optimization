@@ -82,11 +82,12 @@ token-budget 6144 和双 endpoint 服务签名，但不启用 request-level arri
 source、flush、Ray actor 或 routing，不先扫描 K256/K512。
 
 `opening_project_multijob_all_at_t0_diagnostic.example.json` 是上述诊断的最小多 Job
-配对，仅含 Project eager single、static+long 和 shared+long。先用
-`code/scripts/data/build_eager_manifest_variant.py` 从既有 short/long manifest 生成全零
-`arrival_time_s` 的新文件及审计 JSON，不覆盖原 manifest；runner 继续使用 replay start
-epoch 来精确实现 Job 级 `Short@0s→Long@5s`。该矩阵只重测 Project，Daft/Ray Data
-原生 eager 数据复用；系统内 short impact 可作反事实，跨框架 T0 仍因准备边界不同而不排名。
+配对，仅含 Project eager single、static+long 和 shared+long。request manifest 只冻结
+DB 行与 endpoint，不覆盖数据库列里的 `arrival_time_s`；因此模板保留原 short/long
+manifest，并用正数 `arrival_time_scale=1e-9` 将66.875s span压缩为约66.9µs。runner继续
+使用 replay start epoch 精确实现 Job 级 `Short@0s→Long@5s`。该矩阵只重测 Project，
+Daft/Ray Data 原生 eager 数据复用；系统内 short impact 可作反事实，跨框架 T0 仍因准备
+边界不同而不排名。禁止通过修改 manifest 的 arrival 字段假装覆盖 DB source arrival。
 
 若该矩阵的项目臂未达到同协议 bounded direct 的 95% feeding 门，只能保留为
 failed-feeding 诊断。使用 `opening_project_feeding_calibration.example.json` 在每个

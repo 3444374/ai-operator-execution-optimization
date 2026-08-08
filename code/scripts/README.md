@@ -33,9 +33,9 @@ submit→service、service 与 request E2E 分位数；profiler 的 pipeline sta
 `analysis/summarize_project_short_all_at_t0.py` 审计同一 512-row short manifest 的
 Project all-at-t0 1+3 raw，并冻结 T0 full-pipeline、T1 offered-work JCT、T2 framework
 execute、T3 model-request window、T4 vLLM request mean 五层计时。它只在 T3/T4 下做
-Project/Daft short 诊断；Daft 缺失的外层 T0 保持为空。`data/build_eager_manifest_variant.py`
-只将已有 manifest 的 `arrival_time_s` 置零并另存，保存 source/output SHA 与 work 审计，
-用于 Project-only eager 多 Job 配对，不覆盖在线 replay manifest。
+Project/Daft short 诊断；Daft 缺失的外层 T0 保持为空。Project-only eager 多 Job 仍使用
+原 manifest，通过近零正数 arrival scale 压缩 DB source arrival；manifest 中的 arrival
+字段不覆盖数据库列，不能把另存 manifest 误当成 offered-load 控制。
 
 当前连接与测试流程集中在：
 

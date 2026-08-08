@@ -62,7 +62,7 @@
     "--cost-model-id", "${COMPLETION_MODEL}",
     "--cost-tokenizer-id", "${MODEL_PATH}",
     "--arrival-replay",
-    "--arrival-time-scale", "1.0",
+    "--arrival-time-scale", "0.000000001",
     "--scheduling-policy", "static",
     "--endpoint-routing", "manifest_pinned",
     "--token-budget-policy", "static",
@@ -83,7 +83,7 @@
       "weights": [1],
       "arrival_offsets_s": [0.0],
       "source_row_offsets": [0],
-      "request_manifests": ["${OPENING_SHORT_JOB_EAGER_MANIFEST}"]
+      "request_manifests": ["${OPENING_SHORT_JOB_MANIFEST}"]
     },
     {
       "scenario_id": "staggered_static_partition_all_at_t0",
@@ -93,7 +93,7 @@
       "weights": [1, 1],
       "arrival_offsets_s": [0.0, "${OPENING_MULTIJOB_OFFSET_S}"],
       "source_row_offsets": [0, 0],
-      "request_manifests": ["${OPENING_SHORT_JOB_EAGER_MANIFEST}", "${OPENING_LONG_JOB_EAGER_MANIFEST}"]
+      "request_manifests": ["${OPENING_SHORT_JOB_MANIFEST}", "${OPENING_LONG_JOB_MANIFEST}"]
     },
     {
       "scenario_id": "staggered_shared_work_all_at_t0",
@@ -103,7 +103,7 @@
       "weights": [1, 1],
       "arrival_offsets_s": [0.0, "${OPENING_MULTIJOB_OFFSET_S}"],
       "source_row_offsets": [0, 0],
-      "request_manifests": ["${OPENING_SHORT_JOB_EAGER_MANIFEST}", "${OPENING_LONG_JOB_EAGER_MANIFEST}"]
+      "request_manifests": ["${OPENING_SHORT_JOB_MANIFEST}", "${OPENING_LONG_JOB_MANIFEST}"]
     }
   ]
 }
