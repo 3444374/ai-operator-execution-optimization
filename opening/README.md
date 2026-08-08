@@ -57,8 +57,8 @@
 |---|---|---|
 | 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
 | 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：19 项 take-away、必要数据、claim 边界、实验与图表合同；暂不制作 PPT** |
-| 开题报告 | `report/opening_report.md` | 2026-08-07 待替换底稿；feeding 纠正与图/PPT 重构完成后再冻结 |
-| 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-08 复审中；实验准入的当前依据 |
+| 开题报告 | `report/opening_report.md` | 2026-08-09 本地证据口径已对齐；已写入 replacement、原生单 Job、5 s 两 Job 与四部件实现边界，暂不同步云文档 |
+| 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级与禁止外推的当前依据 |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前暂停 PPT 制作 |
 | 开题 PPTX | `slides/opening_defense_20260807_v6.pptx` | v5 模板继承的待替换底稿；已有 QA 不代表新内容已冻结 |
 | 开题飞书源稿 | `feishu/opening_report_wiki.md` | 与本地报告完全一致；线上正文 revision 289 与四个图片块已回读通过 |

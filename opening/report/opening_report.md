@@ -150,17 +150,15 @@ ShareGPT replacement 中，direct、DuckDB AI、项目冻结静态的 correct ro
 | Daft Ray | 101.53 | 16,747 | 0.637 | 300.9 | 741.6 | 0.750 | 40.704 |
 | Ray Data HTTP | 478.66 | 3,551 | 0.112 | 17.3 | 0.0 | 0.059 | 0.094 |
 
-Daft 两臂在吞吐接近 bounded 的同时形成大量 waiting 和 KV 顶格，Ray Data 当前路径则表现为低 running、低 MFU 的供给不足。它们证明单一静态并发或 GPU utilization 不能描述服务状态，需要联合完成速率/MFU、running/waiting、KV 与 tail；但该实验不包含项目动态臂，不能声称项目方法胜出，也不把外部现象归因给框架内部算法。
+Daft 两臂在吞吐接近 bounded 的同时形成大量 waiting，KV max 接近 1；Ray Data 当前路径则表现为低 running、低 MFU 的供给不足。它们证明单一静态并发或 GPU utilization 不能描述服务状态，需要联合完成速率/MFU、running/waiting、KV 与 tail；但该实验不包含项目动态臂，不能声称项目方法胜出，也不把外部现象归因给框架内部算法。
 
 ### 5.4 两 Job guaranteed-overlap 的前台干扰
 
-同一 short/long manifest 上，所有系统统一让 long 在 short 启动 5 s 后到达。项目先用 full-pool 与 reserved-half-pool 两个 single-short 控制隔离静态额度效应；两者 short JCT 均约 71.24 s，quota-only 对 JCT/P99/work rate 的变化约为 −0.003%/−0.013%/−0.004%。long 真正加入后，static 下 short JCT/P99/work rate 变化为 +3.79%/+90.80%/−3.57%，shared 下为 +8.95%/+173.33%/−8.28%，因此前台退化来自服务竞争，而不是额度减半本身。
+同一 short/long manifest 上，所有系统统一让 long 在 short 启动 5 s 后到达。项目先用 full-pool 与 reserved-half-pool 两个 single-short 控制隔离静态额度效应；两者 short JCT 均约 71.24 s，quota-only 对 JCT/P99/work rate 的变化约为 −0.003%/−0.013%/−0.004%。long 真正加入后，static/shared 的实际 overlap 分别为 68.94/72.62 s，short JCT/P99/work rate 变化分别为 +3.79%/+90.80%/−3.57% 和 +8.95%/+173.33%/−8.28%，因此前台退化来自真实服务竞争，而不是额度减半本身。
 
-shared 相对 static 将 aggregate service throughput 提高 21.03%、long JCT 降低 18.31%，但 short JCT 增加 4.98%，Jain fairness median 从 0.759 降到 0.707。它证明 shared work credit 存在效率—隔离—公平权衡，不证明动态全面胜出。Daft Native、Daft Ray、Ray Data 也都产生真实 overlap，short JCT 相对各自 single 增加 82.42%、104.84%、32.76%；这些只作为两个独立官方应用竞争同一 vLLM 的外部观察，不归因框架内部算法。开题据此提出 per-job work/state 感知、idle borrowing 与 SLO/fairness guard，weighted/4+ job 和图像 phase-change 留作论文阶段验证。
+shared 相对 static 将 aggregate service throughput 提高 21.03%、long JCT 降低 18.31%，但 short JCT 增加 4.98%，Jain fairness median 从 0.759 降到 0.707。它证明 shared work credit 存在效率—隔离—公平权衡，不证明动态全面胜出。Daft Native、Daft Ray、Ray Data 也都产生真实 overlap，均值分别为 15.17/25.19/166.14 s，short JCT 相对各自 single 增加 82.42%/104.84%/32.76%。这些只作为两个独立官方应用竞争同一 vLLM 的外部观察，不归因框架内部算法。原 15 s offset 下 Daft Native 的 short 在 long 到达前已完成，该数据不进入干扰结论。开题据此提出 per-job work/state 感知、idle borrowing 与 SLO/fairness guard，weighted/4+ job 和图像 phase-change 留作论文阶段验证。
 
 ### 5.5 最小饱和 active work
-
-![固定资源下的 serving capacity 与过载边界](../../figures/data/report_main/opening_serving_capacity_frontier.png)
 
 双 RTX 4090、冻结 Qwen/vLLM 合同下，每 endpoint 65,536 active work 已达到最大已测吞吐均值的 97.80%，下一档只增加 0.92%；继续提高到 98K，吞吐增量有限而 P99 由 36.78 s 上升到 40.05 s。该结果证明应先标定最小饱和点，再比较上游策略。65,536 只绑定当前机器、模型、协议和 workload，不是通用常数。
 
@@ -182,9 +180,22 @@ CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时
 
 在 429 个 formal 观测、20 个 context 与 4 个候选配置的 context leave-one-out 评价中，Hybrid 模型 pooled regret 为 1.67%，macro regret 为 2.90%，candidate pairwise accuracy 为 0.808，max regret 为 14.72%。最大 regret 仅比 15% 门槛低 0.28 个百分点，属于边界通过。它可作为配置选择的第一份可行性证据，但仍需新时间段、workload 和硬件上的校准。
 
-### 5.9 当前能证明与不能证明的内容
+### 5.9 设计—实现—证据边界
 
-已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；5 s guaranteed-overlap 下后到 Job 会影响前台，shared credit 存在效率—隔离—公平权衡；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值。state-aware 策略是否能在同上限强静态点之上改善综合目标，仍是开题后的可证伪研究问题。
+开题中的设计不等于全部已进入正式执行路径。当前四个等权部件的边界如下：
+
+| 部件 | 设计依据 | 当前实现 | 尚未验证 |
+|---|---|---|---|
+| Work Unit / WorkDescriptor | 同 16 行 token work 差 14.3×；图像 prepare/model 阶段失衡 | 已有 staged descriptor、calibration signature、locality/deadline/uncertainty 字段，`BatchRequest` 和图像合同可携带 descriptor | production descriptor builder 尚未贯通正式端到端 runner；staged organization 尚未证明胜出 |
+| 状态感知 | 同 W65K 在 high/arrival-limited 下呈现不同 running/MFU；原生路径呈现 overqueue/underfeed | endpoint/resource trace 已在正式实验中采集；stage snapshot 包含 freshness 与 calibration-signature 校验，候选控制器具有静态 fallback | stage snapshot 和 fallback controller 尚未接入正式主 runner，尚无独立性能增量 |
+| 动态与多作业调度 | 5 s guaranteed-overlap 显示前台干扰和效率—隔离—公平权衡 | completion release、least-work routing 和 shared fair-work credit 已进入调度器，static/shared 两 Job A/B 已完成 | shared 不是全面胜出；stage-aware dynamic、SLO guard、weighted/4+ Job 尚未正式验证 |
+| 算子代价估计 | 20 contexts 的选错代价为 12.0%–86.5%，简单 proxy 决策失败 | CE1–CE5 离线估计器和 context leave-one-out 已完成，CE5 为 marginal pass | 尚未在线驱动 organization/routing/credit，也未验证跨模态 remaining work 与 SLO 收益 |
+
+因此，后续工程顺序为 descriptor builder、observe-only snapshot、no-op/fallback 门禁和单动作消融；不在同一次实验中同时打开四个部件后归因总体差异。
+
+### 5.10 当前能证明与不能证明的内容
+
+已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft Native/Ray 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；5 s guaranteed-overlap 下后到 Job 会影响前台，shared credit 存在效率—隔离—公平权衡；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值。state-aware 策略是否能在同上限强静态点之上改善综合目标，仍是开题后的可证伪研究问题。
 
 ## 6. 进度安排
 

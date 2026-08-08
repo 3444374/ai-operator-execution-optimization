@@ -1,5 +1,16 @@
 # 开题材料 project log
 
+## 2026-08-09 开题报告证据口径与实现边界对齐
+
+- 使用已冻结的 Claim Matrix、答辩内容大纲和正式结果审计本地开题报告；
+  本轮未修改 PPT、未绘图、未覆盖飞书或 Wiki。
+- 多 Job 段补入 project static/shared 与 Daft Native/Ray/Ray Data 的实际 overlap，
+  并明确原 15 s Daft Native 无 overlap 数据不进入干扰结论。
+- 新增四个等权部件的“设计依据—当前实现—尚未验证”表：Work Unit、
+  状态感知、动态/多作业调度和算子代价估计不再以设计图代替实现状态。
+- 移除容量结果的重复图引用，保留数值与边界；原生 Daft 的 KV 表述收紧为
+  “KV max 接近 1”，避免把均值 0.75–0.80 误写为全程顶格。
+
 ## 2026-08-08 database-E2E replacement 取代 failed-feeding headline
 
 - K128 replacement 的 24/24 cells、18 formal 全部门禁通过；开题当前数字只引用 `opening_database_e2e_text_refeed_20260808/`。
