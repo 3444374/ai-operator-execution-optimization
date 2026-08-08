@@ -108,3 +108,31 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 - 现有负结果说明 strong static 必须作为默认基线，不能用“动态”替代实证。
 - 文本和图像用于验证统一 work/credit 抽象的模态边界，不是两个彼此无关的题目。
 - 最终创新点是 workload-aware 与 runtime-state-aware 的上游执行优化；其中 state-aware 的性能增量仍待开题后验证。
+
+## 7. 开题材料冻结 readiness
+
+本表区分“证据已经冻结”和“发布产物已经冻结”。只有全部必需发布产物通过视觉与口径
+审计后，才能把开题材料整体标为 `frozen`；数据就绪不能替代图、PPT 或发布面验收。
+
+| 材料/证据 | 当前状态 | 权威依据 | 恢复工作后的唯一动作 |
+|---|---|---|---|
+| 题目、系统抽象、两项研究内容与共同使能组件 | `content-frozen` | 本文件 §1–§2、`opening/report/opening_report.md` | 仅在导师明确改变题目或研究边界时重开 |
+| 四级 Claim Matrix 与不能声称边界 | `content-frozen` | 本文件 §2、`opening/qa_bank.md` | 最终答辩一致性审计，不新增实验追正 |
+| SQuAD/ShareGPT database-E2E replacement | `evidence-frozen-with-boundary` | `experiments/results/opening_database_e2e_text_refeed_20260808/` | SQuAD 可作静态地基；ShareGPT 只进 correctness/语义附录表 |
+| serving capacity、数据组织、图像 matched-resource、cost decision quality | `evidence-frozen` | 本文件 §2、§5 与图合同中的输入哈希 | 不重跑现有实验；只按冻结输入生成材料 |
+| 原生单 Job 与两 Job 前台干扰/项目 matched A/B | `evidence-frozen` | `experiments/results/opening_text_native_single_job_formal_20260808/`、`experiments/results/opening_multijob_interference_20260809/` | 只画轨内状态/归一化干扰，不作跨框架绝对排名 |
+| 服务器 raw、失败 incident 与扫描归档 | `verified-and-preserved` | 各结果 README 的 archive SHA256 与服务器路径 | 不删除、不覆盖；论文阶段按需回读 |
+| 图 B、WorkDescriptor 总览、D、E | `retain-existing` | `figures/audit/opening_story_figures_contract_20260808.md` | 不重画，只做最终版式检查 |
+| 图 A、C | `render-pending` | 同上；生成脚本标签已修正，现存 PNG/SVG 仍是旧标签 | 用户恢复绘图后只做标签级重绘并复核哈希/裁切/重叠 |
+| 图 F、H | `data-ready-not-generated` | 同上；原生状态与两 Job 数据均已冻结 | 用户恢复绘图后首次生成并做视觉/语义审计 |
+| 图 G | `plan-only-no-result` | phase-change 尚无同上限正式结果 | 开题不画；论文阶段实验通过后再决定 |
+| database-E2E 展示 | `appendix-table-only` | SQuAD 可排名、ShareGPT 不可作性能排名 | 不生成正文性能图 |
+| 本地开题报告、答辩大纲、QA | `content-frozen-publication-pending` | `opening/report/opening_report.md`、`opening/opening_defense_outline_20260808.md`、`opening/qa_bank.md` | 图完成后做一次引用、数字和措辞总审计 |
+| PPTX | `historical-not-current-paused` | `opening/slides/opening_defense_20260807_v6.pptx` | 用户恢复后基于权威大纲和新图重构、实际渲染检查 |
+| 飞书云文档 | `historical-not-current-paused` | revision 289 落后于本地报告 | 用户恢复后从本地权威报告重新生成同步源并差异审计 |
+| Wiki | `explicitly-exempt` | 用户明确要求不同步 Wiki | 不执行 |
+| 开题材料整体 | `not-yet-frozen` | 图 A/C/F/H、PPT 和云发布面仍未验收 | 仅完成上述发布工作与最终一致性审计；不得据此新增 baseline |
+
+停止规则：当前不存在需要通过新增开题实验才能解除的 readiness 阻塞。图渲染、PPT、云文档
+和最终审计恢复后只消费现有冻结数据；不得为了填满页面、改善叙事或得到更好看的方向而重跑
+offset、weight、4+ Job、第二数据库、文本全框架矩阵或大规模参数扫描。

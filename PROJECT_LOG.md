@@ -5260,3 +5260,15 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   +14.63%/+28.70%，submit→service仍约2ms。完整raw、gate、config和log保留服务器；
   有效归档`opening_project_multijob_eager_retest_20260809_v2.tar.gz` SHA256为
   `713292a1e1f0998a2721b0f747a02c2d0ea60cd1a42b89044f05165c5500c4df`。
+
+## 2026-08-09 开题材料冻结 readiness 收口
+
+- 在 `opening/claim_matrix.md` 新增材料 readiness 表，严格区分
+  `content-frozen`、`evidence-frozen`、`render-pending`、
+  `data-ready-not-generated`、`historical-not-current-paused` 与
+  `not-yet-frozen`，避免把数据就绪误写为最终材料已经冻结。
+- 当前实验、Claim、报告/大纲/QA 内容已冻结；服务器 raw 与失败 incident 已验证保留。
+  图 A/C 只待标签级重绘，F/H 数据就绪但尚未生成；PPTX 和飞书云文档仍是历史发布面，
+  Wiki 按用户要求豁免。
+- 明确剩余工作只有获准后的图渲染、PPT/云发布与最终一致性审计；这些状态不得作为新增
+  baseline、offset、weight、4+ Job 或参数扫描的理由。
