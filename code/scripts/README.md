@@ -135,11 +135,23 @@ per-GPU delta；峰值假设固定 4090 165 TFLOPS/GPU，MFU 只作资源证据�
 若 primary root 含失败 cell，可用一个或多个 `--repair-root` 合并同配置 replacement；只有
 成功 cell 总数对每组恰好等于预注册三次才通过，原失败记录、错误和路径仍保存在合同中。
 
+`analysis/summarize_opening_multijob_minimal.py` 只汇总开题 short/long 两作业的
+staggered 最小矩阵。它要求 static partition 与 shared DRR 两场景各 1 warm-up + 3 formal、资源与
+MFU 状态完整、0 worker failure/incident、两个 job 使用不同 source offset 和不同已验证
+manifest SHA；runner 已逐 job 验证 exactly-once request/submission trace。输出
+`formal_runs_compact.csv`、`scenario_summary.csv`、`pairwise_comparison.csv` 和
+`audit.json`，比较相同 endpoint-shared K/work 上限下 static partition 与 shared DRR 的
+吞吐、JCT、P99、SLO token goodput、Jain fairness 和 normalized service。该实验以完整
+结果 gather 为终点，故意不含 sink；写回不属于多 job 调度因果变量。
+
 `baselines/opening_database_e2e_matrix.py` 的替换正式模式允许 SQuAD 与 ShareGPT 分别
 绑定上述校准 JSON 和选中的 project K；加载配置时会 fail-closed 核对 manifest SHA、
 三次重复、双吞吐门槛、token budget、active work 与 actor slots。该 workload-specific
 参数只作用于 `project_frozen_static`，direct/DuckDB 继续固定每 endpoint 32，避免把项目
 校准误传到对照臂。
+矩阵本身也必须由 `${VENV_ROOT}/text-baselines/bin/python` 启动，因为 DuckDB
+community `ai` 扩展冻结在 DuckDB 1.5.4；base Python 中的 DuckDB 1.5.5 不属于该
+baseline 运行合同。
 
 ## 流程与函数映射
 
@@ -974,6 +986,14 @@ vLLM Bench 必须从独立 vLLM venv 启动，并在该 venv 安装与服务完�
 单 cell 校验由 `validate-gate` 合并两份 summary 和 request CSV；任一
 exactly-once、预测 work 偏斜、endpoint 未使用、服务元数据不一致、worker
 failure 或 vLLM 最终队列非空都会 fail closed。
+
+`baselines/run_text_native_matrix.py` 只用于已有独立 calibration selection/
+fingerprint 的原生 Chat 单 job 矩阵。它为每次 repeat 派生一份单 cell
+core-gate 配置，执行 1 warmup + N 确定性交错 formal，保留失败和时长不足的
+`not_rankable` 证据。`baselines/run_text_native_multijob.py` 只编排 Daft Native/
+Ray 和 Ray Data 的两个错峰独立 job；每 job 同时启动两个现有
+`run-shard` 子进程。它不实现框架调度、不注入项目 credit，只报
+job/group barrier JCT 和可证实的服务计数。
 
 配置边界见：
 

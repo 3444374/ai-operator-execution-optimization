@@ -65,9 +65,27 @@ foreground/background interference, queue balance, and prefix locality.
 
 本目录是项目级图资产库，供 learning 材料、开题报告、开题 PPT、中期汇报和毕业论文共同复用。图不再分散在 `opening/assets/charts/` 和 `opening/assets/figures/` 中；后续新增图也优先放在本目录下，并按用途分子目录。
 
-## 2026-08-07 开题冻结四图
+## 2026-08-08 开题叙事图（当前入口）
 
-当前开题正文和 PPT 的实验主证据冻结为以下四组；旧图只进入备份页或历史说明：
+第一性原理复审后，正文不再从“已有模块”倒推故事，而是先用动机证据分别导出
+WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像与代价估计的先验证据：
+
+| 图 | 角色与边界 |
+|---|---|
+| `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机三联图：等行数有 14.3× work 差异；同 W65K 上限下实际 active work 与 MFU 随 offered load 改变；65K 以后吞吐近平台而 P99 上升。分别导出 work 表达、状态感知和安全区控制的必要性，不证明动态策略已胜出。 |
+| `architecture/opening_ai_data_execution_boundary.png` / `.svg` | 研究边界：数据库 AI 算子与模型/typed GPU backend 之间是 AI Data Execution Layer；两项研究内容并列，算子代价估计作为共同使能部件向二者供给 work/slack/uncertainty。 |
+| `architecture/opening_work_to_schedule_overview.png` / `.svg` | 方案总览：共同代价估计器产生 stage/service/remaining work、SLO slack 和不确定区间，经 staged WorkDescriptor 同时使能组织与调度；组织器保留 work/locality，调度器再结合新鲜状态做 admission/routing/credit/fair queue。 |
+| `data/report_main/opening_work_organization_regime_v2.png` / `.svg` | 数据组织在低压时近似中性，在 KV 饱和时受 locality 主导；禁止宣称某种重排序全局最优。 |
+| `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像 exact-path 的 CPU prepare/GPU actor 比为 13.8–31.2×，matched-resource 静态路径保留约 13–15% 初步信号；动态收益仍未测试。 |
+| `data/report_main/opening_cost_model_decision_quality_v2.png` / `.svg` | 候选选择 regret 的 median/macro/max 同图表达；Hybrid max 14.72%，只称 marginal pass。 |
+
+统一生成脚本：`scripts/generate_opening_story_figures_20260808.py`。数据、claim、视觉和
+禁止外推合同：`audit/opening_story_figures_contract_20260808.md`。上述 PNG/SVG 已逐张
+渲染复核；当前只冻结内容大纲、实验数据与数据图，不制作新的 PPT 成品。旧 PPT 仍只是可打开的历史底稿。
+
+## 2026-08-07 四图（被 2026-08-08 叙事重构取代）
+
+下列图保留可复现性和历史引用，但不再作为新报告/PPT 的首选入口：
 
 | 图 | 核心结论与边界 |
 |---|---|

@@ -6,6 +6,8 @@ import math
 from dataclasses import dataclass, field
 from typing import Literal
 
+from ...planning.work import WorkDescriptor
+
 
 OperatorName = Literal["ai_complete", "ai_embed", "ai_classify"]
 
@@ -28,6 +30,7 @@ class BatchRequest:
     preferred_endpoint_id: str = ""
     work_units: int | None = None
     work_unit: str = "tokens"
+    work_descriptor: WorkDescriptor | None = None
 
     def __post_init__(self) -> None:
         if self.row_count <= 0:
@@ -42,6 +45,16 @@ class BatchRequest:
             raise ValueError("work_units must be a non-negative integer when present")
         if not isinstance(self.work_unit, str) or not self.work_unit:
             raise ValueError("work_unit must be a non-empty string")
+        if self.work_descriptor is not None:
+            primary = self.work_descriptor.primary
+            if self.work_units is not None and self.work_units != primary.units:
+                raise ValueError(
+                    "legacy work_units must match descriptor primary work"
+                )
+            if self.work_unit != primary.unit:
+                raise ValueError(
+                    "legacy work_unit must match descriptor primary unit"
+                )
         if not self.request_id or not self.job_id or not self.payload_id:
             raise ValueError("request_id, job_id, and payload_id must be non-empty")
 
@@ -52,9 +65,18 @@ class BatchRequest:
     @property
     def estimated_work_units(self) -> int:
         """Return modality-neutral admission work with token compatibility."""
+        if self.work_descriptor is not None:
+            return self.work_descriptor.primary.units
         if self.work_units is not None:
             return self.work_units
         return self.estimated_total_tokens
+
+    def estimated_stage_work(self, stage: str) -> int | None:
+        """Return one staged estimate without exposing modality internals."""
+        if self.work_descriptor is None:
+            return None
+        item = self.work_descriptor.for_stage(stage)
+        return None if item is None else item.units
 
 
 @dataclass(frozen=True)

@@ -108,6 +108,10 @@ now lives under `code/src/`:
 - `data/sources/postgres_text.py`: PostgreSQL/Daft data entry.
 - `data/materializers/text.py`: Arrow/Daft batch organization.
 - `modalities/text/costs.py`: strict, shared output-cost modes and provenance.
+- `planning/work.py`: modality-neutral staged `WorkDescriptor` and atomic
+  `RuntimeStateSnapshot`; preserves scalar credit compatibility while exposing
+  prepare/model/result demand, locality, deadline/SLO, uncertainty and
+  calibration identity.
 - `planning/packing/scalar.py`: deterministic, modality-neutral classic BFD and a
   row-cap-first placement candidate sharing the same validation and ordering.
 - `serving/backends/`: 公共 backend 合同、embedding backend 与
@@ -182,6 +186,9 @@ now lives under `code/src/`:
 - `data/workloads/text.py`: small built-in seed workloads for smoke/dev only.
 - `scheduling/`: engine-independent typed core split by decision boundary:
   `core/`, `organization/`, `submission_control/`, `endpoint_routing/`, and `runtime/`.
+  `submission_control/stage_work.py` is a bounded candidate that moves only one
+  offline-calibrated work-credit step and falls back to the workload-specific
+  static point on stale or mismatched state; it is not yet a performance claim.
   Duplicate root compatibility modules have been removed. The formal
   payload/execution path remains Daft -> Arrow -> Ray.
 
@@ -224,6 +231,11 @@ an already-ready arrival, polls `ray.wait(timeout=0)` during arrival gaps, and
 uses blocking collection only when admission or active-work capacity is full.
 This preserves offered-load saturation while releasing request-level credit
 and recording completion timestamps promptly under sparse or bursty replay.
+
+The shared-vLLM experiment runner can pin a distinct immutable request manifest
+and source offset for every job. This is required for staggered short/long or
+otherwise heterogeneous-job evidence; reusing the same rows for all jobs only
+validates concurrency semantics and cannot support a work-aware fairness claim.
 The lifecycle module joins complete-row replay seeds, immutable submission
 events, backend service timestamps, and explicitly sourced token counts into
 exactly-once request trace rows.
@@ -531,6 +543,13 @@ Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属�
 资源口径，并按确定性随机顺序执行 1 warmup + 3 formal。冻结合同以
 `../experiments/plans/opening_database_e2e_p0_20260807.md` 为准；该 runner 不作为新增
 通用 baseline 框架，也不允许加入 adaptive arm 或参数扫描。
+
+`src/baselines/text/orchestration/native_matrix.py` 在明确冻结每臂校准指纹后，
+复用 core gate 执行原生文本框架的 1 warmup + N 交错 formal；它不复制
+adapter 或请求计数逻辑。`native_multijob.py` 只负责绝对时间启动两个错峰
+原生 job、保存四个 endpoint shard 证据和组级计数；禁止项目 credit/router/
+inflight 参数进入 Daft/Ray Data 观察臂。项目 static/shared 因果 A/B 仍由
+`src/experiments/shared_vllm/` 执行。
 
 `src/calibration.py` 与 `scripts/analysis/select_strategy_calibration.py` 负责把 feeding、
 token-budget 和同协议 actor-shape 校准结果冻结为后续策略实验的机器可校验

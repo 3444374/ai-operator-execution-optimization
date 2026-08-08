@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-08；开题统一三臂与 PPT 本地兼容性验收完成）
+Date: 2026-07-20（最后更新：2026-08-08；开题三臂 feeding 纠正中，PPT 成品已暂停）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -56,10 +56,12 @@ Date: 2026-07-20（最后更新：2026-08-08；开题统一三臂与 PPT 本地�
 
 纠正重跑期间仍停止增加开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
 granularity 不同，只用于 serving capacity/overload 证据，不替代上述统一 database-E2E。
-差异不足 5% 不触发换 workload、模型、数据库或扩大参数扫描。首轮四组核心图、报告/PPT
-和飞书已完成，但 feeding 纠正结果可能改变 headline，故都只是待替换版本；新矩阵合格后
-必须重算、重写并再次审计。Wiki 同步已由用户明确豁免。下方 image-first A+B 顺序只在
-开题材料基于合格数据最终确认后恢复。
+差异不足 5% 不触发换 workload、模型、数据库或扩大参数扫描。首轮四组核心图、报告与
+飞书只作为待替换历史版本；新矩阵合格后只重算实验报告与数据图。用户已要求暂停新的
+PPT 成品和云文档覆盖，Wiki 同步也已明确豁免。两组 replacement 通过后不增加新 baseline，
+按 2026-08-08 最新收缩，开题只再补一个 short/long 两作业 staggered static-partition vs
+shared-work-credit 最小实验；phase-change、weighted、文本 Daft/Ray Data 正式矩阵、图像新策略、
+cost held-out 与下方 image-first A+B 完整矩阵均留开题后。
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 
@@ -98,6 +100,13 @@ SLO goodput、P99/JCT 或 fairness 至少一项且 correctness/failure 不退化
 frame/preprocess work/credit；Daft built-in、Ray Data native、typed Ray actor ours 必须使用同机、
 同模型、同归一化语义和同 PostgreSQL/pgvector E2E 合同。文本 equal-workload 1/2/4-job 只算
 已有先验证据；staggered/weighted/异构 burst 未完成，不能写成已覆盖。
+
+第一性原理复审后，详细的分阶段 work descriptor、同上限 static/dynamic 消融顺序、
+图像 baseline/质量/状态指标与多 job 场景统一见
+`state_aware_work_unit_evaluation_20260808.md`。核心调整是：公共 work-unit 不再只把
+`token` 改名为 `frame`，而要显式区分 prepare/model/result 等阶段需求；dynamic 只在
+离线校准的安全动作集合内根据 fresh state 调整，信号缺失时回退 workload-specific
+frozen-static。
 
 **文本轨道遗留的 pivot 后分类**：
 

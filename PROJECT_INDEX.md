@@ -109,9 +109,9 @@
 | `figures/data/backup/b24_local_vllm_interference_sweep_small_job.png` / `.svg` | Local `AI_COMPLETE` shared-vLLM foreground interference sweep figure | Show foreground E2E/service/queue impact under background K_max 8/16/unbounded/adaptive |
 | `figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.png` / `.svg` | Local `AI_COMPLETE` shared-vLLM bulk tradeoff sweep figure | Show bulk throughput plateau and service/queue pressure under larger background inflight |
 | `opening/slides/opening_defense_20260720_v5.pptx` | 开题答辩 PPT v5 | Current incremental deck based on v4; adds three data-organization mechanism slides after original slide 14 without rerunning `build_ppt.py` |
-| `opening/slides/opening_defense_v6_design.md` | 开题答辩 PPT v6 设计说明 | Defines the v5-based design-first deck, motivation-test scope, conditional official-baseline result gate, top-venue architecture figures, synchronization scope, and QA gates before editing the PPTX |
+| `opening/slides/opening_defense_v6_design.md` | 开题答辩 PPT v6 旧 28 页设计底稿 | 2026-08-08 第一性原理复审后待替换；新主讲结构以 `opening/first_principles_reassessment_20260808.md` 为准 |
 | `opening/slides/build_opening_defense_v6_artifact_tool.mjs` | v5 模板继承、文本/图片定点编辑、逐页渲染和备注 QA | 重建或审计 2026-08-07 v6 PPTX |
-| `opening/slides/opening_defense_20260807_v6.pptx` | 开题答辩 28 页 v6 本地冻结候选 | 最终统一三臂负结果、四张核心图与两项研究方法汇报；程序化 QA 通过，仍需 WPS/PowerPoint 打开检查 |
+| `opening/slides/opening_defense_20260807_v6.pptx` | 开题答辩 28 页 v6 待替换底稿 | 旧数值、图和重复叙事待按 feeding replacement 与 19 页主讲结构重做；历史 QA 仅证明文件可打开 |
 | `opening/slides/opening_defense_20260807_v6_qa.md` | v6 模板、数值、逐页渲染、placeholder、notes 与 overflow 审计 | 交付或继续修改 v6 前读 |
 | `figures/architecture/data_organization_token_budget_mechanism.png` / `.svg` | 数据组织策略机制图：token-budget batching | Formal mechanism figure for converting fixed-row batches into token-budget submissions; not an experimental-result claim |
 | `figures/architecture/data_organization_length_align_mechanism.png` / `.svg` | 数据组织策略机制图：length-aligned grouping | Formal mechanism figure for sorting/grouping rows by token length to reduce within-batch compute variance |
@@ -196,19 +196,29 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `PROJECT_INDEX.md` | 文件索引和阅读顺序 | 不知道材料在哪里时读 |
 | `PROJECT_OUTLINE.md` | 项目总纲：当前题目、研究内容、关键证据、近期优先级 | 快速了解最新进展 |
 | `opening/claim_matrix.md` | 开题 framing、证据等级、两组 P0 实验与停止规则 | 修改报告/PPT、启动开题实验或准备答辩前读 |
+| `opening/first_principles_reassessment_20260808.md` | 从目标函数反推开题必需证据、work-unit/动态/图像设计、图表与 19 项答辩内容结构 | 重构开题故事、实验矩阵、方法代码或图前读 |
+| `opening/opening_defense_outline_20260808.md` | 权威答辩内容大纲：逐项 take-away、证据、claim 边界、必要实验与八张图的数据合同 | 编写开题材料、补实验或绘图前读；当前不生成 PPT 成品 |
 | `experiments/plans/opening_database_e2e_p0_20260807.md` | 开题前仅允许的 SQuAD/ShareGPT 三臂统一 database-E2E 合同 | 运行开题证据闭环实验前读 |
+| `experiments/plans/state_aware_work_unit_evaluation_20260808.md` | 分阶段 work descriptor、四个开题最小方法证据、同上限 static vs dynamic、图像强 baseline 与 steady→变化→多 job 正式矩阵 | 两组静态三臂后补最小证据，或开题后扩展 proposed 主实验前读 |
 | `code/scripts/baselines/opening_database_e2e_matrix.py` | 双 endpoint、三静态臂、统一 source/sink/质量/资源的 1 warmup + 3 formal runner；支持 workload-specific、校准合同锁定的 project K/actor shape | 只用于上述冻结开题合同；direct/DuckDB 并发不随 project 选择改变 |
 | `deploy/autodl/opening_database_e2e_p0.example.json` | AutoDL 开题三臂 runner 配置模板 | 复制到服务器 artifact root 后以 runtime env 展开 |
 | `deploy/autodl/opening_project_feeding_calibration.example.json` | 首轮未过 95% feeding 门后的纠正校准模板；同 manifest、统一 256 actor slots 并固定其它变量，仅扫 project K32/64/128/256 | 每个 workload 冻结最小饱和静态点后再整体替换重跑三臂矩阵 |
 | `deploy/autodl/opening_project_feeding_repair.example.json` | 校准失败 cell 的同配置单重复 replacement 模板 | 原失败 root 必须保留；新 root 仅通过 `--repair-root` 合并，事故仍进入选择合同 |
 | `deploy/autodl/opening_database_e2e_refeed.example.json` | 读取两份通过审计的 workload-specific feeding 校准合同并 fail-closed 的替换正式矩阵模板 | 仅在 SQuAD/ShareGPT 校准均冻结后运行；direct/DuckDB 保持每 endpoint 32 |
+| `deploy/autodl/opening_multijob_minimal.example.json` | 两作业 short/long immutable manifest 的 staggered static partition vs shared work-credit 最小矩阵 | replacement 静态三臂后运行；只回答两作业 JCT/隔离/idle borrowing，weighted 留论文阶段 |
+| `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥、等行数的 short/long job manifest，并输出 token 分布与 SHA 审计 | 运行开题两作业实验前生成 512+512 行异质工作证据 |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
 | `code/tests/analysis/test_summarize_opening_database_e2e.py` | 开题矩阵汇总器的项目 feeding/GPU 与 correctness fail-closed 回归测试 | 修改正式审计退出条件时运行；产品 baseline feeding 不得误作项目门禁 |
 | `code/scripts/analysis/summarize_opening_project_feeding_calibration.py` | 审计开题项目 feeder 的 bounded-direct/K32-K256 三重复并选择最小饱和 K | 每个 workload 校准完成后生成冻结选择合同；门禁失败时不得人工选点 |
 | `code/tests/analysis/test_summarize_opening_project_feeding_calibration.py` | feeding 校准选择器的最小饱和点与 manifest fail-closed 回归测试 | 修改校准门槛、输入合同或选择规则时运行 |
+| `code/scripts/analysis/summarize_opening_multijob_minimal.py` | fail-closed 汇总开题 short/long 两作业错峰两场景 | 输出组级紧凑数据、场景统计、shared-vs-static 对照和审计；不含 sink |
+| `code/tests/analysis/test_summarize_opening_multijob_minimal.py` | 多任务汇总器的完整矩阵与 short/long manifest 身份回归测试 | 修改多 job 结果合同或审计边界时运行 |
 | `experiments/results/opening_database_e2e_text_20260807/README.md` | 两组 workload × 三静态臂的统一 database-E2E 正式报告 | 引用开题三臂表、feeding 负结果或 DuckDB cap 语义边界前读 |
 | `figures/scripts/generate_opening_core_evidence_figures.py` | 从冻结正式结果生成开题四张核心证据图 | 更新开题报告或答辩 PPT 前运行 |
 | `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |
+| `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果重建 work/state/control 动机、AI Data Execution Layer 边界、work→schedule、组织 regime、图像 stage 与 cost decision 图 | 更新答辩大纲的动机/方法证据图前运行 |
+| `figures/audit/opening_story_figures_contract_20260808.md` | 2026-08-08 叙事图的数据来源、claim、禁止外推与逐图视觉 QA | 引用新版动机和方案图前核对 |
+| `figures/architecture/opening_ai_data_execution_boundary.png` / `.svg` | 两项研究内容 + 共同 cost estimator 的 AI Data Execution Layer 边界图 | 报告/答辩大纲解释课题范围、平台与贡献关系时使用 |
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |
@@ -340,6 +350,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/experiments/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `code/scripts/experiments/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
 | `code/scripts/baselines/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
+| `code/scripts/baselines/run_text_native_matrix.py` / `code/src/baselines/text/orchestration/native_matrix.py` | 冻结 calibration 指纹后的原生文本单 job 1+N 交错矩阵 | 复用 core gate；时长/门禁不足保留为 `not_rankable`，不手工拼接 formal |
+| `code/scripts/baselines/run_text_native_multijob.py` / `code/src/baselines/text/orchestration/native_multijob.py` | Daft Native/Ray、Ray Data 原生两 job 错峰薄编排 | 每 job 启动双 endpoint official shard，禁止项目 credit/router/inflight；仅报可证实的 barrier 与组级指标 |
 | `code/scripts/baselines/squad_capability_gate.py` | SQuAD v1.1 dev capability gate（DuckDB-ai arm）；全量/分层双模式、确定性分层抽样（largest-remainder + 多答案 max SQuAD-normalized 桶）、sample manifest + 逐行证据 CSV（sample hash 与 EM/F1 可复算）、canonical content hash 对齐 importer provenance、workload 完整性 fail-closed、vLLM counter 归因门禁、full-set exactly-once、命令/异常脱敏、失败结构化归档 | 验证 SQuAD bounded-output 管线（输出解析/EM-F1/错误统计），不发布排名 |
 | `code/scripts/baselines/squad_database_e2e_runner.py` | SQuAD bounded-output database-E2E **单 endpoint**顶层 runner（DuckDB-ai + direct_client + project_static）。project_static shell-out profiler，使用独立 completion evidence、实际 source-scan prompt fingerprints、DB/importer 完整性读取与 sink readback 形成非循环证据链；报告强制写 endpoint_count=1 / multi-endpoint method=false | 三臂可运行；project_static 同时受统一计时墙阻塞与单 endpoint 方法退化约束，只能做正确性/管线开销 diagnostic，不能证明 endpoint-aware 方法 |
 | `code/src/baselines/common/squad_identity.py` | SQuAD gate/runner 共享 helper（identity/attribution/integrity：`_pg_server_identity`/`_gpu_identity`/`_vllm_version`/`_git_commit`/`_scrape_status`/`_endpoint_idle`/`_assess_attribution`/`_structured_content_hash`/`_validate_workload_integrity`/`_load_importer_provenance`）| capability gate 与 E2E runner 共用，禁止第三份拷贝 |
@@ -361,6 +373,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/baselines/common/test_partition_policy.py` | manifest 分片策略 + policy-aware gate 单测（equal_rows 128:128/奇数差≤1/顺序不变/同 seed 同结果/duplicate fail-closed；CLI 两 policy 路由+元数据；equal_rows 不因 work-skew 失败、work-balanced 在 skew>2% 失败）| 多卡静态分片 baseline（DuckDB 2×1 / bounded_static_2x1）的分片+门禁改动后运行 |
 | `code/src/infrastructure/runtime_env.py` | driver、multi-job subprocess 与 Ray worker 的共享 PYTHONPATH/数值线程环境 | 防止 1/2/4-job 因每进程 OpenBLAS 线程膨胀而在请求前耗尽 OS 线程 |
 | `code/src/infrastructure/config_env.py` | 文本、图像、shared-vLLM 和 baseline 配置共用的严格 `${ENV_VAR}` 展开 | unset 立即失败；完整 scalar 保留 JSON 数值/布尔类型 |
+| `code/src/experiments/shared_vllm/config.py` / `evidence.py` / `runner.py` | 多作业场景、每 job immutable manifest/source offset、stagger/weight、组级正确性与公平证据 | 运行异质多 job 前确认每个 job 使用互斥工作量证据，不得重复同一 rows 冒充 work-aware |
 | `code/src/infrastructure/environment.py` | machine profile、Python 能力与模型/数据资产检查/补齐核心 | 默认只读，安装下载由薄 CLI 显式触发 |
 | `code/src/experiments/shared_vllm/` | Shared-vLLM 编排包：config/runner/runtime/evidence/metrics | 配置校验、三臂 credit 语义、并发执行、exactly-once、资源证据与公平性汇总 |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
@@ -399,6 +412,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/observability/profiling/manifest_guard.py` | 同条件 project runtime 的 fail-closed manifest 行语义、payload 契约与固定 endpoint 证据 | 修改 direct/project 公平比较、source offset 或 manifest 映射时读 |
 | `code/src/observability/profiling/ray.py` | Ray task/actor submitter、typed scheduler、credit 释放与 fan-in 接线 | 修改 actor pool、request-level replenishment 或 Ray 资源语义前读 |
 | `code/src/planning/packing/scalar.py` | 与模态无关的确定性 BFD 标量容量装箱与指标 | 修改离线 batch membership、超预算行处理或 packing 指标前读 |
+| `code/src/planning/work.py` | 分阶段 WorkDescriptor、stage state 与原子 RuntimeStateSnapshot 合同 | 修改跨模态 work、状态 freshness、calibration signature 或动态策略输入前读 |
 | `code/src/serving/backends/` | common 合同、fake/HTTP embedding、vLLM-compatible async completion 与 Ollama backend | 修改模型服务接入、vLLM/Ollama endpoint 或 AI_COMPLETE backend 前读 |
 | `code/src/modalities/image/` | 图像 typed batch/result/semantics、lazy Daft source、CLIP preprocess、bounded Ray CPU→GPU pipeline 与输出审计；baseline 已隔离到 `baselines/image/` | 实现 image path-B、切换 backend 或审计 embedding/执行语义前读 |
 | `code/src/modalities/image/resource_sampling.py` | host per-core CPU、visible/active-device GPU 的低频采样与明确汇总语义 | 图像 E2E 资源采样；不能把低频 GPU util 当 MFU |
@@ -411,6 +425,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/scheduling/organization/` | 上游 static/service-quantum token-budget 决策 | 修改数据组织预算控制或动态安全动作集前读 |
 | `code/src/scheduling/organization/service_quantum.py` | 将 planning batch 按预测 work 切成不拆单行的有界 service-completion 单元 | 修改 HTTP/Ray completion 粒度、whole-submission HOL 或 quantum 超预算语义前读 |
 | `code/src/scheduling/submission_control/` | static/adaptive admission、active-work 与多 job shared fair credit | 修改提交反压、公平性或 endpoint capacity 语义前读 |
+| `code/src/scheduling/submission_control/stage_work.py` | 只在离线安全动作集内单步调整、stale/signature mismatch 回退静态点的 stage-work 控制候选 | 接入图像/文本 state-aware runner 前先读；当前只有纯策略合同，无性能 claim |
 | `code/src/scheduling/endpoint_routing/` | round-robin、least-queued、least-work、manifest-pinned、prefix-affinity 路由 | 修改多 endpoint 选择策略前读 |
 | `code/src/scheduling/runtime/` | 有界 Ray actor worker pool、submit/complete adapter、worker contract、metrics observation cache 与 named credit actor | 修改 Ray worker slots、worker routing、completion cleanup 或服务观测接线前读 |
 | `code/scripts/data/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本；支持显式 prompt-token eligibility、按过滤后 offset 选择不重叠 suffix、逐字段核验既有 prefix 和 append-only 防覆盖 | 构造最终可比 `AI_COMPLETE` baseline workload 或补 held-out 行前运行 |
@@ -447,6 +462,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/baselines/test_squad_database_e2e_runner.py` | database-E2E runner 单测（sink adapter shape+sidecar/runner 指标除法/零墙安全/mocked E2E barrier 的计时块与 3 状态字段/fail-closed 与 eligibility 分离）| 修改 `squad_database_e2e_runner.py` 或 `_results_to_sink_payload`/`_runner_metrics` 后运行 |
 | `code/tests/baselines/text/test_direct_client.py` | direct_client 臂单测（DirectClientConfig 校验/`_validate_requests` 多 endpoint+cap 拒绝/run_direct_client cap-mismatch 前置拒绝）| 修改 `direct_client.py` config 校验或 `_validate_requests` 后运行 |
 | `code/tests/baselines/text/test_project_static.py` | project_static wrapper 单测：完整冻结 argv、effective K、active-work、请求语义、completion/source-scan 证据解析与重复/畸形 fail-closed | 修改 `project_static.py` argv 或证据合并后运行 |
+| `code/tests/baselines/text/test_native_matrix.py` | 原生文本交错矩阵配置、日程、失败保留与时长准入测试 | 修改 native single-job formal 编排后运行 |
+| `code/tests/baselines/text/test_native_multijob.py` | 原生两 job manifest 互斥、错峰启动、四 shard、命令审计和失败保留测试 | 修改 Daft/Ray Data 多 job 观察编排后运行 |
 | `code/tests/observability/test_completion_evidence_trace.py` | profiler completion evidence + source-scan fingerprints 单测；完成行缺输出、批内数量错、重复 doc_id 均 fail-closed | 修改 profiler trace/evidence writer 后运行 |
 | `code/tests/baselines/common/test_redact.py` | 共享脱敏模块单测（DB-URL/arg list/URL flag/redact_text）| 修改 `src/baselines/common/redact.py` 后运行 |
 | `code/tests/environment/test_scan_git_secrets.py` | Git 隐私扫描器纯函数单测（私钥/token/sshpass/外部 host 拦截；localhost/模板/example host 放行）| 修改 `scan_git_secrets.py` 拦截规则后运行 |

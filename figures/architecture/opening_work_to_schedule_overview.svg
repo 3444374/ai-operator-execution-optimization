@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="958.79952pt" height="425.99952pt" viewBox="0 0 958.79952 425.99952" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-08-08T17:47:19.283143</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.7, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 425.99952
+L 958.79952 425.99952
+L 958.79952 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 41.198383 185.010993
+L 171.525516 185.010993
+Q 188.524708 185.010993 188.524708 177.602201
+L 188.524708 100.221492
+Q 188.524708 92.8127 171.525516 92.8127
+L 41.198383 92.8127
+Q 24.199191 92.8127 24.199191 100.221492
+L 24.199191 177.602201
+Q 24.199191 185.010993 41.198383 185.010993
+z
+" clip-path="url(#p5485f033ba)" style="fill: #ffffff; stroke: #9aa4af; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 267.854268 185.010993
+L 426.513387 185.010993
+Q 443.512578 185.010993 443.512578 177.602201
+L 443.512578 100.221492
+Q 443.512578 92.8127 426.513387 92.8127
+L 267.854268 92.8127
+Q 250.855076 92.8127 250.855076 100.221492
+L 250.855076 177.602201
+Q 250.855076 185.010993 267.854268 185.010993
+z
+" clip-path="url(#p5485f033ba)" style="fill: #ffffff; stroke: #2864a8; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 532.286133 185.010993
+L 709.833243 185.010993
+Q 726.832434 185.010993 726.832434 177.602201
+L 726.832434 100.221492
+Q 726.832434 92.8127 709.833243 92.8127
+L 532.286133 92.8127
+Q 515.286942 92.8127 515.286942 100.221492
+L 515.286942 177.602201
+Q 515.286942 185.010993 532.286133 185.010993
+z
+" clip-path="url(#p5485f033ba)" style="fill: #ffffff; stroke: #278c8e; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 787.274004 185.010993
+L 917.601137 185.010993
+Q 934.600329 185.010993 934.600329 177.602201
+L 934.600329 100.221492
+Q 934.600329 92.8127 917.601137 92.8127
+L 787.274004 92.8127
+Q 770.274812 92.8127 770.274812 100.221492
+L 770.274812 177.602201
+Q 770.274812 185.010993 787.274004 185.010993
+z
+" clip-path="url(#p5485f033ba)" style="fill: #ffffff; stroke: #e9843b; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 179.191788 138.911846
+Q 219.690624 138.911846 258.736016 138.911846
+" clip-path="url(#p5485f033ba)" style="fill: none; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+    <path d="M 253.936016 136.511846
+L 258.736016 138.911846
+L 253.936016 141.311846
+z
+" clip-path="url(#p5485f033ba)" style="fill: #263238; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 434.177064 138.911846
+Q 479.398311 138.911846 523.166113 138.911846
+" clip-path="url(#p5485f033ba)" style="fill: none; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+    <path d="M 518.366113 136.511846
+L 523.166113 138.911846
+L 518.366113 141.311846
+z
+" clip-path="url(#p5485f033ba)" style="fill: #263238; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 717.49692 138.911846
+Q 748.55249 138.911846 778.154616 138.911846
+" clip-path="url(#p5485f033ba)" style="fill: none; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+    <path d="M 773.354616 136.511846
+L 778.154616 138.911846
+L 773.354616 141.311846
+z
+" clip-path="url(#p5485f033ba)" style="fill: #263238; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 41.198383 316.722839
+L 265.965468 316.722839
+Q 282.96466 316.722839 282.96466 309.314048
+L 282.96466 240.165328
+Q 282.96466 232.756537 265.965468 232.756537
+L 41.198383 232.756537
+Q 24.199191 232.756537 24.199191 240.165328
+L 24.199191 309.314048
+Q 24.199191 316.722839 41.198383 316.722839
+z
+" clip-path="url(#p5485f033ba)" style="fill: #fff4e8; stroke: #e9843b; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 333.962234 316.722839
+L 587.061305 316.722839
+Q 604.060497 316.722839 604.060497 309.314048
+L 604.060497 240.165328
+Q 604.060497 232.756537 587.061305 232.756537
+L 333.962234 232.756537
+Q 316.963043 232.756537 316.963043 240.165328
+L 316.963043 309.314048
+Q 316.963043 316.722839 333.962234 316.722839
+z
+" clip-path="url(#p5485f033ba)" style="fill: #eaf2fa; stroke: #2864a8; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 273.634334 274.739688
+Q 299.965871 274.739688 325.179375 274.739688
+" clip-path="url(#p5485f033ba)" style="fill: none; stroke: #e9843b; stroke-linecap: round"/>
+    <path d="M 320.379375 272.339688
+L 325.179375 274.739688
+L 320.379375 277.139688
+z
+" clip-path="url(#p5485f033ba)" style="fill: #e9843b; stroke: #e9843b; stroke-linecap: round"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 347.183827 235.694509
+Q 347.183827 208.882964 347.183827 183.189453
+" clip-path="url(#p5485f033ba)" style="fill: none; stroke: #2864a8; stroke-linecap: round"/>
+    <path d="M 344.783827 187.989453
+L 347.183827 183.189453
+L 349.583827 187.989453
+z
+" clip-path="url(#p5485f033ba)" style="fill: #2864a8; stroke: #2864a8; stroke-linecap: round"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 575.104945 236.151731
+Q 597.449821 208.883617 619.08606 182.480275
+" clip-path="url(#p5485f033ba)" style="fill: none; stroke: #2864a8; stroke-linecap: round"/>
+    <path d="M 614.187355 184.671779
+L 619.08606 182.480275
+L 617.90004 187.714141
+z
+" clip-path="url(#p5485f033ba)" style="fill: #2864a8; stroke: #2864a8; stroke-linecap: round"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 636.17008 382.578762
+L 917.601137 382.578762
+Q 934.600329 382.578762 934.600329 375.169971
+L 934.600329 240.165328
+Q 934.600329 232.756537 917.601137 232.756537
+L 636.17008 232.756537
+Q 619.170889 232.756537 619.170889 240.165328
+L 619.170889 375.169971
+Q 619.170889 382.578762 636.17008 382.578762
+z
+" clip-path="url(#p5485f033ba)" style="fill: #eaf7f4; stroke: #278c8e; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 621.059688 235.694509
+Q 621.059688 208.882964 621.059688 183.189453
+" clip-path="url(#p5485f033ba)" style="fill: none; stroke-dasharray: 3.7,1.6; stroke-dashoffset: 0; stroke: #278c8e; stroke-linecap: round"/>
+    <path d="M 618.659688 187.989453
+L 621.059688 183.189453
+L 623.459688 187.989453
+z
+" clip-path="url(#p5485f033ba)" style="fill: #278c8e; stroke-dasharray: 3.7,1.6; stroke-dashoffset: 0; stroke: #278c8e; stroke-linecap: round"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 852.43757 235.694509
+Q 852.43757 208.882964 852.43757 183.189453
+" clip-path="url(#p5485f033ba)" style="fill: none; stroke-dasharray: 3.7,1.6; stroke-dashoffset: 0; stroke: #278c8e; stroke-linecap: round"/>
+    <path d="M 850.03757 187.989453
+L 852.43757 183.189453
+L 854.83757 187.989453
+z
+" clip-path="url(#p5485f033ba)" style="fill: #278c8e; stroke-dasharray: 3.7,1.6; stroke-dashoffset: 0; stroke: #278c8e; stroke-linecap: round"/>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #9aa4af" x="39.781783" y="127.38706" transform="rotate(-0 39.781783 127.38706)">数据库记录</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(39.781783 149.749229)">prompt / image</text>
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(39.781783 159.491822)">job + SLO</text>
+   </g>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #2864a8" x="267.287628" y="127.38706" transform="rotate(-0 267.287628 127.38706)">工作单元组织</text>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(267.287628 149.944729)">预算 + 均衡</text>
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(267.287628 159.491822)">+ 局部性</text>
+   </g>
+   <g id="text_5">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #278c8e" x="532.286133" y="127.38706" transform="rotate(-0 532.286133 127.38706)">准入与路由</text>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(532.286133 149.944729)">work credit</text>
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(532.286133 159.491822)">+ 公平队列</text>
+   </g>
+   <g id="text_7">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #e9843b" x="785.857404" y="127.38706" transform="rotate(-0 785.857404 127.38706)">执行阶段</text>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(785.857404 149.944729)">vLLM / CPU→GPU</text>
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(785.857404 159.491822)">+ 数据库写回</text>
+   </g>
+   <g id="text_9">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #e9843b" x="54.419976" y="264.4497" transform="rotate(-0 54.419976 264.4497)">算子代价估计 · 共同使能</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 8.4px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(54.419976 283.826891)">阶段 / 服务 / 剩余工作量</text>
+    <text style="font-size: 8.4px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(54.419976 293.261666)">SLO slack · 不确定区间 · 残差修正</text>
+   </g>
+   <g id="text_11">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #2864a8" x="347.183827" y="264.4497" transform="rotate(-0 347.183827 264.4497)">WorkDescriptor</text>
+   </g>
+   <g id="text_12">
+    <text style="font-size: 8.4px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(347.183827 283.826891)">source / prepare / model / result</text>
+    <text style="font-size: 8.4px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(347.183827 293.261666)">locality  ·  deadline  ·  calibrated interval</text>
+   </g>
+   <g id="text_13">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #278c8e" x="649.391674" y="270.623693" transform="rotate(-0 649.391674 270.623693)">新鲜运行状态</text>
+   </g>
+   <g id="text_14">
+    <text style="font-size: 8.4px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(649.391674 285.186617)">active / ready / queued work</text>
+    <text style="font-size: 8.4px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(649.391674 294.972092)">完成 / 服务速率 · 队龄</text>
+    <text style="font-size: 8.4px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(649.391674 304.406867)">状态过期或签名不匹配</text>
+    <text style="font-size: 8.4px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(649.391674 313.841642)">→ 回退冻结静态点</text>
+   </g>
+   <g id="text_15">
+    <text style="font-weight: 700; font-size: 16px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #263238" x="35.531986" y="40.127962" transform="rotate(-0 35.531986 40.127962)">代价估计与运行状态让组织后的数据可被调度</text>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 10px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #9aa4af" x="35.531986" y="64.823933" transform="rotate(-0 35.531986 64.823933)">代价估计同时使能两项研究内容；新鲜状态只改变有界的上游决策。</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p5485f033ba">
+   <rect x="7.2" y="7.2" width="944.39952" height="411.59952"/>
+  </clipPath>
+ </defs>
+</svg>

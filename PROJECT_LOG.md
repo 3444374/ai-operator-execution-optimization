@@ -1,5 +1,53 @@
 # 项目日志
 
+## 2026-08-08 四条证据链与原生框架/多 Job 对照成为当前执行目标
+
+- 本条取代同日早先“文本 Daft/Ray Data 正式矩阵留论文阶段”的范围判断。Work Unit、状态感知、动态调度与共同使能的算子代价估计按同等证据标准组织，每条都需要“现象→缺口→设计→可证伪对照”。
+- 当前最小增量冻结为：完成 SQuAD/ShareGPT database-E2E 护栏；补同一 ShareGPT Chat manifest 的 bounded、Daft Native/Ray、Ray Data 原生单 job 1+3；补原生两 job 错峰观察和项目 static/shared 同上限 A/B。
+- DuckDB 只在有界输出产品轨中解释；原生路径不注入项目 credit/router。phase-change、weighted、图像新动态策略、cost held-out、第二硬件和更多产品继续留后，不以扩矩阵追正。
+
+## 2026-08-08 开题实验范围按“讲清楚即可”收缩
+
+- 用户确认实验只需支撑开题讲清问题、设计依据、可行性与评价计划，不要求在开题前完成论文方法验收。现有 token-work、状态差异、active-work frontier、组织 regime、1/2/4-job、图像 matched-resource 与 cost decision-quality 已覆盖主要因果链。
+- 开题前剩余实验收缩为：完成正在运行的 SQuAD/ShareGPT 文本三臂 replacement；随后只运行 short/long 两作业 15 s staggered 的 static partition vs shared work-credit，两场景各 1 warm-up + 3 formal。3:1 weighted、phase-change state-aware、文本 Daft/Ray Data 正式矩阵、图像新策略、cost held-out 均留论文阶段。
+- 已撤回尚未完成的图像 encoded-byte budget/prepare-work credit 扩展，不把临时实现留在仓库。同步修正根规则、总纲、开题报告、大纲、Claim Matrix、问答库和统一实验计划；PPT、云文档和 Wiki 仍暂停。
+
+## 2026-08-08 方法实验移除强制 sink 边界
+
+- 按用户确认，从第一性原理把文本与图像调度主实验的计时终点统一为“完整结果 gather”：研究变量位于 work-unit、组织、准入、路由与多 job 协调，强制 sink 会把无关写回成本混入策略归因。
+- 当前正在运行的两组文本三臂仍完成，因为它已按统一 PostgreSQL sink 启动，可作为一次 database-E2E/correctness 护栏；后续同上限 static–dynamic、多 job、数据组织和图像方法排名不再要求 sink。
+- 图像主排名改为同 source、同 CLIP 语义、同 gather 边界的 operator-E2E；pgvector exactly-once/Recall@K/nDCG 只做小规模独立工程与质量闭环，不进入性能主排名。同步修正总纲、开题报告、大纲、问答库、Claim Matrix 和统一实验计划；不更新 Wiki 或云文档。
+
+## 2026-08-08 开题证据从静态地基扩展为四个最小杀手实验
+
+- 用户指出多任务与图像实验数量不足。第一性原理审计确认：现有证据足以证明 work 异质、状态差异和图像阶段瓶颈，但不足以为 state-aware、多作业协调、跨模态复用和共同 cost enabler 提供最小方法闭环。
+- 新顺序仍先完成两组 feeding 合格的文本静态三臂并停止新增开题 baseline；随后补且只补：同上限 phase-change static vs state-aware、两作业 staggered+weighted、图像统一 E2E/质量+staged-work、cost held-out ranking/regret。
+- 完整 1/2/4 job、所有 burst/mixed-cost、图像 dynamic、联合搜索、跨硬件和 K512/endpoint 仍留开题后。负结果不触发换 workload 或弱化 baseline。
+- 已同步根 `AGENTS.md`、`PROJECT_OUTLINE.md`、第一性原理复审、Claim Matrix、答辩内容大纲和统一实验计划；当前仍暂停 PPT、云文档和 Wiki。
+- 六张现有叙事/证据图已改为中文主标题、坐标与直接标注，修正字体优先级后无缺字警告；逐张视觉复核无裁切和重叠。图中仍保留 token、MFU、WorkDescriptor 等必要技术词。
+- 多 job runner 原本已有 arrival offset 和 weight，但默认所有 job 读取相同 rows。现新增每 job `request_manifests` 与 `source_row_offsets`，命令层强制由 runner 注入，evidence 层核对 manifest 路径/校验状态/行数/SHA 与 offset；28 个 shared-vLLM 定向测试通过。这样后续 short/long staggered 结果才有资格支撑 work-aware fairness。
+- 新增 `deploy/autodl/opening_multijob_minimal.example.json`：只含两作业 short/long 的 staggered 与 3:1 weighted 两组因子，各自成对比较 static partition 和 shared work-credit；共 4 scenario × (1 warm-up + 3 formal)，不提前扩成 1/2/4 全矩阵。
+- 新增 `build_opening_multijob_manifests.py`，从冻结 ShareGPT manifest 按 endpoint 各取等量最短/最长 prompt work，保证两个 512 行 job 的 doc_id 互斥和 endpoint 数量平衡，并保存 source/output SHA 与 token 分布审计。
+
+## 2026-08-08 冻结内容大纲、实验与数据图，暂停 PPT 成品
+
+- 按用户最新要求暂停新的 PPTX 生成、排版、渲染和云端幻灯片同步；此前仅用于临时版式检查的 v7 构建器已移除，不将旧 failed-feeding headline 写入任何新成品。
+- 新增 `opening/opening_defense_outline_20260808.md` 作为当前权威答辩内容大纲与证据合同，逐项规定 19 个 take-away、所需数据、可声称边界、开题前 replacement 数据、开题后 static–dynamic/multi-job/image/cost 实验及八张结果图的数据合同。
+- 算子代价估计在大纲中作为两项研究内容的共同使能门禁：它向 organization 提供 staged work/uncertainty，向 admission/routing/fair sharing 提供 service/remaining work 与 SLO slack；预测误差和 decision regret 分开评价。
+- 当前交付范围仅为内容大纲、必要实验、合规实验数据与数据图；不同步 Wiki，也不覆盖普通飞书云文档或制作 PPT 成品。
+
+## 2026-08-08 开题实验、work-unit、动态图像与图表第一性原理复审
+
+- 结论：开题前不需要完成整套动态方法，但动机必须分别证明固定行隐藏 work、运行状态随负载变化、active work 存在欠供给/近饱和/过载区间，并分别导出 work-unit、状态感知和有界动态提交的研究必要性；动态超过同上限静态仍是开题后待验证 claim。
+- 新增 `opening/first_principles_reassessment_20260808.md`，从目标函数反推开题完成边界、方法接口、图像缺口、正文四图职责与 19 项主讲内容。旧 28 页 v6 和四张双 panel 图降级为待替换底稿，历史 PowerPoint/overflow QA 只证明文件可打开，不代表新内容已冻结。
+- 新增 `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 作为文档增殖纪律的一次明确例外：它统一跨研究内容一、研究内容二和图像泛化的因果矩阵，避免旧计划分别定义不兼容的 work/credit/state 合同。计划固定同上限 frozen-static vs dynamic、steady→phase-change/burst→多 job 的顺序和图像强 baseline/质量/状态指标。
+- 方法调整：公共 work-unit 从单个 `work_units + work_unit` 标量收紧为分阶段 `WorkDescriptor`，至少表达 source/prepare/model/result work、locality、deadline/SLO、uncertainty 和 calibration signature。当前瓶颈在模型服务时用 model work credit；图像 CPU prepare 主导时分别约束 prepare work、ready tensor work 和 buffer bytes，不能只把 token 改名为 frame。
+- 代码基础已以兼容方式落地：新增 `planning/work.py` 的 staged work/runtime state 合同，`BatchRequest` 与 `ImageEmbeddingBatch` 可选携带 descriptor，旧标量调用保持不变；新增 `BoundedStageWorkController`，只在离线离散安全点间单步移动，stale/signature mismatch 回退静态点。新增 7 个测试，相关 25 个定向测试均通过；完整 scheduling suite 的 5 个错误来自本机缺 Daft 与 Ray `sysctl` 沙箱权限，不是本次改动回归。
+- 图像边界：现有 exact-path 画像与 matched-resource 静态结果足以支持可行性，不足以支持 proposed 完成。仍需当前 commit 下 Daft built-in、Ray Data native、typed Ray actor 的统一 PostgreSQL/pgvector E2E 正式排名、检索质量、stage-aware organization、state-aware 动态和多 job。
+- 新增六张可复现叙事图：work/state/control 动机三联图、AI Data Execution Layer 边界、work→schedule 总览、组织 regime、图像 stage-aware 证据和 cost decision quality；旧四张双 panel 图保留历史引用但不再作为新报告/PPT 首选。每张图均输出 PNG/SVG，并完成文字重叠、图例、数值来源和 claim 边界的渲染后审计。
+- 根据主线要求进一步把算子代价估计画成两项研究内容的共同使能部件：它同时输出 stage/service/remaining work、SLO slack、uncertainty 与 residual correction，供 WorkDescriptor/Organizer 和 admission/routing/multi-job 消费；单独的 regret 页只承担可行性证据，不把 cost 扩张为第三项研究内容。
+- 同步更新 Claim Matrix、opening/README、experiments/plans/README、实验状态与 PROJECT_INDEX；用户已明确豁免 Wiki 同步。
+
 ## 2026-08-08 开题文本 feeder 重校准前修复项目臂 manifest 透传
 
 - 背景：首轮统一 database-E2E 中项目臂的同协议 feeding ratio 未达到 95% 门禁，按冻结规则降级为 failed-feeding 诊断，需要在相同运行签名下先校准项目静态 feeder。
@@ -4886,3 +4934,10 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 新增 `experiments/plans/opening_database_e2e_p0_20260807.md`，把 SQuAD 均匀控制组与 ShareGPT controlled-skew 的三臂、source、manifest、sink、计时、质量、资源和停止规则冻结为单一合同。
 - 新增 `code/scripts/baselines/opening_database_e2e_matrix.py` 与 AutoDL 配置模板。runner 只暴露 direct static sharded、DuckDB AI static sharded、project frozen static 三臂，按确定性随机顺序执行 1 warmup + 3 formal。
 - project profiler 增加 opt-in clean database-E2E timing boundary；默认历史计时语义不变。request-manifest guard 同时支持无未来信息的 `fixed_output_cap`。
+## 2026-08-08 四条动机证据链与原生框架/多 Job 对照纳入当前目标
+
+- 用户明确 Work Unit、状态感知、动态调度和共同使能的算子代价估计具有同等证据权重；每条都需要“现象→现有系统缺口→设计→可证伪对照”，不再仅以 Work Unit 组织故事。
+- 在已有 SQuAD/ShareGPT database-E2E 三臂 replacement 之后，新增一个最小 ShareGPT Chat 原生框架单 job 矩阵（bounded、Daft Native/Ray、Ray Data），以及 Daft/Ray Data 原生两 job 错峰观察 + 项目 static/shared 因果 A/B。
+- DuckDB 仅在 SQuAD/cap=64 有界输出产品轨中比较；不与 ShareGPT 原生框架轨交叉排名。原生 Daft/Ray Data 观察不注入项目 credit/router，不虚构 request P99 或 idle-borrowing 指标。
+- 新增可复用的原生文本 1+N 交错矩阵 runner 与薄的原生两 job 错峰 runner；两者只编排已有 official/native adapter 并 fail closed 保留证据，不重写框架调度。
+- 仍遵守最小矩阵停止规则：不换模型/数据库/workload，不扫 weighted/offset 追正；结果接近或为负同样进入开题边界结论。

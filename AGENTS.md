@@ -43,13 +43,22 @@ PostgreSQL 18.3
 
 已有实验：GPU-backed 文本 AI_EMBED 预研链路（2026-07-12，文本向量，非图像 CLIP；fine vs coalesced：推理执行阶段约 37.5×、端到端约 13.4×；pgvector writeback 0.897s vs JSON 1.567s）+ vLLM + Qwen2.5-1.5B AI_COMPLETE baseline（已建立，详见 `experiments/results/local_vllm_qwen15b_baseline/`）。图像 CLIP 的动机是另一套（GPU 利用率仅 1–4%、瓶颈在 CPU 预处理，见 `motivation/results/gpu/image_*`）。详细数据见 `motivation/results/gpu/`。CPU/fake 实验仅历史参考。
 
-**2026-08-07 开题冻结顺序**：开题材料冻结前，先统一研究 framing 与
-`opening/claim_matrix.md`，再只补 SQuAD 均匀控制组和 ShareGPT 受控异质组两套
+**2026-08-08 开题证据冻结顺序**：开题材料冻结前，先统一研究 framing 与
+`opening/claim_matrix.md`，再补 SQuAD 均匀控制组和 ShareGPT 受控异质组两套
 三臂 database-E2E 正式实验。两组均比较 direct static-sharded、DuckDB AI
 static-sharded 和 project frozen-static，统一 PostgreSQL source/sink、外部
-database-E2E、质量和资源指标。完成后停止新增开题 baseline，转入四组核心证据图、
-报告/PPT 重构和答辩一致性审计。开题冻结后才恢复 state-aware proposed 主实验。
-本顺序覆盖下述 2026-08-01 工程优先级，但不撤销已有 image-first 证据和论文阶段计划。
+database-E2E、质量和资源指标。两组通过后停止扩展数据库产品、workload 和参数搜索，不换 workload、模型或
+数据库追正结果；随后只补两类不可替代的动机证据：① 同一 ShareGPT Chat manifest
+上的 bounded control、Daft `prompt()` Native/Ray 和 Ray Data HTTP Processor 原生单 job
+1+3 对照；② Daft/Ray Data short/long 两 job 错峰原生观察，以及项目
+static-partition vs shared-work-credit 同上限 A/B。DuckDB 只留在 SQuAD/cap=64
+有界输出产品轨，不与语义不兼容的 ShareGPT 框架轨交叉排名。已有 1/2/4-job、
+图像 matched-resource、组织 regime 和 429-run cost decision-quality 证据直接复用；
+phase-change、3:1 weighted、第二硬件与大规模参数搜索不阻塞开题。四条证据链
+（Work Unit、状态感知、动态调度、共同使能代价估计）权重相同，都必须由实验现象导出设计。
+开题不要求 proposed 全面胜出。当前暂停 PPT 成品、云文档和 Wiki
+同步，只冻结内容大纲、实验报告与数据图。本顺序覆盖下述 2026-08-01 工程优先级，但不撤销
+已有 image-first 证据和论文阶段计划。
 
 **2026-08-01 工程优先级（开题冻结后恢复）**：内部已锁定 A（模型服务状态感知的请求成形/提交）+
 B（算子代价估计），首个 workload 为 image AI_EMBED (CLIP)；文本遗留实验统一
@@ -67,8 +76,9 @@ EWMA flush 对照均已完成）：
 ① 已按预注册规则选择每 endpoint 65,536 active work；多 actor 与固定 quantum
 均未达到 5% 晋升门槛，保留 `request + 1×256`，其价值是精确 completion/
 credit 语义而非显著稳态提速；SLO-EWMA 相对 fixed-50 未过 5% 门槛 →
-② 当前 2×4090 上完成 shared request/work credit 与 1/2/4 job 公平性核心矩阵；
-held-out、staggered/weighted、故障迁移仍是 parked 遗留项；③ prefix cache 开启后的
+② 当前 2×4090 上完成 shared request/work credit 与 1/2/4 job 等量核心矩阵；
+只补两作业 short/long staggered 作为开题最小证据，weighted、完整 held-out/异构 offset 与
+故障迁移均是论文阶段遗留项；③ prefix cache 开启后的
 数据组织机制验证（07-31 系统重测 `rc1_data_organization/`，**取代 07-25/26
 gropy；07-18/19 保留作历史动机参照**）：**regime-dependent**——2-ep/0.9（每
 endpoint KV 池占 GPU 显存 0.9、无压力 max 7–10%）5 策略 50–56k 近似中性；

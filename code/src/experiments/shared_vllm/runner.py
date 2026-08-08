@@ -475,6 +475,18 @@ def _run_group(
             "arrival_offsets_s": json.dumps(
                 scenario.arrival_offsets_s
             ),
+            "source_row_offsets": json.dumps(
+                scenario.source_row_offsets
+            ),
+            "request_manifests": json.dumps(
+                scenario.request_manifests
+            ),
+            "request_manifest_sha256": json.dumps(
+                [
+                    evidence["request_manifest_sha256"]
+                    for evidence in job_evidence
+                ]
+            ),
             "ray_address": options.ray_address,
             "coordinator_name": (
                 coordinator_name

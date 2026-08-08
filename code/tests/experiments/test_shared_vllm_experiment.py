@@ -230,6 +230,75 @@ class SharedVllmExperimentTests(unittest.TestCase):
             self.assertEqual(config.work_limit_per_endpoint, 65536)
             self.assertIsNotNone(config.calibration_contract)
 
+    def test_scenario_pins_distinct_job_manifests_and_offsets(self) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "heterogeneous_j2",
+                    "policy": "shared_drr",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                    "weights": [1, 3],
+                    "arrival_offsets_s": [0.0, 15.0],
+                    "source_row_offsets": [0, 64],
+                    "request_manifests": [
+                        "${SHORT_MANIFEST}",
+                        "${LONG_MANIFEST}",
+                    ],
+                }
+            ]
+        )
+        with (
+            patch.object(Path, "read_text", return_value=json.dumps(payload)),
+            patch.dict(
+                os.environ,
+                {
+                    "SHORT_MANIFEST": "/evidence/short.jsonl",
+                    "LONG_MANIFEST": "/evidence/long.jsonl",
+                },
+                clear=True,
+            ),
+        ):
+            config = load_config(Path("config.json"))
+
+        scenario = config.scenarios[0]
+        self.assertEqual(scenario.source_row_offsets, (0, 64))
+        self.assertEqual(
+            scenario.request_manifests,
+            ("/evidence/short.jsonl", "/evidence/long.jsonl"),
+        )
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+        command = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=1,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+        self.assertEqual(self._flag_value(command, "--source-row-offset"), "64")
+        self.assertEqual(
+            self._flag_value(command, "--request-manifest"),
+            "/evidence/long.jsonl",
+        )
+        self.assertEqual(
+            self._flag_value(command, "--arrival-replay-start-epoch-s"),
+            "115.0",
+        )
+        self.assertEqual(
+            self._flag_value(command, "--shared-credit-job-weight"),
+            "3",
+        )
     def test_config_rejects_setup_and_runner_owned_credit_flags(self) -> None:
         for forbidden in (
             "--setup",

@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-08-01
+日期：2026-08-08
 
 本文说明当前 Daft + Ray 上游执行基础设施已经完成什么、实际执行流程、研究证据
 边界，以及下一步还需要实现和验证的内容。研究方向仍是数据库 AI 算子外部执行
@@ -29,14 +29,15 @@ PostgreSQL
 
 上图是已完成的**文本/vLLM 路径**。2026-08-01 内部执行方向转为 image-first A+B；
 CLIP 5K profile 与不含写回的 operator-E2E 已通过门禁。下图中 PostgreSQL→Daft→
-Ray CPU preprocess→typed CLIP actor 已跑通；frame-cost/state-aware policy 与最终
-pgvector sink 仍是**待实现目标**：
+Ray CPU preprocess→typed CLIP actor 已跑通；分阶段 work/state 合同与有界动态
+候选的纯策略基础已实现，但尚未接入正式 image runner，最终 pgvector sink 与性能
+验证仍是**待实现目标**：
 
 ```text
 PostgreSQL image source
   -> Daft
   -> Ray CPU decode + resize + normalize
-  -> frame-cost organizer + endpoint-state-aware admission
+  -> staged WorkDescriptor + state-aware work-credit admission
   -> typed tensor-input CLIP backend (Ray GPU actor primary)
   -> PostgreSQL + pgvector
 ```
@@ -64,6 +65,9 @@ PostgreSQL image source
 - Arrow 与 Daft 共用同一套纯策略函数；全局 packing 不在 Daft 分支复制实现。
 - 统一记录 batch row/token 分布、packing utilization、oversized rows、
   submission count 与 per-request lifecycle。
+- 新增兼容的 `WorkDescriptor`：在保留旧 `work_units` 的同时表达
+  source/prepare/model/result 分阶段 demand、locality、deadline/SLO、uncertainty 和 calibration
+  signature。当前只完成合同与单元测试，正式运行仍使用已冻结标量 credit。
 
 ### 本轮新增与结果
 
@@ -106,6 +110,9 @@ PostgreSQL image source
 - 多 job shared credit：Ray named actor 统一持有 endpoint request/work
   capacity，使用带权 deficit round robin 和空闲容量借用；联合
   `(job_id, request_id)` 防止不同作业的 batch ID 冲突。
+- 新增 `BoundedStageWorkController` 纯策略候选：仅在离线校准的离散 work-credit
+  集合内单步升降，观测 stale、stage 缺失或 calibration signature 不一致时回退
+  workload-specific frozen-static。尚未接入 runner，也没有性能收益 claim。
 
 ### 当前流程
 
@@ -351,7 +358,8 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 - 4-job shared 聚合吞吐 +9.57%、max P99 -22.52%、max JCT -15.89%，
   但三次吞吐变化为 +8.43%/-0.28%/+22.60%，保留为高竞争条件性候选；
 - staggered idle borrowing、weighted overlap fairness 和异构 workload
-  尚未验证。
+  尚未验证；已补每 job 独立 request manifest/source offset 的配置、命令与证据审计，
+  防止两个 job 重复读取同一段 rows 后误称 work-aware fairness。
 
 ### 文本轨道遗留（parked-conditional）
 
@@ -367,8 +375,8 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
    baseline 独立 calibration，不能以弱默认值对比已调优 ours；
 7. baseline 同时承担 transient saturation/ramp 实验：固定总工作量与下游
    容量，报告 direct ceiling、time-to-ceiling、ramp regret 和最小饱和 work；
-8. baseline 锁定后再做 4-job held-out、staggered idle borrowing 与 weighted
-   fairness；
+8. 开题静态 baseline 锁定后先做两作业 staggered + weighted 最小证据；4-job
+   held-out、完整异构 offset 和故障迁移仍留论文阶段；
 9. Prefix-aware 已在 cache-on 下评估：batching regime-dependent（2-ep 近似中性、4-ep 饱和分化，见 `rc1_data_organization/`）；routing 在 2-ep/7B 中性
    （−0.1%），4-ep/1.5B prefix_affinity +5.9% 跨过 5% 门禁但受 model×endpoint×KV
    与过饱和 regime（SLO 违约 25–31%）混淆，方向有条件重开，待隔离消融；

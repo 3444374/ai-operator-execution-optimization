@@ -117,6 +117,34 @@ def _validate_job_evidence(
         raise RuntimeError(
             f"job {job_index} submission trace is not exactly-once"
         )
+    expected_offset = (
+        scenario.source_row_offsets[job_index]
+        if scenario.source_row_offsets
+        else 0
+    )
+    if (
+        scenario.source_row_offsets
+        and int(summary.get("source_row_offset", -1)) != expected_offset
+    ):
+        raise RuntimeError(f"job {job_index} source offset does not match")
+    expected_manifest = (
+        scenario.request_manifests[job_index]
+        if scenario.request_manifests
+        else None
+    )
+    observed_manifest = str(summary.get("request_manifest_path", "") or "")
+    if expected_manifest is not None:
+        if (
+            not observed_manifest
+            or Path(observed_manifest).resolve()
+            != Path(expected_manifest).resolve()
+            or summary.get("request_manifest_validation_status") != "ok"
+            or int(summary.get("request_manifest_validated_rows", -1))
+            != scenario.rows_per_job
+        ):
+            raise RuntimeError(
+                f"job {job_index} request manifest evidence does not match"
+            )
     request_ids = [row.get("request_id", "") for row in request_rows]
     if len(set(request_ids)) != len(request_ids) or "" in request_ids:
         raise RuntimeError(f"job {job_index} has duplicate request IDs")
@@ -174,6 +202,11 @@ def _validate_job_evidence(
         "actual_work": actual_work,
         "actual_work_source": (
             "prompt_plus_actual_or_client_estimate_fallback"
+        ),
+        "source_row_offset": expected_offset,
+        "request_manifest_path": observed_manifest,
+        "request_manifest_sha256": str(
+            summary.get("request_manifest_sha256", "") or ""
         ),
         "arrival_start_epoch_s": min(arrival),
         "completion_end_epoch_s": max(completion),

@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="958.79952pt" height="425.99952pt" viewBox="0 0 958.79952 425.99952" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-08-08T17:47:19.132566</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.7, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 425.99952
+L 958.79952 425.99952
+L 958.79952 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 41.198383 271.446892
+L 171.525516 271.446892
+Q 188.524708 271.446892 188.524708 264.0381
+L 188.524708 153.729429
+Q 188.524708 146.320638 171.525516 146.320638
+L 41.198383 146.320638
+Q 24.199191 146.320638 24.199191 153.729429
+L 24.199191 264.0381
+Q 24.199191 271.446892 41.198383 271.446892
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #ffffff; stroke: #9aa4af; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 768.386013 250.866916
+L 917.601137 250.866916
+Q 934.600329 250.866916 934.600329 243.458124
+L 934.600329 153.729429
+Q 934.600329 146.320638 917.601137 146.320638
+L 768.386013 146.320638
+Q 751.386822 146.320638 751.386822 153.729429
+L 751.386822 243.458124
+Q 751.386822 250.866916 768.386013 250.866916
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #ffffff; stroke: #e9843b; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 768.386013 357.882791
+L 917.601137 357.882791
+Q 934.600329 357.882791 934.600329 350.474
+L 934.600329 285.441276
+Q 934.600329 278.032484 917.601137 278.032484
+L 768.386013 278.032484
+Q 751.386822 278.032484 751.386822 285.441276
+L 751.386822 350.474
+Q 751.386822 357.882791 768.386013 357.882791
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #ffffff; stroke: #9aa4af; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 237.633483 351.297199
+L 702.278047 351.297199
+Q 721.166037 351.297199 721.166037 343.065208
+L 721.166037 107.630283
+Q 721.166037 99.398292 702.278047 99.398292
+L 237.633483 99.398292
+Q 218.745492 99.398292 218.745492 107.630283
+L 218.745492 343.065208
+Q 218.745492 351.297199 237.633483 351.297199
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #f8fbff; stroke: #2864a8; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 267.854268 254.982911
+L 445.401377 254.982911
+Q 462.400569 254.982911 462.400569 247.57412
+L 462.400569 178.4254
+Q 462.400569 171.016609 445.401377 171.016609
+L 267.854268 171.016609
+Q 250.855076 171.016609 250.855076 178.4254
+L 250.855076 247.57412
+Q 250.855076 254.982911 267.854268 254.982911
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #ffffff; stroke: #2864a8; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 494.510152 254.982911
+L 672.057262 254.982911
+Q 689.056453 254.982911 689.056453 247.57412
+L 689.056453 178.4254
+Q 689.056453 171.016609 672.057262 171.016609
+L 494.510152 171.016609
+Q 477.510961 171.016609 477.510961 178.4254
+L 477.510961 247.57412
+Q 477.510961 254.982911 494.510152 254.982911
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #ffffff; stroke: #278c8e; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 266.909868 324.13163
+L 673.001662 324.13163
+Q 687.167654 324.13163 687.167654 317.957638
+L 687.167654 276.797686
+Q 687.167654 270.623693 673.001662 270.623693
+L 266.909868 270.623693
+Q 252.743875 270.623693 252.743875 276.797686
+L 252.743875 317.957638
+Q 252.743875 324.13163 266.909868 324.13163
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #fff4e8; stroke: #e9843b; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 356.627822 272.740978
+Q 356.627822 262.391171 356.627822 253.159398
+" clip-path="url(#pc5ed8586c2)" style="fill: none; stroke: #e9843b; stroke-linecap: round"/>
+    <path d="M 354.427822 257.559398
+L 356.627822 253.159398
+L 358.827822 257.559398
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #e9843b; stroke: #e9843b; stroke-linecap: round"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 583.283707 272.740978
+Q 583.283707 262.391171 583.283707 253.159398
+" clip-path="url(#pc5ed8586c2)" style="fill: none; stroke: #e9843b; stroke-linecap: round"/>
+    <path d="M 581.083707 257.559398
+L 583.283707 253.159398
+L 585.483707 257.559398
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #e9843b; stroke: #e9843b; stroke-linecap: round"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 179.194382 208.883765
+Q 205.525919 208.883765 230.404013 208.883765
+" clip-path="url(#pc5ed8586c2)" style="fill: none; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+    <path d="M 225.604013 206.483765
+L 230.404013 208.883765
+L 225.604013 211.283765
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #263238; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 708.058113 208.883765
+Q 734.389651 208.883765 759.267744 208.883765
+" clip-path="url(#pc5ed8586c2)" style="fill: none; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+    <path d="M 754.467744 206.483765
+L 759.267744 208.883765
+L 754.467744 211.283765
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #263238; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 842.993575 247.930953
+Q 842.993575 264.452535 842.993575 279.520673
+" clip-path="url(#pc5ed8586c2)" style="fill: none; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+    <path d="M 845.393575 274.720673
+L 842.993575 279.520673
+L 840.593575 274.720673
+z
+" clip-path="url(#pc5ed8586c2)" style="fill: #263238; stroke: #263238; stroke-width: 1.3; stroke-linecap: round"/>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #9aa4af" x="39.781783" y="192.749064" transform="rotate(-0 39.781783 192.749064)">数据库 AI 算子</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(39.781783 227.485637)">记录 / 图像</text>
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(39.781783 237.695731)">job + SLO + 语义</text>
+   </g>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #e9843b" x="767.536054" y="185.340272" transform="rotate(-0 767.536054 185.340272)">执行后端</text>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(767.536054 212.060218)">vLLM 生成</text>
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(767.536054 222.260749)">或 typed GPU actor</text>
+   </g>
+   <g id="text_5">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #9aa4af" x="767.536054" y="308.161569" transform="rotate(-0 767.536054 308.161569)">数据库 / 向量写回</text>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(767.536054 325.903523)">正确性 + 质量</text>
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(767.536054 335.450617)">外部 database-E2E</text>
+   </g>
+   <g id="text_7">
+    <text style="font-weight: 700; font-size: 13px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #2864a8" x="262.18787" y="130.679856" transform="rotate(-0 262.18787 130.679856)">AI 数据执行层 · 研究边界</text>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #9aa4af" x="262.18787" y="149.201834" transform="rotate(-0 262.18787 149.201834)">位于模型服务上游；不修改模型、kernel 或服务内部调度器</text>
+   </g>
+   <g id="text_9">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #2864a8" x="267.854268" y="202.627452" transform="rotate(-0 267.854268 202.627452)">研究内容一</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(267.854268 221.974645)">工作单元构造</text>
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(267.854268 231.521738)">+ 数据组织</text>
+   </g>
+   <g id="text_11">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #278c8e" x="494.510152" y="202.627452" transform="rotate(-0 494.510152 202.627452)">研究内容二</text>
+   </g>
+   <g id="text_12">
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(494.510152 221.974645)">状态感知准入 / 路由</text>
+    <text style="font-size: 8.5px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; fill: #263238" transform="translate(494.510152 231.521738)">+ 多作业协调</text>
+   </g>
+   <g id="text_13">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #e9843b" x="281.075861" y="295.319664" transform="rotate(-0 281.075861 295.319664)">共同算子代价估计</text>
+   </g>
+   <g id="text_14">
+    <text style="font-size: 8.3px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #263238" x="403.847798" y="295.319664" transform="rotate(-0 403.847798 295.319664)">阶段 / 服务 / 剩余工作量 · SLO slack · 不确定区间</text>
+   </g>
+   <g id="text_15">
+    <text style="font-weight: 700; font-size: 16px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #263238" x="35.531986" y="44.243957" transform="rotate(-0 35.531986 44.243957)">研究对象是模型服务上游的 AI 数据执行层</text>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 10px; font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Arial', 'DejaVu Sans', 'Liberation Sans', sans-serif; text-anchor: start; fill: #9aa4af" x="35.531986" y="68.939928" transform="rotate(-0 35.531986 68.939928)">Daft 与 Ray 提供机制；vLLM 与 typed GPU actor 是执行后端和对照。</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pc5ed8586c2">
+   <rect x="7.2" y="7.2" width="944.39952" height="411.59952"/>
+  </clipPath>
+ </defs>
+</svg>

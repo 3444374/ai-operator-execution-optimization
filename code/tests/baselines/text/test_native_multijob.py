@@ -1,0 +1,246 @@
+from __future__ import annotations
+
+import csv
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+
+CODE_ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir())
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
+
+from src.baselines.common.contracts import ChatRequest
+from src.baselines.common.manifests import write_manifest
+from src.baselines.common.provenance import adapter_provenance
+from src.baselines.text.orchestration.native_multijob import (
+    audit_command,
+    balanced_arm_order,
+    load_native_multijob_config,
+    redact_command,
+    run_native_multijob,
+)
+
+
+class _FakeProcess:
+    next_pid = 1000
+
+    def __init__(self, command: list[str], **_kwargs: object) -> None:
+        self.command = command
+        self.pid = _FakeProcess.next_pid
+        _FakeProcess.next_pid += 1
+        output = Path(command[command.index("--output-dir") + 1])
+        manifest = Path(command[command.index("--manifest") + 1])
+        endpoint = int(command[command.index("--endpoint-index") + 1])
+        requests = [
+            json.loads(line)
+            for line in manifest.read_text(encoding="utf-8").splitlines()
+            if json.loads(line)["endpoint_index"] == endpoint
+        ]
+        output.mkdir(parents=True)
+        fields = [
+            "doc_id", "endpoint_index", "status", "error", "submitted_at_s",
+            "started_at_s", "completed_at_s", "input_tokens", "output_tokens",
+            "output_text", "finish_reason",
+        ]
+        with (output / "requests.csv").open("w", encoding="utf-8", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=fields)
+            writer.writeheader()
+            for position, row in enumerate(requests):
+                writer.writerow({
+                    "doc_id": row["doc_id"], "endpoint_index": endpoint, "status": "completed",
+                    "error": "", "submitted_at_s": position, "started_at_s": position,
+                    "completed_at_s": position + 1, "input_tokens": row["prompt_tokens"],
+                    "output_tokens": 2, "output_text": "ok", "finish_reason": "stop",
+                })
+        adapter = command[command.index("--adapter") + 1]
+        (output / "summary.json").write_text(
+            json.dumps({"status": "completed", "adapter": adapter, **adapter_provenance(adapter).summary_fields()}),
+            encoding="utf-8",
+        )
+
+    def wait(self) -> int:
+        return 0
+
+
+class _FailingProcess(_FakeProcess):
+    def wait(self) -> int:
+        return 1 if "shard_0" in self.command[self.command.index("--output-dir") + 1] else 0
+
+
+class NativeMultiJobTests(unittest.TestCase):
+    def _manifest(self, root: Path, name: str, ids: tuple[int, int]) -> Path:
+        path = root / name
+        write_manifest(
+            path,
+            tuple(
+                ChatRequest(
+                    doc_id=doc_id,
+                    prompt=f"p-{doc_id}",
+                    arrival_time_s=0.0,
+                    prompt_tokens=10,
+                    max_output_tokens=8,
+                    estimated_output_tokens=8,
+                    source_row_hash=f"row-{doc_id}",
+                    endpoint_index=position,
+                )
+                for position, doc_id in enumerate(ids)
+            ),
+        )
+        return path
+
+    def _config(self, root: Path, *, offset_s: float = 0.001) -> Path:
+        first = self._manifest(root, "short.jsonl", (1, 2))
+        second = self._manifest(root, "long.jsonl", (3, 4))
+        arms = []
+        for arm_id, adapter, ray_address in (
+            ("daft_native", "daft_native", None),
+            ("ray_data_http", "ray_data_http", "ray://127.0.0.1:10001"),
+        ):
+            arms.append({
+                "id": arm_id, "adapter": adapter, "python_executable": sys.executable,
+                "concurrency_per_endpoint": 2, "batch_size": 8, "timeout_s": 10.0,
+                "ray_address": ray_address,
+                "jobs": [
+                    {"id": "short", "manifest": str(first), "offset_s": 0.0},
+                    {"id": "long", "manifest": str(second), "offset_s": offset_s},
+                ],
+            })
+        payload = {
+            "schema_version": 1, "experiment_id": "native-multijob-test", "formal": True,
+            "output_root": str(root / "out"),
+            "endpoint_urls": [
+                "http://127.0.0.1:8000/v1/chat/completions",
+                "http://127.0.0.1:8001/v1/chat/completions",
+            ],
+            "model": "qwen", "api_key_env": None,
+            "service": {"prefix_caching": "enabled", "max_num_seqs": 64, "max_num_batched_tokens": 4096},
+            "idle_timeout_s": 1.0, "launch_lead_s": 0.0, "warmup_repeats": 1,
+            "formal_repeats": 1, "schedule_seed": 9, "endpoint_work_skew_max": 0.02,
+            "minimum_measurement_seconds": 0.000001,
+            "arms": arms,
+        }
+        path = root / "config.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path
+
+    @staticmethod
+    def _queues(_urls: tuple[str, ...], _timeout: float) -> dict[int, dict[str, int]]:
+        return {0: {"running": 0, "waiting": 0}, 1: {"running": 0, "waiting": 0}}
+
+    @staticmethod
+    def _counters(_urls: tuple[str, ...]) -> dict[int, dict[str, int]]:
+        _FakeProcess.next_pid += 1
+        value = _FakeProcess.next_pid
+        return {
+            0: {"prompt_tokens": value, "generation_tokens": value},
+            1: {"prompt_tokens": value, "generation_tokens": value},
+        }
+
+    def test_requires_disjoint_manifests_and_balanced_endpoints(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = self._config(root)
+            payload = json.loads(path.read_text())
+            payload["arms"][0]["jobs"][1]["manifest"] = payload["arms"][0]["jobs"][0]["manifest"]
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "overlapping doc_ids"):
+                load_native_multijob_config(path)
+
+    def test_schedule_is_deterministic_and_rotates_formal_positions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config = load_native_multijob_config(self._config(Path(directory)))
+            first = balanced_arm_order(config, "formal", 1)
+            second = balanced_arm_order(config, "formal", 2)
+            self.assertEqual(first, balanced_arm_order(config, "formal", 1))
+            self.assertEqual(first[0].arm_id, second[-1].arm_id)
+
+    def test_command_audit_redacts_secret_and_rejects_project_controls(self) -> None:
+        self.assertEqual(redact_command(["--api-key", "secret"]), ["--api-key", "<redacted>"])
+        with self.assertRaisesRegex(ValueError, "prohibited"):
+            audit_command(["runner", "--max-active-work", "65536"])
+
+    def test_runs_four_native_shards_per_arm_and_preserves_job_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = run_native_multijob(
+                self._config(root), runner_script=root / "run_official_baseline.py",
+                popen_factory=_FakeProcess, queue_waiter=self._queues, counter_sampler=self._counters,
+            )
+            self.assertEqual(result["comparison_admission"], "admissible")
+            self.assertEqual(len(result["runs"]), 4)  # 2 arms * (warmup + formal)
+            formal = [run for run in result["runs"] if run["phase"] == "formal"]
+            self.assertTrue(all(len(run["jobs"]) == 2 for run in formal))
+            job = formal[0]["jobs"][0]
+            self.assertTrue(job["exactly_once"])
+            self.assertEqual(len(job["pids"]), 2)
+            self.assertTrue(Path(job["shards"][0]["log"]).is_file())
+            self.assertTrue(Path(job["shards"][0]["requests"]).is_file())
+            self.assertTrue(result["repository_commit"])
+            self.assertEqual(job["shard_provenance"][0]["adapter"], formal[0]["adapter"])
+
+    def test_summary_provenance_mismatch_fails_closed(self) -> None:
+        class WrongProvenanceProcess(_FakeProcess):
+            def __init__(self, command: list[str], **kwargs: object) -> None:
+                super().__init__(command, **kwargs)
+                output = Path(command[command.index("--output-dir") + 1])
+                summary = json.loads((output / "summary.json").read_text())
+                summary["scheduler_owner"] = "project_credit_router"
+                summary["custom_scheduling_code"] = True
+                (output / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, "native job shards failed"):
+                run_native_multijob(
+                    self._config(root), runner_script=root / "run_official_baseline.py",
+                    popen_factory=WrongProvenanceProcess, queue_waiter=self._queues,
+                    counter_sampler=self._counters,
+                )
+            index = json.loads((root / "out" / "matrix_index.json").read_text())
+            self.assertEqual(index["status"], "failed")
+
+    def test_records_commit_and_releases_host_scope_lease(self) -> None:
+        class Lease:
+            released = False
+
+            def release(self) -> None:
+                self.released = True
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            lease = Lease()
+            acquired: list[tuple[Path, str]] = []
+
+            def acquire(path: Path, *, repository_commit: str) -> Lease:
+                acquired.append((path, repository_commit))
+                return lease
+
+            result = run_native_multijob(
+                self._config(root), runner_script=root / "run_official_baseline.py",
+                popen_factory=_FakeProcess, queue_waiter=self._queues, counter_sampler=self._counters,
+                repository_commit_getter=lambda: "test-commit", host_lease_acquirer=acquire,
+            )
+            self.assertEqual(result["repository_commit"], "test-commit")
+            self.assertEqual(acquired, [(root, "test-commit")])
+            self.assertTrue(lease.released)
+
+    def test_failure_is_retained_in_index_and_job_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, "native job shards failed"):
+                run_native_multijob(
+                    self._config(root), runner_script=root / "run_official_baseline.py",
+                    popen_factory=_FailingProcess, queue_waiter=self._queues, counter_sampler=self._counters,
+                )
+            index = json.loads((root / "out" / "matrix_index.json").read_text())
+            self.assertEqual(index["status"], "failed")
+            failed_jobs = list((root / "out" / "runs").glob("*/jobs/short/job_summary.json"))
+            self.assertEqual(len(failed_jobs), 1)
+            self.assertTrue(failed_jobs[0].is_file())
+
+
+if __name__ == "__main__":
+    unittest.main()

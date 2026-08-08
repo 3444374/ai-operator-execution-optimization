@@ -8,7 +8,7 @@
 
 模型服务通常把输入抽象为相互独立的请求，却不了解数据库行、作业边界、剩余工作量和写回语义；数据库优化器也通常看不到模型服务内部的队列、KV 压力和完成节奏。两者之间由此形成一个新的 AI 数据执行层：它决定哪些记录组成一个 work unit、在途 work 保持多少、请求何时提交、发往哪个 endpoint，以及多个数据库作业如何共享固定 GPU 容量。
 
-本课题研究这一外部执行链路，不修改数据库内核、vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel。核心目标有两个：一是按 token、frame 等计算量而非固定行数构造 work unit，并处理负载均衡与 prefix locality 的冲突；二是依据服务容量和运行状态控制准入、路由与多作业共享，使系统以尽可能小且可控的在途 work 达到有效吞吐，同时约束尾延迟和公平性。轻量算子代价估计为两项研究内容共同提供 work、服务时间、剩余工作量和配置选择信号。
+本课题研究这一外部执行链路，不修改数据库内核、vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel。核心目标有两个：一是按 token、frame 等计算量而非固定行数构造 staged work unit，并处理负载均衡与 prefix locality 的冲突；二是依据服务容量和运行状态控制准入、路由与多作业共享，使系统以尽可能小且可控的在途 work 达到有效吞吐，同时约束尾延迟和公平性。轻量算子代价估计是两项研究内容的共同使能部件：它统一产生 stage/service/remaining work、SLO slack 和不确定区间，既供数据组织形成 `WorkDescriptor`，也供准入、路由和多作业调度消费。
 
 课题的研究意义在于把“数据库如何有效驱动模型服务”作为独立的系统问题。现有数据库 AI 工作主要优化查询语义、模型调用次数或数据库内推理；模型服务工作主要优化已到达请求的批处理、KV 管理和 GPU 调度。数据库记录到模型请求之间的数据组织、提交与多作业协调仍缺少统一、可观测且可证伪的方法。应用上，本课题希望给出一套能够复现实验条件、明确适用边界的执行策略与评价方法，而不是宣称上游系统能够突破模型服务本身的容量上限。
 
@@ -41,7 +41,7 @@ Ray 以 task 和 actor 支撑分布式 AI 应用，Ray Data 的 Streaming Batch 
 1. 固定行数无法稳定代表 token/frame 计算量，work balance 又可能破坏 prefix locality；
 2. 固定并发或无限提交无法区分“达到容量所需的最小 active work”和无效排队；
 3. 多个数据库作业共享 endpoint 时，需要同时处理 work-conserving、隔离和公平；
-4. 上游策略必须在统一 source/sink、质量和资源合同下与强静态点比较，不能只看内部 operator wall。
+4. 上游策略必须在统一 source、完整结果 gather、质量和资源合同下与强静态点比较；sink 只属于独立 database-E2E 护栏，不能用写回成本掩盖调度差异。
 
 ## 3. 研究目标、研究问题与边界
 
@@ -52,36 +52,41 @@ Ray 以 task 和 actor 支撑分布式 AI 应用，Ray Data 的 Streaming Batch 
 ```text
 Database
   -> AI Data Execution Layer
-       -> work-unit construction
-       -> cost estimation
-       -> admission and routing
-       -> resource-aware scheduling
-       -> multi-job coordination
+       -> research content 1: work-unit construction and organization
+       -> research content 2: state-aware admission, routing and multi-job
+       -> shared enabler: cost estimation
+            -> stage/service/remaining work
+            -> SLO slack and uncertainty interval
   -> Model Service / GPU Executor
   -> Database / Vector Sink
 ```
 
+![两项研究内容与共同代价估计的 AI 数据执行层边界](../../figures/architecture/opening_ai_data_execution_boundary.png)
+
 ### 3.2 研究问题
 
-本课题围绕三个可证伪问题展开：
+本课题围绕四个可证伪问题展开：
 
 1. 在固定机器、模型、协议和 workload 下，达到模型服务近饱和吞吐所需的最小 active work 是多少；超过该点后吞吐、尾延迟和能耗如何变化？
 2. 当总 work 相同但行长度、输出上限或 prefix 分布不同，work-unit 的 balance 与 locality 怎样影响端到端执行？
-3. 多个数据库作业共享 endpoint pool 时，request/work credit、idle borrowing、路由和公平队列能否在不降低有效吞吐的条件下改善 JCT、尾延迟或公平性？
+3. 当 arrival rate、work mix 或阶段瓶颈发生突变时，状态感知准入与路由能否在相同最大 K/work 上限下比 frozen-static 更快回到安全区，并改善 SLO goodput 或 tail？
+4. 多个数据库作业共享 endpoint pool 时，request/work credit、idle borrowing、路由和公平队列能否在不降低有效吞吐的条件下改善 JCT、尾延迟或公平性？
 
 ### 3.3 研究边界
 
-- PostgreSQL 是任务 source 与统一 sink；写回采用 PostgreSQL + pgvector、COPY + deferred index 作为工程 baseline，不单列研究内容。
+- PostgreSQL 是任务 source；调度主实验以完整结果 gather 为边界。文本三臂保留一次统一 sink 的 database-E2E 护栏，图像 pgvector sink 只作小规模 exactly-once/检索质量工程闭环；写回不单列研究内容。
 - vLLM 是文本生成服务，图像主路径使用 typed Ray GPU actor；不修改服务内部 batching 或模型实现。
 - Daft 与 Ray 是数据引擎和执行机制；“使用框架”本身不构成创新。
 - 文本 `AI_COMPLETE` 是主要方法场景，图像 `AI_EMBED/AI_CLASSIFY` 用于检验 work/credit 抽象的跨模态复用。
-- 开题阶段只用统一 PostgreSQL source/sink 闭合因果合同，不通过增加第二数据库或大矩阵追求更好的结果。
+- 开题阶段用统一 source、完整结果 gather 和输出质量闭合调度因果合同；已有文本三臂另提供 database-E2E 护栏，不通过强制每组 sink、增加第二数据库或大矩阵追求完整感。
 
 ## 4. 研究内容与技术路线
 
+![共同代价估计、WorkDescriptor、数据组织与状态感知调度的关系](../../figures/architecture/opening_work_to_schedule_overview.png)
+
 ### 4.1 研究内容一：workload-aware work-unit 构造
 
-首先由 Cost Adapter 将数据库记录转换为可比较的 estimated work。文本侧使用 prompt tokens、output cap 或校准后的输出预测；图像侧使用 frame、pixel、patch 与预处理成本。Organizer 在预算内形成 `BatchRequest`，并保留 oversize row 的显式单独提交语义。
+首先由共同代价估计器把数据库记录转换为可比较的分阶段 estimated work。文本侧估计 source/tokenize、prompt/output model work 与 result bytes；图像侧估计 encoded bytes、decode/resize/normalize、tensor/model work 与 embedding bytes。记录或 batch 携带 `WorkDescriptor`：source/prepare/model/result work、locality key、deadline/SLO、不确定区间和 calibration signature。Organizer 在预算内形成 `BatchRequest`，并保留 oversize row 的显式单独提交语义。
 
 候选策略包括 sequential token/frame budget、length alignment、prefix-aware grouping 和受控的 best-fit 组织。研究重点不是预设某一策略必然最优，而是刻画两个冲突：更均衡的 work 可能减少 batch 内方差，却也可能打散共享 prefix；更强的 locality 可能提高缓存复用，却造成 endpoint work 不均衡。实验将分别报告 packing、endpoint work skew、prefix group ratio、cache hit、TTFT、吞吐与尾延迟。
 
@@ -93,7 +98,7 @@ Database
 
 ### 4.3 共同使能组件：算子代价估计
 
-首版代价模型采用解析 work 特征、少量 profile 校准和 residual correction，预测 prompt/output work、operator service time、JCT、remaining work 与 SLO slack。评价不只报告 MAE/MAPE，还报告候选配置 pairwise ranking、选择 regret、最坏 context 和预测区间。模型服务于 active-work 初始化、数据组织、路由和多作业调度，不作为第三项独立研究内容。
+首版代价模型采用解析 work 特征、少量 profile 校准和 residual correction，预测 prompt/output 或 prepare/model work、operator service time、JCT、remaining work 与 SLO slack。离线阶段用于容量包络、组织预算与候选配置排序；运行时利用 completion residual 更新 remaining work，但动作仍受冻结安全集合约束。评价不只报告 MAE/MAPE，还报告候选配置 pairwise ranking、选择 regret、最坏 context、预测区间与 decision regret。它同时服务 active-work 初始化、数据组织、路由和多作业调度，不作为第三项独立研究内容。
 
 ### 4.4 多模态泛化验证
 
@@ -101,13 +106,21 @@ Database
 
 ### 4.5 实验与因果设计
 
-两项策略先分别独立搜索冻结静态点，再执行单因素消融；之后把两个独立最优拼接，与小规模联合搜索对比。联合显著优于拼接，说明存在强交互；两者接近，则说明可以分层优化。每组正式实验固定 workload manifest、资源、模型服务 flags、source/sink 和随机种子，采用 warmup 加交错 formal repeats，并保存完整原始请求、submission trace、资源时序与版本信息。
+两项策略先分别独立搜索冻结静态点，再执行单因素消融；之后把两个独立最优拼接，与小规模联合搜索对比。联合显著优于拼接，说明存在强交互；两者接近，则说明可以分层优化。每组正式实验固定 workload manifest、资源、模型服务 flags、source、完整结果语义和随机种子，采用 warmup 加交错 formal repeats，并保存完整原始请求、submission trace、资源时序与版本信息。只有 database-E2E 护栏额外固定 sink。
 
 核心指标包括 correct rows/s、database-E2E JCT、TTFT/ITL、P95/P99、SLO goodput、GPU/MFU/能耗、running/waiting/KV、endpoint work skew、任务质量和 exactly-once。动态方法的默认晋级门槛为相对强静态点约 5%，同时要求 correctness、feeding-saturation 和稳定性门禁通过。
 
 ## 5. 前期工作与可行性证据
 
-### 5.1 统一文本 database-E2E 三臂
+### 5.1 动机证据：为什么需要 work、感知与有界控制
+
+![固定行隐藏 work、静态上限不是状态、提交压力存在安全区](../../figures/data/report_main/opening_motivation_work_state.png)
+
+固定 16 行批次的 prompt+output-cap work 最小/最大中位数为 474/6,793 token，相差 14.3 倍，说明 row count 只能承担数据库 correctness 单位，不能作为模型计算量代理。同一 W65K 配置下，高 offered load 的实际 active work 达配置上限、MFU 约 35%；arrival-limited 条件下实际 active work 只有约 29%、MFU 约 7%，说明静态参数不是运行状态。active-work 八档曲线又显示 65K/endpoint 已达已测峰值 97.8%，继续增加 work 主要进入吞吐平台并使 P99 从 36.8 s 上升到 98K 的 40.0 s。
+
+三组现象分别导出三项研究要求：显式 staged `WorkDescriptor`；可校验新鲜度的 runtime state snapshot；只在离线安全包络内移动的 bounded dynamic work credit。它们证明设计必要性，不证明现有动态控制器已经胜出。已有 SLO-EWMA、AIMD 等负结果因此保留为强静态基线和信号选择教训。
+
+### 5.2 统一文本 database-E2E 三臂
 
 开题前最后一组新增文本数据采用两类 workload：SQuAD short-answer 均匀控制组和 ShareGPT controlled-skew 异质组。三条路径分别是 bounded HTTP 静态直接控制、DuckDB AI static-sharded、项目 Daft organizer + Ray actor frozen-static。三者共享 PostgreSQL source、immutable manifest、双 vLLM endpoint、Qwen2.5-7B、prefix cache、统一 PostgreSQL sink、外部 database-E2E 与 1 warmup + 3 formal 合同。
 
@@ -126,45 +139,45 @@ ShareGPT 的正式结果同样没有给出项目路径的性能优势：direct�
 
 这组实验的目标不是证明项目路径胜出，而是建立可审计的统一比较边界。raw rows/s、correct rows/s 和 service tokens/s 必须同时报告；产品层因固定输出上限返回空结果时，GPU 已消耗的服务 work 不能被隐藏，也不能把语义不兼容误写成纯性能排名。
 
-### 5.2 最小饱和 active work
+### 5.3 最小饱和 active work
 
 ![固定资源下的 serving capacity 与过载边界](../../figures/data/report_main/opening_serving_capacity_frontier.png)
 
 双 RTX 4090、冻结 Qwen/vLLM 合同下，每 endpoint 65,536 active work 已达到最大已测吞吐均值的 97.80%，下一档只增加 0.92%；继续提高到 98K，吞吐增量有限而 P99 由 36.78 s 上升到 40.05 s。该结果证明应先标定最小饱和点，再比较上游策略。65,536 只绑定当前机器、模型、协议和 workload，不是通用常数。
 
-### 5.3 数据组织的 serving-regime 依赖
+### 5.4 数据组织的 serving-regime 依赖
 
-![数据组织在不同 serving regime 下的排名变化](../../figures/data/report_main/opening_work_organization_regime.png)
+![数据组织在不同 serving regime 下的排名变化](../../figures/data/report_main/opening_work_organization_regime_v2.png)
 
 在双 endpoint、大 KV 池且压力较低的条件下，五种组织策略约为 50K–56K tok/s，差异接近中性；在四 endpoint、小 KV 池且 KV 饱和的条件下，吞吐分化到约 39K–50K tok/s，并出现排名反转。重排序类 organizer 将 prefix group ratio 打散后，prefix cache hit 可降至 0.06–0.07。该证据支持“组织策略必须结合 serving regime 评价”，不支持 sequential 或 prefix-aware 的全局最优性。
 
-### 5.4 图像 matched-resource 可重复证据
+### 5.5 图像 staged-work 与 matched-resource 证据
 
-![图像 workload 的 matched-resource 正式对照](../../figures/data/report_main/opening_image_matched_resource.png)
+![图像 workload 的阶段失衡与 matched-resource 正式对照](../../figures/data/report_main/opening_image_stage_aware_evidence.png)
 
-在相同 CPU 资源和输出合同下，项目 typed Ray GPU actor 静态路径相对 Ray Data native graph 的 operator JCT 在主正式报告中降低约 12.8%–15.1%，独立复测两档 CPU 仍同向。冻结 headline 为约 13%–15%，不使用资源不匹配比较得到的旧 45.7%。GPU busy 约 6%–10%，表明链路主要受 CPU decode/resize/normalize 喂入限制；因此该结果证明执行结构可行性，不证明 GPU 饱和或状态感知策略已经有效。
+CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时间比为 13.8/31.2/29.5 倍，说明图像 work 不能只用 frame 数描述；prepare work、ready tensor bytes 与 model work 必须分别约束。在相同 CPU 资源和输出合同下，项目 typed Ray GPU actor 静态路径相对 Ray Data native graph 的 operator JCT 在主正式报告中降低约 12.8%–15.1%，独立复测两档 CPU 仍同向。冻结 headline 为约 13%–15%，不使用资源不匹配比较得到的旧 45.7%。该结果证明 staged work 与执行结构可行性，不证明状态感知动态增量已经有效。
 
-### 5.5 代价模型的配置选择价值
+### 5.6 代价模型的配置选择价值
 
-![算子代价模型的选择质量](../../figures/data/report_main/opening_cost_model_decision_quality.png)
+![算子代价模型的选择质量](../../figures/data/report_main/opening_cost_model_decision_quality_v2.png)
 
 在 429 个 formal 观测、20 个 context 与 4 个候选配置的 context leave-one-out 评价中，Hybrid 模型 pooled regret 为 1.67%，macro regret 为 2.90%，candidate pairwise accuracy 为 0.808，max regret 为 14.72%。最大 regret 仅比 15% 门槛低 0.28 个百分点，属于边界通过。它可作为配置选择的第一份可行性证据，但仍需新时间段、workload 和硬件上的校准。
 
-### 5.6 当前能证明与不能证明的内容
+### 5.7 当前能证明与不能证明的内容
 
-已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益。条件性证据：轻量代价模型已体现配置选择价值。仍待验证：state-aware 提交、路由或多作业策略能否超过同上限静态点。当前不能声称：项目路径普遍优于 direct、DuckDB AI、Ray Data 或 Daft；某一 organizer 普遍最优；动态策略已经胜出。
+已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益。条件性证据：轻量代价模型已体现配置选择价值；已有 1/2/4-job 结果表明 shared credit 只在高竞争区间出现条件性收益。开题冻结前还需完成三项最小对照：纠正后的 database-E2E 三臂；同一 ShareGPT Chat manifest 上 bounded control、Daft Native/Ray 与 Ray Data 的原生单 job 对照；Daft/Ray Data 原生两 job 错峰观察和项目 static-partition vs shared-work-credit 因果 A/B。state-aware phase-change、weighted fairness、图像新动态策略和 cost held-out 仍是论文阶段计划；在完成前不能声称相应 proposed 已经有效，也不能声称项目路径普遍优于 direct、DuckDB AI、Ray Data 或 Daft。
 
 ## 6. 进度安排
 
 | 时间 | 工作内容 | 交付物与停止条件 |
 |---|---|---|
-| 2026 年 8 月 | 冻结开题材料；完成图像强 baseline 与统一链路实现 | 开题报告、PPT、统一 source/sink 合同、结果归档 |
+| 2026 年 8 月 | 完成 database-E2E 护栏、原生单 job 与原生/项目两 job 错峰最小对照；冻结答辩内容大纲和核心数据图 | 三条最小矩阵的报告与图；其余复用既有证据，当前暂停 PPT 成品 |
 | 2026 年 9 月 | 完成 work-unit 构造的跨 workload、跨 serving-regime 消融 | 数据组织 formal 报告；不以单点峰值选策略 |
 | 2026 年 10 月 | 完成状态感知提交、路由和多作业公平性对照 | 与同上限 frozen-static 比较；未过门则记录失效边界 |
 | 2026 年 11 月 | 完成代价模型 held-out 校准和两项策略耦合验证 | ranking/regret、独立拼接与联合搜索报告 |
 | 2026 年 12 月及以后 | 补齐外部有效性、论文图表和正文 | 可复现脚本、完整原始证据、论文与答辩材料 |
 
-开题前不再增加第二数据库、文本全框架矩阵或大规模参数扫描。后续新增实验必须对应一个核心 claim，且现有证据无法回答；否则不启动。
+开题前不再增加第二数据库、更多框架产品、workload 或大规模参数扫描。已冻结的最小文本原生框架矩阵只用于补齐当前系统对照，不扩成产品排名。后续新增实验必须对应一个核心 claim，且现有证据无法回答；否则不启动。
 
 ## 7. 预期成果、创新点与风险控制
 

@@ -55,10 +55,12 @@
 
 | 材料 | 主文件 | 状态 |
 |---|---|---|
-| 开题报告 | `report/opening_report.md` | **2026-08-07 本地冻结稿，含最终统一三臂表与四张核心图** |
-| 开题叙事与 Claim Matrix | `claim_matrix.md` | **2026-08-07 已冻结，报告/PPT/实验准入的当前依据** |
-| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页冻结设计与逐页 claim/source 约束 |
-| 开题 PPTX | `slides/opening_defense_20260807_v6.pptx` | **由 v5 模板继承生成；28 页、备注完整、无空 placeholder、overflow test 通过** |
+| 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
+| 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：19 项 take-away、必要数据、claim 边界、实验与图表合同；暂不制作 PPT** |
+| 开题报告 | `report/opening_report.md` | 2026-08-07 待替换底稿；feeding 纠正与图/PPT 重构完成后再冻结 |
+| 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-08 复审中；实验准入的当前依据 |
+| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前暂停 PPT 制作 |
+| 开题 PPTX | `slides/opening_defense_20260807_v6.pptx` | v5 模板继承的待替换底稿；已有 QA 不代表新内容已冻结 |
 | 开题飞书源稿 | `feishu/opening_report_wiki.md` | 与本地报告完全一致；线上正文 revision 289 与四个图片块已回读通过 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
@@ -81,10 +83,10 @@
 
 ## 下一步
 
-1. 以 `claim_matrix.md`、本地报告和 v6 PPTX 为冻结口径，不再新增开题 baseline。
-2. v6 已完成程序化渲染、画布检查和 Microsoft PowerPoint 真实打开检查。
-3. 飞书线上报告与四张核心图已同步并回读；平级 Wiki 目录恢复后执行知识镜像。
-4. 导师确认后生成学校模板 DOCX，并恢复开题后实验 backlog。
+1. 完成 SQuAD/ShareGPT workload-specific feeding 校准与整体 replacement formal，不新增其他开题 baseline。
+2. 依据 `opening_defense_outline_20260808.md` 重构动机—挑战—方法—实验链，只生成合规数据图。
+3. 更新实验报告、Claim Matrix 与问答；用户已明确豁免 Wiki，同步云文档和制作 PPT 均暂停。
+4. 完成数值、边界、数据溯源与图表渲染检查后冻结本阶段材料。
 ## 飞书同步目标
 
 后续需要写入飞书的主要目标：

@@ -1,0 +1,158 @@
+# 开题答辩内容大纲与证据合同
+
+日期：2026-08-08
+状态：内容大纲；暂不制作 PPT 成品
+
+## 1. 一句话主线
+
+数据库把数据行交给外部 AI 服务时，记录数不能准确表示计算工作量，固定提交上限也不能适应运行状态与多阶段瓶颈的变化。因此，本课题研究数据库 AI 算子外部执行链路中的两项问题：一是把数据组织成携带分阶段工作量、局部性与期限的 work unit；二是在离线安全容量包络内，依据新鲜运行状态进行准入、路由与多作业共享。轻量算子代价估计同时为两项研究内容提供 stage/service/remaining work、SLO slack 和不确定区间，是共同使能部件，不单列为第三项研究内容。
+
+## 2. 四条同等严格的证据链
+
+```text
+Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model 成本也不同
+  -> 不能用 rows/images 定义可比 work，需要 staged descriptor 和局部性字段
+状态感知：相同静态上限在 high/arrival-limited 下对应完全不同的 running/MFU
+  -> 需要 fresh stage/service/job snapshot，过期或签名不匹配时回退强静态点
+动态调度：多 job 错峰到达时，预分配份额可能空闲，独立 job 并发又可能叠加成全局过载
+  -> 需要有界准入、路由、shared work credit 和 idle borrowing，但必须败过同上限强静态点
+算子代价估计：不同 context 的四个 active-work 候选 E2E 差 12.0%–86.5%，简单均值/解析/lookup 选择失败
+  -> 使用解析结构 + profile 校准 + residual correction，以 ranking/regret 而非只看 MAE 验收
+```
+
+四条证据链权重相同：每条都必须说清“为什么做、为什么这样设计、证据支持到哪、尚未证明什么”。代价估计仍是两项研究内容的共同使能部件，不单列为第三项研究内容。
+
+## 3. 主讲大纲
+
+| 序号 | take-away 标题 | 必须讲清的内容 | 所需证据或图 | 可声称边界 |
+|---:|---|---|---|---|
+| 1 | 数据库 AI 负载的执行优化与调度研究 | 题目、对象和边界 | 无 | 不修改数据库内核、vLLM、Ray 调度器或模型 kernel |
+| 2 | 数据库正在成为批量 AI 任务的数据入口 | PostgreSQL 行经过数据引擎、外部 AI 执行层和模型服务再写回 | 简洁链路图 | 研究对象是数据库 AI 算子的外部执行链路 |
+| 3 | 同样的数据库行数并不代表同样的 AI work | 固定 16 行的 token work 最大/最小相差 14.3 倍 | 动机图左侧 | 行数不是可靠成本代理 |
+| 4 | 固定提交压力无法同时避免欠供给与过载 | high 与 arrival-limited 在相同上限下 running/MFU 不同；容量曲线存在近饱和区和 tail 代价 | 动机图右侧 | 动态必要性来自状态变化；尚未证明动态收益 |
+| 5 | 图像链路暴露了不同的主导阶段 | CLIP CPU prepare/GPU service 为 13.8–31.2 倍 | 图像阶段图 | 需要分阶段 work；不能只用图片数或单一 GPU 指标 |
+| 6 | 三类现象导出表征、感知和控制三个挑战 | 现象到挑战再到设计的逐项映射 | 三列表或因果箭头 | 动机测试只证明设计必要性 |
+| 7 | 现有系统分别优化数据库端和模型服务端 | 数据库按行/分区，模型服务内部 continuous batching；中间缺少数据库语义下的 work 组织和状态控制 | 相关工作边界图 | 不贬低 Daft/Ray/vLLM；明确未覆盖的层次 |
+| 8 | 本课题研究两端之间的 AI Data Execution Layer | 两项研究内容、共同代价估计、多模态验证 | `opening_ai_data_execution_boundary` | 只有两项研究内容；代价估计是共同使能部件 |
+| 9 | 代价估计把原始记录变为可决策的分阶段 work | 解析模型、profile 校准、residual correction、预测区间与校准签名 | 代价估计到 WorkDescriptor/调度器的数据流图 | 现有证据只支持初步配置选择价值 |
+| 10 | 数据组织输出调度可消费的 WorkDescriptor | row/source/prepare/model/result work、locality、deadline、uncertainty | WorkDescriptor 字段图 | 组织的输出不是只有 payload batch |
+| 11 | 数据组织同时平衡 work、局部性和下游队列形态 | token/frame/stage budget；balance 与 prefix/locality 的冲突 | organization regime 图 | 已有结果是 serving-regime-dependent，不宣称普遍胜出 |
+| 12 | 状态感知控制只在离线安全包络内动作 | offline safe envelope、fresh snapshot、候选 credit、deadband、回退 | `opening_work_to_schedule_overview` | stale/missing signal 回退强静态点 |
+| 13 | 多作业按 work 共享而不是按请求数平均 | shared work credit、deficit/fair queue、idle borrowing、remaining work/SLO slack | 多 job 实验设计图 | 公平性、JCT 和隔离仍需完整动态实验验证 |
+| 14 | 文本和图像复用接口，但主导 stage 不同 | text token work；image prepare/model/tensor work；同一 descriptor/state/controller 接口 | 跨模态映射表 | 泛化是接口复用，不是假设两种负载成本相同 |
+| 15 | 因果评估必须先冻结饱和强静态点 | 同资源、同最大 K/work、同 source、同完整结果语义；dynamic 仅改变策略 | 实验合同图 | 未通过 feeding/correctness/stability 的数据不得排名；sink 仅用于 database-E2E 护栏 |
+| 16 | 开题静态基线由两组纠正后三臂实验给出 | SQuAD 均匀控制组与 ShareGPT 受控异质组；direct、DuckDB AI、project frozen-static | replacement 三臂单 panel/表 | 只使用重跑后过门数据；旧 89.9%/91.38% feeding 数据仅作诊断 |
+| 17 | 前期证据分别覆盖组织、图像结构和代价选择质量 | organization regime、image matched-resource、cost decision regret | 三个不重复的小图或一页表 | 都标为 preliminary/conditional evidence |
+| 18 | 论文主实验按稳态、变化、多作业、跨模态推进 | steady no-regression；phase shift/burst/mixed-cost；multi-job；image | 实验路线与停止规则 | K512、VLM、故障迁移不是开题 blocker |
+| 19 | 贡献是统一 work 表征与状态感知上游执行方法 | 两项研究内容、共同使能代价估计、多模态验证和严格实验合同 | 一页总结 | 不把工程集成或弱 baseline 写成贡献 |
+
+## 4. 开题前必须落地的数据
+
+### 4.1 两组 replacement database-E2E
+
+| workload | 作用 | 三臂 | 当前动作 | 必过门禁 |
+|---|---|---|---|---|
+| SQuAD 均匀控制组 | 验证统一 source/sink 和质量口径 | bounded direct static-sharded、DuckDB AI static-sharded、project frozen-static | 已选择 project K128，待整体重跑 | project feeding ≥95% direct；correctness；1 warm-up+3 formal；稳定性 |
+| ShareGPT 受控异质组 | 验证长短 work 异质下的静态边界 | 同上 | K32/64/128/256 校准运行中，选最小近饱和点后整体重跑 | 同上；不能因异质性预设项目一定胜出 |
+
+每臂至少汇总：correct rows/s、database-E2E wall time、service/operator tokens/s、request P50/P95/P99、GPU util time-series、MFU、显存、功耗/能耗、J/1k token、running/waiting、KV usage、prefix hit、各 pipeline 阶段时间、质量、failure 和成本假设。图中只放支持主结论的 3–5 个指标，其余进入结果报告表。
+
+### 4.2 文本原生系统同环境对照
+
+| 轨道 | arms | 作用 | 最小合同 |
+|---|---|---|---|
+| Chat 原生框架轨 | bounded Chat control、Daft `prompt()` Native/Ray、Ray Data HTTP Processor，并与同 manifest 的 project frozen-static 对齐 | 测量现有框架在异质 work 下的 JCT、service throughput、feeding、资源与可观测性边界 | 一个 ShareGPT controlled-skew manifest；各臂独立冻结运行点；1+3 交错 formal；单 run 至少 60 s |
+| DuckDB 有界输出产品轨 | DuckDB AI vs 同 manifest direct/project | 检验数据库 AI 产品入口的 database-E2E、质量、错误和可观测性 | 仅 SQuAD/cap=64；ShareGPT `finish_reason=length` 语义不兼容时不进入跨轨排名 |
+
+两轨分开是语义门禁，不是为了选择性报告。同环境原生框架对照用来发现问题，不预设项目一定赢；只有计时、语义和 scheduler-owner 边界一致的指标才同表排名。
+
+### 4.3 多 Job 原生观察与项目机制对照
+
+| 层次 | arms | 回答的问题 | 边界 |
+|---|---|---|---|
+| 原生系统观察 | Daft Native、Daft Ray、Ray Data 各自启动 short/long 两个错峰 job | 独立数据作业共享同一模型服务时，是否出现全局压力叠加、干扰、资源超卖或可观测性缺口 | 框架自己拥有 batching/backpressure；不注入项目 credit/router；不把 barrier 冒充 request P99 |
+| 项目因果 A/B | `project_static_partition` vs `project_shared_work` | 感知 job 活跃/完成状态并借用空闲 work credit，能否在相同 endpoint 总 K/work 下改善 JCT/tail/fairness | 只改共享与 idle-borrowing 策略；1+3 后无论正负均停止，不扫 offset/weight 追正 |
+
+主指标是 per-job/group JCT、goodput、Jain fairness、isolation、global running/waiting/KV/GPU/MFU 时序。`borrowed_work_seconds` 只在项目 A/B 中由请求/credit trace 计算；原生框架无 job-level active-work 标注时必须明确标记不可观测。
+
+### 4.4 可直接复用的正式/初步证据
+
+| 证据组 | 目的 | 当前结论 | 还需动作 |
+|---|---|---|---|
+| token-work 异质性 | 证明 fixed rows 不是成本代理 | 固定 16 行 batch token 最大/最小 14.3× | 核对 CSV 溯源并保留直接标注 |
+| active-work frontier 与状态差异 | 证明欠供给、安全区、过载及状态变化 | 65K/endpoint 约达已测峰值 97.8%；继续加压主要抬高 P99 | 图中分开画容量结果与运行状态，不混成未解释散点 |
+| organization regime | 证明组织策略受 serving/KV/locality 状态影响 | 2 endpoint 低压力近似中性；4 endpoint KV 压力下排名分化且重排破坏 prefix group | 保留一张机制图，明确不等于动态方法收益 |
+| image exact-path profile | 证明跨模态存在分阶段瓶颈 | CPU prepare/GPU service 13.8–31.2× | 统一单位与质量合同，暂不做 proposed 胜出 claim |
+| cost decision quality | 证明代价估计有资格作为共同使能候选 | pooled regret 1.67%、macro 2.90%、max 14.72%，pairwise 0.808 | 主图只保留决策质量；完整 estimator 对比放附录 |
+
+## 5. 开题后必须补齐的论文实验
+
+### 5.1 强 baseline 与 provenance
+
+- 文本和图像都按相同环境、当前 commit、统一 source 与输出语义比较；调度主实验统一到完整结果 gather，database-E2E 护栏才统一 sink；
+- Daft built-in 和 Ray Data native API graph 必须由框架自身拥有调度；
+- project typed actor frozen-static 是 proposed 的强静态对照；
+- vLLM pooling 只有在模型与任务语义等价时进入图像 baseline；
+- 记录 upstream URL/commit、实现来源、scheduler owner 和适配 diff。
+
+### 5.2 数据组织独立实验
+
+1. fixed rows/images；
+2. scalar token/frame budget；
+3. staged work budget；
+4. balance-aware；
+5. locality-aware；
+6. balance + locality 组合。
+
+先固定调度与资源，只改变 organization。报告 batch-work CV、packing、oversize、stage/endpoint skew、locality preservation、queue age、throughput、tail、quality 和 energy。
+
+### 5.3 同上限 static–dynamic 因果实验
+
+按顺序运行 steady underload、steady near-saturation、overload guardrail、low→high/high→low、burst arrival、short/long 或 easy/hard mix。每个场景在相同最大 K、active-work、buffer bytes、CPU/GPU 和 actor 数下比较 frozen-static、observe-only、admission-only、routing-only 和最小联合候选。
+
+动态策略只有在吞吐、SLO goodput、P99/JCT 或资源效率至少一项改善约 5%，且 correctness、failure、其他关键指标无不可接受退化时才晋级。steady 场景的目标是 no-regression，不要求制造正收益。
+
+### 5.4 多 job
+
+覆盖 1/2/4 job、staggered overlap、3:1 weighted、异构 work mix 和 arrival offset。报告 per-job JCT/P99/goodput、Jain fairness、isolation、work conservation 和 idle borrowing。按请求数公平与按预计 work 公平必须同时出现，说明为什么 WorkDescriptor 会改变结论。
+
+### 5.5 图像完整验证
+
+统一 CLIP 模型/processor/dtype/normalization、PostgreSQL BYTEA source、到 gather 完成的 operator-E2E 边界、CPU/GPU reservation 和冻结 ground truth，比较 bounded direct、Daft built-in、Ray Data native、project frozen-static，最后才加入 project dynamic。workload 至少包含 uniform、decode-cost skew、phase shift、burst 和 two-job mix；报告阶段队列、tensor bytes、correct embeddings/s、JCT、energy、embedding finite/norm/digest。Recall@K/nDCG 与 pgvector exactly-once sink 作为小规模质量/工程闭环单列，不进入调度性能主排名。
+
+### 5.6 算子代价估计作为共同使能的独立门禁
+
+代价估计需要分别回答“预测准不准”和“决策是否因此更好”：
+
+- 文本：input、output、service、remaining work 与 SLO slack；
+- 图像：prepare work、model work、tensor/buffer pressure；
+- 指标：MAPE/区间覆盖仅作预测质量，ranking、pairwise、configuration regret 和 online decision regret 才是主指标；
+- 消融：无估计、简单解析、profile 校准、residual correction、带不确定区间；
+- 外部有效性：独立时间段或 held-out workload，必要时第二硬件 calibration signature；
+- 若估计器不能稳定排序候选，它只能作为 tracing 字段，不能驱动 organization 或 scheduler。
+
+## 6. 需要绘制的图与数据合同
+
+| 图 | 唯一问题 | 画法 | 数据来源 | 完成条件 |
+|---|---|---|---|---|
+| A 动机：work 与状态 | 为什么 rows 和固定上限不足 | 左：固定行数的 work 范围；右：欠供给—安全区—过载及 high/arrival-limited 状态 | 正式 CSV 聚合 | 每个点/线直接标义；不出现无解释散点 |
+| B 研究边界与主线 | 两项研究和共同使能如何连接 | 数据流 + 反馈流；cost estimator 同时连 organizer 与 scheduler | 方法合同 | 不把 cost 画成第三项研究内容 |
+| C organization regime | 组织收益为何依赖 serving regime | 低压力/高压力 small multiples 或 dumbbell；附 locality 机制注释 | cache-on 正式结果 | 一张图只讲 regime dependence |
+| D 图像 stage-aware | 为什么跨模态需要 staged work | CPU prepare/GPU service 比 + matched-resource 单一主指标 | image exact-path 正式结果 | 质量与资源合同一致 |
+| E cost decision quality | 代价估计是否能帮助选择 | median/macro/max regret、pairwise 与门槛；不堆所有预测散点 | cost-profile formal | 明确共同使能和 conditional 结论 |
+| F replacement 三臂 | 合格静态基线表现如何 | workload 分面；correct throughput 为主，P99/MFU/energy 小标注 | 2026-08-08 replacement formal | 两 workload feeding/correctness/stability 全过 |
+| G static–dynamic | 状态变化下动态是否超过同上限静态 | workload phase 时间线 + outcome small multiples | 论文实验设计图；不伪造开题前结果 | 最大 K/work/resources 完全匹配 |
+| H multi-job | shared credit 是否借用空闲份额并改善 job-level 指标 | per-job JCT/goodput + Jain/isolation | 开题两作业 staggered formal；论文阶段扩展 weighted/异构 | 最小结果只覆盖两作业与一个 offset；已有 1/2/4 同步结果单列 |
+
+正文优先使用 A–H 中已经通过门禁的结果；G–H 在开题最小正式实验完成前只能保留为计划，不能画成结果图。所有误差线表示三次 formal 的离散或置信区间，warm-up 不进入统计；重复点放附录或原始表，不在主图堆叠。
+
+## 7. 停止规则
+
+- replacement 三臂完成后，只补 4.2 的一个文本 Chat 原生框架矩阵和 4.3 的两 job 错峰矩阵；不再换模型、数据库、workload 或扩大并发扫描追正结果；
+- DuckDB 仅保留在语义成立的有界输出产品轨；Daft/Ray Data 多 job 只做原生系统观察，不给它们注入项目调度器；
+- K256 已覆盖当前每 endpoint 校准上界；K512/endpoint 只用于独立过载退化研究；
+- 动态未超过同上限强静态点时记录失效边界，不换弱 baseline 或挑 workload；
+- 代价估计现有 429-run 仅声称文本配置选择初步可行；图像 held-out 仅在无法用已有 profile 数据构造决策对照时才新跑，不扩为 TPC-H 或复杂模型搜索；
+- 图像 official baseline 未满足同语义和 scheduler-owner 合同时不进入主排名；
+- 未通过 feeding、correctness、quality 或稳定性门禁的数据不能进入结论图；
+- 当前只冻结本大纲、实验数据和图，不制作或同步新的 PPT 成品，也不同步 Wiki。

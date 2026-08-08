@@ -1,5 +1,37 @@
 # 开题材料 project log
 
+## 2026-08-08 四条证据链与原生框架/多 Job 对照成为当前执行目标
+
+- 本条取代同日早先“文本 Daft/Ray Data 正式矩阵留论文阶段”的范围判断。Work Unit、状态感知、动态调度与共同使能代价估计按同等证据标准组织。
+- 当前补齐 ShareGPT Chat 原生单 job 矩阵，以及 Daft Native/Ray、Ray Data 原生两 job 错峰观察；项目另作 static-partition vs shared-work-credit 因果 A/B。
+- DuckDB 保持 SQuAD/cap=64 有界输出产品轨；不扩大 workload、模型、数据库、weighted 或 offset 搜索追求正结果。
+
+## 2026-08-08 开题实验收缩为三臂 replacement + 两作业错峰
+
+- 开题只需讲清问题、设计依据、已有可行性与后续可证伪评价，不要求 proposed 在开题前完成论文级胜出。
+- 复用现有状态差异、active-work、组织 regime、1/2/4-job、图像 matched-resource 与 cost decision-quality；剩余只完成文本三臂 replacement 和 short/long 两作业 staggered 两臂。
+- phase-change、3:1 weighted、文本 Daft/Ray Data 正式矩阵、图像新策略和 cost held-out 统一留论文阶段；已撤回临时图像新策略代码。
+
+## 2026-08-08 调度实验边界改为完整结果 gather
+
+- 文本与图像方法主实验不再强制 sink；统一 source、完整结果语义、资源与 gather 边界即可回答组织/提交/多 job 的因果增量。
+- 已启动的文本三臂统一 PostgreSQL sink 重跑继续完成，定位为 database-E2E/correctness 护栏；其 service/operator 分项与后续无 sink 方法消融分开解释。
+- 图像 pgvector sink 仅作小规模 exactly-once/检索质量闭环，不进入 operator-E2E 性能主排名；未同步 Wiki 或云文档。
+
+## 2026-08-08 暂停 PPT 成品，冻结内容大纲与证据合同
+
+- 用户要求先不制作 PPT；新的 PPTX 排版、生成与云端同步全部暂停。
+- 新增 `../opening_defense_outline_20260808.md`，逐项冻结主讲 take-away、所需数据、claim 边界、必要实验和结果图合同。
+- 已移除仅用于临时版式 dry-run 的 v7 构建器；旧 headline 不会进入新成品。当前只继续 feeding 校准、replacement formal、实验报告和数据图。
+- 用户明确不需要 Wiki 同步；当前也不覆盖普通飞书云文档。
+
+## 2026-08-08 第一性原理叙事与 19 项内容骨架
+
+- 动机页改为“等行数不等 work → WorkDescriptor”“同一静态上限不等状态 → fresh snapshot”“欠供给/安全区/过载 → bounded dynamic credit”三条因果链；图像阶段失衡补充 stage-aware work 的跨模态必要性。
+- 算子代价估计进入主方案图，作为两项研究内容的共同使能部件，同时输出 stage/service/remaining work、SLO slack 与 uncertainty；独立 cost 页只展示 decision-regret 可行性，不扩张成第三项研究内容。
+- 曾做过一次仅位于 `/private/tmp` 的临时版式 dry-run；它没有形成仓库 PPTX，也不作为当前交付。后续已按用户要求停止 PPT 成品工作。
+- 用户明确不需要 Wiki 同步。
+
 ## 2026-08-08 v6 PowerPoint 应用级验收通过
 
 - Microsoft PowerPoint 已真实打开 `opening_defense_20260807_v6.pptx`，识别为 28 页；
@@ -7,7 +39,7 @@
 - WPS Office 启动后未出现文档窗口，不计为通过。PPT 本地内容与兼容性门禁已完成。
 - 飞书用户明确批准后，线上 docx 已由 revision 277 覆盖并上传四张核心图。最终 revision
   289 的八章目录、关键数字、结论边界和四个带 caption 的图片块均已回读通过。
-- 当前仅余平级 Wiki 目录恢复后的知识镜像；完成前不把整个材料包称为最终发布冻结。
+- 这是当时的 v6 状态；随后第一性原理复审已将 v6 降级，用户也明确免除 Wiki 同步，不能沿用“只余 Wiki”判断。
 
 ## 2026-08-07 开题本地材料冻结候选
 
@@ -440,3 +472,16 @@
 - 题目保持“数据库 AI 负载的执行优化与调度研究”。统一抽象为 Database、AI Data Execution Layer、Model Service / GPU Executor、Database / Vector Sink。
 - 两项研究内容固定为 workload 感知的 work-unit 构造，以及容量感知的提交、路由和多 job 调度。代价估计仍是共同使能组件，state-aware 性能增量仍是待验证项。
 - 开题前只补 SQuAD 均匀控制组和 ShareGPT controlled-skew 异质组三臂统一 database-E2E，完成后转入四图、报告/PPT 和答辩一致性审计。
+# 2026-08-08 第一性原理复审：动机—挑战—方法—实验—图/PPT
+
+- 新增 `opening/first_principles_reassessment_20260808.md`：开题前完成合格强静态 baseline 与必要性证据，开题后再完成同上限 static/dynamic、变化负载、多 job 和图像统一 formal。
+- 动机改为一一对应：异质 work → work descriptor；运行状态变化 → state observer；欠供给/过载 → bounded dynamic control。现有动态负结果保留为强静态与信号选择教训，不写成 proposed 已胜出。
+- 旧四张图存在同结论双 panel 重复、散点语义不直观和正文信息过载，降级为待替换底稿；新图只保留单一问题与自然标注。
+- PPT 主讲由 28 页收敛为 19 页，明确增加“数据组织生成调度可消费的 work descriptor”桥接页，完整诊断和六 estimator 结果进入附录。
+- Wiki 同步由用户明确豁免；最终只覆盖飞书云文档。
+## 2026-08-08 四条证据链与 Daft/Ray Data 多 Job 对照
+
+- Work Unit、状态感知、动态调度和共同使能代价估计改为同等严格的动机证据链，每条均需由实验现象导出设计字段/信号/动作。
+- 当前实验增加 ShareGPT Chat 原生单 job 矩阵，以及 Daft Native/Ray、Ray Data 原生两 job 错峰观察；项目另作 static-partition vs shared-work 同上限 A/B。
+- DuckDB 保持为 SQuAD/cap=64 有界输出产品轨，不与语义不兼容的 ShareGPT 框架轨混排。
+- 同步更新 `opening/claim_matrix.md`、`opening/opening_defense_outline_20260808.md`、`experiments/plans/state_aware_work_unit_evaluation_20260808.md`、`PROJECT_OUTLINE.md` 和根规则的当前顺序。

@@ -38,6 +38,7 @@ _RUNNER_OWNED_FLAGS = {
     "--ray-address",
     "--repeats",
     "--request-trace-output",
+    "--request-manifest",
     "--resource-trace-output",
     "--reset-documents",
     "--run-phase",
@@ -50,6 +51,7 @@ _RUNNER_OWNED_FLAGS = {
     "--shared-credit-quantum",
     "--shared-credit-request-limit",
     "--shared-credit-work-limit",
+    "--source-row-offset",
     "--submission-granularity",
     "--submission-trace-output",
     "--total-rows",
@@ -86,6 +88,8 @@ class SharedVllmScenario:
     rows_per_job: int
     weights: tuple[int, ...]
     arrival_offsets_s: tuple[float, ...]
+    source_row_offsets: tuple[int, ...] = ()
+    request_manifests: tuple[str | None, ...] = ()
 
 @dataclass(frozen=True)
 class SharedVllmConfig:
@@ -304,6 +308,19 @@ def build_job_command(
         "--flush-trace-output",
         str(job_stem.with_suffix(".flush.csv")),
     ]
+    source_row_offset = (
+        scenario.source_row_offsets[job_index]
+        if scenario.source_row_offsets
+        else 0
+    )
+    command.extend(["--source-row-offset", str(source_row_offset)])
+    request_manifest = (
+        scenario.request_manifests[job_index]
+        if scenario.request_manifests
+        else None
+    )
+    if request_manifest is not None:
+        command.extend(["--request-manifest", request_manifest])
     if scenario.policy == "shared_drr":
         if not coordinator_name:
             raise ValueError("shared_drr requires a coordinator name")
@@ -358,6 +375,16 @@ def _load_scenario(
         "arrival_offsets_s",
         job_count,
     )
+    source_row_offsets = _nonnegative_integer_tuple(
+        raw.get("source_row_offsets", [0] * job_count),
+        "source_row_offsets",
+        job_count,
+    )
+    request_manifests = _optional_path_tuple(
+        raw.get("request_manifests", [None] * job_count),
+        "request_manifests",
+        job_count,
+    )
     return SharedVllmScenario(
         scenario_id=scenario_id,
         policy=policy,
@@ -365,6 +392,8 @@ def _load_scenario(
         rows_per_job=rows_per_job,
         weights=weights,
         arrival_offsets_s=offsets,
+        source_row_offsets=source_row_offsets,
+        request_manifests=request_manifests,
     )
 
 def _local_limits(
@@ -527,4 +556,30 @@ def _nonnegative_float_tuple(
         ):
             raise ValueError(f"{label} values must be finite and non-negative")
         resolved.append(float(item))
+    return tuple(resolved)
+
+def _nonnegative_integer_tuple(
+    value: object,
+    label: str,
+    expected: int,
+) -> tuple[int, ...]:
+    if not isinstance(value, list) or len(value) != expected:
+        raise ValueError(f"{label} must contain one value per job")
+    return tuple(_nonnegative_integer(item, label) for item in value)
+
+def _optional_path_tuple(
+    value: object,
+    label: str,
+    expected: int,
+) -> tuple[str | None, ...]:
+    if not isinstance(value, list) or len(value) != expected:
+        raise ValueError(f"{label} must contain one value per job")
+    resolved: list[str | None] = []
+    for index, item in enumerate(value):
+        if item is None:
+            resolved.append(None)
+            continue
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError(f"{label} values must be paths or null")
+        resolved.append(_expand_text(item, f"{label}[{index}]"))
     return tuple(resolved)

@@ -37,6 +37,12 @@ def _float(value: Any, default: float = math.nan) -> float:
     return result if math.isfinite(result) else default
 
 
+def _json_number(value: Any) -> float | None:
+    """Return a finite JSON number or explicit null for unavailable metrics."""
+    result = _float(value)
+    return result if math.isfinite(result) else None
+
+
 def _first_csv_row(path: Path) -> dict[str, str]:
     with path.open(newline="", encoding="utf-8") as handle:
         return next(csv.DictReader(handle))
@@ -451,6 +457,23 @@ def _headline_summary(summaries: list[dict[str, Any]], audit: dict[str, Any]) ->
             "database_e2e_s_mean": row["database_e2e_s_mean"],
             "raw_rows_per_s_mean": row["raw_rows_per_s_mean"],
             "service_tokens_per_s_mean": row["service_tokens_per_s_mean"],
+            "request_latency_s_p99_mean": _json_number(
+                row["request_latency_s_p99_mean"]
+            ),
+            "gpu_utilization_pct_mean": _json_number(
+                row["gpu_utilization_pct_mean_mean"]
+            ),
+            "mfu_fraction_mean": _json_number(row["mfu_fraction_mean"]),
+            "energy_j_per_correct_row_mean": _json_number(
+                row["energy_j_per_correct_row_mean"]
+            ),
+            "quality": {
+                key.removeprefix("quality_").removesuffix("_mean"): value
+                for key, value in row.items()
+                if key.startswith("quality_")
+                and key.endswith("_mean")
+                and math.isfinite(_float(value))
+            },
             "feeding_service_tokens_ratio_vs_direct": gate["feeding_service_tokens_ratio_vs_direct"],
             "feeding_service_tokens_gate_ge_0_95": gate["feeding_service_tokens_gate_ge_0_95"],
             "infrastructure_failures_total": row["infrastructure_failures_total"],

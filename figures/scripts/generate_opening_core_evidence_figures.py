@@ -41,10 +41,14 @@ PALE_RED = "#F9ECEA"
 
 
 def apply_style() -> None:
-    fonts = list(plt.rcParams["font.sans-serif"])
-    for family in ("PingFang SC", "Hiragino Sans GB", "Heiti SC"):
-        if family not in fonts:
-            fonts.insert(1, family)
+    fonts = [
+        "PingFang SC",
+        "Hiragino Sans GB",
+        "Heiti SC",
+        "Arial",
+        "DejaVu Sans",
+        "Liberation Sans",
+    ]
     plt.rcParams.update(
         {
             "font.sans-serif": fonts,

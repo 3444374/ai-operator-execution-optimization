@@ -91,6 +91,9 @@ formal，不是新增开题 baseline。
 矩阵。模板要求每个 workload 显式提供校准 JSON 和其中选中的 K；runner 会核对三次
 重复、0.95/0.97 门槛、manifest SHA、token budget、active work、actor shape 与 K，任一
 不一致即在创建输出目录前失败。direct/DuckDB 仍固定每 endpoint 32，不随 project K 改变。
+矩阵主进程必须使用 `${VENV_ROOT}/text-baselines/bin/python`，不能使用 base Python；
+DuckDB `ai` community extension 的冻结合同是 DuckDB 1.5.4 + extension 0.4.14，若由
+base 环境的 DuckDB 1.5.5 执行 preflight/arm，会在正式 cell 前因扩展二进制不匹配而失败。
 
 ### 全新实例从零准备
 

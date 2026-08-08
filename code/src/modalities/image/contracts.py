@@ -8,6 +8,8 @@ from typing import Literal, Protocol
 
 import numpy as np
 
+from ...planning.work import WorkDescriptor
+
 
 ImageInputKind = Literal["encoded_bytes", "preprocessed_tensor"]
 
@@ -83,6 +85,7 @@ class ImageEmbeddingBatch:
     input_kind: ImageInputKind
     work_units: int
     work_unit: str
+    work_descriptor: WorkDescriptor | None = None
     telemetry: ImageBatchTelemetry = field(default_factory=ImageBatchTelemetry)
 
     def __post_init__(self) -> None:
@@ -100,6 +103,12 @@ class ImageEmbeddingBatch:
             raise ValueError("work_units must be a positive integer")
         if not self.work_unit:
             raise ValueError("work_unit must be non-empty")
+        if self.work_descriptor is not None:
+            primary = self.work_descriptor.primary
+            if primary.units != self.work_units or primary.unit != self.work_unit:
+                raise ValueError(
+                    "work descriptor primary demand must match legacy work fields"
+                )
 
 
 @dataclass(frozen=True)

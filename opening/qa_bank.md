@@ -16,7 +16,7 @@
 
 ### 题目会不会太大？
 
-> 题目中的“数据库 AI 负载”定义 workload 和端到端边界，不代表我要同时改数据库、模型服务和存储内核。方法只作用在 Database → AI Data Execution Layer → Model Service 这条外部执行路径的 work-unit、admission、routing 和 multi-job coordination。写回采用统一 PostgreSQL/pgvector sink 做正确性与端到端评价，属于边界合同，不是独立贡献。
+> 题目中的“数据库 AI 负载”定义 workload 和外部执行场景，不代表我要同时改数据库、模型服务和存储内核。方法只作用在 Database → AI Data Execution Layer → Model Service 这条路径的 work-unit、admission、routing 和 multi-job coordination。调度主实验以完整结果 gather 为边界；统一 PostgreSQL/pgvector sink 只做独立正确性与 database-E2E 护栏，不是每组实验的必选阶段，也不是独立贡献。
 
 风险提示：如果正文继续罗列大量数据库内核、向量数据库或模型 kernel 工作，却没有回到上述边界，委员有理由认为范围失控。报告与 PPT 必须用一张系统抽象图反复固定边界。
 
@@ -34,7 +34,7 @@
 
 ### 为什么不做第二种数据库？
 
-> 开题阶段的关键问题是控制变量和证据闭环，而不是产品数量。第二数据库会引入不同 AI 函数语义、source/sink 和计时边界，反而削弱因果比较。当前先用统一 PostgreSQL source/sink 和一个 DuckDB AI 产品路径闭合三臂合同；若论文阶段需要外部有效性，再在方法稳定后增加数据库，而不是在开题前铺大矩阵。
+> 开题阶段的关键问题是控制变量和证据闭环，而不是产品数量。第二数据库会引入不同 AI 函数语义、source 和计时边界，反而削弱因果比较。当前已有文本三臂用统一 PostgreSQL source/sink 提供一次 database-E2E 护栏；方法消融统一到完整结果 gather。若论文阶段需要外部有效性，再在方法稳定后增加数据库，而不是在开题前铺大矩阵。
 
 ## 现有证据能证明什么
 
@@ -44,7 +44,7 @@
 
 ### 为什么不是“动态策略已经有效”？
 
-> 因为现有多项动态候选没有超过强静态点：AIMD、PID、adaptive flush、service quantum 和多 actor 多数未过约 5% 晋级门槛。它们证明“动态”不是贡献本身，也帮助冻结了更强的静态基线。状态感知方法仍是待验证研究内容，开题只能写设计、触发信号、消融和失败条件，不能使用完成时。
+> 因为现有多项动态候选没有超过强静态点：AIMD、PID、adaptive flush、service quantum 和多 actor 多数未过约 5% 晋级门槛。它们证明“动态”不是贡献本身，也帮助冻结了更强的静态基线。开题冻结前用 short/long 两作业错峰补两层证据：Daft/Ray Data 原生路径只观察多应用竞争与可观测性，项目 static-partition vs shared-work-credit 才检验 idle borrowing 的因果增量。同上限 phase-change 与 weighted 仍是论文阶段实验；开题不提前声称动态已经胜出。
 
 ### 负结果是不是说明课题做不下去？
 
@@ -76,9 +76,9 @@
 
 > direct static-sharded 给出没有数据库产品调度层的强上游参照；DuckDB AI static-sharded 让被测产品拥有自己的执行与调度；project frozen-static 是后续状态感知方法必须超过的冻结项目点。三者共享 PostgreSQL source、immutable manifest、两个 endpoint、模型与 prefix-cache 配置、统一 PostgreSQL sink、外部 database-E2E 计时和任务质量，避免只比较内部 operator wall。
 
-### 为什么只跑 SQuAD 和 ShareGPT 两组？
+### 为什么 database-E2E 只跑 SQuAD 和 ShareGPT 两组？
 
-> SQuAD short-answer 是均匀控制组，用于检验服务层能否吸收上游差异；ShareGPT controlled-skew 是异质实验组，用于增加 prompt/output work 方差。两组回答开题 Claim Matrix 中唯一未闭合的比较问题。无论差距是否超过 5%，完成后都停止新增开题 baseline，不换模型或数据库追求更好看的结果。
+> SQuAD short-answer 是均匀控制组，用于检验服务层能否吸收上游差异；ShareGPT controlled-skew 是异质实验组，用于增加 prompt/output work 方差。它们只承担 database-E2E/correctness 护栏。随后冻结的 ShareGPT Chat 原生单 job 与两 job 错峰矩阵承担框架执行和多作业动机，不再增加第三种 workload、第二数据库或更多产品追求更好看的结果。
 
 ### SQuAD 上项目静态路径更慢，怎么解释？
 
@@ -92,7 +92,7 @@ ShareGPT 三次 formal 的具体结果是 4,936/6,144 行 cap 语义失败，而
 
 ### ShareGPT 异质组是否证明项目方法有效？
 
-> 没有。direct、DuckDB AI、project frozen-static 的 correct rows/s 为 11.34、2.23、10.36；project service tokens/s 只有 direct 的 91.38%，未过 95% feeding 门。相比 SQuAD 的 89.93%，缺口略有收窄，但没有形成合格性能证据。这个负结果说明 workload 异质性本身不足以让冻结静态项目路径胜出，开题后 state-aware 方法仍必须在同 source/sink、同上限和明确状态变化下重新证明增量。
+> 没有。direct、DuckDB AI、project frozen-static 的 correct rows/s 为 11.34、2.23、10.36；project service tokens/s 只有 direct 的 91.38%，未过 95% feeding 门。相比 SQuAD 的 89.93%，缺口略有收窄，但没有形成合格性能证据。这个负结果说明 workload 异质性本身不足以让冻结静态项目路径胜出，后续 state-aware 方法仍必须在同 source、完整结果语义、同上限和明确状态变化下重新证明增量；不要求重复 sink。
 
 ### 为什么用 correct rows/s 而不是只用 tokens/s？
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -325,16 +326,24 @@ class KmaxInterferenceScriptTests(unittest.TestCase):
         ):
             args = experiment.parse_args()
 
-        with self.assertRaisesRegex(ValueError, "Ray address"):
-            experiment.profile_command(
-                args,
-                experiment_id="shared_foreground",
-                total_rows=128,
-                ray_batch_rows=64,
-                max_inflight=64,
-                output="tmp/foreground.csv",
-                completion_max_tokens=256,
-            )
+        # Keep this negative test independent of the developer/CI shell.  The
+        # production path intentionally accepts either --ray-address or the
+        # standard RAY_ADDRESS environment variable.
+        with patch.dict(
+            os.environ,
+            {"RAY_ADDRESS": "", "RAY_CLUSTER_ADDRESS": ""},
+            clear=False,
+        ):
+            with self.assertRaisesRegex(ValueError, "Ray address"):
+                experiment.profile_command(
+                    args,
+                    experiment_id="shared_foreground",
+                    total_rows=128,
+                    ray_batch_rows=64,
+                    max_inflight=64,
+                    output="tmp/foreground.csv",
+                    completion_max_tokens=256,
+                )
 
 
 if __name__ == "__main__":

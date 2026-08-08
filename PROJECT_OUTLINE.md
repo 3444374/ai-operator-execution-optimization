@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-08-07
+更新时间：2026-08-08
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
@@ -15,11 +15,11 @@
 ```text
 Database
   -> AI Data Execution Layer
-       -> work-unit construction
-       -> cost estimation
-       -> admission and routing
-       -> resource-aware scheduling
-       -> multi-job coordination
+       -> research content 1: work-unit construction and organization
+       -> research content 2: state-aware admission, routing and multi-job
+       -> shared cost estimator
+            -> stage/service/remaining work
+            -> SLO slack and uncertainty
   -> Model Service / GPU Executor
   -> Database / Vector Sink
 ```
@@ -32,7 +32,7 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 
 ### 2.1 研究内容一：workload-aware work-unit 构造
 
-研究数据库记录如何组成发送给模型服务的 work unit。核心变量是 token/frame work，而不是固定行数；候选机制包括 sequential budget、length alignment、prefix-aware grouping 和受控 best-fit。重点刻画两个冲突：
+研究数据库记录如何组成发送给模型服务的 staged work unit。核心接口是 `WorkDescriptor`：source/prepare/model/result work、locality key、deadline/SLO、不确定区间和 calibration signature，而不是固定行数或把 token 机械改名为 frame。候选机制包括 sequential budget、length alignment、prefix-aware grouping 和受控 best-fit。重点刻画两个冲突：
 
 - work balance：减少 batch 与 endpoint 之间的计算量偏差；
 - locality：保留 prefix、frame 或数据局部性，避免因重排序破坏缓存与流水线效率。
@@ -52,20 +52,20 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 
 ### 2.3 共同使能组件：算子代价估计
 
-首版采用解析 work 特征、profile 校准和 residual correction，预测 prompt/output work、operator service、JCT、remaining work 与 SLO slack。它服务于 active-work 初始化、work-unit 构造、路由和提交选择，不单列为第三项研究内容。
+首版采用解析 work 特征、profile 校准和 residual correction，预测文本/图像的 stage work、operator service、JCT、remaining work 与 SLO slack。它同时服务于 active-work 初始化、`WorkDescriptor`/组织预算、路由、提交与多 job，不单列为第三项研究内容。
 
 评价 MAE/MAPE 之外的候选配置 ranking、pairwise accuracy、selection regret、最坏 context 与预测区间；平均误差好不能替代决策质量。
 
 ### 2.4 多模态泛化
 
-文本 `AI_COMPLETE` 是主要方法场景；图像 `AI_EMBED/AI_CLASSIFY` 是正文泛化验证。公共策略只消费 estimated work、credit、queue 和 completion event：文本 adapter 输出 token work，图像 adapter 输出 frame/pixel/preprocess work；Organizer、Scheduler、Tracing 和配置逻辑保持一致。不适用某模态的能力必须显式声明。
+文本 `AI_COMPLETE` 是主要方法场景；图像 `AI_EMBED/AI_CLASSIFY` 是正文泛化验证。公共策略只消费 staged estimated work、credit、fresh state 和 completion event：文本 adapter 输出 source/tokenize/prompt-output/result work，图像 adapter 输出 encoded/prepare/tensor-model/result work；Organizer、Scheduler、Tracing 和配置逻辑保持一致。不适用某模态的能力必须显式声明。
 
 ## 3. 系统与实验边界
 
 ```text
 PostgreSQL source
   -> Daft DataFrame / Arrow
-  -> Cost Adapter + Organizer
+  -> Shared Cost Estimator + WorkDescriptor + Organizer
   -> Ray actor admission / shared credit / routing
   -> text: vLLM generation
      image: typed CLIP GPU actor
@@ -80,21 +80,23 @@ PostgreSQL source
 
 ## 4. 研究问题与因果设计
 
-三个研究问题：
+四个研究问题：
 
 1. 固定资源下达到近饱和吞吐所需的最小 active work 是多少，过载怎样影响 tail 与能耗？
 2. 相同 work 下怎样组织记录，balance 与 locality 何时冲突？
-3. 多 job 共享 endpoint pool 时，shared credit、routing 和公平队列能否改善 JCT/tail/fairness？
+3. arrival、work mix 或阶段瓶颈突变时，state-aware admission/routing 能否在同一最大 K/work 上限下比 frozen-static 更快回到安全区？
+4. 多 job 共享 endpoint pool 时，shared credit、routing 和公平队列能否改善 JCT/tail/fairness？
 
 两项策略先独立搜索冻结静态点并分别消融，再把独立最优拼接，与小规模联合 grid 对比。联合显著优于拼接说明需要联合调优；两者接近说明可分层优化。任何结果都不改变研究对象，但会改变方法适用边界。
 
-正式实验统一要求：immutable manifest、相同 source/sink、相同服务 flags、固定随机种子、warmup 与交错 formal repeats；结果同时保存请求、submission、资源时序、版本和 sink readback。headline 优先使用 correct throughput 与 database-E2E，并报告 service throughput、质量、failure 类型和资源门禁。
+正式实验统一要求：immutable manifest、相同 source、相同完整结果语义、相同服务 flags、固定随机种子、warmup 与交错 formal repeats；结果保存请求、submission、资源时序和版本。调度主实验以完整结果 gather 的 correct throughput/JCT 为 headline；仅 database-E2E 护栏要求相同 sink 与 sink readback，另报告 service throughput、质量、failure 类型和资源门禁。
 
 ## 5. 当前证据等级
 
 ### 5.1 已证明
 
-- 固定行数不是稳定 work 代理：同一行数下 token 分布跨度可达 13.9 倍。
+- 固定行数不是稳定 work 代理：固定 16 行批次的 work 最小/最大中位数为 474/6,793 token，相差 14.3 倍。
+- 同一静态上限不是运行状态：W65K 下 high offered load 的实际 active work/MFU 约为 100%/35%，arrival-limited 约为 29%/7%。
 - 当前双 4090/Qwen/vLLM 签名下，65,536 active work/endpoint 达最大已测吞吐均值的 97.80%；下一档只增 0.92%，继续增压会恶化 P99。
 - 复杂动态控制不天然优于强静态点：AIMD/PID/EWMA、adaptive flush、service quantum 与多 actor 多数未过约 5% 晋级门槛。
 - 数据组织策略排名受 serving regime 影响：双 endpoint 大 KV 池近似中性；四 endpoint 小 KV 池饱和时吞吐分化且排名反转，重排序可使 prefix hit 降至 0.06–0.07。
@@ -108,9 +110,10 @@ PostgreSQL source
 ### 5.3 待验证
 
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
+- phase-change、burst、mixed-cost 下 dynamic 的响应时间、SLO goodput 与 tail；
 - 多 job held-out、错峰、加权公平性与故障迁移；
 - 代价模型跨时间段、新 workload 和硬件的稳定性；
-- 图像 system database-E2E 与状态感知增量。
+- 图像当前 commit 的 Daft built-in/Ray Data/project operator-E2E 统一排名与状态感知增量；sink 只作小规模工程闭环，不是性能排名 blocker。
 
 ### 5.4 不能声称
 
@@ -123,7 +126,9 @@ PostgreSQL source
 
 ## 6. 开题前统一文本 database-E2E
 
-开题前仅允许 SQuAD short-answer 均匀控制组与 ShareGPT controlled-skew 异质组。两组均比较：
+2026-08-07 首轮三臂因 project feeding 仅为 direct 的 89.9%/91.38%，已整体降级为 failed-feeding 诊断，不能作为最终开题性能对照。当前按 workload 分别扫描 K32/64/128/256，冻结满足 ≥95% direct feeding 且达到 ≥97% project 峰值的最小静态点；SQuAD 已选择 K128，ShareGPT 校准正在运行。两份合同都通过后才整体替换重跑下列矩阵。
+
+开题静态地基先完成 SQuAD short-answer 均匀控制组与 ShareGPT controlled-skew 异质组。两组均比较：
 
 - `direct_static_sharded`；
 - `duckdb_ai_static_sharded`；
@@ -135,26 +140,26 @@ SQuAD 三次 formal 均值：direct 129.85、DuckDB AI 135.71、project 116.88 c
 
 ShareGPT 三次 formal 均值：direct 11.34、DuckDB AI 2.23、project 10.36 correct rows/s；对应 service tokens/s 为 9,412.74、9,411.76、8,601.29。项目臂只有 direct 的 91.38%，再次未过 95% feeding-saturation 门。DuckDB AI 的模型服务吞吐与 direct 接近，但固定 256-token cap 下三次 formal 共 4,936/6,144 行出现产品层 cap 语义失败，因此 correct throughput 显著降低；基础设施失败仍为 0。异质 workload 没有使项目冻结静态路径获得优势。
 
-两组完成后停止新增开题 baseline。差异不足 5%、项目不占优或产品语义不兼容均不触发换模型、换数据库、换 workload 或扩大扫描。
+两组完成后停止换模型、数据库、workload 或扩大参数扫描追正。只再补两类不可替代的对照：① 同一 ShareGPT Chat manifest 上的 bounded control、Daft Native/Ray 与 Ray Data 原生单 job 1+3；② Daft/Ray Data 两个 short/long 错峰独立 job 观察，以及项目 static-partition vs shared-work-credit 同上限 A/B。原生框架不注入项目 credit/router，不将 barrier 冒充 request P99；DuckDB 仅保留在 SQuAD/cap=64 有界输出产品轨。差异不足 5% 或为负同样有效，不扫更多 offset/weight 追正。开题用现有与新增最小证据同等严格地说明 Work Unit、状态感知、动态调度和共同使能代价估计的设计理由，不要求 proposed 全面胜出。
 
-## 7. 开题四张核心证据图
+## 7. 开题叙事图
 
-1. `opening_serving_capacity_frontier`：最小饱和 active work 与过载边界。
-2. `opening_work_organization_regime`：work-aware 组织的必要性与 regime 局限。
-3. `opening_image_matched_resource`：图像 matched-resource 可重复证据。
-4. `opening_cost_model_decision_quality`：代价模型 selection regret 与最坏风险。
+1. `opening_motivation_work_state`：固定行隐藏 work、静态上限不是状态、提交压力存在安全区，分别导出 WorkDescriptor、感知和有界控制。
+2. `opening_ai_data_execution_boundary`：两项研究内容并列，算子代价估计作为共同使能部件。
+3. `opening_work_to_schedule_overview`：组织输出 work/locality/deadline，调度结合 fresh state 消费。
+4. `opening_work_organization_regime_v2`：work-aware 组织的必要性与 regime 局限。
+5. `opening_image_stage_aware_evidence`：图像阶段失衡与 matched-resource preliminary signal。
+6. `opening_cost_model_decision_quality_v2`：代价模型 selection regret 与最坏风险。
 
-权威输出位于 `figures/data/report_main/`，生成脚本为 `figures/scripts/generate_opening_core_evidence_figures.py`，claim 与视觉审计见 `figures/audit/opening_core_evidence_figures_contract_20260807.md`。开题报告和 PPT 不再堆叠大量参数扫描。
+权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。当前只冻结内容大纲、实验数据与图，不制作新的 PPT 成品。
 
 ## 8. 当前执行顺序
 
-1. 两组统一文本三臂 formal、完整性审计、结果归档和开题 baseline 停止规则已完成。
-2. Claim Matrix、报告、问答库和飞书本地源稿已按最终汇总同步；四张核心图与 28 页 v6
-   PPTX 已完成程序化 QA，并于 2026-08-08 通过 Microsoft PowerPoint 真实打开检查。
-3. 飞书用户授权已于 2026-08-08 恢复；线上正文已覆盖到 revision 289，八章目录、三项关键
-   数字、结论边界和四个带 caption 的图片块均回读通过。
-4. 平级 Obsidian wiki 目录在本机不存在，不能执行镜像脚本；恢复该目录后完成最后镜像并标记
-   发布冻结。开题后再进入图像 system database-E2E 与 state-aware 方法实验。
+1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同、共同 cost enabler 与六张叙事图已完成；相关定向测试与渲染审计通过。
+2. SQuAD feeding 校准已选择 K128；ShareGPT K32/64/128/256 校准正在运行。两份合同通过后重跑两 workload × 三静态臂。
+3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；replacement matrix 通过后更新实验报告和数据图，不生成、覆盖或同步新的 PPT/云文档。
+4. 静态三臂后完成一个文本原生框架单 job 矩阵，再完成原生两 job 观察与项目 static/shared 错峰 A/B；开题后再扩展 state-aware phase-change、weighted/异构多 job、图像 dynamic、完整 burst/mixed-cost、联合消融和跨硬件主实验。
+5. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
 
 ## 9. 结果解释与写作规则
 

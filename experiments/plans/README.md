@@ -12,6 +12,7 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | 文本 Chat/Completions 怎么运行 | `text_native_baseline_rerun_20260802.md` |
 | DuckDB bounded-output 怎么对比（任务/指标/两计时边界/请求等价门禁；单 endpoint 产品语义、双 endpoint project/control 方法轨、可选 gateway 系统轨分开） | `bounded_output_duckdb_comparison_protocol_20260805.md` |
 | 图像 workload、质量语义和执行矩阵怎么运行 | `image_clip_workload_lock_20260731.md` |
+| work-unit、状态感知与图像动态主实验怎么分层验证 | `state_aware_work_unit_evaluation_20260808.md` |
 | 当前做完什么、下一步是什么 | `experiment_status_and_gaps.md` §0 |
 | 厂商/论文为什么采用这些指标 | `../../research/evaluation_metrics_survey_20260731.md` |
 | 初学者如何理解四类 baseline | `../../learning/text_native_baseline_guide.md` |
@@ -55,6 +56,7 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | `sink_writeback_coordination.md` | **写回工程参考**（已降级为实验设置，不作为独立实验阶段） | COPY + deferred index baseline，仅在实验设置中说明 |
 | `operator_cost_profile_dual4090_formal_20260804.md` | **算子代价估计共同使能组件** | 当前 320-run formal 合同；§8 保留通过晋级门槛后才启动的 TPC-H-derived AI 查询计划 held-out |
 | `opening_database_e2e_p0_20260807.md` | **开题前证据闭环** | 仅允许的两组文本三臂统一 database-E2E：SQuAD 均匀控制组与 ShareGPT controlled-skew；冻结 source/manifest/sink/计时/质量/资源合同和停止规则 |
+| `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同** | 开题只运行两作业 short/long staggered 两臂；phase-change、weighted、文本框架正式矩阵、图像新策略与 cost held-out 作为论文阶段可证伪计划 |
 
 双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
 相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭
@@ -133,5 +135,5 @@ runner 中 short/long 的 K256/W65K/W98K 通过 5% 等价性和 repeat 稳定性
 
 ## 文档维护纪律（2026-07-24）
 
-1. **默认并入现有文档，不新建。** plans/ 里已存在的文档是某类内容的自然归属——实验完成度进 `experiment_status_and_gaps.md`，策略边界进 `strategy_design_literature_basis.md`，已有实现映射进 `strategy_design_implementation_reference.md`，可重复使用的跨论文机制发现流程统一进 `literature_driven_pipeline_optimization_guide.md`。深度内容进 `research/reading_notes/` 或对应 `*_reference.md`。**只有当某类内容在所有现有文档中都找不到自然归属时才新建文件，且必须在 `PROJECT_LOG.md` 说明为什么现有文档都不合适。**
+1. **默认并入现有文档，不新建。** plans/ 里已存在的文档是某类内容的自然归属——实验完成度进 `experiment_status_and_gaps.md`，策略边界进 `strategy_design_literature_basis.md`，已有实现映射进 `strategy_design_implementation_reference.md`，可重复使用的跨论文机制发现流程统一进 `literature_driven_pipeline_optimization_guide.md`。深度内容进 `research/reading_notes/` 或对应 `*_reference.md`。**只有当某类内容在所有现有文档中都找不到自然归属时才新建文件，且必须在 `PROJECT_LOG.md` 说明为什么现有文档都不合适。** `state_aware_work_unit_evaluation_20260808.md` 是一次明确例外：它冻结跨研究内容一、研究内容二和图像泛化的同一因果矩阵，避免三个旧计划分别定义不兼容的 work/credit/state 合同。
 2. **计划文档只保留待做内容。** 实验一旦完成（结果已记入 `experiments/results/` + `experiment_status_and_gaps.md`），其设计/变量/矩阵从对应计划文档（`data_organization_batching.md`、`service_scheduling_backpressure.md` 等）删除——计划文档只回答"接下来做什么"，不积累已完成实验的存量。**前提**：完成实验的 results 报告必须自包含该实验的设计；否则删除前先把设计迁移到 results。

@@ -18,9 +18,39 @@ from src.scheduling.core.models import (  # noqa: E402
     PayloadEnvelope,
     TopologySnapshot,
 )
+from src.planning.work import StageWork, WorkDescriptor  # noqa: E402
 
 
 class SchedulingModelTests(unittest.TestCase):
+    def test_batch_request_prefers_staged_work_descriptor(self) -> None:
+        descriptor = WorkDescriptor(
+            stages=(
+                StageWork("prepare", 2048, "bytes"),
+                StageWork("model", 200704, "pixels"),
+            ),
+            primary_stage="model",
+            calibration_signature="machine:model:processor:workload",
+        )
+        request = BatchRequest(
+            request_id="image-1",
+            job_id="job",
+            operator="ai_embed",
+            row_count=4,
+            prompt_tokens=0,
+            estimated_output_tokens=0,
+            prefix_key="",
+            first_arrival_s=0.0,
+            oldest_arrival_s=0.0,
+            payload_id="payload",
+            work_units=200704,
+            work_unit="pixels",
+            work_descriptor=descriptor,
+        )
+
+        self.assertEqual(request.estimated_work_units, 200704)
+        self.assertEqual(request.estimated_stage_work("prepare"), 2048)
+        self.assertIsNone(request.estimated_stage_work("sink"))
+
     def test_batch_request_rejects_non_positive_row_count(self) -> None:
         with self.assertRaisesRegex(ValueError, "row_count must be positive"):
             BatchRequest(
