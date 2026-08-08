@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-08-09 short-only 与 short/long 统一干扰汇总器
+
+- 新增 fail-closed 汇总器，将项目 full/half single-short、项目 static/shared
+  short/long、Daft Native/Ray 与 Ray Data exact-short/two-job 统一到同一 short
+  manifest 身份和 3 formal 合同。
+- 输出严格区分 group service throughput 与项目 request trace 可计算的 short work
+  rate；native request P99 保持 unavailable，短于 60s 的 native short cell 只作 JCT/
+  状态表征。项目资源 trace 另按 pre-long、overlap、long-drain 三段聚合；原 trace
+  没有 interval flops counter，阶段 MFU 明示 unavailable，不由 GPU util 伪造。
+
 ## 2026-08-09 单 short 匹配控制与静态保留分区
 
 - short/long 错峰项目正式矩阵 6/6 formal 通过后，发现 two-job static 中 short 的

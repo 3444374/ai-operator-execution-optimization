@@ -216,6 +216,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/analysis/summarize_opening_project_feeding_calibration.py` | 审计开题项目 feeder 的 bounded-direct/K32-K256 三重复并选择最小饱和 K | 每个 workload 校准完成后生成冻结选择合同；门禁失败时不得人工选点 |
 | `code/tests/analysis/test_summarize_opening_project_feeding_calibration.py` | feeding 校准选择器的最小饱和点与 manifest fail-closed 回归测试 | 修改校准门槛、输入合同或选择规则时运行 |
 | `code/scripts/analysis/summarize_opening_multijob_minimal.py` | fail-closed 汇总开题 short/long 两作业错峰两场景 | 输出组级紧凑数据、场景统计、shared-vs-static 对照和审计；不含 sink |
+| `code/scripts/analysis/summarize_opening_short_job_interference.py` | 统一汇总 exact-short full/half、项目 static/shared 与三条原生 single/two-job 证据 | 输出短 Job 因果对照、系统观察和项目 pre-long/overlap/drain 状态；不伪造 native P99 或 interval MFU |
 | `code/tests/analysis/test_summarize_opening_multijob_minimal.py` | 多任务汇总器的完整矩阵与 short/long manifest 身份回归测试 | 修改多 job 结果合同或审计边界时运行 |
 | `code/scripts/analysis/summarize_text_native_multijob.py` | fail-closed 汇总 Daft Native/Ray、Ray Data 原生 short/long 两 Job 观察 | 用 vLLM service-counter 统一吞吐，输出逐次/汇总状态数据；排除 coverage 不一致的 manifest token/s 与未采集的 request P95/P99 |
 | `code/tests/analysis/test_summarize_text_native_multijob.py` | 原生多 Job 汇总器的 service-counter、重复数和 success/exactly-once 回归测试 | 修改原生多 Job 数据口径或门禁时运行 |

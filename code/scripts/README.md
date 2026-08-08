@@ -21,6 +21,13 @@
 入口脚本只解析参数并调用 `src/`；不得因为移动目录而复制生产逻辑。历史结果目录里的
 raw manifest 保留执行时旧路径作为不可变证据，README 中的复现命令使用当前新路径。
 
+`analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
+full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data
+single/two-job 原生观察做统一 fail-closed 汇总。它显式保留 request P99 仅项目可用、
+native short 不足 60s 只作表征、interval MFU 无 counter 因而不可用等边界，并输出
+项目 pre-long/overlap/drain 三段状态数据；不绘图、不把 group throughput 当 short
+专属吞吐。
+
 当前连接与测试流程集中在：
 
 ```text
