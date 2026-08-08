@@ -5199,3 +5199,13 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   static+long 的 short 使用 half quota，而 single short 使用 full quota；为避免把
   quota-only 影响误归因给 long，新增独立 half-pool eager short 1+3 控制。该控制不启动
   synthetic long，且不重复运行已完成的三臂。
+- Project eager 主矩阵9 formal与half-pool补充3 formal全部通过，512条short均exactly-once、
+  endpoint各256条、arrival span 66.76µs、零incident。full→half quota-only使short JCT
+  +59.00%；matched half→static+long再+58.77%，matched full→shared+long+28.90%。
+- eager shared相对static使short JCT−48.94%、总吞吐+31.85%、long JCT−25.75%、
+  Jain均值0.894→0.972；但online replay下shared曾伤害short/Jain，故冻结结论为
+  arrival-regime dependence与idle-borrowing动机，不称dynamic普遍胜出。
+- 逐阶段matched竞争显示static short service mean/P99 +50.34%/+78.62%，shared为
+  +14.63%/+28.70%，submit→service仍约2ms。完整raw、gate、config和log保留服务器；
+  有效归档`opening_project_multijob_eager_retest_20260809_v2.tar.gz` SHA256为
+  `713292a1e1f0998a2721b0f747a02c2d0ea60cd1a42b89044f05165c5500c4df`。

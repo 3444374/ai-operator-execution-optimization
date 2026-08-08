@@ -90,7 +90,7 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | 后续项 | 状态 | 用途与边界 |
 |---|---|---|
 | 原生文本单 Job 状态指纹 | `data-ready-not-generated` | 四臂 12 formal；JCT/tok/s 与 running/waiting/KV/MFU 原单位 small multiples，不伪造 request P99 |
-| 两 Job 前台干扰与共享权衡 | `data-ready-not-generated` | 只用 `Short@0s → Long@5s` guaranteed-overlap；项目逐请求 replay、原生完整 manifest eager 可用，只画各轨内 normalized single→overlap，不画跨轨绝对 JCT；项目 static/shared 只称效率—隔离—公平权衡 |
+| 两 Job 前台干扰与共享权衡 | `data-ready-not-generated` | online/eager按arrival regime分面；Project使用full/half matched control，跨框架只画各轨内normalized impact；突出quota-only、competition和idle borrowing，不画绝对JCT排名 |
 | 同上限 static–dynamic phase change | `do-not-draw-no-result` | 只保留实验合同；正式 A/B 完成前不画示意结果曲线 |
 | database-E2E replacement 三臂 | `appendix-table-only` | SQuAD 作静态 correctness 地基；ShareGPT 因 C32 direct 欠供给与 DuckDB cap 语义失败不作性能排名 |
 

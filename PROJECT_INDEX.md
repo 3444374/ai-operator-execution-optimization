@@ -215,6 +215,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_project_short_half_pool_all_at_t0_diagnostic.example.json` | Project eager short 的 reserved-half-pool 单 Job 1+3 补充控制；K/W 按两个静态分区切半但不启动 long | 将 static+long 的 short 退化拆成 quota-only 与真实竞争，不重复既有三臂 |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥、等行数的 short/long job manifest，并输出 token 分布与 SHA 审计 | 运行开题两作业实验前生成 512+512 行异质工作证据 |
 | `code/scripts/analysis/summarize_project_short_all_at_t0.py` | 从服务器 raw 重算 Project eager single 的 T0–T4 时间、吞吐、MFU、状态和 Daft 对齐边界 | 回答“项目为何比 Daft 慢”时使用；T0 缺失不补造，T3/T4 只作 short 诊断 |
+| `code/scripts/analysis/summarize_project_multijob_eager.py` | fail-closed 汇总 Project eager full/half single、static/shared+long、short逐阶段和pre-long/overlap/drain状态 | 输出quota-only、matched competition、idle borrowing与各轨normalized short impact；检查12 formal、512 exactly-once、endpoint balance和<1ms arrival span |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
 | `code/tests/analysis/test_summarize_opening_database_e2e.py` | 开题矩阵汇总器的项目 feeding/GPU 与 correctness fail-closed 回归测试 | 修改正式审计退出条件时运行；产品 baseline feeding 不得误作项目门禁 |
 | `code/scripts/analysis/summarize_opening_project_feeding_calibration.py` | 审计开题项目 feeder 的 bounded-direct/K32-K256 三重复并选择最小饱和 K | 每个 workload 校准完成后生成冻结选择合同；门禁失败时不得人工选点 |
@@ -234,7 +235,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `experiments/results/opening_text_native_gate_20260808/README.md` | bounded、Daft Native/Ray、Ray Data 同 Chat manifest capability gate 与 Ray Data C4/C8/C16 最小筛选 | 只用于入口正确性、provenance 和冻结 C8/B16；n=1 gate 不作框架性能排名 |
 | `experiments/results/opening_bounded_saturation_calibration_20260808/README.md` | ShareGPT bounded HTTP C32/C64/C128/C256 容量扫描，含 MFU、running/waiting、KV、TTFT 和服务器归档 SHA | 冻结达到 C256 已测峰值 98.22% 的最小点 C128；纠正旧 C32 欠供给口径，不作框架排名 |
 | `experiments/results/opening_text_native_single_job_formal_20260808/{README.md,formal_runs.csv,formal_summary.csv}` | bounded C128、Daft Native/Ray、Ray Data 同 ShareGPT manifest 的 1+3 原生单 job 正式报告、逐次与汇总数据 | 引用现有原生 graph 的 underfeed/minimum-saturation/overqueue 外部现象前读；不归因内部算法、不称项目胜出 |
-| `experiments/results/opening_multijob_interference_20260809/{README.md,data/}` | exact-short full/half、项目 static/shared 与 Daft Native/Ray/Ray Data 5s guaranteed-overlap 的统一报告和紧凑数据 | 引用前台干扰、效率—隔离—公平权衡或多 Job 状态动机前读；项目逐请求 replay、原生完整 manifest eager 可用，跨轨绝对 JCT 不排名；原生是 observation，项目 matched-cap 才是因果 A/B |
+| `experiments/results/opening_multijob_interference_20260809/{README.md,data/}` | online exact-short、Project eager full/half/static/shared 与 Daft Native/Ray/Ray Data 5s guaranteed-overlap 的统一报告和紧凑数据 | 引用前台干扰、idle borrowing、arrival-regime dependence或多Job状态动机前读；只比较各轨内部normalized impact，跨轨T0/绝对JCT不排名 |
 | `experiments/results/opening_project_short_all_at_t0_diagnostic_20260809/{README.md,data/}` | Project eager single 1+3 的 T0–T4 统一计时、逐次数据和 Project/Daft short 诊断 | Project T3=11.354s、Daft=11.059s；service rate/MFU 仅差约2.5%，不能用缺失的 Daft T0 做完整系统排名 |
 | `figures/scripts/generate_opening_core_evidence_figures.py` | 从冻结正式结果生成开题四张核心证据图 | 更新开题报告或答辩 PPT 前运行 |
 | `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |

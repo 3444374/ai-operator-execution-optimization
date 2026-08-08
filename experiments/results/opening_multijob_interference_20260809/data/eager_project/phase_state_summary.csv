@@ -1,0 +1,7 @@
+scenario_id,phase,formal_repeats,samples,running_sum_mean,waiting_sum_mean,kv_usage_pct_endpoint_mean,gpu_utilization_pct_endpoint_mean
+staggered_shared_work_all_at_t0,pre_long,3,41,230.14634146341464,0.0,18.76236850800844,97.5609756097561
+staggered_shared_work_all_at_t0,overlap,3,88,184.76136363636363,3.1704545454545454,29.164467362323546,100.0
+staggered_shared_work_all_at_t0,long_drain,3,428,76.1355140186916,0.8925233644859814,40.592255109437765,99.13785046728972
+staggered_static_partition_all_at_t0,pre_long,3,42,120.64285714285714,0.0,11.155242207051051,98.64285714285714
+staggered_static_partition_all_at_t0,overlap,3,211,133.33175355450237,1.2654028436018958,30.18908661407323,100.0
+staggered_static_partition_all_at_t0,long_drain,3,481,37.399168399168396,0.0,20.28498763648384,99.8960498960499

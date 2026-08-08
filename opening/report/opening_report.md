@@ -162,6 +162,8 @@ shared 相对 static 将 aggregate service throughput 提高 21.03%、long JCT �
 
 进一步把同一 Project short manifest 改为 all-at-t0 后，三次 T0 profiler E2E 为14.957s，T3 最早模型提交到最晚响应完成为11.354s，service throughput/MFU 为14,361 tok/s/42.93%；Daft Native 已记录的同边界为11.059s、14,727 tok/s/44.04%，只差约2.5%–2.7%。这排除了“Project 模型请求路径慢6.4×”的解释。Daft 的 source、provider、DataFrame 和 expression 准备位于现有 timer 之前，缺匹配 T0，故14.957s 与11.059s 仍不作完整 E2E 排名。短 Job 诊断无需为了60s人为扩规模；eager 多 Job 只补 Project 配对，在线 replay 与原生系统内干扰结论不替换。
 
+Project eager 多 Job 配对随后补齐 full-pool single、half-pool single、static+long 和 shared+long，12/12 formal 均 exactly-once、零 incident，DB arrival span 统一压缩为66.76µs。full→half 的 quota-only 已使 short JCT+59.00%；在相同 half quota 下加入 long，static short JCT/P99/work rate 进一步变化+58.77%/+56.19%/−36.99%；shared+long 相对 full single 为+28.90%/+29.04%/−22.64%。eager shared 相对 static 将 short JCT 降低48.94%、aggregate throughput提高31.85%、long JCT降低25.75%，Jain均值0.894→0.972；long到达前 running总和均值120.6→230.1，直接体现 idle borrowing。逐阶段上，static matched competition 使short service mean/P99 +50.34%/+78.62%，shared为+14.63%/+28.70%，submit→service仍约2ms。在线 replay 中 shared 伤害 short/fairness，而 eager 中同时改善效率、隔离和公平，说明策略价值依赖 arrival regime；开题据此提出状态观测和受SLO/fairness约束的 work-conserving 调度，不声称最终动态控制器已经胜出。
+
 ### 5.5 最小饱和 active work
 
 双 RTX 4090、冻结 Qwen/vLLM 合同下，每 endpoint 65,536 active work 已达到最大已测吞吐均值的 97.80%，下一档只增加 0.92%；继续提高到 98K，吞吐增量有限而 P99 由 36.78 s 上升到 40.05 s。该结果证明应先标定最小饱和点，再比较上游策略。65,536 只绑定当前机器、模型、协议和 workload，不是通用常数。
@@ -192,7 +194,7 @@ CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时
 |---|---|---|---|
 | Work Unit / WorkDescriptor | 同 16 行 token work 差 14.3×；图像 prepare/model 阶段失衡 | 已有 staged descriptor、calibration signature、locality/deadline/uncertainty 字段，`BatchRequest` 和图像合同可携带 descriptor | production descriptor builder 尚未贯通正式端到端 runner；staged organization 尚未证明胜出 |
 | 状态感知 | 同 W65K 在 high/arrival-limited 下呈现不同 running/MFU；原生路径呈现 overqueue/underfeed | endpoint/resource trace 已在正式实验中采集；stage snapshot 包含 freshness 与 calibration-signature 校验，候选控制器具有静态 fallback | stage snapshot 和 fallback controller 尚未接入正式主 runner，尚无独立性能增量 |
-| 动态与多作业调度 | 5 s guaranteed-overlap 显示前台干扰和效率—隔离—公平权衡 | completion release、least-work routing 和 shared fair-work credit 已进入调度器，static/shared 两 Job A/B 已完成 | shared 不是全面胜出；stage-aware dynamic、SLO guard、weighted/4+ Job 尚未正式验证 |
+| 动态与多作业调度 | 5 s guaranteed-overlap 与 online/eager 配对显示前台干扰、idle borrowing 和 arrival-regime dependence | completion release、least-work routing 和 shared fair-work credit 已进入调度器，static/shared 两 Job A/B 与 full/half matched control 已完成 | shared 不是普遍胜出；stage-aware dynamic、SLO guard、weighted/4+ Job 尚未正式验证 |
 | 算子代价估计 | 20 contexts 的选错代价为 12.0%–86.5%，简单 proxy 决策失败 | CE1–CE5 离线估计器和 context leave-one-out 已完成，CE5 为 marginal pass | 尚未在线驱动 organization/routing/credit，也未验证跨模态 remaining work 与 SLO 收益 |
 
 因此，后续工程顺序为 descriptor builder、observe-only snapshot、no-op/fallback 门禁和单动作消融；不在同一次实验中同时打开四个部件后归因总体差异。

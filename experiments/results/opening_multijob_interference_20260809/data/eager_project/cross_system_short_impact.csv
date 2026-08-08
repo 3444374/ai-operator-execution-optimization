@@ -1,0 +1,6 @@
+system,baseline,candidate,evidence_status,short_jct_delta_pct,short_p99_delta_pct,note
+project_static,single_short_half_pool_all_at_t0,staggered_static_partition_all_at_t0,causal:matched_half_quota_eager,58.77088438477849,56.18712114641551,within-Project paired delta; do not rank absolute cross-system JCT
+project_shared,single_short_full_pool_all_at_t0,staggered_shared_work_all_at_t0,causal:matched_full_pool_eager,28.90382311686521,29.036794696203927,within-Project paired delta; do not rank absolute cross-system JCT
+daft_native,daft_native:single_short_native,daft_native:staggered_short_long_native,observational:overlap_present,82.41979804002885,,within-native-arm observed delta; native adapter has no request P99
+daft_ray,daft_ray:single_short_native,daft_ray:staggered_short_long_native,observational:overlap_present,104.84235411980025,,within-native-arm observed delta; native adapter has no request P99
+ray_data_http,ray_data_http:single_short_native,ray_data_http:staggered_short_long_native,observational:overlap_present,32.75796861645528,,within-native-arm observed delta; native adapter has no request P99

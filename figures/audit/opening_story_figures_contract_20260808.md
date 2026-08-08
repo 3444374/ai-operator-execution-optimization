@@ -21,7 +21,7 @@
 | E | 代价估计的决策质量 | `ready-existing` | 已有正式图，结论为 marginal pass |
 | F | 原生文本单 Job 状态指纹 | `data-ready-not-generated` | 12 formal 已通过门禁 |
 | G | 同上限 static–dynamic phase change | `do-not-draw-no-result` | 保留实验合同即可；开题不生成结果图或带虚构数值的示意图 |
-| H | 两 Job 前台干扰与共享权衡 | `data-ready-not-generated` | 5 s guaranteed-overlap 已通过门禁 |
+| H | 两 Job 前台干扰、idle borrowing 与 arrival regime | `data-ready-not-generated` | online/eager 5 s guaranteed-overlap 与 matched full/half control 已通过门禁 |
 | Appendix | database-E2E correctness/语义表 | `appendix-table-only` | 不生成正文性能排名图 |
 
 ### 数据冻结回读（2026-08-09）
@@ -42,6 +42,9 @@
 | F | `opening_text_native_single_job_formal_20260808/formal_summary.csv` | 4 arm × 3 formal | `bd0fd0fa502f50a6` | bounded/Daft Native/Daft Ray/Ray Data=17,800/17,286/16,747/3,551 tok/s |
 | H | `opening_multijob_interference_20260809/data/combined/summary.csv` | 10 汇总行，源自 30 formal | `3622732cf88b4fee` | 所有 two-job overlap>0；原生 short JCT +82.42%/+104.84%/+32.76% |
 | H | `opening_multijob_interference_20260809/data/combined/comparisons.csv` | 6 个预注册对比 | `33701106d0f8bda8` | project shared vs static：吞吐 +21.03%，short JCT +4.98% |
+| H | `opening_multijob_interference_20260809/data/eager_project/scenario_summary.csv` | 4场景×3 formal | `91124f173c47912d` | quota-only short JCT +59.00%；matched static/shared competition +58.77%/+28.90% |
+| H | `opening_multijob_interference_20260809/data/eager_project/phase_state_summary.csv` | 2策略×3阶段 | `7d0519a962cf622b` | pre-long running总和 static/shared=120.6/230.1 |
+| H | `opening_multijob_interference_20260809/data/eager_project/cross_system_short_impact.csv` | 5个系统内normalized对比 | `ca4426f4695298f1` | 只画within-track影响；禁止跨轨绝对JCT排名 |
 | Appendix | `opening_database_e2e_text_refeed_20260808/summary/formal_summary.csv` | 6 cell × 3 formal | `6e9d731dff3c5bde` | SQuAD correct rows/s=136.63/136.68/137.77；ShareGPT DuckDB cap failure=4,921 |
 
 完整数据门禁另由各结果目录的 `audit.json` 和 README 承担；本表不是替代审计器。
@@ -175,27 +178,26 @@ D、E 可保持；A、C 的视觉布局可读但存在上述语义标签修订�
 计划文件：`data/report_main/opening_multijob_interference_tradeoff.{png,svg}`。
 
 - 数据：`experiments/results/opening_multijob_interference_20260809/data/combined/summary.csv`、
-  `data/combined/comparisons.csv`、`data/project/scenario_summary.csv` 与
-  `data/project/pairwise_comparison.csv`。30 formal rows、10 summary rows、6 comparisons，
-  所有 two-job arms 实际 overlap 大于 0。
+  在线输入使用`data/combined/comparisons.csv`；eager主输入使用
+  `data/eager_project/{scenario_summary,comparisons,phase_state_summary,cross_system_short_impact}.csv`。
+  online有30 formal；Project eager有12 formal，所有two-job arm实际overlap大于0。
 - 到达方向固定为 `Short@0s → Long@5s`。panel a 是“后到 long 是否伤害已运行 short”：
   只画各系统内 `single short → short+long`
   的 short JCT 变化和误差，并直接标注实际 overlap。项目 full/half-pool
-  匹配控制标为 `causal`，Daft Native/Ray/Ray Data 标为
-  `observational:overlap_present`；不作系统间绝对 JCT 排名。5 s 仅对齐 Job 启动：项目
-  逐请求 arrival replay，原生 graph 在 Job 启动后获得完整 manifest，因此 panel a 必须
-  使用 within-track normalized delta，禁止画 71.24 s vs 11.06 s 的横向柱图。
-- panel b 是“效率—隔离—公平权衡”：用四个对齐 small multiples 比较
-  project static/shared 的 aggregate tok/s、long JCT、short JCT 和 Jain fairness；
-  禁止双 y 轴和雷达图。
+  匹配控制标为`causal`，Daft Native/Ray/Ray Data标为`observational:overlap_present`；
+  panel a只用`cross_system_short_impact.csv`的within-track normalized delta，禁止画
+  71.24s vs11.06s或其他跨轨绝对JCT柱图。
+- panel b按online/eager分面，用四个对齐small multiples比较project static/shared的
+  aggregate tok/s、long JCT、short JCT和Jain；禁止把两个regime均值混合，也禁止双y轴/雷达图。
 - 备份时间线可分 pre-long/overlap/drain 三段展示 running、waiting、KV、GPU util
   与 completed-work rate。当前无 interval FLOPs counter，MFU 只能报 group aggregate，
   不得画成 interval MFU。
 - 原 15 s Daft Native 无 overlap 数据不进入干扰结论；它只说明该到达间隔下
   short 先完成。开题结论以统一 5 s guaranteed-overlap 数据为准。
-- 支持：原生三路 short JCT 各自上升 82.42%/104.84%/32.76%；project
-  shared 相对 static 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、
-  Jain 0.759→0.707。它证明权衡存在，不证明 shared/dynamic 全面胜出。
+- 支持：原生三路short JCT各自+82.42%/+104.84%/+32.76%；Project online下shared提高
+  aggregate但伤short/Jain，eager下quota-only +59.00%、shared相对static short JCT−48.94%、
+  aggregate+31.85%、Jain 0.894→0.972。它证明arrival-regime dependence与idle borrowing，
+  不证明shared/dynamic全面胜出。
 - 不支持：原生 request P99、系统间绝对性能排名、4+ Job、weighted/SLO、
   图像多 Job 或最终 state-aware controller 效果。
 

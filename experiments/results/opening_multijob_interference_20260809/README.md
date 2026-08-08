@@ -165,15 +165,60 @@ service 变长，同时项目 Ray/pending/credit 层出现 buffer 与 flush→su
 shared work 把更多 long work 注入服务，故 aggregate throughput 更高，但 short 的这两层
 退化都比 static 更强。
 
+### 4.7 统一 eager 到达后的 Project 配对重测
+
+为消除 Project 在线 replay 与原生 eager-manifest 的到达差异，追加 Project-only
+near-all-at-t0 诊断：同一 short/long manifest、同一多 Job runner 和 T1 request-JCT
+边界，DB 的 66.875 s arrival span 统一压缩为 66.76 µs。三个主场景和独立 half-pool
+控制均为 1 warm-up + 3 formal，12/12 formal exactly-once、零 incident；所有 short
+均为 512 条且 endpoint 各 256 条。
+
+干扰增量统一使用本矩阵内的 full/half single，不把前一节独立 generic runner 的
+T3=11.354s 混作基线；本矩阵 full single 的同 runner T1 JCT=12.379s。这样 single 与
+two-job 的启动延迟、资源采样、Job barrier 和统计代码完全一致。
+
+| Project 场景 | short JCT | short P99 | short work/s | group tok/s | MFU | running mean | long JCT |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| full-pool single | 12.379 s | 12.338 s | 11,980.6 | 11,726.1 | 41.82% | 186.2 | — |
+| half-pool single | 19.682 s | 19.671 s | 7,505.1 | 7,647.7 | 22.87% | 98.4 | — |
+| static half + long | 31.249 s | 30.724 s | 4,729.2 | 9,287.2 | 34.79% | 68.4 | 86.694 s |
+| shared full + long | 15.957 s | 15.921 s | 9,267.7 | 12,245.0 | 45.57% | 102.4 | 64.375 s |
+
+这组配对把两个影响分开了：full→half 的 quota-only 已使 short JCT +59.00%；在相同
+half quota 下，long 真正加入又使 static short JCT +58.77%、P99 +56.19%、work rate
+−36.99%。shared+long 相对 full single 的 short JCT/P99 为 +28.90%/+29.04%，但相对
+static+long 将 short JCT 降低 48.94%、group tok/s 提高 31.85%、long JCT 降低 25.75%，
+Jain fairness 从均值 0.894 提到 0.972。这里的 shared 价值是 work-conserving idle
+borrowing，不等于最终 state-aware 控制器已经验证。
+
+long 对 short 的细阶段影响也已对齐。static 的 matched half→long 使
+arrival→flush mean/P99 +45.64%/+54.83%，flush→submit +67.45%/+100.63%，service
++50.34%/+78.62%，request E2E +48.16%/+57.49%；shared 的 matched full→long 主要使
+service mean/P99 +14.63%/+28.70%，而 arrival→flush 仅 +6.08%/+6.54%。
+submit→service 仍约 2 ms，不是主要瓶颈。
+
+状态时间线解释了差异：long 到达前，static 预留一半容量时 running 总和均值为 120.6，
+shared 可借空闲额度达到 230.1；overlap 时分别为 133.3/184.8。两臂 GPU utilization
+都接近 100%，但 MFU、running、KV 和完成速率明显不同，再次说明不能只看 GPU util。
+在线 replay 下 half quota 近似中性且 shared 伤害 short；eager 下 half quota 明显欠供给且
+shared 同时改善效率、隔离和公平。因此策略价值具有 arrival regime dependence，不能用
+任一单一负载宣称 shared/dynamic 普遍胜出。
+
+与原生轨只报告系统内归一化 short-JCT 影响：Daft Native +82.42%、Daft Ray +104.84%、
+Ray Data +32.76%，Project static 的 matched competition-only +58.77%、Project shared
++28.90%。这些是各轨内部的干扰指纹；原生 adapter 没有 request P99，且 T0 准备边界仍
+不同，所以不把归一化变化进一步包装成跨框架方法排名。
+
 ## 5. 结果解释与开题对应
 
 ### 事实
 
 1. 没有 overlap 的 15 s Daft Native 结果不能证明前台干扰；统一 5 s 后三条原生路径与
    两条项目策略都发生真实 overlap。
-2. 单 short 的 half quota 几乎不影响 JCT/P99/work rate；long 加入后才产生明显退化。
-3. 项目 shared work credit 提升总吞吐并缩短 long JCT，但 short JCT/work rate 与 Jain
-   fairness 变差，存在可重复的效率—隔离权衡。
+2. 在线 replay 下 half quota 近似中性；eager 下 half quota 单独使 short JCT +59.00%。
+   静态预留是否浪费容量取决于到达 regime，不能跨负载复用结论。
+3. 在线 replay 下 shared 提升总吞吐但伤害 short/fairness；eager 下 shared 相对 static
+   同时改善 short、long、总吞吐和公平，但相对 full single 仍使 short JCT +28.90%。
 4. 现有原生路径在相同任务下落入 overqueue 或 underfeed 等不同状态形态，且 short
    都受到后到 long 的影响。
 5. 项目与原生轨只对齐 Job 级 5 s offset，没有对齐逐请求 arrival replay；71.24 s 与
@@ -182,6 +227,9 @@ shared work 把更多 long work 注入服务，故 aggregate throughput 更高�
    Daft Native。long 加入后，同时放大 short 的 backend service 和项目上游 buffer。
 7. Project all-at-t0 的 T3/service throughput/MFU 与Daft Native只差约2.5%–2.7%；
    当前大差距来自 arrival 与计时合同，不应先扫K256/K512或把short人为拉到60s。
+8. eager Project 重测的 12 formal 和 half-pool 控制均通过；long 对 short 的 backend
+   service 与上游 pending 影响被分别量化，shared 的收益来自 idle borrowing 而非 GPU
+   utilization 单指标。
 
 ### 对设计的支撑
 
@@ -196,7 +244,8 @@ shared work 把更多 long work 注入服务，故 aggregate throughput 更高�
 
 ### 不能声称
 
-- 不能说 shared/dynamic 全面优于 static；short isolation 和公平指标明确回退。
+- 不能说 shared/dynamic 全面优于 static；在线 replay 中 short isolation/fairness 回退，
+  eager 中则改善，结论明确依赖到达 regime。
 - 不能从原生 JCT 变化归因 Daft/Ray Data 内部调度算法，也不能称项目已优于三个框架。
 - 不能把项目 arrival-replay 的 71.24 s 与原生 eager-manifest 的 11.06/14.74/128.91 s
   做绝对 JCT 或吞吐排名。
@@ -208,11 +257,13 @@ shared work 把更多 long work 注入服务，故 aggregate throughput 更高�
 ## 6. 待画图清单（本轮不画）
 
 1. **前台干扰主图**：每个系统一组 `single short` 与 `short+long` 的 normalized short-JCT
-   delta/误差线，同时标注实际 overlap；不画跨轨绝对 JCT 柱，也不混排原生 request P99。
+   delta/误差线，同时标注实际 overlap；Project 使用 eager matched full/half 控制，不画
+   跨轨绝对 JCT 柱，也不混排原生 request P99。
 2. **项目因果分解图**：full single、half single、static+long、shared+long 四点，分别显示
-   short JCT、P99 和 work rate；突出“quota-only≈0，long competition>0”。
+   short JCT、P99 和 work rate；在线/eager 分面，突出 quota-only 与 competition 都会
+   随 arrival regime 改变。
 3. **效率—隔离权衡图**：static/shared 的 aggregate tok/s、long JCT、short JCT、Jain
-   fairness 四个 aligned small multiples；避免双 y 轴和无解释散点。
+   fairness 四个 aligned small multiples，并按在线/eager 分面；避免双 y 轴和无解释散点。
 4. **状态时间线图**：0–5 s pre-long、overlap、long-drain 三段，画 running/work rate/GPU
    util；MFU 只报 group aggregate，因为没有 interval FLOPs counter。
 5. **原生状态指纹图**：Daft Native、Daft Ray、Ray Data 的 running、waiting、KV、MFU
@@ -226,6 +277,8 @@ shared work 把更多 long work 注入服务，故 aggregate throughput 更高�
 Git 只保存紧凑审计数据：
 
 - `data/combined/`：统一 30-row formal、10-row summary、6 个对比和三阶段数据；
+- `data/eager_project/`：12-row Project eager formal、四场景汇总、quota/competition
+  对比、short 逐阶段分解、三阶段状态和跨轨归一化干扰数据；
 - `data/combined/project_request_timing_summary.csv`：项目四场景逐请求时间分解；
 - `data/combined/single_short_project_daft_timing.csv`：项目/Daft timer 与 vLLM 边界对齐表；
 - `data/combined/project_long_impact_breakdown.csv`：long 对 short 各阶段的 matched-control 增量；
@@ -243,6 +296,7 @@ shard log、GPU/service time series 和失败 incident：
 | `opening_short_job_native_controls_20260809_v1.tar.gz` | `5cd8daa607e986a2b2f8503368a4bde0db9d3968c85ce13be5d4f38b6c348a93` |
 | `opening_text_native_multijob_forced_overlap_20260809_v1.tar.gz` | `515b33a5a07e77c39131e02ba1ee8fcb1ff3c000b4f2a582cd117c6b5ca095a7` |
 | `opening_short_job_interference_forced_overlap_20260809_v1.tar.gz` | `b7aa4c8b6cd728285fa3929acdec0a03ac5052492ef7f1dc99bf8419ea617e6d` |
+| `opening_project_multijob_eager_retest_20260809_v2.tar.gz` | `713292a1e1f0998a2721b0f747a02c2d0ea60cd1a42b89044f05165c5500c4df` |
 | config-load failed v1 | `fbe52e3a53a76d0660b23253e6295d78f3d4dda64814ff5a06260122cf096c8e` |
 | transient-ReadError failed v2 | `6c2bc324accfa92efbf7f1d2a7a25fee480a50e1ce773bca06da1380890ef77a` |
 

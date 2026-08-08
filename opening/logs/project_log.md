@@ -1,5 +1,15 @@
 # 开题材料 project log
 
+## 2026-08-09 Project eager 多 Job 匹配重测
+
+- 统一报告、Claim Matrix、开题报告、答辩大纲和问答口径：Project eager 的 full/half
+  single、static/shared+long 共12 formal全部通过，arrival span为66.76µs。
+- 冻结两个独立效应：quota-only使short JCT+59.00%；matched long competition使
+  static/shared short JCT+58.77%/+28.90%。eager shared相对static改善short、long、
+  aggregate和Jain，但online replay方向不同，因此结论是arrival-regime dependence、
+  idle borrowing和SLO/fairness guard的必要性，不称dynamic普遍胜出。
+- 本轮只整理数据和待画图合同，未生成图片、PPT、飞书或Wiki内容。
+
 ## 2026-08-09 多 Job 请求到达语义澄清
 
 - 明确 5 s 仅统一 Job 级启动；项目逐请求 arrival replay，原生 graph 使用完整 manifest

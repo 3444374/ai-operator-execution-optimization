@@ -44,11 +44,11 @@
 
 ### 为什么不是“动态策略已经有效”？
 
-> 因为现有多项动态候选没有超过强静态点：AIMD、PID、adaptive flush、service quantum 和多 actor 多数未过约 5% 晋级门槛。5s short/long 两作业实验已经补齐两层证据：Daft/Ray Data 原生路径只观察多应用竞争；项目 static-partition vs shared-work-credit 则证明 aggregate efficiency、前台隔离与公平之间存在权衡。shared 提高总吞吐 21.03%、降低 long JCT 18.31%，但 short JCT 增加 4.98%、Jain 下降，因此仍不能说动态已经胜出。同上限 phase-change、weighted/SLO 和图像动态仍是论文阶段实验。
+> 因为现有多项动态候选没有超过强静态点：AIMD、PID、adaptive flush、service quantum 和多 actor 多数未过约5%晋级门槛。5s short/long实验补齐了两层证据：原生路径观察多应用竞争；项目则用full/half single与static/shared分离quota和竞争。在线replay中shared提高总吞吐但伤害short/Jain；eager中half quota本身使short JCT+59.00%，shared通过idle borrowing相对static使short JCT−48.94%、总吞吐+31.85%、Jain 0.894→0.972，但相对full single仍受long影响+28.90%。方向随arrival regime反转，所以需要状态感知和SLO/fairness guard，不能说动态已经普遍胜出。
 
 ### 如果两个 Job 没有执行时间重叠，还能证明多 Job 干扰吗？
 
-> 不能证明“后到 Job 干扰已经运行的前台 Job”。只有当两个 Job 已经同时到达、但框架主动把其中一个排队串行化时，零执行重叠才能证明 admission/HOL 阻塞；如果 short 自然完成后 long 才到达，则实验没有制造共享资源竞争。旧 15s Daft Native 零重叠属于后者，所以不进入结论；当前统一 5s offset 后三条原生路径都有真实 overlap，项目又用 single-short full/half 控制排除了 quota-only 影响。
+> 不能证明“后到 Job 干扰已经运行的前台 Job”。只有当两个 Job 已经同时到达、但框架主动把其中一个排队串行化时，零执行重叠才能证明 admission/HOL 阻塞；如果 short 自然完成后 long 才到达，则没有制造竞争。旧15s Daft Native属于后者。当前5s offset下各原生路径都真实overlap；项目又分别在在线与eager合同下使用full/half single控制。eager结果显示quota-only并非总可忽略，因此归因必须使用同quota baseline。
 
 ### 当前 5 s 实验到底回答哪个到达方向？为什么不换成 Long→Short？
 
@@ -64,7 +64,7 @@
 
 ### 为什么不把 short 调到喂满 GPU？能否只重测项目？
 
-> 保持在线语义时不能提交尚未到达的请求；66.875s arrival span是offered load，不是K/W不足。Project all-at-t0 已把service throughput/MFU提高到14,361 tok/s/42.93%，与Daft短Job只差约2.5%，所以无需扫K256/K512或为了60s扩大short。为了公平测long影响，只需在同一Project多Job runner下补eager single、eager static+long、eager shared+long；Daft/Ray Data原始eager数据复用。该诊断不替换在线多Job反事实，也不升级为正式框架排名。
+> 保持在线语义时不能提交尚未到达的请求；66.875s arrival span是offered load，不是K/W不足。Project all-at-t0将service throughput/MFU提高到14,361tok/s/42.93%，与Daft短Job只差约2.5%，无需扫K256/K512或把short扩到60s。公平long影响重测已完成：同一Project runner下full single、half single、static+long、shared+long各1+3，arrival span 66.76µs、12/12 formal通过；Daft/Ray Data原始eager数据复用。该诊断与在线反事实分轨保留，不升级为绝对框架排名。
 
 ### 一个 short 加一个 long 足以说明多 Job 管理的必要性吗？为什么不直接做四个 Job？
 

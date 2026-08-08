@@ -99,7 +99,7 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 ### 6.1 开题前必须完成
 
 1. 完成 SQuAD 与 ShareGPT 两套统一三臂 replacement；项目静态臂必须通过 feeding-saturation、correctness 与稳定性门。该矩阵保留为一次 database-E2E 护栏，不要求后续方法实验重复 sink。
-2. short/long 两作业 staggered static partition vs shared work-credit 最小实验已完成；报告已覆盖 per-job JCT/P99/goodput、Jain fairness、isolation 和实际 overlap。结果显示 shared 提高 aggregate throughput/long JCT，但 short isolation 与 Jain 回退；3:1 weighted 留论文阶段。
+2. short/long 两作业最小实验已完成 online/eager 两套到达合同及 full/half matched control；报告已覆盖 per-job JCT/P99/goodput、Jain、isolation 和 overlap。online 下 shared 提高 aggregate 但 short/Jain 回退，eager 下 idle borrowing 同时改善 static 的 short/long/aggregate/Jain，证明 arrival-regime dependence；3:1 weighted 留论文阶段。
 3. 把现有 token-work 差异、high/arrival-limited 状态差异、active-work frontier、数据组织 regime、图像阶段失衡与 matched-resource 结果、cost decision quality 重组为动机和可行性证据。
 4. 报告、答辩内容大纲、Claim Matrix 和图使用同一数值与边界；state-aware、图像动态和 cost held-out 只作为可证伪研究计划，不用完成时表述；当前不制作 PPT 成品。
 

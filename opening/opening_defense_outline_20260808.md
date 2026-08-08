@@ -38,7 +38,7 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 | 10 | 数据组织输出调度可消费的 WorkDescriptor | row/source/prepare/model/result work、locality、deadline、uncertainty | WorkDescriptor 字段图 | 组织的输出不是只有 payload batch |
 | 11 | 数据组织同时平衡 work、局部性和下游队列形态 | token/frame/stage budget；balance 与 prefix/locality 的冲突 | organization regime 图 | 已有结果是 serving-regime-dependent，不宣称普遍胜出 |
 | 12 | 状态感知控制只在离线安全包络内动作 | offline safe envelope、fresh snapshot、候选 credit、deadband、回退 | `opening_work_to_schedule_overview` | stale/missing signal 回退强静态点 |
-| 13 | 多作业按 work 共享而不是按请求数平均 | shared work credit、deficit/fair queue、idle borrowing、remaining work/SLO slack | 5s guaranteed-overlap 数据：shared 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、Jain 下降 | 已证明权衡存在；weighted/4+ job 和 SLO guard 仍需论文阶段验证 |
+| 13 | 多作业按 work 共享而不是按请求数平均 | shared work credit、deficit/fair queue、idle borrowing、remaining work/SLO slack | online/eager方向相反；eager quota-only+59.00%，shared相对static short JCT−48.94%、总吞吐+31.85% | 已证明arrival-regime dependence与idle borrowing；weighted/4+job、SLO guard仍需论文阶段验证 |
 | 14 | 文本和图像复用接口，但主导 stage 不同 | text token work；image prepare/model/tensor work；同一 descriptor/state/controller 接口 | 跨模态映射表 | 泛化是接口复用，不是假设两种负载成本相同 |
 | 15 | 因果评估必须先冻结饱和强静态点 | 同资源、同最大 K/work、同 source、同完整结果语义；dynamic 仅改变策略 | 实验合同图 | 未通过 feeding/correctness/stability 的数据不得排名；sink 仅用于 database-E2E 护栏 |
 | 16 | 原生 graph 将同一服务推入不同压力区 | bounded C128 最小饱和；Daft Native/Ray overqueue；Ray Data 当前路径 underfeed | 待画：JCT/tok/s + running/waiting/KV/MFU 状态指纹双面板 | 只讲外部现象；database-E2E 护栏与 DuckDB raw/correct 放 appendix 表 |
@@ -73,15 +73,17 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 | 原生系统观察 | Daft Native、Daft Ray、Ray Data 各自启动 short/long 两个错峰 job | 独立数据作业共享同一模型服务时，是否出现全局压力叠加、干扰、资源超卖或可观测性缺口 | 框架自己拥有 batching/backpressure；Job 启动后完整 manifest 可用，不重放项目逐请求 arrival；不注入项目 credit/router；不把 barrier 冒充 request P99 |
 | 项目因果 A/B | `project_static_partition` vs `project_shared_work` | 感知 job 活跃/完成状态并借用空闲 work credit，能否在相同 endpoint 总 K/work 下改善 JCT/tail/fairness | 只改共享与 idle-borrowing 策略；1+3 后无论正负均停止，不扫 offset/weight 追正 |
 
-2026-08-09 已完成统一 5s offset：三条原生路径 short JCT 相对各自 single 增加
-82.42%/104.84%/32.76%，均有实际 overlap；项目 quota-only≈0，static/shared 加入 long
-后 short JCT 增加 3.79%/8.95%。shared 相对 static 的 aggregate throughput +21.03%、
-long JCT −18.31%，但 short JCT +4.98%、Jain median 0.759→0.707。因此开题结论是
-“多 Job 管理需要显式效率、隔离与公平目标”，不是“shared/dynamic 全面优于 static”。
+2026-08-09 已完成统一5s offset：原生三轨 short JCT 相对各自single增加
+82.42%/104.84%/32.76%，均有实际overlap。项目在线replay下quota-only≈0，shared提高
+总吞吐但short/Jain回退；统一eager后quota-only已使short JCT+59.00%，matched
+static+long又+58.77%，matched shared+long+28.90%。eager shared相对static使short JCT
+−48.94%、总吞吐+31.85%、long JCT−25.75%、Jain 0.894→0.972。因此开题结论是
+“多Job管理必须感知arrival regime、支持idle borrowing并显式约束SLO/fairness”，不是
+“shared/dynamic全面优于static”。
 
-5 s 只统一 Job 级启动，不统一 Job 内请求到达：项目逐请求 replay，原生 graph 使用完整
-manifest eager 执行。因此项目 single short 71.24 s 与 Daft Native 11.06 s 不作绝对性能
-比较；可用的比较只有项目内部 matched-cap 因果 A/B 和各原生轨内部 single→overlap 变化。
+在线5s矩阵只统一Job级启动；新增Project eager矩阵又把DB arrival span压到66.76µs，
+但Daft仍缺准备前T0。因此不作跨轨绝对JCT比较；只展示项目matched-cap因果A/B和各原生轨
+内部single→overlap变化。
 
 主指标是 per-job/group JCT、goodput、Jain fairness、isolation、global running/waiting/KV/GPU/MFU 时序。`borrowed_work_seconds` 只在项目 A/B 中由请求/credit trace 计算；原生框架无 job-level active-work 标注时必须明确标记不可观测。
 

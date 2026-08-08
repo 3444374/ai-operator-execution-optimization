@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "main_root_name": "opening_project_multijob_all_at_t0_diagnostic_20260809_v1",
+  "half_root_name": "opening_project_short_half_pool_all_at_t0_diagnostic_20260809_v1",
+  "formal_runs": 12,
+  "checks": {
+    "one_warmup_three_formal_per_scenario": true,
+    "metrics_resources_mfu_ok": true,
+    "exactly_once_512_and_endpoint_balance": true,
+    "arrival_span_below_1ms": true,
+    "zero_worker_failure_and_incident": true
+  },
+  "errors": []
+}
