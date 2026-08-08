@@ -5,7 +5,8 @@
 - 背景：首轮统一 database-E2E 中项目臂的同协议 feeding ratio 未达到 95% 门禁，按冻结规则降级为 failed-feeding 诊断，需要在相同运行签名下先校准项目静态 feeder。
 - 修复：`multicard_scale_ramp.py` 的项目臂现在显式透传当前 scale 的 immutable request manifest，并启用 database-E2E timing boundary；此前 direct/DuckDB 使用该 manifest，而项目臂退回数据库顺序，不能作为同分片校准证据。
 - 验证：新增回归测试锁定项目臂的 manifest 路径和计时边界。校准仍只单变量扫描 K/active-work，正式矩阵在选择最小饱和点后冻结参数。
-- 新增可复现纠正校准模板：每个 workload 同 manifest 固定服务、token budget、active work 与 8×16 actor slots，三次重复扫描 project K32/64/128；按 97% 项目已测峰值与 95% direct feeding 双门选择最小点。首轮结果状态改为 failed-feeding 诊断，待整体替换重跑，不扩大开题 baseline。
+- 新增可复现纠正校准模板：每个 workload 同 manifest 固定服务、token budget、active work 与 8×32=256 actor slots，三次重复扫描 project K32/64/128/256；K256 为既有正式合同点，必须包含在项目峰值参照中。按 97% 项目已测峰值与 95% direct feeding 双门选择最小点。此前 8×16 的 SQuAD K32/64/128 完整运行与 ShareGPT 未完成预热均仅保留为诊断，统一容量重跑后才冻结。首轮结果状态改为 failed-feeding 诊断，待整体替换重跑，不扩大开题 baseline。
+- 新增版本化校准审计器：逐格重算 direct group service tokens/s，检查三次重复、exactly-once、manifest SHA、完整行数、worker/actor failure、resource metrics 与终态空队列；只有全部审计通过才按双门自动输出最小 K，否则 fail-closed。对应单元测试覆盖 K256 峰值参照下的最小 K 选择和跨臂 manifest 不一致拒绝。
 - 重启后第一次 SQuAD 校准在发出请求前 fail-closed：`_ensure_ray_head()` 对不存在的 6380 head 做复用探测时抛出未捕获的 60 秒 `TimeoutExpired`，没有进入 fresh-start 分支。失败目录与日志保留；修复为 10 秒有界探测并将超时显式降级到 stop/fresh-start，新增回归测试后使用全新 retry 目录运行。
 
 ## 2026-08-08 v6 通过 Microsoft PowerPoint 真实打开检查

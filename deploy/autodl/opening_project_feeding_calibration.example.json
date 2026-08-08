@@ -22,7 +22,8 @@
     {"arm": "bounded_http", "concurrency": 32, "reps": "${OPENING_CALIBRATION_REPS}"},
     {"arm": "project_static", "concurrency": 32, "reps": "${OPENING_CALIBRATION_REPS}"},
     {"arm": "project_static", "concurrency": 64, "reps": "${OPENING_CALIBRATION_REPS}"},
-    {"arm": "project_static", "concurrency": 128, "reps": "${OPENING_CALIBRATION_REPS}"}
+    {"arm": "project_static", "concurrency": 128, "reps": "${OPENING_CALIBRATION_REPS}"},
+    {"arm": "project_static", "concurrency": 256, "reps": "${OPENING_CALIBRATION_REPS}"}
   ],
   "output_root": "${OPENING_CALIBRATION_OUTPUT_ROOT}",
   "database_url": "${DATABASE_URL}",
@@ -31,7 +32,7 @@
   "project_token_budget": 6144,
   "project_active_work": "${OPENING_CALIBRATION_ACTIVE_WORK}",
   "project_actor_workers": 8,
-  "project_ray_concurrency": 16,
+  "project_ray_concurrency": 32,
   "warmup_per_cell": true,
   "warmup_concurrency": 32,
   "idle_timeout_s": 120.0,

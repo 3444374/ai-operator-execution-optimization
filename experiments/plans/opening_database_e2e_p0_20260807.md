@@ -22,7 +22,7 @@
 | sink | 同一 PostgreSQL `document_completions`；每个 cell 写入前按本次 doc-id 集合清除旧行，写后执行 count + `(doc_id, completion_text)` digest readback；清理不计入 E2E |
 | request set | 两 endpoint 的 immutable JSONL manifest；`equal_rows`，seed=20260807；manifest SHA、sidecar、row count、每 endpoint work 逐 run 记录；三臂必须相同 |
 | 并发 | direct 与 DuckDB AI 每 endpoint 32；project 首轮 K=32、8 actors × concurrency 4 未过 feeding 门。纠正重跑只采用校准后冻结的最小饱和 K/actor slots；不得在 formal 在线调参 |
-| project static | token budget=6144，首轮 active work=65,536/endpoint，request-level，manifest-pinned routing，httpx async，固定 50 ms flush 标签沿用冻结静态合同；纠正校准先固定除 K 外全部变量，若 K32/64/128 均不满足才固定最佳 K 后单独扫描 active work |
+| project static | token budget=6144，首轮 active work=65,536/endpoint，request-level，manifest-pinned routing，httpx async，固定 50 ms flush 标签沿用冻结静态合同；纠正校准统一使用 8×32=256 actor slots 并固定除 K 外全部变量，扫描 K32/64/128/256（包含既有正式合同 K256）；若四档均不满足才固定最佳 K 后单独扫描 active work |
 | 重复 | 每 workload 每 arm 1 warmup + 3 formal；按确定性随机顺序交错执行；warmup 不进 headline |
 | headline | `correct_rows / database_e2e_s`；同时报告 raw rows/s、database-E2E、service tokens/s、request latency、TTFT、failure、truncation、GPU、MFU、能耗和 sink 门禁 |
 
@@ -83,8 +83,8 @@ timer 之外只允许：runner preflight、endpoint idle、旧 sink 行清理、
 首轮同时通过正确性与资源门禁，但项目臂未达到同协议 direct 的 95% service-token feeding 门，因此按下列预注册顺序纠正，不删除或覆盖首轮证据：
 
 1. 重启后重新执行 runtime preflight，核对相同 2×4090、Qwen2.5-7B、Chat、prefix-cache ON、8192/256 service capacity、PostgreSQL source/sink 和 immutable manifest。
-2. 使用 `deploy/autodl/opening_project_feeding_calibration.example.json`，对每个 workload 分别固定 token budget=6144、active work=65,536/endpoint、8 actor 与每 actor concurrency=16，只扫描 per-endpoint K `{32,64,128}`；bounded direct 固定每 endpoint 32，所有 cell 使用同一 manifest 并在测量前同协议 cache conditioning。
+2. 使用 `deploy/autodl/opening_project_feeding_calibration.example.json`，对每个 workload 分别固定 token budget=6144、active work=65,536/endpoint、8 actor 与每 actor concurrency=32（每 endpoint 256 slots），只扫描 per-endpoint K `{32,64,128,256}`；K256 是既有正式合同点，不能从峰值参照中省略。bounded direct 固定每 endpoint 32，所有 cell 使用同一 manifest 并在测量前同协议 cache conditioning。此前 8×16 的 SQuAD 三档结果与未完成的 ShareGPT 预热只保留为诊断，不参与冻结。
 3. 每档三个成功重复。候选必须满足 exactly-once、0 failure、双 endpoint、最终空队列；以 repeat 中位数选择同时达到该 workload 已测项目峰值 97% 且达到同 run direct service tokens/s 95% 的最小 K。单次峰值不能晋级。
-4. 若 K 三档均不满足 feeding，固定最佳已测 K，再单独扫描 active work；禁止同时改变 K、active work、token budget 或 actor 数。
+4. 若 K 四档均不满足 feeding，固定最佳已测 K，再单独扫描 active work；禁止同时改变 K、active work、token budget 或 actor 数。
 5. 两个 workload 的校准签名分别冻结；正式 runner 可按 workload 使用各自选择，但每个 workload 的三臂 formal 期间参数不变。
 6. 冻结后以新 experiment ID 和新输出目录完整替换重跑两 workload × 三臂 × 1 warmup + 3 formal。新矩阵通过 correctness、feeding、stability 后才更新报告/PPT/飞书；首轮继续标为 failed-feeding diagnostic。
