@@ -7,6 +7,7 @@
 - DuckDB 保持 SQuAD/cap=64 有界输出产品轨；不扩大 workload、模型、数据库、weighted 或 offset 搜索追求正结果。
 - 原生两 job runner 复用现有轻量 sampler 保存逐 GPU 与 vLLM gauge/latency 时序，让 JCT 现象能够对应到感知信号；该观测不等于框架内部 scheduler trace。
 - 新增单 job 与原生多 job 的 AutoDL 模板；calibration selection/fingerprint、manifest 和 offset 未冻结时均拒绝 formal。
+- 原生单 job matrix 同步保存 GPU 与 vLLM estimated-FLOPs 时序；正式对比将包含 MFU/能耗，不再遗漏该指标。
 
 ## 2026-08-08 开题实验收缩为三臂 replacement + 两作业错峰
 

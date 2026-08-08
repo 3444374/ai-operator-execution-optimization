@@ -990,7 +990,9 @@ failure 或 vLLM 最终队列非空都会 fail closed。
 `baselines/run_text_native_matrix.py` 只用于已有独立 calibration selection/
 fingerprint 的原生 Chat 单 job 矩阵。它为每次 repeat 派生一份单 cell
 core-gate 配置，执行 1 warmup + N 确定性交错 formal，保留失败和时长不足的
-`not_rankable` 证据。`baselines/run_text_native_multijob.py` 只编排 Daft Native/
+`not_rankable` 证据，并保存逐 GPU 资源 CSV 与 vLLM gauge/latency delta，后续
+MFU 必须从 estimated-FLOPs delta、GPU 数和 service wall 按冻结口径计算。
+`baselines/run_text_native_multijob.py` 只编排 Daft Native/
 Ray 和 Ray Data 的两个错峰独立 job；每 job 同时启动两个现有
 `run-shard` 子进程。它不实现框架调度、不注入项目 credit，只报
 job/group barrier JCT、服务计数、vLLM running/waiting/KV/TTFT delta 与

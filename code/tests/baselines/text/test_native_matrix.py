@@ -4,7 +4,9 @@ import json
 import sys
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
+from types import SimpleNamespace
 
 
 CODE_ROOT = next(
@@ -23,6 +25,17 @@ from src.baselines.text.orchestration.native_matrix import (
 
 
 class NativeTextMatrixTests(unittest.TestCase):
+    @staticmethod
+    @contextmanager
+    def _instrumentation(_urls: tuple[str, ...], path: Path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("sample_index,gpu_index,gpu_utilization_pct\n0,0,88\n", encoding="utf-8")
+        yield SimpleNamespace(
+            gpu_summary={"gpu0_util_mean": 88.0, "n_samples": 1.0},
+            gauge_summary={"vllm_running_mean": 8.0, "n_gauge_samples": 1.0},
+            ttft_deltas={0: {"vllm_estimated_flops_delta": 1.0}},
+        )
+
     def _config_path(self, root: Path, *, minimum_seconds: float = 60.0) -> Path:
         manifest = root / "manifest.jsonl"
         write_manifest(
@@ -144,6 +157,7 @@ class NativeTextMatrixTests(unittest.TestCase):
                 driver_python="driver-python",
                 vllm_python="vllm-python",
                 core_gate_invoker=fake_gate,
+                cell_instrumenter=self._instrumentation,
             )
 
             self.assertEqual(len(calls), 8)  # 2 arms * (1 warmup + 3 formal)
@@ -153,6 +167,9 @@ class NativeTextMatrixTests(unittest.TestCase):
             index = json.loads((root / "out" / "matrix_index.json").read_text())
             self.assertEqual(index["formal_runs_rankable"], 6)
             self.assertEqual(index["runs"][0]["duration_status"], "warmup_not_ranked")
+            self.assertTrue(Path(index["runs"][0]["gpu_resource_trace"]).is_file())
+            self.assertEqual(index["runs"][0]["gpu_summary"]["gpu0_util_mean"], 88.0)
+            self.assertEqual(index["runs"][0]["gauge_summary"]["vllm_running_mean"], 8.0)
 
     def test_short_formal_result_is_preserved_but_not_rankable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -176,6 +193,7 @@ class NativeTextMatrixTests(unittest.TestCase):
                 driver_python="driver-python",
                 vllm_python="vllm-python",
                 core_gate_invoker=fake_gate,
+                cell_instrumenter=self._instrumentation,
             )
 
             self.assertEqual(result["status"], "not_rankable")
@@ -197,6 +215,7 @@ class NativeTextMatrixTests(unittest.TestCase):
                     driver_python="driver-python",
                     vllm_python="vllm-python",
                     core_gate_invoker=failing_gate,
+                    cell_instrumenter=self._instrumentation,
                 )
             index = json.loads((root / "out" / "matrix_index.json").read_text())
             self.assertEqual(index["status"], "failed")

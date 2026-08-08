@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
+from src.baselines.common.cell_instrumentation import instrumented_cell
 from src.baselines.common.manifests import read_manifest
 from src.baselines.text.orchestration.gate_runner import (
     BLOCKED_ADAPTER_REASONS,
@@ -349,6 +350,11 @@ def _assert_manifest_unchanged(config: NativeMatrixConfig) -> None:
         raise RuntimeError("immutable manifest changed during matrix execution")
 
 
+def _metrics_urls(endpoint_urls: Sequence[str]) -> tuple[str, ...]:
+    suffix = "/v1/chat/completions"
+    return tuple(url.removesuffix(suffix) + "/metrics" for url in endpoint_urls)
+
+
 def _initial_index(config: NativeMatrixConfig) -> dict[str, object]:
     return {
         "schema_version": 1,
@@ -383,6 +389,7 @@ def run_native_text_matrix(
     driver_python: str,
     vllm_python: str,
     core_gate_invoker: CoreGateInvoker = run_core_gate,
+    cell_instrumenter: Callable[..., object] = instrumented_cell,
 ) -> dict[str, object]:
     """Execute one warm-up and N formal repeats with isolated derived gates."""
 
@@ -394,7 +401,13 @@ def run_native_text_matrix(
     runs_root.mkdir()
     index_path = config.output_root / "matrix_index.json"
     index = _initial_index(config)
+    index["resource_time_series"] = {
+        "status": "collected_per_run",
+        "gpu": "gpu_resource.csv",
+        "vllm": "gauge_summary and vllm_latency_deltas in matrix_index.json",
+    }
     _atomic_json(index_path, index)
+    metrics_urls = _metrics_urls(config.endpoint_urls)
     ordinal = 0
     try:
         for phase, repeats in (("warmup", config.warmup_repeats), ("formal", config.formal_repeats)):
@@ -420,11 +433,13 @@ def run_native_text_matrix(
                     index["runs"].append(record)  # type: ignore[index]
                     _atomic_json(index_path, index)
                     try:
-                        result = core_gate_invoker(
-                            derived_path,
-                            driver_python=driver_python,
-                            vllm_python=vllm_python,
-                        )
+                        gpu_trace = run_root / "gpu_resource.csv"
+                        with cell_instrumenter(metrics_urls, gpu_trace) as instrumentation:  # type: ignore[attr-defined]
+                            result = core_gate_invoker(
+                                derived_path,
+                                driver_python=driver_python,
+                                vllm_python=vllm_python,
+                            )
                     except Exception as exc:
                         record.update(
                             {
@@ -442,6 +457,10 @@ def run_native_text_matrix(
                         _atomic_json(index_path, index)
                         raise
                     record["core_gate_result"] = result
+                    record["gpu_resource_trace"] = str(gpu_trace)
+                    record["gpu_summary"] = instrumentation.gpu_summary
+                    record["gauge_summary"] = instrumentation.gauge_summary
+                    record["vllm_latency_deltas"] = instrumentation.ttft_deltas
                     record["status"] = "passed"
                     if phase == "formal":
                         record.update(_duration_rankability(run_root, arm, config.minimum_measurement_seconds))
