@@ -6,6 +6,7 @@
 - 当前最小增量冻结为：完成 SQuAD/ShareGPT database-E2E 护栏；补同一 ShareGPT Chat manifest 的 bounded、Daft Native/Ray、Ray Data 原生单 job 1+3；补原生两 job 错峰观察和项目 static/shared 同上限 A/B。
 - DuckDB 只在有界输出产品轨中解释；原生路径不注入项目 credit/router。phase-change、weighted、图像新动态策略、cost held-out、第二硬件和更多产品继续留后，不以扩矩阵追正。
 - 原生两 job 薄 runner 已接入现有 cell instrumentation：每个 run 保存逐 GPU 利用率/功耗 CSV、vLLM running/waiting/KV gauge summary 和 TTFT/ITL delta，使“观察到竞争”可对应到明确感知信号；仍不注入或改写框架调度。
+- 新增两个 AutoDL fail-closed 模板：原生单 job 只接受逐臂 calibration selection/fingerprint，原生多 job 只接受冻结 short/long manifest、offset 与 Ray Data 选择；避免把旧 smoke 参数或手工 JSON 当正式合同。
 
 ## 2026-08-08 开题实验范围按“讲清楚即可”收缩
 

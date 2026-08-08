@@ -1176,9 +1176,13 @@ HTTP loop and label it OceanBase.
 同一份 64 行 Chat Completions manifest 能由两张卡上的 service ceiling、direct
 control 与 vendor-native 适配器
 正确执行，不产生性能结论。calibration 规格在
-`dual_gpu_official_baseline_calibration.example.json`；它和 formal JSON 当前都是预注册
-合同，不是 gate runner 可直接执行的配置。gate 未通过禁止做任何 calibration screening；
-统一 matrix runner 未落地前不得声称 calibration/formal 已完成。
+`dual_gpu_official_baseline_calibration.example.json`；它和旧 formal JSON 是预注册
+合同，不是 gate runner 可直接执行的配置。gate 未通过禁止做 calibration screening。
+当前可执行的冻结单 job 模板是 `opening_text_native_matrix.example.json`，由
+`code/scripts/baselines/run_text_native_matrix.py` 调用已有 core gate；每臂必须先填入
+独立 calibration selection 与 fingerprint，否则 fail closed。两 job 错峰原生观察使用
+`opening_text_native_multijob.example.json` 和 `run_text_native_multijob.py`，只编排
+official shard 并采集服务/GPU 时序，不注入项目调度。
 `vLLM Bench` 只作 ceiling，`bounded_*` 只作项目自写 control；Daft built-in prompt、
 Ray Data Processor 和通过部署门禁的 OceanBase 才进入默认 ShareGPT native ranking。
 DuckDB `ai` community extension 必须先用

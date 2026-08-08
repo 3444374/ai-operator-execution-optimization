@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "experiment_id": "opening_text_native_single_job",
+  "formal": true,
+  "rows_total": 2048,
+  "endpoint_urls": [
+    "${COMPLETION_CHAT_ENDPOINT_URL_0}",
+    "${COMPLETION_CHAT_ENDPOINT_URL_1}"
+  ],
+  "completion_protocol": "chat_completions",
+  "model": "${COMPLETION_MODEL}",
+  "tokenizer": "${MODEL_PATH}",
+  "service": {
+    "prefix_caching": "enabled",
+    "max_num_seqs": 256,
+    "max_num_batched_tokens": 8192
+  },
+  "manifest": "${TEXT_NATIVE_FORMAL_MANIFEST}",
+  "output_root": "${TEXT_NATIVE_FORMAL_OUTPUT_ROOT}",
+  "warmup_repeats": 1,
+  "formal_repeats": 3,
+  "schedule_seed": 20260808,
+  "minimum_measurement_seconds": 60,
+  "hard_gates": {
+    "provenance_fields_present": true,
+    "native_arms_have_no_project_scheduler": true,
+    "exactly_once": true,
+    "failed_rows": 0,
+    "worker_failures": 0,
+    "vllm_running_final": 0,
+    "vllm_waiting_final": 0,
+    "both_endpoints_used": true,
+    "service_counter_consistency": true,
+    "same_model": true,
+    "same_protocol": true,
+    "same_service_config": true,
+    "endpoint_predicted_work_skew_max": 0.02
+  },
+  "partition_policy": null,
+  "arms": [
+    {
+      "id": "bounded_http",
+      "adapter": "bounded_http",
+      "concurrency_per_endpoint": "${BOUNDED_HTTP_CONCURRENCY_PER_ENDPOINT}",
+      "batch_size": 1,
+      "ray_address": null,
+      "python_executable": "${TEXT_BASELINES_PYTHON}",
+      "calibration": {
+        "selection": "${BOUNDED_HTTP_SELECTION}",
+        "fingerprint": "${BOUNDED_HTTP_CALIBRATION_FINGERPRINT}"
+      }
+    },
+    {
+      "id": "daft_native",
+      "adapter": "daft_native",
+      "concurrency_per_endpoint": 1,
+      "batch_size": 1,
+      "ray_address": null,
+      "python_executable": "${TEXT_BASELINES_PYTHON}",
+      "calibration": {
+        "selection": "vendor-owned-default-prompt-api",
+        "fingerprint": "${DAFT_NATIVE_CALIBRATION_FINGERPRINT}"
+      }
+    },
+    {
+      "id": "daft_ray",
+      "adapter": "daft_ray",
+      "concurrency_per_endpoint": 1,
+      "batch_size": 1,
+      "ray_address": "${RAY_ADDRESS}",
+      "python_executable": "${TEXT_BASELINES_PYTHON}",
+      "calibration": {
+        "selection": "vendor-owned-default-prompt-api",
+        "fingerprint": "${DAFT_RAY_CALIBRATION_FINGERPRINT}"
+      }
+    },
+    {
+      "id": "ray_data_http",
+      "adapter": "ray_data_http",
+      "concurrency_per_endpoint": "${RAY_DATA_CONCURRENCY_PER_ENDPOINT}",
+      "batch_size": "${RAY_DATA_BATCH_SIZE}",
+      "ray_address": "${RAY_ADDRESS}",
+      "python_executable": "${TEXT_BASELINES_PYTHON}",
+      "calibration": {
+        "selection": "${RAY_DATA_SELECTION}",
+        "fingerprint": "${RAY_DATA_CALIBRATION_FINGERPRINT}"
+      }
+    }
+  ]
+}

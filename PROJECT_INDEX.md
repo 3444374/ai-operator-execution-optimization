@@ -205,6 +205,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_project_feeding_calibration.example.json` | 首轮未过 95% feeding 门后的纠正校准模板；同 manifest、统一 256 actor slots 并固定其它变量，仅扫 project K32/64/128/256 | 每个 workload 冻结最小饱和静态点后再整体替换重跑三臂矩阵 |
 | `deploy/autodl/opening_project_feeding_repair.example.json` | 校准失败 cell 的同配置单重复 replacement 模板 | 原失败 root 必须保留；新 root 仅通过 `--repair-root` 合并，事故仍进入选择合同 |
 | `deploy/autodl/opening_database_e2e_refeed.example.json` | 读取两份通过审计的 workload-specific feeding 校准合同并 fail-closed 的替换正式矩阵模板 | 仅在 SQuAD/ShareGPT 校准均冻结后运行；direct/DuckDB 保持每 endpoint 32 |
+| `deploy/autodl/opening_text_native_matrix.example.json` | ShareGPT Chat bounded、Daft Native/Ray、Ray Data 原生单 job 1+3 正式模板 | 各臂独立校准与 fingerprint 冻结后运行；无 DuckDB 产品轨 |
+| `deploy/autodl/opening_text_native_multijob.example.json` | bounded、Daft Native/Ray、Ray Data 的 short/long 两 job 错峰原生观察模板 | concurrent smoke 与 offset 冻结后运行；保存外部服务/GPU 时序，不注入项目 credit/router |
 | `deploy/autodl/opening_multijob_minimal.example.json` | 两作业 short/long immutable manifest 的 staggered static partition vs shared work-credit 最小矩阵 | replacement 静态三臂后运行；只回答两作业 JCT/隔离/idle borrowing，weighted 留论文阶段 |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥、等行数的 short/long job manifest，并输出 token 分布与 SHA 审计 | 运行开题两作业实验前生成 512+512 行异质工作证据 |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
