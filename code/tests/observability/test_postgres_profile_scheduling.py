@@ -2335,6 +2335,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "prompt_tokens": [10, 20],
                 "arrival_time_s": [5.0, 15.0],
                 "prefix_key": ["p", "p"],
+                "preferred_endpoint_id": ["endpoint-1", "endpoint-0"],
             }
         )
         seeds = []
@@ -2434,6 +2435,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(
             [item.request.row_count for item in envelopes],
             [1, 1],
+        )
+        self.assertEqual(
+            [item.request.preferred_endpoint_id for item in envelopes],
+            ["endpoint-1", "endpoint-0"],
         )
         self.assertEqual(
             [item.submission_id for item in seeds],

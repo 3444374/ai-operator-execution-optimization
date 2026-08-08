@@ -87,14 +87,7 @@ def _batch_envelope(
         }
         if len(prefix_values) == 1:
             prefix_key = prefix_values.pop()
-    preferred_endpoint_id = ""
-    if "preferred_endpoint_id" in batch.column_names and batch.num_rows:
-        preferred_endpoint_values = {
-            str(value.as_py() or "")
-            for value in batch.column("preferred_endpoint_id")
-        }
-        if len(preferred_endpoint_values) == 1:
-            preferred_endpoint_id = preferred_endpoint_values.pop()
+    preferred_endpoint_id = _preferred_endpoint_id(batch)
     arrival_times = []
     if "arrival_time_s" in batch.column_names:
         arrival_times = [
@@ -130,6 +123,16 @@ def _batch_envelope(
         ),
         payload=batch,
     )
+
+
+def _preferred_endpoint_id(batch: pa.Table | pa.RecordBatch) -> str:
+    if "preferred_endpoint_id" not in batch.column_names or not batch.num_rows:
+        return ""
+    values = {
+        str(value.as_py() or "")
+        for value in batch.column("preferred_endpoint_id")
+    }
+    return values.pop() if len(values) == 1 else ""
 
 
 def _service_quantum_envelopes(
@@ -455,6 +458,7 @@ def _arrow_envelope(
             oldest_arrival_s=pending.oldest_arrival_s,
             payload_id=request_id,
             planning_batch_id=request_id,
+            preferred_endpoint_id=_preferred_endpoint_id(payload),
         ),
         payload=payload,
     )
@@ -484,6 +488,9 @@ def _request_envelopes(
                     oldest_arrival_s=row.arrival_s,
                     payload_id=request_id,
                     planning_batch_id=planning_batch_id,
+                    preferred_endpoint_id=_preferred_endpoint_id(
+                        row.payload_ref
+                    ),
                 ),
                 payload=row.payload_ref,
             )

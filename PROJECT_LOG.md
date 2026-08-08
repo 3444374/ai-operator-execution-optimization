@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-08-08 arrival replay 固定 endpoint 元数据传播修复
+
+- `opening_multijob_minimal` v3 的首个 static warm-up 在 scheduler 提交前 fail closed：manifest guard 已给一行 Arrow payload 写入 `preferred_endpoint_id`，但 request-granularity arrival replay 重建 `BatchRequest` 时未传播该字段，`manifest_pinned` router 因此报 `missing preferred endpoint`。
+- replay 现在从完整一行 payload 传播 frozen preferred endpoint；batch envelope 也统一复用同一提取函数，混合 endpoint batch 仍返回空值并由严格路由门拒绝。新增 request-granularity replay 元数据回归；v3 失败 root 保留，正式运行使用新 root。
+
 ## 2026-08-08 manifest-selected staggered 多 Job source 合同修复
 
 - `opening_multijob_minimal` v2 warm-up 在发请求前 fail closed：旧 profiler 同时规定 request manifest 必须 `doc_id` 排序且禁止 arrival replay，而 shared runner 又要求 replay 使用 `arrival_time`；job1 的非零 source offset 还会跳过已筛选 manifest 集合。该合同无法表达“互斥 short/long 集合 + 错峰 replay”。
