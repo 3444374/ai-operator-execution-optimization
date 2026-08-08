@@ -88,7 +88,7 @@
 1. SQuAD/ShareGPT replacement、原生单 job 与 5s guaranteed-overlap 两 job 最小证据均已完成；停止增加开题 baseline、offset、weight 或 4+ job 扫描。
 2. 依据 `opening_defense_outline_20260808.md` 整理动机—挑战—设计—证据边界和待画图数据合同；当前暂不实际画图。
 3. 完成 Claim Matrix、问答、实验状态与实现边界的一致性审计；用户已明确豁免 Wiki，同步云文档和制作 PPT 均暂停。
-4. 后续获准绘图时再完成渲染检查；论文阶段恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
+4. 后续获准绘图时只做 A/C 标签级重绘与 F/H 首次生成；B、WorkDescriptor 总览、D、E 不重画，G 无结果且不画。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
 ## 飞书同步目标
 
 后续需要写入飞书的主要目标：

@@ -5116,3 +5116,16 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   当前停止新增开题 baseline/offset/weight/4+ Job 扫描，后续工程顺序统一为 descriptor
   builder → observe-only snapshot → no-op/fallback → 同上限单动作消融。
 - 按用户要求继续只维护本地报告、紧凑数据和待画图合同；未生成图、PPT、云文档或 Wiki。
+
+## 2026-08-09 开题图表数据冻结与语义标签审计
+
+- 逐图回读 A–H 与附录所需 CSV/JSON，记录 13 个权威输入的行数、formal 数、
+  SHA256 前缀和 headline 复算值；A–F、H 及 database-E2E 附录数据均完整，G 无结果。
+- 通过逐张视觉检查确认现有六图无裁切或文字重叠，同时发现两项非数据问题：A 的
+  `max_active_work_seen_mean` 必须标为运行内峰值，容量曲线不能把未定义区间硬写成
+  “安全区/过载区”；C 的大 KV 池仍有约 12% 范围，不能写“近似中性”。
+- 只修改下次生成脚本与数据合同，未运行绘图入口、未覆盖 PNG/SVG。下一次获准绘图的
+  唯一清单冻结为 A/C 标签级重绘和 F/H 首次生成；B、WorkDescriptor 总览、D、E
+  不重画，G 无结果且不画，database-E2E 只保留附录表。
+- 同步 `figures/README.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`、开题报告、
+  第一性原理复审、答辩内容大纲和方向速览；未修改 PPT、飞书或 Wiki。

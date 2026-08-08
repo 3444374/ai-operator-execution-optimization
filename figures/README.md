@@ -72,16 +72,17 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 
 | 图 | 角色与边界 |
 |---|---|
-| `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机三联图：等行数有 14.3× work 差异；同 W65K 上限下实际 active work 与 MFU 随 offered load 改变；65K 以后吞吐近平台而 P99 上升。分别导出 work 表达、状态感知和安全区控制的必要性，不证明动态策略已胜出。 |
+| `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机三联图：等行数有 14.3× work 差异；同 W65K 上限下运行内峰值 active work 与 MFU 随 offered load 改变；65K 以后吞吐边际收益递减而 P99 上升。数据已冻结，下一次渲染需修正峰值标签并移除未经定义的“安全区/过载区”色带。 |
 | `architecture/opening_ai_data_execution_boundary.png` / `.svg` | 研究边界：数据库 AI 算子与模型/typed GPU backend 之间是 AI Data Execution Layer；两项研究内容并列，算子代价估计作为共同使能部件向二者供给 work/slack/uncertainty。 |
 | `architecture/opening_work_to_schedule_overview.png` / `.svg` | 方案总览：共同代价估计器产生 stage/service/remaining work、SLO slack 和不确定区间，经 staged WorkDescriptor 同时使能组织与调度；组织器保留 work/locality，调度器再结合新鲜状态做 admission/routing/credit/fair queue。 |
-| `data/report_main/opening_work_organization_regime_v2.png` / `.svg` | 数据组织在低压时近似中性，在 KV 饱和时受 locality 主导；禁止宣称某种重排序全局最优。 |
+| `data/report_main/opening_work_organization_regime_v2.png` / `.svg` | 大 KV 池下策略范围约 12%，小 KV 池饱和时分化约 27% 且 locality 主导；下一次渲染需用精确 KV 压力标签替代“低压近似中性”。严格 feeding-saturation 边界必须保留。 |
 | `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像 exact-path 的 CPU prepare/GPU actor 比为 13.8–31.2×，matched-resource 静态路径保留约 13–15% 初步信号；动态收益仍未测试。 |
 | `data/report_main/opening_cost_model_decision_quality_v2.png` / `.svg` | 候选选择 regret 的 median/macro/max 同图表达；Hybrid max 14.72%，只称 marginal pass。 |
 
 统一生成脚本：`scripts/generate_opening_story_figures_20260808.py`。数据、claim、视觉和
-禁止外推合同：`audit/opening_story_figures_contract_20260808.md`。上述 PNG/SVG 已逐张
-渲染复核；当前只冻结内容大纲、实验数据与数据图，不制作新的 PPT 成品。旧 PPT 仍只是可打开的历史底稿。
+禁止外推合同：`audit/opening_story_figures_contract_20260808.md`。现有六张 PNG/SVG
+均已打开复核且无裁切/重叠；其中 A/C 仍需上述标签修订，B、WorkDescriptor 总览、D、E
+无需重画。当前不运行生成脚本、不制作新的 PPT 成品；旧 PPT 仍只是可打开的历史底稿。
 
 2026-08-09 数据就绪审计后，后续图表固定如下；本轮未运行生成脚本，
 也未新建或覆盖任何 PNG/SVG：
@@ -89,9 +90,12 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | 后续项 | 状态 | 用途与边界 |
 |---|---|---|
 | 原生文本单 Job 状态指纹 | `data-ready-not-generated` | 四臂 12 formal；JCT/tok/s 与 running/waiting/KV/MFU 原单位 small multiples，不伪造 request P99 |
-| 两 Job 前台干扰与共享权衡 | `data-ready-not-generated` | 只用 5 s guaranteed-overlap；各系统内 single→overlap，项目 static/shared 只称效率—隔离—公平权衡 |
-| 同上限 static–dynamic phase change | `plan-only-no-result` | 只能画实验设计示意，不得填任何结果数值 |
+| 两 Job 前台干扰与共享权衡 | `data-ready-not-generated` | 只用 `Short@0s → Long@5s` guaranteed-overlap；各系统内 single→overlap，项目 static/shared 只称效率—隔离—公平权衡 |
+| 同上限 static–dynamic phase change | `do-not-draw-no-result` | 只保留实验合同；正式 A/B 完成前不画示意结果曲线 |
 | database-E2E replacement 三臂 | `appendix-table-only` | SQuAD 作静态 correctness 地基；ShareGPT 因 C32 direct 欠供给与 DuckDB cap 语义失败不作性能排名 |
+
+下一次用户允许绘图时的唯一清单：A/C 做标签级重绘，F/H 首次生成；B、WorkDescriptor
+总览、D、E 不重画，G 不画。完整输入行数、关键字段和 SHA256 冻结值见上述 audit 合同。
 
 ## 2026-08-07 四图（被 2026-08-08 叙事重构取代）
 

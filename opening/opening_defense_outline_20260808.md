@@ -98,8 +98,8 @@ long JCT −18.31%，但 short JCT +4.98%、Jain median 0.759→0.707。因此�
 | 证据组 | 目的 | 当前结论 | 还需动作 |
 |---|---|---|---|
 | token-work 异质性 | 证明 fixed rows 不是成本代理 | 固定 16 行 batch token 最大/最小 14.3× | 核对 CSV 溯源并保留直接标注 |
-| active-work frontier 与状态差异 | 证明欠供给、安全区、过载及状态变化 | 65K/endpoint 约达已测峰值 97.8%；继续加压主要抬高 P99 | 图中分开画容量结果与运行状态，不混成未解释散点 |
-| organization regime | 证明组织策略受 serving/KV/locality 状态影响 | 2 endpoint 低压力近似中性；4 endpoint KV 压力下排名分化且重排破坏 prefix group | 保留一张机制图，明确不等于动态方法收益 |
+| active-work frontier 与状态差异 | 证明低供给、最小近饱和点、边际收益递减及状态变化 | 65K/endpoint 约达已测峰值 97.8%；继续加压主要抬高 P99 | 图中分开画容量结果与运行状态，不用未定义区间着色 |
+| organization regime | 证明组织策略受 serving/KV/locality 状态影响 | 2 endpoint 大 KV 池下策略范围约 12%；4 endpoint 小 KV 池饱和下分化约 27% 且重排破坏 prefix group | 保留一张机制图；严格 feeding-saturation 边界可见，不等于动态方法收益 |
 | image exact-path profile | 证明跨模态存在分阶段瓶颈 | CPU prepare/GPU service 13.8–31.2× | 统一单位与质量合同，暂不做 proposed 胜出 claim |
 | cost decision quality | 证明代价估计有资格作为共同使能候选 | pooled regret 1.67%、macro 2.90%、max 14.72%，pairwise 0.808 | 主图只保留决策质量；完整 estimator 对比放附录 |
 
@@ -153,16 +153,16 @@ long JCT −18.31%，但 short JCT +4.98%、Jain median 0.759→0.707。因此�
 
 | 图 | 唯一问题 | 画法 | 数据来源 | 完成条件 |
 |---|---|---|---|---|
-| A 动机：work 与状态 | 为什么 rows 和固定上限不足 | 左：固定行数的 work 范围；右：欠供给—安全区—过载及 high/arrival-limited 状态 | 正式 CSV 聚合 | 每个点/线直接标义；不出现无解释散点 |
+| A 动机：work 与状态 | 为什么 rows 和固定上限不足 | 左：固定行数的 work 范围；右：低供给—最小近饱和点—边际收益递减及 high/arrival-limited 状态 | 正式 CSV 聚合 | 每个点/线直接标义；不出现无数据定义的区间色带 |
 | B 研究边界与主线 | 两项研究和共同使能如何连接 | 数据流 + 反馈流；cost estimator 同时连 organizer 与 scheduler | 方法合同 | 不把 cost 画成第三项研究内容 |
 | C organization regime | 组织收益为何依赖 serving regime | 低压力/高压力 small multiples 或 dumbbell；附 locality 机制注释 | cache-on 正式结果 | 一张图只讲 regime dependence |
 | D 图像 stage-aware | 为什么跨模态需要 staged work | CPU prepare/GPU service 比 + matched-resource 单一主指标 | image exact-path 正式结果 | 质量与资源合同一致 |
 | E cost decision quality | 代价估计是否能帮助选择 | median/macro/max regret、pairwise 与门槛；不堆所有预测散点 | cost-profile formal | 明确共同使能和 conditional 结论 |
 | F 原生单 Job 状态指纹 | 现有原生 graph 如何落入不同服务压力区 | 左：JCT/tok/s；右：running、waiting、KV、MFU 原单位 small multiples；标 underfeed/minimum-saturation/overqueue | `opening_text_native_single_job_formal_20260808` 12 formal | 只解释外部现象；database-E2E 三臂降为 appendix correctness/语义表 |
-| G static–dynamic | 状态变化下动态是否超过同上限静态 | workload phase 时间线 + outcome small multiples | 论文实验设计图；不伪造开题前结果 | 最大 K/work/resources 完全匹配 |
+| G static–dynamic | 状态变化下动态是否超过同上限静态 | 当前只保留 workload phase 与同上限 A/B 实验合同 | 无结果不画图；论文正式运行后再决定图型 | 最大 K/work/resources 完全匹配 |
 | H multi-job | shared credit 如何改变效率、前台隔离与公平 | per-job JCT/goodput + Jain/isolation；同时给 single-short 匹配控制 | 开题两作业 staggered formal；论文阶段扩展 weighted/异构 | 最小结果只覆盖两作业与一个 offset；不预设所有指标同时改善 |
 
-正文优先使用 A–H 中已经通过门禁的结果。H 的两作业 5s guaranteed-overlap 已通过门禁，可整理为结果图；G 的 phase-change static–dynamic 仍只能保留为论文实验设计，不能伪造成结果。所有误差线表示三次 formal 的离散或置信区间，warm-up 不进入统计；重复点放附录或原始表，不在主图堆叠。
+下一次获准绘图时只做四项：A/C 标签级重绘，F/H 首次生成。B、WorkDescriptor 总览、D、E 不重画；G 无结果且不画，database-E2E 只保留附录表。H 的两作业 `Short@0s → Long@5s` guaranteed-overlap 已通过门禁。所有误差线表示三次 formal 的离散或置信区间，warm-up 不进入统计；重复点放附录或原始表，不在主图堆叠。
 
 ## 7. 停止规则
 

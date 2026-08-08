@@ -3,8 +3,10 @@
 
 Each output has one job: motivate the design, connect organization to
 scheduling, or show one preliminary evidence boundary. The corrected text
-database-E2E matrix is intentionally excluded until its replacement formal run
-passes feeding and correctness gates.
+database-E2E matrix remains appendix-only because its ShareGPT arms are not a
+matched-saturation performance ranking, even though the replacement run passed
+the source/sink, identity, exactly-once, and stability gates. DuckDB's
+ShareGPT output-cap semantic failure remains explicit.
 """
 
 from __future__ import annotations
@@ -25,7 +27,6 @@ from generate_opening_core_evidence_figures import (
     ORANGE,
     OUTPUT,
     PALE_BLUE,
-    PALE_RED,
     RED,
     ROOT,
     TEAL,
@@ -110,7 +111,7 @@ def figure_motivation_work_state() -> None:
     ax.set_yticks([1, 0])
     ax.set_yticklabels(labels)
     ax.set_xlim(0, 1.12)
-    ax.set_xlabel("实际 active work / 配置上限 W65K")
+    ax.set_xlabel("运行内峰值 active work / 配置上限 W65K")
     mfus = [
         float(state.loc["high", "mfu_pct_mean"]),
         float(state.loc["near", "mfu_pct_mean"]),
@@ -147,13 +148,10 @@ def figure_motivation_work_state() -> None:
         linewidth=2.2,
         capsize=3,
     )
-    ax.axvspan(0, 64, color="#F2F4F6", zorder=-2)
-    ax.axvspan(64, 82, color=PALE_BLUE, zorder=-2)
-    ax.axvspan(82, 136, color=PALE_RED, zorder=-2)
     ax.axvline(64, color=BLUE, linestyle="--", linewidth=1.1)
-    ax.text(28, 5.25, "供给不足", ha="center", color=DARK)
-    ax.text(73, 8.53, "安全工作区", ha="center", color=BLUE, fontweight="bold")
-    ax.text(108, 8.53, "过载尾部", ha="center", color=RED)
+    ax.text(28, 5.25, "低供给段", ha="center", color=DARK)
+    ax.text(68, 8.53, "最小近饱和点", ha="center", color=BLUE, fontweight="bold")
+    ax.text(108, 8.53, "边际收益递减", ha="center", color=RED)
     y64 = y[np.where(x == 64)[0][0]]
     ax.text(66.5, y64 - 0.33, "65K：已测峰值的 97.8%", fontsize=8.8, color=DARK)
     ax.text(
@@ -172,7 +170,7 @@ def figure_motivation_work_state() -> None:
         ylim=(4.4, 8.7),
     )
     soft_grid(ax)
-    ax.set_title("提交控制应维持安全工作区", loc="left")
+    ax.set_title("提交控制应先标定最小近饱和点", loc="left")
 
     fig.suptitle(
         "动机：描述工作量、感知运行状态、约束提交压力",
@@ -214,7 +212,10 @@ def figure_work_organization_v2() -> None:
     for ax, regime, subtitle in zip(
         axes,
         ["Large KV pool", "Small KV pool"],
-        ["低压力：不同方法近似中性", "KV 饱和：局部性成为主导因素"],
+        [
+            "大 KV 池（KV max 7%–10%）：策略差异约 12%",
+            "小 KV 池（KV max 98%–100%）：局部性主导",
+        ],
         strict=True,
     ):
         subset = runs.loc[runs["regime"].eq(regime)]
@@ -248,11 +249,10 @@ def figure_work_organization_v2() -> None:
                 fontsize=8.7,
             )
         soft_grid(ax, axis="x")
-    axes[1].axvspan(0, 42, color=PALE_RED, zorder=-2)
     axes[1].text(
         58,
         4.55,
-        "重排序方法：缓存命中降至 0.06–0.07",
+        "长度/装箱重排：缓存命中降至 0.06–0.07",
         ha="right",
         va="center",
         color=RED,

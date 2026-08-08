@@ -228,8 +228,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `experiments/results/opening_multijob_interference_20260809/{README.md,data/}` | exact-short full/half、项目 static/shared 与 Daft Native/Ray/Ray Data 5s guaranteed-overlap 的统一报告和紧凑数据 | 引用前台干扰、效率—隔离—公平权衡或多 Job 状态动机前读；原生结果是 observation，项目 matched-cap 才是因果 A/B |
 | `figures/scripts/generate_opening_core_evidence_figures.py` | 从冻结正式结果生成开题四张核心证据图 | 更新开题报告或答辩 PPT 前运行 |
 | `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |
-| `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果重建 work/state/control 动机、AI Data Execution Layer 边界、work→schedule、组织 regime、图像 stage 与 cost decision 图 | 更新答辩大纲的动机/方法证据图前运行 |
-| `figures/audit/opening_story_figures_contract_20260808.md` | 2026-08-08 叙事图的数据来源、claim、禁止外推与逐图视觉 QA | 引用新版动机和方案图前核对 |
+| `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果重建 work/state/control 动机、AI Data Execution Layer 边界、work→schedule、组织 regime、图像 stage 与 cost decision 图；已预置 A/C 下一次标签修订 | 仅在用户恢复绘图后运行；当前不得覆盖 PNG/SVG |
+| `figures/audit/opening_story_figures_contract_20260808.md` | 叙事图的数据来源、SHA/行数冻结、claim、禁止外推、逐图视觉 QA 与唯一待画清单 | 引用新版动机和方案图前核对；A/C 待标签重绘，F/H 待生成，G 不画 |
 | `figures/architecture/opening_ai_data_execution_boundary.png` / `.svg` | 两项研究内容 + 共同 cost estimator 的 AI Data Execution Layer 边界图 | 报告/答辩大纲解释课题范围、平台与贡献关系时使用 |
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |

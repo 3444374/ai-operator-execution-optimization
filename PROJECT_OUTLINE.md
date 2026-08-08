@@ -84,7 +84,7 @@ PostgreSQL source
 
 1. 固定资源下达到近饱和吞吐所需的最小 active work 是多少，过载怎样影响 tail 与能耗？
 2. 相同 work 下怎样组织记录，balance 与 locality 何时冲突？
-3. arrival、work mix 或阶段瓶颈突变时，state-aware admission/routing 能否在同一最大 K/work 上限下比 frozen-static 更快回到安全区？
+3. arrival、work mix 或阶段瓶颈突变时，state-aware admission/routing 能否在同一最大 K/work 上限下比 frozen-static 更快回到标定的近饱和包络？
 4. 多 job 共享 endpoint pool 时，shared credit、routing 和公平队列能否改善 JCT/tail/fairness？
 
 两项策略先独立搜索冻结静态点并分别消融，再把独立最优拼接，与小规模联合 grid 对比。联合显著优于拼接说明需要联合调优；两者接近说明可分层优化。任何结果都不改变研究对象，但会改变方法适用边界。
@@ -96,10 +96,10 @@ PostgreSQL source
 ### 5.1 已证明
 
 - 固定行数不是稳定 work 代理：固定 16 行批次的 work 最小/最大中位数为 474/6,793 token，相差 14.3 倍。
-- 同一静态上限不是运行状态：W65K 下 high offered load 的实际 active work/MFU 约为 100%/35%，arrival-limited 约为 29%/7%。
+- 同一静态上限不是运行状态：W65K 下 high offered load 的运行内峰值 active work/MFU 约为 100%/35%，arrival-limited 约为 29%/7%；前者不是时间平均 active work。
 - 当前双 4090/Qwen/vLLM 签名下，65,536 active work/endpoint 达最大已测吞吐均值的 97.80%；下一档只增 0.92%，继续增压会恶化 P99。
 - 复杂动态控制不天然优于强静态点：AIMD/PID/EWMA、adaptive flush、service quantum 与多 actor 多数未过约 5% 晋级门槛。
-- 数据组织策略排名受 serving regime 影响：双 endpoint 大 KV 池近似中性；四 endpoint 小 KV 池饱和时吞吐分化且排名反转，重排序可使 prefix hit 降至 0.06–0.07。
+- 数据组织策略排名受 serving regime 影响：双 endpoint 大 KV 池下策略范围约 12%；四 endpoint 小 KV 池饱和时分化约 27% 且排名反转，重排序可使 prefix hit 降至 0.06–0.07。
 - 图像 matched-resource 静态执行结构有可重复收益：主报告冻结约 13%–15% operator-JCT 改善；旧 45.7% 资源不匹配，不再使用。
 
 ### 5.2 条件性
@@ -146,18 +146,18 @@ ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 cor
 
 ## 7. 开题叙事图
 
-1. `opening_motivation_work_state`：固定行隐藏 work、静态上限不是状态、提交压力存在安全区，分别导出 WorkDescriptor、感知和有界控制。
+1. `opening_motivation_work_state`：固定行隐藏 work、静态上限不是状态、提交压力存在最小近饱和点与边际收益递减区，分别导出 WorkDescriptor、感知和有界控制。
 2. `opening_ai_data_execution_boundary`：两项研究内容并列，算子代价估计作为共同使能部件。
 3. `opening_work_to_schedule_overview`：组织输出 work/locality/deadline，调度结合 fresh state 消费。
 4. `opening_work_organization_regime_v2`：work-aware 组织的必要性与 regime 局限。
 5. `opening_image_stage_aware_evidence`：图像阶段失衡与 matched-resource preliminary signal。
 6. `opening_cost_model_decision_quality_v2`：代价模型 selection regret 与最坏风险。
 
-权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。现有六张叙事资产已完成；两 Job 干扰与原生状态指纹仅为 `data-ready-not-generated`，phase-change 仅为 `plan-only-no-result`。当前只冻结内容大纲、紧凑实验数据和待画图合同，不生成新图或新的 PPT 成品。
+权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。现有六张叙事资产均可读；A/C 数据已冻结但仍需标签级重绘，F/H 为 `data-ready-not-generated`，G 为 `do-not-draw-no-result`。当前只冻结内容大纲、紧凑实验数据和待画图合同，不生成新图或新的 PPT 成品。
 
 ## 8. 当前执行顺序
 
-1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同、共同 cost enabler 与六张叙事图已完成；相关定向测试与渲染审计通过。这里的“合同完成”只表示类型/纯策略基础可执行：production descriptor builder、fresh stage snapshot 正式接线和 CE5 在线驱动仍待验证。
+1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同与共同 cost enabler 已完成；六张现有图已做视觉回读，但 A/C 标签修订、F/H 首次生成仍待用户恢复绘图。这里的“合同完成”只表示类型/纯策略基础可执行：production descriptor builder、fresh stage snapshot 正式接线和 CE5 在线驱动仍待验证。
 2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
 3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前只更新实验报告、紧凑数据和待画图合同，不生成新图，也不生成、覆盖或同步新的 PPT/云文档。
 4. 文本原生单 job 与 5s 原生/项目两 job 矩阵均已完成；当前只整理报告、紧凑数据和待画图合同。开题后再扩展 state-aware phase-change、weighted/异构多 job、图像 dynamic、完整 burst/mixed-cost、联合消融和跨硬件主实验。

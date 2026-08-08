@@ -69,7 +69,7 @@ Database
 
 1. 在固定机器、模型、协议和 workload 下，达到模型服务近饱和吞吐所需的最小 active work 是多少；超过该点后吞吐、尾延迟和能耗如何变化？
 2. 当总 work 相同但行长度、输出上限或 prefix 分布不同，work-unit 的 balance 与 locality 怎样影响端到端执行？
-3. 当 arrival rate、work mix 或阶段瓶颈发生突变时，状态感知准入与路由能否在相同最大 K/work 上限下比 frozen-static 更快回到安全区，并改善 SLO goodput 或 tail？
+3. 当 arrival rate、work mix 或阶段瓶颈发生突变时，状态感知准入与路由能否在相同最大 K/work 上限下比 frozen-static 更快回到标定的近饱和包络，并改善 SLO goodput 或 tail？
 4. 多个数据库作业共享 endpoint pool 时，request/work credit、idle borrowing、路由和公平队列能否在不降低有效吞吐的条件下改善 JCT、尾延迟或公平性？
 
 ### 3.3 研究边界
@@ -114,9 +114,9 @@ Database
 
 ### 5.1 动机证据：为什么需要 work、感知与有界控制
 
-![固定行隐藏 work、静态上限不是状态、提交压力存在安全区](../../figures/data/report_main/opening_motivation_work_state.png)
+![固定行隐藏 work、静态上限不是状态、提交压力存在最小近饱和点与边际收益递减区](../../figures/data/report_main/opening_motivation_work_state.png)
 
-固定 16 行批次的 prompt+output-cap work 最小/最大中位数为 474/6,793 token，相差 14.3 倍，说明 row count 只能承担数据库 correctness 单位，不能作为模型计算量代理。同一 W65K 配置下，高 offered load 的实际 active work 达配置上限、MFU 约 35%；arrival-limited 条件下实际 active work 只有约 29%、MFU 约 7%，说明静态参数不是运行状态。active-work 八档曲线又显示 65K/endpoint 已达已测峰值 97.8%，继续增加 work 主要进入吞吐平台并使 P99 从 36.8 s 上升到 98K 的 40.0 s。
+固定 16 行批次的 prompt+output-cap work 最小/最大中位数为 474/6,793 token，相差 14.3 倍，说明 row count 只能承担数据库 correctness 单位，不能作为模型计算量代理。同一 W65K 配置下，高 offered load 的运行内峰值 active work 达配置上限、MFU 约 35%；arrival-limited 条件下峰值 active work 约为上限的 29%、MFU 约 7%，说明静态参数不是运行状态。active-work 八档曲线又显示 65K/endpoint 已达已测峰值 97.8%，继续增加 work 主要进入边际收益递减区，并使 P99 从 36.8 s 上升到 98K 的 40.0 s。
 
 三组现象分别导出三项研究要求：显式 staged `WorkDescriptor`；可校验新鲜度的 runtime state snapshot；只在离线安全包络内移动的 bounded dynamic work credit。它们证明设计必要性，不证明现有动态控制器已经胜出。已有 SLO-EWMA、AIMD 等负结果因此保留为强静态基线和信号选择教训。
 

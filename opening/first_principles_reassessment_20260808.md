@@ -89,7 +89,7 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 |---|---|---|---|
 | 同样行数包含的 token work 差异很大 | 固定 16 行时 batch token min/max=474/6,793（14.3×）；固定 128 行时 token P95 达 26,677 | 行数不是成本代理 | work descriptor + budget organizer |
 | 同一静态上限在 high 与 arrival-limited 条件下观测到完全不同的 running/MFU | 固定 65K active-work 下，high 约 169–172 running、MFU 约 35%；arrival-limited 约 19 running、MFU 约 7% | 运行状态会变，单次静态标定不能解释所有时段 | fresh state snapshot + safe fallback |
-| active work 过小欠供给，超过近饱和点后吞吐平台而 P99 继续上升 | 65K/endpoint 达已测峰值 97.8%，继续加压主要增加尾部 | 控制目标是维持安全工作区，不是无限提交 | bounded dynamic work credit |
+| active work 过小欠供给，超过近饱和点后吞吐边际收益递减而 P99 继续上升 | 65K/endpoint 达已测峰值 97.8%，继续加压主要增加尾部 | 控制目标是围绕标定的最小近饱和点权衡吞吐与 tail，不是无限提交 | bounded dynamic work credit |
 | 图像 CPU prepare 为 GPU actor 的 13.8–31.2 倍 | CLIP exact-path 画像，质量一致 | 跨模态瓶颈阶段不同 | stage-aware work 与 queue control |
 
 这四条足以支撑“为什么要研究 work-unit、感知和动态提交”。它们不支持“当前动态控制器已经有效”；已有 SLO-EWMA、AIMD 等负结果应作为强静态基线和信号选择教训。
@@ -137,9 +137,9 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 
 建议冻结为四张正文图：
 
-1. **动机图：记录数不等于 work，固定压力不等于稳定状态**。左侧用同样行数但不同 token/prepare work 的 running example；右侧用欠供给—安全工作区—过载的容量曲线，并标 high/arrival-limited 的状态差异。每个标记直接写含义，不使用未解释散点。
+1. **动机图：记录数不等于 work，固定压力不等于稳定状态**。左侧用同样行数但不同 token/prepare work 的 running example；右侧用低供给—最小近饱和点—边际收益递减的容量曲线，并标 high/arrival-limited 的状态差异。每个标记直接写含义，不使用未解释散点；active work 必须注明是峰值还是时间平均。
 2. **方法总览图：组织产生调度可消费的工作描述**。上方数据流，下方反馈流；只保留 Cost Adapter、Work Organizer、State Observer、Admission/Router/Fair Queue 与 Model/CPU-GPU stages。
-3. **初步机制图：组织策略依赖 serving regime**。用 small multiples 或归一化 slope/dumbbell 表达低压力近似中性、高压力分化；单独用一条简洁机制注释说明 locality hit collapse，不再画十个形状散点。
+3. **初步机制图：组织策略依赖 serving regime**。用 small multiples 表达大 KV 池下约 12% 的策略范围与小 KV 池饱和下约 27% 的分化；单独用一条简洁机制注释说明 locality hit collapse，不再用“近似中性”掩盖仍存在的差异，也不画十个形状散点。
 4. **图像与代价可行性图**。若一页空间紧张，图像作为正文 hero，代价估计移备份；图像图只画 matched-resource JCT 或 throughput 其中一个，并用小 inset 标 CPU prepare/GPU service 比，不重复画相对改善。
 
 三臂 database-E2E 用紧凑表格或归一化单 panel 展示，等纠正重跑通过门禁后再生成。代价估计的六模型全量图适合备份页；正文只显示 Hybrid 的 median/macro/max regret 和门槛，避免双 panel 重复。

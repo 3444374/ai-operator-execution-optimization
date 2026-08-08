@@ -80,7 +80,7 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 
 ## 5. 当前实施顺序
 
-1. 保持 Claim Matrix、现有六张叙事资产、统一三臂 replacement 与开题停止规则一致；原生状态指纹和两 Job 图仅整理数据，phase-change 只保留计划，不实际绘图。
+1. 保持 Claim Matrix、统一三臂 replacement 与开题停止规则一致；当前图表只整理数据：A/C 待标签级重绘，F/H 待首次生成，B、WorkDescriptor 总览、D、E 不重画，phase-change 无结果且不画。
 2. 同一 ShareGPT Chat manifest 的 bounded、Daft Native/Ray、Ray Data 原生单 job 1+3 已完成并归档。
 3. 原生 short/long 两 job 错峰观察与项目 static/shared 同上限 A/B 已完成；开题前停止扩扫 offset、weight、4+ job 追正。
 4. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。
