@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-08；开题三臂 replacement 已通过，原生单/多 job 对照进行中）
+Date: 2026-07-20（最后更新：2026-08-09；开题三臂 replacement、原生单 job 与 5s guaranteed-overlap 两 job 对照均已完成）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -60,9 +60,13 @@ granularity 不同，只用于 serving capacity/overload 证据，不替代上�
 差异不足 5% 不触发换 workload、模型、数据库或扩大参数扫描。首轮四组核心图、报告与
 飞书与旧 PPT 只作为历史版本；当前只整理实验报告与待画图清单。用户已要求暂停新的 PPT 成品、
 云文档覆盖和 Wiki。2026-08-08 原生单 job 1+3 已完成（结果见
-`opening_text_native_single_job_formal_20260808/`）；当前只剩原生 short/long 两 job 错峰观察，以及项目
-static-partition vs shared-work-credit 同上限最小实验。phase-change、weighted、图像新动态策略、
-cost held-out 与完整 image-first A+B 矩阵均留开题后。
+`opening_text_native_single_job_formal_20260808/`）；2026-08-09 又完成统一 5s offset 的
+原生 short/long 两 job 观察和项目 static-partition vs shared-work-credit 同上限 A/B，
+结果见 `opening_multijob_interference_20260809/`。三条原生路径都有真实 overlap；项目
+quota-only 控制近似为零，shared 相对 static 提高总吞吐、缩短 long JCT，但恶化 short
+JCT 与 Jain fairness。因此该实验闭合的是“多 Job 存在效率—隔离—公平权衡”，不是
+“动态全面胜出”。开题前停止新增 offset、weight、4+ job 或框架臂；phase-change、weighted、
+图像新动态策略、cost held-out 与完整 image-first A+B 矩阵均留开题后。
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 
@@ -99,8 +103,9 @@ staggered overlap、weighted fairness 与异构 mix/offset。动态策略只有�
 SLO goodput、P99/JCT 或 fairness 至少一项且 correctness/failure 不退化时才晋级；稳态不优是
 允许的边界，不用弱静态点制造收益。图像复用同一策略代码，将 token work/credit 换成
 frame/preprocess work/credit；Daft built-in、Ray Data native、typed Ray actor ours 必须使用同机、
-同模型、同归一化语义和同 PostgreSQL/pgvector E2E 合同。文本 equal-workload 1/2/4-job 只算
-已有先验证据；staggered/weighted/异构 burst 未完成，不能写成已覆盖。
+同模型、同归一化语义和同 PostgreSQL/pgvector E2E 合同。文本已有 equal-workload
+1/2/4-job 先验证据，并已完成一个 5s short/long guaranteed-overlap 两 job 因果点；
+weighted、4+ job held-out、异构 burst 与图像 phase-change 仍未完成，不能写成已覆盖。
 
 第一性原理复审后，详细的分阶段 work descriptor、同上限 static/dynamic 消融顺序、
 图像 baseline/质量/状态指标与多 job 场景统一见
@@ -154,7 +159,7 @@ frozen-static。
 | **Per-endpoint active-work capacity** | ✅ 07-29 扩展曲线完成 | 双 4090 八档各三次 formal；32/32 成功，65K 达最大吞吐 97.80%，下一档 +0.92% | 按预注册规则选择 65,536；98K→131K 吞吐持平而 P99/SLO 更差 |
 | **Short/long static credit existence screen** | ⚠️ 07-30 screening 完成，正式判决阻塞 | 48/48 run 成功；long 的 W65K 信号稳定，K256 在短/长两侧均造成明显 SLO 退化 | 实际为 urllib、无 output token IDs、非 K×work factorial；short 未绑定等价臂分裂 48.5%，均值/中位数选点相反。审计=`inconclusive`，必须先重跑 async 等价臂 gate |
 | **SLO-aware EWMA flush** | ✅ 07-29 | 双 4090 high/arrival-limited 各 3 次 formal；相对 fixed-50 吞吐 -0.52%/+0.10%，P99 -0.94%/-0.49%，30s SLO 全部零违约 | 25–50ms 动作相对 5.6–17.4s P99 缺少一阶杠杆；`near_*` 实测为 arrival-limited，不晋升动态策略 |
-| **多 job/多 foreground size 扩展** | ✅ 07-29 equal-workload 正式矩阵 | 36/36、0 incident；shared credit 容量安全与公平门槛通过。2-job 无增量；4-job 聚合吞吐 +9.57%、max P99 -22.52%，但逐 repeat 不稳定 | held-out 4-job、staggered idle borrowing、weighted overlap fairness、异构 mix/offset 仍待验证 |
+| **多 job/多 foreground size 扩展** | ✅ 07-29 equal-workload + ✅ 08-09 guaranteed-overlap | equal-workload 36/36、0 incident；4-job 条件性 +9.57% throughput。5s short/long 中 quota-only≈0；shared vs static 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、Jain 0.759→0.707 | 已证明两作业效率—隔离—公平权衡；held-out 4-job、weighted/SLO、异构 mix 与图像 phase-change 仍待验证 |
 
 **RC2 当前状态**：✅ static K8 guardrail 与 fixed 50ms coalescing 均有真实
 证据。跨 arrival-rate、2048 held-out 和 shared-vLLM 双作业均未显示
@@ -666,8 +671,8 @@ Student-t 95% CI 和配对回退次数。代码单测通过不等于真实 vLLM 
 5. SLO-aware EWMA flush 已完成正式对照且未晋升；不在同一 25–50ms 动作
    空间继续调 alpha/deadband；
 6. 多模态复用，以及 shared-vLLM 4-job held-out、
-   workload mix、arrival offset、staggered idle borrowing 和 weighted
-   overlap fairness（prefix cache-on 2-ep/7B 已完成：batching + routing 均中性、
+   workload mix、更多 arrival offset 和 weighted/SLO overlap fairness；5s short/long
+   guaranteed-overlap 已闭合最小两作业权衡，不再扩扫追正（prefix cache-on 2-ep/7B 已完成：batching + routing 均中性、
    prefix 方向在该 regime 收口；4-ep/1.5B routing +5.9% 跨门禁、高淘汰压力 regime
    有条件重新打开，待 4-ep/7B 或 2-ep/1.5B 隔离消融）；
 7. 动态控制的信号选择问题——逐请求完成时间或端到端 SLO slack 可能替代

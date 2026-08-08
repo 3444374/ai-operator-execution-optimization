@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-08-09 开题四部件实现边界与状态文件一致性审计
+
+- 将原生/项目 5s guaranteed-overlap 完成状态回写到实验状态、开题工作区、答辩大纲、
+  问答库、项目总纲、快速方向卡和代码基础设施状态；清除“仍在进行”、15s 旧合同和
+  “staggered 尚未验证”等陈旧当前口径。
+- 冻结四个等权部件的真实实现边界：shared credit/completion release/neutral work/
+  least-work 已进入调度器；staged descriptor builder、fresh stage snapshot/controller
+  正式接线和 CE5 在线驱动仍未完成。
+- 开题停止规则不变：不再增加 offset、weight、4+ job 或框架臂，不画新图、不改 PPT、
+  不覆盖云文档、不同步 Wiki；后续仅按同上限合同推进论文阶段 phase-change、weighted/SLO、
+  图像动态和 held-out cost。
+
 ## 2026-08-09 两 Job guaranteed-overlap 正式闭环与紧凑归档
 
 - 项目 5s short/long 矩阵 8/8 group、6/6 formal 通过；原生 Daft Native/Ray、Ray Data
@@ -15,7 +27,8 @@
   三者均有实际 overlap；只标为同系统外部观察，不归因内部算法。
 - 新增 `experiments/results/opening_multijob_interference_20260809/`，Git 保存 13 个紧凑
   CSV/audit 与七步报告/待画图清单。服务器保留全量 raw；project/native/unified 归档
-  SHA256 分别为 `f766faf7...14cfa`、`515b33a5...095a7`、`b7aa4c8b...17e6d`。
+  SHA256 分别为 `f766faf7...14cfa`、`515b33a5...095a7`、`b7aa4c8b...17e6d`；
+  2026-08-09 已从 `/root/autodl-tmp/experiment-artifacts/archives/` 重新回读核对。
 
 ## 2026-08-09 guaranteed-overlap 项目重跑的瞬时传输失败与状态清理
 

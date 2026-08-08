@@ -1,6 +1,6 @@
 # 开题答辩内容大纲与证据合同
 
-日期：2026-08-08
+日期：2026-08-08（2026-08-09 完成两作业证据与实现边界审计）
 状态：内容大纲；暂不制作 PPT 成品
 
 ## 1. 一句话主线
@@ -81,7 +81,19 @@ long JCT −18.31%，但 short JCT +4.98%、Jain median 0.759→0.707。因此�
 
 主指标是 per-job/group JCT、goodput、Jain fairness、isolation、global running/waiting/KV/GPU/MFU 时序。`borrowed_work_seconds` 只在项目 A/B 中由请求/credit trace 计算；原生框架无 job-level active-work 标注时必须明确标记不可观测。
 
-### 4.4 可直接复用的正式/初步证据
+### 4.4 设计—实现—证据边界
+
+| 等权部件 | 动机证据 | 当前实现 | 开题可声称 | 尚不能声称 |
+|---|---|---|---|---|
+| Work Unit | 同行数 token work 14.3×；图像 prepare/model 阶段失衡 | staged descriptor 类型、neutral work consumer 和图像携带接口已存在；正式 runner 尚未构造 production descriptor | 字段设计由现象导出，接口可执行 | staged organization 已端到端胜出 |
+| 状态感知 | 同 W 下 high/arrival-limited 状态不同；原生路径出现 underfeed/overqueue | endpoint/resource trace 已正式采集；fresh stage snapshot 与 fallback controller 仅通过单测、未接正式 runner | 必须联合观测 work rate、queue、KV/MFU/tail，并校验 freshness/signature | runtime snapshot 已带来性能收益 |
+| 动态调度 | 5s 两 job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；stage-aware controller 未接正式主实验 | bounded shared work 是可执行机制，目标必须同时包含 efficiency/SLO/fairness | shared 或动态全面优于静态 |
+| 算子代价估计 | 候选选错代价 12.0%–86.5%；简单 estimator 决策失败 | CE1–CE5 离线分析器与 context-LOO 已完成；尚未在线驱动调度 | 文本配置选择有 marginal feasibility | 已预测跨模态 remaining work/SLO 并改善在线决策 |
+
+工程下一步按 descriptor builder → observe-only snapshot → no-op/fallback gate → 单动作消融推进；
+不把四个部件同时接入后再做无法归因的总对比。
+
+### 4.5 可直接复用的正式/初步证据
 
 | 证据组 | 目的 | 当前结论 | 还需动作 |
 |---|---|---|---|
@@ -148,9 +160,9 @@ long JCT −18.31%，但 short JCT +4.98%、Jain median 0.759→0.707。因此�
 | E cost decision quality | 代价估计是否能帮助选择 | median/macro/max regret、pairwise 与门槛；不堆所有预测散点 | cost-profile formal | 明确共同使能和 conditional 结论 |
 | F 原生单 Job 状态指纹 | 现有原生 graph 如何落入不同服务压力区 | 左：JCT/tok/s；右：running、waiting、KV、MFU 标准化状态；标 underfeed/minimum-saturation/overqueue | `opening_text_native_single_job_formal_20260808` 12 formal | 只解释外部现象；database-E2E 三臂降为 appendix correctness/语义表 |
 | G static–dynamic | 状态变化下动态是否超过同上限静态 | workload phase 时间线 + outcome small multiples | 论文实验设计图；不伪造开题前结果 | 最大 K/work/resources 完全匹配 |
-| H multi-job | shared credit 是否借用空闲份额并改善 job-level 指标 | per-job JCT/goodput + Jain/isolation | 开题两作业 staggered formal；论文阶段扩展 weighted/异构 | 最小结果只覆盖两作业与一个 offset；已有 1/2/4 同步结果单列 |
+| H multi-job | shared credit 如何改变效率、前台隔离与公平 | per-job JCT/goodput + Jain/isolation；同时给 single-short 匹配控制 | 开题两作业 staggered formal；论文阶段扩展 weighted/异构 | 最小结果只覆盖两作业与一个 offset；不预设所有指标同时改善 |
 
-正文优先使用 A–H 中已经通过门禁的结果；G–H 在开题最小正式实验完成前只能保留为计划，不能画成结果图。所有误差线表示三次 formal 的离散或置信区间，warm-up 不进入统计；重复点放附录或原始表，不在主图堆叠。
+正文优先使用 A–H 中已经通过门禁的结果。H 的两作业 5s guaranteed-overlap 已通过门禁，可整理为结果图；G 的 phase-change static–dynamic 仍只能保留为论文实验设计，不能伪造成结果。所有误差线表示三次 formal 的离散或置信区间，warm-up 不进入统计；重复点放附录或原始表，不在主图堆叠。
 
 ## 7. 停止规则
 

@@ -1,6 +1,6 @@
 # Work Unit、状态感知、动态调度与代价估计的实验计划
 
-日期：2026-08-08
+日期：2026-08-08（2026-08-09 更新：开题两作业 guaranteed-overlap 已完成）
 
 算子代价估计是下述 organization 与 admission/routing/multi-job 的共同使能部件：
 同一 calibration signature 下输出 stage/service/remaining work、SLO slack 与预测区间。
@@ -94,6 +94,19 @@
 
 动作：从冻结的 work-credit 候选集合中单步升降；deadband 内保持；最短驻留时间内不重复动作；观测过期、误差异常或 failure 时回退 frozen-static。vLLM waiting/KV 和 GPU util 作为 guardrail/诊断，不单独驱动 AIMD。
 
+### 5.1 当前实现边界与最小接入顺序
+
+| 部件 | 当前代码事实 | 正式数据支持到哪 | 下一项可验证接入 |
+|---|---|---|---|
+| Work Unit | `planning/work.py` 已定义 staged `WorkDescriptor`；`BatchRequest`、图像 batch 和调度器可消费中性 primary work | fixed-row token tail 与图像阶段画像支持字段设计；正式 runner 目前仍主要构造 legacy scalar work，尚无生产 descriptor builder | 先为文本/图像 adapter 构造带 calibration signature 的 descriptor，并做 legacy/descriptor 等价性门禁 |
+| 状态感知 | `RuntimeStateSnapshot`、freshness/signature 检查和 `BoundedStageWorkController` 已有单元测试；现有 runner 已采 endpoint/service/resource trace | high/arrival-limited、容量曲线和原生状态指纹证明信号会变化；stage snapshot 尚未接入正式 runner | 先接 observe-only snapshot 与 trace，测 no-op 开销、缺失/过期回退，再允许控制 |
+| 动态调度 | 调度器已实际消费 active work、least-work routing、completion release 和共享 DRR work credit；5s 两 job A/B 已正式运行 | 已证明 shared credit 的效率—隔离—公平权衡；尚未证明 stage-aware dynamic 或 SLO guard 优于 frozen-static | 保持同最大 K/work，按 admission-only、routing-only、fair-sharing-only 顺序做 phase-change/SLO 消融 |
+| 代价估计 | CE1–CE5 已实现为离线分析器；CE5 尚未在线驱动 organizer/scheduler | 文本 context-LOO 只支持配置选择的 marginal feasibility | 先把 estimate 作为 descriptor/tracing 字段回放；只有 held-out ranking/regret 过门后才影响在线动作 |
+
+因此当前代码不能表述为“完整状态感知方法已经落地”。最小工程顺序是 descriptor builder →
+observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把 cost、organization、routing
+和 credit 一次性联动。
+
 ## 6. 图像正式矩阵
 
 ### 6.1 强 baseline
@@ -127,9 +140,7 @@
 
 ## 7. 开题使用边界
 
-开题需要四条证据链都有动机现象和可执行对照，但不要求论文方法已经全面胜出。原生单 job 1+3 已完成：Daft Native/Ray 在当前官方 graph 下稳定 overqueue，Ray Data 当前冻结路径稳定 underfeed；它只证明问题形态，不证明项目方法胜出。当前只剩一类不可替代的文本证据：
-
-1. Daft Native/Ray、Ray Data 的两个 short/long 错峰独立 job 观察，以及项目 `static_partition` vs `shared_work` 的同上限因果 A/B。
+开题需要四条证据链都有动机现象和可执行对照，但不要求论文方法已经全面胜出。原生单 job 1+3 已完成：Daft Native/Ray 在当前官方 graph 下稳定 overqueue，Ray Data 当前冻结路径稳定 underfeed；它只证明问题形态，不证明项目方法胜出。2026-08-09 的 5s guaranteed-overlap 又完成了 Daft Native/Ray、Ray Data 的 short/long 独立 job 观察，以及项目 `static_partition` vs `shared_work` 的同上限因果 A/B。该最小文本缺口已经关闭，开题前不再扩大矩阵。
 
 现有 token-work、active-work、图像 stage profile/matched-resource、1/2/4-job 和 429-run cost decision-quality 直接复用。图像 cost held-out 只在已有 profile 无法组成决策对照时才新跑；phase-change、3:1 weighted、第二硬件和更多 workload 不阻塞本轮开题证据闭环。
 
@@ -138,7 +149,7 @@
 | 组 | 冻结 workload/shape | arms/scenarios | 重复 | 目的 |
 |---|---|---|---|---|
 | 原生单 job（已完成） | ShareGPT controlled-skew held-out Chat manifest；同 model/service/output cap | bounded Chat、Daft Native、Daft Ray、Ray Data | 每臂 1+3，平衡交错 | 已冻结 underfeed/minimum-saturation/overqueue 三类外部状态；见 `opening_text_native_single_job_formal_20260808/` |
-| 原生两 job 观察 | 两个 512 行 short/long job；offset=15 s；互斥且 endpoint-work-balanced manifest | Daft Native、Daft Ray、Ray Data 各自启动两个独立 job；不注入项目 credit。bounded 多进程 client 因可复现 CLOSE_WAIT 生命周期问题排除，单 job C128 仅作容量参照 | 每臂 1+3 | job/group JCT、服务计数、vLLM running/waiting/KV/TTFT delta、逐 GPU 利用率/功耗；观察全局压力、干扰和资源超卖 |
-| 两作业 | 两个 512 行 short/long job；15 s stagger；互斥 manifest-selected doc_id 集合 | static partition 与 shared work-credit/fair queue 成对比较；相同 endpoint 总 K/work | 每场景 1+3 group runs | JCT、公平、隔离、idle borrowing；不得把独立 full credit 当公平 baseline；weighted 留论文阶段 |
+| 原生两 job 观察（已完成） | 两个 512 行 short/long job；offset=5 s；互斥且 endpoint-work-balanced manifest | Daft Native、Daft Ray、Ray Data 各自启动两个独立 job；不注入项目 credit。bounded 多进程 client 因可复现 CLOSE_WAIT 生命周期问题排除，单 job C128 仅作容量参照 | 每臂 1+3 | 三臂均产生真实 overlap，short JCT 相对各自 single +82.42%/+104.84%/+32.76%；只作外部竞争观察 |
+| 两作业（已完成） | 两个 512 行 short/long job；5 s stagger；互斥 manifest-selected doc_id 集合 | static partition 与 shared work-credit/fair queue 成对比较；相同 endpoint 总 K/work | 每场景 1+3 group runs | quota-only≈0；shared 提高总吞吐并缩短 long JCT，但恶化 short JCT/Jain；weighted 留论文阶段 |
 
 两作业必须使用冻结的 short/long manifest 直接过滤互斥 doc_id，source offset 固定为 0；再按原始 `arrival_time_s` replay，并在结果中报告各 job 实际 predicted/observed work。原生框架观察不得命名为 `static_partition`；只有项目 A/B 可计算 `borrowed_work_seconds`。该最小矩阵不声称 3:1 weighted fairness 已验证。

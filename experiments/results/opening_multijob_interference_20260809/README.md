@@ -157,4 +157,7 @@ shard log、GPU/service time series 和失败 incident：
 | config-load failed v1 | `fbe52e3a53a76d0660b23253e6295d78f3d4dda64814ff5a06260122cf096c8e` |
 | transient-ReadError failed v2 | `6c2bc324accfa92efbf7f1d2a7a25fee480a50e1ce773bca06da1380890ef77a` |
 
-服务器原始目录不删除、不覆盖；截至归档后仍约有 23 GiB 可用空间。
+服务器原始目录不删除、不覆盖：三份全量目录位于
+`/root/autodl-tmp/experiment-artifacts/<run_name>/`（当前约 11 MiB、16 MiB、36 KiB），
+压缩包位于 `/root/autodl-tmp/experiment-artifacts/archives/`。2026-08-09 回读复核时三份
+压缩包 SHA256 与上表完全一致；截至归档后仍约有 23 GiB 可用空间。

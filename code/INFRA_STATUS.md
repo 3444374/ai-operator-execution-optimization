@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-08-08
+日期：2026-08-09
 
 本文说明当前 Daft + Ray 上游执行基础设施已经完成什么、实际执行流程、研究证据
 边界，以及下一步还需要实现和验证的内容。研究方向仍是数据库 AI 算子外部执行
@@ -150,8 +150,9 @@ Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
 - complete-row service quantum 已接入 offline/arrival replay：planning batch
   只定义组织边界，quantum 独立定义 HTTP/Ray completion 与 credit 释放边界，
   单行 prompt 永不拆分。active-work、pool shape 与 service quantum GPU
-  对照均已完成；least-work routing 和 shared multi-job credit/fairness 仍缺
-  GPU 性能证据，下一步只先做共享 credit/fairness 门禁，不能先跑组合策略再归因。
+  对照均已完成。least-work routing 已接入 typed scheduler，但尚无独立 GPU 因果收益；
+  shared multi-job credit/fairness 已完成 equal-workload 1/2/4-job 与 5s short/long
+  guaranteed-overlap 正式对照。它证明效率—隔离—公平权衡，不证明 shared 全面胜出。
 
 ## 4. Actor pool、endpoint 与 GPU 扩展
 
@@ -193,8 +194,10 @@ Daft→Ray task 合约证据，但 GPU 性能收益尚未建立。
 把 credit-held 降约 16%，但稳态吞吐增益不足 5%，固定 quantum 不晋升；
 request-level completion 保留作后续动态/多 job 精确控制基础。
 shared-credit 与 1/2/4-job 核心矩阵已经完成；2-job 无增量，4-job 聚合指标过
-5% 但逐 repeat 波动大。仍缺 held-out/staggered/weighted/异构 workload、故障迁移
-和异构显存容量验证，因此不能声称多 GPU 调度已经普遍完成。多个 Ray actor
+5% 但逐 repeat 波动大。5s short/long guaranteed-overlap 又完成 quota-only 控制和
+static/shared A/B：shared 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、
+Jain 下降。仍缺 held-out 4+ job、weighted/SLO、异构 workload、图像 phase-change、
+故障迁移和异构显存容量验证，因此不能声称多 GPU 调度已经普遍完成。多个 Ray actor
 worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-first pivot 后为
 `parked-conditional`。
 
@@ -283,8 +286,10 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
   active-window 的 Ray Data adapter 256 行 gate 只作可行性证据，native gate 需重跑。官方 ResNet18 parity、
   独立 calibration/formal、统一 pgvector sink、CPU-budget-normalized curve、
   frame-cost 策略接线、CLIP HTTP/vLLM pooling 对照和正式策略结果尚未完成。
-- **算子代价估计（共同使能组件）**：初版实现与 grouped held-out 评估已完成，可提供
-  粗粒度编排提示；独立时间段/新 workload 校准、预测区间和跨模型迁移仍未完成。
+- **算子代价估计（共同使能组件）**：CE1–CE5 与 429 formal/20-context context-LOO
+  已完成；CE5 pooled/macro/max regret=1.67%/2.90%/14.72%、candidate pairwise=0.808，
+  只算贴线的文本配置选择可行性。它仍是离线分析器，未在线驱动 organizer/scheduler；
+  独立时间段、新 workload/图像阶段、预测区间和跨硬件迁移仍未完成。
 
 | 部分 | 代码完成度 | 真实证据 | 当前判断 |
 |---|---|---|---|
@@ -299,10 +304,10 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 | AIMD/EWMA/PID | 高（代码） | 单作业矩阵 + static K16 control + shared-vLLM 双作业 | AIMD 饱和至 K16，未保护前台；不默认启用 |
 | UCB bandit | 中（纯控制器） | 无端到端实验 | 尚未接入执行路径 |
 | Actor pool / endpoint routing | 高（有界 slots/trace） | 双 GPU 1×256/2×128/4×64 formal | 多 actor 未过 5% 门槛；单 job 保留 1×256，多 job 分池待测 |
-| Shared-vLLM group runner | 高（代码/模板/真实 formal） | 双 4090 36/36 group run、63 formal job | shared-credit 容量安全、公平性通过；2-job 无增量，4-job 聚合过 5% 门槛但逐 repeat 不稳定，暂作高竞争条件性候选 |
+| Shared-vLLM group runner | 高（代码/模板/真实 formal） | equal-workload 36/36 group + 5s short/long static/shared 6 formal | shared-credit 容量安全；4-job 仅条件性。5s A/B 证明效率—隔离—公平权衡，不称全面胜出 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |
 | 多模态复用 | 中（native + diagnostic + project operator runner） | 5K CLIP diagnostic + 旧 staged 256-row resource gate | 当前主线；待 Daft built-in/Ray Data native gate、官方 ResNet18 parity、pgvector sink、frame-cost/state-aware policy 与完整服务 baseline |
-| 算子代价估计 | 中 | 283 行、70 配置组、五个 held-out split | 粗粒度可用；不能作严格 SLO 预测 |
+| 算子代价估计 | 中（离线） | 429 formal、20 context × 4 candidate context-LOO | CE5 配置选择 marginal pass；尚未在线驱动或验证跨模态 remaining work/SLO |
 
 ## 7. 后续设计与实施顺序
 
@@ -357,9 +362,9 @@ static K8 guardrail → workload-specific flush window。联合搜索保留为�
 - 1-job 协调开销可忽略，2-job 无可分辨增量；
 - 4-job shared 聚合吞吐 +9.57%、max P99 -22.52%、max JCT -15.89%，
   但三次吞吐变化为 +8.43%/-0.28%/+22.60%，保留为高竞争条件性候选；
-- staggered idle borrowing、weighted overlap fairness 和异构 workload
-  尚未验证；已补每 job 独立 request manifest/source offset 的配置、命令与证据审计，
-  防止两个 job 重复读取同一段 rows 后误称 work-aware fairness。
+- 5s short/long guaranteed-overlap 已完成：quota-only≈0；shared 相对 static 提高总吞吐
+  21.03%、降低 long JCT 18.31%，但 short JCT 增加 4.98%、Jain 下降；因此只冻结为
+  效率—隔离—公平权衡证据；weighted/SLO、held-out 4+ job 和异构 workload 仍未验证。
 
 ### 文本轨道遗留（parked-conditional）
 

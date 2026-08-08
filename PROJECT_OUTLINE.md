@@ -111,7 +111,7 @@ PostgreSQL source
 
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - phase-change、burst、mixed-cost 下 dynamic 的响应时间、SLO goodput 与 tail；
-- 多 job held-out、错峰、加权公平性与故障迁移；
+- 多 job 的 5s 两作业错峰最小点已完成；仍待 held-out 4+ job、加权/SLO、公平 guard 与故障迁移；
 - 代价模型跨时间段、新 workload 和硬件的稳定性；
 - 图像当前 commit 的 Daft built-in/Ray Data/project operator-E2E 统一排名与状态感知增量；sink 只作小规模工程闭环，不是性能排名 blocker。
 
@@ -157,7 +157,7 @@ ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 cor
 
 ## 8. 当前执行顺序
 
-1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同、共同 cost enabler 与六张叙事图已完成；相关定向测试与渲染审计通过。
+1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同、共同 cost enabler 与六张叙事图已完成；相关定向测试与渲染审计通过。这里的“合同完成”只表示类型/纯策略基础可执行：production descriptor builder、fresh stage snapshot 正式接线和 CE5 在线驱动仍待验证。
 2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
 3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前更新实验报告和数据图，不生成、覆盖或同步新的 PPT/云文档。
 4. 文本原生单 job 与 5s 原生/项目两 job 矩阵均已完成；当前只整理报告、紧凑数据和待画图合同。开题后再扩展 state-aware phase-change、weighted/异构多 job、图像 dynamic、完整 burst/mixed-cost、联合消融和跨硬件主实验。

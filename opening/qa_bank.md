@@ -1,6 +1,6 @@
 # 开题答辩攻击面与问答库
 
-冻结基线：2026-08-07。本文档用于内部演练，回答必须服从 `opening/claim_matrix.md` 的证据等级。原则是先承认证据边界，再说明研究问题为何仍成立；不把计划写成成果，也不靠更换 workload 掩盖负结果。
+冻结基线：2026-08-09。本文档用于内部演练，回答必须服从 `opening/claim_matrix.md` 的证据等级。原则是先承认证据边界，再说明研究问题为何仍成立；不把计划写成成果，也不靠更换 workload 掩盖负结果。
 
 ## 一句话版本
 
@@ -44,7 +44,15 @@
 
 ### 为什么不是“动态策略已经有效”？
 
-> 因为现有多项动态候选没有超过强静态点：AIMD、PID、adaptive flush、service quantum 和多 actor 多数未过约 5% 晋级门槛。它们证明“动态”不是贡献本身，也帮助冻结了更强的静态基线。开题冻结前用 short/long 两作业错峰补两层证据：Daft/Ray Data 原生路径只观察多应用竞争与可观测性，项目 static-partition vs shared-work-credit 才检验 idle borrowing 的因果增量。同上限 phase-change 与 weighted 仍是论文阶段实验；开题不提前声称动态已经胜出。
+> 因为现有多项动态候选没有超过强静态点：AIMD、PID、adaptive flush、service quantum 和多 actor 多数未过约 5% 晋级门槛。5s short/long 两作业实验已经补齐两层证据：Daft/Ray Data 原生路径只观察多应用竞争；项目 static-partition vs shared-work-credit 则证明 aggregate efficiency、前台隔离与公平之间存在权衡。shared 提高总吞吐 21.03%、降低 long JCT 18.31%，但 short JCT 增加 4.98%、Jain 下降，因此仍不能说动态已经胜出。同上限 phase-change、weighted/SLO 和图像动态仍是论文阶段实验。
+
+### 如果两个 Job 没有执行时间重叠，还能证明多 Job 干扰吗？
+
+> 不能证明“后到 Job 干扰已经运行的前台 Job”。只有当两个 Job 已经同时到达、但框架主动把其中一个排队串行化时，零执行重叠才能证明 admission/HOL 阻塞；如果 short 自然完成后 long 才到达，则实验没有制造共享资源竞争。旧 15s Daft Native 零重叠属于后者，所以不进入结论；当前统一 5s offset 后三条原生路径都有真实 overlap，项目又用 single-short full/half 控制排除了 quota-only 影响。
+
+### 当前四个设计部件是否已经全部接入项目并验证？
+
+> 没有。共享 work credit、completion release、neutral work admission 和 least-work routing 已进入调度器，其中两作业 shared/static 已做正式 A/B；staged WorkDescriptor、fresh runtime snapshot 和有界 stage controller 已有类型/单测，但 production descriptor builder 和正式 runner 接入尚未完成；CE5 仍是离线配置选择器。开题可以证明设计动机、接口可执行性和部分机制权衡，不能把完整 state-aware + cost-driven 方法写成已完成贡献。
 
 ### 负结果是不是说明课题做不下去？
 
@@ -140,6 +148,7 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 | 与 vLLM 调度重复 | 中 | vLLM 管已到达请求，本课题管 DB work-unit 与上游 admission/routing | 明确“不修改 vLLM” |
 | 只是 Ray/Daft 集成 | 高 | 框架是载体；贡献需来自 work/credit/state 的可证伪策略 | 删除“集成创新”措辞 |
 | 动态策略尚未胜出 | 高 | 明确列为待验证，现有负结果用于冻结强静态基线 | 任何页不得写完成时 |
+| 接口实现被误写成端到端方法 | 高 | descriptor/snapshot/controller/cost 的生产接入与正式 A/B 尚未齐全 | 方法页分列“当前实现”和“论文待验证” |
 | 数据组织 feeding 门有边界 | 中 | 只声称 regime dependency，不声称全局排名 | 图注保留 KV/feeding 条件 |
 | 图像 GPU 未饱和 | 中 | 证明 matched-resource 执行结构收益，不证明 GPU-serving 优化 | 报 GPU busy 6–10% |
 | 代价模型贴线 | 中 | 14.72% 为 marginal pass | 图中画 15% 门槛和 0.28 pp 裕量 |

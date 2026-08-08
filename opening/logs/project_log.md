@@ -495,3 +495,11 @@
 - 当前实验增加 ShareGPT Chat 原生单 job 矩阵，以及 Daft Native/Ray、Ray Data 原生两 job 错峰观察；项目另作 static-partition vs shared-work 同上限 A/B。
 - DuckDB 保持为 SQuAD/cap=64 有界输出产品轨，不与语义不兼容的 ShareGPT 框架轨混排。
 - 同步更新 `opening/claim_matrix.md`、`opening/opening_defense_outline_20260808.md`、`experiments/plans/state_aware_work_unit_evaluation_20260808.md`、`PROJECT_OUTLINE.md` 和根规则的当前顺序。
+# 2026-08-09 两作业证据与四部件实现边界审计
+
+- 把 5s guaranteed-overlap 的原生观察和项目 static/shared A/B 从“待运行”更新为已完成，
+  并明确零 overlap 只能在已同时到达但被框架串行化时证明 HOL，不能证明运行中干扰。
+- 在权威答辩大纲和问答库中加入 Work Unit、状态感知、动态调度、代价估计的
+  “动机证据—当前实现—可声称—不能声称”映射。
+- 当前仅整理数据合同和待画图清单；按用户要求未生成图、未修改 PPT、未覆盖云文档、
+  未同步 Wiki。

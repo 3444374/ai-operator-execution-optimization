@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-最后更新：2026-08-08
+最后更新：2026-08-09
 
 > 本文是两分钟快速参考卡片。完整定义以 `PROJECT_OUTLINE.md` 为准；当前执行顺序以
 > `opening/claim_matrix.md` 与 `experiments/plans/experiment_status_and_gaps.md` 顶部
@@ -18,6 +18,9 @@
   52.07%，正式原生矩阵冻结 C128，旧 154.57% 比值不作方法排名。
 - **state-aware 仍是拟研究方法**：现有证据支持 strong static、regime dependence、图像
   matched-resource 结构收益和代价估计可行性，但没有证明 state-aware 优于冻结静态点。
+- **实现边界已审计**：shared work credit、completion release、neutral work admission 和
+  least-work routing 已进入调度器；staged descriptor、fresh stage snapshot/controller 与
+  CE5 在线接线尚未进入正式 runner，不能把接口或离线结果写成完整方法已落地。
 
 ## 2. 课题定位
 

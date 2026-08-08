@@ -83,10 +83,10 @@
 
 ## 下一步
 
-1. 完成 SQuAD/ShareGPT workload-specific feeding 校准与整体 replacement formal，不新增其他开题 baseline。
-2. 依据 `opening_defense_outline_20260808.md` 重构动机—挑战—方法—实验链，只生成合规数据图。
-3. 更新实验报告、Claim Matrix 与问答；用户已明确豁免 Wiki，同步云文档和制作 PPT 均暂停。
-4. 完成数值、边界、数据溯源与图表渲染检查后冻结本阶段材料。
+1. SQuAD/ShareGPT replacement、原生单 job 与 5s guaranteed-overlap 两 job 最小证据均已完成；停止增加开题 baseline、offset、weight 或 4+ job 扫描。
+2. 依据 `opening_defense_outline_20260808.md` 整理动机—挑战—设计—证据边界和待画图数据合同；当前暂不实际画图。
+3. 完成 Claim Matrix、问答、实验状态与实现边界的一致性审计；用户已明确豁免 Wiki，同步云文档和制作 PPT 均暂停。
+4. 后续获准绘图时再完成渲染检查；论文阶段恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
 ## 飞书同步目标
 
 后续需要写入飞书的主要目标：
