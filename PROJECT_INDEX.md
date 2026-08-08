@@ -381,7 +381,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/baselines/common/test_partition_policy.py` | manifest 分片策略 + policy-aware gate 单测（equal_rows 128:128/奇数差≤1/顺序不变/同 seed 同结果/duplicate fail-closed；CLI 两 policy 路由+元数据；equal_rows 不因 work-skew 失败、work-balanced 在 skew>2% 失败）| 多卡静态分片 baseline（DuckDB 2×1 / bounded_static_2x1）的分片+门禁改动后运行 |
 | `code/src/infrastructure/runtime_env.py` | driver、multi-job subprocess 与 Ray worker 的共享 PYTHONPATH/数值线程环境 | 防止 1/2/4-job 因每进程 OpenBLAS 线程膨胀而在请求前耗尽 OS 线程 |
 | `code/src/infrastructure/config_env.py` | 文本、图像、shared-vLLM 和 baseline 配置共用的严格 `${ENV_VAR}` 展开 | unset 立即失败；完整 scalar 保留 JSON 数值/布尔类型 |
-| `code/src/experiments/shared_vllm/config.py` / `evidence.py` / `runner.py` | 多作业场景、每 job immutable manifest/source offset、stagger/weight、组级正确性与公平证据 | 运行异质多 job 前确认每个 job 使用互斥工作量证据，不得重复同一 rows 冒充 work-aware |
+| `code/src/experiments/shared_vllm/config.py` / `evidence.py` / `runner.py` | 多作业场景、每 job immutable manifest-selected doc_id、stagger/weight、组级正确性与公平证据 | 运行异质多 job 前确认 manifest 互斥、source offset=0，不得重复同一 rows 冒充 work-aware |
 | `code/src/infrastructure/environment.py` | machine profile、Python 能力与模型/数据资产检查/补齐核心 | 默认只读，安装下载由薄 CLI 显式触发 |
 | `code/src/experiments/shared_vllm/` | Shared-vLLM 编排包：config/runner/runtime/evidence/metrics | 配置校验、三臂 credit 语义、并发执行、exactly-once、资源证据与公平性汇总 |
 | `figures/AGENTS.md` | 图表长期规则 | 做图、改图、审查图前必读 |
@@ -409,7 +409,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `data/README.md` | 本地 workload 数据说明；raw payloads 被 git ignore | 查看 ShareGPT/BurstGPT 下载位置、用途和边界 |
 | `code/AGENTS.md` | 正式工程代码规则 | 后续迁移可复用代码前读 |
 | `code/tests/architecture/test_architecture_boundaries.py` | AST 导入边界与旧兼容入口 fail-closed 门禁 | 新增模块、改变跨层依赖或迁移路径后运行 |
-| `code/src/data/sources/postgres_text.py` | PostgreSQL data source 后端：psycopg/Arrow baseline、Daft SQL entry、`doc_id`/`arrival_time` source order | 切换或修改数据入口与读取顺序时读 |
+| `code/src/data/sources/postgres_text.py` | PostgreSQL data source 后端：psycopg/Arrow baseline、Daft SQL entry、`doc_id`/`arrival_time` source order、manifest doc_id filter | 切换或修改数据入口、读取顺序或多 job manifest 选集时读 |
 | `code/src/data/materializers/text.py` | ArrowOrganizer / DaftOrganizer 数据组织后端 | 接入或比较 Arrow 与 Daft 文本数据组织路径时读 |
 | `code/src/modalities/text/costs.py` | 与引擎无关的 prompt/output 成本模式解析 | 修改 prompt-only、固定输出上限或 trace 输出成本语义前读 |
 | `code/src/infrastructure/runner_lease.py` | 场景输出目录的原子单写者租约、owner 身份校验和显式 stale recovery | 修改 runner 幂等、恢复或 manifest/CSV 单写者边界前读 |
@@ -418,7 +418,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/observability/profiling/traces.py` | profiler control/flush/submission/request/resource 的版本化 CSV 序列化 | 修改 trace schema、生命周期标识或 endpoint/GPU 归因前读 |
 | `code/src/observability/profiling/cli.py` / `config.py` / `schema.py` | profiler 参数面、CLI/env 解析与正式汇总 schema 的独立边界 | 修改运行参数、环境切换优先级或 runs.csv 字段前读 |
 | `code/src/observability/profiling/replay.py` | Arrow planning-batch/request/service-quantum envelope、arrival replay 与 lifecycle seed 组装 | 修改 token-budget 关批、complete-row quantum、request 粒度补位或 replay 时间语义前读 |
-| `code/src/observability/profiling/manifest_guard.py` | 同条件 project runtime 的 fail-closed manifest 行语义、payload 契约与固定 endpoint 证据 | 修改 direct/project 公平比较、source offset 或 manifest 映射时读 |
+| `code/src/observability/profiling/manifest_guard.py` | 同条件 project runtime 的 fail-closed manifest 行语义、payload 契约、arrival replay 与固定 endpoint 证据 | 修改 direct/project 公平比较、manifest-selected source 或 replay 映射时读 |
 | `code/src/observability/profiling/ray.py` | Ray task/actor submitter、typed scheduler、credit 释放与 fan-in 接线 | 修改 actor pool、request-level replenishment 或 Ray 资源语义前读 |
 | `code/src/planning/packing/scalar.py` | 与模态无关的确定性 BFD 标量容量装箱与指标 | 修改离线 batch membership、超预算行处理或 packing 指标前读 |
 | `code/src/planning/work.py` | 分阶段 WorkDescriptor、stage state 与原子 RuntimeStateSnapshot 合同 | 修改跨模态 work、状态 freshness、calibration signature 或动态策略输入前读 |

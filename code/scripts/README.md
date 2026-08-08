@@ -137,8 +137,9 @@ per-GPU delta；峰值假设固定 4090 165 TFLOPS/GPU，MFU 只作资源证据�
 
 `analysis/summarize_opening_multijob_minimal.py` 只汇总开题 short/long 两作业的
 staggered 最小矩阵。它要求 static partition 与 shared DRR 两场景各 1 warm-up + 3 formal、资源与
-MFU 状态完整、0 worker failure/incident、两个 job 使用不同 source offset 和不同已验证
-manifest SHA；runner 已逐 job 验证 exactly-once request/submission trace。输出
+MFU 状态完整、0 worker failure/incident、两个 job 使用各自 manifest-selected doc_id 集合、
+zero source offset 和不同已验证 manifest SHA；runner 已逐 job验证 exactly-once
+request/submission trace。输出
 `formal_runs_compact.csv`、`scenario_summary.csv`、`pairwise_comparison.csv` 和
 `audit.json`，比较相同 endpoint-shared K/work 上限下 static partition 与 shared DRR 的
 吞吐、JCT、P99、SLO token goodput、Jain fairness 和 normalized service。该实验以完整

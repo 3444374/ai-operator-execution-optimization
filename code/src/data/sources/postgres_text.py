@@ -20,6 +20,7 @@ class SourceConfig:
     workload_name: str | None = None
     order: SourceOrder = "doc_id"
     max_prompt_tokens: int | None = None
+    doc_ids: tuple[int, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,18 @@ def _validate_config(config: SourceConfig) -> None:
         and config.max_prompt_tokens <= 0
     ):
         raise ValueError("max_prompt_tokens must be positive when present")
+    if config.doc_ids is not None:
+        if (
+            not config.doc_ids
+            or any(
+                isinstance(doc_id, bool)
+                or not isinstance(doc_id, int)
+                or doc_id < 0
+                for doc_id in config.doc_ids
+            )
+            or len(set(config.doc_ids)) != len(config.doc_ids)
+        ):
+            raise ValueError("doc_ids must be unique non-negative integers")
 
 
 def _order_by_sql(order: SourceOrder) -> str:
@@ -60,6 +73,9 @@ def postgres_documents_query(
     if config.max_prompt_tokens is not None:
         conditions.append("prompt_tokens <= %s")
         filter_params.append(config.max_prompt_tokens)
+    if config.doc_ids is not None:
+        conditions.append("doc_id = ANY(%s)")
+        filter_params.append(list(config.doc_ids))
     where_sql = (
         f"WHERE {' AND '.join(conditions)}" if conditions else ""
     )
@@ -128,6 +144,10 @@ def daft_sql_query(config: SourceConfig) -> str:
     if config.max_prompt_tokens is not None:
         conditions.append(
             f"prompt_tokens <= {config.max_prompt_tokens}"
+        )
+    if config.doc_ids is not None:
+        conditions.append(
+            "doc_id IN (" + ",".join(str(doc_id) for doc_id in config.doc_ids) + ")"
         )
     where_sql = (
         f"WHERE {' AND '.join(conditions)} " if conditions else ""

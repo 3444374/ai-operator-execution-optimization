@@ -190,8 +190,8 @@ def summarize(matrix_root: Path, output: Path) -> bool:
                     raise ValueError("incidents is non-zero")
                 offsets = _json_list(row, "source_row_offsets")
                 manifests = _json_list(row, "request_manifest_sha256")
-                if len(offsets) != 2 or len(set(offsets)) != 2:
-                    raise ValueError("jobs do not have two distinct source offsets")
+                if len(offsets) != 2 or any(int(offset) != 0 for offset in offsets):
+                    raise ValueError("manifest-selected jobs require zero source offsets")
                 if len(manifests) != 2 or not all(manifests) or len(set(manifests)) != 2:
                     raise ValueError("jobs do not have two distinct validated manifests")
                 parsed = {key: _array(row, key) for key in ARRAY_FIELDS}
@@ -281,7 +281,7 @@ def summarize(matrix_root: Path, output: Path) -> bool:
             "one_warmup_three_formal": not errors,
             "metrics_resources_mfu_ok": not errors,
             "zero_worker_failure_and_incident": not errors,
-            "distinct_short_long_manifest_sha": not errors,
+            "manifest_selected_zero_offsets_and_distinct_sha": not errors,
             "runner_exactly_once_evidence_validation": not errors,
         },
         "errors": errors,

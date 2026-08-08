@@ -385,6 +385,12 @@ def _load_scenario(
         "request_manifests",
         job_count,
     )
+    if any(request_manifests) and not all(request_manifests):
+        raise ValueError("request_manifests must be provided for every job or none")
+    if all(request_manifests) and any(source_row_offsets):
+        raise ValueError(
+            "manifest-selected jobs require zero source_row_offsets"
+        )
     return SharedVllmScenario(
         scenario_id=scenario_id,
         policy=policy,

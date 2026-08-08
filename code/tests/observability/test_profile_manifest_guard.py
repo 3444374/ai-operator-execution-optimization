@@ -232,6 +232,27 @@ class ProfileManifestGuardTests(unittest.TestCase):
             arrival_replay=False,
         )
 
+    def test_profile_manifest_contract_accepts_manifest_selected_arrival_replay(
+        self,
+    ) -> None:
+        validate_profile_manifest_contract(
+            self.requests,
+            total_rows=2,
+            operator="ai_complete",
+            model_backend="compatible_http",
+            endpoint_count=2,
+            completion_protocol="chat_completions",
+            completion_prompt_format="raw",
+            completion_temperature=0.0,
+            completion_max_tokens=256,
+            output_cost_mode="trace_target_output",
+            source_order="arrival_time",
+            executor="ray_actor",
+            submission_granularity="request",
+            endpoint_routing="manifest_pinned",
+            arrival_replay=True,
+        )
+
     def test_fixed_cap_manifest_ignores_target_output_for_cost_but_keeps_hash(self) -> None:
         fixed = request(
             1,
@@ -335,7 +356,7 @@ class ProfileManifestGuardTests(unittest.TestCase):
             ("executor", "ray_task", "ray_actor"),
             ("submission_granularity", "batch", "request"),
             ("endpoint_routing", "least_work", "manifest_pinned"),
-            ("arrival_replay", True, "arrival replay"),
+            ("arrival_replay", True, "arrival_time source order"),
         ]
 
         for field, value, message in invalid:

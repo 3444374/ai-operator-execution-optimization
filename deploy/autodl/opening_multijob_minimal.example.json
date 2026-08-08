@@ -82,7 +82,7 @@
       "rows_per_job": 512,
       "weights": [1, 1],
       "arrival_offsets_s": [0.0, 15.0],
-      "source_row_offsets": [0, 512],
+      "source_row_offsets": [0, 0],
       "request_manifests": ["${OPENING_SHORT_JOB_MANIFEST}", "${OPENING_LONG_JOB_MANIFEST}"]
     },
     {
@@ -92,7 +92,7 @@
       "rows_per_job": 512,
       "weights": [1, 1],
       "arrival_offsets_s": [0.0, 15.0],
-      "source_row_offsets": [0, 512],
+      "source_row_offsets": [0, 0],
       "request_manifests": ["${OPENING_SHORT_JOB_MANIFEST}", "${OPENING_LONG_JOB_MANIFEST}"]
     }
   ]

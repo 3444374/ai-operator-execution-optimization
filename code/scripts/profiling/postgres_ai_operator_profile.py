@@ -1463,6 +1463,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     request_manifest_validated_rows = 0
     request_manifest_validation_status = "disabled"
     request_manifest_guard = None
+    request_manifest_doc_ids: tuple[int, ...] | None = None
     if request_manifest_path:
         endpoint_ids = tuple(
             f"endpoint-{index}" for index in range(len(endpoint_urls))
@@ -1491,6 +1492,9 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
         )
         request_manifest_sha256 = request_manifest_guard.manifest_sha256
         request_manifest_rows = len(request_manifest_guard.requests)
+        request_manifest_doc_ids = tuple(
+            request.doc_id for request in request_manifest_guard.requests
+        )
         request_manifest_validation_status = "pending"
     actor_workers_per_endpoint = 0
     if args.executor == "ray_actor":
@@ -2363,6 +2367,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 workload_name=args.source_workload_name,
                 order=args.source_order,
                 max_prompt_tokens=args.source_max_prompt_tokens,
+                doc_ids=request_manifest_doc_ids,
             )
             if args.data_source == "arrow_postgres":
                 source_batch = source.fetch(conn, source_config)

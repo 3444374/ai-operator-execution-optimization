@@ -55,6 +55,20 @@ class SourceTests(unittest.TestCase):
         self.assertIn("ORDER BY arrival_time_s NULLS LAST, doc_id", sql)
         self.assertEqual(params, (128, 256))
 
+    def test_postgres_documents_query_can_filter_manifest_doc_ids(self) -> None:
+        sql, params = postgres_documents_query(
+            SourceConfig(
+                limit=2,
+                offset=0,
+                order="arrival_time",
+                doc_ids=(7, 3),
+            )
+        )
+
+        self.assertIn("WHERE doc_id = ANY(%s)", sql)
+        self.assertIn("ORDER BY arrival_time_s NULLS LAST, doc_id", sql)
+        self.assertEqual(params, ([7, 3], 2, 0))
+
     def test_postgres_documents_query_rejects_unknown_order(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown source order"):
             postgres_documents_query(SourceConfig(limit=128, offset=256, order="bad"))
@@ -159,6 +173,19 @@ class DaftSqlTests(unittest.TestCase):
 
         self.assertIn("ORDER BY arrival_time_s NULLS LAST, doc_id", sql)
         self.assertIn("LIMIT 32 OFFSET 64", sql)
+
+    def test_daft_sql_query_can_filter_manifest_doc_ids(self) -> None:
+        sql = daft_sql_query(
+            SourceConfig(
+                limit=2,
+                offset=0,
+                order="arrival_time",
+                doc_ids=(7, 3),
+            )
+        )
+
+        self.assertIn("WHERE doc_id IN (7,3)", sql)
+        self.assertIn("ORDER BY arrival_time_s NULLS LAST, doc_id", sql)
 
 
 class SourceFactoryTests(unittest.TestCase):

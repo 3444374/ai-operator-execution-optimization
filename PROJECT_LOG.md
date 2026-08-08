@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-08-08 manifest-selected staggered 多 Job source 合同修复
+
+- `opening_multijob_minimal` v2 warm-up 在发请求前 fail closed：旧 profiler 同时规定 request manifest 必须 `doc_id` 排序且禁止 arrival replay，而 shared runner 又要求 replay 使用 `arrival_time`；job1 的非零 source offset 还会跳过已筛选 manifest 集合。该合同无法表达“互斥 short/long 集合 + 错峰 replay”。
+- PostgreSQL/Daft source 现支持由 manifest doc_id 集合过滤后再按 `arrival_time_s, doc_id` 排序；manifest guard 允许这一明确组合，非 replay 仍强制 `doc_id`。两个 job 的 source offset 固定为 0，隔离由不同 manifest SHA 和逐行 source hash 证明；config 对非零 offset 或半数 manifest fail closed。v2 失败 root 与 log 保留，正式运行必须使用新 root。
+
 ## 2026-08-08 shared-vLLM topology preflight NameError 修复
 
 - `opening_multijob_minimal` 首次启动在创建输出目录和发送请求前由 topology preflight 安全失败：`evidence.py` 引用了 config 中的 `_csv_argument_values` 但未导入。

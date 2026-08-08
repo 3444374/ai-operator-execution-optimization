@@ -230,7 +230,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             self.assertEqual(config.work_limit_per_endpoint, 65536)
             self.assertIsNotNone(config.calibration_contract)
 
-    def test_scenario_pins_distinct_job_manifests_and_offsets(self) -> None:
+    def test_scenario_pins_distinct_job_manifests_with_zero_offsets(self) -> None:
         payload = self._config_payload(
             scenarios=[
                 {
@@ -240,7 +240,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                     "rows_per_job": 64,
                     "weights": [1, 3],
                     "arrival_offsets_s": [0.0, 15.0],
-                    "source_row_offsets": [0, 64],
+                    "source_row_offsets": [0, 0],
                     "request_manifests": [
                         "${SHORT_MANIFEST}",
                         "${LONG_MANIFEST}",
@@ -262,7 +262,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             config = load_config(Path("config.json"))
 
         scenario = config.scenarios[0]
-        self.assertEqual(scenario.source_row_offsets, (0, 64))
+        self.assertEqual(scenario.source_row_offsets, (0, 0))
         self.assertEqual(
             scenario.request_manifests,
             ("/evidence/short.jsonl", "/evidence/long.jsonl"),
@@ -286,7 +286,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             start_epoch_s=100.0,
             coordinator_name="credits",
         )
-        self.assertEqual(self._flag_value(command, "--source-row-offset"), "64")
+        self.assertEqual(self._flag_value(command, "--source-row-offset"), "0")
         self.assertEqual(
             self._flag_value(command, "--request-manifest"),
             "/evidence/long.jsonl",
@@ -299,6 +299,23 @@ class SharedVllmExperimentTests(unittest.TestCase):
             self._flag_value(command, "--shared-credit-job-weight"),
             "3",
         )
+
+    def test_manifest_selected_jobs_reject_nonzero_source_offsets(self) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "heterogeneous_j2",
+                    "policy": "shared_drr",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                    "source_row_offsets": [0, 64],
+                    "request_manifests": ["short.jsonl", "long.jsonl"],
+                }
+            ]
+        )
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            with self.assertRaisesRegex(ValueError, "zero source_row_offsets"):
+                load_config(Path("config.json"))
     def test_config_rejects_setup_and_runner_owned_credit_flags(self) -> None:
         for forbidden in (
             "--setup",

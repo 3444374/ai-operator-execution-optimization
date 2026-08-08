@@ -77,8 +77,12 @@ def validate_profile_manifest_contract(
         raise ValueError(
             "request manifest requires trace_target_output or fixed_output_cap"
         )
-    if source_order != "doc_id":
-        raise ValueError("request manifest requires doc_id source order")
+    expected_source_order = "arrival_time" if arrival_replay else "doc_id"
+    if source_order != expected_source_order:
+        raise ValueError(
+            "request manifest requires "
+            f"{expected_source_order} source order"
+        )
     if executor != "ray_actor":
         raise ValueError("request manifest requires ray_actor")
     if completion_protocol == "chat_completions":
@@ -107,10 +111,6 @@ def validate_profile_manifest_contract(
             "Completions request manifest requires request or batch "
             "granularity"
         )
-    if arrival_replay:
-        raise ValueError("request manifest comparison forbids arrival replay")
-
-
 class ProfileManifestGuard:
     """Validate source rows and attach their frozen endpoint assignment."""
 

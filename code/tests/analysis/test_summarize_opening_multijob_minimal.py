@@ -39,7 +39,7 @@ class OpeningMultijobSummaryTests(unittest.TestCase):
             "mfu_status": "ok",
             "actor_worker_failures": 0,
             "incidents": 0,
-            "source_row_offsets": json.dumps([0, 512]),
+            "source_row_offsets": json.dumps([0, 0]),
             "request_manifest_sha256": json.dumps(
                 ["a" * 64, "a" * 64 if duplicate_manifests else "b" * 64]
             ),
