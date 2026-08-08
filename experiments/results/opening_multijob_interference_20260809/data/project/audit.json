@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "matrix_root": "/root/autodl-tmp/experiment-artifacts/opening_multijob_forced_overlap_20260809_v3",
+  "manifest_status": "completed",
+  "expected_scenarios": [
+    "staggered_shared_work",
+    "staggered_static_partition"
+  ],
+  "observed_group_runs": 8,
+  "observed_formal_runs": 6,
+  "checks": {
+    "one_warmup_three_formal": true,
+    "metrics_resources_mfu_ok": true,
+    "zero_worker_failure_and_incident": true,
+    "manifest_selected_zero_offsets_and_distinct_sha": true,
+    "runner_exactly_once_evidence_validation": true
+  },
+  "errors": []
+}

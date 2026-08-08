@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "matrix_root": "/root/autodl-tmp/experiment-artifacts/opening_text_native_multijob_forced_overlap_20260809_v1",
+  "repository_commit": "cc05ebd5d3cb75c613392abf26f6cbe9dd607749",
+  "gpu_peak_tflops_per_gpu": 165.0,
+  "mfu_formula": "sum(vllm_estimated_flops_per_gpu_delta)/(arm_barrier_jct_s*gpu_count*gpu_peak_tflops*1e12)",
+  "throughput_source": "vLLM prompt+generation service-counter delta divided by arm barrier JCT",
+  "excluded_metric": "matrix_index.group_barrier_tokens_per_s uses adapter request files whose output-token coverage differs; it is not rankable",
+  "request_tail_latency": "not_collected_by_native_multijob_adapter; do not infer request P95/P99 from barrier JCT",
+  "observed_runs": 12,
+  "observed_formal_runs": 9,
+  "errors": []
+}

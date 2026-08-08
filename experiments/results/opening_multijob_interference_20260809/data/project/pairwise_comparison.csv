@@ -1,0 +1,2 @@
+factor,baseline,candidate,tokens_per_s_delta_pct,max_job_jct_delta_pct,max_job_p99_delta_pct,job0_jct_delta_pct,job1_jct_delta_pct,slo_token_goodput_delta_pct,shared_jain_fairness_median,shared_min_normalized_service_rate
+staggered,staggered_static_partition,staggered_shared_work,21.031518743324295,-18.31088996985314,-37.65828939122562,4.97712487256905,-18.31088996985314,45.957123591466484,0.707249301298143,1473.5060713271412

@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "short_manifest_sha256": "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971",
+  "formal_rows": 30,
+  "summary_rows": 10,
+  "comparisons": 6,
+  "project_phase_rows": 18,
+  "request_p99_boundary": "project_only",
+  "interval_mfu_boundary": "unavailable:no_interval_flops_counter",
+  "native_short_duration_boundary": "characterization_not_60s_capacity_ranking"
+}

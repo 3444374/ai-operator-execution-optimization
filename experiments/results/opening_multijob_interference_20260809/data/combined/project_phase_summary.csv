@@ -1,0 +1,7 @@
+scenario,phase,formal_repeats,duration_s_mean,gpu_util_pct_mean,running_total_mean,waiting_total_mean,kv_per_endpoint_mean,short_completed_requests_mean,short_completed_work_per_s_mean,mfu_status
+staggered_shared_work,long_drain,3,24.676480611165363,93.91139888791338,66.05172666081359,0.09862452443664033,0.36391086301932263,1.0,14.532860244460704,unavailable:no_interval_flops_counter
+staggered_shared_work,overlap,3,72.61613702774048,95.19072779072779,86.73377363377364,0.03377363377363377,0.23981225353861949,505.0,2008.4484941291853,unavailable:no_interval_flops_counter
+staggered_shared_work,pre_long,3,5.0,89.63095238095238,6.309523809523809,0.0,0.005761855136575993,6.0,287.59999999999997,unavailable:no_interval_flops_counter
+staggered_static_partition,long_drain,3,49.91476813952128,97.01678479495045,34.39610000352622,0.007246376811594203,0.18590168007067637,1.0,8.654763844657667,unavailable:no_interval_flops_counter
+staggered_static_partition,overlap,3,68.93623812993367,94.8034641466014,67.61310584839997,0.0,0.1649700920515097,505.0,2117.759191432201,unavailable:no_interval_flops_counter
+staggered_static_partition,pre_long,3,5.0,87.80952380952381,6.238095238095238,0.0,0.005717546807319029,6.0,287.46666666666664,unavailable:no_interval_flops_counter
