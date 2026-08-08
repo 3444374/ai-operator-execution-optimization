@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-08-08 shared-vLLM topology preflight NameError 修复
+
+- `opening_multijob_minimal` 首次启动在创建输出目录和发送请求前由 topology preflight 安全失败：`evidence.py` 引用了 config 中的 `_csv_argument_values` 但未导入。
+- 补齐显式导入，并新增 matching profiler metrics/completion endpoint 正常路径回归；shared-vLLM runner 测试从 28/28 增至 29/29。失败启动只保留独立 runner log，不含实验 cell，正式矩阵继续使用同一冻结配置和全新输出目录。
+
 ## 2026-08-08 原生两 Job 正式数据统一汇总口径
 
 - 新增 `summarize_text_native_multijob.py`：对 Daft Native、Daft Ray、Ray Data 三臂各 1 warm-up + 3 formal 做 fail-closed 审计，统一用 vLLM prompt+generation service-counter delta / arm barrier JCT 计算吞吐，并恢复 MFU、GPU 能耗、running/waiting/KV、short/long JCT 与实际重叠时长。

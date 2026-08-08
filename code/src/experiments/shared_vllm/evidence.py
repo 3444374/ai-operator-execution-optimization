@@ -14,7 +14,13 @@ from pathlib import Path
 
 from src.observability.metrics import percentile
 
-from .config import GroupRunIdentity, RunnerOptions, SharedVllmConfig, SharedVllmScenario
+from .config import (
+    GroupRunIdentity,
+    RunnerOptions,
+    SharedVllmConfig,
+    SharedVllmScenario,
+    _csv_argument_values,
+)
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
 

@@ -771,6 +771,36 @@ class SharedVllmExperimentTests(unittest.TestCase):
         ):
             _validate_runner_topology(duplicate, config)
 
+    def test_runner_topology_accepts_matching_profiler_urls(self) -> None:
+        metrics = ("http://metrics0", "http://metrics1")
+        payload = self._config_payload(
+            common_args=[
+                "--arrival-replay",
+                "--model-metrics-urls",
+                ",".join(metrics),
+                "--completion-endpoint-urls",
+                "http://endpoint0,http://endpoint1",
+            ]
+        )
+        with patch.object(
+            Path,
+            "read_text",
+            return_value=json.dumps(payload),
+        ):
+            config = load_config(Path("config.json"))
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("output"),
+            health_url="http://health",
+            metrics_urls=metrics,
+            ray_address="127.0.0.1:6379",
+            idle_timeout_s=1.0,
+        )
+
+        _validate_runner_topology(options, config)
+
     def test_coordinator_name_isolated_by_physical_output_run(self) -> None:
         first_id = _run_instance_id(Path("results/gate-a"))
         second_id = _run_instance_id(Path("results/gate-b"))
