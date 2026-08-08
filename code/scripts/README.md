@@ -30,6 +30,13 @@ native short 不足 60s 只作表征、interval MFU 无 counter 因而不可用�
 submit→service、service 与 request E2E 分位数；profiler 的 pipeline stage 字段可能
 重叠，明确禁止相加。不绘图、不把 group throughput 当 short 专属吞吐。
 
+`analysis/summarize_project_short_all_at_t0.py` 审计同一 512-row short manifest 的
+Project all-at-t0 1+3 raw，并冻结 T0 full-pipeline、T1 offered-work JCT、T2 framework
+execute、T3 model-request window、T4 vLLM request mean 五层计时。它只在 T3/T4 下做
+Project/Daft short 诊断；Daft 缺失的外层 T0 保持为空。`data/build_eager_manifest_variant.py`
+只将已有 manifest 的 `arrival_time_s` 置零并另存，保存 source/output SHA 与 work 审计，
+用于 Project-only eager 多 Job 配对，不覆盖在线 replay manifest。
+
 当前连接与测试流程集中在：
 
 ```text

@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "scope": "short_job_timer_boundary_diagnostic_not_60s_capacity_ranking",
+  "formal_repeats": 3,
+  "expected_rows_per_repeat": 512,
+  "expected_rows_per_endpoint": 256,
+  "request_identity_sha256": "035cc1bc2fdd1bccd3eb1956490e547045774b963b960ea49da3e298d0654690",
+  "short_manifest_sha256": "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971",
+  "short_manifest_sha_boundary": "observed_on_server_before_run",
+  "repository_commit": "282bf71",
+  "repository_commit_boundary": "observed_server_HEAD_before_run",
+  "raw_archive_sha256": "21280849f7987a1b728d4cb586111bad615de107abab3a40c474d504b8d66944",
+  "arrival_replay": false,
+  "source_order": "doc_id",
+  "project_static_k_per_endpoint": 128,
+  "project_active_work_per_endpoint": 65536,
+  "token_budget": 6144,
+  "comparison_boundary": {
+    "T0_full_pipeline_wall": "not_available_cross_system",
+    "T1_offered_work_jct": "same_input_visibility_only",
+    "T2_framework_execute_wall": "diagnostic_only",
+    "T3_model_request_window": "comparable_short_job_diagnostic",
+    "T4_vllm_request_service_mean": "comparable_short_job_diagnostic"
+  },
+  "daft_native_service_window_repeats_s": [
+    10.640310287475586,
+    11.532585620880127,
+    11.004170894622803
+  ]
+}

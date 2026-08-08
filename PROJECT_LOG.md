@@ -5179,3 +5179,15 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 该实验只诊断项目离线饱和能力，不属于新增开题 baseline，不替换在线 short/long 因果对照，也不与 Daft eager-manifest 直接排名。达到同签名 bounded 95% feeding 即停止；否则才逐项隔离 source、flush、Ray actor 或 routing。
 - 用户明确本阶段不画图、不做 PPT、不同步 Wiki；继续保存服务器 raw，并在完成审计后同步 Git。
 - 首个 64-row all-at-t0 gate 在发请求前由 manifest guard fail-closed：关闭 replay 后 request manifest 必须使用 `source-order=doc_id`，模板错误沿用了在线 `arrival_time`。失败输出目录完整保留；模板改为 `doc_id`，下一 gate 另建 v2 且从两个 endpoint 各取 32 行。
+
+## 2026-08-09 Project short 统一计时与 eager 多 Job 配对
+
+- Project all-at-t0 1+3 已完成：T0 profiler E2E 14.957s、T1 request JCT 14.776s、
+  T3 earliest-submit→latest-completion 11.354s；model service 14,361 tok/s、MFU42.93%，
+  三次 CV 均低于1%。raw 和 gate 均留服务器，归档 SHA256 为 `21280849...6944`。
+- 冻结 T0–T4 统一计时合同。Daft Native 当前只记录 collect/request window，缺准备前
+  T0，因此 Project 14.957s vs Daft 11.059s 不作完整 E2E 排名；在对齐的 T3 下为
+  11.354s vs11.059s（Project +2.67%），service tokens/s/MFU 分别只差−2.48%/−2.52%。
+- 现有多 Job 系统内 single→overlap 反事实继续有效；为回答 eager 条件下 long 对 Project
+  short 的影响，新增 Project-only eager single/static/shared 配对模板和 arrival-zero
+  manifest builder。只补 Project，不重跑原生三臂；在线 replay 与 eager 结果分轨保留。

@@ -160,6 +160,8 @@ shared 相对 static 将 aggregate service throughput 提高 21.03%、long JCT �
 
 逐请求 raw 将该现象进一步定位：项目 single-short 的 71.24 s 中，66.875 s（93.87%）是冻结 arrival span，最后到达后的 drain 为4.367 s；平均 arrival→flush、flush→submit、submit→service 分别只有75.1/3.29/3.00 ms，backend service 为3.847 s。项目 vLLM 单请求 mean 3.837 s 反而低于 Daft Native 的6.654 s；Daft 更快来自完整 manifest 在计时前可见，使 running/MFU 达250.1/44.04%，而项目只有26.1/6.63%。long 加入后，static/shared 的 short backend service mean 分别增加59.74%/88.17%，buffer P99 从约86 ms 增至0.917/3.835 s，说明既有 GPU service 竞争，也有项目上游 pending/credit 软拥塞；vLLM queue mean 仍只有微秒量级，不能单独作为控制信号。
 
+进一步把同一 Project short manifest 改为 all-at-t0 后，三次 T0 profiler E2E 为14.957s，T3 最早模型提交到最晚响应完成为11.354s，service throughput/MFU 为14,361 tok/s/42.93%；Daft Native 已记录的同边界为11.059s、14,727 tok/s/44.04%，只差约2.5%–2.7%。这排除了“Project 模型请求路径慢6.4×”的解释。Daft 的 source、provider、DataFrame 和 expression 准备位于现有 timer 之前，缺匹配 T0，故14.957s 与11.059s 仍不作完整 E2E 排名。短 Job 诊断无需为了60s人为扩规模；eager 多 Job 只补 Project 配对，在线 replay 与原生系统内干扰结论不替换。
+
 ### 5.5 最小饱和 active work
 
 双 RTX 4090、冻结 Qwen/vLLM 合同下，每 endpoint 65,536 active work 已达到最大已测吞吐均值的 97.80%，下一档只增加 0.92%；继续提高到 98K，吞吐增量有限而 P99 由 36.78 s 上升到 40.05 s。该结果证明应先标定最小饱和点，再比较上游策略。65,536 只绑定当前机器、模型、协议和 workload，不是通用常数。

@@ -144,6 +144,8 @@ ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 cor
 
 5s guaranteed-overlap 对照已完成：Daft Native/Ray、Ray Data 的 short JCT 相对各自 single 增加 82.42%/104.84%/32.76%，只作外部观察；项目 quota-only≈0，static/shared 加入 long 后 short JCT 增加 3.79%/8.95%。逐请求 raw 又确认项目 single 的 71.24 s=66.875 s arrival span+4.367 s drain；long 使 static/shared 的 short service mean 增加59.74%/88.17%，同时放大 Ray/pending 层 buffer 与 flush→submit。shared 相对 static 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、Jain fairness 下降。原生完整 manifest eager 可用，所以 71.24 s vs 11.06 s 仍不作跨轨绝对排名。该结果冻结为效率—隔离—公平权衡证据，不称动态全面胜出；开题前不再扫 offset/weight/更多 Job 追正。
 
+Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profiler E2E 14.957s，T3 earliest model submit→latest completion 11.354s，service 14,361 tok/s、MFU42.93%；Daft Native 的同一 short T3 为11.059s、14,727 tok/s、MFU44.04%，差异仅约2.5%–2.7%。Daft 未记录 source/framework 准备前的 T0，因此完整 E2E 仍不排名；该结果排除了“Project 模型请求路径慢6.4×”，也不要求把短 cell 拉长到60s。为对齐 eager 多 Job 的 offered-load，只补 Project eager single/static/shared 配对，不重跑原生三臂；在线 replay 结论保留。
+
 ## 7. 开题叙事图
 
 1. `opening_motivation_work_state`：固定行隐藏 work、静态上限不是状态、提交压力存在最小近饱和点与边际收益递减区，分别导出 WorkDescriptor、感知和有界控制。

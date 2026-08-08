@@ -23,6 +23,7 @@
 | Directory | Content | Boundary |
 |---|---|---|
 | `opening_multijob_interference_20260809/` | exact-short full/half 控制、项目 static/shared 5s guaranteed-overlap A/B、三条原生观察，以及逐请求 arrival/buffer/submit/service 分解 | 项目 71.24 s 中 66.875 s 是 arrival span；long 同时放大 short 的 backend service 与上游 buffer。shared 总吞吐 +21.03%，但 short JCT +4.98% 且 fairness 下降，不能称动态全面胜出。 |
+| `opening_project_short_all_at_t0_diagnostic_20260809/` | 同一 short manifest 的 Project all-at-t0 1+3，统一 T0–T4 timer 与 Daft raw 对齐 | Project T3 model-request window 11.354s vs Daft 11.059s，service tokens/s 与 MFU 差约−2.5%；Daft T0 未采集，完整系统 E2E 不排名。 |
 
 ## 图像 AI_EMBED operator（2026-08-03/04）
 

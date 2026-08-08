@@ -44,6 +44,67 @@ from src.experiments.shared_vllm import (  # noqa: E402
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_all_at_t0_multijob_template_keeps_matched_project_limits(self) -> None:
+        with TemporaryDirectory() as directory:
+            selection = Path(directory) / "selection.json"
+            selection.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "status": "ready",
+                        "selection": {
+                            "project_static_k_per_endpoint": 128,
+                            "project_active_work_per_endpoint": 65536,
+                            "project_actor_workers_per_endpoint": 8,
+                            "project_ray_actor_max_concurrency": 32,
+                            "project_ray_worker_num_cpus": 0.25,
+                        },
+                        "evidence": {
+                            "feeding": {"status": "passed"},
+                            "token_budget": {"status": "passed"},
+                            "actor_pool": {"status": "passed"},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            env = {
+                "DATABASE_URL": "postgresql://example",
+                "VLLM_VERSION": "0.25.1",
+                "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
+                "VLLM_MAX_NUM_SEQS": "256",
+                "COMPLETION_MODEL": "qwen2.5-7b",
+                "MODEL_PATH": "/models/qwen2.5-7b",
+                "OPENING_SHORT_JOB_EAGER_MANIFEST": "/tmp/short-eager.jsonl",
+                "OPENING_LONG_JOB_EAGER_MANIFEST": "/tmp/long-eager.jsonl",
+                "OPENING_MULTIJOB_OFFSET_S": "5",
+                "SHAREGPT_PROJECT_K": "128",
+                "SHAREGPT_PROJECT_CALIBRATION_CONTRACT": str(selection),
+            }
+            with patch.dict(os.environ, env, clear=True):
+                config = load_config(
+                    CODE_ROOT.parent
+                    / "deploy"
+                    / "autodl"
+                    / "opening_project_multijob_all_at_t0_diagnostic.example.json"
+                )
+
+        self.assertEqual(config.request_limit_per_endpoint, 128)
+        self.assertEqual(config.work_limit_per_endpoint, 65536)
+        self.assertIn("--arrival-replay", config.common_args)
+        scale = config.common_args.index("--arrival-time-scale")
+        self.assertEqual(config.common_args[scale + 1], "1.0")
+        self.assertEqual(
+            [scenario.scenario_id for scenario in config.scenarios],
+            [
+                "single_short_full_pool_all_at_t0",
+                "staggered_static_partition_all_at_t0",
+                "staggered_shared_work_all_at_t0",
+            ],
+        )
+        self.assertEqual(config.scenarios[0].job_count, 1)
+        self.assertEqual(config.scenarios[1].arrival_offsets_s, (0.0, 5.0))
+
     def test_credit_observer_exports_code_root_to_ray_workers(self) -> None:
         ray_module = MagicMock()
         ray_module.is_initialized.return_value = False

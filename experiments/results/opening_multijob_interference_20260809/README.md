@@ -137,6 +137,13 @@ Daft Native 的 6.654 s；项目 decode/prefill 为 3.785/0.0365 s，Daft Native
 6.381/0.1056 s。Daft 的总 Job 更快来自一次性暴露全部 work，令 running mean 从项目
 26.1 提到 250.1、MFU 从 6.63% 提到 44.04%，而不是 Daft 单请求 service 更短。
 
+后续 Project all-at-t0 1+3 已按统一 T0–T4 合同补测。其 T0 profiler E2E 为14.957s；
+对齐到 T3“最早模型提交→最晚响应完成”为11.354s，Daft Native 同边界为11.059s，
+Project 仅+2.67%。两者 service tokens/s 为14,361/14,727，MFU为42.93%/44.04%，
+差约−2.5%。因此“Project 模型请求路径慢6.4×”已被排除。Daft 未记录 source/framework
+准备前的 T0，故Project14.957s与Daft11.059s仍不能作为完整系统排名。权威对齐数据见
+`../opening_project_short_all_at_t0_diagnostic_20260809/`。
+
 ### 4.6 long Job 具体影响了 short 的哪些阶段
 
 arrival span 在所有项目场景都固定为 66.875 s，所以 long 没有改变 offered-arrival
@@ -173,6 +180,8 @@ shared work 把更多 long work 注入服务，故 aggregate throughput 更高�
    11.06 s 不构成系统绝对性能比较。
 6. 项目 71.24 s 中 66.875 s 是冻结 arrival span；single-short 的逐请求 service 并不慢于
    Daft Native。long 加入后，同时放大 short 的 backend service 和项目上游 buffer。
+7. Project all-at-t0 的 T3/service throughput/MFU 与Daft Native只差约2.5%–2.7%；
+   当前大差距来自 arrival 与计时合同，不应先扫K256/K512或把short人为拉到60s。
 
 ### 对设计的支撑
 
