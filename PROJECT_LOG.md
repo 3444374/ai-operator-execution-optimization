@@ -5272,3 +5272,16 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   Wiki 按用户要求豁免。
 - 明确剩余工作只有获准后的图渲染、PPT/云发布与最终一致性审计；这些状态不得作为新增
   baseline、offset、weight、4+ Job 或参数扫描的理由。
+
+## 2026-08-09 开题权威内容与冻结数据一致性审计
+
+- 从 database-E2E、bounded capacity、原生单 Job、多 Job、图像 matched-resource 与
+  cost LOO 的冻结 CSV/JSON 重新核对报告、总纲、答辩大纲、QA 和 Claim Matrix 的核心
+  数字及不能声称边界；未发现主线 Claim 越界。
+- 修正报告证据卫生问题：标题由单写“320 runs”改为“320-run 基础矩阵 +
+  429-formal 合并 LOO”，删除把代价估计称作“研究内容四”的矛盾表述，并把实际六个
+  estimator 的范围由误写的 CE0–CE6 更正为 CE0–CE5。
+- `ce_context_loo_rerun_20260807.json` 有 6 处 `§6` 使用错误字节编码，导致标准 UTF-8
+  Python 解析失败；已只做字符编码规范化，字段和数值不变。修复后 SHA256 为
+  `bbb2f2f8c5c1c07f2b1973e5d39960f26880e54ca10c616920638a19ebef43c8`，Python 与 jq
+  均验证 429 formal、20 context。

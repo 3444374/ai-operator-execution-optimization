@@ -51,13 +51,13 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 算子代价估计已表现出配置选择价值 | 条件性 | `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md`：429 formal，CE5 pooled regret 1.67%、macro 2.90%、max 14.72%、candidate pairwise 0.808 | 可写为第一份选择质量可行性证据；CE5 只是 marginal pass | 更多 context、时间段、workload 和硬件 held-out |
 | 简单代价 proxy 不足以支持配置选择 | 已证明（文本） | 同上 20 contexts；各 context 四候选 E2E spread 12.0%–86.5%。CE0 mean macro regret 37.2%/pairwise 0.50，CE1 analytical 17.8%/0.53；逐行 MAE 更低的 Ridge 选择反而更差 | 代价估计必须按 ranking/regret 验收，首版保留物理解析结构并只学习 residual | 图像阶段代价的 held-out 选择证据仍缺 |
 | 三条静态路径在 SQuAD 均匀控制组已有统一 database-E2E 对照 | 已证明（静态地基） | `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`：K128 replacement 24/24 单元、18 formal 全门禁通过；direct/DuckDB/project service tok/s=40,920.72/40,955.99/41,277.95，correct rows/s=136.63/136.68/137.77 | 喂饱后均匀短输出下三条静态路径近似中性；强静态点必须保留为后续动态对照 | 无 database-E2E blocker；不能从近似中性外推异质负载 |
-| 两类 workload 的完整三臂统一 database-E2E 护栏 | 已证明（correctness 地基） | `opening_database_e2e_text_refeed_20260808/`：24/24 cells 的 source/sink、identity、exactly-once 和 CV 门通过；后续饱和扫描证明 ShareGPT C32 direct 只有已测峰值的 52.07% | 可用于 database-E2E 与产品语义边界；ShareGPT 三臂不作 matched-saturation 性能排名 | 原生单 job 正式矩阵改用 bounded C128 |
+| 两类 workload 的完整三臂统一 database-E2E 护栏 | 已证明（correctness 地基） | `experiments/results/opening_database_e2e_text_refeed_20260808/`：24/24 cells 的 source/sink、identity、exactly-once 和 CV 门通过；后续饱和扫描证明 ShareGPT C32 direct 只有已测峰值的 52.07% | 可用于 database-E2E 与产品语义边界；ShareGPT 三臂不作 matched-saturation 性能排名 | 原生单 job 正式矩阵改用 bounded C128 |
 | ShareGPT C32→C256 呈现欠供给、平台与过量排队区间 | 已证明（容量动机） | `experiments/results/opening_bounded_saturation_calibration_20260808/README.md`：formal tok/s=9,455/14,058/17,834/18,158；C128 达峰值 98.22%，C256 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18s | GPU utilization 高不等于喂饱；状态感知需联合完成速率、running/waiting、KV、MFU 与 tail，控制目标是最小饱和区 | 数值只绑定当前机器、模型、协议、workload；动态收益仍待 A/B |
 | 异质文本 workload 会拉开冻结静态路径差距 | 条件性（降级） | ShareGPT project/C32-direct service tok/s=14,568.91/9,425.25、DB-E2E=116.70/180.33 s；C32 后续证实欠供给，且两臂并发/执行结构不同。DuckDB 4,921/6,144 行 cap 语义失败 | 只说旧静态配置在异质 workload 下暴露容量校准和产品语义问题；不能称项目方法收益 | 同 manifest、独立冻结点的原生单 job 矩阵；项目方法增量需同上限 A/B |
 | 后到 Job 会影响已存在前台，且共享额度的价值依赖 arrival regime | 已证明（受控文本） | `experiments/results/opening_multijob_interference_20260809/README.md`：在线 replay 下 quota-only≈0，shared 提高总吞吐但 short/Jain 回退；统一 eager 后 full→half quota-only 已使 short JCT +59.00%，matched half→static+long 又 +58.77%，matched full→shared+long +28.90%。eager shared 相对 static 的 short JCT −48.94%、总吞吐 +31.85%、long JCT −25.75%、Jain 0.894→0.972 | 多 Job 管理必须显式表征 per-job work、arrival/active/drain 状态；需要 work-conserving idle borrowing，并同时保留 foreground SLO/fairness guard。online/eager 方向相反，证明策略不能固定跨 regime 复用 | 仅 2 Job、equal weight、文本；Project eager 与原生仅比较各轨内部 normalized impact，跨轨 T0/绝对 JCT 不排名；4+ Job、weighted/SLO、图像 phase-change 属论文阶段 |
 | state-aware 请求成形/提交优于冻结强静态策略 | 待验证 | 尚无与同上限 frozen static 的正式对照 | 只能写成拟研究方法，不得写成已有贡献 | 开题后 proposed 主实验 |
 | 文本原生路径在同环境下呈现稳定但不同的服务压力形态 | 已证明（外部现象） | `experiments/results/opening_text_native_single_job_formal_20260808/README.md`：16/16 cells、12 formal；bounded/Daft Native/Daft Ray/Ray Data tok/s=17,800/17,286/16,747/3,551，CV<0.6%。Daft waiting mean=783/742、KV max≈1；Ray Data running=17.3、MFU=0.112 | 同一任务可落入最小饱和、过量排队或欠供给；状态感知需联合 work rate/MFU、running/waiting、KV 与 tail | 只证明当前官方 graph/冻结点的外部现象；不能归因内部算法或称项目方法胜出 |
-| 现有原生路径在多 job 共享服务时呈现前台干扰与不同压力形态 | 已证明（外部现象） | `opening_multijob_interference_20260809/`：统一 Job 级5s offset、各1+3；Daft Native/Ray/Ray Data short JCT 相对各自 single +82.42%/+104.84%/+32.76%，Project eager static/shared 的 matched增量为+58.77%/+28.90%。Daft 两臂 high waiting/KV，Ray Data low running/no waiting/low MFU | 同一“两个 Job”可落入不同服务状态且前台均受影响，因此需要全局 work/state 观测；不归因框架内部算法，也不把 normalized delta 当跨框架性能排名 | 原生 adapter 无 request P99；Project 与原生虽都为eager offered-work，但T0准备边界不同，short cell不作≥60s容量或绝对排名，不称项目优于框架 |
+| 现有原生路径在多 job 共享服务时呈现前台干扰与不同压力形态 | 已证明（外部现象） | `experiments/results/opening_multijob_interference_20260809/`：统一 Job 级5s offset、各1+3；Daft Native/Ray/Ray Data short JCT 相对各自 single +82.42%/+104.84%/+32.76%，Project eager static/shared 的 matched增量为+58.77%/+28.90%。Daft 两臂 high waiting/KV，Ray Data low running/no waiting/low MFU | 同一“两个 Job”可落入不同服务状态且前台均受影响，因此需要全局 work/state 观测；不归因框架内部算法，也不把 normalized delta 当跨框架性能排名 | 原生 adapter 无 request P99；Project 与原生虽都为eager offered-work，但T0准备边界不同，short cell不作≥60s容量或绝对排名，不称项目优于框架 |
 | 项目、Daft、Ray Data 或DuckDB存在跨workload普遍性能优胜关系 | 不能声称 | SQuAD三臂近似中性；ShareGPT三臂并发/语义合同不匹配；原生框架仅有当前冻结点的外部状态观察 | 只能在各自成立的source/语义/timing/feeding合同内报告条件性结果 | 需同任务语义、同完整T0、各系统独立饱和点和正式重复；不作为开题blocker |
 | state-aware/shared/dynamic已经普遍优于强静态点 | 不能声称 | 多项动态候选未过约5%门；online/eager多Job方向相反；尚无phase-change同上限主实验 | 写成拟研究方法、已实现的局部机制及可证伪评价计划 | 开题后frozen-static vs state-aware同上限消融 |
 | sequential、prefix-aware或65K是全局最优策略/通用容量 | 不能声称 | 组织策略排名随endpoint/KV regime反转；65K只绑定当前机器/模型/协议/workload签名 | 只报告当前签名下的最小近饱和点与机制边界 | 新签名必须重新gate与校准 |
@@ -136,3 +136,22 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 停止规则：当前不存在需要通过新增开题实验才能解除的 readiness 阻塞。图渲染、PPT、云文档
 和最终审计恢复后只消费现有冻结数据；不得为了填满页面、改善叙事或得到更好看的方向而重跑
 offset、weight、4+ Job、第二数据库、文本全框架矩阵或大规模参数扫描。
+
+## 8. 本地内容一致性审计（2026-08-09）
+
+审计对象为 `PROJECT_OUTLINE.md`、本地开题报告、答辩大纲、QA、第一性原理复审和本
+Claim Matrix；数字直接回到冻结 CSV/JSON，不以文档之间相互一致代替数据复核。
+
+| 审计项 | 权威数据复核 | 结论 |
+|---|---|---|
+| database-E2E | `summary/formal_summary.csv` 共 6 组，每组 3 formal；SQuAD correct rows/s=136.63/136.68/137.77，ShareGPT DuckDB cap failures=4,921/6,144 | 报告数字一致；ShareGPT 不作性能排名 |
+| bounded capacity | `runs_summary.csv` 的 formal C32/C64/C128/C256=9,454.88/14,057.93/17,834.14/18,158.19 tok/s | C128=98.22% 已测峰值，最小饱和口径一致 |
+| 原生单 Job | `opening_text_native_single_job_formal_20260808/formal_summary.csv` 四臂与报告的 17,800/17,286/16,747/3,551 tok/s 一致 | 只作外部状态指纹，不归因内部算法 |
+| 多 Job | `opening_multijob_interference_20260809/data/eager_project/cross_system_short_impact.csv` 复核 +58.77%/+28.90%/+82.42%/+104.84%/+32.76% | 只画各轨内部 normalized impact；旧 15 s 零重叠排除 |
+| 图像 matched-resource | schema-v12 正式表复核 cpu8/cpu16 两档均同向；主报告继续使用跨 campaign 冻结的约 13%–15%，不用旧 45.7% | 静态结构信号成立；动态增量仍待验证 |
+| cost decision quality | UTF-8 合法的 `ce_context_loo_rerun_20260807.json` 复核 429 formal、20 context；CE5 pooled/macro/max=1.6657%/2.8973%/14.7152%，candidate pairwise=0.8083 | 文档四舍五入一致，保持 marginal pass |
+| 禁止外推 | 扫描旧 45.7%、15 s、6.4×、ShareGPT 154.57%、K512 与“动态胜出”等关键词 | 仅出现在反驳、历史说明或不能声称条目；未发现主线越界 |
+
+审计发现并修复三类证据卫生问题：代价报告标题补充 429-formal 合并评估边界；估计器
+范围由误写的 CE0–CE6 更正为实际 CE0–CE5，并删除“研究内容四”的矛盾表述；合并 LOO
+JSON 中 6 处误编码的 `§6` 已规范为 UTF-8。上述修正均不改变实验字段、数值或 Claim 等级。

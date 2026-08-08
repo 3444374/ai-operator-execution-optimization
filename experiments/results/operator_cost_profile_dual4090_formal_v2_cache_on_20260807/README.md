@@ -1,12 +1,12 @@
-# 双 4090 算子代价估计 v2 cache-on formal profile（320 runs，2026-08-07）
+# 双 4090 算子代价估计 v2 cache-on formal profile（320-run 基础矩阵 + 429-formal 合并 LOO，2026-08-07）
 
-> **状态（plan §7）：本目录是 v2 cache-on 重跑的**有效数据 + 归档 + CE0–CE6 context-LOO 评估**。2026-08-04 首次 run 因并发共用 GPU + 空 `--ray-address`（每子 run local Ray）而**无效**（见 `../operator_cost_profile_dual4090_formal_20260804/`）；本轮 v2 修复后重跑，**320/320 有效、0 incident、gate 10（0 local-Ray）通过**——正是对首次无效的闭环。**
+> **状态（plan §7）：本目录是 v2 cache-on 重跑的**有效数据 + 归档 + CE0–CE5 context-LOO 评估**。2026-08-04 首次 run 因并发共用 GPU + 空 `--ray-address`（每子 run local Ray）而**无效**（见 `../operator_cost_profile_dual4090_formal_20260804/`）；本轮 v2 修复后重跑，**320/320 有效、0 incident、gate 10（0 local-Ray）通过**——正是对首次无效的闭环。**
 > **CE LOO 主结果（§5.3，6-rep 重跑后）**：高 CV 补跑（63 scenario × 6 reps）+ 17 低 CV scenario（3 reps）合并重评后，**CE5_hybrid（解析+残差校正）过完整 plan §6 promotion contract**（pooled regret 1.67%、median 0%、macro 2.90%、**max 14.72%**（<15%，**marginal**）、candidate pairwise 0.808）——首个过 contract 的估计器。6-rep tighten mean 把 CE5 的 max regret 从 3-rep 的 **39.77% → 14.72%**（证实"高 CV 噪声驱动 max regret"假设）；CE3_ridge（max 22.71%）/ CE4_lightgbm（max 26.89%）仍 fail max 门槛；CE0/CE2 退化、CE1 17.8%。CE5 row MAE 3.98 略高于 CE3 3.23（accuracy≠selection，Heinrich）。
 > ⚠️ **3-rep 版（v2 原始 320-run）先前结论已修订**：3-rep 下 CE3/CE5 macro 6.42% + max 39.77% 全 FAIL；6-rep 补跑后 CE5 转 PASS（见 §5.3 + §9 erratum 续）。**边际警告**：CE5 max 14.72% 贴 15% 线，是 marginal pass，非稳健通过——换 split / 更多 context 可能翻转。CE4 LightGBM（max 26.89%）未优于 CE3/CE5（小数据集 20 context，非线性学习器未增益）。
 
 ## 1. 实验目的（plan §1）
 
-在双 4090（与旧单 5070 隔离）下，验证现有 CE0–CE5 代价估计方法能否仅凭**执行前特征**对未见过的 workload/rows/output context 排序 4 个 active-work 候选并选近 oracle。本实验评价**预测/排序/决策质量**，**不**评价上游调度策略的论文增益（plan §1/§6）。属课题"算子代价估计"共同使能组件（研究内容四），非独立研究内容。
+在双 4090（与旧单 5070 隔离）下，验证现有 CE0–CE5 代价估计方法能否仅凭**执行前特征**对未见过的 workload/rows/output context 排序 4 个 active-work 候选并选近 oracle。本实验评价**预测/排序/决策质量**，**不**评价上游调度策略的论文增益（plan §1/§6）。它是两项研究内容共用的算子代价估计使能组件，不是独立研究内容。
 
 ## 2. 实验设置
 
@@ -71,7 +71,7 @@
 - 20/20 context 全有 4 candidate；**0 退化**（spread 全 >5%，min 12% / median 44% / max 86.5%）→ 每个 context candidate 选择都 matter，选错最多付 86% e2e。
 - **oracle 分布**：98304 → 11/20，65536 → 5/20，49152 → 3/20，32768 → 1/20。最优 active-work **context-dependent**（大 workload/rows/cap 倾向大 active-work，但 9/20 context 反例）——这正是估计器须捕获的非平凡信号。
 
-### 5.3 CE0–CE6 context-LOO 评估（plan §5；6-rep 重跑后）
+### 5.3 CE0–CE5 context-LOO 评估（plan §5；6-rep 重跑后）
 
 **6-rep 合并数据**（63 高 CV scenario × 6 reps + 17 低 CV × 3 reps = 429 formal 行 / 20 context / 4 candidate），`ce_context_loo_rerun_20260807.json` + `merged_runs_6rep_20260807.csv`。完整 plan §6 contract 矩阵：
 
@@ -141,6 +141,7 @@
 ## provenance
 
 - **raw archive SHA256**：`a4f9cd5220306789d94f3a5c47169f3d967eb6fad0b5310f51ab5f8670314e8f`（全 66MB raw，服务器 `/root/autodl-tmp/experiment-artifacts/dual_gpu_cost_profile_formal_v2_cache_on_20260807/`）。
+- **合并 LOO JSON SHA256**：`bbb2f2f8c5c1c07f2b1973e5d39960f26880e54ca10c616920638a19ebef43c8`。2026-08-09 只把 6 处误编码的 `§6` 字符规范为 UTF-8，JSON 字段与数值未变；`python json.load` 与 `jq` 均复核 `row_count=429`、`decision_context_count=20`。
 - 本目录：`runs.csv`（320×296 全指标）+ `manifest.json`（status/completed_runs/schedule/redacted_config/incidents）+ 本 README。raw per-run requests/submissions/stdout/stderr（含 output_text）未进 git（体积；同项目 raw 排除口径），服务器可复核。
 - 驱动：run_ai_operator_scenarios.py + postgres_ai_operator_profile.py，commit `88aec55`（v2 cache-on 合同，server at e49ac53+ for the hang fix unrelated to this run's path）。vLLM 服务 = 4 路径 ramp 同进程（prefix-cache ON、三 flag）。
 - 失败/异常：0 incident、0 failed-status formal、0 local-Ray。
