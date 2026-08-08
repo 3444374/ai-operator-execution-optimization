@@ -38,7 +38,7 @@
 | C | `rc1_data_organization/dataorg_4ep_1.5b_cacheON_20260731/raw/runs.csv` | 20 行；15 formal；每策略 3 formal | `6115c11df2375475` | 39.4–50.0k tok/s；重排序命中 0.06–0.07 |
 | D | `image_clip_preprocess_variants_20260801/raw_repeats.csv` | 720 formal；目标 batch 每个 30 repeat | `8851447336c86e9e` | prepare/actor=13.84×/31.24×/29.48× |
 | D | `image_ai_embed_operator_formal_20260803/summary.csv` | 4 cell，各 n=3 formal | `63ccdefdef015d5f` | CPU8/16 的 JCT 改善 12.82%/15.12% |
-| E | `operator_cost_profile_dual4090_formal_v2_cache_on_20260807/ce_context_loo_rerun_20260807.json` | 20 context，6 estimator | `1600360e920c405d` | CE5 macro/max regret=2.897%/14.715% |
+| E | `operator_cost_profile_dual4090_formal_v2_cache_on_20260807/ce_context_loo_rerun_20260807.json` | 20 context，6 estimator | `bbb2f2f8c5c1c07f` | CE5 macro/max regret=2.897%/14.715% |
 | F | `opening_text_native_single_job_formal_20260808/formal_summary.csv` | 4 arm × 3 formal | `bd0fd0fa502f50a6` | bounded/Daft Native/Daft Ray/Ray Data=17,800/17,286/16,747/3,551 tok/s |
 | H | `opening_multijob_interference_20260809/data/combined/summary.csv` | 10 汇总行，源自 30 formal | `3622732cf88b4fee` | 所有 two-job overlap>0；原生 short JCT +82.42%/+104.84%/+32.76% |
 | H | `opening_multijob_interference_20260809/data/combined/comparisons.csv` | 6 个预注册对比 | `33701106d0f8bda8` | project shared vs static：吞吐 +21.03%，short JCT +4.98% |
@@ -48,6 +48,8 @@
 | Appendix | `opening_database_e2e_text_refeed_20260808/summary/formal_summary.csv` | 6 cell × 3 formal | `6e9d731dff3c5bde` | SQuAD correct rows/s=136.63/136.68/137.77；ShareGPT DuckDB cap failure=4,921 |
 
 完整数据门禁另由各结果目录的 `audit.json` 和 README 承担；本表不是替代审计器。
+E 的 SHA 于 2026-08-09 随 6 处 `§6` 字符 UTF-8 规范化更新；JSON 字段、数值与图 E
+语义均未改变，旧 SHA `1600360e920c405d` 仅对应不可被标准 UTF-8 Python 解析的字节版本。
 
 ### Figure Designer 完整性审计
 

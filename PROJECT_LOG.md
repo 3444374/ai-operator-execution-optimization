@@ -5285,3 +5285,13 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   Python 解析失败；已只做字符编码规范化，字段和数值不变。修复后 SHA256 为
   `bbb2f2f8c5c1c07f2b1973e5d39960f26880e54ca10c616920638a19ebef43c8`，Python 与 jq
   均验证 429 formal、20 context。
+
+## 2026-08-09 开题总目标完成条件审计
+
+- 在 Claim Matrix 中逐项映射完整 `/goal`：叙事、两组 P0、停止 baseline、四组核心证据、
+  总纲/报告、四级 Claim/QA、PPT、云发布、Git/raw 与最终冻结；明确内容/实验已完成，
+  发布层仍因用户暂停而未完成，不能提前关闭目标。
+- 报告当前对旧 A/C 渲染已有显式禁止终稿引用的 guard；D/E 可保留，F/H 数据就绪但未生成。
+  当前不存在需要新增实验才能解除的 blocker。
+- cost JSON UTF-8 规范化改变了文件字节 SHA；同步更新图表合同的 E 输入 SHA 前缀为
+  `bbb2f2f8c5c1c07f`，并在 `figures/README.md` 说明字段、数值和既有图均未改变、无需重画。

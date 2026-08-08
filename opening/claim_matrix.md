@@ -155,3 +155,30 @@ Claim Matrix；数字直接回到冻结 CSV/JSON，不以文档之间相互一�
 审计发现并修复三类证据卫生问题：代价报告标题补充 429-formal 合并评估边界；估计器
 范围由误写的 CE0–CE6 更正为实际 CE0–CE5，并删除“研究内容四”的矛盾表述；合并 LOO
 JSON 中 6 处误编码的 `§6` 已规范为 UTF-8。上述修正均不改变实验字段、数值或 Claim 等级。
+
+## 9. 总目标完成条件审计（2026-08-09）
+
+本表按当前 `/goal` 的完整交付条件验收，不以“文件已经存在”代替内容、门禁、渲染或发布
+验收。用户明确暂停的工作保持未完成，不能据此把总目标提前标为完成。
+
+| 目标要求 | 当前判定 | 可验证证据 | 剩余动作 |
+|---|---|---|---|
+| 冻结论文叙事与 Claim Matrix | `complete` | 本文件 §1–§4；四级 Claim、实验准入与停止规则已冻结 | 仅导师改变题目时重开 |
+| SQuAD 统一 database-E2E 三臂 1+3 | `complete` | replacement 12 cells/9 formal；source/sink、correctness、feeding、stability 通过 | 无 |
+| ShareGPT 统一 database-E2E 三臂 1+3 | `complete-with-ranking-boundary` | replacement 12 cells/9 formal；correctness/sink/stability 通过；C32 欠供给与 DuckDB cap 语义失败已单列 | 不作三臂性能排名 |
+| 完成 P0 后停止新增开题 baseline | `complete` | §4、§7 停止规则；后续只补支持新用户问题的最小诊断，不扩第二数据库或全矩阵 | 保持停止 |
+| serving capacity 核心证据 | `data-complete-render-pending` | active-work、bounded C32–C256 与图 A 数据合同完整 | 图 A 获准后标签级重绘 |
+| work-aware 组织及局限核心证据 | `data-complete-render-pending` | 2/4 endpoint regime 数据与图 C 合同完整 | 图 C 获准后标签级重绘 |
+| 图像 matched-resource 核心证据 | `complete-existing-figure` | 图 D 与 matched-resource 正式重复；约 13%–15% 边界冻结 | 最终版式检查 |
+| cost-model decision quality 核心证据 | `complete-existing-figure` | 图 E；429 formal/20 context，CE5 marginal pass；UTF-8 JSON 与新 SHA 已验证 | 最终版式检查 |
+| PROJECT_OUTLINE 与本地开题报告重构 | `content-complete` | 总纲、报告、答辩大纲、QA 与 §8 数据复算一致 | 新图插入后做引用总审计 |
+| 四级 Claim 与答辩攻击面审计 | `complete` | 本文件 §2、`opening/qa_bank.md` 的攻击面、不能声称与回答模板 | PPT 完成后再做逐页口径检查 |
+| 原生状态与多 Job 新增动机证据 | `data-complete-render-paused` | F/H 输入和门禁完整；所有干扰臂 measured overlap>0 | 获准后首次生成 F/H；不新增实验 |
+| PPT 重构与实际渲染验收 | `incomplete-paused` | 当前 v6 仅为历史底稿，不能代表新叙事 | 用户恢复后增量重构并在 PowerPoint/WPS 实查 |
+| 飞书云文档发布面 | `incomplete-paused` | revision 289 已标历史，未用当前报告覆盖 | 用户恢复后从本地权威报告生成并差异审计 |
+| Wiki | `explicitly-exempt` | 用户明确要求不同步 Wiki | 无 |
+| 本地/GitHub/实验服务器同步与 raw 保留 | `complete-current-commit` | Git 三端一致；服务器 archive SHA 与空间已复核，未跟踪 raw 未清理 | 每次后续提交继续同步 |
+| 开题材料整体冻结 | `incomplete` | A/C/F/H、PPT、云发布和最终逐页/逐图审计未全部完成 | 只完成发布层工作后再执行最终 completion audit |
+
+当前没有实验层 blocker；剩余项全部属于用户暂停的渲染与发布层。恢复后不得借“最终材料尚未
+冻结”重新打开已经关闭的 baseline、offset、weight、4+ Job、K512 或第二数据库实验。
