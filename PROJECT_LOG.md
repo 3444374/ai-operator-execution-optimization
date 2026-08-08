@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-08-09 单 short 匹配控制与静态保留分区
+
+- short/long 错峰项目正式矩阵 6/6 formal 通过后，发现 two-job static 中 short 的
+  73.78s 同时包含“全局 credit 静态减半”和“long 加入后的服务竞争”，不能与普通
+  单 Job 直接归因比较。
+- shared-vLLM scenario 新增可选 `static_partition_count`：仅 static policy 可用，
+  且不得小于 active `job_count`。`job_count=1, static_partition_count=2` 在冻结
+  K128/W65536 下给 short K64/W32768，同时保留另一份为空，形成无 synthetic job
+  的 matched-half-pool 控制；group evidence 显式记录实际 partition count。
+- 新增项目 full/half-pool 与 Daft Native/Ray/Ray Data exact-short 1+3 配置；原生
+  short cell 只用于 JCT/资源状态表征，不升级为不足 60s 的容量排名。shared-vLLM
+  32/32 定向测试通过。
+
 ## 2026-08-08 arrival replay 固定 endpoint 元数据传播修复
 
 - `opening_multijob_minimal` v3 的首个 static warm-up 在 scheduler 提交前 fail closed：manifest guard 已给一行 Arrow payload 写入 `preferred_endpoint_id`，但 request-granularity arrival replay 重建 `BatchRequest` 时未传播该字段，`manifest_pinned` router 因此报 `missing preferred endpoint`。

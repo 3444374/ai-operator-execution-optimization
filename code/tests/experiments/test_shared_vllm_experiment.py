@@ -300,6 +300,77 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "3",
         )
 
+    def test_single_job_can_retain_one_of_two_static_partitions(self) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "single_short_half_pool",
+                    "policy": "static_partition",
+                    "job_count": 1,
+                    "static_partition_count": 2,
+                    "rows_per_job": 64,
+                }
+            ]
+        )
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("config.json"))
+
+        scenario = config.scenarios[0]
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+        command = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=0,
+            start_epoch_s=100.0,
+            coordinator_name="",
+        )
+
+        self.assertEqual(scenario.static_partition_count, 2)
+        self.assertEqual(self._flag_value(command, "--max-inflight"), "128")
+        self.assertEqual(
+            self._flag_value(command, "--max-active-work-per-endpoint"),
+            "32768",
+        )
+
+    def test_static_partition_count_rejects_invalid_policy_or_underallocation(self) -> None:
+        invalid = (
+            {
+                "scenario_id": "shared_invalid",
+                "policy": "shared_drr",
+                "job_count": 1,
+                "static_partition_count": 2,
+                "rows_per_job": 64,
+            },
+            {
+                "scenario_id": "static_invalid",
+                "policy": "static_partition",
+                "job_count": 2,
+                "static_partition_count": 1,
+                "rows_per_job": 64,
+            },
+        )
+        for scenario in invalid:
+            with self.subTest(scenario=scenario["scenario_id"]):
+                payload = self._config_payload(scenarios=[scenario])
+                with patch.object(
+                    Path,
+                    "read_text",
+                    return_value=json.dumps(payload),
+                ):
+                    with self.assertRaises(ValueError):
+                        load_config(Path("config.json"))
+
     def test_manifest_selected_jobs_reject_nonzero_source_offsets(self) -> None:
         payload = self._config_payload(
             scenarios=[

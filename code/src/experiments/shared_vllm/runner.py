@@ -465,6 +465,11 @@ def _run_group(
             "order_index": identity.order_index,
             "policy": scenario.policy,
             "job_count": scenario.job_count,
+            "static_partition_count": (
+                scenario.static_partition_count
+                if scenario.static_partition_count is not None
+                else scenario.job_count
+            ),
             "rows_per_job": scenario.rows_per_job,
             "request_limit_per_endpoint": (
                 config.request_limit_per_endpoint

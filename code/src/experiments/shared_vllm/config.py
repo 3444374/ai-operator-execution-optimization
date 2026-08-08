@@ -88,6 +88,7 @@ class SharedVllmScenario:
     rows_per_job: int
     weights: tuple[int, ...]
     arrival_offsets_s: tuple[float, ...]
+    static_partition_count: int | None = None
     source_row_offsets: tuple[int, ...] = ()
     request_manifests: tuple[str | None, ...] = ()
 
@@ -356,13 +357,34 @@ def _load_scenario(
     if policy not in POLICIES:
         raise ValueError(f"unknown shared-vLLM policy: {policy}")
     job_count = _positive_integer(raw.get("job_count"), "job_count")
+    static_partition_count_raw = raw.get("static_partition_count")
+    static_partition_count = (
+        _positive_integer(
+            static_partition_count_raw,
+            "static_partition_count",
+        )
+        if static_partition_count_raw is not None
+        else None
+    )
+    if policy != "static_partition" and static_partition_count is not None:
+        raise ValueError(
+            "static_partition_count is only valid for static_partition"
+        )
+    if (
+        static_partition_count is not None
+        and static_partition_count < job_count
+    ):
+        raise ValueError(
+            "static_partition_count cannot be smaller than job_count"
+        )
+    partition_count = static_partition_count or job_count
     rows_per_job = _positive_integer(
         raw.get("rows_per_job"),
         "rows_per_job",
     )
     if (
         policy == "static_partition"
-        and (job_count > request_limit or job_count > work_limit)
+        and (partition_count > request_limit or partition_count > work_limit)
     ):
         raise ValueError("static partition would assign zero capacity")
     weights = _positive_integer_tuple(
@@ -398,6 +420,7 @@ def _load_scenario(
         rows_per_job=rows_per_job,
         weights=weights,
         arrival_offsets_s=offsets,
+        static_partition_count=static_partition_count,
         source_row_offsets=source_row_offsets,
         request_manifests=request_manifests,
     )
@@ -412,15 +435,16 @@ def _local_limits(
             config.request_limit_per_endpoint,
             config.work_limit_per_endpoint,
         )
+    partition_count = scenario.static_partition_count or scenario.job_count
     return (
         _partition_share(
             config.request_limit_per_endpoint,
-            scenario.job_count,
+            partition_count,
             job_index,
         ),
         _partition_share(
             config.work_limit_per_endpoint,
-            scenario.job_count,
+            partition_count,
             job_index,
         ),
     )

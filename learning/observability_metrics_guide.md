@@ -61,6 +61,10 @@ HTTP success、NULL、truncation、finish reason 和 exactly-once 审计。
   job 活跃重叠期间的最大服务差。当前实现同时写
   `service_disparity_bound_status=unavailable:not_proven...`，因此这些数是描述性公平
   证据，不冒充 DRR/VTC 的理论上界。
+- 单 Job 静态保留分区控制额外记录 `static_partition_count`。它与
+  `job_count` 分开：前者决定固定配额被切成几份，后者是实际启动的 Job 数。
+  因而 `job_count=1, static_partition_count=2` 表示一份在用、一份闲置，不是
+  隐藏的第二个负载，也不能把其差值归因于服务竞争。
 
 ## 正式重复与代价模型
 

@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "experiment_id": "opening_short_job_native_controls_20260809",
+  "formal": true,
+  "rows_total": 512,
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "completion_protocol": "chat_completions",
+  "model": "${COMPLETION_MODEL}",
+  "tokenizer": "${MODEL_PATH}",
+  "service": {
+    "prefix_caching": "enabled",
+    "max_num_seqs": "${VLLM_MAX_NUM_SEQS}",
+    "max_num_batched_tokens": "${VLLM_MAX_NUM_BATCHED_TOKENS}"
+  },
+  "manifest": "${OPENING_SHORT_JOB_MANIFEST}",
+  "output_root": "${OPENING_SHORT_NATIVE_OUTPUT_ROOT}",
+  "warmup_repeats": 1,
+  "formal_repeats": 3,
+  "schedule_seed": 20260809,
+  "minimum_measurement_seconds": 1,
+  "partition_policy": null,
+  "hard_gates": {
+    "provenance_fields_present": true,
+    "native_arms_have_no_project_scheduler": true,
+    "exactly_once": true,
+    "failed_rows": 0,
+    "worker_failures": 0,
+    "vllm_running_final": 0,
+    "vllm_waiting_final": 0,
+    "both_endpoints_used": true,
+    "service_counter_consistency": true,
+    "same_model": true,
+    "same_protocol": true,
+    "same_service_config": true,
+    "endpoint_predicted_work_skew_max": 0.02
+  },
+  "arms": [
+    {
+      "id": "daft_native",
+      "adapter": "daft_native",
+      "concurrency_per_endpoint": 1,
+      "batch_size": 1,
+      "ray_address": null,
+      "python_executable": "${DRIVER_PYTHON}",
+      "calibration": {
+        "selection": "vendor-owned-default-prompt-api",
+        "fingerprint": "82476d4e1753d8e8909409c748e936d887e0e485329adae5364ba4feb2b70ae9"
+      }
+    },
+    {
+      "id": "daft_ray",
+      "adapter": "daft_ray",
+      "concurrency_per_endpoint": 1,
+      "batch_size": 1,
+      "ray_address": "${RAY_ADDRESS}",
+      "python_executable": "${DRIVER_PYTHON}",
+      "calibration": {
+        "selection": "vendor-owned-default-prompt-api",
+        "fingerprint": "18a62a8af0b4baeb157aa7216658897a6f3dfad470bc743f4990de8da9273760"
+      }
+    },
+    {
+      "id": "ray_data_http",
+      "adapter": "ray_data_http",
+      "concurrency_per_endpoint": 8,
+      "batch_size": 16,
+      "ray_address": "${RAY_ADDRESS}",
+      "python_executable": "${DRIVER_PYTHON}",
+      "calibration": {
+        "selection": "ray-data-batch16-c8-measured-peak-of-c4-c8-c16-screen",
+        "fingerprint": "b362b35c7258f8fc76c8b073ef547174583e1ecf047acf0293e979fd689a853b"
+      }
+    }
+  ]
+}

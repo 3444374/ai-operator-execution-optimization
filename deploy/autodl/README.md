@@ -927,6 +927,25 @@ shared DRR。通过条件不是只看 `status=completed`，还必须核对：
   会连接同一物理 run，而新的输出目录会得到全新 actor 名称。失败 gate 保留的
   detached actor 因此不会污染下一次新目录 gate，仍不得手工复用旧输出路径。
 
+### Short job 匹配控制
+
+`opening_short_job_controls.example.json` 使用与 short/long 错峰实验完全相同的
+512-row short manifest、服务和项目冻结全局上限，交错运行两个单 Job 控制：
+
+- `single_short_full_pool`：单 short 独占每 endpoint K128/W65536；
+- `single_short_half_pool`：仍只有一个 active short，但声明两个静态分区，因而只
+  获得 K64/W32768，另一个分区保留为空。
+
+这两个控制分别隔离正常单 Job 基线与静态配额减半效应。将 half-pool 与
+two-job static 对比才是同本地上限下 long 服务竞争；将 full-pool 与 two-job
+shared 对比才是同全局上限下动态共享干扰。每个场景 1 warm-up + 3 formal，禁止
+用其中任一单点替代三次正式均值。
+
+`opening_short_job_native_controls.example.json` 对相同 short manifest 运行 Daft
+Native、Daft Ray 与 Ray Data 已冻结原生配置。由于 short cell 可能小于 60 秒，
+该矩阵用于匹配 JCT/服务状态表征，不作为新的稳态容量排名，也不注入项目
+credit、router 或静态配额。
+
 已完成的 1024–32768 曲线只能记作 offered-load 诊断：固定的是每 endpoint
 四个 batch，而平均每 batch 行数约从 2.3 增至 64，所以可供给的 request
 envelope 约从每 endpoint 9 增至 256，vLLM mean running requests 也约从

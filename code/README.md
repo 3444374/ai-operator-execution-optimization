@@ -236,6 +236,11 @@ The shared-vLLM experiment runner can pin a distinct immutable request manifest
 and source offset for every job. This is required for staggered short/long or
 otherwise heterogeneous-job evidence; reusing the same rows for all jobs only
 validates concurrency semantics and cannot support a work-aware fairness claim.
+For a causal single-short control, a static scenario may declare
+`static_partition_count` larger than its active `job_count`. The unused fixed
+partition stays reserved, so `job_count=1, static_partition_count=2` reproduces
+the K/work quota available to one job in a two-job static partition without
+launching a synthetic competing job. Other policies reject this field.
 The lifecycle module joins complete-row replay seeds, immutable submission
 events, backend service timestamps, and explicitly sourced token counts into
 exactly-once request trace rows.
