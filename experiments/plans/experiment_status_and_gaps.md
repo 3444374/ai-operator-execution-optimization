@@ -37,9 +37,12 @@ Date: 2026-07-20（最后更新：2026-08-08；开题统一三臂与 PPT 本地�
   `service_prefix_caching` 纳入 context 身份，执行后 hit rate 禁止用作预测特征。
 - 上方 §0 "下一步运行 Daft 官方 ResNet18 parity 与 60 秒以上稳态 formal" 中，**60 秒稳态 formal 已由 60K×2 schema-v12 重跑闭合**；ResNet18 parity 仍待（A②）。
 
-## 开题冻结优先级（2026-08-07，材料冻结前覆盖下方工程优先级）
+## 开题冻结优先级（2026-08-07；2026-08-08 feeding 纠正重跑中，材料尚未最终冻结）
 
-开题题目与研究内容按 `opening/claim_matrix.md` 冻结。以下两个缺口已于 2026-08-07 完成：
+开题题目与研究内容按 `opening/claim_matrix.md` 冻结。以下两个开题范围已于
+2026-08-07 完成首轮，但项目臂 feeding 未过门，当前只算 failed-feeding 诊断；必须按
+`opening_database_e2e_p0_20260807.md` 完成 K32/64/128/256 最小饱和点校准并整体替换
+重跑后，才能冻结：
 
 1. SQuAD short-answer/cap=64 的 direct static-sharded、DuckDB AI static-sharded、
    project frozen-static 三臂统一 database-E2E，1 warmup + 3 formal。
@@ -51,11 +54,12 @@ Date: 2026-07-20（最后更新：2026-08-08；开题统一三臂与 PPT 本地�
 因此只作为负结果和瓶颈诊断。DuckDB AI ShareGPT 的 service tok/s≈direct，但
 4,936/6,144 行 cap 语义失败主导 correct throughput。
 
-两组实验后已停止增加开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
+纠正重跑期间仍停止增加开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
 granularity 不同，只用于 serving capacity/overload 证据，不替代上述统一 database-E2E。
-差异不足 5% 不触发换 workload、模型、数据库或扩大参数扫描。随后只做四组核心图、
-报告/PPT 重构和答辩一致性审计均已完成；v6 已通过 PowerPoint 真实打开检查，飞书正文
-revision 289 与四图已回读通过。尚欠 wiki 镜像；下方 image-first A+B 顺序在开题材料最终确认后恢复。
+差异不足 5% 不触发换 workload、模型、数据库或扩大参数扫描。首轮四组核心图、报告/PPT
+和飞书已完成，但 feeding 纠正结果可能改变 headline，故都只是待替换版本；新矩阵合格后
+必须重算、重写并再次审计。Wiki 同步已由用户明确豁免。下方 image-first A+B 顺序只在
+开题材料基于合格数据最终确认后恢复。
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 
@@ -83,6 +87,17 @@ operator-E2E 原始数据和七步报告见
 `motivation/results/gpu/image_clip_native_baseline_20260801/`。
 
 **过门禁后（image build，顺序固定）**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor + fused Daft Native/Ray/project-Ray operator-E2E formal 已完成 → ② ✅ staged runner/resource gate；✅ 原生 baseline 独立校准已完成（Daft built-in batch64≈177 img/s@5K、Ray Data native batch64/cpu8≈957 img/s@60K×2，见 `motivation/results/gpu/{daft_builtin,ray_data}_calibration_20260803/`）；✅ project 静态点已冻结 `cpu16/active32/batch64`（两轮 1701/1681 img/s，**旧 schema，只用于选点**，见 `motivation/results/gpu/image_project_static_60k_x2_20260803/`）；✅ 统一 `l2_normalized` 输出合同（`03b815d`/`6f0954b`）。下一步：Daft built-in 60K 长门禁 → 四臂同机 formal 排名（**当前 commit + 统一合同**，不复用旧 schema 行）→ 再接统一 pgvector sink，并扩展 bounded direct CLIP、CPU-normalized curve 和 naive；vLLM pooling 当前保持 blocked，不进入队列（+OceanBase AI_EMBED 待可部署环境）→ ③ **A**（state-aware 请求成形，观测 actor/endpoint 队列）+ **B**（代价模型 v1，<100 LOC 解析 + profile + residual）。
+
+**开题冻结后的动态主实验边界（2026-08-08 再确认）**：上述四臂同机 image formal
+先建立官方框架与项目 **best frozen-static** 强基线；项目最终 proposed 不能停在静态点。
+随后固定相同资源、相同 K/active-work 上限和相同 source/sink，比较 frozen-static 与
+state-aware dynamic：先 steady control，再做阶段突变/突发 arrival、长短 work mix、1/2/4-job、
+staggered overlap、weighted fairness 与异构 mix/offset。动态策略只有改善 observed throughput、
+SLO goodput、P99/JCT 或 fairness 至少一项且 correctness/failure 不退化时才晋级；稳态不优是
+允许的边界，不用弱静态点制造收益。图像复用同一策略代码，将 token work/credit 换成
+frame/preprocess work/credit；Daft built-in、Ray Data native、typed Ray actor ours 必须使用同机、
+同模型、同归一化语义和同 PostgreSQL/pgvector E2E 合同。文本 equal-workload 1/2/4-job 只算
+已有先验证据；staggered/weighted/异构 burst 未完成，不能写成已覆盖。
 
 **文本轨道遗留的 pivot 后分类**：
 
