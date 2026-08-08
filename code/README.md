@@ -547,8 +547,9 @@ Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属�
 `src/baselines/text/orchestration/native_matrix.py` 在明确冻结每臂校准指纹后，
 复用 core gate 执行原生文本框架的 1 warmup + N 交错 formal；它不复制
 adapter 或请求计数逻辑。`native_multijob.py` 只负责绝对时间启动两个错峰
-原生 job、保存四个 endpoint shard 证据和组级计数；禁止项目 credit/router/
-inflight 参数进入 Daft/Ray Data 观察臂。项目 static/shared 因果 A/B 仍由
+原生 job、保存四个 endpoint shard 证据、组级计数、vLLM gauge/latency delta
+与逐 GPU 利用率/功耗时序；禁止项目 credit/router/inflight 参数进入
+Daft/Ray Data 观察臂。项目 static/shared 因果 A/B 仍由
 `src/experiments/shared_vllm/` 执行。
 
 `src/calibration.py` 与 `scripts/analysis/select_strategy_calibration.py` 负责把 feeding、

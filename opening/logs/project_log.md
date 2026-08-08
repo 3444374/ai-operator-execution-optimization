@@ -5,6 +5,7 @@
 - 本条取代同日早先“文本 Daft/Ray Data 正式矩阵留论文阶段”的范围判断。Work Unit、状态感知、动态调度与共同使能代价估计按同等证据标准组织。
 - 当前补齐 ShareGPT Chat 原生单 job 矩阵，以及 Daft Native/Ray、Ray Data 原生两 job 错峰观察；项目另作 static-partition vs shared-work-credit 因果 A/B。
 - DuckDB 保持 SQuAD/cap=64 有界输出产品轨；不扩大 workload、模型、数据库、weighted 或 offset 搜索追求正结果。
+- 原生两 job runner 复用现有轻量 sampler 保存逐 GPU 与 vLLM gauge/latency 时序，让 JCT 现象能够对应到感知信号；该观测不等于框架内部 scheduler trace。
 
 ## 2026-08-08 开题实验收缩为三臂 replacement + 两作业错峰
 

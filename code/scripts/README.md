@@ -993,7 +993,8 @@ core-gate 配置，执行 1 warmup + N 确定性交错 formal，保留失败和�
 `not_rankable` 证据。`baselines/run_text_native_multijob.py` 只编排 Daft Native/
 Ray 和 Ray Data 的两个错峰独立 job；每 job 同时启动两个现有
 `run-shard` 子进程。它不实现框架调度、不注入项目 credit，只报
-job/group barrier JCT 和可证实的服务计数。
+job/group barrier JCT、服务计数、vLLM running/waiting/KV/TTFT delta 与
+逐 GPU 利用率/功耗时序；不把这些观测伪装成框架内部调度指标。
 
 配置边界见：
 

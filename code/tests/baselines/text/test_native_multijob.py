@@ -5,7 +5,9 @@ import json
 import sys
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
+from types import SimpleNamespace
 
 
 CODE_ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir())
@@ -139,6 +141,17 @@ class NativeMultiJobTests(unittest.TestCase):
             1: {"prompt_tokens": value, "generation_tokens": value},
         }
 
+    @staticmethod
+    @contextmanager
+    def _instrumentation(_urls: tuple[str, ...], path: Path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("sample_index,gpu_index,gpu_utilization_pct\n0,0,90\n", encoding="utf-8")
+        yield SimpleNamespace(
+            gpu_summary={"gpu0_util_mean": 90.0, "n_samples": 1.0},
+            gauge_summary={"vllm_running_mean": 2.0, "n_gauge_samples": 1.0},
+            ttft_deltas={0: {"status": "ok"}, 1: {"status": "ok"}},
+        )
+
     def test_requires_disjoint_manifests_and_balanced_endpoints(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -168,6 +181,7 @@ class NativeMultiJobTests(unittest.TestCase):
             result = run_native_multijob(
                 self._config(root), runner_script=root / "run_official_baseline.py",
                 popen_factory=_FakeProcess, queue_waiter=self._queues, counter_sampler=self._counters,
+                cell_instrumenter=self._instrumentation,
             )
             self.assertEqual(result["comparison_admission"], "admissible")
             self.assertEqual(len(result["runs"]), 4)  # 2 arms * (warmup + formal)
@@ -180,6 +194,9 @@ class NativeMultiJobTests(unittest.TestCase):
             self.assertTrue(Path(job["shards"][0]["requests"]).is_file())
             self.assertTrue(result["repository_commit"])
             self.assertEqual(job["shard_provenance"][0]["adapter"], formal[0]["adapter"])
+            self.assertTrue(Path(formal[0]["gpu_resource_trace"]).is_file())
+            self.assertEqual(formal[0]["gpu_summary"]["gpu0_util_mean"], 90.0)
+            self.assertEqual(formal[0]["gauge_summary"]["vllm_running_mean"], 2.0)
 
     def test_summary_provenance_mismatch_fails_closed(self) -> None:
         class WrongProvenanceProcess(_FakeProcess):
@@ -198,6 +215,7 @@ class NativeMultiJobTests(unittest.TestCase):
                     self._config(root), runner_script=root / "run_official_baseline.py",
                     popen_factory=WrongProvenanceProcess, queue_waiter=self._queues,
                     counter_sampler=self._counters,
+                    cell_instrumenter=self._instrumentation,
                 )
             index = json.loads((root / "out" / "matrix_index.json").read_text())
             self.assertEqual(index["status"], "failed")
@@ -222,6 +240,7 @@ class NativeMultiJobTests(unittest.TestCase):
                 self._config(root), runner_script=root / "run_official_baseline.py",
                 popen_factory=_FakeProcess, queue_waiter=self._queues, counter_sampler=self._counters,
                 repository_commit_getter=lambda: "test-commit", host_lease_acquirer=acquire,
+                cell_instrumenter=self._instrumentation,
             )
             self.assertEqual(result["repository_commit"], "test-commit")
             self.assertEqual(acquired, [(root, "test-commit")])
@@ -234,6 +253,7 @@ class NativeMultiJobTests(unittest.TestCase):
                 run_native_multijob(
                     self._config(root), runner_script=root / "run_official_baseline.py",
                     popen_factory=_FailingProcess, queue_waiter=self._queues, counter_sampler=self._counters,
+                    cell_instrumenter=self._instrumentation,
                 )
             index = json.loads((root / "out" / "matrix_index.json").read_text())
             self.assertEqual(index["status"], "failed")

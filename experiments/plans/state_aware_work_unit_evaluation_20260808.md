@@ -139,7 +139,7 @@
 | 组 | 冻结 workload/shape | arms/scenarios | 重复 | 目的 |
 |---|---|---|---|---|
 | 原生单 job | ShareGPT controlled-skew held-out Chat manifest；同 model/service/output cap | bounded Chat、Daft Native、Daft Ray、Ray Data；项目 frozen-static 用同 manifest 的相同边界指标对齐 | 每臂 1+3，平衡交错 | 现有原生框架的 feeding、JCT、service throughput、资源与可观测性边界 |
-| 原生两 job 观察 | 两个 512 行 short/long job；offset 在 concurrent smoke 后冻结；互斥 manifest | Daft Native、Daft Ray、Ray Data 各自启动两个独立 job；不注入项目 credit | 每臂 1+3 | 全局压力叠加、干扰、资源超卖和 job-level 可观测性 |
+| 原生两 job 观察 | 两个 512 行 short/long job；offset 在 concurrent smoke 后冻结；互斥 manifest | Daft Native、Daft Ray、Ray Data 各自启动两个独立 job；不注入项目 credit | 每臂 1+3 | job/group JCT、服务计数、vLLM running/waiting/KV/TTFT delta、逐 GPU 利用率/功耗；观察全局压力、干扰和资源超卖 |
 | 两作业 | 两个 512 行 short/long job；15 s stagger；互斥 manifest 与 source offset | static partition 与 shared work-credit/fair queue 成对比较；相同 endpoint 总 K/work | 每场景 1+3 group runs | JCT、公平、隔离、idle borrowing；不得把独立 full credit 当公平 baseline；weighted 留论文阶段 |
 
 两作业必须使用冻结的 short/long manifest 与互斥 source offset，并在结果中报告各 job 实际 predicted/observed work。原生框架观察不得命名为 `static_partition`；只有项目 A/B 可计算 `borrowed_work_seconds`。该最小矩阵不声称 3:1 weighted fairness 已验证。

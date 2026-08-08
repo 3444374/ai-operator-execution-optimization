@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
+from src.baselines.common.cell_instrumentation import instrumented_cell
 from src.baselines.common.contracts import BaselineRequestResult
 from src.baselines.common.manifests import partition_summary, read_manifest
 from src.baselines.common.provenance import adapter_provenance
@@ -538,7 +539,11 @@ def _initial_index(config: NativeMultiJobConfig) -> dict[str, object]:
         "comparison_admission": "pending", "warmup_repeats": config.warmup_repeats,
         "formal_repeats": config.formal_repeats, "schedule_seed": config.schedule_seed,
         "minimum_measurement_seconds": config.minimum_measurement_seconds,
-        "resource_time_series": {"status": "not_collected", "reason": "no lightweight shared sampler is attached"},
+        "resource_time_series": {
+            "status": "collected_per_run",
+            "gpu": "gpu_resource.csv",
+            "vllm": "gauge_summary and vllm_latency_deltas in matrix_index.json",
+        },
         "arms": [{"id": arm.arm_id, "adapter": arm.adapter} for arm in config.arms], "runs": [],
     }
 
@@ -551,6 +556,7 @@ def run_native_multijob(
     now: Callable[[], float] = time.time,
     repository_commit_getter: Callable[[], str] = _repository_commit,
     host_lease_acquirer: Callable[..., object] = acquire_host_runner_lease,
+    cell_instrumenter: Callable[..., object] = instrumented_cell,
 ) -> dict[str, object]:
     """Execute warmup/formal native arms, preserving failed evidence fail-closed."""
 
@@ -592,25 +598,33 @@ def run_native_multijob(
                     try:
                         queue_before = queue_waiter(metrics_urls, config.idle_timeout_s)
                         counters_before = counter_sampler(metrics_urls)
-                        t0 = now() + config.launch_lead_s
-                        record["t0_epoch_s"] = t0
-                        with ThreadPoolExecutor(max_workers=2) as pool:
-                            futures = [
-                                pool.submit(
-                                    _run_job, target_epoch_s=t0 + job.offset_s, arm=arm, job=job,
-                                    arm_root=arm_root, runner_script=runner_script, config=config,
-                                    api_key=api_key, popen_factory=popen_factory, now=now,
-                                )
-                                for job in arm.jobs
-                            ]
-                            jobs = [future.result() for future in futures]
-                        queue_after = queue_waiter(metrics_urls, config.idle_timeout_s)
+                        gpu_trace = arm_root / "gpu_resource.csv"
+                        with cell_instrumenter(metrics_urls, gpu_trace) as instrumentation:  # type: ignore[attr-defined]
+                            t0 = now() + config.launch_lead_s
+                            record["t0_epoch_s"] = t0
+                            with ThreadPoolExecutor(max_workers=2) as pool:
+                                futures = [
+                                    pool.submit(
+                                        _run_job, target_epoch_s=t0 + job.offset_s, arm=arm, job=job,
+                                        arm_root=arm_root, runner_script=runner_script, config=config,
+                                        api_key=api_key, popen_factory=popen_factory, now=now,
+                                    )
+                                    for job in arm.jobs
+                                ]
+                                jobs = [future.result() for future in futures]
+                            # Keep the instrumentation's final metrics snapshot idle so
+                            # histogram deltas and the next arm cannot overlap.
+                            queue_after = queue_waiter(metrics_urls, config.idle_timeout_s)
                         counters_after = counter_sampler(metrics_urls)
                         service = _counter_delta(counters_before, counters_after)
                         _atomic_json(arm_root / "service_counters.json", service)
                         record.update({
                             "jobs": jobs, "queue_before": queue_before, "queue_final": queue_after,
                             "service_counters": str(arm_root / "service_counters.json"),
+                            "gpu_resource_trace": str(gpu_trace),
+                            "gpu_summary": instrumentation.gpu_summary,
+                            "gauge_summary": instrumentation.gauge_summary,
+                            "vllm_latency_deltas": instrumentation.ttft_deltas,
                             "arm_barrier_jct_s": now() - t0,
                             "status": "passed" if all(job["status"] == "passed" for job in jobs) else "failed",
                             "exactly_once": all(job.get("exactly_once") is True for job in jobs),
