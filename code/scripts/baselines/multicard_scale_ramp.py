@@ -542,18 +542,28 @@ def _ensure_ray_head() -> None:
     # that answered ray.nodes(), without verifying the cluster was idle/clean --
     # a prior project_static run that leaked actors would contaminate the next
     # run. A non-clean or absent head falls through to stop + fresh start.
-    reuse = subprocess.run(
-        ["/root/miniconda3/bin/python", "-c",
-         "import ray; ray.init(address='127.0.0.1:6380', ignore_reinit_error=True); "
-         "assert ray.nodes(), 'no nodes'; "
-         "named = ray.util.list_named_actors(); "
-         "assert not named, f'leftover named actors: {named}'; "
-         "cluster = ray.cluster_resources(); avail = ray.available_resources(); "
-         "held = {k: cluster[k]-avail.get(k,0) for k in cluster if cluster[k]-avail.get(k,0) > 0.5}; "
-         "assert not held, f'cluster has held resources (unnamed actors/tasks): {held}'; "
-         "ray.shutdown()"],
-        capture_output=True, text=True, timeout=60,
-    )
+    reuse_cmd = [
+        "/root/miniconda3/bin/python", "-c",
+        "import ray; ray.init(address='127.0.0.1:6380', ignore_reinit_error=True); "
+        "assert ray.nodes(), 'no nodes'; "
+        "named = ray.util.list_named_actors(); "
+        "assert not named, f'leftover named actors: {named}'; "
+        "cluster = ray.cluster_resources(); avail = ray.available_resources(); "
+        "held = {k: cluster[k]-avail.get(k,0) for k in cluster if cluster[k]-avail.get(k,0) > 0.5}; "
+        "assert not held, f'cluster has held resources (unnamed actors/tasks): {held}'; "
+        "ray.shutdown()",
+    ]
+    try:
+        reuse = subprocess.run(
+            reuse_cmd, capture_output=True, text=True, timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        reuse = subprocess.CompletedProcess(
+            reuse_cmd,
+            124,
+            stdout="",
+            stderr="existing Ray head probe timed out after 10s",
+        )
     if reuse.returncode == 0:
         print("[ramp] reusing CLEAN Ray head at 127.0.0.1:6380", flush=True)
         return

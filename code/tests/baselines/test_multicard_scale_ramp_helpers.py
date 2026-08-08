@@ -181,6 +181,29 @@ class ProjectManifestParityTests(unittest.TestCase):
             self.assertEqual(record["status"], "passed")
 
 
+class RayHeadRecoveryTests(unittest.TestCase):
+    """A rebooted host has no head; the reuse timeout must trigger fresh start."""
+
+    def test_reuse_timeout_falls_back_to_fresh_head(self) -> None:
+        import subprocess
+
+        completed = subprocess.CompletedProcess
+        responses = [
+            subprocess.TimeoutExpired(cmd=["probe"], timeout=10),
+            completed(["ray", "stop"], 0, stdout="", stderr=""),
+            completed(["ray", "start"], 0, stdout="started", stderr=""),
+            completed(["python", "check"], 0, stdout="resources", stderr=""),
+        ]
+        with mock.patch("subprocess.run", side_effect=responses) as run, mock.patch(
+            "shutil.which", return_value="/mock/ray"
+        ):
+            drv._ensure_ray_head()
+
+        self.assertEqual(run.call_count, 4)
+        self.assertEqual(run.call_args_list[0].kwargs["timeout"], 10)
+        self.assertEqual(run.call_args_list[2].args[0][:3], ["/mock/ray", "start", "--head"])
+
+
 class StrictPreflightTests(unittest.TestCase):
     """复审 #4 (codex strict): the vLLM-config preflight is split into pure
     helpers so the 8 strict cases are unit-testable without /proc or a live
