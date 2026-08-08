@@ -25,8 +25,10 @@ raw manifest 保留执行时旧路径作为不可变证据，README 中的复现
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data
 single/two-job 原生观察做统一 fail-closed 汇总。它显式保留 request P99 仅项目可用、
 native short 不足 60s 只作表征、interval MFU 无 counter 因而不可用等边界，并输出
-项目 pre-long/overlap/drain 三段状态数据；不绘图、不把 group throughput 当 short
-专属吞吐。
+项目 pre-long/overlap/drain 三段状态数据。它还从服务器逐请求 raw 分解
+`arrival span + post-last-arrival drain = JCT`，汇总 buffer、flush→submit、
+submit→service、service 与 request E2E 分位数；profiler 的 pipeline stage 字段可能
+重叠，明确禁止相加。不绘图、不把 group throughput 当 short 专属吞吐。
 
 当前连接与测试流程集中在：
 

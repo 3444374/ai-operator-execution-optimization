@@ -60,7 +60,11 @@
 
 ### 为什么项目 single short 要 71.24 s，而 Daft Native 只要 11.06 s？
 
-> 首先不能把它读成“项目慢 6.4 倍”。项目 short control 是在线 arrival replay，512 条请求按压缩后的原始到达间隔逐步释放；Daft Native 是官方 graph 的 eager-manifest 执行，Job 启动时完整输入已可用。项目 single short 的 running mean=26.1、waiting=0、KV≈3.0%、MFU=6.63%、service tok/s=2,218；Daft Native 为 250.1、0、24.5%、44.04%、14,727。项目 full/half pool 的 JCT 又几乎相同（71.2416/71.2397 s），说明 K/W 不是主要原因。这个矩阵能比较各轨内部“后到 long 的增量干扰”，不能比较项目与原生轨的绝对最大吞吐；Ray/flush/token-budget 各自贡献仍需同 arrival replay 的 bounded control 才能分解。
+> 首先不能把它读成“项目慢 6.4 倍”。逐请求 raw 已精确分解：项目 71.2416 s=66.875 s arrival span+4.3666 s 最后 drain，93.87% 是冻结的在线 replay 时间；逐请求 arrival→flush、flush→submit、submit→service 均值只有75.1/3.29/3.00 ms，service mean 为3.847 s。Daft Native 在完整 manifest、provider/DataFrame/expression 已准备后才计 `collect()` 的11.059 s。项目 vLLM request mean 3.837 s 反而低于 Daft 的6.654 s；Daft 通过一次性供给把 running/MFU 提到250.1/44.04%，项目只有26.1/6.63%。full/half JCT 仍几乎相同，排除 K/W。若要测项目离线容量，应另跑 all-at-t0 project eager；不能用改变 arrival 合同后的结果替换当前在线多 Job 因果对照。
+
+### 为什么不把 short 调到喂满 GPU？能否只重测项目？
+
+> 保持当前在线语义时，调度器不能提交尚未到达的请求；66.875 s arrival span 是 offered load，不是 K/W 配置不足。强行预提交会把 workload 改成 offline/eager，研究问题随之改变。可以只新增 project eager 1+3，复用当前 replay control，回答“项目在 all-at-t0 时能否饱和”；而且 K128/endpoint 已提供总计256 slots，接近 Daft observed running 250，无需先扫 K256/K512。该 project-only 消融不能单独更新 Daft/项目正式排名；若 eager 仍未达到同协议 bounded 的95%，再补 bounded eager 并逐因子诊断。
 
 ### 一个 short 加一个 long 足以说明多 Job 管理的必要性吗？为什么不直接做四个 Job？
 

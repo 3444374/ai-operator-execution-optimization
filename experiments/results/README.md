@@ -22,7 +22,7 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
-| `opening_multijob_interference_20260809/` | exact-short full/half 控制、项目 static/shared 5s guaranteed-overlap A/B，以及 Daft Native/Ray、Ray Data 同时间轴原生观察 | 项目 long 竞争是 matched-cap 因果证据；原生仅作 overlap-present 外部观察。shared 总吞吐 +21.03%，但 short JCT +4.98% 且 fairness 下降，不能称动态全面胜出。 |
+| `opening_multijob_interference_20260809/` | exact-short full/half 控制、项目 static/shared 5s guaranteed-overlap A/B、三条原生观察，以及逐请求 arrival/buffer/submit/service 分解 | 项目 71.24 s 中 66.875 s 是 arrival span；long 同时放大 short 的 backend service 与上游 buffer。shared 总吞吐 +21.03%，但 short JCT +4.98% 且 fairness 下降，不能称动态全面胜出。 |
 
 ## 图像 AI_EMBED operator（2026-08-03/04）
 

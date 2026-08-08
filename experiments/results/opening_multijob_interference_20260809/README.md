@@ -42,8 +42,9 @@ arrival observation；本报告以所有系统共同使用的 5 s guaranteed-ove
   exactly-once、零 worker failure/incident 和 manifest 隔离门全部通过。
 - 原生 5 s 矩阵：12/12 cells、9/9 formal、0 error；exactly-once、provenance、服务
   counter 和两个 endpoint 使用门通过。
-- 统一汇总：30 formal rows、10 summary rows、6 comparisons、18 project phase rows，
-  short manifest 身份一致；所有 two-job arms 的实际 overlap 都大于 0。
+- 统一汇总：30 formal rows、10 summary rows、6 comparisons、18 project phase rows、
+  12 条 project request-timing rows；short manifest 身份一致，且逐次满足
+  `JCT = arrival span + post-last-arrival drain`。所有 two-job arms 的实际 overlap 都大于 0。
 - formal 稳定性：项目 service tok/s CV 为 0.065%（static）和 0.228%（shared）；原生
   two-job service tok/s CV 为 0.59%（Daft Native）、1.18%（Daft Ray）、0.60%
   （Ray Data）。
@@ -111,6 +112,52 @@ MFU=6.63%；Daft Native 分别为 14,727、250.1、0、24.5%、44.04%。项目�
 分解，不能从现有矩阵继续归因。该合同不影响各轨内部 `single → two-job` 的干扰变化，
 但禁止把项目与原生轨的绝对 JCT、tok/s、running 或 MFU 横向排名。
 
+### 4.5 项目 71.24 s 的逐请求时间分解
+
+服务器 raw 回读后，项目 single-short full-pool 的三次 formal 精确分解为：
+
+| 时间边界 | mean | P99/总量 | 含义 |
+|---|---:|---:|---|
+| arrival span | 66.875 s | 占 JCT 93.87% | 512 条请求按冻结 replay 时钟逐步变为可提交 |
+| post-last-arrival drain | 4.367 s | — | 最后一条到达后到全 Job 完成 |
+| arrival→flush buffer | 75.14 ms/request | 87.25 ms | 50 ms flush 与 replay/pending 形成的上游等待 |
+| flush→submit | 3.29 ms/request | 9.23 ms | scheduler/actor 提交前等待 |
+| submit→service | 3.00 ms/request | 6.40 ms | HTTP/Ray 到服务起点 |
+| service | 3.847 s/request | 4.838 s | backend service span |
+| request E2E | 3.928 s/request | 4.922 s | 上述逐请求边界总和 |
+
+因此 `71.2416 = 66.8750 + 4.3666 s`；除 backend service 外的逐请求平均开销约
+81.4 ms，只占 request E2E 约 2.1%。项目 profiler 的更宽 E2E 为 79.394 s，其中
+source fetch 2.216 s、actor-ready 4.389 s、operator wall 71.245 s；这些 stage 有嵌套，
+不得相加。Daft Native 的 11.059 s 从完整 manifest、provider、DataFrame 和 expression
+均已准备后才在 `collect()` 前开始，故仍不是与 79.394 s 相同的 pipeline 边界。
+
+在模型服务内部，项目 single-short 的 vLLM request E2E mean 为 3.837 s，低于
+Daft Native 的 6.654 s；项目 decode/prefill 为 3.785/0.0365 s，Daft Native 为
+6.381/0.1056 s。Daft 的总 Job 更快来自一次性暴露全部 work，令 running mean 从项目
+26.1 提到 250.1、MFU 从 6.63% 提到 44.04%，而不是 Daft 单请求 service 更短。
+
+### 4.6 long Job 具体影响了 short 的哪些阶段
+
+arrival span 在所有项目场景都固定为 66.875 s，所以 long 没有改变 offered-arrival
+合同；它改变的是最后 drain、上游 pending/backpressure 和 backend service：
+
+| 指标 | matched single | static + long | 变化 | matched single | shared + long | 变化 |
+|---|---:|---:|---:|---:|---:|---:|
+| post-last-arrival drain | 4.365 s | 7.061 s | +61.78% | 4.367 s | 10.741 s | +145.98% |
+| buffer mean | 73.4 ms | 129.8 ms | +76.78% | 75.1 ms | 990.8 ms | +1,218.61% |
+| buffer P99 | 85.6 ms | 917.4 ms | +972.06% | 87.3 ms | 3.835 s | +4,295.48% |
+| flush→submit P99 | 7.77 ms | 698.8 ms | +8,893.00% | 9.23 ms | 1.285 s | +13,814.24% |
+| service mean | 3.845 s | 6.142 s | +59.74% | 3.847 s | 7.239 s | +88.17% |
+| service P99 | 4.837 s | 8.433 s | +74.36% | 4.838 s | 10.170 s | +110.22% |
+| request E2E P99 | 4.922 s | 9.380 s | +90.59% | 4.922 s | 13.454 s | +173.33% |
+
+submit→service mean 没有变差（约 2–3 ms），vLLM queue mean 也只有 23–62 µs；因此
+long 的主要影响不是“请求卡在 vLLM waiting 队列”，而是：共享 GPU 后 prefill/decode
+service 变长，同时项目 Ray/pending/credit 层出现 buffer 与 flush→submit 软拥塞。
+shared work 把更多 long work 注入服务，故 aggregate throughput 更高，但 short 的这两层
+退化都比 static 更强。
+
 ## 5. 结果解释与开题对应
 
 ### 事实
@@ -124,6 +171,8 @@ MFU=6.63%；Daft Native 分别为 14,727、250.1、0、24.5%、44.04%。项目�
    都受到后到 long 的影响。
 5. 项目与原生轨只对齐 Job 级 5 s offset，没有对齐逐请求 arrival replay；71.24 s 与
    11.06 s 不构成系统绝对性能比较。
+6. 项目 71.24 s 中 66.875 s 是冻结 arrival span；single-short 的逐请求 service 并不慢于
+   Daft Native。long 加入后，同时放大 short 的 backend service 和项目上游 buffer。
 
 ### 对设计的支撑
 
@@ -168,6 +217,10 @@ MFU=6.63%；Daft Native 分别为 14,727、250.1、0、24.5%、44.04%。项目�
 Git 只保存紧凑审计数据：
 
 - `data/combined/`：统一 30-row formal、10-row summary、6 个对比和三阶段数据；
+- `data/combined/project_request_timing_summary.csv`：项目四场景逐请求时间分解；
+- `data/combined/single_short_project_daft_timing.csv`：项目/Daft timer 与 vLLM 边界对齐表；
+- `data/combined/project_long_impact_breakdown.csv`：long 对 short 各阶段的 matched-control 增量；
+- `data/combined/project_issue_audit.csv`：已确认、已排除、待 same-replay 验证的问题台账；
 - `data/project/`：项目 5 s static/shared 的逐次、汇总、pairwise 与 audit；
 - `data/native/`：三条原生路径的逐次、汇总与 audit。
 
@@ -177,6 +230,8 @@ shard log、GPU/service time series 和失败 incident：
 | 归档 | SHA256 |
 |---|---|
 | `opening_multijob_forced_overlap_20260809_v3.tar.gz` | `f766faf7f91fb3a30a6dde8ab1b79c6cc02bae4678a5454bc4e533abae814cfa` |
+| `opening_short_job_controls_20260809_v1.tar.gz` | `b8bcb0be35bf46e07806b24b7e838781dc4de50410289f932a9674080ff02480` |
+| `opening_short_job_native_controls_20260809_v1.tar.gz` | `5cd8daa607e986a2b2f8503368a4bde0db9d3968c85ce13be5d4f38b6c348a93` |
 | `opening_text_native_multijob_forced_overlap_20260809_v1.tar.gz` | `515b33a5a07e77c39131e02ba1ee8fcb1ff3c000b4f2a582cd117c6b5ca095a7` |
 | `opening_short_job_interference_forced_overlap_20260809_v1.tar.gz` | `b7aa4c8b6cd728285fa3929acdec0a03ac5052492ef7f1dc99bf8419ea617e6d` |
 | config-load failed v1 | `fbe52e3a53a76d0660b23253e6295d78f3d4dda64814ff5a06260122cf096c8e` |

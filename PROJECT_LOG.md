@@ -1,5 +1,35 @@
 # 项目日志
 
+## 2026-08-09 项目 single-short 与 long 干扰的逐请求时间归因
+
+- 从服务器只读回收四份已归档 raw，SHA256 与服务器归档一致；新增汇总器回归并验证
+  `JCT = arrival span + post-last-arrival drain`。服务器原目录和压缩包均未移动或覆盖。
+- 项目 full-pool single 的71.2416 s 精确分为66.875 s arrival span与4.3666 s drain；
+  arrival span 占93.87%。逐请求非 service 开销均值约81.4 ms，backend service mean/P99
+  为3.847/4.838 s，故71 s 不是项目执行器慢6.4×的证据。
+- Daft Native 的11.059 s 从完整 manifest和graph setup完成后的`collect()`开始；其 vLLM
+  request mean为6.654 s，高于项目3.837 s，但running/MFU为250.1/44.04%，远高于项目
+  26.1/6.63%。冻结结论为“eager供给提高aggregate利用率”，不作跨timer系统排名。
+- long加入后，static/shared short service mean分别+59.74%/+88.17%，buffer P99从约
+  86 ms升至0.917/3.835 s，flush→submit P99升至0.699/1.285 s，而vLLM queue仍为
+  微秒量级。确认GPU service竞争与项目上游软拥塞并存，waiting单信号不足。
+- 若后续只重测项目，最小消融是保持K128/W65,536等合同、仅关闭arrival replay做
+  all-at-t0 eager 1+3；它回答离线饱和能力，不替换当前在线多Job实验，也不先扫K256/K512。
+
+## 2026-08-09 在线 replay 与离线容量诊断分轨
+
+- 复核 single-short 的绝对值后确认输入可见性不同：项目按原始
+  `arrival_time_s × 0.001` 逐请求 replay，原生 Daft/Ray Data 只对齐 Job 启动，启动后
+  完整 manifest 交给框架 graph。项目约 71 s 与 Daft Native 约 11 s 不再作为性能排名。
+- 冻结开题后、条件触发的最小诊断顺序：先用 bounded HTTP 与 project 做同 manifest、
+  同 arrival replay 的两臂，并把 JCT 分解为 arrival span、最后到达后的 drain 和逐请求
+  completion lag；只有 project drain/P99 仍差约 5% 才逐一隔离 pipeline 因素。
+- 离线容量另起所有 rows 在 `t=0` 可见、每 formal 至少 60 s 的框架自有调度轨道，
+  不与在线 JCT 混表。full/half project single-short 近似相等已排除当前 K/W 静态额度
+  是主要原因，因此不预先扫 K256/K512，也不在证据前修改调度逻辑。
+- 本次只修订实验计划、状态与索引；不开新实验、不改代码、不画图、不改 PPT，也不
+  同步用户明确暂停的 Wiki。
+
 ## 2026-08-09 开题四部件实现边界与状态文件一致性审计
 
 - 将原生/项目 5s guaranteed-overlap 完成状态回写到实验状态、开题工作区、答辩大纲、

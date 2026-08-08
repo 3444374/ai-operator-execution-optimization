@@ -152,10 +152,46 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 原生两 job 观察（已完成） | 两个 512 行 short/long job；offset=5 s；互斥且 endpoint-work-balanced manifest | Daft Native、Daft Ray、Ray Data 各自启动两个独立 job；不注入项目 credit。bounded 多进程 client 因可复现 CLOSE_WAIT 生命周期问题排除，单 job C128 仅作容量参照 | 每臂 1+3 | 三臂均产生真实 overlap，short JCT 相对各自 single +82.42%/+104.84%/+32.76%；只作外部竞争观察 |
 | 两作业（已完成） | 两个 512 行 short/long job；5 s stagger；互斥 manifest-selected doc_id 集合 | static partition 与 shared work-credit/fair queue 成对比较；相同 endpoint 总 K/work | 每场景 1+3 group runs | quota-only≈0；shared 提高总吞吐并缩短 long JCT，但恶化 short JCT/Jain；weighted 留论文阶段 |
 
-两作业必须使用冻结的 short/long manifest 直接过滤互斥 doc_id，source offset 固定为 0；再按原始 `arrival_time_s` replay，并在结果中报告各 job 实际 predicted/observed work。原生框架观察不得命名为 `static_partition`；只有项目 A/B 可计算 `borrowed_work_seconds`。该最小矩阵不声称 3:1 weighted fairness 已验证。
+两作业必须使用冻结的 short/long manifest 直接过滤互斥 doc_id，source offset 固定为 0。
+项目 A/B 按原始 `arrival_time_s` 做 request-level replay；原生 Daft/Ray Data 观察只按
+0/5 s 对齐 Job 启动，Job 启动后完整 manifest 交给框架拥有的 graph，不声称逐行 replay。
+两条轨道都报告各 Job 实际 predicted/observed work，但绝对 JCT/吞吐不得跨轨排名。
+原生框架观察不得命名为 `static_partition`；只有项目 A/B 可计算
+`borrowed_work_seconds`。该最小矩阵不声称 3:1 weighted fairness 已验证。
 
 本轮到达方向严格为 `Short@0s → Long@5s`，回答“后到 long 是否影响已运行 short”。
 所有进入干扰结论的 arm 都必须满足 measured overlap > 0；旧 15 s Daft Native 中 short
 自然完成后 long 才到达，因而只能保留为 arrival observation。`Long→Short` 回答的是
 “繁忙 long 背景下新到 short 的 SLO”，是不同的论文阶段补充场景，不能用本轮结果代替，
 也不构成本轮开题最小因果链的缺口。
+
+### 7.2 开题后项目性能诊断的两条独立轨道
+
+当前项目 single-short 约 71 s、Daft Native single-short 约 11 s 不构成性能差距结论：
+前者是 arrival-limited request replay，后者是 eager-manifest graph。若开题后需要判断
+项目代码是否还需优化，先按以下顺序执行，不把诊断加入开题 blocker。
+
+**轨道 A：同 replay 在线诊断。** 只比较 bounded HTTP replay control 与 project
+frozen-static replay；使用同一 short manifest、endpoint pinning、Chat 语义、output cap、
+temperature、`arrival_time_scale` 和逐请求到达时间。除 Job JCT 外，必须分解并报告：
+
+- `arrival_span_s`：首个到达到最后到达；
+- `post_last_arrival_drain_s`：最后到达到最后完成；
+- completion lag P50/P95/P99；
+- available/admitted/completed work、running/waiting/KV、queue/service 与 MFU。
+
+arrival-limited cell 不套用离线 feeding-saturation ≥95% 门禁，改用 arrival fidelity、
+exactly-once、同 offered load 和 matched-replay no-regression。若 project 的 drain/P99
+相对 bounded 差异均小于约 5%，立即停止，不改调度行为；若显著更差，再一次只隔离
+source/organizer、flush、Ray actor 或 routing 中一个因素，禁止先放大 K/W 或联合调参。
+
+**轨道 B：离线饱和容量。** 所有 rows 在 `t=0` 可见，不做 arrival replay；在同一
+Chat manifest/model/service/output 合同下，分别运行 bounded control、Daft Native、
+Daft Ray、Ray Data 和 project frozen-static。workload 先扩到每个 formal ≥60 s，
+各框架拥有自身 scheduling；correctness、feeding-saturation 和稳定性门通过后才允许
+容量排名。该轨只回答平台容量，不与轨道 A 的在线 JCT 混表。
+
+现有 `Short@0s → Long@5s` 继续回答“活跃 Job 集变化是否产生效率—隔离—公平权衡”，
+不承担单系统最优容量排名。full/half project single-short 的 JCT 近似相等已排除当前
+K128/W65536 静态额度是 71 s 的主因，因此在轨道 A 证实项目侧额外 lag 前，不扫
+K256/K512。

@@ -199,7 +199,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/first_principles_reassessment_20260808.md` | 从目标函数反推开题必需证据、work-unit/动态/图像设计、图表与 19 项答辩内容结构 | 重构开题故事、实验矩阵、方法代码或图前读 |
 | `opening/opening_defense_outline_20260808.md` | 权威答辩内容大纲：逐项 take-away、证据、claim 边界、必要实验与八张图的数据合同 | 编写开题材料、补实验或绘图前读；当前不生成 PPT 成品 |
 | `experiments/plans/opening_database_e2e_p0_20260807.md` | 开题前仅允许的 SQuAD/ShareGPT 三臂统一 database-E2E 合同 | 运行开题证据闭环实验前读 |
-| `experiments/plans/state_aware_work_unit_evaluation_20260808.md` | 分阶段 work descriptor、四个开题最小方法证据、同上限 static vs dynamic、图像强 baseline 与 steady→变化→多 job 正式矩阵 | 两组静态三臂后补最小证据，或开题后扩展 proposed 主实验前读 |
+| `experiments/plans/state_aware_work_unit_evaluation_20260808.md` | 分阶段 work descriptor、四个开题最小方法证据、同上限 static vs dynamic、图像强 baseline、steady→变化→多 job 正式矩阵，以及 same-replay 在线诊断与 eager-manifest 离线容量分轨 | 两组静态三臂后补最小证据，或开题后诊断项目性能/扩展 proposed 主实验前读 |
 | `code/scripts/baselines/opening_database_e2e_matrix.py` | 双 endpoint、三静态臂、统一 source/sink/质量/资源的 1 warmup + 3 formal runner；支持 workload-specific、校准合同锁定的 project K/actor shape | 只用于上述冻结开题合同；direct/DuckDB 并发不随 project 选择改变 |
 | `deploy/autodl/opening_database_e2e_p0.example.json` | AutoDL 开题三臂 runner 配置模板 | 复制到服务器 artifact root 后以 runtime env 展开 |
 | `deploy/autodl/opening_project_feeding_calibration.example.json` | 首轮未过 95% feeding 门后的纠正校准模板；同 manifest、统一 256 actor slots 并固定其它变量，仅扫 project K32/64/128/256 | 每个 workload 冻结最小饱和静态点后再整体替换重跑三臂矩阵 |
@@ -216,7 +216,12 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/analysis/summarize_opening_project_feeding_calibration.py` | 审计开题项目 feeder 的 bounded-direct/K32-K256 三重复并选择最小饱和 K | 每个 workload 校准完成后生成冻结选择合同；门禁失败时不得人工选点 |
 | `code/tests/analysis/test_summarize_opening_project_feeding_calibration.py` | feeding 校准选择器的最小饱和点与 manifest fail-closed 回归测试 | 修改校准门槛、输入合同或选择规则时运行 |
 | `code/scripts/analysis/summarize_opening_multijob_minimal.py` | fail-closed 汇总开题 short/long 两作业错峰两场景 | 输出组级紧凑数据、场景统计、shared-vs-static 对照和审计；不含 sink |
-| `code/scripts/analysis/summarize_opening_short_job_interference.py` | 统一汇总 exact-short full/half、项目 static/shared 与三条原生 single/two-job 证据 | 输出短 Job 因果对照、系统观察和项目 pre-long/overlap/drain 状态；不伪造 native P99 或 interval MFU |
+| `code/scripts/analysis/summarize_opening_short_job_interference.py` | 统一汇总 exact-short full/half、项目 static/shared 与三条原生 single/two-job 证据 | 输出短 Job 因果对照、pre-long/overlap/drain 状态，以及 arrival span、最后到达后 drain、buffer/submit/service/E2E 细粒度时间；不伪造 native P99、interval MFU 或把重叠 stage 相加 |
+| `code/tests/analysis/test_summarize_opening_short_job_interference.py` | 项目逐请求时间分解的 JCT 恒等式与负时长 fail-closed 回归 | 修改 short/long 时间归因或 raw timing 汇总公式时运行 |
+| `experiments/results/opening_multijob_interference_20260809/data/combined/project_request_timing_summary.csv` | full/half single 与 static/shared+long 的 arrival span、drain、buffer、submit、service、request E2E 与 profiler stage 紧凑汇总 | 分析项目 71 s 的组成或 long 影响哪一层时读；profiler stage 有重叠，不得相加 |
+| `experiments/results/opening_multijob_interference_20260809/data/combined/single_short_project_daft_timing.csv` | 项目 request-replay 与 Daft Native eager-manifest 的 timer、vLLM service 和状态边界对齐 | 回答 71.24 s vs 11.06 s 时读；只解释合同与状态，不作跨轨排名 |
+| `experiments/results/opening_multijob_interference_20260809/data/combined/project_long_impact_breakdown.csv` | long 对 short 的 matched single→two-job 各阶段绝对值与增幅 | 区分 backend service 竞争、上游软拥塞与 vLLM queue 时读 |
+| `experiments/results/opening_multijob_interference_20260809/data/combined/project_issue_audit.csv` | 项目多 Job 性能问题的已确认、已排除、待验证状态 | 决定是否改代码、调 K/W 或补 same-replay/eager 诊断前读 |
 | `code/tests/analysis/test_summarize_opening_multijob_minimal.py` | 多任务汇总器的完整矩阵与 short/long manifest 身份回归测试 | 修改多 job 结果合同或审计边界时运行 |
 | `code/scripts/analysis/summarize_text_native_multijob.py` | fail-closed 汇总 Daft Native/Ray、Ray Data 原生 short/long 两 Job 观察 | 用 vLLM service-counter 统一吞吐，输出逐次/汇总状态数据；排除 coverage 不一致的 manifest token/s 与未采集的 request P95/P99 |
 | `code/tests/analysis/test_summarize_text_native_multijob.py` | 原生多 Job 汇总器的 service-counter、重复数和 success/exactly-once 回归测试 | 修改原生多 Job 数据口径或门禁时运行 |

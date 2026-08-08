@@ -5,7 +5,17 @@
   "summary_rows": 10,
   "comparisons": 6,
   "project_phase_rows": 18,
+  "timing_interference_rows": 5,
+  "project_timeline_rows": 2,
+  "project_issue_audit_rows": 11,
+  "project_request_timing_summary_rows": 4,
+  "project_long_impact_breakdown_rows": 2,
+  "single_short_project_daft_timing_rows": 2,
+  "project_request_timing_identity": "jct=arrival_span+post_last_arrival_drain",
+  "project_profiler_stage_boundary": "overlapping_fields_do_not_sum",
   "request_p99_boundary": "project_only",
   "interval_mfu_boundary": "unavailable:no_interval_flops_counter",
-  "native_short_duration_boundary": "characterization_not_60s_capacity_ranking"
+  "native_short_duration_boundary": "characterization_not_60s_capacity_ranking",
+  "timing_boundary": "overlap_is_exposure_window_not_added_delay",
+  "cross_track_boundary": "request_replay_and_eager_manifest_are_not_rankable"
 }

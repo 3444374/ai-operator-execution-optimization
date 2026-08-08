@@ -71,6 +71,14 @@ JCT 与 Jain fairness。因此该实验闭合的是“多 Job 存在效率—隔
 “动态全面胜出”。开题前停止新增 offset、weight、4+ job 或框架臂；phase-change、weighted、
 图像新动态策略、cost held-out 与完整 image-first A+B 矩阵均留开题后。
 
+上述多 Job 结果含两种不同输入可见性合同：项目 A/B 按 manifest 中
+`arrival_time_s` 逐请求 replay；Daft Native/Ray 与 Ray Data 只统一 Job 的 0/5 s
+启动，Job 启动后由原生 graph 看到完整 manifest。因此项目 single-short 约 71 s 与
+Daft Native 约 11 s 不得解释为框架性能排名。开题后若诊断项目性能，先做同 manifest、
+同 request replay 的 bounded HTTP vs project 两臂；只有 completion drain/P99 仍差约
+5% 才逐因子检查 source/organizer、flush、Ray actor 和 routing。随后另做所有 rows 在
+`t=0` 可见、每 formal ≥60 s 的离线容量矩阵。两条轨道不混表，且都不阻塞本轮开题。
+
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 
 **方向决定（2026-08-01；本节为该决定的记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `image_clip_workload_lock_20260731.md` §0「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。

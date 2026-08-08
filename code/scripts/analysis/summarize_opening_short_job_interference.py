@@ -58,6 +58,21 @@ def _summary(values: Sequence[float]) -> tuple[float, float, float]:
     return mean, sd, sd / mean if mean else 0.0
 
 
+def _percentile(values: Sequence[float], probability: float) -> float:
+    if not values:
+        raise ValueError("cannot take percentile of an empty sequence")
+    if not 0.0 <= probability <= 1.0:
+        raise ValueError("probability must be in [0, 1]")
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * probability
+    lower = math.floor(position)
+    upper = math.ceil(position)
+    if lower == upper:
+        return ordered[lower]
+    fraction = position - lower
+    return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
+
+
 def _write_csv(path: Path, rows: Sequence[Mapping[str, object]]) -> None:
     if not rows:
         raise ValueError(f"refusing to write empty CSV: {path}")
@@ -138,7 +153,10 @@ def _native_single_rows(root: Path) -> list[dict[str, object]]:
         if run.get("status") != "passed":
             raise ValueError(f"native single formal failed: {run.get('run_id')}")
         arm = str(run["arm_id"])
-        gates = glob.glob(str(Path(str(run["output_root"])) / "*" / "gate.json"))
+        run_root = Path(str(run["output_root"]))
+        if not run_root.exists():
+            run_root = root / "runs" / str(run["run_id"])
+        gates = glob.glob(str(run_root / "*" / "gate.json"))
         if len(gates) != 1:
             raise ValueError(f"expected one gate for {run['run_id']}")
         metrics = _read_json(Path(gates[0]))["metrics"]
@@ -193,6 +211,85 @@ def _native_single_rows(root: Path) -> list[dict[str, object]]:
     return rows
 
 
+def _native_single_service_timing_rows(
+    root: Path,
+    arm_id: str = "daft_native",
+) -> list[dict[str, object]]:
+    """Expose service-side timing while preserving Daft's barrier timestamp boundary."""
+
+    index = _read_json(root / "matrix_index.json")
+    rows: list[dict[str, object]] = []
+    metric_fields = (
+        "vllm_e2e_request_latency_mean_s",
+        "vllm_request_queue_time_mean_s",
+        "vllm_request_inference_time_mean_s",
+        "vllm_request_prefill_time_mean_s",
+        "vllm_request_decode_time_mean_s",
+        "vllm_time_to_first_token_mean_s",
+        "vllm_inter_token_latency_mean_s",
+    )
+    for run in index.get("runs", []):
+        if (
+            not isinstance(run, dict)
+            or run.get("phase") != "formal"
+            or run.get("arm_id") != arm_id
+        ):
+            continue
+        run_root = Path(str(run["output_root"]))
+        if not run_root.exists():
+            run_root = root / "runs" / str(run["run_id"])
+        gates = tuple(run_root.glob("*/gate.json"))
+        if len(gates) != 1:
+            raise ValueError(f"expected one gate for {run['run_id']}")
+        metrics = _read_json(gates[0]).get("metrics")
+        latency = run.get("vllm_latency_deltas")
+        if not isinstance(metrics, dict) or not isinstance(latency, dict):
+            raise ValueError("native service timing evidence is incomplete")
+        endpoint_metrics = [item for item in latency.values() if isinstance(item, dict)]
+        wall = _float(metrics["group_service_wall_s"], "group_service_wall_s")
+        row: dict[str, object] = {
+            "system": arm_id,
+            "scenario": "single_short_native",
+            "repeat": int(run["repeat"]),
+            "input_visibility": "full_manifest_before_timer",
+            "timer_start": "immediately_before_daft_collect",
+            "timer_end": "after_daft_collect_to_pylist",
+            "reported_wall_s": wall,
+            "arrival_span_s": 0.0,
+            "post_last_arrival_drain_s": wall,
+            "client_request_timing_status": "unavailable:barrier_stamped",
+            "pretimer_setup_status": "excluded:not_instrumented",
+        }
+        for field in metric_fields:
+            row[field] = _mean(
+                _float(item[field], field) for item in endpoint_metrics
+            )
+        rows.append(row)
+    if len(rows) != 3:
+        raise ValueError(f"expected three formal {arm_id} timing rows, got {len(rows)}")
+    return rows
+
+
+def _native_single_service_timing_summary(
+    rows: Sequence[Mapping[str, object]],
+) -> dict[str, object]:
+    first = rows[0]
+    output: dict[str, object] = {
+        "system": first["system"],
+        "scenario": first["scenario"],
+        "formal_repeats": len(rows),
+        "input_visibility": first["input_visibility"],
+        "timer_start": first["timer_start"],
+        "timer_end": first["timer_end"],
+        "client_request_timing_status": first["client_request_timing_status"],
+        "pretimer_setup_status": first["pretimer_setup_status"],
+    }
+    for field, value in first.items():
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and field != "repeat":
+            output[f"{field}_mean"] = _mean(_float(row[field], field) for row in rows)
+    return output
+
+
 def _native_two_rows(root: Path) -> list[dict[str, object]]:
     index = _read_json(root / "matrix_index.json")
     if index.get("status") != "passed":
@@ -220,7 +317,10 @@ def _native_two_rows(root: Path) -> list[dict[str, object]]:
         gpu = run.get("gpu_summary")
         gauge = run.get("gauge_summary")
         latency = run.get("vllm_latency_deltas")
-        counters = _read_json(Path(str(run["service_counters"])))
+        counters_path = Path(str(run["service_counters"]))
+        if not counters_path.exists():
+            counters_path = root / "runs" / str(run["run_id"]) / "service_counters.json"
+        counters = _read_json(counters_path)
         if not isinstance(gpu, dict) or not isinstance(gauge, dict) or not isinstance(latency, dict):
             raise ValueError("native two-job resource summary missing")
         wall = _float(run["arm_barrier_jct_s"], "arm barrier JCT")
@@ -438,6 +538,324 @@ def _project_phase_rows(root: Path) -> list[dict[str, object]]:
     return rows
 
 
+def _project_request_timing_metrics(
+    request_rows: Sequence[Mapping[str, object]],
+) -> dict[str, object]:
+    """Decompose one project Job without treating overlapping stages as additive."""
+
+    if not request_rows:
+        raise ValueError("project request timing requires non-empty rows")
+    required = (
+        "arrival_epoch_s",
+        "flush_epoch_s",
+        "submit_epoch_s",
+        "service_start_epoch_s",
+        "completion_epoch_s",
+        "e2e_s",
+    )
+    if any(row.get(field) in {None, ""} for row in request_rows for field in required):
+        raise ValueError("project request timing contains missing timestamps")
+    arrival = [_float(row["arrival_epoch_s"], "arrival") for row in request_rows]
+    flush = [_float(row["flush_epoch_s"], "flush") for row in request_rows]
+    submit = [_float(row["submit_epoch_s"], "submit") for row in request_rows]
+    service_start = [
+        _float(row["service_start_epoch_s"], "service start") for row in request_rows
+    ]
+    completion = [
+        _float(row["completion_epoch_s"], "completion") for row in request_rows
+    ]
+    e2e = [_float(row["e2e_s"], "e2e") for row in request_rows]
+    buffer = [right - left for left, right in zip(arrival, flush)]
+    flush_to_submit = [right - left for left, right in zip(flush, submit)]
+    submit_to_service = [right - left for left, right in zip(submit, service_start)]
+    service = [right - left for left, right in zip(service_start, completion)]
+    for name, values in (
+        ("buffer", buffer),
+        ("flush_to_submit", flush_to_submit),
+        ("submit_to_service", submit_to_service),
+        ("service", service),
+        ("e2e", e2e),
+    ):
+        if any(value < -1e-6 for value in values):
+            raise ValueError(f"negative {name} duration")
+    jct = max(completion) - min(arrival)
+    arrival_span = max(arrival) - min(arrival)
+    completion_lag = max(completion) - max(arrival)
+    if not math.isclose(jct, arrival_span + completion_lag, abs_tol=1e-6):
+        raise ValueError("JCT does not equal arrival span plus completion lag")
+    output: dict[str, object] = {
+        "request_count": len(request_rows),
+        "jct_s": jct,
+        "arrival_span_s": arrival_span,
+        "post_last_arrival_drain_s": completion_lag,
+        "arrival_span_fraction": arrival_span / jct if jct else 0.0,
+        "submit_span_s": max(submit) - min(submit),
+        "completion_span_s": max(completion) - min(completion),
+    }
+    for name, values in (
+        ("buffer_s", buffer),
+        ("flush_to_submit_s", flush_to_submit),
+        ("submit_to_service_s", submit_to_service),
+        ("service_s", service),
+        ("request_e2e_s", e2e),
+    ):
+        output[f"{name}_mean"] = _mean(values)
+        output[f"{name}_p50"] = _percentile(values, 0.50)
+        output[f"{name}_p95"] = _percentile(values, 0.95)
+        output[f"{name}_p99"] = _percentile(values, 0.99)
+        output[f"{name}_max"] = max(values)
+    return output
+
+
+def _project_request_timing_rows(root: Path) -> list[dict[str, object]]:
+    """Read formal Job-0 profiler evidence and preserve its stage timing fields."""
+
+    profiler_fields = (
+        "db_fetch_s",
+        "arrow_build_s",
+        "source_fetch_s",
+        "organizer_from_arrow_s",
+        "organizer_plan_s",
+        "organizer_collect_s",
+        "actor_ready_s",
+        "submit_s",
+        "model_service_s",
+        "model_request_wall_s",
+        "operator_wall_s",
+        "bounded_wait_s",
+        "fanin_s",
+        "scheduling_control_overhead_s",
+        "vllm_e2e_request_latency_mean_s",
+        "vllm_request_queue_time_mean_s",
+        "vllm_request_inference_time_mean_s",
+        "vllm_request_prefill_time_mean_s",
+        "vllm_request_decode_time_mean_s",
+        "vllm_time_to_first_token_mean_s",
+        "vllm_inter_token_latency_mean_s",
+        "e2e_s",
+    )
+    output: list[dict[str, object]] = []
+    for record_path in sorted((root / "records").glob("*.json")):
+        record = _read_json(record_path)
+        if record.get("phase") != "formal":
+            continue
+        stem = (
+            f"{int(record['order_index']):03d}_formal_{int(record['repeat_index'])}_"
+            f"{record['scenario_id']}_job0"
+        )
+        with (root / "jobs" / f"{stem}.requests.csv").open(
+            encoding="utf-8", newline=""
+        ) as handle:
+            requests = list(csv.DictReader(handle))
+        with (root / "jobs" / f"{stem}.runs.csv").open(
+            encoding="utf-8", newline=""
+        ) as handle:
+            summaries = list(csv.DictReader(handle))
+        if len(summaries) != 1 or summaries[0].get("status") != "ok":
+            raise ValueError(f"project Job-0 summary is not uniquely successful: {stem}")
+        row: dict[str, object] = {
+            "scenario": record["scenario_id"],
+            "repeat": int(record["repeat_index"]),
+            "timer_start": "min_request_arrival",
+            "timer_end": "max_request_completion",
+            "input_visibility": "request_level_arrival_replay",
+            **_project_request_timing_metrics(requests),
+        }
+        for field in profiler_fields:
+            value = summaries[0].get(field)
+            row[f"profiler_{field}"] = (
+                _float(value, field) if value not in {None, ""} else ""
+            )
+        row["profiler_stage_boundary"] = "overlapping_fields_do_not_sum"
+        output.append(row)
+    return output
+
+
+def _project_request_timing_summary(
+    rows: Sequence[Mapping[str, object]],
+) -> list[dict[str, object]]:
+    grouped: dict[str, list[Mapping[str, object]]] = defaultdict(list)
+    for row in rows:
+        grouped[str(row["scenario"])].append(row)
+    output: list[dict[str, object]] = []
+    for scenario, items in sorted(grouped.items()):
+        result: dict[str, object] = {
+            "scenario": scenario,
+            "formal_repeats": len(items),
+            "timer_start": items[0]["timer_start"],
+            "timer_end": items[0]["timer_end"],
+            "input_visibility": items[0]["input_visibility"],
+        }
+        numeric_fields = [
+            field
+            for field, value in items[0].items()
+            if field not in {"scenario", "repeat"}
+            and isinstance(value, (int, float))
+            and not isinstance(value, bool)
+        ]
+        for field in numeric_fields:
+            result[f"{field}_mean"] = _mean(
+                _float(item[field], field) for item in items
+            )
+        result["profiler_stage_boundary"] = "overlapping_fields_do_not_sum"
+        output.append(result)
+    return output
+
+
+def _single_short_boundary_rows(
+    project_timing: Mapping[str, object],
+    native_timing: Mapping[str, object],
+    group_summary: Mapping[tuple[str, str], Mapping[str, object]],
+) -> list[dict[str, object]]:
+    """Align only named timing boundaries; blanks remain explicitly unavailable."""
+
+    project_group = group_summary[("project", "single_short_full_pool")]
+    native_group = group_summary[("daft_native", "single_short_native")]
+    fields = (
+        "system",
+        "input_visibility",
+        "timer_start",
+        "timer_end",
+        "reported_wall_s_mean",
+        "arrival_span_s_mean",
+        "post_last_arrival_drain_s_mean",
+        "arrival_span_fraction_mean",
+        "buffer_s_mean_mean",
+        "buffer_s_p99_mean",
+        "flush_to_submit_s_mean_mean",
+        "flush_to_submit_s_p99_mean",
+        "submit_to_service_s_mean_mean",
+        "submit_to_service_s_p99_mean",
+        "service_s_mean_mean",
+        "service_s_p99_mean",
+        "request_e2e_s_mean_mean",
+        "request_e2e_s_p99_mean",
+        "vllm_e2e_request_latency_mean_s",
+        "vllm_request_queue_time_mean_s",
+        "vllm_request_inference_time_mean_s",
+        "vllm_request_prefill_time_mean_s",
+        "vllm_request_decode_time_mean_s",
+        "vllm_time_to_first_token_mean_s",
+        "vllm_inter_token_latency_mean_s",
+        "source_fetch_s_mean",
+        "actor_ready_s_mean",
+        "profiler_e2e_s_mean",
+        "group_service_tokens_per_s_mean",
+        "group_mfu_pct_mean",
+        "group_running_mean",
+        "group_waiting_mean",
+        "group_kv_pct_mean",
+        "timing_boundary",
+    )
+    project = {
+        "system": "project",
+        "input_visibility": project_timing["input_visibility"],
+        "timer_start": project_timing["timer_start"],
+        "timer_end": project_timing["timer_end"],
+        "reported_wall_s_mean": project_timing["jct_s_mean"],
+        "arrival_span_s_mean": project_timing["arrival_span_s_mean"],
+        "post_last_arrival_drain_s_mean": project_timing[
+            "post_last_arrival_drain_s_mean"
+        ],
+        "arrival_span_fraction_mean": project_timing["arrival_span_fraction_mean"],
+        "buffer_s_mean_mean": project_timing["buffer_s_mean_mean"],
+        "buffer_s_p99_mean": project_timing["buffer_s_p99_mean"],
+        "flush_to_submit_s_mean_mean": project_timing["flush_to_submit_s_mean_mean"],
+        "flush_to_submit_s_p99_mean": project_timing["flush_to_submit_s_p99_mean"],
+        "submit_to_service_s_mean_mean": project_timing[
+            "submit_to_service_s_mean_mean"
+        ],
+        "submit_to_service_s_p99_mean": project_timing[
+            "submit_to_service_s_p99_mean"
+        ],
+        "service_s_mean_mean": project_timing["service_s_mean_mean"],
+        "service_s_p99_mean": project_timing["service_s_p99_mean"],
+        "request_e2e_s_mean_mean": project_timing["request_e2e_s_mean_mean"],
+        "request_e2e_s_p99_mean": project_timing["request_e2e_s_p99_mean"],
+        "vllm_e2e_request_latency_mean_s": project_timing[
+            "profiler_vllm_e2e_request_latency_mean_s_mean"
+        ],
+        "vllm_request_queue_time_mean_s": project_timing[
+            "profiler_vllm_request_queue_time_mean_s_mean"
+        ],
+        "vllm_request_inference_time_mean_s": project_timing[
+            "profiler_vllm_request_inference_time_mean_s_mean"
+        ],
+        "vllm_request_prefill_time_mean_s": project_timing[
+            "profiler_vllm_request_prefill_time_mean_s_mean"
+        ],
+        "vllm_request_decode_time_mean_s": project_timing[
+            "profiler_vllm_request_decode_time_mean_s_mean"
+        ],
+        "vllm_time_to_first_token_mean_s": project_timing[
+            "profiler_vllm_time_to_first_token_mean_s_mean"
+        ],
+        "vllm_inter_token_latency_mean_s": project_timing[
+            "profiler_vllm_inter_token_latency_mean_s_mean"
+        ],
+        "source_fetch_s_mean": project_timing["profiler_source_fetch_s_mean"],
+        "actor_ready_s_mean": project_timing["profiler_actor_ready_s_mean"],
+        "profiler_e2e_s_mean": project_timing["profiler_e2e_s_mean"],
+        "group_service_tokens_per_s_mean": project_group[
+            "group_service_tokens_per_s_mean"
+        ],
+        "group_mfu_pct_mean": _float(
+            project_group["group_mfu_fraction_mean"], "project MFU"
+        )
+        * 100.0,
+        "group_running_mean": project_group["group_running_mean_mean"],
+        "group_waiting_mean": project_group["group_waiting_mean_mean"],
+        "group_kv_pct_mean": _float(project_group["group_kv_mean_mean"], "project KV")
+        * 100.0,
+        "timing_boundary": "arrival_replay_jct;profiler_stages_overlap_do_not_sum",
+    }
+    native = {
+        "system": "daft_native",
+        "input_visibility": native_timing["input_visibility"],
+        "timer_start": native_timing["timer_start"],
+        "timer_end": native_timing["timer_end"],
+        "reported_wall_s_mean": native_timing["reported_wall_s_mean"],
+        "arrival_span_s_mean": native_timing["arrival_span_s_mean"],
+        "post_last_arrival_drain_s_mean": native_timing[
+            "post_last_arrival_drain_s_mean"
+        ],
+        "vllm_e2e_request_latency_mean_s": native_timing[
+            "vllm_e2e_request_latency_mean_s_mean"
+        ],
+        "vllm_request_queue_time_mean_s": native_timing[
+            "vllm_request_queue_time_mean_s_mean"
+        ],
+        "vllm_request_inference_time_mean_s": native_timing[
+            "vllm_request_inference_time_mean_s_mean"
+        ],
+        "vllm_request_prefill_time_mean_s": native_timing[
+            "vllm_request_prefill_time_mean_s_mean"
+        ],
+        "vllm_request_decode_time_mean_s": native_timing[
+            "vllm_request_decode_time_mean_s_mean"
+        ],
+        "vllm_time_to_first_token_mean_s": native_timing[
+            "vllm_time_to_first_token_mean_s_mean"
+        ],
+        "vllm_inter_token_latency_mean_s": native_timing[
+            "vllm_inter_token_latency_mean_s_mean"
+        ],
+        "group_service_tokens_per_s_mean": native_group[
+            "group_service_tokens_per_s_mean"
+        ],
+        "group_mfu_pct_mean": _float(
+            native_group["group_mfu_fraction_mean"], "native MFU"
+        )
+        * 100.0,
+        "group_running_mean": native_group["group_running_mean_mean"],
+        "group_waiting_mean": native_group["group_waiting_mean_mean"],
+        "group_kv_pct_mean": _float(native_group["group_kv_mean_mean"], "native KV")
+        * 100.0,
+        "timing_boundary": "collect_wall;full_manifest_and_graph_setup_before_timer",
+    }
+    return [{field: row.get(field, "") for field in fields} for row in (project, native)]
+
+
 def _phase_summary(rows: Sequence[Mapping[str, object]]) -> list[dict[str, object]]:
     grouped: dict[tuple[str, str], list[Mapping[str, object]]] = defaultdict(list)
     for row in rows:
@@ -523,12 +941,51 @@ def summarize(args: argparse.Namespace) -> dict[str, object]:
             )
         )
     phase_rows = _project_phase_rows(args.project_two_root)
+    project_request_timing_rows = (
+        _project_request_timing_rows(args.project_single_root)
+        + _project_request_timing_rows(args.project_two_root)
+    )
+    project_request_timing_summary = _project_request_timing_summary(
+        project_request_timing_rows
+    )
+    native_service_timing_rows = _native_single_service_timing_rows(
+        args.native_single_root
+    )
+    native_service_timing_summary = _native_single_service_timing_summary(
+        native_service_timing_rows
+    )
+    project_single_timing = next(
+        row
+        for row in project_request_timing_summary
+        if row["scenario"] == "single_short_full_pool"
+    )
+    single_short_boundary_rows = _single_short_boundary_rows(
+        project_single_timing,
+        native_service_timing_summary,
+        by_key,
+    )
     args.output.mkdir(parents=True, exist_ok=False)
     _write_csv(args.output / "formal_runs.csv", all_rows)
     _write_csv(args.output / "summary.csv", summary_rows)
     _write_csv(args.output / "comparisons.csv", comparisons)
     _write_csv(args.output / "project_phase_runs.csv", phase_rows)
     _write_csv(args.output / "project_phase_summary.csv", _phase_summary(phase_rows))
+    _write_csv(
+        args.output / "project_request_timing_runs.csv",
+        project_request_timing_rows,
+    )
+    _write_csv(
+        args.output / "project_request_timing_summary.csv",
+        project_request_timing_summary,
+    )
+    _write_csv(
+        args.output / "native_single_service_timing_runs.csv",
+        native_service_timing_rows,
+    )
+    _write_csv(
+        args.output / "single_short_project_daft_timing.csv",
+        single_short_boundary_rows,
+    )
     audit = {
         "status": "passed",
         "short_manifest_sha256": next(iter(manifest_shas)),
@@ -536,6 +993,11 @@ def summarize(args: argparse.Namespace) -> dict[str, object]:
         "summary_rows": len(summary_rows),
         "comparisons": len(comparisons),
         "project_phase_rows": len(phase_rows),
+        "project_request_timing_rows": len(project_request_timing_rows),
+        "native_single_service_timing_rows": len(native_service_timing_rows),
+        "single_short_project_daft_timing_rows": len(single_short_boundary_rows),
+        "project_request_timing_identity": "jct=arrival_span+post_last_arrival_drain",
+        "project_profiler_stage_boundary": "overlapping_fields_do_not_sum",
         "request_p99_boundary": "project_only",
         "interval_mfu_boundary": "unavailable:no_interval_flops_counter",
         "native_short_duration_boundary": "characterization_not_60s_capacity_ranking",
