@@ -81,6 +81,7 @@ class NativeMultiJobArm:
     concurrency_per_endpoint: int
     batch_size: int
     timeout_s: float
+    process_timeout_s: float
     ray_address: str | None
     jobs: tuple[NativeMultiJobJob, NativeMultiJobJob]
 
@@ -193,7 +194,7 @@ def _parse_arm(raw: object, *, seen_arm_ids: set[str], skew_max: float) -> Nativ
         raise ValueError("each arm must be an object")
     required = {
         "id", "adapter", "python_executable", "concurrency_per_endpoint",
-        "batch_size", "timeout_s", "ray_address", "jobs",
+        "batch_size", "timeout_s", "process_timeout_s", "ray_address", "jobs",
     }
     missing = required - set(raw)
     unknown = set(raw) - required
@@ -232,6 +233,9 @@ def _parse_arm(raw: object, *, seen_arm_ids: set[str], skew_max: float) -> Nativ
         concurrency_per_endpoint=_positive_int(raw["concurrency_per_endpoint"], f"arm {arm_id} concurrency_per_endpoint"),
         batch_size=_positive_int(raw["batch_size"], f"arm {arm_id} batch_size"),
         timeout_s=_positive_float(raw["timeout_s"], f"arm {arm_id} timeout_s"),
+        process_timeout_s=_positive_float(
+            raw["process_timeout_s"], f"arm {arm_id} process_timeout_s"
+        ),
         ray_address=ray_address if isinstance(ray_address, str) else None,
         jobs=(jobs[0], jobs[1]),
     )
@@ -448,6 +452,42 @@ def _counter_delta(before: Mapping[int, Mapping[str, int]], after: Mapping[int, 
     return {"before": before, "after": after, "delta": delta}
 
 
+def _wait_for_processes(
+    processes: Sequence[subprocess.Popen[object]],
+    *,
+    timeout_s: float,
+) -> tuple[list[int], bool]:
+    """Wait against one shared wall deadline and terminate every survivor.
+
+    The per-request HTTP timeout is not a process-lifecycle bound: a client can
+    retain a CLOSE_WAIT socket after vLLM has drained.  A shared deadline keeps
+    one hung shard from serially consuming one timeout per endpoint.
+    """
+
+    deadline = time.monotonic() + timeout_s
+    return_codes: list[int] = []
+    timed_out = False
+    try:
+        for process in processes:
+            remaining_s = deadline - time.monotonic()
+            if remaining_s <= 0:
+                raise subprocess.TimeoutExpired(process.args, timeout_s)
+            return_codes.append(int(process.wait(timeout=remaining_s)))
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        return_codes = []
+        for process in processes:
+            if process.poll() is None:
+                process.terminate()
+        for process in processes:
+            try:
+                return_codes.append(int(process.wait(timeout=10.0)))
+            except subprocess.TimeoutExpired:
+                process.kill()
+                return_codes.append(int(process.wait(timeout=10.0)))
+    return return_codes, timed_out
+
+
 def _run_job(
     *, target_epoch_s: float, arm: NativeMultiJobArm, job: NativeMultiJobJob,
     arm_root: Path, runner_script: str | Path, config: NativeMultiJobConfig,
@@ -485,7 +525,10 @@ def _run_job(
             for command, log in zip(commands, logs)
         ]
         pids = [int(process.pid) for process in processes]
-        return_codes = [int(process.wait()) for process in processes]
+        return_codes, timed_out = _wait_for_processes(
+            processes,
+            timeout_s=arm.process_timeout_s,
+        )
     finally:
         for log in logs:
             log.close()
@@ -504,9 +547,16 @@ def _run_job(
             }
             for index in (0, 1)
         ],
+        "process_timeout_s": arm.process_timeout_s,
+        "process_timed_out": timed_out,
     }
-    if return_codes != [0, 0]:
-        record.update({"status": "failed", "failure_reason": "nonzero_shard_exit"})
+    if timed_out or return_codes != [0, 0]:
+        record.update({
+            "status": "failed",
+            "failure_reason": (
+                "shard_process_timeout" if timed_out else "nonzero_shard_exit"
+            ),
+        })
         _atomic_json(job_root / "job_summary.json", record)
         return record
     try:

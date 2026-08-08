@@ -206,7 +206,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_project_feeding_repair.example.json` | 校准失败 cell 的同配置单重复 replacement 模板 | 原失败 root 必须保留；新 root 仅通过 `--repair-root` 合并，事故仍进入选择合同 |
 | `deploy/autodl/opening_database_e2e_refeed.example.json` | 读取两份通过审计的 workload-specific feeding 校准合同并 fail-closed 的替换正式矩阵模板 | 仅在 SQuAD/ShareGPT 校准均冻结后运行；direct/DuckDB 保持每 endpoint 32 |
 | `deploy/autodl/opening_text_native_matrix.example.json` | ShareGPT Chat bounded、Daft Native/Ray、Ray Data 原生单 job 1+3 正式模板 | 各臂独立校准与 fingerprint 冻结后运行；无 DuckDB 产品轨 |
-| `deploy/autodl/opening_text_native_multijob.example.json` | bounded、Daft Native/Ray、Ray Data 的 short/long 两 job 错峰原生观察模板 | concurrent smoke 与 offset 冻结后运行；保存外部服务/GPU 时序，不注入项目 credit/router |
+| `deploy/autodl/opening_text_native_multijob.example.json` | bounded、Daft Native/Ray、Ray Data 的 short/long 两 job 错峰原生观察模板 | bounded 总 C128 静态平分为 C64/job；显式 shard process wall timeout；保存服务/GPU 时序，不注入项目 credit/router |
 | `deploy/autodl/opening_multijob_minimal.example.json` | 两作业 short/long immutable manifest 的 staggered static partition vs shared work-credit 最小矩阵 | replacement 静态三臂后运行；只回答两作业 JCT/隔离/idle borrowing，weighted 留论文阶段 |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥、等行数的 short/long job manifest，并输出 token 分布与 SHA 审计 | 运行开题两作业实验前生成 512+512 行异质工作证据 |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
@@ -357,7 +357,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/experiments/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
 | `code/scripts/baselines/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
 | `code/scripts/baselines/run_text_native_matrix.py` / `code/src/baselines/text/orchestration/native_matrix.py` | 冻结 calibration 指纹后的原生文本单 job 1+N 交错矩阵 | 复用 core gate并保存逐 GPU、vLLM gauge/latency/estimated-FLOPs 时序；先验证 Ray worker nofile，时长/门禁不足保留为 `not_rankable` |
-| `code/scripts/baselines/run_text_native_multijob.py` / `code/src/baselines/text/orchestration/native_multijob.py` | Daft Native/Ray、Ray Data 原生两 job 错峰薄编排 | 每 job 启动双 endpoint official shard，禁止项目 credit/router/inflight；保存 barrier、服务计数、vLLM gauge/latency delta 与逐 GPU 时序，并 fail-closed 验证 Ray worker nofile |
+| `code/scripts/baselines/run_text_native_multijob.py` / `code/src/baselines/text/orchestration/native_multijob.py` | Daft Native/Ray、Ray Data 原生两 job 错峰薄编排 | 每 job 启动双 endpoint official shard，禁止项目控制；共享进程 wall deadline 终止 CLOSE_WAIT survivor；保存 barrier、服务/vLLM/GPU 证据并验证 Ray worker nofile |
 | `code/scripts/baselines/squad_capability_gate.py` | SQuAD v1.1 dev capability gate（DuckDB-ai arm）；全量/分层双模式、确定性分层抽样（largest-remainder + 多答案 max SQuAD-normalized 桶）、sample manifest + 逐行证据 CSV（sample hash 与 EM/F1 可复算）、canonical content hash 对齐 importer provenance、workload 完整性 fail-closed、vLLM counter 归因门禁、full-set exactly-once、命令/异常脱敏、失败结构化归档 | 验证 SQuAD bounded-output 管线（输出解析/EM-F1/错误统计），不发布排名 |
 | `code/scripts/baselines/squad_database_e2e_runner.py` | SQuAD bounded-output database-E2E **单 endpoint**顶层 runner（DuckDB-ai + direct_client + project_static）。project_static shell-out profiler，使用独立 completion evidence、实际 source-scan prompt fingerprints、DB/importer 完整性读取与 sink readback 形成非循环证据链；报告强制写 endpoint_count=1 / multi-endpoint method=false | 三臂可运行；project_static 同时受统一计时墙阻塞与单 endpoint 方法退化约束，只能做正确性/管线开销 diagnostic，不能证明 endpoint-aware 方法 |
 | `code/src/baselines/common/squad_identity.py` | SQuAD gate/runner 共享 helper（identity/attribution/integrity：`_pg_server_identity`/`_gpu_identity`/`_vllm_version`/`_git_commit`/`_scrape_status`/`_endpoint_idle`/`_assess_attribution`/`_structured_content_hash`/`_validate_workload_integrity`/`_load_importer_provenance`）| capability gate 与 E2E runner 共用，禁止第三份拷贝 |
@@ -471,7 +471,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/baselines/text/test_direct_client.py` | direct_client 臂单测（DirectClientConfig 校验/`_validate_requests` 多 endpoint+cap 拒绝/run_direct_client cap-mismatch 前置拒绝）| 修改 `direct_client.py` config 校验或 `_validate_requests` 后运行 |
 | `code/tests/baselines/text/test_project_static.py` | project_static wrapper 单测：完整冻结 argv、effective K、active-work、请求语义、completion/source-scan 证据解析与重复/畸形 fail-closed | 修改 `project_static.py` argv 或证据合并后运行 |
 | `code/tests/baselines/text/test_native_matrix.py` | 原生文本交错矩阵配置、日程、失败保留与时长准入测试 | 修改 native single-job formal 编排后运行 |
-| `code/tests/baselines/text/test_native_multijob.py` | 原生两 job manifest 互斥、错峰启动、四 shard、命令审计和失败保留测试 | 修改 Daft/Ray Data 多 job 观察编排后运行 |
+| `code/tests/baselines/text/test_native_multijob.py` | 原生两 job manifest 互斥、错峰启动、四 shard、命令审计、进程超时与失败保留测试 | 修改 Daft/Ray Data 多 job 观察编排后运行 |
 | `code/tests/observability/test_completion_evidence_trace.py` | profiler completion evidence + source-scan fingerprints 单测；完成行缺输出、批内数量错、重复 doc_id 均 fail-closed | 修改 profiler trace/evidence writer 后运行 |
 | `code/tests/baselines/common/test_redact.py` | 共享脱敏模块单测（DB-URL/arg list/URL flag/redact_text）| 修改 `src/baselines/common/redact.py` 后运行 |
 | `code/tests/environment/test_scan_git_secrets.py` | Git 隐私扫描器纯函数单测（私钥/token/sshpass/外部 host 拦截；localhost/模板/example host 放行）| 修改 `scan_git_secrets.py` 拦截规则后运行 |

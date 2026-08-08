@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-08-08 原生两 Job bounded 总上限与子进程生命周期修复
+
+- 首次原生两 job warm-up 暴露配置/runner 缺陷：bounded 给每个 job 各 C128，使每 endpoint 总压力变成 C256；vLLM 已 drain 到 running/waiting=0 后四个客户端仍停在 CLOSE_WAIT，而 harness 对 `Popen.wait()` 没有 wall deadline。
+- 精确终止四个卡死 shard 后，matrix 在 `003_warmup_01_bounded_http` fail closed；原目录保留并归档为 `opening_text_native_multijob_20260808_failed_bounded_c256_hang.tar.gz`，SHA256 `3ba728ac51c0b46edaa6e7b5d655acfd33be0e804453800b8b9869ace86229f4`。
+- 正式合同改为 bounded 将单 job C128 总上限静态平分为每 job/endpoint C64；所有 arm 新增显式 `process_timeout_s=360`。runner 使用两个 endpoint shard 共享的单一 deadline，超时后 TERM/KILL survivor、写入 `process_timed_out` 和 failure reason，再使 matrix fail closed。
+- 新增 hung-shard 回归测试；原生多 job 测试现为 8/8 通过。该修复只保障实验公平性和可终止性，不改变任何 vendor graph 或项目调度策略。
+
 ## 2026-08-08 文本原生单 Job 同环境正式矩阵通过
 
 - bounded C128、Daft Native、Daft Ray、Ray Data official graph 在同一 2,048-row ShareGPT manifest 上完成 1 warm-up + 3 formal；16/16 cells、12/12 formal、0 failure、exactly-once 和 provenance 门全部通过，四臂吞吐/JCT CV<0.7%。

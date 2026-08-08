@@ -996,7 +996,9 @@ MFU 必须从 estimated-FLOPs delta、GPU 数和 service wall 按冻结口径计
 Ray 和 Ray Data 的两个错峰独立 job；每 job 同时启动两个现有
 `run-shard` 子进程。它不实现框架调度、不注入项目 credit，只报
 job/group barrier JCT、服务计数、vLLM running/waiting/KV/TTFT delta 与
-逐 GPU 利用率/功耗时序；不把这些观测伪装成框架内部调度指标。
+逐 GPU 利用率/功耗时序；不把这些观测伪装成框架内部调度指标。配置中的
+`process_timeout_s` 是两个 shard 共享的单一 wall deadline；超时后先 TERM、再 KILL
+仍存活子进程并保存 `process_timed_out`，避免一个 CLOSE_WAIT shard 无限阻塞矩阵。
 
 配置边界见：
 

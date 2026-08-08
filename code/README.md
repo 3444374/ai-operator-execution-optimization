@@ -551,7 +551,9 @@ latency/estimated-FLOPs delta，供 GPU 利用率、能耗和 MFU 审计。
 `native_multijob.py` 只负责绝对时间启动两个错峰
 原生 job、保存四个 endpoint shard 证据、组级计数、vLLM gauge/latency delta
 与逐 GPU 利用率/功耗时序；禁止项目 credit/router/inflight 参数进入
-Daft/Ray Data 观察臂。项目 static/shared 因果 A/B 仍由
+Daft/Ray Data 观察臂。两个 endpoint shard 共享显式进程 wall deadline，超时会终止
+survivor、保存 job evidence 并 fail closed；HTTP 单 request timeout 不替代该生命周期门。
+项目 static/shared 因果 A/B 仍由
 `src/experiments/shared_vllm/` 执行。
 
 `src/calibration.py` 与 `scripts/analysis/select_strategy_calibration.py` 负责把 feeding、

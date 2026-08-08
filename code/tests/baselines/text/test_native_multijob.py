@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -31,7 +32,9 @@ class _FakeProcess:
 
     def __init__(self, command: list[str], **_kwargs: object) -> None:
         self.command = command
+        self.args = command
         self.pid = _FakeProcess.next_pid
+        self.returncode: int | None = None
         _FakeProcess.next_pid += 1
         output = Path(command[command.index("--output-dir") + 1])
         manifest = Path(command[command.index("--manifest") + 1])
@@ -63,13 +66,32 @@ class _FakeProcess:
             encoding="utf-8",
         )
 
-    def wait(self) -> int:
-        return 0
+    def wait(self, timeout: float | None = None) -> int:
+        del timeout
+        self.returncode = 0
+        return self.returncode
+
+    def poll(self) -> int | None:
+        return self.returncode
+
+    def terminate(self) -> None:
+        self.returncode = -15
+
+    def kill(self) -> None:
+        self.returncode = -9
 
 
 class _FailingProcess(_FakeProcess):
-    def wait(self) -> int:
+    def wait(self, timeout: float | None = None) -> int:
+        del timeout
         return 1 if "shard_0" in self.command[self.command.index("--output-dir") + 1] else 0
+
+
+class _HangingProcess(_FakeProcess):
+    def wait(self, timeout: float | None = None) -> int:
+        if self.returncode is not None:
+            return self.returncode
+        raise subprocess.TimeoutExpired(self.args, timeout)
 
 
 class NativeMultiJobTests(unittest.TestCase):
@@ -108,6 +130,7 @@ class NativeMultiJobTests(unittest.TestCase):
             arms.append({
                 "id": arm_id, "adapter": adapter, "python_executable": sys.executable,
                 "concurrency_per_endpoint": 2, "batch_size": 8, "timeout_s": 10.0,
+                "process_timeout_s": 1.0,
                 "ray_address": ray_address,
                 "jobs": [
                     {"id": "short", "manifest": str(first), "offset_s": 0.0},
@@ -272,6 +295,25 @@ class NativeMultiJobTests(unittest.TestCase):
             failed_jobs = list((root / "out" / "runs").glob("*/jobs/short/job_summary.json"))
             self.assertEqual(len(failed_jobs), 1)
             self.assertTrue(failed_jobs[0].is_file())
+
+    def test_hung_shards_time_out_and_preserve_job_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, "native job shards failed"):
+                run_native_multijob(
+                    self._config(root), runner_script=root / "run_official_baseline.py",
+                    popen_factory=_HangingProcess, queue_waiter=self._queues,
+                    counter_sampler=self._counters,
+                    cell_instrumenter=self._instrumentation,
+                    ray_nofile_probe=self._ray_nofile,
+                )
+            summaries = list(
+                (root / "out" / "runs").glob("*/jobs/short/job_summary.json")
+            )
+            self.assertEqual(len(summaries), 1)
+            summary = json.loads(summaries[0].read_text())
+            self.assertTrue(summary["process_timed_out"])
+            self.assertEqual(summary["failure_reason"], "shard_process_timeout")
 
 
 if __name__ == "__main__":

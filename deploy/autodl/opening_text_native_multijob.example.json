@@ -26,9 +26,10 @@
       "id": "bounded_http",
       "adapter": "bounded_http",
       "python_executable": "${TEXT_BASELINES_PYTHON}",
-      "concurrency_per_endpoint": "${BOUNDED_HTTP_CONCURRENCY_PER_ENDPOINT}",
+      "concurrency_per_endpoint": "${BOUNDED_HTTP_MULTIJOB_CONCURRENCY_PER_JOB_PER_ENDPOINT}",
       "batch_size": 1,
       "timeout_s": 300,
+      "process_timeout_s": 360,
       "ray_address": null,
       "jobs": [
         {"id": "short", "manifest": "${TEXT_NATIVE_SHORT_JOB_MANIFEST}", "offset_s": 0},
@@ -42,6 +43,7 @@
       "concurrency_per_endpoint": 1,
       "batch_size": 1,
       "timeout_s": 300,
+      "process_timeout_s": 360,
       "ray_address": null,
       "jobs": [
         {"id": "short", "manifest": "${TEXT_NATIVE_SHORT_JOB_MANIFEST}", "offset_s": 0},
@@ -55,6 +57,7 @@
       "concurrency_per_endpoint": 1,
       "batch_size": 1,
       "timeout_s": 300,
+      "process_timeout_s": 360,
       "ray_address": "${RAY_ADDRESS}",
       "jobs": [
         {"id": "short", "manifest": "${TEXT_NATIVE_SHORT_JOB_MANIFEST}", "offset_s": 0},
@@ -68,6 +71,7 @@
       "concurrency_per_endpoint": "${RAY_DATA_CONCURRENCY_PER_ENDPOINT}",
       "batch_size": "${RAY_DATA_BATCH_SIZE}",
       "timeout_s": 300,
+      "process_timeout_s": 360,
       "ray_address": "${RAY_ADDRESS}",
       "jobs": [
         {"id": "short", "manifest": "${TEXT_NATIVE_SHORT_JOB_MANIFEST}", "offset_s": 0},
