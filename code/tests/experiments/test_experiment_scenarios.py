@@ -538,6 +538,10 @@ class ExperimentScenarioTests(unittest.TestCase):
         self.assertNotIn("--arrival-replay", config.common_args)
         self.assertNotIn("--arrival-replay-start-epoch-s", config.common_args)
         self.assertEqual(
+            config.common_args[config.common_args.index("--source-order") + 1],
+            "doc_id",
+        )
+        self.assertEqual(
             config.common_args[config.common_args.index("--max-inflight") + 1],
             "128",
         )

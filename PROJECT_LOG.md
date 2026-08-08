@@ -5178,3 +5178,4 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 新增 `deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json`：同一 512-row short manifest、双 endpoint、K128/W65536、8×32 actor、token-budget 6144、fixed-50ms，唯一语义变化是不启用 arrival replay，使全部请求在 profiler 开始时可见；1 warm-up + 3 formal。
 - 该实验只诊断项目离线饱和能力，不属于新增开题 baseline，不替换在线 short/long 因果对照，也不与 Daft eager-manifest 直接排名。达到同签名 bounded 95% feeding 即停止；否则才逐项隔离 source、flush、Ray actor 或 routing。
 - 用户明确本阶段不画图、不做 PPT、不同步 Wiki；继续保存服务器 raw，并在完成审计后同步 Git。
+- 首个 64-row all-at-t0 gate 在发请求前由 manifest guard fail-closed：关闭 replay 后 request manifest 必须使用 `source-order=doc_id`，模板错误沿用了在线 `arrival_time`。失败输出目录完整保留；模板改为 `doc_id`，下一 gate 另建 v2 且从两个 endpoint 各取 32 行。

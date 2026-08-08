@@ -32,7 +32,7 @@
     "--db-fetch-rows", "512",
     "--request-manifest", "${OPENING_SHORT_JOB_MANIFEST}",
     "--source-workload-name", "sharegpt_multiturn",
-    "--source-order", "arrival_time",
+    "--source-order", "doc_id",
     "--data-source", "daft_postgres",
     "--operator", "ai_complete",
     "--model-backend", "compatible_http",
