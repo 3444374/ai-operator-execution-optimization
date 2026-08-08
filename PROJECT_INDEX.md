@@ -202,6 +202,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_project_feeding_calibration.example.json` | 首轮未过 95% feeding 门后的纠正校准模板；同 manifest、统一 256 actor slots 并固定其它变量，仅扫 project K32/64/128/256 | 每个 workload 冻结最小饱和静态点后再整体替换重跑三臂矩阵 |
 | `deploy/autodl/opening_database_e2e_refeed.example.json` | 读取两份通过审计的 workload-specific feeding 校准合同并 fail-closed 的替换正式矩阵模板 | 仅在 SQuAD/ShareGPT 校准均冻结后运行；direct/DuckDB 保持每 endpoint 32 |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
+| `code/tests/analysis/test_summarize_opening_database_e2e.py` | 开题矩阵汇总器的项目 feeding/GPU 与 correctness fail-closed 回归测试 | 修改正式审计退出条件时运行；产品 baseline feeding 不得误作项目门禁 |
 | `code/scripts/analysis/summarize_opening_project_feeding_calibration.py` | 审计开题项目 feeder 的 bounded-direct/K32-K256 三重复并选择最小饱和 K | 每个 workload 校准完成后生成冻结选择合同；门禁失败时不得人工选点 |
 | `code/tests/analysis/test_summarize_opening_project_feeding_calibration.py` | feeding 校准选择器的最小饱和点与 manifest fail-closed 回归测试 | 修改校准门槛、输入合同或选择规则时运行 |
 | `experiments/results/opening_database_e2e_text_20260807/README.md` | 两组 workload × 三静态臂的统一 database-E2E 正式报告 | 引用开题三臂表、feeding 负结果或 DuckDB cap 语义边界前读 |

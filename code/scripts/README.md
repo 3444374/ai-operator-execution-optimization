@@ -117,6 +117,8 @@ ownership copy 和同步 wall。它不含数据库/Daft/Ray queue，不能作为
 矩阵。它要求 SQuAD 均匀控制组与 ShareGPT controlled-skew 各具备三条静态路径、
 每条路径 1 次 warmup + 3 次 formal；任一单元状态、source/sink exactly-once、
 workload identity 或 GPU feeding 门禁不一致都会写入 `audit.json` 并返回失败。
+退出门禁只把 `project_frozen_static` 的 ≥95% direct service feeding 和 GPU mean ≥80%
+作为项目有效性要求；产品 baseline 的 feeding 只报告、不反向调参，也不替项目门禁。
 输出同时保留 raw rows/s、correct rows/s、service tokens/s 与 cap-semantic failure，
 避免把产品语义不兼容误写成纯性能差异。该脚本不启动实验、不补跑缺失单元，也不
 改变 runner 冻结合同。

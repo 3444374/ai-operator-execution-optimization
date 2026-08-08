@@ -368,6 +368,14 @@ def _audit(rows: list[dict[str, Any]], summaries: list[dict[str, Any]]) -> dict[
                 "feeding_service_tokens_gate_ge_0_95": feeding_ratio >= 0.95,
             }
         )
+    project_gates = [
+        gate for gate in summary_gates if gate["arm"] == "project_frozen_static"
+    ]
+    manifest_identity_ok = (
+        set(manifests) == set(EXPECTED_WORKLOADS)
+        and all(len(values) == 1 and "" not in values for values in manifests.values())
+        and len(identities) == 1
+    )
     return {
         "schema_version": 1,
         "cell_count": len(rows),
@@ -381,6 +389,7 @@ def _audit(rows: list[dict[str, Any]], summaries: list[dict[str, Any]]) -> dict[
         "cap_semantic_failure_count": sum(int(row["cap_semantic_failure_count"]) for row in rows),
         "manifest_sha256_by_workload": {key: sorted(value) for key, value in manifests.items()},
         "identity_pairs": [list(pair) for pair in sorted(identities)],
+        "manifest_and_identity_consistent": manifest_identity_ok,
         "mfu_recovery_note": (
             "project_frozen_static recorded missing_gpu_peak_tflops; the audit recovers MFU from the "
             "profiler counter using estimated_flops_per_gpu_delta/(operator_wall_s*165e12). "
@@ -391,11 +400,40 @@ def _audit(rows: list[dict[str, Any]], summaries: list[dict[str, Any]]) -> dict[
             "direct_static_sharded formal mean. Values below 0.95 fail the pre-registered "
             "feeding-saturation gate and cannot support a strategy-performance claim."
         ),
-        "all_feeding_service_token_gates_passed": all(
+        "all_arm_feeding_service_token_observations_ge_0_95": all(
             gate["feeding_service_tokens_gate_ge_0_95"] for gate in summary_gates
+        ),
+        "all_project_feeding_service_token_gates_passed": (
+            len(project_gates) == len(EXPECTED_WORKLOADS)
+            and all(gate["feeding_service_tokens_gate_ge_0_95"] for gate in project_gates)
+        ),
+        "all_project_gpu_utilization_gates_passed": (
+            len(project_gates) == len(EXPECTED_WORKLOADS)
+            and all(gate["feeding_gpu_util_gate_ge_80"] for gate in project_gates)
         ),
         "summary_gates": summary_gates,
     }
+
+
+def _audit_passed(audit: dict[str, Any]) -> bool:
+    """Fail closed on the formal correctness and project-feeding contract.
+
+    Product baseline feeding is reported but deliberately not repaired or used
+    to fail the project gate. Cap-semantic failures remain explicit quality
+    outcomes; infrastructure failures are fatal.
+    """
+    return all(
+        (
+            audit.get("expected_counts_ok") is True,
+            audit.get("all_status_passed") is True,
+            audit.get("all_exactly_once") is True,
+            audit.get("all_sink_readback_matched") is True,
+            int(audit.get("infrastructure_failure_count", -1)) == 0,
+            audit.get("manifest_and_identity_consistent") is True,
+            audit.get("all_project_feeding_service_token_gates_passed") is True,
+            audit.get("all_project_gpu_utilization_gates_passed") is True,
+        )
+    )
 
 
 def _headline_summary(summaries: list[dict[str, Any]], audit: dict[str, Any]) -> dict[str, Any]:
@@ -460,7 +498,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     audit = summarize(args.matrix_root.resolve(), args.output.resolve())
     print(json.dumps(audit, indent=2, ensure_ascii=False))
-    return 0 if audit["expected_counts_ok"] and audit["all_status_passed"] else 1
+    return 0 if _audit_passed(audit) else 1
 
 
 if __name__ == "__main__":
