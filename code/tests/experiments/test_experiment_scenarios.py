@@ -303,6 +303,7 @@ class ExperimentScenarioTests(unittest.TestCase):
                     "lmcache_agent",
                 },
             )
+
             self.assertEqual(len(contexts), 20)
             self.assertTrue(
                 all(
@@ -485,6 +486,68 @@ class ExperimentScenarioTests(unittest.TestCase):
                     "long_k256_w98304",
                 ],
             )
+
+    def test_project_short_all_at_t0_diagnostic_is_eager_input_only(self) -> None:
+        with TemporaryDirectory() as temporary_dir:
+            selection_path = Path(temporary_dir) / "selection.json"
+            selection_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "status": "ready",
+                        "selection": {
+                            "project_static_k_per_endpoint": 128,
+                            "project_active_work_per_endpoint": 65536,
+                            "project_actor_workers_per_endpoint": 8,
+                            "project_ray_actor_max_concurrency": 32,
+                            "project_ray_worker_num_cpus": 0.25,
+                        },
+                        "evidence": {
+                            "feeding": {"status": "passed"},
+                            "token_budget": {"status": "passed"},
+                            "actor_pool": {"status": "passed"},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            env = {
+                "DATABASE_URL": "postgresql://example",
+                "RAY_ADDRESS": "127.0.0.1:6380",
+                "VLLM_VERSION": "0.25.1",
+                "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
+                "VLLM_MAX_NUM_SEQS": "256",
+                "COMPLETION_MODEL": "qwen2.5-7b",
+                "MODEL_PATH": "/models/qwen2.5-7b",
+                "OPENING_SHORT_JOB_MANIFEST": "/tmp/short.jsonl",
+                "SHAREGPT_PROJECT_K": "128",
+                "SHAREGPT_PROJECT_CALIBRATION_CONTRACT": str(selection_path),
+            }
+            with patch.dict(os.environ, env, clear=True):
+                config = _load_config(
+                    CODE_ROOT.parent
+                    / "deploy"
+                    / "autodl"
+                    / "opening_project_short_all_at_t0_diagnostic.example.json"
+                )
+
+        self.assertEqual(
+            [item.scenario_id for item in config.scenarios],
+            ["project_short_all_at_t0_static"],
+        )
+        self.assertNotIn("--arrival-replay", config.common_args)
+        self.assertNotIn("--arrival-replay-start-epoch-s", config.common_args)
+        self.assertEqual(
+            config.common_args[config.common_args.index("--max-inflight") + 1],
+            "128",
+        )
+        self.assertEqual(
+            config.common_args[
+                config.common_args.index("--max-active-work-per-endpoint") + 1
+            ],
+            "65536",
+        )
+        self.assertFalse(dict(config.service_metadata)["enforce_eager"])
 
     def test_wait_for_idle_reports_metrics_fetch_failure(self) -> None:
         health_response = MagicMock()

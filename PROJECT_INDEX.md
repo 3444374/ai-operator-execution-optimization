@@ -210,6 +210,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_multijob_minimal.example.json` | 两作业 short/long immutable manifest 的 staggered static partition vs shared work-credit 最小矩阵 | offset 由环境显式冻结；15s 作 arrival observation、5s 作 guaranteed-overlap 干扰，所有系统必须同值 |
 | `deploy/autodl/opening_short_job_controls.example.json` | 同一 512-row short manifest 的项目 full-pool 与 reserved-half-pool 单 Job 1+3 匹配控制 | 分离正常单 Job、静态配额减半和 long 服务竞争，不启动 synthetic competing job |
 | `deploy/autodl/opening_short_job_native_controls.example.json` | Daft Native/Ray、Ray Data 同一 short manifest 的 1+3 原生匹配控制 | 补 short-only JCT/MFU/GPU/vLLM 状态；短 cell 仅作表征，不作稳态容量排名 |
+| `deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json` | 同一 512-row short manifest 的项目 all-at-t0 静态 1+3 诊断；复用 K128/W65536、8×32 actor 和 token-budget 6144，但关闭逐请求 arrival replay | 判断项目能否在完整输入可见时喂满服务；不属于开题 baseline，不替换在线多 Job 结论，成功即停止且不扫 K256/K512 |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥、等行数的 short/long job manifest，并输出 token 分布与 SHA 审计 | 运行开题两作业实验前生成 512+512 行异质工作证据 |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
 | `code/tests/analysis/test_summarize_opening_database_e2e.py` | 开题矩阵汇总器的项目 feeding/GPU 与 correctness fail-closed 回归测试 | 修改正式审计退出条件时运行；产品 baseline feeding 不得误作项目门禁 |

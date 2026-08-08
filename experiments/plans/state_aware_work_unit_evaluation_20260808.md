@@ -191,6 +191,11 @@ Daft Ray、Ray Data 和 project frozen-static。workload 先扩到每个 formal 
 各框架拥有自身 scheduling；correctness、feeding-saturation 和稳定性门通过后才允许
 容量排名。该轨只回答平台容量，不与轨道 A 的在线 JCT 混表。
 
+在扩展成全框架容量轨前，先用
+`deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json` 只运行项目
+512-row 1+3。它是最小诊断：若项目相对现有同签名 bounded all-at-t0 control 达到
+95% feeding，立即停止且不改代码；若失败，才补 matched bounded 或逐项隔离项目阶段。
+
 现有 `Short@0s → Long@5s` 继续回答“活跃 Job 集变化是否产生效率—隔离—公平权衡”，
 不承担单系统最优容量排名。full/half project single-short 的 JCT 近似相等已排除当前
 K128/W65536 静态额度是 71 s 的主因，因此在轨道 A 证实项目侧额外 lag 前，不扫

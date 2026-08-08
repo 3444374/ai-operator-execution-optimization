@@ -73,6 +73,14 @@ controlled-skew 的冻结合同；复制到仓库外 artifact/config 目录后�
 `export-postgres-manifest --partition-policy equal_rows --partition-seed 20260807`
 生成两份 immutable manifest。不要在模板中写入真实连接串或服务器地址。
 
+`opening_project_short_all_at_t0_diagnostic.example.json` 是独立的项目性能诊断，
+不属于开题 baseline。它复用冻结 short manifest、K128/W65536、8×32 actor shape、
+token-budget 6144 和双 endpoint 服务签名，但不启用 request-level arrival replay，因而
+512 条请求在 profiler 开始时全部可见。该 1+3 只回答“项目在 all-at-t0 输入下能否接近
+同协议 bounded 容量”；不能替换在线 short/long 因果实验，也不能与 Daft eager-manifest
+绝对 JCT 直接排名。若达到同签名 bounded 的 95% feeding 即停止；失败后才逐项隔离
+source、flush、Ray actor 或 routing，不先扫描 K256/K512。
+
 若该矩阵的项目臂未达到同协议 bounded direct 的 95% feeding 门，只能保留为
 failed-feeding 诊断。使用 `opening_project_feeding_calibration.example.json` 在每个
 workload 的同一 immutable manifest 上固定服务、token budget、active work 与 8×32=256

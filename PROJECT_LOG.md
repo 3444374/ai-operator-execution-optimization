@@ -5170,3 +5170,11 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   两者不构成“项目慢 6.4×”的系统排名。
 - 同步结果报告、Claim Matrix、答辩问答/大纲、图合同、总纲和索引；后续 H 图只画各轨
   within-track normalized delta。未改代码、数据、图片、PPT、飞书或 Wiki。
+
+## 2026-08-09 Project short all-at-t0 最小诊断合同
+
+- 用户要求从第一性原理判断能否调整 short Job 使其喂满 GPU，并询问是否只重测项目即可。
+- 逐请求证据已确认项目 single-short 71.24 s 中 66.875 s 是冻结 arrival span；因此先改变输入可见性，而不是扫描 K256/K512 或直接改调度器。
+- 新增 `deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json`：同一 512-row short manifest、双 endpoint、K128/W65536、8×32 actor、token-budget 6144、fixed-50ms，唯一语义变化是不启用 arrival replay，使全部请求在 profiler 开始时可见；1 warm-up + 3 formal。
+- 该实验只诊断项目离线饱和能力，不属于新增开题 baseline，不替换在线 short/long 因果对照，也不与 Daft eager-manifest 直接排名。达到同签名 bounded 95% feeding 即停止；否则才逐项隔离 source、flush、Ray actor 或 routing。
+- 用户明确本阶段不画图、不做 PPT、不同步 Wiki；继续保存服务器 raw，并在完成审计后同步 Git。
