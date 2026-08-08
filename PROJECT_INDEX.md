@@ -199,6 +199,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `experiments/plans/opening_database_e2e_p0_20260807.md` | 开题前仅允许的 SQuAD/ShareGPT 三臂统一 database-E2E 合同 | 运行开题证据闭环实验前读 |
 | `code/scripts/baselines/opening_database_e2e_matrix.py` | 双 endpoint、三静态臂、统一 source/sink/质量/资源的 1 warmup + 3 formal runner | 只用于上述冻结开题合同 |
 | `deploy/autodl/opening_database_e2e_p0.example.json` | AutoDL 开题三臂 runner 配置模板 | 复制到服务器 artifact root 后以 runtime env 展开 |
+| `deploy/autodl/opening_project_feeding_calibration.example.json` | 首轮未过 95% feeding 门后的纠正校准模板；同 manifest 固定其它变量，仅扫 project K32/64/128 | 每个 workload 冻结最小饱和静态点后再整体替换重跑三臂矩阵 |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
 | `experiments/results/opening_database_e2e_text_20260807/README.md` | 两组 workload × 三静态臂的统一 database-E2E 正式报告 | 引用开题三臂表、feeding 负结果或 DuckDB cap 语义边界前读 |
 | `figures/scripts/generate_opening_core_evidence_figures.py` | 从冻结正式结果生成开题四张核心证据图 | 更新开题报告或答辩 PPT 前运行 |

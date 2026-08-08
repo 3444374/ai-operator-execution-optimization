@@ -5,6 +5,7 @@
 - 背景：首轮统一 database-E2E 中项目臂的同协议 feeding ratio 未达到 95% 门禁，按冻结规则降级为 failed-feeding 诊断，需要在相同运行签名下先校准项目静态 feeder。
 - 修复：`multicard_scale_ramp.py` 的项目臂现在显式透传当前 scale 的 immutable request manifest，并启用 database-E2E timing boundary；此前 direct/DuckDB 使用该 manifest，而项目臂退回数据库顺序，不能作为同分片校准证据。
 - 验证：新增回归测试锁定项目臂的 manifest 路径和计时边界。校准仍只单变量扫描 K/active-work，正式矩阵在选择最小饱和点后冻结参数。
+- 新增可复现纠正校准模板：每个 workload 同 manifest 固定服务、token budget、active work 与 8×16 actor slots，三次重复扫描 project K32/64/128；按 97% 项目已测峰值与 95% direct feeding 双门选择最小点。首轮结果状态改为 failed-feeding 诊断，待整体替换重跑，不扩大开题 baseline。
 
 ## 2026-08-08 v6 通过 Microsoft PowerPoint 真实打开检查
 

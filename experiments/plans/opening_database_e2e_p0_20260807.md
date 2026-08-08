@@ -2,7 +2,7 @@
 
 冻结日期：2026-08-07
 
-状态：**已完成并冻结**。2026-08-07 在 AutoDL 双 RTX 4090 上完成 24/24 单元（2 workload × 3 arm × 1 warmup + 3 formal），18 个 formal 全部 exactly-once、sink digest 匹配，基础设施失败为 0。项目臂在 SQuAD/ShareGPT 的 service feeding 为 89.93%/91.38%，均未过 95% 门；DuckDB AI ShareGPT 有 4,936/6,144 行 cap 语义失败。权威报告见 `experiments/results/opening_database_e2e_text_20260807/README.md`。按预注册停止规则，开题前不再新增 baseline。
+状态：**首轮完成但未冻结，正在执行 feeding corrective rerun**。2026-08-07 在 AutoDL 双 RTX 4090 上完成 24/24 单元（2 workload × 3 arm × 1 warmup + 3 formal），18 个 formal 全部 exactly-once、sink digest 匹配，基础设施失败为 0；但项目臂在 SQuAD/ShareGPT 的 service feeding 为 89.93%/91.38%，均未过 95% 门。因此首轮只保留为 failed-feeding 诊断，不能作为项目调度性能排名。DuckDB AI ShareGPT 的 4,936/6,144 行 cap 语义失败仍是有效语义边界。权威首轮报告见 `experiments/results/opening_database_e2e_text_20260807/README.md`。纠正流程不是新增 baseline：先在完全相同签名下校准项目 feeder 的最小饱和静态点，冻结后原三臂、两 workload、1 warmup + 3 formal 整体替换重跑；完成后仍立即停止开题 baseline。
 
 ## 1. 准入问题
 
@@ -21,8 +21,8 @@
 | source | 同一 PostgreSQL `documents` 表、同一 `workload_name`、`ORDER BY doc_id`；每个 measured cell 都在 E2E 计时内重新扫描并校验 frozen manifest |
 | sink | 同一 PostgreSQL `document_completions`；每个 cell 写入前按本次 doc-id 集合清除旧行，写后执行 count + `(doc_id, completion_text)` digest readback；清理不计入 E2E |
 | request set | 两 endpoint 的 immutable JSONL manifest；`equal_rows`，seed=20260807；manifest SHA、sidecar、row count、每 endpoint work 逐 run 记录；三臂必须相同 |
-| 并发 | direct 与 DuckDB AI 每 endpoint 32；project 每 endpoint K=32，8 actors × concurrency 4 |
-| project static | token budget=6144，active work=65,536/endpoint，request-level，manifest-pinned routing，httpx async，固定 50 ms flush 标签沿用冻结静态合同 |
+| 并发 | direct 与 DuckDB AI 每 endpoint 32；project 首轮 K=32、8 actors × concurrency 4 未过 feeding 门。纠正重跑只采用校准后冻结的最小饱和 K/actor slots；不得在 formal 在线调参 |
+| project static | token budget=6144，首轮 active work=65,536/endpoint，request-level，manifest-pinned routing，httpx async，固定 50 ms flush 标签沿用冻结静态合同；纠正校准先固定除 K 外全部变量，若 K32/64/128 均不满足才固定最佳 K 后单独扫描 active work |
 | 重复 | 每 workload 每 arm 1 warmup + 3 formal；按确定性随机顺序交错执行；warmup 不进 headline |
 | headline | `correct_rows / database_e2e_s`；同时报告 raw rows/s、database-E2E、service tokens/s、request latency、TTFT、failure、truncation、GPU、MFU、能耗和 sink 门禁 |
 
@@ -77,3 +77,14 @@ timer 之外只允许：runner preflight、endpoint idle、旧 sink 行清理、
 - `raw/` 保存在服务器 artifact root；Git 仅提交去敏、必要、体积受控的正式汇总和重建图表所需证据。
 - 报告按项目八段结构：目的、设置、合规自检、设计、全组件数据、解释、课题含义、下一步。
 - 两组完成后立即停止开题 baseline。小于 5% 的差异是有效结果，不触发第二数据库、更多文本引擎、更多 workload、模型替换或 scale × concurrency 扫描。
+
+## 8. Feeding corrective rerun（2026-08-08）
+
+首轮同时通过正确性与资源门禁，但项目臂未达到同协议 direct 的 95% service-token feeding 门，因此按下列预注册顺序纠正，不删除或覆盖首轮证据：
+
+1. 重启后重新执行 runtime preflight，核对相同 2×4090、Qwen2.5-7B、Chat、prefix-cache ON、8192/256 service capacity、PostgreSQL source/sink 和 immutable manifest。
+2. 使用 `deploy/autodl/opening_project_feeding_calibration.example.json`，对每个 workload 分别固定 token budget=6144、active work=65,536/endpoint、8 actor 与每 actor concurrency=16，只扫描 per-endpoint K `{32,64,128}`；bounded direct 固定每 endpoint 32，所有 cell 使用同一 manifest 并在测量前同协议 cache conditioning。
+3. 每档三个成功重复。候选必须满足 exactly-once、0 failure、双 endpoint、最终空队列；以 repeat 中位数选择同时达到该 workload 已测项目峰值 97% 且达到同 run direct service tokens/s 95% 的最小 K。单次峰值不能晋级。
+4. 若 K 三档均不满足 feeding，固定最佳已测 K，再单独扫描 active work；禁止同时改变 K、active work、token budget 或 actor 数。
+5. 两个 workload 的校准签名分别冻结；正式 runner 可按 workload 使用各自选择，但每个 workload 的三臂 formal 期间参数不变。
+6. 冻结后以新 experiment ID 和新输出目录完整替换重跑两 workload × 三臂 × 1 warmup + 3 formal。新矩阵通过 correctness、feeding、stability 后才更新报告/PPT/飞书；首轮继续标为 failed-feeding diagnostic。

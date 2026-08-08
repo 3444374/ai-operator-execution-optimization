@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "experiment_id": "opening_project_feeding_calibration_${OPENING_CALIBRATION_LABEL}",
+  "_note": "Corrective calibration for the opening database-E2E project arm. Keep the manifest/model/protocol/service/token-budget/active-work/actor topology fixed and scan only per-endpoint K. Run one workload at a time; use three repeats for the frozen selection. This is not an additional opening baseline.",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "completion_protocol": "chat_completions",
+  "model": "${COMPLETION_MODEL}",
+  "tokenizer": "${MODEL_PATH}",
+  "service_prefix_caching": "enabled",
+  "service_max_num_seqs": 256,
+  "service_max_num_batched_tokens": 8192,
+  "scales": [
+    {
+      "rows": "${OPENING_CALIBRATION_ROWS}",
+      "manifest": "${OPENING_CALIBRATION_MANIFEST}"
+    }
+  ],
+  "arms": [
+    {"arm": "bounded_http", "concurrency": 32, "reps": "${OPENING_CALIBRATION_REPS}"},
+    {"arm": "project_static", "concurrency": 32, "reps": "${OPENING_CALIBRATION_REPS}"},
+    {"arm": "project_static", "concurrency": 64, "reps": "${OPENING_CALIBRATION_REPS}"},
+    {"arm": "project_static", "concurrency": 128, "reps": "${OPENING_CALIBRATION_REPS}"}
+  ],
+  "output_root": "${OPENING_CALIBRATION_OUTPUT_ROOT}",
+  "database_url": "${DATABASE_URL}",
+  "workload_name": "${OPENING_CALIBRATION_WORKLOAD_NAME}",
+  "max_tokens": "${OPENING_CALIBRATION_MAX_TOKENS}",
+  "project_token_budget": 6144,
+  "project_active_work": "${OPENING_CALIBRATION_ACTIVE_WORK}",
+  "project_actor_workers": 8,
+  "project_ray_concurrency": 16,
+  "warmup_per_cell": true,
+  "warmup_concurrency": 32,
+  "idle_timeout_s": 120.0,
+  "vllm_config_strict": true
+}

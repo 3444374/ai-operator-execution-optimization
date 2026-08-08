@@ -73,6 +73,14 @@ controlled-skew 的冻结合同；复制到仓库外 artifact/config 目录后�
 `export-postgres-manifest --partition-policy equal_rows --partition-seed 20260807`
 生成两份 immutable manifest。不要在模板中写入真实连接串或服务器地址。
 
+若该矩阵的项目臂未达到同协议 bounded direct 的 95% feeding 门，只能保留为
+failed-feeding 诊断。使用 `opening_project_feeding_calibration.example.json` 在每个
+workload 的同一 immutable manifest 上固定服务、token budget、active work 与 actor
+拓扑，单变量扫描 per-endpoint K 32/64/128；三次重复按 97% 已测项目峰值与 95%
+direct feeding 双门选择最小点。若三档均失败，才固定最佳 K 后单独扫描 active work。
+冻结选择后必须用新 experiment ID/输出目录整体替换重跑原三臂矩阵；这属于纠正无效
+formal，不是新增开题 baseline。
+
 ### 全新实例从零准备
 
 以下步骤只做一次；纯下载/安装优先在无卡模式完成：
