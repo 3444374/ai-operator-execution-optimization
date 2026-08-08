@@ -5129,3 +5129,14 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   不重画，G 无结果且不画，database-E2E 只保留附录表。
 - 同步 `figures/README.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`、开题报告、
   第一性原理复审、答辩内容大纲和方向速览；未修改 PPT、飞书或 Wiki。
+
+## 2026-08-09 多 Job 请求到达合同澄清
+
+- 回读项目 single-short 配置、原生 adapter 和统一结果，确认 5 s 只对齐 Job 级启动：
+  项目按 `arrival_time_scale=0.001` 逐请求 replay，Daft Native/Ray 与 Ray Data 在 Job
+  启动后让完整 manifest 进入 vendor-owned graph。
+- 项目 single short 的 71.24 s、2,218 tok/s、running 26.1、KV 3.0%、MFU 6.63% 描述
+  arrival-limited 在线回放；Daft Native 11.06 s/14,727 tok/s 描述 eager-manifest 执行。
+  两者不构成“项目慢 6.4×”的系统排名。
+- 同步结果报告、Claim Matrix、答辩问答/大纲、图合同、总纲和索引；后续 H 图只画各轨
+  within-track normalized delta。未改代码、数据、图片、PPT、飞书或 Wiki。

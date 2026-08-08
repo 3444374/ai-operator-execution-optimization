@@ -182,7 +182,9 @@ D、E 可保持；A、C 的视觉布局可读但存在上述语义标签修订�
   只画各系统内 `single short → short+long`
   的 short JCT 变化和误差，并直接标注实际 overlap。项目 full/half-pool
   匹配控制标为 `causal`，Daft Native/Ray/Ray Data 标为
-  `observational:overlap_present`；不作系统间绝对 JCT 排名。
+  `observational:overlap_present`；不作系统间绝对 JCT 排名。5 s 仅对齐 Job 启动：项目
+  逐请求 arrival replay，原生 graph 在 Job 启动后获得完整 manifest，因此 panel a 必须
+  使用 within-track normalized delta，禁止画 71.24 s vs 11.06 s 的横向柱图。
 - panel b 是“效率—隔离—公平权衡”：用四个对齐 small multiples 比较
   project static/shared 的 aggregate tok/s、long JCT、short JCT 和 Jain fairness；
   禁止双 y 轴和雷达图。

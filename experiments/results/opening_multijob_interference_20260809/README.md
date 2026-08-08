@@ -29,7 +29,9 @@ arrival observation；本报告以所有系统共同使用的 5 s guaranteed-ove
   half pool。后者让 short 获得 K64/W32,768，却不启动 synthetic competing Job。
 - 原生路径：Daft `functions.prompt` Native、Daft `functions.prompt` Ray runner、Ray Data
   HTTP official graph。每个 Job 独立启动两个官方 endpoint shard；不注入项目 credit、
-  router、actor pool 或调度器。
+  router、actor pool 或调度器。5 s 只对齐 **Job 启动时刻**；原生 graph 在 Job 启动后
+  获得完整 manifest，不重放每行 `arrival_time`，而项目按 `arrival_time_scale=0.001`
+  逐请求 replay。因此两轨的绝对 JCT/吞吐不具备系统排名合同。
 - 边界：`writeback-mode=none`。该实验测 serving-side multi-job interference，不承担
   database-E2E sink 排名；项目 request trace 可报告 short P99/work rate，原生 adapter
   未采集 request P95/P99，不能由 Job barrier JCT 伪造。
@@ -95,6 +97,20 @@ running/waiting、KV、MFU 和 tail 状态。
 原生对比标记为 `observational:overlap_present`：它描述两个独立官方应用竞争同一 vLLM
 服务后的外部现象，不把框架内部算法或项目未控制的提交语义作因果归因。
 
+### 4.4 为什么项目 single short 是 71.24 s，而 Daft Native 是 11.06 s
+
+这两个绝对值不能解释为“项目比 Daft 慢 6.4 倍”。项目保留逐请求 arrival replay；
+Daft Native/Daft Ray/Ray Data 只执行 Job 级错峰，Job 启动后完整 manifest 已对原生 graph
+可见。项目 single-short 的 service tok/s=2,218、running mean=26.1、waiting=0、KV≈3.0%、
+MFU=6.63%；Daft Native 分别为 14,727、250.1、0、24.5%、44.04%。项目在 pre-long
+前 5 s 也只有约 6.3 running、完成 6 条请求，说明该 71.24 s 主要处于 arrival-limited
+在线回放，而不是最大吞吐测试。
+
+项目 full/half pool 的 JCT 为 71.2416/71.2397 s，进一步排除 K/W 减半是该绝对值的
+主要来源。Ray actor、token-budget 和 flush 的独立成本仍未由同 replay bounded control
+分解，不能从现有矩阵继续归因。该合同不影响各轨内部 `single → two-job` 的干扰变化，
+但禁止把项目与原生轨的绝对 JCT、tok/s、running 或 MFU 横向排名。
+
 ## 5. 结果解释与开题对应
 
 ### 事实
@@ -106,6 +122,8 @@ running/waiting、KV、MFU 和 tail 状态。
    fairness 变差，存在可重复的效率—隔离权衡。
 4. 现有原生路径在相同任务下落入 overqueue 或 underfeed 等不同状态形态，且 short
    都受到后到 long 的影响。
+5. 项目与原生轨只对齐 Job 级 5 s offset，没有对齐逐请求 arrival replay；71.24 s 与
+   11.06 s 不构成系统绝对性能比较。
 
 ### 对设计的支撑
 
@@ -122,6 +140,8 @@ running/waiting、KV、MFU 和 tail 状态。
 
 - 不能说 shared/dynamic 全面优于 static；short isolation 和公平指标明确回退。
 - 不能从原生 JCT 变化归因 Daft/Ray Data 内部调度算法，也不能称项目已优于三个框架。
+- 不能把项目 arrival-replay 的 71.24 s 与原生 eager-manifest 的 11.06/14.74/128.91 s
+  做绝对 JCT 或吞吐排名。
 - 不能把原生 short cell 当作 ≥60 s 稳态容量排名，不能伪造原生 request P99。
 - 不能外推到 4+ Job、weighted/SLO、图像、音频、视频或故障恢复。
 - 不能外推为 `Long→Short` 的新到前台 SLO 结论；本轮只运行了 `Short→Long`。
@@ -129,8 +149,8 @@ running/waiting、KV、MFU 和 tail 状态。
 
 ## 6. 待画图清单（本轮不画）
 
-1. **前台干扰主图**：每个系统一组 `single short` 与 `short+long` 的 short JCT 点/误差线，
-   同时标注实际 overlap；只画 within-system normalized delta，不混排原生 request P99。
+1. **前台干扰主图**：每个系统一组 `single short` 与 `short+long` 的 normalized short-JCT
+   delta/误差线，同时标注实际 overlap；不画跨轨绝对 JCT 柱，也不混排原生 request P99。
 2. **项目因果分解图**：full single、half single、static+long、shared+long 四点，分别显示
    short JCT、P99 和 work rate；突出“quota-only≈0，long competition>0”。
 3. **效率—隔离权衡图**：static/shared 的 aggregate tok/s、long JCT、short JCT、Jain

@@ -56,7 +56,11 @@
 
 ### 各系统都用 5 s offset，干扰强度能直接比吗？
 
-> 不能直接做系统间的“抗干扰排名”。5 s 是相同外部到达轨迹，优点是能保证所有路径发生重叠；但各系统的 single-short JCT 不同，long 到达时处于 short 生命周期的不同比例。因此只报各系统内的 single→overlap 变化，不混排绝对 JCT。若论文阶段需要比较干扰敏感度，再增加按各自 standalone JCT 比例对齐的机制实验。
+> 不能直接做系统间的“抗干扰排名”。5 s 只对齐 Job 级 `Short@0→Long@5` 启动轨迹：项目在每个 Job 内按 `arrival_time_scale=0.001` 逐请求 replay，原生 Daft/Ray Data graph 则在 Job 启动后获得完整 manifest，没有相同的逐请求到达轨迹；各系统的 standalone JCT 和 long 到达时所处生命周期比例也不同。因此只报各轨内部的 single→overlap 变化，不混排绝对 JCT。若论文阶段需要比较干扰敏感度，必须再统一 request-arrival 合同，并按 standalone 生命周期比例做机制实验。
+
+### 为什么项目 single short 要 71.24 s，而 Daft Native 只要 11.06 s？
+
+> 首先不能把它读成“项目慢 6.4 倍”。项目 short control 是在线 arrival replay，512 条请求按压缩后的原始到达间隔逐步释放；Daft Native 是官方 graph 的 eager-manifest 执行，Job 启动时完整输入已可用。项目 single short 的 running mean=26.1、waiting=0、KV≈3.0%、MFU=6.63%、service tok/s=2,218；Daft Native 为 250.1、0、24.5%、44.04%、14,727。项目 full/half pool 的 JCT 又几乎相同（71.2416/71.2397 s），说明 K/W 不是主要原因。这个矩阵能比较各轨内部“后到 long 的增量干扰”，不能比较项目与原生轨的绝对最大吞吐；Ray/flush/token-budget 各自贡献仍需同 arrival replay 的 bounded control 才能分解。
 
 ### 一个 short 加一个 long 足以说明多 Job 管理的必要性吗？为什么不直接做四个 Job？
 
@@ -179,6 +183,7 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 | 接口实现被误写成端到端方法 | 高 | descriptor/snapshot/controller/cost 的生产接入与正式 A/B 尚未齐全 | 方法页分列“当前实现”和“论文待验证” |
 | Daft Ray 被误当成项目方法 | 高 | Daft Native/Ray 都是 vendor-owned graph；项目 static/shared 另行标记 | 每张表保留 scheduler owner/provenance |
 | 5 s offset 被误用作框架间抗干扰排名 | 高 | 只比各系统内 single→overlap；不比框架间绝对 JCT | 图中标 observational/causal 和 actual overlap |
+| 项目 71.24 s 被误读为比 Daft Native 慢 6.4× | 高 | 项目逐请求 replay，原生只对齐 Job 启动且完整 manifest eager 可用；绝对值不 rankable | 正文、图注和问答显式标 request-arrival contract mismatch |
 | 两 Job 被外推为多租户完整结论 | 高 | 只闭合最小干扰与权衡因果；早期 4-job 为同步等量诊断且有逐次回退，weighted/SLO 待论文验证 | 主文与图注显式写外推边界 |
 | 数据组织 feeding 门有边界 | 中 | 只声称 regime dependency，不声称全局排名 | 图注保留 KV/feeding 条件 |
 | 图像 GPU 未饱和 | 中 | 证明 matched-resource 执行结构收益，不证明 GPU-serving 优化 | 报 GPU busy 6–10% |
@@ -195,6 +200,7 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 - 不把 Daft Ray 当成项目调度方法。
 - 不说“65K 是 vLLM 最优并发或容量上限”。
 - 不把 5 s offset 下各框架的绝对 JCT 做抗干扰排名。
+- 不把项目 arrival-replay 71.24 s 与 Daft Native eager-manifest 11.06 s 写成系统性能倍数。
 - 不用原 15 s Daft Native 无 overlap 数据证明运行中干扰。
 - 不把两 Job 文本结果外推到 4+ Job、weighted/SLO 或图像动态。
 - 不说“sequential 是普遍最优 organizer”。

@@ -142,7 +142,7 @@ ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 cor
 
 同一 ShareGPT Chat manifest 的原生单 job 1+3 已完成：bounded C128、Daft Native、Daft Ray、Ray Data 的 service tok/s 为 17,800/17,286/16,747/3,551，四臂 CV<0.6%。Daft 两臂 waiting mean 为 783/742、KV max≈1，呈现过量提前提交；Ray Data running mean=17.3、MFU=0.112，呈现供给不足；bounded C128 位于最小饱和区。该结果只证明官方 graph/冻结点的外部压力形态，不证明项目方法胜出或某个框架内部算法有缺陷。
 
-5s guaranteed-overlap 对照已完成：Daft Native/Ray、Ray Data 的 short JCT 相对各自 single 增加 82.42%/104.84%/32.76%，只作外部观察；项目 quota-only≈0，static/shared 加入 long 后 short JCT 增加 3.79%/8.95%。shared 相对 static 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、Jain fairness 下降。该结果冻结为效率—隔离—公平权衡证据，不称动态全面胜出；开题前不再扫 offset/weight/更多 Job 追正。
+5s guaranteed-overlap 对照已完成：Daft Native/Ray、Ray Data 的 short JCT 相对各自 single 增加 82.42%/104.84%/32.76%，只作外部观察；项目 quota-only≈0，static/shared 加入 long 后 short JCT 增加 3.79%/8.95%。shared 相对 static 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、Jain fairness 下降。5 s 只对齐 Job 级启动；项目逐请求 arrival replay、原生完整 manifest eager 可用，所以 71.24 s vs 11.06 s 不作跨轨绝对排名。该结果冻结为效率—隔离—公平权衡证据，不称动态全面胜出；开题前不再扫 offset/weight/更多 Job 追正。
 
 ## 7. 开题叙事图
 

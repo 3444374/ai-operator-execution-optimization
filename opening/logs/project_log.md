@@ -1,5 +1,12 @@
 # 开题材料 project log
 
+## 2026-08-09 多 Job 请求到达语义澄清
+
+- 明确 5 s 仅统一 Job 级启动；项目逐请求 arrival replay，原生 graph 使用完整 manifest
+  eager 执行，71.24 s 与 11.06 s 不可写成系统性能倍数。
+- 答辩攻击面和 H 图合同新增该红线；只保留项目 matched-cap 因果 A/B 与各原生轨内部
+  single→overlap 变化。未改图、PPT、飞书或 Wiki。
+
 ## 2026-08-09 图表数据冻结与待画清单收口
 
 - 回读 A–F、H 和 database-E2E 附录的权威输入、formal 数、SHA 与 headline；G 无结果，

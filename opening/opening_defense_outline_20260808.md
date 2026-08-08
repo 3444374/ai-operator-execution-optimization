@@ -70,7 +70,7 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 
 | 层次 | arms | 回答的问题 | 边界 |
 |---|---|---|---|
-| 原生系统观察 | Daft Native、Daft Ray、Ray Data 各自启动 short/long 两个错峰 job | 独立数据作业共享同一模型服务时，是否出现全局压力叠加、干扰、资源超卖或可观测性缺口 | 框架自己拥有 batching/backpressure；不注入项目 credit/router；不把 barrier 冒充 request P99 |
+| 原生系统观察 | Daft Native、Daft Ray、Ray Data 各自启动 short/long 两个错峰 job | 独立数据作业共享同一模型服务时，是否出现全局压力叠加、干扰、资源超卖或可观测性缺口 | 框架自己拥有 batching/backpressure；Job 启动后完整 manifest 可用，不重放项目逐请求 arrival；不注入项目 credit/router；不把 barrier 冒充 request P99 |
 | 项目因果 A/B | `project_static_partition` vs `project_shared_work` | 感知 job 活跃/完成状态并借用空闲 work credit，能否在相同 endpoint 总 K/work 下改善 JCT/tail/fairness | 只改共享与 idle-borrowing 策略；1+3 后无论正负均停止，不扫 offset/weight 追正 |
 
 2026-08-09 已完成统一 5s offset：三条原生路径 short JCT 相对各自 single 增加
@@ -78,6 +78,10 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 后 short JCT 增加 3.79%/8.95%。shared 相对 static 的 aggregate throughput +21.03%、
 long JCT −18.31%，但 short JCT +4.98%、Jain median 0.759→0.707。因此开题结论是
 “多 Job 管理需要显式效率、隔离与公平目标”，不是“shared/dynamic 全面优于 static”。
+
+5 s 只统一 Job 级启动，不统一 Job 内请求到达：项目逐请求 replay，原生 graph 使用完整
+manifest eager 执行。因此项目 single short 71.24 s 与 Daft Native 11.06 s 不作绝对性能
+比较；可用的比较只有项目内部 matched-cap 因果 A/B 和各原生轨内部 single→overlap 变化。
 
 主指标是 per-job/group JCT、goodput、Jain fairness、isolation、global running/waiting/KV/GPU/MFU 时序。`borrowed_work_seconds` 只在项目 A/B 中由请求/credit trace 计算；原生框架无 job-level active-work 标注时必须明确标记不可观测。
 
