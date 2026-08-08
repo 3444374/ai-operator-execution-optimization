@@ -153,3 +153,9 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 两作业（已完成） | 两个 512 行 short/long job；5 s stagger；互斥 manifest-selected doc_id 集合 | static partition 与 shared work-credit/fair queue 成对比较；相同 endpoint 总 K/work | 每场景 1+3 group runs | quota-only≈0；shared 提高总吞吐并缩短 long JCT，但恶化 short JCT/Jain；weighted 留论文阶段 |
 
 两作业必须使用冻结的 short/long manifest 直接过滤互斥 doc_id，source offset 固定为 0；再按原始 `arrival_time_s` replay，并在结果中报告各 job 实际 predicted/observed work。原生框架观察不得命名为 `static_partition`；只有项目 A/B 可计算 `borrowed_work_seconds`。该最小矩阵不声称 3:1 weighted fairness 已验证。
+
+本轮到达方向严格为 `Short@0s → Long@5s`，回答“后到 long 是否影响已运行 short”。
+所有进入干扰结论的 arm 都必须满足 measured overlap > 0；旧 15 s Daft Native 中 short
+自然完成后 long 才到达，因而只能保留为 arrival observation。`Long→Short` 回答的是
+“繁忙 long 背景下新到 short 的 SLO”，是不同的论文阶段补充场景，不能用本轮结果代替，
+也不构成本轮开题最小因果链的缺口。

@@ -56,25 +56,21 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | `sink_writeback_coordination.md` | **写回工程参考**（已降级为实验设置，不作为独立实验阶段） | COPY + deferred index baseline，仅在实验设置中说明 |
 | `operator_cost_profile_dual4090_formal_20260804.md` | **算子代价估计共同使能组件** | 当前 320-run formal 合同；§8 保留通过晋级门槛后才启动的 TPC-H-derived AI 查询计划 held-out |
 | `opening_database_e2e_p0_20260807.md` | **开题前证据闭环** | 仅允许的两组文本三臂统一 database-E2E：SQuAD 均匀控制组与 ShareGPT controlled-skew；冻结 source/manifest/sink/计时/质量/资源合同和停止规则 |
-| `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同** | 开题只运行两作业 short/long staggered 两臂；phase-change、weighted、文本框架正式矩阵、图像新策略与 cost held-out 作为论文阶段可证伪计划 |
+| `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同** | 开题原生单 Job、原生两 Job 观察和项目 short/long 两臂均已完成；phase-change、weighted/held-out、多模态动态与 cost held-out 留论文阶段 |
 
 双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
 相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭
 arrival replay 隔离数据组织，最后回到 arrival replay 检验 request-level
 持续补位。不能用同一个大矩阵同时搜索三层参数。
 
-当前双 GPU 下一轮的唯一顺序是：以 49K 为主点、65K 为高负载敏感性点，
-先运行固定 active-work 的 token-budget 曲线，再用 49K 主点在 SLO/P99
-约束下选出的最佳已测预算隔离比较 whole-submission 与 request-credit。
-任何预算均不得高于同场景 active-work 上限，避免 oversized admission
-破坏公平对照。具体矩阵和晋级条件以 `experiment_status_and_gaps.md`
-§剩余关键缺口与 §10.3 为准。
-
-动态提交另有独立 fail-closed 顺序：07-30 short/long screening 因
-urllib/no-token-ID、未绑定等价臂高方差和非 factorial 设计判为
-`inconclusive`。先运行 version-controlled async 等价臂门禁；只有同一
-runner 中 short/long 的 K256/W65K/W98K 通过 5% 等价性和 repeat 稳定性，
-才补静态 credit surface，最后才决定是否运行 endpoint-local adaptive。
+**当前执行状态（2026-08-09）**：开题 database-E2E replacement、文本原生单 Job、
+`Short@0s → Long@5s` guaranteed-overlap 原生观察和项目 static/shared 因果 A/B 均已
+完成，开题前停止新增 baseline、offset、weight、4+ Job 或参数扫描。当前只维护报告、
+紧凑数据和待画图合同。开题后的最小工程顺序为 production descriptor builder →
+observe-only snapshot → no-op/fallback gate → 同上限单一控制动作消融；随后才进入
+phase-change、weighted/SLO、图像动态和 held-out cost。旧 49K/65K 扫描顺序与
+2026-07-30 fail-closed 筛选只保留为历史设计记录，不再是执行指令。权威状态只看
+`experiment_status_and_gaps.md` 的开题冻结段与 §0。
 
 ## 二、设计参考
 
@@ -97,7 +93,7 @@ runner 中 short/long 的 K256/W65K/W98K 通过 5% 等价性和 repeat 稳定性
 
 | 文件 | 内容 |
 |---|---|
-| `experiment_status_and_gaps.md` | 已完成/未完成实验表、证据链完整性、指标盲区、P0/P1/P2 路线图、审稿人视角风险、§6 完整问题审计。**当前实验设计的第一参考。** |
+| `experiment_status_and_gaps.md` | 开题冻结段与 §0 是当前状态；后续 P0/P1/P2、旧扫描顺序只作已标记的历史记录。**当前实验设计的第一参考。** |
 | `archive/research_design_catalog.md` | **课题研究方案候选目录（已归档）**：28 个候选方案的六维评估矩阵，作为设计历史参考 |
 
 ## 实验计划的共同评估标准（来自 CCF-A 论文）

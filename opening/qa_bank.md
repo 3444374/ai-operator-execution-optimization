@@ -50,6 +50,10 @@
 
 > 不能证明“后到 Job 干扰已经运行的前台 Job”。只有当两个 Job 已经同时到达、但框架主动把其中一个排队串行化时，零执行重叠才能证明 admission/HOL 阻塞；如果 short 自然完成后 long 才到达，则实验没有制造共享资源竞争。旧 15s Daft Native 零重叠属于后者，所以不进入结论；当前统一 5s offset 后三条原生路径都有真实 overlap，项目又用 single-short full/half 控制排除了 quota-only 影响。
 
+### 当前 5 s 实验到底回答哪个到达方向？为什么不换成 Long→Short？
+
+> 当前冻结方向是 `Short@0s → Long@5s`，回答“后到 long 会不会伤害已经运行的 short”，与本轮动机问题完全一致。`Long→Short` 回答的是“long 已占用服务时，新到 short 的排队/SLO”，同样有价值但属于不同反事实；它不能替代当前结果，也不是证明当前前台干扰所必需。论文阶段若研究优先级/SLO guard，再用 standalone-normalized offset 单独补该方向，不能把两个方向混成一次实验。
+
 ### 各系统都用 5 s offset，干扰强度能直接比吗？
 
 > 不能直接做系统间的“抗干扰排名”。5 s 是相同外部到达轨迹，优点是能保证所有路径发生重叠；但各系统的 single-short JCT 不同，long 到达时处于 short 生命周期的不同比例。因此只报各系统内的 single→overlap 变化，不混排绝对 JCT。若论文阶段需要比较干扰敏感度，再增加按各自 standalone JCT 比例对齐的机制实验。

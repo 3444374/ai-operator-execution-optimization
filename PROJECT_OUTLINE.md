@@ -153,13 +153,13 @@ ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 cor
 5. `opening_image_stage_aware_evidence`：图像阶段失衡与 matched-resource preliminary signal。
 6. `opening_cost_model_decision_quality_v2`：代价模型 selection regret 与最坏风险。
 
-权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。当前只冻结内容大纲、实验数据与图，不制作新的 PPT 成品。
+权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。现有六张叙事资产已完成；两 Job 干扰与原生状态指纹仅为 `data-ready-not-generated`，phase-change 仅为 `plan-only-no-result`。当前只冻结内容大纲、紧凑实验数据和待画图合同，不生成新图或新的 PPT 成品。
 
 ## 8. 当前执行顺序
 
 1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同、共同 cost enabler 与六张叙事图已完成；相关定向测试与渲染审计通过。这里的“合同完成”只表示类型/纯策略基础可执行：production descriptor builder、fresh stage snapshot 正式接线和 CE5 在线驱动仍待验证。
 2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
-3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前更新实验报告和数据图，不生成、覆盖或同步新的 PPT/云文档。
+3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前只更新实验报告、紧凑数据和待画图合同，不生成新图，也不生成、覆盖或同步新的 PPT/云文档。
 4. 文本原生单 job 与 5s 原生/项目两 job 矩阵均已完成；当前只整理报告、紧凑数据和待画图合同。开题后再扩展 state-aware phase-change、weighted/异构多 job、图像 dynamic、完整 burst/mixed-cost、联合消融和跨硬件主实验。
 5. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
 

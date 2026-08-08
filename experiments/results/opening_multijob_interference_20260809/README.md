@@ -6,6 +6,10 @@
 执行路径会怎样影响前台 short Job；项目的固定分区和共享 work-credit 又呈现什么
 效率、隔离与公平权衡。
 
+到达方向固定为 `Short@0s → Long@5s`。因此本实验的反事实是“已运行的 short 在
+long 到达前后如何变化”，不回答“long 已占用服务后，新到 short 的排队/SLO”。后者
+需要独立的 `Long→Short` 对照，属于论文阶段的补充问题，不是本轮干扰结论的替代条件。
+
 这不是完整系统排名，也不验证图像、多模型、weighted fairness 或最终 state-aware
 控制器。原 15 s offset 下 Daft Native 的 short 在 long 到达前结束，因而只保留为
 arrival observation；本报告以所有系统共同使用的 5 s guaranteed-overlap 补充矩阵为准。
@@ -120,6 +124,7 @@ running/waiting、KV、MFU 和 tail 状态。
 - 不能从原生 JCT 变化归因 Daft/Ray Data 内部调度算法，也不能称项目已优于三个框架。
 - 不能把原生 short cell 当作 ≥60 s 稳态容量排名，不能伪造原生 request P99。
 - 不能外推到 4+ Job、weighted/SLO、图像、音频、视频或故障恢复。
+- 不能外推为 `Long→Short` 的新到前台 SLO 结论；本轮只运行了 `Short→Long`。
 - 不能把本实验当 database-E2E sink 结果；它有意使用 no-writeback 来隔离 serving 竞争。
 
 ## 6. 待画图清单（本轮不画）

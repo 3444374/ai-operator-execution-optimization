@@ -1,5 +1,13 @@
 # 开题材料 project log
 
+## 2026-08-09 多 Job 因果方向与零重叠边界
+
+- 将正式 5 s 矩阵明确标为 `Short→Long`：证明后到 long 对已运行 short 的干扰；
+  `Long→Short` 是独立的 foreground-arrival/SLO 反事实，留论文阶段。
+- 旧 15 s Daft Native 因 short 在 long 到达前自然完成，不进入多 Job 干扰结论；
+  当前结论只使用 measured overlap > 0 的数据。
+- 本轮只修订本地口径和实验计划入口，未画图、未修改 PPT、未同步飞书或 Wiki。
+
 ## 2026-08-09 答辩攻击面审计闭合
 
 - 将“最强四项事实”改为 Work Unit、状态感知、动态/多作业调度和算子代价估计

@@ -5104,3 +5104,15 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - H 只使用所有 two-job arm 均真实重叠的 5 s guaranteed-overlap 数据；原 15 s
   Daft Native 无 overlap 数据不进入多 Job 干扰结论。原生路径只作同系统内
   single→overlap 观察，项目 static/shared 只称效率—隔离—公平权衡。
+
+## 2026-08-09 多 Job 到达方向与当前执行状态收口
+
+- 冻结当前两 Job 因果问题为 `Short@0s → Long@5s`：只回答后到 long 对已运行
+  short 的影响。所有干扰结论要求 measured overlap > 0；旧 15 s Daft Native 中
+  short 自然完成后的零重叠只保留为 arrival observation。
+- 明确 `Long→Short` 是“繁忙 long 背景下新到 short 的 SLO”这一不同反事实，留作
+  论文阶段优先级/SLO guard 补充，不把它误写成当前开题最小因果链的缺口。
+- 清理 `experiments/plans/README.md` 中已经失效的 49K/65K 与 2026-07-30 执行指令；
+  当前停止新增开题 baseline/offset/weight/4+ Job 扫描，后续工程顺序统一为 descriptor
+  builder → observe-only snapshot → no-op/fallback → 同上限单动作消融。
+- 按用户要求继续只维护本地报告、紧凑数据和待画图合同；未生成图、PPT、云文档或 Wiki。

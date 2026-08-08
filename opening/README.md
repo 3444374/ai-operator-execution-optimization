@@ -14,7 +14,9 @@
 - 三个研究问题为：最小饱和压力与 transient ramp、相同 work 的数据组织、
   多 job shared credit/fairness。
 
-本目录用于同步准备开题报告、开题汇报 PPT 和飞书进度汇报。当前阶段优先维护本地 Markdown 源稿和飞书文档，不急于生成 DOCX。后续顺序是：本地 Markdown -> 飞书文档补全 -> PPT -> PPT 同步飞书 -> 最终 DOCX 生成。
+本目录用于准备开题报告、开题汇报 PPT 和进度材料。当前阶段只维护本地 Markdown、
+紧凑实验数据和待画图合同；按用户要求暂停新图、PPT、飞书云文档覆盖、Wiki 与 DOCX。
+恢复这些产物时仍以本地权威稿和 Claim Matrix 为唯一输入。
 
 开题材料不是独立于项目的展示层。当前报告确定的题目和研究内容会反向影响 `overview/` 中的阶段规划、`motivation/` 中的后续实验设计以及项目级 README / PROJECT_INDEX 的方向说明。修改开题题目、研究内容或实验边界时，需要同步检查这些项目入口，避免开题材料和项目主线割裂。
 

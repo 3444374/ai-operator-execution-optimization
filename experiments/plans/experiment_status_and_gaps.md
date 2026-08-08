@@ -4,7 +4,10 @@ Date: 2026-07-20（最后更新：2026-08-09；开题三臂 replacement、原生
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
-## 状态增量（2026-08-04，claude 增补 — 标记新完成项防重复运行）
+## 状态增量（2026-08-04，历史快照；当前执行以其后的开题冻结段与 §0 为准）
+
+本节保留当日完成项和事故上下文，里面的“新下一步”不再构成执行指令；2026-08-09
+开题 replacement、原生单 Job 与 guaranteed-overlap 两 Job 已完成后的停止规则优先。
 
 **新完成（不要重跑）**：
 
@@ -135,7 +138,7 @@ frozen-static。
 |---|---|---|---|
 | 固定行 batch sweep（synthetic prompt） | ✅ 07-18 | 链路跑通 | 不是真实 workload baseline |
 | ShareGPT/BurstGPT Ray 静态 batch sweep | ✅ 07-18 | Ray task > Ray actor；batch=16 时 ~260 rows/s | 离线扫表（doc_id 序），不反映在线到达 |
-| Token-tail 修订版（batch 1~128, 512 行）| ✅ 07-19 | **固定行 batch 是计算量的弱代理**：batch=8 时 token 跨度 13.9×；batch=128 时 token P95=26678 | — |
+| Token-tail 修订版（batch 1~128, 512 行）| ✅ 07-19 | **固定行 batch 是计算量的弱代理**：正式统一口径为固定 16 行 token min/max=474/6,793（14.3×）；batch=128 时 token P95≈26,677 | — |
 | Token-budget vs Fixed Row（timeout=300）| ✅ 07-19 | **Token-budget 能约束 token tail**：6144/8192 吞吐接近 fixed 32/64，token P95 大幅降低 | 4096 吞吐更低（tradeoff）；未证明在所有场景下优于 fixed |
 | **Token-budget 1024–32768 容量曲线** | ⏳ 配置完成 | — | 预算甜点、过大预算的 completion barrier/HOL 代价、动态预算动作集 |
 | Length-align + Prefix-aware ablation | ✅ 07-19 | length+fixed 是负结果（token P95=33407）；prefix+token6144 吞吐最高（339 rows/s）但 prefix ratio 仅 6.4% | length-align 需配 token-budget；prefix 信号太弱 |
@@ -271,6 +274,10 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 
 ## 3. 指标盲区
 
+**历史范围**：本节审计的是 2026-07-18/19 的早期 CSV。后续正式 runner 已补
+`tokens/s`、request/resource time series、MFU 与多 Job phase trace；这里的“缺失”
+不能解释为当前所有实验仍缺，只用于说明早期结果为什么不能承担更强 claim。
+
 ### 3.1 已采集但未充分利用
 
 当前 CSV 中已有但未在分析中充分利用的列：
@@ -290,9 +297,12 @@ queue-adaptive 稳定增量；双 GPU SLO-EWMA 正式矩阵也未过 5% 门槛�
 
 ### 3.3 AI_EMBED vs AI_COMPLETE 指标选择差异
 
-AI_EMBED 时期测"时延"（按阶段拆分的 wall time）是有意义的，因为每行计算量相等，"一行"是可比较的工作单位。
+早期 AI_EMBED 预研曾把每行近似视为等量，以分阶段 wall time 做比较；后续图像画像已经
+证明 encoded size、decode/resize 与 model work 并不恒等，因此正式图像实验也不能把
+“一张图片”直接当作可迁移 work 单位。
 
-AI_COMPLETE 的根本差异：每行 token 量可差 13.9×，"一行"不再是有意义的比较单位。应该用：
+AI_COMPLETE 的直接证据更明显：固定 16 行 batch 的 token min/max 为 474/6,793
+（14.3×），"一行"不再是有意义的比较单位。应该用：
 - **计算量归一化指标**：`tokens/s` 替代/补充 `rows/s`
 - **分布指标**：token P50/P95/P99、service P50/P95/P99
 - **服务端压力指标**：queue time、running/waiting requests
@@ -461,7 +471,7 @@ Prometheus 的实际 `prompt_tokens_delta + generation_tokens_delta` 事后无�
 结果见 `experiments/results/accelerated_arrival_flush_20260725/`。旧实验仍需在
 跨 workload 比较前补算，不能把本项标记为全历史数据已修复。
 
-**事实**：所有实验使用 `rows/s` 作为主吞吐指标，但同一 workload 中每行 token 量可差 13.9×（batch=8 时 token 跨度从几十到几千）。Token-budget=4096 的 rows/s（301）低于 fixed 32（325），但如果计算 `tokens/s`，4096 可能持平甚至更高。
+**事实**：历史实验以 `rows/s` 作为主吞吐指标，但同一 workload 中固定 16 行 batch 的 token min/max 为 474/6,793（14.3×）。Token-budget=4096 的 rows/s（301）低于 fixed 32（325）；历史记录没有足够证据据此断言其 `tokens/s` 一定持平或更高，因此只保留“rows 不是稳定 work 代理”的结论。
 
 **影响**：无法公平比较不同策略的效率。token-budget 策略的核心 tradeoff（更多小请求 vs 更少大请求）在 `rows/s` 指标下被扭曲。
 
