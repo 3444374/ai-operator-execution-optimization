@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-08-08 开题文本 feeder 重校准前修复项目臂 manifest 透传
+
+- 背景：首轮统一 database-E2E 中项目臂的同协议 feeding ratio 未达到 95% 门禁，按冻结规则降级为 failed-feeding 诊断，需要在相同运行签名下先校准项目静态 feeder。
+- 修复：`multicard_scale_ramp.py` 的项目臂现在显式透传当前 scale 的 immutable request manifest，并启用 database-E2E timing boundary；此前 direct/DuckDB 使用该 manifest，而项目臂退回数据库顺序，不能作为同分片校准证据。
+- 验证：新增回归测试锁定项目臂的 manifest 路径和计时边界。校准仍只单变量扫描 K/active-work，正式矩阵在选择最小饱和点后冻结参数。
+
 ## 2026-08-08 v6 通过 Microsoft PowerPoint 真实打开检查
 
 - `opening/slides/opening_defense_20260807_v6.pptx` 已由 Microsoft PowerPoint

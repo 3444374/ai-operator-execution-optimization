@@ -346,6 +346,8 @@ def _run_project_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int
         ray_actor_max_concurrency=ramp.project_ray_concurrency,
         total_rows=scale.rows,
         python_executable=ramp.driver_python,
+        request_manifest=str(scale.manifest),
+        database_e2e_timing_boundary=True,
     )
     record = {"arm": "project_static", "scale": scale.rows, "concurrency": arm.concurrency,
               "rep": rep, "cell": str(cell_output), "kind": "project"}

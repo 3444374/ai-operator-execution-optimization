@@ -14,6 +14,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
 
 CODE_ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").is_dir())
 if str(CODE_ROOT) not in sys.path:
@@ -132,6 +134,51 @@ class WarmupEndpointIndicesTests(unittest.TestCase):
         # gate 2-endpoint manifest: each backend warms its own shard
         idxs = drv._warmup_endpoint_indices(single_endpoint=False, n_endpoints=2)
         self.assertEqual(idxs, (0, 1))
+
+
+class ProjectManifestParityTests(unittest.TestCase):
+    """The project calibration arm must consume the same pinned manifest."""
+
+    def test_project_cell_pins_scale_manifest_and_database_e2e_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            manifest = root / "manifest.jsonl"
+            manifest.write_text("{}\n", encoding="utf-8")
+            ramp = SimpleNamespace(
+                output_root=root / "out",
+                database_url="postgresql://postgres:postgres@localhost/db",
+                workload_name="workload",
+                endpoint_urls=(
+                    "http://127.0.0.1:8000/v1/chat/completions",
+                    "http://127.0.0.1:8001/v1/chat/completions",
+                ),
+                model="model",
+                max_tokens=64,
+                project_token_budget=6144,
+                project_active_work=65536,
+                project_actor_workers=8,
+                project_ray_concurrency=16,
+                driver_python="/usr/bin/python3",
+            )
+            scale = SimpleNamespace(rows=1, manifest=manifest)
+            arm = SimpleNamespace(arm="project_static", concurrency=32)
+            result = SimpleNamespace(
+                exit_code=0,
+                formal_row_found=True,
+                effective_k=32,
+                stderr_tail="",
+            )
+
+            with mock.patch.object(drv, "_write_identity"), mock.patch(
+                "src.baselines.text.products.project_static.run_project_static",
+                return_value=result,
+            ) as run_project:
+                record = drv._run_project_cell(ramp, scale, arm, rep=1)
+
+            config = run_project.call_args.args[0]
+            self.assertEqual(config.request_manifest, str(manifest))
+            self.assertTrue(config.database_e2e_timing_boundary)
+            self.assertEqual(record["status"], "passed")
 
 
 class StrictPreflightTests(unittest.TestCase):
