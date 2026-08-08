@@ -2399,6 +2399,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "prompt_tokens": [10, 20],
                 "arrival_time_s": [5.0, 15.0],
                 "prefix_key": ["p", "p"],
+                "preferred_endpoint_id": ["endpoint-1", "endpoint-0"],
             }
         )
         seeds = []
