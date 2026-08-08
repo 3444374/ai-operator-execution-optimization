@@ -215,6 +215,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/analysis/test_summarize_opening_project_feeding_calibration.py` | feeding 校准选择器的最小饱和点与 manifest fail-closed 回归测试 | 修改校准门槛、输入合同或选择规则时运行 |
 | `code/scripts/analysis/summarize_opening_multijob_minimal.py` | fail-closed 汇总开题 short/long 两作业错峰两场景 | 输出组级紧凑数据、场景统计、shared-vs-static 对照和审计；不含 sink |
 | `code/tests/analysis/test_summarize_opening_multijob_minimal.py` | 多任务汇总器的完整矩阵与 short/long manifest 身份回归测试 | 修改多 job 结果合同或审计边界时运行 |
+| `code/scripts/analysis/summarize_text_native_multijob.py` | fail-closed 汇总 Daft Native/Ray、Ray Data 原生 short/long 两 Job 观察 | 用 vLLM service-counter 统一吞吐，输出逐次/汇总状态数据；排除 coverage 不一致的 manifest token/s 与未采集的 request P95/P99 |
+| `code/tests/analysis/test_summarize_text_native_multijob.py` | 原生多 Job 汇总器的 service-counter、重复数和 success/exactly-once 回归测试 | 修改原生多 Job 数据口径或门禁时运行 |
 | `experiments/results/opening_database_e2e_text_refeed_20260808/README.md` | K128 喂饱后的两组 workload × 三静态臂统一 database-E2E 正式报告，含 MFU、能耗、服务状态与正确吞吐 | 引用当前开题三臂表、静态 workload/regime 差异或 DuckDB cap 语义边界前读 |
 | `experiments/results/opening_database_e2e_text_20260807/README.md` | 首轮两组 workload × 三静态臂 database-E2E | 只读 failed-feeding 历史诊断；当前性能口径已被 20260808 replacement 取代 |
 | `experiments/results/opening_text_native_gate_20260808/README.md` | bounded、Daft Native/Ray、Ray Data 同 Chat manifest capability gate 与 Ray Data C4/C8/C16 最小筛选 | 只用于入口正确性、provenance 和冻结 C8/B16；n=1 gate 不作框架性能排名 |

@@ -144,6 +144,13 @@ manifest SHA；runner 已逐 job 验证 exactly-once request/submission trace。
 吞吐、JCT、P99、SLO token goodput、Jain fairness 和 normalized service。该实验以完整
 结果 gather 为终点，故意不含 sink；写回不属于多 job 调度因果变量。
 
+`analysis/summarize_text_native_multijob.py` 审计 Daft Native、Daft Ray 与 Ray Data
+三个 vendor-owned 两 Job 错峰观察臂各 1 warm-up + 3 formal。吞吐统一使用 vLLM
+prompt+generation service-counter delta / arm barrier JCT；native 请求文件的 output-token
+覆盖不一致，因此 runner 的 manifest-derived group token/s 明确排除出排名。汇总同时保留
+short/long barrier JCT、实际重叠时长、running/waiting/KV、GPU 利用率、能耗与 MFU；原生
+adapter 没有采集 request P95/P99，审计文件明确禁止从 barrier JCT 推断尾延迟。
+
 `baselines/opening_database_e2e_matrix.py` 的替换正式模式允许 SQuAD 与 ShareGPT 分别
 绑定上述校准 JSON 和选中的 project K；加载配置时会 fail-closed 核对 manifest SHA、
 三次重复、双吞吐门槛、token budget、active work 与 actor slots。该 workload-specific

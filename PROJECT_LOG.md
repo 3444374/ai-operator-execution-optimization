@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-08-08 原生两 Job 正式数据统一汇总口径
+
+- 新增 `summarize_text_native_multijob.py`：对 Daft Native、Daft Ray、Ray Data 三臂各 1 warm-up + 3 formal 做 fail-closed 审计，统一用 vLLM prompt+generation service-counter delta / arm barrier JCT 计算吞吐，并恢复 MFU、GPU 能耗、running/waiting/KV、short/long JCT 与实际重叠时长。
+- 原生 adapter 的请求结果对 output-token 覆盖不一致，runner 的 manifest-derived `group_barrier_tokens_per_s` 因此登记为不可排名；原生多 Job adapter 未采集 request P95/P99，也不得用 job barrier JCT 伪造。新增两项回归测试，覆盖统一计数与 service-success mismatch fail-closed。
+
 ## 2026-08-08 bounded 多进程 control 从原生两 Job 正式矩阵排除
 
 - 修正总上限后，bounded C64/job（同 endpoint 总 C128）仍复现 vLLM running/waiting 已归零但四个客户端停留 CLOSE_WAIT；因此根因不是 C256 过载，而是当前 bounded 多进程 client 生命周期。
