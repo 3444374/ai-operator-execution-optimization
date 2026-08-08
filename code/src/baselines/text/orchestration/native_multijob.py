@@ -43,7 +43,7 @@ from src.infrastructure.runner_lease import acquire_host_runner_lease
 
 
 NATIVE_MULTI_JOB_ADAPTERS = frozenset(
-    {"bounded_http", "daft_native", "daft_ray", "ray_data_http"}
+    {"daft_native", "daft_ray", "ray_data_http"}
 )
 _RAY_ADAPTERS = frozenset({"daft_ray", "ray_data_http"})
 _BANNED_COMMAND_TOKENS = frozenset(

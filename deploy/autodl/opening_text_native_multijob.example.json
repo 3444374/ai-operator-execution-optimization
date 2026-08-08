@@ -23,20 +23,6 @@
   "minimum_measurement_seconds": 60,
   "arms": [
     {
-      "id": "bounded_http",
-      "adapter": "bounded_http",
-      "python_executable": "${TEXT_BASELINES_PYTHON}",
-      "concurrency_per_endpoint": "${BOUNDED_HTTP_MULTIJOB_CONCURRENCY_PER_JOB_PER_ENDPOINT}",
-      "batch_size": 1,
-      "timeout_s": 300,
-      "process_timeout_s": 360,
-      "ray_address": null,
-      "jobs": [
-        {"id": "short", "manifest": "${TEXT_NATIVE_SHORT_JOB_MANIFEST}", "offset_s": 0},
-        {"id": "long", "manifest": "${TEXT_NATIVE_LONG_JOB_MANIFEST}", "offset_s": "${TEXT_NATIVE_MULTIJOB_OFFSET_S}"}
-      ]
-    },
-    {
       "id": "daft_native",
       "adapter": "daft_native",
       "python_executable": "${TEXT_BASELINES_PYTHON}",

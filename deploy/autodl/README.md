@@ -1182,9 +1182,10 @@ control 与 vendor-native 适配器
 `code/scripts/baselines/run_text_native_matrix.py` 调用已有 core gate；每臂必须先填入
 独立 calibration selection 与 fingerprint，否则 fail closed。两 job 错峰原生观察使用
 `opening_text_native_multijob.example.json` 和 `run_text_native_multijob.py`，只编排
-official shard 并采集服务/GPU 时序，不注入项目调度。bounded control 必须把单 job
-C128 总上限在两个 job 间静态平分为每 job/endpoint C64，不能让两个 job 各自持有
-C128 后把总压力翻倍成 C256。每个 arm 还必须显式冻结 `process_timeout_s`；它是 shard
+Daft Native/Ray 与 Ray Data official shard 并采集服务/GPU 时序，不注入项目调度。
+bounded HTTP 的两个独立 client 进程共享同 endpoint 时，在 C128 与静态平分后的 C64/job
+均复现 vLLM 已 drain 但客户端停留 CLOSE_WAIT；因此它只保留单 job 容量参照，不进入原生
+多 job 正式模板。每个 native arm 必须显式冻结 `process_timeout_s`；它是 shard
 进程 wall 上限，与单 request `timeout_s` 分离，CLOSE_WAIT 等生命周期挂起会终止全部
 同 job shard、保留 job summary 并使 matrix fail closed。
 `vLLM Bench` 只作 ceiling，`bounded_*` 只作项目自写 control；Daft built-in prompt、

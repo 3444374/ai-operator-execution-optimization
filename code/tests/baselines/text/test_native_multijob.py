@@ -189,6 +189,15 @@ class NativeMultiJobTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "overlapping doc_ids"):
                 load_native_multijob_config(path)
 
+    def test_rejects_bounded_control_as_native_multijob_arm(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._config(Path(directory))
+            payload = json.loads(path.read_text())
+            payload["arms"][0]["adapter"] = "bounded_http"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "adapter must be one of"):
+                load_native_multijob_config(path)
+
     def test_schedule_is_deterministic_and_rotates_formal_positions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             config = load_native_multijob_config(self._config(Path(directory)))

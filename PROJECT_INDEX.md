@@ -206,7 +206,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_project_feeding_repair.example.json` | 校准失败 cell 的同配置单重复 replacement 模板 | 原失败 root 必须保留；新 root 仅通过 `--repair-root` 合并，事故仍进入选择合同 |
 | `deploy/autodl/opening_database_e2e_refeed.example.json` | 读取两份通过审计的 workload-specific feeding 校准合同并 fail-closed 的替换正式矩阵模板 | 仅在 SQuAD/ShareGPT 校准均冻结后运行；direct/DuckDB 保持每 endpoint 32 |
 | `deploy/autodl/opening_text_native_matrix.example.json` | ShareGPT Chat bounded、Daft Native/Ray、Ray Data 原生单 job 1+3 正式模板 | 各臂独立校准与 fingerprint 冻结后运行；无 DuckDB 产品轨 |
-| `deploy/autodl/opening_text_native_multijob.example.json` | bounded、Daft Native/Ray、Ray Data 的 short/long 两 job 错峰原生观察模板 | bounded 总 C128 静态平分为 C64/job；显式 shard process wall timeout；保存服务/GPU 时序，不注入项目 credit/router |
+| `deploy/autodl/opening_text_native_multijob.example.json` | Daft Native/Ray、Ray Data 的 short/long 两 job 错峰原生观察模板 | bounded 多进程 client 因可复现 CLOSE_WAIT 排除；显式 shard process wall timeout；保存服务/GPU 时序，不注入项目 credit/router |
 | `deploy/autodl/opening_multijob_minimal.example.json` | 两作业 short/long immutable manifest 的 staggered static partition vs shared work-credit 最小矩阵 | replacement 静态三臂后运行；只回答两作业 JCT/隔离/idle borrowing，weighted 留论文阶段 |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥、等行数的 short/long job manifest，并输出 token 分布与 SHA 审计 | 运行开题两作业实验前生成 512+512 行异质工作证据 |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
@@ -471,7 +471,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/baselines/text/test_direct_client.py` | direct_client 臂单测（DirectClientConfig 校验/`_validate_requests` 多 endpoint+cap 拒绝/run_direct_client cap-mismatch 前置拒绝）| 修改 `direct_client.py` config 校验或 `_validate_requests` 后运行 |
 | `code/tests/baselines/text/test_project_static.py` | project_static wrapper 单测：完整冻结 argv、effective K、active-work、请求语义、completion/source-scan 证据解析与重复/畸形 fail-closed | 修改 `project_static.py` argv 或证据合并后运行 |
 | `code/tests/baselines/text/test_native_matrix.py` | 原生文本交错矩阵配置、日程、失败保留与时长准入测试 | 修改 native single-job formal 编排后运行 |
-| `code/tests/baselines/text/test_native_multijob.py` | 原生两 job manifest 互斥、错峰启动、四 shard、命令审计、进程超时与失败保留测试 | 修改 Daft/Ray Data 多 job 观察编排后运行 |
+| `code/tests/baselines/text/test_native_multijob.py` | 原生两 job manifest 互斥、错峰启动、四 shard、bounded 排除、命令审计、进程超时与失败保留测试 | 修改 Daft/Ray Data 多 job 观察编排后运行 |
 | `code/tests/observability/test_completion_evidence_trace.py` | profiler completion evidence + source-scan fingerprints 单测；完成行缺输出、批内数量错、重复 doc_id 均 fail-closed | 修改 profiler trace/evidence writer 后运行 |
 | `code/tests/baselines/common/test_redact.py` | 共享脱敏模块单测（DB-URL/arg list/URL flag/redact_text）| 修改 `src/baselines/common/redact.py` 后运行 |
 | `code/tests/environment/test_scan_git_secrets.py` | Git 隐私扫描器纯函数单测（私钥/token/sshpass/外部 host 拦截；localhost/模板/example host 放行）| 修改 `scan_git_secrets.py` 拦截规则后运行 |

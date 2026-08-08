@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-08-08 bounded 多进程 control 从原生两 Job 正式矩阵排除
+
+- 修正总上限后，bounded C64/job（同 endpoint 总 C128）仍复现 vLLM running/waiting 已归零但四个客户端停留 CLOSE_WAIT；因此根因不是 C256 过载，而是当前 bounded 多进程 client 生命周期。
+- 新增的 360 s 进程门按预期自动终止 short/long 四个 shard；两个 job summary 均记录 `process_timed_out=true`、`return_codes=[-15,-15]`，matrix fail closed且无遗留进程。v2 归档 SHA256 为 `4b9a77699f739fbb9d6a135b9c5b430bf351365f202b05ba0aeaad9b87d2f859`。
+- 正式原生多 job 模板和 adapter allowlist 现在只允许 Daft Native、Daft Ray、Ray Data。bounded C128 继续作为单 job capacity reference；项目 `static_partition` vs `shared_work` 承担两 job 因果控制。新增 bounded 排除测试后，原生多 job 测试为 9/9 通过。
+
 ## 2026-08-08 原生两 Job bounded 总上限与子进程生命周期修复
 
 - 首次原生两 job warm-up 暴露配置/runner 缺陷：bounded 给每个 job 各 C128，使每 endpoint 总压力变成 C256；vLLM 已 drain 到 running/waiting=0 后四个客户端仍停在 CLOSE_WAIT，而 harness 对 `Popen.wait()` 没有 wall deadline。
