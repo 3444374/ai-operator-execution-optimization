@@ -576,17 +576,13 @@ def _nonnegative_float_tuple(
 ) -> tuple[float, ...]:
     if not isinstance(value, list) or len(value) != expected:
         raise ValueError(f"{label} must contain one value per job")
-    resolved = []
-    for item in value:
-        if (
-            isinstance(item, bool)
-            or not isinstance(item, (int, float))
-            or not math.isfinite(float(item))
-            or item < 0
-        ):
-            raise ValueError(f"{label} values must be finite and non-negative")
-        resolved.append(float(item))
-    return tuple(resolved)
+    return tuple(
+        _nonnegative_float(
+            _expand_scalar(item, f"{label}[{index}]"),
+            f"{label}[{index}]",
+        )
+        for index, item in enumerate(value)
+    )
 
 def _nonnegative_integer_tuple(
     value: object,

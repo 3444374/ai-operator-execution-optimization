@@ -300,6 +300,45 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "3",
         )
 
+    def test_arrival_offset_expands_numeric_environment_scalar(self) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "forced_overlap",
+                    "policy": "shared_drr",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                    "arrival_offsets_s": [0.0, "${JOB_OFFSET_S}"],
+                }
+            ]
+        )
+        with (
+            patch.object(Path, "read_text", return_value=json.dumps(payload)),
+            patch.dict(os.environ, {"JOB_OFFSET_S": "5"}, clear=True),
+        ):
+            config = load_config(Path("config.json"))
+
+        self.assertEqual(config.scenarios[0].arrival_offsets_s, (0.0, 5.0))
+
+    def test_arrival_offset_rejects_missing_environment_scalar(self) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "forced_overlap",
+                    "policy": "shared_drr",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                    "arrival_offsets_s": [0.0, "${JOB_OFFSET_S}"],
+                }
+            ]
+        )
+        with (
+            patch.object(Path, "read_text", return_value=json.dumps(payload)),
+            patch.dict(os.environ, {}, clear=True),
+        ):
+            with self.assertRaisesRegex(ValueError, "JOB_OFFSET_S"):
+                load_config(Path("config.json"))
+
     def test_single_job_can_retain_one_of_two_static_partitions(self) -> None:
         payload = self._config_payload(
             scenarios=[

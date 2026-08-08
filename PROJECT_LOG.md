@@ -9,6 +9,9 @@
   native 配置都从环境显式读取 offset，禁止为某个系统单独调小。exact-short 1+3
   直接复用，只重跑 two-job 5s；汇总器从实际 replay start 计算 overlap，不再假设
   固定 15s。
+- 项目 5s 首次启动在 config load、创建 cell 和发送请求前安全失败：旧 tuple parser
+  没有展开 `arrival_offsets_s` 数组中的环境 scalar。失败 log 独立保留；parser 现逐项
+  严格展开并保留缺失/非数值/负数 fail-closed，新增 resolved=5 与 unset 两项回归。
 
 ## 2026-08-09 short-only 与 short/long 统一干扰汇总器
 
