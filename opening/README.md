@@ -59,7 +59,7 @@
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | **2026-08-07 已冻结，报告/PPT/实验准入的当前依据** |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页冻结设计与逐页 claim/source 约束 |
 | 开题 PPTX | `slides/opening_defense_20260807_v6.pptx` | **由 v5 模板继承生成；28 页、备注完整、无空 placeholder、overflow test 通过** |
-| 开题飞书源稿 | `feishu/opening_report_wiki.md` | 与本地报告完全一致；用户授权已恢复，线上覆盖 dry-run 已完成并等待高风险写入批准 |
+| 开题飞书源稿 | `feishu/opening_report_wiki.md` | 与本地报告完全一致；线上正文 revision 289 与四个图片块已回读通过 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
 | 文献精读清单 | `literature/reading_list.md` | 候选清单已补，待精读（笔记全集在 `research/reading_notes/`） |
@@ -83,7 +83,7 @@
 
 1. 以 `claim_matrix.md`、本地报告和 v6 PPTX 为冻结口径，不再新增开题 baseline。
 2. v6 已完成程序化渲染、画布检查和 Microsoft PowerPoint 真实打开检查。
-3. 飞书用户授权恢复后覆盖线上报告并插入四张核心图；回读 revision 和本地路径残留。
+3. 飞书线上报告与四张核心图已同步并回读；平级 Wiki 目录恢复后执行知识镜像。
 4. 导师确认后生成学校模板 DOCX，并恢复开题后实验 backlog。
 ## 飞书同步目标
 

@@ -54,8 +54,8 @@ Date: 2026-07-20（最后更新：2026-08-08；开题统一三臂与 PPT 本地�
 两组实验后已停止增加开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
 granularity 不同，只用于 serving capacity/overload 证据，不替代上述统一 database-E2E。
 差异不足 5% 不触发换 workload、模型、数据库或扩大参数扫描。随后只做四组核心图、
-报告/PPT 重构和答辩一致性审计均已完成；v6 已通过 PowerPoint 真实打开检查。尚欠飞书
-线上覆盖和 wiki 镜像；下方 image-first A+B 顺序在开题材料最终确认后恢复。
+报告/PPT 重构和答辩一致性审计均已完成；v6 已通过 PowerPoint 真实打开检查，飞书正文
+revision 289 与四图已回读通过。尚欠 wiki 镜像；下方 image-first A+B 顺序在开题材料最终确认后恢复。
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 

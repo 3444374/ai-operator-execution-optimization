@@ -8,8 +8,9 @@
   `opening/AGENTS.md` 的应用级检查门禁。
 - 当前只剩飞书在线覆盖/图片插入/回读、平级 Wiki 镜像和 Git 发布收尾；不因此扩大
   开题实验或 baseline 范围。
-- 飞书用户授权已恢复，并完成目标 docx revision 277 的 full fetch 与 overwrite dry-run；
-  实际全文覆盖等待用户对高风险写操作作明确批准。
+- 飞书用户明确批准后，目标 docx 已从 revision 277 覆盖到 revision 289；八章目录、SQuAD
+  89.93%、ShareGPT 91.38%、4,936/6,144 cap 语义失败、“不能声称”边界及四个带 caption
+  的图片块均已回读通过。
 
 ## 2026-08-07 开题证据闭环：统一三臂负结果、四图与 v6 材料冻结候选
 

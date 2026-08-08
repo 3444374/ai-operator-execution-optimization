@@ -151,9 +151,10 @@ ShareGPT 三次 formal 均值：direct 11.34、DuckDB AI 2.23、project 10.36 co
 1. 两组统一文本三臂 formal、完整性审计、结果归档和开题 baseline 停止规则已完成。
 2. Claim Matrix、报告、问答库和飞书本地源稿已按最终汇总同步；四张核心图与 28 页 v6
    PPTX 已完成程序化 QA，并于 2026-08-08 通过 Microsoft PowerPoint 真实打开检查。
-3. 飞书用户授权已于 2026-08-08 恢复，revision 277 的覆盖 dry-run 已核验；尚欠用户明确
-   批准后的线上覆盖/图片插入/回读。平级 Obsidian wiki 目录在本机不存在，不能执行镜像脚本。
-4. 外部同步完成后标记最终发布冻结；开题后再进入图像 system database-E2E 与 state-aware 方法实验。
+3. 飞书用户授权已于 2026-08-08 恢复；线上正文已覆盖到 revision 289，八章目录、三项关键
+   数字、结论边界和四个带 caption 的图片块均回读通过。
+4. 平级 Obsidian wiki 目录在本机不存在，不能执行镜像脚本；恢复该目录后完成最后镜像并标记
+   发布冻结。开题后再进入图像 system database-E2E 与 state-aware 方法实验。
 
 ## 9. 结果解释与写作规则
 

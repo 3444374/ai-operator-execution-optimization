@@ -4,9 +4,9 @@
 
 ## 线上文档
 
-2026-08-08 状态：`opening_report_wiki.md` 已与本地权威报告完全一致；飞书用户授权已恢复，
-线上 docx 已完成 revision 277 的 full fetch 与 overwrite dry-run。实际覆盖属于高风险写操作，
-须在用户明确批准后继续执行“四图 media-insert → fetch 回读”。
+2026-08-08 状态：`opening_report_wiki.md` 已与本地权威报告完全一致。用户明确批准后，
+线上 docx 已由 revision 277 覆盖并完成四图上传；最终 revision 289 的八章目录、关键实验数字、
+“不能声称”边界和四个带 caption 的图片块均已回读通过。
 
 | 飞书文档 | 链接 | 承载内容 | 本地来源 |
 |---|---|---|---|
