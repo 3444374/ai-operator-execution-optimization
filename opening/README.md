@@ -68,7 +68,7 @@
 | 开题精读 Top 15 拷贝 | `literature/top15_reading_notes/` | 开题要求精读的 15 篇笔记自包含快照 |
 | GPU 调度与数据放置补充调研 | `research/gpu_scheduler_data_placement_supplement_20260715.md` | 已补，作为策略控制器设计依据与后续精读清单 |
 | 本地 PDF 子集索引 | `research/reference/README.md` | 已登记当前已下载的部分论文，非完整文献库 |
-| 答辩问答 | `qa_bank.md` | 已扩展 |
+| 答辩问答 | `qa_bank.md` | 2026-08-09 已完成四部件、baseline provenance、overlap、2→4+ Job、K256/K512、sink 与跨模态攻击面审计 |
 | 材料同步日志 | `logs/project_log.md` | 初版已建 |
 
 ## 与项目其他目录的关系

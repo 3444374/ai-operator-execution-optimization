@@ -1,5 +1,18 @@
 # 开题材料 project log
 
+## 2026-08-09 答辩攻击面审计闭合
+
+- 将“最强四项事实”改为 Work Unit、状态感知、动态/多作业调度和算子代价估计
+  四条等权证据链，并将旧 13.9× 口径修正为正式 CSV 的 14.3×。
+- 补齐高风险问题：Daft Ray 的 vendor-owned provenance；统一 5 s offset 只支持系统内
+  single→overlap；两 Job 足以闭合最小因果但不外推 4+/weighted/SLO；当前多 Job
+  是文本 ShareGPT；K512 不是开题 blocker；serving 干扰实验不强制 sink。
+- 明确已有早期同步等量 1/2/4-job 矩阵；4-job shared 聚合均值有吞吐/tail/JCT
+  改善，但三次中有一次回退且无 short/long 错峰因果，因此只作高竞争诊断，
+  不与当前 5 s 两 Job 实验互相替代。
+- 攻击面表和红线同步增加 provenance、offset 归一化、两 Job 外推与文本→图像外推
+  限制。本轮未绘图、未修改 PPT，也未覆盖云文档或 Wiki。
+
 ## 2026-08-09 开题报告证据口径与实现边界对齐
 
 - 使用已冻结的 Claim Matrix、答辩内容大纲和正式结果审计本地开题报告；
