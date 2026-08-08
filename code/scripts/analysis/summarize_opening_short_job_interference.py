@@ -382,6 +382,24 @@ def _project_phase_rows(root: Path) -> list[dict[str, object]]:
                 }
             )
         short_end = starts[0] + jct[0]
+        request_trace = root / "jobs" / (
+            f"{int(record['order_index']):03d}_formal_{int(record['repeat_index'])}_"
+            f"{record['scenario_id']}_job0.requests.csv"
+        )
+        short_completions: list[tuple[float, float]] = []
+        with request_trace.open(encoding="utf-8", newline="") as handle:
+            for item in csv.DictReader(handle):
+                if item.get("status") != "completed":
+                    continue
+                short_completions.append(
+                    (
+                        _float(item["completion_epoch_s"], "completion_epoch_s"),
+                        _float(item["prompt_tokens"], "prompt_tokens")
+                        + _float(item["actual_output_tokens"], "actual_output_tokens"),
+                    )
+                )
+        if len(short_completions) != 512:
+            raise ValueError("project short request trace is not exactly-once")
         boundaries = (
             ("pre_long", starts[0], starts[1]),
             ("overlap", starts[1], short_end),
@@ -389,17 +407,22 @@ def _project_phase_rows(root: Path) -> list[dict[str, object]]:
         )
         for phase, begin, end in boundaries:
             selected = [point for point in points if begin <= point["epoch"] < end]
+            completed = [work for epoch, work in short_completions if begin <= epoch < end]
+            duration = max(0.0, end - begin)
             rows.append(
                 {
                     "scenario": record["scenario_id"],
                     "repeat": int(record["repeat_index"]),
                     "phase": phase,
-                    "duration_s": max(0.0, end - begin),
+                    "duration_s": duration,
                     "samples": len(selected),
                     "gpu_util_pct_mean": _mean(point["gpu"] for point in selected) if selected else "",
                     "running_total_mean": _mean(point["running"] for point in selected) if selected else "",
                     "waiting_total_mean": _mean(point["waiting"] for point in selected) if selected else "",
                     "kv_per_endpoint_mean": _mean(point["kv"] for point in selected) if selected else "",
+                    "short_completed_requests": len(completed),
+                    "short_completed_work": sum(completed),
+                    "short_completed_work_per_s": sum(completed) / duration if duration else "",
                     "mfu_status": "unavailable:no_interval_flops_counter",
                 }
             )
@@ -422,6 +445,14 @@ def _phase_summary(rows: Sequence[Mapping[str, object]]) -> list[dict[str, objec
                 "running_total_mean": _mean(_float(item["running_total_mean"], "running") for item in items),
                 "waiting_total_mean": _mean(_float(item["waiting_total_mean"], "waiting") for item in items),
                 "kv_per_endpoint_mean": _mean(_float(item["kv_per_endpoint_mean"], "kv") for item in items),
+                "short_completed_requests_mean": _mean(
+                    _float(item["short_completed_requests"], "short completed requests")
+                    for item in items
+                ),
+                "short_completed_work_per_s_mean": _mean(
+                    _float(item["short_completed_work_per_s"], "short completed work rate")
+                    for item in items
+                ),
                 "mfu_status": "unavailable:no_interval_flops_counter",
             }
         )
