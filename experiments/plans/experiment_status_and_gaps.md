@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-08；开题三臂 feeding 纠正中，PPT 成品已暂停）
+Date: 2026-07-20（最后更新：2026-08-08；开题三臂 replacement 已通过，原生单/多 job 对照进行中）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -37,31 +37,31 @@ Date: 2026-07-20（最后更新：2026-08-08；开题三臂 feeding 纠正中，
   `service_prefix_caching` 纳入 context 身份，执行后 hit rate 禁止用作预测特征。
 - 上方 §0 "下一步运行 Daft 官方 ResNet18 parity 与 60 秒以上稳态 formal" 中，**60 秒稳态 formal 已由 60K×2 schema-v12 重跑闭合**；ResNet18 parity 仍待（A②）。
 
-## 开题冻结优先级（2026-08-07；2026-08-08 feeding 纠正重跑中，材料尚未最终冻结）
+## 开题冻结优先级（2026-08-07；2026-08-08 replacement 已通过，材料尚未最终冻结）
 
-开题题目与研究内容按 `opening/claim_matrix.md` 冻结。以下两个开题范围已于
-2026-08-07 完成首轮，但项目臂 feeding 未过门，当前只算 failed-feeding 诊断；必须按
-`opening_database_e2e_p0_20260807.md` 完成 K32/64/128/256 最小饱和点校准并整体替换
-重跑后，才能冻结：
+开题题目与研究内容按 `opening/claim_matrix.md` 冻结。以下两个开题范围的首轮结果因
+项目臂 feeding 未过门而只作历史诊断；2026-08-08 已按
+`opening_database_e2e_p0_20260807.md` 完成校准、冻结 K128 并整体 replacement：
 
 1. SQuAD short-answer/cap=64 的 direct static-sharded、DuckDB AI static-sharded、
    project frozen-static 三臂统一 database-E2E，1 warmup + 3 formal。
 2. 一个冻结 short/medium/long histogram 的 ShareGPT controlled-skew 三臂实验，复用
    同一 source/sink、模型、endpoint、质量、计时和资源合同。
 
-结果目录：`experiments/results/opening_database_e2e_text_20260807/`。24/24 单元、18 formal
-完整性通过；项目臂 SQuAD/ShareGPT service feeding 为 89.93%/91.38%，均未过 95%，
-因此只作为负结果和瓶颈诊断。DuckDB AI ShareGPT 的 service tok/s≈direct，但
-4,936/6,144 行 cap 语义失败主导 correct throughput。
+当前结果目录：`experiments/results/opening_database_e2e_text_refeed_20260808/`。24/24 单元、
+18 formal 的 feeding、GPU、exactly-once、sink、identity 与稳定性门均通过。项目臂
+SQuAD/ShareGPT service feeding 为 100.87%/154.57%；SQuAD 三静态路径近似中性，
+ShareGPT 静态结构差异显著。DuckDB AI ShareGPT 的 service tok/s≈direct，但
+4,921/6,144 行 cap 语义失败主导 correct throughput。旧目录只作 failed-feeding 诊断。
 
-纠正重跑期间仍停止增加开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
+仍停止增加不在冻结矩阵内的开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
 granularity 不同，只用于 serving capacity/overload 证据，不替代上述统一 database-E2E。
 差异不足 5% 不触发换 workload、模型、数据库或扩大参数扫描。首轮四组核心图、报告与
-飞书只作为待替换历史版本；新矩阵合格后只重算实验报告与数据图。用户已要求暂停新的
-PPT 成品和云文档覆盖，Wiki 同步也已明确豁免。两组 replacement 通过后不增加新 baseline，
-按 2026-08-08 最新收缩，开题只再补一个 short/long 两作业 staggered static-partition vs
-shared-work-credit 最小实验；phase-change、weighted、文本 Daft/Ray Data 正式矩阵、图像新策略、
-cost held-out 与下方 image-first A+B 完整矩阵均留开题后。
+飞书与旧 PPT 只作为历史版本；当前只重算实验报告与数据图。用户已要求暂停新的 PPT 成品、
+云文档覆盖和 Wiki。按 2026-08-08 最新要求，剩余补同一 ShareGPT Chat manifest 的 bounded、
+Daft Native/Ray、Ray Data 原生单 job 1+3，原生 short/long 两 job 错峰观察，以及项目
+static-partition vs shared-work-credit 同上限最小实验；phase-change、weighted、图像新动态策略、
+cost held-out 与完整 image-first A+B 矩阵均留开题后。
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 

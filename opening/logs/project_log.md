@@ -1,5 +1,12 @@
 # 开题材料 project log
 
+## 2026-08-08 database-E2E replacement 取代 failed-feeding headline
+
+- K128 replacement 的 24/24 cells、18 formal 全部门禁通过；开题当前数字只引用 `opening_database_e2e_text_refeed_20260808/`。
+- SQuAD 三条静态路径近似中性；ShareGPT project/direct service ratio=1.5457、DB-E2E=116.70/180.33 s。该结果只说明静态执行结构的 workload/regime 依赖，不能写成动态、感知或 WorkDescriptor 的单因素收益。
+- DuckDB AI ShareGPT service throughput≈direct，但 4,921/6,144 行 fixed-cap 产品语义失败。开题报告、Claim Matrix、问答与总纲已改用新口径，并保留 MFU、GPU、能耗和服务状态。
+- 当前仍暂停 PPT、云文档和 Wiki；后续只补原生单 job、原生两 job 观察和项目 static/shared 同上限 A/B。
+
 ## 2026-08-08 四条证据链与原生框架/多 Job 对照成为当前执行目标
 
 - 本条取代同日早先“文本 Daft/Ray Data 正式矩阵留论文阶段”的范围判断。Work Unit、状态感知、动态调度与共同使能代价估计按同等证据标准组织。

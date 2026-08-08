@@ -60,3 +60,6 @@ validation/results/fake_ai_embed_outputs_smoke/
 
 # Codex checkpoint/snapshot working artifacts (not for commit).
 experiments/results/checkpoint_*/
+
+# Full request/trace archives stay on local disk and AutoDL; Git keeps aggregates.
+experiments/results/opening_database_e2e_text_refeed_20260808/raw.tar.gz

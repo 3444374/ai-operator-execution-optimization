@@ -80,19 +80,19 @@
 
 > SQuAD short-answer 是均匀控制组，用于检验服务层能否吸收上游差异；ShareGPT controlled-skew 是异质实验组，用于增加 prompt/output work 方差。它们只承担 database-E2E/correctness 护栏。随后冻结的 ShareGPT Chat 原生单 job 与两 job 错峰矩阵承担框架执行和多作业动机，不再增加第三种 workload、第二数据库或更多产品追求更好看的结果。
 
-### SQuAD 上项目静态路径更慢，怎么解释？
+### SQuAD 上为什么三条静态路径几乎没有差异？
 
-> 三次 formal 的 correct rows/s 均值为：project frozen-static 116.88、direct static-sharded 129.85、DuckDB AI static-sharded 135.71。项目臂只有 direct 的 89.9% service tokens/s，未过预注册的 95% feeding-saturation 门，因此不能拿这组数据证明项目策略性能；它只说明在均匀 workload 和当前冻结静态实现下，额外组织与 actor 控制没有形成端到端优势，并暴露出喂入或路径开销。这个负结果强化了强静态 baseline 的必要性，后续 state-aware 方法必须在同上限、明确的状态变化或资源竞争中证明增量。
+> 喂饱后的 K128 replacement 中，project、direct、DuckDB AI 的 correct rows/s 为 137.77、136.63、136.68，service tokens/s 为 41,277.95、40,920.72、40,955.99；project feeding 已达 direct 的 100.87%。SQuAD 是均匀短输出控制组，服务层可以吸收上游静态结构差异，因此近似中性是有效结论。它说明后续动态方法不能靠弱 baseline 获胜，必须在同上限和明确状态变化或资源竞争中证明增量。
 
 ### DuckDB AI 的 cap semantic failure 是否意味着实验失败？
 
 > runner 把 transport、worker、timeout 等基础设施失败设为 fail-closed；同时把固定输出 cap 下的产品语义差异单独记录为 cap-semantic failure，并把错误行从 correct rows/s 分子中扣除。这不是静默忽略，也不是把产品错误包装成成功。报告会同时给出 raw rows/s、correct rows/s、failure 类型和 finish reason，读者可以看到性能与语义代价。
 
-ShareGPT 三次 formal 的具体结果是 4,936/6,144 行 cap 语义失败，而基础设施失败为 0。DuckDB AI 的 raw rows/s 为 11.34、service tokens/s 为 9,411.76，几乎等于 direct；correct rows/s 只有 2.23。因此最准确的说法是“模型服务容量没有明显掉速，但当前产品 fixed-cap 语义与该 workload 不兼容”，不能笼统说 DuckDB AI 更慢。
+ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而基础设施失败为 0。DuckDB AI 的 raw rows/s 为 11.35、service tokens/s 为 9,421.31，几乎等于 direct；correct rows/s 只有 2.26。因此最准确的说法是“模型服务容量没有明显掉速，但当前产品 fixed-cap 语义与该 workload 不兼容”，不能笼统说 DuckDB AI 更慢。
 
-### ShareGPT 异质组是否证明项目方法有效？
+### ShareGPT 异质组是否证明动态方法有效？
 
-> 没有。direct、DuckDB AI、project frozen-static 的 correct rows/s 为 11.34、2.23、10.36；project service tokens/s 只有 direct 的 91.38%，未过 95% feeding 门。相比 SQuAD 的 89.93%，缺口略有收窄，但没有形成合格性能证据。这个负结果说明 workload 异质性本身不足以让冻结静态项目路径胜出，后续 state-aware 方法仍必须在同 source、完整结果语义、同上限和明确状态变化下重新证明增量；不要求重复 sink。
+> 没有。replacement 中 direct、DuckDB AI、project frozen-static 的 correct rows/s 为 11.36、2.26、17.55；project service tokens/s 为 direct 的 154.57%，DB-E2E 为 116.70 s 对 180.33 s。它证明喂饱后的冻结静态执行结构在该异质 workload 下有明显差异，但项目臂与 direct 的请求成形和执行结构整体不同，不能隔离出状态感知、动态调度或 WorkDescriptor 的因果收益。后续仍需同 source、同上限和明确状态变化的 static/shared A/B；不要求重复 sink。
 
 ### 为什么用 correct rows/s 而不是只用 tokens/s？
 
@@ -108,7 +108,7 @@ ShareGPT 三次 formal 的具体结果是 4,936/6,144 行 cap 语义失败，而
 
 ### feeding-saturation 门怎么判断？
 
-> 优先使用运行期 time-series：GPU utilization mean/p50/p95/max、vLLM running/waiting、KV usage，并以同 workload 的 direct bounded client formal mean service tokens/s 为分母。单点 `gpu_utilization_pct` 不能作为结论。SQuAD 项目冻结静态臂当前只有 direct 的 89.9%，已经按规则标为未过门；不能因 GPU 均值仍约 90% 就把它改写成合格结果，也不能只看 waiting=0 就断言没有喂入问题。
+> 优先使用运行期 time-series：GPU utilization mean/p50/p95/max、vLLM running/waiting、KV usage，并以同 workload 的 direct bounded client formal mean service tokens/s 为分母。单点 `gpu_utilization_pct` 不能作为结论。replacement 中项目臂 SQuAD/ShareGPT feeding 为 100.87%/154.57%，GPU mean 为 88.39%/97.19%，均已过门；首轮 89.93%/91.38% 只作历史诊断。waiting=0 也不能单独证明已经喂饱。
 
 ## 方法设计与可证伪性
 
@@ -139,7 +139,7 @@ ShareGPT 三次 formal 的具体结果是 4,936/6,144 行 cap 语义失败，而
 | 数据组织 feeding 门有边界 | 中 | 只声称 regime dependency，不声称全局排名 | 图注保留 KV/feeding 条件 |
 | 图像 GPU 未饱和 | 中 | 证明 matched-resource 执行结构收益，不证明 GPU-serving 优化 | 报 GPU busy 6–10% |
 | 代价模型贴线 | 中 | 14.72% 为 marginal pass | 图中画 15% 门槛和 0.28 pp 裕量 |
-| database-E2E 三臂项目不占优且两类 workload 均未过 feeding 门 | 高 | SQuAD/ShareGPT project feeding 为 89.93%/91.38%；如实作为负结果与诊断 | 不新增 baseline 或换 workload |
+| database-E2E 静态差异随 workload 改变，且 ShareGPT 产品语义不兼容 | 中 | replacement project feeding 为 100.87%/154.57%；DuckDB ShareGPT 4,921/6,144 cap 失败 | 不把静态结构差异归因成动态收益，不新增 workload 追正 |
 | 单数据库/单机器外推 | 中 | 开题先闭合因果合同，外部有效性留论文阶段 | 标 AutoDL PG18.4 rehearsal |
 | 写回贡献不清 | 低 | sink 只做统一边界、正确性与收益吞噬检查 | 不单列研究内容 |
 

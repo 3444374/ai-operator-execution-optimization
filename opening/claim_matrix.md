@@ -1,7 +1,7 @@
 # 开题叙事与 Claim Matrix
 
 初版冻结日期：2026-08-07
-第一性原理复审：2026-08-08（feeding 纠正与叙事重构中，尚未最终冻结）
+第一性原理复审：2026-08-08（feeding 纠正矩阵已通过；原生单/多 job 对照仍在补齐）
 
 用途：本文件是开题阶段研究叙事、证据等级和新增实验停止规则的内部判定表。报告、答辩内容大纲、问答和实验计划若与本表冲突，先回到原始结果核对，再更新本表和相关材料。不得为了得到更好看的结果改变研究问题。当前暂停 PPT 成品制作。
 
@@ -50,9 +50,9 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 图像 work 是分阶段的，固定图片数不足以描述当前瓶颈 | 已证明（画像） | `motivation/results/gpu/image_clip_preprocess_variants_20260801/README.md`：实用 batch 下 CPU prepare 为 GPU actor 的 13.8–31.2 倍 | 跨模态公共 work-unit 需表达 prepare/model 等阶段需求，不能只把 token 字段改名为 frame | 仍需按 prepare/model work 组织与动态控制的正式消融 |
 | 算子代价估计已表现出配置选择价值 | 条件性 | `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md`：429 formal，CE5 pooled regret 1.67%、macro 2.90%、max 14.72%、candidate pairwise 0.808 | 可写为第一份选择质量可行性证据；CE5 只是 marginal pass | 更多 context、时间段、workload 和硬件 held-out |
 | 简单代价 proxy 不足以支持配置选择 | 已证明（文本） | 同上 20 contexts；各 context 四候选 E2E spread 12.0%–86.5%。CE0 mean macro regret 37.2%/pairwise 0.50，CE1 analytical 17.8%/0.53；逐行 MAE 更低的 Ridge 选择反而更差 | 代价估计必须按 ranking/regret 验收，首版保留物理解析结构并只学习 residual | 图像阶段代价的 held-out 选择证据仍缺 |
-| 三条静态路径在 SQuAD 均匀控制组已有统一 database-E2E 对照 | 条件性（failed-feeding 诊断） | 首轮统一 source/sink 与三次 formal 完整，但 project feeding ratio 89.9% 未过 95% 门；纠正校准已选择 K128 | 首轮只说明比较合同和瓶颈诊断可执行，不能进入最终性能排名 | 以 K128 的合格整体替换重跑 |
-| 两类 workload 的完整三臂统一 database-E2E 结论 | 待验证（替换重跑中） | 首轮 24/24 单元与 correctness 完整，但 SQuAD/ShareGPT project feeding 89.93%/91.38% 均未过门 | 在两份 workload-specific 校准合同通过后整体重跑；只引用新矩阵 | ShareGPT K32/64/128/256 选择与两组完整 replacement formal |
-| 异质文本 workload 会稳定拉开三臂差距 | 已证明（否定） | ShareGPT direct/project correct rows/s 为 11.34/10.36，service feeding 91.38%；差距没有反转为项目优势。DuckDB AI service 吞吐≈direct，但 4,936/6,144 行 cap 语义失败主导 correct throughput | 异质性本身不足以制造调度增量，且产品语义必须进入正确吞吐 | 不补新 baseline；状态变化与方法增量留开题后验证 |
+| 三条静态路径在 SQuAD 均匀控制组已有统一 database-E2E 对照 | 已证明（静态地基） | `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`：K128 replacement 24/24 单元、18 formal 全门禁通过；direct/DuckDB/project service tok/s=40,920.72/40,955.99/41,277.95，correct rows/s=136.63/136.68/137.77 | 喂饱后均匀短输出下三条静态路径近似中性；强静态点必须保留为后续动态对照 | 无 database-E2E blocker；不能从近似中性外推异质负载 |
+| 两类 workload 的完整三臂统一 database-E2E 结论 | 已证明（静态地基） | 同上：两 workload 均通过 feeding/GPU/exactly-once/sink/CV 门；ShareGPT project/direct service ratio=1.5457，SQuAD=1.0087 | 静态路径差异是 workload/regime-dependent；这不是动态或单一 WorkDescriptor 机制的因果收益 | 原生 Daft/Ray Data 轨与项目动态 A/B 分开补齐 |
+| 异质文本 workload 会拉开冻结静态路径差距 | 条件性 | ShareGPT project/direct service tok/s=14,568.91/9,425.25、DB-E2E=116.70/180.33 s；但两臂执行结构整体不同。DuckDB service≈direct，但 4,921/6,144 行 cap 语义失败 | 可说异质组观察到显著静态结构差异和产品语义边界；不能归因给动态、感知或某个 organizer 字段 | 同 manifest 原生单 job 矩阵；项目方法增量需同上限 A/B |
 | state-aware 请求成形/提交优于冻结强静态策略 | 待验证 | 尚无与同上限 frozen static 的正式对照 | 只能写成拟研究方法，不得写成已有贡献 | 开题后 proposed 主实验 |
 | Daft/Ray Data 文本原生路径已有同环境正式排名 | 待验证 | 当前只有 64/256-row validity/scale gate，没有至少 60 s、1+3 交错 formal | 只能说原生入口可执行且 scheduler owner 可审计，不得说哪个框架更快 | 同 ShareGPT Chat manifest 的 bounded、Daft Native/Ray、Ray Data 独立冻结点 1+3 formal |
 | 现有原生框架在多 job 共享服务时已暴露全局提交/感知缺口 | 待验证 | 已有项目 1/2/4-job 结果不包含 Daft built-in/Ray Data，且同步等量启动不能证明 idle borrowing | 不预设现有框架一定表现差；只观察独立 job 竞争、全局压力和可观测性 | Daft Native/Ray、Ray Data short/long staggered 原生观察 + 项目 static/shared 同上限 A/B |
@@ -72,7 +72,7 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 - arms、source/sink、模型和重复合同与均匀控制组相同。
 - 追加报告 work CV、token P50/P95/P99、estimated service work、endpoint work imbalance、TTFT/JCT/tail、cache/locality、active work 和 serving pressure。
 
-首轮两组实验因项目臂未喂饱而只作诊断。当前先按 workload 独立选择最小饱和 K，再整体替换。为闭合“现有系统不足→设计”因果链，替换矩阵后只再补两类不可替代证据：一个 ShareGPT Chat 原生框架单 job 矩阵，以及 Daft/Ray Data 原生两 job 观察 + 项目 static/shared 因果 A/B。差异不足 5% 或为负同样有效；不换 workload、模型、数据库，不扫更多 offset/weight 追正。
+首轮两组实验因项目臂未喂饱而只作历史诊断。K128 replacement 已整体通过，后续只引用 `opening_database_e2e_text_refeed_20260808/`。为闭合“现有系统不足→设计”因果链，只再补两类不可替代证据：一个 ShareGPT Chat 原生框架单 job 矩阵，以及 Daft/Ray Data 原生两 job 观察 + 项目 static/shared 因果 A/B。差异不足 5% 或为负同样有效；不换 workload、模型、数据库，不扫更多 offset/weight 追正。
 
 ## 4. 新实验准入问题
 

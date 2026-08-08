@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-08-08 喂饱后的统一文本 database-E2E replacement 通过
+
+- K128 replacement 完成 24/24 cells、18 formal；feeding、GPU、exactly-once、sink readback、manifest/identity、0 infrastructure failure 与稳定性门全部通过。当前权威报告为 `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`，2026-08-07 首轮只保留为 failed-feeding 历史诊断。
+- SQuAD direct/DuckDB/project service tok/s 为 40,920.72/40,955.99/41,277.95，project/direct=1.0087，三条静态路径近似中性；ShareGPT 为 9,425.25/9,421.31/14,568.91，project/direct=1.5457，DB-E2E 116.70 s 对 180.33 s。该差异只称 workload/regime-dependent 静态结构信号，不归因成动态或状态感知收益。
+- DuckDB AI ShareGPT raw/service throughput≈direct，但 4,921/6,144 行 fixed-cap 产品语义失败；正确吞吐与服务吞吐继续分列。报告同时列出 GPU util、MFU、能耗和 running/waiting/KV。
+- replacement 图暂不生成；数据已整理到 formal/headline summary。后续候选图冻结为 workload 内 service 相对 direct、统一 DB-E2E speed、ShareGPT raw/correct throughput 三部分，待全部开题实验数据完成后统一绘制。
+- 纠正归档策略：聚合 CSV/JSON、报告、preflight 进入 Git；15.4 MB request/trace `raw.tar.gz` 保留本地磁盘与 AutoDL，仅从 Git 跟踪移除。后续转入原生单 job、原生多 job 观察和项目 static/shared A/B。
+
 ## 2026-08-08 四条证据链与原生框架/多 Job 对照成为当前执行目标
 
 - 本条取代同日早先“文本 Daft/Ray Data 正式矩阵留论文阶段”的范围判断。Work Unit、状态感知、动态调度与共同使能的算子代价估计按同等证据标准组织，每条都需要“现象→缺口→设计→可证伪对照”。

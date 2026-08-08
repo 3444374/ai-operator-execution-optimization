@@ -126,7 +126,7 @@ PostgreSQL source
 
 ## 6. 开题前统一文本 database-E2E
 
-2026-08-07 首轮三臂因 project feeding 仅为 direct 的 89.9%/91.38%，已整体降级为 failed-feeding 诊断，不能作为最终开题性能对照。当前按 workload 分别扫描 K32/64/128/256，冻结满足 ≥95% direct feeding 且达到 ≥97% project 峰值的最小静态点；SQuAD 已选择 K128，ShareGPT 校准正在运行。两份合同都通过后才整体替换重跑下列矩阵。
+2026-08-07 首轮三臂因 project feeding 仅为 direct 的 89.9%/91.38%，保留为 failed-feeding 历史诊断。2026-08-08 已按 workload 校准并冻结 `K=128`，完整 replacement 24/24 单元、18 formal 均通过 feeding、GPU、exactly-once、sink、identity 与稳定性门禁；后续只引用 `experiments/results/opening_database_e2e_text_refeed_20260808/`。
 
 开题静态地基先完成 SQuAD short-answer 均匀控制组与 ShareGPT controlled-skew 异质组。两组均比较：
 
@@ -136,9 +136,9 @@ PostgreSQL source
 
 统一合同：PostgreSQL source、immutable equal-row manifest、双 Qwen2.5-7B vLLM endpoint、prefix cache ON、统一 PostgreSQL sink、外部 database-E2E、质量与资源指标、1 warmup + 3 formal。
 
-SQuAD 三次 formal 均值：direct 129.85、DuckDB AI 135.71、project 116.88 correct rows/s。三臂 EM/F1 接近；项目臂 service tokens/s 只有 direct 的约 89.9%，未过 95% feeding-saturation 门，因此只作为负结果与瓶颈诊断，不支持项目策略性能 claim。DuckDB AI 每次 1 行 cap 语义失败，保留在分母。
+SQuAD replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 136.63、136.68、137.77，service tokens/s 为 40,920.72、40,955.99、41,277.95；三臂 EM/F1 接近。project feeding 为 direct 的 100.87%，均匀短输出下三条静态路径近似中性。
 
-ShareGPT 三次 formal 均值：direct 11.34、DuckDB AI 2.23、project 10.36 correct rows/s；对应 service tokens/s 为 9,412.74、9,411.76、8,601.29。项目臂只有 direct 的 91.38%，再次未过 95% feeding-saturation 门。DuckDB AI 的模型服务吞吐与 direct 接近，但固定 256-token cap 下三次 formal 共 4,936/6,144 行出现产品层 cap 语义失败，因此 correct throughput 显著降低；基础设施失败仍为 0。异质 workload 没有使项目冻结静态路径获得优势。
+ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 11.36、2.26、17.55，service tokens/s 为 9,425.25、9,421.31、14,568.91；project feeding 为 direct 的 154.57%，DB-E2E 为 116.70 s 对 180.33 s。DuckDB AI 的 raw/service throughput 与 direct 接近，但 fixed-cap 产品语义下三次 formal 共 4,921/6,144 行失败。该结果证明静态路径差异随 workload/regime 改变，并建立了强静态地基；不能写成 state-aware、动态调度或单个 WorkDescriptor 机制已胜出。
 
 两组完成后停止换模型、数据库、workload 或扩大参数扫描追正。只再补两类不可替代的对照：① 同一 ShareGPT Chat manifest 上的 bounded control、Daft Native/Ray 与 Ray Data 原生单 job 1+3；② Daft/Ray Data 两个 short/long 错峰独立 job 观察，以及项目 static-partition vs shared-work-credit 同上限 A/B。原生框架不注入项目 credit/router，不将 barrier 冒充 request P99；DuckDB 仅保留在 SQuAD/cap=64 有界输出产品轨。差异不足 5% 或为负同样有效，不扫更多 offset/weight 追正。开题用现有与新增最小证据同等严格地说明 Work Unit、状态感知、动态调度和共同使能代价估计的设计理由，不要求 proposed 全面胜出。
 
@@ -156,8 +156,8 @@ ShareGPT 三次 formal 均值：direct 11.34、DuckDB AI 2.23、project 10.36 co
 ## 8. 当前执行顺序
 
 1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同、共同 cost enabler 与六张叙事图已完成；相关定向测试与渲染审计通过。
-2. SQuAD feeding 校准已选择 K128；ShareGPT K32/64/128/256 校准正在运行。两份合同通过后重跑两 workload × 三静态臂。
-3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；replacement matrix 通过后更新实验报告和数据图，不生成、覆盖或同步新的 PPT/云文档。
+2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
+3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前更新实验报告和数据图，不生成、覆盖或同步新的 PPT/云文档。
 4. 静态三臂后完成一个文本原生框架单 job 矩阵，再完成原生两 job 观察与项目 static/shared 错峰 A/B；开题后再扩展 state-aware phase-change、weighted/异构多 job、图像 dynamic、完整 burst/mixed-cost、联合消融和跨硬件主实验。
 5. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
 

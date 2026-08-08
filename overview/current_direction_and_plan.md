@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-最后更新：2026-08-07
+最后更新：2026-08-08
 
 > 本文是两分钟快速参考卡片。完整定义以 `PROJECT_OUTLINE.md` 为准；当前执行顺序以
 > `opening/claim_matrix.md` 与 `experiments/plans/experiment_status_and_gaps.md` 顶部
@@ -13,8 +13,8 @@
   Database 与 Model Service 之间的 AI Data Execution Layer。
 - **两项内容不变**：workload 感知的 work-unit 构造；容量感知的提交、路由与多 job 调度。
   cost estimator 是共同使能组件，文本和图像是跨模态证据轨道。
-- **开题最后两组数据已完成**：统一三臂矩阵 24/24 单元通过完整性门禁；project 在
-  SQuAD/ShareGPT 的 service feeding 为 89.93%/91.38%，均未过 95%。开题前已停止加 baseline。
+- **喂饱后的三臂 replacement 已完成**：24/24 单元、18 formal 全门禁通过；project 在
+  SQuAD/ShareGPT 的 service feeding 为 100.87%/154.57%。旧 89.93%/91.38% 只作历史诊断。
 - **state-aware 仍是拟研究方法**：现有证据支持 strong static、regime dependence、图像
   matched-resource 结构收益和代价估计可行性，但没有证明 state-aware 优于冻结静态点。
 
@@ -55,8 +55,8 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 
 | 证据 | 当前可得出的结论 |
 |---|---|
-| 统一文本三臂：24/24 单元，project feeding 89.93%/91.38% | 项目冻结静态路径在两类 workload 均无性能优势，只作为负结果与瓶颈诊断 |
-| DuckDB AI ShareGPT：service tok/s≈direct，4,936/6,144 cap 语义失败 | 产品语义兼容性必须进入 correct throughput，不能把问题写成纯速度排名 |
+| 统一文本三臂 replacement：24/24 单元，project feeding 100.87%/154.57% | SQuAD 三静态路径近似中性；ShareGPT project/direct service ratio=1.546，说明静态结构差异具有 workload/regime 依赖，不能冒充动态收益 |
+| DuckDB AI ShareGPT：service tok/s≈direct，4,921/6,144 cap 语义失败 | 产品语义兼容性必须进入 correct throughput，不能把问题写成纯速度排名 |
 | 65,536 active work/endpoint 达最大吞吐的 97.8% | 固定 token-aware credit 是当前简单、稳健的文本默认点 |
 | AIMD/PID/EWMA、动态 flush、多 actor 多数未过 5% 门槛 | 不能声称复杂动态策略普遍胜过强静态 baseline |
 | 2-ep 与 4-ep cache-ON 数据组织排名反转 | 上游组织/准入价值依赖 endpoint consolidation 与 KV 饱和 regime |
@@ -73,10 +73,10 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 
 ## 5. 当前实施顺序
 
-1. 保持 Claim Matrix、四张核心图、统一三臂负结果与开题停止规则冻结。
-2. 使用本地重构后的报告和 28 页 v6 PPTX 做导师/答辩复核；不再补开题 baseline。
-3. 飞书授权恢复后同步线上报告；本地 `opening/feishu/opening_report_wiki.md` 已与报告一致。
-4. 开题材料确认后恢复 image state-aware A+B、system-E2E 和论文阶段 backlog。
+1. 保持 Claim Matrix、六张叙事图、统一三臂 replacement 与开题停止规则一致。
+2. 完成同一 ShareGPT Chat manifest 的 bounded、Daft Native/Ray、Ray Data 原生单 job 1+3。
+3. 完成原生 short/long 两 job 错峰观察与项目 static/shared 同上限 A/B；阴性结果也停止，不扩扫追正。
+4. 当前暂停 PPT、云文档和 Wiki，只同步本地报告、聚合数据与 Git。
 
 晋级门槛：相对各自独立标定的强静态/系统 baseline 至少改善约 5%，重复方向一致，且质量不退化。
 

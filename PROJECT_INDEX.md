@@ -215,7 +215,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/analysis/test_summarize_opening_project_feeding_calibration.py` | feeding 校准选择器的最小饱和点与 manifest fail-closed 回归测试 | 修改校准门槛、输入合同或选择规则时运行 |
 | `code/scripts/analysis/summarize_opening_multijob_minimal.py` | fail-closed 汇总开题 short/long 两作业错峰两场景 | 输出组级紧凑数据、场景统计、shared-vs-static 对照和审计；不含 sink |
 | `code/tests/analysis/test_summarize_opening_multijob_minimal.py` | 多任务汇总器的完整矩阵与 short/long manifest 身份回归测试 | 修改多 job 结果合同或审计边界时运行 |
-| `experiments/results/opening_database_e2e_text_20260807/README.md` | 两组 workload × 三静态臂的统一 database-E2E 正式报告 | 引用开题三臂表、feeding 负结果或 DuckDB cap 语义边界前读 |
+| `experiments/results/opening_database_e2e_text_refeed_20260808/README.md` | K128 喂饱后的两组 workload × 三静态臂统一 database-E2E 正式报告，含 MFU、能耗、服务状态与正确吞吐 | 引用当前开题三臂表、静态 workload/regime 差异或 DuckDB cap 语义边界前读 |
+| `experiments/results/opening_database_e2e_text_20260807/README.md` | 首轮两组 workload × 三静态臂 database-E2E | 只读 failed-feeding 历史诊断；当前性能口径已被 20260808 replacement 取代 |
 | `figures/scripts/generate_opening_core_evidence_figures.py` | 从冻结正式结果生成开题四张核心证据图 | 更新开题报告或答辩 PPT 前运行 |
 | `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |
 | `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果重建 work/state/control 动机、AI Data Execution Layer 边界、work→schedule、组织 regime、图像 stage 与 cost decision 图 | 更新答辩大纲的动机/方法证据图前运行 |

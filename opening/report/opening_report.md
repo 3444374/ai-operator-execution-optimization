@@ -124,18 +124,18 @@ Database
 
 开题前最后一组新增文本数据采用两类 workload：SQuAD short-answer 均匀控制组和 ShareGPT controlled-skew 异质组。三条路径分别是 bounded HTTP 静态直接控制、DuckDB AI static-sharded、项目 Daft organizer + Ray actor frozen-static。三者共享 PostgreSQL source、immutable manifest、双 vLLM endpoint、Qwen2.5-7B、prefix cache、统一 PostgreSQL sink、外部 database-E2E 与 1 warmup + 3 formal 合同。
 
-SQuAD 三次 formal 已显示：direct、DuckDB AI、项目冻结静态的 correct rows/s 均值分别为 129.85、135.71 和 116.88；三臂 normalized EM 约 80.2%–80.3%，token F1 约 89.3%–89.4%。项目臂 service tokens/s 只有 direct 的约 89.9%，未过预注册的 95% feeding-saturation 门，因此该结果不能支持项目策略性能 claim，只能作为统一链路负结果和瓶颈诊断。DuckDB AI 每次有 1 行固定上限语义失败，均保留在 correct throughput 分母中。
+喂饱后的 K128 replacement 中，SQuAD direct、DuckDB AI、项目冻结静态的 correct rows/s 均值分别为 136.63、136.68 和 137.77；service tokens/s 分别为 40,920.72、40,955.99 和 41,277.95。project feeding 达 direct 的 100.87%，三臂 normalized EM 约 80.26%–80.31%，token F1 约 89.36%–89.38%。因此均匀短输出下三条静态路径近似中性，而不是首轮未喂饱时观察到的项目劣势。
 
-ShareGPT 的正式结果同样没有给出项目路径的性能优势：direct、DuckDB AI、项目冻结静态的 correct rows/s 均值分别为 11.34、2.23 和 10.36；service tokens/s 分别为 9,412.74、9,411.76 和 8,601.29。项目臂 service feeding 只有 direct 的 91.38%，再次未过 95% 门。DuckDB AI 已经驱动模型服务完成与 direct 几乎相同的 token work，但固定 256-token cap 下三次 formal 共 4,936/6,144 行被产品层判为 cap 语义失败；基础设施失败为 0。这个结果说明异质 workload 本身不会自动形成项目增量，产品语义兼容性也必须进入正确吞吐。
+ShareGPT replacement 中，direct、DuckDB AI、项目冻结静态的 correct rows/s 均值分别为 11.36、2.26 和 17.55；service tokens/s 分别为 9,425.25、9,421.31 和 14,568.91。project feeding 为 direct 的 154.57%，database-E2E 从 direct 的 180.33 s 降为 116.70 s。DuckDB AI 已经驱动模型服务完成与 direct 几乎相同的 token work，但固定 256-token cap 下三次 formal 共 4,921/6,144 行被产品层判为 cap 语义失败；基础设施失败为 0。这个结果说明静态执行结构的效果随 workload/regime 改变，产品语义兼容性必须进入正确吞吐；它不能归因成动态调度、状态感知或单一 WorkDescriptor 机制的收益。
 
 | workload | 路径 | correct rows/s | service tokens/s | feeding vs direct | cap 语义失败 |
 |---|---|---:|---:|---:|---:|
-| SQuAD uniform | direct | 129.85 | 38,927.70 | 100.00% | 0 |
-| SQuAD uniform | DuckDB AI | 135.71 | 40,663.54 | 104.46% | 3/31,710 |
-| SQuAD uniform | project frozen-static | 116.88 | 35,006.05 | **89.93%，未过门** | 0 |
-| ShareGPT controlled-skew | direct | 11.34 | 9,412.74 | 100.00% | 0 |
-| ShareGPT controlled-skew | DuckDB AI | 2.23 | 9,411.76 | 99.99% | 4,936/6,144 |
-| ShareGPT controlled-skew | project frozen-static | 10.36 | 8,601.29 | **91.38%，未过门** | 0 |
+| SQuAD uniform | direct | 136.63 | 40,920.72 | 100.00% | 0 |
+| SQuAD uniform | DuckDB AI | 136.68 | 40,955.99 | 100.09% | 3/31,710 |
+| SQuAD uniform | project frozen-static | 137.77 | 41,277.95 | 100.87%，通过 | 0 |
+| ShareGPT controlled-skew | direct | 11.36 | 9,425.25 | 100.00% | 0 |
+| ShareGPT controlled-skew | DuckDB AI | 2.26 | 9,421.31 | 99.96% | 4,921/6,144 |
+| ShareGPT controlled-skew | project frozen-static | 17.55 | 14,568.91 | 154.57%，通过 | 0 |
 
 这组实验的目标不是证明项目路径胜出，而是建立可审计的统一比较边界。raw rows/s、correct rows/s 和 service tokens/s 必须同时报告；产品层因固定输出上限返回空结果时，GPU 已消耗的服务 work 不能被隐藏，也不能把语义不兼容误写成纯性能排名。
 
@@ -165,7 +165,7 @@ CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时
 
 ### 5.7 当前能证明与不能证明的内容
 
-已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益。条件性证据：轻量代价模型已体现配置选择价值；已有 1/2/4-job 结果表明 shared credit 只在高竞争区间出现条件性收益。开题冻结前还需完成三项最小对照：纠正后的 database-E2E 三臂；同一 ShareGPT Chat manifest 上 bounded control、Daft Native/Ray 与 Ray Data 的原生单 job 对照；Daft/Ray Data 原生两 job 错峰观察和项目 static-partition vs shared-work-credit 因果 A/B。state-aware phase-change、weighted fairness、图像新动态策略和 cost held-out 仍是论文阶段计划；在完成前不能声称相应 proposed 已经有效，也不能声称项目路径普遍优于 direct、DuckDB AI、Ray Data 或 Daft。
+已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；喂饱后的统一三臂 database-E2E 静态地基已经闭合。条件性证据：轻量代价模型已体现配置选择价值；已有 1/2/4-job 结果表明 shared credit 只在高竞争区间出现条件性收益。开题冻结前还需完成两项最小对照：同一 ShareGPT Chat manifest 上 bounded control、Daft Native/Ray 与 Ray Data 的原生单 job 对照；Daft/Ray Data 原生两 job 错峰观察和项目 static-partition vs shared-work-credit 因果 A/B。state-aware phase-change、weighted fairness、图像新动态策略和 cost held-out 仍是论文阶段计划；在完成前不能声称相应 proposed 已经有效，也不能声称项目路径普遍优于 direct、DuckDB AI、Ray Data 或 Daft。
 
 ## 6. 进度安排
 

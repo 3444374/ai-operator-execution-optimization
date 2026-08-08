@@ -4,11 +4,12 @@
 
 先读 [`EXPERIMENT_EVIDENCE_REGISTRY.md`](EXPERIMENT_EVIDENCE_REGISTRY.md)。该台账登记主要机制结果，并区分“设计预留、功能测试、真实链路门禁、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 
-## 开题统一文本 database-E2E（2026-08-07）
+## 开题统一文本 database-E2E（2026-08-08 replacement）
 
 | Directory | Content | Boundary |
 |---|---|---|
-| `opening_database_e2e_text_20260807/` | SQuAD uniform + ShareGPT controlled-skew；direct / DuckDB AI / project frozen-static；24/24 单元、18 formal、统一 PG source/sink | project feeding 89.93%/91.38% 均未过门，只支持负结果与诊断；DuckDB ShareGPT 有 4,936/6,144 cap 语义失败。开题前 baseline 到此停止。 |
+| `opening_database_e2e_text_refeed_20260808/` | K128 喂饱后的 SQuAD + ShareGPT 三静态臂 replacement；24/24 单元、18 formal、统一 PG source/sink、MFU/能耗/服务状态 | 全门禁通过；SQuAD 静态路径近似中性，ShareGPT project/direct service ratio=1.546；DuckDB ShareGPT 有 4,921/6,144 cap 语义失败。不能将静态结构差异写成动态收益。 |
+| `opening_database_e2e_text_20260807/` | 首轮相同三臂合同 | project feeding 89.93%/91.38% 未过门，只保留为 failed-feeding 历史诊断，性能数字已被 replacement 取代。 |
 
 ## 图像 AI_EMBED operator（2026-08-03/04）
 
