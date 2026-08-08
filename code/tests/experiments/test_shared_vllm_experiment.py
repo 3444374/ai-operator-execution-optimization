@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
@@ -103,6 +104,19 @@ class SharedVllmExperimentTests(unittest.TestCase):
             [("task-0",), ("task-1",)],
         )
         self.assertIs(observer.actor, client.actor)
+
+    def test_credit_observer_cleanup_preserves_primary_failure(self) -> None:
+        observer = shared_vllm._RayCreditObserver.__new__(
+            shared_vllm._RayCreditObserver
+        )
+        observer.ray = MagicMock()
+        observer.actor = object()
+        observer.ray.kill.side_effect = RuntimeError("ray unavailable")
+
+        with self.assertWarnsRegex(RuntimeWarning, "cleanup failed"):
+            observer.cleanup()
+
+        self.assertIsNone(observer.actor)
 
     def test_request_trace_success_matches_profiler_schema(self) -> None:
         self.assertTrue(
@@ -1041,6 +1055,29 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "exactly-once failed",
                 failure.read_text(encoding="utf-8"),
             )
+
+    def test_shared_credit_actor_is_cleaned_after_group_failure(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            options, config, scenario = self._group_fixture(Path(temp_dir))
+            scenario = replace(scenario, policy="shared_drr")
+            observer = MagicMock()
+            observer.prewarm.side_effect = RuntimeError("prewarm failed")
+            observer.sample.return_value = []
+            observer.final_snapshots.return_value = []
+
+            with patch(
+                "src.experiments.shared_vllm.runner._RayCreditObserver",
+                return_value=observer,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "prewarm failed"):
+                    _run_group(
+                        options,
+                        config,
+                        scenario,
+                        GroupRunIdentity("formal", 1, 0),
+                    )
+
+            observer.cleanup.assert_called_once_with()
 
     def test_worker_failure_is_a_hard_group_gate(self) -> None:
         with TemporaryDirectory() as temp_dir:

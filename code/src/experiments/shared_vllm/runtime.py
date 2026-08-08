@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import time
+import warnings
 from dataclasses import asdict
 from pathlib import Path
 
@@ -107,8 +108,20 @@ class _RayCreditObserver:
         return [_snapshot_mapping(snapshot) for snapshot in snapshots]
 
     def cleanup(self) -> None:
-        if self.actor is not None:
-            self.ray.kill(self.actor, no_restart=True)
+        actor = self._resolve_actor()
+        if actor is None:
+            return
+        try:
+            self.ray.kill(actor, no_restart=True)
+        except Exception as exc:
+            warnings.warn(
+                "shared credit actor cleanup failed: "
+                f"{type(exc).__name__}:{exc}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        finally:
+            self.actor = None
 
 def _snapshot_mapping(snapshot) -> dict[str, object]:
     mapping = asdict(snapshot)

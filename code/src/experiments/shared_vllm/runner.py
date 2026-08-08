@@ -595,8 +595,6 @@ def _run_group(
             / f"{run_stem}.credits.csv",
             credit_samples,
         )
-        if observer is not None:
-            observer.cleanup()
         _write_json_atomic(record_path, record)
         return record
     except Exception as exc:
@@ -641,5 +639,7 @@ def _run_group(
         )
         raise
     finally:
+        if observer is not None:
+            observer.cleanup()
         for handle in log_handles:
             handle.close()

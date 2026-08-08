@@ -1,5 +1,14 @@
 # Learning Notes
 
+## 2026-08-09 多 Job 共享额度的异常生命周期
+
+共享 credit actor 的生命周期必须与一个 group run 一致，而不能只在成功路径结束。
+如果任一 Job 因 HTTP、Ray 或证据门失败，runner 仍要先终止所有 child，再保存失败
+trace，最后在 `finally` 精确销毁该 group 的具名 credit actor。否则下一次实验即使使用
+新输出目录，也可能在同一个 Ray 集群中继承不属于自己的调度状态。清理操作现在是
+幂等的：找不到 actor 时直接返回，销毁后清空本地句柄；Ray 自身清理失败只产生显式
+warning，失败实验仍保留原始异常作为主错误。
+
 代码结构导读：
 
 - [`code_architecture_guide.md`](code_architecture_guide.md)：解释公共执行阶段与

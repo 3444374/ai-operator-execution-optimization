@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-08-09 guaranteed-overlap 项目重跑的瞬时传输失败与状态清理
+
+- 项目 5s offset v2 在完成 static warm-up 后，shared warm-up 的一个 child 因
+  `httpx.ReadError` fail closed。两个 vLLM endpoint 随后均健康，服务日志未见 5xx、
+  CUDA 或 engine crash；该不完整 root 与 runner/child 日志继续保留，不进入正式均值。
+- 失败审计发现该 group 的具名 `_FairCreditActor` 仍存活。runner 过去只在成功路径调用
+  cleanup；现在将 observer 清理移入 `finally`，且 cleanup 在销毁后清空 actor 句柄。
+  Ray kill 失败只产生显式 warning，不覆盖主实验异常；新增异常路径与 cleanup-failure
+  回归，shared-vLLM 定向测试 36/36 通过。
+- 精确销毁唯一残留 actor 后，保留同一服务/Ray/参数合同，以全新 v3 root 重跑完整
+  1 warm-up + 3 formal；不通过修改 offset、K/W 或重试单个请求追求正结果。
+
 ## 2026-08-09 多 Job 干扰实验增加统一 guaranteed-overlap 合同
 
 - 复核发现统一 15s offset 下 Daft Native short 在 long 到达前已经结束，
