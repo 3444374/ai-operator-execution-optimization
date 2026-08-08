@@ -58,10 +58,10 @@ project/C32-direct=1.5457 不作性能排名。正式原生矩阵使用达到峰
 仍停止增加不在冻结矩阵内的开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
 granularity 不同，只用于 serving capacity/overload 证据，不替代上述统一 database-E2E。
 差异不足 5% 不触发换 workload、模型、数据库或扩大参数扫描。首轮四组核心图、报告与
-飞书与旧 PPT 只作为历史版本；当前只重算实验报告与数据图。用户已要求暂停新的 PPT 成品、
-云文档覆盖和 Wiki。按 2026-08-08 最新要求，剩余补同一 ShareGPT Chat manifest 的 bounded、
-Daft Native/Ray、Ray Data 原生单 job 1+3，原生 short/long 两 job 错峰观察，以及项目
-static-partition vs shared-work-credit 同上限最小实验；phase-change、weighted、图像新动态策略、
+飞书与旧 PPT 只作为历史版本；当前只整理实验报告与待画图清单。用户已要求暂停新的 PPT 成品、
+云文档覆盖和 Wiki。2026-08-08 原生单 job 1+3 已完成（结果见
+`opening_text_native_single_job_formal_20260808/`）；当前只剩原生 short/long 两 job 错峰观察，以及项目
+static-partition vs shared-work-credit 同上限最小实验。phase-change、weighted、图像新动态策略、
 cost held-out 与完整 image-first A+B 矩阵均留开题后。
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）

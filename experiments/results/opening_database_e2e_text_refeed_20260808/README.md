@@ -109,8 +109,8 @@ project 的 request P99 来自项目 profiler，而 direct/DuckDB 的 request la
 ## 7. 下一步与停止规则
 
 1. 不再重跑本三臂 database-E2E，也不更换 workload、模型、数据库或 K 追求更大差异。
-2. 以新冻结的 bounded C128 完成同一 ShareGPT Chat manifest 的 bounded、Daft Native、Daft Ray、Ray Data 原生单 job 1+3；各原生系统拥有自身执行和调度。
-3. 完成原生 short/long 两 job 错峰观察，以及项目 `static_partition` vs `shared_work_credit` 同上限因果 A/B；报告 per-job JCT、服务状态、GPU/MFU、fairness 和 exactly-once。
+2. bounded C128、Daft Native、Daft Ray、Ray Data 原生单 job 1+3 已完成，见 `opening_text_native_single_job_formal_20260808/`。
+3. 当前只完成原生 short/long 两 job 错峰观察，以及项目 `static_partition` vs `shared_work_credit` 同上限因果 A/B；报告 per-job JCT、服务状态、GPU/MFU、fairness 和 exactly-once。
 4. 若差异不足 5%或为负，按阴性结果停止，不扩扫 offset/weight 追正。
 
 ## 8. 证据与复现

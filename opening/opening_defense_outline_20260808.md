@@ -41,7 +41,7 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 | 13 | 多作业按 work 共享而不是按请求数平均 | shared work credit、deficit/fair queue、idle borrowing、remaining work/SLO slack | 多 job 实验设计图 | 公平性、JCT 和隔离仍需完整动态实验验证 |
 | 14 | 文本和图像复用接口，但主导 stage 不同 | text token work；image prepare/model/tensor work；同一 descriptor/state/controller 接口 | 跨模态映射表 | 泛化是接口复用，不是假设两种负载成本相同 |
 | 15 | 因果评估必须先冻结饱和强静态点 | 同资源、同最大 K/work、同 source、同完整结果语义；dynamic 仅改变策略 | 实验合同图 | 未通过 feeding/correctness/stability 的数据不得排名；sink 仅用于 database-E2E 护栏 |
-| 16 | database-E2E 护栏与饱和校准分开呈现 | SQuAD 三臂近似中性；ShareGPT C32 仅达峰值 52.1%，因此旧 project/C32-direct=1.546 降级为配置诊断；DuckDB raw/correct 语义分离 | 待画：C32–C256 饱和/排队双面板 + 紧凑 correctness 表 | 不把 C32 当饱和 ceiling；不称项目方法收益 |
+| 16 | 原生 graph 将同一服务推入不同压力区 | bounded C128 最小饱和；Daft Native/Ray overqueue；Ray Data 当前路径 underfeed | 待画：JCT/tok/s + running/waiting/KV/MFU 状态指纹双面板 | 只讲外部现象；database-E2E 护栏与 DuckDB raw/correct 放 appendix 表 |
 | 17 | 前期证据分别覆盖组织、图像结构和代价选择质量 | organization regime、image matched-resource、cost decision regret | 三个不重复的小图或一页表 | 都标为 preliminary/conditional evidence |
 | 18 | 论文主实验按稳态、变化、多作业、跨模态推进 | steady no-regression；phase shift/burst/mixed-cost；multi-job；image | 实验路线与停止规则 | K512、VLM、故障迁移不是开题 blocker |
 | 19 | 贡献是统一 work 表征与状态感知上游执行方法 | 两项研究内容、共同使能代价估计、多模态验证和严格实验合同 | 一页总结 | 不把工程集成或弱 baseline 写成贡献 |
@@ -140,7 +140,7 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 | C organization regime | 组织收益为何依赖 serving regime | 低压力/高压力 small multiples 或 dumbbell；附 locality 机制注释 | cache-on 正式结果 | 一张图只讲 regime dependence |
 | D 图像 stage-aware | 为什么跨模态需要 staged work | CPU prepare/GPU service 比 + matched-resource 单一主指标 | image exact-path 正式结果 | 质量与资源合同一致 |
 | E cost decision quality | 代价估计是否能帮助选择 | median/macro/max regret、pairwise 与门槛；不堆所有预测散点 | cost-profile formal | 明确共同使能和 conditional 结论 |
-| F replacement 三臂 | 合格静态基线表现如何 | workload 分面；correct throughput 为主，P99/MFU/energy 小标注 | 2026-08-08 replacement formal | 两 workload feeding/correctness/stability 全过 |
+| F 原生单 Job 状态指纹 | 现有原生 graph 如何落入不同服务压力区 | 左：JCT/tok/s；右：running、waiting、KV、MFU 标准化状态；标 underfeed/minimum-saturation/overqueue | `opening_text_native_single_job_formal_20260808` 12 formal | 只解释外部现象；database-E2E 三臂降为 appendix correctness/语义表 |
 | G static–dynamic | 状态变化下动态是否超过同上限静态 | workload phase 时间线 + outcome small multiples | 论文实验设计图；不伪造开题前结果 | 最大 K/work/resources 完全匹配 |
 | H multi-job | shared credit 是否借用空闲份额并改善 job-level 指标 | per-job JCT/goodput + Jain/isolation | 开题两作业 staggered formal；论文阶段扩展 weighted/异构 | 最小结果只覆盖两作业与一个 offset；已有 1/2/4 同步结果单列 |
 

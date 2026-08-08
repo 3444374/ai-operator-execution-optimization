@@ -127,10 +127,9 @@
 
 ## 7. 开题使用边界
 
-开题需要四条证据链都有动机现象和可执行对照，但不要求论文方法已经全面胜出。当前只新增两类不可替代的文本证据：
+开题需要四条证据链都有动机现象和可执行对照，但不要求论文方法已经全面胜出。原生单 job 1+3 已完成：Daft Native/Ray 在当前官方 graph 下稳定 overqueue，Ray Data 当前冻结路径稳定 underfeed；它只证明问题形态，不证明项目方法胜出。当前只剩一类不可替代的文本证据：
 
-1. 同一 ShareGPT controlled-skew Chat manifest 上的 bounded control、Daft Native/Ray、Ray Data 原生单 job 1+3 对照；DuckDB 仅在 SQuAD/cap=64 有界输出产品轨中比较。
-2. Daft Native/Ray、Ray Data 的两个 short/long 错峰独立 job 观察，以及项目 `static_partition` vs `shared_work` 的同上限因果 A/B。
+1. Daft Native/Ray、Ray Data 的两个 short/long 错峰独立 job 观察，以及项目 `static_partition` vs `shared_work` 的同上限因果 A/B。
 
 现有 token-work、active-work、图像 stage profile/matched-resource、1/2/4-job 和 429-run cost decision-quality 直接复用。图像 cost held-out 只在已有 profile 无法组成决策对照时才新跑；phase-change、3:1 weighted、第二硬件和更多 workload 不阻塞本轮开题证据闭环。
 
@@ -138,7 +137,7 @@
 
 | 组 | 冻结 workload/shape | arms/scenarios | 重复 | 目的 |
 |---|---|---|---|---|
-| 原生单 job | ShareGPT controlled-skew held-out Chat manifest；同 model/service/output cap | bounded Chat、Daft Native、Daft Ray、Ray Data；项目 frozen-static 用同 manifest 的相同边界指标对齐 | 每臂 1+3，平衡交错 | 现有原生框架的 feeding、JCT、service throughput、资源与可观测性边界 |
+| 原生单 job（已完成） | ShareGPT controlled-skew held-out Chat manifest；同 model/service/output cap | bounded Chat、Daft Native、Daft Ray、Ray Data | 每臂 1+3，平衡交错 | 已冻结 underfeed/minimum-saturation/overqueue 三类外部状态；见 `opening_text_native_single_job_formal_20260808/` |
 | 原生两 job 观察 | 两个 512 行 short/long job；offset 在 concurrent smoke 后冻结；互斥 manifest | Daft Native、Daft Ray、Ray Data 各自启动两个独立 job；不注入项目 credit | 每臂 1+3 | job/group JCT、服务计数、vLLM running/waiting/KV/TTFT delta、逐 GPU 利用率/功耗；观察全局压力、干扰和资源超卖 |
 | 两作业 | 两个 512 行 short/long job；15 s stagger；互斥 manifest 与 source offset | static partition 与 shared work-credit/fair queue 成对比较；相同 endpoint 总 K/work | 每场景 1+3 group runs | JCT、公平、隔离、idle borrowing；不得把独立 full credit 当公平 baseline；weighted 留论文阶段 |
 

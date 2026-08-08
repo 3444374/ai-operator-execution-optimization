@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-08-08 文本原生单 Job 同环境正式矩阵通过
+
+- bounded C128、Daft Native、Daft Ray、Ray Data official graph 在同一 2,048-row ShareGPT manifest 上完成 1 warm-up + 3 formal；16/16 cells、12/12 formal、0 failure、exactly-once 和 provenance 门全部通过，四臂吞吐/JCT CV<0.7%。
+- 三次 formal 均值 service tok/s 为 17,800/17,286/16,747/3,551。Daft Native/Ray waiting mean=783/742、observed max=1,763/1,773、KV max≈1，稳定呈现过量提前提交；Ray Data running mean=17.3、waiting=0、MFU=0.112，稳定呈现供给不足；bounded C128 位于最小饱和参考区。
+- 结论冻结为“同一任务在现有原生 graph/冻结点下落入不同压力形态，需要联合 work rate/MFU、running/waiting、KV 与 tail 感知”；不归因内部算法、不称项目方法胜出。下一步只补原生两 job 错峰观察与项目 static/shared 同上限 A/B。
+- 服务器原始目录 38 MB，并生成 12 MB 独立归档 `opening_text_native_single_job_formal_20260808_saturated_c128_v2.tar.gz`，SHA256 `d2d59e7428df3254ef877e32f89cca3dff45dd5be13dbf67c8c2bc7f006b7da7`。仓库新增逐次/汇总 CSV和报告；本轮不画图。
+
 ## 2026-08-08 ShareGPT bounded 饱和校准与旧 C32 口径纠正
 
 - 同一 2,048-row ShareGPT manifest 上完成 bounded HTTP C32/C64/C128/C256 的 1 warm-up + 1 formal 容量扫描；8/8 cells、4/4 formal 通过 exactly-once、service counter 与 ≥60 s 门禁。

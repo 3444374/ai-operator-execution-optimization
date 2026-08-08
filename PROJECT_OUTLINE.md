@@ -140,7 +140,9 @@ SQuAD replacement 三次 formal 均值：direct、DuckDB AI、project 的 correc
 
 ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 11.36、2.26、17.55，service tokens/s 为 9,425.25、9,421.31、14,568.91。后续 bounded C32/C64/C128/C256 扫描为 9,454.88/14,057.93/17,834.14/18,158.19 tok/s，C128 是达到已测峰值 97% 的最小点；C256 仅增 1.82%，却使 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18s。旧 project/C32-direct=1.5457 因对照欠供给而不作方法排名。DuckDB fixed-cap 产品语义失败 4,921/6,144 行的结论仍有效。
 
-两组完成后停止换模型、数据库、workload 或扩大参数扫描追正。只再补两类不可替代的对照：① 同一 ShareGPT Chat manifest 上的 bounded control、Daft Native/Ray 与 Ray Data 原生单 job 1+3；② Daft/Ray Data 两个 short/long 错峰独立 job 观察，以及项目 static-partition vs shared-work-credit 同上限 A/B。原生框架不注入项目 credit/router，不将 barrier 冒充 request P99；DuckDB 仅保留在 SQuAD/cap=64 有界输出产品轨。差异不足 5% 或为负同样有效，不扫更多 offset/weight 追正。开题用现有与新增最小证据同等严格地说明 Work Unit、状态感知、动态调度和共同使能代价估计的设计理由，不要求 proposed 全面胜出。
+同一 ShareGPT Chat manifest 的原生单 job 1+3 已完成：bounded C128、Daft Native、Daft Ray、Ray Data 的 service tok/s 为 17,800/17,286/16,747/3,551，四臂 CV<0.6%。Daft 两臂 waiting mean 为 783/742、KV max≈1，呈现过量提前提交；Ray Data running mean=17.3、MFU=0.112，呈现供给不足；bounded C128 位于最小饱和区。该结果只证明官方 graph/冻结点的外部压力形态，不证明项目方法胜出或某个框架内部算法有缺陷。
+
+只再补一类不可替代的对照：Daft/Ray Data 两个 short/long 错峰独立 job 观察，以及项目 static-partition vs shared-work-credit 同上限 A/B。原生框架不注入项目 credit/router，不将 barrier 冒充 request P99；DuckDB 仅保留在 SQuAD/cap=64 有界输出产品轨。差异不足 5% 或为负同样有效，不扫更多 offset/weight 追正。
 
 ## 7. 开题叙事图
 
@@ -158,7 +160,7 @@ ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 cor
 1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同、共同 cost enabler 与六张叙事图已完成；相关定向测试与渲染审计通过。
 2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
 3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前更新实验报告和数据图，不生成、覆盖或同步新的 PPT/云文档。
-4. 静态三臂后完成一个文本原生框架单 job 矩阵，再完成原生两 job 观察与项目 static/shared 错峰 A/B；开题后再扩展 state-aware phase-change、weighted/异构多 job、图像 dynamic、完整 burst/mixed-cost、联合消融和跨硬件主实验。
+4. 文本原生框架单 job 矩阵已完成；下一步只完成原生两 job 观察与项目 static/shared 错峰 A/B。开题后再扩展 state-aware phase-change、weighted/异构多 job、图像 dynamic、完整 burst/mixed-cost、联合消融和跨硬件主实验。
 5. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
 
 ## 9. 结果解释与写作规则

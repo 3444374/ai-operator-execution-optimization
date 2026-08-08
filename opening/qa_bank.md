@@ -82,7 +82,7 @@
 
 ### SQuAD 上为什么三条静态路径几乎没有差异？
 
-> 喂饱后的 K128 replacement 中，project、direct、DuckDB AI 的 correct rows/s 为 137.77、136.63、136.68，service tokens/s 为 41,277.95、40,920.72、40,955.99；project feeding 已达 direct 的 100.87%。SQuAD 是均匀短输出控制组，服务层可以吸收上游静态结构差异，因此近似中性是有效结论。它说明后续动态方法不能靠弱 baseline 获胜，必须在同上限和明确状态变化或资源竞争中证明增量。
+> K128 replacement 中，project、direct、DuckDB AI 的 correct rows/s 为 137.77、136.63、136.68，service tokens/s 为 41,277.95、40,920.72、40,955.99；project/direct service ratio 为 100.87%。SQuAD 是均匀短输出控制组，服务层可以吸收上游静态结构差异，因此近似中性是有效结论。它说明后续动态方法不能靠弱 baseline 获胜，必须在同上限和明确状态变化或资源竞争中证明增量。
 
 ### DuckDB AI 的 cap semantic failure 是否意味着实验失败？
 
@@ -109,6 +109,10 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 ### feeding-saturation 门怎么判断？
 
 > 优先使用同 workload 的 bounded concurrency frontier，并联合 service tokens/s、running/waiting、KV、MFU、TTFT 与 time-series GPU utilization。ShareGPT C32 的 GPU mean 约 98% 但吞吐只有峰值 52.07%，直接证明高 GPU utilization 或 waiting=0 都不能单独说明已经喂饱。当前冻结 C128，因为它是达到 C256 已测峰值 97% 的最小点。
+
+### Daft Native、Daft Ray 和 Ray Data 的正式同环境结果说明了什么？
+
+> 同一 2,048-row ShareGPT manifest 的 1+3 formal 中，bounded C128、Daft Native、Daft Ray、Ray Data 的 service tok/s 为 17,800、17,286、16,747、3,551，CV 都低于 0.6%。更重要的是状态不同：Daft 两臂 waiting mean 约 783/742、KV max≈1，属于过量提前提交；Ray Data running mean 17.3、MFU 0.112，属于当前 graph 供给不足。它说明现有原生路径会把同一服务推入不同压力区，需要联合状态感知与有界提交；不能据此说项目已经胜出，也不能把外部现象归因成框架内部算法缺陷。
 
 ## 方法设计与可证伪性
 

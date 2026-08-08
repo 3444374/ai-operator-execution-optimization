@@ -139,33 +139,46 @@ ShareGPT replacement 中，direct、DuckDB AI、项目冻结静态的 correct ro
 
 这组实验的目标不是证明项目路径胜出，而是建立可审计的统一比较边界。raw rows/s、correct rows/s 和 service tokens/s 必须同时报告；产品层因固定输出上限返回空结果时，GPU 已消耗的服务 work 不能被隐藏，也不能把语义不兼容误写成纯性能排名。
 
-### 5.3 最小饱和 active work
+### 5.3 原生单 Job 的服务压力形态
+
+同一 2,048-row ShareGPT manifest 上，bounded C128、Daft Native、Daft Ray 和 Ray Data official graph 均完成 1 warm-up + 3 formal；16/16 cells、12 formal、0 failure，吞吐与 JCT CV 均小于 0.7%。三次均值如下：
+
+| 路径 | JCT (s) | service tok/s | MFU | running mean | waiting mean | KV mean | TTFT mean (s) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| bounded C128 | 95.49 | 17,800 | 0.562 | 229.8 | 2.8 | 0.598 | 0.783 |
+| Daft Native | 98.36 | 17,286 | 0.651 | 319.4 | 783.5 | 0.798 | 40.495 |
+| Daft Ray | 101.53 | 16,747 | 0.637 | 300.9 | 741.6 | 0.750 | 40.704 |
+| Ray Data HTTP | 478.66 | 3,551 | 0.112 | 17.3 | 0.0 | 0.059 | 0.094 |
+
+Daft 两臂在吞吐接近 bounded 的同时形成大量 waiting 和 KV 顶格，Ray Data 当前路径则表现为低 running、低 MFU 的供给不足。它们证明单一静态并发或 GPU utilization 不能描述服务状态，需要联合完成速率/MFU、running/waiting、KV 与 tail；但该实验不包含项目动态臂，不能声称项目方法胜出，也不把外部现象归因给框架内部算法。
+
+### 5.4 最小饱和 active work
 
 ![固定资源下的 serving capacity 与过载边界](../../figures/data/report_main/opening_serving_capacity_frontier.png)
 
 双 RTX 4090、冻结 Qwen/vLLM 合同下，每 endpoint 65,536 active work 已达到最大已测吞吐均值的 97.80%，下一档只增加 0.92%；继续提高到 98K，吞吐增量有限而 P99 由 36.78 s 上升到 40.05 s。该结果证明应先标定最小饱和点，再比较上游策略。65,536 只绑定当前机器、模型、协议和 workload，不是通用常数。
 
-### 5.4 数据组织的 serving-regime 依赖
+### 5.5 数据组织的 serving-regime 依赖
 
 ![数据组织在不同 serving regime 下的排名变化](../../figures/data/report_main/opening_work_organization_regime_v2.png)
 
 在双 endpoint、大 KV 池且压力较低的条件下，五种组织策略约为 50K–56K tok/s，差异接近中性；在四 endpoint、小 KV 池且 KV 饱和的条件下，吞吐分化到约 39K–50K tok/s，并出现排名反转。重排序类 organizer 将 prefix group ratio 打散后，prefix cache hit 可降至 0.06–0.07。该证据支持“组织策略必须结合 serving regime 评价”，不支持 sequential 或 prefix-aware 的全局最优性。
 
-### 5.5 图像 staged-work 与 matched-resource 证据
+### 5.6 图像 staged-work 与 matched-resource 证据
 
 ![图像 workload 的阶段失衡与 matched-resource 正式对照](../../figures/data/report_main/opening_image_stage_aware_evidence.png)
 
 CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时间比为 13.8/31.2/29.5 倍，说明图像 work 不能只用 frame 数描述；prepare work、ready tensor bytes 与 model work 必须分别约束。在相同 CPU 资源和输出合同下，项目 typed Ray GPU actor 静态路径相对 Ray Data native graph 的 operator JCT 在主正式报告中降低约 12.8%–15.1%，独立复测两档 CPU 仍同向。冻结 headline 为约 13%–15%，不使用资源不匹配比较得到的旧 45.7%。该结果证明 staged work 与执行结构可行性，不证明状态感知动态增量已经有效。
 
-### 5.6 代价模型的配置选择价值
+### 5.7 代价模型的配置选择价值
 
 ![算子代价模型的选择质量](../../figures/data/report_main/opening_cost_model_decision_quality_v2.png)
 
 在 429 个 formal 观测、20 个 context 与 4 个候选配置的 context leave-one-out 评价中，Hybrid 模型 pooled regret 为 1.67%，macro regret 为 2.90%，candidate pairwise accuracy 为 0.808，max regret 为 14.72%。最大 regret 仅比 15% 门槛低 0.28 个百分点，属于边界通过。它可作为配置选择的第一份可行性证据，但仍需新时间段、workload 和硬件上的校准。
 
-### 5.7 当前能证明与不能证明的内容
+### 5.8 当前能证明与不能证明的内容
 
-已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值；已有 1/2/4-job 结果表明 shared credit 只在高竞争区间出现条件性收益。开题冻结前还需完成两项最小对照：同一 ShareGPT Chat manifest 上 bounded C128、Daft Native/Ray 与 Ray Data 的原生单 job 对照；Daft/Ray Data 原生两 job 错峰观察和项目 static-partition vs shared-work-credit 因果 A/B。
+已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值；已有 1/2/4-job 结果表明 shared credit 只在高竞争区间出现条件性收益。开题冻结前只需完成 Daft/Ray Data 原生两 job 错峰观察和项目 static-partition vs shared-work-credit 因果 A/B。
 
 ## 6. 进度安排
 

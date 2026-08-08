@@ -16,6 +16,7 @@
 | Directory | Content | Boundary |
 |---|---|---|
 | `opening_text_native_gate_20260808/` | bounded、Daft Native/Ray、Ray Data 的 256-row capability gate，以及 Ray Data C4/C8/C16 最小筛选 | 6/6 gate 正确性与 provenance 通过；冻结 C8/B16 measured peak 供正式矩阵使用。n=1 gate 不作框架性能排名。 |
+| `opening_text_native_single_job_formal_20260808/` | 同一 2,048-row ShareGPT manifest 的 bounded C128、Daft Native/Ray、Ray Data 1+3 formal，含 MFU、服务压力与能耗 | 16/16 cells、12 formal 通过；Daft 两臂高 waiting/KV，Ray Data 当前路径低 running/MFU。只报告官方 graph/冻结点外部现象，不称项目胜出。 |
 
 ## 图像 AI_EMBED operator（2026-08-03/04）
 
