@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "workloads": {
+    "sharegpt_controlled_skew": {
+      "direct_static_sharded": {
+        "formal_repeats": 3,
+        "correct_rows_per_s_mean": 11.35683754603874,
+        "correct_rows_per_s_cv_pct": 0.0177396416110454,
+        "database_e2e_s_mean": 180.3318956233561,
+        "raw_rows_per_s_mean": 11.35683754603874,
+        "service_tokens_per_s_mean": 9425.254610848277,
+        "request_latency_s_p99_mean": 177.24673411369326,
+        "gpu_utilization_pct_mean": 98.0939825319216,
+        "mfu_fraction_mean": 0.3015849427249962,
+        "energy_j_per_correct_row_mean": 69.34172313791204,
+        "quality": {
+          "nonempty_completion_rows": 2048.0,
+          "successful_rows": 2048.0
+        },
+        "feeding_service_tokens_ratio_vs_direct": 1.0,
+        "feeding_service_tokens_gate_ge_0_95": true,
+        "infrastructure_failures_total": 0,
+        "cap_semantic_failures_total": 0,
+        "null_outputs_total": 0
+      },
+      "duckdb_ai_static_sharded": {
+        "formal_repeats": 3,
+        "correct_rows_per_s_mean": 2.2596025451901927,
+        "correct_rows_per_s_cv_pct": 1.5419733019155084,
+        "database_e2e_s_mean": 180.4160533969601,
+        "raw_rows_per_s_mean": 11.351544900303983,
+        "service_tokens_per_s_mean": 9421.307275741181,
+        "request_latency_s_p99_mean": 180.11589741706848,
+        "gpu_utilization_pct_mean": 98.01522943099617,
+        "mfu_fraction_mean": 0.30146464693828645,
+        "energy_j_per_correct_row_mean": 347.2104002033373,
+        "quality": {
+          "nonempty_completion_rows": 407.6666666666667,
+          "successful_rows": 407.6666666666667
+        },
+        "feeding_service_tokens_ratio_vs_direct": 0.9995811959177684,
+        "feeding_service_tokens_gate_ge_0_95": true,
+        "infrastructure_failures_total": 0,
+        "cap_semantic_failures_total": 4921,
+        "null_outputs_total": 4921
+      },
+      "project_frozen_static": {
+        "formal_repeats": 3,
+        "correct_rows_per_s_mean": 17.54991243422356,
+        "correct_rows_per_s_cv_pct": 0.9574992537067534,
+        "database_e2e_s_mean": 116.70286033333333,
+        "raw_rows_per_s_mean": 17.54991243422356,
+        "service_tokens_per_s_mean": 14568.911685902005,
+        "request_latency_s_p99_mean": 9.65143987894058,
+        "gpu_utilization_pct_mean": 97.19063075064183,
+        "mfu_fraction_mean": 0.477860178356085,
+        "energy_j_per_correct_row_mean": 47.94161993459816,
+        "quality": {
+          "nonempty_completion_rows": 2048.0,
+          "successful_rows": 2048.0
+        },
+        "feeding_service_tokens_ratio_vs_direct": 1.5457313661461711,
+        "feeding_service_tokens_gate_ge_0_95": true,
+        "infrastructure_failures_total": 0,
+        "cap_semantic_failures_total": 0,
+        "null_outputs_total": 0
+      }
+    },
+    "squad_uniform": {
+      "direct_static_sharded": {
+        "formal_repeats": 3,
+        "correct_rows_per_s_mean": 136.63166658006045,
+        "correct_rows_per_s_cv_pct": 0.43019506057145934,
+        "database_e2e_s_mean": 62.126370898758374,
+        "raw_rows_per_s_mean": 170.13886605135448,
+        "service_tokens_per_s_mean": 40920.719841695514,
+        "request_latency_s_p99_mean": 60.26317586104076,
+        "gpu_utilization_pct_mean": 97.64360587002096,
+        "mfu_fraction_mean": 0.6592518326751814,
+        "energy_j_per_correct_row_mean": 6.3027967312993,
+        "quality": {
+          "squad_evaluated_rows": 10570.0,
+          "squad_exact_match_percent": 80.30589719331442,
+          "squad_exact_match_rows": 8488.333333333334,
+          "squad_missing_prediction_rows": 0.0,
+          "squad_prediction_rows": 10570.0,
+          "squad_token_f1_percent": 89.38133783350487
+        },
+        "feeding_service_tokens_ratio_vs_direct": 1.0,
+        "feeding_service_tokens_gate_ge_0_95": true,
+        "infrastructure_failures_total": 0,
+        "cap_semantic_failures_total": 0,
+        "null_outputs_total": 0
+      },
+      "duckdb_ai_static_sharded": {
+        "formal_repeats": 3,
+        "correct_rows_per_s_mean": 136.67512648950995,
+        "correct_rows_per_s_cv_pct": 0.04483300264588066,
+        "database_e2e_s_mean": 62.074212772771716,
+        "raw_rows_per_s_mean": 170.28006329743008,
+        "service_tokens_per_s_mean": 40955.9905989555,
+        "request_latency_s_p99_mean": 61.14577865600586,
+        "gpu_utilization_pct_mean": 94.85442706336426,
+        "mfu_fraction_mean": 0.6598511010147164,
+        "energy_j_per_correct_row_mean": 6.177799630932551,
+        "quality": {
+          "squad_evaluated_rows": 10570.0,
+          "squad_exact_match_percent": 80.26490066225166,
+          "squad_exact_match_rows": 8484.0,
+          "squad_missing_prediction_rows": 1.0,
+          "squad_prediction_rows": 10569.0,
+          "squad_token_f1_percent": 89.35938163434862
+        },
+        "feeding_service_tokens_ratio_vs_direct": 1.000861929051992,
+        "feeding_service_tokens_gate_ge_0_95": true,
+        "infrastructure_failures_total": 0,
+        "cap_semantic_failures_total": 3,
+        "null_outputs_total": 3
+      },
+      "project_frozen_static": {
+        "formal_repeats": 3,
+        "correct_rows_per_s_mean": 137.7699747648871,
+        "correct_rows_per_s_cv_pct": 1.749672454198577,
+        "database_e2e_s_mean": 61.600611333333326,
+        "raw_rows_per_s_mean": 171.62323310518568,
+        "service_tokens_per_s_mean": 41277.94634460101,
+        "request_latency_s_p99_mean": 2.8640074245134968,
+        "gpu_utilization_pct_mean": 88.38740184082371,
+        "mfu_fraction_mean": 0.7414004831775752,
+        "energy_j_per_correct_row_mean": 5.730648011758909,
+        "quality": {
+          "squad_evaluated_rows": 10570.0,
+          "squad_exact_match_percent": 80.27436140018922,
+          "squad_exact_match_rows": 8485.0,
+          "squad_missing_prediction_rows": 0.0,
+          "squad_prediction_rows": 10570.0,
+          "squad_token_f1_percent": 89.36759079769551
+        },
+        "feeding_service_tokens_ratio_vs_direct": 1.008729721869201,
+        "feeding_service_tokens_gate_ge_0_95": true,
+        "infrastructure_failures_total": 0,
+        "cap_semantic_failures_total": 0,
+        "null_outputs_total": 0
+      }
+    }
+  },
+  "claim_rule": "An arm below 0.95 of the workload-matched direct formal mean service tokens/s is not eligible to support a strategy-performance claim."
+}

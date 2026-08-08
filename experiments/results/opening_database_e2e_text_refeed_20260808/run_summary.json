@@ -1,0 +1,521 @@
+{
+  "status": "passed",
+  "experiment_id": "opening_database_e2e_text_refeed_20260808_retry1",
+  "git_commit": "f69acfb1fa3423dddf7b8cbe4a3ac7d0b7bd08ef",
+  "cells": 24,
+  "formal_cells": 18,
+  "preflight": {
+    "status": "passed",
+    "postgres": {
+      "server_version": "18.4 (Ubuntu 18.4-1.pgdg22.04+1)",
+      "pgvector_version": "0.8.5"
+    },
+    "duckdb": {
+      "duckdb_version": "v1.5.4",
+      "duckdb_ai_extension_version": "0.4.14",
+      "duckdb_ai_extension_source": "community"
+    },
+    "ray_address_present": true,
+    "service": {
+      "model": "qwen2.5-7b",
+      "endpoint_count": 2,
+      "prefix_caching": "enabled",
+      "max_num_seqs": 256,
+      "max_num_batched_tokens": 8192,
+      "max_model_len": 8192,
+      "gpu_memory_utilization": 0.9
+    },
+    "workloads": {
+      "squad_uniform": {
+        "rows": 10570,
+        "max_tokens": 64,
+        "manifest_sha256": "0543b29e9fed8df8ee2666433e2c54ee400a5dd05e25af31703e293f0cf6b19b",
+        "manifest_metadata": {
+          "endpoint_estimated_output_work": {
+            "0": 338240,
+            "1": 338240
+          },
+          "endpoint_prompt_tokens": {
+            "0": 1286137,
+            "1": 1270486
+          },
+          "endpoint_row_count_diff": 0,
+          "endpoint_row_counts": {
+            "0": 5285,
+            "1": 5285
+          },
+          "endpoint_total_estimated_work": {
+            "0": 1624377,
+            "1": 1608726
+          },
+          "endpoint_work": {
+            "0": 1624377,
+            "1": 1608726
+          },
+          "endpoint_work_skew": 0.009635078556271113,
+          "manifest_sha256": "0543b29e9fed8df8ee2666433e2c54ee400a5dd05e25af31703e293f0cf6b19b",
+          "partition_policy": "equal_rows",
+          "partition_seed": 20260807,
+          "row_count": 10570
+        },
+        "prompt_tokens": {
+          "min": 78,
+          "p50": 223.0,
+          "p95": 387.0,
+          "p99": 565.0,
+          "max": 1078,
+          "mean": 241.87540208136235,
+          "stdev": 88.37879561997393,
+          "cv": 0.36538976208190427
+        },
+        "target_output_tokens": {
+          "min": 10,
+          "p50": 10.0,
+          "p95": 10.0,
+          "p99": 10.0,
+          "max": 10,
+          "mean": 10,
+          "stdev": 0.0,
+          "cv": 0.0
+        },
+        "estimated_work": {
+          "min": 142,
+          "p50": 287.0,
+          "p95": 451.0,
+          "p99": 629.0,
+          "max": 1142,
+          "mean": 305.8754020813623,
+          "stdev": 88.37879561997393,
+          "cv": 0.2889372437881269
+        },
+        "prompt_buckets": {
+          "short_lt256": 7075,
+          "medium_256_to_1024": 3491,
+          "long_gt1024": 4
+        },
+        "project_static_contract": {
+          "max_inflight_per_endpoint": 128,
+          "active_work_per_endpoint": 65536,
+          "actor_workers_per_endpoint": 8,
+          "actor_concurrency": 32,
+          "calibration_contract": "/root/autodl-tmp/experiment-artifacts/opening_project_feeding_calibration_squad_k256_20260808/selection_contract.json",
+          "calibration_contract_sha256": "2b3656ca46184e0d25dd493bfd78ac54550225e15487995d9b89e68683c7ce86"
+        }
+      },
+      "sharegpt_controlled_skew": {
+        "rows": 2048,
+        "max_tokens": 256,
+        "manifest_sha256": "54c97a2f10347d35b15ac5442da116dd7a8c56a8ef05e36c76a7120da783169b",
+        "manifest_metadata": {
+          "endpoint_estimated_output_work": {
+            "0": 262144,
+            "1": 262144
+          },
+          "endpoint_prompt_tokens": {
+            "0": 592167,
+            "1": 578796
+          },
+          "endpoint_row_count_diff": 0,
+          "endpoint_row_counts": {
+            "0": 1024,
+            "1": 1024
+          },
+          "endpoint_total_estimated_work": {
+            "0": 854311,
+            "1": 840940
+          },
+          "endpoint_work": {
+            "0": 854311,
+            "1": 840940
+          },
+          "endpoint_work_skew": 0.015651208985954762,
+          "manifest_sha256": "54c97a2f10347d35b15ac5442da116dd7a8c56a8ef05e36c76a7120da783169b",
+          "partition_policy": "equal_rows",
+          "partition_seed": 20260807,
+          "row_count": 2048
+        },
+        "prompt_tokens": {
+          "min": 3,
+          "p50": 540.5,
+          "p95": 1253.0,
+          "p99": 1408.12,
+          "max": 1486,
+          "mean": 571.75927734375,
+          "stdev": 398.02780925921314,
+          "cv": 0.6961457820297213
+        },
+        "target_output_tokens": {
+          "min": 1,
+          "p50": 256.0,
+          "p95": 256.0,
+          "p99": 256.0,
+          "max": 256,
+          "mean": 202.47509765625,
+          "stdev": 76.60605016782822,
+          "cv": 0.37834800948156766
+        },
+        "estimated_work": {
+          "min": 259,
+          "p50": 796.5,
+          "p95": 1509.0,
+          "p99": 1664.12,
+          "max": 1742,
+          "mean": 827.75927734375,
+          "stdev": 398.02780925921314,
+          "cv": 0.4808497109648474
+        },
+        "prompt_buckets": {
+          "short_lt256": 538,
+          "medium_256_to_1024": 1175,
+          "long_gt1024": 335
+        },
+        "project_static_contract": {
+          "max_inflight_per_endpoint": 128,
+          "active_work_per_endpoint": 65536,
+          "actor_workers_per_endpoint": 8,
+          "actor_concurrency": 32,
+          "calibration_contract": "/root/autodl-tmp/experiment-artifacts/opening_project_feeding_calibration_sharegpt_k256_20260808_retry1/selection_contract.json",
+          "calibration_contract_sha256": "4d13b28454674d62638642077f39de0f6fdf2c5faa194003ead929b14567aa46"
+        }
+      }
+    }
+  },
+  "records": [
+    {
+      "workload": "squad_uniform",
+      "phase": "warmup",
+      "repeat": 1,
+      "order": 1,
+      "arm": "project_frozen_static",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/warmup_01_01_project_frozen_static",
+      "started_at": 1786183942.8396978,
+      "status": "passed",
+      "database_e2e_s": 62.54784,
+      "correct_rows_per_s": 135.68813887098258,
+      "failure_count": 0,
+      "finished_at": 1786184078.0449111
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "warmup",
+      "repeat": 1,
+      "order": 2,
+      "arm": "direct_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/warmup_01_02_direct_static_sharded",
+      "started_at": 1786184078.0452783,
+      "status": "passed",
+      "database_e2e_s": 62.03763091005385,
+      "correct_rows_per_s": 136.91689826639492,
+      "failure_count": 0,
+      "finished_at": 1786184202.2452257
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "warmup",
+      "repeat": 1,
+      "order": 3,
+      "arm": "duckdb_ai_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/warmup_01_03_duckdb_ai_static_sharded",
+      "started_at": 1786184202.245763,
+      "status": "passed",
+      "database_e2e_s": 62.583922965452075,
+      "correct_rows_per_s": 135.4341434409436,
+      "failure_count": 1,
+      "finished_at": 1786184327.4399898
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "formal",
+      "repeat": 1,
+      "order": 1,
+      "arm": "project_frozen_static",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/formal_01_01_project_frozen_static",
+      "started_at": 1786184327.4404557,
+      "status": "passed",
+      "database_e2e_s": 61.153239,
+      "correct_rows_per_s": 138.74980522290898,
+      "failure_count": 0,
+      "finished_at": 1786184462.2751105
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "formal",
+      "repeat": 1,
+      "order": 2,
+      "arm": "duckdb_ai_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/formal_01_02_duckdb_ai_static_sharded",
+      "started_at": 1786184462.2757213,
+      "status": "passed",
+      "database_e2e_s": 62.09902532398701,
+      "correct_rows_per_s": 136.6043984706998,
+      "failure_count": 1,
+      "finished_at": 1786184587.1509798
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "formal",
+      "repeat": 1,
+      "order": 3,
+      "arm": "direct_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/formal_01_03_direct_static_sharded",
+      "started_at": 1786184587.151472,
+      "status": "passed",
+      "database_e2e_s": 62.3815438374877,
+      "correct_rows_per_s": 136.03382471756663,
+      "failure_count": 0,
+      "finished_at": 1786184711.7953727
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "formal",
+      "repeat": 2,
+      "order": 1,
+      "arm": "duckdb_ai_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/formal_02_01_duckdb_ai_static_sharded",
+      "started_at": 1786184711.796012,
+      "status": "passed",
+      "database_e2e_s": 62.05738206021488,
+      "correct_rows_per_s": 136.71218021681761,
+      "failure_count": 1,
+      "finished_at": 1786184836.7027092
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "formal",
+      "repeat": 2,
+      "order": 2,
+      "arm": "direct_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/formal_02_02_direct_static_sharded",
+      "started_at": 1786184836.703225,
+      "status": "passed",
+      "database_e2e_s": 62.10651518031955,
+      "correct_rows_per_s": 136.65232987809594,
+      "failure_count": 0,
+      "finished_at": 1786184962.1906216
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "formal",
+      "repeat": 2,
+      "order": 3,
+      "arm": "project_frozen_static",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/formal_02_03_project_frozen_static",
+      "started_at": 1786184962.1913702,
+      "status": "passed",
+      "database_e2e_s": 62.818541,
+      "correct_rows_per_s": 135.023829986755,
+      "failure_count": 0,
+      "finished_at": 1786185098.623649
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "formal",
+      "repeat": 3,
+      "order": 1,
+      "arm": "project_frozen_static",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/formal_03_01_project_frozen_static",
+      "started_at": 1786185098.624399,
+      "status": "passed",
+      "database_e2e_s": 60.830054,
+      "correct_rows_per_s": 139.53628908499738,
+      "failure_count": 0,
+      "finished_at": 1786185232.6794868
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "formal",
+      "repeat": 3,
+      "order": 2,
+      "arm": "direct_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/formal_03_02_direct_static_sharded",
+      "started_at": 1786185232.6800227,
+      "status": "passed",
+      "database_e2e_s": 61.89105367846787,
+      "correct_rows_per_s": 137.20884514451882,
+      "failure_count": 0,
+      "finished_at": 1786185358.067971
+    },
+    {
+      "workload": "squad_uniform",
+      "phase": "formal",
+      "repeat": 3,
+      "order": 3,
+      "arm": "duckdb_ai_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/squad_uniform/formal_03_03_duckdb_ai_static_sharded",
+      "started_at": 1786185358.0687194,
+      "status": "passed",
+      "database_e2e_s": 62.066230934113264,
+      "correct_rows_per_s": 136.7088007810124,
+      "failure_count": 1,
+      "finished_at": 1786185482.6205647
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "warmup",
+      "repeat": 1,
+      "order": 1,
+      "arm": "direct_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/warmup_01_01_direct_static_sharded",
+      "started_at": 1786185482.621289,
+      "status": "passed",
+      "database_e2e_s": 180.17787545733154,
+      "correct_rows_per_s": 11.366545391889655,
+      "failure_count": 0,
+      "finished_at": 1786185843.246437
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "warmup",
+      "repeat": 1,
+      "order": 2,
+      "arm": "project_frozen_static",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/warmup_01_02_project_frozen_static",
+      "started_at": 1786185843.2470653,
+      "status": "passed",
+      "database_e2e_s": 115.66856,
+      "correct_rows_per_s": 17.70576204977394,
+      "failure_count": 0,
+      "finished_at": 1786186148.8736386
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "warmup",
+      "repeat": 1,
+      "order": 3,
+      "arm": "duckdb_ai_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/warmup_01_03_duckdb_ai_static_sharded",
+      "started_at": 1786186148.8744397,
+      "status": "passed",
+      "database_e2e_s": 180.40543912909925,
+      "correct_rows_per_s": 2.256029540820819,
+      "failure_count": 1641,
+      "finished_at": 1786186510.1424978
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "formal",
+      "repeat": 1,
+      "order": 1,
+      "arm": "direct_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/formal_01_01_direct_static_sharded",
+      "started_at": 1786186510.1434107,
+      "status": "passed",
+      "database_e2e_s": 180.3591443989426,
+      "correct_rows_per_s": 11.355121509503052,
+      "failure_count": 0,
+      "finished_at": 1786186870.8714514
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "formal",
+      "repeat": 1,
+      "order": 2,
+      "arm": "duckdb_ai_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/formal_01_02_duckdb_ai_static_sharded",
+      "started_at": 1786186870.872152,
+      "status": "passed",
+      "database_e2e_s": 180.25433960929513,
+      "correct_rows_per_s": 2.2690161073875705,
+      "failure_count": 1639,
+      "finished_at": 1786187231.9798448
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "formal",
+      "repeat": 1,
+      "order": 3,
+      "arm": "project_frozen_static",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/formal_01_03_project_frozen_static",
+      "started_at": 1786187231.9805918,
+      "status": "passed",
+      "database_e2e_s": 115.530849,
+      "correct_rows_per_s": 17.72686704656693,
+      "failure_count": 0,
+      "finished_at": 1786187537.4223077
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "formal",
+      "repeat": 2,
+      "order": 1,
+      "arm": "duckdb_ai_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/formal_02_01_duckdb_ai_static_sharded",
+      "started_at": 1786187537.4235063,
+      "status": "passed",
+      "database_e2e_s": 180.4461817033589,
+      "correct_rows_per_s": 2.288771067923973,
+      "failure_count": 1635,
+      "finished_at": 1786187898.99903
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "formal",
+      "repeat": 2,
+      "order": 2,
+      "arm": "project_frozen_static",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/formal_02_02_project_frozen_static",
+      "started_at": 1786187898.9999282,
+      "status": "passed",
+      "database_e2e_s": 117.751943,
+      "correct_rows_per_s": 17.392494321728517,
+      "failure_count": 0,
+      "finished_at": 1786188205.924412
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "formal",
+      "repeat": 2,
+      "order": 3,
+      "arm": "direct_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/formal_02_03_direct_static_sharded",
+      "started_at": 1786188205.9253983,
+      "status": "passed",
+      "database_e2e_s": 180.29667549952865,
+      "correct_rows_per_s": 11.359055813568531,
+      "failure_count": 0,
+      "finished_at": 1786188566.5121276
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "formal",
+      "repeat": 3,
+      "order": 1,
+      "arm": "duckdb_ai_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/formal_03_01_duckdb_ai_static_sharded",
+      "started_at": 1786188566.51306,
+      "status": "passed",
+      "database_e2e_s": 180.54763887822628,
+      "correct_rows_per_s": 2.221020460259034,
+      "failure_count": 1647,
+      "finished_at": 1786188927.9234722
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "formal",
+      "repeat": 3,
+      "order": 2,
+      "arm": "direct_static_sharded",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/formal_03_02_direct_static_sharded",
+      "started_at": 1786188927.924411,
+      "status": "passed",
+      "database_e2e_s": 180.33986697159708,
+      "correct_rows_per_s": 11.356335315044639,
+      "failure_count": 0,
+      "finished_at": 1786189288.750136
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "phase": "formal",
+      "repeat": 3,
+      "order": 3,
+      "arm": "project_frozen_static",
+      "cell_dir": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_refeed_20260808_retry1/raw/sharegpt_controlled_skew/formal_03_03_project_frozen_static",
+      "started_at": 1786189288.7508545,
+      "status": "passed",
+      "database_e2e_s": 116.825789,
+      "correct_rows_per_s": 17.530375934375243,
+      "failure_count": 0,
+      "finished_at": 1786189595.2315614
+    }
+  ]
+}
