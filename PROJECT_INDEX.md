@@ -207,7 +207,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_database_e2e_refeed.example.json` | 读取两份通过审计的 workload-specific feeding 校准合同并 fail-closed 的替换正式矩阵模板 | 仅在 SQuAD/ShareGPT 校准均冻结后运行；direct/DuckDB 保持每 endpoint 32 |
 | `deploy/autodl/opening_text_native_matrix.example.json` | ShareGPT Chat bounded、Daft Native/Ray、Ray Data 原生单 job 1+3 正式模板 | 各臂独立校准与 fingerprint 冻结后运行；无 DuckDB 产品轨 |
 | `deploy/autodl/opening_text_native_multijob.example.json` | Daft Native/Ray、Ray Data 的 short/long 两 job 错峰原生观察模板 | bounded 多进程 client 因可复现 CLOSE_WAIT 排除；显式 shard process wall timeout；保存服务/GPU 时序，不注入项目 credit/router |
-| `deploy/autodl/opening_multijob_minimal.example.json` | 两作业 short/long immutable manifest 的 staggered static partition vs shared work-credit 最小矩阵 | replacement 静态三臂后运行；只回答两作业 JCT/隔离/idle borrowing，weighted 留论文阶段 |
+| `deploy/autodl/opening_multijob_minimal.example.json` | 两作业 short/long immutable manifest 的 staggered static partition vs shared work-credit 最小矩阵 | offset 由环境显式冻结；15s 作 arrival observation、5s 作 guaranteed-overlap 干扰，所有系统必须同值 |
 | `deploy/autodl/opening_short_job_controls.example.json` | 同一 512-row short manifest 的项目 full-pool 与 reserved-half-pool 单 Job 1+3 匹配控制 | 分离正常单 Job、静态配额减半和 long 服务竞争，不启动 synthetic competing job |
 | `deploy/autodl/opening_short_job_native_controls.example.json` | Daft Native/Ray、Ray Data 同一 short manifest 的 1+3 原生匹配控制 | 补 short-only JCT/MFU/GPU/vLLM 状态；短 cell 仅作表征，不作稳态容量排名 |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥、等行数的 short/long job manifest，并输出 token 分布与 SHA 审计 | 运行开题两作业实验前生成 512+512 行异质工作证据 |

@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-08-09 多 Job 干扰实验增加统一 guaranteed-overlap 合同
+
+- 复核发现统一 15s offset 下 Daft Native short 在 long 到达前已经结束，
+  `overlap=0`；该结果只能作为相同 arrival schedule 下的系统边界，不能证明“新 Job
+  加入对前台 Job 的影响”。
+- 保留所有 15s raw，不覆盖；新增所有系统共同使用的 5s offset 干扰矩阵。项目与
+  native 配置都从环境显式读取 offset，禁止为某个系统单独调小。exact-short 1+3
+  直接复用，只重跑 two-job 5s；汇总器从实际 replay start 计算 overlap，不再假设
+  固定 15s。
+
 ## 2026-08-09 short-only 与 short/long 统一干扰汇总器
 
 - 新增 fail-closed 汇总器，将项目 full/half single-short、项目 static/shared

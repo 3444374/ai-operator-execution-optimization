@@ -946,6 +946,13 @@ Native、Daft Ray 与 Ray Data 已冻结原生配置。由于 short cell 可能�
 该矩阵用于匹配 JCT/服务状态表征，不作为新的稳态容量排名，也不注入项目
 credit、router 或静态配额。
 
+当研究问题明确为“long 中途加入对已存在 short 的影响”时，必须先确保每一臂
+实际发生 overlap。`opening_multijob_minimal.example.json` 与
+`opening_text_native_multijob.example.json` 均从环境读取统一 offset；原 15s
+arrival observation 设 `OPENING_MULTIJOB_OFFSET_S=15` 与
+`TEXT_NATIVE_MULTIJOB_OFFSET_S=15`，受控干扰补充矩阵两者都设为 5。禁止按系统
+分别选择 offset。single-short 1+3 可复用，不因 offset 变化重复运行。
+
 已完成的 1024–32768 曲线只能记作 offered-load 诊断：固定的是每 endpoint
 四个 batch，而平均每 batch 行数约从 2.3 增至 64，所以可供给的 request
 envelope 约从每 endpoint 9 增至 256，vLLM mean running requests 也约从

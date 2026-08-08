@@ -86,6 +86,15 @@ def _project_rows(root: Path, expected_scenarios: set[str]) -> list[dict[str, ob
             _float(value, "job_actual_work") for value in _json_list(record["job_actual_work"])
         ]
         manifests = [str(value) for value in _json_list(record["request_manifest_sha256"])]
+        starts = [
+            _float(value, "replay start")
+            for value in _json_list(record["replay_configured_start_epoch_s"])
+        ]
+        overlap = (
+            max(0.0, starts[0] + jct[0] - starts[1])
+            if len(jct) == 2 and len(starts) == 2
+            else 0.0
+        )
         rows.append(
             {
                 "system": "project",
@@ -104,7 +113,7 @@ def _project_rows(root: Path, expected_scenarios: set[str]) -> list[dict[str, ob
                 "group_waiting_mean": _float(record["vllm_waiting_mean"], "vllm_waiting_mean"),
                 "group_kv_mean": _float(record["vllm_kv_usage_mean"], "vllm_kv_usage_mean"),
                 "group_gpu_energy_j": "",
-                "short_long_overlap_s": max(0.0, jct[0] - 15.0) if len(jct) == 2 else 0.0,
+                "short_long_overlap_s": overlap,
                 "short_manifest_sha256": manifests[0],
                 "request_p99_status": "observed",
                 "throughput_scope": "group_all_active_jobs",

@@ -81,7 +81,7 @@
       "job_count": 2,
       "rows_per_job": 512,
       "weights": [1, 1],
-      "arrival_offsets_s": [0.0, 15.0],
+      "arrival_offsets_s": [0.0, "${OPENING_MULTIJOB_OFFSET_S}"],
       "source_row_offsets": [0, 0],
       "request_manifests": ["${OPENING_SHORT_JOB_MANIFEST}", "${OPENING_LONG_JOB_MANIFEST}"]
     },
@@ -91,7 +91,7 @@
       "job_count": 2,
       "rows_per_job": 512,
       "weights": [1, 1],
-      "arrival_offsets_s": [0.0, 15.0],
+      "arrival_offsets_s": [0.0, "${OPENING_MULTIJOB_OFFSET_S}"],
       "source_row_offsets": [0, 0],
       "request_manifests": ["${OPENING_SHORT_JOB_MANIFEST}", "${OPENING_LONG_JOB_MANIFEST}"]
     }
