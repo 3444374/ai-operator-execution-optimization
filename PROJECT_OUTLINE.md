@@ -113,7 +113,7 @@ PostgreSQL source
 - phase-change、burst、mixed-cost 下 dynamic 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业错峰最小点已完成；仍待 held-out 4+ job、加权/SLO、公平 guard 与故障迁移；
 - 代价模型跨时间段、新 workload 和硬件的稳定性；
-- 图像当前 commit 的 Daft built-in/Ray Data/project operator-E2E 统一排名与状态感知增量；sink 只作小规模工程闭环，不是性能排名 blocker。
+- 图像Daft built-in、Ray Data native与project frozen-static的operator-E2E/provenance证据已完成；仍待状态感知增量、跨workload外推与小规模sink质量闭环，sink不是性能排名blocker。
 
 ### 5.4 不能声称
 

@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-08-09 四级 Claim 表与报告最终口径收口
+
+- 将“不能声称”从原则说明落为Claim Matrix实际表行：禁止跨workload系统总排名、禁止
+  宣称dynamic普遍胜出、禁止把organizer/65K写成全局最优、禁止把71.24s/11.06s写成
+  6.4倍系统性能差距；四级证据表由此具备可逐行审计对象。
+- 修正总纲中已过时的“图像当前commit operator-E2E仍待完成”：现有Daft built-in、
+  Ray Data native与project frozen-static的正式/provenance证据已完成，剩余是动态增量、
+  跨workload与小规模sink质量闭环。
+- 将报告中2-endpoint大KV池的50K–56K差异从“近似中性”收紧为“约12%范围、locality
+  破坏尚未放大”，与待画图C的冻结标签一致；答辩大纲同步标记原生、Project eager和
+  DuckDB三条已完成轨道及不可跨轨排名边界。
+- 本轮仍不生成图/PPT，不覆盖飞书或Wiki。
+
 ## 2026-08-09 开题完成审计：eager 多 Job 与权威状态对齐
 
 - 逐项复核两组database-E2E replacement：24/24 cells、18 formal的correctness、

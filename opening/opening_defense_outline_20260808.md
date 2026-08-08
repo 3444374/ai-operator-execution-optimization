@@ -46,7 +46,7 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 | 18 | 论文主实验按稳态、变化、多作业、跨模态推进 | steady no-regression；phase shift/burst/mixed-cost；multi-job；image | 实验路线与停止规则 | K512、VLM、故障迁移不是开题 blocker |
 | 19 | 贡献是统一 work 表征与状态感知上游执行方法 | 两项研究内容、共同使能代价估计、多模态验证和严格实验合同 | 一页总结 | 不把工程集成或弱 baseline 写成贡献 |
 
-## 4. 开题前必须落地的数据
+## 4. 已落地的数据与可排名边界
 
 ### 4.1 两组 replacement database-E2E
 
@@ -61,8 +61,9 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 
 | 轨道 | arms | 作用 | 最小合同 |
 |---|---|---|---|
-| Chat 原生框架轨 | bounded Chat control、Daft `prompt()` Native/Ray、Ray Data HTTP Processor，并与同 manifest 的 project frozen-static 对齐 | 测量现有框架在异质 work 下的 JCT、service throughput、feeding、资源与可观测性边界 | 一个 ShareGPT controlled-skew manifest；各臂独立冻结运行点；1+3 交错 formal；单 run 至少 60 s |
-| DuckDB 有界输出产品轨 | DuckDB AI vs 同 manifest direct/project | 检验数据库 AI 产品入口的 database-E2E、质量、错误和可观测性 | 仅 SQuAD/cap=64；ShareGPT `finish_reason=length` 语义不兼容时不进入跨轨排名 |
+| Chat原生框架轨（已完成） | bounded Chat control、Daft `prompt()` Native/Ray、Ray Data HTTP Processor | 测量现有框架在异质work下的JCT、service throughput、feeding、资源与可观测性边界 | 同一ShareGPT controlled-skew manifest；各臂独立冻结运行点；1+3交错formal；不与Project不同T0/arrival合同作绝对排名 |
+| Project eager诊断（已完成） | project frozen-static all-at-t0及full/half/static/shared多Job匹配控制 | 排除71.24s来源并分离quota与competition | 只作Project内因果和与Daft Native对齐T3诊断；不升级为完整框架容量排名 |
+| DuckDB有界输出产品轨（已完成） | DuckDB AI vs同manifest direct/project | 检验数据库AI产品入口的database-E2E、质量、错误和可观测性 | SQuAD/cap=64可作静态地基；ShareGPT fixed-cap语义不兼容，只作产品护栏 |
 
 两轨分开是语义门禁，不是为了选择性报告。同环境原生框架对照用来发现问题，不预设项目一定赢；只有计时、语义和 scheduler-owner 边界一致的指标才同表排名。
 

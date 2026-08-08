@@ -1,5 +1,13 @@
 # 开题材料 project log
 
+## 2026-08-09 四级 Claim 与内容大纲收口
+
+- Claim Matrix新增四条`不能声称`实际表行，覆盖跨系统总排名、dynamic普遍胜出、
+  organizer/65K全局最优和71.24s/11.06s误读；四级证据不再只停留在定义。
+- 报告的数据组织表述改为“大KV池仍有约12%范围但locality破坏未放大”；总纲与答辩
+  大纲同步修正图像/原生/Project eager/DuckDB各轨已完成状态和可排名边界。
+- 未生成图、PPT、飞书或Wiki内容。
+
 ## 2026-08-09 开题证据完成审计
 
 - 复核两组database-E2E replacement：SQuAD可作静态均匀控制地基；ShareGPT只保留

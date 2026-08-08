@@ -172,7 +172,7 @@ Project eager 多 Job 配对随后补齐 full-pool single、half-pool single、s
 
 ![数据组织在不同 serving regime 下的排名变化](../../figures/data/report_main/opening_work_organization_regime_v2.png)
 
-在双 endpoint、大 KV 池且压力较低的条件下，五种组织策略约为 50K–56K tok/s，差异接近中性；在四 endpoint、小 KV 池且 KV 饱和的条件下，吞吐分化到约 39K–50K tok/s，并出现排名反转。重排序类 organizer 将 prefix group ratio 打散后，prefix cache hit 可降至 0.06–0.07。该证据支持“组织策略必须结合 serving regime 评价”，不支持 sequential 或 prefix-aware 的全局最优性。
+在双endpoint、大KV池且压力较低的条件下，五种组织策略约为50K–56K tok/s，仍有约12%的范围，但locality破坏尚未被放大；在四endpoint、小KV池且KV饱和的条件下，吞吐分化到约39K–50K tok/s，并出现排名反转。重排序类organizer将prefix group ratio打散后，prefix cache hit可降至0.06–0.07。该证据支持“组织策略必须结合serving regime评价”，不支持sequential或prefix-aware的全局最优性。
 
 ### 5.7 图像 staged-work 与 matched-resource 证据
 
