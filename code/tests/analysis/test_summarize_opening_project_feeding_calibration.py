@@ -50,6 +50,15 @@ class FeedingCalibrationSummaryTests(unittest.TestCase):
             json.dumps({"status": "passed", "passed": True, "metrics": {"group_service_total_tokens_per_s": rate}}),
             encoding="utf-8",
         )
+        (cell / "ttft_metrics.json").write_text(
+            json.dumps(
+                {
+                    "0": {"vllm_estimated_flops_per_gpu_delta": 0.825e15},
+                    "1": {"vllm_estimated_flops_per_gpu_delta": 0.825e15},
+                }
+            ),
+            encoding="utf-8",
+        )
         return {"arm": "bounded_http", "concurrency": 32, "rep": rep, "status": "passed", "cell": str(cell)}
 
     def _project(self, scale: Path, k: int, rep: int, rate: float, *, manifest_sha: str | None = None) -> dict:
@@ -88,6 +97,8 @@ class FeedingCalibrationSummaryTests(unittest.TestCase):
             "actor_workers_per_endpoint": 8,
             "ray_actor_max_concurrency": 32,
             "per_endpoint_inflight_limit": k,
+            "operator_wall_s": 100.0,
+            "vllm_estimated_flops_per_gpu_delta": 8.25e15,
         }
         with (cell / "project_static_summary.csv").open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=list(row))
@@ -117,6 +128,8 @@ class FeedingCalibrationSummaryTests(unittest.TestCase):
         self.assertEqual(result["selected_k_per_endpoint"], 128)
         self.assertTrue(result["audit"]["passed"])
         self.assertAlmostEqual(result["direct_control"]["median_tokens_per_s"], 1000.0)
+        self.assertAlmostEqual(result["direct_control"]["mfu_recovered_median_fraction"], 0.5)
+        self.assertAlmostEqual(result["project_candidates"]["128"]["mfu_recovered_median_fraction"], 0.5)
 
     def test_manifest_mismatch_fails_closed_without_selection(self) -> None:
         with tempfile.TemporaryDirectory() as td:

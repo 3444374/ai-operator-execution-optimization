@@ -128,7 +128,9 @@ direct 三次重复与 project K32/64/128/256 三次重复，重新用服务端 
 最大 JCT 计算 direct group 吞吐，并逐格检查 exactly-once、行数、worker failure、终态空队列、
 manifest SHA 和 resource metrics。只有全部门禁通过时，才冻结同时达到 direct 中位数 95%
 与已测 project 峰值中位数 97% 的最小 K；否则显式输出 `audit_failed` 或
-`active_work_scan_required`，不允许人工选点。
+`active_work_scan_required`，不允许人工选点。选择文件同时从 vLLM estimated-FLOPs counter
+恢复每个 repeat 的 BF16 MFU：direct 使用双 endpoint 聚合峰值，project 使用 profiler 的
+per-GPU delta；峰值假设固定 4090 165 TFLOPS/GPU，MFU 只作资源证据、不替代 feeding 门。
 
 `baselines/opening_database_e2e_matrix.py` 的替换正式模式允许 SQuAD 与 ShareGPT 分别
 绑定上述校准 JSON 和选中的 project K；加载配置时会 fail-closed 核对 manifest SHA、

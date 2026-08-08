@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import Any
 
 
+GPU_PEAK_TFLOPS_PER_4090_BF16 = 165.0
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -70,7 +73,9 @@ def _portable_cell(root: Path, rows: int, record: dict[str, Any]) -> Path:
     return local if local.exists() else original
 
 
-def _audit_direct_cell(cell: Path, rows: int) -> tuple[float, str, list[str]]:
+def _audit_direct_cell(
+    cell: Path, rows: int
+) -> tuple[float, str, dict[str, float], list[str]]:
     errors: list[str] = []
     gate_dir = cell / "gate_output" / "bounded_http_c32"
     gate = _read_json(gate_dir / "gate.json")
@@ -106,7 +111,28 @@ def _audit_direct_cell(cell: Path, rows: int) -> tuple[float, str, list[str]]:
     gate_rate = _float(gate.get("metrics", {}).get("group_service_total_tokens_per_s"))
     if not math.isfinite(rate) or not math.isclose(rate, gate_rate, rel_tol=1e-6):
         errors.append(f"recomputed direct rate {rate} != gate rate {gate_rate}")
-    return rate, next(iter(manifest_shas), ""), errors
+    ttft_path = cell / "ttft_metrics.json"
+    endpoint_metrics = _read_json(ttft_path) if ttft_path.is_file() else {}
+    if len(endpoint_metrics) != 2:
+        errors.append(f"expected 2 direct endpoint metric deltas, found {len(endpoint_metrics)}")
+    estimated_flops = sum(
+        _float(endpoint.get("vllm_estimated_flops_per_gpu_delta"), 0.0)
+        for endpoint in endpoint_metrics.values()
+    )
+    mfu = (
+        estimated_flops
+        / (max_jct * len(endpoint_metrics) * GPU_PEAK_TFLOPS_PER_4090_BF16 * 1e12)
+        if max_jct > 0 and len(endpoint_metrics) == 2 and estimated_flops > 0
+        else math.nan
+    )
+    if not math.isfinite(mfu) or mfu <= 0:
+        errors.append("direct recovered MFU is not positive and finite")
+    observations = {
+        "group_service_wall_s": max_jct,
+        "vllm_estimated_flops_all_endpoints_delta": estimated_flops,
+        "mfu_recovered_fraction": mfu,
+    }
+    return rate, next(iter(manifest_shas), ""), observations, errors
 
 
 def _audit_project_cell(cell: Path, rows: int) -> tuple[float, str, dict[str, Any], list[str]]:
@@ -163,7 +189,24 @@ def _audit_project_cell(cell: Path, rows: int) -> tuple[float, str, dict[str, An
         "actor_workers_per_endpoint": _int(row.get("actor_workers_per_endpoint")),
         "ray_actor_max_concurrency": _int(row.get("ray_actor_max_concurrency")),
         "per_endpoint_inflight_limit": _int(row.get("per_endpoint_inflight_limit")),
+        "operator_wall_s": _float(row.get("operator_wall_s")),
+        "vllm_estimated_flops_per_gpu_delta": _float(
+            row.get("vllm_estimated_flops_per_gpu_delta")
+        ),
     }
+    operator_wall_s = float(observations["operator_wall_s"])
+    estimated_flops_per_gpu = float(
+        observations["vllm_estimated_flops_per_gpu_delta"]
+    )
+    recovered_mfu = (
+        estimated_flops_per_gpu
+        / (operator_wall_s * GPU_PEAK_TFLOPS_PER_4090_BF16 * 1e12)
+        if operator_wall_s > 0 and estimated_flops_per_gpu > 0
+        else math.nan
+    )
+    observations["mfu_recovered_fraction"] = recovered_mfu
+    if not math.isfinite(recovered_mfu) or recovered_mfu <= 0:
+        errors.append("project recovered MFU is not positive and finite")
     return rate, str(row.get("request_manifest_sha256", "")), observations, errors
 
 
@@ -190,12 +233,16 @@ def summarize(
     if len(direct_records) != expected_repeats:
         errors.append(f"direct repeat count {len(direct_records)} != expected {expected_repeats}")
     direct_rates: list[float] = []
+    direct_observations: list[dict[str, float]] = []
     manifest_shas: set[str] = set()
     for record in direct_records:
         if record.get("status") != "passed":
             errors.append(f"direct rep {record.get('rep')} record status is not passed")
-        rate, manifest_sha, cell_errors = _audit_direct_cell(_portable_cell(root, rows, record), rows)
+        rate, manifest_sha, observation, cell_errors = _audit_direct_cell(
+            _portable_cell(root, rows, record), rows
+        )
         direct_rates.append(rate)
+        direct_observations.append(observation)
         manifest_shas.add(manifest_sha)
         errors.extend(f"direct rep {record.get('rep')}: {error}" for error in cell_errors)
 
@@ -248,6 +295,14 @@ def summarize(
             "ratio_to_tested_project_peak": median / project_peak if math.isfinite(project_peak) and math.isfinite(median) else math.nan,
             "passes_feeding_floor": bool(valid_direct and math.isfinite(median) and median / direct_median >= feeding_floor),
             "passes_project_peak_floor": bool(math.isfinite(project_peak) and math.isfinite(median) and median / project_peak >= project_peak_floor),
+            "mfu_recovered_values_fraction": [
+                observation.get("mfu_recovered_fraction", math.nan)
+                for observation in project_observations.get(k, [])
+            ],
+            "mfu_recovered_median_fraction": statistics.median(
+                observation.get("mfu_recovered_fraction", math.nan)
+                for observation in project_observations.get(k, [])
+            ) if project_observations.get(k) else math.nan,
             "observations": project_observations.get(k, []),
         }
 
@@ -264,11 +319,28 @@ def summarize(
             "ratio_to_tested_project_peak_min": project_peak_floor,
             "selection_rule": "smallest tested K meeting both median-throughput floors after all audit gates pass",
         },
+        "mfu_contract": {
+            "gpu": "NVIDIA GeForce RTX 4090",
+            "precision": "BF16",
+            "assumed_peak_tflops_per_gpu": GPU_PEAK_TFLOPS_PER_4090_BF16,
+            "direct_formula": "sum(endpoint estimated_flops_delta) / (group_wall_s * 2 * 165e12)",
+            "project_formula": "estimated_flops_per_gpu_delta / (operator_wall_s * 165e12)",
+            "role": "resource-utilization evidence; does not replace the service-token feeding gate",
+        },
         "direct_control": {
             "concurrency_per_endpoint": direct_concurrency,
             "values_tokens_per_s": direct_rates,
             "median_tokens_per_s": direct_median,
             "cv": _cv(direct_rates) if valid_direct else math.nan,
+            "mfu_recovered_values_fraction": [
+                observation.get("mfu_recovered_fraction", math.nan)
+                for observation in direct_observations
+            ],
+            "mfu_recovered_median_fraction": statistics.median(
+                observation.get("mfu_recovered_fraction", math.nan)
+                for observation in direct_observations
+            ) if direct_observations else math.nan,
+            "observations": direct_observations,
         },
         "project_candidates": project_summary,
         "project_peak_median_tokens_per_s": project_peak,

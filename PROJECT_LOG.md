@@ -10,6 +10,7 @@
 - 替换正式矩阵不再复用全局 K：新增 workload-specific 校准合同入口，SQuAD 与 ShareGPT 分别读取选择 JSON；runner 在跑前核对 selected/audit 状态、3 repeats、0.95/0.97 阈值、manifest SHA、K、6144 token budget、65,536 active work 和 8×32 actor shape，direct/DuckDB 的每 endpoint 32 保持不变。
 - 再确认开题与最终方法的层次：当前 `project_frozen_static` 仅用于先建立喂饱后的强静态控制，不代表最终 proposed。开题冻结后先补 image Daft built-in/Ray Data native/typed Ray actor 同机 formal，再在相同 K/W 上限下做 steady→阶段突变/突发→长短混合→1/2/4-job staggered/weighted/heterogeneous 的 frozen-static vs state-aware dynamic；图像复用同一策略抽象。现有文本 equal-workload 1/2/4-job 是先验证据，不能替代尚未完成的剧烈变化实验。
 - 修复开题矩阵汇总器退出语义：旧实现虽在 `audit.json` 记录 feeding 失败，命令退出码却只检查 cell count/status。现在要求 project feeding≥95% direct、project GPU mean≥80%、exactly-once、sink、0 infrastructure failure、manifest/PG identity 一致才返回成功；DuckDB 等产品 baseline feeding 仍只报告，不为过项目门禁而调参。新增回归测试锁定该边界。
+- 补齐 feeder 校准 MFU：raw 已有 vLLM estimated-FLOPs counter，但 profiler 因未注入 GPU peak 把原生 MFU 标为 unavailable。校准审计器现在按 4090 BF16 165 TFLOPS/GPU 显式恢复 direct 双 endpoint 聚合 MFU与 project per-GPU MFU，保存每次重复/中位数、公式和峰值假设；该指标只作资源利用证据，不替代 95% service feeding。
 - 重启后第一次 SQuAD 校准在发出请求前 fail-closed：`_ensure_ray_head()` 对不存在的 6380 head 做复用探测时抛出未捕获的 60 秒 `TimeoutExpired`，没有进入 fresh-start 分支。失败目录与日志保留；修复为 10 秒有界探测并将超时显式降级到 stop/fresh-start，新增回归测试后使用全新 retry 目录运行。
 
 ## 2026-08-08 v6 通过 Microsoft PowerPoint 真实打开检查
