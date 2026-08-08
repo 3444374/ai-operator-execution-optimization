@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-08-08 Ray worker nofile 正式运行门禁
+
+- 原生单 job 首次 2048-row warm-up 保留了一个环境无效 incident：Ray 在机器重启后继承 `RLIMIT_NOFILE=1024`，Daft Ray actor 达到 1,024 open files 后报错并停止向 vLLM 提交；该 run 不进入性能结论。
+- Ray 以同一 32 CPU/2 GPU 合同、`nofile=65536` 重启后，真实 worker probe 返回 `(65536, 65536)`，retry 已越过故障点。
+- 新增 `ray_runtime_preflight.py`，并接入原生单 job/多 job runner：对每个唯一 Ray address 启动真实 worker probe，soft limit 低于 65,536 时在 matrix index 写入 `runtime_preflight_error` 并在第一个 cell 前 fail closed。新增 2 个纯门禁测试并扩展两个 runner 测试；合计 2+6+7 全过。
+
 ## 2026-08-08 文本原生框架 capability gate 与 Ray Data 最小筛选
 
 - 同一 256-row Chat manifest 上完成 bounded HTTP、Daft Native、Daft Ray、Ray Data 四入口 gate；6/6 点均 256/256、0 failed、exactly-once、双 endpoint、service counter 与 provenance 门通过。

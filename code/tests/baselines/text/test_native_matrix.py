@@ -26,6 +26,10 @@ from src.baselines.text.orchestration.native_matrix import (
 
 class NativeTextMatrixTests(unittest.TestCase):
     @staticmethod
+    def _ray_nofile(_address: str) -> tuple[int, int]:
+        return 65_536, 1_048_576
+
+    @staticmethod
     @contextmanager
     def _instrumentation(_urls: tuple[str, ...], path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -158,6 +162,7 @@ class NativeTextMatrixTests(unittest.TestCase):
                 vllm_python="vllm-python",
                 core_gate_invoker=fake_gate,
                 cell_instrumenter=self._instrumentation,
+                ray_nofile_probe=self._ray_nofile,
             )
 
             self.assertEqual(len(calls), 8)  # 2 arms * (1 warmup + 3 formal)
@@ -170,6 +175,10 @@ class NativeTextMatrixTests(unittest.TestCase):
             self.assertTrue(Path(index["runs"][0]["gpu_resource_trace"]).is_file())
             self.assertEqual(index["runs"][0]["gpu_summary"]["gpu0_util_mean"], 88.0)
             self.assertEqual(index["runs"][0]["gauge_summary"]["vllm_running_mean"], 8.0)
+            self.assertEqual(
+                index["ray_worker_nofile"]["127.0.0.1:6380"]["soft"],
+                65_536,
+            )
 
     def test_short_formal_result_is_preserved_but_not_rankable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -194,6 +203,7 @@ class NativeTextMatrixTests(unittest.TestCase):
                 vllm_python="vllm-python",
                 core_gate_invoker=fake_gate,
                 cell_instrumenter=self._instrumentation,
+                ray_nofile_probe=self._ray_nofile,
             )
 
             self.assertEqual(result["status"], "not_rankable")
@@ -216,12 +226,39 @@ class NativeTextMatrixTests(unittest.TestCase):
                     vllm_python="vllm-python",
                     core_gate_invoker=failing_gate,
                     cell_instrumenter=self._instrumentation,
+                    ray_nofile_probe=self._ray_nofile,
                 )
             index = json.loads((root / "out" / "matrix_index.json").read_text())
             self.assertEqual(index["status"], "failed")
             self.assertEqual(index["comparison_admission"], "not_rankable")
             self.assertEqual(len(index["runs"]), 1)
             self.assertEqual(index["runs"][0]["status"], "failed")
+
+    def test_low_ray_worker_nofile_fails_before_the_first_cell(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self._config_path(root)
+            calls: list[Path] = []
+
+            def unused_gate(path: Path, **_kwargs: object) -> dict[str, object]:
+                calls.append(path)
+                return {"status": "unexpected"}
+
+            with self.assertRaisesRegex(RuntimeError, "soft=1024"):
+                run_native_text_matrix(
+                    config_path,
+                    driver_python="driver-python",
+                    vllm_python="vllm-python",
+                    core_gate_invoker=unused_gate,
+                    cell_instrumenter=self._instrumentation,
+                    ray_nofile_probe=lambda _address: (1_024, 1_048_576),
+                )
+
+            self.assertEqual(calls, [])
+            index = json.loads((root / "out" / "matrix_index.json").read_text())
+            self.assertEqual(index["status"], "failed")
+            self.assertEqual(index["comparison_admission"], "not_rankable")
+            self.assertIn("RLIMIT_NOFILE", index["runtime_preflight_error"])
 
     def test_requires_explicit_per_arm_calibration_and_python(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

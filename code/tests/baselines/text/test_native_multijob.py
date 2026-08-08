@@ -73,6 +73,10 @@ class _FailingProcess(_FakeProcess):
 
 
 class NativeMultiJobTests(unittest.TestCase):
+    @staticmethod
+    def _ray_nofile(_address: str) -> tuple[int, int]:
+        return 65_536, 1_048_576
+
     def _manifest(self, root: Path, name: str, ids: tuple[int, int]) -> Path:
         path = root / name
         write_manifest(
@@ -182,6 +186,7 @@ class NativeMultiJobTests(unittest.TestCase):
                 self._config(root), runner_script=root / "run_official_baseline.py",
                 popen_factory=_FakeProcess, queue_waiter=self._queues, counter_sampler=self._counters,
                 cell_instrumenter=self._instrumentation,
+                ray_nofile_probe=self._ray_nofile,
             )
             self.assertEqual(result["comparison_admission"], "admissible")
             self.assertEqual(len(result["runs"]), 4)  # 2 arms * (warmup + formal)
@@ -197,6 +202,10 @@ class NativeMultiJobTests(unittest.TestCase):
             self.assertTrue(Path(formal[0]["gpu_resource_trace"]).is_file())
             self.assertEqual(formal[0]["gpu_summary"]["gpu0_util_mean"], 90.0)
             self.assertEqual(formal[0]["gauge_summary"]["vllm_running_mean"], 2.0)
+            self.assertEqual(
+                result["ray_worker_nofile"]["ray://127.0.0.1:10001"]["soft"],
+                65_536,
+            )
 
     def test_summary_provenance_mismatch_fails_closed(self) -> None:
         class WrongProvenanceProcess(_FakeProcess):
@@ -216,6 +225,7 @@ class NativeMultiJobTests(unittest.TestCase):
                     popen_factory=WrongProvenanceProcess, queue_waiter=self._queues,
                     counter_sampler=self._counters,
                     cell_instrumenter=self._instrumentation,
+                    ray_nofile_probe=self._ray_nofile,
                 )
             index = json.loads((root / "out" / "matrix_index.json").read_text())
             self.assertEqual(index["status"], "failed")
@@ -241,6 +251,7 @@ class NativeMultiJobTests(unittest.TestCase):
                 popen_factory=_FakeProcess, queue_waiter=self._queues, counter_sampler=self._counters,
                 repository_commit_getter=lambda: "test-commit", host_lease_acquirer=acquire,
                 cell_instrumenter=self._instrumentation,
+                ray_nofile_probe=self._ray_nofile,
             )
             self.assertEqual(result["repository_commit"], "test-commit")
             self.assertEqual(acquired, [(root, "test-commit")])
@@ -254,6 +265,7 @@ class NativeMultiJobTests(unittest.TestCase):
                     self._config(root), runner_script=root / "run_official_baseline.py",
                     popen_factory=_FailingProcess, queue_waiter=self._queues, counter_sampler=self._counters,
                     cell_instrumenter=self._instrumentation,
+                    ray_nofile_probe=self._ray_nofile,
                 )
             index = json.loads((root / "out" / "matrix_index.json").read_text())
             self.assertEqual(index["status"], "failed")

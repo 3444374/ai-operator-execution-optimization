@@ -354,8 +354,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/experiments/run_kmax_interference_experiment.py` | Shared-vLLM K_max interference runner | Starts background bulk and foreground small jobs against the same vLLM endpoint |
 | `code/scripts/experiments/run_shared_vllm_experiment.py` | Shared-vLLM 正式 group runner | 同步启动 1/2/4 job，隔离 per-job trace 并生成组级指标/manifest |
 | `code/scripts/baselines/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
-| `code/scripts/baselines/run_text_native_matrix.py` / `code/src/baselines/text/orchestration/native_matrix.py` | 冻结 calibration 指纹后的原生文本单 job 1+N 交错矩阵 | 复用 core gate并保存逐 GPU、vLLM gauge/latency/estimated-FLOPs 时序；时长/门禁不足保留为 `not_rankable` |
-| `code/scripts/baselines/run_text_native_multijob.py` / `code/src/baselines/text/orchestration/native_multijob.py` | Daft Native/Ray、Ray Data 原生两 job 错峰薄编排 | 每 job 启动双 endpoint official shard，禁止项目 credit/router/inflight；保存 barrier、服务计数、vLLM gauge/latency delta 与逐 GPU 时序 |
+| `code/scripts/baselines/run_text_native_matrix.py` / `code/src/baselines/text/orchestration/native_matrix.py` | 冻结 calibration 指纹后的原生文本单 job 1+N 交错矩阵 | 复用 core gate并保存逐 GPU、vLLM gauge/latency/estimated-FLOPs 时序；先验证 Ray worker nofile，时长/门禁不足保留为 `not_rankable` |
+| `code/scripts/baselines/run_text_native_multijob.py` / `code/src/baselines/text/orchestration/native_multijob.py` | Daft Native/Ray、Ray Data 原生两 job 错峰薄编排 | 每 job 启动双 endpoint official shard，禁止项目 credit/router/inflight；保存 barrier、服务计数、vLLM gauge/latency delta 与逐 GPU 时序，并 fail-closed 验证 Ray worker nofile |
 | `code/scripts/baselines/squad_capability_gate.py` | SQuAD v1.1 dev capability gate（DuckDB-ai arm）；全量/分层双模式、确定性分层抽样（largest-remainder + 多答案 max SQuAD-normalized 桶）、sample manifest + 逐行证据 CSV（sample hash 与 EM/F1 可复算）、canonical content hash 对齐 importer provenance、workload 完整性 fail-closed、vLLM counter 归因门禁、full-set exactly-once、命令/异常脱敏、失败结构化归档 | 验证 SQuAD bounded-output 管线（输出解析/EM-F1/错误统计），不发布排名 |
 | `code/scripts/baselines/squad_database_e2e_runner.py` | SQuAD bounded-output database-E2E **单 endpoint**顶层 runner（DuckDB-ai + direct_client + project_static）。project_static shell-out profiler，使用独立 completion evidence、实际 source-scan prompt fingerprints、DB/importer 完整性读取与 sink readback 形成非循环证据链；报告强制写 endpoint_count=1 / multi-endpoint method=false | 三臂可运行；project_static 同时受统一计时墙阻塞与单 endpoint 方法退化约束，只能做正确性/管线开销 diagnostic，不能证明 endpoint-aware 方法 |
 | `code/src/baselines/common/squad_identity.py` | SQuAD gate/runner 共享 helper（identity/attribution/integrity：`_pg_server_identity`/`_gpu_identity`/`_vllm_version`/`_git_commit`/`_scrape_status`/`_endpoint_idle`/`_assess_attribution`/`_structured_content_hash`/`_validate_workload_integrity`/`_load_importer_provenance`）| capability gate 与 E2E runner 共用，禁止第三份拷贝 |
@@ -409,6 +409,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/data/materializers/text.py` | ArrowOrganizer / DaftOrganizer 数据组织后端 | 接入或比较 Arrow 与 Daft 文本数据组织路径时读 |
 | `code/src/modalities/text/costs.py` | 与引擎无关的 prompt/output 成本模式解析 | 修改 prompt-only、固定输出上限或 trace 输出成本语义前读 |
 | `code/src/infrastructure/runner_lease.py` | 场景输出目录的原子单写者租约、owner 身份校验和显式 stale recovery | 修改 runner 幂等、恢复或 manifest/CSV 单写者边界前读 |
+| `code/src/infrastructure/ray_runtime_preflight.py` | 在真实 Ray worker 上读取并校验 `RLIMIT_NOFILE` | Daft Ray/Ray Data 正式 runner 启动前调用；低于 65,536 时保留失败证据并停止 |
 | `code/src/observability/profiling/` | profiler 应用子包：CLI/config、正式 schema/trace、replay 和 Ray 接线；旧根级 `profile_*.py` 已删除 | 修改画像应用参数、运行接线或结果契约前读 |
 | `code/src/observability/profiling/traces.py` | profiler control/flush/submission/request/resource 的版本化 CSV 序列化 | 修改 trace schema、生命周期标识或 endpoint/GPU 归因前读 |
 | `code/src/observability/profiling/cli.py` / `config.py` / `schema.py` | profiler 参数面、CLI/env 解析与正式汇总 schema 的独立边界 | 修改运行参数、环境切换优先级或 runs.csv 字段前读 |
@@ -437,6 +438,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/data/import_bounded_output_workload.py` | 通用 bounded-output 包装 importer（`--template` 支持任意 wrap，把源 workload 包成短输出 workload）；幂等、新 doc_id base 避 PK 冲突 | 构造句子计数等 microbenchmark workload |
 | `code/scripts/experiments/run_ai_operator_scenarios.py` | 带空闲门禁、失败审计和原子 manifest 的 seeded 场景运行器 | 执行随机化策略对比或真实基础设施门禁前运行 |
 | `code/tests/infrastructure/test_runner_lease.py` | runner 活跃 owner、stale recovery、fingerprint 与租约释放测试 | 修改场景 runner 恢复或单写者边界后运行 |
+| `code/tests/infrastructure/test_ray_runtime_preflight.py` | Ray worker nofile 去重、证据记录与 1024 fail-closed 测试 | 修改 Ray 原生 framework 正式运行前置条件后运行 |
 | `code/scripts/analysis/summarize_output_aware_bfd.py` | output-aware BFD 重复实验的长表统计汇总 | 汇总吞吐、E2E、packing、GPU、能耗与 MFU 正式结果时运行 |
 | `code/tests/data/test_sources.py` | data source 查询构造和 source factory 单元测试 | 修改数据入口行为后运行 |
 | `code/tests/planning/test_organizers.py` | 数据组织后端最小单元测试 | 修改 organizer 接口或 batch 行为后运行 |

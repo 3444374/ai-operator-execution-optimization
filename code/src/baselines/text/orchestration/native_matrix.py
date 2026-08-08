@@ -24,6 +24,11 @@ from src.baselines.text.orchestration.gate_runner import (
     run_core_gate,
 )
 from src.infrastructure.config_env import expand_structure
+from src.infrastructure.ray_runtime_preflight import (
+    RayNofileProbe,
+    probe_ray_worker_nofile,
+    validate_ray_worker_nofile,
+)
 
 
 _GATE_HARD_GATES = frozenset(
@@ -390,6 +395,7 @@ def run_native_text_matrix(
     vllm_python: str,
     core_gate_invoker: CoreGateInvoker = run_core_gate,
     cell_instrumenter: Callable[..., object] = instrumented_cell,
+    ray_nofile_probe: RayNofileProbe = probe_ray_worker_nofile,
 ) -> dict[str, object]:
     """Execute one warm-up and N formal repeats with isolated derived gates."""
 
@@ -406,6 +412,26 @@ def run_native_text_matrix(
         "gpu": "gpu_resource.csv",
         "vllm": "gauge_summary and vllm_latency_deltas in matrix_index.json",
     }
+    _atomic_json(index_path, index)
+    try:
+        index["ray_worker_nofile"] = validate_ray_worker_nofile(
+            (
+                arm.ray_address
+                for arm in config.arms
+                if arm.ray_address is not None
+            ),
+            probe=ray_nofile_probe,
+        )
+    except Exception as exc:
+        index.update(
+            {
+                "status": "failed",
+                "comparison_admission": "not_rankable",
+                "runtime_preflight_error": f"{type(exc).__name__}: {exc}",
+            }
+        )
+        _atomic_json(index_path, index)
+        raise
     _atomic_json(index_path, index)
     metrics_urls = _metrics_urls(config.endpoint_urls)
     ordinal = 0

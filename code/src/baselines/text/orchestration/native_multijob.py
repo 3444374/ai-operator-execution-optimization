@@ -34,6 +34,11 @@ from src.baselines.text.orchestration.gate_runner import (
     wait_for_idle,
 )
 from src.infrastructure.config_env import expand_structure
+from src.infrastructure.ray_runtime_preflight import (
+    RayNofileProbe,
+    probe_ray_worker_nofile,
+    validate_ray_worker_nofile,
+)
 from src.infrastructure.runner_lease import acquire_host_runner_lease
 
 
@@ -557,6 +562,7 @@ def run_native_multijob(
     repository_commit_getter: Callable[[], str] = _repository_commit,
     host_lease_acquirer: Callable[..., object] = acquire_host_runner_lease,
     cell_instrumenter: Callable[..., object] = instrumented_cell,
+    ray_nofile_probe: RayNofileProbe = probe_ray_worker_nofile,
 ) -> dict[str, object]:
     """Execute warmup/formal native arms, preserving failed evidence fail-closed."""
 
@@ -579,6 +585,26 @@ def run_native_multijob(
         repository_commit=repository_commit,
     )
     try:
+        try:
+            index["ray_worker_nofile"] = validate_ray_worker_nofile(
+                (
+                    arm.ray_address
+                    for arm in config.arms
+                    if arm.ray_address is not None
+                ),
+                probe=ray_nofile_probe,
+            )
+        except Exception as exc:
+            index.update(
+                {
+                    "status": "failed",
+                    "comparison_admission": "not_rankable",
+                    "runtime_preflight_error": f"{type(exc).__name__}: {exc}",
+                }
+            )
+            _atomic_json(index_path, index)
+            raise
+        _atomic_json(index_path, index)
         for phase, repeats in (("warmup", config.warmup_repeats), ("formal", config.formal_repeats)):
             for repeat in range(1, repeats + 1):
                 for position, arm in enumerate(balanced_arm_order(config, phase, repeat), start=1):
