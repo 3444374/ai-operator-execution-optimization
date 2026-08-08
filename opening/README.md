@@ -63,7 +63,7 @@
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级与禁止外推的当前依据 |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前暂停 PPT 制作 |
 | 开题 PPTX | `slides/opening_defense_20260807_v6.pptx` | v5 模板继承的待替换底稿；已有 QA 不代表新内容已冻结 |
-| 开题飞书源稿 | `feishu/opening_report_wiki.md` | 与本地报告完全一致；线上正文 revision 289 与四个图片块已回读通过 |
+| 开题飞书历史快照 | `feishu/opening_report_wiki.md` | **已过期，禁止同步**；仍含首轮failed-feeding数字。当前权威正文为`report/opening_report.md`，用户恢复云文档工作后再由权威正文重新生成同步源 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
 | 文献精读清单 | `literature/reading_list.md` | 候选清单已补，待精读（笔记全集在 `research/reading_notes/`） |
@@ -89,13 +89,13 @@
 2. 依据 `opening_defense_outline_20260808.md` 整理动机—挑战—设计—证据边界和待画图数据合同；当前暂不实际画图。
 3. 完成 Claim Matrix、问答、实验状态与实现边界的一致性审计；用户已明确豁免 Wiki，同步云文档和制作 PPT 均暂停。
 4. 后续获准绘图时只做 A/C 标签级重绘与 F/H 首次生成；B、WorkDescriptor 总览、D、E 不重画，G 无结果且不画。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
-## 飞书同步目标
+## 飞书发布面（当前同步暂停）
 
-后续需要写入飞书的主要目标：
+以下链接只用于识别既有发布面；当前均不是可直接覆盖的同步目标：
 
 | 飞书文档 | 链接 | 用途 |
 |---|---|---|
-| 开题报告（新版，当前同步目标） | https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb | 承载开题报告正文最新版，口径为三层上游执行策略、写回瓶颈判定和端到端评价 |
+| 开题报告（revision 289历史发布面） | https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb | 已落后于当前本地报告；恢复同步时从`report/opening_report.md`重新生成并差异审计 |
 | 开题报告与开题汇报（旧版，已过时） | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 旧版，保留作为历史参考 |
 | 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 承载动机实验、可行性实验、分阶段性能剖析和实验结论边界 |
 | 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 旧版在线幻灯片，当前内容和形式先作废，后续需基于新版报告重做 |

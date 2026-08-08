@@ -1,6 +1,14 @@
-# 开题答辩 PPT v6 冻结设计
+# 历史开题答辩 PPT v6 设计（已被取代）
 
 冻结日期：2026-08-07
+
+> **状态护栏（2026-08-09）**：本文件只保留旧版页面映射与版式经验，**不得继续作为
+> 当前内容合同、数据源或PPT生成输入**。其中首轮database-E2E、数据组织“近似中性”及
+> 四图结构均已被后续replacement、原生单/多Job和第一性原理复审取代。当前权威内容入口为
+> `opening/opening_defense_outline_20260808.md`、`opening/claim_matrix.md`、
+> `opening/report/opening_report.md`和
+> `figures/audit/opening_story_figures_contract_20260808.md`。用户已暂停PPT成品，本文件不更新
+> 为新版本，也不得据此覆盖云端材料。
 
 本文件定义从 `opening_defense_20260720_v5.pptx` 增量生成 v6 的内容合同。学校模板、母版、页眉页脚和人工版式调整继续保留；旧稿只提供版式，不再提供研究结论。最终可见文字不得出现内部实验代号。
 

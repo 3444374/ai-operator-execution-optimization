@@ -1,5 +1,13 @@
 # 硕士生论文开题报告
 
+> **历史快照，禁止同步或引用（2026-08-09）**：本文件仍保留2026-08-07首轮
+> failed-feeding三臂数字，未纳入K128 replacement、C32–C256饱和校准、原生单Job、
+> online/eager多Job和四级Claim复审。当前权威本地报告是
+> `opening/report/opening_report.md`；当前答辩内容合同是
+> `opening/opening_defense_outline_20260808.md`与`opening/claim_matrix.md`。
+> 用户已明确不需要Wiki同步且暂停普通飞书云文档覆盖，因此本文件只作历史审计证据，
+> 不得上传、覆盖或作为当前开题数值来源。
+
 题目：数据库 AI 负载的执行优化与调度研究
 
 ## 1. 课题背景、目的和意义

@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-08-09 旧PPT/飞书底稿误用护栏
+
+- 审计发现`opening/slides/opening_defense_v6_design.md`仍引用2026-08-07首轮三臂与旧
+  四图合同，`opening/feishu/opening_report_wiki.md`仍保留failed-feeding数字。按用户暂停
+  PPT/云文档/Wiki的要求，不重写或同步这些历史稿，只在文件顶部加fail-closed状态护栏。
+- 两份旧稿现在明确禁止作为当前内容合同、数据源、生成输入或云端覆盖源，并统一指向
+  `opening_defense_outline_20260808.md`、`claim_matrix.md`、当前本地报告和待画图合同。
+- 同步修正`opening/README.md`、`opening/feishu/README.md`、`opening/navigation.md`与
+  `PROJECT_OUTLINE.md`入口：线上revision 289和本地飞书Markdown均为历史发布面，当前
+  不存在云端同步目标；恢复后必须从权威本地报告重新生成并差异审计。
+- 未生成PPT、图片或云文档，也未修改任何远端Wiki。
+
 ## 2026-08-09 四级 Claim 表与报告最终口径收口
 
 - 将“不能声称”从原则说明落为Claim Matrix实际表行：禁止跨workload系统总排名、禁止

@@ -1,5 +1,14 @@
 # 开题材料 project log
 
+## 2026-08-09 历史PPT/飞书底稿状态护栏
+
+- 旧v6设计和本地飞书底稿仍含被replacement取代的数据；按暂停PPT/云文档/Wiki要求，
+  仅增加“历史、禁止引用/同步/作为生成输入”护栏，并指向当前权威大纲、Claim Matrix、
+  本地报告和待画图合同。
+- README、navigation和总纲入口同步改为fail-closed：revision 289与本地飞书Markdown均为
+  历史发布面，恢复同步时必须从权威本地报告重新生成，不能直接覆盖。
+- 未生成或覆盖任何PPT、飞书云文档或Wiki。
+
 ## 2026-08-09 四级 Claim 与内容大纲收口
 
 - Claim Matrix新增四条`不能声称`实际表行，覆盖跨系统总排名、dynamic普遍胜出、

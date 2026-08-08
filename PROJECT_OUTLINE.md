@@ -177,7 +177,8 @@ GPU 利用率优先使用 time-series mean/p50/p95/max；KV usage 按 0–1 分�
 
 - 开题报告：`opening/report/opening_report.md`
 - 开题 Claim Matrix：`opening/claim_matrix.md`
-- 开题 PPT 冻结设计：`opening/slides/opening_defense_v6_design.md`
+- 当前答辩内容合同：`opening/opening_defense_outline_20260808.md`；历史PPT v6设计
+  `opening/slides/opening_defense_v6_design.md`已被取代且禁止作为生成输入
 - 答辩问答：`opening/qa_bank.md`
 - 当前方向速览：`overview/current_direction_and_plan.md`
 - 实验状态：`experiments/plans/experiment_status_and_gaps.md`

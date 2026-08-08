@@ -48,7 +48,7 @@ AGENTS.md
 | PPT 制作规则 | `ppt_rules.md` |
 | 开题工作组织规则 | `work_rules.md` |
 | 飞书同步规则 | `feishu/README.md` |
-| 开题飞书 wiki 源稿 | `feishu/opening_report_wiki.md` |
+| 开题飞书历史快照 | `feishu/opening_report_wiki.md`（已过期、禁止同步；当前正文见`report/opening_report.md`） |
 | 飞书进度汇报 | `feishu/progress_update.md` |
 | 文献清单和精读笔记 | `literature/reading_list.md` |
 | 答辩问答 | `qa_bank.md` |
@@ -152,8 +152,8 @@ qa_bank.md
 
 ```text
 opening/feishu/README.md
-opening/feishu/opening_report_wiki.md
 opening/report/opening_report.md
+opening/feishu/opening_report_wiki.md  # 历史快照，只读对照，禁止作为覆盖源
 opening/slides/opening_ppt.md
 motivation/results/
 learning/experiment_walkthrough.md

@@ -4,13 +4,15 @@
 
 ## 线上文档
 
-2026-08-08 状态：`opening_report_wiki.md` 已与本地权威报告完全一致。用户明确批准后，
-线上 docx 已由 revision 277 覆盖并完成四图上传；最终 revision 289 的八章目录、关键实验数字、
-“不能声称”边界和四个带 caption 的图片块均已回读通过。
+2026-08-09状态：线上docx revision 289与`opening_report_wiki.md`只代表2026-08-08
+发布快照，已经被K128 replacement、饱和校准、原生单/多Job和四级Claim复审取代。
+`opening_report_wiki.md`现为**禁止同步的历史证据**，当前权威正文是
+`opening/report/opening_report.md`。用户已暂停普通飞书云文档与Wiki同步；恢复前不存在
+“当前同步目标”，也不得用历史源覆盖线上文档。
 
 | 飞书文档 | 链接 | 承载内容 | 本地来源 |
 |---|---|---|---|
-| 开题报告（新版，当前同步目标） | https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb | 开题报告正文、当前研究方案图和最终报告口径 | `opening/feishu/opening_report_wiki.md`、`opening/report/`、`figures/architecture/` |
+| 开题报告（线上历史发布面；同步暂停） | https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb | revision 289历史快照，不代表当前实验口径 | 恢复同步时从`opening/report/opening_report.md`重新生成；禁止直接使用历史`opening_report_wiki.md` |
 | 开题报告与开题汇报（旧版历史） | https://my.feishu.cn/wiki/GCxowlVJbinzgRkoHDmc06cSn9J?from=from_copylink | 旧版历史参考，不再作为当前同步目标 | `opening/feishu/opening_report_wiki.md` 的历史版本 |
 | 动机测试与可行性测试 | https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink | 动机实验、可行性实验、分阶段性能剖析、实验结论边界 | `opening/feishu/motivation_feasibility_wiki.md`、`motivation/results/`、`feasibility/results/`、`learning/experiment_walkthrough.md` |
 | 开题汇报飞书幻灯片 | https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg | 旧版 PPT 在线版，当前内容和形式先作废，后续需基于新报告重做 | `opening/slides/README.md`、`opening/slides/opening_ppt.md` |
@@ -21,7 +23,9 @@
 - 同步前先检查本地报告、PPT、飞书版、实验报告口径是否一致。
 - 写入飞书前要区分“事实、推断、待验证、不能声称”。
 - 开题报告飞书文档中可以同步 PPT 大纲和关键页摘要，但正式 PPTX 仍由 `opening/slides/` 维护。
-- `opening_report_wiki.md` 是新版开题报告飞书 docx 的主源稿；`motivation_feasibility_wiki.md` 是“动机测试与可行性测试”飞书 wiki 的主源稿；`progress_update.md` 是阶段进度同步稿。
+- `opening_report_wiki.md`当前是禁止同步的历史快照；恢复云文档工作时，先从
+  `opening/report/opening_report.md`生成新的发布源并完成差异审计。`motivation_feasibility_wiki.md`
+  和`progress_update.md`仍分别是其既有发布面的历史源稿，但未经用户新授权不覆盖。
 - 动机测试与可行性测试飞书文档只写真实实验和明确边界，不把聊天中的临时判断当作正式结论。
 
 ## 工具使用
