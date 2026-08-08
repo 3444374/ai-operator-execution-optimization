@@ -131,6 +131,8 @@ manifest SHA 和 resource metrics。只有全部门禁通过时，才冻结同�
 `active_work_scan_required`，不允许人工选点。选择文件同时从 vLLM estimated-FLOPs counter
 恢复每个 repeat 的 BF16 MFU：direct 使用双 endpoint 聚合峰值，project 使用 profiler 的
 per-GPU delta；峰值假设固定 4090 165 TFLOPS/GPU，MFU 只作资源证据、不替代 feeding 门。
+若 primary root 含失败 cell，可用一个或多个 `--repair-root` 合并同配置 replacement；只有
+成功 cell 总数对每组恰好等于预注册三次才通过，原失败记录、错误和路径仍保存在合同中。
 
 `baselines/opening_database_e2e_matrix.py` 的替换正式模式允许 SQuAD 与 ShareGPT 分别
 绑定上述校准 JSON 和选中的 project K；加载配置时会 fail-closed 核对 manifest SHA、

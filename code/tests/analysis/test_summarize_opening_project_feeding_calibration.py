@@ -145,6 +145,45 @@ class FeedingCalibrationSummaryTests(unittest.TestCase):
         self.assertEqual(prepared, {"missing": None, "values": [1.0, None]})
         json.dumps(prepared, allow_nan=False)
 
+    def test_same_config_repair_root_replaces_failed_repeat_without_hiding_incident(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "primary"
+            repair = Path(td) / "repair"
+            root.mkdir()
+            repair.mkdir()
+            self._tree(root)
+            run = json.loads((root / "ramp_run.json").read_text(encoding="utf-8"))
+            failed = next(
+                row for row in run["records"]
+                if row["arm"] == "project_static"
+                and row["concurrency"] == 128
+                and row["rep"] == 3
+            )
+            failed["status"] = "failed"
+            failed["error"] = "transient ReadError"
+            run["n_passed"] = 14
+            run["n_failed"] = 1
+            (root / "ramp_run.json").write_text(json.dumps(run), encoding="utf-8")
+
+            repair_scale = repair / f"scale_{self.ROWS}"
+            repair_record = self._project(repair_scale, 128, 1, 990)
+            (repair / "ramp_run.json").write_text(
+                json.dumps(
+                    {
+                        "experiment_id": "repair",
+                        "records": [repair_record],
+                        "n_passed": 1,
+                        "n_failed": 0,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = mod.summarize(root, repair_roots=(repair,), rows=self.ROWS)
+        self.assertEqual(result["status"], "selected")
+        self.assertEqual(result["selected_k_per_endpoint"], 128)
+        self.assertEqual(result["audit"]["failed_incident_count"], 1)
+        self.assertIn("ReadError", result["audit"]["failed_incidents_preserved"][0]["error"])
+
 
 if __name__ == "__main__":
     unittest.main()

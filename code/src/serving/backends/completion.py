@@ -115,7 +115,9 @@ def call_compatible_completion_endpoint(
             http_response_body_epoch_s = time.time()
             http_response_body_s = time.perf_counter()
     except error.URLError as exc:
-        raise RuntimeError(f"Completion endpoint request failed: {exc}") from exc
+        raise RuntimeError(
+            f"Completion endpoint request failed ({type(exc).__name__}): {exc}"
+        ) from exc
     decoded = json.loads(body.decode("utf-8"))
     return _decode_completion_endpoint_result(
         decoded,
@@ -403,7 +405,7 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
                 http_response_body_s = time.perf_counter()
         except self._httpx.HTTPError as exc:
             raise RuntimeError(
-                f"Completion endpoint request failed: {exc}"
+                f"Completion endpoint request failed ({type(exc).__name__}): {exc}"
             ) from exc
         endpoint_result = _decode_completion_endpoint_result(
             json.loads(body.decode("utf-8")),

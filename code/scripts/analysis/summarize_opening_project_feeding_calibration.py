@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Audit an opening-project feeding calibration and freeze the smallest saturated K.
 
-The input must be one ``multicard_scale_ramp.py`` output containing one
-bounded-HTTP control and project-static candidates for the same immutable
-request manifest.  Selection is deliberately repeat-based: the smallest K
+The primary input must contain the bounded-HTTP control and project-static
+candidates for the same immutable request manifest. Failed incidents remain in
+that evidence; optional repair roots may contribute only the exact same-config
+successful replacement cells needed to reach three valid repeats. Selection is
+deliberately repeat-based: the smallest K
 whose median service throughput reaches both the bounded-control floor and the
 tested project-peak floor is selected.  A failed audit never yields a K.
 """
@@ -75,7 +77,7 @@ def _portable_cell(root: Path, rows: int, record: dict[str, Any]) -> Path:
 
 def _audit_direct_cell(
     cell: Path, rows: int
-) -> tuple[float, str, dict[str, float], list[str]]:
+) -> tuple[float, str, dict[str, Any], list[str]]:
     errors: list[str] = []
     gate_dir = cell / "gate_output" / "bounded_http_c32"
     gate = _read_json(gate_dir / "gate.json")
@@ -128,6 +130,7 @@ def _audit_direct_cell(
     if not math.isfinite(mfu) or mfu <= 0:
         errors.append("direct recovered MFU is not positive and finite")
     observations = {
+        "evidence_cell": str(cell),
         "group_service_wall_s": max_jct,
         "vllm_estimated_flops_all_endpoints_delta": estimated_flops,
         "mfu_recovered_fraction": mfu,
@@ -172,6 +175,7 @@ def _audit_project_cell(cell: Path, rows: int) -> tuple[float, str, dict[str, An
     if not math.isfinite(rate) or rate <= 0:
         errors.append("model_request_tokens_per_s is not positive and finite")
     observations = {
+        "evidence_cell": str(cell),
         "model_name": row.get("model_name", ""),
         "completion_protocol": row.get("completion_protocol", ""),
         "service_prefix_caching": row.get("service_prefix_caching", ""),
@@ -213,6 +217,7 @@ def _audit_project_cell(cell: Path, rows: int) -> tuple[float, str, dict[str, An
 def summarize(
     root: Path,
     *,
+    repair_roots: tuple[Path, ...] = (),
     rows: int,
     expected_repeats: int = 3,
     direct_concurrency: int = 32,
@@ -220,26 +225,52 @@ def summarize(
     feeding_floor: float = 0.95,
     project_peak_floor: float = 0.97,
 ) -> dict[str, Any]:
-    run = _read_json(root / "ramp_run.json")
-    records = run.get("records", [])
+    evidence_roots = (root,) + tuple(repair_roots)
+    runs: list[dict[str, Any]] = []
+    records: list[dict[str, Any]] = []
+    for evidence_root in evidence_roots:
+        run = _read_json(evidence_root / "ramp_run.json")
+        runs.append(run)
+        for source in run.get("records", []):
+            record = dict(source)
+            record["_evidence_root"] = str(evidence_root)
+            records.append(record)
     errors: list[str] = []
     expected_count = expected_repeats * (1 + len(candidate_ks))
-    if len(records) != expected_count:
-        errors.append(f"record count {len(records)} != expected {expected_count}")
-    if run.get("n_failed") != 0:
-        errors.append(f"ramp reports {run.get('n_failed')} failed cells")
+    failed_records = [record for record in records if record.get("status") != "passed"]
+    passed_records = [record for record in records if record.get("status") == "passed"]
+    if len(passed_records) != expected_count:
+        errors.append(
+            f"successful record count {len(passed_records)} != expected {expected_count}"
+        )
+    reported_failed = sum(_int(run.get("n_failed"), 0) for run in runs)
+    if reported_failed != len(failed_records):
+        errors.append(
+            f"reported failed count {reported_failed} != observed {len(failed_records)}"
+        )
+    incidents = [
+        {
+            "evidence_root": record["_evidence_root"],
+            "arm": record.get("arm"),
+            "concurrency": record.get("concurrency"),
+            "repeat": record.get("rep"),
+            "status": record.get("status"),
+            "cell": record.get("cell"),
+            "error": record.get("error", ""),
+            "exit_code": record.get("exit_code"),
+        }
+        for record in failed_records
+    ]
 
-    direct_records = [r for r in records if r.get("arm") == "bounded_http" and _int(r.get("concurrency")) == direct_concurrency]
+    direct_records = [r for r in passed_records if r.get("arm") == "bounded_http" and _int(r.get("concurrency")) == direct_concurrency]
     if len(direct_records) != expected_repeats:
         errors.append(f"direct repeat count {len(direct_records)} != expected {expected_repeats}")
     direct_rates: list[float] = []
-    direct_observations: list[dict[str, float]] = []
+    direct_observations: list[dict[str, Any]] = []
     manifest_shas: set[str] = set()
     for record in direct_records:
-        if record.get("status") != "passed":
-            errors.append(f"direct rep {record.get('rep')} record status is not passed")
         rate, manifest_sha, observation, cell_errors = _audit_direct_cell(
-            _portable_cell(root, rows, record), rows
+            _portable_cell(Path(record["_evidence_root"]), rows, record), rows
         )
         direct_rates.append(rate)
         direct_observations.append(observation)
@@ -249,15 +280,15 @@ def summarize(
     project_values: dict[int, list[float]] = {}
     project_observations: dict[int, list[dict[str, Any]]] = {}
     for k in sorted(set(candidate_ks)):
-        candidates = [r for r in records if r.get("arm") == "project_static" and _int(r.get("concurrency")) == k]
+        candidates = [r for r in passed_records if r.get("arm") == "project_static" and _int(r.get("concurrency")) == k]
         if len(candidates) != expected_repeats:
             errors.append(f"project K{k} repeat count {len(candidates)} != expected {expected_repeats}")
         values: list[float] = []
         observations: list[dict[str, Any]] = []
         for record in candidates:
-            if record.get("status") != "passed":
-                errors.append(f"project K{k} rep {record.get('rep')} record status is not passed")
-            rate, manifest_sha, obs, cell_errors = _audit_project_cell(_portable_cell(root, rows, record), rows)
+            rate, manifest_sha, obs, cell_errors = _audit_project_cell(
+                _portable_cell(Path(record["_evidence_root"]), rows, record), rows
+            )
             values.append(rate)
             observations.append(obs)
             manifest_shas.add(manifest_sha)
@@ -310,7 +341,9 @@ def summarize(
     return {
         "schema_version": 1,
         "evidence_root": str(root.resolve()),
-        "experiment_id": run.get("experiment_id"),
+        "evidence_roots": [str(path.resolve()) for path in evidence_roots],
+        "experiment_id": runs[0].get("experiment_id"),
+        "experiment_ids": [run.get("experiment_id") for run in runs],
         "rows": rows,
         "manifest_sha256": next(iter(manifest_shas), "") if len(manifest_shas) == 1 else None,
         "thresholds": {
@@ -346,13 +379,23 @@ def summarize(
         "project_peak_median_tokens_per_s": project_peak,
         "selected_k_per_endpoint": selected_k,
         "status": status,
-        "audit": {"passed": not errors, "errors": errors},
+        "audit": {
+            "passed": not errors,
+            "errors": errors,
+            "failed_incident_count": len(incidents),
+            "failed_incidents_preserved": incidents,
+            "replacement_policy": (
+                "failed cells remain incidents; same-config repair roots may contribute "
+                "only enough successful cells to reach exactly the expected repeat count"
+            ),
+        },
     }
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", required=True, type=Path)
+    parser.add_argument("--repair-root", action="append", type=Path, default=[])
     parser.add_argument("--rows", required=True, type=int)
     parser.add_argument("--expected-repeats", type=int, default=3)
     parser.add_argument("--direct-concurrency", type=int, default=32)
@@ -364,6 +407,7 @@ def main() -> int:
     args = parser.parse_args()
     result = summarize(
         args.root,
+        repair_roots=tuple(args.repair_root),
         rows=args.rows,
         expected_repeats=args.expected_repeats,
         direct_concurrency=args.direct_concurrency,

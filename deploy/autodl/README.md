@@ -79,6 +79,11 @@ workload 的同一 immutable manifest 上固定服务、token budget、active wo
 actor slots，单变量扫描 per-endpoint K 32/64/128/256（含既有正式合同 K256）；三次重复
 按 97% 已测项目峰值与 95% direct feeding 双门选择最小点。若四档均失败，才固定最佳 K
 后单独扫描 active work。
+
+某个 measured cell 若因传输/基础设施异常失败，不删除原目录，也不重跑整轮覆盖证据。
+使用 `opening_project_feeding_repair.example.json` 在全新输出目录只补同 K 的一个重复；
+生成选择合同时用 `--repair-root <new-root>`。审计器要求每组恰好三个**成功**重复，原 failed
+record 仍写入 `failed_incidents_preserved`；多补成功重复会因计数不等 fail-closed，避免挑点。
 冻结选择后必须用新 experiment ID/输出目录整体替换重跑原三臂矩阵；这属于纠正无效
 formal，不是新增开题 baseline。
 

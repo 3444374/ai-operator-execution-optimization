@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "experiment_id": "opening_project_feeding_repair_${OPENING_CALIBRATION_LABEL}",
+  "_note": "Same-config replacement for a failed calibration cell. Preserve the failed primary root; this file contributes one successful repeat only and must be passed to the auditor with --repair-root.",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "completion_protocol": "chat_completions",
+  "model": "${COMPLETION_MODEL}",
+  "tokenizer": "${MODEL_PATH}",
+  "service_prefix_caching": "enabled",
+  "service_max_num_seqs": 256,
+  "service_max_num_batched_tokens": 8192,
+  "scales": [
+    {
+      "rows": "${OPENING_CALIBRATION_ROWS}",
+      "manifest": "${OPENING_CALIBRATION_MANIFEST}"
+    }
+  ],
+  "arms": [
+    {"arm": "project_static", "concurrency": "${OPENING_CALIBRATION_REPAIR_K}", "reps": 1}
+  ],
+  "output_root": "${OPENING_CALIBRATION_OUTPUT_ROOT}",
+  "database_url": "${DATABASE_URL}",
+  "workload_name": "${OPENING_CALIBRATION_WORKLOAD_NAME}",
+  "max_tokens": "${OPENING_CALIBRATION_MAX_TOKENS}",
+  "project_token_budget": 6144,
+  "project_active_work": "${OPENING_CALIBRATION_ACTIVE_WORK}",
+  "project_actor_workers": 8,
+  "project_ray_concurrency": 32,
+  "warmup_per_cell": true,
+  "warmup_concurrency": 32,
+  "idle_timeout_s": 120.0,
+  "vllm_config_strict": true
+}
