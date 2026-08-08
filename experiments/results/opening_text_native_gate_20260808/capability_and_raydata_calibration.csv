@@ -1,0 +1,7 @@
+run_group,arm,concurrency_per_endpoint,batch_size,manifest_rows,endpoint_rows_0,endpoint_rows_1,endpoint_work_0,endpoint_work_1,endpoint_work_skew,group_service_wall_s,group_service_total_tokens,group_service_total_tokens_per_s,failed_rows,exactly_once,comparison_role,scheduler_owner,custom_scheduling_code,formal_baseline_eligible,timing_granularity,calibration_decision
+main,bounded_http,32,1,256,128,128,41942,41943,0.0000238419,20.236026,100393,4961.102529,0,true,direct_client_control,project_asyncio_control,true,false,request,protocol_control_only
+main,daft_native,1,1,256,128,128,41942,41943,0.0000238419,8.497096,100119,11782.731663,0,true,framework_native_baseline,daft_native_runner,false,true,shard_barrier,vendor_default
+main,daft_ray,1,1,256,128,128,41942,41943,0.0000238419,10.932855,100163,9161.650914,0,true,framework_native_baseline,daft_ray_runner,false,true,shard_barrier,vendor_default
+raydata_c4,ray_data_http,4,16,256,128,128,41942,41943,0.0000238419,126.816241,100139,789.638611,0,true,framework_native_baseline,ray_data,false,true,shard_barrier,screened_not_selected
+raydata_c8,ray_data_http,8,16,256,128,128,41942,41943,0.0000238419,123.038220,100042,813.096939,0,true,framework_native_baseline,ray_data,false,true,shard_barrier,frozen_measured_peak
+raydata_c16,ray_data_http,16,16,256,128,128,41942,41943,0.0000238419,131.176698,100256,764.282082,0,true,framework_native_baseline,ray_data,false,true,shard_barrier,screened_not_selected

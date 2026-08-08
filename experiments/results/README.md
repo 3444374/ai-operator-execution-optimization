@@ -11,6 +11,12 @@
 | `opening_database_e2e_text_refeed_20260808/` | K128 喂饱后的 SQuAD + ShareGPT 三静态臂 replacement；24/24 单元、18 formal、统一 PG source/sink、MFU/能耗/服务状态 | 全门禁通过；SQuAD 静态路径近似中性，ShareGPT project/direct service ratio=1.546；DuckDB ShareGPT 有 4,921/6,144 cap 语义失败。不能将静态结构差异写成动态收益。 |
 | `opening_database_e2e_text_20260807/` | 首轮相同三臂合同 | project feeding 89.93%/91.38% 未过门，只保留为 failed-feeding 历史诊断，性能数字已被 replacement 取代。 |
 
+## 开题文本原生框架入口（2026-08-08）
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `opening_text_native_gate_20260808/` | bounded、Daft Native/Ray、Ray Data 的 256-row capability gate，以及 Ray Data C4/C8/C16 最小筛选 | 6/6 gate 正确性与 provenance 通过；冻结 C8/B16 measured peak 供正式矩阵使用。n=1 gate 不作框架性能排名。 |
+
 ## 图像 AI_EMBED operator（2026-08-03/04）
 
 | Directory | Content | Boundary |

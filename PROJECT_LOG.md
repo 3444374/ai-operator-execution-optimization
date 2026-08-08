@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-08-08 文本原生框架 capability gate 与 Ray Data 最小筛选
+
+- 同一 256-row Chat manifest 上完成 bounded HTTP、Daft Native、Daft Ray、Ray Data 四入口 gate；6/6 点均 256/256、0 failed、exactly-once、双 endpoint、service counter 与 provenance 门通过。
+- Ray Data B16 的 C4/C8/C16 单次 service throughput 为 789.64/813.10/764.28 tok/s；正式矩阵冻结三个已测点的 measured peak C8，但 n=1 只称筛选点，不称稳定最优或最小饱和。
+- 原始 gate、shard log、逐请求 CSV 和 service counter 保留在服务器独立目录，并额外归档为 `opening_text_native_scans_20260808.tar.gz`（SHA256 `0bfe22fec0f477a70e805b0237efdf09b6cc7d4d80640ddd2ba8e5d4a7c8c7e7`）。仓库新增 `experiments/results/opening_text_native_gate_20260808/` 汇总，不提交 raw request trace。
+
 ## 2026-08-08 喂饱后的统一文本 database-E2E replacement 通过
 
 - K128 replacement 完成 24/24 cells、18 formal；feeding、GPU、exactly-once、sink readback、manifest/identity、0 infrastructure failure 与稳定性门全部通过。当前权威报告为 `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`，2026-08-07 首轮只保留为 failed-feeding 历史诊断。
