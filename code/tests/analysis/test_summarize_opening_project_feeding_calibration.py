@@ -47,7 +47,17 @@ class FeedingCalibrationSummaryTests(unittest.TestCase):
                 json.dumps({"row_count": self.ROWS, "sha256": self.SHA}), encoding="utf-8"
             )
         (gate_dir / "gate.json").write_text(
-            json.dumps({"status": "passed", "passed": True, "metrics": {"group_service_total_tokens_per_s": rate}}),
+            json.dumps(
+                {
+                    "status": "passed",
+                    "passed": True,
+                    "metrics": {
+                        "group_service_total_tokens": total_tokens,
+                        "group_service_wall_s": jct,
+                        "group_service_total_tokens_per_s": rate,
+                    },
+                }
+            ),
             encoding="utf-8",
         )
         (cell / "ttft_metrics.json").write_text(

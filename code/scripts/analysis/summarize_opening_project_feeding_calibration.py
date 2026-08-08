@@ -109,8 +109,25 @@ def _audit_direct_cell(
         errors.append(f"completed rows {completed} != expected {rows}")
     if len(manifest_shas) != 1 or "" in manifest_shas:
         errors.append(f"direct manifest SHA mismatch: {sorted(manifest_shas)}")
-    rate = total_tokens / max_jct if max_jct > 0 else math.nan
-    gate_rate = _float(gate.get("metrics", {}).get("group_service_total_tokens_per_s"))
+    gate_metrics = gate.get("metrics", {})
+    group_wall_s = _float(gate_metrics.get("group_service_wall_s"))
+    gate_total_tokens = _int(gate_metrics.get("group_service_total_tokens"), 0)
+    if gate_total_tokens != total_tokens:
+        errors.append(
+            f"shard service tokens {total_tokens} != gate total {gate_total_tokens}"
+        )
+    if not math.isfinite(group_wall_s) or group_wall_s <= 0:
+        errors.append("group_service_wall_s is not positive and finite")
+    elif group_wall_s < max_jct:
+        errors.append(
+            f"group wall {group_wall_s} is shorter than max shard JCT {max_jct}"
+        )
+    elif max_jct > 0 and (group_wall_s - max_jct) / group_wall_s > 0.02:
+        errors.append(
+            f"group/max-shard wall gap exceeds 2%: {group_wall_s} vs {max_jct}"
+        )
+    rate = total_tokens / group_wall_s if group_wall_s > 0 else math.nan
+    gate_rate = _float(gate_metrics.get("group_service_total_tokens_per_s"))
     if not math.isfinite(rate) or not math.isclose(rate, gate_rate, rel_tol=1e-6):
         errors.append(f"recomputed direct rate {rate} != gate rate {gate_rate}")
     ttft_path = cell / "ttft_metrics.json"
@@ -123,15 +140,16 @@ def _audit_direct_cell(
     )
     mfu = (
         estimated_flops
-        / (max_jct * len(endpoint_metrics) * GPU_PEAK_TFLOPS_PER_4090_BF16 * 1e12)
-        if max_jct > 0 and len(endpoint_metrics) == 2 and estimated_flops > 0
+        / (group_wall_s * len(endpoint_metrics) * GPU_PEAK_TFLOPS_PER_4090_BF16 * 1e12)
+        if group_wall_s > 0 and len(endpoint_metrics) == 2 and estimated_flops > 0
         else math.nan
     )
     if not math.isfinite(mfu) or mfu <= 0:
         errors.append("direct recovered MFU is not positive and finite")
     observations = {
         "evidence_cell": str(cell),
-        "group_service_wall_s": max_jct,
+        "group_service_wall_s": group_wall_s,
+        "max_shard_jct_s": max_jct,
         "vllm_estimated_flops_all_endpoints_delta": estimated_flops,
         "mfu_recovered_fraction": mfu,
     }

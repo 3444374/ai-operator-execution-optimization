@@ -13,6 +13,7 @@
 - 补齐 feeder 校准 MFU：raw 已有 vLLM estimated-FLOPs counter，但 profiler 因未注入 GPU peak 把原生 MFU 标为 unavailable。校准审计器现在按 4090 BF16 165 TFLOPS/GPU 显式恢复 direct 双 endpoint 聚合 MFU与 project per-GPU MFU，保存每次重复/中位数、公式和峰值假设；该指标只作资源利用证据，不替代 95% service feeding。
 - SQuAD 统一 256-slot 校准的 K128 第三次出现一次空消息 HTTPX 异常，cell 保留为 failed incident，endpoint 仍健康、服务日志无 5xx/CUDA/engine error。Completion backend 错误现在附带具体异常类型，避免 `RuntimeError: ... failed:` 空尾无法区分 ReadError/timeout；失败重复不得静默删除，按同配置补跑并由校准审计器显式合并事故与 replacement。
 - 新增校准 replacement 合同：失败后在新 root 只补同 K 一个成功重复，审计器通过 `--repair-root` 合并；要求每个 direct/K 组成功数恰好为 3，并把原失败记录永久保留在 `failed_incidents_preserved`。这避免为一次传输事故覆盖原证据，也禁止多跑后挑最好三次。
+- 修正校准 direct group 计时：gate 已明确保存 `group_service_wall_s`，它比最大 shard JCT 多出微小 group join 开销。审计器改为用服务端总 token / group wall 重算正式 direct 吞吐与 MFU，并只用 max-shard JCT 检查 group wall 不短于 shard 且额外开销不超过 2%；不再把两种不同计时边界要求到浮点完全相等。
 - 重启后第一次 SQuAD 校准在发出请求前 fail-closed：`_ensure_ray_head()` 对不存在的 6380 head 做复用探测时抛出未捕获的 60 秒 `TimeoutExpired`，没有进入 fresh-start 分支。失败目录与日志保留；修复为 10 秒有界探测并将超时显式降级到 stop/fresh-start，新增回归测试后使用全新 retry 目录运行。
 
 ## 2026-08-08 v6 通过 Microsoft PowerPoint 真实打开检查

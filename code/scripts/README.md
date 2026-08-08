@@ -124,8 +124,9 @@ workload identity 或 GPU feeding 门禁不一致都会写入 `audit.json` 并�
 改变 runner 冻结合同。
 
 `analysis/summarize_opening_project_feeding_calibration.py` 审计同 manifest 的 bounded
-direct 三次重复与 project K32/64/128/256 三次重复，重新用服务端 token delta 与两 shard
-最大 JCT 计算 direct group 吞吐，并逐格检查 exactly-once、行数、worker failure、终态空队列、
+direct 三次重复与 project K32/64/128/256 三次重复，重新用服务端 token delta 与正式
+`group_service_wall_s` 计算 direct group 吞吐，并用两 shard 最大 JCT 交叉检查 group join
+开销，再逐格检查 exactly-once、行数、worker failure、终态空队列、
 manifest SHA 和 resource metrics。只有全部门禁通过时，才冻结同时达到 direct 中位数 95%
 与已测 project 峰值中位数 97% 的最小 K；否则显式输出 `audit_failed` 或
 `active_work_scan_required`，不允许人工选点。选择文件同时从 vLLM estimated-FLOPs counter
