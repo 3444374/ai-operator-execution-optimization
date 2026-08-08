@@ -2,7 +2,7 @@
 
 冻结日期：2026-08-07
 
-状态：待执行。该计划只服务于 `opening/claim_matrix.md` 中两个尚未闭环的文本证据缺口。两组完成后停止新增开题 baseline，不因结果接近而更换 workload、模型、数据库或扩大扫描。
+状态：**已完成并冻结**。2026-08-07 在 AutoDL 双 RTX 4090 上完成 24/24 单元（2 workload × 3 arm × 1 warmup + 3 formal），18 个 formal 全部 exactly-once、sink digest 匹配，基础设施失败为 0。项目臂在 SQuAD/ShareGPT 的 service feeding 为 89.93%/91.38%，均未过 95% 门；DuckDB AI ShareGPT 有 4,936/6,144 行 cap 语义失败。权威报告见 `experiments/results/opening_database_e2e_text_20260807/README.md`。按预注册停止规则，开题前不再新增 baseline。
 
 ## 1. 准入问题
 

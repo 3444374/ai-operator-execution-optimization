@@ -1,5 +1,27 @@
 # 开题材料 project log
 
+## 2026-08-08 v6 PowerPoint 应用级验收通过
+
+- Microsoft PowerPoint 已真实打开 `opening_defense_20260807_v6.pptx`，识别为 28 页；
+  首页与缩略图正常，未出现文件修复提示。
+- WPS Office 启动后未出现文档窗口，不计为通过。PPT 本地内容与兼容性门禁已完成，
+  材料包仍待飞书线上覆盖和 Wiki 镜像后发布冻结。
+- 飞书用户授权已恢复；目标文档 revision 277 的 full fetch 与 overwrite dry-run 已通过，
+  实际全文覆盖等待用户对高风险写操作作明确批准。
+
+## 2026-08-07 开题本地材料冻结候选
+
+- 两组统一文本三臂正式实验完成并归档；项目路径在 SQuAD/ShareGPT feeding 门均失败，
+  已按负结果写入报告、PPT、Claim Matrix 和答辩问答，没有增加第二数据库或新 workload。
+- 报告正文压缩为一张统一三臂表和四张核心图；四级 claim 明确区分已证明、条件性、
+  待验证与不能声称。
+- 从 v5 学校模板映射生成 28 页 v6，逐页备注完整；程序化渲染发现并修复 v5 bullet 残留、
+  图片未替换和底图透出。最终空 placeholder=0，notes failure=0，画布 overflow test 通过。
+- `opening/feishu/opening_report_wiki.md` 已与本地报告逐字一致。线上文档未覆盖：现有用户
+  token 过期，授权请求被 Codex 额度门禁拒绝；恢复授权后必须 dry-run overwrite、插入四图并回读。
+- 尚欠 WPS/PowerPoint 实际打开检查；因此当前称“本地冻结候选”，不称最终发布版。
+
+
 ## 2026-07-29 开题答辩 PPT v6 设计规划与反馈修订
 
 - 完成 v5 的内容、视觉和架构图审阅，确认当前文件落后于 2026-07-29

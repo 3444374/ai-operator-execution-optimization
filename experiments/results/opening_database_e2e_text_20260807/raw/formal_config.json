@@ -1,0 +1,43 @@
+{
+  "experiment_id": "opening_database_e2e_text_20260807",
+  "database_url": "postgresql://postgres:postgres@localhost:5432/ai_operator",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "model": "qwen2.5-7b",
+  "tokenizer": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
+  "output_root": "/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_20260807",
+  "project_python": "/root/autodl-tmp/venvs/text-baselines/bin/python",
+  "concurrency_per_endpoint": 32,
+  "timeout_s": 180,
+  "write_batch_rows": 500,
+  "token_budget": 6144,
+  "active_work_per_endpoint": 65536,
+  "actor_workers_per_endpoint": 8,
+  "actor_concurrency": 4,
+  "service_prefix_caching": "enabled",
+  "service_max_num_seqs": 256,
+  "service_max_num_batched_tokens": 8192,
+  "gpu_peak_tflops_each": 165.0,
+  "service_conditioning_before_cell": true,
+  "seed": 20260807,
+  "workloads": [
+    {
+      "label": "squad_uniform",
+      "name": "squad_v11_dev_short_answer",
+      "rows": 10570,
+      "max_tokens": 64,
+      "manifest": "/root/autodl-tmp/experiment-artifacts/opening_manifests/squad_uniform_equal_rows_seed20260807.jsonl",
+      "quality": "squad"
+    },
+    {
+      "label": "sharegpt_controlled_skew",
+      "name": "sharegpt_multiturn",
+      "rows": 2048,
+      "max_tokens": 256,
+      "manifest": "/root/autodl-tmp/experiment-artifacts/opening_manifests/sharegpt_controlled_skew_equal_rows_seed20260807.jsonl",
+      "quality": "completion_validity"
+    }
+  ]
+}

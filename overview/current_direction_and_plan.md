@@ -13,8 +13,8 @@
   Database 与 Model Service 之间的 AI Data Execution Layer。
 - **两项内容不变**：workload 感知的 work-unit 构造；容量感知的提交、路由与多 job 调度。
   cost estimator 是共同使能组件，文本和图像是跨模态证据轨道。
-- **开题只补两组数据**：SQuAD 均匀控制组和 ShareGPT controlled-skew 实验组，均为
-  direct、DuckDB AI、project frozen-static 三臂统一 database-E2E。完成后停止加 baseline。
+- **开题最后两组数据已完成**：统一三臂矩阵 24/24 单元通过完整性门禁；project 在
+  SQuAD/ShareGPT 的 service feeding 为 89.93%/91.38%，均未过 95%。开题前已停止加 baseline。
 - **state-aware 仍是拟研究方法**：现有证据支持 strong static、regime dependence、图像
   matched-resource 结构收益和代价估计可行性，但没有证明 state-aware 优于冻结静态点。
 
@@ -55,7 +55,8 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 
 | 证据 | 当前可得出的结论 |
 |---|---|
-| 文本 feeding 同协议对照达到 direct client 的约 97.7% | 项目链路可以接近模型服务容量；feeding 缺口基本闭合 |
+| 统一文本三臂：24/24 单元，project feeding 89.93%/91.38% | 项目冻结静态路径在两类 workload 均无性能优势，只作为负结果与瓶颈诊断 |
+| DuckDB AI ShareGPT：service tok/s≈direct，4,936/6,144 cap 语义失败 | 产品语义兼容性必须进入 correct throughput，不能把问题写成纯速度排名 |
 | 65,536 active work/endpoint 达最大吞吐的 97.8% | 固定 token-aware credit 是当前简单、稳健的文本默认点 |
 | AIMD/PID/EWMA、动态 flush、多 actor 多数未过 5% 门槛 | 不能声称复杂动态策略普遍胜过强静态 baseline |
 | 2-ep 与 4-ep cache-ON 数据组织排名反转 | 上游组织/准入价值依赖 endpoint consolidation 与 KV 饱和 regime |
@@ -72,12 +73,10 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 
 ## 5. 当前实施顺序
 
-1. 冻结 Claim Matrix、四级 claim 边界和开题唯一系统抽象。
-2. 冻结 SQuAD 三臂合同并完成 1 warmup + 3 formal。
-3. 冻结 ShareGPT controlled-skew workload 并完成同合同三臂实验。
-4. 停止新增开题 baseline，生成四组 headline evidence。
-5. 重构报告/PPT，完成答辩攻击面和逐页数据来源审计。
-6. 开题材料冻结后恢复 image state-aware A+B、system-E2E 和论文阶段 backlog。
+1. 保持 Claim Matrix、四张核心图、统一三臂负结果与开题停止规则冻结。
+2. 使用本地重构后的报告和 28 页 v6 PPTX 做导师/答辩复核；不再补开题 baseline。
+3. 飞书授权恢复后同步线上报告；本地 `opening/feishu/opening_report_wiki.md` 已与报告一致。
+4. 开题材料确认后恢复 image state-aware A+B、system-E2E 和论文阶段 backlog。
 
 晋级门槛：相对各自独立标定的强静态/系统 baseline 至少改善约 5%，重复方向一致，且质量不退化。
 

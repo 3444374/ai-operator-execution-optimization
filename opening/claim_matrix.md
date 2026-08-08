@@ -46,23 +46,24 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 数据组织策略排名受 serving regime 影响 | 已证明 | `experiments/results/rc1_data_organization/README.md`：2 endpoint 无 KV 压力时 50k 到 56k，4 endpoint KV 饱和时 39k 到 50k 且排名反转 | work balance 与 locality 存在冲突，不能脱离 endpoint/KV 条件宣称某策略普遍最优 | 单 workload、单模型；严格 feeding-saturation 口径有边界 |
 | 项目图像静态执行结构有可重复收益 | 已证明 | `experiments/results/image_ai_embed_operator_formal_20260803/README.md`：matched CPU8/16 两轮正式实验方向一致，主报告冻结约 13% 到 15% operator-JCT 改善 | 在相同资源和输出合同下，显式阶段组织与提交结构优于 Ray Data native graph 的冻结点 | 不能使用旧 45.7%；system database-E2E 与状态感知增量未完成 |
 | 算子代价估计已表现出配置选择价值 | 条件性 | `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md`：429 formal，CE5 pooled regret 1.67%、macro 2.90%、max 14.72%、candidate pairwise 0.808 | 可写为第一份选择质量可行性证据；CE5 只是 marginal pass | 更多 context、时间段、workload 和硬件 held-out |
-| 数据库产品、直接控制与项目静态路径已有统一 database-E2E 排名 | 不能声称 | 现有 scale-ramp 的 request 与 query-barrier timing granularity 不一致，且未统一质量与 sink | 现有结果只用于 serving capacity 与失败边界，不做完整三臂 per-row 排名 | P0-1 SQuAD 三臂统一合同 |
-| 异质文本 workload 会稳定拉开三臂差距 | 待验证 | 既有 RC1/cost 数据证明 heterogeneity 和 regime 信号存在，但不是目标三臂统一 database-E2E 对照 | 作为研究动机问题，不预设结果方向 | P0-2 冻结异质 workload 三臂实验 |
+| 三条静态路径在 SQuAD 均匀控制组已有统一 database-E2E 对照 | 已证明 | 统一 source/sink 与三次 formal：direct 129.85、DuckDB AI 135.71、project 116.88 correct rows/s；EM/F1 接近；project feeding ratio 89.9% 未过 95% 门 | 均匀负载下项目冻结静态路径没有优势；该臂只用于负结果和瓶颈诊断，不能支持策略性能 claim | 不能把未过 feeding 门的项目臂写成合格性能排名 |
+| 两类 workload 的完整三臂统一 database-E2E 结论 | 已证明 | 24/24 单元、18 formal 全部 status/exactly-once/sink digest 通过；SQuAD project feeding 89.93%，ShareGPT 91.38%，均未过 95%；基础设施失败 0 | 两类 workload 都没有给项目冻结静态路径提供性能优势；该结果只支持强静态基线与瓶颈诊断 | 后续 state-aware 候选仍需在同上限下重新通过 feeding 门 |
+| 异质文本 workload 会稳定拉开三臂差距 | 已证明（否定） | ShareGPT direct/project correct rows/s 为 11.34/10.36，service feeding 91.38%；差距没有反转为项目优势。DuckDB AI service 吞吐≈direct，但 4,936/6,144 行 cap 语义失败主导 correct throughput | 异质性本身不足以制造调度增量，且产品语义必须进入正确吞吐 | 不补新 baseline；状态变化与方法增量留开题后验证 |
 | state-aware 请求成形/提交优于冻结强静态策略 | 待验证 | 尚无与同上限 frozen static 的正式对照 | 只能写成拟研究方法，不得写成已有贡献 | 开题后 proposed 主实验 |
 
-## 3. 开题前仅允许的新增数据
+## 3. 已冻结的统一实验组
 
-### P0-1：均匀控制组
+### 均匀控制组
 
 - workload：SQuAD short-answer，output cap=64。
 - arms：`direct_static_sharded`、`duckdb_ai_static_sharded`、`project_frozen_static`。
 - 合同：同 PostgreSQL source、同 immutable manifest、2 endpoints、同 Qwen、同 prefix-cache 状态、temperature=0、同数据库 sink、外部统一 database-E2E，1 warmup + 3 formal。
 - headline：correct rows/s，同时报告 database-E2E、EM、F1、failure、truncation、service tokens/s、GPU/MFU 和 energy/correct row。
 
-### P0-2：异质实验组
+### 异质实验组
 
 - workload：冻结一个 ShareGPT controlled-skew workload，明确 short/medium/long 构成并保存 prompt/output-work histogram。
-- arms、source/sink、模型和重复合同与 P0-1 相同。
+- arms、source/sink、模型和重复合同与均匀控制组相同。
 - 追加报告 work CV、token P50/P95/P99、estimated service work、endpoint work imbalance、TTFT/JCT/tail、cache/locality、active work 和 serving pressure。
 
 两组实验完成后停止增加开题 baseline。差异不足 5% 不触发换 workload、换模型、换数据库或扩大参数扫描。结果接近同样是有效结论，它说明当前 serving 层吸收了上游差异，state-aware 方法需要更明确的竞争 regime。

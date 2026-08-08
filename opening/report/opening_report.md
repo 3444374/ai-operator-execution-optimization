@@ -1,466 +1,247 @@
-﻿# 硕士生论文开题报告
+# 硕士生论文开题报告
 
 题目：数据库 AI 负载的执行优化与调度研究
 
 ## 1. 课题背景、目的和意义
 
-数据库系统正在从管理结构化数据，扩展到承载文本、图像、向量和模型推理结果等 AI 数据处理任务。Snowflake Cortex AISQL[1]、BigQuery ML/AI[2] 和 Oracle AI Vector Search[3] 等云数据库厂商已在 SQL 中直接提供 `AI_EMBED`、`AI_COMPLETE`、`AI_FILTER`、`AI_CLASSIFY` 等 AI 算子，允许用户在 SQL 查询中调用大语言模型完成 embedding、分类、过滤、摘要和生成等操作。PostgreSQL 生态中，pgvector[4] 提供了向量存储与检索能力，pgai[5] 和 PostgresML[6] 则尝试把模型推理能力带入数据库周边。这些系统共同表明：数据库已经成为 AI workload 的常见入口。
+数据库正从结构化数据管理系统扩展为 AI workload 的入口。Snowflake Cortex AISQL、BigQuery ML/AI、Oracle AI Vector Search 以及 PostgreSQL 的 pgvector、pgai 等系统，已经允许用户在 SQL 或数据库工作流中调用文本生成、向量化、语义过滤和分类模型[1-5]。这类算子改变了查询执行的成本结构：一条数据库任务不再只经历 scan、join 和 aggregate，还要把表中记录转换为模型请求，经由外部执行层提交到 GPU 服务，再把生成文本、分类结果或向量写回数据库。
 
-然而，这类 AI 操作和传统 SQL 算子（scan、filter、join、aggregate）有本质区别。传统算子在数据库执行器内部完成，数据不离开数据库进程；而 AI 算子的执行链路要长得多：表数据被组织为 batch 或 Arrow RecordBatch，经由外部数据处理层完成数据流组织，再调度 GPU-backed 模型服务执行推理，最后将 embedding、分类结果或生成文本写回数据库或外部存储。端到端性能不只由模型推理速度决定，也受数据组织方式、任务划分粒度、模型服务队列状态、结果汇聚和写回批量等因素影响。 Snowflake 的生产数据[1] 也印证了这一点：AI 算子主导查询成本，约 40% 的查询涉及多表操作且消耗超过 58% 的总执行时间。但 Snowflake 是闭源系统，其内部数据组织、批处理构造、模型服务交互和写回之间的阶段边界不可拆分，无法直接作为可观测、可消融的实验对象。
+模型服务通常把输入抽象为相互独立的请求，却不了解数据库行、作业边界、剩余工作量和写回语义；数据库优化器也通常看不到模型服务内部的队列、KV 压力和完成节奏。两者之间由此形成一个新的 AI 数据执行层：它决定哪些记录组成一个 work unit、在途 work 保持多少、请求何时提交、发往哪个 endpoint，以及多个数据库作业如何共享固定 GPU 容量。
 
-本课题以 `AI_COMPLETE`（生成式 LLM 推理）为主场景，研究数据库 AI 算子外部执行链路中的上游调度优化问题。核心关注两个方面：一是数据组织策略，即如何将数据库中的行打包为发送给推理引擎的请求，探索按 token 量而非固定行数的动态组织方式，以及按 token 长度或 prefix 分组对推理效率的影响；二是提交控制策略，即利用 Ray actor 的异步能力，探索去中心化的自适应提交方式，使请求的发送节奏能够响应模型服务的实际队列状态，替代传统的固定并发上限或无界提交。在此基础上，通过对照实验验证两项策略是否需要联合调优。结果写回作为端到端评价的一部分：优先采用 PostgreSQL + pgvector 的 COPY + deferred index 作为写入 baseline；仅当写回占比持续过高、严重吞噬上游收益时，才考虑额外的写回优化。
+本课题研究这一外部执行链路，不修改数据库内核、vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel。核心目标有两个：一是按 token、frame 等计算量而非固定行数构造 work unit，并处理负载均衡与 prefix locality 的冲突；二是依据服务容量和运行状态控制准入、路由与多作业共享，使系统以尽可能小且可控的在途 work 达到有效吞吐，同时约束尾延迟和公平性。轻量算子代价估计为两项研究内容共同提供 work、服务时间、剩余工作量和配置选择信号。
 
-课题的理论意义在于，将数据库 AI 算子外部执行链路中的上游调度作为独立的优化对象。现有工作中，推理引擎内部已有大量关于批处理调度和内存管理的优化工作，但数据从数据库表出发到进入推理引擎之前的这段链路（数据如何组织为请求、以什么节奏发送、如何根据模型服务状态调节并发）尚未被作为系统性的优化目标来对待。本课题在这段上游链路中探索数据组织策略和提交控制策略的设计空间，利用 Ray 的 actor 模型和异步能力实现可实验验证的调度方案。课题的应用意义在于，在真实 GPU-backed 环境中测量不同策略的端到端效果，为数据库 AI 算子的外部执行链路提供可落地的优化参考。
+课题的研究意义在于把“数据库如何有效驱动模型服务”作为独立的系统问题。现有数据库 AI 工作主要优化查询语义、模型调用次数或数据库内推理；模型服务工作主要优化已到达请求的批处理、KV 管理和 GPU 调度。数据库记录到模型请求之间的数据组织、提交与多作业协调仍缺少统一、可观测且可证伪的方法。应用上，本课题希望给出一套能够复现实验条件、明确适用边界的执行策略与评价方法，而不是宣称上游系统能够突破模型服务本身的容量上限。
 
 ## 2. 国内外研究现状
 
-### 2.1 数据库 AI SQL 算子现状
+### 2.1 数据库 AI 算子与语义查询优化
 
-Snowflake 于 SIGMOD 2026 发表了 Cortex AISQL 生产系统论文[1]，正式将 AI 算子作为 SQL 执行引擎的一等公民。Cortex AISQL 提供六类 AI SQL 算子：`AI_EMBED`（向量生成）、`AI_COMPLETE`（文本生成）、`AI_FILTER`（语义过滤）、`AI_CLASSIFY`（分类）、`AI_JOIN`（语义连接）和 `AI_AGG`/`AI_SUMMARIZE_AGG`（语义聚合）。生产环境监控数据显示 AI 算子主导查询成本，约 40% 的查询涉及多表操作且消耗超过 58% 的总执行时间。论文提出三项核心技术。一是 AI 感知查询优化：将 LLM 推理成本作为一阶优化目标，必要时将昂贵 AI 谓词上拉到 Join 后执行，一个案例中 LLM 调用从 11 万次降至 330 次（2-8× 加速）。二是自适应模型级联：用小模型处理大部分行，仅不确定行升级到大模型（2-6× 加速，90-95% 质量保持）。三是语义 Join 重写：将 O(N×M) 交叉连接转为线性多标签分类（15-70× 加速）。
+Cortex AISQL 把 `AI_COMPLETE`、`AI_EMBED`、`AI_FILTER`、`AI_CLASSIFY` 和语义连接等算子纳入 SQL，并通过谓词重排、模型级联和语义连接重写减少昂贵模型调用[1]。BigQuery 和 Oracle 也提供 SQL 级生成与向量化接口[2-3]。LOTUS、Palimpzest、Abacus 和 SemBench 分别研究语义算子的声明式执行、代价优化和统一评测[20-23]。GaussML、Smart、NeurDB 和 LEADS 则代表把模型推理或模型选择进一步带入数据库内核的路线[6-9]。
 
-BigQuery ML/AI 提供了 `ML.GENERATE_TEXT`、`ML.GENERATE_EMBEDDING` 和 `AI.GENERATE` 等函数[2]，支持在 SQL 查询中调用 Gemini、Claude、Llama 等模型，并报告了 100× 吞吐提升（第一方 LLM）和 99.99% 查询完成率。Oracle AI Vector Search 提供 `VECTOR_EMBEDDING` SQL 函数[3]，直接在数据库 SQL 中调用 embedding 模型。三大云数据库厂商的 AI SQL 函数表明，数据库已经是 AI workload 的常见入口。
+这些工作证明了场景真实性，也说明任务质量必须和执行性能同时评价。但它们主要优化 SQL 语义计划、模型选择或数据库内执行，并未系统回答：当数据库把大批记录交给外部 GPU 服务时，怎样构造请求、限制 active work、利用服务状态并协调多个数据库作业。
 
-然而 Snowflake Cortex AISQL 论文虽然给出了 AI 感知查询优化、模型级联和语义 Join 等方法，但它是一个生产闭源系统，其内部数据组织、批处理构造、外部执行调度、GPU 模型服务交互和写回之间的阶段边界不可拆分。BigQuery 和 Oracle 同样只暴露 SQL 入参和结果，不公开内部执行阶段。对于研究”数据库到 AI 执行再到存储”的端到端链路而言，这些系统证明了需求真实性，但不能直接作为可拆分、可消融的实验 baseline。
+### 2.2 GPU 推理服务内部优化
 
-这类系统说明，研究重点不应停留在”模型能否被 SQL 调用”，而应进一步分析大量表数据进入 AI 数据执行系统后，如何被批处理、调度、推理和持久化。Snowflake 六类 AI 算子的并存，对应本项目三类 workload 的划分：`AI_EMBED` 对应向量生成与写回，`AI_FILTER`/`AI_CLASSIFY` 对应 AI predicate 批处理（selectivity 感知），`AI_COMPLETE` 对应离线生成式推理（token / prefix / queue 感知）。它们用于定义工作负载，不直接决定本文的系统实现路线。
+Orca 提出 iteration-level scheduling，vLLM 通过 PagedAttention 和 continuous batching 提高 KV 利用率与吞吐，Sarathi-Serve 通过 chunked prefill 缓解 prefill/decode 干扰[11-13]。DistServe、Parrot、Llumnix 和公平 LLM serving 工作继续研究阶段分离、prefix 共享、动态调度和多租户公平性[14-17]。
 
-### 2.2 PostgreSQL AI 生态现状与”数据库内 ML”对照路线
+这些系统把“已经到达服务端的请求”作为基本输入。它们不负责解释数据库行如何组合成请求，也不知道 source scan、作业剩余 work、结果 exactly-once 或数据库 sink。因而，本课题不重复 vLLM 内部调度，而是在其上游形成容量受控的请求流，并将 vLLM 指标作为可观测信号而不是待修改对象。
 
-PostgreSQL 生态中，pgvector[4] 负责向量类型、索引和相似度检索，定义了 `vector(384)` 等数据类型和 IVFFlat、HNSW 索引，但本身不负责 embedding 计算。pgai[5] 曾提供 PostgreSQL + stateless vectorizer worker + embedding endpoint + 写回数据库的外部执行形态，其 vectorizer worker 以独立进程读队列、调模型、写回结果，与本课题关注的外部执行链路高度一致。PostgresML[6] 代表把模型能力放到数据库内或近数据库执行的路线，提供 `pgml.transform()`、`pgml.predict()` 等 SQL 函数。
+### 2.3 分布式数据执行与异构流水线
 
-在学术侧，华为与清华大学联合提出的 GaussML[7] 在 ICDE 2024 发表，将 20 余种典型 ML 算子直接集成进 openGauss 查询引擎，以原生 SQL 接口替代 ML-as-UDF 方案，引入 ML 感知的基数与代价估计器和 SIMD 加速，相比 Apache MADlib 实现 2-6× 速度提升。类似地，Smart[8]（VLDB Journal 2025, 清华大学李国良团队）在 PostgreSQL 中实现了 ML 谓词的推理重写、渐进式推理和成本最优物理优化，相比 baseline 最高提升三个数量级。NeurDB[9]（CIDR 2025）和 LEADS/INDICES[10]（VLDB 2024）进一步提出了 AI 原生数据库和 SQL 感知的动态模型切片方法，在数据库内核中嵌入 AI 能力的蓝图日渐清晰。
+Ray 以 task 和 actor 支撑分布式 AI 应用，Ray Data 的 Streaming Batch Model 进一步研究 CPU/GPU 异构批流水线[10,18]。Daft 提供 Arrow/Rust 数据路径、partition 与批处理抽象；DuckDB 和 DataFusion 则代表嵌入式与 Arrow-native 执行引擎[19,24-25]。这些系统提供实现数据组织、异步提交和资源隔离所需的机制，但框架本身不等于面向数据库 AI workload 的优化方法。
 
-上述系统共同构成了”模型进数据库”（DB4AI）路线：将 AI/ML 能力嵌入数据库内核、以 SQL 原生语法调用、通过查询优化器统一优化。这条路线在减少数据移动和降低推理延迟方面有优势，但其优化范围止于数据库进程边界。它不研究数据出数据库后经由外部分布式执行系统（Ray/Daft）和 GPU-backed 模型服务再写回的完整路径。本课题与之形成对照而非重复：GaussML 和 Smart 把模型拉进数据库，本课题把数据交出去执行 AI 再收回来，两种路线的适用场景、瓶颈形态和优化方法互不相同。
+本课题使用 Daft 作为统一数据引擎、Ray actor 作为可控执行载体，并把官方或内置执行路径作为 baseline。项目自写 actor、credit 或 UDF 路径只能在明确合同下作为研究方法或 diagnostic reference，不能冒充被测框架的原生调度能力。
 
-在向量数据库侧，除 pgvector 作为数据库内嵌方案外，专用向量数据库亦有其系统设计贡献。Milvus[51]（SIGMOD 2021）首次将向量数据管理系统作为专用架构发表，提出 CPU/GPU 混合查询引擎和 LSM-tree 存储；其 2.0 版本 Manu[52]（VLDB 2022）进一步引入存算分离和 log-structured 写入路径，其从日志到索引节点的写入设计与本课题的三种写回架构（driver fan-in、worker-direct、queue-worker）形成对比参照。VBASE[53]（OSDI 2023）通过 relaxed monotonicity 统一向量检索与关系过滤，其 selectivity 感知的自适应队列管理对 AI_FILTER 类 workload 的批处理策略有参考价值。BigVectorBench[54]（VLDB 2025）和 Big ANN Benchmarks 等评测工作为向量数据库的性能比较提供了方法论基础。这些系统的共同特点是优化范围止于存储和检索层，它们不研究数据在到达向量数据库之前经历了怎样的上游数据组织、调度执行和推理过程。
+### 2.4 代价估计与当前研究空白
 
-### 2.3 分布式数据与 AI 执行框架现状
+学习型代价模型研究表明，平均预测误差并不能直接代表查询优化决策质量；应进一步评价 ranking、regret 和未见 context 的泛化[26-28]。对 AI 算子而言，代价同时受 prompt/output work、缓存命中、endpoint 状态和流水线阶段影响，因此需要把简单解析模型、少量 profile 校准与 residual correction 结合起来。
 
-**分布式执行框架。** Ray[11]（OSDI 2018）定位为面向新兴 AI 应用的分布式框架，同时支持 task-parallel 和 actor-based 计算，用动态执行引擎、分布式调度和分布式对象存储支撑 AI workload。Daft 运行在 Ray 上，提供 partition、batch、shuffle、join 等数据处理抽象。Ray Data 团队在 2025 年提出 Streaming Batch Model[12]，一种面向异构资源（CPU+GPU）的批处理执行模型，在 CPU/GPU 混合批推理管线上实现 3-8× 吞吐提升。在 Arrow 生态中，Velox[55]（VLDB 2022, Meta）是 C++ 向量化执行引擎库，为 Presto、Spark 和 PyTorch 特征工程提供统一的列式批处理执行层；DuckDB[56]（SIGMOD 2019）和 Arrow DataFusion[57]（SIGMOD 2024）分别提供了嵌入式分析数据库和 Arrow-native 查询引擎方案。这些系统的存在说明数据组织层有多种选择，Daft 是本课题采用的 Python 层方案，Velox/DuckDB 则代表更接近 C++/嵌入式执行的优化路径。这些框架共同构成了本课题关注的 AI 数据执行链路：Daft/Ray Data 负责数据组织和批处理，Ray 负责分布式任务执行和资源调度。
+综合上述工作，当前空白不是缺少另一个 serving engine，也不是缺少数据库 AI 函数，而是缺少两端之间的 AI 数据执行层方法：
 
-**GPU 推理服务系统。** vLLM[13]（SOSP 2023, Best Paper）提出 PagedAttention 内存管理技术，受操作系统虚拟内存分页启发，将 KV cache 划分为固定大小的块并允许非连续存储，实现近零内存浪费（>96% 利用率），配合 iteration-level continuous batching 实现 2-4× 吞吐提升。Orca[14]（OSDI 2022）率先提出 iteration-level scheduling，将调度粒度从请求级降到迭代级，在 GPT-3 175B 上实现最高 36.9× 吞吐提升。Sarathi-Serve[15]（OSDI 2024）通过 chunked-prefills 和 stall-free scheduling 在不同模型上实现 2.6-5.6× 的服务容量提升。ServerlessLLM[16]（OSDI 2024）利用 GPU 服务器上本地多级存储（GPU 内存、DRAM、NVMe、SATA），将 LLM 模型加载时间缩短 6-10×。DistServe[33]（OSDI 2024）将 LLM 推理的 prefill 和 decode 阶段分离到不同 GPU 上以消除阶段间干扰。Parrot[37]（OSDI 2024）引入语义变量抽象实现跨请求的 prompt 共享和 prefix 缓存。
+1. 固定行数无法稳定代表 token/frame 计算量，work balance 又可能破坏 prefix locality；
+2. 固定并发或无限提交无法区分“达到容量所需的最小 active work”和无效排队；
+3. 多个数据库作业共享 endpoint 时，需要同时处理 work-conserving、隔离和公平；
+4. 上游策略必须在统一 source/sink、质量和资源合同下与强静态点比较，不能只看内部 operator wall。
 
-在模型服务调度层面，Clockwork[58]（OSDI 2020）提出集中式确定性调度，通过弃用线程池和 OS 调度等不可预测机制实现可预测的推理延迟，与本课题的 bounded in-flight 和 backpressure 控制形成对照。Nexus[59]（SOSP 2019）提出 batch-aware 的 GPU 集群调度，将 batch size 作为一等调度维度。Clipper[60]（NSDI 2017）提出基于 AIMD 的自适应批处理，本课题的动态 batching 策略可视为其在 GPU 推理场景下的延伸。INFaaS[61]（ATC 2021）实现自动化的模型变体选择和资源配置。在流水线并行和微批次方面，GPipe[62]（NeurIPS 2019）首次引入 micro-batch 拆分隐藏通信延迟，PipeDream[63]（SOSP 2019）提出 1F1B 调度和权重暂存实现通用流水线并行，这些是服务端批次拆分与流水线机制的奠基性工作。Alpa[64]（OSDI 2022）通过层次化的 inter/intra-operator parallelism 自动化，为本课题的 Ray actor 粒度选择和资源配比提供了并行策略设计参考。
+## 3. 研究目标、研究问题与边界
 
-这些系统说明 GPU 推理服务的批处理、内存和调度已有大量 CCF-A 工作，但它们的研究范围止于 GPU 侧：数据从何而来、计算结果写往何处，不在其优化目标之内。Nexus 和 Clockwork 虽然考虑了 batch 感知调度，但同样不穿透上游数据组织或下游存储层。
+### 3.1 总体目标
 
-**AI 数据存储与写回优化。** Lance[17]（LanceDB, 2025）提出面向 AI/ML 的列式存储格式，通过自适应结构编码在随机访问和全表扫描间取得平衡；ColStorEval[50]（PVLDB 2023）对 Parquet/ORC 等列式存储格式的写入性能进行了系统对比，为 AI 数据 sink 的格式选择提供了量化依据。Arrow Flight[18] 面向高性能列式数据传输。在向量数据库侧，如前所述的 Milvus[51]/Manu[52] 代表了专用向量存储的系统设计路线。在存储引擎层面，TurboVecDB[46]（PVLDB 2025）利用并行 I/O 和空间感知插入将 HNSW 索引构建时间减少 98.4%；Delta Lake[47]（PVLDB 2020）通过 optimistic concurrency 和盲追加实现了多 worker 并行写入，其盲追加模式是本课题 worker-direct writeback 架构的直接参考；FlexPushdownDB[48]（PVLDB 2021）提出了代价驱动的 compute-vs-storage pushdown 决策模型；WiscKey[49]（FAST 2016）通过 KV 分离避免了 compaction 对大 value 的重写开销。pgvector 和 Lance 分别代表"数据库内嵌向量存储"和"独立 AI 数据存储"两条技术路线。这些工作覆盖了存储引擎、写入路径和索引构建等关键环节，但研究范围止于存储层。数据在到达存储之前经历了怎样的数据组织、调度执行和推理过程，不在其优化目标之内；写回批量与上游 GPU 批处理之间的协同效应也未被系统考察。
-
-上述三个方向都有大量 CCF-A 论文，但优化目标并不相同：Ray/Daft 关注数据流组织和资源调度，vLLM/Orca 关注 GPU 侧的内存、队列和批处理效率，TurboVecDB/Delta Lake/Lance 关注存储格式、写入路径和索引构建效率。数据库 AI 负载 的执行链路同时经过这三个方向：数据从数据库表出发，经由 Arrow 批处理组织、Ray 调度执行、GPU 推理服务调用，最终写回 Lance、pgvector 或 PostgreSQL。现有研究通常没有把这条链路作为一个可观测、可拆分、可调优的整体来处理。
-
-图 2-1 把这个格局画了出来。左边是三个已有方向及其代表系统——DB4AI（GaussML、Smart、NeurDB）、AI 推理服务（vLLM、Orca、Sarathi-Serve）和 AI 数据存储（Lance、TurboVecDB、Delta Lake）。每个方向内部都有成熟的 CCF-A 工作和明确的优化目标，但它们各自止于自己的边界：DB4AI 停在数据库进程内，推理服务停在 GPU 侧，存储层停在数据落盘之后。三个方向之间的两条连接带——数据库到推理引擎之间的"数据组织与调度执行"、推理引擎到存储之间的"结果汇聚与持久化写回"——缺少系统性的可观测、可拆分、可调优研究。
-
-本文重点研究方向一的数据组织策略与方向二的调度与提交控制策略，方向三用于写回瓶颈判定和端到端收益检查。
-
-![图 2-1 已有研究的三个方向与本课题定位](../../figures/architecture/research_gap_three_islands.png)
-
-图 2-1 已有研究的三个方向与本课题的定位。DB4AI、AI 推理服务和 AI 数据存储三个方向各自有大量 CCF-A 工作，但优化范围分别止于数据库进程边界、GPU 服务侧和存储层，缺少跨方向的端到端链路视角。本课题聚焦方向一的数据组织与方向二的执行调度/模型服务协同，方向三用于写回瓶颈判定和端到端收益检查。
-
-### 2.4 当前研究存在的问题
-
-综合以上三个方向的分析，当前研究的空白不在某一个单点，而在三个方向之间的连接处。
-
-**第一，数据库 AI 算子方向**。Snowflake Cortex AISQL[1] 证明了 AI SQL 算子的工业可行性，GaussML[7]、Smart[8]、NeurDB[9]、LEADS[10] 等在数据库内核中嵌入了 AI/ML 能力。但这条 DB4AI 路线的优化范围主要停留在数据库进程边界内。它们不研究"数据库触发后经由外部分布式系统执行 AI 再写回"的路径，其内部执行阶段（数据组织、模型服务调用、结果汇聚、持久化写回）也难以拆分观测。
-
-**第二，GPU 推理服务方向**。vLLM[13]、Orca[14]、Sarathi-Serve[15]、ServerlessLLM[16] 等 CCF-A 工作在 GPU 侧的内存管理、批处理调度和模型加载上取得了进展。但它们通常把数据来源抽象为"输入请求"，把结果去向抽象为"返回客户端"。数据库表结构、批处理执行路径和写回约束不在其优化目标之内。
-
-**第三，AI 数据存储与写回方向**。TurboVecDB[46]、Delta Lake[47]、FlexPushdownDB[48] 和 Lance[17] 分别优化了向量索引构建、多 worker 并行写入、compute-storage pushdown 决策和列式存储格式。但数据在到达存储之前经历了怎样的数据组织、调度执行和推理过程，不在其研究范围内。写回批量与上游 GPU 批处理之间的关系也缺少系统分析。
-
-**第四，数据库 AI workload 的场景差异被忽视。** Snowflake 的生产数据[1] 已经证实了 `AI_EMBED`、`AI_FILTER/AI_CLASSIFY` 和 `AI_COMPLETE` 三类算子的并存需求。Embedding 产生高维向量并对写回压力敏感，AI predicate 受 selectivity 影响，LLM 类 workload 受 token 长度和共享 prefix 影响。现有系统大多以单一算子为优化目标，没有在三类 workload 上验证方法的一般性。
-
-**第五，已有本地预研和 GPU-backed 复测**显示，在同一 GPU-backed 文本 `AI_EMBED` 链路（2026-07-12 预研，非图像 CLIP）中，batch 粒度（fine vs coalesced）可导致 37.5× 的推理执行阶段差异（端到端约 13.4×）；多 endpoint 路由可降低 operator wall time 但 writeback 基本不变（1.585s → 1.541s）。这些信号表明数据组织与调度执行是当前应优先调优的上游阶段，同时写回可能限制端到端收益。仅把问题写成 object/fan-in 或仅写成 Ray 调度都过窄。持久化写回（JSON text 1.567s、pgvector 0.897s）在当前规模下是可见成本但不是主导瓶颈，本文将其纳入端到端效果评价，而不是作为独立方法贡献。
-
-综合以上分析，本课题的核心研究空白在于：面向数据库 AI workload 的数据组织与运行层调度/模型服务批处理之间缺少可观测、可拆分、可调优的上游执行链路研究，持久化写回需要纳入端到端效果评价。现有工作无论是 Ray/Daft 的数据流组织、vLLM/Orca 的 GPU 内部调度，还是 DB4AI 路线的数据库内 ML，都没有系统考察"数据库表数据如何被组织为 batch、如何根据模型服务状态调节提交与反压、以及这些上游决策在加入写回后是否仍然改善端到端效果"。
-
-因此，本课题的研究问题不是“能否让 GPU 超过自身推理上限”，而是：在数据库驱动 `AI_COMPLETE` workload 从表数据出发、经由 Arrow/Daft 数据组织、Ray 调度提交、GPU 推理并最终写回的链路中，怎样以更小且可控的在途 work 快速达到下游服务容量，怎样组织相同 work，以及多 job 共享同一模型服务时怎样实现 work-conserving 的隔离与公平。现有 semantic operator、LLM serving 和数据引擎文献分别覆盖了相邻部分，但尚未系统覆盖这一上游组合问题。
-
-## 3. 研究目标与研究内容
-
-### 3.1 研究目标
-
-本课题的总体目标是：面向数据库 AI 负载，以 `AI_COMPLETE`（生成式 LLM 推理）为主场景，构建基于 Daft/Ray 的端到端实验链路。优化侧重点放在上游执行链路：先测得固定硬件、模型和 workload 下的下游 serving ceiling 与最小饱和 active work，再研究数据组织策略和 Ray 调度提交策略能否以更小压力、更低瞬态损失和更可控的多 job 排队逼近该上限。结果写回纳入端到端效果评价。
-
-具体目标包括：
-
-1. 建立 direct vLLM、无 Daft/Ray 强客户端、Daft/Ray 官方 runtime 和数据库 AI 算子系统四层 baseline；所有 arm 使用同模型、同请求 manifest、同 endpoint 和独立 calibration。
-2. 回答“饱和效率”问题：测量 `minimum_saturating_active_work`、`time_to_95pct_ceiling` 和 ramp regret，判断上游是否能用更少的在途 work 更快达到 serving ceiling。
-3. 设计并验证动态数据组织：token-budget、length-aligned、prefix-aware 及 semantic operator 减少无效调用的边界；相同 work 的执行加速与减少 work 的系统优化分开报告。
-4. 设计并验证 Ray actor 调度提交：request-level replenishment、endpoint-shared request/work credit、idle borrowing 和多 job fair queue；固定静态上限是强 baseline，自适应策略必须显著超过同上限静态策略才晋级。
-5. 建立简单解析模型 + profile 校准 + residual correction 的算子代价估计，预测 token work、service time、JCT、remaining work 和 SLO slack，服务于 active-work/K 初始化、数据组织、路由和提交决策。
-6. 通过耦合验证判断数据组织和提交策略是否需要联合调优，并确认写回是否吞噬上游收益。
-7. 以 `AI_EMBED` 预研支撑实验框架可行性，并在图像 `AI_EMBED`/`AI_CLASSIFY` workload 上复用同一套 work/credit 抽象做多模态泛化验证。
-
-### 3.2 研究内容
-
-阶段划分、性能剖析和瓶颈归因用于支撑动机测试、方案设计和效果评价。课题仍保持两项策略设计，不重拆为三个独立贡献：研究内容一是数据组织，研究内容二是调度与提交控制；多模态是泛化验证。算子代价估计从“补充讨论”提升为贯穿两项策略的重要使能组件，但不单独扩张为第三项研究内容。
-
-**优化层级聚焦**：本课题聚焦部署服务层（PagedAttention + In-Flight-Batching），不涉及模型结构（GQA/MQA）和计算内核（Flash-Attention）。vLLM 为部署平台，论文不修改其内部调度器，重点研究上游 Ray 数据执行层的数据组织策略和提交控制策略。
-
-**研究内容一：AI workload 感知的动态数据组织与批处理构造策略。**
-
-数据库 AI 负载 进入分布式数据执行系统时，传统的做法是按固定行数（如 batch_size=64）将数据库行打包为请求发送给推理引擎。但在 `AI_COMPLETE` 场景下，各行 token 长度差异可能很大（从 50 到 2000 tokens），固定行数的 batch 意味着各请求的 token 总量不可预测，有的 batch 严重欠载、有的 batch 超出推理引擎的 token 上限。此外，共享 system prompt 的请求如果随机分散到不同 batch，推理引擎的 prefix caching 无法发挥作用。
-
-本课题在上游 Ray 侧探索动态的数据组织策略：
-
-- **Token-budget batching**：以 `max_tokens_per_submission`（类似 vLLM 的 `max_num_batched_tokens`）替代固定 batch_size，按 token 累积量而非行数决定何时发送请求。
-- **Length-aligned grouping**：按 token 长度对行排序后分组，使相似长度的行合并为一个请求，减少 generation straggler（长文本请求拖慢整个 batch）。
-- **Prefix-aware grouping**：共享 system prompt 的行合并发送，利用推理引擎的 prefix caching 减少重复 KV-cache 计算。
-
-Ray actor 异构化是实现上述策略的关键机制：创建不同配置的 actor 类型。短 token actor 使用高 token_budget 处理短文本，长 token actor 使用低 token_budget 加 max_rows 上限处理长文本，prefix 亲和 actor 绑定特定 system prompt hash 以最大化 APC 命中率。Actor pool 按行特征路由。
-
-评价时比较静态固定 batch_size（按行数）、token-budget batching、length-aligned grouping、prefix-aware grouping 及其组合。指标包括端到端耗时、tokens/s、TTFT（Time To First Token）、TPOT（Time Per Output Token）、GPU utilization、vLLM prefix cache hit rate 和 queue wait。消融实验分别固定 batching policy 类型、token budget 大小和 prefix grouping 开关，用于判断收益来源。
-
-**研究内容二：运行层调度与提交控制策略。**
-
-传统方式中，上游按请求数或批次数控制并发，但不同请求承载的 token work 不同；无界提交会把不可控排队推入 vLLM，过小静态上限又会使 GPU ramp 缓慢。课题利用 Ray actor 的 stateful + async 能力，研究 request-level continuous replenishment、endpoint-shared request/work credit、work-conserving idle borrowing 和多 job fair queue。actor 负责持有 job 状态、累计已服务 work 和异步完成事件，Ray cluster 负责资源与 actor 生命周期，vLLM 仍只负责下游推理。
-
-当前实验已表明，单 job 饱和后继续增大 active work 不再提高吞吐；固定 25–50ms 范围内的 queue/SLO-adaptive flush、固定 service quantum 和 actor pool 形状也未达到预注册的 5% 晋级门槛。因此研究内容二不再预设“动态控制器一定优于静态策略”。单 job 首先比较最小饱和压力和瞬态 ramp；多 job 再比较共享 credit、公平性、JCT 和尾延迟。只有在相同 capacity 与 SLO guardrail 下显著超过独立标定的静态强 baseline，动态策略才作为最终方案。
-
-研究内容一和研究内容二的策略各自通过消融实验独立验证。在此基础上，分别独立搜索两项策略的最优配置后拼接，再与联合 grid search 对比：如果联合显著优于拼接，说明两项策略需要联合调优；如果两者接近，则分层独立优化即可。无论哪种结果，课题的核心贡献（上游调度策略的设计与验证）不受影响。
-
-评价时比较 direct serving ceiling、固定 request/work credit、无界提交、request-level replenishment、共享 credit/fair queue 和必要的自适应候选。指标包括 JCT、P50/P95/P99、goodput/SLO、tokens/s、capacity efficiency、minimum saturating active work、time-to-ceiling、ramp regret、每 job slowdown/Jain fairness、vLLM running/waiting/KV 和 Ray actor/queue trace。
-
-**跨两项策略的代价估计。** 首版用静态可解析特征估计 prompt/output work 与一阶 service time，以少量真实 profile 校准不同 GPU、模型和 workload，再用运行 trace 的 actual usage/completion residual 跨轮次修正。它为 active-work/K 初始化、组织/路由/提交选择和多 job remaining work/SLO slack 提供输入。评价除 MAE/MAPE/R² 外，还报告配置 ranking、选定策略相对 oracle 的 JCT/throughput regret 和预测区间覆盖，避免“预测更准但决策更差”。
-
-耦合验证实验设计如下：
-1. 独立搜索最优 batching policy（固定默认 submission policy）
-2. 独立搜索最优 submission policy（固定默认 batching policy）
-3. 拼接独立最优配置
-4. 联合 grid search（batching policy type, token budget, submission policy type, queue threshold）
-5. 比较联合搜索与拼接的端到端差异：如果联合搜索显著优于拼接，说明两项策略需要联合调优；如果两者接近，分层独立优化即可
-
-**端到端验证：AI 数据流结果持久化的瓶颈判定。**
-
-本部分不作为独立方法贡献，而是以瓶颈判定为目标：采用 PostgreSQL + pgvector 的 COPY + deferred index 作为写回 baseline，确认在加入上游优化后，写回是否严重限制端到端收益。比较不同 sink 类型（JSON text、pgvector 等）的写回成本。仅当写回占比持续过高时才考虑额外的写回优化，否则文档化并收尾。评价指标包括 writeback time、端到端耗时和写回占比变化。
-
-### 3.3 总体研究框架
-
-图 3-1 给出了课题的总体研究框架，按数据流向从左到右组织。输入端是数据库 AI workload（以 `AI_COMPLETE` 为主场景），数据经过 Daft/Arrow 数据组织层进入 Ray actor 调度层。Ray 层包含两个研究内容：研究内容一决定数据以何种 token/frame work 粒度和分组规则组织；研究内容二决定何时提交、向哪个 endpoint 提交，以及多 job 如何共享 request/work credit。代价估计位于两项内容之间，为 active-work/K 初始化、组织、路由和 remaining-work/SLO 判断提供共同输入。请求随后进入 vLLM；课题不修改其内部 continuous batching。写回作为端到端瓶颈判定，多模态验证复用同一套 work/credit 抽象。
-
-![图 3-1 课题总体研究框架](../../figures/architecture/system_architecture_ai_data_execution.png)
-
-图 3-1 课题总体研究框架。数据库 AI workload 作为入口，Daft/Arrow、Ray 动态 batching（异构 actor pool）、GPU 推理引擎和数据库 sink 共同构成研究对象；上游数据组织策略与调度提交控制构成主要优化内容，写回作为瓶颈判定和端到端效果评价的一部分。
-
-## 4. 研究方案与可行性分析
-
-### 4.1 研究方案
-
-本课题采用”GPU baseline 建立 -> 分阶段性能剖析 -> 上游动态 batching 策略设计 -> 自适应提交策略设计 -> 耦合验证 -> 写回瓶颈判定”的研究路线。
-
-基础执行路径如下：
+本课题拟构建并评价数据库 AI 数据执行层，使数据库触发的批量 AI 任务能够按工作量形成请求，并在固定模型服务容量下进行可控提交、路由和多作业协调。统一抽象如下：
 
 ```text
-Database AI COMPLETE workload source (PostgreSQL)
-  -> Daft / Arrow RecordBatch
-  -> Ray 动态 Batching（token-budget / length-align / prefix-aware grouping）
-     + Ray actor 架构（异构 actor pool / async loop / 去中心化协调）
-  -> GPU 推理引擎
-  -> fan-in / result consolidation
-  -> 写回（PostgreSQL + pgvector，COPY + deferred index）
+Database
+  -> AI Data Execution Layer
+       -> work-unit construction
+       -> cost estimation
+       -> admission and routing
+       -> resource-aware scheduling
+       -> multi-job coordination
+  -> Model Service / GPU Executor
+  -> Database / Vector Sink
 ```
 
-实验分为四个阶段：
+### 3.2 研究问题
 
-**前置阶段：vLLM baseline 建立。** 部署 vLLM + 小 LLM（如 Qwen2.5-1.5B-Instruct，适配 AutoDL 2×4090，24GB/卡），替代此前的手动 HTTP endpoint。构造 AI_COMPLETE workload（4096+ 行，含三类 token 长度分布：短 <128 tokens、中 128-512 tokens、长 >512 tokens，控制 shared prefix ratio）。记录 vLLM 默认 continuous batching 行为下的端到端指标（TTFT、TPOT、tokens/s、GPU utilization、queue metrics），为后续动态 batching 和自适应提交实验建立可对比 baseline。
+本课题围绕三个可证伪问题展开：
 
-**第一阶段（研究内容一）：上游动态 batching 策略消融。** 固定 vLLM 配置和默认提交策略，比较四种方案：
-- 静态 baseline：固定 batch_size=32/64/128（按行数打包，不做 token 感知）
-- Token-budget batching：max_tokens_per_submission = 2048/4096/8192，按 token 累积量而非行数决定发送时机
-- Length-aligned grouping：按 token 长度排序后分组，相似长度的行合并为一个请求
-- Prefix-aware grouping：共享 system prompt 的行合并发送，利用 vLLM APC 减少重复 KV-cache 计算
+1. 在固定机器、模型、协议和 workload 下，达到模型服务近饱和吞吐所需的最小 active work 是多少；超过该点后吞吐、尾延迟和能耗如何变化？
+2. 当总 work 相同但行长度、输出上限或 prefix 分布不同，work-unit 的 balance 与 locality 怎样影响端到端执行？
+3. 多个数据库作业共享 endpoint pool 时，request/work credit、idle borrowing、路由和公平队列能否在不降低有效吞吐的条件下改善 JCT、尾延迟或公平性？
 
-Ray 侧按 actor 类型异构化部署（短 token actor / 长 token actor / prefix 亲和 actor），行级路由按 token 长度和 prefix hash 分配到对应 actor 类型。
+### 3.3 研究边界
 
-**第二阶段（研究内容二）：饱和效率与提交策略消融。** 固定第一阶段筛选出的组织策略，先独立标定 direct vLLM ceiling 和达到 95% ceiling 的最小 active work，再比较：
-- 固定 request/work credit 强 baseline；
-- 无界提交，作为排队位置和尾延迟的诊断对照；
-- request-level continuous replenishment；
-- endpoint-shared request/work credit 与 work-conserving borrowing；
-- 多 job fair queue，以及有文献依据且通过最小门禁的自适应候选。
+- PostgreSQL 是任务 source 与统一 sink；写回采用 PostgreSQL + pgvector、COPY + deferred index 作为工程 baseline，不单列研究内容。
+- vLLM 是文本生成服务，图像主路径使用 typed Ray GPU actor；不修改服务内部 batching 或模型实现。
+- Daft 与 Ray 是数据引擎和执行机制；“使用框架”本身不构成创新。
+- 文本 `AI_COMPLETE` 是主要方法场景，图像 `AI_EMBED/AI_CLASSIFY` 用于检验 work/credit 抽象的跨模态复用。
+- 开题阶段只用统一 PostgreSQL source/sink 闭合因果合同，不通过增加第二数据库或大矩阵追求更好的结果。
 
-固定 25–50ms 的 queue/SLO-adaptive flush 已在当前硬件上未通过 5% 晋级门槛，不继续围绕 alpha/deadband 做参数挖掘。actor pool 只有在固定总资源、总 credit 和 endpoint 拓扑后仍有稳定增益，才作为策略贡献。
+## 4. 研究内容与技术路线
 
-**第三阶段：耦合验证实验。** 分别独立搜索最优 batching policy（固定默认提交策略）和最优提交策略（固定默认 batching policy），得到独立最优配置后拼接，再对两类策略做联合 grid search。比较拼接后的端到端表现与联合搜索最优之间的差异。如果联合搜索显著优于独立拼接，则上游 batching 与下游 continuous batching 需要联合调优；如果两者接近，则分层独立优化已足够。
+### 4.1 研究内容一：workload-aware work-unit 构造
 
-**第四阶段：写回瓶颈判定。** 在最优上游配置下，对比不写回和不同 sink 类型（JSON text、pgvector 等）的端到端表现。如果写回占比在可接受范围内，文档化并收尾；仅当占比持续过高时才考虑额外的写回优化。写回使用 PostgreSQL + pgvector（COPY + deferred index baseline），不作为独立实验阶段。
+首先由 Cost Adapter 将数据库记录转换为可比较的 estimated work。文本侧使用 prompt tokens、output cap 或校准后的输出预测；图像侧使用 frame、pixel、patch 与预处理成本。Organizer 在预算内形成 `BatchRequest`，并保留 oversize row 的显式单独提交语义。
 
-**多模态泛化验证。** 在文本 workload 消融完成后，将同一套 Daft/Ray 策略代码从 `df["prompt"]` 扩展到 `df["image"]`，在图像 workload（`AI_EMBED`/`AI_CLASSIFY`，CLIP/Qwen2.5-VL）上验证策略的模态无关性。验证 token 预算到 frame 预算的参数迁移是否直接可用，queue-adaptive flush 等提交控制策略是否完全复用。该验证作为正文实验，用于支撑"策略抽象不依赖数据模态"的结论。
+候选策略包括 sequential token/frame budget、length alignment、prefix-aware grouping 和受控的 best-fit 组织。研究重点不是预设某一策略必然最优，而是刻画两个冲突：更均衡的 work 可能减少 batch 内方差，却也可能打散共享 prefix；更强的 locality 可能提高缓存复用，却造成 endpoint work 不均衡。实验将分别报告 packing、endpoint work skew、prefix group ratio、cache hit、TTFT、吞吐与尾延迟。
 
-评价指标包括端到端耗时、tokens/s、TTFT、TPOT、P50/P99 latency、GPU utilization、模型服务队列深度、prefix cache hit rate、writeback time 和端到端吞吐。
+### 4.2 研究内容二：容量感知的提交、路由与多作业调度
 
-拟解决的关键技术问题包括：
+提交控制使用 request credit 与 work credit 两类约束。credit 在请求完成时精确释放，随后按 request-level replenishment 补位；多个 job 共享 endpoint 上限，空闲份额可以被其他 job 借用，但公平队列保留权重和隔离语义。路由在同一上限内考虑 predicted work、prefix/frame locality、endpoint active work 和服务压力。
 
-1. 固定 GPU、模型和 workload 下，最小饱和 active work 是多少；Ray request-level replenishment 能否缩短 time-to-ceiling、降低 ramp regret，或用更小压力达到相同吞吐？
-2. 在总 token work、输出和下游 capacity 相同的条件下，token-budget、length-align、prefix-aware 怎样影响 JCT、尾延迟、cache 命中和 active-work 波动？
-3. 多 job 共享同一 vLLM 时，endpoint-shared work credit、idle borrowing 和 fair queue 能否在不牺牲 work-conserving throughput 的前提下改善每 job JCT、P99 和公平性？
-4. 简单解析模型 + profile + residual 能否正确排序 active-work、组织、路由和提交候选，并在新 workload/硬件上控制决策 regret？
-5. 数据组织与提交策略是否需要联合调优；写回是否会限制其端到端收益？
+固定静态 credit 是默认强 baseline。queue-adaptive flush、状态感知 K、路由和多作业控制只有显著优于同资源、同上限静态点时才晋级。若吞吐接近，则继续检验 tail、SLO、JCT 和 fairness；若这些指标也没有改善，结论应收敛为策略失效边界，而不是更换 workload 寻找正结果。
 
-为验证全链路调优效果，本文采用逐步递进的对照实验：首先建立 GPU baseline；其次在默认提交策略下搜索最优动态 batching policy；再用最优 batching 搜索最优自适应提交策略；然后联合 grid search 与独立最优拼接对照，判定两项策略是否需要联合调优；最后加入写回检查端到端收益是否被持久化阶段吞噬。`AI_EMBED` 预研结果仅用于证明阶段计时方法和实验框架可行，不作为论文主体贡献证据。`AI_FILTER/AI_CLASSIFY` 作为 simulated extension 在 §6 Discussion 中讨论 selectivity-aware 方向的适用性。
+### 4.3 共同使能组件：算子代价估计
 
-图 4-1 把这个研究方案按执行阶段展开。图的顶部是场景入口（AI_COMPLETE 主场景），中间是分阶段性能剖析——将整个链路拆为数据库读取、Daft/Arrow 数据组织、Ray 动态 batching、GPU 推理和写回，每个阶段标注了关键可观测指标。下半部分展示了两项策略的消融实验路线：数据组织策略（token-budget、length-align、prefix-aware）和提交控制策略（queue-adaptive flush、K_max 动态控制、actor pool 分池路由），以及耦合验证（独立拼接 vs 联合 grid search）和写回瓶颈判定。图的底部说明这条方案不只是罗列实验，而是按"定位瓶颈→设计策略→独立消融→耦合验证→端到端检查"的逻辑组织。
+首版代价模型采用解析 work 特征、少量 profile 校准和 residual correction，预测 prompt/output work、operator service time、JCT、remaining work 与 SLO slack。评价不只报告 MAE/MAPE，还报告候选配置 pairwise ranking、选择 regret、最坏 context 和预测区间。模型服务于 active-work 初始化、数据组织、路由和多作业调度，不作为第三项独立研究内容。
 
-![图 4-1 研究方案：上游调度策略设计与端到端验证](../../figures/architecture/cross_layer_method_framework.png)
+### 4.4 多模态泛化验证
 
-图 4-1 研究方案图。以 AI_COMPLETE 为主场景，先做分阶段性能剖析，再通过数据组织策略（token-budget / length-align / prefix-aware）与调度提交控制策略（queue-adaptive flush / K_max 动态控制 / actor pool 分池路由）优化上游执行链路。端到端验证包含耦合实验（独立拼接 vs 联合 grid search）与写回瓶颈判定，用于确认上游优化收益是否成立。
+公共策略代码只消费 estimated work、credit、queue 和 completion event。文本 adapter 输出 token work，图像 adapter 输出 frame/pixel/preprocess work；Organizer、Scheduler、Tracing 与配置逻辑保持一致。不适用于某一模态的能力（如 prefix locality）必须显式声明，不能在缺列时静默退化。泛化评价同时报告性能、任务质量和资源利用率，避免把图像实验做成独立 demo。
 
-三类 workload 的选择依据不是为了罗列更多应用，而是为了覆盖数据库 AI 算子中三种不同的系统压力。`AI_COMPLETE` 是本课题的主场景，对应离线生成式 LLM 推理，外部依据来自 Snowflake `AI_COMPLETE`、BigQuery `ML.GENERATE_TEXT`、Ray Data offline batch inference 和 vLLM continuous batching。它引入 token 长度分布不均、共享 prefix、queue wait 和 generation straggler 等系统问题，适合验证上游动态 batching 和自适应提交策略。`AI_EMBED` 对应批量 embedding / RAG ingestion，外部依据来自 Snowflake `AI_EMBED`、pgvector 和 pgai vectorizer worker；项目已完成真实 GPU-backed `AI_EMBED` 链路画像，作为预研验证场景，用于支撑阶段计时方法和实验框架可行性。`AI_FILTER/AI_CLASSIFY` 对应 AI predicate 和分类过滤，外部依据来自 Snowflake `AI_FILTER` / `AI_CLASSIFY`；特点是输出小、模型调用次数多、选择率影响下游数据量，在本课题中作为 selectivity-aware simulated extension。三者共用同一条数据库读取、批处理组织、Ray 执行、模型服务调用和写回链路，但分别放大 token/queue、向量写回和选择率变化三类压力。
+### 4.5 实验与因果设计
 
-调优变量的选择同样有依据。batch、partition、task/actor 和 object 粒度来自 Ray/Daft/Spark 等分布式执行系统的官方文档和性能调优经验；token-budget batching、queue-adaptive flush 和 actor pool 路由等机制来自 Ray Serve dynamic batching / routing、vLLM continuous batching 等模型服务机制；writeback 和 fan-in 来自 pgai vectorizer worker、pgvector / Lance 存储形态以及当前 GPU-backed 链路画像。当前 `AI_EMBED` 复测已经覆盖 batch 粒度、Ray/Python 执行方式、单双 endpoint、JSON text 写回和 pgvector(384) 写回，在 4096/8192 行场景中 PostgreSQL 写回已经是全链路的大块成本，说明只优化模型调用不能保证端到端收益。这些变量由外部系统机制和本项目真实 GPU-backed 实验信号共同支撑，不是凭经验选择。
+两项策略先分别独立搜索冻结静态点，再执行单因素消融；之后把两个独立最优拼接，与小规模联合搜索对比。联合显著优于拼接，说明存在强交互；两者接近，则说明可以分层优化。每组正式实验固定 workload manifest、资源、模型服务 flags、source/sink 和随机种子，采用 warmup 加交错 formal repeats，并保存完整原始请求、submission trace、资源时序与版本信息。
 
-### 4.2 可行性分析
+核心指标包括 correct rows/s、database-E2E JCT、TTFT/ITL、P95/P99、SLO goodput、GPU/MFU/能耗、running/waiting/KV、endpoint work skew、任务质量和 exactly-once。动态方法的默认晋级门槛为相对强静态点约 5%，同时要求 correctness、feeding-saturation 和稳定性门禁通过。
 
-可行性分析分三层：先看策略机制是否闭合（图 4-2），再看已有预研证据（表 4-1 和图 4-3 至 4-6），最后确认 AI_COMPLETE 阶段的工程基础（图 4-7）。
+## 5. 前期工作与可行性证据
 
-**策略机制的可行性：运行时信号驱动的闭环。** 图 4-2 以一次 `AI_COMPLETE` 查询为例，画出上游策略的执行闭环。这个闭环的关键在于：数据组织决策（token-budget、分组方式）在执行前确定，不依赖运行时反馈；提交控制决策（queue-adaptive flush、K_max、routing）在运行中根据 vLLM 队列状态自适应调节。GPU 侧只作为信号源——上游 actor 通过观测 `num_requests_running` 和 `num_requests_waiting` 来判断队列深浅，不修改 vLLM 内部的 continuous batching 逻辑。写回占比作为保护约束：如果上游调优后端到端收益被持久化阶段吞噬，说明需要关注写入侧，否则写回不是当前瓶颈。
+### 5.1 统一文本 database-E2E 三臂
 
-这个闭环的可行性在于，它不需要侵入 vLLM 或 Ray 内部，只需要利用 Ray actor 的 stateful async loop 读取队列指标、做本地决策。每个 actor 独立运行这个闭环，不依赖中央协调器。
+开题前最后一组新增文本数据采用两类 workload：SQuAD short-answer 均匀控制组和 ShareGPT controlled-skew 异质组。三条路径分别是 bounded HTTP 静态直接控制、DuckDB AI static-sharded、项目 Daft organizer + Ray actor frozen-static。三者共享 PostgreSQL source、immutable manifest、双 vLLM endpoint、Qwen2.5-7B、prefix cache、统一 PostgreSQL sink、外部 database-E2E 与 1 warmup + 3 formal 合同。
 
-![图 4-2 运行时信号驱动的上游执行闭环](../../figures/architecture/runtime_strategy_control_loop.png)
+SQuAD 三次 formal 已显示：direct、DuckDB AI、项目冻结静态的 correct rows/s 均值分别为 129.85、135.71 和 116.88；三臂 normalized EM 约 80.2%–80.3%，token F1 约 89.3%–89.4%。项目臂 service tokens/s 只有 direct 的约 89.9%，未过预注册的 95% feeding-saturation 门，因此该结果不能支持项目策略性能 claim，只能作为统一链路负结果和瓶颈诊断。DuckDB AI 每次有 1 行固定上限语义失败，均保留在 correct throughput 分母中。
 
-图 4-2 运行时信号驱动的上游执行闭环。以 AI_COMPLETE 查询为例，数据组织决策（token-budget / 分组）在执行前确定，提交控制决策（queue-adaptive flush / K_max / routing）在运行中根据 vLLM 队列状态自适应调节。GPU 侧仅观测队列状态作为反馈信号，不修改 vLLM 内部批处理机制。写回占比作为保护约束，用于判断上游调优是否真正改善全链路。
+ShareGPT 的正式结果同样没有给出项目路径的性能优势：direct、DuckDB AI、项目冻结静态的 correct rows/s 均值分别为 11.34、2.23 和 10.36；service tokens/s 分别为 9,412.74、9,411.76 和 8,601.29。项目臂 service feeding 只有 direct 的 91.38%，再次未过 95% 门。DuckDB AI 已经驱动模型服务完成与 direct 几乎相同的 token work，但固定 256-token cap 下三次 formal 共 4,936/6,144 行被产品层判为 cap 语义失败；基础设施失败为 0。这个结果说明异质 workload 本身不会自动形成项目增量，产品语义兼容性也必须进入正确吞吐。
 
-**已有预研证据（AI_EMBED 阶段）。** 目前已完成的预研工作包括：本地 PostgreSQL 18.4 同构预演环境搭建、PG18.4 + pgvector 连接验证、pgai SQL trigger surface 冒烟验证、真实 GPU-backed embedding 端到端画像和双 endpoint Ray 动机测试。这些实验共同说明一件事：阶段计时方法可行，数据库到 GPU 再到写回的端到端链路可观测，batch 粒度是影响端到端性能的核心变量。
+| workload | 路径 | correct rows/s | service tokens/s | feeding vs direct | cap 语义失败 |
+|---|---|---:|---:|---:|---:|
+| SQuAD uniform | direct | 129.85 | 38,927.70 | 100.00% | 0 |
+| SQuAD uniform | DuckDB AI | 135.71 | 40,663.54 | 104.46% | 3/31,710 |
+| SQuAD uniform | project frozen-static | 116.88 | 35,006.05 | **89.93%，未过门** | 0 |
+| ShareGPT controlled-skew | direct | 11.34 | 9,412.74 | 100.00% | 0 |
+| ShareGPT controlled-skew | DuckDB AI | 2.23 | 9,411.76 | 99.99% | 4,936/6,144 |
+| ShareGPT controlled-skew | project frozen-static | 10.36 | 8,601.29 | **91.38%，未过门** | 0 |
 
-表 4-1 汇总了当前可行性证据的来源、作用和边界。所有证据均来自真实 GPU-backed 链路，结论仅供可行性论证，不直接作为论文主体贡献。
+这组实验的目标不是证明项目路径胜出，而是建立可审计的统一比较边界。raw rows/s、correct rows/s 和 service tokens/s 必须同时报告；产品层因固定输出上限返回空结果时，GPU 已消耗的服务 work 不能被隐藏，也不能把语义不兼容误写成纯性能排名。
 
-| 证据来源 | 已完成内容 | 支撑的可行性 | 边界 |
-|---|---|---|---|
-| PG18.4 连接验证 | PostgreSQL 18.4 + pgvector 可连接、可读写 | 数据库和向量扩展环境可用 | 只证明环境可用，不证明性能收益 |
-| GPU-backed `AI_EMBED` 画像 | PostgreSQL -> Arrow -> Ray/Python -> CUDA embedding endpoint -> writeback | 真实模型服务可接入端到端执行路径；7 月 14 日复测覆盖 batch、writeback、endpoint、规模和 pgvector(384) sink 对比 | PG18.4 本地预演，不代表 PostgreSQL 18.3 内部平台性能 |
-| 双 endpoint Ray 动机测试 | Ray actor 调用 `8000` / `8001` 两个本地 endpoint | 可验证并发 routing 对 operator wall time 的影响 | 两个 endpoint 在同一 GPU 上，不代表多 GPU 或 Ray Serve 结论 |
+### 5.2 最小饱和 active work
 
-**硬件边界说明。** 当前实验环境为 AutoDL 单机双 GPU（2× NVIDIA GeForce RTX 4090，各 24GB VRAM）。这一环境对研究方案的影响有三点：（1）AI_COMPLETE 场景可运行 Qwen2.5-1.5B 与 Qwen2.5-7B 级 LLM，7B 已用于 2-endpoint prefix-routing 消融；（2）双 GPU 使多 endpoint 部署具备物理隔离能力，当前 4-endpoint 部署为 4× Qwen2.5-1.5B（每 GPU 2 副本，gpu_mem_util 0.43，prefix-caching 开启），workload-aware 分池的价值可通过 in-flight 上限差异、队列优先级及跨 GPU 物理隔离共同体现；（3）多节点分布式调度（如两层 Engine + Cluster 架构）仍属于 §8 未来工作，不在本文实验范围内。以上环境不影响数据组织、in-flight 控制、routing 和耦合验证等核心方法的验证。
+![固定资源下的 serving capacity 与过载边界](../../figures/data/report_main/opening_serving_capacity_frontier.png)
 
-**实验证据一：Batch 粒度决定端到端性能的上限。** 图 4-3 汇总了不同行数、执行策略和写回模式下的端到端耗时分解。每个堆叠柱分三段：模型推理执行（model_service_s）、writeback 写回、以及其余阶段（DB 读取 + Arrow 构建 + 汇聚）。前三行为无写回对照组（writeback_mode=none），1024 行 fine 策略的推理执行阶段达到 20.6s——相比同样行数的 coalesced 策略，差异约 37.5 倍。这背后的原因很直接：fine 策略向 CUDA embedding endpoint 发起了 1024 次独立请求，每次请求的固定开销（HTTP 往返、CUDA kernel launch、GPU 上下文切换）被放大了 1024 次；coalesced 策略只发 4 次请求，每次携带 256 行，固定开销被摊销。
+双 RTX 4090、冻结 Qwen/vLLM 合同下，每 endpoint 65,536 active work 已达到最大已测吞吐均值的 97.80%，下一档只增加 0.92%；继续提高到 98K，吞吐增量有限而 P99 由 36.78 s 上升到 40.05 s。该结果证明应先标定最小饱和点，再比较上游策略。65,536 只绑定当前机器、模型、协议和 workload，不是通用常数。
 
-这个对比的主要作用是诊断性的：它说明逐行调用不是合理的 baseline，批处理执行是必须研究的对象。在论文的方法对照中，不会把”去掉所有 batch”作为对比目标。动机展示使用 coalesced batch=64 + driver fan-in 作为合理默认配置，方法对照使用文献和工程最优 baseline（vLLM continuous batching、COPY + deferred index 等）。
+### 5.3 数据组织的 serving-regime 依赖
 
-图 4-3 还透露出一个容易被忽视的事实：单 endpoint 下，Ray 并不天然优于 Python。4096 行 coalesced 场景中，Python + JSON 写回的端到端时间为 3.420s，Ray actor 单 endpoint 为 3.621s，两者几乎持平。Ray 的优势在于它提供了 actor pool、async loop 和队列观测能力这些机制，但不使用这些机制时，它不会自动产生加速效果。后续研究要分析的正是 Ray 在多 endpoint、bounded in-flight、routing 和 actor pool 等条件下的适用范围。
+![数据组织在不同 serving regime 下的排名变化](../../figures/data/report_main/opening_work_organization_regime.png)
 
-![图 4-3 端到端耗时分解——模型推理执行与写回堆叠](../../figures/data/report_main/10_e2e_operator_writeback_breakdown.png)
+在双 endpoint、大 KV 池且压力较低的条件下，五种组织策略约为 50K–56K tok/s，差异接近中性；在四 endpoint、小 KV 池且 KV 饱和的条件下，吞吐分化到约 39K–50K tok/s，并出现排名反转。重排序类 organizer 将 prefix group ratio 打散后，prefix cache hit 可降至 0.06–0.07。该证据支持“组织策略必须结合 serving regime 评价”，不支持 sequential 或 prefix-aware 的全局最优性。
 
-图 4-3 端到端耗时按模型推理执行、writeback 写回和其余阶段（DB 读取 + Arrow + 汇聚）堆叠分解。fine 策略下推理执行阶段为 20.6s，约为 coalesced 的 37.5×；4096 行及以上 coalesced 配置中 writeback 成为可见成本（1.6–3.2s）；单 endpoint 下 Ray actor（3.62s）与 Python（3.42s）端到端接近。前三行为无写回对照组（writeback_mode=none）。数据来源：2026-07-14 GPU-backed AI_EMBED 复测 CSV，对数横轴。
+### 5.4 图像 matched-resource 可重复证据
 
-**实验证据二：当 GPU 模型调用变快后，writeback 成为可见成本。** 图 4-4 把一个 coalesced 配置下的端到端时间拆成六个阶段：DB fetch、Arrow build、GPU model request wall、fan-in、sink writeback 和 residual。这里的关键观察不是 writeback 占了多少秒，而是”GPU 模型调用被 batch 加速后，writeback 的相对占比上升了”。4096 行无写回时，GPU model request wall 是 1.51s；加入 JSON text 写回后，writeback 占 1.56s——已经和模型调用本身差不多了。8192 行时 writeback 进一步升到 3.16s。这说明如果只优化上游的 batching 和调度而不处理 writeback，端到端收益会被写回吃掉相当一部分。
+![图像 workload 的 matched-resource 正式对照](../../figures/data/report_main/opening_image_matched_resource.png)
 
-这个结论直接影响课题设计：写回不作为独立方法贡献，但作为端到端评价的检查点——如果最优上游配置下的 writeback 占比持续过高，就需要考虑额外的写回优化。
+在相同 CPU 资源和输出合同下，项目 typed Ray GPU actor 静态路径相对 Ray Data native graph 的 operator JCT 在主正式报告中降低约 12.8%–15.1%，独立复测两档 CPU 仍同向。冻结 headline 为约 13%–15%，不使用资源不匹配比较得到的旧 45.7%。GPU busy 约 6%–10%，表明链路主要受 CPU decode/resize/normalize 喂入限制；因此该结果证明执行结构可行性，不证明 GPU 饱和或状态感知策略已经有效。
 
-![图 4-4 数据库到 GPU 再到写回的链路阶段时延](../../figures/data/report_main/07_gpu_pgai_rerun_stage_writeback_20260714.png)
+### 5.5 代价模型的配置选择价值
 
-图 4-4 数据库到 GPU 再到写回的链路阶段时延。以 4096 行无写回、4096 行 JSON 写回和 8192 行 JSON 写回为对照，堆叠 DB fetch、Arrow build、GPU model request wall、fan-in、sink writeback 和 residual 六个阶段。GPU 模型调用变快后，PostgreSQL JSON text writeback 在 4096 行时占 1.557s，在 8192 行时占 3.159s，成为端到端时间中的大块成本。数据来源：2026-07-14 GPU-backed AI_EMBED 复测 CSV。
+![算子代价模型的选择质量](../../figures/data/report_main/opening_cost_model_decision_quality.png)
 
-**实验证据三：多 endpoint 降低模型调用时间，但 writeback 几乎不动。** 图 4-5 直接对比了 Ray actor 在单 endpoint 和双 endpoint 下的表现。4096 行、16 个 coalesced batch 条件下，双 endpoint 将 model_request_wall_s 从 1.933s 降到 1.204s（减少约 38%），operator_wall_s 从 2.009s 降到 1.292s。但 writeback 从 1.585s 降到 1.541s——只减少了不到 3%，基本没变。
+在 429 个 formal 观测、20 个 context 与 4 个候选配置的 context leave-one-out 评价中，Hybrid 模型 pooled regret 为 1.67%，macro regret 为 2.90%，candidate pairwise accuracy 为 0.808，max regret 为 14.72%。最大 regret 仅比 15% 门槛低 0.28 个百分点，属于边界通过。它可作为配置选择的第一份可行性证据，但仍需新时间段、workload 和硬件上的校准。
 
-这个对比的意义不在于”双 endpoint 比单 endpoint 快”本身，而在于它暴露了收益边界：模型调用侧的优化可以降低 operator wall time，但写回时间独立于 endpoint 数量。当上游优化到一定程度后，写回会成为端到端收益的天花板。课题中的耦合验证实验（独立最优拼接 vs 联合 grid search）就是在问一个类似但更深入的问题：两项上游策略之间是否也存在这种边界效应。
+### 5.6 当前能证明与不能证明的内容
 
-![图 4-5 双 endpoint 场景下 Ray actor 的端到端对比](../../figures/data/report_main/08_gpu_pgai_rerun_endpoint_comparison_20260714.png)
+已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益。条件性证据：轻量代价模型已体现配置选择价值。仍待验证：state-aware 提交、路由或多作业策略能否超过同上限静态点。当前不能声称：项目路径普遍优于 direct、DuckDB AI、Ray Data 或 Daft；某一 organizer 普遍最优；动态策略已经胜出。
 
-图 4-5 双 endpoint 场景下 Ray actor 的端到端对比。两个本地 CUDA endpoint 可以降低 model request wall time 和 operator wall time，但端到端收益仍受 writeback 约束。两个 endpoint 是同一张 RTX 5070 上的本地服务副本，不能写成多 GPU 结论。
+## 6. 进度安排
 
-**实验证据四：pgvector 写回比 JSON text 快约 43%。** 图 4-6 在同一条链路中比较了三种落盘方式：不写回（none）、JSON text 写回和 pgvector `vector(384)` 写回。三组的 `model_request_wall_s` 均为 1.51-1.52s，`operator_wall_s` 均为约 1.60s——模型调用侧完全一致。差异全部来自 sink 阶段：JSON text 写回的 writeback_s 为 1.567s，pgvector 为 0.897s，减少了约 43%。这意味着选择什么格式落地，对端到端时间有直接且可量化的影响。
+| 时间 | 工作内容 | 交付物与停止条件 |
+|---|---|---|
+| 2026 年 8 月 | 冻结开题材料；完成图像强 baseline 与统一链路实现 | 开题报告、PPT、统一 source/sink 合同、结果归档 |
+| 2026 年 9 月 | 完成 work-unit 构造的跨 workload、跨 serving-regime 消融 | 数据组织 formal 报告；不以单点峰值选策略 |
+| 2026 年 10 月 | 完成状态感知提交、路由和多作业公平性对照 | 与同上限 frozen-static 比较；未过门则记录失效边界 |
+| 2026 年 11 月 | 完成代价模型 held-out 校准和两项策略耦合验证 | ranking/regret、独立拼接与联合搜索报告 |
+| 2026 年 12 月及以后 | 补齐外部有效性、论文图表和正文 | 可复现脚本、完整原始证据、论文与答辩材料 |
 
-实验使用 4096 行、16 个 coalesced batch、一个 CUDA embedding endpoint、`embedding_dim = 384`、`write_batch_rows = 512`，只改变 `writeback_mode`。pgvector 组运行后数据库中 4096 行 `embedding_vector` 非空，`vector_dims(embedding_vector)` 均为 384，确认数据正确写入。
+开题前不再增加第二数据库、文本全框架矩阵或大规模参数扫描。后续新增实验必须对应一个核心 claim，且现有证据无法回答；否则不启动。
 
-这个结果直接支持了课题中采用 PostgreSQL + pgvector 的 COPY + deferred index 作为写回 baseline 的决定：pgvector 格式在当前规模下已经比 JSON text 快 43%，是一个合理的工程优化起点。它不作为独立研究内容，但为端到端评价提供了写入侧的基准线。
+## 7. 预期成果、创新点与风险控制
 
-![图 4-6 no writeback、JSON text 和 pgvector(384) 写回对比](../../figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png)
+### 7.1 预期成果
 
-图 4-6 no writeback、JSON text 和 pgvector(384) 写回对比。formal repeat 均值：no writeback 端到端 1.635s；JSON text 写回 3.198s（writeback_s = 1.567s）；pgvector `vector(384)` 写回 2.524s（writeback_s = 0.897s）。三组 model_request_wall_s 均为 1.51-1.52s，operator_wall_s 均为约 1.60s，差异全部来自 sink 阶段。数据来源：2026-07-14 pgvector writeback 实验 CSV。
+1. 一套数据库触发、模型服务执行、结果写回的可复现 AI 数据执行层实验系统。
+2. 一套按 token/frame work 构造请求、按 request/work credit 提交与协调多作业的方法。
+3. 一个用于 active-work、组织、路由和提交选择的轻量算子代价估计组件。
+4. 统一的 correctness、quality、feeding-saturation、stability、resource 和 database-E2E 评价合同，以及相应实验报告、图表和论文正文。
 
-**工程可行性：Daft 管线不引入额外开销。** 图 4-7 回答了从 AI_EMBED 阶段的手动 Arrow 管线迁移到 AI_COMPLETE 阶段的 Daft 管线时的一个工程问题：Daft 的数据引擎本身会不会成为新的瓶颈？对比两条路径的阶段耗时：arrow_postgres（psycopg2 + 手动 Arrow RecordBatch，AI_EMBED coalesced，5939 行）的 DB Read + Build 合计 0.036s；daft_postgres（daft.read_sql + Daft Organizer，AI_COMPLETE batch=8，512 行）的 DB Read + Organize 合计 0.091s。两者的管线开销都在亚秒级，差异来自 `daft.read_sql` 比原始 `psycopg2` 查询多出的常数级开销（约 0.05s）。在两三秒级别的端到端推理时间面前，这个差异可以忽略。
+### 7.2 预期创新点
 
-需要注意，这张图只对比管线开销，不比较推理时间——两个 workload 完全不同（BGE embedding 5939 行 vs Qwen2.5-1.5B 生成 512 行），直接比 Operator Wall 没有意义。图的结论是：Daft 不会引入可观测的管线瓶颈，后续 AI_COMPLETE 及多模态泛化验证统一使用 Daft 具备工程可行性。
+1. 面向数据库 AI workload 的 work-unit 构造方法：统一 token/frame work 表征，刻画 balance 与 locality 的冲突和 serving-regime 边界。
+2. 面向固定模型服务容量的上游提交、路由和多作业调度：以 shared request/work credit 和 completion release 表达真实在途 work，并以强静态点作为默认对照。
+3. 面向执行决策的轻量代价估计：把误差评价进一步落实到配置 ranking、selection regret 和 SLO slack，为两项研究内容提供共同信号。
 
-![图 4-7 arrow_postgres 与 daft_postgres 阶段耗时对比](../../figures/data/report_main/b26_arrow_vs_daft_stage_breakdown.png)
+### 7.3 风险与降级路径
 
-图 4-7 arrow_postgres（AI_EMBED coalesced，psycopg2 + 手动 Arrow RecordBatch）与 daft_postgres（AI_COMPLETE batch=8，daft.read_sql + Daft Organizer）的阶段耗时对比。两种路径下数据管线开销（DB Read + Build/Organize）均 < 0.1s，Operator Wall（Ray + 模型推理）占主导。两个 workload 不同（BGE embedding 5939 行 vs Qwen2.5-1.5B 512 行），推理时间不直接可比；本图仅对比管线开销。写回阶段已排除。数据来源：ai_embed_chain_breakdown_20260712.csv / sharegpt_burstgpt_ray_task_batch128_token_sweep_20260719.csv。
+- 若 state-aware 策略不超过静态点，则收敛为最小饱和标定、regime 诊断和动态控制失效边界，不更换 workload 追正结果。
+- 若图像链路持续由 CPU 预处理主导，则把结论限定为异构流水线组织，不外推为 GPU serving 优化。
+- 若代价模型 max regret 在新 context 上越过门槛，则保留解析 baseline 与不确定区间，并限制其只用于初始化或候选剪枝。
+- 若某产品 AI 函数与统一 output-cap 语义不兼容，则同时报告 raw work、correct throughput 和失败类型，不进行失真的纯性能排名。
 
-综合四组实验证据（图 4-3 至 4-6）和工程验证（图 4-7），当前可行性结论有三点。第一，数据库 AI 负载 的端到端画像链路已在 AI_EMBED 预研中跑通，阶段计时方法和指标（operator_wall_s、model_request_wall_s、fanin_s、writeback_s）可复现。第二，batch 粒度是端到端性能的一阶变量（推理执行阶段 37.5×、端到端约 13.4×），多 endpoint routing 可降低模型调用时间但 writeback 独立于此收益——数据组织和提交控制是当前应优先调优的上游阶段，writeback 作为端到端检查点。第三，论文主体实验将在 vLLM + AI_COMPLETE 平台上进行，AI_EMBED 预研仅支撑实验框架可行性，Daft 作为数据引擎不引入管线瓶颈。
+## 8. 主要参考文献
 
-当前已完成的环节：vLLM + Qwen2.5-1.5B baseline 已建立（2026-07-18）；Daft 数据引擎已接入并验证管线开销（<0.1s）；token-tail revision 实验已完成。后续关键环节：8 月至 9 月在 AI_COMPLETE 场景下完成动态 batching 和自适应提交消融；9 月至 10 月完成耦合验证和写回瓶颈判定。
+[1] Aggarwal P, Chen B, Datta A, et al. Cortex AISQL: A Production SQL Engine for Unstructured Data. SIGMOD Companion, 2026.
 
-## 5. 进度安排
+[2] Google Cloud. BigQuery ML: Generate Text and Embeddings. 2025.
 
-2026 年 7 月：完成开题报告和文献清单（✅）；建立 vLLM + Qwen2.5-1.5B baseline（✅）；Daft 数据引擎接入并验证管线开销（✅）；token-tail revision 实验（✅）。整理现有 GPU-backed `AI_EMBED` 预研实验和 pgvector 写回对比结果。
+[3] Oracle. Oracle AI Vector Search: VECTOR_EMBEDDING SQL Function. 2025.
 
-2026 年 8 月：完成第一阶段实验（研究内容一消融：Token-budget / Length-align / Prefix-aware vs 静态 baseline）。同时确认 COPY + deferred index 写回 baseline。
+[4] pgvector. Open-source Vector Similarity Search for Postgres.
 
-2026 年 9 月：完成第二阶段（研究内容二：固定 K_max vs queue-adaptive flush vs actor pool 分池路由 消融）和第三阶段（耦合验证：独立最优拼接 vs 联合 grid search）。
+[5] Timescale. pgai: AI Workflows for PostgreSQL.
 
-2026 年 10 月：完成第四阶段（写回瓶颈判定 + sink 对比）。若联合搜索显著优于独立拼接，补充联合调优的增强对照。启动多模态泛化验证：在图像 workload（AI_EMBED/AI_CLASSIFY，CLIP/Qwen2.5-VL）上复用同一套策略代码。
+[6] Li G, Sun J, Li S, et al. GaussML: An End-to-End In-database Machine Learning System. ICDE, 2024.
 
-2026 年 11 月：整理统一方法，补齐 baseline、消融和反证实验；形成可复现实验脚本、结果 CSV、图表和阶段分析报告。
+[7] Guo Y, Li G, Hu R, Wang Y. In-database Query Optimization on SQL with ML Predicates. The VLDB Journal, 2025.
 
-2026 年 12 月以后：完成论文实验、图表、正文撰写、答辩材料和结果复核；根据导师和企业侧反馈收敛题目表述、贡献边界和最终实验组合。
+[8] Zhao Z, Cai S, Chen G, et al. NeurDB: On the Design and Implementation of an AI-powered Autonomous Database. CIDR, 2025.
 
-## 6. 预期成果
+[9] Zeng L, Xing N, Cai S, et al. Powering In-Database Dynamic Model Slicing for Structured Data Analytics. PVLDB, 2024.
 
-预期形成以下成果：
+[10] Moritz P, Nishihara R, Wang S, et al. Ray: A Distributed Framework for Emerging AI Applications. OSDI, 2018.
 
-1. 一个基于 vLLM + Ray 的数据库驱动 AI_COMPLETE 端到端实验链路，支持 PostgreSQL 表读取、Daft/Arrow 组织、Ray request/work credit 与多 job actor 调度、vLLM continuous batching 和写回阶段计时。
-2. 一组以 `AI_COMPLETE` 为主、`AI_EMBED` 为预研验证的可复现实验 workload。
-3. 一套上游动态组织方法、最小饱和 active-work 标定方法、Ray actor shared-credit/fair-queue 策略，以及简单解析 + profile + residual 的代价估计和耦合验证框架。
-4. 实验报告、开题 PPT、论文图表和硕士论文正文。
+[11] Yu G I, Jeong J S, Kim G W, et al. Orca: A Distributed Serving System for Transformer-Based Generative Models. OSDI, 2022.
 
-预期关键技术指标包括：
+[12] Kwon W, Li Z, Zhuang S, et al. Efficient Memory Management for Large Language Model Serving with PagedAttention. SOSP, 2023.
 
-1. 阶段计时完整性：实验结果至少覆盖 DB fetch、Arrow build、Ray actor flush decision、模型服务队列深度、model request wall、TTFT/TPOT、fan-in 和 writeback 等字段。
-2. 可复现性：每组正式实验保留运行命令、参数、CSV 输出、warm-up / formal repeat 标记和结果解释。
-3. 对照完整性：至少比较 direct vLLM、无 Daft/Ray 强上游、Daft/Ray 官方 runtime、数据库 AI 算子系统和本项目策略；策略内比较固定行/固定 credit、token-work、request refill 与 shared-credit/fair queue。
-4. 边界清晰性：实验结论明确区分 PG18.4 本地预演（AI_EMBED 预研）和 AI_COMPLETE + vLLM 主实验平台。
-5. 统计严谨性：每组正式实验至少 3 次重复（核心发现额外补到 5 次），取中位数且报告 IQR 或标准差；每次重复间重启 Ray 并重建数据库表；warm-up run 不计入结果；数据生成固定随机种子确保不同配置跑同一批数据。
+[13] Agrawal A, Kedia N, Panwar A, et al. Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve. OSDI, 2024.
 
-预期创新点包括：
+[14] Zhong Y, et al. DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving. OSDI, 2024.
 
-1. AI workload 感知的上游动态数据组织与批处理构造策略。借鉴 vLLM continuous batching 的"按 token 预算而非固定请求数"原则，在 Ray 侧设计 token-budget batching、length-aligned grouping 和 prefix-aware grouping 三种动态 batching policy，利用 Ray actor 异构化实现，填补"上游数据管道 batching 策略如何影响下游 continuous batching 效率"这一研究空白。
-2. 面向饱和效率和多 job 的 Ray actor 调度提交策略。以 request/work credit 表示真实在途计算量，通过异步完成事件连续补位，在 endpoint 级共享上限内实现 idle borrowing 和公平队列；评价目标从“单点吞吐最大”扩展到最小饱和压力、瞬态 ramp、每 job JCT/P99 和公平性。
-3. 面向执行决策的轻量算子代价估计。用解析模型、少量 profile 与 residual correction 预测 work/service/JCT，辅助 active-work/K、数据组织、路由和提交选择；它贯穿两项策略但不单独构成第三项研究内容。写回仅作为端到端边界检查。
+[15] Lin C, et al. Parrot: Efficient Serving of LLM-based Applications with Semantic Variable. OSDI, 2024.
 
-## 7. 主要参考文献
+[16] Sheng Y, Cao S, Li D, et al. Fairness in Serving Large Language Models. OSDI, 2024.
 
-[1] Paritosh Aggarwal, Bowei Chen, Anupam Datta, Benjamin Han, Boxin Jiang, Nitish Jindal, et al. Cortex AISQL: A Production SQL Engine for Unstructured Data. In: Companion of the International Conference on Management of Data (SIGMOD Companion '26), Bengaluru, India, 2026. arXiv:2511.07663.
+[17] Sun B, Huang Z, Zhao H, et al. Llumnix: Dynamic Scheduling for Large Language Model Serving. OSDI, 2024.
 
-[2] Google Cloud. BigQuery ML: Generate Text and Embeddings. https://cloud.google.com/bigquery/docs/generate-text-tutorial, 2025.
+[18] Luan F S, Mao Z, Wang R Y, et al. The Streaming Batch Model for Efficient and Fault-Tolerant Heterogeneous Execution. arXiv:2501.12407, 2025.
 
-[3] Oracle. Oracle AI Vector Search: VECTOR_EMBEDDING SQL Function. https://docs.oracle.com/en/database/oracle/oracle-database/23/vecse/, 2025.
+[19] Daft Documentation. Distributed Execution with Ray, Partitioning and Batching. 2025.
 
-[4] pgvector. Open-source Vector Similarity Search for Postgres. https://github.com/pgvector/pgvector.
+[20] Patel L, Jha S, Pan M, et al. Semantic Operators and Their Optimization: Enabling LLM-Based Data Processing with Accuracy Guarantees in LOTUS. PVLDB, 2025.
 
-[5] Timescale. pgai: AI workflows for PostgreSQL. https://github.com/timescale/pgai.
+[21] Russo M, Sudhir S, Vitagliano G, et al. Abacus: A Cost-Based Optimizer for Semantic Operator Systems. PVLDB, 2026.
 
-[6] PostgresML. PostgresML: Machine Learning inside PostgreSQL. https://github.com/postgresml/postgresml.
+[22] Liu C, Russo M, Cafarella M, et al. Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing. CIDR, 2025.
 
-[7] Guoliang Li, Ji Sun, Shifu Li, Jiang Wang, Wen Nie, Lijie Xu. GaussML: An End-to-End In-database Machine Learning System. In: Proceedings of the 40th IEEE International Conference on Data Engineering (ICDE), Utrecht, Netherlands, 2024.
+[23] Lao J, et al. SemBench: A Benchmark for Semantic Query Processing Engines. PVLDB, 2026.
 
-[8] Yunyan Guo, Guoliang Li, Ruilin Hu, Yong Wang. In-database Query Optimization on SQL with ML Predicates. The VLDB Journal, Vol.34, No.1, Article 12, 2025. DOI:10.1007/s00778-024-00888-3.
+[24] Raasveldt M, Mühleisen H. DuckDB: An Embeddable Analytical Database. SIGMOD, 2019.
 
-[9] Zhanhao Zhao, Shaofeng Cai, Gang Chen, Yanyan Shen, Kian-Lee Tan, Yuncheng Wu, Xiaokui Xiao, Naili Xing, Cong Yue, Lingze Zeng, Meihui Zhang, Beng Chin Ooi. NeurDB: On the Design and Implementation of an AI-powered Autonomous Database. In: Proceedings of the Conference on Innovative Data Systems Research (CIDR), Amsterdam, Netherlands, 2025.
+[25] Lamb A, et al. Apache Arrow DataFusion: A Fast, Embeddable, Modular Analytic Query Engine. SIGMOD, 2024.
 
-[10] Lingze Zeng, Naili Xing, Shaofeng Cai, Gang Chen, Beng Chin Ooi, Jian Pei, Yuncheng Wu. Powering In-Database Dynamic Model Slicing for Structured Data Analytics. Proceedings of the VLDB Endowment (PVLDB), Vol.17, No.13, pp.4813-4826, 2024.
+[26] Heinrich R, Luthra M, Wehrstein J, et al. How Good are Learned Cost Models, Really? Insights from Query Optimization Tasks. SIGMOD, 2025.
 
-[11] Philipp Moritz, Robert Nishihara, Stephanie Wang, Alexey Tumanov, Richard Liaw, Eric Liang, et al. Ray: A Distributed Framework for Emerging AI Applications. In: Proceedings of the 13th USENIX Symposium on Operating Systems Design and Implementation (OSDI), Carlsbad, CA, USA, 2018: 561-577.
+[27] Wehrstein J, Bang T, Heinrich R, Binnig C. GRACEFUL: A Learned Cost Estimator for UDFs. ICDE, 2025.
 
-[12] Frank Sifei Luan, Ziming Mao, Ron Yifeng Wang, Charlotte Lin, Amog Kamsetty, Hao Chen, et al. The Streaming Batch Model for Efficient and Fault-Tolerant Heterogeneous Execution. arXiv:2501.12407, 2025.
-
-[13] Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gonzalez, Hao Zhang, Ion Stoica. Efficient Memory Management for Large Language Model Serving with PagedAttention. In: Proceedings of the 29th ACM Symposium on Operating Systems Principles (SOSP), Koblenz, Germany, 2023: 611-626. (Best Paper Award)
-
-[14] Gyeong-In Yu, Joo Seong Jeong, Geon-Woo Kim, Soojeong Kim, Byung-Gon Chun. Orca: A Distributed Serving System for Transformer-Based Generative Models. In: Proceedings of the 16th USENIX Symposium on Operating Systems Design and Implementation (OSDI), Carlsbad, CA, USA, 2022: 521-538.
-
-[15] Amey Agrawal, Nitin Kedia, Ashish Panwar, Jayashree Mohan, Nipun Kwatra, Bhargav S. Gulavani, Alexey Tumanov, Ramachandran Ramjee. Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve. In: Proceedings of the 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI), Santa Clara, CA, USA, 2024.
-
-[16] Yao Fu, Leyang Xue, Yeqi Huang, Andrei-Octavian Brabete, Dmitrii Ustiugov, Yuvraj Patel, Luo Mai. ServerlessLLM: Low-Latency Serverless Inference for Large Language Models. In: Proceedings of the 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI), Santa Clara, CA, USA, 2024: 135-153.
-
-[17] Weston Pace, Will Jones, Chang She, Lei Xu, Albert Lockett, Jun Wang, Raunak Shah. Lance: Efficient Random Access in Columnar Storage through Adaptive Structural Encodings. arXiv:2504.15247, 2025.
-
-[18] Apache Arrow. Arrow Flight: A Framework for Fast Data Transport. arXiv:2204.03032, 2022.
-
-[19] Daft Documentation. Distributed Execution with Ray / Partitioning and Batching / Shuffle Algorithms. https://docs.daft.ai, 2025.
-
-[20] Apache Spark. Spark SQL Performance Tuning Guide. https://spark.apache.org/docs/latest/sql-performance-tuning.html, 2025.
-
-[21] Dario Satriani, Enzo Veltri, Donatello Santoro, Sara Rosato, Simone Varriale, Paolo Papotti. Logical and Physical Optimizations for SQL Query Execution over Large Language Models. In: Proceedings of the ACM SIGMOD/PODS Conference (SIGMOD), Berlin, Germany, 2025. DOI:10.1145/3725411.
-
-[22] Xun Wang, et al. AnDB: Breaking Boundaries with an AI-Native Database for Universal Semantic Analysis. In: Proceedings of the ACM SIGMOD Conference (SIGMOD Demo), 2025. arXiv:2502.13805.
-
-[23] Rong Zhu, Tianjing Zeng, Bolin Ding, Jingren Zhou. Learned Query Optimizer: What is New and What is Next. In: Proceedings of the ACM SIGMOD Conference (SIGMOD), 2024.
-
-[24] Roman Heinrich, Manisha Luthra, Johannes Wehrstein, Harald Kornmayer, Carsten Binnig. How Good are Learned Cost Models, Really? Insights from Query Optimization Tasks. In: Proceedings of the ACM SIGMOD Conference (SIGMOD), 2025.
-
-[25] Xuanhe Zhou, Guoliang Li, Xinyang Zhao. LLM for Data Management. Proceedings of the VLDB Endowment (PVLDB), Vol.17, No.12, pp.4213-4216, 2024.
-
-[26] James Jie Pan, Guoliang Li. Database Perspective on LLM Inference Systems. Proceedings of the VLDB Endowment (PVLDB), Vol.18, 2025.
-
-[27] Shaojie Qiao, Hanlin Fan, Nan Han, et al. Learning Database Optimization Techniques: The State-of-the-Art and Prospects. Frontiers of Computer Science, 2025.
-
-[28] Kyoungmin Kim, Anastasia Ailamaki. Trustworthy and Efficient LLMs Meet Databases. Proceedings of the VLDB Endowment (PVLDB), Vol.17, 2024. (Tutorial)
-
-[29] Xuanhe Zhou, Guoliang Li, Ji Sun, et al. D-Bot: Database Diagnosis System using Large Language Models. Proceedings of the VLDB Endowment (PVLDB), Vol.17, 2024.
-
-[30] Guoliang Li, et al. openGauss: An Autonomous Database System. Proceedings of the VLDB Endowment (PVLDB), Vol.14, 2021.
-
-[31] Ricardo Salazar-Díaz, Boris Glavic, Tilmann Rabl. InferDB: In-Database Machine Learning Inference Using Indexes. Proceedings of the VLDB Endowment (PVLDB), Vol.17, No.8, pp.1830-1842, 2024.
-
-[32] Qiuru Lin, Sai Wu, Junbo Zhao, Jian Dai, Meng Shi, Gang Chen, Feifei Li. SmartLite: A DBMS-Based Serving System for DNN Inference in Resource-Constrained Environments. Proceedings of the VLDB Endowment (PVLDB), 2024.
-
-[33] Yinmin Zhong, et al. DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving. In: Proceedings of the 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI), Santa Clara, CA, USA, 2024.
-
-[34] Pratyush Patel, Esha Choukse, Chaojie Zhang, Aashaka Shah, Íñigo Goiri, Saeed Maleki, Ricardo Bianchini. Splitwise: Efficient Generative LLM Inference Using Phase Splitting. In: Proceedings of the 51st ACM/IEEE International Symposium on Computer Architecture (ISCA), 2024: 118-132.
-
-[35] Ruoyu Qin, Zheming Li, Weiran He, Mingxing Zhang, Yongwei Wu, Weimin Zheng, Xinran Xu. Mooncake: A KVCache-centric Disaggregated Architecture for LLM Serving. ACM Transactions on Storage, 2025. arXiv:2407.00079.
-
-[36] Guangming Sheng, Chi Zhang, Zilingfeng Ye, Xibin Wu, Wang Zhang, Ru Zhang, Yanghua Peng, Haibin Lin, Chuan Wu. HybridFlow: A Flexible and Efficient RLHF Framework. In: Proceedings of the Twentieth European Conference on Computer Systems (EuroSys), Rotterdam, Netherlands, 2025. DOI:10.1145/3689031.3696075.
-
-[37] Chaofan Lin, et al. Parrot: Efficient Serving of LLM-based Applications with Semantic Variable. In: Proceedings of the 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI), Santa Clara, CA, USA, 2024.
-
-[38] Lianmin Zheng, et al. SGLang: Efficient Execution of Structured Language Model Programs. In: Advances in Neural Information Processing Systems (NeurIPS), 2024.
-
-[39] DeepSeek-AI. DeepSeek-V3 Technical Report. arXiv:2412.19437, 2024.
-
-[40] Snowflake Inc. Cortex AI Functions Documentation. https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql, 2025.
-
-[41] Ray Documentation. Core Objects / Anti-Patterns / Serve Dynamic Batching / Offline Batch Inference. https://docs.ray.io, 2025.
-
-[42] vLLM Documentation. Offline Inference Examples. https://docs.vllm.ai/en/latest/examples/offline_inference/basic.html, 2025.
-
-[43] 本项目实验报告. GPU-Backed AI_EMBED Chain Breakdown + Multi-Endpoint Ray Motivation Test, 2026-07-12. `motivation/results/gpu/`
-
-[44] 本项目实验报告. PGAI-Integrated GPU-Backed Key Rerun, 2026-07-14. `motivation/results/gpu/pgai_integrated_key_rerun_20260714.md`
-
-[45] 本项目实验报告. GPU-Backed pgvector(384) Writeback Test, 2026-07-14. `motivation/results/gpu/pgvector_writeback_20260714.md`
-
-[46] (Authors). Turbocharging Vector Databases Using Modern SSDs. Proceedings of the VLDB Endowment (PVLDB), Vol.18, 2025. DOI:10.14778/3749646.3749724.
-
-[47] Michael Armbrust, Tathagata Das, Aaron Davidson, Ali Ghodsi, Laurel Or, Josh Rosen, Ion Stoica, Reynold Xin, Matei Zaharia. Delta Lake: High-Performance ACID Table Storage over Cloud Object Stores. Proceedings of the VLDB Endowment (PVLDB), Vol.13, No.12, pp.3411-3424, 2020.
-
-[48] Yifei Yang, Matt Youill, Matthew Woicik, Yizhou Liu, Xiangyao Yu, Marco Serafini, Ashraf Aboulnaga, Michael Stonebraker. FlexPushdownDB: Hybrid Pushdown and Caching in a Cloud DBMS. Proceedings of the VLDB Endowment (PVLDB), Vol.14, No.11, pp.2101-2114, 2021.
-
-[49] Lanyue Lu, Thanumalayan Sankaranarayana Pillai, Hariharan Gopalakrishnan, Andrea C. Arpaci-Dusseau, Remzi H. Arpaci-Dusseau. WiscKey: Separating Keys from Values in SSD-Conscious Storage. In: Proceedings of the 14th USENIX Conference on File and Storage Technologies (FAST), Santa Clara, CA, USA, 2016: 133-148.
-
-[50] Xinyu Zeng, Yulong Hui, Jiahui Shen, Andrew Pavlo, Wes McKinney, Huanchen Zhang. An Empirical Evaluation of Columnar Storage Formats. Proceedings of the VLDB Endowment (PVLDB), Vol.17, No.2, pp.148-161, 2023.
-
-[51] Jianguo Wang, Xiaomeng Yi, Rentong Guo, Hai Jin, Peng Xu, Shengjun Li, et al. Milvus: A Purpose-Built Vector Data Management System. In: Proceedings of the ACM SIGMOD International Conference on Management of Data (SIGMOD), Virtual Event, China, 2021: 2614-2627. DOI:10.1145/3448016.3457550.
-
-[52] Jianguo Wang, et al. Manu: A Cloud Native Vector Database Management System. Proceedings of the VLDB Endowment (PVLDB), Vol.15, No.12, pp.3548-3561, 2022.
-
-[53] Qianxi Zhang, et al. VBASE: Unifying Online Vector Similarity Search and Relational Queries via Relaxed Monotonicity. In: Proceedings of the 17th USENIX Symposium on Operating Systems Design and Implementation (OSDI), Boston, MA, USA, 2023: 377-394.
-
-[54] Guoxin Kang, Zhongxin Ge, Jingpei Hu, Xueya Zhang, Lei Wang, Jianfeng Zhan. BigVectorBench: Heterogeneous Data Embedding and Compound Queries are Essential in Evaluating Vector Databases. Proceedings of the VLDB Endowment (PVLDB), Vol.18, No.5, pp.1536-1550, 2025. DOI:10.14778/3718057.3718078.
-
-[55] Pedro Pedreira, Orri Erling, Masha Basmanova, Kevin Wilfong, Laith Sakka, Krishna Pai, Wei He, Biswapesh Chattopadhyay, et al. Velox: Meta's Unified Execution Engine. Proceedings of the VLDB Endowment (PVLDB), Vol.15, No.12, pp.3372-3384, 2022.
-
-[56] Mark Raasveldt, Hannes Mühleisen. DuckDB: An Embeddable Analytical Database. In: Proceedings of the ACM SIGMOD International Conference on Management of Data (SIGMOD), Amsterdam, Netherlands, 2019: 1981-1984. DOI:10.1145/3299869.3320212.
-
-[57] Andrew Lamb, et al. Apache Arrow DataFusion: A Fast, Embeddable, Modular Analytic Query Engine. In: Proceedings of the ACM SIGMOD/PODS Conference (SIGMOD), Santiago, Chile, 2024. DOI:10.1145/3626246.3653368.
-
-[58] Arpan Gujarati, Reza Karimi, Safya Alzayat, Wei Hao, Antoine Kaufmann, Ymir Vigfusson, Jonathan Mace. Serving DNNs like Clockwork: Performance Predictability from the Bottom Up. In: Proceedings of the 14th USENIX Symposium on Operating Systems Design and Implementation (OSDI), Banff, Alberta, Canada, 2020: 939-956.
-
-[59] Haichen Shen, Lequn Chen, Yuchen Jin, Liangyu Zhao, Aarti Aswani, Ratul Mahajan, Paramvir Bahl. Nexus: A GPU Cluster Engine for Accelerating DNN-Based Video Analysis. In: Proceedings of the 27th ACM Symposium on Operating Systems Principles (SOSP), Huntsville, Canada, 2019: 322-337.
-
-[60] Daniel Crankshaw, Xin Wang, Giulio Zhou, Michael J. Franklin, Joseph E. Gonzalez, Ion Stoica. Clipper: A Low-Latency Online Prediction Serving System. In: Proceedings of the 14th USENIX Symposium on Networked Systems Design and Implementation (NSDI), Boston, MA, USA, 2017: 613-627.
-
-[61] Francisco Romero, Qian Li, Neeraja J. Yadwadkar, Christos Kozyrakis. INFaaS: Automated Model-less Inference Serving. In: Proceedings of the USENIX Annual Technical Conference (ATC), Virtual Event, 2021: 397-411.
-
-[62] Yanping Huang, Youlong Cheng, Ankur Bapna, Orhan Firat, Mia Xu Chen, Dehao Chen, et al. GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism. In: Advances in Neural Information Processing Systems 32 (NeurIPS), Vancouver, Canada, 2019: 103-112.
-
-[63] Deepak Narayanan, Aaron Harlap, Amar Phanishayee, Vivek Seshadri, Nikhil R. Devanur, Gregory R. Ganger, Phillip B. Gibbons, Matei Zaharia. PipeDream: Generalized Pipeline Parallelism for DNN Training. In: Proceedings of the 27th ACM Symposium on Operating Systems Principles (SOSP), Huntsville, Canada, 2019: 1-15.
-
-[64] Lianmin Zheng, Zhuohan Li, Hao Zhang, Yonghao Zhuang, Zhifeng Chen, Yanping Huang, et al. Alpa: Automating Inter- and Intra-Operator Parallelism for Distributed Deep Learning. In: Proceedings of the 16th USENIX Symposium on Operating Systems Design and Implementation (OSDI), Carlsbad, CA, USA, 2022: 559-578.
-
-[65] Ying Sheng, Shiyi Cao, Dacheng Li, Banghua Zhu, Zhuohan Li, Danyang Zhuo, Joseph E. Gonzalez, and Ion Stoica. Fairness in Serving Large Language Models. In: Proceedings of the 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI), 2024.
-
-[66] Biao Sun, Ziming Huang, Hanyu Zhao, Wencong Xiao, Xinyi Zhang, Yong Li, and Wei Lin. Llumnix: Dynamic Scheduling for Large Language Model Serving. In: Proceedings of the 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI), 2024.
-
-[67] Liana Patel, Siddharth Jha, Melissa Pan, Harshit Gupta, Parth Asawa, Carlos Guestrin, and Matei Zaharia. Semantic Operators and Their Optimization: Enabling LLM-Based Data Processing with Accuracy Guarantees in LOTUS. Proceedings of the VLDB Endowment, 18(11):4171-4184, 2025. DOI:10.14778/3749646.3749685.
-
-[68] Matthew Russo, Sivaprasad Sudhir, Gerardo Vitagliano, Chunwei Liu, Tim Kraska, Samuel Madden, and Michael Cafarella. Abacus: A Cost-Based Optimizer for Semantic Operator Systems. Proceedings of the VLDB Endowment, 19(5):1060-1073, 2026. DOI:10.14778/3796195.3796215.
-
-[69] Roman Heinrich, Manisha Luthra, Johannes Wehrstein, Harald Kornmayer, and Carsten Binnig. How Good are Learned Cost Models, Really? Insights from Query Optimization Tasks. Proceedings of the ACM on Management of Data, 3(3), Article 172, 2025.
-
-[70] Johannes Wehrstein, Tiemo Bang, Roman Heinrich, and Carsten Binnig. GRACEFUL: A Learned Cost Estimator for UDFs. In: Proceedings of the 41st IEEE International Conference on Data Engineering (ICDE), 2025:2450-2463. DOI:10.1109/ICDE65448.2025.00185.
-
-[71] Roman Heinrich, Carsten Binnig, Harald Kornmayer, and Manisha Luthra. COSTREAM: Learned Cost Models for Operator Placement in Edge-Cloud Environments. In: Proceedings of the 40th IEEE International Conference on Data Engineering (ICDE), 2024:96-109. DOI:10.1109/ICDE60146.2024.00015.
-
-[72] Chunwei Liu, Matthew Russo, Michael Cafarella, Lei Cao, Peter Baile Chen, Zui Chen, Michael Franklin, Tim Kraska, Samuel Madden, Rana Shahout, and Gerardo Vitagliano. Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing. In: Proceedings of the Conference on Innovative Data Systems Research (CIDR), 2025. (非 CCF-A)
-
-[73] Jiale Lao, et al. SemBench: A Benchmark for Semantic Query Processing Engines. Proceedings of the VLDB Endowment, 19(8):1754-1767, 2026. DOI:10.14778/3811243.3811249.
+[28] Heinrich R, Binnig C, Kornmayer H, Luthra M. COSTREAM: Learned Cost Models for Operator Placement in Edge-Cloud Environments. ICDE, 2024.

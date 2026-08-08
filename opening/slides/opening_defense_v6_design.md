@@ -1,388 +1,140 @@
-# 开题答辩 PPT v6 设计说明
+# 开题答辩 PPT v6 冻结设计
 
-## 1. 目标与状态
+冻结日期：2026-08-07
 
-本文件定义 `opening_defense_20260720_v5.pptx` 的后续增量版本设计。
-当前状态为：**已按用户反馈修订，等待复审，尚未修改 PPTX**。
+本文件定义从 `opening_defense_20260720_v5.pptx` 增量生成 v6 的内容合同。学校模板、母版、页眉页脚和人工版式调整继续保留；旧稿只提供版式，不再提供研究结论。最终可见文字不得出现内部实验代号。
 
-v6 的目标是在 v5 的章节、页面顺序和学校模板基础上，修正过时口径并强化
-研究设计。正文只保留能够证明问题存在、链路可观测和方案可执行的动机测试；
-已完成的大量正式实验主要进入答辩备份和 speaker notes。开题报告的主体是
-研究问题、总体架构、两项策略设计、baseline 设计、消融方案和后续验证路线，
-不是阶段性结果汇报。
+## 1. 一句话叙事
 
-设计原则：
+数据库已经成为 AI workload 的入口，但模型服务只接收请求，不理解数据库行、作业和写回语义；本课题研究两者之间的 AI 数据执行层，解决 work-unit 如何构造，以及请求如何在容量约束下提交、路由和多作业协调。
 
-- 保留学校模板、母版、页眉页脚和用户已有的人工版式调整；
-- 不重新运行 `opening/slides/build_ppt.py` 全量覆盖 v5；
-- 从 v5 复制生成新文件后，使用 `python-pptx` 做增量编辑；
-- 正文沿用 v5 的四段式主线，通过讲稿标签区分“优先讲”“可跳过”“答辩备份”；
-- 正文实验只讲动机测试、baseline 设计和少量可行性信号；
-- baseline 正式测试完成后，按预先定义的等价性和重复门禁模块化插入结果页；
-- 架构图对标 SIGMOD/VLDB 系统论文的 Solution Overview 与机制放大图；
-- 所有结论以项目权威总纲、正式结果报告和 CSV 为依据。
-
-## 2. 权威来源与证据边界
-
-制作 v6 时按以下优先级确定内容：
-
-1. `PROJECT_OUTLINE.md`
-2. `overview/current_direction_and_plan.md`
-3. `experiments/results/` 下对应正式结果报告与 CSV
-4. `motivation/results/` 下 GPU-backed 动机实验结果
-5. `opening/report/opening_report.md`
-6. v5 PPT 与旧图仅作为版式和历史口径参考
-
-以下当前结论用于约束页面口径、答辩备注和备份材料，不要求全部进入正文：
-
-- 数据组织当前默认采用 sequential token-budget；
-- shared-vLLM 单 endpoint 当前默认采用 static `K=8` 与 fixed `50 ms`；
-- queue-adaptive flush 与 SLO-aware EWMA 相对最佳静态窗口没有达到 5% 晋升门槛；
-- 独立最优配置拼接与联合搜索未出现显著差距，当前证据不要求联合调优；
-- 双 4090 active-work 扩展按预注册规则选择每 endpoint `65,536`；
-- 固定资源 Actor Pool 保留 `1×256`，多 actor 未达到 5% 晋升门槛；
-- complete-row fixed service quantum 未提高稳态吞吐，保留 request-level completion/credit 语义；
-- endpoint-shared request/work credit 和 1/2/4-job 正式实验已完成；
-- 4-job 收益属于高竞争条件下的条件性结果，仍需 held-out、错峰、加权公平性与异构 workload 验证；
-- prefix-only 在 cache-off 下无稳定收益，下一步必须做 cache-on 独立机制验证；
-- 多模态泛化、路由增量与故障迁移、代价模型跨时间段或新 workload 校准仍属于后续任务；
-- 写回使用 PostgreSQL + pgvector、COPY + deferred index，仅作为工程 baseline 和端到端 guardrail。
-
-正文实验内容的选择原则：
-
-- AI_EMBED 预研用于证明端到端链路可观测、调用粒度重要和写回成本可量化；
-- AI_COMPLETE 预研只保留“固定行数不是固定计算量”和“无界提交伤害共享服务”
-  两个动机信号；
-- 双 4090 active-work、Actor Pool、service quantum、SLO-EWMA 和多作业公平性
-  结果默认进入备份页，不在主讲路径逐项展开；
-- 正文不提前宣讲仍在测试中的 official baseline 性能排名。
-
-必须修正的旧口径：
-
-- `37.5×` 是 operator/推理执行阶段差异，端到端差异约为 `13.4×`；
-- 不把 writeback bottleneck determination 写成第三项独立研究内容或创新点；
-- 不把 queue-adaptive、AIMD 或 SLO-EWMA 写成已经优于静态策略；
-- 不把 vLLM `num_requests_waiting` 画成当前默认控制器的一阶有效反馈；
-- 不把双 endpoint、双 GPU、单 endpoint 结果混为同一资源条件；
-- 不在正式可见文字中使用 `RC1/RC2/RC3`、`BL1/BL2`、`Phase`、`P0/P1/P2` 等内部代号。
-
-## 3. 演示规模与跳页策略
-
-目标规模：
-
-- 正文约 31 页，保持接近 v5 的体量和四章节结构；
-- 答辩备份约 6 页；
-- official baseline 完成后允许模块化增加 1–2 页结果；
-- 其中约 20 页标为优先讲，其余正文页标为可跳过。
-
-标签只写入 speaker notes，不在页面上显示：
+统一系统边界：
 
 ```text
-页面角色：优先讲
-页面角色：可跳过
-页面角色：答辩备份
+Database
+  -> AI Data Execution Layer
+       -> work-unit construction
+       -> cost estimation
+       -> admission and routing
+       -> resource-aware scheduling
+       -> multi-job coordination
+  -> Model Service / GPU Executor
+  -> Database / Vector Sink
 ```
 
-每页备注继续保留：
+研究内容一是 workload-aware work-unit 构造；研究内容二是 runtime-state-aware 提交、路由和多作业调度。算子代价估计是共同使能组件，不单列为第三项研究内容。Daft、Ray、vLLM、PostgreSQL 和 CLIP 是实现与验证平台，不是贡献名称。
+
+## 2. 证据与表达边界
+
+正文只保留四张核心证据图，每张图只回答一个问题：
+
+1. `opening_serving_capacity_frontier`：固定资源下存在最小饱和 active work；无限增压只会恶化尾部。
+2. `opening_work_organization_regime`：数据组织价值依赖 serving regime；work balance 与 prefix locality 可能冲突。
+3. `opening_image_matched_resource`：相同资源和输出合同下，图像静态执行结构获得可重复的约 13%–15% operator-JCT 改善。
+4. `opening_cost_model_decision_quality`：轻量代价估计已表现出配置选择价值，但最坏 regret 仍是边界风险。
+
+统一文本 database-E2E 三臂实验只放一页表格，必须同时报告正确吞吐、外部 E2E、语义失败和 feeding-saturation。任何未过门禁的臂均以醒目标记呈现，不进入“项目胜出”叙事。DuckDB AI 的固定输出上限语义不兼容必须解释为产品语义边界，不能伪装成基础设施失败或单纯性能差距。
+
+以下表述禁止进入正文：
+
+- “动态策略已经优于强静态点”；
+- “sequential 或 prefix-aware 普遍最优”；
+- “项目路径已经在统一三臂中胜出”；
+- “图像实验提升 45.7%”；
+- “代价模型已经解决”；
+- “修改了 vLLM continuous batching、Ray 调度器或 GPU kernel”。
+
+## 3. 28 页正文映射
+
+| 页 | 页面题目 | 页面角色 | 唯一主结论 | 复用 v5 页 |
+|---:|---|---|---|---:|
+| 1 | 数据库 AI 负载的执行优化与调度研究 | 优先讲 | 题目与研究对象 | 1 |
+| 2 | 汇报结构 | 可跳过 | 问题—证据—方法—计划 | 2 |
+| 3 | 数据库正在成为 AI workload 入口 | 优先讲 | AI SQL 使数据库成为模型调用与结果管理入口 | 3 |
+| 4 | 模型服务前后出现新的数据执行层 | 优先讲 | 数据库行不能直接等同于同成本请求 | 4 |
+| 5 | 现有系统分别优化两端，连接层仍缺方法 | 优先讲 | DB 内优化与 serving 内优化均未覆盖完整上游链路 | 5 |
+| 6 | 前期证据与研究边界 | 可跳过 | 进入证据章节 | 6 |
+| 7 | 统一文本三臂揭示静态路径边界 | 优先讲 | 同 source/sink 后不预设项目胜出；门禁和语义失败同表展示 | 7 |
+| 8 | 先标定最小饱和点，再比较策略 | 优先讲 | 65K 达已测最大吞吐 97.8%，继续增压收益小且尾部变差 | 8 |
+| 9 | 数据组织收益取决于 serving regime | 优先讲 | 低压力近似中性，KV 饱和时出现排名反转 | 9 |
+| 10 | 相同资源下，图像执行结构获得可重复收益 | 优先讲 | 主报告冻结约 13%–15%，不使用旧极值 | 10 |
+| 11 | 代价估计已能辅助选择，但仍有最坏情形 | 优先讲 | pooled regret 低，max regret 仍需继续校准 | 11 |
+| 12 | 证据支持问题存在，不代表方法已经完成 | 优先讲 | 已证明、条件性、待验证、不能声称四级边界 | 12 |
+| 13 | 研究目标与方法 | 可跳过 | 进入方法章节 | 13 |
+| 14 | 总体架构：AI 数据执行层连接数据库与模型服务 | 优先讲 | 两项研究内容位于同一层，模型服务保持黑盒 | 14 |
+| 15 | 三个研究问题限定方法设计 | 优先讲 | 最小饱和、相同 work 的组织、多作业共享 | 15 |
+| 16 | 研究内容一：按工作量构造 work-unit | 优先讲 | 从固定行数转向 token/frame budget | 16 |
+| 17 | 数据组织同时处理 balance 与 locality | 优先讲 | length/prefix 是候选信号，不是预设最优答案 | 17 |
+| 18 | 数据组织策略用强静态点和机制指标证伪 | 优先讲 | 先独立消融，再检验跨 regime 排名稳定性 | 18 |
+| 19 | 研究内容二：按容量提交、路由与协调 | 优先讲 | 控制 active work，而不是无限压入请求 | 19 |
+| 20 | request/work credit 在完成时精确释放 | 优先讲 | shared credit、idle borrowing 与公平队列形成闭环 | 20 |
+| 21 | 状态感知策略必须超过同上限静态点 | 优先讲 | 服务信号只驱动上游决策，不修改 vLLM 内部 | 21 |
+| 22 | 代价估计共同服务两项研究内容 | 可跳过 | 预测 work/service/slack，并以 ranking regret 评价 | 22 |
+| 23 | 验证计划与风险控制 | 可跳过 | 进入计划章节 | 23 |
+| 24 | 实验矩阵只回答可证伪问题 | 优先讲 | baseline、消融、独立拼接/联合搜索和多作业公平性 | 24 |
+| 25 | 同一抽象跨文本与图像复用 | 优先讲 | token cost 换成 frame/patch cost，Organizer/Scheduler 不变 | 25 |
+| 26 | 进度安排与停止规则 | 优先讲 | 不扩第二数据库和无关矩阵；按证据门禁推进 | 26 |
+| 27 | 预期创新、风险与降级路径 | 优先讲 | 负结果转化为适用边界，不改问题追结果 | 27 |
+| 28 | 谢谢各位老师 | 优先讲 | 结束并进入问答 | 28 |
+
+## 4. 页面 7 的统一文本三臂合同
+
+页面可见表格最多六列：workload、路径、correct rows/s、database-E2E、语义/基础设施失败、feeding gate。表下只保留三句话：
+
+- SQuAD 是均匀控制组，不预设项目路径更快；
+- ShareGPT controlled-skew 检查异质 work 是否放大路径差异；
+- correct rows/s 将 cap 语义失败保留在分母中。
+
+正式值必须来自 `experiments/results/opening_database_e2e_text_20260807/raw/formal_summary.csv`。若某一臂 service tokens/s 低于 direct 的 95%，表中标记“未过 feeding 门”，讲稿明确说明该结果不能支持策略性能 claim。
+
+## 5. 四图页面合同
+
+四张图分别占页面 8–11 的主视觉区，图题不得重复正文标题。每页只允许一个结论条：
+
+- 页面 8：`65K 是当前合同下的最小饱和点，不是跨机器通用常数。`
+- 页面 9：`组织策略必须在明确的 endpoint/KV regime 下评价。`
+- 页面 10：`图像证据支持执行结构可行性，尚不支持状态感知增量。`
+- 页面 11：`代价估计进入决策闭环，但最坏 regret 仍需压缩。`
+
+图内字号、颜色和误差表达以 `figures/audit/opening_core_evidence_figures_contract_20260807.md` 为准。不得在 PPT 内重绘另一套数字。
+
+## 6. 备注合同
+
+每页 speaker notes 必须包含：
 
 ```text
+页面角色：优先讲 / 可跳过
+
 汇报讲稿：
+说明该页如何承接上一页、要让评委记住什么、如何转入下一页。
+
 答辩备注：
+记录资源条件、证据等级、不能声称的内容和被追问时的最短回答。
+
+[Sources]
+- 本地结果报告或论文/官方文档来源
 ```
 
-讲稿必须说明该页与前后页的因果关系，不照抄页面文字。答辩备注必须记录结论
-边界、资源条件和不能声称的内容。
-
-## 4. 正文页面结构
-
-| 页码 | 页面题目 | 角色 | 核心信息 |
-|---|---|---|---|
-| 1 | 封面 | 优先讲 | 正式题目、报告人、指导老师 |
-| 2 | 目录 | 可跳过 | 沿用 v5 四章节结构 |
-| 3 | 数据库成为 AI workload 入口 | 优先讲 | 工业场景与 AI SQL 算子 |
-| 4 | AI 算子执行链路为何不同 | 优先讲 | 模型推理引入数据库优化器未覆盖的决策地带 |
-| 5 | 现有研究与连接处缺口 | 优先讲 | DB4AI、模型服务、数据系统各自边界 |
-| 6 | 目录：预研基础与动机证据 | 可跳过 | 沿用 v5 章节切换页 |
-| 7 | GPU-backed AI_EMBED 端到端链路 | 优先讲 | 链路跑通、阶段可观测、可做消融 |
-| 8 | 动机测试：粒度、写回与 Ray 边界 | 优先讲 | operator 约 37.5×、端到端约 13.4×，写回已量化 |
-| 9 | AI_COMPLETE 动机：固定行数不是固定计算量 | 优先讲 | token tail 与请求计算量失配 |
-| 10 | AI_COMPLETE 动机：无界提交伤害共享服务 | 优先讲 | 证明 admission/in-flight 控制有必要 |
-| 11 | official baseline 的实验设计与准入门禁 | 可跳过 | 同一 workload、资源、tokenization、计量与重复规则 |
-| 12 | 目录：研究目标与内容 | 可跳过 | 沿用 v5 章节切换页 |
-| 13 | 研究目标与总体执行架构 | 优先讲 | 系统边界、两项研究内容、黑盒 vLLM 和写回 baseline |
-| 14 | 研究内容总览 | 优先讲 | 数据组织、提交控制、多模态验证和补充性代价估计 |
-| 15 | 研究内容一：数据组织设计空间 | 优先讲 | Cost Adapter、Organizer 与 BatchRequest |
-| 16 | token-budget：按计算量形成请求 | 优先讲 | 预算约束、oversize row 和输出元数据 |
-| 17 | length-align：降低提交内计算量方差 | 优先讲 | 候选机制与验证指标，不提前声称收益 |
-| 18 | prefix-aware：为缓存命中创造条件 | 优先讲 | 候选机制与 cache-on 受控验证 |
-| 19 | 研究内容二：提交控制设计空间 | 优先讲 | flush、admission/shared credit、routing |
-| 20 | 高信息密度提交控制架构 | 优先讲 | per-job queue、shared credit、router、endpoint pool |
-| 21 | Runtime Credit Lifecycle | 优先讲 | acquire、submit、complete、release |
-| 22 | 实验设计：baseline、变量与指标矩阵 | 优先讲 | 对照组、资源条件、吞吐/尾延迟/公平性与 MFU |
-| 23 | 实验设计：独立消融与耦合验证 | 优先讲 | 分别调优、独立拼接、联合搜索和反证条件 |
-| 24 | 多作业与多 endpoint 验证设计 | 可跳过 | shared credit、公平性、routing 与故障迁移 |
-| 25 | 多模态泛化验证 | 优先讲 | prompt token cost 切换为 image/frame cost |
-| 26 | 算子代价估计补充 | 可跳过 | profile 校准、ranking、regret 与预测区间 |
-| 27 | 目录：可行性与计划 | 可跳过 | 沿用 v5 章节切换页 |
-| 28 | 可行性、预期创新与风险控制 | 优先讲 | 已跑通链路、策略设计、失败门禁和降级路径 |
-| 29 | 进度安排 | 优先讲 | baseline → 消融 → 耦合 → 多模态 → 整理 |
-| 30 | 总结 | 优先讲 | 场景、设计、可行性和边界 |
-| 31 | 致谢 | 优先讲 | 结束页 |
-
-正文中的实验页必须服务于动机或实验设计。禁止连续展示大量参数扫描，也禁止
-继续使用相同的 `vLLM + AI_COMPLETE Baseline` 标题堆叠结果。
-
-## 5. Baseline 结果插入门禁与答辩备份
-
-### 5.1 正文中的 baseline 页面
-
-第 11 页只讲 official baseline 的实验设计和准入规则，不讲尚未完成的性能排名。
-页面列出：
-
-- vLLM Bench；
-- bounded HTTP；
-- Daft Native；
-- Daft Ray；
-- Ray Data；
-- immutable manifest、相同模型配置、相同 endpoint 和相同输出上限；
-- exactly-once、双 endpoint work balance、服务队列归零和零 incident 门禁；
-- request-level/server-usage 与 barrier/manifest 计量粒度差异。
-
-### 5.2 条件式 baseline 结果页
-
-baseline 测完后最多向第 11 页后插入两页：
-
-1. **等价性门禁结果**：只有当 row set、tokenization/chat template、输出上限、
-   endpoint 数、固定 actor pool、exactly-once 和队列归零全部通过时才进入正文；
-2. **规模校准与正式性能结果**：只有完成最小安全并发校准、同资源正式重复，
-   且 token accounting 与 timing granularity 可比时才报告性能差异。
-
-若门禁未全部通过，结果留在实验记录或答辩备份，不在开题正文做性能排名。
-插入条件页后，后续页面由脚本自动顺延编号。
-
-### 5.3 答辩备份页
-
-| 逻辑顺序 | 页面题目 | 用途 |
-|---|---|---|
-| 1 | 完整实验环境与 baseline 等价性矩阵 | 回答硬件、模型、版本、runner 和 workload 问题 |
-| 2 | official baseline 详细结果 | 仅在门禁通过后展开规模、吞吐和 JCT |
-| 3 | active-work、Actor Pool、service quantum 与 adaptive 对照 | 回答参数选择和负结果问题 |
-| 4 | 1/2/4-job 公平性与 shared credit | 展开 fairness、P99、JCT 与条件性收益 |
-| 5 | PostgreSQL + pgvector 写回 baseline | 解释写回为何不是独立贡献 |
-| 6 | 参考文献与研究边界问答 | 给出核心文献和常见质疑口径 |
-
-## 6. 总体执行架构图
-
-### 6.1 图类型与范式
-
-- 类型：Solution Overview / System Architecture；
-- 范式：三层高密度系统架构；
-- 主方向：左到右的数据路径；
-- 上层：规划与配置；
-- 中层：数据执行主路径；
-- 下层：运行状态、完成事件、观测指标和 guardrail。
-
-### 6.2 一级模块
-
-主路径最多保留六个一级模块：
-
-1. PostgreSQL Workload Source
-2. Daft Data Engine
-3. Request Organizer
-4. Ray Admission / Shared Credit / Router
-5. vLLM Endpoint Pool
-6. Fan-in + PostgreSQL/pgvector Sink
-
-研究内容一只覆盖 Cost Adapter、Request Organizer 和 BatchRequest 成形；
-研究内容二只覆盖 per-job queue、shared request/work credit、router 和 completion
-release。Daft 标为数据引擎，Ray 标为调度载体，vLLM 标为不修改内部的部署平台。
-
-### 6.3 数据与控制语义
-
-线型必须有图例：
-
-- 深灰实线：数据或请求流；
-- 橙色虚线：admission、routing 和 credit 控制；
-- 灰色点线：telemetry/observability；
-- 绿色回路线：completion event 与 credit release。
-
-禁止使用含义不明的双箭头。每条线标注具体对象，例如：
-
-- `Arrow RecordBatch`
-- `BatchRequest`
-- `HTTP request`
-- `completion event`
-- `request/work credit release`
-- `COPY + deferred index`
-
-vLLM 指标进入 Observability/Evaluation，不直接进入当前默认静态控制路径。
-候选自适应策略可作为虚线 plug-in 出现，但必须标注为“候选/待验证”。
-
-### 6.4 高信息密度规则
-
-高密度通过层次和复用实现，不通过缩小字体实现：
-
-- 每个一级模块最多两层信息；
-- 一级模块标题使用正式组件名；
-- 框内只放状态、接口和关键策略名；
-- 动作放在连线上；
-- 指标统一收拢到观测带；
-- 选定默认、候选策略、平台组件使用不同边框和徽标编码；
-- 论文缩放后的最小字体不低于 8 pt；
-- PPT 图内最小字体不低于 16 pt，一级模块标题不低于 20 pt。
-
-### 6.5 配色
-
-- 数据组织与 Daft：蓝色 `#2F6FEB`
-- 调度与提交控制：橙色 `#F97316`
-- vLLM 模型服务：紫色 `#7C3AED`
-- 已选定配置与通过门禁：绿色 `#16A34A`
-- 平台、辅助组件和未强调基线：中性灰
-
-颜色必须同时配合空间位置、标题和线型，不允许只靠颜色表达语义。
-
-## 7. 数据组织机制图组
-
-沿用并重绘 v5 的 token-budget、length-align、prefix-aware 三页机制图。
-三页共享同一套输入、元数据和 `BatchRequest` 视觉语法，共同展示从数据库行
-到请求成形的过程：
-
-```text
-row
-  -> Cost Adapter
-  -> estimated prompt/output/frame work
-  -> token/frame budget
-  -> optional length/prefix metadata
-  -> BatchRequest
-```
-
-图组中明确区分：
-
-- sequential token-budget：当前默认；
-- length-align/output-aware：需要跨规模正式重复；
-- prefix-aware：需要 prefix cache 开启后的独立验证；
-- oversize row：单独提交，不能静默丢弃或截断。
-
-图中不声称 length-align 必然降低尾延迟，也不声称 prefix-aware 必然提高 APC
-命中率。图注第一句必须说明对应页面展示的是候选请求成形机制及其验证目标。
-
-## 8. Runtime Credit Lifecycle 机制放大图
-
-该图按请求生命周期组织：
-
-```text
-Per-job Queue
-  -> acquire endpoint request/work credit
-  -> endpoint routing
-  -> submit to vLLM
-  -> request completion
-  -> release request/work credit
-  -> fan-in / writeback
-```
-
-必须准确表达：
-
-- credit 是 endpoint-shared，而不是每个 job 各自独占；
-- request credit 与 work credit 是两个不同约束；
-- credit 在 completion 时释放，不在 submit 时提前释放；
-- active work 与 request count 不得混用；
-- routing/failover 是可插拔模块，未完成的机制使用虚线边框；
-- single-endpoint `K=8 + 50 ms` 与 dual-endpoint active-work/shared-credit
-  属于不同资源配置，不绘制成同一数值控制器。
-
-## 9. 多模态复用图
-
-该图只突出一个抽象：
-
-```text
-TextCostAdapter(prompt tokens)
-ImageCostAdapter(frames / pixels / patches)
-                   ↓
-        same Organizer / Scheduler / Tracing
-```
-
-不把多模态画成另一条独立系统。主张范围限定为策略接口和配置逻辑复用，
-最终性能收益仍由图像 workload 实验验证。
-
-## 10. 图表和页面视觉规范
-
-- 学校模板继续作为版式约束，不重新绘制校徽、页眉和页脚；
-- 页面标题使用结论式短句；
-- 正文可见字号原则上不低于 18 pt；
-- 每页只保留一个主结论；
-- 数据图优先从 CSV 通过项目脚本重画；
-- 正式数据图同时输出 SVG 与 PNG；
-- 架构图以 SVG 为权威源，输出 EMF 供 Office 2013/PPT 使用，并保留高分辨率 PNG；
-- 不使用普通文生图生成架构图；
-- 不使用渐变、阴影、3D、装饰性图标和无意义背景纹理；
-- 实验图必须有轴名、单位、图例、误差或重复说明以及证据层级；
-- 页面底部结论条只写该页结论，不写“图注建议”“后续补充”等制作提示。
-
-## 11. 增量编辑与文件保护
-
-实施时：
-
-1. 保持 `opening_defense_20260720_v5.pptx` 不变；
-2. 复制为日期化的 v6 文件；
-3. 使用 `python-pptx` 定位和修改现有 shape；
-4. 不重新运行 `build_ppt.py`；
-5. 不覆盖用户已有的手动图片位置、字号和模板元素，除非该页进入明确重排范围；
-6. 新增架构图和数据图统一从 `figures/` 引用；
-7. 不在 `opening/slides/` 保存重复图资产副本。
-
-## 12. 同步范围
-
-v6 完成时至少同步：
-
-- `opening/slides/README.md`
-- `PROJECT_INDEX.md`
-- `PROJECT_LOG.md`
-- `opening/logs/project_log.md`
-- 新增或修改图对应的 `figures/README.md`
-- 新增或修改图对应的 `figures/audit/`
-
-若 v6 修正了开题报告中的旧结论，还需同步本地：
-
-- `opening/report/opening_report.md`
-- `opening/feishu/opening_report_wiki.md`
-
-未经用户明确授权，不执行线上飞书发布或覆盖。
-
-## 13. 质量验收
-
-内容验收：
-
-- 所有数字能追溯到结果报告或 CSV；
-- `37.5×` 与 `13.4×` 阶段口径正确；
-- 当前默认、未晋升策略和待验证任务明确区分；
-- writeback、vLLM、Ray、Daft 的研究边界准确；
-- 页面、讲稿和答辩备注使用相同口径；
-- 正式可见内容无内部代号和制作提示。
-
-视觉验收：
-
-- PowerPoint 渲染后无文本溢出、裁切和元素重叠；
-- 所有正文和图内标签在 100% 投影视图下可读；
-- 核心架构图在缩放到单页安全区后仍可追踪主路径；
-- 所有图例、线型和颜色语义一致；
-- 不存在低于目标分辨率的核心 PNG 图；
-- 至少完成一次“渲染—发现问题—修复—重新渲染”闭环；
-- 最终 PPTX 使用 PowerPoint 或 WPS 实际打开检查。
-
-交付物：
-
-- v6 PPTX；
-- 审阅用 PDF；
-- 全部页面预览图；
-- 三张核心架构图的 SVG、EMF 和 PNG；
-- 对应图表审计记录；
-- 更新后的本地文档索引与变更日志。
-
-## 14. 非目标
-
-- 不修改 vLLM 内部调度器；
-- 不把 Ray 或 Daft 产品集成包装成独立创新；
-- 不重新设计学校模板；
-- 不为填满页面增加没有证据的新机制；
-- 不把负结果隐藏或改写为正向收益；
-- 不在本轮直接发布线上飞书材料。
+页面 7–12 的答辩备注还要写明对应 Claim Matrix 等级。备注不照抄页面正文。
+
+## 7. 模板增量编辑合同
+
+1. v5 保持不变，最终输出为日期化 v6 文件。
+2. 先完成 28 页 source-slide inventory 和 `template-frame-map.json`，再复制为 starter deck。
+3. 只编辑映射中声明的原有文本框和图片框；母版、校徽、页眉页脚、章节色条默认保留。
+4. 图片使用 `figures/data/report_main/` 的权威 PNG/SVG，不在 `opening/slides/` 保存副本。
+5. 每页渲染为 PNG，并检查裁切、溢出、空 placeholder、字体替换和 source note。
+6. 最终 PPTX 用 PowerPoint/WPS 实际打开验证；若本机无法完成该人工检查，状态不得写成“已冻结”。
+
+当前 Codex 桌面工作流使用 artifact-tool 导入、检查和增量导出 PPTX；这一实现选择不改变“保留 v5 人工版式、不重跑旧 build 脚本”的项目约束。
+
+## 8. 验收条件
+
+- 正文恰好 28 页，页面与上表一一映射；
+- 只有四张 headline evidence 图；
+- 统一文本三臂表包含门禁与语义失败，不只给吞吐排名；
+- 题目、两项研究内容、代价估计定位和多模态边界与 Claim Matrix 一致；
+- 所有正式值可追溯到 CSV/JSON，页面没有内部代号、制作提示或过时数字；
+- 28 页均有 `汇报讲稿`、`答辩备注` 和 `[Sources]`；
+- 最终 XML 中不存在未处理的空结构 placeholder；
+- 渲染与实际 PowerPoint/WPS 打开检查均通过后，才将 v6 标记为冻结。

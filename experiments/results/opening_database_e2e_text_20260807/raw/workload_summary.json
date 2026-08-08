@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-07",
+  "source": "PostgreSQL documents table on the frozen AutoDL rehearsal environment",
+  "workloads": {
+    "squad_uniform": {
+      "workload_name": "squad_v11_dev_short_answer",
+      "row_count": 10570,
+      "output_cap_tokens": 64,
+      "partition_policy": "equal_rows",
+      "partition_seed": 20260807,
+      "endpoint_row_counts": {
+        "0": 5285,
+        "1": 5285
+      },
+      "endpoint_prompt_tokens": {
+        "0": 1286137,
+        "1": 1270486
+      },
+      "endpoint_estimated_work_skew_fraction": 0.009635078556271113,
+      "manifest_sha256": "0543b29e9fed8df8ee2666433e2c54ee400a5dd05e25af31703e293f0cf6b19b"
+    },
+    "sharegpt_controlled_skew": {
+      "workload_name": "sharegpt_multiturn",
+      "row_count": 2048,
+      "output_cap_tokens": 256,
+      "prompt_tokens": {
+        "mean": 571.75927734375,
+        "sample_sd": 398.027809259213,
+        "cv_fraction": 0.696145782029721,
+        "p50": 540.5,
+        "p95": 1253.0,
+        "p99": 1408.12
+      },
+      "target_output_tokens": {
+        "mean": 202.47509765625,
+        "sample_sd": 76.60605016782822,
+        "p50": 256.0,
+        "p95": 256.0,
+        "p99": 256.0
+      },
+      "estimated_work_prompt_plus_fixed_cap": {
+        "mean": 827.75927734375,
+        "sample_sd": 398.027809259213,
+        "cv_fraction": 0.4808497109648472,
+        "p50": 796.5,
+        "p95": 1509.0,
+        "p99": 1664.12
+      },
+      "prompt_buckets": {
+        "short_lt_256": 538,
+        "medium_256_to_1024": 1175,
+        "long_gt_1024": 335
+      },
+      "partition_policy": "equal_rows",
+      "partition_seed": 20260807,
+      "endpoint_row_counts": {
+        "0": 1024,
+        "1": 1024
+      },
+      "endpoint_prompt_tokens": {
+        "0": 592167,
+        "1": 578796
+      },
+      "endpoint_estimated_work_skew_fraction": 0.015651208985954762,
+      "manifest_sha256": "54c97a2f10347d35b15ac5442da116dd7a8c56a8ef05e36c76a7120da783169b"
+    }
+  },
+  "query_note": "Prompt/target/work distribution was computed from documents where workload_name='sharegpt_multiturn'; estimated work is prompt_tokens + fixed output cap 256."
+}

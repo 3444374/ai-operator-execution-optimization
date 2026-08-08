@@ -4,6 +4,12 @@
 
 先读 [`EXPERIMENT_EVIDENCE_REGISTRY.md`](EXPERIMENT_EVIDENCE_REGISTRY.md)。该台账登记主要机制结果，并区分“设计预留、功能测试、真实链路门禁、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 
+## 开题统一文本 database-E2E（2026-08-07）
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `opening_database_e2e_text_20260807/` | SQuAD uniform + ShareGPT controlled-skew；direct / DuckDB AI / project frozen-static；24/24 单元、18 formal、统一 PG source/sink | project feeding 89.93%/91.38% 均未过门，只支持负结果与诊断；DuckDB ShareGPT 有 4,936/6,144 cap 语义失败。开题前 baseline 到此停止。 |
+
 ## 图像 AI_EMBED operator（2026-08-03/04）
 
 | Directory | Content | Boundary |

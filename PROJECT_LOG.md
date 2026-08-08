@@ -1,5 +1,37 @@
 # 项目日志
 
+## 2026-08-08 v6 通过 Microsoft PowerPoint 真实打开检查
+
+- `opening/slides/opening_defense_20260807_v6.pptx` 已由 Microsoft PowerPoint
+  实际打开并识别为 28 页；首页与缩略图正常，未出现文件修复或页面损坏提示。
+- WPS Office 进程虽启动但未出现文档窗口，不计为通过；PowerPoint 的直接证据满足
+  `opening/AGENTS.md` 的应用级检查门禁。
+- 当前只剩飞书在线覆盖/图片插入/回读、平级 Wiki 镜像和 Git 发布收尾；不因此扩大
+  开题实验或 baseline 范围。
+- 飞书用户授权已恢复，并完成目标 docx revision 277 的 full fetch 与 overwrite dry-run；
+  实际全文覆盖等待用户对高风险写操作作明确批准。
+
+## 2026-08-07 开题证据闭环：统一三臂负结果、四图与 v6 材料冻结候选
+
+- 按冻结合同在 AutoDL 双 RTX 4090 完成 SQuAD uniform 与 ShareGPT controlled-skew 的
+  direct / DuckDB AI / project frozen-static 统一 database-E2E：24/24 单元、18 formal，
+  source manifest、exactly-once 与 PostgreSQL sink digest 全通过，基础设施失败 0。
+- 项目臂 service tokens/s 相对 direct：SQuAD 89.93%、ShareGPT 91.38%，均未过预注册
+  95% feeding 门；正确结论是冻结静态项目路径没有优势，只作为负结果与瓶颈诊断。
+  DuckDB AI ShareGPT service tok/s≈direct，但三次 formal 有 4,936/6,144 行 fixed-cap
+  产品语义失败；性能与语义代价分开报告。
+- 新增正式结果目录 `experiments/results/opening_database_e2e_text_20260807/` 和独立汇总器；
+  服务器保留全量 raw，Git 范围只含去敏配置、状态、聚合 CSV/JSON 与报告。
+- 开题证据压缩为四张可复现核心图：serving capacity、work organization regime、image
+  matched-resource、cost-model decision quality；每图有 claim/input/视觉 QA 合同。
+- 重写 `PROJECT_OUTLINE.md`、开题报告、Claim Matrix 与问答库；本地飞书源稿与报告完全一致。
+  生成 v5 模板继承的 28 页 `opening_defense_20260807_v6.pptx`，修复旧正文残留和图片帧
+  透出，28/28 notes、0 空 placeholder、`slides_test.py` 无溢出。
+- 外部阻塞：飞书用户 refresh token 已过期，重新授权又被当前 Codex 额度门禁拒绝（可重试
+  2026-08-08 14:05）；平级 `../ai-operator-wiki/` 当前不存在。线上覆盖、wiki 镜像、Git
+  stage/commit/push 与一次 WPS/PowerPoint 实际打开检查尚未完成，不伪称最终发布冻结。
+
+
 ## 2026-08-07 数据存放政策修订 + raw 全量下载到本地（撤回 git raw tarball）
 
 - 用户修订政策：**raw 实验数据存本地磁盘 + AutoDL 服务器，不进 git；git 只放 aggregated CSV / summary / README / 代码 / 计划**。

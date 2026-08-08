@@ -1,0 +1,160 @@
+{
+  "duckdb": {
+    "duckdb_ai_extension_source": "community",
+    "duckdb_ai_extension_version": "0.4.14",
+    "duckdb_version": "v1.5.4"
+  },
+  "postgres": {
+    "pgvector_version": "0.8.5",
+    "server_version": "18.4 (Ubuntu 18.4-1.pgdg22.04+1)"
+  },
+  "ray_address_present": true,
+  "service": {
+    "endpoint_count": 2,
+    "gpu_memory_utilization": 0.9,
+    "max_model_len": 8192,
+    "max_num_batched_tokens": 8192,
+    "max_num_seqs": 256,
+    "model": "qwen2.5-7b",
+    "prefix_caching": "enabled"
+  },
+  "status": "passed",
+  "workloads": {
+    "sharegpt_controlled_skew": {
+      "estimated_work": {
+        "cv": 0.4808497109648474,
+        "max": 1742,
+        "mean": 827.75927734375,
+        "min": 259,
+        "p50": 796.5,
+        "p95": 1509.0,
+        "p99": 1664.12,
+        "stdev": 398.02780925921314
+      },
+      "manifest_metadata": {
+        "endpoint_estimated_output_work": {
+          "0": 262144,
+          "1": 262144
+        },
+        "endpoint_prompt_tokens": {
+          "0": 592167,
+          "1": 578796
+        },
+        "endpoint_row_count_diff": 0,
+        "endpoint_row_counts": {
+          "0": 1024,
+          "1": 1024
+        },
+        "endpoint_total_estimated_work": {
+          "0": 854311,
+          "1": 840940
+        },
+        "endpoint_work": {
+          "0": 854311,
+          "1": 840940
+        },
+        "endpoint_work_skew": 0.015651208985954762,
+        "manifest_sha256": "54c97a2f10347d35b15ac5442da116dd7a8c56a8ef05e36c76a7120da783169b",
+        "partition_policy": "equal_rows",
+        "partition_seed": 20260807,
+        "row_count": 2048
+      },
+      "manifest_sha256": "54c97a2f10347d35b15ac5442da116dd7a8c56a8ef05e36c76a7120da783169b",
+      "max_tokens": 256,
+      "prompt_buckets": {
+        "long_gt1024": 335,
+        "medium_256_to_1024": 1175,
+        "short_lt256": 538
+      },
+      "prompt_tokens": {
+        "cv": 0.6961457820297213,
+        "max": 1486,
+        "mean": 571.75927734375,
+        "min": 3,
+        "p50": 540.5,
+        "p95": 1253.0,
+        "p99": 1408.12,
+        "stdev": 398.02780925921314
+      },
+      "rows": 2048,
+      "target_output_tokens": {
+        "cv": 0.37834800948156766,
+        "max": 256,
+        "mean": 202.47509765625,
+        "min": 1,
+        "p50": 256.0,
+        "p95": 256.0,
+        "p99": 256.0,
+        "stdev": 76.60605016782822
+      }
+    },
+    "squad_uniform": {
+      "estimated_work": {
+        "cv": 0.2889372437881269,
+        "max": 1142,
+        "mean": 305.8754020813623,
+        "min": 142,
+        "p50": 287.0,
+        "p95": 451.0,
+        "p99": 629.0,
+        "stdev": 88.37879561997393
+      },
+      "manifest_metadata": {
+        "endpoint_estimated_output_work": {
+          "0": 338240,
+          "1": 338240
+        },
+        "endpoint_prompt_tokens": {
+          "0": 1286137,
+          "1": 1270486
+        },
+        "endpoint_row_count_diff": 0,
+        "endpoint_row_counts": {
+          "0": 5285,
+          "1": 5285
+        },
+        "endpoint_total_estimated_work": {
+          "0": 1624377,
+          "1": 1608726
+        },
+        "endpoint_work": {
+          "0": 1624377,
+          "1": 1608726
+        },
+        "endpoint_work_skew": 0.009635078556271113,
+        "manifest_sha256": "0543b29e9fed8df8ee2666433e2c54ee400a5dd05e25af31703e293f0cf6b19b",
+        "partition_policy": "equal_rows",
+        "partition_seed": 20260807,
+        "row_count": 10570
+      },
+      "manifest_sha256": "0543b29e9fed8df8ee2666433e2c54ee400a5dd05e25af31703e293f0cf6b19b",
+      "max_tokens": 64,
+      "prompt_buckets": {
+        "long_gt1024": 4,
+        "medium_256_to_1024": 3491,
+        "short_lt256": 7075
+      },
+      "prompt_tokens": {
+        "cv": 0.36538976208190427,
+        "max": 1078,
+        "mean": 241.87540208136235,
+        "min": 78,
+        "p50": 223.0,
+        "p95": 387.0,
+        "p99": 565.0,
+        "stdev": 88.37879561997393
+      },
+      "rows": 10570,
+      "target_output_tokens": {
+        "cv": 0.0,
+        "max": 10,
+        "mean": 10,
+        "min": 10,
+        "p50": 10.0,
+        "p95": 10.0,
+        "p99": 10.0,
+        "stdev": 0.0
+      }
+    }
+  }
+}

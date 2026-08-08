@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "cell_count": 24,
+  "formal_cell_count": 18,
+  "expected_count_contract": {
+    "squad_uniform/direct_static_sharded/warmup": 1,
+    "squad_uniform/direct_static_sharded/formal": 3,
+    "squad_uniform/duckdb_ai_static_sharded/warmup": 1,
+    "squad_uniform/duckdb_ai_static_sharded/formal": 3,
+    "squad_uniform/project_frozen_static/warmup": 1,
+    "squad_uniform/project_frozen_static/formal": 3,
+    "sharegpt_controlled_skew/direct_static_sharded/warmup": 1,
+    "sharegpt_controlled_skew/direct_static_sharded/formal": 3,
+    "sharegpt_controlled_skew/duckdb_ai_static_sharded/warmup": 1,
+    "sharegpt_controlled_skew/duckdb_ai_static_sharded/formal": 3,
+    "sharegpt_controlled_skew/project_frozen_static/warmup": 1,
+    "sharegpt_controlled_skew/project_frozen_static/formal": 3
+  },
+  "expected_counts_ok": true,
+  "all_status_passed": true,
+  "all_exactly_once": true,
+  "all_sink_readback_matched": true,
+  "infrastructure_failure_count": 0,
+  "cap_semantic_failure_count": 6586,
+  "manifest_sha256_by_workload": {
+    "squad_uniform": [
+      "0543b29e9fed8df8ee2666433e2c54ee400a5dd05e25af31703e293f0cf6b19b"
+    ],
+    "sharegpt_controlled_skew": [
+      "54c97a2f10347d35b15ac5442da116dd7a8c56a8ef05e36c76a7120da783169b"
+    ]
+  },
+  "identity_pairs": [
+    [
+      "18.4 (Ubuntu 18.4-1.pgdg22.04+1)",
+      "0.8.5"
+    ]
+  ],
+  "mfu_recovery_note": "project_frozen_static recorded missing_gpu_peak_tflops; the audit recovers MFU from the profiler counter using estimated_flops_per_gpu_delta/(operator_wall_s*165e12). Baseline arms retain their runner-recorded aggregate-two-GPU MFU.",
+  "feeding_reference": "Within each workload, formal mean service_tokens_per_s is divided by the direct_static_sharded formal mean. Values below 0.95 fail the pre-registered feeding-saturation gate and cannot support a strategy-performance claim.",
+  "all_feeding_service_token_gates_passed": false,
+  "summary_gates": [
+    {
+      "workload": "sharegpt_controlled_skew",
+      "arm": "direct_static_sharded",
+      "correct_rows_per_s_cv_pct": 0.03591318124548488,
+      "database_e2e_s_cv_pct": 0.035908200726223076,
+      "gpu_utilization_pct_mean": 98.05498438182231,
+      "feeding_gpu_util_gate_ge_80": true,
+      "feeding_service_tokens_ratio_vs_direct": 1.0,
+      "feeding_service_tokens_gate_ge_0_95": true
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "arm": "duckdb_ai_static_sharded",
+      "correct_rows_per_s_cv_pct": 1.0178621918049913,
+      "database_e2e_s_cv_pct": 0.10223432659961483,
+      "gpu_utilization_pct_mean": 97.98507575306485,
+      "feeding_gpu_util_gate_ge_80": true,
+      "feeding_service_tokens_ratio_vs_direct": 0.9998963518253924,
+      "feeding_service_tokens_gate_ge_0_95": true
+    },
+    {
+      "workload": "sharegpt_controlled_skew",
+      "arm": "project_frozen_static",
+      "correct_rows_per_s_cv_pct": 0.11457055648199091,
+      "database_e2e_s_cv_pct": 0.11463374193913635,
+      "gpu_utilization_pct_mean": 97.60417637012887,
+      "feeding_gpu_util_gate_ge_80": true,
+      "feeding_service_tokens_ratio_vs_direct": 0.9137930197224388,
+      "feeding_service_tokens_gate_ge_0_95": false
+    },
+    {
+      "workload": "squad_uniform",
+      "arm": "direct_static_sharded",
+      "correct_rows_per_s_cv_pct": 4.787331348951696,
+      "database_e2e_s_cv_pct": 4.681938946666913,
+      "gpu_utilization_pct_mean": 97.37433765421571,
+      "feeding_gpu_util_gate_ge_80": true,
+      "feeding_service_tokens_ratio_vs_direct": 1.0,
+      "feeding_service_tokens_gate_ge_0_95": true
+    },
+    {
+      "workload": "squad_uniform",
+      "arm": "duckdb_ai_static_sharded",
+      "correct_rows_per_s_cv_pct": 0.5588289412033042,
+      "database_e2e_s_cv_pct": 0.6342736085400719,
+      "gpu_utilization_pct_mean": 94.50369084362141,
+      "feeding_gpu_util_gate_ge_80": true,
+      "feeding_service_tokens_ratio_vs_direct": 1.0445912224781604,
+      "feeding_service_tokens_gate_ge_0_95": true
+    },
+    {
+      "workload": "squad_uniform",
+      "arm": "project_frozen_static",
+      "correct_rows_per_s_cv_pct": 0.8017130364862922,
+      "database_e2e_s_cv_pct": 0.8350847945218235,
+      "gpu_utilization_pct_mean": 90.02587412587413,
+      "feeding_gpu_util_gate_ge_80": true,
+      "feeding_service_tokens_ratio_vs_direct": 0.8992580523838329,
+      "feeding_service_tokens_gate_ge_0_95": false
+    }
+  ]
+}

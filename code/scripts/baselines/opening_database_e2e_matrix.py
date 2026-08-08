@@ -209,8 +209,9 @@ def _scan_source(
             FROM documents
             WHERE workload_name = %s
             ORDER BY doc_id
+            LIMIT %s
             """,
-            (workload.name,),
+            (workload.name, workload.rows),
         )
         rows = cur.fetchall()
     if len(rows) != workload.rows:
@@ -591,8 +592,8 @@ def _preflight(config: Config) -> dict:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT prompt_tokens, target_output_tokens FROM documents "
-                    "WHERE workload_name = %s ORDER BY doc_id",
-                    (workload.name,),
+                    "WHERE workload_name = %s ORDER BY doc_id LIMIT %s",
+                    (workload.name, workload.rows),
                 )
                 database_work = [(int(a), int(b)) for a, b in cur.fetchall()]
             if len(database_work) != workload.rows:
@@ -714,8 +715,8 @@ def _scan_scoring_only(conn, workload: Workload) -> dict[int, tuple[str, list[st
     with conn.cursor() as cur:
         cur.execute(
             "SELECT doc_id, source_example_id, reference_answers FROM documents "
-            "WHERE workload_name = %s ORDER BY doc_id",
-            (workload.name,),
+            "WHERE workload_name = %s ORDER BY doc_id LIMIT %s",
+            (workload.name, workload.rows),
         )
         rows = cur.fetchall()
     scoring = {}

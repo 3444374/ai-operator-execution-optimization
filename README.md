@@ -4,12 +4,11 @@
 
 > 数据库 AI 负载的执行优化与调度研究方向。
 
-> **当前状态（2026-08-07）**：开题阶段先冻结统一的 AI Data Execution Layer 叙事和
-> `opening/claim_matrix.md`，再补两组统一 database-E2E 文本三臂实验。文本
-> `AI_COMPLETE` 与图像 `AI_EMBED/AI_CLASSIFY` 都是统一 work-unit、credit、routing
-> 抽象的证据轨道。Daft/Ray 是实现与 baseline，cost estimator 是共同使能组件，
-> state-aware 方法仍是待验证方案。两组实验完成后停止新增开题 baseline，转入四图、
-> 报告/PPT 和答辩审计；图像 A+B 工程主实验在开题材料冻结后恢复。
+> **当前状态（2026-08-07）**：开题叙事、四级 Claim Matrix、两组统一 database-E2E
+> 文本三臂实验和四张核心证据图已经冻结；本地报告与 28 页 v6 PPTX 已按最终数据重构。
+> 项目冻结静态臂在 SQuAD/ShareGPT 的 service feeding 为 89.93%/91.38%，均未过 95%
+> 门，因此保留为负结果和瓶颈诊断，不支持性能优势。开题前停止新增 baseline；线上飞书
+> 覆盖与知识库镜像受本机授权/目录状态阻塞，不改变本地 Markdown 的权威性。
 
 当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。研究对象是数据库
 触发后的外部链路：数据读取与物化、代价估计与组织、准入/路由/提交、模型执行、观测
@@ -145,8 +144,10 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 汇总入口见 `PROJECT_OUTLINE.md` §当前最重要证据与
 `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`。
 
-- **文本 feeding 已闭合**：同协议项目链路达到 direct control 的约 97.7%；固定
-  token-aware active-work 65,536/endpoint 达当前最大吞吐的 97.8%，是简单强静态点。
+- **统一文本三臂已闭合，但项目臂未过 feeding 门**：24/24 单元通过 source/sink 与
+  exactly-once；project 在 SQuAD/ShareGPT 仅为 direct service tokens/s 的
+  89.93%/91.38%。固定 active-work 65,536/endpoint 仍是历史校准签名下的最小近饱和点，
+  但不能覆盖本轮统一 database-E2E 的负结果。
 - **复杂动态策略尚未普遍胜出**：AIMD/PID/EWMA、动态 flush、service quantum 和
   多 actor 多数未超过预注册的约 5% 晋级门槛；不能因“动态”命名就声称更优。
 - **文本策略具有 regime 依赖**：2-endpoint KV 无压力时多数数据组织策略接近；
@@ -170,12 +171,11 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 当前执行顺序以 `opening/claim_matrix.md` 和
 `experiments/plans/experiment_status_and_gaps.md` 顶部的 2026-08-07 开题冻结优先级为准：
 
-1. 冻结题目、系统抽象、Claim Matrix 和不能声称边界。
-2. 冻结并运行 SQuAD short-answer 三臂统一 database-E2E，1 warmup + 3 formal。
-3. 冻结并运行一个 ShareGPT controlled-skew 三臂实验，完成后停止增加开题 baseline。
-4. 用现有正式结果生成 serving capacity、work-aware 组织、图像 matched-resource、
-   cost-model decision quality 四组核心图。
-5. 重构同步总纲、开题报告和 PPT，完成逐页 claim 绑定与答辩攻击面审计。
+1. 保持题目、系统抽象、四级 Claim Matrix 与开题 baseline 停止规则冻结。
+2. 以 `opening/report/opening_report.md` 和 `opening/slides/opening_defense_20260807_v6.pptx`
+   作为本地答辩材料；不因统一三臂负结果补跑新产品或 workload。
+3. 在飞书用户授权恢复后覆盖同步线上报告并插入四张核心图；当前本地飞书源稿与报告完全一致。
+4. 开题材料确认后恢复 image state-aware A+B、system database-E2E 与论文阶段 held-out。
 
 开题前不做第二数据库、文本 Daft/Ray Data 全矩阵、multi-job 五 baseline、TPC-H cost
 planning 或完整 scale×concurrency grid。图像 state-aware A+B、统一 pgvector system-E2E

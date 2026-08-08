@@ -113,6 +113,14 @@ ownership copy 和同步 wall。它不含数据库/Daft/Ray queue，不能作为
 源 CSV SHA256 和配置覆盖缺口写入 JSON。它验证的是 unseen-context generalization，
 不能改称 unseen-config，也不能只抄控制台的 2.14% 均值。
 
+`analysis/summarize_opening_database_e2e.py` 只汇总冻结的开题文本 database-E2E
+矩阵。它要求 SQuAD 均匀控制组与 ShareGPT controlled-skew 各具备三条静态路径、
+每条路径 1 次 warmup + 3 次 formal；任一单元状态、source/sink exactly-once、
+workload identity 或 GPU feeding 门禁不一致都会写入 `audit.json` 并返回失败。
+输出同时保留 raw rows/s、correct rows/s、service tokens/s 与 cap-semantic failure，
+避免把产品语义不兼容误写成纯性能差异。该脚本不启动实验、不补跑缺失单元，也不
+改变 runner 冻结合同。
+
 ## 流程与函数映射
 
 ```text

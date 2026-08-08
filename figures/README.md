@@ -65,6 +65,19 @@ foreground/background interference, queue balance, and prefix locality.
 
 本目录是项目级图资产库，供 learning 材料、开题报告、开题 PPT、中期汇报和毕业论文共同复用。图不再分散在 `opening/assets/charts/` 和 `opening/assets/figures/` 中；后续新增图也优先放在本目录下，并按用途分子目录。
 
+## 2026-08-07 开题冻结四图
+
+当前开题正文和 PPT 的实验主证据冻结为以下四组；旧图只进入备份页或历史说明：
+
+| 图 | 核心结论与边界 |
+|---|---|
+| `data/report_main/opening_serving_capacity_frontier.png` / `.svg` | 65K active work/endpoint 已达最大已测吞吐均值的 97.80%，继续增压时吞吐趋于平台而 P99 上升；这是当前配置的最小近饱和点，不是 vLLM 内部容量上限 |
+| `data/report_main/opening_work_organization_regime.png` / `.svg` | 数据组织排名随 KV 压力反转；重排序破坏 prefix locality 的效应只在小 KV 池饱和 regime 明显，不能外推为某策略全局最优 |
+| `data/report_main/opening_image_matched_resource.png` / `.svg` | 匹配 CPU/GPU 资源后，项目静态分级 actor 路径的 operator JCT 主实验改善 12.8%/15.1%，独立复测同向；禁止使用旧 45.7% 口径 |
+| `data/report_main/opening_cost_model_decision_quality.png` / `.svg` | Hybrid 首次通过候选选择合同，但 max regret=14.72% 距 15% 线仅 0.28 pp，只能称 marginal pass |
+
+统一生成脚本：`scripts/generate_opening_core_evidence_figures.py`。设计合同、数据来源、统计口径和渲染后 QA：`audit/opening_core_evidence_figures_contract_20260807.md`。四图均由正式结果 CSV/JSON 重建，排除 warm-up；SVG 保留可编辑文字，PNG 为报告/PPT 兼容副本。
+
 ## 目录结构
 
 ```text
@@ -95,6 +108,10 @@ figures/data/report_main/
 | `data/report_main/03_invocation_granularity.png` / `.svg` | 调用粒度对比，说明 batch / invocation 粒度值得调 |
 | `data/report_main/04_executor_endpoint_comparison.png` / `.svg` | single / dual endpoint 下执行方式对比，说明 Ray 的价值依赖模型服务并行条件 |
 | `data/report_main/05_actor_endpoint_scaling_writeback.png` / `.svg` | actor endpoint scaling 和写回约束，说明只优化模型调用会被 writeback 限制 |
+| `data/report_main/opening_serving_capacity_frontier.png` / `.svg` | 开题冻结证据一：serving capacity、最小近饱和 active work 与尾延迟边界 |
+| `data/report_main/opening_work_organization_regime.png` / `.svg` | 开题冻结证据二：数据组织的 regime dependency 与 prefix locality 机制 |
+| `data/report_main/opening_image_matched_resource.png` / `.svg` | 开题冻结证据三：图像 workload 的 matched-resource 静态结构收益 |
+| `data/report_main/opening_cost_model_decision_quality.png` / `.svg` | 开题冻结证据四：代价估计的候选选择质量与 marginal-pass 边界 |
 
 ## 备份与补充图
 

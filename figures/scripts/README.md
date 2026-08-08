@@ -2,6 +2,21 @@
 
 本目录存放项目级图表的可复现生成脚本。脚本可用于 learning、开题报告、PPT、中期汇报和毕业论文图表复现。
 
+## 2026-08-07 开题冻结四图
+
+```bash
+python figures/scripts/generate_opening_core_evidence_figures.py
+```
+
+输入只来自项目内已归档的正式实验：
+
+- `dual_gpu_active_work_saturation_20260729/formal_summary.csv`；
+- `rc1_data_organization` 两个 topology 的 `raw/runs.csv`；
+- `image_ai_embed_operator_formal_20260803/summary*.csv`；
+- `operator_cost_profile_dual4090_formal_v2_cache_on_20260807/ce_context_loo_rerun_20260807.json`。
+
+输出为 `figures/data/report_main/opening_*.{svg,png}`。脚本排除 warm-up，保留 formal 重复或折级分布；图像 matched-resource headline 冻结为约 13–15%，代价估计明确标注 14.72% max regret 的 marginal-pass 风险。完整设计合同与视觉 QA 见 `figures/audit/opening_core_evidence_figures_contract_20260807.md`。
+
 ## Python 图表脚本
 
 ```powershell

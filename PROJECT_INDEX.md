@@ -110,6 +110,9 @@
 | `figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.png` / `.svg` | Local `AI_COMPLETE` shared-vLLM bulk tradeoff sweep figure | Show bulk throughput plateau and service/queue pressure under larger background inflight |
 | `opening/slides/opening_defense_20260720_v5.pptx` | 开题答辩 PPT v5 | Current incremental deck based on v4; adds three data-organization mechanism slides after original slide 14 without rerunning `build_ppt.py` |
 | `opening/slides/opening_defense_v6_design.md` | 开题答辩 PPT v6 设计说明 | Defines the v5-based design-first deck, motivation-test scope, conditional official-baseline result gate, top-venue architecture figures, synchronization scope, and QA gates before editing the PPTX |
+| `opening/slides/build_opening_defense_v6_artifact_tool.mjs` | v5 模板继承、文本/图片定点编辑、逐页渲染和备注 QA | 重建或审计 2026-08-07 v6 PPTX |
+| `opening/slides/opening_defense_20260807_v6.pptx` | 开题答辩 28 页 v6 本地冻结候选 | 最终统一三臂负结果、四张核心图与两项研究方法汇报；程序化 QA 通过，仍需 WPS/PowerPoint 打开检查 |
+| `opening/slides/opening_defense_20260807_v6_qa.md` | v6 模板、数值、逐页渲染、placeholder、notes 与 overflow 审计 | 交付或继续修改 v6 前读 |
 | `figures/architecture/data_organization_token_budget_mechanism.png` / `.svg` | 数据组织策略机制图：token-budget batching | Formal mechanism figure for converting fixed-row batches into token-budget submissions; not an experimental-result claim |
 | `figures/architecture/data_organization_length_align_mechanism.png` / `.svg` | 数据组织策略机制图：length-aligned grouping | Formal mechanism figure for sorting/grouping rows by token length to reduce within-batch compute variance |
 | `figures/architecture/data_organization_prefix_aware_mechanism.png` / `.svg` | 数据组织策略机制图：prefix-aware grouping | Formal mechanism figure for grouping shared system prompts; prefix-cache benefit still requires vLLM metric validation |
@@ -196,6 +199,10 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `experiments/plans/opening_database_e2e_p0_20260807.md` | 开题前仅允许的 SQuAD/ShareGPT 三臂统一 database-E2E 合同 | 运行开题证据闭环实验前读 |
 | `code/scripts/baselines/opening_database_e2e_matrix.py` | 双 endpoint、三静态臂、统一 source/sink/质量/资源的 1 warmup + 3 formal runner | 只用于上述冻结开题合同 |
 | `deploy/autodl/opening_database_e2e_p0.example.json` | AutoDL 开题三臂 runner 配置模板 | 复制到服务器 artifact root 后以 runtime env 展开 |
+| `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
+| `experiments/results/opening_database_e2e_text_20260807/README.md` | 两组 workload × 三静态臂的统一 database-E2E 正式报告 | 引用开题三臂表、feeding 负结果或 DuckDB cap 语义边界前读 |
+| `figures/scripts/generate_opening_core_evidence_figures.py` | 从冻结正式结果生成开题四张核心证据图 | 更新开题报告或答辩 PPT 前运行 |
+| `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |

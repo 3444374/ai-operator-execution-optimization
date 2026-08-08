@@ -4,6 +4,10 @@
 
 ## 线上文档
 
+2026-08-08 状态：`opening_report_wiki.md` 已与本地权威报告完全一致；飞书用户授权已恢复，
+线上 docx 已完成 revision 277 的 full fetch 与 overwrite dry-run。实际覆盖属于高风险写操作，
+须在用户明确批准后继续执行“四图 media-insert → fetch 回读”。
+
 | 飞书文档 | 链接 | 承载内容 | 本地来源 |
 |---|---|---|---|
 | 开题报告（新版，当前同步目标） | https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb | 开题报告正文、当前研究方案图和最终报告口径 | `opening/feishu/opening_report_wiki.md`、`opening/report/`、`figures/architecture/` |

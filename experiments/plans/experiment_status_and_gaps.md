@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-05；双 4090 cost-profile cache-on 最小门禁通过）
+Date: 2026-07-20（最后更新：2026-08-08；开题统一三臂与 PPT 本地兼容性验收完成）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -39,17 +39,23 @@ Date: 2026-07-20（最后更新：2026-08-05；双 4090 cost-profile cache-on �
 
 ## 开题冻结优先级（2026-08-07，材料冻结前覆盖下方工程优先级）
 
-开题题目与研究内容按 `opening/claim_matrix.md` 冻结。开题前只补两个缺口：
+开题题目与研究内容按 `opening/claim_matrix.md` 冻结。以下两个缺口已于 2026-08-07 完成：
 
 1. SQuAD short-answer/cap=64 的 direct static-sharded、DuckDB AI static-sharded、
    project frozen-static 三臂统一 database-E2E，1 warmup + 3 formal。
 2. 一个冻结 short/medium/long histogram 的 ShareGPT controlled-skew 三臂实验，复用
    同一 source/sink、模型、endpoint、质量、计时和资源合同。
 
-两组实验后停止增加开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
+结果目录：`experiments/results/opening_database_e2e_text_20260807/`。24/24 单元、18 formal
+完整性通过；项目臂 SQuAD/ShareGPT service feeding 为 89.93%/91.38%，均未过 95%，
+因此只作为负结果和瓶颈诊断。DuckDB AI ShareGPT 的 service tok/s≈direct，但
+4,936/6,144 行 cap 语义失败主导 correct throughput。
+
+两组实验后已停止增加开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
 granularity 不同，只用于 serving capacity/overload 证据，不替代上述统一 database-E2E。
 差异不足 5% 不触发换 workload、模型、数据库或扩大参数扫描。随后只做四组核心图、
-报告/PPT 重构和答辩一致性审计。下方 image-first A+B 顺序在开题材料冻结后恢复。
+报告/PPT 重构和答辩一致性审计均已完成；v6 已通过 PowerPoint 真实打开检查。尚欠飞书
+线上覆盖和 wiki 镜像；下方 image-first A+B 顺序在开题材料最终确认后恢复。
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 

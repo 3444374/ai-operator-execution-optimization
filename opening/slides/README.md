@@ -1,6 +1,19 @@
 # 开题 PPT 状态说明
 
-## 2026-07-29 v6 设计
+## 2026-08-07 v6 内容冻结版
+
+当前 PPTX：`opening_defense_20260807_v6.pptx`（28 页）。它从 v5 学校模板映射复制，
+使用 `build_opening_defense_v6_artifact_tool.mjs` 定点改写继承文本和图片帧；没有重跑旧
+`build_ppt.py`。一页统一文本三臂边界、四张核心证据图、两项研究内容和计划/风险已经与
+`opening/report/opening_report.md`、`opening/claim_matrix.md` 对齐。
+
+程序化 QA：28/28 speaker notes 含“汇报讲稿/答辩备注/[Sources]”；空 placeholder 为 0；
+`slides_test.py` 画布溢出检查通过；逐页 PNG montage 已人工检查并修正 v5 正文残留、图片替换
+与底图透出。2026-08-08 已在 Microsoft PowerPoint 中真实打开并识别为 28 页，首页和缩略图
+正常，无文件修复提示。PPT 本地内容与兼容性门禁已通过；整个材料包仍待外部同步后发布冻结。
+完整记录见 `opening_defense_20260807_v6_qa.md`。
+
+## 2026-07-29 v6 设计（历史计划）
 
 下一版以 v5 的章节和页面为骨架，保留学校模板与人工调整。正文重点讲动机
 测试、总体架构、两项策略设计和实验设计；已完成的大量正式实验进入答辩
@@ -13,8 +26,8 @@
 opening/slides/opening_defense_v6_design.md
 ```
 
-设计已按当前反馈修订，等待最终复审，尚未生成 v6 PPTX。实施时必须从 v5 复制后使用
-`python-pptx` 增量编辑，不得重新运行 `build_ppt.py` 覆盖现有人工调整。
+该计划已由 2026-08-07 v6 实现取代。当前 Codex workflow 按 presentations skill 使用
+artifact-tool 在 v5 复制映射上定点编辑；仍遵守“不运行旧 `build_ppt.py` 覆盖人工模板”的约束。
 
 早期 `opening_defense_20260712.pptx`（已删除）和 `opening_ppt.md` 的内容与表现形式先作废，不作为下一版开题汇报内容依据；当前版本见文末 2026-07-20 v5 段落。
 

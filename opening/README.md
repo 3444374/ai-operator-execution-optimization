@@ -22,19 +22,19 @@
 
 ## 当前汇报主线
 
-建议主线：
+冻结主线：
 
 ```text
 数据库正在成为 AI workload 的入口
-  -> 传统数据库执行过程无法覆盖数据组织、GPU 推理服务、调度、写回等新成本
-  -> 本项目构建 Daft/Arrow + Ray + GPU endpoint + Lance/数据库 sink 的可控执行路径
-  -> 初步实验发现 batch、模型服务路由、writeback 都会影响端到端性能
-  -> 后续研究数据组织、Ray 调度反压和持久化写回的协同优化
+  -> Database 与 Model Service 之间出现 AI Data Execution Layer
+  -> 先标定最小饱和 work，再研究 work-unit 的 balance/locality
+  -> 以同上限 strong static 约束 state-aware admission/routing/multi-job
+  -> 用文本与图像检验 work/credit 抽象边界，代价估计共同辅助决策
 ```
 
 一句话口径：
 
-> 本课题关注数据库 AI 负载的执行优化与调度，重点研究 Database source、Daft / Arrow batch、Ray task / actor、GPU 模型服务、fan-in、Lance / pgvector / PostgreSQL sink 等阶段的瓶颈定位与协同优化。
+> 本课题研究数据库触发 AI 算子后、数据进入模型服务前的 AI 数据执行层：按 token/frame work 构造 work-unit，并依据容量和运行状态控制提交、路由与多作业共享；不修改数据库内核、vLLM 调度器或模型 kernel。
 
 ## 目录结构
 
@@ -55,11 +55,11 @@
 
 | 材料 | 主文件 | 状态 |
 |---|---|---|
-| 开题报告 | `report/opening_report.md` | 初稿已补 |
+| 开题报告 | `report/opening_report.md` | **2026-08-07 本地冻结稿，含最终统一三臂表与四张核心图** |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | **2026-08-07 已冻结，报告/PPT/实验准入的当前依据** |
-| 开题 PPT 源稿 | `slides/opening_ppt.md` | 当前内容和形式先作废，仅保留版式经验，下一版需重写 |
-| 开题 PPTX | `slides/opening_defense_20260720_v5.pptx` | 当前 v5 增量版：基于 v4 拷贝，加入数据组织三张机制图页；未重跑全量生成脚本 |
-| 开题飞书源稿 | `feishu/opening_report_wiki.md` | 已用于同步新版飞书 docx |
+| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页冻结设计与逐页 claim/source 约束 |
+| 开题 PPTX | `slides/opening_defense_20260807_v6.pptx` | **由 v5 模板继承生成；28 页、备注完整、无空 placeholder、overflow test 通过** |
+| 开题飞书源稿 | `feishu/opening_report_wiki.md` | 与本地报告完全一致；用户授权已恢复，线上覆盖 dry-run 已完成并等待高风险写入批准 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
 | 文献精读清单 | `literature/reading_list.md` | 候选清单已补，待精读（笔记全集在 `research/reading_notes/`） |
@@ -81,10 +81,10 @@
 
 ## 下一步
 
-1. 以 `claim_matrix.md` 为当前冻结口径，先完成两组 P0 文本三臂统一 database-E2E。
-2. 两组数据后停止新增开题 baseline，生成四组 headline evidence。
-3. 依据 Claim Matrix 和四组图重构 `report/opening_report.md`、PPT 源稿与答辩问答。
-4. 本地材料通过逐页一致性审计后，再同步飞书并生成学校模板 DOCX。
+1. 以 `claim_matrix.md`、本地报告和 v6 PPTX 为冻结口径，不再新增开题 baseline。
+2. v6 已完成程序化渲染、画布检查和 Microsoft PowerPoint 真实打开检查。
+3. 飞书用户授权恢复后覆盖线上报告并插入四张核心图；回读 revision 和本地路径残留。
+4. 导师确认后生成学校模板 DOCX，并恢复开题后实验 backlog。
 ## 飞书同步目标
 
 后续需要写入飞书的主要目标：

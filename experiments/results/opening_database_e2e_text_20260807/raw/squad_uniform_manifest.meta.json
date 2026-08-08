@@ -1,0 +1,13 @@
+{
+  "endpoint_estimated_output_work": {"0": 338240, "1": 338240},
+  "endpoint_prompt_tokens": {"0": 1286137, "1": 1270486},
+  "endpoint_row_count_diff": 0,
+  "endpoint_row_counts": {"0": 5285, "1": 5285},
+  "endpoint_total_estimated_work": {"0": 1624377, "1": 1608726},
+  "endpoint_work": {"0": 1624377, "1": 1608726},
+  "endpoint_work_skew": 0.009635078556271113,
+  "manifest_sha256": "0543b29e9fed8df8ee2666433e2c54ee400a5dd05e25af31703e293f0cf6b19b",
+  "partition_policy": "equal_rows",
+  "partition_seed": 20260807,
+  "row_count": 10570
+}
