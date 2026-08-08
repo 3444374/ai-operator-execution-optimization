@@ -128,6 +128,12 @@ manifest SHA 和 resource metrics。只有全部门禁通过时，才冻结同�
 与已测 project 峰值中位数 97% 的最小 K；否则显式输出 `audit_failed` 或
 `active_work_scan_required`，不允许人工选点。
 
+`baselines/opening_database_e2e_matrix.py` 的替换正式模式允许 SQuAD 与 ShareGPT 分别
+绑定上述校准 JSON 和选中的 project K；加载配置时会 fail-closed 核对 manifest SHA、
+三次重复、双吞吐门槛、token budget、active work 与 actor slots。该 workload-specific
+参数只作用于 `project_frozen_static`，direct/DuckDB 继续固定每 endpoint 32，避免把项目
+校准误传到对照臂。
+
 ## 流程与函数映射
 
 ```text

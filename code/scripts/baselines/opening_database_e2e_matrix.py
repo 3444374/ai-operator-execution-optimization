@@ -75,6 +75,11 @@ class Workload:
     max_tokens: int
     manifest: Path
     quality: str
+    project_max_inflight_per_endpoint: int | None = None
+    project_active_work_per_endpoint: int | None = None
+    project_actor_workers_per_endpoint: int | None = None
+    project_actor_concurrency: int | None = None
+    project_calibration_contract: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -112,17 +117,47 @@ def _load_config(path: Path) -> Config:
         not value.endswith("/v1/chat/completions") for value in endpoints
     ):
         raise ValueError("exactly two /v1/chat/completions endpoints are required")
-    workloads = tuple(
-        Workload(
-            label=str(row["label"]),
-            name=str(row["name"]),
-            rows=int(row["rows"]),
-            max_tokens=int(row["max_tokens"]),
-            manifest=Path(row["manifest"]),
-            quality=str(row["quality"]),
+    parsed_workloads = []
+    for row in payload["workloads"]:
+        project = row.get("project_static")
+        if project is None:
+            project_values = (None, None, None, None, None)
+        else:
+            required = {
+                "max_inflight_per_endpoint",
+                "active_work_per_endpoint",
+                "actor_workers_per_endpoint",
+                "actor_concurrency",
+                "calibration_contract",
+            }
+            missing = sorted(required - set(project))
+            if missing:
+                raise ValueError(
+                    f"{row.get('label', 'workload')} project_static missing {missing}"
+                )
+            project_values = (
+                int(project["max_inflight_per_endpoint"]),
+                int(project["active_work_per_endpoint"]),
+                int(project["actor_workers_per_endpoint"]),
+                int(project["actor_concurrency"]),
+                Path(project["calibration_contract"]),
+            )
+        parsed_workloads.append(
+            Workload(
+                label=str(row["label"]),
+                name=str(row["name"]),
+                rows=int(row["rows"]),
+                max_tokens=int(row["max_tokens"]),
+                manifest=Path(row["manifest"]),
+                quality=str(row["quality"]),
+                project_max_inflight_per_endpoint=project_values[0],
+                project_active_work_per_endpoint=project_values[1],
+                project_actor_workers_per_endpoint=project_values[2],
+                project_actor_concurrency=project_values[3],
+                project_calibration_contract=project_values[4],
+            )
         )
-        for row in payload["workloads"]
-    )
+    workloads = tuple(parsed_workloads)
     if {item.quality for item in workloads} - {"squad", "completion_validity"}:
         raise ValueError("quality must be squad or completion_validity")
     if any(not item.manifest.is_file() for item in workloads):
@@ -159,13 +194,14 @@ def _load_config(path: Path) -> Config:
         raise FileExistsError(f"output_root already exists: {config.output_root}")
     if config.concurrency_per_endpoint != 32:
         raise ValueError("opening contract freezes concurrency_per_endpoint=32")
-    if (
-        config.token_budget,
+    if config.token_budget != 6144:
+        raise ValueError("opening project token_budget must remain 6144")
+    if any(item.project_calibration_contract is None for item in workloads) and (
         config.active_work_per_endpoint,
         config.actor_workers_per_endpoint,
         config.actor_concurrency,
-    ) != (6144, 65536, 8, 4):
-        raise ValueError("project frozen-static contract must remain 6144/65536/8x4")
+    ) != (65536, 8, 4):
+        raise ValueError("legacy project frozen-static contract must remain 6144/65536/8x4")
     for workload in workloads:
         manifest = read_manifest(workload.manifest)
         if len(manifest) != workload.rows:
@@ -179,6 +215,8 @@ def _load_config(path: Path) -> Config:
             raise ValueError(f"{workload.label} requires equal_rows metadata")
         if int(metadata.get("partition_seed", -1)) != config.seed:
             raise ValueError(f"{workload.label} partition seed mismatch")
+        if workload.project_calibration_contract is not None:
+            _validate_project_calibration_contract(config, workload)
     return config
 
 
@@ -192,6 +230,76 @@ def _endpoint_base(url: str) -> str:
 
 def _manifest_sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _project_runtime_contract(config: Config, workload: Workload) -> dict[str, int | str | None]:
+    if workload.project_calibration_contract is None:
+        return {
+            "max_inflight_per_endpoint": config.concurrency_per_endpoint,
+            "active_work_per_endpoint": config.active_work_per_endpoint,
+            "actor_workers_per_endpoint": config.actor_workers_per_endpoint,
+            "actor_concurrency": config.actor_concurrency,
+            "calibration_contract": None,
+            "calibration_contract_sha256": None,
+        }
+    calibration_path = workload.project_calibration_contract
+    return {
+        "max_inflight_per_endpoint": workload.project_max_inflight_per_endpoint,
+        "active_work_per_endpoint": workload.project_active_work_per_endpoint,
+        "actor_workers_per_endpoint": workload.project_actor_workers_per_endpoint,
+        "actor_concurrency": workload.project_actor_concurrency,
+        "calibration_contract": str(calibration_path),
+        "calibration_contract_sha256": _manifest_sha(calibration_path),
+    }
+
+
+def _validate_project_calibration_contract(config: Config, workload: Workload) -> None:
+    path = workload.project_calibration_contract
+    if path is None or not path.is_file():
+        raise FileNotFoundError(f"{workload.label} missing calibration contract: {path}")
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    expected_k = workload.project_max_inflight_per_endpoint
+    if contract.get("status") != "selected" or contract.get("audit", {}).get("passed") is not True:
+        raise ValueError(f"{workload.label} calibration contract did not pass")
+    if int(contract.get("rows", -1)) != workload.rows:
+        raise ValueError(f"{workload.label} calibration row count mismatch")
+    if contract.get("manifest_sha256") != _manifest_sha(workload.manifest):
+        raise ValueError(f"{workload.label} calibration manifest SHA mismatch")
+    if int(contract.get("selected_k_per_endpoint", -1)) != expected_k:
+        raise ValueError(f"{workload.label} configured K does not match calibrated selection")
+    thresholds = contract.get("thresholds", {})
+    if (
+        int(thresholds.get("expected_repeats", -1)) != 3
+        or float(thresholds.get("feeding_ratio_to_direct_median_min", 0.0)) != 0.95
+        or float(thresholds.get("ratio_to_tested_project_peak_min", 0.0)) != 0.97
+    ):
+        raise ValueError(f"{workload.label} calibration thresholds are not frozen 3/0.95/0.97")
+    project = contract.get("project_candidates", {}).get(str(expected_k), {})
+    if not project.get("passes_feeding_floor") or not project.get("passes_project_peak_floor"):
+        raise ValueError(f"{workload.label} selected K does not pass both calibration floors")
+    observations = project.get("observations", [])
+    if len(observations) != 3:
+        raise ValueError(f"{workload.label} selected K must contain three observations")
+    expected = {
+        "token_budget": config.token_budget,
+        "max_active_work_per_endpoint": workload.project_active_work_per_endpoint,
+        "actor_workers_per_endpoint": workload.project_actor_workers_per_endpoint,
+        "ray_actor_max_concurrency": workload.project_actor_concurrency,
+        "per_endpoint_inflight_limit": expected_k,
+    }
+    for repeat, observation in enumerate(observations, start=1):
+        for key, value in expected.items():
+            if int(observation.get(key, -1)) != value:
+                raise ValueError(
+                    f"{workload.label} calibration rep {repeat} {key} mismatch"
+                )
+    if expected_k is None or expected_k <= 0:
+        raise ValueError(f"{workload.label} project K must be positive")
+    slots = int(workload.project_actor_workers_per_endpoint or 0) * int(
+        workload.project_actor_concurrency or 0
+    )
+    if slots < expected_k:
+        raise ValueError(f"{workload.label} actor slots {slots} < calibrated K {expected_k}")
 
 
 def _scan_source(
@@ -614,6 +722,7 @@ def _preflight(config: Config) -> dict:
                     "medium_256_to_1024": sum(256 <= value <= 1024 for value in prompts),
                     "long_gt1024": sum(value > 1024 for value in prompts),
                 },
+                "project_static_contract": _project_runtime_contract(config, workload),
             }
     ray_address = __import__("os").environ.get("RAY_ADDRESS", "")
     if not ray_address:
@@ -740,6 +849,7 @@ def _run_project_cell(
     with psycopg.connect(config.database_url) as conn:
         _clean_sink(conn, (row.doc_id for row in manifest))
     _service_condition(manifest, config, workload)
+    frozen = _project_runtime_contract(config, workload)
     project = ProjectStaticConfig(
         database_url=config.database_url,
         workload_name=workload.name,
@@ -748,10 +858,10 @@ def _run_project_cell(
         model=config.model,
         max_tokens=workload.max_tokens,
         token_budget=config.token_budget,
-        max_inflight=config.concurrency_per_endpoint,
-        max_active_work_per_endpoint=config.active_work_per_endpoint,
-        actor_workers_per_endpoint=config.actor_workers_per_endpoint,
-        ray_actor_max_concurrency=config.actor_concurrency,
+        max_inflight=int(frozen["max_inflight_per_endpoint"]),
+        max_active_work_per_endpoint=int(frozen["active_work_per_endpoint"]),
+        actor_workers_per_endpoint=int(frozen["actor_workers_per_endpoint"]),
+        ray_actor_max_concurrency=int(frozen["actor_concurrency"]),
         total_rows=workload.rows,
         write_batch_rows=config.write_batch_rows,
         request_timeout_s=config.timeout_s,
@@ -818,6 +928,7 @@ def _run_project_cell(
         "sink": {"rows_written": len(run.sunk_pairs), "readback": readback},
         "identity": pg_identity,
         "profiler_summary": "profiler/project_static_summary.csv",
+        "project_static_contract": frozen,
     }
     (cell_dir / "report.json").write_text(
         json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False) + "\n",

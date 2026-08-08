@@ -135,6 +135,10 @@ def _audit_project_cell(cell: Path, rows: int) -> tuple[float, str, dict[str, An
     if not math.isfinite(rate) or rate <= 0:
         errors.append("model_request_tokens_per_s is not positive and finite")
     observations = {
+        "model_name": row.get("model_name", ""),
+        "completion_protocol": row.get("completion_protocol", ""),
+        "service_prefix_caching": row.get("service_prefix_caching", ""),
+        "token_budget": _int(row.get("token_budget")),
         "gpu_utilization_pct_mean": _float(row.get("gpu_utilization_pct_mean")),
         "vllm_running_mean": _float(row.get("vllm_running_mean")),
         "vllm_running_p95": _float(row.get("vllm_running_p95")),

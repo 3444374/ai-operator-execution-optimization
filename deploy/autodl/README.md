@@ -82,6 +82,11 @@ actor slots，单变量扫描 per-endpoint K 32/64/128/256（含既有正式合�
 冻结选择后必须用新 experiment ID/输出目录整体替换重跑原三臂矩阵；这属于纠正无效
 formal，不是新增开题 baseline。
 
+两份选择文件都通过后，使用 `opening_database_e2e_refeed.example.json` 启动替换正式
+矩阵。模板要求每个 workload 显式提供校准 JSON 和其中选中的 K；runner 会核对三次
+重复、0.95/0.97 门槛、manifest SHA、token budget、active work、actor shape 与 K，任一
+不一致即在创建输出目录前失败。direct/DuckDB 仍固定每 endpoint 32，不随 project K 改变。
+
 ### 全新实例从零准备
 
 以下步骤只做一次；纯下载/安装优先在无卡模式完成：

@@ -1,0 +1,54 @@
+{
+  "experiment_id": "${OPENING_FORMAL_EXPERIMENT_ID}",
+  "database_url": "${DATABASE_URL}",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "model": "${VLLM_MODEL_NAME}",
+  "tokenizer": "${VLLM_TOKENIZER}",
+  "output_root": "${OPENING_FORMAL_OUTPUT_ROOT}",
+  "project_python": "${VENV_ROOT}/text-baselines/bin/python",
+  "concurrency_per_endpoint": 32,
+  "timeout_s": 180,
+  "write_batch_rows": 500,
+  "token_budget": 6144,
+  "service_prefix_caching": "enabled",
+  "service_max_num_seqs": 256,
+  "service_max_num_batched_tokens": 8192,
+  "gpu_peak_tflops_each": 165.0,
+  "service_conditioning_before_cell": true,
+  "seed": 20260807,
+  "workloads": [
+    {
+      "label": "squad_uniform",
+      "name": "squad_v11_dev_short_answer",
+      "rows": 10570,
+      "max_tokens": 64,
+      "manifest": "${ARTIFACT_ROOT}/opening_manifests/squad_uniform_equal_rows_seed20260807.jsonl",
+      "quality": "squad",
+      "project_static": {
+        "max_inflight_per_endpoint": "${SQUAD_PROJECT_K}",
+        "active_work_per_endpoint": 65536,
+        "actor_workers_per_endpoint": 8,
+        "actor_concurrency": 32,
+        "calibration_contract": "${SQUAD_PROJECT_CALIBRATION_CONTRACT}"
+      }
+    },
+    {
+      "label": "sharegpt_controlled_skew",
+      "name": "sharegpt_multiturn",
+      "rows": 2048,
+      "max_tokens": 256,
+      "manifest": "${ARTIFACT_ROOT}/opening_manifests/sharegpt_controlled_skew_equal_rows_seed20260807.jsonl",
+      "quality": "completion_validity",
+      "project_static": {
+        "max_inflight_per_endpoint": "${SHAREGPT_PROJECT_K}",
+        "active_work_per_endpoint": 65536,
+        "actor_workers_per_endpoint": 8,
+        "actor_concurrency": 32,
+        "calibration_contract": "${SHAREGPT_PROJECT_CALIBRATION_CONTRACT}"
+      }
+    }
+  ]
+}
