@@ -89,6 +89,11 @@ manifest，并用正数 `arrival_time_scale=1e-9` 将66.875s span压缩为约66.
 Daft/Ray Data 原生 eager 数据复用；系统内 short impact 可作反事实，跨框架 T0 仍因准备
 边界不同而不排名。禁止通过修改 manifest 的 arrival 字段假装覆盖 DB source arrival。
 
+`opening_project_short_half_pool_all_at_t0_diagnostic.example.json` 是该配对的单一
+补充控制：只运行 eager short，并用 `static_partition_count=2` 预留一半 K/work 额度，
+但不启动 long。它用于把 static+long 的退化分解为“额度减半”与“真实服务竞争”，只补
+1 warm-up + 3 formal，不重复运行已有 full-pool、static+long 或 shared+long。
+
 若该矩阵的项目臂未达到同协议 bounded direct 的 95% feeding 门，只能保留为
 failed-feeding 诊断。使用 `opening_project_feeding_calibration.example.json` 在每个
 workload 的同一 immutable manifest 上固定服务、token budget、active work 与 8×32=256

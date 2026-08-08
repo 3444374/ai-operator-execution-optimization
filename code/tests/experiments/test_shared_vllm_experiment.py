@@ -88,6 +88,12 @@ class SharedVllmExperimentTests(unittest.TestCase):
                     / "autodl"
                     / "opening_project_multijob_all_at_t0_diagnostic.example.json"
                 )
+                half_pool = load_config(
+                    CODE_ROOT.parent
+                    / "deploy"
+                    / "autodl"
+                    / "opening_project_short_half_pool_all_at_t0_diagnostic.example.json"
+                )
 
         self.assertEqual(config.request_limit_per_endpoint, 128)
         self.assertEqual(config.work_limit_per_endpoint, 65536)
@@ -104,6 +110,17 @@ class SharedVllmExperimentTests(unittest.TestCase):
         )
         self.assertEqual(config.scenarios[0].job_count, 1)
         self.assertEqual(config.scenarios[1].arrival_offsets_s, (0.0, 5.0))
+
+        self.assertEqual(len(half_pool.scenarios), 1)
+        self.assertEqual(
+            half_pool.scenarios[0].scenario_id,
+            "single_short_half_pool_all_at_t0",
+        )
+        self.assertEqual(half_pool.scenarios[0].static_partition_count, 2)
+        self.assertEqual(half_pool.request_limit_per_endpoint, 128)
+        self.assertEqual(half_pool.work_limit_per_endpoint, 65536)
+        half_scale = half_pool.common_args.index("--arrival-time-scale")
+        self.assertEqual(half_pool.common_args[half_scale + 1], "0.000000001")
 
     def test_credit_observer_exports_code_root_to_ray_workers(self) -> None:
         ray_module = MagicMock()

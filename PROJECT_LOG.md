@@ -5195,3 +5195,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   manifest未改变实际 replay，误设scale=1.0反而把等待放大1000倍。v1/v2均在64-row
   shared cell中止并完整保留，不进入均值。删除无效manifest转换工具，改用原manifest与
   `arrival_time_scale=1e-9`，把66.875s压缩至约66.9µs后另建v3 gate。
+- v3 gate 的三个场景均通过且 arrival span 为34–36µs。正式首轮同时表明 eager
+  static+long 的 short 使用 half quota，而 single short 使用 full quota；为避免把
+  quota-only 影响误归因给 long，新增独立 half-pool eager short 1+3 控制。该控制不启动
+  synthetic long，且不重复运行已完成的三臂。
