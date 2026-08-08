@@ -1,7 +1,7 @@
 # 开题叙事与 Claim Matrix
 
 初版冻结日期：2026-08-07
-第一性原理复审：2026-08-08（ShareGPT bounded 饱和校准已冻结 C128；原生单/多 job 对照仍在补齐）
+第一性原理复审：2026-08-09（ShareGPT bounded C128、原生单 job 与 5s guaranteed-overlap 多 job 证据已冻结）
 
 用途：本文件是开题阶段研究叙事、证据等级和新增实验停止规则的内部判定表。报告、答辩内容大纲、问答和实验计划若与本表冲突，先回到原始结果核对，再更新本表和相关材料。不得为了得到更好看的结果改变研究问题。当前暂停 PPT 成品制作。
 
@@ -54,9 +54,10 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 两类 workload 的完整三臂统一 database-E2E 护栏 | 已证明（correctness 地基） | `opening_database_e2e_text_refeed_20260808/`：24/24 cells 的 source/sink、identity、exactly-once 和 CV 门通过；后续饱和扫描证明 ShareGPT C32 direct 只有已测峰值的 52.07% | 可用于 database-E2E 与产品语义边界；ShareGPT 三臂不作 matched-saturation 性能排名 | 原生单 job 正式矩阵改用 bounded C128 |
 | ShareGPT C32→C256 呈现欠供给、平台与过量排队区间 | 已证明（容量动机） | `experiments/results/opening_bounded_saturation_calibration_20260808/README.md`：formal tok/s=9,455/14,058/17,834/18,158；C128 达峰值 98.22%，C256 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18s | GPU utilization 高不等于喂饱；状态感知需联合完成速率、running/waiting、KV、MFU 与 tail，控制目标是最小饱和区 | 数值只绑定当前机器、模型、协议、workload；动态收益仍待 A/B |
 | 异质文本 workload 会拉开冻结静态路径差距 | 条件性（降级） | ShareGPT project/C32-direct service tok/s=14,568.91/9,425.25、DB-E2E=116.70/180.33 s；C32 后续证实欠供给，且两臂并发/执行结构不同。DuckDB 4,921/6,144 行 cap 语义失败 | 只说旧静态配置在异质 workload 下暴露容量校准和产品语义问题；不能称项目方法收益 | 同 manifest、独立冻结点的原生单 job 矩阵；项目方法增量需同上限 A/B |
+| 后到 Job 会影响已存在前台，且共享额度存在效率—隔离—公平权衡 | 已证明（受控文本） | `experiments/results/opening_multijob_interference_20260809/README.md`：quota-only 对 short JCT≈0；5s long 加入后 static/shared short JCT +3.79%/+8.95%、P99 +90.80%/+173.33%。shared 相对 static 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、Jain 0.759→0.707 | 多 Job 管理必须同时表征 per-job work、arrival/active/drain 状态，并把 aggregate efficiency、foreground SLO 与 fairness 写入策略目标；shared/动态不是无条件胜出 | 仅 2 Job、equal weight、文本；4+ Job、weighted/SLO、图像 phase-change 属论文阶段 |
 | state-aware 请求成形/提交优于冻结强静态策略 | 待验证 | 尚无与同上限 frozen static 的正式对照 | 只能写成拟研究方法，不得写成已有贡献 | 开题后 proposed 主实验 |
 | 文本原生路径在同环境下呈现稳定但不同的服务压力形态 | 已证明（外部现象） | `experiments/results/opening_text_native_single_job_formal_20260808/README.md`：16/16 cells、12 formal；bounded/Daft Native/Daft Ray/Ray Data tok/s=17,800/17,286/16,747/3,551，CV<0.6%。Daft waiting mean=783/742、KV max≈1；Ray Data running=17.3、MFU=0.112 | 同一任务可落入最小饱和、过量排队或欠供给；状态感知需联合 work rate/MFU、running/waiting、KV 与 tail | 只证明当前官方 graph/冻结点的外部现象；不能归因内部算法或称项目方法胜出 |
-| 现有原生框架在多 job 共享服务时已暴露全局提交/感知缺口 | 待验证 | 已有项目 1/2/4-job 结果不包含 Daft built-in/Ray Data，且同步等量启动不能证明 idle borrowing | 不预设现有框架一定表现差；只观察独立 job 竞争、全局压力和可观测性 | Daft Native/Ray、Ray Data short/long staggered 原生观察 + 项目 static/shared 同上限 A/B |
+| 现有原生路径在多 job 共享服务时呈现前台干扰与不同压力形态 | 已证明（外部现象） | `opening_multijob_interference_20260809/`：统一 5s offset、各 1+3；Daft Native/Ray/Ray Data 均真实 overlap，short JCT 相对各自 single +82.42%/+104.84%/+32.76%。Daft 两臂 high waiting/KV，Ray Data low running/no waiting/low MFU | 同一“两个 Job”可落入不同服务状态且前台均受影响，因此需要全局 work/state 观测；不归因框架内部算法 | 原生 adapter 无 request P99，short cell 不作 ≥60s 容量排名；不称项目优于框架 |
 
 ## 3. 待最终冻结的统一实验组
 
@@ -73,7 +74,7 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 - arms、source/sink、模型和重复合同与均匀控制组相同。
 - 追加报告 work CV、token P50/P95/P99、estimated service work、endpoint work imbalance、TTFT/JCT/tail、cache/locality、active work 和 serving pressure。
 
-首轮两组实验因项目臂未喂饱而只作历史诊断；K128 replacement 的 correctness 护栏有效，但 ShareGPT 的 C32 direct 后续证实仍欠供给，故三臂性能口径降级。原生单 job 已用 bounded C128 完成 1+3，稳定观察到 Daft 两臂过量排队与 Ray Data 当前路径欠供给。为闭合“现有系统不足→设计”因果链，只再补 Daft/Ray Data 原生两 job 观察 + 项目 static/shared 因果 A/B。差异不足 5% 或为负同样有效；不换 workload、模型、数据库，不扫更多 offset/weight 追正。
+首轮两组实验因项目臂未喂饱而只作历史诊断；K128 replacement 的 correctness 护栏有效，但 ShareGPT 的 C32 direct 后续证实仍欠供给，故三臂性能口径降级。原生单 job 已用 bounded C128 完成 1+3，稳定观察到 Daft 两臂过量排队与 Ray Data 当前路径欠供给。5s guaranteed-overlap 的原生观察与项目 static/shared 因果 A/B 已于 2026-08-09 闭环；开题前停止增加 offset、weight、4-job 或框架臂，转入数据整理和图表合同。
 
 ## 4. 新实验准入问题
 

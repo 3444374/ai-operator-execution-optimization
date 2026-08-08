@@ -76,9 +76,11 @@ EWMA flush 对照均已完成）：
 ① 已按预注册规则选择每 endpoint 65,536 active work；多 actor 与固定 quantum
 均未达到 5% 晋升门槛，保留 `request + 1×256`，其价值是精确 completion/
 credit 语义而非显著稳态提速；SLO-EWMA 相对 fixed-50 未过 5% 门槛 →
-② 当前 2×4090 上完成 shared request/work credit 与 1/2/4 job 等量核心矩阵；
-只补两作业 short/long staggered 作为开题最小证据，weighted、完整 held-out/异构 offset 与
-故障迁移均是论文阶段遗留项；③ prefix cache 开启后的
+② 当前 2×4090 上完成 shared request/work credit 与 1/2/4 job 等量核心矩阵，以及
+5s short/long guaranteed-overlap 开题最小证据：shared 相对 static 总吞吐 +21.03%、
+long JCT −18.31%，但 short JCT +4.98%、Jain fairness 下降；冻结为效率—隔离—公平
+权衡，不称动态全面胜出。weighted、完整 held-out/异构 offset 与故障迁移均是论文阶段
+遗留项；③ prefix cache 开启后的
 数据组织机制验证（07-31 系统重测 `rc1_data_organization/`，**取代 07-25/26
 gropy；07-18/19 保留作历史动机参照**）：**regime-dependent**——2-ep/0.9（每
 endpoint KV 池占 GPU 显存 0.9、无压力 max 7–10%）5 策略 50–56k 近似中性；

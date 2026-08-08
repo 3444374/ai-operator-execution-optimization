@@ -59,6 +59,7 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 | 统一文本三臂 replacement：24/24 单元 correctness 护栏 | SQuAD 三静态路径近似中性；ShareGPT C32 欠供给，旧 project/C32-direct=1.546 只作配置诊断 |
 | ShareGPT bounded C32/C64/C128/C256：9,455/14,058/17,834/18,158 tok/s | C128 是达到已测峰值 97% 的最小点；C256 waiting/KV/TTFT 显著恶化，支持状态感知与有界提交动机 |
 | 原生单 job 1+3：bounded/Daft Native/Daft Ray/Ray Data=17,800/17,286/16,747/3,551 tok/s | Daft 两臂稳定过量排队，Ray Data 当前路径稳定欠供给；同一服务需要 work-rate + running/waiting/KV/MFU 联合感知 |
+| 5s guaranteed-overlap：Daft Native/Ray/Ray Data short JCT +82.42%/+104.84%/+32.76%；项目 shared vs static 总吞吐 +21.03%，但 short JCT +4.98%、Jain 下降 | 后到 Job 的前台干扰与效率—隔离—公平权衡已证明；原生只作外部观察，shared/dynamic 不作全面胜出表述 |
 | DuckDB AI ShareGPT：service tok/s≈direct，4,921/6,144 cap 语义失败 | 产品语义兼容性必须进入 correct throughput，不能把问题写成纯速度排名 |
 | 65,536 active work/endpoint 达最大吞吐的 97.8% | 固定 token-aware credit 是当前简单、稳健的文本默认点 |
 | AIMD/PID/EWMA、动态 flush、多 actor 多数未过 5% 门槛 | 不能声称复杂动态策略普遍胜过强静态 baseline |
@@ -78,8 +79,8 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 
 1. 保持 Claim Matrix、六张叙事图、统一三臂 replacement 与开题停止规则一致。
 2. 同一 ShareGPT Chat manifest 的 bounded、Daft Native/Ray、Ray Data 原生单 job 1+3 已完成并归档。
-3. 当前只完成原生 short/long 两 job 错峰观察与项目 static/shared 同上限 A/B；阴性结果也停止，不扩扫追正。
-4. 当前暂停 PPT、云文档和 Wiki，只同步本地报告、聚合数据与 Git。
+3. 原生 short/long 两 job 错峰观察与项目 static/shared 同上限 A/B 已完成；开题前停止扩扫 offset、weight、4+ job 追正。
+4. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。
 
 晋级门槛：相对各自独立标定的强静态/系统 baseline 至少改善约 5%，重复方向一致，且质量不退化。
 

@@ -11,6 +11,23 @@
 
 > **2026-07-20 拆分说明**：pre-convergence 时期的早期实验讲解（组件可行性验证、fake/CPU 动机测试、PG18.4 接入、pgvector scaling 等）已归档至 `learning/archive/early_experiments_walkthrough.md`。本文档只保留 GPU-backed 真实 embedding 画像及之后的内容（§9 起），对应项目当前 AI_COMPLETE + vLLM + Daft 主线。
 
+## 2026-08-09：为什么多 Job 实验必须真的重叠
+
+如果 short Job 在 long Job 到达前已经结束，long 不可能影响已经完成的 short；这种
+结果只能描述到达计划，不能测前台干扰。补充实验因此让所有系统统一在 5 秒后加入
+long，并复用完全相同的 single-short 控制。
+
+项目中，单 short 独占 full pool 与保留 half pool 的 JCT 都约 71.24 秒，说明“额度减半”
+本身几乎没有影响。long 真正加入后，static 下 short JCT 增加 3.79%、P99 增加 90.80%；
+shared 下 short JCT 增加 8.95%、P99 增加 173.33%。shared 同时把总吞吐提高 21.03%、
+把 long JCT 降低 18.31%，所以它展示的是效率—隔离—公平权衡，而不是无条件胜利。
+
+Daft Native、Daft Ray、Ray Data 也都发生了真实重叠，short JCT 相对各自 single 增加
+82.42%、104.84%、32.76%。这些是两个独立官方应用竞争同一 vLLM 的外部观察，不能
+反推框架内部算法。正确的学习结论是：多 Job 管理必须感知“谁到达、谁活跃、各自还剩
+多少 work、服务现在是 underfeed 还是 overqueue”，并在总效率、前台 SLO 和公平之间
+设定明确目标。
+
 ## Arrival replay 运行契约（不是性能实验）
 
 2026-07-25 已打通真实 `DaftOrganizer -> Arrow RecordBatch -> arrival replay

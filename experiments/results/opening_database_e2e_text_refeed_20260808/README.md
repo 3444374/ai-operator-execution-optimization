@@ -110,8 +110,8 @@ project 的 request P99 来自项目 profiler，而 direct/DuckDB 的 request la
 
 1. 不再重跑本三臂 database-E2E，也不更换 workload、模型、数据库或 K 追求更大差异。
 2. bounded C128、Daft Native、Daft Ray、Ray Data 原生单 job 1+3 已完成，见 `opening_text_native_single_job_formal_20260808/`。
-3. 当前只完成原生 short/long 两 job 错峰观察，以及项目 `static_partition` vs `shared_work_credit` 同上限因果 A/B；报告 per-job JCT、服务状态、GPU/MFU、fairness 和 exactly-once。
-4. 若差异不足 5%或为负，按阴性结果停止，不扩扫 offset/weight 追正。
+3. 原生 short/long 两 job 错峰观察，以及项目 `static_partition` vs `shared_work_credit` 同上限因果 A/B 已完成，见 `opening_multijob_interference_20260809/`。
+4. 开题前停止扩扫 offset/weight/更多 Job 追正；weighted、4+ Job 与 state-aware SLO guard 留作论文阶段。
 
 ## 8. 证据与复现
 

@@ -142,7 +142,7 @@ ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 cor
 
 同一 ShareGPT Chat manifest 的原生单 job 1+3 已完成：bounded C128、Daft Native、Daft Ray、Ray Data 的 service tok/s 为 17,800/17,286/16,747/3,551，四臂 CV<0.6%。Daft 两臂 waiting mean 为 783/742、KV max≈1，呈现过量提前提交；Ray Data running mean=17.3、MFU=0.112，呈现供给不足；bounded C128 位于最小饱和区。该结果只证明官方 graph/冻结点的外部压力形态，不证明项目方法胜出或某个框架内部算法有缺陷。
 
-只再补一类不可替代的对照：Daft/Ray Data 两个 short/long 错峰独立 job 观察，以及项目 static-partition vs shared-work-credit 同上限 A/B。原生框架不注入项目 credit/router，不将 barrier 冒充 request P99；DuckDB 仅保留在 SQuAD/cap=64 有界输出产品轨。差异不足 5% 或为负同样有效，不扫更多 offset/weight 追正。
+5s guaranteed-overlap 对照已完成：Daft Native/Ray、Ray Data 的 short JCT 相对各自 single 增加 82.42%/104.84%/32.76%，只作外部观察；项目 quota-only≈0，static/shared 加入 long 后 short JCT 增加 3.79%/8.95%。shared 相对 static 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、Jain fairness 下降。该结果冻结为效率—隔离—公平权衡证据，不称动态全面胜出；开题前不再扫 offset/weight/更多 Job 追正。
 
 ## 7. 开题叙事图
 
@@ -160,7 +160,7 @@ ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 cor
 1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同、共同 cost enabler 与六张叙事图已完成；相关定向测试与渲染审计通过。
 2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
 3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前更新实验报告和数据图，不生成、覆盖或同步新的 PPT/云文档。
-4. 文本原生框架单 job 矩阵已完成；下一步只完成原生两 job 观察与项目 static/shared 错峰 A/B。开题后再扩展 state-aware phase-change、weighted/异构多 job、图像 dynamic、完整 burst/mixed-cost、联合消融和跨硬件主实验。
+4. 文本原生单 job 与 5s 原生/项目两 job 矩阵均已完成；当前只整理报告、紧凑数据和待画图合同。开题后再扩展 state-aware phase-change、weighted/异构多 job、图像 dynamic、完整 burst/mixed-cost、联合消融和跨硬件主实验。
 5. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
 
 ## 9. 结果解释与写作规则

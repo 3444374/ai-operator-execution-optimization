@@ -19,7 +19,7 @@ workload 与流水线状态会随时间和作业组合变化
   -> 公共抽象应描述分阶段 work，不应只把 token 改名为 frame
 ```
 
-因此，开题前的完成标准是：问题存在、研究对象明确、已有证据证明方法接口可实现、强静态基线合格，并补一个两作业错峰实验说明共享 credit 的可测量性。开题不要求 proposed 已经全面胜出；同上限动态 surface、weighted/异构多 job、文本框架正式大矩阵、图像新策略增量与跨硬件外部有效性属于开题后的论文主实验。
+因此，开题前的完成标准是：问题存在、研究对象明确、已有证据证明方法接口可实现、强静态基线合格，并补一个两作业错峰实验说明共享 credit 的可测量性。该 5s guaranteed-overlap 实验已于 2026-08-09 完成：它验证了前台干扰和效率—隔离—公平权衡，但没有证明动态全面胜出。开题不要求 proposed 已经全面胜出；同上限动态 surface、weighted/异构多 job、图像新策略增量与跨硬件外部有效性属于开题后的论文主实验。
 
 ## 2. 从目标函数反推方法
 
@@ -99,7 +99,7 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 ### 6.1 开题前必须完成
 
 1. 完成 SQuAD 与 ShareGPT 两套统一三臂 replacement；项目静态臂必须通过 feeding-saturation、correctness 与稳定性门。该矩阵保留为一次 database-E2E 护栏，不要求后续方法实验重复 sink。
-2. 补一个 short/long 两作业 staggered static partition vs shared work-credit 最小实验，报告 per-job JCT/P99/goodput、Jain fairness、isolation 和 idle borrowing；3:1 weighted 留论文阶段。
+2. short/long 两作业 staggered static partition vs shared work-credit 最小实验已完成；报告已覆盖 per-job JCT/P99/goodput、Jain fairness、isolation 和实际 overlap。结果显示 shared 提高 aggregate throughput/long JCT，但 short isolation 与 Jain 回退；3:1 weighted 留论文阶段。
 3. 把现有 token-work 差异、high/arrival-limited 状态差异、active-work frontier、数据组织 regime、图像阶段失衡与 matched-resource 结果、cost decision quality 重组为动机和可行性证据。
 4. 报告、答辩内容大纲、Claim Matrix 和图使用同一数值与边界；state-aware、图像动态和 cost held-out 只作为可证伪研究计划，不用完成时表述；当前不制作 PPT 成品。
 

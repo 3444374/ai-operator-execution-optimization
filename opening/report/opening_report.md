@@ -152,39 +152,45 @@ ShareGPT replacement 中，direct、DuckDB AI、项目冻结静态的 correct ro
 
 Daft 两臂在吞吐接近 bounded 的同时形成大量 waiting 和 KV 顶格，Ray Data 当前路径则表现为低 running、低 MFU 的供给不足。它们证明单一静态并发或 GPU utilization 不能描述服务状态，需要联合完成速率/MFU、running/waiting、KV 与 tail；但该实验不包含项目动态臂，不能声称项目方法胜出，也不把外部现象归因给框架内部算法。
 
-### 5.4 最小饱和 active work
+### 5.4 两 Job guaranteed-overlap 的前台干扰
+
+同一 short/long manifest 上，所有系统统一让 long 在 short 启动 5 s 后到达。项目先用 full-pool 与 reserved-half-pool 两个 single-short 控制隔离静态额度效应；两者 short JCT 均约 71.24 s，quota-only 对 JCT/P99/work rate 的变化约为 −0.003%/−0.013%/−0.004%。long 真正加入后，static 下 short JCT/P99/work rate 变化为 +3.79%/+90.80%/−3.57%，shared 下为 +8.95%/+173.33%/−8.28%，因此前台退化来自服务竞争，而不是额度减半本身。
+
+shared 相对 static 将 aggregate service throughput 提高 21.03%、long JCT 降低 18.31%，但 short JCT 增加 4.98%，Jain fairness median 从 0.759 降到 0.707。它证明 shared work credit 存在效率—隔离—公平权衡，不证明动态全面胜出。Daft Native、Daft Ray、Ray Data 也都产生真实 overlap，short JCT 相对各自 single 增加 82.42%、104.84%、32.76%；这些只作为两个独立官方应用竞争同一 vLLM 的外部观察，不归因框架内部算法。开题据此提出 per-job work/state 感知、idle borrowing 与 SLO/fairness guard，weighted/4+ job 和图像 phase-change 留作论文阶段验证。
+
+### 5.5 最小饱和 active work
 
 ![固定资源下的 serving capacity 与过载边界](../../figures/data/report_main/opening_serving_capacity_frontier.png)
 
 双 RTX 4090、冻结 Qwen/vLLM 合同下，每 endpoint 65,536 active work 已达到最大已测吞吐均值的 97.80%，下一档只增加 0.92%；继续提高到 98K，吞吐增量有限而 P99 由 36.78 s 上升到 40.05 s。该结果证明应先标定最小饱和点，再比较上游策略。65,536 只绑定当前机器、模型、协议和 workload，不是通用常数。
 
-### 5.5 数据组织的 serving-regime 依赖
+### 5.6 数据组织的 serving-regime 依赖
 
 ![数据组织在不同 serving regime 下的排名变化](../../figures/data/report_main/opening_work_organization_regime_v2.png)
 
 在双 endpoint、大 KV 池且压力较低的条件下，五种组织策略约为 50K–56K tok/s，差异接近中性；在四 endpoint、小 KV 池且 KV 饱和的条件下，吞吐分化到约 39K–50K tok/s，并出现排名反转。重排序类 organizer 将 prefix group ratio 打散后，prefix cache hit 可降至 0.06–0.07。该证据支持“组织策略必须结合 serving regime 评价”，不支持 sequential 或 prefix-aware 的全局最优性。
 
-### 5.6 图像 staged-work 与 matched-resource 证据
+### 5.7 图像 staged-work 与 matched-resource 证据
 
 ![图像 workload 的阶段失衡与 matched-resource 正式对照](../../figures/data/report_main/opening_image_stage_aware_evidence.png)
 
 CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时间比为 13.8/31.2/29.5 倍，说明图像 work 不能只用 frame 数描述；prepare work、ready tensor bytes 与 model work 必须分别约束。在相同 CPU 资源和输出合同下，项目 typed Ray GPU actor 静态路径相对 Ray Data native graph 的 operator JCT 在主正式报告中降低约 12.8%–15.1%，独立复测两档 CPU 仍同向。冻结 headline 为约 13%–15%，不使用资源不匹配比较得到的旧 45.7%。该结果证明 staged work 与执行结构可行性，不证明状态感知动态增量已经有效。
 
-### 5.7 代价模型的配置选择价值
+### 5.8 代价模型的配置选择价值
 
 ![算子代价模型的选择质量](../../figures/data/report_main/opening_cost_model_decision_quality_v2.png)
 
 在 429 个 formal 观测、20 个 context 与 4 个候选配置的 context leave-one-out 评价中，Hybrid 模型 pooled regret 为 1.67%，macro regret 为 2.90%，candidate pairwise accuracy 为 0.808，max regret 为 14.72%。最大 regret 仅比 15% 门槛低 0.28 个百分点，属于边界通过。它可作为配置选择的第一份可行性证据，但仍需新时间段、workload 和硬件上的校准。
 
-### 5.8 当前能证明与不能证明的内容
+### 5.9 当前能证明与不能证明的内容
 
-已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值；已有 1/2/4-job 结果表明 shared credit 只在高竞争区间出现条件性收益。开题冻结前只需完成 Daft/Ray Data 原生两 job 错峰观察和项目 static-partition vs shared-work-credit 因果 A/B。
+已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；5 s guaranteed-overlap 下后到 Job 会影响前台，shared credit 存在效率—隔离—公平权衡；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值。state-aware 策略是否能在同上限强静态点之上改善综合目标，仍是开题后的可证伪研究问题。
 
 ## 6. 进度安排
 
 | 时间 | 工作内容 | 交付物与停止条件 |
 |---|---|---|
-| 2026 年 8 月 | 完成 database-E2E 护栏、原生单 job 与原生/项目两 job 错峰最小对照；冻结答辩内容大纲和核心数据图 | 三条最小矩阵的报告与图；其余复用既有证据，当前暂停 PPT 成品 |
+| 2026 年 8 月 | 完成 database-E2E 护栏、原生单 job 与原生/项目两 job 错峰最小对照；冻结答辩内容大纲和待画图数据合同 | 三条最小矩阵报告与紧凑数据已完成；当前不制作新图或 PPT 成品 |
 | 2026 年 9 月 | 完成 work-unit 构造的跨 workload、跨 serving-regime 消融 | 数据组织 formal 报告；不以单点峰值选策略 |
 | 2026 年 10 月 | 完成状态感知提交、路由和多作业公平性对照 | 与同上限 frozen-static 比较；未过门则记录失效边界 |
 | 2026 年 11 月 | 完成代价模型 held-out 校准和两项策略耦合验证 | ranking/regret、独立拼接与联合搜索报告 |

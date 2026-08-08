@@ -225,6 +225,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `experiments/results/opening_text_native_gate_20260808/README.md` | bounded、Daft Native/Ray、Ray Data 同 Chat manifest capability gate 与 Ray Data C4/C8/C16 最小筛选 | 只用于入口正确性、provenance 和冻结 C8/B16；n=1 gate 不作框架性能排名 |
 | `experiments/results/opening_bounded_saturation_calibration_20260808/README.md` | ShareGPT bounded HTTP C32/C64/C128/C256 容量扫描，含 MFU、running/waiting、KV、TTFT 和服务器归档 SHA | 冻结达到 C256 已测峰值 98.22% 的最小点 C128；纠正旧 C32 欠供给口径，不作框架排名 |
 | `experiments/results/opening_text_native_single_job_formal_20260808/{README.md,formal_runs.csv,formal_summary.csv}` | bounded C128、Daft Native/Ray、Ray Data 同 ShareGPT manifest 的 1+3 原生单 job 正式报告、逐次与汇总数据 | 引用现有原生 graph 的 underfeed/minimum-saturation/overqueue 外部现象前读；不归因内部算法、不称项目胜出 |
+| `experiments/results/opening_multijob_interference_20260809/{README.md,data/}` | exact-short full/half、项目 static/shared 与 Daft Native/Ray/Ray Data 5s guaranteed-overlap 的统一报告和紧凑数据 | 引用前台干扰、效率—隔离—公平权衡或多 Job 状态动机前读；原生结果是 observation，项目 matched-cap 才是因果 A/B |
 | `figures/scripts/generate_opening_core_evidence_figures.py` | 从冻结正式结果生成开题四张核心证据图 | 更新开题报告或答辩 PPT 前运行 |
 | `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |
 | `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果重建 work/state/control 动机、AI Data Execution Layer 边界、work→schedule、组织 regime、图像 stage 与 cost decision 图 | 更新答辩大纲的动机/方法证据图前运行 |

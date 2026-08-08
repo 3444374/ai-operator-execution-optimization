@@ -1,5 +1,22 @@
 # 项目日志
 
+## 2026-08-09 两 Job guaranteed-overlap 正式闭环与紧凑归档
+
+- 项目 5s short/long 矩阵 8/8 group、6/6 formal 通过；原生 Daft Native/Ray、Ray Data
+  矩阵 12/12 cells、9/9 formal 通过；统一汇总 30 formal rows、10 summary rows、
+  6 comparisons 和 18 phase rows 全部通过 short-manifest 与真实 overlap 审计。
+- quota-only full→half 对 short JCT/P99/work rate 的影响约为 −0.003%/−0.013%/−0.004%；
+  matched static+long 为 +3.79%/+90.80%/−3.57%，matched shared+long 为
+  +8.95%/+173.33%/−8.28%。因此 short 退化来自 long 服务竞争，不是静态额度减半。
+- shared 相对 static 的总吞吐 +21.03%、long JCT −18.31%、max P99 −37.66%，但 short
+  JCT +4.98%、Jain median 从 0.759 降到 0.707；冻结为效率—隔离—公平权衡证据，
+  不称动态全面胜出。
+- Daft Native/Ray/Ray Data 的 short JCT 相对各自 single 增加 82.42%/104.84%/32.76%，
+  三者均有实际 overlap；只标为同系统外部观察，不归因内部算法。
+- 新增 `experiments/results/opening_multijob_interference_20260809/`，Git 保存 13 个紧凑
+  CSV/audit 与七步报告/待画图清单。服务器保留全量 raw；project/native/unified 归档
+  SHA256 分别为 `f766faf7...14cfa`、`515b33a5...095a7`、`b7aa4c8b...17e6d`。
+
 ## 2026-08-09 guaranteed-overlap 项目重跑的瞬时传输失败与状态清理
 
 - 项目 5s offset v2 在完成 static warm-up 后，shared warm-up 的一个 child 因
