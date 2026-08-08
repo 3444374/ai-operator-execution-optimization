@@ -37,7 +37,7 @@ Date: 2026-07-20（最后更新：2026-08-08；开题三臂 replacement 已通�
   `service_prefix_caching` 纳入 context 身份，执行后 hit rate 禁止用作预测特征。
 - 上方 §0 "下一步运行 Daft 官方 ResNet18 parity 与 60 秒以上稳态 formal" 中，**60 秒稳态 formal 已由 60K×2 schema-v12 重跑闭合**；ResNet18 parity 仍待（A②）。
 
-## 开题冻结优先级（2026-08-07；2026-08-08 replacement 已通过，材料尚未最终冻结）
+## 开题冻结优先级（2026-08-07；2026-08-08 correctness 护栏与 bounded 饱和校准已通过，材料尚未最终冻结）
 
 开题题目与研究内容按 `opening/claim_matrix.md` 冻结。以下两个开题范围的首轮结果因
 项目臂 feeding 未过门而只作历史诊断；2026-08-08 已按
@@ -48,11 +48,12 @@ Date: 2026-07-20（最后更新：2026-08-08；开题三臂 replacement 已通�
 2. 一个冻结 short/medium/long histogram 的 ShareGPT controlled-skew 三臂实验，复用
    同一 source/sink、模型、endpoint、质量、计时和资源合同。
 
-当前结果目录：`experiments/results/opening_database_e2e_text_refeed_20260808/`。24/24 单元、
-18 formal 的 feeding、GPU、exactly-once、sink、identity 与稳定性门均通过。项目臂
-SQuAD/ShareGPT service feeding 为 100.87%/154.57%；SQuAD 三静态路径近似中性，
-ShareGPT 静态结构差异显著。DuckDB AI ShareGPT 的 service tok/s≈direct，但
-4,921/6,144 行 cap 语义失败主导 correct throughput。旧目录只作 failed-feeding 诊断。
+当前 correctness 护栏目录为 `experiments/results/opening_database_e2e_text_refeed_20260808/`：
+24/24 单元、18 formal 的 GPU、exactly-once、sink、identity 与稳定性门通过；SQuAD 三静态
+路径近似中性，DuckDB AI ShareGPT 的 4,921/6,144 cap 语义失败结论有效。后续同 manifest
+bounded C32/C64/C128/C256 扫描证明 C32 只有已测峰值 52.07%，因此旧 ShareGPT
+project/C32-direct=1.5457 不作性能排名。正式原生矩阵使用达到峰值 98.22% 的最小点 C128；
+校准见 `experiments/results/opening_bounded_saturation_calibration_20260808/`。
 
 仍停止增加不在冻结矩阵内的开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
 granularity 不同，只用于 serving capacity/overload 证据，不替代上述统一 database-E2E。

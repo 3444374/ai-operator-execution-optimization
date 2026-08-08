@@ -13,8 +13,9 @@
   Database 与 Model Service 之间的 AI Data Execution Layer。
 - **两项内容不变**：workload 感知的 work-unit 构造；容量感知的提交、路由与多 job 调度。
   cost estimator 是共同使能组件，文本和图像是跨模态证据轨道。
-- **喂饱后的三臂 replacement 已完成**：24/24 单元、18 formal 全门禁通过；project 在
-  SQuAD/ShareGPT 的 service feeding 为 100.87%/154.57%。旧 89.93%/91.38% 只作历史诊断。
+- **三臂 database-E2E correctness 护栏已完成**：24/24 单元、18 formal 的 source/sink、
+  exactly-once 与稳定性通过；后续 ShareGPT C32–C256 扫描证明旧 C32 direct 仅达已测峰值
+  52.07%，正式原生矩阵冻结 C128，旧 154.57% 比值不作方法排名。
 - **state-aware 仍是拟研究方法**：现有证据支持 strong static、regime dependence、图像
   matched-resource 结构收益和代价估计可行性，但没有证明 state-aware 优于冻结静态点。
 
@@ -55,7 +56,8 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 
 | 证据 | 当前可得出的结论 |
 |---|---|
-| 统一文本三臂 replacement：24/24 单元，project feeding 100.87%/154.57% | SQuAD 三静态路径近似中性；ShareGPT project/direct service ratio=1.546，说明静态结构差异具有 workload/regime 依赖，不能冒充动态收益 |
+| 统一文本三臂 replacement：24/24 单元 correctness 护栏 | SQuAD 三静态路径近似中性；ShareGPT C32 欠供给，旧 project/C32-direct=1.546 只作配置诊断 |
+| ShareGPT bounded C32/C64/C128/C256：9,455/14,058/17,834/18,158 tok/s | C128 是达到已测峰值 97% 的最小点；C256 waiting/KV/TTFT 显著恶化，支持状态感知与有界提交动机 |
 | DuckDB AI ShareGPT：service tok/s≈direct，4,921/6,144 cap 语义失败 | 产品语义兼容性必须进入 correct throughput，不能把问题写成纯速度排名 |
 | 65,536 active work/endpoint 达最大吞吐的 97.8% | 固定 token-aware credit 是当前简单、稳健的文本默认点 |
 | AIMD/PID/EWMA、动态 flush、多 actor 多数未过 5% 门槛 | 不能声称复杂动态策略普遍胜过强静态 baseline |
