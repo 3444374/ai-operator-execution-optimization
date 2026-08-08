@@ -60,6 +60,7 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
+| `opening_bounded_saturation_calibration_20260808/` | ShareGPT bounded HTTP C32/C64/C128/C256 容量校准，含 MFU、服务状态与服务器原始归档 SHA。 | C128 是达到 C256 已测峰值 97% 的最小点；只用于冻结正式对照并纠正旧 C32 欠供给口径，不作框架性能排名。 |
 | `dual_gpu_active_work_curve_20260728/` | Dual-4090 request-level per-endpoint active-work curve over 16,384–65,536 predicted tokens. | Throughput still rises at 65K but marginal gain has fallen to 5.5%; 49K is the current knee candidate and 65K is only the best tested boundary. |
 | `dual_gpu_request_replay_20260728/` | Dual-4090 batch-barrier/request-level replenishment comparison with three formal repeats per arm and admission-work audit. | K48 is the work-matched request control and matches batch K16 throughput; K64 is the best tested request K but carries about 33% more offered work and has worse P99, so it is not an isolated replenishment win or a capacity optimum. |
 | `shared_vllm_adaptive_admission_20260726/` | Real shared-endpoint foreground/background K8/K16/AIMD repeats plus adaptive-flush follow-up, with exact request-token accounting. | Static K8 protects foreground tails; AIMD saturates near K16 with zero decreases and provides no feedback gain. Adaptive flush behaves mostly like fixed-50 and has no stable increment. |

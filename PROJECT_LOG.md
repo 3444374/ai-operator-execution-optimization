@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-08-08 ShareGPT bounded 饱和校准与旧 C32 口径纠正
+
+- 同一 2,048-row ShareGPT manifest 上完成 bounded HTTP C32/C64/C128/C256 的 1 warm-up + 1 formal 容量扫描；8/8 cells、4/4 formal 通过 exactly-once、service counter 与 ≥60 s 门禁。
+- formal service tok/s 为 9,454.88/14,057.93/17,834.14/18,158.19；C128 达 C256 已测峰值 98.22%，按“达到 97% 的最小点”冻结为原生正式矩阵 bounded 对照。C256 只多 1.82%，但 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18 s。
+- C32 即使 GPU utilization 约 98%，吞吐仍只有已测峰值 52.07%。因此 `opening_database_e2e_text_refeed_20260808/` 的 ShareGPT project/C32-direct=1.5457 降级为并发/执行结构诊断，不能称喂饱后的方法收益；correctness、sink 和 DuckDB cap 语义证据仍保留。
+- 原始扫描目录继续保留在服务器，并归档为 `opening_bounded_saturation_calibration_20260808.tar.gz`（SHA256 `d416c71762515172e177d6483f6156645d949c25a40fbfe117e89b3fc86139d0`）；仓库只纳入汇总 CSV、报告和图清单，不生成图。
+
 ## 2026-08-08 Ray worker nofile 正式运行门禁
 
 - 原生单 job 首次 2048-row warm-up 保留了一个环境无效 incident：Ray 在机器重启后继承 `RLIMIT_NOFILE=1024`，Daft Ray actor 达到 1,024 open files 后报错并停止向 vLLM 提交；该 run 不进入性能结论。
@@ -12,10 +19,10 @@
 - Ray Data B16 的 C4/C8/C16 单次 service throughput 为 789.64/813.10/764.28 tok/s；正式矩阵冻结三个已测点的 measured peak C8，但 n=1 只称筛选点，不称稳定最优或最小饱和。
 - 原始 gate、shard log、逐请求 CSV 和 service counter 保留在服务器独立目录，并额外归档为 `opening_text_native_scans_20260808.tar.gz`（SHA256 `0bfe22fec0f477a70e805b0237efdf09b6cc7d4d80640ddd2ba8e5d4a7c8c7e7`）。仓库新增 `experiments/results/opening_text_native_gate_20260808/` 汇总，不提交 raw request trace。
 
-## 2026-08-08 喂饱后的统一文本 database-E2E replacement 通过
+## 2026-08-08 统一文本 database-E2E replacement correctness 护栏通过（性能口径后续降级）
 
-- K128 replacement 完成 24/24 cells、18 formal；feeding、GPU、exactly-once、sink readback、manifest/identity、0 infrastructure failure 与稳定性门全部通过。当前权威报告为 `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`，2026-08-07 首轮只保留为 failed-feeding 历史诊断。
-- SQuAD direct/DuckDB/project service tok/s 为 40,920.72/40,955.99/41,277.95，project/direct=1.0087，三条静态路径近似中性；ShareGPT 为 9,425.25/9,421.31/14,568.91，project/direct=1.5457，DB-E2E 116.70 s 对 180.33 s。该差异只称 workload/regime-dependent 静态结构信号，不归因成动态或状态感知收益。
+- K128 replacement 完成 24/24 cells、18 formal；GPU、exactly-once、sink readback、manifest/identity、0 infrastructure failure 与稳定性门通过。后续校准证明“相对 C32 direct ≥95%”不是 ShareGPT feeding 门，故本矩阵只保留 correctness/语义护栏和配置诊断。
+- SQuAD direct/DuckDB/project service tok/s 为 40,920.72/40,955.99/41,277.95，三条静态路径近似中性。ShareGPT project/C32-direct=1.5457 因 C32 欠供给而不再进入性能 claim。
 - DuckDB AI ShareGPT raw/service throughput≈direct，但 4,921/6,144 行 fixed-cap 产品语义失败；正确吞吐与服务吞吐继续分列。报告同时列出 GPU util、MFU、能耗和 running/waiting/KV。
 - replacement 图暂不生成；数据已整理到 formal/headline summary。后续候选图冻结为 workload 内 service 相对 direct、统一 DB-E2E speed、ShareGPT raw/correct throughput 三部分，待全部开题实验数据完成后统一绘制。
 - 纠正归档策略：聚合 CSV/JSON、报告、preflight 进入 Git；15.4 MB request/trace `raw.tar.gz` 保留本地磁盘与 AutoDL，仅从 Git 跟踪移除。后续转入原生单 job、原生多 job 观察和项目 static/shared A/B。

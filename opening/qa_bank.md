@@ -92,7 +92,7 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 
 ### ShareGPT 异质组是否证明动态方法有效？
 
-> 没有。replacement 中 direct、DuckDB AI、project frozen-static 的 correct rows/s 为 11.36、2.26、17.55；project service tokens/s 为 direct 的 154.57%，DB-E2E 为 116.70 s 对 180.33 s。它证明喂饱后的冻结静态执行结构在该异质 workload 下有明显差异，但项目臂与 direct 的请求成形和执行结构整体不同，不能隔离出状态感知、动态调度或 WorkDescriptor 的因果收益。后续仍需同 source、同上限和明确状态变化的 static/shared A/B；不要求重复 sink。
+> 没有。replacement 中 direct、DuckDB AI、project frozen-static 的 service tokens/s 为 9,425.25、9,421.31、14,568.91；但后续同 manifest 饱和扫描证明 C32 direct 只有已测峰值的 52.07%。所以 154.57% 比值首先是并发/执行结构不匹配，不能作为项目方法收益。有效结论是 database-E2E correctness、DuckDB cap 语义边界，以及必须先按 workload 标定最小饱和点。
 
 ### 为什么用 correct rows/s 而不是只用 tokens/s？
 
@@ -108,7 +108,7 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 
 ### feeding-saturation 门怎么判断？
 
-> 优先使用运行期 time-series：GPU utilization mean/p50/p95/max、vLLM running/waiting、KV usage，并以同 workload 的 direct bounded client formal mean service tokens/s 为分母。单点 `gpu_utilization_pct` 不能作为结论。replacement 中项目臂 SQuAD/ShareGPT feeding 为 100.87%/154.57%，GPU mean 为 88.39%/97.19%，均已过门；首轮 89.93%/91.38% 只作历史诊断。waiting=0 也不能单独证明已经喂饱。
+> 优先使用同 workload 的 bounded concurrency frontier，并联合 service tokens/s、running/waiting、KV、MFU、TTFT 与 time-series GPU utilization。ShareGPT C32 的 GPU mean 约 98% 但吞吐只有峰值 52.07%，直接证明高 GPU utilization 或 waiting=0 都不能单独说明已经喂饱。当前冻结 C128，因为它是达到 C256 已测峰值 97% 的最小点。
 
 ## 方法设计与可证伪性
 
@@ -139,7 +139,7 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 | 数据组织 feeding 门有边界 | 中 | 只声称 regime dependency，不声称全局排名 | 图注保留 KV/feeding 条件 |
 | 图像 GPU 未饱和 | 中 | 证明 matched-resource 执行结构收益，不证明 GPU-serving 优化 | 报 GPU busy 6–10% |
 | 代价模型贴线 | 中 | 14.72% 为 marginal pass | 图中画 15% 门槛和 0.28 pp 裕量 |
-| database-E2E 静态差异随 workload 改变，且 ShareGPT 产品语义不兼容 | 中 | replacement project feeding 为 100.87%/154.57%；DuckDB ShareGPT 4,921/6,144 cap 失败 | 不把静态结构差异归因成动态收益，不新增 workload 追正 |
+| database-E2E correctness 与 ShareGPT 产品语义不兼容 | 中 | replacement 24/24 cells；DuckDB ShareGPT 4,921/6,144 cap 失败；旧 ShareGPT C32 对照欠供给 | 静态跨路径性能排名改由独立冻结点原生矩阵承担 |
 | 单数据库/单机器外推 | 中 | 开题先闭合因果合同，外部有效性留论文阶段 | 标 AutoDL PG18.4 rehearsal |
 | 写回贡献不清 | 低 | sink 只做统一边界、正确性与收益吞噬检查 | 不单列研究内容 |
 

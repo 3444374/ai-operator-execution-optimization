@@ -1,7 +1,7 @@
 # 开题叙事与 Claim Matrix
 
 初版冻结日期：2026-08-07
-第一性原理复审：2026-08-08（feeding 纠正矩阵已通过；原生单/多 job 对照仍在补齐）
+第一性原理复审：2026-08-08（ShareGPT bounded 饱和校准已冻结 C128；原生单/多 job 对照仍在补齐）
 
 用途：本文件是开题阶段研究叙事、证据等级和新增实验停止规则的内部判定表。报告、答辩内容大纲、问答和实验计划若与本表冲突，先回到原始结果核对，再更新本表和相关材料。不得为了得到更好看的结果改变研究问题。当前暂停 PPT 成品制作。
 
@@ -51,8 +51,9 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 算子代价估计已表现出配置选择价值 | 条件性 | `experiments/results/operator_cost_profile_dual4090_formal_v2_cache_on_20260807/README.md`：429 formal，CE5 pooled regret 1.67%、macro 2.90%、max 14.72%、candidate pairwise 0.808 | 可写为第一份选择质量可行性证据；CE5 只是 marginal pass | 更多 context、时间段、workload 和硬件 held-out |
 | 简单代价 proxy 不足以支持配置选择 | 已证明（文本） | 同上 20 contexts；各 context 四候选 E2E spread 12.0%–86.5%。CE0 mean macro regret 37.2%/pairwise 0.50，CE1 analytical 17.8%/0.53；逐行 MAE 更低的 Ridge 选择反而更差 | 代价估计必须按 ranking/regret 验收，首版保留物理解析结构并只学习 residual | 图像阶段代价的 held-out 选择证据仍缺 |
 | 三条静态路径在 SQuAD 均匀控制组已有统一 database-E2E 对照 | 已证明（静态地基） | `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`：K128 replacement 24/24 单元、18 formal 全门禁通过；direct/DuckDB/project service tok/s=40,920.72/40,955.99/41,277.95，correct rows/s=136.63/136.68/137.77 | 喂饱后均匀短输出下三条静态路径近似中性；强静态点必须保留为后续动态对照 | 无 database-E2E blocker；不能从近似中性外推异质负载 |
-| 两类 workload 的完整三臂统一 database-E2E 结论 | 已证明（静态地基） | 同上：两 workload 均通过 feeding/GPU/exactly-once/sink/CV 门；ShareGPT project/direct service ratio=1.5457，SQuAD=1.0087 | 静态路径差异是 workload/regime-dependent；这不是动态或单一 WorkDescriptor 机制的因果收益 | 原生 Daft/Ray Data 轨与项目动态 A/B 分开补齐 |
-| 异质文本 workload 会拉开冻结静态路径差距 | 条件性 | ShareGPT project/direct service tok/s=14,568.91/9,425.25、DB-E2E=116.70/180.33 s；但两臂执行结构整体不同。DuckDB service≈direct，但 4,921/6,144 行 cap 语义失败 | 可说异质组观察到显著静态结构差异和产品语义边界；不能归因给动态、感知或某个 organizer 字段 | 同 manifest 原生单 job 矩阵；项目方法增量需同上限 A/B |
+| 两类 workload 的完整三臂统一 database-E2E 护栏 | 已证明（correctness 地基） | `opening_database_e2e_text_refeed_20260808/`：24/24 cells 的 source/sink、identity、exactly-once 和 CV 门通过；后续饱和扫描证明 ShareGPT C32 direct 只有已测峰值的 52.07% | 可用于 database-E2E 与产品语义边界；ShareGPT 三臂不作 matched-saturation 性能排名 | 原生单 job 正式矩阵改用 bounded C128 |
+| ShareGPT C32→C256 呈现欠供给、平台与过量排队区间 | 已证明（容量动机） | `experiments/results/opening_bounded_saturation_calibration_20260808/README.md`：formal tok/s=9,455/14,058/17,834/18,158；C128 达峰值 98.22%，C256 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18s | GPU utilization 高不等于喂饱；状态感知需联合完成速率、running/waiting、KV、MFU 与 tail，控制目标是最小饱和区 | 数值只绑定当前机器、模型、协议、workload；动态收益仍待 A/B |
+| 异质文本 workload 会拉开冻结静态路径差距 | 条件性（降级） | ShareGPT project/C32-direct service tok/s=14,568.91/9,425.25、DB-E2E=116.70/180.33 s；C32 后续证实欠供给，且两臂并发/执行结构不同。DuckDB 4,921/6,144 行 cap 语义失败 | 只说旧静态配置在异质 workload 下暴露容量校准和产品语义问题；不能称项目方法收益 | 同 manifest、独立冻结点的原生单 job 矩阵；项目方法增量需同上限 A/B |
 | state-aware 请求成形/提交优于冻结强静态策略 | 待验证 | 尚无与同上限 frozen static 的正式对照 | 只能写成拟研究方法，不得写成已有贡献 | 开题后 proposed 主实验 |
 | Daft/Ray Data 文本原生路径已有同环境正式排名 | 待验证 | 当前只有 64/256-row validity/scale gate，没有至少 60 s、1+3 交错 formal | 只能说原生入口可执行且 scheduler owner 可审计，不得说哪个框架更快 | 同 ShareGPT Chat manifest 的 bounded、Daft Native/Ray、Ray Data 独立冻结点 1+3 formal |
 | 现有原生框架在多 job 共享服务时已暴露全局提交/感知缺口 | 待验证 | 已有项目 1/2/4-job 结果不包含 Daft built-in/Ray Data，且同步等量启动不能证明 idle borrowing | 不预设现有框架一定表现差；只观察独立 job 竞争、全局压力和可观测性 | Daft Native/Ray、Ray Data short/long staggered 原生观察 + 项目 static/shared 同上限 A/B |
@@ -72,7 +73,7 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 - arms、source/sink、模型和重复合同与均匀控制组相同。
 - 追加报告 work CV、token P50/P95/P99、estimated service work、endpoint work imbalance、TTFT/JCT/tail、cache/locality、active work 和 serving pressure。
 
-首轮两组实验因项目臂未喂饱而只作历史诊断。K128 replacement 已整体通过，后续只引用 `opening_database_e2e_text_refeed_20260808/`。为闭合“现有系统不足→设计”因果链，只再补两类不可替代证据：一个 ShareGPT Chat 原生框架单 job 矩阵，以及 Daft/Ray Data 原生两 job 观察 + 项目 static/shared 因果 A/B。差异不足 5% 或为负同样有效；不换 workload、模型、数据库，不扫更多 offset/weight 追正。
+首轮两组实验因项目臂未喂饱而只作历史诊断；K128 replacement 的 correctness 护栏有效，但 ShareGPT 的 C32 direct 后续证实仍欠供给，故三臂性能口径降级。正式原生单 job 以 bounded C128 作为达到已测峰值 97% 的最小饱和对照。为闭合“现有系统不足→设计”因果链，只再补原生单 job，以及 Daft/Ray Data 原生两 job 观察 + 项目 static/shared 因果 A/B。差异不足 5% 或为负同样有效；不换 workload、模型、数据库，不扫更多 offset/weight 追正。
 
 ## 4. 新实验准入问题
 

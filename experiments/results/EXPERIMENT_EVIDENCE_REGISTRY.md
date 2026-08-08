@@ -43,6 +43,7 @@
 | 多模态 cost adapter / image path | 中性 `work_units` + lazy Daft image source + typed CLIP tensor actor 已实现基础合同；两个 CLIP profiler；`import_coco_images.py` | `motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`（历史 slow-pt）；`image_clip_preprocess_variants_20260801/`（当前实现边界，720 raw rows）；`feasibility/results/vllm_clip_pooling_gate_20260804/` | 四变体质量门禁通过；tensor fast path 相对 production-np 串行 profile 1.14–1.22×，CPU prepare 仍为 actor 13.8–31.2×。这只保留 E2E build 动机；写回和相对 Daft Native 的正式方法对照尚未完成。vLLM pooling 是 direct-service ceiling 候选，当前 0.25.1 两次 1-image offline gate 均 600s 超时且无 embedding，状态 blocked，不能生成性能排名。 |
 | 多 endpoint/多 GPU 调度 | endpoint/pool 配置与 routing contract | request replay、active-work saturation、Actor Pool 与 Shared-vLLM formal | 真实双 4090 容量、admission、worker identity 与 equal-weight 1/2/4-job 公平性证据已建立；尚不能声称 staggered/weighted、路由增量或故障迁移有效。 |
 | 文本原生框架入口 | official/native adapter、单 job matrix 与 native multi-job runner tests | `opening_text_native_gate_20260808/` | bounded、Daft Native/Ray、Ray Data 的 6/6 capability/calibration gate 通过；只证明入口、provenance、exactly-once 和最小 Ray Data 筛选可用，n=1 不作性能排名。 |
+| ShareGPT bounded 饱和校准 | bounded HTTP C32/C64/C128/C256 + vLLM/GPU time series | `opening_bounded_saturation_calibration_20260808/` | 8/8 cells 通过；formal C128 达 C256 已测峰值 98.22%，冻结为正式对照。C32 仅 52.07%，高 GPU util 不等于喂饱；C256 明显过量排队。 |
 | Ray task/actor 与 vLLM capacity 调优 | 执行接口、参数字段和实验设计 | CUDA Graph、双 GPU request replay、active-work、Actor Pool 与 service quantum | 已固定 vLLM 8192 batched-token/256 seq capacity，并标定上游 65K work 饱和点；增加 actor 或固定 quantum 均未过 5% 门槛。 |
 
 ## 3. 全部正式结果目录
@@ -50,6 +51,7 @@
 | 结果目录 | 角色 | 当前状态或结论 |
 |---|---|---|
 | `opening_text_native_gate_20260808/` | 开题文本原生框架 capability gate 与 Ray Data C4/C8/C16 最小筛选 | 6/6 gate 通过；冻结单次 measured peak C8/B16 供正式矩阵。只有一次 256-row gate，不支持框架正式性能排名。 |
+| `opening_bounded_saturation_calibration_20260808/` | ShareGPT bounded HTTP 容量扫描与 C128 冻结 | C32/C64/C128/C256 formal tok/s=9,455/14,058/17,834/18,158；C128 为 97% 最小饱和点，C256 过量排队。单次 formal 只用于校准，不支持统计排名。 |
 | `opening_database_e2e_text_20260807/` | 开题统一 database-E2E 文本三臂：SQuAD 均匀 + ShareGPT 异质 | 24/24 单元与 18 formal 完整性通过；project service feeding 89.93%/91.38% 均未过门，不支持性能 claim。DuckDB ShareGPT 的 service tok/s≈direct，但 4,936/6,144 行 cap 语义失败主导 correct throughput。开题前停止加 baseline。 |
 | `operator_cost_profile_dual4090_formal_v2_cache_on_20260807/` | cache-on 双 4090 代价估计正式结果 | 429 formal、20 context × 4 candidate；Hybrid pooled/macro/max regret 1.67%/2.90%/14.72%，pairwise 0.808；最坏 regret 为边界通过。 |
 | `hol_age_diagnostic_512_20260728/` | HOL-age 诊断实验实际运行（6 臂 × 3 formal，24/24 ok） | **负向**：aimd_hol/replenish/aimd_hol_replenish SLO-goodput（6.78/4.62/2.91）远低于 static_k16（15.27），P99 恶化 4–13×。「诊断优先」假设被否定——补 HOL-age 信号 + request-level replenish 后动态稳态仍不优于最佳静态。 |

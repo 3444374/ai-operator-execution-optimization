@@ -126,7 +126,7 @@ PostgreSQL source
 
 ## 6. 开题前统一文本 database-E2E
 
-2026-08-07 首轮三臂因 project feeding 仅为 direct 的 89.9%/91.38%，保留为 failed-feeding 历史诊断。2026-08-08 已按 workload 校准并冻结 `K=128`，完整 replacement 24/24 单元、18 formal 均通过 feeding、GPU、exactly-once、sink、identity 与稳定性门禁；后续只引用 `experiments/results/opening_database_e2e_text_refeed_20260808/`。
+2026-08-07 首轮三臂因 project feeding 仅为 direct 的 89.9%/91.38%，保留为 failed-feeding 历史诊断。2026-08-08 K128 replacement 的 24/24 单元、18 formal 通过 correctness、sink、identity 与稳定性门禁；但随后 ShareGPT bounded C32–C256 扫描证明 C32 只有已测峰值的 52.07%，故 ShareGPT 三臂性能排名降级，正式原生矩阵改用达到峰值 98.22% 的最小点 C128。
 
 开题静态地基先完成 SQuAD short-answer 均匀控制组与 ShareGPT controlled-skew 异质组。两组均比较：
 
@@ -136,9 +136,9 @@ PostgreSQL source
 
 统一合同：PostgreSQL source、immutable equal-row manifest、双 Qwen2.5-7B vLLM endpoint、prefix cache ON、统一 PostgreSQL sink、外部 database-E2E、质量与资源指标、1 warmup + 3 formal。
 
-SQuAD replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 136.63、136.68、137.77，service tokens/s 为 40,920.72、40,955.99、41,277.95；三臂 EM/F1 接近。project feeding 为 direct 的 100.87%，均匀短输出下三条静态路径近似中性。
+SQuAD replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 136.63、136.68、137.77，service tokens/s 为 40,920.72、40,955.99、41,277.95；三臂 EM/F1 接近，project/direct service ratio 为 1.0087，均匀短输出下近似中性。
 
-ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 11.36、2.26、17.55，service tokens/s 为 9,425.25、9,421.31、14,568.91；project feeding 为 direct 的 154.57%，DB-E2E 为 116.70 s 对 180.33 s。DuckDB AI 的 raw/service throughput 与 direct 接近，但 fixed-cap 产品语义下三次 formal 共 4,921/6,144 行失败。该结果证明静态路径差异随 workload/regime 改变，并建立了强静态地基；不能写成 state-aware、动态调度或单个 WorkDescriptor 机制已胜出。
+ShareGPT replacement 三次 formal 均值：direct、DuckDB AI、project 的 correct rows/s 为 11.36、2.26、17.55，service tokens/s 为 9,425.25、9,421.31、14,568.91。后续 bounded C32/C64/C128/C256 扫描为 9,454.88/14,057.93/17,834.14/18,158.19 tok/s，C128 是达到已测峰值 97% 的最小点；C256 仅增 1.82%，却使 waiting mean=116.8、KV max=0.9996、TTFT mean=6.18s。旧 project/C32-direct=1.5457 因对照欠供给而不作方法排名。DuckDB fixed-cap 产品语义失败 4,921/6,144 行的结论仍有效。
 
 两组完成后停止换模型、数据库、workload 或扩大参数扫描追正。只再补两类不可替代的对照：① 同一 ShareGPT Chat manifest 上的 bounded control、Daft Native/Ray 与 Ray Data 原生单 job 1+3；② Daft/Ray Data 两个 short/long 错峰独立 job 观察，以及项目 static-partition vs shared-work-credit 同上限 A/B。原生框架不注入项目 credit/router，不将 barrier 冒充 request P99；DuckDB 仅保留在 SQuAD/cap=64 有界输出产品轨。差异不足 5% 或为负同样有效，不扫更多 offset/weight 追正。开题用现有与新增最小证据同等严格地说明 Work Unit、状态感知、动态调度和共同使能代价估计的设计理由，不要求 proposed 全面胜出。
 

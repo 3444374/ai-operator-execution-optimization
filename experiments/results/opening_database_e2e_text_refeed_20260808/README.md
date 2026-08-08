@@ -1,7 +1,7 @@
-# 喂饱后的统一文本 database-E2E 正式实验
+# 统一文本 database-E2E correctness 护栏与静态配置诊断
 
 日期：2026-08-08
-状态：**通过；取代 `opening_database_e2e_text_20260807/` 的 failed-feeding 性能口径**
+状态：**correctness / database-E2E 护栏通过；ShareGPT 性能排名被后续 C32–C256 饱和校准降级**
 
 ## 1. 实验目的
 
@@ -37,17 +37,17 @@ SQuAD manifest SHA256 为 `0543b29e…f6b19b`；ShareGPT 为 `54c97a2f…83169b`
 | exactly-once / sink readback | 全部通过 |
 | manifest、PG/pgvector identity | 全部一致 |
 | 基础设施失败 | 0 |
-| project feeding ≥95% direct | SQuAD 100.87%；ShareGPT 154.57%，均通过 |
+| project/direct service ratio | SQuAD 100.87%；ShareGPT 154.57%；这只是相对 C32 direct 的比值，不再作为 feeding 通过判据 |
 | project GPU utilization mean ≥80% | SQuAD 88.39%；ShareGPT 97.19%，均通过 |
 | 稳定性 | 六组 correct rows/s CV 均 ≤1.75% |
 
-因此本矩阵可以替换首轮 failed-feeding 结果。feeding 只证明比较处于有效 serving regime，不等于某个策略的因果收益。
+24/24 cell 的 correctness、sink、identity 与稳定性结论有效。后续独立 ShareGPT bounded calibration 发现 C32 仅为已测峰值的 52.07%，故 ShareGPT 三臂不处于 matched-saturation regime，不能用于项目/direct 性能排名。详见 `opening_bounded_saturation_calibration_20260808/`。
 
 ## 4. 实验数据
 
 ### 4.1 Headline：三次 formal 均值
 
-| workload | 路径 | DB-E2E (s) | raw rows/s | correct rows/s | service tok/s | feeding vs direct | cap 语义失败 |
+| workload | 路径 | DB-E2E (s) | raw rows/s | correct rows/s | service tok/s | service ratio vs C32 direct | cap 语义失败 |
 |---|---|---:|---:|---:|---:|---:|---:|
 | SQuAD | direct | 62.126 | 170.139 | 136.632 | 40,920.72 | 100.00% | 0/31,710 |
 | SQuAD | DuckDB AI | 62.074 | 170.280 | 136.675 | 40,955.99 | 100.09% | 3/31,710 |
@@ -83,14 +83,14 @@ project 的 request P99 来自项目 profiler，而 direct/DuckDB 的 request la
 
 ### 事实
 
-1. K128 replacement 把两个 workload 的项目臂都送入合格 feeding regime；首轮 89.93%/91.38% 结果被取代。
+1. K128 replacement 提高了项目臂供给，但“达到 C32 direct 的 95%”不是可靠的饱和门。后续扫描证明 ShareGPT C32 仍明显欠供给。
 2. SQuAD 下三臂 correct throughput 和 DB-E2E 接近，项目相对 direct 的 service throughput 仅 +0.87%。
-3. ShareGPT 下 project frozen-static 相对 direct 的 service throughput 为 1.546×，correct rows/s 为 1.545×，DB-E2E 从 180.33 s 降到 116.70 s。
+3. ShareGPT 下 project frozen-static 相对 **C32、欠供给的** direct service throughput 为 1.546×，DB-E2E 从 180.33 s 降到 116.70 s；该差异由并发/执行结构混淆，不能作为方法收益。
 4. DuckDB AI 在 ShareGPT 的 raw rows/s、service tok/s、GPU util 与 direct 几乎相同，但 4,921/6,144 行触发 fixed-cap 产品语义失败，correct throughput 因此降到 2.26 rows/s。
 
 ### 推断
 
-- 静态执行结构的收益是 workload/regime-dependent：均匀短输出下差异被服务吸收，异质长输出下不同请求成形/并发结构产生明显差异。
+- 静态配置的表现是 workload/regime-dependent：相同 C32 对短输出可能足够，对 ShareGPT 只达到已测峰值的约一半；必须先做 workload-specific saturation calibration。
 - DuckDB ShareGPT 结果首先暴露的是产品输出语义边界，而不是“DuckDB 喂不饱 vLLM”或“DuckDB 很慢”。
 
 ### 不能声称
@@ -102,14 +102,14 @@ project 的 request P99 来自项目 profiler，而 direct/DuckDB 的 request la
 ## 6. 对课题的含义
 
 - **数据组织 / Work Unit**：同一冻结静态点在 SQuAD 与 ShareGPT 的结果差异很大，说明组织策略必须绑定 work 分布和 serving regime；但 WorkDescriptor 的字段必要性仍主要由固定行 token 14.3× 与图像分阶段画像直接支撑。
-- **状态感知**：本实验验证 running/waiting/KV/GPU/MFU 可以在统一链路中持续观测，并排除了未喂饱这一混淆；“同一 W 下状态会变化”的直接动机仍来自 high 与 arrival-limited 对照。
-- **动态调度**：K128/W65,536 成为动态方法必须超过的强冻结静态基线。动态策略只有在同上限、明确负载变化的 A/B 中达到预注册门槛，才能晋级。
+- **状态感知**：本实验验证 running/waiting/KV/GPU/MFU 可以在统一链路中持续观测，但没有排除 ShareGPT direct 欠供给；后续 C32–C256 扫描才给出欠供给/平台/过量排队三段证据。
+- **动态调度**：项目 K128/W65,536 仍是项目内冻结静态点；跨执行路径正式比较改用 bounded C128。动态策略只有在同上限、明确负载变化的 A/B 中达到预注册门槛，才能晋级。
 - **算子代价估计**：raw、correct 与 service throughput 的分离说明选择目标必须纳入 work、语义失败和决策 regret；代价估计本身的选择质量由独立 429-formal context-LOO 实验支撑。
 
 ## 7. 下一步与停止规则
 
 1. 不再重跑本三臂 database-E2E，也不更换 workload、模型、数据库或 K 追求更大差异。
-2. 完成同一 ShareGPT Chat manifest 的 bounded、Daft Native、Daft Ray、Ray Data 原生单 job 1+3；各原生系统拥有自身执行和调度。
+2. 以新冻结的 bounded C128 完成同一 ShareGPT Chat manifest 的 bounded、Daft Native、Daft Ray、Ray Data 原生单 job 1+3；各原生系统拥有自身执行和调度。
 3. 完成原生 short/long 两 job 错峰观察，以及项目 `static_partition` vs `shared_work_credit` 同上限因果 A/B；报告 per-job JCT、服务状态、GPU/MFU、fairness 和 exactly-once。
 4. 若差异不足 5%或为负，按阴性结果停止，不扩扫 offset/weight 追正。
 

@@ -41,7 +41,7 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 | 13 | 多作业按 work 共享而不是按请求数平均 | shared work credit、deficit/fair queue、idle borrowing、remaining work/SLO slack | 多 job 实验设计图 | 公平性、JCT 和隔离仍需完整动态实验验证 |
 | 14 | 文本和图像复用接口，但主导 stage 不同 | text token work；image prepare/model/tensor work；同一 descriptor/state/controller 接口 | 跨模态映射表 | 泛化是接口复用，不是假设两种负载成本相同 |
 | 15 | 因果评估必须先冻结饱和强静态点 | 同资源、同最大 K/work、同 source、同完整结果语义；dynamic 仅改变策略 | 实验合同图 | 未通过 feeding/correctness/stability 的数据不得排名；sink 仅用于 database-E2E 护栏 |
-| 16 | 开题静态基线由两组纠正后三臂实验给出 | SQuAD 均匀组近似中性；ShareGPT project/direct service=1.546；DuckDB raw/correct 语义分离 | 待画：workload 分面比较 + 紧凑表 | 只使用 replacement 过门数据；旧 89.9%/91.38% feeding 数据仅作诊断；不称动态收益 |
+| 16 | database-E2E 护栏与饱和校准分开呈现 | SQuAD 三臂近似中性；ShareGPT C32 仅达峰值 52.1%，因此旧 project/C32-direct=1.546 降级为配置诊断；DuckDB raw/correct 语义分离 | 待画：C32–C256 饱和/排队双面板 + 紧凑 correctness 表 | 不把 C32 当饱和 ceiling；不称项目方法收益 |
 | 17 | 前期证据分别覆盖组织、图像结构和代价选择质量 | organization regime、image matched-resource、cost decision regret | 三个不重复的小图或一页表 | 都标为 preliminary/conditional evidence |
 | 18 | 论文主实验按稳态、变化、多作业、跨模态推进 | steady no-regression；phase shift/burst/mixed-cost；multi-job；image | 实验路线与停止规则 | K512、VLM、故障迁移不是开题 blocker |
 | 19 | 贡献是统一 work 表征与状态感知上游执行方法 | 两项研究内容、共同使能代价估计、多模态验证和严格实验合同 | 一页总结 | 不把工程集成或弱 baseline 写成贡献 |
@@ -52,8 +52,8 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 
 | workload | 作用 | 三臂 | 当前动作 | 必过门禁 |
 |---|---|---|---|---|
-| SQuAD 均匀控制组 | 验证统一 source/sink 和质量口径 | bounded direct static-sharded、DuckDB AI static-sharded、project frozen-static | K128 replacement 已通过；project/direct service=1.0087 | project feeding ≥95% direct；correctness；1 warm-up+3 formal；稳定性均通过 |
-| ShareGPT 受控异质组 | 验证长短 work 异质下的静态边界 | 同上 | K128 replacement 已通过；project/direct service=1.5457 | 同上均通过；静态整条路径差异不能归因成动态收益 |
+| SQuAD 均匀控制组 | 验证统一 source/sink 和质量口径 | bounded direct static-sharded、DuckDB AI static-sharded、project frozen-static | correctness/稳定性通过；project/direct service=1.0087，近似中性 | 只作该 workload 静态地基，不外推到 ShareGPT |
+| ShareGPT 受控异质组 | 验证长短 work 异质下的容量与语义边界 | 同上 | correctness 护栏通过；后续 C32–C256 扫描冻结 bounded C128；旧 project/C32-direct=1.5457 不排名 | C128 达 C256 已测峰值 98.22%；正式原生矩阵用 C128 |
 
 每臂至少汇总：correct rows/s、database-E2E wall time、service/operator tokens/s、request P50/P95/P99、GPU util time-series、MFU、显存、功耗/能耗、J/1k token、running/waiting、KV usage、prefix hit、各 pipeline 阶段时间、质量、failure 和成本假设。图中只放支持主结论的 3–5 个指标，其余进入结果报告表。
 
