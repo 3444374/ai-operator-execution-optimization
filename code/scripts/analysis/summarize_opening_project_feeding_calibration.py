@@ -53,6 +53,17 @@ def _cv(values: list[float]) -> float:
     return statistics.stdev(values) / mean if len(values) > 1 and mean else 0.0
 
 
+def _json_ready(value: Any) -> Any:
+    """Replace non-finite diagnostic values so failed audits still write JSON."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: _json_ready(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_ready(item) for item in value]
+    return value
+
+
 def _portable_cell(root: Path, rows: int, record: dict[str, Any]) -> Path:
     original = Path(record["cell"])
     local = root / f"scale_{rows}" / original.name
@@ -289,7 +300,10 @@ def main() -> int:
         project_peak_floor=args.project_peak_floor,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
+    args.output.write_text(
+        json.dumps(_json_ready(result), indent=2, ensure_ascii=False, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
     print(json.dumps({"status": result["status"], "selected_k_per_endpoint": result["selected_k_per_endpoint"], "output": str(args.output)}, indent=2))
     return 2 if args.require_pass and result["status"] != "selected" else 0
 

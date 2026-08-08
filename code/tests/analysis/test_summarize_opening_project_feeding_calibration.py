@@ -127,6 +127,11 @@ class FeedingCalibrationSummaryTests(unittest.TestCase):
         self.assertIsNone(result["selected_k_per_endpoint"])
         self.assertTrue(any("manifest SHA mismatch" in error for error in result["audit"]["errors"]))
 
+    def test_nonfinite_diagnostics_are_serialized_as_null(self) -> None:
+        prepared = mod._json_ready({"missing": float("nan"), "values": [1.0, float("inf")]})
+        self.assertEqual(prepared, {"missing": None, "values": [1.0, None]})
+        json.dumps(prepared, allow_nan=False)
+
 
 if __name__ == "__main__":
     unittest.main()
