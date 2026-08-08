@@ -8,6 +8,22 @@
 - 证据层级：动机图证明问题与研究必要性；组织、图像和代价图证明已有机制/可行性信号；均不证明待研究的状态感知动态策略已经优于同上限静态基线。
 - 视觉规则：一张图一个主句；无未解释散点；标签不压数据、标题或图例；颜色之外同时保留位置、形状或文字标签。2026-08-08 已统一为中文主标题/轴/直接标注，保留 WorkDescriptor、MFU、token 等必要技术词。
 
+## 2026-08-09 数据就绪状态
+
+本轮只整理数据与绘图合同，**未运行绘图脚本，未新建或覆盖 PNG/SVG，未修改 PPT**。
+
+| 编号 | 内容 | 当前状态 | 备注 |
+|---|---|---|---|
+| A | work 与运行状态动机 | `ready-existing` | 已有正式图与可追溯数据 |
+| B | 研究边界与共同使能 | `ready-existing` | 已有 solution overview |
+| C | 数据组织的 regime dependency | `ready-existing` | 已有正式图 |
+| D | 图像 staged work | `ready-existing` | 已有正式图 |
+| E | 代价估计的决策质量 | `ready-existing` | 已有正式图，结论为 marginal pass |
+| F | 原生文本单 Job 状态指纹 | `data-ready-not-generated` | 12 formal 已通过门禁 |
+| G | 同上限 static–dynamic phase change | `plan-only-no-result` | 只能作实验设计示意，不得填结果数值 |
+| H | 两 Job 前台干扰与共享权衡 | `data-ready-not-generated` | 5 s guaranteed-overlap 已通过门禁 |
+| Appendix | database-E2E correctness/语义表 | `appendix-table-only` | 不生成正文性能排名图 |
+
 ## 1. Work、状态与提交压力动机
 
 文件：`data/report_main/opening_motivation_work_state.{png,svg}`。
@@ -71,22 +87,81 @@
 
 六张现有图已在中文重绘后逐张打开复核：无缺字方框、无裁切、无标题/图例/数值重叠；所有 marker 的含义在图内图例或文字中直接解释。字体链以 PingFang SC 为首选，英文技术词回退 Arial/DejaVu Sans。
 
-## 7. Replacement 文本三臂（待数据门禁通过后生成）
+## 7. Replacement 文本三臂（附录 correctness/语义表）
 
-计划文件：`data/report_main/opening_database_e2e_replacement.{png,svg}`。
+数据：`experiments/results/opening_database_e2e_text_refeed_20260808/summary/formal_summary.csv`
+与 `summary/audit.json`。旧 `opening_database_e2e_text_20260807` 只作 failed-feeding 诊断，
+不得回填。
 
-- 输入只能来自 `experiments/results/opening_database_e2e_text_refeed_20260808/` 的审计通过汇总；旧 `opening_database_e2e_text_20260807` 数据只作 failed-feeding 诊断，不得回填。
-- 两个 workload 分面分别比较 bounded direct static-sharded、DuckDB AI static-sharded 与 project frozen-static。主轴使用 correct rows/s；P99、time-series GPU util、MFU 与 energy 以直接标注或紧凑副轴呈现，不把 service tokens/s 冒充 database correct throughput。
-- feeding、correctness、failure、manifest/PG identity 与三次 formal 稳定性任一未过，绘图命令必须 fail-closed，图文件不得生成。
-- 支持：开题统一 source/sink/质量/资源合同下的强静态基线表现。
-- 不支持：project dynamic 已胜；DuckDB AI 的 product scheduler 可以由项目调参；某个 workload 的 K 可跨 workload 或机器复用。
-- 渲染 QA：待生成后补充；必须核对每个 arm 的均值、离散、P99、MFU、energy、quality 和 failure 文字与汇总 JSON 一致。
+- 门禁已通过：24/24 cells、18 formal，source/sink、identity、exactly-once、manifest
+  和稳定性合同一致，0 infrastructure failure。
+- SQuAD 可作静态地基：direct/DuckDB/project correct rows/s 为
+  136.63/136.68/137.77，在该 workload 下近似中性。
+- DuckDB ShareGPT 有 4,921/6,144 行 cap 语义失败，correct rows/s 为 2.26；
+  它只用于产品语义边界，不与 Chat 轨混排。
+- ShareGPT C32 direct 后续被独立扫描证实只达已测峰值的 52.07%，因此
+  project/direct 1.5457× 被并发与执行结构混淆，必须显式标为 `not rankable`。
+- 决策：不再生成 `opening_database_e2e_replacement.{png,svg}` 作正文性能图。
+  开题只保留一张附录表，展示 correctness、sink、语义失败与可排名性。
+
+## 8. F：原生文本单 Job 状态指纹
+
+计划文件：`data/report_main/opening_native_single_job_state_fingerprint.{png,svg}`。
+
+- 类型：experimental results；数据为
+  `experiments/results/opening_text_native_single_job_formal_20260808/formal_summary.csv`，
+  4 arms × 3 formal，warm-up 不进统计。
+- 可用字段：`wall_s_mean/sd`、`tokens_per_s_mean/sd`、`running_mean`、
+  `waiting_mean`、`kv_mean`、`mfu_mean`、`gpu_util_mean_pct`、`ttft_mean_s`、
+  `queue_mean_s`。原生 adapter 无统一 request P99，不得补算或伪造。
+- 画法：左侧用两个对齐的点图/误差线展示 JCT 与 service tok/s；右侧用
+  running、waiting、KV、MFU 四个原单位 small multiples。避免雷达图、双 y 轴和
+  隐藏单位的统一归一化。
+- 主句：同一 ShareGPT 任务下，bounded control 处于最小饱和参照，
+  Daft Native/Ray 出现 high-running/high-waiting/KV-near-full，Ray Data 当前路径
+  low-running/no-waiting/low-MFU。
+- 不支持：不归因框架内部算法，不称某框架普遍更快，不将单 Job
+  短 cell 外推为长时间容量排名。
+
+## 9. H：两 Job 前台干扰与共享权衡
+
+计划文件：`data/report_main/opening_multijob_interference_tradeoff.{png,svg}`。
+
+- 数据：`experiments/results/opening_multijob_interference_20260809/data/combined/summary.csv`、
+  `data/combined/comparisons.csv`、`data/project/scenario_summary.csv` 与
+  `data/project/pairwise_comparison.csv`。30 formal rows、10 summary rows、6 comparisons，
+  所有 two-job arms 实际 overlap 大于 0。
+- panel a 是“后到 Job 是否伤害前台”：只画各系统内 `single short → short+long`
+  的 short JCT 变化和误差，并直接标注实际 overlap。项目 full/half-pool
+  匹配控制标为 `causal`，Daft Native/Ray/Ray Data 标为
+  `observational:overlap_present`；不作系统间绝对 JCT 排名。
+- panel b 是“效率—隔离—公平权衡”：用四个对齐 small multiples 比较
+  project static/shared 的 aggregate tok/s、long JCT、short JCT 和 Jain fairness；
+  禁止双 y 轴和雷达图。
+- 备份时间线可分 pre-long/overlap/drain 三段展示 running、waiting、KV、GPU util
+  与 completed-work rate。当前无 interval FLOPs counter，MFU 只能报 group aggregate，
+  不得画成 interval MFU。
+- 原 15 s Daft Native 无 overlap 数据不进入干扰结论；它只说明该到达间隔下
+  short 先完成。开题结论以统一 5 s guaranteed-overlap 数据为准。
+- 支持：原生三路 short JCT 各自上升 82.42%/104.84%/32.76%；project
+  shared 相对 static 总吞吐 +21.03%、long JCT −18.31%，但 short JCT +4.98%、
+  Jain 0.759→0.707。它证明权衡存在，不证明 shared/dynamic 全面胜出。
+- 不支持：原生 request P99、系统间绝对性能排名、4+ Job、weighted/SLO、
+  图像多 Job 或最终 state-aware controller 效果。
+
+## 10. G：同上限 static–dynamic phase change
+
+当前只有论文实验设计，**无开题结果数据**。如果在开题中保留，只能画方法/评估
+示意：low→high/high→low 或 easy→heavy 的 workload phase，在完全相同的最大
+K、active-work、buffer bytes、CPU/GPU 和 actor 数下比较 frozen-static、
+observe-only 和最小动作候选。图内不得出现虚构吞吐、延迟、MFU 或改善百分比。
 
 ## 报告与答辩内容大纲使用顺序
 
-1. 先用动机三联图导出“表示—感知—控制”三项挑战。
-2. 用 overview 说明数据组织如何把数据库行变成可调度的 work。
-3. 用组织、图像、cost 三图展示已有先验证据与清晰边界。
-4. 最后才给出同资源、同最大 K/W 的 frozen-static vs dynamic 后续实验计划。
+1. 先用 A 动机三联图导出“表示—感知—控制”三项挑战。
+2. 用 B 说明数据组织如何把数据库行变成可调度的 work，以及代价估计如何共同使能组织与调度。
+3. 用 C–E 展示组织、图像和 cost 的已有证据与边界。
+4. 用 F 说明不同原生 graph 的外部状态形态，再用 H 说明后到 Job 干扰和效率—隔离—公平权衡。
+5. G 只作同上限 static–dynamic 评估设计，database-E2E 三臂只进附录 correctness/语义表。
 
 该顺序避免把 preliminary signal 写成最终方法胜出，也避免让答辩内容变成实验目录罗列。

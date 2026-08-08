@@ -158,7 +158,7 @@ long JCT −18.31%，但 short JCT +4.98%、Jain median 0.759→0.707。因此�
 | C organization regime | 组织收益为何依赖 serving regime | 低压力/高压力 small multiples 或 dumbbell；附 locality 机制注释 | cache-on 正式结果 | 一张图只讲 regime dependence |
 | D 图像 stage-aware | 为什么跨模态需要 staged work | CPU prepare/GPU service 比 + matched-resource 单一主指标 | image exact-path 正式结果 | 质量与资源合同一致 |
 | E cost decision quality | 代价估计是否能帮助选择 | median/macro/max regret、pairwise 与门槛；不堆所有预测散点 | cost-profile formal | 明确共同使能和 conditional 结论 |
-| F 原生单 Job 状态指纹 | 现有原生 graph 如何落入不同服务压力区 | 左：JCT/tok/s；右：running、waiting、KV、MFU 标准化状态；标 underfeed/minimum-saturation/overqueue | `opening_text_native_single_job_formal_20260808` 12 formal | 只解释外部现象；database-E2E 三臂降为 appendix correctness/语义表 |
+| F 原生单 Job 状态指纹 | 现有原生 graph 如何落入不同服务压力区 | 左：JCT/tok/s；右：running、waiting、KV、MFU 原单位 small multiples；标 underfeed/minimum-saturation/overqueue | `opening_text_native_single_job_formal_20260808` 12 formal | 只解释外部现象；database-E2E 三臂降为 appendix correctness/语义表 |
 | G static–dynamic | 状态变化下动态是否超过同上限静态 | workload phase 时间线 + outcome small multiples | 论文实验设计图；不伪造开题前结果 | 最大 K/work/resources 完全匹配 |
 | H multi-job | shared credit 如何改变效率、前台隔离与公平 | per-job JCT/goodput + Jain/isolation；同时给 single-short 匹配控制 | 开题两作业 staggered formal；论文阶段扩展 weighted/异构 | 最小结果只覆盖两作业与一个 offset；不预设所有指标同时改善 |
 

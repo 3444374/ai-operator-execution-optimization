@@ -5089,3 +5089,18 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - DuckDB 仅在 SQuAD/cap=64 有界输出产品轨中比较；不与 ShareGPT 原生框架轨交叉排名。原生 Daft/Ray Data 观察不注入项目 credit/router，不虚构 request P99 或 idle-borrowing 指标。
 - 新增可复用的原生文本 1+N 交错矩阵 runner 与薄的原生两 job 错峰 runner；两者只编排已有 official/native adapter 并 fail closed 保留证据，不重写框架调度。
 - 仍遵守最小矩阵停止规则：不换模型/数据库/workload，不扫 weighted/offset 追正；结果接近或为负同样进入开题边界结论。
+
+## 2026-08-09 开题图表数据就绪合同冻结（未绘图）
+
+- 依用户要求本轮只整理数据和确认图表，未运行绘图脚本、未新建或覆盖
+  PNG/SVG，未修改 PPT。
+- 将 A–E 冻结为现有可用图；F 原生单 Job 状态指纹和 H 两 Job 前台干扰/共享权衡
+  冻结为 `data-ready-not-generated`；G phase-change 仅为 `plan-only-no-result`。
+- database-E2E replacement 24/24 cells、18 formal 的 correctness、sink、identity、
+  exactly-once 和稳定性门禁有效；SQuAD 三臂 correct rows/s 为
+  136.63/136.68/137.77，可作静态地基。ShareGPT 因 C32 direct 后续证实只达
+  已测峰值 52.07%，且 DuckDB 有 4,921/6,144 行 cap 语义失败，因此三臂降为
+  appendix correctness/语义表，不生成正文性能排名图。
+- H 只使用所有 two-job arm 均真实重叠的 5 s guaranteed-overlap 数据；原 15 s
+  Daft Native 无 overlap 数据不进入多 Job 干扰结论。原生路径只作同系统内
+  single→overlap 观察，项目 static/shared 只称效率—隔离—公平权衡。

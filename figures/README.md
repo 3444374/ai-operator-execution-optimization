@@ -83,6 +83,16 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 禁止外推合同：`audit/opening_story_figures_contract_20260808.md`。上述 PNG/SVG 已逐张
 渲染复核；当前只冻结内容大纲、实验数据与数据图，不制作新的 PPT 成品。旧 PPT 仍只是可打开的历史底稿。
 
+2026-08-09 数据就绪审计后，后续图表固定如下；本轮未运行生成脚本，
+也未新建或覆盖任何 PNG/SVG：
+
+| 后续项 | 状态 | 用途与边界 |
+|---|---|---|
+| 原生文本单 Job 状态指纹 | `data-ready-not-generated` | 四臂 12 formal；JCT/tok/s 与 running/waiting/KV/MFU 原单位 small multiples，不伪造 request P99 |
+| 两 Job 前台干扰与共享权衡 | `data-ready-not-generated` | 只用 5 s guaranteed-overlap；各系统内 single→overlap，项目 static/shared 只称效率—隔离—公平权衡 |
+| 同上限 static–dynamic phase change | `plan-only-no-result` | 只能画实验设计示意，不得填任何结果数值 |
+| database-E2E replacement 三臂 | `appendix-table-only` | SQuAD 作静态 correctness 地基；ShareGPT 因 C32 direct 欠供给与 DuckDB cap 语义失败不作性能排名 |
+
 ## 2026-08-07 四图（被 2026-08-08 叙事重构取代）
 
 下列图保留可复现性和历史引用，但不再作为新报告/PPT 的首选入口：
