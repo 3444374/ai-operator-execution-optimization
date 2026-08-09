@@ -13,13 +13,21 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.experiments.image_multijob.manifest import load_image_job_manifest
 from src.experiments.image_multijob.native import (
+    _repository_commit as native_repository_commit,
     build_job_command,
     load_native_image_multijob_config,
 )
-from src.experiments.image_multijob.project import load_project_image_multijob_config
+from src.experiments.image_multijob.project import (
+    _repository_commit as project_repository_commit,
+    load_project_image_multijob_config,
+)
 
 
 class ImageMultiJobContractTests(unittest.TestCase):
+    def test_runners_record_the_checkout_commit(self) -> None:
+        self.assertEqual(native_repository_commit(), project_repository_commit())
+        self.assertEqual(len(native_repository_commit()), 40)
+
     def _manifest(self, root: Path) -> Path:
         path = root / "jobs.json"
         path.write_text(

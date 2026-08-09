@@ -647,9 +647,12 @@ def _scenario_order(config: ProjectImageMultiJobConfig, phase: str, repeat: int)
 
 
 def _repository_commit() -> str:
+    repository_root = next(
+        parent for parent in Path(__file__).resolve().parents if (parent / ".git").exists()
+    )
     return subprocess.run(
         ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True,
-        cwd=Path(__file__).resolve().parents[5],
+        cwd=repository_root,
     ).stdout.strip()
 
 
