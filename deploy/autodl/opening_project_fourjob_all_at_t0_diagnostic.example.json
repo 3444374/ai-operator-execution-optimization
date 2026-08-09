@@ -77,55 +77,55 @@
   "scenarios": [
     {
       "scenario_id": "single_short_full_pool",
-      "policy": "static_partition", "job_count": 1, "rows_per_job": 512,
+      "policy": "static_partition", "job_count": 1, "rows_per_job": "${FOURJOB_ROWS_PER_JOB}",
       "weights": [1], "arrival_offsets_s": [0], "source_row_offsets": [0],
       "request_manifests": ["${OPENING_SHORT_JOB_MANIFEST}"]
     },
     {
       "scenario_id": "single_long1_full_pool",
-      "policy": "static_partition", "job_count": 1, "rows_per_job": 512,
+      "policy": "static_partition", "job_count": 1, "rows_per_job": "${FOURJOB_ROWS_PER_JOB}",
       "weights": [1], "arrival_offsets_s": [0], "source_row_offsets": [0],
       "request_manifests": ["${OPENING_LONG_JOB_MANIFEST_1}"]
     },
     {
       "scenario_id": "single_long2_full_pool",
-      "policy": "static_partition", "job_count": 1, "rows_per_job": 512,
+      "policy": "static_partition", "job_count": 1, "rows_per_job": "${FOURJOB_ROWS_PER_JOB}",
       "weights": [1], "arrival_offsets_s": [0], "source_row_offsets": [0],
       "request_manifests": ["${OPENING_LONG_JOB_MANIFEST_2}"]
     },
     {
       "scenario_id": "single_long3_full_pool",
-      "policy": "static_partition", "job_count": 1, "rows_per_job": 512,
+      "policy": "static_partition", "job_count": 1, "rows_per_job": "${FOURJOB_ROWS_PER_JOB}",
       "weights": [1], "arrival_offsets_s": [0], "source_row_offsets": [0],
       "request_manifests": ["${OPENING_LONG_JOB_MANIFEST_3}"]
     },
     {
       "scenario_id": "single_short_quarter_pool",
       "policy": "static_partition", "job_count": 1, "static_partition_count": 4,
-      "rows_per_job": 512, "weights": [1], "arrival_offsets_s": [0],
+      "rows_per_job": "${FOURJOB_ROWS_PER_JOB}", "weights": [1], "arrival_offsets_s": [0],
       "source_row_offsets": [0], "request_manifests": ["${OPENING_SHORT_JOB_MANIFEST}"]
     },
     {
       "scenario_id": "single_long1_quarter_pool",
       "policy": "static_partition", "job_count": 1, "static_partition_count": 4,
-      "rows_per_job": 512, "weights": [1], "arrival_offsets_s": [0],
+      "rows_per_job": "${FOURJOB_ROWS_PER_JOB}", "weights": [1], "arrival_offsets_s": [0],
       "source_row_offsets": [0], "request_manifests": ["${OPENING_LONG_JOB_MANIFEST_1}"]
     },
     {
       "scenario_id": "single_long2_quarter_pool",
       "policy": "static_partition", "job_count": 1, "static_partition_count": 4,
-      "rows_per_job": 512, "weights": [1], "arrival_offsets_s": [0],
+      "rows_per_job": "${FOURJOB_ROWS_PER_JOB}", "weights": [1], "arrival_offsets_s": [0],
       "source_row_offsets": [0], "request_manifests": ["${OPENING_LONG_JOB_MANIFEST_2}"]
     },
     {
       "scenario_id": "single_long3_quarter_pool",
       "policy": "static_partition", "job_count": 1, "static_partition_count": 4,
-      "rows_per_job": 512, "weights": [1], "arrival_offsets_s": [0],
+      "rows_per_job": "${FOURJOB_ROWS_PER_JOB}", "weights": [1], "arrival_offsets_s": [0],
       "source_row_offsets": [0], "request_manifests": ["${OPENING_LONG_JOB_MANIFEST_3}"]
     },
     {
       "scenario_id": "staggered_fourjob_static_partition",
-      "policy": "static_partition", "job_count": 4, "rows_per_job": 512,
+      "policy": "static_partition", "job_count": 4, "rows_per_job": "${FOURJOB_ROWS_PER_JOB}",
       "weights": [1, 1, 1, 1],
       "arrival_offsets_s": [0, "${OPENING_MULTIJOB_OFFSET_S}", "${OPENING_MULTIJOB_OFFSET_S}", "${OPENING_MULTIJOB_OFFSET_S}"],
       "source_row_offsets": [0, 0, 0, 0],
@@ -133,7 +133,7 @@
     },
     {
       "scenario_id": "staggered_fourjob_shared_work",
-      "policy": "shared_drr", "job_count": 4, "rows_per_job": 512,
+      "policy": "shared_drr", "job_count": 4, "rows_per_job": "${FOURJOB_ROWS_PER_JOB}",
       "weights": [1, 1, 1, 1],
       "arrival_offsets_s": [0, "${OPENING_MULTIJOB_OFFSET_S}", "${OPENING_MULTIJOB_OFFSET_S}", "${OPENING_MULTIJOB_OFFSET_S}"],
       "source_row_offsets": [0, 0, 0, 0],
