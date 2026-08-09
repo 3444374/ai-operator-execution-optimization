@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-08-10 第一性原理开题数据图冻结
+
+- 从“开题必须证明什么”重新审计证据，冻结七张正文数据图：work/state 动机、文本
+  baseline 分轨、原生四 Job 归一化干扰、数据组织 regime、Project 四 Job 机制与公平
+  权衡、图像 staged/baseline 边界、代价估计决策质量；另保留原生单 Job 状态指纹备份。
+- 新增 `figures/audit/opening_required_data_figures_20260810.md`，明确正文、附录与不画边界。
+  图像多 Job、DuckDB 多 Job、同上限 phase-change 尚无正式结果，不用示意数值补位。
+- 新增文本 baseline、原生四 Job 和 Project 四 Job 三张图，统一重建 A/T/N/C/H/D/E/F。
+  八张 PNG 均为 300 DPI，SVG 可编辑；SciPilot strict、PDF 字体/Type3、彩色与灰度视觉
+  检查全部通过。
+- 多 Job 数据已足够支撑开题动机：原生轨证明 Short 与全部 Long 的共同干扰，Project
+  配对实验拆分 quota、竞争和 shared-credit 效果；不把它们外推为动态方法普遍胜出。
+- 数据组织图保留在报告中用于证明 work 与 locality/regime 必须联合考虑；相同双卡硬件
+  下，2-endpoint 低 KV 压力的约 12% 只作机制现象，4-endpoint 高 KV 压力下约 27% 且
+  缓存命中塌陷，不把运行压力误写成硬件池大小，也不作 feeding-saturated 容量排名。
+
 ## 2026-08-09 大众多 Job benchmark 的组合接入合同
 
 - 在 `experiments/plans/state_aware_work_unit_evaluation_20260808.md` §7.6 将现有

@@ -96,7 +96,7 @@
 
 ### 数据组织图能否证明 sequential 普遍最好？
 
-> 不能。2 endpoint 大 KV 池下五种策略只在 50–56k tok/s 范围内接近；4 endpoint 小 KV 池饱和时才分化到 39–50k，并出现 sequential 优于重排序类。这个结果证明的是“策略排序随 serving regime 改变”以及 work balance 与 locality 冲突，不是某个 organizer 的全局最优性。
+> 不能。相同双卡硬件下，2 endpoint 低 KV 压力时五种策略在 50–56k tok/s 范围；4 endpoint consolidation 使 KV 压力达到 98%–100% 时分化到 39–50k，并出现 sequential 优于重排序类。这个结果证明的是“策略排序随 serving regime 改变”以及 work balance 与 locality 冲突，不是硬件池大小变化，也不是某个 organizer 的全局最优性。
 
 ### 图像实验 GPU 利用率很低，结果还有意义吗？
 

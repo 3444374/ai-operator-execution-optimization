@@ -37,14 +37,14 @@ Reviewer risk: 65K 是最小近饱和点，不是全局最优或 vLLM 内部容�
 ## 图二：work-aware 组织的 regime dependency
 
 ```text
-Core conclusion: 数据组织在大 KV 池下近似中性，但在 KV 饱和的小池中发生排名反转；破坏 prefix 局部性的重排序策略命中率塌到 0.06–0.07 并损失吞吐。
+Core conclusion: 相同双卡硬件下，2-endpoint 低 KV 压力与 4-endpoint consolidation 高 KV 压力呈现不同策略排序；后者中破坏 prefix 局部性的重排序策略命中率塌到 0.06–0.07 并损失吞吐。
 Figure archetype: quantitative grid
 Target journal/output: 开题报告 + 开题 PPT + 后续论文实验部分
 Backend: Python
 Final size: 13.2 × 6.2 in
 Panel map:
   a: 5 策略 × 2 压力 regime 的吞吐；柱为 formal 中位数、点为 3 次正式重复
-  b: prefix_group_ratio—prefix cache 命中率机制散点；标注 4-endpoint 小 KV 池
+  b: prefix_group_ratio—prefix cache 命中率机制散点；标注 4-endpoint 高 KV 压力
 Evidence hierarchy:
   hero evidence: 4-endpoint 饱和 regime 下 39–50k tok/s 的分化与排名反转
   validation evidence: prefix_group_ratio 与 hit-rate 同步塌缩

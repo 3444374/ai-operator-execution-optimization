@@ -139,7 +139,7 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 
 1. **动机图：记录数不等于 work，固定压力不等于稳定状态**。左侧用同样行数但不同 token/prepare work 的 running example；右侧用低供给—最小近饱和点—边际收益递减的容量曲线，并标 high/arrival-limited 的状态差异。每个标记直接写含义，不使用未解释散点；active work 必须注明是峰值还是时间平均。
 2. **方法总览图：组织产生调度可消费的工作描述**。上方数据流，下方反馈流；只保留 Cost Adapter、Work Organizer、State Observer、Admission/Router/Fair Queue 与 Model/CPU-GPU stages。
-3. **初步机制图：组织策略依赖 serving regime**。用 small multiples 表达大 KV 池下约 12% 的策略范围与小 KV 池饱和下约 27% 的分化；单独用一条简洁机制注释说明 locality hit collapse，不再用“近似中性”掩盖仍存在的差异，也不画十个形状散点。
+3. **初步机制图：组织策略依赖 serving regime**。用 small multiples 表达相同双卡硬件下 2-endpoint 低 KV 压力约 12% 的策略范围与 4-endpoint consolidation 高 KV 压力下约 27% 的分化；单独用一条简洁机制注释说明 locality hit collapse，不把运行压力误写成硬件池大小，也不画十个形状散点。
 4. **图像与代价可行性图**。若一页空间紧张，图像作为正文 hero，代价估计移备份；图像图只画 matched-resource JCT 或 throughput 其中一个，并用小 inset 标 CPU prepare/GPU service 比，不重复画相对改善。
 
 三臂 database-E2E 用紧凑表格或归一化单 panel 展示，等纠正重跑通过门禁后再生成。代价估计的六模型全量图适合备份页；正文只显示 Hybrid 的 median/macro/max regret 和门槛，避免双 panel 重复。

@@ -248,8 +248,13 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `experiments/results/opening_project_short_all_at_t0_diagnostic_20260809/{README.md,data/}` | Project eager single 1+3 的 T0–T4 统一计时、逐次数据和 Project/Daft short 诊断 | Project T3=11.354s、Daft=11.059s；service rate/MFU 仅差约2.5%，不能用缺失的 Daft T0 做完整系统排名 |
 | `figures/scripts/generate_opening_core_evidence_figures.py` | 从冻结正式结果生成开题四张核心证据图 | 更新开题报告或答辩 PPT 前运行 |
 | `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |
-| `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果重建 work/state/control 动机、AI Data Execution Layer 边界、work→schedule、组织 regime、图像 stage 与 cost decision 图；已预置 A/C 下一次标签修订 | 仅在用户恢复绘图后运行；当前不得覆盖 PNG/SVG |
-| `figures/audit/opening_story_figures_contract_20260808.md` | 叙事图的数据来源、SHA/行数冻结、claim、禁止外推、逐图视觉 QA 与唯一待画清单 | 引用新版动机和方案图前核对；A/C 待标签重绘，F/H 待生成，G 不画 |
+| `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果可复现生成 A/T/N/C/H/D/E 七张开题正文数据图、F 状态备份图及既有架构图 | 更新报告图时按选择器运行；不得更换冻结输入追求更漂亮结论 |
+| `figures/audit/opening_story_figures_contract_20260808.md` | 叙事图的数据来源、SHA/行数冻结、claim、禁止外推与逐图视觉 QA | 引用新版动机和方案图前核对；A/T/N/C/H/D/E/F 已通过 QA，G 不画 |
+| `figures/audit/opening_required_data_figures_20260810.md` | 从六项开题证明义务推导正文、备份、附录和明确不画的最小图集 | 决定一张实验图是否应进开题、PPT还是论文阶段前读 |
+| `figures/data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | Daft Native/Ray、Ray Data 的 Short 与三个 Long 的 four-job/isolated-single JCT 比值 | 证明共享服务多 Job 干扰是共同外部现象；禁止跨框架绝对 JCT 排名 |
+| `figures/data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | SQuAD database-E2E 产品轨与 ShareGPT 官方 Chat graph 轨的文本 baseline 分轨图 | 呈现 DuckDB、Daft Native/Ray、Ray Data 的可比合同与问题；禁止跨 panel 排名 |
+| `figures/data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | Project full/quarter/static/shared 四 Job 因果分解、组效率与公平权衡 | 导出 shared work credit、idle borrowing 和 fairness/SLO guard 的设计要求 |
+| `figures/data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | 四条原生/控制路径的 JCT、tok/s、running、waiting、KV、MFU 原单位状态指纹 | 报告正文/答辩备份解释状态异质性，不作框架通用排名 |
 | `figures/architecture/opening_ai_data_execution_boundary.png` / `.svg` | 两项研究内容 + 共同 cost estimator 的 AI Data Execution Layer 边界图 | 报告/答辩大纲解释课题范围、平台与贡献关系时使用 |
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |

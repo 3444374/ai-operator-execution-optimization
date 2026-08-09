@@ -1,6 +1,6 @@
 # 开题答辩内容大纲与证据合同
 
-日期：2026-08-08（2026-08-09 完成两/四作业证据与实现边界审计）
+日期：2026-08-08（2026-08-10 完成 baseline、两/四作业证据与图集审计）
 状态：内容大纲；暂不制作 PPT 成品
 
 ## 1. 一句话主线
@@ -22,6 +22,13 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 
 四条证据链权重相同：每条都必须说清“为什么做、为什么这样设计、证据支持到哪、尚未证明什么”。代价估计仍是两项研究内容的共同使能部件，不单列为第三项研究内容。
 
+PPT 与报告不得把 baseline、动机和研究内容拆成三个互不相干的章节。每一组材料固定使用
+同一条四步句法：`baseline/动机现象 → 暴露的缺口 → 对应研究内容与设计 → 验证实验`。
+文本 baseline 分产品 database-E2E 与官方 Chat graph 两轨，导出 work 表达、正确性和状态
+感知问题；图像 baseline 分 12K 结构诊断与 120K matched-resource 排名，导出 staged work、
+CPU/GPU 队列感知和跨阶段提交问题。不可排名的合同边界必须显式保留，不能为了版面完整
+合并成总排行榜。
+
 ## 3. 主讲大纲
 
 | 序号 | take-away 标题 | 必须讲清的内容 | 所需证据或图 | 可声称边界 |
@@ -30,18 +37,18 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 | 2 | 数据库正在成为批量 AI 任务的数据入口 | PostgreSQL 行经过数据引擎、外部 AI 执行层和模型服务再写回 | 简洁链路图 | 研究对象是数据库 AI 算子的外部执行链路 |
 | 3 | 同样的数据库行数并不代表同样的 AI work | 固定 16 行的 token work 最大/最小相差 14.3 倍 | 动机图左侧 | 行数不是可靠成本代理 |
 | 4 | 固定提交压力无法同时避免欠供给与过载 | high 与 arrival-limited 在相同上限下 running/MFU 不同；容量曲线存在近饱和区和 tail 代价 | 动机图右侧 | 动态必要性来自状态变化；尚未证明动态收益 |
-| 5 | 图像链路暴露了不同的主导阶段 | CLIP CPU prepare/GPU service 为 13.8–31.2 倍 | 图像阶段图 | 需要分阶段 work；不能只用图片数或单一 GPU 指标 |
+| 5 | 图像 baseline 暴露阶段与扩展边界 | CLIP CPU prepare/GPU service 为 13.8–31.2 倍；Daft built-in 20K object-store 失败；120K 仅 Ray Data/Project 可排名 | 图像三层 baseline 图 | 对应 staged work、CPU/GPU 状态与跨阶段提交；12K 三臂不作稳态排名 |
 | 6 | 三类现象导出表征、感知和控制三个挑战 | 现象到挑战再到设计的逐项映射 | 三列表或因果箭头 | 动机测试只证明设计必要性 |
-| 7 | 现有系统分别优化数据库端和模型服务端 | 数据库按行/分区，模型服务内部 continuous batching；中间缺少数据库语义下的 work 组织和状态控制 | 相关工作边界图 | 不贬低 Daft/Ray/vLLM；明确未覆盖的层次 |
+| 7 | 文本 baseline 暴露产品语义与服务供给边界 | SQuAD 产品轨近似中性；DuckDB ShareGPT cap 失败；Daft/Ray Data Chat graph 呈现 overqueue/underfeed | 文本 baseline 分轨图 | 对应 neutral WorkDescriptor、correctness-aware evidence 与状态感知提交；不跨轨排名 |
 | 8 | 本课题研究两端之间的 AI Data Execution Layer | 两项研究内容、共同代价估计、多模态验证 | `opening_ai_data_execution_boundary` | 只有两项研究内容；代价估计是共同使能部件 |
 | 9 | 代价估计把原始记录变为可决策的分阶段 work | 解析模型、profile 校准、residual correction、预测区间与校准签名 | 代价估计到 WorkDescriptor/调度器的数据流图 | 现有证据只支持初步配置选择价值 |
 | 10 | 数据组织输出调度可消费的 WorkDescriptor | row/source/prepare/model/result work、locality、deadline、uncertainty | WorkDescriptor 字段图 | 组织的输出不是只有 payload batch |
 | 11 | 数据组织同时平衡 work、局部性和下游队列形态 | token/frame/stage budget；balance 与 prefix/locality 的冲突 | organization regime 图 | 已有结果是 serving-regime-dependent，不宣称普遍胜出 |
 | 12 | 状态感知控制只在离线安全包络内动作 | offline safe envelope、fresh snapshot、候选 credit、deadband、回退 | `opening_work_to_schedule_overview` | stale/missing signal 回退强静态点 |
-| 13 | 多作业按 work 共享而不是按请求数平均 | shared work credit、deficit/fair queue、idle borrowing、remaining work/SLO slack | 两Job证明arrival-regime dependence；四Job shared相对static总吞吐+8.68%、short JCT−72.23%，但Jain 0.960→0.923 | 已证明idle borrowing与效率—公平权衡；weighted/held-out、SLO guard仍需论文阶段验证 |
+| 13 | 多作业按 work 共享而不是按请求数平均 | shared work credit、deficit/fair queue、idle borrowing、remaining work/SLO slack | 原生四Job归一化图证明Short与全部Long均受影响；Project四Job图拆分quota/competition/shared，shared相对static总吞吐+8.68%、short JCT−72.23%，但Jain下降 | 已证明idle borrowing与效率—公平权衡；weighted/held-out、SLO guard仍需论文阶段验证 |
 | 14 | 文本和图像复用接口，但主导 stage 不同 | text token work；image prepare/model/tensor work；同一 descriptor/state/controller 接口 | 跨模态映射表 | 泛化是接口复用，不是假设两种负载成本相同 |
 | 15 | 因果评估必须先冻结饱和强静态点 | 同资源、同最大 K/work、同 source、同完整结果语义；dynamic 仅改变策略 | 实验合同图 | 未通过 feeding/correctness/stability 的数据不得排名；sink 仅用于 database-E2E 护栏 |
-| 16 | 原生 graph 将同一服务推入不同压力区 | bounded C128 最小饱和；Daft Native/Ray overqueue；Ray Data 当前路径 underfeed | 待画：JCT/tok/s + running/waiting/KV/MFU 状态指纹双面板 | 只讲外部现象；database-E2E 护栏与 DuckDB raw/correct 放 appendix 表 |
+| 16 | 原生 graph 将同一服务推入不同压力区 | bounded C128 最小饱和；Daft Native/Ray overqueue；Ray Data 当前路径 underfeed | `opening_native_single_job_state_fingerprint`（报告/答辩备份） | 只讲外部现象；database-E2E 护栏与 DuckDB raw/correct 放 appendix 表 |
 | 17 | 前期证据分别覆盖组织、图像结构和代价选择质量 | organization regime、image matched-resource、cost decision regret | 三个不重复的小图或一页表 | 都标为 preliminary/conditional evidence |
 | 18 | 论文主实验按稳态、变化、多作业、跨模态推进 | steady no-regression；phase shift/burst/mixed-cost；multi-job；image | 实验路线与停止规则 | K512、VLM、故障迁移不是开题 blocker |
 | 19 | 贡献是统一 work 表征与状态感知上游执行方法 | 两项研究内容、共同使能代价估计、多模态验证和严格实验合同 | 一页总结 | 不把工程集成或弱 baseline 写成贡献 |
@@ -106,7 +113,7 @@ static+long又+58.77%，matched shared+long+28.90%。eager shared相对static使
 |---|---|---|---|
 | token-work 异质性 | 证明 fixed rows 不是成本代理 | 固定 16 行 batch token 最大/最小 14.3× | 核对 CSV 溯源并保留直接标注 |
 | active-work frontier 与状态差异 | 证明低供给、最小近饱和点、边际收益递减及状态变化 | 65K/endpoint 约达已测峰值 97.8%；继续加压主要抬高 P99 | 图中分开画容量结果与运行状态，不用未定义区间着色 |
-| organization regime | 证明组织策略受 serving/KV/locality 状态影响 | 2 endpoint 大 KV 池下策略范围约 12%；4 endpoint 小 KV 池饱和下分化约 27% 且重排破坏 prefix group | 保留一张机制图；严格 feeding-saturation 边界可见，不等于动态方法收益 |
+| organization regime | 证明组织策略受 serving/KV/locality 状态影响 | 相同双卡硬件下，2 endpoint 低 KV 压力时策略范围约 12%；4 endpoint consolidation 高 KV 压力下分化约 27% 且重排破坏 prefix group | 保留一张机制图；严格 feeding-saturation 边界可见，不等于动态方法收益 |
 | image exact-path profile | 证明跨模态存在分阶段瓶颈 | CPU prepare/GPU service 13.8–31.2× | 统一单位与质量合同，暂不做 proposed 胜出 claim |
 | cost decision quality | 证明代价估计有资格作为共同使能候选 | pooled regret 1.67%、macro 2.90%、max 14.72%，pairwise 0.808 | 主图只保留决策质量；完整 estimator 对比放附录 |
 
@@ -169,7 +176,11 @@ static+long又+58.77%，matched shared+long+28.90%。eager shared相对static使
 | G static–dynamic | 状态变化下动态是否超过同上限静态 | 当前只保留 workload phase 与同上限 A/B 实验合同 | 无结果不画图；论文正式运行后再决定图型 | 最大 K/work/resources 完全匹配 |
 | H multi-job | shared credit 如何改变效率、前台/long隔离与公平 | 两Job给最小因果；四Job画full→quarter→static→shared、long spread、Jain/MFU | 开题两/四作业 formal；论文阶段扩展 weighted/held-out | 四Job只覆盖一个offset/equal-weight workload；shared改善效率但Jain/long稳定性回退 |
 
-下一次获准绘图时只做四项：A/C 标签级重绘，F/H 首次生成。B、WorkDescriptor 总览、D、E 不重画；G 无结果且不画，database-E2E 只保留附录表。H 使用已通过门禁的两Job最小因果与 `Short@0s → 3 Long@5s` 四Job扩展；主图优先四Job quota/competition/shared 与效率—公平权衡，两Job arrival-regime 放附录。所有误差线表示三次 formal 的离散或置信区间，warm-up 不进入统计；重复点放附录或原始表，不在主图堆叠。
+2026-08-10 已完成 A/T/N/C/H/D/E 七张正文数据图与 F 状态备份图。G 无结果且不画，
+database-E2E 只保留附录表。N 使用三条原生轨各自的 four-job/isolated-single 归一化
+影响，H 使用 `Short@0s → 3 Long@5s` 的 Project quota/competition/shared 与效率—公平
+权衡；两Job arrival-regime 放附录。所有误差线表示三次 formal 的离散，warm-up 不进入
+统计，三次原始点在关键图中直接显示。
 
 ## 7. 停止规则
 

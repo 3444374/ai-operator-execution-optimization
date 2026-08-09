@@ -123,16 +123,16 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | serving capacity、数据组织、图像 matched-resource、cost decision quality | `evidence-frozen` | 本文件 §2、§5 与图合同中的输入哈希 | 不重跑现有实验；只按冻结输入生成材料 |
 | 原生单 Job 与两/四 Job 干扰/项目 matched A/B | `evidence-frozen` | `experiments/results/opening_text_native_single_job_formal_20260808/`、`opening_multijob_interference_20260809/`、`opening_fourjob_interference_20260809/` | 只画轨内状态/归一化干扰，不作跨框架绝对排名 |
 | 服务器 raw、失败 incident 与扫描归档 | `verified-and-preserved` | 各结果 README 的 archive SHA256 与服务器路径 | 不删除、不覆盖；论文阶段按需回读 |
-| 图 B、WorkDescriptor 总览、D、E | `retain-existing` | `figures/audit/opening_story_figures_contract_20260808.md` | 不重画，只做最终版式检查 |
-| 图 A、C | `render-pending` | 同上；生成脚本标签已修正，现存 PNG/SVG 仍是旧标签 | 用户恢复绘图后只做标签级重绘并复核哈希/裁切/重叠 |
-| 图 F、H | `data-ready-not-generated` | 同上；原生状态与两/四 Job 数据均已冻结 | 用户恢复绘图后首次生成并做视觉/语义审计 |
+| 图 B、WorkDescriptor 总览 | `retain-existing` | `figures/audit/opening_story_figures_contract_20260808.md` | 架构图保持现有版本，只做最终版式检查 |
+| 七张正文数据图 A/T/N/C/H/D/E | `rendered-qa-pass` | `figures/audit/opening_required_data_figures_20260810.md` 与叙事图合同；八张 PNG/SVG（含备份 F）完成 300-DPI、矢量、灰度和视觉审计 | T/D 分轨呈现文本与图像 baseline；只允许版式级微调，不因追求更漂亮结论更换数据源 |
+| 图 F 原生单 Job 状态备份 | `rendered-qa-pass` | 12 formal 的 JCT/tok/s/running/waiting/KV/MFU 原单位 small multiples | 报告正文或答辩追问使用；不作框架通用排名 |
 | 图 G | `plan-only-no-result` | phase-change 尚无同上限正式结果 | 开题不画；论文阶段实验通过后再决定 |
 | database-E2E 展示 | `appendix-table-only` | SQuAD 可排名、ShareGPT 不可作性能排名 | 不生成正文性能图 |
-| 本地开题报告、答辩大纲、QA | `content-frozen-publication-pending` | `opening/report/opening_report.md`、`opening/opening_defense_outline_20260808.md`、`opening/qa_bank.md` | 图完成后做一次引用、数字和措辞总审计 |
+| 本地开题报告、答辩大纲、QA | `content-with-figures-publication-pending` | `opening/report/opening_report.md`、`opening/opening_defense_outline_20260808.md`、`opening/qa_bank.md` | PPT恢复前再做一次引用、数字和措辞总审计 |
 | PPTX | `historical-not-current-paused` | `opening/slides/opening_defense_20260807_v6.pptx` | 用户恢复后基于权威大纲和新图重构、实际渲染检查 |
 | 飞书云文档 | `historical-not-current-paused` | revision 289 落后于本地报告 | 用户恢复后从本地权威报告重新生成同步源并差异审计 |
 | Wiki | `explicitly-exempt` | 用户明确要求不同步 Wiki | 不执行 |
-| 开题材料整体 | `not-yet-frozen` | 图 A/C/F/H、PPT 和云发布面仍未验收 | 仅完成上述发布工作与最终一致性审计；不得据此新增 baseline |
+| 开题材料整体 | `not-yet-frozen` | 数据图已验收；PPT 和云发布面仍暂停/未验收 | 后续仅完成获准的发布工作与最终一致性审计；不得据此新增 baseline |
 
 停止规则：当前不存在需要通过新增开题实验才能解除的 readiness 阻塞。图渲染、PPT、云文档
 和最终审计恢复后只消费现有冻结数据；不得为了填满页面、改善叙事或得到更好看的方向而重跑
@@ -168,9 +168,9 @@ JSON 中 6 处误编码的 `§6` 已规范为 UTF-8。上述修正均不改变�
 | SQuAD 统一 database-E2E 三臂 1+3 | `complete` | replacement 12 cells/9 formal；source/sink、correctness、feeding、stability 通过 | 无 |
 | ShareGPT 统一 database-E2E 三臂 1+3 | `complete-with-ranking-boundary` | replacement 12 cells/9 formal；correctness/sink/stability 通过；C32 欠供给与 DuckDB cap 语义失败已单列 | 不作三臂性能排名 |
 | 完成 P0 后停止新增开题 baseline | `complete` | §4、§7 停止规则；后续只补支持新用户问题的最小诊断，不扩第二数据库或全矩阵 | 保持停止 |
-| serving capacity 核心证据 | `data-complete-render-pending` | active-work、bounded C32–C256 与图 A 数据合同完整 | 图 A 获准后标签级重绘 |
-| work-aware 组织及局限核心证据 | `data-complete-render-pending` | 2/4 endpoint regime 数据与图 C 合同完整 | 图 C 获准后标签级重绘 |
-| 图像 matched-resource 核心证据 | `complete-existing-figure` | 图 D 与 matched-resource 正式重复；约 13%–15% 边界冻结 | 最终版式检查 |
+| serving capacity 核心证据 | `complete-figure` | active-work、bounded C32–C256 与图 A 数据合同完整，图已通过 QA | 后续只在统一版式时无损复用 |
+| work-aware 组织及局限核心证据 | `complete-figure` | 2/4 endpoint regime 数据与图 C 合同完整，图已通过 QA | 保留 feeding 边界，不转述为容量排名 |
+| 图像 staged/baseline 核心证据 | `complete-figure` | 图 D：CPU prepare画像、12K Daft/Ray Data/Project 结构诊断、120K Ray Data/Project matched-resource 正式重复 | 只在120K matched panel排名；12K三臂不外推 |
 | cost-model decision quality 核心证据 | `complete-existing-figure` | 图 E；429 formal/20 context，CE5 marginal pass；UTF-8 JSON 与新 SHA 已验证 | 最终版式检查 |
 | PROJECT_OUTLINE 与本地开题报告重构 | `content-complete` | 总纲、报告、答辩大纲、QA 与 §8 数据复算一致 | 新图插入后做引用总审计 |
 | 四级 Claim 与答辩攻击面审计 | `complete` | 本文件 §2、`opening/qa_bank.md` 的攻击面、不能声称与回答模板 | PPT 完成后再做逐页口径检查 |

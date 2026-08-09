@@ -72,6 +72,7 @@ def apply_style() -> None:
 
 def finish(fig: plt.Figure, stem: str) -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUTPUT / f"{stem}.pdf", bbox_inches="tight")
     fig.savefig(OUTPUT / f"{stem}.svg", bbox_inches="tight")
     fig.savefig(OUTPUT / f"{stem}.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -223,8 +224,8 @@ def figure_work_organization() -> None:
     ax_bar.set_ylabel("End-to-end throughput (K tokens/s)")
     ax_bar.set_ylim(0, 63)
     ax_bar.legend(loc="lower left", ncol=2)
-    ax_bar.text(0.02, 0.96, "Large KV pool: max 7–10%; strategies nearly neutral", transform=ax_bar.transAxes, va="top", color=DARK, fontsize=9.5)
-    ax_bar.text(0.02, 0.90, "Small KV pool: max 98–100%; ranking reverses", transform=ax_bar.transAxes, va="top", color=BLUE, fontsize=9.5, fontweight="bold")
+    ax_bar.text(0.02, 0.96, "Low KV pressure (2 endpoints): max 7–10%", transform=ax_bar.transAxes, va="top", color=DARK, fontsize=9.5)
+    ax_bar.text(0.02, 0.90, "High KV pressure (4 endpoints): max 98–100%; ranking reverses", transform=ax_bar.transAxes, va="top", color=BLUE, fontsize=9.5, fontweight="bold")
     soft_grid(ax_bar)
     panel_label(ax_bar, "a")
 
@@ -271,8 +272,8 @@ def figure_work_organization() -> None:
     soft_grid(ax_scatter)
     ax_scatter.legend(
         handles=[
-            Line2D([0], [0], marker="o", linestyle="none", markerfacecolor="none", markeredgecolor=GREY, label="Large KV pool"),
-            Line2D([0], [0], marker="o", linestyle="none", markerfacecolor=BLUE, markeredgecolor=BLUE, label="Small KV pool"),
+            Line2D([0], [0], marker="o", linestyle="none", markerfacecolor="none", markeredgecolor=GREY, label="Low KV pressure (2 endpoints)"),
+            Line2D([0], [0], marker="o", linestyle="none", markerfacecolor=BLUE, markeredgecolor=BLUE, label="High KV pressure (4 endpoints)"),
         ],
         loc="center right",
     )

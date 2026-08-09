@@ -112,11 +112,9 @@ Database
 
 ## 5. 前期工作与可行性证据
 
-> **图表冻结状态（2026-08-09）**：本节正文数值和数据合同已冻结，但当前嵌入的动机图A
-> 与数据组织图C仍是旧渲染。A尚含未经数据定义的“安全工作区/过载尾部”标签，C尚含
-> “低压力近似中性”标签；二者不得作为最终开题图引用。用户恢复制图后只按
-> `figures/audit/opening_story_figures_contract_20260808.md`做标签级重绘；在此之前以正文、
-> 原始CSV和该合同为准。其余现有图也不因本说明自动升级为最终PPT资产。
+> **图表状态（2026-08-10）**：已按第一性原理审计完成七张正文数据图与一张状态备份图，
+> 均通过 300-DPI、矢量、灰度和逐图视觉 QA。选图依据、证据边界及明确不画的缺口见
+> `figures/audit/opening_required_data_figures_20260810.md`；图完成不等于动态策略已胜出。
 
 ### 5.1 动机证据：为什么需要 work、感知与有界控制
 
@@ -145,7 +143,17 @@ ShareGPT replacement 中，direct、DuckDB AI、项目冻结静态的 correct ro
 
 这组实验的目标不是证明项目路径胜出，而是建立可审计的统一比较边界。raw rows/s、correct rows/s 和 service tokens/s 必须同时报告；产品层因固定输出上限返回空结果时，GPU 已消耗的服务 work 不能被隐藏，也不能把语义不兼容误写成纯性能排名。
 
+![文本 baseline 的产品轨与官方 Chat graph 轨](../../figures/data/report_main/opening_text_baseline_evidence_map.png)
+
+这张图不把 DuckDB、Daft 和 Ray Data 强行压入一个总排行榜。产品轨暴露正确吞吐与输出
+语义边界，官方 Chat graph 轨暴露 underfeed、overqueue 与服务状态差异；两者共同对应到
+研究内容一的 neutral WorkDescriptor，以及研究内容二的状态感知有界提交。也就是说，
+baseline 的作用不是单独展示谁快，而是明确现有系统在哪一层缺少可迁移 work 表达、全局
+状态观测或多 Job 协调。
+
 ### 5.3 原生单 Job 的服务压力形态
+
+![同一 ShareGPT 任务在不同原生执行图中的服务压力状态](../../figures/data/report_main/opening_native_single_job_state_fingerprint.png)
 
 同一 2,048-row ShareGPT manifest 上，bounded C128、Daft Native、Daft Ray 和 Ray Data official graph 均完成 1 warm-up + 3 formal；16/16 cells、12 formal、0 failure，吞吐与 JCT CV 均小于 0.7%。三次均值如下：
 
@@ -180,6 +188,10 @@ vendor-owned graph，未注入项目调度；它们的short与三个long相对�
 并分别呈现high-waiting/high-KV或low-running/low-MFU。四Job证据因此支持idle borrowing
 与fairness/SLO guard必须同时设计，不支持Project或dynamic普遍胜出。
 
+![原生执行图中 Short 与全部 Long Job 的四 Job归一化影响](../../figures/data/report_main/opening_native_fourjob_normalized_impact.png)
+
+![Project 四 Job 中配额、真实竞争、shared work credit 与公平权衡](../../figures/data/report_main/opening_multijob_interference_tradeoff.png)
+
 ### 5.5 最小饱和 active work
 
 双 RTX 4090、冻结 Qwen/vLLM 合同下，每 endpoint 65,536 active work 已达到最大已测吞吐均值的 97.80%，下一档只增加 0.92%；继续提高到 98K，吞吐增量有限而 P99 由 36.78 s 上升到 40.05 s。该结果证明应先标定最小饱和点，再比较上游策略。65,536 只绑定当前机器、模型、协议和 workload，不是通用常数。
@@ -188,13 +200,26 @@ vendor-owned graph，未注入项目调度；它们的short与三个long相对�
 
 ![数据组织在不同 serving regime 下的排名变化](../../figures/data/report_main/opening_work_organization_regime_v2.png)
 
-在双endpoint、大KV池且压力较低的条件下，五种组织策略约为50K–56K tok/s，仍有约12%的范围，但locality破坏尚未被放大；在四endpoint、小KV池且KV饱和的条件下，吞吐分化到约39K–50K tok/s，并出现排名反转。重排序类organizer将prefix group ratio打散后，prefix cache hit可降至0.06–0.07。该证据支持“组织策略必须结合serving regime评价”，不支持sequential或prefix-aware的全局最优性。
+在相同双卡硬件上，2 endpoint 条件下 KV max 仅 7%–10%，五种组织策略约为
+50K–56K tok/s，范围约 12%，locality 破坏尚未被放大；4 endpoint consolidation
+使 KV max 达 98%–100% 时，吞吐分化到约 39K–50K tok/s，并出现排名反转。
+重排序类 organizer 将 prefix group ratio 打散后，prefix cache hit 降至 0.06–0.07。
+因此变化的是 serving 拓扑造成的运行压力，不是硬件池大小。该证据对应研究内容一中
+work balance 与 locality preservation 的联合组织，不支持某个 organizer 全局最优。
 
-### 5.7 图像 staged-work 与 matched-resource 证据
+### 5.7 图像 staged-work、原生 baseline 与 matched-resource 证据
 
-![图像 workload 的阶段失衡与 matched-resource 正式对照](../../figures/data/report_main/opening_image_stage_aware_evidence.png)
+![图像 workload 的阶段失衡、12K 原生能力与 120K matched-resource 正式对照](../../figures/data/report_main/opening_image_stage_aware_evidence.png)
 
-CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时间比为 13.8/31.2/29.5 倍，说明图像 work 不能只用 frame 数描述；prepare work、ready tensor bytes 与 model work 必须分别约束。在相同 CPU 资源和输出合同下，项目 typed Ray GPU actor 静态路径相对 Ray Data native graph 的 operator JCT 在主正式报告中降低约 12.8%–15.1%，独立复测两档 CPU 仍同向。冻结 headline 为约 13%–15%，不使用资源不匹配比较得到的旧 45.7%。该结果证明 staged work 与执行结构可行性，不证明状态感知动态增量已经有效。
+CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时间比为
+13.8/31.2/29.5 倍，说明图像 work 不能只用 frame 数描述；prepare work、ready tensor
+bytes 与 model work 必须分别约束。12K 同语义三臂均 exactly-once，但 Ray Data/Project
+仍处于 setup-dominated 短窗口，Daft built-in 在 20K 已因 object-store OutOfDisk，故该
+panel 只说明 materialize 与 streaming 的结构/扩展边界，不作稳态排名。120K 下只有
+Ray Data native 与 Project frozen-static 具备 matched-resource 正式合同：两档 CPU
+均为 3 次 formal，Project JCT 低约 10%–17%。这些现象对应分阶段 WorkDescriptor、
+CPU prepare queue / ready tensor / GPU actor 状态观测，以及后续跨阶段有界提交；不证明
+图像动态增量已经有效，也不把 Daft 12K 数字外推到 120K。
 
 ### 5.8 代价模型的配置选择价值
 
