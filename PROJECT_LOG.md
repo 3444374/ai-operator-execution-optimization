@@ -1,5 +1,22 @@
 # 项目日志
 
+## 2026-08-09 大众多 Job benchmark 的组合接入合同
+
+- 在 `experiments/plans/state_aware_work_unit_evaluation_20260808.md` §7.6 将现有
+  1-short+3-long 定位为最小因果控制轨，并增加公开 benchmark 泛化轨；两者不互相替代。
+- 首轮 VTC-compatible synthetic 只复用官方 artifact 的 `on_off_overload`（状态切换）与
+  `overload-multi`（8 clients）两个 suite；冻结 artifact commit、许可、到达率、时长、
+  token shape、转换和 service-disparity 合同，不继续扩扫 Job 数。
+- 真实到达轨固定 BurstGPT v2.0 `BurstGPT_without_fails_3.csv` 的
+  timestamp/session/token lengths；Session ID 仅称
+  conversation session，prompt 内容由冻结 ShareGPT 池做 deterministic length matching，
+  原始 CC-BY-4.0 大文件不进入 Git。
+- VTC 官方 scheduler 位于 S-LoRA/continuous batching 内部，本项目不修改 vLLM，因此仅
+  复用 workload/actual-work/fairness 定义；可选外部 counter 必须称 `VTC-style upstream
+  baseline`，禁止将其冒充 artifact 原样复现或与 S-LoRA 数字作跨运行时绝对排名。
+- 图像没有现成官方 VTC/BurstGPT 多 Job 套件，继续使用 Daft/Ray Data 官方 image workload
+  加独立 Job wrapper，仅称 VTC-compatible evaluation contract。
+
 ## 2026-08-09 四 Job 干扰补充启动
 
 - 用户明确解除此前“不开 4+ Job”的开题冻结，限定只补一个

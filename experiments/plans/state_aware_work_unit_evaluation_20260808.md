@@ -338,3 +338,80 @@ running/waiting 均归零。该单次结果明确为 `comparison_admission=not_r
 重算；图像和 DuckDB 只有在各自四个 single controls 与 formal 完成后才计算。该指标用于
 消除 short/long 固有工作量差异，但不能替代 aggregate throughput/MFU、actual-work Jain、
 JCT/P99/SLO 与能耗；高 normalized Jain 也可能只是“大家同样慢”。
+
+### 7.6 大众多 Job benchmark 的接入合同：VTC 因果套件 + BurstGPT 真实 trace
+
+现有 1-short+3-long 四 Job 不是废弃的自定义负载，而是最小因果控制组；公开 benchmark
+作为第二条泛化轨补充。两轨回答不同问题，不合并成一个 headline：
+
+| 轨道 | 冻结 workload | 回答的问题 | 允许进入的 arms |
+|---|---|---|---|
+| 因果控制 | 现有 single controls + `short@0 -> 3*long@offset` | 谁影响谁、idle borrowing 和 long-long interference 从何发生 | 原生 Daft/Ray Data/DuckDB observation；project frozen-static/shared-work |
+| VTC-compatible synthetic | VTC `on_off_overload`、`overload-multi` | active/inactive phase 下是否 work-conserving；8 client 规模下 service fairness 是否稳定 | direct FCFS/control；project frozen-static；project shared-work；可选 external VTC-style counter |
+| BurstGPT trace | BurstGPT v2.0 固定窗口，保留 timestamp/session/token lengths | 在真实 burst、conversation session 和长尾 work 下结论是否泛化 | direct control；project frozen-static/shared-work；原生系统只做独立 application observation，不注入项目 credit |
+
+#### 7.6.1 VTC-compatible synthetic：只选两个公开 suite
+
+固定上游 artifact `Ying1123/VTC-artifact@192c2e2014c69c8c6c699d7113c3822e4db632e6`
+（Apache-2.0），保存原始 `exp_suite.py` SHA 和转换后 manifest SHA。首轮只复用：
+
+1. `on_off_overload`：2 clients、到达率 `[2,3] req/s`、每 60 s 切换 client-0
+   active/inactive、256 input + 256 output、原 artifact 600 s。它是“状态变化与闲置份额”
+   的标准化验证；本机可按预注册比例统一缩短，但至少保留两个完整 on/off 周期且总测量
+   不少于 180 s。
+2. `overload-multi`：8 clients、到达率 `[0.4,0.4,0.4,0.6,0.6,0.6,0.6,0.6]`
+   req/s、256 input + 256 output、原 artifact 360 s。它验证 client 数扩展与累计服务差，
+   不再额外发明 16/32 Job 扫描。
+
+转换器把 `adapter_dir` 仅解释为 `job_id/client_id`，把 `req_time` 映射为相对到达时刻；
+prompt 使用冻结 ShareGPT/SQuAD 内容池按目标 token 长度做 deterministic nearest-length
+匹配，禁止把 artifact 的 `"Hello " * token_len` 当数据库语义输入。目标 output length
+只用于 workload 构造/估计；计费和公平指标使用模型实际完成的 prompt/output token，预测值
+在 completion 时校正。
+
+VTC 官方 artifact 把公平 scheduler 实现在 S-LoRA/continuous-batching 服务内部，且论文
+真实 trace 的原文件已遗失、仓库中的 `real_trace.pkl` 来自不同时间段。因此：
+
+- 不把 artifact 直接跑出的 S-LoRA 数字与本项目 vLLM 上游路径做绝对性能排名；
+- 不称本项目 `shared_work` 为“复现 VTC”；
+- 若实现 `external_vtc_counter`，必须标为 **VTC-style upstream baseline**：按最小累计
+  actual token service 选 Job、work-conserving、completion 校正，但不修改 vLLM 内部调度；
+- 真实到达泛化改由 BurstGPT v2.0 承担，不使用 VTC replacement real trace 作主证据。
+
+#### 7.6.2 BurstGPT trace：真实 arrival，不把 Session ID 直接等同用户
+
+冻结 `HPMLL/BurstGPT` release v2.0 commit
+`7eb2c4f8350f8a6985272386f5c14af1f678b299`（dataset CC-BY-4.0），只保存原文件 SHA、
+许可、筛选规则和转换后的 manifest；原始大文件不进 Git。使用 v2.0 的
+`BurstGPT_without_fails_3.csv`，因为 Session ID 与 elapsed time 是 `BurstGPT_3` 新增字段；
+它同时包含 timestamp、model、request/response tokens 和 log type。首轮选一个连续、
+以 conversation log 为主的窗口，按本机 bounded ceiling 用单一 `time_scale` 压缩到
+60--180 s；scale 先由 control
+校准后冻结，所有 arms 共用。`Session ID` 表示会话而非稳定用户，故只用作 session/job
+分组，不声称 user-level fairness；API log 缺 session 时不人工随机造租户。
+
+BurstGPT 不包含原始 prompt 文本。按其官方示例，用冻结 ShareGPT prompt pool 做
+deterministic nearest-length matching；记录匹配前后 prompt token 误差 P50/P95/max。若
+output cap 使目标 response length 无法表达，则该行在转换门禁被拒绝，不能静默截断后仍称
+faithful replay。首个公开 trace formal 只跑 direct capacity/control 与 project
+frozen-static/shared-work；Daft Native/Ray、Ray Data 和 DuckDB 已由四 Job 因果轨观察原生
+多应用竞争，不再为了“benchmark 齐全”重复整个真实 trace 大矩阵。
+
+#### 7.6.3 统一指标与通过门禁
+
+每条公开 benchmark run 除现有 E2E/GPU/MFU/能耗指标外，必须输出：per-job arrived/
+completed/failed requests、actual prompt/output/weighted service、JCT/TTFT/P99/SLO goodput、
+solo-normalized progress、Jain、持续 backlogged window 的 cumulative service
+max-min/mean disparity、idle time、borrowed work 和 endpoint running/waiting/KV。VTC 式
+service disparity 只在至少两个 Job **同时持续 backlogged** 的窗口计算，不能把未到达或已
+drain 的 Job 计入分母制造“公平”。
+
+准备阶段通过标准：转换 deterministic；Job/manifest doc-id 互斥；arrival 重放误差
+P95 <= 50 ms；token-length 匹配误差有审计；exactly-once；同一资源/模型/服务签名；所有
+arms 复用同一 manifest 与 time scale。正式阶段保持 1 warmup + 3 balanced formal；任一
+correctness、feeding 或 arrival-fidelity 门禁失败，只保留 diagnostic，不继续调参追正。
+
+图像侧没有可直接称为“VTC/BurstGPT 图像多 Job benchmark”的公开套件。图像继续复用
+官方 Daft/Ray Data image workload 和现有四 Job wrapper，并迁移上述 active/inactive、
+actual stage-work 和 service-disparity 定义；只能称 **VTC-compatible evaluation contract**，
+不能称官方 VTC 图像 benchmark。
