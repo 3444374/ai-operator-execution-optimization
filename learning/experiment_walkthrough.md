@@ -28,6 +28,16 @@ Daft Native、Daft Ray、Ray Data 也都发生了真实重叠，short JCT 相对
 多少 work、服务现在是 underfeed 还是 overqueue”，并在总效率、前台 SLO 和公平之间
 设定明确目标。
 
+### 从两 Job 扩展到四 Job 时为什么必须补每个 Job 的单独基线
+
+`short + 3 long` 中不能只看 short。每个 Job 的输入 work 即使经过匹配也不会完全相同，
+因此并发 JCT 本身不能区分输入难度、静态额度和服务竞争。正确分解是：先让
+short/long1/long2/long3 各自独占 full pool；Project 再各自运行 reserved-quarter
+control；最后运行四分静态和 shared-work。逐 Job slowdown 必须除以该 Job 自己的
+single-full JCT，静态真实竞争则用 static-four-job 除以该 Job 的 quarter control。
+同时报告三个 long 的 slowdown/JCT 离散度、完成顺序和 overlap，才能发现“总吞吐变好，
+但其中一个 long 被饿死”这类只看 short 或组均值会漏掉的问题。
+
 ## Arrival replay 运行契约（不是性能实验）
 
 2026-07-25 已打通真实 `DaftOrganizer -> Arrow RecordBatch -> arrival replay

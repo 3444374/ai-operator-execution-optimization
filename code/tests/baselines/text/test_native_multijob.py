@@ -206,6 +206,52 @@ class NativeMultiJobTests(unittest.TestCase):
             self.assertEqual(first, balanced_arm_order(config, "formal", 1))
             self.assertEqual(first[0].arm_id, second[-1].arm_id)
 
+    def test_accepts_one_short_plus_three_matched_late_jobs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = self._config(root)
+            payload = json.loads(path.read_text())
+            long2 = self._manifest(root, "long2.jsonl", (5, 6))
+            long3 = self._manifest(root, "long3.jsonl", (7, 8))
+            for arm in payload["arms"]:
+                arm["jobs"].extend(
+                    [
+                        {"id": "long2", "manifest": str(long2), "offset_s": 0.001},
+                        {"id": "long3", "manifest": str(long3), "offset_s": 0.001},
+                    ]
+                )
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            config = load_native_multijob_config(path)
+            self.assertTrue(all(len(arm.jobs) == 4 for arm in config.arms))
+
+    def test_accepts_single_job_control_at_zero_offset(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = self._config(root)
+            payload = json.loads(path.read_text())
+            for arm in payload["arms"]:
+                arm["jobs"] = arm["jobs"][:1]
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            config = load_native_multijob_config(path)
+            self.assertTrue(all(len(arm.jobs) == 1 for arm in config.arms))
+
+    def test_rejects_multiple_late_arrival_offsets(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = self._config(root)
+            payload = json.loads(path.read_text())
+            long2 = self._manifest(root, "long2.jsonl", (5, 6))
+            long3 = self._manifest(root, "long3.jsonl", (7, 8))
+            payload["arms"][0]["jobs"].extend(
+                [
+                    {"id": "long2", "manifest": str(long2), "offset_s": 0.002},
+                    {"id": "long3", "manifest": str(long3), "offset_s": 0.003},
+                ]
+            )
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "one shared positive arrival offset"):
+                load_native_multijob_config(path)
+
     def test_command_audit_redacts_secret_and_rejects_project_controls(self) -> None:
         self.assertEqual(redact_command(["--api-key", "secret"]), ["--api-key", "<redacted>"])
         with self.assertRaisesRegex(ValueError, "prohibited"):

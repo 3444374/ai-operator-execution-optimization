@@ -213,7 +213,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_project_short_all_at_t0_diagnostic.example.json` | 同一 512-row short manifest 的项目 all-at-t0 静态 1+3 诊断；复用 K128/W65536、8×32 actor 和 token-budget 6144，但关闭逐请求 arrival replay | 判断项目能否在完整输入可见时喂满服务；不属于开题 baseline，不替换在线多 Job 结论，成功即停止且不扫 K256/K512 |
 | `deploy/autodl/opening_project_multijob_all_at_t0_diagnostic.example.json` | Project-only eager single、static+long、shared+long 配对矩阵；把 DB arrival span 压缩至约66.9µs，保持 Short@0s→Long@5s | 公平重测 eager 条件下 long 对 short 的影响；复用原生数据，不重跑 Daft/Ray Data，不替换在线 replay 结论 |
 | `deploy/autodl/opening_project_short_half_pool_all_at_t0_diagnostic.example.json` | Project eager short 的 reserved-half-pool 单 Job 1+3 补充控制；K/W 按两个静态分区切半但不启动 long | 将 static+long 的 short 退化拆成 quota-only 与真实竞争，不重复既有三臂 |
-| `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥、等行数的 short/long job manifest，并输出 token 分布与 SHA 审计 | 运行开题两作业实验前生成 512+512 行异质工作证据 |
+| `deploy/autodl/opening_project_fourjob_all_at_t0_diagnostic.example.json` | Project 1-short+3-matched-long 的 full/quarter 单 Job、四分静态与 shared-work 1+3 补充矩阵 | 逐 Job 拆分 quota、竞争与共享调度影响；同全局 K/W，不扫参数 |
+| `deploy/autodl/opening_text_native_fourjob.example.json` | Daft Native/Ray、Ray Data 的四个 single-full 控制与 1-short+3-long 独立应用并发观察 | 每个系统使用自己的单 Job slowdown 基线；不注入项目 credit，短 cell 不作容量排名 |
+| `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥 short 与一个或多个 token-work 匹配 long manifest，并输出 SHA/工作量 skew 审计 | 两作业用单 long；四作业用 1 short+3 long、每 Job 512 行 |
 | `code/scripts/analysis/summarize_project_short_all_at_t0.py` | 从服务器 raw 重算 Project eager single 的 T0–T4 时间、吞吐、MFU、状态和 Daft 对齐边界 | 回答“项目为何比 Daft 慢”时使用；T0 缺失不补造，T3/T4 只作 short 诊断 |
 | `code/scripts/analysis/summarize_project_multijob_eager.py` | fail-closed 汇总 Project eager full/half single、static/shared+long、short逐阶段和pre-long/overlap/drain状态 | 输出quota-only、matched competition、idle borrowing与各轨normalized short impact；检查12 formal、512 exactly-once、endpoint balance和<1ms arrival span |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
@@ -222,6 +224,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/analysis/test_summarize_opening_project_feeding_calibration.py` | feeding 校准选择器的最小饱和点与 manifest fail-closed 回归测试 | 修改校准门槛、输入合同或选择规则时运行 |
 | `code/scripts/analysis/summarize_opening_multijob_minimal.py` | fail-closed 汇总开题 short/long 两作业错峰两场景 | 输出组级紧凑数据、场景统计、shared-vs-static 对照和审计；不含 sink |
 | `code/scripts/analysis/summarize_opening_short_job_interference.py` | 统一汇总 exact-short full/half、项目 static/shared 与三条原生 single/two-job 证据 | 输出短 Job 因果对照、pre-long/overlap/drain 状态，以及 arrival span、最后到达后 drain、buffer/submit/service/E2E 细粒度时间；不伪造 native P99、interval MFU 或把重叠 stage 相加 |
+| `code/scripts/analysis/summarize_opening_fourjob_interference.py` | 审计 1-short+3-long 的 Project/native single→concurrent 四 Job 数据 | 输出每 Job slowdown、long 间离散/完成顺序、组公平性/资源与 Project 三阶段状态；不伪造 native request tail |
 | `code/tests/analysis/test_summarize_opening_short_job_interference.py` | 项目逐请求时间分解的 JCT 恒等式与负时长 fail-closed 回归 | 修改 short/long 时间归因或 raw timing 汇总公式时运行 |
 | `experiments/results/opening_multijob_interference_20260809/data/combined/project_request_timing_summary.csv` | full/half single 与 static/shared+long 的 arrival span、drain、buffer、submit、service、request E2E 与 profiler stage 紧凑汇总 | 分析项目 71 s 的组成或 long 影响哪一层时读；profiler stage 有重叠，不得相加 |
 | `experiments/results/opening_multijob_interference_20260809/data/combined/single_short_project_daft_timing.csv` | 项目 request-replay 与 Daft Native eager-manifest 的 timer、vLLM service 和状态边界对齐 | 回答 71.24 s vs 11.06 s 时读；只解释合同与状态，不作跨轨排名 |

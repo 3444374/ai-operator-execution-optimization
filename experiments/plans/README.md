@@ -56,7 +56,7 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | `sink_writeback_coordination.md` | **写回工程参考**（已降级为实验设置，不作为独立实验阶段） | COPY + deferred index baseline，仅在实验设置中说明 |
 | `operator_cost_profile_dual4090_formal_20260804.md` | **算子代价估计共同使能组件** | 当前 320-run formal 合同；§8 保留通过晋级门槛后才启动的 TPC-H-derived AI 查询计划 held-out |
 | `opening_database_e2e_p0_20260807.md` | **开题前证据闭环** | 仅允许的两组文本三臂统一 database-E2E：SQuAD 均匀控制组与 ShareGPT controlled-skew；冻结 source/manifest/sink/计时/质量/资源合同和停止规则 |
-| `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同** | 开题原生单 Job、原生两 Job 观察和项目 short/long 两臂均已完成；明确 project request replay 与 native eager-manifest 不跨轨排名，并冻结开题后 same-replay 诊断→offline capacity 顺序；phase-change、weighted/held-out、多模态动态与 cost held-out 留论文阶段 |
+| `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同** | 原生单/两 Job 与项目 short/long 两臂已完成；按用户确认新增 1-short+3-matched-long 的四 Job 干扰补充，逐 Job single-full、Project quarter、static/shared 和原生独立 Job 对照；明确 project request replay 与 native eager-manifest 不跨轨排名 |
 
 双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
 相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭
@@ -65,8 +65,9 @@ arrival replay 隔离数据组织，最后回到 arrival replay 检验 request-l
 
 **当前执行状态（2026-08-09）**：开题 database-E2E replacement、文本原生单 Job、
 `Short@0s → Long@5s` guaranteed-overlap 原生观察和项目 static/shared 因果 A/B 均已
-完成，开题前停止新增 baseline、offset、weight、4+ Job 或参数扫描。当前只维护报告、
-紧凑数据和待画图合同。开题后的最小工程顺序为 production descriptor builder →
+完成。2026-08-09 用户明确解除“4+ Job”冻结，仅补一个预注册的
+`short@0s → 3×matched-long@5s` 矩阵；仍停止新增 baseline、offset、weight 或参数扫描。
+当前除该补充外只维护报告、紧凑数据和待画图合同。开题后的最小工程顺序为 production descriptor builder →
 observe-only snapshot → no-op/fallback gate → 同上限单一控制动作消融；随后才进入
 phase-change、weighted/SLO、图像动态和 held-out cost。若先诊断当前项目 short 性能，
 必须先做 bounded/project 的 same-replay 两臂，再单列所有 rows 在 `t=0` 可见的离线

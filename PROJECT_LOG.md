@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-08-09 四 Job 干扰补充启动
+
+- 用户明确解除此前“不开 4+ Job”的开题冻结，限定只补一个
+  `short@0s → {long1,long2,long3}@5s` 预注册矩阵，不扩大 baseline、offset、weight、
+  K/W 或 workload 扫描。
+- 合同要求四个 512-row manifest 互斥、endpoint-balanced，三个 long 的 prompt-token
+  work 匹配；所有系统先跑每个 Job 的 single-full，再跑四 Job 并发。Project 另补四个
+  reserved-quarter 单 Job控制及 static/shared 同上限因果 A/B。
+- native orchestration 从固定两 Job扩展为显式允许 1/2/4 Job，仍禁止项目 credit、
+  router/inflight 等控制进入 Daft/Ray Data 原生臂；新增 Project/native AutoDL 模板与
+  全 Job汇总器，逐 Job报告 slowdown、long 间离散/完成顺序、组公平性/资源和 Project
+  三阶段状态。短 cell 仅作干扰基线，不作60秒容量排名。
+- 服务器刚重启，本轮必须按 cold-start runbook 重启 PG/Ray/双 vLLM 并重新通过 preflight、
+  idle、correctness 与 bounded smoke gate；旧 raw/扫描目录只读保留，不覆盖或清理。
+
 ## 2026-08-09 权威报告旧渲染护栏
 
 - 只读核对确认A/C生成脚本已预置正确新标签，但当前PNG/SVG仍是旧渲染：A含无严格数据

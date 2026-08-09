@@ -1,4 +1,4 @@
-"""CLI entrypoint for native-framework two-job staggered characterization."""
+"""CLI entrypoint for native-framework single/multi-job characterization."""
 
 from __future__ import annotations
 

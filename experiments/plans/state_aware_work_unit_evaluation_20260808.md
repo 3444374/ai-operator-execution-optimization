@@ -152,6 +152,31 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 原生两 job 观察（已完成） | 两个 512 行 short/long job；offset=5 s；互斥且 endpoint-work-balanced manifest | Daft Native、Daft Ray、Ray Data 各自启动两个独立 job；不注入项目 credit。bounded 多进程 client 因可复现 CLOSE_WAIT 生命周期问题排除，单 job C128 仅作容量参照 | 每臂 1+3 | 三臂均产生真实 overlap，short JCT 相对各自 single +82.42%/+104.84%/+32.76%；只作外部竞争观察 |
 | 两作业（已完成） | 两个512行short/long job；5s stagger；互斥manifest-selected doc_id集合 | online replay与eager两种arrival regime；各自使用full/half single、static partition、shared work-credit/fair queue匹配对照 | 每场景1+3 group runs | online下quota-only≈0、shared提高总吞吐但伤short/Jain；eager下quota-only short JCT +59.00%，shared相对static使short JCT −48.94%、总吞吐+31.85%、Jain 0.894→0.972；冻结为arrival-regime dependence，weighted留论文阶段 |
 
+#### 四作业干扰补充合同（2026-08-09 用户确认）
+
+四作业补充实验固定为 `short@0s → {long1,long2,long3}@5s`。四个 512-row
+manifest 必须 doc_id 互斥、两 endpoint 等行且 endpoint-work skew ≤2%；三个 long
+从 short 之外的行按 prompt-token work 贪心平衡，避免将输入工作量差异误判为调度
+不公平。它是两作业结论的并发扩展，不替换两作业的最小因果证据。
+
+对每个系统都先运行 `short/long1/long2/long3` 各自的 full-pool 单 Job 控制，再运行
+四 Job 并发。Project 额外运行四个 reserved-quarter-pool 单 Job 控制，然后比较：
+
+1. `single_full → static_4job`：总影响（静态配额 + 服务竞争）；
+2. `single_full → single_quarter`：纯静态配额影响；
+3. `single_quarter → static_4job`：匹配本地上限后的真实竞争影响；
+4. `single_full → shared_4job`：共享 work-credit 下的总干扰；
+5. `static_4job → shared_4job`：同全局 K/W 上限的调度策略因果对比。
+
+逐 Job 必须报告 JCT、P95/P99（native adapter 无可靠 request timestamp 时明确不可用）、
+actual work、work/s、相对自身 single-full slowdown、开始/结束和与其它 Job 的重叠时长。
+三个 long 还要报告 slowdown/JCT 的 max-min、CV、最慢 Job、pairwise overlap 和完成顺序。
+组级报告总 tokens/s、Jain fairness、max/min service、GPU util、MFU、running/waiting/KV、
+能耗、exactly-once；Project 按 `short-only / four-job overlap / long-only drain` 三段重算
+完成 work rate 与服务状态。只有四个 Job 全部完成、实际 overlap>0、manifest 和资源
+合同一致的 formal run 才进入比较。每场景 1 warm-up + 3 formal；短于60秒的单 Job
+cell 仅作匹配 slowdown 的诊断基线，不作框架容量排名。
+
 两作业必须使用冻结的 short/long manifest 直接过滤互斥 doc_id，source offset 固定为 0。
 项目 A/B 按原始 `arrival_time_s` 做 request-level replay；原生 Daft/Ray Data 观察只按
 0/5 s 对齐 Job 启动，Job 启动后完整 manifest 交给框架拥有的 graph，不声称逐行 replay。

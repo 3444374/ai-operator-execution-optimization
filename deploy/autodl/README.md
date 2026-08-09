@@ -94,6 +94,13 @@ Daft/Ray Data 原生 eager 数据复用；系统内 short impact 可作反事实
 但不启动 long。它用于把 static+long 的退化分解为“额度减半”与“真实服务竞争”，只补
 1 warm-up + 3 formal，不重复运行已有 full-pool、static+long 或 shared+long。
 
+`opening_project_fourjob_all_at_t0_diagnostic.example.json` 将同一因果分解扩展为
+`short@0s → {long1,long2,long3}@5s`：四个 Job 各跑 full-pool 与 reserved-quarter
+单 Job 控制，再跑四分静态和 shared-work。`opening_text_native_fourjob.example.json`
+则让 Daft Native/Ray、Ray Data 分别运行四个 single-full 控制与四个官方独立应用并发；
+不向原生框架注入项目 credit。两个模板均固定 1+3、不扫 offset/K/W；短于60秒的 cell
+只用于计算相对自身 single 的 slowdown，不进入框架容量排名。
+
 若该矩阵的项目臂未达到同协议 bounded direct 的 95% feeding 门，只能保留为
 failed-feeding 诊断。使用 `opening_project_feeding_calibration.example.json` 在每个
 workload 的同一 immutable manifest 上固定服务、token budget、active work 与 8×32=256

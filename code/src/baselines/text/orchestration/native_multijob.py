@@ -1,6 +1,6 @@
-"""Run two staggered jobs through unmodified native text-framework adapters.
+"""Run single or staggered jobs through unmodified native text adapters.
 
-This is deliberately a *thin* experiment harness: it starts two immutable
+This is deliberately a *thin* experiment harness: it starts immutable
 manifest jobs at absolute times and preserves their official ``run-shard``
 evidence.  It does not own batching, admission, routing, credit, or inflight
 control, so it can characterize how the native Daft/Ray paths behave when jobs
@@ -73,7 +73,7 @@ class NativeMultiJobJob:
 
 @dataclass(frozen=True)
 class NativeMultiJobArm:
-    """Frozen native adapter configuration applied to exactly two jobs."""
+    """Frozen native adapter configuration applied to one, two, or four jobs."""
 
     arm_id: str
     adapter: str
@@ -83,12 +83,12 @@ class NativeMultiJobArm:
     timeout_s: float
     process_timeout_s: float
     ray_address: str | None
-    jobs: tuple[NativeMultiJobJob, NativeMultiJobJob]
+    jobs: tuple[NativeMultiJobJob, ...]
 
 
 @dataclass(frozen=True)
 class NativeMultiJobConfig:
-    """Formal repeat contract for the native two-job staggered characterization."""
+    """Formal repeat contract for native single/multi-job characterization."""
 
     experiment_id: str
     output_root: Path
@@ -213,8 +213,8 @@ def _parse_arm(raw: object, *, seen_arm_ids: set[str], skew_max: float) -> Nativ
     elif ray_address is not None:
         raise ValueError(f"arm {arm_id} ray_address must be null for {adapter}")
     jobs_raw = raw["jobs"]
-    if not isinstance(jobs_raw, list) or len(jobs_raw) != 2:
-        raise ValueError(f"arm {arm_id} must define exactly two jobs")
+    if not isinstance(jobs_raw, list) or len(jobs_raw) not in {1, 2, 4}:
+        raise ValueError(f"arm {arm_id} must define exactly one, two, or four jobs")
     seen_job_ids: set[str] = set()
     seen_doc_ids: set[int] = set()
     jobs = tuple(
@@ -224,8 +224,16 @@ def _parse_arm(raw: object, *, seen_arm_ids: set[str], skew_max: float) -> Nativ
         )
         for item in jobs_raw
     )
-    if len({job.offset_s for job in jobs}) != 2 or min(job.offset_s for job in jobs) != 0:
-        raise ValueError(f"arm {arm_id} jobs require one zero offset and one distinct staggered offset")
+    zero_offsets = sum(job.offset_s == 0 for job in jobs)
+    positive_offsets = {job.offset_s for job in jobs if job.offset_s > 0}
+    if len(jobs) == 1:
+        if zero_offsets != 1:
+            raise ValueError(f"arm {arm_id} single job must start at offset zero")
+    elif zero_offsets != 1 or len(positive_offsets) != 1:
+        raise ValueError(
+            f"arm {arm_id} multi-job run requires exactly one zero-offset job "
+            "and one shared positive arrival offset for every later job"
+        )
     return NativeMultiJobArm(
         arm_id=arm_id,
         adapter=adapter,
@@ -237,12 +245,12 @@ def _parse_arm(raw: object, *, seen_arm_ids: set[str], skew_max: float) -> Nativ
             raw["process_timeout_s"], f"arm {arm_id} process_timeout_s"
         ),
         ray_address=ray_address if isinstance(ray_address, str) else None,
-        jobs=(jobs[0], jobs[1]),
+        jobs=jobs,
     )
 
 
 def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
-    """Load the narrow two-job contract and reject scheduler-control options."""
+    """Load the narrow single/multi-job contract and reject scheduler controls."""
 
     payload = expand_structure(json.loads(Path(path).read_text(encoding="utf-8")), "native_multijob_config")
     if not isinstance(payload, dict):
@@ -599,7 +607,11 @@ def _initial_index(config: NativeMultiJobConfig) -> dict[str, object]:
             "gpu": "gpu_resource.csv",
             "vllm": "gauge_summary and vllm_latency_deltas in matrix_index.json",
         },
-        "arms": [{"id": arm.arm_id, "adapter": arm.adapter} for arm in config.arms], "runs": [],
+        "arms": [
+            {"id": arm.arm_id, "adapter": arm.adapter, "job_count": len(arm.jobs)}
+            for arm in config.arms
+        ],
+        "runs": [],
     }
 
 
@@ -667,7 +679,8 @@ def run_native_multijob(
                     record: dict[str, object] = {
                         "run_id": run_id, "phase": phase, "repeat": repeat,
                         "interleaved_position": position, "arm_id": arm.arm_id,
-                        "adapter": arm.adapter, "output_root": str(arm_root), "status": "running",
+                        "adapter": arm.adapter, "job_count": len(arm.jobs),
+                        "output_root": str(arm_root), "status": "running",
                     }
                     index["runs"].append(record)  # type: ignore[index]
                     _atomic_json(index_path, index)
@@ -678,7 +691,7 @@ def run_native_multijob(
                         with cell_instrumenter(metrics_urls, gpu_trace) as instrumentation:  # type: ignore[attr-defined]
                             t0 = now() + config.launch_lead_s
                             record["t0_epoch_s"] = t0
-                            with ThreadPoolExecutor(max_workers=2) as pool:
+                            with ThreadPoolExecutor(max_workers=len(arm.jobs)) as pool:
                                 futures = [
                                     pool.submit(
                                         _run_job, target_epoch_s=t0 + job.offset_s, arm=arm, job=job,
@@ -751,7 +764,7 @@ def run_native_multijob(
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run native framework two-job staggered characterization.")
+    parser = argparse.ArgumentParser(description="Run native framework single/multi-job characterization.")
     parser.add_argument("--config", required=True)
     parser.add_argument("--runner-script", required=True, help="Path to existing run_official_baseline.py")
     return parser

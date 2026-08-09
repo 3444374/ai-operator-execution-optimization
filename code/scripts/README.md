@@ -30,6 +30,14 @@ native short 不足 60s 只作表征、interval MFU 无 counter 因而不可用�
 submit→service、service 与 request E2E 分位数；profiler 的 pipeline stage 字段可能
 重叠，明确禁止相加。不绘图、不把 group throughput 当 short 专属吞吐。
 
+`analysis/summarize_opening_fourjob_interference.py` 对
+`short@0s → {long1,long2,long3}@5s` 补充矩阵做 fail-closed 汇总。它要求四个
+manifest 全流程身份一致、每场景恰 3 次 formal、每 Job 512 条 exactly-once 且实际
+发生 overlap；输出所有 Job 的 JCT/work rate/Project request P95-P99、相对各自
+single-full slowdown、三个 long 的离散度与完成顺序、组级公平性/资源，以及 Project
+short-only/four-job-overlap/long-only-drain 三段状态。native request tail 因 barrier
+timestamp 保持不可用；短 cell 只作 slowdown 基线，不作容量排名。
+
 `analysis/summarize_project_short_all_at_t0.py` 审计同一 512-row short manifest 的
 Project all-at-t0 1+3 raw，并冻结 T0 full-pipeline、T1 offered-work JCT、T2 framework
 execute、T3 model-request window、T4 vLLM request mean 五层计时。它只在 T3/T4 下做
