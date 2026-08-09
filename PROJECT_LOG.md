@@ -5310,3 +5310,14 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   当前不存在需要新增实验才能解除的 blocker。
 - cost JSON UTF-8 规范化改变了文件字节 SHA；同步更新图表合同的 E 输入 SHA 前缀为
   `bbb2f2f8c5c1c07f`，并在 `figures/README.md` 说明字段、数值和既有图均未改变、无需重画。
+
+## 2026-08-09 四 Job 原生 baseline 边界冻结
+
+- 用户明确 Daft Native、Daft Ray、Ray Data 应展示各自原生执行效果，不为其注入项目的
+  workload 均衡、work credit、跨 Job 路由或调度优化，也不扫描后挑选有利参数。
+- Ray Data 正式四 Job 合同继续固定官方 API `batch_size=16,
+  concurrency=8/endpoint`；一次 concurrency=16 尝试在用户冻结口径后中止，仅保留服务器
+  诊断，不进入配置选择或正式比较。
+- 64-row 冷启动/原生门禁已覆盖全部 15 个 single/four-job arm，29 个单元完成且
+  exactly-once，随后停止无意义重复；未完成根和日志保留服务器。正式 512-row 模板只将
+  Ray Data 外层 shard 等待上限从 900 s 延长到 2400 s，不改变其内部执行策略。

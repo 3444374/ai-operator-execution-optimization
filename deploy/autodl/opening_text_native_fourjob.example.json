@@ -88,31 +88,31 @@
     {
       "id": "ray_data_http_single_short", "adapter": "ray_data_http",
       "python_executable": "${TEXT_BASELINES_PYTHON}", "concurrency_per_endpoint": "${RAY_DATA_CONCURRENCY_PER_ENDPOINT}",
-      "batch_size": "${RAY_DATA_BATCH_SIZE}", "timeout_s": 600, "process_timeout_s": 900, "ray_address": "${RAY_ADDRESS}",
+      "batch_size": "${RAY_DATA_BATCH_SIZE}", "timeout_s": 600, "process_timeout_s": 2400, "ray_address": "${RAY_ADDRESS}",
       "jobs": [{"id": "short", "manifest": "${TEXT_NATIVE_SHORT_JOB_MANIFEST}", "offset_s": 0}]
     },
     {
       "id": "ray_data_http_single_long1", "adapter": "ray_data_http",
       "python_executable": "${TEXT_BASELINES_PYTHON}", "concurrency_per_endpoint": "${RAY_DATA_CONCURRENCY_PER_ENDPOINT}",
-      "batch_size": "${RAY_DATA_BATCH_SIZE}", "timeout_s": 600, "process_timeout_s": 900, "ray_address": "${RAY_ADDRESS}",
+      "batch_size": "${RAY_DATA_BATCH_SIZE}", "timeout_s": 600, "process_timeout_s": 2400, "ray_address": "${RAY_ADDRESS}",
       "jobs": [{"id": "long1", "manifest": "${TEXT_NATIVE_LONG_JOB_MANIFEST_1}", "offset_s": 0}]
     },
     {
       "id": "ray_data_http_single_long2", "adapter": "ray_data_http",
       "python_executable": "${TEXT_BASELINES_PYTHON}", "concurrency_per_endpoint": "${RAY_DATA_CONCURRENCY_PER_ENDPOINT}",
-      "batch_size": "${RAY_DATA_BATCH_SIZE}", "timeout_s": 600, "process_timeout_s": 900, "ray_address": "${RAY_ADDRESS}",
+      "batch_size": "${RAY_DATA_BATCH_SIZE}", "timeout_s": 600, "process_timeout_s": 2400, "ray_address": "${RAY_ADDRESS}",
       "jobs": [{"id": "long2", "manifest": "${TEXT_NATIVE_LONG_JOB_MANIFEST_2}", "offset_s": 0}]
     },
     {
       "id": "ray_data_http_single_long3", "adapter": "ray_data_http",
       "python_executable": "${TEXT_BASELINES_PYTHON}", "concurrency_per_endpoint": "${RAY_DATA_CONCURRENCY_PER_ENDPOINT}",
-      "batch_size": "${RAY_DATA_BATCH_SIZE}", "timeout_s": 600, "process_timeout_s": 900, "ray_address": "${RAY_ADDRESS}",
+      "batch_size": "${RAY_DATA_BATCH_SIZE}", "timeout_s": 600, "process_timeout_s": 2400, "ray_address": "${RAY_ADDRESS}",
       "jobs": [{"id": "long3", "manifest": "${TEXT_NATIVE_LONG_JOB_MANIFEST_3}", "offset_s": 0}]
     },
     {
       "id": "ray_data_http_fourjob", "adapter": "ray_data_http",
       "python_executable": "${TEXT_BASELINES_PYTHON}", "concurrency_per_endpoint": "${RAY_DATA_CONCURRENCY_PER_ENDPOINT}",
-      "batch_size": "${RAY_DATA_BATCH_SIZE}", "timeout_s": 600, "process_timeout_s": 900, "ray_address": "${RAY_ADDRESS}",
+      "batch_size": "${RAY_DATA_BATCH_SIZE}", "timeout_s": 600, "process_timeout_s": 2400, "ray_address": "${RAY_ADDRESS}",
       "jobs": [
         {"id": "short", "manifest": "${TEXT_NATIVE_SHORT_JOB_MANIFEST}", "offset_s": 0},
         {"id": "long1", "manifest": "${TEXT_NATIVE_LONG_JOB_MANIFEST_1}", "offset_s": "${TEXT_NATIVE_FOURJOB_OFFSET_S}"},

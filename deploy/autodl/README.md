@@ -974,6 +974,11 @@ Native、Daft Ray 与 Ray Data 已冻结原生配置。由于 short cell 可能�
 该矩阵用于匹配 JCT/服务状态表征，不作为新的稳态容量排名，也不注入项目
 credit、router 或静态配额。
 
+四 Job 原生观察同样不做项目侧 workload 重排或调度调参：Daft/Ray Data 接收完整、
+不可变 manifest 后由 vendor-owned graph 自行执行。Ray Data 固定使用已登记的
+`batch_size=16, concurrency=8/endpoint`，不从扫描中挑选有利点；四 Job 模板只把其
+外层 shard 等待上限设为 2400 s，防止 512-row 原生执行被 harness 提前终止。
+
 当研究问题明确为“long 中途加入对已存在 short 的影响”时，必须先确保每一臂
 实际发生 overlap。`opening_multijob_minimal.example.json` 与
 `opening_text_native_multijob.example.json` 均从环境读取统一 offset；原 15s

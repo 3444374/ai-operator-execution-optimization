@@ -183,6 +183,10 @@ cell 仅作匹配 slowdown 的诊断基线，不作框架容量排名。
 两条轨道都报告各 Job 实际 predicted/observed work，但绝对 JCT/吞吐不得跨轨排名。
 原生框架观察不得命名为 `static_partition`；只有项目 A/B 可计算
 `borrowed_work_seconds`。该最小矩阵不声称 3:1 weighted fairness 已验证。
+Daft Native、Daft Ray 和 Ray Data 均保持 vendor-owned graph：不为正式结果扫描
+workload 重排、长度均衡、项目 credit、跨 Job 路由或调度参数。Ray Data 使用冻结的
+官方 API 配置 `batch_size=16, concurrency=8/endpoint`；外层 shard 进程等待上限延长至
+2400 s 仅保证 512-row 原生运行能够自然结束，不改变框架内部执行策略。
 
 本轮到达方向严格为 `Short@0s → Long@5s`，回答“后到 long 是否影响已运行 short”。
 所有进入干扰结论的 arm 都必须满足 measured overlap > 0；旧 15 s Daft Native 中 short
