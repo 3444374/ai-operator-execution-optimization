@@ -5324,3 +5324,11 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 修正四 Job 汇总器的 shared-credit 阶段统计：同一采样时刻先对两个 endpoint 的
   active/waiting request 与 work 求和，再对时间求均值；旧实现直接平均 endpoint 行会把
   名为 `*_total_mean` 的量缩小一半。正式结果尚未生成，因此没有已发布数值受影响。
+- Project 512-row 四 Job formal v1 在第一个 shared formal 后被 replay-start skew 门禁
+  判失败；四 Job 均 exactly-once、credit 归零，配置/观测 barrier 准确，但 shared credit
+  令两个 long 的 first-submit 延迟约 0.62–0.67 s。原门禁错误地把 admission 后的
+  first-submit skew 当成到达 skew，从而把待测调度行为判为输入不同步。
+- `_validate_replay_starts` 改为用 observed replay barrier（扣除预注册 offset）校验跨 Job
+  启动同步；actual first-submit 仍逐 Job受 `max_start_lateness_s` 约束并保留为结果证据。
+  新增回归测试覆盖“barrier 同步但 scheduler submit 有差异”，38/38 单测通过；v1 原始
+  failure、完整 Job 输出与 traces 保留，修复后必须另建 v2，不得 resume/覆盖。

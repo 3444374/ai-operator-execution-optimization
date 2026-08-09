@@ -35,7 +35,7 @@ def _validate_replay_starts(
 ) -> None:
     if len(job_evidence) != len(arrival_offsets_s):
         raise RuntimeError("replay start evidence is incomplete")
-    normalized_starts = []
+    normalized_barrier_starts = []
     for index, (evidence, offset_s) in enumerate(
         zip(job_evidence, arrival_offsets_s)
     ):
@@ -62,10 +62,15 @@ def _validate_replay_starts(
                 f"job {index} missed replay start deadline by "
                 f"{lateness:.6f}s"
             )
-        normalized_starts.append(actual_submit - offset_s)
+        # Submission is intentionally downstream of admission/credit control.
+        # Its delay is bounded above, but cross-job launch skew must be judged
+        # at the replay barrier or the scheduler behavior being measured can
+        # invalidate an otherwise synchronized run.
+        normalized_barrier_starts.append(observed - offset_s)
     if (
-        normalized_starts
-        and max(normalized_starts) - min(normalized_starts) > max_skew_s
+        normalized_barrier_starts
+        and max(normalized_barrier_starts) - min(normalized_barrier_starts)
+        > max_skew_s
     ):
         raise RuntimeError("cross-job replay start skew exceeded limit")
 

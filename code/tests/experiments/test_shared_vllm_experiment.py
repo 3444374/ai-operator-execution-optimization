@@ -936,7 +936,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
         )
 
     def test_replay_start_validation_rejects_late_or_skewed_jobs(self) -> None:
-        evidence = [
+        skewed_barrier = [
             {
                 "replay_configured_start_epoch_s": 100.0,
                 "replay_observed_start_epoch_s": 100.1,
@@ -951,7 +951,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "start skew"):
             _validate_replay_starts(
-                evidence,
+                skewed_barrier,
                 expected_start_epoch_s=100.0,
                 arrival_offsets_s=(0.0, 0.0),
                 max_lateness_s=2.0,
@@ -959,12 +959,34 @@ class SharedVllmExperimentTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(RuntimeError, "start deadline"):
             _validate_replay_starts(
-                evidence,
+                skewed_barrier,
                 expected_start_epoch_s=100.0,
                 arrival_offsets_s=(0.0, 0.0),
                 max_lateness_s=0.5,
                 max_skew_s=1.0,
             )
+
+    def test_replay_start_validation_allows_scheduler_submit_skew(self) -> None:
+        evidence = [
+            {
+                "replay_configured_start_epoch_s": 100.0,
+                "replay_observed_start_epoch_s": 100.1,
+                "replay_actual_submit_start_epoch_s": 100.1,
+            },
+            {
+                "replay_configured_start_epoch_s": 105.0,
+                "replay_observed_start_epoch_s": 105.1,
+                "replay_actual_submit_start_epoch_s": 105.8,
+            },
+        ]
+
+        _validate_replay_starts(
+            evidence,
+            expected_start_epoch_s=100.0,
+            arrival_offsets_s=(0.0, 5.0),
+            max_lateness_s=2.0,
+            max_skew_s=0.5,
+        )
 
     def test_runner_topology_rejects_duplicate_metrics_urls(self) -> None:
         with patch.object(
