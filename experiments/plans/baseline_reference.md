@@ -684,6 +684,11 @@ baseline 调成无限参数搜索，也不把未到 ceiling 的默认点当最�
 多 job 侧增加 VTC（OSDI 2024）作为算法基线：token-cost service counter、
 work-conserving borrowing 和每 job service/JCT/fairness。Llumnix（OSDI 2024）
 作为多实例 virtual usage 与在线纠偏参考，不要求实现 KV live migration。
+公开 workload 的精确运行合同见
+[`state_aware_work_unit_evaluation_20260808.md` §7.6](state_aware_work_unit_evaluation_20260808.md)：
+VTC 两个 synthetic suite 只进入 direct/project/VTC-style 上游调度轨；BurstGPT v2.0
+另补 Daft Native、Daft Ray、Ray Data 的 `eager_trace_shape` 原生观察，禁止跨计时边界做
+absolute JCT 排名。
 
 ---
 

@@ -343,12 +343,14 @@ JCT/P99/SLO 与能耗；高 normalized Jain 也可能只是“大家同样慢”
 
 现有 1-short+3-long 四 Job 不是废弃的自定义负载，而是最小因果控制组；公开 benchmark
 作为第二条泛化轨补充。两轨回答不同问题，不合并成一个 headline：
+baseline 的层级身份与原生性总规则仍以 [`baseline_reference.md`](baseline_reference.md)
+为准，本节冻结可执行的公开多 Job workload/metric 合同。
 
 | 轨道 | 冻结 workload | 回答的问题 | 允许进入的 arms |
 |---|---|---|---|
 | 因果控制 | 现有 single controls + `short@0 -> 3*long@offset` | 谁影响谁、idle borrowing 和 long-long interference 从何发生 | 原生 Daft/Ray Data/DuckDB observation；project frozen-static/shared-work |
 | VTC-compatible synthetic | VTC `on_off_overload`、`overload-multi` | active/inactive phase 下是否 work-conserving；8 client 规模下 service fairness 是否稳定 | direct FCFS/control；project frozen-static；project shared-work；可选 external VTC-style counter |
-| BurstGPT trace | BurstGPT v2.0 固定窗口，保留 timestamp/session/token lengths | 在真实 burst、conversation session 和长尾 work 下结论是否泛化 | direct control；project frozen-static/shared-work；原生系统只做独立 application observation，不注入项目 credit |
+| BurstGPT trace | BurstGPT v2.0 固定窗口，保留 timestamp/session/token lengths | 在真实 burst、conversation session 和长尾 work 下结论是否泛化 | direct/project faithful timed replay；Daft Native/Daft Ray/Ray Data native eager trace-shape observation，不注入项目 credit |
 
 #### 7.6.1 VTC-compatible synthetic：只选两个公开 suite
 
@@ -387,15 +389,27 @@ VTC 官方 artifact 把公平 scheduler 实现在 S-LoRA/continuous-batching 服
 它同时包含 timestamp、model、request/response tokens 和 log type。首轮选一个连续、
 以 conversation log 为主的窗口，按本机 bounded ceiling 用单一 `time_scale` 压缩到
 60--180 s；scale 先由 control
-校准后冻结，所有 arms 共用。`Session ID` 表示会话而非稳定用户，故只用作 session/job
-分组，不声称 user-level fairness；API log 缺 session 时不人工随机造租户。
+校准后冻结，所有 faithful-timed arms 共用。`Session ID` 表示会话而非稳定用户，故只作为
+不可拆分的 session 原子：按首次出现顺序做 deterministic round-robin，冻结为 4 条 logical
+application streams；不称真实 tenant/user，也不按事后 work 人工平衡。API log 缺 session
+时不随机造租户，首轮直接排除并记录计数。
 
 BurstGPT 不包含原始 prompt 文本。按其官方示例，用冻结 ShareGPT prompt pool 做
 deterministic nearest-length matching；记录匹配前后 prompt token 误差 P50/P95/max。若
 output cap 使目标 response length 无法表达，则该行在转换门禁被拒绝，不能静默截断后仍称
-faithful replay。首个公开 trace formal 只跑 direct capacity/control 与 project
-frozen-static/shared-work；Daft Native/Ray、Ray Data 和 DuckDB 已由四 Job 因果轨观察原生
-多应用竞争，不再为了“benchmark 齐全”重复整个真实 trace 大矩阵。
+faithful replay。首个公开 trace formal 包含 direct capacity/control 与 project
+frozen-static/shared-work 的 faithful timed replay；另补 Daft Native、Daft Ray、Ray Data
+三条原生 `eager_trace_shape` 观察轨。DuckDB 不进入 BurstGPT：其 bounded-output 产品轨继续
+使用 SQuAD 多 Job，不能把 output-cap 不兼容的 trace 强塞进产品 baseline。
+
+Daft/Ray Data 原生 graph 不暴露逐请求 timed-arrival 调度合同，因此每个 logical stream
+作为独立官方 application/process，在同一 ready barrier 后 eager 执行自己的 immutable
+manifest；保留 prompt、token shape、stream 划分和共享 vLLM，但不声称 faithful timestamp
+replay。每个原生 arm 必须跑 4 个 isolated single controls 与一次 4-application concurrent，
+只比较该系统内部的 single-to-multi slowdown、normalized progress、吞吐/MFU、waiting/KV
+和公平性；不得用其 absolute JCT 与 faithful-timed direct/project 排名。Daft/Ray Data 不跑
+VTC on/off 与 8-client suite，因为给官方 graph 注入外部 per-client pause/credit 会改变其
+原生 scheduler ownership。
 
 #### 7.6.3 统一指标与通过门禁
 
@@ -406,10 +420,12 @@ max-min/mean disparity、idle time、borrowed work 和 endpoint running/waiting/
 service disparity 只在至少两个 Job **同时持续 backlogged** 的窗口计算，不能把未到达或已
 drain 的 Job 计入分母制造“公平”。
 
-准备阶段通过标准：转换 deterministic；Job/manifest doc-id 互斥；arrival 重放误差
-P95 <= 50 ms；token-length 匹配误差有审计；exactly-once；同一资源/模型/服务签名；所有
-arms 复用同一 manifest 与 time scale。正式阶段保持 1 warmup + 3 balanced formal；任一
-correctness、feeding 或 arrival-fidelity 门禁失败，只保留 diagnostic，不继续调参追正。
+准备阶段通过标准：转换 deterministic；Job/manifest doc-id 互斥；faithful-timed arms 的
+arrival 重放误差 P95 <= 50 ms；token-length 匹配误差有审计；exactly-once；同一资源/
+模型/服务签名。所有 arms 复用同一内容/stream manifest；faithful-timed arms 再共用同一
+time scale，eager arms 保存移除 timing 后的 derived-manifest SHA。正式阶段保持 1 warmup
++ 3 balanced formal；任一 correctness、feeding 或适用的 arrival-fidelity 门禁失败，只
+保留 diagnostic，不继续调参追正。
 
 图像侧没有可直接称为“VTC/BurstGPT 图像多 Job benchmark”的公开套件。图像继续复用
 官方 Daft/Ray Data image workload 和现有四 Job wrapper，并迁移上述 active/inactive、

@@ -11,6 +11,10 @@
   timestamp/session/token lengths；Session ID 仅称
   conversation session，prompt 内容由冻结 ShareGPT 池做 deterministic length matching，
   原始 CC-BY-4.0 大文件不进入 Git。
+- BurstGPT 轨补 Daft Native、Daft Ray、Ray Data：4 条 logical application stream 的
+  isolated controls + native concurrent；三者保留官方 scheduler ownership，不注入项目
+  credit。由于不支持相同逐请求到达合同，明确标为 `eager_trace_shape`，只作各轨内部
+  single-to-multi normalized impact，不与 direct/project faithful-timed absolute JCT 排名。
 - VTC 官方 scheduler 位于 S-LoRA/continuous batching 内部，本项目不修改 vLLM，因此仅
   复用 workload/actual-work/fairness 定义；可选外部 counter 必须称 `VTC-style upstream
   baseline`，禁止将其冒充 artifact 原样复现或与 S-LoRA 数字作跨运行时绝对排名。
