@@ -119,6 +119,26 @@ Project shared 相对 static：group tok/s +8.68%、group JCT −7.97%、MFU +8.
 running +24.77、KV +0.120，但 Jain 从 0.960 降到 0.923。共享更多 work 是有效机制，
 但“提高总效率”与“公平地服务每个 Job”不是同一个目标。
 
+为与 VTC/FairServe 的 work-based fairness 思路对齐，又从同一
+`job_slowdown_comparisons.csv` 计算 isolated-normalized progress：对每个完整 Job 定义
+`p_i = JCT_i(single matched control) / JCT_i(four-job)`，再计算
+`Jain(p)=(Σp_i)^2/(4Σp_i^2)`。它不是 VTC 在服务内部的理论 service bound，而是可同时用于
+Daft/Ray Data/Project barrier 证据的系统内 slowdown fairness；值越高只表示四个 Job 的
+相对保留进度越接近，不表示吞吐更高。
+
+| 系统/对照 | normalized-progress Jain | min–max progress | max/min | 事实含义 |
+|---|---:|---:|---:|---|
+| Daft Native four/single | 0.931 | 0.333–0.600 | 1.80× | short 保留进度明显高于 long |
+| Daft Ray four/single | 0.902 | 0.387–0.797 | 2.06× | 四 Job 相对退化最不均匀 |
+| Ray Data four/single | 0.984 | 0.449–0.597 | 1.33× | 相对退化较均匀，但绝对容量仍低 |
+| Project static/full-single | 0.988 | 0.222–0.296 | 1.33× | 较均匀但所有 Job 保留进度都低 |
+| Project static/quarter-single | 0.998 | 0.623–0.711 | 1.14× | 扣除 quota 后，竞争损失很均匀 |
+| Project shared/full-single | 0.876 | 0.311–0.801 | 2.57× | 总效率提高，但 long1 得到的相对进度最低 |
+
+这补强了现有结论：只看原始吞吐 Jain 会混入 Job 工作量和完成窗口；只看
+normalized-progress Jain 又会遗漏总效率。正式讲述必须把 group throughput/MFU、原始
+work-service Jain、isolated-normalized progress Jain 和最坏 Job JCT/P99 并列。
+
 ### 4.4 Project 三阶段状态
 
 | 阶段 | static 时长 / running / completed work/s | shared 时长 / running / completed work/s | 解释边界 |
@@ -186,6 +206,8 @@ Git 保存紧凑、可绘图且已通过哈希复核的数据：
 
 - `data/combined/job_formal_runs.csv` / `job_summary.csv`：逐 Job formal 与三重复汇总；
 - `data/combined/job_slowdown_comparisons.csv`：全部因果/相对变化；
+- `data/combined/isolated_normalized_fairness.csv`：按各 Job 自身 single control 归一化的
+  slowdown fairness、服务差和最坏 Job；
 - `data/combined/group_formal_runs.csv` / `group_summary.csv`：组级效率和服务状态；
 - `data/combined/long_job_spread.csv`：三个 long 的离散度、完成顺序和最慢 Job；
 - `data/combined/project_phase_runs.csv` / `project_phase_summary.csv`：Project 三阶段状态；

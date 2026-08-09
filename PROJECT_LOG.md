@@ -5413,3 +5413,12 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 图像、DuckDB contract/gate/rehearsal 原始证据均留服务器，并另存只增不删的准备归档
   `/root/autodl-tmp/experiment-artifacts/opening_image_duckdb_multijob_preparation_20260809_v1.tar.gz`
   （1.2 MiB，SHA256 `a7e1c2c58a0c55c6f69832cd623c0d3c08336211e876be02cdf51188cabd4825`）。
+- 复审现成 multi-job benchmark 后冻结“组合合同”：vLLM bench serve 只复用标准到达/容量，
+  VTC 复用 actual-work/normalized-service/fairness，Daft/Ray 官方 benchmark 复用多模态
+  workload/native graph；独立 Job 生命周期与数据库数据流仍由薄 runner 负责。远端 vLLM
+  0.25.1 支持 request-rate/burstiness/ramp-up，但不含新版 `probe-request-rate`，不为此升级
+  正式环境或再造客户端。
+- 从现有文本四 Job formal 的 slowdown CSV 事后重算 isolated-normalized progress
+  `single JCT / concurrent JCT`。Project static/shared 的 normalized Jain 为0.988/0.876，
+  对应 min-max progress 0.222–0.296/0.311–0.801；说明 static 可“均匀地慢”，shared 提高
+  总效率但收益不均。新增紧凑 CSV，只是同一证据的标准化派生，不重跑、不新增性能 claim。

@@ -312,3 +312,29 @@ running/waiting 均归零。该单次结果明确为 `comparison_admission=not_r
 产品原生多个独立查询竞争时的现象，不是 DuckDB 内部拥有跨查询全局 fair scheduler 的
 证明，也不与 Chat 原生框架做绝对排名。项目文本动态策略以后仍使用同一批 manifest 和
 到达合同单独重测；若 workload/service 资源签名未变，DuckDB 原生结果可复用。
+
+### 7.5 现成 benchmark 的复用边界：组合合同，不更换四作业 runner
+
+当前没有一个现成套件同时覆盖数据库 source、Daft/Ray Data/DuckDB 原生 graph、独立 Job
+生命周期、共享 vLLM/GPU、项目 static/dynamic 和逐 Job fairness。正式方法因此采用四层
+组合 benchmark，而不是把自写 runner 误称为新的通用行业标准：
+
+1. **服务容量/到达模型**：复用 `vllm bench serve` 的 ShareGPT/custom dataset、Poisson/
+   Gamma burst、request-rate、max-concurrency 与 ramp-up；它只作 serving ceiling/control，
+   不代表多 Job 数据流。远端 vLLM 0.25.1 实测没有新版文档中的 `probe-request-rate`，不开
+   升级或自写仿 probe 客户端；现有独立 Job runner 已覆盖更完整的干扰观测。
+2. **多租户公平定义**：复用 VTC 的 actual token-work accounting、work-conserving、
+   cumulative service disparity 和 per-client completion；项目 runner 已保存 normalized
+   service/Jain/disparity。VTC 位于服务内部，本项目不修改 vLLM，故只迁移指标和 counter
+   思路，不把 VTC artifact 当同层系统 baseline。
+3. **多模态 workload/native graph**：复用 Daft/Ray Data 官方 image/document/audio/video
+   benchmark 的 workload 形态与 vendor-owned graph；本项目只增加 single controls、独立
+   graph 并发、ready/start barrier、统一 source/质量与状态采集。
+4. **数据库 AI 定位**：SQuAD/ShareGPT/COCO 继续作为当前冻结工作负载；SemBench/LOTUS 可
+   在论文阶段补 operator 语义覆盖，但不替换长短异质、多 Job 干扰主矩阵。
+
+跨模态统一派生指标为 `normalized_progress_i = isolated matched JCT_i / concurrent JCT_i`，
+并报告其 Jain、max-min disparity、max/min 与 worst Job。文本现有四 Job 正式数据已能事后
+重算；图像和 DuckDB 只有在各自四个 single controls 与 formal 完成后才计算。该指标用于
+消除 short/long 固有工作量差异，但不能替代 aggregate throughput/MFU、actual-work Jain、
+JCT/P99/SLO 与能耗；高 normalized Jain 也可能只是“大家同样慢”。

@@ -2,6 +2,11 @@
   "figures_drawn": false,
   "formal_group_rows": 75,
   "formal_job_rows": 120,
+  "isolated_normalized_fairness": {
+    "formula": "normalized_progress_i=isolated_matched_jct_i/concurrent_jct_i; jain=(sum(p_i)^2)/(4*sum(p_i^2))",
+    "rows": 6,
+    "source": "job_slowdown_comparisons.csv"
+  },
   "manifest_sha256_by_job": {
     "long1": "d63ddb097a1e7f0e8d0cef8771ad48cb29ed330e450bc5435b2965b439a052ff",
     "long2": "2df8d11091d09a505b43f043fce4ad689c2c0d118617b81217574655d26473b9",
