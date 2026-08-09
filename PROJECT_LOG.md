@@ -5398,3 +5398,6 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   是资源碎片化死锁而非慢。杀死四个 child 后 runner 将目录结构化标为 failed，证据保留。
   修正采用 Ray Data 官方 autoscaling ActorPool（min=1、max=原冻结16/2）；single 与
   four-job 全臂同配置，不加入项目调度，后续重新运行新 gate 目录。
+- 文本原生多作业编排增加显式 `--gate-only`：只运行四作业 arm 一次，证据标记
+  `comparison_admission=not_rankable`，不执行 single control、warmup 或 formal repeats；
+  用于先验证 DuckDB 四连接并发的 manifest、进程生命周期、exactly-once 与采集流程。

@@ -316,6 +316,42 @@ class NativeMultiJobTests(unittest.TestCase):
                 65_536,
             )
 
+    def test_gate_only_runs_each_four_job_arm_once_and_is_not_rankable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = self._config(root)
+            payload = json.loads(path.read_text())
+            long2 = self._manifest(root, "long2.jsonl", (5, 6))
+            long3 = self._manifest(root, "long3.jsonl", (7, 8))
+            for arm in payload["arms"]:
+                arm["jobs"].extend(
+                    [
+                        {"id": "long2", "manifest": str(long2), "offset_s": 0.001},
+                        {"id": "long3", "manifest": str(long3), "offset_s": 0.001},
+                    ]
+                )
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            result = run_native_multijob(
+                path,
+                runner_script=root / "run_official_baseline.py",
+                popen_factory=_FakeProcess,
+                queue_waiter=self._queues,
+                counter_sampler=self._counters,
+                cell_instrumenter=self._instrumentation,
+                ray_nofile_probe=self._ray_nofile,
+                gate_only=True,
+            )
+
+            self.assertEqual(result["status"], "passed")
+            self.assertEqual(result["execution_mode"], "gate")
+            self.assertEqual(result["comparison_admission"], "not_rankable")
+            self.assertEqual(result["gate_runs_total"], 2)
+            self.assertTrue(all(run["phase"] == "gate" for run in result["runs"]))
+            self.assertTrue(all(len(run["jobs"]) == 4 for run in result["runs"]))
+            self.assertTrue(all(run["duration_status"] == "gate_not_ranked" for run in result["runs"]))
+            self.assertTrue(all(run["comparison_eligible"] is False for run in result["runs"]))
+
     def test_summary_provenance_mismatch_fails_closed(self) -> None:
         class WrongProvenanceProcess(_FakeProcess):
             def __init__(self, command: list[str], **kwargs: object) -> None:

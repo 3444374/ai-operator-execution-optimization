@@ -636,6 +636,7 @@ def run_native_multijob(
     host_lease_acquirer: Callable[..., object] = acquire_host_runner_lease,
     cell_instrumenter: Callable[..., object] = instrumented_cell,
     ray_nofile_probe: RayNofileProbe = probe_ray_worker_nofile,
+    gate_only: bool = False,
 ) -> dict[str, object]:
     """Execute warmup/formal native arms, preserving failed evidence fail-closed."""
 
@@ -646,6 +647,7 @@ def run_native_multijob(
     config.output_root.mkdir(parents=True)
     index_path = config.output_root / "matrix_index.json"
     index = _initial_index(config)
+    index["execution_mode"] = "gate" if gate_only else "formal_matrix"
     repository_commit = repository_commit_getter()
     if not repository_commit:
         raise RuntimeError("repository commit must be non-empty")
@@ -678,9 +680,19 @@ def run_native_multijob(
             _atomic_json(index_path, index)
             raise
         _atomic_json(index_path, index)
-        for phase, repeats in (("warmup", config.warmup_repeats), ("formal", config.formal_repeats)):
+        phases = (
+            (("gate", 1),)
+            if gate_only
+            else (("warmup", config.warmup_repeats), ("formal", config.formal_repeats))
+        )
+        for phase, repeats in phases:
             for repeat in range(1, repeats + 1):
-                for position, arm in enumerate(balanced_arm_order(config, phase, repeat), start=1):
+                scheduled = (
+                    tuple(arm for arm in config.arms if len(arm.jobs) == 4)
+                    if gate_only
+                    else balanced_arm_order(config, phase, repeat)
+                )
+                for position, arm in enumerate(scheduled, start=1):
                     ordinal += 1
                     run_id = f"{ordinal:03d}_{phase}_{repeat:02d}_{arm.arm_id}"
                     arm_root = config.output_root / "runs" / run_id
@@ -735,15 +747,16 @@ def run_native_multijob(
                             and record["arm_barrier_jct_s"]
                             >= config.minimum_measurement_seconds
                         )
-                        record["duration_status"] = (
-                            "warmup_not_ranked"
-                            if phase == "warmup"
-                            else (
+                        if phase == "gate":
+                            record["duration_status"] = "gate_not_ranked"
+                        elif phase == "warmup":
+                            record["duration_status"] = "warmup_not_ranked"
+                        else:
+                            record["duration_status"] = (
                                 "passed"
                                 if record["comparison_eligible"]
                                 else "below_minimum_not_rankable"
                             )
-                        )
                         total_tokens = sum(int(job.get("total_tokens", 0)) for job in jobs)
                         record["group_barrier_tokens_per_s"] = total_tokens / record["arm_barrier_jct_s"] if record["arm_barrier_jct_s"] > 0 else 0.0
                         if record["status"] != "passed":
@@ -759,6 +772,18 @@ def run_native_multijob(
     finally:
         lease.release()  # type: ignore[union-attr]
     formal = [item for item in index["runs"] if isinstance(item, dict) and item.get("phase") == "formal"]
+    if gate_only:
+        passed = bool(index["runs"]) and all(
+            isinstance(item, dict) and item.get("status") == "passed"
+            for item in index["runs"]
+        )
+        index.update({
+            "status": "passed" if passed else "failed",
+            "comparison_admission": "not_rankable",
+            "gate_runs_total": len(index["runs"]),
+        })
+        _atomic_json(index_path, index)
+        return index
     admissible = bool(formal) and all(
         item.get("comparison_eligible") is True for item in formal
     )
@@ -778,15 +803,20 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run native framework single/multi-job characterization.")
     parser.add_argument("--config", required=True)
     parser.add_argument("--runner-script", required=True, help="Path to existing run_official_baseline.py")
+    parser.add_argument("--gate-only", action="store_true", help="Run only four-job arms once as non-rankable gates")
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
-        result = run_native_multijob(args.config, runner_script=args.runner_script)
+        result = run_native_multijob(
+            args.config, runner_script=args.runner_script, gate_only=args.gate_only
+        )
     except Exception as exc:
         print(json.dumps({"status": "failed", "error": f"{type(exc).__name__}: {exc}"}))
         return 2
     print(json.dumps(result, indent=2, sort_keys=True))
-    return 0 if result["comparison_admission"] == "admissible" else 2
+    return 0 if result["status"] == "passed" and (
+        args.gate_only or result["comparison_admission"] == "admissible"
+    ) else 2
