@@ -5336,3 +5336,6 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   first-submit→completion，比较表报告 first-submit 等待的绝对增量和提交后完成窗口变化，
   用于区分输入同步、调度准入等待与模型服务/资源竞争时间；native barrier-only 入口保持缺失，
   不伪造请求时间戳。
+- Project v2 完成后分阶段审计发现 `_comparisons` 只接受四系统同时到齐；改为按输入中实际
+  存在的系统生成比较，使 Project 可以在原生矩阵启动前独立 fail-closed 审计。最终
+  `summarize()` 仍分别要求 Project 与全部三种 native 数据完整，不降低全矩阵门禁。

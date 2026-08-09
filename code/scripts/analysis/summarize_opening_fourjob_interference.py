@@ -474,7 +474,12 @@ def _comparisons(job_summary: Sequence[Mapping[str, object]]) -> list[dict[str, 
         for row in job_summary
     }
     output: list[dict[str, object]] = []
-    systems = ("project", "daft_native", "daft_ray", "ray_data_http")
+    present = {str(row["system"]) for row in job_summary}
+    systems = tuple(
+        system
+        for system in ("project", "daft_native", "daft_ray", "ray_data_http")
+        if system in present
+    )
     for system in systems:
         for job in JOBS:
             base_scenario = f"single_{job}_full_pool" if system == "project" else "single_full"
