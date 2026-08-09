@@ -5344,3 +5344,27 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   相同的不可变 manifest，不为 native 另行重排或造有利输入，将原生门禁冻结为实测值上界
   4%，并保留失败日志；正式运行另建 v2。两个 endpoint 仍各 256 行，比较继续以系统内
   single→four-job 相对变化为主。
+
+## 2026-08-09 四 Job 正式矩阵、汇总与服务器归档
+
+- Project v2 完成 40/40 runs；原生 v2 完成 60/60 runs、45/45 formal，Daft Native、
+  Daft Ray、Ray Data 各 15 formal，`comparison_admission=admissible`、全部 512-row
+  exactly-once。原生逐 shard provenance 确认 vendor-owned scheduler 且
+  `custom_scheduling_code=false`，未为其注入项目负载均衡、credit、路由或参数扫描。
+- 统一汇总通过 120 条逐 Job、75 条组级和 18 条 Project phase formal，四份 manifest
+  在 Project 与原生轨 SHA 完全一致。Project full→quarter short JCT +180.38%，
+  quarter→static 再 +60.40%；shared 相对 static 总吞吐 +8.68%、short JCT −72.23%、
+  三个 long JCT 均改善，但 Jain 0.960→0.923且 long 收益/稳定性不均，冻结为“idle
+  borrowing 有价值、仍需 fairness/SLO guard”，不称 dynamic 普遍胜出。
+- Daft Native、Daft Ray、Ray Data 四 Job 的 short 相对各自 single 分别 +66.62%、
+  +25.48%、+67.57%，三个 long 也全部退化；Daft 两臂表现为 high waiting/KV，Ray Data
+  为 low running/zero waiting/low MFU。只作轨内外部状态观察，不归因内部算法或跨框架
+  绝对排名。
+- 新增 `experiments/results/opening_fourjob_interference_20260809/` 七步报告、紧凑 CSV 和
+  六项待画图合同；本轮未画图、未改 PPT、未同步 Wiki。
+- 服务器完整 archive 为
+  `/root/autodl-tmp/experiment-artifacts/opening_fourjob_full_archive_20260809_v1.tar.gz`
+  （34 MiB，SHA256
+  `db705caac77c438f272a9ac1e4687b69dfef3be96500f768b9e7ca5d1ca416fb`），包含成功 raw、
+  gate、停止的 Ray Data concurrency 诊断、Project/native v1 失败、不可变 manifest 和
+  日志；未删除或覆盖任何扫描数据。

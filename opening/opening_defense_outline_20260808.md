@@ -1,6 +1,6 @@
 # 开题答辩内容大纲与证据合同
 
-日期：2026-08-08（2026-08-09 完成两作业证据与实现边界审计）
+日期：2026-08-08（2026-08-09 完成两/四作业证据与实现边界审计）
 状态：内容大纲；暂不制作 PPT 成品
 
 ## 1. 一句话主线
@@ -38,7 +38,7 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
 | 10 | 数据组织输出调度可消费的 WorkDescriptor | row/source/prepare/model/result work、locality、deadline、uncertainty | WorkDescriptor 字段图 | 组织的输出不是只有 payload batch |
 | 11 | 数据组织同时平衡 work、局部性和下游队列形态 | token/frame/stage budget；balance 与 prefix/locality 的冲突 | organization regime 图 | 已有结果是 serving-regime-dependent，不宣称普遍胜出 |
 | 12 | 状态感知控制只在离线安全包络内动作 | offline safe envelope、fresh snapshot、候选 credit、deadband、回退 | `opening_work_to_schedule_overview` | stale/missing signal 回退强静态点 |
-| 13 | 多作业按 work 共享而不是按请求数平均 | shared work credit、deficit/fair queue、idle borrowing、remaining work/SLO slack | online/eager方向相反；eager quota-only+59.00%，shared相对static short JCT−48.94%、总吞吐+31.85% | 已证明arrival-regime dependence与idle borrowing；weighted/4+job、SLO guard仍需论文阶段验证 |
+| 13 | 多作业按 work 共享而不是按请求数平均 | shared work credit、deficit/fair queue、idle borrowing、remaining work/SLO slack | 两Job证明arrival-regime dependence；四Job shared相对static总吞吐+8.68%、short JCT−72.23%，但Jain 0.960→0.923 | 已证明idle borrowing与效率—公平权衡；weighted/held-out、SLO guard仍需论文阶段验证 |
 | 14 | 文本和图像复用接口，但主导 stage 不同 | text token work；image prepare/model/tensor work；同一 descriptor/state/controller 接口 | 跨模态映射表 | 泛化是接口复用，不是假设两种负载成本相同 |
 | 15 | 因果评估必须先冻结饱和强静态点 | 同资源、同最大 K/work、同 source、同完整结果语义；dynamic 仅改变策略 | 实验合同图 | 未通过 feeding/correctness/stability 的数据不得排名；sink 仅用于 database-E2E 护栏 |
 | 16 | 原生 graph 将同一服务推入不同压力区 | bounded C128 最小饱和；Daft Native/Ray overqueue；Ray Data 当前路径 underfeed | 待画：JCT/tok/s + running/waiting/KV/MFU 状态指纹双面板 | 只讲外部现象；database-E2E 护栏与 DuckDB raw/correct 放 appendix 表 |
@@ -167,13 +167,13 @@ static+long又+58.77%，matched shared+long+28.90%。eager shared相对static使
 | E cost decision quality | 代价估计是否能帮助选择 | median/macro/max regret、pairwise 与门槛；不堆所有预测散点 | cost-profile formal | 明确共同使能和 conditional 结论 |
 | F 原生单 Job 状态指纹 | 现有原生 graph 如何落入不同服务压力区 | 左：JCT/tok/s；右：running、waiting、KV、MFU 原单位 small multiples；标 underfeed/minimum-saturation/overqueue | `opening_text_native_single_job_formal_20260808` 12 formal | 只解释外部现象；database-E2E 三臂降为 appendix correctness/语义表 |
 | G static–dynamic | 状态变化下动态是否超过同上限静态 | 当前只保留 workload phase 与同上限 A/B 实验合同 | 无结果不画图；论文正式运行后再决定图型 | 最大 K/work/resources 完全匹配 |
-| H multi-job | shared credit 如何改变效率、前台隔离与公平 | per-job JCT/goodput + Jain/isolation；同时给 single-short 匹配控制 | 开题两作业 staggered formal；论文阶段扩展 weighted/异构 | 最小结果只覆盖两作业与一个 offset；不预设所有指标同时改善 |
+| H multi-job | shared credit 如何改变效率、前台/long隔离与公平 | 两Job给最小因果；四Job画full→quarter→static→shared、long spread、Jain/MFU | 开题两/四作业 formal；论文阶段扩展 weighted/held-out | 四Job只覆盖一个offset/equal-weight workload；shared改善效率但Jain/long稳定性回退 |
 
-下一次获准绘图时只做四项：A/C 标签级重绘，F/H 首次生成。B、WorkDescriptor 总览、D、E 不重画；G 无结果且不画，database-E2E 只保留附录表。H 的两作业 `Short@0s → Long@5s` guaranteed-overlap 已通过门禁。所有误差线表示三次 formal 的离散或置信区间，warm-up 不进入统计；重复点放附录或原始表，不在主图堆叠。
+下一次获准绘图时只做四项：A/C 标签级重绘，F/H 首次生成。B、WorkDescriptor 总览、D、E 不重画；G 无结果且不画，database-E2E 只保留附录表。H 使用已通过门禁的两Job最小因果与 `Short@0s → 3 Long@5s` 四Job扩展；主图优先四Job quota/competition/shared 与效率—公平权衡，两Job arrival-regime 放附录。所有误差线表示三次 formal 的离散或置信区间，warm-up 不进入统计；重复点放附录或原始表，不在主图堆叠。
 
 ## 7. 停止规则
 
-- replacement 三臂、文本 Chat 原生单 job 和 4.3 两 job 错峰矩阵均已完成；开题前不再换模型、数据库、workload、offset、weight 或扩大并发扫描追正结果；
+- replacement 三臂、文本 Chat 原生单 job、两 job 因果点和四 job 扩展均已完成；开题前不再换模型、数据库、workload、offset、weight、Job 数或扩大并发扫描追正结果；
 - DuckDB 仅保留在语义成立的有界输出产品轨；Daft/Ray Data 多 job 只做原生系统观察，不给它们注入项目调度器；
 - K256 已覆盖当前每 endpoint 校准上界；K512/endpoint 只用于独立过载退化研究；
 - 动态未超过同上限强静态点时记录失效边界，不换弱 baseline 或挑 workload；

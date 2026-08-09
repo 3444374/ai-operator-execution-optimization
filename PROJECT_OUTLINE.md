@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-08-08
+更新时间：2026-08-09
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
@@ -101,6 +101,10 @@ PostgreSQL source
 - 复杂动态控制不天然优于强静态点：AIMD/PID/EWMA、adaptive flush、service quantum 与多 actor 多数未过约 5% 晋级门槛。
 - 数据组织策略排名受 serving regime 影响：双 endpoint 大 KV 池下策略范围约 12%；四 endpoint 小 KV 池饱和时分化约 27% 且排名反转，重排序可使 prefix hit 降至 0.06–0.07。
 - 图像 matched-resource 静态执行结构有可重复收益：主报告冻结约 13%–15% operator-JCT 改善；旧 45.7% 资源不匹配，不再使用。
+- 多 Job 干扰已从两作业扩展到受控 `short@0s → 3 long@5s`：Project full/quarter
+  single 将 quota 与竞争分离；三条原生路径全部 Job 均出现轨内退化。Project shared 相对
+  static 总吞吐 +8.68%、short JCT −72.23%，但 Jain 0.960→0.923且 long 收益/稳定性不均，
+  支撑 idle borrowing 与 fairness guard 同时存在的研究问题，不证明 dynamic 普遍胜出。
 
 ### 5.2 条件性
 
@@ -111,7 +115,8 @@ PostgreSQL source
 
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - phase-change、burst、mixed-cost 下 dynamic 的响应时间、SLO goodput 与 tail；
-- 多 job 的 5s 两作业错峰最小点已完成；仍待 held-out 4+ job、加权/SLO、公平 guard 与故障迁移；
+- 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、
+  加权/SLO、公平 guard、Long→Short 与故障迁移；
 - 代价模型跨时间段、新 workload 和硬件的稳定性；
 - 图像Daft built-in、Ray Data native与project frozen-static的operator-E2E/provenance证据已完成；仍待状态感知增量、跨workload外推与小规模sink质量闭环，sink不是性能排名blocker。
 

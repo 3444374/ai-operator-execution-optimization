@@ -1,0 +1,18 @@
+{
+  "figures_drawn": false,
+  "formal_group_rows": 75,
+  "formal_job_rows": 120,
+  "manifest_sha256_by_job": {
+    "long1": "d63ddb097a1e7f0e8d0cef8771ad48cb29ed330e450bc5435b2965b439a052ff",
+    "long2": "2df8d11091d09a505b43f043fce4ad689c2c0d118617b81217574655d26473b9",
+    "long3": "54f6ec75e2be9a498d3ada3cf14d2fb71f8326cb0b686b3dc20304c2c42948d9",
+    "short": "9ab22f36bec72e4958a8690ac5fea6710e8555dc77a6a2f76eb385256df8f81c"
+  },
+  "native_request_tail": "unavailable: native adapters expose barrier timestamps",
+  "native_root": "/root/autodl-tmp/experiment-artifacts/opening_text_native_fourjob_formal_20260809_v2",
+  "project_phase_rows": 18,
+  "project_request_tail": "recomputed from request timestamps",
+  "project_root": "/root/autodl-tmp/experiment-artifacts/opening_project_fourjob_formal_20260809_v2",
+  "schema_version": 1,
+  "status": "passed"
+}

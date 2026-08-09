@@ -59,7 +59,7 @@
 |---|---|---|
 | 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
 | 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：19 项 take-away、必要数据、claim 边界、实验与图表合同；暂不制作 PPT** |
-| 开题报告 | `report/opening_report.md` | 2026-08-09 本地证据口径已对齐；已写入 replacement、原生单 Job、5 s 两 Job 与四部件实现边界，暂不同步云文档 |
+| 开题报告 | `report/opening_report.md` | 2026-08-09 本地证据口径已对齐；已写入 replacement、原生单 Job、两/四 Job 与四部件实现边界，暂不同步云文档 |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前暂停 PPT 制作 |
 | 开题 PPTX | `slides/opening_defense_20260807_v6.pptx` | v5 模板继承的待替换底稿；已有 QA 不代表新内容已冻结 |
@@ -70,7 +70,7 @@
 | 开题精读 Top 15 拷贝 | `literature/top15_reading_notes/` | 开题要求精读的 15 篇笔记自包含快照 |
 | GPU 调度与数据放置补充调研 | `research/gpu_scheduler_data_placement_supplement_20260715.md` | 已补，作为策略控制器设计依据与后续精读清单 |
 | 本地 PDF 子集索引 | `research/reference/README.md` | 已登记当前已下载的部分论文，非完整文献库 |
-| 答辩问答 | `qa_bank.md` | 2026-08-09 已完成四部件、baseline provenance、overlap、2→4+ Job、K256/K512、sink 与跨模态攻击面审计 |
+| 答辩问答 | `qa_bank.md` | 2026-08-09 已完成四部件、baseline provenance、两/四 Job、K256/K512、sink 与跨模态攻击面审计 |
 | 材料同步日志 | `logs/project_log.md` | 初版已建 |
 
 ## 与项目其他目录的关系
@@ -85,7 +85,7 @@
 
 ## 下一步
 
-1. SQuAD/ShareGPT replacement、原生单 job 与 5s guaranteed-overlap 两 job 最小证据均已完成；停止增加开题 baseline、offset、weight 或 4+ job 扫描。
+1. SQuAD/ShareGPT replacement、原生单 job、两 job 最小因果与四 job 扩展均已完成；停止增加开题 baseline、offset、weight 或更多 job 数扫描。
 2. 依据 `opening_defense_outline_20260808.md` 整理动机—挑战—设计—证据边界和待画图数据合同；当前暂不实际画图。
 3. 完成 Claim Matrix、问答、实验状态与实现边界的一致性审计；用户已明确豁免 Wiki，同步云文档和制作 PPT 均暂停。
 4. 后续获准绘图时只做 A/C 标签级重绘与 F/H 首次生成；B、WorkDescriptor 总览、D、E 不重画，G 无结果且不画。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。

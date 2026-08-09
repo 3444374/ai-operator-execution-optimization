@@ -158,17 +158,27 @@ ShareGPT replacement 中，direct、DuckDB AI、项目冻结静态的 correct ro
 
 Daft 两臂在吞吐接近 bounded 的同时形成大量 waiting，KV max 接近 1；Ray Data 当前路径则表现为低 running、低 MFU 的供给不足。它们证明单一静态并发或 GPU utilization 不能描述服务状态，需要联合完成速率/MFU、running/waiting、KV 与 tail；但该实验不包含项目动态臂，不能声称项目方法胜出，也不把外部现象归因给框架内部算法。
 
-### 5.4 两 Job guaranteed-overlap 的前台干扰
+### 5.4 两 Job 因果点与四 Job 扩展
 
 同一 short/long manifest 上，所有系统只统一 Job 级到达：long 在 short 启动 5 s 后启动。项目在 Job 内按 `arrival_time_scale=0.001` 逐请求 replay；原生 Daft/Ray Data graph 在 Job 启动后获得完整 manifest，因此跨轨绝对 JCT 不具备排名合同。项目先用 full-pool 与 reserved-half-pool 两个 single-short 控制隔离静态额度效应；两者 short JCT 均约 71.24 s，quota-only 对 JCT/P99/work rate 的变化约为 −0.003%/−0.013%/−0.004%。long 真正加入后，static/shared 的实际 overlap 分别为 68.94/72.62 s，short JCT/P99/work rate 变化分别为 +3.79%/+90.80%/−3.57% 和 +8.95%/+173.33%/−8.28%，因此项目轨内的前台退化来自真实服务竞争，而不是额度减半本身。
 
-shared 相对 static 将 aggregate service throughput 提高 21.03%、long JCT 降低 18.31%，但 short JCT 增加 4.98%，Jain fairness median 从 0.759 降到 0.707。它证明 shared work credit 存在效率—隔离—公平权衡，不证明动态全面胜出。Daft Native、Daft Ray、Ray Data 也都产生真实 overlap，均值分别为 15.17/25.19/166.14 s，short JCT 相对各自 single 增加 82.42%/104.84%/32.76%。这些只作为各原生轨内部 `single→overlap` 的外部观察，不归因框架内部算法，也不把项目 arrival-replay 的 71.24 s 与 Daft Native eager-manifest 的 11.06 s 写成系统性能倍数。原 15 s offset 下 Daft Native 的 short 在 long 到达前已完成，该数据不进入干扰结论。开题据此提出 per-job work/state 感知、idle borrowing 与 SLO/fairness guard，weighted/4+ job 和图像 phase-change 留作论文阶段验证。
+shared 相对 static 将 aggregate service throughput 提高 21.03%、long JCT 降低 18.31%，但 short JCT 增加 4.98%，Jain fairness median 从 0.759 降到 0.707。它证明 shared work credit 存在效率—隔离—公平权衡，不证明动态全面胜出。Daft Native、Daft Ray、Ray Data 也都产生真实 overlap，均值分别为 15.17/25.19/166.14 s，short JCT 相对各自 single 增加 82.42%/104.84%/32.76%。这些只作为各原生轨内部 `single→overlap` 的外部观察，不归因框架内部算法，也不把项目 arrival-replay 的 71.24 s 与 Daft Native eager-manifest 的 11.06 s 写成系统性能倍数。原 15 s offset 下 Daft Native 的 short 在 long 到达前已完成，该数据不进入干扰结论。开题据此提出 per-job work/state 感知、idle borrowing 与 SLO/fairness guard；weighted/held-out、Long→Short 和图像 phase-change 留作论文阶段验证。
 
 逐请求 raw 将该现象进一步定位：项目 single-short 的 71.24 s 中，66.875 s（93.87%）是冻结 arrival span，最后到达后的 drain 为4.367 s；平均 arrival→flush、flush→submit、submit→service 分别只有75.1/3.29/3.00 ms，backend service 为3.847 s。项目 vLLM 单请求 mean 3.837 s 反而低于 Daft Native 的6.654 s；Daft 更快来自完整 manifest 在计时前可见，使 running/MFU 达250.1/44.04%，而项目只有26.1/6.63%。long 加入后，static/shared 的 short backend service mean 分别增加59.74%/88.17%，buffer P99 从约86 ms 增至0.917/3.835 s，说明既有 GPU service 竞争，也有项目上游 pending/credit 软拥塞；vLLM queue mean 仍只有微秒量级，不能单独作为控制信号。
 
 进一步把同一 Project short manifest 改为 all-at-t0 后，三次 T0 profiler E2E 为14.957s，T3 最早模型提交到最晚响应完成为11.354s，service throughput/MFU 为14,361 tok/s/42.93%；Daft Native 已记录的同边界为11.059s、14,727 tok/s/44.04%，只差约2.5%–2.7%。这排除了“Project 模型请求路径慢6.4×”的解释。Daft 的 source、provider、DataFrame 和 expression 准备位于现有 timer 之前，缺匹配 T0，故14.957s 与11.059s 仍不作完整 E2E 排名。短 Job 诊断无需为了60s人为扩规模；eager 多 Job 只补 Project 配对，在线 replay 与原生系统内干扰结论不替换。
 
 Project eager 多 Job 配对随后补齐 full-pool single、half-pool single、static+long 和 shared+long，12/12 formal 均 exactly-once、零 incident，DB arrival span 统一压缩为66.76µs。full→half 的 quota-only 已使 short JCT+59.00%；在相同 half quota 下加入 long，static short JCT/P99/work rate 进一步变化+58.77%/+56.19%/−36.99%；shared+long 相对 full single 为+28.90%/+29.04%/−22.64%。eager shared 相对 static 将 short JCT 降低48.94%、aggregate throughput提高31.85%、long JCT降低25.75%，Jain均值0.894→0.972；long到达前 running总和均值120.6→230.1，直接体现 idle borrowing。逐阶段上，static matched competition 使short service mean/P99 +50.34%/+78.62%，shared为+14.63%/+28.70%，submit→service仍约2ms。在线 replay 中 shared 伤害 short/fairness，而 eager 中同时改善效率、隔离和公平，说明策略价值依赖 arrival regime；开题据此提出状态观测和受SLO/fairness约束的 work-conserving 调度，不声称最终动态控制器已经胜出。
+
+为验证结论不只来自一个 long，进一步完成 `short@0s → {long1,long2,long3}@5s` 四 Job
+矩阵。每个 Job 均为512行；Project先运行full/quarter single，再运行static/shared四Job，
+从而把quota-only与真实竞争分离。full→quarter使short JCT +180.38%，在相同quarter上限
+下加入其它Job又使static short +60.40%；shared相对static使short/long1/2/3 JCT分别
+−72.23%/−8.28%/−20.24%/−52.66%，group throughput +8.68%、MFU +8.56个百分点，
+但Jain 0.960→0.923且long收益与CV不均。Daft Native、Daft Ray、Ray Data保持各自
+vendor-owned graph，未注入项目调度；它们的short与三个long相对各自single也全部退化，
+并分别呈现high-waiting/high-KV或low-running/low-MFU。四Job证据因此支持idle borrowing
+与fairness/SLO guard必须同时设计，不支持Project或dynamic普遍胜出。
 
 ### 5.5 最小饱和 active work
 
@@ -200,20 +210,20 @@ CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时
 |---|---|---|---|
 | Work Unit / WorkDescriptor | 同 16 行 token work 差 14.3×；图像 prepare/model 阶段失衡 | 已有 staged descriptor、calibration signature、locality/deadline/uncertainty 字段，`BatchRequest` 和图像合同可携带 descriptor | production descriptor builder 尚未贯通正式端到端 runner；staged organization 尚未证明胜出 |
 | 状态感知 | 同 W65K 在 high/arrival-limited 下呈现不同 running/MFU；原生路径呈现 overqueue/underfeed | endpoint/resource trace 已在正式实验中采集；stage snapshot 包含 freshness 与 calibration-signature 校验，候选控制器具有静态 fallback | stage snapshot 和 fallback controller 尚未接入正式主 runner，尚无独立性能增量 |
-| 动态与多作业调度 | 5 s guaranteed-overlap 与 online/eager 配对显示前台干扰、idle borrowing 和 arrival-regime dependence | completion release、least-work routing 和 shared fair-work credit 已进入调度器，static/shared 两 Job A/B 与 full/half matched control 已完成 | shared 不是普遍胜出；stage-aware dynamic、SLO guard、weighted/4+ Job 尚未正式验证 |
+| 动态与多作业调度 | 两Job与四Job配对显示前台/long干扰、idle borrowing、arrival-regime dependence及效率—公平权衡 | completion release、least-work routing 和 shared fair-work credit 已进入调度器，static/shared 两/四Job A/B 与 full/half/quarter matched control 已完成 | shared 不是普遍胜出；stage-aware dynamic、SLO/fairness guard、weighted/held-out 尚未正式验证 |
 | 算子代价估计 | 20 contexts 的选错代价为 12.0%–86.5%，简单 proxy 决策失败 | CE1–CE5 离线估计器和 context leave-one-out 已完成，CE5 为 marginal pass | 尚未在线驱动 organization/routing/credit，也未验证跨模态 remaining work 与 SLO 收益 |
 
 因此，后续工程顺序为 descriptor builder、observe-only snapshot、no-op/fallback 门禁和单动作消融；不在同一次实验中同时打开四个部件后归因总体差异。
 
 ### 5.10 当前能证明与不能证明的内容
 
-已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft Native/Ray 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；5 s guaranteed-overlap 下后到 Job 会影响前台，shared credit 存在效率—隔离—公平权衡；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值。state-aware 策略是否能在同上限强静态点之上改善综合目标，仍是开题后的可证伪研究问题。
+已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft Native/Ray 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；两Job与四Job下后到/并发 Job 会影响前台和long，shared credit 存在效率—隔离—公平权衡；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值。state-aware 策略是否能在同上限强静态点之上改善综合目标，仍是开题后的可证伪研究问题。
 
 ## 6. 进度安排
 
 | 时间 | 工作内容 | 交付物与停止条件 |
 |---|---|---|
-| 2026 年 8 月 | 完成 database-E2E 护栏、原生单 job 与原生/项目两 job 错峰最小对照；冻结答辩内容大纲和待画图数据合同 | 三条最小矩阵报告与紧凑数据已完成；当前不制作新图或 PPT 成品 |
+| 2026 年 8 月 | 完成 database-E2E 护栏、原生单 job、两 job 因果点与四 job 扩展；冻结答辩内容大纲和待画图数据合同 | 对应报告与紧凑数据已完成；当前不制作新图或 PPT 成品 |
 | 2026 年 9 月 | 完成 work-unit 构造的跨 workload、跨 serving-regime 消融 | 数据组织 formal 报告；不以单点峰值选策略 |
 | 2026 年 10 月 | 完成状态感知提交、路由和多作业公平性对照 | 与同上限 frozen-static 比较；未过门则记录失效边界 |
 | 2026 年 11 月 | 完成代价模型 held-out 校准和两项策略耦合验证 | ranking/regret、独立拼接与联合搜索报告 |

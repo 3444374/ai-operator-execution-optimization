@@ -23,6 +23,7 @@
 | Directory | Content | Boundary |
 |---|---|---|
 | `opening_multijob_interference_20260809/` | online exact-short、Project eager full/half/static/shared、三条原生5s overlap观察，以及逐请求阶段/状态分解 | online下shared提高aggregate但伤short/Jain；eager下quota-only +59.00%、matched static竞争+58.77%、shared竞争+28.90%，shared相对static short JCT−48.94%。结论是arrival-regime dependence和idle borrowing动机，不是动态普遍胜出。 |
+| `opening_fourjob_interference_20260809/` | 1 short+3 matched long 的 Project full/quarter/static/shared 因果分解，以及 Daft Native/Ray、Ray Data 原生 single→four-job 三重复 | Project shared 相对static总吞吐+8.68%、short JCT−72.23%，但Jain 0.960→0.923且long收益不均；三条原生路径的全部Job均退化。只作轨内干扰/状态证据，不作跨框架绝对排名。 |
 | `opening_project_short_all_at_t0_diagnostic_20260809/` | 同一 short manifest 的 Project all-at-t0 1+3，统一 T0–T4 timer 与 Daft raw 对齐 | Project T3 model-request window 11.354s vs Daft 11.059s，service tokens/s 与 MFU 差约−2.5%；Daft T0 未采集，完整系统 E2E 不排名。 |
 
 ## 图像 AI_EMBED operator（2026-08-03/04）

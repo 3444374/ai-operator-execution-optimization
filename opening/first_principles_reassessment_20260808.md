@@ -19,7 +19,7 @@ workload 与流水线状态会随时间和作业组合变化
   -> 公共抽象应描述分阶段 work，不应只把 token 改名为 frame
 ```
 
-因此，开题前的完成标准是：问题存在、研究对象明确、已有证据证明方法接口可实现、强静态基线合格，并补一个两作业错峰实验说明共享 credit 的可测量性。该 5s guaranteed-overlap 实验已于 2026-08-09 完成：它验证了前台干扰和效率—隔离—公平权衡，但没有证明动态全面胜出。开题不要求 proposed 已经全面胜出；同上限动态 surface、weighted/异构多 job、图像新策略增量与跨硬件外部有效性属于开题后的论文主实验。
+因此，开题前的完成标准是：问题存在、研究对象明确、已有证据证明方法接口可实现、强静态基线合格，并以两作业错峰说明共享 credit 的可测量性。该最小因果点及1-short+3-long四Job扩展均已于 2026-08-09 完成：它们验证了前台/long干扰和效率—隔离—公平权衡，但没有证明动态全面胜出。开题不要求 proposed 已经全面胜出；同上限动态 surface、weighted/held-out 多 job、图像新策略增量与跨硬件外部有效性属于开题后的论文主实验。
 
 ## 2. 从目标函数反推方法
 
@@ -99,7 +99,7 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 ### 6.1 开题前必须完成
 
 1. 完成 SQuAD 与 ShareGPT 两套统一三臂 replacement；项目静态臂必须通过 feeding-saturation、correctness 与稳定性门。该矩阵保留为一次 database-E2E 护栏，不要求后续方法实验重复 sink。
-2. short/long 两作业最小实验已完成 online/eager 两套到达合同及 full/half matched control；报告已覆盖 per-job JCT/P99/goodput、Jain、isolation 和 overlap。online 下 shared 提高 aggregate 但 short/Jain 回退，eager 下 idle borrowing 同时改善 static 的 short/long/aggregate/Jain，证明 arrival-regime dependence；3:1 weighted 留论文阶段。
+2. short/long 两作业最小实验已完成 online/eager 两套到达合同及 full/half matched control；1-short+3-long四Job也完成full/quarter/static/shared与三条原生轨内single→four-job。两Job证明arrival-regime dependence，四Job进一步分离quota/竞争并暴露shared的Jain/long稳定性缺口；3:1 weighted与held-out留论文阶段。
 3. 把现有 token-work 差异、high/arrival-limited 状态差异、active-work frontier、数据组织 regime、图像阶段失衡与 matched-resource 结果、cost decision quality 重组为动机和可行性证据。
 4. 报告、答辩内容大纲、Claim Matrix 和图使用同一数值与边界；state-aware、图像动态和 cost held-out 只作为可证伪研究计划，不用完成时表述；当前不制作 PPT 成品。
 
@@ -108,7 +108,7 @@ Fresh State    -> Scheduler consumes work/locality/deadline/state
 1. **强静态基线**：同机、当前 commit、统一语义下完成 Daft built-in、Ray Data native、project frozen-static 和必要 direct ceiling；正式 baseline 由框架拥有调度。
 2. **稳态控制**：动态策略在 steady workload 下不应显著劣于冻结静态点，用于确认控制开销与回退正确。
 3. **状态变化**：阶段突变、突发到达、长短 work mix；比较相同最大 K/active-work 下的 static 与 state-aware。
-4. **多 job 扩展**：在开题前两作业错峰结果上扩展更多 staggered overlap、3:1 weighted fairness、异构 job mix/offset，并与已有 1/2/4 job 结果组成完整矩阵；报告 JCT、P99、SLO goodput、Jain fairness、isolation 与 work conservation。
+4. **多 job 扩展**：在开题前两/四作业结果上扩展3:1 weighted fairness、Long→Short、held-out job mix/offset与故障迁移；报告 JCT、P99、SLO goodput、Jain fairness、isolation 与 work conservation。
 5. **组织—调度耦合**：组织独立最优 + 调度独立最优的拼接，与小规模联合搜索比较；不同时扩大两个维度后归因。
 6. **跨模态复用**：同一 `WorkDescriptor`、credit、state snapshot 和策略接口；只替换 modality adapter。
 7. **外部有效性**：至少一个 held-out 时间段或 workload；资源允许时再增加第二硬件签名。

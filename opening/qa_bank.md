@@ -68,7 +68,7 @@
 
 ### 一个 short 加一个 long 足以说明多 Job 管理的必要性吗？为什么不直接做四个 Job？
 
-> 足以回答开题的最小因果问题：后到 Job 是否伤害已运行前台，以及 shared credit 是否引入效率—隔离—公平权衡。两个 Job 能使 arrival、quota 和竞争的归因最清楚。项目其实已做过早期同步等量 1/2/4-job 矩阵：4-job 高竞争下 shared 相对 independent 的聚合均值为吞吐 +9.57%、max P99 −22.52%、max JCT −15.89%，但三次中有一次回退，且它没有 short/long 错峰到达或原生框架对照。因此它只作“高竞争下存在 coordination 空间”的诊断，不替代当前两 Job 最小因果。现有数据仍不足以证明 4+ Job scalability、weighted fairness、SLO guard 或异构长作业下的稳定性；这些留作论文阶段。
+> 两个 Job 足以回答最小因果问题，因为 arrival、quota 和竞争最容易分离；但现在也已补完受控 `short@0s→3 long@5s` 四 Job 扩展。四个 Job 都是512行，Project有full/quarter single、static/shared配对，三条原生路径各自运行single→four-job三重复。结果显示Project shared相对static总吞吐+8.68%、short JCT−72.23%，但Jain 0.960→0.923且long收益不均；三条原生路径的short和long也全部退化。因此两Job负责干净因果，四Job负责验证多long干扰与公平问题。现有数据仍不足以证明weighted fairness、SLO guard、Long→Short或新workload稳定性，这些留论文阶段。
 
 ### 当前 short/long 多 Job 是文本还是图像？
 
@@ -76,7 +76,7 @@
 
 ### 当前四个设计部件是否已经全部接入项目并验证？
 
-> 没有。共享 work credit、completion release、neutral work admission 和 least-work routing 已进入调度器，其中两作业 shared/static 已做正式 A/B；staged WorkDescriptor、fresh runtime snapshot 和有界 stage controller 已有类型/单测，但 production descriptor builder 和正式 runner 接入尚未完成；CE5 仍是离线配置选择器。开题可以证明设计动机、接口可执行性和部分机制权衡，不能把完整 state-aware + cost-driven 方法写成已完成贡献。
+> 没有。共享 work credit、completion release、neutral work admission 和 least-work routing 已进入调度器，其中两/四作业 shared/static 已做正式 A/B；staged WorkDescriptor、fresh runtime snapshot 和有界 stage controller 已有类型/单测，但 production descriptor builder 和正式 runner 接入尚未完成；CE5 仍是离线配置选择器。开题可以证明设计动机、接口可执行性和部分机制权衡，不能把完整 state-aware + cost-driven 方法写成已完成贡献。
 
 ### Daft Ray 是项目自己的调度路径吗？
 
@@ -92,7 +92,7 @@
 
 ### K256 已经测了，为什么不再测 K512？
 
-> 当前 vLLM 服务合同的 `max_num_seqs=256`。ShareGPT bounded C32/C64/C128/C256 扫描已覆盖欠供给、最小饱和和过量排队：C128 达 C256 已测峰值的 98.22%，C256 只多 1.82% 吞吐，却将 TTFT mean 从 0.829 s 推到 6.181 s。K512/endpoint 会超出服务同时 resident sequence 上限，主要增加 client/service queue，且改变当前冻结合同。它只对专门研究过载退化有价值，而开题动机已由 C256 闭合，因此不是开题 blocker。两 Job 正式 A/B 则在每 endpoint 总 K128/W65,536 的同一上限内比较 static/shared，不把扩大 K 冒充调度收益。
+> 当前 vLLM 服务合同的 `max_num_seqs=256`。ShareGPT bounded C32/C64/C128/C256 扫描已覆盖欠供给、最小饱和和过量排队：C128 达 C256 已测峰值的 98.22%，C256 只多 1.82% 吞吐，却将 TTFT mean 从 0.829 s 推到 6.181 s。K512/endpoint 会超出服务同时 resident sequence 上限，主要增加 client/service queue，且改变当前冻结合同。它只对专门研究过载退化有价值，而开题动机已由 C256 闭合，因此不是开题 blocker。两/四 Job 正式 A/B 都在每 endpoint 总 K128/W65,536 的同一上限内比较 static/shared，不把扩大 K 冒充调度收益。
 
 ### 数据组织图能否证明 sequential 普遍最好？
 
@@ -142,9 +142,9 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 
 > 每个 cell 都从同一 immutable manifest 校验 PostgreSQL source，固定两 endpoint 的行数和 work 分配；完成后写入统一 sink，再以行数和 digest 回读。report.json 同时记录 source manifest SHA、rows written、readback digest、exactly-once、失败数和数据库版本。任一基础设施失败或 sink mismatch 都会使矩阵 fail-closed。
 
-### 为什么两 Job 干扰实验没有 sink？文本侧是否必须每次写回？
+### 为什么两/四 Job 干扰实验没有 sink？文本侧是否必须每次写回？
 
-> 不必须。两 Job 实验要隔离的是 shared-vLLM serving 竞争，因此以完整结果 gather、manifest 完成和 exactly-once request 证据为边界，使用 `writeback-mode=none`。若强制 sink，数据库写回会把 serving 干扰与 I/O 竞争混在一起。SQuAD/ShareGPT 三臂已单独用统一 PostgreSQL source/sink 闭合 database-E2E 和 correctness 护栏。因此文本侧的方法主实验可以不做 sink，但不能把它说成 database-E2E 结果。
+> 不必须。两/四 Job 实验要隔离的是 shared-vLLM serving 竞争，因此以完整结果 gather、manifest 完成和 exactly-once request 证据为边界，使用 `writeback-mode=none`。若强制 sink，数据库写回会把 serving 干扰与 I/O 竞争混在一起。SQuAD/ShareGPT 三臂已单独用统一 PostgreSQL source/sink 闭合 database-E2E 和 correctness 护栏。因此文本侧的方法主实验可以不做 sink，但不能把它说成 database-E2E 结果。
 
 ### PostgreSQL 18.4 与项目要求的 18.3 冲突吗？
 
@@ -188,7 +188,7 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 | Daft Ray 被误当成项目方法 | 高 | Daft Native/Ray 都是 vendor-owned graph；项目 static/shared 另行标记 | 每张表保留 scheduler owner/provenance |
 | 5 s offset 被误用作框架间抗干扰排名 | 高 | 只比各系统内 single→overlap；不比框架间绝对 JCT | 图中标 observational/causal 和 actual overlap |
 | 项目 71.24 s 被误读为比 Daft Native 慢 6.4× | 高 | 项目逐请求 replay，原生只对齐 Job 启动且完整 manifest eager 可用；绝对值不 rankable | 正文、图注和问答显式标 request-arrival contract mismatch |
-| 两 Job 被外推为多租户完整结论 | 高 | 只闭合最小干扰与权衡因果；早期 4-job 为同步等量诊断且有逐次回退，weighted/SLO 待论文验证 | 主文与图注显式写外推边界 |
+| 两/四 Job 被外推为多租户完整结论 | 高 | 两Job闭合最小因果，四Job只扩展一个offset/equal-weight workload；weighted/SLO/held-out待论文验证 | 主文与图注显式写外推边界 |
 | 数据组织 feeding 门有边界 | 中 | 只声称 regime dependency，不声称全局排名 | 图注保留 KV/feeding 条件 |
 | 图像 GPU 未饱和 | 中 | 证明 matched-resource 执行结构收益，不证明 GPU-serving 优化 | 报 GPU busy 6–10% |
 | 文本多 Job 被外推为图像动态结论 | 中 | 当前 short/long 是 ShareGPT/vLLM；图像只有 staged-work 与静态结构证据 | 图像 phase-change/two-job 留作论文阶段 |
@@ -206,7 +206,7 @@ ShareGPT replacement 的具体结果是 4,921/6,144 行 cap 语义失败，而�
 - 不把 5 s offset 下各框架的绝对 JCT 做抗干扰排名。
 - 不把项目 arrival-replay 71.24 s 与 Daft Native eager-manifest 11.06 s 写成系统性能倍数。
 - 不用原 15 s Daft Native 无 overlap 数据证明运行中干扰。
-- 不把两 Job 文本结果外推到 4+ Job、weighted/SLO 或图像动态。
+- 不把两/四 Job 文本结果外推到更多 Job 数、weighted/SLO、Long→Short 或图像动态。
 - 不说“sequential 是普遍最优 organizer”。
 - 不说“图像路径提升 45.7%”。
 - 不说“Hybrid 稳健通过”。
