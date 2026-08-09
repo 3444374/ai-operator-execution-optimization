@@ -34,7 +34,8 @@ submit→service、service 与 request E2E 分位数；profiler 的 pipeline sta
 `short@0s → {long1,long2,long3}@5s` 补充矩阵做 fail-closed 汇总。它要求四个
 manifest 全流程身份一致、每场景恰 3 次 formal、每 Job 512 条 exactly-once 且实际
 发生 overlap；输出所有 Job 的 JCT/work rate/Project request P95-P99、相对各自
-single-full slowdown、三个 long 的离散度与完成顺序、组级公平性/资源，以及 Project
+single-full slowdown、replay barrier lateness、arrival→first-submit 和
+first-submit→completion 分解、三个 long 的离散度与完成顺序、组级公平性/资源，以及 Project
 short-only/four-job-overlap/long-only-drain 三段状态。native request tail 因 barrier
 timestamp 保持不可用；短 cell 只作 slowdown 基线，不作容量排名。
 shared-credit 的阶段量先在同一采样时刻跨 endpoint 求和，再沿时间求均值，避免把

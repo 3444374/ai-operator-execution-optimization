@@ -5332,3 +5332,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   启动同步；actual first-submit 仍逐 Job受 `max_start_lateness_s` 约束并保留为结果证据。
   新增回归测试覆盖“barrier 同步但 scheduler submit 有差异”，38/38 单测通过；v1 原始
   failure、完整 Job 输出与 traces 保留，修复后必须另建 v2，不得 resume/覆盖。
+- 四 Job 汇总器逐 Job 新增 barrier lateness、arrival→first-submit 与
+  first-submit→completion，比较表报告 first-submit 等待的绝对增量和提交后完成窗口变化，
+  用于区分输入同步、调度准入等待与模型服务/资源竞争时间；native barrier-only 入口保持缺失，
+  不伪造请求时间戳。

@@ -128,8 +128,19 @@ def _project_rows(root: Path) -> tuple[list[dict[str, object]], list[dict[str, o
             _float(v, "replay_configured_start_epoch_s")
             for v in _list(record["replay_configured_start_epoch_s"], "starts")
         ]
+        observed_starts = [
+            _float(v, "replay_observed_start_epoch_s")
+            for v in _list(record["replay_observed_start_epoch_s"], "observed starts")
+        ]
+        submit_starts = [
+            _float(v, "replay_actual_submit_start_epoch_s")
+            for v in _list(record["replay_actual_submit_start_epoch_s"], "submit starts")
+        ]
         shas = [str(v) for v in _list(record["request_manifest_sha256"], "manifest sha")]
-        if not all(len(values) == count for values in (jcts, p99s, work, starts, shas)):
+        if not all(
+            len(values) == count
+            for values in (jcts, p99s, work, starts, observed_starts, submit_starts, shas)
+        ):
             raise ValueError(f"Project job vector length mismatch: {path}")
         ends = [start + jct for start, jct in zip(starts, jcts)]
         for index, name in enumerate(names):
@@ -158,6 +169,10 @@ def _project_rows(root: Path) -> tuple[list[dict[str, object]], list[dict[str, o
                     "work_per_s": work[index] / jcts[index],
                     "start_epoch_s": starts[index],
                     "end_epoch_s": ends[index],
+                    "replay_barrier_lateness_ms": (observed_starts[index] - starts[index]) * 1000,
+                    "arrival_to_first_submit_ms": (submit_starts[index] - starts[index]) * 1000,
+                    "first_submit_to_completion_s": ends[index] - submit_starts[index],
+                    "submit_timing_status": "observed:project_request_timestamp",
                     "overlap_with_any_s": max(_pairwise_overlap(starts, ends, index).values(), default=0.0),
                     "pairwise_overlap_s": json.dumps(_pairwise_overlap(starts, ends, index), sort_keys=True),
                     "manifest_sha256": shas[index],
@@ -243,6 +258,10 @@ def _native_rows(root: Path) -> tuple[list[dict[str, object]], list[dict[str, ob
                     "work_per_s": total_tokens / jct,
                     "start_epoch_s": starts[position],
                     "end_epoch_s": ends[position],
+                    "replay_barrier_lateness_ms": "",
+                    "arrival_to_first_submit_ms": "",
+                    "first_submit_to_completion_s": "",
+                    "submit_timing_status": "unavailable:native_adapter_barrier_timestamp",
                     "overlap_with_any_s": max(_pairwise_overlap(starts, ends, position).values(), default=0.0),
                     "pairwise_overlap_s": json.dumps(_pairwise_overlap(starts, ends, position), sort_keys=True),
                     "manifest_sha256": str(job["manifest_sha256"]),
@@ -481,6 +500,16 @@ def _comparisons(job_summary: Sequence[Mapping[str, object]]) -> list[dict[str, 
                              _float(base["request_p99_s_mean"], "base p99") - 1) * 100
                             if base.get("request_p99_s_mean", "") != "" else ""
                         ),
+                        "arrival_to_first_submit_ms_delta": (
+                            _float(target["arrival_to_first_submit_ms_mean"], "target first submit")
+                            - _float(base["arrival_to_first_submit_ms_mean"], "base first submit")
+                            if system == "project" else ""
+                        ),
+                        "first_submit_to_completion_change_pct": (
+                            (_float(target["first_submit_to_completion_s_mean"], "target post-submit") /
+                             _float(base["first_submit_to_completion_s_mean"], "base post-submit") - 1) * 100
+                            if system == "project" else ""
+                        ),
                     }
                 )
             if system == "project":
@@ -503,6 +532,15 @@ def _comparisons(job_summary: Sequence[Mapping[str, object]]) -> list[dict[str, 
                             "request_p99_change_pct": (
                                 _float(target["request_p99_s_mean"], "target p99") /
                                 _float(baseline["request_p99_s_mean"], "base p99") * 100 - 100
+                            ),
+                            "arrival_to_first_submit_ms_delta": (
+                                _float(target["arrival_to_first_submit_ms_mean"], "target first submit")
+                                - _float(baseline["arrival_to_first_submit_ms_mean"], "base first submit")
+                            ),
+                            "first_submit_to_completion_change_pct": (
+                                _float(target["first_submit_to_completion_s_mean"], "target post-submit") /
+                                _float(baseline["first_submit_to_completion_s_mean"], "base post-submit")
+                                * 100 - 100
                             ),
                         }
                     )
@@ -550,7 +588,11 @@ def summarize(project_root: Path, native_root: Path, output: Path) -> dict[str, 
     groups = project_groups + native_groups
     job_summary = _aggregate(
         jobs, ("system", "scenario", "policy", "job"),
-        ("job_jct_s", "request_p95_s", "request_p99_s", "actual_work", "work_per_s", "overlap_with_any_s"),
+        (
+            "job_jct_s", "request_p95_s", "request_p99_s", "actual_work", "work_per_s",
+            "overlap_with_any_s", "replay_barrier_lateness_ms", "arrival_to_first_submit_ms",
+            "first_submit_to_completion_s",
+        ),
     )
     group_summary = _aggregate(
         groups, ("system", "scenario", "policy"),
