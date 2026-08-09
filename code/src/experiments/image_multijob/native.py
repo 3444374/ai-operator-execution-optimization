@@ -113,9 +113,12 @@ def _number(value: object, field: str, *, allow_zero: bool = False) -> float:
 
 
 def _arguments(value: object, field: str) -> tuple[str, ...]:
-    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
-        raise ValueError(f"{field} must be a list of strings")
-    result = tuple(value)
+    if not isinstance(value, list) or any(
+        isinstance(item, bool) or not isinstance(item, (str, int, float))
+        for item in value
+    ):
+        raise ValueError(f"{field} must be a list of string/number argv scalars")
+    result = tuple(str(item) for item in value)
     conflicts = sorted(set(result) & _OWNED_FLAGS)
     if conflicts:
         raise ValueError(f"{field} contains runner-owned flags: {conflicts}")
