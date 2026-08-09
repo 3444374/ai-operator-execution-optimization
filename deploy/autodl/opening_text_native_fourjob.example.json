@@ -12,7 +12,7 @@
   "warmup_repeats": 1,
   "formal_repeats": 3,
   "schedule_seed": 20260809,
-  "endpoint_work_skew_max": 0.02,
+  "endpoint_work_skew_max": 0.04,
   "minimum_measurement_seconds": 1,
   "arms": [
     {

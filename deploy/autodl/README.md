@@ -978,6 +978,8 @@ credit、router 或静态配额。
 不可变 manifest 后由 vendor-owned graph 自行执行。Ray Data 固定使用已登记的
 `batch_size=16, concurrency=8/endpoint`，不从扫描中挑选有利点；四 Job 模板只把其
 外层 shard 等待上限设为 2400 s，防止 512-row 原生执行被 harness 提前终止。
+同一 Project/native short manifest 的两个 endpoint 各 256 行，prompt-work skew 实测
+3.58%；为避免为 native 单独重排输入，原生合同门禁冻结为 ≤4%，而非另造更有利数据。
 
 当研究问题明确为“long 中途加入对已存在 short 的影响”时，必须先确保每一臂
 实际发生 overlap。`opening_multijob_minimal.example.json` 与

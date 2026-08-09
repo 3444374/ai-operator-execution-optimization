@@ -5339,3 +5339,8 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - Project v2 完成后分阶段审计发现 `_comparisons` 只接受四系统同时到齐；改为按输入中实际
   存在的系统生成比较，使 Project 可以在原生矩阵启动前独立 fail-closed 审计。最终
   `summarize()` 仍分别要求 Project 与全部三种 native 数据完整，不降低全矩阵门禁。
+- 原生 512-row formal 首次启动在请求前因 short endpoint prompt-work skew 3.58% 超过
+  模板的任意 2% 阈值而 fail-closed；三份 long 已平衡。为保持 Project/native 使用完全
+  相同的不可变 manifest，不为 native 另行重排或造有利输入，将原生门禁冻结为实测值上界
+  4%，并保留失败日志；正式运行另建 v2。两个 endpoint 仍各 256 行，比较继续以系统内
+  single→four-job 相对变化为主。

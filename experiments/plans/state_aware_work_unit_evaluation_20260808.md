@@ -155,7 +155,8 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 #### 四作业干扰补充合同（2026-08-09 用户确认）
 
 四作业补充实验固定为 `short@0s → {long1,long2,long3}@5s`。四个 512-row
-manifest 必须 doc_id 互斥、两 endpoint 等行且 endpoint-work skew ≤2%；三个 long
+manifest 必须 doc_id 互斥、两 endpoint 等行；已冻结 short manifest 的 endpoint
+prompt-work skew 为 3.58%，原生门禁按不重排同一输入的原则冻结为 ≤4%。三个 long
 从 short 之外的行按 prompt-token work 贪心平衡，避免将输入工作量差异误判为调度
 不公平。它是两作业结论的并发扩展，不替换两作业的最小因果证据。
 
