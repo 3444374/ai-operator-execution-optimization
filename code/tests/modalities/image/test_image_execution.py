@@ -119,6 +119,10 @@ class ImageRunnerSchemaTest(unittest.TestCase):
             "joules_per_1k_images",
             "gpu_seconds_per_image",
             "images_per_cpu_core_second",
+            "ray_address_mode",
+            "formal_start_epoch_s_planned",
+            "formal_start_epoch_s_actual",
+            "formal_start_lateness_s",
         }
 
         self.assertTrue(expected.issubset(set(RUNNER_MODULE.CSV_FIELDS)))

@@ -215,7 +215,11 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_project_short_half_pool_all_at_t0_diagnostic.example.json` | Project eager short 的 reserved-half-pool 单 Job 1+3 补充控制；K/W 按两个静态分区切半但不启动 long | 将 static+long 的 short 退化拆成 quota-only 与真实竞争，不重复既有三臂 |
 | `deploy/autodl/opening_project_fourjob_all_at_t0_diagnostic.example.json` | Project 1-short+3-matched-long 的 full/quarter 单 Job、四分静态与 shared-work 1+3 补充矩阵 | 逐 Job 拆分 quota、竞争与共享调度影响；同全局 K/W，不扫参数 |
 | `deploy/autodl/opening_text_native_fourjob.example.json` | Daft Native/Ray、Ray Data 的四个 single-full 控制与 1-short+3-long 独立应用并发观察 | 每个系统使用自己的单 Job slowdown 基线；不注入项目 credit，短 cell 不作容量排名 |
+| `deploy/autodl/opening_duckdb_fourjob.example.json` | DuckDB AI bounded-output SQuAD 的四个 single-full 与四个独立连接并发准备模板 | 固定产品原生 concurrency，不注入项目 credit/router；当前未跑 formal |
+| `deploy/autodl/opening_image_native_fourjob.example.json` | Daft built-in、Ray Data 图像四个 single-full 与 short→3×long 原生并发模板 | 两系统共享 immutable image manifest/外部 Ray 资源，禁止项目调度；当前未跑 formal |
+| `deploy/autodl/opening_image_project_fourjob.example.json` | 图像 project 四个 single-full、frozen static 与稳定 `proposed` 角色模板 | 后续动态算法只变 `policy_revision`/输出目录并仅重跑 project，不改 manifest/scenario |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥 short 与一个或多个 token-work 匹配 long manifest，并输出 SHA/工作量 skew 审计 | 两作业用单 long；四作业用 1 short+3 long、每 Job 512 行 |
+| `code/scripts/data/build_image_multijob_manifest.py` | 从 PostgreSQL 冻结 2K short + 3×3K long 图像 source slices、0.5s arrival、doc-id/byte digest | native/project 唯一 workload identity；首次 formal 前 rehearsal 验证实际 overlap |
 | `code/scripts/analysis/summarize_project_short_all_at_t0.py` | 从服务器 raw 重算 Project eager single 的 T0–T4 时间、吞吐、MFU、状态和 Daft 对齐边界 | 回答“项目为何比 Daft 慢”时使用；T0 缺失不补造，T3/T4 只作 short 诊断 |
 | `code/scripts/analysis/summarize_project_multijob_eager.py` | fail-closed 汇总 Project eager full/half single、static/shared+long、short逐阶段和pre-long/overlap/drain状态 | 输出quota-only、matched competition、idle borrowing与各轨normalized short impact；检查12 formal、512 exactly-once、endpoint balance和<1ms arrival span |
 | `code/scripts/analysis/summarize_opening_database_e2e.py` | 冻结开题文本矩阵的完整性审计与 formal 汇总 | 两组 workload 全部结束后一次性运行 |
@@ -225,6 +229,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/analysis/summarize_opening_multijob_minimal.py` | fail-closed 汇总开题 short/long 两作业错峰两场景 | 输出组级紧凑数据、场景统计、shared-vs-static 对照和审计；不含 sink |
 | `code/scripts/analysis/summarize_opening_short_job_interference.py` | 统一汇总 exact-short full/half、项目 static/shared 与三条原生 single/two-job 证据 | 输出短 Job 因果对照、pre-long/overlap/drain 状态，以及 arrival span、最后到达后 drain、buffer/submit/service/E2E 细粒度时间；不伪造 native P99、interval MFU 或把重叠 stage 相加 |
 | `code/scripts/analysis/summarize_opening_fourjob_interference.py` | 审计 1-short+3-long 的 Project/native single→concurrent 四 Job 数据 | 输出每 Job slowdown、long 间离散/完成顺序、组公平性/资源与 Project 三阶段状态；不伪造 native request tail |
+| `code/scripts/analysis/summarize_image_multijob.py` | fail-closed 汇总图像 Daft built-in/Ray Data/project single→four-job 数据 | 检查 manifest SHA、1+3、exactly-once/overlap；输出阶段时间与资源，不作跨框架绝对排名 |
 | `code/tests/analysis/test_summarize_opening_short_job_interference.py` | 项目逐请求时间分解的 JCT 恒等式与负时长 fail-closed 回归 | 修改 short/long 时间归因或 raw timing 汇总公式时运行 |
 | `experiments/results/opening_multijob_interference_20260809/data/combined/project_request_timing_summary.csv` | full/half single 与 static/shared+long 的 arrival span、drain、buffer、submit、service、request E2E 与 profiler stage 紧凑汇总 | 分析项目 71 s 的组成或 long 影响哪一层时读；profiler stage 有重叠，不得相加 |
 | `experiments/results/opening_multijob_interference_20260809/data/combined/single_short_project_daft_timing.csv` | 项目 request-replay 与 Daft Native eager-manifest 的 timer、vLLM service 和状态边界对齐 | 回答 71.24 s vs 11.06 s 时读；只解释合同与状态，不作跨轨排名 |
@@ -379,6 +384,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/baselines/run_official_baseline.py` | 同条件 Chat Completions baseline 薄入口 | 执行 immutable endpoint shard、归一化 vLLM Bench、验证 exactly-once/双 endpoint gate |
 | `code/scripts/baselines/run_text_native_matrix.py` / `code/src/baselines/text/orchestration/native_matrix.py` | 冻结 calibration 指纹后的原生文本单 job 1+N 交错矩阵 | 复用 core gate并保存逐 GPU、vLLM gauge/latency/estimated-FLOPs 时序；先验证 Ray worker nofile，时长/门禁不足保留为 `not_rankable` |
 | `code/scripts/baselines/run_text_native_multijob.py` / `code/src/baselines/text/orchestration/native_multijob.py` | Daft Native/Ray、Ray Data 原生两 job 错峰薄编排 | 每 job 启动双 endpoint official shard，禁止项目控制；共享进程 wall deadline 终止 CLOSE_WAIT survivor；保存 barrier、服务/vLLM/GPU 证据并验证 Ray worker nofile |
+| `code/scripts/experiments/run_image_native_multijob.py` / `code/src/experiments/image_multijob/native.py` | Daft built-in/Ray Data 图像单/四 Job 原生薄编排 | 独立 vendor-owned apps + ready/start barrier，共享外部 Ray；保存 GPU/CPU/Ray/shm 证据 |
+| `code/scripts/experiments/run_image_project_multijob.py` / `code/src/experiments/image_multijob/project.py` | 图像 project static/proposed 单/四 Job 编排 | 有界 source queues、逐 Job exactly-once/JCT/queue-stage trace、同全局32 active上限与策略版本 |
+| `code/src/experiments/image_multijob/manifest.py` | 图像多 Job immutable PostgreSQL source contract | 强制四个标准 Job、互斥 ranges、统一 late offset、doc-id/encoded-byte digest |
 | `code/scripts/baselines/squad_capability_gate.py` | SQuAD v1.1 dev capability gate（DuckDB-ai arm）；全量/分层双模式、确定性分层抽样（largest-remainder + 多答案 max SQuAD-normalized 桶）、sample manifest + 逐行证据 CSV（sample hash 与 EM/F1 可复算）、canonical content hash 对齐 importer provenance、workload 完整性 fail-closed、vLLM counter 归因门禁、full-set exactly-once、命令/异常脱敏、失败结构化归档 | 验证 SQuAD bounded-output 管线（输出解析/EM-F1/错误统计），不发布排名 |
 | `code/scripts/baselines/squad_database_e2e_runner.py` | SQuAD bounded-output database-E2E **单 endpoint**顶层 runner（DuckDB-ai + direct_client + project_static）。project_static shell-out profiler，使用独立 completion evidence、实际 source-scan prompt fingerprints、DB/importer 完整性读取与 sink readback 形成非循环证据链；报告强制写 endpoint_count=1 / multi-endpoint method=false | 三臂可运行；project_static 同时受统一计时墙阻塞与单 endpoint 方法退化约束，只能做正确性/管线开销 diagnostic，不能证明 endpoint-aware 方法 |
 | `code/src/baselines/common/squad_identity.py` | SQuAD gate/runner 共享 helper（identity/attribution/integrity：`_pg_server_identity`/`_gpu_identity`/`_vllm_version`/`_git_commit`/`_scrape_status`/`_endpoint_idle`/`_assess_attribution`/`_structured_content_hash`/`_validate_workload_integrity`/`_load_importer_provenance`）| capability gate 与 E2E runner 共用，禁止第三份拷贝 |
@@ -484,6 +492,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/scheduling/test_shared_credit.py` | 多 job endpoint credit、借用、公平轮转与 ID 隔离测试 | 修改共享 admission 纯策略后运行 |
 | `code/tests/scheduling/test_shared_credit_ray.py` | named Ray actor 复用与配置一致性边界测试 | 修改共享 credit 的 Ray ownership 接线后运行 |
 | `code/tests/experiments/test_shared_vllm_experiment.py` | Shared-vLLM 配置、容量语义、组级指标与公平性测试 | 修改多 job runner 后运行 |
+| `code/tests/experiments/test_image_multijob_contract.py` | 图像 native/project 共用 manifest、固定矩阵、命令隔离与静态容量门禁测试 | 修改图像多 Job workload/config/runner 合同时运行 |
 | `code/tests/data/test_import_ai_complete_workload.py` | ShareGPT/BurstGPT importer 单元测试 | 修改 importer 或 trace 过滤逻辑后运行 |
 | `code/tests/data/test_import_squad_workload.py` | SQuAD v1.1 dev importer 单元测试（多答案/特殊字符/重复 ID/缺答案/content hash/行数门禁/canonical SHA256 门禁/模板）| 修改 SQuAD importer 后运行 |
 | `code/tests/baselines/test_duckdb_ai_sentence_count_gate.py` | 句子计数 gate 纯函数单测（句子切分/整数 fullmatch/行数门禁/dist）| 修改 sentence-count gate 后运行 |

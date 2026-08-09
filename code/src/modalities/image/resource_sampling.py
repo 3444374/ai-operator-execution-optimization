@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import csv
 import json
+import shutil
 import statistics
 import subprocess
 import threading
@@ -169,6 +171,33 @@ def summarize_cpu_samples(samples: list[list[float]]) -> dict[str, object]:
         "cpu_per_core_peak_pct": max(per_core),
         "cpu_logical_count": logical_count,
         "cpu_samples": len(samples),
+    }
+
+
+def summarize_ray_resource_samples(
+    samples: list[dict[str, float]],
+) -> dict[str, object]:
+    """Summarize Ray capacity and object-store pressure samples."""
+
+    return {
+        "ray_resource_samples": len(samples),
+        "ray_available_cpu_min": min(
+            (item["ray_available_cpu"] for item in samples), default=0.0
+        ),
+        "ray_available_gpu_min": min(
+            (item["ray_available_gpu"] for item in samples), default=0.0
+        ),
+        "shm_used_bytes_mean": (
+            statistics.fmean(item["shm_used_bytes"] for item in samples)
+            if samples
+            else 0.0
+        ),
+        "shm_used_bytes_peak": max(
+            (item["shm_used_bytes"] for item in samples), default=0.0
+        ),
+        "shm_total_bytes": max(
+            (item["shm_total_bytes"] for item in samples), default=0.0
+        ),
     }
 
 
@@ -347,3 +376,57 @@ class SystemCpuSampler:
             "host_context_switches": int(cpu.ctx_switches),
             "host_interrupts": int(cpu.interrupts),
         }
+
+
+class RayClusterResourceSampler:
+    """Sample Ray scheduler availability and shared-memory pressure over time."""
+
+    def __init__(self, interval_s: float) -> None:
+        if interval_s <= 0:
+            raise ValueError("Ray resource sample interval must be positive")
+        self.interval_s = interval_s
+        self._stop = threading.Event()
+        self._samples: list[dict[str, float]] = []
+        self._thread = threading.Thread(target=self._run, daemon=True)
+
+    def start(self) -> None:
+        self._thread.start()
+
+    def stop(self) -> dict[str, object]:
+        self._stop.set()
+        self._thread.join(timeout=max(2.0, self.interval_s * 4))
+        return summarize_ray_resource_samples(self._samples)
+
+    def write_csv(self, path) -> None:
+        from pathlib import Path
+
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        fields = (
+            "timestamp_s",
+            "ray_available_cpu",
+            "ray_available_gpu",
+            "shm_used_bytes",
+            "shm_total_bytes",
+        )
+        with target.open("w", encoding="utf-8", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(self._samples)
+
+    def _run(self) -> None:
+        import ray
+
+        while not self._stop.is_set():
+            available = ray.available_resources()
+            shared = shutil.disk_usage("/dev/shm")
+            self._samples.append(
+                {
+                    "timestamp_s": time.time(),
+                    "ray_available_cpu": float(available.get("CPU", 0.0)),
+                    "ray_available_gpu": float(available.get("GPU", 0.0)),
+                    "shm_used_bytes": float(shared.used),
+                    "shm_total_bytes": float(shared.total),
+                }
+            )
+            self._stop.wait(self.interval_s)

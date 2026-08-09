@@ -108,6 +108,18 @@ code/scripts/experiments/run_ai_operator_scenarios.py
   记录为 `provider_default`，不会伪装成命令行 `--dtype` 已生效。正式跨系统排名必须传
   `--embedding-output-contract l2_normalized`；Daft 的 adapter-side L2 成本位于计时边界
   内，CSV 同时记录 requested/effective contract、归一化归属和是否计时；
+- `data/build_image_multijob_manifest.py`：从 PostgreSQL 冻结 short + 3×matched-long
+  图像 Job manifest，保存互斥 source range、doc-id digest、encoded-byte digest 与统一
+  arrival offset；native/project 配置只引用该文件，不各自选数据；
+- `experiments/run_image_native_multijob.py`：在同一外部 Ray 资源池上编排 Daft built-in
+  和 Ray Data 的四个 single-full 与四个独立应用并发；只对齐 ready/start barrier，禁止
+  project credit、active-work 和 router；
+- `experiments/run_image_project_multijob.py`：在同一 immutable manifest 上运行四个
+  single-full、frozen static partition 和稳定角色 `proposed`；算法变化只需更新
+  `policy_revision` 并重跑 project，不改原生配置；
+- `analysis/summarize_image_multijob.py`：fail-closed 检查 1+3 重复、manifest SHA、
+  exactly-once 和 short/long 实际 overlap，输出逐 Job slowdown/阶段分解与组级资源；只做
+  系统内 single→four-job 和 project static→proposed 对比，不作跨框架绝对排名；
 - `analysis/augment_image_observability.py`：不改 raw CSV，给历史 schema-v11 图像结果
   旁置补算 first-output/E2E 比例、post-first-output、60s duration gate、J/1K-images、
   GPU-seconds/image、images/CPU-core-second 与 host I/O bytes/image；它不补造 Daft

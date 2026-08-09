@@ -38,6 +38,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.modalities.image import DaftImageSource, ImageSourceConfig  # noqa: E402
+from src.modalities.image.source import read_image_source_metadata  # noqa: E402
 from src.baselines.image.provenance import (  # noqa: E402
     image_arm_provenance,
     require_formal_arm_allowed,
@@ -107,6 +108,10 @@ CSV_FIELDS = (
     "declared_model_cpus",
     "declared_total_cpus",
     "resource_budget_semantics",
+    "ray_address_mode",
+    "formal_start_epoch_s_planned",
+    "formal_start_epoch_s_actual",
+    "formal_start_lateness_s",
     "torch_intraop_threads_per_worker",
     "torch_interop_threads_per_worker",
     "worker_setup_s",
@@ -349,6 +354,27 @@ def parse_args():
     parser.add_argument("--gpu-sample-interval-s", type=float, default=0.5)
     parser.add_argument("--cpu-sample-interval-s", type=float, default=0.25)
     parser.add_argument(
+        "--ray-address",
+        default="",
+        help=(
+            "Connect to one externally managed Ray cluster. Required when multiple "
+            "independent native image applications share the same physical resources; "
+            "empty keeps the isolated single-job behavior."
+        ),
+    )
+    parser.add_argument(
+        "--formal-ready-file",
+        default="",
+        help="Optional per-job readiness marker written after the untimed warm-up.",
+    )
+    parser.add_argument(
+        "--formal-start-barrier-file",
+        default="",
+        help="Optional JSON barrier containing start_epoch_s for coordinated jobs.",
+    )
+    parser.add_argument("--formal-start-offset-s", type=float, default=0.0)
+    parser.add_argument("--formal-barrier-timeout-s", type=float, default=900.0)
+    parser.add_argument(
         "--detailed-stage-timing",
         action="store_true",
         help="Synchronize CUDA stages to measure H2D/forward/D2H; use as a diagnostic arm",
@@ -386,47 +412,15 @@ def read_database_metadata(
     offset: int,
     dataset_passes: int = 1,
 ) -> tuple[frozenset[str], dict[str, object]]:
-    import psycopg
-
-    with psycopg.connect(dsn) as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT doc_id FROM image_documents "
-                "WHERE workload_name = %s ORDER BY doc_id LIMIT %s OFFSET %s",
-                (workload_name, limit, offset),
-            )
-            physical_doc_ids = frozenset(str(row[0]) for row in cursor.fetchall())
-            cursor.execute("SHOW server_version")
-            server_version = str(cursor.fetchone()[0])
-            cursor.execute(
-                "SELECT extversion FROM pg_extension WHERE extname = 'vector'"
-            )
-            extension = cursor.fetchone()
-            cursor.execute(
-                "SELECT COALESCE(SUM(image_bytes), 0), "
-                "COALESCE(AVG(image_bytes), 0) FROM ("
-                "SELECT image_bytes FROM image_documents "
-                "WHERE workload_name = %s ORDER BY doc_id LIMIT %s OFFSET %s"
-                ") AS selected_rows",
-                (workload_name, limit, offset),
-            )
-            input_encoded_bytes, avg_encoded_bytes = cursor.fetchone()
-    if len(physical_doc_ids) != limit:
-        raise ValueError(f"expected {limit} source rows, found {len(physical_doc_ids)}")
-    if dataset_passes == 1:
-        doc_ids = physical_doc_ids
-    else:
-        doc_ids = frozenset(
-            f"{doc_id}#pass={pass_index}"
-            for pass_index in range(1, dataset_passes + 1)
-            for doc_id in physical_doc_ids
-        )
-    return doc_ids, {
-        "server_version": server_version,
-        "pgvector_version": str(extension[0]) if extension else "not_installed",
-        "input_encoded_bytes": int(input_encoded_bytes) * dataset_passes,
-        "avg_encoded_bytes": float(avg_encoded_bytes),
-    }
+    return read_image_source_metadata(
+        dsn,
+        ImageSourceConfig(
+            workload_name=workload_name,
+            limit=limit,
+            offset=offset,
+            dataset_passes=dataset_passes,
+        ),
+    )
 
 
 def make_source(
@@ -527,6 +521,12 @@ def main() -> None:
         raise SystemExit("FLOP values must be non-negative")
     if bool(args.model_flops_per_image) != bool(args.gpu_peak_flops_per_s):
         raise SystemExit("set both FLOP values or leave both at 0")
+    if args.formal_start_offset_s < 0 or args.formal_barrier_timeout_s <= 0:
+        raise SystemExit("formal barrier offset must be non-negative and timeout positive")
+    if bool(args.formal_ready_file) != bool(args.formal_start_barrier_file):
+        raise SystemExit(
+            "--formal-ready-file and --formal-start-barrier-file must be set together"
+        )
     if args.save_embeddings:
         if args.arm not in ("daft_builtin_embed", "project_ray"):
             raise SystemExit(
@@ -596,13 +596,23 @@ def main() -> None:
         raise SystemExit(str(error)) from error
     ray_cluster_num_cpus = cpu_budget.cluster_slots
     worker_runtime_env = ray_runtime_env(CODE_ROOT)
+    def init_ray() -> None:
+        if args.ray_address:
+            ray.init(
+                address=args.ray_address,
+                include_dashboard=False,
+                runtime_env=worker_runtime_env,
+            )
+        else:
+            ray.init(
+                num_cpus=ray_cluster_num_cpus,
+                num_gpus=args.gpu_workers,
+                include_dashboard=False,
+                runtime_env=worker_runtime_env,
+            )
+
     if args.arm == "daft_builtin_embed":
-        ray.init(
-            num_cpus=ray_cluster_num_cpus,
-            num_gpus=args.gpu_workers,
-            include_dashboard=False,
-            runtime_env=worker_runtime_env,
-        )
+        init_ray()
         daft.set_runner_ray(noop_if_initialized=True)
     elif args.arm == "daft_native":
         daft.set_runner_native(num_threads=source_cpu_threads)
@@ -618,12 +628,7 @@ def main() -> None:
             torch_interop_threads=args.torch_interop_threads,
         )
     elif args.arm == "daft_ray":
-        ray.init(
-            num_cpus=ray_cluster_num_cpus,
-            num_gpus=args.gpu_workers,
-            include_dashboard=False,
-            runtime_env=worker_runtime_env,
-        )
+        init_ray()
         daft.set_runner_ray(noop_if_initialized=True)
         embedder = build_daft_clip_embedder(
             model_revision=args.model,
@@ -637,12 +642,7 @@ def main() -> None:
             torch_interop_threads=args.torch_interop_threads,
         )
     elif args.arm == "daft_staged":
-        ray.init(
-            num_cpus=ray_cluster_num_cpus,
-            num_gpus=args.gpu_workers,
-            include_dashboard=False,
-            runtime_env=worker_runtime_env,
-        )
+        init_ray()
         daft.set_runner_ray(noop_if_initialized=True)
         preprocessor, embedder = build_daft_staged_clip_pipeline(
             model_revision=args.model,
@@ -657,22 +657,12 @@ def main() -> None:
             torch_interop_threads=args.torch_interop_threads,
         )
     elif args.arm == "ray_data_staged":
-        ray.init(
-            # Ray Data keeps SQL readers and both callable actor pools live in
-            # one streaming graph. Reserve reader slots explicitly so fixed
-            # actor pools cannot starve the source and deadlock the pipeline.
-            num_cpus=ray_cluster_num_cpus,
-            num_gpus=args.gpu_workers,
-            include_dashboard=False,
-            runtime_env=worker_runtime_env,
-        )
+        # Ray Data keeps SQL readers and both callable actor pools live in one
+        # streaming graph.  In multi-job mode the external cluster, rather than
+        # this adapter, owns the common resource capacity.
+        init_ray()
     else:
-        ray.init(
-            num_cpus=ray_cluster_num_cpus,
-            num_gpus=args.gpu_workers,
-            include_dashboard=False,
-            runtime_env=worker_runtime_env,
-        )
+        init_ray()
         daft.set_runner_native(num_threads=source_cpu_threads)
         worker_pool = build_project_ray_worker_pool(
             model_revision=args.model,
@@ -762,6 +752,38 @@ def main() -> None:
     execute(warmup_count, warmup_ids)
     if worker_pool is not None:
         stop_project_ray_worker_pool(worker_pool)
+    formal_start_epoch_s_planned = 0.0
+    if args.formal_ready_file:
+        ready_path = Path(args.formal_ready_file)
+        ready_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = ready_path.with_suffix(ready_path.suffix + ".tmp")
+        temporary.write_text(
+            json.dumps(
+                {
+                    "pid": os.getpid(),
+                    "arm": args.arm,
+                    "warmup_completed_epoch_s": time.time(),
+                },
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        temporary.replace(ready_path)
+        barrier_path = Path(args.formal_start_barrier_file)
+        deadline = time.monotonic() + args.formal_barrier_timeout_s
+        while not barrier_path.is_file():
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"formal start barrier timed out: {barrier_path}")
+            time.sleep(0.05)
+        barrier = json.loads(barrier_path.read_text(encoding="utf-8"))
+        formal_start_epoch_s_planned = (
+            float(barrier["start_epoch_s"]) + args.formal_start_offset_s
+        )
+        remaining = formal_start_epoch_s_planned - time.time()
+        if remaining > 0:
+            time.sleep(remaining)
+    formal_start_epoch_s_actual = time.time()
     gpu_sampler = NvidiaSmiSampler(
         args.gpu_sample_interval_s,
         active_device_count=args.gpu_workers,
@@ -933,6 +955,16 @@ def main() -> None:
         "declared_model_cpus": declared_model_cpus if declared_model_cpus is not None else "",
         "declared_total_cpus": cpu_budget.declared_total_slots,
         "resource_budget_semantics": cpu_budget.semantics,
+        "ray_address_mode": "external_shared" if args.ray_address else "isolated_local",
+        "formal_start_epoch_s_planned": (
+            formal_start_epoch_s_planned if args.formal_ready_file else ""
+        ),
+        "formal_start_epoch_s_actual": formal_start_epoch_s_actual,
+        "formal_start_lateness_s": (
+            max(0.0, formal_start_epoch_s_actual - formal_start_epoch_s_planned)
+            if args.formal_ready_file
+            else ""
+        ),
         "torch_intraop_threads_per_worker": args.torch_intraop_threads,
         "torch_interop_threads_per_worker": args.torch_interop_threads,
         "worker_setup_s": worker_setup_s if project_metrics else "",

@@ -230,3 +230,69 @@ Daft Native同边界只差约2.5%–2.7%。它回答的是“此前71.24s是否�
 不承担单系统最优容量排名。online full/half single-short近似相等，而eager full→half
 使short JCT +59.00%，说明quota效应依赖arrival regime；两者必须分轨保留。当前
 all-at-t0诊断已经排除“项目模型请求路径慢6.4×”，因此不扫K256/K512。
+
+### 7.3 图像四作业：已冻结准备合同，尚未启动正式实验
+
+图像多作业不复制文本的 5 s offset。既有单作业结果表明 Ray Data/project 的图像作业
+远快于 Daft built-in；若仍用 5 s，前台 short 很可能已经结束，实验无法回答“后到作业
+怎样影响正在运行的 short”。因此候选 manifest 固定为 COCO PostgreSQL 中互不重叠的
+`short=2,000` 与 `long1/2/3=3,000` 行，三个 long 在 `t=0.5 s` 同时到达。正式结果只有在
+每次 run 的实际时间戳证明 short 与三个 long 均有正 overlap 时才有效。64-row gate 只验
+correctness；offset 由既有 single-job JCT 推导，并在首次 formal 前用一次不进入结论的
+full-size rehearsal 验证。若 rehearsal 无 overlap，必须废弃候选 manifest、重新冻结一次，
+不能在看过正式结果后扫描 offset。
+
+原生观察矩阵由 Daft built-in `decode_image→embed_image` 和 Ray Data native
+`SQL datasource→map_batches` 各自拥有调度。每个系统运行 short/long1/long2/long3 四个
+single-full 控制，再运行四个独立应用并发；外层只提供同一 PostgreSQL 数据切片、共享 Ray
+资源池、ready barrier 和 0/0.5 s 启动时序，不注入项目 credit、active-work、路由或
+负载均衡。项目矩阵使用同一个 manifest，运行四个 single-full、冻结
+`fourjob_static_partition` 与 `fourjob_proposed`。`proposed` 是稳定的实验角色，不绑定
+具体算法名：当前实现版本由 `policy_revision` 记录，后续接入状态感知、动态 credit 或
+动态路由时保持 manifest、六个 scenario、模型、资源上限与指标 schema 不变，只更换项目
+实现和 revision，并重新运行 project 矩阵。
+
+冻结资源/语义：2×RTX 4090、同一 CLIP model/processor revision、L2 normalized 512-d
+embedding、batch 64、4 source shards、Ray cluster 总物理资源不变；project 为 16 CPU
+preprocess actor、2 GPU actor、全局 active-batch 上限 32、每 Job source queue 2 batch。
+static 四作业每 Job 固定 8 active batches且不借用；proposed 使用同一个全局 32 上限。
+Daft/Ray Data 的公开资源参数保持既有正式单作业合同，不为多作业结果重新调参，也不把
+它们命名为 static partition。
+
+每个 Job 必须保存：arrival、actual start、first source batch、source done、first submit、
+first output、completion/JCT、images/s、single→four-job slowdown、source/queue/completion
+时间分解、prepare/H2D/forward P95 与总量、encoded/tensor/device/output bytes、exactly-once
+与输出 norm。三个 long 额外报告 JCT/slowdown max-min、CV、完成顺序和 Jain fairness。
+组级保存 GPU util 时序、显存、功耗/能耗、经校准 FLOPs 计算的 estimated MFU、CPU busy、
+host memory/network/disk、Ray available CPU/GPU、`/dev/shm` 峰值；project 另保存逐事件
+ready/active-by-job trace。Daft/Ray Data 隐藏阶段无法可靠归因的字段留空，不补造。
+
+执行顺序固定为：环境/数据库/模型只读 preflight → 停止文本 vLLM 并清理 stale Ray →
+生成候选 manifest 并记录 SHA256 → 64-row correctness/capability gate → 一次 overlap rehearsal
+并封存 manifest → 启动
+共享 32-CPU/2-GPU Ray → 原生 1 warm-up + 3 balanced formal → project 1+3 → fail-closed
+汇总。当前只完成 runner、配置和 preflight 准备，**没有启动 formal**。远端 preflight
+已确认 core/image Python 与 2×4090 profile；原始 COCO ZIP 不在本机，但数据库中已有
+正式导入表，首次 gate 仍须验证行数、schema、doc-id digest 和 encoded-byte digest。
+当前 GPU 被文本 vLLM 占用，正式图像 gate 前必须先释放，不能与文本服务共跑。
+
+未来只重测 project 的复用门禁：native 结果的 manifest SHA、model/processor、输出语义、
+硬件/资源、batch/source-shard、计时边界和 metric schema 全部与新 project run 一致；否则
+native 证据失效并重跑对应系统。若只是 `policy_revision` 和项目提交逻辑变化，native 不重跑；
+project static/proposed 同次交错重跑，避免把日期漂移误判成算法收益。任何 proposed 结论都
+必须相对同次 frozen-static，而不是只与旧 native 绝对 JCT 比较。
+
+### 7.4 DuckDB 文本四作业：产品原生观察准备合同
+
+DuckDB 只进入 bounded-output SQuAD 轨，不使用 ShareGPT fixed-cap 语义失败的输入。冻结
+四份 doc-id 互斥、双 endpoint prompt-work skew 通过门禁的 manifest；分别运行四个单
+Job 控制和 `short@0 → 3×long@offset` 四个独立 DuckDB connection/process。DuckDB AI
+extension 自己拥有执行和并发，固定已有产品合同的 per-endpoint concurrency 32，不注入
+project work credit、路由或重新分区。必须记录每 Job barrier JCT、first/last completion、
+output-length/quality error、服务 token counter、running/waiting/KV、GPU/MFU/energy、组级
+Jain 与 single→four-job slowdown；缺少可靠逐请求时间戳时不伪造 P95/P99。
+
+DuckDB 与图像矩阵同样先只做 manifest/config/capability gate，不跑 formal。它回答的是
+产品原生多个独立查询竞争时的现象，不是 DuckDB 内部拥有跨查询全局 fair scheduler 的
+证明，也不与 Chat 原生框架做绝对排名。项目文本动态策略以后仍使用同一批 manifest 和
+到达合同单独重测；若 workload/service 资源签名未变，DuckDB 原生结果可复用。

@@ -5368,3 +5368,23 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `db705caac77c438f272a9ac1e4687b69dfef3be96500f768b9e7ca5d1ca416fb`），包含成功 raw、
   gate、停止的 Ray Data concurrency 诊断、Project/native v1 失败、不可变 manifest 和
   日志；未删除或覆盖任何扫描数据。
+
+## 2026-08-09 图像与 DuckDB 四作业实验准备（未跑 formal）
+
+- 从实验目的重新推导图像到达合同：图像 Ray Data/project 的 single-short 远快于文本，
+  继续使用 5 s 会失去 overlap，故候选 manifest 冻结为 COCO `short=2,000`、
+  `3×long=3,000`、late offset 0.5 s；汇总器要求实际 short/long overlap>0，否则整次拒收。
+- 新增共享 image manifest builder、Daft built-in/Ray Data 原生 single/four-job 薄编排、
+  project single/static/proposed 编排与统一汇总。两轨共享 source digest；原生臂不注入
+  project scheduling，project source queue 有界并保存 source/queue/prepare/H2D/forward、
+  GPU/CPU/Ray/`/dev/shm`、能耗和 estimated MFU 数据。
+- 将项目候选臂固定为稳定角色 `fourjob_proposed`，具体实现由 `policy_revision` 标识。
+  后续状态感知/动态调度调整保持 manifest、六个 scenario、native config 和指标 schema
+  不变，只在新输出目录重跑 project static/proposed；资源/模型/语义合同变化才重跑 native。
+- 文本 native multi-job adapter 增加 DuckDB AI bounded-output 产品臂，新增四 single +
+  四连接并发 SQuAD 配置；固定 extension concurrency 32，不使用 ShareGPT cap 失败输入，
+  不注入项目 credit/router。
+- 远端环境只读 preflight 已执行：2×4090、core/image Python 和 PostgreSQL 环境可用；raw
+  COCO ZIP 缺失但数据库已有正式导入表，后续仍需 source digest gate。GPU 当前由文本
+  vLLM 占用，正式图像 gate 前必须释放并重建干净 Ray。本次未启动正式实验、未画图、
+  未改 PPT、未同步 Wiki。

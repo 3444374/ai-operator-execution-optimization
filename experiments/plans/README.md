@@ -75,6 +75,11 @@ phase-change、weighted/SLO、图像动态和 held-out cost。若先诊断当前
 2026-07-30 fail-closed 筛选只保留为历史设计记录，不再是执行指令。权威状态只看
 `experiment_status_and_gaps.md` 的开题冻结段与 §0。
 
+四作业文本补充现已完成。2026-08-09 新增的图像 Daft built-in/Ray Data/project 四作业
+与 DuckDB bounded-output 四作业目前只完成 immutable manifest、配置、runner、指标和
+流程准备，尚未跑 formal。图像 proposed 使用稳定 scenario ID 与独立 `policy_revision`；
+后续状态感知/动态调度代码变化保持 workload/native 合同不动，只重跑 project。
+
 ## 二、设计参考
 
 | 文件 | 用途 | 回答什么 |

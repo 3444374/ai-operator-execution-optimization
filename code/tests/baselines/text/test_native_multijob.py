@@ -21,6 +21,7 @@ from src.baselines.common.provenance import adapter_provenance
 from src.baselines.text.orchestration.native_multijob import (
     audit_command,
     balanced_arm_order,
+    build_shard_command,
     load_native_multijob_config,
     redact_command,
     run_native_multijob,
@@ -197,6 +198,36 @@ class NativeMultiJobTests(unittest.TestCase):
             path.write_text(json.dumps(payload), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "adapter must be one of"):
                 load_native_multijob_config(path)
+
+    def test_accepts_duckdb_native_jobs_and_freezes_extension_concurrency(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = self._config(root)
+            payload = json.loads(path.read_text())
+            arm = payload["arms"][0]
+            arm["adapter"] = "duckdb_ai"
+            arm["ray_address"] = None
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            parsed = load_native_multijob_config(path).arms[0]
+            command = build_shard_command(
+                runner_script="run_official_baseline.py",
+                arm=parsed,
+                job=parsed.jobs[0],
+                endpoint_index=0,
+                endpoint_url="http://127.0.0.1:8000/v1/chat/completions",
+                output_dir=root / "duckdb-shard",
+                model="qwen",
+                service_prefix_caching="enabled",
+                service_max_num_seqs=64,
+                service_max_num_batched_tokens=4096,
+                api_key=None,
+            )
+
+            self.assertEqual(
+                command[command.index("--duckdb-max-concurrent-requests") + 1],
+                str(parsed.concurrency_per_endpoint),
+            )
 
     def test_schedule_is_deterministic_and_rotates_formal_positions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "experiment_id": "opening_duckdb_fourjob_20260809",
+  "formal": true,
+  "output_root": "${DUCKDB_FOURJOB_OUTPUT_ROOT}",
+  "endpoint_urls": ["${COMPLETION_CHAT_ENDPOINT_URL_0}", "${COMPLETION_CHAT_ENDPOINT_URL_1}"],
+  "model": "${COMPLETION_MODEL}",
+  "api_key_env": null,
+  "service": {"prefix_caching": "enabled", "max_num_seqs": 256, "max_num_batched_tokens": 8192},
+  "idle_timeout_s": 600,
+  "launch_lead_s": 2,
+  "warmup_repeats": 1,
+  "formal_repeats": 3,
+  "schedule_seed": 20260809,
+  "endpoint_work_skew_max": 0.04,
+  "minimum_measurement_seconds": 1,
+  "arms": [
+    {
+      "id": "duckdb_single_short", "adapter": "duckdb_ai",
+      "python_executable": "${TEXT_BASELINES_PYTHON}", "concurrency_per_endpoint": 32,
+      "batch_size": 1, "timeout_s": 600, "process_timeout_s": 900, "ray_address": null,
+      "jobs": [{"id": "short", "manifest": "${DUCKDB_SHORT_JOB_MANIFEST}", "offset_s": 0}]
+    },
+    {
+      "id": "duckdb_single_long1", "adapter": "duckdb_ai",
+      "python_executable": "${TEXT_BASELINES_PYTHON}", "concurrency_per_endpoint": 32,
+      "batch_size": 1, "timeout_s": 600, "process_timeout_s": 900, "ray_address": null,
+      "jobs": [{"id": "long1", "manifest": "${DUCKDB_LONG_JOB_MANIFEST_1}", "offset_s": 0}]
+    },
+    {
+      "id": "duckdb_single_long2", "adapter": "duckdb_ai",
+      "python_executable": "${TEXT_BASELINES_PYTHON}", "concurrency_per_endpoint": 32,
+      "batch_size": 1, "timeout_s": 600, "process_timeout_s": 900, "ray_address": null,
+      "jobs": [{"id": "long2", "manifest": "${DUCKDB_LONG_JOB_MANIFEST_2}", "offset_s": 0}]
+    },
+    {
+      "id": "duckdb_single_long3", "adapter": "duckdb_ai",
+      "python_executable": "${TEXT_BASELINES_PYTHON}", "concurrency_per_endpoint": 32,
+      "batch_size": 1, "timeout_s": 600, "process_timeout_s": 900, "ray_address": null,
+      "jobs": [{"id": "long3", "manifest": "${DUCKDB_LONG_JOB_MANIFEST_3}", "offset_s": 0}]
+    },
+    {
+      "id": "duckdb_fourjob", "adapter": "duckdb_ai",
+      "python_executable": "${TEXT_BASELINES_PYTHON}", "concurrency_per_endpoint": 32,
+      "batch_size": 1, "timeout_s": 600, "process_timeout_s": 1200, "ray_address": null,
+      "jobs": [
+        {"id": "short", "manifest": "${DUCKDB_SHORT_JOB_MANIFEST}", "offset_s": 0},
+        {"id": "long1", "manifest": "${DUCKDB_LONG_JOB_MANIFEST_1}", "offset_s": "${DUCKDB_FOURJOB_OFFSET_S}"},
+        {"id": "long2", "manifest": "${DUCKDB_LONG_JOB_MANIFEST_2}", "offset_s": "${DUCKDB_FOURJOB_OFFSET_S}"},
+        {"id": "long3", "manifest": "${DUCKDB_LONG_JOB_MANIFEST_3}", "offset_s": "${DUCKDB_FOURJOB_OFFSET_S}"}
+      ]
+    }
+  ]
+}

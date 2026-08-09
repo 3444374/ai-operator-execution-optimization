@@ -97,3 +97,53 @@ class DaftImageSource:
             for shard in split_image_source_config(config, shards)
         ]
         return frames[0] if len(frames) == 1 else daft.concat(frames)
+
+
+def read_image_source_metadata(
+    database_url: str,
+    config: ImageSourceConfig,
+) -> tuple[frozenset[str], dict[str, object]]:
+    """Read only row identities and aggregate bytes for a frozen source slice."""
+
+    if not database_url:
+        raise ValueError("database_url must be non-empty")
+    import psycopg
+
+    with psycopg.connect(database_url) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT doc_id FROM image_documents "
+                "WHERE workload_name = %s ORDER BY doc_id LIMIT %s OFFSET %s",
+                (config.workload_name, config.limit, config.offset),
+            )
+            physical_doc_ids = frozenset(str(row[0]) for row in cursor.fetchall())
+            cursor.execute("SHOW server_version")
+            server_version = str(cursor.fetchone()[0])
+            cursor.execute("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
+            extension = cursor.fetchone()
+            cursor.execute(
+                "SELECT COALESCE(SUM(image_bytes), 0), COALESCE(AVG(image_bytes), 0) "
+                "FROM (SELECT image_bytes FROM image_documents "
+                "WHERE workload_name = %s ORDER BY doc_id LIMIT %s OFFSET %s) selected_rows",
+                (config.workload_name, config.limit, config.offset),
+            )
+            encoded_bytes, average_bytes = cursor.fetchone()
+    if len(physical_doc_ids) != config.limit:
+        raise ValueError(
+            f"expected {config.limit} source rows, found {len(physical_doc_ids)}"
+        )
+    doc_ids = (
+        physical_doc_ids
+        if config.dataset_passes == 1
+        else frozenset(
+            f"{doc_id}#pass={pass_index}"
+            for pass_index in range(1, config.dataset_passes + 1)
+            for doc_id in physical_doc_ids
+        )
+    )
+    return doc_ids, {
+        "server_version": server_version,
+        "pgvector_version": str(extension[0]) if extension else "not_installed",
+        "input_encoded_bytes": int(encoded_bytes) * config.dataset_passes,
+        "avg_encoded_bytes": float(average_bytes),
+    }

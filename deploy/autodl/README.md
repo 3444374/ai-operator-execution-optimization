@@ -1249,6 +1249,10 @@ bounded HTTP 的两个独立 client 进程共享同 endpoint 时，在 C128 与�
 多 job 正式模板。每个 native arm 必须显式冻结 `process_timeout_s`；它是 shard
 进程 wall 上限，与单 request `timeout_s` 分离，CLOSE_WAIT 等生命周期挂起会终止全部
 同 job shard、保留 job summary 并使 matrix fail closed。
+DuckDB bounded-output 四作业准备使用 `opening_duckdb_fourjob.example.json`：四个
+single-full 与一个 short→3×long 独立连接观察共享同一组互斥 SQuAD manifests，固定
+extension concurrency 32，不注入 project credit/router。该模板当前只完成配置和门禁，
+未启动 formal。
 `vLLM Bench` 只作 ceiling，`bounded_*` 只作项目自写 control；Daft built-in prompt、
 Ray Data Processor 和通过部署门禁的 OceanBase 才进入默认 ShareGPT native ranking。
 DuckDB `ai` community extension 必须先用
@@ -1727,3 +1731,27 @@ per-endpoint K、active work 和 **Completions** actor shape；Chat actor 曲线
 `EndpointSnapshot.available` 与 typed capacity backpressure 的新提交，在全新
 目录先重跑 64 行 gate。门禁必须核对 exactly-once、固定 endpoint 分布、0
 worker failure、服务端 counter 和最终空队列；通过后才允许重新启动 512 校准。
+
+## 图像四作业准备与未来 project-only 重测
+
+图像多作业使用三个入口：
+
+- `code/scripts/data/build_image_multijob_manifest.py` 生成唯一 immutable manifest；
+- `opening_image_native_fourjob.example.json` +
+  `code/scripts/experiments/run_image_native_multijob.py` 运行 Daft built-in/Ray Data
+  原生观察；
+- `opening_image_project_fourjob.example.json` +
+  `code/scripts/experiments/run_image_project_multijob.py` 运行 project static/proposed。
+
+两个配置必须引用同一 manifest SHA，保持 2×4090、同 model/processor、batch 64、
+4 source shards、L2 normalized 输出和相同 timing/metrics schema。当前 offset 为 0.5 s，
+因为图像 short 比文本快；汇总器要求每次 formal 的 short 与三个 late long 实际 overlap
+均大于零。正式前仍先执行 runtime preflight、释放文本 vLLM 占用、删除 stale
+`/tmp/ray/ray_current_cluster`、检查 PostgreSQL `image_documents` 行数/主键，再启动共享
+32-CPU/2-GPU Ray cluster。64-row gate 只验证 correctness；另用一次不入结论的 full-size
+rehearsal 验证 overlap，不能在正式结果后扫描 offset。
+
+以后修改状态感知或动态调度时，不改 manifest 和六个 project scenario；只设置新的
+`IMAGE_PROJECT_POLICY_REVISION` 与全新 `IMAGE_PROJECT_FOURJOB_OUTPUT_ROOT`，然后重跑
+project static/proposed。只有 manifest、模型、硬件/资源、输出语义或计时/指标合同变化时，
+才需要重跑 Daft built-in/Ray Data。正式实验当前未启动。

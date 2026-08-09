@@ -15,6 +15,7 @@ from src.modalities.image.resource_sampling import (  # noqa: E402
     GpuResourceSample,
     summarize_cpu_samples,
     summarize_gpu_samples,
+    summarize_ray_resource_samples,
 )
 
 
@@ -47,6 +48,31 @@ class ImageResourceSamplingTest(unittest.TestCase):
         self.assertEqual(summary["cpu_system_mean_pct"], 50.0)
         self.assertEqual(summary["cpu_busy_cores_mean"], 2.0)
         self.assertEqual(summary["cpu_logical_count"], 4)
+
+    def test_ray_summary_preserves_capacity_minimum_and_shm_peak(self):
+        summary = summarize_ray_resource_samples(
+            [
+                {
+                    "timestamp_s": 1.0,
+                    "ray_available_cpu": 12.0,
+                    "ray_available_gpu": 1.0,
+                    "shm_used_bytes": 100.0,
+                    "shm_total_bytes": 1000.0,
+                },
+                {
+                    "timestamp_s": 2.0,
+                    "ray_available_cpu": 4.0,
+                    "ray_available_gpu": 0.0,
+                    "shm_used_bytes": 300.0,
+                    "shm_total_bytes": 1000.0,
+                },
+            ]
+        )
+
+        self.assertEqual(summary["ray_available_cpu_min"], 4.0)
+        self.assertEqual(summary["ray_available_gpu_min"], 0.0)
+        self.assertEqual(summary["shm_used_bytes_mean"], 200.0)
+        self.assertEqual(summary["shm_used_bytes_peak"], 300.0)
 
 
 if __name__ == "__main__":

@@ -43,7 +43,7 @@ from src.infrastructure.runner_lease import acquire_host_runner_lease
 
 
 NATIVE_MULTI_JOB_ADAPTERS = frozenset(
-    {"daft_native", "daft_ray", "ray_data_http"}
+    {"daft_native", "daft_ray", "ray_data_http", "duckdb_ai"}
 )
 _RAY_ADAPTERS = frozenset({"daft_ray", "ray_data_http"})
 _BANNED_COMMAND_TOKENS = frozenset(
@@ -356,6 +356,17 @@ def build_shard_command(
     ]
     if arm.ray_address is not None:
         command.extend(["--ray-address", arm.ray_address])
+    if arm.adapter == "duckdb_ai":
+        # Reuse the frozen product-owned concurrency selected by the bounded-output
+        # single-query contract.  This is not a harness semaphore: each independent
+        # DuckDB connection still lets the community extension schedule its own
+        # requests.
+        command.extend(
+            [
+                "--duckdb-max-concurrent-requests",
+                str(arm.concurrency_per_endpoint),
+            ]
+        )
     if api_key is not None:
         command.extend(["--api-key", api_key])
     audit_command(command)
@@ -424,7 +435,7 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
     }
     if mismatches:
         raise ValueError(f"shard provenance mismatch for {arm.arm_id}: {mismatches}")
-    if arm.adapter in _RAY_ADAPTERS | {"daft_native"} and (
+    if arm.adapter in _RAY_ADAPTERS | {"daft_native", "duckdb_ai"} and (
         summary["custom_scheduling_code"] is not False
         or summary["formal_baseline_eligible"] is not True
     ):

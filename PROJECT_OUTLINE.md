@@ -119,6 +119,9 @@ PostgreSQL source
   加权/SLO、公平 guard、Long→Short 与故障迁移；
 - 代价模型跨时间段、新 workload 和硬件的稳定性；
 - 图像Daft built-in、Ray Data native与project frozen-static的operator-E2E/provenance证据已完成；仍待状态感知增量、跨workload外推与小规模sink质量闭环，sink不是性能排名blocker。
+- 图像 short→3×long 多作业与 DuckDB bounded-output 四作业目前只完成 immutable
+  manifest/config/runner/指标准备，尚未启动正式实验；图像 proposed 角色已与具体算法名
+  解耦，后续状态感知/动态调度调整只需版本化并重跑 project static/proposed。
 
 ### 5.4 不能声称
 
@@ -167,7 +170,10 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同与共同 cost enabler 已完成；六张现有图已做视觉回读，但 A/C 标签修订、F/H 首次生成仍待用户恢复绘图。这里的“合同完成”只表示类型/纯策略基础可执行：production descriptor builder、fresh stage snapshot 正式接线和 CE5 在线驱动仍待验证。
 2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
 3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前只更新实验报告、紧凑数据和待画图合同，不生成新图，也不生成、覆盖或同步新的 PPT/云文档。
-4. 文本原生单 job 与 5s 原生/项目两 job 矩阵均已完成；当前只整理报告、紧凑数据和待画图合同。开题后再扩展 state-aware phase-change、weighted/异构多 job、图像 dynamic、完整 burst/mixed-cost、联合消融和跨硬件主实验。
+4. 文本原生单 job、5s 两 job 与四 job 矩阵均已完成。图像 Daft built-in/Ray Data/project
+   四作业和 DuckDB bounded-output 四作业只完成冻结准备，不跑 formal；图像使用 0.5s
+   offset 并要求实际 overlap。后续先完成 capability/rehearsal，再跑 native 一次；项目
+   感知/动态实现调整后只重跑同 manifest 的 project static/proposed。
 5. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
 
 ## 9. 结果解释与写作规则
