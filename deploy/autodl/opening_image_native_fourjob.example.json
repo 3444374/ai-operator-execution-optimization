@@ -37,10 +37,10 @@
     {"id": "daft_builtin_single_long2", "adapter": "daft_builtin_embed", "args": ["--cpu-workers", "4"], "jobs": ["long2"]},
     {"id": "daft_builtin_single_long3", "adapter": "daft_builtin_embed", "args": ["--cpu-workers", "4"], "jobs": ["long3"]},
     {"id": "daft_builtin_fourjob", "adapter": "daft_builtin_embed", "args": ["--cpu-workers", "4"], "jobs": ["short", "long1", "long2", "long3"]},
-    {"id": "ray_data_single_short", "adapter": "ray_data_staged", "args": ["--cpu-workers", "16"], "jobs": ["short"]},
-    {"id": "ray_data_single_long1", "adapter": "ray_data_staged", "args": ["--cpu-workers", "16"], "jobs": ["long1"]},
-    {"id": "ray_data_single_long2", "adapter": "ray_data_staged", "args": ["--cpu-workers", "16"], "jobs": ["long2"]},
-    {"id": "ray_data_single_long3", "adapter": "ray_data_staged", "args": ["--cpu-workers", "16"], "jobs": ["long3"]},
-    {"id": "ray_data_fourjob", "adapter": "ray_data_staged", "args": ["--cpu-workers", "16"], "jobs": ["short", "long1", "long2", "long3"]}
+    {"id": "ray_data_single_short", "adapter": "ray_data_staged", "args": ["--cpu-workers", "16", "--ray-data-autoscaling-actor-pools"], "jobs": ["short"]},
+    {"id": "ray_data_single_long1", "adapter": "ray_data_staged", "args": ["--cpu-workers", "16", "--ray-data-autoscaling-actor-pools"], "jobs": ["long1"]},
+    {"id": "ray_data_single_long2", "adapter": "ray_data_staged", "args": ["--cpu-workers", "16", "--ray-data-autoscaling-actor-pools"], "jobs": ["long2"]},
+    {"id": "ray_data_single_long3", "adapter": "ray_data_staged", "args": ["--cpu-workers", "16", "--ray-data-autoscaling-actor-pools"], "jobs": ["long3"]},
+    {"id": "ray_data_fourjob", "adapter": "ray_data_staged", "args": ["--cpu-workers", "16", "--ray-data-autoscaling-actor-pools"], "jobs": ["short", "long1", "long2", "long3"]}
   ]
 }

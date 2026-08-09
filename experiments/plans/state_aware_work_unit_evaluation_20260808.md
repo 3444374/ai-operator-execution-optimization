@@ -259,6 +259,14 @@ static 四作业每 Job 固定 8 active batches且不借用；proposed 使用同
 Daft/Ray Data 的公开资源参数保持既有正式单作业合同，不为多作业结果重新调参，也不把
 它们命名为 static partition。
 
+64-row 首次试跑发现：若四个 Ray Data 独立 graph 都使用固定 16-CPU/2-GPU actor pool，
+32 CPU 会先被 64 个 preprocess actor 占满，8 个需要 CPU+GPU 的 predictor actor 全部
+pending，GPU 保持 0%，构成跨应用资源碎片化死锁。该失败 gate 原样保留，不删证据。
+可完成性修正只启用 Ray Data 官方 `ActorPoolStrategy(min_size=1,max_size=冻结单作业上限)`；
+四个 graph 仍由 Ray Data/Ray scheduler 原生调度，不加入项目 quota、credit、router 或
+跨 Job 管理。single/four-job 全部 Ray Data arms 使用同一 autoscaling contract，避免
+只为并发 cell 特制配置；固定 pool 失败只作诊断，不进入完成作业的 slowdown 表。
+
 每个 Job 必须保存：arrival、actual start、first source batch、source done、first submit、
 first output、completion/JCT、images/s、single→four-job slowdown、source/queue/completion
 时间分解、prepare/H2D/forward P95 与总量、encoded/tensor/device/output bytes、exactly-once

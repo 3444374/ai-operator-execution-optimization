@@ -5393,3 +5393,8 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   配置原本即通过。为避免把 64-row smoke 伪装成 formal，又增加独立 `gate` 子命令：native
   只跑 Daft built-in/Ray Data 四作业各一次，project 只跑 static/proposed 各一次；正式
   `run` 合同保持不变。source digest 也接入 child runner fail-closed 校验。
+- 64-row 真实 gate 中 Daft built-in 四作业通过；Ray Data 固定 pool 四应用把 32 CPU
+  全部占为 preprocess actors，8 个 CPU+GPU predictor actors pending、双 GPU 0%，确认
+  是资源碎片化死锁而非慢。杀死四个 child 后 runner 将目录结构化标为 failed，证据保留。
+  修正采用 Ray Data 官方 autoscaling ActorPool（min=1、max=原冻结16/2）；single 与
+  four-job 全臂同配置，不加入项目调度，后续重新运行新 gate 目录。

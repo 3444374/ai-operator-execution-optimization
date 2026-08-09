@@ -110,7 +110,7 @@ class ImageMultiJobContractTests(unittest.TestCase):
                             {
                                 "id": f"ray_data_single_{job_id}",
                                 "adapter": "ray_data_staged",
-                                "args": ["--cpu-workers", "16"],
+                                "args": ["--cpu-workers", "16", "--ray-data-autoscaling-actor-pools"],
                                 "jobs": [job_id],
                             }
                             for job_id in ("short", "long1", "long2", "long3")
@@ -118,7 +118,7 @@ class ImageMultiJobContractTests(unittest.TestCase):
                         {
                             "id": "ray_data_fourjob",
                             "adapter": "ray_data_staged",
-                            "args": ["--cpu-workers", "16"],
+                            "args": ["--cpu-workers", "16", "--ray-data-autoscaling-actor-pools"],
                             "jobs": ["short", "long1", "long2", "long3"],
                         },
                     ],

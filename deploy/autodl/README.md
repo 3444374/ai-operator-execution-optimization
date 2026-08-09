@@ -1753,6 +1753,10 @@ rehearsal 验证 overlap，不能在正式结果后扫描 offset。
 gate 使用单独的 64-row manifest 和输出目录，分别执行两个 CLI 的 `gate` 子命令；正式
 manifest/配置不改，`run` 子命令才允许写 1+3 formal 目录。runner 会逐 Job 核对
 PostgreSQL doc-id/encoded-byte digest，防止数据库内容漂移后 exactly-once 仍假通过。
+Ray Data 四个固定 16-CPU pool 会先占满 32 CPU 并使 GPU predictor 永久 pending；该失败
+gate 必须保留。当前模板统一使用 Ray Data 原生 autoscaling ActorPool（min=1，max 保持
+既有单作业 16 CPU/2 GPU 上限），single/four-job 同合同；这不是 project quota 或手工
+负载均衡，scheduler owner 仍是 Ray Data/Ray。
 
 以后修改状态感知或动态调度时，不改 manifest 和六个 project scenario；只设置新的
 `IMAGE_PROJECT_POLICY_REVISION` 与全新 `IMAGE_PROJECT_FOURJOB_OUTPUT_ROOT`，然后重跑

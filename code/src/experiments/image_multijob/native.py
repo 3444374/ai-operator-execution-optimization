@@ -219,6 +219,9 @@ def load_native_image_multijob_config(path: str | Path) -> NativeImageMultiJobCo
         )
         if arm.adapter != expected_adapter or {job.job_id for job in arm.jobs} != expected_jobs:
             raise ValueError(f"native image arm identity changed: {arm.arm_id}")
+        uses_autoscaling = "--ray-data-autoscaling-actor-pools" in arm.args
+        if uses_autoscaling != (arm.adapter == "ray_data_staged"):
+            raise ValueError(f"native image Ray Data autoscaling contract changed: {arm.arm_id}")
     output_root = Path(_text(payload["output_root"], "output_root"))
     if output_root.exists():
         raise FileExistsError(f"output_root already exists: {output_root}")

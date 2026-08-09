@@ -114,6 +114,7 @@ CSV_FIELDS = (
     "declared_total_cpus",
     "resource_budget_semantics",
     "ray_address_mode",
+    "ray_data_actor_pool_mode",
     "formal_start_epoch_s_planned",
     "formal_start_epoch_s_actual",
     "formal_start_lateness_s",
@@ -379,6 +380,14 @@ def parse_args():
     )
     parser.add_argument("--formal-start-offset-s", type=float, default=0.0)
     parser.add_argument("--formal-barrier-timeout-s", type=float, default=900.0)
+    parser.add_argument(
+        "--ray-data-autoscaling-actor-pools",
+        action="store_true",
+        help=(
+            "Use Ray Data's native min=1/max=configured ActorPoolStrategy. "
+            "This prevents independent multi-job graphs from gang-reserving all CPU slots."
+        ),
+    )
     parser.add_argument("--expected-source-doc-ids-sha256", default="")
     parser.add_argument("--expected-input-encoded-bytes", type=int, default=0)
     parser.add_argument(
@@ -717,6 +726,7 @@ def main() -> None:
                 batch_size=args.batch_size,
                 cpu_workers=args.cpu_workers,
                 gpu_workers=args.gpu_workers,
+                autoscaling_actor_pools=args.ray_data_autoscaling_actor_pools,
                 torch_intraop_threads=args.torch_intraop_threads,
                 torch_interop_threads=args.torch_interop_threads,
             )
@@ -979,6 +989,11 @@ def main() -> None:
         "declared_total_cpus": cpu_budget.declared_total_slots,
         "resource_budget_semantics": cpu_budget.semantics,
         "ray_address_mode": "external_shared" if args.ray_address else "isolated_local",
+        "ray_data_actor_pool_mode": (
+            "native_autoscaling_min1_to_configured_max"
+            if args.arm == "ray_data_staged" and args.ray_data_autoscaling_actor_pools
+            else ("fixed_size" if args.arm == "ray_data_staged" else "not_applicable")
+        ),
         "formal_start_epoch_s_planned": (
             formal_start_epoch_s_planned if args.formal_ready_file else ""
         ),

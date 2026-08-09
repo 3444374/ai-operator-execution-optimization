@@ -123,6 +123,7 @@ class ImageRunnerSchemaTest(unittest.TestCase):
             "formal_start_epoch_s_planned",
             "formal_start_epoch_s_actual",
             "formal_start_lateness_s",
+            "ray_data_actor_pool_mode",
             "source_doc_ids_sha256",
             "source_manifest_match",
         }
@@ -228,6 +229,14 @@ class RayDataBaselineValidationTest(unittest.TestCase):
             "@ray.remote",
         ):
             self.assertNotIn(forbidden, source)
+
+    def test_native_ray_data_graph_can_use_framework_autoscaling_actor_pools(self):
+        import inspect
+
+        source = inspect.getsource(build_ray_data_clip_pipeline)
+
+        self.assertIn("ActorPoolStrategy(min_size=1, max_size=cpu_workers)", source)
+        self.assertIn("ActorPoolStrategy(min_size=1, max_size=gpu_workers)", source)
 
 
 if __name__ == "__main__":

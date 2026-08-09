@@ -92,6 +92,7 @@ def build_ray_data_clip_pipeline(
     batch_size: int,
     cpu_workers: int,
     gpu_workers: int,
+    autoscaling_actor_pools: bool = False,
     torch_intraop_threads: int = 1,
     torch_interop_threads: int = 1,
 ):
@@ -133,7 +134,11 @@ def build_ray_data_clip_pipeline(
     dataset = source_datasets[0]
     for shard_dataset in source_datasets[1:]:
         dataset = dataset.union(shard_dataset)
-    cpu_pool = ray.data.ActorPoolStrategy(size=cpu_workers)
+    cpu_pool = (
+        ray.data.ActorPoolStrategy(min_size=1, max_size=cpu_workers)
+        if autoscaling_actor_pools
+        else ray.data.ActorPoolStrategy(size=cpu_workers)
+    )
     dataset = dataset.map_batches(
         RayDataClipPreprocessor,
         fn_constructor_kwargs={
@@ -147,7 +152,11 @@ def build_ray_data_clip_pipeline(
         num_cpus=1,
         zero_copy_batch=True,
     )
-    gpu_pool = ray.data.ActorPoolStrategy(size=gpu_workers)
+    gpu_pool = (
+        ray.data.ActorPoolStrategy(min_size=1, max_size=gpu_workers)
+        if autoscaling_actor_pools
+        else ray.data.ActorPoolStrategy(size=gpu_workers)
+    )
     return dataset.map_batches(
         RayDataClipPredictor,
         fn_constructor_kwargs={
