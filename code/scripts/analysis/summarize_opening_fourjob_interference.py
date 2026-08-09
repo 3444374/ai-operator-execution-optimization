@@ -322,6 +322,38 @@ def _mean_resource_samples(rows: Sequence[Mapping[str, str]]) -> dict[str, objec
     }
 
 
+def _mean_credit_totals(rows: Sequence[Mapping[str, str]]) -> dict[str, object]:
+    """Sum endpoint credits at each observation, then average over time."""
+
+    by_epoch: defaultdict[str, list[Mapping[str, str]]] = defaultdict(list)
+    for row in rows:
+        by_epoch[row["observed_epoch_s"]].append(row)
+    if not by_epoch:
+        return {
+            "credit_samples": 0,
+            "active_requests_total_mean": "",
+            "active_work_total_mean": "",
+            "waiting_requests_total_mean": "",
+            "waiting_work_total_mean": "",
+        }
+    totals = [
+        {
+            "active_requests": sum(_float(item["active_requests"], "active requests") for item in samples),
+            "active_work": sum(_float(item["active_work"], "active work") for item in samples),
+            "waiting_requests": sum(_float(item["waiting_requests"], "waiting requests") for item in samples),
+            "waiting_work": sum(_float(item["waiting_work"], "waiting work") for item in samples),
+        }
+        for samples in by_epoch.values()
+    ]
+    return {
+        "credit_samples": len(totals),
+        "active_requests_total_mean": _mean(item["active_requests"] for item in totals),
+        "active_work_total_mean": _mean(item["active_work"] for item in totals),
+        "waiting_requests_total_mean": _mean(item["waiting_requests"] for item in totals),
+        "waiting_work_total_mean": _mean(item["waiting_work"] for item in totals),
+    }
+
+
 def _project_phase_rows(root: Path, job_rows: Sequence[Mapping[str, object]]) -> list[dict[str, object]]:
     grouped: defaultdict[tuple[str, int, str], list[Mapping[str, object]]] = defaultdict(list)
     for row in job_rows:
@@ -391,14 +423,7 @@ def _project_phase_rows(root: Path, job_rows: Sequence[Mapping[str, object]]) ->
                 if start <= _float(credit["observed_epoch_s"], "credit epoch") < end
             ]
             row["credit_trace_status"] = "observed" if phase_credits else "not_applicable:static"
-            row["active_work_total_mean"] = (
-                _mean(_float(credit["active_work"], "active work") for credit in phase_credits)
-                if phase_credits else ""
-            )
-            row["waiting_work_total_mean"] = (
-                _mean(_float(credit["waiting_work"], "waiting work") for credit in phase_credits)
-                if phase_credits else ""
-            )
+            row.update(_mean_credit_totals(phase_credits))
             output.append(row)
     return output
 
@@ -560,6 +585,7 @@ def summarize(project_root: Path, native_root: Path, output: Path) -> dict[str, 
                 "energy_j_estimate", "total_completed_work_per_s", "short_completed_work_per_s",
                 "long1_completed_work_per_s", "long2_completed_work_per_s",
                 "long3_completed_work_per_s", "active_work_total_mean", "waiting_work_total_mean",
+                "active_requests_total_mean", "waiting_requests_total_mean",
             ),
         ),
     )

@@ -5321,3 +5321,6 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 64-row 冷启动/原生门禁已覆盖全部 15 个 single/four-job arm，29 个单元完成且
   exactly-once，随后停止无意义重复；未完成根和日志保留服务器。正式 512-row 模板只将
   Ray Data 外层 shard 等待上限从 900 s 延长到 2400 s，不改变其内部执行策略。
+- 修正四 Job 汇总器的 shared-credit 阶段统计：同一采样时刻先对两个 endpoint 的
+  active/waiting request 与 work 求和，再对时间求均值；旧实现直接平均 endpoint 行会把
+  名为 `*_total_mean` 的量缩小一半。正式结果尚未生成，因此没有已发布数值受影响。

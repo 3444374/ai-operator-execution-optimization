@@ -37,6 +37,8 @@ manifest 全流程身份一致、每场景恰 3 次 formal、每 Job 512 条 exa
 single-full slowdown、三个 long 的离散度与完成顺序、组级公平性/资源，以及 Project
 short-only/four-job-overlap/long-only-drain 三段状态。native request tail 因 barrier
 timestamp 保持不可用；短 cell 只作 slowdown 基线，不作容量排名。
+shared-credit 的阶段量先在同一采样时刻跨 endpoint 求和，再沿时间求均值，避免把
+per-endpoint 平均误标为全局 active/waiting request/work 总量。
 
 `analysis/summarize_project_short_all_at_t0.py` 审计同一 512-row short manifest 的
 Project all-at-t0 1+3 raw，并冻结 T0 full-pipeline、T1 offered-work JCT、T2 framework
