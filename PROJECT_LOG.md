@@ -5388,3 +5388,8 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   COCO ZIP 缺失但数据库已有正式导入表，后续仍需 source digest gate。GPU 当前由文本
   vLLM 占用，正式图像 gate 前必须释放并重建干净 Ray。本次未启动正式实验、未画图、
   未改 PPT、未同步 Wiki。
+- 用户随后要求先试跑确认流程。首次远端 `validate-config` 暴露环境展开后的 FLOPs 数值
+  不能进入 argv 的类型错误；已改为只接受 string/number 标量并显式字符串化，project
+  配置原本即通过。为避免把 64-row smoke 伪装成 formal，又增加独立 `gate` 子命令：native
+  只跑 Daft built-in/Ray Data 四作业各一次，project 只跑 static/proposed 各一次；正式
+  `run` 合同保持不变。source digest 也接入 child runner fail-closed 校验。

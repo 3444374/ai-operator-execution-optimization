@@ -19,14 +19,14 @@ from src.experiments.image_multijob.project import (  # noqa: E402
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("validate-config", "run"))
+    parser.add_argument("command", choices=("validate-config", "gate", "run"))
     parser.add_argument("--config", required=True)
     args = parser.parse_args()
     config = load_project_image_multijob_config(args.config)
     if args.command == "validate-config":
         print(f"validated {len(config.scenarios)} project image scenarios")
         return 0
-    return run_project_image_multijob(config)
+    return run_project_image_multijob(config, gate_only=args.command == "gate")
 
 
 if __name__ == "__main__":

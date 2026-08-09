@@ -123,6 +123,8 @@ class ImageRunnerSchemaTest(unittest.TestCase):
             "formal_start_epoch_s_planned",
             "formal_start_epoch_s_actual",
             "formal_start_lateness_s",
+            "source_doc_ids_sha256",
+            "source_manifest_match",
         }
 
         self.assertTrue(expected.issubset(set(RUNNER_MODULE.CSV_FIELDS)))

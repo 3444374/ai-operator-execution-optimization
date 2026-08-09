@@ -113,10 +113,12 @@ code/scripts/experiments/run_ai_operator_scenarios.py
   arrival offset；native/project 配置只引用该文件，不各自选数据；
 - `experiments/run_image_native_multijob.py`：在同一外部 Ray 资源池上编排 Daft built-in
   和 Ray Data 的四个 single-full 与四个独立应用并发；只对齐 ready/start barrier，禁止
-  project credit、active-work 和 router；
+  project credit、active-work 和 router；`gate` 只跑两个四作业原生 arm 各一次，
+  `run` 才执行 1+3 正式矩阵；
 - `experiments/run_image_project_multijob.py`：在同一 immutable manifest 上运行四个
   single-full、frozen static partition 和稳定角色 `proposed`；算法变化只需更新
-  `policy_revision` 并重跑 project，不改原生配置；
+  `policy_revision` 并重跑 project，不改原生配置；`gate` 只跑 static/proposed 四作业
+  各一次，`run` 才执行 1+3；
 - `analysis/summarize_image_multijob.py`：fail-closed 检查 1+3 重复、manifest SHA、
   exactly-once 和 short/long 实际 overlap，输出逐 Job slowdown/阶段分解与组级资源；只做
   系统内 single→four-job 和 project static→proposed 对比，不作跨框架绝对排名；

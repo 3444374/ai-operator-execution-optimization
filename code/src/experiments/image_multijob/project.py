@@ -374,7 +374,7 @@ def run_project_scenario(
     audits = {}
     for job in run_jobs:
         manifest_entry = next(item for item in config.job_manifest.jobs if item.job_id == job.job_id)
-        if phase == "formal":
+        if phase != "warmup":
             ids, job_metadata = validate_image_job_source(config.database_url, manifest_entry)
         else:
             ids, job_metadata = read_image_source_metadata(
@@ -653,7 +653,9 @@ def _repository_commit() -> str:
     ).stdout.strip()
 
 
-def run_project_image_multijob(config: ProjectImageMultiJobConfig) -> int:
+def run_project_image_multijob(
+    config: ProjectImageMultiJobConfig, *, gate_only: bool = False
+) -> int:
     """Run the complete project single/static/shared matrix on an external Ray cluster."""
 
     import daft
@@ -669,6 +671,7 @@ def run_project_image_multijob(config: ProjectImageMultiJobConfig) -> int:
         "job_manifest": str(config.job_manifest.path),
         "job_manifest_sha256": config.job_manifest.sha256,
         "policy_revision": config.policy_revision,
+        "execution_mode": "gate" if gate_only else "formal_matrix",
         "status": "running",
         "runs": [],
     }
@@ -676,9 +679,23 @@ def run_project_image_multijob(config: ProjectImageMultiJobConfig) -> int:
     try:
         with acquire_host_runner_lease(config.output_root.parent, repository_commit=index["repository_commit"]):
             try:
-                for phase, count in (("warmup", config.warmup_repeats), ("formal", config.formal_repeats)):
+                phases = (
+                    (("gate", 1),)
+                    if gate_only
+                    else (("warmup", config.warmup_repeats), ("formal", config.formal_repeats))
+                )
+                for phase, count in phases:
                     for repeat in range(1, count + 1):
-                        for scenario in _scenario_order(config, phase, repeat):
+                        scheduled = (
+                            tuple(
+                                scenario
+                                for scenario in config.scenarios
+                                if scenario.scenario_id.startswith("fourjob_")
+                            )
+                            if gate_only
+                            else _scenario_order(config, phase, repeat)
+                        )
+                        for scenario in scheduled:
                             group, jobs, traces = run_project_scenario(
                                 config,
                                 scenario,

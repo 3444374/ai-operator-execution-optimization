@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 import subprocess
@@ -89,6 +90,10 @@ CSV_FIELDS = (
     "phase",
     "repeat_index",
     "workload_name",
+    "source_doc_ids_sha256",
+    "expected_source_doc_ids_sha256",
+    "source_manifest_match",
+    "expected_input_encoded_bytes",
     "rows",
     "unique_images",
     "dataset_passes",
@@ -374,6 +379,8 @@ def parse_args():
     )
     parser.add_argument("--formal-start-offset-s", type=float, default=0.0)
     parser.add_argument("--formal-barrier-timeout-s", type=float, default=900.0)
+    parser.add_argument("--expected-source-doc-ids-sha256", default="")
+    parser.add_argument("--expected-input-encoded-bytes", type=int, default=0)
     parser.add_argument(
         "--detailed-stage-timing",
         action="store_true",
@@ -562,6 +569,18 @@ def main() -> None:
         offset=args.offset,
         dataset_passes=args.dataset_passes,
     )
+    source_doc_ids_sha256 = hashlib.sha256(
+        ("\n".join(sorted(formal_ids)) + "\n").encode("utf-8")
+    ).hexdigest()
+    source_manifest_match = True
+    if args.expected_source_doc_ids_sha256:
+        source_manifest_match = (
+            source_doc_ids_sha256 == args.expected_source_doc_ids_sha256
+            and int(database_metadata["input_encoded_bytes"])
+            == args.expected_input_encoded_bytes
+        )
+        if not source_manifest_match:
+            raise ValueError("PostgreSQL image source no longer matches the immutable manifest")
     warmup_count = min(args.warmup_rows, args.limit)
     warmup_ids, _ = read_database_metadata(
         args.pg_dsn,
@@ -934,6 +953,10 @@ def main() -> None:
         "phase": args.phase,
         "repeat_index": args.repeat_index,
         "workload_name": args.workload_name,
+        "source_doc_ids_sha256": source_doc_ids_sha256,
+        "expected_source_doc_ids_sha256": args.expected_source_doc_ids_sha256,
+        "source_manifest_match": source_manifest_match,
+        "expected_input_encoded_bytes": args.expected_input_encoded_bytes or "",
         "rows": total_rows,
         "unique_images": args.limit,
         "dataset_passes": args.dataset_passes,

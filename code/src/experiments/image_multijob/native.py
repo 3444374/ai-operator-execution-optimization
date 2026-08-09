@@ -47,6 +47,8 @@ _OWNED_FLAGS = frozenset(
         "--formal-ready-file",
         "--formal-start-barrier-file",
         "--formal-start-offset-s",
+        "--expected-source-doc-ids-sha256",
+        "--expected-input-encoded-bytes",
         "--out-csv",
         "--out-manifest",
     }
@@ -60,6 +62,8 @@ class ImageJob:
     limit: int
     offset: int
     start_offset_s: float
+    doc_ids_sha256: str
+    input_encoded_bytes: int
 
 
 @dataclass(frozen=True)
@@ -160,6 +164,8 @@ def _arm(raw: object, manifest: ImageJobManifest) -> NativeImageArm:
             item.limit,
             item.offset,
             item.multi_job_start_offset_s,
+            item.doc_ids_sha256,
+            item.input_encoded_bytes,
         )
         for item in selected
     )
@@ -302,6 +308,8 @@ def build_job_command(
         "--formal-ready-file", str(root / job.job_id / "ready.json"),
         "--formal-start-barrier-file", str(root / "start_barrier.json"),
         "--formal-start-offset-s", str(job.start_offset_s),
+        "--expected-source-doc-ids-sha256", job.doc_ids_sha256,
+        "--expected-input-encoded-bytes", str(job.input_encoded_bytes),
         "--formal-barrier-timeout-s", str(config.ready_timeout_s),
         "--phase", phase,
         "--repeat-index", str(repeat),
@@ -361,6 +369,12 @@ def _read_row(path: Path, arm: NativeImageArm, job: ImageJob, minimum_s: float) 
         raise ValueError(f"native image provenance mismatch: {mismatches}")
     if row.get("ray_address_mode") != "external_shared":
         raise ValueError("native image job did not use the shared external Ray cluster")
+    if (
+        row.get("source_manifest_match") is not True
+        or row.get("source_doc_ids_sha256") != job.doc_ids_sha256
+        or int(row.get("input_encoded_bytes", -1)) != job.input_encoded_bytes
+    ):
+        raise ValueError("native image job source differs from the immutable manifest")
     if row.get("exactly_once") is not True or row.get("output_rows") != job.limit:
         raise ValueError("native image job failed exactly-once")
     if float(row["operator_e2e_s"]) < minimum_s:
@@ -459,6 +473,7 @@ def run_native_image_multijob(
     config: NativeImageMultiJobConfig,
     *,
     popen_factory: Callable[..., subprocess.Popen[object]] = subprocess.Popen,
+    gate_only: bool = False,
 ) -> int:
     """Run the preregistered native matrix; callers may inject fake processes in tests."""
 
@@ -472,6 +487,7 @@ def run_native_image_multijob(
         "repository_commit": _repository_commit(),
         "job_manifest": str(config.job_manifest.path),
         "job_manifest_sha256": config.job_manifest.sha256,
+        "execution_mode": "gate" if gate_only else "formal_matrix",
         "status": "running",
         "runs": [],
     }
@@ -480,12 +496,19 @@ def run_native_image_multijob(
     try:
         with acquire_host_runner_lease(config.output_root.parent, repository_commit=index["repository_commit"]):
             try:
-                for phase, count in (
-                    ("warmup", config.warmup_repeats),
-                    ("formal", config.formal_repeats),
-                ):
+                phases = (
+                    (("gate", 1),)
+                    if gate_only
+                    else (("warmup", config.warmup_repeats), ("formal", config.formal_repeats))
+                )
+                for phase, count in phases:
                     for repeat in range(1, count + 1):
-                        for arm in _schedule(config, phase, repeat):
+                        scheduled = (
+                            tuple(arm for arm in config.arms if arm.arm_id.endswith("fourjob"))
+                            if gate_only
+                            else _schedule(config, phase, repeat)
+                        )
+                        for arm in scheduled:
                             run_id = f"{phase}_{repeat}_{arm.arm_id}"
                             summary = _run_cell(
                                 config,

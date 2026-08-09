@@ -201,6 +201,8 @@ class ImageMultiJobContractTests(unittest.TestCase):
 
             self.assertIn("--ray-address", command)
             self.assertIn("--formal-start-barrier-file", command)
+            self.assertIn("--expected-source-doc-ids-sha256", command)
+            self.assertIn("--expected-input-encoded-bytes", command)
             self.assertNotIn("--max-active-batches", command)
 
     def test_project_config_rejects_nondivisible_static_capacity(self) -> None:
