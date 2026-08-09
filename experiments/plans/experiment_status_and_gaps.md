@@ -131,9 +131,12 @@ frame/preprocess work/credit；Daft built-in、Ray Data native、typed Ray actor
 同模型、同归一化语义和同 PostgreSQL/pgvector E2E 合同。文本已有 equal-workload
 1/2/4-job 先验证据，并已完成一个 5s short/long guaranteed-overlap 两 job 因果点；
 1-short+3-long 四作业补充也已完成。weighted/SLO、异构 burst 与图像 phase-change 仍未
-完成，不能写成已覆盖。图像四作业当前只完成 2K short + 3×3K long、0.5s offset 的
-immutable manifest/config/runner/指标合同，Daft built-in、Ray Data 与 project formal
-均未启动；DuckDB bounded-output SQuAD 四作业同样只完成配置准备。后续项目感知/动态
+完成，不能写成已覆盖。图像四作业已完成 2K short + 3×3K long、0.5s offset 的
+immutable manifest/config/runner/指标合同、64-row correctness gate 和一次 full-size
+overlap rehearsal；Daft built-in、Ray Data 与 project formal 均未启动。DuckDB
+bounded-output SQuAD 四作业的 128-row native gate 也已通过，512 outputs 全部 non-empty、
+0 error、exactly-once，short/long overlap 2.948s；single controls 和 formal 均未运行。
+后续项目感知/动态
 实现调整保持图像 manifest、六个 scenario 和 native 配置不变，以 `policy_revision`
 版本化并只重跑 project static/proposed；只有资源/模型/语义/计时合同变化才重跑 native。
 

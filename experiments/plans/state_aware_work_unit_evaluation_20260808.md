@@ -231,7 +231,7 @@ Daft Native同边界只差约2.5%–2.7%。它回答的是“此前71.24s是否�
 使short JCT +59.00%，说明quota效应依赖arrival regime；两者必须分轨保留。当前
 all-at-t0诊断已经排除“项目模型请求路径慢6.4×”，因此不扫K256/K512。
 
-### 7.3 图像四作业：已冻结准备合同，尚未启动正式实验
+### 7.3 图像四作业：gate/rehearsal 已通过，尚未启动正式实验
 
 图像多作业不复制文本的 5 s offset。既有单作业结果表明 Ray Data/project 的图像作业
 远快于 Daft built-in；若仍用 5 s，前台 short 很可能已经结束，实验无法回答“后到作业
@@ -279,10 +279,13 @@ ready/active-by-job trace。Daft/Ray Data 隐藏阶段无法可靠归因的字�
 生成候选 manifest 并记录 SHA256 → 64-row correctness/capability gate → 一次 overlap rehearsal
 并封存 manifest → 启动
 共享 32-CPU/2-GPU Ray → 原生 1 warm-up + 3 balanced formal → project 1+3 → fail-closed
-汇总。当前只完成 runner、配置和 preflight 准备，**没有启动 formal**。远端 preflight
-已确认 core/image Python 与 2×4090 profile；原始 COCO ZIP 不在本机，但数据库中已有
-正式导入表，首次 gate 仍须验证行数、schema、doc-id digest 和 encoded-byte digest。
-当前 GPU 被文本 vLLM 占用，正式图像 gate 前必须先释放，不能与文本服务共跑。
+汇总。远端 64-row gate 已验证行数、schema、doc-id/encoded-byte digest、exactly-once
+和采集闭环；Ray Data 首次固定 actor pool 的资源碎片化失败证据保留，改用其官方
+autoscaling ActorPool 后与 Daft built-in、project static/proposed gate 均通过。候选
+2K+3×3K manifest 的一次 full-size rehearsal 也通过：Daft、Ray Data、project static、
+project proposed 的 short/long overlap 分别约 19.62/20.43/6.19/2.27 s，证明 0.5 s offset
+能测到真实并发。该 rehearsal 只有一次、`proposed` 仍是当前占位实现，所有绝对值和臂间
+差异都只用于流程诊断，**没有启动 formal，也不构成策略收益结论**。
 
 未来只重测 project 的复用门禁：native 结果的 manifest SHA、model/processor、输出语义、
 硬件/资源、batch/source-shard、计时边界和 metric schema 全部与新 project run 一致；否则
@@ -290,7 +293,7 @@ native 证据失效并重跑对应系统。若只是 `policy_revision` 和项目
 project static/proposed 同次交错重跑，避免把日期漂移误判成算法收益。任何 proposed 结论都
 必须相对同次 frozen-static，而不是只与旧 native 绝对 JCT 比较。
 
-### 7.4 DuckDB 文本四作业：产品原生观察准备合同
+### 7.4 DuckDB 文本四作业：产品原生 gate 已通过，尚未启动正式实验
 
 DuckDB 只进入 bounded-output SQuAD 轨，不使用 ShareGPT fixed-cap 语义失败的输入。冻结
 四份 doc-id 互斥、双 endpoint prompt-work skew 通过门禁的 manifest；分别运行四个单
@@ -300,7 +303,12 @@ project work credit、路由或重新分区。必须记录每 Job barrier JCT、
 output-length/quality error、服务 token counter、running/waiting/KV、GPU/MFU/energy、组级
 Jain 与 single→four-job slowdown；缺少可靠逐请求时间戳时不伪造 P95/P99。
 
-DuckDB 与图像矩阵同样先只做 manifest/config/capability gate，不跑 formal。它回答的是
+DuckDB 与图像矩阵同样先只做 manifest/config/capability gate，不跑 formal。64-row
+候选先被 endpoint-work skew 4.68% 门禁正确拒绝，未放宽冻结 4% 合同；重新生成的 128-row
+gate 通过，四个 Job 共 512 rows 全部 non-empty、0 error、exactly-once，short 从 0 s
+运行至 3.448 s，三个 long 在 0.5 s 到达，实测 short/long overlap 2.948 s，终态服务
+running/waiting 均归零。该单次结果明确为 `comparison_admission=not_rankable`。
+它回答的是
 产品原生多个独立查询竞争时的现象，不是 DuckDB 内部拥有跨查询全局 fair scheduler 的
 证明，也不与 Chat 原生框架做绝对排名。项目文本动态策略以后仍使用同一批 manifest 和
 到达合同单独重测；若 workload/service 资源签名未变，DuckDB 原生结果可复用。

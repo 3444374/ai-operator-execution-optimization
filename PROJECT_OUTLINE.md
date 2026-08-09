@@ -119,8 +119,9 @@ PostgreSQL source
   加权/SLO、公平 guard、Long→Short 与故障迁移；
 - 代价模型跨时间段、新 workload 和硬件的稳定性；
 - 图像Daft built-in、Ray Data native与project frozen-static的operator-E2E/provenance证据已完成；仍待状态感知增量、跨workload外推与小规模sink质量闭环，sink不是性能排名blocker。
-- 图像 short→3×long 多作业与 DuckDB bounded-output 四作业目前只完成 immutable
-  manifest/config/runner/指标准备，尚未启动正式实验；图像 proposed 角色已与具体算法名
+- 图像 short→3×long 多作业已完成 immutable manifest、64-row correctness gate 和一次
+  full-size overlap rehearsal；DuckDB bounded-output 四作业已完成 128-row native gate。
+  两者均未启动 formal、不能用于系统排名或策略收益；图像 proposed 角色已与具体算法名
   解耦，后续状态感知/动态调度调整只需版本化并重跑 project static/proposed。
 
 ### 5.4 不能声称

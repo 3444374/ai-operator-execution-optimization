@@ -5401,3 +5401,15 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 文本原生多作业编排增加显式 `--gate-only`：只运行四作业 arm 一次，证据标记
   `comparison_admission=not_rankable`，不执行 single control、warmup 或 formal repeats；
   用于先验证 DuckDB 四连接并发的 manifest、进程生命周期、exactly-once 与采集流程。
+- 修正后的图像 64-row native/project gate 全部通过；候选 2K short + 3×3K long 的一次
+  full-size rehearsal 也通过，Daft、Ray Data、project static/proposed 的实测 overlap 均
+  为正。rehearsal 只有一次且 proposed 尚是当前实现，只证明 0.5 s offset、完整生命周期和
+  指标 schema 可用，不抽性能或动态收益结论。
+- DuckDB 64-row smoke 在请求前因一个 long 的 endpoint-work skew 4.68% 超过冻结 4% 门禁
+  被拒；未放宽合同，改用 128-row smoke。新 gate 四 Job×128=512 rows 全部完成、non-empty、
+  0 error、exactly-once；short JCT 3.448 s，三个 long 于0.5 s到达，short/long overlap
+  2.948 s，组 barrier 5.745 s，终态 running/waiting=0。该 run 标记 not-rankable，未运行
+  single controls、warmup 或 formal。
+- 图像、DuckDB contract/gate/rehearsal 原始证据均留服务器，并另存只增不删的准备归档
+  `/root/autodl-tmp/experiment-artifacts/opening_image_duckdb_multijob_preparation_20260809_v1.tar.gz`
+  （1.2 MiB，SHA256 `a7e1c2c58a0c55c6f69832cd623c0d3c08336211e876be02cdf51188cabd4825`）。
