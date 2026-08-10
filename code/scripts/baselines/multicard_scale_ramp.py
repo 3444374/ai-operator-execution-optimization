@@ -77,6 +77,7 @@ class RampArm:
 
 @dataclass(frozen=True)
 class RampScale:
+    label: str
     rows: int
     manifest: Path
 
@@ -117,6 +118,10 @@ class RampConfig:
     # lets screening runs proceed on vLLM defaults; formal runs set true to force
     # declared == effective.
     vllm_config_strict: bool = False
+    # Timed open-loop ramps replay the manifest's arrival timestamps. ``ignore_eos``
+    # is intentionally limited by the core gate to the bounded HTTP control.
+    replay_arrivals: bool = False
+    ignore_eos: bool = False
 
 
 def _load_ramp_config(path: str | Path, *, driver_python: str, vllm_python: str) -> RampConfig:
@@ -124,9 +129,24 @@ def _load_ramp_config(path: str | Path, *, driver_python: str, vllm_python: str)
     if not isinstance(payload, dict):
         raise ValueError("ramp config must be an object")
     scales = tuple(
-        RampScale(rows=int(s["rows"]), manifest=Path(s["manifest"]))
+        RampScale(
+            label=str(s.get("label", s["rows"])),
+            rows=int(s["rows"]),
+            manifest=Path(s["manifest"]),
+        )
         for s in payload["scales"]
     )
+    labels = [scale.label for scale in scales]
+    if any(
+        not label
+        or label in {".", ".."}
+        or "/" in label
+        or "\\" in label
+        for label in labels
+    ):
+        raise ValueError("scale labels must be non-empty path-safe names")
+    if len(set(labels)) != len(labels):
+        raise ValueError("scale labels must be unique")
     for s in scales:
         if not s.manifest.is_file():
             raise ValueError(f"scale {s.rows} manifest missing: {s.manifest}")
@@ -144,6 +164,10 @@ def _load_ramp_config(path: str | Path, *, driver_python: str, vllm_python: str)
             raise ValueError(f"unsupported arm {a.arm!r}; expected {GATE_ARMS}, project_static, or lb_rr")
         if a.concurrency <= 0 or a.reps <= 0:
             raise ValueError(f"arm {a.arm} concurrency/reps must be positive")
+    replay_arrivals = payload.get("replay_arrivals", False)
+    ignore_eos = payload.get("ignore_eos", False)
+    if not isinstance(replay_arrivals, bool) or not isinstance(ignore_eos, bool):
+        raise ValueError("replay_arrivals and ignore_eos must be booleans")
     return RampConfig(
         experiment_id=str(payload.get("experiment_id", "multicard_scale_ramp")),
         endpoint_urls=tuple(payload["endpoint_urls"]),
@@ -170,7 +194,15 @@ def _load_ramp_config(path: str | Path, *, driver_python: str, vllm_python: str)
         warmup_concurrency=int(payload.get("warmup_concurrency", 32)),
         idle_timeout_s=float(payload.get("idle_timeout_s", 120.0)),
         vllm_config_strict=bool(payload.get("vllm_config_strict", False)),
+        replay_arrivals=replay_arrivals,
+        ignore_eos=ignore_eos,
     )
+
+
+def _scale_label(scale: RampScale) -> str:
+    """Return the output/config identity for one workload-scale point."""
+
+    return str(getattr(scale, "label", scale.rows))
 
 
 def _gate_config_for_cell(
@@ -180,7 +212,9 @@ def _gate_config_for_cell(
     cell_id = f"{arm.arm}_c{arm.concurrency}"
     cfg_dict = {
         "schema_version": 1,
-        "experiment_id": f"{ramp.experiment_id}_{arm.arm}_{scale.rows}r",
+        "experiment_id": (
+            f"{ramp.experiment_id}_{arm.arm}_{_scale_label(scale)}"
+        ),
         "formal": False,
         "rows_total": scale.rows,
         "endpoint_urls": list(ramp.endpoint_urls),
@@ -195,6 +229,8 @@ def _gate_config_for_cell(
         },
         "manifest": str(scale.manifest),
         "output_root": str(cell_output / "gate_output"),
+        "replay_arrivals": ramp.replay_arrivals,
+        "ignore_eos": ramp.ignore_eos,
         "cells": [
             {"id": cell_id, "adapter": arm.arm, "concurrency_per_endpoint": arm.concurrency}
         ],
@@ -272,7 +308,11 @@ def _write_identity(arm: str, cell_output: Path) -> None:
 
 
 def _run_gate_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) -> dict:
-    cell_output = ramp.output_root / f"scale_{scale.rows}" / f"{arm.arm}_c{arm.concurrency}_rep{rep}"
+    cell_output = (
+        ramp.output_root
+        / f"scale_{_scale_label(scale)}"
+        / f"{arm.arm}_c{arm.concurrency}_rep{rep}"
+    )
     if cell_output.exists():
         raise FileExistsError(f"cell output already exists: {cell_output}")
     cell_output.mkdir(parents=True)
@@ -327,7 +367,11 @@ def _run_project_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int
         ProjectStaticConfig,
         run_project_static,
     )
-    cell_output = ramp.output_root / f"scale_{scale.rows}" / f"{arm.arm}_K{arm.concurrency}_rep{rep}"
+    cell_output = (
+        ramp.output_root
+        / f"scale_{_scale_label(scale)}"
+        / f"{arm.arm}_K{arm.concurrency}_rep{rep}"
+    )
     if cell_output.exists():
         raise FileExistsError(f"cell output already exists: {cell_output}")
     cell_output.mkdir(parents=True)
@@ -396,7 +440,11 @@ def _run_lb_rr_cell(ramp: RampConfig, scale: RampScale, arm: RampArm, rep: int) 
     import subprocess
     if not ramp.lb_endpoint_url:
         raise ValueError("lb_rr arm requires lb_endpoint_url in the ramp config")
-    cell_output = ramp.output_root / f"scale_{scale.rows}" / f"{arm.arm}_c{arm.concurrency}_rep{rep}"
+    cell_output = (
+        ramp.output_root
+        / f"scale_{_scale_label(scale)}"
+        / f"{arm.arm}_c{arm.concurrency}_rep{rep}"
+    )
     if cell_output.exists():
         raise FileExistsError(f"cell output already exists: {cell_output}")
     cell_output.mkdir(parents=True)
@@ -715,9 +763,13 @@ def run_ramp(ramp: RampConfig) -> dict:
         for arm in ramp.arms:
             for rep in range(1, arm.reps + 1):
                 if ramp.warmup_per_cell:
-                    print(f"[ramp] warmup scale={scale.rows} (bounded_http c={ramp.warmup_concurrency})", flush=True)
+                    print(
+                        f"[ramp] warmup scale={_scale_label(scale)} "
+                        f"(bounded_http c={ramp.warmup_concurrency})",
+                        flush=True,
+                    )
                     _warmup_cache(ramp, scale)
-                print(f"[ramp] scale={scale.rows} arm={arm.arm} "
+                print(f"[ramp] scale={_scale_label(scale)} arm={arm.arm} "
                       f"{'c' if arm.arm in GATE_ARMS else 'K'}={arm.concurrency} rep={rep}", flush=True)
                 if arm.arm in GATE_ARMS:
                     record = _run_gate_cell(ramp, scale, arm, rep)

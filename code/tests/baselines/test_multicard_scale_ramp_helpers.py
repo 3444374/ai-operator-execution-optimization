@@ -181,6 +181,59 @@ class ProjectManifestParityTests(unittest.TestCase):
             self.assertEqual(record["status"], "passed")
 
 
+class TimedScaleRampTests(unittest.TestCase):
+    """Timed ramps may reuse one row count with distinct arrival-rate labels."""
+
+    def test_gate_config_preserves_timed_replay_and_ignore_eos(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            manifest = root / "manifest.jsonl"
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "arrival_time_s": 0.0,
+                        "doc_id": 1,
+                        "endpoint_index": 0,
+                        "estimated_output_tokens": 1,
+                        "max_output_tokens": 1,
+                        "prompt": "hello",
+                        "prompt_tokens": 1,
+                        "source_row_hash": "hash",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            ramp = SimpleNamespace(
+                experiment_id="timed",
+                endpoint_urls=(
+                    "http://127.0.0.1:8000/v1/chat/completions",
+                    "http://127.0.0.1:8001/v1/chat/completions",
+                ),
+                completion_protocol="chat_completions",
+                model="model",
+                tokenizer=None,
+                service_prefix_caching="enabled",
+                service_max_num_seqs=256,
+                service_max_num_batched_tokens=8192,
+                replay_arrivals=True,
+                ignore_eos=True,
+            )
+            scale = drv.RampScale(label="rate_2x", rows=1, manifest=manifest)
+            arm = drv.RampArm(arm="bounded_http", concurrency=8, reps=1)
+            cell = root / "cell"
+            cell.mkdir()
+
+            cfg_path, config = drv._gate_config_for_cell(ramp, scale, arm, cell)
+            payload = json.loads(cfg_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(drv._scale_label(scale), "rate_2x")
+            self.assertTrue(payload["replay_arrivals"])
+            self.assertTrue(payload["ignore_eos"])
+            self.assertTrue(config.replay_arrivals)
+            self.assertTrue(config.ignore_eos)
+
+
 class RayHeadRecoveryTests(unittest.TestCase):
     """A rebooted host has no head; the reuse timeout must trigger fresh start."""
 
