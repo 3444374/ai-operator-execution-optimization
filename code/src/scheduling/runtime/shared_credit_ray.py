@@ -27,8 +27,18 @@ class _FairCreditActor:
     def try_acquire(self, **kwargs) -> bool:
         return self.coordinator.try_acquire(**kwargs)
 
-    def release(self, request_id: str, *, job_id: str) -> None:
-        self.coordinator.release(request_id, job_id=job_id)
+    def release(
+        self,
+        request_id: str,
+        *,
+        job_id: str,
+        actual_work: int | None = None,
+    ) -> None:
+        self.coordinator.release(
+            request_id,
+            job_id=job_id,
+            actual_work=actual_work,
+        )
 
     def snapshot(self, endpoint_id: str):
         return self.coordinator.snapshot(endpoint_id)
@@ -46,9 +56,19 @@ class RaySharedCreditClient:
             )
         )
 
-    def release(self, request_id: str, *, job_id: str) -> None:
+    def release(
+        self,
+        request_id: str,
+        *,
+        job_id: str,
+        actual_work: int | None = None,
+    ) -> None:
         self.ray_module.get(
-            self.actor.release.remote(request_id, job_id=job_id)
+            self.actor.release.remote(
+                request_id,
+                job_id=job_id,
+                actual_work=actual_work,
+            )
         )
 
     def snapshot(self, endpoint_id: str):

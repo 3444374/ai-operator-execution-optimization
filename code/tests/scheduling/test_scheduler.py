@@ -523,8 +523,8 @@ class SchedulerTests(unittest.TestCase):
                 self.attempts += 1
                 return self.attempts >= 2
 
-            def release(self, request_id, *, job_id):
-                self.released.append((job_id, request_id))
+            def release(self, request_id, *, job_id, actual_work=None):
+                self.released.append((job_id, request_id, actual_work))
 
         shared = DelayedSharedCredit()
         adapter = FakeSubmissionAdapter()
@@ -541,7 +541,45 @@ class SchedulerTests(unittest.TestCase):
 
         self.assertEqual(result.operator_invocations, 1)
         self.assertEqual(shared.attempts, 2)
-        self.assertEqual(shared.released, [("j1", "r0")])
+        self.assertEqual(shared.released, [("j1", "r0", None)])
+
+    def test_shared_credit_release_receives_actual_completed_token_work(self) -> None:
+        class TokenResultAdapter(FakeSubmissionAdapter):
+            def wait_one(self, pending):
+                handle, pending_envelope = pending[0]
+                return CollectedSubmission(
+                    handle=handle,
+                    completion=SubmissionCompletion(
+                        request_id=pending_envelope.request.request_id,
+                        status="completed",
+                        result={"token_count": 37},
+                    ),
+                    wait_s=0.0,
+                    result_s=0.0,
+                )
+
+        class RecordingSharedCredit:
+            def __init__(self) -> None:
+                self.released = []
+
+            def try_acquire(self, **_kwargs):
+                return True
+
+            def release(self, request_id, *, job_id, actual_work=None):
+                self.released.append((job_id, request_id, actual_work))
+
+        shared = RecordingSharedCredit()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=1),
+            router=RoundRobinEndpointRouter(),
+            adapter=TokenResultAdapter(),
+            pool_id="default",
+            shared_credit=shared,
+        )
+
+        scheduler.run([envelope(0)], topology())
+
+        self.assertEqual(shared.released, [("j1", "r0", 37)])
 
     def test_failed_completion_releases_shared_credit_once(self) -> None:
         class RecordingSharedCredit:
@@ -553,8 +591,8 @@ class SchedulerTests(unittest.TestCase):
                 self.acquired.append((job_id, request_id))
                 return True
 
-            def release(self, request_id, *, job_id):
-                self.released.append((job_id, request_id))
+            def release(self, request_id, *, job_id, actual_work=None):
+                self.released.append((job_id, request_id, actual_work))
 
         shared = RecordingSharedCredit()
         scheduler = SynchronousScheduler(
@@ -568,7 +606,7 @@ class SchedulerTests(unittest.TestCase):
         result = scheduler.run([envelope(0)], topology())
 
         self.assertEqual(shared.acquired, [("j1", "r0")])
-        self.assertEqual(shared.released, [("j1", "r0")])
+        self.assertEqual(shared.released, [("j1", "r0", None)])
         self.assertEqual(result.completions[0].status, "failed")
         self.assertEqual(result.submission_events[0].status, "failed")
 

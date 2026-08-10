@@ -22,6 +22,7 @@ POLICIES = {
     "static_partition",
     "shared_drr",
     "shared_fifo",
+    "external_vtc",
 }
 
 _SCENARIO_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
@@ -339,7 +340,7 @@ def build_job_command(
     )
     if request_manifest is not None:
         command.extend(["--request-manifest", request_manifest])
-    if scenario.policy in {"shared_drr", "shared_fifo"}:
+    if scenario.policy in {"shared_drr", "shared_fifo", "external_vtc"}:
         if not coordinator_name:
             raise ValueError("shared policies require a coordinator name")
         command.extend(
@@ -355,7 +356,11 @@ def build_job_command(
                 "--shared-credit-quantum",
                 str(config.credit_quantum),
                 "--shared-credit-policy",
-                "fifo" if scenario.policy == "shared_fifo" else "drr",
+                (
+                    "fifo" if scenario.policy == "shared_fifo"
+                    else "vtc" if scenario.policy == "external_vtc"
+                    else "drr"
+                ),
                 "--shared-credit-job-weight",
                 str(scenario.weights[job_index]),
             ]

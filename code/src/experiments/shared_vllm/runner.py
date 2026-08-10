@@ -13,6 +13,7 @@ from typing import Callable
 from src.experiments.scenarios.core import build_scenario_schedule
 from src.infrastructure.runner_lease import acquire_runner_lease
 from src.infrastructure.runtime_env import subprocess_env
+from src.modalities.text.contracts import text_work_calibration_signature
 from src.observability.metrics import (
     aggregate_model_metric_snapshots,
     estimate_mfu,
@@ -57,10 +58,51 @@ from .metrics import (
     normalized_job_service_rates,
     shared_credit_trace_summary,
 )
-from .runtime import _RayCreditObserver, _resource_sample
+from .runtime import (
+    _RayCreditObserver,
+    _resource_sample,
+    build_observe_only_text_state_rows,
+)
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _common_arg_value(
+    arguments: tuple[str, ...],
+    flag: str,
+    default: str,
+) -> str:
+    for index, item in enumerate(arguments[:-1]):
+        if item == flag:
+            return arguments[index + 1]
+    prefix = f"{flag}="
+    return next(
+        (item[len(prefix):] for item in arguments if item.startswith(prefix)),
+        default,
+    )
+
+
+def _text_state_calibration_signature(config: SharedVllmConfig) -> str:
+    metadata = dict(config.service_metadata)
+    return text_work_calibration_signature(
+        model_revision=_common_arg_value(
+            config.common_args,
+            "--completion-model",
+            "unrecorded-model",
+        ),
+        serving_revision=f"vllm-{metadata.get('vllm_version', 'unrecorded')}",
+        protocol=_common_arg_value(
+            config.common_args,
+            "--completion-protocol",
+            "completions",
+        ),
+        cost_model_revision=_common_arg_value(
+            config.common_args,
+            "--output-cost-mode",
+            "fixed_output_cap",
+        ),
+    )
 
 
 def run_experiment(
@@ -275,6 +317,8 @@ def _run_group(
     log_handles = []
     resource_samples: list[dict[str, object]] = []
     credit_samples: list[dict[str, object]] = []
+    state_samples: list[dict[str, object]] = []
+    state_signature = _text_state_calibration_signature(config)
     group_launch_epoch_s = 0.0
     try:
         observer = (
@@ -284,7 +328,7 @@ def _run_group(
                 coordinator_name,
                 config.endpoint_ids,
             )
-            if scenario.policy in {"shared_drr", "shared_fifo"}
+            if scenario.policy in {"shared_drr", "shared_fifo", "external_vtc"}
             else None
         )
         if observer is not None:
@@ -292,7 +336,11 @@ def _run_group(
                 request_limit=config.request_limit_per_endpoint,
                 work_limit=config.work_limit_per_endpoint,
                 quantum=config.credit_quantum,
-                policy="fifo" if scenario.policy == "shared_fifo" else "drr",
+                policy=(
+                    "fifo" if scenario.policy == "shared_fifo"
+                    else "vtc" if scenario.policy == "external_vtc"
+                    else "drr"
+                ),
             )
         start_epoch_s = time.time() + options.start_delay_s
         commands = [
@@ -356,15 +404,21 @@ def _run_group(
                 raise RuntimeError(
                     f"profiler child failed with exit code {failed[0]}"
                 )
-            resource_samples.extend(
-                _resource_sample(
-                    options.metrics_urls,
-                    group_launch_epoch_s,
-                )
+            resource_batch = _resource_sample(
+                options.metrics_urls,
+                group_launch_epoch_s,
             )
+            resource_samples.extend(resource_batch)
             if observer is not None:
-                credit_samples.extend(
-                    observer.sample(group_launch_epoch_s)
+                credit_batch = observer.sample(group_launch_epoch_s)
+                credit_samples.extend(credit_batch)
+                state_samples.extend(
+                    build_observe_only_text_state_rows(
+                        credit_batch,
+                        resource_batch,
+                        endpoint_ids=config.endpoint_ids,
+                        calibration_signature=state_signature,
+                    )
                 )
             time.sleep(0.25)
         return_codes = [process.wait() for process in processes]
@@ -490,6 +544,12 @@ def _run_group(
             ),
             "work_limit_per_endpoint": config.work_limit_per_endpoint,
             "credit_quantum": config.credit_quantum,
+            "runtime_state_mode": (
+                "observe_only" if observer is not None else "unavailable"
+            ),
+            "runtime_state_calibration_signature": (
+                state_signature if observer is not None else ""
+            ),
             "weights": json.dumps(scenario.weights),
             "arrival_offsets_s": json.dumps(
                 scenario.arrival_offsets_s
@@ -509,7 +569,7 @@ def _run_group(
             "ray_address": options.ray_address,
             "coordinator_name": (
                 coordinator_name
-                if scenario.policy in {"shared_drr", "shared_fifo"}
+                if scenario.policy in {"shared_drr", "shared_fifo", "external_vtc"}
                 else ""
             ),
             "run_instance_id": run_instance_id,
@@ -645,6 +705,12 @@ def _run_group(
             / f"{run_stem}.credits.csv",
             credit_samples,
         )
+        _write_trace_rows_atomic(
+            options.output_dir
+            / "traces"
+            / f"{run_stem}.states.csv",
+            state_samples,
+        )
         _write_json_atomic(record_path, record)
         return record
     except Exception as exc:
@@ -672,6 +738,12 @@ def _run_group(
             / "traces"
             / f"{run_stem}.credits.csv",
             credit_samples,
+        )
+        _write_trace_rows_atomic(
+            options.output_dir
+            / "traces"
+            / f"{run_stem}.states.csv",
+            state_samples,
         )
         _write_json_atomic(
             options.output_dir

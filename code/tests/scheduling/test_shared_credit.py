@@ -18,6 +18,120 @@ from src.scheduling.submission_control.shared_credit import (  # noqa: E402
 
 
 class SharedCreditCoordinatorTests(unittest.TestCase):
+    def test_vtc_selects_least_attained_service_and_corrects_actual_work(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=25,
+            policy="vtc",
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="a0",
+                job_id="a",
+                endpoint_id="gpu0",
+                estimated_work=50,
+            )
+        )
+        for request_id, job_id in (("a1", "a"), ("b0", "b")):
+            self.assertFalse(
+                coordinator.try_acquire(
+                    request_id=request_id,
+                    job_id=job_id,
+                    endpoint_id="gpu0",
+                    estimated_work=50,
+                )
+            )
+
+        coordinator.release("a0", job_id="a", actual_work=80)
+
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="b0",
+                job_id="b",
+                endpoint_id="gpu0",
+                estimated_work=50,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="a1",
+                job_id="a",
+                endpoint_id="gpu0",
+                estimated_work=50,
+            )
+        )
+        self.assertEqual(
+            coordinator.snapshot("gpu0").attained_service_by_job,
+            (("a", 80), ("b", 100)),
+        )
+
+    def test_vtc_reactivated_job_is_lifted_to_active_floor(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=25,
+            policy="vtc",
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="old",
+                job_id="idle",
+                endpoint_id="gpu0",
+                estimated_work=50,
+            )
+        )
+        coordinator.release("old", job_id="idle", actual_work=50)
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="busy0",
+                job_id="busy",
+                endpoint_id="gpu0",
+                estimated_work=100,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="idle1",
+                job_id="idle",
+                endpoint_id="gpu0",
+                estimated_work=50,
+            )
+        )
+
+        self.assertEqual(
+            coordinator.snapshot("gpu0").attained_service_by_job,
+            (("busy", 100), ("idle", 100)),
+        )
+
+    def test_vtc_reactivation_lift_uses_normalized_weighted_service(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 200)},
+            quantum=25,
+            policy="vtc",
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="weighted0",
+                job_id="weighted",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                weight=2,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="new0",
+                job_id="new",
+                endpoint_id="gpu0",
+                estimated_work=50,
+                weight=1,
+            )
+        )
+
+        self.assertEqual(
+            coordinator.snapshot("gpu0").attained_service_by_job,
+            (("new", 50), ("weighted", 100)),
+        )
+
     def test_fifo_policy_preserves_global_waiter_order(self) -> None:
         coordinator = FairEndpointCreditCoordinator(
             {"gpu0": (1, 100)},

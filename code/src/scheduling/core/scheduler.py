@@ -81,7 +81,13 @@ class SharedCreditPolicy(Protocol):
     ) -> bool:
         ...
 
-    def release(self, request_id: str, *, job_id: str) -> None:
+    def release(
+        self,
+        request_id: str,
+        *,
+        job_id: str,
+        actual_work: int | None = None,
+    ) -> None:
         ...
 
 
@@ -605,9 +611,22 @@ class SynchronousScheduler:
             _work,
         ) = submission_context.pop(request_id)
         if self.shared_credit is not None:
+            actual_work = None
+            if (
+                collected.completion.status == "completed"
+                and isinstance(collected.completion.result, dict)
+            ):
+                observed = collected.completion.result.get("token_count")
+                if (
+                    isinstance(observed, int)
+                    and not isinstance(observed, bool)
+                    and observed > 0
+                ):
+                    actual_work = observed
             self.shared_credit.release(
                 request_id,
                 job_id=pending_envelope.request.job_id,
+                actual_work=actual_work,
             )
         submission_events.append(
             SubmissionLifecycleEvent(

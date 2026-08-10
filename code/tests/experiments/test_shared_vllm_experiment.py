@@ -595,6 +595,45 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
         self.assertEqual(config.scenarios[0].arrival_offsets_s, (0.0, 5.0))
 
+    def test_external_vtc_uses_completion_corrected_credit_policy(self) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "external_vtc",
+                    "policy": "external_vtc",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                }
+            ]
+        )
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("config.json"))
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+
+        command = build_job_command(
+            options,
+            config,
+            config.scenarios[0],
+            GroupRunIdentity("formal", 1, 0),
+            job_index=0,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+
+        self.assertEqual(
+            self._flag_value(command, "--shared-credit-policy"),
+            "vtc",
+        )
+
     def test_arrival_offset_rejects_missing_environment_scalar(self) -> None:
         payload = self._config_payload(
             scenarios=[

@@ -9,6 +9,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from src.infrastructure.runtime_env import ray_runtime_env
+from src.modalities.text.contracts import build_text_runtime_snapshot
 from src.observability.metrics import gpu_metadata, scrape_prometheus_metrics
 from src.scheduling.runtime.shared_credit_ray import get_or_create_shared_credit_client
 
@@ -164,6 +165,66 @@ def _resource_sample(
                 "gpu_utilization_pct": gpu["gpu_utilization_pct"],
                 "gpu_memory_used_mib": gpu["gpu_memory_used_mib"],
                 "gpu_power_w": gpu["gpu_power_w"],
+            }
+        )
+    return rows
+
+
+def build_observe_only_text_state_rows(
+    credit_rows: list[dict[str, object]],
+    resource_rows: list[dict[str, object]],
+    *,
+    endpoint_ids: tuple[str, ...],
+    calibration_signature: str,
+) -> list[dict[str, object]]:
+    """Join one credit/resource sample into typed staged state evidence."""
+    resources = {
+        endpoint_ids[int(row["endpoint_index"])]: row
+        for row in resource_rows
+        if 0 <= int(row["endpoint_index"]) < len(endpoint_ids)
+    }
+    rows = []
+    for credit in credit_rows:
+        endpoint_id = str(credit["endpoint_id"])
+        resource = resources.get(endpoint_id)
+        if resource is None:
+            continue
+        waiting_raw = resource.get("waiting")
+        waiting = (
+            int(float(waiting_raw))
+            if waiting_raw not in (None, "")
+            else 0
+        )
+        observed_at_s = float(credit["observed_epoch_s"])
+        snapshot = build_text_runtime_snapshot(
+            active_work=int(credit["active_work"]),
+            upstream_queued_work=int(credit["waiting_work"]),
+            service_waiting_requests=waiting,
+            active_requests=int(credit["active_requests"]),
+            oldest_upstream_age_s=float(credit["oldest_waiting_age_s"]),
+            observed_at_s=observed_at_s,
+            capacity_work=int(credit["work_limit"]),
+            calibration_signature=calibration_signature,
+        )
+        organizer = snapshot.for_stage("organizer")
+        model = snapshot.for_stage("model")
+        rows.append(
+            {
+                "schema_version": 1,
+                "runtime_state_mode": "observe_only",
+                "observed_epoch_s": observed_at_s,
+                "elapsed_s": credit["elapsed_s"],
+                "endpoint_id": endpoint_id,
+                "calibration_signature": calibration_signature,
+                "request_limit": int(credit["request_limit"]),
+                "organizer_queued_work": organizer.queued_work,
+                "organizer_oldest_queue_age_s": organizer.oldest_queue_age_s,
+                "model_active_work": model.active_work,
+                "model_queued_work_estimated": model.queued_work,
+                "model_capacity_work": model.capacity_work,
+                "vllm_running": resource.get("running", ""),
+                "vllm_waiting": resource.get("waiting", ""),
+                "vllm_kv_usage": resource.get("kv_usage", ""),
             }
         )
     return rows

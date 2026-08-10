@@ -248,7 +248,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--shared-credit-policy",
-        choices=["drr", "fifo"],
+        choices=["drr", "fifo", "vtc"],
         default="drr",
     )
     parser.add_argument("--shared-credit-job-weight", type=int, default=1)
