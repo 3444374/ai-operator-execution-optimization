@@ -10,16 +10,19 @@ class _FairCreditActor:
         self,
         capacities: dict[str, tuple[int, int]],
         quantum: int,
+        policy: str,
     ) -> None:
         self.capacities = capacities
         self.quantum = quantum
+        self.policy = policy
         self.coordinator = FairEndpointCreditCoordinator(
             capacities,
             quantum=quantum,
+            policy=policy,
         )
 
-    def configuration(self) -> tuple[dict[str, tuple[int, int]], int]:
-        return self.capacities, self.quantum
+    def configuration(self) -> tuple[dict[str, tuple[int, int]], int, str]:
+        return self.capacities, self.quantum, self.policy
 
     def try_acquire(self, **kwargs) -> bool:
         return self.coordinator.try_acquire(**kwargs)
@@ -61,6 +64,7 @@ def get_or_create_shared_credit_client(
     namespace: str,
     capacities: dict[str, tuple[int, int]],
     quantum: int,
+    policy: str = "drr",
 ) -> RaySharedCreditClient:
     if not name:
         raise ValueError("shared credit actor name must be non-empty")
@@ -73,13 +77,14 @@ def get_or_create_shared_credit_client(
         lifetime="detached",
         get_if_exists=True,
         num_cpus=0,
-    ).remote(capacities, quantum)
-    configured_capacities, configured_quantum = ray_module.get(
+    ).remote(capacities, quantum, policy)
+    configured_capacities, configured_quantum, configured_policy = ray_module.get(
         actor.configuration.remote()
     )
     if (
         configured_capacities != capacities
         or configured_quantum != quantum
+        or configured_policy != policy
     ):
         raise ValueError(
             "existing shared credit actor configuration does not match "

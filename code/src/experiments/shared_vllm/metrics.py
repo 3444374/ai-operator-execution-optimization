@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 
 from src.observability.metrics import (
@@ -31,6 +32,46 @@ def group_metric_delta(
         "request_success_delta": int(raw["vllm_request_success_delta"]),
         "estimated_flops_per_gpu_delta": float(
             raw["vllm_estimated_flops_per_gpu_delta"]
+        ),
+        "vllm_e2e_request_latency_mean_s": float(
+            raw["vllm_e2e_request_latency_mean_s"]
+        ),
+        "vllm_request_queue_time_mean_s": float(
+            raw["vllm_request_queue_time_mean_s"]
+        ),
+        "vllm_request_inference_time_mean_s": float(
+            raw["vllm_request_inference_time_mean_s"]
+        ),
+        "vllm_request_prefill_time_mean_s": float(
+            raw["vllm_request_prefill_time_mean_s"]
+        ),
+        "vllm_request_decode_time_mean_s": float(
+            raw["vllm_request_decode_time_mean_s"]
+        ),
+        "vllm_prefix_cache_hit_rate": float(
+            raw["vllm_prefix_cache_hit_rate"]
+        ),
+        "vllm_ttft_histogram_status": str(
+            raw["vllm_ttft_histogram_status"]
+        ),
+        "vllm_itl_histogram_status": str(raw["vllm_itl_histogram_status"]),
+        "vllm_time_to_first_token_p50_s": float(
+            raw["vllm_time_to_first_token_p50_s"]
+        ),
+        "vllm_time_to_first_token_p95_s": float(
+            raw["vllm_time_to_first_token_p95_s"]
+        ),
+        "vllm_time_to_first_token_p99_s": float(
+            raw["vllm_time_to_first_token_p99_s"]
+        ),
+        "vllm_inter_token_latency_p50_s": float(
+            raw["vllm_inter_token_latency_p50_s"]
+        ),
+        "vllm_inter_token_latency_p95_s": float(
+            raw["vllm_inter_token_latency_p95_s"]
+        ),
+        "vllm_inter_token_latency_p99_s": float(
+            raw["vllm_inter_token_latency_p99_s"]
         ),
         "tokens_per_s": (prompt_tokens + generation_tokens) / duration_s,
         "duration_s": duration_s,
@@ -118,13 +159,28 @@ def cumulative_service_disparity(
     overlap_samples = 0
     for completion_epoch_s, job_index, work in events:
         cumulative[job_index] += work
-        active = [
-            index
-            for index, evidence in enumerate(job_evidence)
-            if float(evidence.get("arrival_start_epoch_s", float("inf")))
-            <= completion_epoch_s
-            <= float(evidence.get("completion_end_epoch_s", float("-inf")))
-        ]
+        active = []
+        for index, evidence in enumerate(job_evidence):
+            intervals = evidence.get("request_backlog_intervals", ())
+            if intervals:
+                backlogged = any(
+                    float(arrival_epoch_s) <= completion_epoch_s
+                    <= float(request_completion_epoch_s)
+                    for arrival_epoch_s, request_completion_epoch_s in intervals
+                )
+            else:
+                # Compatibility for historical evidence that only recorded the
+                # coarse job lifetime. New formal runs always use request-level
+                # backlog intervals.
+                backlogged = (
+                    float(evidence.get("arrival_start_epoch_s", float("inf")))
+                    <= completion_epoch_s
+                    <= float(
+                        evidence.get("completion_end_epoch_s", float("-inf"))
+                    )
+                )
+            if backlogged:
+                active.append(index)
         if len(active) < 2:
             continue
         overlap_samples += 1
@@ -138,7 +194,7 @@ def cumulative_service_disparity(
         )
     return {
         "service_disparity_status": (
-            "ok:overlapping_active_jobs_descriptive"
+            "ok:simultaneously_backlogged_jobs_descriptive"
             if overlap_samples
             else "unavailable:no_overlapping_completion_samples"
         ),
@@ -154,6 +210,53 @@ def cumulative_service_disparity(
         "overlap_service_disparity_samples": overlap_samples,
         "max_overlap_normalized_service_disparity": max_overlap_disparity,
         "max_overlap_normalized_service_disparity_ratio": max_overlap_ratio,
+    }
+
+
+def shared_credit_trace_summary(
+    samples: list[dict[str, object]],
+    *,
+    work_limit_per_endpoint: int,
+    job_count: int,
+) -> dict[str, float | str]:
+    """Summarize observable idle credit and work borrowed above equal share."""
+    if work_limit_per_endpoint <= 0 or job_count <= 0:
+        raise ValueError("credit limits and job count must be positive")
+    if not samples:
+        return {
+            "credit_trace_status": "unavailable:not_a_shared_policy",
+            "credit_endpoint_idle_sample_fraction": 0.0,
+            "credit_idle_capacity_fraction_mean": 0.0,
+            "credit_borrowed_work_mean": 0.0,
+            "credit_borrowed_work_max": 0.0,
+        }
+    equal_share = work_limit_per_endpoint / job_count
+    idle_endpoint_samples = 0
+    idle_capacity_fractions = []
+    borrowed_work = []
+    for sample in samples:
+        active_work = float(sample["active_work"])
+        if not 0 <= active_work <= work_limit_per_endpoint:
+            raise ValueError("credit trace active_work is outside capacity")
+        idle_endpoint_samples += active_work == 0
+        idle_capacity_fractions.append(
+            (work_limit_per_endpoint - active_work) / work_limit_per_endpoint
+        )
+        raw_by_job = sample.get("active_work_by_job", "[]")
+        by_job = json.loads(raw_by_job) if isinstance(raw_by_job, str) else raw_by_job
+        borrowed_work.append(
+            sum(max(0.0, float(work) - equal_share) for _job, work in by_job)
+        )
+    return {
+        "credit_trace_status": "ok:sampled_endpoint_credit",
+        "credit_endpoint_idle_sample_fraction": (
+            idle_endpoint_samples / len(samples)
+        ),
+        "credit_idle_capacity_fraction_mean": (
+            sum(idle_capacity_fractions) / len(idle_capacity_fractions)
+        ),
+        "credit_borrowed_work_mean": sum(borrowed_work) / len(borrowed_work),
+        "credit_borrowed_work_max": max(borrowed_work),
     }
 
 def group_resource_summary(

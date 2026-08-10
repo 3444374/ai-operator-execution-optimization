@@ -120,11 +120,12 @@ def _validate_job_evidence(
     if len(summary_rows) != 1 or summary_rows[0].get("status") != "ok":
         raise RuntimeError(f"job {job_index} has no unique successful summary")
     summary = summary_rows[0]
-    if int(summary.get("total_rows", -1)) != scenario.rows_per_job:
+    expected_rows = scenario.row_count(job_index)
+    if int(summary.get("total_rows", -1)) != expected_rows:
         raise RuntimeError(f"job {job_index} processed an unexpected row count")
-    if len(request_rows) != scenario.rows_per_job:
+    if len(request_rows) != expected_rows:
         raise RuntimeError(f"job {job_index} request trace is not exactly-once")
-    if len(submission_rows) != scenario.rows_per_job:
+    if len(submission_rows) != expected_rows:
         raise RuntimeError(
             f"job {job_index} submission trace is not exactly-once"
         )
@@ -151,7 +152,7 @@ def _validate_job_evidence(
             != Path(expected_manifest).resolve()
             or summary.get("request_manifest_validation_status") != "ok"
             or int(summary.get("request_manifest_validated_rows", -1))
-            != scenario.rows_per_job
+            != expected_rows
         ):
             raise RuntimeError(
                 f"job {job_index} request manifest evidence does not match"
@@ -173,14 +174,20 @@ def _validate_job_evidence(
     ]
     jct_s = max(completion) - min(arrival)
     completed_in_slo = sum(slo_met)
-    actual_work_by_request = [
-        int(row["prompt_tokens"])
-        + int(
-            row.get("actual_output_tokens")
-            or row.get("client_estimated_output_tokens")
+    actual_prompt_work = sum(int(row["prompt_tokens"]) for row in request_rows)
+    actual_output_work_by_request = []
+    for row in request_rows:
+        observed = row.get("actual_output_tokens")
+        fallback = (
+            row.get("client_estimated_output_tokens")
             or row["estimated_output_tokens"]
         )
-        for row in request_rows
+        actual_output_work_by_request.append(
+            int(observed) if observed not in (None, "") else int(fallback)
+        )
+    actual_work_by_request = [
+        int(row["prompt_tokens"]) + output_work
+        for row, output_work in zip(request_rows, actual_output_work_by_request)
     ]
     actual_work = sum(actual_work_by_request)
     slo_token_goodput = sum(
@@ -211,6 +218,8 @@ def _validate_job_evidence(
         "slo_token_goodput_per_s": slo_token_goodput,
         "predicted_work": predicted_work,
         "actual_work": actual_work,
+        "actual_prompt_work": actual_prompt_work,
+        "actual_output_work": sum(actual_output_work_by_request),
         "actual_work_source": (
             "prompt_plus_actual_or_client_estimate_fallback"
         ),
@@ -224,6 +233,7 @@ def _validate_job_evidence(
         "service_completion_events": sorted(
             zip(completion, actual_work_by_request)
         ),
+        "request_backlog_intervals": sorted(zip(arrival, completion)),
         "endpoint_counts": endpoint_counts,
         "actor_worker_failures": _sum_semicolon_integers(
             summary.get("actor_worker_failures", "")

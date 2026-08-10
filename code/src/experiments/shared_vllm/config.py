@@ -21,6 +21,7 @@ POLICIES = {
     "independent_full",
     "static_partition",
     "shared_drr",
+    "shared_fifo",
 }
 
 _SCENARIO_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
@@ -48,6 +49,7 @@ _RUNNER_OWNED_FLAGS = {
     "--shared-credit-coordinator-name",
     "--shared-credit-job-weight",
     "--shared-credit-namespace",
+    "--shared-credit-policy",
     "--shared-credit-quantum",
     "--shared-credit-request-limit",
     "--shared-credit-work-limit",
@@ -85,12 +87,23 @@ class SharedVllmScenario:
     scenario_id: str
     policy: str
     job_count: int
-    rows_per_job: int
+    rows_per_job: int | None
     weights: tuple[int, ...]
     arrival_offsets_s: tuple[float, ...]
     static_partition_count: int | None = None
     source_row_offsets: tuple[int, ...] = ()
     request_manifests: tuple[str | None, ...] = ()
+    rows_per_jobs: tuple[int, ...] = ()
+
+    def row_count(self, job_index: int) -> int:
+        """Return the immutable request count for one job."""
+        if not 0 <= job_index < self.job_count:
+            raise ValueError("job_index is outside scenario job_count")
+        if self.rows_per_jobs:
+            return self.rows_per_jobs[job_index]
+        if self.rows_per_job is None:
+            raise ValueError("scenario has no row-count contract")
+        return self.rows_per_job
 
 @dataclass(frozen=True)
 class SharedVllmConfig:
@@ -271,9 +284,9 @@ def build_job_command(
         str(options.profiler_path),
         *config.common_args,
         "--total-rows",
-        str(scenario.rows_per_job),
+        str(scenario.row_count(job_index)),
         "--db-fetch-rows",
-        str(scenario.rows_per_job),
+        str(scenario.row_count(job_index)),
         "--max-inflight",
         str(request_limit),
         "--admission-scope",
@@ -322,9 +335,9 @@ def build_job_command(
     )
     if request_manifest is not None:
         command.extend(["--request-manifest", request_manifest])
-    if scenario.policy == "shared_drr":
+    if scenario.policy in {"shared_drr", "shared_fifo"}:
         if not coordinator_name:
-            raise ValueError("shared_drr requires a coordinator name")
+            raise ValueError("shared policies require a coordinator name")
         command.extend(
             [
                 "--shared-credit-coordinator-name",
@@ -337,6 +350,8 @@ def build_job_command(
                 str(config.work_limit_per_endpoint),
                 "--shared-credit-quantum",
                 str(config.credit_quantum),
+                "--shared-credit-policy",
+                "fifo" if scenario.policy == "shared_fifo" else "drr",
                 "--shared-credit-job-weight",
                 str(scenario.weights[job_index]),
             ]
@@ -378,9 +393,25 @@ def _load_scenario(
             "static_partition_count cannot be smaller than job_count"
         )
     partition_count = static_partition_count or job_count
-    rows_per_job = _positive_integer(
-        raw.get("rows_per_job"),
-        "rows_per_job",
+    has_uniform_rows = raw.get("rows_per_job") is not None
+    has_per_job_rows = raw.get("rows_per_jobs") is not None
+    if has_uniform_rows == has_per_job_rows:
+        raise ValueError(
+            "provide exactly one of rows_per_job or rows_per_jobs"
+        )
+    rows_per_job = (
+        _positive_integer(raw.get("rows_per_job"), "rows_per_job")
+        if has_uniform_rows
+        else None
+    )
+    rows_per_jobs = (
+        _positive_integer_tuple(
+            raw.get("rows_per_jobs"),
+            "rows_per_jobs",
+            job_count,
+        )
+        if has_per_job_rows
+        else ()
     )
     if (
         policy == "static_partition"
@@ -423,6 +454,7 @@ def _load_scenario(
         static_partition_count=static_partition_count,
         source_row_offsets=source_row_offsets,
         request_manifests=request_manifests,
+        rows_per_jobs=rows_per_jobs,
     )
 
 def _local_limits(
@@ -567,7 +599,13 @@ def _positive_integer_tuple(
 ) -> tuple[int, ...]:
     if not isinstance(value, list) or len(value) != expected:
         raise ValueError(f"{label} must contain one value per job")
-    return tuple(_positive_integer(item, label) for item in value)
+    return tuple(
+        _positive_integer(
+            _expand_scalar(item, f"{label}[{index}]"),
+            f"{label}[{index}]",
+        )
+        for index, item in enumerate(value)
+    )
 
 def _nonnegative_float_tuple(
     value: object,

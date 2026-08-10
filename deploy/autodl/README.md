@@ -988,6 +988,55 @@ arrival observation 设 `OPENING_MULTIJOB_OFFSET_S=15` 与
 `TEXT_NATIVE_MULTIJOB_OFFSET_S=15`，受控干扰补充矩阵两者都设为 5。禁止按系统
 分别选择 offset。single-short 1+3 可复用，不因 offset 变化重复运行。
 
+### VTC-compatible 多 Job 泛化轨
+
+该轨只迁移公开 suite 的 client/rate/on-off/token-shape，不运行 S-LoRA，也不称官方 VTC
+复现。服务器重启后仍先执行本 README 的 PostgreSQL/Ray/vLLM cold-start preflight；正式
+运行前用独立 workload 名和未占用非负 doc-id 段准备数据：
+
+```bash
+python code/scripts/data/prepare_vtc_compatible_workload.py \
+  --database-url "$DATABASE_URL" \
+  --source-workload squad_v11_dev_short_answer \
+  --target-workload vtc_on_off_20260810 \
+  --suite on_off_overload \
+  --doc-id-base 900000000 \
+  --output-dir "$ARTIFACT_ROOT/vtc_on_off_contract_20260810" \
+  --apply
+```
+
+先从 `audit.json.job_row_counts` 和 `job_first_arrival_s` 设置模板要求的逐 client
+`*_ROWS` / `*_OFFSET_S`，再把 `client_N.jsonl` 绝对路径设为 `*_MANIFEST`。offset 不能
+统一写零：profiler 会把每个 manifest 的首个 arrival 归一到本 Job 起点，runner 必须用
+该 offset 恢复跨 Job 的同一全局 Poisson 时间原点。`vtc_compatible_on_off_overload.example.json` 与
+`vtc_compatible_overload_multi.example.json` 均包含 isolated full-pool、静态分区、同上限
+shared FIFO control 和 shared-work DRR，保持 1 warm-up + 3 formal。汇总命令：
+
+正式运行优先使用 audit-aware wrapper，避免手工设置上述逐 Job 变量：
+
+```bash
+python code/scripts/experiments/run_vtc_compatible.py \
+  --contract-dir "$ARTIFACT_ROOT/vtc_on_off_contract_20260810" \
+  --config deploy/autodl/vtc_compatible_on_off_overload.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$VENV_ROOT/driver/bin/python" \
+  --output-dir "$ARTIFACT_ROOT/vtc_on_off_formal_20260810" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls http://127.0.0.1:8000/metrics,http://127.0.0.1:8001/metrics \
+  --ray-address 127.0.0.1:6380
+```
+
+```bash
+python code/scripts/analysis/summarize_vtc_compatible.py \
+  --matrix-root "$ARTIFACT_ROOT/vtc_on_off_formal_20260810" \
+  --output-dir "$ARTIFACT_ROOT/vtc_on_off_formal_20260810/summary" \
+  --suite on_off_overload
+```
+
+准备器拒绝覆盖已存在的 target workload、doc-id 或非空输出目录；不得用删除旧 workload
+来复用路径。正式报告必须写“VTC-compatible upstream evaluation”，并保留官方/本地时长、
+manifest SHA、actual prompt/output service 与 simultaneously-backlogged disparity 状态。
+
 已完成的 1024–32768 曲线只能记作 offered-load 诊断：固定的是每 endpoint
 四个 batch，而平均每 batch 行数约从 2.3 增至 64，所以可供给的 request
 envelope 约从每 endpoint 9 增至 256，vLLM mean running requests 也约从

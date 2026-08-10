@@ -46,6 +46,7 @@ class _RayCreditObserver:
         request_limit: int,
         work_limit: int,
         quantum: int,
+        policy: str = "drr",
     ) -> None:
         capacities = {
             endpoint_id: (request_limit, work_limit)
@@ -57,6 +58,7 @@ class _RayCreditObserver:
             namespace=self.namespace,
             capacities=capacities,
             quantum=quantum,
+            policy=policy,
         )
         for endpoint_id in self.endpoint_ids:
             client.snapshot(endpoint_id)

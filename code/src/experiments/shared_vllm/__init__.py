@@ -26,6 +26,7 @@ from .metrics import (
     group_resource_summary,
     jain_fairness,
     normalized_job_service_rates,
+    shared_credit_trace_summary,
 )
 from .runner import _run_group, run_experiment
 from .runtime import _RayCreditObserver

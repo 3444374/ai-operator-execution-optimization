@@ -120,6 +120,27 @@ class SharedCreditRayTests(unittest.TestCase):
                 quantum=100,
             )
 
+    def test_existing_actor_rejects_mismatched_policy(self) -> None:
+        ray = _FakeRay()
+        get_or_create_shared_credit_client(
+            ray,
+            name="credits",
+            namespace="tests",
+            capacities={"gpu0": (2, 200)},
+            quantum=100,
+            policy="fifo",
+        )
+
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            get_or_create_shared_credit_client(
+                ray,
+                name="credits",
+                namespace="tests",
+                capacities={"gpu0": (2, 200)},
+                quantum=100,
+                policy="drr",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -122,6 +122,14 @@ code/scripts/experiments/run_ai_operator_scenarios.py
 - `analysis/summarize_image_multijob.py`：fail-closed 检查 1+3 重复、manifest SHA、
   exactly-once 和 short/long 实际 overlap，输出逐 Job slowdown/阶段分解与组级资源；只做
   系统内 single→four-job 和 project static→proposed 对比，不作跨框架绝对排名；
+- `data/prepare_vtc_compatible_workload.py`：按冻结 VTC suite 参数生成 seeded Poisson
+  多 client 到达，用冻结 ShareGPT/SQuAD 的 256-token 邻近内容物化 append-only PostgreSQL workload，
+  输出每 Job immutable manifest、行数与 SHA audit；明确不是 S-LoRA/VTC runtime 复现；
+- `experiments/run_vtc_compatible.py`：从准备 audit 自动恢复逐 Job rows、首到达 offset 与
+  manifest 环境，复用 shared-vLLM runner 执行同版本、可 resume 的正式矩阵；
+- `analysis/summarize_vtc_compatible.py`：要求每个 isolated/static/shared-FIFO/shared-work
+  场景 1 warm-up + 3 formal，检查异速 Job exactly-once/零失败，输出 actual-work、TTFT/P99/
+  SLO、solo-normalized progress Jain、持续 backlog service disparity 与资源状态；
 - `analysis/augment_image_observability.py`：不改 raw CSV，给历史 schema-v11 图像结果
   旁置补算 first-output/E2E 比例、post-first-output、60s duration gate、J/1K-images、
   GPU-seconds/image、images/CPU-core-second 与 host I/O bytes/image；它不补造 Daft

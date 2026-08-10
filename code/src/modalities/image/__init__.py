@@ -15,6 +15,9 @@ from .contracts import (
     ImageEmbeddingBackend,
     ImageEmbeddingBatch,
     ImageEmbeddingResult,
+    build_image_runtime_snapshot,
+    build_image_work_descriptor,
+    image_work_calibration_signature,
 )
 from .source import (
     DaftImageSource,
@@ -34,8 +37,11 @@ __all__ = [
     "ImageEmbeddingResult",
     "ImageBatchTelemetry",
     "ImageSourceConfig",
+    "build_image_runtime_snapshot",
+    "build_image_work_descriptor",
     "configure_torch_thread_pools",
     "extract_clip_image_features",
+    "image_work_calibration_signature",
     "image_documents_query",
     "l2_normalize_embeddings",
     "l2_normalize_numpy_embeddings",

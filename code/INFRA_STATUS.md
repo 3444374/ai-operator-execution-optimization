@@ -298,6 +298,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 | Length/prefix grouping | 高（代码） | 0/30/70/100% cache-off screen + cache-on batching/routing 消融 | cache-off 无收益；cache-on batching **regime-dependent**（2-ep 近似中性、4-ep KV 饱和分化+排名反转，见 `rc1_data_organization/`）；2-ep/7B routing 中性（−0.1%），4-ep/1.5B +5.9% 跨过 5% 门禁但混淆待隔离，方向有条件重开 |
 | BFD/row-cap-first | 高 | 512 + 1024 | 负向边界明确，不默认启用 |
 | Static K_max | 高 | shared-vLLM | 必要性成立 |
+| VTC-compatible multi-job | 高（代码/配置） | 2-client on/off + 8-client overload | 异速 Job、shared FIFO/static/shared-work 与 fail-closed 汇总已接入；远端 formal 待新提交部署后运行 |
 | Queue-adaptive flush | 高 | 512 变长重复 + 跨 rate + 2048 held-out + shared-vLLM | 优于 fixed-25；未优于 fixed-50 |
 | SLO-aware EWMA flush | 高 | 双 4090 high/arrival-limited 各三次 formal | 相对 fixed-50 未过 5% 门槛；不默认启用 |
 | Request-level continuous replenishment | 高（代码） | 双 GPU K 对照 + 固定 active-work quantum/formal | 逐请求释放与 completion 已验证；保留为 shared-credit/fairness 基础 |

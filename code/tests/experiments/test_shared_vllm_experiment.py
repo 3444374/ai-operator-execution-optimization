@@ -40,10 +40,118 @@ from src.experiments.shared_vllm import (  # noqa: E402
     jain_fairness,
     load_config,
     normalized_job_service_rates,
+    shared_credit_trace_summary,
 )
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_credit_trace_reports_idle_and_borrowed_work(self) -> None:
+        summary = shared_credit_trace_summary(
+            [
+                {"active_work": 0, "active_work_by_job": "[]"},
+                {
+                    "active_work": 90,
+                    "active_work_by_job": json.dumps([["a", 70], ["b", 20]]),
+                },
+            ],
+            work_limit_per_endpoint=100,
+            job_count=2,
+        )
+
+        self.assertEqual(summary["credit_endpoint_idle_sample_fraction"], 0.5)
+        self.assertEqual(summary["credit_idle_capacity_fraction_mean"], 0.55)
+        self.assertEqual(summary["credit_borrowed_work_mean"], 10.0)
+
+    def test_vtc_templates_expand_unequal_job_counts(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            selection = root / "selection.json"
+            selection.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "status": "ready",
+                        "selection": {
+                            "project_static_k_per_endpoint": 128,
+                            "project_active_work_per_endpoint": 65536,
+                            "project_actor_workers_per_endpoint": 8,
+                            "project_ray_actor_max_concurrency": 32,
+                            "project_ray_worker_num_cpus": 0.25,
+                        },
+                        "evidence": {
+                            "feeding": {"status": "passed"},
+                            "token_budget": {"status": "passed"},
+                            "actor_pool": {"status": "passed"},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            environment = {
+                "VLLM_VERSION": "0.25.1",
+                "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
+                "VLLM_MAX_NUM_SEQS": "256",
+                "SHAREGPT_PROJECT_CALIBRATION_CONTRACT": str(selection),
+                "SHAREGPT_PROJECT_K": "128",
+                "DATABASE_URL": "postgresql://postgres:postgres@localhost/db",
+                "COMPLETION_MODEL": "qwen",
+                "MODEL_PATH": "/models/qwen",
+                "VTC_ON_OFF_WORKLOAD": "vtc_on_off",
+                "VTC_ON_OFF_CLIENT0_ROWS": "7",
+                "VTC_ON_OFF_CLIENT1_ROWS": "11",
+                "VTC_ON_OFF_CLIENT0_OFFSET_S": "0.25",
+                "VTC_ON_OFF_CLIENT1_OFFSET_S": "0.5",
+                "VTC_ON_OFF_CLIENT0_MANIFEST": "/tmp/client0.jsonl",
+                "VTC_ON_OFF_CLIENT1_MANIFEST": "/tmp/client1.jsonl",
+            }
+            template = (
+                Path(__file__).resolve().parents[3]
+                / "deploy/autodl/vtc_compatible_on_off_overload.example.json"
+            )
+            with patch.dict(os.environ, environment, clear=True):
+                config = load_config(template)
+
+        self.assertEqual(config.scenarios[-1].rows_per_jobs, (7, 11))
+        self.assertEqual(config.scenarios[-1].arrival_offsets_s, (0.25, 0.5))
+        self.assertEqual(config.scenarios[-1].job_count, 2)
+
+    def test_config_accepts_per_job_row_counts_for_vtc_traces(self) -> None:
+        with TemporaryDirectory() as temporary:
+            path = Path(temporary) / "config.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "experiment_id": "vtc-compatible",
+                        "seed": 1,
+                        "warmup_runs_per_scenario": 0,
+                        "formal_repeats": 1,
+                        "endpoint_ids": ["endpoint-0", "endpoint-1"],
+                        "request_limit_per_endpoint": 8,
+                        "work_limit_per_endpoint": 1024,
+                        "credit_quantum": 128,
+                        "common_args": ["--arrival-replay", "--executor", "ray_actor"],
+                        "scenarios": [
+                            {
+                                "scenario_id": "unequal",
+                                "policy": "static_partition",
+                                "job_count": 2,
+                                "rows_per_jobs": [7, 11],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            config = load_config(path)
+
+        scenario = config.scenarios[0]
+        self.assertIsNone(scenario.rows_per_job)
+        self.assertEqual(scenario.rows_per_jobs, (7, 11))
+        self.assertEqual(scenario.row_count(0), 7)
+        self.assertEqual(scenario.row_count(1), 11)
+
     def test_all_at_t0_multijob_template_keeps_matched_project_limits(self) -> None:
         with TemporaryDirectory() as directory:
             selection = Path(directory) / "selection.json"
@@ -176,6 +284,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "task-1": (256, 65536),
             },
             quantum=2048,
+            policy="drr",
         )
         self.assertEqual(
             [call.args for call in client.snapshot.call_args_list],

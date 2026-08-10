@@ -2,16 +2,142 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from dataclasses import dataclass, field
 from typing import Literal, Protocol
 
 import numpy as np
 
-from ...planning.work import WorkDescriptor
+from ...planning.work import (
+    RuntimeStateSnapshot,
+    StageStateSnapshot,
+    StageWork,
+    WorkDescriptor,
+)
 
 
 ImageInputKind = Literal["encoded_bytes", "preprocessed_tensor"]
+
+
+def image_work_calibration_signature(
+    *,
+    model_revision: str,
+    processor_revision: str,
+    dtype: str,
+    input_size: int = 224,
+    embedding_dimension: int = 512,
+) -> str:
+    """Return a stable identity for comparable image stage-work estimates."""
+    if not model_revision or not processor_revision or not dtype:
+        raise ValueError("image work calibration identity fields must be non-empty")
+    if input_size <= 0 or embedding_dimension <= 0:
+        raise ValueError("image work dimensions must be positive")
+    payload = {
+        "dtype": dtype,
+        "embedding_dimension": embedding_dimension,
+        "input_size": input_size,
+        "model_revision": model_revision,
+        "processor_revision": processor_revision,
+        "schema": "image-stage-work-v1",
+    }
+    digest = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return f"image-stage-work-v1:{digest}"
+
+
+def build_image_work_descriptor(
+    *,
+    row_count: int,
+    encoded_bytes: int,
+    model_revision: str,
+    processor_revision: str,
+    dtype: str,
+    input_size: int = 224,
+    embedding_dimension: int = 512,
+) -> WorkDescriptor:
+    """Describe source, prepare, model, and result demand for one image batch."""
+    if row_count <= 0 or encoded_bytes < 0:
+        raise ValueError("row_count must be positive and encoded_bytes non-negative")
+    pixels = row_count * input_size * input_size
+    return WorkDescriptor(
+        stages=(
+            StageWork("source", encoded_bytes, "encoded_bytes"),
+            StageWork("prepare", pixels * 3, "tensor_values"),
+            StageWork("model", pixels, "pixels"),
+            StageWork("result", row_count * embedding_dimension * 4, "bytes"),
+        ),
+        primary_stage="model",
+        calibration_signature=image_work_calibration_signature(
+            model_revision=model_revision,
+            processor_revision=processor_revision,
+            dtype=dtype,
+            input_size=input_size,
+            embedding_dimension=embedding_dimension,
+        ),
+        locality_key=f"shape-{input_size}x{input_size}",
+    )
+
+
+def build_image_runtime_snapshot(
+    *,
+    ready: tuple[tuple[WorkDescriptor, float], ...],
+    active: tuple[WorkDescriptor, ...],
+    observed_at_s: float,
+    calibration_signature: str,
+    max_active_batches: int,
+    batch_size: int,
+    input_size: int = 224,
+) -> RuntimeStateSnapshot:
+    """Build an observe-only snapshot from scheduler-visible image work.
+
+    Submitted batches reserve both prepare and model work because the driver
+    cannot observe their internal hand-off without intrusive actor polling.
+    The stages must therefore be interpreted independently, never summed.
+    """
+    if max_active_batches <= 0 or batch_size <= 0 or input_size <= 0:
+        raise ValueError("snapshot capacity inputs must be positive")
+    descriptors = tuple(item for item, _ready_at_s in ready) + active
+    if any(item.calibration_signature != calibration_signature for item in descriptors):
+        raise ValueError("snapshot work descriptors must share the calibration signature")
+    oldest_age_s = (
+        max(0.0, observed_at_s - min(ready_at_s for _item, ready_at_s in ready))
+        if ready
+        else 0.0
+    )
+
+    def total(items: tuple[WorkDescriptor, ...], stage: str) -> int:
+        return sum(
+            stage_work.units
+            for item in items
+            if (stage_work := item.for_stage(stage)) is not None
+        )
+
+    ready_descriptors = tuple(item for item, _ready_at_s in ready)
+    model_capacity = max_active_batches * batch_size * input_size * input_size
+    prepare_capacity = model_capacity * 3
+    stages = tuple(
+        StageStateSnapshot(
+            stage=stage,
+            active_work=total(active, stage),
+            queued_work=total(ready_descriptors, stage),
+            service_rate_units_s=None,
+            oldest_queue_age_s=oldest_age_s,
+            observed_at_s=observed_at_s,
+            capacity_work=capacity,
+        )
+        for stage, capacity in (
+            ("prepare", prepare_capacity),
+            ("model", model_capacity),
+        )
+    )
+    return RuntimeStateSnapshot(
+        stages=stages,
+        observed_at_s=observed_at_s,
+        calibration_signature=calibration_signature,
+    )
 
 
 @dataclass(frozen=True)

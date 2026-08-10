@@ -103,6 +103,7 @@ def _shared_credit_client(
         namespace=config["namespace"],
         capacities=capacities,
         quantum=config["quantum"],
+        policy=config.get("policy", "drr"),
     )
 
 

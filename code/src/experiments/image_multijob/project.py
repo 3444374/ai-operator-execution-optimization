@@ -17,7 +17,7 @@ import subprocess
 import threading
 import time
 from collections import deque
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 from src.infrastructure.config_env import expand_structure
@@ -27,6 +27,11 @@ from src.modalities.image.execution import (
     EmbeddingAudit,
     build_project_ray_worker_pool,
     stop_project_ray_worker_pool,
+)
+from src.modalities.image.contracts import (
+    build_image_runtime_snapshot,
+    build_image_work_descriptor,
+    image_work_calibration_signature,
 )
 from src.modalities.image.resource_sampling import (
     NvidiaSmiSampler,
@@ -38,6 +43,7 @@ from src.modalities.image.source import (
     ImageSourceConfig,
     read_image_source_metadata,
 )
+from src.planning.work import WorkDescriptor
 from src.scheduling.submission_control.shared_credit import FairEndpointCreditCoordinator
 from .manifest import (
     ImageJobManifest,
@@ -100,6 +106,7 @@ class _SourceBatch:
     work_units: int
     encoded_bytes: int
     ready_elapsed_s: float
+    work_descriptor: WorkDescriptor
 
 
 def _percentile(values: list[float], fraction: float) -> float:
@@ -309,15 +316,24 @@ def _produce(
         for index, record_batch in enumerate(batches):
             doc_ids = tuple(str(item.as_py()) for item in record_batch["doc_id"])
             encoded = [item.as_py() for item in record_batch["image"]]
+            encoded_bytes = sum(len(item) for item in encoded)
+            descriptor = build_image_work_descriptor(
+                row_count=len(doc_ids),
+                encoded_bytes=encoded_bytes,
+                model_revision=config.model,
+                processor_revision=config.processor,
+                dtype=config.dtype,
+            )
             output.put(
                 _SourceBatch(
                     batch_id=f"{job.job_id}:{index}",
                     job_id=job.job_id,
                     doc_ids=doc_ids,
                     encoded=encoded,
-                    work_units=len(doc_ids) * 224 * 224,
-                    encoded_bytes=sum(len(item) for item in encoded),
+                    work_units=descriptor.primary.units,
+                    encoded_bytes=encoded_bytes,
                     ready_elapsed_s=time.monotonic() - start_monotonic,
+                    work_descriptor=descriptor,
                 )
             )
     except Exception as exc:  # noqa: BLE001
@@ -333,13 +349,38 @@ def _state_row(
     job_id: str,
     waiting: dict[str, deque[_SourceBatch]],
     active_by_job: dict[str, int],
+    active_batches: tuple[_SourceBatch, ...],
+    calibration_signature: str,
+    max_active_batches: int,
+    batch_size: int,
 ) -> dict[str, object]:
     import ray
 
     shm = shutil.disk_usage("/dev/shm")
     available = ray.available_resources()
+    observed_at_s = time.monotonic()
+    snapshot_started = time.perf_counter()
+    snapshot = build_image_runtime_snapshot(
+        ready=tuple(
+            (batch.work_descriptor, started + batch.ready_elapsed_s)
+            for batches in waiting.values()
+            for batch in batches
+        ),
+        active=tuple(batch.work_descriptor for batch in active_batches),
+        observed_at_s=observed_at_s,
+        calibration_signature=calibration_signature,
+        max_active_batches=max_active_batches,
+        batch_size=batch_size,
+    )
+    snapshot_build_s = time.perf_counter() - snapshot_started
+    snapshot_checked_at_s = time.monotonic()
+    snapshot_age_s = snapshot_checked_at_s - snapshot.observed_at_s
+    # The scheduler's completion poll is 50 ms, so older state would already
+    # belong to a previous control iteration. Observe-only mode records this
+    # gate but never changes admission on failure.
+    snapshot_max_age_s = 0.05
     return {
-        "elapsed_s": time.monotonic() - started,
+        "elapsed_s": observed_at_s - started,
         "event": event,
         "job_id": job_id,
         "active_batches": sum(active_by_job.values()),
@@ -350,6 +391,16 @@ def _state_row(
         "ray_available_cpu": float(available.get("CPU", 0.0)),
         "ray_available_gpu": float(available.get("GPU", 0.0)),
         "shm_used_bytes": shm.used,
+        "runtime_state_mode": "observe_only",
+        "runtime_state_fresh": snapshot.is_fresh(
+            now_s=snapshot_checked_at_s,
+            max_age_s=snapshot_max_age_s,
+        ),
+        "runtime_state_age_s": snapshot_age_s,
+        "runtime_state_max_age_s": snapshot_max_age_s,
+        "runtime_state_calibration_signature": snapshot.calibration_signature,
+        "runtime_state_snapshot_json": json.dumps(asdict(snapshot), sort_keys=True),
+        "runtime_state_snapshot_build_s": snapshot_build_s,
     }
 
 
@@ -420,6 +471,11 @@ def run_project_scenario(
     pending: dict[object, tuple[_SourceBatch, float]] = {}
     traces: list[dict[str, object]] = []
     started = time.monotonic()
+    calibration_signature = image_work_calibration_signature(
+        model_revision=config.model,
+        processor_revision=config.processor,
+        dtype=config.dtype,
+    )
     threads = [
         threading.Thread(
             target=_produce,
@@ -502,6 +558,10 @@ def run_project_scenario(
                     _state_row(
                         started=started, event="submit", job_id=job.job_id,
                         waiting=waiting, active_by_job=active_by_job,
+                        active_batches=tuple(item[0] for item in pending.values()),
+                        calibration_signature=calibration_signature,
+                        max_active_batches=config.max_active_batches,
+                        batch_size=config.batch_size,
                     )
                 )
                 submitted = True
@@ -534,6 +594,10 @@ def run_project_scenario(
                         _state_row(
                             started=started, event="complete", job_id=batch.job_id,
                             waiting=waiting, active_by_job=active_by_job,
+                            active_batches=tuple(item[0] for item in pending.values()),
+                            calibration_signature=calibration_signature,
+                            max_active_batches=config.max_active_batches,
+                            batch_size=config.batch_size,
                         )
                     )
                     continue
@@ -567,6 +631,7 @@ def run_project_scenario(
                 "repeat": repeat,
                 "job_manifest_sha256": config.job_manifest.sha256,
                 "policy_revision": config.policy_revision,
+                "work_descriptor_calibration_signature": calibration_signature,
                 "job_id": job.job_id,
                 "job_count": len(run_jobs),
                 "rows": job.limit,
@@ -609,6 +674,18 @@ def run_project_scenario(
         * config.model_flops_per_image
         / (group_jct_s * config.gpu_workers * config.gpu_peak_flops_per_s)
     )
+    snapshot_build_values = [
+        float(row["runtime_state_snapshot_build_s"])
+        for row in traces
+    ]
+    snapshot_age_values = [
+        float(row["runtime_state_age_s"])
+        for row in traces
+    ]
+    snapshot_fresh_count = sum(
+        bool(row["runtime_state_fresh"])
+        for row in traces
+    )
     group = {
         "scenario_id": scenario.scenario_id,
         "policy": scenario.policy,
@@ -616,6 +693,24 @@ def run_project_scenario(
         "repeat": repeat,
         "job_manifest_sha256": config.job_manifest.sha256,
         "policy_revision": config.policy_revision,
+        "work_descriptor_mode": "staged_v1_legacy_equivalent",
+        "work_descriptor_calibration_signature": calibration_signature,
+        "runtime_state_mode": "observe_only",
+        "runtime_state_snapshot_count": len(snapshot_build_values),
+        "runtime_state_fresh_ratio": (
+            snapshot_fresh_count / len(snapshot_build_values)
+            if snapshot_build_values
+            else 0.0
+        ),
+        "runtime_state_age_p95_s": _percentile(snapshot_age_values, 0.95),
+        "runtime_state_snapshot_build_mean_s": (
+            sum(snapshot_build_values) / len(snapshot_build_values)
+            if snapshot_build_values
+            else 0.0
+        ),
+        "runtime_state_snapshot_build_p95_s": _percentile(
+            snapshot_build_values, 0.95
+        ),
         "policy_implementation": (
             config.policy_revision if scenario.policy == "proposed" else "frozen_static_partition"
         ),

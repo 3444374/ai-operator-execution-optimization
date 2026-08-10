@@ -18,6 +18,49 @@ from src.scheduling.submission_control.shared_credit import (  # noqa: E402
 
 
 class SharedCreditCoordinatorTests(unittest.TestCase):
+    def test_fifo_policy_preserves_global_waiter_order(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="fifo",
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="active",
+                job_id="a",
+                endpoint_id="gpu0",
+                estimated_work=100,
+            )
+        )
+        for request_id, job_id in (("first", "b"), ("second", "a")):
+            self.assertFalse(
+                coordinator.try_acquire(
+                    request_id=request_id,
+                    job_id=job_id,
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                )
+            )
+
+        coordinator.release("active", job_id="a")
+
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="first",
+                job_id="b",
+                endpoint_id="gpu0",
+                estimated_work=100,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="second",
+                job_id="a",
+                endpoint_id="gpu0",
+                estimated_work=100,
+            )
+        )
+
     def test_single_job_borrows_all_idle_endpoint_capacity(self) -> None:
         coordinator = FairEndpointCreditCoordinator(
             {"gpu0": (3, 300)},

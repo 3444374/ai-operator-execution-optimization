@@ -38,7 +38,7 @@ class EndpointCreditSnapshot:
 
 
 class FairEndpointCreditCoordinator:
-    """Deficit-round-robin admission with work-conserving credit borrowing.
+    """Shared endpoint credit with DRR or an arrival-ordered FIFO control.
 
     This class is engine independent. A Ray named actor can own one instance so
     schedulers from separate database jobs observe the same endpoint capacity.
@@ -49,11 +49,14 @@ class FairEndpointCreditCoordinator:
         capacities: dict[str, tuple[int, int]],
         *,
         quantum: int,
+        policy: str = "drr",
     ) -> None:
         if not capacities:
             raise ValueError("capacities must not be empty")
         if quantum <= 0:
             raise ValueError("quantum must be positive")
+        if policy not in {"drr", "fifo"}:
+            raise ValueError("shared credit policy must be drr or fifo")
         for endpoint_id, (request_limit, work_limit) in capacities.items():
             if not endpoint_id:
                 raise ValueError("endpoint IDs must be non-empty")
@@ -61,6 +64,7 @@ class FairEndpointCreditCoordinator:
                 raise ValueError("endpoint capacity limits must be positive")
         self._capacities = dict(capacities)
         self._quantum = quantum
+        self._policy = policy
         self._active: dict[tuple[str, str], CreditLease] = {}
         self._active_work: dict[str, int] = {
             endpoint_id: 0 for endpoint_id in capacities
@@ -84,6 +88,9 @@ class FairEndpointCreditCoordinator:
             endpoint_id: {} for endpoint_id in capacities
         }
         self._queued_request_keys: set[tuple[str, str]] = set()
+        self._fifo_order: dict[str, deque[tuple[str, str]]] = {
+            endpoint_id: deque() for endpoint_id in capacities
+        }
         self._weights: dict[str, int] = {}
         self._deficits: dict[tuple[str, str], int] = {}
         self._job_order: dict[str, list[str]] = {
@@ -135,6 +142,8 @@ class FairEndpointCreditCoordinator:
                 self._job_order[endpoint_id].append(job_id)
             job_queues[job_id].append(lease)
             self._queued_request_keys.add(request_key)
+            if self._policy == "fifo":
+                self._fifo_order[endpoint_id].append(request_key)
         self._grant_waiters(endpoint_id)
         return request_key in self._active
 
@@ -198,6 +207,9 @@ class FairEndpointCreditCoordinator:
         )
 
     def _grant_waiters(self, endpoint_id: str) -> None:
+        if self._policy == "fifo":
+            self._grant_fifo_waiters(endpoint_id)
+            return
         request_limit, work_limit = self._capacities[endpoint_id]
         job_order = self._job_order[endpoint_id]
         if not job_order:
@@ -267,3 +279,44 @@ class FairEndpointCreditCoordinator:
                 + lease.estimated_work
             )
             visits_without_grant = 0
+
+    def _grant_fifo_waiters(self, endpoint_id: str) -> None:
+        """Grant one global arrival-ordered queue without work borrowing."""
+        request_limit, work_limit = self._capacities[endpoint_id]
+        fifo = self._fifo_order[endpoint_id]
+        while fifo and self._active_requests[endpoint_id] < request_limit:
+            job_id, request_id = fifo[0]
+            queue = self._waiting[endpoint_id][job_id]
+            if not queue:
+                fifo.popleft()
+                continue
+            lease = queue[0]
+            if lease.request_id != request_id:
+                raise RuntimeError("FIFO and per-job credit queues diverged")
+            if self._active_work[endpoint_id] + lease.estimated_work > work_limit:
+                return
+            fifo.popleft()
+            queue.popleft()
+            request_key = (job_id, request_id)
+            self._queued_request_keys.remove(request_key)
+            self._activate(endpoint_id, lease)
+
+    def _activate(self, endpoint_id: str, lease: CreditLease) -> None:
+        request_key = (lease.job_id, lease.request_id)
+        self._active[request_key] = lease
+        self._active_requests[endpoint_id] += 1
+        self._active_work[endpoint_id] += lease.estimated_work
+        self._max_active_requests[endpoint_id] = max(
+            self._max_active_requests[endpoint_id],
+            self._active_requests[endpoint_id],
+        )
+        self._max_active_work[endpoint_id] = max(
+            self._max_active_work[endpoint_id],
+            self._active_work[endpoint_id],
+        )
+        granted_requests = self._granted_requests[endpoint_id]
+        granted_requests[lease.job_id] = granted_requests.get(lease.job_id, 0) + 1
+        granted_work = self._granted_work[endpoint_id]
+        granted_work[lease.job_id] = (
+            granted_work.get(lease.job_id, 0) + lease.estimated_work
+        )

@@ -29,6 +29,8 @@ from src.modalities.image.contracts import (  # noqa: E402
     ImageBatchTelemetry,
     ImageEmbeddingBatch,
     ImageEmbeddingResult,
+    build_image_runtime_snapshot,
+    build_image_work_descriptor,
 )
 from src.modalities.image.source import (  # noqa: E402
     ImageSourceConfig,
@@ -70,6 +72,67 @@ class ImageContractTests(unittest.TestCase):
                 input_kind="preprocessed_tensor",
                 work_units=0,
                 work_unit="pixels",
+            )
+
+    def test_staged_descriptor_preserves_legacy_image_work(self) -> None:
+        descriptor = build_image_work_descriptor(
+            row_count=2,
+            encoded_bytes=4096,
+            model_revision="clip-rev",
+            processor_revision="processor-rev",
+            dtype="float16",
+        )
+
+        self.assertEqual(descriptor.primary.units, 2 * 224 * 224)
+        self.assertEqual(descriptor.for_stage("source").units, 4096)
+        self.assertEqual(descriptor.for_stage("prepare").units, 2 * 3 * 224 * 224)
+        self.assertEqual(descriptor.for_stage("result").units, 2 * 512 * 4)
+
+    def test_observe_only_snapshot_uses_one_signature_and_visible_work(self) -> None:
+        ready = build_image_work_descriptor(
+            row_count=2,
+            encoded_bytes=4096,
+            model_revision="clip-rev",
+            processor_revision="processor-rev",
+            dtype="float16",
+        )
+        active = build_image_work_descriptor(
+            row_count=1,
+            encoded_bytes=2048,
+            model_revision="clip-rev",
+            processor_revision="processor-rev",
+            dtype="float16",
+        )
+        snapshot = build_image_runtime_snapshot(
+            ready=((ready, 9.5),),
+            active=(active,),
+            observed_at_s=10.0,
+            calibration_signature=ready.calibration_signature,
+            max_active_batches=32,
+            batch_size=64,
+        )
+
+        self.assertEqual(snapshot.for_stage("model").queued_work, 2 * 224 * 224)
+        self.assertEqual(snapshot.for_stage("model").active_work, 224 * 224)
+        self.assertEqual(snapshot.for_stage("model").oldest_queue_age_s, 0.5)
+        self.assertTrue(snapshot.is_fresh(now_s=10.0, max_age_s=0.0))
+
+    def test_observe_only_snapshot_rejects_mixed_calibration(self) -> None:
+        descriptor = build_image_work_descriptor(
+            row_count=1,
+            encoded_bytes=2048,
+            model_revision="clip-rev",
+            processor_revision="processor-rev",
+            dtype="float16",
+        )
+        with self.assertRaisesRegex(ValueError, "calibration signature"):
+            build_image_runtime_snapshot(
+                ready=((descriptor, 1.0),),
+                active=(),
+                observed_at_s=2.0,
+                calibration_signature="wrong",
+                max_active_batches=32,
+                batch_size=64,
             )
 
     def test_clip_v5_pooler_output_is_selected(self) -> None:

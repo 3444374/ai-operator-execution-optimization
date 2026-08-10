@@ -55,6 +55,7 @@ from .metrics import (
     group_resource_summary,
     jain_fairness,
     normalized_job_service_rates,
+    shared_credit_trace_summary,
 )
 from .runtime import _RayCreditObserver, _resource_sample
 
@@ -283,7 +284,7 @@ def _run_group(
                 coordinator_name,
                 config.endpoint_ids,
             )
-            if scenario.policy == "shared_drr"
+            if scenario.policy in {"shared_drr", "shared_fifo"}
             else None
         )
         if observer is not None:
@@ -291,6 +292,7 @@ def _run_group(
                 request_limit=config.request_limit_per_endpoint,
                 work_limit=config.work_limit_per_endpoint,
                 quantum=config.credit_quantum,
+                policy="fifo" if scenario.policy == "shared_fifo" else "drr",
             )
         start_epoch_s = time.time() + options.start_delay_s
         commands = [
@@ -471,6 +473,18 @@ def _run_group(
                 else scenario.job_count
             ),
             "rows_per_job": scenario.rows_per_job,
+            **(
+                {
+                    "rows_per_jobs": json.dumps(
+                        [
+                            scenario.row_count(index)
+                            for index in range(scenario.job_count)
+                        ]
+                    )
+                }
+                if scenario.rows_per_jobs
+                else {}
+            ),
             "request_limit_per_endpoint": (
                 config.request_limit_per_endpoint
             ),
@@ -495,7 +509,7 @@ def _run_group(
             "ray_address": options.ray_address,
             "coordinator_name": (
                 coordinator_name
-                if scenario.policy == "shared_drr"
+                if scenario.policy in {"shared_drr", "shared_fifo"}
                 else ""
             ),
             "run_instance_id": run_instance_id,
@@ -508,6 +522,11 @@ def _run_group(
             **cumulative_service_disparity(
                 job_evidence,
                 scenario.weights,
+            ),
+            **shared_credit_trace_summary(
+                credit_samples,
+                work_limit_per_endpoint=config.work_limit_per_endpoint,
+                job_count=scenario.job_count,
             ),
             "job_jct_s": json.dumps(
                 [evidence["jct_s"] for evidence in job_evidence]
@@ -547,6 +566,37 @@ def _run_group(
             ),
             "job_actual_work": json.dumps(
                 [evidence["actual_work"] for evidence in job_evidence]
+            ),
+            **(
+                {
+                    "job_actual_prompt_work": json.dumps(
+                        [
+                            evidence["actual_prompt_work"]
+                            for evidence in job_evidence
+                        ]
+                    ),
+                    "job_actual_output_work": json.dumps(
+                        [
+                            evidence["actual_output_work"]
+                            for evidence in job_evidence
+                        ]
+                    ),
+                    "job_arrived_rows": json.dumps(
+                        [
+                            scenario.row_count(index)
+                            for index in range(scenario.job_count)
+                        ]
+                    ),
+                    "job_completed_rows": json.dumps(
+                        [
+                            scenario.row_count(index)
+                            for index in range(scenario.job_count)
+                        ]
+                    ),
+                    "job_failed_rows": json.dumps([0] * scenario.job_count),
+                }
+                if scenario.rows_per_jobs
+                else {}
             ),
             "job_normalized_service_rate": json.dumps(
                 normalized_service

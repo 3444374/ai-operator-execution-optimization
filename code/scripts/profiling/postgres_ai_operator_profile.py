@@ -1637,6 +1637,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "work_limit": args.shared_credit_work_limit,
             "quantum": args.shared_credit_quantum,
             "job_weight": args.shared_credit_job_weight,
+            "policy": args.shared_credit_policy,
         }
     effective_global_inflight_limit = (
         per_endpoint_inflight_limit * routing_endpoint_count
