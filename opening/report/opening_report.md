@@ -126,7 +126,7 @@ Database
 
 ### 5.2 统一文本 database-E2E 三臂
 
-开题前最后一组新增文本数据采用两类 workload：SQuAD short-answer 均匀控制组和 ShareGPT controlled-skew 异质组。三条路径分别是 bounded HTTP 静态直接控制、DuckDB AI static-sharded、项目 Daft organizer + Ray actor frozen-static。三者共享 PostgreSQL source、immutable manifest、双 vLLM endpoint、Qwen2.5-7B、prefix cache、统一 PostgreSQL sink、外部 database-E2E 与 1 warmup + 3 formal 合同。
+开题前最后一组新增文本数据采用两类 workload：SQuAD short-answer 均匀控制组和 ShareGPT controlled-skew 异质组。三条路径分别是直接调用（容量参照，内部 arm 为 `bounded_http`）、DuckDB AI static-sharded、项目 Daft organizer + Ray actor frozen-static。三者共享 PostgreSQL source、immutable manifest、双 vLLM endpoint、Qwen2.5-7B、prefix cache、统一 PostgreSQL sink、外部 database-E2E 与 1 warmup + 3 formal 合同。
 
 K128 replacement 中，SQuAD direct、DuckDB AI、项目冻结静态的 correct rows/s 均值分别为 136.63、136.68 和 137.77；service tokens/s 分别为 40,920.72、40,955.99 和 41,277.95。项目/direct service ratio 为 100.87%，三臂 normalized EM 约 80.26%–80.31%，token F1 约 89.36%–89.38%。因此均匀短输出下三条静态路径近似中性；该结论不外推到 ShareGPT。
 

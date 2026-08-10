@@ -160,7 +160,8 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。九张彩色与灰�
   避免把小样本诊断视觉包装成正式排名。
 - panel c 以每个 CPU 档两条直接标名的横条展示 120K matched-resource Ray Data 与 Project；
   CPU8/16 各 3 formal，横条为均值，条末数字为均值±SD。横轴从 0 开始，不再叠加重复点、均值大点、
-  配对线与图例。只有此 panel 可作性能排名。
+  配对线与图例。panel 内显式写明 Daft Built-in 在 20K 已 OutOfDisk、未形成 120K formal cell，
+  避免单独截取 panel 时被误解为漏画。只有此 panel 可作性能排名。
 - 不支持：给 vLLM pooling 补虚构吞吐；把 Direct ceiling、12K diagnostic 与 120K operator JCT
   混成总排行榜；把 Project Static 称为第三个原生 baseline。
 
@@ -201,9 +202,11 @@ A/T/N/C/H/D/I/E/F 已逐张打开复核，均无缺字方框、裁切或文字�
 
 - panel a 使用统一 PostgreSQL source/sink 的 SQuAD database-E2E 产品轨，比较 Direct
   static、DuckDB AI 与 Project frozen-static 的 correct rows/s；三臂在该合同下可排名。
-- panel b 使用同一 ShareGPT Chat manifest，比较 bounded HTTP、Daft Native、Daft Ray、
+- panel b 使用同一 ShareGPT Chat manifest，比较直接调用（容量参照）、Daft Native、Daft Ray、
   Ray Data 的 service tokens/s；Daft/Ray Data 保持 vendor scheduler ownership。
 - DuckDB 的 ShareGPT 4,921/6,144 cap 语义失败只作产品边界注释，不进入 Chat 图的性能排名。
+- 两个 panel 的均值±SD 口径只在整图页脚说明一次；删除原先压在最上方柱条上的重复说明，
+  条末数字与柱条保持独立，不再发生文字—数据重叠。
 - 支持：现有路径在正确吞吐、语义和服务供给状态上各有边界，研究不能只看 raw rows/s；
   这导出 neutral WorkDescriptor、correctness-aware evidence 和状态感知提交。
 - 不支持：两个 panel 跨轨排名、Project 普遍胜出或 DuckDB/Daft/Ray 的内部算法归因。
@@ -220,9 +223,9 @@ A/T/N/C/H/D/I/E/F 已逐张打开复核，均无缺字方框、裁切或文字�
   `queue_mean_s`。原生 adapter 无统一 request P99，不得补算或伪造。
 - 画法：六个原单位 small multiples 分别展示 JCT、service tok/s、running、waiting、KV、MFU；
   圆点/方框/三角/菱形的形状与颜色均由全图共享图例映射到四条执行路径，误差线为 SD；
-  避免雷达图、双 y 轴和
-  隐藏单位的统一归一化。
-- 主句：同一 ShareGPT 任务下，bounded control 处于最小饱和参照，
+  总标题、共享图例和 panel 标题分别占用独立区域，避免 PPT 裁切时发生顶部重叠；避免雷达图、
+  双 y 轴和隐藏单位的统一归一化。
+- 主句：同一 ShareGPT 任务下，直接调用（容量参照）处于最小饱和参照，
   Daft Native/Ray 出现 high-running/high-waiting/KV-near-full，Ray Data 当前路径
   low-running/no-waiting/low-MFU。
 - 不支持：不归因框架内部算法，不称某框架普遍更快，不将单 Job

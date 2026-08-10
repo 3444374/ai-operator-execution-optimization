@@ -308,7 +308,7 @@ def figure_work_organization_v2() -> None:
 
 
 TEXT_ARM_ORDER = ["bounded_http", "daft_native", "daft_ray", "ray_data_http"]
-TEXT_ARM_LABELS = ["Bounded HTTP", "Daft Native", "Daft Ray", "Ray Data"]
+TEXT_ARM_LABELS = ["直接调用（容量参照）", "Daft Native", "Daft Ray", "Ray Data"]
 TEXT_ARM_COLORS = [DARK, TEAL, PURPLE, GREY]
 TEXT_ARM_MARKERS = ["o", "s", "^", "D"]
 
@@ -387,7 +387,18 @@ def figure_native_single_job_state_fingerprint() -> None:
     if set(runs["arm"]) != set(TEXT_ARM_ORDER) or len(runs) != 12:
         raise ValueError("native single-job figure requires 4 arms × 3 formal runs")
 
-    fig, axes = plt.subplots(2, 3, figsize=(13.2, 7.6), constrained_layout=True)
+    # Reserve a real header band for the title and shared legend.  Letting
+    # constrained_layout place figure-level artists made the legend collide
+    # with the first-row panel titles in narrow PPT crops.
+    fig, axes = plt.subplots(2, 3, figsize=(13.5, 8.0), constrained_layout=False)
+    fig.subplots_adjust(
+        left=0.12,
+        right=0.985,
+        bottom=0.12,
+        top=0.80,
+        wspace=0.15,
+        hspace=0.38,
+    )
     definitions = [
         ("wall_s", "完成同一任务的时间", "Job JCT（秒，越低越好）", 1.0, 0, (0, 530)),
         ("tokens_per_s", "服务完成速率", "吞吐（千 token/s）", 1 / 1000, 1, (0, 20)),
@@ -435,7 +446,7 @@ def figure_native_single_job_state_fingerprint() -> None:
         "同一 ShareGPT 任务被不同原生执行图送入不同服务压力状态",
         fontsize=15,
         fontweight="bold",
-        y=1.02,
+        y=0.975,
     )
     fig.legend(
         [
@@ -452,7 +463,7 @@ def figure_native_single_job_state_fingerprint() -> None:
         ],
         TEXT_ARM_LABELS,
         loc="upper center",
-        bbox_to_anchor=(0.5, 0.98),
+        bbox_to_anchor=(0.5, 0.925),
         ncol=4,
         fontsize=8.1,
         handlelength=1.8,
@@ -460,10 +471,10 @@ def figure_native_single_job_state_fingerprint() -> None:
     )
     fig.text(
         0.5,
-        -0.015,
+        0.025,
         "形状/颜色=执行路径；点与误差线=3 次 formal 的均值 ± SD。用于状态指纹与当前路径诊断，不外推为框架通用排名。",
         ha="center",
-        va="top",
+        va="bottom",
         fontsize=8.5,
         color=GREY,
     )
@@ -514,21 +525,11 @@ def figure_text_baseline_evidence_map() -> None:
         color=DARK,
     )
     ax.set_title("产品 / database-E2E 轨：仅 SQuAD 可排名", loc="left")
-    ax.text(
-        0.98,
-        0.96,
-        "柱=均值；数字=均值±SD（n=3）",
-        transform=ax.transAxes,
-        ha="right",
-        va="top",
-        fontsize=7.8,
-        color=GREY,
-    )
     soft_grid(ax, axis="x")
 
     ax = axes[1]
     chat_arms = [
-        ("bounded_http", "Bounded HTTP", DARK),
+        ("bounded_http", "直接调用（容量参照）", DARK),
         ("daft_native", "Daft Native", TEAL),
         ("daft_ray", "Daft Ray", PURPLE),
         ("ray_data_http", "Ray Data", GREY),
@@ -555,16 +556,6 @@ def figure_text_baseline_evidence_map() -> None:
         color=GREY,
     )
     ax.set_title("官方 Chat graph 轨：服务状态与供给差异", loc="left")
-    ax.text(
-        0.98,
-        0.96,
-        "柱=均值；数字=均值±SD（n=3）",
-        transform=ax.transAxes,
-        ha="right",
-        va="top",
-        fontsize=7.8,
-        color=GREY,
-    )
     soft_grid(ax, axis="x")
 
     fig.suptitle(
@@ -1298,16 +1289,6 @@ def figure_image_baseline_evidence_map() -> None:
     ax.set_xlim(0, 78)
     ax.set_ylim(-0.55, 2.55)
     ax.set_xlabel("12K operator JCT（秒）")
-    ax.text(
-        0.02,
-        0.97,
-        "横条=均值；数字=均值±SD（n=3 formal）",
-        transform=ax.transAxes,
-        ha="left",
-        va="top",
-        color=GREY,
-        fontsize=7.2,
-    )
     ax.set_title("12K 同语义能力诊断（非稳态排名）", loc="left")
     soft_grid(ax, axis="x")
 
@@ -1358,19 +1339,18 @@ def figure_image_baseline_evidence_map() -> None:
     ax.set_yticks(y)
     ax.set_yticklabels(["8 个 CPU worker", "16 个 CPU worker"])
     ax.set_xlim(0, 148)
-    ax.set_ylim(-0.5, 1.5)
+    ax.set_ylim(-0.5, 1.68)
     ax.set_xlabel("120K operator JCT（秒，越低越好）")
     ax.text(
-        0.02,
-        0.96,
-        "横条=均值；数字=均值±SD（n=3 formal）",
-        transform=ax.transAxes,
+        2.0,
+        1.53,
+        "Daft Built-in：20K OutOfDisk，未形成 120K formal cell",
         ha="left",
-        va="top",
-        color=GREY,
-        fontsize=7.5,
+        va="center",
+        color=RED,
+        fontsize=7.4,
     )
-    ax.set_title("120K 同资源正式比较（越低越好）", loc="left")
+    ax.set_title("120K 同资源比较：仅两条路径通过规模门禁", loc="left")
     soft_grid(ax, axis="x")
 
     for panel_ax, label in zip(axes, ["a", "b", "c"], strict=True):
@@ -1393,7 +1373,7 @@ def figure_image_baseline_evidence_map() -> None:
     fig.text(
         0.5,
         -0.02,
-        "统一 PostgreSQL 图像输入、CLIP 与 L2-normalized 输出；panel b 不排名，panel c 为 1 warmup + 3 formal 的同资源比较。",
+        "统一 PostgreSQL 图像输入、CLIP 与 L2-normalized 输出；条末数字=均值±SD（n=3 formal）；panel b 不排名，panel c 仅比较通过规模门禁的路径。",
         ha="center",
         va="top",
         fontsize=8.3,
