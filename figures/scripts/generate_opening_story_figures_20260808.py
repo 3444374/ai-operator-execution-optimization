@@ -310,7 +310,6 @@ def figure_work_organization_v2() -> None:
 TEXT_ARM_ORDER = ["bounded_http", "daft_native", "daft_ray", "ray_data_http"]
 TEXT_ARM_LABELS = ["直接调用（容量参照）", "Daft Native", "Daft Ray", "Ray Data"]
 TEXT_ARM_COLORS = [DARK, TEAL, PURPLE, GREY]
-TEXT_ARM_MARKERS = ["o", "s", "^", "D"]
 
 
 def _arm_point_panel(
@@ -324,38 +323,31 @@ def _arm_point_panel(
     decimals: int = 1,
     xlim: tuple[float, float] | None = None,
 ) -> None:
-    """Draw one original-unit state metric as mean ± SD over three formal runs."""
+    """Draw one original-unit state metric as a mean point over three formal runs."""
 
     y = np.arange(len(TEXT_ARM_ORDER))[::-1]
-    for yi, arm, color, marker in zip(
+    for yi, arm, color in zip(
         y,
         TEXT_ARM_ORDER,
         TEXT_ARM_COLORS,
-        TEXT_ARM_MARKERS,
         strict=True,
     ):
         values = runs.loc[runs["arm"].eq(arm), column].to_numpy(dtype=float) * scale
         if len(values) != 3:
             raise ValueError(f"{arm}/{column} requires exactly three formal runs")
         mean = float(values.mean())
-        sd = float(values.std(ddof=1))
-        ax.errorbar(
-            mean,
-            yi,
-            xerr=sd,
-            fmt=marker,
+        ax.scatter(
+            [mean],
+            [yi],
             color=color,
-            ecolor=color,
-            markeredgecolor="white",
-            markeredgewidth=0.7,
-            markersize=7,
-            linewidth=1.6,
-            capsize=3,
+            marker="o",
+            s=42,
+            linewidths=0,
             zorder=3,
         )
         if xlim is not None:
             span = xlim[1] - xlim[0]
-            text_x = min(mean + max(sd, span * 0.018), xlim[1] - span * 0.02)
+            text_x = min(mean + span * 0.018, xlim[1] - span * 0.02)
             ha = "right" if text_x >= xlim[1] - span * 0.04 else "left"
             ax.text(
                 text_x,
@@ -454,12 +446,11 @@ def figure_native_single_job_state_fingerprint() -> None:
                 [0],
                 [0],
                 color=color,
-                marker=marker,
-                markeredgecolor="white",
-                linewidth=1.4,
-                markersize=6,
+                marker="o",
+                linewidth=0,
+                markersize=6.5,
             )
-            for color, marker in zip(TEXT_ARM_COLORS, TEXT_ARM_MARKERS, strict=True)
+            for color in TEXT_ARM_COLORS
         ],
         TEXT_ARM_LABELS,
         loc="upper center",
@@ -472,7 +463,7 @@ def figure_native_single_job_state_fingerprint() -> None:
     fig.text(
         0.5,
         0.025,
-        "形状/颜色=执行路径；点与误差线=3 次 formal 的均值 ± SD。用于状态指纹与当前路径诊断，不外推为框架通用排名。",
+        "颜色=执行路径；实心圆=3 次 formal 的均值（离散度见审计数据）。用于状态指纹与当前路径诊断，不外推为框架通用排名。",
         ha="center",
         va="bottom",
         fontsize=8.5,

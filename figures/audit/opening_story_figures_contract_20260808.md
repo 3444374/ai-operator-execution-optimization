@@ -222,9 +222,10 @@ A/T/N/C/H/D/I/E/F 已逐张打开复核，均无缺字方框、裁切或文字�
   `waiting_mean`、`kv_mean`、`mfu_mean`、`gpu_util_mean_pct`、`ttft_mean_s`、
   `queue_mean_s`。原生 adapter 无统一 request P99，不得补算或伪造。
 - 画法：六个原单位 small multiples 分别展示 JCT、service tok/s、running、waiting、KV、MFU；
-  圆点/方框/三角/菱形的形状与颜色均由全图共享图例映射到四条执行路径，误差线为 SD；
-  总标题、共享图例和 panel 标题分别占用独立区域，避免 PPT 裁切时发生顶部重叠；避免雷达图、
-  双 y 轴和隐藏单位的统一归一化。
+  统一使用无描边实心圆表示 3 次 formal 均值，只用颜色映射四条执行路径。重复间 SD 保留在
+  `formal_summary.csv` 与审计数据中，但不再叠加形状、误差线和端帽，因为本图论点是状态指纹，
+  不是重复波动比较。总标题、共享图例和 panel 标题分别占用独立区域，避免 PPT 裁切时发生顶部
+  重叠；避免雷达图、双 y 轴和隐藏单位的统一归一化。
 - 主句：同一 ShareGPT 任务下，直接调用（容量参照）处于最小饱和参照，
   Daft Native/Ray 出现 high-running/high-waiting/KV-near-full，Ray Data 当前路径
   low-running/no-waiting/low-MFU。
