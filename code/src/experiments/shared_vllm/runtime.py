@@ -221,6 +221,7 @@ def build_observe_only_text_state_rows(
             else 0
         )
         observed_at_s = float(credit["observed_epoch_s"])
+        service_rate = (service_rates or {}).get(endpoint_id)
         snapshot = build_text_runtime_snapshot(
             active_work=int(credit["active_work"]),
             upstream_queued_work=int(credit["waiting_work"]),
@@ -230,7 +231,11 @@ def build_observe_only_text_state_rows(
             observed_at_s=observed_at_s,
             capacity_work=int(credit["work_limit"]),
             calibration_signature=calibration_signature,
-            service_rate_tokens_s=(service_rates or {}).get(endpoint_id),
+            service_rate_tokens_s=(
+                service_rate
+                if service_rate is not None and service_rate > 0
+                else None
+            ),
         )
         organizer = snapshot.for_stage("organizer")
         model = snapshot.for_stage("model")

@@ -83,6 +83,36 @@ class SharedVllmRuntimeStateTests(unittest.TestCase):
         self.assertEqual(first, {})
         self.assertEqual(second, {"endpoint-0": 100.0})
 
+    def test_zero_completion_rate_remains_unavailable_in_typed_state(self) -> None:
+        rows = build_observe_only_text_state_rows(
+            [
+                {
+                    "endpoint_id": "endpoint-0",
+                    "observed_epoch_s": 10.0,
+                    "elapsed_s": 2.0,
+                    "request_limit": 96,
+                    "work_limit": 98304,
+                    "active_requests": 0,
+                    "active_work": 0,
+                    "waiting_work": 0,
+                    "oldest_waiting_age_s": 0.0,
+                }
+            ],
+            [
+                {
+                    "endpoint_index": 0,
+                    "running": 0.0,
+                    "waiting": 0.0,
+                    "kv_usage": 0.0,
+                }
+            ],
+            endpoint_ids=("endpoint-0",),
+            calibration_signature="sig",
+            service_rates={"endpoint-0": 0.0},
+        )
+
+        self.assertEqual(rows[0]["service_rate_tokens_s"], "")
+
     def test_actuator_applies_bounded_capacity_decision(self) -> None:
         class Observer:
             def __init__(self) -> None:
