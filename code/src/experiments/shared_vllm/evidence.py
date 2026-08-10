@@ -510,7 +510,8 @@ def _load_resume_manifest(path: Path, expected: dict) -> dict:
         "redacted_config",
         "schedule",
     ):
-        if manifest.get(key) != expected[key]:
+        expected_value = json.loads(json.dumps(expected[key]))
+        if manifest.get(key) != expected_value:
             raise ValueError(f"resume manifest does not match {key}")
     if not isinstance(manifest.get("completed_runs"), list):
         raise ValueError("resume manifest has invalid completed_runs")

@@ -991,6 +991,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             __version__="2.test",
             init=Mock(),
             remote=Mock(return_value=RemoteDefinition()),
+            wait=Mock(side_effect=lambda refs, **_kwargs: (refs, [])),
             get=Mock(side_effect=lambda refs: [None for _ in refs]),
         )
         submission_metrics = {

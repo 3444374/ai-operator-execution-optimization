@@ -1184,6 +1184,37 @@ class SharedVllmExperimentTests(unittest.TestCase):
             ):
                 _load_resume_manifest(Path("manifest.json"), expected)
 
+    def test_resume_compares_json_normalized_config_values(self) -> None:
+        manifest = {
+            "schema_version": 1,
+            "experiment_id": "experiment",
+            "config_fingerprint": "fingerprint",
+            "repository_commit": "commit",
+            "run_instance_id": "run",
+            "redacted_config": {
+                "endpoint_ids": ["endpoint-0", "endpoint-1"],
+                "scenarios": [{"weights": [1, 1]}],
+            },
+            "schedule": [],
+            "completed_runs": [],
+            "incidents": [],
+        }
+        expected = {
+            **manifest,
+            "redacted_config": {
+                "endpoint_ids": ("endpoint-0", "endpoint-1"),
+                "scenarios": [{"weights": (1, 1)}],
+            },
+        }
+        with patch.object(
+            Path,
+            "read_text",
+            return_value=json.dumps(manifest),
+        ), patch.object(Path, "exists", return_value=True):
+            loaded = _load_resume_manifest(Path("manifest.json"), expected)
+
+        self.assertEqual(loaded, manifest)
+
     def test_group_summary_is_rebuilt_from_durable_records(self) -> None:
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir)
