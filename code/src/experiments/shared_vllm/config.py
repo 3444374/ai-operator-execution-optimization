@@ -96,6 +96,8 @@ class SharedVllmScenario:
     source_row_offsets: tuple[int, ...] = ()
     request_manifests: tuple[str | None, ...] = ()
     rows_per_jobs: tuple[int, ...] = ()
+    request_limit_per_endpoint: int | None = None
+    work_limit_per_endpoint: int | None = None
 
     def row_count(self, job_index: int) -> int:
         """Return the immutable request count for one job."""
@@ -106,6 +108,17 @@ class SharedVllmScenario:
         if self.rows_per_job is None:
             raise ValueError("scenario has no row-count contract")
         return self.rows_per_job
+
+    def endpoint_limits(
+        self,
+        default_request_limit: int,
+        default_work_limit: int,
+    ) -> tuple[int, int]:
+        """Return this arm's frozen endpoint capacity contract."""
+        return (
+            self.request_limit_per_endpoint or default_request_limit,
+            self.work_limit_per_endpoint or default_work_limit,
+        )
 
 @dataclass(frozen=True)
 class StateAwareControlConfig:
@@ -319,6 +332,10 @@ def build_job_command(
         scenario,
         job_index,
     )
+    endpoint_request_limit, endpoint_work_limit = scenario.endpoint_limits(
+        config.request_limit_per_endpoint,
+        config.work_limit_per_endpoint,
+    )
     run_stem = (
         f"{identity.order_index:03d}_{identity.phase}_"
         f"{identity.repeat_index}_{scenario.scenario_id}"
@@ -395,9 +412,9 @@ def build_job_command(
                 "--shared-credit-namespace",
                 config.shared_credit_namespace,
                 "--shared-credit-request-limit",
-                str(config.request_limit_per_endpoint),
+                str(endpoint_request_limit),
                 "--shared-credit-work-limit",
-                str(config.work_limit_per_endpoint),
+                str(endpoint_work_limit),
                 "--shared-credit-quantum",
                 str(config.credit_quantum),
                 "--shared-credit-policy",
@@ -426,6 +443,38 @@ def _load_scenario(
     if policy not in POLICIES:
         raise ValueError(f"unknown shared-vLLM policy: {policy}")
     job_count = _positive_integer(raw.get("job_count"), "job_count")
+    scenario_request_raw = raw.get("request_limit_per_endpoint")
+    scenario_work_raw = raw.get("work_limit_per_endpoint")
+    if (scenario_request_raw is None) != (scenario_work_raw is None):
+        raise ValueError(
+            "scenario request/work endpoint limits must be provided together"
+        )
+    scenario_request_limit = (
+        _positive_integer(
+            _expand_scalar(
+                scenario_request_raw,
+                "scenario.request_limit_per_endpoint",
+            ),
+            "scenario.request_limit_per_endpoint",
+        )
+        if scenario_request_raw is not None
+        else None
+    )
+    scenario_work_limit = (
+        _positive_integer(
+            _expand_scalar(
+                scenario_work_raw,
+                "scenario.work_limit_per_endpoint",
+            ),
+            "scenario.work_limit_per_endpoint",
+        )
+        if scenario_work_raw is not None
+        else None
+    )
+    if policy == "state_aware_adaptive" and scenario_request_limit is not None:
+        raise ValueError(
+            "state_aware_adaptive uses the root initial endpoint limits"
+        )
     static_partition_count_raw = raw.get("static_partition_count")
     static_partition_count = (
         _positive_integer(
@@ -467,9 +516,14 @@ def _load_scenario(
         if has_per_job_rows
         else ()
     )
+    effective_request_limit = scenario_request_limit or request_limit
+    effective_work_limit = scenario_work_limit or work_limit
     if (
         policy == "static_partition"
-        and (partition_count > request_limit or partition_count > work_limit)
+        and (
+            partition_count > effective_request_limit
+            or partition_count > effective_work_limit
+        )
     ):
         raise ValueError("static partition would assign zero capacity")
     weights = _positive_integer_tuple(
@@ -509,6 +563,8 @@ def _load_scenario(
         source_row_offsets=source_row_offsets,
         request_manifests=request_manifests,
         rows_per_jobs=rows_per_jobs,
+        request_limit_per_endpoint=scenario_request_limit,
+        work_limit_per_endpoint=scenario_work_limit,
     )
 
 def _local_limits(
@@ -516,20 +572,21 @@ def _local_limits(
     scenario: SharedVllmScenario,
     job_index: int,
 ) -> tuple[int, int]:
+    request_limit, work_limit = scenario.endpoint_limits(
+        config.request_limit_per_endpoint,
+        config.work_limit_per_endpoint,
+    )
     if scenario.policy != "static_partition":
-        return (
-            config.request_limit_per_endpoint,
-            config.work_limit_per_endpoint,
-        )
+        return request_limit, work_limit
     partition_count = scenario.static_partition_count or scenario.job_count
     return (
         _partition_share(
-            config.request_limit_per_endpoint,
+            request_limit,
             partition_count,
             job_index,
         ),
         _partition_share(
-            config.work_limit_per_endpoint,
+            work_limit,
             partition_count,
             job_index,
         ),

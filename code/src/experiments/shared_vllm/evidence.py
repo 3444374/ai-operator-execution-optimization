@@ -267,19 +267,32 @@ def _request_trace_succeeded(row: dict[str, str]) -> bool:
 
 def _validate_final_credit(
     config: SharedVllmConfig,
+    scenario: SharedVllmScenario,
     snapshots: list[dict[str, object]],
 ) -> None:
     if len(snapshots) != len(config.endpoint_ids):
         raise RuntimeError("shared credit final snapshot is incomplete")
     request_limit = (
         max(config.state_aware_control.request_candidates)
-        if config.state_aware_control is not None
-        else config.request_limit_per_endpoint
+        if (
+            scenario.policy == "state_aware_adaptive"
+            and config.state_aware_control is not None
+        )
+        else scenario.endpoint_limits(
+            config.request_limit_per_endpoint,
+            config.work_limit_per_endpoint,
+        )[0]
     )
     work_limit = (
         max(config.state_aware_control.work_candidates)
-        if config.state_aware_control is not None
-        else config.work_limit_per_endpoint
+        if (
+            scenario.policy == "state_aware_adaptive"
+            and config.state_aware_control is not None
+        )
+        else scenario.endpoint_limits(
+            config.request_limit_per_endpoint,
+            config.work_limit_per_endpoint,
+        )[1]
     )
     for snapshot in snapshots:
         if (

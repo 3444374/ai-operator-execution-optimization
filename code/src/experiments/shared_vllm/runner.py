@@ -445,6 +445,10 @@ def _run_group(
         else {}
     )
     group_launch_epoch_s = 0.0
+    endpoint_request_limit, endpoint_work_limit = scenario.endpoint_limits(
+        config.request_limit_per_endpoint,
+        config.work_limit_per_endpoint,
+    )
     try:
         observer = (
             _RayCreditObserver(
@@ -463,8 +467,8 @@ def _run_group(
         )
         if observer is not None:
             observer.prewarm(
-                request_limit=config.request_limit_per_endpoint,
-                work_limit=config.work_limit_per_endpoint,
+                request_limit=endpoint_request_limit,
+                work_limit=endpoint_work_limit,
                 quantum=config.credit_quantum,
                 policy=(
                     "fifo" if scenario.policy == "shared_fifo"
@@ -616,7 +620,7 @@ def _run_group(
                 f"actor worker failures observed: {actor_worker_failures}"
             )
         if observer is not None:
-            _validate_final_credit(config, final_credit)
+            _validate_final_credit(config, scenario, final_credit)
             if not credit_samples:
                 raise RuntimeError("shared credit trace is empty")
         if not resource_samples:
@@ -685,9 +689,9 @@ def _run_group(
                 else {}
             ),
             "request_limit_per_endpoint": (
-                config.request_limit_per_endpoint
+                endpoint_request_limit
             ),
-            "work_limit_per_endpoint": config.work_limit_per_endpoint,
+            "work_limit_per_endpoint": endpoint_work_limit,
             "credit_quantum": config.credit_quantum,
             "runtime_state_mode": (
                 "actuated" if controllers
@@ -749,7 +753,7 @@ def _run_group(
             ),
             **shared_credit_trace_summary(
                 credit_samples,
-                work_limit_per_endpoint=config.work_limit_per_endpoint,
+                work_limit_per_endpoint=endpoint_work_limit,
                 job_count=scenario.job_count,
             ),
             "job_jct_s": json.dumps(

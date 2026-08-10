@@ -634,6 +634,54 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "vtc",
         )
 
+    def test_scenario_can_freeze_a_distinct_static_capacity_arm(self) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "frozen_vtc",
+                    "policy": "external_vtc",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                    "request_limit_per_endpoint": 128,
+                    "work_limit_per_endpoint": 131072,
+                }
+            ]
+        )
+        payload["request_limit_per_endpoint"] = 96
+        payload["work_limit_per_endpoint"] = 98304
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("config.json"))
+        scenario = config.scenarios[0]
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+
+        command = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=0,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+
+        self.assertEqual(
+            self._flag_value(command, "--shared-credit-request-limit"),
+            "128",
+        )
+        self.assertEqual(
+            self._flag_value(command, "--shared-credit-work-limit"),
+            "131072",
+        )
+
     def test_state_aware_policy_requires_bounded_calibrated_control(self) -> None:
         payload = self._config_payload(
             scenarios=[
@@ -1557,7 +1605,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             RuntimeError,
             "shared request limit was exceeded",
         ):
-            _validate_final_credit(config, snapshots)
+            _validate_final_credit(config, config.scenarios[0], snapshots)
 
     @staticmethod
     def _flag_value(command: list[str], flag: str) -> str:

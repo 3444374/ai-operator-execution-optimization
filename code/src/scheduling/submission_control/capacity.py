@@ -111,9 +111,6 @@ class BoundedCapacityController:
         upstream = snapshot.for_stage(self.upstream_stage)
         if model is None or upstream is None:
             return self._fallback("missing_stage", service_rate_tokens_s)
-        if service_rate_tokens_s is None or not math.isfinite(service_rate_tokens_s):
-            self._clear_streaks()
-            return self._decision("hold", "missing_service_rate", None)
         if kv_usage is None or not math.isfinite(kv_usage) or not 0 <= kv_usage <= 1:
             return self._fallback(
                 "missing_or_invalid_kv_usage",
@@ -133,6 +130,24 @@ class BoundedCapacityController:
             active_requests
             >= self.current_arm.request_limit * self.occupied_fraction
         )
+        if service_rate_tokens_s is None or not math.isfinite(service_rate_tokens_s):
+            bootstrap_feed_limited = (
+                has_backlog
+                and occupied
+                and service_waiting_requests == 0
+                and self._index < len(self.candidates) - 1
+            )
+            self._decrease_streak = 0
+            self._increase_streak = (
+                self._increase_streak + 1 if bootstrap_feed_limited else 0
+            )
+            if self._increase_streak >= self.consecutive_samples:
+                return self._move(
+                    1,
+                    "ready_backlog_rate_bootstrap",
+                    None,
+                )
+            return self._decision("hold", "missing_service_rate", None)
         below_target = (
             service_rate_tokens_s
             < self.target_service_rate_tokens_s * self.target_fraction
@@ -165,7 +180,7 @@ class BoundedCapacityController:
         self,
         delta: int,
         reason: str,
-        service_rate_tokens_s: float,
+        service_rate_tokens_s: float | None,
     ) -> CapacityDecision:
         updated = min(max(self._index + delta, 0), len(self.candidates) - 1)
         action = "hold" if updated == self._index else (
