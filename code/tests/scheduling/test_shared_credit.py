@@ -18,6 +18,44 @@ from src.scheduling.submission_control.shared_credit import (  # noqa: E402
 
 
 class SharedCreditCoordinatorTests(unittest.TestCase):
+    def test_capacity_downshift_drains_active_leases_without_revocation(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (2, 200)},
+            quantum=100,
+        )
+        for index in range(2):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=f"active{index}",
+                    job_id="job",
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                )
+            )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="waiting",
+                job_id="job",
+                endpoint_id="gpu0",
+                estimated_work=100,
+            )
+        )
+
+        snapshot = coordinator.update_capacity(
+            "gpu0",
+            request_limit=1,
+            work_limit=100,
+        )
+
+        self.assertEqual(snapshot.active_requests, 2)
+        self.assertEqual(snapshot.request_limit, 1)
+        coordinator.release("active0", job_id="job")
+        self.assertEqual(coordinator.snapshot("gpu0").active_requests, 1)
+        self.assertEqual(coordinator.snapshot("gpu0").waiting_requests, 1)
+        coordinator.release("active1", job_id="job")
+        self.assertEqual(coordinator.snapshot("gpu0").active_requests, 1)
+        self.assertEqual(coordinator.snapshot("gpu0").waiting_requests, 0)
+
     def test_vtc_selects_least_attained_service_and_corrects_actual_work(self) -> None:
         coordinator = FairEndpointCreditCoordinator(
             {"gpu0": (1, 100)},

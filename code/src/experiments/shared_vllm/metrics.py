@@ -230,17 +230,24 @@ def shared_credit_trace_summary(
             "credit_borrowed_work_mean": 0.0,
             "credit_borrowed_work_max": 0.0,
         }
-    equal_share = work_limit_per_endpoint / job_count
     idle_endpoint_samples = 0
     idle_capacity_fractions = []
     borrowed_work = []
     for sample in samples:
+        sample_work_limit = float(
+            sample.get("work_limit", work_limit_per_endpoint)
+        )
+        if sample_work_limit <= 0:
+            raise ValueError("credit trace work limit must be positive")
+        equal_share = sample_work_limit / job_count
         active_work = float(sample["active_work"])
-        if not 0 <= active_work <= work_limit_per_endpoint:
+        # A downshift does not revoke existing leases, so active work may
+        # temporarily exceed the newly applied capacity while it drains.
+        if active_work < 0:
             raise ValueError("credit trace active_work is outside capacity")
         idle_endpoint_samples += active_work == 0
         idle_capacity_fractions.append(
-            (work_limit_per_endpoint - active_work) / work_limit_per_endpoint
+            max(0.0, sample_work_limit - active_work) / sample_work_limit
         )
         raw_by_job = sample.get("active_work_by_job", "[]")
         by_job = json.loads(raw_by_job) if isinstance(raw_by_job, str) else raw_by_job

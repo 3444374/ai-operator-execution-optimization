@@ -279,6 +279,32 @@ class FairEndpointCreditCoordinator:
             ),
         )
 
+    def update_capacity(
+        self,
+        endpoint_id: str,
+        *,
+        request_limit: int,
+        work_limit: int,
+    ) -> EndpointCreditSnapshot:
+        """Change future admission capacity without revoking active leases."""
+        if endpoint_id not in self._capacities:
+            raise ValueError(f"unknown endpoint_id: {endpoint_id}")
+        if request_limit <= 0 or work_limit <= 0:
+            raise ValueError("endpoint capacity limits must be positive")
+        oversized_waiters = [
+            lease.estimated_work
+            for queue in self._waiting[endpoint_id].values()
+            for lease in queue
+            if lease.estimated_work > work_limit
+        ]
+        if oversized_waiters:
+            raise ValueError(
+                "updated work limit is smaller than queued request work"
+            )
+        self._capacities[endpoint_id] = (request_limit, work_limit)
+        self._grant_waiters(endpoint_id)
+        return self.snapshot(endpoint_id)
+
     def _grant_waiters(self, endpoint_id: str) -> None:
         if self._policy == "fifo":
             self._grant_fifo_waiters(endpoint_id)

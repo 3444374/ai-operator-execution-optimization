@@ -43,6 +43,9 @@ class _FairCreditActor:
     def snapshot(self, endpoint_id: str):
         return self.coordinator.snapshot(endpoint_id)
 
+    def update_capacity(self, endpoint_id: str, **kwargs):
+        return self.coordinator.update_capacity(endpoint_id, **kwargs)
+
 
 class RaySharedCreditClient:
     def __init__(self, ray_module, actor) -> None:
@@ -74,6 +77,11 @@ class RaySharedCreditClient:
     def snapshot(self, endpoint_id: str):
         return self.ray_module.get(
             self.actor.snapshot.remote(endpoint_id)
+        )
+
+    def update_capacity(self, endpoint_id: str, **kwargs):
+        return self.ray_module.get(
+            self.actor.update_capacity.remote(endpoint_id, **kwargs)
         )
 
 

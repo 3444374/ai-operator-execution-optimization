@@ -92,6 +92,11 @@ from .submission_control.shared_credit import (
     EndpointCreditSnapshot,
     FairEndpointCreditCoordinator,
 )
+from .submission_control.capacity import (
+    BoundedCapacityController,
+    CapacityArm,
+    CapacityDecision,
+)
 from .core.topology import healthy_endpoints, schedulable_endpoints
 from .organization.token_budget import (
     ArrivalRateEwma,
@@ -121,8 +126,11 @@ __all__ = [
     "AimdAdmissionController",
     "AimdConfig",
     "BatchRequest",
+    "BoundedCapacityController",
     "CollectedSubmission",
     "ControlDiagnostics",
+    "CapacityArm",
+    "CapacityDecision",
     "CreditLease",
     "CachedMetricsObservationProvider",
     "NonBlockingMetricsObservationProvider",

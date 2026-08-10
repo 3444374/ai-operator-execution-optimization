@@ -13,12 +13,19 @@ from typing import Callable
 from src.experiments.scenarios.core import build_scenario_schedule
 from src.infrastructure.runner_lease import acquire_runner_lease
 from src.infrastructure.runtime_env import subprocess_env
-from src.modalities.text.contracts import text_work_calibration_signature
+from src.modalities.text.contracts import (
+    build_text_runtime_snapshot,
+    text_work_calibration_signature,
+)
 from src.observability.metrics import (
     aggregate_model_metric_snapshots,
     estimate_mfu,
     scrape_prometheus_metrics,
     vllm_metric_delta_stats,
+)
+from src.scheduling.submission_control.capacity import (
+    BoundedCapacityController,
+    CapacityArm,
 )
 
 from .config import (
@@ -59,6 +66,7 @@ from .metrics import (
     shared_credit_trace_summary,
 )
 from .runtime import (
+    EndpointServiceRateTracker,
     _RayCreditObserver,
     _resource_sample,
     build_observe_only_text_state_rows,
@@ -103,6 +111,85 @@ def _text_state_calibration_signature(config: SharedVllmConfig) -> str:
             "fixed_output_cap",
         ),
     )
+
+
+def _apply_state_control(
+    rows: list[dict[str, object]],
+    *,
+    controllers: dict[str, BoundedCapacityController],
+    observer: _RayCreditObserver,
+    calibration_signature: str,
+    max_state_age_s: float,
+) -> list[dict[str, object]]:
+    if not controllers:
+        return rows
+    for row in rows:
+        endpoint_id = str(row["endpoint_id"])
+        controller = controllers[endpoint_id]
+        waiting_raw = row.get("vllm_waiting")
+        waiting = (
+            int(float(waiting_raw))
+            if waiting_raw not in (None, "")
+            else 0
+        )
+        rate_raw = row.get("service_rate_tokens_s")
+        service_rate = (
+            float(rate_raw) if rate_raw not in (None, "") else None
+        )
+        kv_raw = row.get("vllm_kv_usage")
+        kv_usage = float(kv_raw) if kv_raw not in (None, "") else None
+        observed_at_s = float(row["observed_epoch_s"])
+        snapshot = build_text_runtime_snapshot(
+            active_work=int(row["model_active_work"]),
+            upstream_queued_work=int(row["organizer_queued_work"]),
+            service_waiting_requests=waiting,
+            active_requests=int(row["active_requests"]),
+            oldest_upstream_age_s=float(
+                row["organizer_oldest_queue_age_s"]
+            ),
+            observed_at_s=observed_at_s,
+            capacity_work=int(row["model_capacity_work"]),
+            calibration_signature=calibration_signature,
+            service_rate_tokens_s=service_rate,
+        )
+        decision = controller.select(
+            snapshot,
+            active_requests=int(row["active_requests"]),
+            service_waiting_requests=waiting,
+            service_rate_tokens_s=service_rate,
+            kv_usage=kv_usage,
+            now_s=time.time(),
+            max_age_s=max_state_age_s,
+            calibration_signature=calibration_signature,
+        )
+        previous_limit = int(row["request_limit"])
+        applied_limit = previous_limit
+        previous_work_limit = int(row["model_capacity_work"])
+        if (
+            decision.arm.request_limit != previous_limit
+            or decision.arm.work_limit != previous_work_limit
+        ):
+            updated = observer.update_capacity(
+                endpoint_id,
+                request_limit=decision.arm.request_limit,
+                work_limit=decision.arm.work_limit,
+            )
+            applied_limit = int(updated["request_limit"])
+        row.update(
+            {
+                "runtime_state_mode": "actuated",
+                "control_action": decision.action,
+                "control_reason": decision.reason,
+                "control_previous_request_limit": previous_limit,
+                "control_previous_work_limit": previous_work_limit,
+                "control_recommended_request_limit": (
+                    decision.arm.request_limit
+                ),
+                "control_applied_request_limit": applied_limit,
+                "control_applied_work_limit": decision.arm.work_limit,
+            }
+        )
+    return rows
 
 
 def run_experiment(
@@ -319,6 +406,44 @@ def _run_group(
     credit_samples: list[dict[str, object]] = []
     state_samples: list[dict[str, object]] = []
     state_signature = _text_state_calibration_signature(config)
+    control = config.state_aware_control
+    service_rate_tracker = EndpointServiceRateTracker(
+        alpha=control.rate_ewma_alpha if control is not None else 0.3
+    )
+    controllers = (
+        {
+            endpoint_id: BoundedCapacityController(
+                tuple(
+                    CapacityArm(limit, work_limit)
+                    for limit, work_limit in zip(
+                        control.request_candidates,
+                        control.work_candidates,
+                    )
+                ),
+                fallback=CapacityArm(
+                    control.fallback_request_limit,
+                    control.fallback_work_limit,
+                ),
+                initial=CapacityArm(
+                    control.initial_request_limit,
+                    control.work_candidates[
+                        control.request_candidates.index(
+                            control.initial_request_limit
+                        )
+                    ],
+                ),
+                target_service_rate_tokens_s=(
+                    control.target_service_rate_tokens_s_per_endpoint
+                ),
+                consecutive_samples=control.consecutive_samples,
+                cooldown_samples=control.cooldown_samples,
+                congestion_kv_usage=control.congestion_kv_usage,
+            )
+            for endpoint_id in config.endpoint_ids
+        }
+        if scenario.policy == "state_aware_adaptive" and control is not None
+        else {}
+    )
     group_launch_epoch_s = 0.0
     try:
         observer = (
@@ -328,7 +453,12 @@ def _run_group(
                 coordinator_name,
                 config.endpoint_ids,
             )
-            if scenario.policy in {"shared_drr", "shared_fifo", "external_vtc"}
+            if scenario.policy in {
+                "shared_drr",
+                "shared_fifo",
+                "external_vtc",
+                "state_aware_adaptive",
+            }
             else None
         )
         if observer is not None:
@@ -409,15 +539,30 @@ def _run_group(
                 group_launch_epoch_s,
             )
             resource_samples.extend(resource_batch)
+            service_rates = service_rate_tracker.update(
+                resource_batch,
+                endpoint_ids=config.endpoint_ids,
+            )
             if observer is not None:
                 credit_batch = observer.sample(group_launch_epoch_s)
                 credit_samples.extend(credit_batch)
                 state_samples.extend(
-                    build_observe_only_text_state_rows(
-                        credit_batch,
-                        resource_batch,
-                        endpoint_ids=config.endpoint_ids,
+                    _apply_state_control(
+                        build_observe_only_text_state_rows(
+                            credit_batch,
+                            resource_batch,
+                            endpoint_ids=config.endpoint_ids,
+                            calibration_signature=state_signature,
+                            service_rates=service_rates,
+                        ),
+                        controllers=controllers,
+                        observer=observer,
                         calibration_signature=state_signature,
+                        max_state_age_s=(
+                            control.max_state_age_s
+                            if control is not None
+                            else 1.0
+                        ),
                     )
                 )
             time.sleep(0.25)
@@ -545,10 +690,24 @@ def _run_group(
             "work_limit_per_endpoint": config.work_limit_per_endpoint,
             "credit_quantum": config.credit_quantum,
             "runtime_state_mode": (
-                "observe_only" if observer is not None else "unavailable"
+                "actuated" if controllers
+                else "observe_only" if observer is not None
+                else "unavailable"
             ),
             "runtime_state_calibration_signature": (
                 state_signature if observer is not None else ""
+            ),
+            "adaptive_capacity_increases": sum(
+                row.get("control_action") == "increase"
+                for row in state_samples
+            ),
+            "adaptive_capacity_decreases": sum(
+                row.get("control_action") == "decrease"
+                for row in state_samples
+            ),
+            "adaptive_capacity_fallbacks": sum(
+                row.get("control_action") == "fallback"
+                for row in state_samples
             ),
             "weights": json.dumps(scenario.weights),
             "arrival_offsets_s": json.dumps(
@@ -569,7 +728,12 @@ def _run_group(
             "ray_address": options.ray_address,
             "coordinator_name": (
                 coordinator_name
-                if scenario.policy in {"shared_drr", "shared_fifo", "external_vtc"}
+                if scenario.policy in {
+                    "shared_drr",
+                    "shared_fifo",
+                    "external_vtc",
+                    "state_aware_adaptive",
+                }
                 else ""
             ),
             "run_instance_id": run_instance_id,

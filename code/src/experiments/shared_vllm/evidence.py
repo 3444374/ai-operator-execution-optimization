@@ -271,6 +271,16 @@ def _validate_final_credit(
 ) -> None:
     if len(snapshots) != len(config.endpoint_ids):
         raise RuntimeError("shared credit final snapshot is incomplete")
+    request_limit = (
+        max(config.state_aware_control.request_candidates)
+        if config.state_aware_control is not None
+        else config.request_limit_per_endpoint
+    )
+    work_limit = (
+        max(config.state_aware_control.work_candidates)
+        if config.state_aware_control is not None
+        else config.work_limit_per_endpoint
+    )
     for snapshot in snapshots:
         if (
             int(snapshot["active_requests"]) != 0
@@ -281,12 +291,12 @@ def _validate_final_credit(
             raise RuntimeError("shared credit did not return to zero")
         if (
             int(snapshot["max_active_requests_seen"])
-            > config.request_limit_per_endpoint
+            > request_limit
         ):
             raise RuntimeError("shared request limit was exceeded")
         if (
             int(snapshot["max_active_work_seen"])
-            > config.work_limit_per_endpoint
+            > work_limit
         ):
             raise RuntimeError("shared work limit was exceeded")
 
@@ -462,6 +472,11 @@ def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
                 "selection": dict(config.calibration_contract.selection),
             }
             if config.calibration_contract is not None
+            else None
+        ),
+        "state_aware_control": (
+            asdict(config.state_aware_control)
+            if config.state_aware_control is not None
             else None
         ),
     }

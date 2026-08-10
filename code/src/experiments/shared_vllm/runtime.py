@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import time
 import warnings
 from dataclasses import asdict
@@ -110,6 +111,25 @@ class _RayCreditObserver:
         )
         return [_snapshot_mapping(snapshot) for snapshot in snapshots]
 
+    def update_capacity(
+        self,
+        endpoint_id: str,
+        *,
+        request_limit: int,
+        work_limit: int,
+    ) -> dict[str, object]:
+        actor = self._resolve_actor()
+        if actor is None:
+            raise RuntimeError("shared credit actor was never observed")
+        snapshot = self.ray.get(
+            actor.update_capacity.remote(
+                endpoint_id,
+                request_limit=request_limit,
+                work_limit=work_limit,
+            )
+        )
+        return _snapshot_mapping(snapshot)
+
     def cleanup(self) -> None:
         actor = self._resolve_actor()
         if actor is None:
@@ -161,6 +181,10 @@ def _resource_sample(
                     "vllm:kv_cache_usage_perc",
                     "",
                 ),
+                "completed_tokens_total": (
+                    metrics.get("vllm:prompt_tokens_total", 0.0)
+                    + metrics.get("vllm:generation_tokens_total", 0.0)
+                ),
                 "gpu_metrics_status": gpu["gpu_metrics_status"],
                 "gpu_utilization_pct": gpu["gpu_utilization_pct"],
                 "gpu_memory_used_mib": gpu["gpu_memory_used_mib"],
@@ -176,6 +200,7 @@ def build_observe_only_text_state_rows(
     *,
     endpoint_ids: tuple[str, ...],
     calibration_signature: str,
+    service_rates: dict[str, float] | None = None,
 ) -> list[dict[str, object]]:
     """Join one credit/resource sample into typed staged state evidence."""
     resources = {
@@ -205,6 +230,7 @@ def build_observe_only_text_state_rows(
             observed_at_s=observed_at_s,
             capacity_work=int(credit["work_limit"]),
             calibration_signature=calibration_signature,
+            service_rate_tokens_s=(service_rates or {}).get(endpoint_id),
         )
         organizer = snapshot.for_stage("organizer")
         model = snapshot.for_stage("model")
@@ -217,14 +243,59 @@ def build_observe_only_text_state_rows(
                 "endpoint_id": endpoint_id,
                 "calibration_signature": calibration_signature,
                 "request_limit": int(credit["request_limit"]),
+                "active_requests": int(credit["active_requests"]),
                 "organizer_queued_work": organizer.queued_work,
                 "organizer_oldest_queue_age_s": organizer.oldest_queue_age_s,
                 "model_active_work": model.active_work,
                 "model_queued_work_estimated": model.queued_work,
                 "model_capacity_work": model.capacity_work,
+                "service_rate_tokens_s": model.service_rate_units_s or "",
                 "vllm_running": resource.get("running", ""),
                 "vllm_waiting": resource.get("waiting", ""),
                 "vllm_kv_usage": resource.get("kv_usage", ""),
             }
         )
     return rows
+
+
+class EndpointServiceRateTracker:
+    """EWMA completion-token rate derived from cumulative vLLM counters."""
+
+    def __init__(self, *, alpha: float = 0.3) -> None:
+        if not math.isfinite(alpha) or not 0 < alpha <= 1:
+            raise ValueError("alpha must be in (0, 1]")
+        self.alpha = alpha
+        self._previous: dict[str, tuple[float, float]] = {}
+        self._rates: dict[str, float] = {}
+
+    def update(
+        self,
+        rows: list[dict[str, object]],
+        *,
+        endpoint_ids: tuple[str, ...],
+    ) -> dict[str, float]:
+        for row in rows:
+            index = int(row["endpoint_index"])
+            if not 0 <= index < len(endpoint_ids):
+                continue
+            endpoint_id = endpoint_ids[index]
+            observed_at_s = float(row["observed_epoch_s"])
+            total = float(row["completed_tokens_total"])
+            previous = self._previous.get(endpoint_id)
+            if (
+                previous is not None
+                and observed_at_s > previous[0]
+                and total >= previous[1]
+            ):
+                instantaneous = (total - previous[1]) / (
+                    observed_at_s - previous[0]
+                )
+                prior_rate = self._rates.get(endpoint_id)
+                self._rates[endpoint_id] = (
+                    instantaneous
+                    if prior_rate is None
+                    else self.alpha * instantaneous
+                    + (1.0 - self.alpha) * prior_rate
+                )
+            self._previous[endpoint_id] = (observed_at_s, total)
+        return dict(self._rates)

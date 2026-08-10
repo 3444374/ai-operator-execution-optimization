@@ -65,6 +65,33 @@ class _FakeRay:
 
 
 class SharedCreditRayTests(unittest.TestCase):
+    def test_runtime_capacity_update_preserves_creation_identity(self) -> None:
+        ray = _FakeRay()
+        initial = {"gpu0": (2, 200)}
+        first = get_or_create_shared_credit_client(
+            ray,
+            name="credits",
+            namespace="tests",
+            capacities=initial,
+            quantum=100,
+        )
+
+        updated = first.update_capacity(
+            "gpu0",
+            request_limit=3,
+            work_limit=300,
+        )
+        second = get_or_create_shared_credit_client(
+            ray,
+            name="credits",
+            namespace="tests",
+            capacities=initial,
+            quantum=100,
+        )
+
+        self.assertEqual(updated.request_limit, 3)
+        self.assertEqual(second.snapshot("gpu0").work_limit, 300)
+
     def test_named_actor_is_reused_and_tracks_jobs_independently(self) -> None:
         ray = _FakeRay()
         capacities = {"gpu0": (2, 200)}

@@ -634,6 +634,45 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "vtc",
         )
 
+    def test_state_aware_policy_requires_bounded_calibrated_control(self) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "adaptive",
+                    "policy": "state_aware_adaptive",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                }
+            ]
+        )
+        payload["request_limit_per_endpoint"] = 96
+        payload["work_limit_per_endpoint"] = 98304
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            with self.assertRaisesRegex(ValueError, "state_aware_control"):
+                load_config(Path("config.json"))
+
+        payload["state_aware_control"] = {
+            "request_candidates": [96, 128, 160],
+            "work_candidates": [98304, 131072, 131072],
+            "initial_request_limit": payload["request_limit_per_endpoint"],
+            "fallback_request_limit": 128,
+            "fallback_work_limit": 131072,
+            "target_service_rate_tokens_s_per_endpoint": 7600.0,
+            "rate_ewma_alpha": 0.3,
+            "congestion_kv_usage": 0.85,
+            "consecutive_samples": 8,
+            "cooldown_samples": 8,
+            "max_state_age_s": 1.0,
+        }
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("config.json"))
+
+        self.assertEqual(
+            config.state_aware_control.request_candidates,
+            (96, 128, 160),
+        )
+        self.assertEqual(config.state_aware_control.fallback_request_limit, 128)
+
     def test_arrival_offset_rejects_missing_environment_scalar(self) -> None:
         payload = self._config_payload(
             scenarios=[

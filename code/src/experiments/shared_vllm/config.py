@@ -23,6 +23,7 @@ POLICIES = {
     "shared_drr",
     "shared_fifo",
     "external_vtc",
+    "state_aware_adaptive",
 }
 
 _SCENARIO_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
@@ -107,6 +108,21 @@ class SharedVllmScenario:
         return self.rows_per_job
 
 @dataclass(frozen=True)
+class StateAwareControlConfig:
+    request_candidates: tuple[int, ...]
+    work_candidates: tuple[int, ...]
+    initial_request_limit: int
+    fallback_request_limit: int
+    fallback_work_limit: int
+    target_service_rate_tokens_s_per_endpoint: float
+    rate_ewma_alpha: float
+    congestion_kv_usage: float
+    consecutive_samples: int
+    cooldown_samples: int
+    max_state_age_s: float
+
+
+@dataclass(frozen=True)
 class SharedVllmConfig:
     experiment_id: str
     seed: int
@@ -123,6 +139,7 @@ class SharedVllmConfig:
     scenarios: tuple[SharedVllmScenario, ...]
     service_metadata: tuple[tuple[str, object], ...]
     calibration_contract: CalibrationContract | None = None
+    state_aware_control: StateAwareControlConfig | None = None
 
 def load_config(path: Path) -> SharedVllmConfig:
     decoded = json.loads(path.read_text(encoding="utf-8"))
@@ -242,6 +259,28 @@ def load_config(path: Path) -> SharedVllmConfig:
     calibration_contract = _load_calibration_contract(
         decoded.get("calibration_contract")
     )
+    state_aware_control = _load_state_aware_control(
+        decoded.get("state_aware_control")
+    )
+    uses_state_aware = any(
+        scenario.policy == "state_aware_adaptive"
+        for scenario in scenarios
+    )
+    if uses_state_aware and state_aware_control is None:
+        raise ValueError(
+            "state_aware_adaptive policy requires state_aware_control"
+        )
+    if state_aware_control is not None and (
+        state_aware_control.initial_request_limit != request_limit
+        or state_aware_control.work_candidates[
+            state_aware_control.request_candidates.index(
+                state_aware_control.initial_request_limit
+            )
+        ] != work_limit
+    ):
+        raise ValueError(
+            "state-aware initial arm must equal root request/work limits"
+        )
     return SharedVllmConfig(
         experiment_id=experiment_id,
         seed=seed,
@@ -258,6 +297,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         scenarios=scenarios,
         service_metadata=expanded_metadata,
         calibration_contract=calibration_contract,
+        state_aware_control=state_aware_control,
     )
 
 def build_job_command(
@@ -340,7 +380,12 @@ def build_job_command(
     )
     if request_manifest is not None:
         command.extend(["--request-manifest", request_manifest])
-    if scenario.policy in {"shared_drr", "shared_fifo", "external_vtc"}:
+    if scenario.policy in {
+        "shared_drr",
+        "shared_fifo",
+        "external_vtc",
+        "state_aware_adaptive",
+    }:
         if not coordinator_name:
             raise ValueError("shared policies require a coordinator name")
         command.extend(
@@ -533,6 +578,136 @@ def _expand_text(value: str, label: str) -> str:
 
 def _expand_scalar(value: object, label: str) -> object:
     return expand_scalar(value, label)
+
+def _load_state_aware_control(
+    raw: object,
+) -> StateAwareControlConfig | None:
+    if raw is None:
+        return None
+    required = {
+        "request_candidates",
+        "work_candidates",
+        "initial_request_limit",
+        "fallback_request_limit",
+        "fallback_work_limit",
+        "target_service_rate_tokens_s_per_endpoint",
+        "rate_ewma_alpha",
+        "congestion_kv_usage",
+        "consecutive_samples",
+        "cooldown_samples",
+        "max_state_age_s",
+    }
+    if not isinstance(raw, dict) or set(raw) != required:
+        raise ValueError("state_aware_control fields are invalid")
+    raw_candidates = raw["request_candidates"]
+    if not isinstance(raw_candidates, list) or not raw_candidates:
+        raise ValueError("request_candidates must be a non-empty list")
+    candidates = tuple(
+        sorted(
+            set(
+                _positive_integer(
+                    _expand_scalar(item, "request_candidates"),
+                    "request_candidates",
+                )
+                for item in raw_candidates
+            )
+        )
+    )
+    raw_work_candidates = raw["work_candidates"]
+    if (
+        not isinstance(raw_work_candidates, list)
+        or len(raw_work_candidates) != len(raw_candidates)
+    ):
+        raise ValueError("work_candidates must align with request_candidates")
+    work_by_request: dict[int, int] = {}
+    for request, work in zip(raw_candidates, raw_work_candidates):
+        request_limit = _positive_integer(
+            _expand_scalar(request, "request_candidates"),
+            "request_candidates",
+        )
+        work_limit = _positive_integer(
+            _expand_scalar(work, "work_candidates"),
+            "work_candidates",
+        )
+        if (
+            request_limit in work_by_request
+            and work_by_request[request_limit] != work_limit
+        ):
+            raise ValueError("duplicate request candidate has conflicting work limit")
+        work_by_request[request_limit] = work_limit
+    work_candidates = tuple(work_by_request[item] for item in candidates)
+    fallback = _positive_integer(
+        _expand_scalar(
+            raw["fallback_request_limit"],
+            "fallback_request_limit",
+        ),
+        "fallback_request_limit",
+    )
+    if fallback not in candidates:
+        raise ValueError("fallback_request_limit must be a candidate")
+    initial = _positive_integer(
+        _expand_scalar(
+            raw["initial_request_limit"],
+            "initial_request_limit",
+        ),
+        "initial_request_limit",
+    )
+    if initial not in candidates:
+        raise ValueError("initial_request_limit must be a candidate")
+    fallback_work = _positive_integer(
+        _expand_scalar(
+            raw["fallback_work_limit"],
+            "fallback_work_limit",
+        ),
+        "fallback_work_limit",
+    )
+    if work_by_request[fallback] != fallback_work:
+        raise ValueError("fallback request/work limits must form a candidate")
+
+    def positive_float(value: object, label: str) -> float:
+        resolved = _nonnegative_float(_expand_scalar(value, label), label)
+        if resolved <= 0:
+            raise ValueError(f"{label} must be positive")
+        return resolved
+
+    alpha = positive_float(raw["rate_ewma_alpha"], "rate_ewma_alpha")
+    if alpha > 1:
+        raise ValueError("rate_ewma_alpha must be <= 1")
+    congestion_kv_usage = positive_float(
+        raw["congestion_kv_usage"],
+        "congestion_kv_usage",
+    )
+    if congestion_kv_usage > 1:
+        raise ValueError("congestion_kv_usage must be <= 1")
+    return StateAwareControlConfig(
+        request_candidates=candidates,
+        work_candidates=work_candidates,
+        initial_request_limit=initial,
+        fallback_request_limit=fallback,
+        fallback_work_limit=fallback_work,
+        target_service_rate_tokens_s_per_endpoint=positive_float(
+            raw["target_service_rate_tokens_s_per_endpoint"],
+            "target_service_rate_tokens_s_per_endpoint",
+        ),
+        rate_ewma_alpha=alpha,
+        congestion_kv_usage=congestion_kv_usage,
+        consecutive_samples=_positive_integer(
+            _expand_scalar(
+                raw["consecutive_samples"],
+                "consecutive_samples",
+            ),
+            "consecutive_samples",
+        ),
+        cooldown_samples=_nonnegative_integer(
+            _expand_scalar(raw["cooldown_samples"], "cooldown_samples"),
+            "cooldown_samples",
+        ),
+        max_state_age_s=positive_float(
+            raw["max_state_age_s"],
+            "max_state_age_s",
+        ),
+    )
+
 
 def _load_calibration_contract(
     value: object,
