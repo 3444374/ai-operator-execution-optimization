@@ -1,5 +1,189 @@
 # 项目日志
 
+## 2026-08-10 开题二十页内容大纲收口
+
+- 当前工作面收敛为开题内容大纲，暂停报告正文与 PPT 成品；权威入口为
+  `opening/opening_defense_outline_20260808.md`。
+- 20 页逐页卡片已统一标题、页码、页面结论和转场，并建立背景、动机证据、两项研究内容、
+  共同代价估计、多模态验证之间的映射；新增 18--20 分钟主讲预算与 15 分钟删减合同。
+- 本轮没有新增实验、图片、PPT、云文档或 Wiki。
+
+## 2026-08-10 开题状态感知与动态提交表述闭环
+
+- 开题报告研究问题与技术路线补全“状态→决策→动作→效果 trace”闭环：状态识别必须联合
+  ready/active/remaining work、arrival/completion rate、running/waiting/KV、queue age、
+  SLO 与 GPU/MFU，后两者只作交叉验证和保护信号，不单独触发增压。
+- 明确当前工程边界：正式文本和多 Job 路径仍冻结 static K/work，图像 stage snapshot 为
+  observe-only；已有动态 request-window、stage-work controller 和 shared credit 局部机制，
+  但动态 active-work 执行器尚未接入正式主 runner。开题后按 descriptor builder、统一状态
+  快照、fallback、admission-only、routing、fairness 顺序逐层验证。
+- 同步更新开题报告、20页答辩大纲、问答攻击面、opening README 与 opening project log；
+  未新增实验或修改 PPT/云文档/Wiki。
+
+## 2026-08-10 开题报告背景与研究现状重写
+
+- 重写开题报告第1章，将背景从“数据库调用AI”扩展为 AI-Native Data Infrastructure 演进，
+  依次说明数据平台能力扩展、AI算子成本结构、CPU＋GPU异构流水线和数据库—模型服务之间
+  的任务级执行缺口，再收敛到本课题的两个研究内容与共同代价估计。
+- 重写第2章并增加2.5研究空白：数据库AI线纳入Cortex AISQL、LOTUS、Galois、GaussML、
+  Palimpzest、Abacus；serving线纳入Orca、vLLM、Sarathi-Serve、DistServe、SGLang、VTC、
+  Llumnix；数据执行线纳入Ray、Ray Data、Daft、NeuStream；代价线强调prediction accuracy
+  与plan/config ranking、regret的区别。
+- 新增Galois、SGLang和NeuStream题录[29]--[31]，并根据EURECOM、NeurIPS官方论文页和
+  EuroSys 2025官方日程核对标题、作者和正式出处。报告正文使用自然学术叙事，claim边界
+  继续由内部Claim Matrix和答辩备注维护，不写成“允许/禁止声称”式正文。
+
+## 2026-08-10 开题背景与二十页答辩大纲重构
+
+- 根据用户复审将大纲扩展为 20 页：背景总框架升级为 AI-Native Data Infrastructure，新增
+  “AI 算子改变传统以行数和 CPU 为中心的执行假设”一页，再收敛到数据库 AI 算子外部异构
+  执行与上游调度这一具体切片。Serverless、模型 kernel 和数据分析智能体只作为总背景邻域，
+  不扩入当前研究内容。
+- PPT 中保留并明确展示代表性论文名称，但按数据库 AI、GPU serving、分布式数据执行和
+  代价决策四条问题线组织；删除主大纲与报告结构表中“允许/禁止声称”式可见措辞，相关边界
+  继续只由 Claim Matrix、内部审计和答辩备注维护。
+- 将开题答辩从历史 21/28 页实验清单式结构收敛为 20 页主讲合同，沟通目标冻结为：证明
+  AI 数据执行层问题真实、独立、可证伪，现有证据支持问题与可行性，但不预设动态策略胜出。
+- 前四页背景改为“产业系统证明数据库成为 AI workload 入口→数据库 AI、GPU serving、
+  分布式数据执行三条研究线分别成熟→交界处仍缺 work/state/control 闭环→本地 baseline
+  把文献空白落成可观测系统现象”。代价估计文献作为横向共同使能线，不扩成第三研究内容。
+- 答辩只显示 Cortex AISQL/LOTUS/GaussML、Orca/vLLM/Sarathi/VTC、Ray/Ray Data/Daft、
+  Learned Cost Models/GRACEFUL/COSTREAM/Abacus 等代表工作；完整题录留在报告和备注，禁止
+  使用“无人研究”或产业产品证明学术创新的表述。
+- 新增前八页逐页转场、主讲/备份图分层和开题报告八章写作合同。报告第5章后续按 baseline
+  合同、work/state 动机、研究内容一、研究内容二、跨模态、cost、claim 边界重组，避免按
+  实验日期罗列和重复 active-work 证据。
+
+## 2026-08-10 新增图像四 Job 归一化干扰图
+
+- 统一 Project 四 Job 效率表的变化口径：吞吐、Group JCT、MFU 全部改为相对变化，MFU
+  从 `+8.56pp` 改为相对 `+22.41%`；Static/Shared两列取消红蓝区分并统一为中性深灰，
+  只在变化列用红色表示上涨、绿色表示下跌，同时保留 `+`/`−` 作为色觉无关编码。
+- 修复文本 baseline、单 Job 请求延迟、六项状态图与图像四 Job 图的多行 y 轴标签对齐：
+  “直接调用 /（容量参照）”及“Project shared /（状态仅观测）”的每一行均按轴边缘右对齐，
+  不再使用多行文本默认的内部居中对齐。
+- 图像四 Job 主图按文本四 Job 图的视觉语法重画：取消 Daft Built-in、Ray Data、Project
+  三个散点 panel，改为 4×4 路径/策略×Job slowdown 矩阵。列统一为 Short/Long 1--3，
+  行统一为 Daft Built-in、Ray Data、Project static、Project shared；每格直标倍率与 JCT
+  增幅。Project static/shared 保持互斥臂，shared 状态继续明确为 observe-only。
+
+- 按逐图反馈重绘文本动机与 baseline 图：删除动机图中遮挡柱形的“同一上限，不同运行状态”
+  内嵌文字；将“直接调用（容量参照）”统一换为两行标签。官方 Chat graph、单 Job 请求延迟
+  与六项状态图均明确标注 Project 暂无同一 2,048-row graph→gather 正式点；database-E2E
+  和 512-row eager 诊断因 source/sink、manifest 或计时起点不一致，不用于补齐右侧排名。
+- 冻结原生四 Job 图与 Project 四 Job 图的不同叙事角色：前者是方法前的现有系统干扰动机，
+  后者是方法后的 Project 机制 A/B 与效率—隔离—公平权衡。两图可引用同一正式结果目录，
+  但比较对象、归一化分母和证明义务不同，不作为重复的跨框架性能图连续呈现。
+
+- 将代价估计决策图由四个 estimator 级汇总 panel 收敛为“配置排序 + 20-context regret
+  点云”：右图逐 estimator 完整读取20个 leave-one-context-out regret（共120个真实点），
+  菱形标平均、外圈标最坏 context，并同时显示平均5%与最坏15%门槛。CE3/CE4/CE5各有
+  11/20个精确零regret，解释旧图median=0而不掩盖长尾；绘图入口新增20点及mean/max回算门禁。
+  后续按逐行复核加高画布，并在六个estimator之间加入浅灰水平分隔线，减少上下点云误读，
+  不改变点的位置、统计量或门槛。顶部再去除重复“20场景”标题，把两条门槛说明并入统一
+  图例；最坏context最终与普通点保持同尺寸、无描边，非Hybrid使用深灰而非近黑色。汇总
+  标记最终采用小菱形表示中位数，面积明显小于旧版菱形、仅略大于单context点；正式macro
+  mean regret≤5%的数值与门槛继续保留在图注和报告中，避免将中位数误作晋级统计量。
+- 新增 `opening_image_fourjob_normalized_impact`：Daft Built-in、Ray Data 与 Project
+  三栏分别展示 Short/Long1/Long2/Long3 的 `four-job JCT / isolated JCT`，直接标注影响倍数，
+  不使用误差线或无意义连线，也不进行跨框架绝对 JCT 排名。
+- Daft Built-in 的三个 Long 为 2.13×--3.19×，Ray Data 为 1.06×--1.64×；Project
+  frozen-static 四个 Job 约 1.74×--1.81×，shared-credit observe-only 约 1.12×--1.78×。
+  这些结果证明图像多 Job 干扰依赖 Job 与执行图，并支持 per-Job staged work/state、隔离和
+  公平约束的研究动机；不证明 observe-only 状态或当前共享额度构成动态收益。
+- 原生适配器没有统一的 prepare/H2D/forward 阶段计时，因此主图不虚构阶段分解；阶段机制
+  继续由独立的图像 staged-work 图承担。绘图输入来自两个已通过 audit 且共享同一 manifest
+  SHA 的正式结果目录。
+
+- 根据逐图复核，将 Project 四 Job 主图从孤立 Static/Shared 点恢复为同一 Job 的受控场景
+  折线：独立运行→1/4配额→四Job静态竞争→共享调度。这里连线有明确语义，用于显示配额、
+  竞争与策略变化趋势；右下同步改为 Static→Shared 的 per-Job progress 折线。标签已错位
+  避免 Long 点重叠，图注明确折线不是时间序列，误差仍留在正式数据中。
+- 调整数据组织双趋势图的顶部排版：总标题、共享图例、panel标题改成互不占位的三层；
+  panel标题写为“a 端到端吞吐”和“b Prefix cache命中率”，删除图例上方重复的说明标题。
+  数据、线型与无误差线合同不变。
+- 重排代价估计图顶部层级：四个panel改为“配置排序/中位决策损失/平均决策损失/最坏决策
+  损失”，门槛标签移入panel浅色通过区，总标题独占顶部。回读JSON确认Ridge、LightGBM、
+  Hybrid的median regret均为精确0.0%；图注新增“至少半数context选中oracle，不代表所有
+  context零损失”，并并列给出macro/max风险。绘图代码显式锁定CE0--CE5顺序与键集合。
+- 精简Project四Job图的重复数值编码：保留归一化口径以避免Job规模与干扰程度混淆，但将
+  panel a纵轴改为“归一化JCT（独立运行=1）”，删除各点重复倍率；panel c同样删除点旁进度
+  数字。无数值坐标轴的效率表继续保留精确值。
+- 数据组织图的吞吐单位统一由“千token/s”改为学术图表常用的 `k token/s`；纵轴和五条
+  右端直接标签同步修改，底层数值与统计口径不变。
+
+## 2026-08-10 原生四 Job 影响图改为 slowdown 矩阵
+
+- 将原生四 Job 图从三分面的菱形均值与 SD 误差线改为 3×4 影响矩阵：行对应 Daft
+  Native、Daft Ray、Ray Data，列对应 Short 与三个 Long；格内同时直标
+  `four-job/isolated-single` 倍率和 JCT 百分比增幅，颜色只编码受影响强度。
+- 三次 formal 的 SD 继续保留在正式 CSV 和附录，不在开题主图中用十二组误差线争夺视觉
+  注意力。新版 PNG 通过 300 DPI strict 检查，PDF 字体已嵌入且无 Type 3。
+- 数据组织图最终采用吞吐与prefix-cache命中率双轨迹，删除误差线；每条线仅连接同一策略
+  的低→高服务压力中位数，直接展示重排策略的cache与吞吐同步下降。报告、答辩大纲和问答库
+  保留“实验臂互斥、设计维度可联动、数据组织输出WorkDescriptor后由调度消费”的统一口径。
+- Project四Job主图改为无连线影响倍率点图，逐个报告Short与三个Long在Static/Shared下
+  相对各自独立Full的JCT倍率；右侧公平性也改为Static/Shared并列点，不再用连线暗示阶段
+  迁移。效率表仍报告吞吐/JCT/MFU，Jain与long spread保留。full/quarter反事实控制继续
+  留在正式数据与附录，Static/Shared仍是同上限互斥A/B臂。
+- 图像 baseline 图删除路径角色卡片，只保留 12K 同语义诊断与 120K
+  matched-resource 数据对照；Direct CLIP、vLLM Pooling 等能力门禁改由报告独立
+  表格说明，避免将结构图与数据坐标轴混用。数据组织图另增独立“颜色—策略”
+  图例，并将“顺序 token 预算”改为“按 token 工作量成批”。
+- 代价估计图删除median到max的横向范围线，改为candidate pairwise、median、macro、max
+  四个对齐的无连线点图；浅色区只编码预注册通过范围。图注增加Ridge逐行MAE更低、但
+  max regret高于Hybrid的反例，直接说明为什么必须以ranking/regret而非点预测误差验收。
+
+## 2026-08-10 图像 staged state 与 VTC-compatible 多 Job 接线
+
+- 服务器重启后按 cold-start runbook 清除 stale Ray 指针，恢复 PostgreSQL 18/pgvector、
+  重建 2×4090 Ray cluster 并保存只读 preflight；raw COCO ZIP 仍缺，但数据库 image workload
+  与 CLIP 模型资产存在。原生图像四 Job 1+3 矩阵 40/40 passed，30 formal group、48 formal
+  Job、exactly-once、manifest SHA 与真实 overlap 门禁全部通过；完整 5.1 MiB raw 已下载复核，
+  紧凑结果归档到 `experiments/results/opening_image_native_fourjob_formal_20260810/`。
+- 图像 project path 将旧 `rows×224×224` 标量扩成 source/prepare/model/result staged
+  `WorkDescriptor`；主 credit 仍严格取 legacy-equivalent model pixels。新增 observe-only
+  `RuntimeStateSnapshot` 只记录 ready/active prepare/model work、容量、freshness 与 calibration
+  signature，不改变 static/proposed 的任何选择。远端同 manifest 1+3 正式矩阵 24/24 group
+  passed、99K formal rows exactly-once；3,114 个 snapshot 100% fresh，构建均值 0.141 ms。
+  proposed-role/static group JCT 5.691/5.635s（差 0.98%），只证明观测接入成本近乎中性。
+- 新增 VTC-compatible workload 包与 append-only PostgreSQL 准备器：固定官方 artifact
+  commit，只迁移 `on_off_overload` / `overload-multi` suite 参数；本地 seeded Poisson 时长
+  冻结为 240/180 s；首个合同使用 SQuAD 256-token 邻近内容（192--320 候选 6,479 行，
+  足够覆盖 980/745 条请求），不重复 prompt，也不称 S-LoRA/VTC runtime 复现。
+- shared-vLLM runner 新增每 Job 独立 `rows_per_jobs`，修复 VTC 异速 client 无法表达的问题；
+  actual service 分开记录 prompt/output，并把 service disparity 窗口收紧到 request-level
+  simultaneously-backlogged 区间。vLLM group 证据补 TTFT/ITL、queue/prefill/decode 与 prefix
+  cache 指标。
+- 新增同全局 request/work 上限的 `shared_fifo` control；它按 coordinator 到达顺序服务，
+  与 frozen static partition、shared-work DRR 构成三臂，不冒充 VTC counter，也不声称理论
+  lag bound。两套 AutoDL 模板、audit-aware runner wrapper 和 fail-closed 汇总器已落地；
+  wrapper 自动恢复每 client 首到达 offset，避免 profiler 归一化破坏全局 trace 原点。
+  本地相关 84 个 shared/VTC/image 定向测试通过，依赖 pyarrow 的 profiler 全测试需在
+  远端完整环境补跑。
+- 服务器重启后恢复双 Qwen2.5-7B vLLM endpoint；VTC-compatible workload 已 append-only
+  导入 PostgreSQL：on/off 980 requests（226/754）、8-client overload 745 requests
+  （72/71/68/112/114/109/105/94），prompt 246--266/248--264 tokens。首个后台启动因
+  runtime env 未 export 在写结果前 fail-closed；保留日志后以 `set -a` 导出并从 retry1
+  启动。首个完成 cell 又发现 SQuAD 自然 EOS 使 256-token cap 实际只生成约 6 tokens/request、
+  GPU util 7.5%，不满足 overload/effect-range 门；立即停止并保留诊断。随后增加默认关闭、
+  只供 fixed-output synthetic contract 使用的 `--completion-ignore-eos`，远端 vLLM smoke
+  确认 256 output tokens/`finish_reason=length`，再从全新 retry2 目录正式启动；后续两套
+  矩阵严格串行。
+- VTC-compatible on/off fixed-output retry3 在 commit `0531f94` 上 20/20 runs、15 formal、
+  0 incident，并通过 fail-closed summarizer：static/FCFS/shared-work 吞吐为
+  2016.56/2014.65/2016.02 tok/s，GPU mean 98.90%/98.82%/98.97%，waiting=0、
+  borrowed-work=0、solo-normalized progress Jain 近 1。冻结为“模型服务饱和但当前到达率
+  未触发上游 credit 竞争”的层级负结果，不称动态胜出。
+- 8-client overload 首次启动暴露 workload env 名不一致，修复并新增回归测试；retry1 的
+  8-job warmup 因 15s barrier 不足而 fail-closed，且留下不完整 artifacts，故不 resume/
+  不拼接。当前在 commit `b15509e`、全新 retry2 目录以 45s barrier 完整重跑。
+- 对既有开题结果做 claim-vs-data 回溯审计：08-07 K32 三臂报告显式降为被 K128 refeed
+  取代的历史诊断；补齐 database-E2E MFU、native gate 计时和四 Job actual-work 基数的
+  跨臂不可比边界。CE5 把原称 86.5% 的量重命名为“最坏候选相对 oracle slowdown”，并补
+  项目统一 `/max` spread 10.7%--46.4%；选择性 6-rep 只写为与噪声解释一致，不再称因果
+  证实，下一步改为独立时间段/新 workload 的统一重复验证。
+
 ## 2026-08-10 第一性原理开题数据图冻结
 
 - 将原生单 Job 证据拆成主结果与机制补充：F-main 用 JCT、waiting、queue time、TTFT 证明
@@ -5479,3 +5663,32 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `single JCT / concurrent JCT`。Project static/shared 的 normalized Jain 为0.988/0.876，
   对应 min-max progress 0.222–0.296/0.311–0.801；说明 static 可“均匀地慢”，shared 提高
   总效率但收益不均。新增紧凑 CSV，只是同一证据的标准化派生，不重跑、不新增性能 claim。
+
+## 2026-08-10 Direct timed-client baseline 基础合同
+
+- bounded AsyncIO HTTP control 新增显式 `ignore_eos`，服务指纹和 shard summary 同步记录，
+  避免 VTC-compatible fixed-output 对照再次退化为自然 EOS 的短输出无效实验。
+- 新增多个逻辑 Job 共享同一 direct client 的 trace 合并接口：只叠加预注册 arrival offset，
+  复用 endpoint-local semaphore，不加入项目 per-job credit、fair queue 或 routing；因此可以
+  作为后续 Direct vLLM FCFS 外部锚点的核心，不与 Daft/Ray native runner 混用。
+- 文本 baseline 137 项单元测试通过。当前只完成可复用核心合同，正式矩阵编排、资源采集和
+  fail-closed 汇总尚未接线，不能据此声称 Direct VTC-compatible formal 已可运行或已有结果。
+
+## 2026-08-10 VTC 8-client effect-range提前停止
+
+- 8-client overload完成全部11个warm-up和首个8-job static formal后停止，共14/44个完整
+  run、0 incident；停止前进程和8个child均正常终止，vLLM恢复idle，已有和中途文件不删除。
+- 三个8-job warm-up吞吐约2009--2012 tok/s、GPU mean约98.6%，但shared两臂每endpoint
+  峰值仅20--22/128 requests、10,230--11,221/65,536 work，credit平均空闲约94.6%，
+  waiting与borrowed work均为0，Job JCT逐项几乎重合。该配置服务饱和但上游控制未进入
+  可识别区，继续formal只会确认结构性零效应。
+- 远端原目录新增`early_stop.json`，状态为`stopped_effect_range_gate`；manifest保留runner
+  终止时的原始状态，不resume、不与后续校准结果合并。后续先用同workload Direct ceiling
+  扫描可整除Job数的K/work档，冻结最小95%饱和点，再通过mechanism-activation warm-up门。
+
+## 2026-08-10 开题材料容量控制表述调整
+
+- 面向评委的报告、答辩大纲与第一性原理复审文档统一使用“预先标定的安全容量范围”，
+  并明确其操作含义：先在固定机器、
+  模型、协议、workload 与拓扑下，通过实验确定不会明显欠供给或过载的 active-work/K 范围，
+  再依据实时队列、完成速率与阶段压力在该范围内调节提交量。算法内部字段名称不受此表述调整影响。

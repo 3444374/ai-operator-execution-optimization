@@ -58,8 +58,8 @@
 | 材料 | 主文件 | 状态 |
 |---|---|---|
 | 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
-| 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：19 项 take-away、必要数据、claim 边界、实验与图表合同；暂不制作 PPT** |
-| 开题报告 | `report/opening_report.md` | 2026-08-09 本地证据口径已对齐；已写入 replacement、原生单 Job、两/四 Job 与四部件实现边界，暂不同步云文档 |
+| 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：20 页主讲内容大纲；每页已补齐核心问题、内容块、证据、页面结论与转场，并建立背景—动机—研究内容—实验对应表；暂不制作 PPT** |
+| 开题报告 | `report/opening_report.md` | 2026-08-10 已完成第1--7章内容重组：以 AI-Native Data Infra 为背景，按数据库 AI、GPU serving、分布式数据执行和代价估计四条论文线收敛研究空白；研究问题、技术路线、前期证据、进度和预期创新已统一到“work→state→bounded action→evaluation”闭环，明确在线 dynamic active-work 尚未接入正式主路径；暂不同步云文档 |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前暂停 PPT 制作 |
 | 开题 PPTX | `slides/opening_defense_20260807_v6.pptx` | v5 模板继承的待替换底稿；已有 QA 不代表新内容已冻结 |
@@ -85,10 +85,10 @@
 
 ## 下一步
 
-1. SQuAD/ShareGPT replacement、原生单 job、两 job 最小因果与四 job 扩展均已完成；停止增加开题 baseline、offset、weight 或更多 job 数扫描。
-2. 依据 `opening_defense_outline_20260808.md` 整理动机—挑战—设计—证据边界和待画图数据合同；当前暂不实际画图。
-3. 完成 Claim Matrix、问答、实验状态与实现边界的一致性审计；用户已明确豁免 Wiki，同步云文档和制作 PPT 均暂停。
-4. 后续获准绘图时只做 A/C 标签级重绘与 F/H 首次生成；B、WorkDescriptor 总览、D、E 不重画，G 无结果且不画。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
+1. 当前只审 `opening_defense_outline_20260808.md`：按 20 页逐页确认背景、动机、研究内容、证据和转场，不继续扩写报告或制作 PPT。
+2. SQuAD/ShareGPT replacement、原生单 job、两 job 最小因果与四 job 扩展均已完成；停止增加开题 baseline、offset、weight 或更多 job 数扫描。
+3. 大纲经用户逐页确认后，再决定是否重组报告和制作低保真页面；在此之前不继承学校模板，不生成 PPT 成品。
+4. Claim Matrix、问答、实验状态与实现边界继续作为大纲事实护栏；用户已明确豁免 Wiki，当前不同步云文档。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
 ## 飞书发布面（当前同步暂停）
 
 以下链接只用于识别既有发布面；当前均不是可直接覆盖的同步目标：

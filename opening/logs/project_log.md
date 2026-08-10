@@ -1,5 +1,25 @@
 # 开题材料 project log
 
+## 2026-08-10 二十页内容大纲收口
+
+- 按用户当前优先级暂停报告扩写和 PPT 制作，只维护 `opening_defense_outline_20260808.md`。
+- 20 页均补齐“本页回答、核心内容/证据、页面结论、转场”，并统一标题与页码；新增
+  背景—动机—研究内容—实验对应表，以及 18--20 分钟主讲时间和 15 分钟删减顺序。
+- 逐页主线保持为：AI-Native Data Infra 背景→相邻研究与交界空白→baseline/动机现象→
+  两项研究内容与共同代价估计→文本/图像验证→预期贡献；本轮未制作报告、PPT 或云文档。
+
+## 2026-08-10 状态感知与动态提交内容闭环
+
+- 将开题报告研究问题从四项补全为五项，分别覆盖 Work Unit、跨层状态识别、同上限动态
+  admission/routing、多 Job 协调和代价估计决策质量；容量扫描作为状态识别和动作范围标定。
+- 技术路线明确区分“GPU 低利用率”与“有 ready work 但欠供给”：只有 ready work、状态
+  freshness、active work、完成速率与服务压力共同满足条件时才逐档增压；无 ready work 保持，
+  状态过期或签名不一致回退 frozen-static。
+- 报告、20页答辩大纲与问答库同步注明当前正式路径仍使用 static K/work；已有 trace、
+  observe-only snapshot、request-window/controller 原型和 shared credit，但动态 active-work
+  执行器尚未进入正式主 runner。该闭环列为开题后首个核心工程与同上限 A/B，不写成已完成贡献。
+- 本轮未新增实验、图片、PPT、飞书云文档或 Wiki。
+
 ## 2026-08-09 权威报告图表状态护栏
 
 - A/C脚本已含正确新标签，但当前PNG/SVG仍为旧渲染；按暂停绘图要求不执行生成器。
