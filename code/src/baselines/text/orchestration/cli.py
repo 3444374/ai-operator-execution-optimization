@@ -119,6 +119,7 @@ def _service_fingerprint(
             "model": args.model,
             "protocol": completion_protocol,
             "temperature": 0.0,
+            "ignore_eos": bool(getattr(args, "ignore_eos", False)),
             "service_prefix_caching": args.service_prefix_caching,
             "service_max_num_seqs": args.service_max_num_seqs,
             "service_max_num_batched_tokens": args.service_max_num_batched_tokens,
@@ -174,6 +175,7 @@ def _run_adapter(
                     endpoint_index_offset=args.endpoint_index,
                     replay_arrivals=not args.disable_arrival_replay,
                     arrival_time_scale=args.arrival_time_scale,
+                    ignore_eos=args.ignore_eos,
                 ),
             )
         )
@@ -291,6 +293,7 @@ def _run_shard(args: argparse.Namespace) -> dict[str, object]:
         "predicted_work": sum(request.estimated_work for request in requests),
         "model_name": args.model,
         "completion_protocol": completion_protocol,
+        "ignore_eos": args.ignore_eos,
         "service_prefix_caching": args.service_prefix_caching,
         "service_max_num_seqs": args.service_max_num_seqs,
         "service_max_num_batched_tokens": args.service_max_num_batched_tokens,
@@ -703,6 +706,11 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--ray-address")
     run.add_argument("--arrival-time-scale", type=float, default=1.0)
     run.add_argument("--disable-arrival-replay", action="store_true")
+    run.add_argument(
+        "--ignore-eos",
+        action="store_true",
+        help="Require vLLM-compatible Chat requests to consume max_tokens.",
+    )
     run.add_argument("--python-executable", default="python")
     run.add_argument("--output-dir", required=True)
     run.add_argument("--vllm-running-final", type=int, default=-1)

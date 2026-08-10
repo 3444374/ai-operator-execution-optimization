@@ -136,10 +136,14 @@ def load_config(path: Path) -> SharedVllmConfig:
         decoded.get("warmup_runs_per_scenario"),
         "warmup_runs_per_scenario",
     )
-    repeats = _positive_integer(
+    repeats = _nonnegative_integer(
         decoded.get("formal_repeats"),
         "formal_repeats",
     )
+    if warmups == 0 and repeats == 0:
+        raise ValueError(
+            "shared-vLLM config requires at least one warmup or formal run"
+        )
     endpoint_ids_raw = decoded.get("endpoint_ids")
     if (
         not isinstance(endpoint_ids_raw, list)

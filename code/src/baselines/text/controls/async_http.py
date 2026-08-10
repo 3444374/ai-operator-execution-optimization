@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import math
 import time
 from collections.abc import Awaitable, Callable, Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
@@ -27,6 +28,16 @@ class BoundedHttpConfig:
     endpoint_index_offset: int = 0
     replay_arrivals: bool = True
     arrival_time_scale: float = 1.0
+    ignore_eos: bool = False
+
+
+@dataclass(frozen=True)
+class TimedHttpJob:
+    """One logical client whose immutable requests share an arrival offset."""
+
+    job_id: str
+    requests: tuple[ChatRequest, ...]
+    arrival_offset_s: float = 0.0
 
 
 def _validate_config(
@@ -109,14 +120,17 @@ async def _run_requests(
         async with semaphores[local_index]:
             started_at_s = time.time()
             try:
+                payload: dict[str, object] = {
+                    "model": config.model,
+                    "messages": list(request.messages),
+                    "temperature": 0.0,
+                    "max_tokens": request.max_output_tokens,
+                }
+                if config.ignore_eos:
+                    payload["ignore_eos"] = True
                 response = await transport(
                     config.endpoint_urls[local_index],
-                    {
-                        "model": config.model,
-                        "messages": list(request.messages),
-                        "temperature": 0.0,
-                        "max_tokens": request.max_output_tokens,
-                    },
+                    payload,
                 )
                 completed_at_s = time.time()
                 return _completed_result(
@@ -193,3 +207,57 @@ async def run_bounded_http(
             config,
             http_transport,
         )
+
+
+async def run_bounded_http_jobs(
+    jobs: Iterable[TimedHttpJob],
+    config: BoundedHttpConfig,
+    transport: HttpTransport | None = None,
+) -> dict[str, tuple[BaselineRequestResult, ...]]:
+    """Replay multiple logical jobs through one shared direct-client control.
+
+    This only merges immutable arrival traces. It adds no per-job credit,
+    routing, or fairness policy, leaving endpoint-local bounds and vLLM as the
+    admission and scheduling owners.
+    """
+
+    materialized = tuple(jobs)
+    if not materialized:
+        raise ValueError("timed HTTP jobs must not be empty")
+    job_ids = [job.job_id for job in materialized]
+    if any(not job_id.strip() for job_id in job_ids):
+        raise ValueError("timed HTTP job_id must be non-empty")
+    if len(set(job_ids)) != len(job_ids):
+        raise ValueError("timed HTTP job_id values must be unique")
+
+    merged: list[ChatRequest] = []
+    owner_by_doc_id: dict[int, str] = {}
+    for job in materialized:
+        if not math.isfinite(job.arrival_offset_s) or job.arrival_offset_s < 0:
+            raise ValueError(
+                "timed HTTP arrival_offset_s must be finite and non-negative"
+            )
+        if not job.requests:
+            raise ValueError(f"timed HTTP job is empty: {job.job_id}")
+        for request in job.requests:
+            if request.doc_id in owner_by_doc_id:
+                raise ValueError(
+                    f"timed HTTP jobs contain duplicate doc_id: {request.doc_id}"
+                )
+            owner_by_doc_id[request.doc_id] = job.job_id
+            merged.append(
+                replace(
+                    request,
+                    arrival_time_s=(
+                        request.arrival_time_s + job.arrival_offset_s
+                    ),
+                )
+            )
+
+    results = await run_bounded_http(merged, config, transport=transport)
+    grouped: dict[str, list[BaselineRequestResult]] = {
+        job_id: [] for job_id in job_ids
+    }
+    for result in results:
+        grouped[owner_by_doc_id[result.doc_id]].append(result)
+    return {job_id: tuple(rows) for job_id, rows in grouped.items()}

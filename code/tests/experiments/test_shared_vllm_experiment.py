@@ -152,6 +152,80 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertEqual(scenario.row_count(0), 7)
         self.assertEqual(scenario.row_count(1), 11)
 
+    def test_config_accepts_warmup_only_effect_range_gate(self) -> None:
+        with TemporaryDirectory() as temporary:
+            path = Path(temporary) / "config.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "experiment_id": "effect-range-gate",
+                        "seed": 1,
+                        "warmup_runs_per_scenario": 1,
+                        "formal_repeats": 0,
+                        "endpoint_ids": ["endpoint-0", "endpoint-1"],
+                        "request_limit_per_endpoint": 8,
+                        "work_limit_per_endpoint": 4096,
+                        "credit_quantum": 512,
+                        "common_args": [
+                            "--arrival-replay",
+                            "--executor",
+                            "ray_actor",
+                        ],
+                        "scenarios": [
+                            {
+                                "scenario_id": "shared_gate",
+                                "policy": "shared_fifo",
+                                "job_count": 1,
+                                "rows_per_job": 1,
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            config = load_config(path)
+
+        self.assertEqual(config.warmup_runs_per_scenario, 1)
+        self.assertEqual(config.formal_repeats, 0)
+
+    def test_config_rejects_empty_effect_range_schedule(self) -> None:
+        with TemporaryDirectory() as temporary:
+            path = Path(temporary) / "config.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "experiment_id": "empty-gate",
+                        "seed": 1,
+                        "warmup_runs_per_scenario": 0,
+                        "formal_repeats": 0,
+                        "endpoint_ids": ["endpoint-0"],
+                        "request_limit_per_endpoint": 1,
+                        "work_limit_per_endpoint": 512,
+                        "credit_quantum": 512,
+                        "common_args": [
+                            "--arrival-replay",
+                            "--executor",
+                            "ray_actor",
+                        ],
+                        "scenarios": [
+                            {
+                                "scenario_id": "empty",
+                                "policy": "independent_full",
+                                "job_count": 1,
+                                "rows_per_job": 1,
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "at least one warmup"):
+                load_config(path)
+
     def test_all_at_t0_multijob_template_keeps_matched_project_limits(self) -> None:
         with TemporaryDirectory() as directory:
             selection = Path(directory) / "selection.json"

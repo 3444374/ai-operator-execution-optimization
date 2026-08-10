@@ -16,7 +16,12 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.baselines.text.controls import BoundedHttpConfig, run_bounded_http
+from src.baselines.text.controls import (
+    BoundedHttpConfig,
+    TimedHttpJob,
+    run_bounded_http,
+    run_bounded_http_jobs,
+)
 from src.baselines.common.contracts import ChatRequest
 
 
@@ -186,6 +191,116 @@ class BoundedHttpBaselineTests(unittest.TestCase):
             )
         )
         self.assertTrue(all("prompt" not in payload for payload in payloads))
+
+    def test_ignore_eos_is_explicit_and_opt_in(self) -> None:
+        payloads: list[dict[str, object]] = []
+
+        async def fake_transport(_url: str, payload: dict[str, object]) -> dict:
+            payloads.append(payload)
+            return {
+                "choices": [
+                    {
+                        "message": {"content": "ok"},
+                        "finish_reason": "length",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 4,
+                    "completion_tokens": 8,
+                },
+            }
+
+        for ignore_eos in (False, True):
+            asyncio.run(
+                run_bounded_http(
+                    (sample_request(1, endpoint_index=0),),
+                    BoundedHttpConfig(
+                        endpoint_urls=("http://ep0/v1/chat/completions",),
+                        model="model",
+                        concurrency_per_endpoint=1,
+                        timeout_s=30,
+                        api_key=None,
+                        ignore_eos=ignore_eos,
+                    ),
+                    transport=fake_transport,
+                )
+            )
+
+        self.assertNotIn("ignore_eos", payloads[0])
+        self.assertIs(payloads[1]["ignore_eos"], True)
+
+    def test_multiple_timed_jobs_share_one_direct_client(self) -> None:
+        submitted: list[int] = []
+
+        async def fake_transport(
+            _url: str,
+            payload: dict[str, object],
+        ) -> dict:
+            messages = payload["messages"]
+            assert isinstance(messages, list)
+            content = messages[0]["content"]
+            submitted.append(int(content.removeprefix("question-")))
+            return {
+                "choices": [
+                    {
+                        "message": {"content": "ok"},
+                        "finish_reason": "length",
+                    }
+                ],
+                "usage": {"prompt_tokens": 4, "completion_tokens": 8},
+            }
+
+        grouped = asyncio.run(
+            run_bounded_http_jobs(
+                (
+                    TimedHttpJob(
+                        "client-0",
+                        (sample_request(1, endpoint_index=0),),
+                    ),
+                    TimedHttpJob(
+                        "client-1",
+                        (sample_request(2, endpoint_index=1),),
+                        arrival_offset_s=0.001,
+                    ),
+                ),
+                BoundedHttpConfig(
+                    endpoint_urls=(
+                        "http://ep0/v1/chat/completions",
+                        "http://ep1/v1/chat/completions",
+                    ),
+                    model="model",
+                    concurrency_per_endpoint=128,
+                    timeout_s=30,
+                    api_key=None,
+                    ignore_eos=True,
+                ),
+                transport=fake_transport,
+            )
+        )
+
+        self.assertEqual(set(grouped), {"client-0", "client-1"})
+        self.assertEqual(grouped["client-0"][0].doc_id, 1)
+        self.assertEqual(grouped["client-1"][0].doc_id, 2)
+        self.assertEqual(set(submitted), {1, 2})
+
+    def test_multiple_timed_jobs_reject_duplicate_documents(self) -> None:
+        request = sample_request(1, endpoint_index=0)
+        with self.assertRaisesRegex(ValueError, "duplicate doc_id"):
+            asyncio.run(
+                run_bounded_http_jobs(
+                    (
+                        TimedHttpJob("client-0", (request,)),
+                        TimedHttpJob("client-1", (request,)),
+                    ),
+                    BoundedHttpConfig(
+                        endpoint_urls=("http://ep0/v1/chat/completions",),
+                        model="model",
+                        concurrency_per_endpoint=1,
+                        timeout_s=30,
+                        api_key=None,
+                    ),
+                )
+            )
 
     def test_transport_failure_is_preserved_as_failed_result(self) -> None:
         async def failing_transport(_url: str, _payload: dict) -> dict:

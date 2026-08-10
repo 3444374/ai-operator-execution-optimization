@@ -21,6 +21,7 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.text.orchestration.gate_runner import (
+    _shard_command,
     load_core_gate_config,
     parse_concurrency_overrides,
     parse_vllm_queue_metrics,
@@ -34,6 +35,80 @@ from src.baselines.common.provenance import adapter_provenance
 
 
 class OfficialBaselineGateRunnerTests(unittest.TestCase):
+    def test_direct_timed_gate_replays_arrivals_and_forces_fixed_output(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "manifest.jsonl"
+            write_manifest(
+                manifest,
+                (
+                    ChatRequest(
+                        doc_id=1,
+                        prompt="question",
+                        arrival_time_s=0.25,
+                        prompt_tokens=4,
+                        max_output_tokens=8,
+                        estimated_output_tokens=8,
+                        source_row_hash="row-1",
+                        endpoint_index=0,
+                    ),
+                    ChatRequest(
+                        doc_id=2,
+                        prompt="question",
+                        arrival_time_s=0.5,
+                        prompt_tokens=4,
+                        max_output_tokens=8,
+                        estimated_output_tokens=8,
+                        source_row_hash="row-2",
+                        endpoint_index=1,
+                    ),
+                ),
+            )
+            config_path = root / "gate.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "experiment_id": "direct-timed-gate",
+                        "formal": False,
+                        "rows_total": 2,
+                        "endpoint_urls": [
+                            "http://127.0.0.1:8000/v1/chat/completions",
+                            "http://127.0.0.1:8001/v1/chat/completions",
+                        ],
+                        "completion_protocol": "chat_completions",
+                        "model": "qwen",
+                        "manifest": str(manifest),
+                        "output_root": str(root / "out"),
+                        "replay_arrivals": True,
+                        "ignore_eos": True,
+                        "cells": [
+                            {
+                                "id": "bounded_http",
+                                "adapter": "bounded_http",
+                                "concurrency_per_endpoint": 8,
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            config = load_core_gate_config(config_path)
+            command = _shard_command(
+                config=config,
+                cell=config.cells[0],
+                endpoint_index=0,
+                output_dir=root / "shard-0",
+                driver_python="python",
+                vllm_python="vllm-python",
+            )
+
+        self.assertTrue(config.replay_arrivals)
+        self.assertTrue(config.ignore_eos)
+        self.assertNotIn("--disable-arrival-replay", command)
+        self.assertIn("--ignore-eos", command)
+
     def test_native_and_project_formal_contracts_share_core_workload(self) -> None:
         deploy_root = CODE_ROOT.parent / "deploy/autodl"
         native = json.loads(

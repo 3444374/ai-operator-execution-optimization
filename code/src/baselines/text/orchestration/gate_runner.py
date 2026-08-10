@@ -87,6 +87,8 @@ class CoreGateConfig:
     service_max_num_seqs: int = -1
     service_max_num_batched_tokens: int = -1
     partition_policy: str | None = None
+    replay_arrivals: bool = False
+    ignore_eos: bool = False
 
 
 _BOOLEAN_HARD_GATES = {
@@ -404,6 +406,14 @@ def load_core_gate_config(
             raise ValueError(
                 f"partition_policy must be one of {PARTITION_POLICIES} or null"
             )
+    replay_arrivals = payload.get("replay_arrivals", False)
+    ignore_eos = payload.get("ignore_eos", False)
+    if not isinstance(replay_arrivals, bool) or not isinstance(ignore_eos, bool):
+        raise ValueError("replay_arrivals and ignore_eos must be booleans")
+    if ignore_eos and any(cell.adapter != "bounded_http" for cell in cells):
+        raise ValueError(
+            "ignore_eos direct gate may contain bounded_http cells only"
+        )
     return CoreGateConfig(
         experiment_id=str(payload.get("experiment_id", "core_gate")),
         rows_total=rows_total,
@@ -420,6 +430,8 @@ def load_core_gate_config(
         service_max_num_seqs=service_max_num_seqs,
         service_max_num_batched_tokens=service_max_num_batched_tokens,
         partition_policy=partition_policy,
+        replay_arrivals=replay_arrivals,
+        ignore_eos=ignore_eos,
     )
 
 
@@ -616,7 +628,6 @@ def _shard_command(
         str(cell.batch_size),
         "--output-dir",
         str(output_dir),
-        "--disable-arrival-replay",
         "--service-prefix-caching",
         config.service_prefix_caching,
         "--service-max-num-seqs",
@@ -624,6 +635,10 @@ def _shard_command(
         "--service-max-num-batched-tokens",
         str(config.service_max_num_batched_tokens),
     ]
+    if not config.replay_arrivals:
+        command.append("--disable-arrival-replay")
+    if config.ignore_eos:
+        command.append("--ignore-eos")
     command.extend(cell.adapter_args)
     if cell.ray_address:
         command.extend(["--ray-address", cell.ray_address])
@@ -1084,6 +1099,8 @@ def run_core_gate(
             for cell in config.cells
         ],
         "blocked_cells": list(config.blocked_cells),
+        "replay_arrivals": config.replay_arrivals,
+        "ignore_eos": config.ignore_eos,
     }
     _atomic_json(config.output_root / "resolved_config.json", resolved)
     metrics_urls = tuple(_metrics_url(url) for url in config.endpoint_urls)
