@@ -4195,13 +4195,14 @@ class StaticTaskSchedulingTests(unittest.TestCase):
             completion_return_token_ids=True,
         )
 
-        self.assertTrue(all(call[-4] is True for call in remote.calls))
-        self.assertTrue(all(call[-3] == "raw" for call in remote.calls))
-        self.assertTrue(all(call[-2] is None for call in remote.calls))
+        self.assertTrue(all(call[-5] is True for call in remote.calls))
+        self.assertTrue(all(call[-4] == "raw" for call in remote.calls))
+        self.assertTrue(all(call[-3] is None for call in remote.calls))
         self.assertTrue(
-            all(call[-1] == "completions" for call in remote.calls)
+            all(call[-2] == "completions" for call in remote.calls)
         )
-        self.assertTrue(all(len(call) == 10 for call in remote.calls))
+        self.assertTrue(all(call[-1] is False for call in remote.calls))
+        self.assertTrue(all(len(call) == 11 for call in remote.calls))
 
     def test_adaptive_task_path_remains_isolated_from_static_scheduler(self) -> None:
         remote = _RecordingRemote()

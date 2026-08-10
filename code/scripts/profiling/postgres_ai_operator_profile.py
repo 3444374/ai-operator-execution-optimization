@@ -1758,6 +1758,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ),
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
             "completion_return_token_ids": args.completion_return_token_ids,
+            "completion_ignore_eos": args.completion_ignore_eos,
             "completion_prompt_format": args.completion_prompt_format,
             "completion_protocol": args.completion_protocol,
             "completion_http_transport": (
