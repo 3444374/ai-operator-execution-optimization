@@ -45,9 +45,11 @@ baseline 边界和实验计划之间形成闭环。对本课题，最小证明�
 
 ### 报告正文或答辩备份
 
-- `opening_native_single_job_state_fingerprint`：保留六个原单位 small multiples，解释
-  Daft Native/Ray 的 high-running/high-waiting/KV-near-full 与 Ray Data 当前路径的
-  low-running/no-waiting/low-MFU；它是图 2/3 的状态补充，不再承担独立主结论。
+- `opening_native_single_job_request_latency`：报告正文先独立展示 Job JCT、waiting、queue time
+  与 TTFT，证明相近批任务 makespan 会掩盖请求级排队。
+- `opening_native_single_job_state_fingerprint`：保留六个原单位 small multiples，展示 tok/s、
+  running、waiting、KV、MFU 与 GPU utilization，解释 Daft Native/Ray 的 overqueue 与 Ray Data
+  当前路径的 underfeed；它是 JCT 主图的状态补充，不承担独立性能排名。
 - 两 Job online/eager arrival-regime 表：作为图 4 的最小因果复核，不与四 Job 主图混画。
 - database-E2E replacement：只用 correctness/语义/可排名性表，不画 ShareGPT 三臂性能图。
 - DuckDB AI：只放有界输出产品语义和能力表；没有多 Job 正式结果，不生成性能图。

@@ -11,7 +11,8 @@
 ## 2026-08-10 第一性原理图集状态
 
 选图理由与正文/备份/不画边界见 `opening_required_data_figures_20260810.md`。本轮已统一
-重建 A/T/N/C/H/D/I/E 八张正文数据图与 F 备份图，**未生成 G，未修改 PPT**。
+重建 A/T/N/C/H/D/I/E 八张正文数据图、新增单 Job 任务—请求主图并保留 F 状态备份图，
+**未生成 G，未修改 PPT**。
 
 | 编号 | 内容 | 当前状态 | 备注 |
 |---|---|---|---|
@@ -23,7 +24,8 @@
 | D | 图像 staged-work 动机 | `rendered-qa-pass` | prepare/model、R0/R1/R2 传输形态与 active-window 分开呈现；仍不声称动态胜出 |
 | I | 图像 baseline 分轨 | `rendered-qa-pass` | Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 全部呈现；仅 120K Ray Data/Project 可排名 |
 | E | 代价估计的决策质量 | `rendered-qa-pass` | 已统一图注；结论仍为 marginal pass |
-| F | 原生文本单 Job 状态指纹 | `rendered-qa-pass` | 12 formal；6 个原单位 small multiples，均值 ± SD |
+| F-main | 原生文本单 Job 任务—请求对照 | `rendered-qa-pass` | 12 formal；JCT/waiting/queue time/TTFT 四项原单位对齐，均值直标 |
+| F-state | JCT 的服务与资源状态补充 | `rendered-qa-pass` | tok/s/running/waiting/KV/MFU/GPU utilization 六项原单位对齐 |
 | G | 同上限 static–dynamic phase change | `do-not-draw-no-result` | 保留实验合同即可；开题不生成结果图或带虚构数值的示意图 |
 | H | 四 Job quota、竞争与共享权衡 | `rendered-qa-pass` | 1 short + 3 long；full/quarter/static/shared、总效率、MFU、公平与 long spread 同图 |
 | Appendix | database-E2E correctness/语义表 | `appendix-table-only` | 不生成正文性能排名图 |
@@ -49,8 +51,8 @@
 | I | `image_ai_embed_operator_formal_20260803/raw/runs_matched_resource_schemav12_20260804.csv` | 4 cell × (1 warmup + 3 formal) | `df5ca0c872eca585` | 120K CPU8/16 下 Project 对 Ray Data JCT 低约10%/17%；仅此 panel 可排名 |
 | I | `vllm_clip_pooling_gate_20260804/summary.csv` | 2 个 600s capability gate | `d5b2480bca5287ca` | 两次均 timeout 且无 embedding；不得生成性能值 |
 | E | `operator_cost_profile_dual4090_formal_v2_cache_on_20260807/ce_context_loo_rerun_20260807.json` | 20 context，6 estimator | `bbb2f2f8c5c1c07f` | CE5 macro/max regret=2.897%/14.715% |
-| F | `opening_text_native_single_job_formal_20260808/formal_summary.csv` | 4 arm × 3 formal | `bd0fd0fa502f50a6` | bounded/Daft Native/Daft Ray/Ray Data=17,800/17,286/16,747/3,551 tok/s |
-| F | `opening_text_native_single_job_formal_20260808/formal_runs.csv` | 12 formal | `1384ab9dc4abf003` | JCT/running/waiting/KV/MFU 的逐次输入；图中误差线=SD |
+| F | `opening_text_native_single_job_formal_20260808/formal_summary.csv` | 4 arm × 3 formal | `bd0fd0fa502f50a6` | direct/Daft Native/Daft Ray/Ray Data 的 JCT=95.5/98.4/101.5/478.7s；queue=0.10/37.49/37.64/≈0s |
+| F | `opening_text_native_single_job_formal_20260808/formal_runs.csv` | 12 formal | `1384ab9dc4abf003` | waiting/TTFT 与 tok/s/running/KV/MFU/GPU util 的逐次输入；SD 保留在数据中、主图不绘制 |
 | H | `opening_fourjob_interference_20260809/data/combined/job_formal_runs.csv` | 120 条逐 Job formal | `d7fa2417361fcd7b` | Project short full/quarter/static/shared=13.07/36.65/58.79/16.33 s |
 | N | `opening_fourjob_interference_20260809/data/combined/job_formal_runs.csv` | 120 条逐 Job formal | `d7fa2417361fcd7b` | Daft Native/Ray/Ray Data 的 short slowdown=1.67×/1.25×/1.68×；三个 long 也均退化 |
 | H | `opening_fourjob_interference_20260809/data/combined/group_formal_runs.csv` | 75 条组级 formal | `b415c8a68e5d1139` | Project shared vs static：tok/s +8.68%，group JCT −7.97%，MFU +8.56pp |
@@ -73,14 +75,14 @@ E 的 SHA 于 2026-08-09 随 6 处 `§6` 字符 UTF-8 规范化更新；JSON 字
 |---|---|---|
 | Motivated Example | A | “真实运行现象 + 现有表达失败”三联图；不画 proposed 胜出 teaser，符合当前尚无动态胜出结果的证据状态 |
 | Solution Overview | B、WorkDescriptor 总览 | system boundary + multi-layer feedback；输入、两项研究内容、共同 cost enabler、执行后端和 sink 均有真实名称 |
-| Experimental Results | T、N、C、H、D、I、E、F | T/I 为分轨 baseline，D 为图像阶段/传输/窗口动机，N 为轨内归一化点区间，C/F 为 aligned small multiples，H 为因果分解，E 为 decision-regret interval；禁止 radar、双 y 轴和系统间绝对抗干扰排名 |
+| Experimental Results | T、N、C、H、D、I、E、F | T/I 为分轨 baseline，D 为图像阶段/传输/窗口动机，N 为轨内归一化点区间，C 为 regime 对照，F-main 为任务—请求主图、F-state 为状态补充，H 为因果分解，E 为 decision-regret interval；禁止 radar、双 y 轴和系统间绝对抗干扰排名 |
 | 排除项 | G | 无结果，不占用 Experimental Results 图位 |
 
-通用规则审计：A/T/N/C/H/D/I/E/F 同时有 SVG/PNG；本地 QA 另生成 PDF 与灰度预览但不纳入 Git。
+通用规则审计：A/T/N/C/H/D/I/E/F-main/F-state 同时有 SVG/PNG；本地 QA 另生成 PDF 与灰度预览但不纳入 Git。
 无 3D、阴影、渐变或双 y 轴；坐标带单位；正式重复以均值 ± SD 编码；颜色之外同时使用
 位置、marker 形状和文字。A/N/F 的统计 marker、H 的场景 marker 与成对连线、E 的
-median/macro/max/range 均在图内图例或页脚明确定义。SciPilot `check_figure.py --strict` 对九张 300-DPI PNG 全部
-PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。九张彩色与灰度预览均逐张人工检查，
+median/macro/max/range 均在图内图例或页脚明确定义。SciPilot `check_figure.py --strict` 对十张 300-DPI PNG 全部
+PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。十张彩色与灰度预览均逐张人工检查，
 无缺字、裁切、标题/图例/数据重叠。最终为 **0 CRITICAL、0 MAJOR、0 MINOR**。
 
 ## 1. Work、状态与提交压力动机
@@ -175,8 +177,8 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。九张彩色与灰�
 - 不支持：模型成熟、跨 workload 泛化、worst-case 风险已解决。
 - 渲染 QA：两条门线标签位于图内空白，不覆盖标题；图例与 Hybrid 数值不重叠。
 
-当前叙事图中，本轮统一重建 A/T/N/C/H/D/I/E/F；B 与 WorkDescriptor 总览保持现有架构图。
-A/T/N/C/H/D/I/E/F 已逐张打开复核，均无缺字方框、裁切或文字重叠；灰度下仍可由
+当前叙事图中，本轮统一重建 A/T/N/C/H/D/I/E/F-main/F-state；B 与 WorkDescriptor 总览保持现有架构图。
+A/T/N/C/H/D/I/E/F-main/F-state 已逐张打开复核，均无缺字方框、裁切或文字重叠；灰度下仍可由
 位置、marker 与标签区分。字体链以 PingFang SC 为首选，英文技术词回退 Arial/DejaVu Sans。
 
 ## 7. Replacement 文本三臂（附录 correctness/语义表）
@@ -211,24 +213,29 @@ A/T/N/C/H/D/I/E/F 已逐张打开复核，均无缺字方框、裁切或文字�
   这导出 neutral WorkDescriptor、correctness-aware evidence 和状态感知提交。
 - 不支持：两个 panel 跨轨排名、Project 普遍胜出或 DuckDB/Daft/Ray 的内部算法归因。
 
-## 9. F：原生文本单 Job 状态指纹
+## 9. F：原生文本单 Job 主结果与状态补充
 
-文件：`data/report_main/opening_native_single_job_state_fingerprint.{png,svg}`。
+文件：
+
+- `data/report_main/opening_native_single_job_request_latency.{png,svg}`；
+- `data/report_main/opening_native_single_job_state_fingerprint.{png,svg}`。
 
 - 类型：experimental results；数据为
   `experiments/results/opening_text_native_single_job_formal_20260808/formal_summary.csv`，
   4 arms × 3 formal，warm-up 不进统计。
-- 可用字段：`wall_s_mean/sd`、`tokens_per_s_mean/sd`、`running_mean`、
-  `waiting_mean`、`kv_mean`、`mfu_mean`、`gpu_util_mean_pct`、`ttft_mean_s`、
-  `queue_mean_s`。原生 adapter 无统一 request P99，不得补算或伪造。
-- 画法：六个原单位 small multiples 分别展示 JCT、service tok/s、running、waiting、KV、MFU；
-  统一使用无描边实心圆表示 3 次 formal 均值，只用颜色映射四条执行路径。重复间 SD 保留在
-  `formal_summary.csv` 与审计数据中，但不再叠加形状、误差线和端帽，因为本图论点是状态指纹，
-  不是重复波动比较。总标题、共享图例和 panel 标题分别占用独立区域，避免 PPT 裁切时发生顶部
-  重叠；避免雷达图、双 y 轴和隐藏单位的统一归一化。
-- 主句：同一 ShareGPT 任务下，直接调用（容量参照）处于最小饱和参照，
-  Daft Native/Ray 出现 high-running/high-waiting/KV-near-full，Ray Data 当前路径
-  low-running/no-waiting/low-MFU。
+- F-main 按相同行顺序展示 Job JCT、vLLM waiting、单请求 queue time 与 TTFT；它承担
+  “相近 makespan 掩盖请求级排队”的主结论。Job JCT 明确采用
+  `min(submitted_at_s) → max(completed_at_s)`：包含执行路径内部的上游准入、请求提交、vLLM
+  排队与推理，直到全部结果 gather；不包含 manifest 准备和数据库 source/sink。
+- F-state 移除重复的 JCT，改为六个补充 panel：service tok/s、running、waiting、KV、MFU 与
+  GPU utilization。它解释相近 JCT 背后的 overqueue、minimum-saturation 与 underfeed，不承担
+  第二个独立性能结论。GPU utilization 采用 0–100% 轴，避免放大 86%–97% 的小差异。
+- 两图均使用无描边实心圆表示 3 次 formal 均值，数值直接标在点旁；颜色与 y 位置共同映射
+  执行路径。Ray Data 行加浅灰底并写明欠供给，避免把零 waiting 误读为调度更优。重复间 SD
+  保留在 `formal_summary.csv` 与审计数据中；主图不比较重复波动，故不叠加误差线和端帽。
+- 主句：前三条已饱和路径的 Job JCT 只差 6.0s，但 Daft Native/Ray 的单请求平均 queue time
+  约 37.5s、TTFT 约 40.5s；任务级 makespan 会掩盖请求级排队。Ray Data 的零 waiting 与
+  478.7s JCT、3.6k tok/s、MFU 0.11 共同构成欠供给诊断。
 - 不支持：不归因框架内部算法，不称某框架普遍更快，不将单 Job
   短 cell 外推为长时间容量排名。
 

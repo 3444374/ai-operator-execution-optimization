@@ -112,7 +112,7 @@ Database
 
 ## 5. 前期工作与可行性证据
 
-> **图表状态（2026-08-10）**：已按第一性原理审计完成八张正文数据图与一张状态备份图，
+> **图表状态（2026-08-10）**：已按第一性原理审计完成九张正文数据图与一张状态备份图，
 > 均通过 300-DPI、矢量、灰度和逐图视觉 QA。选图依据、证据边界及明确不画的缺口见
 > `figures/audit/opening_required_data_figures_20260810.md`；图完成不等于动态策略已胜出。
 
@@ -151,20 +151,24 @@ ShareGPT replacement 中，direct、DuckDB AI、项目冻结静态的 correct ro
 baseline 的作用不是单独展示谁快，而是明确现有系统在哪一层缺少可迁移 work 表达、全局
 状态观测或多 Job 协调。
 
-### 5.3 原生单 Job 的服务压力形态
+### 5.3 原生单 Job：任务完成与请求等待并不等价
 
-![同一 ShareGPT 任务在不同原生执行图中的服务压力状态](../../figures/data/report_main/opening_native_single_job_state_fingerprint.png)
+![批任务完成时间相近不代表请求等待相近](../../figures/data/report_main/opening_native_single_job_request_latency.png)
 
-同一 2,048-row ShareGPT manifest 上，bounded C128、Daft Native、Daft Ray 和 Ray Data official graph 均完成 1 warm-up + 3 formal；16/16 cells、12 formal、0 failure，吞吐与 JCT CV 均小于 0.7%。三次均值如下：
+同一 2,048-row ShareGPT manifest 上，直接调用 C128 容量参照、Daft Native、Daft Ray 和 Ray Data official graph 均完成 1 warm-up + 3 formal；16/16 cells、12 formal、0 failure，吞吐与 JCT CV 均小于 0.7%。三次均值如下：
 
-| 路径 | JCT (s) | service tok/s | MFU | running mean | waiting mean | KV mean | TTFT mean (s) |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| bounded C128 | 95.49 | 17,800 | 0.562 | 229.8 | 2.8 | 0.598 | 0.783 |
-| Daft Native | 98.36 | 17,286 | 0.651 | 319.4 | 783.5 | 0.798 | 40.495 |
-| Daft Ray | 101.53 | 16,747 | 0.637 | 300.9 | 741.6 | 0.750 | 40.704 |
-| Ray Data HTTP | 478.66 | 3,551 | 0.112 | 17.3 | 0.0 | 0.059 | 0.094 |
+| 路径 | Job JCT | vLLM waiting 均值 | 单请求 queue time 均值 | TTFT 均值 |
+|---|---:|---:|---:|---:|
+| 直接调用（容量参照） | 95.5s | 2.8 | 0.10s | 0.78s |
+| Daft Native | 98.4s | 783.5 | 37.49s | 40.50s |
+| Daft Ray | 101.5s | 741.6 | 37.64s | 40.70s |
+| Ray Data（欠供给诊断） | 478.7s | 0 | 约 0s | 0.09s |
 
-Daft 两臂在吞吐接近 bounded 的同时形成大量 waiting，KV max 接近 1；Ray Data 当前路径则表现为低 running、低 MFU 的供给不足。它们证明单一静态并发或 GPU utilization 不能描述服务状态，需要联合完成速率/MFU、running/waiting、KV 与 tail；但该实验不包含项目动态臂，不能声称项目方法胜出，也不把外部现象归因给框架内部算法。
+Daft Native/Ray 的 Job JCT 仅比容量参照增加约 2.9/6.0s，但单请求平均 queue time 增至约 37.5s、TTFT 增至约 40.5s；大量并行排队被任务级 makespan 掩盖。两臂 service tok/s 仍为 17,286/16,747，KV max 接近 1。Ray Data 当前路径的 service tok/s/MFU 仅为 3,551/0.112，因此零 waiting 是欠供给诊断，不是调度更优。该现象要求提交控制同时观察任务吞吐与请求级 queue/tail；本实验不包含项目动态臂，不能声称项目方法胜出，也不把外部现象归因给框架内部算法。
+
+上图先给出任务级结果和请求级延迟；下面的状态补充图再解释相同 JCT 背后的供给与资源机制。GPU utilization 在四条路径中均为 86%–97%，但 MFU、running、waiting 与 KV 明显分化，因此不能以 GPU utilization 单独判断是否喂饱模型服务。
+
+![相近Job JCT背后的服务供给与资源状态](../../figures/data/report_main/opening_native_single_job_state_fingerprint.png)
 
 ### 5.4 两 Job 因果点与四 Job 扩展
 

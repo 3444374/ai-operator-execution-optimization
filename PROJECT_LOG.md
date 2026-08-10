@@ -2,6 +2,11 @@
 
 ## 2026-08-10 第一性原理开题数据图冻结
 
+- 将原生单 Job 证据拆成主结果与机制补充：F-main 用 JCT、waiting、queue time、TTFT 证明
+  “相近批任务 JCT 掩盖约 37.5s 请求排队”；F-state 移除重复 JCT，改画 tok/s、running、
+  waiting、KV、MFU、GPU utilization，解释 overqueue、最小饱和与 underfeed。两图统一原单位、
+  行顺序和均值直标；Ray Data 浅灰标为欠供给。JCT 边界包含上游准入、vLLM 排队与推理，不含
+  manifest 准备和数据库 source/sink。
 - 简化原生单 Job 状态指纹图：移除与主结论无关且视觉拥挤的多形状、白描边、误差线和端帽，
   六个 panel 统一用颜色区分路径、无描边实心圆表示 3 次 formal 均值；SD 仍保留在正式汇总与
   审计数据中。该图继续只作状态诊断，不作为框架通用排名。

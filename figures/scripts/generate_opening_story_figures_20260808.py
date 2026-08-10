@@ -308,7 +308,12 @@ def figure_work_organization_v2() -> None:
 
 
 TEXT_ARM_ORDER = ["bounded_http", "daft_native", "daft_ray", "ray_data_http"]
-TEXT_ARM_LABELS = ["直接调用（容量参照）", "Daft Native", "Daft Ray", "Ray Data"]
+TEXT_ARM_LABELS = [
+    "直接调用（容量参照）",
+    "Daft Native",
+    "Daft Ray",
+    "Ray Data（欠供给）",
+]
 TEXT_ARM_COLORS = [DARK, TEAL, PURPLE, GREY]
 
 
@@ -322,6 +327,7 @@ def _arm_point_panel(
     scale: float = 1.0,
     decimals: int = 1,
     xlim: tuple[float, float] | None = None,
+    annotation_labels: dict[str, str] | None = None,
 ) -> None:
     """Draw one original-unit state metric as a mean point over three formal runs."""
 
@@ -352,7 +358,11 @@ def _arm_point_panel(
             ax.text(
                 text_x,
                 yi + 0.18,
-                f"{mean:.{decimals}f}",
+                (
+                    annotation_labels[arm]
+                    if annotation_labels is not None
+                    else f"{mean:.{decimals}f}"
+                ),
                 color=color,
                 fontsize=8.2,
                 ha=ha,
@@ -368,9 +378,7 @@ def _arm_point_panel(
     soft_grid(ax, axis="x")
 
 
-def figure_native_single_job_state_fingerprint() -> None:
-    """Show how native graphs create distinct externally observable service states."""
-
+def _native_single_job_runs() -> pd.DataFrame:
     runs = pd.read_csv(
         ROOT
         / "experiments/results/opening_text_native_single_job_formal_20260808/"
@@ -378,29 +386,69 @@ def figure_native_single_job_state_fingerprint() -> None:
     )
     if set(runs["arm"]) != set(TEXT_ARM_ORDER) or len(runs) != 12:
         raise ValueError("native single-job figure requires 4 arms × 3 formal runs")
+    return runs
 
-    # Reserve a real header band for the title and shared legend.  Letting
-    # constrained_layout place figure-level artists made the legend collide
-    # with the first-row panel titles in narrow PPT crops.
-    fig, axes = plt.subplots(2, 3, figsize=(13.5, 8.0), constrained_layout=False)
+
+def _metric_annotation_labels(
+    runs: pd.DataFrame,
+    definitions: list[tuple[str, str, str, float, int, tuple[float, float]]],
+) -> dict[str, dict[str, str]]:
+    labels_by_column: dict[str, dict[str, str]] = {}
+    second_columns = {"wall_s", "queue_mean_s", "ttft_mean_s"}
+    for column, _, _, scale, decimals, _ in definitions:
+        labels: dict[str, str] = {}
+        for arm in TEXT_ARM_ORDER:
+            mean = float(runs.loc[runs["arm"].eq(arm), column].mean()) * scale
+            if column == "queue_mean_s" and mean < 0.01:
+                labels[arm] = "≈0s"
+            elif column in second_columns:
+                labels[arm] = f"{mean:.{decimals}f}s"
+            elif column == "gpu_util_mean_pct":
+                labels[arm] = f"{mean:.1f}%"
+            else:
+                labels[arm] = f"{mean:.{decimals}f}"
+        labels_by_column[column] = labels
+    return labels_by_column
+
+
+def figure_native_single_job_request_latency() -> None:
+    """Contrast job completion with request-level waiting and first-token delay."""
+
+    runs = _native_single_job_runs()
+
+    fig, axes = plt.subplots(1, 4, figsize=(13.5, 4.8), constrained_layout=False)
     fig.subplots_adjust(
-        left=0.12,
+        left=0.15,
         right=0.985,
-        bottom=0.12,
-        top=0.80,
-        wspace=0.15,
-        hspace=0.38,
+        bottom=0.24,
+        top=0.74,
+        wspace=0.16,
     )
     definitions = [
-        ("wall_s", "完成同一任务的时间", "Job JCT（秒，越低越好）", 1.0, 0, (0, 530)),
-        ("tokens_per_s", "服务完成速率", "吞吐（千 token/s）", 1 / 1000, 1, (0, 20)),
-        ("running_mean", "运行中请求", "running（请求数）", 1.0, 0, (0, 360)),
-        ("waiting_mean", "等待中请求", "waiting（请求数）", 1.0, 0, (0, 880)),
-        ("kv_mean", "KV 占用", "KV fraction（0–1）", 1.0, 2, (0, 1.05)),
-        ("mfu", "模型计算利用率", "MFU（0–1）", 1.0, 2, (0, 0.72)),
+        ("wall_s", "任务级完成", "Job JCT（秒）", 1.0, 1, (0, 520)),
+        (
+            "waiting_mean",
+            "服务端积压",
+            "vLLM waiting 均值（请求数）",
+            1.0,
+            1,
+            (0, 850),
+        ),
+        (
+            "queue_mean_s",
+            "单请求排队",
+            "queue time 均值（秒）",
+            1.0,
+            2,
+            (0, 43),
+        ),
+        ("ttft_mean_s", "首 token 延迟", "TTFT 均值（秒）", 1.0, 2, (0, 46)),
     ]
-    for index, (ax, definition) in enumerate(zip(axes.flat, definitions, strict=True)):
+    annotation_by_column = _metric_annotation_labels(runs, definitions)
+
+    for index, (ax, definition) in enumerate(zip(axes, definitions, strict=True)):
         column, title, xlabel, scale, decimals, xlim = definition
+        ax.axhspan(-0.45, 0.45, color="#F4F6F8", zorder=0)
         _arm_point_panel(
             ax,
             runs,
@@ -410,12 +458,19 @@ def figure_native_single_job_state_fingerprint() -> None:
             scale=scale,
             decimals=decimals,
             xlim=xlim,
+            annotation_labels=annotation_by_column[column],
         )
-        if index % 3 != 0:
+        ax.tick_params(axis="y", length=0)
+        if index != 0:
             ax.set_yticklabels([])
+        else:
+            for tick_label, color in zip(
+                ax.get_yticklabels(), TEXT_ARM_COLORS, strict=True
+            ):
+                tick_label.set_color(color)
         ax.text(
-            -0.12,
-            1.05,
+            -0.16,
+            1.08,
             chr(ord("a") + index),
             transform=ax.transAxes,
             fontsize=12,
@@ -424,52 +479,154 @@ def figure_native_single_job_state_fingerprint() -> None:
             va="bottom",
         )
 
-    axes[1, 2].text(
-        0.98,
-        0.08,
-        "GPU util 均为 86%–97%\n但 MFU 为 11%–65%",
-        transform=axes[1, 2].transAxes,
-        ha="right",
-        va="bottom",
-        color=GREY,
-        fontsize=8.3,
-    )
     fig.suptitle(
-        "同一 ShareGPT 任务被不同原生执行图送入不同服务压力状态",
+        "批任务完成时间相近，不代表请求等待相近",
         fontsize=15,
         fontweight="bold",
-        y=0.975,
-    )
-    fig.legend(
-        [
-            Line2D(
-                [0],
-                [0],
-                color=color,
-                marker="o",
-                linewidth=0,
-                markersize=6.5,
-            )
-            for color in TEXT_ARM_COLORS
-        ],
-        TEXT_ARM_LABELS,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.925),
-        ncol=4,
-        fontsize=8.1,
-        handlelength=1.8,
-        columnspacing=1.4,
+        y=0.965,
     )
     fig.text(
         0.5,
-        0.025,
-        "颜色=执行路径；实心圆=3 次 formal 的均值（离散度见审计数据）。用于状态指纹与当前路径诊断，不外推为框架通用排名。",
+        0.875,
+        "前三条已饱和路径的 JCT 只差 6.0s，但 Daft 请求平均在 vLLM 内部排队约 37.5s",
+        ha="center",
+        va="center",
+        fontsize=9.2,
+        color=DARK,
+    )
+    fig.text(
+        0.5,
+        0.055,
+        "同一 2,048-row ShareGPT manifest；实心圆=3 次 formal 均值。Job JCT 为执行路径触发→全部结果返回，\n"
+        "含上游准入、vLLM 排队与推理，不含 manifest 准备和 DB source/sink。灰底 Ray Data 为欠供给诊断。",
+        ha="center",
+        va="bottom",
+        fontsize=8.5,
+        color=GREY,
+    )
+    finish(fig, "opening_native_single_job_request_latency")
+
+
+def figure_native_single_job_state_fingerprint() -> None:
+    """Explain the service and resource state behind the observed job JCT."""
+
+    runs = _native_single_job_runs()
+
+    fig, axes = plt.subplots(2, 3, figsize=(13.5, 7.8), constrained_layout=False)
+    fig.subplots_adjust(
+        left=0.13,
+        right=0.985,
+        bottom=0.16,
+        top=0.77,
+        wspace=0.16,
+        hspace=0.40,
+    )
+    definitions = [
+        (
+            "tokens_per_s",
+            "服务完成速率",
+            "吞吐（千 token/s）",
+            1 / 1000,
+            1,
+            (0, 20),
+        ),
+        (
+            "running_mean",
+            "vLLM 执行中请求",
+            "running 均值（请求数）",
+            1.0,
+            0,
+            (0, 360),
+        ),
+        (
+            "waiting_mean",
+            "vLLM 内部排队请求",
+            "waiting 均值（请求数）",
+            1.0,
+            1,
+            (0, 850),
+        ),
+        ("kv_mean", "KV 占用", "KV fraction（0–1）", 1.0, 2, (0, 1.05)),
+        ("mfu", "模型计算利用率", "MFU（0–1）", 1.0, 2, (0, 0.72)),
+        (
+            "gpu_util_mean_pct",
+            "GPU 活跃率",
+            "GPU utilization 均值（%）",
+            1.0,
+            1,
+            (0, 100),
+        ),
+    ]
+    annotation_by_column = _metric_annotation_labels(runs, definitions)
+
+    for index, (ax, definition) in enumerate(
+        zip(axes.flat, definitions, strict=True)
+    ):
+        column, title, xlabel, scale, decimals, xlim = definition
+        ax.axhspan(-0.45, 0.45, color="#F4F6F8", zorder=0)
+        _arm_point_panel(
+            ax,
+            runs,
+            column,
+            title=title,
+            xlabel=xlabel,
+            scale=scale,
+            decimals=decimals,
+            xlim=xlim,
+            annotation_labels=annotation_by_column[column],
+        )
+        ax.tick_params(axis="y", length=0)
+        if index not in {0, 3}:
+            ax.set_yticklabels([])
+        else:
+            for tick_label, color in zip(
+                ax.get_yticklabels(), TEXT_ARM_COLORS, strict=True
+            ):
+                tick_label.set_color(color)
+        ax.text(
+            -0.16,
+            1.08,
+            chr(ord("a") + index),
+            transform=ax.transAxes,
+            fontsize=12,
+            fontweight="bold",
+            ha="left",
+            va="bottom",
+        )
+
+    fig.suptitle(
+        "相近 Job JCT 背后的服务供给与资源状态并不相同",
+        fontsize=15,
+        fontweight="bold",
+        y=0.965,
+    )
+    fig.text(
+        0.5,
+        0.895,
+        "Daft Native/Ray 形成高 waiting 与近满 KV；Ray Data 当前路径则是低 running、低 KV、低 MFU 的欠供给",
+        ha="center",
+        va="center",
+        fontsize=9.2,
+        color=DARK,
+    )
+    fig.text(
+        0.5,
+        0.045,
+        "同一 2,048-row ShareGPT manifest；实心圆=3 次 formal 均值，离散度见审计数据。灰底 Ray Data 为欠供给诊断。\n"
+        "GPU utilization 都较高仍不能区分供给状态，必须与吞吐、running/waiting、KV 和 MFU 联合解读。",
         ha="center",
         va="bottom",
         fontsize=8.5,
         color=GREY,
     )
     finish(fig, "opening_native_single_job_state_fingerprint")
+
+
+def figure_native_single_job_evidence() -> None:
+    """Render the headline task/request figure and its state diagnostic companion."""
+
+    figure_native_single_job_request_latency()
+    figure_native_single_job_state_fingerprint()
 
 
 def figure_text_baseline_evidence_map() -> None:
@@ -1794,7 +1951,7 @@ def main() -> None:
         "D": figure_image_stage_evidence,
         "I": figure_image_baseline_evidence_map,
         "E": figure_cost_decision_v2,
-        "F": figure_native_single_job_state_fingerprint,
+        "F": figure_native_single_job_evidence,
         "H": figure_multijob_interference_tradeoff,
         "N": figure_native_fourjob_normalized_impact,
         "T": figure_text_baseline_evidence_map,

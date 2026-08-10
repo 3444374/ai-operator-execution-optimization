@@ -81,13 +81,14 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像动机图：CPU prepare/GPU actor 为 13.8–31.2×；batch64 的 R0/R1/R2 transfer ceiling 区分 GPU-resident、pinned FP16 与 pageable FP32；active-window screening 显示欠供给、近平台与过量排队。只证明 staged work 和状态观测必要性。 |
 | `data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | 图像 baseline 分层图：完整呈现 Direct CLIP、Daft Built-in、Ray Data、vLLM Pooling 与 Project Static；12K 只作结构诊断，vLLM pooling 当前 blocked，120K matched-resource 仅 Ray Data/Project 可排名。 |
 | `data/report_main/opening_cost_model_decision_quality_v2.png` / `.svg` | 候选选择 regret 的 median/macro/max 同图表达；Hybrid max 14.72%，只称 marginal pass。 |
-| `data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | 四条原生/控制路径的单 Job 状态指纹：JCT、tok/s、running、waiting、KV、MFU 均保持原单位；用于说明同一任务可落入不同服务压力状态，不作框架通用排名。 |
+| `data/report_main/opening_native_single_job_request_latency.png` / `.svg` | 单 Job 主结果：Job JCT、vLLM waiting、单请求 queue time、TTFT 四项原单位对齐；说明相近 makespan 可掩盖请求级排队。 |
+| `data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | JCT 补充诊断：service tok/s、running、waiting、KV、MFU、GPU utilization 六项原单位对齐；区分最小饱和、过量排队与欠供给。 |
 | `data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | 四 Job 主图：分离 full→quarter 配额损失、quarter→static 真实竞争和 static→shared 调度效果，并同时展示组吞吐、MFU、normalized-progress Jain 与 long JCT spread。 |
 
 统一生成脚本：`scripts/generate_opening_story_figures_20260808.py`。数据、claim、视觉和
 禁止外推合同：`audit/opening_story_figures_contract_20260808.md`；第一性原理的选图依据见
 `audit/opening_required_data_figures_20260810.md`。2026-08-10 已统一重建八张正文数据图
-A/T/N/C/H/D/I/E，并生成 F 作为单 Job 状态备份图；九张 PNG/SVG 均已打开复核，无裁切、
+A/T/N/C/H/D/I/E，新增单 Job 任务—请求主图，并保留 F 状态备份图；十张 PNG/SVG 均已打开复核，无裁切、
 缺字或文字重叠，并通过 300 DPI、矢量、灰度与颜色外形状编码检查。当前仍未制作新的
 PPT 成品；旧 PPT 只是历史底稿。
 
@@ -100,7 +101,8 @@ PPT 成品；旧 PPT 只是历史底稿。
 
 | 后续项 | 状态 | 用途与边界 |
 |---|---|---|
-| 原生文本单 Job 状态指纹 | `rendered-qa-pass` | 四臂 12 formal；JCT/tok/s 与 running/waiting/KV/MFU 原单位 small multiples，不伪造 request P99，不归因框架内部算法 |
+| 原生文本单 Job 任务—请求主图 | `rendered-qa-pass` | 四臂 12 formal；JCT/waiting/queue time/TTFT 原单位对齐，Ray Data 欠供给单列诊断 |
+| 原生文本单 Job 状态补充 | `rendered-qa-pass` | tok/s、running、waiting、KV、MFU、GPU utilization 解释 JCT 背后的供给与资源状态 |
 | 文本 baseline 分轨图 | `rendered-qa-pass` | DuckDB 产品轨与 Daft/Ray Chat graph 轨均呈现；合同不同的 panel 禁止互排 |
 | 原生文本四 Job 归一化干扰 | `rendered-qa-pass` | Daft Native/Ray、Ray Data 的 Short 与 3 个 Long；只画 four-job/isolated-single 的菱形均值与 SD，删去装饰性重复点 |
 | 四 Job 干扰与共享权衡 | `rendered-qa-pass` | Project full/quarter/static/shared 因果分解；主图覆盖 short 与 3 个 long、总效率、MFU、normalized progress 和 long spread；原生轨内影响保留在结果表/附录 |
