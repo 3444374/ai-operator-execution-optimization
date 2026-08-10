@@ -73,22 +73,23 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | 图 | 角色与边界 |
 |---|---|
 | `data/report_main/opening_motivation_work_state.png` / `.svg` | 动机三联图：等行数有 14.3× work 差异；同 W65K 上限下运行内峰值 active work 与 MFU 随 offered load 改变；65K 以后吞吐边际收益递减而 P99 上升。2026-08-10 已按冻结合同修正峰值标签并移除未经定义的区间色带。 |
-| `data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | 文本 baseline 分轨图：SQuAD database-E2E 产品轨比较 Direct/DuckDB/Project；ShareGPT 官方 Chat graph 轨比较 bounded/Daft Native/Daft Ray/Ray Data。只在 panel 内排名。 |
-| `data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | 三条原生执行图的四 Job/isolated-single JCT 比值；Short 与全部 Long 均受共享服务竞争影响。只作各系统内部归一化，不作跨框架绝对性能排名。 |
+| `data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | 文本 baseline 分轨图：SQuAD database-E2E 产品轨比较 Direct/DuckDB/Project；ShareGPT 官方 Chat graph 轨比较直接调用容量参照、Daft Native、Daft Ray 与 Ray Data。只在 panel 内排名；Project 没有同一 2,048-row graph→gather 正式点，图中明确标注而不混入右侧排名。2026-08-10 修正多行 y 轴标签：文本块贴近轴，块内两行居中。 |
+| `data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | 现有原生框架的多 Job 动机图：三条 vendor-owned 执行图的 four-job/isolated-single JCT 影响矩阵；格内同时给出 slowdown 倍率与 JCT 增幅，Short 与全部 Long 均受共享服务竞争影响。只作各系统内部归一化，不作跨框架绝对性能排名，也不用于证明项目方法胜出。 |
 | `architecture/opening_ai_data_execution_boundary.png` / `.svg` | 研究边界：数据库 AI 算子与模型/typed GPU backend 之间是 AI Data Execution Layer；两项研究内容并列，算子代价估计作为共同使能部件向二者供给 work/slack/uncertainty。 |
 | `architecture/opening_work_to_schedule_overview.png` / `.svg` | 方案总览：共同代价估计器产生 stage/service/remaining work、SLO slack 和不确定区间，经 staged WorkDescriptor 同时使能组织与调度；组织器保留 work/locality，调度器再结合新鲜状态做 admission/routing/credit/fair queue。 |
-| `data/report_main/opening_work_organization_regime_v2.png` / `.svg` | 相同双卡硬件下，2-endpoint 低 KV 压力时策略范围约 12%，4-endpoint consolidation 导致高 KV 压力时分化约 27% 且 locality 主导；严格 feeding-saturation 边界必须保留。 |
+| `data/report_main/opening_work_organization_regime_v2.png` / `.svg` | 吞吐与prefix-cache命中率双轨迹图：每条线连接同一策略从2-endpoint低压力到4-endpoint高压力的3次formal中位数；吞吐统一用 `k token/s`，高压力时保序策略命中约47%，重排/装箱策略降至6%–7%。不画误差线；严格feeding-saturation边界必须保留。 |
 | `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像动机图：CPU prepare/GPU actor 为 13.8–31.2×；batch64 的 R0/R1/R2 transfer ceiling 区分 GPU-resident、pinned FP16 与 pageable FP32；active-window screening 显示欠供给、近平台与过量排队。只证明 staged work 和状态观测必要性。 |
-| `data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | 图像 baseline 分层图：完整呈现 Direct CLIP、Daft Built-in、Ray Data、vLLM Pooling 与 Project Static；12K 只作结构诊断，vLLM pooling 当前 blocked，120K matched-resource 仅 Ray Data/Project 可排名。 |
-| `data/report_main/opening_cost_model_decision_quality_v2.png` / `.svg` | 候选选择 regret 的 median/macro/max 同图表达；Hybrid max 14.72%，只称 marginal pass。 |
-| `data/report_main/opening_native_single_job_request_latency.png` / `.svg` | 单 Job 主结果：Job JCT、vLLM waiting、单请求 queue time、TTFT 四项原单位对齐；说明相近 makespan 可掩盖请求级排队。 |
-| `data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | JCT 补充诊断：service tok/s、running、waiting、KV、MFU、GPU utilization 六项原单位对齐；区分最小饱和、过量排队与欠供给。 |
-| `data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | 四 Job 主图：分离 full→quarter 配额损失、quarter→static 真实竞争和 static→shared 调度效果，并同时展示组吞吐、MFU、normalized-progress Jain 与 long JCT spread。 |
+| `data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | 图像 baseline 纯数据图：左为 12K 同语义诊断，右为 120K matched-resource 正式对照；Direct CLIP/vLLM Pooling 等能力与角色边界改由报告独立表格呈现。 |
+| `data/report_main/opening_image_fourjob_normalized_impact.png` / `.svg` | 图像四 Job 归一化干扰矩阵：列为 Short/Long 1--3，行为 Daft Built-in、Ray Data、Project static 与 Project shared；格内直标并发/独立 JCT 倍数和增幅，画法与文本原生四 Job 图统一。只作各路径内部比较；Project shared 的状态快照仅观测、不驱动动作。 |
+| `data/report_main/opening_cost_model_decision_quality_v2.png` / `.svg` | 左图呈现 estimator 级 candidate pairwise；右图逐估计器完整展开 20 个 leave-one-context-out decision regret，以小菱形标中位数、同尺寸深色点标最坏 context，并同时显示平均 5%/最坏 15% 门槛；Hybrid平均2.90%、max 14.72%。Ridge逐行MAE更低但最坏选择regret更高，只称 marginal pass。 |
+| `data/report_main/opening_native_single_job_request_latency.png` / `.svg` | 单 Job 主结果：Job JCT、vLLM waiting、单请求 queue time、TTFT 四项原单位对齐；说明相近 makespan 可掩盖请求级排队。Project 暂无同一 2,048-row graph→gather 正式点，故只在图注说明缺口，不用 database-E2E 或 512-row eager 诊断补位。 |
+| `data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | JCT 补充诊断：service tok/s、running、waiting、KV、MFU、GPU utilization 六项原单位对齐；区分最小饱和、过量排队与欠供给。Project 同样因计时/manifest 合同不匹配而不进入六项横向坐标。 |
+| `data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | Project 机制 A/B 图：每条线固定代表同一个Job，从独立运行、1/4配额、四Job静态竞争到共享调度，直接显示配额、竞争与策略变化趋势；右侧效率表统一报告相对变化，Static/Shared原值使用中性色，仅变化列以红色上涨、绿色下跌和正负号编码；进度折线呈现效率—公平权衡。Static/Shared是同上限互斥A/B臂。 |
 
 统一生成脚本：`scripts/generate_opening_story_figures_20260808.py`。数据、claim、视觉和
 禁止外推合同：`audit/opening_story_figures_contract_20260808.md`；第一性原理的选图依据见
-`audit/opening_required_data_figures_20260810.md`。2026-08-10 已统一重建八张正文数据图
-A/T/N/C/H/D/I/E，新增单 Job 任务—请求主图，并保留 F 状态备份图；十张 PNG/SVG 均已打开复核，无裁切、
+`audit/opening_required_data_figures_20260810.md`。2026-08-10 已统一重建九张正文数据图
+A/T/N/C/H/D/I/J/E，新增单 Job 任务—请求主图，并保留 F 状态备份图；十一张 PNG/SVG 均已打开复核，无裁切、
 缺字或文字重叠，并通过 300 DPI、矢量、灰度与颜色外形状编码检查。当前仍未制作新的
 PPT 成品；旧 PPT 只是历史底稿。
 
@@ -104,14 +105,15 @@ PPT 成品；旧 PPT 只是历史底稿。
 | 原生文本单 Job 任务—请求主图 | `rendered-qa-pass` | 四臂 12 formal；JCT/waiting/queue time/TTFT 原单位对齐，Ray Data 欠供给单列诊断 |
 | 原生文本单 Job 状态补充 | `rendered-qa-pass` | tok/s、running、waiting、KV、MFU、GPU utilization 解释 JCT 背后的供给与资源状态 |
 | 文本 baseline 分轨图 | `rendered-qa-pass` | DuckDB 产品轨与 Daft/Ray Chat graph 轨均呈现；合同不同的 panel 禁止互排 |
-| 原生文本四 Job 归一化干扰 | `rendered-qa-pass` | Daft Native/Ray、Ray Data 的 Short 与 3 个 Long；只画 four-job/isolated-single 的菱形均值与 SD，删去装饰性重复点 |
-| 四 Job 干扰与共享权衡 | `rendered-qa-pass` | Project full/quarter/static/shared 因果分解；主图覆盖 short 与 3 个 long、总效率、MFU、normalized progress 和 long spread；原生轨内影响保留在结果表/附录 |
+| 原生文本四 Job 归一化干扰 | `rendered-qa-pass` | Daft Native/Ray、Ray Data 的 Short 与 3 个 Long；使用slowdown影响矩阵，格内直标倍率和百分比增幅，SD留在附录数据 |
+| 四 Job 干扰与共享权衡 | `rendered-qa-pass` | Project按同一Job连接独立→1/4配额→静态竞争→共享调度；效率表与Static→Shared进度折线分别展示总收益和公平代价 |
 | 图像 staged-work 动机 | `rendered-qa-pass` | prepare/model、R0/R1/R2 transfer 形态和 active-window screening 分开呈现；不把 microprofile 或 screening 写成系统排名 |
-| 图像 baseline 分层图 | `rendered-qa-pass` | Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 全覆盖；能力门禁、12K 诊断和 120K 正式排名分层 |
+| 图像 baseline 数据图 | `rendered-qa-pass` | 图内只画 12K 诊断和 120K 正式对照；能力门禁和路径角色与数据图分离 |
+| 图像四 Job 归一化干扰 | `rendered-qa-pass` | 4×4 路径/策略×Job slowdown 矩阵，与文本四 Job 图统一；不画误差线或跨系统绝对排名，Project 状态只作 observe-only 证据 |
 | 同上限 static–dynamic phase change | `do-not-draw-no-result` | 只保留实验合同；正式 A/B 完成前不画示意结果曲线 |
 | database-E2E replacement 三臂 | `appendix-table-only` | SQuAD 作静态 correctness 地基；ShareGPT 因 C32 direct 欠供给与 DuckDB cap 语义失败不作性能排名 |
 
-本轮第一性原理数据图清单 A/T/N/C/H/D/I/E 与备份图 F 已完成；G 仍不画。
+本轮第一性原理数据图清单 A/T/N/C/H/D/I/J/E 与备份图 F 已完成；G 仍不画。
 完整输入行数、关键字段、SHA256 与视觉 QA 记录见上述 audit 合同。
 2026-08-09 cost LOO JSON 仅规范化 6 处 `§6` 的 UTF-8 编码，图 E 的冻结输入 SHA 前缀
 相应更新为 `bbb2f2f8c5c1c07f`；字段、数值和既有图 E 均不变，无需重画。
