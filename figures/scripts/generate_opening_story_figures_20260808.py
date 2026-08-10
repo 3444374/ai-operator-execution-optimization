@@ -16,6 +16,7 @@ import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 import numpy as np
 import pandas as pd
@@ -28,6 +29,7 @@ from generate_opening_core_evidence_figures import (
     ORANGE,
     OUTPUT,
     PALE_BLUE,
+    PURPLE,
     RED,
     ROOT,
     TEAL,
@@ -95,7 +97,7 @@ def figure_motivation_work_state() -> None:
         f"同为 16 行，工作量相差 {heavy / light:.1f}×",
         transform=ax.transAxes,
         ha="right",
-        color=RED,
+        color=BLUE,
         fontweight="bold",
     )
     soft_grid(ax, axis="x")
@@ -131,7 +133,7 @@ def figure_motivation_work_state() -> None:
         "同一上限，不同运行状态",
         transform=ax.transAxes,
         ha="right",
-        color=RED,
+        color=DARK,
         fontweight="bold",
     )
     soft_grid(ax, axis="x")
@@ -152,18 +154,9 @@ def figure_motivation_work_state() -> None:
     ax.axvline(64, color=BLUE, linestyle="--", linewidth=1.1)
     ax.text(28, 5.25, "低供给段", ha="center", color=DARK)
     ax.text(68, 8.53, "最小近饱和点", ha="center", color=BLUE, fontweight="bold")
-    ax.text(108, 8.53, "边际收益递减", ha="center", color=RED)
+    ax.text(108, 8.53, "边际收益递减", ha="center", color=DARK)
     y64 = y[np.where(x == 64)[0][0]]
     ax.text(66.5, y64 - 0.33, "65K：已测峰值的 97.8%", fontsize=8.8, color=DARK)
-    ax.text(
-        0.98,
-        0.05,
-        "P99: 36.8 s @65K → 40.0 s @98K",
-        transform=ax.transAxes,
-        ha="right",
-        color=RED,
-        fontsize=8.8,
-    )
     ax.set(
         xlabel="每 endpoint active work（千 token）",
         ylabel="吞吐（千 token/s）",
@@ -172,6 +165,25 @@ def figure_motivation_work_state() -> None:
     )
     soft_grid(ax)
     ax.set_title("提交控制应先标定最小近饱和点", loc="left")
+    ax.legend(
+        [Line2D([0], [0], color=BLUE, marker="o", linewidth=1.6, markersize=5)],
+        ["圆点=均值；误差线=SD（n=3 formal）"],
+        loc="lower right",
+        fontsize=8.0,
+        handlelength=2.0,
+    )
+
+    for panel_ax, label in zip(fig.axes, ["a", "b", "c"], strict=True):
+        panel_ax.text(
+            -0.12,
+            1.05,
+            label,
+            transform=panel_ax.transAxes,
+            fontsize=11,
+            fontweight="bold",
+            ha="left",
+            va="bottom",
+        )
 
     fig.suptitle(
         "动机：描述工作量、感知运行状态、约束提交压力",
@@ -181,7 +193,7 @@ def figure_motivation_work_state() -> None:
     fig.text(
         0.5,
         -0.02,
-        "a：RTX 5070 / Qwen2.5-1.5B 机制证据；b–c：2×RTX 4090 / Qwen2.5-7B。均为 n=3 formal，不作跨 panel 性能比较。",
+        "a：RTX 5070 / Qwen2.5-1.5B 机制证据；b–c：2×RTX 4090 / Qwen2.5-7B。点与误差线=均值±SD（n=3 formal）；65K→98K 时 P99 由 36.8s 增至 40.0s。",
         ha="center",
         va="top",
         fontsize=8.3,
@@ -297,7 +309,7 @@ def figure_work_organization_v2() -> None:
 
 TEXT_ARM_ORDER = ["bounded_http", "daft_native", "daft_ray", "ray_data_http"]
 TEXT_ARM_LABELS = ["Bounded HTTP", "Daft Native", "Daft Ray", "Ray Data"]
-TEXT_ARM_COLORS = [DARK, BLUE, TEAL, ORANGE]
+TEXT_ARM_COLORS = [DARK, TEAL, PURPLE, GREY]
 TEXT_ARM_MARKERS = ["o", "s", "^", "D"]
 
 
@@ -416,18 +428,40 @@ def figure_native_single_job_state_fingerprint() -> None:
         transform=axes[1, 2].transAxes,
         ha="right",
         va="bottom",
-        color=RED,
+        color=GREY,
         fontsize=8.3,
     )
     fig.suptitle(
         "同一 ShareGPT 任务被不同原生执行图送入不同服务压力状态",
         fontsize=15,
         fontweight="bold",
+        y=1.02,
+    )
+    fig.legend(
+        [
+            Line2D(
+                [0],
+                [0],
+                color=color,
+                marker=marker,
+                markeredgecolor="white",
+                linewidth=1.4,
+                markersize=6,
+            )
+            for color, marker in zip(TEXT_ARM_COLORS, TEXT_ARM_MARKERS, strict=True)
+        ],
+        TEXT_ARM_LABELS,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.98),
+        ncol=4,
+        fontsize=8.1,
+        handlelength=1.8,
+        columnspacing=1.4,
     )
     fig.text(
         0.5,
         -0.015,
-        "点与误差线为 3 次 formal 的均值 ± SD；用于状态指纹与当前路径诊断，不外推为框架通用排名。",
+        "形状/颜色=执行路径；点与误差线=3 次 formal 的均值 ± SD。用于状态指纹与当前路径诊断，不外推为框架通用排名。",
         ha="center",
         va="top",
         fontsize=8.5,
@@ -462,13 +496,13 @@ def figure_text_baseline_evidence_map() -> None:
     means = [float(squad.loc[arm, "correct_rows_per_s_mean"]) for arm, _, _ in product_arms]
     errors = [float(squad.loc[arm, "correct_rows_per_s_sd"]) for arm, _, _ in product_arms]
     colors = [color for _, _, color in product_arms]
-    ax.barh(y, means, xerr=errors, capsize=3, color=colors, height=0.56)
+    ax.barh(y, means, color=colors, height=0.56)
     ax.set_yticks(y)
     ax.set_yticklabels([label for _, label, _ in product_arms])
-    ax.set_xlim(0, 150)
+    ax.set_xlim(0, 155)
     ax.set_xlabel("SQuAD correct rows/s")
-    for yi, value in zip(y, means, strict=True):
-        ax.text(value + 1.2, yi, f"{value:.1f}", va="center", fontsize=8.7)
+    for yi, value, error in zip(y, means, errors, strict=True):
+        ax.text(value + 1.4, yi, f"{value:.1f} ± {error:.1f}", va="center", fontsize=8.5)
     ax.set_ylim(-1.0, 2.5)
     ax.text(
         3,
@@ -477,29 +511,39 @@ def figure_text_baseline_evidence_map() -> None:
         ha="left",
         va="bottom",
         fontsize=8.1,
-        color=RED,
+        color=DARK,
     )
     ax.set_title("产品 / database-E2E 轨：仅 SQuAD 可排名", loc="left")
+    ax.text(
+        0.98,
+        0.96,
+        "柱=均值；数字=均值±SD（n=3）",
+        transform=ax.transAxes,
+        ha="right",
+        va="top",
+        fontsize=7.8,
+        color=GREY,
+    )
     soft_grid(ax, axis="x")
 
     ax = axes[1]
     chat_arms = [
         ("bounded_http", "Bounded HTTP", DARK),
-        ("daft_native", "Daft Native", BLUE),
-        ("daft_ray", "Daft Ray", TEAL),
-        ("ray_data_http", "Ray Data", ORANGE),
+        ("daft_native", "Daft Native", TEAL),
+        ("daft_ray", "Daft Ray", PURPLE),
+        ("ray_data_http", "Ray Data", GREY),
     ]
     y = np.arange(len(chat_arms))[::-1]
     means = [float(native.loc[arm, "tokens_per_s_mean"]) / 1000 for arm, _, _ in chat_arms]
     errors = [float(native.loc[arm, "tokens_per_s_sd"]) / 1000 for arm, _, _ in chat_arms]
     colors = [color for _, _, color in chat_arms]
-    ax.barh(y, means, xerr=errors, capsize=3, color=colors, height=0.54)
+    ax.barh(y, means, color=colors, height=0.54)
     ax.set_yticks(y)
     ax.set_yticklabels([label for _, label, _ in chat_arms])
-    ax.set_xlim(0, 20)
+    ax.set_xlim(0, 21.5)
     ax.set_xlabel("ShareGPT 服务吞吐（千 token/s）")
-    for yi, value in zip(y, means, strict=True):
-        ax.text(value + 0.25, yi, f"{value:.1f}", va="center", fontsize=8.7)
+    for yi, value, error in zip(y, means, errors, strict=True):
+        ax.text(value + 0.22, yi, f"{value:.1f} ± {error:.1f}", va="center", fontsize=8.5)
     ax.set_ylim(-1.0, 3.5)
     ax.text(
         19.5,
@@ -511,6 +555,16 @@ def figure_text_baseline_evidence_map() -> None:
         color=GREY,
     )
     ax.set_title("官方 Chat graph 轨：服务状态与供给差异", loc="left")
+    ax.text(
+        0.98,
+        0.96,
+        "柱=均值；数字=均值±SD（n=3）",
+        transform=ax.transAxes,
+        ha="right",
+        va="top",
+        fontsize=7.8,
+        color=GREY,
+    )
     soft_grid(ax, axis="x")
 
     fig.suptitle(
@@ -521,7 +575,7 @@ def figure_text_baseline_evidence_map() -> None:
     fig.text(
         0.5,
         -0.02,
-        "两 panel 使用相同双卡模型服务，但 workload、source/sink 与输出语义合同不同；只在 panel 内比较。误差线为 SD。",
+        "两 panel 使用相同双卡模型服务，但 workload、source/sink 与输出语义合同不同；只在 panel 内比较。条末数字为均值 ± SD。",
         ha="center",
         va="top",
         fontsize=8.3,
@@ -600,18 +654,18 @@ def figure_multijob_interference_tradeoff() -> None:
     job_labels = ["Short", "Long 1", "Long 2", "Long 3"]
     y_base = np.arange(len(jobs))[::-1]
     scenario_defs = [
-        ("full single", GREY, "o", -0.24),
-        ("quarter single", ORANGE, "s", -0.08),
-        ("static four-job", RED, "X", 0.08),
-        ("shared four-job", BLUE, "D", 0.24),
+        ("full single", "独立运行 / full credit", GREY, "o", -0.24),
+        ("quarter single", "独立运行 / quarter credit", ORANGE, "s", -0.08),
+        ("static four-job", "四 Job / static", RED, "X", 0.08),
+        ("shared four-job", "四 Job / shared", BLUE, "D", 0.24),
     ]
-    for label, color, marker, offset in scenario_defs:
+    for key, display, color, marker, offset in scenario_defs:
         for job, yi in zip(jobs, y_base, strict=True):
-            if label == "full single":
+            if key == "full single":
                 scenario = f"single_{job}_full_pool"
-            elif label == "quarter single":
+            elif key == "quarter single":
                 scenario = f"single_{job}_quarter_pool"
-            elif label == "static four-job":
+            elif key == "static four-job":
                 scenario = "staggered_fourjob_static_partition"
             else:
                 scenario = "staggered_fourjob_shared_work"
@@ -633,7 +687,7 @@ def figure_multijob_interference_tradeoff() -> None:
                 markeredgewidth=0.6,
                 capsize=2.5,
                 linewidth=1.4,
-                label=label if job == "short" else None,
+                label=display if job == "short" else None,
                 zorder=3,
             )
     ax_jct.set_yticks(y_base)
@@ -642,7 +696,7 @@ def figure_multijob_interference_tradeoff() -> None:
     ax_jct.set_ylim(-0.65, 3.65)
     ax_jct.set_xlabel("Job JCT（秒，越低越好）")
     ax_jct.set_title("配额损失、真实竞争与共享调度可被分离", loc="left")
-    ax_jct.legend(loc="lower right", ncol=2)
+    ax_jct.legend(loc="lower right", ncol=2, title="形状/颜色=运行场景")
     soft_grid(ax_jct, axis="x")
     ax_jct.text(
         0.98,
@@ -734,7 +788,7 @@ def figure_multijob_interference_tradeoff() -> None:
         color=RED,
         marker="X",
         s=55,
-        label="Static / matched quarter control",
+        label="Static（quarter control）",
         zorder=3,
     )
     ax_fair.scatter(
@@ -743,7 +797,7 @@ def figure_multijob_interference_tradeoff() -> None:
         color=BLUE,
         marker="D",
         s=45,
-        label="Shared / full-pool control",
+        label="Shared（full control）",
         zorder=3,
     )
     ax_fair.set_yticks(y)
@@ -752,7 +806,21 @@ def figure_multijob_interference_tradeoff() -> None:
     ax_fair.set_ylim(-0.65, 3.65)
     ax_fair.set_xlabel("isolated-normalized progress（越高表示保留进度越多）")
     ax_fair.set_title("效率提升并不等于公平性完成", loc="left")
-    ax_fair.legend(loc="lower left", fontsize=7.8)
+    fairness_handles = [
+        Line2D([0], [0], color=RED, marker="X", linewidth=0, markersize=6),
+        Line2D([0], [0], color=BLUE, marker="D", linewidth=0, markersize=6),
+        Line2D([0], [0], color=LIGHT_GRID, linewidth=2.2),
+    ]
+    ax_fair.legend(
+        fairness_handles,
+        [
+            "Static（quarter control）",
+            "Shared（full control）",
+            "灰线=同一 Job 的成对变化",
+        ],
+        loc="lower left",
+        fontsize=7.5,
+    )
     soft_grid(ax_fair, axis="x")
     static_jain = float(
         fairness.loc[
@@ -786,7 +854,7 @@ def figure_multijob_interference_tradeoff() -> None:
         transform=ax_fair.transAxes,
         ha="left",
         va="top",
-        color=RED,
+        color=DARK,
         fontsize=8.2,
     )
 
@@ -828,7 +896,7 @@ def figure_native_fourjob_normalized_impact() -> None:
     )
     systems = ["daft_native", "daft_ray", "ray_data_http"]
     system_labels = ["Daft Native", "Daft Ray", "Ray Data"]
-    system_colors = [BLUE, TEAL, ORANGE]
+    system_colors = [TEAL, PURPLE, GREY]
     jobs = ["short", "long1", "long2", "long3"]
     job_labels = ["Short", "Long 1", "Long 2", "Long 3"]
     y = np.arange(len(jobs))[::-1]
@@ -851,16 +919,6 @@ def figure_native_fourjob_normalized_impact() -> None:
                 raise ValueError(f"{system}/{job} requires 3 isolated and 3 four-job runs")
             denominator = float(isolated.mean())
             normalized = concurrent / denominator
-            ax.scatter(
-                normalized,
-                np.full(len(normalized), yi),
-                s=55,
-                marker="|",
-                color=color,
-                linewidth=1.2,
-                alpha=0.50,
-                zorder=3,
-            )
             ax.errorbar(
                 normalized.mean(),
                 yi,
@@ -910,6 +968,23 @@ def figure_native_fourjob_normalized_impact() -> None:
         fontsize=8.0,
         ha="left",
     )
+    axes[0].legend(
+        [
+            Line2D(
+                [0],
+                [0],
+                color=DARK,
+                marker="D",
+                markeredgecolor="white",
+                linewidth=1.4,
+                markersize=6,
+            )
+        ],
+        ["菱形=均值；误差线=SD（n=3 formal）"],
+        loc="lower right",
+        fontsize=7.8,
+        handlelength=2.0,
+    )
     fig.suptitle(
         "原生执行图中的 Short 与全部 Long Job 均受到共享服务竞争影响",
         fontsize=15,
@@ -918,7 +993,7 @@ def figure_native_fourjob_normalized_impact() -> None:
     fig.text(
         0.5,
         -0.02,
-        "细刻度=3 次 four-job formal 相对各自 3-run isolated-single 均值；菱形与误差线=均值 ± SD。只比较系统内退化，不作跨框架绝对性能排名。",
+        "每个 Job 的 four-job JCT 均除以本 Job 的 3-run isolated-single 均值；只比较系统内退化，不作跨框架绝对性能排名。",
         ha="center",
         va="top",
         fontsize=8.3,
@@ -928,6 +1003,8 @@ def figure_native_fourjob_normalized_impact() -> None:
 
 
 def figure_image_stage_evidence() -> None:
+    """Motivate staged work and bounded admission for image operators."""
+
     profile = pd.read_csv(
         ROOT
         / "motivation/results/gpu/image_clip_preprocess_variants_20260801/"
@@ -937,135 +1014,392 @@ def figure_image_stage_evidence() -> None:
         profile["variant"].eq("torchvision_tensor_pt")
         & profile["batch_size"].isin([16, 64, 256])
     ]
-    ratio = (
-        fast.groupby("batch_size")["cpu_preprocess_s"].median()
-        / fast.groupby("batch_size")["actor_call_wall_s"].median()
+    fast = fast.assign(
+        prepare_to_actor=fast["cpu_preprocess_s"] / fast["actor_call_wall_s"]
     )
-    image_root = ROOT / "experiments/results/image_ai_embed_operator_formal_20260803"
-    consistency = _formal(image_root / "raw/runs_3arm_12k_consistency_20260804.csv")
-    matched = _formal(image_root / "raw/runs_matched_resource_schemav12_20260804.csv")
+    transfer = pd.read_csv(
+        ROOT
+        / "motivation/results/gpu/image_clip_transfer_ceiling_20260803/raw.csv"
+    )
+    transfer = transfer.loc[transfer["batch_size"].eq(64)].copy()
+    host = pd.read_csv(
+        ROOT
+        / "motivation/results/gpu/image_host_path_screening_20260802/summary.csv"
+    )
+    active = host.loc[host["experiment"].eq("active_batch_screen")].sort_values(
+        "max_active_batches"
+    )
 
     fig, axes = plt.subplots(1, 3, figsize=(13.2, 4.9), constrained_layout=True)
     ax = axes[0]
     batches = [16, 64, 256]
-    values = [float(ratio.loc[item]) for item in batches]
-    bars = ax.bar([str(item) for item in batches], values, color=ORANGE, width=0.58)
-    for bar, value in zip(bars, values, strict=True):
+    medians = []
+    q1s = []
+    q3s = []
+    for batch in batches:
+        values = fast.loc[fast["batch_size"].eq(batch), "prepare_to_actor"].to_numpy(
+            dtype=float
+        )
+        if len(values) != 30:
+            raise ValueError(f"image prepare ratio requires 30 repeats for batch={batch}")
+        medians.append(float(np.median(values)))
+        q1s.append(float(np.quantile(values, 0.25)))
+        q3s.append(float(np.quantile(values, 0.75)))
+    x = np.arange(len(batches))
+    ax.errorbar(
+        x,
+        medians,
+        yerr=[np.asarray(medians) - np.asarray(q1s), np.asarray(q3s) - np.asarray(medians)],
+        color=ORANGE,
+        marker="o",
+        linewidth=1.8,
+        capsize=3,
+        markersize=6,
+    )
+    for xi, value in zip(x, medians, strict=True):
         ax.text(
-            bar.get_x() + bar.get_width() / 2,
+            xi,
             value + 0.8,
             f"{value:.1f}×",
             ha="center",
             fontsize=9,
         )
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(item) for item in batches])
     ax.set(
         xlabel="每批图像数",
         ylabel="CPU 准备时间 / GPU actor 时间",
         ylim=(0, 35),
     )
-    ax.set_title("当前图像路径受 CPU 准备阶段限制", loc="left")
+    ax.legend(
+        [Line2D([0], [0], color=ORANGE, marker="o", linewidth=1.6)],
+        ["圆点=中位数；误差线=IQR（n=30）"],
+        loc="lower right",
+        fontsize=7.6,
+    )
+    ax.set_title("prepare 是独立且占主导的工作阶段", loc="left")
     soft_grid(ax)
 
     ax = axes[1]
-    diagnostic_arms = [
-        ("daft_builtin_embed", "Daft built-in", ORANGE),
-        ("ray_data_staged", "Ray Data", GREY),
-        ("project_ray", "Project static", BLUE),
+    transfer_defs = [
+        ("r0_gpu_resident", "R0 GPU-resident", DARK, "o"),
+        ("r1_pinned_fp16", "R1 pinned FP16", TEAL, "s"),
+        ("r2_pageable_fp32", "R2 pageable FP32", ORANGE, "D"),
     ]
-    labels = [item[1] for item in diagnostic_arms]
-    means = []
-    errors = []
-    colors = []
-    for arm, _, color in diagnostic_arms:
-        values_12k = consistency.loc[consistency["arm"].eq(arm), "operator_e2e_s"].to_numpy(dtype=float)
-        if len(values_12k) != 3:
-            raise ValueError(f"12K image diagnostic requires 3 formal runs for {arm}")
-        means.append(float(values_12k.mean()))
-        errors.append(float(values_12k.std(ddof=1)))
-        colors.append(color)
-    y = np.arange(len(labels))[::-1]
-    ax.barh(y, means, xerr=errors, capsize=3, color=colors, height=0.56)
+    y = np.arange(len(transfer_defs))[::-1]
+    for yi, (mode, _, color, marker) in zip(y, transfer_defs, strict=True):
+        values = transfer.loc[transfer["mode"].eq(mode), "images_per_s"].to_numpy(
+            dtype=float
+        )
+        if len(values) != 30:
+            raise ValueError(f"transfer mode {mode} requires 30 repeats at batch64")
+        median = float(np.median(values)) / 1000
+        q1 = float(np.quantile(values, 0.25)) / 1000
+        q3 = float(np.quantile(values, 0.75)) / 1000
+        ax.errorbar(
+            median,
+            yi,
+            xerr=[[median - q1], [q3 - median]],
+            fmt=marker,
+            color=color,
+            ecolor=color,
+            markersize=7,
+            capsize=3,
+            linewidth=1.6,
+        )
+        ax.text(median + 0.18, yi + 0.16, f"{median:.2f}K", color=color, fontsize=8.4)
+    labels = [item[1] for item in transfer_defs]
     ax.set_yticks(y)
     ax.set_yticklabels(labels)
-    ax.set_xlabel("12K 算子 JCT（秒，越低越好）")
-    ax.set_xlim(0, 75)
-    for yi, value in zip(y, means, strict=True):
-        ax.text(value + 1.2, yi, f"{value:.1f}s", va="center", fontsize=8.6)
+    ax.set_xlabel("吞吐（千 image/s，batch=64）")
+    ax.set_xlim(0, 10.8)
+    ax.set_ylim(-0.45, 2.45)
     ax.text(
         0.98,
         0.06,
-        "结构诊断：fast arms 未达稳态\nDaft 20K 已触发 OutOfDisk",
+        "R0→R1 仅约 −11%\nR0→R2 约 −80%",
         transform=ax.transAxes,
         ha="right",
         va="bottom",
         fontsize=8.0,
-        color=RED,
+        color=DARK,
     )
-    ax.set_title("12K 同语义三臂：只作结构诊断", loc="left")
+    ax.legend(
+        [Line2D([0], [0], color=DARK, marker="o", linewidth=1.6)],
+        ["形状=传输形态；点=中位数；误差线=IQR（n=30）"],
+        loc="lower center",
+        fontsize=7.3,
+    )
+    ax.set_title("瓶颈不是 PCIe，而是 host ownership-copy", loc="left")
     soft_grid(ax, axis="x")
 
     ax = axes[2]
-    cpu_levels = [8, 16]
-    x = np.arange(len(cpu_levels))
-    width = 0.34
-    for index, (arm, label, color) in enumerate(
+    windows = active["max_active_batches"].to_numpy(dtype=int)
+    throughput = active["post_setup_images_per_s"].to_numpy(dtype=float) / 1000
+    waits = active["batch_unattributed_wait_p50_s"].to_numpy(dtype=float)
+    ax.plot(windows, throughput, color=DARK, marker="o", linewidth=1.8, markersize=6)
+    best_idx = int(np.argmax(throughput))
+    ax.scatter(
+        windows[best_idx],
+        throughput[best_idx],
+        color=BLUE,
+        marker="D",
+        s=52,
+        zorder=4,
+    )
+    ax.scatter(windows[-1], throughput[-1], color=RED, marker="X", s=58, zorder=4)
+    for window, value, wait in zip(windows, throughput, waits, strict=True):
+        ax.text(window, value + 0.055, f"wait {wait:.2f}s", ha="center", fontsize=7.7)
+    ax.set(
+        xlabel="max active batches",
+        ylabel="setup 后吞吐（千 image/s）",
+        xlim=(1, 67),
+        ylim=(0.35, 1.18),
+    )
+    ax.set_xticks(windows)
+    ax.legend(
         [
-            ("ray_data_staged", "Ray Data 原生图", GREY),
-            ("project_ray", "项目冻结静态", BLUE),
-        ]
-    ):
-        values = []
-        errors = []
-        for cpu in cpu_levels:
-            cell = matched.loc[
-                matched["arm"].eq(arm) & matched["cpu_workers"].eq(cpu),
-                "operator_e2e_s",
-            ].to_numpy(dtype=float)
-            if len(cell) != 3:
-                raise ValueError(f"120K matched image figure requires 3 formal runs for {arm}/cpu{cpu}")
-            values.append(float(cell.mean()))
-            errors.append(float(cell.std(ddof=1)))
-        positions = x + (index - 0.5) * width
-        bars = ax.bar(
-            positions,
-            values,
-            width,
-            yerr=errors,
-            capsize=3,
-            color=color,
-            label=label,
-        )
-        for bar, value in zip(bars, values, strict=True):
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                value + 4,
-                f"{value:.1f}s",
-                ha="center",
-                fontsize=8.7,
-            )
-    ax.set_xticks(x)
-    ax.set_xticklabels(["8 个 CPU worker", "16 个 CPU worker"])
-    ax.set_ylabel("算子 JCT（秒，越低越好）")
-    ax.set_ylim(0, 150)
-    ax.legend(loc="upper right")
-    ax.set_title("120K 同资源正式排名：Ray Data vs Project", loc="left")
+            Line2D([0], [0], color=DARK, marker="o", linewidth=1.6),
+            Line2D([0], [0], color=BLUE, marker="D", linewidth=0),
+            Line2D([0], [0], color=RED, marker="X", linewidth=0),
+        ],
+        ["点=单次 screening", "菱形=最高吞吐点", "红叉=继续增压后回退"],
+        loc="lower right",
+        fontsize=7.2,
+    )
+    ax.set_title("提交窗口过小会欠供给，过大又积累等待", loc="left")
     soft_grid(ax)
 
+    for panel_ax, label in zip(axes, ["a", "b", "c"], strict=True):
+        panel_ax.text(
+            -0.12,
+            1.05,
+            label,
+            transform=panel_ax.transAxes,
+            fontsize=11,
+            fontweight="bold",
+            ha="left",
+            va="bottom",
+        )
+
     fig.suptitle(
-        "图像 baseline 必须同时交代阶段瓶颈、原生能力与可排名边界",
+        "图像动机：阶段工作、传输形态和提交窗口都必须显式描述",
         fontsize=15,
         fontweight="bold",
     )
     fig.text(
         0.5,
         -0.02,
-        "相同双卡硬件；左为每 batch 30 次 formal 中位数比，中央/右为 3 次 formal 均值 ± SD。12K 三臂不作稳态排名；120K 仅 Ray Data 与 Project 可比。",
+        "a–b：每 cell 30 次重复，中位数与 IQR；c：5K 单次 screening，仅作窗口选择动机，不作策略胜出证据。",
         ha="center",
         va="top",
         fontsize=8.3,
         color=GREY,
     )
     finish(fig, "opening_image_stage_aware_evidence")
+
+
+def figure_image_baseline_evidence_map() -> None:
+    """Separate image baseline roles, diagnostic evidence, and rankable cells."""
+
+    image_root = ROOT / "experiments/results/image_ai_embed_operator_formal_20260803"
+    consistency = _formal(image_root / "raw/runs_3arm_12k_consistency_20260804.csv")
+    matched = _formal(image_root / "raw/runs_matched_resource_schemav12_20260804.csv")
+    vllm_gate = pd.read_csv(
+        ROOT / "feasibility/results/vllm_clip_pooling_gate_20260804/summary.csv"
+    )
+    if len(vllm_gate) != 2 or not vllm_gate["timed_out"].all():
+        raise ValueError("vLLM pooling status must remain two blocked 600s capability gates")
+
+    fig = plt.figure(figsize=(13.2, 5.2), constrained_layout=True)
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.22, 1.0, 1.22])
+    axes = [fig.add_subplot(gs[0, index]) for index in range(3)]
+
+    ax = axes[0]
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+    rows = [
+        ("Direct CLIP", "CONTROL", "R0 9.8K img/s · 非系统排名", DARK, "#F4F6F8"),
+        ("Daft Built-in", "BOUNDARY", "12K PASS · 20K OutOfDisk", TEAL, "#EAF7F5"),
+        ("Ray Data", "FORMAL", "120K 原生 baseline", DARK, "#F1F3F5"),
+        ("vLLM Pooling", "BLOCKED", "2×600s timeout · 无性能值", RED, "#FDECEC"),
+        ("Project Static", "REFERENCE", "120K 项目静态参考", BLUE, PALE_BLUE),
+    ]
+    for index, (name, tag, detail, color, face) in enumerate(rows):
+        y0 = 0.78 - index * 0.16
+        ax.add_patch(
+            FancyBboxPatch(
+                (0.02, y0),
+                0.96,
+                0.125,
+                boxstyle="round,pad=0.008,rounding_size=0.012",
+                linewidth=0.7,
+                edgecolor=LIGHT_GRID,
+                facecolor=face,
+            )
+        )
+        ax.text(0.05, y0 + 0.083, name, color=color, fontweight="bold", fontsize=9.0)
+        ax.text(0.95, y0 + 0.083, tag, color=color, ha="right", fontsize=7.2, fontweight="bold")
+        ax.text(0.05, y0 + 0.032, detail, color=DARK, fontsize=7.8)
+    ax.text(
+        0.02,
+        0.015,
+        "Daft Native/Ray 自写 UDF：diagnostic reference，不计入原生 baseline",
+        color=GREY,
+        fontsize=7.3,
+    )
+    ax.set_title("五条路径必须按证据角色分层", loc="left")
+
+    ax = axes[1]
+    diagnostic_defs = [
+        ("daft_builtin_embed", "Daft Built-in", TEAL),
+        ("ray_data_staged", "Ray Data", GREY),
+        ("project_ray", "Project Static", BLUE),
+    ]
+    y = np.arange(len(diagnostic_defs))[::-1]
+    diagnostic_means = []
+    diagnostic_sds = []
+    for yi, (arm, label, color) in zip(y, diagnostic_defs, strict=True):
+        values = consistency.loc[
+            consistency["arm"].eq(arm), "operator_e2e_s"
+        ].to_numpy(dtype=float)
+        if len(values) != 3:
+            raise ValueError(f"12K image diagnostic requires three formal runs for {arm}")
+        mean = float(values.mean())
+        sd = float(values.std(ddof=1))
+        diagnostic_means.append(mean)
+        diagnostic_sds.append(sd)
+    ax.barh(
+        y,
+        diagnostic_means,
+        height=0.34,
+        color=[item[2] for item in diagnostic_defs],
+        alpha=0.86,
+    )
+    for yi, mean, sd, color in zip(
+        y,
+        diagnostic_means,
+        diagnostic_sds,
+        [item[2] for item in diagnostic_defs],
+        strict=True,
+    ):
+        ax.text(
+            mean + 1.15,
+            yi,
+            f"{mean:.1f} ± {sd:.1f} s",
+            color=color,
+            fontsize=8.2,
+            va="center",
+            fontweight="bold",
+        )
+    ax.set_yticks(y)
+    ax.set_yticklabels([item[1] for item in diagnostic_defs])
+    ax.set_xlim(0, 78)
+    ax.set_ylim(-0.55, 2.55)
+    ax.set_xlabel("12K operator JCT（秒）")
+    ax.text(
+        0.02,
+        0.97,
+        "横条=均值；数字=均值±SD（n=3 formal）",
+        transform=ax.transAxes,
+        ha="left",
+        va="top",
+        color=GREY,
+        fontsize=7.2,
+    )
+    ax.set_title("12K 同语义能力诊断（非稳态排名）", loc="left")
+    soft_grid(ax, axis="x")
+
+    ax = axes[2]
+    cpu_levels = [8, 16]
+    y = np.arange(len(cpu_levels))[::-1]
+    ranking_defs = [
+        ("ray_data_staged", "Ray Data", GREY, 0.13),
+        ("project_ray", "Project", BLUE, -0.13),
+    ]
+    for arm, label, color, offset in ranking_defs:
+        for cpu, yi in zip(cpu_levels, y, strict=True):
+            values = matched.loc[
+                matched["arm"].eq(arm)
+                & matched["cpu_workers"].eq(cpu)
+                & matched["phase"].eq("formal"),
+                "operator_e2e_s",
+            ].to_numpy(dtype=float)
+            if len(values) != 3:
+                raise ValueError(f"120K matched cell requires three formal runs for {arm}/cpu{cpu}")
+            mean = float(values.mean())
+            sd = float(values.std(ddof=1))
+            ax.barh(
+                yi + offset,
+                mean,
+                height=0.22,
+                color=color,
+                alpha=0.86,
+            )
+            ax.text(
+                3.0,
+                yi + offset,
+                label,
+                color="white" if color == BLUE else DARK,
+                fontsize=7.5,
+                va="center",
+                fontweight="bold",
+            )
+            ax.text(
+                mean + 1.5,
+                yi + offset,
+                f"{mean:.1f} ± {sd:.1f} s",
+                color=color,
+                fontsize=8.2,
+                va="center",
+                fontweight="bold",
+            )
+    ax.set_yticks(y)
+    ax.set_yticklabels(["8 个 CPU worker", "16 个 CPU worker"])
+    ax.set_xlim(0, 148)
+    ax.set_ylim(-0.5, 1.5)
+    ax.set_xlabel("120K operator JCT（秒，越低越好）")
+    ax.text(
+        0.02,
+        0.96,
+        "横条=均值；数字=均值±SD（n=3 formal）",
+        transform=ax.transAxes,
+        ha="left",
+        va="top",
+        color=GREY,
+        fontsize=7.5,
+    )
+    ax.set_title("120K 同资源正式比较（越低越好）", loc="left")
+    soft_grid(ax, axis="x")
+
+    for panel_ax, label in zip(axes, ["a", "b", "c"], strict=True):
+        panel_ax.text(
+            -0.12,
+            1.05,
+            label,
+            transform=panel_ax.transAxes,
+            fontsize=11,
+            fontweight="bold",
+            ha="left",
+            va="bottom",
+        )
+
+    fig.suptitle(
+        "图像 baseline 必须分开能力门禁、结构诊断与正式排名",
+        fontsize=15,
+        fontweight="bold",
+    )
+    fig.text(
+        0.5,
+        -0.02,
+        "统一 PostgreSQL 图像输入、CLIP 与 L2-normalized 输出；panel b 不排名，panel c 为 1 warmup + 3 formal 的同资源比较。",
+        ha="center",
+        va="top",
+        fontsize=8.3,
+        color=GREY,
+    )
+    finish(fig, "opening_image_baseline_evidence_map")
 
 
 def _load_json_replacing_invalid_utf8(path: Path) -> dict:
@@ -1101,7 +1435,7 @@ def figure_cost_decision_v2() -> None:
                 yi,
                 f"最大 {maximum:.2f}%",
                 va="center",
-                color=RED,
+                color=BLUE,
                 fontweight="bold",
             )
     ax.axvline(5, color=TEAL, linestyle="--", linewidth=1.1)
@@ -1116,16 +1450,17 @@ def figure_cost_decision_v2() -> None:
         fontsize=14,
     )
     ax.text(5.5, 4.62, "中位数 / macro 门槛", color=TEAL, fontsize=8.5)
-    ax.text(15.5, 4.22, "最大值门槛", color=RED, fontsize=8.5)
+    ax.text(15.5, 4.22, "最大值门槛", color=DARK, fontsize=8.5)
     ax.scatter([], [], marker="|", s=180, color=DARK, label="中位数")
     ax.scatter([], [], marker="D", s=48, color=DARK, label="Macro 均值")
     ax.scatter([], [], marker="o", s=55, color=DARK, label="最大值")
-    ax.legend(loc="lower right", ncol=3)
+    ax.plot([], [], color=DARK, linewidth=3, label="横线=中位数至最大值")
+    ax.legend(loc="lower right", ncol=4)
     soft_grid(ax, axis="x")
     fig.text(
         0.5,
         -0.02,
-        "20-context leave-one-context-out；竖线=中位数，菱形=macro 均值，圆点=最大值。5%/15% 为预注册决策 regret 门槛。",
+        "20-context leave-one-context-out；横线连接中位数与最大值，菱形=macro 均值。5%/15% 为预注册决策 regret 门槛。",
         ha="center",
         va="top",
         fontsize=8.3,
@@ -1467,7 +1802,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--figures",
         nargs="+",
-        choices=["A", "B", "C", "D", "E", "F", "H", "N", "T", "work-descriptor", "all"],
+        choices=["A", "B", "C", "D", "E", "F", "H", "I", "N", "T", "work-descriptor", "all"],
         default=["all"],
         help="Frozen figure identifiers to render; defaults to the historical full set.",
     )
@@ -1480,12 +1815,13 @@ def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     selected = set(args.figures)
     if "all" in selected:
-        selected = {"A", "B", "C", "D", "E", "F", "H", "N", "T", "work-descriptor"}
+        selected = {"A", "B", "C", "D", "E", "F", "H", "I", "N", "T", "work-descriptor"}
     renderers = {
         "A": figure_motivation_work_state,
         "B": figure_ai_data_execution_boundary,
         "C": figure_work_organization_v2,
         "D": figure_image_stage_evidence,
+        "I": figure_image_baseline_evidence_map,
         "E": figure_cost_decision_v2,
         "F": figure_native_single_job_state_fingerprint,
         "H": figure_multijob_interference_tradeoff,
@@ -1493,7 +1829,7 @@ def main() -> None:
         "T": figure_text_baseline_evidence_map,
         "work-descriptor": figure_work_to_schedule_overview,
     }
-    for figure_id in ["A", "T", "N", "B", "C", "H", "D", "E", "F", "work-descriptor"]:
+    for figure_id in ["A", "T", "N", "B", "C", "H", "D", "I", "E", "F", "work-descriptor"]:
         if figure_id in selected:
             renderers[figure_id]()
 

@@ -6,21 +6,22 @@
 - 输出：`generate_opening_story_figures_20260808.py` 同时生成 PNG 与 SVG；PNG 用于报告与答辩内容大纲，SVG 保留可编辑文字。当前不制作 PPT 成品。
 - 统计：只读取项目内正式 CSV/JSON 或冻结画像数据，不手填结果，不混入 warm-up。
 - 证据层级：动机图证明问题与研究必要性；组织、图像和代价图证明已有机制/可行性信号；均不证明待研究的状态感知动态策略已经优于同上限静态基线。
-- 视觉规则：一张图一个主句；无未解释散点；标签不压数据、标题或图例；颜色之外同时保留位置、形状或文字标签。2026-08-08 已统一为中文主标题/轴/直接标注，保留 WorkDescriptor、MFU、token 等必要技术词。
+- 视觉规则：一张图一个主句；无未解释散点或连线；标签不压数据、标题或图例；颜色之外同时保留位置、形状或文字标签。2026-08-10 的出版风格复核进一步冻结：红色只表示真实失败、静态退化或预注册门槛；形状表示方法/场景时必须有图例，表示统计量时必须写明统计口径；线段必须明确是 SD、范围、门槛还是同一对象的成对变化。
 
 ## 2026-08-10 第一性原理图集状态
 
 选图理由与正文/备份/不画边界见 `opening_required_data_figures_20260810.md`。本轮已统一
-重建 A/T/N/C/H/D/E 七张正文数据图与 F 备份图，**未生成 G，未修改 PPT**。
+重建 A/T/N/C/H/D/I/E 八张正文数据图与 F 备份图，**未生成 G，未修改 PPT**。
 
 | 编号 | 内容 | 当前状态 | 备注 |
 |---|---|---|---|
 | A | work 与运行状态动机 | `rendered-qa-pass` | active work 已明确标为运行内峰值；已移除未经定义的“安全区/过载区”色带 |
 | T | 文本 baseline 分轨 | `rendered-qa-pass` | SQuAD 产品轨与 ShareGPT Chat graph 轨分开；DuckDB、Daft Native/Ray、Ray Data 均被呈现但不跨轨排名 |
-| N | 原生四 Job 归一化干扰 | `rendered-qa-pass` | 三条原生轨分别画 four-job/isolated-single；Short 与 3 个 Long 的 3 次 formal 点均可见 |
+| N | 原生四 Job 归一化干扰 | `rendered-qa-pass` | 三条原生轨分别画 four-job/isolated-single；删去装饰性重复点，只保留菱形均值与 SD 误差线 |
 | B | 研究边界与共同使能 | `ready-existing` | 已有 solution overview |
 | C | 数据组织的 regime dependency | `rendered-qa-pass` | 已改为“2-endpoint 低 KV 压力差异约 12% / 4-endpoint 高 KV 压力下局部性主导”，不再把运行状态写成池大小 |
-| D | 图像 staged work | `rendered-qa-pass` | 已统一图注与统计边界；仍不声称动态胜出 |
+| D | 图像 staged-work 动机 | `rendered-qa-pass` | prepare/model、R0/R1/R2 传输形态与 active-window 分开呈现；仍不声称动态胜出 |
+| I | 图像 baseline 分轨 | `rendered-qa-pass` | Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 全部呈现；仅 120K Ray Data/Project 可排名 |
 | E | 代价估计的决策质量 | `rendered-qa-pass` | 已统一图注；结论仍为 marginal pass |
 | F | 原生文本单 Job 状态指纹 | `rendered-qa-pass` | 12 formal；6 个原单位 small multiples，均值 ± SD |
 | G | 同上限 static–dynamic phase change | `do-not-draw-no-result` | 保留实验合同即可；开题不生成结果图或带虚构数值的示意图 |
@@ -42,8 +43,11 @@
 | C | `rc1_data_organization/dataorg_2ep_1.5b_cacheON_20260731/raw/runs.csv` | 20 行；15 formal；每策略 3 formal | `89f6b7d44e10ea61` | 50.3–56.3k tok/s，KV max 7%–10% |
 | C | `rc1_data_organization/dataorg_4ep_1.5b_cacheON_20260731/raw/runs.csv` | 20 行；15 formal；每策略 3 formal | `6115c11df2375475` | 39.4–50.0k tok/s；重排序命中 0.06–0.07 |
 | D | `image_clip_preprocess_variants_20260801/raw_repeats.csv` | 720 formal；目标 batch 每个 30 repeat | `8851447336c86e9e` | prepare/actor=13.84×/31.24×/29.48× |
-| D | `image_ai_embed_operator_formal_20260803/raw/runs_3arm_12k_consistency_20260804.csv` | 3 arm × (1 warmup + 3 formal) | `15ac62548887093c` | Daft built-in/Ray Data/Project JCT=65.2/17.8/15.9s；fast arms 未达稳态 |
-| D | `image_ai_embed_operator_formal_20260803/raw/runs_matched_resource_schemav12_20260804.csv` | 4 cell × (1 warmup + 3 formal) | `df5ca0c872eca585` | 120K CPU8/16 下 Project 对 Ray Data JCT 低约10%/17%；仅此 panel 可排名 |
+| D | `image_clip_transfer_ceiling_20260803/raw.csv` | 3 mode × 3 batch × 30 repeat | `f6d908143c5063d2` | batch64 R0/R1/R2=9.82K/8.72K/1.96K img/s；host ownership-copy 为传输侧主损失 |
+| D | `image_host_path_screening_20260802/summary.csv` | active-window 5 点单次 screening | `fce52c936a79cd4b` | active4→32 setup后吞吐 0.50→1.02K img/s；active64 回退且 wait P50=1.44s |
+| I | `image_ai_embed_operator_formal_20260803/raw/runs_3arm_12k_consistency_20260804.csv` | 3 arm × (1 warmup + 3 formal) | `15ac62548887093c` | Daft built-in/Ray Data/Project JCT=65.2/17.8/15.9s；fast arms 未达稳态 |
+| I | `image_ai_embed_operator_formal_20260803/raw/runs_matched_resource_schemav12_20260804.csv` | 4 cell × (1 warmup + 3 formal) | `df5ca0c872eca585` | 120K CPU8/16 下 Project 对 Ray Data JCT 低约10%/17%；仅此 panel 可排名 |
+| I | `vllm_clip_pooling_gate_20260804/summary.csv` | 2 个 600s capability gate | `d5b2480bca5287ca` | 两次均 timeout 且无 embedding；不得生成性能值 |
 | E | `operator_cost_profile_dual4090_formal_v2_cache_on_20260807/ce_context_loo_rerun_20260807.json` | 20 context，6 estimator | `bbb2f2f8c5c1c07f` | CE5 macro/max regret=2.897%/14.715% |
 | F | `opening_text_native_single_job_formal_20260808/formal_summary.csv` | 4 arm × 3 formal | `bd0fd0fa502f50a6` | bounded/Daft Native/Daft Ray/Ray Data=17,800/17,286/16,747/3,551 tok/s |
 | F | `opening_text_native_single_job_formal_20260808/formal_runs.csv` | 12 formal | `1384ab9dc4abf003` | JCT/running/waiting/KV/MFU 的逐次输入；图中误差线=SD |
@@ -69,13 +73,14 @@ E 的 SHA 于 2026-08-09 随 6 处 `§6` 字符 UTF-8 规范化更新；JSON 字
 |---|---|---|
 | Motivated Example | A | “真实运行现象 + 现有表达失败”三联图；不画 proposed 胜出 teaser，符合当前尚无动态胜出结果的证据状态 |
 | Solution Overview | B、WorkDescriptor 总览 | system boundary + multi-layer feedback；输入、两项研究内容、共同 cost enabler、执行后端和 sink 均有真实名称 |
-| Experimental Results | T、N、C、H、D、E、F | T/D 为分轨 baseline，N 为轨内归一化点区间，C/F 为 aligned small multiples，H 为因果分解，E 为 decision-regret interval；禁止 radar、双 y 轴和系统间绝对抗干扰排名 |
+| Experimental Results | T、N、C、H、D、I、E、F | T/I 为分轨 baseline，D 为图像阶段/传输/窗口动机，N 为轨内归一化点区间，C/F 为 aligned small multiples，H 为因果分解，E 为 decision-regret interval；禁止 radar、双 y 轴和系统间绝对抗干扰排名 |
 | 排除项 | G | 无结果，不占用 Experimental Results 图位 |
 
-通用规则审计：A/T/N/C/H/D/E/F 同时有 SVG/PNG；本地 QA 另生成 PDF 与灰度预览但不纳入 Git。
+通用规则审计：A/T/N/C/H/D/I/E/F 同时有 SVG/PNG；本地 QA 另生成 PDF 与灰度预览但不纳入 Git。
 无 3D、阴影、渐变或双 y 轴；坐标带单位；正式重复以均值 ± SD 编码；颜色之外同时使用
-位置、marker 形状和文字。SciPilot `check_figure.py --strict` 对八张 300-DPI PNG 全部
-PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。八张彩色与灰度预览均逐张人工检查，
+位置、marker 形状和文字。A/N/F 的统计 marker、H 的场景 marker 与成对连线、E 的
+median/macro/max/range 均在图内图例或页脚明确定义。SciPilot `check_figure.py --strict` 对九张 300-DPI PNG 全部
+PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。九张彩色与灰度预览均逐张人工检查，
 无缺字、裁切、标题/图例/数据重叠。最终为 **0 CRITICAL、0 MAJOR、0 MINOR**。
 
 ## 1. Work、状态与提交压力动机
@@ -129,32 +134,48 @@ PASS；PDF 均为单页矢量且字体嵌入、无 Type 3。八张彩色与灰�
   与“高 KV 压力（4 endpoint，KV max 98%–100%）”，已删除“近似中性”、池大小误导和
   无数据定义的阈值底色。
 
-## 5. 图像 staged work 与 baseline 边界
+## 5. 图像 staged-work 动机
 
 文件：`data/report_main/opening_image_stage_aware_evidence.{png,svg}`。
 
-- panel a 来源：`image_clip_preprocess_variants_20260801/raw_repeats.csv` exact tensor path；batch 16/64/256 的 CPU prepare/GPU actor 比为 13.8×/31.2×/29.5×。
-- panel b 是 12K 同语义 Daft built-in、Ray Data、Project 三臂；三者 exactly-once，但
-  fast arms setup-dominated，且 Daft 20K 已触发 OutOfDisk，因此只作结构/扩展边界诊断。
-- panel c 是 120K matched-resource 的 Ray Data official native API graph 与 project
-  frozen-static；两档 CPU 都是 3 次 formal，只有此 panel 可作性能排名。
-- 支持：图像 workload 不能只用 frame 数描述，CPU prepare 是独立 stage work；materialize
-  与 streaming 结构决定可扩展性；matched-resource 下静态结构存在 preliminary signal。
-- 不支持：12K 三臂稳态排名、图像动态已胜、Daft 的 12K JCT 可外推到 120K。
-- 渲染 QA：误差棒、单位、lower-is-better、规模和可排名边界均直接可见。
+- panel a 来源：`image_clip_preprocess_variants_20260801/raw_repeats.csv` exact tensor path；
+  batch 16/64/256 的 prepare/actor 比中位数为 13.9×/31.0×/29.5×，误差线为 IQR（n=30）。
+- panel b 来源：R0/R1/R2 transfer ceiling 的 batch64 各 30 次重复；GPU-resident、pinned FP16、
+  pageable FP32 分别约 9.82K/8.72K/1.96K img/s，说明 PCIe 不是主损失，host ownership-copy 才是。
+- panel c 来源：5K active-window 单次 screening；active4→32 增加供给，active64 时吞吐回退且
+  unattributed wait P50 增至 1.44s。该 panel 明确标为 diagnostic，不是策略正式结果。
+- 支持：图像 work 需要显式区分 prepare/model/tensor-transfer stage；准入窗口存在欠供给、平台与
+  过量排队区间，因此需要阶段状态观测和有界提交。
+- 不支持：active32 可迁移到其他规模/机器；图像动态策略已胜；R0-R2 microprofile 可替代 operator E2E。
+
+## 5.1 图像 baseline 完整证据图
+
+文件：`data/report_main/opening_image_baseline_evidence_map.{png,svg}`。
+
+- panel a 明确五条路径角色：Direct CLIP 是容量 control；Daft Built-in 与 Ray Data 是原生
+  baseline；vLLM Pooling 是当前 blocked 的 serving candidate；Project Static 是方法参考。
+  Daft Native/Ray 自写 UDF 只作 diagnostic reference，不冒充原生 baseline。
+- panel b 以横条展示 12K 三臂均值，并在条末直接写均值±SD；三臂同语义且 exactly-once，但 fast arms
+  setup-dominated，Daft 20K 已 OutOfDisk，因此不作稳态排名。删去重复散点、浮动说明和图例，
+  避免把小样本诊断视觉包装成正式排名。
+- panel c 以每个 CPU 档两条直接标名的横条展示 120K matched-resource Ray Data 与 Project；
+  CPU8/16 各 3 formal，横条为均值，条末数字为均值±SD。横轴从 0 开始，不再叠加重复点、均值大点、
+  配对线与图例。只有此 panel 可作性能排名。
+- 不支持：给 vLLM pooling 补虚构吞吐；把 Direct ceiling、12K diagnostic 与 120K operator JCT
+  混成总排行榜；把 Project Static 称为第三个原生 baseline。
 
 ## 6. 代价估计的决策价值
 
 文件：`data/report_main/opening_cost_model_decision_quality_v2.{png,svg}`。
 
 - 来源：20-context leave-one-context-out 结果 `ce_context_loo_rerun_20260807.json`。
-- 编码：竖线=median，菱形=macro mean，圆点=max；横线连接 typical 到 worst case。
+- 编码：短竖线=median，菱形=macro mean，圆点=max；横线连接 median 到 max。四种图元均在图内图例解释。
 - 支持：Hybrid 同时低于 median/macro 5% 与 max 15% 门，max=14.72%，属于 marginal pass。
 - 不支持：模型成熟、跨 workload 泛化、worst-case 风险已解决。
 - 渲染 QA：两条门线标签位于图内空白，不覆盖标题；图例与 Hybrid 数值不重叠。
 
-当前叙事图中，本轮统一重建 A/T/N/C/H/D/E/F；B 与 WorkDescriptor 总览保持现有架构图。
-A/T/N/C/H/D/E/F 已逐张打开复核，均无缺字方框、裁切或文字重叠；灰度下仍可由
+当前叙事图中，本轮统一重建 A/T/N/C/H/D/I/E/F；B 与 WorkDescriptor 总览保持现有架构图。
+A/T/N/C/H/D/I/E/F 已逐张打开复核，均无缺字方框、裁切或文字重叠；灰度下仍可由
 位置、marker 与标签区分。字体链以 PingFang SC 为首选，英文技术词回退 Arial/DejaVu Sans。
 
 ## 7. Replacement 文本三臂（附录 correctness/语义表）
@@ -197,8 +218,9 @@ A/T/N/C/H/D/E/F 已逐张打开复核，均无缺字方框、裁切或文字重�
 - 可用字段：`wall_s_mean/sd`、`tokens_per_s_mean/sd`、`running_mean`、
   `waiting_mean`、`kv_mean`、`mfu_mean`、`gpu_util_mean_pct`、`ttft_mean_s`、
   `queue_mean_s`。原生 adapter 无统一 request P99，不得补算或伪造。
-- 画法：左侧用两个对齐的点图/误差线展示 JCT 与 service tok/s；右侧用
-  running、waiting、KV、MFU 四个原单位 small multiples。避免雷达图、双 y 轴和
+- 画法：六个原单位 small multiples 分别展示 JCT、service tok/s、running、waiting、KV、MFU；
+  圆点/方框/三角/菱形的形状与颜色均由全图共享图例映射到四条执行路径，误差线为 SD；
+  避免雷达图、双 y 轴和
   隐藏单位的统一归一化。
 - 主句：同一 ShareGPT 任务下，bounded control 处于最小饱和参照，
   Daft Native/Ray 出现 high-running/high-waiting/KV-near-full，Ray Data 当前路径
@@ -213,7 +235,8 @@ A/T/N/C/H/D/E/F 已逐张打开复核，均无缺字方框、裁切或文字重�
 - 数据：`opening_fourjob_interference_20260809/data/combined/job_formal_runs.csv`；
   `Short@0s → 3×Long@5s`，每条轨均有四个 isolated-single 与 concurrent-four-job。
 - 画法：Daft Native、Daft Ray、Ray Data 分面；横轴只用 `four-job JCT / 本 Job 的
-  isolated-single JCT 均值`，白点展示三次 formal，菱形与误差线为均值 ± SD。
+  isolated-single JCT 均值`。不再散放三次 formal 点；菱形=均值、横向误差线=SD，
+  口径由首个 panel 的中性统计图例统一说明。
 - 支持：Short 与三个 Long 在三条原生轨中都受到共享服务竞争影响；多 Job 管理不能只
   观察前台 Short，也要观察全部 Long 的进度和离散。
 - 不支持：跨框架绝对 JCT 排名、框架内部调度算法归因、项目方法胜出。
@@ -226,6 +249,8 @@ A/T/N/C/H/D/E/F 已逐张打开复核，均无缺字方框、裁切或文字重�
   `isolated_normalized_fairness.csv` 与 `long_job_spread.csv`。
 - panel a 分离 full→quarter 配额损失、quarter→static 真实竞争与 static→shared 调度效果；
   panel b 报组吞吐/JCT/MFU；panel c 同时报 isolated-normalized progress、Jain 与 long spread。
+- panel a 的形状/颜色=运行场景，误差线=SD；panel c 的红叉=Static、蓝菱形=Shared，
+  浅灰线连接同一 Job 的成对变化。三类关系均在各自 panel 图例内解释。
 - 支持：shared credit 提高 work conservation，并显著帮助 Short，但当前 equal-weight 点的
   Jain 与 Long 间离散仍需 fairness/SLO guard；因此动态调度目标必须同时包含效率和隔离。
 - 不支持：shared/dynamic 普遍胜出、weighted/SLO 已验证、图像多 Job 已完成。

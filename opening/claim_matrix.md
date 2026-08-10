@@ -124,7 +124,7 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 原生单 Job 与两/四 Job 干扰/项目 matched A/B | `evidence-frozen` | `experiments/results/opening_text_native_single_job_formal_20260808/`、`opening_multijob_interference_20260809/`、`opening_fourjob_interference_20260809/` | 只画轨内状态/归一化干扰，不作跨框架绝对排名 |
 | 服务器 raw、失败 incident 与扫描归档 | `verified-and-preserved` | 各结果 README 的 archive SHA256 与服务器路径 | 不删除、不覆盖；论文阶段按需回读 |
 | 图 B、WorkDescriptor 总览 | `retain-existing` | `figures/audit/opening_story_figures_contract_20260808.md` | 架构图保持现有版本，只做最终版式检查 |
-| 七张正文数据图 A/T/N/C/H/D/E | `rendered-qa-pass` | `figures/audit/opening_required_data_figures_20260810.md` 与叙事图合同；八张 PNG/SVG（含备份 F）完成 300-DPI、矢量、灰度和视觉审计 | T/D 分轨呈现文本与图像 baseline；只允许版式级微调，不因追求更漂亮结论更换数据源 |
+| 八张正文数据图 A/T/N/C/H/D/I/E | `rendered-qa-pass` | `figures/audit/opening_required_data_figures_20260810.md` 与叙事图合同；九张 PNG/SVG（含备份 F）完成 300-DPI、矢量、灰度和视觉审计 | T/I 分轨呈现文本与图像 baseline，D 只承担图像 staged-work 动机；只允许版式级微调，不因追求更漂亮结论更换数据源 |
 | 图 F 原生单 Job 状态备份 | `rendered-qa-pass` | 12 formal 的 JCT/tok/s/running/waiting/KV/MFU 原单位 small multiples | 报告正文或答辩追问使用；不作框架通用排名 |
 | 图 G | `plan-only-no-result` | phase-change 尚无同上限正式结果 | 开题不画；论文阶段实验通过后再决定 |
 | database-E2E 展示 | `appendix-table-only` | SQuAD 可排名、ShareGPT 不可作性能排名 | 不生成正文性能图 |
@@ -170,7 +170,8 @@ JSON 中 6 处误编码的 `§6` 已规范为 UTF-8。上述修正均不改变�
 | 完成 P0 后停止新增开题 baseline | `complete` | §4、§7 停止规则；后续只补支持新用户问题的最小诊断，不扩第二数据库或全矩阵 | 保持停止 |
 | serving capacity 核心证据 | `complete-figure` | active-work、bounded C32–C256 与图 A 数据合同完整，图已通过 QA | 后续只在统一版式时无损复用 |
 | work-aware 组织及局限核心证据 | `complete-figure` | 2/4 endpoint regime 数据与图 C 合同完整，图已通过 QA | 保留 feeding 边界，不转述为容量排名 |
-| 图像 staged/baseline 核心证据 | `complete-figure` | 图 D：CPU prepare画像、12K Daft/Ray Data/Project 结构诊断、120K Ray Data/Project matched-resource 正式重复 | 只在120K matched panel排名；12K三臂不外推 |
+| 图像 staged-work 动机 | `complete-figure` | 图 D：CPU prepare/GPU actor 比、R0/R1/R2 transfer ceiling 与 active-window screening | 只证明阶段表征、状态观测与有界准入必要性；microprofile/screening 不作系统排名 |
+| 图像 baseline 核心证据 | `complete-figure` | 图 I：Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 五条路径角色；12K 结构诊断与 120K matched-resource 正式重复分开 | 只在 120K matched panel 排名；vLLM blocked 不生成吞吐；12K 三臂不外推 |
 | cost-model decision quality 核心证据 | `complete-existing-figure` | 图 E；429 formal/20 context，CE5 marginal pass；UTF-8 JSON 与新 SHA 已验证 | 最终版式检查 |
 | PROJECT_OUTLINE 与本地开题报告重构 | `content-complete` | 总纲、报告、答辩大纲、QA 与 §8 数据复算一致 | 新图插入后做引用总审计 |
 | 四级 Claim 与答辩攻击面审计 | `complete` | 本文件 §2、`opening/qa_bank.md` 的攻击面、不能声称与回答模板 | PPT 完成后再做逐页口径检查 |

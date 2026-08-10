@@ -2,13 +2,21 @@
 
 ## 2026-08-10 第一性原理开题数据图冻结
 
-- 从“开题必须证明什么”重新审计证据，冻结七张正文数据图：work/state 动机、文本
+- 按顶会数据图的视觉语法复核 A/T/N/C/H/D/I/E/F：移除普通红色说明和无信息增量的
+  重复散点；统一系统/策略配色；为圆点、方框、三角、菱形、误差线、范围线和同一 Job
+  成对连线补齐图内图例或页脚定义。九张图重新渲染后通过 300 DPI strict、无 Type 3
+  字体与灰度可辨性复核。
+- 从“开题必须证明什么”重新审计证据，冻结八张正文数据图：work/state 动机、文本
   baseline 分轨、原生四 Job 归一化干扰、数据组织 regime、Project 四 Job 机制与公平
-  权衡、图像 staged/baseline 边界、代价估计决策质量；另保留原生单 Job 状态指纹备份。
+  权衡、图像 staged-work 动机、图像 baseline 分层、代价估计决策质量；另保留原生单 Job 状态指纹备份。
+- 将原先混在一张图中的图像动机与 baseline 拆开：图 D 只呈现 prepare/model、R0/R1/R2
+  transfer 形态和 active-window screening；新增图 I 完整呈现 Direct CLIP、Daft Built-in、
+  Ray Data、vLLM Pooling 与 Project Static，并严格分开能力门禁、12K 结构诊断和 120K
+  matched-resource 正式排名。
 - 新增 `figures/audit/opening_required_data_figures_20260810.md`，明确正文、附录与不画边界。
   图像多 Job、DuckDB 多 Job、同上限 phase-change 尚无正式结果，不用示意数值补位。
-- 新增文本 baseline、原生四 Job 和 Project 四 Job 三张图，统一重建 A/T/N/C/H/D/E/F。
-  八张 PNG 均为 300 DPI，SVG 可编辑；SciPilot strict、PDF 字体/Type3、彩色与灰度视觉
+- 新增文本 baseline、原生四 Job、Project 四 Job 和图像 baseline 分层图，统一重建 A/T/N/C/H/D/I/E/F。
+  九张 PNG 均为 300 DPI，SVG 可编辑；SciPilot strict、PDF 字体/Type3、彩色与灰度视觉
   检查全部通过。
 - 多 Job 数据已足够支撑开题动机：原生轨证明 Short 与全部 Long 的共同干扰，Project
   配对实验拆分 quota、竞争和 shared-credit 效果；不把它们外推为动态方法普遍胜出。

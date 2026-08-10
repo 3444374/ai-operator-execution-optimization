@@ -29,16 +29,17 @@ baseline 边界和实验计划之间形成闭环。对本课题，最小证明�
 | 3 | `opening_native_fourjob_normalized_impact` | 当前原生系统是否也会在共享服务下出现 short/long 干扰 | 全局 work/state 可观测、多 Job 管理 | 只画各系统 `four-job / isolated single`，不画跨系统绝对 JCT 排名，不归因内部算法 |
 | 4 | `opening_work_organization_regime_v2` | 数据组织为何必须同时考虑 work 与 locality，且策略为何不能脱离 serving regime | token/frame budget、locality-preserving organization | 当前 2-endpoint 合同未过 95% feeding 门，只证明 regime/locality 机制 |
 | 5 | `opening_multijob_interference_tradeoff` | Project 中多少是 quota、多少是竞争；shared credit 改善什么、牺牲什么 | shared work credit、idle borrowing、per-job floor/cap、fairness/SLO guard | 一个 `Short@0s → 3×Long@5s`、equal weight；不是最终动态控制器胜出 |
-| 6 | `opening_image_stage_aware_evidence` | 图像 CPU/GPU stage 为何要显式建模；Daft built-in、Ray Data、Project 在哪些规模可比 | staged WorkDescriptor、CPU/GPU 队列观测、frame/byte work | 12K 三臂是 setup-dominated 结构诊断；120K 仅 Ray Data/Project matched-resource 可排名 |
-| 7 | `opening_cost_model_decision_quality_v2` | 代价估计是否能选对配置，而不只是预测误差较小 | parse + profile calibration + residual correction | 20 个文本 context 的 marginal pass；尚未证明跨模态或在线收益 |
+| 6 | `opening_image_stage_aware_evidence` | 图像 CPU prepare、tensor transfer 与 GPU model stage 为何要显式建模；提交窗口为何不能只看图片数 | staged WorkDescriptor、CPU/GPU 队列观测、frame/byte work、有界准入 | prepare/actor 与 transfer 为 microprofile；active-window 为单次 screening；只证明机制，不作系统排名或动态胜出结论 |
+| 7 | `opening_image_baseline_evidence_map` | Direct、Daft Built-in、Ray Data、vLLM Pooling 与 Project 分别在哪一层可比较 | 原生能力门禁、结构诊断、matched-resource 正式排名分层 | 12K 三臂 setup-dominated；vLLM pooling blocked；120K 仅 Ray Data/Project 可排名 |
+| 8 | `opening_cost_model_decision_quality_v2` | 代价估计是否能选对配置，而不只是预测误差较小 | parse + profile calibration + residual correction | 20 个文本 context 的 marginal pass；尚未证明跨模态或在线收益 |
 
-七张图分别承担不同证明义务，不能用一张综合雷达图或“项目比 baseline 快”的总柱状图替代。
+八张图分别承担不同证明义务，不能用一张综合雷达图或“项目比 baseline 快”的总柱状图替代。
 
 ## 3. 正文、报告和备份的分层
 
 ### PPT 正文优先
 
-正文按 `1 → 2 → 3 → 研究边界/WorkDescriptor 方案图 → 4 → 5 → 6 → 7` 讲。若答辩时间有限，
+正文按 `1 → 2 → 3 → 研究边界/WorkDescriptor 方案图 → 4 → 5 → 6 → 7 → 8` 讲。若答辩时间有限，
 图 3 与图 5 可分成连续两页：先证明现有原生路径存在多 Job 干扰，再证明项目 shared credit
 的条件性收益与公平缺口。不要把两者压缩成同一坐标系的绝对性能排名。
 
@@ -62,7 +63,7 @@ baseline 边界和实验计划之间形成闭环。对本课题，最小证明�
 
 ## 5. 当前数据是否足以完成开题图集
 
-足以。图 1–7 的权威数据已经冻结；原生四 Job 图直接由
+足以。图 1–8 的权威数据已经冻结；原生四 Job 图直接由
 `opening_fourjob_interference_20260809/data/combined/job_formal_runs.csv` 生成，不需要重跑。
 当前缺口属于论文主实验而非开题证据缺口：同上限 state-aware phase change、weighted/SLO
 多 Job、图像动态/多 Job、跨模态 cost held-out。开题应把这些写成预注册实验与停止规则，

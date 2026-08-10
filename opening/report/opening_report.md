@@ -112,7 +112,7 @@ Database
 
 ## 5. 前期工作与可行性证据
 
-> **图表状态（2026-08-10）**：已按第一性原理审计完成七张正文数据图与一张状态备份图，
+> **图表状态（2026-08-10）**：已按第一性原理审计完成八张正文数据图与一张状态备份图，
 > 均通过 300-DPI、矢量、灰度和逐图视觉 QA。选图依据、证据边界及明确不画的缺口见
 > `figures/audit/opening_required_data_figures_20260810.md`；图完成不等于动态策略已胜出。
 
@@ -207,27 +207,44 @@ vendor-owned graph，未注入项目调度；它们的short与三个long相对�
 因此变化的是 serving 拓扑造成的运行压力，不是硬件池大小。该证据对应研究内容一中
 work balance 与 locality preservation 的联合组织，不支持某个 organizer 全局最优。
 
-### 5.7 图像 staged-work、原生 baseline 与 matched-resource 证据
+### 5.7 图像 staged-work 与状态感知动机
 
-![图像 workload 的阶段失衡、12K 原生能力与 120K matched-resource 正式对照](../../figures/data/report_main/opening_image_stage_aware_evidence.png)
+![图像 workload 的阶段失衡、传输形态与 active-window screening](../../figures/data/report_main/opening_image_stage_aware_evidence.png)
 
 CLIP exact-path 画像显示，在 batch 16/64/256 时 CPU prepare/GPU actor 时间比为
 13.8/31.2/29.5 倍，说明图像 work 不能只用 frame 数描述；prepare work、ready tensor
-bytes 与 model work 必须分别约束。12K 同语义三臂均 exactly-once，但 Ray Data/Project
-仍处于 setup-dominated 短窗口，Daft built-in 在 20K 已因 object-store OutOfDisk，故该
-panel 只说明 materialize 与 streaming 的结构/扩展边界，不作稳态排名。120K 下只有
-Ray Data native 与 Project frozen-static 具备 matched-resource 正式合同：两档 CPU
-均为 3 次 formal，Project JCT 低约 10%–17%。这些现象对应分阶段 WorkDescriptor、
-CPU prepare queue / ready tensor / GPU actor 状态观测，以及后续跨阶段有界提交；不证明
-图像动态增量已经有效，也不把 Daft 12K 数字外推到 120K。
+bytes 与 model work 必须分别约束。batch64 的 transfer ceiling 中，GPU-resident、pinned
+FP16 与 pageable FP32 路径分别约为 9.82K、8.72K 和 1.96K img/s，说明所有“传输”不能
+合并成一个常数项，host ownership-copy 与转换必须进入阶段描述。5K active-window 单次
+screening 又显示 active4→32 时 setup 后吞吐由约 0.50K 增至 1.02K img/s，active64 回退且
+wait P50 增至 1.44s。三组证据共同导出分阶段 WorkDescriptor、CPU prepare queue / ready
+tensor / GPU actor 状态观测和有界准入；它们不证明 active32 可迁移，也不证明图像动态策略
+已经胜出。
 
-### 5.8 代价模型的配置选择价值
+### 5.8 图像 baseline 的能力、扩展与正式排名边界
+
+![图像 baseline 的能力门禁、结构诊断与 matched-resource 正式对照](../../figures/data/report_main/opening_image_baseline_evidence_map.png)
+
+图像路径必须按角色分层，而不能把所有数字放进一个排行榜。Direct CLIP 是 GPU 容量
+control；Daft Built-in 与 Ray Data 是 vendor-owned 原生 baseline；vLLM Pooling 是服务化
+候选，但当前两次单图 capability gate 均在 600 s timeout 且无 embedding，因而只标
+`blocked`，不生成吞吐值；Project Static 是冻结方法参考。Daft Native/Ray 自写 UDF 仅作
+diagnostic reference，不冒充原生 baseline。
+
+12K 同语义三臂均 exactly-once，Daft Built-in、Ray Data 与 Project 的 JCT 均值分别约为
+65.2、17.8 和 15.9 s，但快臂仍是短窗口，且 Daft Built-in 在 20K 已因 object-store
+OutOfDisk，因此该 panel 只承担结构诊断。120K matched-resource 下，只有 Ray Data native
+与 Project frozen-static 具备同资源正式合同；CPU8/16 各 3 次 formal，Project JCT 比
+Ray Data 低约 10%/17%。只有这一 panel 可排名；它是静态阶段组织的 preliminary signal，
+不证明状态感知动态增量已经有效，也不把 Direct ceiling、12K 诊断或 blocked 服务轨混入结论。
+
+### 5.9 代价模型的配置选择价值
 
 ![算子代价模型的选择质量](../../figures/data/report_main/opening_cost_model_decision_quality_v2.png)
 
 在 429 个 formal 观测、20 个 context 与 4 个候选配置的 context leave-one-out 评价中，Hybrid 模型 pooled regret 为 1.67%，macro regret 为 2.90%，candidate pairwise accuracy 为 0.808，max regret 为 14.72%。最大 regret 仅比 15% 门槛低 0.28 个百分点，属于边界通过。它可作为配置选择的第一份可行性证据，但仍需新时间段、workload 和硬件上的校准。
 
-### 5.9 设计—实现—证据边界
+### 5.10 设计—实现—证据边界
 
 开题中的设计不等于全部已进入正式执行路径。当前四个等权部件的边界如下：
 

@@ -78,17 +78,23 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 | `architecture/opening_ai_data_execution_boundary.png` / `.svg` | 研究边界：数据库 AI 算子与模型/typed GPU backend 之间是 AI Data Execution Layer；两项研究内容并列，算子代价估计作为共同使能部件向二者供给 work/slack/uncertainty。 |
 | `architecture/opening_work_to_schedule_overview.png` / `.svg` | 方案总览：共同代价估计器产生 stage/service/remaining work、SLO slack 和不确定区间，经 staged WorkDescriptor 同时使能组织与调度；组织器保留 work/locality，调度器再结合新鲜状态做 admission/routing/credit/fair queue。 |
 | `data/report_main/opening_work_organization_regime_v2.png` / `.svg` | 相同双卡硬件下，2-endpoint 低 KV 压力时策略范围约 12%，4-endpoint consolidation 导致高 KV 压力时分化约 27% 且 locality 主导；严格 feeding-saturation 边界必须保留。 |
-| `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像 baseline 三层图：CPU prepare/GPU actor 为 13.8–31.2×；12K 同语义 Daft built-in/Ray Data/Project 只作结构诊断；120K matched-resource 仅 Ray Data/Project 可排名。 |
+| `data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像动机图：CPU prepare/GPU actor 为 13.8–31.2×；batch64 的 R0/R1/R2 transfer ceiling 区分 GPU-resident、pinned FP16 与 pageable FP32；active-window screening 显示欠供给、近平台与过量排队。只证明 staged work 和状态观测必要性。 |
+| `data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | 图像 baseline 分层图：完整呈现 Direct CLIP、Daft Built-in、Ray Data、vLLM Pooling 与 Project Static；12K 只作结构诊断，vLLM pooling 当前 blocked，120K matched-resource 仅 Ray Data/Project 可排名。 |
 | `data/report_main/opening_cost_model_decision_quality_v2.png` / `.svg` | 候选选择 regret 的 median/macro/max 同图表达；Hybrid max 14.72%，只称 marginal pass。 |
 | `data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | 四条原生/控制路径的单 Job 状态指纹：JCT、tok/s、running、waiting、KV、MFU 均保持原单位；用于说明同一任务可落入不同服务压力状态，不作框架通用排名。 |
 | `data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | 四 Job 主图：分离 full→quarter 配额损失、quarter→static 真实竞争和 static→shared 调度效果，并同时展示组吞吐、MFU、normalized-progress Jain 与 long JCT spread。 |
 
 统一生成脚本：`scripts/generate_opening_story_figures_20260808.py`。数据、claim、视觉和
 禁止外推合同：`audit/opening_story_figures_contract_20260808.md`；第一性原理的选图依据见
-`audit/opening_required_data_figures_20260810.md`。2026-08-10 已统一重建七张正文数据图
-A/T/N/C/H/D/E，并生成 F 作为单 Job 状态备份图；八张 PNG/SVG 均已打开复核，无裁切、
+`audit/opening_required_data_figures_20260810.md`。2026-08-10 已统一重建八张正文数据图
+A/T/N/C/H/D/I/E，并生成 F 作为单 Job 状态备份图；九张 PNG/SVG 均已打开复核，无裁切、
 缺字或文字重叠，并通过 300 DPI、矢量、灰度与颜色外形状编码检查。当前仍未制作新的
 PPT 成品；旧 PPT 只是历史底稿。
+
+本组图的视觉语法已冻结：颜色表示系统或策略，形状只在需要冗余编码时保留；圆点、
+方框、三角、菱形若表示执行路径，必须由图内图例逐项映射；若表示统计量，图例或页脚
+必须写明均值、中位数、macro 均值或最大值。误差线必须注明 SD，普通横线必须注明是
+中位数至最大值范围或同一 Job 的成对变化。未承担上述语义的装饰性散点与线段不得保留。
 
 2026-08-10 绘图完成后的冻结状态如下：
 
@@ -96,12 +102,14 @@ PPT 成品；旧 PPT 只是历史底稿。
 |---|---|---|
 | 原生文本单 Job 状态指纹 | `rendered-qa-pass` | 四臂 12 formal；JCT/tok/s 与 running/waiting/KV/MFU 原单位 small multiples，不伪造 request P99，不归因框架内部算法 |
 | 文本 baseline 分轨图 | `rendered-qa-pass` | DuckDB 产品轨与 Daft/Ray Chat graph 轨均呈现；合同不同的 panel 禁止互排 |
-| 原生文本四 Job 归一化干扰 | `rendered-qa-pass` | Daft Native/Ray、Ray Data 的 Short 与 3 个 Long；只画 four-job/isolated-single 和三次 formal 点 |
+| 原生文本四 Job 归一化干扰 | `rendered-qa-pass` | Daft Native/Ray、Ray Data 的 Short 与 3 个 Long；只画 four-job/isolated-single 的菱形均值与 SD，删去装饰性重复点 |
 | 四 Job 干扰与共享权衡 | `rendered-qa-pass` | Project full/quarter/static/shared 因果分解；主图覆盖 short 与 3 个 long、总效率、MFU、normalized progress 和 long spread；原生轨内影响保留在结果表/附录 |
+| 图像 staged-work 动机 | `rendered-qa-pass` | prepare/model、R0/R1/R2 transfer 形态和 active-window screening 分开呈现；不把 microprofile 或 screening 写成系统排名 |
+| 图像 baseline 分层图 | `rendered-qa-pass` | Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 全覆盖；能力门禁、12K 诊断和 120K 正式排名分层 |
 | 同上限 static–dynamic phase change | `do-not-draw-no-result` | 只保留实验合同；正式 A/B 完成前不画示意结果曲线 |
 | database-E2E replacement 三臂 | `appendix-table-only` | SQuAD 作静态 correctness 地基；ShareGPT 因 C32 direct 欠供给与 DuckDB cap 语义失败不作性能排名 |
 
-本轮第一性原理数据图清单 A/T/N/C/H/D/E 与备份图 F 已完成；G 仍不画。
+本轮第一性原理数据图清单 A/T/N/C/H/D/I/E 与备份图 F 已完成；G 仍不画。
 完整输入行数、关键字段、SHA256 与视觉 QA 记录见上述 audit 合同。
 2026-08-09 cost LOO JSON 仅规范化 6 处 `§6` 的 UTF-8 编码，图 E 的冻结输入 SHA 前缀
 相应更新为 `bbb2f2f8c5c1c07f`；字段、数值和既有图 E 均不变，无需重画。

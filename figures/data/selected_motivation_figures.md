@@ -1,9 +1,9 @@
 # 开题动机图表选择说明
 
 > **2026-08-10 当前入口**：下文 2026-07 的历史候选保留作溯源；当前开题正文数据图已由
-> `figures/audit/opening_required_data_figures_20260810.md` 第一性原理重审并冻结为七张：
+> `figures/audit/opening_required_data_figures_20260810.md` 第一性原理重审并冻结为八张：
 > work/state 动机、文本 baseline 分轨、原生四 Job 归一化干扰、组织 regime、Project 四 Job
-> 机制与公平权衡、图像 staged/baseline 边界、代价估计决策质量。原生单 Job 状态指纹降为报告/答辩备份；图像与
+> 机制与公平权衡、图像 staged-work 动机、图像 baseline 分层、代价估计决策质量。原生单 Job 状态指纹降为报告/答辩备份；图像与
 > DuckDB 多 Job、同上限 phase-change 因无正式结果不画。后续选图以该审计为准。
 
 本文档用于确定开题报告、飞书文档和开题 PPT 中优先使用哪些图来说明”为什么要做这个课题”。选择原则是：主线图必须能直接支撑课题动机，优先使用真实 GPU-backed 端到端实验；fake/CPU 和组件 benchmark 只作为备用解释，不放在主线里承担最终瓶颈结论。

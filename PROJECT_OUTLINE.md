@@ -161,10 +161,11 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 2. `opening_ai_data_execution_boundary`：两项研究内容并列，算子代价估计作为共同使能部件。
 3. `opening_work_to_schedule_overview`：组织输出 work/locality/deadline，调度结合 fresh state 消费。
 4. `opening_work_organization_regime_v2`：work-aware 组织的必要性与 regime 局限。
-5. `opening_image_stage_aware_evidence`：图像阶段失衡与 matched-resource preliminary signal。
-6. `opening_cost_model_decision_quality_v2`：代价模型 selection regret 与最坏风险。
+5. `opening_image_stage_aware_evidence`：图像 prepare/model、transfer 形态和 active-window 动机，只承担 staged work 与状态感知必要性。
+6. `opening_image_baseline_evidence_map`：Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 的能力门禁、12K 结构诊断与 120K matched-resource 正式排名边界。
+7. `opening_cost_model_decision_quality_v2`：代价模型 selection regret 与最坏风险。
 
-权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。现有六张叙事资产均可读；A/C 数据已冻结但仍需标签级重绘，F/H 为 `data-ready-not-generated`，G 为 `do-not-draw-no-result`。当前只冻结内容大纲、紧凑实验数据和待画图合同，不生成新图或新的 PPT 成品。
+权威输出位于 `figures/data/report_main/` 与 `figures/architecture/`，生成脚本为 `figures/scripts/generate_opening_story_figures_20260808.py`，claim 与视觉审计见 `figures/audit/opening_story_figures_contract_20260808.md`。A/T/N/C/H/D/I/E 八张正文数据图和 F 状态备份图已经完成可读性与证据边界审计；G 为 `do-not-draw-no-result`。当前只冻结内容大纲、紧凑实验数据和图表合同，不生成新的 PPT 成品。
 
 ## 8. 当前执行顺序
 
