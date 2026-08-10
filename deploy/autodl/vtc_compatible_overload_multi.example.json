@@ -51,7 +51,7 @@
     "--completion-request-timeout-s", "180",
     "--model-metrics-urls", "http://127.0.0.1:8000/metrics,http://127.0.0.1:8001/metrics",
     "--endpoint-gpu-ids", "0,1",
-    "--source-workload-name", "${VTC_OVERLOAD_MULTI_WORKLOAD}",
+    "--source-workload-name", "${VTC_OVERLOAD_WORKLOAD}",
     "--source-order", "arrival_time",
     "--data-source", "daft_postgres",
     "--organizer", "daft",

@@ -90,6 +90,33 @@ class VtcCompatibleWorkloadTests(unittest.TestCase):
             ]
             self.assertLessEqual(abs(endpoint_counts[0] - endpoint_counts[1]), 1)
 
+    def test_overload_runner_environment_uses_config_prefix(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for index in range(8):
+                (root / f"client_{index}.jsonl").write_text(
+                    "{}\n", encoding="utf-8"
+                )
+            environment = runner_environment(
+                {
+                    "status": "prepared",
+                    "target_workload": "vtc_overload_multi",
+                    "suite": {
+                        "suite_id": "overload_multi",
+                        "rates_per_s": [0.4] * 8,
+                    },
+                    "job_row_counts": [1] * 8,
+                    "job_first_arrival_s": [0.25] * 8,
+                },
+                root,
+            )
+
+        self.assertEqual(
+            environment["VTC_OVERLOAD_WORKLOAD"],
+            "vtc_overload_multi",
+        )
+        self.assertEqual(environment["VTC_OVERLOAD_CLIENT7_ROWS"], "1")
+
     def test_on_off_client_has_no_arrivals_in_off_windows(self) -> None:
         spec = suite_spec("on_off_overload", duration_s=240.0)
         jobs, _manifests = build_suite(
