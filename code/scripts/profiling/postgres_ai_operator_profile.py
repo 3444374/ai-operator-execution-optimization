@@ -1090,6 +1090,7 @@ def submit_python_compatible_http_batches(
     completion_prompt_format: str = "raw",
     completion_temperature: float | None = None,
     completion_protocol: str = "completions",
+    completion_ignore_eos: bool = False,
 ) -> tuple[list[dict], dict]:
     results = []
     invocation_count = 0
@@ -1114,6 +1115,7 @@ def submit_python_compatible_http_batches(
                     completion_prompt_format,
                     completion_temperature,
                     completion_protocol,
+                    completion_ignore_eos,
                 )
             )
         invocation_count += 1
@@ -1388,6 +1390,7 @@ def _validate_completion_observation_args(args: argparse.Namespace) -> None:
         raise SystemExit("--source-row-offset must be non-negative")
     uses_compatible_completion_options = (
         args.completion_return_token_ids
+        or args.completion_ignore_eos
         or args.completion_prompt_format != "raw"
         or args.completion_temperature is not None
     )
@@ -1396,7 +1399,7 @@ def _validate_completion_observation_args(args: argparse.Namespace) -> None:
         or args.model_backend not in {"compatible_http", "http_openai"}
     ):
         raise SystemExit(
-            "completion token IDs, prompt format, and temperature require "
+            "completion token IDs, ignore-EOS, prompt format, and temperature require "
             "--operator ai_complete with a compatible HTTP backend"
         )
     if args.completion_http_transport == "httpx_async" and (
@@ -1998,21 +2001,22 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                             args.completion_max_tokens,
                         ]
                         if model_backend == "compatible_http":
-                            actor_args.extend(
-                                [
-                                    args.completion_return_token_ids,
-                                    args.completion_prompt_format,
-                                    args.completion_temperature,
-                                    args.completion_protocol,
-                                ]
-                            )
+                            actor_args.extend([
+                                args.completion_return_token_ids,
+                                args.completion_prompt_format,
+                                args.completion_temperature,
+                                args.completion_protocol,
+                            ])
                             if (
                                 args.completion_http_transport
                                 == "httpx_async"
                             ):
-                                actor_args.append(
-                                    reported_ray_actor_max_concurrency
-                                )
+                                actor_args.extend([
+                                    reported_ray_actor_max_concurrency,
+                                    args.completion_ignore_eos,
+                                ])
+                            else:
+                                actor_args.append(args.completion_ignore_eos)
                         actor_pools[endpoint_id] = [
                             RayCompletionActor.remote(*actor_args)
                             for _ in range(actor_workers_per_endpoint)
@@ -2332,6 +2336,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     completion_prompt_format=args.completion_prompt_format,
                     completion_temperature=args.completion_temperature,
                     completion_protocol=args.completion_protocol,
+                    completion_ignore_eos=args.completion_ignore_eos,
                 )
             if replay_envelopes is not None:
                 raise RuntimeError("arrival replay requires a Ray executor")
@@ -2354,6 +2359,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 args.completion_prompt_format,
                 args.completion_temperature,
                 args.completion_protocol,
+                args.completion_ignore_eos,
             )
 
         organizer_warnings = []
@@ -2938,6 +2944,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "embedding_vector_dim": current_vector_dim if current_vector_dim is not None else "",
             "completion_max_tokens": args.completion_max_tokens if args.operator == "ai_complete" else "",
             "completion_return_token_ids": args.completion_return_token_ids,
+            "completion_ignore_eos": args.completion_ignore_eos,
             "completion_prompt_format": args.completion_prompt_format,
             "completion_protocol": args.completion_protocol,
             "completion_http_transport": (

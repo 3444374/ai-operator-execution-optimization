@@ -114,10 +114,12 @@ class ModelBackendTests(unittest.TestCase):
                 8,
                 return_token_ids=True,
                 temperature=0.0,
+                ignore_eos=True,
             )
 
         sent = json.loads(urlopen.call_args.args[0].data.decode("utf-8"))
         self.assertTrue(sent["return_token_ids"])
+        self.assertTrue(sent["ignore_eos"])
         self.assertEqual(sent["temperature"], 0.0)
         self.assertEqual(result.outputs, ["first", "second"])
         self.assertEqual(result.total_tokens, 9)

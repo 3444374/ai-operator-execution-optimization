@@ -543,6 +543,7 @@ def submit_ray_tasks(
     completion_prompt_format: str = "raw",
     completion_temperature: float | None = None,
     completion_protocol: str = "completions",
+    completion_ignore_eos: bool = False,
     per_endpoint_limit: int | None = None,
     per_endpoint_work_limit: int | None = None,
     shared_credit_config: dict | None = None,
@@ -577,6 +578,7 @@ def submit_ray_tasks(
             completion_prompt_format,
             completion_temperature,
             completion_protocol,
+            completion_ignore_eos,
         )
 
     envelopes = (
@@ -623,6 +625,7 @@ def submit_ray_tasks(
                     or completion_prompt_format != "raw"
                     or completion_temperature is not None
                     or completion_protocol != "completions"
+                    or completion_ignore_eos
                 )
             ):
                 submitters[endpoint_id] = (
@@ -637,6 +640,7 @@ def submit_ray_tasks(
                         completion_prompt_format,
                         completion_temperature,
                         completion_protocol,
+                        completion_ignore_eos,
                     )
                 )
             else:
@@ -736,6 +740,7 @@ def _submit_ray_tasks_legacy_adaptive(
     completion_prompt_format: str = "raw",
     completion_temperature: float | None = None,
     completion_protocol: str = "completions",
+    completion_ignore_eos: bool = False,
 ) -> tuple[list[dict], dict]:
     pending = []
     results = []
@@ -786,6 +791,7 @@ def _submit_ray_tasks_legacy_adaptive(
                     or completion_prompt_format != "raw"
                     or completion_temperature is not None
                     or completion_protocol != "completions"
+                    or completion_ignore_eos
                 )
             ):
                 pending.append(
@@ -800,6 +806,7 @@ def _submit_ray_tasks_legacy_adaptive(
                         completion_prompt_format,
                         completion_temperature,
                         completion_protocol,
+                        completion_ignore_eos,
                     )
                 )
             else:

@@ -44,6 +44,7 @@ def build_completion_request_body(
     *,
     temperature: float | None = None,
     return_token_ids: bool = False,
+    ignore_eos: bool = False,
 ) -> dict:
     """Build the exact vLLM completion request body the project path sends.
 
@@ -73,6 +74,8 @@ def build_completion_request_body(
         raise ValueError(f"Unknown completion protocol: {protocol}")
     if return_token_ids:
         body["return_token_ids"] = True
+    if ignore_eos:
+        body["ignore_eos"] = True
     if temperature is not None:
         if not math.isfinite(temperature) or temperature < 0:
             raise ValueError("temperature must be finite and non-negative")
@@ -91,6 +94,7 @@ def call_compatible_completion_endpoint(
     prompt_format: CompletionPromptFormat = "raw",
     temperature: float | None = None,
     protocol: CompletionProtocol = "completions",
+    ignore_eos: bool = False,
 ) -> CompletionEndpointResult:
     request_body = build_completion_request_body(
         model_name,
@@ -99,6 +103,7 @@ def call_compatible_completion_endpoint(
         protocol,
         temperature=temperature,
         return_token_ids=return_token_ids,
+        ignore_eos=ignore_eos,
     )
     payload = json.dumps(request_body).encode("utf-8")
     headers = {"Content-Type": "application/json"}
@@ -263,6 +268,7 @@ class CompatibleHTTPCompletionActor(_ReadyActor):
         prompt_format: CompletionPromptFormat = "raw",
         temperature: float | None = None,
         protocol: CompletionProtocol = "completions",
+        ignore_eos: bool = False,
     ):
         self.endpoint_url = endpoint_url
         self.model_name = model_name
@@ -273,6 +279,7 @@ class CompatibleHTTPCompletionActor(_ReadyActor):
         self.prompt_format = prompt_format
         self.temperature = temperature
         self.protocol = protocol
+        self.ignore_eos = ignore_eos
 
     def complete(self, batch: pa.RecordBatch | pa.Table) -> dict:
         service_start = time.perf_counter()
@@ -289,6 +296,7 @@ class CompatibleHTTPCompletionActor(_ReadyActor):
             prompt_format=self.prompt_format,
             temperature=self.temperature,
             protocol=self.protocol,
+            ignore_eos=self.ignore_eos,
         )
         return _completion_actor_result(
             batch,
@@ -313,6 +321,7 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
         temperature: float | None = None,
         protocol: CompletionProtocol = "completions",
         max_connections: int = 1,
+        ignore_eos: bool = False,
     ):
         if max_connections <= 0:
             raise ValueError("max_connections must be positive")
@@ -334,6 +343,7 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
         self.temperature = temperature
         self.protocol = protocol
         self.max_connections = max_connections
+        self.ignore_eos = ignore_eos
         self._httpx = httpx
         self._client = httpx.AsyncClient(
             headers=headers,
@@ -388,6 +398,7 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
             self.protocol,
             temperature=self.temperature,
             return_token_ids=self.return_token_ids,
+            ignore_eos=self.ignore_eos,
         )
         http_request_start_epoch_s = time.time()
         http_request_start_s = time.perf_counter()
@@ -569,6 +580,7 @@ def compatible_http_complete_batch(
     prompt_format: CompletionPromptFormat = "raw",
     temperature: float | None = None,
     protocol: CompletionProtocol = "completions",
+    ignore_eos: bool = False,
 ) -> dict:
     return CompatibleHTTPCompletionActor(
         endpoint_url,
@@ -580,6 +592,7 @@ def compatible_http_complete_batch(
         prompt_format,
         temperature,
         protocol,
+        ignore_eos,
     ).complete(batch)
 
 def ollama_complete_batch(

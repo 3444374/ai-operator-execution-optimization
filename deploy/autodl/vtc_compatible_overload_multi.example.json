@@ -45,6 +45,7 @@
     "--completion-http-transport", "httpx_async",
     "--completion-max-tokens", "256",
     "--completion-return-token-ids",
+    "--completion-ignore-eos",
     "--completion-prompt-format", "raw",
     "--completion-temperature", "0",
     "--completion-request-timeout-s", "180",

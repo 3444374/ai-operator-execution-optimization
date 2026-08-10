@@ -2846,6 +2846,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "--completion-endpoint-url",
                     "http://localhost/v1/completions",
                     "--completion-return-token-ids",
+                    "--completion-ignore-eos",
                 ]
             ),
             "formal",
@@ -2854,6 +2855,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertFalse(default_row["completion_return_token_ids"])
         self.assertTrue(enabled_row["completion_return_token_ids"])
+        self.assertTrue(enabled_row["completion_ignore_eos"])
+        self.assertFalse(default_row["completion_ignore_eos"])
         self.assertEqual(default_row["completion_prompt_format"], "raw")
         self.assertEqual(default_row["completion_temperature"], "")
         self.assertEqual(default_row["source_max_prompt_tokens"], "")

@@ -125,6 +125,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
     )
     parser.add_argument(
+        "--completion-ignore-eos",
+        action="store_true",
+        help=(
+            "Ask a compatible vLLM endpoint to generate to max_tokens even "
+            "after EOS. Use only for fixed-output synthetic contracts."
+        ),
+    )
+    parser.add_argument(
         "--completion-prompt-format",
         choices=["raw", "chatml"],
         default="raw",
