@@ -709,6 +709,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "rate_ewma_alpha": 0.3,
             "congestion_kv_usage": 0.85,
             "consecutive_samples": 8,
+            "increase_consecutive_samples": 2,
             "cooldown_samples": 8,
             "max_state_age_s": 1.0,
         }
@@ -720,6 +721,10 @@ class SharedVllmExperimentTests(unittest.TestCase):
             (96, 128, 160),
         )
         self.assertEqual(config.state_aware_control.fallback_request_limit, 128)
+        self.assertEqual(
+            config.state_aware_control.increase_consecutive_samples,
+            2,
+        )
 
     def test_arrival_offset_rejects_missing_environment_scalar(self) -> None:
         payload = self._config_payload(

@@ -48,6 +48,7 @@ class BoundedCapacityController:
         occupied_fraction: float = 0.8,
         congestion_kv_usage: float = 0.85,
         consecutive_samples: int = 4,
+        increase_consecutive_samples: int | None = None,
         cooldown_samples: int = 4,
     ) -> None:
         ordered = tuple(sorted(set(candidates)))
@@ -67,7 +68,16 @@ class BoundedCapacityController:
             raise ValueError("controller fractions must be in (0, 1]")
         if not 0 < congestion_kv_usage <= 1:
             raise ValueError("congestion_kv_usage must be in (0, 1]")
-        if consecutive_samples <= 0 or cooldown_samples < 0:
+        resolved_increase_samples = (
+            consecutive_samples
+            if increase_consecutive_samples is None
+            else increase_consecutive_samples
+        )
+        if (
+            consecutive_samples <= 0
+            or resolved_increase_samples <= 0
+            or cooldown_samples < 0
+        ):
             raise ValueError("sample hysteresis values are invalid")
         self.candidates = ordered
         self.fallback = fallback
@@ -78,6 +88,7 @@ class BoundedCapacityController:
         self.occupied_fraction = occupied_fraction
         self.congestion_kv_usage = congestion_kv_usage
         self.consecutive_samples = consecutive_samples
+        self.increase_consecutive_samples = resolved_increase_samples
         self.cooldown_samples = cooldown_samples
         self._index = ordered.index(resolved_initial)
         self._increase_streak = 0
@@ -141,7 +152,7 @@ class BoundedCapacityController:
             self._increase_streak = (
                 self._increase_streak + 1 if bootstrap_feed_limited else 0
             )
-            if self._increase_streak >= self.consecutive_samples:
+            if self._increase_streak >= self.increase_consecutive_samples:
                 return self._move(
                     1,
                     "ready_backlog_rate_bootstrap",
@@ -162,7 +173,7 @@ class BoundedCapacityController:
         self._increase_streak = self._increase_streak + 1 if feed_limited else 0
         if self._decrease_streak >= self.consecutive_samples:
             return self._move(-1, "persistent_service_queue", service_rate_tokens_s)
-        if self._increase_streak >= self.consecutive_samples:
+        if self._increase_streak >= self.increase_consecutive_samples:
             return self._move(1, "ready_backlog_below_target", service_rate_tokens_s)
         return self._decision("hold", "hysteresis_or_deadband", service_rate_tokens_s)
 

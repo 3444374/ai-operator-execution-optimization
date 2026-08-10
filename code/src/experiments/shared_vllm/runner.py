@@ -436,6 +436,9 @@ def _run_group(
                     control.target_service_rate_tokens_s_per_endpoint
                 ),
                 consecutive_samples=control.consecutive_samples,
+                increase_consecutive_samples=(
+                    control.increase_consecutive_samples
+                ),
                 cooldown_samples=control.cooldown_samples,
                 congestion_kv_usage=control.congestion_kv_usage,
             )

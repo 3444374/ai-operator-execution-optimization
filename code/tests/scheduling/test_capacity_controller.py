@@ -194,6 +194,33 @@ class BoundedCapacityControllerTests(unittest.TestCase):
         self.assertTrue(all(item.action == "hold" for item in decisions))
         self.assertEqual(self.controller.current_arm.request_limit, 128)
 
+    def test_upshift_can_use_shorter_hysteresis_than_downshift(self) -> None:
+        controller = BoundedCapacityController(
+            (CapacityArm(96, 131072), CapacityArm(128, 131072)),
+            fallback=CapacityArm(96, 131072),
+            initial=CapacityArm(96, 131072),
+            target_service_rate_tokens_s=7600.0,
+            consecutive_samples=8,
+            increase_consecutive_samples=2,
+            cooldown_samples=0,
+        )
+
+        decisions = [
+            controller.select(
+                _snapshot(queued=1024),
+                active_requests=96,
+                service_waiting_requests=0,
+                service_rate_tokens_s=6000.0,
+                kv_usage=0.2,
+                now_s=10.1,
+                max_age_s=1.0,
+                calibration_signature="sig",
+            )
+            for _ in range(2)
+        ]
+
+        self.assertEqual(decisions[-1].action, "increase")
+
 
 if __name__ == "__main__":
     unittest.main()

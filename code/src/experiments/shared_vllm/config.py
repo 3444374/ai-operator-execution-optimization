@@ -131,6 +131,7 @@ class StateAwareControlConfig:
     rate_ewma_alpha: float
     congestion_kv_usage: float
     consecutive_samples: int
+    increase_consecutive_samples: int
     cooldown_samples: int
     max_state_age_s: float
 
@@ -654,7 +655,12 @@ def _load_state_aware_control(
         "cooldown_samples",
         "max_state_age_s",
     }
-    if not isinstance(raw, dict) or set(raw) != required:
+    allowed = required | {"increase_consecutive_samples"}
+    if (
+        not isinstance(raw, dict)
+        or not required.issubset(raw)
+        or not set(raw).issubset(allowed)
+    ):
         raise ValueError("state_aware_control fields are invalid")
     raw_candidates = raw["request_candidates"]
     if not isinstance(raw_candidates, list) or not raw_candidates:
@@ -754,6 +760,16 @@ def _load_state_aware_control(
                 "consecutive_samples",
             ),
             "consecutive_samples",
+        ),
+        increase_consecutive_samples=_positive_integer(
+            _expand_scalar(
+                raw.get(
+                    "increase_consecutive_samples",
+                    raw["consecutive_samples"],
+                ),
+                "increase_consecutive_samples",
+            ),
+            "increase_consecutive_samples",
         ),
         cooldown_samples=_nonnegative_integer(
             _expand_scalar(raw["cooldown_samples"], "cooldown_samples"),
