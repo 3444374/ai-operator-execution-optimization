@@ -248,17 +248,24 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `experiments/results/opening_project_short_all_at_t0_diagnostic_20260809/{README.md,data/}` | Project eager single 1+3 的 T0–T4 统一计时、逐次数据和 Project/Daft short 诊断 | Project T3=11.354s、Daft=11.059s；service rate/MFU 仅差约2.5%，不能用缺失的 Daft T0 做完整系统排名 |
 | `figures/scripts/generate_opening_core_evidence_figures.py` | 从冻结正式结果生成开题四张核心证据图 | 更新开题报告或答辩 PPT 前运行 |
 | `figures/audit/opening_core_evidence_figures_contract_20260807.md` | 四图 claim、输入、视觉 QA 与禁止外推合同 | 引用四图前核对 |
-| `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果可复现生成 A/T/N/C/H/D/I/E、单 Job 任务—请求主图、F 状态备份图及既有架构图 | 更新报告图时按选择器运行；不得更换冻结输入追求更漂亮结论 |
-| `figures/audit/opening_story_figures_contract_20260808.md` | 叙事图的数据来源、SHA/行数冻结、claim、禁止外推与逐图视觉 QA | 引用新版动机和方案图前核对；A/T/N/C/H/D/I/E/F 已通过 QA，G 不画 |
+| `figures/scripts/generate_opening_story_figures_20260808.py` | 从正式结果可复现生成 A/T/N/C/H/D/I/J/E、单 Job 任务—请求主图、F 状态备份图及既有架构图 | 更新报告图时按选择器运行；不得更换冻结输入追求更漂亮结论 |
+| `figures/audit/opening_story_figures_contract_20260808.md` | 叙事图的数据来源、SHA/行数冻结、claim、禁止外推与逐图视觉 QA | 引用新版动机和方案图前核对；A/T/N/C/H/D/I/J/E/F 已通过 QA，G 不画 |
 | `figures/audit/opening_required_data_figures_20260810.md` | 从六项开题证明义务推导正文、备份、附录和明确不画的最小图集 | 决定一张实验图是否应进开题、PPT还是论文阶段前读 |
+| `figures/opening_figure_set/README.md` 与 `main_png/`、`main_svg/`、`editable_drawio/`、`backup_*` | 按 20 页答辩页码和中文用途重命名的开题专用图集：14 张主讲图、5 张 Draw.io 概念源、2 张备份图 | 制作开题 PPT/报告时从这里选图，不再浏览整个 `report_main/`；权威源仍在原目录 |
+| `figures/audit/opening_figure_set_manifest_20260811.md` | 开题专用图集的选图依据、源文件映射、格式合同、排除项与复制 QA | 新增、替换或同步开题图集前读取 |
+| `figures/scripts/embed_svg_assets.py` | 将 SVG 的本地相对 icon/Logo 引用机械内嵌为 data URI | 生成可单文件拖入 PowerPoint/Word 的开题图集 SVG 副本；不改权威源图 |
 | `figures/data/report_main/opening_native_fourjob_normalized_impact.png` / `.svg` | Daft Native/Ray、Ray Data 的 Short 与三个 Long 的 four-job/isolated-single JCT 比值 | 证明共享服务多 Job 干扰是共同外部现象；禁止跨框架绝对 JCT 排名 |
 | `figures/data/report_main/opening_text_baseline_evidence_map.png` / `.svg` | SQuAD database-E2E 产品轨与 ShareGPT 官方 Chat graph 轨的文本 baseline 分轨图 | 呈现 DuckDB、Daft Native/Ray、Ray Data 的可比合同与问题；禁止跨 panel 排名 |
 | `figures/data/report_main/opening_image_stage_aware_evidence.png` / `.svg` | 图像 prepare/model 比、R0/R1/R2 transfer ceiling 与 active-window screening | 导出 staged WorkDescriptor、阶段状态观测与有界准入；不作系统排名 |
 | `figures/data/report_main/opening_image_baseline_evidence_map.png` / `.svg` | Direct、Daft Built-in、Ray Data、vLLM Pooling、Project 的能力门禁、12K 诊断与 120K matched-resource 分层图 | 只有 120K Ray Data/Project panel 可排名；blocked 路径不生成性能值 |
+| `figures/data/report_main/opening_image_fourjob_normalized_impact.png` / `.svg` | Daft Built-in、Ray Data、Project 的 Short 与三个 Long 在 four-job/isolated 下的 JCT 比值 | 只作各路径内部归一化；Project 状态快照仅 observe-only，不作动态收益或跨框架绝对排名 |
 | `figures/data/report_main/opening_multijob_interference_tradeoff.png` / `.svg` | Project full/quarter/static/shared 四 Job 因果分解、组效率与公平权衡 | 导出 shared work credit、idle borrowing 和 fairness/SLO guard 的设计要求 |
 | `figures/data/report_main/opening_native_single_job_request_latency.png` / `.svg` | 四条原生/控制路径的 JCT、waiting、queue time、TTFT 原单位任务—请求主图 | 报告正文解释相近 makespan 如何掩盖请求级排队，不作框架通用排名 |
 | `figures/data/report_main/opening_native_single_job_state_fingerprint.png` / `.svg` | tok/s、running、waiting、KV、MFU、GPU utilization 原单位状态补充 | 作为 JCT 的机制诊断，区分过量排队、最小饱和与欠供给 |
 | `figures/architecture/opening_ai_data_execution_boundary.png` / `.svg` | 两项研究内容 + 共同 cost estimator 的 AI Data Execution Layer 边界图 | 报告/答辩大纲解释课题范围、平台与贡献关系时使用 |
+| `figures/architecture/editable/README.md` 与 `01_research_gap`--`05_evidence_gate` 的 `.drawio/.svg/.png/.audit.md` | 2026-08-11 开题可编辑概念图候选批次：研究空白、总体闭环、Work-unit、状态感知调度、因果验证路线 | 每图文字/卡片/连接器可编辑，icon 为独立 SVG；用户逐图确认前不替换报告现行图 |
+| `figures/audit/opening_editable_diagrams_manifest_20260811.md` | 六张参考图到五张必要开题图的选择、合并、样式与完成门槛合同 | 重画、替换 icon 或决定某图是否进入 PPT 前读取 |
+| `figures/audit/reference_opening_editable_20260811/` | 用户提供并经筛选的五张视觉参考图本地审计副本 | 只用于版式/icon/视觉对照，不直接进入报告或 PPT，不作为整图截图嵌入 |
 | `README.md` | 工作区总览、当前方向、目录结构 | 了解项目背景 |
 | `overview/AGENTS.md` | 总览目录规则 | 修改 `current_direction_and_plan.md` 时读 |
 | `overview/current_direction_and_plan.md` | 当前方向的快速参考卡片（TL;DR） | 2 分钟了解课题全貌 |

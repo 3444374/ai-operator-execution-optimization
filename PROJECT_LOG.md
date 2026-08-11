@@ -5708,3 +5708,60 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   并明确其操作含义：先在固定机器、
   模型、协议、workload 与拓扑下，通过实验确定不会明显欠供给或过载的 active-work/K 范围，
   再依据实时队列、完成速率与阶段压力在该范围内调节提交量。算法内部字段名称不受此表述调整影响。
+
+## 2026-08-11 开题可编辑概念图批次
+
+- 按 20 页答辩主线审查用户提供的六张参考图，冻结为五张不可替代的概念图任务：研究空白与
+  边界、总体系统闭环、Work-unit 与数据组织、状态感知提交/路由/多作业、因果验证路线；将
+  “文本/图像共用调度抽象”并入总体闭环，避免与系统架构重复。
+- 新增 `figures/architecture/editable/` 作为用户逐图确认用候选稿目录。每张图同时保存
+  Draw.io 编辑源、SVG、1600×900 PNG、逐元素审计与独立 SVG icon；文字、卡片和连接器均为
+  可编辑对象，不嵌入参考整图或裁剪 icon。
+- 新增 `figures/audit/opening_editable_diagrams_manifest_20260811.md`，记录选图依据、四色视觉
+  语法、字体/画布合同、动态候选与同上限 A/B 的证据边界。候选稿未自动替换报告现有两张
+  架构图，待用户逐图确认后再同步报告/PPT引用。
+- 按用户提出的 PPT＋文档双场景要求完成第二轮大字压缩：五张图统一 1600×900，主标题
+  38–40 px，所有可见正文、图例和独立 SVG icon 文字均不低于 18 px；删除字段堆叠而不是
+  局部缩字。批量 Draw.io 检查 5/5 通过，并逐张完成 PPT 全宽与 A4 横向/正文宽度缩放审计。
+- 用户指出候选图存在覆盖式修补后，完成全批次源图层清理：01 删除研究边界锁卡并改用
+  “图像表征/分类”；02 删除 SVG 中旧整页 PNG 底图及紫/绿覆盖层并重建纯矢量页面；04 将
+  两条重合 completion 流合并为单一汇合箭头；05 删除七个 header mask、拆分 connector label，
+  七列进入条件与 trace 改为两行原生文本。当前 `.drawio`/SVG 均不依赖整图底图、白色遮罩或
+  叠层边框来隐藏错误对象，PNG 以本机真实中文字体重新渲染并逐张全尺寸复核。
+- 随后按用户要求完成五张图的边界级与箭头和谐性复核：逐张检查真实字体包围盒、卡片内边距、
+  连接器端点、箭头方向/头部、反馈外围路由、边框遮挡与重复对象。主流程统一中等视觉重量和
+  紧凑箭头头部，反馈流降为更细灰虚线和更小头部，短间距不再使用大箭头，汇合后只保留一个
+  头部；所有 PNG 重新渲染为 1600×900，并完成全尺寸与文档宽度检查。
+- 用户继续指出 02 的 Admission 与 Adapter 文本边界、以及 Daft 标识真实性问题后，删除原手绘
+  Daft 近似 SVG，换为 Daft 官方仓库提供的黑/洋红标识；Admission 标题改用整卡宽度，两个
+  Adapter 卡重新分配图标、标题和正文宽度。Draw.io、SVG、PNG 与审计同步更新，未采用覆盖层、
+  白色遮罩或局部缩字，最终可见字号仍不低于 18 px。
+- 用户认为 03 Work-unit 图字体偏小、版面稀疏后，完成不改文案的整体密度修订：主标题 42 px、
+  分区标题 29–30 px、卡片标题 24 px，正文/字段/徽标/图例统一 20 px；同步重排左上盲点、
+  Work Estimation、WorkDescriptor 和右下评价区的文本框与内距。Draw.io、SVG、PNG、独立
+  Sequential SVG 与审计全部更新，未引入遮罩、重复边框或箭头改义。
+
+## 2026-08-11 建立开题专用图集入口
+
+- 新增 `figures/opening_figure_set/`，把当前 20 页答辩实际需要的 5 张概念图与 9 张数据图
+  汇总为 14 张主讲最小集，并按 `P页码_用途_内容` 的中文文件名保存 PNG/SVG；另保存 5 张
+  Draw.io 可编辑概念源和 2 张 `B序号` 单 Job 诊断备份图。
+- 本次只复制和重命名，不移动、删除或改写 `architecture/editable/` 与 `data/report_main/`
+  的权威源。概念 SVG 的相对 icon 资产同步复制到图集，避免离开原目录后缺图。
+- `figures/audit/opening_figure_set_manifest_20260811.md` 记录选图、格式和排除合同；没有把
+  static–dynamic 示意结果、DuckDB 多 Job、容量合同不匹配或跨框架不可比图带入图集。
+- 同步更新 `figures/README.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md` 与根 `README.md`；
+  后续开题 PPT/报告默认从该图集选图，权威结果与可复现脚本仍保留在原目录。
+- 完整性检查通过：14/14 主讲 PNG/SVG、2/2 备份 PNG/SVG、5 个 Draw.io 均存在；16 张 PNG
+  可正常读取，全部 SVG/Draw.io XML 合法，概念 SVG 的相对 icon 引用均可在图集内解析，
+  文档 `git diff --check` 无错误。图集约 5.9 MiB，未发现缺图或断链。
+- 新增 `figures/scripts/embed_svg_assets.py`，将图集概念 SVG 的本地 icon/Logo 引用转换为
+  内嵌 data URI；这样单独复制 SVG 到 PowerPoint/Word 也不会缺图。权威 SVG 与 Draw.io
+  保持原结构，独立 icon 资产继续保留用于编辑和来源追溯。
+
+# 2026-08-11
+
+- Revised opening figure 04 Shared Credit geometry and icon semantics: widened the native panel/cards while preserving its centerline, replaced coin/gauge SVGs with request-slot/work-budget ceiling icons, regenerated the 1600×900 PNG, and updated the reconstruction audit. No research claim changed.
+- Rebalanced figure 04 short connectors after visual review: the two 20 px orange links now use compact arrowheads, and the refill-to-credit route uses a centered bend and a longer visible vertical shaft. Draw.io/SVG/PNG and the audit were synchronized; no content or claim changed.
+- Repaired the figure 02 Sink icon at source level: replaced the clipped database/check SVG with a complete three-level PostgreSQL cylinder and an external validation badge, then regenerated Draw.io/SVG/PNG and updated the visual audit. No claim changed.
+- Revised opening figure 05 for audience-facing planning: replaced the internal causal validation / contract / evidence-gate narrative with “研究基础与后续工作计划,” marked the first two stages complete, kept later tasks deliberately broad, changed the lower panels to experiment principles and evaluation dimensions, and removed the evidence feedback edge. This is a presentation-framing change, not a new experimental claim.

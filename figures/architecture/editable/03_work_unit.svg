@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#165DCC"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#15803D"/>
+    </marker>
+    <marker id="arrow-gray" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#6B7280"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="900" fill="#FFFFFF"/>
+  <rect x="30" y="18" width="78" height="54" rx="10" fill="#165DCC" stroke="#165DCC" stroke-width="2"/>
+  <text x="69" y="59" font-family="STHeiti,Arial,sans-serif" font-size="36" font-weight="bold" fill="#FFFFFF" text-anchor="middle">03</text>
+  <text x="130" y="60" font-family="STHeiti,Arial,sans-serif" font-size="42" font-weight="bold" fill="#000000" text-anchor="start">&#x7814;&#x7A76;&#x5185;&#x5BB9;&#x4E00;&#xFF1A;Work-unit &#x6784;&#x9020;&#x4E0E;&#x6570;&#x636E;&#x7EC4;&#x7EC7;&#xFF08;Data Organization&#xFF09;</text>
+  <rect x="32" y="92" width="390" height="288" rx="16" fill="#FFFFFF" stroke="#165DCC" stroke-width="2"/>
+  <text x="227" y="130" font-family="STHeiti,Arial,sans-serif" font-size="30" font-weight="bold" fill="#165DCC" text-anchor="middle">&#x56FA;&#x5B9A; rows / images &#x7684;&#x76F2;&#x70B9;</text>
+  <g transform="translate(52 142) scale(0.906250 0.906250)">
+    <path d="M32 7 L58 54 H6 Z" fill="none" stroke="#165DCC" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M32 22 V38" stroke="#165DCC" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="32" cy="47" r="3" fill="#165DCC"/>
+  </g>
+  <circle cx="46" cy="217" r="4.5" fill="#165DCC"/>
+  <text x="62" y="224" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">&#x76F8;&#x540C;&#x884C;&#x6570; &#x2260; &#x76F8;&#x540C; token/frame work</text>
+  <circle cx="46" cy="273" r="4.5" fill="#165DCC"/>
+  <text x="62" y="280" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">fixed rows &#x96BE;&#x63A7; work budget &#x4E0E;&#x5C3E;&#x5EF6;&#x8FDF;</text>
+  <circle cx="46" cy="329" r="4.5" fill="#165DCC"/>
+  <text x="62" y="336" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">balance &#x4E0E; locality/cache &#x51B2;&#x7A81;</text>
+  <rect x="470" y="92" width="520" height="288" rx="16" fill="#FFFFFF" stroke="#165DCC" stroke-width="2"/>
+  <text x="730" y="130" font-family="STHeiti,Arial,sans-serif" font-size="30" font-weight="bold" fill="#165DCC" text-anchor="middle">1) &#x5206;&#x9636;&#x6BB5; Work Estimation</text>
+  <rect x="490" y="145" width="480" height="60" rx="10" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
+  <g transform="translate(505 153) scale(0.687500 0.687500)">
+    <rect x="10" y="6" width="44" height="52" rx="5" fill="none" stroke="#165DCC" stroke-width="4"/>
+    <rect x="17" y="13" width="30" height="10" rx="2" fill="none" stroke="#165DCC" stroke-width="3"/>
+    <path d="M18 31h7M30 31h7M42 31h5M18 41h7M30 41h7M42 41h5M18 51h7M30 51h17" stroke="#165DCC" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text x="560" y="183" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="start">Source / Input</text>
+  <text x="730" y="183" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="start">&#x2014; tokens &#xB7; bytes</text>
+  <rect x="490" y="215" width="480" height="60" rx="10" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
+  <g transform="translate(505 223) scale(0.687500 0.687500)">
+    <circle cx="24" cy="25" r="10" fill="none" stroke="#165DCC" stroke-width="4"/>
+    <path d="M24 8v5M24 37v5M7 25h5M36 25h5M12 13l4 4M32 33l4 4M36 13l-4 4M16 33l-4 4" stroke="#165DCC" stroke-width="4" stroke-linecap="round"/>
+    <path d="M43 18h13v28H29v-7M43 18v8h8" fill="none" stroke="#165DCC" stroke-width="4" stroke-linejoin="round"/>
+  </g>
+  <text x="560" y="253" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="start">Prepare</text>
+  <text x="675" y="253" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="start">&#x2014; tokenize &#xB7; decode/resize</text>
+  <rect x="490" y="285" width="480" height="60" rx="10" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
+  <g transform="translate(505 293) scale(0.687500 0.687500)">
+    <path d="M8 54V10M8 54h48" fill="none" stroke="#165DCC" stroke-width="4" stroke-linecap="round"/>
+    <path d="M15 44l11-13 9 6 16-21" fill="none" stroke="#165DCC" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M43 16h8v8" fill="none" stroke="#165DCC" stroke-width="4"/>
+  </g>
+  <text x="560" y="323" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="start">Model / Result</text>
+  <text x="735" y="323" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="start">&#x2014; output &#xB7; service</text>
+  <rect x="1035" y="92" width="535" height="288" rx="16" fill="#FFFFFF" stroke="#165DCC" stroke-width="2"/>
+  <text x="1302" y="126" font-family="STHeiti,Arial,sans-serif" font-size="30" font-weight="bold" fill="#165DCC" text-anchor="middle">Typed WorkDescriptor</text>
+  <text x="1302" y="155" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#165DCC" text-anchor="middle">&#x7EC4;&#x7EC7;&#x8F93;&#x51FA; / &#x8C03;&#x5EA6;&#x8F93;&#x5165;</text>
+  <g transform="translate(1048 177) scale(1.125 1.125)">
+    <path d="M12 6h28l12 12v40H12z" fill="none" stroke="#165DCC" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M40 6v13h12M20 29h22M20 39h22M20 49h13" fill="none" stroke="#165DCC" stroke-width="4" stroke-linecap="round"/>
+    <path d="M44 42l9-6 7 8-9 8z" fill="#EEF5FF" stroke="#165DCC" stroke-width="3"/>
+    <circle cx="53" cy="43" r="2" fill="#165DCC"/>
+  </g>
+  <circle cx="1136" cy="184" r="4" fill="#165DCC"/>
+  <text x="1150" y="191" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">ID / SLO &#x2014; record &#xB7; job &#xB7; deadline</text>
+  <circle cx="1136" cy="218" r="4" fill="#165DCC"/>
+  <text x="1150" y="225" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">Stage Work &#x2014; source / prepare / model</text>
+  <circle cx="1136" cy="252" r="4" fill="#165DCC"/>
+  <text x="1150" y="259" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">Control &#x2014; primary / remaining &#xB7; locality</text>
+  <circle cx="1136" cy="286" r="4" fill="#165DCC"/>
+  <text x="1150" y="293" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">Confidence &#x2014; uncertainty &#xB7; calibration</text>
+  <rect x="1045" y="328" width="515" height="38" rx="9" fill="#F8FBFF" stroke="#165DCC" stroke-width="1.2"/>
+  <text x="1060" y="354" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="start">Text: tokens / prefix</text>
+  <text x="1270" y="354" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="start">Image: bytes / resize / tensor</text>
+  <path d="M422 236 L452.00 236.00" fill="none" stroke="#165DCC" stroke-width="5" stroke-linecap="round"/>
+  <polygon points="462,236 452.00,242.00 452.00,230.00" fill="#165DCC"/>
+  <path d="M990 236 L1017.00 236.00" fill="none" stroke="#165DCC" stroke-width="5" stroke-linecap="round"/>
+  <polygon points="1027,236 1017.00,242.00 1017.00,230.00" fill="#165DCC"/>
+  <path d="M1302 380 L1302.00 402.00" fill="none" stroke="#165DCC" stroke-width="5" stroke-linecap="round"/>
+  <polygon points="1302,412 1296.00,402.00 1308.00,402.00" fill="#165DCC"/>
+  <rect x="100" y="420" width="1400" height="170" rx="16" fill="#FFFFFF" stroke="#E85D04" stroke-width="2"/>
+  <rect x="118" y="430" width="202" height="36" rx="18" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5"/>
+  <text x="219" y="456" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#E85D04" text-anchor="middle">&#x5019;&#x9009; / &#x4E92;&#x65A5;</text>
+  <text x="790" y="459" font-family="STHeiti,Arial,sans-serif" font-size="29" font-weight="bold" fill="#E85D04" text-anchor="middle">2) Candidate Packing&#xFF08;Budget + Balance + Locality&#xFF09;</text>
+  <rect x="1180" y="430" width="300" height="36" rx="18" fill="#F5F0FF" stroke="#5B2AA6" stroke-width="1.5"/>
+  <text x="1330" y="456" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#5B2AA6" text-anchor="middle">regime-dependent &#x5019;&#x9009;</text>
+  <rect x="120" y="482" width="300" height="86" rx="10" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5"/>
+  <g transform="translate(136 494) scale(0.906250 0.906250)">
+    <path d="M22 16h32M22 32h24M22 48h17" stroke="#E85D04" stroke-width="5" stroke-linecap="round"/>
+    <text x="3" y="22" font-family="Arial" font-size="20" font-weight="bold" fill="#E85D04">1</text>
+    <text x="3" y="39" font-family="Arial" font-size="20" font-weight="bold" fill="#E85D04">2</text>
+    <text x="3" y="56" font-family="Arial" font-size="20" font-weight="bold" fill="#E85D04">3</text>
+  </g>
+  <text x="308" y="518" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="middle">Sequential</text>
+  <text x="308" y="548" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="middle">&#x4FDD;&#x5E8F;</text>
+  <rect x="460" y="482" width="300" height="86" rx="10" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5"/>
+  <g transform="translate(476 494) scale(0.906250 0.906250)">
+    <path d="M15 8v48M32 8v48M49 8v48" stroke="#E85D04" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="15" cy="23" r="6" fill="#FFFFFF" stroke="#E85D04" stroke-width="4"/>
+    <circle cx="32" cy="41" r="6" fill="#FFFFFF" stroke="#E85D04" stroke-width="4"/>
+    <circle cx="49" cy="29" r="6" fill="#FFFFFF" stroke="#E85D04" stroke-width="4"/>
+  </g>
+  <text x="648" y="518" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="middle">Length-aligned</text>
+  <text x="648" y="548" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="middle">&#x957F;&#x5EA6;&#x5BF9;&#x9F50;</text>
+  <rect x="800" y="482" width="300" height="86" rx="10" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5"/>
+  <g transform="translate(816 494) scale(0.906250 0.906250)">
+    <path d="M8 56V8M8 56h48" fill="none" stroke="#E85D04" stroke-width="4" stroke-linecap="round"/>
+    <rect x="16" y="31" width="8" height="25" fill="none" stroke="#E85D04" stroke-width="4"/>
+    <rect x="28" y="19" width="8" height="37" fill="none" stroke="#E85D04" stroke-width="4"/>
+    <rect x="40" y="40" width="8" height="16" fill="none" stroke="#E85D04" stroke-width="4"/>
+  </g>
+  <text x="988" y="518" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="middle">Best-fit</text>
+  <text x="988" y="548" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="middle">&#x6309; Work Budget &#x88C5;&#x7BB1;</text>
+  <rect x="1140" y="482" width="300" height="86" rx="10" fill="#FFF7ED" stroke="#E85D04" stroke-width="1.5"/>
+  <g transform="translate(1156 494) scale(0.906250 0.906250)">
+    <path d="M32 8c-11 0-19 8-19 19 0 14 19 30 19 30s19-16 19-30C51 16 43 8 32 8z" fill="none" stroke="#E85D04" stroke-width="4"/>
+    <circle cx="32" cy="27" r="7" fill="none" stroke="#E85D04" stroke-width="4"/>
+    <path d="M10 56h44" stroke="#E85D04" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text x="1328" y="518" font-family="STHeiti,Arial,sans-serif" font-size="24" font-weight="bold" fill="#111827" text-anchor="middle">Locality-aware</text>
+  <text x="1328" y="548" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#374151" text-anchor="middle">&#x5C40;&#x90E8;&#x6027;&#x4F18;&#x5148;</text>
+  <path d="M525 590 L525.00 622.00" fill="none" stroke="#165DCC" stroke-width="5" stroke-linecap="round"/>
+  <polygon points="525,632 519.00,622.00 531.00,622.00" fill="#165DCC"/>
+  <rect x="100" y="640" width="850" height="145" rx="16" fill="#FFFFFF" stroke="#165DCC" stroke-width="2"/>
+  <text x="525" y="679" font-family="STHeiti,Arial,sans-serif" font-size="29" font-weight="bold" fill="#165DCC" text-anchor="middle">3) BatchRequest&#xFF08;&#x63D0;&#x4EA4;&#x7ED9; Scheduler&#xFF09;</text>
+  <rect x="120" y="700" width="150" height="58" rx="8" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.2"/>
+  <text x="195.0" y="739" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#111827" text-anchor="middle">batch_id</text>
+  <rect x="280" y="700" width="160" height="58" rx="8" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.2"/>
+  <text x="360.0" y="739" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#111827" text-anchor="middle">work_items[]</text>
+  <rect x="450" y="700" width="160" height="58" rx="8" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.2"/>
+  <text x="530.0" y="739" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#111827" text-anchor="middle">staged_work</text>
+  <rect x="620" y="700" width="160" height="58" rx="8" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.2"/>
+  <text x="700.0" y="739" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#111827" text-anchor="middle">work_budget K</text>
+  <rect x="790" y="700" width="140" height="58" rx="8" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.2"/>
+  <text x="860.0" y="739" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#111827" text-anchor="middle">job / priority</text>
+  <path d="M950 712 L982.00 712.00" fill="none" stroke="#15803D" stroke-width="5" stroke-linecap="round"/>
+  <polygon points="992,712 982.00,718.00 982.00,706.00" fill="#15803D"/>
+  <rect x="1000" y="640" width="500" height="145" rx="16" fill="#FFFFFF" stroke="#15803D" stroke-width="2"/>
+  <text x="1284" y="676" font-family="STHeiti,Arial,sans-serif" font-size="29" font-weight="bold" fill="#15803D" text-anchor="middle">&#x76F8;&#x540C; Work Budget &#x4E0B;&#x8BC4;&#x4EF7;</text>
+  <g transform="translate(1018 695) scale(1.03125 1.03125)">
+    <circle cx="31" cy="33" r="24" fill="none" stroke="#15803D" stroke-width="4"/>
+    <circle cx="31" cy="33" r="14" fill="none" stroke="#15803D" stroke-width="4"/>
+    <circle cx="31" cy="33" r="4" fill="#15803D"/>
+    <path d="M34 30l19-19M45 11h8v8" fill="none" stroke="#15803D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <circle cx="1102" cy="693" r="4" fill="#15803D"/>
+  <text x="1116" y="700" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">Balance&#xFF1A;work skew / padding</text>
+  <circle cx="1102" cy="717" r="4" fill="#15803D"/>
+  <text x="1116" y="724" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">Locality&#xFF1A;prefix / cache reuse</text>
+  <circle cx="1102" cy="741" r="4" fill="#15803D"/>
+  <text x="1116" y="748" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">Latency&#xFF1A;JCT / P99&#xFF1B;&#x8D28;&#x91CF;&#x4E0D;&#x9000;&#x5316;</text>
+  <rect x="1095" y="754" width="385" height="26" rx="13" fill="#F5F0FF" stroke="#5B2AA6" stroke-width="1"/>
+  <text x="1287.5" y="775" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#5B2AA6" text-anchor="middle">&#x4EC5;&#x5728;&#x5F53;&#x524D; serving regime &#x5185;&#x6BD4;&#x8F83;</text>
+  <path d="M1440 785 L1440 800 Q1440 810 1430 810 L80 810 Q70 810 70 800 L70 410 Q70 400 80 400 L720 400 Q730 400 730 390" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="7 7"/>
+  <polygon points="730,380 725,390 735,390" fill="#6B7280"/>
+  <text x="695" y="834" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#6B7280" text-anchor="middle">&#x6821;&#x51C6; / regime &#x53CD;&#x9988;</text>
+  <path d="M150 852 L205.00 852.00" fill="none" stroke="#165DCC" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="215,852 205.00,858.00 205.00,846.00" fill="#165DCC"/>
+  <text x="230" y="862" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">&#x6570;&#x636E; / Work &#x6D41;</text>
+  <path d="M460 852 L515.00 852.00" fill="none" stroke="#E85D04" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="525,852 515.00,858.00 515.00,846.00" fill="#E85D04"/>
+  <text x="540" y="862" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">&#x7EC4;&#x7EC7; / &#x51B3;&#x7B56;</text>
+  <path d="M760 852 L815.00 852.00" fill="none" stroke="#15803D" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="825,852 815.00,858.00 815.00,846.00" fill="#15803D"/>
+  <text x="840" y="862" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">&#x5B8C;&#x6210; / &#x8BC4;&#x4EF7;</text>
+  <path d="M1060 852h55" stroke="#6B7280" stroke-width="2.5" stroke-dasharray="7 7"/>
+  <polygon points="1125,852 1115,847 1115,857" fill="#6B7280"/>
+  <text x="1140" y="862" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="normal" fill="#111827" text-anchor="start">&#x89C2;&#x6D4B; / &#x53CD;&#x9988;</text>
+  <rect x="1310" y="835" width="215" height="34" rx="17" fill="#F5F0FF" stroke="#5B2AA6" stroke-width="1.2"/>
+  <text x="1417.5" y="862" font-family="STHeiti,Arial,sans-serif" font-size="20" font-weight="bold" fill="#5B2AA6" text-anchor="middle">Serving regime &#x6761;&#x4EF6;</text>
+</svg>

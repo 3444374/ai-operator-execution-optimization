@@ -115,6 +115,7 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
 ├── figures/                          # 项目级图资产
 │   ├── AGENTS.md
 │   ├── README.md
+│   ├── opening_figure_set/           # 开题专用图集：按页码命名的主讲、SVG、Draw.io 与备份图
 │   ├── architecture/
 │   ├── data/report_main/
 │   ├── data/backup/
