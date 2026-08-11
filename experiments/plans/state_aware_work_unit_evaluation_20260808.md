@@ -119,8 +119,8 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 字段 | 当前冻结值 |
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
-| policy revision | `saor-v0.3-design`；core implementation `saor-core-v0.1`；capacity adapter `saor-v0.2-development/not-promoted` |
-| 状态 | SAOR-Release 为主方法候选，尚未接完整 ordered-release/fairness/stage queue formal；capacity-only 已 trace/真实 development gate 但未晋级，降为可选 Safe-Capacity Governor；尚未完成定理证明 |
+| policy revision | `saor-v0.4-design`；core implementation `saor-core-v0.1`；capacity adapter `saor-v0.2-development/not-promoted` |
+| 状态 | SAOR-Release 为主方法候选，尚未接完整 ordered-release/fairness/stage queue formal；dynamic K 已退出主线，Safe-Capacity Governor 为 `parked-conditional`；尚未完成定理证明 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
 | 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
@@ -131,9 +131,9 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 
 > SAOR 在冻结的安全 request/work envelope 内维护数据库/Daft/Ray 分阶段真实队列与公平/SLO
 > 虚拟债务，以单 endpoint 有序 dispatcher 将选中的 Job-head 独立请求持续释放给 vLLM FCFS；
-> vLLM 继续负责 iteration/token 级 continuous batching、chunked prefill 和 KV 管理。容量档位
-> 动态选择拆为慢速、可选的 Safe-Capacity Governor，不再与可证明的 ordered-release core
-> 共用一个未校准目标函数。
+> vLLM 继续负责 iteration/token 级 continuous batching、chunked prefill 和 KV 管理。总容量
+> 在主方法中固定；动态对象是 active-set entitlement、idle borrowing/reclaim 和 release order。
+> Safe-Capacity Governor 已暂停，不进入当前主方法。
 
 该设计利用 FCFS，而不是与 FCFS 对抗：上游决定合并后的到达流，vLLM 按到达顺序执行；
 request 完成即释放 credit 并补位，使 continuous batching 不必等待整个上游 cohort 完成。
@@ -259,16 +259,18 @@ mean service、即时 action effect、stationary slot 与完整 virtual queue �
 只有在独立 burst/recovery workload 上 oracle 相对强静态先显示约 5% 以上且无 tail/fairness
 退化时，才允许继续在线 estimator；否则 dynamic capacity 分支直接淘汰。
 
-#### 5.2.2.3 `saor-v0.3` 分层修正
+#### 5.2.2.3 `saor-v0.4`：固定总 K，动态 active-set 份额
 
 详细数学模型、证明骨架、benchmark 和一手依据统一见
 `../../research/saor_model_scenario_audit_20260811.md`。本次审计把两个不同问题明确拆开：
 
 1. **SAOR-Release（主方法候选）**：固定总 request/work envelope，只对 per-Job head request
    做 completion-driven ordered release，并用实际 completion 更新 unfinished work、公平和
-   SLO debt。第一组 formal 只比较 FIFO、static partition、shared DRR、external VTC-style 与
-   SAOR-Release，不在线切 K。
-2. **Safe-Capacity Governor（可选）**：慢速选择已校准档位。安全/tail/failure 先形成 hard
+   SLO debt。动态对象是 backlogged Job 集合内的 entitlement、idle borrowing、completion-time
+   reclaim 和 release order；不在线切 K。
+2. **Safe-Capacity Governor（`parked-conditional`）**：慢速选择已校准档位。现有实验没有
+   证明它相对 K160/最小饱和强静态点有必要性。只有离线 oracle 先证明 Pareto 空间才允许恢复；
+   恢复时安全/tail/failure 先形成 hard
    feasible set，再在其中选择预测 goodput 最好的档位；current-arm EWMA 不再被当作未运行臂
    的同状态反事实。降档显式记录
    $D_e=[R_e-K^{work}_{target}]^+$ pipeline debt，debt 清零前不发新 lease，并用 drain envelope
@@ -280,8 +282,16 @@ mean service、即时 action effect、stationary slot 与完整 virtual queue �
 单位的能耗或切换 penalty。
 
 容量 benchmark 与公平 benchmark 分轨：多 Job fixed-envelope 是 SAOR 主验证；capacity 动态
-先过 offline oracle gate，再在 recovery-gated burst 上验证。若 oracle 相对最佳 static 不能
-形成约 5% Pareto 改善，直接淘汰 governor，不更换 workload 追正。
+暂停。现有 static/shared 只证明固定分区存在浪费和无约束共享存在 fairness/tail 代价，**尚未
+排除同一 K 下 global FIFO/no project Job scheduler 已足够好**。因此第一项决定性 formal 必须
+在同一 K、manifest、source/sink、vLLM FCFS 合同下比较：global FIFO、static partition、
+shared DRR、external VTC-style 与 SAOR-Release。若 global FIFO 或 DRR 已落在相同 Pareto
+前沿，淘汰 SAOR，不更换 workload 追正。
+
+决定性场景固定为 `bulk-only → foreground-arrival → foreground-drain`：bulk Job 先借用全部
+总 envelope；前台 Job 到达后只在 completion 释放 credit 时回收未来份额，不抢占已进入
+vLLM 的请求；前台 drain 后 bulk 再借用。该场景验证的是活跃集变化下的分配，不通过 K128/
+K160 切换制造收益。晋级最小效应按 formal repeat 噪声预注册，不写入算法硬编码阈值。
 
 #### 5.2.3 三种 work 语义：token 组织不取消，但不再一数三用
 
@@ -777,17 +787,17 @@ $\arg\min_a\Psi(a)=\arg\min_a[\Psi(a)-\Psi(hold)]$，不会改变动作排序。
 
 所有正式臂冻结未修改 vLLM 和相同内部配置。fixed-envelope 多 Job 主比较为：global FIFO、
 static partition、shared DRR、external VTC-style 与 `FCFS-SAOR-Release`；`Priority-SAOR` 只作
-后续可选消融。dynamic capacity 独立比较 frozen lower、frozen upper、state-observed no-op、
-threshold/deadband、Safe-Capacity Governor 和 finite-horizon clairvoyant/offline oracle；oracle
-只作每条 trace 的上界与 dynamic regret 参照，不作为线上 proposed。
+后续可选消融。dynamic capacity 保持 `parked-conditional`；若未来恢复，才独立比较 frozen
+lower/upper、state-observed no-op、threshold/deadband、governor 和 offline oracle。
 
 验证顺序保持“单一动作先行”，且 fixed-envelope release 与 dynamic capacity 分轨：
 
-1. fixed-envelope two-/four-Job replay/fake E2E：接入真实 per-Job completion ledger；
-2. short/long、equal-weight、3:1 weighted 与 staggered borrowing：比较 service lag/slowdown；
-3. 独立 finite-horizon capacity oracle：判断动态 K 是否存在约 5% Pareto 机会；
-4. oracle 通过后才运行 recovery-gated burst，比较 lower/upper/threshold/governor/oracle；
-5. 只有前述通过后才加入 routing、prefix bonus、priority 和图像 HSE 泛化。
+1. fixed-envelope `bulk-only → foreground-arrival → foreground-drain`：接入真实 per-Job
+   completion ledger，并加入 global FIFO/no-op killer baseline；
+2. SAOR 同时超过 FIFO 与 DRR 的 Pareto 前沿后，才进入 four-Job、3:1 weighted 与 held-out；
+3. 若 FIFO/DRR 已足够，淘汰 SAOR；不运行 dynamic capacity，也不换 workload 追正；
+4. 只有 fixed-envelope release 通过后才加入 routing、prefix bonus、priority 和图像 HSE 泛化；
+5. dynamic K 仅在被重新激活时先跑独立 finite-horizon oracle，未证明机会则永久停止。
 
 动态候选只有同时满足下列条件才晋级：
 
@@ -834,6 +844,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-11 | `saor-core-v0.1` | 实现中性 capacity、execution ledger、有限动作 DPP、公平债务和 Job-head ordered release；配置与模态适配外置 | 纯 Python unit/architecture tests | 不升阶；runner/replay/真实服务均未接入 |
 | 2026-08-11 | `saor-v0.2-development` | 接入文本 shared-vLLM capacity adapter、配对 trace replay、state/action trace 与最大安全臂 validator；四臂真实服务 development gate 未过晋级门 | 6-sample regret replay + 2×4090 one-repeat 4-arm gate | 升为 `trace-validated`；capacity-only 标记 `not-promoted`，完整 SAOR 仍未验证 |
 | 2026-08-11 | `saor-v0.3-design` | 将 fixed-envelope ordered release 与 slow Safe-Capacity Governor 分层；安全改为 hard feasible set，加入反事实模型、pipeline debt/hysteresis 和独立 oracle 淘汰门 | capacity-only 负结果 + MaxWeight/DPP、reconfiguration-delay 与 unknown-service 一手工作交叉审计 | SAOR-Release 保持 design-candidate；governor 降为 optional，不能继承 oracle theorem |
+| 2026-08-11 | `saor-v0.4-design` | dynamic K 退出主线；固定总 envelope，仅动态调整 active-set entitlement、idle borrowing/reclaim 与 ordered release；新增 global FIFO/no-op 和 DRR killer baseline | capacity-only 未胜 K160 + eager/online 两/四 Job static/shared 方向差异 + fatal-flaw audit | dynamic-K `reject and pivot`；SAOR-Release `accept with revisions`，killer baseline 未过前不晋级 |
 
 状态只允许按以下顺序变化：
 

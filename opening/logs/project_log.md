@@ -1,5 +1,16 @@
 # 开题材料 project log
 
+## 2026-08-11 SAOR 主线从 dynamic K 收窄为 fixed-envelope active-set release
+
+- capacity-only SAOR 未超过 K160/简单 threshold，故开题研究问题、技术路线和答辩第14页不再
+  把在线 K 增压/减压写成主方法；dynamic K 标记 `parked-conditional`。
+- 主动作改为固定总 K 下的 Job entitlement、idle borrowing、completion-time reclaim 和
+  ordered release；vLLM 继续使用显式 FCFS 与 continuous batching。
+- 补上现有 static/shared 证据缺少 global FIFO/no project Job scheduler 的边界。下一项实验
+  必须同时比较 FIFO/static/DRR/VTC-style/SAOR；简单策略达到同一 Pareto 前沿即淘汰 SAOR。
+- 同步更新本地开题报告、Claim Matrix、20 页内容大纲和飞书 Markdown 源稿；遵守暂停状态，
+  未覆盖云端飞书、Wiki、PPT 或图表。
+
 ## 2026-08-10 二十页内容大纲收口
 
 - 按用户当前优先级暂停报告扩写和 PPT 制作，只维护 `opening_defense_outline_20260808.md`。

@@ -63,8 +63,8 @@ Work Unit：同行数的文本 token work 可差 14.3×，图像 prepare/model �
   -> 不能用 rows/images 定义可比 work，需要 staged descriptor 和局部性字段
 状态感知：相同静态上限在 high/arrival-limited 下对应完全不同的 running/MFU
   -> 需要 fresh stage/service/job snapshot，过期或签名不匹配时回退强静态点
-动态调度：多 job 错峰到达时，预分配份额可能空闲，独立 job 并发又可能叠加成全局过载
-  -> 需要有界准入、路由、shared work credit 和 idle borrowing，并与同上限强静态点公平比较
+动态调度：多 job 错峰到达时，预分配份额可能空闲，无约束全局 FIFO 又可能伤害前台 tail/SLO
+  -> 固定总 K，动态完成 idle borrowing、completion-time reclaim 和 ordered release，并同时对比 global FIFO/static/DRR
 算子代价估计：不同 context 的四个 active-work 候选 E2E 差 12.0%–86.5%，简单均值/解析/lookup 选择失败
   -> 使用解析结构 + profile 校准 + residual correction，以 ranking/regret 而非只看 MAE 验收
 ```
@@ -98,7 +98,7 @@ CPU/GPU 队列感知和跨阶段提交，再由独立 baseline 图分开能力�
 | 11 | AI 数据执行层把数据组织、状态感知和调度连接成闭环 | source→organizer→scheduler→executor→sink 与反馈流 | `opening_work_to_schedule_overview` | 研究发生在数据库与模型服务之间，不修改模型内部调度 |
 | 12 | WorkDescriptor 把一行数据变成可估计、可组织、可调度的工作单元 | 文本与图像字段、估计来源和运行时更新关系 | WorkDescriptor 字段与消费者关系图 | 字段设计对应后续组织、路由、准入和公平决策 |
 | 13 | 数据组织没有全局最优，服务压力会改变 balance 与 locality 的权衡 | 低/高压力下吞吐与 prefix cache hit 的共同趋势 | `opening_work_organization_regime_v2` | 区分互斥实验臂与可联合的设计维度 |
-| 14 | 先标定安全容量范围，再根据运行状态调整提交压力 | ready/active work、完成速率、服务压力、新鲜状态快照、deadband 与静态回退 | 方法流程图或总体图局部放大 | 上游无 ready work 时保持，不把合理空闲误判为欠供给；先只观测，再逐步启用动作 |
+| 14 | 冻结总容量，再随 Job 活跃集调整释放顺序 | per-Job ready/active/completed work、entitlement、idle borrowing/reclaim、SLO debt | 方法流程图或总体图局部放大 | dynamic K 已退出主线；状态无效时回退 global FIFO/DRR，先用 killer baseline 证伪必要性 |
 | 15 | 共享调度提高总效率时，也会改变隔离与公平 | Project full/quarter/static/shared 对照，解释 idle borrowing 与 fair queue | `opening_multijob_interference_tradeoff` | 当前结果用于呈现效率—隔离—公平权衡 |
 | 16 | 代价估计需要同时评价预测质量和决策质量 | 解析结构＋profile＋residual；pairwise、平均/中位/最坏 regret | `opening_cost_model_decision_quality_v2` | 重点回答估计结果能否正确选择配置 |
 | 17 | 图像 baseline 展示不同原生路径的能力与扩展边界 | Direct CLIP、Daft Built-in、Ray Data、Project 的数据与角色 | `opening_image_baseline_evidence_map` | 12K 结构诊断与 120K matched-resource 正式比较分开解释 |
@@ -241,8 +241,8 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 - **本页回答**：前面三组动机如何对应后续方案。
 - **Work Unit**：同行数工作量差异和图像阶段失衡 → staged `WorkDescriptor`。
 - **状态感知**：同一静态上限对应不同运行状态 → fresh stage/service/job snapshot。
-- **动态调度**：欠供给、过载和多 Job 干扰 → bounded admission、routing、shared work credit、
-  idle borrowing 与 fairness/SLO guard。
+- **动态调度**：多 Job 活跃集变化和前台干扰 → 固定总 envelope、shared work credit、
+  idle borrowing/reclaim、ordered release 与 fairness/SLO guard。
 - **代价估计**：候选配置选错代价显著 → 解析结构＋profile＋residual，以 ranking/regret 验收。
 - **关系**：Work Unit 属研究内容一；状态感知和动态调度属研究内容二；代价估计是共同使能；
   图像负责跨模态验证。
@@ -288,21 +288,21 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 - **页面结论**：组织策略要同时考虑工作量均衡和 locality，且其价值依赖服务压力状态。
 - **转场**：研究内容二利用运行状态决定这些 work unit 何时进入服务。
 
-#### 第 14 页：先标定安全容量范围，再根据运行状态调整提交压力
+#### 第 14 页：冻结总容量，再随 Job 活跃集调整释放顺序
 
 - **本页回答**：状态感知如何真正变成控制动作。
-- **离线标定**：在固定机器、模型、协议和 workload 下冻结 work-credit 候选档位、静态点和
-  最大 K/work 上限。
-- **在线观测**：ready/active/remaining work、arrival/completion rate、queue age、
-  running/waiting/KV、TTFT/ITL；GPU/MFU 只作交叉验证和保护信号。
-- **增压条件**：上游仍有 ready work、状态新鲜、模型排队低、active work 低于标定范围并
-  持续欠供给时，work credit 单步提高。
-- **减压与回退**：waiting、queue age、KV 或 SLO 风险持续升高时单步降低；上游无 ready
-  work 时保持；状态过期、签名不符或异常时回退 frozen-static。
+- **离线标定**：在固定机器、模型、协议和 workload 下冻结最小饱和、安全的总 K/work
+  envelope；K160 只是当前签名的强静态点，不是通用常数。
+- **在线观测**：per-Job model-ready/active/remaining/completed work、arrival/drain、queue age、
+  SLO debt，以及 running/waiting/KV、TTFT/ITL；GPU/MFU 只作交叉验证。
+- **动态动作**：空闲 Job 的未用份额可借；前台/新 Job 到达后，不抢占已进入 vLLM 的请求，
+  只在 completion 释放 credit 时按 entitlement、service lag 和 SLO debt 回收未来份额。
+- **回退**：状态过期、签名不符或 ledger 异常时保持冻结总 K，并退回简单 DRR/FIFO；不在线猜
+  新容量档位。
 - **当前基础**：已有 trace、observe-only snapshot、completion release、shared credit 和
-  控制器原型；正式主路径仍冻结 static K/work，动态 active-work 执行器是后续核心任务。
-- **页面结论**：研究目标不是“GPU 低就加 K”，而是辨别可增压的欠供给并形成安全闭环。
-- **转场**：当多个 Job 共享同一容量时，还要决定新增额度分配给谁。
+  控制器原型；capacity-only SAOR 未超过 K160，dynamic K 已退出主线。
+- **页面结论**：动态调度不等于动态 K；本项目要验证的是固定总容量下“下一份 credit 给谁”。
+- **转场**：接下来用多 Job 数据观察借用带来的效率与公平代价。
 
 #### 第 15 页：共享调度提高总效率时，也会改变隔离与公平
 
@@ -315,6 +315,8 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 - **机制关系**：idle borrowing 提高 work conservation；per-Job floor/cap、work-fair deficit
   和 SLO guard 约束隔离；状态感知再决定总准入与路由。
 - **页面结论**：动态调度不是单目标提吞吐，需要同时评价 efficiency、isolation 和 fairness。
+- **证据缺口**：现有矩阵缺 global FIFO/no project Job scheduler；下一项 formal 必须加入
+  FIFO 与 DRR killer baseline，简单策略达到同一 Pareto 前沿即淘汰 SAOR。
 - **转场**：组织、准入和公平决策都需要一个可比较的代价信号。
 
 #### 第 16 页：代价估计需要同时评价预测质量和决策质量
@@ -489,12 +491,12 @@ static+long又+58.77%，matched shared+long+28.90%。eager shared相对static使
 | 等权部件 | 动机证据 | 当前实现 | 开题落点 | 后续验证 |
 |---|---|---|---|---|
 | Work Unit | 同行数 token work 14.3×；图像 prepare/model 阶段失衡 | staged descriptor 类型、neutral work consumer 和图像携带接口已存在；正式 runner 尚未构造 production descriptor | 字段设计由现象导出，接口可执行 | staged organization 已端到端胜出 |
-| 状态感知 | 同 W 下 high/arrival-limited 状态不同；原生路径出现 underfeed/overqueue | endpoint、vLLM 和 GPU/MFU trace 已正式采集；图像 fresh stage snapshot 已 observe-only 接入 | 必须联合 ready/active work、完成速率、queue、KV/MFU/tail，并校验 freshness/signature；GPU/MFU 不单独触发增压 | snapshot 正式驱动 active-work 后产生可归因增量 |
-| 动态调度 | 5s 两 job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；另有 request-window 控制器原型 | 正式路径仍冻结 static K/work；bounded shared work 是可执行机制，目标必须同时包含 efficiency/SLO/fairness | 动态 active-work 执行器与同上限 A/B 尚未完成 |
+| 状态感知 | 同 W 下 high/arrival-limited 状态不同；原生路径出现 underfeed/overqueue | endpoint、vLLM 和 GPU/MFU trace 已正式采集；图像 fresh stage snapshot 已 observe-only 接入 | 必须联合 ready/active work、完成速率、queue、KV/MFU/tail，并校验 freshness/signature；GPU/MFU 不单独触发动作 | snapshot 正式驱动 fixed-K Job release 后产生可归因增量 |
+| 动态调度 | 5s 两 job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；capacity-only SAOR 未晋级 | 总 K 固定；动态对象是 active-set entitlement、idle borrowing/reclaim 和 release order；缺 global FIFO killer baseline | fixed-K FIFO/static/DRR/VTC-style/SAOR 决定性 A/B 尚未完成 |
 | 算子代价估计 | 候选选错代价 12.0%–86.5%；简单 estimator 决策失败 | CE1–CE5 离线分析器与 context-LOO 已完成；尚未在线驱动调度 | 文本配置选择有 marginal feasibility | 已预测跨模态 remaining work/SLO 并改善在线决策 |
 
-工程下一步按 production descriptor builder → 统一状态快照 → no-op/fallback gate → 动态
-active-work 执行器 → 单动作消融推进。先闭合“状态→决策→动作→效果 trace”，不把四个部件
+工程下一步按 production descriptor builder → 统一状态快照 → global FIFO/no-op gate → fixed-K
+ordered-release 执行器 → 单动作消融推进。先闭合“状态→决策→动作→效果 trace”，不把四个部件
 同时接入后再做无法归因的总对比。
 
 ### 5.5 可直接复用的正式/初步证据

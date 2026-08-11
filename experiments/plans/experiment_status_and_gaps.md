@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-11；开题证据冻结，SAOR capacity-only development gate 未晋级）
+Date: 2026-07-20（最后更新：2026-08-11；开题证据冻结，SAOR dynamic-K 已退出主线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -16,10 +16,18 @@ state-aware 价值保持待验证；下一轮必须是带显式 drain/recovery �
 threshold −1.46%，Jain 也最低。K160 相对 K128 仍有 +3.82% 吞吐和 −3.68% duration，
 但 Job B P99 +23.93%、Jain −3.22%、KV P95 0.826→0.997。故 K160 冻结为强效率 baseline
 兼 tail/fairness 风险点；当前 aggregate two-arm capacity adapter 标记 `not-promoted`，不在该
-workload 继续扫权重/K，也不把它追加到公平专场。`saor-v0.3` 已把 fixed-envelope
-SAOR-Release 与 dynamic K 分轨：下一项算法验证是同总上限的多 Job ordered release，动态 K
-只有 offline oracle 显示约 5% Pareto 机会才进入独立 recovery-gated burst。完整报告见
+workload 继续扫权重/K，也不把它追加到公平专场。`saor-v0.4` 已把 fixed-envelope
+SAOR-Release 定为唯一算法候选，并将 dynamic K 标记为 `parked-conditional`：下一项算法验证
+不是 phase-change 调 K，而是固定总 K 下的 active-set entitlement、idle borrowing/reclaim 和
+ordered release。完整报告见
 `experiments/results/saor_capacity_development_20260811/README.md`。
+
+现有 eager 两/四 Job 结果证明 static partition 会产生 quota loss，shared borrowing 能恢复
+效率，但 online replay 与四 Job Jain 又证明“共享更多”并非完整策略。它们尚未排除 fixed-K
+global FIFO/no project Job scheduler 已经足够好。故下一项决定性矩阵必须加入同一 K 的 global
+FIFO、static、DRR、external VTC-style 和 SAOR，并使用 `bulk-only → foreground-arrival →
+foreground-drain` 活跃集变化合同。若 FIFO 或 DRR 已达到同一 throughput--tail--fairness
+Pareto 前沿，SAOR 直接淘汰，不扩 workload 追正。
 
 ## 状态增量（2026-08-04，历史快照；当前执行以其后的开题冻结段与 §0 为准）
 
@@ -137,10 +145,11 @@ operator-E2E 原始数据和七步报告见
 是开题后在冻结最佳静态点上做 **A**（state-aware请求成形/提交）+ **B**（代价估计），而不是
 继续增加图像开题baseline、sink或参数扫描。
 
-**开题冻结后的动态主实验边界（2026-08-08 再确认）**：上述四臂同机 image formal
+**开题冻结后的调度主实验边界（2026-08-11 修正）**：上述四臂同机 image formal
 先建立官方框架与项目 **best frozen-static** 强基线；项目最终 proposed 不能停在静态点。
-随后固定相同资源、相同 K/active-work 上限和相同 source/sink，比较 frozen-static 与
-state-aware dynamic：先 steady control，再做阶段突变/突发 arrival、长短 work mix、1/2/4-job、
+随后固定相同资源、相同总 K/active-work 上限和相同 source/sink，比较 no-op/global FIFO、
+frozen static partition、简单 shared/fair queue 与 state-aware ordered release：先做活跃 Job
+集合变化，再做长短 work mix、1/2/4-job、
 staggered overlap、weighted fairness 与异构 mix/offset。动态策略只有改善 observed throughput、
 SLO goodput、P99/JCT 或 fairness 至少一项且 correctness/failure 不退化时才晋级；稳态不优是
 允许的边界，不用弱静态点制造收益。图像复用同一策略代码，将 token work/credit 换成

@@ -666,10 +666,12 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **系统教训**：外部 downshift 不能撤销 vLLM 已接纳请求，动作主要在末段发生时只会等待
   KV/long decode 排空。dynamic 的正确对手是强静态 Pareto 点，不是低档稻草人；后续必须先用
   recovery-gated burst 上的 offline oracle 证明有可利用动态空间，否则淘汰容量分支。
-- **`saor-v0.3` 修正**：主方法收紧为固定安全 envelope 内的 SAOR-Release，用 per-Job
-  unfinished work、fairness/SLO debt 和 completion-driven Job-head release 验证多 Job；动态 K
-  降为独立 Safe-Capacity Governor，需要同状态反事实 response model、hard safe set、pipeline
-  debt、drain-aware hysteresis 和 oracle gate。详细模型与 benchmark 见
+- **`saor-v0.4` 修正**：主方法收紧为固定安全 envelope 内的 SAOR-Release，用 per-Job
+  unfinished work、active-set entitlement、idle borrowing/reclaim、fairness/SLO debt 和
+  completion-driven Job-head release 验证多 Job；动态 K 标记为 `parked-conditional`。现有
+  static/shared 对照尚未排除同 K global FIFO/no project Job scheduler 已经足够好，因此下一项
+  formal 必须把 global FIFO 与 DRR 设为 killer baseline；任一简单策略达到同一 Pareto 前沿即
+  淘汰 SAOR。详细模型与 benchmark 见
   `saor_model_scenario_audit_20260811.md`。
 
 #### 5.7.6 模式优先级矩阵

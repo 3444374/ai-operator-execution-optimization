@@ -48,7 +48,10 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 - endpoint routing、idle borrowing 与故障迁移；
 - 多 job fair queue、JCT、tail、SLO 和公平性。
 
-固定静态 credit 是默认强 baseline。动态 K、queue-adaptive flush、状态感知 routing 或多作业控制只有显著优于同资源、同上限静态点时才晋级；吞吐接近时继续评价 tail/SLO/fairness，均无改善则记录失效边界。
+固定静态 credit 是默认强 baseline。现有证据已将动态 K 标记为 `parked-conditional`；主候选
+固定总 envelope，只动态决定活跃 Job 间的份额借用、completion-time 回收与 release order。
+它必须同时超过 global FIFO/no project Job scheduler 和简单 DRR/VTC-style 强 baseline；吞吐
+接近时继续评价 tail/SLO/fairness，均无改善则淘汰 SAOR，不更换 workload 追正。
 
 ### 2.3 共同使能组件：算子代价估计
 
@@ -89,8 +92,10 @@ PostgreSQL source
 
 1. 固定资源下达到近饱和吞吐所需的最小 active work 是多少，过载怎样影响 tail 与能耗？
 2. 相同 work 下怎样组织记录，balance 与 locality 何时冲突？
-3. arrival、work mix 或阶段瓶颈突变时，state-aware admission/routing 能否在同一最大 K/work 上限下比 frozen-static 更快回到标定的近饱和包络？
-4. 多 job 共享 endpoint pool 时，shared credit、routing 和公平队列能否改善 JCT/tail/fairness？
+3. 多 Job 活跃集、arrival 或 work mix 改变时，固定总 K 内的 idle borrowing、reclaim 和
+   state-aware ordered release 能否相对 global FIFO/static/DRR 改善 worst-Job JCT/tail/SLO？
+4. 多 job 共享 endpoint pool 时，怎样在 work conservation 与 weighted service lag/fairness
+   之间形成可验证的 Pareto 改善？
 
 两项策略先独立搜索冻结静态点并分别消融，再把独立最优拼接，与小规模联合 grid 对比。联合显著优于拼接说明需要联合调优；两者接近说明可分层优化。任何结果都不改变研究对象，但会改变方法适用边界。
 
@@ -123,12 +128,13 @@ PostgreSQL source
   phase-change 聚合 trace 的非因果 replay 在 6 个可计 regret 样本中 5 次匹配事后 oracle，
   累计归一化 regret 0.0141，但没有形成真实降档证据；单次真实服务四臂 development gate
   中，capacity-only SAOR 相对 K128 +4.36%，相对 K160 +0.52%、相对 threshold −1.46%，
-  Jain 最低，故标记 `not-promoted`。`saor-v0.3` 已将 fixed-envelope SAOR-Release 定为主候选，
-  把未知反事实、延迟生效的动态 K 降为独立 Safe-Capacity Governor：先跑多 Job ordered-release
-  formal，capacity 分支只有 offline oracle 显示约 5% Pareto 机会才继续。两者都尚未完成 formal
-  或定理证明，因此不是已胜出的 proposed 方法；
+  Jain 最低，故标记 `not-promoted`。`saor-v0.4` 已将 fixed-envelope SAOR-Release 定为唯一算法
+  候选，dynamic K 标记 `parked-conditional`。现有 static/shared 两/四 Job 结果支持 active-set
+  分配问题，但缺同 K global FIFO/no-op killer baseline；下一项 formal 必须先比较 FIFO、static、
+  DRR、external VTC-style 与 SAOR。若 FIFO/DRR 已在同一 Pareto 前沿，淘汰 SAOR。当前尚未完成
+  该 formal 或定理证明，因此不是已胜出的 proposed 方法；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
-- phase-change、burst、mixed-cost 下 dynamic 的响应时间、SLO goodput 与 tail；
+- fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、
   加权/SLO、公平 guard、Long→Short 与故障迁移；
 - 代价模型跨时间段、新 workload 和硬件的稳定性；

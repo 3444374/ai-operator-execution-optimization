@@ -69,8 +69,11 @@ Database
 
 1. 在固定机器、模型、协议和 workload 下，达到模型服务近饱和吞吐所需的最小 active work 是多少；超过该点后吞吐、尾延迟和能耗如何变化？
 2. 当总 work 相同但行长度、输出上限或 prefix 分布不同，work-unit 的 balance 与 locality 怎样影响端到端执行？
-3. 当 arrival rate、work mix 或阶段瓶颈发生突变时，状态感知准入与路由能否在相同最大 K/work 上限下比 frozen-static 更快回到标定的近饱和包络，并改善 SLO goodput 或 tail？
-4. 多个数据库作业共享 endpoint pool 时，request/work credit、idle borrowing、路由和公平队列能否在不降低有效吞吐的条件下改善 JCT、尾延迟或公平性？
+3. 当数据库 Job 的活跃集合、arrival 或 work mix 改变时，固定总 K/work envelope 内的
+   idle borrowing、completion-time reclaim 和 ordered release 能否相对 global FIFO、静态
+   分区与简单 DRR 改善最坏 Job 的 JCT、tail 或 SLO？
+4. 多个数据库作业共享 endpoint pool 时，request/work credit、路由和公平队列能否在
+   work conservation 与 weighted service lag/fairness 之间形成可验证的 Pareto 改善？
 
 ### 3.3 研究边界
 
@@ -94,7 +97,11 @@ Database
 
 提交控制使用 request credit 与 work credit 两类约束。credit 在请求完成时精确释放，随后按 request-level replenishment 补位；多个 job 共享 endpoint 上限，空闲份额可以被其他 job 借用，但公平队列保留权重和隔离语义。路由在同一上限内考虑 predicted work、prefix/frame locality、endpoint active work 和服务压力。
 
-固定静态 credit 是默认强 baseline。queue-adaptive flush、状态感知 K、路由和多作业控制只有显著优于同资源、同上限静态点时才晋级。若吞吐接近，则继续检验 tail、SLO、JCT 和 fairness；若这些指标也没有改善，结论应收敛为策略失效边界，而不是更换 workload 寻找正结果。
+固定静态 credit 是默认强 baseline。现有 capacity-only 结果未证明动态 K 相对强静态点有
+增量，因此主方法冻结总 K/work envelope，只动态决定活跃 Job 间的份额借用、回收和 release
+order。正式对照必须同时包含 global FIFO/no project Job scheduler、静态分区、简单 DRR/
+VTC-style 和 SAOR；若 FIFO 或 DRR 已处于同一吞吐—tail—公平 Pareto 前沿，则淘汰 SAOR，
+而不是更换 workload 寻找正结果。
 
 ### 4.3 共同使能组件：算子代价估计
 
@@ -256,14 +263,15 @@ Ray Data 低约 10%/17%。只有这一 panel 可排名；它是静态阶段组�
 |---|---|---|---|
 | Work Unit / WorkDescriptor | 同 16 行 token work 差 14.3×；图像 prepare/model 阶段失衡 | 已有 staged descriptor、calibration signature、locality/deadline/uncertainty 字段，`BatchRequest` 和图像合同可携带 descriptor | production descriptor builder 尚未贯通正式端到端 runner；staged organization 尚未证明胜出 |
 | 状态感知 | 同 W65K 在 high/arrival-limited 下呈现不同 running/MFU；原生路径呈现 overqueue/underfeed | endpoint/resource trace 已在正式实验中采集；stage snapshot 包含 freshness 与 calibration-signature 校验，候选控制器具有静态 fallback | stage snapshot 和 fallback controller 尚未接入正式主 runner，尚无独立性能增量 |
-| 动态与多作业调度 | 两Job与四Job配对显示前台/long干扰、idle borrowing、arrival-regime dependence及效率—公平权衡 | completion release、least-work routing 和 shared fair-work credit 已进入调度器，static/shared 两/四Job A/B 与 full/half/quarter matched control 已完成 | shared 不是普遍胜出；stage-aware dynamic、SLO/fairness guard、weighted/held-out 尚未正式验证 |
+| 动态与多作业调度 | 两Job与四Job配对显示前台/long干扰、idle borrowing、arrival-regime dependence及效率—公平权衡 | completion release、least-work routing 和 shared fair-work credit 已进入调度器；capacity-only SAOR 未胜 K160/threshold | shared 不是普遍胜出；缺同K global FIFO/no-op killer baseline，fixed-envelope SAOR、SLO/fairness guard、weighted/held-out 尚未正式验证 |
 | 算子代价估计 | 20 contexts 的选错代价为 12.0%–86.5%，简单 proxy 决策失败 | CE1–CE5 离线估计器和 context leave-one-out 已完成，CE5 为 marginal pass | 尚未在线驱动 organization/routing/credit，也未验证跨模态 remaining work 与 SLO 收益 |
 
-因此，后续工程顺序为 descriptor builder、observe-only snapshot、no-op/fallback 门禁和单动作消融；不在同一次实验中同时打开四个部件后归因总体差异。
+因此，后续工程顺序为 descriptor builder、observe-only snapshot、global FIFO/no-op 门禁、
+fixed-envelope ordered release 和单动作消融；不在同一次实验中同时打开四个部件后归因总体差异。
 
 ### 5.10 当前能证明与不能证明的内容
 
-已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft Native/Ray 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；两Job与四Job下后到/并发 Job 会影响前台和long，shared credit 存在效率—隔离—公平权衡；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值。state-aware 策略是否能在同上限强静态点之上改善综合目标，仍是开题后的可证伪研究问题。
+已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft Native/Ray 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；两Job与四Job下后到/并发 Job 会影响前台和long，shared credit 存在效率—隔离—公平权衡；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值。尚未证明的是：在固定总 K 下，SAOR 是否比 global FIFO 和 DRR 形成额外 Pareto 改善；dynamic K 不再作为当前主方法。
 
 ## 6. 进度安排
 
@@ -271,7 +279,7 @@ Ray Data 低约 10%/17%。只有这一 panel 可排名；它是静态阶段组�
 |---|---|---|
 | 2026 年 8 月 | 完成 database-E2E 护栏、原生单 job、两 job 因果点与四 job 扩展；冻结答辩内容大纲和待画图数据合同 | 对应报告与紧凑数据已完成；当前不制作新图或 PPT 成品 |
 | 2026 年 9 月 | 完成 work-unit 构造的跨 workload、跨 serving-regime 消融 | 数据组织 formal 报告；不以单点峰值选策略 |
-| 2026 年 10 月 | 完成状态感知提交、路由和多作业公平性对照 | 与同上限 frozen-static 比较；未过门则记录失效边界 |
+| 2026 年 10 月 | 完成 fixed-envelope active-set release、路由和多作业公平性对照 | 同 K 比较 global FIFO/static/DRR/VTC-style/SAOR；简单策略同样好则淘汰 SAOR |
 | 2026 年 11 月 | 完成代价模型 held-out 校准和两项策略耦合验证 | ranking/regret、独立拼接与联合搜索报告 |
 | 2026 年 12 月及以后 | 补齐外部有效性、论文图表和正文 | 可复现脚本、完整原始证据、论文与答辩材料 |
 

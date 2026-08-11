@@ -1,25 +1,53 @@
 # SAOR 数学模型、控制分层与适用场景审计
 
-> 状态：`design-revision`。本文依据 2026-08-11 capacity-only 负结果，对 SAOR 的控制对象、
+> 状态：`saor-v0.4-design-revision`。本文依据 2026-08-11 capacity-only 负结果和既有两/四 Job
+> 干扰结果，对 SAOR 的控制对象、
 > 可证明部分、经验控制部分和 benchmark 重新分层。它不把一次 development run 写成算法结论，
 > 也不宣称实际实现已经获得 MaxWeight/VTC 的理论保证。
 
 ## 1. 审计结论
 
 当前 SAOR 思路中值得保留的是 **Stage-Aware Ordered Release**，而不是“两档 K 动态切换”本身。
-后续实现应拆成两个不同时间尺度、不同证据等级的控制器：
+`saor-v0.4` 进一步冻结：**总 request/work envelope 在主实验中固定；动态的对象是活跃 Job
+集合内的份额、借用、回收和释放顺序。** 后续实现分成一个主控制器和一个暂停分支：
 
 1. **SAOR-Release（主方法候选）**：在冻结的安全总容量内，对数据库 Job 的 head request 做
    completion-driven ordered release，维护物理 backlog、公平债务和 SLO 债务。它是最接近
    constrained queueing / MaxWeight 模型、也最适合多 Job 数据库 AI 场景的部分。
-2. **Safe-Capacity Governor（可选扩展）**：慢速选择 K/work 档位。它必须使用可校准的
-   反事实 response model、风险上界、hysteresis 和 drain debt；在完成这些桥接前只称经验
-   safety governor，不继承 SAOR-Release 的 throughput-optimality 结论。
+2. **Safe-Capacity Governor（`parked-conditional`）**：慢速选择 K/work 档位。现有数据没有
+   证明它相对强静态点有必要性；只有离线 oracle 先证明可利用的 Pareto 空间，才允许恢复。
+   恢复后仍必须使用反事实 response model、风险上界、hysteresis 和 drain debt，且不继承
+   SAOR-Release 的 throughput-optimality 结论。
 
 现有 capacity-only arm 多数时间停留在 K160，并在末段切换。它与 K160 的吞吐差仅约 0.5%，
 低于 threshold 约 1.5%，且没有改善 Jain 或 Job B tail。这说明该 workload 的主要机会不是
 “在线猜 K”，也说明公平债务从未进入实际动作。继续在同一 trace 调 `V` 或 risk weight 会
 成为事后参数搜索，不再推进研究问题。
+
+### 1.1 现有证据究竟支持什么
+
+现有实验支持的是“固定总容量内的多 Job 动态分配问题”，不是“总 K 必须动态变化”：
+
+- 该机器/模型签名下，K160 是强静态效率点；capacity-only SAOR 相对它只有约 0.5% 吞吐差，
+  且未改善 Job B tail 或 Jain。因此动态 K 当前应淘汰出主线。
+- eager 两 Job 中，固定分区使 short 的 quota-only JCT 增加 59.00%；相同总上限下 shared
+  相对 static 使 short JCT 降低 48.94%、总吞吐提高 31.85%、long JCT 降低 25.75%。四 Job
+  中 shared 相对 static 总吞吐提高 8.68%、short JCT 降低 72.23%，但 Jain 从 0.960 降到
+  0.923。这证明静态分区会浪费或错配份额，也证明无约束共享会产生公平/稳定性代价。
+- online replay 中结论方向不同：shared 提高总吞吐却伤害 short/Jain。因此 arrival、active、
+  drain 状态确实影响正确的份额分配，但还不能推出 SAOR 已解决该问题。
+
+上述 static/shared 对照仍缺少一个决定性反事实：**同一固定 K 下，不设置项目级 Job 配额和
+公平队列，只把所有请求按到达顺序交给 vLLM FCFS。** shared 相对 static 的收益可能只是消除
+静态分区浪费；若 global FIFO/no-op 已同时达到相同效率、tail 和公平，则 SAOR 没有必要。
+因此现阶段的严谨判定是：dynamic-K 版本 `reject and pivot`；fixed-envelope active-set
+release 版本 `accept with revisions`，等待 no-op killer baseline。
+
+“no project K”不等于系统真的没有边界：vLLM 仍受 `max_num_seqs`、每 iteration 的
+`max_num_batched_tokens` 和 KV 容量约束，只是把外部队列移入 HTTP/vLLM。现有 ShareGPT
+bounded 校准中，C128 已达到 C256 吞吐的 98.22%；C256 只再增 1.82%，却使 TTFT mean 从
+0.829 s 增至 6.181 s、waiting mean 从 3.7 增至 116.8、KV max 接近 1。因此“无项目级 Job
+调度”必须作为强 baseline 跑，但不能预设无限提前提交没有 tail 代价。
 
 ## 2. 现有逻辑为什么不闭合
 
@@ -61,17 +89,13 @@ aggregate proxy 与目标约束不一致。公平/SLO 必须通过 per-Job compl
 
 ```text
 slow/offline calibration
-  ├─ safe capacity arms + service intervals
-  ├─ drain/recovery envelope
+  ├─ one minimum-saturation safe envelope
   └─ cost/work calibration signature
-                │
-                ▼
-optional Safe-Capacity Governor (slow)
-  └─ chooses highest certified-safe total envelope
                 │
                 ▼
 SAOR-Release (fast, primary)
   ├─ per-Job ready/active work
+  ├─ active-set entitlement + idle borrowing/reclaim
   ├─ fairness and SLO virtual debt
   ├─ Job-head ordered release
   └─ completion-driven replenishment
@@ -94,7 +118,11 @@ K160 在 development run 中没有 OOM/failure/credit leak，且相对 K128 有�
 work 获得表面公平。若正式 safety gate 认为 K160 不满足预注册 SLO，则改用达到条件的最小
 饱和安全点，选择规则仍相同。
 
-### 3.2 可选 governor 选择最高可认证安全档
+这里的“动态”定义为：当 backlogged/eligible Job 集合变化时，权重份额随之重新归一化；空闲
+Job 的未用份额立即可借，Job 返回或新 Job 到达后，只在后续 completion 释放 credit 时回收，
+不抢占已经进入 vLLM 的请求。总 envelope 始终不变。
+
+### 3.2 暂停分支：governor 选择最高可认证安全档
 
 令 $z_t$ 为包含 ready work、active-work age histogram、completion rate、TTFT/TPOT、SLO
 miss、waiting/KV 和 freshness 的状态。对每个离线校准档位 $k$，预测未来 $H$ 个周期的
@@ -127,6 +155,8 @@ $D_e>0$ 时不再给该 endpoint 新 lease，直至 completion 使 debt 清零�
 才允许切换。该思路来自带 reconfiguration delay 的 adaptive MaxWeight，但这里仍需重新证明
 其对不可撤销 LLM request 的适用性。
 
+以上只保留为恢复条件与理论备忘，不进入 `saor-v0.4` 主 benchmark、主算法图或贡献表述。
+
 ## 4. SAOR-Release 的数学模型
 
 ### 4.1 状态与队列
@@ -146,10 +176,17 @@ $$
 U_j(t+1)=[U_j(t)-C_j(t)]^+ + A_j(t).
 $$
 
-设共同积压集合 $B(t)=\{j:U_j(t)>0\}$，权重 $\phi_j>0$，目标份额：
+对模型阶段定义 eligible/backlogged 集合：
 
 $$
-\rho_j(t)=\frac{\phi_j}{\sum_{i\in B(t)}\phi_i}.
+B_M(t)=\{j:Q^{ready}_{j,M}(t)+R_{j,M}(t)>0\}.
+$$
+
+尚在数据库读取或 CPU prepare、没有 model-ready work 的 Job 不在 GPU 服务份额上积累债务；
+否则会把上游瓶颈错误地转换成 GPU 优先级。设 $j\in B_M(t)$ 的权重为 $\phi_j>0$，目标份额：
+
+$$
+\rho_j(t)=\frac{\phi_j}{\sum_{i\in B_M(t)}\phi_i}.
 $$
 
 公平和 SLO debt 用实际 completion 更新：
@@ -270,13 +307,46 @@ $C$-additive error。实现要获得理论桥接，只能选择以下之一：
 当前项目应选择第三条作为诚实默认，以 held-out ranking 和 offline oracle 判断以后能否升级
 到第一条。capacity governor 由于反事实、delay 和 non-preemption 更复杂，必须独立论证。
 
+### 5.4 可以先完成的两个较弱性质
+
+在完整随机稳定性定理之前，可以先对实现合同证明两个不依赖 service-rate 预测的性质：
+
+1. **固定 envelope 不越界**：若每次 release 前原子检查 request/work credit，且只由唯一
+   completion ledger 释放，则所有时刻都有
+   $\sum_jR_{j,e}^{req}\le K_e^{req}$ 和
+   $\sum_jR_{j,e}^{work}\le K_e^{work}$。
+2. **工作守恒**：若 endpoint 有可用 credit，且至少一个 Job-head eligible 并能装入剩余
+   work credit，则动作集合不得让 hold 成为可发布动作，策略必须释放至少一个 head。该性质
+   保证 idle borrowing，但不自动保证公平或吞吐最优。
+
+公平还需要 active-set counter lift：Job 从 idle 返回时，其债务/虚拟服务基线最多抬到当前
+active 集合的最低合法基线，不能携带空闲期未使用份额形成无限 credit。实际请求大小未知时，
+release 用 estimated work 预扣，completion 用 actual work 修正；任何 service-lag 上界都必须
+显式包含最大单请求 work、估计误差和 non-preemptive feedback delay，不能照搬 VTC 的 token
+级上界。
+
 ## 6. 更合适的 benchmark
 
 ### 6.1 主 benchmark：固定容量的多 Job ordered release
 
 这是最符合算法名、数学模型和数据库背景的场景。
 
-建议冻结一个通过 safety/feeding gate 的强总 envelope，显式 vLLM FCFS，构造：
+建议冻结一个通过 safety/feeding gate 的强总 envelope，显式 vLLM FCFS。第一项不是扩大
+workload 矩阵，而是跑一个能直接证伪 SAOR 必要性的 active-set 场景：
+
+1. `bulk-only`：long/batch Job B 先到并可借用全部总 envelope；
+2. `foreground-arrival`：B 仍积压时 latency-sensitive Job A 到达；已有 B request 不抢占，
+   只在 completion 后逐步把新 credit 回收给 A；
+3. `foreground-drain`：A 完成后，B 重新借用全部空闲份额。
+
+这三个阶段使用同一 immutable manifest，不通过改变总 K 制造收益。它精确区分：
+
+- static partition 在第一、三阶段是否浪费 A 的预留份额；
+- global FIFO/no-op 在第二阶段是否因 B 已形成到达序列而伤害 A tail/SLO；
+- shared DRR 是否已足以解决问题；
+- SAOR 的 active-set、SLO debt 和回收顺序是否提供额外 Pareto 收益。
+
+通过这项 killer baseline 后，才扩展到：
 
 - 4 个数据库 Job，至少一个 short/latency-sensitive Job 与多个 long/throughput Job；
 - equal-weight 与 3:1 weighted 两种 entitlement；
@@ -284,13 +354,19 @@ $C$-additive error。实现要获得理论桥接，只能选择以下之一：
 - 每条数据库记录仍为完整 request，prompt/output shape 从冻结 manifest 读取；
 - 先用受控 short/long shape，再用真实 trace 做外部有效性。
 
-主比较：global FIFO、static partition、shared DRR、external VTC-style、SAOR-Release。K/window、
-source/sink、manifest、endpoint 和 vLLM flags 完全相同。headline 不只看 tokens/s，而是：
+主比较固定为：global FIFO/no project Job scheduler、static partition、shared DRR、
+external VTC-style、SAOR-Release。global FIFO 与所有项目策略使用相同 K/window、source/sink、
+manifest、endpoint 和 vLLM flags。headline 不只看 tokens/s，而是：
 
 - weighted service Jain、GPS service lag max/P95/偿还时间；
 - Job slowdown 对 matched solo、JCT/TTFT P95/P99、SLO miss；
 - starvation/max age、avoidable idle、correct goodput、energy；
 - throughput--fairness--tail Pareto。
+
+晋级规则按正式重复的噪声和业务最小效应预注册，不把算法参数硬编码成结论阈值。若
+SAOR-Release 不能在 correctness/failure 不退化、总吞吐基本不损失的条件下，相对 global
+FIFO 和 shared DRR 至少改善一项预注册的 worst-Job tail/SLO/service-lag 指标，则淘汰 SAOR；
+若 DRR 已达到相同 Pareto 前沿，则保留 DRR，不再包装新算法。
 
 VTC artifact 已公开 overload、proportional、on/off、Poisson short/long、increase 和 distribution
 shift suites，可借其 **workload shape 与指标定义**，但实现仍是 S-LoRA artifact，不能和本项目
@@ -298,7 +374,8 @@ upstream vLLM 做绝对性能排名。
 
 ### 6.2 独立 benchmark：dynamic capacity 是否真的存在机会
 
-容量自适应不再和主 benchmark 混跑。先做 offline oracle gate，再决定是否实现 governor：
+该分支当前暂停，不与主 benchmark 混跑。若未来恢复，先做 offline oracle gate，再决定是否
+实现 governor：
 
 1. 使用 recovery-gated square wave 或有限 burst，不继续抬高同一平均 B rate；
 2. 每个独立周期开始前要求 active work/waiting 清零，KV 与 completion rate 回到预注册基线带；
@@ -306,7 +383,8 @@ upstream vLLM 做绝对性能排名。
 4. 低压 phase 必须重复证明 upper 相对 lower 的收益；高压 phase 必须重复证明 upper 违反
    预注册 tail/SLO 而 lower 保持可接受；
 5. 比较 lower、upper、简单 threshold、governor、clairvoyant/offline oracle；
-6. oracle 若不能相对最佳 static 形成约 5% Pareto 增量，直接淘汰 dynamic capacity。
+6. oracle 若不能相对最佳 static 形成超过重复噪声和预注册最小效应的 Pareto 增量，直接淘汰
+   dynamic capacity。
 
 vLLM 官方 benchmark serving 可用 Gamma inter-arrival：`burstiness<1` 产生高变异 arrival；
 BurstGPT 提供真实 timestamp、request/response token 和 burst pattern；两者适合外部有效性，
@@ -345,10 +423,14 @@ Jain 只是一个聚合统计，不是公平定义。正式报告同时使用：
 
 ## 8. 实施与停止顺序
 
-1. 冻结 capacity-only 为 `not-promoted`，不再在旧 A20/B4.5 trace 调权重；
-2. 把现有 ordered release 接入 per-Job completion ledger，固定总 K 做 replay/fake E2E；
-3. 先跑 two-/four-Job equal-weight，再跑 3:1 weighted 与 staggered borrowing；
-4. 同时构建离线 finite-horizon capacity oracle；oracle 不过门即停止 governor；
+1. 冻结 capacity-only 为 `not-promoted`，Safe-Capacity Governor 标记
+   `parked-conditional`，不再在旧 A20/B4.5 trace 调权重；
+2. 把现有 ordered release 接入 per-Job completion ledger，固定总 K；先补 global FIFO/no-op
+   与 DRR killer baseline，再运行 SAOR；
+3. 先跑上述 `bulk-only → foreground-arrival → foreground-drain` 决定性场景；通过后才跑
+   four-Job、3:1 weighted 和异构 held-out；
+4. 只有用户重新激活 dynamic capacity 时才构建 finite-horizon oracle；oracle 不过门即永久
+   停止 governor；
 5. HSE 先接 static real-ready broker 和 byte ledger，再逐项做 packed uint8/pinned/DALI/cache；
 6. 只有 release core、governor、HSE 各自过独立门后才做组合，不运行“一次打开所有机制”的
    联合实验。
@@ -363,6 +445,8 @@ Jain 只是一个聚合统计，不是公平定义。正式报告同时使用：
   <https://proceedings.mlr.press/v206/yang23d.html>
 - VTC 论文与 artifact：<https://www.usenix.org/conference/osdi24/presentation/sheng>、
   <https://github.com/Ying1123/VTC-artifact/tree/main/fair_bench>
+- vLLM scheduler capacity fields（`max_num_seqs`/`max_num_batched_tokens`）：
+  <https://docs.vllm.ai/en/stable/api/vllm/config/scheduler/>
 - vLLM benchmark load pattern：<https://docs.vllm.ai/en/latest/benchmarking/cli/>
 - BurstGPT trace：<https://github.com/HPMLL/BurstGPT>
 - Vidur simulator：<https://github.com/microsoft/vidur>
@@ -379,9 +463,10 @@ Jain 只是一个聚合统计，不是公平定义。正式报告同时使用：
 | flaw | severity | defense |
 |---|---|---|
 | 与 Ray Data streaming/backpressure、VTC/MaxWeight 的增量若说不清，会被认为只是组合已有机制 | MAJOR | 明确 Ray/Daft 拥有执行，VTC 拥有 in-engine token fairness；项目只 claim DB Job/stage state 到 fixed-envelope ordered release 的映射，并使用 native/VTC-style 强 baseline |
-| 同时承诺新执行模型、动态 K、公平算法、定理、GPU 数据通路和多模态，scope 会跨越多个 paper type | MAJOR | 主贡献只保留 work-unit/typed stage contract 与 SAOR-Release；HSE 是底座，governor/DALI/cache 是 conditional ablation 或后续工作 |
+| 同时承诺新执行模型、动态 K、公平算法、定理、GPU 数据通路和多模态，scope 会跨越多个 paper type | MAJOR | 主贡献只保留 work-unit/typed stage contract 与 SAOR-Release；HSE 是底座，governor/DALI/cache 是 parked 或后续工作 |
+| shared 相对 static 的收益可能完全来自去掉静态分区；缺 global FIFO/no-op 时仍属 solution-seeking | MAJOR | 把 fixed-K global FIFO 和 shared DRR 设为 killer baseline；任一简单策略落在同一 Pareto 前沿即淘汰 SAOR |
 
-没有不可修复的 CRITICAL flaw，但两项 MAJOR 必须在 formal 前持续收窄。
+没有不可修复的 CRITICAL flaw，但三项 MAJOR 必须在 formal 前持续收窄。
 
 ### 10.2 五维审计
 
@@ -413,8 +498,8 @@ Jain 只是一个聚合统计，不是公平定义。正式报告同时使用：
 | Data | Low | 已有冻结 DB manifests，BurstGPT/VTC suites/ServeGen 可公开获得 |
 | Engineering | Medium--High | 先接 static broker/ledger，再接 release；禁止一次重构全 pipeline |
 | Theory | High | 先完成 oracle appendix；unknown-service/governor 不获证明就保持 empirical，并安排独立数学复核 |
-| Timeline | High if combined | 把 HSE static、SAOR-Release、governor 设为三个串行 gate；前一门失败不继续组合 |
+| Timeline | High if combined | 先做 HSE static 与 SAOR-Release killer baseline；governor 保持 parked，不进入当前串行路径 |
 
-**Verdict：Accept with Revisions。** 值得继续，但前提是把 SAOR-Release 作为唯一算法主线，
-HSE 作为执行底座，capacity governor 作为 oracle-gated optional；否则 scope 和 prior overlap 会
-压过实际贡献。
+**Verdict：分版本判定。** dynamic-K SAOR 为 **Reject and Pivot**；fixed-envelope active-set
+SAOR-Release 为 **Accept with Revisions**。后者只有通过 global FIFO/no-op 与 shared DRR 两个
+killer baseline 才能晋级；HSE 作为执行底座，capacity governor 保持 `parked-conditional`。

@@ -71,11 +71,12 @@ Database
 
 ### 3.2 研究问题
 
-本课题围绕三个可证伪问题展开：
+本课题围绕四个可证伪问题展开：
 
 1. 在固定机器、模型、协议和 workload 下，达到模型服务近饱和吞吐所需的最小 active work 是多少；超过该点后吞吐、尾延迟和能耗如何变化？
 2. 当总 work 相同但行长度、输出上限或 prefix 分布不同，work-unit 的 balance 与 locality 怎样影响端到端执行？
-3. 多个数据库作业共享 endpoint pool 时，request/work credit、idle borrowing、路由和公平队列能否在不降低有效吞吐的条件下改善 JCT、尾延迟或公平性？
+3. 当数据库 Job 的活跃集合、arrival 或 work mix 改变时，固定总 K/work envelope 内的 idle borrowing、completion-time reclaim 和 ordered release 能否相对 global FIFO、静态分区与简单 DRR 改善最坏 Job 的 JCT、tail 或 SLO？
+4. 多个数据库作业共享 endpoint pool 时，request/work credit、路由和公平队列能否在 work conservation 与 weighted service lag/fairness 之间形成可验证的 Pareto 改善？
 
 ### 3.3 研究边界
 
@@ -97,7 +98,7 @@ Database
 
 提交控制使用 request credit 与 work credit 两类约束。credit 在请求完成时精确释放，随后按 request-level replenishment 补位；多个 job 共享 endpoint 上限，空闲份额可以被其他 job 借用，但公平队列保留权重和隔离语义。路由在同一上限内考虑 predicted work、prefix/frame locality、endpoint active work 和服务压力。
 
-固定静态 credit 是默认强 baseline。queue-adaptive flush、状态感知 K、路由和多作业控制只有显著优于同资源、同上限静态点时才晋级。若吞吐接近，则继续检验 tail、SLO、JCT 和 fairness；若这些指标也没有改善，结论应收敛为策略失效边界，而不是更换 workload 寻找正结果。
+固定静态 credit 是默认强 baseline。现有 capacity-only 结果未证明动态 K 相对强静态点有增量，因此主方法冻结总 K/work envelope，只动态决定活跃 Job 间的份额借用、回收和 release order。正式对照必须同时包含 global FIFO/no project Job scheduler、静态分区、简单 DRR/VTC-style 和 SAOR；若 FIFO 或 DRR 已处于同一吞吐—tail—公平 Pareto 前沿，则淘汰 SAOR，而不是更换 workload 寻找正结果。
 
 ### 4.3 共同使能组件：算子代价估计
 
@@ -160,7 +161,7 @@ ShareGPT 的正式结果同样没有给出项目路径的性能优势：direct�
 
 ### 5.6 当前能证明与不能证明的内容
 
-已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益。条件性证据：轻量代价模型已体现配置选择价值。仍待验证：state-aware 提交、路由或多作业策略能否超过同上限静态点。当前不能声称：项目路径普遍优于 direct、DuckDB AI、Ray Data 或 Daft；某一 organizer 普遍最优；动态策略已经胜出。
+已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；static/shared 多 Job 存在效率—隔离—公平权衡。条件性证据：轻量代价模型已体现配置选择价值。仍待验证：固定总 K 下 SAOR 是否比 global FIFO 和 DRR 形成额外 Pareto 改善。当前不能声称动态 K 或 SAOR 已经胜出。
 
 ## 6. 进度安排
 
@@ -168,7 +169,7 @@ ShareGPT 的正式结果同样没有给出项目路径的性能优势：direct�
 |---|---|---|
 | 2026 年 8 月 | 冻结开题材料；完成图像强 baseline 与统一链路实现 | 开题报告、PPT、统一 source/sink 合同、结果归档 |
 | 2026 年 9 月 | 完成 work-unit 构造的跨 workload、跨 serving-regime 消融 | 数据组织 formal 报告；不以单点峰值选策略 |
-| 2026 年 10 月 | 完成状态感知提交、路由和多作业公平性对照 | 与同上限 frozen-static 比较；未过门则记录失效边界 |
+| 2026 年 10 月 | 完成 fixed-envelope active-set release、路由和多作业公平性对照 | 同 K 比较 global FIFO/static/DRR/VTC-style/SAOR；简单策略同样好则淘汰 SAOR |
 | 2026 年 11 月 | 完成代价模型 held-out 校准和两项策略耦合验证 | ranking/regret、独立拼接与联合搜索报告 |
 | 2026 年 12 月及以后 | 补齐外部有效性、论文图表和正文 | 可复现脚本、完整原始证据、论文与答辩材料 |
 

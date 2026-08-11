@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-08-11 SAOR v0.4：动态 K 退出主线，改为固定总 K 的活跃集调度
+
+- 接受“固定 K160/更大 K 可能已经足够”的反证压力：现有 capacity-only SAOR 相对 K160
+  只有约 +0.52%，且 Jain/Job B tail 未改善，因此 dynamic-K 版本判定为 `Reject and Pivot`，
+  Safe-Capacity Governor 改为 `parked-conditional`。
+- 现有 eager 两/四 Job 数据证明 static partition 存在 quota loss、shared idle borrowing 有
+  效率收益，但 online replay 与四 Job Jain 也显示无约束共享可能伤害 isolation/fairness；这些
+  数据支持“固定总容量内的活跃集分配问题”，不证明 SAOR 已胜出。
+- SAOR 主方法收窄为 fixed-envelope active-set ordered release：按 model-ready/active Job 集合
+  动态归一化 entitlement，空闲份额可借，新 Job 到达后仅在 completion 时非抢占回收，并以
+  actual completion 更新 fairness/SLO debt。
+- 识别出此前缺失的 killer baseline：同一总 K 下的 global FIFO/no project Job scheduler。
+  下一项 formal 固定比较 global FIFO、static partition、shared DRR、external VTC-style 和
+  SAOR，使用 `bulk-only → foreground-arrival → foreground-drain` 场景；FIFO 或 DRR 若落在
+  同一 throughput--tail--fairness Pareto 前沿，即淘汰 SAOR，不扩 workload 追正。
+- 数学合同新增 fixed-envelope safety/work-conservation 两个先行性质；完整公平/稳定性证明仍需
+  active-set counter lift、最大请求 work、估计误差与 non-preemptive feedback delay 的显式界。
+
 ## 2026-08-11 SAOR v0.3 数学审计与 benchmark 分轨
 
 - 将 capacity-only 负结果反推到模型：旧实现把 slow capacity selection 与 fast per-Job release
