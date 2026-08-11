@@ -1,0 +1,5 @@
+a_rate_req_s,b_rate_req_s,stage,completed_cells,incidents,status,reason
+20,,a_only,2,0,passed,K128 occupied with admission backlog and K160 service-rate gain >=5%
+20,2.5,pressure,2,0,failed,phase 1 endpoint-0 lacks upper pressure plus lower relief
+20,3.5,pressure,2,0,failed,phase 1 endpoint-0 lacks upper pressure plus lower relief
+20,4.5,pressure,2,0,failed,phase 1 endpoint-0 lacks upper pressure plus lower relief

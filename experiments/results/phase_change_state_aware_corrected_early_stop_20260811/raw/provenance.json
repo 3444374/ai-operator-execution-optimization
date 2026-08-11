@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "status": "stopped_pressure_gate",
+  "server_commit": "feb8a7f673277cd586f1cb2192b692dbd2b3a214",
+  "hardware": "2x NVIDIA RTX 4090",
+  "postgresql_version": "18.4",
+  "pgvector_version": "0.8.5",
+  "vllm_version": "0.25.1",
+  "model": "Qwen2.5-7B-Instruct",
+  "ray_resources": {"cpu": 32, "gpu": 2},
+  "archive_path": "/root/autodl-tmp/experiment-artifacts/phase_change_corrected_early_stop_feb8a7f.tgz",
+  "archive_size_mib": 24,
+  "archive_sha256": "001600b6ef5d0261b4277af01349dcf07ff08b156eb169048fe171cd89be0bca",
+  "action_gate_ran": false,
+  "formal_ran": false
+}

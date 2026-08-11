@@ -5764,3 +5764,8 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   waiting（max 2--7、P95=0，KV P95<0.70），但第一 ON phase 的 K160 尚未产生压力。
   OFF 安全门因此统一为 P95 口径，允许孤立边界 drain、仍拒绝持续拥塞；B2.5 按“第一
   ON phase 无 upper pressure”正确失败，继续预注册的 B3.5，而不把瞬时 drain 当失败原因。
+- B3.5 与最高预注册 B4.5 均 2/2 cell、0 incident，但都在第一 ON phase endpoint-0
+  缺少 upper pressure/relief；B4.5 第二 ON 只有 endpoint-0 KV max=0.874，endpoint-1
+  max=0.837，waiting 均为0，未达到双 endpoint、双周期条件。实验按 pressure gate
+  正式停止，不运行 action/formal；完整七步报告与紧凑数据归档到
+  `experiments/results/phase_change_state_aware_corrected_early_stop_20260811/`。

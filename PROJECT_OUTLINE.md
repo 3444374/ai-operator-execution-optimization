@@ -178,6 +178,12 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
    感知/动态实现调整后只重跑同 manifest 的 project static/proposed。
 5. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
 
+2026-08-11 修正后的文本 phase-change 门禁显示：A-only K160 相对 K128 的每 endpoint
+service rate 提升 7.77%，低压升档动机成立；但 B=2.5/3.5/4.5 均未在两个 ON 周期、
+两个 endpoint 上稳定产生 waiting 或 KV>=0.85，最高档仅第二轮 endpoint-0 瞬时达到
+KV=0.874。按预注册规则停止，未运行 adaptive action/formal；当前不能判断动态策略有效或
+无效。后续只能以独立合同验证显式 drain/recovery 后的可重复 phase change。
+
 ## 9. 结果解释与写作规则
 
 每个正式实验按以下顺序记录：目的、设置、合规自检、设计、全组件数据、解释、对课题含义、下一步。解释明确区分事实、推断、待确认和不能声称。

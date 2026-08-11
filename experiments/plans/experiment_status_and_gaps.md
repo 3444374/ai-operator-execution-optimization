@@ -1,8 +1,15 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-09；开题三臂 replacement、原生单 job 与 5s guaranteed-overlap 两 job 对照均已完成）
+Date: 2026-07-20（最后更新：2026-08-11；开题证据冻结，修正后的文本 phase-change 已按 pressure gate 停止）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
+
+## 2026-08-11 状态感知 phase-change 最新结论
+
+修正 A-only backlog 判据、HTTP tail-drain 和多 Job 全局 arrival clock 后，A=20 的
+K128/K160 门禁通过（每 endpoint service rate +7.77%）；B=2.5/3.5/4.5 pressure
+均未形成双 endpoint、双周期 upper risk，按最高预注册档失败停止。action/formal 未运行，
+state-aware 价值保持待验证；下一轮必须是带显式 drain/recovery 的独立合同，不与本轮合并。
 
 ## 状态增量（2026-08-04，历史快照；当前执行以其后的开题冻结段与 §0 为准）
 

@@ -4,6 +4,12 @@
 
 先读 [`EXPERIMENT_EVIDENCE_REGISTRY.md`](EXPERIMENT_EVIDENCE_REGISTRY.md)。该台账登记主要机制结果，并区分“设计预留、功能测试、真实链路门禁、GPU 筛选、重复或留出验证”，避免把代码完成度误写成性能证据。
 
+## 状态感知 phase-change（2026-08-11）
+
+| Directory | Content | Boundary |
+|---|---|---|
+| `phase_change_state_aware_corrected_early_stop_20260811/` | 修正门禁、HTTP tail-drain 与多 Job 全局 arrival clock 后的 A-only + 三档 pressure | A-only 证明 K160 相对 K128 service rate +7.77%；B=2.5/3.5/4.5 均未形成双 endpoint、双周期降档压力，按门禁停止，未跑 action/formal。 |
+
 ## 开题统一文本 database-E2E（2026-08-08 correctness 护栏）
 
 | Directory | Content | Boundary |

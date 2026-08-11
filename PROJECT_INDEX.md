@@ -809,6 +809,10 @@ python feasibility/benchmarks/analyze_results.py \
 
 ## 2026-08-11 phase-change state-aware preparation
 
+- `experiments/results/phase_change_state_aware_corrected_early_stop_20260811/`:
+  corrected A-only/pressure evidence, compact phase metrics, provenance and
+  the hard-stop boundary; no adaptive/formal performance claim.
+
 - `code/scripts/data/prepare_phase_change_workload.py`: immutable real-prompt
   two-Job workload builder with explicit PostgreSQL apply.
 - `code/src/experiments/phase_change/`: fail-closed workload/import/manifest

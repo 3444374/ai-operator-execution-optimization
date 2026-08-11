@@ -10,6 +10,12 @@
 > 门，因此保留为负结果和瓶颈诊断，不支持性能优势。开题前停止新增 baseline；线上飞书
 > 覆盖与知识库镜像受本机授权/目录状态阻塞，不改变本地 Markdown 的权威性。
 
+> **状态感知补充（2026-08-11）**：修正执行与门禁后的两 Job phase-change 实验在
+> pressure gate 提前停止。A-only K160 相对 K128 每 endpoint service rate +7.77%，
+> 但 B=2.5/3.5/4.5 均未稳定触发双 endpoint、双周期降档条件；未运行 action/formal，
+> 不能据此判断动态策略有效或无效。完整边界见
+> `experiments/results/phase_change_state_aware_corrected_early_stop_20260811/`。
+
 当前重点不是传统数据库 GPU 查询算子，也不是模型 kernel 优化。研究对象是数据库
 触发后的外部链路：数据读取与物化、代价估计与组织、准入/路由/提交、模型执行、观测
 和写回。Daft 是数据引擎，Ray actor 是可控执行机制，vLLM/CLIP 等是模型执行后端，
