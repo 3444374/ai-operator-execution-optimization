@@ -1,0 +1,9 @@
+endpoint,phase,previous_arm,selected_arm,oracle_arm,selected_reward,oracle_reward,regret,switched,prediction_phase,regret_eligible,action_scores_json,reward_by_arm_json,claim_scope
+endpoint-0,0,lower,lower,upper,0.7107569426238987,0.73,0.019243057376101325,False,,False,{},"{""lower"": 0.7107569426238987, ""upper"": 0.73}",paired_aggregate_trace_noncausal
+endpoint-0,1,lower,upper,upper,0.73,0.73,0.0,True,0,True,"{""lower"": 0.0, ""upper"": -0.019243057376101342}","{""lower"": 0.7146613194712469, ""upper"": 0.73}",paired_aggregate_trace_noncausal
+endpoint-0,2,upper,upper,upper,0.75,0.75,0.0,False,1,True,"{""lower"": 0.05533868052875314, ""upper"": 0.0}","{""lower"": 0.6769234058536048, ""upper"": 0.75}",paired_aggregate_trace_noncausal
+endpoint-0,3,upper,upper,upper,0.75,0.75,0.0,False,2,True,"{""lower"": 0.07307659414639518, ""upper"": 0.0}","{""lower"": 0.6990520309910001, ""upper"": 0.75}",paired_aggregate_trace_noncausal
+endpoint-1,0,lower,lower,lower,0.7521369204589536,0.7521369204589536,0.0,False,,False,{},"{""lower"": 0.7521369204589536, ""upper"": 0.73}",paired_aggregate_trace_noncausal
+endpoint-1,1,lower,lower,upper,0.7158771529020413,0.73,0.014122847097958635,False,0,True,"{""lower"": 0.0, ""upper"": 0.022136920458953584}","{""lower"": 0.7158771529020413, ""upper"": 0.73}",paired_aggregate_trace_noncausal
+endpoint-1,2,lower,upper,upper,0.73,0.73,0.0,True,1,True,"{""lower"": 0.0, ""upper"": -0.014122847097958652}","{""lower"": 0.6868717512235378, ""upper"": 0.73}",paired_aggregate_trace_noncausal
+endpoint-1,3,upper,upper,upper,0.75,0.75,0.0,False,2,True,"{""lower"": 0.08312824877646215, ""upper"": 0.0}","{""lower"": 0.6757061460985336, ""upper"": 0.75}",paired_aggregate_trace_noncausal

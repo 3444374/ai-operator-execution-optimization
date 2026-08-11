@@ -1,0 +1,9 @@
+{
+  "claim_scope": "paired_aggregate_trace_noncausal",
+  "cumulative_regret": 0.014122847097958635,
+  "heldout_sample_count": 6,
+  "oracle_match_count": 5,
+  "sample_count": 8,
+  "schema_version": 1,
+  "switch_count": 2
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "provenance": "reconstructed_from_exported_runner_shell_environment_after_v3_completion",
+  "capacity_arms": {
+    "lower": {
+      "request_limit": 128,
+      "work_limit": 131072,
+      "prior_goodput": 0.9279,
+      "prior_tail_risk": 0.2736
+    },
+    "upper": {
+      "request_limit": 160,
+      "work_limit": 163840,
+      "prior_goodput": 1.0,
+      "prior_tail_risk": 0.3308
+    }
+  },
+  "saor": {
+    "ewma_alpha": 0.3,
+    "waiting_scale": 160,
+    "waiting_weight": 0.5,
+    "kv_scale": 1.0,
+    "kv_weight": 0.5,
+    "queue_work_scale": 1024,
+    "min_dwell_samples": 8,
+    "max_state_age_s": 1.0,
+    "v": 1.0,
+    "tail_weight": 1.0,
+    "switch_weight": 0.01
+  },
+  "legacy_threshold": {
+    "congestion_kv_usage": 0.85,
+    "consecutive_samples": 8,
+    "increase_consecutive_samples": 2,
+    "cooldown_samples": 8
+  }
+}

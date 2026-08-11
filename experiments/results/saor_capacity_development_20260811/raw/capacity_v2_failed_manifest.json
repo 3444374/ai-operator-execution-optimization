@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "experiment_id": "saor_capacity_development",
+  "config_fingerprint": "1489f7e56bf6cec0fcf44dfb310bd014bb654970a8d062e0ca6bcd314a3542d1",
+  "repository_commit": "feb8a7f673277cd586f1cb2192b692dbd2b3a214",
+  "run_instance_id": "capacity_matrix_b4p5_v2-172ecfe6f72e",
+  "redacted_config": {
+    "experiment_id": "saor_capacity_development",
+    "seed": 20260811,
+    "warmup_runs_per_scenario": 0,
+    "formal_repeats": 1,
+    "endpoint_ids": [
+      "endpoint-0",
+      "endpoint-1"
+    ],
+    "request_limit_per_endpoint": 128,
+    "work_limit_per_endpoint": 131072,
+    "credit_quantum": 512,
+    "shared_credit_namespace": "ai-operator-saor-capacity-development",
+    "gpu_peak_tflops": 165.0,
+    "mfu_precision": "bf16_dense_fp32_accumulate",
+    "common_args": [
+      "--database-url",
+      "***",
+      "--operator",
+      "ai_complete",
+      "--executor",
+      "ray_actor",
+      "--actor-workers-per-endpoint",
+      "8",
+      "--ray-actor-max-concurrency",
+      "32",
+      "--ray-worker-num-cpus",
+      "0.25",
+      "--model-backend",
+      "compatible_http",
+      "--completion-endpoint-urls",
+      "http://127.0.0.1:8000/v1/chat/completions,http://127.0.0.1:8001/v1/chat/completions",
+      "--completion-model",
+      "qwen2.5-7b",
+      "--completion-protocol",
+      "chat_completions",
+      "--completion-http-transport",
+      "httpx_async",
+      "--completion-max-tokens",
+      "512",
+      "--completion-return-token-ids",
+      "--completion-ignore-eos",
+      "--completion-prompt-format",
+      "raw",
+      "--completion-temperature",
+      "0",
+      "--completion-request-timeout-s",
+      "180",
+      "--model-metrics-urls",
+      "http://127.0.0.1:8000/metrics,http://127.0.0.1:8001/metrics",
+      "--endpoint-gpu-ids",
+      "0,1",
+      "--source-workload-name",
+      "phase_change_a20_b4p5_feb8a7f_20260811",
+      "--source-order",
+      "arrival_time",
+      "--data-source",
+      "daft_postgres",
+      "--organizer",
+      "daft",
+      "--daft-runner",
+      "native",
+      "--batching-policy",
+      "token_budget",
+      "--token-budget",
+      "6144",
+      "--ray-batch-rows",
+      "256",
+      "--output-cost-mode",
+      "fixed_output_cap",
+      "--cost-model-id",
+      "qwen2.5-7b",
+      "--cost-tokenizer-id",
+      "/root/autodl-tmp/models/Qwen2.5-7B-Instruct",
+      "--arrival-replay",
+      "--arrival-time-scale",
+      "1.0",
+      "--scheduling-policy",
+      "static",
+      "--endpoint-routing",
+      "manifest_pinned",
+      "--token-budget-policy",
+      "static",
+      "--flush-policy",
+      "fixed_timeout",
+      "--flush-timeout-ms",
+      "50",
+      "--flush-max-wait-ms",
+      "50",
+      "--writeback-mode",
+      "none",
+      "--request-slo-ms",
+      "30000",
+      "--gpu-peak-tflops",
+      "165",
+      "--mfu-precision",
+      "bf16_dense_fp32_accumulate"
+    ],
+    "scenarios": [
+      {
+        "scenario_id": "capacity_frozen_lower",
+        "policy": "shared_drr",
+        "job_count": 2,
+        "rows_per_job": null,
+        "weights": [
+          1,
+          1
+        ],
+        "arrival_offsets_s": [
+          0.0017985555088504337,
+          60.3353830094564
+        ],
+        "static_partition_count": null,
+        "source_row_offsets": [
+          0,
+          0
+        ],
+        "request_manifests": [
+          "/root/autodl-tmp/experiment-artifacts/phase_change_feb8a7f/pressure_a20_b4p5_contract/client_0.jsonl",
+          "/root/autodl-tmp/experiment-artifacts/phase_change_feb8a7f/pressure_a20_b4p5_contract/client_1.jsonl"
+        ],
+        "rows_per_jobs": [
+          4713,
+          553
+        ],
+        "request_limit_per_endpoint": 128,
+        "work_limit_per_endpoint": 131072
+      },
+      {
+        "scenario_id": "capacity_frozen_upper",
+        "policy": "shared_drr",
+        "job_count": 2,
+        "rows_per_job": null,
+        "weights": [
+          1,
+          1
+        ],
+        "arrival_offsets_s": [
+          0.0017985555088504337,
+          60.3353830094564
+        ],
+        "static_partition_count": null,
+        "source_row_offsets": [
+          0,
+          0
+        ],
+        "request_manifests": [
+          "/root/autodl-tmp/experiment-artifacts/phase_change_feb8a7f/pressure_a20_b4p5_contract/client_0.jsonl",
+          "/root/autodl-tmp/experiment-artifacts/phase_change_feb8a7f/pressure_a20_b4p5_contract/client_1.jsonl"
+        ],
+        "rows_per_jobs": [
+          4713,
+          553
+        ],
+        "request_limit_per_endpoint": 160,
+        "work_limit_per_endpoint": 163840
+      },
+      {
+        "scenario_id": "capacity_legacy_threshold",
+        "policy": "state_aware_adaptive",
+        "job_count": 2,
+        "rows_per_job": null,
+        "weights": [
+          1,
+          1
+        ],
+        "arrival_offsets_s": [
+          0.0017985555088504337,
+          60.3353830094564
+        ],
+        "static_partition_count": null,
+        "source_row_offsets": [
+          0,
+          0
+        ],
+        "request_manifests": [
+          "/root/autodl-tmp/experiment-artifacts/phase_change_feb8a7f/pressure_a20_b4p5_contract/client_0.jsonl",
+          "/root/autodl-tmp/experiment-artifacts/phase_change_feb8a7f/pressure_a20_b4p5_contract/client_1.jsonl"
+        ],
+        "rows_per_jobs": [
+          4713,
+          553
+        ],
+        "request_limit_per_endpoint": null,
+        "work_limit_per_endpoint": null
+      },
+      {
+        "scenario_id": "capacity_saor",
+        "policy": "saor_capacity",
+        "job_count": 2,
+        "rows_per_job": null,
+        "weights": [
+          1,
+          1
+        ],
+        "arrival_offsets_s": [
+          0.0017985555088504337,
+          60.3353830094564
+        ],
+        "static_partition_count": null,
+        "source_row_offsets": [
+          0,
+          0
+        ],
+        "request_manifests": [
+          "/root/autodl-tmp/experiment-artifacts/phase_change_feb8a7f/pressure_a20_b4p5_contract/client_0.jsonl",
+          "/root/autodl-tmp/experiment-artifacts/phase_change_feb8a7f/pressure_a20_b4p5_contract/client_1.jsonl"
+        ],
+        "rows_per_jobs": [
+          4713,
+          553
+        ],
+        "request_limit_per_endpoint": null,
+        "work_limit_per_endpoint": null
+      }
+    ],
+    "service_metadata": {
+      "chunked_prefill": true,
+      "compilation_mode": "default",
+      "enforce_eager": false,
+      "gpu_memory_utilization": 0.9,
+      "max_num_batched_tokens": 8192,
+      "max_num_seqs": 256,
+      "mfu_metrics": true,
+      "prefix_caching": true,
+      "vllm_version": "0.25.1"
+    },
+    "calibration_contract": null,
+    "state_aware_control": {
+      "request_candidates": [
+        128,
+        160
+      ],
+      "work_candidates": [
+        131072,
+        163840
+      ],
+      "initial_request_limit": 128,
+      "fallback_request_limit": 128,
+      "fallback_work_limit": 131072,
+      "target_service_rate_tokens_s_per_endpoint": 7115.0,
+      "rate_ewma_alpha": 0.3,
+      "congestion_kv_usage": 0.85,
+      "consecutive_samples": 8,
+      "increase_consecutive_samples": 2,
+      "cooldown_samples": 8,
+      "max_state_age_s": 1.0
+    }
+  },
+  "schedule": [
+    {
+      "scenario_id": "capacity_legacy_threshold",
+      "phase": "formal",
+      "repeat_index": 1,
+      "order_index": 0,
+      "random_seed": 20260811
+    },
+    {
+      "scenario_id": "capacity_frozen_upper",
+      "phase": "formal",
+      "repeat_index": 1,
+      "order_index": 1,
+      "random_seed": 20260811
+    },
+    {
+      "scenario_id": "capacity_saor",
+      "phase": "formal",
+      "repeat_index": 1,
+      "order_index": 2,
+      "random_seed": 20260811
+    },
+    {
+      "scenario_id": "capacity_frozen_lower",
+      "phase": "formal",
+      "repeat_index": 1,
+      "order_index": 3,
+      "random_seed": 20260811
+    }
+  ],
+  "completed_runs": [
+    {
+      "scenario_id": "capacity_legacy_threshold",
+      "phase": "formal",
+      "repeat_index": 1,
+      "order_index": 0,
+      "random_seed": 20260811,
+      "policy": "state_aware_adaptive",
+      "job_count": 2,
+      "record_path": "records/000_formal_1_capacity_legacy_threshold.json"
+    },
+    {
+      "scenario_id": "capacity_frozen_upper",
+      "phase": "formal",
+      "repeat_index": 1,
+      "order_index": 1,
+      "random_seed": 20260811,
+      "policy": "shared_drr",
+      "job_count": 2,
+      "record_path": "records/001_formal_1_capacity_frozen_upper.json"
+    }
+  ],
+  "incidents": [
+    {
+      "scenario_id": "capacity_saor",
+      "phase": "formal",
+      "repeat_index": 1,
+      "order_index": 2,
+      "random_seed": 20260811,
+      "reason": "RuntimeError:shared request limit was exceeded",
+      "recovered": false
+    }
+  ],
+  "status": "failed"
+}

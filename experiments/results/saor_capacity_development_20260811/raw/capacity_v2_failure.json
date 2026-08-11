@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "reason": "RuntimeError:shared request limit was exceeded",
+  "return_codes": [
+    0,
+    0
+  ],
+  "final_credit_snapshots": [
+    {
+      "endpoint_id": "endpoint-0",
+      "request_limit": 128,
+      "work_limit": 131072,
+      "active_requests": 0,
+      "active_work": 0,
+      "waiting_requests": 0,
+      "waiting_work": 0,
+      "oldest_waiting_age_s": 0.0,
+      "active_by_job": "[]",
+      "active_work_by_job": "[]",
+      "waiting_by_job": "[]",
+      "waiting_work_by_job": "[]",
+      "max_active_requests_seen": 160,
+      "max_active_work_seen": 163770,
+      "granted_requests_by_job": "[[\"3433\", 277], [\"3434\", 2357]]",
+      "granted_work_by_job": "[[\"3433\", 420179], [\"3434\", 1790342]]",
+      "attained_service_by_job": "[]"
+    },
+    {
+      "endpoint_id": "endpoint-1",
+      "request_limit": 128,
+      "work_limit": 131072,
+      "active_requests": 0,
+      "active_work": 0,
+      "waiting_requests": 0,
+      "waiting_work": 0,
+      "oldest_waiting_age_s": 0.0,
+      "active_by_job": "[]",
+      "active_work_by_job": "[]",
+      "waiting_by_job": "[]",
+      "waiting_work_by_job": "[]",
+      "max_active_requests_seen": 160,
+      "max_active_work_seen": 141282,
+      "granted_requests_by_job": "[[\"3433\", 276], [\"3434\", 2356]]",
+      "granted_work_by_job": "[[\"3433\", 422938], [\"3434\", 1790480]]",
+      "attained_service_by_job": "[]"
+    }
+  ],
+  "credit_capture_error": null
+}

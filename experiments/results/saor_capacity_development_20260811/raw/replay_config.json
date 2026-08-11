@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "arms": {
+    "lower": {
+      "request_limit": 128,
+      "work_limit": 131072
+    },
+    "upper": {
+      "request_limit": 160,
+      "work_limit": 163840
+    }
+  },
+  "initial_arm": "lower",
+  "service_field": "service_rate_p50_tokens_s",
+  "risk_proxy_weights": {
+    "waiting_p95": 1.0,
+    "kv_p95": 0.5,
+    "kv_max": 0.5
+  },
+  "v": 1.0,
+  "tail_weight": 0.25,
+  "switch_weight": 0.02,
+  "prediction_lag_samples": 1,
+  "calibration_signature": "phase-change-b4p5-paired-aggregate-v1"
+}

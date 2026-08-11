@@ -113,15 +113,24 @@ PostgreSQL source
 
 ### 5.3 待验证
 
-- SAOR 已实现不依赖 Daft/Ray/vLLM 的 finite-action DPP、Job-head ordered release 和通用
-  exactly-once execution ledger，并通过纯 Python 单测；它尚未接入正式 runner/replay，也未完成
-  真实 phase-change 验证或定理证明，因此仍是 `design-candidate`，不是已胜出的 proposed 方法；
+- SAOR 已实现不依赖 Daft/Ray/vLLM 的 finite-action DPP、Job-head ordered release、通用
+  exactly-once execution ledger、文本 shared-vLLM capacity adapter 与配对 trace replay。旧
+  phase-change 聚合 trace 的非因果 replay 在 6 个可计 regret 样本中 5 次匹配事后 oracle，
+  累计归一化 regret 0.0141，但没有形成真实降档证据；单次真实服务四臂 development gate
+  中，capacity-only SAOR 相对 K128 +4.36%，相对 K160 +0.52%、相对 threshold −1.46%，
+  Jain 最低，故标记 `not-promoted`。它尚未完成完整 ordered-release/fairness/stage-queue
+  formal 验证或定理证明，因此不是已胜出的 proposed 方法；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - phase-change、burst、mixed-cost 下 dynamic 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、
   加权/SLO、公平 guard、Long→Short 与故障迁移；
 - 代价模型跨时间段、新 workload 和硬件的稳定性；
-- 图像Daft built-in、Ray Data native与project frozen-static的operator-E2E/provenance证据已完成；仍待状态感知增量、跨workload外推与小规模sink质量闭环，sink不是性能排名blocker。
+- 图像 Daft built-in、Ray Data native 与 project frozen-static 的 operator-E2E/provenance
+  证据已完成。现有数据把瓶颈进一步定位为 CPU prepare 与 driver/Ray submission 的组合：
+  SAOR 图像扩展必须显式拆出 pending-prepare、ready-tensor、pending-model 三段并使用有界
+  differential backpressure；调度不能消灭 decode/resize 工作，derived-image cache 与 DALI
+  GPU/mixed preprocess 作为正交 work-reduction 消融。仍待动态 runner 接线、跨 workload
+  外推与小规模 sink 质量闭环，sink 不是性能排名 blocker。
 - 图像 short→3×long 多作业已完成 immutable manifest、64-row correctness gate 和一次
   full-size overlap rehearsal；DuckDB bounded-output 四作业已完成 128-row native gate。
   两者均未启动 formal、不能用于系统排名或策略收益；图像 proposed 角色已与具体算法名

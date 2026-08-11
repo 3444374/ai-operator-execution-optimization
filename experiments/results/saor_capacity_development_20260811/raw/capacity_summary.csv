@@ -1,0 +1,5 @@
+scenario_id,policy,tokens_per_s,duration_s,request_success_delta,job_a_jct_s,job_b_jct_s,job_a_p99_s,job_b_p99_s,jain_fairness,vllm_waiting_mean,vllm_waiting_p95,vllm_waiting_max,vllm_kv_usage_mean,vllm_kv_usage_p95,vllm_kv_usage_max,gpu_utilization_pct_mean,vllm_running_mean,capacity_increases,capacity_decreases,capacity_fallbacks,incidents
+capacity_legacy_threshold,state_aware_adaptive,13458.477508,327.149486,5266,298.213875,265.033426,58.452615,186.603203,0.785780,1.221971,10.0,51.0,0.699566,0.993003,0.999404,99.363533,271.278596,2,0,0,0
+capacity_frozen_upper,shared_drr,13192.967532,333.733407,5266,297.006712,271.710262,57.008366,190.899879,0.778965,2.023230,17.0,70.0,0.689540,0.997171,1.000000,99.327987,266.525442,0,0,0,0
+capacity_saor,saor_capacity,13261.839693,332.000243,5266,291.794479,270.170537,49.422267,195.535622,0.775960,1.916201,17.0,61.0,0.684625,0.995683,1.000000,99.344693,263.378771,7,7,86,0
+capacity_frozen_lower,shared_drr,12707.929488,346.471390,5266,343.516856,281.793995,103.743724,154.035157,0.804857,0.068230,0.0,13.0,0.602695,0.826262,0.939556,98.997335,228.890192,0,0,0,0

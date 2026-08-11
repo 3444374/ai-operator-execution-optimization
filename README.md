@@ -155,16 +155,20 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
   89.93%/91.38%。固定 active-work 65,536/endpoint 仍是历史校准签名下的最小近饱和点，
   但不能覆盖本轮统一 database-E2E 的负结果。
 - **复杂动态策略尚未普遍胜出**：AIMD/PID/EWMA、动态 flush、service quantum 和
-  多 actor 多数未超过预注册的约 5% 晋级门槛；不能因“动态”命名就声称更优。
+  多 actor 多数未超过预注册的约 5% 晋级门槛；SAOR capacity-only 开发门相对 K128
+  +4.36%，但相对 K160 仅 +0.52%、相对简单 threshold −1.46%，同样未晋级。不能因“动态”
+  命名就声称更优；K160 是强效率 baseline，但已有 Job B tail/Jain 代价。
 - **文本策略具有 regime 依赖**：2-endpoint KV 无压力时多数数据组织策略接近；
   4-endpoint KV 饱和时排名和 prefix-cache 行为明显分化。相关结论不能脱离 endpoint/
   KV 条件外推。
-- **图像瓶颈仍需逐阶段判定**：CLIP 画像支持 CPU preprocess 是候选限制，但尚未证明
-  PCIe/H2D 是主瓶颈。项目静态 staged 路径优于项目自写 fused UDF 只构成动机证据。
+- **图像瓶颈是 CPU prepare 与提交链路的组合，不是 GPU 单指标问题**：60K×2 matched-resource
+  正式结果和 host-path 筛选共同表明，增加 CPU actor/读取线程只有有限边际收益，PCIe/H2D
+  也未被证明是主瓶颈。后续先显式拆出 ready-tensor 队列做两级 backpressure，再把
+  derived-image cache 与 DALI mixed/GPU preprocess 作为独立 work-reduction 消融。
 - **原生 baseline 身份已收紧**：图像 Daft built-in、Ray Data native graph 和固定
   upstream vendor code 才进入正式 baseline；项目自写 Daft fused/staged UDF 只作诊断。
   256 图资源/正确性 gate 与 Daft built-in/project 逐行 embedding parity 已通过，独立
-  calibration 与正式重复尚未完成。
+  matched-resource 正式重复已完成；动态两级 broker 与 sink 质量闭环尚未完成。
 - **可运行性验证**：最新代码在 AutoDL 完整依赖环境通过 679/679 单测；文本 512 行
   双 endpoint、图像 256 行 Daft/Ray Data correctness gate、两条默认无 capture 路径均
   跑通。它们是 smoke，不是论文性能排名。

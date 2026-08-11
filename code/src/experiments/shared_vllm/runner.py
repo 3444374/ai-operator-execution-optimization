@@ -27,6 +27,10 @@ from src.scheduling.submission_control.capacity import (
     BoundedCapacityController,
     CapacityArm,
 )
+from src.scheduling.runtime.saor_capacity import (
+    SaorCapacityController,
+    SaorObservationModel,
+)
 
 from .config import (
     GroupRunIdentity,
@@ -187,6 +191,98 @@ def _apply_state_control(
                 ),
                 "control_applied_request_limit": applied_limit,
                 "control_applied_work_limit": decision.arm.work_limit,
+            }
+        )
+    return rows
+
+
+def _apply_saor_capacity_control(
+    rows: list[dict[str, object]],
+    *,
+    controllers: dict[str, SaorCapacityController],
+    observation_model: SaorObservationModel,
+    observer: _RayCreditObserver,
+    calibration_signature: str,
+    max_state_age_s: float,
+) -> list[dict[str, object]]:
+    """Apply only the SAOR capacity action to existing shared-credit state."""
+
+    if not controllers:
+        return rows
+    for row in rows:
+        endpoint_id = str(row["endpoint_id"])
+        observed_at_s = float(row["observed_epoch_s"])
+        rate_raw = row.get("service_rate_tokens_s")
+        service_rate = float(rate_raw) if rate_raw not in (None, "") else None
+        waiting_raw = row.get("vllm_waiting")
+        waiting = int(float(waiting_raw)) if waiting_raw not in (None, "") else 0
+        snapshot = build_text_runtime_snapshot(
+            active_work=int(row["model_active_work"]),
+            upstream_queued_work=int(row["organizer_queued_work"]),
+            service_waiting_requests=waiting,
+            active_requests=int(row["active_requests"]),
+            oldest_upstream_age_s=float(row["organizer_oldest_queue_age_s"]),
+            observed_at_s=observed_at_s,
+            capacity_work=int(row["model_capacity_work"]),
+            calibration_signature=calibration_signature,
+            service_rate_tokens_s=service_rate,
+        )
+        try:
+            goodput, tail_risk, energy = observation_model.evaluate(row)
+            observation_status = "ok"
+        except ValueError as exc:
+            goodput, tail_risk, energy = math.nan, math.nan, math.nan
+            observation_status = f"invalid:{type(exc).__name__}:{exc}"
+        decision = controllers[endpoint_id].select(
+            snapshot,
+            observed_goodput=goodput,
+            observed_tail_risk=tail_risk,
+            observed_energy=energy,
+            now_s=time.time(),
+            max_age_s=max_state_age_s,
+            calibration_signature=calibration_signature,
+        )
+        previous_limit = int(row["request_limit"])
+        previous_work_limit = int(row["model_capacity_work"])
+        applied_limit = previous_limit
+        applied_work_limit = previous_work_limit
+        if (
+            decision.arm.request_limit != previous_limit
+            or decision.arm.work_limit != previous_work_limit
+        ):
+            updated = observer.update_capacity(
+                endpoint_id,
+                request_limit=decision.arm.request_limit,
+                work_limit=decision.arm.work_limit,
+            )
+            applied_limit = int(updated["request_limit"])
+            applied_work_limit = int(updated["work_limit"])
+        row.update(
+            {
+                "runtime_state_mode": "actuated_saor_capacity",
+                "control_policy": "saor_capacity",
+                "control_action": decision.action,
+                "control_reason": decision.reason,
+                "control_arm_name": decision.arm_name,
+                "control_action_scores": json.dumps(
+                    dict(decision.action_scores),
+                    sort_keys=True,
+                ),
+                "control_observation_status": observation_status,
+                "control_observed_goodput": (
+                    goodput if math.isfinite(goodput) else ""
+                ),
+                "control_observed_tail_risk": (
+                    tail_risk if math.isfinite(tail_risk) else ""
+                ),
+                "control_observed_energy": (
+                    energy if math.isfinite(energy) else ""
+                ),
+                "control_previous_request_limit": previous_limit,
+                "control_previous_work_limit": previous_work_limit,
+                "control_recommended_request_limit": decision.arm.request_limit,
+                "control_applied_request_limit": applied_limit,
+                "control_applied_work_limit": applied_work_limit,
             }
         )
     return rows
@@ -407,8 +503,15 @@ def _run_group(
     state_samples: list[dict[str, object]] = []
     state_signature = _text_state_calibration_signature(config)
     control = config.state_aware_control
+    saor_control = config.saor_capacity_control
     service_rate_tracker = EndpointServiceRateTracker(
-        alpha=control.rate_ewma_alpha if control is not None else 0.3
+        alpha=(
+            control.rate_ewma_alpha
+            if control is not None
+            else saor_control.ewma_alpha
+            if saor_control is not None
+            else 0.3
+        )
     )
     controllers = (
         {
@@ -447,6 +550,25 @@ def _run_group(
         if scenario.policy == "state_aware_adaptive" and control is not None
         else {}
     )
+    saor_controllers = (
+        {
+            endpoint_id: SaorCapacityController(
+                arms=saor_control.arms,
+                initial_arm=saor_control.initial_arm,
+                fallback_arm=saor_control.fallback_arm,
+                ewma_alpha=saor_control.ewma_alpha,
+                queue_work_scale=saor_control.queue_work_scale,
+                min_dwell_samples=saor_control.min_dwell_samples,
+                v=saor_control.v,
+                tail_weight=saor_control.tail_weight,
+                energy_weight=saor_control.energy_weight,
+                switch_weight=saor_control.switch_weight,
+            )
+            for endpoint_id in config.endpoint_ids
+        }
+        if scenario.policy == "saor_capacity" and saor_control is not None
+        else {}
+    )
     group_launch_epoch_s = 0.0
     endpoint_request_limit, endpoint_work_limit = scenario.endpoint_limits(
         config.request_limit_per_endpoint,
@@ -465,6 +587,7 @@ def _run_group(
                 "shared_fifo",
                 "external_vtc",
                 "state_aware_adaptive",
+                "saor_capacity",
             }
             else None
         )
@@ -553,15 +676,25 @@ def _run_group(
             if observer is not None:
                 credit_batch = observer.sample(group_launch_epoch_s)
                 credit_samples.extend(credit_batch)
-                state_samples.extend(
-                    _apply_state_control(
-                        build_observe_only_text_state_rows(
-                            credit_batch,
-                            resource_batch,
-                            endpoint_ids=config.endpoint_ids,
-                            calibration_signature=state_signature,
-                            service_rates=service_rates,
-                        ),
+                state_rows = build_observe_only_text_state_rows(
+                    credit_batch,
+                    resource_batch,
+                    endpoint_ids=config.endpoint_ids,
+                    calibration_signature=state_signature,
+                    service_rates=service_rates,
+                )
+                if saor_controllers and saor_control is not None:
+                    state_rows = _apply_saor_capacity_control(
+                        state_rows,
+                        controllers=saor_controllers,
+                        observation_model=saor_control.observation_model,
+                        observer=observer,
+                        calibration_signature=state_signature,
+                        max_state_age_s=saor_control.max_state_age_s,
+                    )
+                else:
+                    state_rows = _apply_state_control(
+                        state_rows,
                         controllers=controllers,
                         observer=observer,
                         calibration_signature=state_signature,
@@ -571,7 +704,7 @@ def _run_group(
                             else 1.0
                         ),
                     )
-                )
+                state_samples.extend(state_rows)
             time.sleep(0.25)
         return_codes = [process.wait() for process in processes]
         if any(code != 0 for code in return_codes):
@@ -697,7 +830,8 @@ def _run_group(
             "work_limit_per_endpoint": endpoint_work_limit,
             "credit_quantum": config.credit_quantum,
             "runtime_state_mode": (
-                "actuated" if controllers
+                "actuated_saor_capacity" if saor_controllers
+                else "actuated" if controllers
                 else "observe_only" if observer is not None
                 else "unavailable"
             ),
@@ -740,6 +874,7 @@ def _run_group(
                     "shared_fifo",
                     "external_vtc",
                     "state_aware_adaptive",
+                    "saor_capacity",
                 }
                 else ""
             ),

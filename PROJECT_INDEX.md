@@ -199,7 +199,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/first_principles_reassessment_20260808.md` | 从目标函数反推开题必需证据、work-unit/动态/图像设计、图表与 19 项答辩内容结构 | 重构开题故事、实验矩阵、方法代码或图前读 |
 | `opening/opening_defense_outline_20260808.md` | 权威答辩内容大纲：逐项 take-away、证据、claim 边界、必要实验与八张图的数据合同 | 编写开题材料、补实验或绘图前读；当前不生成 PPT 成品 |
 | `experiments/plans/opening_database_e2e_p0_20260807.md` | 开题前仅允许的 SQuAD/ShareGPT 三臂统一 database-E2E 合同 | 运行开题证据闭环实验前读 |
-| `experiments/plans/state_aware_work_unit_evaluation_20260808.md` | 分阶段 work descriptor、四个开题最小方法证据、同上限 static vs dynamic，以及 §5.2 SAOR 动态算法唯一维护入口：FCFS ordered release、固定周期 DPP、三种 work、公平/SLO 债务、证明义务、MPC oracle 与淘汰门 | 设计/调整动态调度、补多 Job 公平证据、准备公开 trace、诊断项目性能或扩展 proposed 主实验前读；SAOR 当前为 `design-candidate` |
+| `experiments/plans/state_aware_work_unit_evaluation_20260808.md` | 分阶段 work descriptor、四个开题最小方法证据、同上限 static vs dynamic，以及 §5.2 SAOR 动态算法唯一维护入口：FCFS ordered release、固定周期 DPP、三种 work、公平/SLO 债务、证明义务、失败机理、MPC oracle 与淘汰门 | 设计/调整动态调度、补多 Job 公平证据、准备公开 trace、诊断项目性能或扩展 proposed 主实验前读；SAOR 当前为 `trace-validated / capacity-only not-promoted` |
+| `experiments/results/saor_capacity_development_20260811/` | SAOR capacity-only 开发门：控制开销、paired aggregate trace replay、服务器四臂容量运行、无效运行、K160 权衡与失败机理 | 判断 SAOR 是否过 single-action gate；结果为 not-promoted，development evidence，不作为 formal proposed 排名 |
 | `code/scripts/baselines/opening_database_e2e_matrix.py` | 双 endpoint、三静态臂、统一 source/sink/质量/资源的 1 warmup + 3 formal runner；支持 workload-specific、校准合同锁定的 project K/actor shape | 只用于上述冻结开题合同；direct/DuckDB 并发不随 project 选择改变 |
 | `deploy/autodl/opening_database_e2e_p0.example.json` | AutoDL 开题三臂 runner 配置模板 | 复制到服务器 artifact root 后以 runtime env 展开 |
 | `deploy/autodl/opening_project_feeding_calibration.example.json` | 首轮未过 95% feeding 门后的纠正校准模板；同 manifest、统一 256 actor slots 并固定其它变量，仅扫 project K32/64/128/256 | 每个 workload 冻结最小饱和静态点后再整体替换重跑三臂矩阵 |
@@ -218,6 +219,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_duckdb_fourjob.example.json` | DuckDB AI bounded-output SQuAD 的四个 single-full 与四个独立连接并发准备模板 | 固定产品原生 concurrency，不注入项目 credit/router；当前未跑 formal |
 | `deploy/autodl/opening_image_native_fourjob.example.json` | Daft built-in、Ray Data 图像四个 single-full 与 short→3×long 原生并发模板 | 两系统共享 immutable image manifest/外部 Ray 资源，禁止项目调度；当前未跑 formal |
 | `deploy/autodl/opening_image_project_fourjob.example.json` | 图像 project 四个 single-full、frozen static 与稳定 `proposed` 角色模板 | 后续动态算法只变 `policy_revision`/输出目录并仅重跑 project，不改 manifest/scenario |
+| `deploy/autodl/saor_capacity_development.example.json` | fixed lower/upper、legacy threshold、SAOR capacity-only 四臂开发配置；所有臂/观测/权重由 runtime env 注入 | 只用于 single-action 机制门，不作为 frozen formal 配置；运行前必须绑定 calibration signature |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥 short 与一个或多个 token-work 匹配 long manifest，并输出 SHA/工作量 skew 审计 | 两作业用单 long；四作业用 1 short+3 long、每 Job 512 行 |
 | `code/scripts/data/build_image_multijob_manifest.py` | 从 PostgreSQL 冻结 2K short + 3×3K long 图像 source slices、0.5s arrival、doc-id/byte digest | native/project 唯一 workload identity；首次 formal 前 rehearsal 验证实际 overlap |
 | `code/scripts/analysis/summarize_project_short_all_at_t0.py` | 从服务器 raw 重算 Project eager single 的 T0–T4 时间、吞吐、MFU、状态和 Daft 对齐边界 | 回答“项目为何比 Daft 慢”时使用；T0 缺失不补造，T3/T4 只作 short 诊断 |
@@ -477,6 +479,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/scheduling/submission_control/stage_work.py` | 只在离线安全动作集内单步调整、stale/signature mismatch 回退静态点的 stage-work 控制候选 | 接入图像/文本 state-aware runner 前先读；当前只有纯策略合同，无性能 claim |
 | `code/src/scheduling/endpoint_routing/` | round-robin、least-queued、least-work、manifest-pinned、prefix-affinity 路由 | 修改多 endpoint 选择策略前读 |
 | `code/src/scheduling/runtime/` | 有界 Ray actor worker pool、submit/complete adapter、worker contract、metrics observation cache 与 named credit actor | 修改 Ray worker slots、worker routing、completion cleanup 或服务观测接线前读 |
+| `code/src/scheduling/runtime/saor_capacity.py` | 只学习当前臂、相邻安全档位、fresh/signature fallback 的 SAOR capacity-only 薄适配；无 Ray/Daft/vLLM import | 修改 shared-vLLM SAOR development profile 或容量观测映射前读；不是完整 ordered-release SAOR |
+| `code/src/scheduling/runtime/saor_pipeline.py` | prepare→ready-model 两阶段 differential-backpressure 有限安全臂；只返回预启动池的 flow limits | 拆图像两级 broker 或扩展异构 stage admission 前读；尚未接 image formal runner |
+| `code/src/experiments/saor/` | SAOR CPU 控制开销 benchmark 与 phase aggregate paired replay 分析 | 运行开发门、审计非因果 replay claim scope 或比较策略控制开销前读 |
 | `code/scripts/data/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本；支持显式 prompt-token eligibility、按过滤后 offset 选择不重叠 suffix、逐字段核验既有 prefix 和 append-only 防覆盖 | 构造最终可比 `AI_COMPLETE` baseline workload 或补 held-out 行前运行 |
 | `code/scripts/data/import_squad_workload.py` | SQuAD v1.1 validation/dev 专用 importer（bounded-output AI_COMPLETE 主对比轨）；锁定 prompt 模板、cap=64、fail-closed 校验 canonical SHA256 + 行数，reference_answers JSONB 多答案 + source_example_id；写 provenance（版本/split/SHA256/官方 repo/revision/下载方式/content hash/importer commit） | 跑 SQuAD bounded-output 三臂对照前导入；篡改文件会被 SHA256 门禁拒。配合 `code/tests/data/test_import_squad_workload.py` |
 | `code/scripts/data/import_bounded_output_workload.py` | 通用 bounded-output 包装 importer（`--template` 支持任意 wrap，把源 workload 包成短输出 workload）；幂等、新 doc_id base 避 PK 冲突 | 构造句子计数等 microbenchmark workload |
@@ -484,6 +489,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/infrastructure/test_runner_lease.py` | runner 活跃 owner、stale recovery、fingerprint 与租约释放测试 | 修改场景 runner 恢复或单写者边界后运行 |
 | `code/tests/infrastructure/test_ray_runtime_preflight.py` | Ray worker nofile 去重、证据记录与 1024 fail-closed 测试 | 修改 Ray 原生 framework 正式运行前置条件后运行 |
 | `code/scripts/analysis/summarize_output_aware_bfd.py` | output-aware BFD 重复实验的长表统计汇总 | 汇总吞吐、E2E、packing、GPU、能耗与 MFU 正式结果时运行 |
+| `code/scripts/analysis/benchmark_saor_control.py` | static/threshold/DRR/external-VTC/SAOR 纯 CPU 控制路径 microbenchmark | 只量控制计算开销，不据此声明 GPU/E2E 性能 |
+| `code/scripts/analysis/replay_saor_capacity.py` | 对 paired capacity aggregate trace 做滞后一拍选择与同 phase oracle regret | 验证动作方向；输出明确为 noncausal aggregate development evidence |
 | `code/tests/data/test_sources.py` | data source 查询构造和 source factory 单元测试 | 修改数据入口行为后运行 |
 | `code/tests/planning/test_organizers.py` | 数据组织后端最小单元测试 | 修改 organizer 接口或 batch 行为后运行 |
 | `code/tests/modalities/text/test_request_costs.py` | 输出成本模式、来源标签、严格输入校验与 completion actual-token work adapter | 修改文本成本估计或 completion work 提取语义后运行 |
@@ -523,6 +530,11 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/scheduling/test_scheduler.py` | bounded-inflight 与 exactly-once deterministic scheduler 测试 | 修改 scheduler orchestration 前运行 |
 | `code/tests/scheduling/test_execution_ledger.py` | exactly-once ledger、actual-work extractor 与异常原子性测试 | 修改通用 completion state 前运行 |
 | `code/tests/scheduling/test_saor.py` | SAOR DPP/fairness/stale fallback/capacity/predicted-service 单元测试 | 修改 SAOR 纯控制律或动作构造前运行 |
+| `code/tests/scheduling/test_saor_capacity_runtime.py` | capacity-only 当前臂学习、上下档与 stale fallback 单测 | 修改 SAOR shared-vLLM 薄适配前运行 |
+| `code/tests/scheduling/test_saor_pipeline_runtime.py` | 两阶段 prepare/model differential backlog 选择与 stale fallback 单测 | 修改图像异构 pipeline 控制核前运行 |
+| `code/tests/experiments/test_saor_control_benchmark.py` | SAOR 控制开销 benchmark schema/策略覆盖测试 | 修改 microbenchmark 前运行 |
+| `code/tests/experiments/test_saor_trace_replay.py` | paired trace 滞后一拍、oracle regret 与重复/缺臂 fail-closed 测试 | 修改 replay 口径前运行 |
+| `code/tests/experiments/test_saor_shared_vllm_config.py` | SAOR 容量配置、最大安全臂证据校验和 named-credit actuation 测试 | 修改服务器 development profile/runner/evidence validation 前运行 |
 | `code/tests/scheduling/test_ordered_release.py` | Job-head 顺序、release sequence、容量预校验、completion correction 与跨模态 work 测试 | 修改 ordered dispatcher state 前运行 |
 | `code/tests/scheduling/test_adaptive_admission.py` | AIMD、EWMA-AIMD、PID、UCB 控制律、边界与 reward 单元测试 | 修改动态 admission controller 前运行 |
 | `code/tests/scheduling/test_dynamic_admission.py` | 缓存采样、stale hold、typed trace 与动态降窗调度不变量测试 | 修改 observation provider 或 dynamic gate 前运行 |

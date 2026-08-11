@@ -1,0 +1,16 @@
+policy,operation,job_count,iterations,latency_us_p50,latency_us_p95,operations_per_s,claim_scope
+static,read_frozen_arm,1,100000,0.042,0.083,20025721.036098767,cpu_control_path_only
+legacy_threshold,select_capacity_arm,1,100000,1.167,1.292,839397.4482787634,cpu_control_path_only
+shared_drr,acquire_and_release_credit,1,100000,2.0,2.166,494915.59843011585,cpu_control_path_only
+external_vtc,acquire_and_release_credit,1,100000,2.917,3.083,341078.6205491308,cpu_control_path_only
+saor,select_finite_dpp_action,1,100000,2.125,2.209,470888.99486507324,cpu_control_path_only
+static,read_frozen_arm,8,100000,0.042,0.083,19581112.99829527,cpu_control_path_only
+legacy_threshold,select_capacity_arm,8,100000,1.167,1.25,838527.6768805375,cpu_control_path_only
+shared_drr,acquire_and_release_credit,8,100000,2.917,3.125,338828.77923284256,cpu_control_path_only
+external_vtc,acquire_and_release_credit,8,100000,3.542,3.833,276776.3272188793,cpu_control_path_only
+saor,select_finite_dpp_action,8,100000,8.084,8.958,119312.90746230374,cpu_control_path_only
+static,read_frozen_arm,32,100000,0.042,0.083,19726550.556190092,cpu_control_path_only
+legacy_threshold,select_capacity_arm,32,100000,1.208,1.292,811666.3729787173,cpu_control_path_only
+shared_drr,acquire_and_release_credit,32,100000,5.791,6.417,170381.17012597833,cpu_control_path_only
+external_vtc,acquire_and_release_credit,32,100000,5.417,5.792,182673.81634203577,cpu_control_path_only
+saor,select_finite_dpp_action,32,100000,28.375,37.291,31405.09268607145,cpu_control_path_only

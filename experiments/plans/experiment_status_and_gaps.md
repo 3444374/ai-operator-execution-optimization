@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-11；开题证据冻结，修正后的文本 phase-change 已按 pressure gate 停止）
+Date: 2026-07-20（最后更新：2026-08-11；开题证据冻结，SAOR capacity-only development gate 未晋级）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -10,6 +10,14 @@ Date: 2026-07-20（最后更新：2026-08-11；开题证据冻结，修正后的
 K128/K160 门禁通过（每 endpoint service rate +7.77%）；B=2.5/3.5/4.5 pressure
 均未形成双 endpoint、双周期 upper risk，按最高预注册档失败停止。action/formal 未运行，
 state-aware 价值保持待验证；下一轮必须是带显式 drain/recovery 的独立合同，不与本轮合并。
+
+同日完成的 SAOR capacity-only 四臂 development gate 不改变上述结论：4/4 arm 均完成
+5,266 请求、0 incident；SAOR 相对 K128 吞吐 +4.36%，但相对 K160 仅 +0.52%、相对简单
+threshold −1.46%，Jain 也最低。K160 相对 K128 仍有 +3.82% 吞吐和 −3.68% duration，
+但 Job B P99 +23.93%、Jain −3.22%、KV P95 0.826→0.997。故 K160 冻结为强效率 baseline
+兼 tail/fairness 风险点；当前 aggregate two-arm SAOR 标记 `not-promoted`，不在该 workload
+继续扫权重/K，也不追加公平专场。完整报告见
+`experiments/results/saor_capacity_development_20260811/README.md`。
 
 ## 状态增量（2026-08-04，历史快照；当前执行以其后的开题冻结段与 §0 为准）
 

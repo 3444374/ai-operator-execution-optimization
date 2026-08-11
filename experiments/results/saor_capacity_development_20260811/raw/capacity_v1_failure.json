@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "reason": "RuntimeError:profiler child failed with exit code 1",
+  "return_codes": [
+    -9,
+    1
+  ],
+  "final_credit_snapshots": [
+    {
+      "endpoint_id": "endpoint-0",
+      "request_limit": 128,
+      "work_limit": 131072,
+      "active_requests": 128,
+      "active_work": 98235,
+      "waiting_requests": 1,
+      "waiting_work": 762,
+      "oldest_waiting_age_s": 0.05403598211705685,
+      "active_by_job": "[[\"3428\", 128]]",
+      "active_work_by_job": "[[\"3428\", 98235]]",
+      "waiting_by_job": "[[\"3428\", 1]]",
+      "waiting_work_by_job": "[[\"3428\", 762]]",
+      "max_active_requests_seen": 128,
+      "max_active_work_seen": 98304,
+      "granted_requests_by_job": "[[\"3428\", 284]]",
+      "granted_work_by_job": "[[\"3428\", 218025]]",
+      "attained_service_by_job": "[]"
+    },
+    {
+      "endpoint_id": "endpoint-1",
+      "request_limit": 160,
+      "work_limit": 163840,
+      "active_requests": 133,
+      "active_work": 102046,
+      "waiting_requests": 0,
+      "waiting_work": 0,
+      "oldest_waiting_age_s": 0.0,
+      "active_by_job": "[[\"3428\", 133]]",
+      "active_work_by_job": "[[\"3428\", 102046]]",
+      "waiting_by_job": "[]",
+      "waiting_work_by_job": "[]",
+      "max_active_requests_seen": 151,
+      "max_active_work_seen": 115942,
+      "granted_requests_by_job": "[[\"3428\", 304]]",
+      "granted_work_by_job": "[[\"3428\", 233365]]",
+      "attained_service_by_job": "[]"
+    }
+  ],
+  "credit_capture_error": null
+}

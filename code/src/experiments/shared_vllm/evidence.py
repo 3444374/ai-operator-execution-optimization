@@ -272,28 +272,7 @@ def _validate_final_credit(
 ) -> None:
     if len(snapshots) != len(config.endpoint_ids):
         raise RuntimeError("shared credit final snapshot is incomplete")
-    request_limit = (
-        max(config.state_aware_control.request_candidates)
-        if (
-            scenario.policy == "state_aware_adaptive"
-            and config.state_aware_control is not None
-        )
-        else scenario.endpoint_limits(
-            config.request_limit_per_endpoint,
-            config.work_limit_per_endpoint,
-        )[0]
-    )
-    work_limit = (
-        max(config.state_aware_control.work_candidates)
-        if (
-            scenario.policy == "state_aware_adaptive"
-            and config.state_aware_control is not None
-        )
-        else scenario.endpoint_limits(
-            config.request_limit_per_endpoint,
-            config.work_limit_per_endpoint,
-        )[1]
-    )
+    request_limit, work_limit = _maximum_scenario_capacity(config, scenario)
     for snapshot in snapshots:
         if (
             int(snapshot["active_requests"]) != 0
@@ -312,6 +291,33 @@ def _validate_final_credit(
             > work_limit
         ):
             raise RuntimeError("shared work limit was exceeded")
+
+
+def _maximum_scenario_capacity(
+    config: SharedVllmConfig,
+    scenario: SharedVllmScenario,
+) -> tuple[int, int]:
+    """Return the largest configured safe arm used for peak validation."""
+    if (
+        scenario.policy == "state_aware_adaptive"
+        and config.state_aware_control is not None
+    ):
+        return (
+            max(config.state_aware_control.request_candidates),
+            max(config.state_aware_control.work_candidates),
+        )
+    if (
+        scenario.policy == "saor_capacity"
+        and config.saor_capacity_control is not None
+    ):
+        return (
+            max(item.arm.request_limit for item in config.saor_capacity_control.arms),
+            max(item.arm.work_limit for item in config.saor_capacity_control.arms),
+        )
+    return scenario.endpoint_limits(
+        config.request_limit_per_endpoint,
+        config.work_limit_per_endpoint,
+    )
 
 def _terminate_processes(processes: list[subprocess.Popen]) -> None:
     for process in processes:
@@ -490,6 +496,11 @@ def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
         "state_aware_control": (
             asdict(config.state_aware_control)
             if config.state_aware_control is not None
+            else None
+        ),
+        "saor_capacity_control": (
+            asdict(config.saor_capacity_control)
+            if config.saor_capacity_control is not None
             else None
         ),
     }

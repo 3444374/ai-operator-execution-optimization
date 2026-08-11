@@ -9,6 +9,7 @@
 | Directory | Content | Boundary |
 |---|---|---|
 | `phase_change_state_aware_corrected_early_stop_20260811/` | 修正门禁、HTTP tail-drain 与多 Job 全局 arrival clock 后的 A-only + 三档 pressure | A-only 证明 K160 相对 K128 service rate +7.77%；B=2.5/3.5/4.5 均未形成双 endpoint、双周期降档压力，按门禁停止，未跑 action/formal。 |
+| `saor_capacity_development_20260811/` | SAOR 控制 microbenchmark、paired trace replay 与 2×4090 四臂 capacity-only development gate | 4/4 arm、0 incident；SAOR 相对 K128 +4.36%，相对 K160 +0.52%、相对简单 threshold −1.46%，未晋级。一次顺序运行且 provenance 有已修复缺口，不作 formal 排名。 |
 
 ## 开题统一文本 database-E2E（2026-08-08 correctness 护栏）
 

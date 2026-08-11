@@ -119,8 +119,8 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 字段 | 当前冻结值 |
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
-| policy revision | `saor-v0.1.2-design`；core implementation `saor-core-v0.1` |
-| 状态 | `design-candidate`；纯策略/有序释放/执行账本已单测，尚未接 formal runner、尚未完成定理证明、尚无 proposed 胜出数据 |
+| policy revision | `saor-v0.2-development`；core implementation `saor-core-v0.1` |
+| 状态 | `trace-validated / capacity-only not-promoted`；纯策略、配对 replay 与文本容量 adapter 已接，真实服务仅 1-repeat development gate；尚未接完整 ordered-release/fairness/stage queue，尚未完成定理证明 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
 | 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
@@ -220,6 +220,44 @@ vLLM `priority` 只作可选消融：将少量公平/SLO 紧迫度等级投影�
 代码只接收带 calibration signature 的容量档位、预测 service/cost 和 fresh state；所有具体
 档位、阈值、窗口、endpoint 数与模态 work 换算必须由配置/adapter 显式提供。
 
+#### 5.2.2.2 2026-08-11 capacity-only development gate：为什么没有超过强静态
+
+`experiments/results/saor_capacity_development_20260811/` 在同一 A20/B4.5 合同上完成 frozen
+K128、frozen K160、legacy threshold 和 SAOR capacity-only 四臂各一次。4/4 均完成 5,266
+请求、0 incident、终态 credit 归零；但只有一次且顺序固定，服务器 worktree 还是基座 commit
+加未提交同步代码，因此只作 development evidence。
+
+SAOR 相对 K128 吞吐 +4.36%、group duration −4.18%，低于约 5% 晋级门；相对 K160 只有
++0.52%/−0.52%，相对简单 threshold 则吞吐 −1.46%、duration +1.48%。同时 SAOR 的 Jain
+为 0.776，低于 K128/K160/threshold 的 0.805/0.779/0.786；相对 K128，Job B P99 恶化
+26.94%。因此当前 **aggregate-state + two-arm + capacity-only** 版本记为 `not-promoted`，
+不继续在同一 workload 扫 `V`、risk weight 或更多 K。
+
+这不等于 frozen K160 很差。K160 相对 K128 吞吐 +3.82%、duration −3.68%，两个 Job JCT
+分别 −13.54%/−3.58%；代价是 waiting mean/P95/max 从 0.068/0/13 升至 2.023/17/70，KV
+P95/max 从 0.826/0.940 升至 0.997/1.000，Job B P99 +23.93%，Jain −3.22%。本轮无 OOM、
+failure 或 credit leak，故只能把 K160 定位为**强静态效率点兼 tail/fairness 风险点**，不能
+写成“不安全/必然失败”。动态方法的证明义务是相对它形成 Pareto 改善，不是先假定它有害。
+
+失败机理按证据冻结为：
+
+1. workload 是持续高压且没有 recovery gate；四臂 GPU mean 都约 99%，缺少可避免 idle；
+2. SAOR 1,876 个 endpoint-state 样本中 1,551 个（82.7%）仍在 K160，threshold 为
+   1,632/1,850（88.2%），SAOR 只是“多数时间 upper + 末段振荡”；
+3. 当前 runner 只执行 aggregate capacity，没有把 per-Job fairness/SLO debt 或 ordered release
+   接入动作，因此不能从完整 DPP 模型推导 Jain 改善；
+4. backlog-weighted service 项随队列增长，而 risk proxy 是归一化小数且 `V=1`，量纲使 high
+   arm 长期占优；线上还只更新 current-arm EWMA，未获得同状态反事实 service；
+5. 外部降档不撤销已获 lease，14 次切换主要出现在约 286--330 s，KV/长 decode 的排空延迟
+   使动作错过压力形成期；
+6. aggregate waiting/KV 不表达 Job B P99、SLO 或 attained-service lag，故改善 Job A tail
+   可以同时伤害 Job B 和 Jain。
+
+这一负结果进一步说明“数学模型写出”不等于“实现已数学验证”：oracle DPP 的 conditional
+mean service、即时 action effect、stationary slot 与完整 virtual queue 在本轮都未闭合。后续
+只有在独立 burst/recovery workload 上 oracle 相对强静态先显示约 5% 以上且无 tail/fairness
+退化时，才允许继续在线 estimator；否则 dynamic capacity 分支直接淘汰。
+
 #### 5.2.3 三种 work 语义：token 组织不取消，但不再一数三用
 
 每行必须保持一个独立完整请求。**禁止**把单行长 prompt 按 token 切成多个互相隔离的请求；
@@ -262,6 +300,109 @@ vLLM `priority` 只作可选消融：将少量公平/SLO 紧迫度等级投影�
 
 图像路径保持同一抽象，只在 modality adapter 中把上述量换成 image/frame、prepare/model
 work 与实际完成服务；scheduler 本身不出现 `if text else image`。
+
+#### 5.2.3.1 图像 CPU 木桶的两级 broker 修正
+
+现有图像证据不支持“GPU busy 低就扩大 model active window”。60K×2 matched-resource 正式
+结果中，project CPU8→CPU16 从 1038.7 提升到 1666.5 image/s，而 GPU busy mean 仍只有
+6.3%→9.6%；同机 dual-GPU forward ceiling 约 19K image/s。host-path screening 又显示
+preprocess actor 16→32 的 post-setup 吞吐只提高约 7.3%，但 worker setup 和 first output
+明显恶化；source thread 1→4 只提高约 2.4%。因此当前木桶是 CPU prepare 与 driver/Ray
+submission 的组合，不是数据库读取、PCIe 或 GPU forward 单点。
+
+当前 project runner 直接执行：
+
+```text
+preprocess_ref = cpu_actor.preprocess.remote(encoded)
+result_ref = gpu_actor.embed.remote(preprocess_ref)
+```
+
+这会把尚未完成的 prepare dependency 预先排入 GPU actor，调度器看不到独立的 ready-tensor
+队列，也无法区分“CPU 还没产出”与“GPU 来不及消费”。SAOR 图像扩展必须先改为显式两级
+broker：
+
+```text
+Daft encoded queue
+  → bounded pending-prepare（预启动 Ray CPU actor pool）
+  → bounded ready-tensor queue
+  → bounded pending-model（常驻 Ray GPU actor）
+```
+
+令 $Q_{j,p}$ 为等待 prepare 的 work，$Q_{j,m}$ 为已经 prepare、等待 model 的 work。对单 Job
+省略下标后，两级 tandem queue 的动作相关 MaxWeight 项为：
+
+$$
+\Psi_{pipe}(a)=
+-(Q_p-Q_m)\widehat\mu_p(a)-Q_m\widehat\mu_m(a)
++V\left(c_{tail}(a)+c_{memory}(a)+c_{switch}(a)\right).
+$$
+
+这里 $Q_p-Q_m$ 是 differential backlog：encoded backlog 大而 ready tensor 少时提高 prepare
+流量；ready tensor 已堆积时自动抑制继续膨胀 tensor，并优先让 model 排空。它比“GPU
+utilization 未达阈值就增档”更符合现有反例。
+
+工程采用两个时间尺度：
+
+- **离线/慢时间尺度**：冻结 CPU/GPU actor pool 拓扑、每 actor 线程数和 placement/resource
+  request；不在每个控制周期创建/销毁 actor；
+- **在线/快时间尺度**：只从校准安全集合选择
+  `(prepare_inflight, ready_tensor_work, model_inflight)`，completion 即补位；
+- **多 Job**：每个 Job 保持独立的 $Q_{j,p},Q_{j,m}$ 和公平债务，先选 Job-head，再由两级
+  broker 执行；共享 ready buffer 必须按 work 而不是 batch 条数记账；
+- **内存**：ready tensor 以 bytes/work 设硬上限。224×224 RGB 的 FP32 tensor 约 588 KiB
+  （602 kB）/图，
+  不能把 batch 数当成跨 dtype/shape 可比较的内存量。
+
+纯策略已新增 `scheduling/runtime/saor_pipeline.py` 的有限安全臂与 differential-backpressure
+控制器；它不 import Ray/Daft/CLIP。当前尚未接 image formal runner，因此只算核心代码和单元
+测试，不产生图像性能 claim。接线前先把现有 observe-only snapshot 中“同一 submitted batch
+同时计入 prepare/model active”的近似替换为真实两级队列。
+
+Ray/Daft 的正确利用方式是让框架负责资源放置和流式执行，让 SAOR 负责项目拥有的应用层
+admission：Ray task/actor 显式声明 CPU/GPU/custom resource，必要时 placement group 只做
+跨节点共置；Ray Data/Daft Native baseline 仍由其自身 streaming executor 和 backpressure
+拥有调度，不注入项目 controller。官方接口依据：
+
+- Ray Data streaming executor 与 operator out queue/backpressure：
+  <https://docs.ray.io/en/latest/data/data-internals.html>；
+- Ray `map_batches` 的 CPU/GPU、concurrency 和 actor pool：
+  <https://docs.ray.io/en/latest/data/api/doc/ray.data.Dataset.map_batches.html>；
+- Ray logical resources 与 placement group：
+  <https://docs.ray.io/en/latest/ray-core/scheduling/resources.html>、
+  <https://docs.ray.io/en/latest/ray-core/scheduling/placement-group.html>；
+- Daft `@daft.cls` 的 `cpus/gpus/max_concurrency/ray_options`：
+  <https://docs.daft.ai/en/stable/api/udf/>。
+
+SAOR 能减少错配、隐藏 overlap 并限制中间态，但**不能凭调度消灭每图约 5 ms 的 decode/
+resize/normalize CPU work**。因此图像需求拆成“flow scheduling”和“work reduction”两条正交
+消融，后者优先验证以下已有技术，不包装成 SAOR 算法贡献：
+
+1. **带签名的 derived-image cache**：对重复/迭代数据库 AI 查询，建立普通派生表或 lakehouse
+   表，主键为 `(content_hash, transform_signature)`；保存 resize/crop 后的 `uint8 CHW`，把
+   decode/resize 从热路径移走，normalize/cast 留给 GPU。224×224 RGB uint8 为 150,528 B/图，
+   是 FP32 输入 tensor 的四分之一。PostgreSQL 中不建议用 generated column 隐式执行模型依赖
+   预处理；使用可审计 refresh 的派生表/物化结果，并显式记录 processor revision。Arrow
+   lakehouse 可用 canonical `arrow.fixed_shape_tensor`（底层 FixedSizeList）保存 shape/layout。
+2. **GPU preprocessing baseline**：用 NVIDIA DALI `external_source` 接数据库返回的 encoded
+   bytes，比较 mixed decoder + resize + crop/normalize 与当前 CPU actor。DALI 官方即以
+   CPU preprocessing bottleneck、prefetch/parallel/batch 为目标，但 mixed JPEG decoder 部分
+   路径仍可能使用 CPU，且会消耗 GPU 资源，所以必须在 4090 上实测，不能按文档直接假定获益。
+3. **CPU 路径继续保留**：当前 `FastClipImagePreprocessor`/torchvision actor 是冷数据和缓存
+   miss 的生产 fallback；actor pool 规模离线冻结，在线只做 dispatch/admission。数据库端
+   predicate/projection/limit 必须在读取 image bytes 前完成，但已有 source-thread 扫描说明单纯
+   增加 PostgreSQL 读取并发不是当前主杠杆。
+
+正式消融固定同一 CLIP processor 语义和 embedding 质量，比较
+`raw→CPU`、`derived uint8→GPU normalize`、`raw→DALI mixed→GPU` 的冷/热命中率、JCT、
+CPU-core-s/image、GPU-s/image、bytes/image、能耗和检索 recall@k/nDCG。只有 cache hit 可预测且
+收益覆盖存储/refresh 成本时，derived cache 才进入主方案；一次性冷扫描不得借用预计算成本。
+
+接口依据：NVIDIA DALI 的 GPU/mixed image pipeline 与 external source
+<https://docs.nvidia.com/deeplearning/dali/user-guide/docs/index.html>、
+<https://docs.nvidia.com/deeplearning/dali/main-user-guide/docs/operations/nvidia.dali.fn.external_source.html>；
+Arrow fixed-shape tensor
+<https://arrow.apache.org/docs/format/CanonicalExtensions.html>；PostgreSQL materialized view
+<https://www.postgresql.org/docs/current/rules-materializedviews.html>。
 
 #### 5.2.4 固定控制周期与事件驱动补位
 
@@ -449,6 +590,51 @@ Job 的长期加权服务约束和长期 miss-rate 约束。
 公平份额或 SLO 定理。即使完成这些定理，也不能继承 VTC 的 in-engine 2× tight token service
 difference bound。
 
+#### 5.2.8.1 什么才算“完成定理证明”
+
+仅写出 Lyapunov 函数、引用 MaxWeight 或跑出实验曲线，都不算完成证明。项目中“定理证明已
+完成”必须同时具备以下可审计对象：
+
+1. **定理陈述闭合**：随机过程、capacity region、稳定性定义、控制周期、可行动作、所有常数
+   和期望所依赖的条件全部定义；结论必须量化适用范围，不能写“通常稳定”；
+2. **假设可枚举**：arrival/service 有界性、平稳或分段平稳、$\varepsilon$ slack、反馈延迟、
+   work 上界、失败回退逐项列出，正文不得再偷偷使用未声明假设；
+3. **逐步推导**：从 queue recursion 展开 quadratic drift，给出有限常数 $B$，证明每一步
+   不等式，再与存在 $\varepsilon$ slack 的 stationary randomized policy 比较；
+4. **近似误差闭合**：明确线上选择相对理想 MaxWeight/DPP 是 exact、$C$-additive、
+   $\alpha$-approximate 还是 high-probability robust，并按对应形式重写定理；
+5. **虚拟队列推论闭合**：单独证明 $F_j/Z_j$ 稳定如何推出长期 weighted-service 与 SLO
+   约束；不能从普通物理队列稳定直接跳到公平；
+6. **边界和反例**：说明 overload、signature 漂移、无界 output、无界 inversion、Job 离开重入
+   时哪个结论失效；
+7. **独立复核材料**：proof appendix 给出全部 lemma/theorem，不以代码或实验替代缺失推导。
+
+定理本身完成与系统适用性验证是两道门。数学证明可以在抽象模型内成立；但要把它写成 SAOR
+系统结论，还必须用 trace/实验验证真实实现满足 service ranking、delay/inversion、bounded
+work 和 action-feasibility 等桥接假设。实验不能“证明定理”，只能证伪或支持假设适用。
+
+#### 5.2.8.2 对估计误差论证的致命缺口与修正路线
+
+上一版拟把任意 bounded service-estimation error 直接写成与队列无关的 $C$-additive DPP
+误差，这不严谨。MaxWeight 得分含 $Q\widehat\mu$；即使
+$|\widehat\mu-\mu|\le\delta$，当 $Q$ 无界时得分误差仍可达 $Q\delta$，一般不能成为常数
+$C$。在该项闭合前不得套用 $(B+C)/V$ 结论。
+
+可接受的证明路线只有三类：
+
+1. **oracle/exact 主定理**：先在已知 conditional mean service 的有限动作模型下给出 exact
+   MaxWeight/DPP 定理，明确它只覆盖抽象 oracle policy；
+2. **$\alpha$-approximate MaxWeight**：证明线上动作的真实 weighted service 至少为最优值的
+   $\alpha$ 倍，则只对相应收缩后的 capacity region 声明稳定；需要用校准区间和 held-out
+   ranking 证明 $alpha$ 下界；
+3. **有界物理 buffer + robust error**：若工程硬上限给出 $Q\le Q_{max}$，可把误差界写成
+   与 $Q_{max}\delta$ 有关的常数，但物理队列“稳定”此时是容量截断的直接结果，必须同时报告
+   source backpressure/drop/未接纳 work；仍需另证不受硬截断保护的公平/SLO 虚拟队列。
+
+当前冻结选择是：以路线 1 给出理论基准，以路线 2 作为可发表的实现桥接目标，路线 3 只作
+工程安全边界。若 held-out 数据无法给出可复现的 $\alpha$ 或 contracted-region slack，论文
+只能保留 oracle theorem + empirical controller，不声称实际 SAOR throughput-optimal。
+
 #### 5.2.9 可执行伪代码与现有模块映射
 
 ```text
@@ -596,6 +782,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-11 | `saor-v0.1.1-design` | 撤销任何以 waiting 或 GPU utilization 单独判断健康/拥塞的表述；加入历史反例、五层状态指纹与联合状态分类 | 历史 GPU/vLLM/Ray/图像实验事实 + 指标合同 | 保持 `design-candidate`；观测模型收紧 |
 | 2026-08-11 | `saor-v0.1.2-design` | 纳入 phase-change 提前停止证据：增档动机成立、降档区未建立、phase 不等于状态复位；禁止固化 K/KV/waiting 阈值 | 独立结果分支正式报告 + CSV 审计 | 保持 `design-candidate`；重做 recovery/burst gate |
 | 2026-08-11 | `saor-core-v0.1` | 实现中性 capacity、execution ledger、有限动作 DPP、公平债务和 Job-head ordered release；配置与模态适配外置 | 纯 Python unit/architecture tests | 不升阶；runner/replay/真实服务均未接入 |
+| 2026-08-11 | `saor-v0.2-development` | 接入文本 shared-vLLM capacity adapter、配对 trace replay、state/action trace 与最大安全臂 validator；四臂真实服务 development gate 未过晋级门 | 6-sample regret replay + 2×4090 one-repeat 4-arm gate | 升为 `trace-validated`；capacity-only 标记 `not-promoted`，完整 SAOR 仍未验证 |
 
 状态只允许按以下顺序变化：
 
@@ -624,8 +811,9 @@ runtime 使用 shared credit，replay batching 使用 flush policy，通用执�
 
 只有依次满足以下门禁，才可建立 SAOR-only 发布 profile：
 
-1. 新增一个薄 runtime adapter，把 atomic snapshot、action builder、ordered publish、Ray
-   completion 和实际 work correction 接成端到端路径；纯策略仍不得 import Ray/Daft/vLLM。
+1. 薄 runtime adapter 已完成文本 aggregate capacity actuation；仍需把 atomic snapshot、
+   action builder、ordered publish、Ray completion 和实际 work correction 接成完整端到端
+   路径。纯策略仍不得 import Ray/Daft/vLLM。
 2. 文本 shared-vLLM 与图像 project runner 都显式选择 `saor` profile，并通过 exactly-once、
    capacity、failure/stale fallback 和配置 provenance 测试。
 3. 对 `code/src`、`code/scripts` 做静态依赖扫描；除单独保留的 baseline/reproduction profile 外，

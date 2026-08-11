@@ -24,7 +24,7 @@ code/
 │   │   ├── organization/         ← pending batching、token/work budget、service quantum
 │   │   ├── submission_control/   ← request/work credit、legacy baselines、SAOR policy/ordered release
 │   │   ├── endpoint_routing/     ← pinned/queue/work/prefix routing
-│   │   └── runtime/              ← Ray adapter 与服务观测缓存
+│   │   └── runtime/              ← Ray adapter、服务观测缓存、SAOR 容量/多阶段薄适配
 │   ├── serving/                  ← completion/embedding backend 与 vLLM probe
 │   ├── modalities/
 │   │   ├── text/                 ← prompt/output-token work 语义
@@ -226,8 +226,8 @@ endpoint routing, a deterministic policy-composition scheduler, and Ray runtime
 adapters. Policy modules do not import Daft, Arrow, Ray, or HTTP; only runtime
 adapters receive the active Ray module explicitly.
 
-The first SAOR core revision is intentionally not wired into a formal runner yet. Its slow
-path selects among caller-enumerated safe actions using queue and weighted-fairness debt;
+The first SAOR core revision selects among caller-enumerated safe actions using queue and
+weighted-fairness debt;
 its fast path publishes validated Job-head requests with a monotonic sequence and releases
 capacity on completion. Release work and predicted epoch service are separate fields, so a
 long request is not silently treated as service completed within the current control slot.
@@ -235,6 +235,19 @@ The convenience action builder requires every service/goodput/tail/energy/switch
 release-action values are explicit marginal deltas against the zero-delta hold reference.
 GPU utilization, `waiting`, KV thresholds and phase labels remain observation/experiment
 inputs outside the policy; no single metric is hard-coded into the action selector.
+`scheduling/runtime/saor_capacity.py` is a capacity-only development adapter wired to the
+existing shared-vLLM named-credit actor. It learns only the current safe arm, evaluates
+adjacent configured arms, and fails back to a configured frozen point on stale/signature/
+invalid observations. This does not yet wire ordered release or fairness debt into the
+formal runtime, so it must not be described as full SAOR.
+
+`scheduling/runtime/saor_pipeline.py` is an engine-neutral two-stage differential-
+backpressure core for image/heterogeneous pipelines. It changes only bounded flow limits
+for prestarted worker pools; it does not create Ray actors. The current image runner still
+submits unresolved CPU futures directly to GPU actors, so the controller remains unwired
+until an explicit pending-prepare → ready-tensor → pending-model broker exposes true stage
+queues. Its tests prove selection/fallback invariants only, not image performance.
+
 The package facade now resolves compatibility exports lazily, so importing SAOR does not
 load AIMD/PID/UCB or Ray adapters. This removes an import-time dependency, but it does not
 yet make the repository SAOR-only: the profiler, shared-vLLM runner, image multi-Job runner,

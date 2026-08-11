@@ -15,6 +15,12 @@ from src.experiments.calibration.contracts import (
 )
 from src.experiments.scenarios.core import validate_service_metadata
 from src.infrastructure.config_env import expand_scalar, expand_text
+from src.scheduling.core.control import CapacityArm
+from src.scheduling.runtime.saor_capacity import (
+    LinearCostFeature,
+    SaorArmEstimate,
+    SaorObservationModel,
+)
 
 
 POLICIES = {
@@ -24,6 +30,7 @@ POLICIES = {
     "shared_fifo",
     "external_vtc",
     "state_aware_adaptive",
+    "saor_capacity",
 }
 
 _SCENARIO_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
@@ -137,6 +144,22 @@ class StateAwareControlConfig:
 
 
 @dataclass(frozen=True)
+class SaorCapacityControlConfig:
+    arms: tuple[SaorArmEstimate, ...]
+    initial_arm: str
+    fallback_arm: str
+    observation_model: SaorObservationModel
+    ewma_alpha: float
+    queue_work_scale: int
+    min_dwell_samples: int
+    max_state_age_s: float
+    v: float
+    tail_weight: float
+    energy_weight: float
+    switch_weight: float
+
+
+@dataclass(frozen=True)
 class SharedVllmConfig:
     experiment_id: str
     seed: int
@@ -154,6 +177,7 @@ class SharedVllmConfig:
     service_metadata: tuple[tuple[str, object], ...]
     calibration_contract: CalibrationContract | None = None
     state_aware_control: StateAwareControlConfig | None = None
+    saor_capacity_control: SaorCapacityControlConfig | None = None
 
 def load_config(path: Path) -> SharedVllmConfig:
     decoded = json.loads(path.read_text(encoding="utf-8"))
@@ -276,6 +300,9 @@ def load_config(path: Path) -> SharedVllmConfig:
     state_aware_control = _load_state_aware_control(
         decoded.get("state_aware_control")
     )
+    saor_capacity_control = _load_saor_capacity_control(
+        decoded.get("saor_capacity_control")
+    )
     uses_state_aware = any(
         scenario.policy == "state_aware_adaptive"
         for scenario in scenarios
@@ -284,6 +311,11 @@ def load_config(path: Path) -> SharedVllmConfig:
         raise ValueError(
             "state_aware_adaptive policy requires state_aware_control"
         )
+    uses_saor_capacity = any(
+        scenario.policy == "saor_capacity" for scenario in scenarios
+    )
+    if uses_saor_capacity and saor_capacity_control is None:
+        raise ValueError("saor_capacity policy requires saor_capacity_control")
     if state_aware_control is not None and (
         state_aware_control.initial_request_limit != request_limit
         or state_aware_control.work_candidates[
@@ -295,6 +327,16 @@ def load_config(path: Path) -> SharedVllmConfig:
         raise ValueError(
             "state-aware initial arm must equal root request/work limits"
         )
+    if saor_capacity_control is not None:
+        initial_saor_arm = next(
+            arm
+            for arm in saor_capacity_control.arms
+            if arm.name == saor_capacity_control.initial_arm
+        )
+        if initial_saor_arm.arm != CapacityArm(request_limit, work_limit):
+            raise ValueError(
+                "SAOR initial arm must equal root request/work limits"
+            )
     return SharedVllmConfig(
         experiment_id=experiment_id,
         seed=seed,
@@ -312,6 +354,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         service_metadata=expanded_metadata,
         calibration_contract=calibration_contract,
         state_aware_control=state_aware_control,
+        saor_capacity_control=saor_capacity_control,
     )
 
 def build_job_command(
@@ -403,6 +446,7 @@ def build_job_command(
         "shared_fifo",
         "external_vtc",
         "state_aware_adaptive",
+        "saor_capacity",
     }:
         if not coordinator_name:
             raise ValueError("shared policies require a coordinator name")
@@ -472,9 +516,12 @@ def _load_scenario(
         if scenario_work_raw is not None
         else None
     )
-    if policy == "state_aware_adaptive" and scenario_request_limit is not None:
+    if (
+        policy in {"state_aware_adaptive", "saor_capacity"}
+        and scenario_request_limit is not None
+    ):
         raise ValueError(
-            "state_aware_adaptive uses the root initial endpoint limits"
+            "dynamic capacity policies use the root initial endpoint limits"
         )
     static_partition_count_raw = raw.get("static_partition_count")
     static_partition_count = (
@@ -588,6 +635,13 @@ def _local_limits(
         return (
             max(config.state_aware_control.request_candidates),
             max(config.state_aware_control.work_candidates),
+        )
+    if scenario.policy == "saor_capacity":
+        if config.saor_capacity_control is None:
+            raise ValueError("saor_capacity requires saor_capacity_control")
+        return (
+            max(item.arm.request_limit for item in config.saor_capacity_control.arms),
+            max(item.arm.work_limit for item in config.saor_capacity_control.arms),
         )
     if scenario.policy != "static_partition":
         return request_limit, work_limit
@@ -790,6 +844,177 @@ def _load_state_aware_control(
         max_state_age_s=positive_float(
             raw["max_state_age_s"],
             "max_state_age_s",
+        ),
+    )
+
+
+def _load_saor_capacity_control(
+    raw: object,
+) -> SaorCapacityControlConfig | None:
+    if raw is None:
+        return None
+    required = {
+        "arms",
+        "initial_arm",
+        "fallback_arm",
+        "observation_model",
+        "ewma_alpha",
+        "queue_work_scale",
+        "min_dwell_samples",
+        "max_state_age_s",
+        "v",
+        "tail_weight",
+        "energy_weight",
+        "switch_weight",
+    }
+    if not isinstance(raw, dict) or set(raw) != required:
+        raise ValueError("saor_capacity_control fields are invalid")
+    raw_arms = raw["arms"]
+    if not isinstance(raw_arms, list) or not raw_arms:
+        raise ValueError("SAOR arms must be a non-empty list")
+    arms = []
+    arm_fields = {
+        "name",
+        "request_limit",
+        "work_limit",
+        "prior_goodput",
+        "prior_tail_risk",
+        "prior_energy",
+    }
+    for item in raw_arms:
+        if not isinstance(item, dict) or set(item) != arm_fields:
+            raise ValueError("SAOR arm fields are invalid")
+        arms.append(
+            SaorArmEstimate(
+                name=_nonempty_string(item["name"], "SAOR arm name"),
+                arm=CapacityArm(
+                    _positive_integer(
+                        _expand_scalar(item["request_limit"], "SAOR request_limit"),
+                        "SAOR request_limit",
+                    ),
+                    _positive_integer(
+                        _expand_scalar(item["work_limit"], "SAOR work_limit"),
+                        "SAOR work_limit",
+                    ),
+                ),
+                goodput=_nonnegative_float(
+                    _expand_scalar(item["prior_goodput"], "SAOR prior_goodput"),
+                    "SAOR prior_goodput",
+                ),
+                tail_risk=_nonnegative_float(
+                    _expand_scalar(item["prior_tail_risk"], "SAOR prior_tail_risk"),
+                    "SAOR prior_tail_risk",
+                ),
+                energy=_nonnegative_float(
+                    _expand_scalar(item["prior_energy"], "SAOR prior_energy"),
+                    "SAOR prior_energy",
+                ),
+            )
+        )
+    names = tuple(item.name for item in arms)
+    if len(names) != len(set(names)):
+        raise ValueError("SAOR arm names must be unique")
+    if tuple(sorted(arms, key=lambda item: item.arm)) != tuple(arms):
+        raise ValueError("SAOR arms must be ordered by capacity")
+    initial_arm = _nonempty_string(raw["initial_arm"], "SAOR initial_arm")
+    fallback_arm = _nonempty_string(raw["fallback_arm"], "SAOR fallback_arm")
+    if initial_arm not in names or fallback_arm not in names:
+        raise ValueError("SAOR initial/fallback arm is not configured")
+
+    observation_raw = raw["observation_model"]
+    if not isinstance(observation_raw, dict) or set(observation_raw) != {
+        "goodput_field",
+        "goodput_scale",
+        "tail_features",
+        "energy_features",
+    }:
+        raise ValueError("SAOR observation_model fields are invalid")
+
+    def load_features(value: object, label: str) -> tuple[LinearCostFeature, ...]:
+        if not isinstance(value, list):
+            raise ValueError(f"{label} must be a list")
+        features = []
+        for item in value:
+            if not isinstance(item, dict) or set(item) != {"field", "scale", "weight"}:
+                raise ValueError(f"{label} feature fields are invalid")
+            scale = _nonnegative_float(
+                _expand_scalar(item["scale"], f"{label}.scale"),
+                f"{label}.scale",
+            )
+            if scale <= 0:
+                raise ValueError(f"{label}.scale must be positive")
+            features.append(
+                LinearCostFeature(
+                    _nonempty_string(item["field"], f"{label}.field"),
+                    scale,
+                    _nonnegative_float(
+                        _expand_scalar(item["weight"], f"{label}.weight"),
+                        f"{label}.weight",
+                    ),
+                )
+            )
+        return tuple(features)
+
+    goodput_scale = _nonnegative_float(
+        _expand_scalar(observation_raw["goodput_scale"], "SAOR goodput_scale"),
+        "SAOR goodput_scale",
+    )
+    if goodput_scale <= 0:
+        raise ValueError("SAOR goodput_scale must be positive")
+    observation_model = SaorObservationModel(
+        goodput_field=_nonempty_string(
+            observation_raw["goodput_field"],
+            "SAOR goodput_field",
+        ),
+        goodput_scale=goodput_scale,
+        tail_features=load_features(
+            observation_raw["tail_features"],
+            "SAOR tail_features",
+        ),
+        energy_features=load_features(
+            observation_raw["energy_features"],
+            "SAOR energy_features",
+        ),
+    )
+    ewma_alpha = _nonnegative_float(
+        _expand_scalar(raw["ewma_alpha"], "SAOR ewma_alpha"),
+        "SAOR ewma_alpha",
+    )
+    if not 0 < ewma_alpha <= 1:
+        raise ValueError("SAOR ewma_alpha must be in (0, 1]")
+    max_state_age_s = _nonnegative_float(
+        _expand_scalar(raw["max_state_age_s"], "SAOR max_state_age_s"),
+        "SAOR max_state_age_s",
+    )
+    if max_state_age_s <= 0:
+        raise ValueError("SAOR max_state_age_s must be positive")
+    return SaorCapacityControlConfig(
+        arms=tuple(arms),
+        initial_arm=initial_arm,
+        fallback_arm=fallback_arm,
+        observation_model=observation_model,
+        ewma_alpha=ewma_alpha,
+        queue_work_scale=_positive_integer(
+            _expand_scalar(raw["queue_work_scale"], "SAOR queue_work_scale"),
+            "SAOR queue_work_scale",
+        ),
+        min_dwell_samples=_nonnegative_integer(
+            _expand_scalar(raw["min_dwell_samples"], "SAOR min_dwell_samples"),
+            "SAOR min_dwell_samples",
+        ),
+        max_state_age_s=max_state_age_s,
+        v=_nonnegative_float(_expand_scalar(raw["v"], "SAOR v"), "SAOR v"),
+        tail_weight=_nonnegative_float(
+            _expand_scalar(raw["tail_weight"], "SAOR tail_weight"),
+            "SAOR tail_weight",
+        ),
+        energy_weight=_nonnegative_float(
+            _expand_scalar(raw["energy_weight"], "SAOR energy_weight"),
+            "SAOR energy_weight",
+        ),
+        switch_weight=_nonnegative_float(
+            _expand_scalar(raw["switch_weight"], "SAOR switch_weight"),
+            "SAOR switch_weight",
         ),
     )
 

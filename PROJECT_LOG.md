@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-08-11 SAOR capacity-only 四臂开发门未晋级，冻结失败机理与 K160 权衡
+
+- 在隔离服务器 worktree 完成 threshold、frozen K160、SAOR、frozen K128 四臂各一次：
+  4/4 均完成 5,266 requests、0 incident、终态 request/work credit 归零；SAOR 真实执行 7 次
+  increase/7 次 decrease，最大安全臂 validator 已修复并回归测试。
+- SAOR 相对 K128 吞吐 +4.36%、duration −4.18%，但低于约 5% 晋级门；相对 K160 仅
+  +0.52%/−0.52%，相对简单 threshold 为 −1.46%/+1.48%，且 Jain 最低。capacity-only 分支
+  标记 `not-promoted`，按停止规则不追加公平专场或同 workload 权重/K 扫描。
+- K160 相对 K128 吞吐 +3.82%、duration −3.68%、两个 Job JCT 均改善，但 Job B P99
+  +23.93%、Jain −3.22%、KV P95 0.826→0.997；未出现 OOM/failure/leak。故将 K160 记为
+  强静态效率点兼 tail/fairness 风险点，不写成必然不安全。
+- 失败分析冻结为：持续高压缺少动态可利用区、capacity-only 未执行 per-Job DPP、公平债务与
+  ordered release、队列项和归一化 risk 量纲错配、current-arm-only EWMA 缺少反事实、外部
+  downshift 不能撤销已有 lease、aggregate waiting/KV 不表达 Job tail/fairness。
+- 同步修复两项 evidence 问题：终态峰值按最大配置安全臂验证；redacted manifest 重新包含
+  `saor_capacity_control`。本轮仍因 one-repeat、固定顺序、dirty-worktree commit provenance
+  和既有 manifest 漏字段，只作 development evidence。
+- 新增图像两级 `prepare→ready-tensor→model` differential-backpressure core；图像 CPU 木桶
+  另拆 derived-image cache、DALI mixed/GPU preprocess 与现有 CPU fallback 三臂 work-reduction
+  消融，禁止声称 SAOR 能消灭 decode/resize 计算。
+
 ## 2026-08-10 VTC 8-client long-overload 正式 4 臂 + K160 对照：bound 主导，动态吞吐增量未获支持
 
 - 跑了 external completion-corrected VTC-style 多 job 共享 4 臂正式（FIFO/DRR/VTC @ K128 + state-aware adaptive K96→160，1w+3f=16 group，seed 20260810，2×4090 / Qwen2.5-7B / vLLM 0.25.1 / 8-client 2963 行 720s overload）。10 正确性门 + 动态动作门 + VTC 门全过；config SHA `903ba1f9…`，git `5f3a605`。

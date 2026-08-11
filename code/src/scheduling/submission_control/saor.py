@@ -200,8 +200,28 @@ class SaorPolicy:
             return self._fallback(state, "stale_observation")
         if not state.actions:
             return self._fallback(state, "no_feasible_action")
+        queue_work = {job.job_id: job.ready_work for job in state.jobs}
+        fairness_debt = {job.job_id: job.fairness_debt for job in state.jobs}
+        active = tuple(job for job in state.jobs if job.backlogged)
+        total_weight = sum(job.weight for job in active)
+        fairness_share = (
+            sum(
+                job.fairness_debt * job.weight / total_weight
+                for job in active
+            )
+            if total_weight > 0
+            else 0.0
+        )
         scored = tuple(
-            (action.action_id, self._score(state.jobs, action))
+            (
+                action.action_id,
+                self._score(
+                    queue_work,
+                    fairness_debt,
+                    fairness_share,
+                    action,
+                ),
+            )
             for action in state.actions
         )
         by_id = {action.action_id: action for action in state.actions}
@@ -215,26 +235,21 @@ class SaorPolicy:
 
     def _score(
         self,
-        jobs: tuple[SaorJobState, ...],
+        queue_work: Mapping[str, int],
+        fairness_debt: Mapping[str, float],
+        fairness_share: float,
         action: SaorAction,
     ) -> float:
         service = action.service_by_job
         total_service = sum(service.values())
-        active = tuple(job for job in jobs if job.backlogged)
-        total_weight = sum(job.weight for job in active)
         queue_term = -sum(
-            job.ready_work * service.get(job.job_id, 0) for job in jobs
+            queue_work[job_id] * completed
+            for job_id, completed in service.items()
         )
-        fairness_term = 0.0
-        if total_weight > 0:
-            fairness_term = sum(
-                job.fairness_debt
-                * (
-                    job.weight / total_weight * total_service
-                    - service.get(job.job_id, 0)
-                )
-                for job in active
-            )
+        fairness_term = fairness_share * total_service - sum(
+            fairness_debt[job_id] * completed
+            for job_id, completed in service.items()
+        )
         cost = (
             -action.predicted_goodput_delta
             + self.tail_weight * action.tail_risk_delta

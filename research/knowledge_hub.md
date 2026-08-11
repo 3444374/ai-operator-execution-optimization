@@ -618,7 +618,56 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **落地难度**：🟡 中——需实验验证"partial execution 特征 vs full execution 代价"的相关性
 - **gap**：当前 profile 全部是完整 E2E 运行
 
-#### 5.7.4 模式优先级矩阵
+#### 5.7.4 图像异构多阶段候选（2026-08-11 偏差修正）
+
+**模式 20：显式两级 broker + differential backpressure**
+
+- **来源**：Tassiulas–Ephremides MaxWeight/backpressure 的 tandem-queue 迁移；Ray Core/Data
+  提供显式 CPU/GPU resource、actor pool 和 streaming operator，但不替项目选择数据库 Job
+  的 stage admission。
+- **含义**：不再把未完成的 CPU preprocess future 直接预排入 GPU actor。显式拆成
+  `pending-prepare → ready-tensor → pending-model`，分别维护 encoded/ready tensor work；
+  在线只在预启动 actor pool 上选择有限安全
+  `(prepare_inflight, ready_tensor_work, model_inflight)` 档位。
+- **决策项**：两阶段动作相关 drift 使用
+  `-(Q_prepare-Q_model)·mu_prepare - Q_model·mu_model + V·cost`。ready tensor 堆积时抑制
+  继续生产，GPU 缺料且 encoded backlog 存在时增加 prepare 流量；GPU utilization 只作佐证，
+  不作为阈值触发器。
+- **工程边界**：actor pool 大小和线程数离线冻结；已有 16→32 CPU actor 结果显示热查询只
+  增约 7.3%，但 setup/first-output 恶化，因而动态建/杀 actor 不是快控制动作。
+- **状态**：engine-neutral core 和单元测试已实现，尚未接 image formal runner；无性能 claim。
+
+**模式 21：带 transform signature 的 derived-image cache / GPU preprocess 对照**
+
+- **来源**：数据库物化结果、Arrow fixed-shape tensor、NVIDIA DALI mixed decoder/resize/
+  normalize 的成熟工程模式；不是新调度算法。
+- **含义**：SAOR 只能协调 pipeline，不能消灭每图 decode/resize CPU work。对重复查询可用
+  `(content_hash, processor/model transform signature)` 建派生表或 lakehouse cache，优先保存
+  224×224 RGB uint8（150,528 B/图）而不是 FP32 tensor（602,112 B/图）；冷 miss 保留当前
+  CPU actor。另以 DALI external source + mixed/GPU preprocessing 作匹配资源 baseline。
+- **评价**：必须把一次性冷扫描与热命中分开，计入 cache build/refresh/storage；固定 CLIP
+  embedding 语义并报告 JCT、CPU-core-s/image、GPU-s/image、bytes/image、energy 和检索质量。
+- **晋级门**：cache hit 可预测且摊销收益覆盖 refresh/storage，或 DALI 在同硬件上净降低 JCT
+  且不挤占 model GPU；否则只保留为负结果/工程 baseline。
+
+#### 5.7.5 SAOR capacity-only 负结果与可迁移教训（2026-08-11）
+
+- **事实**：双 4090 单次四臂 development gate 中，SAOR 相对 K128 吞吐 +4.36%，但相对
+  K160 +0.52%、相对 legacy threshold −1.46%，Jain 最低，故未过晋级门。K160 相对 K128
+  仍有 +3.82% 吞吐与两个 Job JCT 改善，但 Job B P99 +23.93%、Jain −3.22%、KV P95
+  0.826→0.997；本轮无 OOM/failure/leak。
+- **算法教训**：持续高压、GPU 已饱和时，有限容量控制没有足够的 avoidable-idle 区间。当前
+  runner 又只执行 aggregate capacity，没有 per-Job virtual queue/ordered release；不能把完整
+  DPP 模型的公平结论外推给 capacity-only adapter。
+- **建模教训**：MaxWeight backlog 项随队列增长，归一化 waiting/KV risk 在固定 `V=1` 下会
+  被淹没；只学习 current arm 的 EWMA 也不是同状态反事实 service。一般 bounded prediction
+  error 乘无界 backlog 后不是常数，必须走 oracle exact、可证明 `alpha`-approximate 或有界
+  buffer 三条严谨路线之一。
+- **系统教训**：外部 downshift 不能撤销 vLLM 已接纳请求，动作主要在末段发生时只会等待
+  KV/long decode 排空。dynamic 的正确对手是强静态 Pareto 点，不是低档稻草人；后续必须先用
+  recovery-gated burst 上的 offline oracle 证明有可利用动态空间，否则淘汰容量分支。
+
+#### 5.7.6 模式优先级矩阵
 
 ```
                     落地难度 →
