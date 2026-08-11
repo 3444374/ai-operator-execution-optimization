@@ -2,6 +2,16 @@
 
 本目录存放项目级图表的可复现生成脚本。脚本可用于 learning、开题报告、PPT、中期汇报和毕业论文图表复现。
 
+## 开题图集 SVG 便携化
+
+```bash
+python3 figures/scripts/embed_svg_assets.py figures/opening_figure_set/main_svg/P05_研究空白_AI数据执行层.svg
+```
+
+该脚本把 SVG 中相对路径引用的本地 icon/Logo 转为内嵌 data URI，使单个 SVG 拖入
+PowerPoint 或 Word 后不依赖旁边的 `assets/` 目录。它只处理图集副本；权威 SVG 和 Draw.io
+源图仍保留相对资产与独立可编辑对象。遇到缺失资产或未知 MIME 类型时脚本 fail closed。
+
 ## 2026-08-07 开题冻结四图
 
 ```bash

@@ -67,6 +67,17 @@ foreground/background interference, queue balance, and prefix locality.
 
 ## 2026-08-08 开题叙事图（当前入口）
 
+### 开题专用图集
+
+开题 PPT 和开题报告不再直接从内容繁杂的 `data/report_main/` 选图。统一进入
+`opening_figure_set/`：`main_png/` 与 `main_svg/` 按答辩页码保存 14 张主讲图，
+`editable_drawio/` 保存 5 张可编辑概念图，`backup_png/` 与 `backup_svg/` 只保存 2 张
+单 Job 诊断备份图。文件采用 `P页码_用途_内容` 或 `B序号_用途_内容` 的中文可读命名。
+
+完整目录、源文件映射和排除项见 `opening_figure_set/README.md`；选择与复制审计见
+`audit/opening_figure_set_manifest_20260811.md`。权威源仍在 `architecture/editable/` 和
+`data/report_main/`，图集只作为稳定选图入口。
+
 第一性原理复审后，正文不再从“已有模块”倒推故事，而是先用动机证据分别导出
 WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像与代价估计的先验证据：
 
@@ -92,6 +103,31 @@ WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像
 A/T/N/C/H/D/I/J/E，新增单 Job 任务—请求主图，并保留 F 状态备份图；十一张 PNG/SVG 均已打开复核，无裁切、
 缺字或文字重叠，并通过 300 DPI、矢量、灰度与颜色外形状编码检查。当前仍未制作新的
 PPT 成品；旧 PPT 只是历史底稿。
+
+### 2026-08-11 可编辑概念图候选稿
+
+`architecture/editable/` 新增五张按当前 20 页答辩主线重构的 Draw.io 候选图：研究空白与
+方案概览、总体闭环、Work-unit 与数据组织、状态感知提交/路由/多作业、因果验证路线。每张同时
+保留 `.drawio`、SVG、1600×900 PNG、逐元素审计和独立 SVG icon 资产；参考图只用于版式与
+图形语言，不作为整图截图嵌入。多模态复用并入总体闭环，不再单独重复一张大架构图。
+
+本批次是供用户逐图确认的 PPT-ready 候选稿，尚未替换报告当前引用的
+`opening_ai_data_execution_boundary.*` 与 `opening_work_to_schedule_overview.*`。选择合同、
+编辑方式和图标来源边界见 `audit/opening_editable_diagrams_manifest_20260811.md` 与
+`architecture/editable/README.md`。
+
+用户复核后完成源图层清理：01 删除面向内部的研究边界锁卡并将“嵌入/分类”改为“图像表征/分类”；
+02 删除旧整页 raster base 和后加覆盖层，重建单一原生紫色模态面板与绿色 Sink；04 合并重复
+completion 路径；05 删除七个圆角修补 mask，并把窄卡文字改为显式两行。五张图禁止用遮罩或
+新卡片盖住错误对象，必须删除错误节点后再导出。
+
+02 后续按用户局部复核再次清理：Admission 标题改用卡片整行宽度，两个 Adapter 卡重排图标、
+标题与正文安全边距；删除手绘 Daft 近似符号，改用 Daft 官方仓库的黑/洋红标识。官方 Logo 仅作
+产品识别，保留原比例与颜色，来源、哈希与商标边界记录在 `02_system_architecture.audit.md`。
+
+03 按用户反馈完成整体字体与版面密度提升：主标题 42 px、三栏标题 30 px、机制卡标题 24 px，
+正文、字段、徽标和图例统一不低于 20 px；通过重分配盲点、Work Estimation、WorkDescriptor 和
+评价区的文本框与内距解决放大后的边界问题，没有删减内容、增加遮罩或改变箭头语义。
 
 本组图的视觉语法已冻结：颜色表示系统或策略，形状只在需要冗余编码时保留；圆点、
 方框、三角、菱形若表示执行路径，必须由图内图例逐项映射；若表示统计量，图例或页脚
@@ -408,3 +444,9 @@ sweep over background `K_max={8,16,unbounded}` plus a tuned queue-adaptive
 implementation test. In this run, `K_max=8` protects the foreground job better
 than larger background inflight. Tuned adaptive does downshift, but it is not
 yet better than static `K_max=8`.
+# Figure asset updates
+
+- 2026-08-11: Rebuilt the Shared Credit region in `architecture/editable/04_state_aware_scheduling` to remove the `Request Credit` overflow, replaced ambiguous coin/gauge icons with editable request-slot/work-budget SVGs, and re-audited adjacent arrows and borders.
+- 2026-08-11: Corrected the two short orange inter-panel arrows and the green refill arrow in figure 04: compact heads now leave visible shafts, and the refill bend is vertically centered in the available gap.
+- 2026-08-11: Rebuilt figure 02's editable Sink SVG so the PostgreSQL cylinder has a complete body and lower closure; the validation badge now sits outside the silhouette instead of visually cutting it away.
+- 2026-08-11: Reframed editable figure 05 from an internal causal/evidence-gate workflow into an opening-defense research plan: two completed foundations, five deliberately broad future-work stages, unified experiment principles and expected evaluation dimensions. Removed visible contract/Trace/gate terminology and the S7 feedback connector.

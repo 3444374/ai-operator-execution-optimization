@@ -1,0 +1,52 @@
+{
+  "source_dir": "/Users/junshun/Desktop/dameng/GPU/figures/audit/reference_opening_editable_20260811",
+  "output_dir": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable",
+  "recursive": false,
+  "overwrite": false,
+  "image_extensions": [
+    ".bmp",
+    ".jpeg",
+    ".jpg",
+    ".png",
+    ".tif",
+    ".tiff",
+    ".webp"
+  ],
+  "entries": [
+    {
+      "index": 1,
+      "status": "pending",
+      "image": "/Users/junshun/Desktop/dameng/GPU/figures/audit/reference_opening_editable_20260811/01_research_gap.png",
+      "drawio": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable/01_research_gap.drawio",
+      "preview": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable/01_research_gap.png"
+    },
+    {
+      "index": 2,
+      "status": "pending",
+      "image": "/Users/junshun/Desktop/dameng/GPU/figures/audit/reference_opening_editable_20260811/02_system_architecture.png",
+      "drawio": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable/02_system_architecture.drawio",
+      "preview": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable/02_system_architecture.png"
+    },
+    {
+      "index": 3,
+      "status": "pending",
+      "image": "/Users/junshun/Desktop/dameng/GPU/figures/audit/reference_opening_editable_20260811/03_work_unit.png",
+      "drawio": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable/03_work_unit.drawio",
+      "preview": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable/03_work_unit.png"
+    },
+    {
+      "index": 4,
+      "status": "pending",
+      "image": "/Users/junshun/Desktop/dameng/GPU/figures/audit/reference_opening_editable_20260811/04_state_aware_scheduling.png",
+      "drawio": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable/04_state_aware_scheduling.drawio",
+      "preview": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable/04_state_aware_scheduling.png"
+    },
+    {
+      "index": 5,
+      "status": "pending",
+      "image": "/Users/junshun/Desktop/dameng/GPU/figures/audit/reference_opening_editable_20260811/05_evidence_gate.png",
+      "drawio": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable/05_evidence_gate.drawio",
+      "preview": "/Users/junshun/Desktop/dameng/GPU/figures/architecture/editable/05_evidence_gate.png"
+    }
+  ]
+}

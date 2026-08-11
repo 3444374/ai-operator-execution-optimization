@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <style>
+      .cn{font-family:"Microsoft YaHei","PingFang SC","STHeiti",Arial,sans-serif}
+      .title{font-size:40px;font-weight:700;fill:#111827}
+      .sub{font-size:18px;fill:#6B7280}
+      .panel-title{font-size:26px;font-weight:700;fill:#fff}
+      .section{font-size:28px;font-weight:700}
+      .card-title{font-size:22px;font-weight:700}
+      .body{font-size:18px;fill:#374151}
+      .pill{font-size:18px;font-weight:700}
+    </style>
+    <marker id="ab" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto"><path d="M0 0 12 6 0 12z" fill="#165DCC"/></marker>
+    <marker id="ao" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto"><path d="M0 0 12 6 0 12z" fill="#E85D04"/></marker>
+    <marker id="ag" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0 10 5 0 10z" fill="#15803D"/></marker>
+    <marker id="ax" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 9 4.5 0 9z" fill="#6B7280"/></marker>
+  </defs>
+
+  <rect width="1600" height="900" fill="#fff"/>
+
+  <!-- Page title -->
+  <rect x="40" y="28" width="72" height="56" rx="12" fill="#165DCC"/>
+  <text class="cn" x="76" y="66" text-anchor="middle" font-size="30" font-weight="700" fill="#fff">02</text>
+  <text class="cn title" x="132" y="64">AI 数据执行层：从 work 描述到状态感知调度闭环</text>
+  <text class="cn sub" x="134" y="121">统一 work / state 契约，连接数据库 AI 算子与模型服务</text>
+
+  <!-- Source panel -->
+  <rect x="40" y="170" width="250" height="430" rx="12" fill="#fff" stroke="#165DCC" stroke-width="2"/>
+  <path d="M52 170H278A12 12 0 0 1 290 182V228H40V182A12 12 0 0 1 52 170Z" fill="#165DCC"/>
+  <text class="cn panel-title" x="165" y="207" text-anchor="middle">数据源与数据引擎</text>
+  <image href="assets/02_system_architecture/database.svg" x="80" y="250" width="70" height="70"/>
+  <text class="cn card-title" x="152" y="281" fill="#0F3F9E">PostgreSQL</text>
+  <text class="cn body" x="155" y="315"><tspan x="155">prompt / image</tspan><tspan x="155" dy="23">job / SLO</tspan></text>
+  <line x1="65" y1="365" x2="265" y2="365" stroke="#CBD5E1"/>
+  <image href="assets/02_system_architecture/daft-official.png" x="80" y="395" width="70" height="70" preserveAspectRatio="xMidYMid meet"/>
+  <text class="cn" x="155" y="420" font-size="24" font-weight="700" fill="#111827">Daft</text>
+  <text class="cn body" x="155" y="444"><tspan x="155">DataFrame</tspan><tspan x="155" dy="23">扫描 · 分区</tspan></text>
+  <rect x="65" y="525" width="200" height="48" rx="12" fill="#EEF5FF" stroke="#165DCC"/>
+  <text class="cn pill" x="165" y="556" text-anchor="middle" fill="#0F3F9E">统一 source contract</text>
+
+  <!-- AI Data Execution Layer -->
+  <rect x="335" y="155" width="760" height="455" rx="14" fill="#FFFCF8" stroke="#E85D04" stroke-width="2" stroke-dasharray="9 6"/>
+  <text class="cn section" x="365" y="181" fill="#E85D04">AI Data Execution Layer</text>
+  <rect x="835" y="166" width="230" height="32" rx="16" fill="#FFF4EA" stroke="#E85D04"/>
+  <text class="cn pill" x="950" y="188" text-anchor="middle" fill="#E85D04">候选 / 待验证</text>
+
+  <rect x="370" y="207" width="320" height="38" rx="14" fill="#EEF5FF" stroke="#165DCC"/>
+  <text class="cn card-title" x="530" y="233" text-anchor="middle" fill="#0F3F9E">研究内容一：work-unit 构造</text>
+  <rect x="730" y="207" width="330" height="38" rx="14" fill="#FFF4EA" stroke="#E85D04"/>
+  <text class="cn card-title" x="895" y="233" text-anchor="middle" fill="#E85D04">研究内容二：容量感知调度</text>
+
+  <rect x="370" y="255" width="320" height="120" rx="12" fill="#fff" stroke="#165DCC" stroke-width="2"/>
+  <image href="assets/02_system_architecture/estimate.svg" x="390" y="280" width="60" height="60"/>
+  <image href="assets/02_system_architecture/descriptor.svg" x="444" y="292" width="42" height="42"/>
+  <text class="cn card-title" x="495" y="282" fill="#0F3F9E"><tspan x="495">WorkDescriptor</tspan><tspan x="495" dy="27">+ 代价估计</tspan></text>
+  <text class="cn body" x="495" y="327"><tspan x="495">staged work · locality</tspan><tspan x="495" dy="23">SLO · uncertainty</tspan></text>
+
+  <rect x="730" y="255" width="330" height="120" rx="12" fill="#fff" stroke="#165DCC" stroke-width="2"/>
+  <image href="assets/02_system_architecture/organizer.svg" x="752" y="282" width="60" height="60"/>
+  <text class="cn" x="825" y="296" font-size="24" font-weight="700" fill="#0F3F9E">Work Organizer</text>
+  <text class="cn body" x="825" y="326"><tspan x="825">work budget · balance</tspan><tspan x="825" dy="23">locality → BatchRequest</tspan></text>
+
+  <rect x="370" y="410" width="320" height="140" rx="12" fill="#fff" stroke="#E85D04" stroke-width="2"/>
+  <image href="assets/02_system_architecture/admission.svg" x="392" y="478" width="52" height="52"/>
+  <text class="cn card-title" x="535" y="440" text-anchor="middle" fill="#E85D04"><tspan x="535">安全容量</tspan><tspan x="535" dy="27">State-aware Admission</tspan></text>
+  <text class="cn body" x="460" y="492"><tspan x="460">bounded active work</tspan><tspan x="460" dy="23">fresh / stale fallback</tspan></text>
+
+  <rect x="730" y="410" width="330" height="140" rx="12" fill="#fff" stroke="#E85D04" stroke-width="2"/>
+  <image href="assets/02_system_architecture/routing.svg" x="752" y="448" width="64" height="64"/>
+  <text class="cn" x="829" y="446" font-size="23" font-weight="700" fill="#E85D04">Routing + Multi-job</text>
+  <text class="cn body" x="829" y="485"><tspan x="829">credit · idle borrowing</tspan><tspan x="829" dy="23">fair queue · SLO guard</tspan></text>
+
+  <rect x="370" y="564" width="690" height="28" rx="14" fill="#FFF4EA" stroke="#E85D04"/>
+  <text class="cn pill" x="715" y="584" text-anchor="middle" fill="#E85D04">同上限 frozen-static A/B · 动态策略不预设优胜</text>
+
+  <!-- Modality panel: one clean purple outline, no hidden raster or duplicate shell. -->
+  <rect x="1120" y="170" width="225" height="430" rx="12" fill="#fff" stroke="#5B2AA6" stroke-width="2"/>
+  <path d="M1132 170H1333A12 12 0 0 1 1345 182V228H1120V182A12 12 0 0 1 1132 170Z" fill="#5B2AA6"/>
+  <text class="cn panel-title" x="1232" y="207" text-anchor="middle">模态分支</text>
+  <rect x="1140" y="248" width="185" height="103" rx="12" fill="#F6F0FF" stroke="#5B2AA6"/>
+  <image href="assets/02_system_architecture/text.svg" x="1148" y="258" width="28" height="28"/>
+  <text class="cn card-title" x="1182" y="279" font-size="18" fill="#5B2AA6">Text Adapter</text>
+  <text class="cn body" x="1232" y="323" text-anchor="middle">Prompt → vLLM</text>
+  <rect x="1140" y="370" width="185" height="125" rx="12" fill="#F6F0FF" stroke="#5B2AA6"/>
+  <image href="assets/02_system_architecture/image.svg" x="1148" y="380" width="28" height="28"/>
+  <text class="cn card-title" x="1182" y="401" font-size="18" fill="#5B2AA6">Image Adapter</text>
+  <text class="cn body" x="1232" y="457" text-anchor="middle">Tensor → CLIP / ViT</text>
+  <image href="assets/02_system_architecture/gpu.svg" x="1150" y="521" width="52" height="52"/>
+  <text class="cn pill" x="1205" y="536" fill="#5B2AA6"><tspan x="1205">GPU · KV</tspan><tspan x="1205" dy="23">queue · stage</tspan></text>
+
+  <!-- Sink panel: one clean green outline with a 20 px gap from the modality panel. -->
+  <rect x="1365" y="170" width="195" height="430" rx="12" fill="#fff" stroke="#15803D" stroke-width="2"/>
+  <path d="M1377 170H1548A12 12 0 0 1 1560 182V228H1365V182A12 12 0 0 1 1377 170Z" fill="#15803D"/>
+  <text class="cn panel-title" x="1462" y="207" text-anchor="middle">统一 Sink</text>
+  <image href="assets/02_system_architecture/sink.svg" x="1426" y="265" width="72" height="72"/>
+  <text class="cn" x="1462" y="371" text-anchor="middle" font-size="20" font-weight="700" fill="#15803D">PostgreSQL</text>
+  <text class="cn body" x="1462" y="418" text-anchor="middle"><tspan x="1462">text / label</tspan><tspan x="1462" dy="23">pgvector embedding</tspan><tspan x="1462" dy="23">exactly-once</tspan></text>
+  <rect x="1380" y="525" width="160" height="48" rx="12" fill="#EFFAF2" stroke="#15803D"/>
+  <text class="cn pill" x="1460" y="556" text-anchor="middle" fill="#15803D">统一结果契约</text>
+
+  <!-- Shared runtime state -->
+  <rect x="335" y="645" width="1035" height="145" rx="12" fill="#F5F7FA" stroke="#6B7280" stroke-width="2" stroke-dasharray="8 5"/>
+  <image href="assets/02_system_architecture/snapshot.svg" x="360" y="665" width="58" height="58"/>
+  <image href="assets/02_system_architecture/trace.svg" x="412" y="682" width="38" height="38"/>
+  <text class="cn" x="465" y="688" font-size="24" font-weight="700" fill="#374151">RuntimeStateSnapshot + Trace（公共状态契约）</text>
+  <text class="cn sub" x="465" y="715">completion + queue / service / job state</text>
+  <rect x="365" y="738" width="235" height="36" rx="12" fill="#fff" stroke="#6B7280"/>
+  <rect x="610" y="738" width="220" height="36" rx="12" fill="#fff" stroke="#6B7280"/>
+  <rect x="840" y="738" width="230" height="36" rx="12" fill="#fff" stroke="#6B7280"/>
+  <rect x="1080" y="738" width="265" height="36" rx="12" fill="#fff" stroke="#6B7280"/>
+  <text class="cn body" x="482" y="762" text-anchor="middle">stage: ready / active</text>
+  <text class="cn body" x="720" y="762" text-anchor="middle">service: running / KV</text>
+  <text class="cn body" x="955" y="762" text-anchor="middle">GPU / MFU / rate</text>
+  <text class="cn body" x="1212" y="762" text-anchor="middle">job: progress / done</text>
+
+  <rect x="335" y="806" width="1225" height="52" rx="12" fill="#EEF5FF" stroke="#165DCC"/>
+  <text class="cn pill" x="355" y="838" fill="#0F3F9E">跨模态复用：WorkDescriptor · Organizer · safe capacity · credit · routing · multi-job · trace</text>
+  <rect x="1305" y="815" width="235" height="34" rx="14" fill="#F6F0FF" stroke="#5B2AA6"/>
+  <text class="cn pill" x="1422" y="838" text-anchor="middle" fill="#5B2AA6">仅 adapter / backend 不同</text>
+
+  <!-- Editable connectors are last so no filled panel can hide their visible segments. -->
+  <path d="M290 325H370" fill="none" stroke="#165DCC" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ab)"/>
+  <path d="M690 315H730" fill="none" stroke="#165DCC" stroke-width="3" stroke-linecap="round" marker-end="url(#ab)"/>
+  <path d="M895 375V392H530V410" fill="none" stroke="#E85D04" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ao)"/>
+  <path d="M690 480H730" fill="none" stroke="#E85D04" stroke-width="3" stroke-linecap="round" marker-end="url(#ao)"/>
+  <path d="M1060 480H1110V407H1120" fill="none" stroke="#165DCC" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ab)"/>
+  <path d="M1345 385H1365" fill="none" stroke="#15803D" stroke-width="3" stroke-linecap="round" marker-end="url(#ag)"/>
+  <path d="M1232 600V630H1204V645" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ax)"/>
+  <path d="M1462 600V718H1370" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ax)"/>
+  <path d="M625 645V620H350V500H370" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ax)"/>
+  <path d="M1028 645V620H1080V500H1060" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ax)"/>
+</svg>

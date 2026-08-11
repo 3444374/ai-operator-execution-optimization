@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <style>
+      .cn{font-family:"Microsoft YaHei","PingFang SC","STHeiti",Arial,sans-serif}
+      .title{font-size:40px;font-weight:700;fill:#111827}
+      .sub{font-size:18px;fill:#6B7280}
+      .panel-title{font-size:26px;font-weight:700;fill:#fff}
+      .section{font-size:28px;font-weight:700}
+      .card-title{font-size:22px;font-weight:700}
+      .body{font-size:18px;fill:#374151}
+      .pill{font-size:18px;font-weight:700}
+    </style>
+    <marker id="ab" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto"><path d="M0 0 12 6 0 12z" fill="#165DCC"/></marker>
+    <marker id="ao" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto"><path d="M0 0 12 6 0 12z" fill="#E85D04"/></marker>
+    <marker id="ag" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0 10 5 0 10z" fill="#15803D"/></marker>
+    <marker id="ax" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 9 4.5 0 9z" fill="#6B7280"/></marker>
+  </defs>
+
+  <rect width="1600" height="900" fill="#fff"/>
+
+  <!-- Page title -->
+  <rect x="40" y="28" width="72" height="56" rx="12" fill="#165DCC"/>
+  <text class="cn" x="76" y="66" text-anchor="middle" font-size="30" font-weight="700" fill="#fff">02</text>
+  <text class="cn title" x="132" y="64">AI 数据执行层：从 work 描述到状态感知调度闭环</text>
+  <text class="cn sub" x="134" y="121">统一 work / state 契约，连接数据库 AI 算子与模型服务</text>
+
+  <!-- Source panel -->
+  <rect x="40" y="170" width="250" height="430" rx="12" fill="#fff" stroke="#165DCC" stroke-width="2"/>
+  <path d="M52 170H278A12 12 0 0 1 290 182V228H40V182A12 12 0 0 1 52 170Z" fill="#165DCC"/>
+  <text class="cn panel-title" x="165" y="207" text-anchor="middle">数据源与数据引擎</text>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMzIiIGN5PSIxMyIgcng9IjIxIiByeT0iOCIvPjxwYXRoIGQ9Ik0xMSAxM3YzNWMwIDQgOSA4IDIxIDhzMjEtNCAyMS04VjEzIi8+PHBhdGggZD0iTTExIDMwYzAgNCA5IDggMjEgOHMyMS00IDIxLTgiLz48cGF0aCBkPSJNMTEgNDdjMCA0IDkgOCAyMSA4czIxLTQgMjEtOCIvPjwvc3ZnPg==" x="80" y="250" width="70" height="70"/>
+  <text class="cn card-title" x="152" y="281" fill="#0F3F9E">PostgreSQL</text>
+  <text class="cn body" x="155" y="315"><tspan x="155">prompt / image</tspan><tspan x="155" dy="23">job / SLO</tspan></text>
+  <line x1="65" y1="365" x2="265" y2="365" stroke="#CBD5E1"/>
+  <image href="data:image/png;base64,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" x="80" y="395" width="70" height="70" preserveAspectRatio="xMidYMid meet"/>
+  <text class="cn" x="155" y="420" font-size="24" font-weight="700" fill="#111827">Daft</text>
+  <text class="cn body" x="155" y="444"><tspan x="155">DataFrame</tspan><tspan x="155" dy="23">扫描 · 分区</tspan></text>
+  <rect x="65" y="525" width="200" height="48" rx="12" fill="#EEF5FF" stroke="#165DCC"/>
+  <text class="cn pill" x="165" y="556" text-anchor="middle" fill="#0F3F9E">统一 source contract</text>
+
+  <!-- AI Data Execution Layer -->
+  <rect x="335" y="155" width="760" height="455" rx="14" fill="#FFFCF8" stroke="#E85D04" stroke-width="2" stroke-dasharray="9 6"/>
+  <text class="cn section" x="365" y="181" fill="#E85D04">AI Data Execution Layer</text>
+  <rect x="835" y="166" width="230" height="32" rx="16" fill="#FFF4EA" stroke="#E85D04"/>
+  <text class="cn pill" x="950" y="188" text-anchor="middle" fill="#E85D04">候选 / 待验证</text>
+
+  <rect x="370" y="207" width="320" height="38" rx="14" fill="#EEF5FF" stroke="#165DCC"/>
+  <text class="cn card-title" x="530" y="233" text-anchor="middle" fill="#0F3F9E">研究内容一：work-unit 构造</text>
+  <rect x="730" y="207" width="330" height="38" rx="14" fill="#FFF4EA" stroke="#E85D04"/>
+  <text class="cn card-title" x="895" y="233" text-anchor="middle" fill="#E85D04">研究内容二：容量感知调度</text>
+
+  <rect x="370" y="255" width="320" height="120" rx="12" fill="#fff" stroke="#165DCC" stroke-width="2"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIxMCIgeT0iNyIgd2lkdGg9IjQ0IiBoZWlnaHQ9IjUwIiByeD0iNSIvPjxwYXRoIGQ9Ik0xOCAxN2gyOE0xOCAyN2g4TTMyIDI3aDhNNDYgMjdoME0xOCAzN2g4TTMyIDM3aDhNNDYgMzdoME0xOCA0N2g4TTMyIDQ3aDE0Ii8+PC9zdmc+" x="390" y="280" width="60" height="60"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTcgNmgyMmwxMCAxMHY0MkgxN3oiLz48cGF0aCBkPSJNMzkgNnYxMmgxMk0yNCAyOGgxOE0yNCAzOGgxOE0yNCA0OGgxMiIvPjxyZWN0IHg9IjQyIiB5PSIzOSIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiByeD0iMiIvPjwvc3ZnPg==" x="444" y="292" width="42" height="42"/>
+  <text class="cn card-title" x="495" y="282" fill="#0F3F9E"><tspan x="495">WorkDescriptor</tspan><tspan x="495" dy="27">+ 代价估计</tspan></text>
+  <text class="cn body" x="495" y="327"><tspan x="495">staged work · locality</tspan><tspan x="495" dy="23">SLO · uncertainty</tspan></text>
+
+  <rect x="730" y="255" width="330" height="120" rx="12" fill="#fff" stroke="#165DCC" stroke-width="2"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSI3IiB5PSIxMSIgd2lkdGg9IjE1IiBoZWlnaHQ9IjE3IiByeD0iMiIvPjxyZWN0IHg9IjI1IiB5PSIxMSIgd2lkdGg9IjI3IiBoZWlnaHQ9IjE3IiByeD0iMiIvPjxyZWN0IHg9IjciIHk9IjMyIiB3aWR0aD0iMjciIGhlaWdodD0iMTciIHJ4PSIyIi8+PHJlY3QgeD0iMzciIHk9IjMyIiB3aWR0aD0iMTUiIGhlaWdodD0iMTciIHJ4PSIyIi8+PHBhdGggZD0iTTE1IDU1aDM0Ii8+PC9zdmc+" x="752" y="282" width="60" height="60"/>
+  <text class="cn" x="825" y="296" font-size="24" font-weight="700" fill="#0F3F9E">Work Organizer</text>
+  <text class="cn body" x="825" y="326"><tspan x="825">work budget · balance</tspan><tspan x="825" dy="23">locality → BatchRequest</tspan></text>
+
+  <rect x="370" y="410" width="320" height="140" rx="12" fill="#fff" stroke="#E85D04" stroke-width="2"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiNFODVEMDQiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMzIgNSA1MyAxM3YxNWMwIDE0LTkgMjQtMjEgMzBDMjAgNTIgMTEgNDIgMTEgMjhWMTNsMjEtOFoiLz48cGF0aCBkPSJNMjIgMzFsNyA3IDE0LTE2Ii8+PC9zdmc+" x="392" y="478" width="52" height="52"/>
+  <text class="cn card-title" x="535" y="440" text-anchor="middle" fill="#E85D04"><tspan x="535">安全容量</tspan><tspan x="535" dy="27">State-aware Admission</tspan></text>
+  <text class="cn body" x="460" y="492"><tspan x="460">bounded active work</tspan><tspan x="460" dy="23">fresh / stale fallback</tspan></text>
+
+  <rect x="730" y="410" width="330" height="140" rx="12" fill="#fff" stroke="#E85D04" stroke-width="2"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiNFODVEMDQiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48Y2lyY2xlIGN4PSIxNCIgY3k9IjMyIiByPSI2Ii8+PGNpcmNsZSBjeD0iNDkiIGN5PSIxMyIgcj0iNiIvPjxjaXJjbGUgY3g9IjQ5IiBjeT0iNTEiIHI9IjYiLz48cGF0aCBkPSJNMjAgMzJoMTJjOCAwIDgtMTkgMTEtMTlNMzIgMzJjOCAwIDggMTkgMTEgMTkiLz48cGF0aCBkPSJtMzggOCA1IDUtNSA1TTM4IDQ2bDUgNS01IDUiLz48L3N2Zz4=" x="752" y="448" width="64" height="64"/>
+  <text class="cn" x="829" y="446" font-size="23" font-weight="700" fill="#E85D04">Routing + Multi-job</text>
+  <text class="cn body" x="829" y="485"><tspan x="829">credit · idle borrowing</tspan><tspan x="829" dy="23">fair queue · SLO guard</tspan></text>
+
+  <rect x="370" y="564" width="690" height="28" rx="14" fill="#FFF4EA" stroke="#E85D04"/>
+  <text class="cn pill" x="715" y="584" text-anchor="middle" fill="#E85D04">同上限 frozen-static A/B · 动态策略不预设优胜</text>
+
+  <!-- Modality panel: one clean purple outline, no hidden raster or duplicate shell. -->
+  <rect x="1120" y="170" width="225" height="430" rx="12" fill="#fff" stroke="#5B2AA6" stroke-width="2"/>
+  <path d="M1132 170H1333A12 12 0 0 1 1345 182V228H1120V182A12 12 0 0 1 1132 170Z" fill="#5B2AA6"/>
+  <text class="cn panel-title" x="1232" y="207" text-anchor="middle">模态分支</text>
+  <rect x="1140" y="248" width="185" height="103" rx="12" fill="#F6F0FF" stroke="#5B2AA6"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiM1QjJBQTYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYgNmgyNGwxMCAxMHY0MkgxNnoiLz48cGF0aCBkPSJNNDAgNnYxMmgxMk0yMyAyOWgyME0yMyAzOWgyME0yMyA0OWgxMyIvPjwvc3ZnPg==" x="1148" y="258" width="28" height="28"/>
+  <text class="cn card-title" x="1182" y="279" font-size="18" fill="#5B2AA6">Text Adapter</text>
+  <text class="cn body" x="1232" y="323" text-anchor="middle">Prompt → vLLM</text>
+  <rect x="1140" y="370" width="185" height="125" rx="12" fill="#F6F0FF" stroke="#5B2AA6"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiM1QjJBQTYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSI3IiB5PSI5IiB3aWR0aD0iNTAiIGhlaWdodD0iNDYiIHJ4PSI1Ii8+PGNpcmNsZSBjeD0iNDMiIGN5PSIyMiIgcj0iNSIvPjxwYXRoIGQ9Im0xMiA0OSAxNC0xNSA5IDkgNy03IDEwIDEzIi8+PC9zdmc+" x="1148" y="380" width="28" height="28"/>
+  <text class="cn card-title" x="1182" y="401" font-size="18" fill="#5B2AA6">Image Adapter</text>
+  <text class="cn body" x="1232" y="457" text-anchor="middle">Tensor → CLIP / ViT</text>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiM1QjJBQTYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIxNCIgeT0iMTQiIHdpZHRoPSIzNiIgaGVpZ2h0PSIzNiIgcng9IjUiLz48cmVjdCB4PSIyMyIgeT0iMjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjMiLz48cGF0aCBkPSJNMjIgNnY4TTMyIDZ2OE00MiA2djhNMjIgNTB2OE0zMiA1MHY4TTQyIDUwdjhNNiAyMmg4TTYgMzJoOE02IDQyaDhNNTAgMjJoOE01MCAzMmg4TTUwIDQyaDgiLz48L3N2Zz4=" x="1150" y="521" width="52" height="52"/>
+  <text class="cn pill" x="1205" y="536" fill="#5B2AA6"><tspan x="1205">GPU · KV</tspan><tspan x="1205" dy="23">queue · stage</tspan></text>
+
+  <!-- Sink panel: one clean green outline with a 20 px gap from the modality panel. -->
+  <rect x="1365" y="170" width="195" height="430" rx="12" fill="#fff" stroke="#15803D" stroke-width="2"/>
+  <path d="M1377 170H1548A12 12 0 0 1 1560 182V228H1365V182A12 12 0 0 1 1377 170Z" fill="#15803D"/>
+  <text class="cn panel-title" x="1462" y="207" text-anchor="middle">统一 Sink</text>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIj4KICA8ZyBzdHJva2U9IiMxNTgwM0QiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICAgIDxlbGxpcHNlIGN4PSIyNCIgY3k9IjEzIiByeD0iMTciIHJ5PSI2IiBmaWxsPSIjRjBGREY0Ii8+CiAgICA8cGF0aCBkPSJNNyAxM3YzMGMwIDQgNy41IDcgMTcgN3MxNy0zIDE3LTdWMTMiLz4KICAgIDxwYXRoIGQ9Ik03IDI3YzAgNCA3LjUgNyAxNyA3czE3LTMgMTctNyIvPgogICAgPHBhdGggZD0iTTcgNDFjMCA0IDcuNSA3IDE3IDdzMTctMyAxNy03Ii8+CiAgICA8Y2lyY2xlIGN4PSI0OSIgY3k9IjQ1IiByPSIxMCIgZmlsbD0iI0ZGRkZGRiIvPgogICAgPHBhdGggZD0ibTQ0LjUgNDUgMyAzIDYtNyIvPgogIDwvZz4KPC9zdmc+Cg==" x="1426" y="265" width="72" height="72"/>
+  <text class="cn" x="1462" y="371" text-anchor="middle" font-size="20" font-weight="700" fill="#15803D">PostgreSQL</text>
+  <text class="cn body" x="1462" y="418" text-anchor="middle"><tspan x="1462">text / label</tspan><tspan x="1462" dy="23">pgvector embedding</tspan><tspan x="1462" dy="23">exactly-once</tspan></text>
+  <rect x="1380" y="525" width="160" height="48" rx="12" fill="#EFFAF2" stroke="#15803D"/>
+  <text class="cn pill" x="1460" y="556" text-anchor="middle" fill="#15803D">统一结果契约</text>
+
+  <!-- Shared runtime state -->
+  <rect x="335" y="645" width="1035" height="145" rx="12" fill="#F5F7FA" stroke="#6B7280" stroke-width="2" stroke-dasharray="8 5"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjcyODAiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyNCIvPjxwYXRoIGQ9Ik0zMiAxNHYxOGwxMiA3Ii8+PHBhdGggZD0iTTkgMzJoNk00OSAzMmg2TTMyIDl2NiIvPjwvc3ZnPg==" x="360" y="665" width="58" height="58"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjcyODAiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNOCA1NFYxME04IDU0aDQ4Ii8+PHBhdGggZD0ibTE1IDQ1IDEwLTEzIDkgNyAxNC0yMSA4IDUiLz48L3N2Zz4=" x="412" y="682" width="38" height="38"/>
+  <text class="cn" x="465" y="688" font-size="24" font-weight="700" fill="#374151">RuntimeStateSnapshot + Trace（公共状态契约）</text>
+  <text class="cn sub" x="465" y="715">completion + queue / service / job state</text>
+  <rect x="365" y="738" width="235" height="36" rx="12" fill="#fff" stroke="#6B7280"/>
+  <rect x="610" y="738" width="220" height="36" rx="12" fill="#fff" stroke="#6B7280"/>
+  <rect x="840" y="738" width="230" height="36" rx="12" fill="#fff" stroke="#6B7280"/>
+  <rect x="1080" y="738" width="265" height="36" rx="12" fill="#fff" stroke="#6B7280"/>
+  <text class="cn body" x="482" y="762" text-anchor="middle">stage: ready / active</text>
+  <text class="cn body" x="720" y="762" text-anchor="middle">service: running / KV</text>
+  <text class="cn body" x="955" y="762" text-anchor="middle">GPU / MFU / rate</text>
+  <text class="cn body" x="1212" y="762" text-anchor="middle">job: progress / done</text>
+
+  <rect x="335" y="806" width="1225" height="52" rx="12" fill="#EEF5FF" stroke="#165DCC"/>
+  <text class="cn pill" x="355" y="838" fill="#0F3F9E">跨模态复用：WorkDescriptor · Organizer · safe capacity · credit · routing · multi-job · trace</text>
+  <rect x="1305" y="815" width="235" height="34" rx="14" fill="#F6F0FF" stroke="#5B2AA6"/>
+  <text class="cn pill" x="1422" y="838" text-anchor="middle" fill="#5B2AA6">仅 adapter / backend 不同</text>
+
+  <!-- Editable connectors are last so no filled panel can hide their visible segments. -->
+  <path d="M290 325H370" fill="none" stroke="#165DCC" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ab)"/>
+  <path d="M690 315H730" fill="none" stroke="#165DCC" stroke-width="3" stroke-linecap="round" marker-end="url(#ab)"/>
+  <path d="M895 375V392H530V410" fill="none" stroke="#E85D04" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ao)"/>
+  <path d="M690 480H730" fill="none" stroke="#E85D04" stroke-width="3" stroke-linecap="round" marker-end="url(#ao)"/>
+  <path d="M1060 480H1110V407H1120" fill="none" stroke="#165DCC" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ab)"/>
+  <path d="M1345 385H1365" fill="none" stroke="#15803D" stroke-width="3" stroke-linecap="round" marker-end="url(#ag)"/>
+  <path d="M1232 600V630H1204V645" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ax)"/>
+  <path d="M1462 600V718H1370" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ax)"/>
+  <path d="M625 645V620H350V500H370" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ax)"/>
+  <path d="M1028 645V620H1080V500H1060" fill="none" stroke="#6B7280" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ax)"/>
+</svg>
