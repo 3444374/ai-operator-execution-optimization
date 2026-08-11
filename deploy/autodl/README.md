@@ -1811,3 +1811,14 @@ gate 必须保留。当前模板统一使用 Ray Data 原生 autoscaling ActorPo
 `IMAGE_PROJECT_POLICY_REVISION` 与全新 `IMAGE_PROJECT_FOURJOB_OUTPUT_ROOT`，然后重跑
 project static/proposed。只有 manifest、模型、硬件/资源、输出语义或计时/指标合同变化时，
 才需要重跑 Daft built-in/Ray Data。正式实验当前未启动。
+
+## 两 Job phase-change 状态感知容量实验
+
+入口为 `phase_change_state_aware_RUNBOOK.md`。该实验明确是 project-derived
+VTC-shape workload，不是官方 VTC reproduction，也不加入 Daft/Ray native baseline
+排名。四份配置依次承担 A-only 容量标定、A+B 压力/缓解标定、双向 action gate 和
+三臂 formal；必须由 `audit_phase_change.py` 前一阶段返回 `passed` 才能继续。
+
+服务器重启后先按 runtime preflight 恢复 PG/vLLM/Ray，并在 Ray 不可达时先停止 Ray，
+再只删除 stale `/tmp/ray/ray_current_cluster`。旧
+`phase_change_probe_20260811` 的非 canonical manifest 仅留诊断，禁止复用或写入结论。

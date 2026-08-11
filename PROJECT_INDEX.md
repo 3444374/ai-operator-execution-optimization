@@ -806,3 +806,20 @@ python feasibility/benchmarks/analyze_results.py \
 - 数据从数据库到外部执行链路的格式是什么；
 - 真实 AI 算子是否批处理，是否涉及 join/groupby/repartition/embedding preprocessing；
 - 为什么需要 Ray，而不是数据库内部线程池或普通服务。
+
+## 2026-08-11 phase-change state-aware preparation
+
+- `code/scripts/data/prepare_phase_change_workload.py`: immutable real-prompt
+  two-Job workload builder with explicit PostgreSQL apply.
+- `code/src/experiments/phase_change/`: fail-closed workload/import/manifest
+  contract used by the runner.
+- `code/scripts/experiments/run_phase_change.py`: shared-vLLM phase-change wrapper.
+- `code/scripts/analysis/audit_phase_change.py`: A-only, pressure, action and
+  formal gates.
+- `deploy/autodl/phase_change_{a_only_calibration,pressure_calibration,action_gate,formal}.example.json`:
+  the four ordered experiment configs.
+- `deploy/autodl/phase_change_state_aware_RUNBOOK.md`: authoritative remote
+  execution and stop rules.
+- Tests: `code/tests/data/test_prepare_phase_change_workload.py`,
+  `code/tests/experiments/test_phase_change_{contract,configs}.py`, and
+  `code/tests/analysis/test_audit_phase_change.py`.

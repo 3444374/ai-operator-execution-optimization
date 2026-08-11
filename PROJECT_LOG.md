@@ -5708,3 +5708,17 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   并明确其操作含义：先在固定机器、
   模型、协议、workload 与拓扑下，通过实验确定不会明显欠供给或过载的 active-work/K 范围，
   再依据实时队列、完成速率与阶段压力在该范围内调节提交量。算法内部字段名称不受此表述调整影响。
+
+## 2026-08-11 两 Job phase-change 动态容量实验准备
+
+- 复审远端初版 builder 后确认已有 probe manifest 含非 canonical 字段，不能被正式
+  runner 读取；旧数据库行与文件原样保留为无效诊断，不复用。
+- 从合同重做 immutable builder：真实 SQuAD/ShareGPT prompt、OFF-first 两周期、统一
+  512 output cap、严格 token 距离、源行不重复、显式 `--apply`、目标 workload/doc-id
+  冲突拒绝、PG/pgvector 导入回执与 canonical manifest SHA round-trip。
+- 新增独立 workload runner、四份有序配置以及 A-only/pressure/action/formal 自动审计。
+  action gate 要求每 endpoint `up/down/up/down` 且降档后风险改善；formal claim gate
+  要求三重复稳定性、动态相对 lower 的 5% 增益以及分别匹配 upper 效率/lower 安全。
+- 重启后远端只读检查确认 2x4090、两个 vLLM endpoint、Ray 32 CPU/2 GPU 与核心 Python
+  依赖可用；prompt 池在冻结距离内有 SQuAD 6,479 行、ShareGPT 663 行。据此只允许
+  A={16,20,24}、B={2.5,3.5,4.5} req/s 的顺序有限扫描，最高档仍不触发合法机制即停止。

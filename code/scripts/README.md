@@ -1197,6 +1197,19 @@ python code/scripts/baselines/squad_database_e2e_runner.py --arm duckdb_ai \
 或 `_results_to_sink_payload`/`_runner_metrics` 后运行
 `python -m unittest tests.baselines.test_squad_database_e2e_runner`。
 
+## Project-derived phase-change state-aware experiment
+
+`data/prepare_phase_change_workload.py` 从 SQuAD 短 prompt 与 ShareGPT 长 prompt
+池构造 OFF-first 的两 Job 到达轨迹。它默认只写不可变文件合同，只有显式
+`--apply` 才导入 PostgreSQL；不允许覆盖目录、重复源行、扩大 token 距离或复用
+已有 workload。`experiments/run_phase_change.py` 在发请求前重新核对 canonical
+manifest、SHA、导入回执、两 endpoint 与四阶段合同。
+
+`analysis/audit_phase_change.py` 提供 `a-only`、`pressure`、`action`、`formal`
+四个 fail-closed 审计模式。它不是通用 VTC 汇总器；这里只验证项目动态容量控制
+是否在离线标定的上下界内形成合法双向闭环。完整顺序与硬停止条件见
+`deploy/autodl/phase_change_state_aware_RUNBOOK.md`。
+
 `--arm project_static` 结构不同：runner 在通用 scan 前分流，子进程调用 `postgres_ai_operator_profile.py`
 跑显式冻结的静态合同，profiler 独占 scan+organize+model+sink。wrapper 无连接——所有 per-doc 证据来自 profiler
 输出文件（run-scoped completion-evidence CSV，`output_text` 从 in-process `operator_results` 展平，独立于
