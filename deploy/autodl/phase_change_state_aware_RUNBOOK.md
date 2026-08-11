@@ -112,8 +112,12 @@ export PHASE_CHANGE_UPPER_W=163840
 Also export `DATABASE_URL`, `VLLM_VERSION`,
 `VLLM_MAX_NUM_BATCHED_TOKENS`, `VLLM_MAX_NUM_SEQS`, `COMPLETION_MODEL`,
 `MODEL_PATH` and the explicit Ray address. The workload wrapper supplies
-`PHASE_CHANGE_WORKLOAD`, row counts, manifest paths and output cap from the
-validated contract; never set those by hand.
+`PHASE_CHANGE_WORKLOAD`, row counts, manifest paths, each Job's global
+first-arrival offset and output cap from the validated contract; never set
+those by hand. The offsets are required because each profiler process
+normalizes replay to its own manifest's first arrival. Omitting them moves Job
+B's first request from about 60 seconds to group time zero and invalidates every
+OFF/ON phase comparison.
 
 Every run uses:
 

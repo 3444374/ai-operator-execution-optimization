@@ -86,7 +86,14 @@ class TestPhaseChangeContract(unittest.TestCase):
                 int(environment["PHASE_CHANGE_CLIENT0_ROWS"]),
                 expected["job_row_counts"][0],
             )
-            self.assertNotIn("OFFSET", " ".join(environment))
+            self.assertEqual(
+                float(environment["PHASE_CHANGE_CLIENT0_OFFSET_S"]),
+                expected["job_first_arrival_s"][0],
+            )
+            self.assertEqual(
+                float(environment["PHASE_CHANGE_CLIENT1_OFFSET_S"]),
+                expected["job_first_arrival_s"][1],
+            )
 
     def test_manifest_tampering_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -114,6 +121,17 @@ class TestPhaseChangeContract(unittest.TestCase):
             audit["phase_segments"][-1]["end_s"] = 300.0
             audit_path.write_text(json.dumps(audit), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "cover the duration"):
+                load_contract(root)
+
+    def test_tampered_first_arrival_offset_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._contract(root)
+            audit_path = root / "audit.json"
+            audit = json.loads(audit_path.read_text(encoding="utf-8"))
+            audit["job_first_arrival_s"][1] = 0.0
+            audit_path.write_text(json.dumps(audit), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "first-arrival offset"):
                 load_contract(root)
 
 

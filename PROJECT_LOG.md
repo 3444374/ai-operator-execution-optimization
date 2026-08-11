@@ -5746,3 +5746,17 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - `CompatibleAsyncHTTPCompletionActor` 显式设置 `keepalive_expiry=4.0s`，先于
   Uvicorn/vLLM 常见 5s server keep-alive 淘汰连接，并在 actor readiness evidence 记录。
   两个失败输出目录永久保留；修复后从新 output 重跑，不 resume、不把失败 cell 纳入比较。
+
+## 2026-08-11 phase-change 多 Job 全局到达时钟修正
+
+- keep-alive 修复后的独立 rate-20 A-only 重跑 2/2 cell 完成、0 incident 并通过新门禁：
+  lower 两 endpoint 的 0.8K 占用样本比例为 0.937/0.884，arrival-to-submit P95 为
+  22.92/23.01s；K160 相对 K128 的 per-endpoint median service rate 由 6602 提升到
+  7115 tokens/s（+7.77%），两臂 waiting=0、KV max<0.85。
+- 随后的 A20+B2.5 pressure 跑虽然执行完成，却发现 Job B 在 group time 0 已提交请求。
+  原因是每个 profiler 独立把本 manifest 的首个 arrival 归零，而 phase-change config
+  没有像 VTC-compatible config 那样把 `job_first_arrival_s` 交给 group runner；因此约
+  60.6s 的 OFF-first 偏移被丢失，该 pressure 目录只作 invalid diagnostic。
+- phase-change 合同现在校验 manifest 首到达时间与 audit offset 一致、导出两个 Job 的
+  offset；A-only/pressure/action/formal 配置均通过 `arrival_offsets_s` 恢复同一个全局
+  240s phase clock。旧 pressure 结果不重新解释、不 resume，修复后从新目录重跑。

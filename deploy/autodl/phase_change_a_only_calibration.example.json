@@ -72,6 +72,7 @@
       "job_count": 1,
       "rows_per_jobs": ["${PHASE_CHANGE_CLIENT0_ROWS}"],
       "request_manifests": ["${PHASE_CHANGE_CLIENT0_MANIFEST}"],
+      "arrival_offsets_s": ["${PHASE_CHANGE_CLIENT0_OFFSET_S}"],
       "request_limit_per_endpoint": "${PHASE_CHANGE_LOWER_K}",
       "work_limit_per_endpoint": "${PHASE_CHANGE_LOWER_W}"
     },
@@ -81,6 +82,7 @@
       "job_count": 1,
       "rows_per_jobs": ["${PHASE_CHANGE_CLIENT0_ROWS}"],
       "request_manifests": ["${PHASE_CHANGE_CLIENT0_MANIFEST}"],
+      "arrival_offsets_s": ["${PHASE_CHANGE_CLIENT0_OFFSET_S}"],
       "request_limit_per_endpoint": "${PHASE_CHANGE_UPPER_K}",
       "work_limit_per_endpoint": "${PHASE_CHANGE_UPPER_W}"
     }

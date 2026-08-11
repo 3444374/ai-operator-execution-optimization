@@ -99,7 +99,8 @@
       "policy": "state_aware_adaptive",
       "job_count": 2,
       "rows_per_jobs": ["${PHASE_CHANGE_CLIENT0_ROWS}", "${PHASE_CHANGE_CLIENT1_ROWS}"],
-      "request_manifests": ["${PHASE_CHANGE_CLIENT0_MANIFEST}", "${PHASE_CHANGE_CLIENT1_MANIFEST}"]
+      "request_manifests": ["${PHASE_CHANGE_CLIENT0_MANIFEST}", "${PHASE_CHANGE_CLIENT1_MANIFEST}"],
+      "arrival_offsets_s": ["${PHASE_CHANGE_CLIENT0_OFFSET_S}", "${PHASE_CHANGE_CLIENT1_OFFSET_S}"]
     }
   ]
 }

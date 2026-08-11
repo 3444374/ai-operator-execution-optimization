@@ -62,6 +62,8 @@ class TestPhaseChangeConfigs(unittest.TestCase):
                 "PHASE_CHANGE_WORKLOAD": "phase_change_test",
                 "PHASE_CHANGE_CLIENT0_ROWS": "600",
                 "PHASE_CHANGE_CLIENT1_ROWS": "300",
+                "PHASE_CHANGE_CLIENT0_OFFSET_S": "0.125",
+                "PHASE_CHANGE_CLIENT1_OFFSET_S": "60.625",
                 "PHASE_CHANGE_CLIENT0_MANIFEST": "/tmp/client_0.jsonl",
                 "PHASE_CHANGE_CLIENT1_MANIFEST": "/tmp/client_1.jsonl",
                 "PHASE_CHANGE_OUTPUT_CAP": "512",
@@ -93,6 +95,12 @@ class TestPhaseChangeConfigs(unittest.TestCase):
         )
         self.assertEqual(formal.state_aware_control.request_candidates, (128, 160))
         self.assertEqual(formal.state_aware_control.work_candidates, (131072, 163840))
+        for config in configs.values():
+            for scenario in config.scenarios:
+                expected_offsets = (
+                    (0.125,) if scenario.job_count == 1 else (0.125, 60.625)
+                )
+                self.assertEqual(scenario.arrival_offsets_s, expected_offsets)
 
         adaptive = formal.scenarios[2]
         command = build_job_command(

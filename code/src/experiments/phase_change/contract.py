@@ -45,6 +45,7 @@ def load_contract(contract_dir: Path) -> dict[str, object]:
     if not isinstance(target_workload, str) or not target_workload:
         raise ValueError("phase-change target workload is missing")
     counts = audit.get("job_row_counts")
+    offsets = audit.get("job_first_arrival_s")
     spec = audit.get("spec")
     segments = audit.get("phase_segments")
     manifests = audit.get("manifests")
@@ -52,6 +53,12 @@ def load_contract(contract_dir: Path) -> dict[str, object]:
         not isinstance(counts, list)
         or len(counts) != 2
         or any(int(value) <= 0 for value in counts)
+        or not isinstance(offsets, list)
+        or len(offsets) != 2
+        or any(
+            not math.isfinite(float(value)) or float(value) < 0
+            for value in offsets
+        )
         or not isinstance(spec, dict)
         or not isinstance(segments, list)
         or len(segments) != 4
@@ -113,6 +120,11 @@ def load_contract(contract_dir: Path) -> dict[str, object]:
             )
         ):
             raise ValueError(f"phase-change manifest {index} failed validation")
+        first_arrival_s = min(request.arrival_time_s for request in requests)
+        if abs(first_arrival_s - float(offsets[index])) > 1e-9:
+            raise ValueError(
+                f"phase-change manifest {index} first-arrival offset is invalid"
+            )
         if index == 1:
             active_windows = [
                 (float(item["start_s"]), float(item["end_s"]))
@@ -130,12 +142,21 @@ def load_contract(contract_dir: Path) -> dict[str, object]:
 def runner_environment(audit: dict[str, object], contract_dir: Path) -> dict[str, str]:
     """Resolve config variables without changing the workload's phase clock."""
     counts = audit["job_row_counts"]
+    offsets = audit["job_first_arrival_s"]
     spec = audit["spec"]
-    assert isinstance(counts, list) and isinstance(spec, dict)
+    assert (
+        isinstance(counts, list)
+        and isinstance(offsets, list)
+        and isinstance(spec, dict)
+    )
     return {
         "PHASE_CHANGE_WORKLOAD": str(audit["target_workload"]),
         "PHASE_CHANGE_CLIENT0_ROWS": str(int(counts[0])),
         "PHASE_CHANGE_CLIENT1_ROWS": str(int(counts[1])),
+        # Each profiler process normalizes replay to its manifest's first
+        # arrival. Restore the shared phase clock at the group runner.
+        "PHASE_CHANGE_CLIENT0_OFFSET_S": str(float(offsets[0])),
+        "PHASE_CHANGE_CLIENT1_OFFSET_S": str(float(offsets[1])),
         "PHASE_CHANGE_CLIENT0_MANIFEST": str(
             (contract_dir / "client_0.jsonl").resolve()
         ),
