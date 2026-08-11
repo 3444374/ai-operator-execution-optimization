@@ -5769,3 +5769,40 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   max=0.837，waiting 均为0，未达到双 endpoint、双周期条件。实验按 pressure gate
   正式停止，不运行 action/formal；完整七步报告与紧凑数据归档到
   `experiments/results/phase_change_state_aware_corrected_early_stop_20260811/`。
+
+## 2026-08-11 SAOR 动态调度设计集中维护
+
+- 按用户要求把本轮关于“利用未修改 vLLM FCFS/continuous batching 的动态多 Job 调度、
+  严格数学建模、公平评价和 token 组织边界”的讨论集中写入
+  `experiments/plans/state_aware_work_unit_evaluation_20260808.md` §5.2。
+- 遵循 `experiments/plans/README.md` 的文档维护纪律，没有新建重复计划；该现有跨研究内容总
+  合同成为 SAOR 的唯一维护入口。同步更新 `experiments/plans/README.md` 和 `PROJECT_INDEX.md`。
+- SAOR 当前冻结为 `saor-v0.1-design` / `design-candidate`：主臂使用 FCFS ordered release，
+  completion-level replenishment 利用 continuous batching；固定周期 DPP 在离线安全容量档位中
+  选择动作；token organization、resource admission work 与 fairness accounting 三种语义分离。
+- 文档同时冻结公平/SLO 虚拟债务、weighted-service Jain/GPS lag/solo-normalized slowdown、
+  目标定理的假设与不可声称边界、MPC/clairvoyant oracle 交叉验证、frozen-static/threshold/
+  DRR/external-VTC-style baseline 以及约 5% 晋级/effect-range 淘汰门。现阶段不声称算法已实现、
+  已证明、优于 frozen-static 或拥有 VTC 的 token-level service-difference bound。
+- 用户复审指出 GPU utilization 本身不可靠，SAOR revision 更新为 `saor-v0.1.1-design`：
+  §5.2.2 集中记录单点 GPU=0 假象、vLLM waiting=0/Ray 侧软拥塞、active-work 吞吐平台后
+  P99/SLO 恶化、offered-work 混淆、图像 CPU prepare 木桶和 KV/prefix thrash 六类历史反例；
+  控制判断改为 workload availability、Ray 外部执行、vLLM 内部、实际完成进展和资源佐证五层
+  状态指纹。GPU utilization/MFU 只作 time-series 交叉证据，不再作为单变量扩缩容触发器。
+- 继续实现 `saor-core-v0.1`：抽离中性 `CapacityArm`，新增纯 finite-action DPP 与 weighted
+  common-backlog fairness debt、Job-head ordered release/单调 `release_seq`，并把旧 scheduler
+  的 pending/completion/lifecycle 收敛到通用 exactly-once execution ledger。actual-work 解析由
+  模态 adapter 注入，release work 与控制周期 predicted service 显式分离；核心不含 K128/K160、
+  KV/waiting/GPU 阈值、endpoint 数或文本/图像分支。
+- 将 `scheduling` 包级入口改为兼容惰性导出，单独导入 SAOR 不再级联加载 AIMD/PID/UCB/
+  Ray adapter；旧公开名称仍按需解析。纯策略、ordered release、execution ledger、scheduler
+  regression 与 architecture boundary 测试通过；formal runner、Ray dispatcher 和真实服务尚未
+  接线，因此状态仍为 `design-candidate`，不产生性能或定理 claim。
+- 移除 scheduling core 对 completion 字典 `token_count` 的内建认识：`SynchronousScheduler`
+  现在只接受显式 `actual_work_extractor`，文本 profiling adapter 从
+  `modalities/text/costs.py` 注入 token work 提取；图像路径可注入自己的 frame/pixel/resource
+  work 语义，无需在 core 增加模态分支。
+- 纳入独立分支 `dae9f7ae9dbbf211887134ce5bddd07bcb0aa81a` 的 phase-change 提前停止证据，
+  revision 更新为 `saor-v0.1.2-design`：A-only 支持增档动机，但多 Job 降档区未稳定形成；
+  phase label 不等于状态复位，禁止把具体 K、KV=0.85 或 waiting>0 固化为核心规则。下一次只改
+  burst/drain/recovery 结构，保持原 calibration signature 下硬件、模型、输出上限和容量档位不变。

@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 CODE_ROOT = next(
     parent
@@ -12,7 +13,11 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.modalities.text.costs import output_cost_source, resolve_output_tokens
+from src.modalities.text.costs import (
+    extract_completed_token_work,
+    output_cost_source,
+    resolve_output_tokens,
+)
 
 
 class RequestCostTests(unittest.TestCase):
@@ -87,6 +92,33 @@ class RequestCostTests(unittest.TestCase):
                     )
         with self.assertRaisesRegex(ValueError, "output cost mode"):
             output_cost_source("unknown")
+
+    def test_actual_token_work_is_a_text_adapter_concern(self) -> None:
+        self.assertEqual(
+            extract_completed_token_work(
+                SimpleNamespace(
+                    status="completed",
+                    result={"token_count": 37},
+                )
+            ),
+            37,
+        )
+        self.assertIsNone(
+            extract_completed_token_work(
+                SimpleNamespace(
+                    status="failed",
+                    result={"token_count": 37},
+                )
+            )
+        )
+        self.assertIsNone(
+            extract_completed_token_work(
+                SimpleNamespace(
+                    status="completed",
+                    result={"token_count": True},
+                )
+            )
+        )
 
 
 if __name__ == "__main__":

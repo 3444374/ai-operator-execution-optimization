@@ -113,6 +113,9 @@ PostgreSQL source
 
 ### 5.3 待验证
 
+- SAOR 已实现不依赖 Daft/Ray/vLLM 的 finite-action DPP、Job-head ordered release 和通用
+  exactly-once execution ledger，并通过纯 Python 单测；它尚未接入正式 runner/replay，也未完成
+  真实 phase-change 验证或定理证明，因此仍是 `design-candidate`，不是已胜出的 proposed 方法；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - phase-change、burst、mixed-cost 下 dynamic 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、

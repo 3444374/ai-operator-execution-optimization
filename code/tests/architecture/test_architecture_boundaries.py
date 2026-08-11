@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import ast
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -193,6 +195,18 @@ def _check_native_baselines_do_not_import_project_scheduling() -> None:
     )
 
 
+def _check_saor_import_does_not_load_legacy_policies() -> None:
+    script = (
+        "import sys; "
+        f"sys.path.insert(0, {str(CODE_ROOT)!r}); "
+        "import src.scheduling.submission_control.saor; "
+        "assert 'src.scheduling.submission_control.adaptive' not in sys.modules; "
+        "assert 'src.scheduling.submission_control.pid' not in sys.modules; "
+        "assert 'src.scheduling.submission_control.ucb' not in sys.modules"
+    )
+    subprocess.run([sys.executable, "-c", script], check=True)
+
+
 class ArchitectureBoundaryTests(unittest.TestCase):
     def test_removed_compatibility_modules_do_not_return(self) -> None:
         _check_removed_compatibility_modules_do_not_return()
@@ -211,3 +225,6 @@ class ArchitectureBoundaryTests(unittest.TestCase):
 
     def test_native_baselines_do_not_import_project_scheduling(self) -> None:
         _check_native_baselines_do_not_import_project_scheduling()
+
+    def test_saor_import_does_not_load_legacy_policies(self) -> None:
+        _check_saor_import_does_not_load_legacy_policies()

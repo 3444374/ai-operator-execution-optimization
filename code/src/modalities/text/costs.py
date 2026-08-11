@@ -55,3 +55,17 @@ def resolve_output_tokens(
         "target_output_tokens",
     )
     return min(target, cap)
+
+
+def extract_completed_token_work(completion: object) -> int | None:
+    """Extract actual text work without coupling scheduling core to tokens."""
+
+    if getattr(completion, "status", None) != "completed":
+        return None
+    result = getattr(completion, "result", None)
+    if not isinstance(result, dict):
+        return None
+    value = result.get("token_count")
+    if isinstance(value, int) and not isinstance(value, bool) and value > 0:
+        return value
+    return None

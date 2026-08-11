@@ -1,202 +1,168 @@
-"""Composable scheduling policies for database AI operator execution."""
+"""Lazy compatibility facade for composable scheduling modules.
 
-from .organization.batching import (
-    ArrivalReplayBatcher,
-    FlushTraceEvent,
-    PendingBatch,
-    PendingBatchBuilder,
-    ReplayClock,
-    ReplayServiceObservation,
-    RowArrival,
-    SystemReplayClock,
-)
-from .submission_control.adaptive import (
-    AimdAdmissionController,
-    AimdConfig,
-    EwmaAimdAdmissionController,
-    HolAgeAimdAdmissionController,
-    HolAgeAimdConfig,
-)
-from .submission_control.admission import (
-    DynamicAdmissionGate,
-    StaticAdmissionController,
-    WindowController,
-)
-from .submission_control.flush import (
-    FixedTimeoutFlush,
-    FlushDecision,
-    FlushObservation,
-    FlushWindow,
-    ImmediateFlush,
-    QueueAdaptiveFlush,
-    SloAwareEwmaFlush,
-)
-from .core.errors import EndpointCapacityUnavailable
-from .core.lifecycle import (
-    MonotonicEpochClock,
-    RequestLifecycleSeed,
-    RequestTraceRow,
-    SubmissionServiceTiming,
-    build_request_trace_rows,
-)
-from .core.models import (
-    AdmissionDecision,
-    AdmissionObservation,
-    BatchRequest,
-    CollectedSubmission,
-    ControlDiagnostics,
-    EndpointSnapshot,
-    PayloadEnvelope,
-    PoolRoutingDecision,
-    RoutingDecision,
-    SubmissionCompletion,
-    SubmissionLifecycleEvent,
-    TopologySnapshot,
-    WindowDecision,
-)
-from .organization import ServiceQuantumSlice, slice_service_quanta
-from .submission_control.pid import PidAdmissionController, PidConfig
-from .runtime.observations import (
-    AdmissionTraceEvent,
-    CachedMetricsObservationProvider,
-    NonBlockingMetricsObservationProvider,
-    ServiceMetricsSnapshot,
-)
-from .runtime.ray_adapter import (
-    ActorSubmissionState,
-    ActorWorkerAssignment,
-    ActorWorkerPoolSubmitter,
-    ActorWorkerSnapshot,
-    RaySubmissionAdapter,
-    RoundRobinSubmitter,
-)
-from .runtime.ray_runtime import RayWorkerOptions
-from .endpoint_routing.policies import (
-    LeastQueuedEndpointRouter,
-    LeastWorkEndpointRouter,
-    PinnedEndpointRouter,
-    PrefixAffinityEndpointRouter,
-    RequestPoolRouter,
-    RoundRobinEndpointRouter,
-)
-from .core.scheduler import (
-    AdmissionPolicy,
-    EndpointRouter,
-    PoolRouter,
-    SchedulerResult,
-    SubmissionAdapter,
-    SynchronousScheduler,
-)
-from .submission_control.shared_credit import (
-    CreditLease,
-    EndpointCreditSnapshot,
-    FairEndpointCreditCoordinator,
-)
-from .submission_control.capacity import (
-    BoundedCapacityController,
-    CapacityArm,
-    CapacityDecision,
-)
-from .core.topology import healthy_endpoints, schedulable_endpoints
-from .organization.token_budget import (
-    ArrivalRateEwma,
-    ServiceQuantumTokenBudgetController,
-    StaticTokenBudgetController,
-    TokenBudgetDecision,
-    TokenBudgetObservation,
-)
-from .submission_control.ucb import (
-    SloRewardInput,
-    UcbAdmissionController,
-    UcbConfig,
-    slo_constrained_reward,
-)
+Importing one policy must not load every legacy policy or runtime adapter. New
+code should import from the owning submodule; these lazy exports preserve the
+existing package-level API while the runners migrate.
+"""
 
-__all__ = [
-    "AdmissionDecision",
-    "AdmissionObservation",
-    "AdmissionPolicy",
-    "AdmissionTraceEvent",
-    "ArrivalReplayBatcher",
-    "ArrivalRateEwma",
-    "ActorWorkerPoolSubmitter",
-    "ActorWorkerAssignment",
-    "ActorWorkerSnapshot",
-    "ActorSubmissionState",
-    "AimdAdmissionController",
-    "AimdConfig",
-    "BatchRequest",
-    "BoundedCapacityController",
-    "CollectedSubmission",
-    "ControlDiagnostics",
-    "CapacityArm",
-    "CapacityDecision",
-    "CreditLease",
-    "CachedMetricsObservationProvider",
-    "NonBlockingMetricsObservationProvider",
-    "DynamicAdmissionGate",
-    "EndpointSnapshot",
-    "EndpointRouter",
-    "EndpointCreditSnapshot",
-    "EndpointCapacityUnavailable",
-    "EwmaAimdAdmissionController",
-    "FixedTimeoutFlush",
-    "FairEndpointCreditCoordinator",
-    "FlushDecision",
-    "FlushObservation",
-    "FlushWindow",
-    "FlushTraceEvent",
-    "HolAgeAimdAdmissionController",
-    "HolAgeAimdConfig",
-    "ImmediateFlush",
-    "PayloadEnvelope",
-    "PoolRouter",
-    "PoolRoutingDecision",
-    "PidAdmissionController",
-    "PidConfig",
-    "PendingBatch",
-    "PendingBatchBuilder",
-    "RaySubmissionAdapter",
-    "RoundRobinSubmitter",
-    "RayWorkerOptions",
-    "LeastQueuedEndpointRouter",
-    "LeastWorkEndpointRouter",
-    "PinnedEndpointRouter",
-    "MonotonicEpochClock",
-    "PrefixAffinityEndpointRouter",
-    "RequestPoolRouter",
-    "ReplayClock",
-    "ReplayServiceObservation",
-    "QueueAdaptiveFlush",
-    "SloAwareEwmaFlush",
-    "RequestLifecycleSeed",
-    "RequestTraceRow",
-    "RoutingDecision",
-    "RoundRobinEndpointRouter",
-    "RowArrival",
-    "SchedulerResult",
-    "ServiceMetricsSnapshot",
-    "ServiceQuantumSlice",
-    "ServiceQuantumTokenBudgetController",
-    "StaticAdmissionController",
-    "StaticTokenBudgetController",
-    "SloRewardInput",
-    "SubmissionAdapter",
-    "SubmissionCompletion",
-    "SubmissionLifecycleEvent",
-    "SubmissionServiceTiming",
-    "SynchronousScheduler",
-    "SystemReplayClock",
-    "TopologySnapshot",
-    "TokenBudgetDecision",
-    "TokenBudgetObservation",
-    "UcbAdmissionController",
-    "UcbConfig",
-    "WindowDecision",
-    "WindowController",
-    "healthy_endpoints",
-    "schedulable_endpoints",
-    "build_request_trace_rows",
-    "slice_service_quanta",
-    "slo_constrained_reward",
-]
+from __future__ import annotations
+
+from importlib import import_module
+from typing import Any
+
+
+_EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
+    ".organization.batching": (
+        "ArrivalReplayBatcher",
+        "FlushTraceEvent",
+        "PendingBatch",
+        "PendingBatchBuilder",
+        "ReplayClock",
+        "ReplayServiceObservation",
+        "RowArrival",
+        "SystemReplayClock",
+    ),
+    ".submission_control.adaptive": (
+        "AimdAdmissionController",
+        "AimdConfig",
+        "EwmaAimdAdmissionController",
+        "HolAgeAimdAdmissionController",
+        "HolAgeAimdConfig",
+    ),
+    ".submission_control.admission": (
+        "DynamicAdmissionGate",
+        "StaticAdmissionController",
+        "WindowController",
+    ),
+    ".submission_control.flush": (
+        "FixedTimeoutFlush",
+        "FlushDecision",
+        "FlushObservation",
+        "FlushWindow",
+        "ImmediateFlush",
+        "QueueAdaptiveFlush",
+        "SloAwareEwmaFlush",
+    ),
+    ".core.errors": ("EndpointCapacityUnavailable",),
+    ".core.control": ("CapacityArm",),
+    ".core.execution": (
+        "RecordedCompletion",
+        "SubmissionContext",
+        "SubmissionExecutionLedger",
+    ),
+    ".core.lifecycle": (
+        "MonotonicEpochClock",
+        "RequestLifecycleSeed",
+        "RequestTraceRow",
+        "SubmissionServiceTiming",
+        "build_request_trace_rows",
+    ),
+    ".core.models": (
+        "AdmissionDecision",
+        "AdmissionObservation",
+        "BatchRequest",
+        "CollectedSubmission",
+        "ControlDiagnostics",
+        "EndpointSnapshot",
+        "PayloadEnvelope",
+        "PoolRoutingDecision",
+        "RoutingDecision",
+        "SubmissionCompletion",
+        "SubmissionLifecycleEvent",
+        "TopologySnapshot",
+        "WindowDecision",
+    ),
+    ".organization": ("ServiceQuantumSlice", "slice_service_quanta"),
+    ".submission_control.pid": ("PidAdmissionController", "PidConfig"),
+    ".runtime.observations": (
+        "AdmissionTraceEvent",
+        "CachedMetricsObservationProvider",
+        "NonBlockingMetricsObservationProvider",
+        "ServiceMetricsSnapshot",
+    ),
+    ".runtime.ray_adapter": (
+        "ActorSubmissionState",
+        "ActorWorkerAssignment",
+        "ActorWorkerPoolSubmitter",
+        "ActorWorkerSnapshot",
+        "RaySubmissionAdapter",
+        "RoundRobinSubmitter",
+    ),
+    ".runtime.ray_runtime": ("RayWorkerOptions",),
+    ".endpoint_routing.policies": (
+        "LeastQueuedEndpointRouter",
+        "LeastWorkEndpointRouter",
+        "PinnedEndpointRouter",
+        "PrefixAffinityEndpointRouter",
+        "RequestPoolRouter",
+        "RoundRobinEndpointRouter",
+    ),
+    ".core.scheduler": (
+        "AdmissionPolicy",
+        "EndpointRouter",
+        "PoolRouter",
+        "SchedulerResult",
+        "SubmissionAdapter",
+        "SynchronousScheduler",
+    ),
+    ".submission_control.shared_credit": (
+        "CreditLease",
+        "EndpointCreditSnapshot",
+        "FairEndpointCreditCoordinator",
+    ),
+    ".submission_control.ordered_release": (
+        "OrderedReleaseCoordinator",
+        "OrderedReleaseSnapshot",
+        "ReleasedSubmission",
+    ),
+    ".submission_control.saor": (
+        "SaorAction",
+        "SaorControlState",
+        "SaorDecision",
+        "SaorJobState",
+        "SaorPolicy",
+        "SaorReleaseCandidate",
+        "build_single_release_actions",
+        "update_fairness_debts",
+    ),
+    ".submission_control.capacity": (
+        "BoundedCapacityController",
+        "CapacityDecision",
+    ),
+    ".core.topology": ("healthy_endpoints", "schedulable_endpoints"),
+    ".organization.token_budget": (
+        "ArrivalRateEwma",
+        "ServiceQuantumTokenBudgetController",
+        "StaticTokenBudgetController",
+        "TokenBudgetDecision",
+        "TokenBudgetObservation",
+    ),
+    ".submission_control.ucb": (
+        "SloRewardInput",
+        "UcbAdmissionController",
+        "UcbConfig",
+        "slo_constrained_reward",
+    ),
+}
+
+_EXPORTS = {
+    name: module
+    for module, names in _EXPORT_GROUPS.items()
+    for name in names
+}
+__all__ = sorted(_EXPORTS)
+
+
+def __getattr__(name: str) -> Any:
+    """Resolve a compatibility export only when a caller requests it."""
+
+    module_name = _EXPORTS.get(name)
+    if module_name is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    value = getattr(import_module(module_name, __name__), name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted((*globals(), *__all__))

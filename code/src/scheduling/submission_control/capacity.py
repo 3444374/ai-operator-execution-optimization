@@ -6,16 +6,7 @@ import math
 from dataclasses import dataclass
 
 from ...planning.work import RuntimeStateSnapshot
-
-
-@dataclass(frozen=True, order=True)
-class CapacityArm:
-    request_limit: int
-    work_limit: int
-
-    def __post_init__(self) -> None:
-        if self.request_limit <= 0 or self.work_limit <= 0:
-            raise ValueError("capacity limits must be positive")
+from ..core.control import CapacityArm
 
 
 @dataclass(frozen=True)

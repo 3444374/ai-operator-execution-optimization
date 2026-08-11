@@ -341,3 +341,20 @@ replayed arrival 到 submit 的延迟和持续占据来证明，不靠 GPU 利�
 HTTP/1.1 连接闲置到服务端 keep-alive 过期，再在尾部复用已关闭 socket，表现为服务端
 健康且记录 200、客户端却 `ReadError`。客户端连接池应比服务端更早淘汰 idle socket；
 本项目固定 4 s，并把它作为运行身份记录，而不是把 transport 失败算成策略负结果。
+
+## 2026-08-11 SAOR 核心代码现在做到哪一步
+
+当前完成的是“可独立测试的控制核心”，不是已经跑赢静态策略的正式系统：
+
+- `core/control.py` 只定义 request/work 容量档位，不包含 K128/K160 等机器参数；
+- `submission_control/saor.py` 根据 ready work、公平债务、预测 service 与代价选择有限动作；
+- `submission_control/ordered_release.py` 只从每个 Job 队首释放请求，分配单调
+  `release_seq`，completion 后按实际 work 修正；
+- `core/execution.py` 统一维护旧 scheduler 的 pending、exactly-once completion 和生命周期证据。
+
+这里最容易混淆的是“请求预计 work”和“一个控制周期内预计完成的 service”。长请求可以占用
+很多 active work，却未必在当前周期完成同等 service，因此代码将二者分开输入。具体容量档位、
+KV/waiting/GPU 信号阈值、控制周期、endpoint 数和 token/frame/pixel 换算都留在 calibration
+配置或模态 adapter；动作构造还要求显式提供相对 hold 的 service/goodput/tail/energy/switch
+边际预测，缺一项就拒绝构造，核心没有静默默认。phase-change 提前停止实验目前只支持低压增档动机，
+没有建立可靠降档区，所以还不能把某个 KV 峰值写进算法。

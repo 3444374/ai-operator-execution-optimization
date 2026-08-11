@@ -9,7 +9,10 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 import pyarrow as pa
 
 from src.observability.metrics import StageTimer, scrape_prometheus_metrics
-from src.modalities.text.costs import OutputCostMode
+from src.modalities.text.costs import (
+    OutputCostMode,
+    extract_completed_token_work,
+)
 from src.scheduling.core.models import (
     EndpointSnapshot,
     PayloadEnvelope,
@@ -165,6 +168,7 @@ def _run_scheduler(
         per_endpoint_admission=per_endpoint_admission,
         shared_credit=shared_credit,
         job_weight=job_weight,
+        actual_work_extractor=extract_completed_token_work,
     )
     result = scheduler.run(envelopes, topology)
     if submission_lifecycle_sink is not None:

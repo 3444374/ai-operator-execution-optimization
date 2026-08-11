@@ -20,9 +20,9 @@ code/
 │   ├── data/                     ← PostgreSQL/Daft source、Arrow/Daft materializer、sink、workload
 │   ├── planning/                 ← 纯 cost estimator 与 work-unit packing；不依赖执行引擎
 │   ├── scheduling/
-│   │   ├── core/                 ← typed state、lifecycle、topology、scheduler loop
+│   │   ├── core/                 ← typed state、capacity contract、execution ledger、scheduler loop
 │   │   ├── organization/         ← pending batching、token/work budget、service quantum
-│   │   ├── submission_control/   ← request/work credit、flush、AIMD/PID/UCB、shared credit
+│   │   ├── submission_control/   ← request/work credit、legacy baselines、SAOR policy/ordered release
 │   │   ├── endpoint_routing/     ← pinned/queue/work/prefix routing
 │   │   └── runtime/              ← Ray adapter 与服务观测缓存
 │   ├── serving/                  ← completion/embedding backend 与 vLLM probe
@@ -107,7 +107,8 @@ now lives under `code/src/`:
 
 - `data/sources/postgres_text.py`: PostgreSQL/Daft data entry.
 - `data/materializers/text.py`: Arrow/Daft batch organization.
-- `modalities/text/costs.py`: strict, shared output-cost modes and provenance.
+- `modalities/text/costs.py`: strict, shared output-cost modes/provenance and the
+  completion actual-token-work extractor injected into the generic scheduler.
 - `planning/work.py`: modality-neutral staged `WorkDescriptor` and atomic
   `RuntimeStateSnapshot`; preserves scalar credit compatibility while exposing
   prepare/model/result demand, locality, deadline/SLO, uncertainty and
@@ -186,6 +187,13 @@ now lives under `code/src/`:
 - `data/workloads/text.py`: small built-in seed workloads for smoke/dev only.
 - `scheduling/`: engine-independent typed core split by decision boundary:
   `core/`, `organization/`, `submission_control/`, `endpoint_routing/`, and `runtime/`.
+  `core/control.py` owns the neutral capacity-arm contract;
+  `core/execution.py` owns exactly-once pending/completion/lifecycle state and accepts a
+  modality-specific actual-work extractor. `submission_control/saor.py` contains only the
+  finite-action DPP policy and typed inputs; `ordered_release.py` is the single owner of
+  per-Job ready queues, active work and monotonic `release_seq`. Neither module contains
+  K128/K160, KV thresholds, endpoint counts or text/image branches: calibrated arms,
+  predicted service and admissible actions are caller inputs.
   `submission_control/stage_work.py` is a bounded candidate that moves only one
   offline-calibrated work-credit step and falls back to the workload-specific
   static point on stale or mismatched state; it is not yet a performance claim.
@@ -217,6 +225,21 @@ data-organization policies, request/work admission, shared multi-job credit,
 endpoint routing, a deterministic policy-composition scheduler, and Ray runtime
 adapters. Policy modules do not import Daft, Arrow, Ray, or HTTP; only runtime
 adapters receive the active Ray module explicitly.
+
+The first SAOR core revision is intentionally not wired into a formal runner yet. Its slow
+path selects among caller-enumerated safe actions using queue and weighted-fairness debt;
+its fast path publishes validated Job-head requests with a monotonic sequence and releases
+capacity on completion. Release work and predicted epoch service are separate fields, so a
+long request is not silently treated as service completed within the current control slot.
+The convenience action builder requires every service/goodput/tail/energy/switch prediction;
+release-action values are explicit marginal deltas against the zero-delta hold reference.
+GPU utilization, `waiting`, KV thresholds and phase labels remain observation/experiment
+inputs outside the policy; no single metric is hard-coded into the action selector.
+The package facade now resolves compatibility exports lazily, so importing SAOR does not
+load AIMD/PID/UCB or Ray adapters. This removes an import-time dependency, but it does not
+yet make the repository SAOR-only: the profiler, shared-vLLM runner, image multi-Job runner,
+and observability wiring still import legacy baselines directly. Those callers must migrate
+to a tested SAOR runtime profile before legacy files can be archived or removed.
 
 Endpoint state separates service health (`healthy`) from request-specific
 admission capacity (`available`). Routers use `schedulable_endpoints()` for
@@ -313,6 +336,9 @@ independently; an oversized row remains intact and is explicitly marked.
 .conda\pg-ai-profile\python.exe code\tests\scheduling\test_token_budget_controller.py
 .conda\pg-ai-profile\python.exe code\tests\scheduling\test_shared_credit.py
 .conda\pg-ai-profile\python.exe code\tests\scheduling\test_shared_credit_ray.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_execution_ledger.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_saor.py
+.conda\pg-ai-profile\python.exe code\tests\scheduling\test_ordered_release.py
 ```
 
 Typed AIMD, optional EWMA-AIMD, and PID controllers can now drive the same Ray

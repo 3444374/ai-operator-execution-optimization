@@ -11,6 +11,10 @@ from queue import Empty, Full, Queue
 from typing import Callable, Iterable, Iterator, Protocol
 
 from .errors import EndpointCapacityUnavailable
+from .execution import (
+    SubmissionContext,
+    SubmissionExecutionLedger,
+)
 from .models import (
     AdmissionDecision,
     BatchRequest,
@@ -189,6 +193,9 @@ class SynchronousScheduler:
         shared_credit: SharedCreditPolicy | None = None,
         shared_credit_poll_s: float = 0.001,
         job_weight: int = 1,
+        actual_work_extractor: Callable[
+            [SubmissionCompletion], int | None
+        ] | None = None,
     ):
         if per_endpoint_limit is not None and per_endpoint_limit <= 0:
             raise ValueError("per_endpoint_limit must be positive")
@@ -210,20 +217,16 @@ class SynchronousScheduler:
         self.shared_credit = shared_credit
         self.shared_credit_poll_s = shared_credit_poll_s
         self.job_weight = job_weight
+        self.actual_work_extractor = actual_work_extractor
 
     def run(
         self,
         envelopes: Iterable[PayloadEnvelope],
         topology: TopologySnapshot,
     ) -> SchedulerResult:
-        pending: list[tuple[object, PayloadEnvelope]] = []
-        completions: list[SubmissionCompletion] = []
-        submission_events: list[SubmissionLifecycleEvent] = []
-        submission_context: dict[
-            str,
-            tuple[str, str, str, float, int],
-        ] = {}
-        submission_order: dict[str, int] = {}
+        ledger = SubmissionExecutionLedger(
+            actual_work_extractor=self.actual_work_extractor,
+        )
         endpoints_by_id = {
             endpoint.endpoint_id: endpoint for endpoint in topology.endpoints
         }
@@ -254,12 +257,7 @@ class SynchronousScheduler:
         )
         for source_item in source:
             if source_item is _ConcurrentEnvelopeSource._POLL:
-                collected = self._poll_one(
-                    pending,
-                    completions,
-                    submission_events,
-                    submission_context,
-                )
+                collected = self._poll_one(ledger)
                 if collected is not None:
                     bounded_wait_samples.append(collected.wait_s)
                     fanin_s += collected.result_s
@@ -271,19 +269,21 @@ class SynchronousScheduler:
             envelope = source_item
 
             request_id = envelope.request.request_id
-            if request_id in submission_order:
-                raise ValueError(f"duplicate request_id: {request_id}")
-            submission_order[request_id] = len(submission_order)
+            ledger.observe(envelope)
             pool_id: str | None = None
             route: RoutingDecision | None = None
             while True:
-                hol_age_s = self._head_of_line_age_s(submission_context)
+                hol_age_s = (
+                    ledger.oldest_inflight_age_s(now_s=self.epoch_clock())
+                    if ledger.contexts
+                    else 0.0
+                )
                 globally_allowed = self.admission.decide(
-                    len(pending), hol_age_s=hol_age_s
+                    ledger.inflight_count, hol_age_s=hol_age_s
                 ).allowed
                 capacity_topology = self._topology_with_local_inflight(
                     topology,
-                    submission_context,
+                    ledger.contexts,
                     per_endpoint_limit=self.per_endpoint_limit,
                     per_endpoint_work_limit=self.per_endpoint_work_limit,
                     request_work=envelope.request.estimated_work_units,
@@ -291,7 +291,7 @@ class SynchronousScheduler:
                 if self.per_endpoint_admission:
                     capacity_topology = self._topology_with_endpoint_admission(
                         capacity_topology,
-                        submission_context,
+                        ledger.contexts,
                     )
                 if globally_allowed and any(
                     endpoint.healthy and endpoint.available
@@ -322,18 +322,13 @@ class SynchronousScheduler:
                         route = None
                     if route is not None:
                         break
-                if not pending:
+                if not ledger.pending:
                     raise RuntimeError(
                         "admission denied or no endpoint has capacity with no "
                         "in-flight submission to collect; the scheduler cannot "
                         "make progress"
                     )
-                collected = self._collect_one(
-                    pending,
-                    completions,
-                    submission_events,
-                    submission_context,
-                )
+                collected = self._collect_one(ledger)
                 bounded_wait_samples.append(collected.wait_s)
                 fanin_s += collected.result_s
             if pool_id is None or route is None:
@@ -353,13 +348,8 @@ class SynchronousScheduler:
                     weight=self.job_weight,
                 )
             ):
-                if pending:
-                    collected = self._collect_one(
-                        pending,
-                        completions,
-                        submission_events,
-                        submission_context,
-                    )
+                if ledger.pending:
+                    collected = self._collect_one(ledger)
                     bounded_wait_samples.append(collected.wait_s)
                     fanin_s += collected.result_s
                 else:
@@ -375,42 +365,28 @@ class SynchronousScheduler:
                     )
                 raise
             submit_s += time.perf_counter() - submit_start
-            submission_context[request_id] = (
-                pool_id,
-                route.endpoint_id,
-                endpoint.gpu_id,
-                self.epoch_clock(),
-                envelope.request.estimated_work_units,
+            ledger.submitted(
+                handle,
+                envelope,
+                pool_id=pool_id,
+                endpoint_id=route.endpoint_id,
+                gpu_id=endpoint.gpu_id,
+                submit_epoch_s=self.epoch_clock(),
             )
-            pending.append((handle, envelope))
-            max_inflight_seen = max(max_inflight_seen, len(pending))
+            max_inflight_seen = max(max_inflight_seen, ledger.inflight_count)
             max_active_work_per_endpoint_seen = max(
                 max_active_work_per_endpoint_seen,
-                self._max_endpoint_active_work(submission_context),
+                max(ledger.active_work_by_endpoint().values(), default=0),
             )
 
-        while pending:
-            collected = self._collect_one(
-                pending,
-                completions,
-                submission_events,
-                submission_context,
-            )
+        while ledger.pending:
+            collected = self._collect_one(ledger)
             fanin_s += collected.result_s
 
+        completions = ledger.ordered_completions()
         return SchedulerResult(
-            completions=tuple(
-                sorted(
-                    completions,
-                    key=lambda completion: submission_order[completion.request_id],
-                )
-            ),
-            submission_events=tuple(
-                sorted(
-                    submission_events,
-                    key=lambda event: submission_order[event.submission_id],
-                )
-            ),
+            completions=completions,
+            submission_events=ledger.ordered_events(),
             operator_invocations=len(completions),
             max_inflight_seen=max_inflight_seen,
             applied_limit=self.admission.limit,
@@ -425,32 +401,10 @@ class SynchronousScheduler:
             ),
         )
 
-    def _head_of_line_age_s(
-        self,
-        submission_context: dict[str, tuple[str, str, str, float, int]],
-    ) -> float:
-        # This is the age of the oldest in-flight submission, including both
-        # Ray-side waiting and normal endpoint service time. It is directly
-        # observable but must not be interpreted as pure queue delay.
-        if not submission_context:
-            return 0.0
-        now = self.epoch_clock()
-        oldest_submit_s = min(
-            submit_epoch_s
-            for (
-                _pool_id,
-                _endpoint_id,
-                _gpu_id,
-                submit_epoch_s,
-                _work,
-            ) in submission_context.values()
-        )
-        return max(0.0, now - oldest_submit_s)
-
     @staticmethod
     def _topology_with_local_inflight(
         topology: TopologySnapshot,
-        submission_context: dict[str, tuple[str, str, str, float, int]],
+        submission_context: Mapping[str, SubmissionContext],
         *,
         per_endpoint_limit: int | None = None,
         per_endpoint_work_limit: int | None = None,
@@ -458,14 +412,13 @@ class SynchronousScheduler:
     ) -> TopologySnapshot:
         inflight_by_endpoint: dict[str, int] = {}
         work_by_endpoint: dict[str, int] = {}
-        for _pool_id, endpoint_id, _gpu_id, _submit_epoch_s, work in (
-            submission_context.values()
-        ):
+        for item in submission_context.values():
+            endpoint_id = item.endpoint_id
             inflight_by_endpoint[endpoint_id] = (
                 inflight_by_endpoint.get(endpoint_id, 0) + 1
             )
             work_by_endpoint[endpoint_id] = (
-                work_by_endpoint.get(endpoint_id, 0) + work
+                work_by_endpoint.get(endpoint_id, 0) + item.estimated_work
             )
         return replace(
             topology,
@@ -507,33 +460,16 @@ class SynchronousScheduler:
             ),
         )
 
-    @staticmethod
-    def _max_endpoint_active_work(
-        submission_context: dict[str, tuple[str, str, str, float, int]],
-    ) -> int:
-        work_by_endpoint: dict[str, int] = {}
-        for _pool_id, endpoint_id, _gpu_id, _submit_s, work in (
-            submission_context.values()
-        ):
-            work_by_endpoint[endpoint_id] = (
-                work_by_endpoint.get(endpoint_id, 0) + work
-            )
-        return max(work_by_endpoint.values(), default=0)
-
     def _topology_with_endpoint_admission(
         self,
         topology: TopologySnapshot,
-        submission_context: dict[str, tuple[str, str, str, float, int]],
+        submission_context: Mapping[str, SubmissionContext],
     ) -> TopologySnapshot:
         inflight_by_endpoint: dict[str, int] = {}
         oldest_submit_by_endpoint: dict[str, float] = {}
-        for (
-            _pool_id,
-            endpoint_id,
-            _gpu_id,
-            submit_epoch_s,
-            _work,
-        ) in submission_context.values():
+        for item in submission_context.values():
+            endpoint_id = item.endpoint_id
+            submit_epoch_s = item.submit_epoch_s
             inflight_by_endpoint[endpoint_id] = (
                 inflight_by_endpoint.get(endpoint_id, 0) + 1
             )
@@ -570,107 +506,39 @@ class SynchronousScheduler:
 
     def _collect_one(
         self,
-        pending: list[tuple[object, PayloadEnvelope]],
-        completions: list[SubmissionCompletion],
-        submission_events: list[SubmissionLifecycleEvent],
-        submission_context: dict[str, tuple[str, str, str, float, int]],
+        ledger: SubmissionExecutionLedger,
     ) -> CollectedSubmission:
-        collected = self.adapter.wait_one(pending)
-        return self._record_collected(
-            collected,
-            pending,
-            completions,
-            submission_events,
-            submission_context,
-        )
+        collected = self.adapter.wait_one(ledger.pending)
+        return self._record_collected(collected, ledger)
 
     def _record_collected(
         self,
         collected: CollectedSubmission,
-        pending: list[tuple[object, PayloadEnvelope]],
-        completions: list[SubmissionCompletion],
-        submission_events: list[SubmissionLifecycleEvent],
-        submission_context: dict[str, tuple[str, str, str, float, int]],
+        ledger: SubmissionExecutionLedger,
     ) -> CollectedSubmission:
-        completion_epoch_s = self.epoch_clock()
-        matching = [
-            index for index, (item, _) in enumerate(pending) if item is collected.handle
-        ]
-        if len(matching) != 1:
-            raise RuntimeError("adapter returned an unknown or duplicate pending handle")
-        _, pending_envelope = pending.pop(matching[0])
-        if collected.completion.request_id != pending_envelope.request.request_id:
-            raise RuntimeError("completion request_id does not match pending request")
-        completions.append(collected.completion)
-        request_id = collected.completion.request_id
-        (
-            pool_id,
-            endpoint_id,
-            gpu_id,
-            submit_epoch_s,
-            _work,
-        ) = submission_context.pop(request_id)
+        recorded = ledger.record(
+            collected,
+            completion_epoch_s=self.epoch_clock(),
+        )
+        request_id = recorded.envelope.request.request_id
         if self.shared_credit is not None:
-            actual_work = None
-            if (
-                collected.completion.status == "completed"
-                and isinstance(collected.completion.result, dict)
-            ):
-                observed = collected.completion.result.get("token_count")
-                if (
-                    isinstance(observed, int)
-                    and not isinstance(observed, bool)
-                    and observed > 0
-                ):
-                    actual_work = observed
             self.shared_credit.release(
                 request_id,
-                job_id=pending_envelope.request.job_id,
-                actual_work=actual_work,
+                job_id=recorded.envelope.request.job_id,
+                actual_work=recorded.actual_work,
             )
-        submission_events.append(
-            SubmissionLifecycleEvent(
-                submission_id=request_id,
-                pool_id=pool_id,
-                endpoint_id=endpoint_id,
-                gpu_id=gpu_id,
-                submit_epoch_s=submit_epoch_s,
-                completion_epoch_s=completion_epoch_s,
-                status=collected.completion.status,
-                error=collected.completion.error,
-                planning_batch_id=pending_envelope.request.planning_batch_id,
-                service_quantum_index=(
-                    pending_envelope.request.service_quantum_index
-                ),
-                service_quantum_oversized=(
-                    pending_envelope.request.service_quantum_oversized
-                ),
-                actor_worker_id=collected.actor_worker_id,
-                actor_worker_index=collected.actor_worker_index,
-                actor_worker_pid=collected.actor_worker_pid,
-            )
-        )
         return collected
 
     def _poll_one(
         self,
-        pending: list[tuple[object, PayloadEnvelope]],
-        completions: list[SubmissionCompletion],
-        submission_events: list[SubmissionLifecycleEvent],
-        submission_context: dict[str, tuple[str, str, str, float, int]],
+        ledger: SubmissionExecutionLedger,
     ) -> CollectedSubmission | None:
-        if not pending:
+        if not ledger.pending:
             return None
         poll_one = getattr(self.adapter, "poll_one", None)
         if not callable(poll_one):
             return None
-        collected = poll_one(pending)
+        collected = poll_one(ledger.pending)
         if collected is None:
             return None
-        return self._record_collected(
-            collected,
-            pending,
-            completions,
-            submission_events,
-            submission_context,
-        )
+        return self._record_collected(collected, ledger)

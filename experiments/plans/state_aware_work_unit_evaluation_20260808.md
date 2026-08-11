@@ -1,6 +1,11 @@
 # Work Unit、状态感知、动态调度与代价估计的实验计划
 
-日期：2026-08-08（2026-08-09 更新：开题两作业 guaranteed-overlap 已完成）
+日期：2026-08-08（2026-08-09 更新：开题两作业 guaranteed-overlap 已完成；
+2026-08-11 更新：新增 SAOR 动态调度设计维护入口）
+
+> **动态调度算法唯一维护入口**：本文 §5.2。当前状态为 `design-candidate`，不是已完成方法，
+> 也不替代 §5 的简单阈值/滞回控制 baseline。后续算法假设、公式、工程映射、实验门禁和
+> 结论状态统一在 §5.2 调整，避免散落到报告、代码注释或结果文档中形成不兼容版本。
 
 算子代价估计是下述 organization 与 admission/routing/multi-job 的共同使能部件：
 同一 calibration signature 下输出 stage/service/remaining work、SLO slack 与预测区间。
@@ -106,6 +111,533 @@
 因此当前代码不能表述为“完整状态感知方法已经落地”。最小工程顺序是 descriptor builder →
 observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把 cost、organization、routing
 和 credit 一次性联动。
+
+### 5.2 SAOR：阶段感知有序释放调度（动态候选，唯一设计维护入口）
+
+#### 5.2.1 状态、定位与一句话定义
+
+| 字段 | 当前冻结值 |
+|---|---|
+| 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
+| policy revision | `saor-v0.1.2-design`；core implementation `saor-core-v0.1` |
+| 状态 | `design-candidate`；纯策略/有序释放/执行账本已单测，尚未接 formal runner、尚未完成定理证明、尚无 proposed 胜出数据 |
+| vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
+| 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
+| 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
+| 公平定位 | Job 级长期加权服务约束；不声称复现或超过 in-engine VTC token-level bound |
+| 理论来源 | constrained stochastic network、MaxWeight、Lyapunov drift-plus-penalty；属于成熟理论迁移 |
+
+一句话定义：
+
+> SAOR 在数据库/Daft/Ray 上游维护分阶段真实队列与公平/SLO 虚拟债务，周期性从离线校准的
+> 安全 request/work 容量档位中选择动作，并以单 endpoint 有序 dispatcher 将选中的独立请求
+> 持续释放给 vLLM FCFS；vLLM 继续负责 iteration/token 级 continuous batching、chunked
+> prefill 和 KV 管理。
+
+该设计利用 FCFS，而不是与 FCFS 对抗：上游决定合并后的到达流，vLLM 按到达顺序执行；
+request 完成即释放 credit 并补位，使 continuous batching 不必等待整个上游 cohort 完成。
+项目不分配 CUDA core、不选择下一个 decode token、不改 vLLM scheduler。
+
+#### 5.2.2 对“waiting reservoir”和单一 GPU 利用率判断的修正
+
+`vLLM waiting > 0` 不是目标状态，也不是 continuous batching 生效的必要条件；GPU
+utilization 高或低同样不是健康/欠供给的充分条件。GPU utilization 是采样到的设备忙碌症状，
+不能单独回答“是否有上游 ready work、请求排在哪里、是否产生有效完成、tail/SLO 是否恶化、
+是否达到当前配置的服务平台”。`running` 较高、GPU utilization 较高且 `waiting=0` **只有在**
+完成速率接近同协议 ceiling、上游/Ray/vLLM 队列不持续增长、tail 稳定且无 failure 时，才可
+判为健康饱和；缺少这些交叉证据时不得下结论。
+
+此前项目经验统一冻结为反例，而不是零散调参记忆：
+
+| 已观察经验 | 单一指标会给出的错误判断 | 对 SAOR 的约束 |
+|---|---|---|
+| 单点 `gpu_utilization_pct` 曾在实际运行后显示 0，属于采样时刻假象 | “GPU 没有工作” | 禁止使用单点 snapshot；只读 during-run `mean/p50/p95/max`，并与完成 work、running 和功耗交叉验证 |
+| shared-vLLM 中 `waiting=0`，但请求已在 Ray actor 侧排队，前台延迟恶化 38.9% | “vLLM 无 waiting，所以可以继续加并发” | 必须同时观察 Ray ready/active work、oldest age、submit/completion rate 和 Job slowdown |
+| 每 endpoint 65,536 active work 已达到最大吞吐的 97.80%，继续提高到 98K--131K 吞吐近似持平而 P99/SLO 更差 | “更高并发或更高 GPU busy 一定更好” | 选择最小饱和点；边际吞吐平台且 tail 上升时判为过量 admission |
+| request K64 的 offered work 比匹配臂约高 33%，P99 同时恶化 | “持续补位带来的吞吐就是机制收益” | 比较 continuous replenishment 时必须匹配 active work，不能把多喂 work 当算法收益 |
+| 图像路径曾表现为 CPU preprocess/driver-Ray submit 混合木桶 | “GPU utilization 低，应继续提高模型侧并发” | 先定位 source/prepare/model 哪一阶段缺 work；上游瓶颈不能靠扩大 vLLM window 修复 |
+| KV 饱和、prefix 命中下降时，数据组织策略排名发生反转并伴随 TTFT/tail 恶化 | “GPU 已经很忙，所以运行状态健康” | 高 GPU busy 仍可能是重复 prefill/KV thrash；必须联合 KV、prefix hit、TTFT/TPOT 和 correct goodput |
+
+SAOR 的观测必须形成五层状态指纹：
+
+| 层次 | 必需信号 | 回答的问题 |
+|---|---|---|
+| workload availability | source/prepare/model `ready_work`、arrival work、freshness/signature | 当前是否真的有可提交工作，瓶颈在哪个阶段 |
+| Ray 外部执行 | active request/work、credit occupancy、Ray queue depth/work、oldest age、submit/completion rate | 请求是否在 vLLM 之前形成软拥塞 |
+| vLLM 服务内部 | running/waiting、KV usage、queue time、TTFT/TPOT、prefix-cache hit | engine 是否出现排队、KV/prefill 压力或 cache thrash |
+| 实际进展 | completion-work EWMA、model/operator/E2E throughput、JCT/P99、SLO goodput、failure | 忙碌是否转化为正确完成和可接受 tail |
+| 资源佐证 | GPU utilization `mean/p50/p95/max`、MFU、显存、功耗/能耗 | 设备是否忙、忙碌成本多高；只作交叉证据，不单独触发动作 |
+
+控制状态按联合证据分类：
+
+| 状态 | 联合判据 | SAOR 动作 |
+|---|---|---|
+| 观测无效 | snapshot stale/signature 不匹配，或只有单点 GPU 值 | 不调节；保持/回退 frozen-static |
+| 上游受限 | model ready work 不足，且 source/prepare 等待或服务不足 | 不扩大 vLLM 容量；保留阶段诊断，相关策略在上游单独处理 |
+| 模型欠供给 | ready work 充足、active work 低于安全饱和区、完成速率低于同协议 ceiling，且 tail/队列稳定 | 只上调一个离线安全容量档位 |
+| 健康饱和 | correct completion/goodput 接近 ceiling，队列和 tail 稳定，无 failure | 保持；不要求 waiting 非零，也不要求 GPU utilization 达到固定阈值 |
+| Ray 侧软拥塞 | Ray queue work/oldest age/slowdown 持续上升，而 vLLM waiting 仍低或为 0 | 停止扩容；下调外部 window 或在独立消融中调整 dispatcher/credit |
+| vLLM 内部拥塞 | waiting/KV/queue time/TTFT 持续上升，边际吞吐平台或下降，SLO 恶化 | 下调一个安全容量档位；记录是否存在 preemption/KV thrash |
+| 信号冲突 | GPU/MFU 与完成速率、队列或 tail 给出相反结论 | 不在线猜测；保持当前档位或 fail-closed，保存 trace 离线诊断 |
+
+所有“持续上升/稳定/接近 ceiling”均按冻结观测窗口、最短驻留时间和 time-series 聚合定义，
+不能由一次 scrape 或瞬时峰值触发。GPU utilization 与 MFU 进入模型可以作为解释变量或
+guardrail，但第一版 SAOR 不以它们作为单变量阈值控制器。
+
+vLLM `priority` 只作可选消融：将少量公平/SLO 紧迫度等级投影为 request priority，检验在
+真实 engine waiting 出现时是否改善 tail。它不是 SAOR 成立条件；其潜在 preemption/recompute
+必须单独记录。自定义 `scheduler_cls` 不进入主方法，因为它改变引擎边界且接口不是稳定公共合同。
+
+主要依据：
+
+- vLLM V1 request queue 当前公开的 FCFS/priority 语义：
+  <https://docs.vllm.ai/en/stable/api/vllm/v1/core/sched/request_queue/>；
+- vLLM chunked prefill 将长 prefill 分块并可与 decode 工作共同调度：
+  <https://docs.vllm.ai/en/latest/configuration/optimization/>；
+- VTC 是 continuous-batching 引擎内部公平算法，本项目仅保留外部 VTC-style baseline：
+  <https://www.usenix.org/conference/osdi24/presentation/sheng>。
+
+#### 5.2.2.1 2026-08-11 phase-change 提前停止结果对状态模型的约束
+
+`experiments/results/phase_change_state_aware_corrected_early_stop_20260811/` 已在
+`dae9f7ae9dbbf211887134ce5bddd07bcb0aa81a` 完成报告和紧凑原始数据归档，本节将其作为
+已审计的提前停止证据纳入设计约束。
+
+- 在该机器/模型/服务/workload calibration signature 下，A-only 从 K128 到 K160 的每 endpoint
+  服务率提升约 7.77%，且 K128 上游 `arrival→submit` P95 约 23 秒；这支持“存在安全增档机会”的
+  动机，不支持把 K128/K160 固化为通用动作。
+- B=2.5/3.5/4.5 req/s 均未通过预注册降档门。最高压力下只有第二轮 ON 的一个 endpoint
+  出现 KV max=0.874，waiting 始终为 0；因此不得把 `KV≥0.85` 或 `waiting>0` 写成 SAOR
+  的硬编码降档规则，也不能声称 adaptive 已有效或无效。
+- 第二轮 ON 明显比第一轮重，且第二个 OFF 仍保留较高 KV/backlog，说明 phase label 不是
+  状态复位信号。$Q_{j,s}$ 与 $R_e$ 必须跨 phase 连续演化；若实验想把两个周期当作等价重复，
+  必须另设 `waiting=0 + KV/active-work/backlog 回到预注册基线带` 的 recovery gate。
+- 下一轮独立验证保持模型、硬件、输出上限和两档容量不变，只改 phase 结构：使用明确 burst，
+  或延长 drain 并等待 recovery gate。未恢复的周期仍可用于检验有记忆的在线控制，但不能当作
+  独立同分布重复。
+
+这一结果改变的是可行动作的证据等级和实验初始条件，不改变 DPP/ordered-release 框架。核心
+代码只接收带 calibration signature 的容量档位、预测 service/cost 和 fresh state；所有具体
+档位、阈值、窗口、endpoint 数与模态 work 换算必须由配置/adapter 显式提供。
+
+#### 5.2.3 三种 work 语义：token 组织不取消，但不再一数三用
+
+每行必须保持一个独立完整请求。**禁止**把单行长 prompt 按 token 切成多个互相隔离的请求；
+安全的 token 级 prefill 分块由 vLLM chunked prefill 完成。现有 token-budget 若表示“按 token
+总量把多行请求组织为 cohort”，则继续保留。
+
+三种 work 明确分离：
+
+1. 数据组织量：
+
+   $$
+   W_i^{org}=n_i^{prompt}
+   $$
+
+   用于 token-budget、length alignment 和 prefix-affinity；只改变请求集合/顺序，不拆请求内容。
+
+2. admission/resource work：
+
+   $$
+   \widehat W_i^{resource}
+   =c_0+c_p n_i^{uncached}+c_d\mathbb E[n_i^{output}],
+   \qquad
+   \overline W_i=\widehat W_i^{resource}+\kappa\sigma_i
+   $$
+
+   用于 active-work、容量档位和 endpoint routing。prefix cache 开启时使用 effective/uncached
+   prefill work；若解析 proxy 不能在 held-out 上改善配置 ranking/regret，则退回 raw token
+   work，不为使用复杂模型而使用复杂模型。
+
+3. 公平记账量：
+
+   $$
+   W_i^{fair}=w_p n_i^{prompt}+w_q n_i^{output,actual}
+   $$
+
+   用于与 VTC-style baseline 可比的 Job entitlement；完成时以实际输出 token 修正估计。
+   capacity 使用物理 resource work，公平使用逻辑 weighted-token work，不能因 prefix cache
+   命中而混为同一个计数器。若以后研究硬件资源公平，另报实际服务时间/KV/FLOPs 指标，
+   不把它悄悄替换为用户侧公平定义。
+
+图像路径保持同一抽象，只在 modality adapter 中把上述量换成 image/frame、prepare/model
+work 与实际完成服务；scheduler 本身不出现 `if text else image`。
+
+#### 5.2.4 固定控制周期与事件驱动补位
+
+理论模型使用固定长度控制周期 $\Delta$，避免把可变请求完成间隔直接套入普通 slotted
+Lyapunov 定理。工程实现分成两个时间尺度：
+
+- **慢循环（每个 $\Delta$）**：读取 atomic snapshot，更新队列/虚拟债务，选择安全容量档位，
+  并生成每个 endpoint 的有序候选流；
+- **快循环（每次 completion）**：释放 request/work credit，在本周期已选择的动作与上限内
+  立即补一个或多个请求，不等待 cohort 完成；周期中出现 failure/stale signature 时停止补位
+  并回退 frozen-static。
+
+每个 endpoint 使用单一 ordered dispatcher 和单调 `release_seq`。正式 trace 同时记录
+`release_seq`、HTTP submit time、服务端可见 arrival（若可得）和 completion time。HTTP/Ray
+并发造成的小范围重排不伪装成严格 FCFS；理论上将其作为每周期有界近似误差，实验中报告
+实际 inversion rate。若 inversion 不可界定，`FCFS ordered release` 的机制声明失败，不能
+仅靠理论意图继续声称成立。
+
+#### 5.2.5 系统状态、队列与可行动作
+
+索引：Job $j$、阶段 $s\in\{source,prepare,model,result\}$、endpoint $e$、控制周期 $t$。
+
+- $Q_{j,s}(t)$：Job $j$ 在阶段 $s$ 的 ready work；
+- $A_{j,s}(t)$：外部到达或上一阶段完成带来的新 work；
+- $S_{j,s}(t)$：本周期实际完成的阶段服务；
+- $R_e(t)$：endpoint 已提交未完成的 active resource work；
+- $R_j^{active}(t)$：归属于 Job $j$ 的已提交未完成 work；
+- $H_e(t)$：running、waiting、KV、TTFT、queue/service rate、freshness/signature；
+- $N_e(t)$：endpoint active request 数。
+
+阶段队列：
+
+$$
+Q_{j,s}(t+1)=\left[Q_{j,s}(t)-S_{j,s}(t)\right]^+ + A_{j,s}(t).
+$$
+
+endpoint outstanding work：
+
+$$
+R_e(t+1)=\left[R_e(t)-C_e(t)\right]^+ + X_e(t).
+$$
+
+容量档位只来自同 calibration signature 下离线验证的有限集合：
+
+$$
+\mathcal K_e=\{(K_{e,k}^{req},K_{e,k}^{work})\}_{k=1}^{m_e}.
+$$
+
+请求 $i$ 只有同时满足下式才可释放：
+
+$$
+N_e(t)+1\le K_{e,k}^{req},
+\qquad
+R_e(t)+\overline W_i\le K_{e,k}^{work}.
+$$
+
+一个动作 $a(t)\in\mathcal A(H_t)$ 由“容量档位、Job/request 选择、endpoint 路由、可选
+priority tier”组成。第一版只同时开放容量 + Job/request 选择；routing、priority 和 organizer
+动态化按消融逐项加入，禁止一开始联合搜索所有旋钮。
+
+#### 5.2.6 公平和 SLO 虚拟债务
+
+当前有 ready 或 active work 的 Job 集合：
+
+$$
+B(t)=\{j:Q_{j,model}(t)+R_j^{active}(t)>0\}.
+$$
+
+权重 $\phi_j>0$，动态理想份额：
+
+$$
+\rho_j(t)=\frac{\phi_j}{\sum_{k\in B(t)}\phi_k}.
+$$
+
+公平债务：
+
+$$
+F_j(t+1)=
+\left[
+F_j(t)+\rho_j(t)C_{total}(t)-S_j(t)
+\right]^+.
+$$
+
+只在共同积压期间计债；上游尚未准备好且无 active work 的 Job 不积累债务。Job 新加入或
+重新变为 backlogged 时采用 counter-lift/active-set 初始化，防止通过离开再加入重置历史份额。
+外部实现只能在 completion 后获得准确 output work，因此属于 delayed accounting；固定
+`max_tokens`、timeout 和有界请求大小是证明中“反馈延迟有界”的必要条件。
+
+若 $M_j(t)$ 为本周期 SLO miss 数，$N_j^{done}(t)$ 为完成数，允许 miss rate 为
+$\epsilon_j$，则：
+
+$$
+Z_j(t+1)=
+\left[
+Z_j(t)+M_j(t)-\epsilon_jN_j^{done}(t)
+\right]^+.
+$$
+
+$F_j$ 与 $Z_j$ 是约束债务，不是把公平、SLO、吞吐压成一个无法解释的 Jain/utility 总分。
+
+#### 5.2.7 Drift-plus-penalty 决策
+
+令 $\Theta(t)=\{Q(t),F(t),Z(t)\}$，定义：
+
+$$
+L(\Theta(t))=
+\frac12\left(
+\sum_{j,s}Q_{j,s}^2+
+\eta_F\sum_jF_j^2+
+\eta_Z\sum_jZ_j^2
+\right).
+$$
+
+每周期枚举有限可行动作，最小化 Lyapunov drift 上界加运行代价：
+
+$$
+a^*(t)=
+\arg\min_{a\in\mathcal A(H_t)}
+\widehat\Delta(a\mid\Theta(t))+V\widehat g(a,H_t),
+$$
+
+其中：
+
+$$
+g=-\operatorname{goodput}
++\alpha\operatorname{tail\ risk}
++\beta\operatorname{energy}
++\gamma\operatorname{switch\ cost}.
+$$
+
+实现可直接计算下列与动作相关的上界项，不需要通用优化求解器：
+
+$$
+\begin{aligned}
+\Psi(a)=
+&\sum_{j,s}Q_{j,s}\left(A_{j,s}-\widehat S_{j,s}(a)\right)\\
+&+\eta_F\sum_jF_j\left(\rho_j\widehat C_{total}(a)-\widehat S_j(a)\right)\\
+&+\eta_Z\sum_jZ_j\left(\widehat M_j(a)-\epsilon_j\widehat N_j^{done}(a)\right)\\
+&+V\widehat g(a,H_t).
+\end{aligned}
+$$
+
+prefix/cache locality 只能作为 $\widehat g$ 中有上界的效率奖励，或在得分近似相同的候选间
+tie-break；不得无限压过 $F_j/Z_j$ 而造成饥饿。
+
+经典理论依据为 MaxWeight 与 Lyapunov drift-plus-penalty：
+
+- <https://drum.lib.umd.edu/items/571fda52-aefb-4497-9a2d-69d8c7c907b9>；
+- <https://ee.usc.edu/stochastic-nets/docs/network-optimization-notes.pdf>。
+
+#### 5.2.8 目标定理、证明义务和不可声称边界
+
+目标不是证明“SAOR 在任意 vLLM 负载下最优”，而是在显式假设下证明队列稳定与长期约束
+满足。需要依次完成：
+
+**假设集**：
+
+1. arrival、单请求 work 和单周期 service 有界并具有有限二阶矩；
+2. arrival/service 在 calibration signature 内平稳遍历，或每个 phase 内分段平稳；
+3. offered load 位于所选安全动作的 capacity region 内部，并存在 $\varepsilon>0$ slack；
+4. observation delay、completion feedback delay 和 `release_seq` inversion 有界；
+5. work/service 估计误差可转化为每周期 $C$-additive DPP 近似误差；
+6. failure/stale signature 时 fail-closed，回退到已经验证的 frozen-static。
+
+**拟证明结论**：若上述假设成立，且每周期动作相对理想 DPP 至多为 $C$-additive，则争取证明
+
+$$
+\limsup_{T\rightarrow\infty}
+\frac1T\sum_{t<T}\mathbb E[g(t)]
+\le g^*+\frac{B+C}{V},
+$$
+
+以及真实/虚拟队列强稳定、平均 backlog 为 $O(V)$。由公平与 SLO 虚拟队列稳定推出共同积压
+Job 的长期加权服务约束和长期 miss-rate 约束。
+
+**必须先证明或实测的桥接项**：
+
+- 不同容量档位下 $\widehat\mu_e(a,H)$ 对真实完成 work 的 ranking 与残差界；
+- service process 在一个 calibration signature 内是否足以稳定，phase change 是否能及时检测；
+- completion-only actual-token 修正的最大反馈延迟；
+- 单 dispatcher 的实际 arrival inversion 是否有界；
+- approximate action 的误差能否写成与队列长度无关的常数 $C$。
+
+上述桥接项未完成前，只能称“基于 DPP 的设计候选”，不能声称已经拥有 $O(1/V)$、$O(V)$、
+公平份额或 SLO 定理。即使完成这些定理，也不能继承 VTC 的 in-engine 2× tight token service
+difference bound。
+
+#### 5.2.9 可执行伪代码与现有模块映射
+
+```text
+initialize frozen safe arms, per-Job Q/F/Z, per-endpoint ordered queues
+
+every fixed control interval Δ:
+    read one atomic RuntimeStateSnapshot
+    if snapshot stale, signature changed, or failure observed:
+        select frozen-static fallback; stop dynamic expansion
+    aggregate arrivals/completions and update Q/F/Z
+    enumerate feasible (capacity arm, Job/request, endpoint) actions
+    choose action minimizing the DPP upper-bound surrogate
+    publish per-endpoint ordered release queues with monotonically increasing release_seq
+
+on every request completion:
+    release request/work credit
+    correct estimated work with actual prompt/output work
+    update completion counters used by the next fixed interval
+    while the published arm has request/work capacity:
+        release the next eligible independent request to the endpoint dispatcher
+```
+
+工程映射：
+
+| SAOR 概念 | 当前落点 | 状态与下一最小增量 |
+|---|---|---|
+| staged work/state | `planning/work.py` | descriptor/snapshot 已有；需接入文本 formal runner 的 atomic observe-only trace |
+| safe capacity arms | `scheduling/core/control.py` | 中性 `CapacityArm` 已抽离；具体档位只由 calibration config 注入 |
+| finite-action DPP | `scheduling/submission_control/saor.py` | 纯策略与公平债务已单测；需用 replay 验证 service ranking/动作 regret |
+| completion/exactly-once | `scheduling/core/execution.py` | 通用 ledger 已接原 scheduler；actual-work extractor 由模态 adapter 注入 |
+| ordered release | `scheduling/submission_control/ordered_release.py` | Job-head、容量预校验、单调 `release_seq` 与 completion correction 已单测；尚未接 Ray dispatcher |
+| endpoint state | vLLM/resource time series | atomic freshness/signature gate 待接；waiting/KV/GPU 不单独驱动 |
+| cost model | CE1--CE5/WorkDescriptor | 先 replay/observe-only，过 ranking/regret 门后才进入动作 |
+
+第一版算法增量必须保持简单：只实现 `FCFS + admission arm + Job ordered release`。routing、
+priority、prefix bonus、SLO debt 分别做后续单因素增量，不在一个提交中同时实现。
+单请求动作构造器把 hold 定义为零增量参考，所有 release action 的 service/goodput/tail/energy/
+switch 输入都必须是相对 hold 的显式边际预测；任何映射缺失立即拒绝，不能静默补 0。
+这是对每个候选分数减去同一个基准 $\Psi(hold)$；因为
+$\arg\min_a\Psi(a)=\arg\min_a[\Psi(a)-\Psi(hold)]$，不会改变动作排序。该等价只在同一 snapshot
+下基准项对所有候选相同时成立，跨 snapshot 或跨 calibration signature 不能复用边际预测。
+
+#### 5.2.10 公平评价合同
+
+主公平定义：**共同积压 Job 的长期加权 attained service**。不以原始 TTFT 相等、请求条数
+相等或静态配额未超限替代。
+
+1. 加权服务 Jain。共同积压窗口内令 $x_j=S_j/\phi_j$：
+
+   $$
+   J_{service}=\frac{(\sum_jx_j)^2}{|B|\sum_jx_j^2}.
+   $$
+
+   只在按权重归一化后的实际服务量上计算；不直接对原始 TTFT/JCT 做 Jain。
+
+2. 理想 GPS 服务滞后：
+
+   $$
+   G_j(t)=\int_0^t\rho_j(\tau)dS_{total}(\tau),
+   \qquad
+   Lag_j(t)=G_j(t)-S_j(t).
+   $$
+
+   报告最大正 lag、P95 lag 和 phase change 后的偿还时间。没有定理时只称 empirical service
+   lag，不能称 VTC service-difference bound。
+
+3. 用户体验隔离。相对同一 Job 的匹配独占控制：
+
+   $$
+   slowdown_j=\frac{JCT_j^{shared}}{JCT_j^{solo}},
+   \qquad
+   progress_j=\frac{JCT_j^{solo}}{JCT_j^{shared}}.
+   $$
+
+   报告 max slowdown、progress Jain、TTFT/JCT P95/P99 和 SLO miss；Jain 高但所有 Job 都
+   同样慢不能称为好调度。
+
+4. 饥饿和工作守恒。报告最大 waiting age、未完成请求、以及“存在 eligible ready work 且
+   健康 endpoint 仍有可用安全容量”的 avoidable-idle ratio。GPU idle 但无 ready work 不算
+   调度器不工作守恒。
+
+5. 效率—公平 Pareto。吞吐/goodput、tail、energy 与 service lag 分开报告，不压成一个 headline
+   composite score。
+
+#### 5.2.11 交叉验证、baseline 与淘汰门
+
+所有正式臂冻结未修改 vLLM 和相同内部配置；主比较为：
+
+1. 最佳 frozen-static；
+2. state-observed no-op；
+3. 现有 threshold/deadband controller；
+4. external DRR 与 external VTC-style 公平 baseline；
+5. `FCFS-SAOR`；
+6. 可选 `Priority-SAOR` 消融；
+7. 离线 finite-horizon MPC/clairvoyant trace oracle，只作每条 trace 的上界和 dynamic regret
+   参照，不作为线上 proposed。
+
+验证顺序保持“单一动作先行”：
+
+1. trace-driven replay：复用现有容量画像和 cost-profile，先检查动作、稳定性与 oracle regret；
+2. steady underload/near-saturation：证明 no-op 开销和 frozen-static fallback；
+3. low→high/high→low、burst、上游 prepare stall：测 recovery、overshoot 和 avoidable idle；
+4. short/long 与 1/2/4 Job：加入公平债务，报告 service lag/slowdown；
+5. 只有前述通过后才加入 routing、prefix bonus、priority 和图像泛化。
+
+动态候选只有同时满足下列条件才晋级：
+
+- 与 frozen-static 保持同最大 request/work 上限、source/sink、manifest 和服务配置；
+- correctness、exactly-once、质量、feeding-saturation 和稳定性门禁通过；
+- 至少一个预注册主要指标改善约 5%，且 throughput、P99/SLO、公平或 failure 无不可接受退化；
+- 相比简单 threshold controller 的 recovery/overshoot/regret 有可复现增量；
+- 控制轨迹确实不同，非零动作覆盖足够时长；否则按 effect-range gate 停止；
+- cost/状态估计换成 oracle 后仍无收益，则淘汰调度结构；oracle 有收益而在线无收益，则归因于
+  estimator/controller，而不是更换 workload 追正。
+
+#### 5.2.12 相关工作边界与可写贡献
+
+最接近的重叠方向包括 VTC 的 in-engine token fairness、EWSJF 的 upstream mixed-workload
+排序、Equinox 的预测/双维公平，以及 CONCUR 的外部 congestion admission：
+
+- VTC：<https://www.usenix.org/conference/osdi24/presentation/sheng>；
+- EWSJF：<https://arxiv.org/abs/2601.21758>（预印本）；
+- Equinox：<https://arxiv.org/abs/2508.16646>（预印本）；
+- CONCUR：<https://arxiv.org/abs/2601.22705>（预印本）。
+
+因此不能把 MaxWeight、虚拟队列、weighted-token fairness、上游 adaptive scheduling 或
+continuous replenishment 单独声明为新算法贡献。可验证的项目贡献候选收紧为：
+
+> 在不修改 vLLM 的前提下，将数据库/Daft/Ray 的分阶段 ready work、Job 存活集、工作量
+> 不确定性和模型服务状态映射为带公平/SLO 虚拟约束的外部安全动作集合，并通过 FCFS 有序
+> 释放与 completion-level replenishment 组合数据库上游控制和 vLLM continuous batching。
+
+该定位属于 **new setting + mature-method transplantation**。当前 idea 审核结论为
+`Accept with Revisions`：工程可行性较高，主要风险是 prior overlap、范围过大以及理论假设
+无法在实际 vLLM 服务曲线上闭合。论文核心只保留“阶段感知容量 + 有序释放”；公平是约束，
+token organization 是输入，priority 是消融，多模态是外部有效性验证。
+
+#### 5.2.13 维护规则与决策日志
+
+本节每次修改按以下字段追加，不删除被实验否定的旧版本：
+
+| 日期 | revision | 变更 | 依据类型 | 状态影响 |
+|---|---|---|---|---|
+| 2026-08-11 | `saor-v0.1-design` | 首次冻结 FCFS ordered release、固定周期 DPP、三种 work、公平/SLO debt、证明义务与淘汰门 | 现有代码/实验事实 + 文献迁移 + 设计推导 | 保持 `design-candidate` |
+| 2026-08-11 | `saor-v0.1.1-design` | 撤销任何以 waiting 或 GPU utilization 单独判断健康/拥塞的表述；加入历史反例、五层状态指纹与联合状态分类 | 历史 GPU/vLLM/Ray/图像实验事实 + 指标合同 | 保持 `design-candidate`；观测模型收紧 |
+| 2026-08-11 | `saor-v0.1.2-design` | 纳入 phase-change 提前停止证据：增档动机成立、降档区未建立、phase 不等于状态复位；禁止固化 K/KV/waiting 阈值 | 独立结果分支正式报告 + CSV 审计 | 保持 `design-candidate`；重做 recovery/burst gate |
+| 2026-08-11 | `saor-core-v0.1` | 实现中性 capacity、execution ledger、有限动作 DPP、公平债务和 Job-head ordered release；配置与模态适配外置 | 纯 Python unit/architecture tests | 不升阶；runner/replay/真实服务均未接入 |
+
+状态只允许按以下顺序变化：
+
+```text
+design-candidate
+→ trace-validated
+→ observe-only-passed
+→ single-action-gated
+→ formal-evaluated
+→ frozen-proposed 或 rejected
+```
+
+每次升阶必须在本节记录对应代码 revision、结果目录、通过/失败门禁和仍不可声称的结论。
+开放问题保持显式：控制周期 $\Delta$、可证明的服务/预测误差界、Job 重入 counter-lift、
+实际 arrival inversion、resource-work 系数、priority 是否值得保留，以及图像公平 work 的最终
+定义。任何开放项不得在实现中用未记录的默认值静默决定。
+
+#### 5.2.14 SAOR-only 删除门
+
+当前**不能**直接删除其他所有策略后期待项目继续运行。惰性包入口已经保证“只导入 SAOR
+核心”不加载 legacy policy，但生产调用仍有显式依赖：profiler 使用 adaptive/PID/static
+admission 与 routing，shared-vLLM runner 使用 bounded capacity，图像多 Job runner 和 Ray
+runtime 使用 shared credit，replay batching 使用 flush policy，通用执行路径仍使用
+`SynchronousScheduler`。其中一部分是实验 baseline，一部分是可复用执行基础设施，不能都当作
+“待删除的竞争算法”。
+
+只有依次满足以下门禁，才可建立 SAOR-only 发布 profile：
+
+1. 新增一个薄 runtime adapter，把 atomic snapshot、action builder、ordered publish、Ray
+   completion 和实际 work correction 接成端到端路径；纯策略仍不得 import Ray/Daft/vLLM。
+2. 文本 shared-vLLM 与图像 project runner 都显式选择 `saor` profile，并通过 exactly-once、
+   capacity、failure/stale fallback 和配置 provenance 测试。
+3. 对 `code/src`、`code/scripts` 做静态依赖扫描；除单独保留的 baseline/reproduction profile 外，
+   production SAOR profile 对被删模块引用为零。
+4. 在临时副本中实际移走候选 legacy 文件，运行全量 unit、Daft→Ray contract smoke 和一个
+   bounded fake/HTTP E2E；不能只以 import SAOR 成功作为“项目可运行”证据。
+5. 论文复现实验所需 baseline 默认归档并冻结，不从研究仓库物理删除；若只做部署制品，则由
+   packaging allowlist 排除，避免破坏已有结果复现。
+
+因此当前删除判断为 `not-ready`。下一工程动作应是接一个最小 `saor` runtime profile，而不是
+先删策略文件再逐个修 ImportError。
+
 
 ## 6. 图像正式矩阵
 

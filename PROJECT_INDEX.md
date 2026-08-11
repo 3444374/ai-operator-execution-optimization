@@ -199,7 +199,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/first_principles_reassessment_20260808.md` | 从目标函数反推开题必需证据、work-unit/动态/图像设计、图表与 19 项答辩内容结构 | 重构开题故事、实验矩阵、方法代码或图前读 |
 | `opening/opening_defense_outline_20260808.md` | 权威答辩内容大纲：逐项 take-away、证据、claim 边界、必要实验与八张图的数据合同 | 编写开题材料、补实验或绘图前读；当前不生成 PPT 成品 |
 | `experiments/plans/opening_database_e2e_p0_20260807.md` | 开题前仅允许的 SQuAD/ShareGPT 三臂统一 database-E2E 合同 | 运行开题证据闭环实验前读 |
-| `experiments/plans/state_aware_work_unit_evaluation_20260808.md` | 分阶段 work descriptor、四个开题最小方法证据、同上限 static vs dynamic、图像强 baseline、steady→变化→多 job 正式矩阵，以及 VTC/BurstGPT 公开 benchmark、faithful-timed 与原生 eager-trace-shape 分轨 | 补多 Job 证据、准备公开 trace、诊断项目性能或扩展 proposed 主实验前读 |
+| `experiments/plans/state_aware_work_unit_evaluation_20260808.md` | 分阶段 work descriptor、四个开题最小方法证据、同上限 static vs dynamic，以及 §5.2 SAOR 动态算法唯一维护入口：FCFS ordered release、固定周期 DPP、三种 work、公平/SLO 债务、证明义务、MPC oracle 与淘汰门 | 设计/调整动态调度、补多 Job 公平证据、准备公开 trace、诊断项目性能或扩展 proposed 主实验前读；SAOR 当前为 `design-candidate` |
 | `code/scripts/baselines/opening_database_e2e_matrix.py` | 双 endpoint、三静态臂、统一 source/sink/质量/资源的 1 warmup + 3 formal runner；支持 workload-specific、校准合同锁定的 project K/actor shape | 只用于上述冻结开题合同；direct/DuckDB 并发不随 project 选择改变 |
 | `deploy/autodl/opening_database_e2e_p0.example.json` | AutoDL 开题三臂 runner 配置模板 | 复制到服务器 artifact root 后以 runtime env 展开 |
 | `deploy/autodl/opening_project_feeding_calibration.example.json` | 首轮未过 95% feeding 门后的纠正校准模板；同 manifest、统一 256 actor slots 并固定其它变量，仅扫 project K32/64/128/256 | 每个 workload 冻结最小饱和静态点后再整体替换重跑三臂矩阵 |
@@ -446,7 +446,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/architecture/test_architecture_boundaries.py` | AST 导入边界与旧兼容入口 fail-closed 门禁 | 新增模块、改变跨层依赖或迁移路径后运行 |
 | `code/src/data/sources/postgres_text.py` | PostgreSQL data source 后端：psycopg/Arrow baseline、Daft SQL entry、`doc_id`/`arrival_time` source order、manifest doc_id filter | 切换或修改数据入口、读取顺序或多 job manifest 选集时读 |
 | `code/src/data/materializers/text.py` | ArrowOrganizer / DaftOrganizer 数据组织后端 | 接入或比较 Arrow 与 Daft 文本数据组织路径时读 |
-| `code/src/modalities/text/costs.py` | 与引擎无关的 prompt/output 成本模式解析 | 修改 prompt-only、固定输出上限或 trace 输出成本语义前读 |
+| `code/src/modalities/text/costs.py` | 与引擎无关的 prompt/output 成本模式及 completion actual-token-work adapter | 修改文本估计成本、实际 completion 计费或 scheduler extractor 注入前读 |
 | `code/src/infrastructure/runner_lease.py` | 场景输出目录的原子单写者租约、owner 身份校验和显式 stale recovery | 修改 runner 幂等、恢复或 manifest/CSV 单写者边界前读 |
 | `code/src/infrastructure/ray_runtime_preflight.py` | 在真实 Ray worker 上读取并校验 `RLIMIT_NOFILE` | Daft Ray/Ray Data 正式 runner 启动前调用；低于 65,536 时保留失败证据并停止 |
 | `code/src/observability/profiling/` | profiler 应用子包：CLI/config、正式 schema/trace、replay 和 Ray 接线；旧根级 `profile_*.py` 已删除 | 修改画像应用参数、运行接线或结果契约前读 |
@@ -465,10 +465,15 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/data/workloads/text.py` | 内置 synthetic / controlled workload seed | 仅用于 smoke/dev；最终 baseline 优先用 ShareGPT/BurstGPT importer |
 | `code/src/experiments/scenarios/core.py` | 可复现的 warm-up / formal 场景交错顺序生成器 | 修改实验随机化与运行顺序前读 |
 | `code/src/scheduling/` | Daft→Arrow→Ray 正式链路中的 typed scheduling core；按 `core/`、`organization/`、`submission_control/`、`endpoint_routing/`、`runtime/` 分包，旧根级兼容模块已删除 | 实现或审查运行时策略前读 |
+| `code/src/scheduling/__init__.py` | 调度包兼容 API 的惰性导出层；导入单个策略不再级联加载所有 legacy policy/runtime | 修改包级公开名称或准备 SAOR-only profile 前读 |
+| `code/src/scheduling/core/control.py` | 模态/引擎无关的 request/work capacity-arm 合同 | 注入离线校准容量档位或修改 admission action schema 前读 |
+| `code/src/scheduling/core/execution.py` | exactly-once pending/completion/lifecycle ledger；actual-work extractor 由模态 adapter 注入 | 修改 scheduler completion、回收 credit 或跨模态实际 work 计费前读 |
 | `code/src/scheduling/core/errors.py` | 可重试 endpoint capacity 背压与终止性调度错误的 typed 边界 | 修改健康/容量语义或 scheduler retry 控制流前读 |
 | `code/src/scheduling/organization/` | 上游 static/service-quantum token-budget 决策 | 修改数据组织预算控制或动态安全动作集前读 |
 | `code/src/scheduling/organization/service_quantum.py` | 将 planning batch 按预测 work 切成不拆单行的有界 service-completion 单元 | 修改 HTTP/Ray completion 粒度、whole-submission HOL 或 quantum 超预算语义前读 |
 | `code/src/scheduling/submission_control/` | static/adaptive admission、active-work 与多 job shared fair credit | 修改提交反压、公平性或 endpoint capacity 语义前读 |
+| `code/src/scheduling/submission_control/saor.py` | SAOR finite-action DPP、weighted common-backlog fairness debt 与显式预测 service 合同 | 修改 SAOR 控制律、动作分数或 fairness debt 前运行对应纯策略测试；当前无 formal 性能 claim |
+| `code/src/scheduling/submission_control/ordered_release.py` | endpoint-neutral Job-head ready queue、capacity 预校验、单调 release sequence 与 completion correction | 接 Ray dispatcher、改补位/完成语义或审计 FCFS approximation 前读 |
 | `code/src/scheduling/submission_control/stage_work.py` | 只在离线安全动作集内单步调整、stale/signature mismatch 回退静态点的 stage-work 控制候选 | 接入图像/文本 state-aware runner 前先读；当前只有纯策略合同，无性能 claim |
 | `code/src/scheduling/endpoint_routing/` | round-robin、least-queued、least-work、manifest-pinned、prefix-affinity 路由 | 修改多 endpoint 选择策略前读 |
 | `code/src/scheduling/runtime/` | 有界 Ray actor worker pool、submit/complete adapter、worker contract、metrics observation cache 与 named credit actor | 修改 Ray worker slots、worker routing、completion cleanup 或服务观测接线前读 |
@@ -481,7 +486,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/analysis/summarize_output_aware_bfd.py` | output-aware BFD 重复实验的长表统计汇总 | 汇总吞吐、E2E、packing、GPU、能耗与 MFU 正式结果时运行 |
 | `code/tests/data/test_sources.py` | data source 查询构造和 source factory 单元测试 | 修改数据入口行为后运行 |
 | `code/tests/planning/test_organizers.py` | 数据组织后端最小单元测试 | 修改 organizer 接口或 batch 行为后运行 |
-| `code/tests/modalities/text/test_request_costs.py` | 输出成本模式、来源标签与严格输入校验 | 修改成本估计语义后运行 |
+| `code/tests/modalities/text/test_request_costs.py` | 输出成本模式、来源标签、严格输入校验与 completion actual-token work adapter | 修改文本成本估计或 completion work 提取语义后运行 |
 | `code/tests/planning/test_packing.py` | 确定性 BFD、超预算单行与 packing 汇总测试 | 修改装箱算法后运行 |
 | `code/tests/planning/test_cost_context_loo.py` | 候选 repeat 聚合、宏统计与 pooled selection 口径测试 | 修改 context-LOO 证据或晋级聚合时运行 |
 | `code/tests/experiments/test_output_aware_summary.py` | 正式重复实验长表汇总与 warm-up/失败过滤测试 | 修改 output-aware 汇总脚本后运行 |
@@ -516,6 +521,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/scheduling/test_scheduling_models.py` | scheduling request/endpoint/topology schema 单元测试 | 修改 typed scheduling metadata 前运行 |
 | `code/tests/scheduling/test_scheduling_policies.py` | static admission 与 round-robin routing 单元测试 | 修改 admission/routing baseline 前运行 |
 | `code/tests/scheduling/test_scheduler.py` | bounded-inflight 与 exactly-once deterministic scheduler 测试 | 修改 scheduler orchestration 前运行 |
+| `code/tests/scheduling/test_execution_ledger.py` | exactly-once ledger、actual-work extractor 与异常原子性测试 | 修改通用 completion state 前运行 |
+| `code/tests/scheduling/test_saor.py` | SAOR DPP/fairness/stale fallback/capacity/predicted-service 单元测试 | 修改 SAOR 纯控制律或动作构造前运行 |
+| `code/tests/scheduling/test_ordered_release.py` | Job-head 顺序、release sequence、容量预校验、completion correction 与跨模态 work 测试 | 修改 ordered dispatcher state 前运行 |
 | `code/tests/scheduling/test_adaptive_admission.py` | AIMD、EWMA-AIMD、PID、UCB 控制律、边界与 reward 单元测试 | 修改动态 admission controller 前运行 |
 | `code/tests/scheduling/test_dynamic_admission.py` | 缓存采样、stale hold、typed trace 与动态降窗调度不变量测试 | 修改 observation provider 或 dynamic gate 前运行 |
 | `code/tests/scheduling/test_flush_policies.py` | immediate、fixed-timeout、queue-adaptive flush 与 hard max-wait 单元测试 | 修改独立 flush policy 前运行 |

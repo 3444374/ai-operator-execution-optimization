@@ -575,6 +575,9 @@ class SchedulerTests(unittest.TestCase):
             adapter=TokenResultAdapter(),
             pool_id="default",
             shared_credit=shared,
+            actual_work_extractor=lambda completion: completion.result.get(
+                "token_count"
+            ),
         )
 
         scheduler.run([envelope(0)], topology())
