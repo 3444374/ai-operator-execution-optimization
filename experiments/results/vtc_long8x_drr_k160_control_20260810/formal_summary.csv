@@ -1,0 +1,2 @@
+job_count,policy,repeats,tokens_per_s_mean,tokens_per_s_sd,duration_s_mean,gpu_utilization_pct_mean,mfu_pct_mean,jain_fairness_median,jain_fairness_min,job_jct_s_mean,job_jct_s_max,job_p99_s_mean,job_p99_s_max,slo_violation_ratio_mean,slo_violation_ratio_max,slo_goodput_per_s_mean,min_normalized_rate_over_mean,start_lateness_s_max,start_skew_s_max
+8,shared_drr,3,14830.537,7.133,100.142,96.97,46.323,0.9666,0.9657,95.712,96.617,12.531,15.23,0.0,0.0,3.869,0.7361,0.0002,1.1605

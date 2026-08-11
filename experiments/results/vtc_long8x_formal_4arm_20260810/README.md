@@ -11,6 +11,7 @@
 - **4 臂**：`shared_fifo` / `shared_drr_frozen` / `external_vtc` 冻结 K128/W131072；`state_aware_adaptive` 初始 K96/W98304、候选 [K96/W98304, K128/W131072, K160/W131072]、increase-hyst=2、decrease-hyst=8、cooldown=8、target 7600 tok/s/ep、congestion KV 0.85。公共：8 actor/ep × concurrency 32、token_budget 6144、flush fixed 50ms、no writeback、SLO 30s。
 - **重复**：1 warmup + 3 formal × 4 臂 = 16 group run，确定性交错，seed 20260810。
 - **raw**：服务器 `experiment-artifacts/vtc_long8x_formal_4arm_20260810/run/`（per-run requests/submissions/resources/credits/states CSV + manifest），按 raw-not-in-git 政策不进 git，可下载到本地镜像。
+- **聚合（进 git，本目录）**：`manifest.json` + `records/*.json`（16 cell per-cell summary）+ `group_runs.csv`（runner 直接产的 per-cell 运行表）+ `formal_summary.csv`（per-arm 3-rep 聚合，codex shared_vllm schema；vs-independent 3 列因无 independent 臂而省略）。
 
 ## 1. 实验设置
 

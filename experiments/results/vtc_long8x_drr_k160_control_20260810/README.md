@@ -10,6 +10,7 @@
 - **平台/服务/workload**：同 4-arm（2×4090 / vLLM 0.25.1 Qwen2.5-7B / 8-client 2963 行 720s overload / arrival scale 0.125）。
 - **重复**：1 warmup + 3 formal = 4 group run，seed 20260810。
 - **raw**：服务器 `experiment-artifacts/vtc_long8x_drr_k160_control_20260810/run/`（raw-not-in-git）。
+- **聚合（进 git，本目录）**：`manifest.json` + `records/*.json`（4 cell）+ `group_runs.csv`（runner per-cell 运行表）+ `formal_summary.csv`（per-arm 3-rep 聚合，codex shared_vllm schema 派生）。
 
 ## 1. 实验设置 / 2. 设计
 
