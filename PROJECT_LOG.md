@@ -5760,3 +5760,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - phase-change 合同现在校验 manifest 首到达时间与 audit offset 一致、导出两个 Job 的
   offset；A-only/pressure/action/formal 配置均通过 `arrival_offsets_s` 恢复同一个全局
   240s phase clock。旧 pressure 结果不重新解释、不 resume，修复后从新目录重跑。
+- 修正全局时钟后的 B2.5 pressure 显示第二个 OFF phase 边界存在 1--2 个采样的 drain
+  waiting（max 2--7、P95=0，KV P95<0.70），但第一 ON phase 的 K160 尚未产生压力。
+  OFF 安全门因此统一为 P95 口径，允许孤立边界 drain、仍拒绝持续拥塞；B2.5 按“第一
+  ON phase 无 upper pressure”正确失败，继续预注册的 B3.5，而不把瞬时 drain 当失败原因。

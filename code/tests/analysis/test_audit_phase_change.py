@@ -95,6 +95,28 @@ def _valid_rows() -> list[dict[str, str]]:
 
 
 class TestAuditPhaseChange(unittest.TestCase):
+    def test_off_phase_safety_allows_isolated_boundary_drain(self) -> None:
+        self.assertTrue(
+            audit._phase_is_safe(
+                {
+                    "waiting_max": 7.0,
+                    "waiting_p95": 0.0,
+                    "kv_max": 0.91,
+                    "kv_p95": 0.72,
+                }
+            )
+        )
+        self.assertFalse(
+            audit._phase_is_safe(
+                {
+                    "waiting_max": 7.0,
+                    "waiting_p95": 1.0,
+                    "kv_max": 0.91,
+                    "kv_p95": 0.86,
+                }
+            )
+        )
+
     def test_admission_lag_uses_replayed_arrival_to_submit_boundary(self) -> None:
         rows = [
             {

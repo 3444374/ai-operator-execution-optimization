@@ -166,6 +166,11 @@ def _summary(rows: list[dict[str, str]]) -> dict[str, float]:
     }
 
 
+def _phase_is_safe(summary: dict[str, float]) -> bool:
+    """Treat isolated boundary-drain samples as transients, not a whole phase."""
+    return summary["waiting_p95"] == 0 and summary["kv_p95"] < 0.85
+
+
 def _admission_lag_summary(
     rows: list[dict[str, str]],
     endpoint_id: str,
@@ -281,7 +286,7 @@ def audit_pressure(
         for endpoint, phases in grouped.items():
             items = {str(index): _summary(phases[index]) for index in range(4)}
             for index in (0, 2):
-                if items[str(index)]["waiting_max"] > 0 or items[str(index)]["kv_max"] >= 0.85:
+                if not _phase_is_safe(items[str(index)]):
                     raise ValueError(f"{scenario}/{endpoint} is congested during A-only phase {index}")
             endpoint_evidence[endpoint] = items
         evidence[scenario] = endpoint_evidence

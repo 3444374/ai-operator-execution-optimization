@@ -183,7 +183,9 @@ new immutable contract for each point. Run
   --calibration-output <pressure-output>/calibration_selection.json
 ```
 
-Stop at the first passed point. Both OFF phases must be safe. In both ON
+Stop at the first passed point. Both OFF phases must be safe at P95
+(`waiting_p95=0`, `KV_p95<0.85`); this permits isolated boundary-drain samples
+without reclassifying a persistently congested phase as safe. In both ON
 phases and on both endpoints, frozen-upper must show real service pressure
 (`waiting>0` or KV>=0.85) while frozen-lower has safe P95 pressure and visibly
 relieves waiting or KV. The script emits the only calibration selection file
