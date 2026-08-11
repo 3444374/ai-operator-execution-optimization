@@ -30,6 +30,7 @@ def _row(
     applied: int = 160,
     kv: float = 0.2,
     waiting: int = 0,
+    active: int = 128,
 ) -> dict[str, str]:
     return {
         "endpoint_id": endpoint,
@@ -39,6 +40,7 @@ def _row(
         "control_applied_request_limit": str(applied),
         "vllm_kv_usage": str(kv),
         "vllm_waiting": str(waiting),
+        "active_requests": str(active),
     }
 
 
@@ -54,6 +56,8 @@ def _valid_rows() -> list[dict[str, str]]:
                     reason="ready_backlog_below_target",
                     applied=160,
                 ),
+                _row(endpoint, 15, applied=160, active=145),
+                _row(endpoint, 20, applied=160, active=145),
                 _row(endpoint, 66, kv=0.9),
                 _row(
                     endpoint,
@@ -72,6 +76,8 @@ def _valid_rows() -> list[dict[str, str]]:
                     reason="ready_backlog_rate_bootstrap",
                     applied=160,
                 ),
+                _row(endpoint, 135, applied=160, active=145),
+                _row(endpoint, 140, applied=160, active=145),
                 _row(endpoint, 186, kv=0.9),
                 _row(
                     endpoint,
@@ -130,6 +136,24 @@ class TestAuditPhaseChange(unittest.TestCase):
             [item["action"] for item in result["endpoint-0"]],
             ["increase", "decrease", "increase", "decrease"],
         )
+        self.assertEqual(
+            result["endpoint-0"][0]["post_increase_active_p50"],
+            145,
+        )
+
+    def test_rejects_upshift_that_remains_clamped_at_lower_arm(self) -> None:
+        rows = _valid_rows()
+        for row in rows:
+            if float(row["observed_epoch_s"]) in {1015.0, 1020.0}:
+                row["active_requests"] = "128"
+        with self.assertRaisesRegex(ValueError, "above the lower arm"):
+            audit._audit_actions(
+                rows,
+                {"start_epoch_s": 1000.0},
+                SEGMENTS,
+                128,
+                160,
+            )
 
     def test_rejects_missing_second_downshift(self) -> None:
         rows = [

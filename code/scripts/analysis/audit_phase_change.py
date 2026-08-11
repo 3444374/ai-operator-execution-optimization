@@ -359,6 +359,28 @@ def _risk_improved(rows: list[dict[str, str]], action_time: float) -> bool:
     )
 
 
+def _expanded_capacity_summary(
+    rows: list[dict[str, str]],
+    action_time: float,
+    lower_k: int,
+) -> dict[str, float]:
+    after = [
+        row
+        for row in rows
+        if action_time + 2.0 <= _number(row, "_elapsed_s") <= action_time + 20.0
+    ]
+    if not after:
+        raise ValueError("upshift has no post-action occupancy evidence")
+    active = [_required_number(row, "active_requests") for row in after]
+    summary = {
+        "post_increase_active_p50": statistics.median(active),
+        "post_increase_active_max": max(active),
+    }
+    if summary["post_increase_active_p50"] <= lower_k:
+        raise ValueError("upshift did not sustain capacity above the lower arm")
+    return summary
+
+
 def _audit_actions(
     rows: list[dict[str, str]],
     record: dict[str, object],
@@ -398,6 +420,15 @@ def _audit_actions(
             applied = int(float(row["control_applied_request_limit"]))
             if applied != (upper_k if action == "increase" else lower_k):
                 raise ValueError(f"{endpoint} applied the wrong capacity arm")
+            expansion = (
+                _expanded_capacity_summary(
+                    endpoint_rows,
+                    _number(row, "_elapsed_s"),
+                    lower_k,
+                )
+                if action == "increase"
+                else {}
+            )
             if action == "decrease" and not _risk_improved(
                 endpoint_rows, _number(row, "_elapsed_s")
             ):
@@ -409,6 +440,7 @@ def _audit_actions(
                     "elapsed_s": _number(row, "_elapsed_s"),
                     "reason": row["control_reason"],
                     "applied_request_limit": applied,
+                    **expansion,
                 }
             )
         if [item["elapsed_s"] for item in selected] != sorted(item["elapsed_s"] for item in selected):

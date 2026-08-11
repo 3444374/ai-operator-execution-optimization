@@ -210,8 +210,9 @@ Use the exact passed A+B contract and calibration selection. Run
 
 The audit must observe, on **each endpoint**, ordered increase/decrease/
 increase/decrease actions in phases 0/1/2/3, correct reasons, exact applied
-arms, zero fallback and measurable risk relief after each downshift. A mere
-change in a counter, GPU utilization, or whole-run throughput is not enough.
+arms, zero fallback, post-upshift active-request P50 above lower K during the
+2--20 second observation window, and measurable risk relief after each
+downshift. A mere change in a counter, GPU utilization, or whole-run throughput is not enough.
 Any failure ends the experiment; do not enter formal.
 
 ## 7. Formal comparison and claim gate

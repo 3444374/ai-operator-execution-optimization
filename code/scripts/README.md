@@ -1214,7 +1214,9 @@ A-only 的 backlog 证据使用 request trace 中 replayed arrival 到 submit �
 lower arm 持续占据；不能把 `organizer_queued_work` 当作 Daft source backlog——该字段
 当前来自 shared-credit waiting work，单 Job 的等上限本地 admission 会先于它截流。
 adaptive job 的本地 request/work 只作为安全 ceiling，固定为已标定候选的最大值；
-实际在线容量仍由 shared coordinator 在候选臂之间调整。
+实际在线容量仍由 shared coordinator 在候选臂之间调整。action/formal 审计还要求
+每次上调后 2--20 s 窗口的 active-request P50 真正超过 lower K，避免把控制器动作计数
+误当成有效扩容。
 
 `--arm project_static` 结构不同：runner 在通用 scan 前分流，子进程调用 `postgres_ai_operator_profile.py`
 跑显式冻结的静态合同，profiler 独占 scan+organize+model+sink。wrapper 无连接——所有 per-doc 证据来自 profiler

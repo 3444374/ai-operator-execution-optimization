@@ -5734,5 +5734,5 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   upper/lower median service-rate 至少 5% 差异。
 - 同时修复真实 actuation 死区：`state_aware_adaptive` 的 job-local request/work ceiling
   使用最大标定候选，shared coordinator 保持从 lower 起步并独占上下档决策。正式 action
-  gate 必须从 resolved command 核对 local=upper ceiling、shared initial=lower，不能只看
-  action counter。
+  gate 必须从 resolved command 核对 local=upper ceiling、shared initial=lower，并要求每次
+  upshift 后 2--20 s 的 active-request P50 超过 lower K，不能只看 action counter。
