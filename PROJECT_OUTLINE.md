@@ -60,6 +60,11 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 
 文本 `AI_COMPLETE` 是主要方法场景；图像 `AI_EMBED/AI_CLASSIFY` 是正文泛化验证。公共策略只消费 staged estimated work、credit、fresh state 和 completion event：文本 adapter 输出 source/tokenize/prompt-output/result work，图像 adapter 输出 encoded/prepare/tensor-model/result work；Organizer、Scheduler、Tracing 和配置逻辑保持一致。不适用某模态的能力必须显式声明。
 
+图像路径新增 HSE（Heterogeneous Staged Execution）作为执行底座候选：Daft/Ray 继续拥有
+数据引擎、资源放置和任务执行，typed data plane 管理 encoded/prepared/device/result block，
+SAOR 只控制项目侧 Job-head admission 与 byte/work-bounded 中间态。HSE 连接研究内容一和二，
+不单列为第三项贡献；static HSE 未超过冻结 project static 前，不评价动态 HSE。
+
 ## 3. 系统与实验边界
 
 ```text
@@ -127,10 +132,14 @@ PostgreSQL source
 - 代价模型跨时间段、新 workload 和硬件的稳定性；
 - 图像 Daft built-in、Ray Data native 与 project frozen-static 的 operator-E2E/provenance
   证据已完成。现有数据把瓶颈进一步定位为 CPU prepare 与 driver/Ray submission 的组合：
-  SAOR 图像扩展必须显式拆出 pending-prepare、ready-tensor、pending-model 三段并使用有界
-  differential backpressure；调度不能消灭 decode/resize 工作，derived-image cache 与 DALI
-  GPU/mixed preprocess 作为正交 work-reduction 消融。仍待动态 runner 接线、跨 workload
-  外推与小规模 sink 质量闭环，sink 不是性能排名 blocker。
+  HSE/SAOR 图像扩展必须显式拆出 pending-prepare、ready-block、pending-model、pending-result，
+  采用 packed typed block 和 byte/work-bounded differential backpressure；调度不能消灭
+  decode/resize 工作，derived-image cache 与 DALI GPU/mixed preprocess 作为正交
+  work-reduction 消融。仍待 static HSE、动态 runner 接线、跨 workload 外推与小规模 sink
+  质量闭环，sink 不是性能排名 blocker。
+- prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理已进入
+  `parked-conditional` 清单；当前不实现，主路径完成后仅在真实 reuse opportunity≥10% 且扣除
+  lookup/build/refresh 后 oracle 潜力≥5% 时重新激活。
 - 图像 short→3×long 多作业已完成 immutable manifest、64-row correctness gate 和一次
   full-size overlap rehearsal；DuckDB bounded-output 四作业已完成 128-row native gate。
   两者均未启动 formal、不能用于系统排名或策略收益；图像 proposed 角色已与具体算法名

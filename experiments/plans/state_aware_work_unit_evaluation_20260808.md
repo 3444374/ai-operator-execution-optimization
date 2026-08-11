@@ -404,6 +404,32 @@ Arrow fixed-shape tensor
 <https://arrow.apache.org/docs/format/CanonicalExtensions.html>；PostgreSQL materialized view
 <https://www.postgresql.org/docs/current/rules-materializedviews.html>。
 
+#### 5.2.3.2 HSE 异构执行底座与暂缓候选
+
+2026-08-11 的架构迁移审计进一步把两级 broker 扩展成工作名 HSE（Heterogeneous Staged
+Execution）的执行合同，完整设计见
+`../../research/heterogeneous_ai_dataflow_execution_model_20260811.md`。HSE 不修改 Ray/Daft
+调度器，也不增加第三项研究内容；它只把研究内容一的 staged work/data representation 与
+研究内容二的 admission/Job 调度接在真实队列上：
+
+```text
+encoded Arrow block
+  → bounded CPU prepare leases
+  → packed ready block（uint8/FP16，按 physical bytes/work 记账）
+  → resident GPU actor（actor-local pinned ring / CUDA stream）
+  → embedding block / ordered sink
+```
+
+实现顺序冻结为：真实 ready queue/lease → static typed/byte-bounded broker → 单因素
+packed-uint8、pinned、double-buffer、DALI/cache 消融 → 最后才接 SAOR 多 Job 动态控制。
+static HSE 未超过同资源 current project frozen-static 前，不运行动态 HSE 主实验。
+
+prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理已登记为
+`parked-conditional`，当前不实现。它们必须复用 descriptor 的 source/version、transform、
+model/tokenizer/processor 和 decoding signature；vLLM APC/prefix affinity 只算已有能力，不能
+写成项目实现任意 KV 增量更新。重新激活门为主路径完成后真实 reuse opportunity ≥10%，且
+扣除 lookup/build/refresh 后离线 oracle 潜力 ≥5%。
+
 #### 5.2.4 固定控制周期与事件驱动补位
 
 理论模型使用固定长度控制周期 $\Delta$，避免把可变请求完成间隔直接套入普通 slotted

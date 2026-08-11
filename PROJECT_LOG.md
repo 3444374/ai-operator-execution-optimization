@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-08-11 CPU–GPU 异构分阶段执行模型与远期复用候选登记
+
+- 基于图像 CLIP preprocess、host-path、R0–R2 transfer ceiling 与 120K matched-resource
+  证据，将当前问题限定为 CPU prepare、pageable representation conversion 和 driver/Ray
+  submission 的组合，不再以“GPU busy 低”或“增加 source thread”单独驱动优化。
+- 新增 HSE（Heterogeneous Staged Execution）设计候选：Daft/Ray 负责数据引擎、资源放置与
+  执行，typed data plane 使用 encoded/prepared/device/result block，项目 broker 维护真实
+  ready queue、lease 和 byte/work cap，SAOR 负责多 Job admission/fairness/SLO。
+- 文献/官方能力边界明确：借鉴 Ray Data streaming/backpressure、Daft resource UDF、DALI
+  mixed/prefetch、Arrow fixed-shape/device interface、PyTorch pinned stream、StarPU/HetExchange
+  task+data 模型和 MaxWeight；这些机制本身不作为项目原创。
+- 实施门冻结为真实队列 → static typed/byte-bounded broker → 单因素 data-path 消融 → 动态
+  SAOR-HSE；static HSE 未超过 current project frozen-static 前不得评价动态增量。
+- prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理登记为
+  `parked-conditional`；主路径完成且真实机会≥10%、净 oracle 潜力≥5% 才重新激活。
+
 ## 2026-08-11 SAOR capacity-only 四臂开发门未晋级，冻结失败机理与 K160 权衡
 
 - 在隔离服务器 worktree 完成 threshold、frozen K160、SAOR、frozen K128 四臂各一次：

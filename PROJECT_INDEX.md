@@ -441,6 +441,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `research/gpu_scheduler_data_placement_supplement_20260715.md` | GPU 调度与数据放置补充调研 | 查看策略控制器设计的前沿系统依据、可借鉴思想和后续精读清单 |
 | `research/evaluation_metrics_survey_20260731.md` | AI 算子/推理服务文献 + 数据库厂商评估指标调研与 gap 分析 | 设计新实验指标、对照文献标准指标时读；P0 缺口 TTFT/ITL/prefix-cache-hit-rate |
 | `research/daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：DB↔GPU 经 Daft 桥接 + 三痛点 + offline-batch 候选；已撤回传输瓶颈/结构性空白预设 | 方向/题目讨论、Daft 痛点、workload 选型时读；以 staged baseline 后的证据为准 |
+| `research/heterogeneous_ai_dataflow_execution_model_20260811.md` | HSE CPU–GPU 异构分阶段执行候选：已有架构迁移审计、typed block、byte-bounded broker、tandem-queue/DPP 模型、实验门与 prompt/复用/增量推理待办 | 设计图像 static HSE、GPU 友好数据通路或重启远期复用候选前读；当前无性能/新颖性结论 |
 | `research/reference/README.md` | 本地 PDF 状态 | 查看 21 份实体 PDF、Top 15 完整性和维护规则 |
 | `research/reference/REFERENCE_INDEX.md` | 权威题录索引 | 查看 DOI、正式轨道、核心补充级别和工程资料入口 |
 | `data/README.md` | 本地 workload 数据说明；raw payloads 被 git ignore | 查看 ShareGPT/BurstGPT 下载位置、用途和边界 |

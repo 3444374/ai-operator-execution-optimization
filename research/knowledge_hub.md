@@ -724,6 +724,33 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 以上技术的代码路径和实验 CSV 均保持可用状态，后续重新激活时改动量预计较小（主要是接入新观测信号或切换 workload 配置）。
 
+### 5.10 CPU–GPU 异构分阶段执行与远期待办（2026-08-11）
+
+图像正式/诊断证据已把 feeding gap 定位为 CPU prepare、host representation conversion 与
+driver/Ray submission 的组合，而不是 PostgreSQL source thread、PCIe 或 GPU forward 单点。
+因此新增工作名 HSE（Heterogeneous Staged Execution）作为**执行底座候选**，不增加第三项
+研究内容，也不把 Daft/Ray/DALI/Arrow/StarPU 的已有能力重写为项目创新。完整迁移审计、
+数据合同、tandem-queue/DPP 模型和实验门禁见
+`heterogeneous_ai_dataflow_execution_model_20260811.md`。
+
+最小增量按顺序冻结：
+
+1. 真实 `pending-prepare → ready-block → pending-model → pending-result` 队列与 lease；
+2. packed typed block 和按 physical bytes/work 限制的中间态；
+3. static broker 超过冻结 project static 后，才接 SAOR Job-head/fairness/SLO；
+4. CPU fast path、DALI mixed、signed derived-image cache 分开做 work-reduction 消融；
+5. Ray Data/Daft Native 继续由框架拥有调度，不能注入 project broker。
+
+下列候选已登记但状态统一为 `parked-conditional`：
+
+| 候选 | 最小正确性合同 | 重新激活条件 |
+|---|---|---|
+| prompt 变化感知 | template/segment/tokenizer revision 签名；不拆分单行 vLLM 请求 | HSE/SAOR 主门完成，细粒度签名相对 full-hash 的净决策收益 ≥5% |
+| exact 结果复用 | source row/version + full input/prompt + model/processor + decoding 参数完整 cache key | 真实 exact reuse opportunity ≥10%，扣除 lookup/refresh 后 oracle 收益 ≥5% |
+| semantic 结果复用 | 与 exact cache 分轨；报告 false-hit、任务质量与失效策略 | 有任务 ground truth 和可接受的质量损失合同后 |
+| 数据库级增量推理 | 只对新增/变更 row version 重跑，未变结果按完整 provenance 复用 | CDC/version source 与 exactly-once sink 闭环后 |
+| 模型内部增量推理 | 不把 vLLM APC 冒充任意 KV delta update；需要 engine/model 明确支持 | engine 能力、语义等价与 KV 生命周期均验证后 |
+
 ---
 
 ## 6. 本项目已有实验证据
