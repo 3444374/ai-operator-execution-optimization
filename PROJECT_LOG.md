@@ -1,5 +1,24 @@
 # 项目日志
 
+## 2026-08-11 SAOR v0.3 数学审计与 benchmark 分轨
+
+- 将 capacity-only 负结果反推到模型：旧实现把 slow capacity selection 与 fast per-Job release
+  放入同一未校准 score，current-arm EWMA 又不能提供未运行臂反事实，外部 downshift 还受
+  non-preemptive active work/drain delay 影响，故不能套用普通即时 oracle DPP 结论。
+- SAOR 主候选收紧为 fixed-envelope `SAOR-Release`：以 per-Job unfinished work、公平/SLO
+  virtual debt 和 actual completion 做 ordered Job-head release；动态 K 降为可选
+  Safe-Capacity Governor，需要 hard safe set、反事实区间、pipeline debt、hysteresis 和独立
+  offline oracle gate。
+- 新增 `research/saor_model_scenario_audit_20260811.md`，给出 capacity region、oracle theorem
+  陈述、quadratic drift 证明骨架、估计误差不可直接写成常数的边界，以及 service Jain、GPS
+  lag、matched-solo slowdown、starvation/avoidable-idle 的公平合同。
+- benchmark 分轨：多 Job fixed-envelope 是主验证，依次比较 FIFO/static partition/DRR/
+  external VTC-style/SAOR-Release；dynamic capacity 只有 oracle 相对最佳 static 显示约 5%
+  Pareto 机会，才在 recovery-gated burst 上比较 lower/upper/threshold/governor/oracle。
+- 一手资料交叉核对了 MaxWeight/DPP、reconfiguration-delay adaptive MaxWeight、unknown-service
+  Discounted-UCB、VTC artifact workload suites、vLLM Gamma burst、BurstGPT、Vidur 与 ServeGen；
+  当前仍不声称定理证明完成或 SAOR 已胜出。
+
 ## 2026-08-11 CPU–GPU 异构分阶段执行模型与远期复用候选登记
 
 - 基于图像 CLIP preprocess、host-path、R0–R2 transfer ceiling 与 120K matched-resource
@@ -13,6 +32,10 @@
   task+data 模型和 MaxWeight；这些机制本身不作为项目原创。
 - 实施门冻结为真实队列 → static typed/byte-bounded broker → 单因素 data-path 消融 → 动态
   SAOR-HSE；static HSE 未超过 current project frozen-static 前不得评价动态增量。
+- 补充串联系统上界 $X\le\min_s\mu_s$：project CPU16 约 1,666 image/s 与 GPU-resident 双卡
+  约 19K image/s 的比值约 8.8%，和约 9.6% GPU busy 同量级。buffer/backpressure 只能减少
+  bubble/限制内存，不能突破 prepare 木桶；提高 prepare rate 必须由 packed uint8/GPU
+  normalize、DALI、derived cache 或更有效 CPU backend 单独验证。
 - prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理登记为
   `parked-conditional`；主路径完成且真实机会≥10%、净 oracle 潜力≥5% 才重新激活。
 

@@ -119,8 +119,8 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 字段 | 当前冻结值 |
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
-| policy revision | `saor-v0.2-development`；core implementation `saor-core-v0.1` |
-| 状态 | `trace-validated / capacity-only not-promoted`；纯策略、配对 replay 与文本容量 adapter 已接，真实服务仅 1-repeat development gate；尚未接完整 ordered-release/fairness/stage queue，尚未完成定理证明 |
+| policy revision | `saor-v0.3-design`；core implementation `saor-core-v0.1`；capacity adapter `saor-v0.2-development/not-promoted` |
+| 状态 | SAOR-Release 为主方法候选，尚未接完整 ordered-release/fairness/stage queue formal；capacity-only 已 trace/真实 development gate 但未晋级，降为可选 Safe-Capacity Governor；尚未完成定理证明 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
 | 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
@@ -129,10 +129,11 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 
 一句话定义：
 
-> SAOR 在数据库/Daft/Ray 上游维护分阶段真实队列与公平/SLO 虚拟债务，周期性从离线校准的
-> 安全 request/work 容量档位中选择动作，并以单 endpoint 有序 dispatcher 将选中的独立请求
-> 持续释放给 vLLM FCFS；vLLM 继续负责 iteration/token 级 continuous batching、chunked
-> prefill 和 KV 管理。
+> SAOR 在冻结的安全 request/work envelope 内维护数据库/Daft/Ray 分阶段真实队列与公平/SLO
+> 虚拟债务，以单 endpoint 有序 dispatcher 将选中的 Job-head 独立请求持续释放给 vLLM FCFS；
+> vLLM 继续负责 iteration/token 级 continuous batching、chunked prefill 和 KV 管理。容量档位
+> 动态选择拆为慢速、可选的 Safe-Capacity Governor，不再与可证明的 ordered-release core
+> 共用一个未校准目标函数。
 
 该设计利用 FCFS，而不是与 FCFS 对抗：上游决定合并后的到达流，vLLM 按到达顺序执行；
 request 完成即释放 credit 并补位，使 continuous batching 不必等待整个上游 cohort 完成。
@@ -257,6 +258,30 @@ failure 或 credit leak，故只能把 K160 定位为**强静态效率点兼 tai
 mean service、即时 action effect、stationary slot 与完整 virtual queue 在本轮都未闭合。后续
 只有在独立 burst/recovery workload 上 oracle 相对强静态先显示约 5% 以上且无 tail/fairness
 退化时，才允许继续在线 estimator；否则 dynamic capacity 分支直接淘汰。
+
+#### 5.2.2.3 `saor-v0.3` 分层修正
+
+详细数学模型、证明骨架、benchmark 和一手依据统一见
+`../../research/saor_model_scenario_audit_20260811.md`。本次审计把两个不同问题明确拆开：
+
+1. **SAOR-Release（主方法候选）**：固定总 request/work envelope，只对 per-Job head request
+   做 completion-driven ordered release，并用实际 completion 更新 unfinished work、公平和
+   SLO debt。第一组 formal 只比较 FIFO、static partition、shared DRR、external VTC-style 与
+   SAOR-Release，不在线切 K。
+2. **Safe-Capacity Governor（可选）**：慢速选择已校准档位。安全/tail/failure 先形成 hard
+   feasible set，再在其中选择预测 goodput 最好的档位；current-arm EWMA 不再被当作未运行臂
+   的同状态反事实。降档显式记录
+   $D_e=[R_e-K^{work}_{target}]^+$ pipeline debt，debt 清零前不发新 lease，并用 drain envelope
+   与 hysteresis 处理不可撤销 work。
+
+该修正保留 MaxWeight/DPP 作为 fixed-envelope oracle theorem 的理论来源，但不把它自动扩张到
+未知 service、延迟生效的 capacity governor。安全条件不再作为可被 backlog 抵消的 soft risk
+小数；第一版 ordered-release 可令 $V=0$，先验证 queue/fairness/SLO 约束，再单因素加入有明确
+单位的能耗或切换 penalty。
+
+容量 benchmark 与公平 benchmark 分轨：多 Job fixed-envelope 是 SAOR 主验证；capacity 动态
+先过 offline oracle gate，再在 recovery-gated burst 上验证。若 oracle 相对最佳 static 不能
+形成约 5% Pareto 改善，直接淘汰 governor，不更换 workload 追正。
 
 #### 5.2.3 三种 work 语义：token 组织不取消，但不再一数三用
 
@@ -435,8 +460,10 @@ model/tokenizer/processor 和 decoding signature；vLLM APC/prefix affinity 只�
 理论模型使用固定长度控制周期 $\Delta$，避免把可变请求完成间隔直接套入普通 slotted
 Lyapunov 定理。工程实现分成两个时间尺度：
 
-- **慢循环（每个 $\Delta$）**：读取 atomic snapshot，更新队列/虚拟债务，选择安全容量档位，
-  并生成每个 endpoint 的有序候选流；
+- **SAOR-Release 慢循环（每个 $\Delta$）**：读取 atomic snapshot，更新队列/虚拟债务，在
+  当前冻结 envelope 内生成每个 endpoint 的有序候选流；
+- **可选 governor 慢循环（多个 $\Delta$）**：仅在独立 oracle/安全门通过后选择容量档位；
+  stale/signature 变化时回退 frozen-static；
 - **快循环（每次 completion）**：释放 request/work credit，在本周期已选择的动作与上限内
   立即补一个或多个请求，不等待 cohort 完成；周期中出现 failure/stale signature 时停止补位
   并回退 frozen-static。
@@ -485,9 +512,9 @@ N_e(t)+1\le K_{e,k}^{req},
 R_e(t)+\overline W_i\le K_{e,k}^{work}.
 $$
 
-一个动作 $a(t)\in\mathcal A(H_t)$ 由“容量档位、Job/request 选择、endpoint 路由、可选
-priority tier”组成。第一版只同时开放容量 + Job/request 选择；routing、priority 和 organizer
-动态化按消融逐项加入，禁止一开始联合搜索所有旋钮。
+SAOR-Release 动作 $a(t)\in\mathcal A_K(H_t)$ 在冻结 envelope $K$ 内只包含 Job/request 选择
+与必要 endpoint assignment。capacity governor、priority、routing 和 organizer 动态化分别按
+独立消融加入，禁止第一版联合搜索所有旋钮。
 
 #### 5.2.6 公平和 SLO 虚拟债务
 
@@ -571,6 +598,7 @@ $$
 \end{aligned}
 $$
 
+安全/tail/failure 条件优先定义 hard feasible set，不能作为会被 backlog 项压过的任意软小数。
 prefix/cache locality 只能作为 $\widehat g$ 中有上界的效率奖励，或在得分近似相同的候选间
 tie-break；不得无限压过 $F_j/Z_j$ 而造成饥饿。
 
@@ -747,24 +775,19 @@ $\arg\min_a\Psi(a)=\arg\min_a[\Psi(a)-\Psi(hold)]$，不会改变动作排序。
 
 #### 5.2.11 交叉验证、baseline 与淘汰门
 
-所有正式臂冻结未修改 vLLM 和相同内部配置；主比较为：
+所有正式臂冻结未修改 vLLM 和相同内部配置。fixed-envelope 多 Job 主比较为：global FIFO、
+static partition、shared DRR、external VTC-style 与 `FCFS-SAOR-Release`；`Priority-SAOR` 只作
+后续可选消融。dynamic capacity 独立比较 frozen lower、frozen upper、state-observed no-op、
+threshold/deadband、Safe-Capacity Governor 和 finite-horizon clairvoyant/offline oracle；oracle
+只作每条 trace 的上界与 dynamic regret 参照，不作为线上 proposed。
 
-1. 最佳 frozen-static；
-2. state-observed no-op；
-3. 现有 threshold/deadband controller；
-4. external DRR 与 external VTC-style 公平 baseline；
-5. `FCFS-SAOR`；
-6. 可选 `Priority-SAOR` 消融；
-7. 离线 finite-horizon MPC/clairvoyant trace oracle，只作每条 trace 的上界和 dynamic regret
-   参照，不作为线上 proposed。
+验证顺序保持“单一动作先行”，且 fixed-envelope release 与 dynamic capacity 分轨：
 
-验证顺序保持“单一动作先行”：
-
-1. trace-driven replay：复用现有容量画像和 cost-profile，先检查动作、稳定性与 oracle regret；
-2. steady underload/near-saturation：证明 no-op 开销和 frozen-static fallback；
-3. low→high/high→low、burst、上游 prepare stall：测 recovery、overshoot 和 avoidable idle；
-4. short/long 与 1/2/4 Job：加入公平债务，报告 service lag/slowdown；
-5. 只有前述通过后才加入 routing、prefix bonus、priority 和图像泛化。
+1. fixed-envelope two-/four-Job replay/fake E2E：接入真实 per-Job completion ledger；
+2. short/long、equal-weight、3:1 weighted 与 staggered borrowing：比较 service lag/slowdown；
+3. 独立 finite-horizon capacity oracle：判断动态 K 是否存在约 5% Pareto 机会；
+4. oracle 通过后才运行 recovery-gated burst，比较 lower/upper/threshold/governor/oracle；
+5. 只有前述通过后才加入 routing、prefix bonus、priority 和图像 HSE 泛化。
 
 动态候选只有同时满足下列条件才晋级：
 
@@ -789,9 +812,10 @@ $\arg\min_a\Psi(a)=\arg\min_a[\Psi(a)-\Psi(hold)]$，不会改变动作排序。
 因此不能把 MaxWeight、虚拟队列、weighted-token fairness、上游 adaptive scheduling 或
 continuous replenishment 单独声明为新算法贡献。可验证的项目贡献候选收紧为：
 
-> 在不修改 vLLM 的前提下，将数据库/Daft/Ray 的分阶段 ready work、Job 存活集、工作量
-> 不确定性和模型服务状态映射为带公平/SLO 虚拟约束的外部安全动作集合，并通过 FCFS 有序
-> 释放与 completion-level replenishment 组合数据库上游控制和 vLLM continuous batching。
+> 在不修改 vLLM 的前提下，将数据库/Daft/Ray 的分阶段 ready/active work、Job 存活集和
+> completion-level 公平/SLO 债务映射为固定安全 envelope 内的 Job-head 有序释放，并与 vLLM
+> FCFS continuous batching 组合；状态感知容量选择只在独立 oracle/safety gate 通过时作为
+> 可选扩展。
 
 该定位属于 **new setting + mature-method transplantation**。当前 idea 审核结论为
 `Accept with Revisions`：工程可行性较高，主要风险是 prior overlap、范围过大以及理论假设
@@ -809,6 +833,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-11 | `saor-v0.1.2-design` | 纳入 phase-change 提前停止证据：增档动机成立、降档区未建立、phase 不等于状态复位；禁止固化 K/KV/waiting 阈值 | 独立结果分支正式报告 + CSV 审计 | 保持 `design-candidate`；重做 recovery/burst gate |
 | 2026-08-11 | `saor-core-v0.1` | 实现中性 capacity、execution ledger、有限动作 DPP、公平债务和 Job-head ordered release；配置与模态适配外置 | 纯 Python unit/architecture tests | 不升阶；runner/replay/真实服务均未接入 |
 | 2026-08-11 | `saor-v0.2-development` | 接入文本 shared-vLLM capacity adapter、配对 trace replay、state/action trace 与最大安全臂 validator；四臂真实服务 development gate 未过晋级门 | 6-sample regret replay + 2×4090 one-repeat 4-arm gate | 升为 `trace-validated`；capacity-only 标记 `not-promoted`，完整 SAOR 仍未验证 |
+| 2026-08-11 | `saor-v0.3-design` | 将 fixed-envelope ordered release 与 slow Safe-Capacity Governor 分层；安全改为 hard feasible set，加入反事实模型、pipeline debt/hysteresis 和独立 oracle 淘汰门 | capacity-only 负结果 + MaxWeight/DPP、reconfiguration-delay 与 unknown-service 一手工作交叉审计 | SAOR-Release 保持 design-candidate；governor 降为 optional，不能继承 oracle theorem |
 
 状态只允许按以下顺序变化：
 

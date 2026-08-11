@@ -182,6 +182,38 @@ normalization。任何签名不匹配都必须 cache miss/fallback，不能静�
 
 ## 5. 数学模型
 
+### 5.0 先承认串联系统的吞吐上界
+
+HSE 可以让各阶段重叠并吸收服务时间波动，但不能仅靠 buffer 或 admission 突破瓶颈阶段。
+令 source、prepare、model、result 的长期有效服务率分别为
+$\mu_s,\mu_p,\mu_g,\mu_o$，则任何稳定、无丢失串行流水线都满足：
+
+$$
+X_{E2E}\le \min\{\mu_s,\mu_p,\mu_g,\mu_o\}.
+$$
+
+当 prepare 是瓶颈且 GPU 每个输入只执行一次时，长期 GPU 可获得的输入率不超过 $\mu_p$，
+因此近似有：
+
+$$
+U_{GPU}\le \min\left\{1,\frac{\mu_p}{\mu_g}\right\}.
+$$
+
+现有 project CPU16 吞吐约 1,666 image/s，而 GPU-resident 双卡参照约 19K image/s，二者比值
+约 8.8%，与约 9.6% 的 GPU busy mean 同量级。这项交叉验证说明当前低 GPU busy 主要由
+prepare supply 上界解释：增加 ready buffer、model inflight 或 SAOR K 不可能把 GPU 长期喂满。
+
+因此 HSE 的两类机制必须分开归因：
+
+- **flow efficiency**：真实 ready queue、overlap、completion 补位和有界 buffer，目标是逼近
+  当前 $\min_s\mu_s$，减少 bubble、spill 和排队；
+- **work/rate improvement**：packed uint8、GPU normalize/cast、DALI mixed path、derived-image
+  cache 或更有效的 CPU backend，目标是提高 $\mu_p$ 或减少每图 prepare/copy work。
+
+如果 static HSE 仅改变 flow 而现有 static pipeline 已接近 prepare ceiling，则其合理结果可以
+是近似中性；不能为了证明动态调度有效而继续扩大 buffer。只有 work-reduction 提高 $\mu_p$
+后，stage balance 和 admission 才可能出现新的最优点。
+
 ### 5.1 Tandem queues 与约束
 
 Job $j$ 在控制周期 $t$ 维护：
@@ -225,6 +257,13 @@ $$
 
 其中 $B^r,B^o$ 使用 physical bytes；CPU/GPU actor 和 ready/result buffer 是不同约束，
 不能压成一个 active-batch 标量。
+
+ready buffer 的作用是覆盖服务抖动和有限 burst，不创造长期 capacity。设一个 prepared block
+的 physical bytes 为 $b_r$，则硬上限只允许
+$n_r\le\lfloor M_{ready}/b_r\rfloor$ 个 block；buffer sizing 应由独立 trace replay 选择满足
+目标 starvation probability 的最小值，并同时报告 excess residence time。若提高
+$M_{ready}$ 只降低瞬时 GPU starvation、却不提高 correct E2E throughput 或 tail，则保留更小
+内存点。
 
 ### 5.2 有限动作上的 differential MaxWeight / DPP
 

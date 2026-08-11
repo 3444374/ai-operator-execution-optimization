@@ -666,6 +666,11 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **系统教训**：外部 downshift 不能撤销 vLLM 已接纳请求，动作主要在末段发生时只会等待
   KV/long decode 排空。dynamic 的正确对手是强静态 Pareto 点，不是低档稻草人；后续必须先用
   recovery-gated burst 上的 offline oracle 证明有可利用动态空间，否则淘汰容量分支。
+- **`saor-v0.3` 修正**：主方法收紧为固定安全 envelope 内的 SAOR-Release，用 per-Job
+  unfinished work、fairness/SLO debt 和 completion-driven Job-head release 验证多 Job；动态 K
+  降为独立 Safe-Capacity Governor，需要同状态反事实 response model、hard safe set、pipeline
+  debt、drain-aware hysteresis 和 oracle gate。详细模型与 benchmark 见
+  `saor_model_scenario_audit_20260811.md`。
 
 #### 5.7.6 模式优先级矩阵
 
@@ -732,6 +737,12 @@ driver/Ray submission 的组合，而不是 PostgreSQL source thread、PCIe 或 
 研究内容，也不把 Daft/Ray/DALI/Arrow/StarPU 的已有能力重写为项目创新。完整迁移审计、
 数据合同、tandem-queue/DPP 模型和实验门禁见
 `heterogeneous_ai_dataflow_execution_model_20260811.md`。
+
+串联流水线有基本上界 $X\le\min_s\mu_s$。当前 project CPU16 约 1,666 image/s 与约 19K
+image/s GPU-resident ceiling 的比值约 8.8%，和约 9.6% GPU busy 同量级；这支持 prepare supply
+是当前木桶，也证明 ready buffer、更多 model inflight 或动态 K 本身不可能把 GPU 长期喂满。
+HSE 的 flow/buffer 机制只负责逼近现有 bottleneck capacity 和控制内存；packed uint8、GPU
+normalize、DALI 或 derived cache 才可能提高 prepare rate/减少 work，两类收益必须分开归因。
 
 最小增量按顺序冻结：
 

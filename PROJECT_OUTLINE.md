@@ -123,8 +123,10 @@ PostgreSQL source
   phase-change 聚合 trace 的非因果 replay 在 6 个可计 regret 样本中 5 次匹配事后 oracle，
   累计归一化 regret 0.0141，但没有形成真实降档证据；单次真实服务四臂 development gate
   中，capacity-only SAOR 相对 K128 +4.36%，相对 K160 +0.52%、相对 threshold −1.46%，
-  Jain 最低，故标记 `not-promoted`。它尚未完成完整 ordered-release/fairness/stage-queue
-  formal 验证或定理证明，因此不是已胜出的 proposed 方法；
+  Jain 最低，故标记 `not-promoted`。`saor-v0.3` 已将 fixed-envelope SAOR-Release 定为主候选，
+  把未知反事实、延迟生效的动态 K 降为独立 Safe-Capacity Governor：先跑多 Job ordered-release
+  formal，capacity 分支只有 offline oracle 显示约 5% Pareto 机会才继续。两者都尚未完成 formal
+  或定理证明，因此不是已胜出的 proposed 方法；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - phase-change、burst、mixed-cost 下 dynamic 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、
@@ -133,8 +135,10 @@ PostgreSQL source
 - 图像 Daft built-in、Ray Data native 与 project frozen-static 的 operator-E2E/provenance
   证据已完成。现有数据把瓶颈进一步定位为 CPU prepare 与 driver/Ray submission 的组合：
   HSE/SAOR 图像扩展必须显式拆出 pending-prepare、ready-block、pending-model、pending-result，
-  采用 packed typed block 和 byte/work-bounded differential backpressure；调度不能消灭
-  decode/resize 工作，derived-image cache 与 DALI GPU/mixed preprocess 作为正交
+  采用 packed typed block 和 byte/work-bounded differential backpressure。串行流水线满足
+  $X\le\min_s\mu_s$；现有 1666 image/s 与约 19K GPU-resident ceiling 的约 8.8% 比值和约
+  9.6% GPU busy 同量级，说明调度/buffer 不能消灭 CPU prepare 木桶。derived-image cache、
+  packed uint8/GPU normalize 与 DALI GPU/mixed preprocess 作为正交
   work-reduction 消融。仍待 static HSE、动态 runner 接线、跨 workload 外推与小规模 sink
   质量闭环，sink 不是性能排名 blocker。
 - prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理已进入

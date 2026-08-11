@@ -15,8 +15,10 @@ state-aware 价值保持待验证；下一轮必须是带显式 drain/recovery �
 5,266 请求、0 incident；SAOR 相对 K128 吞吐 +4.36%，但相对 K160 仅 +0.52%、相对简单
 threshold −1.46%，Jain 也最低。K160 相对 K128 仍有 +3.82% 吞吐和 −3.68% duration，
 但 Job B P99 +23.93%、Jain −3.22%、KV P95 0.826→0.997。故 K160 冻结为强效率 baseline
-兼 tail/fairness 风险点；当前 aggregate two-arm SAOR 标记 `not-promoted`，不在该 workload
-继续扫权重/K，也不追加公平专场。完整报告见
+兼 tail/fairness 风险点；当前 aggregate two-arm capacity adapter 标记 `not-promoted`，不在该
+workload 继续扫权重/K，也不把它追加到公平专场。`saor-v0.3` 已把 fixed-envelope
+SAOR-Release 与 dynamic K 分轨：下一项算法验证是同总上限的多 Job ordered release，动态 K
+只有 offline oracle 显示约 5% Pareto 机会才进入独立 recovery-gated burst。完整报告见
 `experiments/results/saor_capacity_development_20260811/README.md`。
 
 ## 状态增量（2026-08-04，历史快照；当前执行以其后的开题冻结段与 §0 为准）
