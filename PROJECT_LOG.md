@@ -1,10 +1,10 @@
 # 项目日志
 
-## 2026-08-10 VTC 8-client long-overload 正式 4 臂 + K160 对照：bound 主导，动态适应吞吐增量被证伪
+## 2026-08-10 VTC 8-client long-overload 正式 4 臂 + K160 对照：bound 主导，动态吞吐增量未获支持
 
 - 跑了 external completion-corrected VTC-style 多 job 共享 4 臂正式（FIFO/DRR/VTC @ K128 + state-aware adaptive K96→160，1w+3f=16 group，seed 20260810，2×4090 / Qwen2.5-7B / vLLM 0.25.1 / 8-client 2963 行 720s overload）。10 正确性门 + 动态动作门 + VTC 门全过；config SHA `903ba1f9…`，git `5f3a605`。
 - 喂饱门（direct long8x 15401.10 的 95% = 14631.05）：**adaptive 14781.6 过（96.0%），DRR/VTC/FIFO 14564–14625 不过（94.6–94.9%）**。
-- follow-up K160 对照（frozen DRR K160，config SHA `ee2c4297…`，从 4-arm 程序化派生、仅 K128→160、其余字节一致）：**frozen-K160 = 14830.5 过门（96.30%），且比 adaptive 高 +0.33%** → **过门是 K160 上限的功劳，非动态适应**。持续 overload 下动态吞吐增量 ≈ 0。
+- follow-up K160 对照（frozen DRR K160，config SHA `ee2c4297…`，从 4-arm 程序化派生、仅 K128→160、其余字节一致）：**frozen-K160 = 14830.5 过门（96.30%），数值上比 adaptive 高 +0.33%**。冻结 K160 已足以解释过门，当前 sustained-overload 数据不支持额外动态吞吐收益；但该 follow-up 在 4-arm 后顺序运行，且 +0.33% 小于 adaptive 重复波动，不能声称动态增量严格为零或静态显著胜出。
 - 结论：claim_matrix 第 59 行（state-aware 优于冻结强静态）**维持待验证**。要证动态价值须换 phase-change / 变载（on-off gate 此前从未跑）。KV 全程 ≤0.52 < 0.85，控制器下行分支仍未被真实触发。
 - 报告：`experiments/results/vtc_long8x_formal_4arm_20260810/` + `vtc_long8x_drr_k160_control_20260810/`。raw 在服务器 `experiment-artifacts/`（raw-not-in-git）。
 
