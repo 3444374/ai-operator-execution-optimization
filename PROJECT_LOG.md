@@ -5722,3 +5722,17 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 重启后远端只读检查确认 2x4090、两个 vLLM endpoint、Ray 32 CPU/2 GPU 与核心 Python
   依赖可用；prompt 池在冻结距离内有 SQuAD 6,479 行、ShareGPT 663 行。据此只允许
   A={16,20,24}、B={2.5,3.5,4.5} req/s 的顺序有限扫描，最高档仍不触发合法机制即停止。
+
+## 2026-08-11 phase-change A-only 门禁与 adaptive 执行上限修正
+
+- 代码追踪确认 `organizer_queued_work` 实际取自 shared-credit `waiting_work`，不是 Daft
+  organizer/source backlog。单 Job frozen-static 校准中，等值 job-local per-endpoint K
+  在 shared acquire 之前截流，因此旧 A-only 门禁结构上不可满足；此前 16/20/24 early
+  stop 只证明旧门禁失败，不判定动态有效或无效。
+- A-only 资格门改为两项直接证据：lower 在每 endpoint 至少 50% 样本达到 0.8K，且
+  request trace 的 replayed-arrival→submit P95 至少 1 s；仍要求 waiting=0、KV<0.85 与
+  upper/lower median service-rate 至少 5% 差异。
+- 同时修复真实 actuation 死区：`state_aware_adaptive` 的 job-local request/work ceiling
+  使用最大标定候选，shared coordinator 保持从 lower 起步并独占上下档决策。正式 action
+  gate 必须从 resolved command 核对 local=upper ceiling、shared initial=lower，不能只看
+  action counter。

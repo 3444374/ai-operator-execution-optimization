@@ -726,6 +726,36 @@ class SharedVllmExperimentTests(unittest.TestCase):
             2,
         )
 
+        scenario = config.scenarios[0]
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+        command = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=0,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+        self.assertEqual(self._flag_value(command, "--max-inflight"), "160")
+        self.assertEqual(
+            self._flag_value(command, "--max-active-work-per-endpoint"),
+            "131072",
+        )
+        self.assertEqual(
+            self._flag_value(command, "--shared-credit-request-limit"),
+            "96",
+        )
+
     def test_arrival_offset_rejects_missing_environment_scalar(self) -> None:
         payload = self._config_payload(
             scenarios=[

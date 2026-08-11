@@ -1818,6 +1818,10 @@ project static/proposed。只有 manifest、模型、硬件/资源、输出语�
 VTC-shape workload，不是官方 VTC reproduction，也不加入 Daft/Ray native baseline
 排名。四份配置依次承担 A-only 容量标定、A+B 压力/缓解标定、双向 action gate 和
 三臂 formal；必须由 `audit_phase_change.py` 前一阶段返回 `passed` 才能继续。
+其中 A-only backlog 门读取 replayed-arrival→submit request lag，并要求 lower 持续占据；
+`organizer_queued_work` 是 shared-credit waiting work，不是 Daft source backlog。adaptive
+resolved command 的 job-local K/W 必须等于最大候选臂，shared-credit 初值必须等于 lower，
+否则 action 计数不能证明容量真正扩大。
 
 服务器重启后先按 runtime preflight 恢复 PG/vLLM/Ray，并在 Ray 不可达时先停止 Ray，
 再只删除 stale `/tmp/ray/ray_current_cluster`。旧

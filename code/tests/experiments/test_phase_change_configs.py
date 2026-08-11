@@ -15,7 +15,12 @@ REPOSITORY_ROOT = CODE_ROOT.parent
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from src.experiments.shared_vllm import load_config  # noqa: E402
+from src.experiments.shared_vllm import (  # noqa: E402
+    GroupRunIdentity,
+    RunnerOptions,
+    build_job_command,
+    load_config,
+)
 
 
 class TestPhaseChangeConfigs(unittest.TestCase):
@@ -88,6 +93,34 @@ class TestPhaseChangeConfigs(unittest.TestCase):
         )
         self.assertEqual(formal.state_aware_control.request_candidates, (128, 160))
         self.assertEqual(formal.state_aware_control.work_candidates, (131072, 163840))
+
+        adaptive = formal.scenarios[2]
+        command = build_job_command(
+            RunnerOptions(
+                config_path=Path("config.json"),
+                profiler_path=Path("profile.py"),
+                python_executable=Path(sys.executable),
+                output_dir=Path("out"),
+                health_url="http://health",
+                metrics_urls=("http://metrics0", "http://metrics1"),
+                ray_address="127.0.0.1:6380",
+                idle_timeout_s=1.0,
+            ),
+            formal,
+            adaptive,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=0,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+
+        def flag_value(flag: str) -> str:
+            return command[command.index(flag) + 1]
+
+        self.assertEqual(flag_value("--max-inflight"), "160")
+        self.assertEqual(flag_value("--max-active-work-per-endpoint"), "163840")
+        self.assertEqual(flag_value("--shared-credit-request-limit"), "128")
+        self.assertEqual(flag_value("--shared-credit-work-limit"), "131072")
 
 
 if __name__ == "__main__":

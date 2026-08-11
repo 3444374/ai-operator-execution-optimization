@@ -1210,6 +1210,12 @@ manifest、SHA、导入回执、两 endpoint 与四阶段合同。
 是否在离线标定的上下界内形成合法双向闭环。完整顺序与硬停止条件见
 `deploy/autodl/phase_change_state_aware_RUNBOOK.md`。
 
+A-only 的 backlog 证据使用 request trace 中 replayed arrival 到 submit 的延迟，并要求
+lower arm 持续占据；不能把 `organizer_queued_work` 当作 Daft source backlog——该字段
+当前来自 shared-credit waiting work，单 Job 的等上限本地 admission 会先于它截流。
+adaptive job 的本地 request/work 只作为安全 ceiling，固定为已标定候选的最大值；
+实际在线容量仍由 shared coordinator 在候选臂之间调整。
+
 `--arm project_static` 结构不同：runner 在通用 scan 前分流，子进程调用 `postgres_ai_operator_profile.py`
 跑显式冻结的静态合同，profiler 独占 scan+organize+model+sink。wrapper 无连接——所有 per-doc 证据来自 profiler
 输出文件（run-scoped completion-evidence CSV，`output_text` 从 in-process `operator_results` 展平，独立于

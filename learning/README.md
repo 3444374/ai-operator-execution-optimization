@@ -330,3 +330,9 @@ waiting/KV 压力的 upper arm；在线控制器只能在这两个已验证边�
 waiting/KV 风险实际下降。GPU utilization 只作交叉验证；若到达率没有 ready backlog、
 上下档服务率差不足 5%，或长阶段压不出服务压力，实验按设计停止，不能靠继续加参数
 或只比较整段吞吐制造正结果。
+
+这里有一个容易误判的双重限流问题：shared credit 之外还存在每个 Job 的本地 admission。
+若二者都固定为 lower K，本地层会先挡住新请求，shared waiting 指标保持 0；即使控制器
+把 shared K 改到 upper，本地 K 也会让实际并发仍停在 lower。因此 adaptive 路径把本地
+K/W 设为最大安全候选，只让 shared coordinator 执行上下档；离线 A-only backlog 则用
+replayed arrival 到 submit 的延迟和持续占据来证明，不靠 GPU 利用率或错误命名的队列字段。

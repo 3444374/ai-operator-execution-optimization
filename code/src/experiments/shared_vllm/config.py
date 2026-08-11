@@ -577,6 +577,18 @@ def _local_limits(
         config.request_limit_per_endpoint,
         config.work_limit_per_endpoint,
     )
+    if scenario.policy == "state_aware_adaptive":
+        if config.state_aware_control is None:
+            raise ValueError(
+                "state_aware_adaptive requires state_aware_control"
+            )
+        # The shared coordinator owns the actuated capacity.  Keep the
+        # job-local admission ceiling at the largest calibrated arm so it
+        # cannot silently clamp a coordinator upshift at the initial arm.
+        return (
+            max(config.state_aware_control.request_candidates),
+            max(config.state_aware_control.work_candidates),
+        )
     if scenario.policy != "static_partition":
         return request_limit, work_limit
     partition_count = scenario.static_partition_count or scenario.job_count

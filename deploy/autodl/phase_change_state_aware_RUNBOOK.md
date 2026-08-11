@@ -144,10 +144,24 @@ prepared contract (the A-only config does not submit Job B). Run
 ```
 
 Stop at the first passed point and freeze its A rate. A valid point requires,
-on both endpoints: lower-arm ready backlog while at least 80% occupied, no
-vLLM waiting, KV below 0.85 on both arms, non-empty fresh state traces, and at
-least 5% upper-over-lower median service-rate improvement. If no preregistered
-rate passes, stop the experiment: the workload cannot motivate this controller.
+on both endpoints: the lower arm is at least 80% occupied in at least 50% of
+state samples; replayed-arrival-to-submit P95 is at least 1 second in the
+request trace; there is no vLLM waiting and KV remains below 0.85 on both arms;
+and the upper arm improves median service rate by at least 5%. The request lag
+is the source/admission backlog signal. Do not use `organizer_queued_work` for
+this A-only gate: that field is shared-credit waiting work, and a single job's
+equal job-local cap stops the scheduler before that queue under frozen-static
+calibration. If no preregistered rate passes, stop the experiment.
+
+For `state_aware_adaptive`, the runner deliberately sets job-local request/work
+ceilings to the largest calibrated candidate while the shared coordinator starts
+at the lower arm. The coordinator is therefore the only owner of K128/K160
+actuation, and its waiting-work signal remains observable. Before the action
+gate, inspect the resolved job command and require local
+`--max-inflight/--max-active-work-per-endpoint` to equal the upper arm while
+`--shared-credit-request-limit/--shared-credit-work-limit` initially equal the
+lower arm. A mismatch is a hard stop: an action counter alone is not proof that
+capacity changed.
 
 ## 5. A+B pressure/relief gate
 

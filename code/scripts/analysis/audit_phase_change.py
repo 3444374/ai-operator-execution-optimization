@@ -13,6 +13,10 @@ from pathlib import Path
 from typing import Iterable
 
 
+_MIN_OCCUPIED_SAMPLE_FRACTION = 0.5
+_MIN_ADMISSION_LAG_P95_S = 1.0
+
+
 def _number(row: dict[str, object], key: str, default: float = 0.0) -> float:
     value = row.get(key)
     if value in (None, ""):
@@ -73,6 +77,23 @@ def _states(run_dir: Path, record_path: Path) -> list[dict[str, str]]:
         rows = list(csv.DictReader(stream))
     if not rows:
         raise ValueError(f"state trace is empty: {path}")
+    return rows
+
+
+def _requests(run_dir: Path, record_path: Path) -> list[dict[str, str]]:
+    paths = sorted(
+        (run_dir / "jobs").glob(
+            f"{record_path.stem}_job*.requests.csv"
+        )
+    )
+    if not paths:
+        raise ValueError(f"request traces are missing for {record_path.stem}")
+    rows: list[dict[str, str]] = []
+    for path in paths:
+        with path.open(newline="", encoding="utf-8") as stream:
+            rows.extend(csv.DictReader(stream))
+    if not rows:
+        raise ValueError(f"request traces are empty for {record_path.stem}")
     return rows
 
 
@@ -145,6 +166,33 @@ def _summary(rows: list[dict[str, str]]) -> dict[str, float]:
     }
 
 
+def _admission_lag_summary(
+    rows: list[dict[str, str]],
+    endpoint_id: str,
+) -> dict[str, float]:
+    selected = [row for row in rows if row.get("endpoint_id") == endpoint_id]
+    if not selected:
+        raise ValueError(f"request trace has no rows for {endpoint_id}")
+    if any(
+        row.get("request_time_origin") != "replayed_arrival"
+        for row in selected
+    ):
+        raise ValueError("A-only request traces must use replayed arrivals")
+    lags = [
+        _required_number(row, "submit_epoch_s")
+        - _required_number(row, "arrival_epoch_s")
+        for row in selected
+    ]
+    if any(lag < -1e-6 for lag in lags):
+        raise ValueError("request submission precedes its replayed arrival")
+    nonnegative = [max(0.0, lag) for lag in lags]
+    return {
+        "admission_lag_p50_s": statistics.median(nonnegative),
+        "admission_lag_p95_s": _percentile(nonnegative, 0.95),
+        "admission_lag_max_s": max(nonnegative),
+    }
+
+
 def audit_a_only(
     run_dir: Path,
     contract_dir: Path,
@@ -162,21 +210,31 @@ def audit_a_only(
         path, record = records[scenario]
         _integrity(record)
         grouped = _phase_rows(_states(run_dir, path), record, segments)
+        request_rows = _requests(run_dir, path)
         limit = lower_k if scenario.endswith("lower") else upper_k
         endpoint_evidence = {}
         for endpoint, phases in grouped.items():
             rows = [row for index in range(4) for row in phases[index]]
             item = _summary(rows)
-            occupied_with_backlog = any(
+            occupied_fraction = statistics.mean(
                 _required_number(row, "active_requests") >= 0.8 * limit
-                and _required_number(row, "organizer_queued_work") > 0
                 for row in rows
             )
-            item["occupied_with_backlog"] = occupied_with_backlog
+            item["occupied_sample_fraction"] = occupied_fraction
+            item.update(_admission_lag_summary(request_rows, endpoint))
             if item["waiting_max"] > 0 or item["kv_max"] >= 0.85:
                 raise ValueError(f"{scenario}/{endpoint} is not a safe A-only arm")
-            if scenario.endswith("lower") and not occupied_with_backlog:
-                raise ValueError(f"{scenario}/{endpoint} did not expose feed-limited backlog")
+            if scenario.endswith("lower"):
+                if occupied_fraction < _MIN_OCCUPIED_SAMPLE_FRACTION:
+                    raise ValueError(
+                        f"{scenario}/{endpoint} did not persistently occupy "
+                        "the lower arm"
+                    )
+                if item["admission_lag_p95_s"] < _MIN_ADMISSION_LAG_P95_S:
+                    raise ValueError(
+                        f"{scenario}/{endpoint} did not expose replayed-arrival "
+                        "admission backlog"
+                    )
             if item["service_rate_p50"] <= 0:
                 raise ValueError(f"{scenario}/{endpoint} has no service-rate evidence")
             rates[scenario].append(item["service_rate_p50"])

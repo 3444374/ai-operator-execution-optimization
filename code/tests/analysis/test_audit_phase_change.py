@@ -89,6 +89,35 @@ def _valid_rows() -> list[dict[str, str]]:
 
 
 class TestAuditPhaseChange(unittest.TestCase):
+    def test_admission_lag_uses_replayed_arrival_to_submit_boundary(self) -> None:
+        rows = [
+            {
+                "endpoint_id": "endpoint-0",
+                "request_time_origin": "replayed_arrival",
+                "arrival_epoch_s": str(float(index)),
+                "submit_epoch_s": str(float(index) + lag),
+            }
+            for index, lag in enumerate((0.1, 0.2, 1.5, 2.0))
+        ]
+
+        result = audit._admission_lag_summary(rows, "endpoint-0")
+
+        self.assertEqual(result["admission_lag_p50_s"], 0.85)
+        self.assertEqual(result["admission_lag_p95_s"], 2.0)
+        self.assertEqual(result["admission_lag_max_s"], 2.0)
+
+    def test_admission_lag_rejects_non_replayed_clock_origin(self) -> None:
+        rows = [
+            {
+                "endpoint_id": "endpoint-0",
+                "request_time_origin": "offline_job_start",
+                "arrival_epoch_s": "1.0",
+                "submit_epoch_s": "2.0",
+            }
+        ]
+        with self.assertRaisesRegex(ValueError, "replayed arrivals"):
+            audit._admission_lag_summary(rows, "endpoint-0")
+
     def test_accepts_ordered_bidirectional_actions_with_relief(self) -> None:
         result = audit._audit_actions(
             _valid_rows(),
