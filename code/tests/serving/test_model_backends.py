@@ -418,9 +418,11 @@ class AsyncModelBackendTests(unittest.IsolatedAsyncioTestCase):
             {
                 "max_connections": 4,
                 "max_keepalive_connections": 4,
+                "keepalive_expiry": 4.0,
             },
         )
         self.assertEqual(readiness["http_transport"], "httpx_async")
+        self.assertEqual(readiness["keepalive_expiry_s"], 4.0)
         self.assertTrue(readiness["client_initialized"])
         self.assertEqual(first["output_text"], ["first", "second"])
         self.assertEqual(second["token_count"], 9)

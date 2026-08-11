@@ -309,6 +309,8 @@ class CompatibleHTTPCompletionActor(_ReadyActor):
 class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
     """Persistent async HTTP client for request-level vLLM forwarding."""
 
+    _KEEPALIVE_EXPIRY_S = 4.0
+
     def __init__(
         self,
         endpoint_url: str,
@@ -351,6 +353,10 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
             limits=httpx.Limits(
                 max_connections=max_connections,
                 max_keepalive_connections=max_connections,
+                # Uvicorn/vLLM commonly expires idle HTTP/1.1 connections at
+                # 5 s. Retire pooled sockets first so a sparse Ray actor does
+                # not reuse a server-closed connection during tail drain.
+                keepalive_expiry=self._KEEPALIVE_EXPIRY_S,
             ),
         )
 
@@ -360,6 +366,7 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
             "actor_type": type(self).__name__,
             "http_transport": "httpx_async",
             "max_connections": self.max_connections,
+            "keepalive_expiry_s": self._KEEPALIVE_EXPIRY_S,
             "client_initialized": not self._client.is_closed,
         }
 

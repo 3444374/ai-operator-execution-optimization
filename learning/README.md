@@ -336,3 +336,8 @@ waiting/KV 风险实际下降。GPU utilization 只作交叉验证；若到达�
 把 shared K 改到 upper，本地 K 也会让实际并发仍停在 lower。因此 adaptive 路径把本地
 K/W 设为最大安全候选，只让 shared coordinator 执行上下档；离线 A-only backlog 则用
 replayed arrival 到 submit 的延迟和持续占据来证明，不靠 GPU 利用率或错误命名的队列字段。
+
+长时间 open-loop replay 还有一个与策略无关的 transport 陷阱：多个稀疏 Ray actor 会把
+HTTP/1.1 连接闲置到服务端 keep-alive 过期，再在尾部复用已关闭 socket，表现为服务端
+健康且记录 200、客户端却 `ReadError`。客户端连接池应比服务端更早淘汰 idle socket；
+本项目固定 4 s，并把它作为运行身份记录，而不是把 transport 失败算成策略负结果。

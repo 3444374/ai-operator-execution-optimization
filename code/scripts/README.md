@@ -1218,6 +1218,11 @@ adaptive job 的本地 request/work 只作为安全 ceiling，固定为已标定
 每次上调后 2--20 s 窗口的 active-request P50 真正超过 lower K，避免把控制器动作计数
 误当成有效扩容。
 
+phase-change 独立确认曾在 tail drain 稳定复现 `httpx.ReadError`，同时 vLLM 健康且
+服务日志均为 200。`CompatibleAsyncHTTPCompletionActor` 因此将客户端 idle keep-alive
+expiry 固定为 4 s，先于 Uvicorn/vLLM 常见的 5 s server expiry 淘汰连接；该值会出现在
+actor readiness evidence。失败目录保留，修复后必须从新 output 运行，不能 resume 拼接。
+
 `--arm project_static` 结构不同：runner 在通用 scan 前分流，子进程调用 `postgres_ai_operator_profile.py`
 跑显式冻结的静态合同，profiler 独占 scan+organize+model+sink。wrapper 无连接——所有 per-doc 证据来自 profiler
 输出文件（run-scoped completion-evidence CSV，`output_text` 从 in-process `operator_results` 展平，独立于

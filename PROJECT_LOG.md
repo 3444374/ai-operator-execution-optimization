@@ -5736,3 +5736,13 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   使用最大标定候选，shared coordinator 保持从 lower 起步并独占上下档决策。正式 action
   gate 必须从 resolved command 核对 local=upper ceiling、shared initial=lower，并要求每次
   upshift 后 2--20 s 的 active-request P50 超过 lower K，不能只看 action counter。
+
+## 2026-08-11 phase-change HTTP tail-drain transport 修正
+
+- 新 commit 的 rate-20 独立 A-only 确认在 K160 tail drain 连续两次出现单请求
+  `httpx.ReadError`；两个 vLLM 进程全程健康、无 OOM/traceback，服务日志请求均为 200。
+  该现象判定为 persistent Ray actor 复用 server-expired HTTP/1.1 idle socket 的 transport
+  correctness 问题，不是 workload/K 结果。
+- `CompatibleAsyncHTTPCompletionActor` 显式设置 `keepalive_expiry=4.0s`，先于
+  Uvicorn/vLLM 常见 5s server keep-alive 淘汰连接，并在 actor readiness evidence 记录。
+  两个失败输出目录永久保留；修复后从新 output 重跑，不 resume、不把失败 cell 纳入比较。
