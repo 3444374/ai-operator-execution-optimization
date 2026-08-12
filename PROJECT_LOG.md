@@ -6131,3 +6131,16 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 从 v7 学校模板原位替换第 2–4 页，生成 `opening/slides/opening_defense_20260812_v8.pptx`；
   删除旧正文对象后插入正式图，没有遮罩或叠层修补。20/20 页渲染、overflow、20/20 notes、
   template fidelity 0 issue 和逐页视觉复核均通过，其余 17 页内容与 notes 保持不变。
+# 2026-08-12 按对外叙事重构开题 PPT v9
+
+- 在新分支 `codex/opening-ppt-template-v9` 生成 31 页
+  `opening/slides/opening_defense_20260812_v9.pptx`；学校模板只提供页眉、配色和基本身份识别，
+  不再逐框仿制，页数服从“入口变化—执行假设—四层研究现状—研究空白—动机—方法”的叙事。
+- 背景先解释数据库为何成为 AI 任务入口，再区分传统算子与外部 AI 算子的执行假设，随后分别
+  讲数据库 AI、数据执行、模型服务与代价决策，最后收敛到数据库与模型服务之间的跨层执行闭环。
+- 动机数据页统一为“实验现象—系统含义—设计对应”，并用专页把工作量差异、多阶段失配和
+  多作业干扰映射到两项研究内容及代价估计的共同支撑。
+- 全稿面向外部评审清理 `Project/W65K/RC/P0` 及“门禁、冻结、晋升、正式点、失效边界”等
+  内部表达；图中对外替换版本在构建时生成并栅格化，未改写权威源图。
+- 31/31 页讲稿与来源、0 空占位符、`slides_test.py` 画布溢出检查和关键页逐页视觉复核通过；
+  记录见 `opening/slides/opening_defense_20260812_v9_qa.md`。

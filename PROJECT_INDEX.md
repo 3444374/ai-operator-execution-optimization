@@ -123,6 +123,9 @@
 | `opening/slides/opening_defense_20260812_v8.pptx` | 当前 20 页中文开题答辩主讲版 | 现场汇报与逐页审阅；正式答辩前在目标 PowerPoint/WPS 环境再打开一次 |
 | `opening/slides/opening_defense_20260812_v8_qa.md` | v8 的模板、逐页视觉、overflow、notes 和三张新增背景图审计 | 交付或继续修改 v8 前读 |
 | `opening/slides/opening_defense_20260812_v8_figure_content_audit.md` | v8 第 2–4 页正式图映射与主张边界 | 检查背景图是否仍与开题口径一致 |
+| `opening/slides/build_opening_defense_v9_artifact_tool.mjs` | 基于学校视觉识别、项目材料和对外叙事生成 31 页 v9；自动生成图中对外文字版本、讲稿来源与逐页渲染 | 重建或继续修改当前开题 PPT |
+| `opening/slides/opening_defense_20260812_v9.pptx` | 当前 31 页对外开题答辩版；页数与版面服从叙事，不逐框仿制模板 | 现场汇报与逐页审阅；正式答辩前在目标 PowerPoint/WPS 环境再打开一次 |
+| `opening/slides/opening_defense_20260812_v9_qa.md` | v9 的对外术语、叙事、图文、overflow、notes 与逐页视觉审计 | 交付或继续修改 v9 前读 |
 | `opening/navigation.md` | 开题材料导航、当前 PPT→中文 Markdown→飞书发布顺序与权威入口 | 开始报告、PPT、飞书或文献工作前读 |
 | `figures/architecture/data_organization_token_budget_mechanism.png` / `.svg` | 数据组织策略机制图：token-budget batching | Formal mechanism figure for converting fixed-row batches into token-budget submissions; not an experimental-result claim |
 | `figures/architecture/data_organization_length_align_mechanism.png` / `.svg` | 数据组织策略机制图：length-aligned grouping | Formal mechanism figure for sorting/grouping rows by token length to reduce within-batch compute variance |

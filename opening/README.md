@@ -14,8 +14,9 @@
 - 当前五个研究问题为：跨模态 work 描述、可靠运行状态识别、balance/locality 数据组织、
   固定总上限下的多作业调度，以及面向配置选择的代价估计；两项研究内容与共同使能关系不变。
 
-本目录用于准备开题报告、开题汇报 PPT 和进度材料。20 页中文 PPT 与中文 Markdown 报告
-均已完成本地冻结和一致性审计；普通飞书云文档等待用户对指定文档 URL 的最终覆盖授权，
+本目录用于准备开题报告、开题汇报 PPT 和进度材料。当前 31 页对外答辩 PPT 已按“入口变化—
+执行假设—分层研究现状—研究空白—动机—方法”重构；中文 Markdown 报告保持项目事实基线。
+普通飞书云文档等待用户对指定文档 URL 的最终覆盖授权，
 Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一输入。
 
 开题材料不是独立于项目的展示层。当前报告确定的题目和研究内容会反向影响 `overview/` 中的阶段规划、`motivation/` 中的后续实验设计以及项目级 README / PROJECT_INDEX 的方向说明。修改开题题目、研究内容或实验边界时，需要同步检查这些项目入口，避免开题材料和项目主线割裂。
@@ -24,19 +25,19 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 
 ## 当前汇报主线
 
-冻结主线：
+当前对外主线：
 
 ```text
-数据库正在成为 AI workload 的入口
+数据库正在成为 AI 任务的入口
   -> Database 与 Model Service 之间出现 AI Data Execution Layer
-  -> 先标定最小饱和 work，再研究 work-unit 的 balance/locality
-  -> 以同上限 strong static 约束 state-aware admission/routing/multi-job
-  -> 用文本与图像检验 work/credit 抽象边界，代价估计共同辅助决策
+  -> 先测量接近饱和的最小在途工作量，再研究工作单元的均衡与局部性
+  -> 保持资源与最大在途工作量不变，比较状态感知准入、路由和多作业调度
+  -> 用文本与图像检验工作量与共享份额抽象，代价估计共同辅助决策
 ```
 
 一句话口径：
 
-> 本课题研究数据库触发 AI 算子后、数据进入模型服务前的 AI 数据执行层：按 token/frame work 构造 work-unit，并依据容量和运行状态控制提交、路由与多作业共享；不修改数据库内核、vLLM 调度器或模型 kernel。
+> 本课题研究数据库触发 AI 算子后、数据进入模型服务前的 AI 数据执行层：按 token 或图像帧描述工作量，并依据可用容量和运行状态控制提交、路由与多作业共享；不修改数据库内核、vLLM 调度器或模型内部实现。
 
 ## 目录结构
 
@@ -62,8 +63,8 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 | 开题报告 | `report/opening_report.md` | 2026-08-12 已按学校模板重组为七部分中文正文；研究内容、研究方案、前期证据、进度和参考文献已统一到“工作量描述→状态观测→固定上限调度→决策评价”闭环，14/14 张主讲图与 2 张补充状态图均从开题专用图集引用；固定上限有序释放已接运行时但尚无正式 GPU 对照；飞书普通云文档覆盖已完成 dry-run，等待对指定文档 URL 的最终外部写入确认 |
 | 开题报告 QA | `report/opening_report_20260812_qa.md` | 学校模板映射、图表、引用、实现边界及 PPT/报告口径审计 |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
-| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前主讲结构已由 20 页 v8 取代 |
-| 开题 PPTX | `slides/opening_defense_20260812_v8.pptx` | 当前 20 页中文主讲版；第 2–4 页背景图已补齐，模板、逐页渲染、图文、数据和引用 QA 见 `slides/opening_defense_20260812_v8_qa.md` |
+| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前 31 页 v9 不受旧页数限制，优先服从对外叙事 |
+| 开题 PPTX | `slides/opening_defense_20260812_v9.pptx` | 当前 31 页对外答辩版；学校视觉识别保留，内容区按叙事自由重排，QA 见 `slides/opening_defense_20260812_v9_qa.md` |
 | 开题飞书历史快照 | `feishu/opening_report_wiki.md` | **已过期，禁止同步**；仍含首轮failed-feeding数字。当前权威正文为`report/opening_report.md`，用户恢复云文档工作后再由权威正文重新生成同步源 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
@@ -86,9 +87,9 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 
 ## 下一步
 
-1. `slides/opening_defense_20260812_v8.pptx` 已按 20 页逐页确认背景、动机、研究内容、证据和转场；中文 Markdown 报告也已完成模板、图表与引用总审计。
+1. `slides/opening_defense_20260812_v9.pptx` 已按 31 页逐页确认背景、动机、研究内容、证据和转场，并完成对外术语清理；中文 Markdown 报告继续承担完整论证。
 2. SQuAD/ShareGPT replacement、原生单 job、两 job 最小因果与四 job 扩展均已完成；停止增加开题 baseline、offset、weight 或更多 job 数扫描。
-3. v8 已继承学校模板形成 20 页成品，第 2–4 页三张背景/相关工作图已经完成，不改变冻结主线。
+3. v9 只保留学校页眉、配色和身份识别，不逐框仿制模板；页数和版面服从现场叙事。
 4. Claim Matrix、问答、实验状态与实现边界继续作为事实护栏；用户已明确豁免 Wiki。普通飞书云文档仅在获得对指定 URL 的最终覆盖授权后同步。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
 ## 飞书发布面（等待指定 URL 覆盖授权）
 
