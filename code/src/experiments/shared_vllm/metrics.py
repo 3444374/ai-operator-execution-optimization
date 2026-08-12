@@ -292,6 +292,7 @@ def active_set_phase_summary(
         "active_set_bulk_job_index": -1,
         "active_set_foreground_job_index": -1,
         "active_set_overlap_s": 0.0,
+        "active_set_foreground_drained_first": False,
         "active_set_bulk_only_pre_samples": 0,
         "active_set_overlap_samples": 0,
         "active_set_bulk_only_post_samples": 0,
@@ -314,14 +315,17 @@ def active_set_phase_summary(
         0.0,
         min(bulk_end, foreground_end) - foreground_start,
     )
+    # Validity is defined only by the externally imposed lifecycle. Requiring
+    # the foreground job to finish first would select baselines by the outcome
+    # that the experiment is intended to compare.
     lifecycle_passed = bool(
         starts[bulk_index] < foreground_start
         and foreground_start < bulk_end
         and overlap_s > 0
-        and foreground_end < bulk_end
     )
+    foreground_drained_first = foreground_end < bulk_end
     lifecycle_status = (
-        "ok:observed_bulk_then_foreground_then_bulk_drain"
+        "ok:observed_staggered_two_job_overlap"
         if lifecycle_passed
         else "active_set_lifecycle_not_observed"
     )
@@ -407,6 +411,7 @@ def active_set_phase_summary(
         "active_set_bulk_job_index": bulk_index,
         "active_set_foreground_job_index": foreground_index,
         "active_set_overlap_s": overlap_s,
+        "active_set_foreground_drained_first": foreground_drained_first,
         "active_set_bulk_only_pre_samples": pre_samples,
         "active_set_overlap_samples": overlap_samples,
         "active_set_bulk_only_post_samples": post_samples,

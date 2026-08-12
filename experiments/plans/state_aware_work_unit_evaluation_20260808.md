@@ -746,7 +746,7 @@ on every request completion:
 | finite-action DPP | `scheduling/submission_control/saor.py` | 纯策略与公平债务已单测；需用 replay 验证 service ranking/动作 regret |
 | completion/exactly-once | `scheduling/core/execution.py` | 通用 ledger 已接原 scheduler；actual-work extractor 由模态 adapter 注入 |
 | ordered release | `scheduling/submission_control/{ordered_release,shared_credit,saor}.py` + `scheduling/runtime/shared_credit_ray.py` | 纯队列合同与 fixed-envelope `saor_release` 均已单测并接 named Ray coordinator；尚待真实 GPU formal，SLO debt 暂未接通 |
-| formal harness | `experiments/shared_vllm/{runner,direct_control,metrics}.py` + `analysis/{audit_saor_formal_readiness,summarize_saor_active_set}.py` | 十 scenario 统一交错、direct/project matched-solo、生命周期/机制分层门禁、rehearsal 与 fail-closed 汇总已接线；真实 2×4090 rehearsal 暴露并修正 wall-clock offset 与 direct keepalive 两项合同偏差，完整 10/10 rerun 尚待通过，未产出 formal GPU 结果 |
+| formal harness | `experiments/shared_vllm/{runner,direct_control,metrics}.py` + `analysis/{audit_saor_formal_readiness,summarize_saor_active_set}.py` | 十 scenario 统一交错、direct/project matched-solo、生命周期/机制分层门禁、rehearsal 与 fail-closed 汇总已接线；真实 2×4090 已完成 10/10 correctness rehearsal，但 0.001 replay 在 foreground 前供给不足、四 credit mechanism gate 均未过；已加入 per-endpoint pre-borrow supply readiness 并冻结独立 burst rehearsal，未产出 formal GPU 结果 |
 | endpoint state | vLLM/resource time series | atomic freshness/signature gate 待接；waiting/KV/GPU 不单独驱动 |
 | cost model | CE1--CE5/WorkDescriptor | 先 replay/observe-only，过 ranking/regret 门后才进入动作 |
 
@@ -809,9 +809,11 @@ lower/upper、state-observed no-op、threshold/deadband、governor 和 offline o
 
 验证顺序保持“单一动作先行”，且 fixed-envelope release 与 dynamic capacity 分轨：
 
-1. fixed-envelope `bulk-only → foreground-arrival → foreground-drain`：统一 runner 已接真实
+1. fixed-envelope `bulk-only → foreground-arrival → overlap → drain`：统一 runner 已接真实
    per-Job completion evidence、direct no-Job、project FIFO 与四个 credit 策略；所有 active-set
-   臂先过 workload lifecycle gate，只有 credit 臂再过 borrow/reclaim/reborrow mechanism gate，
+   臂先过外生错峰/overlap/exactly-once lifecycle gate；foreground-first 只作结果字段，不筛选
+   baseline。只有 credit 臂再过 borrow/reclaim/reborrow mechanism gate，且 readiness 先证明
+   foreground 到达前每 endpoint 的 bulk predicted ready work 至少覆盖一个完整 work envelope，
    static/direct 的 mechanism 为 not-applicable，不得误判失败；
 2. SAOR 同时超过 FIFO 与 DRR 的 Pareto 前沿后，才进入 four-Job、3:1 weighted 与 held-out；
 3. 若 FIFO/DRR 已足够，淘汰 SAOR；不运行 dynamic capacity，也不换 workload 追正；
@@ -868,6 +870,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-12 | `saor-v0.4.2-formal-ready` | direct no-Job 纳入同一交错 runner；新增 project/direct matched solo、request lifecycle 与 credit mechanism 分层门禁、rehearsal、静态 readiness audit 和 fail-closed formal summary | 单元测试 + 静态合同；未运行服务器 formal | 工程达到可 rehearsal/formal 状态，但仍无 GPU 策略结果；direct 只匹配 request K，不伪称 work-credit 等资源臂 |
 | 2026-08-12 | `saor-v0.4.3-server-ready` | 服务器 preflight 发现 512-row manifest 原始 arrival span 约 66,880 s，模板写死 `arrival_time_scale=1.0` 会使 rehearsal 约 18.6 h；改为 workload 合同注入 scale，并由 readiness 自动计算 effective span、设置运行预算门禁 | 服务器真实 immutable manifest + 本地/服务器静态门禁 | 修正运行可行性，不改变算法、K 或证据结论；仍需 GPU rehearsal 后才能启动 formal |
 | 2026-08-12 | `saor-v0.4.4-transport-contract` | 第二次 2×4090 rehearsal 前八个 cell 完成，但 `solo_direct_bulk` 出现单请求 `ReadError`；服务端健康且日志为 200，定位为 direct 漏配已在 Ray actor 验证的 idle keepalive 合同。将 expiry 改为两路径共享、可注入和可审计，仍禁用 retry | 真实服务器 rehearsal + endpoint health/log + 既有 tail-drain 复现 | 传输合同修正，不改变 SAOR 算法或性能结论；旧 8/10 rehearsal 判失败，完整新目录 rerun 通过前禁止 formal |
+| 2026-08-12 | `saor-v0.4.5-active-set-supply` | 修复后真实 rehearsal 10/10、0 incident、exactly-once 通过，但 0.001 replay 的 5 s 前置阶段每 endpoint 仅约 10K bulk work，无法占满 65,536 envelope；四 credit 臂 pre-borrow 均未发生。公共 lifecycle gate 删除 outcome-dependent 的 foreground-first 条件，新增 per-endpoint pre-foreground work-envelope readiness；相同 manifest 冻结 0.0001 burst scale 复验 | 真实 group/request/credit trace + immutable manifest 离线供给计算 | correctness 通过、mechanism 未通过；不跑 formal。foreground-first 改为结果字段，禁止按性能结果过滤 baseline；新 burst rehearsal 通过前不晋级 |
 
 状态只允许按以下顺序变化：
 

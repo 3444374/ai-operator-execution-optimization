@@ -23,6 +23,16 @@
   与 direct control 共享该值，profiler/direct readiness 和结果 evidence 记录实际值。当前
   vLLM/Uvicorn 环境冻结为 4 s，但代码不硬编码特定服务器配置。仍保持 zero retry、失败完整
   落盘；旧 8/10 rehearsal 不续跑、不进入性能统计，必须从新目录重跑完整 10/10。
+- 修正后的第三次 2×4090 rehearsal 完成 10/10、0 incident；所有 cell 的 metrics/resources
+  为 ok，每个 Job 512/512 完成、0 failed/actor failure，previous `solo_direct_bulk` ReadError
+  未复现。但深审计仍阻止 formal：direct 虽有 81.9 s overlap，却因 foreground 晚于 bulk
+  完成被旧 lifecycle gate 排除；四个 credit 臂 foreground 前 bulk 占总 envelope 最高仅 6.98%，
+  没有发生预注册 pre-borrow，mechanism gate 全未过。
+- 纠正 gate 因果定义：公共有效性只要求外生错峰、真实 overlap 和 exactly-once；foreground
+  是否先完成改为结果字段，防止按策略表现筛选 baseline。readiness 新增每 endpoint 的
+  pre-foreground predicted-work 门，要求至少覆盖一个完整 envelope。真实 manifest 离线计算：
+  `scale=0.001` 的 5 s 前每 endpoint 约 10K（失败），`0.0001` 约 140K/138K（通过）；下一次
+  rehearsal 冻结为独立 burst 合同，不把 scale 搜索或前三次失败结果混入 formal。
 
 ## 2026-08-12 SAOR fixed-envelope formal harness 闭合
 

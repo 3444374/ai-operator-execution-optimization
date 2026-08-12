@@ -149,6 +149,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertTrue(summary["active_set_contract_passed"])
         self.assertTrue(summary["active_set_lifecycle_passed"])
         self.assertTrue(summary["active_set_mechanism_passed"])
+        self.assertTrue(summary["active_set_foreground_drained_first"])
         self.assertEqual(summary["active_set_overlap_s"], 5.0)
         self.assertEqual(
             summary["active_set_bulk_reborrow_fraction_max"],
@@ -218,6 +219,26 @@ class SharedVllmExperimentTests(unittest.TestCase):
             summary["active_set_mechanism_status"],
             "not_applicable:no_credit_trace",
         )
+
+    def test_lifecycle_does_not_select_on_foreground_finishing_first(self) -> None:
+        summary = active_set_phase_summary(
+            [
+                {
+                    "arrival_start_epoch_s": 10.0,
+                    "completion_end_epoch_s": 20.0,
+                    "runtime_job_id": "bulk",
+                },
+                {
+                    "arrival_start_epoch_s": 15.0,
+                    "completion_end_epoch_s": 25.0,
+                    "runtime_job_id": "foreground",
+                },
+            ],
+            [],
+        )
+
+        self.assertTrue(summary["active_set_lifecycle_passed"])
+        self.assertFalse(summary["active_set_foreground_drained_first"])
 
     def test_active_set_mechanism_aggregates_endpoints_per_epoch(self) -> None:
         evidence = [

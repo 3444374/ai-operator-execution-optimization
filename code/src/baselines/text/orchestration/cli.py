@@ -657,10 +657,9 @@ def _run_jobs_control(
             min(bulk_end, foreground_end) - foreground_start,
         )
         active_set_status = (
-            "ok:observed_bulk_then_foreground_then_bulk_drain"
+            "ok:observed_staggered_two_job_overlap"
             if bulk_start < foreground_start
             and active_set_overlap_s > 0
-            and foreground_end < bulk_end
             else "active_set_contract_not_observed"
         )
     slo_target_s = (

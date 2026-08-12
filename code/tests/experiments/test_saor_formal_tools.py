@@ -153,6 +153,9 @@ class SaorFormalToolsTests(unittest.TestCase):
                 (
                     self._request(1, 0),
                     self._request(2, 1),
+                    # Exactly at the foreground boundary: this request cannot
+                    # establish capacity before the second Job becomes active.
+                    self._request(5, 0, arrival_time_s=5001.0),
                 ),
             )
             write_manifest(
@@ -221,16 +224,23 @@ class SaorFormalToolsTests(unittest.TestCase):
                 "REQUEST_SLO_MS": "30000",
                 "GPU_PEAK_TFLOPS": "165",
                 "MFU_PRECISION": "bf16_dense_fp32_accumulate",
-                "SAOR_BULK_ROWS": "2",
+                "SAOR_BULK_ROWS": "3",
                 "SAOR_FOREGROUND_ROWS": "2",
                 "SAOR_FOREGROUND_OFFSET_S": "5",
                 "SAOR_ARRIVAL_TIME_SCALE": "0.001",
                 "SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S": "120",
+                "SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES": "0.0001",
                 "SAOR_BULK_MANIFEST": str(bulk),
                 "SAOR_FOREGROUND_MANIFEST": str(foreground),
             }
             with patch.dict(os.environ, environment, clear=True):
                 result = AUDIT.audit(
+                    REPOSITORY
+                    / "deploy/autodl/saor_active_set_release.example.json"
+                )
+            environment["SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES"] = "1"
+            with patch.dict(os.environ, environment, clear=True):
+                insufficient_supply = AUDIT.audit(
                     REPOSITORY
                     / "deploy/autodl/saor_active_set_release.example.json"
                 )
@@ -240,6 +250,17 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(result["direct_contract"]["protocol"], "completions")
         self.assertEqual(result["direct_contract"]["prompt_format"], "raw")
         self.assertEqual(result["direct_contract"]["keepalive_expiry_s"], 4.0)
+        self.assertEqual(
+            result["pre_foreground_predicted_work_by_endpoint"],
+            {"endpoint-0": 12, "endpoint-1": 12},
+        )
+        self.assertEqual(insufficient_supply["status"], "failed")
+        self.assertTrue(
+            any(
+                "pre-foreground predicted work" in error
+                for error in insufficient_supply["errors"]
+            )
+        )
 
     def test_readiness_rejects_token_budget_not_bound_to_evidence(self) -> None:
         with TemporaryDirectory() as directory:
@@ -314,6 +335,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                 "SAOR_FOREGROUND_OFFSET_S": "5",
                 "SAOR_ARRIVAL_TIME_SCALE": "0.001",
                 "SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S": "120",
+                "SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES": "0.0001",
                 "SAOR_BULK_MANIFEST": str(bulk),
                 "SAOR_FOREGROUND_MANIFEST": str(foreground),
             }
@@ -412,6 +434,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                 "SAOR_FOREGROUND_OFFSET_S": "5",
                 "SAOR_ARRIVAL_TIME_SCALE": "1",
                 "SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S": "120",
+                "SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES": "0.0001",
                 "SAOR_BULK_MANIFEST": str(bulk),
                 "SAOR_FOREGROUND_MANIFEST": str(foreground),
             }

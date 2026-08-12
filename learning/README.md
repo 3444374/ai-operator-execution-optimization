@@ -357,6 +357,12 @@ HTTP/1.1 连接闲置到服务端 keep-alive 过期，再在尾部复用已关�
 失败算成策略负结果。项目 Ray actor 和 direct control 必须共用该值；这不是自动重试，
 失败请求仍会使实验 fail-closed。
 
+active-set 实验还要区分“外生有效性”和“策略结果”。错峰到达、真实重叠、两 Job 全部完成
+属于外生有效性；foreground 是否比 bulk 先完成属于调度结果，不能拿它过滤 baseline，否则
+会只保留表现符合预期的运行。借用机制也不能靠降低阈值制造：foreground 到达前，bulk 每个
+endpoint 的预测 ready work 必须至少覆盖一个完整 work envelope。若供给不足，实验在静态
+readiness 就停止，而不是跑完后把 7% 容量占用称为“借用”。
+
 ## 2026-08-11 SAOR 核心代码现在做到哪一步
 
 当前完成的是“可独立测试的控制核心”，不是已经跑赢静态策略的正式系统：

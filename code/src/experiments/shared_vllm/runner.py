@@ -908,6 +908,11 @@ def _run_group(
                 else "project_admission"
             ),
             "work_envelope_applied": scenario.policy != "direct_no_job",
+            "http_keepalive_expiry_s": _common_arg_value(
+                config.common_args,
+                "--completion-http-keepalive-expiry-s",
+                "4.0",
+            ),
             "credit_quantum": config.credit_quantum,
             "runtime_state_mode": (
                 "actuated_saor_capacity" if saor_controllers

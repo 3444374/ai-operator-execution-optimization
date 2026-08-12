@@ -1031,11 +1031,20 @@ zero retry，任何 `ReadError` 都必须作为 incident 保留并使该 cell �
 模板不硬编码 manifest replay 速度。`SAOR_ARRIVAL_TIME_SCALE` 必须来自冻结 workload 合同；
 `SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S` 是运行预算门禁。readiness 按 immutable manifest 的
 `max(arrival_time_s)-min(arrival_time_s)` 计算实际 replay span，拒绝非正 scale 或超预算
-配置。当前 work-balanced 512-row ShareGPT 合同沿用已审计的 `0.001` scale，原始约
-66,880 s 跨度压缩为约 66.9 s；不能误用 `1.0` 把 rehearsal 拉长到约 18.6 小时。
+配置。固定包络 active-set 还必须设置
+`SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES=1.0`：readiness 在发送任何请求前，按每 endpoint
+计算 bulk 在 foreground offset 前已到达的预测 work，要求至少覆盖一个完整 work envelope。
+这是 borrow 机制的供给可达性门，不是 GPU/KV 利用率门。
+
+服务器首次真实 rehearsal 证明原有 `0.001` scale 虽把约 66,880 s 原始跨度压缩为 66.9 s，
+但 5 s 前每 endpoint 只有约 10K bulk work，远低于 65,536 envelope，无法触发预注册的
+pre-borrow；四个 credit 臂因此都正确失败 mechanism gate。相同 immutable manifests 的独立
+burst 合同冻结 `0.0001` scale：5 s 前两 endpoint 分别约 140K/138K predicted work，足以
+触发机制，完整 span 约 6.69 s。不能复用 `1.0`，也不能在 formal 后再扫描 scale。
 
 门禁分两层，不能混写：所有六个 active-set 臂都必须从 request evidence 观察到
-`bulk starts → foreground overlaps → foreground drains first → bulk continues`；只有四个 credit
+`bulk starts → foreground overlaps` 且两 Job exactly-once 完成；`foreground drains first` 是
+策略结果，单独报告，不能作为筛选 baseline 的有效性门。只有四个 credit
 策略还必须从 credit trace 观察到 pre/overlap/post 三段借用机制。static/direct 的机制门禁为
 `not_applicable:no_credit_trace`，不是失败。任一适用门禁未过，不抽策略结论。
 

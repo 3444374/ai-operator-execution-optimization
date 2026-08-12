@@ -17,6 +17,7 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
+from src.baselines.common.contracts import ChatRequest  # noqa: E402
 from src.baselines.common.manifests import read_manifest  # noqa: E402
 from src.experiments.shared_vllm.config import (  # noqa: E402
     _argument_value,
@@ -86,6 +87,7 @@ def audit(config_path: Path) -> dict[str, object]:
     if not isinstance(readiness, dict):
         errors.append("formal matrix requires a readiness_contract")
         max_effective_span_s = math.nan
+        min_pre_foreground_envelopes = math.nan
     else:
         try:
             max_effective_span_s = float(
@@ -101,9 +103,33 @@ def audit(config_path: Path) -> dict[str, object]:
             errors.append(
                 "readiness max_effective_manifest_span_s must be finite and positive"
             )
+        try:
+            min_pre_foreground_envelopes = float(
+                expand_scalar(
+                    readiness.get(
+                        "min_pre_foreground_work_envelopes_per_endpoint"
+                    ),
+                    (
+                        "readiness_contract."
+                        "min_pre_foreground_work_envelopes_per_endpoint"
+                    ),
+                    environment=os.environ,
+                )
+            )
+        except (TypeError, ValueError):
+            min_pre_foreground_envelopes = math.nan
+        if (
+            not math.isfinite(min_pre_foreground_envelopes)
+            or min_pre_foreground_envelopes <= 0
+        ):
+            errors.append(
+                "readiness pre-foreground work-envelope factor must be "
+                "finite and positive"
+            )
     active_reference: tuple[str, ...] | None = None
     active_offsets: tuple[float, ...] | None = None
     doc_owners: dict[int, str] = {}
+    manifest_requests: dict[str, tuple[ChatRequest, ...]] = {}
     for scenario in config.scenarios:
         paths = tuple(str(path) for path in scenario.request_manifests)
         if not paths or len(paths) != scenario.job_count:
@@ -130,6 +156,7 @@ def audit(config_path: Path) -> dict[str, object]:
                 errors.append(f"manifest is missing: {path}")
                 continue
             requests = read_manifest(path)
+            manifest_requests[str(path.resolve())] = requests
             if len(requests) != scenario.row_count(index):
                 errors.append(f"{scenario.scenario_id} job {index} row count mismatch")
             ids = {request.doc_id for request in requests}
@@ -168,6 +195,37 @@ def audit(config_path: Path) -> dict[str, object]:
                 "raw_arrival_span_s": raw_span_s,
                 "effective_arrival_span_s": effective_span_s,
             }
+    pre_foreground_work: dict[str, int] = {}
+    if active_reference and active_offsets and len(active_reference) == 2:
+        bulk_path = str(Path(active_reference[0]).resolve())
+        bulk_requests = manifest_requests.get(bulk_path, ())
+        foreground_offset_s = active_offsets[1]
+        first_bulk_arrival_s = min(
+            (request.arrival_time_s for request in bulk_requests),
+            default=0.0,
+        )
+        for endpoint_index in range(len(config.endpoint_ids)):
+            work = sum(
+                request.estimated_work
+                for request in bulk_requests
+                if request.endpoint_index == endpoint_index
+                and (
+                    request.arrival_time_s - first_bulk_arrival_s
+                )
+                * arrival_time_scale
+                < foreground_offset_s
+            )
+            endpoint_id = config.endpoint_ids[endpoint_index]
+            pre_foreground_work[endpoint_id] = work
+            required = (
+                config.work_limit_per_endpoint
+                * min_pre_foreground_envelopes
+            )
+            if math.isfinite(required) and work < required:
+                errors.append(
+                    "bulk pre-foreground predicted work does not cover the "
+                    f"required envelope on {endpoint_id}: {work} < {required}"
+                )
     if config.calibration_contract is None:
         errors.append("formal matrix requires a validated calibration contract")
     else:
@@ -218,6 +276,10 @@ def audit(config_path: Path) -> dict[str, object]:
         "formal_repeats": config.formal_repeats,
         "arrival_time_scale": arrival_time_scale,
         "max_effective_manifest_span_s": max_effective_span_s,
+        "min_pre_foreground_work_envelopes_per_endpoint": (
+            min_pre_foreground_envelopes
+        ),
+        "pre_foreground_predicted_work_by_endpoint": pre_foreground_work,
         "service_metadata": dict(config.service_metadata),
         "calibration_contract": (
             {

@@ -54,6 +54,12 @@ class SaorSharedVllmConfigTest(unittest.TestCase):
             "${SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S}",
         )
         self.assertEqual(
+            payload["readiness_contract"][
+                "min_pre_foreground_work_envelopes_per_endpoint"
+            ],
+            "${SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES}",
+        )
+        self.assertEqual(
             [scenario["policy"] for scenario in payload["scenarios"]],
             [
                 "direct_no_job",

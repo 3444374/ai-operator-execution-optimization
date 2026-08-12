@@ -39,7 +39,8 @@
     "slo_weight": 0.0
   },
   "readiness_contract": {
-    "max_effective_manifest_span_s": "${SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S}"
+    "max_effective_manifest_span_s": "${SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S}",
+    "min_pre_foreground_work_envelopes_per_endpoint": "${SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES}"
   },
   "common_args": [
     "--database-url", "${DATABASE_URL}",
