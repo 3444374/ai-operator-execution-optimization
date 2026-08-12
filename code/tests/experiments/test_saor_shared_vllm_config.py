@@ -27,6 +27,138 @@ from src.scheduling.runtime.saor_capacity import (
 
 
 class SaorSharedVllmConfigTest(unittest.TestCase):
+    def test_active_set_template_does_not_hardcode_k(self) -> None:
+        repository = Path(__file__).resolve().parents[3]
+        payload = json.loads(
+            (
+                repository
+                / "deploy/autodl/saor_active_set_release.example.json"
+            ).read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(
+            payload["request_limit_per_endpoint"],
+            "${PROJECT_STATIC_K_PER_ENDPOINT}",
+        )
+        self.assertEqual(
+            payload["work_limit_per_endpoint"],
+            "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
+        )
+        self.assertEqual(
+            [scenario["policy"] for scenario in payload["scenarios"]],
+            [
+                "static_partition",
+                "shared_fifo",
+                "shared_drr",
+                "external_vtc",
+                "saor_release",
+            ],
+        )
+
+    def test_rejects_unwired_saor_slo_weight(self) -> None:
+        payload = {
+            "schema_version": 1,
+            "experiment_id": "saor-release-slo",
+            "seed": 1,
+            "warmup_runs_per_scenario": 0,
+            "formal_repeats": 1,
+            "endpoint_ids": ["endpoint-0"],
+            "request_limit_per_endpoint": 4,
+            "work_limit_per_endpoint": 40,
+            "credit_quantum": 1,
+            "common_args": ["--arrival-replay"],
+            "saor_release_control": {
+                "entitlement_weight": 1.0,
+                "queue_weight": 0.0,
+                "fairness_weight": 1.0,
+                "slo_weight": 1.0,
+            },
+            "scenarios": [
+                {
+                    "scenario_id": "saor-release",
+                    "policy": "saor_release",
+                    "job_count": 2,
+                    "rows_per_job": 1,
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "not executable yet"):
+                load_config(path)
+
+    def test_loads_fixed_envelope_release_and_emits_only_release_controls(self) -> None:
+        payload = {
+            "schema_version": 1,
+            "experiment_id": "saor-release-gate",
+            "seed": 1,
+            "warmup_runs_per_scenario": 0,
+            "formal_repeats": 1,
+            "endpoint_ids": ["endpoint-0"],
+            "request_limit_per_endpoint": 4,
+            "work_limit_per_endpoint": 40,
+            "credit_quantum": 1,
+            "common_args": ["--arrival-replay"],
+            "saor_release_control": {
+                "entitlement_weight": 1.0,
+                "queue_weight": 0.0,
+                "fairness_weight": 1.0,
+                "slo_weight": 0.0,
+            },
+            "scenarios": [
+                {
+                    "scenario_id": "saor-release",
+                    "policy": "saor_release",
+                    "job_count": 2,
+                    "rows_per_job": 1,
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "config.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            config = load_config(path)
+            command = build_job_command(
+                RunnerOptions(
+                    config_path=path,
+                    profiler_path=root / "profiler.py",
+                    python_executable=root / "python",
+                    output_dir=root / "out",
+                    health_url="http://127.0.0.1/health",
+                    metrics_urls=("http://127.0.0.1/metrics",),
+                    ray_address="local",
+                    idle_timeout_s=1.0,
+                ),
+                config,
+                config.scenarios[0],
+                GroupRunIdentity("formal", 0, 0),
+                job_index=0,
+                start_epoch_s=1.0,
+                coordinator_name="coordinator",
+            )
+
+        self.assertEqual(
+            command[command.index("--max-inflight") + 1],
+            "4",
+        )
+        self.assertEqual(
+            command[command.index("--max-active-work-per-endpoint") + 1],
+            "40",
+        )
+        self.assertEqual(
+            command[command.index("--shared-credit-policy") + 1],
+            "saor",
+        )
+        self.assertNotIn("--controller-min-window", command)
+        self.assertEqual(
+            _redacted_config(config)["saor_release_control"][
+                "entitlement_weight"
+            ],
+            1.0,
+        )
+
     def test_loads_capacity_only_policy_and_keeps_job_ceiling_at_max_arm(self) -> None:
         payload = {
             "schema_version": 1,

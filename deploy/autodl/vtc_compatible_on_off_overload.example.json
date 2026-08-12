@@ -31,6 +31,12 @@
   "work_limit_per_endpoint": 65536,
   "credit_quantum": 512,
   "shared_credit_namespace": "ai-operator-vtc-compatible-on-off",
+  "saor_release_control": {
+    "entitlement_weight": 1.0,
+    "queue_weight": 0.0,
+    "fairness_weight": 1.0,
+    "slo_weight": 0.0
+  },
   "common_args": [
     "--database-url", "${DATABASE_URL}",
     "--operator", "ai_complete",
@@ -109,6 +115,22 @@
     {
       "scenario_id": "on_off_shared_work",
       "policy": "shared_drr",
+      "job_count": 2,
+      "rows_per_jobs": ["${VTC_ON_OFF_CLIENT0_ROWS}", "${VTC_ON_OFF_CLIENT1_ROWS}"],
+      "arrival_offsets_s": ["${VTC_ON_OFF_CLIENT0_OFFSET_S}", "${VTC_ON_OFF_CLIENT1_OFFSET_S}"],
+      "request_manifests": ["${VTC_ON_OFF_CLIENT0_MANIFEST}", "${VTC_ON_OFF_CLIENT1_MANIFEST}"]
+    },
+    {
+      "scenario_id": "on_off_external_vtc_style",
+      "policy": "external_vtc",
+      "job_count": 2,
+      "rows_per_jobs": ["${VTC_ON_OFF_CLIENT0_ROWS}", "${VTC_ON_OFF_CLIENT1_ROWS}"],
+      "arrival_offsets_s": ["${VTC_ON_OFF_CLIENT0_OFFSET_S}", "${VTC_ON_OFF_CLIENT1_OFFSET_S}"],
+      "request_manifests": ["${VTC_ON_OFF_CLIENT0_MANIFEST}", "${VTC_ON_OFF_CLIENT1_MANIFEST}"]
+    },
+    {
+      "scenario_id": "on_off_saor_release",
+      "policy": "saor_release",
       "job_count": 2,
       "rows_per_jobs": ["${VTC_ON_OFF_CLIENT0_ROWS}", "${VTC_ON_OFF_CLIENT1_ROWS}"],
       "arrival_offsets_s": ["${VTC_ON_OFF_CLIENT0_OFFSET_S}", "${VTC_ON_OFF_CLIENT1_OFFSET_S}"],

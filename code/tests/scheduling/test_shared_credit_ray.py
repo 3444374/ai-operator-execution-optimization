@@ -65,6 +65,24 @@ class _FakeRay:
 
 
 class SharedCreditRayTests(unittest.TestCase):
+    def test_previous_non_saor_actor_configuration_is_compatible(self) -> None:
+        class PreviousActor:
+            def configuration(self):
+                return {"gpu0": (2, 200)}, 100, "drr"
+
+        ray = _FakeRay()
+        ray.actors[("tests", "credits")] = _ActorHandle(PreviousActor())
+
+        client = get_or_create_shared_credit_client(
+            ray,
+            name="credits",
+            namespace="tests",
+            capacities={"gpu0": (2, 200)},
+            quantum=100,
+        )
+
+        self.assertIsNotNone(client)
+
     def test_runtime_capacity_update_preserves_creation_identity(self) -> None:
         ray = _FakeRay()
         initial = {"gpu0": (2, 200)}

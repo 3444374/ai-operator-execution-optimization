@@ -46,7 +46,9 @@ FORMAL_RESULT_FIELDS = tuple(
     per_endpoint_inflight_limit max_active_work_per_endpoint
     max_active_work_per_endpoint_seen shared_credit_coordinator_name
     shared_credit_request_limit shared_credit_work_limit shared_credit_quantum
-    shared_credit_job_weight effective_global_inflight_limit
+    shared_credit_job_weight shared_credit_policy saor_entitlement_weight
+    saor_queue_weight saor_fairness_weight saor_slo_weight
+    effective_global_inflight_limit
     endpoint_routing
     pool_routing endpoint_pool_ids endpoint_gpu_ids long_request_token_threshold
     scheduling_policy adaptive_min_inflight adaptive_max_inflight

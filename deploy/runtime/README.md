@@ -124,6 +124,13 @@ GPU 型号检测不能可靠推导最优 batch/K/actor/active-work。项目采�
    协议或显著改变输入/输出长度及图像分辨率时自动视为失效。只增加同分布行数通常不
    改单请求最优点，但必须确认 run 已达到至少 60 秒稳态和吞吐平台。
 
+这意味着 K 不是“每个实验手调”，也不是一个跨机器常数。当前自动化边界是：机器/profile
+检测、校准结果选择、合同 SHA/期望值校验均自动；首次遇到新签名时，仍由操作者启动一次
+短 calibration matrix，并把选择器生成的 JSON/env 路径登记到该机器的 runtime env。完成后，
+该签名下所有 warmup/formal 都只读同一个 `PROJECT_STATIC_K_PER_ENDPOINT` 与
+`PROJECT_ACTIVE_WORK_PER_ENDPOINT`，runner 不在线搜索 K。未来可把“cache miss 后自动排队
+校准”工程化，但不得让它与 formal 同时运行或边看结果边改。
+
 现有文本选择器是 `code/scripts/analysis/select_strategy_calibration.py`；静态 workload
 曲面的 GO/NO-GO 由 `summarize_static_{k,credit}_workload_surface.py` 判定。图像轨道继续
 按 `experiments/plans/image_clip_workload_lock_20260731.md` 独立校准。这里不再发明第二套

@@ -31,6 +31,7 @@ from src.scheduling.runtime.saor_capacity import (
     SaorCapacityController,
     SaorObservationModel,
 )
+from src.scheduling.submission_control.saor import SaorReleaseConfig
 
 from .config import (
     GroupRunIdentity,
@@ -62,6 +63,7 @@ from .evidence import (
     _write_trace_rows_atomic,
 )
 from .metrics import (
+    active_set_phase_summary,
     cumulative_service_disparity,
     group_metric_delta,
     group_resource_summary,
@@ -586,6 +588,7 @@ def _run_group(
                 "shared_drr",
                 "shared_fifo",
                 "external_vtc",
+                "saor_release",
                 "state_aware_adaptive",
                 "saor_capacity",
             }
@@ -599,7 +602,16 @@ def _run_group(
                 policy=(
                     "fifo" if scenario.policy == "shared_fifo"
                     else "vtc" if scenario.policy == "external_vtc"
+                    else "saor" if scenario.policy == "saor_release"
                     else "drr"
+                ),
+                saor_release_config=(
+                    SaorReleaseConfig(
+                        **asdict(config.saor_release_control)
+                    )
+                    if scenario.policy == "saor_release"
+                    and config.saor_release_control is not None
+                    else None
                 ),
             )
         start_epoch_s = time.time() + options.start_delay_s
@@ -832,6 +844,8 @@ def _run_group(
             "runtime_state_mode": (
                 "actuated_saor_capacity" if saor_controllers
                 else "actuated" if controllers
+                else "actuated_saor_release"
+                if scenario.policy == "saor_release"
                 else "observe_only" if observer is not None
                 else "unavailable"
             ),
@@ -873,6 +887,7 @@ def _run_group(
                     "shared_drr",
                     "shared_fifo",
                     "external_vtc",
+                    "saor_release",
                     "state_aware_adaptive",
                     "saor_capacity",
                 }
@@ -894,6 +909,7 @@ def _run_group(
                 work_limit_per_endpoint=endpoint_work_limit,
                 job_count=scenario.job_count,
             ),
+            **active_set_phase_summary(job_evidence, credit_samples),
             "job_jct_s": json.dumps(
                 [evidence["jct_s"] for evidence in job_evidence]
             ),

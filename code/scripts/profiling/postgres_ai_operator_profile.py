@@ -1633,6 +1633,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 "shared credit request/work limits, quantum, and job weight "
                 "must be positive"
             )
+        if args.shared_credit_policy == "saor" and args.saor_slo_weight > 0:
+            raise SystemExit(
+                "SAOR SLO-weighted release is not executable yet; use "
+                "--saor-slo-weight 0 until per-Job SLO debt is connected"
+            )
         shared_credit_config = {
             "name": args.shared_credit_coordinator_name,
             "namespace": args.shared_credit_namespace,
@@ -1641,6 +1646,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "quantum": args.shared_credit_quantum,
             "job_weight": args.shared_credit_job_weight,
             "policy": args.shared_credit_policy,
+            "saor_release": (
+                {
+                    "entitlement_weight": args.saor_entitlement_weight,
+                    "queue_weight": args.saor_queue_weight,
+                    "fairness_weight": args.saor_fairness_weight,
+                    "slo_weight": args.saor_slo_weight,
+                }
+                if args.shared_credit_policy == "saor"
+                else None
+            ),
         }
     effective_global_inflight_limit = (
         per_endpoint_inflight_limit * routing_endpoint_count
@@ -1806,6 +1821,31 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "shared_credit_work_limit": args.shared_credit_work_limit,
             "shared_credit_quantum": args.shared_credit_quantum,
             "shared_credit_job_weight": args.shared_credit_job_weight,
+            "shared_credit_policy": (
+                args.shared_credit_policy
+                if args.shared_credit_coordinator_name
+                else ""
+            ),
+            "saor_entitlement_weight": (
+                args.saor_entitlement_weight
+                if args.shared_credit_policy == "saor"
+                else 0.0
+            ),
+            "saor_queue_weight": (
+                args.saor_queue_weight
+                if args.shared_credit_policy == "saor"
+                else 0.0
+            ),
+            "saor_fairness_weight": (
+                args.saor_fairness_weight
+                if args.shared_credit_policy == "saor"
+                else 0.0
+            ),
+            "saor_slo_weight": (
+                args.saor_slo_weight
+                if args.shared_credit_policy == "saor"
+                else 0.0
+            ),
             "effective_global_inflight_limit": effective_global_inflight_limit,
             "endpoint_routing": args.endpoint_routing,
             "pool_routing": args.pool_routing,
@@ -2996,6 +3036,31 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "shared_credit_work_limit": args.shared_credit_work_limit,
             "shared_credit_quantum": args.shared_credit_quantum,
             "shared_credit_job_weight": args.shared_credit_job_weight,
+            "shared_credit_policy": (
+                args.shared_credit_policy
+                if args.shared_credit_coordinator_name
+                else ""
+            ),
+            "saor_entitlement_weight": (
+                args.saor_entitlement_weight
+                if args.shared_credit_policy == "saor"
+                else 0.0
+            ),
+            "saor_queue_weight": (
+                args.saor_queue_weight
+                if args.shared_credit_policy == "saor"
+                else 0.0
+            ),
+            "saor_fairness_weight": (
+                args.saor_fairness_weight
+                if args.shared_credit_policy == "saor"
+                else 0.0
+            ),
+            "saor_slo_weight": (
+                args.saor_slo_weight
+                if args.shared_credit_policy == "saor"
+                else 0.0
+            ),
             "effective_global_inflight_limit": effective_global_inflight_limit,
             "endpoint_routing": args.endpoint_routing,
             "pool_routing": args.pool_routing,

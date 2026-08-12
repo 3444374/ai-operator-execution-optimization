@@ -1,9 +1,10 @@
 # SAOR 数学模型、控制分层与适用场景审计
 
-> 状态：`saor-v0.4-design-revision`。本文依据 2026-08-11 capacity-only 负结果和既有两/四 Job
+> 状态：`saor-v0.4.1-runtime-revision`。本文依据 2026-08-11 capacity-only 负结果和既有两/四 Job
 > 干扰结果，对 SAOR 的控制对象、
 > 可证明部分、经验控制部分和 benchmark 重新分层。它不把一次 development run 写成算法结论，
-> 也不宣称实际实现已经获得 MaxWeight/VTC 的理论保证。
+> 也不宣称实际实现已经获得 MaxWeight/VTC 的理论保证。2026-08-12 已接入固定包络
+> `saor_release` runtime 与 active-set trace audit；这提高的是可执行性，不等于证明完成。
 
 ## 1. 审计结论
 
@@ -111,6 +112,11 @@ unmodified vLLM FCFS
 continuous batching 和 credit 上限。SAOR-Release 只决定下一个 eligible Job-head；不切 K、不改
 endpoint scheduler、不在线扩缩 Ray actor。这样才能把多 Job 效果归因于 release order、idle
 borrowing 和 virtual debt。
+
+K 的冻结过程是按 calibration signature 的半自动合同，不是逐实验手调：硬件/profile 自动
+识别，首次新签名由操作者启动一次短 sweep，选择器按 correctness/SLO 和最小饱和规则生成带
+证据 SHA 的 selection；相同签名的 formal 只读并校验该 selection。当前 `saor_release` 不含
+capacity action，因而不能在运行中修改 K。
 
 K160 在 development run 中没有 OOM/failure/credit leak，且相对 K128 有吞吐/JCT收益，因此
 不能预设它“不安全”。若用 K160 作为总 envelope，必须把其 Job B tail/fairness 风险作为强
@@ -362,6 +368,16 @@ manifest、endpoint 和 vLLM flags。headline 不只看 tokens/s，而是：
 - Job slowdown 对 matched solo、JCT/TTFT P95/P99、SLO miss；
 - starvation/max age、avoidable idle、correct goodput、energy；
 - throughput--fairness--tail Pareto。
+
+工程上，global FIFO/no-project control 由 direct `run-jobs-control` 提供：合并 immutable Job
+arrival，仅保留 endpoint-local HTTP concurrency bound，随后由 vLLM FCFS 调度；project
+`shared_fifo` 是另一个有 coordinator 的基线，二者不得混称。项目五臂由
+`saor_active_set_release.example.json` 驱动，runner 从实际 request/credit trace 审计
+borrow→overlap/reclaim→foreground-drain→bulk-reborrow；合同未发生的 run 不进入策略结论。
+
+当前 executable release score 实现 entitlement、queue 和 completion-updated fairness debt；
+per-Job SLO virtual queue 尚未进入 runtime，因此配置层强制 `slo_weight=0`。完整 oracle DPP
+证明、SLO 约束和真实实现的近似保证仍按第 5 节保持未完成状态。
 
 晋级规则按正式重复的噪声和业务最小效应预注册，不把算法参数硬编码成结论阈值。若
 SAOR-Release 不能在 correctness/failure 不退化、总吞吐基本不损失的条件下，相对 global

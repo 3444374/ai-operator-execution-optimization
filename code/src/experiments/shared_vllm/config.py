@@ -29,6 +29,7 @@ POLICIES = {
     "shared_drr",
     "shared_fifo",
     "external_vtc",
+    "saor_release",
     "state_aware_adaptive",
     "saor_capacity",
 }
@@ -62,6 +63,10 @@ _RUNNER_OWNED_FLAGS = {
     "--shared-credit-quantum",
     "--shared-credit-request-limit",
     "--shared-credit-work-limit",
+    "--saor-entitlement-weight",
+    "--saor-fairness-weight",
+    "--saor-queue-weight",
+    "--saor-slo-weight",
     "--source-row-offset",
     "--submission-granularity",
     "--submission-trace-output",
@@ -160,6 +165,14 @@ class SaorCapacityControlConfig:
 
 
 @dataclass(frozen=True)
+class SaorReleaseControlConfig:
+    entitlement_weight: float
+    queue_weight: float
+    fairness_weight: float
+    slo_weight: float
+
+
+@dataclass(frozen=True)
 class SharedVllmConfig:
     experiment_id: str
     seed: int
@@ -178,6 +191,7 @@ class SharedVllmConfig:
     calibration_contract: CalibrationContract | None = None
     state_aware_control: StateAwareControlConfig | None = None
     saor_capacity_control: SaorCapacityControlConfig | None = None
+    saor_release_control: SaorReleaseControlConfig | None = None
 
 def load_config(path: Path) -> SharedVllmConfig:
     decoded = json.loads(path.read_text(encoding="utf-8"))
@@ -303,6 +317,9 @@ def load_config(path: Path) -> SharedVllmConfig:
     saor_capacity_control = _load_saor_capacity_control(
         decoded.get("saor_capacity_control")
     )
+    saor_release_control = _load_saor_release_control(
+        decoded.get("saor_release_control")
+    )
     uses_state_aware = any(
         scenario.policy == "state_aware_adaptive"
         for scenario in scenarios
@@ -316,6 +333,11 @@ def load_config(path: Path) -> SharedVllmConfig:
     )
     if uses_saor_capacity and saor_capacity_control is None:
         raise ValueError("saor_capacity policy requires saor_capacity_control")
+    uses_saor_release = any(
+        scenario.policy == "saor_release" for scenario in scenarios
+    )
+    if uses_saor_release and saor_release_control is None:
+        raise ValueError("saor_release policy requires saor_release_control")
     if state_aware_control is not None and (
         state_aware_control.initial_request_limit != request_limit
         or state_aware_control.work_candidates[
@@ -355,6 +377,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         calibration_contract=calibration_contract,
         state_aware_control=state_aware_control,
         saor_capacity_control=saor_capacity_control,
+        saor_release_control=saor_release_control,
     )
 
 def build_job_command(
@@ -445,6 +468,7 @@ def build_job_command(
         "shared_drr",
         "shared_fifo",
         "external_vtc",
+        "saor_release",
         "state_aware_adaptive",
         "saor_capacity",
     }:
@@ -466,12 +490,29 @@ def build_job_command(
                 (
                     "fifo" if scenario.policy == "shared_fifo"
                     else "vtc" if scenario.policy == "external_vtc"
+                    else "saor" if scenario.policy == "saor_release"
                     else "drr"
                 ),
                 "--shared-credit-job-weight",
                 str(scenario.weights[job_index]),
             ]
         )
+        if scenario.policy == "saor_release":
+            control = config.saor_release_control
+            if control is None:
+                raise ValueError("saor_release control configuration is missing")
+            command.extend(
+                [
+                    "--saor-entitlement-weight",
+                    str(control.entitlement_weight),
+                    "--saor-queue-weight",
+                    str(control.queue_weight),
+                    "--saor-fairness-weight",
+                    str(control.fairness_weight),
+                    "--saor-slo-weight",
+                    str(control.slo_weight),
+                ]
+            )
     return command
 
 def _load_scenario(
@@ -1017,6 +1058,36 @@ def _load_saor_capacity_control(
             "SAOR switch_weight",
         ),
     )
+
+
+def _load_saor_release_control(
+    raw: object,
+) -> SaorReleaseControlConfig | None:
+    if raw is None:
+        return None
+    fields = {
+        "entitlement_weight",
+        "queue_weight",
+        "fairness_weight",
+        "slo_weight",
+    }
+    if not isinstance(raw, dict) or set(raw) != fields:
+        raise ValueError("saor_release_control fields are invalid")
+    values = {
+        field: _nonnegative_float(
+            _expand_scalar(raw[field], f"saor_release_control.{field}"),
+            f"saor_release_control.{field}",
+        )
+        for field in fields
+    }
+    if not any(value > 0 for value in values.values()):
+        raise ValueError("at least one SAOR release weight must be positive")
+    if values["slo_weight"] > 0:
+        raise ValueError(
+            "saor_release_control.slo_weight is not executable yet; "
+            "keep it at 0 until per-Job SLO debt is connected to release"
+        )
+    return SaorReleaseControlConfig(**values)
 
 
 def _load_calibration_contract(

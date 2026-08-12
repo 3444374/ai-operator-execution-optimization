@@ -15,6 +15,9 @@ if str(CODE_ROOT) not in sys.path:
 from src.scheduling.submission_control.shared_credit import (  # noqa: E402
     FairEndpointCreditCoordinator,
 )
+from src.scheduling.submission_control.saor import (  # noqa: E402
+    SaorReleaseConfig,
+)
 
 
 class SharedCreditCoordinatorTests(unittest.TestCase):
@@ -211,6 +214,90 @@ class SharedCreditCoordinatorTests(unittest.TestCase):
                 endpoint_id="gpu0",
                 estimated_work=100,
             )
+        )
+
+    def test_saor_reclaims_only_future_credit_for_new_active_job(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (2, 200)},
+            quantum=100,
+            policy="saor",
+            saor_release_config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+        for index in range(2):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=f"bulk-active-{index}",
+                    job_id="bulk",
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                )
+            )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="bulk-waiting",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="foreground",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+            )
+        )
+
+        coordinator.release("bulk-active-0", job_id="bulk", actual_work=100)
+
+        snapshot = coordinator.snapshot("gpu0")
+        self.assertEqual(
+            snapshot.active_by_job,
+            (("bulk", 1), ("foreground", 1)),
+        )
+        self.assertEqual(snapshot.waiting_by_job, (("bulk", 1),))
+
+    def test_saor_single_job_borrows_and_reborrows_full_envelope(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (2, 200)},
+            quantum=100,
+            policy="saor",
+            saor_release_config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+        for request_id in ("bulk-0", "bulk-1"):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=request_id,
+                    job_id="bulk",
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                )
+            )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="foreground",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+            )
+        )
+        coordinator.release("bulk-0", job_id="bulk", actual_work=100)
+        coordinator.release("bulk-1", job_id="bulk", actual_work=100)
+        coordinator.release("foreground", job_id="foreground", actual_work=100)
+
+        for request_id in ("bulk-2", "bulk-3"):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=request_id,
+                    job_id="bulk",
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                )
+            )
+        self.assertEqual(
+            coordinator.snapshot("gpu0").active_by_job,
+            (("bulk", 2),),
         )
 
     def test_single_job_borrows_all_idle_endpoint_capacity(self) -> None:

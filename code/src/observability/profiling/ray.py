@@ -26,6 +26,7 @@ from src.scheduling.runtime.ray_adapter import (
 from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from src.scheduling.core.scheduler import SchedulerResult, SynchronousScheduler
 from src.scheduling.submission_control.admission import StaticAdmissionController
+from src.scheduling.submission_control.saor import SaorReleaseConfig
 from src.scheduling.runtime.shared_credit_ray import (
     get_or_create_shared_credit_client,
 )
@@ -107,6 +108,11 @@ def _shared_credit_client(
         capacities=capacities,
         quantum=config["quantum"],
         policy=config.get("policy", "drr"),
+        saor_release_config=(
+            SaorReleaseConfig(**config["saor_release"])
+            if config.get("saor_release") is not None
+            else None
+        ),
     )
 
 

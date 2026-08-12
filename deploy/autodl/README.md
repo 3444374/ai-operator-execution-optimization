@@ -1012,6 +1012,37 @@ python code/scripts/data/prepare_vtc_compatible_workload.py \
 `vtc_compatible_overload_multi.example.json` 均包含 isolated full-pool、静态分区、同上限
 shared FIFO control 和 shared-work DRR，保持 1 warm-up + 3 formal。汇总命令：
 
+固定包络 SAOR 的决定性 active-set 模板是
+`saor_active_set_release.example.json`。它不含 K128/K160：request K、active-work、actor shape
+和 token budget 全部由当前机器/模型/workload 签名的 calibration selection 注入。项目五臂为
+static partition、project shared FIFO、DRR、external VTC-style 与 `saor_release`；每个 group
+自动从真实 request/credit trace 判断 bulk 先借用、foreground overlap/先排空和 bulk 后续重借
+是否发生。未观察到时标记 `active_set_contract_not_observed`，不得作策略结论。
+
+同一 immutable manifest 的 no-project killer control 单独运行，以免把项目协调器误称为
+“什么都不做”：
+
+```bash
+PYTHONPATH=code python code/scripts/baselines/run_official_baseline.py \
+  run-jobs-control \
+  --experiment-id saor_active_set_release_gate --phase formal --repeat-index 1 \
+  --job "bulk=$SAOR_BULK_MANIFEST=0" \
+  --job "foreground=$SAOR_FOREGROUND_MANIFEST=$SAOR_FOREGROUND_OFFSET_S" \
+  --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
+  --endpoint-url http://127.0.0.1:8001/v1/chat/completions \
+  --metrics-url http://127.0.0.1:8000/metrics \
+  --metrics-url http://127.0.0.1:8001/metrics \
+  --model "$COMPLETION_MODEL" --concurrency "$PROJECT_STATIC_K_PER_ENDPOINT" \
+  --request-slo-ms "$REQUEST_SLO_MS" \
+  --output-dir "$ARTIFACT_ROOT/saor_direct_control/formal_1"
+```
+
+该命令只有 endpoint-local HTTP bound，没有 Job credit/fair queue，`scheduler_owner` 记录为
+`endpoint_http_bound_then_vllm_fcfs`；它是 project-authored direct control，不是 vendor-native
+baseline。这里显式复用同一签名下的 request K，但不加 Job quota/fair queue 或 token-work
+credit；因此它回答“同 request window 下简单 merged arrival 是否已足够”。正式比较仍需
+1 warm-up + 3 个交错 repeat，并保留 idle/counter/exactly-once 证据。
+
 正式运行优先使用 audit-aware wrapper，避免手工设置上述逐 Job 变量：
 
 ```bash

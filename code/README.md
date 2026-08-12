@@ -227,9 +227,18 @@ adapters. Policy modules do not import Daft, Arrow, Ray, or HTTP; only runtime
 adapters receive the active Ray module explicitly.
 
 The first SAOR core revision selects among caller-enumerated safe actions using queue and
-weighted-fairness debt;
-its fast path publishes validated Job-head requests with a monotonic sequence and releases
-capacity on completion. Release work and predicted epoch service are separate fields, so a
+weighted-fairness debt. The executable `saor_release` path now runs inside the existing named
+shared-credit coordinator: it keeps the calibrated request/work envelope fixed, recomputes
+weighted dominant-share entitlement over the active Job set, grants only fitting Job heads,
+and updates fairness debt from actual completion work. It is completion-driven and
+non-preemptive, so vLLM still owns FCFS, continuous batching, chunked prefill, and KV
+management. The runner records `actuated_saor_release`, per-Job debt, and an observed
+bulk-borrow/foreground-reclaim/bulk-reborrow phase audit. SLO-weighted release is deliberately
+rejected until per-Job SLO debt is connected; the current executable default uses
+`slo_weight=0`.
+
+The pure ordered-release fast path publishes validated Job-head requests with a monotonic
+sequence and releases capacity on completion. Release work and predicted epoch service are separate fields, so a
 long request is not silently treated as service completed within the current control slot.
 The convenience action builder requires every service/goodput/tail/energy/switch prediction;
 release-action values are explicit marginal deltas against the zero-delta hold reference.
@@ -239,7 +248,8 @@ inputs outside the policy; no single metric is hard-coded into the action select
 existing shared-vLLM named-credit actor. It learns only the current safe arm, evaluates
 adjacent configured arms, and fails back to a configured frozen point on stale/signature/
 invalid observations. This does not yet wire ordered release or fairness debt into the
-formal runtime, so it must not be described as full SAOR.
+formal runtime. This capacity-only adapter remains `not-promoted` and separate from
+fixed-envelope `saor_release`; it must not be described as full SAOR.
 
 `scheduling/runtime/saor_pipeline.py` is an engine-neutral two-stage differential-
 backpressure core for image/heterogeneous pipelines. It changes only bounded flow limits
@@ -272,6 +282,12 @@ The shared-vLLM experiment runner can pin a distinct immutable request manifest
 and source offset for every job. This is required for staggered short/long or
 otherwise heterogeneous-job evidence; reusing the same rows for all jobs only
 validates concurrency semantics and cannot support a work-aware fairness claim.
+`shared_fifo` in that runner is a project-owned global ready-enqueue FIFO under the same
+shared envelope; it is not the no-project control. The latter is exposed as
+`run_official_baseline.py run-jobs-control`: it merges timed immutable Job arrivals and applies
+only one endpoint-local HTTP concurrency bound before unmodified vLLM FCFS. Its output is a
+formal control (not a vendor-native baseline) and records per-Job exactly-once/JCT/tail plus
+the observed staggered active-set lifecycle.
 For a causal single-short control, a static scenario may declare
 `static_partition_count` larger than its active `job_count`. The unused fixed
 partition stays reserved, so `job_count=1, static_partition_count=2` reproduces

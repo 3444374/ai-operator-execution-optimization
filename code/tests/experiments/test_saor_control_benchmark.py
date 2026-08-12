@@ -14,10 +14,18 @@ class SaorControlBenchmarkTest(unittest.TestCase):
             repeats=2,
         )
 
-        self.assertEqual(len(rows), 10)
+        self.assertEqual(len(rows), 14)
         self.assertEqual(
             {row.policy for row in rows},
-            {"static", "legacy_threshold", "shared_drr", "external_vtc", "saor"},
+            {
+                "static",
+                "legacy_threshold",
+                "shared_drr",
+                "shared_fifo",
+                "external_vtc",
+                "saor_release",
+                "saor_dpp_oracle",
+            },
         )
         self.assertEqual({row.job_count for row in rows}, {1, 4})
         for row in rows:

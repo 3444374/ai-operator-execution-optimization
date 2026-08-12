@@ -10,6 +10,160 @@ from ..core.control import CapacityArm
 
 
 @dataclass(frozen=True)
+class SaorReleaseConfig:
+    """Dimensionless weights for fixed-envelope active-set release.
+
+    The total request/work envelope is supplied by the coordinator.  These
+    weights only rank Job-head requests that already fit the remaining credit;
+    they never resize the envelope.
+    """
+
+    entitlement_weight: float
+    queue_weight: float
+    fairness_weight: float
+    slo_weight: float
+
+    def __post_init__(self) -> None:
+        values = (
+            self.entitlement_weight,
+            self.queue_weight,
+            self.fairness_weight,
+            self.slo_weight,
+        )
+        if any(not math.isfinite(value) or value < 0 for value in values):
+            raise ValueError("SAOR release weights must be finite and non-negative")
+        if not any(value > 0 for value in values):
+            raise ValueError("at least one SAOR release weight must be positive")
+
+
+@dataclass(frozen=True)
+class SaorReleaseState:
+    """One fitting Job-head summarized in normalized coordinator state."""
+
+    job_id: str
+    weight: float
+    active_requests: int
+    active_work: int
+    waiting_work: int
+    fairness_debt: float
+    oldest_waiting_age_s: float
+    slo_target_s: float | None
+    arrival_order: int
+    eligible: bool = True
+
+    def __post_init__(self) -> None:
+        if not self.job_id:
+            raise ValueError("SAOR release job_id must be non-empty")
+        if not math.isfinite(self.weight) or self.weight <= 0:
+            raise ValueError("SAOR release weight must be finite and positive")
+        if min(self.active_requests, self.active_work, self.waiting_work) < 0:
+            raise ValueError("SAOR release work and request counts must be non-negative")
+        if not math.isfinite(self.fairness_debt) or self.fairness_debt < 0:
+            raise ValueError("SAOR fairness debt must be finite and non-negative")
+        if (
+            not math.isfinite(self.oldest_waiting_age_s)
+            or self.oldest_waiting_age_s < 0
+        ):
+            raise ValueError("SAOR waiting age must be finite and non-negative")
+        if self.slo_target_s is not None and (
+            not math.isfinite(self.slo_target_s) or self.slo_target_s <= 0
+        ):
+            raise ValueError("SAOR SLO target must be finite and positive")
+        if self.arrival_order < 0:
+            raise ValueError("SAOR arrival order must be non-negative")
+
+
+@dataclass(frozen=True)
+class SaorReleaseSelection:
+    job_id: str
+    score: float
+    entitlement_deficit: float
+    active_share: float
+    target_share: float
+
+
+def select_saor_release_job(
+    states: tuple[SaorReleaseState, ...],
+    *,
+    request_limit: int,
+    work_limit: int,
+    config: SaorReleaseConfig,
+) -> SaorReleaseSelection:
+    """Choose one fitting Job head under a fixed two-resource envelope.
+
+    The active-set entitlement is a weighted dominant-share target.  A Job's
+    current share is ``max(active_requests/K_req, active_work/K_work)``.  The
+    selector first reclaims future releases for Jobs below their target; if no
+    fitting Job is below target it remains work-conserving and considers every
+    fitting head.  Queue, completion-updated fairness debt, and head waiting
+    age break ties within that feasible set.
+
+    This is the executable fixed-envelope policy.  It is intentionally weaker
+    than the oracle DPP theorem: it uses observed coordinator state rather than
+    claiming knowledge of counterfactual vLLM service rates.
+    """
+
+    if request_limit <= 0 or work_limit <= 0:
+        raise ValueError("SAOR release limits must be positive")
+    if not states or not any(state.eligible for state in states):
+        raise ValueError("SAOR release requires at least one fitting Job head")
+    job_ids = tuple(state.job_id for state in states)
+    if len(job_ids) != len(set(job_ids)):
+        raise ValueError("SAOR release states must contain each Job once")
+    total_weight = sum(state.weight for state in states)
+
+    scored: list[tuple[SaorReleaseState, float, float, float, float]] = []
+    for state in states:
+        target_share = state.weight / total_weight
+        active_share = max(
+            state.active_requests / request_limit,
+            state.active_work / work_limit,
+        )
+        entitlement_deficit = target_share - active_share
+        queue_pressure = state.waiting_work / work_limit
+        fairness_pressure = state.fairness_debt / work_limit
+        if config.slo_weight > 0:
+            if state.slo_target_s is None:
+                raise ValueError(
+                    "SAOR SLO-weighted release requires every active Job target"
+                )
+            slo_pressure = state.oldest_waiting_age_s / state.slo_target_s
+        else:
+            slo_pressure = 0.0
+        score = (
+            config.entitlement_weight * entitlement_deficit
+            + config.queue_weight * queue_pressure
+            + config.fairness_weight * fairness_pressure
+            + config.slo_weight * slo_pressure
+        )
+        scored.append(
+            (
+                state,
+                score,
+                entitlement_deficit,
+                active_share,
+                target_share,
+            )
+        )
+
+    fitting = [item for item in scored if item[0].eligible]
+    under_entitled = [item for item in fitting if item[2] > 0]
+    eligible = under_entitled or fitting
+    selected = max(
+        eligible,
+        key=lambda item: (item[1], -item[0].arrival_order, item[0].job_id),
+    )
+    state, score, deficit, active_share, target_share = selected
+    return SaorReleaseSelection(
+        state.job_id,
+        score,
+        deficit,
+        active_share,
+        target_share,
+    )
+
+
+@dataclass(frozen=True)
 class SaorJobState:
     job_id: str
     weight: float

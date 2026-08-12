@@ -121,8 +121,12 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "SaorDecision",
         "SaorJobState",
         "SaorPolicy",
+        "SaorReleaseConfig",
         "SaorReleaseCandidate",
+        "SaorReleaseSelection",
+        "SaorReleaseState",
         "build_single_release_actions",
+        "select_saor_release_job",
         "update_fairness_debts",
     ),
     ".submission_control.capacity": (

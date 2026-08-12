@@ -8,6 +8,12 @@ from collections import deque
 from dataclasses import dataclass
 from collections.abc import Callable
 
+from .saor import (
+    SaorReleaseConfig,
+    SaorReleaseState,
+    select_saor_release_job,
+)
+
 
 @dataclass(frozen=True)
 class CreditLease:
@@ -45,6 +51,7 @@ class EndpointCreditSnapshot:
     granted_requests_by_job: tuple[tuple[str, int], ...]
     granted_work_by_job: tuple[tuple[str, int], ...]
     attained_service_by_job: tuple[tuple[str, int], ...]
+    fairness_debt_by_job: tuple[tuple[str, float], ...]
 
 
 class FairEndpointCreditCoordinator:
@@ -60,14 +67,21 @@ class FairEndpointCreditCoordinator:
         *,
         quantum: int,
         policy: str = "drr",
+        saor_release_config: SaorReleaseConfig | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         if not capacities:
             raise ValueError("capacities must not be empty")
         if quantum <= 0:
             raise ValueError("quantum must be positive")
-        if policy not in {"drr", "fifo", "vtc"}:
-            raise ValueError("shared credit policy must be drr, fifo, or vtc")
+        if policy not in {"drr", "fifo", "vtc", "saor"}:
+            raise ValueError(
+                "shared credit policy must be drr, fifo, vtc, or saor"
+            )
+        if policy == "saor" and saor_release_config is None:
+            raise ValueError("saor shared credit requires release configuration")
+        if policy != "saor" and saor_release_config is not None:
+            raise ValueError("SAOR release configuration is only valid for saor")
         for endpoint_id, (request_limit, work_limit) in capacities.items():
             if not endpoint_id:
                 raise ValueError("endpoint IDs must be non-empty")
@@ -76,6 +90,7 @@ class FairEndpointCreditCoordinator:
         self._capacities = dict(capacities)
         self._quantum = quantum
         self._policy = policy
+        self._saor_release_config = saor_release_config
         self._clock = clock
         self._active: dict[tuple[str, str], CreditLease] = {}
         self._active_work: dict[str, int] = {
@@ -117,6 +132,10 @@ class FairEndpointCreditCoordinator:
         self._attained_service: dict[str, dict[str, int]] = {
             endpoint_id: {} for endpoint_id in capacities
         }
+        self._fairness_debt: dict[str, dict[str, float]] = {
+            endpoint_id: {} for endpoint_id in capacities
+        }
+        self._saor_slo_target_s: dict[str, float] = {}
 
     def try_acquire(
         self,
@@ -126,6 +145,7 @@ class FairEndpointCreditCoordinator:
         endpoint_id: str,
         estimated_work: int,
         weight: int = 1,
+        slo_target_s: float | None = None,
     ) -> bool:
         request_key = (job_id, request_id)
         if request_key in self._active:
@@ -147,6 +167,18 @@ class FairEndpointCreditCoordinator:
         previous_weight = self._weights.setdefault(job_id, weight)
         if previous_weight != weight:
             raise ValueError("a job must use one stable weight")
+        if self._policy == "saor":
+            if slo_target_s is not None and (
+                not math.isfinite(slo_target_s) or slo_target_s <= 0
+            ):
+                raise ValueError("slo_target_s must be finite and positive")
+            previous_target = self._saor_slo_target_s.setdefault(
+                job_id,
+                0.0 if slo_target_s is None else float(slo_target_s),
+            )
+            current_target = 0.0 if slo_target_s is None else float(slo_target_s)
+            if previous_target != current_target:
+                raise ValueError("a job must use one stable SLO target")
         if request_key not in self._queued_request_keys:
             lease = CreditLease(
                 request_id,
@@ -210,6 +242,14 @@ class FairEndpointCreditCoordinator:
                 counters[job_id] = counters.get(job_id, 0) + (
                     actual_work - lease.estimated_work
                 )
+        if self._policy == "saor":
+            self._update_saor_fairness_debt(
+                endpoint_id,
+                completed_job_id=job_id,
+                completed_work=(
+                    lease.estimated_work if actual_work is None else actual_work
+                ),
+            )
         self._grant_waiters(endpoint_id)
 
     def snapshot(self, endpoint_id: str) -> EndpointCreditSnapshot:
@@ -277,6 +317,9 @@ class FairEndpointCreditCoordinator:
             attained_service_by_job=tuple(
                 sorted(self._attained_service[endpoint_id].items())
             ),
+            fairness_debt_by_job=tuple(
+                sorted(self._fairness_debt[endpoint_id].items())
+            ),
         )
 
     def update_capacity(
@@ -311,6 +354,9 @@ class FairEndpointCreditCoordinator:
             return
         if self._policy == "vtc":
             self._grant_vtc_waiters(endpoint_id)
+            return
+        if self._policy == "saor":
+            self._grant_saor_waiters(endpoint_id)
             return
         request_limit, work_limit = self._capacities[endpoint_id]
         job_order = self._job_order[endpoint_id]
@@ -454,8 +500,109 @@ class FairEndpointCreditCoordinator:
             if job_id in self._attained_service[endpoint_id]
         ]
 
+    def _grant_saor_waiters(self, endpoint_id: str) -> None:
+        """Grant fitting Job heads using fixed-envelope active-set release."""
+
+        if self._saor_release_config is None:
+            raise RuntimeError("SAOR release configuration is missing")
+        request_limit, work_limit = self._capacities[endpoint_id]
+        while self._active_requests[endpoint_id] < request_limit:
+            ordered_jobs = [
+                job_id
+                for job_id in self._job_order[endpoint_id]
+                if self._waiting[endpoint_id][job_id]
+            ]
+            if not ordered_jobs:
+                return
+            order_by_job = {
+                job_id: order for order, job_id in enumerate(ordered_jobs)
+            }
+            active_requests_by_job: dict[str, int] = {}
+            active_work_by_job: dict[str, int] = {}
+            for lease in self._active.values():
+                if lease.endpoint_id != endpoint_id:
+                    continue
+                active_requests_by_job[lease.job_id] = (
+                    active_requests_by_job.get(lease.job_id, 0) + 1
+                )
+                active_work_by_job[lease.job_id] = (
+                    active_work_by_job.get(lease.job_id, 0)
+                    + lease.estimated_work
+                )
+            active_set = set(ordered_jobs) | set(active_requests_by_job)
+            states = []
+            for job_id in sorted(active_set):
+                queue = self._waiting[endpoint_id].get(job_id, ())
+                waiting_work = sum(lease.estimated_work for lease in queue)
+                head_fits = bool(queue) and (
+                    self._active_work[endpoint_id]
+                    + queue[0].estimated_work
+                    <= work_limit
+                )
+                target = self._saor_slo_target_s.get(job_id, 0.0)
+                states.append(
+                    SaorReleaseState(
+                        job_id=job_id,
+                        weight=float(self._weights[job_id]),
+                        active_requests=active_requests_by_job.get(job_id, 0),
+                        active_work=active_work_by_job.get(job_id, 0),
+                        waiting_work=waiting_work,
+                        fairness_debt=self._fairness_debt[endpoint_id].get(
+                            job_id,
+                            0.0,
+                        ),
+                        oldest_waiting_age_s=(
+                            max(0.0, self._clock() - queue[0].enqueued_at_s)
+                            if queue
+                            else 0.0
+                        ),
+                        slo_target_s=target or None,
+                        arrival_order=order_by_job.get(
+                            job_id,
+                            len(order_by_job),
+                        ),
+                        eligible=head_fits,
+                    )
+                )
+            if not any(state.eligible for state in states):
+                return
+            selected = select_saor_release_job(
+                tuple(states),
+                request_limit=request_limit,
+                work_limit=work_limit,
+                config=self._saor_release_config,
+            )
+            lease = self._waiting[endpoint_id][selected.job_id].popleft()
+            self._queued_request_keys.remove((lease.job_id, lease.request_id))
+            self._activate(endpoint_id, lease)
+
+    def _update_saor_fairness_debt(
+        self,
+        endpoint_id: str,
+        *,
+        completed_job_id: str,
+        completed_work: int,
+    ) -> None:
+        active_jobs = {
+            lease.job_id
+            for lease in self._active.values()
+            if lease.endpoint_id == endpoint_id
+        }
+        active_jobs.update(
+            job_id
+            for job_id, queue in self._waiting[endpoint_id].items()
+            if queue
+        )
+        active_jobs.add(completed_job_id)
+        total_weight = sum(self._weights[job_id] for job_id in active_jobs)
+        debts = self._fairness_debt[endpoint_id]
+        for job_id in active_jobs:
+            target = completed_work * self._weights[job_id] / total_weight
+            received = completed_work if job_id == completed_job_id else 0.0
+            debts[job_id] = max(0.0, debts.get(job_id, 0.0) + target - received)
+
     def _grant_fifo_waiters(self, endpoint_id: str) -> None:
-        """Grant one global arrival-ordered queue without work borrowing."""
+        """Grant one global ready-enqueue FIFO, preserving head-of-line order."""
         request_limit, work_limit = self._capacities[endpoint_id]
         fifo = self._fifo_order[endpoint_id]
         while fifo and self._active_requests[endpoint_id] < request_limit:

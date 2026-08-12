@@ -1,5 +1,22 @@
 # 项目日志
 
+## 2026-08-12 SAOR fixed-envelope runtime、direct control 与 K 校准边界落地
+
+- 将 `saor_release` 接入现有 endpoint-shared Ray credit coordinator：固定 request/work
+  envelope，按 active-set weighted dominant-share deficit、queue/fairness debt选择 fitting Job
+  head，completion 后用 actual work 修正并补位；不修改 vLLM FCFS/continuous batching。
+- shared-vLLM runner 新增 `saor_release` 正式配置、权重 provenance、fairness-debt trace 和
+  `bulk-only → foreground-arrival → foreground-drain` 实际生命周期审计。未观察到 borrow、
+  overlap/reclaim、foreground 先 drain 与 bulk 后重借时，明确标记合同未发生。
+- 区分两个容易混淆的 FIFO：`shared_fifo` 是 project-owned shared-envelope FIFO；新增
+  `run-jobs-control` 将多个 immutable Job arrival 合并，仅施加 endpoint-local HTTP bound 后交给
+  vLLM FCFS，作为 no-project Job scheduler killer control，不冒充 vendor-native baseline。
+- K 不再写死或逐实验手调：新硬件/模型/服务/workload 签名首次由操作者启动 calibration matrix，
+  选择器自动冻结最小饱和安全点并输出 SHA selection；同签名 formal 只读并 fail-closed 校验。
+  dynamic K 继续 `parked-conditional`。
+- 当前仍不声称 SAOR theorem 完成或策略胜出。`slo_weight` 在 per-Job SLO debt 接线前强制为
+  0；下一步只运行同 K direct/static/FIFO/DRR/external-VTC/SAOR active-set formal。
+
 ## 2026-08-12 补齐图像四 Job 正式结果归档
 
 - 审计发现 2026-08-10 的两组图像正式结果已被项目日志和图表引用，但结果目录本身尚未

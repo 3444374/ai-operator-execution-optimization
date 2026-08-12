@@ -20,7 +20,10 @@ from src.scheduling.submission_control.saor import (  # noqa: E402
     SaorJobState,
     SaorPolicy,
     SaorReleaseCandidate,
+    SaorReleaseConfig,
+    SaorReleaseState,
     build_single_release_actions,
+    select_saor_release_job,
     update_fairness_debts,
 )
 
@@ -35,6 +38,74 @@ class SaorPolicyTests(unittest.TestCase):
             energy_weight=0.0,
             switch_weight=1.0,
         )
+
+    def test_fixed_envelope_release_reclaims_future_share_for_new_job(self) -> None:
+        selection = select_saor_release_job(
+            (
+                SaorReleaseState(
+                    "bulk",
+                    1.0,
+                    active_requests=4,
+                    active_work=400,
+                    waiting_work=1_000,
+                    fairness_debt=0.0,
+                    oldest_waiting_age_s=10.0,
+                    slo_target_s=None,
+                    arrival_order=0,
+                ),
+                SaorReleaseState(
+                    "foreground",
+                    1.0,
+                    active_requests=0,
+                    active_work=0,
+                    waiting_work=100,
+                    fairness_debt=0.0,
+                    oldest_waiting_age_s=1.0,
+                    slo_target_s=None,
+                    arrival_order=1,
+                ),
+            ),
+            request_limit=4,
+            work_limit=400,
+            config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        self.assertEqual(selection.job_id, "foreground")
+        self.assertGreater(selection.entitlement_deficit, 0.0)
+
+    def test_fixed_envelope_release_ignores_nonfitting_underentitled_head(self) -> None:
+        selection = select_saor_release_job(
+            (
+                SaorReleaseState(
+                    "large",
+                    1.0,
+                    active_requests=0,
+                    active_work=0,
+                    waiting_work=200,
+                    fairness_debt=0.0,
+                    oldest_waiting_age_s=2.0,
+                    slo_target_s=None,
+                    arrival_order=0,
+                    eligible=False,
+                ),
+                SaorReleaseState(
+                    "small",
+                    1.0,
+                    active_requests=1,
+                    active_work=50,
+                    waiting_work=50,
+                    fairness_debt=0.0,
+                    oldest_waiting_age_s=1.0,
+                    slo_target_s=None,
+                    arrival_order=1,
+                ),
+            ),
+            request_limit=2,
+            work_limit=100,
+            config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+        )
+
+        self.assertEqual(selection.job_id, "small")
 
     def test_fairness_debt_breaks_equal_queue_tie(self) -> None:
         arm = CapacityArm(2, 200)

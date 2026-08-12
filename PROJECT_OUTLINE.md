@@ -84,7 +84,8 @@ PostgreSQL source
 - 正式 baseline 必须由被测系统拥有执行与调度；项目只做 source、sink、质量审计和指标适配。
 - 自写 actor pool、credit、inflight/backpressure 或 Daft UDF 只能按清晰 provenance 标为项目方法或 diagnostic reference。
 - 模型/数据下载不等于数据库 workload 已导入；必须继续执行 importer 和 schema/行数/exactly-once 门禁。
-- 性能参数绑定“机器 + 模型/服务配置 + 协议 + workload 分布/规模”签名，签名变化重新校准。
+- 性能参数绑定“机器 + 模型/服务配置 + 协议 + workload 分布/规模”签名，签名变化重新校准；
+  同一签名只校准一次并复用冻结合同。K 不是逐实验手调，也不在 SAOR formal 中在线变化。
 
 ## 4. 研究问题与因果设计
 
@@ -129,8 +130,10 @@ PostgreSQL source
   累计归一化 regret 0.0141，但没有形成真实降档证据；单次真实服务四臂 development gate
   中，capacity-only SAOR 相对 K128 +4.36%，相对 K160 +0.52%、相对 threshold −1.46%，
   Jain 最低，故标记 `not-promoted`。`saor-v0.4` 已将 fixed-envelope SAOR-Release 定为唯一算法
-  候选，dynamic K 标记 `parked-conditional`。现有 static/shared 两/四 Job 结果支持 active-set
-  分配问题，但缺同 K global FIFO/no-op killer baseline；下一项 formal 必须先比较 FIFO、static、
+  候选，dynamic K 标记 `parked-conditional`。fixed-envelope `saor_release` 已接入 named Ray
+  credit coordinator、completion-corrected fairness debt 和 active-set phase audit；SLO debt/理论
+  bridge 尚未闭合。现有 static/shared 两/四 Job 结果支持 active-set 分配问题；同 K global
+  FIFO/no-op control 已有可运行 CLI，但尚无 GPU formal 结果。下一项 formal 必须先比较 FIFO、static、
   DRR、external VTC-style 与 SAOR。若 FIFO/DRR 已在同一 Pareto 前沿，淘汰 SAOR。当前尚未完成
   该 formal 或定理证明，因此不是已胜出的 proposed 方法；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；

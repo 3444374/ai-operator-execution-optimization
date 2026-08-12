@@ -266,6 +266,95 @@ def shared_credit_trace_summary(
         "credit_borrowed_work_max": max(borrowed_work),
     }
 
+
+def active_set_phase_summary(
+    job_evidence: list[dict[str, object]],
+    samples: list[dict[str, object]],
+) -> dict[str, float | int | bool | str]:
+    """Audit an observed two-Job borrow/reclaim/reborrow lifecycle.
+
+    The audit derives phase boundaries from request arrival/completion evidence,
+    never from configured labels.  It reports mechanism observability only; it
+    does not claim that the selected policy improved performance.
+    """
+
+    unavailable = {
+        "active_set_contract_status": "unavailable:requires_staggered_two_job_trace",
+        "active_set_contract_passed": False,
+        "active_set_bulk_job_index": -1,
+        "active_set_foreground_job_index": -1,
+        "active_set_overlap_s": 0.0,
+        "active_set_bulk_only_pre_samples": 0,
+        "active_set_overlap_samples": 0,
+        "active_set_bulk_only_post_samples": 0,
+        "active_set_bulk_reborrow_fraction_max": 0.0,
+    }
+    if len(job_evidence) != 2 or not samples:
+        return unavailable
+    starts = [float(item["arrival_start_epoch_s"]) for item in job_evidence]
+    if math.isclose(starts[0], starts[1], abs_tol=1e-6):
+        return unavailable
+    bulk_index = min(range(2), key=starts.__getitem__)
+    foreground_index = 1 - bulk_index
+    bulk = job_evidence[bulk_index]
+    foreground = job_evidence[foreground_index]
+    foreground_start = float(foreground["arrival_start_epoch_s"])
+    foreground_end = float(foreground["completion_end_epoch_s"])
+    bulk_end = float(bulk["completion_end_epoch_s"])
+    overlap_s = max(
+        0.0,
+        min(bulk_end, foreground_end) - foreground_start,
+    )
+    bulk_job_id = str(bulk["runtime_job_id"])
+    foreground_job_id = str(foreground["runtime_job_id"])
+    pre_samples = 0
+    overlap_samples = 0
+    post_samples = 0
+    post_bulk_fractions = []
+    for sample in samples:
+        observed_at = float(sample["observed_epoch_s"])
+        raw = sample.get("active_work_by_job", ())
+        pairs = json.loads(raw) if isinstance(raw, str) else raw
+        by_job = {str(job_id): float(work) for job_id, work in pairs}
+        bulk_work = by_job.get(bulk_job_id, 0.0)
+        foreground_work = by_job.get(foreground_job_id, 0.0)
+        if observed_at < foreground_start:
+            pre_samples += bulk_work > 0 and foreground_work == 0
+        elif observed_at <= foreground_end:
+            overlap_samples += bulk_work > 0 and foreground_work > 0
+        elif observed_at <= bulk_end:
+            is_bulk_only = bulk_work > 0 and foreground_work == 0
+            post_samples += is_bulk_only
+            if is_bulk_only:
+                work_limit = float(sample["work_limit"])
+                if work_limit <= 0:
+                    raise ValueError("active-set trace work limit must be positive")
+                post_bulk_fractions.append(bulk_work / work_limit)
+    passed = bool(
+        overlap_s > 0
+        and foreground_end < bulk_end
+        and pre_samples
+        and overlap_samples
+        and post_samples
+    )
+    return {
+        "active_set_contract_status": (
+            "ok:observed_bulk_borrow_reclaim_reborrow"
+            if passed
+            else "active_set_contract_not_observed"
+        ),
+        "active_set_contract_passed": passed,
+        "active_set_bulk_job_index": bulk_index,
+        "active_set_foreground_job_index": foreground_index,
+        "active_set_overlap_s": overlap_s,
+        "active_set_bulk_only_pre_samples": pre_samples,
+        "active_set_overlap_samples": overlap_samples,
+        "active_set_bulk_only_post_samples": post_samples,
+        "active_set_bulk_reborrow_fraction_max": (
+            max(post_bulk_fractions) if post_bulk_fractions else 0.0
+        ),
+    }
+
 def group_resource_summary(
     samples: list[dict[str, object]],
     *,

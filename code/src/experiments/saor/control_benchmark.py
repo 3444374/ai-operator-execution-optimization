@@ -15,6 +15,7 @@ from src.scheduling.submission_control.saor import (
     SaorControlState,
     SaorJobState,
     SaorPolicy,
+    SaorReleaseConfig,
 )
 from src.scheduling.submission_control.shared_credit import (
     FairEndpointCreditCoordinator,
@@ -43,7 +44,7 @@ def run_control_benchmark(
     warmup_iterations: int,
     repeats: int,
 ) -> tuple[ControlBenchmarkRow, ...]:
-    """Benchmark five existing decision paths under a shared timing contract."""
+    """Benchmark existing decision paths under a shared timing contract."""
 
     if not job_counts or any(value <= 0 for value in job_counts):
         raise ValueError("job_counts must contain positive integers")
@@ -95,11 +96,25 @@ def _case_factories(
             lambda: _credit_factory(job_count, "drr"),
         ),
         (
+            "shared_fifo",
+            "acquire_and_release_credit",
+            lambda: _credit_factory(job_count, "fifo"),
+        ),
+        (
             "external_vtc",
             "acquire_and_release_credit",
             lambda: _credit_factory(job_count, "vtc"),
         ),
-        ("saor", "select_finite_dpp_action", lambda: _saor_factory(job_count)),
+        (
+            "saor_release",
+            "acquire_and_release_credit",
+            lambda: _credit_factory(job_count, "saor"),
+        ),
+        (
+            "saor_dpp_oracle",
+            "select_finite_dpp_action",
+            lambda: _saor_factory(job_count),
+        ),
     )
 
 
@@ -152,6 +167,16 @@ def _credit_factory(job_count: int, policy: str) -> Callable[[int], bool]:
         {endpoint_id: (1, 1_024)},
         quantum=1_024,
         policy=policy,
+        saor_release_config=(
+            SaorReleaseConfig(
+                entitlement_weight=1.0,
+                queue_weight=0.0,
+                fairness_weight=1.0,
+                slo_weight=0.0,
+            )
+            if policy == "saor"
+            else None
+        ),
     )
 
     def decide(sequence: int) -> bool:

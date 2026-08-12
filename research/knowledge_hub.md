@@ -673,6 +673,12 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
   formal 必须把 global FIFO 与 DRR 设为 killer baseline；任一简单策略达到同一 Pareto 前沿即
   淘汰 SAOR。详细模型与 benchmark 见
   `saor_model_scenario_audit_20260811.md`。
+- **2026-08-12 工程边界**：`saor_release` 已接入共享 Ray credit runtime；它只在离线校准并
+  按签名冻结的 $K^*$ 内选择 fitting Job head，不在线调 K。当前 completion 更新 fairness debt，
+  `slo_weight` 强制为 0，直到 per-Job SLO virtual queue 接通，因此不能声称完整 DPP/SLO 定理
+  已实现。direct `run-jobs-control` 与 project `shared_fifo` 分开：前者无 Job policy，后者是
+  project-owned FIFO。真实 trace 自动审计 borrow→reclaim→reborrow 是否发生；未发生即不能抽
+  动态结论。
 
 #### 5.7.6 模式优先级矩阵
 

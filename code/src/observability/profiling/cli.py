@@ -248,10 +248,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--shared-credit-policy",
-        choices=["drr", "fifo", "vtc"],
+        choices=["drr", "fifo", "vtc", "saor"],
         default="drr",
     )
     parser.add_argument("--shared-credit-job-weight", type=int, default=1)
+    parser.add_argument(
+        "--saor-entitlement-weight",
+        type=float,
+        default=1.0,
+    )
+    parser.add_argument("--saor-queue-weight", type=float, default=0.0)
+    parser.add_argument("--saor-fairness-weight", type=float, default=1.0)
+    parser.add_argument("--saor-slo-weight", type=float, default=0.0)
     parser.add_argument(
         "--pool-routing",
         choices=["none", "request_cost"],

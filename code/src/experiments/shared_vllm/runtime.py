@@ -13,6 +13,7 @@ from src.infrastructure.runtime_env import ray_runtime_env
 from src.modalities.text.contracts import build_text_runtime_snapshot
 from src.observability.metrics import gpu_metadata, scrape_prometheus_metrics
 from src.scheduling.runtime.shared_credit_ray import get_or_create_shared_credit_client
+from src.scheduling.submission_control.saor import SaorReleaseConfig
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
@@ -49,19 +50,22 @@ class _RayCreditObserver:
         work_limit: int,
         quantum: int,
         policy: str = "drr",
+        saor_release_config: SaorReleaseConfig | None = None,
     ) -> None:
         capacities = {
             endpoint_id: (request_limit, work_limit)
             for endpoint_id in self.endpoint_ids
         }
-        client = get_or_create_shared_credit_client(
-            self.ray,
-            name=self.actor_name,
-            namespace=self.namespace,
-            capacities=capacities,
-            quantum=quantum,
-            policy=policy,
-        )
+        arguments: dict[str, object] = {
+            "name": self.actor_name,
+            "namespace": self.namespace,
+            "capacities": capacities,
+            "quantum": quantum,
+            "policy": policy,
+        }
+        if saor_release_config is not None:
+            arguments["saor_release_config"] = saor_release_config
+        client = get_or_create_shared_credit_client(self.ray, **arguments)
         for endpoint_id in self.endpoint_ids:
             client.snapshot(endpoint_id)
         self.actor = client.actor

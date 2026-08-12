@@ -162,6 +162,18 @@ def _validate_job_evidence(
         raise RuntimeError(f"job {job_index} has duplicate request IDs")
     if any(not _request_trace_succeeded(row) for row in request_rows):
         raise RuntimeError(f"job {job_index} contains failed requests")
+    runtime_job_ids = {
+        str(row.get("job_id", ""))
+        for row in request_rows
+        if str(row.get("job_id", ""))
+    }
+    if len(runtime_job_ids) > 1:
+        raise RuntimeError(f"job {job_index} has inconsistent runtime job IDs")
+    runtime_job_id = (
+        runtime_job_ids.pop()
+        if runtime_job_ids
+        else str(summary.get("job_id", "") or f"job-{job_index}")
+    )
     arrival = [float(row["arrival_epoch_s"]) for row in request_rows]
     completion = [float(row["completion_epoch_s"]) for row in request_rows]
     e2e = [float(row["e2e_s"]) for row in request_rows]
@@ -228,6 +240,7 @@ def _validate_job_evidence(
         "request_manifest_sha256": str(
             summary.get("request_manifest_sha256", "") or ""
         ),
+        "runtime_job_id": runtime_job_id,
         "arrival_start_epoch_s": min(arrival),
         "completion_end_epoch_s": max(completion),
         "service_completion_events": sorted(
@@ -501,6 +514,11 @@ def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
         "saor_capacity_control": (
             asdict(config.saor_capacity_control)
             if config.saor_capacity_control is not None
+            else None
+        ),
+        "saor_release_control": (
+            asdict(config.saor_release_control)
+            if config.saor_release_control is not None
             else None
         ),
     }

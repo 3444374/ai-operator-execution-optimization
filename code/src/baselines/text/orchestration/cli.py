@@ -7,6 +7,7 @@ import asyncio
 import csv
 import hashlib
 import json
+import math
 import os
 import subprocess
 import sys
@@ -25,8 +26,10 @@ from ..ceilings import (
 from ..controls import (
     BatchedCompletionsConfig,
     BoundedHttpConfig,
+    TimedHttpJob,
     run_batched_completions,
     run_bounded_http,
+    run_bounded_http_jobs,
 )
 from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.common.gate import validate_gate
@@ -531,6 +534,191 @@ def _read_result_csv(path: str | Path) -> tuple[BaselineRequestResult, ...]:
     )
 
 
+def _parse_timed_job(value: str) -> tuple[str, Path, float]:
+    fields = value.split("=", 2)
+    if len(fields) != 3 or not fields[0].strip() or not fields[1].strip():
+        raise argparse.ArgumentTypeError(
+            "timed job must use JOB_ID=/path/to/manifest.jsonl=OFFSET_S"
+        )
+    try:
+        offset_s = float(fields[2])
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "timed job OFFSET_S must be numeric"
+        ) from exc
+    if not math.isfinite(offset_s) or offset_s < 0:
+        raise argparse.ArgumentTypeError(
+            "timed job OFFSET_S must be finite and non-negative"
+        )
+    return fields[0].strip(), Path(fields[1]), offset_s
+
+
+def _run_jobs_control(
+    args: argparse.Namespace,
+) -> dict[str, object]:
+    """Run one merged-arrival, endpoint-bounded, no-Job-policy control."""
+
+    from .gate_runner import (
+        sample_vllm_token_counters,
+        wait_for_idle,
+    )
+
+    if len(args.endpoint_url) != len(args.metrics_url):
+        raise ValueError("run-jobs-control requires one metrics URL per endpoint")
+    if len(set(args.endpoint_url)) != len(args.endpoint_url):
+        raise ValueError("run-jobs-control endpoint URLs must be unique")
+    raw_jobs = tuple(args.job)
+    job_ids = [job_id for job_id, _path, _offset in raw_jobs]
+    if len(set(job_ids)) != len(job_ids):
+        raise ValueError("run-jobs-control job IDs must be unique")
+    timed_jobs = []
+    metadata = {}
+    for job_id, path, offset_s in raw_jobs:
+        if not path.is_file():
+            raise ValueError(f"timed job manifest does not exist: {path}")
+        requests = read_manifest(path)
+        timed_jobs.append(TimedHttpJob(job_id, requests, offset_s))
+        payload = path.read_bytes()
+        metadata[job_id] = {
+            "path": str(path.resolve()),
+            "rows": len(requests),
+            "sha256": hashlib.sha256(payload).hexdigest(),
+            "arrival_offset_s": offset_s,
+        }
+    output_dir = Path(args.output_dir)
+    if output_dir.exists():
+        raise FileExistsError(f"output directory already exists: {output_dir}")
+    output_dir.mkdir(parents=True)
+    raw_dir = output_dir / "raw"
+    raw_dir.mkdir()
+    wait_for_idle(tuple(args.metrics_url), args.idle_timeout_s)
+    counters_before = sample_vllm_token_counters(tuple(args.metrics_url))
+    grouped = asyncio.run(
+        run_bounded_http_jobs(
+            timed_jobs,
+            BoundedHttpConfig(
+                endpoint_urls=tuple(args.endpoint_url),
+                model=args.model,
+                concurrency_per_endpoint=args.concurrency,
+                timeout_s=args.timeout_s,
+                api_key=args.api_key,
+                replay_arrivals=True,
+                arrival_time_scale=args.arrival_time_scale,
+                ignore_eos=args.ignore_eos,
+            ),
+        )
+    )
+    final_queues = wait_for_idle(tuple(args.metrics_url), args.idle_timeout_s)
+    counters_after = sample_vllm_token_counters(tuple(args.metrics_url))
+    job_summaries = {}
+    combined_results = []
+    request_by_job = {job.job_id: job.requests for job in timed_jobs}
+    for job_id in job_ids:
+        results = grouped[job_id]
+        combined_results.extend(results)
+        _write_results(raw_dir / f"{job_id}.requests.csv", results)
+        job_summaries[job_id] = summarize_results(
+            request_by_job[job_id],
+            results,
+        )
+    combined = tuple(combined_results)
+    if not combined:
+        raise RuntimeError("run-jobs-control produced no results")
+    service_prompt_tokens = sum(
+        counters_after[index]["prompt_tokens"]
+        - counters_before[index]["prompt_tokens"]
+        for index in counters_before
+    )
+    service_generation_tokens = sum(
+        counters_after[index]["generation_tokens"]
+        - counters_before[index]["generation_tokens"]
+        for index in counters_before
+    )
+    group_wall_s = (
+        max(item.completed_at_s for item in combined)
+        - min(item.submitted_at_s for item in combined)
+    )
+    job_windows = {
+        job_id: (
+            min(item.submitted_at_s for item in grouped[job_id]),
+            max(item.completed_at_s for item in grouped[job_id]),
+        )
+        for job_id in job_ids
+    }
+    ordered_jobs = sorted(job_ids, key=lambda job_id: job_windows[job_id][0])
+    active_set_status = "unavailable:requires_staggered_two_jobs"
+    active_set_overlap_s = 0.0
+    if len(ordered_jobs) == 2:
+        bulk_id, foreground_id = ordered_jobs
+        bulk_start, bulk_end = job_windows[bulk_id]
+        foreground_start, foreground_end = job_windows[foreground_id]
+        active_set_overlap_s = max(
+            0.0,
+            min(bulk_end, foreground_end) - foreground_start,
+        )
+        active_set_status = (
+            "ok:observed_bulk_then_foreground_then_bulk_drain"
+            if bulk_start < foreground_start
+            and active_set_overlap_s > 0
+            and foreground_end < bulk_end
+            else "active_set_contract_not_observed"
+        )
+    slo_target_s = (
+        args.request_slo_ms / 1000.0 if args.request_slo_ms > 0 else None
+    )
+    slo_metrics = {}
+    for job_id in job_ids:
+        latencies = [item.latency_s for item in grouped[job_id]]
+        slo_metrics[job_id] = {
+            "target_ms": args.request_slo_ms,
+            "violation_ratio": (
+                sum(latency > slo_target_s for latency in latencies)
+                / len(latencies)
+                if slo_target_s is not None
+                else None
+            ),
+        }
+    summary = {
+        "schema_version": 1,
+        "status": "completed",
+        "experiment_id": args.experiment_id,
+        "phase": args.phase,
+        "repeat_index": args.repeat_index,
+        "control": "direct_merged_arrival_no_job_scheduler",
+        "scheduler_owner": "endpoint_http_bound_then_vllm_fcfs",
+        "project_job_scheduler": False,
+        "comparison_role": "direct_client_control",
+        "implementation_provenance": "project_bounded_async_client",
+        "formal_baseline_eligible": False,
+        "formal_control_eligible": True,
+        "qualification_gate": (
+            "same_manifest_model_protocol_endpoints_and_idle_boundaries"
+        ),
+        "job_count": len(timed_jobs),
+        "concurrency_per_endpoint": args.concurrency,
+        "endpoint_count": len(args.endpoint_url),
+        "model_name": args.model,
+        "arrival_time_scale": args.arrival_time_scale,
+        "manifests": metadata,
+        "job_metrics": job_summaries,
+        "job_slo_metrics": slo_metrics,
+        "active_set_contract_status": active_set_status,
+        "active_set_overlap_s": active_set_overlap_s,
+        "group_wall_s": group_wall_s,
+        "service_prompt_tokens": service_prompt_tokens,
+        "service_generation_tokens": service_generation_tokens,
+        "service_total_tokens_per_s": (
+            (service_prompt_tokens + service_generation_tokens) / group_wall_s
+            if group_wall_s > 0
+            else 0.0
+        ),
+        "final_queues": final_queues,
+    }
+    _write_results(raw_dir / "all.requests.csv", combined)
+    _atomic_json(output_dir / "summary.json", summary)
+    return summary
+
+
 def _normalize_vllm_bench(
     args: argparse.Namespace,
 ) -> dict[str, object]:
@@ -747,6 +935,33 @@ def _parser() -> argparse.ArgumentParser:
     )
     run.add_argument("--dry-run", action="store_true")
 
+    jobs = commands.add_parser("run-jobs-control")
+    jobs.add_argument("--experiment-id", required=True)
+    jobs.add_argument(
+        "--phase",
+        choices=("smoke", "warmup", "formal"),
+        required=True,
+    )
+    jobs.add_argument("--repeat-index", type=int, required=True)
+    jobs.add_argument(
+        "--job",
+        action="append",
+        type=_parse_timed_job,
+        required=True,
+        help="JOB_ID=/absolute/manifest.jsonl=OFFSET_S; repeat per Job",
+    )
+    jobs.add_argument("--endpoint-url", action="append", required=True)
+    jobs.add_argument("--metrics-url", action="append", required=True)
+    jobs.add_argument("--model", required=True)
+    jobs.add_argument("--concurrency", type=int, required=True)
+    jobs.add_argument("--timeout-s", type=float, default=300.0)
+    jobs.add_argument("--idle-timeout-s", type=float, default=300.0)
+    jobs.add_argument("--api-key")
+    jobs.add_argument("--arrival-time-scale", type=float, default=1.0)
+    jobs.add_argument("--request-slo-ms", type=float, default=0.0)
+    jobs.add_argument("--ignore-eos", action="store_true")
+    jobs.add_argument("--output-dir", required=True)
+
     normalize = commands.add_parser("normalize-vllm-bench")
     normalize.add_argument("--manifest", required=True)
     normalize.add_argument("--endpoint-index", type=int, required=True)
@@ -788,6 +1003,8 @@ def run_cli(argv: Sequence[str]) -> dict[str, object]:
         return _export_postgres_manifest(args)
     if args.command == "run-shard":
         return _run_shard(args)
+    if args.command == "run-jobs-control":
+        return _run_jobs_control(args)
     if args.command == "normalize-vllm-bench":
         return _normalize_vllm_bench(args)
     if args.command == "validate-gate":

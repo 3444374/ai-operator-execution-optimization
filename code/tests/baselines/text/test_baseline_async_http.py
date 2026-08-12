@@ -23,6 +23,7 @@ from src.baselines.text.controls import (
     run_bounded_http_jobs,
 )
 from src.baselines.common.contracts import ChatRequest
+from src.baselines.text.orchestration.cli import _parse_timed_job
 
 
 def sample_request(
@@ -43,6 +44,15 @@ def sample_request(
 
 
 class BoundedHttpBaselineTests(unittest.TestCase):
+    def test_timed_job_cli_contract_parses_manifest_and_offset(self) -> None:
+        job_id, path, offset = _parse_timed_job(
+            "foreground=/tmp/foreground.jsonl=5.5"
+        )
+
+        self.assertEqual(job_id, "foreground")
+        self.assertEqual(path, Path("/tmp/foreground.jsonl"))
+        self.assertEqual(offset, 5.5)
+
     def test_default_transport_scales_httpx_pool_to_requested_concurrency(
         self,
     ) -> None:

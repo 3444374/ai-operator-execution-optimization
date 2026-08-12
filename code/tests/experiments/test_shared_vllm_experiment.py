@@ -33,6 +33,7 @@ from src.experiments.shared_vllm import (  # noqa: E402
     _validate_replay_starts,
     _validate_runner_topology,
     _validate_final_credit,
+    active_set_phase_summary,
     build_job_command,
     cumulative_service_disparity,
     group_resource_summary,
@@ -45,6 +46,87 @@ from src.experiments.shared_vllm import (  # noqa: E402
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_active_set_phase_summary_uses_observed_lifecycle(self) -> None:
+        evidence = [
+            {
+                "arrival_start_epoch_s": 10.0,
+                "completion_end_epoch_s": 30.0,
+                "runtime_job_id": "bulk",
+            },
+            {
+                "arrival_start_epoch_s": 15.0,
+                "completion_end_epoch_s": 20.0,
+                "runtime_job_id": "foreground",
+            },
+        ]
+        samples = [
+            {
+                "observed_epoch_s": 12.0,
+                "work_limit": 100,
+                "active_work_by_job": '[["bulk", 100]]',
+            },
+            {
+                "observed_epoch_s": 17.0,
+                "work_limit": 100,
+                "active_work_by_job": (
+                    '[["bulk", 60], ["foreground", 40]]'
+                ),
+            },
+            {
+                "observed_epoch_s": 25.0,
+                "work_limit": 100,
+                "active_work_by_job": '[["bulk", 90]]',
+            },
+        ]
+
+        summary = active_set_phase_summary(evidence, samples)
+
+        self.assertTrue(summary["active_set_contract_passed"])
+        self.assertEqual(summary["active_set_overlap_s"], 5.0)
+        self.assertEqual(
+            summary["active_set_bulk_reborrow_fraction_max"],
+            0.9,
+        )
+
+    def test_active_set_phase_summary_fails_without_observed_overlap(self) -> None:
+        evidence = [
+            {
+                "arrival_start_epoch_s": 10.0,
+                "completion_end_epoch_s": 30.0,
+                "runtime_job_id": "bulk",
+            },
+            {
+                "arrival_start_epoch_s": 15.0,
+                "completion_end_epoch_s": 20.0,
+                "runtime_job_id": "foreground",
+            },
+        ]
+        samples = [
+            {
+                "observed_epoch_s": 12.0,
+                "work_limit": 100,
+                "active_work_by_job": '[["bulk", 100]]',
+            },
+            {
+                "observed_epoch_s": 17.0,
+                "work_limit": 100,
+                "active_work_by_job": '[["foreground", 40]]',
+            },
+            {
+                "observed_epoch_s": 25.0,
+                "work_limit": 100,
+                "active_work_by_job": '[["bulk", 90]]',
+            },
+        ]
+
+        summary = active_set_phase_summary(evidence, samples)
+
+        self.assertFalse(summary["active_set_contract_passed"])
+        self.assertEqual(
+            summary["active_set_contract_status"],
+            "active_set_contract_not_observed",
+        )
+
     def test_credit_trace_reports_idle_and_borrowed_work(self) -> None:
         summary = shared_credit_trace_summary(
             [

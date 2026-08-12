@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ..submission_control.shared_credit import FairEndpointCreditCoordinator
+from ..submission_control.saor import SaorReleaseConfig
 
 
 class _FairCreditActor:
@@ -11,18 +12,33 @@ class _FairCreditActor:
         capacities: dict[str, tuple[int, int]],
         quantum: int,
         policy: str,
+        saor_release_config: SaorReleaseConfig | None = None,
     ) -> None:
         self.capacities = capacities
         self.quantum = quantum
         self.policy = policy
+        self.saor_release_config = saor_release_config
         self.coordinator = FairEndpointCreditCoordinator(
             capacities,
             quantum=quantum,
             policy=policy,
+            saor_release_config=saor_release_config,
         )
 
-    def configuration(self) -> tuple[dict[str, tuple[int, int]], int, str]:
-        return self.capacities, self.quantum, self.policy
+    def configuration(
+        self,
+    ) -> tuple[
+        dict[str, tuple[int, int]],
+        int,
+        str,
+        SaorReleaseConfig | None,
+    ]:
+        return (
+            self.capacities,
+            self.quantum,
+            self.policy,
+            self.saor_release_config,
+        )
 
     def try_acquire(self, **kwargs) -> bool:
         return self.coordinator.try_acquire(**kwargs)
@@ -93,26 +109,55 @@ def get_or_create_shared_credit_client(
     capacities: dict[str, tuple[int, int]],
     quantum: int,
     policy: str = "drr",
+    saor_release_config: SaorReleaseConfig | None = None,
 ) -> RaySharedCreditClient:
     if not name:
         raise ValueError("shared credit actor name must be non-empty")
     if not namespace:
         raise ValueError("shared credit namespace must be non-empty")
     remote_actor = ray_module.remote(_FairCreditActor)
-    actor = remote_actor.options(
+    actor_builder = remote_actor.options(
         name=name,
         namespace=namespace,
         lifetime="detached",
         get_if_exists=True,
         num_cpus=0,
-    ).remote(capacities, quantum, policy)
-    configured_capacities, configured_quantum, configured_policy = ray_module.get(
-        actor.configuration.remote()
     )
+    actor = (
+        actor_builder.remote(capacities, quantum, policy)
+        if saor_release_config is None
+        else actor_builder.remote(
+            capacities,
+            quantum,
+            policy,
+            saor_release_config,
+        )
+    )
+    configured = tuple(ray_module.get(actor.configuration.remote()))
+    if len(configured) == 3:
+        # A non-SAOR detached actor created by the previous runtime revision is
+        # safe to reuse.  SAOR itself still fails closed because the old actor
+        # cannot carry a release configuration.
+        (
+            configured_capacities,
+            configured_quantum,
+            configured_policy,
+        ) = configured
+        configured_saor_release = None
+    elif len(configured) == 4:
+        (
+            configured_capacities,
+            configured_quantum,
+            configured_policy,
+            configured_saor_release,
+        ) = configured
+    else:
+        raise ValueError("existing shared credit actor configuration is invalid")
     if (
         configured_capacities != capacities
         or configured_quantum != quantum
         or configured_policy != policy
+        or configured_saor_release != saor_release_config
     ):
         raise ValueError(
             "existing shared credit actor configuration does not match "
