@@ -54,7 +54,7 @@
     "--completion-protocol", "${COMPLETION_PROTOCOL}",
     "--completion-max-tokens", "${COMPLETION_MAX_TOKENS}",
     "--completion-return-token-ids",
-    "--completion-prompt-format", "${COMPLETION_PROMPT_FORMAT}",
+    "--completion-prompt-format", "raw",
     "--completion-temperature", "0",
     "--completion-request-timeout-s", "300",
     "--model-metrics-urls", "${MODEL_METRICS_URLS}",
@@ -84,6 +84,14 @@
     "--mfu-precision", "${MFU_PRECISION}"
   ],
   "scenarios": [
+    {
+      "scenario_id": "active_set_direct_no_job",
+      "policy": "direct_no_job",
+      "job_count": 2,
+      "rows_per_jobs": ["${SAOR_BULK_ROWS}", "${SAOR_FOREGROUND_ROWS}"],
+      "arrival_offsets_s": [0, "${SAOR_FOREGROUND_OFFSET_S}"],
+      "request_manifests": ["${SAOR_BULK_MANIFEST}", "${SAOR_FOREGROUND_MANIFEST}"]
+    },
     {
       "scenario_id": "active_set_static_partition",
       "policy": "static_partition",
@@ -123,6 +131,38 @@
       "rows_per_jobs": ["${SAOR_BULK_ROWS}", "${SAOR_FOREGROUND_ROWS}"],
       "arrival_offsets_s": [0, "${SAOR_FOREGROUND_OFFSET_S}"],
       "request_manifests": ["${SAOR_BULK_MANIFEST}", "${SAOR_FOREGROUND_MANIFEST}"]
+    },
+    {
+      "scenario_id": "solo_project_bulk",
+      "policy": "independent_full",
+      "job_count": 1,
+      "rows_per_jobs": ["${SAOR_BULK_ROWS}"],
+      "arrival_offsets_s": [0],
+      "request_manifests": ["${SAOR_BULK_MANIFEST}"]
+    },
+    {
+      "scenario_id": "solo_project_foreground",
+      "policy": "independent_full",
+      "job_count": 1,
+      "rows_per_jobs": ["${SAOR_FOREGROUND_ROWS}"],
+      "arrival_offsets_s": [0],
+      "request_manifests": ["${SAOR_FOREGROUND_MANIFEST}"]
+    },
+    {
+      "scenario_id": "solo_direct_bulk",
+      "policy": "direct_no_job",
+      "job_count": 1,
+      "rows_per_jobs": ["${SAOR_BULK_ROWS}"],
+      "arrival_offsets_s": [0],
+      "request_manifests": ["${SAOR_BULK_MANIFEST}"]
+    },
+    {
+      "scenario_id": "solo_direct_foreground",
+      "policy": "direct_no_job",
+      "job_count": 1,
+      "rows_per_jobs": ["${SAOR_FOREGROUND_ROWS}"],
+      "arrival_offsets_s": [0],
+      "request_manifests": ["${SAOR_FOREGROUND_MANIFEST}"]
     }
   ]
 }

@@ -1,6 +1,6 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-11；开题证据冻结，SAOR dynamic-K 已退出主线）
+Date: 2026-07-20（最后更新：2026-08-12；开题证据冻结，SAOR dynamic-K 已退出主线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -27,7 +27,10 @@ ordered release。完整报告见
 global FIFO/no project Job scheduler 已经足够好。故下一项决定性矩阵必须加入同一 K 的 global
 FIFO、static、DRR、external VTC-style 和 SAOR，并使用 `bulk-only → foreground-arrival →
 foreground-drain` 活跃集变化合同。若 FIFO 或 DRR 已达到同一 throughput--tail--fairness
-Pareto 前沿，SAOR 直接淘汰，不扩 workload 追正。
+Pareto 前沿，SAOR 直接淘汰，不扩 workload 追正。2026-08-12 已将 direct no-Job 纳入同一
+交错 runner，并补齐 static/FIFO/DRR/external-VTC/SAOR 六臂 active-set、project/direct
+matched solo、生命周期/credit 机制分层门禁、rehearsal、静态 readiness audit 和 fail-closed
+formal 汇总；当前只代表工程 `formal-ready`，服务器 formal 尚未运行，不改变方法证据状态。
 
 ## 图像状态增量（2026-08-10）
 

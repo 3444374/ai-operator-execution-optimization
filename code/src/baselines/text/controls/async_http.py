@@ -7,7 +7,7 @@ import math
 import time
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, replace
-from typing import Any
+from typing import Any, Literal
 
 from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
 
@@ -29,6 +29,11 @@ class BoundedHttpConfig:
     replay_arrivals: bool = True
     arrival_time_scale: float = 1.0
     ignore_eos: bool = False
+    protocol: Literal["completions", "chat_completions"] = "chat_completions"
+    prompt_format: Literal["raw", "chatml"] = "raw"
+    temperature: float | None = 0.0
+    return_token_ids: bool = False
+    replay_start_epoch_s: float | None = None
 
 
 @dataclass(frozen=True)
@@ -52,6 +57,18 @@ def _validate_config(
         raise ValueError("timeout_s must be positive")
     if config.arrival_time_scale <= 0:
         raise ValueError("arrival_time_scale must be positive")
+    if config.protocol not in {"completions", "chat_completions"}:
+        raise ValueError("unsupported completion protocol")
+    if config.prompt_format not in {"raw", "chatml"}:
+        raise ValueError("unsupported completion prompt format")
+    if config.temperature is not None and (
+        not math.isfinite(config.temperature) or config.temperature < 0
+    ):
+        raise ValueError("temperature must be finite and non-negative")
+    if config.replay_start_epoch_s is not None and not math.isfinite(
+        config.replay_start_epoch_s
+    ):
+        raise ValueError("replay_start_epoch_s must be finite")
     for request in requests:
         local_index = request.endpoint_index - config.endpoint_index_offset
         if not 0 <= local_index < len(config.endpoint_urls):
@@ -75,13 +92,18 @@ def _completed_result(
     choice = choices[0]
     if not isinstance(choice, dict):
         raise ValueError("Chat Completions choice must be an object")
-    message = choice.get("message")
-    if not isinstance(message, dict):
-        raise ValueError("Chat Completions choice is missing message")
     usage = response.get("usage") or {}
     if not isinstance(usage, dict):
         raise ValueError("Chat Completions usage must be an object")
-    content = message.get("content", "")
+    if "message" in choice:
+        message = choice.get("message")
+        if not isinstance(message, dict):
+            raise ValueError("Chat Completions choice is missing message")
+        content = message.get("content", "")
+    elif "text" in choice:
+        content = choice.get("text", "")
+    else:
+        raise ValueError("completion choice contains neither message nor text")
     finish_reason = choice.get("finish_reason")
     return BaselineRequestResult(
         doc_id=request.doc_id,
@@ -107,7 +129,19 @@ async def _run_requests(
         asyncio.Semaphore(config.concurrency_per_endpoint) for _ in config.endpoint_urls
     )
     loop = asyncio.get_running_loop()
+    if config.replay_start_epoch_s is not None:
+        remaining_s = config.replay_start_epoch_s - time.time()
+        if remaining_s > 0:
+            await asyncio.sleep(remaining_s)
     replay_start = loop.time()
+
+    def request_prompt(request: ChatRequest) -> str:
+        if config.prompt_format == "raw":
+            return request.prompt
+        return (
+            f"<|im_start|>user\n{request.prompt}<|im_end|>\n"
+            "<|im_start|>assistant\n"
+        )
 
     async def run_one(request: ChatRequest) -> BaselineRequestResult:
         if config.replay_arrivals:
@@ -120,12 +154,23 @@ async def _run_requests(
         async with semaphores[local_index]:
             started_at_s = time.time()
             try:
+                prompt = request_prompt(request)
                 payload: dict[str, object] = {
                     "model": config.model,
-                    "messages": list(request.messages),
-                    "temperature": 0.0,
                     "max_tokens": request.max_output_tokens,
                 }
+                if config.protocol == "chat_completions":
+                    payload["messages"] = [
+                        {"role": "user", "content": prompt}
+                    ]
+                else:
+                    # Match the project completion actor, which always sends
+                    # its request-level prompt as a one-element batch.
+                    payload["prompt"] = [prompt]
+                if config.temperature is not None:
+                    payload["temperature"] = config.temperature
+                if config.return_token_ids:
+                    payload["return_token_ids"] = True
                 if config.ignore_eos:
                     payload["ignore_eos"] = True
                 response = await transport(
@@ -239,6 +284,7 @@ async def run_bounded_http_jobs(
             )
         if not job.requests:
             raise ValueError(f"timed HTTP job is empty: {job.job_id}")
+        first_arrival_s = min(request.arrival_time_s for request in job.requests)
         for request in job.requests:
             if request.doc_id in owner_by_doc_id:
                 raise ValueError(
@@ -249,7 +295,9 @@ async def run_bounded_http_jobs(
                 replace(
                     request,
                     arrival_time_s=(
-                        request.arrival_time_s + job.arrival_offset_s
+                        request.arrival_time_s
+                        - first_arrival_s
+                        + job.arrival_offset_s
                     ),
                 )
             )

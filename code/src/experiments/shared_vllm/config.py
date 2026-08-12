@@ -24,6 +24,7 @@ from src.scheduling.runtime.saor_capacity import (
 
 
 POLICIES = {
+    "direct_no_job",
     "independent_full",
     "static_partition",
     "shared_drr",
@@ -89,6 +90,7 @@ class RunnerOptions:
     max_start_skew_s: float = 0.5
     resume: bool = False
     recover_stale_lease: bool = False
+    rehearsal: bool = False
 
 @dataclass(frozen=True)
 class GroupRunIdentity:
@@ -240,7 +242,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         "work_limit_per_endpoint",
     )
     quantum = _positive_integer(
-        decoded.get("credit_quantum"),
+        _expand_scalar(decoded.get("credit_quantum"), "credit_quantum"),
         "credit_quantum",
     )
     namespace = _nonempty_string(
@@ -275,6 +277,31 @@ def load_config(path: Path) -> SharedVllmConfig:
     scenario_ids = [item.scenario_id for item in scenarios]
     if len(set(scenario_ids)) != len(scenario_ids):
         raise ValueError("scenario_id values must be unique")
+    if any(scenario.policy == "direct_no_job" for scenario in scenarios):
+        protocol = _argument_value(
+            common_args,
+            "--completion-protocol",
+            "completions",
+        )
+        endpoint_urls = _csv_argument_values(
+            common_args,
+            "--completion-endpoint-urls",
+        )
+        expected_path = (
+            "/v1/completions"
+            if protocol == "completions"
+            else "/v1/chat/completions"
+            if protocol == "chat_completions"
+            else ""
+        )
+        if (
+            not expected_path
+            or len(endpoint_urls) != len(endpoint_ids_raw)
+            or any(not url.endswith(expected_path) for url in endpoint_urls)
+        ):
+            raise ValueError(
+                "direct_no_job completion endpoints must match protocol/topology"
+            )
     executor = _argument_value(common_args, "--executor", "")
     if executor == "ray_actor":
         expected_endpoint_ids = tuple(
@@ -390,6 +417,8 @@ def build_job_command(
     start_epoch_s: float,
     coordinator_name: str,
 ) -> list[str]:
+    if scenario.policy == "direct_no_job":
+        raise ValueError("direct_no_job is executed in-process by the group runner")
     if not 0 <= job_index < scenario.job_count:
         raise ValueError("job_index is outside scenario job_count")
     if not options.ray_address:
@@ -558,11 +587,11 @@ def _load_scenario(
         else None
     )
     if (
-        policy in {"state_aware_adaptive", "saor_capacity"}
+        policy in {"state_aware_adaptive", "saor_capacity", "direct_no_job"}
         and scenario_request_limit is not None
     ):
         raise ValueError(
-            "dynamic capacity policies use the root initial endpoint limits"
+            "this policy uses the root endpoint limits"
         )
     static_partition_count_raw = raw.get("static_partition_count")
     static_partition_count = (
@@ -637,6 +666,8 @@ def _load_scenario(
     )
     if any(request_manifests) and not all(request_manifests):
         raise ValueError("request_manifests must be provided for every job or none")
+    if policy == "direct_no_job" and not all(request_manifests):
+        raise ValueError("direct_no_job requires immutable request_manifests")
     if all(request_manifests) and any(source_row_offsets):
         raise ValueError(
             "manifest-selected jobs require zero source_row_offsets"

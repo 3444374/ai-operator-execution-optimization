@@ -293,6 +293,42 @@ class BoundedHttpBaselineTests(unittest.TestCase):
         self.assertEqual(grouped["client-1"][0].doc_id, 2)
         self.assertEqual(set(submitted), {1, 2})
 
+    def test_completions_protocol_matches_project_payload(self) -> None:
+        payloads: list[dict[str, object]] = []
+
+        async def fake_transport(
+            _url: str,
+            payload: dict[str, object],
+        ) -> dict:
+            payloads.append(payload)
+            return {
+                "choices": [{"text": "ok", "finish_reason": "stop"}],
+                "usage": {"prompt_tokens": 4, "completion_tokens": 1},
+            }
+
+        results = asyncio.run(
+            run_bounded_http(
+                (sample_request(1, endpoint_index=0),),
+                BoundedHttpConfig(
+                    endpoint_urls=("http://ep0/v1/completions",),
+                    model="model",
+                    concurrency_per_endpoint=1,
+                    timeout_s=30,
+                    api_key=None,
+                    protocol="completions",
+                    prompt_format="raw",
+                    temperature=0.0,
+                    return_token_ids=True,
+                ),
+                transport=fake_transport,
+            )
+        )
+
+        self.assertEqual(results[0].output_text, "ok")
+        self.assertEqual(payloads[0]["prompt"], ["question-1"])
+        self.assertEqual(payloads[0]["return_token_ids"], True)
+        self.assertNotIn("messages", payloads[0])
+
     def test_multiple_timed_jobs_reject_duplicate_documents(self) -> None:
         request = sample_request(1, endpoint_index=0)
         with self.assertRaisesRegex(ValueError, "duplicate doc_id"):

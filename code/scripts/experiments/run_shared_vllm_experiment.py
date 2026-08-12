@@ -40,6 +40,14 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
     parser.add_argument("--max-start-skew-s", type=float, default=0.5)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--recover-stale-lease", action="store_true")
+    parser.add_argument(
+        "--rehearsal",
+        action="store_true",
+        help=(
+            "Run exactly one warmup-identity cell per configured scenario; "
+            "never emit formal identities. Use a separate output directory."
+        ),
+    )
     args = parser.parse_args(argv)
     metrics_urls = tuple(
         item.strip()
@@ -75,6 +83,7 @@ def parse_args(argv: list[str] | None = None) -> RunnerOptions:
         max_start_skew_s=args.max_start_skew_s,
         resume=args.resume,
         recover_stale_lease=args.recover_stale_lease,
+        rehearsal=args.rehearsal,
     )
 
 

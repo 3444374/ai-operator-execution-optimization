@@ -1014,34 +1014,58 @@ shared FIFO control 和 shared-work DRR，保持 1 warm-up + 3 formal。汇总�
 
 固定包络 SAOR 的决定性 active-set 模板是
 `saor_active_set_release.example.json`。它不含 K128/K160：request K、active-work、actor shape
-和 token budget 全部由当前机器/模型/workload 签名的 calibration selection 注入。项目五臂为
-static partition、project shared FIFO、DRR、external VTC-style 与 `saor_release`；每个 group
-自动从真实 request/credit trace 判断 bulk 先借用、foreground overlap/先排空和 bulk 后续重借
-是否发生。未观察到时标记 `active_set_contract_not_observed`，不得作策略结论。
+和 token budget 全部由当前机器/模型/workload 签名的 calibration selection 注入。统一矩阵
+含六个 active-set 臂：direct no-Job control、static partition、project shared FIFO、DRR、
+external VTC-style 与 `saor_release`；另含 project/direct 各自的 bulk/foreground matched-solo，
+共十个 scenario、每个 1 warm-up + 3 formal，由同一个 runner 确定性交错。direct 臂复用相同
+request K、协议、prompt format、immutable manifests、vLLM counters、资源时序和组间 idle gate，
+只跳过 Daft/Ray Job credit/fair queue，因此回答“同 request window 下简单 merged arrival 是否
+已足够”；它是 project-authored control，不是 vendor-native baseline。
 
-同一 immutable manifest 的 no-project killer control 单独运行，以免把项目协调器误称为
-“什么都不做”：
+门禁分两层，不能混写：所有六个 active-set 臂都必须从 request evidence 观察到
+`bulk starts → foreground overlaps → foreground drains first → bulk continues`；只有四个 credit
+策略还必须从 credit trace 观察到 pre/overlap/post 三段借用机制。static/direct 的机制门禁为
+`not_applicable:no_credit_trace`，不是失败。任一适用门禁未过，不抽策略结论。
+
+formal 前先运行纯静态 fail-closed audit；它解析模板、校准合同、十臂矩阵、manifest 行数/
+SHA/endpoint 覆盖和 direct/project 请求合同，不发送请求：
 
 ```bash
-PYTHONPATH=code python code/scripts/baselines/run_official_baseline.py \
-  run-jobs-control \
-  --experiment-id saor_active_set_release_gate --phase formal --repeat-index 1 \
-  --job "bulk=$SAOR_BULK_MANIFEST=0" \
-  --job "foreground=$SAOR_FOREGROUND_MANIFEST=$SAOR_FOREGROUND_OFFSET_S" \
-  --endpoint-url http://127.0.0.1:8000/v1/chat/completions \
-  --endpoint-url http://127.0.0.1:8001/v1/chat/completions \
-  --metrics-url http://127.0.0.1:8000/metrics \
-  --metrics-url http://127.0.0.1:8001/metrics \
-  --model "$COMPLETION_MODEL" --concurrency "$PROJECT_STATIC_K_PER_ENDPOINT" \
-  --request-slo-ms "$REQUEST_SLO_MS" \
-  --output-dir "$ARTIFACT_ROOT/saor_direct_control/formal_1"
+PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
+  code/scripts/analysis/audit_saor_formal_readiness.py \
+  --config deploy/autodl/saor_active_set_release.example.json \
+  --output "$ARTIFACT_ROOT/saor_active_set_readiness.json"
 ```
 
-该命令只有 endpoint-local HTTP bound，没有 Job credit/fair queue，`scheduler_owner` 记录为
-`endpoint_http_bound_then_vllm_fcfs`；它是 project-authored direct control，不是 vendor-native
-baseline。这里显式复用同一签名下的 request K，但不加 Job quota/fair queue 或 token-work
-credit；因此它回答“同 request window 下简单 merged arrival 是否已足够”。正式比较仍需
-1 warm-up + 3 个交错 repeat，并保留 idle/counter/exactly-once 证据。
+审计通过后先用正式模板做一次 rehearsal。`--rehearsal` 强制每个 scenario 只跑一个
+`warmup` identity，绝不会写 formal identity；输出目录必须与 formal 分离：
+
+```bash
+PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
+  --rehearsal \
+  --config deploy/autodl/saor_active_set_release.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$VENV_ROOT/driver/bin/python" \
+  --output-dir "$ARTIFACT_ROOT/saor_active_set_release_rehearsal" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+```
+
+只有 rehearsal `manifest.status=completed`、0 incident、十个 cell 全部完成，且六个 active-set
+cell 均通过 lifecycle gate、四个 credit cell 通过 mechanism gate，才允许移除 `--rehearsal`
+并换新输出目录启动 formal。禁止把 rehearsal 合并进 formal 统计。
+
+runner 完成后必须由 fail-closed 汇总器复算 formal 重复、生命周期/机制门禁、project/direct
+matched-solo slowdown、Jain、SLO 和资源时序：
+
+```bash
+PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
+  code/scripts/analysis/summarize_saor_active_set.py \
+  --matrix-root "$ARTIFACT_ROOT/saor_active_set_release_formal" \
+  --output-dir "$ARTIFACT_ROOT/saor_active_set_release_formal/summary"
+```
 
 正式运行优先使用 audit-aware wrapper，避免手工设置上述逐 Job 变量：
 

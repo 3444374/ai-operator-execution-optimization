@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-08-12 SAOR fixed-envelope formal harness 闭合
+
+- 将 `direct_no_job` 纳入 shared-vLLM 同一 seeded/interleaved runner，复用 immutable manifests、
+  request K、协议/prompt format、vLLM counters、资源时序和 idle gate；它只移除 Daft/Ray Job
+  调度，并显式记录 `work_envelope_applied=false`，不伪称与 project work-credit 等资源。
+- `saor_active_set_release.example.json` 扩为六个 active-set 臂加 project/direct 各自 bulk/
+  foreground matched solo，共十个 scenario、1 warm-up + 3 formal。active-set audit 拆为所有臂
+  必须通过的 request lifecycle gate 与只对 credit 策略适用的 mechanism gate。
+- 新增只读 readiness audit、runner `--rehearsal` 非 formal 模式和 fail-closed formal summarizer；
+  汇总分别以 project/direct solo 复算 work-rate slowdown、Jain、SLO 和资源状态。代码/单测已
+  就绪，但按用户要求未启动服务器 formal，因此不产生 SAOR 胜出、动态 K 或 theorem claim。
+
 ## 2026-08-12 HSE static core、真实 ready broker 与安全定理落地
 
 - 将 CPU–GPU HSE 从纯设计候选推进为 `static-core-implemented / gpu-gate-pending`：新增中性

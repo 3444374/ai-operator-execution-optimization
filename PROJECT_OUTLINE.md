@@ -132,9 +132,10 @@ PostgreSQL source
   Jain 最低，故标记 `not-promoted`。`saor-v0.4` 已将 fixed-envelope SAOR-Release 定为唯一算法
   候选，dynamic K 标记 `parked-conditional`。fixed-envelope `saor_release` 已接入 named Ray
   credit coordinator、completion-corrected fairness debt 和 active-set phase audit；SLO debt/理论
-  bridge 尚未闭合。现有 static/shared 两/四 Job 结果支持 active-set 分配问题；同 K global
-  FIFO/no-op control 已有可运行 CLI，但尚无 GPU formal 结果。下一项 formal 必须先比较 FIFO、static、
-  DRR、external VTC-style 与 SAOR。若 FIFO/DRR 已在同一 Pareto 前沿，淘汰 SAOR。当前尚未完成
+  bridge 尚未闭合。现有 static/shared 两/四 Job 结果支持 active-set 分配问题；同 request K 的
+  direct no-Job control、static/FIFO/DRR/external-VTC/SAOR 六臂 active-set、project/direct matched
+  solo、分层门禁与 fail-closed 汇总已纳入统一交错 runner，但尚无 GPU formal 结果。若
+  direct/FIFO/DRR 已在同一 Pareto 前沿，淘汰 SAOR。当前尚未完成
   该 formal 或定理证明，因此不是已胜出的 proposed 方法；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；

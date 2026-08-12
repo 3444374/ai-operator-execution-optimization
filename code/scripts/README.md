@@ -21,6 +21,17 @@
 入口脚本只解析参数并调用 `src/`；不得因为移动目录而复制生产逻辑。历史结果目录里的
 raw manifest 保留执行时旧路径作为不可变证据，README 中的复现命令使用当前新路径。
 
+`analysis/audit_saor_formal_readiness.py` 在不发送请求的前提下 fail-closed 校验固定包络 SAOR
+十 scenario 矩阵、1+3 合同、FCFS 声明、calibration selection、manifest 行数/SHA/endpoint
+覆盖和 direct/project 请求等价字段。正式 runner 的 `--rehearsal` 只产生每 scenario 一个
+warmup identity；通过后才可用新目录运行配置中的 formal。
+
+`analysis/summarize_saor_active_set.py` 要求十个 scenario 各 1 warm-up + 3 formal、0 incident，
+并把六臂 workload lifecycle 与四个 credit 策略 mechanism gate 分开审计。它分别以 project
+solo 和 direct solo 复算 work-rate slowdown/Jain，输出 `formal_summary.csv`、
+`per_job_slowdown.csv` 与 `validation.json`；不把 direct 的 request bound 误标为 work-credit
+等资源 envelope，也不产生 theorem 或 dynamic-K claim。
+
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data
 single/two-job 原生观察做统一 fail-closed 汇总。它显式保留 request P99 仅项目可用、

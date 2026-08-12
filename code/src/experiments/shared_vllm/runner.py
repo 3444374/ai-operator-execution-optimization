@@ -6,10 +6,12 @@ import json
 import math
 import subprocess
 import time
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
 from typing import Callable
 
+from src.baselines.common.redact import redact_text
 from src.experiments.scenarios.core import build_scenario_schedule
 from src.infrastructure.runner_lease import acquire_runner_lease
 from src.infrastructure.runtime_env import subprocess_env
@@ -41,6 +43,7 @@ from .config import (
     build_job_command,
     load_config,
 )
+from .direct_control import run_direct_control
 from .evidence import (
     _config_fingerprint,
     _coordinator_name,
@@ -314,8 +317,8 @@ def run_experiment(
     _validate_runner_topology(options, config)
     schedule = build_scenario_schedule(
         [scenario.scenario_id for scenario in config.scenarios],
-        config.warmup_runs_per_scenario,
-        config.formal_repeats,
+        1 if options.rehearsal else config.warmup_runs_per_scenario,
+        0 if options.rehearsal else config.formal_repeats,
         config.seed,
     )
     fingerprint = _config_fingerprint(config, schedule)
@@ -352,13 +355,21 @@ def _run_locked(
     manifest_path = options.output_dir / "manifest.json"
     group_runs_path = options.output_dir / "group_runs.csv"
     run_instance_id = _run_instance_id(options.output_dir)
+    redacted_config = _redacted_config(config)
+    if options.rehearsal:
+        redacted_config = {
+            **redacted_config,
+            "warmup_runs_per_scenario": 1,
+            "formal_repeats": 0,
+        }
     expected = {
         "schema_version": 1,
         "experiment_id": config.experiment_id,
         "config_fingerprint": fingerprint,
         "repository_commit": repository_commit,
         "run_instance_id": run_instance_id,
-        "redacted_config": _redacted_config(config),
+        "execution_mode": "rehearsal" if options.rehearsal else "configured_matrix",
+        "redacted_config": redacted_config,
         "schedule": [asdict(item) for item in schedule],
         "completed_runs": [],
         "incidents": [],
@@ -448,12 +459,13 @@ def _run_locked(
                     config,
                     scenario,
                     identity,
+                    idle_gate=idle_gate,
                 )
         except Exception as exc:
             manifest["incidents"].append(
                 {
                     **asdict(scheduled),
-                    "reason": f"{type(exc).__name__}:{exc}",
+                    "reason": redact_text(f"{type(exc).__name__}:{exc}"),
                     "recovered": False,
                 }
             )
@@ -484,6 +496,8 @@ def _run_group(
     config: SharedVllmConfig,
     scenario: SharedVllmScenario,
     identity: GroupRunIdentity,
+    *,
+    idle_gate: Callable[[str, tuple[str, ...], float], None] | None = None,
 ) -> dict[str, object]:
     run_stem = _run_stem(scenario, identity)
     record_path = options.output_dir / "records" / f"{run_stem}.json"
@@ -499,6 +513,8 @@ def _run_group(
     commands: list[list[str]] = []
     observer = None
     processes = []
+    direct_executor: ThreadPoolExecutor | None = None
+    direct_future: Future[list[dict[str, object]]] | None = None
     log_handles = []
     resource_samples: list[dict[str, object]] = []
     credit_samples: list[dict[str, object]] = []
@@ -615,22 +631,31 @@ def _run_group(
                 ),
             )
         start_epoch_s = time.time() + options.start_delay_s
-        commands = [
-            build_job_command(
-                options,
-                config,
-                scenario,
-                identity,
-                job_index=job_index,
-                start_epoch_s=start_epoch_s,
-                coordinator_name=coordinator_name,
-            )
-            for job_index in range(scenario.job_count)
-        ]
+        commands = (
+            []
+            if scenario.policy == "direct_no_job"
+            else [
+                build_job_command(
+                    options,
+                    config,
+                    scenario,
+                    identity,
+                    job_index=job_index,
+                    start_epoch_s=start_epoch_s,
+                    coordinator_name=coordinator_name,
+                )
+                for job_index in range(scenario.job_count)
+            ]
+        )
         _write_json_atomic(
             options.output_dir / "traces" / f"{run_stem}.commands.json",
             {
                 "schema_version": 1,
+                "execution_owner": (
+                    "bounded_http_then_vllm_fcfs"
+                    if scenario.policy == "direct_no_job"
+                    else "project_daft_ray_profiler"
+                ),
                 "commands": [
                     _redact_command(command) for command in commands
                 ],
@@ -641,6 +666,19 @@ def _run_group(
             scrape_prometheus_metrics(url)
             for url in options.metrics_urls
         ]
+        if scenario.policy == "direct_no_job":
+            direct_executor = ThreadPoolExecutor(
+                max_workers=1,
+                thread_name_prefix="direct-no-job",
+            )
+            direct_future = direct_executor.submit(
+                run_direct_control,
+                config,
+                scenario,
+                start_epoch_s=start_epoch_s,
+                output_dir=options.output_dir,
+                run_stem=run_stem,
+            )
         for job_index, command in enumerate(commands):
             stdout_path = (
                 options.output_dir
@@ -665,7 +703,9 @@ def _run_group(
                     env=subprocess_env(),
                 )
             )
-        while any(process.poll() is None for process in processes):
+        while any(process.poll() is None for process in processes) or (
+            direct_future is not None and not direct_future.done()
+        ):
             failed = [
                 process.returncode
                 for process in processes
@@ -723,7 +763,25 @@ def _run_group(
             raise RuntimeError(
                 f"profiler children failed: {return_codes}"
             )
-        group_end_epoch_s = time.time()
+        direct_job_evidence = (
+            direct_future.result() if direct_future is not None else None
+        )
+        if scenario.policy == "direct_no_job":
+            if direct_job_evidence is None:
+                raise RuntimeError("direct_no_job returned no job evidence")
+            group_end_epoch_s = max(
+                float(item["completion_end_epoch_s"])
+                for item in direct_job_evidence
+            )
+            if idle_gate is None:
+                raise RuntimeError("direct_no_job requires the final idle gate")
+            idle_gate(
+                options.health_url,
+                options.metrics_urls,
+                options.idle_timeout_s,
+            )
+        else:
+            group_end_epoch_s = time.time()
         after = [
             scrape_prometheus_metrics(url)
             for url in options.metrics_urls
@@ -732,15 +790,19 @@ def _run_group(
         if observer is not None:
             credit_samples.extend(observer.sample(group_launch_epoch_s))
             final_credit = observer.final_snapshots()
-        job_evidence = [
-            _validate_job_evidence(
-                options,
-                scenario,
-                identity,
-                job_index,
-            )
-            for job_index in range(scenario.job_count)
-        ]
+        job_evidence = (
+            direct_job_evidence
+            if direct_job_evidence is not None
+            else [
+                _validate_job_evidence(
+                    options,
+                    scenario,
+                    identity,
+                    job_index,
+                )
+                for job_index in range(scenario.job_count)
+            ]
+        )
         _validate_replay_starts(
             job_evidence,
             expected_start_epoch_s=start_epoch_s,
@@ -840,6 +902,12 @@ def _run_group(
                 endpoint_request_limit
             ),
             "work_limit_per_endpoint": endpoint_work_limit,
+            "request_envelope_owner": (
+                "direct_endpoint_http_semaphore"
+                if scenario.policy == "direct_no_job"
+                else "project_admission"
+            ),
+            "work_envelope_applied": scenario.policy != "direct_no_job",
             "credit_quantum": config.credit_quantum,
             "runtime_state_mode": (
                 "actuated_saor_capacity" if saor_controllers
@@ -847,6 +915,8 @@ def _run_group(
                 else "actuated_saor_release"
                 if scenario.policy == "saor_release"
                 else "observe_only" if observer is not None
+                else "direct_no_job_control"
+                if scenario.policy == "direct_no_job"
                 else "unavailable"
             ),
             "runtime_state_calibration_signature": (
@@ -881,6 +951,11 @@ def _run_group(
                 ]
             ),
             "ray_address": options.ray_address,
+            "scheduler_owner": (
+                "endpoint_http_bound_then_vllm_fcfs"
+                if scenario.policy == "direct_no_job"
+                else "project_daft_ray_submission_then_vllm_fcfs"
+            ),
             "coordinator_name": (
                 coordinator_name
                 if scenario.policy in {
@@ -894,6 +969,9 @@ def _run_group(
                 else ""
             ),
             "run_instance_id": run_instance_id,
+            "execution_mode": (
+                "rehearsal" if options.rehearsal else "configured_matrix"
+            ),
             "start_epoch_s": start_epoch_s,
             "end_epoch_s": group_end_epoch_s,
             **service_metrics,
@@ -1046,7 +1124,7 @@ def _run_group(
                 )
                 final_credit = observer.final_snapshots()
             except Exception as evidence_exc:
-                capture_error = (
+                capture_error = redact_text(
                     f"{type(evidence_exc).__name__}:{evidence_exc}"
                 )
         _write_trace_rows_atomic(
@@ -1073,7 +1151,7 @@ def _run_group(
             / f"{run_stem}.failure.json",
             {
                 "schema_version": 1,
-                "reason": f"{type(exc).__name__}:{exc}",
+                "reason": redact_text(f"{type(exc).__name__}:{exc}"),
                 "return_codes": [
                     process.poll() for process in processes
                 ],
@@ -1087,3 +1165,5 @@ def _run_group(
             observer.cleanup()
         for handle in log_handles:
             handle.close()
+        if direct_executor is not None:
+            direct_executor.shutdown(wait=True, cancel_futures=True)

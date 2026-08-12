@@ -119,8 +119,8 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 字段 | 当前冻结值 |
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
-| policy revision | `saor-v0.4.1-runtime`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
-| 状态 | SAOR-Release 已接 fixed-envelope Ray credit runtime 与 active-set trace audit，但尚无 GPU formal；SLO debt/stage queue/理论 bridge 未完成；dynamic K 已退出主线，Safe-Capacity Governor 为 `parked-conditional`；尚未完成定理证明 |
+| policy revision | `saor-v0.4.2-formal-ready`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
+| 状态 | SAOR-Release 已接 fixed-envelope Ray credit runtime、统一六臂 active-set runner、matched solo、分层门禁与 fail-closed 汇总，但尚无 GPU formal；SLO debt/stage queue/理论 bridge 未完成；dynamic K 已退出主线，Safe-Capacity Governor 为 `parked-conditional`；尚未完成定理证明 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
 | 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
@@ -283,10 +283,13 @@ mean service、即时 action effect、stationary slot 与完整 virtual queue �
 
 容量 benchmark 与公平 benchmark 分轨：多 Job fixed-envelope 是 SAOR 主验证；capacity 动态
 暂停。现有 static/shared 只证明固定分区存在浪费和无约束共享存在 fairness/tail 代价，**尚未
-排除同一 K 下 global FIFO/no project Job scheduler 已足够好**。因此第一项决定性 formal 必须
-在同一 K、manifest、source/sink、vLLM FCFS 合同下比较：global FIFO、static partition、
-shared DRR、external VTC-style 与 SAOR-Release。若 global FIFO 或 DRR 已落在相同 Pareto
-前沿，淘汰 SAOR，不更换 workload 追正。
+排除同一 request K 下 no-project Job scheduler 已足够好**。因此第一项决定性 formal 使用统一
+交错 runner 比较：direct no-Job、static partition、project shared FIFO、shared DRR、external
+VTC-style 与 SAOR-Release，并加入 project/direct 各自的 bulk/foreground matched solo。
+project 五臂共享 request/work envelope；direct 只共享相同 request window、manifest、协议和
+vLLM 配置，不声称具有 project work-credit envelope，结果显式记录
+`work_envelope_applied=false`。若 direct/FIFO/DRR 已落在相同 Pareto 前沿，淘汰 SAOR，不更换
+workload 追正。
 
 决定性场景固定为 `bulk-only → foreground-arrival → foreground-drain`：bulk Job 先借用全部
 总 envelope；前台 Job 到达后只在 completion 释放 credit 时回收未来份额，不抢占已进入
@@ -743,6 +746,7 @@ on every request completion:
 | finite-action DPP | `scheduling/submission_control/saor.py` | 纯策略与公平债务已单测；需用 replay 验证 service ranking/动作 regret |
 | completion/exactly-once | `scheduling/core/execution.py` | 通用 ledger 已接原 scheduler；actual-work extractor 由模态 adapter 注入 |
 | ordered release | `scheduling/submission_control/{ordered_release,shared_credit,saor}.py` + `scheduling/runtime/shared_credit_ray.py` | 纯队列合同与 fixed-envelope `saor_release` 均已单测并接 named Ray coordinator；尚待真实 GPU formal，SLO debt 暂未接通 |
+| formal harness | `experiments/shared_vllm/{runner,direct_control,metrics}.py` + `analysis/{audit_saor_formal_readiness,summarize_saor_active_set}.py` | 十 scenario 统一交错、direct/project matched-solo、生命周期/机制分层门禁、rehearsal 与 fail-closed 汇总已接线；尚未产出 GPU 结果 |
 | endpoint state | vLLM/resource time series | atomic freshness/signature gate 待接；waiting/KV/GPU 不单独驱动 |
 | cost model | CE1--CE5/WorkDescriptor | 先 replay/observe-only，过 ranking/regret 门后才进入动作 |
 
@@ -805,9 +809,10 @@ lower/upper、state-observed no-op、threshold/deadband、governor 和 offline o
 
 验证顺序保持“单一动作先行”，且 fixed-envelope release 与 dynamic capacity 分轨：
 
-1. fixed-envelope `bulk-only → foreground-arrival → foreground-drain`：接入真实 per-Job
-   completion ledger，并加入 global FIFO/no-op killer baseline；`run-jobs-control` 已提供无 Job
-   policy 的 direct control，`shared_fifo` 则保留为 project-owned FIFO，不得混称；
+1. fixed-envelope `bulk-only → foreground-arrival → foreground-drain`：统一 runner 已接真实
+   per-Job completion evidence、direct no-Job、project FIFO 与四个 credit 策略；所有 active-set
+   臂先过 workload lifecycle gate，只有 credit 臂再过 borrow/reclaim/reborrow mechanism gate，
+   static/direct 的 mechanism 为 not-applicable，不得误判失败；
 2. SAOR 同时超过 FIFO 与 DRR 的 Pareto 前沿后，才进入 four-Job、3:1 weighted 与 held-out；
 3. 若 FIFO/DRR 已足够，淘汰 SAOR；不运行 dynamic capacity，也不换 workload 追正；
 4. 只有 fixed-envelope release 通过后才加入 routing、prefix bonus、priority 和图像 HSE 泛化；
@@ -860,6 +865,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-11 | `saor-v0.3-design` | 将 fixed-envelope ordered release 与 slow Safe-Capacity Governor 分层；安全改为 hard feasible set，加入反事实模型、pipeline debt/hysteresis 和独立 oracle 淘汰门 | capacity-only 负结果 + MaxWeight/DPP、reconfiguration-delay 与 unknown-service 一手工作交叉审计 | SAOR-Release 保持 design-candidate；governor 降为 optional，不能继承 oracle theorem |
 | 2026-08-11 | `saor-v0.4-design` | dynamic K 退出主线；固定总 envelope，仅动态调整 active-set entitlement、idle borrowing/reclaim 与 ordered release；新增 global FIFO/no-op 和 DRR killer baseline | capacity-only 未胜 K160 + eager/online 两/四 Job static/shared 方向差异 + fatal-flaw audit | dynamic-K `reject and pivot`；SAOR-Release `accept with revisions`，killer baseline 未过前不晋级 |
 | 2026-08-12 | `saor-v0.4.1-runtime` | 接入 fixed-envelope Ray credit runtime、completion fairness debt、SAOR/shared FIFO 配置与 active-set phase audit；新增 direct merged-arrival no-Job control；K 全部改由签名化 calibration contract 注入 | 代码/单测与既有 calibration infrastructure | 仍为 candidate；无 GPU formal、SLO debt 和 theorem bridge，不晋级 |
+| 2026-08-12 | `saor-v0.4.2-formal-ready` | direct no-Job 纳入同一交错 runner；新增 project/direct matched solo、request lifecycle 与 credit mechanism 分层门禁、rehearsal、静态 readiness audit 和 fail-closed formal summary | 单元测试 + 静态合同；未运行服务器 formal | 工程达到可 rehearsal/formal 状态，但仍无 GPU 策略结果；direct 只匹配 request K，不伪称 work-credit 等资源臂 |
 
 状态只允许按以下顺序变化：
 

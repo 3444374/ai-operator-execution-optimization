@@ -103,11 +103,13 @@ def normalized_job_service_rates(
         raise ValueError("job evidence and weights must have equal length")
     rates = []
     for evidence, weight in zip(job_evidence, weights):
-        predicted_work = float(evidence["predicted_work"])
+        observed_work = float(
+            evidence.get("actual_work", evidence["predicted_work"])
+        )
         jct_s = float(evidence["jct_s"])
         if (
-            not math.isfinite(predicted_work)
-            or predicted_work < 0
+            not math.isfinite(observed_work)
+            or observed_work < 0
             or not math.isfinite(jct_s)
             or jct_s <= 0
             or weight <= 0
@@ -116,7 +118,7 @@ def normalized_job_service_rates(
                 "service inputs must contain finite non-negative work, "
                 "positive JCT, and positive weights"
             )
-        rates.append(predicted_work / jct_s / weight)
+        rates.append(observed_work / jct_s / weight)
     return rates
 
 
@@ -271,25 +273,32 @@ def active_set_phase_summary(
     job_evidence: list[dict[str, object]],
     samples: list[dict[str, object]],
 ) -> dict[str, float | int | bool | str]:
-    """Audit an observed two-Job borrow/reclaim/reborrow lifecycle.
+    """Audit workload lifecycle separately from credit-policy mechanism.
 
     The audit derives phase boundaries from request arrival/completion evidence,
-    never from configured labels.  It reports mechanism observability only; it
-    does not claim that the selected policy improved performance.
+    never from configured labels. Lifecycle applies to every arm. Credit
+    borrow/reclaim/reborrow only applies to policies that emit a credit trace.
+    Neither gate claims that the selected policy improved performance.
     """
 
     unavailable = {
         "active_set_contract_status": "unavailable:requires_staggered_two_job_trace",
         "active_set_contract_passed": False,
+        "active_set_lifecycle_status": "unavailable:requires_staggered_two_job_trace",
+        "active_set_lifecycle_passed": False,
+        "active_set_mechanism_applicable": False,
+        "active_set_mechanism_status": "not_applicable:no_credit_trace",
+        "active_set_mechanism_passed": False,
         "active_set_bulk_job_index": -1,
         "active_set_foreground_job_index": -1,
         "active_set_overlap_s": 0.0,
         "active_set_bulk_only_pre_samples": 0,
         "active_set_overlap_samples": 0,
         "active_set_bulk_only_post_samples": 0,
+        "active_set_bulk_borrow_fraction_max": 0.0,
         "active_set_bulk_reborrow_fraction_max": 0.0,
     }
-    if len(job_evidence) != 2 or not samples:
+    if len(job_evidence) != 2:
         return unavailable
     starts = [float(item["arrival_start_epoch_s"]) for item in job_evidence]
     if math.isclose(starts[0], starts[1], abs_tol=1e-6):
@@ -305,51 +314,105 @@ def active_set_phase_summary(
         0.0,
         min(bulk_end, foreground_end) - foreground_start,
     )
+    lifecycle_passed = bool(
+        starts[bulk_index] < foreground_start
+        and foreground_start < bulk_end
+        and overlap_s > 0
+        and foreground_end < bulk_end
+    )
+    lifecycle_status = (
+        "ok:observed_bulk_then_foreground_then_bulk_drain"
+        if lifecycle_passed
+        else "active_set_lifecycle_not_observed"
+    )
     bulk_job_id = str(bulk["runtime_job_id"])
     foreground_job_id = str(foreground["runtime_job_id"])
+    by_epoch: dict[float, dict[str, object]] = {}
+    for sample in samples:
+        observed_at = float(sample["observed_epoch_s"])
+        aggregate = by_epoch.setdefault(
+            observed_at,
+            {"work_limit": 0.0, "active_work_by_job": {}},
+        )
+        work_limit = float(sample["work_limit"])
+        if work_limit <= 0:
+            raise ValueError("active-set trace work limit must be positive")
+        aggregate["work_limit"] = float(aggregate["work_limit"]) + work_limit
+        raw = sample.get("active_work_by_job", ())
+        pairs = json.loads(raw) if isinstance(raw, str) else raw
+        aggregate_by_job = aggregate["active_work_by_job"]
+        if not isinstance(aggregate_by_job, dict):
+            raise ValueError("active-set aggregate has invalid job mapping")
+        for job_id, work in pairs:
+            key = str(job_id)
+            aggregate_by_job[key] = aggregate_by_job.get(key, 0.0) + float(work)
+
     pre_samples = 0
     overlap_samples = 0
     post_samples = 0
     post_bulk_fractions = []
-    for sample in samples:
-        observed_at = float(sample["observed_epoch_s"])
-        raw = sample.get("active_work_by_job", ())
-        pairs = json.loads(raw) if isinstance(raw, str) else raw
-        by_job = {str(job_id): float(work) for job_id, work in pairs}
+    pre_bulk_fractions = []
+    for observed_at, aggregate in sorted(by_epoch.items()):
+        by_job = aggregate["active_work_by_job"]
+        if not isinstance(by_job, dict):
+            raise ValueError("active-set aggregate has invalid job mapping")
         bulk_work = by_job.get(bulk_job_id, 0.0)
         foreground_work = by_job.get(foreground_job_id, 0.0)
         if observed_at < foreground_start:
-            pre_samples += bulk_work > 0 and foreground_work == 0
+            is_bulk_only = bulk_work > 0 and foreground_work == 0
+            pre_samples += is_bulk_only
+            if is_bulk_only:
+                pre_bulk_fractions.append(
+                    bulk_work / float(aggregate["work_limit"])
+                )
         elif observed_at <= foreground_end:
             overlap_samples += bulk_work > 0 and foreground_work > 0
         elif observed_at <= bulk_end:
             is_bulk_only = bulk_work > 0 and foreground_work == 0
             post_samples += is_bulk_only
             if is_bulk_only:
-                work_limit = float(sample["work_limit"])
-                if work_limit <= 0:
-                    raise ValueError("active-set trace work limit must be positive")
+                work_limit = float(aggregate["work_limit"])
                 post_bulk_fractions.append(bulk_work / work_limit)
-    passed = bool(
-        overlap_s > 0
-        and foreground_end < bulk_end
-        and pre_samples
+    mechanism_applicable = bool(samples)
+    equal_share_fraction = 1.0 / len(job_evidence)
+    pre_borrow_observed = bool(
+        pre_bulk_fractions
+        and max(pre_bulk_fractions) > equal_share_fraction
+    )
+    post_reborrow_observed = bool(
+        post_bulk_fractions
+        and max(post_bulk_fractions) > equal_share_fraction
+    )
+    mechanism_passed = bool(
+        mechanism_applicable
+        and lifecycle_passed
+        and pre_borrow_observed
         and overlap_samples
-        and post_samples
+        and post_reborrow_observed
     )
     return {
-        "active_set_contract_status": (
+        "active_set_contract_status": lifecycle_status,
+        "active_set_contract_passed": lifecycle_passed,
+        "active_set_lifecycle_status": lifecycle_status,
+        "active_set_lifecycle_passed": lifecycle_passed,
+        "active_set_mechanism_applicable": mechanism_applicable,
+        "active_set_mechanism_status": (
             "ok:observed_bulk_borrow_reclaim_reborrow"
-            if passed
-            else "active_set_contract_not_observed"
+            if mechanism_passed
+            else "active_set_mechanism_not_observed"
+            if mechanism_applicable
+            else "not_applicable:no_credit_trace"
         ),
-        "active_set_contract_passed": passed,
+        "active_set_mechanism_passed": mechanism_passed,
         "active_set_bulk_job_index": bulk_index,
         "active_set_foreground_job_index": foreground_index,
         "active_set_overlap_s": overlap_s,
         "active_set_bulk_only_pre_samples": pre_samples,
         "active_set_overlap_samples": overlap_samples,
         "active_set_bulk_only_post_samples": post_samples,
+        "active_set_bulk_borrow_fraction_max": (
+            max(pre_bulk_fractions) if pre_bulk_fractions else 0.0
+        ),
         "active_set_bulk_reborrow_fraction_max": (
             max(post_bulk_fractions) if post_bulk_fractions else 0.0
         ),

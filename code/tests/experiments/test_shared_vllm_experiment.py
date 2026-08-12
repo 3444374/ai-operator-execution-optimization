@@ -41,11 +41,76 @@ from src.experiments.shared_vllm import (  # noqa: E402
     jain_fairness,
     load_config,
     normalized_job_service_rates,
+    run_experiment,
     shared_credit_trace_summary,
 )
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_rehearsal_runs_one_nonformal_cell_per_scenario(self) -> None:
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics",),
+            ray_address="local",
+            idle_timeout_s=1.0,
+            rehearsal=True,
+        )
+        scenario = SharedVllmScenario(
+            scenario_id="only",
+            policy="independent_full",
+            job_count=1,
+            rows_per_job=1,
+            weights=(1,),
+            arrival_offsets_s=(0.0,),
+        )
+        config = SharedVllmConfig(
+            experiment_id="formal-config",
+            seed=1,
+            warmup_runs_per_scenario=1,
+            formal_repeats=3,
+            endpoint_ids=("endpoint-0",),
+            request_limit_per_endpoint=1,
+            work_limit_per_endpoint=1,
+            credit_quantum=1,
+            shared_credit_namespace="test",
+            gpu_peak_tflops=1.0,
+            mfu_precision="bf16",
+            common_args=("--arrival-replay",),
+            scenarios=(scenario,),
+            service_metadata=(),
+        )
+
+        with (
+            patch(
+                "src.experiments.shared_vllm.runner.load_config",
+                return_value=config,
+            ),
+            patch(
+                "src.experiments.shared_vllm.runner._validate_runner_topology"
+            ),
+            patch(
+                "src.experiments.shared_vllm.runner._repository_commit",
+                return_value="commit",
+            ),
+            patch(
+                "src.experiments.shared_vllm.runner.acquire_runner_lease"
+            ) as lease,
+            patch(
+                "src.experiments.shared_vllm.runner._run_locked",
+                return_value=0,
+            ) as locked,
+        ):
+            lease.return_value.__enter__.return_value.recovered_owner = None
+            self.assertEqual(run_experiment(options, idle_gate=MagicMock()), 0)
+
+        schedule = locked.call_args.args[2]
+        self.assertEqual(len(schedule), 1)
+        self.assertEqual(schedule[0].phase, "warmup")
+
     def test_active_set_phase_summary_uses_observed_lifecycle(self) -> None:
         evidence = [
             {
@@ -82,6 +147,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
         summary = active_set_phase_summary(evidence, samples)
 
         self.assertTrue(summary["active_set_contract_passed"])
+        self.assertTrue(summary["active_set_lifecycle_passed"])
+        self.assertTrue(summary["active_set_mechanism_passed"])
         self.assertEqual(summary["active_set_overlap_s"], 5.0)
         self.assertEqual(
             summary["active_set_bulk_reborrow_fraction_max"],
@@ -121,11 +188,94 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
         summary = active_set_phase_summary(evidence, samples)
 
-        self.assertFalse(summary["active_set_contract_passed"])
+        self.assertTrue(summary["active_set_lifecycle_passed"])
+        self.assertFalse(summary["active_set_mechanism_passed"])
         self.assertEqual(
-            summary["active_set_contract_status"],
-            "active_set_contract_not_observed",
+            summary["active_set_mechanism_status"],
+            "active_set_mechanism_not_observed",
         )
+
+    def test_active_set_lifecycle_applies_without_credit_trace(self) -> None:
+        summary = active_set_phase_summary(
+            [
+                {
+                    "arrival_start_epoch_s": 10.0,
+                    "completion_end_epoch_s": 30.0,
+                    "runtime_job_id": "bulk",
+                },
+                {
+                    "arrival_start_epoch_s": 15.0,
+                    "completion_end_epoch_s": 20.0,
+                    "runtime_job_id": "foreground",
+                },
+            ],
+            [],
+        )
+
+        self.assertTrue(summary["active_set_lifecycle_passed"])
+        self.assertFalse(summary["active_set_mechanism_applicable"])
+        self.assertEqual(
+            summary["active_set_mechanism_status"],
+            "not_applicable:no_credit_trace",
+        )
+
+    def test_active_set_mechanism_aggregates_endpoints_per_epoch(self) -> None:
+        evidence = [
+            {
+                "arrival_start_epoch_s": 10.0,
+                "completion_end_epoch_s": 30.0,
+                "runtime_job_id": "bulk",
+            },
+            {
+                "arrival_start_epoch_s": 15.0,
+                "completion_end_epoch_s": 20.0,
+                "runtime_job_id": "foreground",
+            },
+        ]
+        samples = [
+            {
+                "observed_epoch_s": 12.0,
+                "endpoint_id": "endpoint-0",
+                "work_limit": 50,
+                "active_work_by_job": '[["bulk", 50]]',
+            },
+            {
+                "observed_epoch_s": 12.0,
+                "endpoint_id": "endpoint-1",
+                "work_limit": 50,
+                "active_work_by_job": '[["bulk", 50]]',
+            },
+            {
+                "observed_epoch_s": 17.0,
+                "endpoint_id": "endpoint-0",
+                "work_limit": 50,
+                "active_work_by_job": '[["bulk", 50]]',
+            },
+            {
+                "observed_epoch_s": 17.0,
+                "endpoint_id": "endpoint-1",
+                "work_limit": 50,
+                "active_work_by_job": '[["foreground", 40]]',
+            },
+            {
+                "observed_epoch_s": 25.0,
+                "endpoint_id": "endpoint-0",
+                "work_limit": 50,
+                "active_work_by_job": '[["bulk", 50]]',
+            },
+            {
+                "observed_epoch_s": 25.0,
+                "endpoint_id": "endpoint-1",
+                "work_limit": 50,
+                "active_work_by_job": '[["bulk", 40]]',
+            },
+        ]
+
+        summary = active_set_phase_summary(evidence, samples)
+
+        self.assertTrue(summary["active_set_mechanism_passed"])
+        self.assertEqual(summary["active_set_overlap_samples"], 1)
+        self.assertEqual(summary["active_set_bulk_reborrow_fraction_max"], 0.9)
 
     def test_credit_trace_reports_idle_and_borrowed_work(self) -> None:
         summary = shared_credit_trace_summary(
@@ -1321,8 +1471,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self,
     ) -> None:
         evidence = [
-            {"predicted_work": 1000, "jct_s": 10.0},
-            {"predicted_work": 1000, "jct_s": 20.0},
+            {"predicted_work": 800, "actual_work": 1000, "jct_s": 10.0},
+            {"predicted_work": 1200, "actual_work": 1000, "jct_s": 20.0},
         ]
 
         rates = normalized_job_service_rates(evidence, (1, 1))

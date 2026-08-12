@@ -292,11 +292,14 @@ and source offset for every job. This is required for staggered short/long or
 otherwise heterogeneous-job evidence; reusing the same rows for all jobs only
 validates concurrency semantics and cannot support a work-aware fairness claim.
 `shared_fifo` in that runner is a project-owned global ready-enqueue FIFO under the same
-shared envelope; it is not the no-project control. The latter is exposed as
-`run_official_baseline.py run-jobs-control`: it merges timed immutable Job arrivals and applies
-only one endpoint-local HTTP concurrency bound before unmodified vLLM FCFS. Its output is a
-formal control (not a vendor-native baseline) and records per-Job exactly-once/JCT/tail plus
-the observed staggered active-set lifecycle.
+shared envelope; it is not the no-project control. The shared-vLLM runner now treats
+`direct_no_job` as an in-process arm: it merges timed immutable Job arrivals and applies only
+one endpoint-local HTTP concurrency bound before unmodified vLLM FCFS, while reusing the same
+interleaving, service counters, resource samples and idle gates. It is a formal control (not a
+vendor-native baseline), explicitly records that no work-credit envelope was applied, and
+uses its own matched-solo normalization. The standalone `run-jobs-control` CLI remains useful
+for diagnostics but is no longer the formal matrix boundary. Workload lifecycle and credit
+borrow/reclaim/reborrow are separate gates; static/direct have no applicable credit mechanism.
 For a causal single-short control, a static scenario may declare
 `static_partition_count` larger than its active `job_count`. The unused fixed
 partition stays reserved, so `job_count=1, static_partition_count=2` reproduces

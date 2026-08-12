@@ -47,11 +47,16 @@ class SaorSharedVllmConfigTest(unittest.TestCase):
         self.assertEqual(
             [scenario["policy"] for scenario in payload["scenarios"]],
             [
+                "direct_no_job",
                 "static_partition",
                 "shared_fifo",
                 "shared_drr",
                 "external_vtc",
                 "saor_release",
+                "independent_full",
+                "independent_full",
+                "direct_no_job",
+                "direct_no_job",
             ],
         )
 
