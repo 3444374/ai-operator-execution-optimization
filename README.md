@@ -4,11 +4,13 @@
 
 > 数据库 AI 负载的执行优化与调度研究方向。
 
-> **当前状态（2026-08-07）**：开题叙事、四级 Claim Matrix、两组统一 database-E2E
-> 文本三臂实验和四张核心证据图已经冻结；本地报告与 28 页 v6 PPTX 已按最终数据重构。
-> 项目冻结静态臂在 SQuAD/ShareGPT 的 service feeding 为 89.93%/91.38%，均未过 95%
-> 门，因此保留为负结果和瓶颈诊断，不支持性能优势。开题前停止新增 baseline；线上飞书
-> 覆盖与知识库镜像受本机授权/目录状态阻塞，不改变本地 Markdown 的权威性。
+> **当前状态（2026-08-11）**：开题 framing、四级 Claim Matrix、K128 replacement
+> database-E2E、文本原生单/多 Job 与图像静态 baseline 证据已冻结；PPT/飞书/Wiki 暂停，
+> 本地 Markdown 与 CSV 是权威来源。图像原生 single→four-job 40/40 passed；Project
+> staged descriptor + observe-only snapshot 正式矩阵也已 24/24 passed、99K formal rows
+> exactly-once，snapshot 100% fresh 且构建均值 0.141 ms，但 static/proposed group JCT 只差
+> 0.98%，不能写成 state-aware 胜出。SAOR capacity-only 未超过 K160/简单 threshold，
+> dynamic K 已退出主线；下一项只验证固定总 K 下的 active-set ordered release。
 
 > **状态感知补充（2026-08-11）**：修正执行与门禁后的两 Job phase-change 实验在
 > pressure gate 提前停止。A-only K160 相对 K128 每 endpoint service rate +7.77%，
@@ -166,6 +168,10 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
   正式结果和 host-path 筛选共同表明，增加 CPU actor/读取线程只有有限边际收益，PCIe/H2D
   也未被证明是主瓶颈。后续先显式拆出 ready-tensor 队列做两级 backpressure，再把
   derived-image cache 与 DALI mixed/GPU preprocess 作为独立 work-reduction 消融。
+- **图像多 Job 与状态观测门已闭合**：Daft built-in/Ray Data 1+3 原生矩阵 40/40 passed，
+  两条执行图都出现非均匀 Job slowdown；Project observe-only 矩阵 24/24 passed，snapshot
+  构建成本约 0.141 ms，但总体 JCT 与 static 仅差 0.98%。它们证明跨模态 staged work/state
+  观测可行，不证明动态调度胜出，也不构成跨框架绝对排名。
 - **原生 baseline 身份已收紧**：图像 Daft built-in、Ray Data native graph 和固定
   upstream vendor code 才进入正式 baseline；项目自写 Daft fused/staged UDF 只作诊断。
   256 图资源/正确性 gate 与 Daft built-in/project 逐行 embedding parity 已通过，独立

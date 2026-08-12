@@ -1,0 +1,9 @@
+system,fourjob_scenario,job_id,single_jct_s_mean,fourjob_jct_s_mean,slowdown_pct
+daft_builtin_embed,daft_builtin_fourjob,short,19.003026,19.337974,1.762604
+daft_builtin_embed,daft_builtin_fourjob,long1,23.125570,72.826665,214.918353
+daft_builtin_embed,daft_builtin_fourjob,long2,22.792479,72.655610,218.770112
+daft_builtin_embed,daft_builtin_fourjob,long3,23.353878,49.680480,112.729033
+ray_data_staged,ray_data_fourjob,short,16.604965,18.192540,9.560843
+ray_data_staged,ray_data_fourjob,long1,22.525124,29.723852,31.958658
+ray_data_staged,ray_data_fourjob,long2,21.376987,22.670593,6.051393
+ray_data_staged,ray_data_fourjob,long3,21.223005,34.826156,64.096253

@@ -29,6 +29,18 @@ FIFO、static、DRR、external VTC-style 和 SAOR，并使用 `bulk-only → for
 foreground-drain` 活跃集变化合同。若 FIFO 或 DRR 已达到同一 throughput--tail--fairness
 Pareto 前沿，SAOR 直接淘汰，不扩 workload 追正。
 
+## 图像状态增量（2026-08-10）
+
+- Daft built-in/Ray Data 四 Job 1+3 矩阵在服务器重启恢复后 40/40 passed，包含 30 个
+  formal group、48 条 formal Job，并通过 exactly-once 与真实 overlap 门禁。结果只用于
+  各原生执行图内部的 Job slowdown/状态观察，不作跨框架绝对性能排名。
+- Project staged descriptor + observe-only 矩阵 24/24 group passed、99K formal rows
+  exactly-once。3,114 个正式 snapshot 全部 fresh，构建均值 0.141 ms；static/proposed
+  group JCT 差 0.98%。因此当前只证明 production 观测面已接入，不证明 state-aware 控制
+  有收益，也不允许把 shared-credit 份额变化归因于 snapshot。
+- 权威结果分别归档在 `experiments/results/opening_image_native_fourjob_formal_20260810/`
+  与 `experiments/results/opening_image_project_fourjob_observe_only_formal_20260810/`。
+
 ## 状态增量（2026-08-04，历史快照；当前执行以其后的开题冻结段与 §0 为准）
 
 本节保留当日完成项和事故上下文，里面的“新下一步”不再构成执行指令；2026-08-09

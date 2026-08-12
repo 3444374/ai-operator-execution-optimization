@@ -20,8 +20,12 @@
   未超过 K160/简单 threshold，已退出主线；现有多 Job 数据只支持继续检验固定总 K 内的
   idle borrowing、reclaim、SLO/fairness release order，尚未证明 SAOR 优于 global FIFO/DRR。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
-  least-work routing 已进入调度器；staged descriptor、fresh stage snapshot/controller 与
-  CE5 在线接线尚未进入正式 runner，不能把接口或离线结果写成完整方法已落地。
+  least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
+  已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值
+  0.141 ms，static/proposed group JCT 只差 0.98%。stage controller 与 CE5 在线接线仍未
+  进入正式路径，不能把观测接线写成完整 state-aware 方法已落地。
+- **图像原生多 Job 已完成**：Daft built-in/Ray Data single→four-job 40/40 runs、30 formal
+  group 通过；两轨均出现非均匀 Job slowdown，只作系统内干扰/状态证据，不作跨框架排名。
 
 ## 2. 课题定位
 

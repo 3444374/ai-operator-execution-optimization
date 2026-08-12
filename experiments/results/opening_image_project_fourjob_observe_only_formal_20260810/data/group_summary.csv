@@ -1,0 +1,7 @@
+scenario_id,policy,n,group_jct_s_mean,jct_cv_pct,images_per_s_mean,gpu_util_mean_pct_mean,estimated_e2e_mfu_mean,gpu_energy_estimate_j_mean,cpu_busy_cores_mean,runtime_state_snapshot_count_mean,runtime_state_fresh_ratio_mean,runtime_state_age_p95_ms_mean,runtime_state_snapshot_build_ms_mean
+single_short_full_pool,static_partition,3,2.318584,3.3772,863.262,3.0417,0.045631,281.473,17.0165,64,1.0,0.179338,0.108180
+single_long1_full_pool,static_partition,3,2.844138,1.5406,1054.967,4.3000,0.055764,378.771,15.8935,94,1.0,0.162314,0.104668
+single_long2_full_pool,static_partition,3,2.843113,1.4697,1055.333,4.7667,0.055783,383.461,14.4749,94,1.0,0.170789,0.105880
+single_long3_full_pool,static_partition,3,2.925798,1.6964,1025.559,3.8667,0.054210,388.980,15.5273,94,1.0,0.199469,0.101007
+fourjob_static_partition,static_partition,3,5.634861,0.2875,1952.144,10.4833,0.103187,999.883,21.8235,346,1.0,0.284217,0.158938
+fourjob_proposed,proposed,3,5.690510,2.8837,1934.098,12.3167,0.102234,1015.832,22.3563,346,1.0,0.267773,0.159355

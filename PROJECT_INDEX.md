@@ -217,7 +217,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/opening_project_fourjob_all_at_t0_diagnostic.example.json` | Project 1-short+3-matched-long 的 full/quarter 单 Job、四分静态与 shared-work 1+3 补充矩阵 | 逐 Job 拆分 quota、竞争与共享调度影响；同全局 K/W，不扫参数 |
 | `deploy/autodl/opening_text_native_fourjob.example.json` | Daft Native/Ray、Ray Data 的四个 single-full 控制与 1-short+3-long 独立应用并发观察 | 每个系统使用自己的单 Job slowdown 基线；不注入项目 credit，短 cell 不作容量排名 |
 | `deploy/autodl/opening_duckdb_fourjob.example.json` | DuckDB AI bounded-output SQuAD 的四个 single-full 与四个独立连接并发准备模板 | 固定产品原生 concurrency，不注入项目 credit/router；当前未跑 formal |
-| `deploy/autodl/opening_image_native_fourjob.example.json` | Daft built-in、Ray Data 图像四个 single-full 与 short→3×long 原生并发模板 | 两系统共享 immutable image manifest/外部 Ray 资源，禁止项目调度；当前未跑 formal |
+| `deploy/autodl/opening_image_native_fourjob.example.json` | Daft built-in、Ray Data 图像四个 single-full 与 short→3×long 原生并发模板 | 两系统共享 immutable image manifest/外部 Ray 资源，禁止项目调度；2026-08-10 formal 40/40 passed |
 | `deploy/autodl/opening_image_project_fourjob.example.json` | 图像 project 四个 single-full、frozen static 与稳定 `proposed` 角色模板 | 后续动态算法只变 `policy_revision`/输出目录并仅重跑 project，不改 manifest/scenario |
 | `deploy/autodl/saor_capacity_development.example.json` | fixed lower/upper、legacy threshold、SAOR capacity-only 四臂开发配置；所有臂/观测/权重由 runtime env 注入 | 只用于 single-action 机制门，不作为 frozen formal 配置；运行前必须绑定 calibration signature |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥 short 与一个或多个 token-work 匹配 long manifest，并输出 SHA/工作量 skew 审计 | 两作业用单 long；四作业用 1 short+3 long、每 Job 512 行 |
@@ -232,6 +232,8 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/analysis/summarize_opening_short_job_interference.py` | 统一汇总 exact-short full/half、项目 static/shared 与三条原生 single/two-job 证据 | 输出短 Job 因果对照、pre-long/overlap/drain 状态，以及 arrival span、最后到达后 drain、buffer/submit/service/E2E 细粒度时间；不伪造 native P99、interval MFU 或把重叠 stage 相加 |
 | `code/scripts/analysis/summarize_opening_fourjob_interference.py` | 审计 1-short+3-long 的 Project/native single→concurrent 四 Job 数据 | 输出每 Job slowdown、long 间离散/完成顺序、组公平性/资源与 Project 三阶段状态；不伪造 native request tail |
 | `code/scripts/analysis/summarize_image_multijob.py` | fail-closed 汇总图像 Daft built-in/Ray Data/project single→four-job 数据 | 检查 manifest SHA、1+3、exactly-once/overlap；输出阶段时间与资源，不作跨框架绝对排名 |
+| `experiments/results/opening_image_native_fourjob_formal_20260810/` | 图像 Daft built-in/Ray Data single→four-job 1+3 正式结果与紧凑 CSV | 40/40 runs、30 formal group；只作同系统 Job slowdown 与状态证据，不作跨框架绝对排名 |
+| `experiments/results/opening_image_project_fourjob_observe_only_formal_20260810/` | 图像 Project staged descriptor + observe-only runtime snapshot 的 single/static/proposed-role 1+3 正式门禁与紧凑 CSV | 24/24 group、99K formal rows exactly-once；snapshot 100% fresh、构建均值 0.141 ms；只证明观测接入，不称 stage-aware 胜出 |
 | `code/tests/analysis/test_summarize_opening_short_job_interference.py` | 项目逐请求时间分解的 JCT 恒等式与负时长 fail-closed 回归 | 修改 short/long 时间归因或 raw timing 汇总公式时运行 |
 | `experiments/results/opening_multijob_interference_20260809/data/combined/project_request_timing_summary.csv` | full/half single 与 static/shared+long 的 arrival span、drain、buffer、submit、service、request E2E 与 profiler stage 紧凑汇总 | 分析项目 71 s 的组成或 long 影响哪一层时读；profiler stage 有重叠，不得相加 |
 | `experiments/results/opening_multijob_interference_20260809/data/combined/single_short_project_daft_timing.csv` | 项目 request-replay 与 Daft Native eager-manifest 的 timer、vLLM service 和状态边界对齐 | 回答 71.24 s vs 11.06 s 时读；只解释合同与状态，不作跨轨排名 |

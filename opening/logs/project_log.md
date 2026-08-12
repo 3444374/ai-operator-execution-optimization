@@ -1,5 +1,13 @@
 # 开题材料 project log
 
+## 2026-08-12 图像四 Job 证据补归档
+
+- 将已完成的图像原生 40/40 与 Project observe-only 24/24 正式结果目录补入 `main`，并在
+  Claim Matrix 与报告中引用相同的 normalized Job slowdown、snapshot freshness/构建成本。
+- 报告新增图像四 Job 跨模态证据段，明确只作路径内部归一化；Project snapshot 不驱动
+  credit/路由，static/shared group JCT 差 0.98%，不得写成动态策略胜出。
+- 继续遵守暂停状态：本轮未生成或覆盖 PPT、飞书、Wiki 与 DOCX。
+
 ## 2026-08-11 SAOR 主线从 dynamic K 收窄为 fixed-envelope active-set release
 
 - capacity-only SAOR 未超过 K160/简单 threshold，故开题研究问题、技术路线和答辩第14页不再

@@ -200,7 +200,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
-1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同与共同 cost enabler 已完成；六张现有图已做视觉回读，但 A/C 标签修订、F/H 首次生成仍待用户恢复绘图。这里的“合同完成”只表示类型/纯策略基础可执行：production descriptor builder、fresh stage snapshot 正式接线和 CE5 在线驱动仍待验证。
+1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同与共同 cost enabler 已完成。图像 production descriptor builder 与 fresh snapshot 已以 observe-only 方式接入 project runner，legacy model-pixel credit 和调度决策保持不变；原生图像 single→four-job 40/40 passed，Project observe-only 24/24 passed、99K formal rows exactly-once、snapshot 100% fresh/构建均值 0.141 ms。static/proposed group JCT 只差 0.98%，因此只验收观测接入；stage controller 决策接线和 CE5 在线驱动仍待验证，不能将原生观察或 observe-only 写成动态方法胜出。
 2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
 3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前只更新实验报告、紧凑数据和待画图合同，不生成新图，也不生成、覆盖或同步新的 PPT/云文档。
 4. 文本原生单 job、5s 两 job 与四 job 矩阵均已完成。图像 Daft built-in/Ray Data/project

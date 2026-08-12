@@ -249,29 +249,43 @@ OutOfDisk，因此该 panel 只承担结构诊断。120K matched-resource 下，
 Ray Data 低约 10%/17%。只有这一 panel 可排名；它是静态阶段组织的 preliminary signal，
 不证明状态感知动态增量已经有效，也不把 Direct ceiling、12K 诊断或 blocked 服务轨混入结论。
 
-### 5.9 代价模型的配置选择价值
+### 5.9 图像四 Job 并发干扰的跨模态证据
+
+![图像四 Job 的路径/策略×Job并发干扰矩阵](../../figures/data/report_main/opening_image_fourjob_normalized_impact.png)
+
+图中只比较每条路径内“four-job JCT / 对应 isolated JCT”，不比较不同框架的绝对时间。
+Daft Built-in 的 Short/Long1/Long2/Long3 分别为 1.02×/3.15×/3.19×/2.13×，Ray Data
+分别为 1.10×/1.32×/1.06×/1.64×；这说明相同 Job 数与输入规模并不产生相同的任务级
+干扰形态。Project frozen-static 下四个 Job 约为 1.74×--1.81×；现有 shared-credit
+路径下为 1.19×/1.12×/1.53×/1.78×，但该路径的 RuntimeStateSnapshot 只做
+observe-only 记录，不驱动 credit 或路由，而且 shared/static group JCT 只差 0.98%。因此，
+它支持“图像也需要 per-Job staged work、阶段进度、隔离和公平状态”这一动机，不支持
+“状态感知动态策略已经提高总体性能”。原生适配器没有统一输出 prepare/H2D/forward
+阶段计时，故本图不虚构阶段分解；CPU 准备、传输与模型阶段的机制证据由上一张独立图承担。
+
+### 5.10 代价模型的配置选择价值
 
 ![算子代价模型的选择质量](../../figures/data/report_main/opening_cost_model_decision_quality_v2.png)
 
 在 429 个 formal 观测、20 个 context 与 4 个候选配置的 context leave-one-out 评价中，Hybrid 模型 pooled regret 为 1.67%，macro regret 为 2.90%，candidate pairwise accuracy 为 0.808，max regret 为 14.72%。最大 regret 仅比 15% 门槛低 0.28 个百分点，属于边界通过。它可作为配置选择的第一份可行性证据，但仍需新时间段、workload 和硬件上的校准。
 
-### 5.10 设计—实现—证据边界
+### 5.11 设计—实现—证据边界
 
 开题中的设计不等于全部已进入正式执行路径。当前四个等权部件的边界如下：
 
 | 部件 | 设计依据 | 当前实现 | 尚未验证 |
 |---|---|---|---|
-| Work Unit / WorkDescriptor | 同 16 行 token work 差 14.3×；图像 prepare/model 阶段失衡 | 已有 staged descriptor、calibration signature、locality/deadline/uncertainty 字段，`BatchRequest` 和图像合同可携带 descriptor | production descriptor builder 尚未贯通正式端到端 runner；staged organization 尚未证明胜出 |
-| 状态感知 | 同 W65K 在 high/arrival-limited 下呈现不同 running/MFU；原生路径呈现 overqueue/underfeed | endpoint/resource trace 已在正式实验中采集；stage snapshot 包含 freshness 与 calibration-signature 校验，候选控制器具有静态 fallback | stage snapshot 和 fallback controller 尚未接入正式主 runner，尚无独立性能增量 |
+| Work Unit / WorkDescriptor | 同 16 行 token work 差 14.3×；图像 prepare/model 阶段失衡 | 已有 staged descriptor、calibration signature、locality/deadline/uncertainty 字段，图像 production builder 已接入正式 Project runner | staged organization 尚未证明胜出；文本正式 runner 的同类 descriptor 接线仍待完成 |
+| 状态感知 | 同 W65K 在 high/arrival-limited 下呈现不同 running/MFU；原生路径呈现 overqueue/underfeed | endpoint/resource trace 已采集；图像 stage snapshot 已以 observe-only 方式接入，并校验 freshness 与 calibration signature | snapshot 尚未驱动正式 active-work/release 动作，尚无独立性能增量 |
 | 动态与多作业调度 | 两Job与四Job配对显示前台/long干扰、idle borrowing、arrival-regime dependence及效率—公平权衡 | completion release、least-work routing 和 shared fair-work credit 已进入调度器；capacity-only SAOR 未胜 K160/threshold | shared 不是普遍胜出；缺同K global FIFO/no-op killer baseline，fixed-envelope SAOR、SLO/fairness guard、weighted/held-out 尚未正式验证 |
 | 算子代价估计 | 20 contexts 的选错代价为 12.0%–86.5%，简单 proxy 决策失败 | CE1–CE5 离线估计器和 context leave-one-out 已完成，CE5 为 marginal pass | 尚未在线驱动 organization/routing/credit，也未验证跨模态 remaining work 与 SLO 收益 |
 
-因此，后续工程顺序为 descriptor builder、observe-only snapshot、global FIFO/no-op 门禁、
+因此，后续工程顺序为 global FIFO/no-op 门禁、missing/stale fallback、
 fixed-envelope ordered release 和单动作消融；不在同一次实验中同时打开四个部件后归因总体差异。
 
-### 5.10 当前能证明与不能证明的内容
+### 5.12 当前能证明与不能证明的内容
 
-已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft Native/Ray 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；两Job与四Job下后到/并发 Job 会影响前台和long，shared credit 存在效率—隔离—公平权衡；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值。尚未证明的是：在固定总 K 下，SAOR 是否比 global FIFO 和 DRR 形成额外 Pareto 改善；dynamic K 不再作为当前主方法。
+已经证明：固定行数不是稳定 work 代理；固定资源下存在最小饱和 active work；运行状态会随 offered load 改变；ShareGPT C32/C128/C256 分别呈现欠供给、最小饱和和过量排队；原生单 job 下 Daft Native/Ray 与 Ray Data 当前路径稳定呈现 overqueue/underfeed 两种外部压力形态；文本与图像的多 Job 并发都会影响 short/long，且干扰形态依赖 Job 与执行图；图像 staged descriptor/snapshot 已通过 observe-only 正式门；shared credit 存在效率—隔离—公平权衡；数据组织排名受 serving regime 影响；图像 matched-resource 静态执行结构有可重复收益；统一三臂 database-E2E correctness 护栏已经闭合。条件性证据：轻量代价模型已体现配置选择价值。尚未证明的是：在固定总 K 下，SAOR 是否比 global FIFO 和 DRR 形成额外 Pareto 改善；dynamic K 不再作为当前主方法。
 
 ## 6. 进度安排
 

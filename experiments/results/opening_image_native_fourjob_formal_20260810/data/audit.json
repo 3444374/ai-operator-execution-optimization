@@ -1,0 +1,14 @@
+{
+  "claim_boundary": "within-system single-to-four-job slowdown only; no cross-system absolute ranking and no project/state-aware claim",
+  "exactly_once": true,
+  "formal_group_rows": 30,
+  "formal_job_rows": 48,
+  "formal_source_rows_across_all_arms": 132000,
+  "fourjob_overlap": "passed",
+  "job_manifest_sha256": "fd8cff32debc367da69fdef1b29955ce81056808f4e17e97f2fdce1de9a64765",
+  "matrix_runs_passed": 40,
+  "matrix_runs_total": 40,
+  "repository_commit": "c4fa45508b2de0fbcb4ee372eb899f47a96bc745",
+  "schema_version": 1,
+  "status": "passed"
+}

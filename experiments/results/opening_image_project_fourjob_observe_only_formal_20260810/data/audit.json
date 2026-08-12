@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "repository_commit": "939b7268502ee56447cdfc1bfa256a466a2bdbed",
+  "job_manifest_sha256": "fd8cff32debc367da69fdef1b29955ce81056808f4e17e97f2fdce1de9a64765",
+  "descriptor_calibration_signature": "image-stage-work-v1:07b3c83bfc9233f5e033b09c1b8cb0a06dfb9794c65c9d7656b26ca63b84ce4d",
+  "group_runs_total": 24,
+  "formal_group_runs": 18,
+  "formal_job_rows": 36,
+  "formal_completed_rows": 99000,
+  "formal_exactly_once_all": true,
+  "formal_control_trace_events": 3114,
+  "trace_observe_only_all": true,
+  "trace_fresh_all": true,
+  "snapshot_build_s_mean": 0.0001409816571828947,
+  "snapshot_age_s_p95": 0.00024612993001937866,
+  "raw_server_path": "/root/autodl-tmp/experiment-artifacts/opening_image_project_fourjob_observe_only_formal_20260810"
+}

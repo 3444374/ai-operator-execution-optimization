@@ -31,6 +31,8 @@
 |---|---|---|
 | `opening_multijob_interference_20260809/` | online exact-short、Project eager full/half/static/shared、三条原生5s overlap观察，以及逐请求阶段/状态分解 | online下shared提高aggregate但伤short/Jain；eager下quota-only +59.00%、matched static竞争+58.77%、shared竞争+28.90%，shared相对static short JCT−48.94%。结论是arrival-regime dependence和idle borrowing动机，不是动态普遍胜出。 |
 | `opening_fourjob_interference_20260809/` | 1 short+3 matched long 的 Project full/quarter/static/shared 因果分解，以及 Daft Native/Ray、Ray Data 原生 single→four-job 三重复 | Project shared 相对static总吞吐+8.68%、short JCT−72.23%，但Jain 0.960→0.923且long收益不均；另按各Job single control给出 isolated-normalized progress Jain/disparity，避免工作量差异污染。只作轨内干扰/状态证据，不作跨框架绝对排名。 |
+| `opening_image_native_fourjob_formal_20260810/` | 同一 2K short + 3×3K long、0.5s offset 的 Daft built-in/Ray Data single→four-job 1+3 正式观察 | 40/40 runs、30 formal group 通过；只比较各系统内 Job slowdown，不作跨框架绝对排名，不称 Project/state-aware 胜出。 |
+| `opening_image_project_fourjob_observe_only_formal_20260810/` | 同一图像 manifest 的 Project single/static/proposed-role staged descriptor + observe-only snapshot 1+3 正式门禁 | 24/24 group runs、99K formal rows exactly-once；3,114 个 snapshot 100% fresh、构建均值 0.141 ms；static/proposed group JCT 差 0.98%，只证明观测接入，不称动态胜出。 |
 | `opening_project_short_all_at_t0_diagnostic_20260809/` | 同一 short manifest 的 Project all-at-t0 1+3，统一 T0–T4 timer 与 Daft raw 对齐 | Project T3 model-request window 11.354s vs Daft 11.059s，service tokens/s 与 MFU 差约−2.5%；Daft T0 未采集，完整系统 E2E 不排名。 |
 
 ## 图像 AI_EMBED operator（2026-08-03/04）

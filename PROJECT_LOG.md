@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-08-12 补齐图像四 Job 正式结果归档
+
+- 审计发现 2026-08-10 的两组图像正式结果已被项目日志和图表引用，但结果目录本身尚未
+  进入 `main`。现补齐 Daft built-in/Ray Data 原生 40/40 矩阵，以及 Project staged
+  descriptor + observe-only 24/24 矩阵的 README 与紧凑 CSV/JSON。
+- 同步 `PROJECT_INDEX.md`、结果索引/证据台账、项目总纲、实验状态、Claim Matrix、开题
+  报告和快速方向卡片。边界保持不变：只证明跨模态多 Job 干扰与观测接入，不证明
+  state-aware 动态收益，不作跨框架绝对性能排名。
+
 ## 2026-08-11 SAOR v0.4：动态 K 退出主线，改为固定总 K 的活跃集调度
 
 - 接受“固定 K160/更大 K 可能已经足够”的反证压力：现有 capacity-only SAOR 相对 K160

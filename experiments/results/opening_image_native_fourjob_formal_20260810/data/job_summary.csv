@@ -1,0 +1,17 @@
+system,scenario_id,job_id,n,jct_s_mean,jct_cv,first_output_s_mean,images_per_s_mean
+daft_builtin_embed,daft_builtin_fourjob,long1,3,72.826665,0.158337,71.261303,41.838213
+daft_builtin_embed,daft_builtin_fourjob,long2,3,72.655610,0.377609,71.743623,46.991330
+daft_builtin_embed,daft_builtin_fourjob,long3,3,49.680480,0.234829,48.125362,62.440189
+daft_builtin_embed,daft_builtin_fourjob,short,3,19.337974,0.034709,18.075142,103.506405
+daft_builtin_embed,daft_builtin_single_long1,long1,3,23.125570,0.017354,21.472729,129.752336
+daft_builtin_embed,daft_builtin_single_long2,long2,3,22.792479,0.026078,21.738980,131.681203
+daft_builtin_embed,daft_builtin_single_long3,long3,3,23.353878,0.026083,21.420718,128.516078
+daft_builtin_embed,daft_builtin_single_short,short,3,19.003026,0.026774,17.504162,105.297044
+ray_data_staged,ray_data_fourjob,long1,3,29.723852,0.087252,28.596552,101.449245
+ray_data_staged,ray_data_fourjob,long2,3,22.670593,0.165438,12.650789,134.599988
+ray_data_staged,ray_data_fourjob,long3,3,34.826156,0.096005,34.008963,86.652315
+ray_data_staged,ray_data_fourjob,short,3,18.192540,0.148108,13.504198,111.550752
+ray_data_staged,ray_data_single_long1,long1,3,22.525124,0.179594,11.569277,136.232175
+ray_data_staged,ray_data_single_long2,long2,3,21.376987,0.199637,11.858384,143.766211
+ray_data_staged,ray_data_single_long3,long3,3,21.223005,0.122082,11.046603,142.882871
+ray_data_staged,ray_data_single_short,short,3,16.604965,0.077108,12.033606,120.946417
