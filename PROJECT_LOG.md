@@ -1,5 +1,25 @@
 # 项目日志
 
+## 2026-08-12 SAOR v0.5.1 本地实现、无损事件门与服务器延期
+
+- 完成 `saor_bounded_priority` 全链本地实现：actual-work debt cap、每 Job 单 recovery lease、
+  debt-critical ready-head reclaim barrier、显式 priority/SLO window、旧 SAOR fallback，以及 acquire
+  timeout waiter/hold 清理；旧 `saor_release` 行为保持不变。
+- Ray coordinator/client 与 shared-vLLM runner 新增单调序号 lossless release-event ledger；成功、
+  采样与失败路径都会 drain/落盘。bounded 机制门只读事件账本，250 ms snapshot 仅作状态图；
+  5 ms 转换回归通过，缺失/空账本、gap/duplicate 均 fail closed，封闭采样假阴性同时避免假阳性。
+- 新增显式 per-Job 配置、四臂 `saor_bounded_priority.example.json`、
+  `bounded_priority_development` readiness 和两轮汇总器。输出结论被限制为
+  `formal_registration_candidate/diagnostic_only/constraint_conflict_stop`，slowdown 不作 bulk hard gate。
+- 本地受影响套件共 291 tests passed，`compileall`、`git diff --check` 与 staged secret scan 通过；
+  selector 为 89 个物理行/34 个 statement line，满足小于 100 executable lines 的约束。完整 discovery
+  执行 1,154 tests；固定可写 temp 后仍有 24 个本地环境/平台错误（未安装 Ray/Daft、Windows 无
+  POSIX `os.killpg`），故明确不记为 full pass。当前 Python 环境也未安装 ruff，未临时安装依赖。
+  实现提交 `60559d7` 已推送。
+- 用户已关闭服务器；本轮没有连接远端，没有运行 0.125K/0.25K GPU rehearsal 或长 formal，也未
+  创建结果目录。当前状态为 `code-complete/development-unrun/not-formal-registered`，不新增性能或
+  winner claim；按用户要求不进行 Wiki 同步。
+
 ## 2026-08-12 SAOR v0.5.1 bounded-priority TDD 实施计划冻结
 
 - 在 SAOR 唯一权威计划的 §5.2.15 冻结 8 个 task 的 TDD 实施顺序：纯词典序 selector →

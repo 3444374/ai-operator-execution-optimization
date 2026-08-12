@@ -111,9 +111,20 @@ PostgreSQL image source
 - 多 job shared credit：Ray named actor 统一持有 endpoint request/work
   capacity，使用带权 deficit round robin 和空闲容量借用；联合
   `(job_id, request_id)` 防止不同作业的 batch ID 冲突。
+- `saor_bounded_priority` development path：在冻结 endpoint request/work envelope 内按
+  actual-work debt recovery → ready-head reclaim barrier → SLO priority window → 原 SAOR
+  fallback 的词典序释放；每 Job 只有一张 recovery lease，acquire timeout 会取消 waiter，
+  不会留下幽灵队列或永久 hold。priority/SLO/window/debt cap 全部由显式 per-Job 配置给出。
+- bounded-SAOR 机制审计使用 coordinator 单调序号的 lossless release-event ledger；runner 在
+  采样、成功结束和失败落盘前 drain。5 ms 转换不会再被 250 ms snapshot 漏采判成失败，
+  而账本缺失、为空、序号缺口或重复仍 fail closed。
 - 新增 `BoundedStageWorkController` 纯策略候选：仅在离线校准的离散 work-credit
   集合内单步升降，观测 stale、stage 缺失或 calibration signature 不一致时回退
   workload-specific frozen-static。尚未接入 runner，也没有性能收益 claim。
+
+`saor_bounded_priority` 当前只完成本地实现、配置/readiness、两轮 rehearsal 汇总器和测试。
+服务器已关机，0.125K/0.25K 两轮 GPU rehearsal 未运行；因此状态是
+`code-complete / development-unrun / not-formal-registered`，不是 SAOR 胜出证据。
 
 ### 当前流程
 

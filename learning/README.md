@@ -1,5 +1,12 @@
 # Learning Notes
 
+## 2026-08-12 bounded-priority SAOR 与事件账本
+
+`experiment_walkthrough.md` 的 2026-08-12 小节新增通俗说明：为什么新候选不是简单调大
+foreground 权重，actual-work debt/recovery lease/reclaim barrier 分别解决什么问题，以及为什么
+机制真值必须来自无损事件账本而不是 250 ms snapshot。当前只完成本地代码和测试；服务器已
+关闭，两档 GPU rehearsal 尚未运行，因此该讲解不包含新性能结论。
+
 ## 2026-08-09 多 Job 共享额度的异常生命周期
 
 共享 credit actor 的生命周期必须与一个 group run 一致，而不能只在成功路径结束。

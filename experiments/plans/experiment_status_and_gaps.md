@@ -1,7 +1,8 @@
 # 实验状态与缺口分析
 
 Date: 2026-07-20（最后更新：2026-08-12；开题证据冻结，SAOR fixed-envelope formal 已
-fail-closed 完成，dynamic-K 仍退出主线）
+fail-closed 完成，bounded-priority v0.5.1 本地实现完成、GPU rehearsal 因服务器关机延后，
+dynamic-K 仍退出主线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -39,6 +40,13 @@ simultaneous-drain 审计与完整重汇总已完成；foreground strict-priorit
 tok/s 达到 fg P99 14.27s、SLO 0%，证明 release-only 可达，但 hard priority 尚无 anti-starvation。
 下一步只做 2–3 个有界 lexicographic priority-window/service-lag guard 点；reservation 和 q95 work
 credit 作为鲁棒性消融。达到 static fg 非劣、吞吐≥static+5% 且 bulk lag/SLO 不越界才注册 formal。
+
+2026-08-12 本地工程增量：`saor_bounded_priority` 已接通 actual-work debt cap、每 Job 单张
+recovery lease、ready-head reclaim barrier、显式 priority/SLO window、旧 SAOR fallback、
+timeout waiter cleanup 和 Ray lossless release-event ledger；四臂模板只含 static、release-only、
+0.125K/0.25K。readiness 与两轮汇总器均 fail closed，机制门不再使用 250 ms snapshot 猜测
+短转换；缺账本/空账本/序号缺口/重复一律失败。本地受影响套件通过，代码已推送；服务器已
+关机，故两轮 GPU rehearsal 与任何 formal registration 均未发生，不新增性能结论。
 
 ## 图像状态增量（2026-08-10）
 

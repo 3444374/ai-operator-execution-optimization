@@ -246,6 +246,17 @@ bulk-borrow/foreground-reclaim/bulk-reborrow phase audit. SLO-weighted release i
 rejected until per-Job SLO debt is connected; the current executable default uses
 `slo_weight=0`.
 
+The separate development policy `saor_bounded_priority` now implements the frozen
+v0.5.1 lexicographic contract without changing `saor_release`: debt-critical fitting
+heads receive one completion-corrected recovery lease; a debt-critical ready head that
+does not fit can open a head-specific reclaim barrier; an SLO priority window is evaluated
+next; all remaining opportunities use the original SAOR selector. Per-Job priority, SLO,
+window, and debt cap are explicit configuration, never inferred from Job names or arrival
+order. Scheduler timeout cancellation removes the waiter and closes any targeted hold.
+The coordinator emits a monotonic, lossless release-event ledger; 250 ms snapshots remain
+phase/resource diagnostics and are not mechanism truth. This path is locally verified and
+development-only: no new GPU rehearsal or formal performance claim exists yet.
+
 The pure ordered-release fast path publishes validated Job-head requests with a monotonic
 sequence and releases capacity on completion. Release work and predicted epoch service are separate fields, so a
 long request is not silently treated as service completed within the current control slot.

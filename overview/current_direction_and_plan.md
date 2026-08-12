@@ -23,7 +23,9 @@
   fairness/release；strict-priority upper-bound 两轮短测 fg P99 14.27s、SLO 0%。下一候选已冻结为
   通用有界词典序 release（显式 priority/SLO budget + actual-work debt cap + 队首定向 reclaim
   barrier/普通 priority fitting-head fallback），首轮只测 2 Job 的 0.125K/0.25K 两个 cap；
-  reservation 作通过后的鲁棒性消融。
+  selector/coordinator/scheduler/Ray/runner、timeout cleanup、无损事件账本、四臂 readiness 与
+  两轮 fail-closed 汇总器已在本地完成并推送。服务器已关机，GPU rehearsal 尚未运行，故仍是
+  `development-unrun/not-formal-registered`；reservation 作通过后的鲁棒性消融。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
   least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
   已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值

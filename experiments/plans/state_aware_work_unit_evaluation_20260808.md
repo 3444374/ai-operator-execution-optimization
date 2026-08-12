@@ -2,7 +2,8 @@
 
 日期：2026-08-08（2026-08-09 更新：开题两作业 guaranteed-overlap 已完成；
 2026-08-11 更新：新增 SAOR 动态调度设计维护入口；2026-08-12 更新：fixed-envelope
-2-Job formal 已运行并经 resolution-aware v2 完整 validation，冻结通用有界优先级 v0.5 设计）
+2-Job formal 已运行并经 resolution-aware v2 完整 validation；通用有界优先级 v0.5.1 已完成
+本地实现与门禁工具，服务器关机期间不运行 GPU rehearsal/formal）
 
 > **动态调度算法唯一维护入口**：本文 §5.2。当前状态为
 > `formal-valid / not-promoted`，不是已完成方法，
@@ -121,8 +122,8 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 字段 | 当前冻结值 |
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
-| policy revision | runtime/formal contract `saor-v0.4.6-work-conserving-gate`；resolution-aware audit `saor-v0.4.10-resolution-aware-full`；priority diagnostic `saor-v0.4.9-release-upper-bound`；下一设计 `saor-v0.5.1-reclaim-barrier`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
-| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上 validation passed、credit mechanism effective 12/12，原 failed 文件保留审计。SAOR 在 credit 臂内 fg 最好但未越过 static；strict-priority 两轮 GPU 短测达到 11,791 tok/s、fg P99 14.27s/SLO 0%，但 formal repeats=0。当前 runtime 的 `slo_weight=0`，不是完整 SLO-aware 方法；dynamic K 为 `parked-conditional`。已冻结通用有界词典序设计，尚未实现、短测或完成定理证明 |
+| policy revision | runtime/formal contract `saor-v0.4.6-work-conserving-gate`；resolution-aware audit `saor-v0.4.10-resolution-aware-full`；priority diagnostic `saor-v0.4.9-release-upper-bound`；development candidate `saor-v0.5.1-reclaim-barrier`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
+| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上 validation passed、credit mechanism effective 12/12，原 failed 文件保留审计。SAOR 在 credit 臂内 fg 最好但未越过 static；strict-priority 两轮 GPU 短测达到 11,791 tok/s、fg P99 14.27s/SLO 0%，但 formal repeats=0。旧 runtime 的 `slo_weight=0`，不是完整 SLO-aware 方法；dynamic K 为 `parked-conditional`。v0.5.1 已完成本地 selector/coordinator/scheduler/Ray/runner/event-ledger/readiness/summary 实现；GPU rehearsal 未运行，仍是 `development-unrun/not-formal-registered`，定理证明也未完成 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
 | 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
@@ -966,7 +967,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-12 | `saor-v0.4.9-release-upper-bound` | 增加非抢占 foreground strict-priority：前台 Job 首次注册后只把新释放 credit 给前台，前台生命周期结束后恢复 bulk；priority 与 fairness weight 分离，并进入 group evidence | shared-credit/scheduler/config/runner 单测 + fail-closed readiness/summary 单测 + 两轮 GPU rehearsal | release-only 可达：fg P99 14.27s、SLO 0%，但仅 development diagnostic；下一步给 hard priority 加 bounded window/service-lag guard |
 | 2026-08-12 | `saor-v0.4.10-resolution-aware-full` | 默认 formal summarizer 写出 resolution-aware v2、采样周期、完整 validation 更新标志与 legacy 重分类清单；在服务器完整 artifact 上旁路重汇总 | 本地/服务器 6 个真假阴性回归 + source SHA 绑定 | validation passed、credit effective 12/12；原 failed 文件保留审计，性能排序不变，SAOR 仍 not-promoted |
 | 2026-08-12 | `saor-v0.5-bounded-priority-design` | 将后继冻结为通用有界词典序 release：显式 per-Job priority/剩余 SLO 预算、completion-corrected actual-work debt cap、单 recovery lease、guard drain/普通 priority fitting-head fallback 与 event-level 机制证据；首轮只做 2-Job 两个 cap | formal/strict-priority GPU 证据 + 实现断点审计 + DRR/VTC/EDF 理论边界 | 仅设计冻结；尚未实现/短测/证明，SAOR 保持 `formal-valid/not-promoted`；reservation 降为通过 guard 后的鲁棒性消融 |
-| 2026-08-12 | `saor-v0.5.1-reclaim-barrier` | 把 guard drain 收紧为只面向一个 debt-critical ready head 的 reclaim barrier；recovery 发出后立即解除全局 guard；首轮 cap 改为 0.125K/0.25K，bulk slowdown 降为诊断 | 对 debt 增长率、foreground work 规模和 strict-priority bulk SLO 反例的设计复核 | 仍仅设计冻结；避免无限 hold 与 0.50K 近似无限 cap 的低信息量实验 |
+| 2026-08-12 | `saor-v0.5.1-reclaim-barrier` | 把 guard drain 收紧为只面向一个 debt-critical ready head 的 reclaim barrier；recovery 发出后立即解除全局 guard；首轮 cap 改为 0.125K/0.25K，bulk slowdown 降为诊断；实现 selector/coordinator/SLO plumbing/timeout cleanup/Ray lossless ledger/readiness/two-round summary | 设计复核 + 本地受影响套件 291 tests + compile/diff/secret scan | 本地代码与证据工具完成；GPU rehearsal 因服务器关机未运行，状态 `development-unrun/not-formal-registered`；避免无限 hold 与 0.50K 近似无限 cap 的低信息量实验 |
 
 状态只允许按以下顺序变化：
 
@@ -1026,6 +1027,18 @@ transport、配置与证据落盘。首轮 workload 保持 2 Job，通用接口�
 
 **Tech stack:** Python dataclasses/protocols、Ray named actor、`unittest`、CSV/JSON evidence、现有
 shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖。
+
+**执行状态（2026-08-12）**：
+
+| Task | 状态 | 证据/边界 |
+|---:|---|---|
+| 1–2 | ✅ 完成并推送 | 纯 selector、completion-corrected debt、单 recovery lease、队首 reclaim hold；commit `b59ce7e` |
+| 3–6 | ✅ 完成并推送 | arrival epoch/剩余 SLO、timeout cancel、Ray lossless ledger、四臂配置/readiness、两轮 fail-closed 汇总；commit `60559d7` |
+| 7 | ✅ 本地收尾 | 受影响套件 291 tests passed（仓库内固定临时目录绕过 Windows sandbox temp ACL），selector 89 physical/34 statement lines，compileall/diff/secrets passed；完整 discovery 1,154 tests 中 24 个因本机缺 Ray/Daft 或 Windows 无 POSIX `os.killpg` 报错，故不记 full pass；本机未安装 ruff，不临时装依赖 |
+| 8 | ⏸ 延后 | 用户已关闭服务器；未连接远端、未生成新结果目录、未运行 rehearsal 或 formal。服务器恢复后仍只按本节跑两轮 rehearsal |
+
+下方 checkbox 保留为逐步复现清单；状态以上表为准。Task 8 未完成前，不得把
+`formal_registration_candidate`、性能变化或 winner 写入项目结论。
 
 ##### Task 1：先冻结纯选择器的可证伪语义
 
@@ -1281,7 +1294,7 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 
 - Modify: `code/INFRA_STATUS.md`
 - Modify: `code/README.md`
-- Modify: `learning/scheduling_and_submission_control_guide.md`
+- Modify: `learning/experiment_walkthrough.md`
 - Modify: `experiments/plans/state_aware_work_unit_evaluation_20260808.md`
 - Modify: `experiments/plans/experiment_status_and_gaps.md`
 - Modify: `experiments/plans/README.md`

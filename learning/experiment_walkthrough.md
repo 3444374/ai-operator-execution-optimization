@@ -1178,6 +1178,26 @@ static 前台隔离点的实验事实，也不能替代服务器完整 raw valid
 已进入 vLLM 的请求。如果连这个 release-only 上界都不能把前台 P99 拉到 30.7 s 以内，就说明
 主要瓶颈是不可抢占的在途工作，应停止扫描 score 权重并转向显式、有限的保护余量。
 
+### bounded-priority SAOR 为什么不是“把前台权重调大”
+
+新候选把冲突写成明确顺序，而不是让一个软分数同时承担 SLO 与公平：先保证 request/work
+硬容量；若某 Job 的 completion-corrected actual-work 债务达到 cap，先给它一个 recovery
+请求；若它已经有 ready 队首但当前碎片装不下，只为这个确定队首暂缓 foreign grant，释放到
+刚好能装下时发一张 recovery 后立刻解除 barrier。没有 debt guard 时，才检查显式 priority
+window 与剩余 SLO 预算；都未触发则回到旧 SAOR。普通高优先级队首装不下时仍允许其他 fitting
+请求，避免 strict priority 的无谓空转。
+
+“每 Job 最多一张 recovery 在途”很重要：公平债务按实际 completion work 校正；如果在第一张
+recovery 尚未完成时连续补发，控制器只能根据预测值过度补偿。barrier 也只针对 `ready &&
+debt-critical && non-fitting` 的具体队首；unfinished 但尚无 ready 请求时保留容量，只会把未知
+未来变成不可审计 reservation。
+
+机制真值现在来自 coordinator 的无损事件账本。每个 endpoint 的事件序号必须从 1 连续递增，
+priority/debt grant、hold 起止、reclaim debt、冲突和 recovery in-flight 都逐事件保存；250 ms
+snapshot 只用来画 phase/资源状态。这样 5 ms 的真实转换不会是假阴性，但缺账本、空账本、跳号
+或重复仍会 fail closed。当前只证明代码语义与证据链闭合；服务器已关闭，两档 cap 的 GPU
+rehearsal 尚未运行，不能据此声称前台、bulk 或吞吐已改善。
+
 ## 2026-08-03：为什么保存 embedding 的运行不是性能 baseline
 
 Daft built-in 和 project 都输出 512 维向量，但前者由 provider 决定 processor、dtype
