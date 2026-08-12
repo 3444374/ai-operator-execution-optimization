@@ -6048,6 +6048,8 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   blocker。仅飞书普通云文档覆盖和回读仍等待用户对指定 URL 的明确授权；Wiki 不同步。
 # 2026-08-12 增补开题背景图并完成 PPT v8
 
+- 根据放大审阅修复 PPT 第 3 页：右侧五段主流程箭头增加可见线身，三条状态反馈分别显示左向箭头；新增线型/边框图例，并将右侧六张步骤卡文字统一按几何中心对齐。
+
 - 在 `figures/architecture/editable/opening_background_20260812/` 新增三张可编辑背景图：数据库
   AI 算子外部执行链路、传统数据库算子与外部 AI 算子的执行假设对照、相关工作分层。三图均按
   当前 PostgreSQL→Daft→Ray→vLLM/typed CLIP→PostgreSQL + pgvector 项目链路重写，而非照抄

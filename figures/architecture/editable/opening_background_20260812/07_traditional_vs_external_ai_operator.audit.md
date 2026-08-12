@@ -19,6 +19,7 @@
 | R1-R6 | 右面板 | records → organization → tokenize/resize → admission/routing → vLLM/Ray actor → gather | native + SVG | 25–27 px，六张独立卡 | accepted |
 | N1 | 模型服务卡 | 模型服务内部 batching 保持不变 | native | 22 px 灰字 | accepted |
 | F1 | 右面板外侧 | 运行状态反馈标签 | native | 青色胶囊，22 px，右边距 65 px | accepted |
+| G1 | 标题下方 | 线型与边框图例：执行主流程、状态反馈、执行步骤、字段分组 | native | 18 px；蓝色实线、青色虚线、实线框、虚线框 | accepted |
 | C1 | 45,678,580,142 | 传统成本字段 | native | 标题 28 px，卡片 24 px | accepted |
 | W1 | 655,670,910,88 | AI work 字段 | native | 标题 22 px；四卡一行 24 px | accepted |
 | S1 | 655,766,910,54 | 模型服务 state 字段 | native | 22 px；四卡等距 | accepted |
@@ -26,6 +27,10 @@
 | I1-I9 | 两条流程卡内 | 表、CPU/I/O、结果、记录、组织、预处理、准入、服务、汇聚 | 独立 SVG | 同一蓝色线性图标族 | accepted |
 
 ## 箭头 inventory
+
+2026-08-12 修正：三条青绿色反馈支线在 SVG 中拆为三个独立 path，每条分别带左向箭头；避免复合 path 仅在最后一段显示 marker。Draw.io 源仍对应三个独立原生连接器 `fb1`–`fb3`，线型与箭头尺寸一致。
+
+同轮将右侧六张步骤卡压缩为 58–66 px 高，并把相邻间距统一扩大到 18 px；五段蓝色主流程连接均保留清晰线身与向下箭头。卡内正文使用卡片几何中心 x=1025，不再通过 `spacingLeft` 偏移。
 
 | ID | 源 → 目标 | 路径 / 样式 | 语义 | 状态 |
 |---|---|---|---|---|
@@ -38,13 +43,15 @@
 ## 技术验证与视觉审计
 
 - [x] `xmllint --noout`：Draw.io、主 SVG 与 9 个独立 icon SVG 全部通过。
-- [x] `check_drawio.py`：通过；57 cells、44 vertices、11 edges、9 image/SVG cells、29 text cells，无 warning。
+- [x] `check_drawio.py`：通过；新增图例后重新检查，无 warning；精确 cell/edge 数见批次审计。
 - [x] Draw.io CLI 在当前环境不可用；PNG 由与 Draw.io 同坐标、同文字、同图标的 SVG 经本机 headless Chrome 渲染，结果为 1600×900 RGB。
 - [x] 已用 `view_image(detail=original)` 全尺寸检查。标题、两侧流程、反馈虚线、字段卡和结论条均完整；无文字越界、相互遮挡、边框覆盖或残留旧图层。
 - [x] work 字段经过重新分配：最终四卡只保留“输入 work / 输出 work / 局部性键 / 剩余 work / SLO”，使用 24 px 单行大字；卡宽 205/205/205/219 px，卡间距 12 px，无长英文串、压叠或缩字。
 - [x] 反馈标签在右上独立胶囊中，距画布右边 65 px；虚线总线位于 x=1520，三个箭头落在目标卡右边界，不穿标签或正文。
 - [x] 结论条位于 y=834–878，距画布底部 22 px；文字基线 y=865，未贴边或裁切。
 - [x] 主流程箭头与反馈箭头均有线身和箭头头，方向清晰；反馈只回到请求组织、预处理和准入/路由，不进入模型内部。
+- [x] 标题下方图例明确说明蓝色实线、青色虚线、实线框和虚线框含义；右侧六卡正文均以卡片几何中心对齐。
+- [x] 左侧 `result` 取消旧 `spacingLeft`，文字中心与卡片几何中心 x=325 对齐；图标保持独立左置。
 - [x] 9 个图标均为不同的独立 SVG，可移动、缩放和替换；没有整图截图、遮罩、白块覆盖或重复边框。
 
 ### 900 px 宽 PPT 缩放审计

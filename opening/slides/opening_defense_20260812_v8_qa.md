@@ -29,7 +29,7 @@
 
 模板检查使用 v7 生成的 20 页 starter、逐页 frame map、starter/final layout 和最终 PPTX；
 `check_template_fidelity.mjs` 返回 `status=pass`、`issueCount=0`。PPTX SHA-256：
-`2cf57ad8fa2f34e11e5e841d074421f72916d2692f11343cfc55697d6375e650`。
+`9cfbe88b5443dbb1068995ab7cb3c9d6a66f6bcd1413f586bf725ece29180bb8`。
 
 ## 3. 图文与主张边界
 
