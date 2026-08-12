@@ -27,7 +27,9 @@ raw manifest 保留执行时旧路径作为不可变证据，README 中的复现
 warmup identity；通过后才可用新目录运行配置中的 formal。
 
 `analysis/summarize_saor_active_set.py` 要求十个 scenario 各 1 warm-up + 3 formal、0 incident，
-并把六臂 workload lifecycle 与四个 credit 策略 mechanism gate 分开审计。它分别以 project
+并把六臂 workload lifecycle 与四个 credit 策略 mechanism gate 分开审计。rehearsal 本身
+fail-closed：metrics/resources、lifecycle 或适用的 borrow/reclaim/work-conserving-drain
+机制任一失败都会写 failed manifest 并返回非零。它分别以 project
 solo 和 direct solo 复算 work-rate slowdown/Jain，输出 `formal_summary.csv`、
 `per_job_slowdown.csv` 与 `validation.json`；不把 direct 的 request bound 误标为 work-credit
 等资源 envelope，也不产生 theorem 或 dynamic-K claim。

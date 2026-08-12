@@ -1045,8 +1045,12 @@ burst 合同冻结 `0.0001` scale：5 s 前两 endpoint 分别约 140K/138K pred
 门禁分两层，不能混写：所有六个 active-set 臂都必须从 request evidence 观察到
 `bulk starts → foreground overlaps` 且两 Job exactly-once 完成；`foreground drains first` 是
 策略结果，单独报告，不能作为筛选 baseline 的有效性门。只有四个 credit
-策略还必须从 credit trace 观察到 pre/overlap/post 三段借用机制。static/direct 的机制门禁为
-`not_applicable:no_credit_trace`，不是失败。任一适用门禁未过，不抽策略结论。
+策略还必须从 credit trace 观察到三段机制：单 Job 阶段占用超过等份；第二 Job 加入后两者
+同时 active 且先到 Job 的份额相对 pre-borrow 峰值下降；任一 Job 先 drain 后，剩余 Job 的
+request/work dominant share 可观测；若仍有 waiting work，则逐 endpoint 验证队首请求至少被
+request slot 或 work slack 之一阻挡。若队首明明同时装得进 request/work envelope 却仍在等待，
+work-conserving 门必须失败；没有 waiting work 时允许按实际剩余量自然排空。static/direct 的
+机制门禁为 `not_applicable:no_credit_trace`，不是失败。任一适用门禁未过，不抽策略结论。
 
 formal 前先运行纯静态 fail-closed audit；它解析模板、校准合同、十臂矩阵、manifest 行数/
 SHA/endpoint 覆盖和 direct/project 请求合同，不发送请求：
@@ -1074,9 +1078,10 @@ PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
   --ray-address "$RAY_ADDRESS"
 ```
 
-只有 rehearsal `manifest.status=completed`、0 incident、十个 cell 全部完成，且六个 active-set
-cell 均通过 lifecycle gate、四个 credit cell 通过 mechanism gate，才允许移除 `--rehearsal`
-并换新输出目录启动 formal。禁止把 rehearsal 合并进 formal 统计。
+runner 对 rehearsal fail-closed：只有 `manifest.status=completed`、0 incident、十个 cell
+全部完成、metrics/resources 完整、六个 active-set cell 通过 lifecycle gate，且四个 credit
+cell 通过 mechanism gate 才返回成功；否则 manifest 标为 failed。通过后才允许移除
+`--rehearsal` 并换新输出目录启动 formal。禁止把 rehearsal 合并进 formal 统计。
 
 runner 完成后必须由 fail-closed 汇总器复算 formal 重复、生命周期/机制门禁、project/direct
 matched-solo slowdown、Jain、SLO 和资源时序：

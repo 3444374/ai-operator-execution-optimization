@@ -46,6 +46,7 @@ class EndpointCreditSnapshot:
     active_work_by_job: tuple[tuple[str, int], ...]
     waiting_by_job: tuple[tuple[str, int], ...]
     waiting_work_by_job: tuple[tuple[str, int], ...]
+    waiting_head_work_by_job: tuple[tuple[str, int], ...]
     max_active_requests_seen: int
     max_active_work_seen: int
     granted_requests_by_job: tuple[tuple[str, int], ...]
@@ -276,6 +277,11 @@ class FairEndpointCreditCoordinator:
             for job_id, queue in self._waiting[endpoint_id].items()
             if queue
         }
+        waiting_head_work_by_job = {
+            job_id: queue[0].estimated_work
+            for job_id, queue in self._waiting[endpoint_id].items()
+            if queue
+        }
         waiting_leases = [
             lease
             for queue in self._waiting[endpoint_id].values()
@@ -305,6 +311,9 @@ class FairEndpointCreditCoordinator:
             waiting_by_job=tuple(sorted(waiting_by_job.items())),
             waiting_work_by_job=tuple(
                 sorted(waiting_work_by_job.items())
+            ),
+            waiting_head_work_by_job=tuple(
+                sorted(waiting_head_work_by_job.items())
             ),
             max_active_requests_seen=self._max_active_requests[endpoint_id],
             max_active_work_seen=self._max_active_work[endpoint_id],

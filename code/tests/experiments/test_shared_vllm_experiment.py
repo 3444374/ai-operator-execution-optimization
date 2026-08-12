@@ -30,6 +30,7 @@ from src.experiments.shared_vllm import (  # noqa: E402
     _rewrite_group_runs,
     _run_group,
     _run_instance_id,
+    _validate_rehearsal_record,
     _validate_replay_starts,
     _validate_runner_topology,
     _validate_final_credit,
@@ -47,6 +48,39 @@ from src.experiments.shared_vllm import (  # noqa: E402
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_rehearsal_record_gate_is_fail_closed(self) -> None:
+        scenario = SharedVllmScenario(
+            scenario_id="active_set_saor_release",
+            policy="saor_release",
+            job_count=2,
+            rows_per_job=None,
+            rows_per_jobs=(1, 1),
+            weights=(1, 1),
+            arrival_offsets_s=(0.0, 5.0),
+        )
+        record = {
+            "execution_mode": "rehearsal",
+            "metrics_status": "ok",
+            "resource_metrics_status": "ok",
+            "incidents": 0,
+            "actor_worker_failures": 0,
+            "active_set_lifecycle_passed": True,
+            "active_set_mechanism_applicable": True,
+            "active_set_mechanism_passed": True,
+        }
+
+        _validate_rehearsal_record(scenario, record)
+        with self.assertRaisesRegex(RuntimeError, "mechanism gate failed"):
+            _validate_rehearsal_record(
+                scenario,
+                {**record, "active_set_mechanism_passed": False},
+            )
+        with self.assertRaisesRegex(RuntimeError, "resource metrics"):
+            _validate_rehearsal_record(
+                scenario,
+                {**record, "resource_metrics_status": "unavailable"},
+            )
+
     def test_rehearsal_runs_one_nonformal_cell_per_scenario(self) -> None:
         options = RunnerOptions(
             config_path=Path("config.json"),
@@ -127,19 +161,26 @@ class SharedVllmExperimentTests(unittest.TestCase):
         samples = [
             {
                 "observed_epoch_s": 12.0,
+                "request_limit": 100,
                 "work_limit": 100,
+                "active_by_job": '[["bulk", 100]]',
                 "active_work_by_job": '[["bulk", 100]]',
             },
             {
                 "observed_epoch_s": 17.0,
+                "request_limit": 100,
                 "work_limit": 100,
+                "active_by_job": '[["bulk", 60], ["foreground", 40]]',
                 "active_work_by_job": (
                     '[["bulk", 60], ["foreground", 40]]'
                 ),
+                "waiting_work_by_job": '[["bulk", 20]]',
             },
             {
                 "observed_epoch_s": 25.0,
+                "request_limit": 100,
                 "work_limit": 100,
+                "active_by_job": '[["bulk", 90]]',
                 "active_work_by_job": '[["bulk", 90]]',
             },
         ]
@@ -155,6 +196,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             summary["active_set_bulk_reborrow_fraction_max"],
             0.9,
         )
+        self.assertTrue(summary["active_set_post_work_conserving_passed"])
 
     def test_active_set_phase_summary_fails_without_observed_overlap(self) -> None:
         evidence = [
@@ -172,17 +214,23 @@ class SharedVllmExperimentTests(unittest.TestCase):
         samples = [
             {
                 "observed_epoch_s": 12.0,
+                "request_limit": 100,
                 "work_limit": 100,
+                "active_by_job": '[["bulk", 100]]',
                 "active_work_by_job": '[["bulk", 100]]',
             },
             {
                 "observed_epoch_s": 17.0,
+                "request_limit": 100,
                 "work_limit": 100,
+                "active_by_job": '[["foreground", 40]]',
                 "active_work_by_job": '[["foreground", 40]]',
             },
             {
                 "observed_epoch_s": 25.0,
+                "request_limit": 100,
                 "work_limit": 100,
+                "active_by_job": '[["bulk", 90]]',
                 "active_work_by_job": '[["bulk", 90]]',
             },
         ]
@@ -240,6 +288,123 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertTrue(summary["active_set_lifecycle_passed"])
         self.assertFalse(summary["active_set_foreground_drained_first"])
 
+    def test_post_drain_accepts_sub_share_work_when_nothing_is_waiting(self) -> None:
+        summary = active_set_phase_summary(
+            [
+                {
+                    "arrival_start_epoch_s": 10.0,
+                    "completion_end_epoch_s": 20.0,
+                    "runtime_job_id": "bulk",
+                },
+                {
+                    "arrival_start_epoch_s": 15.0,
+                    "completion_end_epoch_s": 25.0,
+                    "runtime_job_id": "foreground",
+                },
+            ],
+            [
+                {
+                    "observed_epoch_s": 12.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": '[["bulk", 90]]',
+                    "active_work_by_job": '[["bulk", 90]]',
+                    "waiting_work_by_job": '[["bulk", 100]]',
+                },
+                {
+                    "observed_epoch_s": 17.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "active_work_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "waiting_work_by_job": (
+                        '[["bulk", 20], ["foreground", 10]]'
+                    ),
+                },
+                {
+                    "observed_epoch_s": 22.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": '[["foreground", 40]]',
+                    "active_work_by_job": '[["foreground", 40]]',
+                    "waiting_work_by_job": "[]",
+                },
+            ],
+        )
+
+        self.assertTrue(summary["active_set_mechanism_passed"])
+        self.assertEqual(summary["active_set_first_drained_job_index"], 0)
+        self.assertEqual(summary["active_set_remaining_job_index"], 1)
+        self.assertEqual(summary["active_set_post_remaining_fraction_max"], 0.4)
+        self.assertEqual(
+            summary["active_set_post_remaining_waiting_work_max"],
+            0.0,
+        )
+
+    def test_post_drain_rejects_idle_share_while_work_is_waiting(self) -> None:
+        summary = active_set_phase_summary(
+            [
+                {
+                    "arrival_start_epoch_s": 10.0,
+                    "completion_end_epoch_s": 20.0,
+                    "runtime_job_id": "bulk",
+                },
+                {
+                    "arrival_start_epoch_s": 15.0,
+                    "completion_end_epoch_s": 25.0,
+                    "runtime_job_id": "foreground",
+                },
+            ],
+            [
+                {
+                    "observed_epoch_s": 12.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": '[["bulk", 90]]',
+                    "active_work_by_job": '[["bulk", 90]]',
+                    "waiting_work_by_job": '[["bulk", 100]]',
+                },
+                {
+                    "observed_epoch_s": 17.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "active_work_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "waiting_work_by_job": (
+                        '[["bulk", 20], ["foreground", 10]]'
+                    ),
+                },
+                {
+                    "observed_epoch_s": 22.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": '[["foreground", 40]]',
+                    "active_work_by_job": '[["foreground", 40]]',
+                    "active_requests": 40,
+                    "active_work": 40,
+                    "waiting_by_job": '[["foreground", 1]]',
+                    "waiting_work_by_job": '[["foreground", 60]]',
+                    "waiting_head_work_by_job": '[["foreground", 10]]',
+                },
+            ],
+        )
+
+        self.assertFalse(summary["active_set_mechanism_passed"])
+        self.assertFalse(summary["active_set_post_work_conserving_passed"])
+        self.assertEqual(
+            summary["active_set_post_remaining_waiting_work_max"],
+            60.0,
+        )
+        self.assertEqual(summary["active_set_post_fit_violation_samples"], 1)
+
     def test_active_set_mechanism_aggregates_endpoints_per_epoch(self) -> None:
         evidence = [
             {
@@ -257,37 +422,50 @@ class SharedVllmExperimentTests(unittest.TestCase):
             {
                 "observed_epoch_s": 12.0,
                 "endpoint_id": "endpoint-0",
+                "request_limit": 50,
                 "work_limit": 50,
+                "active_by_job": '[["bulk", 50]]',
                 "active_work_by_job": '[["bulk", 50]]',
             },
             {
                 "observed_epoch_s": 12.0,
                 "endpoint_id": "endpoint-1",
+                "request_limit": 50,
                 "work_limit": 50,
+                "active_by_job": '[["bulk", 50]]',
                 "active_work_by_job": '[["bulk", 50]]',
             },
             {
                 "observed_epoch_s": 17.0,
                 "endpoint_id": "endpoint-0",
+                "request_limit": 50,
                 "work_limit": 50,
+                "active_by_job": '[["bulk", 50]]',
                 "active_work_by_job": '[["bulk", 50]]',
+                "waiting_work_by_job": '[["bulk", 20]]',
             },
             {
                 "observed_epoch_s": 17.0,
                 "endpoint_id": "endpoint-1",
+                "request_limit": 50,
                 "work_limit": 50,
+                "active_by_job": '[["foreground", 40]]',
                 "active_work_by_job": '[["foreground", 40]]',
             },
             {
                 "observed_epoch_s": 25.0,
                 "endpoint_id": "endpoint-0",
+                "request_limit": 50,
                 "work_limit": 50,
+                "active_by_job": '[["bulk", 50]]',
                 "active_work_by_job": '[["bulk", 50]]',
             },
             {
                 "observed_epoch_s": 25.0,
                 "endpoint_id": "endpoint-1",
+                "request_limit": 50,
                 "work_limit": 50,
+                "active_by_job": '[["bulk", 40]]',
                 "active_work_by_job": '[["bulk", 40]]',
             },
         ]

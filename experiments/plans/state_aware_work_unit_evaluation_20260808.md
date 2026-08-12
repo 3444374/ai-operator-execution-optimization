@@ -291,10 +291,12 @@ vLLM 配置，不声称具有 project work-credit envelope，结果显式记录
 `work_envelope_applied=false`。若 direct/FIFO/DRR 已落在相同 Pareto 前沿，淘汰 SAOR，不更换
 workload 追正。
 
-决定性场景固定为 `bulk-only → foreground-arrival → foreground-drain`：bulk Job 先借用全部
-总 envelope；前台 Job 到达后只在 completion 释放 credit 时回收未来份额，不抢占已进入
-vLLM 的请求；前台 drain 后 bulk 再借用。该场景验证的是活跃集变化下的分配，不通过 K128/
-K160 切换制造收益。晋级最小效应按 formal repeat 噪声预注册，不写入算法硬编码阈值。
+决定性场景固定为 `bulk-only → foreground-arrival → overlap → either-job drain`：bulk Job
+先借用总 envelope；前台 Job 到达后只在 completion 释放 credit 时回收未来份额，不抢占已
+进入 vLLM 的请求；任一 Job 先结束后，剩余 Job 在有 waiting work 时应越过旧等份，否则允许
+按实际剩余 work 自然排空。该场景验证的是活跃集变化下的分配，不预设哪一个 Job 先结束，也
+不通过 K128/K160 切换制造收益。晋级最小效应按 formal repeat 噪声预注册，不写入算法硬编码
+阈值。
 
 工程合同补充：`K^*=(K^{req},K^{work})` 由当前机器、GPU 拓扑、模型/revision/dtype、vLLM
 flags、协议与 workload shape 的签名索引。新签名先自动选择硬件 profile，再由操作者启动一次
@@ -812,7 +814,10 @@ lower/upper、state-observed no-op、threshold/deadband、governor 和 offline o
 1. fixed-envelope `bulk-only → foreground-arrival → overlap → drain`：统一 runner 已接真实
    per-Job completion evidence、direct no-Job、project FIFO 与四个 credit 策略；所有 active-set
    臂先过外生错峰/overlap/exactly-once lifecycle gate；foreground-first 只作结果字段，不筛选
-   baseline。只有 credit 臂再过 borrow/reclaim/reborrow mechanism gate，且 readiness 先证明
+   baseline。只有 credit 臂再过 borrow/reclaim/work-conserving-drain mechanism gate，且
+   post-drain 按任一 Job 先退出后的剩余 Job 检查：若仍有 waiting request，则其 endpoint-local
+   队首必须被 request slot 或 work slack 至少一项阻挡；若明明装得下仍等待则失败。readiness
+   先证明
    foreground 到达前每 endpoint 的 bulk predicted ready work 至少覆盖一个完整 work envelope，
    static/direct 的 mechanism 为 not-applicable，不得误判失败；
 2. SAOR 同时超过 FIFO 与 DRR 的 Pareto 前沿后，才进入 four-Job、3:1 weighted 与 held-out；
@@ -871,6 +876,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-12 | `saor-v0.4.3-server-ready` | 服务器 preflight 发现 512-row manifest 原始 arrival span 约 66,880 s，模板写死 `arrival_time_scale=1.0` 会使 rehearsal 约 18.6 h；改为 workload 合同注入 scale，并由 readiness 自动计算 effective span、设置运行预算门禁 | 服务器真实 immutable manifest + 本地/服务器静态门禁 | 修正运行可行性，不改变算法、K 或证据结论；仍需 GPU rehearsal 后才能启动 formal |
 | 2026-08-12 | `saor-v0.4.4-transport-contract` | 第二次 2×4090 rehearsal 前八个 cell 完成，但 `solo_direct_bulk` 出现单请求 `ReadError`；服务端健康且日志为 200，定位为 direct 漏配已在 Ray actor 验证的 idle keepalive 合同。将 expiry 改为两路径共享、可注入和可审计，仍禁用 retry | 真实服务器 rehearsal + endpoint health/log + 既有 tail-drain 复现 | 传输合同修正，不改变 SAOR 算法或性能结论；旧 8/10 rehearsal 判失败，完整新目录 rerun 通过前禁止 formal |
 | 2026-08-12 | `saor-v0.4.5-active-set-supply` | 修复后真实 rehearsal 10/10、0 incident、exactly-once 通过，但 0.001 replay 的 5 s 前置阶段每 endpoint 仅约 10K bulk work，无法占满 65,536 envelope；四 credit 臂 pre-borrow 均未发生。公共 lifecycle gate 删除 outcome-dependent 的 foreground-first 条件，新增 per-endpoint pre-foreground work-envelope readiness；相同 manifest 冻结 0.0001 burst scale 复验 | 真实 group/request/credit trace + immutable manifest 离线供给计算 | correctness 通过、mechanism 未通过；不跑 formal。foreground-first 改为结果字段，禁止按性能结果过滤 baseline；新 burst rehearsal 通过前不晋级 |
+| 2026-08-12 | `saor-v0.4.6-work-conserving-gate` | 0.0001 burst rehearsal 再次 10/10、0 incident、六臂 overlap、四 credit pre-borrow=95.0%；旧 post gate 却只检查 bulk 且强制剩余 active work >50%，即使 FIFO/DRR 中 bulk 先结束，或 coordinator waiting work 已为 0。改为任一 Job 先退出后的 endpoint-local head-fit 条件，并让 rehearsal runner 自身 fail-closed | 真实 per-request completion + per-endpoint active/request/work/waiting/head-work credit trace + 单元反例 | 修正因果机制判据：包络是不可分 request 的二维上限；只有 waiting head 同时装得进 request/work envelope 却未释放才判非工作守恒。须用新 commit 完整 rerun后才能称 formal-ready |
 
 状态只允许按以下顺序变化：
 

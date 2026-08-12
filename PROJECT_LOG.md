@@ -33,6 +33,15 @@
   pre-foreground predicted-work 门，要求至少覆盖一个完整 envelope。真实 manifest 离线计算：
   `scale=0.001` 的 5 s 前每 endpoint 约 10K（失败），`0.0001` 约 140K/138K（通过）；下一次
   rehearsal 冻结为独立 burst 合同，不把 scale 搜索或前三次失败结果混入 formal。
+- `0.0001` burst rehearsal 在 commit `bedb751b` 上完成 10/10、0 incident、metrics/resources 与
+  exactly-once 全通过；六个 active-set 臂均真实 overlap，四个 credit 臂 pre-borrow 均达到
+  95.0%。旧 post gate 仍失败，因为它只检查 bulk 且无条件要求剩余 active work >50%；实际
+  FIFO/DRR 可由 bulk 先结束，VTC/SAOR 在 post 段 coordinator waiting work 已为 0。
+- 将 post 机制定义改为任一 Job 先退出后的剩余 Job，逐 endpoint 检查 waiting head 是否同时
+  装得进 request/work 两维 envelope；能装却未释放才判非工作守恒，避免把不可分 request
+  碎片误判成 quota loss。overlap 同时要求两 Job active 且先到 Job 相对 pre-borrow 峰值发生
+  回收。rehearsal runner 新增 fail-closed record gate；这次旧 commit 的单次 warm-up 仍只作
+  gate 设计证据，必须新 commit 全量复验。
 
 ## 2026-08-12 SAOR fixed-envelope formal harness 闭合
 
@@ -107,8 +116,8 @@
   envelope，按 active-set weighted dominant-share deficit、queue/fairness debt选择 fitting Job
   head，completion 后用 actual work 修正并补位；不修改 vLLM FCFS/continuous batching。
 - shared-vLLM runner 新增 `saor_release` 正式配置、权重 provenance、fairness-debt trace 和
-  `bulk-only → foreground-arrival → foreground-drain` 实际生命周期审计。未观察到 borrow、
-  overlap/reclaim、foreground 先 drain 与 bulk 后重借时，明确标记合同未发生。
+  `bulk-only → foreground-arrival → overlap → either-job drain` 实际生命周期审计。pre-borrow、
+  overlap/reclaim 与 post-drain work conservation 分段审计，不把 foreground-first 当作有效性。
 - 区分两个容易混淆的 FIFO：`shared_fifo` 是 project-owned shared-envelope FIFO；新增
   `run-jobs-control` 将多个 immutable Job arrival 合并，仅施加 endpoint-local HTTP bound 后交给
   vLLM FCFS，作为 no-project Job scheduler killer control，不冒充 vendor-native baseline。

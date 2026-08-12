@@ -56,6 +56,8 @@ def audit(config_path: Path) -> dict[str, object]:
     errors: list[str] = []
     if config.warmup_runs_per_scenario != 1 or config.formal_repeats != 3:
         errors.append("formal matrix requires exactly 1 warmup + 3 formal")
+    if not config.fail_closed_rehearsal:
+        errors.append("formal matrix requires fail_closed_rehearsal=true")
     if dict(config.service_metadata).get("scheduling_policy") != "fcfs":
         errors.append("service_metadata.scheduling_policy must be explicit fcfs")
     observed = {

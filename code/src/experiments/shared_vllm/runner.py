@@ -84,6 +84,13 @@ from .runtime import (
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
 
+_REHEARSAL_CREDIT_POLICIES = {
+    "shared_fifo",
+    "shared_drr",
+    "external_vtc",
+    "saor_release",
+}
+
 
 def _common_arg_value(
     arguments: tuple[str, ...],
@@ -120,6 +127,45 @@ def _text_state_calibration_signature(config: SharedVllmConfig) -> str:
             "fixed_output_cap",
         ),
     )
+
+
+def _validate_rehearsal_record(
+    scenario: SharedVllmScenario,
+    record: dict[str, object],
+) -> None:
+    """Fail closed on evidence gates before a formal matrix is allowed."""
+
+    if str(record.get("execution_mode")) != "rehearsal":
+        raise RuntimeError("rehearsal record has an invalid execution mode")
+    if record.get("metrics_status") != "ok":
+        raise RuntimeError("rehearsal model metrics are incomplete")
+    if record.get("resource_metrics_status") != "ok":
+        raise RuntimeError("rehearsal resource metrics are incomplete")
+    if int(record.get("incidents", -1)) != 0:
+        raise RuntimeError("rehearsal record contains an incident")
+    if int(record.get("actor_worker_failures", -1)) != 0:
+        raise RuntimeError("rehearsal record contains an actor failure")
+    is_staggered_two_job = bool(
+        scenario.job_count == 2
+        and len(scenario.arrival_offsets_s) == 2
+        and not math.isclose(
+            scenario.arrival_offsets_s[0],
+            scenario.arrival_offsets_s[1],
+            abs_tol=1e-9,
+        )
+    )
+    if not is_staggered_two_job:
+        return
+    if record.get("active_set_lifecycle_passed") is not True:
+        raise RuntimeError("rehearsal active-set lifecycle gate failed")
+    mechanism_applicable = record.get("active_set_mechanism_applicable") is True
+    if scenario.policy in _REHEARSAL_CREDIT_POLICIES:
+        if not mechanism_applicable:
+            raise RuntimeError("rehearsal credit trace is unavailable")
+        if record.get("active_set_mechanism_passed") is not True:
+            raise RuntimeError("rehearsal active-set mechanism gate failed")
+    elif mechanism_applicable:
+        raise RuntimeError("rehearsal control unexpectedly emitted a credit trace")
 
 
 def _apply_state_control(
@@ -437,7 +483,7 @@ def _run_locked(
                     raise RuntimeError(
                         "completed record conflicts with failure evidence"
                     )
-                _load_group_record(
+                record = _load_group_record(
                     record_path,
                     config,
                     scenario,
@@ -454,13 +500,15 @@ def _run_locked(
                     options.metrics_urls,
                     options.idle_timeout_s,
                 )
-                _run_group(
+                record = _run_group(
                     options,
                     config,
                     scenario,
                     identity,
                     idle_gate=idle_gate,
                 )
+            if options.rehearsal and config.fail_closed_rehearsal:
+                _validate_rehearsal_record(scenario, record)
         except Exception as exc:
             manifest["incidents"].append(
                 {

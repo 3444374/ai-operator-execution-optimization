@@ -363,6 +363,11 @@ active-set 实验还要区分“外生有效性”和“策略结果”。错峰
 endpoint 的预测 ready work 必须至少覆盖一个完整 work envelope。若供给不足，实验在静态
 readiness 就停止，而不是跑完后把 7% 容量占用称为“借用”。
 
+post-drain 也不能机械要求剩余 Job 一定占满超过 50% work。包络是二维上限，请求又不可分：
+若 coordinator 没有 waiting work，空余不属于配额损失；若仍有 waiting head，则检查
+`active_requests+1<=K_req` 与 `active_work+head_work<=K_work`。两者同时成立却没有释放才是
+非工作守恒；任一维装不下都是合法碎片。结束顺序同样不预设为 foreground-first。
+
 ## 2026-08-11 SAOR 核心代码现在做到哪一步
 
 当前完成的是“可独立测试的控制核心”，不是已经跑赢静态策略的正式系统：

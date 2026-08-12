@@ -419,6 +419,7 @@ class SharedCreditCoordinatorTests(unittest.TestCase):
         self.assertEqual(snapshot.waiting_work, 80)
         self.assertEqual(snapshot.waiting_by_job, (("b", 1),))
         self.assertEqual(snapshot.waiting_work_by_job, (("b", 80),))
+        self.assertEqual(snapshot.waiting_head_work_by_job, (("b", 80),))
 
     def test_work_cap_blocks_large_head_until_capacity_is_released(self) -> None:
         coordinator = FairEndpointCreditCoordinator(

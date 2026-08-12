@@ -497,6 +497,7 @@ def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
         "common_args": _redact_command(list(config.common_args)),
         "scenarios": [asdict(item) for item in config.scenarios],
         "service_metadata": dict(config.service_metadata),
+        "fail_closed_rehearsal": config.fail_closed_rehearsal,
         "calibration_contract": (
             {
                 "path": config.calibration_contract.path,
