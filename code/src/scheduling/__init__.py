@@ -109,6 +109,7 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "CreditLease",
         "EndpointCreditSnapshot",
         "FairEndpointCreditCoordinator",
+        "SaorReleaseEvent",
     ),
     ".submission_control.ordered_release": (
         "OrderedReleaseCoordinator",
@@ -117,6 +118,8 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
     ),
     ".submission_control.saor": (
         "SaorAction",
+        "SaorBoundedHeadState",
+        "SaorBoundedSelection",
         "SaorControlState",
         "SaorDecision",
         "SaorJobState",
@@ -126,6 +129,7 @@ _EXPORT_GROUPS: dict[str, tuple[str, ...]] = {
         "SaorReleaseSelection",
         "SaorReleaseState",
         "build_single_release_actions",
+        "select_bounded_saor_release",
         "select_saor_release_job",
         "update_fairness_debts",
     ),
