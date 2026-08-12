@@ -1056,7 +1056,9 @@ formal 前先运行纯静态 fail-closed audit；它解析模板、校准合同�
 SHA/endpoint 覆盖和 direct/project 请求合同，不发送请求：
 
 ```bash
-PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
+DRIVER_PYTHON="${DRIVER_PYTHON:-$(command -v python)}"
+test -x "$DRIVER_PYTHON"
+PYTHONPATH=code "$DRIVER_PYTHON" \
   code/scripts/analysis/audit_saor_formal_readiness.py \
   --config deploy/autodl/saor_active_set_release.example.json \
   --output "$ARTIFACT_ROOT/saor_active_set_readiness.json"
@@ -1066,12 +1068,12 @@ PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
 `warmup` identity，绝不会写 formal identity；输出目录必须与 formal 分离：
 
 ```bash
-PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
+PYTHONPATH=code "$DRIVER_PYTHON" \
   code/scripts/experiments/run_shared_vllm_experiment.py \
   --rehearsal \
   --config deploy/autodl/saor_active_set_release.example.json \
   --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
-  --python-executable "$VENV_ROOT/driver/bin/python" \
+  --python-executable "$DRIVER_PYTHON" \
   --output-dir "$ARTIFACT_ROOT/saor_active_set_release_rehearsal" \
   --health-url http://127.0.0.1:8000/health \
   --metrics-urls "$MODEL_METRICS_URLS" \
@@ -1087,7 +1089,7 @@ runner 完成后必须由 fail-closed 汇总器复算 formal 重复、生命周�
 matched-solo slowdown、Jain、SLO 和资源时序：
 
 ```bash
-PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
+PYTHONPATH=code "$DRIVER_PYTHON" \
   code/scripts/analysis/summarize_saor_active_set.py \
   --matrix-root "$ARTIFACT_ROOT/saor_active_set_release_formal" \
   --output-dir "$ARTIFACT_ROOT/saor_active_set_release_formal/summary"

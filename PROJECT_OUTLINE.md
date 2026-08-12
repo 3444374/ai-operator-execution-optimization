@@ -134,7 +134,9 @@ PostgreSQL source
   credit coordinator、completion-corrected fairness debt 和 active-set phase audit；SLO debt/理论
   bridge 尚未闭合。现有 static/shared 两/四 Job 结果支持 active-set 分配问题；同 request K 的
   direct no-Job control、static/FIFO/DRR/external-VTC/SAOR 六臂 active-set、project/direct matched
-  solo、分层门禁与 fail-closed 汇总已纳入统一交错 runner，但尚无 GPU formal 结果。若
+  solo、分层门禁与 fail-closed 汇总已纳入统一交错 runner；commit `7c11cc7c` 的真实 2×4090
+  rehearsal 已完成 10/10、0 incident，六臂 lifecycle 与四 credit 机制门通过，但没有 formal
+  identity，故仍无 GPU formal 结果。若
   direct/FIFO/DRR 已在同一 Pareto 前沿，淘汰 SAOR。当前尚未完成
   该 formal 或定理证明，因此不是已胜出的 proposed 方法；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；

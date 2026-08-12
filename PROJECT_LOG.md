@@ -42,6 +42,12 @@
   碎片误判成 quota loss。overlap 同时要求两 Job active 且先到 Job 相对 pre-borrow 峰值发生
   回收。rehearsal runner 新增 fail-closed record gate；这次旧 commit 的单次 warm-up 仍只作
   gate 设计证据，必须新 commit 全量复验。
+- commit `7c11cc7c` 的最终 2×4090 burst rehearsal 由 runner 自身 fail-closed 返回 0：10/10
+  warmup cell、0 formal identity、0 incident，所有 metrics/resources、512/512 exactly-once、
+  actor failure=0；六个 active-set lifecycle 全通过，四个 credit 臂 pre dominant share
+  均为 0.9502、overlap reclaim 全观察到、post head-fit violation=0 且 work-conserving drain
+  全通过。工程现为服务器 formal-ready，但该单次 warmup 不进入性能统计，不证明 SAOR 胜出；
+  先跑两 Job 1+3，只有进入 FIFO/DRR Pareto 前沿才补四 Job 外部有效性。
 
 ## 2026-08-12 SAOR fixed-envelope formal harness 闭合
 

@@ -18,7 +18,8 @@
   52.07%，正式原生矩阵冻结 C128，旧 154.57% 比值不作方法排名。
 - **SAOR 已收窄为 fixed-envelope active-set release**：dynamic K 的真实 development gate
   未超过 K160/简单 threshold，已退出主线；现有多 Job 数据只支持继续检验固定总 K 内的
-  idle borrowing、reclaim、SLO/fairness release order，尚未证明 SAOR 优于 global FIFO/DRR。
+  idle borrowing、reclaim、SLO/fairness release order。2×4090 fail-closed rehearsal 已通过，
+  只证明 formal 合同可执行，尚未证明 SAOR 优于 global FIFO/DRR。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
   least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
   已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值
@@ -92,8 +93,8 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 3. 原生 short/long 两 job 错峰观察与项目 static/shared 同上限 A/B 已完成；它们没有 global
    FIFO/no project Job scheduler 对照，不能单独证明 SAOR 必要。
 4. 开题后的第一个 SAOR killer benchmark 固定总 K，比较 global FIFO、static partition、
-   shared DRR、external VTC-style 与 SAOR，场景为 bulk-only→foreground-arrival→foreground-drain；
-   FIFO/DRR 若达到同一 Pareto 前沿即淘汰 SAOR。
+   shared DRR、external VTC-style 与 SAOR，场景为 bulk-only→foreground-arrival→overlap→
+   either-job drain；2-Job formal 若 SAOR 不能进入 FIFO/DRR Pareto 前沿即淘汰，不跑 4-Job。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。
 
 晋级门槛：相对各自独立标定的强静态/系统 baseline 至少改善约 5%，重复方向一致，且质量不退化。
