@@ -210,9 +210,10 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/first_principles_reassessment_20260808.md` | 从目标函数反推开题必需证据、work-unit/动态/图像设计、图表与 19 项答辩内容结构 | 重构开题故事、实验矩阵、方法代码或图前读 |
 | `opening/opening_defense_outline_20260808.md` | 权威答辩内容大纲：逐项 take-away、证据、claim 边界、必要实验与八张图的数据合同 | 编写开题材料、补实验或绘图前读；当前不生成 PPT 成品 |
 | `experiments/plans/opening_database_e2e_p0_20260807.md` | 开题前仅允许的 SQuAD/ShareGPT 三臂统一 database-E2E 合同 | 运行开题证据闭环实验前读 |
-| `experiments/plans/state_aware_work_unit_evaluation_20260808.md` | 分阶段 work descriptor、四个开题最小方法证据与 §5.2 SAOR 唯一维护入口；fixed-envelope formal 已 fail-closed 评估，post-formal 候选为 reservation-backed release，dynamic K parked | 设计/调整动态调度前读；当前 SAOR 为 `formal-evaluated/directional-only`，先过 strict-priority 可达性、reserve 曲线和 static 非劣门，两 Job 未闭环前不扩 4-Job |
+| `experiments/plans/state_aware_work_unit_evaluation_20260808.md` | 分阶段 work descriptor、四个开题最小方法证据与 §5.2 SAOR 唯一维护入口；fixed-envelope formal 已完成 resolution-aware v2 validation，dynamic K parked | 设计/调整动态调度前读；当前 SAOR 为 `formal-valid/not-promoted`，下一步只做有界 lexicographic priority/lag guard，reservation 作鲁棒性消融，两 Job 未闭环前不扩 4-Job |
 | `experiments/results/saor_capacity_development_20260811/` | SAOR capacity-only 开发门：控制开销、paired aggregate trace replay、服务器四臂容量运行、无效运行、K160 权衡与失败机理 | 判断 SAOR 是否过 single-action gate；结果为 not-promoted，development evidence，不作为 formal proposed 排名 |
-| `experiments/results/saor_active_set_release_formal_20260812_69affc7e/` | fixed-envelope 2-Job 六 active-set + 四 matched-solo 的 40-cell formal、fail-closed validation、机制/性能定位与第一性原理修订 | 查 SAOR 当前最高等级 GPU 证据；SAOR 在 credit 臂内 fg 最好但未越过 static，总 gate 因 DRR/VTC 无 post-drain 样本失败，不作 winner claim |
+| `experiments/results/saor_active_set_release_formal_20260812_69affc7e/` | fixed-envelope 2-Job 六 active-set + 四 matched-solo 的 40-cell formal、resolution-aware v2 validation、机制/性能定位 | 查 SAOR 正式 GPU 证据；credit mechanism effective 12/12，SAOR 在 credit 臂内 fg 最好但未越过 static，不作 winner claim；原 failed validation 保留审计 |
+| `experiments/results/saor_priority_reachability_smoke_20260812_91ffcaa/` | static/SAOR/foreground strict-priority 两轮 release-only 上界短测 | 查为什么 current SAOR 的 soft score 效果有限；strict-priority fg P99 14.27s、SLO 0%，仅 development smoke，不作 formal/proposed 排名 |
 | `code/scripts/baselines/opening_database_e2e_matrix.py` | 双 endpoint、三静态臂、统一 source/sink/质量/资源的 1 warmup + 3 formal runner；支持 workload-specific、校准合同锁定的 project K/actor shape | 只用于上述冻结开题合同；direct/DuckDB 并发不随 project 选择改变 |
 | `deploy/autodl/opening_database_e2e_p0.example.json` | AutoDL 开题三臂 runner 配置模板 | 复制到服务器 artifact root 后以 runtime env 展开 |
 | `deploy/autodl/opening_project_feeding_calibration.example.json` | 首轮未过 95% feeding 门后的纠正校准模板；同 manifest、统一 256 actor slots 并固定其它变量，仅扫 project K32/64/128/256 | 每个 workload 冻结最小饱和静态点后再整体替换重跑三臂矩阵 |
@@ -469,7 +470,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `research/evaluation_metrics_survey_20260731.md` | AI 算子/推理服务文献 + 数据库厂商评估指标调研与 gap 分析 | 设计新实验指标、对照文献标准指标时读；P0 缺口 TTFT/ITL/prefix-cache-hit-rate |
 | `research/daft_db_gpu_bridge_direction_scope_20260731.md` | 方向 reframe scope：DB↔GPU 经 Daft 桥接 + 三痛点 + offline-batch 候选；已撤回传输瓶颈/结构性空白预设 | 方向/题目讨论、Daft 痛点、workload 选型时读；以 staged baseline 后的证据为准 |
 | `research/heterogeneous_ai_dataflow_execution_model_20260811.md` | HSE CPU–GPU 异构分阶段执行候选：已有架构迁移审计、typed block、byte-bounded broker、tandem-queue/DPP 模型、实验门与 prompt/复用/增量推理待办 | 设计图像 static HSE、GPU 友好数据通路或重启远期复用候选前读；当前无性能/新颖性结论 |
-| `research/saor_model_scenario_audit_20260811.md` | SAOR 数学审计：capacity-only 负结果、fixed-envelope release、签名化 K、formal 后 release-only 不可达区域、reservation-backed 修订、hard SLO 可行集与停止门 | 设计 SAOR 后继、解释 static 优势或撰写定理前读；当前不声称证明完成，post-formal 状态为 fail-closed/directional-only |
+| `research/saor_model_scenario_audit_20260811.md` | SAOR 数学审计：capacity-only 负结果、fixed-envelope release、签名化 K、release-only 上界、reservation/priority guard 与 hard SLO 可行集 | 设计 SAOR 后继、解释 static/strict-priority 权衡或撰写定理前读；当前不声称证明完成，post-formal 状态为 formal-valid/not-promoted |
 | `research/reference/README.md` | 本地 PDF 状态 | 查看 21 份实体 PDF、Top 15 完整性和维护规则 |
 | `research/reference/REFERENCE_INDEX.md` | 权威题录索引 | 查看 DOI、正式轨道、核心补充级别和工程资料入口 |
 | `data/README.md` | 本地 workload 数据说明；raw payloads 被 git ignore | 查看 ShareGPT/BurstGPT 下载位置、用途和边界 |
@@ -524,7 +525,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/scripts/analysis/summarize_output_aware_bfd.py` | output-aware BFD 重复实验的长表统计汇总 | 汇总吞吐、E2E、packing、GPU、能耗与 MFU 正式结果时运行 |
 | `code/scripts/analysis/benchmark_saor_control.py` | static/threshold/FIFO/DRR/external-VTC/SAOR-Release 与 oracle-DPP 纯 CPU 控制路径 microbenchmark | 只量控制计算开销；release runtime 与未接线 oracle 分行，不据此声明 GPU/E2E 性能 |
 | `code/scripts/analysis/audit_saor_formal_readiness.py` | 固定包络 SAOR 十 scenario formal 或三臂 priority reachability 的 FCFS/calibration/manifest/direct 请求合同 fail-closed 静态预检 | 服务器 rehearsal/formal 前运行；priority 模板用 `--profile priority_reachability`；只读且不发送模型请求 |
-| `code/scripts/analysis/summarize_saor_active_set.py` | 六臂 active-set + 四 matched-solo 的 fail-closed formal 汇总；分离 lifecycle/mechanism gate，复算 slowdown/Jain/SLO/资源；支持 resolution-aware compact mechanism replay | runner 完成后生成可审计 formal summary；`--mechanism-only` 明确不升级完整 validation；不产生 theorem 或 dynamic-K claim |
+| `code/scripts/analysis/summarize_saor_active_set.py` | 六臂 active-set + 四 matched-solo 的 fail-closed formal 汇总；分离 lifecycle/mechanism gate，复算 slowdown/Jain/SLO/资源；默认路径与 compact replay 均支持 resolution-aware 语义 | runner 完成后生成可审计 formal summary；默认 passed validation 写明 v2/采样周期/重分类，`--mechanism-only` 不升级完整 validation；不产生 theorem 或 dynamic-K claim |
 | `code/scripts/analysis/summarize_saor_priority_reachability.py` | static/SAOR/strict-priority 1+3 的 fail-closed release-only upper-bound 汇总 | 检查 exactly-once、机制、`job_priorities=[0,1]`、fg P99≤30.7s 与 SLO≤1%；吞吐仅作语境，不构成 SAOR/reservation 胜出 |
 | `code/scripts/analysis/replay_saor_capacity.py` | 对 paired capacity aggregate trace 做滞后一拍选择与同 phase oracle regret | 验证动作方向；输出明确为 noncausal aggregate development evidence |
 | `code/tests/data/test_sources.py` | data source 查询构造和 source factory 单元测试 | 修改数据入口行为后运行 |

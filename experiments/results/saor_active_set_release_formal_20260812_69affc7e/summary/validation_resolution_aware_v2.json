@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "full_formal_validation_updated": true,
+  "formal_matrix": "fixed-envelope SAOR active-set release",
+  "mechanism_gate_evaluation": "resolution_aware_v2",
+  "trace_observation_interval_s": 0.25,
+  "source_group_runs_sha256": "a300b56292ca419bb88687ab316de7f5de69834f68835ede33bd9aad7b196290",
+  "summarizer_commit": "ed168d88e42fc99253587ae46d087c44ee7493e6",
+  "project_solo_jct_s": [
+    59.16732931137085,
+    16.51117793718974
+  ],
+  "direct_solo_jct_s": [
+    47.97393647829691,
+    15.97266681989034
+  ],
+  "project_solo_service_rates": [
+    11711.644857893822,
+    8960.32752327349
+  ],
+  "direct_solo_service_rates": [
+    14748.344845521016,
+    10184.622165945766
+  ],
+  "claim_boundary": "descriptive efficiency/fairness/SLO comparison; no theorem or dynamic-capacity claim",
+  "mechanism_reclassifications": [
+    {
+      "scenario_id": "active_set_shared_drr",
+      "repeat_index": "2",
+      "status": "reclassified:post_drain_below_trace_resolution"
+    },
+    {
+      "scenario_id": "active_set_external_vtc",
+      "repeat_index": "2",
+      "status": "reclassified:post_drain_below_trace_resolution"
+    }
+  ],
+  "historical_validation_preserved": "validation.json",
+  "historical_validation_status": "failed",
+  "note": "Generated from the complete remote artifact in a sidecar output directory; the historical validation is preserved for auditability."
+}

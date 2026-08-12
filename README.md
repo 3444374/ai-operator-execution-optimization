@@ -10,9 +10,10 @@
 > staged descriptor + observe-only snapshot 正式矩阵也已 24/24 passed、99K formal rows
 > exactly-once，snapshot 100% fresh 且构建均值 0.141 ms，但 static/proposed group JCT 只差
 > 0.98%，不能写成 state-aware 胜出。SAOR capacity-only 未超过 K160/简单 threshold，
-> dynamic K 已退出主线；fixed-envelope 2-Job formal 已 40/40，原始完整 gate 保留 fail-closed。
-> resolution-aware compact mechanism replay effective 12/12，但不升级完整 validation；SAOR 在
-> credit 臂内 fg 最好、仍未越过 static。strict-priority release-only 诊断已实现、GPU pending。
+> dynamic K 已退出主线；fixed-envelope 2-Job formal 已 40/40，原始 failed gate 保留作审计。
+> resolution-aware v2 已在完整 artifact 上重汇总为 passed、credit mechanism effective 12/12；SAOR 在
+> credit 臂内 fg 最好、仍未越过 static。strict-priority release-only 两轮短测达到 fg P99 14.27s、
+> SLO 0%，但仅是能力上界，尚非 formal/proposed。
 
 > **状态感知补充（2026-08-11）**：修正执行与门禁后的两 Job phase-change 实验在
 > pressure gate 提前停止。A-only K160 相对 K128 每 endpoint service rate +7.77%，
@@ -163,11 +164,11 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
   多 actor 多数未超过预注册的约 5% 晋级门槛；SAOR capacity-only 开发门相对 K128
   +4.36%，但相对 K160 仅 +0.52%、相对简单 threshold −1.46%，同样未晋级。不能因“动态”
   命名就声称更优；K160 是强效率 baseline，但已有 Job B tail/Jain 代价。
-- **SAOR fixed-envelope formal 只给出方向性信号**：40/40、0 incident、exactly-once；SAOR
+- **SAOR fixed-envelope formal 给出有效但未晋级的权衡证据**：40/40、0 incident、exactly-once；SAOR
   12,393 tok/s、fg P99 50.3s，在 credit 臂内最好，但 static 以 9,508 tok/s 换得 fg P99
-  29.2s 和 0% SLO violation。原始完整 gate 因 DRR/VTC rep2 无 post-drain 样本而 fail-closed；
-  250 ms resolution-aware compact replay effective 12/12 仅修审计假阴性，不改变排序。当前
-  `slo_weight=0`，strict-priority 也只有本地实现/单测，不能称 SLO-aware 或策略胜出。
+  29.2s 和 0% SLO violation。原始 gate 因 DRR/VTC rep2 无 post-drain 样本而 fail-closed；
+  250 ms resolution-aware v2 已在完整 artifact 上重汇总为 passed，仅修审计假阴性、不改变排序。当前
+  `slo_weight=0`；strict-priority 两轮短测虽显著改善 fg，但 hard priority 缺少 anti-starvation/lag guard，不能称 SLO-aware 或策略胜出。
 - **文本策略具有 regime 依赖**：2-endpoint KV 无压力时多数数据组织策略接近；
   4-endpoint KV 饱和时排名和 prefix-cache 行为明显分化。相关结论不能脱离 endpoint/
   KV 条件外推。

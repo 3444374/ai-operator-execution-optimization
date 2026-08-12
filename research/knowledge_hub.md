@@ -687,29 +687,32 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
   slowdown 3.45，在 credit 臂内前台最好；static 9,508 tok/s、fg JCT/P99 36.2/29.2s、
   slowdown 2.19、SLO violation 0%，仍是更强隔离 Pareto 点。
 - **门禁边界**：DRR/VTC rep2 的两个 Job 近乎同时结束（绝对完成时刻差约 5.8ms/4.8ms），
-  `active_set_bulk_only_post_samples=0`，使总 validation fail-closed。它说明审计器缺 simultaneous-drain 语义，
-  不证明 baseline 违反工作守恒；本轮不能发布 winner claim。
+  `active_set_bulk_only_post_samples=0`，使原始 validation fail-closed。它说明审计器缺 simultaneous-drain
+  语义，不证明 baseline 违反工作守恒。
 - **分辨率修订**：post-drain 是区间性质。若两 Job 完成间隔小于 trace 周期且该开区间内无
   样本，则证据既不能证明工作守恒，也不能证伪，正确三值语义是 `not_applicable`，而不是
   `false`。冻结 250 ms 规则后的 compact replay 将 DRR/VTC rep2 重分类，四 credit 臂 effective
-  12/12；但 compact 表没有服务器完整 manifest/raw trace，故 artifact 明确不升级完整 formal
-  validation。长于一个周期仍无样本的反例保持失败。
-- **第一性原理原因**：前台到达时若 bulk 已借满包络，且项目不能抢占 vLLM 已接纳请求，
-  release-only 控制的即时前台容量近似为 0，只能等 completion 回收。无 reservation 的事后
-  fairness reclaim 因而不可能免费复制 static 的即时隔离；`slo_weight=0` 又说明 formal 实际
-  验证的是 fairness-aware release，而不是 SLO-aware controller。
+  12/12；随后 `ed168d8` 在服务器完整 artifact 上运行默认 summarizer，resolution-aware v2
+  validation passed、`full_formal_validation_updated=true`。长于一个周期仍无样本、新 schema 明确
+  applicable 或任一前置机制失败仍保持 fail-closed。
+- **第一性原理原因（经 reachability 短测修正）**：前台到达时已占用 lease 仍不可抢占，但未来
+  completion 可被 lexicographic release 立即导向 foreground。两轮 strict-priority 短测达到 fg
+  JCT/P99 20.04/14.27s、SLO 0%，同时保留 11,791 tok/s，说明 reservation 不是已知 foreground
+  存活信号下 2-Job reachability 的必要条件。current SAOR 差的主因是 soft entitlement/fairness
+  score 与 foreground tail/SLO 目标错位；hard priority 的代价是 bulk SLO 0.801 与潜在 starvation。
 - **估计误差**：project credit 臂中 foreground `actual/predicted work≈1.289`，bulk≈1.064；
   前台低估百分比约是 bulk 的 4.5 倍。下一版 admission 必须比较 point estimate、q95 upper
   bound 与 actual-work oracle，不能用同一 predicted token 标量同时承担资源、安全和公平。
-- **修订路线**：simultaneous-drain audit 与 compact replay 已完成；foreground strict-priority
-  release-only 诊断已实现、等待 GPU；通过判门后只扫 reservation $r/K=0,0.25,0.5$，采用 borrow/reclaim debt、
-  upper-bound resource credit 与 hard SLO feasible set。只有 $r<0.5K$ 达到 static fg 非劣且
-  吞吐相对 static≥5% 才晋级；否则淘汰，不扩 4-Job。完整推导见
+- **修订路线**：先把 strict priority 收紧为 lexicographic SLO priority + 有界 priority window 或
+  service-lag cap；其余时间回到 DRR/SAOR。reservation $r/K$ 与 upper-bound work credit 只作未知
+  到达、多 foreground 和预测误差下的鲁棒性消融。达到 static fg 非劣、吞吐相对 static≥5%、
+  bulk lag/SLO 不越界才晋级；否则淘汰，不扩 4-Job。完整推导见
   `saor_model_scenario_audit_20260811.md` §11。
-- **release-only upper bound 实现状态**：已实现非抢占 foreground strict-priority 诊断。前台
+- **release-only upper bound 实现状态**：已实现并完成两轮 GPU 短测。前台
   Job 注册后，未来释放 credit 只给前台；已进入 vLLM 的 bulk lease 不撤销，前台 `finish_job`
   后恢复 bulk。group evidence 记录 `[bulk,foreground]=[0,1]`，独立判门要求 fg P99≤30.7s、
-  fg SLO violation≤1%。它只诊断 release-only 可达域，GPU 尚未运行，不能称 SAOR 改进。
+  fg SLO violation≤1%。实测 fg P99 14.27s、SLO 0%，但 formal repeats=0；它只诊断 release-only
+  可达域，不能称 SAOR 改进或通用 hard-priority 策略胜出。
 
 #### 5.7.6 模式优先级矩阵
 

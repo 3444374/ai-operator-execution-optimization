@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-08-12 SAOR 假阴性完整闭环与 strict-priority 两轮短测
+
+- 确认 `91ffcaa` 的运行时 `active_set_phase_summary` 已把 post-drain applicability 绑定到实际
+  250 ms trace 周期；不是简单把采样频率降到 5 ms。新增完整 validation 审计字段与端到端回归：
+  `full_formal_validation_updated=true`、`mechanism_gate_evaluation=resolution_aware_v2`、采样周期和
+  legacy 重分类清单。6 个真假阴性边界测试本地/服务器均通过。
+- 在服务器完整 40-cell artifact 上以 `ed168d8` 默认 summarizer 做旁路重汇总，source
+  `group_runs.csv` SHA256 为 `a300b562…`；新 validation `passed`，四个 credit 臂 effective 12/12。
+  原 `summary/validation.json=failed` 保留，不静默覆盖历史；性能数值/Pareto 排序未变化，SAOR
+  仍未越过 static。
+- 完成 static/SAOR/foreground strict-priority 三臂各两轮 rehearsal-only GPU 短测：strict-priority
+  11,791 tok/s、fg JCT/P99 20.04/14.27s、fg SLO 0%；相对 SAOR fg P99 −73.02%、吞吐 −4.77%，
+  相对 static 吞吐 +23.46%、fg P99 −51.43%。formal repeats=0，只证明 non-preemptive release
+  ordering 可达，不是 proposed/winner。
+- 第一性原理结论修订：reservation 不是已知 foreground 存活信号下 2-Job reachability 的必要
+  条件；current SAOR 的主要问题是 soft fairness score 与 fg tail/SLO 目标错位。下一候选改为
+  lexicographic SLO priority + bounded priority-window/service-lag guard；reservation/q95 work credit
+  只作未知到达、多 foreground 与预测误差下的鲁棒性消融。
+- 远端只执行离线重汇总，没有启动 formal；临时 worktree 与本地 Paramiko 桥已清理，实验 artifacts
+  保留。按用户要求不进行 Wiki 同步。
+
 ## 2026-08-12 SAOR simultaneous-drain 审计修复与 release-only 上界实现
 
 - 把 active-set post-drain 机制门绑定到 runner 的 250 ms trace 周期：两个 Job 的完成间隔

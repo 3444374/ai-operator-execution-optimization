@@ -526,30 +526,31 @@ killer baseline 才能晋级；HSE 作为执行底座，capacity governor 保持
 
 权威结果为
 `../experiments/results/saor_active_set_release_formal_20260812_69affc7e/README.md`。40/40 cell、
-0 incident、exactly-once；SAOR/FIFO mechanism 3/3 通过，但总 validation 因 DRR/VTC rep2
-`mechanism_not_observed` 而 fail-closed。离线核对显示 DRR/VTC rep2 两 Job 完成时刻分别只差
+0 incident、exactly-once；原始 validation 因 DRR/VTC rep2 `mechanism_not_observed` 而
+fail-closed。离线核对显示 DRR/VTC rep2 两 Job 完成时刻分别只差
 约 5.8 ms/4.8 ms，`active_set_bulk_only_post_samples=0`；因此该失败首先是 post-drain 可观测性问题，不得写成
-baseline 违反工作守恒。下表为 fail-closed 条件下的定位数据，不是正式胜负结论：
+baseline 违反工作守恒。下表是正式有效的权衡数据，但不是 winner 结论：
 
 2026-08-12 后续把该性质改为与 250 ms trace resolution 一致的三值判定：完成间隔小于一个
 采样周期且区间内没有样本时，post-drain 为 `not_applicable`；若有样本或间隔达到一个周期，
 仍必须观察到工作守恒。compact `group_runs.csv` 回放后四 credit 臂 effective 12/12，只有
-DRR/VTC rep2 被重分类；artifact 明确记录 `full_formal_validation_updated=false`，因此原始完整
-validation 不改写，性能/Pareto 结论也不改变。
+DRR/VTC rep2 被重分类。随后 `ed168d8` 在服务器完整 artifact 上用默认 summarizer 重汇总，
+resolution-aware v2 validation passed、`full_formal_validation_updated=true`；原 failed 文件保留审计，
+性能/Pareto 结论不改变。
 
 | arm | tok/s | fg JCT(s) | fg P99(s) | fg SLO viol | fg slowdown | Jain | mechanism |
 |---|---:|---:|---:|---:|---:|---:|---|
 | static | 9508 | **36.2** | **29.2** | **0.000** | **2.19** | **0.914** | N/A |
 | FIFO | 12103 | 65.3 | 58.7 | 0.968 | 3.96 | 0.695 | 3/3 |
-| DRR | 12411 | 62.6 | 55.8 | 0.845 | 3.79 | 0.722 | 2/3 |
-| VTC-style | 12441 | 60.2 | 53.6 | 0.894 | 3.65 | 0.730 | 2/3 |
+| DRR | 12411 | 62.6 | 55.8 | 0.845 | 3.79 | 0.722 | effective 3/3 |
+| VTC-style | 12441 | 60.2 | 53.6 | 0.894 | 3.65 | 0.730 | effective 3/3 |
 | SAOR-Release | 12393 | **57.0** | **50.3** | **0.831** | **3.45** | **0.741** | 3/3 |
 
 SAOR 相对 static 吞吐约 +30.3%，但 fg JCT +57.5%、fg P99 +72.3%、SLO 违反 +83.1pp；
 相对 FIFO 吞吐 +2.4%、fg JCT −12.7%、fg P99 −14.3%。这说明它改进了无保护 shared credit，
 却没有把 static 的隔离能力转化为动态、可借用的安全容量。
 
-### 11.2 第一性原理：release-only 的不可达区域
+### 11.2 第一性原理：即时容量下界与 release-only 可达性
 
 令 endpoint 总包络为 $K_e$，前台在 $t_a$ 到达，bulk 已占用 $A_{B,e}(t_a)$。若为未来前台
 保留 $r_e(t_a)$，则 bulk 回收债务为
@@ -566,8 +567,11 @@ C^{imm}_{F,e}(t_a)\le K_e-A_{B,e}(t_a).
 $$
 
 若 work-conserving borrow 令 $A_{B,e}(t_a)\approx K_e$，且 $r_e=0$，则
-$C^{imm}_{F,e}\approx0$。在 completion 释放 $D_{B,e}$ 前，只改变 release order 的任何策略
-都不能复制 static 的即时半包络。这是结构性因果约束，不是继续调 `fairness_weight` 能消除的。
+$C^{imm}_{F,e}\approx0$。在第一个 completion 前，release order 不能复制 static 的即时半包络；
+但 completion 到来后，lexicographic release 可以把全部未来 credit 导向 foreground。strict-priority
+短测的 fg JCT/P99 20.04/14.27s 表明，在当前 5s offset/请求粒度下，第一个 completion 足够早，
+所以“即时容量为零”不等于“release-only 不可达”。结构性问题转为 soft score 的动作不够强，以及
+hard priority 如何满足 bulk lag/SLO 与反饥饿约束。
 
 ### 11.3 当前实现与论文模型的断点
 
@@ -612,7 +616,7 @@ $$
 | 优先级 | 约束/动作 | 失败时行为 |
 |---:|---|---|
 | 1 | correctness、request/work envelope、状态 freshness | fail-closed 到 frozen static |
-| 2 | 前台保护余量与负 SLO slack | 停止新 bulk lease，形成 reclaim debt |
+| 2 | 负 SLO slack / bounded priority window | 停止新 bulk lease，形成 reclaim debt；窗口到期转入 lag guard |
 | 3 | 无饥饿与 normalized service lag | 在满足 1–2 的候选中选择最欠服务 Job |
 | 4 | work-conserving borrow/goodput | 仅借用未被 1–3 需要的余量 |
 
@@ -635,22 +639,23 @@ $$
 |---:|---|---|
 | 1 | 用已有 trace 修 mechanism gate：同时完成记为 `post_drain_not_applicable` | 不改策略数据，只恢复审计语义 |
 | 2 | foreground strict-priority diagnostic：到达后停发新 bulk，不抢占 | 若仍无法接近 static，release-only 分支不可达，停止调权重 |
-| 3 | 固定其他参数，只扫 reserve $r/K=0,0.25,0.5$ | 画 throughput–fg P99/SLO 前沿 |
-| 4 | 固定最佳 reserve，比较 mean / q95 / actual-work oracle | oracle 无空间则停止 estimator 扩展 |
-| 5 | 只在前四步通过后接 negative-slack SLO guard | 不与 reserve 同时上线，保持因果归因 |
+| 3 | 固定其他参数，扫 2–3 个 priority-window/service-lag cap | 同时约束 fg P99/SLO 与 bulk lag/SLO |
+| 4 | 在最佳 guard 下比较 reserve 0/0.25K 与 mean/q95/actual oracle | 仅测试未知到达/预测误差鲁棒性 |
+| 5 | 前四步通过后才扩多 foreground/4-Job | 不与 guard 首次上线同时扩场景 |
 
 建议的下一轮预注册晋级门（以本轮 static 均值为锚，仅是**待冻结建议**）为：fg P99
 ≤$29.2\times1.05=30.7$s、fg SLO violation≤1%、吞吐≥$\lceil9508\times1.05\rceil=9984$ tok/s、
-correctness/exactly-once 全过。若只有 $r=0.5K$ 能通过，则动态方法等价于 static 半分区，
-不晋级；若 $r<0.5K$ 通过且吞吐相对 static≥5%，才说明 borrow/reclaim 带来净方法价值。
+bulk normalized lag/SLO 不越过冻结上界、correctness/exactly-once 全过。reservation 只有在 guard
+已通过后还能改善未知到达/预测误差鲁棒性，才保留为方法组件。
 
 **post-formal verdict**：dynamic-K 继续 `parked-conditional`；当前 `saor_release` 记为
-`formal-run-fail-closed / directional-only`，不淘汰但不晋级。候选后继是
-**reservation-backed SAOR**，必须先过两 Job 的 release-only 可达性与静态非劣门，再考虑
+`formal-valid / not-promoted`，不淘汰但不晋级。strict-priority 两轮短测已证明 release-only 可达；
+候选后继改为 **bounded lexicographic priority SAOR**，必须先过两 Job 的静态非劣、bulk lag/SLO 门，再考虑
 4-Job、weighted 或多模态扩展。
 
 工程上已补 foreground strict-priority 作为 release-only 上界：前台首次进入 coordinator 后，
 未来 completion 释放的 credit 只分给前台，但不抢占已有 bulk lease；前台 Job 完成并显式关闭
 生命周期后才恢复 bulk。该诊断与 fairness weight 分离，输出 `[0,1]` priority evidence；以
-fg P99≤30.7s、fg SLO violation≤1% 判可达。当前只有本地单测与 fail-closed runner/summary，
-尚无 GPU 结果，不能据此改变 verdict。
+fg P99≤30.7s、fg SLO violation≤1% 判可达。两轮 GPU rehearsal 实测 fg P99 14.27s、SLO 0%，
+但 hard priority 仍缺 anti-starvation/service-lag 上界，不能直接作为 proposed；该结果把 verdict
+从“release-only 可能不可达”更新为“可达但安全约束未闭合”。
