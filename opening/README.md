@@ -14,7 +14,7 @@
 - 当前五个研究问题为：跨模态 work 描述、可靠运行状态识别、balance/locality 数据组织、
   固定总上限下的多作业调度，以及面向配置选择的代价估计；两项研究内容与共同使能关系不变。
 
-本目录用于准备开题报告、开题汇报 PPT 和进度材料。当前 31 页对外答辩 PPT 已按“入口变化—
+本目录用于准备开题报告、开题汇报 PPT 和进度材料。当前 26 页对外答辩 PPT 已按“入口变化—
 执行假设—分层研究现状—研究空白—动机—方法”重构；中文 Markdown 报告保持项目事实基线。
 普通飞书云文档等待用户对指定文档 URL 的最终覆盖授权，
 Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一输入。
@@ -63,8 +63,8 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 | 开题报告 | `report/opening_report.md` | 2026-08-12 已按学校模板重组为七部分中文正文；研究内容、研究方案、前期证据、进度和参考文献已统一到“工作量描述→状态观测→固定上限调度→决策评价”闭环，14/14 张主讲图与 2 张补充状态图均从开题专用图集引用；固定上限有序释放已接运行时但尚无正式 GPU 对照；飞书普通云文档覆盖已完成 dry-run，等待对指定文档 URL 的最终外部写入确认 |
 | 开题报告 QA | `report/opening_report_20260812_qa.md` | 学校模板映射、图表、引用、实现边界及 PPT/报告口径审计 |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
-| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前 31 页 v9 不受旧页数限制，优先服从对外叙事 |
-| 开题 PPTX | `slides/opening_defense_20260812_v9.pptx` | 当前 31 页对外答辩版；学校视觉识别保留，内容区按叙事自由重排，QA 见 `slides/opening_defense_20260812_v9_qa.md` |
+| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前 26 页 v9 以 v5 演示经验和学校模板为基础，优先服从对外叙事 |
+| 开题 PPTX | `slides/opening_defense_20260812_v9.pptx` | 当前 26 页对外答辩版；删去重复文献页并合并验证与结尾内容，QA 见 `slides/opening_defense_20260812_v9_qa.md` |
 | 开题飞书历史快照 | `feishu/opening_report_wiki.md` | **已过期，禁止同步**；仍含首轮failed-feeding数字。当前权威正文为`report/opening_report.md`，用户恢复云文档工作后再由权威正文重新生成同步源 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
@@ -87,7 +87,7 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 
 ## 下一步
 
-1. `slides/opening_defense_20260812_v9.pptx` 已按 31 页逐页确认背景、动机、研究内容、证据和转场，并完成对外术语清理；中文 Markdown 报告继续承担完整论证。
+1. `slides/opening_defense_20260812_v9.pptx` 已按 26 页逐页确认背景、动机、研究内容、证据和转场，并完成“英文专业名首次附中文解释”的对外术语清理；中文 Markdown 报告继续承担完整论证。
 2. SQuAD/ShareGPT replacement、原生单 job、两 job 最小因果与四 job 扩展均已完成；停止增加开题 baseline、offset、weight 或更多 job 数扫描。
 3. v9 只保留学校页眉、配色和身份识别，不逐框仿制模板；页数和版面服从现场叙事。
 4. Claim Matrix、问答、实验状态与实现边界继续作为事实护栏；用户已明确豁免 Wiki。普通飞书云文档仅在获得对指定 URL 的最终覆盖授权后同步。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。

@@ -706,7 +706,7 @@
   overflow、notes、模板保真和 contact sheet 复核全部通过。
 - 修订 P03 的流程表达：加大右侧步骤卡间距，确保五条蓝色向下连接都有线身；三条状态反馈支线
   独立带箭头，补充线型/边框图例并统一卡内文字居中。
-# 2026-08-12 31 页对外开题答辩 PPT v9
+# 2026-08-12 31 页对外开题答辩 PPT v9（历史初版）
 
 - 新建 `codex/opening-ppt-template-v9` 分支并生成 `slides/opening_defense_20260812_v9.pptx`。
 - 保留学校页眉、配色和身份识别，内容区不逐框仿制模板；按数据库成为 AI 任务入口、执行假设
@@ -717,3 +717,16 @@
   构建时单独生成并栅格化，权威源图不变。
 - 31/31 页渲染、0 空占位符、31/31 讲稿与来源、画布溢出及关键页目视检查通过；详见
   `slides/opening_defense_20260812_v9_qa.md`。
+
+## 2026-08-12 v9 叙事收敛与模板式结尾复核
+
+- 在 `codex/opening-ppt-template-v9` 分支将 v9 从 31 页收敛为 26 页：三张逐篇论文截图合并为
+  一张四层研究现状图，实验有效性并入验证方案，研究计划与预期贡献合并为学校模板的双栏结尾。
+- 保留图像 baseline 与图像四作业两页，分别承担“路径/能力边界”和“跨模态并发干扰”两项不同
+  证明义务；未增加新图，也未回退到旧版低质量图。
+- 项目数据结构和机制采用英文专业名首次附中文解释的口径：WorkDescriptor、Runtime State
+  Snapshot、Admission Control、Endpoint Routing、Work Credit、Idle Borrowing、Cost Estimator。
+- 修正文本 baseline 的长标签裁切、图下最后一行裁切、图像阶段数值和图像 baseline 叙述口径；
+  四张目录页分别高亮当前章节。
+- 26/26 页逐页渲染、0 空占位符、26/26 notes 来源、画布溢出与逐页目视检查通过；本机已用
+  Microsoft PowerPoint 成功打开，正式答辩前仍需在最终投影机器确认字体与比例。
