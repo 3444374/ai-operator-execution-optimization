@@ -36,6 +36,8 @@
 
 模板一致性命令使用 `check_template_fidelity.mjs`，输入为 starter frame map、starter/final layout 和最终 PPTX；结果为 `status=pass`、`issueCount=0`。
 
+完成轮再次从当前构建脚本在独立临时目录生成 20 页并运行 overflow 检查；20 张最终渲染 PNG 与本文件所验收版本逐页 SHA-256 完全一致。随后再次逐页目视检查 1–20 页，未发现新增重叠、裁切、页眉页脚侵占或图文主张冲突。PPTX 容器本身含非确定性元数据，因此以逐页渲染一致性而非二进制文件哈希作为可视内容复现门禁。
+
 ## 4. 数据与主张边界
 
 - 文本/图像四 Job 图均为路径内部 `concurrent JCT / isolated JCT`，不用于跨框架绝对排名。

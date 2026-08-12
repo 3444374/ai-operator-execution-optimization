@@ -11,12 +11,12 @@
   CCF-A full research。
 - 开题保持两项研究内容：数据组织；调度与提交控制。代价估计升级为两项内容
   的共同使能组件，多模态仍是泛化验证。
-- 三个研究问题为：最小饱和压力与 transient ramp、相同 work 的数据组织、
-  多 job shared credit/fairness。
+- 当前五个研究问题为：跨模态 work 描述、可靠运行状态识别、balance/locality 数据组织、
+  固定总上限下的多作业调度，以及面向配置选择的代价估计；两项研究内容与共同使能关系不变。
 
-本目录用于准备开题报告、开题汇报 PPT 和进度材料。当前阶段优先冻结 20 页中文 PPT；
-中文 Markdown 报告和飞书云文档在 PPT 冻结后继续，Wiki 不同步。所有发布面仍以本地权威稿和
-Claim Matrix 为唯一输入。
+本目录用于准备开题报告、开题汇报 PPT 和进度材料。20 页中文 PPT 与中文 Markdown 报告
+均已完成本地冻结和一致性审计；普通飞书云文档等待用户对指定文档 URL 的最终覆盖授权，
+Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一输入。
 
 开题材料不是独立于项目的展示层。当前报告确定的题目和研究内容会反向影响 `overview/` 中的阶段规划、`motivation/` 中的后续实验设计以及项目级 README / PROJECT_INDEX 的方向说明。修改开题题目、研究内容或实验边界时，需要同步检查这些项目入口，避免开题材料和项目主线割裂。
 
@@ -86,13 +86,13 @@ Claim Matrix 为唯一输入。
 
 ## 下一步
 
-1. 当前先审 `slides/opening_defense_20260812_v7.pptx`：按 20 页逐页确认背景、动机、研究内容、证据和转场；中文 Markdown 报告与飞书云文档待 PPT 冻结后继续。
+1. `slides/opening_defense_20260812_v7.pptx` 已按 20 页逐页确认背景、动机、研究内容、证据和转场；中文 Markdown 报告也已完成模板、图表与引用总审计。
 2. SQuAD/ShareGPT replacement、原生单 job、两 job 最小因果与四 job 扩展均已完成；停止增加开题 baseline、offset、weight 或更多 job 数扫描。
 3. v7 已继承学校模板形成 20 页成品；如补第 2、3 页背景图，只替换现有图片并重新渲染，不改变冻结主线。
-4. Claim Matrix、问答、实验状态与实现边界继续作为大纲事实护栏；用户已明确豁免 Wiki，当前不同步云文档。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
-## 飞书发布面（当前同步暂停）
+4. Claim Matrix、问答、实验状态与实现边界继续作为事实护栏；用户已明确豁免 Wiki。普通飞书云文档仅在获得对指定 URL 的最终覆盖授权后同步。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
+## 飞书发布面（等待指定 URL 覆盖授权）
 
-以下链接只用于识别既有发布面；当前均不是可直接覆盖的同步目标：
+以下链接用于识别既有发布面；普通云文档只有在用户明确授权覆盖该 URL 后才写入：
 
 | 飞书文档 | 链接 | 用途 |
 |---|---|---|
@@ -127,4 +127,4 @@ https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb
 以及 GPU-backed 动机实验图（粒度对比、阶段时延、endpoint 对比、pgvector 写回对比）。
 旧版 wiki (GCxowlVJbinzgRkoHDmc06cSn9J) 保留作为历史参考，不再更新。
 
-PPT 已按当前 20 页主讲逻辑重做并通过本地程序化与逐页渲染检查；旧版飞书 wiki 保留历史版本，不再作为当前开题报告同步面。中文 Markdown 报告与飞书云文档将在 PPT 冻结后继续。
+PPT 已按当前 20 页主讲逻辑重做并通过本地程序化与逐页渲染检查；中文 Markdown 报告也已完成七部分正文、16 张图和 31 条引用审计。旧版飞书 wiki 保留历史版本，不再作为当前开题报告同步面；普通飞书云文档等待指定 URL 的覆盖授权。
