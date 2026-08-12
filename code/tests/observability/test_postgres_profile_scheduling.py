@@ -2900,6 +2900,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                     "ray_actor",
                     "--model-backend",
                     "compatible_http",
+                    "--completion-endpoint-url",
+                    "http://localhost/v1/completions",
                     "--completion-http-transport",
                     "httpx_async",
                     "--completion-http-keepalive-expiry-s",
