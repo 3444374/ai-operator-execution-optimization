@@ -519,3 +519,126 @@ Jain 只是一个聚合统计，不是公平定义。正式报告同时使用：
 **Verdict：分版本判定。** dynamic-K SAOR 为 **Reject and Pivot**；fixed-envelope active-set
 SAOR-Release 为 **Accept with Revisions**。后者只有通过 global FIFO/no-op 与 shared DRR 两个
 killer baseline 才能晋级；HSE 作为执行底座，capacity governor 保持 `parked-conditional`。
+
+## 11. 2026-08-12 fixed-envelope formal 后审计
+
+### 11.1 证据状态与口径修正
+
+权威结果为
+`../experiments/results/saor_active_set_release_formal_20260812_69affc7e/README.md`。40/40 cell、
+0 incident、exactly-once；SAOR/FIFO mechanism 3/3 通过，但总 validation 因 DRR/VTC rep2
+`mechanism_not_observed` 而 fail-closed。离线核对显示 DRR/VTC rep2 两 Job 完成时刻分别只差
+约 5.8 ms/4.8 ms，`active_set_bulk_only_post_samples=0`；因此该失败首先是 post-drain 可观测性问题，不得写成
+baseline 违反工作守恒。下表为 fail-closed 条件下的定位数据，不是正式胜负结论：
+
+| arm | tok/s | fg JCT(s) | fg P99(s) | fg SLO viol | fg slowdown | Jain | mechanism |
+|---|---:|---:|---:|---:|---:|---:|---|
+| static | 9508 | **36.2** | **29.2** | **0.000** | **2.19** | **0.914** | N/A |
+| FIFO | 12103 | 65.3 | 58.7 | 0.968 | 3.96 | 0.695 | 3/3 |
+| DRR | 12411 | 62.6 | 55.8 | 0.845 | 3.79 | 0.722 | 2/3 |
+| VTC-style | 12441 | 60.2 | 53.6 | 0.894 | 3.65 | 0.730 | 2/3 |
+| SAOR-Release | 12393 | **57.0** | **50.3** | **0.831** | **3.45** | **0.741** | 3/3 |
+
+SAOR 相对 static 吞吐约 +30.3%，但 fg JCT +57.5%、fg P99 +72.3%、SLO 违反 +83.1pp；
+相对 FIFO 吞吐 +2.4%、fg JCT −12.7%、fg P99 −14.3%。这说明它改进了无保护 shared credit，
+却没有把 static 的隔离能力转化为动态、可借用的安全容量。
+
+### 11.2 第一性原理：release-only 的不可达区域
+
+令 endpoint 总包络为 $K_e$，前台在 $t_a$ 到达，bulk 已占用 $A_{B,e}(t_a)$。若为未来前台
+保留 $r_e(t_a)$，则 bulk 回收债务为
+
+$$
+D_{B,e}(t_a;r_e)=\left[A_{B,e}(t_a)-(K_e-r_e)\right]^+.
+$$
+
+在项目“不修改 vLLM、已提交请求不可抢占”的边界下，控制器只能阻止**未来** bulk release。
+因此前台到达后的即时可用容量满足
+
+$$
+C^{imm}_{F,e}(t_a)\le K_e-A_{B,e}(t_a).
+$$
+
+若 work-conserving borrow 令 $A_{B,e}(t_a)\approx K_e$，且 $r_e=0$，则
+$C^{imm}_{F,e}\approx0$。在 completion 释放 $D_{B,e}$ 前，只改变 release order 的任何策略
+都不能复制 static 的即时半包络。这是结构性因果约束，不是继续调 `fairness_weight` 能消除的。
+
+### 11.3 当前实现与论文模型的断点
+
+| 断点 | formal 实际实现 | 后果 |
+|---|---|---|
+| SLO debt 未进入动作 | `slo_weight=0`；30s SLO 仅观测 | 不能把结果解释为 SLO-aware scheduler 的成败 |
+| 状态只 observe | 服务状态采集不改变 release | 当前验证的是 active-set/fairness release，不是完整 state-aware control |
+| 资源 credit 用 point estimate | completion 后 actual work 修正公平账本，但不追溯物理 lease | foreground `actual/predicted≈1.289`，bulk≈1.064；前台低估百分比约为 bulk 的 4.5 倍 |
+| soft score 目标错位 | equal entitlement deficit + fairness debt | 最大化的不是“满足前台 SLO 后的 goodput” |
+| 作用点位于 FCFS 前 | vLLM 内已接纳请求顺序不可撤销 | 到达后回收存在至少一个 completion/drain 时延 |
+
+formal 中的有效 score 可写为
+
+$$
+S_j=(\rho_j-d_j)+\frac{F_j}{K^{work}},
+\qquad
+d_j=\max\left\{\frac{A_j^{req}}{K^{req}},
+                 \frac{A_j^{work}}{K^{work}}\right\},
+$$
+
+其中 SLO 项系数为 0。它更接近 fairness-aware release heuristic，而不是以 foreground deadline
+为硬约束的控制器。这个表述必须替代“完整 DPP/MaxWeight 已由 runtime 实现”的说法。
+
+### 11.4 修订数学问题：hard feasible set + lexicographic release
+
+下一版本不再先拼 soft score，而先定义约束优化：
+
+$$
+\begin{aligned}
+\max_{\pi}\quad & G(\pi) \\
+\text{s.t.}\quad
+& \Pr_{\pi}(L_F>\tau_F)\le\epsilon_F,\\
+& J_{norm}(\pi)\ge J_{min},\\
+& A_e^{req}(t)\le K_e^{req},\quad
+  A_e^{work}(t)\le K_e^{work},\\
+& \sup_t\;W_j^{wait}(t)<\infty.
+\end{aligned}
+$$
+
+可执行策略采用词典序而非可互相抵消的权重和：
+
+| 优先级 | 约束/动作 | 失败时行为 |
+|---:|---|---|
+| 1 | correctness、request/work envelope、状态 freshness | fail-closed 到 frozen static |
+| 2 | 前台保护余量与负 SLO slack | 停止新 bulk lease，形成 reclaim debt |
+| 3 | 无饥饿与 normalized service lag | 在满足 1–2 的候选中选择最欠服务 Job |
+| 4 | work-conserving borrow/goodput | 仅借用未被 1–3 需要的余量 |
+
+资源准入、公平与延迟预测必须继续分账：
+
+$$
+\overline W_i^{resource}=\widehat W_i+\kappa\sigma_i,
+\qquad
+W_i^{fair}=w_p n_i^{prompt}+w_q n_i^{output,actual},
+\qquad
+\widehat T_i^{rem}=f(x_i,s_e)+q_{0.95}(\varepsilon_i).
+$$
+
+其中 upper-bound resource credit 管安全，actual-token counter 管用户侧公平，remaining-time
+分布管 SLO slack；禁止再用一个 predicted token 标量同时承担三种语义。
+
+### 11.5 最小调整与停止规则
+
+| 顺序 | 单变量实验 | 判定 |
+|---:|---|---|
+| 1 | 用已有 trace 修 mechanism gate：同时完成记为 `post_drain_not_applicable` | 不改策略数据，只恢复审计语义 |
+| 2 | foreground strict-priority diagnostic：到达后停发新 bulk，不抢占 | 若仍无法接近 static，release-only 分支不可达，停止调权重 |
+| 3 | 固定其他参数，只扫 reserve $r/K=0,0.25,0.5$ | 画 throughput–fg P99/SLO 前沿 |
+| 4 | 固定最佳 reserve，比较 mean / q95 / actual-work oracle | oracle 无空间则停止 estimator 扩展 |
+| 5 | 只在前四步通过后接 negative-slack SLO guard | 不与 reserve 同时上线，保持因果归因 |
+
+建议的下一轮预注册晋级门（以本轮 static 均值为锚，仅是**待冻结建议**）为：fg P99
+≤$29.2\times1.05=30.7$s、fg SLO violation≤1%、吞吐≥$\lceil9508\times1.05\rceil=9984$ tok/s、
+correctness/exactly-once 全过。若只有 $r=0.5K$ 能通过，则动态方法等价于 static 半分区，
+不晋级；若 $r<0.5K$ 通过且吞吐相对 static≥5%，才说明 borrow/reclaim 带来净方法价值。
+
+**post-formal verdict**：dynamic-K 继续 `parked-conditional`；当前 `saor_release` 记为
+`formal-run-fail-closed / directional-only`，不淘汰但不晋级。候选后继是
+**reservation-backed SAOR**，必须先过两 Job 的 release-only 可达性与静态非劣门，再考虑
+4-Job、weighted 或多模态扩展。

@@ -1,6 +1,7 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-12；开题证据冻结，SAOR dynamic-K 已退出主线）
+Date: 2026-07-20（最后更新：2026-08-12；开题证据冻结，SAOR fixed-envelope formal 已
+fail-closed 完成，dynamic-K 仍退出主线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -22,19 +23,19 @@ SAOR-Release 定为唯一算法候选，并将 dynamic K 标记为 `parked-condi
 ordered release。完整报告见
 `experiments/results/saor_capacity_development_20260811/README.md`。
 
-现有 eager 两/四 Job 结果证明 static partition 会产生 quota loss，shared borrowing 能恢复
-效率，但 online replay 与四 Job Jain 又证明“共享更多”并非完整策略。它们尚未排除 fixed-K
-global FIFO/no project Job scheduler 已经足够好。故下一项决定性矩阵必须加入同一 K 的 global
-FIFO、static、DRR、external VTC-style 和 SAOR，并使用 `bulk-only → foreground-arrival →
-overlap → either-job drain` 活跃集变化合同。若 FIFO 或 DRR 已达到同一 throughput--tail--fairness
-Pareto 前沿，SAOR 直接淘汰，不扩 workload 追正。2026-08-12 已将 direct no-Job 纳入同一
-交错 runner，并补齐 static/FIFO/DRR/external-VTC/SAOR 六臂 active-set、project/direct
-matched solo、生命周期/credit 机制分层门禁、rehearsal、静态 readiness audit 和 fail-closed
-formal 汇总。commit `7c11cc7c` 的 2×4090 fail-closed rehearsal 已完成 10/10、0 incident、
-0 formal identity；十臂 metrics/resources 与 exactly-once 均通过，六 active-set lifecycle
-通过，四 credit 臂 pre-borrow、overlap reclaim 与 endpoint-local post-drain head-fit/work-
-conservation 门均通过。因此当前达到服务器 `formal-ready`，但 formal 尚未运行，不改变方法
-证据状态，也不产生 SAOR 胜出结论。四 Job 仅在两 Job formal 进入 FIFO/DRR Pareto 前沿后补。
+fixed-K 决定性矩阵已于 2026-08-12 完成：direct/static/FIFO/DRR/external-VTC/SAOR 六臂
+active-set 与四 matched-solo 共 40/40 cell、0 incident、exactly-once。定位性均值显示 SAOR
+12,393 tok/s、fg P99 50.3s、fg slowdown 3.45，在四个 credit 臂中 fg 最好；static 只有
+9,508 tok/s，却以 fg P99 29.2s、fg slowdown 2.19 和 0% SLO violation 成为更强隔离 Pareto
+点。总 validation 因 DRR/VTC rep2 没有 post-drain 样本而 fail-closed；离线核对两 Job 完成
+只差约 5.8ms/4.8ms，因此不能写成 baseline 机制失败，也不能写 SAOR 胜出。
+
+当前状态为 `formal-evaluated / fail-closed / directional-only`。formal 的 SAOR 配置
+`slo_weight=0`，且不可抢占已进入 vLLM 的请求；无保护余量时，bulk 在前台到达前占满包络，
+foreground 必须等待 completion 释放 credit。故下一步不扫 fairness/SLO 权重，也不跑 4-Job：
+先修 simultaneous-drain 审计语义并离线重放，再跑 foreground strict-priority release-only
+可达性诊断，最后单变量扫描 reserve 0/0.25K/0.5K 与 q95 work credit。只有小于半包络的
+reserve 同时达到 static fg 非劣与吞吐≥static+5%，才保留 reservation-backed SAOR。
 
 ## 图像状态增量（2026-08-10）
 

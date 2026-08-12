@@ -1,5 +1,24 @@
 # 项目日志
 
+## 2026-08-12 SAOR fixed-envelope formal 归档与 reservation 修订
+
+- 归档并复核 2×4090/Qwen2.5-7B fixed-envelope active-set 正式矩阵：六 active-set 臂与四
+  matched-solo 共 40/40 cell、0 incident、exactly-once。定位性均值为 SAOR 12,393 tok/s、
+  fg JCT/P99 57.0/50.3s；static 9,508 tok/s、fg JCT/P99 36.2/29.2s、SLO violation 0%。
+  SAOR 在 credit 臂内前台最好，但未越过 static，不能称策略胜出。
+- 修正结果 README 中由错误聚合产生的 P99：static fg 28.8→29.2、DRR fg 57.0→55.8、
+  VTC fg 53.7→53.6、SAOR fg 47.8→50.3；同时把 SAOR fg SLO 统一为 0.831。
+- 总 validation 继续 fail-closed：DRR/VTC rep2 `active_set_bulk_only_post_samples=0`。离线核对两 Job 绝对
+  完成时刻只差约 5.8ms/4.8ms，故结论收紧为“没有可观测 drain window”，不写成 baseline
+  违反工作守恒。下一步先增加 simultaneous-drain=`not_applicable` 语义并离线重放。
+- 第一性原理审计确认 current formal 的 `slo_weight=0`，且项目不能抢占已进入 vLLM 的请求；
+  无保护余量时，bulk 在前台到达前借满包络会形成必须等待 completion 清零的 reclaim debt。
+  因而停止继续扫 fairness 权重，后继收紧为 reservation-backed release：strict-priority
+  可达性诊断、reserve 0/0.25K/0.5K、q95/actual-work oracle、hard SLO feasible set。
+- 已同步正式结果报告、SAOR 数学审计、唯一计划入口、实验状态/证据台账、knowledge hub、
+  根 README、项目总纲、快速参考卡片、结果/计划 README 与项目索引。两 Job 未达到 static fg 非劣且
+  吞吐≥static+5% 前不启动 4-Job；按现有冻结要求未同步 Wiki/云文档/PPT。
+
 ## 2026-08-12 SAOR formal 双层 env 合同补全
 
 - 复核服务器最终 `7c11cc7c` rehearsal 的 `readiness.json` 与 redacted resolved config，消除

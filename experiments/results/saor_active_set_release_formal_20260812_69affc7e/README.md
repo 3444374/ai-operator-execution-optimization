@@ -32,6 +32,9 @@
 - **mechanism gate**（二维工作守恒：`d_j(t)=max{R_j/K^req, W_j/K^work}`，post-drain 逐 endpoint 检查队首 `R_e+1≤K_e^req ∧ W_e+h_{j,e}≤K_e^work`）：
   - `shared_fifo` 3/3 passed；**`saor_release` 3/3 passed**；
   - `shared_drr` **rep2 `mechanism_not_observed`**（rep1/rep3 passed）；`external_vtc` **rep2 `mechanism_not_observed`**（rep1/rep3 passed）。
+- **rep2 机制门定位**：DRR rep2 的两 Job 绝对完成时刻只差约 **5.8 ms**，VTC rep2 只差约
+  **4.8 ms**；两臂该 repeat 的 `active_set_bulk_only_post_samples=0`。因此当前证据支持“没有形成可采样的
+  post-drain 窗口”，不支持“算法违反工作守恒”。validation 仍按预注册规则保持 fail-closed。
 - **fail-closed**：summarize 检测到 DRR/VTC rep2 mechanism 失败 → `validation.json status=failed`，**拒绝产 formal_summary.csv**（不进入策略胜出声明）。这是预注册硬规则（§12），非 bug。
 - **观测口径**：tok/s、JCT、P99、KV、waiting、SLO 均取自 per-run time-series 聚合（`*_mean/p95/max`），非单点。`vllm_kv_cache_usage` 按分数读。
 
@@ -42,11 +45,11 @@ active-set 臂（mean of 3 formal repeats；JCT/P99 单位 s；SLO viol 是分�
 | arm | tok/s | JCT bulk | JCT fg | P99 bulk | P99 fg | kv_max | wait_max | SLOviol bulk | SLOviol fg | mechanism |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
 | direct_no_job | 13676 | 51.0 | 58.6 | 44.5 | 53.3 | 1.000 | 142 | 0.535 | 0.986 | N/A |
-| static_partition | 9508 | 89.9 | **36.2** | 83.1 | **28.8** | 0.424 | 0 | 0.673 | **0.000** | N/A |
+| static_partition | 9508 | 89.9 | **36.2** | 83.1 | **29.2** | 0.424 | 0 | 0.673 | **0.000** | N/A |
 | shared_fifo | 12103 | 62.2 | 65.3 | 55.7 | 58.7 | 0.554 | 20 | 0.460 | 0.968 | ✅ 3/3 |
-| shared_drr | 12411 | 68.5 | 62.6 | 61.8 | 57.0 | 0.550 | 17 | 0.471 | 0.845 | ❌ 2/3 |
-| external_vtc | 12441 | 68.4 | 60.2 | 61.9 | 53.7 | 0.552 | 21 | 0.463 | 0.894 | ❌ 2/3 |
-| saor_release | 12393 | 68.5 | **57.0** | 62.0 | **47.8** | 0.551 | 18 | 0.471 | **0.832** | ✅ 3/3 |
+| shared_drr | 12411 | 68.5 | 62.6 | 61.9 | 55.8 | 0.550 | 17 | 0.471 | 0.845 | ❌ 2/3 |
+| external_vtc | 12441 | 68.4 | 60.2 | 62.0 | 53.6 | 0.552 | 21 | 0.463 | 0.894 | ❌ 2/3 |
+| saor_release | 12393 | 68.5 | **57.0** | 62.0 | **50.3** | 0.551 | 18 | 0.471 | **0.831** | ✅ 3/3 |
 
 solo（slowdown 分母，3-repeat mean）：solo_project_bulk tok/s=11670 JCT=59.17；solo_project_foreground tok/s=8998 JCT=16.51；solo_direct_bulk tok/s=14743 JCT=47.97；solo_direct_foreground tok/s=10174 JCT=15.97。
 
@@ -62,34 +65,112 @@ solo（slowdown 分母，3-repeat mean）：solo_project_bulk tok/s=11670 JCT=59
 
 CV：各臂 tok/s 跨 3 repeat CV 均 <0.5%（极稳，如 SAOR [12406,12353,12420]、FIFO [12133,12074,12100]）。
 
+辅助机制量（3-repeat mean；只用于解释，不作胜负指标）：
+
+| arm | Jain | running mean | credit idle fraction | borrowed work mean | fg overlap dominant-share max |
+|---|---:|---:|---:|---:|---:|
+| static_partition | 0.914 | 73.4 | N/A | N/A | N/A |
+| shared_fifo | 0.695 | 99.0 | 0.373 | 14794 | 0.737 |
+| shared_drr | 0.722 | 113.1 | 0.345 | 12170 | 0.565 |
+| external_vtc | 0.730 | 112.6 | 0.346 | 12171 | 0.669 |
+| saor_release | 0.741 | 112.9 | 0.353 | 11723 | 0.746 |
+
 ## 5. 事实 / 推断 / 不能声称
 
 - **事实**：
   1. formal 40/40 完成、0 incident、exactly-once；lifecycle gate 全过。
   2. `validation.json status=failed`：DRR、VTC 在 formal rep2 未观察到 credit mechanism（rep1/rep3 过）。FIFO、SAOR mechanism 3/3 全过。
-  3. **static_partition 在前台延迟上是独立 Pareto 点**：fg_slowdown 2.19（最低）、fg P99 28.8s（最低）、fg SLO 违反 0%（唯一为 0）；代价是吞吐最低（9508）。
-  4. **在 4 个 credit 臂内部**：吞吐几乎同档（12103–12441，差 <3%）；SAOR 的 fg JCT（57.0）/ fg P99（47.8）/ fg slowdown（3.45）/ fg SLO 违反（0.832）**均不差于** FIFO/DRR/VTC，多数更优；SAOR 是 credit 臂里 fg 尾延迟最优的，且是唯一 mechanism 3/3 全过的 credit 臂（与 FIFO 并列）。
+  3. **static_partition 在前台延迟上是独立 Pareto 点**：fg_slowdown 2.19（最低）、fg P99 29.2s（最低）、fg SLO 违反 0%（唯一为 0）；代价是吞吐最低（9508）。
+  4. **在 4 个 credit 臂内部**：吞吐几乎同档（12103–12441，差 <3%）；SAOR 的 fg JCT（57.0）/ fg P99（50.3）/ fg slowdown（3.45）/ fg SLO 违反（0.831）均优于 FIFO/DRR/VTC；SAOR 是 credit 臂里 fg 尾延迟最优的，且与 FIFO 都是 mechanism 3/3 全过的 credit 臂。
   5. direct_no_job 顶满（kv=1.0、wait=142）吞吐最高，但 fg SLO 违反 98.6%（最差尾延迟）——符合"direct 是直连天花板参照，吞吐差含执行链路差异，非纯算法差"。
 - **推断**：
   1. SAOR 进入了 FIFO/DRR 的 Pareto 前沿（同吞吐档、fg 尾延迟不差且更优、mechanism 稳定）→ 按 §17 **不被淘汰**。
   2. 但 **static_partition 是前台尾延迟/SLO 的更强 Pareto 点**——SAOR 没有在所有维度超过 static；两者是吞吐–尾延迟权衡的两个点（static 低吞吐换极低 fg 尾延迟，credit 臂高吞吐但 fg 尾延迟高）。
-  3. DRR/VTC rep2 mechanism 未观察到，是该 baseline 在本合同下的机制不稳定性（不是 SAOR 的问题），但导致 validation fail-closed，本轮无法做"策略胜出"的正式声明。
+  3. DRR/VTC rep2 更可能是两个 Job 近乎同时结束，使审计器没有 post-drain 样本，而不是
+     baseline 机制不稳定；但按既定规则仍导致 validation fail-closed，本轮无法做“策略胜出”的
+     正式声明。
 - **不能声称**：
   - "SAOR 胜出 / SAOR 优于 baseline"——validation failed，且 static 在 fg 尾延迟上更强。
   - "DRR/VTC 无效"——只是 rep2 机制未观察，rep1/rep3 过。
   - 任何 4-Job 结论（未跑）、任何 dynamic-K 结论（K 来自冻结合同，未动态选）、定理证明（仅 empirical）。
   - "external VTC = in-engine VTC reproduction"——它是外部 VTC-style baseline。
 
+### 5.1 第一性原理定位：为什么当前 SAOR 效果有限
+
+| 原因 | 实验/实现证据 | 数学含义 |
+|---|---|---|
+| 非抢占 release 的因果下界 | bulk 在前台到达前可借满包络；已进入 vLLM 的请求不能撤销 | 若前台到达时保护余量为 0，则其最早可用容量受下一批 completion 限制；只改 release order 不能复制 static 的即时隔离 |
+| formal 实际不是 SLO-aware controller | `slo_weight=0`，30s SLO 只被测量；score 由 entitlement deficit 与 fairness debt 构成 | 优化目标没有把前台 deadline 作为 hard constraint，故 fg SLO 0.831 并不反常 |
+| static 消除了 arrival uncertainty | static 为每个 Job 保留 K64/W32768，前台 5s 到达时已有专属空间 | static 吞吐损失是 reservation 的机会成本；其 fg 优势不是当前 SAOR 仅靠事后 reclaim 能免费取得的 |
+| work 估计对前台偏乐观 | project credit 臂的 `actual/predicted work`：bulk≈1.064，foreground≈1.289 | 前台低估约 28.9%，相对 bulk 的 6.4% 低估约为 4.5 倍；同一 nominal credit 会给前台更少真实服务预算 |
+| 当前 score 与目标错位 | equal entitlement + fairness debt；observe-only 服务状态未进入动作 | 它近似“公平 release”，不是“在吞吐约束下最小化前台 tail”的解 |
+| 两 Job 场景的可支配自由度很小 | 四个 credit 臂吞吐仅差 <3%，KV≈0.55、running≈99–113 | 固定 K/W 且 FCFS 内核不变时，上游只能决定未来 admission；大部分执行顺序已在 vLLM 内固化 |
+
+把 endpoint 包络记作 $K$，前台到达时 bulk 已占用 $A_B(t_a)$，为前台保留 $r$。当前
+non-preemptive release 的回收债务为
+
+$$
+D_B(t_a;r)=\left[A_B(t_a)-(K-r)\right]^+.
+$$
+
+当 $r=0$ 且 $A_B(t_a)\approx K$ 时，前台即时可用容量近似为 0；在未来 completion 释放至少
+$D_B$ 之前，任何只控制新请求 release 的算法都无法给出 static 式的即时容量。因此要同时逼近
+static 的前台 tail 和 shared 的吞吐，至少需要以下一个额外信息或动作：有限保护余量、可预测的
+到达/阶段信号、引擎内抢占。项目不修改 vLLM，故当前可行解应是前两者的组合，而不是继续调
+fairness score 权重。
+
+### 5.2 基于该模型的修订方向
+
+| 修订 | 形式化定义 | 目的 |
+|---|---|---|
+| 有限保护余量 | 为前台保留 $r_e(t)\in[0,K_e]$，空闲时允许 bulk 借用，但记录 reclaim debt | 把 static 的隔离能力变成可借用 reservation，而不是完全事后补偿 |
+| 风险上界 credit | admission 使用 $\overline W_i=\widehat W_i+\kappa\sigma_i$，完成后用 actual work 记账 | 防止前台输出 work 系统性低估导致实际资源份额偏小 |
+| 词典序可行集 | 先满足 envelope/correctness、fg SLO、无饥饿，再在可行策略中最大化 goodput | 避免 soft score 用吞吐/公平项抵消 SLO 安全条件 |
+| stage lead-time | foreground 已知 offset/DB stage 信号触发提前回收；未知到达只保留最小保险余量 | 在不可抢占边界内缩短 $D_B$ 的清零时间 |
+| fail-closed fallback | 状态过期、风险区间过宽或 SLO debt 超阈值时回退冻结 static | 给正式 claim 提供安全边界 |
+
+建议优化问题改写为约束形式，而不是单一加权分数：
+
+$$
+\max_\pi\; G(\pi)
+\quad\text{s.t.}\quad
+\Pr\{L_F>30\text{s}\}\le\epsilon,
+\quad J_{norm}(\pi)\ge J_{min},
+\quad A_e^{req}\le K_e^{req},
+\quad A_e^{work}\le K_e^{work}.
+$$
+
+当前数据不足以声称已经找到该约束问题的可行动态解；它只说明 `saor_release` 相对无保护的
+credit baseline 改善了前台，但距离 static 的可行域仍很远。
+
 ## 6. 对课题含义
 
-SAOR `saor_release` 在同最大资源上限下：（a）机制稳定（mechanism 3/3 全过，与 FIFO 并列、优于 DRR/VTC）；（b）在 credit 臂内进入 Pareto 前沿且 fg 尾延迟最优。**但** static_partition 在前台尾延迟/SLO 上是更强的 Pareto 点，且 summarize 因 DRR/VTC rep2 mechanism 失败而 fail-closed，本轮**不能正式声明策略胜出**。state-aware 在 2-Job 下的价值方向性成立（fg 尾延迟最优 + 机制最稳），但需（i）固定 DRR/VTC 的 mechanism 不稳定根因后重跑通过 validation，或（ii）补 4-Job 看扩展性，才能升级 claim。
+SAOR `saor_release` 在同最大资源上限下：（a）自身 mechanism 3/3 全过；（b）在 credit 臂内
+以几乎同档吞吐获得最佳 fg 延迟。**但** static_partition 在前台尾延迟/SLO 上是更强的 Pareto
+点，且 summarize 因 DRR/VTC rep2 没有 post-drain 可观测窗口而 fail-closed，本轮**不能正式
+声明策略胜出**。更重要的是，当前实现验证的是 fixed-envelope fairness/release，而不是完整
+SLO-aware 控制：在 `slo_weight=0`、无保护余量、不可抢占的合同下，它理论上无法免费复制
+static 的前台隔离。下一版本应从“调 score 权重”转为“有限 reservation + borrow/reclaim +
+风险上界 work credit + hard SLO feasible set”。
 
 ## 7. 下一步（不阻塞开题）
 
-1. 诊断 DRR/VTC rep2 mechanism 未观察的根因（是否某次 arrival 抖动使 pre-borrow/overlap-reclaim 信号未达阈值）；若可修复，同合同重跑 formal 使 validation 通过。
-2. validation 通过后再做正式 Pareto 声明 + 决定是否补 4-Job（§18：本轮若进 Pareto 仅"登记允许补 4-Job"，不自动启动）。
-3. static_partition 的强 fg 表现值得单独分析（是否对开题主线的"低尾延迟"叙事更有利）。
+1. **先修审计器，不先重跑**：对“两个 Job 几乎同时完成”的 repeat 增加
+   `post_drain_not_applicable` 分支；只有确有 drain window 才要求 post-drain 样本。修改规则后用
+   已有 trace 离线重放，规则冻结后才决定是否同合同复验。
+2. **做 release-only 可达性诊断**：增加 foreground strict-priority（停止发新 bulk，但不抢占）
+   作为上游 release 能力上界；若它仍无法接近 static fg P99，则证明瓶颈是不可撤销在途 work，
+   不再扫描 SAOR 权重。
+3. **只扫一维 reservation 曲线**：固定其他配置，比较 $r/K=0,0.25,0.5$ 的
+   reserve-borrow-reclaim；建议晋级门为 fg P99≤30.7s、fg SLO 违反≤1%、吞吐≥9984 tok/s。
+   若只有 0.5K 通过，则等价于 static，淘汰动态方案；若更小 reserve 通过且吞吐较 static≥5%，
+   才有方法价值。
+4. **再做 work-risk 消融**：同一 reserve 下比较 mean estimate、q95 upper-bound 与 actual-work
+   oracle；只在 oracle 显示可达空间时继续估计器。两 Job 问题闭环前不启动 4-Job 扩展。
 
 ## 不能声称的边界
 
-formal gate fail-closed（DRR/VTC rep2 mechanism 未观察）；不称 SAOR 胜出、不称 baseline 无效、不称 4-Job/dynamic-K/定理结论。SAOR 在 credit 臂内进 Pareto 前沿 + fg 尾延迟最优 + 机制最稳，是方向性正面信号，但**不是正式策略胜出声明**。
+formal gate fail-closed（DRR/VTC rep2 没有形成可采样 post-drain 窗口）；不称 SAOR 胜出、不称
+baseline 无效、不称 4-Job/dynamic-K/定理结论。SAOR 在 credit 臂内进入经验 Pareto 前沿且 fg
+延迟最好，是方向性正面信号；它没有越过 static，也尚未验证 SLO-aware 动作，因而**不是正式
+策略胜出声明**。
