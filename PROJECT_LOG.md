@@ -6032,3 +6032,16 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   主讲图、2 张补充图、31/31 引用、20 页 PPT 和本地跨材料审计均已完成。
 - 固定总上限有序释放保持“机制已接运行时、正式 GPU A/B 待验证”；当前没有实验或本地图表
   blocker。仅飞书普通云文档覆盖和回读仍等待用户对指定 URL 的明确授权；Wiki 不同步。
+# 2026-08-12 增补开题背景图并完成 PPT v8
+
+- 在 `figures/architecture/editable/opening_background_20260812/` 新增三张可编辑背景图：数据库
+  AI 算子外部执行链路、传统数据库算子与外部 AI 算子的执行假设对照、相关工作分层。三图均按
+  当前 PostgreSQL→Daft→Ray→vLLM/typed CLIP→PostgreSQL + pgvector 项目链路重写，而非照抄
+  参考图；每张都有 Draw.io、SVG、1600×900 PNG、独立 icon 和逐图审计。
+- 三图通过 Draw.io 结构检查、XML 校验、1600×900 与 900×506 目视检查；删除“研究边界”式
+  内部说明，不把模型服务内部 batching 写成研究内容，相关工作缺口只称“仍需系统验证”。
+- 开题专用图集扩为 17 张 PPT 主讲 PNG/SVG、8 张 Draw.io 和 2 张备份图；P02–P04 用中文页码
+  命名，SVG icon 已内嵌。报告正文仍使用 P05–P19 的 14 张研究/证据图，不因背景图增补而改写。
+- 从 v7 学校模板原位替换第 2–4 页，生成 `opening/slides/opening_defense_20260812_v8.pptx`；
+  删除旧正文对象后插入正式图，没有遮罩或叠层修补。20/20 页渲染、overflow、20/20 notes、
+  template fidelity 0 issue 和逐页视觉复核均通过，其余 17 页内容与 notes 保持不变。

@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <style>
+      .cn{font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",Arial,sans-serif}
+      .title{font-size:40px;font-weight:700;fill:#111827}
+      .section{font-size:28px;font-weight:700}
+      .cardtitle{font-size:25px;font-weight:700}
+      .body{font-size:23px;fill:#374151}
+      .small{font-size:22px;fill:#6B7280}
+      .pill{font-size:22px;font-weight:700}
+    </style>
+    <marker id="a-blue" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 9 4.5 0 9z" fill="#165DCC"/></marker>
+    <marker id="a-orange" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 9 4.5 0 9z" fill="#E85D04"/></marker>
+    <marker id="a-purple" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 9 4.5 0 9z" fill="#5B2AA6"/></marker>
+    <marker id="a-teal" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8z" fill="#0F8C8C"/></marker>
+    <marker id="a-green" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 9 4.5 0 9z" fill="#15803D"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#FFFFFF"/>
+
+  <rect x="48" y="28" width="70" height="54" rx="10" fill="#165DCC"/>
+  <text class="cn" x="83" y="65" text-anchor="middle" font-size="28" font-weight="700" fill="#FFFFFF">01</text>
+  <text class="cn title" x="140" y="68">数据库 AI 算子的外部执行链路</text>
+
+  <text class="cn small" x="120" y="124" fill="#165DCC">SQL Analytics</text>
+  <path d="M300 116H585" stroke="#E85D04" stroke-width="3" fill="none" marker-end="url(#a-orange)"/>
+  <text class="cn small" x="735" y="124" text-anchor="middle" fill="#E85D04">Database AI Operators</text>
+  <path d="M900 116H1185" stroke="#E85D04" stroke-width="3" fill="none" marker-end="url(#a-orange)"/>
+  <text class="cn small" x="1450" y="124" text-anchor="end" fill="#5B2AA6">External AI Execution</text>
+
+  <text class="cn section" x="190" y="184" text-anchor="middle" fill="#165DCC">① 数据与 SQL 入口</text>
+  <text class="cn section" x="485" y="184" text-anchor="middle" fill="#165DCC">② 数据库 AI 算子</text>
+  <text class="cn section" x="885" y="184" text-anchor="middle" fill="#E85D04">③ 本课题研究对象</text>
+  <text class="cn section" x="1370" y="184" text-anchor="middle" fill="#5B2AA6">④ 模型服务与 GPU</text>
+
+  <rect x="42" y="205" width="298" height="500" rx="18" fill="#F7FAFF" stroke="#165DCC" stroke-width="2"/>
+  <rect x="365" y="205" width="240" height="500" rx="18" fill="#F7FAFF" stroke="#165DCC" stroke-width="2"/>
+  <rect x="640" y="198" width="520" height="514" rx="18" fill="#FFFBF7" stroke="#E85D04" stroke-width="2.5" stroke-dasharray="10 7"/>
+  <rect x="1188" y="205" width="370" height="500" rx="18" fill="#FBF9FF" stroke="#5B2AA6" stroke-width="2"/>
+
+  <g>
+    <rect x="65" y="234" width="252" height="86" rx="13" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.5"/>
+    <image href="assets/06_ai_native_execution_architecture/database.svg" data-icon="database" x="82" y="249" width="54" height="54"/>
+    <text class="cn cardtitle" x="148" y="270" fill="#0F3F9E">PostgreSQL</text>
+    <text class="cn body" x="148" y="301">表与任务语义</text>
+  </g>
+  <g>
+    <rect x="65" y="338" width="252" height="86" rx="13" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.5"/>
+    <image href="assets/06_ai_native_execution_architecture/table.svg" data-icon="table" x="82" y="354" width="52" height="52"/>
+    <text class="cn cardtitle" x="148" y="374" fill="#0F3F9E">SQL / AI SQL</text>
+    <text class="cn body" x="148" y="405">选择与触发</text>
+  </g>
+  <g>
+    <rect x="65" y="442" width="252" height="226" rx="13" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
+    <image href="assets/06_ai_native_execution_architecture/table.svg" data-icon="table" x="86" y="472" width="48" height="48"/>
+    <text class="cn cardtitle" x="150" y="503" fill="#0F3F9E">结构化表</text>
+    <image href="assets/06_ai_native_execution_architecture/document.svg" data-icon="document" x="86" y="538" width="48" height="48"/>
+    <text class="cn cardtitle" x="150" y="569" fill="#0F3F9E">文本 / Prompt</text>
+    <image href="assets/06_ai_native_execution_architecture/image.svg" data-icon="image" x="86" y="604" width="48" height="48"/>
+    <text class="cn cardtitle" x="150" y="635" fill="#0F3F9E">图像</text>
+  </g>
+
+  <g>
+    <rect x="388" y="242" width="194" height="112" rx="14" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.8"/>
+    <text class="cn" x="485" y="282" text-anchor="middle" font-size="23" font-weight="700" fill="#0F3F9E">AI_COMPLETE</text>
+    <image href="assets/06_ai_native_execution_architecture/operator.svg" data-icon="operator" x="412" y="298" width="42" height="42"/>
+    <text class="cn body" x="467" y="329">文本生成</text>
+  </g>
+  <g>
+    <rect x="388" y="380" width="194" height="132" rx="14" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.8"/>
+    <text class="cn" x="485" y="425" text-anchor="middle" font-size="23" font-weight="700" fill="#0F3F9E">AI_EMBED</text>
+    <image href="assets/06_ai_native_execution_architecture/operator.svg" data-icon="operator" x="412" y="445" width="42" height="42"/>
+    <text class="cn body" x="467" y="477">向量表征</text>
+  </g>
+  <g>
+    <rect x="388" y="538" width="194" height="112" rx="14" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.8"/>
+    <text class="cn" x="485" y="578" text-anchor="middle" font-size="23" font-weight="700" fill="#0F3F9E">AI_CLASSIFY</text>
+    <image href="assets/06_ai_native_execution_architecture/operator.svg" data-icon="operator" x="412" y="594" width="42" height="42"/>
+    <text class="cn body" x="467" y="626">图像分类</text>
+  </g>
+
+  <text class="cn" x="670" y="231" font-size="23" font-weight="700" fill="#E85D04">AI Data Execution Layer</text>
+  <g>
+    <rect x="670" y="254" width="218" height="168" rx="14" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.8"/>
+    <image href="assets/06_ai_native_execution_architecture/descriptor.svg" data-icon="descriptor" x="690" y="282" width="54" height="54"/>
+    <text class="cn cardtitle" x="757" y="292" fill="#0F3F9E">Work Unit</text>
+    <text class="cn cardtitle" x="757" y="327" fill="#0F3F9E">Descriptor</text>
+    <text class="cn body" x="690" y="373">work 估计 · locality</text>
+    <text class="cn body" x="690" y="405">Packing</text>
+  </g>
+  <g>
+    <rect x="912" y="254" width="218" height="168" rx="14" fill="#FFFFFF" stroke="#E85D04" stroke-width="1.8"/>
+    <image href="assets/06_ai_native_execution_architecture/admission.svg" data-icon="admission" x="932" y="282" width="54" height="54"/>
+    <text class="cn cardtitle" x="999" y="292" fill="#E85D04">容量感知</text>
+    <text class="cn cardtitle" x="999" y="327" fill="#E85D04">准入与路由</text>
+    <text class="cn body" x="932" y="373">安全容量 · SLO</text>
+    <text class="cn body" x="932" y="405">endpoint 选择</text>
+  </g>
+  <g>
+    <rect x="670" y="446" width="218" height="168" rx="14" fill="#FFFFFF" stroke="#E85D04" stroke-width="1.8"/>
+    <image href="assets/06_ai_native_execution_architecture/routing.svg" data-icon="routing" x="690" y="474" width="54" height="54"/>
+    <text class="cn cardtitle" x="757" y="485" fill="#E85D04">多 Job</text>
+    <text class="cn" x="757" y="520" font-size="22" font-weight="700" fill="#E85D04">Shared credit</text>
+    <text class="cn body" x="690" y="566">idle borrowing</text>
+    <text class="cn body" x="690" y="598">fair queue</text>
+  </g>
+  <g>
+    <rect x="912" y="446" width="218" height="168" rx="14" fill="#F0FDFA" stroke="#0F8C8C" stroke-width="1.8"/>
+    <text class="cn" x="1021" y="482" text-anchor="middle" font-size="23" font-weight="700" fill="#0F8C8C">运行状态快照</text>
+    <text class="cn" x="1021" y="516" text-anchor="middle" font-size="22" font-weight="700" fill="#0F8C8C">RuntimeState</text>
+    <text class="cn body" x="940" y="556">队列 · KV</text>
+    <text class="cn body" x="940" y="593">完成率 · queue age</text>
+  </g>
+  <rect x="670" y="637" width="460" height="44" rx="14" fill="#FFF4EA" stroke="#E85D04" stroke-width="1.3"/>
+  <text class="cn pill" x="900" y="667" text-anchor="middle" fill="#E85D04">组织 → 准入 / 路由 → 状态反馈</text>
+
+  <g>
+    <rect x="1215" y="235" width="316" height="128" rx="14" fill="#FFFFFF" stroke="#5B2AA6" stroke-width="1.8"/>
+    <image href="assets/06_ai_native_execution_architecture/service.svg" data-icon="service" x="1235" y="267" width="56" height="56"/>
+    <text class="cn cardtitle" x="1306" y="282" fill="#5B2AA6">文本：vLLM</text>
+    <text class="cn body" x="1306" y="320">AI_COMPLETE</text>
+  </g>
+  <g>
+    <rect x="1215" y="388" width="316" height="148" rx="14" fill="#FFFFFF" stroke="#5B2AA6" stroke-width="1.8"/>
+    <image href="assets/06_ai_native_execution_architecture/gpu.svg" data-icon="gpu" x="1235" y="432" width="56" height="56"/>
+    <text class="cn cardtitle" x="1306" y="427" fill="#5B2AA6">图像：typed CLIP</text>
+    <text class="cn body" x="1306" y="465">Ray GPU actor</text>
+    <text class="cn small" x="1306" y="500">EMBED · CLASSIFY</text>
+  </g>
+  <g>
+    <rect x="1215" y="561" width="316" height="104" rx="14" fill="#F6F0FF" stroke="#5B2AA6" stroke-width="1.5"/>
+    <text class="cn cardtitle" x="1373" y="601" text-anchor="middle" fill="#5B2AA6">不改模型内部 batching</text>
+    <text class="cn body" x="1373" y="641" text-anchor="middle">服务侧保留原生调度</text>
+  </g>
+
+  <path d="M340 455H365" stroke="#165DCC" stroke-width="5" fill="none" marker-end="url(#a-blue)"/>
+  <path d="M605 455H640" stroke="#165DCC" stroke-width="5" fill="none" marker-end="url(#a-blue)"/>
+  <path d="M1160 455H1188" stroke="#5B2AA6" stroke-width="5" fill="none" marker-end="url(#a-purple)"/>
+  <path d="M1188 544H1130" stroke="#0F8C8C" stroke-width="2.5" fill="none" stroke-dasharray="8 6" marker-end="url(#a-teal)"/>
+  <path d="M1373 705V758" stroke="#15803D" stroke-width="3" fill="none" marker-end="url(#a-green)"/>
+
+  <rect x="52" y="760" width="1496" height="76" rx="16" fill="#F0FDF4" stroke="#15803D" stroke-width="1.8"/>
+  <image href="assets/06_ai_native_execution_architecture/sink.svg" data-icon="sink" x="77" y="772" width="52" height="52"/>
+  <text class="cn cardtitle" x="145" y="794" fill="#15803D">PostgreSQL + pgvector 写回</text>
+  <text class="cn body" x="145" y="824">结果表 / 向量列 / 分类结果</text>
+  <text class="cn small" x="1518" y="810" text-anchor="end">场景实例：Cortex AISQL · BigQuery ML/AI · Oracle AI Vector Search · pgai / pgvector</text>
+</svg>

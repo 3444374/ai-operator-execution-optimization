@@ -62,8 +62,8 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 | 开题报告 | `report/opening_report.md` | 2026-08-12 已按学校模板重组为七部分中文正文；研究内容、研究方案、前期证据、进度和参考文献已统一到“工作量描述→状态观测→固定上限调度→决策评价”闭环，14/14 张主讲图与 2 张补充状态图均从开题专用图集引用；固定上限有序释放已接运行时但尚无正式 GPU 对照；飞书普通云文档覆盖已完成 dry-run，等待对指定文档 URL 的最终外部写入确认 |
 | 开题报告 QA | `report/opening_report_20260812_qa.md` | 学校模板映射、图表、引用、实现边界及 PPT/报告口径审计 |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
-| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前主讲结构已由 20 页 v7 取代 |
-| 开题 PPTX | `slides/opening_defense_20260812_v7.pptx` | 当前 20 页中文主讲版；模板、逐页渲染、图文、数据和引用 QA 见 `slides/opening_defense_20260812_v7_qa.md` |
+| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前主讲结构已由 20 页 v8 取代 |
+| 开题 PPTX | `slides/opening_defense_20260812_v8.pptx` | 当前 20 页中文主讲版；第 2–4 页背景图已补齐，模板、逐页渲染、图文、数据和引用 QA 见 `slides/opening_defense_20260812_v8_qa.md` |
 | 开题飞书历史快照 | `feishu/opening_report_wiki.md` | **已过期，禁止同步**；仍含首轮failed-feeding数字。当前权威正文为`report/opening_report.md`，用户恢复云文档工作后再由权威正文重新生成同步源 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
@@ -86,9 +86,9 @@ Wiki 不同步。所有发布面仍以本地权威稿和 Claim Matrix 为唯一�
 
 ## 下一步
 
-1. `slides/opening_defense_20260812_v7.pptx` 已按 20 页逐页确认背景、动机、研究内容、证据和转场；中文 Markdown 报告也已完成模板、图表与引用总审计。
+1. `slides/opening_defense_20260812_v8.pptx` 已按 20 页逐页确认背景、动机、研究内容、证据和转场；中文 Markdown 报告也已完成模板、图表与引用总审计。
 2. SQuAD/ShareGPT replacement、原生单 job、两 job 最小因果与四 job 扩展均已完成；停止增加开题 baseline、offset、weight 或更多 job 数扫描。
-3. v7 已继承学校模板形成 20 页成品；如补第 2、3 页背景图，只替换现有图片并重新渲染，不改变冻结主线。
+3. v8 已继承学校模板形成 20 页成品，第 2–4 页三张背景/相关工作图已经完成，不改变冻结主线。
 4. Claim Matrix、问答、实验状态与实现边界继续作为事实护栏；用户已明确豁免 Wiki。普通飞书云文档仅在获得对指定 URL 的最终覆盖授权后同步。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
 ## 飞书发布面（等待指定 URL 覆盖授权）
 

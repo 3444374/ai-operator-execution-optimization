@@ -102,7 +102,7 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 
 算子代价估计必须在主方案图中作为两项研究内容的共同使能部件出现：它向 WorkDescriptor/Organizer 提供 stage work 与不确定区间，也向 admission/routing/multi-job 提供 service/remaining work 和 SLO slack。单独结果页只展示 decision-regret 可行性，不把 cost 写成第三项研究内容。
 
-图和答辩内容合同以 `first_principles_reassessment_20260808.md`、`opening_defense_outline_20260808.md` 与 `figures/opening_figure_set/` 为准；旧四图与 28 页 v6 仅作历史底稿，当前成品为 20 页 v7。
+图和答辩内容合同以 `first_principles_reassessment_20260808.md`、`opening_defense_outline_20260808.md` 与 `figures/opening_figure_set/` 为准；旧四图与 28 页 v6 仅作历史底稿，当前成品为 20 页 v8。
 
 ## 6. 答辩约束
 
@@ -131,10 +131,10 @@ Daft、Ray、vLLM、CLIP 和 PostgreSQL + pgvector 是实现与验证平台，�
 | 图 G | `plan-only-no-result` | phase-change 尚无同上限正式结果 | 开题不画；论文阶段实验通过后再决定 |
 | database-E2E 展示 | `appendix-table-only` | SQuAD 可排名、ShareGPT 不可作性能排名 | 不生成正文性能图 |
 | 本地开题报告、答辩大纲、QA | `complete-local-qa` | `opening/report/opening_report.md`、`opening/report/opening_report_20260812_qa.md`、`opening/opening_defense_outline_20260808.md`、`opening/qa_bank.md` | 七部分中文正文、14/14 主讲图、2 张补充图、31/31 引用与 PPT 对照已审计；导师反馈后再定向修改 |
-| PPTX | `current-v7-rendered-qa-pass` | `opening/slides/opening_defense_20260812_v7.pptx`、`opening/slides/opening_defense_20260812_v7_qa.md` | 20 页、14/14 专用主讲图、20/20 notes、模板保真与逐页视觉检查已通过；正式答辩前在目标 PowerPoint/WPS 再打开一次 |
+| PPTX | `current-v8-rendered-qa-pass` | `opening/slides/opening_defense_20260812_v8.pptx`、`opening/slides/opening_defense_20260812_v8_qa.md` | 20 页、17/17 PPT 主讲图、20/20 notes、模板保真与逐页视觉检查已通过；报告正文仍使用 14 张研究/证据主图；正式答辩前在目标 PowerPoint/WPS 再打开一次 |
 | 飞书云文档 | `historical-not-current-paused` | revision 289 落后于本地报告 | 用户恢复后从本地权威报告重新生成同步源并差异审计 |
 | Wiki | `explicitly-exempt` | 用户明确要求不同步 Wiki | 不执行 |
-| 开题材料整体 | `local-artifacts-frozen-external-publication-pending` | 数据图、本地中文报告与 PPT v7 均已验收；飞书发布面尚未获得对指定 URL 的最终覆盖授权 | 获得明确授权后只覆盖并回读飞书普通云文档；不得据此新增 baseline |
+| 开题材料整体 | `local-artifacts-frozen-external-publication-pending` | 数据图、本地中文报告与 PPT v8 均已验收；飞书发布面尚未获得对指定 URL 的最终覆盖授权 | 获得明确授权后只覆盖并回读飞书普通云文档；不得据此新增 baseline |
 
 停止规则：当前不存在需要通过新增开题实验才能解除的 readiness 阻塞。外部云文档发布
 只消费已经完成本地审计的报告与冻结数据；不得为了填满页面、改善叙事或得到更好看的方向而重跑
@@ -178,7 +178,7 @@ JSON 中 6 处误编码的 `§6` 已规范为 UTF-8。上述修正均不改变�
 | PROJECT_OUTLINE 与本地开题报告重构 | `complete-local-qa` | 总纲、七部分中文报告、答辩大纲、QA 与 §8 数据复算一致；14/14 主讲图、2 张补充图、31/31 引用已审计 | 仅根据导师反馈定向修改 |
 | 四级 Claim 与答辩攻击面审计 | `complete` | 本文件 §2、`opening/qa_bank.md` 的攻击面、不能声称与回答模板 | PPT 完成后再做逐页口径检查 |
 | 原生状态与多 Job 新增动机证据 | `data-and-main-figures-complete` | 两/四 Job 输入与门禁完整；文本、图像四 Job 主讲图已进入专用图集，单 Job 状态备份图也已渲染 | 只在对应合同内复用，不新增实验 |
-| PPT 重构与逐页渲染验收 | `complete-local-qa` | 当前 v7 共 20 页，使用专用图集 14/14 张主讲图；20/20 渲染、0 空 placeholder、20/20 notes、模板保真 0 issue；完成轮重建的 20 张渲染与已验收版本逐页像素哈希一致 | 正式答辩前在目标 PowerPoint/WPS 环境再打开一次 |
+| PPT 重构与逐页渲染验收 | `complete-local-qa` | 当前 v8 共 20 页，使用专用图集 17/17 张 PPT 主讲图；20/20 渲染、0 overflow、20/20 notes、模板保真 0 issue；第 2–4 页原尺寸和全套 contact sheet 已目视复核 | 正式答辩前在目标 PowerPoint/WPS 环境再打开一次 |
 | 飞书云文档发布面 | `incomplete-paused` | revision 289 已标历史，未用当前报告覆盖 | 用户恢复后从本地权威报告生成并差异审计 |
 | Wiki | `explicitly-exempt` | 用户明确要求不同步 Wiki | 无 |
 | 本地/GitHub/实验服务器同步与 raw 保留 | `complete-current-commit` | Git 三端一致；服务器 archive SHA 与空间已复核，未跟踪 raw 未清理 | 每次后续提交继续同步 |

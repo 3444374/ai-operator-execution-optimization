@@ -8,9 +8,9 @@
 
 | 目录 | 内容 | 使用建议 |
 |---|---|---|
-| `main_png/` | 14 张主讲图的 PNG 副本 | 快速预览、兼容性优先的 PPT/Word |
-| `main_svg/` | 同一 14 张主讲图的 SVG 副本 | PPT、Word 和报告优先使用，缩放不失真 |
-| `editable_drawio/` | 5 张概念图的 Draw.io 编辑源 | 修改文字、卡片、箭头或 icon 时使用 |
+| `main_png/` | 17 张 PPT 主讲图的 PNG 副本 | 快速预览、兼容性优先的 PPT/Word |
+| `main_svg/` | 同一 17 张 PPT 主讲图的 SVG 副本 | PPT、Word 和报告优先使用，缩放不失真 |
+| `editable_drawio/` | 8 张概念图的 Draw.io 编辑源 | 修改文字、卡片、箭头或 icon 时使用 |
 | `backup_png/` | 2 张答辩备份数据图的 PNG | 回答单 Job 排队与状态问题时使用 |
 | `backup_svg/` | 同一 2 张备份图的 SVG | 需要放大或进入文档时使用 |
 
@@ -21,6 +21,9 @@
 
 | 页码 | 可读文件名 | 页面任务 | 权威源 |
 |---:|---|---|---|
+| 02 | `P02_背景_数据库AI算子外部执行链路` | 展示数据库 AI 算子、外部执行层、模型服务状态和写回闭环 | `architecture/editable/opening_background_20260812/06_ai_native_execution_architecture` |
+| 03 | `P03_背景_传统算子与外部AI执行假设` | 对照 rows/cardinality 与多阶段 work/state 的执行假设 | `architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator` |
+| 04 | `P04_相关工作_跨层执行闭环` | 按层归纳代表工作并审慎提出跨层闭环仍需系统验证 | `architecture/editable/opening_background_20260812/08_related_work_landscape` |
 | 05 | `P05_研究空白_AI数据执行层` | 从数据库侧和模型服务侧之间导出研究问题 | `architecture/editable/01_research_gap` |
 | 06 | `P06_文本基线_执行路径与可比边界` | 分开说明 database-E2E 与官方 Chat graph 的可比范围 | `data/report_main/opening_text_baseline_evidence_map` |
 | 07 | `P07_动机证据_工作量运行状态与容量边界` | 说明固定行数、固定上限不能代表真实 work 与运行状态 | `data/report_main/opening_motivation_work_state` |
@@ -36,7 +39,8 @@
 | 18 | `P18_图像多作业_并发干扰` | 展示图像路径内部的 four-job/isolated slowdown | `data/report_main/opening_image_fourjob_normalized_impact` |
 | 19 | `P19_研究基础与后续工作计划` | 概括已完成基础、后续工作方向与评价维度 | `architecture/editable/05_evidence_gate` |
 
-第 10 页承担研究问题归纳，第 20 页承担总结与答辩收束，当前不需要另画独立大图。
+第 10 页承担研究问题归纳，第 20 页承担总结与答辩收束，当前不需要另画独立大图。开题报告正文
+仍使用 P05–P19 的 14 张研究/证据图和两张补充图；P02–P04 是 PPT 背景与相关工作专用图。
 
 ## 答辩备份
 

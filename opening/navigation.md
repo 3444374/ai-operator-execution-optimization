@@ -44,8 +44,8 @@ AGENTS.md
 | 开题统一口径和页序 | `report/opening_report.md` |
 | Claim 边界和实验准入 | `claim_matrix.md` |
 | 开题报告正文 | `report/opening_report.md` |
-| 当前开题 PPT 与可复现构建 | `slides/opening_defense_20260812_v7.pptx`、`slides/build_opening_defense_v7_artifact_tool.mjs`、`slides/opening_defense_20260812_v7_qa.md` |
-| 20 页主讲内容上游 | `opening_defense_outline_20260808.md`、`slides/opening_defense_20260812_v7_figure_content_audit.md` |
+| 当前开题 PPT 与可复现构建 | `slides/opening_defense_20260812_v8.pptx`、`slides/update_opening_defense_v8_artifact_tool.mjs`、`slides/opening_defense_20260812_v8_qa.md` |
+| 20 页主讲内容上游 | `opening_defense_outline_20260808.md`、`slides/opening_defense_20260812_v8_figure_content_audit.md` |
 | PPT 制作规则 | `ppt_rules.md` |
 | 开题工作组织规则 | `work_rules.md` |
 | 飞书同步规则 | `feishu/README.md` |
@@ -82,7 +82,7 @@ AGENTS.md
 
 ### PPT 是现场讲解
 
-当前 `slides/opening_defense_20260812_v7.pptx` 已按冻结的 20 页大纲生成，不承担报告的全部细节。PPT 每页只突出一个主结论，详细解释写到备注；旧 `slides/opening_ppt.md` 只保留历史版式经验，不再作为当前内容入口。
+当前 `slides/opening_defense_20260812_v8.pptx` 已按冻结的 20 页大纲生成，不承担报告的全部细节。PPT 每页只突出一个主结论，详细解释写到备注；旧 `slides/opening_ppt.md` 只保留历史版式经验，不再作为当前内容入口。
 
 PPT 修改后要反查报告：
 

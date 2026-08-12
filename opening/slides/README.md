@@ -1,14 +1,24 @@
 # 开题 PPT 状态说明
 
-## 2026-08-12 v7（当前 20 页中文主讲版）
+## 2026-08-12 v8（当前 20 页中文主讲版）
 
-当前 PPTX：`opening_defense_20260812_v7.pptx`。该版本继承 v6 学校模板的母版、页眉页脚和
+当前 PPTX：`opening_defense_20260812_v8.pptx`。v8 在 v7 学校模板与冻结叙事上增量替换第
+2–4 页：数据库 AI 外部执行链路、传统/外部 AI 执行假设对照、相关工作分层三张图已经进入
+正式内容区；其余 17 页和 20/20 speaker notes 保持不变。构建脚本为
+`update_opening_defense_v8_artifact_tool.mjs`。
+
+20/20 页渲染、overflow、模板保真、notes 和逐页目视均通过；详见
+`opening_defense_20260812_v8_qa.md` 与 `opening_defense_20260812_v8_figure_content_audit.md`。
+
+## 2026-08-12 v7（历史完整基线）
+
+PPTX：`opening_defense_20260812_v7.pptx`。该版本继承 v6 学校模板的母版、页眉页脚和
 安全内容区，按 `../opening_defense_outline_20260808.md` 重组为 20 页中文主讲结构；生成使用
 `build_opening_defense_v7_artifact_tool.mjs`，没有运行旧 `build_ppt.py`。
 
-当前版本已完成 20/20 页渲染、图文一致性审计、空 placeholder、speaker notes 和模板保真
-检查。正式图的比较合同与 `../claim_matrix.md` 一致；第 2、3 页的可选增强图提示词记录在
-`opening_defense_20260812_v7_figure_content_audit.md`，无需等待补图即可使用当前版本。
+该版本已完成 20/20 页渲染、图文一致性审计、空 placeholder、speaker notes 和模板保真
+检查。正式图的比较合同与 `../claim_matrix.md` 一致；第 2–4 页增强图的历史提示词记录在
+`opening_defense_20260812_v7_figure_content_audit.md`，其正式实现已经进入 v8。
 完整记录见 `opening_defense_20260812_v7_qa.md`。
 
 ## 2026-08-08 内容大纲冻结（历史阶段）

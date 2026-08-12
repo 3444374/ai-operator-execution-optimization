@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<defs>
+  <marker id="blueArrow" markerWidth="16" markerHeight="12" refX="14" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 14 6 0 12Z" fill="#165DCC"/></marker>
+  <marker id="tealArrow" markerWidth="14" markerHeight="11" refX="12" refY="5.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 12 5.5 0 11Z" fill="#0F8B8D"/></marker>
+</defs>
+<rect width="1600" height="900" fill="#FFFFFF"/>
+<text x="800" y="61" text-anchor="middle" font-family="STHeiti, PingFang SC, Microsoft YaHei, sans-serif" font-size="42" font-weight="700" fill="#111827">传统数据库算子与外部 AI 算子的执行假设</text>
+<rect x="35" y="112" width="580" height="552" rx="14" fill="#F8FBFF" stroke="#D7E5F7" stroke-width="1.5"/>
+<rect x="655" y="112" width="910" height="552" rx="14" fill="#F8FBFF" stroke="#D7E5F7" stroke-width="1.5"/>
+<text x="325" y="151" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="32" font-weight="700" fill="#165DCC">传统数据库算子</text>
+<text x="1110" y="151" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="32" font-weight="700" fill="#165DCC">外部 AI 算子</text>
+
+<g fill="none" stroke="#165DCC" stroke-width="4" marker-end="url(#blueArrow)"><path d="M325 281V353"/><path d="M325 466V538"/></g>
+<g fill="#FFFFFF" stroke="#165DCC" stroke-width="2.5"><rect x="95" y="176" width="460" height="105" rx="12"/><rect x="95" y="361" width="460" height="105" rx="12"/><rect x="95" y="546" width="460" height="92" rx="12"/></g>
+<image href="assets/07_traditional_vs_external_ai_operator/table.svg" x="125" y="195" width="66" height="66"/>
+<image href="assets/07_traditional_vs_external_ai_operator/cpu_io.svg" x="118" y="381" width="66" height="66"/>
+<image href="assets/07_traditional_vs_external_ai_operator/result.svg" x="125" y="559" width="64" height="64"/>
+<g text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="28" font-weight="700" fill="#111827"><text x="350" y="238">rows / selectivity</text><text x="350" y="423">CPU / I/O operator</text><text x="350" y="602">result</text></g>
+
+<g fill="none" stroke="#165DCC" stroke-width="4" marker-end="url(#blueArrow)"><path d="M1025 236V243"/><path d="M1025 320V327"/><path d="M1025 404V411"/><path d="M1025 488V495"/><path d="M1025 578V585"/></g>
+<g fill="#FFFFFF" stroke="#165DCC" stroke-width="2.5">
+ <rect x="700" y="166" width="650" height="70" rx="10"/><rect x="700" y="250" width="650" height="70" rx="10"/>
+ <rect x="700" y="334" width="650" height="70" rx="10"/><rect x="700" y="418" width="650" height="70" rx="10"/>
+ <rect x="700" y="502" width="650" height="76" rx="10"/><rect x="700" y="592" width="650" height="62" rx="10"/>
+</g>
+<image href="assets/07_traditional_vs_external_ai_operator/records.svg" x="723" y="176" width="50" height="50"/>
+<image href="assets/07_traditional_vs_external_ai_operator/organize.svg" x="723" y="260" width="50" height="50"/>
+<image href="assets/07_traditional_vs_external_ai_operator/prepare.svg" x="723" y="344" width="50" height="50"/>
+<image href="assets/07_traditional_vs_external_ai_operator/admission.svg" x="723" y="428" width="50" height="50"/>
+<image href="assets/07_traditional_vs_external_ai_operator/service.svg" x="723" y="515" width="50" height="50"/>
+<image href="assets/07_traditional_vs_external_ai_operator/gather.svg" x="727" y="598" width="50" height="50"/>
+<g text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-weight="700" fill="#111827">
+ <text x="1055" y="211" font-size="27">records</text><text x="1055" y="295" font-size="27">request organization</text>
+ <text x="1055" y="379" font-size="25">文本 tokenize · 图像 resize / normalize</text><text x="1055" y="463" font-size="27">admission / routing</text>
+ <text x="1055" y="534" font-size="25">文本 vLLM · 图像 typed Ray GPU actor</text><text x="1055" y="562" font-size="22" font-weight="400" fill="#6B7280">模型服务内部 batching 保持不变</text>
+ <text x="1055" y="632" font-size="27">result gather</text>
+</g>
+<path d="M1350 540H1520V285" fill="none" stroke="#0F8B8D" stroke-width="3" stroke-dasharray="9 7"/>
+<path d="M1520 285H1358M1520 369H1358M1520 453H1358" fill="none" stroke="#0F8B8D" stroke-width="3" stroke-dasharray="9 7" marker-end="url(#tealArrow)"/>
+<rect x="1365" y="120" width="170" height="36" rx="9" fill="#EAF8F8" stroke="#0F8B8D" stroke-width="1.5"/>
+<text x="1450" y="146" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="22" font-weight="700" fill="#0F8B8D">运行状态反馈</text>
+
+<rect x="45" y="678" width="580" height="142" rx="12" fill="#F8FBFF" stroke="#165DCC" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="335" y="714" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="28" font-weight="700" fill="#165DCC">典型成本字段</text>
+<g fill="#FFFFFF" stroke="#165DCC" stroke-width="1.5"><rect x="65" y="742" width="120" height="58" rx="10"/><rect x="202" y="742" width="130" height="58" rx="10"/><rect x="349" y="742" width="120" height="58" rx="10"/><rect x="486" y="742" width="120" height="58" rx="10"/></g>
+<g text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="24" fill="#111827"><text x="125" y="780">rows</text><text x="267" y="780">cardinality</text><text x="409" y="780">CPU</text><text x="546" y="780">I/O</text></g>
+
+<rect x="655" y="670" width="910" height="88" rx="12" fill="#FFF9F4" stroke="#E85D04" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="1110" y="695" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="22" font-weight="700" fill="#E85D04">work 字段</text>
+<g fill="#FFFFFF" stroke="#F59E66" stroke-width="1.5"><rect x="675" y="702" width="205" height="46" rx="8"/><rect x="892" y="702" width="205" height="46" rx="8"/><rect x="1109" y="702" width="205" height="46" rx="8"/><rect x="1326" y="702" width="219" height="46" rx="8"/></g>
+<g text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="24" font-weight="700" fill="#111827"><text x="777" y="732">输入 work</text><text x="994" y="732">输出 work</text><text x="1211" y="732">局部性键</text><text x="1435" y="732">剩余 work / SLO</text></g>
+<rect x="655" y="766" width="910" height="54" rx="12" fill="#F3FBFB" stroke="#0F8B8D" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="705" y="799" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="22" font-weight="700" fill="#0F8B8D">state</text>
+<g fill="#FFFFFF" stroke="#0F8B8D" stroke-width="1.5"><rect x="750" y="772" width="180" height="38" rx="9"/><rect x="940" y="772" width="145" height="38" rx="9"/><rect x="1095" y="772" width="145" height="38" rx="9"/><rect x="1250" y="772" width="300" height="38" rx="9"/></g>
+<g text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="22" fill="#111827"><text x="840" y="799">running / waiting</text><text x="1012" y="799">queue age</text><text x="1167" y="799">KV / GPU</text><text x="1400" y="799">completion / service rate</text></g>
+<rect x="45" y="834" width="1520" height="44" rx="12" fill="#FFF7ED" stroke="#E85D04" stroke-width="2.5"/>
+<text x="805" y="865" text-anchor="middle" font-family="STHeiti, PingFang SC, sans-serif" font-size="28" font-weight="700" fill="#E85D04">行数与静态上限不能同时表示 AI work 与模型服务运行状态</text>
+</svg>
