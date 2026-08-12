@@ -122,12 +122,13 @@ def read_image_source_metadata(
             cursor.execute("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
             extension = cursor.fetchone()
             cursor.execute(
-                "SELECT COALESCE(SUM(image_bytes), 0), COALESCE(AVG(image_bytes), 0) "
+                "SELECT COALESCE(SUM(image_bytes), 0), COALESCE(AVG(image_bytes), 0), "
+                "COALESCE(MAX(image_bytes), 0) "
                 "FROM (SELECT image_bytes FROM image_documents "
                 "WHERE workload_name = %s ORDER BY doc_id LIMIT %s OFFSET %s) selected_rows",
                 (config.workload_name, config.limit, config.offset),
             )
-            encoded_bytes, average_bytes = cursor.fetchone()
+            encoded_bytes, average_bytes, maximum_bytes = cursor.fetchone()
     if len(physical_doc_ids) != config.limit:
         raise ValueError(
             f"expected {config.limit} source rows, found {len(physical_doc_ids)}"
@@ -146,4 +147,5 @@ def read_image_source_metadata(
         "pgvector_version": str(extension[0]) if extension else "not_installed",
         "input_encoded_bytes": int(encoded_bytes) * config.dataset_passes,
         "avg_encoded_bytes": float(average_bytes),
+        "max_encoded_bytes": int(maximum_bytes),
     }

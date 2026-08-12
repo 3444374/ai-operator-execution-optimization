@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-08-09
+日期：2026-08-12
 
 本文说明当前 Daft + Ray 上游执行基础设施已经完成什么、实际执行流程、研究证据
 边界，以及下一步还需要实现和验证的内容。研究方向仍是数据库 AI 算子外部执行
@@ -29,15 +29,16 @@ PostgreSQL
 
 上图是已完成的**文本/vLLM 路径**。2026-08-01 内部执行方向转为 image-first A+B；
 CLIP 5K profile 与不含写回的 operator-E2E 已通过门禁。下图中 PostgreSQL→Daft→
-Ray CPU preprocess→typed CLIP actor 已跑通；分阶段 work/state 合同与有界动态
-候选的纯策略基础已实现，但尚未接入正式 image runner，最终 pgvector sink 与性能
+Ray CPU preprocess→typed CLIP actor 已跑通；分阶段 work/state 合同、真实 ready broker 与
+static HSE adapter 已接入 image runner，但尚未运行 GPU 对照门，动态 SAOR 也未接入该路径；
+最终 pgvector sink 与性能
 验证仍是**待实现目标**：
 
 ```text
 PostgreSQL image source
   -> Daft
   -> Ray CPU decode + resize + normalize
-  -> staged WorkDescriptor + state-aware work-credit admission
+  -> StageBlockDescriptor + byte/work-bounded real ready broker
   -> typed tensor-input CLIP backend (Ray GPU actor primary)
   -> PostgreSQL + pgvector
 ```

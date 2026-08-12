@@ -113,6 +113,9 @@ now lives under `code/src/`:
   `RuntimeStateSnapshot`; preserves scalar credit compatibility while exposing
   prepare/model/result demand, locality, deadline/SLO, uncertainty and
   calibration identity.
+- `planning/blocks.py` + `scheduling/runtime/stage_broker.py`: engine-neutral physical
+  block identity and a real encoded/prepare/ready/model lifecycle. Ready bytes/work are
+  reserved before CPU work starts, so concurrent completions cannot exceed declared caps.
 - `planning/packing/scalar.py`: deterministic, modality-neutral classic BFD and a
   row-cap-first placement candidate sharing the same validation and ordering.
 - `serving/backends/`: 公共 backend 合同、embedding backend 与
@@ -125,6 +128,12 @@ now lives under `code/src/`:
   `modalities/image/metrics.py` only derives scale-aware unit-resource and
   streaming-onset fields from observed totals; it does not infer hidden engine
   queues or relabel text TTFT/ITL as image metrics.
+  `staged.py` validates representation/signatures; `staged_execution.py` adds the optional
+  static HSE path. CPU actors return descriptor and prepared tensor as separate Ray objects,
+  so the driver observes only metadata while the tensor stays in the object store until a
+  real ready lease is issued. Enable it explicitly with
+  `--arm project_ray --project-execution-mode hse_static`; the default direct-dependency
+  path remains the matched static control.
 - `infrastructure/runtime_env.py`: one shared contract for `PYTHONPATH` plus single-threaded
   OpenBLAS/MKL/OMP/NumExpr settings inherited by Ray workers and multi-job
   subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per

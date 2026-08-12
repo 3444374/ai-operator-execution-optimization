@@ -25,6 +25,12 @@ from .source import (
     image_documents_query,
     split_image_source_config,
 )
+from .staged import (
+    build_encoded_image_block_descriptor,
+    build_prepared_image_block_descriptor,
+    image_model_signature,
+    image_transform_signature,
+)
 
 __all__ = [
     "ClipImagePreprocessor",
@@ -46,4 +52,8 @@ __all__ = [
     "l2_normalize_embeddings",
     "l2_normalize_numpy_embeddings",
     "split_image_source_config",
+    "build_encoded_image_block_descriptor",
+    "build_prepared_image_block_descriptor",
+    "image_model_signature",
+    "image_transform_signature",
 ]

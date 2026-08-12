@@ -143,13 +143,14 @@ PostgreSQL source
 - 代价模型跨时间段、新 workload 和硬件的稳定性；
 - 图像 Daft built-in、Ray Data native 与 project frozen-static 的 operator-E2E/provenance
   证据已完成。现有数据把瓶颈进一步定位为 CPU prepare 与 driver/Ray submission 的组合：
-  HSE/SAOR 图像扩展必须显式拆出 pending-prepare、ready-block、pending-model、pending-result，
-  采用 packed typed block 和 byte/work-bounded differential backpressure。串行流水线满足
+  HSE static core 已显式拆出 pending-prepare、ready-block、pending-model，并以 descriptor/
+  lease 做 physical-byte/work 预留；result 当前由 driver 即时审计，独立 sink queue 尚未接。
+  串行流水线满足
   $X\le\min_s\mu_s$；现有 1666 image/s 与约 19K GPU-resident ceiling 的约 8.8% 比值和约
   9.6% GPU busy 同量级，说明调度/buffer 不能消灭 CPU prepare 木桶。derived-image cache、
   packed uint8/GPU normalize 与 DALI GPU/mixed preprocess 作为正交
-  work-reduction 消融。仍待 static HSE、动态 runner 接线、跨 workload 外推与小规模 sink
-  质量闭环，sink 不是性能排名 blocker。
+  work-reduction 消融。仍待 static HSE GPU 对照门、packed/pinned/DALI、动态 SAOR runner、
+  跨 workload 外推与小规模 sink 质量闭环，sink 不是性能排名 blocker。
 - prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理已进入
   `parked-conditional` 清单；当前不实现，主路径完成后仅在真实 reuse opportunity≥10% 且扣除
   lookup/build/refresh 后 oracle 潜力≥5% 时重新激活。

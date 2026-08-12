@@ -40,14 +40,29 @@ Arrow/Daft materializer 放在 `data/`，不是 `planning/`。原因是 material
 这样做的直接作用是：看到一个文件路径就能判断它是否允许使用项目 credit/router。
 `baselines/*/frameworks` 若 import `src.scheduling`，架构测试会直接失败。
 
-## 4. 这次只改变了什么
+## 4. HSE static core 怎样跨层协作
+
+新的异构执行路径仍遵守同一依赖方向：`planning/blocks.py` 只定义 block 身份和物理表示；
+`scheduling/runtime/stage_broker.py` 只做状态/lease/bytes/work 账本；图像 adapter 在
+`modalities/image/staged.py` 计算 image-specific signature 和 NCHW 大小；
+`modalities/image/staged_execution.py` 才调用 Ray。
+
+CPU actor 一次返回两个独立 Ray ObjectRef：小 descriptor 与大 prepared tensor。driver 只取
+descriptor 并把 block 原子转成 ready；随后把 tensor ref 作为 GPU actor 的顶层参数提交。这样
+Ray 仍负责对象依赖和资源放置，项目 broker 只负责“什么已经 ready、能否继续放行”。
+ready bytes 在 CPU lease 发出前预留，因此多个 prepare 同时完成也不会越界。
+
+CLI 默认仍是 `direct_dependency`；`--project-execution-mode hse_static` 只是一个显式项目方法
+候选。当前单元/fake-Ray 测试证明状态和内存账本，不证明 GPU 性能更高。
+
+## 5. 之前的路径迁移只改变了什么
 
 这次迁移只改变文件归属和 import 路径，没有改变算法、默认参数、CLI 参数或 CSV
 schema。旧的 6 个 `profile_*` 和 11 个 scheduling 兼容壳已删除，避免同一个实现有
 两个入口。`tests/architecture/test_architecture_boundaries.py` 用 AST 检查跨层 import，
 并阻止旧路径重新出现。
 
-## 5. 大文件现在如何拆分
+## 6. 大文件现在如何拆分
 
 `observability/metrics/` 已按 timing、CSV、statistics、resources、vLLM 指标拆分；
 `serving/backends/` 已按公共合同、embedding、completion 拆分；
@@ -59,7 +74,7 @@ schema。旧的 6 个 `profile_*` 和 11 个 scheduling 兼容壳已删除，避
 其中的旧路径属于证据的一部分。`data/materializers/text.py` 等剩余大文件后续仍按一次
 一个职责处理。
 
-## 6. 如何判断迁移是否正确
+## 7. 如何判断迁移是否正确
 
 - 静态门禁：源码可编译，旧 import 搜索结果为空，AST boundary test 通过；目录化测试
   使用 `python -m unittest discover -s code/tests -t code -p 'test_*.py'`；

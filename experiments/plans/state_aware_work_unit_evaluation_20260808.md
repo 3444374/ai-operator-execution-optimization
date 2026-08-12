@@ -462,9 +462,15 @@ encoded Arrow block
   → embedding block / ordered sink
 ```
 
-实现顺序冻结为：真实 ready queue/lease → static typed/byte-bounded broker → 单因素
-packed-uint8、pinned、double-buffer、DALI/cache 消融 → 最后才接 SAOR 多 Job 动态控制。
-static HSE 未超过同资源 current project frozen-static 前，不运行动态 HSE 主实验。
+2026-08-12 已完成前两步的静态核心：engine-neutral descriptor/lease broker、prepare 时
+ready-byte/work 预留、真实 ready snapshot、Ray CPU actor descriptor/tensor 双返回值以及
+`project_ray --project-execution-mode hse_static` 接线；旧 `direct_dependency` 默认路径继续作为
+同资源对照。安全不变量已完成归纳证明与单元/fake-Ray E2E 检查，但尚无 GPU 性能结果。
+
+后续顺序冻结为：先跑 direct-dependency static vs HSE static gate → 单因素 packed-uint8、
+pinned、double-buffer、DALI/cache 消融 → 最后才接 SAOR 多 Job 动态控制。static HSE 未达到
+同资源 current project frozen-static 的 `≥95%` 吞吐/JCT 非劣门，不运行动态 HSE 主实验；
+它只有相对 frozen-static 出现可重复 `≥5%` 正增量时，才可声称 flow 增量。
 
 prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理已登记为
 `parked-conditional`，当前不实现。它们必须复用 descriptor 的 source/version、transform、

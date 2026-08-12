@@ -495,6 +495,10 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/scheduling/runtime/` | 有界 Ray actor worker pool、submit/complete adapter、worker contract、metrics observation cache 与 named credit actor | 修改 Ray worker slots、worker routing、completion cleanup 或服务观测接线前读 |
 | `code/src/scheduling/runtime/saor_capacity.py` | 只学习当前臂、相邻安全档位、fresh/signature fallback 的 SAOR capacity-only 薄适配；无 Ray/Daft/vLLM import | 修改 shared-vLLM SAOR development profile 或容量观测映射前读；不是完整 ordered-release SAOR |
 | `code/src/scheduling/runtime/saor_pipeline.py` | prepare→ready-model 两阶段 differential-backpressure 有限安全臂；只返回预启动池的 flow limits | 拆图像两级 broker 或扩展异构 stage admission 前读；尚未接 image formal runner |
+| `code/src/planning/blocks.py` | 模态/引擎中性的 `StageBlockDescriptor`：block/row identity、representation、shape/dtype、physical bytes、signature 与 staged work | 实现 staged data plane、cache/reuse key 或 broker 前读 |
+| `code/src/scheduling/runtime/stage_broker.py` | encoded→prepare→ready→model 的真实 lease/state/byte/work broker；prepare 提交前预留 ready capacity | 修改 HSE memory safety、真实 snapshot 或多 Job Job-head 选择前读 |
+| `code/src/modalities/image/staged.py` | 图像 encoded/prepared descriptor builder、transform/model signature 与 contiguous NCHW 校验 | 新增 packed uint8/FP16、derived cache 或图像复用前读 |
+| `code/src/modalities/image/staged_execution.py` | `project_ray` 可选 static HSE Ray adapter；driver 只取 descriptor ref，prepared tensor 留在 object store | 跑 direct-dependency vs HSE static gate 或接 dynamic controller 前读 |
 | `code/src/experiments/saor/` | SAOR CPU 控制开销 benchmark 与 phase aggregate paired replay 分析 | 运行开发门、审计非因果 replay claim scope 或比较策略控制开销前读 |
 | `code/scripts/data/import_ai_complete_workload.py` | ShareGPT prompt + BurstGPT trace 归一化导入脚本；支持显式 prompt-token eligibility、按过滤后 offset 选择不重叠 suffix、逐字段核验既有 prefix 和 append-only 防覆盖 | 构造最终可比 `AI_COMPLETE` baseline workload 或补 held-out 行前运行 |
 | `code/scripts/data/import_squad_workload.py` | SQuAD v1.1 validation/dev 专用 importer（bounded-output AI_COMPLETE 主对比轨）；锁定 prompt 模板、cap=64、fail-closed 校验 canonical SHA256 + 行数，reference_answers JSONB 多答案 + source_example_id；写 provenance（版本/split/SHA256/官方 repo/revision/下载方式/content hash/importer commit） | 跑 SQuAD bounded-output 三臂对照前导入；篡改文件会被 SHA256 门禁拒。配合 `code/tests/data/test_import_squad_workload.py` |
@@ -546,6 +550,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/scheduling/test_saor.py` | SAOR DPP/fairness/stale fallback/capacity/predicted-service 单元测试 | 修改 SAOR 纯控制律或动作构造前运行 |
 | `code/tests/scheduling/test_saor_capacity_runtime.py` | capacity-only 当前臂学习、上下档与 stale fallback 单测 | 修改 SAOR shared-vLLM 薄适配前运行 |
 | `code/tests/scheduling/test_saor_pipeline_runtime.py` | 两阶段 prepare/model differential backlog 选择与 stale fallback 单测 | 修改图像异构 pipeline 控制核前运行 |
+| `code/tests/scheduling/test_stage_broker.py` | HSE state uniqueness、capacity reservation、failure/exactly-once 与真实 snapshot 测试 | 修改 broker 必跑 |
+| `code/tests/modalities/image/test_staged_image_blocks.py` | 图像 descriptor byte/signature/contiguous payload 合同 | 修改 staged image representation 必跑 |
+| `code/tests/modalities/image/test_staged_image_execution.py` | fake-Ray static HSE E2E；验证 driver 不 `get` prepared batch | 修改 HSE Ray adapter 必跑 |
 | `code/tests/experiments/test_saor_control_benchmark.py` | SAOR 控制开销 benchmark schema/策略覆盖测试 | 修改 microbenchmark 前运行 |
 | `code/tests/experiments/test_saor_trace_replay.py` | paired trace 滞后一拍、oracle regret 与重复/缺臂 fail-closed 测试 | 修改 replay 口径前运行 |
 | `code/tests/experiments/test_saor_shared_vllm_config.py` | SAOR 容量配置、最大安全臂证据校验和 named-credit actuation 测试 | 修改服务器 development profile/runner/evidence validation 前运行 |

@@ -120,12 +120,19 @@ class ExecutionResult:
     batch_source_next_s: tuple[float, ...] = ()
     batch_driver_materialize_s: tuple[float, ...] = ()
     batch_submit_s: tuple[float, ...] = ()
+    batch_prepare_queue_s: tuple[float, ...] = ()
+    batch_ready_residence_s: tuple[float, ...] = ()
     encoded_bytes: int = 0
     input_tensor_bytes: int = 0
     device_input_bytes: int = 0
     output_bytes: int = 0
     submitted_batches: int = 0
     pending_batches_peak: int = 0
+    encoded_bytes_peak: int = 0
+    ready_bytes_peak: int = 0
+    prepare_inflight_peak: int = 0
+    model_inflight_peak: int = 0
+    execution_mode: str = "direct_dependency"
     engine_stats: str = ""
 
     def __post_init__(self) -> None:
@@ -138,12 +145,18 @@ class ExecutionResult:
             self.input_tensor_bytes,
             self.device_input_bytes,
             self.output_bytes,
+            self.encoded_bytes_peak,
+            self.ready_bytes_peak,
         ) < 0:
             raise ValueError("execution byte counts must be non-negative")
         if self.submitted_batches < 0 or self.pending_batches_peak < 0:
             raise ValueError("execution batch counts must be non-negative")
         if self.pending_batches_peak > self.submitted_batches:
             raise ValueError("pending batch peak cannot exceed submitted batches")
+        if min(self.prepare_inflight_peak, self.model_inflight_peak) < 0:
+            raise ValueError("execution inflight peaks must be non-negative")
+        if not self.execution_mode:
+            raise ValueError("execution_mode must be non-empty")
 
     @property
     def batch_service_s(self) -> tuple[float, ...]:
@@ -185,6 +198,7 @@ def build_project_ray_worker_pool(
 
     from .clip import ClipTensorActor, FastClipImagePreprocessor
     from .contracts import ImageEmbeddingBatch
+    from .staged import build_prepared_image_block_descriptor
 
     @ray.remote(num_cpus=1, max_restarts=0, max_task_retries=0)
     class CpuPreprocessActor:
@@ -228,6 +242,42 @@ def build_project_ray_worker_pool(
                     input_tensor_bytes=int(pixels.nbytes),
                 ),
             )
+
+        def preprocess_staged(
+            self,
+            encoded_descriptor,
+            encoded_images: list[bytes],
+        ):
+            """Return descriptor and payload as separate Ray objects.
+
+            The driver reads only the small descriptor. The prepared tensor
+            remains an ObjectRef and becomes a top-level GPU actor argument
+            only after the stage broker admits it to the real ready queue.
+            """
+            started = time.perf_counter()
+            pixels = self._preprocessor.preprocess(encoded_images)
+            preprocess_s = time.perf_counter() - started
+            prepared = build_prepared_image_block_descriptor(
+                encoded_descriptor,
+                pixels,
+                # The driver overwrites ready_at_s with its atomic completion
+                # observation; this worker timestamp is a schema-valid placeholder.
+                ready_at_s=time.perf_counter(),
+            )
+            batch = ImageEmbeddingBatch(
+                doc_ids=encoded_descriptor.row_ids,
+                payload=pixels,
+                input_kind="preprocessed_tensor",
+                work_units=encoded_descriptor.model_work_units,
+                work_unit="pixels",
+                work_descriptor=encoded_descriptor.work,
+                telemetry=ImageBatchTelemetry(
+                    preprocess_s=preprocess_s,
+                    encoded_bytes=encoded_descriptor.physical_bytes,
+                    input_tensor_bytes=int(pixels.nbytes),
+                ),
+            )
+            return prepared, batch
 
     RemoteGpuActor = ray.remote(
         num_cpus=1,

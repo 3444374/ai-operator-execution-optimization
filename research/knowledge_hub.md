@@ -752,11 +752,11 @@ image/s GPU-resident ceiling 的比值约 8.8%，和约 9.6% GPU busy 同量级�
 HSE 的 flow/buffer 机制只负责逼近现有 bottleneck capacity 和控制内存；packed uint8、GPU
 normalize、DALI 或 derived cache 才可能提高 prepare rate/减少 work，两类收益必须分开归因。
 
-最小增量按顺序冻结：
+最小增量按顺序冻结（2026-08-12 状态）：
 
-1. 真实 `pending-prepare → ready-block → pending-model → pending-result` 队列与 lease；
-2. packed typed block 和按 physical bytes/work 限制的中间态；
-3. static broker 超过冻结 project static 后，才接 SAOR Job-head/fairness/SLO；
+1. ✅ 真实 `pending-prepare → ready-block → pending-model` 队列与 lease；result 目前即时审计；
+2. ✅ descriptor + FP32 NCHW block 按 physical bytes/work 预留的 static broker；packed uint8 未做；
+3. ⏳ static broker GPU gate 达到冻结 project static 的非劣门后，才接 SAOR Job-head/fairness/SLO；
 4. CPU fast path、DALI mixed、signed derived-image cache 分开做 work-reduction 消融；
 5. Ray Data/Daft Native 继续由框架拥有调度，不能注入 project broker。
 

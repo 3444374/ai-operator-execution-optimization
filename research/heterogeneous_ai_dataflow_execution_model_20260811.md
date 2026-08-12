@@ -1,7 +1,8 @@
-# 数据库 AI 的 CPU–GPU 异构分阶段执行模型（设计候选）
+# 数据库 AI 的 CPU–GPU 异构分阶段执行模型（静态核心已实现）
 
-> 状态：`design-candidate`。本文给出已有架构迁移审计、项目执行模型、数据合同、数学
-> 模型和实验门禁；它不是已经完成的系统，也不构成性能或新颖性结论。工作名
+> 状态：`static-core-implemented / gpu-gate-pending`。本文给出已有架构迁移审计、项目执行
+> 模型、数据合同、数学模型和实验门禁；真实 ready broker 与 static Ray adapter 已实现，
+> 但 packed-uint8/pinned/DALI、动态 SAOR 与 GPU 性能门仍未完成，不构成性能或新颖性结论。工作名
 > **Heterogeneous Staged Execution（HSE）** 只用于工程沟通，投稿前必须继续做相关工作检索。
 
 ## 1. 为什么需要执行模型，而不只是继续调 actor 数
@@ -71,6 +72,18 @@ ready tensor。
 - HetExchange：<https://www.vldb.org/pvldb/vol12/p544-chrysogelos.pdf>
 - Tassiulas–Ephremides MaxWeight：<https://hdl.handle.net/1903/5346>
 
+### 2.1 代码来源与可主张边界
+
+当前实现没有复制或移植 StarPU、HetExchange、DALI、Ray Data 或其他异构系统的实现代码。
+项目直接调用的第三方能力是 Daft batch stream、Ray actor/`ObjectRef`、NumPy/Torch 与现有
+CLIP backend；`StageBlockDescriptor`、`BoundedStageBroker`、block lease 状态机、双字节/
+work 预算、ready 后才提交 GPU 的静态执行循环和 exactly-once 对账均为本项目新写代码。
+
+因此允许主张的是“针对数据库 AI 外部链路实现并验证了项目级 staged execution/control
+contract”；不允许主张发明 actor、object store、backpressure、异构流水线、pinned memory
+或 MaxWeight。若后续接入 DALI/pinned ring/Arrow device buffer，必须保留独立 adapter 与
+upstream 版本/provenance，并分别与官方路径比较，不能把第三方执行增益归入 SAOR。
+
 ## 3. HSE：分级数据面 + 应用控制面
 
 HSE 不是一个新的底层 runtime。它是项目路径中的执行合同：**Daft/Ray 拥有资源放置与
@@ -122,6 +135,18 @@ PostgreSQL + pgvector sink
 3. 空闲 GPU actor 从 ready queue 拉取完整 block；
 4. model completion 释放 ready-byte/model-work credit；
 5. 失败、重试和取消按 block lease 做 exactly-once 对账。
+
+runtime 同时维护显式 idle-actor 集合：prepare/model 提交时领取具体 actor slot，只有对应
+future 完成或提交失败才归还。仅满足 `inflight ≤ actor_count` 不够，因为朴素 round-robin
+可能把新任务排到仍繁忙的慢 actor 后面；显式 slot lease 使 broker inflight 对应真实可执行
+actor，而不是 actor mailbox 中不可见的二级排队。
+
+项目可见的 source pull 也不是无界 look-ahead：runner 从冻结的 PostgreSQL manifest 读取
+单图最大编码字节数，以 `batch_size × max_encoded_bytes` 作为单块最坏上界，在调用 Daft
+iterator 的 `next()` 前先检查 encoded capacity；实际 block 超过该不可变上界时 fail closed。
+该约束覆盖 driver 接管 block 后的 materialization 与 broker 生命周期；Daft 执行器内部的
+stream buffer 仍由 Daft 自己拥有，不纳入项目 broker 的安全定理，实验中单独记录 source
+buffer 配置与进程内存。
 
 GPU actor 因而只接收真正 ready 的数据，控制器可以区分 CPU starvation、ready-buffer
 膨胀和 model congestion。
@@ -290,14 +315,52 @@ $\kappa,\eta$ 把不同 stage work 映射到可比较的 service-time/normalized
 - fairness/SLO debt 决定多 Job 中先释放谁；
 - copy、memory、energy 和 switch cost 防止用无界缓存或抖动换吞吐。
 
-### 5.3 目标定理与证明边界
+### 5.3 已完成的 broker 安全定理
+
+定义一个 block 的活跃状态集合
+
+$$
+\mathcal S=\{E,P,R,G\}
+$$
+
+分别表示 encoded queue、prepare lease、ready queue 与 model lease。终态为 completed/failed。
+broker 在发出 prepare lease 时，按 descriptor 的 `ready_bytes_estimate` 和 model work **预留**
+容量，而不是等 prepare 完成后再记账。
+
+**定理 1（状态唯一与硬容量安全）**。设初始 broker 为空，所有状态变化只经
+`enqueue_encoded`、`lease/complete/fail_prepare` 和 `lease/complete/fail_model`；descriptor
+immutable identity 校验通过，且每个 prepared block 的实际 bytes/work 不超过 prepare lease
+时的预留值。则任意有限执行前缀后：
+
+1. 每个未终结 block 恰好属于 $E,P,R,G$ 中一个集合；
+2. encoded held bytes、ready held physical bytes 与 ready held model work 分别不超过
+   $M_e,M_r,W_r$；
+3. prepare/model lease 数分别不超过 $K_p,K_g$；
+4. 只有 $R$ 中的 block 能取得 model lease；同一 row id 不能被重复 admission/completion。
+
+**证明**。对状态转换次数归纳。空初态显然成立。`enqueue` 在写入 $E$ 前检查 block/row
+唯一性和 $M_e$；`lease_prepare` 将 block 从 $E$ 原子移入 $P$，并且只有在加入其
+`ready_bytes_estimate`/model work 后仍满足 $M_r,W_r,K_p$ 才执行；因此并发 prepare 全部完成
+也不会突破预留上界。`complete_prepare` 先验证 immutable identity、实际 bytes/work 不超过
+预留，再将 $P\to R$ 并释放估计与实际的差额；`fail_prepare` 释放全部 ready 预留并使
+$P\to E/F$。`lease_model` 只从 $R$ 取 block，并在 $K_g$ 下执行 $R\to G$；ready bytes/work
+在 model completion 前继续持有。`complete_model` 先验证输出 row 顺序和未完成集合，再执行
+$G\to C$ 并释放实际 ready bytes/work；`fail_model` 执行 $G\to R/F$，分别保留或释放额度。
+每个转换只移动一个集合成员且同步更新其唯一 state，故四条性质保持。证毕。
+
+这一证明覆盖的是**执行安全与可观测性**，不是吞吐最优、公平或尾延迟定理。代码中的
+`_assert_invariants()` 还独立重算各容器持有的 bytes/work 与账本值，测试覆盖成功、失败、
+超限、身份变化、重复 row、model-before-ready 和 drain；测试是证明实现与抽象对应的检查，
+不是数学证明本身。
+
+### 5.4 尚未完成的稳定性/最优性定理
 
 可尝试证明的 oracle theorem：若 arrivals/service 有界且平稳、真实 service 已知、action set
 完整覆盖可行资源组合、arrival vector 严格位于 capacity region 内、descriptor/lease 无丢失，
 则基于 quadratic Lyapunov 的 MaxWeight/DPP 控制稳定物理/虚拟队列；在标准 Slater 条件下，
 长期 penalty gap 为 $O(1/V)$，平均 backlog 为 $O(V)$。
 
-这不是当前已经完成的定理。正式证明还必须补：
+这仍不是当前已经完成的定理。正式证明还必须补：
 
 1. 三段实际完成量与队列更新的一致性；
 2. byte constraints、ordered Job-head 和不可撤销 Ray task 对 capacity region 的影响；
@@ -340,18 +403,24 @@ processor/model semantics、sink、质量审计和指标。
 | `run_project_ray_pipeline` | 当前直接把未完成 preprocess ref 排给 GPU actor | 拆成 source pump、prepare completion、ready queue、model completion 四个小循环 |
 | `scheduling/runtime/saor_pipeline.py` | 复用纯控制核；已经无 Ray/Daft/CLIP 依赖 | action 增加 ready physical-byte hard cap；arm service 继续来自离线 profile |
 
-本轮不新增一个无人消费的 `StageBlockDescriptor` 代码壳。先在 static broker 接线提交中同时
-加入 descriptor、lease、真实 snapshot 和 fake-runtime tests，确保新类型从第一天就有生产消费者；
-否则只会形成第二套与 `ImageEmbeddingBatch` 重叠但未执行的抽象。
+当前代码已按这条约束落地：`planning/blocks.py` 定义中性 descriptor，
+`scheduling/runtime/stage_broker.py` 维护 lease/真实 snapshot，
+`modalities/image/staged.py` 负责图像签名与物理表示校验，
+`modalities/image/staged_execution.py` 是生产消费者。CPU actor 使用 Ray 静态多返回值分别产生
+小 descriptor ref 与大 tensor ref；driver 只读取 descriptor，tensor ref 在 broker 判定 ready 后
+才作为 GPU actor 顶层参数提交。原 `direct_dependency` 路径保留为强静态对照。
 
 ## 7. 最小实施顺序与停止门
 
 ### 7.1 先修可观测性，不立即换数据结构
 
-1. 把 `pending-prepare / ready-block / pending-model / pending-result` 变成真实队列；
-2. 每个 block 记录 ready/lease/service/completion 时间和 logical/physical bytes；
-3. 保持当前 NumPy/Torch tensor，实现 static broker；
-4. 与当前 direct-dependency project static 同资源比较；若只拆队列就回退 >5%，先修执行开销。
+1. ✅ `pending-prepare / ready-block / pending-model` 已变成真实队列与 lease；result 由 driver
+   立即审计，尚未加入独立 sink queue；
+2. ✅ 每个 block 已记录 identity/signature/work、ready/lease 时间和 logical/physical bytes，
+   CSV 新增 queue/residence、limit/peak；
+3. ✅ 保持当前 NumPy/Torch FP32 tensor，实现 static broker；
+4. ⏳ 与 current direct-dependency project static 的同资源 GPU gate 尚未运行；若只拆队列就
+   回退 >5%，先修执行开销，不接动态控制。
 
 ### 7.2 再逐项做 data-path 消融
 
@@ -447,10 +516,11 @@ reuse opportunity ≥10%，且离线 oracle 显示扣除 lookup/refresh 后 E2E 
 
 ## 10. 当前结论
 
-HSE 值得作为图像主路径的**执行底座候选**，但不应上升为新的第三研究内容。它把研究内容一
+HSE 的 static core 已实现，但仍只是图像主路径的**执行底座候选**，不应上升为新的第三研究内容。它把研究内容一
 的 work-unit/数据表示和研究内容二的 admission/多 Job 调度连接起来，并为文本 vLLM 与图像
-typed actor 提供同一 staged descriptor。当前最小可验证增量是“真实 ready queue + byte-bounded
-packed block + static broker”，不是立即实现复杂的全局异构调度器。
+typed actor 提供同一 staged descriptor。当前最小待验证增量是“同资源 direct-dependency
+static vs real-ready/byte-bounded static broker”；packed uint8、pinned ring、DALI 与动态 SAOR
+都必须在该 gate 后逐项进入。
 
 只有 static HSE 在 matched-resource 下超过 current project frozen-static，动态 SAOR-HSE 又超过
 static HSE/简单 controller，才能分别声称 data-path 与动态控制增量。否则保留 Ray/Daft 原生

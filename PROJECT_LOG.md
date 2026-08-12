@@ -1,5 +1,30 @@
 # 项目日志
 
+## 2026-08-12 HSE static core、真实 ready broker 与安全定理落地
+
+- 将 CPU–GPU HSE 从纯设计候选推进为 `static-core-implemented / gpu-gate-pending`：新增中性
+  `StageBlockDescriptor`、encoded/prepare/ready/model lifecycle broker，并在 prepare lease 发出前
+  预留 ready physical bytes 与 model work；block/row identity、inflight 和 exactly-once 均
+  fail-closed。
+- 新增可选 `project_ray --project-execution-mode hse_static`。CPU actor 使用 Ray 静态双返回值
+  分离 descriptor/tensor ObjectRef；driver 只 `get` 小 descriptor，prepared tensor 保持在 object
+  store，进入真实 ready queue 后才作为 GPU actor 顶层参数提交。旧 `direct_dependency` 仍为默认
+  matched static control，未改变框架 native baseline。
+- runner schema 升至 13，记录 input size、HSE byte/work/inflight limit/peak、prepare queue 与 ready
+  residence；默认 limits 由数据库 source 最大编码字节、batch/window/shape 推导，也允许显式 override，
+  不写死某台机器的 K/bytes。
+- prepare/model runtime 使用显式 idle-actor slot lease，future 完成后才归还具体 actor；避免
+  round-robin 把任务排到尚忙 actor 的 mailbox，保证 broker inflight 对应真实可执行槽。
+- 完成状态唯一/硬容量安全的有限前缀归纳证明；收尾审计取消 source 单批无界 look-ahead，
+  拉取 Daft batch 前按 manifest 的 `batch_size × max_encoded_bytes` 预留 capacity；14 个新增
+  broker/descriptor/fake-Ray E2E 测试通过，图像目录 65 个测试通过。全仓 1,093 个测试中仅
+  10 个既有环境错误（本地缺 Daft/psycopg，另
+  1 个 macOS Ray sysctl 权限），本次专项无失败。
+- 边界不变：当前仍是 FP32 NCHW flow mechanism，没有 packed uint8、actor-local pinned ring、DALI、
+  独立 sink queue 或动态 SAOR；尚未跑 GPU gate，因此不产生吞吐/JCT/公平或新颖性 claim。
+- prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理继续保留在
+  `parked-conditional` 清单；主门完成且真实 opportunity≥10%、净 oracle 潜力≥5% 才激活。
+
 ## 2026-08-12 服务器旧产物审计与 enhanced ramp 紧凑证据归档
 
 - 只读审计服务器旧工作目录的 3,425 个未跟踪文件：服务器分支无 `main` 之外的独有

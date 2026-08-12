@@ -58,6 +58,8 @@ from src.modalities.image.execution import (  # noqa: E402
     run_project_ray_pipeline,
     stop_project_ray_worker_pool,
 )
+from src.modalities.image.staged_execution import run_project_ray_hse_pipeline  # noqa: E402
+from src.scheduling.runtime.stage_broker import StageBrokerLimits  # noqa: E402
 from src.modalities.image.metrics import (  # noqa: E402
     IMAGE_METRIC_DEFINITIONS,
     image_run_derived_metrics,
@@ -98,6 +100,7 @@ CSV_FIELDS = (
     "unique_images",
     "dataset_passes",
     "batch_size",
+    "input_size",
     "cpu_workers",
     "gpu_workers",
     "model_workers",
@@ -174,6 +177,7 @@ CSV_FIELDS = (
     "detailed_stage_timing",
     "input_encoded_bytes",
     "avg_encoded_bytes",
+    "max_encoded_bytes",
     "telemetry_encoded_bytes",
     "input_tensor_bytes",
     "device_input_bytes",
@@ -182,6 +186,20 @@ CSV_FIELDS = (
     "logical_d2h_effective_gbps",
     "submitted_batches",
     "pending_batches_peak",
+    "project_execution_mode",
+    "hse_encoded_bytes_limit",
+    "hse_ready_bytes_limit",
+    "hse_ready_work_limit",
+    "hse_prepare_inflight_limit",
+    "hse_model_inflight_limit",
+    "hse_encoded_bytes_peak",
+    "hse_ready_bytes_peak",
+    "hse_prepare_inflight_peak",
+    "hse_model_inflight_peak",
+    "batch_prepare_queue_p50_s",
+    "batch_prepare_queue_p95_s",
+    "batch_ready_residence_p50_s",
+    "batch_ready_residence_p95_s",
     "output_rows",
     "exactly_once",
     "embedding_checksum",
@@ -305,6 +323,12 @@ def parse_args():
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--warmup-rows", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument(
+        "--input-size",
+        type=int,
+        default=224,
+        help="Frozen square processor output used for HSE byte/work accounting",
+    )
     parser.add_argument("--cpu-workers", type=int, default=4)
     parser.add_argument("--gpu-workers", type=int, default=2)
     parser.add_argument(
@@ -330,6 +354,45 @@ def parse_args():
         type=int,
         default=8,
         help="Project-Ray admission window; ignored by framework-native baseline arms",
+    )
+    parser.add_argument(
+        "--project-execution-mode",
+        choices=("direct_dependency", "hse_static"),
+        default="direct_dependency",
+        help=(
+            "Project-Ray flow ownership. hse_static uses a real ready queue and hard "
+            "byte/work limits; it does not enable SAOR dynamic decisions."
+        ),
+    )
+    parser.add_argument(
+        "--hse-encoded-bytes-limit",
+        type=int,
+        default=0,
+        help="Encoded source bytes held by HSE; 0 derives a conservative workload cap",
+    )
+    parser.add_argument(
+        "--hse-ready-bytes-limit",
+        type=int,
+        default=0,
+        help="Prepared tensor bytes held by HSE; 0 derives from batch/window/FP32 NCHW",
+    )
+    parser.add_argument(
+        "--hse-ready-work-limit",
+        type=int,
+        default=0,
+        help="Prepared model work held by HSE; 0 derives from batch/window/pixels",
+    )
+    parser.add_argument(
+        "--hse-prepare-inflight-limit",
+        type=int,
+        default=0,
+        help="HSE CPU leases; 0 uses --cpu-workers",
+    )
+    parser.add_argument(
+        "--hse-model-inflight-limit",
+        type=int,
+        default=0,
+        help="HSE GPU leases; 0 uses --gpu-workers",
     )
     parser.add_argument(
         "--allow-non-native-diagnostic",
@@ -514,6 +577,7 @@ def main() -> None:
         args.dataset_passes,
         args.warmup_rows,
         args.batch_size,
+        args.input_size,
         args.cpu_workers,
         args.gpu_workers,
         args.max_active_batches,
@@ -531,6 +595,17 @@ def main() -> None:
         raise SystemExit("optional worker and shard overrides must be non-negative")
     if args.arm == "project_ray" and args.max_active_batches < args.gpu_workers:
         raise SystemExit("--max-active-batches must be at least --gpu-workers")
+    if args.project_execution_mode != "direct_dependency" and args.arm != "project_ray":
+        raise SystemExit("--project-execution-mode applies only to --arm project_ray")
+    hse_values = (
+        args.hse_encoded_bytes_limit,
+        args.hse_ready_bytes_limit,
+        args.hse_ready_work_limit,
+        args.hse_prepare_inflight_limit,
+        args.hse_model_inflight_limit,
+    )
+    if min(hse_values) < 0:
+        raise SystemExit("HSE limit overrides must be non-negative; 0 means derive")
     if args.detailed_stage_timing and args.arm != "project_ray":
         raise SystemExit("--detailed-stage-timing currently supports project_ray only")
     if min(args.model_flops_per_image, args.gpu_peak_flops_per_s) < 0:
@@ -590,6 +665,38 @@ def main() -> None:
         )
         if not source_manifest_match:
             raise ValueError("PostgreSQL image source no longer matches the immutable manifest")
+    hse_encoded_bytes_limit = args.hse_encoded_bytes_limit or max(
+        1,
+        int(database_metadata["max_encoded_bytes"])
+        * args.batch_size
+        * args.max_active_batches
+        * 2,
+    )
+    hse_ready_bytes_limit = args.hse_ready_bytes_limit or (
+        args.batch_size
+        * args.max_active_batches
+        * 3
+        * args.input_size
+        * args.input_size
+        * 4
+    )
+    hse_ready_work_limit = args.hse_ready_work_limit or (
+        args.batch_size
+        * args.max_active_batches
+        * args.input_size
+        * args.input_size
+    )
+    hse_prepare_inflight_limit = (
+        args.hse_prepare_inflight_limit or args.cpu_workers
+    )
+    hse_model_inflight_limit = args.hse_model_inflight_limit or args.gpu_workers
+    hse_limits = StageBrokerLimits(
+        encoded_bytes=hse_encoded_bytes_limit,
+        ready_bytes=hse_ready_bytes_limit,
+        ready_work=hse_ready_work_limit,
+        prepare_inflight=hse_prepare_inflight_limit,
+        model_inflight=hse_model_inflight_limit,
+    )
     warmup_count = min(args.warmup_rows, args.limit)
     warmup_ids, _ = read_database_metadata(
         args.pg_dsn,
@@ -768,15 +875,28 @@ def main() -> None:
                 expected_doc_ids=expected_ids,
                 embedding_dimension=args.embedding_dimension,
             )
-        return run_project_ray_pipeline(
-            source,
-            worker_pool=worker_pool,
-            expected_doc_ids=expected_ids,
-            batch_size=args.batch_size,
-            max_active_batches=args.max_active_batches,
-            embedding_dimension=args.embedding_dimension,
-            embedding_capture=embedding_capture,
-        )
+        project_common = {
+            "worker_pool": worker_pool,
+            "expected_doc_ids": expected_ids,
+            "batch_size": args.batch_size,
+            "max_active_batches": args.max_active_batches,
+            "embedding_dimension": args.embedding_dimension,
+            "embedding_capture": embedding_capture,
+        }
+        if args.project_execution_mode == "hse_static":
+            return run_project_ray_hse_pipeline(
+                source,
+                **project_common,
+                encoded_block_bytes_upper_bound=(
+                    int(database_metadata["max_encoded_bytes"]) * args.batch_size
+                ),
+                limits=hse_limits,
+                model_revision=args.model,
+                processor_revision=processor,
+                model_dtype=args.dtype,
+                input_size=args.input_size,
+            )
+        return run_project_ray_pipeline(source, **project_common)
 
     execute(warmup_count, warmup_ids)
     if worker_pool is not None:
@@ -971,6 +1091,7 @@ def main() -> None:
         "unique_images": args.limit,
         "dataset_passes": args.dataset_passes,
         "batch_size": args.batch_size,
+        "input_size": args.input_size,
         "cpu_workers": "" if args.arm == "daft_builtin_embed" else args.cpu_workers,
         "gpu_workers": args.gpu_workers,
         "model_workers": model_workers,
@@ -1089,6 +1210,52 @@ def main() -> None:
         ),
         "submitted_batches": result.submitted_batches if project_metrics else "",
         "pending_batches_peak": result.pending_batches_peak if project_metrics else "",
+        "project_execution_mode": result.execution_mode if project_metrics else "",
+        "hse_encoded_bytes_limit": (
+            hse_limits.encoded_bytes
+            if project_metrics and args.project_execution_mode == "hse_static"
+            else ""
+        ),
+        "hse_ready_bytes_limit": (
+            hse_limits.ready_bytes
+            if project_metrics and args.project_execution_mode == "hse_static"
+            else ""
+        ),
+        "hse_ready_work_limit": (
+            hse_limits.ready_work
+            if project_metrics and args.project_execution_mode == "hse_static"
+            else ""
+        ),
+        "hse_prepare_inflight_limit": (
+            hse_limits.prepare_inflight
+            if project_metrics and args.project_execution_mode == "hse_static"
+            else ""
+        ),
+        "hse_model_inflight_limit": (
+            hse_limits.model_inflight
+            if project_metrics and args.project_execution_mode == "hse_static"
+            else ""
+        ),
+        "hse_encoded_bytes_peak": (
+            result.encoded_bytes_peak if args.project_execution_mode == "hse_static" else ""
+        ),
+        "hse_ready_bytes_peak": (
+            result.ready_bytes_peak if args.project_execution_mode == "hse_static" else ""
+        ),
+        "hse_prepare_inflight_peak": (
+            result.prepare_inflight_peak
+            if args.project_execution_mode == "hse_static"
+            else ""
+        ),
+        "hse_model_inflight_peak": (
+            result.model_inflight_peak
+            if args.project_execution_mode == "hse_static"
+            else ""
+        ),
+        "batch_prepare_queue_p50_s": percentile(result.batch_prepare_queue_s, 0.50),
+        "batch_prepare_queue_p95_s": percentile(result.batch_prepare_queue_s, 0.95),
+        "batch_ready_residence_p50_s": percentile(result.batch_ready_residence_s, 0.50),
+        "batch_ready_residence_p95_s": percentile(result.batch_ready_residence_s, 0.95),
         "cpu_core_seconds_estimate": cpu_core_seconds,
         "cpu_core_seconds_per_image": cpu_core_seconds / total_rows,
         "gpu_seconds": gpu_seconds,
@@ -1096,7 +1263,11 @@ def main() -> None:
         "images_per_joule": total_rows / gpu_energy_j if gpu_energy_j > 0 else "",
         "engine_stats_text": result.engine_stats,
         "engine_stats_semantics": (
-            "ray_data_operator_stats" if result.engine_stats else "unavailable"
+            "hse_stage_broker_stats"
+            if result.engine_stats and result.execution_mode == "hse_static"
+            else "ray_data_operator_stats"
+            if result.engine_stats
+            else "unavailable"
         ),
         **result.audit,
         **cpu_metrics,
@@ -1123,7 +1294,7 @@ def main() -> None:
     }
     append_csv(Path(args.out_csv), row)
     manifest = {
-        "schema_version": 12,
+        "schema_version": 13,
         "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,
@@ -1143,6 +1314,9 @@ def main() -> None:
             "upstream_source": provenance.upstream_source,
         },
         "detailed_stage_timing_intrusive": args.detailed_stage_timing,
+        "project_execution_mode": (
+            args.project_execution_mode if args.arm == "project_ray" else "not_applicable"
+        ),
         "bandwidth_semantics": "logical_bytes_over_stage_wall_not_pcie_counter",
         "mfu_semantics": "estimated_only_when_verified_flops_and_dtype_peak_are_supplied",
         "cross_scale_comparison_semantics": {

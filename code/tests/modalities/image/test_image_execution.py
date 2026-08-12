@@ -126,6 +126,10 @@ class ImageRunnerSchemaTest(unittest.TestCase):
             "ray_data_actor_pool_mode",
             "source_doc_ids_sha256",
             "source_manifest_match",
+            "project_execution_mode",
+            "hse_ready_bytes_limit",
+            "hse_ready_bytes_peak",
+            "batch_ready_residence_p95_s",
         }
 
         self.assertTrue(expected.issubset(set(RUNNER_MODULE.CSV_FIELDS)))

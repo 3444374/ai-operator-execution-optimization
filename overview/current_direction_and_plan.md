@@ -76,6 +76,7 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 | matched-KV：2-ep 中性、4-ep prefix routing +5.9% | 目前更支持 endpoint consolidation，而非单纯 per-endpoint KV 大小是驱动；仍有饱和深度混淆 |
 | CLIP 5K 串行画像：CPU 准备/actor forward=`13.8–18.3` | 图像链路存在异构流水线候选空间；尚未证明 CPU、Ray/host copy 或 PCIe 谁是主瓶颈 |
 | CLIP operator-E2E：project/fused-Daft=单卡 1.296×、双卡 1.138× | 独立校准后，静态阶段拆分优于 fused UDF；staged 两臂仅通过小规模 gate、尚无正式排名，故不能声称优于主流异构流水线 |
+| HSE static core：descriptor/lease/真实 ready/byte-work 预留已接 runner | 本地只证明执行安全与可观测性；尚无 GPU 性能数据，不能声称优于 direct-dependency static |
 | Ray Data vs project matched-resource 两轮正式实验 | 相同 CPU 下 project 方向一致；开题 headline 冻结为约 13% 到 15% operator-JCT 改善，不使用旧 45.7% |
 | 429 formal cost-model LOO | CE5 pooled/macro/max regret 为 1.67%/2.90%/14.72%，candidate pairwise 0.808；只算 marginal pass |
 

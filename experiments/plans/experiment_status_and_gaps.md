@@ -153,9 +153,10 @@ operator-E2E 原始数据和七步报告见
 ② ✅ Daft built-in、Ray Data native 与 project frozen-static 的 provenance、语义、exactly-once
 和 matched-resource 正式证据已完成，权威结果为
 `experiments/results/image_ai_embed_operator_formal_20260803/`；Daft 60K 容量失败单列，
-不与12K结果横向排名；③ vLLM pooling gate仍blocked，不继续在线/5K/60K；④ 下一研究动作
-是开题后在冻结最佳静态点上做 **A**（state-aware请求成形/提交）+ **B**（代价估计），而不是
-继续增加图像开题baseline、sink或参数扫描。
+不与12K结果横向排名；③ vLLM pooling gate仍blocked，不继续在线/5K/60K；④ HSE static core
+已完成 descriptor/lease、真实 ready 与 byte/work 预留接线，但尚无 GPU 对照结果；下一研究动作
+是开题后先在冻结最佳静态点上过 direct-dependency vs HSE static 非劣门，再做 **A**
+（state-aware请求成形/提交）+ **B**（代价估计），而不是继续增加图像开题baseline、sink或参数扫描。
 
 **开题冻结后的调度主实验边界（2026-08-11 修正）**：上述四臂同机 image formal
 先建立官方框架与项目 **best frozen-static** 强基线；项目最终 proposed 不能停在静态点。
