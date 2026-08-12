@@ -1,0 +1,9 @@
+{
+  "n_gauge_samples": 118.0,
+  "vllm_running_mean": 45.432203389830505,
+  "vllm_running_max": 56.0,
+  "vllm_waiting_mean": 0.0,
+  "vllm_waiting_max": 0.0,
+  "vllm_kv_cache_usage_mean": 0.029179062485017778,
+  "vllm_kv_cache_usage_max": 0.06446330206937617
+}

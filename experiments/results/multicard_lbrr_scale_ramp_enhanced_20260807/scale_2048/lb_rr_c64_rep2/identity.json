@@ -1,0 +1,7 @@
+{
+  "comparison_role": "gateway_system_diagnostic",
+  "component_comparison_role": "database_product_native_baseline",
+  "formal_baseline_eligible": false,
+  "scheduler_owner": "duckdb_ai_extension + nginx_round_robin + vllm",
+  "reason": "single DuckDB process (single BASE_URL) via nginx third-party gateway to 2 vLLM endpoints; protocol §2.6 gateway 完整系统轨 (line 112) -> system-level only, not DuckDB-native, not formal-eligible"
+}

@@ -45,6 +45,8 @@
 
 | Directory | Content | Boundary |
 |---|---|---|
+| `multicard_scale_ramp_enhanced_20260807/` | bounded HTTP + harness-pre-split DuckDB AI 的九档规模曲线，三重复并补齐 during-cell vLLM gauges、身份、能耗和失败 cell 紧凑证据 | bounded 27/27、DuckDB 22/27；两路径身份与计时粒度分开，不作产品原生多 endpoint 排名；逐请求输出和日志留服务器。 |
+| `multicard_lbrr_scale_ramp_enhanced_20260807/` | 单 DuckDB→nginx round-robin→双 vLLM 的九档规模曲线，27/27 三重复紧凑证据 | `gateway_system_diagnostic`，query-barrier 口径；不冒充 DuckDB 原生调度，也不与 request-level E2E 延迟混排。 |
 | `static_credit_prompt_length_screen_20260730/` | Short/long prompt static request/work credit screening, with independent median/CV/equivalent-arm audit. | 48/48 succeeded, but urllib/no-token-ID and 48.5% divergence among no-pressure short arms make the dynamic GO/NO-GO inconclusive. Retained as mechanism-audit evidence; rerun the async equivalence gate. |
 | `dual_gpu_shared_vllm_formal_20260729_1135/` | 1/2/4-job independent-full, static-partition and endpoint-shared DRR comparison. | 36/36 succeeded with exact global request/work bounds. Two jobs show no gain; four jobs improve aggregate throughput by 9.57% and max P99 by 22.52%, but repeat-level results are heterogeneous, so this is a high-contention candidate rather than a universal default. |
 | `dual_gpu_slo_ewma_flush_formal_20260729/` | Fixed-50, queue-25/50 and SLO-EWMA-25/50 under high and arrival-limited replay. | 24/24 succeeded; SLO-EWMA changes throughput by -0.52%/+0.10% versus fixed and all arms have zero 30s-SLO violations. It does not meet the promotion gate. |

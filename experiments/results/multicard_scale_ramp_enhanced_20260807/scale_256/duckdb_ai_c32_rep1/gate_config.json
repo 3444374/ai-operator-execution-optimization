@@ -1,0 +1,43 @@
+{
+  "cells": [
+    {
+      "adapter": "duckdb_ai",
+      "concurrency_per_endpoint": 32,
+      "id": "duckdb_ai_c32"
+    }
+  ],
+  "completion_protocol": "chat_completions",
+  "endpoint_urls": [
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "http://127.0.0.1:8001/v1/chat/completions"
+  ],
+  "experiment_id": "multicard_scale_ramp_formal_duckdb_ai_256r",
+  "formal": false,
+  "hard_gates": {
+    "both_endpoints_used": true,
+    "endpoint_predicted_work_skew_max": 0.02,
+    "exactly_once": true,
+    "failed_rows": 0,
+    "native_arms_have_no_project_scheduler": true,
+    "provenance_fields_present": true,
+    "same_model": true,
+    "same_protocol": true,
+    "same_service_config": true,
+    "service_counter_consistency": true,
+    "vllm_running_final": 0,
+    "vllm_waiting_final": 0,
+    "worker_failures": 0
+  },
+  "manifest": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp/manifests/squad_dev_256.jsonl",
+  "model": "qwen2.5-7b",
+  "output_root": "/root/autodl-tmp/ai-operator/experiments/results/multicard_scale_ramp_enhanced_20260807/scale_256/duckdb_ai_c32_rep1/gate_output",
+  "rows_total": 256,
+  "schema_version": 1,
+  "service": {
+    "max_num_batched_tokens": 8192,
+    "max_num_seqs": 256,
+    "prefix_caching": "enabled"
+  },
+  "temperature": 0.0,
+  "tokenizer": "/root/autodl-tmp/models/Qwen2.5-7B-Instruct"
+}

@@ -1,0 +1,31 @@
+{
+  "incidents": [],
+  "metrics": {
+    "endpoint_row_count_diff": 0,
+    "endpoint_row_counts": {
+      "0": 256,
+      "1": 256
+    },
+    "endpoint_work": {
+      "0": 70365,
+      "1": 69656
+    },
+    "endpoint_work_skew": 0.010076032118240602,
+    "group_service_generation_tokens": 2087,
+    "group_service_generation_tokens_per_s": 1648.6513036352394,
+    "group_service_prompt_tokens": 109655,
+    "group_service_prompt_tokens_per_s": 86623.31514140977,
+    "group_service_total_tokens": 111742,
+    "group_service_total_tokens_per_s": 88271.96644504501,
+    "group_service_wall_s": 1.265883207321167,
+    "manifest_rows": 512,
+    "partition_policy": "equal_rows",
+    "result_endpoint_counts": {
+      "0": 256,
+      "1": 256
+    },
+    "result_rows": 512
+  },
+  "passed": true,
+  "status": "passed"
+}

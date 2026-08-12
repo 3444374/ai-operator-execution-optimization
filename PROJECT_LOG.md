@@ -1,5 +1,22 @@
 # 项目日志
 
+## 2026-08-12 服务器旧产物审计与 enhanced ramp 紧凑证据归档
+
+- 只读审计服务器旧工作目录的 3,425 个未跟踪文件：服务器分支无 `main` 之外的独有
+  tracked commit；绝大多数内容是 7 月末/8 月初逐请求 raw、日志、`$OUT` 误目录、临时
+  launch/config 或已在 `main` 有摘要的历史结果，不直接合并。
+- 闭合 2026-08-07 已登记但未完成的两组 enhanced ramp raw 归档：bounded/DuckDB
+  54 cell（49 passed、5 failed）和 LBRR 27 cell（27 passed）。纳入 identity、配置、门禁、
+  失败记录、shard summary、TTFT/ITL、during-cell vLLM gauges 与 GPU/能耗；排除
+  `requests.csv` 和日志，服务器全量目录不改动。
+- 两组 compact evidence 共新增 903 个 per-cell 文件、约 1.49 MB（另补两份目录级 README）；使用当前
+  `multicard_ramp_aggregate.py` 从归档证据重建，两份 JSON/Markdown aggregate 均逐字节
+  匹配。结果口径不变：DuckDB 仍是 harness-pre-split diagnostic，LBRR 仍是
+  gateway-system diagnostic，不作产品原生多 endpoint 排名。
+- 服务器已在独立 clean worktree 拉取 `main@6ed14f7`；`core,text,analysis` 自动 preflight
+  识别双 RTX 4090 并全项通过，SAOR 14 个纯代码测试通过。按用户要求未启动 formal，旧脏
+  worktree、服务与原始结果均未清理或覆盖。
+
 ## 2026-08-12 SAOR fixed-envelope runtime、direct control 与 K 校准边界落地
 
 - 将 `saor_release` 接入现有 endpoint-shared Ray credit coordinator：固定 request/work
@@ -5534,7 +5551,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - **能耗 8→21 J/1k-tok**（2048→10570）。
 - **口径**：bounded/duckdb/lb_rr `vllm_running_*_total_*` = Σ 两 endpoint（VllmGaugeSampler）；project `vllm_running_prof_*` = profiler per-run，**caliber 不同分列不混比**。MFU = `[0,1]` 分数（`_compute_efficiency`，peak=165 TFLOPS bf16）。
 
-归档：`multicard_scale_ramp_enhanced_20260807/` + `multicard_lbrr_scale_ramp_enhanced_20260807/`（ramp_run+aggregate）+ proj re-aggregate + 4-path ramp README §9（完整 §7.5D 4 臂表）。**正式 raw 归档**（服务器侧 git，只正式结果、控大小）待下一步。
+归档：`multicard_scale_ramp_enhanced_20260807/` + `multicard_lbrr_scale_ramp_enhanced_20260807/`（ramp_run+aggregate）+ proj re-aggregate + 4-path ramp README §9（完整 §7.5D 4 臂表）。**正式 raw 归档已于 2026-08-12 闭环**：只纳入配置/门禁/身份/状态/资源/gauge/失败证据，排除逐请求输出和日志；见项目日志顶部服务器审计记录。
 ## 2026-08-07 开题 framing 与 Claim Matrix 冻结
 
 - 新增 `opening/claim_matrix.md`，冻结题目、AI Data Execution Layer 系统抽象、两项研究内容、共同使能组件、跨模态边界和四级 claim 状态。
