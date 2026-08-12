@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-08-12 SAOR 服务器清理与 replay-duration readiness 修正
+
+- 服务器旧现场审计后，将两个脏开发 worktree 的 tracked patch/untracked 文件和根目录 481 类
+  历史未跟踪产物保存到仓库外可恢复归档并记录 SHA256；删除三个过期 worktree和三个已合并
+  或 patch-equivalent 本地分支。服务器现只保留干净 `main@5250fb3`，未删除仓库外实验资产。
+- 真实服务器 preflight 发现 SAOR 512-row work-balanced manifests 的原始 arrival span 约
+  66,880 s；旧模板写死 `arrival_time_scale=1.0` 会把单次 rehearsal 拉长到约 18.6 h。
+- 将 replay scale 和最大 effective manifest span 改为 workload/runtime 合同注入；readiness
+  自动读取 immutable manifests 计算实际 span，并 fail-closed 拒绝非正 scale 或超预算配置。
+  当前同一 ShareGPT 合同应复用既有 `0.001` scale（约 66.9 s），不是调度器硬编码参数。
+
 ## 2026-08-12 SAOR fixed-envelope formal harness 闭合
 
 - 将 `direct_no_job` 纳入 shared-vLLM 同一 seeded/interleaved runner，复用 immutable manifests、

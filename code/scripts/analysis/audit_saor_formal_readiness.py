@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from src.experiments.shared_vllm.config import (  # noqa: E402
     _argument_value,
     load_config,
 )
+from src.infrastructure.config_env import expand_scalar  # noqa: E402
 from src.experiments.shared_vllm.direct_control import (  # noqa: E402
     direct_control_contract,
 )
@@ -48,6 +50,7 @@ def _args() -> argparse.Namespace:
 
 
 def audit(config_path: Path) -> dict[str, object]:
+    raw_config = json.loads(config_path.resolve().read_text(encoding="utf-8"))
     config = load_config(config_path.resolve())
     errors: list[str] = []
     if config.warmup_runs_per_scenario != 1 or config.formal_repeats != 3:
@@ -71,6 +74,33 @@ def audit(config_path: Path) -> dict[str, object]:
     )
     if configured_cap <= 0:
         errors.append("formal matrix requires a positive completion max token cap")
+    try:
+        arrival_time_scale = float(
+            _argument_value(config.common_args, "--arrival-time-scale", "nan")
+        )
+    except ValueError:
+        arrival_time_scale = math.nan
+    if not math.isfinite(arrival_time_scale) or arrival_time_scale <= 0:
+        errors.append("arrival-time-scale must be finite and positive")
+    readiness = raw_config.get("readiness_contract")
+    if not isinstance(readiness, dict):
+        errors.append("formal matrix requires a readiness_contract")
+        max_effective_span_s = math.nan
+    else:
+        try:
+            max_effective_span_s = float(
+                expand_scalar(
+                    readiness.get("max_effective_manifest_span_s"),
+                    "readiness_contract.max_effective_manifest_span_s",
+                    environment=os.environ,
+                )
+            )
+        except (TypeError, ValueError):
+            max_effective_span_s = math.nan
+        if not math.isfinite(max_effective_span_s) or max_effective_span_s <= 0:
+            errors.append(
+                "readiness max_effective_manifest_span_s must be finite and positive"
+            )
     active_reference: tuple[str, ...] | None = None
     active_offsets: tuple[float, ...] | None = None
     doc_owners: dict[int, str] = {}
@@ -121,13 +151,53 @@ def audit(config_path: Path) -> dict[str, object]:
                     f"{scenario.scenario_id} job {index} output cap mismatch"
                 )
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            arrivals = [request.arrival_time_s for request in requests]
+            raw_span_s = max(arrivals) - min(arrivals) if arrivals else 0.0
+            effective_span_s = raw_span_s * arrival_time_scale
+            if (
+                math.isfinite(max_effective_span_s)
+                and effective_span_s > max_effective_span_s
+            ):
+                errors.append(
+                    f"manifest effective replay span exceeds readiness bound: {path}"
+                )
             manifests[str(path.resolve())] = {
                 "rows": len(requests),
                 "sha256": digest,
                 "endpoint_indices": sorted(endpoint_indices),
+                "raw_arrival_span_s": raw_span_s,
+                "effective_arrival_span_s": effective_span_s,
             }
     if config.calibration_contract is None:
         errors.append("formal matrix requires a validated calibration contract")
+    else:
+        calibration_payload = json.loads(
+            Path(config.calibration_contract.path).read_text(encoding="utf-8")
+        )
+        selection = calibration_payload.get("selection", {})
+        evidence = calibration_payload.get("evidence", {})
+        token_evidence = (
+            evidence.get("token_budget", {})
+            if isinstance(evidence, dict)
+            else {}
+        )
+        calibrated_budget = selection.get("best_token_budget")
+        if calibrated_budget is None:
+            calibrated_budget = token_evidence.get("frozen_token_budget")
+        try:
+            configured_budget = int(
+                _argument_value(config.common_args, "--token-budget", "-1")
+            )
+            calibrated_budget = int(calibrated_budget)
+        except (TypeError, ValueError):
+            errors.append(
+                "calibration contract lacks a numeric selected/frozen token budget"
+            )
+        else:
+            if configured_budget != calibrated_budget:
+                errors.append(
+                    "configured token budget does not match calibration evidence"
+                )
     if config.saor_release_control is None:
         errors.append("formal matrix requires executable SAOR release control")
     elif (
@@ -146,6 +216,8 @@ def audit(config_path: Path) -> dict[str, object]:
         "scenario_count": len(config.scenarios),
         "warmup_runs_per_scenario": config.warmup_runs_per_scenario,
         "formal_repeats": config.formal_repeats,
+        "arrival_time_scale": arrival_time_scale,
+        "max_effective_manifest_span_s": max_effective_span_s,
         "service_metadata": dict(config.service_metadata),
         "calibration_contract": (
             {

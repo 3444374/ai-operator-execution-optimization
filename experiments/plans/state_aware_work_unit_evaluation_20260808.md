@@ -119,7 +119,7 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 字段 | 当前冻结值 |
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
-| policy revision | `saor-v0.4.2-formal-ready`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
+| policy revision | `saor-v0.4.3-server-ready`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
 | 状态 | SAOR-Release 已接 fixed-envelope Ray credit runtime、统一六臂 active-set runner、matched solo、分层门禁与 fail-closed 汇总，但尚无 GPU formal；SLO debt/stage queue/理论 bridge 未完成；dynamic K 已退出主线，Safe-Capacity Governor 为 `parked-conditional`；尚未完成定理证明 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
@@ -866,6 +866,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-11 | `saor-v0.4-design` | dynamic K 退出主线；固定总 envelope，仅动态调整 active-set entitlement、idle borrowing/reclaim 与 ordered release；新增 global FIFO/no-op 和 DRR killer baseline | capacity-only 未胜 K160 + eager/online 两/四 Job static/shared 方向差异 + fatal-flaw audit | dynamic-K `reject and pivot`；SAOR-Release `accept with revisions`，killer baseline 未过前不晋级 |
 | 2026-08-12 | `saor-v0.4.1-runtime` | 接入 fixed-envelope Ray credit runtime、completion fairness debt、SAOR/shared FIFO 配置与 active-set phase audit；新增 direct merged-arrival no-Job control；K 全部改由签名化 calibration contract 注入 | 代码/单测与既有 calibration infrastructure | 仍为 candidate；无 GPU formal、SLO debt 和 theorem bridge，不晋级 |
 | 2026-08-12 | `saor-v0.4.2-formal-ready` | direct no-Job 纳入同一交错 runner；新增 project/direct matched solo、request lifecycle 与 credit mechanism 分层门禁、rehearsal、静态 readiness audit 和 fail-closed formal summary | 单元测试 + 静态合同；未运行服务器 formal | 工程达到可 rehearsal/formal 状态，但仍无 GPU 策略结果；direct 只匹配 request K，不伪称 work-credit 等资源臂 |
+| 2026-08-12 | `saor-v0.4.3-server-ready` | 服务器 preflight 发现 512-row manifest 原始 arrival span 约 66,880 s，模板写死 `arrival_time_scale=1.0` 会使 rehearsal 约 18.6 h；改为 workload 合同注入 scale，并由 readiness 自动计算 effective span、设置运行预算门禁 | 服务器真实 immutable manifest + 本地/服务器静态门禁 | 修正运行可行性，不改变算法、K 或证据结论；仍需 GPU rehearsal 后才能启动 formal |
 
 状态只允许按以下顺序变化：
 

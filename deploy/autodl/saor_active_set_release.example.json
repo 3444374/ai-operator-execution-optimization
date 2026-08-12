@@ -18,7 +18,6 @@
   "calibration_contract": {
     "path": "${STRATEGY_CALIBRATION_SELECTION}",
     "expected": {
-      "best_token_budget": "${BEST_TOKEN_BUDGET}",
       "project_static_k_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
       "project_active_work_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
       "project_actor_workers_per_endpoint": "${PROJECT_ACTOR_WORKERS_PER_ENDPOINT}",
@@ -38,6 +37,9 @@
     "queue_weight": 0.0,
     "fairness_weight": 1.0,
     "slo_weight": 0.0
+  },
+  "readiness_contract": {
+    "max_effective_manifest_span_s": "${SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S}"
   },
   "common_args": [
     "--database-url", "${DATABASE_URL}",
@@ -71,7 +73,7 @@
     "--cost-model-id", "${COMPLETION_MODEL}",
     "--cost-tokenizer-id", "${MODEL_PATH}",
     "--arrival-replay",
-    "--arrival-time-scale", "1.0",
+    "--arrival-time-scale", "${SAOR_ARRIVAL_TIME_SCALE}",
     "--scheduling-policy", "static",
     "--endpoint-routing", "manifest_pinned",
     "--token-budget-policy", "static",

@@ -178,7 +178,10 @@ class SaorFormalToolsTests(unittest.TestCase):
                         },
                         "evidence": {
                             "feeding": {"status": "passed"},
-                            "token_budget": {"status": "passed"},
+                            "token_budget": {
+                                "status": "passed",
+                                "frozen_token_budget": 8192,
+                            },
                             "actor_pool": {"status": "passed"},
                         },
                     }
@@ -220,6 +223,8 @@ class SaorFormalToolsTests(unittest.TestCase):
                 "SAOR_BULK_ROWS": "2",
                 "SAOR_FOREGROUND_ROWS": "2",
                 "SAOR_FOREGROUND_OFFSET_S": "5",
+                "SAOR_ARRIVAL_TIME_SCALE": "0.001",
+                "SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S": "120",
                 "SAOR_BULK_MANIFEST": str(bulk),
                 "SAOR_FOREGROUND_MANIFEST": str(foreground),
             }
@@ -233,6 +238,189 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(result["scenario_count"], 10)
         self.assertEqual(result["direct_contract"]["protocol"], "completions")
         self.assertEqual(result["direct_contract"]["prompt_format"], "raw")
+
+    def test_readiness_rejects_token_budget_not_bound_to_evidence(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            bulk = root / "bulk.jsonl"
+            foreground = root / "foreground.jsonl"
+            write_manifest(bulk, (self._request(1, 0), self._request(2, 1)))
+            write_manifest(
+                foreground,
+                (self._request(3, 0), self._request(4, 1)),
+            )
+            selection = root / "selection.json"
+            selection.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "status": "ready",
+                        "selection": {
+                            "project_static_k_per_endpoint": 128,
+                            "project_active_work_per_endpoint": 65536,
+                            "project_actor_workers_per_endpoint": 8,
+                            "project_ray_actor_max_concurrency": 32,
+                            "project_ray_worker_num_cpus": 0.25,
+                        },
+                        "evidence": {
+                            "feeding": {"status": "passed"},
+                            "token_budget": {
+                                "status": "passed",
+                                "frozen_token_budget": 4096,
+                            },
+                            "actor_pool": {"status": "passed"},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            environment = {
+                "VLLM_VERSION": "0.25.1",
+                "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
+                "VLLM_MAX_NUM_SEQS": "256",
+                "VLLM_GPU_MEMORY_UTILIZATION": "0.9",
+                "STRATEGY_CALIBRATION_SELECTION": str(selection),
+                "BEST_TOKEN_BUDGET": "8192",
+                "PROJECT_STATIC_K_PER_ENDPOINT": "128",
+                "PROJECT_ACTIVE_WORK_PER_ENDPOINT": "65536",
+                "PROJECT_ACTOR_WORKERS_PER_ENDPOINT": "8",
+                "PROJECT_RAY_ACTOR_MAX_CONCURRENCY": "32",
+                "PROJECT_RAY_WORKER_NUM_CPUS": "0.25",
+                "PROJECT_SHARED_CREDIT_QUANTUM": "2048",
+                "DATABASE_URL": "postgresql://postgres:postgres@localhost/db",
+                "SOURCE_MAX_PROMPT_TOKENS": "1500",
+                "COMPLETION_ENDPOINT_URLS": (
+                    "http://127.0.0.1:8000/v1/completions,"
+                    "http://127.0.0.1:8001/v1/completions"
+                ),
+                "COMPLETION_MODEL": "qwen",
+                "COMPLETION_PROTOCOL": "completions",
+                "COMPLETION_MAX_TOKENS": "8",
+                "MODEL_METRICS_URLS": (
+                    "http://127.0.0.1:8000/metrics,"
+                    "http://127.0.0.1:8001/metrics"
+                ),
+                "ENDPOINT_GPU_IDS": "0,1",
+                "SAOR_ACTIVE_SET_WORKLOAD": "saor-test",
+                "MODEL_PATH": "/models/qwen",
+                "REQUEST_SLO_MS": "30000",
+                "GPU_PEAK_TFLOPS": "165",
+                "MFU_PRECISION": "bf16_dense_fp32_accumulate",
+                "SAOR_BULK_ROWS": "2",
+                "SAOR_FOREGROUND_ROWS": "2",
+                "SAOR_FOREGROUND_OFFSET_S": "5",
+                "SAOR_ARRIVAL_TIME_SCALE": "0.001",
+                "SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S": "120",
+                "SAOR_BULK_MANIFEST": str(bulk),
+                "SAOR_FOREGROUND_MANIFEST": str(foreground),
+            }
+            with patch.dict(os.environ, environment, clear=True):
+                result = AUDIT.audit(
+                    REPOSITORY
+                    / "deploy/autodl/saor_active_set_release.example.json"
+                )
+
+        self.assertEqual(result["status"], "failed")
+        self.assertIn(
+            "configured token budget does not match calibration evidence",
+            result["errors"],
+        )
+
+    def test_readiness_rejects_unscaled_multi_hour_manifest(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            bulk = root / "bulk.jsonl"
+            foreground = root / "foreground.jsonl"
+            write_manifest(
+                bulk,
+                (
+                    self._request(1, 0, arrival_time_s=0),
+                    self._request(2, 1, arrival_time_s=66_000),
+                ),
+            )
+            write_manifest(
+                foreground,
+                (
+                    self._request(3, 0, arrival_time_s=0),
+                    self._request(4, 1, arrival_time_s=66_000),
+                ),
+            )
+            selection = root / "selection.json"
+            selection.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "status": "ready",
+                        "selection": {
+                            "best_token_budget": 8192,
+                            "project_static_k_per_endpoint": 128,
+                            "project_active_work_per_endpoint": 65536,
+                            "project_actor_workers_per_endpoint": 8,
+                            "project_ray_actor_max_concurrency": 32,
+                            "project_ray_worker_num_cpus": 0.25,
+                        },
+                        "evidence": {
+                            "feeding": {"status": "passed"},
+                            "token_budget": {
+                                "status": "passed",
+                                "frozen_token_budget": 8192,
+                            },
+                            "actor_pool": {"status": "passed"},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            environment = {
+                "VLLM_VERSION": "0.25.1",
+                "VLLM_MAX_NUM_BATCHED_TOKENS": "8192",
+                "VLLM_MAX_NUM_SEQS": "256",
+                "VLLM_GPU_MEMORY_UTILIZATION": "0.9",
+                "STRATEGY_CALIBRATION_SELECTION": str(selection),
+                "BEST_TOKEN_BUDGET": "8192",
+                "PROJECT_STATIC_K_PER_ENDPOINT": "128",
+                "PROJECT_ACTIVE_WORK_PER_ENDPOINT": "65536",
+                "PROJECT_ACTOR_WORKERS_PER_ENDPOINT": "8",
+                "PROJECT_RAY_ACTOR_MAX_CONCURRENCY": "32",
+                "PROJECT_RAY_WORKER_NUM_CPUS": "0.25",
+                "PROJECT_SHARED_CREDIT_QUANTUM": "2048",
+                "DATABASE_URL": "postgresql://postgres:postgres@localhost/db",
+                "SOURCE_MAX_PROMPT_TOKENS": "1500",
+                "COMPLETION_ENDPOINT_URLS": (
+                    "http://127.0.0.1:8000/v1/completions,"
+                    "http://127.0.0.1:8001/v1/completions"
+                ),
+                "COMPLETION_MODEL": "qwen",
+                "COMPLETION_PROTOCOL": "completions",
+                "COMPLETION_MAX_TOKENS": "8",
+                "MODEL_METRICS_URLS": (
+                    "http://127.0.0.1:8000/metrics,"
+                    "http://127.0.0.1:8001/metrics"
+                ),
+                "ENDPOINT_GPU_IDS": "0,1",
+                "SAOR_ACTIVE_SET_WORKLOAD": "saor-test",
+                "MODEL_PATH": "/models/qwen",
+                "REQUEST_SLO_MS": "30000",
+                "GPU_PEAK_TFLOPS": "165",
+                "MFU_PRECISION": "bf16_dense_fp32_accumulate",
+                "SAOR_BULK_ROWS": "2",
+                "SAOR_FOREGROUND_ROWS": "2",
+                "SAOR_FOREGROUND_OFFSET_S": "5",
+                "SAOR_ARRIVAL_TIME_SCALE": "1",
+                "SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S": "120",
+                "SAOR_BULK_MANIFEST": str(bulk),
+                "SAOR_FOREGROUND_MANIFEST": str(foreground),
+            }
+            with patch.dict(os.environ, environment, clear=True):
+                result = AUDIT.audit(
+                    REPOSITORY
+                    / "deploy/autodl/saor_active_set_release.example.json"
+                )
+
+        self.assertEqual(result["status"], "failed")
+        self.assertTrue(
+            any("effective replay span" in item for item in result["errors"])
+        )
 
     def test_summary_fails_closed_when_active_scenario_is_missing(self) -> None:
         with TemporaryDirectory() as directory:
@@ -261,11 +449,18 @@ class SaorFormalToolsTests(unittest.TestCase):
             self.assertEqual(validation["status"], "failed")
 
     @staticmethod
-    def _request(doc_id: int, endpoint_index: int) -> ChatRequest:
+    def _request(
+        doc_id: int,
+        endpoint_index: int,
+        *,
+        arrival_time_s: float | None = None,
+    ) -> ChatRequest:
         return ChatRequest(
             doc_id=doc_id,
             prompt=f"prompt-{doc_id}",
-            arrival_time_s=float(doc_id),
+            arrival_time_s=(
+                float(doc_id) if arrival_time_s is None else arrival_time_s
+            ),
             prompt_tokens=4,
             max_output_tokens=8,
             estimated_output_tokens=8,

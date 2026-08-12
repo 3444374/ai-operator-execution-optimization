@@ -1022,6 +1022,12 @@ request K、协议、prompt format、immutable manifests、vLLM counters、资�
 只跳过 Daft/Ray Job credit/fair queue，因此回答“同 request window 下简单 merged arrival 是否
 已足够”；它是 project-authored control，不是 vendor-native baseline。
 
+模板不硬编码 manifest replay 速度。`SAOR_ARRIVAL_TIME_SCALE` 必须来自冻结 workload 合同；
+`SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S` 是运行预算门禁。readiness 按 immutable manifest 的
+`max(arrival_time_s)-min(arrival_time_s)` 计算实际 replay span，拒绝非正 scale 或超预算
+配置。当前 work-balanced 512-row ShareGPT 合同沿用已审计的 `0.001` scale，原始约
+66,880 s 跨度压缩为约 66.9 s；不能误用 `1.0` 把 rehearsal 拉长到约 18.6 小时。
+
 门禁分两层，不能混写：所有六个 active-set 臂都必须从 request evidence 观察到
 `bulk starts → foreground overlaps → foreground drains first → bulk continues`；只有四个 credit
 策略还必须从 credit trace 观察到 pre/overlap/post 三段借用机制。static/direct 的机制门禁为

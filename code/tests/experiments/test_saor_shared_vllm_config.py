@@ -44,6 +44,15 @@ class SaorSharedVllmConfigTest(unittest.TestCase):
             payload["work_limit_per_endpoint"],
             "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
         )
+        arrival_scale_index = payload["common_args"].index("--arrival-time-scale")
+        self.assertEqual(
+            payload["common_args"][arrival_scale_index + 1],
+            "${SAOR_ARRIVAL_TIME_SCALE}",
+        )
+        self.assertEqual(
+            payload["readiness_contract"]["max_effective_manifest_span_s"],
+            "${SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S}",
+        )
         self.assertEqual(
             [scenario["policy"] for scenario in payload["scenarios"]],
             [
