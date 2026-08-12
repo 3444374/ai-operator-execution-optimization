@@ -44,7 +44,8 @@ AGENTS.md
 | 开题统一口径和页序 | `report/opening_report.md` |
 | Claim 边界和实验准入 | `claim_matrix.md` |
 | 开题报告正文 | `report/opening_report.md` |
-| 开题 PPT 源稿 | `slides/opening_ppt.md`，当前内容和形式先作废，仅保留版式经验 |
+| 当前开题 PPT 与可复现构建 | `slides/opening_defense_20260812_v8.pptx`、`slides/update_opening_defense_v8_artifact_tool.mjs`、`slides/opening_defense_20260812_v8_qa.md` |
+| 20 页主讲内容上游 | `opening_defense_outline_20260808.md`、`slides/opening_defense_20260812_v8_figure_content_audit.md` |
 | PPT 制作规则 | `ppt_rules.md` |
 | 开题工作组织规则 | `work_rules.md` |
 | 飞书同步规则 | `feishu/README.md` |
@@ -61,14 +62,13 @@ AGENTS.md
 当前工作顺序：
 
 ```text
-本地 Markdown 源稿
-  -> 飞书文档补全
-  -> PPT 制作
-  -> PPT 同步飞书
-  -> 使用学校 Word 模板生成最终 DOCX
+冻结叙事与图集
+  -> 本地 PPT 制作与逐页 QA
+  -> 中文 Markdown 报告补全
+  -> 飞书云文档发布与差异审计
 ```
 
-在最终 DOCX 生成前，不需要提前生成 Word 文件。DOCX 必须使用学校模板，以继承章节样式、字体、行间距、图表标注和参考文献格式。
+当前用户只要求中文 Markdown 与飞书云文档，不生成 Word，也不同步 Wiki。
 
 ### 报告是完整论证
 
@@ -82,7 +82,7 @@ AGENTS.md
 
 ### PPT 是现场讲解
 
-下一版 `slides/opening_ppt.md` 应从用户确认后的报告中重新提炼，不承担报告的全部细节。PPT 每页只突出一个主结论，详细解释写到备注。当前旧版 PPT 内容和形式先作废，但标题区、正文安全区、图表区和页脚位置等版式经验可以保留。
+当前 `slides/opening_defense_20260812_v8.pptx` 已按冻结的 20 页大纲生成，不承担报告的全部细节。PPT 每页只突出一个主结论，详细解释写到备注；旧 `slides/opening_ppt.md` 只保留历史版式经验，不再作为当前内容入口。
 
 PPT 修改后要反查报告：
 

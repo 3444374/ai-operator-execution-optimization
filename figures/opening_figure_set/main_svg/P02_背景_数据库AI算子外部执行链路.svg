@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <style>
+      .cn{font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",Arial,sans-serif}
+      .title{font-size:40px;font-weight:700;fill:#111827}
+      .section{font-size:28px;font-weight:700}
+      .cardtitle{font-size:25px;font-weight:700}
+      .body{font-size:23px;fill:#374151}
+      .small{font-size:22px;fill:#6B7280}
+      .pill{font-size:22px;font-weight:700}
+    </style>
+    <marker id="a-blue" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto"><path d="M0 0 12 6 0 12z" fill="#165DCC"/></marker>
+    <marker id="a-orange" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="13" refY="7" orient="auto"><path d="M0 0 14 7 0 14z" fill="#E85D04"/></marker>
+    <marker id="a-purple" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto"><path d="M0 0 12 6 0 12z" fill="#5B2AA6"/></marker>
+    <marker id="a-teal" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0 10 5 0 10z" fill="#0F8C8C"/></marker>
+    <marker id="a-green" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto"><path d="M0 0 12 6 0 12z" fill="#15803D"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#FFFFFF"/>
+
+  <rect x="48" y="28" width="70" height="54" rx="10" fill="#165DCC"/>
+  <text class="cn" x="83" y="65" text-anchor="middle" font-size="28" font-weight="700" fill="#FFFFFF">01</text>
+  <text class="cn title" x="140" y="68">数据库 AI 算子的外部执行链路</text>
+
+  <text class="cn small" x="120" y="124" fill="#165DCC">SQL Analytics</text>
+  <path d="M300 116H585" stroke="#E85D04" stroke-width="3" fill="none" marker-end="url(#a-orange)"/>
+  <text class="cn small" x="735" y="124" text-anchor="middle" fill="#E85D04">Database AI Operators</text>
+  <path d="M900 116H1185" stroke="#E85D04" stroke-width="3" fill="none" marker-end="url(#a-orange)"/>
+  <text class="cn small" x="1450" y="124" text-anchor="end" fill="#5B2AA6">External AI Execution</text>
+
+  <text class="cn section" x="190" y="184" text-anchor="middle" fill="#165DCC">① 数据与 SQL 入口</text>
+  <text class="cn section" x="485" y="184" text-anchor="middle" fill="#165DCC">② 数据库 AI 算子</text>
+  <text class="cn section" x="885" y="184" text-anchor="middle" fill="#E85D04">③ 外部 AI 数据执行层</text>
+  <text class="cn section" x="1370" y="184" text-anchor="middle" fill="#5B2AA6">④ 模型服务与 GPU</text>
+
+  <rect x="42" y="205" width="298" height="500" rx="18" fill="#F7FAFF" stroke="#165DCC" stroke-width="2"/>
+  <rect x="365" y="205" width="240" height="500" rx="18" fill="#F7FAFF" stroke="#165DCC" stroke-width="2"/>
+  <rect x="640" y="198" width="520" height="514" rx="18" fill="#FFFBF7" stroke="#E85D04" stroke-width="2.5" stroke-dasharray="10 7"/>
+  <rect x="1188" y="205" width="370" height="500" rx="18" fill="#FBF9FF" stroke="#5B2AA6" stroke-width="2"/>
+
+  <g>
+    <rect x="65" y="234" width="252" height="86" rx="13" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.5"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMzIiIGN5PSIxMyIgcng9IjIxIiByeT0iOCIvPjxwYXRoIGQ9Ik0xMSAxM3YzNWMwIDQgOSA4IDIxIDhzMjEtNCAyMS04VjEzIi8+PHBhdGggZD0iTTExIDMwYzAgNCA5IDggMjEgOHMyMS00IDIxLTgiLz48cGF0aCBkPSJNMTEgNDdjMCA0IDkgOCAyMSA4czIxLTQgMjEtOCIvPjwvc3ZnPg==" data-icon="database" x="82" y="249" width="54" height="54"/>
+    <text class="cn cardtitle" x="148" y="270" fill="#0F3F9E">PostgreSQL</text>
+    <text class="cn body" x="148" y="301">表与任务语义</text>
+  </g>
+  <g>
+    <rect x="65" y="338" width="252" height="86" rx="13" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.5"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cmVjdCB4PSI4IiB5PSIxMCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ0IiByeD0iNCIvPgogIDxwYXRoIGQ9Ik04IDIzaDQ4TTggMzZoNDhNMjQgMTB2NDRNNDEgMTB2NDQiLz4KPC9zdmc+Cg==" data-icon="table" x="82" y="354" width="52" height="52"/>
+    <text class="cn cardtitle" x="148" y="374" fill="#0F3F9E">SQL / AI SQL</text>
+    <text class="cn body" x="148" y="405">选择与触发</text>
+  </g>
+  <g>
+    <rect x="65" y="442" width="252" height="226" rx="13" fill="#EEF5FF" stroke="#165DCC" stroke-width="1.5"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cmVjdCB4PSI4IiB5PSIxMCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ0IiByeD0iNCIvPgogIDxwYXRoIGQ9Ik04IDIzaDQ4TTggMzZoNDhNMjQgMTB2NDRNNDEgMTB2NDQiLz4KPC9zdmc+Cg==" data-icon="table" x="86" y="472" width="48" height="48"/>
+    <text class="cn cardtitle" x="150" y="503" fill="#0F3F9E">结构化表</text>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cGF0aCBkPSJNMTYgNmgyM2wxMSAxMXY0MUgxNnoiLz48cGF0aCBkPSJNMzkgNnYxM2gxM00yMyAzMGgyME0yMyA0MGgyME0yMyA1MGgxMyIvPgo8L3N2Zz4K" data-icon="document" x="86" y="538" width="48" height="48"/>
+    <text class="cn cardtitle" x="150" y="569" fill="#0F3F9E">文本 / 提示词</text>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cmVjdCB4PSI3IiB5PSIxMCIgd2lkdGg9IjUwIiBoZWlnaHQ9IjQ0IiByeD0iNSIvPjxjaXJjbGUgY3g9IjQ0IiBjeT0iMjMiIHI9IjUiLz48cGF0aCBkPSJNMTIgNDhsMTMtMTQgOSA5IDctNyAxMSAxMiIvPgo8L3N2Zz4K" data-icon="image" x="86" y="604" width="48" height="48"/>
+    <text class="cn cardtitle" x="150" y="635" fill="#0F3F9E">图像</text>
+  </g>
+
+  <g>
+    <rect x="388" y="242" width="194" height="112" rx="14" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.8"/>
+    <text class="cn" x="485" y="282" text-anchor="middle" font-size="23" font-weight="700" fill="#0F3F9E">AI_COMPLETE</text>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cmVjdCB4PSI4IiB5PSI5IiB3aWR0aD0iNDgiIGhlaWdodD0iNDYiIHJ4PSI3Ii8+PHBhdGggZD0iTTE4IDIyaDI4TTE4IDMyaDE4TTE4IDQyaDEyIi8+PHBhdGggZD0iTTQyIDM4bDggNC04IDR6Ii8+Cjwvc3ZnPgo=" data-icon="operator" x="412" y="298" width="42" height="42"/>
+    <text class="cn body" x="467" y="329">文本生成</text>
+  </g>
+  <g>
+    <rect x="388" y="380" width="194" height="132" rx="14" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.8"/>
+    <text class="cn" x="485" y="425" text-anchor="middle" font-size="23" font-weight="700" fill="#0F3F9E">AI_EMBED</text>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cmVjdCB4PSI4IiB5PSI5IiB3aWR0aD0iNDgiIGhlaWdodD0iNDYiIHJ4PSI3Ii8+PHBhdGggZD0iTTE4IDIyaDI4TTE4IDMyaDE4TTE4IDQyaDEyIi8+PHBhdGggZD0iTTQyIDM4bDggNC04IDR6Ii8+Cjwvc3ZnPgo=" data-icon="operator" x="412" y="445" width="42" height="42"/>
+    <text class="cn body" x="467" y="477">向量表征</text>
+  </g>
+  <g>
+    <rect x="388" y="538" width="194" height="112" rx="14" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.8"/>
+    <text class="cn" x="485" y="578" text-anchor="middle" font-size="23" font-weight="700" fill="#0F3F9E">AI_CLASSIFY</text>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cmVjdCB4PSI4IiB5PSI5IiB3aWR0aD0iNDgiIGhlaWdodD0iNDYiIHJ4PSI3Ii8+PHBhdGggZD0iTTE4IDIyaDI4TTE4IDMyaDE4TTE4IDQyaDEyIi8+PHBhdGggZD0iTTQyIDM4bDggNC04IDR6Ii8+Cjwvc3ZnPgo=" data-icon="operator" x="412" y="594" width="42" height="42"/>
+    <text class="cn body" x="467" y="626">图像分类</text>
+  </g>
+
+  <text class="cn" x="670" y="231" font-size="23" font-weight="700" fill="#E85D04">Work · Control · State</text>
+  <g>
+    <rect x="670" y="254" width="218" height="168" rx="14" fill="#FFFFFF" stroke="#165DCC" stroke-width="1.8"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNjVEQ0MiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTcgNmgyMmwxMCAxMHY0MkgxN3oiLz48cGF0aCBkPSJNMzkgNnYxMmgxMk0yNCAyOGgxOE0yNCAzOGgxOE0yNCA0OGgxMiIvPjxyZWN0IHg9IjQyIiB5PSIzOSIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiByeD0iMiIvPjwvc3ZnPg==" data-icon="descriptor" x="682" y="282" width="54" height="54"/>
+    <text class="cn cardtitle" x="749" y="292" fill="#0F3F9E">Work Unit</text>
+    <text class="cn cardtitle" x="749" y="327" fill="#0F3F9E">Descriptor</text>
+    <text class="cn body" x="682" y="373">work 估计 · 局部性</text>
+    <text class="cn body" x="682" y="405">Packing</text>
+  </g>
+  <g>
+    <rect x="912" y="254" width="218" height="168" rx="14" fill="#FFFFFF" stroke="#E85D04" stroke-width="1.8"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiNFODVEMDQiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMzIgNSA1MyAxM3YxNWMwIDE0LTkgMjQtMjEgMzBDMjAgNTIgMTEgNDIgMTEgMjhWMTNsMjEtOFoiLz48cGF0aCBkPSJNMjIgMzFsNyA3IDE0LTE2Ii8+PC9zdmc+" data-icon="admission" x="924" y="282" width="54" height="54"/>
+    <text class="cn cardtitle" x="991" y="292" fill="#E85D04">容量感知</text>
+    <text class="cn cardtitle" x="991" y="327" fill="#E85D04">准入与路由</text>
+    <text class="cn body" x="924" y="373">安全容量 · SLO</text>
+    <text class="cn body" x="924" y="405">endpoint 选择</text>
+  </g>
+  <g>
+    <rect x="670" y="446" width="218" height="168" rx="14" fill="#FFFFFF" stroke="#E85D04" stroke-width="1.8"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiNFODVEMDQiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48Y2lyY2xlIGN4PSIxNCIgY3k9IjMyIiByPSI2Ii8+PGNpcmNsZSBjeD0iNDkiIGN5PSIxMyIgcj0iNiIvPjxjaXJjbGUgY3g9IjQ5IiBjeT0iNTEiIHI9IjYiLz48cGF0aCBkPSJNMjAgMzJoMTJjOCAwIDgtMTkgMTEtMTlNMzIgMzJjOCAwIDggMTkgMTEgMTkiLz48cGF0aCBkPSJtMzggOCA1IDUtNSA1TTM4IDQ2bDUgNS01IDUiLz48L3N2Zz4=" data-icon="routing" x="690" y="474" width="54" height="54"/>
+    <text class="cn cardtitle" x="757" y="485" fill="#E85D04">多 Job</text>
+    <text class="cn" x="757" y="520" font-size="22" font-weight="700" fill="#E85D04">共享额度</text>
+    <text class="cn body" x="690" y="566">idle borrowing</text>
+    <text class="cn body" x="690" y="598">fair queue</text>
+  </g>
+  <g>
+    <rect x="912" y="446" width="218" height="168" rx="14" fill="#F0FDFA" stroke="#0F8C8C" stroke-width="1.8"/>
+    <text class="cn" x="1021" y="482" text-anchor="middle" font-size="23" font-weight="700" fill="#0F8C8C">运行状态快照</text>
+    <text class="cn" x="1021" y="516" text-anchor="middle" font-size="22" font-weight="700" fill="#0F8C8C">RuntimeState</text>
+    <text class="cn body" x="940" y="556">队列 · KV</text>
+    <text class="cn body" x="940" y="593">完成率 · 队龄</text>
+  </g>
+  <rect x="670" y="637" width="460" height="44" rx="14" fill="#FFF4EA" stroke="#E85D04" stroke-width="1.3"/>
+  <text class="cn pill" x="900" y="667" text-anchor="middle" fill="#E85D04">组织 → 准入 / 路由 → 状态反馈</text>
+
+  <g>
+    <rect x="1215" y="235" width="316" height="128" rx="14" fill="#FFFFFF" stroke="#5B2AA6" stroke-width="1.8"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiM1QjJBQTYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cmVjdCB4PSI4IiB5PSI5IiB3aWR0aD0iNDgiIGhlaWdodD0iMTMiIHJ4PSIzIi8+PHJlY3QgeD0iOCIgeT0iMjYiIHdpZHRoPSI0OCIgaGVpZ2h0PSIxMyIgcng9IjMiLz48cmVjdCB4PSI4IiB5PSI0MyIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjEzIiByeD0iMyIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iMTUuNSIgcj0iMS41IiBmaWxsPSIjNUIyQUE2Ii8+PGNpcmNsZSBjeD0iMTciIGN5PSIzMi41IiByPSIxLjUiIGZpbGw9IiM1QjJBQTYiLz48Y2lyY2xlIGN4PSIxNyIgY3k9IjQ5LjUiIHI9IjEuNSIgZmlsbD0iIzVCMkFBNiIvPjxwYXRoIGQ9Ik0yNiAxNmgyMU0yNiAzM2gyMU0yNiA1MGgyMSIvPgo8L3N2Zz4K" data-icon="service" x="1235" y="267" width="56" height="56"/>
+    <text class="cn cardtitle" x="1306" y="282" fill="#5B2AA6">文本：vLLM</text>
+    <text class="cn body" x="1306" y="320">AI_COMPLETE</text>
+  </g>
+  <g>
+    <rect x="1215" y="388" width="316" height="148" rx="14" fill="#FFFFFF" stroke="#5B2AA6" stroke-width="1.8"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIiBzdHJva2U9IiM1QjJBQTYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIxNCIgeT0iMTQiIHdpZHRoPSIzNiIgaGVpZ2h0PSIzNiIgcng9IjUiLz48cmVjdCB4PSIyMyIgeT0iMjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjMiLz48cGF0aCBkPSJNMjIgNnY4TTMyIDZ2OE00MiA2djhNMjIgNTB2OE0zMiA1MHY4TTQyIDUwdjhNNiAyMmg4TTYgMzJoOE02IDQyaDhNNTAgMjJoOE01MCAzMmg4TTUwIDQyaDgiLz48L3N2Zz4=" data-icon="gpu" x="1235" y="432" width="56" height="56"/>
+    <text class="cn cardtitle" x="1306" y="427" fill="#5B2AA6">图像：typed CLIP</text>
+    <text class="cn body" x="1306" y="465">Ray GPU actor</text>
+    <text class="cn small" x="1306" y="500">EMBED · CLASSIFY</text>
+  </g>
+  <g>
+    <rect x="1215" y="561" width="316" height="104" rx="14" fill="#F6F0FF" stroke="#5B2AA6" stroke-width="1.5"/>
+    <text class="cn cardtitle" x="1373" y="601" text-anchor="middle" fill="#5B2AA6">不改模型内部 batching</text>
+    <text class="cn body" x="1373" y="641" text-anchor="middle">服务侧保留原生调度</text>
+  </g>
+
+  <path d="M340 455H365" stroke="#165DCC" stroke-width="4" fill="none" marker-end="url(#a-blue)"/>
+  <path d="M605 455H640" stroke="#165DCC" stroke-width="4" fill="none" marker-end="url(#a-blue)"/>
+  <path d="M1160 455H1188" stroke="#5B2AA6" stroke-width="4" fill="none" marker-end="url(#a-purple)"/>
+  <path d="M1188 544H1130" stroke="#0F8C8C" stroke-width="2.5" fill="none" stroke-dasharray="8 6" marker-end="url(#a-teal)"/>
+  <path d="M1373 705V746" stroke="#15803D" stroke-width="3" fill="none" marker-end="url(#a-green)"/>
+
+  <rect x="52" y="748" width="1496" height="64" rx="16" fill="#F0FDF4" stroke="#15803D" stroke-width="1.8"/>
+  <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBmaWxsPSJub25lIj4KICA8ZyBzdHJva2U9IiMxNTgwM0QiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICAgIDxlbGxpcHNlIGN4PSIyNCIgY3k9IjEzIiByeD0iMTciIHJ5PSI2IiBmaWxsPSIjRjBGREY0Ii8+CiAgICA8cGF0aCBkPSJNNyAxM3YzMGMwIDQgNy41IDcgMTcgN3MxNy0zIDE3LTdWMTMiLz4KICAgIDxwYXRoIGQ9Ik03IDI3YzAgNCA3LjUgNyAxNyA3czE3LTMgMTctNyIvPgogICAgPHBhdGggZD0iTTcgNDFjMCA0IDcuNSA3IDE3IDdzMTctMyAxNy03Ii8+CiAgICA8Y2lyY2xlIGN4PSI0OSIgY3k9IjQ1IiByPSIxMCIgZmlsbD0iI0ZGRkZGRiIvPgogICAgPHBhdGggZD0ibTQ0LjUgNDUgMyAzIDYtNyIvPgogIDwvZz4KPC9zdmc+Cg==" data-icon="sink" x="77" y="754" width="52" height="52"/>
+  <text class="cn cardtitle" x="145" y="777" fill="#15803D">PostgreSQL + pgvector 写回</text>
+  <text class="cn body" x="145" y="804">结果表 / 向量列 / 分类结果</text>
+  <text class="cn small" x="1518" y="787" text-anchor="end">场景实例：Cortex AISQL · BigQuery ML/AI · Oracle AI Vector Search · pgai / pgvector</text>
+
+  <g class="cn" font-size="18" fill="#4B5563">
+    <rect x="72" y="850" width="40" height="4" fill="#165DCC"/><text x="122" y="859">数据 / 请求流</text>
+    <rect x="286" y="850" width="40" height="4" fill="#E85D04"/><text x="336" y="859">组织 / 控制</text>
+    <rect x="474" y="850" width="40" height="4" fill="#5B2AA6"/><text x="524" y="859">模型提交</text>
+    <rect x="650" y="851" width="8" height="3" fill="#0F8C8C"/><rect x="664" y="851" width="8" height="3" fill="#0F8C8C"/><rect x="678" y="851" width="8" height="3" fill="#0F8C8C"/><text x="700" y="859">状态反馈</text>
+    <rect x="836" y="850" width="40" height="4" fill="#15803D"/><text x="886" y="859">结果写回</text>
+    <rect x="1026" y="839" width="36" height="22" rx="5" fill="#FFFFFF" stroke="#165DCC" stroke-width="2"/><text x="1072" y="859">框色：所属层</text>
+    <rect x="1252" y="839" width="36" height="22" rx="5" fill="#FFFBF7" stroke="#E85D04" stroke-width="2" stroke-dasharray="7 5"/><text x="1298" y="859">虚线框：执行层</text>
+  </g>
+</svg>

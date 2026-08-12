@@ -5,7 +5,7 @@
 
 ## 1. 一句话主线
 
-数据库把数据行交给外部 AI 服务时，记录数不能准确表示计算工作量，固定提交上限也不能适应运行状态与多阶段瓶颈的变化。因此，本课题研究数据库 AI 算子外部执行链路中的两项问题：一是把数据组织成携带分阶段工作量、局部性与期限的 work unit；二是先标定当前执行条件下的安全容量范围，再依据实时运行状态进行准入、路由与多作业共享。轻量算子代价估计同时为两项研究内容提供 stage/service/remaining work、SLO slack 和不确定区间，是共同使能部件，不单列为第三项研究内容。
+数据库把数据行交给外部 AI 服务时，记录数不能准确表示计算工作量，固定提交上限也不能适应运行状态与多阶段瓶颈的变化。因此，本课题研究数据库 AI 算子外部执行链路中的两项问题：一是把数据组织成携带分阶段工作量、局部性与期限的 work unit；二是先通过容量扫描找出当前硬件、模型与工作负载下能够稳定供给的总工作量上限，再依据实时运行状态进行准入、路由与多作业共享。轻量算子代价估计同时为两项研究内容提供 stage/service/remaining work、SLO slack 和不确定区间，是共同使能部件，不单列为第三项研究内容。
 
 **答辩沟通任务**：汇报结束时，评委应当相信本课题研究的是一个真实、独立且可证伪的系统问题，而不是 Daft/Ray/vLLM 的工程拼接；现有证据已经证明问题、设计动机与技术可行性，但最终动态策略是否超过同上限强静态点仍需论文阶段实验回答。
 
@@ -86,19 +86,19 @@ CPU/GPU 队列感知和跨阶段提交，再由独立 baseline 图分开能力�
 | 页 | take-away 标题 | 页面任务与必须讲清的内容 | 主视觉/证据 | 依据与讲述重点 |
 |---:|---|---|---|---|
 | 1 | 数据库 AI 负载的执行优化与调度研究 | 题目、研究对象、姓名与单位 | 极简封面 | 研究平台名称放在实验设置，不进入贡献标题 |
-| 2 | 数据基础设施正在从 SQL 分析平台走向 AI-Native Data Infra | 展示 SQL、LLM 推理、向量计算和多模态处理进入同一数据平台的趋势 | AI-Native Data Infra 演进图 | 结合 Snowflake Cortex AI、BigQuery ML/AI、Oracle AI Vector Search、pgai/pgvector |
-| 3 | AI 算子改变了以行数和 CPU 为中心的执行假设 | 对比传统 SQL 算子与 AI 算子的成本来源、资源形态和运行状态 | 两条执行路径的平面对比 | 从成本结构和 CPU＋GPU 异构性引出执行问题，不在此页讲项目方案 |
+| 2 | AI 算子已经进入数据库工作流 | 展示 SQL 平台接入文本生成、向量计算和多模态处理，并定位外部执行链路的上游控制点 | AI 算子外部执行链路图 | 结合 Snowflake Cortex AI、BigQuery ML/AI、Oracle AI Vector Search、pgai/pgvector |
+| 3 | AI 算子形成新的外部执行链路 | 对比进程内 UDF 与外部 AI 算子的请求组织、队列、异构阶段和结果回收 | 进程内 UDF 与外部执行链路对照 | 引出 token/frame、CPU prepare、GPU model、transfer 与服务状态 |
 | 4 | 代表性工作分别推进数据库 AI、推理服务和数据流水线 | 论文名称、核心机制和优化边界同时出现 | 三条横向研究线 | LOTUS/Galois/GaussML；Orca/vLLM/Sarathi/VTC；Ray/Ray Data/Daft/NeuStream |
 | 5 | AI Data Infra 仍缺少面向数据库任务的上游执行闭环 | 明确本课题在 AI-Native Data Infra 中的位置，以及 work、state、control、cost 四个接口 | `opening_ai_data_execution_boundary` | 聚焦数据库 AI 算子的外部异构执行与上游调度 |
 | 6 | 同一任务经过不同执行图会落入不同供给与排队状态 | 左侧产品 database-E2E，右侧官方 Chat graph | `opening_text_baseline_evidence_map` | 两轨分别解释产品语义与服务供给，不合并为绝对排行榜 |
-| 7 | 记录数和静态上限都不能描述真实 AI 工作状态 | 同行数 token work 14.3×；同一 W 下运行状态不同；存在最小近饱和点 | `opening_motivation_work_state` | 由数据自然导出 work 表征、状态观测和预先标定的安全容量范围 |
+| 7 | 记录数和静态上限都不能描述真实 AI 工作状态 | 同行数 token work 14.3×；同一 W 下运行状态不同；存在最小近饱和点 | `opening_motivation_work_state` | 由数据自然导出 work 表征、状态观测和容量扫描后冻结的稳定总上限 |
 | 8 | 图像把同一问题扩展为 prepare、transfer 与 model 多阶段失配 | CPU prepare/model 比、transfer 形态和 active-window 回退 | `opening_image_stage_aware_evidence` | 说明文本 token work 需要扩展为跨阶段 work |
 | 9 | 四 Job 并发会同时延长前台 Short 和全部 Long Job | 各原生系统内部比较 isolated→four-job 的 JCT 变化 | `opening_native_fourjob_normalized_impact` | 强调多作业管理是任务级问题，而非单一框架现象 |
 | 10 | 实验现象导出四项同等重要的设计要求 | work→WorkDescriptor；state→sensing；interference→dynamic scheduling；decision risk→cost estimation | 四行因果映射 | 两项研究内容、共同使能和多模态验证在此正式定义 |
 | 11 | AI 数据执行层把数据组织、状态感知和调度连接成闭环 | source→organizer→scheduler→executor→sink 与反馈流 | `opening_work_to_schedule_overview` | 研究发生在数据库与模型服务之间，不修改模型内部调度 |
 | 12 | WorkDescriptor 把一行数据变成可估计、可组织、可调度的工作单元 | 文本与图像字段、估计来源和运行时更新关系 | WorkDescriptor 字段与消费者关系图 | 字段设计对应后续组织、路由、准入和公平决策 |
 | 13 | 数据组织没有全局最优，服务压力会改变 balance 与 locality 的权衡 | 低/高压力下吞吐与 prefix cache hit 的共同趋势 | `opening_work_organization_regime_v2` | 区分互斥实验臂与可联合的设计维度 |
-| 14 | 冻结总容量，再随 Job 活跃集调整释放顺序 | per-Job ready/active/completed work、entitlement、idle borrowing/reclaim、SLO debt | 方法流程图或总体图局部放大 | dynamic K 已退出主线；状态无效时回退 global FIFO/DRR，先用 killer baseline 证伪必要性 |
+| 14 | 冻结总容量，再随 Job 活跃集调整释放顺序 | per-Job ready/active/completed work、entitlement、idle borrowing/reclaim、SLO debt | 方法流程图或总体图局部放大 | 不把在线调整总并发写成当前能力；状态无效时回退 global FIFO/DRR，先用强静态基线检验复杂控制是否必要 |
 | 15 | 共享调度提高总效率时，也会改变隔离与公平 | Project full/quarter/static/shared 对照，解释 idle borrowing 与 fair queue | `opening_multijob_interference_tradeoff` | 当前结果用于呈现效率—隔离—公平权衡 |
 | 16 | 代价估计需要同时评价预测质量和决策质量 | 解析结构＋profile＋residual；pairwise、平均/中位/最坏 regret | `opening_cost_model_decision_quality_v2` | 重点回答估计结果能否正确选择配置 |
 | 17 | 图像 baseline 展示不同原生路径的能力与扩展边界 | Direct CLIP、Daft Built-in、Ray Data、Project 的数据与角色 | `opening_image_baseline_evidence_map` | 12K 结构诊断与 120K matched-resource 正式比较分开解释 |
@@ -299,9 +299,10 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
   只在 completion 释放 credit 时按 entitlement、service lag 和 SLO debt 回收未来份额。
 - **回退**：状态过期、签名不符或 ledger 异常时保持冻结总 K，并退回简单 DRR/FIFO；不在线猜
   新容量档位。
-- **当前基础**：已有 trace、observe-only snapshot、completion release、shared credit 和
-  控制器原型；capacity-only SAOR 未超过 K160，dynamic K 已退出主线。
-- **页面结论**：动态调度不等于动态 K；本项目要验证的是固定总容量下“下一份 credit 给谁”。
+- **当前基础**：已有 trace、observe-only snapshot、completion release、shared credit；固定
+  总上限内的阶段感知有序释放已接入具名 Ray 协调器和 active-set trace，但尚无正式 GPU
+  对照。仅调整总并发上限的控制器未超过强静态点，因此不作为主线。
+- **页面结论**：动态调度不是持续改变总并发上限；本项目要验证的是固定总容量下“下一份 credit 给谁”。
 - **转场**：接下来用多 Job 数据观察借用带来的效率与公平代价。
 
 #### 第 15 页：共享调度提高总效率时，也会改变隔离与公平
@@ -309,14 +310,14 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 - **本页回答**：shared work credit 的收益和代价是什么。
 - **反事实控制**：full/quarter single 用于分离配额损失；static partition 与 shared pool 才是
   同一全局上限下互斥的调度 A/B。
-- **当前结果**：shared 相对 static 的 group throughput +8.68%、Group JCT −7.97%、MFU
-  相对 +22.41%，但不同 Job 收益不均。按实际完成 work 计算的 group Jain 为 0.960→0.923；
+- **当前结果**：shared 相对 static 的 group throughput +8.68%、Group JCT −7.97%；MFU
+  从 38.2% 升至 46.8%，即 +8.56 个百分点（相对 +22.41%），但不同 Job 收益不均。按实际完成 work 计算的 group Jain 为 0.960→0.923；
   图中按各自 single control 归一化的进度 Jain 为 0.998→0.876。两种 Jain 口径不能混用。
 - **机制关系**：idle borrowing 提高 work conservation；per-Job floor/cap、work-fair deficit
   和 SLO guard 约束隔离；状态感知再决定总准入与路由。
 - **页面结论**：动态调度不是单目标提吞吐，需要同时评价 efficiency、isolation 和 fairness。
 - **证据缺口**：现有矩阵缺 global FIFO/no project Job scheduler；下一项 formal 必须加入
-  FIFO 与 DRR killer baseline，简单策略达到同一 Pareto 前沿即淘汰 SAOR。
+  FIFO 与 DRR killer baseline，简单策略达到同一 Pareto 前沿即采用简单策略。
 - **转场**：组织、准入和公平决策都需要一个可比较的代价信号。
 
 #### 第 16 页：代价估计需要同时评价预测质量和决策质量
@@ -492,7 +493,7 @@ static+long又+58.77%，matched shared+long+28.90%。eager shared相对static使
 |---|---|---|---|---|
 | Work Unit | 同行数 token work 14.3×；图像 prepare/model 阶段失衡 | staged descriptor 类型、neutral work consumer 和图像携带接口已存在；正式 runner 尚未构造 production descriptor | 字段设计由现象导出，接口可执行 | staged organization 已端到端胜出 |
 | 状态感知 | 同 W 下 high/arrival-limited 状态不同；原生路径出现 underfeed/overqueue | endpoint、vLLM 和 GPU/MFU trace 已正式采集；图像 fresh stage snapshot 已 observe-only 接入 | 必须联合 ready/active work、完成速率、queue、KV/MFU/tail，并校验 freshness/signature；GPU/MFU 不单独触发动作 | snapshot 正式驱动 fixed-K Job release 后产生可归因增量 |
-| 动态调度 | 5s 两 job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；capacity-only SAOR 未晋级 | 总 K 固定；动态对象是 active-set entitlement、idle borrowing/reclaim 和 release order；缺 global FIFO killer baseline | fixed-K FIFO/static/DRR/VTC-style/SAOR 决定性 A/B 尚未完成 |
+| 动态调度 | 5s 两 Job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；仅调整总并发上限的控制器未晋级 | 总并发上限固定；动态对象是 active-set entitlement、idle borrowing/reclaim 和 release order；缺 global FIFO killer baseline | 同一总上限下 FIFO/static/DRR/VTC-style/状态感知有序释放的决定性 A/B 尚未完成 |
 | 算子代价估计 | 候选选错代价 12.0%–86.5%；简单 estimator 决策失败 | CE1–CE5 离线分析器与 context-LOO 已完成；尚未在线驱动调度 | 文本配置选择有 marginal feasibility | 已预测跨模态 remaining work/SLO 并改善在线决策 |
 
 工程下一步按 production descriptor builder → 统一状态快照 → global FIFO/no-op gate → fixed-K

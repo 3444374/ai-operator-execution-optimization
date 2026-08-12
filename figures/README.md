@@ -70,8 +70,8 @@ foreground/background interference, queue balance, and prefix locality.
 ### 开题专用图集
 
 开题 PPT 和开题报告不再直接从内容繁杂的 `data/report_main/` 选图。统一进入
-`opening_figure_set/`：`main_png/` 与 `main_svg/` 按答辩页码保存 14 张主讲图，
-`editable_drawio/` 保存 5 张可编辑概念图，`backup_png/` 与 `backup_svg/` 只保存 2 张
+`opening_figure_set/`：`main_png/` 与 `main_svg/` 按答辩页码保存 17 张 PPT 主讲图，
+`editable_drawio/` 保存 8 张可编辑概念图，`backup_png/` 与 `backup_svg/` 只保存 2 张
 单 Job 诊断备份图。文件采用 `P页码_用途_内容` 或 `B序号_用途_内容` 的中文可读命名。
 
 完整目录、源文件映射和排除项见 `opening_figure_set/README.md`；选择与复制审计见
@@ -120,6 +120,11 @@ PPT 成品；旧 PPT 只是历史底稿。
 02 删除旧整页 raster base 和后加覆盖层，重建单一原生紫色模态面板与绿色 Sink；04 合并重复
 completion 路径；05 删除七个圆角修补 mask，并把窄卡文字改为显式两行。五张图禁止用遮罩或
 新卡片盖住错误对象，必须删除错误节点后再导出。
+
+2026-08-12 又在 `architecture/editable/opening_background_20260812/` 增补第 2–4 页三张背景图：
+数据库 AI 算子外部执行链路、传统数据库算子与外部 AI 算子的执行假设对照、相关工作分层。
+三图已按项目事实重写并通过 Draw.io 结构检查、1600×900 与 PPT 缩放目视审计；图集副本命名为
+`P02`、`P03`、`P04`。
 
 02 后续按用户局部复核再次清理：Admission 标题改用卡片整行宽度，两个 Adapter 卡重排图标、
 标题与正文安全边距；删除手绘 Daft 近似符号，改用 Daft 官方仓库的黑/洋红标识。官方 Logo 仅作

@@ -1,0 +1,38 @@
+{
+  "source_dir": "figures/audit/reference_opening_background_20260812",
+  "output_dir": "figures/architecture/editable/opening_background_20260812",
+  "recursive": false,
+  "overwrite": false,
+  "image_extensions": [
+    ".bmp",
+    ".jpeg",
+    ".jpg",
+    ".png",
+    ".tif",
+    ".tiff",
+    ".webp"
+  ],
+  "entries": [
+    {
+      "index": 1,
+      "status": "complete",
+      "image": "figures/audit/reference_opening_background_20260812/06_ai_native_execution_architecture.png",
+      "drawio": "figures/architecture/editable/opening_background_20260812/06_ai_native_execution_architecture.drawio",
+      "preview": "figures/architecture/editable/opening_background_20260812/06_ai_native_execution_architecture.png"
+    },
+    {
+      "index": 2,
+      "status": "complete",
+      "image": "figures/audit/reference_opening_background_20260812/07_traditional_vs_external_ai_operator.png",
+      "drawio": "figures/architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator.drawio",
+      "preview": "figures/architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator.png"
+    },
+    {
+      "index": 3,
+      "status": "complete",
+      "image": "figures/audit/reference_opening_background_20260812/08_related_work_landscape.png",
+      "drawio": "figures/architecture/editable/opening_background_20260812/08_related_work_landscape.drawio",
+      "preview": "figures/architecture/editable/opening_background_20260812/08_related_work_landscape.png"
+    }
+  ]
+}

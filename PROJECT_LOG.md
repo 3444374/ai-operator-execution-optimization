@@ -51,6 +51,19 @@
   独立 sink queue 或动态 SAOR；尚未跑 GPU gate，因此不产生吞吐/JCT/公平或新颖性 claim。
 - prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理继续保留在
   `parked-conditional` 清单；主门完成且真实 opportunity≥10%、净 oracle 潜力≥5% 才激活。
+## 2026-08-12 修复 P02 卡片文字边界与短箭头
+
+- 用户放大检查发现 P02 的 `文本 / Prompt`、`Shared credit`、`queue age` 和 `locality` 贴边或
+  越出卡片，分别改为等义且更紧凑的 `文本 / 提示词`、`共享额度`、`队龄` 和 `局部性`；保持
+  原 22–25 px 字号，不以缩字规避边界问题。
+- 修复 SVG marker 随 stroke width 二次放大的根因：主流程短箭头使用
+  `markerUnits=userSpaceOnUse`、4 px 线宽和固定 12 px 头部；Draw.io 同步 `endSize=7`。
+  三条短连接均恢复清楚线身，不再呈现“只有头没有线”。
+- 同步更新权威 Draw.io/SVG/PNG、开题图集 P02 和 PPT v8；全尺寸/PPT 缩放目视、Draw.io/XML、
+  20 页 overflow 均通过。
+- 随后补充线型与框线图例，并把上方两张机制卡的内容组整体左移 8 px。用户确认本页只负责介绍
+  工作流后，删除“本课题研究对象”措辞，改成“外部 AI 数据执行层 / Work · Control · State”；
+  课题定位留在后续研究空白与架构页。
 
 ## 2026-08-12 服务器旧产物审计与 enhanced ramp 紧凑证据归档
 
@@ -6045,3 +6058,57 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - Rebalanced figure 04 short connectors after visual review: the two 20 px orange links now use compact arrowheads, and the refill-to-credit route uses a centered bend and a longer visible vertical shaft. Draw.io/SVG/PNG and the audit were synchronized; no content or claim changed.
 - Repaired the figure 02 Sink icon at source level: replaced the clipped database/check SVG with a complete three-level PostgreSQL cylinder and an external validation badge, then regenerated Draw.io/SVG/PNG and updated the visual audit. No claim changed.
 - Revised opening figure 05 for audience-facing planning: replaced the internal causal validation / contract / evidence-gate narrative with “研究基础与后续工作计划,” marked the first two stages complete, kept later tasks deliberately broad, changed the lower panels to experiment principles and evaluation dimensions, and removed the evidence feedback edge. This is a presentation-framing change, not a new experimental claim.
+
+## 2026-08-12 完成 20 页中文开题 PPT v7 本地验收
+
+- 在独立 worktree `/private/tmp/gpu-opening-report-ppt`、分支 `codex/opening-report-ppt` 中完成
+  `opening/slides/opening_defense_20260812_v7.pptx`；未切换或修改主工作区的 `main`。
+- PPT 继承 v6 学校模板，按冻结叙事重组为 20 页：背景与相关工作 → 文本/图像 baseline 与
+  动机 → 四项设计要求 → AI Data Execution Layer → 两项研究内容与共同代价估计 → 图像泛化
+  → 研究基础、计划和预期贡献。
+- 第 5–19 页使用 `figures/opening_figure_set/main_png/` 的 14/14 张主讲图，不直接引用旧
+  `report_main` 或旧 architecture PNG；第 2、3 页保留为背景文字页并记录两张建议结构图提示词，
+  第 4 页文献分层图为可选增强。当前没有阻塞开题的实验数据图缺口。
+- 本地门禁通过：20/20 页渲染、0 个空 placeholder、20/20 speaker notes 含讲稿/答辩提示/来源，
+  template fidelity `pass`、0 issue；逐页 contact sheet 未发现重叠、裁切或页眉页脚侵占。
+- 同步更新图文审计、PPT QA、Claim Matrix、答辩大纲入口、README 与 `PROJECT_INDEX.md`。
+  中文 Markdown 报告和飞书云文档留到 PPT 冻结后继续；按用户要求不执行 Wiki 同步。
+
+## 2026-08-12 中文开题报告与 PPT 口径统一
+
+- 在独立 worktree 和 `codex/opening-report-ppt` 分支中完成中文 Markdown 报告重组；主工作区
+  `main` 未保留本任务修改。
+- 正文现按学校模板组织为七部分，研究内容一、研究内容二、共同代价估计和多模态验证与
+  PPT 的 20 页主线一一对应。
+- 报告使用开题专用图集 14/14 张主讲图和 2 张补充状态图；31 条参考文献全部在正文引用，
+  无缺号、无未引用条目，参考文献末尾无标点。
+- 更新最新实现边界：固定总上限有序释放已经接入 Ray 运行时与 trace，但没有正式 GPU 对照，
+  不将实现状态写成方法收益。
+- 新增 `opening/report/opening_report_20260812_qa.md` 并更新 opening/项目索引。当前没有阻塞
+  开题的实验数据图；仅保留第 2、3 页背景结构图为可选视觉增强。
+- 飞书普通云文档 revision 289 已只读核对；16 张正式图的公开 URL 与整篇 Markdown 覆盖
+  dry-run 均通过。最终覆盖因外部写入门禁等待用户对指定文档 URL 的再次明确确认；未同步 Wiki。
+
+## 2026-08-12 开题本地产物完成审计
+
+- 再次从当前 `@oai/artifact-tool` 构建脚本生成 20 页 PPT；overflow 检查通过，完成轮 20 张
+  渲染与已验收版本逐页 SHA-256 一致，并逐页复核无重叠、裁切或图文冲突。
+- 修正 Claim Matrix 与 opening 入口中“中文报告待完成”的陈旧状态：七部分中文报告、14/14
+  主讲图、2 张补充图、31/31 引用、20 页 PPT 和本地跨材料审计均已完成。
+- 固定总上限有序释放保持“机制已接运行时、正式 GPU A/B 待验证”；当前没有实验或本地图表
+  blocker。仅飞书普通云文档覆盖和回读仍等待用户对指定 URL 的明确授权；Wiki 不同步。
+# 2026-08-12 增补开题背景图并完成 PPT v8
+
+- 根据放大审阅修复 PPT 第 3 页：右侧五段主流程箭头增加可见线身，三条状态反馈分别显示左向箭头；新增线型/边框图例，并将右侧六张步骤卡文字统一按几何中心对齐。
+
+- 在 `figures/architecture/editable/opening_background_20260812/` 新增三张可编辑背景图：数据库
+  AI 算子外部执行链路、传统数据库算子与外部 AI 算子的执行假设对照、相关工作分层。三图均按
+  当前 PostgreSQL→Daft→Ray→vLLM/typed CLIP→PostgreSQL + pgvector 项目链路重写，而非照抄
+  参考图；每张都有 Draw.io、SVG、1600×900 PNG、独立 icon 和逐图审计。
+- 三图通过 Draw.io 结构检查、XML 校验、1600×900 与 900×506 目视检查；删除“研究边界”式
+  内部说明，不把模型服务内部 batching 写成研究内容，相关工作缺口只称“仍需系统验证”。
+- 开题专用图集扩为 17 张 PPT 主讲 PNG/SVG、8 张 Draw.io 和 2 张备份图；P02–P04 用中文页码
+  命名，SVG icon 已内嵌。报告正文仍使用 P05–P19 的 14 张研究/证据图，不因背景图增补而改写。
+- 从 v7 学校模板原位替换第 2–4 页，生成 `opening/slides/opening_defense_20260812_v8.pptx`；
+  删除旧正文对象后插入正式图，没有遮罩或叠层修补。20/20 页渲染、overflow、20/20 notes、
+  template fidelity 0 issue 和逐页视觉复核均通过，其余 17 页内容与 notes 保持不变。
