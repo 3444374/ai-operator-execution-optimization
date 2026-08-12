@@ -59,7 +59,8 @@ Claim Matrix 为唯一输入。
 |---|---|---|
 | 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
 | 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：20 页主讲内容大纲；每页已补齐核心问题、内容块、证据、页面结论与转场，并建立背景—动机—研究内容—实验对应表** |
-| 开题报告 | `report/opening_report.md` | 2026-08-10 已完成第1--7章内容重组：以 AI-Native Data Infra 为背景，按数据库 AI、GPU serving、分布式数据执行和代价估计四条论文线收敛研究空白；研究问题、技术路线、前期证据、进度和预期创新已统一到“work→state→bounded action→evaluation”闭环，明确在线 dynamic active-work 尚未接入正式主路径；暂不同步云文档 |
+| 开题报告 | `report/opening_report.md` | 2026-08-12 已按学校模板重组为七部分中文正文；研究内容、研究方案、前期证据、进度和参考文献已统一到“工作量描述→状态观测→固定上限调度→决策评价”闭环，14/14 张主讲图与 2 张补充状态图均从开题专用图集引用；固定上限有序释放已接运行时但尚无正式 GPU 对照；飞书普通云文档覆盖已完成 dry-run，等待对指定文档 URL 的最终外部写入确认 |
+| 开题报告 QA | `report/opening_report_20260812_qa.md` | 学校模板映射、图表、引用、实现边界及 PPT/报告口径审计 |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
 | 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前主讲结构已由 20 页 v7 取代 |
 | 开题 PPTX | `slides/opening_defense_20260812_v7.pptx` | 当前 20 页中文主讲版；模板、逐页渲染、图文、数据和引用 QA 见 `slides/opening_defense_20260812_v7_qa.md` |

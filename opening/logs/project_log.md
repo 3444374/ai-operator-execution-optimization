@@ -666,3 +666,16 @@
 - 更新 `opening/slides/README.md`、v7 QA、图文一致性审计、`opening/README.md`、
   `opening/claim_matrix.md`、`PROJECT_INDEX.md` 与根日志。中文 Markdown 报告和飞书云文档
   后续继续，Wiki 不同步。
+
+## 2026-08-12 中文开题报告按学校模板收口
+
+- 将 `opening/report/opening_report.md` 重组为学校模板要求的七部分，先定义两项研究内容与
+  共同代价估计，再在研究方案中说明数据结构、固定上限调度实现、实验设计和前期可行性证据。
+- 14/14 张主讲图和 2/2 张单作业补充图统一改从 `figures/opening_figure_set/` 引用，移除报告
+  对旧 `report_main` 与旧 architecture PNG 的直接依赖。
+- 根据 `origin/main` 最新实现更新边界：固定总上限的阶段感知有序释放已接入具名 Ray 协调器、
+  配置和 active-set trace，但尚无正式 GPU 对照；SLO 债务和阶段队列输入仍待接线。
+- 新增 `opening/report/opening_report_20260812_qa.md`，完成学校模板、31 条引用、图表、实现边界
+  和 20 页 PPT 映射审计。当前没有开题论证所缺的数据图；第 2、3 页背景结构图仍是可选增强。
+- 按用户要求不同步 Wiki；飞书普通云文档已完成旧 revision 读取、16 张图 URL 验证和覆盖
+  dry-run，外部写入门禁要求对指定文档 URL 再次明确确认，因此尚未执行最终覆盖。

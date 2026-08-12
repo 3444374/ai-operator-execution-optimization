@@ -299,8 +299,9 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
   只在 completion 释放 credit 时按 entitlement、service lag 和 SLO debt 回收未来份额。
 - **回退**：状态过期、签名不符或 ledger 异常时保持冻结总 K，并退回简单 DRR/FIFO；不在线猜
   新容量档位。
-- **当前基础**：已有 trace、observe-only snapshot、completion release、shared credit 和
-  控制器原型；仅调整总并发上限的控制器未超过强静态点，因此不作为主线。
+- **当前基础**：已有 trace、observe-only snapshot、completion release、shared credit；固定
+  总上限内的阶段感知有序释放已接入具名 Ray 协调器和 active-set trace，但尚无正式 GPU
+  对照。仅调整总并发上限的控制器未超过强静态点，因此不作为主线。
 - **页面结论**：动态调度不是持续改变总并发上限；本项目要验证的是固定总容量下“下一份 credit 给谁”。
 - **转场**：接下来用多 Job 数据观察借用带来的效率与公平代价。
 
@@ -309,8 +310,8 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 - **本页回答**：shared work credit 的收益和代价是什么。
 - **反事实控制**：full/quarter single 用于分离配额损失；static partition 与 shared pool 才是
   同一全局上限下互斥的调度 A/B。
-- **当前结果**：shared 相对 static 的 group throughput +8.68%、Group JCT −7.97%、MFU
-  相对 +22.41%，但不同 Job 收益不均。按实际完成 work 计算的 group Jain 为 0.960→0.923；
+- **当前结果**：shared 相对 static 的 group throughput +8.68%、Group JCT −7.97%；MFU
+  从 38.2% 升至 46.8%，即 +8.56 个百分点（相对 +22.41%），但不同 Job 收益不均。按实际完成 work 计算的 group Jain 为 0.960→0.923；
   图中按各自 single control 归一化的进度 Jain 为 0.998→0.876。两种 Jain 口径不能混用。
 - **机制关系**：idle borrowing 提高 work conservation；per-Job floor/cap、work-fair deficit
   和 SLO guard 约束隔离；状态感知再决定总准入与路由。

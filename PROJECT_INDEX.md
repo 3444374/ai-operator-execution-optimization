@@ -449,6 +449,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `opening/README.md` | 开题工作区入口 | 了解开题材料分布和同步规则 |
 | `opening/navigation.md` | 开题材料导航 | 不知道开题材料在哪时读 |
 | `opening/report/opening_report.md` | 开题报告正文 | 写报告、和导师沟通、定方向 |
+| `opening/report/opening_report_20260812_qa.md` | 中文开题报告模板、图表、引用、实现边界和 PPT 口径审计 | 冻结或复核开题发布材料时读 |
 | `opening/literature/reading_list.md` | 开题文献精读清单 | 查看文献精读优先级和引用边界 |
 | `opening/literature/top15_reading_notes/` | 开题精读 Top 15 拷贝 | 15/15 严格 CCF-A 正式 research paper 的自包含快照，权威版在 `research/reading_notes/` |
 | `research/reading_notes/` | 精读笔记权威库（49 篇 + 模板） | 所有精读笔记单一来源；新增 VTC、Llumnix、LOTUS、Palimpzest、Abacus、SemBench、FairServe、DLPM、Autellix、Chiron |

@@ -6008,3 +6008,18 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   template fidelity `pass`、0 issue；逐页 contact sheet 未发现重叠、裁切或页眉页脚侵占。
 - 同步更新图文审计、PPT QA、Claim Matrix、答辩大纲入口、README 与 `PROJECT_INDEX.md`。
   中文 Markdown 报告和飞书云文档留到 PPT 冻结后继续；按用户要求不执行 Wiki 同步。
+
+## 2026-08-12 中文开题报告与 PPT 口径统一
+
+- 在独立 worktree 和 `codex/opening-report-ppt` 分支中完成中文 Markdown 报告重组；主工作区
+  `main` 未保留本任务修改。
+- 正文现按学校模板组织为七部分，研究内容一、研究内容二、共同代价估计和多模态验证与
+  PPT 的 20 页主线一一对应。
+- 报告使用开题专用图集 14/14 张主讲图和 2 张补充状态图；31 条参考文献全部在正文引用，
+  无缺号、无未引用条目，参考文献末尾无标点。
+- 更新最新实现边界：固定总上限有序释放已经接入 Ray 运行时与 trace，但没有正式 GPU 对照，
+  不将实现状态写成方法收益。
+- 新增 `opening/report/opening_report_20260812_qa.md` 并更新 opening/项目索引。当前没有阻塞
+  开题的实验数据图；仅保留第 2、3 页背景结构图为可选视觉增强。
+- 飞书普通云文档 revision 289 已只读核对；16 张正式图的公开 URL 与整篇 Markdown 覆盖
+  dry-run 均通过。最终覆盖因外部写入门禁等待用户对指定文档 URL 的再次明确确认；未同步 Wiki。
