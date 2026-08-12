@@ -64,12 +64,14 @@ class BoundedHttpBaselineTests(unittest.TestCase):
                 *,
                 max_connections: int,
                 max_keepalive_connections: int,
+                keepalive_expiry: float,
             ) -> None:
                 captured["limits_instance"] = self
                 captured["max_connections"] = max_connections
                 captured["max_keepalive_connections"] = (
                     max_keepalive_connections
                 )
+                captured["keepalive_expiry"] = keepalive_expiry
 
         class FakeResponse:
             def raise_for_status(self) -> None:
@@ -140,6 +142,7 @@ class BoundedHttpBaselineTests(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(captured["max_connections"], 256)
         self.assertEqual(captured["max_keepalive_connections"], 256)
+        self.assertEqual(captured["keepalive_expiry"], 4.0)
         self.assertIs(
             captured["client_kwargs"]["limits"],
             captured["limits_instance"],

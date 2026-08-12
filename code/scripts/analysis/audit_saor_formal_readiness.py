@@ -236,6 +236,7 @@ def audit(config_path: Path) -> dict[str, object]:
                 "protocol": direct.protocol,
                 "prompt_format": direct.prompt_format,
                 "return_token_ids": direct.return_token_ids,
+                "keepalive_expiry_s": direct.keepalive_expiry_s,
             }
             if direct is not None
             else None

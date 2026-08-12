@@ -208,6 +208,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "http://127.0.0.1:8001/v1/completions"
                 ),
                 "COMPLETION_MODEL": "qwen",
+                "COMPLETION_HTTP_KEEPALIVE_EXPIRY_S": "4",
                 "COMPLETION_PROTOCOL": "completions",
                 "COMPLETION_MAX_TOKENS": "8",
                 "MODEL_METRICS_URLS": (
@@ -238,6 +239,7 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(result["scenario_count"], 10)
         self.assertEqual(result["direct_contract"]["protocol"], "completions")
         self.assertEqual(result["direct_contract"]["prompt_format"], "raw")
+        self.assertEqual(result["direct_contract"]["keepalive_expiry_s"], 4.0)
 
     def test_readiness_rejects_token_budget_not_bound_to_evidence(self) -> None:
         with TemporaryDirectory() as directory:
@@ -294,6 +296,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "http://127.0.0.1:8001/v1/completions"
                 ),
                 "COMPLETION_MODEL": "qwen",
+                "COMPLETION_HTTP_KEEPALIVE_EXPIRY_S": "4",
                 "COMPLETION_PROTOCOL": "completions",
                 "COMPLETION_MAX_TOKENS": "8",
                 "MODEL_METRICS_URLS": (
@@ -391,6 +394,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "http://127.0.0.1:8001/v1/completions"
                 ),
                 "COMPLETION_MODEL": "qwen",
+                "COMPLETION_HTTP_KEEPALIVE_EXPIRY_S": "4",
                 "COMPLETION_PROTOCOL": "completions",
                 "COMPLETION_MAX_TOKENS": "8",
                 "MODEL_METRICS_URLS": (

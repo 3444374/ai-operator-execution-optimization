@@ -151,6 +151,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "httpx_async keeps one bounded connection pool per actor."
         ),
     )
+    parser.add_argument(
+        "--completion-http-keepalive-expiry-s",
+        type=float,
+        default=4.0,
+        help=(
+            "Idle lifetime for pooled HTTP/1.1 completion connections. "
+            "Freeze it below the model server keep-alive timeout."
+        ),
+    )
     parser.add_argument("--completion-temperature", type=float)
     parser.add_argument(
         "--output-cost-mode",

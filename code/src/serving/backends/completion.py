@@ -309,8 +309,6 @@ class CompatibleHTTPCompletionActor(_ReadyActor):
 class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
     """Persistent async HTTP client for request-level vLLM forwarding."""
 
-    _KEEPALIVE_EXPIRY_S = 4.0
-
     def __init__(
         self,
         endpoint_url: str,
@@ -324,9 +322,12 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
         protocol: CompletionProtocol = "completions",
         max_connections: int = 1,
         ignore_eos: bool = False,
+        keepalive_expiry_s: float = 4.0,
     ):
         if max_connections <= 0:
             raise ValueError("max_connections must be positive")
+        if not math.isfinite(keepalive_expiry_s) or keepalive_expiry_s <= 0:
+            raise ValueError("keepalive_expiry_s must be finite and positive")
         try:
             import httpx
         except ImportError as exc:
@@ -346,6 +347,7 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
         self.protocol = protocol
         self.max_connections = max_connections
         self.ignore_eos = ignore_eos
+        self.keepalive_expiry_s = keepalive_expiry_s
         self._httpx = httpx
         self._client = httpx.AsyncClient(
             headers=headers,
@@ -356,7 +358,7 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
                 # Uvicorn/vLLM commonly expires idle HTTP/1.1 connections at
                 # 5 s. Retire pooled sockets first so a sparse Ray actor does
                 # not reuse a server-closed connection during tail drain.
-                keepalive_expiry=self._KEEPALIVE_EXPIRY_S,
+                keepalive_expiry=keepalive_expiry_s,
             ),
         )
 
@@ -366,7 +368,7 @@ class CompatibleAsyncHTTPCompletionActor(_ReadyActor):
             "actor_type": type(self).__name__,
             "http_transport": "httpx_async",
             "max_connections": self.max_connections,
-            "keepalive_expiry_s": self._KEEPALIVE_EXPIRY_S,
+            "keepalive_expiry_s": self.keepalive_expiry_s,
             "client_initialized": not self._client.is_closed,
         }
 

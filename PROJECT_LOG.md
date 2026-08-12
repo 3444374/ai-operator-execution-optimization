@@ -14,6 +14,15 @@
   offset 与 manifest timestamp 一起乘 `arrival_time_scale=0.001`，实际只延迟 5 ms。现将
   wall-clock Job offset 除以 scale 后写入合并 trace，使内部 manifest 时间按 scale 回放、跨
   Job offset 保持真实秒数；新增回归测试防止两种时间尺度再次混用。
+- 修正 offset 后的第二次真实 2×4090 rehearsal 完成前八个 cell、六个 active-set 臂均无
+  incident，但 `solo_direct_bulk` 的一个请求以 `httpx.ReadError` fail-closed；两个 vLLM
+  endpoint 全程健康，失败附近服务日志均为 HTTP 200，随后 running/waiting/KV 回到 0。
+  该故障形态与 8 月 11 日已确认的 idle HTTP/1.1 socket 复用一致：Ray completion actor 已
+  用 4 s 提前淘汰连接，新增 direct control 漏掉同一合同。
+- 将 `completion_http_keepalive_expiry_s` 提升为显式运行参数，正式模板从环境注入；Ray actor
+  与 direct control 共享该值，profiler/direct readiness 和结果 evidence 记录实际值。当前
+  vLLM/Uvicorn 环境冻结为 4 s，但代码不硬编码特定服务器配置。仍保持 zero retry、失败完整
+  落盘；旧 8/10 rehearsal 不续跑、不进入性能统计，必须从新目录重跑完整 10/10。
 
 ## 2026-08-12 SAOR fixed-envelope formal harness 闭合
 

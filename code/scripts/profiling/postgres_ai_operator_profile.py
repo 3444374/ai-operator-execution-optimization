@@ -1412,6 +1412,13 @@ def _validate_completion_observation_args(args: argparse.Namespace) -> None:
             "--operator ai_complete, a compatible HTTP backend, "
             "and --executor ray_actor"
         )
+    if (
+        not math.isfinite(args.completion_http_keepalive_expiry_s)
+        or args.completion_http_keepalive_expiry_s <= 0
+    ):
+        raise SystemExit(
+            "--completion-http-keepalive-expiry-s must be finite and positive"
+        )
 
 
 def _vllm_tokens_per_second(vllm_stats: dict, e2e_s: float) -> float:
@@ -1781,6 +1788,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.operator == "ai_complete"
                 else ""
             ),
+            "completion_http_keepalive_expiry_s": (
+                args.completion_http_keepalive_expiry_s
+                if args.operator == "ai_complete"
+                and args.completion_http_transport == "httpx_async"
+                else ""
+            ),
             "completion_temperature": (
                 args.completion_temperature
                 if args.completion_temperature is not None
@@ -2055,6 +2068,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                                 actor_args.extend([
                                     reported_ray_actor_max_concurrency,
                                     args.completion_ignore_eos,
+                                    args.completion_http_keepalive_expiry_s,
                                 ])
                             else:
                                 actor_args.append(args.completion_ignore_eos)
@@ -2991,6 +3005,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "completion_http_transport": (
                 args.completion_http_transport
                 if args.operator == "ai_complete"
+                else ""
+            ),
+            "completion_http_keepalive_expiry_s": (
+                args.completion_http_keepalive_expiry_s
+                if args.operator == "ai_complete"
+                and args.completion_http_transport == "httpx_async"
                 else ""
             ),
             "completion_temperature": (

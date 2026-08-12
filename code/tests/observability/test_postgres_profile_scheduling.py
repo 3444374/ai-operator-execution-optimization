@@ -2860,6 +2860,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertFalse(default_row["completion_ignore_eos"])
         self.assertEqual(default_row["completion_prompt_format"], "raw")
         self.assertEqual(default_row["completion_temperature"], "")
+        self.assertEqual(default_row["completion_http_keepalive_expiry_s"], "")
         self.assertEqual(default_row["source_max_prompt_tokens"], "")
         self.assertEqual(
             default_row["request_actual_output_tokens_observed"],
@@ -2888,6 +2889,30 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
         self.assertEqual(chatml_row["completion_prompt_format"], "chatml")
         self.assertEqual(chatml_row["completion_temperature"], 0.0)
+
+        async_transport_row = profile.run_once(
+            profile.parse_args(
+                [
+                    "--dry-run",
+                    "--operator",
+                    "ai_complete",
+                    "--executor",
+                    "ray_actor",
+                    "--model-backend",
+                    "compatible_http",
+                    "--completion-http-transport",
+                    "httpx_async",
+                    "--completion-http-keepalive-expiry-s",
+                    "3.5",
+                ]
+            ),
+            "formal",
+            1,
+        )
+        self.assertEqual(
+            async_transport_row["completion_http_keepalive_expiry_s"],
+            3.5,
+        )
 
         filtered_row = profile.run_once(
             profile.parse_args(

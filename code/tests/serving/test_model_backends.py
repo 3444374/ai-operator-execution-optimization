@@ -486,6 +486,7 @@ class AsyncModelBackendTests(unittest.IsolatedAsyncioTestCase):
                 8,
                 protocol="chat_completions",
                 max_connections=4,
+                keepalive_expiry_s=3.5,
             )
 
         result = await actor.complete(sample_table())
@@ -494,6 +495,7 @@ class AsyncModelBackendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["rows"], 2)
         self.assertEqual(result["output_text"], ["answer", "answer"])
         self.assertEqual(result["token_count"], 12)
+        self.assertEqual((await actor.ready())["keepalive_expiry_s"], 3.5)
         for _, _, kwargs in actor._client.calls:
             self.assertEqual(len(kwargs["json"]["messages"]), 1)
             self.assertNotIn("prompt", kwargs["json"])

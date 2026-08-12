@@ -1233,8 +1233,10 @@ adaptive job 的本地 request/work 只作为安全 ceiling，固定为已标定
 
 phase-change 独立确认曾在 tail drain 稳定复现 `httpx.ReadError`，同时 vLLM 健康且
 服务日志均为 200。`CompatibleAsyncHTTPCompletionActor` 因此将客户端 idle keep-alive
-expiry 固定为 4 s，先于 Uvicorn/vLLM 常见的 5 s server expiry 淘汰连接；该值会出现在
-actor readiness evidence。失败目录保留，修复后必须从新 output 运行，不能 resume 拼接。
+expiry 默认设为 4 s，先于 Uvicorn/vLLM 常见的 5 s server expiry 淘汰连接；正式 SAOR
+模板通过 `--completion-http-keepalive-expiry-s` 显式冻结并让 Ray actor 与 direct control
+共用，实际值出现在 actor readiness、profiler summary 和 direct evidence。该修正不启用
+重试。失败目录保留，修复后必须从新 output 运行，不能 resume 拼接。
 
 `--arm project_static` 结构不同：runner 在通用 scan 前分流，子进程调用 `postgres_ai_operator_profile.py`
 跑显式冻结的静态合同，profiler 独占 scan+organize+model+sink。wrapper 无连接——所有 per-doc 证据来自 profiler

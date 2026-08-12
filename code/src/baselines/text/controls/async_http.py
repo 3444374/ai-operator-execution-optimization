@@ -34,6 +34,7 @@ class BoundedHttpConfig:
     temperature: float | None = 0.0
     return_token_ids: bool = False
     replay_start_epoch_s: float | None = None
+    keepalive_expiry_s: float = 4.0
 
 
 @dataclass(frozen=True)
@@ -57,6 +58,11 @@ def _validate_config(
         raise ValueError("timeout_s must be positive")
     if config.arrival_time_scale <= 0:
         raise ValueError("arrival_time_scale must be positive")
+    if (
+        not math.isfinite(config.keepalive_expiry_s)
+        or config.keepalive_expiry_s <= 0
+    ):
+        raise ValueError("keepalive_expiry_s must be finite and positive")
     if config.protocol not in {"completions", "chat_completions"}:
         raise ValueError("unsupported completion protocol")
     if config.prompt_format not in {"raw", "chatml"}:
@@ -229,6 +235,10 @@ async def run_bounded_http(
     limits = httpx.Limits(
         max_connections=connection_capacity,
         max_keepalive_connections=connection_capacity,
+        # Retire pooled sockets before the configured model server does. This
+        # prevents a sparse replay from reusing a server-closed HTTP/1.1
+        # connection while preserving the no-retry experiment contract.
+        keepalive_expiry=config.keepalive_expiry_s,
     )
     async with httpx.AsyncClient(
         headers=headers,

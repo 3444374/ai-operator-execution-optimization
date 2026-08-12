@@ -1022,6 +1022,12 @@ request K、协议、prompt format、immutable manifests、vLLM counters、资�
 只跳过 Daft/Ray Job credit/fair queue，因此回答“同 request window 下简单 merged arrival 是否
 已足够”；它是 project-authored control，不是 vendor-native baseline。
 
+项目与 direct 的 persistent HTTP/1.1 client 必须共享同一连接生命周期合同。设置
+`COMPLETION_HTTP_KEEPALIVE_EXPIRY_S=4`，要求它短于当前 vLLM/Uvicorn 的 5 s server
+keep-alive；readiness 会记录 direct 实际值，project profiler 也会把值写入结果。这个参数
+只决定空闲连接何时从 client pool 淘汰，不是请求 timeout，也不允许重试。正式运行仍为
+zero retry，任何 `ReadError` 都必须作为 incident 保留并使该 cell 失败。
+
 模板不硬编码 manifest replay 速度。`SAOR_ARRIVAL_TIME_SCALE` 必须来自冻结 workload 合同；
 `SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S` 是运行预算门禁。readiness 按 immutable manifest 的
 `max(arrival_time_s)-min(arrival_time_s)` 计算实际 replay span，拒绝非正 scale 或超预算

@@ -110,6 +110,13 @@ def direct_control_contract(config: SharedVllmConfig) -> BoundedHttpConfig:
         prompt_format=prompt_format,  # type: ignore[arg-type]
         temperature=temperature,
         return_token_ids="--completion-return-token-ids" in config.common_args,
+        keepalive_expiry_s=float(
+            _argument_value(
+                config.common_args,
+                "--completion-http-keepalive-expiry-s",
+                "4.0",
+            )
+        ),
     )
 
 
@@ -217,6 +224,7 @@ def run_direct_control(
                 "request_backlog_intervals": sorted(zip(arrivals, completions)),
                 "endpoint_counts": endpoint_counts,
                 "actor_worker_failures": 0,
+                "http_keepalive_expiry_s": contract.keepalive_expiry_s,
                 "replay_configured_start_epoch_s": (
                     start_epoch_s + scenario.arrival_offsets_s[index]
                 ),

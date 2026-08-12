@@ -50,6 +50,7 @@
     "--ray-actor-max-concurrency", "${PROJECT_RAY_ACTOR_MAX_CONCURRENCY}",
     "--ray-worker-num-cpus", "${PROJECT_RAY_WORKER_NUM_CPUS}",
     "--completion-http-transport", "httpx_async",
+    "--completion-http-keepalive-expiry-s", "${COMPLETION_HTTP_KEEPALIVE_EXPIRY_S}",
     "--model-backend", "compatible_http",
     "--completion-endpoint-urls", "${COMPLETION_ENDPOINT_URLS}",
     "--completion-model", "${COMPLETION_MODEL}",

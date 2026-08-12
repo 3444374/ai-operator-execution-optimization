@@ -746,7 +746,7 @@ on every request completion:
 | finite-action DPP | `scheduling/submission_control/saor.py` | 纯策略与公平债务已单测；需用 replay 验证 service ranking/动作 regret |
 | completion/exactly-once | `scheduling/core/execution.py` | 通用 ledger 已接原 scheduler；actual-work extractor 由模态 adapter 注入 |
 | ordered release | `scheduling/submission_control/{ordered_release,shared_credit,saor}.py` + `scheduling/runtime/shared_credit_ray.py` | 纯队列合同与 fixed-envelope `saor_release` 均已单测并接 named Ray coordinator；尚待真实 GPU formal，SLO debt 暂未接通 |
-| formal harness | `experiments/shared_vllm/{runner,direct_control,metrics}.py` + `analysis/{audit_saor_formal_readiness,summarize_saor_active_set}.py` | 十 scenario 统一交错、direct/project matched-solo、生命周期/机制分层门禁、rehearsal 与 fail-closed 汇总已接线；尚未产出 GPU 结果 |
+| formal harness | `experiments/shared_vllm/{runner,direct_control,metrics}.py` + `analysis/{audit_saor_formal_readiness,summarize_saor_active_set}.py` | 十 scenario 统一交错、direct/project matched-solo、生命周期/机制分层门禁、rehearsal 与 fail-closed 汇总已接线；真实 2×4090 rehearsal 暴露并修正 wall-clock offset 与 direct keepalive 两项合同偏差，完整 10/10 rerun 尚待通过，未产出 formal GPU 结果 |
 | endpoint state | vLLM/resource time series | atomic freshness/signature gate 待接；waiting/KV/GPU 不单独驱动 |
 | cost model | CE1--CE5/WorkDescriptor | 先 replay/observe-only，过 ranking/regret 门后才进入动作 |
 
@@ -867,6 +867,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-12 | `saor-v0.4.1-runtime` | 接入 fixed-envelope Ray credit runtime、completion fairness debt、SAOR/shared FIFO 配置与 active-set phase audit；新增 direct merged-arrival no-Job control；K 全部改由签名化 calibration contract 注入 | 代码/单测与既有 calibration infrastructure | 仍为 candidate；无 GPU formal、SLO debt 和 theorem bridge，不晋级 |
 | 2026-08-12 | `saor-v0.4.2-formal-ready` | direct no-Job 纳入同一交错 runner；新增 project/direct matched solo、request lifecycle 与 credit mechanism 分层门禁、rehearsal、静态 readiness audit 和 fail-closed formal summary | 单元测试 + 静态合同；未运行服务器 formal | 工程达到可 rehearsal/formal 状态，但仍无 GPU 策略结果；direct 只匹配 request K，不伪称 work-credit 等资源臂 |
 | 2026-08-12 | `saor-v0.4.3-server-ready` | 服务器 preflight 发现 512-row manifest 原始 arrival span 约 66,880 s，模板写死 `arrival_time_scale=1.0` 会使 rehearsal 约 18.6 h；改为 workload 合同注入 scale，并由 readiness 自动计算 effective span、设置运行预算门禁 | 服务器真实 immutable manifest + 本地/服务器静态门禁 | 修正运行可行性，不改变算法、K 或证据结论；仍需 GPU rehearsal 后才能启动 formal |
+| 2026-08-12 | `saor-v0.4.4-transport-contract` | 第二次 2×4090 rehearsal 前八个 cell 完成，但 `solo_direct_bulk` 出现单请求 `ReadError`；服务端健康且日志为 200，定位为 direct 漏配已在 Ray actor 验证的 idle keepalive 合同。将 expiry 改为两路径共享、可注入和可审计，仍禁用 retry | 真实服务器 rehearsal + endpoint health/log + 既有 tail-drain 复现 | 传输合同修正，不改变 SAOR 算法或性能结论；旧 8/10 rehearsal 判失败，完整新目录 rerun 通过前禁止 formal |
 
 状态只允许按以下顺序变化：
 
