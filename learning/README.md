@@ -319,6 +319,19 @@ figures/
 
 学习材料可以讲得更通俗，但不能改变正式实验事实。
 
+## 2026-08-10 VTC-compatible 不等于复现 VTC
+
+VTC 的公平 scheduler 位于 S-LoRA continuous batching 内部；本项目只迁移公开 workload
+形状与 actual-service/fairness 口径。正确对照必须让 static、shared FIFO 和 shared-work
+共享同一 endpoint request/work 上限，并允许每个 Job 有不同到达率和行数。公平差只能在
+至少两个 Job 同时仍有未完成请求的 backlog 区间计算；把整个 Job 生命周期当 backlog，
+会把尚未到达或已经 drain 的 Job 错算进分母。
+
+Direct vLLM FCFS 是外部服务锚点，不等同于项目 `shared_fifo`：前者把多个逻辑 Job 的
+到达 trace 合并到同一个 bounded AsyncIO client，只保留 endpoint-local 并发边界并交给
+vLLM 调度；后者仍经过项目 Ray actor 与 shared-credit coordinator。固定 256-token 输出
+必须显式传 `ignore_eos`，否则自然 EOS 会缩短实际工作量，使 baseline 失去可比性。
+
 ## 2026-08-11 两 Job phase-change 实验准备
 
 这一实验不是“多客户端越多越好”的吞吐压测，而是给状态控制器一个可辨识的四阶段

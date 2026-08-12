@@ -1,5 +1,13 @@
 # 开题统一文本 database-E2E 三臂正式实验（2026-08-07）
 
+> **历史结果，性能定性已被 2026-08-08 K128 replacement 取代。** 本轮项目臂使用
+> K32，后续 `opening_database_e2e_text_refeed_20260808/` 将项目臂校准到 K128 后，
+> SQuAD 三臂 service tokens/s 为 40,920.72 / 40,955.99 / 41,277.95，差异小于 1%；
+> 因而本报告中的 project underfeeding 是静态 K 校准不足，不是项目路径的内在开销。
+> ShareGPT 的 C32 direct 后续也被证明仅达到已测峰值的 52.07%，所以该 workload 本轮
+> 不具备 matched-saturation 性能排名资格。本报告只保留 correctness、产品语义边界和
+> “GPU utilization 高不等于喂饱”的历史诊断证据。
+
 > 结论先行：两类 workload 的 24 个单元全部完成，18 个 formal 均通过 source、exactly-once 与 sink digest 门禁，基础设施失败为 0。项目冻结静态臂在 SQuAD 和 ShareGPT 的 service tokens/s 仅为同 workload direct 的 89.93% 和 91.38%，均未过预注册的 95% feeding-saturation 门，因此本实验不能支持项目路径的性能优势。DuckDB AI 的模型服务吞吐与 direct 接近，但在 ShareGPT 固定 256-token cap 下三次 formal 共 4,936/6,144 行返回产品层 cap 语义失败；这是语义兼容边界，不是基础设施失败，也不能从 correct throughput 分母中删除。
 
 ## 1. 实验目的
@@ -91,13 +99,20 @@ DuckDB AI 的 `request_latency` 是 query-barrier 级别；direct 是 client com
 
 **事实**：两组 project frozen-static 的 service feeding 均低于 direct，且 correct rows/s 也更低；异质 ShareGPT 没有让项目冻结静态路径反转为优势。SQuAD 三臂 EM/F1 接近，说明性能差异不是通过降低答案质量换得。DuckDB AI 在 ShareGPT 的 raw throughput 和 service tokens/s 与 direct 几乎相同，但约 80.34% formal 行因 fixed-cap 产品语义返回空/失败，correct throughput 因而降到 2.23 rows/s。
 
-**推断**：项目路径在当前冻结静态实现中仍存在上游供给或路径开销，GPU 高利用率并不能替代 service-token feeding 门。ShareGPT 上 direct/project 的 service gap 从 SQuAD 的 10.07% 收窄到 8.62%，但仍未过门，不能据此声称 heterogeneity 带来有效策略增量。DuckDB AI 的主要可用性边界是输出 cap 语义，而非模型服务容量。
+**历史推断（已被后续实验收窄）**：本轮只能说明 K32 项目臂供给不足，GPU 高利用率不能
+替代 service-token feeding 门。K128 replacement 已排除“项目路径存在约 10% 内在开销”
+这一解释；ShareGPT C32 direct 自身也欠供给，因此两臂 gap 不再具有 matched-saturation
+含义。DuckDB AI 的主要可用性边界仍是输出 cap 语义，而非模型服务容量。
 
 **不能声称**：项目路径普遍优于 direct 或 DuckDB AI；异质 workload 已证明 work-aware 方法有效；DuckDB AI “更慢”；query-barrier 与请求级 latency 可以直接比较；PG18.4 rehearsal 等同内部 PG18.3 正式平台。
 
 ## 7. 对课题含义
 
-统一三臂结果是负面但有决定性的开题证据：strong static direct 必须继续作为默认性能参照；项目后续 state-aware 方法只有在同 source/sink、同上限并通过 feeding 门后，才能用吞吐、tail、SLO 或 fairness 申请晋级。异质 workload 本身不足以自动制造项目优势，方法必须提供可观测的状态变化与因果机制。产品 baseline 还必须把固定输出上限的语义兼容性纳入正确吞吐，而不能只看 GPU 已完成的 token work。
+本轮是有价值的失败诊断，而不是最终三臂性能结论：它促使项目重新校准最小饱和 K，且
+K128 replacement 已把 SQuAD 三臂收敛到近似中性。strong static direct 仍必须作为默认
+性能参照；项目后续 state-aware 方法只有在同 source/sink、同上限并通过 feeding 门后，
+才能用吞吐、tail、SLO 或 fairness 申请晋级。产品 baseline 还必须把固定输出上限的语义
+兼容性纳入正确吞吐，而不能只看 GPU 已完成的 token work。
 
 ## 8. 下一步与停止规则
 

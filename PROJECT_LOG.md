@@ -9,6 +9,15 @@
   报告和快速方向卡片。边界保持不变：只证明跨模态多 Job 干扰与观测接入，不证明
   state-aware 动态收益，不作跨框架绝对性能排名。
 
+## 2026-08-12 收紧历史实验与跨系统比较边界
+
+- 将 2026-08-07 K32 database-E2E 明确降级为历史 feeding 诊断；K128 replacement 已排除
+  约 10% 项目路径固有开销的解释，ShareGPT C32 direct 也不具 matched-saturation 资格。
+- 四 Job 表中的跨系统 service tok/s/MFU 只作状态指纹，因为各 adapter 的 actual-token-work
+  基数与执行边界不同；仅保留同 adapter、同合同的 Project static/shared 因果对照。
+- 补记 256-row gate 与 ≥60 s formal 不可横比，以及 CE5 选择性高-CV补跑只与噪声解释
+  一致、不构成独立因果证明。学习材料同时区分 direct vLLM FCFS 与项目 `shared_fifo`。
+
 ## 2026-08-11 SAOR v0.4：动态 K 退出主线，改为固定总 K 的活跃集调度
 
 - 接受“固定 K160/更大 K 可能已经足够”的反证压力：现有 capacity-only SAOR 相对 K160

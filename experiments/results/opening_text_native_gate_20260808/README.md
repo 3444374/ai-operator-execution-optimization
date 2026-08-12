@@ -58,6 +58,11 @@ Ray Data C8 是三个已测试点中的单次 measured peak；C4、C16 相对 C8
 −2.89%、−6.00%。因此正式矩阵冻结 C8/B16，但这里只称“筛选点”，不称稳定最优或
 最小饱和点。
 
+本 gate 的 bounded 4,961 tok/s 与后续 2,048-row formal 的 17,800 tok/s **不可直接
+横比**：前者是 256-row 短 gate 的 request 粒度并包含 client 启动效应，后者是 ≥60 s
+正式任务的 shard-barrier/服务容量口径。该 3.6× 差异不是服务容量变化，也不能用于跨报告
+推导加速比。
+
 ## 5. 结果解释
 
 ### 事实
@@ -77,6 +82,7 @@ Ray Data C8 是三个已测试点中的单次 measured peak；C4、C16 相对 C8
 
 - 不能按本表宣称 Daft 比 Ray Data 快多少；各原生入口只有一次短 gate，且只有 Ray Data
   超过 60 秒。
+- 不能把本 gate 的 bounded 4,961 tok/s 与后续 formal 的 17,800 tok/s 当同一计时口径。
 - 不能把 bounded HTTP 当 vendor-native baseline。
 - 不能由 capability gate 推出 Work Unit、状态感知或动态调度已经带来性能收益。
 

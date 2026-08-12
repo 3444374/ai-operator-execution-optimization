@@ -1,7 +1,7 @@
 # 双 4090 算子代价估计 v2 cache-on formal profile（320-run 基础矩阵 + 429-formal 合并 LOO，2026-08-07）
 
 > **状态（plan §7）：本目录是 v2 cache-on 重跑的**有效数据 + 归档 + CE0–CE5 context-LOO 评估**。2026-08-04 首次 run 因并发共用 GPU + 空 `--ray-address`（每子 run local Ray）而**无效**（见 `../operator_cost_profile_dual4090_formal_20260804/`）；本轮 v2 修复后重跑，**320/320 有效、0 incident、gate 10（0 local-Ray）通过**——正是对首次无效的闭环。**
-> **CE LOO 主结果（§5.3，6-rep 重跑后）**：高 CV 补跑（63 scenario × 6 reps）+ 17 低 CV scenario（3 reps）合并重评后，**CE5_hybrid（解析+残差校正）过完整 plan §6 promotion contract**（pooled regret 1.67%、median 0%、macro 2.90%、**max 14.72%**（<15%，**marginal**）、candidate pairwise 0.808）——首个过 contract 的估计器。6-rep tighten mean 把 CE5 的 max regret 从 3-rep 的 **39.77% → 14.72%**（证实"高 CV 噪声驱动 max regret"假设）；CE3_ridge（max 22.71%）/ CE4_lightgbm（max 26.89%）仍 fail max 门槛；CE0/CE2 退化、CE1 17.8%。CE5 row MAE 3.98 略高于 CE3 3.23（accuracy≠selection，Heinrich）。
+> **CE LOO 主结果（§5.3，6-rep 重跑后）**：高 CV 补跑（63 scenario × 6 reps）+ 17 低 CV scenario（3 reps）合并重评后，**CE5_hybrid（解析+残差校正）过完整 plan §6 promotion contract**（pooled regret 1.67%、median 0%、macro 2.90%、**max 14.72%**（<15%，**marginal**）、candidate pairwise 0.808）——首个过 contract 的估计器。选择性 6-rep tighten mean 把 CE5 的 max regret 从 3-rep 的 **39.77% → 14.72%**，与“高 CV 噪声驱动 max regret”假设一致，但不构成独立因果证明；CE3_ridge（max 22.71%）/ CE4_lightgbm（max 26.89%）仍 fail max 门槛；CE0/CE2 退化、CE1 17.8%。CE5 row MAE 3.98 略高于 CE3 3.23（accuracy≠selection，Heinrich）。
 > ⚠️ **3-rep 版（v2 原始 320-run）先前结论已修订**：3-rep 下 CE3/CE5 macro 6.42% + max 39.77% 全 FAIL；6-rep 补跑后 CE5 转 PASS（见 §5.3 + §9 erratum 续）。**边际警告**：CE5 max 14.72% 贴 15% 线，是 marginal pass，非稳健通过——换 split / 更多 context 可能翻转。CE4 LightGBM（max 26.89%）未优于 CE3/CE5（小数据集 20 context，非线性学习器未增益）。
 
 ## 1. 实验目的（plan §1）
@@ -29,7 +29,7 @@
 | 5 | formal-only = 20 context × 4 candidate × 3 repeat；warmup 排除 | ✅ 240 formal（formal-only 过滤），80 scenario |
 | 6 | 每 context 4 个 23 维特征向量 + candidate ID 不同 | ✅ **结构化核验（audit F22）**：20/20 context 的 4 candidate 特征向量两两 distinct + candidate ID distinct（`estimate_operator_cost.feature_vector` 23 维，先前 "延至 LOO" 已闭合） |
 | 7 | 服务快照（model/port/cache/max-batch/seqs） | ✅ model=qwen2.5-7b, gpu=2×4090, prefix_caching=enabled；**+ 08-07 fresh `run_provenance.json`（同 PID 478170/478172）实测 max-num-seqs=256 / max-num-batched-tokens=8192 / prefix-cache ON，declared==effective（audit F7+F8）** |
-| 8 | CV>5% cell 单列、补跑、不静默删 | ✅ **补跑完成（audit F10/F18，2026-08-07）**：63 高 CV scenario 已 6-rep 重跑（`merged_runs_6rep_20260807.csv`），合并 17 低 CV（3 reps）= 429 formal 行重评 CE LOO。**6-rep tighten mean 把 CE5 max regret 从 39.77%→14.72%**（证实高 CV 噪声驱动假设），CE5 过 §6 contract。CV>5% 对 sub-10s cell 仍固有（rerun 降 SEM 非降 CV），但 mean 精度足够让 CE5 过门。详见 §5.3/§6 |
+| 8 | CV>5% cell 单列、补跑、不静默删 | ✅ **补跑完成（audit F10/F18，2026-08-07）**：63 高 CV scenario 已 6-rep 重跑（`merged_runs_6rep_20260807.csv`），合并 17 低 CV（3 reps）= 429 formal 行重评 CE LOO。**6-rep tighten mean 把 CE5 max regret 从 39.77%→14.72%**，与高 CV 噪声解释一致，CE5 过 §6 contract。因补跑对象按 CV 选择，这不是独立因果验证。CV>5% 对 sub-10s cell 仍固有（rerun 降 SEM 非降 CV），但 mean 精度足够让 CE5 过门。详见 §5.3/§6 |
 | 9 | host-scope lease（单 runner） | ✅ `.runner-lease.json` acquire，无并发 runner |
 | 10 | `--ray-address` 非空共享 + 0 "Started a local Ray instance" | ✅ **0**（每 run 连 172.17.0.3:6380 共享 Ray）—— v2 对首次无效 run 的关键修复 |
 | 11 | cache 三处一致 enabled；hit∈[0,1]、hits≤queries | ✅ service_prefix_caching={enabled}；hit_rate∈[0,0.988]；0 hits>queries |
@@ -44,7 +44,7 @@
 
 ### 5.1 CE 信号 headline（per-context mean e2e_s by active-work；oracle = min e2e）
 
-| context | rows | cap | e2e by active-work [32768, 49152, 65536, 98304] | oracle | spread |
+| context | rows | cap | e2e by active-work [32768, 49152, 65536, 98304] | oracle | worst slowdown vs oracle |
 |---|---|---|---|---|---|
 | lmcache_agent | 128 | 256 | 39.5 / 29.5 / 23.7 / 21.2 | 98304 | 86.5% |
 | lmcache_agent | 128 | 64 | 14.8 / 12.7 / 10.8 / 10.5 | 98304 | 40.6% |
@@ -67,8 +67,15 @@
 | short_prompt_lt50 | 256 | 256 | 8.4 / 8.5 / 7.1 / 8.1 | 65536 | 20.2% |
 | short_prompt_lt50 | 256 | 64 | 4.3 / 4.4 / 3.8 / 3.4 | 98304 | 28.0% |
 
+表中最后一列的精确定义是 `(max(e2e)-min(e2e))/min(e2e)`，即“最坏候选相对 oracle
+慢多少”，不是项目其余报告使用的 `/max` spread。按统一 spread
+`(max(e2e)-min(e2e))/max(e2e)` 重算，20 个 context 的 min / median / max 为
+10.7% / 30.3% / 46.4%。两种量都从同一组 E2E 均值计算，但回答的问题不同。
+
 **信号汇总（FACT，直接从 runs.csv 算）**：
-- 20/20 context 全有 4 candidate；**0 退化**（spread 全 >5%，min 12% / median 44% / max 86.5%）→ 每个 context candidate 选择都 matter，选错最多付 86% e2e。
+- 20/20 context 全有 4 candidate；统一 `/max` spread 全 >5%（min 10.7% / median 30.3% /
+  max 46.4%）。等价地，选到最坏候选相对 oracle 的 slowdown 最高为 86.5%；每个 context
+  的 candidate 选择都 matter。
 - **oracle 分布**：98304 → 11/20，65536 → 5/20，49152 → 3/20，32768 → 1/20。最优 active-work **context-dependent**（大 workload/rows/cap 倾向大 active-work，但 9/20 context 反例）——这正是估计器须捕获的非平凡信号。
 
 ### 5.3 CE0–CE5 context-LOO 评估（plan §5；6-rep 重跑后）
@@ -85,7 +92,9 @@
 | **CE5_hybrid** | **1.67** | 0.0 ✓ / **2.90** ✓ / **14.72 ✓** | **0.808 ✓** | 3.98 | **39.77→14.72** | **PASS ✅** |
 
 - **CE5_hybrid 过完整 §6 contract**（4/4 子门：median 0%、macro 2.90%、max 14.72%、candidate pairwise 0.808 全过）——**首个过 contract 的估计器**。按 plan §6 可接管 active-work 候选选择。
-- **6-rep tighten mean 的效果（证实 §3 gate 8 假设）**：CE5 max regret 39.77%→14.72%（−63%），CE3 39.77%→22.71%；macro 也降（CE5 6.42%→2.90%）。高 CV 噪声确实是 max regret 的主因。
+- **6-rep tighten mean 的效果（与 §3 gate 8 假设一致）**：CE5 max regret
+  39.77%→14.72%（−63%），CE3 39.77%→22.71%；macro 也降（CE5 6.42%→2.90%）。
+  由于只补跑 CV>5% cells，不能据此独立识别高 CV 噪声是唯一或主要原因。
 - **CE5 > CE3（在 max 上）**：CE5 max 14.72 vs CE3 22.71——**残差校正在紧数据上现增益**（3-rep 时 CE3≈CE5；6-rep 时 CE5 的残差校正把最差 fold 拉回 15% 内）。但 CE5 row MAE 3.98 > CE3 3.23——**accuracy≠selection**（Heinrich：预测 MAE 略高但选择 regret 更低）。
 - **CE4 LightGBM 未增益**：max 26.89（最差于 CE3/CE5），candPair 0.767；小数据集（20 context）非线性学习器未超过 Ridge/hybrid。
 - **⚠️ 边际警告**：CE5 max 14.72% 贴 15% 线，**marginal pass**——换 split / 更多 context / 不同 reps 可能翻转。这是"刚过门"，非"稳健通过"。
@@ -108,21 +117,26 @@
 
 ## 6. 结果解释（事实 / 推断 / 不能声称）
 
-- **事实**：320-run 数据有效（§3：**11/11 门禁全过**，gate 8 已 6-rep 补跑闭环）；4 candidate 在每 context 产生 12–86% e2e 差异；最优 active-work 随 context 变；**6-rep 合并 CE LOO（§5.3）：CE5_hybrid 过完整 §6 contract**（pooled 1.67%、median 0%、macro 2.90%、max 14.72%、candPair 0.808）；CE3（max 22.71）/CE4（max 26.89）fail max；CE0/CE2 退化、CE1 17.8%。
-- **推断**：6-rep tighten mean 把 CE5 max regret 从 39.77%→14.72%（−63%）——**证实"高 CV 噪声驱动 max regret"假设**；CE5 的残差校正在紧数据上现增益（max 14.72 vs CE3 22.71，3-rep 时 CE3≈CE5）。CE5 row MAE 3.98 > CE3 3.23 但 regret 更低 → accuracy≠selection（Heinrich）。大 workload 倾向大 active-work（98304）。
+- **事实**：320-run 数据有效（§3：**11/11 门禁全过**，gate 8 已 6-rep 补跑闭环）；4 candidate 在每 context 的统一 `/max` spread 为 10.7%–46.4%，最坏候选相对 oracle 的 slowdown 最高 86.5%；最优 active-work 随 context 变；**6-rep 合并 CE LOO（§5.3）：CE5_hybrid 过完整 §6 contract**（pooled 1.67%、median 0%、macro 2.90%、max 14.72%、candPair 0.808）；CE3（max 22.71）/CE4（max 26.89）fail max；CE0/CE2 退化、CE1 17.8%。
+- **推断**：6-rep tighten mean 把 CE5 max regret 从 39.77%→14.72%（−63%），与“高 CV
+  噪声驱动 max regret”假设一致，但不能单独证明该因果解释：补跑只选择了 CV>5% cells，
+  且最差 fold 会随均值收紧而改变。CE5 的残差校正在当前合并数据上优于 CE3 的最坏 regret
+  （14.72 vs 22.71），但这一优势仍需独立时间段/新 workload 验证。CE5 row MAE 3.98 >
+  CE3 3.23 但 regret 更低，说明 accuracy≠selection。大 workload 倾向大 active-work（98304）。
 - **不能声称**：CE5"稳健过 contract"——max 14.72% **贴 15% 线，marginal pass**，换 split/更多 context 可能翻转；"CE5 优于 baseline"——本实验无系统 baseline（CE0-CE5 是代价估计方法 baseline，非数据库 AI 算子系统 baseline），只能说 CE5 在 4 active-work 候选选择上过 §6；CE4"不增益"是 20 context 小数据观察，非 LightGBM 普遍结论。
 
 ## 7. 对课题含义
 
-算子代价估计（共同使能组件）有了第一份**有效**双 4090 数据 + LOO 评估（6-rep 补跑后）：4 active-work 候选在同 context 内有强 e2e 差异（最高 86%），最优点 context-dependent；**CE5_hybrid（解析+残差校正）过完整 §6 promotion contract**（max 14.72%，marginal）——**首个可按 §6 接管 active-work 候选选择的估计器**。6-rep 补跑证实高 CV 噪声是先前 max regret 过高的根因（39.77%→14.72%）。**条件性下一步**：CE5 过 §6 满足 plan §8 TPC-H-derived 计划级 capability 的前置（须 CE5 在计划级再验证 + max 14.72% 的 marginal 程度需更多 context 确认稳健性）。
+算子代价估计（共同使能组件）有了第一份**有效**双 4090 数据 + LOO 评估（6-rep 补跑后）：4 active-work 候选在同 context 内有明显 e2e 差异（统一 `/max` spread 最高 46.4%；最坏候选相对 oracle slowdown 最高 86.5%），最优点 context-dependent；**CE5_hybrid（解析+残差校正）过完整 §6 promotion contract**（max 14.72%，marginal）——**首个可按 §6 接管 active-work 候选选择的估计器**。选择性 6-rep 补跑使最差 regret 从 39.77% 收紧到 14.72%，与高 CV 噪声解释一致，但不构成独立因果验证。**条件性下一步**：CE5 过 §6 满足 plan §8 TPC-H-derived 计划级 capability 的前置（须 CE5 在独立时间段/新 workload 的计划级再验证 + max 14.72% 的 marginal 程度需更多 context 确认稳健性）。
 
 ## 8. 下一步
 
-1. **gate 8 补跑（最高优先，直接降 max regret）**：补跑 63 个 CV>5% cell（尤其 13 个 mean>15s 的 o64 cell）至 CV≤5% 或预注 reps floor；这是 max regret 39.77% 的根因。
-2. **CE4 LightGBM 补跑**：装 lightgbm 到 text-baselines venv，重跑 context-LOO（数据已就绪）。
-3. **harness 路径硬编码修复**：`compare_cost_estimators_contextloo.py` 的 `load_rows`/`_source_evidence` 假设 REF_JSON + source_csv 在 REPO_ROOT 下（本评估用 wrapper 临时 patch + 把 runs.csv 拷进 repo 树）；改为 `--data-csv` 参数化。
-4. **contract 口径澄清**：harness 的 promotion_contract 用行级 pairwise，但 plan §6 指 candidate-aggregated（CE3/CE5 0.758 实际过）——harness 应改用 candidate pairwise 作 gate，避免误判。
-5. plan §8 TPC-H-derived 计划级 capability 仍 `planned-conditional`：须先有估计器过 §6 完整 contract。
+1. gate 8 的 63 个高 CV cell 补跑与 CE4 LightGBM 评估均已完成，不再列为待办。
+2. 在独立时间段或新 workload 上预注册全 cell 一致重复数，复核 CE5 max regret 是否仍低于
+   15%，避免选择性补跑与 context-LOO 最差 fold 的耦合。
+3. 图像阶段只迁移 decision-quality 合同，不复用当前机器/文本 workload 的拟合参数；重新
+   校准 staged work 与候选 ranking/regret。
+4. plan §8 TPC-H-derived 计划级 capability 仍 `planned-conditional`：须先有估计器过 §6 完整 contract。
 
 ## 9. Erratum（2026-08-07 复审修正）
 
@@ -136,7 +150,7 @@
 
 ### 9.1 续（2026-08-07，6-rep 补跑后）
 
-**结论方向已变**：3-rep 下全部 FAIL；**6-rep 补跑（gate 8 闭环）后 CE5_hybrid 转 PASS**（max 39.77%→14.72%，证实高 CV 噪声驱动假设）。这不是改判 3-rep 结论——3-rep 数据下确实全 FAIL（口径正确）；而是**补跑提供了更紧的 oracle 标签**，使 CE5 的最差 fold regret 降到 15% 内。**新事实**：CE5 过 §6（marginal，max 14.72 贴 15）、CE3/CE4 仍 fail max、CE4 LightGBM 首次跑（未增益）。**仍不能声称**：CE5 稳健过门（marginal）、CE5 优于系统 baseline（本实验无系统 baseline）。raw SHA + merged_runs_6rep + ce_context_loo_rerun 见本目录 + 服务器 `experiment-artifacts/dual_gpu_cost_profile_merged_6rep_20260807/`。
+**结论方向已变**：3-rep 下全部 FAIL；**6-rep 补跑（gate 8 闭环）后 CE5_hybrid 转 PASS**（max 39.77%→14.72%，与高 CV 噪声解释一致，但非独立因果验证）。这不是改判 3-rep 结论——3-rep 数据下确实全 FAIL（口径正确）；而是**补跑提供了更紧的 oracle 标签**，使 CE5 的最差 fold regret 降到 15% 内。**新事实**：CE5 过 §6（marginal，max 14.72 贴 15）、CE3/CE4 仍 fail max、CE4 LightGBM 首次跑（未增益）。**仍不能声称**：CE5 稳健过门（marginal）、CE5 优于系统 baseline（本实验无系统 baseline）。raw SHA + merged_runs_6rep + ce_context_loo_rerun 见本目录 + 服务器 `experiment-artifacts/dual_gpu_cost_profile_merged_6rep_20260807/`。
 
 ## provenance
 

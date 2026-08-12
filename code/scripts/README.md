@@ -978,7 +978,9 @@ startup, gate, resume, evidence-preservation, and cleanup procedure in
 
 - `bounded_http`：无 Daft/Ray 的强 AsyncIO 因果对照；其 httpx
   `max_connections/max_keepalive_connections` 显式等于全部 endpoint 的配置
-  并发总量，禁止由客户端默认连接池暗中截断 C128/C256；
+  并发总量，禁止由客户端默认连接池暗中截断 C128/C256；fixed-output workload
+  显式使用 `--ignore-eos`，多逻辑 Job 可通过共享 direct-client 控制合并各自的
+  immutable arrival trace，但不得加入 per-job credit、fair queue 或项目 routing；
 - `vllm_bench`：官方 serving ceiling，先保存详细原始结果，再显式归一化；
 - `daft_native` / `daft_ray`：官方 `daft.functions.prompt()`；
 - `ray_data_http`：官方 Ray Data HTTP Processor；

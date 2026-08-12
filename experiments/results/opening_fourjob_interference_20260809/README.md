@@ -111,6 +111,14 @@ shared 相对 static 明显改善全部四个 Job，但收益分配不均：long
 | Project static | 143.33 s | 11,863.05 | 98.59% | 38.20% | 95.99 | 0.41 | 0.309 | 0.960 |
 | Project shared | 131.91 s | 12,892.38 | 98.59% | 46.76% | 120.76 | 0.39 | 0.429 | 0.923 |
 
+**跨系统 work-basis 边界**：`service tok/s` 的分子是各 adapter 实际返回的 prompt+output
+work，并非固定 manifest 的同一常数。以 long1 formal mean 为例，Daft Native/Ray、
+Project shared、Ray Data 分别约为 377k、500k、515k actual work；short 也分别约为
+38.6k、147.8k、162.8k。因此上表的 Daft/Ray Data/Project `service tok/s` 只用于描述
+各自服务压力，**不得作跨系统吞吐排名**。Project static/shared 使用同一 adapter 和合同，
+其 +8.68% 组内对照仍有效。MFU 同理只作状态指纹；跨系统执行/计时与实际 token work
+不同，不能解释为框架效率胜负。
+
 Daft 两臂表现为 high-running/high-waiting/high-KV；Ray Data 表现为 low-running、零
 waiting、低 KV 与低 MFU，即使 GPU utilization 仍接近 90%。这直接说明感知不能只看
 GPU util 或 Job 数，至少要联合 completed work rate、running/waiting、KV、MFU 和 tail。
@@ -176,6 +184,7 @@ static 四个 Job 都约 39 ms。该差异与 long JCT 分配不均相吻合，�
 ### 不能声称
 
 - 不能说 Project 普遍优于 Daft 或 Ray Data；原生与 Project 的完整 T0/执行边界不同。
+- 不能按组级表跨系统排名 `service tok/s` 或 MFU；实际 token-work 基数和执行边界不同。
 - 不能说 shared/dynamic 已全面优于 static；本实验中 Jain 与 long 稳定性回退，旧在线
   replay 中也出现 shared 伤害 short 的相反方向。
 - 不能把 Daft/Ray Data 的外部状态归因于其内部调度算法。

@@ -61,6 +61,9 @@ SQuAD 的三臂 EM/F1 接近：direct 80.306/89.381，DuckDB AI 80.265/89.359，
 ### 4.2 GPU、MFU、能耗与服务状态
 
 `MFU` 为 0–1 分数。project 原始 profiler 未注入 GPU peak，汇总器按每张 4090 BF16 165 TFLOPS 和 estimated-FLOPs counter 恢复；direct/DuckDB 保留 runner 记录的双 GPU 聚合 MFU。该指标用于资源利用解释，不替代 feeding 门。
+三臂的恢复/聚合路径并不完全相同，故本表 MFU 只用于各臂状态诊断，**不得据此作跨臂
+效率排名**；例如 project running 更高会改变估计 FLOPs 的并行聚合形态，不能把 0.741
+相对 0.659 写成项目执行效率收益。
 
 | workload | 路径 | GPU util mean | MFU | mean power (W, 两卡和) | J / correct row | running mean / max | waiting mean / max | KV mean / max |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
