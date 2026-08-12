@@ -177,7 +177,19 @@ def main() -> None:
             color = el.attrib.get("stroke", "#165DCC")
             sw = el.attrib.get("stroke-width", "3")
             dashed = "dashed=1;dashPattern=8 6;" if el.attrib.get("stroke-dasharray") else ""
-            style = f"endArrow=block;endFill=1;html=1;rounded=0;strokeColor={color};strokeWidth={sw};{dashed}"
+            # Keep arrowheads in proportion to short inter-panel shafts. SVG
+            # uses markerUnits=userSpaceOnUse; Draw.io needs an explicit small
+            # endSize to avoid the same "head without line" appearance.
+            if dashed:
+                end_size = 6
+            elif color == "#E85D04":
+                end_size = 8
+            else:
+                end_size = 7
+            style = (
+                f"endArrow=block;endFill=1;endSize={end_size};html=1;rounded=0;"
+                f"strokeColor={color};strokeWidth={sw};{dashed}"
+            )
             nonlocal_cid = cid
             points_xml = ""
             if len(waypoints) > 1:
