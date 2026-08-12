@@ -293,6 +293,53 @@ class BoundedHttpBaselineTests(unittest.TestCase):
         self.assertEqual(grouped["client-1"][0].doc_id, 2)
         self.assertEqual(set(submitted), {1, 2})
 
+    def test_timed_job_wall_offset_is_not_scaled_with_manifest_time(self) -> None:
+        captured: list[ChatRequest] = []
+
+        async def fake_run(requests, _config, transport=None):
+            del transport
+            captured.extend(requests)
+            return tuple(
+                SimpleNamespace(doc_id=request.doc_id)
+                for request in requests
+            )
+
+        config = BoundedHttpConfig(
+            endpoint_urls=("http://ep0/v1/chat/completions",),
+            model="model",
+            concurrency_per_endpoint=1,
+            timeout_s=30,
+            api_key=None,
+            arrival_time_scale=0.001,
+        )
+        with patch(
+            "src.baselines.text.controls.async_http.run_bounded_http",
+            side_effect=fake_run,
+        ):
+            asyncio.run(
+                run_bounded_http_jobs(
+                    (
+                        TimedHttpJob(
+                            "bulk",
+                            (sample_request(1, endpoint_index=0),),
+                            arrival_offset_s=0.0,
+                        ),
+                        TimedHttpJob(
+                            "foreground",
+                            (sample_request(2, endpoint_index=0),),
+                            arrival_offset_s=5.0,
+                        ),
+                    ),
+                    config,
+                )
+            )
+
+        effective_arrivals = [
+            request.arrival_time_s * config.arrival_time_scale
+            for request in captured
+        ]
+        self.assertEqual(effective_arrivals, [0.0, 5.0])
+
     def test_completions_protocol_matches_project_payload(self) -> None:
         payloads: list[dict[str, object]] = []
 

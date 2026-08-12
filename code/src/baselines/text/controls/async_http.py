@@ -297,7 +297,7 @@ async def run_bounded_http_jobs(
                     arrival_time_s=(
                         request.arrival_time_s
                         - first_arrival_s
-                        + job.arrival_offset_s
+                        + job.arrival_offset_s / config.arrival_time_scale
                     ),
                 )
             )

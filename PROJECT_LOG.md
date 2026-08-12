@@ -10,6 +10,10 @@
 - 将 replay scale 和最大 effective manifest span 改为 workload/runtime 合同注入；readiness
   自动读取 immutable manifests 计算实际 span，并 fail-closed 拒绝非正 scale 或超预算配置。
   当前同一 ShareGPT 合同应复用既有 `0.001` scale（约 66.9 s），不是调度器硬编码参数。
+- 首次服务器 rehearsal 在 direct no-Job cell fail-closed：多 Job adapter 错把 5 s wall-clock
+  offset 与 manifest timestamp 一起乘 `arrival_time_scale=0.001`，实际只延迟 5 ms。现将
+  wall-clock Job offset 除以 scale 后写入合并 trace，使内部 manifest 时间按 scale 回放、跨
+  Job offset 保持真实秒数；新增回归测试防止两种时间尺度再次混用。
 
 ## 2026-08-12 SAOR fixed-envelope formal harness 闭合
 
