@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-08-12 SAOR v0.5.1 bounded-priority TDD 实施计划冻结
+
+- 在 SAOR 唯一权威计划的 §5.2.15 冻结 8 个 task 的 TDD 实施顺序：纯词典序 selector →
+  completion-corrected debt/reclaim barrier → arrival-epoch/SLO plumbing → Ray lossless event ledger →
+  显式 per-Job 配置 → development 汇总器 → 全链验证 → 双轮远端 rehearsal。
+- 明确修复同类假阴性的证据路径：priority/debt/hold/recovery 机制门只消费 coordinator event
+  ledger，不再从 250 ms snapshot trace 反推；snapshot 仅保留 phase/资源状态用途。
+- 首轮配置只保留 bulk cap 0.125K/0.25K、foreground 完整 30 s priority window；bulk 硬门只用
+  request-level SLO violation≤0.723，slowdown 为诊断。远端只跑两个全新 rehearsal root，不启动
+  长时间 formal；通过者也只升级为 formal registration candidate。
+- 计划显式处理 relative arrival 与 epoch clock 的语义断点、单 recovery lease、目标队首 reclaim
+  debt、transport timeout fail-closed、secret scan 和服务器 preflight。按用户要求不进行 Wiki 同步。
+
 ## 2026-08-12 SAOR 假阴性完整闭环与 strict-priority 两轮短测
 
 - 确认 `91ffcaa` 的运行时 `active_set_phase_summary` 已把 post-drain applicability 绑定到实际
