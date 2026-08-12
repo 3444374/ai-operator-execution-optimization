@@ -1,6 +1,6 @@
 # SAOR 数学模型、控制分层与适用场景审计
 
-> 状态：`saor-v0.5-bounded-priority-design`。本文依据 2026-08-11 capacity-only 负结果和既有两/四 Job
+> 状态：`saor-v0.5.1-reclaim-barrier`。本文依据 2026-08-11 capacity-only 负结果和既有两/四 Job
 > 干扰结果，对 SAOR 的控制对象、
 > 可证明部分、经验控制部分和 benchmark 重新分层。它不把一次 development run 写成算法结论，
 > 也不宣称实际实现已经获得 MaxWeight/VTC 的理论保证。2026-08-12 已接入固定包络
@@ -759,8 +759,8 @@ $$
 | 层级 | 候选/选择键 | 解释 |
 |---:|---|---|
 | 0 | correctness、lifecycle、freshness、request/work fit | 任一失败立即拒绝动作或 fail-closed 到冻结策略 |
-| 1a | 若 $\mathcal G_e^{fit}\ne\varnothing$，最大化 $F_j/H_j$；并列时先剩余预算更少，再用稳定 `job_id`；选中后置 $r_j^{guard}=1$ | debt guard 覆盖业务优先级；同一 Job 一次只承诺一个待 actual-work 校正的 recovery lease |
-| 1b | 若 $\mathcal G_e^{ready}\ne\varnothing$ 但 $\mathcal G_e^{fit}=\varnothing$，本 epoch 不发其他新 lease，记录 `guard_reclaim_hold` | 让 active envelope 排空直到欠服务 Job-head 能装入；这是约束性 reclaim，不算 avoidable idle |
+| 1a | 若 $\mathcal G_e^{fit}\ne\varnothing$，最大化 $F_j/H_j$；并列时先剩余预算更少，再用稳定 `job_id`；选中后置 $r_j^{guard}=1$ | debt guard 覆盖业务优先级；同一 Job 一次只承诺一个待 actual-work 校正的 recovery lease；该 lease 发出后立即恢复其余容量的普通选择，不等待其完成才解除全局 guard |
+| 1b | 若 $\mathcal G_e^{ready}\ne\varnothing$ 但 $\mathcal G_e^{fit}=\varnothing$，只针对最大 $F_j/H_j$ 的确定队首建立 `guard_reclaim_hold`，其 reclaim debt 为 $D_e^{reclaim}=\max\{0,\overline W_{i_j}^{resource}-(K_e^{work}-R_e^{active})\}$；在 $D_e^{reclaim}>0$ 时不发其他新 lease | 防止小 foreground head 反复填补碎片、使 bulk 永远不能 fit；一旦 $D_e^{reclaim}=0$ 立即执行 1a，不等待预留整份 Job quota |
 | 2 | 否则若 $\mathcal U_e\ne\varnothing$，先最大 $p_j$，再最小 $d_{i_j}-t_n$，再用 SAOR fallback | 只在还没触发服务债务上界时给关键 Job deadline/criticality 优先级 |
 | 3 | 否则运行现有 SAOR entitlement/fairness selector | 保留 idle borrowing、active-set reclaim 和普通共享效率 |
 | 4 | 只有 priority-window Job（而非 debt-critical Job）当前不 fit 时，才在其余 fitting heads 中继续 2–3 | 不复制 strict-priority 为普通高优先级 Job 留空的行为；debt guard 的 1b 仍可显式 drain |
@@ -770,6 +770,11 @@ $$
 `constraint_conflict=true`，由实验报告冲突频率；不能悄悄用一个权重决定谁被牺牲。所谓
 work-conserving 在这里严格指 **constraint-work-conserving**：除 1b 的显式 guard reclaim 和
 freshness/failure 外，只要存在 fitting head 就必须释放；1b 必须单独计时，不能伪装成自然 idle。
+只有“debt 已到 cap + 欠服务 Job 有 ready head + 该 head 暂时不 fit”才能进入 1b；Job 仅为
+unfinished、尚无 ready head 或普通 priority-window head 不 fit，都不得触发 hold。若目标 head
+自身超过总 work envelope，readiness/runtime 直接拒绝；若已有 active request 在冻结 request/
+transport timeout 内仍未使目标 head fit，则该 development run 记录 incident 并 fail-closed，
+不得用任意 `max_hold_s` 后静默恢复 foreground refill。
 
 strict-priority 是该选择器在 $g_F=\tau_F$、$H_B=+\infty$ 时的诊断极限；普通 SAOR 是
 $p_j=0$ 且 $H_j=+\infty$ 时的退化情形。二者因此可作为同一实现的结构化消融，而不是另写两套
@@ -820,16 +825,21 @@ Job、`guard_reclaim_hold`、`guard_recovery_pending`、`constraint_conflict` �
 
 接口一次按任意 Job 数实现，但首轮只复用冻结的 `bulk@0 → foreground@5s → overlap → drain`
 两 Job workload，暂不跑长时间 formal。除 static/current-SAOR/strict-priority 控制外，只测
-$H_B/K^{work}\in\{0.25,0.50\}$ 两个有界点；foreground 取 $p_F=1$、$g_F=\tau_F$，bulk
+$H_B/K^{work}\in\{0.125,0.25\}$ 两个有界点；foreground 取 $p_F=1$、$g_F=\tau_F$，bulk
 取 $p_B=0$，其他参数、总 request/work envelope、manifest 和 vLLM 配置不变。
+
+等权两 Job 下，每完成 $c$ 单位 foreground actual work，bulk debt 增加 $c/2$。当前 formal 的
+foreground actual work 约 147.7K、两 endpoint 近似均分，因此两个 cap 粗略对应单 endpoint
+foreground 完成约 22%/44% 后首次触发；原 `0.50K` 约到 89% 才触发，信息上过于接近
+strict-priority 的无限 cap 极限，故不进入首轮。
 
 | 门 | 预注册 development 判据 | 目的 |
 |---|---|---|
 | correctness | 0 incident、exactly-once、lifecycle/fit/event ledger 全通过 | 先证执行正确 |
 | foreground | P99≤30.7s，SLO violation≤1% | 不劣于本轮 static P99 29.2s 的 5% 容差 |
 | efficiency | tokens/s≥9,984 | 至少超过本轮 static 9,508 tok/s 约 5% |
-| bulk protection | SLO violation≤0.723，slowdown≤1.60 | SLO 不比 static 0.673 多 5pp；JCT 不劣于 static slowdown 1.52 的约 5% 容差 |
-| mechanism | `avoidable_idle=0`，guard hold 单列；priority/debt tier 均实际触发；同 Job recovery lease≤1；debt-critical fitting head 被 foreign grant 越过次数=0 | 排除“结果好但策略没真正动作”、过量 recovery 与采样假阴性 |
+| bulk protection | SLO violation≤0.723；slowdown 只作诊断，不作首轮硬门 | request-level SLO 能暴露“总 Job JCT 尚可、但大量请求超时”；strict-priority 已给出这种反例 |
+| mechanism | `avoidable_idle=0`，guard hold 的 count/total/P95/max 与 reclaim debt 单列；priority/debt tier 均实际触发；同 Job recovery lease≤1；debt-critical fitting head 被 foreign grant 越过次数=0 | 排除“结果好但策略没真正动作”、无限/无目标 hold、过量 recovery 与采样假阴性 |
 | stability | 两个短 repeat 方向一致；不将其写成 formal 结论 | 只筛选是否值得注册 formal |
 
 停止规则：两个有限 cap 均不能同时通过 foreground、bulk 与 efficiency 门时，不继续密集扫描

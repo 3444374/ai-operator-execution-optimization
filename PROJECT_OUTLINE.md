@@ -136,7 +136,8 @@ PostgreSQL source
   短测达到 11,791 tok/s、fg P99 14.27s、SLO 0%，说明已知 foreground 存活信号下 release-only
   可达。`saor-v0.5` 已冻结为通用有界词典序 release：显式 per-Job priority/剩余 SLO 预算，
   completion-corrected actual-work debt cap 优先阻止饥饿，无 guard 时回退 SAOR；debt-critical
-  head 不 fit 时显式 drain，其余只在 fitting heads 间选择；首轮只做两 Job的 0.25K/0.50K 两个 cap。reservation 与
+  ready head 不 fit 时只为该队首建立 reclaim barrier，其余只在 fitting heads 间选择；首轮只做
+  两 Job 的 0.125K/0.25K 两个 cap。reservation 与
   upper-bound resource work 仅作 guard 通过后的鲁棒性消融。两 Job 未达到 static fg
   非劣且吞吐≥static+5% 前不跑 4-Job，也不声称定理证明；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；

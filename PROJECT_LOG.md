@@ -6244,3 +6244,19 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   非饥饿与 SLO 可达性；不把 debt cap 误写成 completion/service-lag 上界，也不继承 VTC/DRR/EDF 在 in-engine、packet 或理想可抢占模型下的原始
   定理。当前只完成设计冻结，生产实现、GPU 短测和定理证明均未完成，SAOR 状态保持
   `formal-valid/not-promoted`。
+
+## 2026-08-12 收紧 SAOR v0.5 reclaim barrier 与首轮 cap
+
+- 经设计复核，保留 debt-critical Job-head 暂时不 fit 时的 reclaim 行为，但将其收紧为队首定向
+  barrier：只在“debt 到 cap + ready head + 暂时不 fit”时，以
+  `max(0, head_resource_work - remaining_work)` 建立 reclaim debt；能 fit 后只发一个 recovery
+  lease 并立即恢复普通选择。unfinished 无 ready head、普通 priority head 不 fit 均不得 hold。
+- 不增加任意 `max_hold_s`；目标 head 大于总 envelope 直接拒绝，冻结 request/transport timeout
+  到期仍不能 fit 则 development run 记 incident 并 fail-closed。event ledger 必须单列 hold
+  count/total/P95/max、reclaim debt 和 recovery-pending，避免把约束 drain 隐藏成自然 idle。
+- 根据等权 debt 每完成 1 单位 foreground actual work 只增加 0.5 单位 bulk debt，以及当前
+  foreground actual work 约 147.7K/两 endpoint 的规模，首轮 cap 从 0.25K/0.50K 改为
+  0.125K/0.25K：粗略在单 endpoint foreground 完成 22%/44% 后触发；0.50K 约 89% 才触发，
+  过于接近 strict-priority 无限 cap，信息量不足。
+- bulk 硬门保留 request-level SLO violation≤0.723；slowdown 降为诊断指标。strict-priority 已显示
+  bulk 总 JCT 仍可改善而 request SLO violation 升到 0.801，因此 slowdown 不能替代 per-class SLO。

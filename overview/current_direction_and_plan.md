@@ -21,8 +21,9 @@
   原始 failed validation 保留审计；250 ms resolution-aware v2 已在完整 artifact 上 passed、
   credit mechanism effective 12/12。当前实现 `slo_weight=0`，只验证了
   fairness/release；strict-priority upper-bound 两轮短测 fg P99 14.27s、SLO 0%。下一候选已冻结为
-  通用有界词典序 release（显式 priority/SLO budget + actual-work debt cap + fitting-head fallback），
-  首轮只测 2 Job 的 0.25K/0.50K 两个 cap；reservation 作通过后的鲁棒性消融。
+  通用有界词典序 release（显式 priority/SLO budget + actual-work debt cap + 队首定向 reclaim
+  barrier/普通 priority fitting-head fallback），首轮只测 2 Job 的 0.125K/0.25K 两个 cap；
+  reservation 作通过后的鲁棒性消融。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
   least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
   已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值
@@ -99,7 +100,7 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 4. SAOR fixed-envelope 2-Job killer benchmark 已完成；原始 failed validation 保留作审计，
    resolution-aware v2 完整重汇总已 passed。foreground strict-priority 两轮短测已证明
    release-only 上界可达；`saor-v0.5` 接口按任意 Job 数设计，首轮只做 2 Job 的
-   0.25K/0.50K actual-work debt cap，并输出 event-level 选择原因以避免采样假阴性。
+   0.125K/0.25K actual-work debt cap，并输出 event-level 选择原因、reclaim debt/hold 时间以避免采样假阴性。
    reservation/upper-bound work credit 只作 guard 通过后的未知到达和预测误差鲁棒性消融。达到 static fg 非劣、
    吞吐≥static+5% 且 bulk lag/SLO 不越界才注册 formal；两 Job 未闭环前不跑 4-Job。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。

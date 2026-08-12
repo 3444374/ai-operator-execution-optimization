@@ -14,7 +14,8 @@
 > resolution-aware v2 已在完整 artifact 上重汇总为 passed、credit mechanism effective 12/12；SAOR 在
 > credit 臂内 fg 最好、仍未越过 static。strict-priority release-only 两轮短测达到 fg P99 14.27s、
 > SLO 0%，但仅是能力上界，尚非 formal/proposed。下一版已冻结为显式 per-Job priority/SLO budget
-> 与 actual-work debt cap 的有界词典序 release；首轮只做 2 Job 短测，reservation 不先验进入方法。
+> 与 actual-work debt cap 的有界词典序 release；debt-critical ready head 不 fit 时只为该队首建立
+> reclaim barrier。首轮只做 2 Job 的 0.125K/0.25K 两个 cap，reservation 不先验进入方法。
 
 > **状态感知补充（2026-08-11）**：修正执行与门禁后的两 Job phase-change 实验在
 > pressure gate 提前停止。A-only K160 相对 K128 每 endpoint service rate +7.77%，
