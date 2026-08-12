@@ -4,6 +4,7 @@ import csv
 import importlib.util
 import json
 import os
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -40,6 +41,26 @@ AUDIT = _load(
 
 
 class SaorFormalToolsTests(unittest.TestCase):
+    def test_repository_formal_env_covers_template_contract(self) -> None:
+        template = (
+            REPOSITORY / "deploy/autodl/saor_active_set_release.example.json"
+        ).read_text(encoding="utf-8")
+        env_example = (
+            REPOSITORY / "deploy/autodl/saor_active_set_formal.env.example"
+        ).read_text(encoding="utf-8")
+        required = set(re.findall(r"\$\{([A-Z][A-Z0-9_]*)\}", template))
+        provided = set(
+            re.findall(r"^export ([A-Z][A-Z0-9_]*)=", env_example, re.MULTILINE)
+        )
+
+        self.assertEqual(required - provided, {"DATABASE_URL"})
+        self.assertIn("export COMPLETION_PROTOCOL=chat_completions", env_example)
+        self.assertIn("/v1/chat/completions", env_example)
+        self.assertIn("export SAOR_ARRIVAL_TIME_SCALE=0.0001", env_example)
+        self.assertIn(
+            "export SAOR_ACTIVE_SET_WORKLOAD=sharegpt_multiturn", env_example
+        )
+
     def test_direct_control_emits_project_compatible_job_evidence(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)

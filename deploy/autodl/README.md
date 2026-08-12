@@ -1022,6 +1022,31 @@ request K、协议、prompt format、immutable manifests、vLLM counters、资�
 只跳过 Daft/Ray Job credit/fair queue，因此回答“同 request window 下简单 merged arrival 是否
 已足够”；它是 project-authored control，不是 vendor-native baseline。
 
+机器 runtime 与本次 formal 合同分开保存。`ai-operator-runtime.env` 负责数据库、服务和机器
+路径；`saor_active_set_formal.env.example` 冻结当前 2×4090/Qwen2.5-7B/ShareGPT active-set
+证据合同。后者不含凭据，复制到仓库外后使用；不要把二者手工合成一串临时 `export`，否则新
+SSH 会话无法复现。由于 env 文件采用普通 shell assignment，必须在 `set -a` 区间 source，确保
+其值传给 Python 子进程：
+
+```bash
+install -d -m 700 /root/autodl-tmp/runtime
+cp deploy/autodl/saor_active_set_formal.env.example \
+  /root/autodl-tmp/runtime/saor-active-set-formal.env
+chmod 600 /root/autodl-tmp/runtime/saor-active-set-formal.env
+
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+source /root/autodl-tmp/runtime/saor-active-set-formal.env
+set +a
+```
+
+当前最终通过的 rehearsal 权威值是 `chat_completions` + `/v1/chat/completions`、
+`SAOR_ACTIVE_SET_WORKLOAD=sharegpt_multiturn` 和 `SAOR_ARRIVAL_TIME_SCALE=0.0001`。
+`0.001` 是供给可达性门失败的旧 rehearsal：5 s 前每 endpoint 仅约 10K predicted work；不得
+从旧 readiness 或通用 runtime env 恢复它。通用 runtime env 的 `/v1/completions` 也不能覆盖
+本矩阵已校准的 Chat 请求合同。正式前的 readiness resolved evidence 必须再次显示协议、URL、
+scale、校准 SHA 与 pre-foreground work，任何不一致立即停止。
+
 项目与 direct 的 persistent HTTP/1.1 client 必须共享同一连接生命周期合同。设置
 `COMPLETION_HTTP_KEEPALIVE_EXPIRY_S=4`，要求它短于当前 vLLM/Uvicorn 的 5 s server
 keep-alive；readiness 会记录 direct 实际值，project profiler 也会把值写入结果。这个参数

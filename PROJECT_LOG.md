@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-08-12 SAOR formal 双层 env 合同补全
+
+- 复核服务器最终 `7c11cc7c` rehearsal 的 `readiness.json` 与 redacted resolved config，消除
+  交接文字歧义：正式合同为 `chat_completions`、`/v1/chat/completions`、
+  `sharegpt_multiturn`、output cap 256 和 `arrival_time_scale=0.0001`；`0.001` 是首次
+  pre-foreground supply 门失败的旧配置，不得恢复。
+- 发现旧 rehearsal 依赖同一 SSH 进程中的临时 `export`；主
+  `/root/autodl-tmp/ai-operator-runtime.env` 只持久化了 34 个模板变量中的 14 个，且普通
+  `source` 不会自动把非 export assignment 传给 Python 子进程。新增无凭据
+  `saor_active_set_formal.env.example`，明确 machine runtime 与 evidence-bound formal contract
+  分层，并要求在 `set -a` 区间依次 source。
+- 服务器仓库外已建立 mode 600 的 `/root/autodl-tmp/runtime/saor-active-set-formal.env`；使用
+  `env -i` 的全新 shell 仅加载两份 env 后，静态 readiness 返回 passed，校准 SHA 保持
+  `bc2042d7...aa41`，5 s 前两 endpoint predicted work 为 140,417/137,617。未发送模型请求，
+  未启动 formal。
+
 ## 2026-08-12 SAOR 服务器清理与 replay-duration readiness 修正
 
 - 服务器旧现场审计后，将两个脏开发 worktree 的 tracked patch/untracked 文件和根目录 481 类
