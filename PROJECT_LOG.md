@@ -1,5 +1,27 @@
 # 项目日志
 
+## 2026-08-12 SAOR simultaneous-drain 审计修复与 release-only 上界实现
+
+- 把 active-set post-drain 机制门绑定到 runner 的 250 ms trace 周期：两个 Job 的完成间隔
+  小于该周期且区间内无样本时记为 `not_applicable`；若有样本或间隔达到一个周期，仍必须
+  观察到 endpoint-local head-fit 工作守恒，否则 fail-closed。
+- 新增 compact mechanism replay。归档 formal 的四个 credit 臂 effective 12/12，只有 DRR
+  rep2（5.83 ms）与 VTC rep2（4.83 ms）被重分类；artifact 显式记录
+  `full_formal_validation_updated=false`，不覆盖原始完整 `validation.json`，不改变性能排序。
+- 实现 `foreground_strict_priority` 非抢占诊断：前台 Job 存活时只把新释放 credit 分给前台，
+  已提交 bulk 不撤销；前台 `finish_job` 后恢复 bulk。priority 与 fairness weight 分离，逐 Job
+  结果和 group evidence 均记录实际 priority。
+- 新增三臂 AutoDL 模板、priority readiness profile 与 fail-closed reachability 汇总器；要求
+  1+3、exactly-once、metrics/resources/lifecycle/mechanism、`job_priorities=[0,1]` 全过，且
+  fg P99≤30.7s、SLO violation≤1%。吞吐只作上界诊断语境，不据此声称 SAOR/reservation 胜出。
+- 本地受影响回归 115/115 通过，`compileall` 通过；全量 discovery 执行 1123 项后有 11 个
+  环境/平台 error（本机缺 `psycopg`、Daft、Ray，另有既有 Linux-only `os.killpg` 超时分支），
+  因而不记为全套通过，也不在本机混装服务器运行时。GPU 实验未启动。现有自动化 shell 不支持
+  安全交互式密码注入，且 key-only SSH 被服务器拒绝，因此未将明文口令写进命令、日志或仓库；
+  远端 preflight/完整 raw replay/strict-priority rehearsal 与 formal 仍待安全认证会话。
+- 根规则触发了知识库同步检查，但本机不存在指南约定的平级 `../ai-operator-wiki/` 与
+  `sync-wiki.sh`；未猜测路径或手工仿制同步，项目侧知识文档已更新，Wiki 同步保持待办。
+
 ## 2026-08-12 SAOR fixed-envelope formal 归档与 reservation 修订
 
 - 归档并复核 2×4090/Qwen2.5-7B fixed-envelope active-set 正式矩阵：六 active-set 臂与四

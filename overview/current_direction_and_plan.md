@@ -18,8 +18,9 @@
   52.07%，正式原生矩阵冻结 C128，旧 154.57% 比值不作方法排名。
 - **SAOR fixed-envelope formal 已完成但未晋级**：40/40、0 incident、exactly-once；SAOR
   在 credit 臂内 fg JCT/P99 最好，但 static 的 fg P99 29.2s、SLO violation 0% 显著更强。
-  DRR/VTC rep2 无 post-drain 样本使总 gate fail-closed。当前实现 `slo_weight=0`，只验证了
-  fairness/release；下一候选改为有限 reservation + borrow/reclaim，不继续扫动态 K 或权重。
+  原始完整 gate 因 DRR/VTC rep2 无 post-drain 样本而 fail-closed；250 ms resolution-aware
+  compact replay effective 12/12，但不升级完整 validation。当前实现 `slo_weight=0`，只验证了
+  fairness/release；strict-priority upper-bound 已实现、GPU pending，下一候选仍是有限 reservation。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
   least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
   已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值
@@ -93,8 +94,9 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 2. 同一 ShareGPT Chat manifest 的 bounded、Daft Native/Ray、Ray Data 原生单 job 1+3 已完成并归档。
 3. 原生 short/long 两 job 错峰观察与项目 static/shared 同上限 A/B 已完成；它们没有 global
    FIFO/no project Job scheduler 对照，不能单独证明 SAOR 必要。
-4. SAOR fixed-envelope 2-Job killer benchmark 已完成但 fail-closed；先修 simultaneous-drain
-   审计并离线 replay，再做 foreground strict-priority release-only 可达性和
+4. SAOR fixed-envelope 2-Job killer benchmark 已完成但原始完整 validation 保留 fail-closed；
+   simultaneous-drain compact replay 已 12/12，foreground strict-priority release-only
+   诊断已实现、待 GPU；通过其可达性判定后才做
    reserve 0/0.25K/0.5K 单变量曲线。只有小于半包络的 reserve 同时达到 static fg 非劣与
    吞吐≥static+5% 才保留；两 Job 未闭环前不跑 4-Job。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。

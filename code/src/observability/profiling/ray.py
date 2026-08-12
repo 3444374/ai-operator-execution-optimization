@@ -129,6 +129,7 @@ def _run_static_scheduler(
     per_endpoint_work_limit: int | None = None,
     shared_credit=None,
     job_weight: int = 1,
+    job_priority: int = 0,
 ) -> tuple[list[dict], dict]:
     return _run_scheduler(
         ray_module,
@@ -143,6 +144,7 @@ def _run_static_scheduler(
         per_endpoint_work_limit,
         shared_credit,
         job_weight,
+        job_priority,
     )
 
 
@@ -159,6 +161,7 @@ def _run_scheduler(
     per_endpoint_work_limit: int | None = None,
     shared_credit=None,
     job_weight: int = 1,
+    job_priority: int = 0,
     per_endpoint_admission: Mapping[str, object] | None = None,
 ) -> tuple[list[dict], dict]:
     routing_config = routing_config or {}
@@ -174,6 +177,7 @@ def _run_scheduler(
         per_endpoint_admission=per_endpoint_admission,
         shared_credit=shared_credit,
         job_weight=job_weight,
+        job_priority=job_priority,
         actual_work_extractor=extract_completed_token_work,
     )
     result = scheduler.run(envelopes, topology)
@@ -248,6 +252,7 @@ def _run_per_endpoint_dynamic_scheduler(
         None,
         None,
         1,
+        0,
         endpoint_gates,
     )
     new_events = trace_events[trace_start:]
@@ -425,6 +430,11 @@ def submit_with_backpressure(
                     shared_credit_config.get("job_weight", 1)
                     if shared_credit_config
                     else 1
+                ),
+                (
+                    shared_credit_config.get("job_priority", 0)
+                    if shared_credit_config
+                    else 0
                 ),
             )
     metrics.update(
@@ -728,6 +738,11 @@ def submit_ray_tasks(
             shared_credit_config.get("job_weight", 1)
             if shared_credit_config
             else 1
+        ),
+        (
+            shared_credit_config.get("job_priority", 0)
+            if shared_credit_config
+            else 0
         ),
     )
 

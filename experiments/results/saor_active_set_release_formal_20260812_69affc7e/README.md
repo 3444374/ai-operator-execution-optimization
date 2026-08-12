@@ -3,6 +3,8 @@
 > **性质**：project-derived SAOR `saor_release` 状态感知准入 vs 5 个 baseline（direct / static / FIFO / DRR / external VTC），2×4090 + Qwen2.5-7B，2-Job（bulk 后台 + foreground@5s）guaranteed-overlap。固定包络（K128/W65536/actors8/concurrency32/token_budget6144/credit_quantum2048），同 request window 比。**非** 4-Job（未跑）。
 >
 > **最终结论**：formal 40/40 cell 完成、0 incident、exactly-once；但 **summarize 的 formal gate `status=failed`（fail-closed）**——`shared_drr` 和 `external_vtc` 在 formal repeat 2 未观察到 credit mechanism（pre-borrow / overlap reclaim / post-drain work-conservation），按 §12/§17 不进入策略胜出声明。SAOR 自身 mechanism 3/3 全过、FIFO 3/3 全过。
+>
+> **2026-08-12 审计回放补充**：把 post-drain 是否适用绑定到 runner 的 250 ms trace 分辨率后，DRR rep2（5.83 ms）和 VTC rep2（4.83 ms）被判为 `post_drain_not_applicable`，compact `group_runs.csv` 的 12 个 credit formal cell 因而 effective 12/12 通过。该回放只修正机制审计假阴性；Git 中没有服务器完整 manifest/raw trace，故不改写原始 `summary/validation.json`，也不把完整 formal validation 升格为 passed。性能与 Pareto 结论不变。
 
 ## provenance
 
@@ -19,7 +21,7 @@
 - **rehearsal**：commit `7c11cc7c` rehearsal 10/10 cell completed、0 incident、mechanism gate（二维工作守恒）通过（formal 不重跑 rehearsal）。
 - **formal run**：`saor_active_set_release_formal_20260812_69affc7e/`，10 scenario × (1 warmup + 3 formal) = 40 cell，确定性交错，seed 20260812，zero-retry。
 - **raw**：服务器 `experiment-artifacts/saor_active_set_release_formal_20260812_69affc7e/`（manifest.json + records/40 + group_runs.csv + traces/ + jobs/ + summary/validation.json）。raw-not-in-git；下载到本地镜像 `C:\Users\ays\Desktop\results\_mirror_20260812\`（见 raw MANIFEST）。
-- **聚合（进 git，本目录）**：README.md + summary/{validation.json} + records/*.json（40 cell per-cell summary）+ group_runs.csv。
+- **聚合（进 git，本目录）**：README.md + `group_runs.csv` + `summary/{validation.json,mechanism_gate_replay.json}`。完整 manifest、per-cell records 与 raw traces 仍只在服务器/本地镜像，不从 compact 表反向补造。
 
 ## 1. 实验设置 / 2. 设计
 
@@ -35,6 +37,14 @@
 - **rep2 机制门定位**：DRR rep2 的两 Job 绝对完成时刻只差约 **5.8 ms**，VTC rep2 只差约
   **4.8 ms**；两臂该 repeat 的 `active_set_bulk_only_post_samples=0`。因此当前证据支持“没有形成可采样的
   post-drain 窗口”，不支持“算法违反工作守恒”。validation 仍按预注册规则保持 fail-closed。
+- **冻结后的 simultaneous-drain 规则**：若两个 Job 的完成间隔小于观测周期且区间内没有 trace
+  样本，则 post-drain 性质没有可检验时间窗，记为 `not_applicable`；若间隔达到 250 ms 或区间内
+  实际存在样本，则仍必须观察到工作守恒，否则 fail-closed。新 runner 显式写出 duration、interval、
+  observed samples、applicable 和 status；legacy compact evidence 只允许在 lifecycle、pre-borrow、
+  overlap reclaim 已通过且无 fit violation 时兼容重分类。
+- **离线回放**：`summary/mechanism_gate_replay.json` 为 `status=passed`、12/12 effective pass，只有
+  DRR/VTC rep2 两项被重分类。文件显式记录 `scope=compact_mechanism_gate_only` 与
+  `full_formal_validation_updated=false`。
 - **fail-closed**：summarize 检测到 DRR/VTC rep2 mechanism 失败 → `validation.json status=failed`，**拒绝产 formal_summary.csv**（不进入策略胜出声明）。这是预注册硬规则（§12），非 bug。
 - **观测口径**：tok/s、JCT、P99、KV、waiting、SLO 均取自 per-run time-series 聚合（`*_mean/p95/max`），非单点。`vllm_kv_cache_usage` 按分数读。
 
@@ -79,16 +89,15 @@ CV：各臂 tok/s 跨 3 repeat CV 均 <0.5%（极稳，如 SAOR [12406,12353,124
 
 - **事实**：
   1. formal 40/40 完成、0 incident、exactly-once；lifecycle gate 全过。
-  2. `validation.json status=failed`：DRR、VTC 在 formal rep2 未观察到 credit mechanism（rep1/rep3 过）。FIFO、SAOR mechanism 3/3 全过。
+  2. 原始 `validation.json status=failed`：DRR、VTC formal rep2 未观察到 post-drain 样本；冻结采样分辨率规则后的 compact replay 将两项标为不适用并得到 effective 12/12，但尚未用服务器完整 raw 重放，所以原始完整 validation 不变。
   3. **static_partition 在前台延迟上是独立 Pareto 点**：fg_slowdown 2.19（最低）、fg P99 29.2s（最低）、fg SLO 违反 0%（唯一为 0）；代价是吞吐最低（9508）。
   4. **在 4 个 credit 臂内部**：吞吐几乎同档（12103–12441，差 <3%）；SAOR 的 fg JCT（57.0）/ fg P99（50.3）/ fg slowdown（3.45）/ fg SLO 违反（0.831）均优于 FIFO/DRR/VTC；SAOR 是 credit 臂里 fg 尾延迟最优的，且与 FIFO 都是 mechanism 3/3 全过的 credit 臂。
   5. direct_no_job 顶满（kv=1.0、wait=142）吞吐最高，但 fg SLO 违反 98.6%（最差尾延迟）——符合"direct 是直连天花板参照，吞吐差含执行链路差异，非纯算法差"。
 - **推断**：
   1. SAOR 进入了 FIFO/DRR 的 Pareto 前沿（同吞吐档、fg 尾延迟不差且更优、mechanism 稳定）→ 按 §17 **不被淘汰**。
   2. 但 **static_partition 是前台尾延迟/SLO 的更强 Pareto 点**——SAOR 没有在所有维度超过 static；两者是吞吐–尾延迟权衡的两个点（static 低吞吐换极低 fg 尾延迟，credit 臂高吞吐但 fg 尾延迟高）。
-  3. DRR/VTC rep2 更可能是两个 Job 近乎同时结束，使审计器没有 post-drain 样本，而不是
-     baseline 机制不稳定；但按既定规则仍导致 validation fail-closed，本轮无法做“策略胜出”的
-     正式声明。
+  3. DRR/VTC rep2 已由冻结规则定位为低于 trace 分辨率的不可适用窗口，不再解释为 baseline
+     机制不稳定；但 compact 回放不替代缺失的完整 raw validation，本轮仍不做“策略胜出”声明。
 - **不能声称**：
   - "SAOR 胜出 / SAOR 优于 baseline"——validation failed，且 static 在 fg 尾延迟上更强。
   - "DRR/VTC 无效"——只是 rep2 机制未观察，rep1/rep3 过。
@@ -145,22 +154,23 @@ credit baseline 改善了前台，但距离 static 的可行域仍很远。
 
 ## 6. 对课题含义
 
-SAOR `saor_release` 在同最大资源上限下：（a）自身 mechanism 3/3 全过；（b）在 credit 臂内
+SAOR `saor_release` 在同最大资源上限下：（a）自身 mechanism 3/3 全过，且 compact 机制回放后
+四个 credit 臂 effective 12/12；（b）在 credit 臂内
 以几乎同档吞吐获得最佳 fg 延迟。**但** static_partition 在前台尾延迟/SLO 上是更强的 Pareto
-点，且 summarize 因 DRR/VTC rep2 没有 post-drain 可观测窗口而 fail-closed，本轮**不能正式
-声明策略胜出**。更重要的是，当前实现验证的是 fixed-envelope fairness/release，而不是完整
+点；原始完整 validation 因 DRR/VTC rep2 没有 post-drain 可观测窗口而保留 fail-closed，compact
+回放不会改变性能排序，本轮**不能正式声明策略胜出**。更重要的是，当前实现验证的是 fixed-envelope fairness/release，而不是完整
 SLO-aware 控制：在 `slo_weight=0`、无保护余量、不可抢占的合同下，它理论上无法免费复制
 static 的前台隔离。下一版本应从“调 score 权重”转为“有限 reservation + borrow/reclaim +
 风险上界 work credit + hard SLO feasible set”。
 
 ## 7. 下一步（不阻塞开题）
 
-1. **先修审计器，不先重跑**：对“两个 Job 几乎同时完成”的 repeat 增加
-   `post_drain_not_applicable` 分支；只有确有 drain window 才要求 post-drain 样本。修改规则后用
-   已有 trace 离线重放，规则冻结后才决定是否同合同复验。
-2. **做 release-only 可达性诊断**：增加 foreground strict-priority（停止发新 bulk，但不抢占）
-   作为上游 release 能力上界；若它仍无法接近 static fg P99，则证明瓶颈是不可撤销在途 work，
-   不再扫描 SAOR 权重。
+1. **审计器修复已完成**：已增加 `post_drain_not_applicable` 分支、legacy compact 兼容回放和
+   新 schema fail-closed 边界；compact 12/12 effective pass，但完整 raw replay 尚待安全远端会话。
+2. **release-only 可达性诊断已实现、待 GPU 运行**：`foreground_strict_priority` 在前台 Job
+   存活期间停止发新 bulk credit，但不撤销已有 lease；Job 完成后显式 `finish_job` 恢复 bulk。
+   runner 把 `[0,1]` priority 动作写入 group evidence，独立汇总器以 fg P99≤30.7s、fg SLO
+   violation≤1% fail-closed 判定 release-only 是否可达。它只是能力上界，不是新 proposed。
 3. **只扫一维 reservation 曲线**：固定其他配置，比较 $r/K=0,0.25,0.5$ 的
    reserve-borrow-reclaim；建议晋级门为 fg P99≤30.7s、fg SLO 违反≤1%、吞吐≥9984 tok/s。
    若只有 0.5K 通过，则等价于 static，淘汰动态方案；若更小 reserve 通过且吞吐较 static≥5%，
@@ -170,7 +180,8 @@ static 的前台隔离。下一版本应从“调 score 权重”转为“有限
 
 ## 不能声称的边界
 
-formal gate fail-closed（DRR/VTC rep2 没有形成可采样 post-drain 窗口）；不称 SAOR 胜出、不称
-baseline 无效、不称 4-Job/dynamic-K/定理结论。SAOR 在 credit 臂内进入经验 Pareto 前沿且 fg
+原始完整 formal gate 保留 fail-closed；compact mechanism replay 通过不等于完整 validation
+通过。不得称 SAOR 胜出、baseline 无效、strict-priority 已有 GPU 效果，也不称
+4-Job/dynamic-K/定理结论。SAOR 在 credit 臂内进入经验 Pareto 前沿且 fg
 延迟最好，是方向性正面信号；它没有越过 static，也尚未验证 SLO-aware 动作，因而**不是正式
 策略胜出声明**。

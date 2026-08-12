@@ -1076,6 +1076,10 @@ request/work dominant share 可观测；若仍有 waiting work，则逐 endpoint
 request slot 或 work slack 之一阻挡。若队首明明同时装得进 request/work envelope 却仍在等待，
 work-conserving 门必须失败；没有 waiting work 时允许按实际剩余量自然排空。static/direct 的
 机制门禁为 `not_applicable:no_credit_trace`，不是失败。任一适用门禁未过，不抽策略结论。
+若任一 Job 完成到另一 Job 完成的间隔小于 runner 的 250 ms trace 周期，且该区间内没有
+credit 样本，则 post-drain 没有可检验窗口，记为 `not_applicable:drain_below_trace_resolution`；
+间隔达到一个周期或区间内已有样本时仍必须过 head-fit 工作守恒门，不能用 simultaneous-drain
+规则掩盖缺失 trace。
 
 formal 前先运行纯静态 fail-closed audit；它解析模板、校准合同、十臂矩阵、manifest 行数/
 SHA/endpoint 覆盖和 direct/project 请求合同，不发送请求：
@@ -1119,6 +1123,52 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
   --matrix-root "$ARTIFACT_ROOT/saor_active_set_release_formal" \
   --output-dir "$ARTIFACT_ROOT/saor_active_set_release_formal/summary"
 ```
+
+已有 Git 紧凑证据只回放机制门时使用 `--mechanism-only`；输出会显式保留
+`full_formal_validation_updated=false`，不得覆盖原始 `validation.json`：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/summarize_saor_active_set.py \
+  --mechanism-only \
+  --matrix-root experiments/results/saor_active_set_release_formal_20260812_69affc7e \
+  --output-dir experiments/results/saor_active_set_release_formal_20260812_69affc7e/summary
+```
+
+下一项 release-only 可达性使用 `saor_priority_reachability.example.json`。三臂只比较 frozen
+static、既有 SAOR 和 foreground strict-priority；strict-priority 在前台 Job 存活期间停止新
+bulk credit，但不抢占已进入 vLLM 的 lease，前台结束后恢复 bulk。它是上游 release 能力
+upper bound，不是正式 proposed。仍须先完成本节 runtime preflight、idle/lease/endpoint/
+PG/Ray 检查，再依次运行静态 audit、独立 rehearsal 和全新 formal 目录：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/audit_saor_formal_readiness.py \
+  --profile priority_reachability \
+  --config deploy/autodl/saor_priority_reachability.example.json \
+  --output "$ARTIFACT_ROOT/saor_priority_reachability_readiness.json"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
+  --rehearsal \
+  --config deploy/autodl/saor_priority_reachability.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_priority_reachability_rehearsal_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/summarize_saor_priority_reachability.py \
+  --matrix-root "$ARTIFACT_ROOT/saor_priority_reachability_formal_<unique-id>" \
+  --output-dir "$ARTIFACT_ROOT/saor_priority_reachability_formal_<unique-id>/summary"
+```
+
+汇总器要求 1+3、0 incident、exactly-once/lifecycle/metrics/resources/mechanism 全过，并从
+`group_runs.csv` 核对 strict-priority Job 动作为 `[0,1]`；fg P99>30.7s 或 SLO violation>1%
+即判 release-only 不可达。吞吐不作为这一 upper-bound gate 的通过条件，也不得从该臂直接
+声称 reservation 有效。
 
 正式运行优先使用 audit-aware wrapper，避免手工设置上述逐 Job 变量：
 

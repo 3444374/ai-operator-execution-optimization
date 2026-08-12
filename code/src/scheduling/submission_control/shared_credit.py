@@ -56,7 +56,7 @@ class EndpointCreditSnapshot:
 
 
 class FairEndpointCreditCoordinator:
-    """Shared endpoint credit with DRR or an arrival-ordered FIFO control.
+    """Shared endpoint credit with fair and diagnostic release controls.
 
     This class is engine independent. A Ray named actor can own one instance so
     schedulers from separate database jobs observe the same endpoint capacity.
@@ -75,9 +75,10 @@ class FairEndpointCreditCoordinator:
             raise ValueError("capacities must not be empty")
         if quantum <= 0:
             raise ValueError("quantum must be positive")
-        if policy not in {"drr", "fifo", "vtc", "saor"}:
+        if policy not in {"drr", "fifo", "vtc", "saor", "strict_priority"}:
             raise ValueError(
-                "shared credit policy must be drr, fifo, vtc, or saor"
+                "shared credit policy must be drr, fifo, vtc, saor, or "
+                "strict_priority"
             )
         if policy == "saor" and saor_release_config is None:
             raise ValueError("saor shared credit requires release configuration")
@@ -120,6 +121,8 @@ class FairEndpointCreditCoordinator:
             endpoint_id: deque() for endpoint_id in capacities
         }
         self._weights: dict[str, int] = {}
+        self._priorities: dict[str, int] = {}
+        self._finished_jobs: set[str] = set()
         self._deficits: dict[tuple[str, str], int] = {}
         self._job_order: dict[str, list[str]] = {
             endpoint_id: [] for endpoint_id in capacities
@@ -146,9 +149,12 @@ class FairEndpointCreditCoordinator:
         endpoint_id: str,
         estimated_work: int,
         weight: int = 1,
+        priority: int = 0,
         slo_target_s: float | None = None,
     ) -> bool:
         request_key = (job_id, request_id)
+        if job_id in self._finished_jobs:
+            raise ValueError("a finished job cannot acquire new credit")
         if request_key in self._active:
             return True
         if endpoint_id not in self._capacities:
@@ -165,9 +171,14 @@ class FairEndpointCreditCoordinator:
             )
         if weight <= 0:
             raise ValueError("weight must be positive")
+        if not isinstance(priority, int) or isinstance(priority, bool) or priority < 0:
+            raise ValueError("priority must be a non-negative integer")
         previous_weight = self._weights.setdefault(job_id, weight)
         if previous_weight != weight:
             raise ValueError("a job must use one stable weight")
+        previous_priority = self._priorities.setdefault(job_id, priority)
+        if previous_priority != priority:
+            raise ValueError("a job must use one stable priority")
         if self._policy == "saor":
             if slo_target_s is not None and (
                 not math.isfinite(slo_target_s) or slo_target_s <= 0
@@ -252,6 +263,20 @@ class FairEndpointCreditCoordinator:
                 ),
             )
         self._grant_waiters(endpoint_id)
+
+    def finish_job(self, job_id: str) -> None:
+        """Close one Job lifecycle after every lease and waiter drains."""
+
+        has_active = any(lease.job_id == job_id for lease in self._active.values())
+        has_waiting = any(
+            job_queues.get(job_id)
+            for job_queues in self._waiting.values()
+        )
+        if has_active or has_waiting:
+            raise ValueError("cannot finish a job with outstanding credit")
+        self._finished_jobs.add(job_id)
+        for endpoint_id in self._capacities:
+            self._grant_waiters(endpoint_id)
 
     def snapshot(self, endpoint_id: str) -> EndpointCreditSnapshot:
         if endpoint_id not in self._capacities:
@@ -367,6 +392,9 @@ class FairEndpointCreditCoordinator:
         if self._policy == "saor":
             self._grant_saor_waiters(endpoint_id)
             return
+        if self._policy == "strict_priority":
+            self._grant_strict_priority_waiters(endpoint_id)
+            return
         request_limit, work_limit = self._capacities[endpoint_id]
         job_order = self._job_order[endpoint_id]
         if not job_order:
@@ -474,6 +502,47 @@ class FairEndpointCreditCoordinator:
                 self._attained_service[endpoint_id].get(job_id, 0)
                 + lease.estimated_work
             )
+            self._activate(endpoint_id, lease)
+
+    def _grant_strict_priority_waiters(self, endpoint_id: str) -> None:
+        """Grant the highest-priority fitting head without revoking leases.
+
+        This policy is a diagnostic upper bound for release-only foreground
+        protection.  It is non-preemptive: priority changes only which queued
+        Job receives newly freed credit.  While a higher-priority Job remains
+        unfinished, newly freed capacity is held for that Job instead of being
+        refilled by a lower-priority Job.
+        """
+
+        request_limit, work_limit = self._capacities[endpoint_id]
+        order = {
+            job_id: index
+            for index, job_id in enumerate(self._job_order[endpoint_id])
+        }
+        while self._active_requests[endpoint_id] < request_limit:
+            unfinished_priorities = [
+                priority
+                for job_id, priority in self._priorities.items()
+                if job_id not in self._finished_jobs
+            ]
+            active_priority = max(unfinished_priorities, default=0)
+            candidates = [
+                job_id
+                for job_id in self._job_order[endpoint_id]
+                if self._waiting[endpoint_id][job_id]
+                and self._priorities[job_id] == active_priority
+                and self._active_work[endpoint_id]
+                + self._waiting[endpoint_id][job_id][0].estimated_work
+                <= work_limit
+            ]
+            if not candidates:
+                return
+            job_id = min(
+                candidates,
+                key=lambda item: (-self._priorities[item], order[item]),
+            )
+            lease = self._waiting[endpoint_id][job_id].popleft()
+            self._queued_request_keys.remove((lease.job_id, lease.request_id))
             self._activate(endpoint_id, lease)
 
     def _vtc_job_is_inactive(self, endpoint_id: str, job_id: str) -> bool:

@@ -689,6 +689,11 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **门禁边界**：DRR/VTC rep2 的两个 Job 近乎同时结束（绝对完成时刻差约 5.8ms/4.8ms），
   `active_set_bulk_only_post_samples=0`，使总 validation fail-closed。它说明审计器缺 simultaneous-drain 语义，
   不证明 baseline 违反工作守恒；本轮不能发布 winner claim。
+- **分辨率修订**：post-drain 是区间性质。若两 Job 完成间隔小于 trace 周期且该开区间内无
+  样本，则证据既不能证明工作守恒，也不能证伪，正确三值语义是 `not_applicable`，而不是
+  `false`。冻结 250 ms 规则后的 compact replay 将 DRR/VTC rep2 重分类，四 credit 臂 effective
+  12/12；但 compact 表没有服务器完整 manifest/raw trace，故 artifact 明确不升级完整 formal
+  validation。长于一个周期仍无样本的反例保持失败。
 - **第一性原理原因**：前台到达时若 bulk 已借满包络，且项目不能抢占 vLLM 已接纳请求，
   release-only 控制的即时前台容量近似为 0，只能等 completion 回收。无 reservation 的事后
   fairness reclaim 因而不可能免费复制 static 的即时隔离；`slo_weight=0` 又说明 formal 实际
@@ -696,11 +701,15 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 - **估计误差**：project credit 臂中 foreground `actual/predicted work≈1.289`，bulk≈1.064；
   前台低估百分比约是 bulk 的 4.5 倍。下一版 admission 必须比较 point estimate、q95 upper
   bound 与 actual-work oracle，不能用同一 predicted token 标量同时承担资源、安全和公平。
-- **修订路线**：先离线修复 simultaneous-drain audit；再跑 foreground strict-priority
-  release-only 可达性；随后只扫 reservation $r/K=0,0.25,0.5$，采用 borrow/reclaim debt、
+- **修订路线**：simultaneous-drain audit 与 compact replay 已完成；foreground strict-priority
+  release-only 诊断已实现、等待 GPU；通过判门后只扫 reservation $r/K=0,0.25,0.5$，采用 borrow/reclaim debt、
   upper-bound resource credit 与 hard SLO feasible set。只有 $r<0.5K$ 达到 static fg 非劣且
   吞吐相对 static≥5% 才晋级；否则淘汰，不扩 4-Job。完整推导见
   `saor_model_scenario_audit_20260811.md` §11。
+- **release-only upper bound 实现状态**：已实现非抢占 foreground strict-priority 诊断。前台
+  Job 注册后，未来释放 credit 只给前台；已进入 vLLM 的 bulk lease 不撤销，前台 `finish_job`
+  后恢复 bulk。group evidence 记录 `[bulk,foreground]=[0,1]`，独立判门要求 fg P99≤30.7s、
+  fg SLO violation≤1%。它只诊断 release-only 可达域，GPU 尚未运行，不能称 SAOR 改进。
 
 #### 5.7.6 模式优先级矩阵
 

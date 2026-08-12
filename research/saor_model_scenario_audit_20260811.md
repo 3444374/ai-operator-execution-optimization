@@ -531,6 +531,12 @@ killer baseline 才能晋级；HSE 作为执行底座，capacity governor 保持
 约 5.8 ms/4.8 ms，`active_set_bulk_only_post_samples=0`；因此该失败首先是 post-drain 可观测性问题，不得写成
 baseline 违反工作守恒。下表为 fail-closed 条件下的定位数据，不是正式胜负结论：
 
+2026-08-12 后续把该性质改为与 250 ms trace resolution 一致的三值判定：完成间隔小于一个
+采样周期且区间内没有样本时，post-drain 为 `not_applicable`；若有样本或间隔达到一个周期，
+仍必须观察到工作守恒。compact `group_runs.csv` 回放后四 credit 臂 effective 12/12，只有
+DRR/VTC rep2 被重分类；artifact 明确记录 `full_formal_validation_updated=false`，因此原始完整
+validation 不改写，性能/Pareto 结论也不改变。
+
 | arm | tok/s | fg JCT(s) | fg P99(s) | fg SLO viol | fg slowdown | Jain | mechanism |
 |---|---:|---:|---:|---:|---:|---:|---|
 | static | 9508 | **36.2** | **29.2** | **0.000** | **2.19** | **0.914** | N/A |
@@ -642,3 +648,9 @@ correctness/exactly-once 全过。若只有 $r=0.5K$ 能通过，则动态方法
 `formal-run-fail-closed / directional-only`，不淘汰但不晋级。候选后继是
 **reservation-backed SAOR**，必须先过两 Job 的 release-only 可达性与静态非劣门，再考虑
 4-Job、weighted 或多模态扩展。
+
+工程上已补 foreground strict-priority 作为 release-only 上界：前台首次进入 coordinator 后，
+未来 completion 释放的 credit 只分给前台，但不抢占已有 bulk lease；前台 Job 完成并显式关闭
+生命周期后才恢复 bulk。该诊断与 fairness weight 分离，输出 `[0,1]` priority evidence；以
+fg P99≤30.7s、fg SLO violation≤1% 判可达。当前只有本地单测与 fail-closed runner/summary，
+尚无 GPU 结果，不能据此改变 verdict。

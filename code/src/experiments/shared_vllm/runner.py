@@ -83,12 +83,14 @@ from .runtime import (
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
+_TRACE_SAMPLE_INTERVAL_S = 0.25
 
 _REHEARSAL_CREDIT_POLICIES = {
     "shared_fifo",
     "shared_drr",
     "external_vtc",
     "saor_release",
+    "foreground_strict_priority",
 }
 
 
@@ -653,6 +655,7 @@ def _run_group(
                 "shared_fifo",
                 "external_vtc",
                 "saor_release",
+                "foreground_strict_priority",
                 "state_aware_adaptive",
                 "saor_capacity",
             }
@@ -667,6 +670,8 @@ def _run_group(
                     "fifo" if scenario.policy == "shared_fifo"
                     else "vtc" if scenario.policy == "external_vtc"
                     else "saor" if scenario.policy == "saor_release"
+                    else "strict_priority"
+                    if scenario.policy == "foreground_strict_priority"
                     else "drr"
                 ),
                 saor_release_config=(
@@ -805,7 +810,7 @@ def _run_group(
                         ),
                     )
                 state_samples.extend(state_rows)
-            time.sleep(0.25)
+            time.sleep(_TRACE_SAMPLE_INTERVAL_S)
         return_codes = [process.wait() for process in processes]
         if any(code != 0 for code in return_codes):
             raise RuntimeError(
@@ -1016,6 +1021,7 @@ def _run_group(
                     "shared_fifo",
                     "external_vtc",
                     "saor_release",
+                    "foreground_strict_priority",
                     "state_aware_adaptive",
                     "saor_capacity",
                 }
@@ -1040,9 +1046,19 @@ def _run_group(
                 work_limit_per_endpoint=endpoint_work_limit,
                 job_count=scenario.job_count,
             ),
-            **active_set_phase_summary(job_evidence, credit_samples),
+            **active_set_phase_summary(
+                job_evidence,
+                credit_samples,
+                observation_interval_s=_TRACE_SAMPLE_INTERVAL_S,
+            ),
             "job_jct_s": json.dumps(
                 [evidence["jct_s"] for evidence in job_evidence]
+            ),
+            "job_priorities": json.dumps(
+                [
+                    scenario.job_priority(index)
+                    for index in range(scenario.job_count)
+                ]
             ),
             "job_p99_s": json.dumps(
                 [evidence["p99_s"] for evidence in job_evidence]

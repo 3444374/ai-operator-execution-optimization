@@ -56,6 +56,9 @@ class _FairCreditActor:
             actual_work=actual_work,
         )
 
+    def finish_job(self, job_id: str) -> None:
+        self.coordinator.finish_job(job_id)
+
     def snapshot(self, endpoint_id: str):
         return self.coordinator.snapshot(endpoint_id)
 
@@ -89,6 +92,9 @@ class RaySharedCreditClient:
                 actual_work=actual_work,
             )
         )
+
+    def finish_job(self, job_id: str) -> None:
+        self.ray_module.get(self.actor.finish_job.remote(job_id))
 
     def snapshot(self, endpoint_id: str):
         return self.ray_module.get(

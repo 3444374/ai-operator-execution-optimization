@@ -234,6 +234,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `deploy/autodl/saor_capacity_development.example.json` | fixed lower/upper、legacy threshold、SAOR capacity-only 四臂开发配置；所有臂/观测/权重由 runtime env 注入 | 只用于 single-action 机制门，不作为 frozen formal 配置；运行前必须绑定 calibration signature |
 | `deploy/autodl/saor_active_set_release.example.json` | 固定 calibration envelope 下 direct/static/FIFO/DRR/external-VTC/SAOR-Release 六臂 active-set + project/direct matched-solo 十 scenario 模板 | 跑 `bulk-only → foreground-arrival → foreground-drain` killer gate；K/work/actor/budget 全从本机 selection contract 注入；先 readiness audit 和 rehearsal |
 | `deploy/autodl/saor_active_set_formal.env.example` | 当前 2×4090/Qwen2.5-7B/ShareGPT active-set formal 的无凭据双层 env 合同 | 复制到仓库外并在 machine runtime env 后 source；冻结 Chat 协议、burst scale、K/work/actor、manifest 与 calibration evidence，不跨签名复用 |
+| `deploy/autodl/saor_priority_reachability.example.json` | static/SAOR/foreground strict-priority 三臂 release-only 可达性模板 | 只诊断非抢占 ordered release 上界；复用 frozen active-set env，先 `--profile priority_reachability` readiness，再独立 rehearsal/formal，不作 proposed 排名 |
 | `code/scripts/data/build_opening_multijob_manifests.py` | 从冻结 ShareGPT manifest 按 endpoint 构造互斥 short 与一个或多个 token-work 匹配 long manifest，并输出 SHA/工作量 skew 审计 | 两作业用单 long；四作业用 1 short+3 long、每 Job 512 行 |
 | `code/scripts/data/build_image_multijob_manifest.py` | 从 PostgreSQL 冻结 2K short + 3×3K long 图像 source slices、0.5s arrival、doc-id/byte digest | native/project 唯一 workload identity；首次 formal 前 rehearsal 验证实际 overlap |
 | `code/scripts/analysis/summarize_project_short_all_at_t0.py` | 从服务器 raw 重算 Project eager single 的 T0–T4 时间、吞吐、MFU、状态和 Daft 对齐边界 | 回答“项目为何比 Daft 慢”时使用；T0 缺失不补造，T3/T4 只作 short 诊断 |
@@ -522,8 +523,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/infrastructure/test_ray_runtime_preflight.py` | Ray worker nofile 去重、证据记录与 1024 fail-closed 测试 | 修改 Ray 原生 framework 正式运行前置条件后运行 |
 | `code/scripts/analysis/summarize_output_aware_bfd.py` | output-aware BFD 重复实验的长表统计汇总 | 汇总吞吐、E2E、packing、GPU、能耗与 MFU 正式结果时运行 |
 | `code/scripts/analysis/benchmark_saor_control.py` | static/threshold/FIFO/DRR/external-VTC/SAOR-Release 与 oracle-DPP 纯 CPU 控制路径 microbenchmark | 只量控制计算开销；release runtime 与未接线 oracle 分行，不据此声明 GPU/E2E 性能 |
-| `code/scripts/analysis/audit_saor_formal_readiness.py` | 固定包络 SAOR 十 scenario、FCFS/calibration/manifest/direct 请求合同的 fail-closed 静态预检 | 服务器 rehearsal/formal 前运行；只读且不发送模型请求 |
-| `code/scripts/analysis/summarize_saor_active_set.py` | 六臂 active-set + 四 matched-solo 的 fail-closed formal 汇总；分离 lifecycle/mechanism gate，复算 slowdown/Jain/SLO/资源 | runner 完成后生成可审计 formal summary；不产生 theorem 或 dynamic-K claim |
+| `code/scripts/analysis/audit_saor_formal_readiness.py` | 固定包络 SAOR 十 scenario formal 或三臂 priority reachability 的 FCFS/calibration/manifest/direct 请求合同 fail-closed 静态预检 | 服务器 rehearsal/formal 前运行；priority 模板用 `--profile priority_reachability`；只读且不发送模型请求 |
+| `code/scripts/analysis/summarize_saor_active_set.py` | 六臂 active-set + 四 matched-solo 的 fail-closed formal 汇总；分离 lifecycle/mechanism gate，复算 slowdown/Jain/SLO/资源；支持 resolution-aware compact mechanism replay | runner 完成后生成可审计 formal summary；`--mechanism-only` 明确不升级完整 validation；不产生 theorem 或 dynamic-K claim |
+| `code/scripts/analysis/summarize_saor_priority_reachability.py` | static/SAOR/strict-priority 1+3 的 fail-closed release-only upper-bound 汇总 | 检查 exactly-once、机制、`job_priorities=[0,1]`、fg P99≤30.7s 与 SLO≤1%；吞吐仅作语境，不构成 SAOR/reservation 胜出 |
 | `code/scripts/analysis/replay_saor_capacity.py` | 对 paired capacity aggregate trace 做滞后一拍选择与同 phase oracle regret | 验证动作方向；输出明确为 noncausal aggregate development evidence |
 | `code/tests/data/test_sources.py` | data source 查询构造和 source factory 单元测试 | 修改数据入口行为后运行 |
 | `code/tests/planning/test_organizers.py` | 数据组织后端最小单元测试 | 修改 organizer 接口或 batch 行为后运行 |

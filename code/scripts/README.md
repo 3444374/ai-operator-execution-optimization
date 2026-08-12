@@ -22,9 +22,10 @@
 raw manifest 保留执行时旧路径作为不可变证据，README 中的复现命令使用当前新路径。
 
 `analysis/audit_saor_formal_readiness.py` 在不发送请求的前提下 fail-closed 校验固定包络 SAOR
-十 scenario 矩阵、1+3 合同、FCFS 声明、calibration selection、manifest 行数/SHA/endpoint
-覆盖和 direct/project 请求等价字段。正式 runner 的 `--rehearsal` 只产生每 scenario 一个
-warmup identity；通过后才可用新目录运行配置中的 formal。
+十 scenario formal，或用 `--profile priority_reachability` 校验 static/SAOR/foreground
+strict-priority 三臂诊断；共同检查 1+3、FCFS 声明、calibration selection、manifest
+行数/SHA/endpoint 覆盖。formal profile 还检查 direct/project 请求等价字段。正式 runner 的
+`--rehearsal` 只产生每 scenario 一个 warmup identity；通过后才可用新目录运行配置中的 formal。
 
 `analysis/summarize_saor_active_set.py` 要求十个 scenario 各 1 warm-up + 3 formal、0 incident，
 并把六臂 workload lifecycle 与四个 credit 策略 mechanism gate 分开审计。rehearsal 本身
@@ -33,6 +34,15 @@ fail-closed：metrics/resources、lifecycle 或适用的 borrow/reclaim/work-con
 solo 和 direct solo 复算 work-rate slowdown/Jain，输出 `formal_summary.csv`、
 `per_job_slowdown.csv` 与 `validation.json`；不把 direct 的 request bound 误标为 work-credit
 等资源 envelope，也不产生 theorem 或 dynamic-K claim。
+
+同一汇总器的 `--mechanism-only` 只从 compact `group_runs.csv` 回放 credit mechanism。
+post-drain 完成间隔低于 250 ms trace 周期且区间内没有样本时记为不适用；有时间窗/样本时仍
+fail-closed。输出 `mechanism_gate_replay.json` 明确不升级完整 formal validation。
+
+`analysis/summarize_saor_priority_reachability.py` 汇总 static、SAOR 与 non-preemptive
+foreground strict-priority 三臂 1+3 诊断。它要求 group evidence 中 priority 动作为 `[0,1]`，
+并以 foreground P99≤30.7s、SLO violation≤1% 判 release-only 上界是否可达；吞吐只作语境，
+该诊断不构成 SAOR 或 reservation 策略胜出。
 
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data

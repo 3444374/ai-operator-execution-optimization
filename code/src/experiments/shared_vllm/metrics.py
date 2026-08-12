@@ -272,6 +272,8 @@ def shared_credit_trace_summary(
 def active_set_phase_summary(
     job_evidence: list[dict[str, object]],
     samples: list[dict[str, object]],
+    *,
+    observation_interval_s: float = 0.25,
 ) -> dict[str, float | int | bool | str]:
     """Audit workload lifecycle separately from credit-policy mechanism.
 
@@ -282,6 +284,8 @@ def active_set_phase_summary(
     Neither gate claims that the selected policy improved performance.
     """
 
+    if not math.isfinite(observation_interval_s) or observation_interval_s <= 0:
+        raise ValueError("observation_interval_s must be finite and positive")
     unavailable = {
         "active_set_contract_status": "unavailable:requires_staggered_two_job_trace",
         "active_set_contract_passed": False,
@@ -312,6 +316,11 @@ def active_set_phase_summary(
         "active_set_post_remaining_dominant_share_max": 0.0,
         "active_set_post_remaining_waiting_work_max": 0.0,
         "active_set_post_fit_violation_samples": 0,
+        "active_set_post_drain_duration_s": 0.0,
+        "active_set_post_drain_observation_interval_s": observation_interval_s,
+        "active_set_post_drain_observed_samples": 0,
+        "active_set_post_drain_applicable": False,
+        "active_set_post_drain_status": "not_applicable:no_credit_trace",
         "active_set_post_work_conserving_passed": False,
     }
     if len(job_evidence) != 2:
@@ -350,6 +359,7 @@ def active_set_phase_summary(
     remaining_end = float(
         job_evidence[remaining_index]["completion_end_epoch_s"]
     )
+    post_drain_duration_s = max(0.0, remaining_end - first_drained_end)
     lifecycle_status = (
         "ok:observed_staggered_two_job_overlap"
         if lifecycle_passed
@@ -574,16 +584,31 @@ def active_set_phase_summary(
         and min(overlap_bulk_dominant_shares)
         < max(pre_bulk_dominant_shares)
     )
+    post_drain_observed_samples = sum(
+        first_drained_end < observed_at <= remaining_end
+        for observed_at in by_epoch
+    )
+    post_drain_applicable = bool(
+        post_drain_observed_samples > 0
+        or post_drain_duration_s >= observation_interval_s
+    )
     post_work_conserving = bool(
         post_remaining_fractions
         and post_fit_violation_samples == 0
+    )
+    post_drain_status = (
+        "ok:observed_work_conserving_drain"
+        if post_work_conserving
+        else "active_set_post_drain_not_observed"
+        if post_drain_applicable
+        else "not_applicable:drain_below_trace_resolution"
     )
     mechanism_passed = bool(
         mechanism_applicable
         and lifecycle_passed
         and pre_borrow_observed
         and overlap_reclaim_observed
-        and post_work_conserving
+        and (post_work_conserving or not post_drain_applicable)
     )
     return {
         "active_set_contract_status": lifecycle_status,
@@ -592,7 +617,11 @@ def active_set_phase_summary(
         "active_set_lifecycle_passed": lifecycle_passed,
         "active_set_mechanism_applicable": mechanism_applicable,
         "active_set_mechanism_status": (
-            "ok:observed_borrow_reclaim_work_conserving_drain"
+            (
+                "ok:observed_borrow_reclaim_work_conserving_drain"
+                if post_drain_applicable
+                else "ok:observed_borrow_reclaim_post_drain_not_applicable"
+            )
             if mechanism_passed
             else "active_set_mechanism_not_observed"
             if mechanism_applicable
@@ -655,6 +684,11 @@ def active_set_phase_summary(
             else 0.0
         ),
         "active_set_post_fit_violation_samples": post_fit_violation_samples,
+        "active_set_post_drain_duration_s": post_drain_duration_s,
+        "active_set_post_drain_observation_interval_s": observation_interval_s,
+        "active_set_post_drain_observed_samples": post_drain_observed_samples,
+        "active_set_post_drain_applicable": post_drain_applicable,
+        "active_set_post_drain_status": post_drain_status,
         "active_set_post_work_conserving_passed": post_work_conserving,
     }
 

@@ -38,9 +38,135 @@ AUDIT = _load(
     "audit_saor_formal_readiness",
     "code/scripts/analysis/audit_saor_formal_readiness.py",
 )
+PRIORITY_SUMMARY = _load(
+    "summarize_saor_priority_reachability",
+    "code/scripts/analysis/summarize_saor_priority_reachability.py",
+)
 
 
 class SaorFormalToolsTests(unittest.TestCase):
+    def test_priority_reachability_summary_passes_only_with_audited_action(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "matrix"
+            output = Path(directory) / "summary"
+            root.mkdir()
+            self._write_clean_manifest(root)
+            rows = self._priority_matrix_rows(priority_p99_s=30.0)
+            self._write_group_rows(root / "group_runs.csv", rows)
+
+            result = PRIORITY_SUMMARY.summarize(root, output)
+
+            self.assertEqual(result["status"], "passed")
+            self.assertEqual(result["release_only_reachability"], "passed")
+            self.assertEqual(result["strict_priority_job_priorities"], [0, 1])
+            self.assertTrue((output / "reachability_summary.csv").is_file())
+
+    def test_priority_reachability_summary_fails_closed_on_tail_limit(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "matrix"
+            output = Path(directory) / "summary"
+            root.mkdir()
+            self._write_clean_manifest(root)
+            rows = self._priority_matrix_rows(priority_p99_s=31.0)
+            self._write_group_rows(root / "group_runs.csv", rows)
+
+            with self.assertRaisesRegex(ValueError, "foreground P99"):
+                PRIORITY_SUMMARY.summarize(root, output)
+
+            result = json.loads(
+                (output / "validation.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(result["status"], "failed")
+            self.assertEqual(result["release_only_reachability"], "failed")
+
+    def test_legacy_near_simultaneous_drain_is_reclassified(self) -> None:
+        row = {
+            "active_set_mechanism_applicable": "True",
+            "active_set_mechanism_passed": "False",
+            "active_set_mechanism_status": "active_set_mechanism_not_observed",
+            "active_set_lifecycle_passed": "True",
+            "active_set_overlap_reclaim_observed": "True",
+            "active_set_pre_bulk_dominant_share_max": "0.95",
+            "active_set_bulk_only_post_samples": "0",
+            "active_set_post_fit_violation_samples": "0",
+            "arrival_offsets_s": "[0.0, 5.0]",
+            "job_jct_s": "[68.743800, 63.737972]",
+        }
+
+        passed, status = SUMMARY._effective_mechanism_gate(row)
+
+        self.assertTrue(passed)
+        self.assertEqual(
+            status,
+            "reclassified:post_drain_below_trace_resolution",
+        )
+
+    def test_legacy_resolvable_drain_stays_failed(self) -> None:
+        row = {
+            "active_set_mechanism_applicable": "True",
+            "active_set_mechanism_passed": "False",
+            "active_set_mechanism_status": "active_set_mechanism_not_observed",
+            "active_set_lifecycle_passed": "True",
+            "active_set_overlap_reclaim_observed": "True",
+            "active_set_pre_bulk_dominant_share_max": "0.95",
+            "active_set_bulk_only_post_samples": "0",
+            "active_set_post_fit_violation_samples": "0",
+            "arrival_offsets_s": "[0.0, 5.0]",
+            "job_jct_s": "[70.0, 63.0]",
+        }
+
+        passed, _ = SUMMARY._effective_mechanism_gate(row)
+
+        self.assertFalse(passed)
+
+    def test_new_schema_failure_cannot_use_legacy_reclassification(self) -> None:
+        row = {
+            "active_set_mechanism_applicable": "True",
+            "active_set_mechanism_passed": "False",
+            "active_set_mechanism_status": "active_set_mechanism_not_observed",
+            "active_set_post_drain_applicable": "True",
+            "active_set_lifecycle_passed": "True",
+            "active_set_overlap_reclaim_observed": "True",
+            "active_set_pre_bulk_dominant_share_max": "0.95",
+            "active_set_bulk_only_post_samples": "0",
+            "active_set_post_fit_violation_samples": "0",
+            "arrival_offsets_s": "[0.0, 5.0]",
+            "job_jct_s": "[68.743800, 63.737972]",
+        }
+
+        passed, _ = SUMMARY._effective_mechanism_gate(row)
+
+        self.assertFalse(passed)
+
+    def test_compact_mechanism_replay_is_explicitly_not_full_validation(
+        self,
+    ) -> None:
+        matrix = (
+            REPOSITORY
+            / "experiments/results/"
+            "saor_active_set_release_formal_20260812_69affc7e"
+        )
+        with TemporaryDirectory() as directory:
+            payload = SUMMARY.replay_compact_mechanism_gate(
+                matrix,
+                Path(directory),
+            )
+
+        self.assertEqual(payload["status"], "passed")
+        self.assertFalse(payload["full_formal_validation_updated"])
+        self.assertEqual(len(payload["results"]), 12)
+        self.assertEqual(
+            sum(
+                item["effective_mechanism_status"].startswith("reclassified:")
+                for item in payload["results"]
+            ),
+            2,
+        )
+
     def test_repository_formal_env_covers_template_contract(self) -> None:
         template = (
             REPOSITORY / "deploy/autodl/saor_active_set_release.example.json"
@@ -59,6 +185,30 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertIn("export SAOR_ARRIVAL_TIME_SCALE=0.0001", env_example)
         self.assertIn(
             "export SAOR_ACTIVE_SET_WORKLOAD=sharegpt_multiturn", env_example
+        )
+
+    def test_priority_reachability_template_uses_formal_environment(self) -> None:
+        template = (
+            REPOSITORY
+            / "deploy/autodl/saor_priority_reachability.example.json"
+        ).read_text(encoding="utf-8")
+        env_example = (
+            REPOSITORY / "deploy/autodl/saor_active_set_formal.env.example"
+        ).read_text(encoding="utf-8")
+        required = set(re.findall(r"\$\{([A-Z][A-Z0-9_]*)\}", template))
+        provided = set(
+            re.findall(r"^export ([A-Z][A-Z0-9_]*)=", env_example, re.MULTILINE)
+        )
+        decoded = json.loads(template)
+
+        self.assertEqual(required - provided, {"DATABASE_URL"})
+        self.assertEqual(
+            [item["policy"] for item in decoded["scenarios"]],
+            [
+                "static_partition",
+                "saor_release",
+                "foreground_strict_priority",
+            ],
         )
 
     def test_direct_control_emits_project_compatible_job_evidence(self) -> None:
@@ -259,6 +409,11 @@ class SaorFormalToolsTests(unittest.TestCase):
                     REPOSITORY
                     / "deploy/autodl/saor_active_set_release.example.json"
                 )
+                priority_result = AUDIT.audit(
+                    REPOSITORY
+                    / "deploy/autodl/saor_priority_reachability.example.json",
+                    profile="priority_reachability",
+                )
             environment["SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES"] = "1"
             with patch.dict(os.environ, environment, clear=True):
                 insufficient_supply = AUDIT.audit(
@@ -268,6 +423,9 @@ class SaorFormalToolsTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "passed")
         self.assertEqual(result["scenario_count"], 10)
+        self.assertEqual(priority_result["status"], "passed")
+        self.assertEqual(priority_result["scenario_count"], 3)
+        self.assertIsNone(priority_result["direct_contract"])
         self.assertEqual(result["direct_contract"]["protocol"], "completions")
         self.assertEqual(result["direct_contract"]["prompt_format"], "raw")
         self.assertEqual(result["direct_contract"]["keepalive_expiry_s"], 4.0)
@@ -515,6 +673,75 @@ class SaorFormalToolsTests(unittest.TestCase):
             source_row_hash=f"hash-{doc_id}",
             endpoint_index=endpoint_index,
         )
+
+    @staticmethod
+    def _write_group_rows(path: Path, rows: list[dict[str, object]]) -> None:
+        with path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(rows)
+
+    @staticmethod
+    def _write_clean_manifest(root: Path) -> None:
+        (root / "manifest.json").write_text(
+            json.dumps({"status": "completed", "incidents": []}),
+            encoding="utf-8",
+        )
+
+    @staticmethod
+    def _priority_matrix_rows(
+        *,
+        priority_p99_s: float,
+    ) -> list[dict[str, object]]:
+        scenarios = (
+            ("active_set_static_partition", "static_partition", 29.2, 0.0),
+            ("active_set_saor_release", "saor_release", 50.3, 0.831),
+            (
+                "active_set_foreground_strict_priority",
+                "foreground_strict_priority",
+                priority_p99_s,
+                0.005,
+            ),
+        )
+        rows: list[dict[str, object]] = []
+        for scenario_id, policy, foreground_p99, foreground_slo in scenarios:
+            phases = (("warmup", 0), *(("formal", i) for i in range(1, 4)))
+            for phase, repeat_index in phases:
+                priorities = (
+                    [0, 1]
+                    if policy == "foreground_strict_priority"
+                    else [0, 0]
+                )
+                credit_policy = policy in {
+                    "saor_release",
+                    "foreground_strict_priority",
+                }
+                rows.append(
+                    {
+                        "scenario_id": scenario_id,
+                        "policy": policy,
+                        "phase": phase,
+                        "repeat_index": repeat_index,
+                        "incidents": 0,
+                        "metrics_status": "ok",
+                        "resource_metrics_status": "ok",
+                        "actor_worker_failures": 0,
+                        "active_set_lifecycle_passed": True,
+                        "active_set_mechanism_applicable": credit_policy,
+                        "active_set_mechanism_passed": credit_policy,
+                        "job_priorities": json.dumps(priorities),
+                        "job_arrived_rows": "[512, 512]",
+                        "job_completed_rows": "[512, 512]",
+                        "job_failed_rows": "[0, 0]",
+                        "job_p99_s": json.dumps([60.0, foreground_p99]),
+                        "job_slo_violation_ratio": json.dumps(
+                            [0.5, foreground_slo]
+                        ),
+                        "job_jct_s": json.dumps([70.0, 40.0]),
+                        "tokens_per_s": 10_100.0,
+                    }
+                )
+        return rows
 
 
 if __name__ == "__main__":

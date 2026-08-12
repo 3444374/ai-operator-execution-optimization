@@ -1162,6 +1162,22 @@ H2D 占 steady wall≥20%，且 pinned/降字节/overlap 让 E2E 改善≥5%，P
 60s 稳态、交错三重复下比较 Daft built-in、官方 ResNet18 parity、Ray Data native graph 和 project；并用
 GPU-resident/pinned/pageable 表示阶梯正式判 PCIe GO/NO-GO。
 
+## 2026-08-12：为什么 5 ms 的 drain window 不能被 250 ms 采样器判失败
+
+active-set 机制门要检查“一个 Job 结束后，剩余 Job 是否工作守恒地拿到新释放额度”。但这个
+性质只有在 post-drain 区间足够长、或区间内确实采到状态时才可检验。formal 中 DRR/VTC 的
+一个 repeat，两 Job 只相差约 5.8/4.8 ms 完成，而 runner 每 250 ms 采一次 credit；零样本是
+采样分辨率的必然结果，不等于调度器没有回收。
+
+修订后的三值逻辑是：区间内有样本就按 head-fit 检查；没有样本但区间至少一个采样周期，仍
+fail-closed；区间短于一个周期且无样本，记为 `not_applicable`。旧 compact 数据按这个规则
+回放后，四个 credit 臂 12/12 effective pass，但这只修复机制审计，不能改变 SAOR 仍落后
+static 前台隔离点的实验事实，也不能替代服务器完整 raw validation。
+
+下一项 strict-priority 也是诊断，不是新算法胜出：前台到达后停止发新 bulk credit，但不撤销
+已进入 vLLM 的请求。如果连这个 release-only 上界都不能把前台 P99 拉到 30.7 s 以内，就说明
+主要瓶颈是不可抢占的在途工作，应停止扫描 score 权重并转向显式、有限的保护余量。
+
 ## 2026-08-03：为什么保存 embedding 的运行不是性能 baseline
 
 Daft built-in 和 project 都输出 512 维向量，但前者由 provider 决定 processor、dtype

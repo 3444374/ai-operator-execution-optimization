@@ -22,12 +22,21 @@ ACTIVE_SCENARIOS = (
 SOLO_PROJECT = ("solo_project_bulk", "solo_project_foreground")
 SOLO_DIRECT = ("solo_direct_bulk", "solo_direct_foreground")
 CREDIT_POLICIES = {"shared_fifo", "shared_drr", "external_vtc", "saor_release"}
+TRACE_OBSERVATION_INTERVAL_S = 0.25
 
 
 def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--matrix-root", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument(
+        "--mechanism-only",
+        action="store_true",
+        help=(
+            "replay only the credit-policy mechanism gate from compact "
+            "group_runs.csv; does not validate the full formal matrix"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -57,11 +66,127 @@ def _mean(rows: list[dict[str, str]], field: str) -> float:
     return statistics.fmean(float(row[field]) for row in rows)
 
 
+def _effective_mechanism_gate(
+    row: dict[str, str],
+    *,
+    observation_interval_s: float = TRACE_OBSERVATION_INTERVAL_S,
+) -> tuple[bool, str]:
+    """Apply the frozen simultaneous-drain rule to legacy compact evidence."""
+
+    if row.get("active_set_mechanism_passed", "").lower() == "true":
+        return True, row.get("active_set_mechanism_status", "passed")
+    # New runner records carry an explicit post-drain applicability decision.
+    # Never let legacy compatibility override a failure from the new schema.
+    if row.get("active_set_post_drain_applicable", ""):
+        return False, row.get(
+            "active_set_mechanism_status",
+            "active_set_mechanism_not_observed",
+        )
+    try:
+        offsets = _array(row, "arrival_offsets_s", 2)
+        jcts = _array(row, "job_jct_s", 2)
+        completion_gap_s = abs(
+            (offsets[0] + jcts[0]) - (offsets[1] + jcts[1])
+        )
+        reclassifiable = bool(
+            row.get("active_set_mechanism_applicable", "").lower() == "true"
+            and row.get("active_set_lifecycle_passed", "").lower() == "true"
+            and row.get("active_set_overlap_reclaim_observed", "").lower()
+            == "true"
+            and float(row.get("active_set_pre_bulk_dominant_share_max", "0"))
+            > 0.5
+            and int(row.get("active_set_bulk_only_post_samples", "-1")) == 0
+            and int(row.get("active_set_post_fit_violation_samples", "-1")) == 0
+            and completion_gap_s < observation_interval_s
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        reclassifiable = False
+    if reclassifiable:
+        return True, "reclassified:post_drain_below_trace_resolution"
+    return False, row.get(
+        "active_set_mechanism_status",
+        "active_set_mechanism_not_observed",
+    )
+
+
 def _write(path: Path, rows: list[dict[str, object]]) -> None:
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
+
+
+def replay_compact_mechanism_gate(root: Path, output: Path) -> dict[str, object]:
+    """Replay the mechanism rule without upgrading full-formal validity."""
+
+    rows = [
+        row
+        for row in _read(root / "group_runs.csv")
+        if row.get("phase") == "formal" and row.get("policy") in CREDIT_POLICIES
+    ]
+    expected = {
+        (scenario, repeat)
+        for scenario in ACTIVE_SCENARIOS
+        for repeat in ("1", "2", "3")
+        if scenario
+        in {
+            "active_set_shared_fifo",
+            "active_set_shared_drr",
+            "active_set_external_vtc",
+            "active_set_saor_release",
+        }
+    }
+    observed = {
+        (row.get("scenario_id", ""), row.get("repeat_index", ""))
+        for row in rows
+    }
+    errors = []
+    if observed != expected:
+        errors.append("compact evidence does not contain the 12 credit formal cells")
+    results = []
+    for row in sorted(
+        rows,
+        key=lambda item: (item["scenario_id"], int(item["repeat_index"])),
+    ):
+        passed, status = _effective_mechanism_gate(row)
+        offsets = _array(row, "arrival_offsets_s", 2)
+        jcts = _array(row, "job_jct_s", 2)
+        results.append(
+            {
+                "scenario_id": row["scenario_id"],
+                "policy": row["policy"],
+                "repeat_index": int(row["repeat_index"]),
+                "original_mechanism_passed": (
+                    row.get("active_set_mechanism_passed", "").lower() == "true"
+                ),
+                "completion_gap_s": abs(
+                    (offsets[0] + jcts[0]) - (offsets[1] + jcts[1])
+                ),
+                "effective_mechanism_passed": passed,
+                "effective_mechanism_status": status,
+            }
+        )
+        if not passed:
+            errors.append(
+                f"{row['scenario_id']} repeat {row['repeat_index']} still fails"
+            )
+    payload = {
+        "schema_version": 1,
+        "status": "passed" if not errors else "failed",
+        "scope": "compact_mechanism_gate_only",
+        "full_formal_validation_updated": False,
+        "trace_observation_interval_s": TRACE_OBSERVATION_INTERVAL_S,
+        "errors": errors,
+        "results": results,
+    }
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "mechanism_gate_replay.json").write_text(
+        json.dumps(payload, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    if errors:
+        raise ValueError("; ".join(errors))
+    return payload
 
 
 def summarize(root: Path, output: Path) -> None:
@@ -110,6 +235,7 @@ def summarize(root: Path, output: Path) -> None:
     project_solo_jct, project_solo_rate = solo_references(SOLO_PROJECT)
     direct_solo_jct, direct_solo_rate = solo_references(SOLO_DIRECT)
     formal_gate_errors: list[str] = []
+    mechanism_reclassifications: list[dict[str, str]] = []
     summaries = []
     per_job = []
     for scenario in ACTIVE_SCENARIOS:
@@ -142,9 +268,15 @@ def summarize(root: Path, output: Path) -> None:
             mechanism_applicable = (
                 row.get("active_set_mechanism_applicable", "").lower() == "true"
             )
-            mechanism_passed = (
-                row.get("active_set_mechanism_passed", "").lower() == "true"
-            )
+            mechanism_passed, mechanism_status = _effective_mechanism_gate(row)
+            if mechanism_status.startswith("reclassified:"):
+                mechanism_reclassifications.append(
+                    {
+                        "scenario_id": scenario,
+                        "repeat_index": row["repeat_index"],
+                        "status": mechanism_status,
+                    }
+                )
             if policy in CREDIT_POLICIES and not mechanism_passed:
                 formal_gate_errors.append(
                     f"{scenario} repeat {row['repeat_index']} failed mechanism gate"
@@ -251,6 +383,7 @@ def summarize(root: Path, output: Path) -> None:
                     "descriptive efficiency/fairness/SLO comparison; no theorem "
                     "or dynamic-capacity claim"
                 ),
+                "mechanism_reclassifications": mechanism_reclassifications,
             },
             indent=2,
         )
@@ -261,6 +394,12 @@ def summarize(root: Path, output: Path) -> None:
 
 def main() -> int:
     args = _args()
+    if args.mechanism_only:
+        replay_compact_mechanism_gate(
+            args.matrix_root.resolve(),
+            args.output_dir.resolve(),
+        )
+        return 0
     summarize(args.matrix_root.resolve(), args.output_dir.resolve())
     return 0
 

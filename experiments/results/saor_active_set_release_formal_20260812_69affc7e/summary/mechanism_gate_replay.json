@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "compact_mechanism_gate_only",
+  "full_formal_validation_updated": false,
+  "trace_observation_interval_s": 0.25,
+  "errors": [],
+  "results": [
+    {
+      "scenario_id": "active_set_external_vtc",
+      "policy": "external_vtc",
+      "repeat_index": 1,
+      "original_mechanism_passed": true,
+      "completion_gap_s": 2.4780659675598145,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "ok:observed_borrow_reclaim_work_conserving_drain"
+    },
+    {
+      "scenario_id": "active_set_external_vtc",
+      "policy": "external_vtc",
+      "repeat_index": 2,
+      "original_mechanism_passed": false,
+      "completion_gap_s": 0.004834890365600586,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "reclassified:post_drain_below_trace_resolution"
+    },
+    {
+      "scenario_id": "active_set_external_vtc",
+      "policy": "external_vtc",
+      "repeat_index": 3,
+      "original_mechanism_passed": true,
+      "completion_gap_s": 7.172993898391724,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "ok:observed_borrow_reclaim_work_conserving_drain"
+    },
+    {
+      "scenario_id": "active_set_saor_release",
+      "policy": "saor_release",
+      "repeat_index": 1,
+      "original_mechanism_passed": true,
+      "completion_gap_s": 9.004984378814697,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "ok:observed_borrow_reclaim_work_conserving_drain"
+    },
+    {
+      "scenario_id": "active_set_saor_release",
+      "policy": "saor_release",
+      "repeat_index": 2,
+      "original_mechanism_passed": true,
+      "completion_gap_s": 2.8890578746795654,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "ok:observed_borrow_reclaim_work_conserving_drain"
+    },
+    {
+      "scenario_id": "active_set_saor_release",
+      "policy": "saor_release",
+      "repeat_index": 3,
+      "original_mechanism_passed": true,
+      "completion_gap_s": 7.557288646697998,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "ok:observed_borrow_reclaim_work_conserving_drain"
+    },
+    {
+      "scenario_id": "active_set_shared_drr",
+      "policy": "shared_drr",
+      "repeat_index": 1,
+      "original_mechanism_passed": true,
+      "completion_gap_s": 0.7046360969543457,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "ok:observed_borrow_reclaim_work_conserving_drain"
+    },
+    {
+      "scenario_id": "active_set_shared_drr",
+      "policy": "shared_drr",
+      "repeat_index": 2,
+      "original_mechanism_passed": false,
+      "completion_gap_s": 0.005827903747558594,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "reclassified:post_drain_below_trace_resolution"
+    },
+    {
+      "scenario_id": "active_set_shared_drr",
+      "policy": "shared_drr",
+      "repeat_index": 3,
+      "original_mechanism_passed": true,
+      "completion_gap_s": 2.1499078273773193,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "ok:observed_borrow_reclaim_work_conserving_drain"
+    },
+    {
+      "scenario_id": "active_set_shared_fifo",
+      "policy": "shared_fifo",
+      "repeat_index": 1,
+      "original_mechanism_passed": true,
+      "completion_gap_s": 7.937513589859009,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "ok:observed_borrow_reclaim_work_conserving_drain"
+    },
+    {
+      "scenario_id": "active_set_shared_fifo",
+      "policy": "shared_fifo",
+      "repeat_index": 2,
+      "original_mechanism_passed": true,
+      "completion_gap_s": 8.465942144393921,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "ok:observed_borrow_reclaim_work_conserving_drain"
+    },
+    {
+      "scenario_id": "active_set_shared_fifo",
+      "policy": "shared_fifo",
+      "repeat_index": 3,
+      "original_mechanism_passed": true,
+      "completion_gap_s": 8.09384822845459,
+      "effective_mechanism_passed": true,
+      "effective_mechanism_status": "ok:observed_borrow_reclaim_work_conserving_drain"
+    }
+  ]
+}

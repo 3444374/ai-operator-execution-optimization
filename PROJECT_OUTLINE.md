@@ -128,12 +128,14 @@ PostgreSQL source
   2-Job formal 已在 2×4090/Qwen2.5-7B 上完成 40/40 cell、0 incident、exactly-once：SAOR
   12,393 tok/s、fg JCT/P99 57.0/50.3s，在 credit 臂内前台最好；static 9,508 tok/s、fg
   JCT/P99 36.2/29.2s、SLO violation 0%，仍是更强隔离 Pareto 点。总 validation 因 DRR/VTC
-  rep2 没有 post-drain 样本而 fail-closed；两个 repeat 的 Job 完成只差约 5.8ms/4.8ms，故不能
-  写成 baseline 机制失败，也不能声称 SAOR 胜出。当前 formal 的 `slo_weight=0`，服务状态仍
+  rep2 没有 post-drain 样本而 fail-closed；冻结 250 ms trace-resolution 规则后的 compact
+  mechanism replay effective 12/12，但明确不更新完整 validation，故不能写成 baseline 机制失败，
+  也不能声称 SAOR 胜出。当前 formal 的 `slo_weight=0`，服务状态仍
   observe-only；它验证的是 fairness-aware release，不是完整 SLO-aware controller。第一性原理
   审计确认：无保护余量、不可抢占时，bulk 在前台到达前借满包络会形成只能等待 completion
   清零的 reclaim debt，单靠 release score 无法复制 static 的即时隔离。候选后继收紧为
-  reservation-backed release；先修 simultaneous-drain audit，做 strict-priority 可达性、
+  reservation-backed release；simultaneous-drain audit/compact replay 已完成，strict-priority
+  可达性 runner/readiness/summary 已实现但 GPU pending；之后才做
   reserve 0/0.25K/0.5K 和 q95/actual-work oracle，再决定是否淘汰。两 Job 未达到 static fg
   非劣且吞吐≥static+5% 前不跑 4-Job，也不声称定理证明；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；

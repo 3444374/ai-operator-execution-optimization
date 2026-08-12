@@ -82,6 +82,7 @@ class SharedCreditPolicy(Protocol):
         endpoint_id: str,
         estimated_work: int,
         weight: int = 1,
+        priority: int = 0,
     ) -> bool:
         ...
 
@@ -92,6 +93,9 @@ class SharedCreditPolicy(Protocol):
         job_id: str,
         actual_work: int | None = None,
     ) -> None:
+        ...
+
+    def finish_job(self, job_id: str) -> None:
         ...
 
 
@@ -193,6 +197,7 @@ class SynchronousScheduler:
         shared_credit: SharedCreditPolicy | None = None,
         shared_credit_poll_s: float = 0.001,
         job_weight: int = 1,
+        job_priority: int = 0,
         actual_work_extractor: Callable[
             [SubmissionCompletion], int | None
         ] | None = None,
@@ -205,6 +210,12 @@ class SynchronousScheduler:
             raise ValueError("shared_credit_poll_s must be positive")
         if job_weight <= 0:
             raise ValueError("job_weight must be positive")
+        if (
+            not isinstance(job_priority, int)
+            or isinstance(job_priority, bool)
+            or job_priority < 0
+        ):
+            raise ValueError("job_priority must be a non-negative integer")
         self.admission = admission
         self.router = router
         self.adapter = adapter
@@ -217,6 +228,7 @@ class SynchronousScheduler:
         self.shared_credit = shared_credit
         self.shared_credit_poll_s = shared_credit_poll_s
         self.job_weight = job_weight
+        self.job_priority = job_priority
         self.actual_work_extractor = actual_work_extractor
 
     def run(
@@ -250,6 +262,7 @@ class SynchronousScheduler:
         bounded_wait_samples: list[float] = []
         fanin_s = 0.0
         submit_s = 0.0
+        shared_credit_jobs: set[str] = set()
 
         source = _ConcurrentEnvelopeSource(
             envelopes,
@@ -267,6 +280,8 @@ class SynchronousScheduler:
                     "envelopes must contain PayloadEnvelope values"
                 )
             envelope = source_item
+            if self.shared_credit is not None:
+                shared_credit_jobs.add(envelope.request.job_id)
 
             request_id = envelope.request.request_id
             ledger.observe(envelope)
@@ -346,6 +361,7 @@ class SynchronousScheduler:
                         envelope.request.estimated_work_units,
                     ),
                     weight=self.job_weight,
+                    priority=self.job_priority,
                 )
             ):
                 if ledger.pending:
@@ -382,6 +398,15 @@ class SynchronousScheduler:
         while ledger.pending:
             collected = self._collect_one(ledger)
             fanin_s += collected.result_s
+
+        finish_shared_job = (
+            getattr(self.shared_credit, "finish_job", None)
+            if self.shared_credit is not None
+            else None
+        )
+        if finish_shared_job is not None:
+            for job_id in sorted(shared_credit_jobs):
+                finish_shared_job(job_id)
 
         completions = ledger.ordered_completions()
         return SchedulerResult(

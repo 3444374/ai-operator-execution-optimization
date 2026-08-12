@@ -31,6 +31,7 @@ POLICIES = {
     "shared_fifo",
     "external_vtc",
     "saor_release",
+    "foreground_strict_priority",
     "state_aware_adaptive",
     "saor_capacity",
 }
@@ -59,6 +60,7 @@ _RUNNER_OWNED_FLAGS = {
     "--setup",
     "--shared-credit-coordinator-name",
     "--shared-credit-job-weight",
+    "--shared-credit-job-priority",
     "--shared-credit-namespace",
     "--shared-credit-policy",
     "--shared-credit-quantum",
@@ -133,6 +135,16 @@ class SharedVllmScenario:
             self.request_limit_per_endpoint or default_request_limit,
             self.work_limit_per_endpoint or default_work_limit,
         )
+
+    def job_priority(self, job_index: int) -> int:
+        """Return the explicit diagnostic priority for one Job."""
+
+        if not 0 <= job_index < self.job_count:
+            raise ValueError("job_index is outside scenario job_count")
+        if self.policy != "foreground_strict_priority":
+            return 0
+        foreground_offset = max(self.arrival_offsets_s)
+        return int(self.arrival_offsets_s[job_index] == foreground_offset)
 
 @dataclass(frozen=True)
 class StateAwareControlConfig:
@@ -503,6 +515,7 @@ def build_job_command(
         "shared_fifo",
         "external_vtc",
         "saor_release",
+        "foreground_strict_priority",
         "state_aware_adaptive",
         "saor_capacity",
     }:
@@ -525,10 +538,14 @@ def build_job_command(
                     "fifo" if scenario.policy == "shared_fifo"
                     else "vtc" if scenario.policy == "external_vtc"
                     else "saor" if scenario.policy == "saor_release"
+                    else "strict_priority"
+                    if scenario.policy == "foreground_strict_priority"
                     else "drr"
                 ),
                 "--shared-credit-job-weight",
                 str(scenario.weights[job_index]),
+                "--shared-credit-job-priority",
+                str(scenario.job_priority(job_index)),
             ]
         )
         if scenario.policy == "saor_release":
@@ -659,6 +676,13 @@ def _load_scenario(
         "arrival_offsets_s",
         job_count,
     )
+    if policy == "foreground_strict_priority" and (
+        job_count != 2 or offsets.count(max(offsets)) != 1
+    ):
+        raise ValueError(
+            "foreground_strict_priority requires exactly two Jobs and a "
+            "unique later foreground arrival"
+        )
     source_row_offsets = _nonnegative_integer_tuple(
         raw.get("source_row_offsets", [0] * job_count),
         "source_row_offsets",

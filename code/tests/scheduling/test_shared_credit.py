@@ -21,6 +21,144 @@ from src.scheduling.submission_control.saor import (  # noqa: E402
 
 
 class SharedCreditCoordinatorTests(unittest.TestCase):
+    def test_strict_priority_reclaims_future_releases_without_preemption(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (2, 200)},
+            quantum=100,
+            policy="strict_priority",
+        )
+        for request_id in ("bulk-active-0", "bulk-active-1"):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=request_id,
+                    job_id="bulk",
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                    priority=0,
+                )
+            )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="bulk-waiting",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=0,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="foreground",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=1,
+            )
+        )
+
+        coordinator.release("bulk-active-0", job_id="bulk", actual_work=100)
+
+        snapshot = coordinator.snapshot("gpu0")
+        self.assertEqual(
+            snapshot.active_by_job,
+            (("bulk", 1), ("foreground", 1)),
+        )
+        self.assertEqual(snapshot.waiting_by_job, (("bulk", 1),))
+
+    def test_strict_priority_requires_stable_job_priority(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="strict_priority",
+        )
+        coordinator.try_acquire(
+            request_id="first",
+            job_id="foreground",
+            endpoint_id="gpu0",
+            estimated_work=100,
+            priority=1,
+        )
+
+        with self.assertRaisesRegex(ValueError, "stable priority"):
+            coordinator.try_acquire(
+                request_id="second",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=2,
+            )
+
+    def test_strict_priority_holds_bulk_during_foreground_refill_gap(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (2, 200)},
+            quantum=100,
+            policy="strict_priority",
+        )
+        for request_id in ("bulk-active-0", "bulk-active-1"):
+            self.assertTrue(
+                coordinator.try_acquire(
+                    request_id=request_id,
+                    job_id="bulk",
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                    priority=0,
+                )
+            )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="bulk-waiting",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=0,
+            )
+        )
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="foreground-only",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=100,
+                priority=1,
+            )
+        )
+        coordinator.release("bulk-active-0", job_id="bulk")
+
+        coordinator.release("bulk-active-1", job_id="bulk")
+
+        self.assertEqual(
+            coordinator.snapshot("gpu0").active_by_job,
+            (("foreground", 1),),
+        )
+        self.assertEqual(
+            coordinator.snapshot("gpu0").waiting_by_job,
+            (("bulk", 1),),
+        )
+        coordinator.release("foreground-only", job_id="foreground")
+        self.assertEqual(coordinator.snapshot("gpu0").active_requests, 0)
+        coordinator.finish_job("foreground")
+        self.assertEqual(
+            coordinator.snapshot("gpu0").active_by_job,
+            (("bulk", 1),),
+        )
+
+    def test_finish_job_rejects_outstanding_credit(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="strict_priority",
+        )
+        coordinator.try_acquire(
+            request_id="active",
+            job_id="foreground",
+            endpoint_id="gpu0",
+            estimated_work=100,
+            priority=1,
+        )
+
+        with self.assertRaisesRegex(ValueError, "outstanding credit"):
+            coordinator.finish_job("foreground")
+
     def test_capacity_downshift_drains_active_leases_without_revocation(self) -> None:
         coordinator = FairEndpointCreditCoordinator(
             {"gpu0": (2, 200)},

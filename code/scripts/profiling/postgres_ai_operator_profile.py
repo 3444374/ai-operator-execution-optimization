@@ -1635,10 +1635,11 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             or args.shared_credit_work_limit <= 0
             or args.shared_credit_quantum <= 0
             or args.shared_credit_job_weight <= 0
+            or args.shared_credit_job_priority < 0
         ):
             raise SystemExit(
                 "shared credit request/work limits, quantum, and job weight "
-                "must be positive"
+                "must be positive; job priority must be non-negative"
             )
         if args.shared_credit_policy == "saor" and args.saor_slo_weight > 0:
             raise SystemExit(
@@ -1652,6 +1653,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "work_limit": args.shared_credit_work_limit,
             "quantum": args.shared_credit_quantum,
             "job_weight": args.shared_credit_job_weight,
+            "job_priority": args.shared_credit_job_priority,
             "policy": args.shared_credit_policy,
             "saor_release": (
                 {
@@ -1834,6 +1836,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "shared_credit_work_limit": args.shared_credit_work_limit,
             "shared_credit_quantum": args.shared_credit_quantum,
             "shared_credit_job_weight": args.shared_credit_job_weight,
+            "shared_credit_job_priority": args.shared_credit_job_priority,
             "shared_credit_policy": (
                 args.shared_credit_policy
                 if args.shared_credit_coordinator_name
@@ -3056,6 +3059,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "shared_credit_work_limit": args.shared_credit_work_limit,
             "shared_credit_quantum": args.shared_credit_quantum,
             "shared_credit_job_weight": args.shared_credit_job_weight,
+            "shared_credit_job_priority": args.shared_credit_job_priority,
             "shared_credit_policy": (
                 args.shared_credit_policy
                 if args.shared_credit_coordinator_name

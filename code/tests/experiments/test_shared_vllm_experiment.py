@@ -244,6 +244,120 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "active_set_mechanism_not_observed",
         )
 
+    def test_near_simultaneous_drain_is_below_trace_resolution(self) -> None:
+        summary = active_set_phase_summary(
+            [
+                {
+                    "arrival_start_epoch_s": 0.0,
+                    "completion_end_epoch_s": 68.743800,
+                    "runtime_job_id": "bulk",
+                },
+                {
+                    "arrival_start_epoch_s": 5.0,
+                    "completion_end_epoch_s": 68.737972,
+                    "runtime_job_id": "foreground",
+                },
+            ],
+            [
+                {
+                    "observed_epoch_s": 2.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": '[["bulk", 95]]',
+                    "active_work_by_job": '[["bulk", 95]]',
+                    "waiting_work_by_job": '[["bulk", 100]]',
+                },
+                {
+                    "observed_epoch_s": 10.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "active_work_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "waiting_work_by_job": '[["bulk", 20]]',
+                },
+                {
+                    "observed_epoch_s": 68.5,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": (
+                        '[["bulk", 20], ["foreground", 10]]'
+                    ),
+                    "active_work_by_job": (
+                        '[["bulk", 20], ["foreground", 10]]'
+                    ),
+                    "waiting_work_by_job": '[["bulk", 10]]',
+                },
+            ],
+            observation_interval_s=0.25,
+        )
+
+        self.assertTrue(summary["active_set_mechanism_passed"])
+        self.assertFalse(summary["active_set_post_drain_applicable"])
+        self.assertEqual(summary["active_set_post_drain_observed_samples"], 0)
+        self.assertAlmostEqual(
+            summary["active_set_post_drain_duration_s"],
+            0.005828,
+        )
+        self.assertEqual(
+            summary["active_set_post_drain_status"],
+            "not_applicable:drain_below_trace_resolution",
+        )
+        self.assertEqual(
+            summary["active_set_mechanism_status"],
+            "ok:observed_borrow_reclaim_post_drain_not_applicable",
+        )
+
+    def test_resolvable_post_drain_without_sample_still_fails_closed(self) -> None:
+        summary = active_set_phase_summary(
+            [
+                {
+                    "arrival_start_epoch_s": 10.0,
+                    "completion_end_epoch_s": 30.0,
+                    "runtime_job_id": "bulk",
+                },
+                {
+                    "arrival_start_epoch_s": 15.0,
+                    "completion_end_epoch_s": 20.0,
+                    "runtime_job_id": "foreground",
+                },
+            ],
+            [
+                {
+                    "observed_epoch_s": 12.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": '[["bulk", 95]]',
+                    "active_work_by_job": '[["bulk", 95]]',
+                    "waiting_work_by_job": '[["bulk", 100]]',
+                },
+                {
+                    "observed_epoch_s": 17.0,
+                    "request_limit": 100,
+                    "work_limit": 100,
+                    "active_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "active_work_by_job": (
+                        '[["bulk", 45], ["foreground", 40]]'
+                    ),
+                    "waiting_work_by_job": '[["bulk", 20]]',
+                },
+            ],
+            observation_interval_s=0.25,
+        )
+
+        self.assertFalse(summary["active_set_mechanism_passed"])
+        self.assertTrue(summary["active_set_post_drain_applicable"])
+        self.assertEqual(summary["active_set_post_drain_observed_samples"], 0)
+        self.assertEqual(
+            summary["active_set_post_drain_status"],
+            "active_set_post_drain_not_observed",
+        )
+
     def test_active_set_lifecycle_applies_without_credit_trace(self) -> None:
         summary = active_set_phase_summary(
             [
@@ -1005,6 +1119,95 @@ class SharedVllmExperimentTests(unittest.TestCase):
             self._flag_value(command, "--shared-credit-job-weight"),
             "3",
         )
+
+    def test_foreground_strict_priority_is_separate_from_fairness_weight(
+        self,
+    ) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "strict_priority_diagnostic",
+                    "policy": "foreground_strict_priority",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                    "weights": [1, 1],
+                    "arrival_offsets_s": [0.0, 5.0],
+                }
+            ]
+        )
+        with patch.object(
+            Path,
+            "read_text",
+            return_value=json.dumps(payload),
+        ):
+            config = load_config(Path("config.json"))
+        scenario = config.scenarios[0]
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics0", "http://metrics1"),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+
+        bulk = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=0,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+        foreground = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=1,
+            start_epoch_s=100.0,
+            coordinator_name="credits",
+        )
+
+        self.assertEqual(
+            self._flag_value(bulk, "--shared-credit-policy"),
+            "strict_priority",
+        )
+        self.assertEqual(
+            self._flag_value(bulk, "--shared-credit-job-priority"),
+            "0",
+        )
+        self.assertEqual(
+            self._flag_value(foreground, "--shared-credit-job-priority"),
+            "1",
+        )
+        self.assertEqual(
+            self._flag_value(foreground, "--shared-credit-job-weight"),
+            "1",
+        )
+
+    def test_foreground_strict_priority_requires_unique_later_job(self) -> None:
+        payload = self._config_payload(
+            scenarios=[
+                {
+                    "scenario_id": "invalid_priority_diagnostic",
+                    "policy": "foreground_strict_priority",
+                    "job_count": 2,
+                    "rows_per_job": 64,
+                    "arrival_offsets_s": [0.0, 0.0],
+                }
+            ]
+        )
+        with patch.object(
+            Path,
+            "read_text",
+            return_value=json.dumps(payload),
+        ):
+            with self.assertRaisesRegex(ValueError, "unique later foreground"):
+                load_config(Path("config.json"))
 
     def test_arrival_offset_expands_numeric_environment_scalar(self) -> None:
         payload = self._config_payload(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed static preflight for the fixed-envelope SAOR formal matrix."""
+"""Fail-closed static preflight for frozen SAOR active-set matrices."""
 
 from __future__ import annotations
 
@@ -41,16 +41,42 @@ EXPECTED = {
     "solo_direct_bulk": ("direct_no_job", 1),
     "solo_direct_foreground": ("direct_no_job", 1),
 }
+PRIORITY_REACHABILITY_EXPECTED = {
+    "active_set_static_partition": ("static_partition", 2),
+    "active_set_saor_release": ("saor_release", 2),
+    "active_set_foreground_strict_priority": (
+        "foreground_strict_priority",
+        2,
+    ),
+}
 
 
 def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--profile",
+        choices=("formal", "priority_reachability"),
+        default="formal",
+    )
     return parser.parse_args()
 
 
-def audit(config_path: Path) -> dict[str, object]:
+def audit(
+    config_path: Path,
+    *,
+    profile: str = "formal",
+) -> dict[str, object]:
+    expected = (
+        EXPECTED
+        if profile == "formal"
+        else PRIORITY_REACHABILITY_EXPECTED
+        if profile == "priority_reachability"
+        else None
+    )
+    if expected is None:
+        raise ValueError(f"unknown readiness profile: {profile}")
     raw_config = json.loads(config_path.resolve().read_text(encoding="utf-8"))
     config = load_config(config_path.resolve())
     errors: list[str] = []
@@ -64,12 +90,15 @@ def audit(config_path: Path) -> dict[str, object]:
         scenario.scenario_id: (scenario.policy, scenario.job_count)
         for scenario in config.scenarios
     }
-    if observed != EXPECTED:
-        errors.append("scenario matrix does not match the frozen ten-scenario contract")
-    try:
-        direct = direct_control_contract(config)
-    except (TypeError, ValueError) as exc:
-        errors.append(f"direct request contract is invalid: {exc}")
+    if observed != expected:
+        errors.append(f"scenario matrix does not match the frozen {profile} contract")
+    if profile == "formal":
+        try:
+            direct = direct_control_contract(config)
+        except (TypeError, ValueError) as exc:
+            errors.append(f"direct request contract is invalid: {exc}")
+            direct = None
+    else:
         direct = None
     manifests: dict[str, dict[str, object]] = {}
     configured_cap = int(
@@ -273,6 +302,7 @@ def audit(config_path: Path) -> dict[str, object]:
         "status": status,
         "errors": errors,
         "experiment_id": config.experiment_id,
+        "profile": profile,
         "scenario_count": len(config.scenarios),
         "warmup_runs_per_scenario": config.warmup_runs_per_scenario,
         "formal_repeats": config.formal_repeats,
@@ -311,7 +341,7 @@ def audit(config_path: Path) -> dict[str, object]:
 
 def main() -> int:
     args = _args()
-    result = audit(args.config)
+    result = audit(args.config, profile=args.profile)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     if result["status"] != "passed":

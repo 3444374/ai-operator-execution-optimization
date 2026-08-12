@@ -27,14 +27,17 @@ fixed-K 决定性矩阵已于 2026-08-12 完成：direct/static/FIFO/DRR/externa
 active-set 与四 matched-solo 共 40/40 cell、0 incident、exactly-once。定位性均值显示 SAOR
 12,393 tok/s、fg P99 50.3s、fg slowdown 3.45，在四个 credit 臂中 fg 最好；static 只有
 9,508 tok/s，却以 fg P99 29.2s、fg slowdown 2.19 和 0% SLO violation 成为更强隔离 Pareto
-点。总 validation 因 DRR/VTC rep2 没有 post-drain 样本而 fail-closed；离线核对两 Job 完成
-只差约 5.8ms/4.8ms，因此不能写成 baseline 机制失败，也不能写 SAOR 胜出。
+点。原始完整 validation 因 DRR/VTC rep2 没有 post-drain 样本而 fail-closed；离线核对两 Job
+完成只差约 5.8ms/4.8ms。现已冻结 250 ms trace-resolution 规则并回放 compact evidence：
+四个 credit 臂 effective mechanism 12/12；该 artifact 显式不更新完整 formal validation，故仍
+不能写 SAOR 胜出，也不能把原始假阴性写成 baseline 机制失败。
 
 当前状态为 `formal-evaluated / fail-closed / directional-only`。formal 的 SAOR 配置
 `slo_weight=0`，且不可抢占已进入 vLLM 的请求；无保护余量时，bulk 在前台到达前占满包络，
 foreground 必须等待 completion 释放 credit。故下一步不扫 fairness/SLO 权重，也不跑 4-Job：
-先修 simultaneous-drain 审计语义并离线重放，再跑 foreground strict-priority release-only
-可达性诊断，最后单变量扫描 reserve 0/0.25K/0.5K 与 q95 work credit。只有小于半包络的
+simultaneous-drain 审计和 compact 回放已完成；foreground strict-priority release-only
+可达性诊断已完成实现/readiness/summary/单测，等待 2×4090 GPU 运行。其后才单变量扫描
+reserve 0/0.25K/0.5K 与 q95 work credit。只有小于半包络的
 reserve 同时达到 static fg 非劣与吞吐≥static+5%，才保留 reservation-backed SAOR。
 
 ## 图像状态增量（2026-08-10）
