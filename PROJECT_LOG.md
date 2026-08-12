@@ -6224,3 +6224,23 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 从 v7 学校模板原位替换第 2–4 页，生成 `opening/slides/opening_defense_20260812_v8.pptx`；
   删除旧正文对象后插入正式图，没有遮罩或叠层修补。20/20 页渲染、overflow、20/20 notes、
   template fidelity 0 issue 和逐页视觉复核均通过，其余 17 页内容与 notes 保持不变。
+
+## 2026-08-12 冻结 SAOR v0.5 通用有界优先级设计
+
+- 根据 fixed-envelope formal 与 strict-priority 两轮 GPU 短测，把 SAOR 效果有限的根因收紧为
+  三个断点：formal `slo_weight=0`、request 剩余 SLO 预算未进入 coordinator，以及 hard
+  priority 缺 actual-work anti-starvation cap 且可能为不 fit 的高优先级 Job 留空。
+- 在 `research/saor_model_scenario_audit_20260811.md` §12 与
+  `experiments/plans/state_aware_work_unit_evaluation_20260808.md` §5.2.2.4 冻结
+  `saor-v0.5-bounded-priority-design`：显式 per-Job priority/remaining SLO budget，
+  completion-corrected actual-work debt guard 高于 priority，普通状态回退原 SAOR；每 Job 至多
+  一个 guard-recovery lease 在途，debt-critical head 不 fit 时显式 drain，普通 priority head
+  不 fit 时才 work-conserving fallback，并记录 event-level tier/conflict/fit 证据。
+- 接口从第一天按任意 Job 数定义，但首轮实现/短测只覆盖冻结 2-Job workload 和
+  `H_bulk/K_work={0.25,0.50}`；未运行长时间 formal。两个点均不能同时通过 foreground、bulk、
+  efficiency 和机制门时停止密集调参；reservation/upper-bound resource work 仅在 guard 通过后
+  作未知到达与估计误差鲁棒性消融。
+- 数学边界明确区分 envelope safety、constraint-work-conservation、2-Job release-opportunity
+  非饥饿与 SLO 可达性；不把 debt cap 误写成 completion/service-lag 上界，也不继承 VTC/DRR/EDF 在 in-engine、packet 或理想可抢占模型下的原始
+  定理。当前只完成设计冻结，生产实现、GPU 短测和定理证明均未完成，SAOR 状态保持
+  `formal-valid/not-promoted`。

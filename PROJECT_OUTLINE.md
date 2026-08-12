@@ -134,8 +134,10 @@ PostgreSQL source
   observe-only；它验证的是 fairness-aware release，不是完整 SLO-aware controller。第一性原理
   审计确认：soft fairness release score 无法复制 static 的即时隔离；但 strict-priority 两轮 GPU
   短测达到 11,791 tok/s、fg P99 14.27s、SLO 0%，说明已知 foreground 存活信号下 release-only
-  可达。候选后继改为 lexicographic SLO priority + 有界 priority-window/service-lag guard，
-  reservation 与 q95/actual-work oracle 作为鲁棒性消融。两 Job 未达到 static fg
+  可达。`saor-v0.5` 已冻结为通用有界词典序 release：显式 per-Job priority/剩余 SLO 预算，
+  completion-corrected actual-work debt cap 优先阻止饥饿，无 guard 时回退 SAOR；debt-critical
+  head 不 fit 时显式 drain，其余只在 fitting heads 间选择；首轮只做两 Job的 0.25K/0.50K 两个 cap。reservation 与
+  upper-bound resource work 仅作 guard 通过后的鲁棒性消融。两 Job 未达到 static fg
   非劣且吞吐≥static+5% 前不跑 4-Job，也不声称定理证明；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；

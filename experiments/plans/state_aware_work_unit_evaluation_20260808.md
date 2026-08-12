@@ -2,7 +2,7 @@
 
 日期：2026-08-08（2026-08-09 更新：开题两作业 guaranteed-overlap 已完成；
 2026-08-11 更新：新增 SAOR 动态调度设计维护入口；2026-08-12 更新：fixed-envelope
-2-Job formal 已运行并经 resolution-aware v2 完整 validation，进入 post-formal 修订）
+2-Job formal 已运行并经 resolution-aware v2 完整 validation，冻结通用有界优先级 v0.5 设计）
 
 > **动态调度算法唯一维护入口**：本文 §5.2。当前状态为
 > `formal-valid / not-promoted`，不是已完成方法，
@@ -121,8 +121,8 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 | 字段 | 当前冻结值 |
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
-| policy revision | runtime/formal contract `saor-v0.4.6-work-conserving-gate`；post-formal design audit `saor-v0.4.7-reservation-candidate`；audit harness `saor-v0.4.8-resolution-aware`；priority diagnostic harness `saor-v0.4.9-release-upper-bound`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
-| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上 validation passed、credit mechanism effective 12/12，原 failed 文件保留审计。SAOR 在 credit 臂内 fg 最好但未越过 static；strict-priority 两轮 GPU 短测达到 11,791 tok/s、fg P99 14.27s/SLO 0%，但 formal repeats=0。当前实现 `slo_weight=0`，不是完整 SLO-aware 方法；dynamic K 为 `parked-conditional`；下一候选是有界 priority/lag guard，尚未完成定理证明 |
+| policy revision | runtime/formal contract `saor-v0.4.6-work-conserving-gate`；resolution-aware audit `saor-v0.4.10-resolution-aware-full`；priority diagnostic `saor-v0.4.9-release-upper-bound`；下一设计 `saor-v0.5-bounded-priority-design`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
+| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上 validation passed、credit mechanism effective 12/12，原 failed 文件保留审计。SAOR 在 credit 臂内 fg 最好但未越过 static；strict-priority 两轮 GPU 短测达到 11,791 tok/s、fg P99 14.27s/SLO 0%，但 formal repeats=0。当前 runtime 的 `slo_weight=0`，不是完整 SLO-aware 方法；dynamic K 为 `parked-conditional`。已冻结通用有界词典序设计，尚未实现、短测或完成定理证明 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
 | 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
@@ -322,6 +322,62 @@ calibration matrix；选择器冻结“满足 correctness/SLO 且达到已测峰
 证据 SHA 的 selection contract。签名不变的后续实验只读合同，不逐 run 手调；正式 runner
 若配置与 selection 不一致直接拒绝。`saor_release` 不修改该 K，只有 Job active set 与 release
 order 动态变化。
+
+#### 5.2.2.4 `saor-v0.5`：通用接口、2-Job 首验的有界词典序 release
+
+完整推导、release 非饥饿界和反例见
+`../../research/saor_model_scenario_audit_20260811.md` §12。本节只冻结后续实现/实验合同。
+
+根因不再表述为“SAOR 的 SLO 权重不够大”：formal 配置强制 `slo_weight=0`，请求剩余 SLO
+预算也未从 scheduler 接入 coordinator；当前 soft score 实际优化 entitlement/fairness，不直接
+优化 foreground tail。strict-priority 证明未来 release 能救前台，但它会为当前不 fit 的高优先级
+Job 留空，并在无 debt cap 时让 bulk 长期欠服务。因此下一版不继续扫软权重，也不先引入
+reservation。
+
+通用策略对任意 Job 集 $B_e(n)$ 定义稳定业务优先级 $p_j$、公平权重 $\phi_j$、请求剩余 SLO
+预算、completion-corrected actual-work 债务 $F_j$ 和 cap $H_j$。每个 release epoch 只在同时
+满足 request/work envelope 的 fitting heads 中按词典序选择：
+
+| 层级 | 动作 | 不能被什么覆盖 |
+|---:|---|---|
+| 0 | correctness、lifecycle、freshness、request/work fit | 任意吞吐、优先级或公平 score |
+| 1a | $F_j\ge H_j$ 且无 recovery lease 在途时，先选 fitting 的最大 $F_j/H_j$；每 Job 至多一个 recovery lease | 业务 priority；避免 completion 校正前过量 recovery |
+| 1b | debt-critical head 暂时不 fit 时显式 `guard_reclaim_hold` | 停止新 lease 让 active envelope 排空；该时间单列，不伪装成自然 idle |
+| 2 | 否则选已进入 priority window 的最高 $p_j$；同级按最少剩余 SLO 预算 | SAOR 普通 entitlement score |
+| 3 | 无 guard/priority 触发时回退现有 SAOR selector | 只处理剩余普通共享机会 |
+| 4 | 普通高优先级 Job 当前无 fitting head 时，继续选择其他 fitting head | 禁止 strict-priority 的 avoidable idle；不覆盖 1b 的硬 guard reclaim |
+
+服务债务仍按实际 completion work 更新：
+
+$$
+F_j(n+1)=\left[F_j(n)+\rho_j(n)c_n-\mathbf1\{j=k(n)\}c_n\right]^+,
+\qquad
+\rho_j(n)=\frac{\phi_j}{\sum_{h\in B_e(n)}\phi_h}.
+$$
+
+resource upper bound、ordering point estimate 和 actual fairness work 分账。若共同积压份额和
+单 completion actual work 有正下界，则可以界定 debt 到 cap 前允许的 foreign completion 数，
+并保证 cap 触发后第一个 fitting release opportunity 给欠服务 Job；但不能界定该请求在 vLLM
+内部的完成时间或直接继承 VTC 的 in-engine 2× service-difference bound。若 SLO priority 与 debt guard 同时触发，记录 `constraint_conflict` 并由 debt guard 覆盖，
+不以隐式软权重决定牺牲哪个约束。
+
+接口从第一天支持任意 Job 数和显式 per-Job priority/SLO/debt cap，不按到达次序或 Job 名称推断
+foreground；首个实现与 GPU development 只复用冻结 2-Job workload。只测
+$H_B/K^{work}\in\{0.25,0.50\}$ 两点，foreground 的 priority window 取完整 30s SLO，固定其余
+参数和总 envelope；不跑长时间 formal，不扩 4-Job。
+
+| 首轮门 | 判据 |
+|---|---|
+| correctness | 0 incident、exactly-once、lifecycle/fit/event ledger 全通过 |
+| foreground | P99≤30.7s，SLO violation≤1% |
+| efficiency | tokens/s≥9,984，即相对 static 9,508 至少约 +5% |
+| bulk protection | SLO violation≤0.723、slowdown≤1.60 |
+| mechanism | `avoidable_idle=0`，guard hold 单列；priority/debt tier 均实际触发；每 Job recovery lease≤1；debt-critical fitting head 被 foreign grant 越过次数=0 |
+| stability/结论 | 两个短 repeat 方向一致；只决定是否值得注册 formal，不发布 winner claim |
+
+若两个 cap 均不能同时通过 foreground、bulk 和 efficiency 门，则停止密集扫描 cap/权重并审计
+约束冲突；只有一个 cap 先通过后，才在该 cap 下把 reservation 0/0.25K 与 point/upper-bound
+resource work 作为独立鲁棒性消融。
 
 #### 5.2.3 三种 work 语义：token 组织不取消，但不再一数三用
 
@@ -823,8 +879,9 @@ $\arg\min_a\Psi(a)=\arg\min_a[\Psi(a)-\Psi(hold)]$，不会改变动作排序。
 #### 5.2.11 交叉验证、baseline 与淘汰门
 
 所有正式臂冻结未修改 vLLM 和相同内部配置。fixed-envelope 多 Job 主比较为：global FIFO、
-static partition、shared DRR、external VTC-style 与 `FCFS-SAOR-Release`；`Priority-SAOR` 只作
-后续可选消融。dynamic capacity 保持 `parked-conditional`；若未来恢复，才独立比较 frozen
+static partition、shared DRR、external VTC-style 与 `FCFS-SAOR-Release`；strict-priority 保持
+release-only upper-bound diagnostic，`saor-v0.5` 有界 priority/debt 只有通过 2-Job development
+门后才可注册新 formal。dynamic capacity 保持 `parked-conditional`；若未来恢复，才独立比较 frozen
 lower/upper、state-observed no-op、threshold/deadband、governor 和 offline oracle。
 
 验证顺序保持“单一动作先行”，且 fixed-envelope release 与 dynamic capacity 分轨：
@@ -899,6 +956,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-12 | `saor-v0.4.8-resolution-aware` | 将 post-drain 的可检验性绑定到 250 ms trace 周期；完成间隔低于该周期且区间内无样本时记为 `not_applicable`，有窗口/样本时仍 fail-closed 要求工作守恒。legacy compact evidence 仅在 lifecycle、borrow、reclaim 和无 fit violation 全满足时重分类 | 单元反例 + 已归档 `group_runs.csv` 离线回放 | compact mechanism 12/12 effective pass；显式 `full_formal_validation_updated=false`，不改原始 validation、不改变性能结论 |
 | 2026-08-12 | `saor-v0.4.9-release-upper-bound` | 增加非抢占 foreground strict-priority：前台 Job 首次注册后只把新释放 credit 给前台，前台生命周期结束后恢复 bulk；priority 与 fairness weight 分离，并进入 group evidence | shared-credit/scheduler/config/runner 单测 + fail-closed readiness/summary 单测 + 两轮 GPU rehearsal | release-only 可达：fg P99 14.27s、SLO 0%，但仅 development diagnostic；下一步给 hard priority 加 bounded window/service-lag guard |
 | 2026-08-12 | `saor-v0.4.10-resolution-aware-full` | 默认 formal summarizer 写出 resolution-aware v2、采样周期、完整 validation 更新标志与 legacy 重分类清单；在服务器完整 artifact 上旁路重汇总 | 本地/服务器 6 个真假阴性回归 + source SHA 绑定 | validation passed、credit effective 12/12；原 failed 文件保留审计，性能排序不变，SAOR 仍 not-promoted |
+| 2026-08-12 | `saor-v0.5-bounded-priority-design` | 将后继冻结为通用有界词典序 release：显式 per-Job priority/剩余 SLO 预算、completion-corrected actual-work debt cap、单 recovery lease、guard drain/普通 priority fitting-head fallback 与 event-level 机制证据；首轮只做 2-Job 两个 cap | formal/strict-priority GPU 证据 + 实现断点审计 + DRR/VTC/EDF 理论边界 | 仅设计冻结；尚未实现/短测/证明，SAOR 保持 `formal-valid/not-promoted`；reservation 降为通过 guard 后的鲁棒性消融 |
 
 状态只允许按以下顺序变化：
 

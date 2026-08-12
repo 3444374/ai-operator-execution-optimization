@@ -1,6 +1,6 @@
 # SAOR 数学模型、控制分层与适用场景审计
 
-> 状态：`saor-v0.4.1-runtime-revision`。本文依据 2026-08-11 capacity-only 负结果和既有两/四 Job
+> 状态：`saor-v0.5-bounded-priority-design`。本文依据 2026-08-11 capacity-only 负结果和既有两/四 Job
 > 干扰结果，对 SAOR 的控制对象、
 > 可证明部分、经验控制部分和 benchmark 重新分层。它不把一次 development run 写成算法结论，
 > 也不宣称实际实现已经获得 MaxWeight/VTC 的理论保证。2026-08-12 已接入固定包络
@@ -659,3 +659,180 @@ bulk normalized lag/SLO 不越过冻结上界、correctness/exactly-once 全过�
 fg P99≤30.7s、fg SLO violation≤1% 判可达。两轮 GPU rehearsal 实测 fg P99 14.27s、SLO 0%，
 但 hard priority 仍缺 anti-starvation/service-lag 上界，不能直接作为 proposed；该结果把 verdict
 从“release-only 可能不可达”更新为“可达但安全约束未闭合”。
+
+## 12. `saor-v0.5`：通用有界优先级与实际服务债务设计
+
+### 12.1 根因不是“SAOR 权重太小”，而是目标、信号和动作三处断开
+
+| 层次 | 当前事实 | 第一性原理后果 |
+|---|---|---|
+| 目标 | formal 的 `slo_weight=0`，实际 score 只有 entitlement、queue 和 fairness 项 | 当前 SAOR 优化的是共享效率/公平启发式，不是 foreground tail 或 SLO |
+| 信号 | runner 虽用 30s SLO 统计完成后 violation，但 scheduler 没把 request 剩余预算传给 coordinator | release 决策无法区分“仍有 25s”与“只剩 1s”的队首请求；事后 SLO 指标不能反向成为在线状态 |
+| 动作 | strict-priority 对未完成高优先级 Job 保留未来 credit，即使其队首暂时不 fit | 前台可达性变好，但会产生 avoidable idle，并可能让 bulk 长期欠服务 |
+| 资源语义 | formal 物理 lease 使用 point estimate；foreground actual/predicted≈1.289，bulk≈1.064 | 一个低估偏差不同的标量不能同时充当物理安全上界、公平服务量和完成时间预测 |
+| 作用边界 | 上游不能撤销已进入 vLLM 的请求 | 任何到达后保护都至少等待一个 completion；仅调 score 不可能提供 preemptive guarantee |
+
+因此不采用“把 `slo_weight` 从 0 调到某个较大数”的修复。该做法把无量纲 age ratio、work debt、
+active share 和 queue pressure 继续压进一个软分数；随着 backlog/尺度变化，同一个权重会改变含义，
+也无法给出反饥饿上界。
+
+### 12.2 三个候选及选择
+
+| 候选 | 核心动作 | 优点 | 致命问题 | 决策 |
+|---|---|---|---|---|
+| 加权 soft score | 接通 SLO age 并调大 `slo_weight` | 改动最小 | 量纲和尺度不闭合；SLO、公平可互相抵消；没有 starvation bound | 拒绝作为下一主候选，只保留回归对照 |
+| **有界词典序 release** | 显式业务优先级 + request 剩余预算；实际 work debt 到界后覆盖优先级；无候选时回退 SAOR | 不改 vLLM；可解释、可审计、天然支持任意 Job 数；strict-priority 是其无穷 debt cap 极限 | 只能控制未来 release；多 Job 全局 lag 定理仍需桥接 | **选择；接口按通用 Job 集设计，首轮只实现/验证 2 Job** |
+| reservation-first | 预留 request/work headroom，空闲时允许 bulk 借用并回收 | 能改善未知前台到达时的即时容量 | reservation 大小依赖到达和 work 上界；可能牺牲 work conservation；strict-priority 已表明当前场景不必先付该成本 | 暂缓；仅在 bounded release 通过后作未知到达/估计误差鲁棒性消融 |
+
+### 12.3 通用状态与不可混用的三种 work
+
+在 endpoint $e$ 的第 $n$ 个 release epoch，设 backlogged Job 集为 $B_e(n)$，能同时装入剩余
+request/work envelope 的 Job-head 集为 $E_e(n)$。每个 Job $j$ 的稳定配置为：公平权重
+$\phi_j>0$、业务关键级 $p_j\in\mathbb N_0$、可选 request SLO $\tau_j>0$、优先级进入窗口
+$g_j\in[0,\tau_j]$ 和实际服务债务 cap $H_j>0$。这些字段来自 workload/scenario 配置，不允许
+根据“后到的 Job”或 Job 名称推断 foreground。
+
+对 Job-head 请求 $i_j$ 分开维护：
+
+$$
+\overline W_{i_j}^{resource},\qquad
+\widehat W_{i_j}^{order},\qquad
+W_{i_j}^{fair,actual}.
+$$
+
+| work | 用途 | v0.5 合同 |
+|---|---|---|
+| $\overline W^{resource}$ | request/work envelope fit 与安全审计 | 必须是同 calibration signature 下的保守上界；缺失时可运行开发 smoke，但不得声明 envelope 对 actual work 安全 |
+| $\widehat W^{order}$ | SAOR fallback 的 queue/packing tie-break | 允许点估计；预测误差只能影响排序，不能放宽物理 envelope |
+| $W^{fair,actual}$ | completion 后更新公平债务 | 使用实际 prompt/output 加权 work；不能用 q95 或 resource reservation 替代 |
+
+scheduler 不把跨进程绝对时钟直接送入 coordinator，而在 admission 时计算队首已消耗年龄
+$a_i$，传入剩余预算
+
+$$
+b_i=\tau_j-a_i.
+$$
+
+coordinator 用自己的单调时钟保存 $d_i=t_{enqueue}+b_i$。这样 deadline 的在线语义是“从现在起
+还剩多少预算”，不依赖不同 Ray 进程的墙钟/单调时钟原点；$b_i\le0$ 表示到达 coordinator 前
+已经 miss，仍进入紧急集合并单独计数。
+
+### 12.4 实际服务债务与有界词典序选择器
+
+只在 ready 或 active 的共同积压 Job 集内定义目标份额
+
+$$
+\rho_j(n)=\frac{\phi_j}{\sum_{k\in B_e(n)}\phi_k}.
+$$
+
+第 $n$ 个 completion 的实际公平 work 为 $c_n$，完成 Job 为 $k(n)$。沿用已有 completion-corrected
+虚拟债务：
+
+$$
+F_j(n+1)=
+\left[F_j(n)+\rho_j(n)c_n-\mathbf 1\{j=k(n)\}c_n\right]^+.
+$$
+
+定义 priority-window 集：
+
+$$
+\mathcal U_e(n)=\left\{j\in E_e(n):p_j>0,\ d_{i_j}-t_n\le g_j\right\}.
+$$
+
+另设 $r_j^{guard}\in\{0,1\}$ 表示 Job $j$ 是否已有一个由 debt guard 释放、但尚未完成的
+recovery lease。必须等该 lease completion、用 actual work 校正 $F_j$ 后才允许为同一 Job 再发
+一个 recovery lease；否则一个 `while capacity` 循环会在 debt 尚未下降时连续过量释放。
+
+据此把 debt-critical ready 集与其中能装入的子集分别定义为
+
+$$
+\mathcal G_e^{ready}(n)=
+\left\{j\in B_e(n):Q_{j,model}(n)>0,\ F_j(n)\ge H_j,\ r_j^{guard}=0\right\},
+$$
+
+$$
+\mathcal G_e^{fit}(n)=\mathcal G_e^{ready}(n)\cap E_e(n).
+$$
+
+每次按以下词典序选择；高层条件不能被低层 score 抵消：
+
+| 层级 | 候选/选择键 | 解释 |
+|---:|---|---|
+| 0 | correctness、lifecycle、freshness、request/work fit | 任一失败立即拒绝动作或 fail-closed 到冻结策略 |
+| 1a | 若 $\mathcal G_e^{fit}\ne\varnothing$，最大化 $F_j/H_j$；并列时先剩余预算更少，再用稳定 `job_id`；选中后置 $r_j^{guard}=1$ | debt guard 覆盖业务优先级；同一 Job 一次只承诺一个待 actual-work 校正的 recovery lease |
+| 1b | 若 $\mathcal G_e^{ready}\ne\varnothing$ 但 $\mathcal G_e^{fit}=\varnothing$，本 epoch 不发其他新 lease，记录 `guard_reclaim_hold` | 让 active envelope 排空直到欠服务 Job-head 能装入；这是约束性 reclaim，不算 avoidable idle |
+| 2 | 否则若 $\mathcal U_e\ne\varnothing$，先最大 $p_j$，再最小 $d_{i_j}-t_n$，再用 SAOR fallback | 只在还没触发服务债务上界时给关键 Job deadline/criticality 优先级 |
+| 3 | 否则运行现有 SAOR entitlement/fairness selector | 保留 idle borrowing、active-set reclaim 和普通共享效率 |
+| 4 | 只有 priority-window Job（而非 debt-critical Job）当前不 fit 时，才在其余 fitting heads 中继续 2–3 | 不复制 strict-priority 为普通高优先级 Job 留空的行为；debt guard 的 1b 仍可显式 drain |
+
+上述顺序有意让 debt guard 高于 SLO priority：在非抢占、可能 overload 的系统里，硬 SLO 与硬
+无饥饿不一定同时可行。若 $\mathcal G_e^{ready}$ 非空且仍有 $\mathcal U_e$ 中的 Job，必须记录
+`constraint_conflict=true`，由实验报告冲突频率；不能悄悄用一个权重决定谁被牺牲。所谓
+work-conserving 在这里严格指 **constraint-work-conserving**：除 1b 的显式 guard reclaim 和
+freshness/failure 外，只要存在 fitting head 就必须释放；1b 必须单独计时，不能伪装成自然 idle。
+
+strict-priority 是该选择器在 $g_F=\tau_F$、$H_B=+\infty$ 时的诊断极限；普通 SAOR 是
+$p_j=0$ 且 $H_j=+\infty$ 时的退化情形。二者因此可作为同一实现的结构化消融，而不是另写两套
+不一致调度器。
+
+### 12.5 能证明什么、暂时不能证明什么
+
+| 性质 | v0.5 可给出的结论 | 必要条件/边界 |
+|---|---|---|
+| envelope safety | selector 只从 $E_e(n)$ 选择，故不会由 release 动作主动越过 request/work cap | 需要 $\overline W^{resource}\ge W^{actual}$；若仍用 point estimate，只是经验安全 |
+| constraint-work-conserving | 除 debt-critical head 的 `guard_reclaim_hold` 和 freshness/failure 外，$E_e(n)\ne\varnothing$ 时规则必返回一个 fitting head | 不等于 GPU 永不空闲；guard hold 必须单列，不能算 avoidable idle，也不能从 denominator 隐去 |
+| 2-Job release 非饥饿 | 若共同积压时 $\rho_B\ge\rho_{min}>0$、每个 completion actual work≥$c_{min}>0$，则 bulk 从 debt=0 开始，在至多 $\lceil H_B/(\rho_{min}c_{min})\rceil+1$ 个 foreign completions 后进入 guard；此后第一个 fitting release opportunity 必须给 bulk | 只界定“获得一个 recovery lease”的机会，不界定该请求在 vLLM 内的完成时刻或 service lag；head 最终 fit 还要求 active 请求有界完成 |
+| SLO | 可证明选择顺序忠实于显式 priority/deadline；不能证明任意负载下满足 30s SLO | 非抢占、未知 service 与 capacity-region 外 arrival 会使 SLO/公平约束冲突；需报告 `constraint_conflict` 和 miss |
+| 任意 Job 数 | 接口、集合和选择键不含 2-Job 特判 | 首个实现/短测只覆盖 2 Job；N-Job debt bound、重入 counter-lift 与 heterogeneous weight 证明留待两 Job 过门后 |
+
+release 非饥饿界直接来自每个 foreign completion 令 $F_B$ 至少增加
+$\rho_{min}c_{min}$；达到 $H_B$ 后，词典序层 1 不允许 fitting foreign head 越过 bulk。若 bulk
+暂时不 fit，层 1b 停止新 release，使有界 active work 排空。这个命题刻意不声称 $F_B$ 本身被
+$H_B$ 上界：bulk recovery lease 完成前，已有 foreground 仍可继续完成并增加 debt；外部控制器
+不能约束 vLLM 内部完成顺序。要获得 completion/service-lag bound，还需要服务时间上界和更强的
+engine bridge，目前不具备。
+
+理论来源只迁移可用部分：DRR 提供 deficit/packet-quantization 思路，VTC 提供 actual-token
+accounting、active client 与 work-conserving 公平语义，EDF 只提供 deadline 排序模式。SAOR 位于
+vLLM 之前、不可抢占且按 completion 才校正 actual work，因此不继承 DRR/VTC 的原始 lag bound，
+也不继承理想可抢占周期任务的 EDF utilization 结论：
+
+- DRR：<https://doi.org/10.1109/90.502236>；
+- VTC：<https://www.usenix.org/conference/osdi24/presentation/sheng>；
+- EDF/RM：<https://doi.org/10.1145/321738.321743>。
+
+### 12.6 事件证据、假阴性修正和 fail-closed 合同
+
+250ms sampled aggregate trace 继续用于资源/阶段曲线，但不再作为 release 机制是否发生的唯一
+证据。每个 release epoch 必须落一条事件记录：`release_seq`、endpoint、eligible/fitting Job、
+每个 head 的 fit blocker、priority、remaining SLO budget、fairness debt/cap、命中的层级、selected
+Job、`guard_reclaim_hold`、`guard_recovery_pending`、`constraint_conflict` 和是否存在 avoidable idle。机制判定优先使用事件账本；只有事件缺失
+时才退回 resolution-aware sampled gate，并保持 `pass / fail / not_applicable` 三值语义。
+
+| 情形 | 判定 |
+|---|---|
+| 有 fitting head 但本 epoch 未选择，且无 `guard_reclaim_hold`/freshness/failure blocker | `work_conserving=false`，明确失败 |
+| 两 Job 完成间隔小于采样周期、区间没有 aggregate sample，但事件账本完整 | 由事件账本判定；不再产生 `mechanism_not_observed` 假阴性 |
+| 事件账本缺失，post-drain 窗口又短于一个采样周期 | `not_applicable`，不能冒充 pass，也不能误判 fail |
+| priority/SLO/debt 配置缺字段、同 Job 运行中变化或时钟预算非有限值 | readiness/runtime fail-closed；不静默退化为 0 |
+
+### 12.7 首轮 2-Job development gate 与停止条件
+
+接口一次按任意 Job 数实现，但首轮只复用冻结的 `bulk@0 → foreground@5s → overlap → drain`
+两 Job workload，暂不跑长时间 formal。除 static/current-SAOR/strict-priority 控制外，只测
+$H_B/K^{work}\in\{0.25,0.50\}$ 两个有界点；foreground 取 $p_F=1$、$g_F=\tau_F$，bulk
+取 $p_B=0$，其他参数、总 request/work envelope、manifest 和 vLLM 配置不变。
+
+| 门 | 预注册 development 判据 | 目的 |
+|---|---|---|
+| correctness | 0 incident、exactly-once、lifecycle/fit/event ledger 全通过 | 先证执行正确 |
+| foreground | P99≤30.7s，SLO violation≤1% | 不劣于本轮 static P99 29.2s 的 5% 容差 |
+| efficiency | tokens/s≥9,984 | 至少超过本轮 static 9,508 tok/s 约 5% |
+| bulk protection | SLO violation≤0.723，slowdown≤1.60 | SLO 不比 static 0.673 多 5pp；JCT 不劣于 static slowdown 1.52 的约 5% 容差 |
+| mechanism | `avoidable_idle=0`，guard hold 单列；priority/debt tier 均实际触发；同 Job recovery lease≤1；debt-critical fitting head 被 foreign grant 越过次数=0 | 排除“结果好但策略没真正动作”、过量 recovery 与采样假阴性 |
+| stability | 两个短 repeat 方向一致；不将其写成 formal 结论 | 只筛选是否值得注册 formal |
+
+停止规则：两个有限 cap 均不能同时通过 foreground、bulk 与 efficiency 门时，不继续密集扫描
+cap/权重，也不扩 4-Job；先用事件账本区分“release-only 的约束不可同时满足”与实现错误。
+只有至少一个 cap 通过，才允许在该 cap 下单独做 `reserve=0` 对 `0.25K`、point estimate 对
+保守 upper-bound 的鲁棒性消融；reservation 不先验进入主方法。
