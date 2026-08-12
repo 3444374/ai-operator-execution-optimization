@@ -655,3 +655,14 @@
   用户要求暂停，因此整体材料不能标为冻结。
 - 同步 cost UTF-8 规范化后的图 E 输入 SHA；只更新数据合同，不重画图、不改 PPT、
   不同步飞书或 Wiki。
+
+## 2026-08-12 20 页中文开题 PPT v7
+
+- 在独立 worktree 与 `codex/opening-report-ppt` 分支完成 v7，没有切换主工作区 `main`。
+- 第 5–19 页完整使用开题专用图集 14/14 张主讲图；第 2、3 页保留背景文字页并给出建议补图
+  提示词，第 4 页文献分层图为可选增强。没有缺失的开题实验数据图。
+- 完成 20/20 页渲染、0 空 placeholder、20/20 notes、模板保真 0 issue 和逐页视觉复核；
+  图文比较范围与 Claim Matrix 一致。
+- 更新 `opening/slides/README.md`、v7 QA、图文一致性审计、`opening/README.md`、
+  `opening/claim_matrix.md`、`PROJECT_INDEX.md` 与根日志。中文 Markdown 报告和飞书云文档
+  后续继续，Wiki 不同步。

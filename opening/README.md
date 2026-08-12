@@ -14,9 +14,9 @@
 - 三个研究问题为：最小饱和压力与 transient ramp、相同 work 的数据组织、
   多 job shared credit/fairness。
 
-本目录用于准备开题报告、开题汇报 PPT 和进度材料。当前阶段只维护本地 Markdown、
-紧凑实验数据和待画图合同；按用户要求暂停新图、PPT、飞书云文档覆盖、Wiki 与 DOCX。
-恢复这些产物时仍以本地权威稿和 Claim Matrix 为唯一输入。
+本目录用于准备开题报告、开题汇报 PPT 和进度材料。当前阶段优先冻结 20 页中文 PPT；
+中文 Markdown 报告和飞书云文档在 PPT 冻结后继续，Wiki 不同步。所有发布面仍以本地权威稿和
+Claim Matrix 为唯一输入。
 
 开题材料不是独立于项目的展示层。当前报告确定的题目和研究内容会反向影响 `overview/` 中的阶段规划、`motivation/` 中的后续实验设计以及项目级 README / PROJECT_INDEX 的方向说明。修改开题题目、研究内容或实验边界时，需要同步检查这些项目入口，避免开题材料和项目主线割裂。
 
@@ -58,11 +58,11 @@
 | 材料 | 主文件 | 状态 |
 |---|---|---|
 | 第一性原理复审 | `first_principles_reassessment_20260808.md` | 当前方法、实验与图的调整依据 |
-| 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：20 页主讲内容大纲；每页已补齐核心问题、内容块、证据、页面结论与转场，并建立背景—动机—研究内容—实验对应表；暂不制作 PPT** |
+| 答辩内容大纲 | `opening_defense_outline_20260808.md` | **当前权威入口：20 页主讲内容大纲；每页已补齐核心问题、内容块、证据、页面结论与转场，并建立背景—动机—研究内容—实验对应表** |
 | 开题报告 | `report/opening_report.md` | 2026-08-10 已完成第1--7章内容重组：以 AI-Native Data Infra 为背景，按数据库 AI、GPU serving、分布式数据执行和代价估计四条论文线收敛研究空白；研究问题、技术路线、前期证据、进度和预期创新已统一到“work→state→bounded action→evaluation”闭环，明确在线 dynamic active-work 尚未接入正式主路径；暂不同步云文档 |
 | 开题叙事与 Claim Matrix | `claim_matrix.md` | 2026-08-09 已复审；实验准入、主张等级、禁止外推、材料 readiness 与总目标完成条件的当前依据 |
-| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前暂停 PPT 制作 |
-| 开题 PPTX | `slides/opening_defense_20260807_v6.pptx` | v5 模板继承的待替换底稿；已有 QA 不代表新内容已冻结 |
+| 开题 PPT 设计 | `slides/opening_defense_v6_design.md` | 28 页历史设计底稿；当前主讲结构已由 20 页 v7 取代 |
+| 开题 PPTX | `slides/opening_defense_20260812_v7.pptx` | 当前 20 页中文主讲版；模板、逐页渲染、图文、数据和引用 QA 见 `slides/opening_defense_20260812_v7_qa.md` |
 | 开题飞书历史快照 | `feishu/opening_report_wiki.md` | **已过期，禁止同步**；仍含首轮failed-feeding数字。当前权威正文为`report/opening_report.md`，用户恢复云文档工作后再由权威正文重新生成同步源 |
 | 动机测试飞书 wiki 源稿 | `feishu/motivation_feasibility_wiki.md` | 已同步到飞书 |
 | 飞书进度汇报 | `feishu/progress_update.md` | 已同步当前进展 |
@@ -85,9 +85,9 @@
 
 ## 下一步
 
-1. 当前只审 `opening_defense_outline_20260808.md`：按 20 页逐页确认背景、动机、研究内容、证据和转场，不继续扩写报告或制作 PPT。
+1. 当前先审 `slides/opening_defense_20260812_v7.pptx`：按 20 页逐页确认背景、动机、研究内容、证据和转场；中文 Markdown 报告与飞书云文档待 PPT 冻结后继续。
 2. SQuAD/ShareGPT replacement、原生单 job、两 job 最小因果与四 job 扩展均已完成；停止增加开题 baseline、offset、weight 或更多 job 数扫描。
-3. 大纲经用户逐页确认后，再决定是否重组报告和制作低保真页面；在此之前不继承学校模板，不生成 PPT 成品。
+3. v7 已继承学校模板形成 20 页成品；如补第 2、3 页背景图，只替换现有图片并重新渲染，不改变冻结主线。
 4. Claim Matrix、问答、实验状态与实现边界继续作为大纲事实护栏；用户已明确豁免 Wiki，当前不同步云文档。论文阶段再恢复同上限 phase-change、weighted/SLO、图像动态与 held-out cost 验证。
 ## 飞书发布面（当前同步暂停）
 
@@ -126,4 +126,4 @@ https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb
 以及 GPU-backed 动机实验图（粒度对比、阶段时延、endpoint 对比、pgvector 写回对比）。
 旧版 wiki (GCxowlVJbinzgRkoHDmc06cSn9J) 保留作为历史参考，不再更新。
 
-PPT 尚未按当前报告重做；旧版飞书 wiki 保留历史版本，不再作为当前开题报告同步面。
+PPT 已按当前 20 页主讲逻辑重做并通过本地程序化与逐页渲染检查；旧版飞书 wiki 保留历史版本，不再作为当前开题报告同步面。中文 Markdown 报告与飞书云文档将在 PPT 冻结后继续。

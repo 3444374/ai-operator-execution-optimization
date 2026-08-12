@@ -5993,3 +5993,18 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - Rebalanced figure 04 short connectors after visual review: the two 20 px orange links now use compact arrowheads, and the refill-to-credit route uses a centered bend and a longer visible vertical shaft. Draw.io/SVG/PNG and the audit were synchronized; no content or claim changed.
 - Repaired the figure 02 Sink icon at source level: replaced the clipped database/check SVG with a complete three-level PostgreSQL cylinder and an external validation badge, then regenerated Draw.io/SVG/PNG and updated the visual audit. No claim changed.
 - Revised opening figure 05 for audience-facing planning: replaced the internal causal validation / contract / evidence-gate narrative with “研究基础与后续工作计划,” marked the first two stages complete, kept later tasks deliberately broad, changed the lower panels to experiment principles and evaluation dimensions, and removed the evidence feedback edge. This is a presentation-framing change, not a new experimental claim.
+
+## 2026-08-12 完成 20 页中文开题 PPT v7 本地验收
+
+- 在独立 worktree `/private/tmp/gpu-opening-report-ppt`、分支 `codex/opening-report-ppt` 中完成
+  `opening/slides/opening_defense_20260812_v7.pptx`；未切换或修改主工作区的 `main`。
+- PPT 继承 v6 学校模板，按冻结叙事重组为 20 页：背景与相关工作 → 文本/图像 baseline 与
+  动机 → 四项设计要求 → AI Data Execution Layer → 两项研究内容与共同代价估计 → 图像泛化
+  → 研究基础、计划和预期贡献。
+- 第 5–19 页使用 `figures/opening_figure_set/main_png/` 的 14/14 张主讲图，不直接引用旧
+  `report_main` 或旧 architecture PNG；第 2、3 页保留为背景文字页并记录两张建议结构图提示词，
+  第 4 页文献分层图为可选增强。当前没有阻塞开题的实验数据图缺口。
+- 本地门禁通过：20/20 页渲染、0 个空 placeholder、20/20 speaker notes 含讲稿/答辩提示/来源，
+  template fidelity `pass`、0 issue；逐页 contact sheet 未发现重叠、裁切或页眉页脚侵占。
+- 同步更新图文审计、PPT QA、Claim Matrix、答辩大纲入口、README 与 `PROJECT_INDEX.md`。
+  中文 Markdown 报告和飞书云文档留到 PPT 冻结后继续；按用户要求不执行 Wiki 同步。

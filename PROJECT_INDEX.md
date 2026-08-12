@@ -115,6 +115,11 @@
 | `opening/slides/build_opening_defense_v6_artifact_tool.mjs` | v5 模板继承、文本/图片定点编辑、逐页渲染和备注 QA | 重建或审计 2026-08-07 v6 PPTX |
 | `opening/slides/opening_defense_20260807_v6.pptx` | 开题答辩 28 页 v6 待替换底稿 | 旧数值、图和重复叙事待按 feeding replacement 与 19 页主讲结构重做；历史 QA 仅证明文件可打开 |
 | `opening/slides/opening_defense_20260807_v6_qa.md` | v6 模板、数值、逐页渲染、placeholder、notes 与 overflow 审计 | 交付或继续修改 v6 前读 |
+| `opening/slides/build_opening_defense_v7_artifact_tool.mjs` | 从 v6 学校模板映射生成 20 页中文 v7、替换正式图、写入讲稿来源并逐页渲染 | 重建或审计当前开题 PPT |
+| `opening/slides/opening_defense_20260812_v7.pptx` | 当前 20 页中文开题答辩主讲版 | 现场汇报与逐页审阅；正式答辩前在目标 PowerPoint/WPS 环境再打开一次 |
+| `opening/slides/opening_defense_20260812_v7_qa.md` | v7 模板保真、逐页视觉、数据、引用、placeholder 与 notes 审计 | 交付或继续修改 v7 前读 |
+| `opening/slides/opening_defense_20260812_v7_figure_content_audit.md` | 20 页图文一致性映射及第 2–4 页可选增强图中文提示词 | 检查页面结论是否被图支撑或准备补图 |
+| `opening/navigation.md` | 开题材料导航、当前 PPT→中文 Markdown→飞书发布顺序与权威入口 | 开始报告、PPT、飞书或文献工作前读 |
 | `figures/architecture/data_organization_token_budget_mechanism.png` / `.svg` | 数据组织策略机制图：token-budget batching | Formal mechanism figure for converting fixed-row batches into token-budget submissions; not an experimental-result claim |
 | `figures/architecture/data_organization_length_align_mechanism.png` / `.svg` | 数据组织策略机制图：length-aligned grouping | Formal mechanism figure for sorting/grouping rows by token length to reduce within-batch compute variance |
 | `figures/architecture/data_organization_prefix_aware_mechanism.png` / `.svg` | 数据组织策略机制图：prefix-aware grouping | Formal mechanism figure for grouping shared system prompts; prefix-cache benefit still requires vLLM metric validation |
