@@ -167,6 +167,38 @@ class SaorFormalToolsTests(unittest.TestCase):
             2,
         )
 
+    def test_default_summary_declares_resolution_aware_full_validation(
+        self,
+    ) -> None:
+        matrix = (
+            REPOSITORY
+            / "experiments/results/"
+            "saor_active_set_release_formal_20260812_69affc7e"
+        )
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "matrix"
+            output = Path(directory) / "summary"
+            root.mkdir()
+            self._write_clean_manifest(root)
+            (root / "group_runs.csv").write_bytes(
+                (matrix / "group_runs.csv").read_bytes()
+            )
+
+            SUMMARY.summarize(root, output)
+
+            validation = json.loads(
+                (output / "validation.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(validation["status"], "passed")
+        self.assertTrue(validation["full_formal_validation_updated"])
+        self.assertEqual(
+            validation["mechanism_gate_evaluation"],
+            "resolution_aware_v2",
+        )
+        self.assertEqual(validation["trace_observation_interval_s"], 0.25)
+        self.assertEqual(len(validation["mechanism_reclassifications"]), 2)
+
     def test_repository_formal_env_covers_template_contract(self) -> None:
         template = (
             REPOSITORY / "deploy/autodl/saor_active_set_release.example.json"

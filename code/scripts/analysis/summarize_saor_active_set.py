@@ -374,7 +374,10 @@ def summarize(root: Path, output: Path) -> None:
         json.dumps(
             {
                 "status": "passed",
+                "full_formal_validation_updated": True,
                 "formal_matrix": "fixed-envelope SAOR active-set release",
+                "mechanism_gate_evaluation": "resolution_aware_v2",
+                "trace_observation_interval_s": TRACE_OBSERVATION_INTERVAL_S,
                 "project_solo_jct_s": project_solo_jct,
                 "direct_solo_jct_s": direct_solo_jct,
                 "project_solo_service_rates": project_solo_rate,
