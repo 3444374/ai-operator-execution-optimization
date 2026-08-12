@@ -5,6 +5,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from src.experiments.shared_vllm.config import (
     GroupRunIdentity,
@@ -27,6 +28,78 @@ from src.scheduling.runtime.saor_capacity import (
 
 
 class SaorSharedVllmConfigTest(unittest.TestCase):
+    def test_bounded_priority_uses_explicit_per_job_contract(self) -> None:
+        payload = self._bounded_priority_payload()
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("bounded.json"))
+        scenario = config.scenarios[0]
+        options = RunnerOptions(
+            config_path=Path("bounded.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path("python"),
+            output_dir=Path("out"),
+            health_url="http://127.0.0.1/health",
+            metrics_urls=("http://127.0.0.1/metrics",),
+            ray_address="local",
+            idle_timeout_s=1.0,
+        )
+
+        bulk = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=0,
+            start_epoch_s=1.0,
+            coordinator_name="bounded",
+        )
+        foreground = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("formal", 1, 0),
+            job_index=1,
+            start_epoch_s=1.0,
+            coordinator_name="bounded",
+        )
+
+        self.assertEqual(self._flag(bulk, "--shared-credit-policy"), "saor_bounded_priority")
+        self.assertEqual(self._flag(bulk, "--shared-credit-job-priority"), "0")
+        self.assertEqual(self._flag(bulk, "--shared-credit-job-debt-cap-work"), "8192")
+        self.assertNotIn("--shared-credit-priority-window-ms", bulk)
+        self.assertEqual(self._flag(foreground, "--shared-credit-job-priority"), "1")
+        self.assertEqual(self._flag(foreground, "--shared-credit-job-slo-ms"), "30000")
+        self.assertEqual(
+            self._flag(foreground, "--shared-credit-priority-window-ms"),
+            "30000",
+        )
+        self.assertNotIn("--shared-credit-job-debt-cap-work", foreground)
+
+    def test_bounded_priority_rejects_implicit_or_invalid_job_roles(self) -> None:
+        cases = []
+        missing = self._bounded_priority_payload()
+        del missing["scenarios"][0]["priorities"]
+        cases.append((missing, "one value per job"))
+        wrong_length = self._bounded_priority_payload()
+        wrong_length["scenarios"][0]["slo_targets_s"] = [None]
+        cases.append((wrong_length, "one value per job"))
+        bad_cap = self._bounded_priority_payload()
+        bad_cap["scenarios"][0]["debt_cap_fractions"] = [1.1, None]
+        cases.append((bad_cap, "debt_cap_fractions"))
+        missing_window = self._bounded_priority_payload()
+        missing_window["scenarios"][0]["priority_windows_s"] = [None, None]
+        cases.append((missing_window, "SLO target and priority window"))
+        missing_control = self._bounded_priority_payload()
+        del missing_control["saor_release_control"]
+        cases.append((missing_control, "saor_release_control"))
+
+        for payload, message in cases:
+            with self.subTest(message=message), patch.object(
+                Path, "read_text", return_value=json.dumps(payload)
+            ):
+                with self.assertRaisesRegex(ValueError, message):
+                    load_config(Path("bounded.json"))
+
     def test_active_set_template_does_not_hardcode_k(self) -> None:
         repository = Path(__file__).resolve().parents[3]
         payload = json.loads(
@@ -361,6 +434,44 @@ class SaorSharedVllmConfigTest(unittest.TestCase):
         self.assertEqual(len(observer.calls), 1)
         self.assertEqual(rows[0]["control_arm_name"], "upper")
         self.assertEqual(rows[0]["control_applied_work_limit"], 40)
+
+    @staticmethod
+    def _flag(command: list[str], flag: str) -> str:
+        return command[command.index(flag) + 1]
+
+    @staticmethod
+    def _bounded_priority_payload() -> dict[str, object]:
+        return {
+            "schema_version": 1,
+            "experiment_id": "bounded-priority",
+            "seed": 1,
+            "warmup_runs_per_scenario": 0,
+            "formal_repeats": 1,
+            "endpoint_ids": ["endpoint-0"],
+            "request_limit_per_endpoint": 128,
+            "work_limit_per_endpoint": 65536,
+            "credit_quantum": 2048,
+            "common_args": ["--arrival-replay"],
+            "saor_release_control": {
+                "entitlement_weight": 1.0,
+                "queue_weight": 0.0,
+                "fairness_weight": 1.0,
+                "slo_weight": 0.0,
+            },
+            "scenarios": [
+                {
+                    "scenario_id": "bounded",
+                    "policy": "saor_bounded_priority",
+                    "job_count": 2,
+                    "rows_per_job": 1,
+                    "arrival_offsets_s": [0.0, 5.0],
+                    "priorities": [0, 1],
+                    "slo_targets_s": [None, 30.0],
+                    "priority_windows_s": [None, 30.0],
+                    "debt_cap_fractions": [0.125, None],
+                }
+            ],
+        }
 
 
 if __name__ == "__main__":

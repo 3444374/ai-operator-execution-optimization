@@ -38,6 +38,11 @@ AutoDL 新对话的唯一入口是 `autodl/README.md` 顶部“新对话 / 新 a
 `../experiments/plans/experiment_status_and_gaps.md` 为准，不从旧聊天推断，
 也不把多个因果问题合成一个大矩阵。
 
+SAOR 有界优先级开发模板为 `autodl/saor_bounded_priority.example.json`：它冻结 static、
+原 SAOR 与两档 bulk fairness-debt cap，并要求用 lossless release-event ledger 审计机制。
+服务器恢复前不得跳过 `runtime/README.md` 的只读 preflight；当前服务器关闭时不执行远端
+rehearsal，也不把静态 readiness 当作实验结果。
+
 ## 与其他目录的关系
 
 - 实验脚本：`motivation/benchmarks/`、`code/scripts/`

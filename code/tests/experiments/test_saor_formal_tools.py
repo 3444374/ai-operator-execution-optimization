@@ -42,9 +42,64 @@ PRIORITY_SUMMARY = _load(
     "summarize_saor_priority_reachability",
     "code/scripts/analysis/summarize_saor_priority_reachability.py",
 )
+BOUNDED_SUMMARY = _load(
+    "summarize_saor_bounded_priority_gate",
+    "code/scripts/analysis/summarize_saor_bounded_priority_gate.py",
+)
 
 
 class SaorFormalToolsTests(unittest.TestCase):
+    def test_bounded_gate_uses_lossless_events_not_sampled_snapshots(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            matrices = (root / "round-1", root / "round-2")
+            for matrix in matrices:
+                self._write_bounded_matrix(matrix)
+
+            result = BOUNDED_SUMMARY.summarize(matrices, root / "summary")
+
+            self.assertEqual(result["status"], "passed")
+            self.assertEqual(result["conclusion"], "formal_registration_candidate")
+            self.assertTrue((root / "summary/gate_summary.csv").is_file())
+            self.assertTrue((root / "summary/mechanism_summary.csv").is_file())
+
+    def test_bounded_gate_fails_closed_without_event_ledger(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            matrices = (root / "round-1", root / "round-2")
+            for matrix in matrices:
+                self._write_bounded_matrix(matrix)
+            next((matrices[0] / "traces").glob("*0125k*.release_events.csv")).unlink()
+
+            with self.assertRaisesRegex(ValueError, "event ledger"):
+                BOUNDED_SUMMARY.summarize(matrices, root / "summary")
+
+            validation = json.loads(
+                (root / "summary/validation.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(validation["status"], "failed")
+
+    def test_bounded_gate_fails_closed_on_event_sequence_gap(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            matrices = (root / "round-1", root / "round-2")
+            for matrix in matrices:
+                self._write_bounded_matrix(matrix)
+            event_path = next(
+                (matrices[0] / "traces").glob("*0125k*.release_events.csv")
+            )
+            events = list(csv.DictReader(event_path.open(encoding="utf-8")))
+            events[1]["event_seq"] = "3"
+            self._write_group_rows(event_path, events)
+
+            with self.assertRaisesRegex(ValueError, "gap, duplicate, or empty"):
+                BOUNDED_SUMMARY.summarize(matrices, root / "summary")
+
+            validation = json.loads(
+                (root / "summary/validation.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(validation["status"], "failed")
+
     def test_priority_reachability_summary_passes_only_with_audited_action(
         self,
     ) -> None:
@@ -446,6 +501,11 @@ class SaorFormalToolsTests(unittest.TestCase):
                     / "deploy/autodl/saor_priority_reachability.example.json",
                     profile="priority_reachability",
                 )
+                bounded_result = AUDIT.audit(
+                    REPOSITORY
+                    / "deploy/autodl/saor_bounded_priority.example.json",
+                    profile="bounded_priority_development",
+                )
             environment["SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES"] = "1"
             with patch.dict(os.environ, environment, clear=True):
                 insufficient_supply = AUDIT.audit(
@@ -457,6 +517,8 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(result["scenario_count"], 10)
         self.assertEqual(priority_result["status"], "passed")
         self.assertEqual(priority_result["scenario_count"], 3)
+        self.assertEqual(bounded_result["status"], "passed")
+        self.assertEqual(bounded_result["scenario_count"], 4)
         self.assertIsNone(priority_result["direct_contract"])
         self.assertEqual(result["direct_contract"]["protocol"], "completions")
         self.assertEqual(result["direct_contract"]["prompt_format"], "raw")
@@ -774,6 +836,99 @@ class SaorFormalToolsTests(unittest.TestCase):
                     }
                 )
         return rows
+
+    @staticmethod
+    def _write_bounded_matrix(root: Path) -> None:
+        (root / "traces").mkdir(parents=True)
+        (root / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "status": "completed",
+                    "execution_mode": "rehearsal",
+                    "incidents": [],
+                    "config_fingerprint": "same-config",
+                    "repository_commit": "same-commit",
+                    "redacted_config": {
+                        "service_metadata": {"vllm_version": "test", "scheduling_policy": "fcfs"}
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        scenarios = (
+            ("active_set_static_partition", "static_partition"),
+            ("active_set_saor_release", "saor_release"),
+            ("active_set_saor_bounded_priority_0125k", "saor_bounded_priority"),
+            ("active_set_saor_bounded_priority_025k", "saor_bounded_priority"),
+        )
+        rows = []
+        for scenario_id, policy in scenarios:
+            event_path = Path("traces") / f"000_warmup_0_{scenario_id}.release_events.csv"
+            rows.append(
+                {
+                    "scenario_id": scenario_id,
+                    "policy": policy,
+                    "phase": "warmup",
+                    "repeat_index": 0,
+                    "execution_mode": "rehearsal",
+                    "incidents": 0,
+                    "metrics_status": "ok",
+                    "resource_metrics_status": "ok",
+                    "actor_worker_failures": 0,
+                    "active_set_lifecycle_passed": True,
+                    "job_arrived_rows": "[512, 512]",
+                    "job_completed_rows": "[512, 512]",
+                    "job_failed_rows": "[0, 0]",
+                    "job_p99_s": "[60.0, 30.0]",
+                    "job_slo_violation_ratio": "[0.70, 0.0]",
+                    "tokens_per_s": 10_100.0,
+                    "release_event_trace_path": str(event_path),
+                }
+            )
+            if policy == "saor_bounded_priority":
+                with (root / event_path).open("w", newline="", encoding="utf-8") as handle:
+                    writer = csv.DictWriter(
+                        handle,
+                        fieldnames=(
+                            "event_seq",
+                            "event_time_s",
+                            "endpoint_id",
+                            "action",
+                            "tier",
+                            "recovery_inflight_by_job",
+                            "constraint_conflict",
+                            "avoidable_idle",
+                            "foreign_grant_over_debt_critical",
+                        ),
+                    )
+                    writer.writeheader()
+                    writer.writerows(
+                        (
+                            {
+                                "event_seq": 1,
+                                "event_time_s": 10.0,
+                                "endpoint_id": "endpoint-0",
+                                "action": "grant",
+                                "tier": "slo_priority",
+                                "recovery_inflight_by_job": "[]",
+                                "constraint_conflict": "False",
+                                "avoidable_idle": "False",
+                                "foreign_grant_over_debt_critical": "False",
+                            },
+                            {
+                                "event_seq": 2,
+                                "event_time_s": 10.005,
+                                "endpoint_id": "endpoint-0",
+                                "action": "grant",
+                                "tier": "debt_recovery",
+                                "recovery_inflight_by_job": '[["bulk", "r1"]]',
+                                "constraint_conflict": "False",
+                                "avoidable_idle": "False",
+                                "foreign_grant_over_debt_critical": "False",
+                            },
+                        )
+                    )
+        SaorFormalToolsTests._write_group_rows(root / "group_runs.csv", rows)
 
 
 if __name__ == "__main__":

@@ -350,15 +350,17 @@ def _terminate_processes(processes: list[subprocess.Popen]) -> None:
 def _write_trace_rows_atomic(
     path: Path,
     rows: list[dict[str, object]],
+    *,
+    fieldnames: tuple[str, ...] | None = None,
 ) -> None:
-    if not rows:
+    if not rows and fieldnames is None:
         return
-    fieldnames = list(rows[0])
-    if any(list(row) != fieldnames for row in rows):
+    output_fields = list(fieldnames or tuple(rows[0]))
+    if any(list(row) != output_fields for row in rows):
         raise ValueError("trace rows have inconsistent schemas")
     temporary = path.with_suffix(path.suffix + ".tmp")
     with temporary.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=output_fields)
         writer.writeheader()
         writer.writerows(rows)
     os.replace(temporary, path)

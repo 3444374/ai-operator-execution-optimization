@@ -59,8 +59,14 @@ class _FairCreditActor:
     def finish_job(self, job_id: str) -> None:
         self.coordinator.finish_job(job_id)
 
+    def cancel_waiter(self, request_id: str, *, job_id: str) -> bool:
+        return self.coordinator.cancel_waiter(request_id, job_id=job_id)
+
     def snapshot(self, endpoint_id: str):
         return self.coordinator.snapshot(endpoint_id)
+
+    def drain_release_events(self, endpoint_id: str):
+        return self.coordinator.drain_release_events(endpoint_id)
 
     def update_capacity(self, endpoint_id: str, **kwargs):
         return self.coordinator.update_capacity(endpoint_id, **kwargs)
@@ -96,9 +102,23 @@ class RaySharedCreditClient:
     def finish_job(self, job_id: str) -> None:
         self.ray_module.get(self.actor.finish_job.remote(job_id))
 
+    def cancel_waiter(self, request_id: str, *, job_id: str) -> bool:
+        return bool(
+            self.ray_module.get(
+                self.actor.cancel_waiter.remote(request_id, job_id=job_id)
+            )
+        )
+
     def snapshot(self, endpoint_id: str):
         return self.ray_module.get(
             self.actor.snapshot.remote(endpoint_id)
+        )
+
+    def drain_release_events(self, endpoint_id: str):
+        return tuple(
+            self.ray_module.get(
+                self.actor.drain_release_events.remote(endpoint_id)
+            )
         )
 
     def update_capacity(self, endpoint_id: str, **kwargs):

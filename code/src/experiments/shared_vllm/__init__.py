@@ -23,6 +23,7 @@ from .evidence import (
 )
 from .metrics import (
     active_set_phase_summary,
+    bounded_saor_event_summary,
     cumulative_service_disparity,
     group_metric_delta,
     group_resource_summary,

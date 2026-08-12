@@ -339,6 +339,40 @@ class FairEndpointCreditCoordinator:
         self._grant_waiters(endpoint_id)
         return request_key in self._active
 
+    def cancel_waiter(self, request_id: str, *, job_id: str) -> bool:
+        """Remove one queued acquisition without revoking an active lease."""
+
+        request_key = (job_id, request_id)
+        if request_key in self._active:
+            return False
+        if request_key not in self._queued_request_keys:
+            return False
+        endpoint_id = next(
+            endpoint_id
+            for endpoint_id, job_queues in self._waiting.items()
+            if any(
+                lease.request_id == request_id
+                for lease in job_queues.get(job_id, ())
+            )
+        )
+        queue = self._waiting[endpoint_id][job_id]
+        self._waiting[endpoint_id][job_id] = deque(
+            lease for lease in queue if lease.request_id != request_id
+        )
+        self._queued_request_keys.remove(request_key)
+        if self._policy == "fifo":
+            self._fifo_order[endpoint_id] = deque(
+                key for key in self._fifo_order[endpoint_id] if key != request_key
+            )
+        hold = self._guard_holds[endpoint_id]
+        if hold is not None and (
+            hold.target_job_id,
+            hold.target_request_id,
+        ) == request_key:
+            self._close_guard_hold(endpoint_id, hold)
+        self._grant_waiters(endpoint_id)
+        return True
+
     def release(
         self,
         request_id: str,

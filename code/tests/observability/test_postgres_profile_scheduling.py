@@ -29,6 +29,7 @@ from src.baselines.common.contracts import ChatRequest  # noqa: E402
 from src.baselines.common.manifests import write_manifest  # noqa: E402
 from src.observability.profiling import ray as profile_ray  # noqa: E402
 from src.observability.profiling import replay as profile_replay  # noqa: E402
+from src.observability.profiling import config as profile_config  # noqa: E402
 from src.scheduling.submission_control.adaptive import AimdAdmissionController  # noqa: E402
 from src.scheduling.submission_control.admission import DynamicAdmissionGate  # noqa: E402
 from src.scheduling.core.models import (  # noqa: E402
@@ -2201,7 +2202,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         lifecycle_seeds = []
         epoch_values = iter([100.0, 100.005])
 
-        list(
+        envelopes = list(
             profile._arrival_replay_envelopes(
                 [table],
                 args,
@@ -2227,6 +2228,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             [item.flush_epoch_s for item in lifecycle_seeds],
             [100.005, 100.005],
         )
+        self.assertEqual(
+            [item.request.oldest_arrival_epoch_s for item in envelopes],
+            [100.0],
+        )
 
     def test_replay_can_preserve_a_shared_fixed_epoch_origin(self) -> None:
         args = SimpleNamespace(
@@ -2247,7 +2252,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         )
         lifecycle_seeds = []
 
-        list(
+        envelopes = list(
             profile._arrival_replay_envelopes(
                 [table],
                 args,
@@ -2268,6 +2273,105 @@ class SchedulingProfileHelperTests(unittest.TestCase):
 
         self.assertEqual(lifecycle_seeds[0].arrival_epoch_s, 100.0)
         self.assertEqual(lifecycle_seeds[0].flush_epoch_s, 110.0)
+        self.assertEqual(envelopes[0].request.oldest_arrival_s, 0.0)
+        self.assertEqual(envelopes[0].request.oldest_arrival_epoch_s, 100.0)
+
+    def test_bounded_priority_profiler_requires_request_replay_contract(
+        self,
+    ) -> None:
+        common = [
+            "--dry-run",
+            "--executor",
+            "ray_task",
+            "--shared-credit-coordinator-name",
+            "bounded-test",
+            "--shared-credit-request-limit",
+            "64",
+            "--shared-credit-work-limit",
+            "65536",
+            "--shared-credit-quantum",
+            "2048",
+            "--shared-credit-policy",
+            "saor_bounded_priority",
+        ]
+        valid = profile.parse_args(
+            common
+            + [
+                "--arrival-replay",
+                "--data-source",
+                "daft_postgres",
+                "--source-order",
+                "arrival_time",
+                "--submission-granularity",
+                "request",
+                "--shared-credit-job-debt-cap-work",
+                "8192",
+            ]
+        )
+        profile_config.validate_shared_credit_policy_args(valid)
+
+        for extra, message in (
+            ([], "arrival replay"),
+            (["--arrival-replay"], "request granularity"),
+            (
+                [
+                    "--arrival-replay",
+                    "--submission-granularity",
+                    "request",
+                    "--shared-credit-job-priority",
+                    "1",
+                ],
+                "SLO target and priority window",
+            ),
+            (
+                [
+                    "--arrival-replay",
+                    "--submission-granularity",
+                    "request",
+                    "--shared-credit-job-debt-cap-work",
+                    "-1",
+                ],
+                "debt cap",
+            ),
+        ):
+            with self.subTest(message=message):
+                args = profile.parse_args(common + extra)
+                with self.assertRaisesRegex(SystemExit, message):
+                    profile_config.validate_shared_credit_policy_args(args)
+
+    def test_bounded_priority_profiler_accepts_explicit_foreground_slo(self) -> None:
+        args = profile.parse_args(
+            [
+                "--dry-run",
+                "--executor",
+                "ray_task",
+                "--arrival-replay",
+                "--data-source",
+                "daft_postgres",
+                "--source-order",
+                "arrival_time",
+                "--submission-granularity",
+                "request",
+                "--shared-credit-coordinator-name",
+                "bounded-test",
+                "--shared-credit-request-limit",
+                "64",
+                "--shared-credit-work-limit",
+                "65536",
+                "--shared-credit-quantum",
+                "2048",
+                "--shared-credit-policy",
+                "saor_bounded_priority",
+                "--shared-credit-job-priority",
+                "1",
+                "--shared-credit-job-slo-ms",
+                "30000",
+                "--shared-credit-priority-window-ms",
+                "30000",
+            ]
+        )
+
+        profile_config.validate_shared_credit_policy_args(args)
 
     def test_token_budget_membership_survives_arrow_assembly(self) -> None:
         args = SimpleNamespace(

@@ -44,6 +44,13 @@ foreground strict-priority 三臂 1+3 诊断。它要求 group evidence 中 prio
 并以 foreground P99≤30.7s、SLO violation≤1% 判 release-only 上界是否可达；吞吐只作语境，
 该诊断不构成 SAOR 或 reservation 策略胜出。
 
+`analysis/summarize_saor_bounded_priority_gate.py` 是 bounded-priority SAOR
+候选的 fail-closed 本地开发门。它只接受两轮干净 rehearsal，每轮固定包含 static、
+release-only SAOR、0.125K 和 0.25K debt-cap 四臂，并重算正确性、前台尾延迟/SLO、
+吞吐、bulk 保护和机制门。机制证据只来自无损 release-event ledger；账本缺失、为空、
+序号缺口或重复都会失败。采样 credit snapshot 仅供诊断，既不能否决短于采样周期的真实
+转换，也不能单独满足机制门。通过只得到 `formal_registration_candidate`，不构成正式性能结果。
+
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data
 single/two-job 原生观察做统一 fail-closed 汇总。它显式保留 request P99 仅项目可用、

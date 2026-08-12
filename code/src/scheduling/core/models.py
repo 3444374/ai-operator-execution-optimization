@@ -31,6 +31,7 @@ class BatchRequest:
     work_units: int | None = None
     work_unit: str = "tokens"
     work_descriptor: WorkDescriptor | None = None
+    oldest_arrival_epoch_s: float | None = None
 
     def __post_init__(self) -> None:
         if self.row_count <= 0:
@@ -57,6 +58,13 @@ class BatchRequest:
                 )
         if not self.request_id or not self.job_id or not self.payload_id:
             raise ValueError("request_id, job_id, and payload_id must be non-empty")
+        if self.oldest_arrival_epoch_s is not None and (
+            not math.isfinite(self.oldest_arrival_epoch_s)
+            or self.oldest_arrival_epoch_s < 0
+        ):
+            raise ValueError(
+                "oldest_arrival_epoch_s must be finite and non-negative"
+            )
 
     @property
     def estimated_total_tokens(self) -> int:

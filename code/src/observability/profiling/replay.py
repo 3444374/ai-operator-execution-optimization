@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import math
 from collections.abc import Iterable
+from dataclasses import replace
 
 import pyarrow as pa
 
@@ -653,27 +654,42 @@ def _arrival_replay_envelopes(
             for item in closed_envelopes
             for _ in range(item.request.row_count)
         ]
+        if replay_start_epoch_s is None or first_source_arrival_s is None:
+            raise RuntimeError("replay epoch origin is not initialized")
+        intended_arrival_epochs = [
+            replay_start_epoch_s
+            + (row.arrival_s - first_source_arrival_s) * arrival_time_scale
+            for row in pending.rows
+        ]
+        flush_epoch_s = lifecycle_epoch_clock()
+        # Intended arrival timestamps are evidence and SLO inputs. Clamp them
+        # to the observed flush boundary so scheduling never sees future age.
+        arrival_epochs = [
+            min(arrival_epoch_s, flush_epoch_s)
+            for arrival_epoch_s in intended_arrival_epochs
+        ]
+        oldest_epoch_by_submission: dict[str, float] = {}
+        for submission_id, arrival_epoch_s in zip(
+            row_submission_ids,
+            arrival_epochs,
+        ):
+            oldest_epoch_by_submission[submission_id] = min(
+                oldest_epoch_by_submission.get(submission_id, arrival_epoch_s),
+                arrival_epoch_s,
+            )
+        closed_envelopes = tuple(
+            replace(
+                item,
+                request=replace(
+                    item.request,
+                    oldest_arrival_epoch_s=oldest_epoch_by_submission[
+                        item.request.request_id
+                    ],
+                ),
+            )
+            for item in closed_envelopes
+        )
         if lifecycle_seed_sink is not None:
-            if replay_start_epoch_s is None or first_source_arrival_s is None:
-                raise RuntimeError("replay epoch origin is not initialized")
-            intended_arrival_epochs = [
-                replay_start_epoch_s
-                + (row.arrival_s - first_source_arrival_s)
-                * arrival_time_scale
-                for row in pending.rows
-            ]
-            flush_epoch_s = lifecycle_epoch_clock()
-            # The replay clock and epoch-shaped lifecycle clock are separate
-            # monotonic domains. Scheduler jitter can make an intended replay
-            # deadline a few milliseconds later than the epoch observed when
-            # the batch actually closes. Request traces record observed
-            # lifecycle times, so clamp such intended arrivals at the observed
-            # flush boundary instead of pushing flush into the future and
-            # making the subsequent submit timestamp appear to precede it.
-            arrival_epochs = [
-                min(arrival_epoch_s, flush_epoch_s)
-                for arrival_epoch_s in intended_arrival_epochs
-            ]
             seeds = [
                 RequestLifecycleSeed(
                     request_id=f"{job_id}:row:{row.row_id}",

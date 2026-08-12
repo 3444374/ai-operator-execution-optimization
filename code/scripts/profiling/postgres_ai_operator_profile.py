@@ -76,6 +76,7 @@ from src.observability.profiling.config import (
     model_metrics_urls,
     ray_worker_options as _ray_worker_options,
     resolve_actor_workers_per_endpoint as _resolve_actor_workers_per_endpoint,
+    validate_shared_credit_policy_args,
 )
 from src.observability.profiling.traces import (
     source_scan_fingerprint_rows as _source_scan_fingerprint_rows,
@@ -1449,6 +1450,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
     _validate_arrival_replay_args(args)
     _validate_resource_efficiency_args(args)
     _validate_completion_observation_args(args)
+    validate_shared_credit_policy_args(args)
     endpoint_urls = completion_endpoint_urls(args) if args.operator == "ai_complete" else embedding_endpoint_urls(args)
     endpoint_url_label = ";".join(endpoint_urls)
     resolved_metrics_urls = model_metrics_urls(args)
@@ -1654,6 +1656,22 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "quantum": args.shared_credit_quantum,
             "job_weight": args.shared_credit_job_weight,
             "job_priority": args.shared_credit_job_priority,
+            "job_slo_target_s": (
+                args.shared_credit_job_slo_ms / 1000.0
+                if args.shared_credit_job_slo_ms > 0
+                else None
+            ),
+            "job_priority_window_s": (
+                args.shared_credit_priority_window_ms / 1000.0
+                if args.shared_credit_priority_window_ms > 0
+                else None
+            ),
+            "job_fairness_debt_cap": (
+                args.shared_credit_job_debt_cap_work
+                if args.shared_credit_job_debt_cap_work > 0
+                else None
+            ),
+            "acquire_timeout_s": request_timeout_s,
             "policy": args.shared_credit_policy,
             "saor_release": (
                 {
@@ -1662,7 +1680,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                     "fairness_weight": args.saor_fairness_weight,
                     "slo_weight": args.saor_slo_weight,
                 }
-                if args.shared_credit_policy == "saor"
+                if args.shared_credit_policy in {
+                    "saor",
+                    "saor_bounded_priority",
+                }
                 else None
             ),
         }
@@ -1837,6 +1858,13 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "shared_credit_quantum": args.shared_credit_quantum,
             "shared_credit_job_weight": args.shared_credit_job_weight,
             "shared_credit_job_priority": args.shared_credit_job_priority,
+            "shared_credit_job_slo_ms": args.shared_credit_job_slo_ms,
+            "shared_credit_priority_window_ms": (
+                args.shared_credit_priority_window_ms
+            ),
+            "shared_credit_job_debt_cap_work": (
+                args.shared_credit_job_debt_cap_work
+            ),
             "shared_credit_policy": (
                 args.shared_credit_policy
                 if args.shared_credit_coordinator_name
@@ -1844,22 +1872,34 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ),
             "saor_entitlement_weight": (
                 args.saor_entitlement_weight
-                if args.shared_credit_policy == "saor"
+                if args.shared_credit_policy in {
+                    "saor",
+                    "saor_bounded_priority",
+                }
                 else 0.0
             ),
             "saor_queue_weight": (
                 args.saor_queue_weight
-                if args.shared_credit_policy == "saor"
+                if args.shared_credit_policy in {
+                    "saor",
+                    "saor_bounded_priority",
+                }
                 else 0.0
             ),
             "saor_fairness_weight": (
                 args.saor_fairness_weight
-                if args.shared_credit_policy == "saor"
+                if args.shared_credit_policy in {
+                    "saor",
+                    "saor_bounded_priority",
+                }
                 else 0.0
             ),
             "saor_slo_weight": (
                 args.saor_slo_weight
-                if args.shared_credit_policy == "saor"
+                if args.shared_credit_policy in {
+                    "saor",
+                    "saor_bounded_priority",
+                }
                 else 0.0
             ),
             "effective_global_inflight_limit": effective_global_inflight_limit,
@@ -3060,6 +3100,13 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "shared_credit_quantum": args.shared_credit_quantum,
             "shared_credit_job_weight": args.shared_credit_job_weight,
             "shared_credit_job_priority": args.shared_credit_job_priority,
+            "shared_credit_job_slo_ms": args.shared_credit_job_slo_ms,
+            "shared_credit_priority_window_ms": (
+                args.shared_credit_priority_window_ms
+            ),
+            "shared_credit_job_debt_cap_work": (
+                args.shared_credit_job_debt_cap_work
+            ),
             "shared_credit_policy": (
                 args.shared_credit_policy
                 if args.shared_credit_coordinator_name

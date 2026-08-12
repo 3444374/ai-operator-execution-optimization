@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import statistics
 import threading
 import time
@@ -83,6 +84,9 @@ class SharedCreditPolicy(Protocol):
         estimated_work: int,
         weight: int = 1,
         priority: int = 0,
+        slo_budget_remaining_s: float | None = None,
+        priority_window_s: float | None = None,
+        fairness_debt_cap: float | None = None,
     ) -> bool:
         ...
 
@@ -96,6 +100,9 @@ class SharedCreditPolicy(Protocol):
         ...
 
     def finish_job(self, job_id: str) -> None:
+        ...
+
+    def cancel_waiter(self, request_id: str, *, job_id: str) -> bool:
         ...
 
 
@@ -196,8 +203,12 @@ class SynchronousScheduler:
         per_endpoint_admission: Mapping[str, AdmissionPolicy] | None = None,
         shared_credit: SharedCreditPolicy | None = None,
         shared_credit_poll_s: float = 0.001,
+        shared_credit_acquire_timeout_s: float | None = None,
         job_weight: int = 1,
         job_priority: int = 0,
+        job_slo_target_s: float | None = None,
+        job_priority_window_s: float | None = None,
+        job_fairness_debt_cap: float | None = None,
         actual_work_extractor: Callable[
             [SubmissionCompletion], int | None
         ] | None = None,
@@ -208,6 +219,13 @@ class SynchronousScheduler:
             raise ValueError("per_endpoint_work_limit must be positive")
         if shared_credit_poll_s <= 0:
             raise ValueError("shared_credit_poll_s must be positive")
+        if shared_credit_acquire_timeout_s is not None and (
+            not isinstance(shared_credit_acquire_timeout_s, (int, float))
+            or isinstance(shared_credit_acquire_timeout_s, bool)
+            or not math.isfinite(shared_credit_acquire_timeout_s)
+            or shared_credit_acquire_timeout_s <= 0
+        ):
+            raise ValueError("shared credit acquire timeout must be positive")
         if job_weight <= 0:
             raise ValueError("job_weight must be positive")
         if (
@@ -216,6 +234,22 @@ class SynchronousScheduler:
             or job_priority < 0
         ):
             raise ValueError("job_priority must be a non-negative integer")
+        if job_slo_target_s is not None and (
+            not math.isfinite(job_slo_target_s) or job_slo_target_s <= 0
+        ):
+            raise ValueError("job_slo_target_s must be finite and positive")
+        if job_priority_window_s is not None and (
+            not math.isfinite(job_priority_window_s)
+            or job_priority_window_s <= 0
+        ):
+            raise ValueError("job_priority_window_s must be finite and positive")
+        if job_fairness_debt_cap is not None and (
+            not math.isfinite(job_fairness_debt_cap)
+            or job_fairness_debt_cap <= 0
+        ):
+            raise ValueError("job_fairness_debt_cap must be finite and positive")
+        if job_priority_window_s is not None and job_slo_target_s is None:
+            raise ValueError("a priority window requires a Job SLO target")
         self.admission = admission
         self.router = router
         self.adapter = adapter
@@ -227,8 +261,12 @@ class SynchronousScheduler:
         self.per_endpoint_admission = dict(per_endpoint_admission or {})
         self.shared_credit = shared_credit
         self.shared_credit_poll_s = shared_credit_poll_s
+        self.shared_credit_acquire_timeout_s = shared_credit_acquire_timeout_s
         self.job_weight = job_weight
         self.job_priority = job_priority
+        self.job_slo_target_s = job_slo_target_s
+        self.job_priority_window_s = job_priority_window_s
+        self.job_fairness_debt_cap = job_fairness_debt_cap
         self.actual_work_extractor = actual_work_extractor
 
     def run(
@@ -351,6 +389,7 @@ class SynchronousScheduler:
             endpoint = endpoints_by_id.get(route.endpoint_id)
             if endpoint is None:
                 raise RuntimeError("router selected an endpoint outside the topology")
+            credit_wait_started_s = time.monotonic()
             while self.shared_credit is not None and not (
                 self.shared_credit.try_acquire(
                     request_id=request_id,
@@ -362,8 +401,28 @@ class SynchronousScheduler:
                     ),
                     weight=self.job_weight,
                     priority=self.job_priority,
+                    **self._bounded_credit_arguments(envelope.request),
                 )
             ):
+                if (
+                    self.shared_credit_acquire_timeout_s is not None
+                    and time.monotonic() - credit_wait_started_s
+                    >= self.shared_credit_acquire_timeout_s
+                ):
+                    cancel_waiter = getattr(
+                        self.shared_credit,
+                        "cancel_waiter",
+                        None,
+                    )
+                    if cancel_waiter is not None:
+                        cancel_waiter(
+                            request_id,
+                            job_id=envelope.request.job_id,
+                        )
+                    raise TimeoutError(
+                        "shared credit acquire timed out for "
+                        f"{envelope.request.job_id}/{request_id}"
+                    )
                 if ledger.pending:
                     collected = self._collect_one(ledger)
                     bounded_wait_samples.append(collected.wait_s)
@@ -425,6 +484,30 @@ class SynchronousScheduler:
                 max_active_work_per_endpoint_seen
             ),
         )
+
+    def _bounded_credit_arguments(self, request: BatchRequest) -> dict[str, float | None]:
+        if (
+            self.job_slo_target_s is None
+            and self.job_priority_window_s is None
+            and self.job_fairness_debt_cap is None
+        ):
+            return {}
+        if self.job_priority_window_s is not None:
+            if request.oldest_arrival_epoch_s is None:
+                raise ValueError(
+                    "bounded priority requires an explicit oldest arrival epoch"
+                )
+            remaining_slo_budget_s = self.job_slo_target_s - max(
+                0.0,
+                self.epoch_clock() - request.oldest_arrival_epoch_s,
+            )
+        else:
+            remaining_slo_budget_s = None
+        return {
+            "slo_budget_remaining_s": remaining_slo_budget_s,
+            "priority_window_s": self.job_priority_window_s,
+            "fairness_debt_cap": self.job_fairness_debt_cap,
+        }
 
     @staticmethod
     def _topology_with_local_inflight(

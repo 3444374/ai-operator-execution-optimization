@@ -269,6 +269,99 @@ def shared_credit_trace_summary(
     }
 
 
+def bounded_saor_event_summary(
+    events: list[dict[str, object]],
+) -> dict[str, float | int | bool | str]:
+    """Summarize bounded-SAOR mechanics only from the lossless ledger."""
+
+    base: dict[str, float | int | bool | str] = {
+        "bounded_saor_event_status": "unavailable:no_event_ledger",
+        "bounded_saor_event_sequence_complete": False,
+        "bounded_saor_event_count": 0,
+        "bounded_saor_slo_priority_grants": 0,
+        "bounded_saor_debt_recovery_grants": 0,
+        "bounded_saor_fallback_grants": 0,
+        "bounded_saor_hold_count": 0,
+        "bounded_saor_hold_completed_count": 0,
+        "bounded_saor_hold_duration_total_s": 0.0,
+        "bounded_saor_hold_duration_p95_s": 0.0,
+        "bounded_saor_hold_duration_max_s": 0.0,
+        "bounded_saor_reclaim_debt_max": 0,
+        "bounded_saor_constraint_conflicts": 0,
+        "bounded_saor_recovery_inflight_max": 0,
+        "bounded_saor_avoidable_idle_events": 0,
+        "bounded_saor_foreign_grant_over_debt_critical_events": 0,
+    }
+    if not events:
+        return base
+    sequences: dict[str, list[int]] = {}
+    hold_durations = []
+    max_recovery = 0
+    for event in events:
+        endpoint_id = str(event["endpoint_id"])
+        sequences.setdefault(endpoint_id, []).append(int(event["event_seq"]))
+        raw_recovery = event.get("recovery_inflight_by_job", ())
+        recovery = json.loads(raw_recovery) if isinstance(raw_recovery, str) else raw_recovery
+        max_recovery = max(max_recovery, len(recovery))
+        if event.get("action") == "hold_end":
+            hold_durations.append(float(event.get("hold_duration_s", 0.0)))
+    sequence_complete = all(
+        sequence == list(range(1, len(sequence) + 1))
+        for sequence in sequences.values()
+    )
+    tiers = [str(event.get("tier", "")) for event in events]
+    base.update(
+        {
+            "bounded_saor_event_status": (
+                "ok:lossless_ledger"
+                if sequence_complete
+                else "invalid:event_sequence_gap_or_duplicate"
+            ),
+            "bounded_saor_event_sequence_complete": sequence_complete,
+            "bounded_saor_event_count": len(events),
+            "bounded_saor_slo_priority_grants": sum(
+                event.get("action") == "grant" and event.get("tier") == "slo_priority"
+                for event in events
+            ),
+            "bounded_saor_debt_recovery_grants": sum(
+                event.get("action") == "grant" and event.get("tier") == "debt_recovery"
+                for event in events
+            ),
+            "bounded_saor_fallback_grants": sum(
+                event.get("action") == "grant" and event.get("tier") == "saor_fallback"
+                for event in events
+            ),
+            "bounded_saor_hold_count": sum(
+                event.get("action") == "hold_start" for event in events
+            ),
+            "bounded_saor_hold_completed_count": sum(
+                event.get("action") == "hold_end" for event in events
+            ),
+            "bounded_saor_hold_duration_total_s": sum(hold_durations),
+            "bounded_saor_hold_duration_p95_s": (
+                percentile(hold_durations, 95) if hold_durations else 0.0
+            ),
+            "bounded_saor_hold_duration_max_s": max(hold_durations, default=0.0),
+            "bounded_saor_reclaim_debt_max": max(
+                (int(event.get("reclaim_debt", 0)) for event in events),
+                default=0,
+            ),
+            "bounded_saor_constraint_conflicts": sum(
+                bool(event.get("constraint_conflict")) for event in events
+            ),
+            "bounded_saor_recovery_inflight_max": max_recovery,
+            "bounded_saor_avoidable_idle_events": sum(
+                bool(event.get("avoidable_idle")) for event in events
+            ),
+            "bounded_saor_foreign_grant_over_debt_critical_events": sum(
+                bool(event.get("foreign_grant_over_debt_critical"))
+                for event in events
+            ),
+        }
+    )
+    return base
+
+
 def active_set_phase_summary(
     job_evidence: list[dict[str, object]],
     samples: list[dict[str, object]],

@@ -67,6 +67,7 @@ from .evidence import (
 )
 from .metrics import (
     active_set_phase_summary,
+    bounded_saor_event_summary,
     cumulative_service_disparity,
     group_metric_delta,
     group_resource_summary,
@@ -76,6 +77,7 @@ from .metrics import (
 )
 from .runtime import (
     EndpointServiceRateTracker,
+    SAOR_RELEASE_EVENT_FIELDS,
     _RayCreditObserver,
     _resource_sample,
     build_observe_only_text_state_rows,
@@ -160,6 +162,26 @@ def _validate_rehearsal_record(
         return
     if record.get("active_set_lifecycle_passed") is not True:
         raise RuntimeError("rehearsal active-set lifecycle gate failed")
+    if scenario.policy == "saor_bounded_priority":
+        if record.get("bounded_saor_event_status") != "ok:lossless_ledger":
+            raise RuntimeError("rehearsal bounded-SAOR event ledger is unavailable")
+        if record.get("bounded_saor_event_sequence_complete") is not True:
+            raise RuntimeError("rehearsal bounded-SAOR event sequence is incomplete")
+        if (
+            int(record.get("bounded_saor_slo_priority_grants", 0)) < 1
+            or int(record.get("bounded_saor_debt_recovery_grants", 0)) < 1
+            or int(record.get("bounded_saor_avoidable_idle_events", -1)) != 0
+            or int(
+                record.get(
+                    "bounded_saor_foreign_grant_over_debt_critical_events",
+                    -1,
+                )
+            )
+            != 0
+            or int(record.get("bounded_saor_recovery_inflight_max", 2)) > 1
+        ):
+            raise RuntimeError("rehearsal bounded-SAOR mechanism gate failed")
+        return
     mechanism_applicable = record.get("active_set_mechanism_applicable") is True
     if scenario.policy in _REHEARSAL_CREDIT_POLICIES:
         if not mechanism_applicable:
@@ -568,6 +590,7 @@ def _run_group(
     log_handles = []
     resource_samples: list[dict[str, object]] = []
     credit_samples: list[dict[str, object]] = []
+    release_events: list[dict[str, object]] = []
     state_samples: list[dict[str, object]] = []
     state_signature = _text_state_calibration_signature(config)
     control = config.state_aware_control
@@ -655,6 +678,7 @@ def _run_group(
                 "shared_fifo",
                 "external_vtc",
                 "saor_release",
+                "saor_bounded_priority",
                 "foreground_strict_priority",
                 "state_aware_adaptive",
                 "saor_capacity",
@@ -670,6 +694,8 @@ def _run_group(
                     "fifo" if scenario.policy == "shared_fifo"
                     else "vtc" if scenario.policy == "external_vtc"
                     else "saor" if scenario.policy == "saor_release"
+                    else "saor_bounded_priority"
+                    if scenario.policy == "saor_bounded_priority"
                     else "strict_priority"
                     if scenario.policy == "foreground_strict_priority"
                     else "drr"
@@ -678,7 +704,7 @@ def _run_group(
                     SaorReleaseConfig(
                         **asdict(config.saor_release_control)
                     )
-                    if scenario.policy == "saor_release"
+                    if scenario.policy in {"saor_release", "saor_bounded_priority"}
                     and config.saor_release_control is not None
                     else None
                 ),
@@ -781,6 +807,10 @@ def _run_group(
             if observer is not None:
                 credit_batch = observer.sample(group_launch_epoch_s)
                 credit_samples.extend(credit_batch)
+                if scenario.policy == "saor_bounded_priority":
+                    release_events.extend(
+                        observer.drain_release_events(group_launch_epoch_s)
+                    )
                 state_rows = build_observe_only_text_state_rows(
                     credit_batch,
                     resource_batch,
@@ -842,6 +872,10 @@ def _run_group(
         final_credit = []
         if observer is not None:
             credit_samples.extend(observer.sample(group_launch_epoch_s))
+            if scenario.policy == "saor_bounded_priority":
+                release_events.extend(
+                    observer.drain_release_events(group_launch_epoch_s)
+                )
             final_credit = observer.final_snapshots()
         job_evidence = (
             direct_job_evidence
@@ -971,7 +1005,7 @@ def _run_group(
                 "actuated_saor_capacity" if saor_controllers
                 else "actuated" if controllers
                 else "actuated_saor_release"
-                if scenario.policy == "saor_release"
+                if scenario.policy in {"saor_release", "saor_bounded_priority"}
                 else "observe_only" if observer is not None
                 else "direct_no_job_control"
                 if scenario.policy == "direct_no_job"
@@ -1021,6 +1055,7 @@ def _run_group(
                     "shared_fifo",
                     "external_vtc",
                     "saor_release",
+                    "saor_bounded_priority",
                     "foreground_strict_priority",
                     "state_aware_adaptive",
                     "saor_capacity",
@@ -1051,6 +1086,7 @@ def _run_group(
                 credit_samples,
                 observation_interval_s=_TRACE_SAMPLE_INTERVAL_S,
             ),
+            **bounded_saor_event_summary(release_events),
             "job_jct_s": json.dumps(
                 [evidence["jct_s"] for evidence in job_evidence]
             ),
@@ -1160,6 +1196,11 @@ def _run_group(
                 final_credit,
                 sort_keys=True,
             ),
+            "release_event_trace_schema_version": 1,
+            "release_event_trace_path": str(
+                Path("traces") / f"{run_stem}.release_events.csv"
+            ),
+            "release_event_trace_count": len(release_events),
             "incidents": 0,
         }
         _write_trace_rows_atomic(
@@ -1180,6 +1221,13 @@ def _run_group(
             / f"{run_stem}.states.csv",
             state_samples,
         )
+        _write_trace_rows_atomic(
+            options.output_dir
+            / "traces"
+            / f"{run_stem}.release_events.csv",
+            release_events,
+            fieldnames=SAOR_RELEASE_EVENT_FIELDS,
+        )
         _write_json_atomic(record_path, record)
         return record
     except Exception as exc:
@@ -1191,6 +1239,10 @@ def _run_group(
                 credit_samples.extend(
                     observer.sample(group_launch_epoch_s)
                 )
+                if scenario.policy == "saor_bounded_priority":
+                    release_events.extend(
+                        observer.drain_release_events(group_launch_epoch_s)
+                    )
                 final_credit = observer.final_snapshots()
             except Exception as evidence_exc:
                 capture_error = redact_text(
@@ -1214,6 +1266,13 @@ def _run_group(
             / f"{run_stem}.states.csv",
             state_samples,
         )
+        _write_trace_rows_atomic(
+            options.output_dir
+            / "traces"
+            / f"{run_stem}.release_events.csv",
+            release_events,
+            fieldnames=SAOR_RELEASE_EVENT_FIELDS,
+        )
         _write_json_atomic(
             options.output_dir
             / "traces"
@@ -1226,6 +1285,11 @@ def _run_group(
                 ],
                 "final_credit_snapshots": final_credit,
                 "credit_capture_error": capture_error,
+                "release_event_trace_schema_version": 1,
+                "release_event_trace_path": str(
+                    Path("traces") / f"{run_stem}.release_events.csv"
+                ),
+                "release_event_trace_count": len(release_events),
             },
         )
         raise

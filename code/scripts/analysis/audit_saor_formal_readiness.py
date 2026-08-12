@@ -49,6 +49,18 @@ PRIORITY_REACHABILITY_EXPECTED = {
         2,
     ),
 }
+BOUNDED_PRIORITY_EXPECTED = {
+    "active_set_static_partition": ("static_partition", 2),
+    "active_set_saor_release": ("saor_release", 2),
+    "active_set_saor_bounded_priority_0125k": (
+        "saor_bounded_priority",
+        2,
+    ),
+    "active_set_saor_bounded_priority_025k": (
+        "saor_bounded_priority",
+        2,
+    ),
+}
 
 
 def _args() -> argparse.Namespace:
@@ -57,7 +69,11 @@ def _args() -> argparse.Namespace:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument(
         "--profile",
-        choices=("formal", "priority_reachability"),
+        choices=(
+            "formal",
+            "priority_reachability",
+            "bounded_priority_development",
+        ),
         default="formal",
     )
     return parser.parse_args()
@@ -73,6 +89,8 @@ def audit(
         if profile == "formal"
         else PRIORITY_REACHABILITY_EXPECTED
         if profile == "priority_reachability"
+        else BOUNDED_PRIORITY_EXPECTED
+        if profile == "bounded_priority_development"
         else None
     )
     if expected is None:
@@ -92,6 +110,29 @@ def audit(
     }
     if observed != expected:
         errors.append(f"scenario matrix does not match the frozen {profile} contract")
+    if profile == "bounded_priority_development":
+        bounded = [
+            scenario
+            for scenario in config.scenarios
+            if scenario.policy == "saor_bounded_priority"
+        ]
+        if [scenario.priorities for scenario in bounded] != [(0, 1), (0, 1)]:
+            errors.append("bounded priority roles must be explicit bulk=0/foreground=1")
+        if [scenario.slo_targets_s for scenario in bounded] != [
+            (None, 30.0),
+            (None, 30.0),
+        ]:
+            errors.append("bounded priority foreground SLO must be frozen at 30s")
+        if [scenario.priority_windows_s for scenario in bounded] != [
+            (None, 30.0),
+            (None, 30.0),
+        ]:
+            errors.append("bounded priority window must be frozen at 30s")
+        if [scenario.debt_cap_fractions for scenario in bounded] != [
+            (0.125, None),
+            (0.25, None),
+        ]:
+            errors.append("bounded debt caps must be frozen at 0.125K and 0.25K")
     if profile == "formal":
         try:
             direct = direct_control_contract(config)

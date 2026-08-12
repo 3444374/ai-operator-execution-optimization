@@ -130,6 +130,10 @@ def _run_static_scheduler(
     shared_credit=None,
     job_weight: int = 1,
     job_priority: int = 0,
+    job_slo_target_s: float | None = None,
+    job_priority_window_s: float | None = None,
+    job_fairness_debt_cap: float | None = None,
+    shared_credit_acquire_timeout_s: float | None = None,
 ) -> tuple[list[dict], dict]:
     return _run_scheduler(
         ray_module,
@@ -145,6 +149,11 @@ def _run_static_scheduler(
         shared_credit,
         job_weight,
         job_priority,
+        None,
+        job_slo_target_s,
+        job_priority_window_s,
+        job_fairness_debt_cap,
+        shared_credit_acquire_timeout_s,
     )
 
 
@@ -163,6 +172,10 @@ def _run_scheduler(
     job_weight: int = 1,
     job_priority: int = 0,
     per_endpoint_admission: Mapping[str, object] | None = None,
+    job_slo_target_s: float | None = None,
+    job_priority_window_s: float | None = None,
+    job_fairness_debt_cap: float | None = None,
+    shared_credit_acquire_timeout_s: float | None = None,
 ) -> tuple[list[dict], dict]:
     routing_config = routing_config or {}
     scheduler = SynchronousScheduler(
@@ -178,6 +191,10 @@ def _run_scheduler(
         shared_credit=shared_credit,
         job_weight=job_weight,
         job_priority=job_priority,
+        job_slo_target_s=job_slo_target_s,
+        job_priority_window_s=job_priority_window_s,
+        job_fairness_debt_cap=job_fairness_debt_cap,
+        shared_credit_acquire_timeout_s=shared_credit_acquire_timeout_s,
         actual_work_extractor=extract_completed_token_work,
     )
     result = scheduler.run(envelopes, topology)
@@ -435,6 +452,26 @@ def submit_with_backpressure(
                     shared_credit_config.get("job_priority", 0)
                     if shared_credit_config
                     else 0
+                ),
+                (
+                    shared_credit_config.get("job_slo_target_s")
+                    if shared_credit_config
+                    else None
+                ),
+                (
+                    shared_credit_config.get("job_priority_window_s")
+                    if shared_credit_config
+                    else None
+                ),
+                (
+                    shared_credit_config.get("job_fairness_debt_cap")
+                    if shared_credit_config
+                    else None
+                ),
+                (
+                    shared_credit_config.get("acquire_timeout_s")
+                    if shared_credit_config
+                    else None
                 ),
             )
     metrics.update(
@@ -743,6 +780,26 @@ def submit_ray_tasks(
             shared_credit_config.get("job_priority", 0)
             if shared_credit_config
             else 0
+        ),
+        (
+            shared_credit_config.get("job_slo_target_s")
+            if shared_credit_config
+            else None
+        ),
+        (
+            shared_credit_config.get("job_priority_window_s")
+            if shared_credit_config
+            else None
+        ),
+        (
+            shared_credit_config.get("job_fairness_debt_cap")
+            if shared_credit_config
+            else None
+        ),
+        (
+            shared_credit_config.get("acquire_timeout_s")
+            if shared_credit_config
+            else None
         ),
     )
 

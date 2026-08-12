@@ -35,6 +35,7 @@ from src.experiments.shared_vllm import (  # noqa: E402
     _validate_runner_topology,
     _validate_final_credit,
     active_set_phase_summary,
+    bounded_saor_event_summary,
     build_job_command,
     cumulative_service_disparity,
     group_resource_summary,
@@ -44,6 +45,9 @@ from src.experiments.shared_vllm import (  # noqa: E402
     normalized_job_service_rates,
     run_experiment,
     shared_credit_trace_summary,
+)
+from src.scheduling.submission_control.shared_credit import (  # noqa: E402
+    SaorReleaseEvent,
 )
 
 
@@ -79,6 +83,48 @@ class SharedVllmExperimentTests(unittest.TestCase):
             _validate_rehearsal_record(
                 scenario,
                 {**record, "resource_metrics_status": "unavailable"},
+            )
+
+    def test_bounded_rehearsal_gate_uses_event_ledger_not_sampled_snapshot(
+        self,
+    ) -> None:
+        scenario = SharedVllmScenario(
+            scenario_id="active_set_saor_bounded_priority_0125k",
+            policy="saor_bounded_priority",
+            job_count=2,
+            rows_per_job=None,
+            rows_per_jobs=(1, 1),
+            weights=(1, 1),
+            arrival_offsets_s=(0.0, 5.0),
+            priorities=(0, 1),
+            slo_targets_s=(None, 30.0),
+            priority_windows_s=(None, 30.0),
+            debt_cap_fractions=(0.125, None),
+        )
+        record = {
+            "execution_mode": "rehearsal",
+            "metrics_status": "ok",
+            "resource_metrics_status": "ok",
+            "incidents": 0,
+            "actor_worker_failures": 0,
+            "active_set_lifecycle_passed": True,
+            # A sampled snapshot can miss a transition shorter than 250 ms.
+            "active_set_mechanism_applicable": True,
+            "active_set_mechanism_passed": False,
+            "bounded_saor_event_status": "ok:lossless_ledger",
+            "bounded_saor_event_sequence_complete": True,
+            "bounded_saor_slo_priority_grants": 1,
+            "bounded_saor_debt_recovery_grants": 1,
+            "bounded_saor_avoidable_idle_events": 0,
+            "bounded_saor_foreign_grant_over_debt_critical_events": 0,
+            "bounded_saor_recovery_inflight_max": 1,
+        }
+
+        _validate_rehearsal_record(scenario, record)
+        with self.assertRaisesRegex(RuntimeError, "sequence is incomplete"):
+            _validate_rehearsal_record(
+                scenario,
+                {**record, "bounded_saor_event_sequence_complete": False},
             )
 
     def test_rehearsal_runs_one_nonformal_cell_per_scenario(self) -> None:
@@ -607,6 +653,49 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertEqual(summary["credit_idle_capacity_fraction_mean"], 0.55)
         self.assertEqual(summary["credit_borrowed_work_mean"], 10.0)
 
+    def test_bounded_saor_event_ledger_catches_five_ms_transitions(self) -> None:
+        events = [
+            {
+                "event_seq": 1,
+                "event_time_s": 10.000,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "slo_priority",
+                "recovery_inflight_by_job": "[]",
+                "constraint_conflict": False,
+                "avoidable_idle": False,
+                "foreign_grant_over_debt_critical": False,
+            },
+            {
+                "event_seq": 2,
+                "event_time_s": 10.005,
+                "endpoint_id": "task-0",
+                "action": "grant",
+                "tier": "debt_recovery",
+                "recovery_inflight_by_job": '[["bulk", "r-1"]]',
+                "constraint_conflict": True,
+                "avoidable_idle": False,
+                "foreign_grant_over_debt_critical": False,
+            },
+        ]
+
+        summary = bounded_saor_event_summary(events)
+
+        self.assertEqual(summary["bounded_saor_event_status"], "ok:lossless_ledger")
+        self.assertEqual(summary["bounded_saor_slo_priority_grants"], 1)
+        self.assertEqual(summary["bounded_saor_debt_recovery_grants"], 1)
+        self.assertEqual(summary["bounded_saor_constraint_conflicts"], 1)
+        self.assertEqual(summary["bounded_saor_recovery_inflight_max"], 1)
+
+    def test_bounded_saor_mechanism_is_unavailable_without_event_ledger(self) -> None:
+        summary = bounded_saor_event_summary([])
+
+        self.assertEqual(
+            summary["bounded_saor_event_status"],
+            "unavailable:no_event_ledger",
+        )
+        self.assertFalse(summary["bounded_saor_event_sequence_complete"])
+
     def test_vtc_templates_expand_unequal_job_counts(self) -> None:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -923,6 +1012,30 @@ class SharedVllmExperimentTests(unittest.TestCase):
             observer.cleanup()
 
         self.assertIsNone(observer.actor)
+
+    def test_credit_observer_drains_lossless_events(self) -> None:
+        observer = shared_vllm._RayCreditObserver.__new__(
+            shared_vllm._RayCreditObserver
+        )
+        observer.ray = MagicMock()
+        observer.endpoint_ids = ("task-0",)
+        observer.actor = MagicMock()
+        event = SaorReleaseEvent(
+            event_seq=1,
+            event_time_s=12.0,
+            endpoint_id="task-0",
+            action="grant",
+            tier="slo_priority",
+        )
+        observer.actor.drain_release_events.remote.return_value = (event,)
+        observer.ray.get.side_effect = lambda value: value
+
+        rows = observer.drain_release_events(100.0)
+
+        self.assertEqual(rows[0]["event_seq"], 1)
+        self.assertEqual(rows[0]["tier"], "slo_priority")
+        self.assertEqual(rows[0]["schema_version"], 1)
+        self.assertIn("observed_epoch_s", rows[0])
 
     def test_request_trace_success_matches_profiler_schema(self) -> None:
         self.assertTrue(
@@ -2160,6 +2273,13 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 / "000_formal_1_test.failure.json"
             )
             self.assertTrue(failure.exists())
+            self.assertTrue(
+                (
+                    options.output_dir
+                    / "traces"
+                    / "000_formal_1_test.release_events.csv"
+                ).exists()
+            )
             self.assertIn(
                 "exactly-once failed",
                 failure.read_text(encoding="utf-8"),

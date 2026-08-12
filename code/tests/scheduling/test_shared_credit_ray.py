@@ -15,6 +15,9 @@ if str(CODE_ROOT) not in sys.path:
 from src.scheduling.runtime.shared_credit_ray import (  # noqa: E402
     get_or_create_shared_credit_client,
 )
+from src.scheduling.submission_control.saor import (  # noqa: E402
+    SaorReleaseConfig,
+)
 
 
 class _RemoteMethod:
@@ -65,6 +68,33 @@ class _FakeRay:
 
 
 class SharedCreditRayTests(unittest.TestCase):
+    def test_bounded_saor_events_cross_actor_boundary_once_in_order(self) -> None:
+        ray = _FakeRay()
+        client = get_or_create_shared_credit_client(
+            ray,
+            name="bounded-credits",
+            namespace="tests",
+            capacities={"gpu0": (2, 200)},
+            quantum=100,
+            policy="saor_bounded_priority",
+            saor_release_config=SaorReleaseConfig(1.0, 1.0, 1.0, 0.0),
+        )
+
+        for request_id in ("batch-0", "batch-1"):
+            self.assertTrue(
+                client.try_acquire(
+                    request_id=request_id,
+                    job_id="bulk",
+                    endpoint_id="gpu0",
+                    estimated_work=100,
+                    fairness_debt_cap=100.0,
+                )
+            )
+
+        events = client.drain_release_events("gpu0")
+        self.assertEqual([event.event_seq for event in events], [1, 2])
+        self.assertEqual(client.drain_release_events("gpu0"), ())
+
     def test_previous_non_saor_actor_configuration_is_compatible(self) -> None:
         class PreviousActor:
             def configuration(self):

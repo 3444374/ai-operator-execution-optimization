@@ -18,6 +18,33 @@ from src.scheduling.submission_control.saor import SaorReleaseConfig
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
 
+SAOR_RELEASE_EVENT_FIELDS = (
+    "schema_version",
+    "observed_epoch_s",
+    "elapsed_s",
+    "event_seq",
+    "event_time_s",
+    "endpoint_id",
+    "action",
+    "tier",
+    "selected_job_id",
+    "selected_request_id",
+    "target_job_id",
+    "head_work",
+    "reclaim_debt",
+    "hold_duration_s",
+    "constraint_conflict",
+    "ready_jobs",
+    "fitting_jobs",
+    "debt_by_job",
+    "debt_cap_by_job",
+    "recovery_inflight_by_job",
+    "active_requests",
+    "active_work",
+    "avoidable_idle",
+    "foreign_grant_over_debt_critical",
+)
+
 def _ray_runtime_env() -> dict[str, dict[str, str]]:
     return ray_runtime_env(_CODE_ROOT)
 
@@ -115,6 +142,33 @@ class _RayCreditObserver:
         )
         return [_snapshot_mapping(snapshot) for snapshot in snapshots]
 
+    def drain_release_events(
+        self,
+        origin_epoch_s: float,
+    ) -> list[dict[str, object]]:
+        """Drain every coordinator decision once; sampling cadence is irrelevant."""
+
+        actor = self._resolve_actor()
+        if actor is None:
+            return []
+        observed_epoch_s = time.time()
+        batches = self.ray.get(
+            [
+                actor.drain_release_events.remote(endpoint_id)
+                for endpoint_id in self.endpoint_ids
+            ]
+        )
+        return [
+            {
+                "schema_version": 1,
+                "observed_epoch_s": observed_epoch_s,
+                "elapsed_s": observed_epoch_s - origin_epoch_s,
+                **_event_mapping(event),
+            }
+            for batch in batches
+            for event in batch
+        ]
+
     def update_capacity(
         self,
         endpoint_id: str,
@@ -152,6 +206,14 @@ class _RayCreditObserver:
 
 def _snapshot_mapping(snapshot) -> dict[str, object]:
     mapping = asdict(snapshot)
+    for key, value in tuple(mapping.items()):
+        if isinstance(value, (list, tuple)):
+            mapping[key] = json.dumps(value)
+    return mapping
+
+
+def _event_mapping(event) -> dict[str, object]:
+    mapping = asdict(event)
     for key, value in tuple(mapping.items()):
         if isinstance(value, (list, tuple)):
             mapping[key] = json.dumps(value)

@@ -31,6 +31,7 @@ POLICIES = {
     "shared_fifo",
     "external_vtc",
     "saor_release",
+    "saor_bounded_priority",
     "foreground_strict_priority",
     "state_aware_adaptive",
     "saor_capacity",
@@ -61,6 +62,9 @@ _RUNNER_OWNED_FLAGS = {
     "--shared-credit-coordinator-name",
     "--shared-credit-job-weight",
     "--shared-credit-job-priority",
+    "--shared-credit-job-slo-ms",
+    "--shared-credit-priority-window-ms",
+    "--shared-credit-job-debt-cap-work",
     "--shared-credit-namespace",
     "--shared-credit-policy",
     "--shared-credit-quantum",
@@ -114,6 +118,10 @@ class SharedVllmScenario:
     rows_per_jobs: tuple[int, ...] = ()
     request_limit_per_endpoint: int | None = None
     work_limit_per_endpoint: int | None = None
+    priorities: tuple[int, ...] = ()
+    slo_targets_s: tuple[float | None, ...] = ()
+    priority_windows_s: tuple[float | None, ...] = ()
+    debt_cap_fractions: tuple[float | None, ...] = ()
 
     def row_count(self, job_index: int) -> int:
         """Return the immutable request count for one job."""
@@ -141,10 +149,24 @@ class SharedVllmScenario:
 
         if not 0 <= job_index < self.job_count:
             raise ValueError("job_index is outside scenario job_count")
+        if self.policy == "saor_bounded_priority":
+            return self.priorities[job_index]
         if self.policy != "foreground_strict_priority":
             return 0
         foreground_offset = max(self.arrival_offsets_s)
         return int(self.arrival_offsets_s[job_index] == foreground_offset)
+
+    def job_slo_target_s(self, job_index: int) -> float | None:
+        return self.slo_targets_s[job_index] if self.slo_targets_s else None
+
+    def job_priority_window_s(self, job_index: int) -> float | None:
+        return self.priority_windows_s[job_index] if self.priority_windows_s else None
+
+    def job_debt_cap_work(self, job_index: int, work_limit: int) -> float | None:
+        if not self.debt_cap_fractions:
+            return None
+        fraction = self.debt_cap_fractions[job_index]
+        return None if fraction is None else fraction * work_limit
 
 @dataclass(frozen=True)
 class StateAwareControlConfig:
@@ -377,7 +399,8 @@ def load_config(path: Path) -> SharedVllmConfig:
     if uses_saor_capacity and saor_capacity_control is None:
         raise ValueError("saor_capacity policy requires saor_capacity_control")
     uses_saor_release = any(
-        scenario.policy == "saor_release" for scenario in scenarios
+        scenario.policy in {"saor_release", "saor_bounded_priority"}
+        for scenario in scenarios
     )
     if uses_saor_release and saor_release_control is None:
         raise ValueError("saor_release policy requires saor_release_control")
@@ -515,6 +538,7 @@ def build_job_command(
         "shared_fifo",
         "external_vtc",
         "saor_release",
+        "saor_bounded_priority",
         "foreground_strict_priority",
         "state_aware_adaptive",
         "saor_capacity",
@@ -538,6 +562,8 @@ def build_job_command(
                     "fifo" if scenario.policy == "shared_fifo"
                     else "vtc" if scenario.policy == "external_vtc"
                     else "saor" if scenario.policy == "saor_release"
+                    else "saor_bounded_priority"
+                    if scenario.policy == "saor_bounded_priority"
                     else "strict_priority"
                     if scenario.policy == "foreground_strict_priority"
                     else "drr"
@@ -548,7 +574,29 @@ def build_job_command(
                 str(scenario.job_priority(job_index)),
             ]
         )
-        if scenario.policy == "saor_release":
+        if scenario.policy == "saor_bounded_priority":
+            slo_target_s = scenario.job_slo_target_s(job_index)
+            priority_window_s = scenario.job_priority_window_s(job_index)
+            debt_cap_work = scenario.job_debt_cap_work(
+                job_index,
+                endpoint_work_limit,
+            )
+            if slo_target_s is not None:
+                command.extend(
+                    ["--shared-credit-job-slo-ms", f"{slo_target_s * 1000:g}"]
+                )
+            if priority_window_s is not None:
+                command.extend(
+                    [
+                        "--shared-credit-priority-window-ms",
+                        f"{priority_window_s * 1000:g}",
+                    ]
+                )
+            if debt_cap_work is not None:
+                command.extend(
+                    ["--shared-credit-job-debt-cap-work", f"{debt_cap_work:g}"]
+                )
+        if scenario.policy in {"saor_release", "saor_bounded_priority"}:
             control = config.saor_release_control
             if control is None:
                 raise ValueError("saor_release control configuration is missing")
@@ -676,6 +724,46 @@ def _load_scenario(
         "arrival_offsets_s",
         job_count,
     )
+    bounded_fields = {
+        "priorities",
+        "slo_targets_s",
+        "priority_windows_s",
+        "debt_cap_fractions",
+    }
+    if policy == "saor_bounded_priority":
+        priorities = _nonnegative_integer_tuple(
+            raw.get("priorities"), "priorities", job_count
+        )
+        slo_targets_s = _optional_positive_float_tuple(
+            raw.get("slo_targets_s"), "slo_targets_s", job_count
+        )
+        priority_windows_s = _optional_positive_float_tuple(
+            raw.get("priority_windows_s"), "priority_windows_s", job_count
+        )
+        debt_cap_fractions = _optional_fraction_tuple(
+            raw.get("debt_cap_fractions"), "debt_cap_fractions", job_count
+        )
+        for index, priority in enumerate(priorities):
+            has_slo = slo_targets_s[index] is not None
+            has_window = priority_windows_s[index] is not None
+            has_cap = debt_cap_fractions[index] is not None
+            if priority > 0 and not (has_slo and has_window):
+                raise ValueError(
+                    "bounded priority Job requires an SLO target and priority window"
+                )
+            if priority == 0 and (has_slo or has_window):
+                raise ValueError(
+                    "non-priority Job must not define an SLO target or priority window"
+                )
+            if priority > 0 and has_cap:
+                raise ValueError("priority and debt-cap roles must remain distinct")
+    else:
+        if any(field in raw for field in bounded_fields):
+            raise ValueError("bounded per-Job fields require saor_bounded_priority")
+        priorities = ()
+        slo_targets_s = ()
+        priority_windows_s = ()
+        debt_cap_fractions = ()
     if policy == "foreground_strict_priority" and (
         job_count != 2 or offsets.count(max(offsets)) != 1
     ):
@@ -714,6 +802,10 @@ def _load_scenario(
         rows_per_jobs=rows_per_jobs,
         request_limit_per_endpoint=scenario_request_limit,
         work_limit_per_endpoint=scenario_work_limit,
+        priorities=priorities,
+        slo_targets_s=slo_targets_s,
+        priority_windows_s=priority_windows_s,
+        debt_cap_fractions=debt_cap_fractions,
     )
 
 def _local_limits(
@@ -1255,6 +1347,38 @@ def _nonnegative_integer_tuple(
     if not isinstance(value, list) or len(value) != expected:
         raise ValueError(f"{label} must contain one value per job")
     return tuple(_nonnegative_integer(item, label) for item in value)
+
+
+def _optional_positive_float_tuple(
+    value: object,
+    label: str,
+    expected: int,
+) -> tuple[float | None, ...]:
+    if not isinstance(value, list) or len(value) != expected:
+        raise ValueError(f"{label} must contain one value per job")
+    resolved = []
+    for index, item in enumerate(value):
+        if item is None:
+            resolved.append(None)
+            continue
+        number = _nonnegative_float(
+            _expand_scalar(item, f"{label}[{index}]"), f"{label}[{index}]"
+        )
+        if number <= 0:
+            raise ValueError(f"{label} values must be positive when present")
+        resolved.append(number)
+    return tuple(resolved)
+
+
+def _optional_fraction_tuple(
+    value: object,
+    label: str,
+    expected: int,
+) -> tuple[float | None, ...]:
+    fractions = _optional_positive_float_tuple(value, label, expected)
+    if any(item is not None and item > 1 for item in fractions):
+        raise ValueError(f"{label} values must lie in (0, 1]")
+    return fractions
 
 def _optional_path_tuple(
     value: object,

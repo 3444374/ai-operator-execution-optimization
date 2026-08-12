@@ -1170,6 +1170,35 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
 即判 release-only 不可达。吞吐不作为这一 upper-bound gate 的通过条件，也不得从该臂直接
 声称 reservation 有效。
 
+有界优先级 SAOR 的开发门使用 `saor_bounded_priority.example.json`。模板只含四臂：冻结
+static、原 SAOR，以及 bulk fairness-debt cap 为 `0.125K_work`、`0.25K_work` 的两个候选；
+foreground 的 priority/SLO/window 显式冻结为 `1/30s/30s`，bulk 显式冻结为 priority 0，
+不允许从 Job 名或到达 offset 推断角色。新机制是否触发只认
+`traces/*.release_events.csv` 的无损事件账本；250 ms credit snapshot 只用于阶段图，不能作为
+priority/debt/hold 机制真值。服务器关闭期间只做本地静态验证；恢复后先重新执行 runtime
+preflight，再运行两个全新目录的 rehearsal，不启动 formal：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/audit_saor_formal_readiness.py \
+  --profile bounded_priority_development \
+  --config deploy/autodl/saor_bounded_priority.example.json \
+  --output "$ARTIFACT_ROOT/saor_bounded_priority_readiness.json"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
+  --rehearsal \
+  --config deploy/autodl/saor_bounded_priority.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_bounded_priority_rehearsal_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+```
+
+静态 audit 通过只说明配置/资产合同闭合，不说明性能门通过；远端未运行时必须记录为 pending。
+
 正式运行优先使用 audit-aware wrapper，避免手工设置上述逐 Job 变量：
 
 ```bash

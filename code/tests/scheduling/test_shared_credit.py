@@ -335,6 +335,40 @@ class SharedCreditCoordinatorTests(unittest.TestCase):
 
         self.assertEqual(coordinator.snapshot("gpu0").waiting_requests, 0)
 
+    def test_cancel_waiter_removes_timed_out_request_and_guard_hold(self) -> None:
+        coordinator = self.bounded_coordinator(request_limit=2, work_limit=100)
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="active",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=80,
+                priority=1,
+                slo_budget_remaining_s=5.0,
+                priority_window_s=30.0,
+            )
+        )
+        coordinator._fairness_debt["gpu0"]["bulk"] = 100.0
+        self.assertFalse(
+            coordinator.try_acquire(
+                request_id="timed-out",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=40,
+                fairness_debt_cap=100.0,
+            )
+        )
+
+        self.assertTrue(
+            coordinator.cancel_waiter("timed-out", job_id="bulk")
+        )
+        snapshot = coordinator.snapshot("gpu0")
+        self.assertEqual(snapshot.waiting_requests, 0)
+        self.assertEqual(snapshot.guard_hold_target_request_id, "")
+        self.assertFalse(
+            coordinator.cancel_waiter("timed-out", job_id="bulk")
+        )
+
     def test_strict_priority_reclaims_future_releases_without_preemption(self) -> None:
         coordinator = FairEndpointCreditCoordinator(
             {"gpu0": (2, 200)},
