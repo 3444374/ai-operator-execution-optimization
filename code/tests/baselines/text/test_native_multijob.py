@@ -177,6 +177,25 @@ class NativeMultiJobTests(unittest.TestCase):
         path.write_text(json.dumps(payload), encoding="utf-8")
         return path
 
+    def test_generic_config_keeps_matrix_binding_fields_optional(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._config(Path(directory))
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            for field in (
+                "endpoint_ids", "service_signature", "protocol",
+                "output_cap", "organizer",
+            ):
+                payload.pop(field)
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            config = load_native_multijob_config(path)
+
+        self.assertEqual(config.endpoint_ids, ())
+        self.assertEqual(config.service_signature, ())
+        self.assertIsNone(config.protocol)
+        self.assertIsNone(config.output_cap)
+        self.assertIsNone(config.organizer)
+
     @staticmethod
     def _queues(_urls: tuple[str, ...], _timeout: float) -> dict[int, dict[str, int]]:
         return {0: {"running": 0, "waiting": 0}, 1: {"running": 0, "waiting": 0}}
@@ -347,8 +366,18 @@ class NativeMultiJobTests(unittest.TestCase):
             del payload["source"]
             path = root / "untimed.json"
             path.write_text(json.dumps(payload), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "missing=.*source"):
-                load_native_multijob_config(path)
+            legacy = load_native_multijob_config(path)
+            self.assertIsNone(legacy.source)
+            untimed_command = build_shard_command(
+                runner_script="run_official_baseline.py", arm=legacy.arms[0],
+                job=legacy.arms[0].jobs[0], endpoint_index=0,
+                endpoint_url="http://127.0.0.1:8000/v1/chat/completions",
+                output_dir=root / "untimed-shard", model="qwen",
+                service_prefix_caching="enabled", service_max_num_seqs=64,
+                service_max_num_batched_tokens=4096, api_key=None,
+                source=legacy.source,
+            )
+            self.assertNotIn("--timed-postgres-source", untimed_command)
 
     def test_native_config_requires_matching_explicit_service_signature(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

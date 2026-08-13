@@ -55,6 +55,17 @@ from src.scheduling.submission_control.shared_credit import (  # noqa: E402
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_generic_config_keeps_service_signature_optional(self) -> None:
+        with TemporaryDirectory() as temporary:
+            path = Path(temporary) / "config.json"
+            payload = self._config_payload()
+            payload.pop("service_signature")
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            config = load_config(path)
+
+        self.assertEqual(config.service_signature, ())
+
     def test_eager_job_launch_waits_for_absolute_job_offset(self) -> None:
         now_values = iter((100.0, 104.0, 105.0))
         sleeps: list[float] = []

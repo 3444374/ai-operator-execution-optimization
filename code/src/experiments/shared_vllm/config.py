@@ -321,7 +321,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         decoded.get("common_args", []),
         "common_args",
     )
-    service_signature_raw = decoded.get("service_signature")
+    service_signature_raw = decoded.get("service_signature", {})
     if not isinstance(service_signature_raw, dict):
         raise ValueError("service_signature must be an object")
     service_signature = tuple(
@@ -333,16 +333,17 @@ def load_config(path: Path) -> SharedVllmConfig:
             for key, value in service_signature_raw.items()
         )
     )
-    signature = dict(service_signature)
-    signature_model = _nonempty_string(
-        signature.get("model"), "service_signature.model"
-    )
-    _nonempty_string(signature.get("service"), "service_signature.service")
-    configured_model = _argument_value(common_args, "--completion-model", "")
-    if configured_model and signature_model != configured_model:
-        raise ValueError(
-            "service_signature.model must equal --completion-model"
+    if service_signature:
+        signature = dict(service_signature)
+        signature_model = _nonempty_string(
+            signature.get("model"), "service_signature.model"
         )
+        _nonempty_string(signature.get("service"), "service_signature.service")
+        configured_model = _argument_value(common_args, "--completion-model", "")
+        if configured_model and signature_model != configured_model:
+            raise ValueError(
+                "service_signature.model must equal --completion-model"
+            )
     arrival_contract = decoded.get(
         "job_internal_arrival_contract", "manifest_timed"
     )

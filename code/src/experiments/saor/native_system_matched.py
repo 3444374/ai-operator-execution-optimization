@@ -25,7 +25,8 @@ SELECTOR_SANITY_ARM_IDS = (
     "project_bounded_ready_saor_0125we",
 )
 REQUIRED_ARM_IDS = tuple(dict.fromkeys(SYSTEM_ARM_IDS + SELECTOR_SANITY_ARM_IDS))
-JOB_OFFSET_TOLERANCE_S = 0.5
+NOMINAL_JOB_OFFSET_S = 5.0
+ACTUAL_CHILD_OFFSET_TOLERANCE_S = 0.25
 
 _PROJECT_FIELDS = {
     "k_per_endpoint", "work_limit_per_endpoint", "ready_bytes", "actor_topology",
@@ -36,6 +37,18 @@ _COMMON_FIELDS = (
     "protocol", "output_cap", "arrival_offsets_s", "job_internal_arrival_contract",
     "performance_writeback_mode", "unsupported_request_tails", "source", "organizer",
 )
+
+
+def _validate_actual_job_offset(actual_offset_s: float) -> float:
+    """Validate observed child-source timing without claiming zero jitter."""
+
+    deviation_s = actual_offset_s - NOMINAL_JOB_OFFSET_S
+    if abs(deviation_s) > ACTUAL_CHILD_OFFSET_TOLERANCE_S:
+        raise RuntimeError(
+            "actual child-source offset is outside the pre-registered "
+            f"{ACTUAL_CHILD_OFFSET_TOLERANCE_S:.2f}s tolerance"
+        )
+    return deviation_s
 
 
 @dataclass(frozen=True)
@@ -297,8 +310,7 @@ def _validate_cell_evidence(
                 raise RuntimeError("timed PostgreSQL source evidence is invalid")
     starts = [float(job["actual_launch_epoch_s"]) for job in jobs]
     actual_offset_s = starts[1] - starts[0]
-    if abs(actual_offset_s - 5.0) > JOB_OFFSET_TOLERANCE_S:
-        raise RuntimeError("Job overlap/offset evidence is invalid")
+    offset_deviation_s = _validate_actual_job_offset(actual_offset_s)
     if float(jobs[0]["ended_epoch_s"]) <= starts[1]:
         raise RuntimeError("Job overlap evidence is missing")
     service = evidence["service_metrics"]
@@ -358,8 +370,9 @@ def _validate_cell_evidence(
     return {
         **evidence,
         "actual_job_offset_s": actual_offset_s,
-        "job_offset_deviation_s": actual_offset_s - 5.0,
-        "job_offset_tolerance_s": JOB_OFFSET_TOLERANCE_S,
+        "nominal_job_offset_s": NOMINAL_JOB_OFFSET_S,
+        "job_offset_deviation_s": offset_deviation_s,
+        "job_offset_tolerance_s": ACTUAL_CHILD_OFFSET_TOLERANCE_S,
         "arm_id": arm.arm_id,
         "report_blocks": list(cell.report_blocks),
         "scheduler_owner": arm.scheduler_owner,

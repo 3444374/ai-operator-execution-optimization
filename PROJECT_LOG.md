@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-08-14 SAOR 系统级 matched 编排合同兼容性收口
+
+- 补齐 `saor_native_system_matched.example.json`、原生执行器配置和 Project 执行器配置三件套；总编排器按精确 arm/scenario ID 映射，并对 source、service signature、protocol、output cap、organizer、校准路径及 K/W/ready-state 合同 fail closed。
+- 保持通用 native multi-job 与 shared-vLLM loader 向后兼容：矩阵专用绑定字段在通用配置中可缺省，但进入 matched 编排时必须显式且完整；已用两个既有示例配置做回归烟测。
+- 将 5 秒标称 Job 错峰与子进程实际启动偏差分开记录，实际偏差门禁冻结为 ±0.25 秒；模板仍为 placeholder-safe、`formal_authorized=false`，本次未运行任何外部/GPU 实验。
+
 ## 2026-08-13 SAOR 系统级 baseline 复测规格冻结
 
 - 用户确认下一阶段按建议补五臂 2-Job 系统级 matched comparison：Daft Native、Daft Ray、

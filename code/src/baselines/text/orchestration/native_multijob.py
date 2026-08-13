@@ -104,12 +104,12 @@ class NativeMultiJobConfig:
     experiment_id: str
     output_root: Path
     endpoint_urls: tuple[str, str]
-    endpoint_ids: tuple[str, str]
+    endpoint_ids: tuple[str, ...]
     model: str
     service_signature: tuple[tuple[str, object], ...]
-    protocol: str
-    output_cap: int
-    organizer: str
+    protocol: str | None
+    output_cap: int | None
+    organizer: str | None
     api_key_env: str | None
     service_prefix_caching: str
     service_max_num_seqs: int
@@ -121,7 +121,7 @@ class NativeMultiJobConfig:
     schedule_seed: int
     endpoint_work_skew_max: float
     minimum_measurement_seconds: float
-    source: TimedPostgresManifestSource
+    source: TimedPostgresManifestSource | None
     job_internal_arrival_contract: Literal["manifest_timed", "eager"]
     arms: tuple[NativeMultiJobArm, ...]
 
@@ -287,25 +287,29 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         "schema_version", "experiment_id", "formal", "output_root", "endpoint_urls", "model",
         "api_key_env", "service", "idle_timeout_s", "launch_lead_s", "warmup_repeats",
         "formal_repeats", "schedule_seed", "endpoint_work_skew_max", "arms",
-        "minimum_measurement_seconds", "source", "job_internal_arrival_contract",
-        "endpoint_ids", "service_signature", "protocol", "output_cap",
-        "organizer",
+        "minimum_measurement_seconds",
+    }
+    matrix_optional = {
+        "endpoint_ids", "service_signature", "protocol", "output_cap", "organizer",
+        "source", "job_internal_arrival_contract",
     }
     missing = required - set(payload)
-    unknown = set(payload) - required
+    unknown = set(payload) - required - matrix_optional
     if missing or unknown:
         raise ValueError(f"config fields invalid: missing={sorted(missing)} unknown={sorted(unknown)}")
     if payload["schema_version"] != 1 or payload["formal"] is not True:
         raise ValueError("native multi-job runner requires schema_version=1 and formal=true")
-    source_raw = payload["source"]
-    if not isinstance(source_raw, dict) or set(source_raw) != {
-        "kind", "database_url", "workload_name"
-    }:
-        raise ValueError("source must define kind, database_url, and workload_name")
-    if source_raw["kind"] != "timed_postgres_manifest":
-        raise ValueError("rankable native source must be timed_postgres_manifest")
+    source_raw = payload.get("source")
+    if source_raw is not None:
+        if not isinstance(source_raw, dict) or set(source_raw) != {
+            "kind", "database_url", "workload_name"
+        }:
+            raise ValueError("source must define kind, database_url, and workload_name")
+        if source_raw["kind"] != "timed_postgres_manifest":
+            raise ValueError("rankable native source must be timed_postgres_manifest")
     arrival_contract = _string(
-        payload["job_internal_arrival_contract"], "job_internal_arrival_contract"
+        payload.get("job_internal_arrival_contract", "eager"),
+        "job_internal_arrival_contract",
     )
     if arrival_contract != "eager":
         raise ValueError("native multi-job job_internal_arrival_contract must be eager")
@@ -320,14 +324,15 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
     if not isinstance(service, dict) or set(service) != {"prefix_caching", "max_num_seqs", "max_num_batched_tokens"}:
         raise ValueError("service must contain prefix_caching, max_num_seqs, max_num_batched_tokens")
     model = _string(payload["model"], "model")
-    signature = payload["service_signature"]
+    signature = payload.get("service_signature", {})
     if not isinstance(signature, dict):
         raise ValueError("service_signature must be an object")
-    if _string(signature.get("model"), "service_signature.model") != model:
-        raise ValueError("service_signature.model must equal model")
-    _string(signature.get("service"), "service_signature.service")
-    endpoint_ids = payload["endpoint_ids"]
-    if (
+    if signature:
+        if _string(signature.get("model"), "service_signature.model") != model:
+            raise ValueError("service_signature.model must equal model")
+        _string(signature.get("service"), "service_signature.service")
+    endpoint_ids = payload.get("endpoint_ids", [])
+    if endpoint_ids and (
         not isinstance(endpoint_ids, list)
         or len(endpoint_ids) != 2
         or len(set(endpoint_ids)) != 2
@@ -355,12 +360,21 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         experiment_id=_string(payload["experiment_id"], "experiment_id"),
         output_root=output_root,
         endpoint_urls=(endpoints[0], endpoints[1]),
-        endpoint_ids=(endpoint_ids[0], endpoint_ids[1]),
+        endpoint_ids=tuple(endpoint_ids),
         model=model,
         service_signature=tuple(sorted(signature.items())),
-        protocol=_string(payload["protocol"], "protocol"),
-        output_cap=_positive_int(payload["output_cap"], "output_cap"),
-        organizer=_string(payload["organizer"], "organizer"),
+        protocol=(
+            _string(payload["protocol"], "protocol")
+            if "protocol" in payload else None
+        ),
+        output_cap=(
+            _positive_int(payload["output_cap"], "output_cap")
+            if "output_cap" in payload else None
+        ),
+        organizer=(
+            _string(payload["organizer"], "organizer")
+            if "organizer" in payload else None
+        ),
         api_key_env=api_key_env,
         service_prefix_caching=prefix,
         service_max_num_seqs=_positive_int(service["max_num_seqs"], "service.max_num_seqs"),
@@ -374,9 +388,12 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         minimum_measurement_seconds=_positive_float(
             payload["minimum_measurement_seconds"], "minimum_measurement_seconds"
         ),
-        source=TimedPostgresManifestSource(
-            database_url=_string(source_raw["database_url"], "source.database_url"),
-            workload_name=_string(source_raw["workload_name"], "source.workload_name"),
+        source=(
+            TimedPostgresManifestSource(
+                database_url=_string(source_raw["database_url"], "source.database_url"),
+                workload_name=_string(source_raw["workload_name"], "source.workload_name"),
+            )
+            if source_raw is not None else None
         ),
         job_internal_arrival_contract=arrival_contract,
         arms=arms,

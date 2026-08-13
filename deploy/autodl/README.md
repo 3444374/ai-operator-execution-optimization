@@ -2,9 +2,12 @@
 
 ## SAOR native-system matched readiness
 
-`saor_native_system_matched.example.json` defines the fail-closed eight-arm
-contract: three framework-owned native arms, frozen-static, three Project
-selector controls, and one shared SAOR physical cell. Resolve its environment
+The CLI config trio is `saor_native_system_matched.example.json` (eight-arm
+contract), `saor_native_system_matched_native.example.json` (the three
+framework-owned native arms), and
+`saor_native_system_matched_project.example.json` (frozen-static plus four
+Project selector scenarios). All three must be supplied together; the matrix
+runner rejects missing or drifting executor bindings. Resolve their environment
 variables, then run the read-only audit; it sends no model request and starts no
 Ray process. GPU formal is explicitly not locally authorized. The shipped
 manifest is structural only: `matched_manifest_status=placeholder_not_ready`
@@ -12,6 +15,11 @@ prevents it from passing even with a supplied SHA. Operators must create and
 commit a real two-Job matched request manifest, set its SHA, and change the
 status to `ready_frozen` before readiness can pass. Relative manifest and output
 paths are resolved from this example config's directory.
+
+The configured releases are nominally exactly `[0, 5]` seconds. OS/child-source
+timestamps are measured separately: the observed Job 1 minus Job 0 offset and
+its deviation are retained, and eligibility requires the pre-registered
+`±0.25 s` tolerance. This is not a zero-jitter claim.
 
 ```bash
 python code/scripts/analysis/audit_saor_native_system_matched.py \

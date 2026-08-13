@@ -68,6 +68,18 @@ def _argument_value(arguments: tuple[str, ...], flag: str) -> str:
     return arguments[index + 1]
 
 
+def _canonical_config_path(
+    value: str | Path | None,
+    config_path: str | Path | None = None,
+) -> str | None:
+    if value is None:
+        return None
+    path = Path(value)
+    if not path.is_absolute() and config_path is not None:
+        path = Path(config_path).parent / path
+    return str(path.resolve())
+
+
 def _validate_combined_manifest(
     matched_path: str,
     job_paths: tuple[str | Path, ...],
@@ -87,7 +99,14 @@ def _validate_combined_manifest(
         )
 
 
-def _validate_executor_bindings(matched, native, project) -> None:
+def _validate_executor_bindings(
+    matched,
+    native,
+    project,
+    *,
+    matched_config_path: str | Path | None = None,
+    project_config_path: str | Path | None = None,
+) -> None:
     """Fail before dispatch when actual executor contracts drift."""
 
     native_by_id = {item.arm_id: item for item in native.arms}
@@ -115,6 +134,8 @@ def _validate_executor_bindings(matched, native, project) -> None:
             actual = native_by_id.get(arm.arm_id)
             if actual is None:
                 raise ValueError(f"native config is missing arm {arm.arm_id}")
+            if native.source is None:
+                raise ValueError("native matrix config is missing explicit source")
             comparisons = {
                 "endpoint_ids": (native.endpoint_ids, arm.endpoint_ids),
                 "service_signature": (
@@ -206,9 +227,15 @@ def _validate_executor_bindings(matched, native, project) -> None:
                     arm.project_value("debt_caps") or (),
                 ),
                 "calibration_path": (
-                    project.calibration_contract.path
+                    _canonical_config_path(
+                        project.calibration_contract.path,
+                        project_config_path,
+                    )
                     if project.calibration_contract is not None else None,
-                    arm.calibration_path,
+                    _canonical_config_path(
+                        arm.calibration_path,
+                        matched_config_path,
+                    ),
                 ),
             }
             _validate_combined_manifest(
@@ -390,7 +417,13 @@ def run(options: CliOptions) -> dict[str, object]:
     native = load_native_multijob_config(options.native_config)
     project = load_project_config(options.project_config)
     matched = load_matched_system_config(options.config)
-    _validate_executor_bindings(matched, native, project)
+    _validate_executor_bindings(
+        matched,
+        native,
+        project,
+        matched_config_path=options.config,
+        project_config_path=options.project_config,
+    )
     repository_commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         check=True,
