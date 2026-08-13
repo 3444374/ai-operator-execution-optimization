@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-08-14 SAOR 两层汇总审查修正
+
+- 将终态门禁从递归扫描任意数值改为系统真实 schema：原生路径只检查各 endpoint 的
+  `running/waiting`，Project credit 路径只检查实时 active/waiting 及其 per-Job 映射；K/W 限额、
+  历史峰值和累计 grant 非零不再误报，frozen-static 仅接受其约定的空 credit 列表。
+- Project normalizer 显式写出 configured `scheduled_launch_epoch_s`；Job JCT 固定按名义
+  release→completion 计算，actual launch/offset/deviation 与 overlap 单独保留，避免启动抖动改变 JCT。
+- 六个离线输出改为相邻 staging 整代生成；验证失败或中途写失败会移除旧五个 CSV，并原子发布
+  failed `validation.json`，不会让上次成功结果与本次失败状态并存。
+- request P99 与 SLO 分拆为独立 status/value/reason 契约和 repeat 列；原生两项都必须明确
+  `unavailable` 且带原因，禁止伪造 SLO 值或据此生成跨系统排名。本轮仅为本地代码/合同修正，
+  未连接服务器、未运行 GPU/rehearsal/formal，也未改变实验结论。
+
 ## 2026-08-14 SAOR 两层离线汇总与本地验证收口
 
 - 新增 `summarize_saor_native_system_matched.py`，只读已提交矩阵 evidence，分别输出五臂

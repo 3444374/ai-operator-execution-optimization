@@ -350,6 +350,7 @@ def _normalize_project(
     jobs = [
         {
             "job_id": f"job-{index}",
+            "scheduled_launch_epoch_s": float(configured[index]),
             "actual_launch_epoch_s": float(observed[index]),
             "ended_epoch_s": float(completed[index]),
             "completed_count": int(completed_counts[index]),

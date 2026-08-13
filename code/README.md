@@ -8,7 +8,10 @@ two-layer summarizer. The system layer contains Daft Native, Daft Ray, Ray Data,
 Project frozen-static, and bounded-ready SAOR; the Project-internal sanity layer
 contains bounded-ready FIFO/DRR/VTC-style/SAOR, with one shared physical SAOR run.
 This is tested local infrastructure only: no server/GPU rehearsal or formal evidence
-has been produced, and unsupported native request tails remain `unavailable`.
+has been produced. The fail-closed summarizer validates native queue and Project credit
+end-state schemas separately, computes Job JCT from nominal scheduled release while retaining
+actual-launch jitter diagnostics, publishes its six-file generation through staging, and keeps
+unsupported native request P99 and SLO independently `unavailable` with reasons.
 
 全项目代码分层、文本/图像模态边界与分阶段迁移计划见
 [`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、

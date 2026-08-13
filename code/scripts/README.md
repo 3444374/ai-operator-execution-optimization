@@ -86,7 +86,12 @@ cell；runner 与模板均不授予 GPU formal 执行权限。
 `resource_summary.csv` 和固定边界的 `validation.json`。同一个 SAOR 物理 run 同时投影到两张表；
 内部 FIFO 的完整名称是 **Project bounded-ready + global FIFO matched-control**，不是原生
 baseline。原生 request P99/SLO 无共同真实 request clock 时必须保留字面值 `unavailable` 和
-非空原因；工具不产生 winner，也固定 `formal_authorized=false`。
+非空原因；P99 与 SLO 分别输出 status/value/reason，任一不可用时不得生成跨系统排名。Job JCT
+按预注册的 nominal release→completion 计算，actual launch/offset/deviation 仅保留为启动抖动与
+overlap 诊断。终态校验按真实 native `queue_final` 与 Project `shared_credit_final` schema 只检查
+实时 active/waiting，不把 K/W 限额或历史峰值误判为残留工作。六个输出先写相邻 staging 目录再整代
+发布；失败重跑会移除旧 CSV，只保留 failed `validation.json`。工具不产生 winner，也固定
+`formal_authorized=false`。
 
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data

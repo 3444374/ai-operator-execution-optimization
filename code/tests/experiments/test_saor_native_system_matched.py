@@ -38,6 +38,7 @@ from scripts.experiments.run_saor_native_system_matched import (
 from scripts.analysis.summarize_saor_native_system_matched import (
     summarize_matched_system,
 )
+import scripts.analysis.summarize_saor_native_system_matched as summary_module
 
 
 class MatchedSystemContractTest(unittest.TestCase):
@@ -82,6 +83,10 @@ class MatchedSystemContractTest(unittest.TestCase):
             self.assertEqual(float(first_run["service_tokens_per_s"]), 30.0)
             self.assertEqual(first_run["request_p99_status"], "unavailable")
             self.assertTrue(first_run["request_p99_reason"])
+            self.assertEqual(first_run["slo_status"], "unavailable")
+            self.assertTrue(first_run["slo_reason"])
+            self.assertIn("request_p99_s_repeats", system_saor)
+            self.assertIn("slo_violation_ratio_repeats", system_saor)
             first_jobs = [row for row in jobs if row["run_id"] == first_run["run_id"]]
             self.assertEqual(
                 {row["job_role"]: float(row["job_jct_s"]) for row in first_jobs},
@@ -142,7 +147,7 @@ class MatchedSystemContractTest(unittest.TestCase):
 
         def final_queue(index: dict[str, object], root: Path) -> None:
             del root
-            index["cells"][0]["final_queue"]["waiting"] = 1
+            index["cells"][0]["queue_final"]["0"]["waiting"] = 1
 
         def counter_attribution(index: dict[str, object], root: Path) -> None:
             del root
@@ -205,6 +210,135 @@ class MatchedSystemContractTest(unittest.TestCase):
                     (output_dir / "validation.json").read_text(encoding="utf-8")
                 )
                 self.assertEqual(validation["status"], "failed")
+
+    def test_summary_accepts_real_credit_history_but_rejects_each_live_field(self) -> None:
+        mutations: dict[str, object] = {
+            "active_requests": 1,
+            "active_work": 1,
+            "waiting_requests": 1,
+            "waiting_work": 1,
+            "active_by_job": [["job-0", 1]],
+            "active_work_by_job": [["job-0", 1]],
+            "waiting_by_job": [["job-0", 1]],
+            "waiting_work_by_job": [["job-0", 1]],
+            "waiting_head_work_by_job": [["job-0", 1]],
+        }
+        for field, nonempty in mutations.items():
+            with self.subTest(field=field), TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                matrix_root = root / "matrix"
+                output_dir = root / "summary"
+                self._write_complete_summary_fixture(matrix_root)
+                index_path = matrix_root / "matrix_index.json"
+                index = json.loads(index_path.read_text(encoding="utf-8"))
+                project = next(
+                    cell for cell in index["cells"]
+                    if cell["arm_id"] == "project_bounded_ready_fifo"
+                )
+                credit = json.loads(project["shared_credit_final"])
+                credit[0][field] = nonempty
+                project["shared_credit_final"] = json.dumps(credit)
+                index_path.write_text(json.dumps(index), encoding="utf-8")
+
+                self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+                validation = json.loads(
+                    (output_dir / "validation.json").read_text(encoding="utf-8")
+                )
+                self.assertEqual(validation["status"], "failed")
+
+    def test_summary_jct_uses_scheduled_release_not_observed_launch_jitter(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix_root = root / "matrix"
+            output_dir = root / "summary"
+            self._write_complete_summary_fixture(matrix_root)
+            index_path = matrix_root / "matrix_index.json"
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            cell = index["cells"][0]
+            cell["jobs"][0]["actual_launch_epoch_s"] += 0.2
+            cell["jobs"][1]["actual_launch_epoch_s"] += 0.1
+            index_path.write_text(json.dumps(index), encoding="utf-8")
+
+            self.assertTrue(summarize_matched_system(matrix_root, output_dir))
+            jobs = [
+                row for row in self._read_csv(output_dir / "job_summary.csv")
+                if row["run_id"] == cell["run_id"]
+            ]
+            self.assertEqual(
+                {row["job_role"]: float(row["job_jct_s"]) for row in jobs},
+                {"bulk": 8.0, "foreground": 4.0},
+            )
+            deviations = {
+                row["job_role"]: float(row["launch_deviation_s"]) for row in jobs
+            }
+            self.assertAlmostEqual(deviations["bulk"], 0.2)
+            self.assertAlmostEqual(deviations["foreground"], 0.1)
+
+    def test_failed_rerun_removes_stale_success_outputs(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix_root = root / "matrix"
+            output_dir = root / "summary"
+            self._write_complete_summary_fixture(matrix_root)
+            self.assertTrue(summarize_matched_system(matrix_root, output_dir))
+            index_path = matrix_root / "matrix_index.json"
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            index["cells"][0]["status"] = "failed"
+            index_path.write_text(json.dumps(index), encoding="utf-8")
+
+            self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+            self.assertEqual(
+                {path.name for path in output_dir.iterdir()}, {"validation.json"}
+            )
+            self.assertEqual(
+                json.loads((output_dir / "validation.json").read_text())["status"],
+                "failed",
+            )
+
+    def test_mid_write_failure_publishes_no_partial_or_stale_csvs(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix_root = root / "matrix"
+            output_dir = root / "summary"
+            self._write_complete_summary_fixture(matrix_root)
+            self.assertTrue(summarize_matched_system(matrix_root, output_dir))
+            real_write_csv = summary_module._write_csv
+            calls = 0
+
+            def fail_third_write(path: Path, rows: list[dict[str, object]]) -> None:
+                nonlocal calls
+                calls += 1
+                if calls == 3:
+                    raise OSError("simulated staging write failure")
+                real_write_csv(path, rows)
+
+            with patch.object(summary_module, "_write_csv", side_effect=fail_third_write):
+                self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+            self.assertEqual(
+                {path.name for path in output_dir.iterdir()}, {"validation.json"}
+            )
+
+    def test_native_populated_slo_is_rejected_as_unsupported(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix_root = root / "matrix"
+            output_dir = root / "summary"
+            self._write_complete_summary_fixture(matrix_root)
+            index_path = matrix_root / "matrix_index.json"
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            native = next(
+                cell for cell in index["cells"] if cell["arm_id"] == "daft_native"
+            )
+            native["request_tail_status"]["slo"] = {
+                "status": "available", "violation_ratio": 0.25, "reason": ""
+            }
+            index_path.write_text(json.dumps(index), encoding="utf-8")
+
+            self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+            self.assertEqual(
+                json.loads((output_dir / "validation.json").read_text())["status"],
+                "failed",
+            )
 
     def test_calibration_paths_are_canonicalized_relative_to_each_config(self) -> None:
         with TemporaryDirectory() as temporary:
@@ -431,6 +565,10 @@ class MatchedSystemContractTest(unittest.TestCase):
             self.assertEqual(
                 [job["actual_launch_epoch_s"] for job in normalized["jobs"]],
                 [100.0, 105.0],
+            )
+            self.assertEqual(
+                [job["scheduled_launch_epoch_s"] for job in normalized["jobs"]],
+                [90.0, 95.0],
             )
             self.assertEqual(
                 [job["ended_epoch_s"] for job in normalized["jobs"]],
@@ -1105,6 +1243,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                         "jobs": [
                             {
                                 "job_id": "job-0",
+                                "scheduled_launch_epoch_s": start,
                                 "actual_launch_epoch_s": start,
                                 "ended_epoch_s": start + 8.0,
                                 "completed_count": 2,
@@ -1118,6 +1257,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                             },
                             {
                                 "job_id": "job-1",
+                                "scheduled_launch_epoch_s": start + 5.0,
                                 "actual_launch_epoch_s": start + 5.0,
                                 "ended_epoch_s": start + 9.0,
                                 "completed_count": 2,
@@ -1141,10 +1281,54 @@ class MatchedSystemContractTest(unittest.TestCase):
                             "path": str(resource_path),
                         },
                         "request_tail_status": {
-                            "status": "unavailable",
-                            "reason": "common request clock is unsupported",
+                            "request_p99": {
+                                "status": "unavailable",
+                                "reason": "common request clock is unsupported",
+                            },
+                            "slo": {
+                                "status": "unavailable",
+                                "reason": "common SLO contract is unsupported",
+                            },
                         },
-                        "final_queue": {"running": 0, "waiting": 0},
+                        **(
+                            {
+                                "queue_final": {
+                                    "0": {"running": 0, "waiting": 0},
+                                    "1": {"running": 0, "waiting": 0},
+                                }
+                            }
+                            if is_native else {
+                                "shared_credit_final": (
+                                    "[]" if arm_id == "project_frozen_static" else
+                                    json.dumps([{
+                                        "endpoint_id": "ep-0",
+                                        "request_limit": 8,
+                                        "work_limit": 65536,
+                                        "active_requests": 0,
+                                        "active_work": 0,
+                                        "waiting_requests": 0,
+                                        "waiting_work": 0,
+                                        "oldest_waiting_age_s": 0.0,
+                                        "active_by_job": [],
+                                        "active_work_by_job": [],
+                                        "waiting_by_job": [],
+                                        "waiting_work_by_job": [],
+                                        "waiting_head_work_by_job": [],
+                                        "max_active_requests_seen": 8,
+                                        "max_active_work_seen": 65536,
+                                        "granted_requests_by_job": [["job-0", 2]],
+                                        "granted_work_by_job": [["job-0", 512]],
+                                        "attained_service_by_job": [["job-0", 512]],
+                                        "fairness_debt_by_job": [["job-0", 0.0]],
+                                        "recovery_inflight_by_job": [],
+                                        "guard_hold_target_job_id": "",
+                                        "guard_hold_target_request_id": "",
+                                        "guard_reclaim_debt": 0,
+                                        "guard_hold_age_s": 0.0,
+                                    }])
+                                )
+                            }
+                        ),
                         "command": command,
                         "output_paths": {
                             "commands": str(command_path),

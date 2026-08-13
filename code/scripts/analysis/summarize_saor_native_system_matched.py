@@ -27,6 +27,10 @@ from src.experiments.saor.native_system_matched import (
 
 
 FORMAL_REPEATS = 3
+_OUTPUT_NAMES = (
+    "all_runs.csv", "system_summary.csv", "project_selector_sanity.csv",
+    "job_summary.csv", "resource_summary.csv", "validation.json",
+)
 _PROJECT_FLAG_FRAGMENTS = (
     "credit", "coordinator", "router", "bounded-ready", "bounded_ready",
     "max-active-work", "max_active_work", "ready-observation", "ready_observation",
@@ -62,6 +66,29 @@ def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
         writer.writerows(rows)
 
 
+def _remove_named_generation(directory: Path) -> None:
+    for name in _OUTPUT_NAMES:
+        path = directory / name
+        if path.is_file():
+            path.unlink()
+
+
+def _remove_staging(staging_dir: Path) -> None:
+    _remove_named_generation(staging_dir)
+    if staging_dir.is_dir():
+        staging_dir.rmdir()
+
+
+def _publish_failed_validation(output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    _remove_named_generation(output_dir)
+    temporary = output_dir / ".validation.json.failed.tmp"
+    if temporary.is_file():
+        temporary.unlink()
+    _write_json(temporary, _validation("failed"))
+    temporary.replace(output_dir / "validation.json")
+
+
 def _finite(value: object, name: str) -> float:
     parsed = float(value)
     if not math.isfinite(parsed):
@@ -76,42 +103,56 @@ def _positive(value: object, name: str) -> float:
     return parsed
 
 
-def _queue_empty(value: object, run_id: str) -> None:
-    if value is None:
-        return
+def _decode_json_value(value: object, run_id: str, field: str) -> object:
     if isinstance(value, str):
-        value = json.loads(value)
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError as error:
+            raise ValueError(f"{run_id} {field} is not valid JSON") from error
+    return value
 
-    live_names = {
-        "running", "waiting", "active_requests", "active_work",
-        "waiting_requests", "waiting_work",
-    }
 
-    def final_values(item: object, *, nested: bool = False) -> list[float]:
-        if isinstance(item, dict):
-            direct = [
-                _finite(child, f"{run_id} final queue")
-                for name, child in item.items()
-                if name in live_names
-            ]
-            descendants = [
-                descendant
-                for name, child in item.items() if name not in live_names
-                for descendant in final_values(child, nested=True)
-            ]
-            return direct + descendants
-        if isinstance(item, list):
-            return [
-                value for child in item
-                for value in final_values(child, nested=True)
-            ]
-        if nested and isinstance(item, (int, float)) and not isinstance(item, bool):
-            return [float(item)]
-        return []
+def _native_queue_empty(value: object, run_id: str) -> None:
+    decoded = _decode_json_value(value, run_id, "queue_final")
+    if not isinstance(decoded, dict) or not decoded:
+        raise ValueError(f"{run_id} native queue_final has an invalid schema")
+    for endpoint, state in decoded.items():
+        if not str(endpoint) or not isinstance(state, dict):
+            raise ValueError(f"{run_id} native queue_final has an invalid schema")
+        if not {"running", "waiting"}.issubset(state):
+            raise ValueError(f"{run_id} native queue_final lacks live fields")
+        if any(
+            _finite(state[name], f"{run_id} queue_final {name}") != 0
+            for name in ("running", "waiting")
+        ):
+            raise ValueError(f"{run_id} native final queue is not empty")
 
-    values = final_values(value)
-    if not values or any(item != 0 for item in values):
-        raise ValueError(f"{run_id} final queue is not empty")
+
+def _project_credit_empty(value: object, run_id: str, *, frozen_static: bool) -> None:
+    decoded = _decode_json_value(value, run_id, "shared_credit_final")
+    if frozen_static and decoded == []:
+        return
+    if not isinstance(decoded, list) or not decoded:
+        raise ValueError(f"{run_id} shared_credit_final has an invalid schema")
+    scalar_live = (
+        "active_requests", "active_work", "waiting_requests", "waiting_work",
+    )
+    mapping_live = (
+        "active_by_job", "active_work_by_job", "waiting_by_job",
+        "waiting_work_by_job", "waiting_head_work_by_job",
+    )
+    for snapshot in decoded:
+        if not isinstance(snapshot, dict) or not {
+            "endpoint_id", "request_limit", "work_limit", *scalar_live, *mapping_live,
+        }.issubset(snapshot):
+            raise ValueError(f"{run_id} shared_credit_final has an invalid schema")
+        if not str(snapshot["endpoint_id"]):
+            raise ValueError(f"{run_id} shared_credit_final lacks endpoint_id")
+        if any(
+            _finite(snapshot[name], f"{run_id} shared credit {name}") != 0
+            for name in scalar_live
+        ) or any(snapshot[name] not in ([], {}, ()) for name in mapping_live):
+            raise ValueError(f"{run_id} final shared credit is not empty")
 
 
 def _validate_source(job: dict[str, Any], run_id: str) -> None:
@@ -128,6 +169,29 @@ def _validate_source(job: dict[str, Any], run_id: str) -> None:
             }.items()
         ):
             raise ValueError(f"{run_id} source timing is outside the cell")
+
+
+def _availability_metric(
+    payload: dict[str, Any], metric: str, value_name: str, run_id: str,
+) -> tuple[str, object, str]:
+    raw = payload.get(metric, payload)
+    if not isinstance(raw, dict):
+        raise ValueError(f"{run_id} {metric} availability has an invalid schema")
+    status = str(raw.get("status", ""))
+    reason = str(raw.get("reason", ""))
+    raw_value = raw.get(value_name)
+    if status == "unavailable":
+        if not reason or raw_value not in (None, "", "unavailable"):
+            raise ValueError(f"{run_id} {metric} unavailable contract is invalid")
+        return status, "unavailable", reason
+    if status != "available" or raw_value in (None, "", "unavailable"):
+        raise ValueError(f"{run_id} {metric} availability is invalid")
+    value = _finite(raw_value, f"{run_id} {metric} {value_name}")
+    if metric == "request_p99" and value < 0:
+        raise ValueError(f"{run_id} request_p99_s must be nonnegative")
+    if metric == "slo" and not 0 <= value <= 1:
+        raise ValueError(f"{run_id} slo_violation_ratio must be in [0, 1]")
+    return status, value, reason
 
 
 def _resource_row(
@@ -212,14 +276,15 @@ def _normalize_cell(
     )
     if end <= start:
         raise ValueError(f"{run_id} has invalid common timing boundary")
-    final_queue = cell.get("queue_final", cell.get("final_queue"))
-    final_credit = cell.get("shared_credit_final")
-    if final_queue is not None:
-        _queue_empty(final_queue, run_id)
-    elif final_credit is not None:
-        _queue_empty(final_credit, run_id)
+    if arm_id in SYSTEM_ARM_IDS[:3] and "queue_final" in cell:
+        _native_queue_empty(cell["queue_final"], run_id)
+    elif arm_id not in SYSTEM_ARM_IDS[:3] and "shared_credit_final" in cell:
+        _project_credit_empty(
+            cell["shared_credit_final"], run_id,
+            frozen_static=arm_id == "project_frozen_static",
+        )
     else:
-        raise ValueError(f"{run_id} lacks final queue/credit evidence")
+        raise ValueError(f"{run_id} lacks its system-specific final queue evidence")
 
     service = cell.get("service_metrics")
     if not isinstance(service, dict) or service.get("metrics_status") != "ok":
@@ -234,7 +299,8 @@ def _normalize_cell(
     jobs = cell.get("jobs")
     if not isinstance(jobs, list) or len(jobs) != 2:
         raise ValueError(f"{run_id} must contain exactly two Jobs")
-    starts: list[float] = []
+    scheduled_starts: list[float] = []
+    actual_starts: list[float] = []
     ends: list[float] = []
     for job in jobs:
         if not isinstance(job, dict) or job.get("exactly_once") is not True:
@@ -245,19 +311,35 @@ def _normalize_cell(
         ):
             raise ValueError(f"{run_id} has invalid Job row accounting")
         _validate_source(job, run_id)
-        starts.append(_finite(job.get("actual_launch_epoch_s"), f"{run_id} Job release"))
+        scheduled_starts.append(
+            _finite(
+                job.get("scheduled_launch_epoch_s"),
+                f"{run_id} Job scheduled release",
+            )
+        )
+        actual_starts.append(
+            _finite(job.get("actual_launch_epoch_s"), f"{run_id} Job actual launch")
+        )
         ends.append(_finite(job.get("ended_epoch_s"), f"{run_id} Job completion"))
-    overlap = min(ends) - max(starts)
+    if any(completion <= release for completion, release in zip(ends, scheduled_starts)):
+        raise ValueError(f"{run_id} completion precedes scheduled release")
+    overlap = min(ends) - max(actual_starts)
     if overlap <= 0:
         raise ValueError(f"{run_id} has non-positive Job overlap")
 
     request_tail = cell.get("request_tail_status")
     if not isinstance(request_tail, dict):
         raise ValueError(f"{run_id} lacks request-tail availability")
-    status = str(request_tail.get("status", ""))
-    reason = str(request_tail.get("reason", ""))
-    if arm_id in SYSTEM_ARM_IDS[:3] and (status != "unavailable" or not reason):
-        raise ValueError(f"{run_id} native request tail must be unavailable with reason")
+    p99_status, p99_value, p99_reason = _availability_metric(
+        request_tail, "request_p99", "p99_s", run_id
+    )
+    slo_status, slo_value, slo_reason = _availability_metric(
+        request_tail, "slo", "violation_ratio", run_id
+    )
+    if arm_id in SYSTEM_ARM_IDS[:3] and (
+        p99_status != "unavailable" or slo_status != "unavailable"
+    ):
+        raise ValueError(f"{run_id} native tails must be unavailable with reasons")
 
     command = cell.get("command", [])
     command_text = " ".join(str(item).lower() for item in command)
@@ -281,13 +363,24 @@ def _normalize_cell(
         "service_generation_tokens": generation,
         "service_total_tokens": total,
         "service_tokens_per_s": total / duration,
-        "request_p99_status": status,
-        "request_p99_reason": reason,
-        "request_p99_s": (
-            "unavailable"
-            if status == "unavailable"
-            else request_tail.get("p99_s", "")
-        ),
+        "request_p99_status": p99_status,
+        "request_p99_s": p99_value,
+        "request_p99_reason": p99_reason,
+        "slo_status": slo_status,
+        "slo_violation_ratio": slo_value,
+        "slo_reason": slo_reason,
+        "scheduled_launch_epoch_s": json.dumps(scheduled_starts),
+        "actual_launch_epoch_s": json.dumps(actual_starts),
+        "scheduled_launch_offset_s": json.dumps([
+            value - scheduled_starts[0] for value in scheduled_starts
+        ]),
+        "actual_launch_offset_s": json.dumps([
+            value - actual_starts[0] for value in actual_starts
+        ]),
+        "launch_deviation_s": json.dumps([
+            actual - scheduled
+            for actual, scheduled in zip(actual_starts, scheduled_starts)
+        ]),
         "exactly_once": True,
     }
     job_rows = [
@@ -296,13 +389,19 @@ def _normalize_cell(
             "arm_id": arm_id,
             "repeat": repeat,
             "job_role": role,
-            "release_epoch_s": release,
+            "scheduled_release_epoch_s": scheduled,
+            "actual_launch_epoch_s": actual,
+            "scheduled_launch_offset_s": scheduled - scheduled_starts[0],
+            "actual_launch_offset_s": actual - actual_starts[0],
+            "launch_deviation_s": actual - scheduled,
             "completion_epoch_s": completion,
-            "job_jct_s": completion - release,
+            "job_jct_s": completion - scheduled,
             "overlap_s": overlap,
             "completion_order": 1 + sorted(ends).index(completion),
         }
-        for role, release, completion in zip(("bulk", "foreground"), starts, ends)
+        for role, scheduled, actual, completion in zip(
+            ("bulk", "foreground"), scheduled_starts, actual_starts, ends
+        )
     ]
     return run_row, job_rows, _resource_row(cell, start, end, run_id)
 
@@ -336,10 +435,23 @@ def _summary_row(
     bulk_jct = job_values("bulk", "job_jct_s")
     foreground_jct = job_values("foreground", "job_jct_s")
     overlap = job_values("bulk", "overlap_s")
-    tail_statuses = {str(row["request_p99_status"]) for row in ordered}
-    tail_reasons = {str(row["request_p99_reason"]) for row in ordered}
-    if len(tail_statuses) != 1 or len(tail_reasons) != 1:
-        raise ValueError(f"{arm_id} request-tail availability drifted")
+    availability: dict[str, tuple[set[str], set[str]]] = {}
+    for metric in ("request_p99", "slo"):
+        statuses = {str(row[f"{metric}_status"]) for row in ordered}
+        reasons = {str(row[f"{metric}_reason"]) for row in ordered}
+        if len(statuses) != 1 or len(reasons) != 1:
+            raise ValueError(f"{arm_id} {metric} availability drifted")
+        availability[metric] = statuses, reasons
+
+    def optional_metric_summary(metric: str, value: str) -> tuple[object, str]:
+        raw = [row[value] for row in ordered]
+        if next(iter(availability[metric][0])) == "unavailable":
+            return "unavailable", json.dumps(raw)
+        values = [float(item) for item in raw]
+        return statistics.fmean(values), json.dumps(values)
+
+    p99_mean, p99_repeats = optional_metric_summary("request_p99", "request_p99_s")
+    slo_mean, slo_repeats = optional_metric_summary("slo", "slo_violation_ratio")
     return {
         "arm_id": arm_id,
         "scheduler_owner": ordered[0]["scheduler_owner"],
@@ -361,8 +473,14 @@ def _summary_row(
         "overlap_s_mean": statistics.fmean(overlap),
         "overlap_s_sample_cv": _sample_cv(overlap),
         "overlap_s_repeats": json.dumps(overlap),
-        "request_p99_status": next(iter(tail_statuses)),
-        "request_p99_reason": next(iter(tail_reasons)),
+        "request_p99_status": next(iter(availability["request_p99"][0])),
+        "request_p99_s_mean": p99_mean,
+        "request_p99_s_repeats": p99_repeats,
+        "request_p99_reason": next(iter(availability["request_p99"][1])),
+        "slo_status": next(iter(availability["slo"][0])),
+        "slo_violation_ratio_mean": slo_mean,
+        "slo_violation_ratio_repeats": slo_repeats,
+        "slo_reason": next(iter(availability["slo"][1])),
     }
 
 
@@ -404,7 +522,9 @@ def summarize_matched_system(matrix_root: Path, output_dir: Path) -> bool:
     """Summarize only stored matrix evidence; return false on every contract failure."""
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    staging_dir = output_dir.parent / f".{output_dir.name}.matched-summary-staging"
     try:
+        _remove_staging(staging_dir)
         index = json.loads(
             (matrix_root / "matrix_index.json").read_text(encoding="utf-8")
         )
@@ -504,21 +624,26 @@ def summarize_matched_system(matrix_root: Path, output_dir: Path) -> bool:
         ):
             raise ValueError("SAOR reports do not originate from the same physical runs")
 
-        _write_csv(output_dir / "all_runs.csv", run_rows)
-        _write_csv(output_dir / "system_summary.csv", system)
-        _write_csv(output_dir / "project_selector_sanity.csv", selector)
-        _write_csv(output_dir / "job_summary.csv", job_rows)
+        staging_dir.mkdir()
+        _write_csv(staging_dir / "all_runs.csv", run_rows)
+        _write_csv(staging_dir / "system_summary.csv", system)
+        _write_csv(staging_dir / "project_selector_sanity.csv", selector)
+        _write_csv(staging_dir / "job_summary.csv", job_rows)
         _write_csv(
-            output_dir / "resource_summary.csv",
+            staging_dir / "resource_summary.csv",
             [
                 _resource_summary_row(arm_id, rows_for(arm_id), resource_rows)
                 for arm_id in REQUIRED_ARM_IDS
             ],
         )
-        _write_json(output_dir / "validation.json", _validation("passed"))
+        _write_json(staging_dir / "validation.json", _validation("passed"))
+        for name in _OUTPUT_NAMES:
+            (staging_dir / name).replace(output_dir / name)
+        staging_dir.rmdir()
         return True
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
-        _write_json(output_dir / "validation.json", _validation("failed"))
+        _remove_staging(staging_dir)
+        _publish_failed_validation(output_dir)
         return False
 
 
