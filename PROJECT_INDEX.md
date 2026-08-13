@@ -406,6 +406,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code_doc/superpowers/specs/2026-07-28-dual-gpu-experiment-correctness-design.md` | 双 GPU 实验正确性与共享调度设计 | 修复 token-budget/row-cap 混淆、组织/提交指标语义和多 job 共享 Ray cluster 门禁 |
 | `code_doc/superpowers/specs/2026-07-29-saturated-ray-actor-pool-replenishment-design.md` | 饱和 active-work、service quantum 与 Ray actor pool 补位设计 | 先标定 GPU 饱和点，再以固定 work/总 slots 消除 whole-submission HOL，验证有界 actor pool 与 endpoint-local completion replenishment |
 | `code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md` | SAOR 五臂 2-Job 系统级复测规格：原生/Project scheduler-owner 隔离、共同 Job 级到达、PG 计时边界、指标 availability 与 fail-closed 输出 | 实现或运行 Daft Native/Daft Ray/Ray Data/project static/SAOR matched comparison 前读；旧 JSONL 原生数据不得直接拼表 |
+| `code_doc/superpowers/plans/2026-08-13-saor-native-system-matched-comparison-implementation.md` | SAOR 系统复测 TDD 计划：PG timed source、Project eager arrival、八 unique arm/两张表、balanced single-cell runner 与离线汇总 | 按任务 1–4 实现本地基础设施；服务器关闭期间只做测试与 readiness，不跑 GPU formal |
 | `code_doc/superpowers/plans/2026-07-25-adaptive-flush-window-implementation.md` | Adaptive flush 双窗口实施计划 | TDD 窗口选择、event-time replay、profiler trace 与真实单 GPU 分级门禁 |
 | `code_doc/superpowers/plans/2026-07-25-request-lifecycle-scenario-runner-implementation.md` | AI 算子执行 infra 第一阶段实施计划 | request lifecycle、单 prompt E2E/SLO、seeded scenario runner 与真实 64 行门禁 |
 | `code_doc/superpowers/plans/2026-07-26-output-aware-bfd-implementation.md` | 输出成本与确定性 BFD 实施计划 | 共享成本、通用 cost_units BFD、Arrow/Daft 接入、离线 lifecycle、真实 64→512 单 GPU 门禁 |

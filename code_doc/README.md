@@ -6,6 +6,9 @@ experiment results, or opening-report materials.
 Current SAOR native-system matched comparison design:
 `superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`.
 
+Current SAOR native-system matched comparison implementation plan:
+`superpowers/plans/2026-08-13-saor-native-system-matched-comparison-implementation.md`.
+
 ## Files
 
 | Path | Purpose |

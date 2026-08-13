@@ -25,6 +25,10 @@
 - 设计写入
   `code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`；当前只准备
   本地合同、编排与汇总代码，服务器关闭期间不运行 GPU formal。按用户要求不同步 Wiki。
+- 实施计划写入
+  `code_doc/superpowers/plans/2026-08-13-saor-native-system-matched-comparison-implementation.md`，拆为
+  PG timed-source/eager-arrival 基础、八臂静态合同、balanced single-cell 编排和双层离线汇总四个
+  TDD 任务；每项独立测试/提交，最后再统一文档与安全验证。
 
 ## 2026-08-13 SAOR 文档状态收口与下一步统一
 

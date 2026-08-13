@@ -27,6 +27,9 @@ Current designs:
 
 Current implementation plans:
 
+- `plans/2026-08-13-saor-native-system-matched-comparison-implementation.md`:
+  TDD plan for timed PostgreSQL native source, eager Project arrival, eight-arm
+  balanced orchestration, and separate system/internal fail-closed summaries.
 - `plans/2026-07-28-dual-gpu-experiment-correctness-implementation.md`:
   completed dual-GPU correctness foundation.
 - `plans/2026-07-29-saturated-ray-execution-foundation-implementation.md`:
