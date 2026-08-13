@@ -271,8 +271,10 @@ prove the concrete-ready lifecycle, then pairs foreground register-to-grant even
 the coordinator's single clock domain and fails closed on foreign fallback;
 `max_ready_requests_seen`/`max_ready_work_seen` audit the actual
 window. Local tests cover multi-candidate visibility, exactly-once ordering, finite-work
-validation, timeout cancellation, config routing, and fail-closed gate profiles. This is
-development-ready only; no GPU benefit or fairness theorem is claimed.
+validation, timeout cancellation, config routing, and fail-closed gate profiles. Two independent
+GPU development rehearsals now make the 0.125K guard a formal-registration candidate; the
+0.25K guard failed its bulk-SLO bound in both rounds. This is not a completed formal comparison
+or a fairness theorem.
 
 The pure ordered-release fast path publishes validated Job-head requests with a monotonic
 sequence and releases capacity on completion. Release work and predicted epoch service are separate fields, so a

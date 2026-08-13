@@ -56,7 +56,7 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | `sink_writeback_coordination.md` | **写回工程参考**（已降级为实验设置，不作为独立实验阶段） | COPY + deferred index baseline，仅在实验设置中说明 |
 | `operator_cost_profile_dual4090_formal_20260804.md` | **算子代价估计共同使能组件** | 当前 320-run formal 合同；§8 保留通过晋级门槛后才启动的 TPC-H-derived AI 查询计划 held-out |
 | `opening_database_e2e_p0_20260807.md` | **开题前证据闭环** | 仅允许的两组文本三臂统一 database-E2E：SQuAD 均匀控制组与 ShareGPT controlled-skew；冻结 source/manifest/sink/计时/质量/资源合同和停止规则 |
-| `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同 + SAOR 唯一维护入口（§5.2）** | fixed-envelope 2-Job formal 已 40/40，resolution-aware v2 完整 validation passed，SAOR 未越过 static。v0.5.1 双轮 bounded-priority gate 已运行且未晋级，根因是 per-Job 单-head observation。独立 `saor_bounded_ready` 本地路径已用冻结 K/W 派生有界具体 request 预注册，并接通 lifecycle trace、coordinator 同时钟域 register/grant join、static audit 与双轮 profile；尚无 GPU gate，状态 `local-implemented/development-unrun/not-formal-registered`；reservation 后置 |
+| `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同 + SAOR 唯一维护入口（§5.2）** | fixed-envelope 2-Job formal 已完成但 SAOR 未越过 static；v0.5.1 单-head gate 定位 observation gap。独立 `saor_bounded_ready` 双轮 GPU gate 已闭合：0.125K 两轮全过并注册 formal candidate，0.25K 因 bulk SLO 两轮越界拒绝；正式重复、4-Job、reservation 仍未运行 |
 
 双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
 相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭

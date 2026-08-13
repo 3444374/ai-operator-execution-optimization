@@ -1035,6 +1035,7 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-13 | `multi-job-eval-v1` | 将公平评价从 VTC+Jain 单中心扩展为三个 JCT 反事实、共同积压 service lag、starvation/work conservation、SLO 与约束下 Pareto；区分经验性 baseline-relative 改善和 DRF/Themis/VTC 理论性质 | DRF/Pisces/DRFT、Themis/Tiresias/Pollux、VTC/DLPM、Sarathi/DistServe/Llumnix/Agentix 一手文献 + 现有四 Job compact evidence 可计算性审计 | 不改变 SAOR `formal-valid/not-promoted` 状态；新 formal 增 event-ledger 证明义务，历史四 Job 只重解释、不补造 lag |
 | 2026-08-13 | `saor-v0.5.1-ready-set-gap` | 按冻结四臂执行两轮 GPU gate，并用 lossless event + request trace 分解 selector→submit→service | Round 1 clean；Round 2 0.25K debt-recovery=0 被 fail closed；8 个 cell 全部 exactly-once、GPU mean≥95.8% | 两 cap foreground 门均失败，formal 不注册。所有可见 fg head 均获 priority，但单-head pull 使完整 ready backlog 间歇不可见；下一修订先改 observation contract，不扫 cap、不扩 4-Job/reservation |
 | 2026-08-13 | `saor-v0.5.2-bounded-ready-local` | 新增独立 `saor_bounded_ready` observation contract：每 Job 预注册已到达的 concrete request 有界 ready set，request 上限由 effective K 派生、work 上限由 endpoint 数×W 派生；新增 ready→register→grant→submit→completion lifecycle；coordinator 在同一无损事件域记录 register/grant request ID+epoch，旧单-head policy 不变 | 本地 targeted unit/architecture tests + compile/diff；尚未运行 GPU development rehearsal | 状态仅 `local-implemented/development-unrun/not-formal-registered`。异常退出只撤销未提交 waiter/lease，已提交 request 的 credit 保留到整组 fail-closed cleanup，避免服务端仍执行时容量超卖；未过双轮 ready-set 门前不做 formal、reservation、4-Job 或动态 K |
+| 2026-08-13 | `saor-v0.5.2-bounded-ready-gated` | 首次服务器运行因跨 trace 错误假设 `submit_epoch_s` 而 fail closed；按 `submission_id` 连接 submission 生命周期与 request submit 后，从两个全新 root 重跑冻结四臂 | 2×4090 两轮 development rehearsal；8/8 cell、0 incident；lossless event + group/request/submission/resource evidence | 0.125K 两轮全过并注册 formal candidate：12.36K tok/s、fg P99 17.58–18.15s、fg SLO 0%、bulk SLO 65.8%–66.6%；0.25K 因 bulk SLO 74.4%–75.2% 两轮越界拒绝。下一步只做 0.125K formal，不扫 cap、不扩 4-Job/reservation/dynamic K |
 
 状态只允许按以下顺序变化：
 
@@ -1488,7 +1489,7 @@ debt-recovery=0 且 fg 门失败。GPU/throughput/correctness 门排除欠供给
 下一 head，导致 coordinator 在相邻请求间看不到实际 ready backlog 并向 bulk fallback。按预注册
 规则不启动 formal、不补第三轮、不扫描额外 cap。
 
-##### Task 9：ready-set observation 修订（本地实现完成，GPU gate 待运行）
+##### Task 9：ready-set observation 修订（双轮 GPU gate 已完成）
 
 - [x] 把观测状态拆为 source/Daft 尚未产出、scheduler concrete-ready、coordinator registered、
   granted active 与 vLLM running/waiting。submission trace schema 6 增加
@@ -1513,8 +1514,17 @@ debt-recovery=0 且 fg 门失败。GPU/throughput/correctness 门排除欠供给
   actor 的同一时钟域内按 request ID 配对 foreground register→grant。新机制门要求至少一个
   actor-side wait interval，且区间内 foreign `saor_fallback` grant=0；request join 不完整、时序
   错误或 event epoch 缺失均 fail closed。GPU 仍需验证该区间在真实 workload 中非空。
-- [ ] 复用独立 `deploy/autodl/saor_bounded_ready.example.json` 做两个全新 development rehearsal
-  root，再以 `--profile bounded_ready` 汇总。过门前 reservation、4-Job、动态 K 与 formal 保持阻塞。
+- [x] 复用独立 `deploy/autodl/saor_bounded_ready.example.json` 做两个全新 development rehearsal
+  root，再以 `--profile bounded_ready` 汇总。首次 root 在审计阶段暴露跨 trace
+  `submit_epoch_s` 假设并 fail closed；按 `submission_id` 连接后用新 commit/新目录完成两轮。
+  0.125K 两轮通过全部门，允许注册 formal；0.25K 两轮 bulk SLO 越界，停止。formal 前
+  reservation、4-Job 与动态 K 继续阻塞。
+
+**Task 9 事实判决**：bounded concrete-ready observation 修复了单-head 可见性断点。0.125K
+相对原 SAOR release 两轮均值吞吐近似持平（−0.03%），foreground P99 从 55.28s 降到
+17.87s，foreground SLO violation 从 89.2% 降到 0；bulk SLO violation 从 46.5% 升到 66.2%，
+仍低于 72.3% 预注册上限。0.25K 的 bulk SLO 两轮均越界，不进入 formal candidate。该短测只
+支持 formal registration，不构成正式胜出或公平定理。
 
 ##### Plan self-review（写码前必须再核对）
 

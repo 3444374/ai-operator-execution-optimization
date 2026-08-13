@@ -1,0 +1,9 @@
+round,scenario_id,policy,correctness_passed,tokens_per_s,foreground_p99_s,foreground_slo_violation,bulk_slo_violation,foreground_passed,efficiency_passed,bulk_protection_passed,mechanism_passed,all_gates_passed
+1,active_set_static_partition,static_partition,True,9523.612655623283,29.3530695438385,0.0,0.669921875,True,False,True,True,False
+1,active_set_saor_release,saor_release,True,12338.830779070975,56.24220085144043,0.916015625,0.4609375,False,True,True,True,False
+1,active_set_saor_bounded_ready_0125k,saor_bounded_ready,True,12354.996501322592,18.154167652130127,0.0,0.658203125,True,True,True,True,True
+1,active_set_saor_bounded_ready_025k,saor_bounded_ready,True,12141.260227515637,17.9622745513916,0.0,0.751953125,True,True,False,True,False
+2,active_set_static_partition,static_partition,True,9502.257776823328,28.931033849716187,0.0,0.66796875,True,False,True,True,False
+2,active_set_saor_release,saor_release,True,12391.217536350277,54.31421732902527,0.8671875,0.46875,False,True,True,True,False
+2,active_set_saor_bounded_ready_0125k,saor_bounded_ready,True,12366.588895117353,17.583771467208862,0.0,0.666015625,True,True,True,True,True
+2,active_set_saor_bounded_ready_025k,saor_bounded_ready,True,12214.99113660765,17.971525192260742,0.0,0.744140625,True,True,False,True,False

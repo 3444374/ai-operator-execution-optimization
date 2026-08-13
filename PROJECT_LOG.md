@@ -6380,3 +6380,19 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `ready <= registered <= granted <= submit`，缺 ID、重复 ID 或无法连接均显式失败。
 - 新增使用真实生产列集合（submission trace 无 `submit_epoch_s`）的回归测试。修复后必须重新从
   唯一输出目录运行完整 rehearsal；失败目录不续跑、不进入性能或公平性排名。
+
+## 2026-08-13 完成 bounded-ready 双轮 GPU development gate
+
+- 服务器同步 commit `6728c569` 后重新通过 runtime preflight、静态 readiness 和生产 schema
+  回归测试；从两个全新 root 跑完 static、原 SAOR release、bounded-ready 0.125K/0.25K 四臂，
+  共 8/8 cell、8,192/8,192 request、0 incident、0 actor failure。
+- 两个 bounded-ready 臂的 512 个 foreground 生命周期均完成 actor-side request join，ready 峰值
+  256 request/约 85K work，event sequence 完整，foreign fallback=0、avoidable idle=0；真实路径
+  已闭合而非仅本地单测。
+- 0.125K 两轮通过 correctness、机制、foreground、bulk 与效率门：12,355/12,367 tok/s、fg
+  P99 18.15/17.58s、fg SLO 0%、bulk SLO 65.8%/66.6%，状态升为
+  `development-gated/formal-registration-candidate`。0.25K 的 bulk SLO 75.2%/74.4% 两轮越过
+  72.3% 门，拒绝。
+- 新增 `experiments/results/state_aware_work_unit/saor_bounded_ready_gate_20260813/`，保存七步报告、
+  compact raw/provenance 与服务器完整 3.4 MiB 归档 SHA。下一步只冻结 0.125K 做 formal；不在线
+  扫 cap，不启动 4-Job、reservation 或 dynamic K，也不声称理论公平性质。

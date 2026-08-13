@@ -10,7 +10,8 @@ head 时把真实 backlog 隐藏掉。旧 `saor_bounded_priority` 保留为单-h
 credit 还是 vLLM 排队。首次服务器 rehearsal 还暴露出一个跨 trace 合同问题：actor submission
 trace 只拥有 ready/registered/granted，scheduler 的 submit 时间属于 request trace，审计器必须按
 `submission_id` 显式连接，不能假设两份 CSV 重复存储同一列。该问题已用生产 schema 回归测试
-覆盖；当前仍没有通过 rehearsal 的 GPU 性能或公平性结论。
+覆盖。修复后的两个独立 rehearsal root 均完成：0.125K 两轮全过 development gate，0.25K 两轮
+bulk SLO 越界。这个结果只注册 formal candidate，尚不是正式性能或公平性结论。
 
 ## 2026-08-12 bounded-priority SAOR 与事件账本
 

@@ -1224,8 +1224,10 @@ register→grant，检查该 endpoint 区间内是否误发 foreign fallback，�
 与静态门禁。首次 GPU rehearsal 的两个 Job 均完成模型执行，但 runner 在审计阶段发现
 submission trace 并没有 `submit_epoch_s`，遂按 fail-closed 规则停止。正确合同是：submission
 trace 提供 ready/registered/granted，request trace 提供 submit，并以 `submission_id` 一对一连接；
-不能为修审计而在两份 trace 中复制时钟字段。该连接已补生产 schema 回归测试，修复后的两轮
-rehearsal 仍待运行，所以不能声称 SAOR 已改善 tail、吞吐或公平。
+不能为修审计而在两份 trace 中复制时钟字段。该连接已补生产 schema 回归测试。修复后的两个
+全新 rehearsal root 中，0.125K 两轮同时通过 foreground、bulk、效率与机制门，0.25K 两轮因
+bulk SLO 越界拒绝。它说明 observation contract 是旧结果的重要断点，但仍只是 formal
+registration gate，不能据此声称 SAOR 已正式改善 tail、吞吐或公平。
 
 ## 2026-08-03：为什么保存 embedding 的运行不是性能 baseline
 

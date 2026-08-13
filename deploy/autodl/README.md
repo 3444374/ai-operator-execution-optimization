@@ -1226,6 +1226,12 @@ size 或在线调参。`ready/registered/granted/submit` 字段缺失、foregrou
 register→grant interval 为空、区间内出现 foreign fallback、窗口峰值为 0、事件账本不完整或
 exactly-once 失败都只能诊断，不能注册 formal。
 
+2026-08-13 实际双轮结果：0.125K 两轮通过全部开发门，允许注册后续 formal candidate；0.25K
+两轮均因 bulk SLO violation 超过 0.723 而拒绝。后续正式矩阵必须冻结 0.125K，不得在线重选
+cap，也不得把这个两轮 rehearsal 写成 formal 结果。首次失败 root 暴露了跨 trace schema 合同：
+submission trace 的 ready/registered/granted 必须按 `submission_id` 与 request trace 的 submit
+连接；禁止为方便审计复制或伪造时间列。
+
 正式运行优先使用 audit-aware wrapper，避免手工设置上述逐 Job 变量：
 
 ```bash

@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "errors": [],
+  "experiment_id": "saor_bounded_ready_development_gate",
+  "profile": "bounded_ready_development",
+  "scenario_count": 4,
+  "warmup_runs_per_scenario": 1,
+  "formal_repeats": 3,
+  "arrival_time_scale": 0.0001,
+  "max_effective_manifest_span_s": 120.0,
+  "min_pre_foreground_work_envelopes_per_endpoint": 1.0,
+  "pre_foreground_predicted_work_by_endpoint": {
+    "endpoint-0": 140417,
+    "endpoint-1": 137617
+  },
+  "service_metadata": {
+    "chunked_prefill": true,
+    "compilation_mode": "default",
+    "enforce_eager": false,
+    "gpu_memory_utilization": 0.9,
+    "max_num_batched_tokens": 8192,
+    "max_num_seqs": 256,
+    "mfu_metrics": true,
+    "prefix_caching": true,
+    "scheduling_policy": "fcfs",
+    "vllm_version": "0.25.1"
+  },
+  "calibration_contract": {
+    "path": "/root/autodl-tmp/experiment-artifacts/opening_multijob_calibration_selection_20260808.json",
+    "sha256": "bc2042d74bfa4c5c9bf49d9abcd5e911d56e2be581e185d4eb586e155d53aa41",
+    "selection": {
+      "project_active_work_per_endpoint": 65536,
+      "project_actor_workers_per_endpoint": 8,
+      "project_ray_actor_max_concurrency": 32,
+      "project_ray_worker_num_cpus": 0.25,
+      "project_static_k_per_endpoint": 128
+    }
+  },
+  "direct_contract": null,
+  "manifests": {
+    "/root/autodl-tmp/experiment-artifacts/opening_multijob_manifests_20260808_work_balanced/long_512.jsonl": {
+      "rows": 512,
+      "sha256": "8e532819f045f85ff4e92b61c688e2d50f180d438dc577eed79c57e19cfce9c1",
+      "endpoint_indices": [
+        0,
+        1
+      ],
+      "raw_arrival_span_s": 66687.0,
+      "effective_arrival_span_s": 6.6687
+    },
+    "/root/autodl-tmp/experiment-artifacts/opening_multijob_manifests_20260808_work_balanced/short_512.jsonl": {
+      "rows": 512,
+      "sha256": "85b3f90cdc4045ae9fdb48f1d30772649c25d86375b72bab0fbd903f2a01c971",
+      "endpoint_indices": [
+        0,
+        1
+      ],
+      "raw_arrival_span_s": 66875.0,
+      "effective_arrival_span_s": 6.6875
+    }
+  }
+}

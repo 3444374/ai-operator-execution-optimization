@@ -1,8 +1,8 @@
 # 实验状态与缺口分析
 
 Date: 2026-07-20（最后更新：2026-08-13；开题证据冻结，SAOR fixed-envelope formal 已
-fail-closed 完成，bounded-priority v0.5.1 双轮 GPU development gate 未晋级，
-dynamic-K 仍退出主线）
+完成但未晋级；bounded-ready v0.5.2 的 0.125K 双轮 GPU development gate 已注册 formal
+candidate，dynamic-K 仍退出主线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -64,9 +64,18 @@ ready-set/unfinished-priority observation contract，reservation 继续后置。
 模板、static audit 和双轮 gate profile 已通过本地测试。release-event schema 2 对 actor 内的
 register/grant 同时记录 request ID 与 epoch；runner 用 submission trace 验证 concrete-ready
 lifecycle，再在 coordinator 同一时钟域配对 foreground register→grant，并要求区间内 foreign
-bulk fallback=0。当前尚无新 GPU 数据，因此状态仅为
-`local-implemented/development-unrun/not-formal-registered`，reservation、4-Job 与 dynamic K
-继续阻塞。
+bulk fallback=0。
+
+同日完成服务器双轮复验。首次 commit `aaa484f4` 在模型请求完成后的证据审计阶段因错误假设
+submission trace 含 `submit_epoch_s` 而 fail closed；真实 schema 要求 submission trace 的
+ready/registered/granted 与 request trace 的 submit 按 `submission_id` 连接。commit
+`6728c569` 修复并新增生产 schema 回归后，从两个全新 root 重跑 8/8 cell、0 incident，跨轮
+汇总 `status=passed`、`conclusion=formal_registration_candidate`。0.125K 两轮均通过全部门：
+12,355/12,367 tok/s、foreground P99 18.15/17.58s、foreground SLO violation 0、bulk SLO
+violation 0.658/0.666；0.25K 虽保护 foreground，但 bulk SLO 0.752/0.744 两轮越过 0.723，
+拒绝。当前状态改为 `development-gated/formal-registration-candidate-0125k-only`；正式重复尚未
+运行，0.25K、4-Job、reservation 和 dynamic K 均不扩展。完整结论见
+`experiments/results/state_aware_work_unit/saor_bounded_ready_gate_20260813/README.md`。
 
 ## 图像状态增量（2026-08-10）
 

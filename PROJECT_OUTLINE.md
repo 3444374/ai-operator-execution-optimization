@@ -151,16 +151,18 @@ PostgreSQL source
   timeout 清理、lossless event ledger、readiness 与两轮汇总器；事件机制门不再依赖 250 ms
   snapshot。双轮 GPU development gate 没有 cap 晋级：0.25K 第 2 轮 debt-recovery=0，两个
   cap 的 fg P99 约 49–56s、SLO violation 85%–95%。request/event 交叉验证定位 per-Job 单-head
-  pull 没有把完整 Daft/Ray ready backlog 暴露给 coordinator；状态为
-  `development-run/not-promoted/not-formal-registered`。先修 bounded ready-set observation，
-  reservation 与 upper-bound resource work 仍作其后的鲁棒性消融。两 Job 未闭环前不跑
-  4-Job，也不声称定理证明。2026-08-13 已完成独立 `saor_bounded_ready` 本地修订：旧
+  pull 没有把完整 Daft/Ray ready backlog 暴露给 coordinator；该失败版本状态为
+  `development-run/not-promoted/not-formal-registered`。2026-08-13 已完成独立
+  `saor_bounded_ready` 修订：旧
   bounded-priority 保持单-head 回归语义，新路径只预注册已经到达的具体 request，窗口由冻结
   effective K 与 endpoint 数×W 自动派生；submission trace schema 6 分开 ready、registered、
   granted、submit/service；coordinator release-event schema 2 对 ready registration 与 grant
   统一记录 request ID 和 epoch。runner 先用 submission trace 证明 concrete-ready lifecycle 完整，
   再在 actor 同一时钟域内配对 foreground register→grant，并 fail closed 检查区间内 foreign
-  fallback=0。静态 readiness 与双轮汇总 profile 已接通，尚未运行 GPU gate；
+  fallback=0。两轮 GPU development gate 已完成：0.125K 两轮以约 12.36K tok/s、foreground
+  P99 17.58–18.15s、foreground SLO 0% 和 bulk SLO 65.8%–66.6% 通过全部门，注册 formal
+  candidate；0.25K 因 bulk SLO 74.4%–75.2% 两轮越界拒绝。状态为
+  `development-gated/formal-registration-candidate-0125k-only`，不是 formal 胜出；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、

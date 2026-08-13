@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "experiment_id": "saor_bounded_ready_development_gate",
+  "date": "2026-08-13",
+  "repository_commit": "6728c5691eb201941a778dd7eb0547531718deba",
+  "branch": "codex/saor-reservation",
+  "execution_mode": "two_independent_development_rehearsal_roots",
+  "formal_repeats": 0,
+  "initial_failed_commit": "aaa484f401e8e64b703f20666abcc2a5ffdc8b3b",
+  "initial_failure": "KeyError:submit_epoch_s",
+  "full_archive": {
+    "path": "/root/autodl-tmp/experiment-artifacts/saor_bounded_ready_development_6728c56_20260813_full.tar.gz",
+    "sha256": "9beb9c94ad6e8e47a084a08fe4a08d0c088d8f24b7a2fd695ae613cad62799fb"
+  },
+  "compact_files_sha256": {
+    "preflight.json": "c0efa03ccdcd64bae04ac317eb80d23ed141df70fdb6b9bb7d3321ddeca40130",
+    "readiness.json": "0e412d9b1b1fc5bc29379d778b6d177cc225246cf0d69a7949dfcdf1d830222a",
+    "initial_failed_manifest.json": "5071e856891160788842a7accf5cfecbc8ffff3507bceadc6d66f011c8ba2f15",
+    "round1_group_runs.csv": "25dc6152362d6c06eb1895ee53021212a243ccaa7d78f6fd6cf793ed7c12dd4f",
+    "round1_manifest.json": "b228c7c58bc8abc28ebd087c3c51c7f802602ce5f4c60c9a1795cf5f117ddd48",
+    "round2_group_runs.csv": "d8b165f8cb787dcb1f18dcd8205bf61e40304007c3ad80255984c5803df45f03",
+    "round2_manifest.json": "14eb621db834edf1c048b1738e0eed87489f9cba889ca8b7611eff9ccbe7a9fa",
+    "gate_summary.csv": "6ac7fcb14c5c09d6c549a03b4db543697df3f2ef814a1e6b3793265e27d2b095",
+    "mechanism_summary.csv": "3074843f2c8f952b43721d34540544c2c4a0da1902794b7a59bfa739e5d797ab",
+    "validation.json": "a9f892ff9cc7ab90571b587a06d52143d0a7abb6254b2dceee1415f5a725a6b6"
+  },
+  "conclusion": "formal_registration_candidate_0125k_only"
+}
