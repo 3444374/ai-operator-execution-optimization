@@ -50,7 +50,9 @@ class SubmissionExecutionLedgerTests(unittest.TestCase):
         )
         item = envelope("r0")
         handle = object()
-        ledger.observe(item)
+        ledger.observe(item, ready_epoch_s=9.0)
+        ledger.credit_registered("r0", epoch_s=9.1)
+        ledger.credit_granted("r0", epoch_s=9.5)
         ledger.submitted(
             handle,
             item,
@@ -78,6 +80,15 @@ class SubmissionExecutionLedgerTests(unittest.TestCase):
         self.assertEqual(ledger.inflight_count, 0)
         self.assertEqual(ledger.ordered_completions()[0].request_id, "r0")
         self.assertEqual(ledger.ordered_events()[0].endpoint_id, "gpu0")
+        self.assertEqual(ledger.ordered_events()[0].ready_epoch_s, 9.0)
+        self.assertEqual(
+            ledger.ordered_events()[0].credit_registered_epoch_s,
+            9.1,
+        )
+        self.assertEqual(
+            ledger.ordered_events()[0].credit_granted_epoch_s,
+            9.5,
+        )
 
     def test_duplicate_request_id_is_rejected_before_submission(self) -> None:
         ledger = SubmissionExecutionLedger()

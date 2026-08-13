@@ -57,6 +57,17 @@ backlog，因而仍向 bulk fallback。v0.5.1 状态改为
 `development-run/not-promoted/not-formal-registered`；停止 cap 密扫和 4-Job，先修 bounded
 ready-set/unfinished-priority observation contract，reservation 继续后置。
 
+2026-08-13 本地 observation 修订已形成独立 `saor_bounded_ready` policy，未静默修改上述失败
+对照。每 Job 只预注册已经从 source iterator 到达的具体 request；ready request 上限取该 Job
+有效 K，ready work 上限取 endpoint 数×共享 W，仍处于同一冻结总包络。submission trace schema 6
+新增 ready/registered/granted 时间与分段延迟，summary 新增 ready count/work 峰值；独立 AutoDL
+模板、static audit 和双轮 gate profile 已通过本地测试。release-event schema 2 对 actor 内的
+register/grant 同时记录 request ID 与 epoch；runner 用 submission trace 验证 concrete-ready
+lifecycle，再在 coordinator 同一时钟域配对 foreground register→grant，并要求区间内 foreign
+bulk fallback=0。当前尚无新 GPU 数据，因此状态仅为
+`local-implemented/development-unrun/not-formal-registered`，reservation、4-Job 与 dynamic K
+继续阻塞。
+
 ## 图像状态增量（2026-08-10）
 
 - Daft built-in/Ray Data 四 Job 1+3 矩阵在服务器重启恢复后 40/40 passed，包含 30 个

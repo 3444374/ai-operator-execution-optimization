@@ -108,7 +108,11 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    resolution-aware v2 完整重汇总已 passed。foreground strict-priority 两轮短测已证明
    release-only 上界可达；`saor-v0.5.1` 的 0.125K/0.25K 双轮 development gate 已按门禁停止，
    没有 formal candidate。当前先把 Daft/Ray ready work 以 bounded async ready-set/ready-count
-   显式暴露给 coordinator，验证 foreground ready 时无 bulk fallback，再复验同一四臂。
+   显式暴露给 coordinator。独立 `saor_bounded_ready` 本地路径已完成：旧 policy 不改写，窗口
+   由冻结 effective K 与 endpoint 数×W 派生，trace 分开 ready/registered/granted/submit；
+   coordinator 对 register/grant 记录 request ID+epoch，并在 actor 同一时钟域内要求 foreground
+   registered-ready 时 foreign fallback=0。下一步只
+   复验同一四臂的两个全新 development root。
    reservation/upper-bound work credit 只作 observation contract 闭合后的未知到达和预测误差鲁棒性消融；
    两 Job 未闭环前不跑 4-Job。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。

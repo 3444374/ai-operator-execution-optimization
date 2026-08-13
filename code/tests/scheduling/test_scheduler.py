@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import threading
+import time
 import unittest
 from pathlib import Path
 
@@ -543,6 +544,172 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(result.operator_invocations, 1)
         self.assertEqual(shared.attempts, 2)
         self.assertEqual(shared.released, [("j1", "r0", None)])
+
+    def test_shared_ready_window_registers_multiple_candidates_before_waiting(
+        self,
+    ) -> None:
+        class TwoCandidateSharedCredit:
+            def __init__(self) -> None:
+                self.registered: list[str] = []
+                self.released: list[str] = []
+
+            def try_acquire(self, **kwargs):
+                request_id = kwargs["request_id"]
+                if request_id not in self.registered:
+                    self.registered.append(request_id)
+                return len(self.registered) >= 2
+
+            def release(self, request_id, *, job_id, actual_work=None):
+                del job_id, actual_work
+                self.released.append(request_id)
+
+        shared = TwoCandidateSharedCredit()
+
+        class InspectingAdapter(FakeSubmissionAdapter):
+            def submit(self, item, endpoint_id):
+                self.assert_ready_set_visible()
+                return super().submit(item, endpoint_id)
+
+            @staticmethod
+            def assert_ready_set_visible():
+                if shared.registered != ["r0", "r1"]:
+                    raise AssertionError(
+                        "both ready candidates must be registered before submit"
+                    )
+
+        adapter = InspectingAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=2),
+            router=RoundRobinEndpointRouter(),
+            adapter=adapter,
+            pool_id="default",
+            per_endpoint_work_limit=100,
+            shared_credit=shared,
+            shared_credit_poll_s=0.0001,
+            shared_credit_acquire_timeout_s=0.01,
+            shared_ready_request_limit=2,
+            shared_ready_work_limit=100,
+        )
+
+        result = scheduler.run([envelope(0), envelope(1)], topology())
+
+        self.assertEqual(
+            [item.request_id for item in result.completions],
+            ["r0", "r1"],
+        )
+        self.assertEqual(adapter.submitted, [("r0", "e1"), ("r1", "e2")])
+        self.assertEqual(shared.released, ["r0", "r1"])
+        self.assertEqual(result.max_ready_requests_seen, 2)
+        first_event = result.submission_events[0]
+        self.assertIsNotNone(first_event.ready_epoch_s)
+        self.assertIsNotNone(first_event.credit_registered_epoch_s)
+        self.assertIsNotNone(first_event.credit_granted_epoch_s)
+        self.assertLessEqual(
+            first_event.ready_epoch_s,
+            first_event.credit_registered_epoch_s,
+        )
+        self.assertLessEqual(
+            first_event.credit_registered_epoch_s,
+            first_event.credit_granted_epoch_s,
+        )
+        self.assertLessEqual(
+            first_event.credit_granted_epoch_s,
+            first_event.submit_epoch_s,
+        )
+
+    def test_shared_ready_window_rejects_unbounded_work(self) -> None:
+        with self.assertRaisesRegex(ValueError, "requires a work limit"):
+            SynchronousScheduler(
+                admission=StaticAdmissionController(limit=2),
+                router=RoundRobinEndpointRouter(),
+                adapter=FakeSubmissionAdapter(),
+                pool_id="default",
+                shared_credit=object(),
+                shared_ready_request_limit=2,
+            )
+
+    def test_shared_ready_window_cancels_all_waiters_on_timeout(self) -> None:
+        class AlwaysDenySharedCredit:
+            def __init__(self) -> None:
+                self.registered: list[str] = []
+                self.cancelled: list[str] = []
+
+            def try_acquire(self, **kwargs):
+                request_id = kwargs["request_id"]
+                if request_id not in self.registered:
+                    self.registered.append(request_id)
+                return False
+
+            def release(self, request_id, *, job_id, actual_work=None):
+                raise AssertionError("denied requests must not be released")
+
+            def cancel_waiter(self, request_id, *, job_id):
+                del job_id
+                self.cancelled.append(request_id)
+                return True
+
+        shared = AlwaysDenySharedCredit()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=2),
+            router=RoundRobinEndpointRouter(),
+            adapter=FakeSubmissionAdapter(),
+            pool_id="default",
+            shared_credit=shared,
+            shared_credit_poll_s=0.0001,
+            shared_credit_acquire_timeout_s=0.001,
+            shared_ready_request_limit=2,
+            shared_ready_work_limit=100,
+        )
+
+        with self.assertRaisesRegex(TimeoutError, "shared credit acquire"):
+            scheduler.run([envelope(0), envelope(1)], topology())
+
+        self.assertEqual(shared.registered, ["r0", "r1"])
+        self.assertEqual(shared.cancelled, ["r0", "r1"])
+
+    def test_shared_ready_window_does_not_release_submitted_credit_on_abort(
+        self,
+    ) -> None:
+        class OneGrantSharedCredit:
+            def __init__(self) -> None:
+                self.released: list[str] = []
+                self.cancelled: list[str] = []
+
+            def try_acquire(self, **kwargs):
+                if kwargs["request_id"] == "r0":
+                    return True
+                time.sleep(0.002)
+                return False
+
+            def release(self, request_id, *, job_id, actual_work=None):
+                del job_id, actual_work
+                self.released.append(request_id)
+
+            def cancel_waiter(self, request_id, *, job_id):
+                del job_id
+                self.cancelled.append(request_id)
+                return True
+
+        shared = OneGrantSharedCredit()
+        adapter = FakeSubmissionAdapter()
+        scheduler = SynchronousScheduler(
+            admission=StaticAdmissionController(limit=2),
+            router=RoundRobinEndpointRouter(),
+            adapter=adapter,
+            pool_id="default",
+            shared_credit=shared,
+            shared_credit_poll_s=0.0001,
+            shared_credit_acquire_timeout_s=0.001,
+            shared_ready_request_limit=2,
+            shared_ready_work_limit=100,
+        )
+
+        with self.assertRaisesRegex(TimeoutError, "shared credit acquire"):
+            scheduler.run([envelope(0), envelope(1)], topology())
+
+        self.assertEqual(adapter.submitted, [("r0", "e1")])
+        self.assertEqual(shared.cancelled, ["r1"])
+        self.assertEqual(shared.released, [])
 
     def test_shared_credit_uses_epoch_arrival_for_remaining_slo_budget(self) -> None:
         class RecordingSharedCredit:

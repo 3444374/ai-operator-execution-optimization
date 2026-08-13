@@ -1,5 +1,14 @@
 # Learning Notes
 
+## 2026-08-13 bounded ready-set 为什么不是扩大 K
+
+`experiment_walkthrough.md` 新增 ready-set observation 修订说明。新 policy
+`saor_bounded_ready` 不提高 endpoint K/W，也不改变 vLLM FCFS/continuous batching；它只在
+现有 K/W 内把多个已经到达的具体 request 预注册给共享 coordinator，避免每个 Job 同步等待一个
+head 时把真实 backlog 隐藏掉。旧 `saor_bounded_priority` 保留为单-head 回归对照。提交 trace
+现在分开记录 ready、registered、granted、submit 与 service，便于判断问题发生在数据准备、共享
+credit 还是 vLLM 排队。当前只有本地代码/门禁证据，没有 GPU 性能或公平性结论。
+
 ## 2026-08-12 bounded-priority SAOR 与事件账本
 
 `experiment_walkthrough.md` 的 2026-08-12 小节新增通俗说明：为什么新候选不是简单调大

@@ -6347,3 +6347,25 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   过于接近 strict-priority 无限 cap，信息量不足。
 - bulk 硬门保留 request-level SLO violation≤0.723；slowdown 降为诊断指标。strict-priority 已显示
   bulk 总 JCT 仍可改善而 request SLO violation 升到 0.801，因此 slowdown 不能替代 per-class SLO。
+## 2026-08-13 SAOR bounded ready-set observation 本地接线
+
+- 保留旧 `saor_bounded_priority` 单-head 行为作为失败回归对照，新增独立
+  `saor_bounded_ready` policy；两者复用同一个 bounded-priority selector，差异只在 observation
+  contract，避免静默改写旧实验语义。
+- `SynchronousScheduler` 新增有界 concrete waiter pre-registration：只读取已经到达的完整
+  request，不进行 token 拆分；ready request 上限从当前 Job 的 effective K 派生，ready work
+  上限从 endpoint 数×共享 W 派生，不新增硬编码行数、offset、queue-size 或在线调参。
+- 生命周期账本与 submission trace schema 升至 6，新增 ready、credit registered/granted 及
+  ready→register、credit wait、grant→submit、grant→completion 分段；summary 新增
+  `max_ready_requests_seen/max_ready_work_seen`，不再只凭 GPU utilization 或 vLLM waiting 判断。
+- 新增 cancel/timeout/有限 work/多候选先注册/old-policy 隔离/config/runner/readiness/双轮汇总
+  测试。异常路径只清理未授予 waiter 与已授予未提交 lease；已经提交给 vLLM、尚未完成的
+  request 保留 credit，交由整组 fail-closed cleanup 回收，避免服务端仍执行时提前释放造成容量
+  超卖。独立
+  `deploy/autodl/saor_bounded_ready.example.json` 已建立；旧模板保持不变。
+- coordinator release-event schema 升至 2，对 actor 内的 register/grant 同时记录 request ID 与
+  `event_epoch_s`；runner 先验证 submission concrete-ready lifecycle，再在 coordinator 同一时钟域
+  按 request 配对 foreground register→grant，要求区间非空且 foreign fallback=0，缺 lifecycle、
+  request join、event epoch 或时序错误均 fail closed，避免把 Ray RPC 返回延迟误作调度等待。
+- 当前状态仅为 `local-implemented/development-unrun/not-formal-registered`。尚无新 GPU
+  performance/fairness 证据；reservation、4-Job、dynamic K 与 formal 继续阻塞。

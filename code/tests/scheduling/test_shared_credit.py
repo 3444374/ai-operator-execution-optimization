@@ -21,6 +21,37 @@ from src.scheduling.submission_control.saor import (  # noqa: E402
 
 
 class SharedCreditCoordinatorTests(unittest.TestCase):
+    def test_bounded_ready_policy_uses_bounded_priority_selector(self) -> None:
+        epochs = iter((100.0, 101.0))
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="saor_bounded_ready",
+            saor_release_config=SaorReleaseConfig(1.0, 0.0, 1.0, 0.0),
+            epoch_clock=lambda: next(epochs),
+        )
+
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="r0",
+                job_id="foreground",
+                endpoint_id="gpu0",
+                estimated_work=10,
+                priority=1,
+                slo_budget_remaining_s=1.0,
+                priority_window_s=30.0,
+            )
+        )
+        events = coordinator.drain_release_events("gpu0")
+        self.assertEqual(
+            [(event.action, event.selected_request_id) for event in events],
+            [("register", "r0"), ("grant", "r0")],
+        )
+        self.assertEqual(
+            [event.event_epoch_s for event in events],
+            [100.0, 101.0],
+        )
+
     @staticmethod
     def bounded_coordinator(
         *,

@@ -24,6 +24,7 @@ SAOR_RELEASE_EVENT_FIELDS = (
     "elapsed_s",
     "event_seq",
     "event_time_s",
+    "event_epoch_s",
     "endpoint_id",
     "action",
     "tier",
@@ -160,7 +161,7 @@ class _RayCreditObserver:
         )
         return [
             {
-                "schema_version": 1,
+                "schema_version": 2,
                 "observed_epoch_s": observed_epoch_s,
                 "elapsed_s": observed_epoch_s - origin_epoch_s,
                 **_event_mapping(event),

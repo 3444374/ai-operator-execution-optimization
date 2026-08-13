@@ -28,6 +28,41 @@ from src.scheduling.runtime.saor_capacity import (
 
 
 class SaorSharedVllmConfigTest(unittest.TestCase):
+    def test_bounded_ready_uses_distinct_profiler_policy(self) -> None:
+        payload = self._bounded_priority_payload()
+        payload["scenarios"][0]["policy"] = "saor_bounded_ready"
+        payload["ready_observation_contract"] = (
+            "bounded_concrete_pre_registration"
+        )
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("bounded-ready.json"))
+        scenario = config.scenarios[0]
+        options = RunnerOptions(
+            config_path=Path("bounded-ready.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path("python"),
+            output_dir=Path("out"),
+            health_url="http://127.0.0.1/health",
+            metrics_urls=("http://127.0.0.1/metrics",),
+            ray_address="local",
+            idle_timeout_s=1.0,
+        )
+
+        command = build_job_command(
+            options,
+            config,
+            scenario,
+            GroupRunIdentity("rehearsal", 0, 0),
+            job_index=1,
+            start_epoch_s=1.0,
+            coordinator_name="bounded-ready",
+        )
+
+        self.assertEqual(
+            self._flag(command, "--shared-credit-policy"),
+            "saor_bounded_ready",
+        )
+
     def test_bounded_priority_uses_explicit_per_job_contract(self) -> None:
         payload = self._bounded_priority_payload()
         with patch.object(Path, "read_text", return_value=json.dumps(payload)):

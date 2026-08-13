@@ -68,6 +68,7 @@ from .evidence import (
 from .metrics import (
     active_set_phase_summary,
     bounded_saor_event_summary,
+    bounded_ready_event_summary,
     cumulative_service_disparity,
     group_metric_delta,
     group_resource_summary,
@@ -162,7 +163,7 @@ def _validate_rehearsal_record(
         return
     if record.get("active_set_lifecycle_passed") is not True:
         raise RuntimeError("rehearsal active-set lifecycle gate failed")
-    if scenario.policy == "saor_bounded_priority":
+    if scenario.policy in {"saor_bounded_priority", "saor_bounded_ready"}:
         if record.get("bounded_saor_event_status") != "ok:lossless_ledger":
             raise RuntimeError("rehearsal bounded-SAOR event ledger is unavailable")
         if record.get("bounded_saor_event_sequence_complete") is not True:
@@ -181,6 +182,25 @@ def _validate_rehearsal_record(
             or int(record.get("bounded_saor_recovery_inflight_max", 2)) > 1
         ):
             raise RuntimeError("rehearsal bounded-SAOR mechanism gate failed")
+        if scenario.policy == "saor_bounded_ready" and (
+            record.get("bounded_ready_event_status") != "ok:actor_event_join"
+            or record.get("bounded_ready_lifecycle_complete") is not True
+            or int(record.get("bounded_ready_foreground_intervals", 0)) < 1
+            or int(
+                record.get(
+                    "bounded_ready_foreground_max_ready_requests_seen",
+                    0,
+                )
+            )
+            < 2
+            or int(
+                record.get("bounded_ready_foreground_max_ready_work_seen", 0)
+            )
+            <= 0
+            or int(record.get("bounded_ready_foreign_fallback_events", -1))
+            != 0
+        ):
+            raise RuntimeError("rehearsal bounded-ready observation gate failed")
         return
     mechanism_applicable = record.get("active_set_mechanism_applicable") is True
     if scenario.policy in _REHEARSAL_CREDIT_POLICIES:
@@ -679,6 +699,7 @@ def _run_group(
                 "external_vtc",
                 "saor_release",
                 "saor_bounded_priority",
+                "saor_bounded_ready",
                 "foreground_strict_priority",
                 "state_aware_adaptive",
                 "saor_capacity",
@@ -694,8 +715,11 @@ def _run_group(
                     "fifo" if scenario.policy == "shared_fifo"
                     else "vtc" if scenario.policy == "external_vtc"
                     else "saor" if scenario.policy == "saor_release"
-                    else "saor_bounded_priority"
-                    if scenario.policy == "saor_bounded_priority"
+                    else scenario.policy
+                    if scenario.policy in {
+                        "saor_bounded_priority",
+                        "saor_bounded_ready",
+                    }
                     else "strict_priority"
                     if scenario.policy == "foreground_strict_priority"
                     else "drr"
@@ -704,7 +728,11 @@ def _run_group(
                     SaorReleaseConfig(
                         **asdict(config.saor_release_control)
                     )
-                    if scenario.policy in {"saor_release", "saor_bounded_priority"}
+                    if scenario.policy in {
+                        "saor_release",
+                        "saor_bounded_priority",
+                        "saor_bounded_ready",
+                    }
                     and config.saor_release_control is not None
                     else None
                 ),
@@ -807,7 +835,10 @@ def _run_group(
             if observer is not None:
                 credit_batch = observer.sample(group_launch_epoch_s)
                 credit_samples.extend(credit_batch)
-                if scenario.policy == "saor_bounded_priority":
+                if scenario.policy in {
+                    "saor_bounded_priority",
+                    "saor_bounded_ready",
+                }:
                     release_events.extend(
                         observer.drain_release_events(group_launch_epoch_s)
                     )
@@ -872,7 +903,10 @@ def _run_group(
         final_credit = []
         if observer is not None:
             credit_samples.extend(observer.sample(group_launch_epoch_s))
-            if scenario.policy == "saor_bounded_priority":
+            if scenario.policy in {
+                "saor_bounded_priority",
+                "saor_bounded_ready",
+            }:
                 release_events.extend(
                     observer.drain_release_events(group_launch_epoch_s)
                 )
@@ -1005,7 +1039,11 @@ def _run_group(
                 "actuated_saor_capacity" if saor_controllers
                 else "actuated" if controllers
                 else "actuated_saor_release"
-                if scenario.policy in {"saor_release", "saor_bounded_priority"}
+                if scenario.policy in {
+                    "saor_release",
+                    "saor_bounded_priority",
+                    "saor_bounded_ready",
+                }
                 else "observe_only" if observer is not None
                 else "direct_no_job_control"
                 if scenario.policy == "direct_no_job"
@@ -1056,6 +1094,7 @@ def _run_group(
                     "external_vtc",
                     "saor_release",
                     "saor_bounded_priority",
+                    "saor_bounded_ready",
                     "foreground_strict_priority",
                     "state_aware_adaptive",
                     "saor_capacity",
@@ -1087,6 +1126,25 @@ def _run_group(
                 observation_interval_s=_TRACE_SAMPLE_INTERVAL_S,
             ),
             **bounded_saor_event_summary(release_events),
+            **(
+                bounded_ready_event_summary(
+                    release_events,
+                    job_evidence,
+                    foreground_job_index=max(
+                        range(scenario.job_count),
+                        key=scenario.job_priority,
+                    ),
+                )
+                if scenario.policy == "saor_bounded_ready"
+                else {
+                    "bounded_ready_event_status": "not_applicable",
+                    "bounded_ready_lifecycle_complete": False,
+                    "bounded_ready_foreground_intervals": 0,
+                    "bounded_ready_foreign_fallback_events": 0,
+                    "bounded_ready_foreground_max_ready_requests_seen": 0,
+                    "bounded_ready_foreground_max_ready_work_seen": 0,
+                }
+            ),
             "job_jct_s": json.dumps(
                 [evidence["jct_s"] for evidence in job_evidence]
             ),
@@ -1196,7 +1254,7 @@ def _run_group(
                 final_credit,
                 sort_keys=True,
             ),
-            "release_event_trace_schema_version": 1,
+            "release_event_trace_schema_version": 2,
             "release_event_trace_path": str(
                 Path("traces") / f"{run_stem}.release_events.csv"
             ),
@@ -1239,7 +1297,10 @@ def _run_group(
                 credit_samples.extend(
                     observer.sample(group_launch_epoch_s)
                 )
-                if scenario.policy == "saor_bounded_priority":
+                if scenario.policy in {
+                    "saor_bounded_priority",
+                    "saor_bounded_ready",
+                }:
                     release_events.extend(
                         observer.drain_release_events(group_launch_epoch_s)
                     )

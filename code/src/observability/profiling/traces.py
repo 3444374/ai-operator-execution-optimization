@@ -146,7 +146,7 @@ def write_submission_trace(
         append_metrics(
             output_path,
             {
-                "schema_version": 5,
+                "schema_version": 6,
                 "experiment_id": experiment_id,
                 "phase": phase,
                 "repeat_index": repeat_index,
@@ -184,10 +184,66 @@ def write_submission_trace(
                 "error": (
                     (event.error or "") if event is not None else ""
                 ),
+                "ready_epoch_s": (
+                    event.ready_epoch_s
+                    if event is not None and event.ready_epoch_s is not None
+                    else ""
+                ),
+                "credit_registered_epoch_s": (
+                    event.credit_registered_epoch_s
+                    if (
+                        event is not None
+                        and event.credit_registered_epoch_s is not None
+                    )
+                    else ""
+                ),
+                "credit_granted_epoch_s": (
+                    event.credit_granted_epoch_s
+                    if (
+                        event is not None
+                        and event.credit_granted_epoch_s is not None
+                    )
+                    else ""
+                ),
+                "ready_to_register_s": (
+                    event.credit_registered_epoch_s - event.ready_epoch_s
+                    if (
+                        event is not None
+                        and event.ready_epoch_s is not None
+                        and event.credit_registered_epoch_s is not None
+                    )
+                    else ""
+                ),
+                "credit_wait_s": (
+                    event.credit_granted_epoch_s
+                    - event.credit_registered_epoch_s
+                    if (
+                        event is not None
+                        and event.credit_registered_epoch_s is not None
+                        and event.credit_granted_epoch_s is not None
+                    )
+                    else ""
+                ),
+                "grant_to_submit_s": (
+                    event.submit_epoch_s - event.credit_granted_epoch_s
+                    if (
+                        event is not None
+                        and event.credit_granted_epoch_s is not None
+                    )
+                    else ""
+                ),
                 "credit_held_s": (
                     event.completion_epoch_s - event.submit_epoch_s
                     if event is not None
                     else 0.0
+                ),
+                "grant_to_completion_s": (
+                    event.completion_epoch_s - event.credit_granted_epoch_s
+                    if (
+                        event is not None
+                        and event.credit_granted_epoch_s is not None
+                    )
+                    else ""
                 ),
                 "ray_to_service_s": (
                     max(

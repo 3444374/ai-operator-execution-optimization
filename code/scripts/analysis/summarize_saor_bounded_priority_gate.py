@@ -17,6 +17,12 @@ EXPECTED = {
     "active_set_saor_bounded_priority_0125k": "saor_bounded_priority",
     "active_set_saor_bounded_priority_025k": "saor_bounded_priority",
 }
+BOUNDED_READY_EXPECTED = {
+    "active_set_static_partition": "static_partition",
+    "active_set_saor_release": "saor_release",
+    "active_set_saor_bounded_ready_0125k": "saor_bounded_ready",
+    "active_set_saor_bounded_ready_025k": "saor_bounded_ready",
+}
 P99_LIMIT_S = 30.7
 FOREGROUND_SLO_LIMIT = 0.01
 BULK_SLO_LIMIT = 0.723
@@ -27,6 +33,11 @@ def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--matrix-root", action="append", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument(
+        "--profile",
+        choices=("bounded_priority", "bounded_ready"),
+        default="bounded_priority",
+    )
     return parser.parse_args()
 
 
@@ -98,7 +109,21 @@ def _event_summary(events: list[dict[str, str]]) -> dict[str, int | bool]:
     }
 
 
-def summarize(roots: tuple[Path, ...], output: Path) -> dict[str, object]:
+def summarize(
+    roots: tuple[Path, ...],
+    output: Path,
+    *,
+    profile: str = "bounded_priority",
+) -> dict[str, object]:
+    expected = (
+        EXPECTED
+        if profile == "bounded_priority"
+        else BOUNDED_READY_EXPECTED
+        if profile == "bounded_ready"
+        else None
+    )
+    if expected is None:
+        raise ValueError(f"unknown bounded gate profile: {profile}")
     errors: list[str] = []
     gate_rows: list[dict[str, object]] = []
     mechanism_rows: list[dict[str, object]] = []
@@ -130,9 +155,9 @@ def summarize(roots: tuple[Path, ...], output: Path) -> dict[str, object]:
             )
         )
         observed = {row.get("scenario_id", ""): row.get("policy", "") for row in rows}
-        if observed != EXPECTED or len(rows) != 4:
+        if observed != expected or len(rows) != 4:
             errors.append(f"round {round_index} does not contain the frozen four arms")
-        for scenario_id, policy in EXPECTED.items():
+        for scenario_id, policy in expected.items():
             selected = [row for row in rows if row.get("scenario_id") == scenario_id]
             if len(selected) != 1:
                 continue
@@ -165,7 +190,7 @@ def summarize(roots: tuple[Path, ...], output: Path) -> dict[str, object]:
                 "efficiency_passed": throughput >= THROUGHPUT_FLOOR,
                 "bulk_protection_passed": slo[0] <= BULK_SLO_LIMIT,
             }
-            if policy == "saor_bounded_priority":
+            if policy in {"saor_bounded_priority", "saor_bounded_ready"}:
                 event_path = root / row.get("release_event_trace_path", "")
                 if not event_path.is_file():
                     errors.append(
@@ -187,6 +212,39 @@ def summarize(roots: tuple[Path, ...], output: Path) -> dict[str, object]:
                     and mechanism["foreign_grant_events"] == 0
                     and mechanism["recovery_inflight_max"] <= 1
                 )
+                if policy == "saor_bounded_ready":
+                    ready_join_passed = bool(
+                        row.get("bounded_ready_event_status")
+                        == "ok:actor_event_join"
+                        and _truth(row.get("bounded_ready_lifecycle_complete"))
+                        and int(
+                            row.get("bounded_ready_foreground_intervals", "0")
+                        )
+                        >= 1
+                        and int(
+                            row.get(
+                                "bounded_ready_foreground_max_ready_requests_seen",
+                                "0",
+                            )
+                        )
+                        >= 2
+                        and int(
+                            row.get(
+                                "bounded_ready_foreground_max_ready_work_seen",
+                                "0",
+                            )
+                        )
+                        > 0
+                        and int(
+                            row.get(
+                                "bounded_ready_foreign_fallback_events",
+                                "-1",
+                            )
+                        )
+                        == 0
+                    )
+                    mechanism["ready_join_passed"] = ready_join_passed
+                    mechanism_passed = mechanism_passed and ready_join_passed
                 mechanism_rows.append(
                     {"round": round_index, "scenario_id": scenario_id, **mechanism}
                 )
@@ -203,7 +261,7 @@ def summarize(roots: tuple[Path, ...], output: Path) -> dict[str, object]:
             gate_rows.append(gate)
     if identities and (any(not all(identity) for identity in identities) or len(set(identities)) != 1):
         errors.append("rounds do not share config fingerprint, commit, and service signature")
-    caps = tuple(EXPECTED)[-2:]
+    caps = tuple(expected)[-2:]
     cap_pass = {
         cap: len([row for row in gate_rows if row["scenario_id"] == cap]) == 2
         and all(row["all_gates_passed"] for row in gate_rows if row["scenario_id"] == cap)
@@ -226,7 +284,8 @@ def summarize(roots: tuple[Path, ...], output: Path) -> dict[str, object]:
     if mechanism_rows:
         _write(output / "mechanism_summary.csv", mechanism_rows)
     payload: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "profile": profile,
         "status": status,
         "conclusion": conclusion if not errors else "diagnostic_only",
         "matrix_roots": [str(root) for root in roots],
@@ -251,7 +310,11 @@ def summarize(roots: tuple[Path, ...], output: Path) -> dict[str, object]:
 
 def main() -> int:
     args = _args()
-    summarize(tuple(path.resolve() for path in args.matrix_root), args.output_dir.resolve())
+    summarize(
+        tuple(path.resolve() for path in args.matrix_root),
+        args.output_dir.resolve(),
+        profile=args.profile,
+    )
     return 0
 
 

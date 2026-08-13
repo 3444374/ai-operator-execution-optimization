@@ -127,6 +127,49 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 {**record, "bounded_saor_event_sequence_complete": False},
             )
 
+    def test_bounded_ready_rehearsal_requires_epoch_join(self) -> None:
+        scenario = SharedVllmScenario(
+            scenario_id="active_set_saor_bounded_ready_0125k",
+            policy="saor_bounded_ready",
+            job_count=2,
+            rows_per_job=None,
+            rows_per_jobs=(1, 1),
+            weights=(1, 1),
+            arrival_offsets_s=(0.0, 5.0),
+            priorities=(0, 1),
+            slo_targets_s=(None, 30.0),
+            priority_windows_s=(None, 30.0),
+            debt_cap_fractions=(0.125, None),
+        )
+        record = {
+            "execution_mode": "rehearsal",
+            "metrics_status": "ok",
+            "resource_metrics_status": "ok",
+            "incidents": 0,
+            "actor_worker_failures": 0,
+            "active_set_lifecycle_passed": True,
+            "bounded_saor_event_status": "ok:lossless_ledger",
+            "bounded_saor_event_sequence_complete": True,
+            "bounded_saor_slo_priority_grants": 1,
+            "bounded_saor_debt_recovery_grants": 1,
+            "bounded_saor_avoidable_idle_events": 0,
+            "bounded_saor_foreign_grant_over_debt_critical_events": 0,
+            "bounded_saor_recovery_inflight_max": 1,
+            "bounded_ready_event_status": "ok:actor_event_join",
+            "bounded_ready_lifecycle_complete": True,
+            "bounded_ready_foreground_intervals": 1,
+            "bounded_ready_foreign_fallback_events": 0,
+            "bounded_ready_foreground_max_ready_requests_seen": 2,
+            "bounded_ready_foreground_max_ready_work_seen": 100,
+        }
+
+        _validate_rehearsal_record(scenario, record)
+        with self.assertRaisesRegex(RuntimeError, "observation gate"):
+            _validate_rehearsal_record(
+                scenario,
+                {**record, "bounded_ready_foreign_fallback_events": 1},
+            )
+
     def test_rehearsal_runs_one_nonformal_cell_per_scenario(self) -> None:
         options = RunnerOptions(
             config_path=Path("config.json"),
@@ -1023,6 +1066,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
         event = SaorReleaseEvent(
             event_seq=1,
             event_time_s=12.0,
+            event_epoch_s=112.0,
             endpoint_id="task-0",
             action="grant",
             tier="slo_priority",
@@ -1034,8 +1078,72 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
         self.assertEqual(rows[0]["event_seq"], 1)
         self.assertEqual(rows[0]["tier"], "slo_priority")
-        self.assertEqual(rows[0]["schema_version"], 1)
+        self.assertEqual(rows[0]["schema_version"], 2)
         self.assertIn("observed_epoch_s", rows[0])
+
+    def test_bounded_ready_join_rejects_foreign_fallback(self) -> None:
+        job_evidence = [
+            {"runtime_job_id": "bulk", "ready_lifecycle_rows": []},
+            {
+                "runtime_job_id": "foreground",
+                "ready_lifecycle_complete": True,
+                "max_ready_requests_seen": 2,
+                "max_ready_work_seen": 100,
+                "ready_lifecycle_rows": [
+                    {
+                        "request_id": "foreground-r0",
+                        "endpoint_id": "task-0",
+                        "registered_epoch_s": 100.0,
+                        "granted_epoch_s": 102.0,
+                    }
+                ],
+            },
+        ]
+        events = [
+            {
+                "action": "register",
+                "tier": "ready_registration",
+                "event_seq": 1,
+                "event_epoch_s": 100.0,
+                "endpoint_id": "task-0",
+                "selected_job_id": "foreground",
+                "selected_request_id": "foreground-r0",
+            },
+            {
+                "action": "grant",
+                "tier": "saor_fallback",
+                "event_seq": 2,
+                "event_epoch_s": 101.0,
+                "endpoint_id": "task-0",
+                "selected_job_id": "bulk",
+                "selected_request_id": "bulk-r0",
+            },
+            {
+                "action": "grant",
+                "tier": "slo_priority",
+                "event_seq": 3,
+                "event_epoch_s": 102.0,
+                "endpoint_id": "task-0",
+                "selected_job_id": "foreground",
+                "selected_request_id": "foreground-r0",
+            },
+        ]
+
+        summary = shared_vllm.bounded_ready_event_summary(
+            events,
+            job_evidence,
+            foreground_job_index=1,
+        )
+
+        self.assertEqual(
+            summary["bounded_ready_event_status"],
+            "ok:actor_event_join",
+        )
+        self.assertEqual(summary["bounded_ready_foreign_fallback_events"], 1)
+        self.assertEqual(
+            summary["bounded_ready_foreground_max_ready_requests_seen"],
+            2,
+        )
 
     def test_request_trace_success_matches_profiler_schema(self) -> None:
         self.assertTrue(
@@ -1960,12 +2068,22 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "actor_worker_failures": "0;0",
                 "arrival_replay_start_epoch_s": "100.0",
                 "arrival_replay_observed_start_epoch_s": "100.0",
+                "max_ready_requests_seen": "3",
+                "max_ready_work_seen": "90",
             }
+        ]
+        submission_rows = [
+            {
+                "submission_id": f"request-{index}",
+                "endpoint_id": f"task-{index % 2}",
+                "submit_epoch_s": str(index + 0.1),
+            }
+            for index in range(4)
         ]
 
         with patch(
             "src.experiments.shared_vllm.evidence._read_csv",
-            side_effect=[summary_rows, request_rows, [{}] * 4],
+            side_effect=[summary_rows, request_rows, submission_rows],
         ):
             evidence = shared_vllm._validate_job_evidence(
                 options,
@@ -1976,6 +2094,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
         self.assertEqual(evidence["p99_s"], 100.0)
         self.assertEqual(evidence["actor_worker_failures"], 0)
+        self.assertEqual(evidence["max_ready_requests_seen"], 3)
+        self.assertEqual(evidence["max_ready_work_seen"], 90)
 
     def test_jain_fairness_handles_equal_weight_and_zero_service(self) -> None:
         self.assertEqual(jain_fairness([100.0, 100.0]), 1.0)

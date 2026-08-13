@@ -43,6 +43,12 @@ SAOR 有界优先级开发模板为 `autodl/saor_bounded_priority.example.json`�
 服务器恢复前不得跳过 `runtime/README.md` 的只读 preflight；当前服务器关闭时不执行远端
 rehearsal，也不把静态 readiness 当作实验结果。
 
+ready-set observation 修订使用独立模板
+`autodl/saor_bounded_ready.example.json` 和新 policy `saor_bounded_ready`。它复用同一 static、
+原 SAOR、0.125K/0.25K 四臂合同，只将 bounded 两臂改为由现有 K/W 派生的具体 request 有界
+预注册；旧模板不改写。先用 `--profile bounded_ready_development` 做静态预检，且只允许
+development rehearsal，不启动 formal。
+
 ## 与其他目录的关系
 
 - 实验脚本：`motivation/benchmarks/`、`code/scripts/`

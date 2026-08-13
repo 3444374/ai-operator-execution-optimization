@@ -45,6 +45,7 @@ class SaorReleaseEvent:
 
     event_seq: int
     event_time_s: float
+    event_epoch_s: float
     endpoint_id: str
     action: str
     tier: str
@@ -119,6 +120,7 @@ class FairEndpointCreditCoordinator:
         policy: str = "drr",
         saor_release_config: SaorReleaseConfig | None = None,
         clock: Callable[[], float] = time.monotonic,
+        epoch_clock: Callable[[], float] = time.time,
     ) -> None:
         if not capacities:
             raise ValueError("capacities must not be empty")
@@ -130,19 +132,20 @@ class FairEndpointCreditCoordinator:
             "vtc",
             "saor",
             "saor_bounded_priority",
+            "saor_bounded_ready",
             "strict_priority",
         }:
             raise ValueError(
                 "shared credit policy must be drr, fifo, vtc, saor, "
-                "saor_bounded_priority, or strict_priority"
+                "saor_bounded_priority, saor_bounded_ready, or strict_priority"
             )
         if (
-            policy in {"saor", "saor_bounded_priority"}
+            policy in {"saor", "saor_bounded_priority", "saor_bounded_ready"}
             and saor_release_config is None
         ):
             raise ValueError("saor shared credit requires release configuration")
         if (
-            policy not in {"saor", "saor_bounded_priority"}
+            policy not in {"saor", "saor_bounded_priority", "saor_bounded_ready"}
             and saor_release_config is not None
         ):
             raise ValueError(
@@ -158,6 +161,7 @@ class FairEndpointCreditCoordinator:
         self._policy = policy
         self._saor_release_config = saor_release_config
         self._clock = clock
+        self._epoch_clock = epoch_clock
         self._active: dict[tuple[str, str], CreditLease] = {}
         self._active_work: dict[str, int] = {
             endpoint_id: 0 for endpoint_id in capacities
@@ -272,7 +276,7 @@ class FairEndpointCreditCoordinator:
             current_target = 0.0 if slo_target_s is None else float(slo_target_s)
             if previous_target != current_target:
                 raise ValueError("a job must use one stable SLO target")
-        if self._policy == "saor_bounded_priority":
+        if self._policy in {"saor_bounded_priority", "saor_bounded_ready"}:
             if priority > 0 and (
                 slo_budget_remaining_s is None or priority_window_s is None
             ):
@@ -336,6 +340,14 @@ class FairEndpointCreditCoordinator:
             self._queued_request_keys.add(request_key)
             if self._policy == "fifo":
                 self._fifo_order[endpoint_id].append(request_key)
+            if self._policy == "saor_bounded_ready":
+                self._record_release_event(
+                    endpoint_id,
+                    action="register",
+                    tier="ready_registration",
+                    lease=lease,
+                    states=self._bounded_saor_states(endpoint_id),
+                )
         self._grant_waiters(endpoint_id)
         return request_key in self._active
 
@@ -402,7 +414,11 @@ class FairEndpointCreditCoordinator:
                 counters[job_id] = counters.get(job_id, 0) + (
                     actual_work - lease.estimated_work
                 )
-        if self._policy in {"saor", "saor_bounded_priority"}:
+        if self._policy in {
+            "saor",
+            "saor_bounded_priority",
+            "saor_bounded_ready",
+        }:
             recovery = self._recovery_inflight[endpoint_id]
             if recovery.get(job_id) == request_id:
                 del recovery[job_id]
@@ -581,7 +597,7 @@ class FairEndpointCreditCoordinator:
         if self._policy == "saor":
             self._grant_saor_waiters(endpoint_id)
             return
-        if self._policy == "saor_bounded_priority":
+        if self._policy in {"saor_bounded_priority", "saor_bounded_ready"}:
             self._grant_bounded_saor_waiters(endpoint_id)
             return
         if self._policy == "strict_priority":
@@ -1061,17 +1077,25 @@ class FairEndpointCreditCoordinator:
             and target.target_job_id in debt_critical
             and target.reclaim_debt > 0
         )
+        selected_lease = lease if action in {"register", "grant"} else None
         seq = self._release_event_seq[endpoint_id] + 1
         self._release_event_seq[endpoint_id] = seq
         self._release_events[endpoint_id].append(
             SaorReleaseEvent(
                 event_seq=seq,
                 event_time_s=self._clock(),
+                event_epoch_s=self._epoch_clock(),
                 endpoint_id=endpoint_id,
                 action=action,
                 tier=tier,
-                selected_job_id=lease.job_id if lease is not None else "",
-                selected_request_id=lease.request_id if lease is not None else "",
+                selected_job_id=(
+                    selected_lease.job_id if selected_lease is not None else ""
+                ),
+                selected_request_id=(
+                    selected_lease.request_id
+                    if selected_lease is not None
+                    else ""
+                ),
                 target_job_id=target.target_job_id if target is not None else "",
                 head_work=target.head_work if target is not None else 0,
                 reclaim_debt=target.reclaim_debt if target is not None else 0,

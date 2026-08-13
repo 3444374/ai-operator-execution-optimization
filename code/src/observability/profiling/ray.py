@@ -77,6 +77,8 @@ def _scheduler_metrics(result: SchedulerResult) -> dict:
         "max_active_work_per_endpoint_seen": (
             result.max_active_work_per_endpoint_seen
         ),
+        "max_ready_requests_seen": result.max_ready_requests_seen,
+        "max_ready_work_seen": result.max_ready_work_seen,
         "bounded_wait_s": result.bounded_wait_s,
         "avg_bounded_wait_s": result.avg_bounded_wait_s,
         "fanin_s": result.fanin_s,
@@ -116,6 +118,18 @@ def _shared_credit_client(
     )
 
 
+def _shared_ready_window_limits(
+    max_inflight: int,
+    endpoint_ids: Sequence[str],
+    config: Mapping[str, object] | None,
+) -> tuple[int, int | None]:
+    """Derive the ready window from the frozen Job K and endpoint W."""
+
+    if not config or config.get("policy") != "saor_bounded_ready":
+        return 1, None
+    return max_inflight, int(config["work_limit"]) * len(endpoint_ids)
+
+
 def _run_static_scheduler(
     ray_module,
     envelopes: Iterable[PayloadEnvelope],
@@ -134,6 +148,8 @@ def _run_static_scheduler(
     job_priority_window_s: float | None = None,
     job_fairness_debt_cap: float | None = None,
     shared_credit_acquire_timeout_s: float | None = None,
+    shared_ready_request_limit: int = 1,
+    shared_ready_work_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
     return _run_scheduler(
         ray_module,
@@ -154,6 +170,8 @@ def _run_static_scheduler(
         job_priority_window_s,
         job_fairness_debt_cap,
         shared_credit_acquire_timeout_s,
+        shared_ready_request_limit,
+        shared_ready_work_limit,
     )
 
 
@@ -176,6 +194,8 @@ def _run_scheduler(
     job_priority_window_s: float | None = None,
     job_fairness_debt_cap: float | None = None,
     shared_credit_acquire_timeout_s: float | None = None,
+    shared_ready_request_limit: int = 1,
+    shared_ready_work_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
     routing_config = routing_config or {}
     scheduler = SynchronousScheduler(
@@ -195,6 +215,8 @@ def _run_scheduler(
         job_priority_window_s=job_priority_window_s,
         job_fairness_debt_cap=job_fairness_debt_cap,
         shared_credit_acquire_timeout_s=shared_credit_acquire_timeout_s,
+        shared_ready_request_limit=shared_ready_request_limit,
+        shared_ready_work_limit=shared_ready_work_limit,
         actual_work_extractor=extract_completed_token_work,
     )
     result = scheduler.run(envelopes, topology)
@@ -431,6 +453,13 @@ def submit_with_backpressure(
                 endpoint_ids,
                 shared_credit_config,
             )
+            ready_request_limit, ready_work_limit = (
+                _shared_ready_window_limits(
+                    max_inflight,
+                    endpoint_ids,
+                    shared_credit_config,
+                )
+            )
             results, metrics = _run_static_scheduler(
                 ray_module,
                 envelopes,
@@ -473,6 +502,8 @@ def submit_with_backpressure(
                     if shared_credit_config
                     else None
                 ),
+                ready_request_limit,
+                ready_work_limit,
             )
     metrics.update(
         {
@@ -759,6 +790,11 @@ def submit_ray_tasks(
         endpoint_ids,
         shared_credit_config,
     )
+    ready_request_limit, ready_work_limit = _shared_ready_window_limits(
+        max_inflight,
+        endpoint_ids,
+        shared_credit_config,
+    )
     return _run_static_scheduler(
         ray_module,
         envelopes,
@@ -801,6 +837,8 @@ def submit_ray_tasks(
             if shared_credit_config
             else None
         ),
+        ready_request_limit,
+        ready_work_limit,
     )
 
 

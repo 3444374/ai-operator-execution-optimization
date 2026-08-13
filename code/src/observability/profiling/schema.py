@@ -45,7 +45,8 @@ FORMAL_RESULT_FIELDS = tuple(
     actor_worker_max_active_work actor_worker_failures
     actor_worker_slot_held_utilization max_inflight_limit admission_scope
     per_endpoint_inflight_limit max_active_work_per_endpoint
-    max_active_work_per_endpoint_seen shared_credit_coordinator_name
+    max_active_work_per_endpoint_seen max_ready_requests_seen
+    max_ready_work_seen shared_credit_coordinator_name
     shared_credit_request_limit shared_credit_work_limit shared_credit_quantum
     shared_credit_job_weight shared_credit_job_priority
     shared_credit_job_slo_ms shared_credit_priority_window_ms

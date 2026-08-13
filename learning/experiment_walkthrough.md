@@ -1198,6 +1198,31 @@ snapshot 只用来画 phase/资源状态。这样 5 ms 的真实转换不会是�
 或重复仍会 fail closed。当前只证明代码语义与证据链闭合；服务器已关闭，两档 cap 的 GPU
 rehearsal 尚未运行，不能据此声称前台、bulk 或吞吐已改善。
 
+### 为什么下一版要暴露 bounded ready set，而不是继续调 cap
+
+双轮开发门后来显示：所有已经注册的 foreground head 都获得了 priority，但一个 Job 的本地
+scheduler 会同步等这个 head 拿到 credit，之后才读取并注册下一条 request。于是“数据库/Daft
+已经有很多 ready 请求”和“coordinator 眼里这个 Job 暂时没有 waiter”可以同时成立。数学模型把
+前者当作 backlog，实际 selector 却只能看到后者；此时继续放大 priority 或 debt cap 不能修复
+观测缺口。
+
+`saor_bounded_ready` 因此采用具体请求的有界预注册。窗口 request 上限直接等于该 Job 已冻结的
+有效 K，work 上限等于 endpoint 数乘每 endpoint 共享 W；它们是已有安全包络的派生量，不是新的
+workload 特调参数。只有从 source iterator 已实际到达的 request 才能进入窗口，单条 request
+仍保持完整，不进行 token 级拆分。credit grant 以后才提交到 Ray/vLLM，因此 vLLM 仍负责 FCFS、
+continuous batching、chunked prefill 与 KV 管理。
+
+观测被拆成五个不同事实：source/Daft 尚未产出的 backlog、scheduler ready、coordinator
+registered、credit granted、vLLM running/waiting。提交 trace 的 ready→registered、
+registered→granted、granted→submit、submit→service 分段可以区分上游供给、共享调度和模型服务
+排队；coordinator event 对 register/grant 都记录 request ID 与 epoch。runner 先用提交 trace
+确认 concrete-ready 请求没有丢失，再只在 actor 的同一时钟域内配对 foreground
+register→grant，检查该 endpoint 区间内是否误发 foreign fallback，避免把 Ray RPC 返回延迟误算成
+调度器等待。GPU utilization 只作资源旁证。旧
+`saor_bounded_priority` 不改写，仍可作为同 selector、
+不同 observation contract 的回归基线。现在只完成本地 exactly-once/cancel/timeout/finite-window
+与静态门禁，尚未运行两轮 GPU rehearsal，所以不能声称 SAOR 已改善 tail、吞吐或公平。
+
 ## 2026-08-03：为什么保存 embedding 的运行不是性能 baseline
 
 Daft built-in 和 project 都输出 512 维向量，但前者由 provider 决定 processor、dtype

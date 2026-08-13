@@ -63,6 +63,22 @@ class SaorFormalToolsTests(unittest.TestCase):
             self.assertTrue((root / "summary/gate_summary.csv").is_file())
             self.assertTrue((root / "summary/mechanism_summary.csv").is_file())
 
+    def test_bounded_ready_gate_has_a_distinct_frozen_profile(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            matrices = (root / "round-1", root / "round-2")
+            for matrix in matrices:
+                self._write_bounded_matrix(matrix, ready_policy=True)
+
+            result = BOUNDED_SUMMARY.summarize(
+                matrices,
+                root / "summary",
+                profile="bounded_ready",
+            )
+
+            self.assertEqual(result["status"], "passed")
+            self.assertEqual(result["profile"], "bounded_ready")
+
     def test_bounded_gate_fails_closed_without_event_ledger(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -88,7 +104,8 @@ class SaorFormalToolsTests(unittest.TestCase):
             event_path = next(
                 (matrices[0] / "traces").glob("*0125k*.release_events.csv")
             )
-            events = list(csv.DictReader(event_path.open(encoding="utf-8")))
+            with event_path.open(encoding="utf-8") as handle:
+                events = list(csv.DictReader(handle))
             events[1]["event_seq"] = "3"
             self._write_group_rows(event_path, events)
 
@@ -506,6 +523,11 @@ class SaorFormalToolsTests(unittest.TestCase):
                     / "deploy/autodl/saor_bounded_priority.example.json",
                     profile="bounded_priority_development",
                 )
+                bounded_ready_result = AUDIT.audit(
+                    REPOSITORY
+                    / "deploy/autodl/saor_bounded_ready.example.json",
+                    profile="bounded_ready_development",
+                )
             environment["SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES"] = "1"
             with patch.dict(os.environ, environment, clear=True):
                 insufficient_supply = AUDIT.audit(
@@ -519,6 +541,8 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(priority_result["scenario_count"], 3)
         self.assertEqual(bounded_result["status"], "passed")
         self.assertEqual(bounded_result["scenario_count"], 4)
+        self.assertEqual(bounded_ready_result["status"], "passed")
+        self.assertEqual(bounded_ready_result["scenario_count"], 4)
         self.assertIsNone(priority_result["direct_contract"])
         self.assertEqual(result["direct_contract"]["protocol"], "completions")
         self.assertEqual(result["direct_contract"]["prompt_format"], "raw")
@@ -838,7 +862,11 @@ class SaorFormalToolsTests(unittest.TestCase):
         return rows
 
     @staticmethod
-    def _write_bounded_matrix(root: Path) -> None:
+    def _write_bounded_matrix(
+        root: Path,
+        *,
+        ready_policy: bool = False,
+    ) -> None:
         (root / "traces").mkdir(parents=True)
         (root / "manifest.json").write_text(
             json.dumps(
@@ -855,11 +883,21 @@ class SaorFormalToolsTests(unittest.TestCase):
             ),
             encoding="utf-8",
         )
+        bounded_policy = (
+            "saor_bounded_ready"
+            if ready_policy
+            else "saor_bounded_priority"
+        )
+        bounded_stem = (
+            "active_set_saor_bounded_ready"
+            if ready_policy
+            else "active_set_saor_bounded_priority"
+        )
         scenarios = (
             ("active_set_static_partition", "static_partition"),
             ("active_set_saor_release", "saor_release"),
-            ("active_set_saor_bounded_priority_0125k", "saor_bounded_priority"),
-            ("active_set_saor_bounded_priority_025k", "saor_bounded_priority"),
+            (f"{bounded_stem}_0125k", bounded_policy),
+            (f"{bounded_stem}_025k", bounded_policy),
         )
         rows = []
         for scenario_id, policy in scenarios:
@@ -883,9 +921,25 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "job_slo_violation_ratio": "[0.70, 0.0]",
                     "tokens_per_s": 10_100.0,
                     "release_event_trace_path": str(event_path),
+                    "bounded_ready_event_status": (
+                        "ok:actor_event_join"
+                        if ready_policy
+                        else "not_applicable"
+                    ),
+                    "bounded_ready_lifecycle_complete": ready_policy,
+                    "bounded_ready_foreground_intervals": (
+                        2 if ready_policy else 0
+                    ),
+                    "bounded_ready_foreign_fallback_events": 0,
+                    "bounded_ready_foreground_max_ready_requests_seen": (
+                        2 if ready_policy else 0
+                    ),
+                    "bounded_ready_foreground_max_ready_work_seen": (
+                        100 if ready_policy else 0
+                    ),
                 }
             )
-            if policy == "saor_bounded_priority":
+            if policy in {"saor_bounded_priority", "saor_bounded_ready"}:
                 with (root / event_path).open("w", newline="", encoding="utf-8") as handle:
                     writer = csv.DictWriter(
                         handle,

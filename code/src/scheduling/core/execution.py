@@ -44,6 +44,9 @@ class SubmissionExecutionLedger:
         self._pending: list[tuple[object, PayloadEnvelope]] = []
         self._contexts: dict[str, SubmissionContext] = {}
         self._order: dict[str, int] = {}
+        self._ready_epoch_s: dict[str, float] = {}
+        self._credit_registered_epoch_s: dict[str, float] = {}
+        self._credit_granted_epoch_s: dict[str, float] = {}
         self._completions: list[SubmissionCompletion] = []
         self._events: list[SubmissionLifecycleEvent] = []
         self._actual_work_extractor = actual_work_extractor
@@ -60,11 +63,34 @@ class SubmissionExecutionLedger:
     def inflight_count(self) -> int:
         return len(self._pending)
 
-    def observe(self, envelope: PayloadEnvelope) -> None:
+    def observe(
+        self,
+        envelope: PayloadEnvelope,
+        *,
+        ready_epoch_s: float | None = None,
+    ) -> None:
         request_id = envelope.request.request_id
         if request_id in self._order:
             raise ValueError(f"duplicate request_id: {request_id}")
         self._order[request_id] = len(self._order)
+        if ready_epoch_s is not None:
+            self._ready_epoch_s[request_id] = ready_epoch_s
+
+    def credit_registered(self, request_id: str, *, epoch_s: float) -> None:
+        self._record_pre_submission_time(
+            self._credit_registered_epoch_s,
+            request_id,
+            epoch_s,
+            "credit registration",
+        )
+
+    def credit_granted(self, request_id: str, *, epoch_s: float) -> None:
+        self._record_pre_submission_time(
+            self._credit_granted_epoch_s,
+            request_id,
+            epoch_s,
+            "credit grant",
+        )
 
     def submitted(
         self,
@@ -148,6 +174,11 @@ class SubmissionExecutionLedger:
             actor_worker_id=collected.actor_worker_id,
             actor_worker_index=collected.actor_worker_index,
             actor_worker_pid=collected.actor_worker_pid,
+            ready_epoch_s=self._ready_epoch_s.get(request_id),
+            credit_registered_epoch_s=(
+                self._credit_registered_epoch_s.get(request_id)
+            ),
+            credit_granted_epoch_s=self._credit_granted_epoch_s.get(request_id),
         )
         self._pending.pop(matching[0])
         del self._contexts[request_id]
@@ -176,3 +207,16 @@ class SubmissionExecutionLedger:
                 key=lambda item: self._order[item.submission_id],
             )
         )
+
+    def _record_pre_submission_time(
+        self,
+        destination: dict[str, float],
+        request_id: str,
+        epoch_s: float,
+        label: str,
+    ) -> None:
+        if request_id not in self._order:
+            raise ValueError(f"request must be observed before {label}")
+        if request_id in destination:
+            return
+        destination[request_id] = epoch_s

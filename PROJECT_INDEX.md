@@ -514,6 +514,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/src/scheduling/runtime/saor_pipeline.py` | prepare→ready-model 两阶段 differential-backpressure 有限安全臂；只返回预启动池的 flow limits | 拆图像两级 broker 或扩展异构 stage admission 前读；尚未接 image formal runner |
 | `code/src/planning/blocks.py` | 模态/引擎中性的 `StageBlockDescriptor`：block/row identity、representation、shape/dtype、physical bytes、signature 与 staged work | 实现 staged data plane、cache/reuse key 或 broker 前读 |
 | `code/src/scheduling/runtime/stage_broker.py` | encoded→prepare→ready→model 的真实 lease/state/byte/work broker；prepare 提交前预留 ready capacity | 修改 HSE memory safety、真实 snapshot 或多 Job Job-head 选择前读 |
+| `code/src/scheduling/core/ready_window.py` | shared-credit 前的具体 request 有界 ready window；同时限制 request/work，并提供只用于 endpoint routing 的 ready load | 修改 `saor_bounded_ready` 预注册、窗口 K/W 派生或 exactly-once cleanup 前读 |
 | `code/src/modalities/image/staged.py` | 图像 encoded/prepared descriptor builder、transform/model signature 与 contiguous NCHW 校验 | 新增 packed uint8/FP16、derived cache 或图像复用前读 |
 | `code/src/modalities/image/staged_execution.py` | `project_ray` 可选 static HSE Ray adapter；driver 只取 descriptor ref，prepared tensor 留在 object store | 跑 direct-dependency vs HSE static gate 或接 dynamic controller 前读 |
 | `code/src/experiments/saor/` | SAOR CPU 控制开销 benchmark 与 phase aggregate paired replay 分析 | 运行开发门、审计非因果 replay claim scope 或比较策略控制开销前读 |
@@ -525,8 +526,9 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/infrastructure/test_ray_runtime_preflight.py` | Ray worker nofile 去重、证据记录与 1024 fail-closed 测试 | 修改 Ray 原生 framework 正式运行前置条件后运行 |
 | `code/scripts/analysis/summarize_output_aware_bfd.py` | output-aware BFD 重复实验的长表统计汇总 | 汇总吞吐、E2E、packing、GPU、能耗与 MFU 正式结果时运行 |
 | `code/scripts/analysis/benchmark_saor_control.py` | static/threshold/FIFO/DRR/external-VTC/SAOR-Release 与 oracle-DPP 纯 CPU 控制路径 microbenchmark | 只量控制计算开销；release runtime 与未接线 oracle 分行，不据此声明 GPU/E2E 性能 |
-| `code/scripts/analysis/audit_saor_formal_readiness.py` | 固定包络 SAOR 十 scenario formal、三臂 priority reachability 或四臂 bounded-priority development 的 FCFS/calibration/manifest/direct 请求合同 fail-closed 静态预检 | 服务器 rehearsal/formal 前运行；有界优先级模板用 `--profile bounded_priority_development`；只读且不发送模型请求 |
+| `code/scripts/analysis/audit_saor_formal_readiness.py` | 固定包络 SAOR 十 scenario formal、三臂 priority reachability、四臂 bounded-priority 或 bounded-ready development 的 FCFS/calibration/manifest/direct 请求合同 fail-closed 静态预检 | 服务器 rehearsal/formal 前运行；ready-set 模板用 `--profile bounded_ready_development`；只读且不发送模型请求 |
 | `deploy/autodl/saor_bounded_priority.example.json` | static、原 SAOR、0.125K/0.25K actual-work fairness-debt cap 四臂开发模板；显式 per-Job priority/SLO/window/cap | 2026-08-13 双轮已执行且未晋级；保留为 ready-set observation 修订后的同合同回归模板，修订过机制门前不启动 formal |
+| `deploy/autodl/saor_bounded_ready.example.json` | 独立 ready-set observation 四臂开发模板；bounded 两臂使用新 `saor_bounded_ready` policy，K/W/priority/SLO/cap 与旧 gate 一致 | 只允许两个全新 development rehearsal root；先用 `--profile bounded_ready_development`，再以汇总器 `--profile bounded_ready`；未过门不启动 formal |
 | `code/scripts/analysis/summarize_saor_active_set.py` | 六臂 active-set + 四 matched-solo 的 fail-closed formal 汇总；分离 lifecycle/mechanism gate，复算 slowdown/Jain/SLO/资源；默认路径与 compact replay 均支持 resolution-aware 语义 | runner 完成后生成可审计 formal summary；默认 passed validation 写明 v2/采样周期/重分类，`--mechanism-only` 不升级完整 validation；不产生 theorem 或 dynamic-K claim |
 | `code/scripts/analysis/summarize_saor_priority_reachability.py` | static/SAOR/strict-priority 1+3 的 fail-closed release-only upper-bound 汇总 | 检查 exactly-once、机制、`job_priorities=[0,1]`、fg P99≤30.7s 与 SLO≤1%；吞吐仅作语境，不构成 SAOR/reservation 胜出 |
 | `code/scripts/analysis/replay_saor_capacity.py` | 对 paired capacity aggregate trace 做滞后一拍选择与同 phase oracle regret | 验证动作方向；输出明确为 noncausal aggregate development evidence |
@@ -550,6 +552,7 @@ CUDA、模型、数据库和日志路径。只有固定路径或门禁失败时�
 | `code/tests/scheduling/test_token_budget_controller.py` | static/service-quantum budget 与 arrival EWMA 契约测试 | 修改动态预算选择规则后运行 |
 | `code/tests/scheduling/test_shared_credit.py` | 多 job endpoint credit、借用、公平轮转与 ID 隔离测试 | 修改共享 admission 纯策略后运行 |
 | `code/tests/scheduling/test_shared_credit_ray.py` | named Ray actor 复用与配置一致性边界测试 | 修改共享 credit 的 Ray ownership 接线后运行 |
+| `code/tests/scheduling/test_ready_window.py` | concrete ready window 的 request/work 双界限与 oversize fail-closed 测试 | 修改 `saor_bounded_ready` 预注册容量或 routing context 前运行 |
 | `code/tests/experiments/test_shared_vllm_experiment.py` | Shared-vLLM 配置、容量语义、组级指标与公平性测试 | 修改多 job runner 后运行 |
 | `code/tests/experiments/test_image_multijob_contract.py` | 图像 native/project 共用 manifest、固定矩阵、命令隔离与静态容量门禁测试 | 修改图像多 Job workload/config/runner 合同时运行 |
 | `code/tests/data/test_import_ai_complete_workload.py` | ShareGPT/BurstGPT importer 单元测试 | 修改 importer 或 trace 过滤逻辑后运行 |

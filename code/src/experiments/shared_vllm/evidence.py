@@ -180,6 +180,40 @@ def _validate_job_evidence(
     submission_starts = [
         float(row["submit_epoch_s"]) for row in request_rows
     ]
+    ready_lifecycle_rows = []
+    for row in submission_rows:
+        ready_raw = row.get("ready_epoch_s", "")
+        registered_raw = row.get("credit_registered_epoch_s", "")
+        granted_raw = row.get("credit_granted_epoch_s", "")
+        if not ready_raw and not registered_raw and not granted_raw:
+            continue
+        if not ready_raw or not registered_raw or not granted_raw:
+            raise RuntimeError(
+                f"job {job_index} has an incomplete ready lifecycle"
+            )
+        ready_epoch_s = float(ready_raw)
+        registered_epoch_s = float(registered_raw)
+        granted_epoch_s = float(granted_raw)
+        submit_epoch_s = float(row["submit_epoch_s"])
+        if not (
+            ready_epoch_s
+            <= registered_epoch_s
+            <= granted_epoch_s
+            <= submit_epoch_s
+        ):
+            raise RuntimeError(
+                f"job {job_index} has an unordered ready lifecycle"
+            )
+        ready_lifecycle_rows.append(
+            {
+                "request_id": row["submission_id"],
+                "endpoint_id": row["endpoint_id"],
+                "ready_epoch_s": ready_epoch_s,
+                "registered_epoch_s": registered_epoch_s,
+                "granted_epoch_s": granted_epoch_s,
+                "submit_epoch_s": submit_epoch_s,
+            }
+        )
     slo_met = [
         str(row.get("slo_met", "")).strip().lower() == "true"
         for row in request_rows
@@ -262,6 +296,14 @@ def _validate_job_evidence(
             or 0
         ),
         "replay_actual_submit_start_epoch_s": min(submission_starts),
+        "ready_lifecycle_rows": ready_lifecycle_rows,
+        "ready_lifecycle_complete": len(ready_lifecycle_rows) == expected_rows,
+        "max_ready_requests_seen": int(
+            summary.get("max_ready_requests_seen", "0") or 0
+        ),
+        "max_ready_work_seen": int(
+            summary.get("max_ready_work_seen", "0") or 0
+        ),
     }
 
 def _sum_semicolon_integers(value: object) -> int:
@@ -500,6 +542,7 @@ def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
         "scenarios": [asdict(item) for item in config.scenarios],
         "service_metadata": dict(config.service_metadata),
         "fail_closed_rehearsal": config.fail_closed_rehearsal,
+        "ready_observation_contract": config.ready_observation_contract,
         "calibration_contract": (
             {
                 "path": config.calibration_contract.path,

@@ -154,7 +154,13 @@ PostgreSQL source
   pull 没有把完整 Daft/Ray ready backlog 暴露给 coordinator；状态为
   `development-run/not-promoted/not-formal-registered`。先修 bounded ready-set observation，
   reservation 与 upper-bound resource work 仍作其后的鲁棒性消融。两 Job 未闭环前不跑
-  4-Job，也不声称定理证明；
+  4-Job，也不声称定理证明。2026-08-13 已完成独立 `saor_bounded_ready` 本地修订：旧
+  bounded-priority 保持单-head 回归语义，新路径只预注册已经到达的具体 request，窗口由冻结
+  effective K 与 endpoint 数×W 自动派生；submission trace schema 6 分开 ready、registered、
+  granted、submit/service；coordinator release-event schema 2 对 ready registration 与 grant
+  统一记录 request ID 和 epoch。runner 先用 submission trace 证明 concrete-ready lifecycle 完整，
+  再在 actor 同一时钟域内配对 foreground register→grant，并 fail closed 检查区间内 foreign
+  fallback=0。静态 readiness 与双轮汇总 profile 已接通，尚未运行 GPU gate；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、

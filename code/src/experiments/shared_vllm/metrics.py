@@ -362,6 +362,167 @@ def bounded_saor_event_summary(
     return base
 
 
+def bounded_ready_event_summary(
+    events: list[dict[str, object]],
+    job_evidence: list[dict[str, object]],
+    *,
+    foreground_job_index: int,
+) -> dict[str, int | bool | str]:
+    """Prove ready visibility using one lossless coordinator event domain."""
+
+    base: dict[str, int | bool | str] = {
+        "bounded_ready_event_status": "unavailable:no_ready_lifecycle",
+        "bounded_ready_lifecycle_complete": False,
+        "bounded_ready_foreground_intervals": 0,
+        "bounded_ready_foreign_fallback_events": 0,
+        "bounded_ready_foreground_max_ready_requests_seen": 0,
+        "bounded_ready_foreground_max_ready_work_seen": 0,
+    }
+    if not 0 <= foreground_job_index < len(job_evidence):
+        raise ValueError("foreground_job_index is outside job evidence")
+    evidence = job_evidence[foreground_job_index]
+    base.update(
+        {
+            "bounded_ready_foreground_max_ready_requests_seen": int(
+                evidence.get("max_ready_requests_seen", 0)
+            ),
+            "bounded_ready_foreground_max_ready_work_seen": int(
+                evidence.get("max_ready_work_seen", 0)
+            ),
+        }
+    )
+    intervals = tuple(evidence.get("ready_lifecycle_rows", ()))
+    complete = bool(evidence.get("ready_lifecycle_complete"))
+    if not complete or not intervals:
+        return base
+    foreground_job_id = str(evidence["runtime_job_id"])
+    registration_events = [
+        event
+        for event in events
+        if event.get("action") == "register"
+        and str(event.get("selected_job_id", "")) == foreground_job_id
+    ]
+    grant_events = [
+        event
+        for event in events
+        if event.get("action") == "grant"
+        and str(event.get("selected_job_id", "")) == foreground_job_id
+    ]
+    registration_ids = [
+        str(event.get("selected_request_id", ""))
+        for event in registration_events
+    ]
+    grant_ids = [
+        str(event.get("selected_request_id", ""))
+        for event in grant_events
+    ]
+    lifecycle_ids = [str(interval["request_id"]) for interval in intervals]
+    if (
+        "" in registration_ids
+        or "" in grant_ids
+        or "" in lifecycle_ids
+        or len(set(registration_ids)) != len(registration_ids)
+        or len(set(grant_ids)) != len(grant_ids)
+        or len(set(lifecycle_ids)) != len(lifecycle_ids)
+    ):
+        return {
+            **base,
+            "bounded_ready_event_status": "invalid:event_request_duplicate",
+            "bounded_ready_lifecycle_complete": True,
+        }
+    registrations = dict(zip(registration_ids, registration_events))
+    grants = dict(zip(grant_ids, grant_events))
+    lifecycle_by_request = {
+        str(interval["request_id"]): interval for interval in intervals
+    }
+    lifecycle_request_ids = set(lifecycle_by_request)
+    if (
+        set(registrations) != lifecycle_request_ids
+        or set(grants) != lifecycle_request_ids
+    ):
+        return {
+            **base,
+            "bounded_ready_event_status": "invalid:event_request_join_incomplete",
+            "bounded_ready_lifecycle_complete": True,
+        }
+    waiting_intervals = []
+    for request_id in sorted(lifecycle_request_ids):
+        registered = registrations[request_id]
+        granted = grants[request_id]
+        lifecycle = lifecycle_by_request[request_id]
+        if (
+            registered.get("event_epoch_s") in (None, "")
+            or granted.get("event_epoch_s") in (None, "")
+        ):
+            return {
+                **base,
+                "bounded_ready_event_status": "invalid:event_epoch_missing",
+                "bounded_ready_lifecycle_complete": True,
+            }
+        endpoint_id = str(registered.get("endpoint_id", ""))
+        if (
+            endpoint_id != str(granted.get("endpoint_id", ""))
+            or endpoint_id != str(lifecycle.get("endpoint_id", ""))
+        ):
+            return {
+                **base,
+                "bounded_ready_event_status": "invalid:event_endpoint_mismatch",
+                "bounded_ready_lifecycle_complete": True,
+            }
+        registered_epoch_s = float(registered["event_epoch_s"])
+        granted_epoch_s = float(granted["event_epoch_s"])
+        registered_seq = int(registered["event_seq"])
+        granted_seq = int(granted["event_seq"])
+        if (
+            not math.isfinite(registered_epoch_s)
+            or not math.isfinite(granted_epoch_s)
+            or granted_epoch_s < registered_epoch_s
+            or granted_seq <= registered_seq
+        ):
+            return {
+                **base,
+                "bounded_ready_event_status": "invalid:event_order",
+                "bounded_ready_lifecycle_complete": True,
+            }
+        waiting_intervals.append(
+            (
+                endpoint_id,
+                registered_seq,
+                granted_seq,
+            )
+        )
+    if not waiting_intervals:
+        return {
+            **base,
+            "bounded_ready_event_status": "invalid:no_actor_wait_interval",
+            "bounded_ready_lifecycle_complete": True,
+        }
+    violations = 0
+    for event in events:
+        if event.get("action") != "grant" or event.get("tier") != "saor_fallback":
+            continue
+        event_seq = int(event["event_seq"])
+        endpoint_id = str(event["endpoint_id"])
+        foreground_registered = any(
+            interval_endpoint == endpoint_id
+            and registered_seq < event_seq < granted_seq
+            for interval_endpoint, registered_seq, granted_seq
+            in waiting_intervals
+        )
+        if (
+            foreground_registered
+            and str(event.get("selected_job_id", "")) != foreground_job_id
+        ):
+            violations += 1
+    return {
+        **base,
+        "bounded_ready_event_status": "ok:actor_event_join",
+        "bounded_ready_lifecycle_complete": True,
+        "bounded_ready_foreground_intervals": len(waiting_intervals),
+        "bounded_ready_foreign_fallback_events": violations,
+    }
+
+
 def active_set_phase_summary(
     job_evidence: list[dict[str, object]],
     samples: list[dict[str, object]],

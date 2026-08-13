@@ -50,6 +50,10 @@ release-only SAOR、0.125K 和 0.25K debt-cap 四臂，并重算正确性、前�
 吞吐、bulk 保护和机制门。机制证据只来自无损 release-event ledger；账本缺失、为空、
 序号缺口或重复都会失败。采样 credit snapshot 仅供诊断，既不能否决短于采样周期的真实
 转换，也不能单独满足机制门。通过只得到 `formal_registration_candidate`，不构成正式性能结果。
+同一脚本的 `--profile bounded_ready` 只接受新 `saor_bounded_ready` 两档 scenario，并额外
+要求 submission lifecycle 与 actor-side release-event request join 完整、foreground
+register→grant
+区间非空、区间内 foreign fallback=0；旧 bounded-priority profile 保持不变。
 
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data

@@ -263,6 +263,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "vtc",
             "saor",
             "saor_bounded_priority",
+            "saor_bounded_ready",
             "strict_priority",
         ],
         default="drr",

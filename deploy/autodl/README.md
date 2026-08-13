@@ -1199,6 +1199,33 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
 
 静态 audit 通过只说明配置/资产合同闭合，不说明性能门通过；远端未运行时必须记录为 pending。
 
+ready-set 修订必须使用独立模板和 profile，不能覆盖旧双轮结果：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/audit_saor_formal_readiness.py \
+  --profile bounded_ready_development \
+  --config deploy/autodl/saor_bounded_ready.example.json \
+  --output "$ARTIFACT_ROOT/saor_bounded_ready_readiness.json"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
+  --rehearsal \
+  --config deploy/autodl/saor_bounded_ready.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_bounded_ready_rehearsal_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+```
+
+必须运行两个全新 output root，再用 bounded gate 汇总器加
+`--profile bounded_ready`。窗口 request/work 上限由已校准 K/W 自动派生；不得增加手工 queue
+size 或在线调参。`ready/registered/granted/submit` 字段缺失、foreground actor-side
+register→grant interval 为空、区间内出现 foreign fallback、窗口峰值为 0、事件账本不完整或
+exactly-once 失败都只能诊断，不能注册 formal。
+
 正式运行优先使用 audit-aware wrapper，避免手工设置上述逐 Job 变量：
 
 ```bash

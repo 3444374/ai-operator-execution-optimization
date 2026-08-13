@@ -277,6 +277,9 @@ class SubmissionLifecycleEvent:
     actor_worker_id: str = ""
     actor_worker_index: int = -1
     actor_worker_pid: int = 0
+    ready_epoch_s: float | None = None
+    credit_registered_epoch_s: float | None = None
+    credit_granted_epoch_s: float | None = None
 
     def __post_init__(self) -> None:
         if not self.submission_id or not self.pool_id or not self.endpoint_id:
@@ -290,6 +293,31 @@ class SubmissionLifecycleEvent:
             or self.completion_epoch_s < self.submit_epoch_s
         ):
             raise ValueError("submission lifecycle timestamps are invalid")
+        optional_times = tuple(
+            value
+            for value in (
+                self.ready_epoch_s,
+                self.credit_registered_epoch_s,
+                self.credit_granted_epoch_s,
+            )
+            if value is not None
+        )
+        if any(not math.isfinite(value) or value < 0 for value in optional_times):
+            raise ValueError("pre-submission lifecycle timestamps are invalid")
+        ordered_times = (
+            self.ready_epoch_s,
+            self.credit_registered_epoch_s,
+            self.credit_granted_epoch_s,
+            self.submit_epoch_s,
+        )
+        observed_times = tuple(
+            value for value in ordered_times if value is not None
+        )
+        if any(
+            right < left
+            for left, right in zip(observed_times, observed_times[1:])
+        ):
+            raise ValueError("pre-submission lifecycle timestamps are unordered")
 
 
 @dataclass(frozen=True)

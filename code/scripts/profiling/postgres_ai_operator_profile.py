@@ -254,6 +254,8 @@ def _merge_submit_metrics(
     maximum_fields = {
         "max_inflight",
         "max_active_work_per_endpoint_seen",
+        "max_ready_requests_seen",
+        "max_ready_work_seen",
         "adaptive_limit_mean",
         "endpoint_count",
         "actor_worker_count",
@@ -1683,6 +1685,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.shared_credit_policy in {
                     "saor",
                     "saor_bounded_priority",
+                    "saor_bounded_ready",
                 }
                 else None
             ),
@@ -1848,6 +1851,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "per_endpoint_inflight_limit": per_endpoint_inflight_limit or 0,
             "max_active_work_per_endpoint": per_endpoint_work_limit or 0,
             "max_active_work_per_endpoint_seen": 0,
+            "max_ready_requests_seen": 0,
+            "max_ready_work_seen": 0,
             "shared_credit_coordinator_name": (
                 args.shared_credit_coordinator_name
             ),
@@ -1875,6 +1880,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.shared_credit_policy in {
                     "saor",
                     "saor_bounded_priority",
+                    "saor_bounded_ready",
                 }
                 else 0.0
             ),
@@ -1883,6 +1889,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.shared_credit_policy in {
                     "saor",
                     "saor_bounded_priority",
+                    "saor_bounded_ready",
                 }
                 else 0.0
             ),
@@ -1891,6 +1898,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.shared_credit_policy in {
                     "saor",
                     "saor_bounded_priority",
+                    "saor_bounded_ready",
                 }
                 else 0.0
             ),
@@ -1899,6 +1907,7 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.shared_credit_policy in {
                     "saor",
                     "saor_bounded_priority",
+                    "saor_bounded_ready",
                 }
                 else 0.0
             ),
@@ -2238,6 +2247,8 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "actor_worker_count": 0,
             "actor_worker_submission_counts": "",
             "max_active_work_per_endpoint_seen": 0,
+            "max_ready_requests_seen": 0,
+            "max_ready_work_seen": 0,
         }
 
         operator_wall_s = 0.0
@@ -3090,6 +3101,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "max_active_work_per_endpoint_seen": int(
                 submit_metrics["max_active_work_per_endpoint_seen"]
             ),
+            "max_ready_requests_seen": int(
+                submit_metrics["max_ready_requests_seen"]
+            ),
+            "max_ready_work_seen": int(
+                submit_metrics["max_ready_work_seen"]
+            ),
             "shared_credit_coordinator_name": (
                 args.shared_credit_coordinator_name
             ),
@@ -3114,22 +3131,38 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ),
             "saor_entitlement_weight": (
                 args.saor_entitlement_weight
-                if args.shared_credit_policy == "saor"
+                if args.shared_credit_policy in {
+                    "saor",
+                    "saor_bounded_priority",
+                    "saor_bounded_ready",
+                }
                 else 0.0
             ),
             "saor_queue_weight": (
                 args.saor_queue_weight
-                if args.shared_credit_policy == "saor"
+                if args.shared_credit_policy in {
+                    "saor",
+                    "saor_bounded_priority",
+                    "saor_bounded_ready",
+                }
                 else 0.0
             ),
             "saor_fairness_weight": (
                 args.saor_fairness_weight
-                if args.shared_credit_policy == "saor"
+                if args.shared_credit_policy in {
+                    "saor",
+                    "saor_bounded_priority",
+                    "saor_bounded_ready",
+                }
                 else 0.0
             ),
             "saor_slo_weight": (
                 args.saor_slo_weight
-                if args.shared_credit_policy == "saor"
+                if args.shared_credit_policy in {
+                    "saor",
+                    "saor_bounded_priority",
+                    "saor_bounded_ready",
+                }
                 else 0.0
             ),
             "effective_global_inflight_limit": effective_global_inflight_limit,

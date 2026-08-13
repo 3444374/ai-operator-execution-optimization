@@ -1348,6 +1348,8 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "operator_invocations",
                 "max_inflight",
                 "max_active_work_per_endpoint_seen",
+                "max_ready_requests_seen",
+                "max_ready_work_seen",
                 "bounded_wait_s",
                 "avg_bounded_wait_s",
                 "fanin_s",
@@ -1362,6 +1364,24 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertEqual(metrics["adaptive_downshifts"], 0)
         self.assertEqual(metrics["adaptive_upshifts"], 0)
         self.assertEqual(metrics["adaptive_limit_mean"], 4)
+
+    def test_bounded_ready_window_is_derived_from_existing_k_and_w(self) -> None:
+        self.assertEqual(
+            profile_ray._shared_ready_window_limits(
+                256,
+                ["endpoint-0", "endpoint-1"],
+                {"policy": "saor_bounded_ready", "work_limit": 65536},
+            ),
+            (256, 131072),
+        )
+        self.assertEqual(
+            profile_ray._shared_ready_window_limits(
+                256,
+                ["endpoint-0", "endpoint-1"],
+                {"policy": "saor_bounded_priority", "work_limit": 65536},
+            ),
+            (1, None),
+        )
 
     def test_service_metrics_snapshot_maps_available_vllm_gauges(self) -> None:
         with patch.object(
@@ -3877,6 +3897,9 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         pool_id="default",
                         endpoint_id="endpoint-1",
                         gpu_id="1",
+                        ready_epoch_s=99.0,
+                        credit_registered_epoch_s=99.1,
+                        credit_granted_epoch_s=99.5,
                         submit_epoch_s=99.9,
                         completion_epoch_s=100.2,
                         status="completed",
@@ -3930,12 +3953,25 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "RayActorError: worker unavailable",
             )
             self.assertEqual(submission[1]["rows"], "0")
-            self.assertEqual(submission[0]["schema_version"], "5")
+            self.assertEqual(submission[0]["schema_version"], "6")
             self.assertEqual(submission[0]["submission_id"], "9:request:11")
             self.assertEqual(submission[0]["planning_batch_id"], "9:batch:0")
             self.assertEqual(submission[0]["service_quantum_index"], "1")
             self.assertEqual(submission[0]["service_quantum_oversized"], "False")
+            self.assertAlmostEqual(
+                float(submission[0]["ready_to_register_s"]),
+                0.1,
+            )
+            self.assertAlmostEqual(float(submission[0]["credit_wait_s"]), 0.4)
+            self.assertAlmostEqual(
+                float(submission[0]["grant_to_submit_s"]),
+                0.4,
+            )
             self.assertAlmostEqual(float(submission[0]["credit_held_s"]), 0.3)
+            self.assertAlmostEqual(
+                float(submission[0]["grant_to_completion_s"]),
+                0.7,
+            )
             self.assertAlmostEqual(float(submission[0]["ray_to_service_s"]), 0.1)
             self.assertEqual(
                 submission[0]["actor_worker_id"],

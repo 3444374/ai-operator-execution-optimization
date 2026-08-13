@@ -32,6 +32,7 @@ POLICIES = {
     "external_vtc",
     "saor_release",
     "saor_bounded_priority",
+    "saor_bounded_ready",
     "foreground_strict_priority",
     "state_aware_adaptive",
     "saor_capacity",
@@ -149,7 +150,7 @@ class SharedVllmScenario:
 
         if not 0 <= job_index < self.job_count:
             raise ValueError("job_index is outside scenario job_count")
-        if self.policy == "saor_bounded_priority":
+        if self.policy in {"saor_bounded_priority", "saor_bounded_ready"}:
             return self.priorities[job_index]
         if self.policy != "foreground_strict_priority":
             return 0
@@ -229,6 +230,7 @@ class SharedVllmConfig:
     state_aware_control: StateAwareControlConfig | None = None
     saor_capacity_control: SaorCapacityControlConfig | None = None
     saor_release_control: SaorReleaseControlConfig | None = None
+    ready_observation_contract: str = "single_head"
 
 def load_config(path: Path) -> SharedVllmConfig:
     decoded = json.loads(path.read_text(encoding="utf-8"))
@@ -237,6 +239,15 @@ def load_config(path: Path) -> SharedVllmConfig:
     fail_closed_rehearsal = decoded.get("fail_closed_rehearsal", False)
     if not isinstance(fail_closed_rehearsal, bool):
         raise ValueError("fail_closed_rehearsal must be a boolean")
+    ready_observation_contract = decoded.get(
+        "ready_observation_contract",
+        "single_head",
+    )
+    if ready_observation_contract not in {
+        "single_head",
+        "bounded_concrete_pre_registration",
+    }:
+        raise ValueError("ready_observation_contract is unsupported")
     experiment_id = _nonempty_string(
         decoded.get("experiment_id"),
         "experiment_id",
@@ -399,11 +410,28 @@ def load_config(path: Path) -> SharedVllmConfig:
     if uses_saor_capacity and saor_capacity_control is None:
         raise ValueError("saor_capacity policy requires saor_capacity_control")
     uses_saor_release = any(
-        scenario.policy in {"saor_release", "saor_bounded_priority"}
+        scenario.policy in {
+            "saor_release",
+            "saor_bounded_priority",
+            "saor_bounded_ready",
+        }
         for scenario in scenarios
     )
     if uses_saor_release and saor_release_control is None:
         raise ValueError("saor_release policy requires saor_release_control")
+    uses_bounded_ready = any(
+        scenario.policy == "saor_bounded_ready" for scenario in scenarios
+    )
+    if uses_bounded_ready and ready_observation_contract != (
+        "bounded_concrete_pre_registration"
+    ):
+        raise ValueError(
+            "saor_bounded_ready requires bounded concrete pre-registration"
+        )
+    if not uses_bounded_ready and ready_observation_contract != "single_head":
+        raise ValueError(
+            "bounded concrete pre-registration requires saor_bounded_ready"
+        )
     if state_aware_control is not None and (
         state_aware_control.initial_request_limit != request_limit
         or state_aware_control.work_candidates[
@@ -445,6 +473,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         state_aware_control=state_aware_control,
         saor_capacity_control=saor_capacity_control,
         saor_release_control=saor_release_control,
+        ready_observation_contract=ready_observation_contract,
     )
 
 def build_job_command(
@@ -539,6 +568,7 @@ def build_job_command(
         "external_vtc",
         "saor_release",
         "saor_bounded_priority",
+        "saor_bounded_ready",
         "foreground_strict_priority",
         "state_aware_adaptive",
         "saor_capacity",
@@ -562,8 +592,11 @@ def build_job_command(
                     "fifo" if scenario.policy == "shared_fifo"
                     else "vtc" if scenario.policy == "external_vtc"
                     else "saor" if scenario.policy == "saor_release"
-                    else "saor_bounded_priority"
-                    if scenario.policy == "saor_bounded_priority"
+                    else scenario.policy
+                    if scenario.policy in {
+                        "saor_bounded_priority",
+                        "saor_bounded_ready",
+                    }
                     else "strict_priority"
                     if scenario.policy == "foreground_strict_priority"
                     else "drr"
@@ -574,7 +607,7 @@ def build_job_command(
                 str(scenario.job_priority(job_index)),
             ]
         )
-        if scenario.policy == "saor_bounded_priority":
+        if scenario.policy in {"saor_bounded_priority", "saor_bounded_ready"}:
             slo_target_s = scenario.job_slo_target_s(job_index)
             priority_window_s = scenario.job_priority_window_s(job_index)
             debt_cap_work = scenario.job_debt_cap_work(
@@ -596,7 +629,11 @@ def build_job_command(
                 command.extend(
                     ["--shared-credit-job-debt-cap-work", f"{debt_cap_work:g}"]
                 )
-        if scenario.policy in {"saor_release", "saor_bounded_priority"}:
+        if scenario.policy in {
+            "saor_release",
+            "saor_bounded_priority",
+            "saor_bounded_ready",
+        }:
             control = config.saor_release_control
             if control is None:
                 raise ValueError("saor_release control configuration is missing")
@@ -730,7 +767,7 @@ def _load_scenario(
         "priority_windows_s",
         "debt_cap_fractions",
     }
-    if policy == "saor_bounded_priority":
+    if policy in {"saor_bounded_priority", "saor_bounded_ready"}:
         priorities = _nonnegative_integer_tuple(
             raw.get("priorities"), "priorities", job_count
         )
@@ -759,7 +796,9 @@ def _load_scenario(
                 raise ValueError("priority and debt-cap roles must remain distinct")
     else:
         if any(field in raw for field in bounded_fields):
-            raise ValueError("bounded per-Job fields require saor_bounded_priority")
+            raise ValueError(
+                "bounded per-Job fields require a bounded SAOR policy"
+            )
         priorities = ()
         slo_targets_s = ()
         priority_windows_s = ()

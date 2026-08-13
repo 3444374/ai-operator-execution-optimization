@@ -257,6 +257,23 @@ The coordinator emits a monotonic, lossless release-event ledger; 250 ms snapsho
 phase/resource diagnostics and are not mechanism truth. This path is locally verified and
 development-only: no new GPU rehearsal or formal performance claim exists yet.
 
+`saor_bounded_ready` is the observation-contract revision and deliberately has a
+different policy name. The old bounded-priority path remains a single-head regression
+baseline. For the new path, each Job pre-registers only concrete, already-arrived
+requests inside a finite window derived from its existing effective K and the sum of
+per-endpoint shared W; there is no extra tuned queue-size knob and no unbounded payload
+prefetch. The coordinator therefore sees a bounded ready set while vLLM still receives
+ordinary complete requests and retains FCFS/continuous-batching ownership. Submission
+trace schema 6 separates `ready`, credit `registered`, credit `granted`, `submit`, service,
+and completion time. Release-event schema 2 records actor-side registration and grant
+events with request IDs and epoch timestamps. The group runner uses submission traces to
+prove the concrete-ready lifecycle, then pairs foreground register-to-grant events inside
+the coordinator's single clock domain and fails closed on foreign fallback;
+`max_ready_requests_seen`/`max_ready_work_seen` audit the actual
+window. Local tests cover multi-candidate visibility, exactly-once ordering, finite-work
+validation, timeout cancellation, config routing, and fail-closed gate profiles. This is
+development-ready only; no GPU benefit or fairness theorem is claimed.
+
 The pure ordered-release fast path publishes validated Job-head requests with a monotonic
 sequence and releases capacity on completion. Release work and predicted epoch service are separate fields, so a
 long request is not silently treated as service completed within the current control slot.
@@ -290,13 +307,15 @@ selection, while `healthy_endpoints()` remains a pure health query. Temporary
 request/work-credit exhaustion raises typed backpressure so the scheduler
 collects a completion and retries; a manifest-pinned request keeps both its
 endpoint and that endpoint's pool.
-Arrival replay is produced through a one-element bounded queue so waiting for
+Arrival replay is produced through a one-element bounded source queue so waiting for
 the next source arrival cannot block Ray completion collection. The scheduler
 keeps submit/routing/credit/lifecycle state on its main thread: it prioritizes
 an already-ready arrival, polls `ray.wait(timeout=0)` during arrival gaps, and
 uses blocking collection only when admission or active-work capacity is full.
 This preserves offered-load saturation while releasing request-level credit
 and recording completion timestamps promptly under sparse or bursty replay.
+Only `saor_bounded_ready` adds a second, independently bounded scheduler window in
+front of shared credit; its count/work limits are inherited from the frozen K/W contract.
 
 The shared-vLLM experiment runner can pin a distinct immutable request manifest
 and source offset for every job. This is required for staggered short/long or

@@ -61,6 +61,12 @@ BOUNDED_PRIORITY_EXPECTED = {
         2,
     ),
 }
+BOUNDED_READY_EXPECTED = {
+    "active_set_static_partition": ("static_partition", 2),
+    "active_set_saor_release": ("saor_release", 2),
+    "active_set_saor_bounded_ready_0125k": ("saor_bounded_ready", 2),
+    "active_set_saor_bounded_ready_025k": ("saor_bounded_ready", 2),
+}
 
 
 def _args() -> argparse.Namespace:
@@ -73,6 +79,7 @@ def _args() -> argparse.Namespace:
             "formal",
             "priority_reachability",
             "bounded_priority_development",
+            "bounded_ready_development",
         ),
         default="formal",
     )
@@ -91,6 +98,8 @@ def audit(
         if profile == "priority_reachability"
         else BOUNDED_PRIORITY_EXPECTED
         if profile == "bounded_priority_development"
+        else BOUNDED_READY_EXPECTED
+        if profile == "bounded_ready_development"
         else None
     )
     if expected is None:
@@ -110,11 +119,28 @@ def audit(
     }
     if observed != expected:
         errors.append(f"scenario matrix does not match the frozen {profile} contract")
-    if profile == "bounded_priority_development":
+    expected_observation_contract = (
+        "bounded_concrete_pre_registration"
+        if profile == "bounded_ready_development"
+        else "single_head"
+    )
+    if config.ready_observation_contract != expected_observation_contract:
+        errors.append(
+            "ready observation contract does not match the selected profile"
+        )
+    if profile in {
+        "bounded_priority_development",
+        "bounded_ready_development",
+    }:
+        bounded_policy = (
+            "saor_bounded_priority"
+            if profile == "bounded_priority_development"
+            else "saor_bounded_ready"
+        )
         bounded = [
             scenario
             for scenario in config.scenarios
-            if scenario.policy == "saor_bounded_priority"
+            if scenario.policy == bounded_policy
         ]
         if [scenario.priorities for scenario in bounded] != [(0, 1), (0, 1)]:
             errors.append("bounded priority roles must be explicit bulk=0/foreground=1")

@@ -108,7 +108,10 @@ def ray_worker_options(
 def validate_shared_credit_policy_args(args: argparse.Namespace) -> None:
     """Fail closed on bounded-priority policy inputs before runtime setup."""
 
-    if args.shared_credit_policy != "saor_bounded_priority":
+    if args.shared_credit_policy not in {
+        "saor_bounded_priority",
+        "saor_bounded_ready",
+    }:
         return
     if not args.arrival_replay:
         raise SystemExit("bounded priority requires arrival replay")
