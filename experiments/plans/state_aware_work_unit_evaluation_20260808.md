@@ -1015,12 +1015,20 @@ observation-gap 定位臂。
    baseline。该 gate 只回答 SAOR 是否被简单 selector 击败，
    不能单独证明完整系统相对 Daft/Ray 的价值；
 2. **系统级 native matched comparison（下一阶段必做）**：在同一 2-Job immutable workload、
-   arrival replay、PG source/sink、模型、vLLM FCFS 服务签名、协议和 correctness 合同下，分列
+   Job 级 `bulk@0s → foreground@5s` 且 Job 内 eager 的共同原生到达合同、PG source、模型、
+   vLLM FCFS 服务签名、协议和 correctness 合同下，分列
    Daft `prompt()` Native、Daft `prompt()` Ray（两者均可执行时）、Ray Data native graph、
    project frozen-static 与 proposed $0.125W_e$。Project 两臂冻结相同 K/W；原生臂保留官方
    batching/backpressure/scheduler，不注入 Project K/W/credit/bounded-ready，但共享相同物理
    CPU/GPU/endpoint 包络并使用预注册的原生 calibration。报告 E2E throughput/MFU、group JCT、
-   per-Job JCT/P99/SLO、资源与 correctness；这里只能声称完整系统的经验表现；
+   per-Job JCT、资源与 correctness；逐请求 P99/SLO 只有在对应原生臂提供共同真实时钟时才报告，
+   否则显式 `unavailable`。该矩阵禁止在计时前读取 JSONL；PostgreSQL scan/materialization 必须
+   位于共同 source→validated-gather 计时边界内，主性能矩阵统一 `writeback=none`。这里只能声称
+   完整系统的经验表现；详细冻结规格见
+   `../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`；
+   因共同原生到达形态与旧 selector rehearsal 不同，同批基础设施另跑 1--2 次短的 Project
+   bounded-ready FIFO/DRR/VTC-style/SAOR 四臂 same-regime sanity block。它只检查 arrival regime
+   是否改变 selector 排序，不是 native baseline、不是 selector formal，也不新增参数；
 3. **no-bounded-ready control 与 observation 桥接（已完成）**：双轮 6/6 cell、0 incident。
    `frozen-static → single-head + shared FIFO` 使 tok/s +25.96%、group JCT −20.58%，但 fg P99
    +99.17%、fg violation +95.90 pp；`single-head + shared FIFO → bounded-ready + FIFO` 再使

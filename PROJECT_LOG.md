@@ -1,5 +1,31 @@
 # 项目日志
 
+## 2026-08-13 SAOR 系统级 baseline 复测规格冻结
+
+- 用户确认下一阶段按建议补五臂 2-Job 系统级 matched comparison：Daft Native、Daft Ray、
+  Ray Data、Project frozen-static 与 SAOR $0.125W_e$；这不是继续优化 selector，也不是重跑所有
+  历史 baseline。
+- 审核现有 runner 后确认旧原生矩阵在官方 graph 前读取 JSONL，而当前 Project 证据使用
+  PostgreSQL→Daft 与逐请求 arrival replay；两者不能仅凭 manifest SHA 直接拼表。原生 Daft/Ray
+  Data 也没有不接管 scheduler 的忠实逐请求 timed-replay 接口。
+- 新规格冻结共同到达为 Job 级 `bulk@0s → foreground@5s`、Job 内 eager；Project 两臂也使用
+  相同形态。五臂共同计时从 PostgreSQL scan/materialization 前到两 Job validated gather，性能
+  主矩阵统一 `writeback=none`；历史计时前 JSONL path 只作诊断。
+- 原生臂保留自身 batching/backpressure/scheduler，禁止注入 Project K/W、credit、coordinator
+  或 bounded-ready；Project static/SAOR 冻结相同最大 K/W。跨系统主指标为 service tok/s、
+  group/Job JCT、资源与 correctness；缺真实共同 request clock 的 P99/SLO 必须显式
+  `unavailable`，禁止复制 shard completion time。
+- 用户进一步确认 FIFO/DRR/VTC-style 不是原生 baseline，且系统比较必须显式包含
+  **Project bounded-ready SAOR**。由于共同原生合同把 arrival 改为 Job 级 eager，同一基础设施
+  再补 1--2 次短的 bounded-ready FIFO/DRR/VTC-style/SAOR Project-internal sanity block；它只
+  防止 arrival-regime 排名漂移，不是长 formal，也不授权 selector winner。
+- 进一步澄清 `bounded-ready FIFO` 的身份：bounded-ready 不是 FIFO 算法要求，而是 Project
+  matched-observation 接口。它让 FIFO/DRR/VTC-style/SAOR 在同一可见 ready-set $R(t)$ 上只改变
+  selector score；完整旧 FIFO 仍是 single-head + shared FIFO，二者差异单列为 observation effect。
+- 设计写入
+  `code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`；当前只准备
+  本地合同、编排与汇总代码，服务器关闭期间不运行 GPU formal。按用户要求不同步 Wiki。
+
 ## 2026-08-13 SAOR 文档状态收口与下一步统一
 
 - 清理根 `README.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、

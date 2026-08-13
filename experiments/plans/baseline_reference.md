@@ -87,11 +87,27 @@ observation contract。当前身份冻结为：
 
 系统级原生臂保留各自官方 batching/backpressure/scheduler，不向其强塞 Project K/W、credit、
 coordinator 或 bounded-ready；但仍须冻结相同 GPU/CPU、endpoint、模型与 vLLM FCFS 服务签名、
-immutable workload/arrival、PostgreSQL source/sink、协议/输出上限、正确性合同和 balanced run
+immutable workload/arrival、PostgreSQL source、协议/输出上限、正确性合同和 balanced run
 order。原生臂只允许使用预注册的官方/原生旋钮及各自独立 calibration，避免以默认欠调优制造
 strawman。Project frozen-static 与 SAOR 则冻结相同最大 K/W、ready-buffer 口径之外的项目栈和
 服务配置。该层比较不同 scheduler owner，结论必须写“完整系统经验表现”，不能写成 SAOR
 selector 的单因素因果收益。
+
+当前 SAOR 系统级复测的共同到达形态冻结为 Job 级
+`bulk@0s → foreground@5s`、Job 内 eager。Daft/Ray Data 官方 graph 若没有忠实逐请求 timed
+replay 接口，不得用外部 feeder 接管其请求释放后仍称原生调度；Project 两臂也须使用同一 Job
+级形态。五臂共同计时从 PostgreSQL scan/materialization 前开始，到两 Job 全部输出 validated
+gather 结束；计时前读取 JSONL 的旧 native path 只作诊断。性能主矩阵统一不写回；小规模 sink
+exactly-once 另设 correctness gate。原生臂没有真实共同 request clock 时，P99/SLO 必须写
+`unavailable`。详细规格见
+`../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`。
+同一基础设施另输出 Project 内部 bounded-ready FIFO/DRR/VTC-style/SAOR 的 same-regime sanity
+表，用于防止 Job-level eager arrival 改变 selector 排序后仍沿用旧归因。该表不进入原生系统
+baseline 身份，也不因 1--2 次短测产生 selector winner/formal claim。
+这里的 FIFO 全名是 `Project bounded-ready + global FIFO matched-control`：bounded-ready 不是
+FIFO 算法的组成，而是让 FIFO 与 DRR/VTC-style/SAOR 共享同一个可见候选集 $R(t)$，从而只比较
+selector score/order。完整旧方案仍是 single-head + shared FIFO；二者之间的差异属于 observation
+effect，不能计入 FIFO/SAOR selector 差异。
 
 这里必须区分“算法来源”和“实现/调度所有者”：FIFO、DRR、VTC 是已有算法思想，但本项目实验
 中的可执行代码位于 Project `shared_credit.py`，不是 Daft、Ray Data、upstream vLLM 或 VTC

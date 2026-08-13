@@ -3,6 +3,9 @@
 Code implementation process documents that are not research evidence,
 experiment results, or opening-report materials.
 
+Current SAOR native-system matched comparison design:
+`superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`.
+
 ## Files
 
 | Path | Purpose |

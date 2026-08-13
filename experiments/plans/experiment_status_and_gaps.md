@@ -104,11 +104,19 @@ DRR/VTC-style 为 12.90K tok/s、foreground P99 27.23/26.16s、30s SLO violation
 11.7% completion-lag P95 改善，是观测到的非支配折中点，不是 selector 胜出。完整报告见
 `experiments/results/state_aware_work_unit/saor_matched_ready_selector_rehearsal_20260813/`。
 
-下一阶段必须在相同 2-Job manifest、arrival、PG source/sink、
+下一阶段必须在相同 2-Job manifest、Job 级 `bulk@0s → foreground@5s` 且 Job 内 eager 的共同
+原生到达形态、PG source、
 模型/vLLM FCFS 服务签名和物理资源包络上，分列 Daft Native、Daft Ray、Ray Data native、
 project frozen-static 与 proposed，完成系统级 matched comparison。原生臂保留自身调度，不
 注入 Project K/W；Project 两臂冻结相同 K/W。历史原生数据只有完整签名和指标 schema 均匹配
-才可复用，否则重跑。
+才可复用，否则重跑。已确认历史 JSONL 原生路径在计时前读 manifest，且原生 graph 不忠实暴露
+逐请求 timed replay；因此新矩阵必须把 PostgreSQL scan/materialization 放进共同
+source→validated-gather 边界，并将原生臂不具备的 request P99/SLO 明确记为 `unavailable`，不能
+复制 Job/shard completion time。冻结规格见
+`../../code_doc/superpowers/specs/2026-08-13-saor-native-system-matched-comparison-design.md`。
+为避免把 arrival-regime 变化误归因给 SAOR，同一新合同还包含 1--2 次短的 Project 内部
+bounded-ready FIFO/DRR/VTC-style/SAOR sanity block；这些臂仍是 Project controls，不是原生
+baseline，且不据此授权 selector formal。
 
 FIFO、DRR、VTC-style 是**Project coordinator 内的标准算法 controls**，不是上游原生实现；
 接入 bounded-ready 的副本只用于让 selector 看到相同候选集。single-head/no-bounded-ready
