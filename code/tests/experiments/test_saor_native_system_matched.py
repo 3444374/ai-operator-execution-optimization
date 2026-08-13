@@ -6,9 +6,11 @@ import copy
 import hashlib
 import json
 import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from src.experiments.saor.native_system_matched import (
     REQUIRED_ARM_IDS,
@@ -17,7 +19,9 @@ from src.experiments.saor.native_system_matched import (
     audit_matched_system_config,
     balanced_matched_schedule,
     load_matched_system_config,
+    run_matched_system,
 )
+from scripts.experiments.run_saor_native_system_matched import parse_args
 
 
 class MatchedSystemContractTest(unittest.TestCase):
@@ -156,6 +160,214 @@ class MatchedSystemContractTest(unittest.TestCase):
                 path.write_text(json.dumps(raw), encoding="utf-8")
                 with self.assertRaises(ValueError):
                     load_matched_system_config(path)
+
+    def test_matrix_runs_each_physical_cell_once_in_balanced_order(self) -> None:
+        with self._config() as path:
+            config = load_matched_system_config(path)
+            expected = [
+                cell
+                for phase, count in (
+                    ("warmup", config.warmup_repeats),
+                    ("formal", config.formal_repeats),
+                    (
+                        "selector_sanity_development",
+                        config.selector_sanity_development_repeats,
+                    ),
+                )
+                for repeat in range(1, count + 1)
+                for cell in balanced_matched_schedule(
+                    config, phase=phase, repeat=repeat
+                )
+            ]
+            calls: list[tuple[str, str, int, int]] = []
+            idle_calls: list[str] = []
+            instrumenter_calls: list[object] = []
+            lease = SimpleNamespace(released=False)
+            lease.release = lambda: setattr(lease, "released", True)
+
+            def executor(arm, identity, output_dir):
+                calls.append(
+                    (arm.kind, arm.arm_id, identity.repeat, identity.order_index)
+                )
+                return self._cell_evidence(arm, identity, output_dir)
+
+            result = run_matched_system(
+                path,
+                native_executor=executor,
+                project_executor=executor,
+                idle_gate=lambda position: idle_calls.append(position),
+                instrumenter=lambda *args: instrumenter_calls.append(args),
+                repository_commit_getter=lambda: "abc123",
+                host_lease_acquirer=lambda *_args, **_kwargs: lease,
+            )
+
+            self.assertEqual(
+                [item[1:] for item in calls],
+                [
+                    (cell.arm_id, cell.repeat, cell.order_index)
+                    for cell in expected
+                ],
+            )
+            self.assertEqual(
+                sum(item[1] == "project_bounded_ready_saor_0125we" for item in calls),
+                config.warmup_repeats
+                + config.formal_repeats
+                + config.selector_sanity_development_repeats,
+            )
+            saor = [
+                record for record in result["cells"]
+                if record["arm_id"] == "project_bounded_ready_saor_0125we"
+            ]
+            self.assertTrue(all(
+                record["report_blocks"] == ["system", "selector_sanity"]
+                for record in saor
+            ))
+            self.assertEqual(idle_calls, [item for _ in expected for item in ("before", "after")])
+            self.assertEqual(instrumenter_calls, [])
+            self.assertTrue(lease.released)
+            persisted = json.loads((path.parent / "matrix_index.json").read_text())
+            self.assertEqual(persisted["status"], "completed")
+            self.assertEqual(len(persisted["cells"]), len(expected))
+
+    def test_matrix_retains_first_failure_stops_and_releases_lease(self) -> None:
+        with self._config() as path:
+            config = load_matched_system_config(path)
+            first_two = balanced_matched_schedule(
+                config, phase="warmup", repeat=1
+            )[:2]
+            calls: list[str] = []
+            idle_calls: list[str] = []
+            lease = SimpleNamespace(released=False)
+            lease.release = lambda: setattr(lease, "released", True)
+
+            def executor(arm, identity, output_dir):
+                calls.append(arm.arm_id)
+                if len(calls) == 2:
+                    raise RuntimeError("cell exploded")
+                return self._cell_evidence(arm, identity, output_dir)
+
+            with self.assertRaisesRegex(RuntimeError, "cell exploded"):
+                run_matched_system(
+                    path,
+                    native_executor=executor,
+                    project_executor=executor,
+                    idle_gate=lambda position: idle_calls.append(position),
+                    instrumenter=lambda *_args: None,
+                    repository_commit_getter=lambda: "abc123",
+                    host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                )
+
+            self.assertEqual(calls, [cell.arm_id for cell in first_two])
+            persisted = json.loads((path.parent / "matrix_index.json").read_text())
+            self.assertEqual(persisted["status"], "failed")
+            self.assertEqual(persisted["cells"][-1]["status"], "failed")
+            self.assertIn("cell exploded", persisted["cells"][-1]["error"])
+            self.assertEqual(
+                idle_calls,
+                ["before", "after", "before", "after"],
+            )
+            self.assertTrue(lease.released)
+
+    def test_matrix_rejects_existing_output_root_before_lease(self) -> None:
+        with self._config() as path:
+            (path.parent / "matrix_index.json").write_text("{}", encoding="utf-8")
+            with self.assertRaisesRegex(FileExistsError, "matrix output root"):
+                run_matched_system(
+                    path,
+                    native_executor=lambda *_args: {},
+                    project_executor=lambda *_args: {},
+                    idle_gate=lambda _position: None,
+                    instrumenter=lambda *_args: None,
+                )
+
+    def test_matrix_rejects_missing_job_overlap_evidence(self) -> None:
+        with self._config() as path:
+            lease = SimpleNamespace(released=False)
+            lease.release = lambda: setattr(lease, "released", True)
+
+            def executor(arm, identity, output_dir):
+                evidence = self._cell_evidence(arm, identity, output_dir)
+                evidence["jobs"][0]["ended_epoch_s"] = 104.0
+                return evidence
+
+            with self.assertRaisesRegex(RuntimeError, "overlap"):
+                run_matched_system(
+                    path,
+                    native_executor=executor,
+                    project_executor=executor,
+                    idle_gate=lambda _position: None,
+                    instrumenter=lambda *_args: None,
+                    repository_commit_getter=lambda: "abc123",
+                    host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                )
+            self.assertTrue(lease.released)
+
+    def test_cli_accepts_runner_profiler_and_lifecycle_options(self) -> None:
+        options = parse_args(
+            [
+                "--config", "matched.json",
+                "--native-config", "native.json",
+                "--project-config", "project.json",
+                "--native-runner", "native-runner.py",
+                "--profiler", "profiler.py",
+                "--python-executable", sys.executable,
+                "--health-url", "http://health",
+                "--metrics-urls", "http://metrics0,http://metrics1",
+                "--ray-address", "ray://cluster",
+                "--rehearsal", "--resume", "--recover-stale-lease",
+            ]
+        )
+
+        self.assertEqual(options.metrics_urls, ("http://metrics0", "http://metrics1"))
+        self.assertTrue(options.rehearsal)
+        self.assertTrue(options.resume)
+        self.assertTrue(options.recover_stale_lease)
+
+    @staticmethod
+    def _cell_evidence(arm, identity, output_dir: Path) -> dict[str, object]:
+        output_dir.mkdir(parents=True)
+        command = ["runner", "--adapter", arm.arm_id]
+        (output_dir / "commands.json").write_text(json.dumps(command), encoding="utf-8")
+        (output_dir / "resources.csv").write_text("sample,gpu\n0,0\n", encoding="utf-8")
+        return {
+            "command": command,
+            "implementation_source": "official_native" if arm.kind == "native" else "project_runner",
+            "start_epoch_s": 100.0,
+            "end_epoch_s": 101.0,
+            "database_operator_e2e_s": 1.0,
+            "jobs": [
+                {
+                    "job_id": "a",
+                    "actual_launch_epoch_s": 100.0,
+                    "ended_epoch_s": 106.0,
+                    "completed_count": 2,
+                    "exactly_once": True,
+                    "shard_provenance": [{
+                        "source_kind": "timed_postgres_manifest",
+                        "source_timing_boundary": "inside_job_barrier",
+                        "source_validation_status": "ok",
+                    }],
+                },
+                {
+                    "job_id": "b",
+                    "actual_launch_epoch_s": 105.0,
+                    "ended_epoch_s": 105.4,
+                    "completed_count": 2,
+                    "exactly_once": True,
+                    "shard_provenance": [{
+                        "source_kind": "timed_postgres_manifest",
+                        "source_timing_boundary": "inside_job_barrier",
+                        "source_validation_status": "ok",
+                    }],
+                },
+            ],
+            "service_metrics": {"metrics_status": "ok", "request_success_delta": 4},
+            "resource_metrics": {"resource_metrics_status": "ok", "path": str(output_dir / "resources.csv")},
+            "exactly_once": True,
+            "request_tail_status": dict(arm.unsupported_request_tails),
+            "output_paths": {"commands": str(output_dir / "commands.json")},
+            "status": "passed",
+        }
 
     class _ConfigPath:
         def __init__(self, owner: "MatchedSystemContractTest") -> None:

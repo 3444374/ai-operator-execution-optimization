@@ -556,7 +556,7 @@ def _run_locked(
                     options.metrics_urls,
                     options.idle_timeout_s,
                 )
-                record = _run_group(
+                record = run_shared_vllm_group_cell(
                     options,
                     config,
                     scenario,
@@ -601,6 +601,37 @@ def _run_locked(
     _write_json_atomic(manifest_path, manifest)
     return 0
 
+def run_shared_vllm_group_cell(
+    options: RunnerOptions,
+    config: SharedVllmConfig,
+    scenario: SharedVllmScenario,
+    identity: GroupRunIdentity,
+    *,
+    idle_gate: Callable[[str, tuple[str, ...], float], None] | None = None,
+) -> dict[str, object]:
+    """Execute one explicit Project scenario without a matrix or host lease."""
+
+    return _run_group(
+        options, config, scenario, identity, idle_gate=idle_gate
+    )
+
+
+def _wait_for_eager_job_launch(
+    target_epoch_s: float,
+    *,
+    now: Callable[[], float] = time.time,
+    sleep: Callable[[float], None] = time.sleep,
+) -> float:
+    """Cross one absolute Job barrier without imposing request replay."""
+
+    while True:
+        current = now()
+        remaining = target_epoch_s - current
+        if remaining <= 0:
+            return current
+        sleep(min(remaining, 0.05))
+
+
 def _run_group(
     options: RunnerOptions,
     config: SharedVllmConfig,
@@ -630,6 +661,7 @@ def _run_group(
     credit_samples: list[dict[str, object]] = []
     release_events: list[dict[str, object]] = []
     state_samples: list[dict[str, object]] = []
+    eager_job_launches: list[float] = []
     state_signature = _text_state_calibration_signature(config)
     control = config.state_aware_control
     saor_control = config.saor_capacity_control
@@ -809,6 +841,10 @@ def _run_group(
                 run_stem=run_stem,
             )
         for job_index, command in enumerate(commands):
+            if config.job_internal_arrival_contract == "eager":
+                eager_job_launches.append(_wait_for_eager_job_launch(
+                    start_epoch_s + scenario.arrival_offsets_s[job_index]
+                ))
             stdout_path = (
                 options.output_dir
                 / "logs"
@@ -944,6 +980,16 @@ def _run_group(
                 for job_index in range(scenario.job_count)
             ]
         )
+        if config.job_internal_arrival_contract == "eager":
+            if len(eager_job_launches) != len(job_evidence):
+                raise RuntimeError("eager Job launch evidence is incomplete")
+            for job_index, evidence in enumerate(job_evidence):
+                evidence["replay_configured_start_epoch_s"] = (
+                    start_epoch_s + scenario.arrival_offsets_s[job_index]
+                )
+                evidence["replay_observed_start_epoch_s"] = (
+                    eager_job_launches[job_index]
+                )
         _validate_replay_starts(
             job_evidence,
             expected_start_epoch_s=start_epoch_s,

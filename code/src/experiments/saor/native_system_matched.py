@@ -5,10 +5,13 @@ from __future__ import annotations
 import hashlib
 import json
 import random
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 from src.infrastructure.config_env import expand_structure
+from src.infrastructure.runner_lease import acquire_host_runner_lease
 
 
 SYSTEM_ARM_IDS = (
@@ -160,25 +163,236 @@ def audit_matched_system_config(config: MatchedSystemConfig) -> dict[str, object
         "status": "passed" if not errors else "failed",
         "errors": errors,
         "resolved_arm_identities": [arm.arm_id for arm in config.arms],
-        "report_blocks": {"system": list(SYSTEM_ARM_IDS), "selector_sanity": list(SELECTOR_SANITY_ARM_IDS)},
+        "report_blocks": {
+            "system": list(SYSTEM_ARM_IDS),
+            "selector_sanity": list(SELECTOR_SANITY_ARM_IDS),
+        },
         "immutable_manifest_hashes": manifests,
-        "service_signature": dict(config.arms[0].service_signature) if config.arms else {},
-        "calibration_paths": {arm.arm_id: arm.calibration_path for arm in config.arms},
+        "service_signature": (
+            dict(config.arms[0].service_signature) if config.arms else {}
+        ),
+        "calibration_paths": {
+            arm.arm_id: arm.calibration_path for arm in config.arms
+        },
         "gpu_formal_locally_authorized": config.gpu_formal_locally_authorized,
         "planned_schedule": [
             {
                 "phase": phase,
                 "repeat": repeat,
-                "cells": [cell.__dict__ for cell in balanced_matched_schedule(config, phase=phase, repeat=repeat)],
+                "cells": [
+                    cell.__dict__
+                    for cell in balanced_matched_schedule(
+                        config, phase=phase, repeat=repeat
+                    )
+                ],
             }
             for phase, count in (
                 ("warmup", config.warmup_repeats),
                 ("formal", config.formal_repeats),
-                ("selector_sanity_development", config.selector_sanity_development_repeats),
+                (
+                    "selector_sanity_development",
+                    config.selector_sanity_development_repeats,
+                ),
             )
             for repeat in range(1, count + 1)
         ],
     }
+
+
+def _atomic_json(path: Path, payload: object) -> None:
+    temporary = path.with_name(f".{path.name}.tmp")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+
+
+def _repository_commit() -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).resolve().parents[4],
+    ).stdout.strip()
+
+
+def _all_cells(config: MatchedSystemConfig) -> tuple[ScheduledMatchedCell, ...]:
+    return tuple(
+        cell
+        for phase, count in (
+            ("warmup", config.warmup_repeats),
+            ("formal", config.formal_repeats),
+            (
+                "selector_sanity_development",
+                config.selector_sanity_development_repeats,
+            ),
+        )
+        for repeat in range(1, count + 1)
+        for cell in balanced_matched_schedule(config, phase=phase, repeat=repeat)
+    )
+
+
+def _validate_cell_evidence(
+    arm: MatchedArm,
+    cell: ScheduledMatchedCell,
+    evidence: dict[str, object],
+    repository_commit: str,
+) -> dict[str, object]:
+    """Normalize one executor result and reject incomplete comparison evidence."""
+
+    required = {
+        "implementation_source", "start_epoch_s", "end_epoch_s",
+        "database_operator_e2e_s", "jobs", "service_metrics",
+        "resource_metrics", "exactly_once", "request_tail_status",
+        "output_paths", "status",
+    }
+    missing = sorted(required - evidence.keys())
+    if missing:
+        raise RuntimeError(f"cell evidence missing required fields: {missing}")
+    if evidence["status"] != "passed":
+        raise RuntimeError("executor returned non-passing cell evidence")
+    if evidence["exactly_once"] is not True:
+        raise RuntimeError("cell exactly-once evidence failed")
+    start = evidence["start_epoch_s"]
+    end = evidence["end_epoch_s"]
+    boundary = evidence["database_operator_e2e_s"]
+    if not all(isinstance(item, (int, float)) for item in (start, end, boundary)):
+        raise RuntimeError("cell common timing boundary is invalid")
+    if float(end) < float(start) or float(boundary) < 0:
+        raise RuntimeError("cell common timing boundary is inconsistent")
+    jobs = evidence["jobs"]
+    if not isinstance(jobs, list) or len(jobs) != 2:
+        raise RuntimeError("cell must retain both Job evidence blocks")
+    for job in jobs:
+        if not isinstance(job, dict) or job.get("exactly_once") is not True:
+            raise RuntimeError("Job exactly-once evidence is incomplete")
+        if not isinstance(job.get("completed_count"), int):
+            raise RuntimeError("Job counter evidence is incomplete")
+        provenance = job.get("shard_provenance")
+        if not isinstance(provenance, list) or not provenance:
+            raise RuntimeError("Job source/provenance evidence is incomplete")
+        for shard in provenance:
+            if not isinstance(shard, dict) or any(
+                shard.get(name) != expected
+                for name, expected in {
+                    "source_kind": "timed_postgres_manifest",
+                    "source_timing_boundary": "inside_job_barrier",
+                    "source_validation_status": "ok",
+                }.items()
+            ):
+                raise RuntimeError("timed PostgreSQL source evidence is invalid")
+    starts = [float(job["actual_launch_epoch_s"]) for job in jobs]
+    if abs((starts[1] - starts[0]) - 5.0) > 0.5:
+        raise RuntimeError("Job overlap/offset evidence is invalid")
+    if float(jobs[0]["ended_epoch_s"]) <= starts[1]:
+        raise RuntimeError("Job overlap evidence is missing")
+    service = evidence["service_metrics"]
+    resource = evidence["resource_metrics"]
+    if not isinstance(service, dict) or service.get("metrics_status") != "ok":
+        raise RuntimeError("service counter evidence is incomplete")
+    if not isinstance(resource, dict) or resource.get("resource_metrics_status") != "ok":
+        raise RuntimeError("resource evidence is incomplete")
+    if dict(arm.unsupported_request_tails) != evidence["request_tail_status"]:
+        raise RuntimeError("unsupported request-tail evidence drifted")
+    command = evidence.get("command", [])
+    if arm.kind == "native" and any(
+        token in " ".join(str(item) for item in command).lower()
+        for token in ("credit", "coordinator", "router", "bounded-ready", "max-active-work")
+    ):
+        raise RuntimeError("native dispatch contains Project flags")
+    return {
+        **evidence,
+        "arm_id": arm.arm_id,
+        "report_blocks": list(cell.report_blocks),
+        "scheduler_owner": arm.scheduler_owner,
+        "phase": cell.phase,
+        "repeat": cell.repeat,
+        "order_index": cell.order_index,
+        "repository_commit": repository_commit,
+    }
+
+
+def run_matched_system(
+    config_path: Path,
+    *,
+    native_executor: Callable[[MatchedArm, ScheduledMatchedCell, Path], dict[str, object]],
+    project_executor: Callable[[MatchedArm, ScheduledMatchedCell, Path], dict[str, object]],
+    idle_gate: Callable[[str], None],
+    instrumenter: Callable[..., object],
+    repository_commit_getter: Callable[[], str] = _repository_commit,
+    host_lease_acquirer: Callable[..., object] = acquire_host_runner_lease,
+) -> dict[str, object]:
+    """Run the balanced eight-arm matrix; executors retain all instrumentation."""
+
+    del instrumenter  # Deliberately injected for asserting the outer layer never samples.
+    matrix_root = config_path.parent / "matrix_index.json"
+    if matrix_root.exists():
+        raise FileExistsError(f"matrix output root already exists: {matrix_root}")
+    config = load_matched_system_config(config_path)
+    repository_commit = repository_commit_getter()
+    if not repository_commit:
+        raise RuntimeError("repository commit must be non-empty")
+    index: dict[str, object] = {
+        "schema_version": 1,
+        "status": "running",
+        "repository_commit": repository_commit,
+        "schedule": [cell.__dict__ for cell in _all_cells(config)],
+        "cells": [],
+    }
+    _atomic_json(matrix_root, index)
+    lease = host_lease_acquirer(
+        config_path.parent,
+        repository_commit=repository_commit,
+    )
+    by_id = {arm.arm_id: arm for arm in config.arms}
+    try:
+        for ordinal, cell in enumerate(_all_cells(config)):
+            arm = by_id[cell.arm_id]
+            output_dir = Path(arm.output_root) / (
+                f"{ordinal:03d}_{cell.phase}_{cell.repeat:02d}_{arm.arm_id}"
+            )
+            running = {
+                "arm_id": arm.arm_id,
+                "report_blocks": list(cell.report_blocks),
+                "scheduler_owner": arm.scheduler_owner,
+                "phase": cell.phase,
+                "repeat": cell.repeat,
+                "order_index": cell.order_index,
+                "repository_commit": repository_commit,
+                "status": "running",
+            }
+            index["cells"].append(running)  # type: ignore[index]
+            _atomic_json(matrix_root, index)
+            try:
+                idle_gate("before")
+                try:
+                    executor = (
+                        native_executor if arm.kind == "native" else project_executor
+                    )
+                    completed = _validate_cell_evidence(
+                        arm,
+                        cell,
+                        executor(arm, cell, output_dir),
+                        repository_commit,
+                    )
+                    running.update(completed)
+                finally:
+                    idle_gate("after")
+            except Exception as exc:
+                running.update(
+                    {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
+                )
+                index["status"] = "failed"
+                _atomic_json(matrix_root, index)
+                raise
+            _atomic_json(matrix_root, index)
+        index["status"] = "completed"
+        _atomic_json(matrix_root, index)
+        return index
+    finally:
+        lease.release()  # type: ignore[union-attr]
 
 
 def _load_arm(value: object, config_directory: Path) -> MatchedArm:

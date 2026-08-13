@@ -19,11 +19,13 @@ from src.baselines.common.contracts import ChatRequest
 from src.baselines.common.manifests import write_manifest
 from src.baselines.common.provenance import adapter_provenance
 from src.baselines.text.orchestration.native_multijob import (
+    NativeRunIdentity,
     audit_command,
     balanced_arm_order,
     build_shard_command,
     load_native_multijob_config,
     redact_command,
+    run_native_multijob_cell,
     run_native_multijob,
 )
 
@@ -371,6 +373,44 @@ class NativeMultiJobTests(unittest.TestCase):
                 result["ray_worker_nofile"]["ray://127.0.0.1:10001"]["soft"],
                 65_536,
             )
+
+    def test_single_cell_retains_native_evidence_without_matrix_schedule(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_native_multijob_config(self._config(root))
+            output_dir = root / "single-cell"
+            clock = iter(100.0 + index * 0.001 for index in range(1000))
+
+            record = run_native_multijob_cell(
+                config,
+                config.arms[0],
+                NativeRunIdentity("formal", 2, 3),
+                output_dir,
+                runner_script="runner.py",
+                popen_factory=_FakeProcess,
+                queue_waiter=self._queues,
+                counter_sampler=self._counters,
+                now=lambda: next(clock),
+                repository_commit="abc123",
+                cell_instrumenter=self._instrumentation,
+            )
+
+            self.assertEqual(record["phase"], "formal")
+            self.assertEqual(record["repeat"], 2)
+            self.assertEqual(record["order_index"], 3)
+            self.assertEqual(record["repository_commit"], "abc123")
+            self.assertTrue(record["exactly_once"])
+            self.assertEqual(len(record["jobs"]), 2)
+            self.assertTrue(all(job["exactly_once"] for job in record["jobs"]))
+            self.assertTrue(all(
+                shard["source_validation_status"] == "ok"
+                for job in record["jobs"]
+                for shard in job["shard_provenance"]
+            ))
+            self.assertIn("service_counters", record)
+            self.assertIn("gpu_summary", record)
+            self.assertIn("gauge_summary", record)
+            self.assertFalse((output_dir / "matrix_index.json").exists())
 
     def test_gate_only_runs_each_four_job_arm_once_and_is_not_rankable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

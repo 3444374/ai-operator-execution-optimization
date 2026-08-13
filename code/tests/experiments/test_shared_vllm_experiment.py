@@ -45,14 +45,47 @@ from src.experiments.shared_vllm import (  # noqa: E402
     load_config,
     normalized_job_service_rates,
     run_experiment,
+    run_shared_vllm_group_cell,
     shared_credit_trace_summary,
 )
+from src.experiments.shared_vllm.runner import _wait_for_eager_job_launch
 from src.scheduling.submission_control.shared_credit import (  # noqa: E402
     SaorReleaseEvent,
 )
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_eager_job_launch_waits_for_absolute_job_offset(self) -> None:
+        now_values = iter((100.0, 104.0, 105.0))
+        sleeps: list[float] = []
+
+        observed = _wait_for_eager_job_launch(
+            105.0,
+            now=lambda: next(now_values),
+            sleep=lambda seconds: sleeps.append(seconds),
+        )
+
+        self.assertEqual(sleeps, [0.05, 0.05])
+        self.assertEqual(observed, 105.0)
+
+    def test_single_group_cell_uses_explicit_identity_without_matrix_schedule(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            options, config, scenario = self._group_fixture(Path(temp_dir))
+            identity = GroupRunIdentity("formal", 2, 7)
+            expected = {"scenario_id": scenario.scenario_id, "status": "completed"}
+            with patch(
+                "src.experiments.shared_vllm.runner._run_group",
+                return_value=expected,
+            ) as group:
+                actual = run_shared_vllm_group_cell(
+                    options, config, scenario, identity
+                )
+
+            self.assertEqual(actual, expected)
+            group.assert_called_once_with(
+                options, config, scenario, identity, idle_gate=None
+            )
+
     def test_eager_arrival_contract_omits_per_request_arrival_replay(self) -> None:
         payload = self._config_payload(common_args=[])
         payload["job_internal_arrival_contract"] = "eager"

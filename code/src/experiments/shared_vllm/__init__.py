@@ -33,7 +33,12 @@ from .metrics import (
     normalized_job_service_rates,
     shared_credit_trace_summary,
 )
-from .runner import _run_group, _validate_rehearsal_record, run_experiment
+from .runner import (
+    _run_group,
+    _validate_rehearsal_record,
+    run_experiment,
+    run_shared_vllm_group_cell,
+)
 from .runtime import _RayCreditObserver
 
 __all__ = [name for name in globals() if not name.startswith("__")]
