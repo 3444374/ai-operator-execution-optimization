@@ -74,6 +74,12 @@ shared FIFO/bounded-ready。第一段隔离 static partition→shared capacity�
 `bridge_metrics.csv` 与 `bridge_effects.csv`，同时固定 native baseline 数为 0、两个效应均为
 `decided=false`、`formal_authorized=false`；该桥是项目内部归因，不是原生系统比较。
 
+`experiments/run_saor_native_system_matched.py` 是本地系统级 matched matrix 编排入口。它在
+dispatch 前联合加载 matched/native/Project 三份配置并执行 readiness 与执行器绑定审计，随后
+平衡编排 8 个唯一物理臂（3 个原生系统臂、Project frozen-static、3 个 Project selector
+sanity 臂和共享的 proposed 臂）。`--rehearsal` 只运行每个物理臂一次 warm-up，不产生 formal
+cell；runner 与模板均不授予 GPU formal 执行权限。
+
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data
 single/two-job 原生观察做统一 fail-closed 汇总。它显式保留 request P99 仅项目可用、
