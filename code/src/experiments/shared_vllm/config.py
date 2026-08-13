@@ -235,6 +235,7 @@ class SharedVllmConfig:
     saor_release_control: SaorReleaseControlConfig | None = None
     ready_observation_contract: str = "single_head"
     ready_payload_bytes_limit_per_job: int = 0
+    job_internal_arrival_contract: str = "manifest_timed"
 
 def load_config(path: Path) -> SharedVllmConfig:
     decoded = json.loads(path.read_text(encoding="utf-8"))
@@ -316,8 +317,21 @@ def load_config(path: Path) -> SharedVllmConfig:
         decoded.get("common_args", []),
         "common_args",
     )
-    if "--arrival-replay" not in common_args:
-        raise ValueError("common_args must enable --arrival-replay")
+    arrival_contract = decoded.get(
+        "job_internal_arrival_contract", "manifest_timed"
+    )
+    if arrival_contract not in {"manifest_timed", "eager"}:
+        raise ValueError("job_internal_arrival_contract is unsupported")
+    replay_enabled = "--arrival-replay" in common_args
+    if arrival_contract == "manifest_timed" and not replay_enabled:
+        raise ValueError(
+            "manifest_timed job_internal_arrival_contract requires "
+            "--arrival-replay"
+        )
+    if arrival_contract == "eager" and replay_enabled:
+        raise ValueError(
+            "eager job_internal_arrival_contract rejects --arrival-replay"
+        )
     gpu_peak_tflops = _nonnegative_float(
         _argument_value(common_args, "--gpu-peak-tflops", "0"),
         "--gpu-peak-tflops",
@@ -517,6 +531,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         ready_payload_bytes_limit_per_job=(
             ready_payload_bytes_limit_per_job
         ),
+        job_internal_arrival_contract=arrival_contract,
     )
 
 def build_job_command(
@@ -565,8 +580,6 @@ def build_job_command(
         str(work_limit),
         "--ray-address",
         options.ray_address,
-        "--arrival-replay-start-epoch-s",
-        str(start_epoch_s + scenario.arrival_offsets_s[job_index]),
         "--submission-granularity",
         "request",
         "--experiment-id",
@@ -592,6 +605,13 @@ def build_job_command(
         "--flush-trace-output",
         str(job_stem.with_suffix(".flush.csv")),
     ]
+    if config.job_internal_arrival_contract == "manifest_timed":
+        command.extend(
+            [
+                "--arrival-replay-start-epoch-s",
+                str(start_epoch_s + scenario.arrival_offsets_s[job_index]),
+            ]
+        )
     source_row_offset = (
         scenario.source_row_offsets[job_index]
         if scenario.source_row_offsets

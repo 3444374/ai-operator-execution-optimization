@@ -53,6 +53,25 @@ from src.scheduling.submission_control.shared_credit import (  # noqa: E402
 
 
 class SharedVllmExperimentTests(unittest.TestCase):
+    def test_eager_arrival_contract_omits_per_request_arrival_replay(self) -> None:
+        payload = self._config_payload(common_args=[])
+        payload["job_internal_arrival_contract"] = "eager"
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("config.json"))
+
+        self.assertEqual(config.job_internal_arrival_contract, "eager")
+
+    def test_arrival_contract_requires_matching_replay_flag(self) -> None:
+        for contract, common_args, expected in (
+            ("manifest_timed", [], "requires --arrival-replay"),
+            ("eager", ["--arrival-replay"], "rejects --arrival-replay"),
+        ):
+            payload = self._config_payload(common_args=common_args)
+            payload["job_internal_arrival_contract"] = contract
+            with self.subTest(contract=contract), patch.object(
+                Path, "read_text", return_value=json.dumps(payload)
+            ), self.assertRaisesRegex(ValueError, expected):
+                load_config(Path("config.json"))
     def test_rehearsal_record_gate_is_fail_closed(self) -> None:
         scenario = SharedVllmScenario(
             scenario_id="active_set_saor_release",

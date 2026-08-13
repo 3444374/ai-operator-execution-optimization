@@ -63,7 +63,16 @@ class _FakeProcess:
                 })
         adapter = command[command.index("--adapter") + 1]
         (output / "summary.json").write_text(
-            json.dumps({"status": "completed", "adapter": adapter, **adapter_provenance(adapter).summary_fields()}),
+            json.dumps(
+                {
+                    "status": "completed", "adapter": adapter,
+                    "source_kind": "timed_postgres_manifest",
+                    "source_timing_boundary": "inside_job_barrier",
+                    "source_read_s": 0.01,
+                    "source_validation_status": "ok",
+                    **adapter_provenance(adapter).summary_fields(),
+                }
+            ),
             encoding="utf-8",
         )
 
@@ -146,6 +155,12 @@ class NativeMultiJobTests(unittest.TestCase):
                 "http://127.0.0.1:8001/v1/chat/completions",
             ],
             "model": "qwen", "api_key_env": None,
+            "source": {
+                "kind": "timed_postgres_manifest",
+                "database_url": "postgresql://postgres:postgres@localhost:5432/ai_operator",
+                "workload_name": "sharegpt",
+            },
+            "job_internal_arrival_contract": "eager",
             "service": {"prefix_caching": "enabled", "max_num_seqs": 64, "max_num_batched_tokens": 4096},
             "idle_timeout_s": 1.0, "launch_lead_s": 0.0, "warmup_repeats": 1,
             "formal_repeats": 1, "schedule_seed": 9, "endpoint_work_skew_max": 0.02,
@@ -287,6 +302,35 @@ class NativeMultiJobTests(unittest.TestCase):
         self.assertEqual(redact_command(["--api-key", "secret"]), ["--api-key", "<redacted>"])
         with self.assertRaisesRegex(ValueError, "prohibited"):
             audit_command(["runner", "--max-active-work", "65536"])
+
+    def test_timed_postgres_source_is_required_for_rankable_native_shards(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = load_native_multijob_config(self._config(root))
+            arm = config.arms[0]
+            command = build_shard_command(
+                runner_script="run_official_baseline.py", arm=arm, job=arm.jobs[0],
+                endpoint_index=0,
+                endpoint_url="http://127.0.0.1:8000/v1/chat/completions",
+                output_dir=root / "shard", model="qwen",
+                service_prefix_caching="enabled", service_max_num_seqs=64,
+                service_max_num_batched_tokens=4096, api_key=None, source=config.source,
+            )
+            self.assertEqual(
+                command[command.index("--database-url") + 1],
+                "postgresql://postgres:postgres@localhost:5432/ai_operator",
+            )
+            self.assertEqual(
+                command[command.index("--source-workload-name") + 1], "sharegpt"
+            )
+            self.assertIn("--timed-postgres-source", command)
+
+            payload = json.loads((root / "config.json").read_text())
+            del payload["source"]
+            path = root / "untimed.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "missing=.*source"):
+                load_native_multijob_config(path)
 
     def test_runs_four_native_shards_per_arm_and_preserves_job_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

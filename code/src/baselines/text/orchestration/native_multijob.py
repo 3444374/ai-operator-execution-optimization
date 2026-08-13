@@ -72,6 +72,14 @@ class NativeMultiJobJob:
 
 
 @dataclass(frozen=True)
+class TimedPostgresManifestSource:
+    """PostgreSQL source that is loaded and verified inside every shard."""
+
+    database_url: str
+    workload_name: str
+
+
+@dataclass(frozen=True)
 class NativeMultiJobArm:
     """Frozen native adapter configuration applied to one, two, or four jobs."""
 
@@ -105,6 +113,8 @@ class NativeMultiJobConfig:
     schedule_seed: int
     endpoint_work_skew_max: float
     minimum_measurement_seconds: float
+    source: TimedPostgresManifestSource
+    job_internal_arrival_contract: str
     arms: tuple[NativeMultiJobArm, ...]
 
 
@@ -259,7 +269,7 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         "schema_version", "experiment_id", "formal", "output_root", "endpoint_urls", "model",
         "api_key_env", "service", "idle_timeout_s", "launch_lead_s", "warmup_repeats",
         "formal_repeats", "schedule_seed", "endpoint_work_skew_max", "arms",
-        "minimum_measurement_seconds",
+        "minimum_measurement_seconds", "source", "job_internal_arrival_contract",
     }
     missing = required - set(payload)
     unknown = set(payload) - required
@@ -267,6 +277,18 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         raise ValueError(f"config fields invalid: missing={sorted(missing)} unknown={sorted(unknown)}")
     if payload["schema_version"] != 1 or payload["formal"] is not True:
         raise ValueError("native multi-job runner requires schema_version=1 and formal=true")
+    source_raw = payload["source"]
+    if not isinstance(source_raw, dict) or set(source_raw) != {
+        "kind", "database_url", "workload_name"
+    }:
+        raise ValueError("source must define kind, database_url, and workload_name")
+    if source_raw["kind"] != "timed_postgres_manifest":
+        raise ValueError("rankable native source must be timed_postgres_manifest")
+    arrival_contract = _string(
+        payload["job_internal_arrival_contract"], "job_internal_arrival_contract"
+    )
+    if arrival_contract != "eager":
+        raise ValueError("native multi-job job_internal_arrival_contract must be eager")
     output_root = Path(_string(payload["output_root"], "output_root"))
     if output_root.exists():
         raise FileExistsError(f"output_root already exists: {output_root}")
@@ -312,6 +334,11 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         minimum_measurement_seconds=_positive_float(
             payload["minimum_measurement_seconds"], "minimum_measurement_seconds"
         ),
+        source=TimedPostgresManifestSource(
+            database_url=_string(source_raw["database_url"], "source.database_url"),
+            workload_name=_string(source_raw["workload_name"], "source.workload_name"),
+        ),
+        job_internal_arrival_contract=arrival_contract,
         arms=arms,
     )
 
@@ -341,6 +368,7 @@ def build_shard_command(
     endpoint_index: int, endpoint_url: str, output_dir: Path, model: str,
     service_prefix_caching: str, service_max_num_seqs: int,
     service_max_num_batched_tokens: int, api_key: str | None,
+    source: TimedPostgresManifestSource | None = None,
 ) -> list[str]:
     """Build one official adapter invocation; no project scheduler flag is accepted."""
 
@@ -354,6 +382,14 @@ def build_shard_command(
         str(service_max_num_seqs), "--service-max-num-batched-tokens",
         str(service_max_num_batched_tokens),
     ]
+    if source is not None:
+        command.extend(
+            [
+                "--database-url", source.database_url,
+                "--source-workload-name", source.workload_name,
+                "--timed-postgres-source",
+            ]
+        )
     if arm.ray_address is not None:
         command.extend(["--ray-address", arm.ray_address])
     if arm.adapter == "duckdb_ai":
@@ -427,10 +463,15 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         "scheduler_owner",
         "custom_scheduling_code",
         "formal_baseline_eligible",
+        "source_kind",
+        "source_timing_boundary",
+        "source_read_s",
+        "source_validation_status",
     )
+    provenance_fields = required[:5]
     mismatches = {
         field: {"expected": expected.get(field) if field != "adapter" else arm.adapter, "observed": summary.get(field)}
-        for field in required
+        for field in provenance_fields
         if summary.get(field) != (arm.adapter if field == "adapter" else expected.get(field))
     }
     if mismatches:
@@ -440,6 +481,15 @@ def _validate_shard_provenance(summary_path: Path, arm: NativeMultiJobArm) -> di
         or summary["formal_baseline_eligible"] is not True
     ):
         raise ValueError(f"native framework shard contains non-native scheduling evidence: {summary_path}")
+    source_expected = {
+        "source_kind": "timed_postgres_manifest",
+        "source_timing_boundary": "inside_job_barrier",
+        "source_validation_status": "ok",
+    }
+    if any(summary.get(field) != value for field, value in source_expected.items()):
+        raise ValueError(f"shard source timing mismatch for {arm.arm_id}: {summary_path}")
+    if not isinstance(summary["source_read_s"], (int, float)) or summary["source_read_s"] < 0:
+        raise ValueError(f"shard source_read_s is invalid: {summary_path}")
     return {field: summary[field] for field in required}
 
 
@@ -529,7 +579,7 @@ def _run_job(
             model=config.model, service_prefix_caching=config.service_prefix_caching,
             service_max_num_seqs=config.service_max_num_seqs,
             service_max_num_batched_tokens=config.service_max_num_batched_tokens,
-            api_key=api_key,
+            api_key=api_key, source=config.source,
         )
         for index in (0, 1)
     ]
