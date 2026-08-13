@@ -1,5 +1,19 @@
 # AutoDL 云部署指南
 
+## SAOR native-system matched readiness
+
+`saor_native_system_matched.example.json` defines the fail-closed eight-arm
+contract: three framework-owned native arms, frozen-static, three Project
+selector controls, and one shared SAOR physical cell. Resolve its environment
+variables, then run the read-only audit; it sends no model request and starts no
+Ray process. GPU formal is explicitly not locally authorized.
+
+```bash
+python code/scripts/analysis/audit_saor_native_system_matched.py \
+  --config deploy/autodl/saor_native_system_matched.example.json \
+  --output /tmp/saor_native_system_matched_readiness.json
+```
+
 本指南沉淀 2026-07-27 把项目部署到 AutoDL(2× GPU 云服务器)的全流程经验,目标是可在云上复现本机实验并补"多 endpoint / 多 GPU"真实验证缺口(见根 `AGENTS.md` §3、`motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md` 第 83 行)。
 
 指南面向"从零起一台 AutoDL 实例到跑通首个多 endpoint 实验"。所有命令均为 Linux bash(远端)。
