@@ -56,16 +56,20 @@ def _validate_replay_starts(
             raise RuntimeError(
                 f"job {index} crossed replay barrier before its deadline"
             )
-        lateness = actual_submit - configured
-        if lateness < -0.01 or lateness > max_lateness_s:
+        if barrier_lateness > max_lateness_s:
             raise RuntimeError(
                 f"job {index} missed replay start deadline by "
-                f"{lateness:.6f}s"
+                f"{barrier_lateness:.6f}s"
             )
-        # Submission is intentionally downstream of admission/credit control.
-        # Its delay is bounded above, but cross-job launch skew must be judged
-        # at the replay barrier or the scheduler behavior being measured can
-        # invalidate an otherwise synchronized run.
+        # First submission is intentionally downstream of admission/credit
+        # control.  Its post-barrier delay is an experimental outcome, not a
+        # launch-validity condition; bounding it here would reject selectors
+        # that deliberately queue a ready Job.  It may never precede the
+        # observed replay barrier.
+        if actual_submit < observed - 0.01:
+            raise RuntimeError(
+                f"job {index} submitted before crossing its replay barrier"
+            )
         normalized_barrier_starts.append(observed - offset_s)
     if (
         normalized_barrier_starts

@@ -2376,7 +2376,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             {
                 "replay_configured_start_epoch_s": 105.0,
                 "replay_observed_start_epoch_s": 105.1,
-                "replay_actual_submit_start_epoch_s": 105.8,
+                "replay_actual_submit_start_epoch_s": 113.8,
             },
         ]
 
@@ -2387,6 +2387,24 @@ class SharedVllmExperimentTests(unittest.TestCase):
             max_lateness_s=2.0,
             max_skew_s=0.5,
         )
+
+    def test_replay_start_validation_rejects_submit_before_barrier(self) -> None:
+        evidence = [
+            {
+                "replay_configured_start_epoch_s": 100.0,
+                "replay_observed_start_epoch_s": 100.1,
+                "replay_actual_submit_start_epoch_s": 100.0,
+            },
+        ]
+
+        with self.assertRaisesRegex(RuntimeError, "before crossing"):
+            _validate_replay_starts(
+                evidence,
+                expected_start_epoch_s=100.0,
+                arrival_offsets_s=(0.0,),
+                max_lateness_s=2.0,
+                max_skew_s=0.5,
+            )
 
     def test_runner_topology_rejects_duplicate_metrics_urls(self) -> None:
         with patch.object(

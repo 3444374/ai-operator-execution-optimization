@@ -1261,6 +1261,11 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
 `code/scripts/analysis/summarize_saor_matched_ready_ablation.py` 只做证据完整性汇总；其
 `validation.json` 不授权 formal，也不自动判 selector 胜负。
 
+错峰 Job 的有效性按 profiler 实际跨过 replay barrier 的 lateness/skew 判定；
+barrier→first-submit 属于 selector 的排队结果，必须进入等待、JCT 和 SLO 比较，不能再作为
+启动失败门禁。否则 FIFO/DRR 等允许 ready Job 等待 credit 的策略会被系统性误拒绝。
+first-submit 早于实际 barrier 仍然 fail closed。
+
 正式运行优先使用 audit-aware wrapper，避免手工设置上述逐 Job 变量：
 
 ```bash
