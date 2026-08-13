@@ -2,8 +2,9 @@
 
 Date: 2026-07-20（最后更新：2026-08-13；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 $0.125W_e$ 双轮 GPU development gate 已冻结候选参数，
-formal 前需项目内部 matched-observation 归因门；原生 baseline 不接入 bounded-ready，dynamic-K
-仍退出主线）
+formal 前需项目内部 matched-observation selector 门；其后必须补同一 2-Job 合同的 native-system
+matched comparison，且 bounded-ready 独立归因仍缺 single-head + shared FIFO 桥接臂；原生
+baseline 不接入 bounded-ready，dynamic-K 仍退出主线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -81,15 +82,39 @@ violation 0.658/0.666；$0.25W_e$ 虽保护 foreground，但 bulk miss 0.752/0.7
 
 同日 post-hoc 归因审核增加阻塞门：bounded-ready 同时改变 multiple concrete-ready
 pre-registration/execution path 与 priority/debt selector，旧 single-head FIFO/DRR/VTC/SAOR 不能
-作为 selector 的干净因果对照。先做 1--2 轮**项目内部** matched-observation rehearsal，使
+作为 selector 的干净因果对照，但 FIFO/DRR/VTC 仍是 canonical no-bounded-ready 算法 baselines。
+另做 1--2 轮**项目内部** matched-observation rehearsal，使
 project bounded-ready + FIFO、DRR/WFQ、external VTC-style、strict-priority 与 proposed 共享相同
-ready-window、active K/W、ready bytes、arrival/cache/服务合同。它们是 internal controls/ablations，
-不是原生 baseline；Daft、Ray Data、vLLM 或产品 baseline 继续使用各自调度且不接 bounded-ready。
+ready-window、active K/W、ready bytes、arrival/cache/服务合同。接入 bounded-ready 的 FIFO/DRR/
+VTC 只是 canonical baselines 的 matched controls，不替代 no-bounded-ready 版本；Daft、Ray Data、
+vLLM 或产品原生 baseline 继续使用各自调度且不接 bounded-ready。
 只有 proposed 超过最强项目简单 Pareto 前沿才启动 1+3 formal；否则贡献收敛为 bounded ready-state
 exposure + 最小 guarded release，或淘汰复杂 selector。
 formal 另需把 equal-share fairness 与 foreground/bulk differentiated service 分轨，使用
 registered-ready backlog、completion-accounted empirical lag、三个 JCT 反事实、request/token
 SLO goodput、最长 no-service 和 ready buffer/CPU/memory 指标。
+
+当前执行顺序进一步冻结为“两层证据都要”：正在完成的六臂 rehearsal 只属于 Project 内部
+selector attribution，用来判断 bounded-ready 条件下 FIFO/DRR/VTC-style/strict-priority 是否
+已经击败或覆盖 guarded debt；下一阶段必须在相同 2-Job manifest、arrival、PG source/sink、
+模型/vLLM FCFS 服务签名和物理资源包络上，分列 Daft Native、Daft Ray、Ray Data native、
+project frozen-static 与 proposed，完成系统级 matched comparison。原生臂保留自身调度，不
+注入 Project K/W；Project 两臂冻结相同 K/W。历史原生数据只有完整签名和指标 schema 均匹配
+才可复用，否则重跑。
+
+FIFO、DRR、VTC-style 的 canonical 身份是**no-bounded-ready 调度算法 baselines**；接入
+bounded-ready 的副本只用于让 selector 看到完全相同的候选集，标成 matched controls，不替代
+baseline。还须保留其 single-head/no-bounded-ready 实例：最小先补 shared
+FIFO 桥接，若论文报告完整 SAOR 包相对 DRR/VTC 包，则 no-bounded-ready DRR/VTC-style 也必须
+纳入或严格复用签名一致的旧 formal。每个结果名必须显式写 observation contract。
+
+截至本次对话的外部运行中间回报称第一轮 DRR/VTC-style 约 12.9K tok/s、foreground 零违约，
+proposed 约 12.27K tok/s；仓库尚无该 rehearsal 的完整 artifact，故该数字只登记为待核验方向，
+不进入结果表。若第二轮与无损证据重复该排序且 protected metrics 不劣，则完整系统即使胜过
+原生 Daft/Ray，也不能把增益全部归因于 SAOR selector；结论应收敛到 bounded-ready/shared-
+admission 系统价值，复杂 guarded-debt selector 按停止门淘汰。另因 frozen-static→bounded FIFO
+同时改变共享容量和 observation，若要把 bounded-ready 写成独立贡献，还需增加
+`single-head + shared FIFO` 桥接臂。
 
 ## 图像状态增量（2026-08-10）
 

@@ -6471,3 +6471,23 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   若未来仍让所有 `job_id` 平铺竞争，或让跨租户 strict priority 绕过 tenant floor，才构成冲突。
 - 同步修正 `research/knowledge_hub.md` 和 `research/README.md` 的入口口径：当前算法架构可复用，
   但未来仍需重验 tenant floor、anti-splitting、双层 debt/reclaim、work conservation 与恢复时间。
+
+## 2026-08-13 冻结 SAOR 系统价值与机制归因的两层证据矩阵
+
+- 明确若论文问题是“完整 SAOR 数据库 AI 多 Job 系统是否优于原生 Daft/Ray”，只做 Project
+  bounded-ready 五 selector 的内部消融不充分；系统级最小比较必须在同一 2-Job workload、PG
+  source/sink、模型、vLLM FCFS、物理资源和 correctness 合同下，分列 Daft Native、Daft Ray、
+  Ray Data native、project frozen-static 与 proposed。
+- 原生臂保留框架自己的 batching/backpressure/scheduler，不注入 Project K/W、credit 或
+  bounded-ready；Project static/proposed 冻结相同 K/W。该层只支持完整系统经验表现，不支持把
+  差值全部归因给 SAOR selector。
+- 机制级继续让 bounded-ready + FIFO/DRR/VTC-style/strict-priority/proposed 共享同一 ready
+  window。另补 `single-head + shared FIFO` 桥接臂，避免把 static/shared capacity 与
+  single-head/bounded-ready 的联合变化误写成 observation 单因素收益。
+- 进一步澄清 FIFO、DRR、VTC-style 的 canonical 身份是 no-bounded-ready 调度算法 baselines；
+  bounded-ready 副本只是 Project harness 下的 matched-observation controls，不代表 baseline
+  依赖本项目机制，也不能取代 canonical 实例。正式评价在名称中显式标注 observation contract。
+- 历史原生结果只有 manifest/arrival、source/sink 与计时边界、模型/服务、协议/output cap、
+  硬件/endpoint、correctness 和指标 schema 全部一致时才复用，否则重跑。第一轮 selector
+  rehearsal 的约 12.9K DRR/VTC-style 与约 12.27K proposed 目前仅来自对话中间回报，未见完整
+  仓库 artifact，故只登记为待核验停止信号，不改实验结论。

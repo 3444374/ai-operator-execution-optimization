@@ -7,7 +7,8 @@
 VTC/DLPM 与 SLO-serving 文献收紧多 Job 评价合同，并完成双轮 bounded-priority GPU
 development gate；结果未晋级，新增 ready-set observation 修订任务；同日 bounded-ready
 $0.125W_e$ 双轮通过开发门，但审核发现 observation 与 selector 归因混杂，formal 前新增
-项目内部 matched-observation attribution gate；原生 baseline 不接入 bounded-ready）
+项目内部 matched-observation attribution gate；原生 baseline 不接入 bounded-ready；完整系统
+价值另需同一 2-Job 合同下的 native-system matched comparison）
 
 > **动态调度算法唯一维护入口**：本文 §5.2。当前状态为
 > `formal-valid / not-promoted`，不是已完成方法，
@@ -992,24 +993,58 @@ credit 或 bounded-ready；project frozen-static 是同栈静态 reference，不
 `BoundedReadyWindow` 只存在于 Project 路径：它把已经 concrete-ready 的有限多个请求暴露给
 项目 selector。算法因果比较时，project bounded-ready + global FIFO、DRR/WFQ、external
 VTC-style、strict-priority/EDF 与 proposed 必须使用**同一个 bounded ready-window、同一 active
-K/W 和同一 ready bytes 上限**。这些是 project internal controls/ablations，不进入原生 baseline
-排名。旧 single-head `saor_release` 只保留为 observation-gap 定位臂。
+K/W 和同一 ready bytes 上限**。FIFO、DRR/WFQ、external VTC-style 的 canonical 调度算法
+baselines 使用 no-bounded-ready/single-head；接入统一 Project ready-window 的副本只是在候选集
+相同条件下比较 selector，身份是 matched-observation controls，不代表 bounded-ready 属于这些
+算法，也不能取代 canonical baselines。strict-priority/EDF 是 SLO 上界 control。这些 Project
+harness 路径均不进入 vendor-native 系统排名；旧 single-head `saor_release` 只保留为
+observation-gap 定位臂。
 
 `saor-v0.5.2` 的 $0.125W_e$ 虽已通过双轮 development gate，但其 observation/execution path
-与 selector 同时改变；因此 formal 注册分两级：
+与 selector 同时改变；因此 formal 前的证据与归因分层如下：
 
-1. **项目内部 matched-observation attribution gate（先运行）**：在冻结 2-Job workload 上做
+1. **项目内部 matched-observation selector gate（当前先运行）**：在冻结 2-Job workload 上做
    1--2 个 rehearsal，至少比较 project bounded-ready + FIFO、DRR/WFQ、strict-priority 与
    proposed；external VTC-style 在 event accounting 可复用时加入。所有 Job 应用同一 ready
-   window，只改变选择器；这些臂不称原生 baseline；
-2. **项目 formal（归因 gate 通过后）**：project frozen-static reference、最强 bounded-ready
-   internal controls 与 proposed $0.125W_e$ 为核心；direct ceiling、原生系统 baseline 和旧 SAOR
-   分层报告，不把不同 scheduler owner 混成 selector 排名。使用 1 warm-up + 3 个 balanced/
-   interleaved repeats，$0.25W_e$ 只保留 development rejected ablation；
-3. proposed 只有相对最强 bounded-ready 简单 internal control 至少改善一个预注册主要指标、其余 protected
+   window，只改变选择器。这里的 FIFO/DRR/VTC-style 必须标成 canonical 算法 baseline 的
+   `Project harness + bounded-ready matched-control` 副本，不能取代 no-bounded-ready baseline，
+   也不能称 vendor-native/system baseline。该 gate 只回答 SAOR 是否被简单 selector 击败，
+   不能单独证明完整系统相对 Daft/Ray 的价值；
+2. **系统级 native matched comparison（下一阶段必做）**：在同一 2-Job immutable workload、
+   arrival replay、PG source/sink、模型、vLLM FCFS 服务签名、协议和 correctness 合同下，分列
+   Daft `prompt()` Native、Daft `prompt()` Ray（两者均可执行时）、Ray Data native graph、
+   project frozen-static 与 proposed $0.125W_e$。Project 两臂冻结相同 K/W；原生臂保留官方
+   batching/backpressure/scheduler，不注入 Project K/W/credit/bounded-ready，但共享相同物理
+   CPU/GPU/endpoint 包络并使用预注册的原生 calibration。报告 E2E throughput/MFU、group JCT、
+   per-Job JCT/P99/SLO、资源与 correctness；这里只能声称完整系统的经验表现；
+3. **no-bounded-ready baseline 与 observation 桥接（独立贡献前必做）**：同一 FIFO/DRR/VTC-style
+   baseline 应保留 single-head/no-bounded-ready 实例，用于完整调度包比较；其中最小桥接使用
+   `single-head + shared FIFO`。现有 project frozen-static 与 bounded-ready +
+   FIFO 同时改变 static/shared capacity、single-head/bounded-ready 和 selector，二者差值不能全归于
+   observation。增加 `single-head + shared FIFO`，用 `frozen-static → single-head + shared FIFO`
+   观察共享容量，用 `single-head + shared FIFO → bounded-ready + FIFO` 观察 ready-state exposure，
+   再在 bounded-ready 下比较 FIFO/DRR/VTC-style/strict-priority/proposed。若报告完整 SAOR 包相对
+   DRR/VTC 包，还须纳入 no-bounded-ready DRR/VTC-style；
+4. **项目 formal**：project frozen-static reference、最强 bounded-ready internal controls 与
+   proposed $0.125W_e$ 为核心；direct ceiling 和原生系统另表，不把不同 scheduler owner 混成
+   selector 排名。使用 1 warm-up + 3 个 balanced/interleaved repeats，$0.25W_e$ 只保留
+   development rejected ablation；
+5. proposed 只有相对最强 bounded-ready 简单 internal control 至少改善一个预注册主要指标、其余 protected
    metrics 通过 non-inferiority/SLO margin，才能把 selector 写成独立贡献。若简单策略已在同一
    Pareto 前沿，贡献收敛为 bounded ready-state exposure + 最小 guarded release，或淘汰复杂
    selector；不更换 workload 追正。
+
+历史 Daft/Ray 原生多 Job 数据只有在 manifest SHA/顺序、arrival offset/scale/barrier、模型与
+服务签名、PG source/sink 和计时边界、协议/输出 cap、硬件/endpoint、correctness 以及上述指标
+schema 全部一致时才能复用；缺一项就重跑，不能把不匹配的历史数字拼进系统级表。
+
+截至 2026-08-13 对话收到的第一轮 rehearsal 中间回报（尚无仓库内完整 artifact，故不登记为
+实验结论）显示 DRR/VTC-style 约 12.9K tok/s 且 foreground 零 SLO violation，proposed 约
+12.27K tok/s。若第二轮和完整证据重复该形状，且 DRR/VTC-style 的 bulk starvation、service lag
+与资源开销也不更差，则即使 proposed 相对原生系统更快，也只能把优势归给完整 Project/
+bounded-ready 系统，不能把全部收益归给 guarded-debt selector；DRR/VTC-style 已足够时按停止门
+淘汰复杂 selector。反之，proposed 只有在预注册的 bulk guard、service lag、债务偿还或 SLO
+约束上形成简单 selector 不具备的 Pareto 点，才保留其独立算法价值。
 
 dynamic capacity 保持 `parked-conditional`；若未来恢复，才独立比较 frozen lower/upper、
 state-observed no-op、threshold/deadband、governor 和 offline oracle。
