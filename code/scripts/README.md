@@ -88,9 +88,13 @@ cell；runner 与模板均不授予 GPU formal 执行权限。
 baseline。原生 request P99/SLO 无共同真实 request clock 时必须保留字面值 `unavailable` 和
 非空原因；P99 与 SLO 分别输出 status/value/reason，任一不可用时不得生成跨系统排名。Job JCT
 按预注册的 nominal release→completion 计算，actual launch/offset/deviation 仅保留为启动抖动与
-overlap 诊断。终态校验按真实 native `queue_final` 与 Project `shared_credit_final` schema 只检查
-实时 active/waiting，不把 K/W 限额或历史峰值误判为残留工作。六个输出先写相邻 staging 目录再整代
-发布；失败重跑会移除旧 CSV，只保留 failed `validation.json`。工具不产生 winner，也固定
+overlap 诊断。Task3 normalizer 把 legacy flat unavailable tail 转为中性 nested
+`request_p99/slo → status/value/reason`，并把 `_snapshot_mapping` 产生的五类 JSON-encoded per-Job
+live 容器解码后再存入 evidence。终态校验按真实 native `queue_final` 与 Project
+`shared_credit_final` schema 只检查实时 active/waiting，不把 K/W 限额或历史峰值误判为残留工作。
+六个输出先写相邻 staging；发布 CSV 前先原子写入非 passed 的 `publishing` marker，五个 CSV 逐个
+替换，最后才原子发布 passed `validation.json`。消费者只可把 `validation.json.status=passed` 视为
+有效代次；失败重跑会移除旧 CSV，只保留 failed `validation.json`。工具不产生 winner，也固定
 `formal_authorized=false`。
 
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目

@@ -51,6 +51,61 @@ def _validate_actual_job_offset(actual_offset_s: float) -> float:
     return deviation_s
 
 
+def normalize_request_tail_status(value: object) -> dict[str, dict[str, object]]:
+    """Convert legacy flat unavailable tails or validate the neutral nested schema."""
+
+    def thaw(item: object) -> object:
+        if isinstance(item, tuple):
+            if all(
+                isinstance(entry, tuple) and len(entry) == 2
+                and isinstance(entry[0], str)
+                for entry in item
+            ):
+                return {str(key): thaw(child) for key, child in item}
+            return [thaw(child) for child in item]
+        if isinstance(item, list):
+            return [thaw(child) for child in item]
+        if isinstance(item, dict):
+            return {str(key): thaw(child) for key, child in item.items()}
+        return item
+
+    decoded = thaw(value)
+    if not isinstance(decoded, dict):
+        raise RuntimeError("request-tail contract must be an object")
+    if set(decoded) == {"status", "reason"}:
+        if decoded["status"] != "unavailable" or not str(decoded["reason"]):
+            raise RuntimeError("legacy request-tail contract must be unavailable")
+        decoded = {
+            metric: {
+                "status": "unavailable", "value": "unavailable",
+                "reason": str(decoded["reason"]),
+            }
+            for metric in ("request_p99", "slo")
+        }
+    if set(decoded) != {"request_p99", "slo"}:
+        raise RuntimeError("request-tail contract must contain request_p99 and slo")
+    output: dict[str, dict[str, object]] = {}
+    for metric in ("request_p99", "slo"):
+        entry = decoded[metric]
+        if not isinstance(entry, dict) or set(entry) != {"status", "value", "reason"}:
+            raise RuntimeError(f"request-tail {metric} must contain status/value/reason")
+        status = str(entry["status"])
+        reason = str(entry["reason"])
+        metric_value = entry["value"]
+        if status == "unavailable":
+            if metric_value != "unavailable" or not reason:
+                raise RuntimeError(f"request-tail {metric} unavailable evidence is invalid")
+        elif status == "available":
+            if isinstance(metric_value, bool) or not isinstance(metric_value, (int, float)):
+                raise RuntimeError(f"request-tail {metric} available value must be numeric")
+        else:
+            raise RuntimeError(f"request-tail {metric} status is invalid")
+        output[metric] = {
+            "status": status, "value": metric_value, "reason": reason,
+        }
+    return output
+
+
 @dataclass(frozen=True)
 class MatchedArm:
     """One immutable physical execution arm; no service work is performed here."""
@@ -359,7 +414,7 @@ def _validate_cell_evidence(
         artifact = Path(str(value))
         if not artifact.exists() or (artifact.is_file() and artifact.stat().st_size <= 0):
             raise RuntimeError(f"output artifact {name} is missing or empty")
-    if dict(arm.unsupported_request_tails) != evidence["request_tail_status"]:
+    if normalize_request_tail_status(arm.unsupported_request_tails) != evidence["request_tail_status"]:
         raise RuntimeError("unsupported request-tail evidence drifted")
     command = evidence.get("command", [])
     if arm.kind == "native" and any(
@@ -538,8 +593,10 @@ def _validation_errors(config: MatchedSystemConfig) -> list[str]:
             errors.append(f"{arm.arm_id} must use eager internal arrival with offsets [0, 5]")
         if arm.performance_writeback_mode != "none":
             errors.append(f"{arm.arm_id} performance writeback must be none")
-        if dict(arm.unsupported_request_tails).get("status") != "unavailable" or not dict(arm.unsupported_request_tails).get("reason"):
-            errors.append(f"{arm.arm_id} must record unavailable unsupported request tails with reason")
+        try:
+            normalize_request_tail_status(arm.unsupported_request_tails)
+        except RuntimeError as error:
+            errors.append(f"{arm.arm_id} has invalid unsupported request tails: {error}")
         path = Path(arm.manifest_path)
         if not path.is_file():
             errors.append(f"{arm.arm_id} manifest is missing: {path}")

@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-08-14 SAOR producer schema 与 validation-last 发布修正
+
+- Task3 native/Project normalizer 将既有 flat unavailable tail 合同统一转换为中性 nested
+  `request_p99/slo → status/value/reason`；nested 输入逐项校验后保留，不生成任何 available 值。
+- Project normalizer 在 evidence 边界仅解码 `_snapshot_mapping` 文档定义的五类 JSON-encoded
+  per-Job live 容器；离线汇总对旧 evidence 做同范围兼容，malformed、非容器和非空 live 值均失败。
+- 更正“六文件整代原子”的过度表述：实际协议为 fail-closed validation-last。CSV 发布前原子替换
+  `validation.json` 为 `publishing`，五个 CSV 逐个替换，passed marker 最后原子发布；中途失败删除
+  命名 CSV/staging 并只留下 failed marker。消费者必须只信任 `status=passed` 的代次。
+- 本轮仍仅为本地 schema/发布合同修正，未连接服务器、未运行 GPU/rehearsal/formal、未同步 Wiki。
+
 ## 2026-08-14 SAOR 两层汇总审查修正
 
 - 将终态门禁从递归扫描任意数值改为系统真实 schema：原生路径只检查各 endpoint 的

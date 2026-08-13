@@ -10,8 +10,9 @@ contains bounded-ready FIFO/DRR/VTC-style/SAOR, with one shared physical SAOR ru
 This is tested local infrastructure only: no server/GPU rehearsal or formal evidence
 has been produced. The fail-closed summarizer validates native queue and Project credit
 end-state schemas separately, computes Job JCT from nominal scheduled release while retaining
-actual-launch jitter diagnostics, publishes its six-file generation through staging, and keeps
-unsupported native request P99 and SLO independently `unavailable` with reasons.
+actual-launch jitter diagnostics, and keeps unsupported native request P99 and SLO independently
+`unavailable` with reasons. Publication is fail-closed rather than generation-atomic: a non-passed
+marker precedes individual CSV replacement, and passed `validation.json` is published last.
 
 全项目代码分层、文本/图像模态边界与分阶段迁移计划见
 [`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、

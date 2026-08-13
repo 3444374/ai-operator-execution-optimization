@@ -10,6 +10,7 @@ import os
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
@@ -27,9 +28,11 @@ from src.experiments.saor.native_system_matched import (
     audit_matched_system_config,
     balanced_matched_schedule,
     load_matched_system_config,
+    normalize_request_tail_status,
     run_matched_system,
 )
 from scripts.experiments.run_saor_native_system_matched import (
+    _normalize_native,
     _normalize_project,
     _canonical_config_path,
     _validate_executor_bindings,
@@ -217,11 +220,11 @@ class MatchedSystemContractTest(unittest.TestCase):
             "active_work": 1,
             "waiting_requests": 1,
             "waiting_work": 1,
-            "active_by_job": [["job-0", 1]],
-            "active_work_by_job": [["job-0", 1]],
-            "waiting_by_job": [["job-0", 1]],
-            "waiting_work_by_job": [["job-0", 1]],
-            "waiting_head_work_by_job": [["job-0", 1]],
+            "active_by_job": '[["job-0", 1]]',
+            "active_work_by_job": '{"job-0": 1}',
+            "waiting_by_job": '[["job-0", 1]]',
+            "waiting_work_by_job": '{"job-0": 1}',
+            "waiting_head_work_by_job": '[["job-0", 1]]',
         }
         for field, nonempty in mutations.items():
             with self.subTest(field=field), TemporaryDirectory() as temporary:
@@ -274,6 +277,29 @@ class MatchedSystemContractTest(unittest.TestCase):
             self.assertAlmostEqual(deviations["bulk"], 0.2)
             self.assertAlmostEqual(deviations["foreground"], 0.1)
 
+    def test_summary_rejects_malformed_encoded_live_credit_container(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix_root = root / "matrix"
+            output_dir = root / "summary"
+            self._write_complete_summary_fixture(matrix_root)
+            index_path = matrix_root / "matrix_index.json"
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            project = next(
+                cell for cell in index["cells"]
+                if cell["arm_id"] == "project_bounded_ready_fifo"
+            )
+            credit = json.loads(project["shared_credit_final"])
+            credit[0]["active_by_job"] = "not-json"
+            project["shared_credit_final"] = json.dumps(credit)
+            index_path.write_text(json.dumps(index), encoding="utf-8")
+
+            self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+            self.assertEqual(
+                json.loads((output_dir / "validation.json").read_text())["status"],
+                "failed",
+            )
+
     def test_failed_rerun_removes_stale_success_outputs(self) -> None:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -318,6 +344,39 @@ class MatchedSystemContractTest(unittest.TestCase):
                 {path.name for path in output_dir.iterdir()}, {"validation.json"}
             )
 
+    def test_publish_failure_never_exposes_old_passed_validation(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix_root = root / "matrix"
+            output_dir = root / "summary"
+            self._write_complete_summary_fixture(matrix_root)
+            self.assertTrue(summarize_matched_system(matrix_root, output_dir))
+            real_replace = Path.replace
+            publish_count = 0
+            observed_statuses = []
+
+            def fail_second_csv(source: Path, target: Path) -> Path:
+                nonlocal publish_count
+                if source.suffix == ".csv" and target.parent == output_dir:
+                    publish_count += 1
+                    if publish_count == 2:
+                        observed_statuses.append(json.loads(
+                            (output_dir / "validation.json").read_text()
+                        )["status"])
+                        raise OSError("simulated publish replace failure")
+                return real_replace(source, target)
+
+            with patch.object(Path, "replace", new=fail_second_csv):
+                self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+            self.assertNotIn("passed", observed_statuses)
+            self.assertEqual(
+                {path.name for path in output_dir.iterdir()}, {"validation.json"}
+            )
+            self.assertEqual(
+                json.loads((output_dir / "validation.json").read_text())["status"],
+                "failed",
+            )
+
     def test_native_populated_slo_is_rejected_as_unsupported(self) -> None:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -330,7 +389,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                 cell for cell in index["cells"] if cell["arm_id"] == "daft_native"
             )
             native["request_tail_status"]["slo"] = {
-                "status": "available", "violation_ratio": 0.25, "reason": ""
+                "status": "available", "value": 0.25, "reason": ""
             }
             index_path.write_text(json.dumps(index), encoding="utf-8")
 
@@ -558,6 +617,16 @@ class MatchedSystemContractTest(unittest.TestCase):
                 "prompt_tokens_delta": 10,
                 "generation_tokens_delta": 20,
                 "resource_metrics_status": "ok",
+                "shared_credit_final": json.dumps([{
+                    "endpoint_id": "ep-0", "request_limit": 8,
+                    "work_limit": 65536, "active_requests": 0,
+                    "active_work": 0, "waiting_requests": 0,
+                    "waiting_work": 0, "active_by_job": "[]",
+                    "active_work_by_job": "{}", "waiting_by_job": "[]",
+                    "waiting_work_by_job": "{}",
+                    "waiting_head_work_by_job": "[]",
+                    "max_active_requests_seen": 8,
+                }]),
             }
 
             normalized = _normalize_project(arm, record, output_dir)
@@ -583,6 +652,62 @@ class MatchedSystemContractTest(unittest.TestCase):
                 [True, False],
             )
             self.assertFalse(normalized["exactly_once"])
+            self.assertEqual(
+                normalized["request_tail_status"],
+                {
+                    "request_p99": {
+                        "status": "unavailable", "value": "unavailable",
+                        "reason": "unsupported",
+                    },
+                    "slo": {
+                        "status": "unavailable", "value": "unavailable",
+                        "reason": "unsupported",
+                    },
+                },
+            )
+            credit = json.loads(normalized["shared_credit_final"])
+            self.assertEqual(credit[0]["active_by_job"], [])
+            self.assertEqual(credit[0]["active_work_by_job"], {})
+
+    def test_native_normalizer_converts_flat_unavailable_tails_to_neutral_schema(self) -> None:
+        with self._config() as path:
+            arm = next(
+                item for item in load_matched_system_config(path).arms
+                if item.arm_id == "daft_native"
+            )
+            service_path = path.parent / "service.json"
+            service_path.write_text(json.dumps({"delta": {}}), encoding="utf-8")
+            normalized = _normalize_native(arm, {
+                "jobs": [], "service_counters": str(service_path),
+                "t0_epoch_s": 100.0, "arm_barrier_jct_s": 1.0,
+                "gpu_resource_trace": "resources.csv", "gpu_summary": {},
+                "gauge_summary": {},
+            })
+            expected = {
+                "status": "unavailable", "value": "unavailable",
+                "reason": "unsupported",
+            }
+            self.assertEqual(normalized["request_tail_status"]["request_p99"], expected)
+            self.assertEqual(normalized["request_tail_status"]["slo"], expected)
+
+    def test_normalizers_reject_malformed_tail_contract(self) -> None:
+        with self._config() as path:
+            arm = next(
+                item for item in load_matched_system_config(path).arms
+                if item.arm_id == "daft_native"
+            )
+            malformed = replace(
+                arm, unsupported_request_tails=(("status", "available"),)
+            )
+            service_path = path.parent / "service.json"
+            service_path.write_text(json.dumps({"delta": {}}), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "request-tail"):
+                _normalize_native(malformed, {
+                    "jobs": [], "service_counters": str(service_path),
+                    "t0_epoch_s": 100.0, "arm_barrier_jct_s": 1.0,
+                    "gpu_resource_trace": "resources.csv", "gpu_summary": {},
+                    "gauge_summary": {},
+                })
 
     def test_executor_bindings_fail_closed_on_actual_config_drift(self) -> None:
         with self._config() as path:
@@ -1183,7 +1308,9 @@ class MatchedSystemContractTest(unittest.TestCase):
             },
             "resource_metrics": {"resource_metrics_status": "ok", "path": str(output_dir / "resources.csv")},
             "exactly_once": True,
-            "request_tail_status": dict(arm.unsupported_request_tails),
+            "request_tail_status": normalize_request_tail_status(
+                arm.unsupported_request_tails
+            ),
             "output_paths": {"commands": str(output_dir / "commands.json")},
             "status": "passed",
         }
@@ -1283,10 +1410,12 @@ class MatchedSystemContractTest(unittest.TestCase):
                         "request_tail_status": {
                             "request_p99": {
                                 "status": "unavailable",
+                                "value": "unavailable",
                                 "reason": "common request clock is unsupported",
                             },
                             "slo": {
                                 "status": "unavailable",
+                                "value": "unavailable",
                                 "reason": "common SLO contract is unsupported",
                             },
                         },
@@ -1309,11 +1438,11 @@ class MatchedSystemContractTest(unittest.TestCase):
                                         "waiting_requests": 0,
                                         "waiting_work": 0,
                                         "oldest_waiting_age_s": 0.0,
-                                        "active_by_job": [],
-                                        "active_work_by_job": [],
-                                        "waiting_by_job": [],
-                                        "waiting_work_by_job": [],
-                                        "waiting_head_work_by_job": [],
+                                        "active_by_job": "[]",
+                                        "active_work_by_job": "{}",
+                                        "waiting_by_job": "[]",
+                                        "waiting_work_by_job": "{}",
+                                        "waiting_head_work_by_job": "[]",
                                         "max_active_requests_seen": 8,
                                         "max_active_work_seen": 65536,
                                         "granted_requests_by_job": [["job-0", 2]],

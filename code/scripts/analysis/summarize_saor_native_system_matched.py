@@ -89,6 +89,14 @@ def _publish_failed_validation(output_dir: Path) -> None:
     temporary.replace(output_dir / "validation.json")
 
 
+def _publish_validation(output_dir: Path, status: str) -> None:
+    temporary = output_dir / f".validation.json.{status}.tmp"
+    if temporary.is_file():
+        temporary.unlink()
+    _write_json(temporary, _validation(status))
+    temporary.replace(output_dir / "validation.json")
+
+
 def _finite(value: object, name: str) -> float:
     parsed = float(value)
     if not math.isfinite(parsed):
@@ -148,10 +156,24 @@ def _project_credit_empty(value: object, run_id: str, *, frozen_static: bool) ->
             raise ValueError(f"{run_id} shared_credit_final has an invalid schema")
         if not str(snapshot["endpoint_id"]):
             raise ValueError(f"{run_id} shared_credit_final lacks endpoint_id")
+        for name in mapping_live:
+            value = snapshot[name]
+            if isinstance(value, str):
+                try:
+                    value = json.loads(value)
+                except json.JSONDecodeError as error:
+                    raise ValueError(
+                        f"{run_id} shared credit {name} is malformed JSON"
+                    ) from error
+            if not isinstance(value, (list, dict)):
+                raise ValueError(
+                    f"{run_id} shared credit {name} must encode a container"
+                )
+            snapshot[name] = value
         if any(
             _finite(snapshot[name], f"{run_id} shared credit {name}") != 0
             for name in scalar_live
-        ) or any(snapshot[name] not in ([], {}, ()) for name in mapping_live):
+        ) or any(snapshot[name] not in ([], {}) for name in mapping_live):
             raise ValueError(f"{run_id} final shared credit is not empty")
 
 
@@ -179,7 +201,9 @@ def _availability_metric(
         raise ValueError(f"{run_id} {metric} availability has an invalid schema")
     status = str(raw.get("status", ""))
     reason = str(raw.get("reason", ""))
-    raw_value = raw.get(value_name)
+    if set(raw) != {"status", "value", "reason"}:
+        raise ValueError(f"{run_id} {metric} must contain status/value/reason")
+    raw_value = raw.get("value")
     if status == "unavailable":
         if not reason or raw_value not in (None, "", "unavailable"):
             raise ValueError(f"{run_id} {metric} unavailable contract is invalid")
@@ -637,8 +661,10 @@ def summarize_matched_system(matrix_root: Path, output_dir: Path) -> bool:
             ],
         )
         _write_json(staging_dir / "validation.json", _validation("passed"))
-        for name in _OUTPUT_NAMES:
+        _publish_validation(output_dir, "publishing")
+        for name in _OUTPUT_NAMES[:-1]:
             (staging_dir / name).replace(output_dir / name)
+        (staging_dir / "validation.json").replace(output_dir / "validation.json")
         staging_dir.rmdir()
         return True
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):

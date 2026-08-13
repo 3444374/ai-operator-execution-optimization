@@ -30,6 +30,7 @@ from src.experiments.saor.native_system_matched import (  # noqa: E402
     MatchedArm,
     ScheduledMatchedCell,
     load_matched_system_config,
+    normalize_request_tail_status,
     run_matched_system,
 )
 from src.experiments.shared_vllm import (  # noqa: E402
@@ -317,7 +318,9 @@ def _normalize_native(
             "gpu_summary": record["gpu_summary"],
             "gauge_summary": record["gauge_summary"],
         },
-        "request_tail_status": dict(arm.unsupported_request_tails),
+        "request_tail_status": normalize_request_tail_status(
+            arm.unsupported_request_tails
+        ),
         "output_paths": {
             "service_counters": record["service_counters"],
             "resources": record["gpu_resource_trace"],
@@ -338,6 +341,32 @@ def _normalize_project(
     expected_counts = json.loads(str(record["job_expected_count"]))
     completed_counts = json.loads(str(record["job_completed_count"]))
     exactly_once = json.loads(str(record["job_exactly_once"]))
+    shared_credit = json.loads(str(record.get("shared_credit_final", "[]")))
+    if not isinstance(shared_credit, list):
+        raise RuntimeError("Project shared_credit_final must encode a list")
+    container_fields = (
+        "active_by_job", "active_work_by_job", "waiting_by_job",
+        "waiting_work_by_job", "waiting_head_work_by_job",
+    )
+    for snapshot in shared_credit:
+        if not isinstance(snapshot, dict):
+            raise RuntimeError("Project shared_credit_final snapshot must be an object")
+        for field in container_fields:
+            if field not in snapshot:
+                continue
+            value = snapshot[field]
+            if isinstance(value, str):
+                try:
+                    value = json.loads(value)
+                except json.JSONDecodeError as error:
+                    raise RuntimeError(
+                        f"Project shared_credit_final {field} is malformed JSON"
+                    ) from error
+            if not isinstance(value, (list, dict)):
+                raise RuntimeError(
+                    f"Project shared_credit_final {field} must encode a container"
+                )
+            snapshot[field] = value
     summaries = []
     for path in sorted((output_dir / "jobs").glob("*.runs.csv")):
         with path.open(encoding="utf-8", newline="") as stream:
@@ -383,6 +412,7 @@ def _normalize_project(
     command_evidence = json.loads(command_files[0].read_text(encoding="utf-8"))
     return {
         **record,
+        "shared_credit_final": json.dumps(shared_credit, sort_keys=True),
         "command": [
             token
             for command in command_evidence.get("commands", [])
@@ -403,7 +433,9 @@ def _normalize_project(
             ),
         },
         "exactly_once": all(bool(value) for value in exactly_once),
-        "request_tail_status": dict(arm.unsupported_request_tails),
+        "request_tail_status": normalize_request_tail_status(
+            arm.unsupported_request_tails
+        ),
         "output_paths": {
             "commands": str(command_files[0]),
             "resources": str(
