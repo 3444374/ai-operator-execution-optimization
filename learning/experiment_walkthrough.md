@@ -1258,3 +1258,22 @@ capture 的 `.npz.manifest.json` 也必须复制同一份输出合同元数据�
 归一化”这种静态提示代替本次实际参数。旧 artifact 的 sidecar 原文应保留并在结果报告中
 标注元数据缺陷；不能为了让历史记录看起来整齐而事后改写 raw 文件。合同判定以同次运行的
 schema v11 CSV/arm manifest 为准，并可用 `.npz` 重新运行 parity probe 复核。
+
+## 2026-08-14：为什么 SAOR matched comparison 必须分成两张表
+
+这次基础设施回答两个不同问题。系统表比较 Daft Native、Daft Ray、Ray Data、Project
+frozen-static 和 Project bounded-ready SAOR 五个完整系统；内部 sanity 表只比较 Project
+bounded-ready FIFO、DRR、VTC-style 与 SAOR 四个 selector。FIFO 臂的完整身份是
+**Project bounded-ready + global FIFO matched-control**：bounded-ready 是 Project 提供的共同
+可见 ready set，不是 FIFO 算法本身，也不是 Daft/Ray Data 原生能力。
+
+同一个 SAOR 物理 run 同时进入两表，不能为两种报告角色各跑一个“看起来相同”的 SAOR。
+所有臂使用 Job release `[0,5]`、Job 内 eager 的共同到达；每个 Job 的计时包含 PostgreSQL
+source/materialization，直到 validated gather。吞吐只用
+`(prompt_tokens_delta + generation_tokens_delta) / database_operator_e2e_s`；bulk/foreground
+JCT 从各自 release 到完成，且真实 overlap 必须大于零。原生系统若没有共同真实 request clock，
+request P99/SLO 就写 `unavailable` 和原因，不能用 Job barrier 或 0 填充。
+
+当前完成的是本地 offline summarizer 与 corruption tests，不是服务器/GPU 结果。后续精确顺序是：
+runtime preflight → static readiness → small correctness/local fake rehearsal → review → separately
+authorized GPU execution。用户已取消本轮服务器 rehearsal，因此不能把 GPU evidence 标为完成。

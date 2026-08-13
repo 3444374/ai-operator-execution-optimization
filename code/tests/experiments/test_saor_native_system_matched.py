@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import csv
 import hashlib
 import json
 import os
@@ -34,9 +35,177 @@ from scripts.experiments.run_saor_native_system_matched import (
     _validate_executor_bindings,
     parse_args,
 )
+from scripts.analysis.summarize_saor_native_system_matched import (
+    summarize_matched_system,
+)
 
 
 class MatchedSystemContractTest(unittest.TestCase):
+    def test_offline_summary_emits_two_layers_from_one_physical_saor_run(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix_root = root / "matrix"
+            output_dir = root / "summary"
+            self._write_complete_summary_fixture(matrix_root)
+
+            self.assertTrue(summarize_matched_system(matrix_root, output_dir))
+
+            system = self._read_csv(output_dir / "system_summary.csv")
+            selector = self._read_csv(output_dir / "project_selector_sanity.csv")
+            all_runs = self._read_csv(output_dir / "all_runs.csv")
+            jobs = self._read_csv(output_dir / "job_summary.csv")
+            resources = self._read_csv(output_dir / "resource_summary.csv")
+            validation = json.loads(
+                (output_dir / "validation.json").read_text(encoding="utf-8")
+            )
+
+            self.assertEqual(len(system), 5)
+            self.assertEqual(len(selector), 4)
+            system_saor = next(row for row in system if row["arm_id"].endswith("0125we"))
+            selector_saor = next(row for row in selector if row["arm_id"].endswith("0125we"))
+            self.assertEqual(
+                system_saor["physical_run_ids"], selector_saor["physical_run_ids"]
+            )
+            self.assertEqual(
+                system_saor["service_tokens_per_s_repeats"],
+                selector_saor["service_tokens_per_s_repeats"],
+            )
+            self.assertEqual(
+                json.loads(system_saor["physical_run_ids"]),
+                [
+                    row["run_id"]
+                    for row in all_runs
+                    if row["arm_id"] == "project_bounded_ready_saor_0125we"
+                ],
+            )
+            first_run = next(row for row in all_runs if row["arm_id"] == "daft_native")
+            self.assertEqual(float(first_run["service_tokens_per_s"]), 30.0)
+            self.assertEqual(first_run["request_p99_status"], "unavailable")
+            self.assertTrue(first_run["request_p99_reason"])
+            first_jobs = [row for row in jobs if row["run_id"] == first_run["run_id"]]
+            self.assertEqual(
+                {row["job_role"]: float(row["job_jct_s"]) for row in first_jobs},
+                {"bulk": 8.0, "foreground": 4.0},
+            )
+            self.assertTrue(all(float(row["overlap_s"]) > 0 for row in first_jobs))
+            self.assertEqual(system_saor["formal_repeats"], "3")
+            self.assertEqual(
+                json.loads(system_saor["database_operator_e2e_s_repeats"]),
+                [10.0, 11.0, 12.0],
+            )
+            self.assertGreater(float(system_saor["service_tokens_per_s_sample_cv"]), 0)
+            self.assertEqual(system_saor["scheduler_owner"], "project")
+            self.assertEqual(system_saor["report_role"], "complete_system_empirical")
+            self.assertEqual(selector_saor["report_role"], "project_internal_sanity")
+            self.assertEqual(len(resources), 8)
+            self.assertFalse(any("winner" in key.lower() for row in system for key in row))
+            self.assertFalse(any("winner" in key.lower() for row in selector for key in row))
+            self.assertNotIn("formal_authorized=true", json.dumps(validation).lower())
+            self.assertEqual(
+                validation,
+                {
+                    "status": "passed",
+                    "comparison_scope": "complete_system_empirical_plus_project_internal_sanity",
+                    "selector_victory_decided": False,
+                    "formal_authorized": False,
+                    "native_baseline_count": 3,
+                    "project_control_count": 5,
+                },
+            )
+
+    def test_offline_summary_rejects_corrupted_matrix_evidence(self) -> None:
+        def missing_arm(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"] = [
+                cell for cell in index["cells"]
+                if cell["arm_id"] != "ray_data_http"
+            ]
+
+        def missing_repeat(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"] = [
+                cell for cell in index["cells"]
+                if not (cell["arm_id"] == "daft_native" and cell["repeat"] == 3)
+            ]
+
+        def duplicated_run_id(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][1]["run_id"] = index["cells"][0]["run_id"]
+
+        def failed_cell(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][0]["status"] = "failed"
+
+        def non_exact_cell(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][0]["exactly_once"] = False
+
+        def final_queue(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][0]["final_queue"]["waiting"] = 1
+
+        def counter_attribution(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][0]["service_metrics"]["metrics_status"] = "unavailable"
+
+        def source_outside(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][0]["jobs"][0]["shard_provenance"][0][
+                "source_timing_boundary"
+            ] = "outside_job_barrier"
+
+        def no_overlap(index: dict[str, object], root: Path) -> None:
+            del root
+            index["cells"][0]["jobs"][0]["ended_epoch_s"] = 104.0
+
+        def missing_resource(index: dict[str, object], root: Path) -> None:
+            del root
+            Path(index["cells"][0]["resource_metrics"]["path"]).unlink()
+
+        def project_kw_drift(index: dict[str, object], root: Path) -> None:
+            del root
+            project = next(
+                cell for cell in index["cells"]
+                if cell["arm_id"] == "project_bounded_ready_fifo"
+            )
+            project["request_limit_per_endpoint"] = 7
+
+        def native_project_flag(index: dict[str, object], root: Path) -> None:
+            del root
+            native = next(cell for cell in index["cells"] if cell["arm_id"] == "daft_native")
+            native["command"].extend(["--max-active-work", "65536"])
+
+        corruptions = {
+            "missing arm": missing_arm,
+            "missing repeat": missing_repeat,
+            "duplicated run ID": duplicated_run_id,
+            "failed cell": failed_cell,
+            "non-exact cell": non_exact_cell,
+            "non-empty final queue": final_queue,
+            "counter attribution": counter_attribution,
+            "source outside cell": source_outside,
+            "non-positive overlap": no_overlap,
+            "missing resource trace": missing_resource,
+            "Project K/W drift": project_kw_drift,
+            "native Project flag": native_project_flag,
+        }
+        for name, corrupt in corruptions.items():
+            with self.subTest(name=name), TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                matrix_root = root / "matrix"
+                output_dir = root / "summary"
+                self._write_complete_summary_fixture(matrix_root)
+                index_path = matrix_root / "matrix_index.json"
+                index = json.loads(index_path.read_text(encoding="utf-8"))
+                corrupt(index, matrix_root)
+                index_path.write_text(json.dumps(index), encoding="utf-8")
+
+                self.assertFalse(summarize_matched_system(matrix_root, output_dir))
+                validation = json.loads(
+                    (output_dir / "validation.json").read_text(encoding="utf-8")
+                )
+                self.assertEqual(validation["status"], "failed")
+
     def test_calibration_paths_are_canonicalized_relative_to_each_config(self) -> None:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -880,6 +1049,122 @@ class MatchedSystemContractTest(unittest.TestCase):
             "output_paths": {"commands": str(output_dir / "commands.json")},
             "status": "passed",
         }
+
+    @staticmethod
+    def _read_csv(path: Path) -> list[dict[str, str]]:
+        with path.open(encoding="utf-8", newline="") as stream:
+            return list(csv.DictReader(stream))
+
+    @classmethod
+    def _write_complete_summary_fixture(cls, matrix_root: Path) -> None:
+        matrix_root.mkdir(parents=True)
+        cells = []
+        for repeat in range(1, 4):
+            for order_index, arm_id in enumerate(REQUIRED_ARM_IDS):
+                run_id = f"formal-{repeat}-{arm_id}"
+                run_root = matrix_root / "runs" / run_id
+                run_root.mkdir(parents=True)
+                resource_path = run_root / "resources.csv"
+                resource_path.write_text(
+                    "observed_epoch_s,gpu_utilization_pct,gpu_power_w,running,waiting,kv_usage,mfu_fraction\n"
+                    f"{1000 + repeat * 20 + 1},80,300,8,0,0.4,0.2\n",
+                    encoding="utf-8",
+                )
+                command_path = run_root / "commands.json"
+                command = ["runner", "--adapter", arm_id]
+                command_path.write_text(json.dumps(command), encoding="utf-8")
+                start = float(1000 + repeat * 20)
+                duration = float(9 + repeat)
+                is_native = arm_id in SYSTEM_ARM_IDS[:3]
+                report_blocks = []
+                if arm_id in SYSTEM_ARM_IDS:
+                    report_blocks.append("system")
+                if arm_id in SELECTOR_SANITY_ARM_IDS:
+                    report_blocks.append("selector_sanity")
+                cells.append(
+                    {
+                        "run_id": run_id,
+                        "arm_id": arm_id,
+                        "phase": "formal",
+                        "repeat": repeat,
+                        "order_index": order_index,
+                        "report_blocks": report_blocks,
+                        "scheduler_owner": (
+                            "daft" if arm_id.startswith("daft_") else
+                            "ray_data" if arm_id == "ray_data_http" else "project"
+                        ),
+                        "implementation_source": (
+                            "official_native_single_cell_runner"
+                            if is_native else "project_shared_vllm_single_cell_runner"
+                        ),
+                        "status": "passed",
+                        "exactly_once": True,
+                        "start_epoch_s": start,
+                        "end_epoch_s": start + duration,
+                        "database_operator_e2e_s": duration,
+                        "jobs": [
+                            {
+                                "job_id": "job-0",
+                                "actual_launch_epoch_s": start,
+                                "ended_epoch_s": start + 8.0,
+                                "completed_count": 2,
+                                "expected_count": 2,
+                                "exactly_once": True,
+                                "shard_provenance": [{
+                                    "source_kind": "timed_postgres_manifest",
+                                    "source_timing_boundary": "inside_job_barrier",
+                                    "source_validation_status": "ok",
+                                }],
+                            },
+                            {
+                                "job_id": "job-1",
+                                "actual_launch_epoch_s": start + 5.0,
+                                "ended_epoch_s": start + 9.0,
+                                "completed_count": 2,
+                                "expected_count": 2,
+                                "exactly_once": True,
+                                "shard_provenance": [{
+                                    "source_kind": "timed_postgres_manifest",
+                                    "source_timing_boundary": "inside_job_barrier",
+                                    "source_validation_status": "ok",
+                                }],
+                            },
+                        ],
+                        "service_metrics": {
+                            "metrics_status": "ok",
+                            "prompt_tokens_delta": 50 + repeat * 100,
+                            "generation_tokens_delta": 50 + repeat * 100,
+                            "request_success_delta": 4,
+                        },
+                        "resource_metrics": {
+                            "resource_metrics_status": "ok",
+                            "path": str(resource_path),
+                        },
+                        "request_tail_status": {
+                            "status": "unavailable",
+                            "reason": "common request clock is unsupported",
+                        },
+                        "final_queue": {"running": 0, "waiting": 0},
+                        "command": command,
+                        "output_paths": {
+                            "commands": str(command_path),
+                            "resources": str(resource_path),
+                        },
+                        "request_limit_per_endpoint": 8 if not is_native else None,
+                        "work_limit_per_endpoint": 65536 if not is_native else None,
+                    }
+                )
+        (matrix_root / "matrix_index.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "status": "completed",
+                    "repository_commit": "abc123",
+                    "cells": cells,
+                }
+            ),
+            encoding="utf-8",
+        )
 
     class _ConfigPath:
         def __init__(self, owner: "MatchedSystemContractTest") -> None:

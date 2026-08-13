@@ -134,6 +134,12 @@ guard 拒绝。同 ready-window 双轮归因中 guarded-debt 用约 4.8% 吞吐�
 更低 foreground tail，只形成观测非支配折中；固定顺序 n=2 且未预注册 selector non-inferiority
 margin，故 `formal_authorized=false`。下一工程缺口是同一 2-Job 合同的 Daft Native/Daft Ray/
 Ray Data/project static/proposed 系统级 matched comparison，不是继续扫 cap 或直接跑 selector formal。
+截至 2026-08-14，本地合同、八臂薄编排和两层离线 fail-closed 汇总均已实现并通过本地测试：
+系统层为 3 个原生系统 + Project frozen-static + bounded-ready SAOR，内部 sanity 层为
+**Project bounded-ready + global FIFO matched-control**/DRR/VTC-style/SAOR，同一 SAOR 物理
+run 复用到两表。共同到达为 Job `[0,5]` release、Job 内 eager；计时从 PostgreSQL source
+进入 Job lifecycle 到 validated gather。原生臂没有共同 request clock 时 P99/SLO 只能记
+`unavailable`+原因。服务器 rehearsal/GPU/formal 均未运行，故这不是新增性能证据。
 
 ### 当前流程
 

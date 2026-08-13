@@ -1,10 +1,20 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-13；开题证据冻结，SAOR fixed-envelope formal 已
+Date: 2026-07-20（最后更新：2026-08-14；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 matched-observation selector 双轮 rehearsal 已完成，
 SAOR 是观测到的非支配折中点但未形成 selector victory，`formal_authorized=false`；single-head +
 shared FIFO observation bridge 双轮已完成，下一步只补同一 2-Job 合同的 native-system matched comparison；
 原生 baseline 不接入 bounded-ready，dynamic-K 仍退出主线）
+
+2026-08-14 本地基础设施状态：native-system matched comparison 的八臂合同、薄编排器与
+两层 offline fail-closed summarizer 已完成本地测试，但用户已取消本轮服务器 rehearsal，故
+GPU evidence 仍未完成。输出分成五臂 complete-system empirical 表与四臂 Project-internal
+sanity 表；共享同一个 SAOR 物理 run。FIFO 臂必须写全名 **Project bounded-ready + global
+FIFO matched-control**。共同到达保持 Job `[0,5]` release、Job 内 eager；PostgreSQL source
+在 Job lifecycle 内计时到 validated gather；原生 request P99/SLO 不支持时只能写
+`unavailable`+原因。后续固定顺序为 runtime preflight → static readiness → small
+correctness/local fake rehearsal → review → separately authorized GPU execution；当前工作不含
+server/GPU run，不把 formal/GPU 证据标成完成。
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 

@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-08-14 SAOR 两层离线汇总与本地验证收口
+
+- 新增 `summarize_saor_native_system_matched.py`，只读已提交矩阵 evidence，分别输出五臂
+  complete-system empirical 表与四臂 Project-internal sanity 表；同一 SAOR 物理 run 同时投影
+  到两层，固定不产生 winner 且 `formal_authorized=false`。
+- 汇总器按共同 PostgreSQL source→validated gather 边界计算 service tok/s、release→completion
+  Job JCT 与 overlap，并保留 repeats、sample CV、scheduler owner、report role 和资源汇总；原生
+  request-tail 不支持时必须为 `unavailable` 且带原因。
+- synthetic evidence 与 12 类 corruption tests 覆盖缺 arm/repeat、重复 run ID、失败/非
+  exactly-once、final queue、counter attribution、source timing、overlap、resource trace、Project
+  K/W drift 和 native Project-flag contamination。本轮仅做本地测试；用户已取消 server rehearsal，
+  未连接服务器、未运行 GPU/rehearsal/formal，也未同步 Wiki/云文档。
+
 ## 2026-08-14 SAOR 系统级 matched 编排合同兼容性收口
 
 - 补齐 `saor_native_system_matched.example.json`、原生执行器配置和 Project 执行器配置三件套；总编排器按精确 arm/scenario ID 映射，并对 source、service signature、protocol、output cap、organizer、校准路径及 K/W/ready-state 合同 fail closed。

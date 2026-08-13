@@ -80,6 +80,14 @@ dispatch 前联合加载 matched/native/Project 三份配置并执行 readiness 
 sanity 臂和共享的 proposed 臂）。`--rehearsal` 只运行每个物理臂一次 warm-up，不产生 formal
 cell；runner 与模板均不授予 GPU formal 执行权限。
 
+`analysis/summarize_saor_native_system_matched.py` 是该矩阵的纯离线、fail-closed 汇总入口，
+只读已提交的 `matrix_index.json` 与资源 trace，不连接服务。它输出 `all_runs.csv`、五臂
+`system_summary.csv`、四臂 `project_selector_sanity.csv`、`job_summary.csv`、
+`resource_summary.csv` 和固定边界的 `validation.json`。同一个 SAOR 物理 run 同时投影到两张表；
+内部 FIFO 的完整名称是 **Project bounded-ready + global FIFO matched-control**，不是原生
+baseline。原生 request P99/SLO 无共同真实 request clock 时必须保留字面值 `unavailable` 和
+非空原因；工具不产生 winner，也固定 `formal_authorized=false`。
+
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data
 single/two-job 原生观察做统一 fail-closed 汇总。它显式保留 request P99 仅项目可用、

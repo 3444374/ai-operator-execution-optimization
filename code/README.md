@@ -3,6 +3,13 @@
 Current implementation flow, completed mechanisms, evidence boundaries, and
 remaining work are summarized in `code/INFRA_STATUS.md`.
 
+SAOR native-system matched infrastructure is locally complete through its offline
+two-layer summarizer. The system layer contains Daft Native, Daft Ray, Ray Data,
+Project frozen-static, and bounded-ready SAOR; the Project-internal sanity layer
+contains bounded-ready FIFO/DRR/VTC-style/SAOR, with one shared physical SAOR run.
+This is tested local infrastructure only: no server/GPU rehearsal or formal evidence
+has been produced, and unsupported native request tails remain `unavailable`.
+
 全项目代码分层、文本/图像模态边界与分阶段迁移计划见
 [`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、
 文本/图像模态隔离、baseline 分层、旧兼容入口清理，以及 metrics、model backend、
