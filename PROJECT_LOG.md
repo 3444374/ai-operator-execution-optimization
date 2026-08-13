@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-08-13 SAOR bounded-priority 远端执行入口修正
+
+- 执行前审计发现唯一计划 Task 8 误用单 profiler 的
+  `run_ai_operator_scenarios.py` 执行 shared-vLLM 两 Job rehearsal；该入口不拥有并发 Job group、
+  `--ray-address` 或 `--rehearsal` 合同。修正为部署 runbook 已冻结的
+  `run_shared_vllm_experiment.py`，并补齐两轮 fail-closed bounded-priority 汇总命令。
+- 本地 `test_saor_formal_tools.py` 17 项通过，runner/readiness/summary CLI 均可解析；本次只修
+  执行合同文档，尚未产生新的 GPU 性能结论。下一步仍严格限定为两个全新目录的四臂
+  development rehearsal，不启动 formal、不扫描额外 cap。
+
 ## 2026-08-12 SAOR v0.5.1 本地实现、无损事件门与服务器延期
 
 - 完成 `saor_bounded_priority` 全链本地实现：actual-work debt cap、每 Job 单 recovery lease、

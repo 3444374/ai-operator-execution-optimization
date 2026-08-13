@@ -1376,7 +1376,8 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
     --config deploy/autodl/saor_bounded_priority.example.json \
     --output /root/autodl-tmp/experiment-artifacts/saor_bounded_priority_readiness_20260812.json
 
-  /root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scenarios.py \
+  PYTHONPATH=code /root/miniconda3/bin/python \
+    code/scripts/experiments/run_shared_vllm_experiment.py \
     --config deploy/autodl/saor_bounded_priority.example.json \
     --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
     --python-executable /root/miniconda3/bin/python \
@@ -1386,7 +1387,8 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
     --ray-address "$RAY_ADDRESS" \
     --rehearsal
 
-  /root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scenarios.py \
+  PYTHONPATH=code /root/miniconda3/bin/python \
+    code/scripts/experiments/run_shared_vllm_experiment.py \
     --config deploy/autodl/saor_bounded_priority.example.json \
     --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
     --python-executable /root/miniconda3/bin/python \
@@ -1395,6 +1397,12 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
     --metrics-urls "$MODEL_METRICS_URLS" \
     --ray-address "$RAY_ADDRESS" \
     --rehearsal
+
+  PYTHONPATH=code /root/miniconda3/bin/python \
+    code/scripts/analysis/summarize_saor_bounded_priority_gate.py \
+    --matrix-root /root/autodl-tmp/experiment-artifacts/saor_bounded_priority_gate_20260812_r1 \
+    --matrix-root /root/autodl-tmp/experiment-artifacts/saor_bounded_priority_gate_20260812_r2 \
+    --output-dir /root/autodl-tmp/experiment-artifacts/saor_bounded_priority_gate_20260812_summary
   ```
 
 - [ ] 用新汇总器同时消费 r1/r2；先保存全部 per-run 数字与机制事件，再判定：
