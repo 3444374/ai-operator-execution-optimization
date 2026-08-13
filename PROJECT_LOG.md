@@ -6369,3 +6369,14 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   request join、event epoch 或时序错误均 fail closed，避免把 Ray RPC 返回延迟误作调度等待。
 - 当前状态仅为 `local-implemented/development-unrun/not-formal-registered`。尚无新 GPU
   performance/fairness 证据；reservation、4-Job、dynamic K 与 formal 继续阻塞。
+
+## 2026-08-13 修正 bounded-ready 跨 trace 生命周期连接
+
+- 首次 2×4090 development rehearsal 中，static partition、原 SAOR release 两臂正常完成；新增
+  bounded-ready 臂的两个 Job 也完成模型请求，但 runner 在证据审计阶段因 submission trace 不含
+  `submit_epoch_s` 而以 `KeyError` fail closed，未继续第二轮，也未抽取性能结论。
+- 明确 trace ownership：actor submission trace 拥有 ready/registered/granted 时间，scheduler
+  request trace 拥有 submit 时间；审计器现在按 `submission_id` 一对一连接并检查
+  `ready <= registered <= granted <= submit`，缺 ID、重复 ID 或无法连接均显式失败。
+- 新增使用真实生产列集合（submission trace 无 `submit_epoch_s`）的回归测试。修复后必须重新从
+  唯一输出目录运行完整 rehearsal；失败目录不续跑、不进入性能或公平性排名。

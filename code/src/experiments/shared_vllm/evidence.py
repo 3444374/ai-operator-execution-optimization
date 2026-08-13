@@ -180,6 +180,19 @@ def _validate_job_evidence(
     submission_starts = [
         float(row["submit_epoch_s"]) for row in request_rows
     ]
+    request_submit_by_submission_id: dict[str, float] = {}
+    for row in request_rows:
+        submission_id = str(row.get("submission_id", "") or "")
+        if not submission_id:
+            continue
+        if submission_id in request_submit_by_submission_id:
+            raise RuntimeError(
+                f"job {job_index} has duplicate submission IDs in the "
+                "request trace"
+            )
+        request_submit_by_submission_id[submission_id] = float(
+            row["submit_epoch_s"]
+        )
     ready_lifecycle_rows = []
     for row in submission_rows:
         ready_raw = row.get("ready_epoch_s", "")
@@ -194,7 +207,17 @@ def _validate_job_evidence(
         ready_epoch_s = float(ready_raw)
         registered_epoch_s = float(registered_raw)
         granted_epoch_s = float(granted_raw)
-        submit_epoch_s = float(row["submit_epoch_s"])
+        submission_id = str(row.get("submission_id", "") or "")
+        if submission_id not in request_submit_by_submission_id:
+            raise RuntimeError(
+                f"job {job_index} cannot join ready lifecycle submission "
+                f"{submission_id or '<missing>'!r} to the request trace"
+            )
+        # The submission trace owns actor/credit lifecycle timestamps, while
+        # the request trace owns the scheduler submit timestamp. Join the two
+        # schemas by submission_id instead of assuming a duplicate timestamp
+        # column in the submission trace.
+        submit_epoch_s = request_submit_by_submission_id[submission_id]
         if not (
             ready_epoch_s
             <= registered_epoch_s
@@ -206,7 +229,7 @@ def _validate_job_evidence(
             )
         ready_lifecycle_rows.append(
             {
-                "request_id": row["submission_id"],
+                "request_id": submission_id,
                 "endpoint_id": row["endpoint_id"],
                 "ready_epoch_s": ready_epoch_s,
                 "registered_epoch_s": registered_epoch_s,

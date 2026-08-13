@@ -7,7 +7,10 @@
 现有 K/W 内把多个已经到达的具体 request 预注册给共享 coordinator，避免每个 Job 同步等待一个
 head 时把真实 backlog 隐藏掉。旧 `saor_bounded_priority` 保留为单-head 回归对照。提交 trace
 现在分开记录 ready、registered、granted、submit 与 service，便于判断问题发生在数据准备、共享
-credit 还是 vLLM 排队。当前只有本地代码/门禁证据，没有 GPU 性能或公平性结论。
+credit 还是 vLLM 排队。首次服务器 rehearsal 还暴露出一个跨 trace 合同问题：actor submission
+trace 只拥有 ready/registered/granted，scheduler 的 submit 时间属于 request trace，审计器必须按
+`submission_id` 显式连接，不能假设两份 CSV 重复存储同一列。该问题已用生产 schema 回归测试
+覆盖；当前仍没有通过 rehearsal 的 GPU 性能或公平性结论。
 
 ## 2026-08-12 bounded-priority SAOR 与事件账本
 

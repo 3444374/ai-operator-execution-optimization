@@ -1221,7 +1221,11 @@ register→grant，检查该 endpoint 区间内是否误发 foreign fallback，�
 调度器等待。GPU utilization 只作资源旁证。旧
 `saor_bounded_priority` 不改写，仍可作为同 selector、
 不同 observation contract 的回归基线。现在只完成本地 exactly-once/cancel/timeout/finite-window
-与静态门禁，尚未运行两轮 GPU rehearsal，所以不能声称 SAOR 已改善 tail、吞吐或公平。
+与静态门禁。首次 GPU rehearsal 的两个 Job 均完成模型执行，但 runner 在审计阶段发现
+submission trace 并没有 `submit_epoch_s`，遂按 fail-closed 规则停止。正确合同是：submission
+trace 提供 ready/registered/granted，request trace 提供 submit，并以 `submission_id` 一对一连接；
+不能为修审计而在两份 trace 中复制时钟字段。该连接已补生产 schema 回归测试，修复后的两轮
+rehearsal 仍待运行，所以不能声称 SAOR 已改善 tail、吞吐或公平。
 
 ## 2026-08-03：为什么保存 embedding 的运行不是性能 baseline
 

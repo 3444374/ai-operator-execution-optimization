@@ -2097,6 +2097,81 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertEqual(evidence["max_ready_requests_seen"], 3)
         self.assertEqual(evidence["max_ready_work_seen"], 90)
 
+    def test_job_evidence_joins_ready_lifecycle_to_request_submit(self) -> None:
+        options = RunnerOptions(
+            config_path=Path("config.json"),
+            profiler_path=Path("profile.py"),
+            python_executable=Path(sys.executable),
+            output_dir=Path("out"),
+            health_url="http://health",
+            metrics_urls=("http://metrics",),
+            ray_address="127.0.0.1:6380",
+            idle_timeout_s=1.0,
+        )
+        scenario = SharedVllmScenario(
+            scenario_id="bounded-ready",
+            policy="saor_bounded_ready",
+            job_count=1,
+            rows_per_job=1,
+            weights=(1,),
+            arrival_offsets_s=(0.0,),
+        )
+        summary_rows = [{
+            "status": "ok",
+            "total_rows": "1",
+            "actor_worker_failures": "0",
+            "max_ready_requests_seen": "2",
+            "max_ready_work_seen": "90",
+        }]
+        request_rows = [{
+            "request_id": "request-0",
+            "submission_id": "submission-0",
+            "status": "completed",
+            "error_type": "",
+            "arrival_epoch_s": "99.0",
+            "submit_epoch_s": "100.3",
+            "completion_epoch_s": "101.0",
+            "e2e_s": "2.0",
+            "slo_met": "True",
+            "prompt_tokens": "10",
+            "client_estimated_output_tokens": "20",
+            "estimated_output_tokens": "20",
+            "endpoint_id": "task-0",
+        }]
+        # The production submission schema intentionally has no
+        # submit_epoch_s; that timestamp is owned by the request trace.
+        submission_rows = [{
+            "submission_id": "submission-0",
+            "endpoint_id": "task-0",
+            "ready_epoch_s": "100.0",
+            "credit_registered_epoch_s": "100.1",
+            "credit_granted_epoch_s": "100.2",
+        }]
+
+        with patch(
+            "src.experiments.shared_vllm.evidence._read_csv",
+            side_effect=[summary_rows, request_rows, submission_rows],
+        ):
+            evidence = shared_vllm._validate_job_evidence(
+                options,
+                scenario,
+                GroupRunIdentity("formal", 1, 0),
+                0,
+            )
+
+        self.assertTrue(evidence["ready_lifecycle_complete"])
+        self.assertEqual(
+            evidence["ready_lifecycle_rows"],
+            [{
+                "request_id": "submission-0",
+                "endpoint_id": "task-0",
+                "ready_epoch_s": 100.0,
+                "registered_epoch_s": 100.1,
+                "granted_epoch_s": 100.2,
+                "submit_epoch_s": 100.3,
+            }],
+        )
+
     def test_jain_fairness_handles_equal_weight_and_zero_service(self) -> None:
         self.assertEqual(jain_fairness([100.0, 100.0]), 1.0)
         self.assertAlmostEqual(jain_fairness([100.0, 0.0]), 0.5)
