@@ -54,12 +54,22 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 项目 selector 必须在相同 bounded-ready observation 下超过 FIFO、DRR/VTC-style 等项目内部
 消融；吞吐接近时继续评价 tail/SLO/fairness，均无改善则淘汰 SAOR，不更换 workload 追正。
 
-多 Job 不由单一 VTC/Jain 指标判定。每个 Job 同时报 `multi/full-solo`（总体干扰）、
+当前主场景是**单租户多 Job/workload class**，不是多租户资源管理；按 `job_id` 记账与当前范围
+一致。多 Job 不由单一 VTC/Jain 指标判定。每个 Job 同时报 `multi/full-solo`（总体干扰）、
 `multi/reserved-solo`（经验性保留份额非劣）和 `policy-multi/static-multi`（同竞争调度增量）；
 共同积压窗口另报 weighted actual service、empirical GPS lag、最长连续无服务和 avoidable idle，
-用户层报 worst-Job JCT/P99/SLO。评价采用明确保护约束下的多目标/Pareto，不压成 composite。
+用户层报 worst-Job JCT/P99/SLO。公平与隔离分开：另以固定 victim + aggressor step/burst 报 P99
+放大、goodput loss、SLO violation delta 与恢复时间。`group JCT` 等同本批 workload makespan，
+仍须与 per-Job/request tail 同报。评价采用明确保护约束下的多目标/Pareto，不压成 composite。
 baseline-relative empirical Pareto improvement 不等于 DRF Pareto efficiency；Jain 只表示均匀度，
 不能单独证明或否定 share guarantee。
+
+多租户是兼容的后续扩展，不阻塞当前 formal：现有 Job-level ready observation、work/debt、固定
+envelope、completion release 和 idle borrowing/reclaim 作为内层保持不变；外层新增稳定
+principal identity、tenant entitlement/debt 与 per-tenant buffer cap。只有进入该 scope 后才运行
+同一 principal 的 1/2/4-Job 抗拆分门；flat `job_id` 竞争不能直接改名为 tenant fairness。
+两层组合仍须重验 tenant floor、Job priority 不越权、双层 debt/reclaim 和非抢占请求下的恢复
+时间，不能自动继承当前 Job-level 公平性质。
 
 ### 2.3 共同使能组件：算子代价估计
 

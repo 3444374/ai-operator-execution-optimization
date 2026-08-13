@@ -629,7 +629,38 @@ SQL、单纯向量索引和用户自写 HTTP UDF 是四种不同系统；它们�
 
 #### 第四层：多 Job 的反事实、服务公平与晋级规则
 
-先区分评价对象。**Equal-share fairness** 把同权/显式权重 tenant 视为平等参与者，主看共同
+先冻结**当前评价主体与未来层级**。本项目当前正式问题是**单租户内多个 Job/workload class**
+共享同一模型服务：Job/query 是调度单元，request 是工作量载体。在这个范围内，以 `job_id`
+维护权重、priority、attained service 和 SLO 是合理的，评价的是 intra-tenant Job fairness/
+service differentiation，不要求现在实现 tenant identity 或 anti-splitting。
+
+正常数据库/湖仓若以后扩到多个 tenant/account/resource group，则 entitlement 不能继续按所有
+`job_id` 平铺，否则同一客户把一个 workload 拆成多个并发 Job 可能获得多份权重。扩展时记录：
+
+```text
+principal_id（tenant/account/resource group）
+  → workload_class（interactive / batch / maintenance / AI）
+    → job_id / query_id
+      → request_id
+```
+
+多租户权重、最低份额和累计 attained service 应先在 `principal_id` 层聚合记账，再按合同在
+workload class/Job 内部分配。当前 Job-level SAOR 可作为内层 scheduler，ready observation、work
+计量、fixed envelope、completion accounting、idle borrowing/reclaim 和 SLO debt 均可复用；新增
+的是外层 tenant entitlement/debt 与 per-tenant ready/buffer cap。只在多个主体同时 backlogged 的
+窗口评价 share fairness；需求不足的主体未使用份额不算“少分”，空闲份额应允许其他主体借用。
+因此多租户是兼容的后续扩展，不是当前 formal blocker。当前结果准确称为**单租户多 Job 的受控
+logical Job-stream fairness**，不外推为 tenant fairness。只有未来使用 tenant-fairness claim 时，
+才增加稳定 principal identity、层次记账与同一 principal 的 1/2/4-Job anti-splitting 门。
+
+这种兼容性是架构兼容，而不是零改动或公平性质自动继承。未来外层 tenant 选择与内层 Job
+选择需要分别维护 debt/floor；tenant 内 strict priority 不得绕过其他 tenant 的最低份额；两层
+idle borrowing/reclaim 不能形成重复 reservation 或 avoidable idle；已进入未修改 vLLM 的
+request 仍不可抢占。因此当前算法无需为多租户重写，但多租户版本必须重新验证 work
+conservation、reclaim latency、tenant/Job 两层 service lag 和 worst-tenant SLO。
+
+先区分评价对象。当前 **equal-share fairness** 把单租户内同权/显式权重 Job/workload class
+视为平等参与者，主看共同
 积压 attained service、lag 与 work conservation；**differentiated service** 允许 foreground
 业务优先级高于 bulk，主看 foreground SLO isolation，同时给 bulk 设置 service/JCT/starvation
 下界。两者不能共用“延迟越接近越公平”的判据：当前 long bulk + delayed foreground 属于
@@ -647,11 +678,35 @@ SQL、单纯向量索引和用户自写 HTTP UDF 是四种不同系统；它们�
 评价向量采用**约束下多目标/Pareto**，而不是把吞吐、JCT、Jain 和能耗压成一个加权总分：
 
 1. **有效性硬门**：语义、质量、exactly-once、资源/上限、arrival fidelity、feeding 和稳定性先通过；
-2. **效率与 SLO**：correct throughput、SLO goodput、group JCT、P95/P99、能耗；
+2. **效率与 SLO**：correct throughput、SLO goodput、group JCT、P95/P99、能耗。`group JCT`
+   定义为共同 group start/ready barrier 到最后一个 Job 完成的 wall time，即本批 workload 的
+   makespan；不再新增一个同义 `makespan` headline。它必须与 per-Job/request tail 同报，因为
+   相近 group JCT 可能掩盖某类请求的严重排队；
 3. **服务份额**：共同积压窗口的 weighted actual service、max/P95 empirical GPS lag、按 work
    envelope/quantum 归一化的 lag、偿还时间、`min/mean`、`max/min`、最长连续无服务和 avoidable idle；
-4. **作业完成体验**：三个反事实比率、worst Job、SLO miss、JCT/P99 spread；
-5. **分配描述**：raw-work Jain 与 normalized-progress Jain 仅描述“均匀程度”。Jain 下降而所有 Job JCT 都相对 static 改善时，应写成“**基线相对的经验性 JCT Pareto 改善，但收益分配更不均**”，不能仅凭 Jain 宣判正式公平性质变坏；反之，高 Jain 也可能只是所有 Job 同样慢。
+4. **作业完成体验与隔离**：三个反事实比率、worst Job/class、SLO miss、JCT/P99 spread。
+   fairness 回答“共同积压时是否按 entitlement 得到服务”，isolation 回答“aggressor 增压是否
+   伤害无辜 victim”，两者不得合并。除 `multi/full-solo` 外，对固定 victim workload 另做 matched
+   noisy-neighbor step/burst：
+
+   $$
+   I_i^{P99}=\frac{P99_i^{\mathrm{aggressor\ burst}}}{P99_i^{\mathrm{matched\ normal}}},\qquad
+   L_i^{goodput}=1-\frac{Goodput_i^{\mathrm{aggressor\ burst}}}{Goodput_i^{\mathrm{matched\ normal}}},
+   \qquad
+   \Delta V_i^{SLO}=V_i^{burst}-V_i^{normal}.
+   $$
+
+   报告 worst-victim 三项、victim 最大 waiting age，以及 aggressor drain 后 victim 恢复到预注册
+   稳态带所需时间。normal/burst 两臂保持 victim arrival/work、总资源和服务配置不变，只改变
+   aggressor offered load；否则不能把 workload mix 变化归因成 isolation；
+   当前 selector attribution gate 和首个 2-Job formal 不为该指标新增实验臂；它在核心 formal
+   闭合后复用计划中已经登记的一个 held-out on/off/burst 场景，避免 scope expansion；
+5. **分配描述**：raw-work Jain 与 normalized-progress Jain 仅描述“均匀程度”。不把
+   `slowdown Jain` 增加为独立 headline：对 slowdown 或其倒数做 Jain 会受非线性变换影响，且
+   所有主体同样慢时仍可能接近 1。Jain 下降而所有 Job JCT 都相对 static 改善时，应写成
+   “**基线相对的经验性 JCT Pareto 改善，但收益分配更不均**”，不能仅凭 Jain 宣判正式公平性质
+   变坏；反之，高 Jain 也可能只是所有 Job 同样慢。正式保护看 max slowdown、worst-Job/class
+   P99/SLO、service lag 和最长 no-service。
 
 候选晋级需预注册“至少一个 headline 改善约 5%”的 effect-size 门，以及**每个保护指标各自的方向和非劣/SLO 边界**。保护边界不能事后用“无不可接受退化”概括，也不应强行共用 5%；应在看到候选标签前，根据业务 SLO、correctness 要求和 baseline repeat 噪声冻结。只有所有保护约束满足、至少一个 headline 越过 effect-size 门，才称该 workload 上相对指定 baseline 的经验性 Pareto improvement。理论 Pareto efficiency、sharing incentive、strategy-proofness、service-difference bound 或 finish-time fairness 只有在相应模型假设和证明完整时才能使用。
 

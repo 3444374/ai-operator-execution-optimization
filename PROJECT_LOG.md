@@ -6452,3 +6452,22 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 服务器完整 profiler schema 回归发现新增 ready 指标尚未注册进冻结 formal CSV 合同；现已将
   request/work/logical-bytes transition、observation contract 与 bytes limit 同步到实际结果行和
   `FORMAL_RESULT_FIELDS`。该修复只恢复 fail-closed schema 一致性，不产生也不授权 formal 结果。
+
+## 2026-08-13 多租户评价身份与隔离合同补充
+
+- 对照外部数据库/湖仓多租户评价资料和当前代码，确认现有吞吐、三个 JCT 反事实、worst-Job、
+  per-class SLO、actual-work Jain、empirical service lag、最长无服务与 avoidable idle 已覆盖主要
+  评价维度，无需新增综合分数或把 slowdown Jain 设为 headline。
+- 用户进一步冻结当前 scope 为**单租户多 Job/workload class**。当前 coordinator 以 `job_id`
+  维护 weight/attained service 与这个范围一致，现有结果表述为 intra-tenant logical Job-stream
+  fairness/service differentiation；不把真实 tenant identity 或 anti-splitting 设为当前 blocker。
+- 公平与隔离分轨：公平看共同积压 weighted service/lag；隔离以固定 victim、只提高 aggressor
+  offered load 的 matched normal→burst 对照，报告 victim P99 ratio、goodput loss、SLO violation
+  delta、最大 waiting age 和恢复时间。
+- 冻结 `group JCT` 为 group barrier/start 到最后一个 Job 完成的 wall time，即 batch makespan；
+  不新增同义 makespan 字段，且必须与 per-Job/request P99 同报，避免聚合完成时间掩盖尾排队。
+- 多租户保留为兼容的后续层次化扩展：外层增加 tenant entitlement/debt 与 per-tenant ready/
+  buffer cap，内层复用当前 Job-level observation、priority/SLO、service debt 和 borrowing/reclaim。
+  若未来仍让所有 `job_id` 平铺竞争，或让跨租户 strict priority 绕过 tenant floor，才构成冲突。
+- 同步修正 `research/knowledge_hub.md` 和 `research/README.md` 的入口口径：当前算法架构可复用，
+  但未来仍需重验 tenant floor、anti-splitting、双层 debt/reclaim、work conservation 与恢复时间。

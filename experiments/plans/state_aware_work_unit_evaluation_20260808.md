@@ -859,15 +859,27 @@ $\arg\min_a\Psi(a)=\arg\min_a[\Psi(a)-\Psi(hold)]$，不会改变动作排序。
 
 #### 5.2.10 公平评价合同
 
-主公平定义：**共同积压 Job 的长期加权 attained service**。不以原始 TTFT 相等、请求条数
-相等、静态配额未超限或单一 Jain 替代。公平评价与效率/SLO 形成约束下多目标向量，不压成
-一个 composite score。
+主公平定义：**单租户内共同积压 Job/workload class 的长期加权 attained service**。Job/query
+是当前调度单元，request 只是工作量载体；不以原始 TTFT 相等、请求条数相等、静态配额未超限
+或单一 Jain 替代。当前 coordinator 按 `job_id` 记账与本范围一致，现有证据应称 intra-tenant
+logical Job-stream fairness/service differentiation，不称 tenant fairness。
+
+当前 formal 的 `job_id`、weight、priority 和 SLO class 均由 immutable experiment/application
+contract 冻结，不接受客户端在 run 中自行创建额外 Job 身份或修改权重。因此本轮回答“一个
+租户内已知多个 workload class 如何共享服务”，不回答 adversarial identity manipulation。
+
+多租户不阻塞当前 formal，也不要求现在修改 runner。未来若进入 scope，在现有 Job scheduler
+外增加 `principal_id→workload_class→job_id→request_id` 层次：先聚合 tenant entitlement/debt
+与 ready/buffer cap，再在 tenant 内复用当前 Job priority/SLO/borrowing/reclaim。届时才补同一
+principal 将相同 work 拆成 1/2/4 Job 的 anti-splitting 门。若仍让所有 `job_id` 平铺竞争，或让
+跨租户 strict priority 绕过 tenant floor，则不能声称多租户公平。公平评价与效率/SLO 形成约束
+下多目标向量，不压成一个 composite score。
 
 先冻结评价语义，禁止把两种不同问题混成一个“公平分数”：
 
 | 模式 | Job 关系 | 主要目标 | 项目内部算法消融 | 不能用什么代替 |
 |---|---|---|---|---|
-| equal-share fairness | 同权或显式权重的平等 tenant/Job | 共同积压 weighted service lag、最坏 Job、work conservation | project bounded-ready + DRR/WFQ、external VTC-style | foreground SLO 或全生命周期 Jain |
+| equal-share fairness | 同一租户内同权或显式权重的 Job/class | 共同积压 weighted service lag、最坏 Job、work conservation | project bounded-ready + DRR/WFQ、external VTC-style | foreground SLO 或全生命周期 Jain |
 | differentiated service | foreground priority 高于 bulk | foreground SLO isolation，同时 bulk starvation/退化有界 | project bounded-ready + strict-priority/EDF；project frozen-static reference | 要求两类延迟相等或只报 aggregate throughput |
 
 当前 long bulk + 5s 后 foreground 实验属于 differentiated service。bulk 的 30s miss rate 在没有
@@ -909,6 +921,14 @@ reserved-share JCT、最大正 lag、最长 no-service 和 token/work goodput。
    **reserved-share non-inferiority**，不是 DRF sharing incentive 或 Themis finish-time fairness
    定理，因为资源模型、离散请求和服务干扰假设不同。
 
+   公平与隔离分开报告：公平看共同积压的 entitlement/service lag；隔离用固定 victim 的 matched
+   normal→aggressor step/burst 对照，报告 `victim P99 ratio`、`victim goodput loss`、`victim SLO
+   violation delta`、最大 waiting age 和 burst 结束后的 recovery time。victim manifest/arrival、
+   总资源与服务配置必须不变，只改变 aggressor offered load。`group JCT` 定义为 group barrier/
+   start 到最后一个 Job 完成的 wall time（makespan），不新增同义字段，且不得替代 per-Job P99。
+   该 noisy-neighbor 对照不扩张当前 matched-observation gate 或首个 2-Job formal；只在它们闭合
+   后，从已经登记的单个 held-out on/off/burst 场景中选择并冻结，避免重复发明 workload。
+
 4. 饥饿和工作守恒。报告最长连续 no-service interval、最大 waiting age、未完成请求、以及
    “存在 eligible ready work 且
    健康 endpoint 仍有可用安全容量”的 avoidable-idle ratio。GPU idle 但无 ready work 不算
@@ -919,6 +939,10 @@ reserved-share JCT、最大正 lag、最长 no-service 和 token/work goodput。
    aggregate 指标也不退化，可称“**相对该 baseline 和已观测维度的经验性 Pareto 改善**”；
    这不是 DRF 的 Pareto efficiency。Jain 下降但所有 Job JCT 改善时，应表述为“收益更不均”，
    不能只凭 Jain 宣称份额保证失败；最终结论仍由 service lag、保留份额与 SLO 共同决定。
+
+   `slowdown Jain` 不作为新增 headline：对 slowdown 或 reciprocal progress 做 Jain 的结果依赖
+   变换，且无法识别“所有 Job 同样慢”。保留现有 actual-work Jain/normalized-progress Jain 作为
+   描述量；正式保护使用 max slowdown、worst-Job/class P99/SLO、service lag 与最长 no-service。
 
 6. 数据与可计算性门禁。历史 compact CSV 可计算三个 JCT 反事实、worst Job 和 normalized
    progress，但不能无损重建动态 active set 下的 GPS lag、最长连续 no-service 或偿还时间。
@@ -1844,7 +1868,8 @@ running/waiting 均归零。该单次结果明确为 `comparison_admission=not_r
    Gamma burst、request-rate、max-concurrency 与 ramp-up；它只作 serving ceiling/control，
    不代表多 Job 数据流。远端 vLLM 0.25.1 实测没有新版文档中的 `probe-request-rate`，不开
    升级或自写仿 probe 客户端；现有独立 Job runner 已覆盖更完整的干扰观测。
-2. **多租户评价定义**：组合 DRF/Pisces/DRFT 的 share/isolation/work-conservation、
+2. **单租户多 Job 评价与未来多租户边界**：当前组合 DRF/Pisces/DRFT 可迁移的
+   share/isolation/work-conservation、
    Themis/Tiresias 的 full/reserved finish-time 与 attained service，以及 VTC/DLPM 的 actual
    token-work、共同积压 service disparity 和 locality。项目 runner 已保存 normalized
    service/Jain/描述性 disparity；还需完整 ready/backlogged ledger 才能算 empirical GPS lag/

@@ -88,6 +88,14 @@ priority/EDF、foreground SLO goodput 与 bulk reserved-share JCT/starvation gua
 AI 算子的 quality-cost-time；④ project frozen-static/dynamic 消融。只给 tokens/s 或
 images/s 不能构成完整的数据库 AI 算子评价。
 
+当前 baseline 主问题是单租户多 Job/workload class，Project 使用 `job_id` 公平键并按 intra-tenant
+Job fairness/service differentiation 报告；不要求原生系统暴露 tenant resource-group，也不把
+多租户能力作为当前准入门。多租户只保留 future-compatible 边界：届时原生系统使用官方 user/
+resource-group 语义，Project 在现有 Job scheduler 外增加稳定 principal 聚合 entitlement/debt、
+per-tenant buffer cap 与 anti-splitting 门，不能把 flat `job_id` 竞争直接改名为 tenant fairness。
+当前仍将公平（按 Job 份额/lag）与隔离（固定 victim 在 aggressor normal→burst 下的 P99/goodput/
+SLO 变化）分表报告。
+
 ---
 
 ## 使用规则
@@ -829,5 +837,6 @@ selected/oracle JCT 与 plan regret。完整启动条件、语义等价门禁和
 - [ ] 每个 baseline 是否标注了来源论文/系统？
 - [ ] 是否避免了"常识级 strawman"作为唯一 baseline？
 - [ ] 数据库 AI 系统 baseline 是否覆盖 LOTUS/Palimpzest，评价协议是否参考 SemBench？
-- [ ] 多 job 是否包含 VTC/shared-credit，并同时报告聚合吞吐、每 job JCT/P99、Jain fairness 和 idle borrowing？
+- [ ] 单租户多 Job 是否包含 VTC-style/shared-credit，并同时报告聚合吞吐、每 Job JCT/P99、
+      weighted service/empirical lag、最长无服务和 idle borrowing？Jain 只作描述量。
 - [ ] 代价估计是否用 ranking/regret 验证了决策价值，而不只报告 MAPE？

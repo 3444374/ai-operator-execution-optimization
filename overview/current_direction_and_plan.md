@@ -42,6 +42,11 @@
   进入正式路径，不能把观测接线写成完整 state-aware 方法已落地。
 - **图像原生多 Job 已完成**：Daft built-in/Ray Data single→four-job 40/40 runs、30 formal
   group 通过；两轨均出现非均匀 Job slowdown，只作系统内干扰/状态证据，不作跨框架排名。
+- **当前范围冻结为单租户多 Job**：coordinator 按 `job_id` 记账，用于同一租户内 interactive/
+  batch 等 workload class 的 service differentiation、公平与隔离。论文 formal 将公平（weighted
+  service/lag）与隔离（固定 victim 在 aggressor burst 下的 P99/goodput/SLO 变化）分开；`group
+  JCT` 作为 makespan 使用，不新增同义字段。多租户不阻塞当前实验，未来只在现有 Job scheduler
+  外增加 tenant entitlement/debt 与 per-tenant buffer cap，不把 flat Job 竞争直接外推为租户公平。
 
 ## 2. 课题定位
 

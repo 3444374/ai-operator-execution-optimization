@@ -14,6 +14,10 @@
 
 1. **研究内容一：数据组织策略**。探索按计算量（token 量/frame 量）而非固定行数的动态组织方式，以及按计算量相似度分组对推理效率的影响。利用异构 actor pool 实现。引擎级参数（Daft `into_batches`、`batch_size`、`repartition`）与策略级决策（token-budget、length-align、prefix-aware）共同构成数据组织优化空间。
 2. **研究内容二：调度与提交控制策略**。利用 Ray actor 的 stateful + async 能力，研究固定资源下的最小饱和 active work、request-level replenishment、endpoint-shared request/work credit、work-conserving idle borrowing 和多 job fair queue。固定静态 credit 是强 baseline；动态候选只有显著优于同上限静态策略才晋级。
+   当前正式范围是**单租户内多个 Job/workload class**，按 Job 评价份额、SLO 与隔离；不把当前
+   `job_id` 记账外推为多租户公平。多租户只作后续层次化扩展：外层 tenant entitlement/debt 与
+   per-tenant buffer cap，内层复用现有 Job-level observation、priority/SLO、debt 和 borrowing/reclaim，
+   不阻塞当前 formal。
 3. **多模态泛化验证**（正文实验，验证策略抽象不依赖数据模态）。在图像 workload（AI_EMBED/AI_CLASSIFY，CLIP/Qwen2.5-VL）上使用同一套策略代码和配置逻辑，验证 token-budget → frame-budget、queue-adaptive flush → 完全复用的模态无关性。
 4. **算子代价估计**（共同使能组件，不作为独立研究内容）。首版采用简单解析模型 + profile 校准 + residual correction，预测 prompt/output work、operator service time、JCT、remaining work 和 SLO slack，服务于 active-work/K 初始化、数据组织、endpoint 路由和提交策略；评价误差、配置 ranking、决策 regret 和预测区间。
 

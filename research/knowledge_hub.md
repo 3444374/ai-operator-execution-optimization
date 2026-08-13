@@ -719,6 +719,13 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 
 #### 5.7.6 多 Job 评价模式：不是只看 VTC 或 Jain（2026-08-13）
 
+当前评价主体冻结为**单租户内多个 Job/workload class**：`job_id` 是应用/实验合同给出的逻辑
+调度身份，request 是工作量载体。因此当前只声称 intra-tenant Job fairness/service
+differentiation，不把 flat `job_id` 记账改名为 tenant fairness。多租户是兼容的后续扩展而非当前
+formal blocker：外层先按稳定 `principal_id` 聚合 tenant entitlement/debt 和 buffer cap，内层再
+复用现有 Job-level ready observation、priority/SLO、borrowing/reclaim；届时须另验 tenant floor、
+anti-splitting、双层 debt/reclaim 和非抢占请求的恢复时间，不能自动继承当前公平性质。
+
 文献交叉后冻结四个互补视角：DRF/Pisces/DRFT 约束“份额与隔离如何定义”，Themis/Tiresias/
 Pollux 约束“Job 完成体验和未知时长如何评价”，VTC/DLPM 约束“共同积压服务差与 locality
 冲突”，Sarathi-Serve/DistServe/Llumnix 约束“SLO goodput 和 tail”。任何单篇都不能单独成为
@@ -756,7 +763,7 @@ finish-time fairness 均保持 unavailable。图像 CPU/GPU/bytes 在资源向�
   原生 baseline；Daft、Ray Data、vLLM 或产品路径保留原生调度。若简单策略进入同一 Pareto 前沿，论文贡献收敛为 **bounded
   ready-state exposure contract + 最小 guarded release**，删除不必要的复杂 selector；只有
   proposed 有独立增量才进入 1+3 formal。
-- **公平分轨**：equal-share tenant 场景评价 weighted service lag、worst Job 和 work conservation；
+- **公平分轨**：当前 equal-share Job/class 场景评价 weighted service lag、worst Job 和 work conservation；
   foreground/bulk 是 differentiated service，评价 foreground SLO isolation + bulk reserved-share
   JCT/max lag/longest no-service。bulk 30s 在 static 下已约 67% miss，缺外部业务依据时只作相对
   static guard，不称绝对 bulk SLO。
