@@ -46,11 +46,16 @@ FORMAL_RESULT_FIELDS = tuple(
     actor_worker_slot_held_utilization max_inflight_limit admission_scope
     per_endpoint_inflight_limit max_active_work_per_endpoint
     max_active_work_per_endpoint_seen max_ready_requests_seen
-    max_ready_work_seen shared_credit_coordinator_name
+    max_ready_work_seen max_ready_payload_bytes_seen
+    ready_requests_transition_mean ready_requests_transition_p95
+    ready_work_transition_mean ready_work_transition_p95
+    ready_payload_bytes_transition_mean ready_payload_bytes_transition_p95
+    shared_credit_coordinator_name
     shared_credit_request_limit shared_credit_work_limit shared_credit_quantum
     shared_credit_job_weight shared_credit_job_priority
     shared_credit_job_slo_ms shared_credit_priority_window_ms
     shared_credit_job_debt_cap_work shared_credit_policy
+    shared_ready_observation_contract shared_ready_payload_bytes_limit
     saor_entitlement_weight
     saor_queue_weight saor_fairness_weight saor_slo_weight
     effective_global_inflight_limit

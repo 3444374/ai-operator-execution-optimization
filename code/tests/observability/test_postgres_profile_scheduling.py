@@ -329,6 +329,22 @@ class SchedulingProfileHelperTests(unittest.TestCase):
         self.assertLess(ready_index, timer_index)
         self.assertIn("actor_ready_s", profile.FORMAL_RESULT_FIELDS)
         self.assertIn("flush_trace_status", profile.FORMAL_RESULT_FIELDS)
+        self.assertIn(
+            "max_ready_payload_bytes_seen",
+            profile.FORMAL_RESULT_FIELDS,
+        )
+        self.assertIn(
+            "ready_payload_bytes_transition_p95",
+            profile.FORMAL_RESULT_FIELDS,
+        )
+        self.assertIn(
+            "shared_ready_observation_contract",
+            profile.FORMAL_RESULT_FIELDS,
+        )
+        self.assertIn(
+            "shared_ready_payload_bytes_limit",
+            profile.FORMAL_RESULT_FIELDS,
+        )
 
     def test_ray_task_worker_options_ignore_actor_only_concurrency(self) -> None:
         args = profile.parse_args(

@@ -3199,6 +3199,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 if args.shared_credit_coordinator_name
                 else ""
             ),
+            "shared_ready_observation_contract": (
+                args.shared_ready_observation_contract
+                if args.shared_credit_coordinator_name
+                else ""
+            ),
+            "shared_ready_payload_bytes_limit": (
+                args.shared_ready_payload_bytes_limit
+                if args.shared_credit_coordinator_name
+                else 0
+            ),
             "saor_entitlement_weight": (
                 args.saor_entitlement_weight
                 if args.shared_credit_policy in {

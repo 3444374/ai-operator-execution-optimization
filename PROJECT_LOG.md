@@ -6449,3 +6449,6 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - ready buffer 新增 logical Arrow bytes 硬上限和 request/work/bytes transition
   mean/P95/max；组资源证据新增 host CPU/memory 分布。logical bytes 不等同物理 RSS，
   host 指标也不冒充 coordinator process attribution。
+- 服务器完整 profiler schema 回归发现新增 ready 指标尚未注册进冻结 formal CSV 合同；现已将
+  request/work/logical-bytes transition、observation contract 与 bytes limit 同步到实际结果行和
+  `FORMAL_RESULT_FIELDS`。该修复只恢复 fail-closed schema 一致性，不产生也不授权 formal 结果。
