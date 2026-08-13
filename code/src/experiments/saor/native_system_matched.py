@@ -55,6 +55,7 @@ class MatchedArm:
     organizer: str
     calibration_path: str
     project_contract: tuple[tuple[str, object], ...] = ()
+    raw_field_names: tuple[str, ...] = ()
 
     def project_value(self, name: str) -> object | None:
         return dict(self.project_contract).get(name)
@@ -195,6 +196,7 @@ def _load_arm(value: object) -> MatchedArm:
         unsupported_request_tails=_mapping(value["unsupported_request_tails"], "unsupported_request_tails"),
         source=_mapping(value["source"], "source"), organizer=_string(value["organizer"], "organizer"),
         calibration_path=_string(value["calibration_path"], "calibration_path"), project_contract=project_contract,
+        raw_field_names=tuple(value),
     )
 
 
@@ -205,6 +207,8 @@ def _validation_errors(config: MatchedSystemConfig) -> list[str]:
         errors.append("arms must contain exactly the eight unique required arm IDs")
     if not config.arms:
         return errors
+    if config.gpu_formal_locally_authorized:
+        errors.append("local authorization never permits GPU formal execution")
     output_roots = [arm.output_root for arm in config.arms]
     if len(output_roots) != len(set(output_roots)):
         errors.append("output_root values must be unique")
@@ -227,11 +231,25 @@ def _validation_errors(config: MatchedSystemConfig) -> list[str]:
         for field in ("manifest_path", "manifest_sha256", "endpoint_ids", "service_signature", "protocol", "output_cap"):
             if getattr(arm, field) != getattr(reference, field):
                 errors.append(f"{arm.arm_id} {field} drifts from matched contract")
+        source = dict(arm.source)
+        if (
+            source.get("kind") != "timed_postgres_manifest"
+            or source.get("timing_boundary") != "inside_job_barrier"
+            or not source.get("database_url")
+            or not source.get("workload_name")
+        ):
+            errors.append(f"{arm.arm_id} must use an exact timed PostgreSQL source contract")
+        if arm.source != reference.source:
+            errors.append(f"{arm.arm_id} source drifts from matched contract")
+        if Path(arm.output_root).exists():
+            errors.append(f"{arm.arm_id} output_root already exists")
         if arm.kind == "native":
             if arm.scheduler_owner not in {"daft", "ray_data"}:
                 errors.append(f"{arm.arm_id} native scheduler owner must be daft or ray_data")
             if arm.project_contract:
                 errors.append(f"{arm.arm_id} native arm rejects Project controls")
+            if _native_project_control_names(arm.raw_field_names):
+                errors.append(f"{arm.arm_id} native arm rejects explicit Project controls")
         elif arm.kind == "project":
             if arm.scheduler_owner != "project":
                 errors.append(f"{arm.arm_id} project scheduler owner must be project")
@@ -241,6 +259,12 @@ def _validation_errors(config: MatchedSystemConfig) -> list[str]:
     for arm_id in ("project_bounded_ready_fifo", "project_bounded_ready_drr", "project_bounded_ready_vtc_style"):
         if by_id.get(arm_id) and by_id[arm_id].kind != "project":
             errors.append(f"{arm_id} is a Project selector control, never native")
+    for arm_id in SELECTOR_SANITY_ARM_IDS:
+        if by_id.get(arm_id) and by_id[arm_id].project_value("ready_observation") != "bounded_concrete_pre_registration":
+            errors.append(f"{arm_id} must use bounded concrete pre-registration")
+    frozen = by_id.get("project_frozen_static")
+    if frozen and frozen.project_value("ready_observation") == "bounded_concrete_pre_registration":
+        errors.append("project_frozen_static must not be bounded-ready")
     project_arms = [arm for arm in config.arms if arm.kind == "project"]
     if project_arms:
         project_reference = project_arms[0]
@@ -250,6 +274,10 @@ def _validation_errors(config: MatchedSystemConfig) -> list[str]:
                     errors.append(f"{arm.arm_id} {field} drifts across Project selector arms")
             if arm.source != project_reference.source or arm.organizer != project_reference.organizer:
                 errors.append(f"{arm.arm_id} source or organizer drifts across Project selector arms")
+            if arm.calibration_path != project_reference.calibration_path:
+                errors.append(f"{arm.arm_id} calibration_path drifts across Project selector arms")
+            if arm.unsupported_request_tails != project_reference.unsupported_request_tails:
+                errors.append(f"{arm.arm_id} unsupported request tails drift across Project selector arms")
     saor = by_id.get("project_bounded_ready_saor_0125we")
     if saor and (saor.project_value("policy") != "saor_bounded_ready" or saor.project_value("ready_observation") != "bounded_concrete_pre_registration" or saor.project_value("debt_caps") != (0.125, None)):
         errors.append("SAOR must use bounded-ready policy/observation and debt caps [0.125, null]")
@@ -260,6 +288,13 @@ def _freeze(value: object) -> object:
     if isinstance(value, dict): return tuple(sorted((key, _freeze(item)) for key, item in value.items()))
     if isinstance(value, list): return tuple(_freeze(item) for item in value)
     return value
+
+def _native_project_control_names(names: tuple[str, ...]) -> tuple[str, ...]:
+    normalized = tuple(name.lower().replace("-", "_") for name in names)
+    forbidden = (
+        "credit", "coordinator", "router", "ready_observation", "bounded_ready",
+    )
+    return tuple(name for name in normalized if any(word in name for word in forbidden))
 
 def _mapping(value: object, name: str) -> tuple[tuple[str, object], ...]:
     if not isinstance(value, dict): raise ValueError(f"{name} must be an object")

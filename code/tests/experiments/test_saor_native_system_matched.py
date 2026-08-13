@@ -63,6 +63,19 @@ class MatchedSystemContractTest(unittest.TestCase):
         self.assertEqual(len(report["immutable_manifest_hashes"]), 8)
         self.assertEqual(len(report["planned_schedule"]), 6)
 
+    def test_example_uses_a_literal_tracked_manifest_path_without_expansion(self) -> None:
+        repository = Path(__file__).resolve().parents[3]
+        example = json.loads(
+            (repository / "deploy/autodl/saor_native_system_matched.example.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        paths = {arm["manifest_path"] for arm in example["arms"]}
+        self.assertEqual(len(paths), 1)
+        manifest_path = paths.pop()
+        self.assertNotIn("${", manifest_path)
+        self.assertTrue((repository / manifest_path).is_file())
+
     def test_audit_rejects_one_field_contract_drift(self) -> None:
         mutations = {
             "missing arm": lambda value: value["arms"].pop(),
@@ -89,6 +102,20 @@ class MatchedSystemContractTest(unittest.TestCase):
             "saor observation": lambda value: value["arms"][7].__setitem__("ready_observation", "single_head"),
             "saor debt": lambda value: value["arms"][7].__setitem__("debt_caps", [0.2, None]),
             "reused output": lambda value: value["arms"][1].__setitem__("output_root", value["arms"][0]["output_root"]),
+            "existing output": lambda value: value["arms"][1].__setitem__("output_root", str(path.parent)),
+            "source kind": lambda value: value["arms"][0]["source"].__setitem__("kind", "postgres"),
+            "source boundary": lambda value: value["arms"][0]["source"].__setitem__("timing_boundary", "outside_job"),
+            "source database": lambda value: value["arms"][0]["source"].__setitem__("database_url", ""),
+            "source workload": lambda value: value["arms"][0]["source"].__setitem__("workload_name", ""),
+            "native normalized credit": lambda value: value["arms"][0].__setitem__("request-credit", 8),
+            "native normalized coordinator": lambda value: value["arms"][0].__setitem__("shared_credit_coordinator", "x"),
+            "native normalized router": lambda value: value["arms"][0].__setitem__("endpoint-router", "x"),
+            "native bounded ready": lambda value: value["arms"][0].__setitem__("ready_observation", "bounded_concrete_pre_registration"),
+            "selector ready observation": lambda value: value["arms"][5].__setitem__("ready_observation", "single_head"),
+            "frozen static bounded ready": lambda value: value["arms"][3].__setitem__("ready_observation", "bounded_concrete_pre_registration"),
+            "formal local authorization": lambda value: value.__setitem__("gpu_formal_locally_authorized", True),
+            "project calibration drift": lambda value: value["arms"][5].__setitem__("calibration_path", "other-calibration.json"),
+            "project request-tail drift": lambda value: value["arms"][5]["unsupported_request_tails"].__setitem__("reason", "other"),
         }
         for name, mutate in mutations.items():
             with self.subTest(name=name), self._config() as path:
@@ -113,7 +140,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                 "arrival_offsets_s": [0, 5], "job_internal_arrival_contract": "eager",
                 "performance_writeback_mode": "none",
                 "unsupported_request_tails": {"status": "unavailable", "reason": "unsupported"},
-                "source": {"workload": "test", "row_offset": 512}, "organizer": "daft",
+                "source": {"kind": "timed_postgres_manifest", "timing_boundary": "inside_job_barrier", "database_url": "postgresql://localhost/test", "workload_name": "test", "row_offset": 512}, "organizer": "daft",
             }
             native = lambda arm_id, owner: {**common, "arm_id": arm_id, "kind": "native", "scheduler_owner": owner, "output_root": f"out/{arm_id}", "calibration_path": "native-calibration.json"}
             project = lambda arm_id, policy: {**common, "arm_id": arm_id, "kind": "project", "scheduler_owner": "project", "output_root": f"out/{arm_id}", "policy": policy, "k_per_endpoint": 8, "work_limit_per_endpoint": 65536, "ready_bytes": 4096, "actor_topology": {"workers": 1, "concurrency": 256}, "calibration_path": "project-calibration.json"}
