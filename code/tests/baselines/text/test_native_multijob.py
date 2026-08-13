@@ -303,6 +303,18 @@ class NativeMultiJobTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "prohibited"):
             audit_command(["runner", "--max-active-work", "65536"])
 
+    def test_command_audit_rejects_coordinator_and_bounded_ready_spellings(self) -> None:
+        for flag in (
+            "--shared-credit-coordinator-name",
+            "--shared_credit_coordinator_name",
+            "--shared-ready-observation-contract",
+            "--shared_ready_observation_contract",
+        ):
+            with self.subTest(flag=flag), self.assertRaisesRegex(
+                ValueError, "prohibited"
+            ):
+                audit_command(["runner", flag, "project-control"])
+
     def test_timed_postgres_source_is_required_for_rankable_native_shards(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
