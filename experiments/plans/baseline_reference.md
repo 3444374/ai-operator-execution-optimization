@@ -69,10 +69,10 @@ observation contract。当前身份冻结为：
 | 服务上限 | bounded direct HTTP / vLLM Bench | vLLM + 原生/简单有界客户端 | 否 | saturation ceiling，不是公平 baseline |
 | 原生系统 baseline | Daft `prompt()` Native/Ray、Ray Data native graph、通过门禁的数据库产品 | 被测框架/产品 | **否，禁止注入** | 同合同系统主比较；保留其原生 batching/backpressure/scheduling |
 | 项目静态参照 | project frozen-static partition/reservation | Project | 否；保持冻结静态执行路径 | 同栈隔离/Pareto reference，不能简称“原生 baseline” |
-| 项目 no-bounded-ready 算法 baseline | single-head FIFO/DRR/VTC-style | Project | 否 | 完整调度包/observation bridge baseline；不是 vendor-native baseline |
+| 项目内标准算法 control（no-bounded-ready） | single-head FIFO/DRR/VTC-style | **Project shared-credit coordinator 的本地实现** | 否 | 用已有算法作完整调度包/observation bridge 对照；不是 Daft/Ray/vLLM upstream-native 实现 |
 | 项目历史诊断 | old single-head SAOR | Project | 否 | 只定位旧 SAOR observation gap，不作为 proposed |
-| 项目 matched-observation FIFO control | project bounded-ready + global FIFO | Project | 是 | FIFO baseline 的候选集配平变体；与 canonical single-head FIFO 配对衡量 ready-state exposure |
-| 项目 matched-observation 份额 control | project bounded-ready + DRR/WFQ、external VTC-style actual-work counter | Project | 是 | DRR/VTC baseline 的候选集配平变体，判断复杂 selector 是否必要 |
+| 项目 matched-observation FIFO control | project bounded-ready + global FIFO | **Project shared-credit coordinator 的本地实现** | 是 | FIFO control 的候选集配平变体；与 single-head FIFO 配对衡量 ready-state exposure |
+| 项目 matched-observation 份额 control | project bounded-ready + DRR/WFQ、external VTC-style actual-work counter | **Project shared-credit coordinator 的本地实现** | 是 | 复用已有 DRR/VTC 思想的 control，判断复杂 selector 是否必要；不是上游 artifact |
 | 项目优先级上界消融 | project bounded-ready + strict-priority/EDF | Project | 是 | 测 SLO 可达上界与 starvation 代价；属于 internal ablation |
 | 项目 proposed | project bounded-ready + $H_B=0.125W_e$ guarded priority/debt | Project | 是 | 判断 debt guard 是否有独立 Pareto 增量 |
 | 引擎内相关工作 | VTC、DLPM、JITServe、Llumnix、SCORPIO、ProServe | 原论文系统 | 不由本项目注入 | 理论/系统参照；没有原实现同层复现时不冒充 executable baseline |
@@ -83,7 +83,7 @@ observation contract。当前身份冻结为：
 | 证据层 | 回答的问题 | 最小对象 | 可以声称什么 |
 |---|---|---|---|
 | **系统级 matched comparison** | 完整 Project/SAOR 系统是否有实际经验价值 | Daft `prompt()` Native、Daft `prompt()` Ray（两种 runner 均可执行时分列）、Ray Data native graph、project frozen-static、project bounded-ready + guarded debt | 相同数据库 AI workload 与物理资源下，各完整系统的经验性 E2E 性能、SLO、资源与 correctness 差异 |
-| **机制级 attribution** | Project 收益来自 ready-state exposure、共享容量还是 selector | canonical no-bounded-ready FIFO/DRR/VTC-style 算法 baselines（最小桥接为 single-head + shared FIFO）；另设 bounded-ready + FIFO、DRR、VTC-style、strict-priority、guarded debt matched controls | observation、共享容量和 selector 的项目内部因果分解；接入 bounded-ready 的副本只作配平 control，不替代 canonical baseline，也不得冒充 vendor-native/system baseline |
+| **机制级 attribution** | Project 收益来自 ready-state exposure、共享容量还是 selector | Project coordinator 内的 no-bounded-ready FIFO/DRR/VTC-style 标准算法 controls（最小桥接为 single-head + shared FIFO）；另设 bounded-ready + FIFO、DRR、VTC-style、strict-priority、guarded debt matched controls | observation、共享容量和 selector 的项目内部因果分解；所有这些臂均复用项目执行栈，不得冒充 upstream-native/system baseline |
 
 系统级原生臂保留各自官方 batching/backpressure/scheduler，不向其强塞 Project K/W、credit、
 coordinator 或 bounded-ready；但仍须冻结相同 GPU/CPU、endpoint、模型与 vLLM FCFS 服务签名、
@@ -93,11 +93,14 @@ strawman。Project frozen-static 与 SAOR 则冻结相同最大 K/W、ready-buff
 服务配置。该层比较不同 scheduler owner，结论必须写“完整系统经验表现”，不能写成 SAOR
 selector 的单因素因果收益。
 
-这里的 baseline 有两个正交身份，不能混写：Daft/Ray Data 是**原生系统 baseline**；FIFO、DRR、
-VTC-style 是**调度算法 baseline**。它们的 canonical baseline 实例不使用 bounded-ready。为做
-selector 单因素归因，可以另复制一个接入 Project bounded-ready 的 matched-control 版本：这不
-表示 bounded-ready 变成 FIFO/DRR/VTC 的组成，只是让各 selector 看到同一批 ready request。
-因此 `single-head/no-bounded-ready + FIFO/DRR/VTC-style` 承担 baseline 身份；
+这里必须区分“算法来源”和“实现/调度所有者”：FIFO、DRR、VTC 是已有算法思想，但本项目实验
+中的可执行代码位于 Project `shared_credit.py`，不是 Daft、Ray Data、upstream vLLM 或 VTC
+artifact 的原生实现；所有获准请求随后共同进入 upstream vLLM FCFS + continuous batching。
+因此 Daft/Ray Data 才称**原生系统 baseline**，FIFO/DRR/VTC-style 只称**项目内标准算法
+control**。为做 selector 单因素归因，可以另复制一个接入 Project bounded-ready 的
+matched-control 版本：这不表示 bounded-ready 变成 FIFO/DRR/VTC 的组成，只是让各 selector
+看到同一批 ready request。因此 `single-head/no-bounded-ready + FIFO/DRR/VTC-style` 承担标准
+算法对照身份；
 `bounded-ready + FIFO/DRR/VTC-style` 只承担 matched-observation control 身份，不能取代前者。
 报告必须同时标注 `scheduler_owner`、observation contract 和实现来源，禁止省略前缀只写“DRR”。
 
@@ -110,7 +113,7 @@ DRR/VTC-style 与 service lag；foreground/bulk differentiated-service 场景用
 priority/EDF、foreground SLO goodput 与 bulk reserved-share JCT/starvation guard。
 
 当前 bounded-ready 五个 selector 同窗口只能回答“哪一个 selector 在相同 observation 下更好”；
-其中 FIFO/DRR/VTC-style 是 canonical 算法 baselines 的 matched-control 版本，strict-priority 是
+其中 FIFO/DRR/VTC-style 是项目内标准算法 controls 的 matched-observation 版本，strict-priority 是
 SLO 上界 control，guarded debt 是 proposed，而不是“五个 proposed internal controls”。
 `project frozen-static` 同时与它们在 static/shared capacity、single-head/bounded-ready 和 selector
 上不同，不能单独归因 ready-state exposure。若论文要把 bounded-ready 本身写成独立贡献，必须

@@ -47,8 +47,9 @@ matched comparison 回答。
 | Project harness + bounded-ready strict-priority | foreground SLO 上界 control | bounded concrete pre-registration |
 | SAOR guarded-debt $H_B=0.125W_e$ | proposed candidate | bounded concrete pre-registration |
 
-这些 bounded-ready 副本不替代 canonical single-head/no-bounded-ready FIFO、DRR 或 VTC-style
-algorithm baseline，也不冒充 vendor-native baseline。
+FIFO、DRR、VTC 是已有算法思想，但这里运行的是 Project shared-credit coordinator 中的本地实现，
+不是 Daft/Ray Data/upstream vLLM 或 VTC artifact 的原生实现。它们是 standard-algorithm
+controls；这些 bounded-ready 副本也不冒充 vendor-native baseline。
 
 ## 3. 严谨性与合规自检
 
@@ -212,15 +213,17 @@ request SLO 下的 foreground goodput。
 `observed-nondominated-tradeoff / formal-not-authorized`：不立即启动 selector 1+3 formal，也不
 继续扫描 debt cap、dynamic K、reservation 或 4-Job 来追正。
 
-下一步按新冻结合同执行两项工作：
+本报告形成时冻结了两项后续工作；其中 observation bridge 现已完成：
 
 1. **系统级 native matched comparison**：同一 2-Job immutable workload、0/5s arrival、PG
    source/sink、Qwen/vLLM FCFS 服务和物理资源下，分列 Daft Native、Daft Ray、Ray Data native、
    project frozen-static 与当前 SAOR。原生臂保留自己的 batching/backpressure/scheduler，禁止
    注入 K/W、credit 或 bounded-ready。该层只判断完整系统经验表现；
-2. **observation bridge**：补 `single-head + shared FIFO`，把
-   `frozen-static → single-head + shared FIFO` 的共享容量效应与
-   `single-head + shared FIFO → bounded-ready + FIFO` 的 observation/execution-path 效应拆开。
+2. **observation bridge（已完成）**：双轮结果表明
+   `frozen-static → single-head + shared FIFO` 使 tok/s +25.96% 但 foreground P99 +99.17%；
+   `single-head + shared FIFO → bounded-ready + FIFO` 再使 tok/s +7.30%、foreground P99
+   −33.62%，但 foreground SLO violation 仍约 39.7%。完整报告见
+   `../saor_ready_observation_bridge_rehearsal_20260813/`。
 
 历史原生 two-job 数据不能直接与本实验拼表：当前 SAOR 使用 PG→Daft source、manifest-selected
 request、arrival replay 和新的 P99/SLO/lag schema；旧 native runner 在计时前读取 JSONL

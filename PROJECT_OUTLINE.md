@@ -57,13 +57,17 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 foreground SLO 零违约；SAOR 约 12.28K tok/s、foreground P99 17.85s。SAOR 用约 4.8%
 吞吐和约 5.2% bulk JCT 代价进一步降低 tail，属于观测到的非支配折中点，但固定顺序 n=2、
 selector 级 non-inferiority margin 未预注册，故 `formal_authorized=false`，不写 selector 胜出。
-FIFO、DRR、VTC-style 的 canonical 身份是 single-head/no-bounded-ready 调度算法 baselines；
-bounded-ready 副本只是在 Project harness 中配平候选集的 matched controls，不替代 baseline，
-也不表示这些算法包含本项目机制。报告中必须显式区分 observation contract。
+FIFO、DRR、VTC 是已有算法思想，但本实验的可执行版本均由 Project shared-credit coordinator
+实现，不是 Daft/Ray Data/upstream vLLM 的原生实现；它们应称项目内标准算法 controls。
+bounded-ready 副本只是在 Project harness 中配平候选集的 matched controls，也不表示这些算法
+包含本项目机制。报告中必须显式区分实现来源、scheduler owner 和 observation contract。
 论文的完整系统价值另用同一 2-Job/PG/vLLM/资源合同下的 Daft Native、Daft Ray、Ray Data
 native、project frozen-static 与 proposed 作 system-level matched comparison：原生臂保留自身
 调度且不注入 Project K/W，Project 两臂冻结同 K/W。该比较只能说明完整系统经验表现；要单独
-归因 bounded-ready，还需 `single-head + shared FIFO` 桥接共享容量与 observation 的变化。
+ready-observation bridge 已用双轮 GPU rehearsal 完成：static→single-head shared FIFO 使 tok/s
++25.96% 但 foreground P99 +99.17%；同 FIFO 下 single-head→bounded-ready 再使 tok/s +7.30%、
+foreground P99 −33.62%，但前台 SLO violation 仍约 39.7%。这分离了共享效率、隔离损失和
+observation 增量，也证明 observation 不能替代 selector/service differentiation。
 历史 JSONL native multi-job 结果把 PG export 放在计时外，且 Daft/Ray Data 当前只可靠提供
 shard/Job barrier，不满足新 system-level PG source/sink 与 request-tail schema，禁止直接拼表。
 

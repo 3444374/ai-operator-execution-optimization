@@ -37,8 +37,10 @@
   proposed 12.28K tok/s、fg P99 17.85s。proposed 是用约 4.8% 吞吐与约 5.2% bulk JCT 换 tail
   的观测非支配折中点，不是 selector winner；固定顺序 n=2，`formal_authorized=false`。
   下一步补 Daft Native/Daft Ray/Ray Data/project static/proposed 的 PG source/sink matched
-  comparison，并补 `single-head + shared FIFO` observation bridge。原生 baseline 不使用
-  bounded-ready；reservation 仍后置。
+  comparison。`single-head + shared FIFO` bridge 已完成：shared capacity 使 tok/s +25.96%
+  但 fg P99 +99.17%；bounded-ready 在同 FIFO 下再使 tok/s +7.30%、fg P99 −33.62%，但
+  fg SLO violation 仍约 39.7%。FIFO/DRR/VTC 为 Project 本地实现的标准算法 controls，不是
+  Daft/Ray/vLLM 原生实现；reservation 仍后置。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
   least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
   已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值

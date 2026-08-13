@@ -2,8 +2,8 @@
 
 Date: 2026-07-20（最后更新：2026-08-13；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 matched-observation selector 双轮 rehearsal 已完成，
-SAOR 是观测到的非支配折中点但未形成 selector victory，`formal_authorized=false`；下一步补同一
-2-Job 合同的 native-system matched comparison 与 single-head + shared FIFO observation bridge；
+SAOR 是观测到的非支配折中点但未形成 selector victory，`formal_authorized=false`；single-head +
+shared FIFO observation bridge 双轮已完成，下一步只补同一 2-Job 合同的 native-system matched comparison；
 原生 baseline 不接入 bounded-ready，dynamic-K 仍退出主线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
@@ -82,11 +82,12 @@ violation 0.658/0.666；$0.25W_e$ 虽保护 foreground，但 bulk miss 0.752/0.7
 
 同日 post-hoc 归因审核增加阻塞门：bounded-ready 同时改变 multiple concrete-ready
 pre-registration/execution path 与 priority/debt selector，旧 single-head FIFO/DRR/VTC/SAOR 不能
-作为 selector 的干净因果对照，但 FIFO/DRR/VTC 仍是 canonical no-bounded-ready 算法 baselines。
+作为 selector 的干净因果对照；FIFO/DRR/VTC 虽是已有算法，但本实验运行的是 Project
+shared-credit coordinator 中的本地实现，只能称项目内标准算法 controls。
 另做 1--2 轮**项目内部** matched-observation rehearsal，使
 project bounded-ready + FIFO、DRR/WFQ、external VTC-style、strict-priority 与 proposed 共享相同
 ready-window、active K/W、ready bytes、arrival/cache/服务合同。接入 bounded-ready 的 FIFO/DRR/
-VTC 只是 canonical baselines 的 matched controls，不替代 no-bounded-ready 版本；Daft、Ray Data、
+VTC 只是这些项目内标准算法的 matched controls，不替代 no-bounded-ready 版本；Daft、Ray Data、
 vLLM 或产品原生 baseline 继续使用各自调度且不接 bounded-ready。
 只有 proposed 超过最强项目简单 Pareto 前沿才启动 1+3 formal；否则贡献收敛为 bounded ready-state
 exposure + 最小 guarded release，或淘汰复杂 selector。
@@ -109,15 +110,13 @@ project frozen-static 与 proposed，完成系统级 matched comparison。原生
 注入 Project K/W；Project 两臂冻结相同 K/W。历史原生数据只有完整签名和指标 schema 均匹配
 才可复用，否则重跑。
 
-FIFO、DRR、VTC-style 的 canonical 身份是**no-bounded-ready 调度算法 baselines**；接入
-bounded-ready 的副本只用于让 selector 看到完全相同的候选集，标成 matched controls，不替代
-baseline。还须保留其 single-head/no-bounded-ready 实例：最小先补 shared
-FIFO 桥接，若论文报告完整 SAOR 包相对 DRR/VTC 包，则 no-bounded-ready DRR/VTC-style 也必须
-纳入或严格复用签名一致的旧 formal。每个结果名必须显式写 observation contract。
+FIFO、DRR、VTC-style 是**Project coordinator 内的标准算法 controls**，不是上游原生实现；
+接入 bounded-ready 的副本只用于让 selector 看到相同候选集。single-head/no-bounded-ready
+实例用于完整调度包对照；每个结果名必须显式写实现来源和 observation contract。
 
 两轮完整 artifact 已进入仓库，第一轮中间回报不再是证据缺口。当前更准确的停止门是：不立即
 启动 selector 1+3 formal，也不事后为这批数据补 non-inferiority margin；先完成原生系统 matched
-comparison 与 `single-head + shared FIFO` bridge。若完整 Project 系统胜过原生 Daft/Ray，差值也
+comparison。`single-head + shared FIFO` bridge 已完成；若完整 Project 系统胜过原生 Daft/Ray，差值也
 不能全归因于 guarded-debt selector；只有业务合同明确要求比 30s 更紧的 foreground tail，且
 预注册接受约 5% efficiency/bulk-JCT 代价后，才有理由将 SAOR 折中点注册为独立 selector formal。
 

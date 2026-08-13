@@ -10,6 +10,11 @@ FCFS 和 FIFO 顺序：`frozen-static → single-head shared FIFO` 只观察共�
 汇总器只报告这两个观测效应，不自动判胜负或授权 formal。这仍是项目内部消融；Daft Native、
 Daft Ray 和 Ray Data native 不接 bounded-ready，必须在另一张系统级表中比较。
 
+这里的 FIFO、DRR、VTC 名称表示复用已有调度算法思想，不表示调用了 Daft/Ray/vLLM 的原生
+实现。本实验真正运行的是项目 `shared_credit.py` 中的 coordinator 选择逻辑；被它释放的请求再
+进入 upstream vLLM FCFS + continuous batching。只有调度所有权属于 Daft/Ray Data 自己的臂才叫
+原生系统 baseline。
+
 ## 2026-08-13 bounded ready-set 为什么不是扩大 K
 
 `experiment_walkthrough.md` 新增 ready-set observation 修订说明。新 policy

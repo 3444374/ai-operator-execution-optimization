@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-08-13 ready-observation bridge 双轮完成与“原生”身份纠偏
+
+- 服务器以执行提交 `3cfc5eb2` 完成两个独立三臂 rehearsal root：6/6 cell、6,144/6,144
+  requests、0 incident；分析提交 `77b12d45` 双轮汇总 passed，但保持两个 effect 未判决、formal
+  未授权。
+- shared capacity 双轮均值 tok/s +25.96%、group JCT −20.58%，代价是 foreground P99
+  +99.17%、SLO violation +95.90 pp；同 FIFO 下 bounded-ready 再使 tok/s +7.30%、fg P99
+  −33.62%，但 fg violation 仍约 39.7%。动态动机收紧为固定 K/W 下的 Job 份额借用/回收和
+  release order，不写 dynamic-K 必要。
+- 用户指出 FIFO/DRR/VTC “原生”措辞歧义。代码核实后统一：算法思想是已有工作，但本次可执行
+  版本由 Project `shared_credit.py` 实现，downstream 才是 upstream vLLM FCFS/continuous
+  batching；因此称 Project standard-algorithm controls，不称 Daft/Ray/vLLM native baseline。
+- 新增 bridge 结果目录与 compact evidence；服务器仓库外完整 archive SHA 写入报告。下一步只剩
+  无 Project coordinator/bounded-ready 的 Daft Native/Daft Ray/Ray Data system comparison。
+
 ## 2026-08-13 ready-observation 三臂桥接合同实现
 
 - 新增 `saor_ready_observation_bridge.example.json`：冻结

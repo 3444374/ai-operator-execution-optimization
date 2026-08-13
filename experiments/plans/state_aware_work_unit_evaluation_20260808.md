@@ -993,11 +993,12 @@ credit 或 bounded-ready；project frozen-static 是同栈静态 reference，不
 `BoundedReadyWindow` 只存在于 Project 路径：它把已经 concrete-ready 的有限多个请求暴露给
 项目 selector。算法因果比较时，project bounded-ready + global FIFO、DRR/WFQ、external
 VTC-style、strict-priority/EDF 与 proposed 必须使用**同一个 bounded ready-window、同一 active
-K/W 和同一 ready bytes 上限**。FIFO、DRR/WFQ、external VTC-style 的 canonical 调度算法
-baselines 使用 no-bounded-ready/single-head；接入统一 Project ready-window 的副本只是在候选集
-相同条件下比较 selector，身份是 matched-observation controls，不代表 bounded-ready 属于这些
-算法，也不能取代 canonical baselines。strict-priority/EDF 是 SLO 上界 control。这些 Project
-harness 路径均不进入 vendor-native 系统排名；旧 single-head `saor_release` 只保留为
+K/W 和同一 ready bytes 上限**。FIFO、DRR/WFQ、external VTC-style 是已有算法思想，但此处
+可执行版本由 Project shared-credit coordinator 实现，不是 Daft/Ray Data/upstream vLLM/VTC
+artifact 原生实现。no-bounded-ready/single-head 版本是项目内标准算法 controls；接入统一
+Project ready-window 的副本只是在候选集相同条件下比较 selector，身份是 matched-observation
+controls，不代表 bounded-ready 属于这些算法。strict-priority/EDF 是 SLO 上界 control。这些
+Project harness 路径均不进入 vendor-native 系统排名；旧 single-head `saor_release` 只保留为
 observation-gap 定位臂。
 
 `saor-v0.5.2` 的 $0.125W_e$ 虽已通过双轮 development gate，但其 observation/execution path
@@ -1006,9 +1007,9 @@ observation-gap 定位臂。
 1. **项目内部 matched-observation selector gate（当前先运行）**：在冻结 2-Job workload 上做
    1--2 个 rehearsal，至少比较 project bounded-ready + FIFO、DRR/WFQ、strict-priority 与
    proposed；external VTC-style 在 event accounting 可复用时加入。所有 Job 应用同一 ready
-   window，只改变选择器。这里的 FIFO/DRR/VTC-style 必须标成 canonical 算法 baseline 的
-   `Project harness + bounded-ready matched-control` 副本，不能取代 no-bounded-ready baseline，
-   也不能称 vendor-native/system baseline。该 gate 只回答 SAOR 是否被简单 selector 击败，
+   window，只改变选择器。这里的 FIFO/DRR/VTC-style 必须标成已有算法的
+   `Project implementation + bounded-ready matched-control`，不能称 vendor-native/system
+   baseline。该 gate 只回答 SAOR 是否被简单 selector 击败，
    不能单独证明完整系统相对 Daft/Ray 的价值；
 2. **系统级 native matched comparison（下一阶段必做）**：在同一 2-Job immutable workload、
    arrival replay、PG source/sink、模型、vLLM FCFS 服务签名、协议和 correctness 合同下，分列
@@ -1017,14 +1018,12 @@ observation-gap 定位臂。
    batching/backpressure/scheduler，不注入 Project K/W/credit/bounded-ready，但共享相同物理
    CPU/GPU/endpoint 包络并使用预注册的原生 calibration。报告 E2E throughput/MFU、group JCT、
    per-Job JCT/P99/SLO、资源与 correctness；这里只能声称完整系统的经验表现；
-3. **no-bounded-ready baseline 与 observation 桥接（独立贡献前必做）**：同一 FIFO/DRR/VTC-style
-   baseline 应保留 single-head/no-bounded-ready 实例，用于完整调度包比较；其中最小桥接使用
-   `single-head + shared FIFO`。现有 project frozen-static 与 bounded-ready +
-   FIFO 同时改变 static/shared capacity、single-head/bounded-ready 和 selector，二者差值不能全归于
-   observation。增加 `single-head + shared FIFO`，用 `frozen-static → single-head + shared FIFO`
-   观察共享容量，用 `single-head + shared FIFO → bounded-ready + FIFO` 观察 ready-state exposure，
-   再在 bounded-ready 下比较 FIFO/DRR/VTC-style/strict-priority/proposed。若报告完整 SAOR 包相对
-   DRR/VTC 包，还须纳入 no-bounded-ready DRR/VTC-style；
+3. **no-bounded-ready control 与 observation 桥接（已完成）**：双轮 6/6 cell、0 incident。
+   `frozen-static → single-head + shared FIFO` 使 tok/s +25.96%、group JCT −20.58%，但 fg P99
+   +99.17%、fg violation +95.90 pp；`single-head + shared FIFO → bounded-ready + FIFO` 再使
+   tok/s +7.30%、fg P99 −33.62%，但 fg violation 仍约 39.7%。这证明共享容量、ready exposure
+   和 selector 是三项独立效应；所有 FIFO 臂均为 Project implementation，不是原生系统 baseline。
+   若报告完整 SAOR 包相对 DRR/VTC 包，还须纳入 Project no-bounded-ready DRR/VTC-style；
 4. **项目 formal**：project frozen-static reference、最强 bounded-ready internal controls 与
    proposed $0.125W_e$ 为核心；direct ceiling 和原生系统另表，不把不同 scheduler owner 混成
    selector 排名。使用 1 warm-up + 3 个 balanced/interleaved repeats，$0.25W_e$ 只保留
@@ -1179,7 +1178,8 @@ organization 是输入，多模态是外部有效性验证。若同 observation 
 | 2026-08-13 | `saor-v0.5.2-bounded-ready-local` | 新增独立 `saor_bounded_ready` observation contract：每 Job 预注册已到达的 concrete request 有界 ready set，request 上限由 effective K 派生、work 上限由 endpoint 数×W 派生；新增 ready→register→grant→submit→completion lifecycle；coordinator 在同一无损事件域记录 register/grant request ID+epoch，旧单-head policy 不变 | 本地 targeted unit/architecture tests + compile/diff；尚未运行 GPU development rehearsal | 状态仅 `local-implemented/development-unrun/not-formal-registered`。异常退出只撤销未提交 waiter/lease，已提交 request 的 credit 保留到整组 fail-closed cleanup，避免服务端仍执行时容量超卖；未过双轮 ready-set 门前不做 formal、reservation、4-Job 或动态 K |
 | 2026-08-13 | `saor-v0.5.2-bounded-ready-gated` | 首次服务器运行因跨 trace 错误假设 `submit_epoch_s` 而 fail closed；按 `submission_id` 连接 submission 生命周期与 request submit 后，从两个全新 root 重跑冻结四臂 | 2×4090 两轮 development rehearsal；8/8 cell、0 incident；lossless event + group/request/submission/resource evidence | $0.125W_e$ 两轮全过并注册候选参数：12.36K tok/s、fg P99 17.58–18.15s、fg SLO 0%、bulk miss 65.8%–66.6%；$0.25W_e$ 因 bulk miss 74.4%–75.2% 两轮越界拒绝。尚不能把组合收益归因给 selector |
 | 2026-08-13 | `saor-v0.5.3-attribution-review` | 审核确认 `saor_bounded_ready` 同时改变 observation/execution path 与 priority/debt selector；修正 cap 记号为 $H_B/W_e$，把 equal-share 与 differentiated-service 公平拆轨，并冻结同 ready-window 的 Project FIFO/DRR/VTC/strict-priority internal controls | 本地代码语义审计 + 双轮 gate + VTC/DLPM、Themis/Pollux、JITServe/SCORPIO、Agentix/BatchGen 文献迁移 | 保持 `development-gated/formal-registration-candidate`，但增加 `matched-observation-attribution-required`：先做 1--2 轮项目内部归因 gate，通过后才启动 1+3 formal；原生 baseline 不接 bounded-ready，不扫 cap、不扩 4-Job/reservation/dynamic K |
-| 2026-08-13 | `saor-v0.5.4-matched-ready-observed` | frozen-static 与 bounded-ready FIFO/DRR/VTC-style/strict-priority/guarded-debt 在同 observation 下完成两轮；新增 completion-accounted lag、最长无服务、ready bytes/CPU/memory 重汇总 | 2×4090 双轮 development rehearsal；12/12 cell、0 incident；仓库 compact + 服务器完整 archive | proposed 相对 VTC-style 用 4.81% 吞吐、5.15% bulk JCT 和 22.68% no-service 代价换 31.78% fg P99 与 11.67% lag 改善；记为 observed nondominated tradeoff，不判 selector victory、不授权 formal。下一步先做 native matched comparison + single-head/shared-FIFO bridge |
+| 2026-08-13 | `saor-v0.5.4-matched-ready-observed` | frozen-static 与 bounded-ready FIFO/DRR/VTC-style/strict-priority/guarded-debt 在同 observation 下完成两轮；新增 completion-accounted lag、最长无服务、ready bytes/CPU/memory 重汇总 | 2×4090 双轮 development rehearsal；12/12 cell、0 incident；仓库 compact + 服务器完整 archive | proposed 相对 VTC-style 用 4.81% 吞吐、5.15% bulk JCT 和 22.68% no-service 代价换 31.78% fg P99 与 11.67% lag 改善；记为 observed nondominated tradeoff，不判 selector victory、不授权 formal。当时冻结的 bridge 下一行已完成 |
+| 2026-08-13 | `saor-v0.5.5-observation-bridge-observed` | frozen-static/single-head shared FIFO/bounded-ready FIFO 在同 K/W、FIFO、manifest 与服务签名下完成双轮 | 2×4090 双轮 development rehearsal；6/6 cell、0 incident；Project implementation + compact/full archive | shared capacity 解释效率提升与 foreground 隔离损失；bounded-ready 额外提升效率并部分恢复 foreground，但 FIFO 仍约 40% SLO violation。bridge 完成，dynamic 证据收紧为 fixed-envelope Job 份额/ordering；下一步只做 native-system matched comparison |
 
 状态只允许按以下顺序变化：
 
