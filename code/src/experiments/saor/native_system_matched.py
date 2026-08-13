@@ -70,6 +70,7 @@ class MatchedSystemConfig:
     formal_repeats: int
     selector_sanity_development_repeats: int
     gpu_formal_locally_authorized: bool
+    matched_manifest_status: str
     arms: tuple[MatchedArm, ...]
 
 
@@ -93,7 +94,8 @@ def load_matched_system_config(path: Path) -> MatchedSystemConfig:
     arms_raw = decoded.get("arms")
     if not isinstance(arms_raw, list):
         raise ValueError("arms must be a list")
-    arms = tuple(_load_arm(item) for item in arms_raw)
+    config_directory = path.parent.resolve()
+    arms = tuple(_load_arm(item, config_directory) for item in arms_raw)
     config = MatchedSystemConfig(
         seed=_integer(decoded.get("seed"), "seed"),
         warmup_repeats=_nonnegative(decoded.get("warmup_repeats"), "warmup_repeats"),
@@ -104,6 +106,9 @@ def load_matched_system_config(path: Path) -> MatchedSystemConfig:
         ),
         gpu_formal_locally_authorized=_boolean(
             decoded.get("gpu_formal_locally_authorized"), "gpu_formal_locally_authorized"
+        ),
+        matched_manifest_status=_string(
+            decoded.get("matched_manifest_status"), "matched_manifest_status"
         ),
         arms=arms,
     )
@@ -176,7 +181,7 @@ def audit_matched_system_config(config: MatchedSystemConfig) -> dict[str, object
     }
 
 
-def _load_arm(value: object) -> MatchedArm:
+def _load_arm(value: object, config_directory: Path) -> MatchedArm:
     if not isinstance(value, dict):
         raise ValueError("each arm must be an object")
     missing = [field for field in _COMMON_FIELDS + ("arm_id", "kind", "scheduler_owner", "output_root", "calibration_path") if field not in value]
@@ -186,8 +191,8 @@ def _load_arm(value: object) -> MatchedArm:
     return MatchedArm(
         arm_id=_string(value["arm_id"], "arm_id"), kind=_string(value["kind"], "kind"),
         scheduler_owner=_string(value["scheduler_owner"], "scheduler_owner"),
-        output_root=_string(value["output_root"], "output_root"),
-        manifest_path=_string(value["manifest_path"], "manifest_path"),
+        output_root=_resolve_config_path(value["output_root"], "output_root", config_directory),
+        manifest_path=_resolve_config_path(value["manifest_path"], "manifest_path", config_directory),
         manifest_sha256=_string(value["manifest_sha256"], "manifest_sha256"),
         endpoint_ids=tuple(value["endpoint_ids"]), service_signature=_mapping(value["service_signature"], "service_signature"),
         protocol=_string(value["protocol"], "protocol"), output_cap=_integer(value["output_cap"], "output_cap"),
@@ -207,6 +212,8 @@ def _validation_errors(config: MatchedSystemConfig) -> list[str]:
         errors.append("arms must contain exactly the eight unique required arm IDs")
     if not config.arms:
         return errors
+    if config.matched_manifest_status != "ready_frozen":
+        errors.append("matched_manifest_status must be ready_frozen")
     if config.gpu_formal_locally_authorized:
         errors.append("local authorization never permits GPU formal execution")
     output_roots = [arm.output_root for arm in config.arms]
@@ -295,6 +302,12 @@ def _native_project_control_names(names: tuple[str, ...]) -> tuple[str, ...]:
         "credit", "coordinator", "router", "ready_observation", "bounded_ready",
     )
     return tuple(name for name in normalized if any(word in name for word in forbidden))
+
+def _resolve_config_path(value: object, name: str, config_directory: Path) -> str:
+    path = Path(_string(value, name))
+    if not path.is_absolute():
+        path = config_directory / path
+    return str(path.resolve())
 
 def _mapping(value: object, name: str) -> tuple[tuple[str, object], ...]:
     if not isinstance(value, dict): raise ValueError(f"{name} must be an object")

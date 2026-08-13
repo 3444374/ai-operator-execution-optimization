@@ -6,7 +6,12 @@
 contract: three framework-owned native arms, frozen-static, three Project
 selector controls, and one shared SAOR physical cell. Resolve its environment
 variables, then run the read-only audit; it sends no model request and starts no
-Ray process. GPU formal is explicitly not locally authorized.
+Ray process. GPU formal is explicitly not locally authorized. The shipped
+manifest is structural only: `matched_manifest_status=placeholder_not_ready`
+prevents it from passing even with a supplied SHA. Operators must create and
+commit a real two-Job matched request manifest, set its SHA, and change the
+status to `ready_frozen` before readiness can pass. Relative manifest and output
+paths are resolved from this example config's directory.
 
 ```bash
 python code/scripts/analysis/audit_saor_native_system_matched.py \

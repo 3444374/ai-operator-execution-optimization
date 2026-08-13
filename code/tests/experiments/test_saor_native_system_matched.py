@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -65,16 +66,46 @@ class MatchedSystemContractTest(unittest.TestCase):
 
     def test_example_uses_a_literal_tracked_manifest_path_without_expansion(self) -> None:
         repository = Path(__file__).resolve().parents[3]
-        example = json.loads(
-            (repository / "deploy/autodl/saor_native_system_matched.example.json").read_text(
-                encoding="utf-8"
-            )
-        )
+        example_path = repository / "deploy/autodl/saor_native_system_matched.example.json"
+        example = json.loads(example_path.read_text(encoding="utf-8"))
         paths = {arm["manifest_path"] for arm in example["arms"]}
         self.assertEqual(len(paths), 1)
         manifest_path = paths.pop()
         self.assertNotIn("${", manifest_path)
-        self.assertTrue((repository / manifest_path).is_file())
+        self.assertTrue((example_path.parent / manifest_path).resolve().is_file())
+
+    def test_example_cannot_pass_when_environment_and_sha_are_supplied(self) -> None:
+        repository = Path(__file__).resolve().parents[3]
+        example_path = repository / "deploy/autodl/saor_native_system_matched.example.json"
+        example = json.loads(example_path.read_text(encoding="utf-8"))
+        manifest = (example_path.parent / example["arms"][0]["manifest_path"]).resolve()
+        environment = {
+            name: "1"
+            for name in {
+                value.removeprefix("${").removesuffix("}")
+                for arm in example["arms"]
+                for value in self._walk_values(arm)
+                if isinstance(value, str) and value.startswith("${") and value.endswith("}")
+            }
+        }
+        environment["DATABASE_URL"] = "postgresql://localhost/test"
+        environment["SAOR_MATCHED_MANIFEST_SHA256"] = hashlib.sha256(manifest.read_bytes()).hexdigest()
+        old_environment = os.environ.copy()
+        try:
+            os.environ.update(environment)
+            with self.assertRaises(ValueError):
+                load_matched_system_config(example_path)
+        finally:
+            os.environ.clear()
+            os.environ.update(old_environment)
+
+    @staticmethod
+    def _walk_values(value: object) -> list[object]:
+        if isinstance(value, dict):
+            return [item for child in value.values() for item in MatchedSystemContractTest._walk_values(child)]
+        if isinstance(value, list):
+            return [item for child in value for item in MatchedSystemContractTest._walk_values(child)]
+        return [value]
 
     def test_audit_rejects_one_field_contract_drift(self) -> None:
         mutations = {
@@ -114,6 +145,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             "selector ready observation": lambda value: value["arms"][5].__setitem__("ready_observation", "single_head"),
             "frozen static bounded ready": lambda value: value["arms"][3].__setitem__("ready_observation", "bounded_concrete_pre_registration"),
             "formal local authorization": lambda value: value.__setitem__("gpu_formal_locally_authorized", True),
+            "manifest readiness": lambda value: value.__setitem__("matched_manifest_status", "placeholder_not_ready"),
             "project calibration drift": lambda value: value["arms"][5].__setitem__("calibration_path", "other-calibration.json"),
             "project request-tail drift": lambda value: value["arms"][5]["unsupported_request_tails"].__setitem__("reason", "other"),
         }
@@ -147,7 +179,7 @@ class MatchedSystemContractTest(unittest.TestCase):
             arms = [native("daft_native", "daft"), native("daft_ray", "daft"), native("ray_data_http", "ray_data"), project("project_frozen_static", "static_partition"), project("project_bounded_ready_fifo", "shared_fifo"), project("project_bounded_ready_drr", "shared_drr"), project("project_bounded_ready_vtc_style", "external_vtc"), project("project_bounded_ready_saor_0125we", "saor_bounded_ready")]
             for arm in arms[4:]: arm["ready_observation"] = "bounded_concrete_pre_registration"
             arms[7]["debt_caps"] = [0.125, None]
-            self.path.write_text(json.dumps({"schema_version": 1, "seed": 7, "warmup_repeats": 1, "formal_repeats": 3, "selector_sanity_development_repeats": 2, "gpu_formal_locally_authorized": False, "arms": arms}), encoding="utf-8")
+            self.path.write_text(json.dumps({"schema_version": 1, "seed": 7, "warmup_repeats": 1, "formal_repeats": 3, "selector_sanity_development_repeats": 2, "gpu_formal_locally_authorized": False, "matched_manifest_status": "ready_frozen", "arms": arms}), encoding="utf-8")
         def __enter__(self) -> Path: return self.path
         def __exit__(self, *args: object) -> None: self._temporary.cleanup()
 
