@@ -669,21 +669,24 @@ service lag`，而不是连续 token service 或 VTC bound。请求尾延迟按 
 并拆 ready→registered、registered→grant、grant→submit、submit→completion；SLO goodput 同时报
 request/s 与 token/work/s，防止短请求条数掩盖资源占用。
 
-#### 第五层：同 observation 的算法归因与隐藏缓冲成本
+#### 第五层：项目内部同 observation 的算法归因与隐藏缓冲成本
 
 动态策略必须同时匹配“选择器看到什么”和“选择器怎么选”。如果 proposed 预注册多个 concrete
 ready request，而 FIFO/DRR/VTC 仍只看到单 Job head，则差异混合了 pre-registration/prefetch、
 head-of-line visibility 与 selector；不能全部归因给公平或 SLO 算法。正确顺序是：
 
 1. direct bounded HTTP 单列 saturation ceiling，不作公平 baseline；
-2. static partition 作隔离/Pareto 锚点；
-3. bounded-ready FIFO、DRR/WFQ、external VTC-style、strict-priority/EDF 与 proposed 共享同一
-   ready-window、active K/W、ready bytes 和 immutable arrival trace；
-4. old single-head policy 只作 observation-gap 消融；in-engine VTC/DLPM/JITServe/Llumnix 等只作
-   理论/系统上界参考，不冒充同层 executable baseline；
-5. Daft Native、Ray Data 评价完整 runtime graph，不进入 project selector 排名。
+2. Daft Native、Ray Data 与产品 baseline 保留各自原生 batching/backpressure/scheduling，禁止
+   注入项目 bounded-ready；它们评价完整 runtime graph，不进入 project selector 排名；
+3. project frozen-static 作同栈隔离/Pareto reference，不简称原生 baseline；
+4. project bounded-ready + FIFO、DRR/WFQ、external VTC-style、strict-priority/EDF 与 proposed
+   共享同一 ready-window、active K/W、ready bytes 和 immutable arrival trace；这些都是项目内部
+   controls/ablations，只有 proposed 是候选方法；
+5. old single-head policy 只作 observation-gap 消融；in-engine VTC/DLPM/JITServe/Llumnix 等只作
+   理论/系统上界参考，没有原实现同层复现时不冒充 executable baseline。
 
-bounded-ready 可能不扩大 active K/W，却增加 active 之外的 host buffer。故资源等价门还需报告
+在 proposed 及其项目内部 attribution arms 中，所有 Job 都必须应用同一 bounded-ready 上限；
+原生 baseline 不受此要求。bounded-ready 可能不扩大 active K/W，却增加 active 之外的 host buffer。故资源等价门还需报告
 ready requests/work/bytes mean/P95/max、host memory、coordinator CPU、registration→grant tail 与
 随 Job 数的扩展。文本 token work 不能约束 payload bytes；图像必须显式 byte-bounded，否则不能
 称与 static 同一 memory/backpressure envelope。

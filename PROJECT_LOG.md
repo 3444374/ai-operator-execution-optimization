@@ -6421,3 +6421,18 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 新增 `experiments/results/state_aware_work_unit/saor_bounded_ready_gate_20260813/`，保存七步报告、
   compact raw/provenance 与服务器完整 3.4 MiB 归档 SHA。下一步只冻结 0.125K 做 formal；不在线
   扫 cap，不启动 4-Job、reservation 或 dynamic K，也不声称理论公平性质。
+
+## 2026-08-13 纠正 bounded-ready 与原生 baseline 的实验身份
+
+- 代码边界复核确认 `BoundedReadyWindow` 是 Project 在未修改 vLLM 之外增加的上游 concrete-
+  ready 预注册窗口；它改变项目 selector 的可见请求集合并增加 active credit 之外的 host-side
+  buffer，不是 Daft、Ray Data、vLLM 或数据库产品的原生调度能力。
+- 正式实验重新分为四类：① direct/vLLM 服务上限；② 由被测框架/产品拥有 batching、
+  backpressure 与 scheduling 的原生 baseline；③ `project frozen-static` 同栈静态参照；④
+  project bounded-ready + FIFO/DRR/VTC-style/strict-priority 的内部 controls/ablations 与
+  bounded-ready + guarded priority/debt proposed。禁止把后两类简称为原生 baseline。
+- 原生 baseline 一律不注入项目 coordinator、credit 或 bounded-ready。只有为拆分 ready-state
+  exposure 与 selector 增量时，Project 内部 attribution arms 的所有 Job 才共享同一 ready
+  request/work/bytes 上限；若简单 internal control 已在同一 Pareto 前沿，则淘汰复杂 selector。
+- 本次只修正 baseline 身份、报告分层与下一步合同，不改变 2026-08-13 development 数据、门禁
+  判决或代码。正式报告须把 native system comparison 与 Project mechanism ablation 分表呈现。

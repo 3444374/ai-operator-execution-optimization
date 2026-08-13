@@ -673,8 +673,8 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
   unfinished work、active-set entitlement、idle borrowing/reclaim、fairness/SLO debt 和
   completion-driven Job-head release 验证多 Job；动态 K 标记为 `parked-conditional`。现有
   static/shared 对照尚未排除同 K global FIFO/no project Job scheduler 已经足够好，因此下一项
-  formal 必须把 global FIFO 与 DRR 设为 killer baseline；任一简单策略达到同一 Pareto 前沿即
-  淘汰 SAOR。详细模型与 benchmark 见
+  formal 前必须把 global FIFO 与 DRR 作为**项目内部简单消融**；任一简单策略达到同一 Pareto
+  前沿即淘汰 SAOR。Daft/Ray Data/产品原生 baseline 保持各自调度，不注入项目机制。详细模型与 benchmark 见
   `saor_model_scenario_audit_20260811.md`。
 - **2026-08-12 工程边界**：`saor_release` 已接入共享 Ray credit runtime；它只在离线校准并
   按签名冻结的 $K^*$ 内选择 fitting Job head，不在线调 K。当前 completion 更新 fairness debt，
@@ -750,9 +750,10 @@ finish-time fairness 均保持 unavailable。图像 CPU/GPU/bytes 在资源向�
   priority/debt selector。现有 static/old-SAOR/FIFO/DRR/VTC 使用 single-head observation，不能回答
   “简单 selector 获得同一个 ready set 后是否已经足够”。当前事实只支持 bounded-ready + guarded
   priority 组合可行，不能把约 30% 吞吐与 foreground tail 改善全部归因给 SAOR 算法。
-- **最小决定性门**：在 formal 前把 ready-window 从 selector 解耦，用相同 active K/W、ready
-  bytes、arrival、服务与 cache 合同比较 bounded-ready FIFO、DRR/WFQ、external VTC-style、
-  strict-priority/EDF 和 proposed。若简单策略进入同一 Pareto 前沿，论文贡献收敛为 **bounded
+- **最小决定性门**：在 formal 前把 ready-window 从 selector 解耦，只在 Project 路径内部用相同
+  active K/W、ready bytes、arrival、服务与 cache 合同比较 bounded-ready + FIFO、DRR/WFQ、
+  external VTC-style、strict-priority/EDF 和 proposed。它们是 internal controls/ablations，不是
+  原生 baseline；Daft、Ray Data、vLLM 或产品路径保留原生调度。若简单策略进入同一 Pareto 前沿，论文贡献收敛为 **bounded
   ready-state exposure contract + 最小 guarded release**，删除不必要的复杂 selector；只有
   proposed 有独立增量才进入 1+3 formal。
 - **公平分轨**：equal-share tenant 场景评价 weighted service lag、worst Job 和 work conservation；
@@ -770,7 +771,7 @@ finish-time fairness 均保持 unavailable。图像 CPU/GPU/bytes 在资源向�
   serving 内部，只迁移指标、work accounting 与 oracle，不作为上游同层 executable baseline。
 
 当前方向裁决为 `Accept with Revisions / attribution-gate-first`。formal 前不继续扫 cap、dynamic K、
-reservation、4-Job 或图像；matched-observation gate 通过后先完成 2-Job formal，再只选一个
+reservation、4-Job 或图像；项目内部 matched-observation gate 通过后先完成 2-Job formal，再只选一个
 不调参 held-out（reverse/simultaneous arrival、on/off burst 或 prefix-rich）。
 
 #### 5.7.7 模式优先级矩阵

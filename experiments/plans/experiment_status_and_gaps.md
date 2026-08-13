@@ -2,7 +2,8 @@
 
 Date: 2026-07-20（最后更新：2026-08-13；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 $0.125W_e$ 双轮 GPU development gate 已冻结候选参数，
-formal 前需 matched-observation 归因门；dynamic-K 仍退出主线）
+formal 前需项目内部 matched-observation 归因门；原生 baseline 不接入 bounded-ready，dynamic-K
+仍退出主线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -80,10 +81,12 @@ violation 0.658/0.666；$0.25W_e$ 虽保护 foreground，但 bulk miss 0.752/0.7
 
 同日 post-hoc 归因审核增加阻塞门：bounded-ready 同时改变 multiple concrete-ready
 pre-registration/execution path 与 priority/debt selector，旧 single-head FIFO/DRR/VTC/SAOR 不能
-作为 selector 的干净因果对照。先做 1--2 轮 matched-observation rehearsal，使 bounded-ready
-FIFO、DRR/WFQ、external VTC-style、strict-priority 与 proposed 共享相同 ready-window、active
-K/W、ready bytes、arrival/cache/服务合同。只有 proposed 超过最强简单 Pareto 前沿才启动 1+3
-formal；否则贡献收敛为 bounded ready-state exposure + 最小 guarded release，或淘汰复杂 selector。
+作为 selector 的干净因果对照。先做 1--2 轮**项目内部** matched-observation rehearsal，使
+project bounded-ready + FIFO、DRR/WFQ、external VTC-style、strict-priority 与 proposed 共享相同
+ready-window、active K/W、ready bytes、arrival/cache/服务合同。它们是 internal controls/ablations，
+不是原生 baseline；Daft、Ray Data、vLLM 或产品 baseline 继续使用各自调度且不接 bounded-ready。
+只有 proposed 超过最强项目简单 Pareto 前沿才启动 1+3 formal；否则贡献收敛为 bounded ready-state
+exposure + 最小 guarded release，或淘汰复杂 selector。
 formal 另需把 equal-share fairness 与 foreground/bulk differentiated service 分轨，使用
 registered-ready backlog、completion-accounted empirical lag、三个 JCT 反事实、request/token
 SLO goodput、最长 no-service 和 ready buffer/CPU/memory 指标。

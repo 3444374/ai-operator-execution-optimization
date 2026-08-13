@@ -48,10 +48,11 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 - endpoint routing、idle borrowing 与故障迁移；
 - 多 job fair queue、JCT、tail、SLO 和公平性。
 
-固定静态 credit 是默认强 baseline。现有证据已将动态 K 标记为 `parked-conditional`；主候选
+原生 baseline 必须保留被测系统自己的 batching/backpressure/scheduler；项目 frozen-static 是
+同栈静态参照，不冒充原生 baseline。现有证据已将动态 K 标记为 `parked-conditional`；主候选
 固定总 envelope，只动态决定活跃 Job 间的份额借用、completion-time 回收与 release order。
-它必须同时超过 global FIFO/no project Job scheduler 和简单 DRR/VTC-style 强 baseline；吞吐
-接近时继续评价 tail/SLO/fairness，均无改善则淘汰 SAOR，不更换 workload 追正。
+项目 selector 必须在相同 bounded-ready observation 下超过 FIFO、DRR/VTC-style 等项目内部
+消融；吞吐接近时继续评价 tail/SLO/fairness，均无改善则淘汰 SAOR，不更换 workload 追正。
 
 多 Job 不由单一 VTC/Jain 指标判定。每个 Job 同时报 `multi/full-solo`（总体干扰）、
 `multi/reserved-solo`（经验性保留份额非劣）和 `policy-multi/static-multi`（同竞争调度增量）；
@@ -90,6 +91,7 @@ PostgreSQL source
 - 写回采用 PostgreSQL + pgvector、COPY + deferred index，属于统一 correctness/E2E guardrail，不是独立研究内容。
 - 正式 baseline 必须由被测系统拥有执行与调度；项目只做 source、sink、质量审计和指标适配。
 - 自写 actor pool、credit、inflight/backpressure 或 Daft UDF 只能按清晰 provenance 标为项目方法或 diagnostic reference。
+- `BoundedReadyWindow` 属于项目方法：不得注入 Daft、Ray Data、vLLM 或数据库产品的原生 baseline；只在项目内部 selector 归因消融中保持一致。
 - 模型/数据下载不等于数据库 workload 已导入；必须继续执行 importer 和 schema/行数/exactly-once 门禁。
 - 性能参数绑定“机器 + 模型/服务配置 + 协议 + workload 分布/规模”签名，签名变化重新校准；
   同一签名只校准一次并复用冻结合同。K 不是逐实验手调，也不在 SAOR formal 中在线变化。
@@ -164,8 +166,9 @@ PostgreSQL source
   candidate；$0.25W_e$ 因 bulk 30s miss 74.4%–75.2% 两轮越界拒绝。状态为
   `development-gated/formal-registration-candidate-0125k-only`，不是 formal 胜出。post-hoc
   归因审核确认 bounded-ready 同时改变 observation/execution path 与 selector，因此 formal 前先让
-  FIFO、DRR/WFQ、external VTC-style、strict-priority 和 proposed 使用相同 ready-window。只有
-  proposed 越过 matched-ready 简单 Pareto 前沿才进入 1+3 formal；否则贡献收敛为 bounded
+  **项目内部** FIFO、DRR/WFQ、external VTC-style、strict-priority 和 proposed 使用相同 ready-window；
+  Daft/Ray Data/产品原生 baseline 不接入该机制。只有 proposed 越过同 observation 的项目简单
+  消融 Pareto 前沿才进入 1+3 formal；否则贡献收敛为 bounded
   ready-state exposure + 最小 guarded release，或淘汰复杂 selector；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；

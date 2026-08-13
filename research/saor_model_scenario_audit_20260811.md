@@ -45,7 +45,7 @@
 公平队列，只把所有请求按到达顺序交给 vLLM FCFS。** shared 相对 static 的收益可能只是消除
 静态分区浪费；若 global FIFO/no-op 已同时达到相同效率、tail 和公平，则 SAOR 没有必要。
 因此现阶段的严谨判定是：dynamic-K 版本 `reject and pivot`；fixed-envelope active-set
-release 版本 `accept with revisions`，等待 no-op killer baseline。
+release 版本 `accept with revisions`，等待 direct no-project control 与 Project 简单调度消融。
 
 “no project K”不等于系统真的没有边界：vLLM 仍受 `max_num_seqs`、每 iteration 的
 `max_num_batched_tokens` 和 KV 容量约束，只是把外部队列移入 HTTP/vLLM。现有 ShareGPT
@@ -355,7 +355,7 @@ workload 矩阵，而是跑一个能直接证伪 SAOR 必要性的 active-set �
 - shared DRR 是否已足以解决问题；
 - SAOR 的 active-set、SLO debt 和回收顺序是否提供额外 Pareto 收益。
 
-通过这项 killer baseline 后，才扩展到：
+通过这项决定性 control 后，才扩展到：
 
 - 4 个数据库 Job，至少一个 short/latency-sensitive Job 与多个 long/throughput Job；
 - equal-weight 与 3:1 weighted 两种 entitlement；
@@ -444,8 +444,8 @@ Jain 只是一个聚合统计，不是公平定义。正式报告同时使用：
 
 1. 冻结 capacity-only 为 `not-promoted`，Safe-Capacity Governor 标记
    `parked-conditional`，不再在旧 A20/B4.5 trace 调权重；
-2. 把现有 ordered release 接入 per-Job completion ledger，固定总 K；先补 global FIFO/no-op
-   与 DRR killer baseline，再运行 SAOR；
+2. 把现有 ordered release 接入 per-Job completion ledger，固定总 K；先补 direct global FIFO/no-op
+   control 与 Project DRR internal control，再运行 SAOR；
 3. 先跑上述 `bulk-only → foreground-arrival → foreground-drain` 决定性场景；通过后才跑
    four-Job、3:1 weighted 和异构 held-out；
 4. 只有用户重新激活 dynamic capacity 时才构建 finite-horizon oracle；oracle 不过门即永久
@@ -483,7 +483,7 @@ Jain 只是一个聚合统计，不是公平定义。正式报告同时使用：
 |---|---|---|
 | 与 Ray Data streaming/backpressure、VTC/MaxWeight 的增量若说不清，会被认为只是组合已有机制 | MAJOR | 明确 Ray/Daft 拥有执行，VTC 拥有 in-engine token fairness；项目只 claim DB Job/stage state 到 fixed-envelope ordered release 的映射，并使用 native/VTC-style 强 baseline |
 | 同时承诺新执行模型、动态 K、公平算法、定理、GPU 数据通路和多模态，scope 会跨越多个 paper type | MAJOR | 主贡献只保留 work-unit/typed stage contract 与 SAOR-Release；HSE 是底座，governor/DALI/cache 是 parked 或后续工作 |
-| shared 相对 static 的收益可能完全来自去掉静态分区；缺 global FIFO/no-op 时仍属 solution-seeking | MAJOR | 把 fixed-K global FIFO 和 shared DRR 设为 killer baseline；任一简单策略落在同一 Pareto 前沿即淘汰 SAOR |
+| shared 相对 static 的收益可能完全来自去掉静态分区；缺 global FIFO/no-op 时仍属 solution-seeking | MAJOR | 把 fixed-K direct global FIFO 作为 no-project control，把 shared DRR 作为 Project internal control；任一简单策略落在同一 Pareto 前沿即淘汰 SAOR |
 
 没有不可修复的 CRITICAL flaw，但三项 MAJOR 必须在 formal 前持续收窄。
 
@@ -517,11 +517,12 @@ Jain 只是一个聚合统计，不是公平定义。正式报告同时使用：
 | Data | Low | 已有冻结 DB manifests，BurstGPT/VTC suites/ServeGen 可公开获得 |
 | Engineering | Medium--High | 先接 static broker/ledger，再接 release；禁止一次重构全 pipeline |
 | Theory | High | 先完成 oracle appendix；unknown-service/governor 不获证明就保持 empirical，并安排独立数学复核 |
-| Timeline | High if combined | 先做 HSE static 与 SAOR-Release killer baseline；governor 保持 parked，不进入当前串行路径 |
+| Timeline | High if combined | 先做 HSE static 与 SAOR-Release 决定性 controls；governor 保持 parked，不进入当前串行路径 |
 
 **Verdict：分版本判定。** dynamic-K SAOR 为 **Reject and Pivot**；fixed-envelope active-set
-SAOR-Release 为 **Accept with Revisions**。后者只有通过 global FIFO/no-op 与 shared DRR 两个
-killer baseline 才能晋级；HSE 作为执行底座，capacity governor 保持 `parked-conditional`。
+SAOR-Release 为 **Accept with Revisions**。后者只有通过 direct global FIFO/no-op control 与
+Project shared DRR internal control 才能晋级；HSE 作为执行底座，capacity governor 保持
+`parked-conditional`。
 
 ## 11. 2026-08-12 fixed-envelope formal 后审计
 
@@ -850,17 +851,18 @@ strict-priority 的无限 cap 极限，故不进入首轮。
 停止规则：两个有限 cap 均不能同时通过 foreground、bulk 与 efficiency 门时，不继续密集扫描
 cap/权重，也不扩 4-Job；先用事件账本区分“release-only 的约束不可同时满足”与实现错误。
 至少一个 cap 通过时也不直接启动 formal：bounded ready-set observation 必须与 selector 解耦，
-先在相同 ready-window 下比较 FIFO、DRR/WFQ、external VTC-style、strict-priority 与 proposed。
+只在 Project 路径内部让 FIFO、DRR/WFQ、external VTC-style、strict-priority 与 proposed 使用相同
+ready-window。它们是项目内部 controls/ablations；原生 baseline 保持自身调度，不使用 bounded-ready。
 若简单 selector 已在同一 Pareto 前沿，组合收益不能归因给 SAOR selector；贡献收敛为 bounded
 ready-state exposure + 最小 guarded release，或淘汰复杂 selector。reservation、point estimate/
-upper-bound 鲁棒性消融只在 matched-observation gate 和 2-Job formal 均闭合后启动。
+upper-bound 鲁棒性消融只在 Project 内部 matched-observation gate 和 2-Job formal 均闭合后启动。
 
 ### 12.8 Bounded-ready 双轮结果与 post-hoc 归因边界（2026-08-13）
 
 两轮 2×4090 development rehearsal 已证明 $H_B=0.125W_e$ 组合同时通过 correctness、机制、
 foreground、bulk miss guard 与 efficiency 门；$0.25W_e$ 被 bulk guard 拒绝。该结果修复了
 single-head observation gap，但 `saor_bounded_ready` 同时引入多 concrete request 预注册和
-priority/debt 选择器，现有实验没有 matched-ready 简单 selector，故只能声称：
+priority/debt 选择器，现有实验没有同 ready-window 的项目简单 selector 消融，故只能声称：
 
 1. finite concrete-ready exposure 是当前 workload 上可行且必要检查的执行合同；
 2. bounded-ready + guarded priority/debt 组合值得进入归因门；

@@ -32,8 +32,9 @@
   `development-run/not-promoted/not-formal-registered`。bounded-ready 修订随后从两个全新 root
   完成 8/8 cell：$0.125W_e$ 两轮约 12.36K tok/s、fg P99 17.58–18.15s、fg SLO 0%、bulk
   30s miss 65.8%–66.6%，通过开发门；$0.25W_e$ 被 bulk guard 拒绝。但 ready-window 与 selector
-  同时变化，当前状态增加 `matched-observation-attribution-required`：先让 FIFO/DRR/VTC/
-  strict-priority 使用相同 ready-window，再决定 selector 是否值得 formal。reservation 仍后置。
+  同时变化，当前状态增加 `matched-observation-attribution-required`：先让**项目内部** FIFO/DRR/
+  VTC-style/strict-priority 使用相同 ready-window，再决定 selector 是否值得 formal。Daft/Ray Data/
+  产品原生 baseline 不使用 bounded-ready；reservation 仍后置。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
   least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
   已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值
@@ -108,7 +109,7 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
 2. 同一 ShareGPT Chat manifest 的 bounded、Daft Native/Ray、Ray Data 原生单 job 1+3 已完成并归档。
 3. 原生 short/long 两 job 错峰观察与项目 static/shared 同上限 A/B 已完成；它们没有 global
    FIFO/no project Job scheduler 对照，不能单独证明 SAOR 必要。
-4. SAOR fixed-envelope 2-Job killer benchmark 已完成；原始 failed validation 保留作审计，
+4. SAOR fixed-envelope 2-Job 决定性 benchmark 已完成；原始 failed validation 保留作审计，
    resolution-aware v2 完整重汇总已 passed。foreground strict-priority 两轮短测已证明
    release-only 上界可达；`saor-v0.5.1` 的 $0.125W_e/0.25W_e$ 双轮 development gate 已按门禁停止，
    没有 formal candidate。随后把 Daft/Ray ready work 以 bounded async ready-set/ready-count
@@ -117,8 +118,9 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    coordinator 对 register/grant 记录 request ID+epoch，并在 actor 同一时钟域内要求 foreground
    registered-ready 时 foreign fallback=0。两个全新 development root 已完成：只冻结
    $0.125W_e$ 候选；$0.25W_e$ 两轮 bulk miss 越界已拒绝。下一步不是直接 formal，而是先把
-   ready observation 从 selector 解耦，做 matched-ready FIFO、DRR/WFQ、strict-priority、
-   external VTC-style 与 proposed 的最小归因 gate；通过后再做 1+3 formal。若简单策略已在同一
+   ready observation 从 selector 解耦，做 project bounded-ready + FIFO、DRR/WFQ、strict-priority、
+   external VTC-style 与 proposed 的最小**项目内部归因 gate**；这些臂不是原生 baseline。通过后
+   再做 1+3 formal，原生 baseline 继续使用各自调度。若简单策略已在同一
    Pareto 前沿，贡献收敛为 bounded ready-state exposure + 最小 guarded release。期间不扫 cap，
    不跑 4-Job/reservation/dynamic K。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。

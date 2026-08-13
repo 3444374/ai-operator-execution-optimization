@@ -184,7 +184,7 @@ foreground concrete request 已经 registered 到 grant 的区间内没有向 bu
 | 事实 | $0.125W_e$ 两轮同时通过 correctness、机制、foreground、bulk 与效率门；汇总器返回 `status=passed`、`formal_registration_candidate`。 |
 | 事实 | $0.25W_e$ 两轮都只因 bulk SLO 越界失败；不能在 formal 中继续携带这一臂作为候选。 |
 | 推断 | 旧 SAOR 的主要问题包含 observation contract：暴露 concrete-ready set 后，$0.125W_e$ 组合在保持 release 吞吐的同时把 foreground P99 从约 55.3s 降到 17.9s。由于 observation path 与 selector 同时变化，当前不能把全部改善归因给 debt selector。 |
-| 待确认 | $0.125W_e$ 的 actual-work debt recovery 是否提供了超出同 ready-window FIFO/DRR/VTC/strict-priority 的 bulk 保护；必须用 matched-observation 消融后判定。 |
+| 待确认 | $0.125W_e$ 的 actual-work debt recovery 是否提供了超出同 ready-window 的 project FIFO/DRR/VTC-style/strict-priority internal controls 的 bulk 保护；必须用项目内部 matched-observation 消融后判定。 |
 | 不能声称 | 不能称 SAOR 已正式胜出、跨 workload/硬件泛化或已有公平定理；不能称所有动态 K 都必要；不能把 Jain≈0.94 写成 max-min/VTC 公平保证；不能称 reservation 有效。 |
 
 ## 7. 对课题的含义与下一步
@@ -196,14 +196,16 @@ foreground concrete request 已经 registered 到 grant 的区间内没有向 bu
 同时保持吞吐、前台 SLO、bulk guard 和较高的 achieved-service Jain。
 
 2026-08-13 post-hoc 方法审核将下一步进一步收紧：**候选参数冻结不等于立即启动 formal**。
-当前 `saor_bounded_ready` 同时改变 ready-set observation/execution path 与 priority/debt selector，
-因此先把 bounded-ready observation 从 selector 解耦，让 global FIFO、DRR/WFQ、external
-VTC-style、strict-priority 和 proposed 使用相同 ready-window，做 1--2 轮最小归因 gate：
+当前 `saor_bounded_ready` 同时改变 ready-set observation/execution path 与 priority/debt selector。
+`BoundedReadyWindow` 是项目在 vLLM 之外增加的上游机制，不属于 Daft、Ray Data、vLLM 或产品
+原生调度；因此原生 baseline 不使用它。只在 Project 路径内部把 bounded-ready observation 从
+selector 解耦，让 global FIFO、DRR/WFQ、external VTC-style、strict-priority 和 proposed 对所有
+Job 使用相同 ready-window，做 1--2 轮最小归因 gate：
 
-1. 若简单 matched-ready 策略已落在同一 throughput/foreground/bulk Pareto 前沿，不能把收益
+1. 若同 observation 的项目简单消融已落在同一 throughput/foreground/bulk Pareto 前沿，不能把收益
    写成 SAOR selector；贡献应收敛为 bounded ready-state exposure + guarded release，或淘汰
    不必要的复杂选择器；
-2. 只有 proposed 相对 matched-ready killer baselines 在至少一个预注册主指标上有增量、其余
+2. 只有 proposed 相对最强 bounded-ready project internal control 在至少一个预注册主指标上有增量、其余
    protected metrics 非劣，才启动 1 warm-up + 3 formal；
 3. formal 使用 balanced/interleaved 顺序并明确 warm-cache steady state 或 cell reset 合同，保存
    per-class SLO goodput、ready/registered→grant→submit→completion 尾延迟、共同积压 empirical

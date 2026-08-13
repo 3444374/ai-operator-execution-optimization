@@ -52,28 +52,37 @@
 | project image static | 60K unique 数据和 2-pass formal 配置已准备 | 先过语义/原生 baseline 门禁，再运行交错 formal |
 | Snowflake/BigQuery/PolarDB/学术系统 | external/capability evidence | 仅在语义、质量、模型和计时边界可对齐时升级为数字比较 |
 
-### 0.1 多 Job fixed-envelope 调度的同层 baseline（2026-08-13 归因审核）
+### 0.1 多 Job fixed-envelope：原生 baseline、项目实验臂与内部消融（2026-08-13 纠偏）
 
-多 Job 算法排名必须匹配 selector 的**可见 ready set**，不能只匹配 active K/W。当前 baseline
-身份冻结为：
+`BoundedReadyWindow` 是**项目自有的上游执行机制**：每个 Project Job 把已经到达、payload 和
+estimated work 均已确定的有限多个 concrete request 预注册给项目 coordinator，使 selector
+不再只能看到每个 Job 的单个 head。它不修改 vLLM continuous batching，也不扩大已经授予的
+active K/W；但会增加 active credit 之外的 host-side ready buffer，因此必须另报 request/work/
+bytes、内存与 CPU。它不是 Daft、Ray Data、vLLM 或数据库产品的原生调度能力。
 
-| 身份 | 对象 | 回答的问题 | 是否进入 selector 排名 |
-|---|---|---|---|
-| saturation ceiling | bounded direct HTTP/vLLM Bench | 同协议服务上限与 feeding | 否 |
-| isolation/Pareto anchor | static partition/reservation | 为 foreground 付出多少共享效率 | 是，分栏锚点 |
-| observation-only killer | bounded-ready global FIFO | ready-state exposure 本身带来多少收益 | 是，必须 |
-| simple fairness killers | bounded-ready DRR/WFQ、external VTC-style actual-work counter | 简单份额/服务计账是否已足够 | 是，必须 |
-| SLO upper/simple killer | bounded-ready strict-priority 或 EDF | SLO 可达上界与 starvation 代价 | 是，必须 |
-| proposed | bounded-ready $H_B=0.125W_e$ guarded priority/debt | debt guard 是否有独立 Pareto 增量 | 是 |
-| historical ablation | old single-head SAOR/FIFO/DRR/VTC | observation gap 的损失 | 否，诊断分栏 |
-| runtime graph baseline | Daft Native、Ray Data native | 整个框架执行图影响 | 否，不与 project selector 混排 |
-| in-engine related work | VTC、DLPM、JITServe、Llumnix、SCORPIO、ProServe | 理论/系统上界、指标与设计模式 | 否，除非同层可执行实现 |
+因此正式评价严格分层：**任何原生 baseline 都不得接入 bounded-ready**。只有为了归因项目内部
+机制时，若比较不同 selector，才让这些 Project internal controls 使用同一个 bounded-ready
+observation contract。当前身份冻结为：
 
-所有 matched-ready 算法臂共享 immutable manifest、arrival、vLLM FCFS、prefix-cache 生命周期、
-active request/work envelope、ready request/work/bytes、CPU/GPU/endpoint 和 balanced run order。
-若 proposed 只赢旧 single-head baseline 而不赢 matched-ready 简单策略，不能写 SAOR selector
-胜出。equal-share 场景用同权 DRR/VTC 和 service lag；foreground/bulk differentiated-service
-场景用 strict-priority/EDF、foreground SLO goodput 与 bulk reserved-share JCT/starvation guard。
+| 层级与身份 | 对象 | scheduler owner | 是否使用项目 bounded-ready | 报告角色 |
+|---|---|---|---|---|
+| 服务上限 | bounded direct HTTP / vLLM Bench | vLLM + 原生/简单有界客户端 | 否 | saturation ceiling，不是公平 baseline |
+| 原生系统 baseline | Daft `prompt()` Native/Ray、Ray Data native graph、通过门禁的数据库产品 | 被测框架/产品 | **否，禁止注入** | 同合同系统主比较；保留其原生 batching/backpressure/scheduling |
+| 项目静态参照 | project frozen-static partition/reservation | Project | 否；保持冻结静态执行路径 | 同栈隔离/Pareto reference，不能简称“原生 baseline” |
+| 项目历史诊断 | old single-head FIFO/DRR/VTC-style/SAOR | Project | 否 | 只定位 observation gap，不进入原生 baseline 排名 |
+| 项目 observation 消融 | project bounded-ready + global FIFO | Project | 是 | 衡量 ready-state exposure 本身；属于 internal ablation |
+| 项目简单算法消融 | project bounded-ready + DRR/WFQ、external VTC-style actual-work counter | Project | 是 | 判断简单份额/服务计账是否已足够；属于 internal ablation |
+| 项目优先级上界消融 | project bounded-ready + strict-priority/EDF | Project | 是 | 测 SLO 可达上界与 starvation 代价；属于 internal ablation |
+| 项目 proposed | project bounded-ready + $H_B=0.125W_e$ guarded priority/debt | Project | 是 | 判断 debt guard 是否有独立 Pareto 增量 |
+| 引擎内相关工作 | VTC、DLPM、JITServe、Llumnix、SCORPIO、ProServe | 原论文系统 | 不由本项目注入 | 理论/系统参照；没有原实现同层复现时不冒充 executable baseline |
+
+“同一个 ready-window”只约束最后四类**项目内部 selector 归因臂**：每个臂内的所有 Job 都应用
+同样的 ready request/work/bytes 上限，且共享 immutable manifest、arrival、vLLM FCFS、prefix-
+cache 生命周期、active K/W、CPU/GPU/endpoint 和 balanced run order。原生 baseline 保持各自
+调度，不能为了表面配平而套入项目 coordinator。若 proposed 只赢旧 single-head 路径而不赢
+bounded-ready 简单 internal controls，不能写 SAOR selector 胜出。equal-share 场景用项目内
+DRR/VTC-style 与 service lag；foreground/bulk differentiated-service 场景用项目内 strict-
+priority/EDF、foreground SLO goodput 与 bulk reserved-share JCT/starvation guard。
 
 正式报告必须分别给出：① 外部公开 benchmark 锚点；② 同机原生系统排名；③ 数据库
 AI 算子的 quality-cost-time；④ project frozen-static/dynamic 消融。只给 tokens/s 或

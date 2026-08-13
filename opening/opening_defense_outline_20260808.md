@@ -321,9 +321,9 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
   和 SLO guard 约束隔离；状态感知再决定总准入与路由。
 - **页面结论**：动态调度不是单目标提吞吐，需要同时评价 efficiency、isolation、service lag
   和 SLO；效率/JCT 子向量的经验性 Pareto 不是完整多目标或 DRF Pareto efficiency，Jain 下降应读作收益更不均。
-- **证据缺口**：现有矩阵缺 global FIFO/no project Job scheduler；下一项 formal 必须加入
-  FIFO 与 DRR killer baseline，并保存无损 completion/backlog ledger 计算 event-level lag 与
-  starvation；简单策略达到同一 Pareto 前沿即采用简单策略。
+- **证据缺口**：现有矩阵缺 global FIFO/no project Job scheduler；下一项归因实验必须分开加入
+  direct no-project FIFO control 与 Project DRR internal control，并保存无损 completion/backlog
+  ledger 计算 event-level lag 与 starvation；简单策略达到同一 Pareto 前沿即采用简单策略。
 - **转场**：组织、准入和公平决策都需要一个可比较的代价信号。
 
 #### 第 16 页：代价估计需要同时评价预测质量和决策质量
@@ -499,7 +499,7 @@ static+long又+58.77%，matched shared+long+28.90%。eager shared相对static使
 |---|---|---|---|---|
 | Work Unit | 同行数 token work 14.3×；图像 prepare/model 阶段失衡 | staged descriptor 类型、neutral work consumer 和图像携带接口已存在；正式 runner 尚未构造 production descriptor | 字段设计由现象导出，接口可执行 | staged organization 已端到端胜出 |
 | 状态感知 | 同 W 下 high/arrival-limited 状态不同；原生路径出现 underfeed/overqueue | endpoint、vLLM 和 GPU/MFU trace 已正式采集；图像 fresh stage snapshot 已 observe-only 接入 | 必须联合 ready/active work、完成速率、queue、KV/MFU/tail，并校验 freshness/signature；GPU/MFU 不单独触发动作 | snapshot 正式驱动 fixed-K Job release 后产生可归因增量 |
-| 动态调度 | 5s 两 Job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；仅调整总并发上限的控制器未晋级 | 总并发上限固定；动态对象是 active-set entitlement、idle borrowing/reclaim 和 release order；缺 global FIFO killer baseline | 同一总上限下 FIFO/static/DRR/VTC-style/状态感知有序释放的决定性 A/B 尚未完成 |
+| 动态调度 | 5s 两 Job 显示真实前台干扰和效率—隔离—公平权衡 | completion release、least-work、shared DRR credit 已进入调度器并完成 A/B；仅调整总并发上限的控制器未晋级 | 总并发上限固定；动态对象是 active-set entitlement、idle borrowing/reclaim 和 release order；缺 direct global FIFO control 与同 observation 的 Project internal controls | 原生 baseline 保持自身调度；同一总上限下 project frozen-static/FIFO/DRR/VTC-style/状态感知有序释放的内部决定性 A/B 尚未完成 |
 | 算子代价估计 | 候选选错代价 12.0%–86.5%；简单 estimator 决策失败 | CE1–CE5 离线分析器与 context-LOO 已完成；尚未在线驱动调度 | 文本配置选择有 marginal feasibility | 已预测跨模态 remaining work/SLO 并改善在线决策 |
 
 工程下一步按 production descriptor builder → 统一状态快照 → global FIFO/no-op gate → fixed-K

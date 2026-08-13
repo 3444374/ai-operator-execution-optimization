@@ -7,7 +7,7 @@
 VTC/DLPM 与 SLO-serving 文献收紧多 Job 评价合同，并完成双轮 bounded-priority GPU
 development gate；结果未晋级，新增 ready-set observation 修订任务；同日 bounded-ready
 $0.125W_e$ 双轮通过开发门，但审核发现 observation 与 selector 归因混杂，formal 前新增
-matched-observation killer gate）
+项目内部 matched-observation attribution gate；原生 baseline 不接入 bounded-ready）
 
 > **动态调度算法唯一维护入口**：本文 §5.2。当前状态为
 > `formal-valid / not-promoted`，不是已完成方法，
@@ -44,6 +44,7 @@ matched-observation killer gate）
 - 离线容量校准和正式运行使用相同 calibration signature；
 - baseline 由对应框架拥有 batching/backpressure/scheduling；项目只做 source、必要的 sink、质量与指标适配；
 - project static 与 project dynamic 使用同一最大 request credit、stage work credit、actor/GPU/CPU 资源和 buffer bytes 上限；
+- `BoundedReadyWindow` 是 project-owned observation/execution mechanism，不得注入 Daft、Ray Data、vLLM 或产品原生 baseline；只有项目内部 selector 消融共享它；
 - 全部指标使用 during-run time series 聚合，不使用单点 idle snapshot。
 
 ## 4. 因子分解
@@ -130,7 +131,7 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
 | policy revision | runtime/formal contract `saor-v0.4.6-work-conserving-gate`；resolution-aware audit `saor-v0.4.10-resolution-aware-full`；priority diagnostic `saor-v0.4.9-release-upper-bound`；failed development candidate `saor-v0.5.1-reclaim-barrier`；local observation revision `saor-v0.5.2-bounded-ready-local`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
-| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上 validation passed、credit mechanism effective 12/12，原 failed 文件保留审计。SAOR 在 credit 臂内 fg 最好但未越过 static；strict-priority 两轮 GPU 短测达到 11,791 tok/s、fg P99 14.27s/SLO 0%，但 formal repeats=0。旧 runtime 的 `slo_weight=0`，不是完整 SLO-aware 方法；dynamic K 为 `parked-conditional`。v0.5.1 单-head gate 未晋级，定位 ready observation gap；v0.5.2 bounded-ready 两轮中只有 $H_B=0.125W_e$ 同时通过 foreground/bulk/efficiency 门，$0.25W_e$ 被 bulk guard 拒绝。该结果只注册候选参数；因 ready-window 与 selector 同时变化，formal 前必须完成 matched-observation 归因 gate，定理证明也未完成 |
+| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上 validation passed、credit mechanism effective 12/12，原 failed 文件保留审计。SAOR 在 credit 臂内 fg 最好但未越过 static；strict-priority 两轮 GPU 短测达到 11,791 tok/s、fg P99 14.27s/SLO 0%，但 formal repeats=0。旧 runtime 的 `slo_weight=0`，不是完整 SLO-aware 方法；dynamic K 为 `parked-conditional`。v0.5.1 单-head gate 未晋级，定位 ready observation gap；v0.5.2 bounded-ready 两轮中只有 $H_B=0.125W_e$ 同时通过 foreground/bulk/efficiency 门，$0.25W_e$ 被 bulk guard 拒绝。该结果只注册候选参数；因 ready-window 与 selector 同时变化，formal 前必须完成项目内部 matched-observation 归因 gate；该机制不注入原生 baseline，定理证明也未完成 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
 | 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
@@ -398,7 +399,7 @@ debt units。配置字段的 fraction 乘 `work_limit`，不是 request K；历�
 
 若两个 cap 均不能同时通过 foreground、bulk 和 efficiency 门，则停止密集扫描 cap/权重并审计
 约束冲突。当前 $0.125W_e$ 已通过双轮 development gate，但这只冻结候选参数；必须先完成
-§5.2.11 的 matched-observation 归因 gate。reservation 与 point/upper-bound resource work
+§5.2.11 的项目内部 matched-observation 归因 gate。reservation 与 point/upper-bound resource work
 推迟到该 gate 和 2-Job formal 均闭合以后，不因 development 正结果自动启动。
 
 #### 5.2.3 三种 work 语义：token 组织不取消，但不再一数三用
@@ -864,10 +865,10 @@ $\arg\min_a\Psi(a)=\arg\min_a[\Psi(a)-\Psi(hold)]$，不会改变动作排序。
 
 先冻结评价语义，禁止把两种不同问题混成一个“公平分数”：
 
-| 模式 | Job 关系 | 主要目标 | killer baseline | 不能用什么代替 |
+| 模式 | Job 关系 | 主要目标 | 项目内部算法消融 | 不能用什么代替 |
 |---|---|---|---|---|
-| equal-share fairness | 同权或显式权重的平等 tenant/Job | 共同积压 weighted service lag、最坏 Job、work conservation | bounded-ready DRR/WFQ、external VTC-style | foreground SLO 或全生命周期 Jain |
-| differentiated service | foreground priority 高于 bulk | foreground SLO isolation，同时 bulk starvation/退化有界 | bounded-ready strict-priority/EDF、static reservation | 要求两类延迟相等或只报 aggregate throughput |
+| equal-share fairness | 同权或显式权重的平等 tenant/Job | 共同积压 weighted service lag、最坏 Job、work conservation | project bounded-ready + DRR/WFQ、external VTC-style | foreground SLO 或全生命周期 Jain |
+| differentiated service | foreground priority 高于 bulk | foreground SLO isolation，同时 bulk starvation/退化有界 | project bounded-ready + strict-priority/EDF；project frozen-static reference | 要求两类延迟相等或只报 aggregate throughput |
 
 当前 long bulk + 5s 后 foreground 实验属于 differentiated service。bulk 的 30s miss rate 在没有
 外部应用合同证明该 deadline 合理前只作相对 static 的保护 guard；bulk headline 优先使用
@@ -959,23 +960,29 @@ reserved-share JCT、最大正 lag、最长 no-service 和 token/work goodput。
 
 #### 5.2.11 交叉验证、baseline 与淘汰门
 
-所有正式臂冻结未修改 vLLM 和相同内部配置。baseline 按身份分层，不能交叉冒充：direct bounded
-HTTP 是同协议 saturation ceiling，不是公平策略；Daft Native/Ray Data 是 E2E/runtime baseline，
-不进入 project-owned selector 排名；static partition 是隔离/Pareto 锚点。算法因果比较必须让
-global FIFO、DRR/WFQ、external VTC-style、strict-priority/EDF 与 proposed 使用**同一个 bounded
-ready-window、同一 active K/W 和同一 ready bytes 上限**。旧 single-head `saor_release` 只保留为
-observation-gap 定位臂，不能替代 matched-ready killer baselines。
+所有正式臂冻结未修改 vLLM 和相同内部配置，但执行所有权严格分层：direct bounded HTTP 是
+同协议 saturation ceiling，不是公平策略；Daft Native、Ray Data 和产品路径是**原生系统
+baseline**，必须由各系统拥有 batching/backpressure/scheduling，禁止接入项目 coordinator、
+credit 或 bounded-ready；project frozen-static 是同栈静态 reference，不冒充原生 baseline。
+
+`BoundedReadyWindow` 只存在于 Project 路径：它把已经 concrete-ready 的有限多个请求暴露给
+项目 selector。算法因果比较时，project bounded-ready + global FIFO、DRR/WFQ、external
+VTC-style、strict-priority/EDF 与 proposed 必须使用**同一个 bounded ready-window、同一 active
+K/W 和同一 ready bytes 上限**。这些是 project internal controls/ablations，不进入原生 baseline
+排名。旧 single-head `saor_release` 只保留为 observation-gap 定位臂。
 
 `saor-v0.5.2` 的 $0.125W_e$ 虽已通过双轮 development gate，但其 observation/execution path
 与 selector 同时改变；因此 formal 注册分两级：
 
-1. **matched-observation attribution gate（先运行）**：在冻结 2-Job workload 上做 1--2 个
-   rehearsal，至少比较 bounded-ready FIFO、DRR/WFQ、strict-priority 与 proposed；external
-   VTC-style 在 event accounting 可复用时加入。只改变选择器，其他 ready/active/服务合同一致；
-2. **formal（归因 gate 通过后）**：static、matched-ready FIFO、DRR/WFQ、strict-priority、
-   proposed $0.125W_e$ 为核心；direct ceiling 与旧 SAOR 分栏报告。使用 1 warm-up + 3 个
-   balanced/interleaved repeats，$0.25W_e$ 只保留 development rejected ablation；
-3. proposed 只有相对最强 matched-ready 简单策略至少改善一个预注册主要指标、其余 protected
+1. **项目内部 matched-observation attribution gate（先运行）**：在冻结 2-Job workload 上做
+   1--2 个 rehearsal，至少比较 project bounded-ready + FIFO、DRR/WFQ、strict-priority 与
+   proposed；external VTC-style 在 event accounting 可复用时加入。所有 Job 应用同一 ready
+   window，只改变选择器；这些臂不称原生 baseline；
+2. **项目 formal（归因 gate 通过后）**：project frozen-static reference、最强 bounded-ready
+   internal controls 与 proposed $0.125W_e$ 为核心；direct ceiling、原生系统 baseline 和旧 SAOR
+   分层报告，不把不同 scheduler owner 混成 selector 排名。使用 1 warm-up + 3 个 balanced/
+   interleaved repeats，$0.25W_e$ 只保留 development rejected ablation；
+3. proposed 只有相对最强 bounded-ready 简单 internal control 至少改善一个预注册主要指标、其余 protected
    metrics 通过 non-inferiority/SLO margin，才能把 selector 写成独立贡献。若简单策略已在同一
    Pareto 前沿，贡献收敛为 bounded ready-state exposure + 最小 guarded release，或淘汰复杂
    selector；不更换 workload 追正。
@@ -994,7 +1001,7 @@ state-observed no-op、threshold/deadband、governor 和 offline oracle。
    先证明
    foreground 到达前每 endpoint 的 bulk predicted ready work 至少覆盖一个完整 work envelope，
    static/direct 的 mechanism 为 not-applicable，不得误判失败；
-2. proposed 同时超过 matched-ready FIFO 与 DRR/WFQ 的 Pareto 前沿后，先做当前 2-Job formal，
+2. proposed 同时超过同 ready-window 的 project FIFO 与 DRR/WFQ internal controls 的 Pareto 前沿后，先做当前 2-Job formal，
    再选一个不调参 held-out（reverse/simultaneous arrival、on/off burst 或 prefix-rich 三选一）；
    held-out 通过后才进入 four-Job、3:1 weighted 与图像泛化；
 3. 若 FIFO/DRR 已足够，淘汰 SAOR；不运行 dynamic capacity，也不换 workload 追正；
@@ -1004,7 +1011,7 @@ state-observed no-op、threshold/deadband、governor 和 offline oracle。
 动态候选只有同时满足下列条件才晋级：
 
 - 与 frozen-static 保持同最大 request/work 上限、source/sink、manifest 和服务配置；
-- 与 matched-ready baselines 保持同 ready-window、ready bytes、selector 可见 active set 和运行顺序；
+- 与 bounded-ready project internal controls 保持同 ready-window、ready bytes、selector 可见 active set 和运行顺序；原生 baseline 不适用该条；
 - correctness、exactly-once、质量、feeding-saturation 和稳定性门禁通过；
 - 至少一个预注册主要指标改善约 5%；每个 protected metric 必须在 run 前写明方向、
   non-inferiority/SLO margin 和统计汇总方式，并全部满足。通用 5% effect-size gate 与具体保护
@@ -1069,14 +1076,15 @@ continuous replenishment 单独声明为新算法贡献。可验证的项目贡�
 > 在不修改 vLLM 的前提下，为数据库/Daft/Ray 上游建立有限、生命周期正确且 byte/work-bounded
 > 的 ready-state exposure contract，再将 Job 存活集、priority/SLO 与 completion-accounted
 > service debt 映射为固定 active envelope 内的 guarded ordered release，并与 vLLM FCFS
-> continuous batching 组合；selector 是否构成独立增量必须通过 matched-observation baseline，
+> continuous batching 组合；selector 是否构成独立增量必须通过项目内部 matched-observation
+> attribution ablation，
 > 状态感知容量选择只在独立 oracle/safety gate 通过时作为可选扩展。
 
 该定位属于 **new setting + mature-method transplantation**。当前 idea 审核结论为
 `Accept with Revisions`：工程可行性较高，主要风险是 prior overlap、observation/selector 归因
 混杂、范围过大以及理论假设无法在实际 vLLM 服务曲线上闭合。当前论文核心优先收敛为
 “bounded ready-state exposure + fixed-envelope guarded ordered release”；公平是约束，token
-organization 是输入，多模态是外部有效性验证。若 matched-ready 简单 selector 已达到同一前沿，
+organization 是输入，多模态是外部有效性验证。若同 observation 的项目简单 selector 已达到同一前沿，
 删除不必要的复杂 SAOR 算法叙事，而不是继续加参数。
 
 #### 5.2.13 维护规则与决策日志
@@ -1091,7 +1099,7 @@ organization 是输入，多模态是外部有效性验证。若 matched-ready �
 | 2026-08-11 | `saor-core-v0.1` | 实现中性 capacity、execution ledger、有限动作 DPP、公平债务和 Job-head ordered release；配置与模态适配外置 | 纯 Python unit/architecture tests | 不升阶；runner/replay/真实服务均未接入 |
 | 2026-08-11 | `saor-v0.2-development` | 接入文本 shared-vLLM capacity adapter、配对 trace replay、state/action trace 与最大安全臂 validator；四臂真实服务 development gate 未过晋级门 | 6-sample regret replay + 2×4090 one-repeat 4-arm gate | 升为 `trace-validated`；capacity-only 标记 `not-promoted`，完整 SAOR 仍未验证 |
 | 2026-08-11 | `saor-v0.3-design` | 将 fixed-envelope ordered release 与 slow Safe-Capacity Governor 分层；安全改为 hard feasible set，加入反事实模型、pipeline debt/hysteresis 和独立 oracle 淘汰门 | capacity-only 负结果 + MaxWeight/DPP、reconfiguration-delay 与 unknown-service 一手工作交叉审计 | SAOR-Release 保持 design-candidate；governor 降为 optional，不能继承 oracle theorem |
-| 2026-08-11 | `saor-v0.4-design` | dynamic K 退出主线；固定总 envelope，仅动态调整 active-set entitlement、idle borrowing/reclaim 与 ordered release；新增 global FIFO/no-op 和 DRR killer baseline | capacity-only 未胜 K160 + eager/online 两/四 Job static/shared 方向差异 + fatal-flaw audit | dynamic-K `reject and pivot`；SAOR-Release `accept with revisions`，killer baseline 未过前不晋级 |
+| 2026-08-11 | `saor-v0.4-design` | dynamic K 退出主线；固定总 envelope，仅动态调整 active-set entitlement、idle borrowing/reclaim 与 ordered release；新增 direct global FIFO/no-op control 和 Project DRR internal control | capacity-only 未胜 K160 + eager/online 两/四 Job static/shared 方向差异 + fatal-flaw audit | dynamic-K `reject and pivot`；SAOR-Release `accept with revisions`，决定性 controls 未过前不晋级 |
 | 2026-08-12 | `saor-v0.4.1-runtime` | 接入 fixed-envelope Ray credit runtime、completion fairness debt、SAOR/shared FIFO 配置与 active-set phase audit；新增 direct merged-arrival no-Job control；K 全部改由签名化 calibration contract 注入 | 代码/单测与既有 calibration infrastructure | 仍为 candidate；无 GPU formal、SLO debt 和 theorem bridge，不晋级 |
 | 2026-08-12 | `saor-v0.4.2-formal-ready` | direct no-Job 纳入同一交错 runner；新增 project/direct matched solo、request lifecycle 与 credit mechanism 分层门禁、rehearsal、静态 readiness audit 和 fail-closed formal summary | 单元测试 + 静态合同；未运行服务器 formal | 工程达到可 rehearsal/formal 状态，但仍无 GPU 策略结果；direct 只匹配 request K，不伪称 work-credit 等资源臂 |
 | 2026-08-12 | `saor-v0.4.3-server-ready` | 服务器 preflight 发现 512-row manifest 原始 arrival span 约 66,880 s，模板写死 `arrival_time_scale=1.0` 会使 rehearsal 约 18.6 h；改为 workload 合同注入 scale，并由 readiness 自动计算 effective span、设置运行预算门禁 | 服务器真实 immutable manifest + 本地/服务器静态门禁 | 修正运行可行性，不改变算法、K 或证据结论；仍需 GPU rehearsal 后才能启动 formal |
@@ -1108,7 +1116,7 @@ organization 是输入，多模态是外部有效性验证。若 matched-ready �
 | 2026-08-13 | `saor-v0.5.1-ready-set-gap` | 按冻结四臂执行两轮 GPU gate，并用 lossless event + request trace 分解 selector→submit→service | Round 1 clean；Round 2 0.25K debt-recovery=0 被 fail closed；8 个 cell 全部 exactly-once、GPU mean≥95.8% | 两 cap foreground 门均失败，formal 不注册。所有可见 fg head 均获 priority，但单-head pull 使完整 ready backlog 间歇不可见；下一修订先改 observation contract，不扫 cap、不扩 4-Job/reservation |
 | 2026-08-13 | `saor-v0.5.2-bounded-ready-local` | 新增独立 `saor_bounded_ready` observation contract：每 Job 预注册已到达的 concrete request 有界 ready set，request 上限由 effective K 派生、work 上限由 endpoint 数×W 派生；新增 ready→register→grant→submit→completion lifecycle；coordinator 在同一无损事件域记录 register/grant request ID+epoch，旧单-head policy 不变 | 本地 targeted unit/architecture tests + compile/diff；尚未运行 GPU development rehearsal | 状态仅 `local-implemented/development-unrun/not-formal-registered`。异常退出只撤销未提交 waiter/lease，已提交 request 的 credit 保留到整组 fail-closed cleanup，避免服务端仍执行时容量超卖；未过双轮 ready-set 门前不做 formal、reservation、4-Job 或动态 K |
 | 2026-08-13 | `saor-v0.5.2-bounded-ready-gated` | 首次服务器运行因跨 trace 错误假设 `submit_epoch_s` 而 fail closed；按 `submission_id` 连接 submission 生命周期与 request submit 后，从两个全新 root 重跑冻结四臂 | 2×4090 两轮 development rehearsal；8/8 cell、0 incident；lossless event + group/request/submission/resource evidence | $0.125W_e$ 两轮全过并注册候选参数：12.36K tok/s、fg P99 17.58–18.15s、fg SLO 0%、bulk miss 65.8%–66.6%；$0.25W_e$ 因 bulk miss 74.4%–75.2% 两轮越界拒绝。尚不能把组合收益归因给 selector |
-| 2026-08-13 | `saor-v0.5.3-attribution-review` | 审核确认 `saor_bounded_ready` 同时改变 observation/execution path 与 priority/debt selector；修正 cap 记号为 $H_B/W_e$，把 equal-share 与 differentiated-service 公平拆轨，并冻结 matched-ready FIFO/DRR/VTC/strict-priority killer baselines | 本地代码语义审计 + 双轮 gate + VTC/DLPM、Themis/Pollux、JITServe/SCORPIO、Agentix/BatchGen 文献迁移 | 保持 `development-gated/formal-registration-candidate`，但增加 `matched-observation-attribution-required`：先做 1--2 轮归因 gate，通过后才启动 1+3 formal；不扫 cap、不扩 4-Job/reservation/dynamic K |
+| 2026-08-13 | `saor-v0.5.3-attribution-review` | 审核确认 `saor_bounded_ready` 同时改变 observation/execution path 与 priority/debt selector；修正 cap 记号为 $H_B/W_e$，把 equal-share 与 differentiated-service 公平拆轨，并冻结同 ready-window 的 Project FIFO/DRR/VTC/strict-priority internal controls | 本地代码语义审计 + 双轮 gate + VTC/DLPM、Themis/Pollux、JITServe/SCORPIO、Agentix/BatchGen 文献迁移 | 保持 `development-gated/formal-registration-candidate`，但增加 `matched-observation-attribution-required`：先做 1--2 轮项目内部归因 gate，通过后才启动 1+3 formal；原生 baseline 不接 bounded-ready，不扫 cap、不扩 4-Job/reservation/dynamic K |
 
 状态只允许按以下顺序变化：
 
@@ -1609,7 +1617,7 @@ formal 胜出或公平定理。
 | completion correction 前连续补 recovery | per Job/endpoint 最多一张 recovery in-flight，actual completion 后才清除 |
 | 250 ms trace 造成机制假阴性 | 机制真值来自 lossless coordinator event ledger；snapshot 只做状态/资源图 |
 | 为追结果在线改 cap/窗口 | 模板只含 $0.125W_e/0.25W_e$，窗口固定 30 s，两个全新 rehearsal root 后停止 |
-| observation 改善误归因给 selector | formal 前所有 killer baselines 共享相同 bounded ready-window、active K/W 与 ready bytes |
+| observation 改善误归因给 selector | formal 前所有 project selector internal controls 共享相同 bounded ready-window、active K/W 与 ready bytes；原生 baseline 保持自身调度 |
 | slowdown 误作 bulk hard gate | bulk 只用 request-level SLO violation≤0.723；slowdown 单列诊断 |
 | 旧 SAOR/strict-priority 被静默改写 | 新 policy 名与新 selector；旧 policy 和测试保持不变，作为对照 |
 | 短测被写成 formal/winner | readiness/profile/summary/README 四处固定 development-only claim boundary |
