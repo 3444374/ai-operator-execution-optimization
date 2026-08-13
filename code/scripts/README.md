@@ -55,6 +55,16 @@ release-only SAOR、0.125K 和 0.25K debt-cap 四臂，并重算正确性、前�
 register→grant
 区间非空、区间内 foreign fallback=0；旧 bounded-priority profile 保持不变。
 
+`analysis/audit_saor_formal_readiness.py --profile matched_ready_selector_ablation`
+审计六臂项目内部归因合同：project frozen-static 不使用 bounded-ready；FIFO、DRR、
+external VTC-style、strict-priority 与 proposed 对所有 Job 使用同一 bounded-ready
+request/work/logical-bytes 上限。该 profile 不包含、也不能替代任何原生系统 baseline；
+通过只允许 1--2 轮 development rehearsal。
+`analysis/summarize_saor_matched_ready_ablation.py` 随后 fail-closed 校验六臂身份、
+correctness、全 Job ready lifecycle 和 proposed 的 guarded-debt 机制证据，输出原始臂指标，
+但固定写明 `selector_victory_decided=false`、`formal_authorized=false`；效应量与
+non-inferiority 边界未预注册前，工具不会替研究者宣布 proposed 胜出。
+
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data
 single/two-job 原生观察做统一 fail-closed 汇总。它显式保留 request P99 仅项目可用、

@@ -79,6 +79,7 @@ class _RayCreditObserver:
         quantum: int,
         policy: str = "drr",
         saor_release_config: SaorReleaseConfig | None = None,
+        record_ready_lifecycle_events: bool = False,
     ) -> None:
         capacities = {
             endpoint_id: (request_limit, work_limit)
@@ -90,6 +91,9 @@ class _RayCreditObserver:
             "capacities": capacities,
             "quantum": quantum,
             "policy": policy,
+            "record_ready_lifecycle_events": (
+                record_ready_lifecycle_events
+            ),
         }
         if saor_release_config is not None:
             arguments["saor_release_config"] = saor_release_config
@@ -226,6 +230,29 @@ def _resource_sample(
 ) -> list[dict[str, object]]:
     observed_epoch_s = time.time()
     gpu = gpu_metadata()
+    try:
+        import psutil
+
+        per_cpu = [
+            float(value)
+            for value in psutil.cpu_percent(interval=None, percpu=True)
+        ]
+        memory = psutil.virtual_memory()
+        host = {
+            "host_cpu_busy_cores": sum(per_cpu) / 100.0,
+            "host_cpu_per_core_max_pct": max(per_cpu, default=0.0),
+            "host_memory_used_pct": float(memory.percent),
+            "host_memory_available_mib": (
+                float(memory.available) / (1024 * 1024)
+            ),
+        }
+    except (ImportError, OSError):
+        host = {
+            "host_cpu_busy_cores": "",
+            "host_cpu_per_core_max_pct": "",
+            "host_memory_used_pct": "",
+            "host_memory_available_mib": "",
+        }
     rows = []
     for endpoint_index, metrics_url in enumerate(metrics_urls):
         metrics = scrape_prometheus_metrics(metrics_url)
@@ -256,6 +283,7 @@ def _resource_sample(
                 "gpu_utilization_pct": gpu["gpu_utilization_pct"],
                 "gpu_memory_used_mib": gpu["gpu_memory_used_mib"],
                 "gpu_power_w": gpu["gpu_power_w"],
+                **host,
             }
         )
     return rows

@@ -68,6 +68,29 @@ class _FakeRay:
 
 
 class SharedCreditRayTests(unittest.TestCase):
+    def test_ready_lifecycle_identity_cannot_be_changed_on_actor_reuse(self) -> None:
+        ray = _FakeRay()
+        get_or_create_shared_credit_client(
+            ray,
+            name="credits",
+            namespace="tests",
+            capacities={"gpu0": (2, 200)},
+            quantum=100,
+            policy="fifo",
+            record_ready_lifecycle_events=True,
+        )
+
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            get_or_create_shared_credit_client(
+                ray,
+                name="credits",
+                namespace="tests",
+                capacities={"gpu0": (2, 200)},
+                quantum=100,
+                policy="fifo",
+                record_ready_lifecycle_events=False,
+            )
+
     def test_bounded_saor_events_cross_actor_boundary_once_in_order(self) -> None:
         ray = _FakeRay()
         client = get_or_create_shared_credit_client(

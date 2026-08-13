@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "experiment_id": "saor_bounded_ready_development_gate",
+  "experiment_id": "saor_matched_ready_selector_ablation",
   "seed": 20260813,
   "fail_closed_rehearsal": true,
-  "ready_observation_contract": "bounded_concrete_pre_registration",
+  "ready_observation_contract": "single_head",
   "ready_payload_bytes_limit_per_job": "${SAOR_READY_PAYLOAD_BYTES_LIMIT_PER_JOB}",
   "require_complete_service_metadata": true,
   "service_metadata": {
@@ -34,7 +34,7 @@
   "request_limit_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
   "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
   "credit_quantum": "${PROJECT_SHARED_CREDIT_QUANTUM}",
-  "shared_credit_namespace": "ai-operator-saor-bounded-ready",
+  "shared_credit_namespace": "ai-operator-saor-matched-ready",
   "saor_release_control": {
     "entitlement_weight": 1.0,
     "queue_weight": 0.0,
@@ -92,7 +92,7 @@
   ],
   "scenarios": [
     {
-      "scenario_id": "active_set_static_partition",
+      "scenario_id": "active_set_project_frozen_static",
       "policy": "static_partition",
       "job_count": 2,
       "rows_per_jobs": ["${SAOR_BULK_ROWS}", "${SAOR_FOREGROUND_ROWS}"],
@@ -100,16 +100,45 @@
       "request_manifests": ["${SAOR_BULK_MANIFEST}", "${SAOR_FOREGROUND_MANIFEST}"]
     },
     {
-      "scenario_id": "active_set_saor_release",
-      "policy": "saor_release",
+      "scenario_id": "active_set_project_bounded_ready_fifo",
+      "policy": "shared_fifo",
+      "ready_observation_contract": "bounded_concrete_pre_registration",
       "job_count": 2,
       "rows_per_jobs": ["${SAOR_BULK_ROWS}", "${SAOR_FOREGROUND_ROWS}"],
       "arrival_offsets_s": [0, "${SAOR_FOREGROUND_OFFSET_S}"],
       "request_manifests": ["${SAOR_BULK_MANIFEST}", "${SAOR_FOREGROUND_MANIFEST}"]
     },
     {
-      "scenario_id": "active_set_saor_bounded_ready_0125k",
+      "scenario_id": "active_set_project_bounded_ready_drr",
+      "policy": "shared_drr",
+      "ready_observation_contract": "bounded_concrete_pre_registration",
+      "job_count": 2,
+      "rows_per_jobs": ["${SAOR_BULK_ROWS}", "${SAOR_FOREGROUND_ROWS}"],
+      "arrival_offsets_s": [0, "${SAOR_FOREGROUND_OFFSET_S}"],
+      "request_manifests": ["${SAOR_BULK_MANIFEST}", "${SAOR_FOREGROUND_MANIFEST}"]
+    },
+    {
+      "scenario_id": "active_set_project_bounded_ready_vtc_style",
+      "policy": "external_vtc",
+      "ready_observation_contract": "bounded_concrete_pre_registration",
+      "job_count": 2,
+      "rows_per_jobs": ["${SAOR_BULK_ROWS}", "${SAOR_FOREGROUND_ROWS}"],
+      "arrival_offsets_s": [0, "${SAOR_FOREGROUND_OFFSET_S}"],
+      "request_manifests": ["${SAOR_BULK_MANIFEST}", "${SAOR_FOREGROUND_MANIFEST}"]
+    },
+    {
+      "scenario_id": "active_set_project_bounded_ready_strict_priority",
+      "policy": "foreground_strict_priority",
+      "ready_observation_contract": "bounded_concrete_pre_registration",
+      "job_count": 2,
+      "rows_per_jobs": ["${SAOR_BULK_ROWS}", "${SAOR_FOREGROUND_ROWS}"],
+      "arrival_offsets_s": [0, "${SAOR_FOREGROUND_OFFSET_S}"],
+      "request_manifests": ["${SAOR_BULK_MANIFEST}", "${SAOR_FOREGROUND_MANIFEST}"]
+    },
+    {
+      "scenario_id": "active_set_project_bounded_ready_guarded_debt_0125we",
       "policy": "saor_bounded_ready",
+      "ready_observation_contract": "bounded_concrete_pre_registration",
       "job_count": 2,
       "rows_per_jobs": ["${SAOR_BULK_ROWS}", "${SAOR_FOREGROUND_ROWS}"],
       "arrival_offsets_s": [0, "${SAOR_FOREGROUND_OFFSET_S}"],
@@ -117,18 +146,6 @@
       "slo_targets_s": [null, 30],
       "priority_windows_s": [null, 30],
       "debt_cap_fractions": [0.125, null],
-      "request_manifests": ["${SAOR_BULK_MANIFEST}", "${SAOR_FOREGROUND_MANIFEST}"]
-    },
-    {
-      "scenario_id": "active_set_saor_bounded_ready_025k",
-      "policy": "saor_bounded_ready",
-      "job_count": 2,
-      "rows_per_jobs": ["${SAOR_BULK_ROWS}", "${SAOR_FOREGROUND_ROWS}"],
-      "arrival_offsets_s": [0, "${SAOR_FOREGROUND_OFFSET_S}"],
-      "priorities": [0, 1],
-      "slo_targets_s": [null, 30],
-      "priority_windows_s": [null, 30],
-      "debt_cap_fractions": [0.25, null],
       "request_manifests": ["${SAOR_BULK_MANIFEST}", "${SAOR_FOREGROUND_MANIFEST}"]
     }
   ]

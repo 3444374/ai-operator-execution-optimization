@@ -13,16 +13,19 @@ class _FairCreditActor:
         quantum: int,
         policy: str,
         saor_release_config: SaorReleaseConfig | None = None,
+        record_ready_lifecycle_events: bool = False,
     ) -> None:
         self.capacities = capacities
         self.quantum = quantum
         self.policy = policy
         self.saor_release_config = saor_release_config
+        self.record_ready_lifecycle_events = record_ready_lifecycle_events
         self.coordinator = FairEndpointCreditCoordinator(
             capacities,
             quantum=quantum,
             policy=policy,
             saor_release_config=saor_release_config,
+            record_ready_lifecycle_events=record_ready_lifecycle_events,
         )
 
     def configuration(
@@ -32,12 +35,14 @@ class _FairCreditActor:
         int,
         str,
         SaorReleaseConfig | None,
+        bool,
     ]:
         return (
             self.capacities,
             self.quantum,
             self.policy,
             self.saor_release_config,
+            self.record_ready_lifecycle_events,
         )
 
     def try_acquire(self, **kwargs) -> bool:
@@ -136,6 +141,7 @@ def get_or_create_shared_credit_client(
     quantum: int,
     policy: str = "drr",
     saor_release_config: SaorReleaseConfig | None = None,
+    record_ready_lifecycle_events: bool = False,
 ) -> RaySharedCreditClient:
     if not name:
         raise ValueError("shared credit actor name must be non-empty")
@@ -149,15 +155,12 @@ def get_or_create_shared_credit_client(
         get_if_exists=True,
         num_cpus=0,
     )
-    actor = (
-        actor_builder.remote(capacities, quantum, policy)
-        if saor_release_config is None
-        else actor_builder.remote(
-            capacities,
-            quantum,
-            policy,
-            saor_release_config,
-        )
+    actor = actor_builder.remote(
+        capacities,
+        quantum,
+        policy,
+        saor_release_config,
+        record_ready_lifecycle_events,
     )
     configured = tuple(ray_module.get(actor.configuration.remote()))
     if len(configured) == 3:
@@ -170,12 +173,22 @@ def get_or_create_shared_credit_client(
             configured_policy,
         ) = configured
         configured_saor_release = None
+        configured_ready_lifecycle = False
     elif len(configured) == 4:
         (
             configured_capacities,
             configured_quantum,
             configured_policy,
             configured_saor_release,
+        ) = configured
+        configured_ready_lifecycle = False
+    elif len(configured) == 5:
+        (
+            configured_capacities,
+            configured_quantum,
+            configured_policy,
+            configured_saor_release,
+            configured_ready_lifecycle,
         ) = configured
     else:
         raise ValueError("existing shared credit actor configuration is invalid")
@@ -184,6 +197,7 @@ def get_or_create_shared_credit_client(
         or configured_quantum != quantum
         or configured_policy != policy
         or configured_saor_release != saor_release_config
+        or configured_ready_lifecycle != record_ready_lifecycle_events
     ):
         raise ValueError(
             "existing shared credit actor configuration does not match "

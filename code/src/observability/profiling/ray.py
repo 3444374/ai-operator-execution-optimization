@@ -79,6 +79,16 @@ def _scheduler_metrics(result: SchedulerResult) -> dict:
         ),
         "max_ready_requests_seen": result.max_ready_requests_seen,
         "max_ready_work_seen": result.max_ready_work_seen,
+        "max_ready_payload_bytes_seen": (
+            result.max_ready_payload_bytes_seen
+        ),
+        "ready_requests_transition_samples": (
+            result.ready_requests_transition_samples
+        ),
+        "ready_work_transition_samples": result.ready_work_transition_samples,
+        "ready_payload_bytes_transition_samples": (
+            result.ready_payload_bytes_transition_samples
+        ),
         "bounded_wait_s": result.bounded_wait_s,
         "avg_bounded_wait_s": result.avg_bounded_wait_s,
         "fanin_s": result.fanin_s,
@@ -115,6 +125,10 @@ def _shared_credit_client(
             if config.get("saor_release") is not None
             else None
         ),
+        record_ready_lifecycle_events=(
+            config.get("ready_observation_contract")
+            == "bounded_concrete_pre_registration"
+        ),
     )
 
 
@@ -122,12 +136,18 @@ def _shared_ready_window_limits(
     max_inflight: int,
     endpoint_ids: Sequence[str],
     config: Mapping[str, object] | None,
-) -> tuple[int, int | None]:
+) -> tuple[int, int | None, int | None]:
     """Derive the ready window from the frozen Job K and endpoint W."""
 
-    if not config or config.get("policy") != "saor_bounded_ready":
-        return 1, None
-    return max_inflight, int(config["work_limit"]) * len(endpoint_ids)
+    if not config or config.get("ready_observation_contract") != (
+        "bounded_concrete_pre_registration"
+    ):
+        return 1, None, None
+    return (
+        max_inflight,
+        int(config["work_limit"]) * len(endpoint_ids),
+        int(config["ready_payload_bytes_limit"]),
+    )
 
 
 def _run_static_scheduler(
@@ -150,6 +170,7 @@ def _run_static_scheduler(
     shared_credit_acquire_timeout_s: float | None = None,
     shared_ready_request_limit: int = 1,
     shared_ready_work_limit: int | None = None,
+    shared_ready_payload_bytes_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
     return _run_scheduler(
         ray_module,
@@ -172,6 +193,7 @@ def _run_static_scheduler(
         shared_credit_acquire_timeout_s,
         shared_ready_request_limit,
         shared_ready_work_limit,
+        shared_ready_payload_bytes_limit,
     )
 
 
@@ -196,6 +218,7 @@ def _run_scheduler(
     shared_credit_acquire_timeout_s: float | None = None,
     shared_ready_request_limit: int = 1,
     shared_ready_work_limit: int | None = None,
+    shared_ready_payload_bytes_limit: int | None = None,
 ) -> tuple[list[dict], dict]:
     routing_config = routing_config or {}
     scheduler = SynchronousScheduler(
@@ -217,6 +240,9 @@ def _run_scheduler(
         shared_credit_acquire_timeout_s=shared_credit_acquire_timeout_s,
         shared_ready_request_limit=shared_ready_request_limit,
         shared_ready_work_limit=shared_ready_work_limit,
+        shared_ready_payload_bytes_limit=(
+            shared_ready_payload_bytes_limit
+        ),
         actual_work_extractor=extract_completed_token_work,
     )
     result = scheduler.run(envelopes, topology)
@@ -453,7 +479,11 @@ def submit_with_backpressure(
                 endpoint_ids,
                 shared_credit_config,
             )
-            ready_request_limit, ready_work_limit = (
+            (
+                ready_request_limit,
+                ready_work_limit,
+                ready_payload_bytes_limit,
+            ) = (
                 _shared_ready_window_limits(
                     max_inflight,
                     endpoint_ids,
@@ -504,6 +534,7 @@ def submit_with_backpressure(
                 ),
                 ready_request_limit,
                 ready_work_limit,
+                ready_payload_bytes_limit,
             )
     metrics.update(
         {
@@ -790,7 +821,11 @@ def submit_ray_tasks(
         endpoint_ids,
         shared_credit_config,
     )
-    ready_request_limit, ready_work_limit = _shared_ready_window_limits(
+    (
+        ready_request_limit,
+        ready_work_limit,
+        ready_payload_bytes_limit,
+    ) = _shared_ready_window_limits(
         max_inflight,
         endpoint_ids,
         shared_credit_config,
@@ -839,6 +874,7 @@ def submit_ray_tasks(
         ),
         ready_request_limit,
         ready_work_limit,
+        ready_payload_bytes_limit,
     )
 
 

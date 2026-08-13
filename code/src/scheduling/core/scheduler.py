@@ -121,6 +121,10 @@ class SchedulerResult:
     max_active_work_per_endpoint_seen: int = 0
     max_ready_requests_seen: int = 0
     max_ready_work_seen: int = 0
+    max_ready_payload_bytes_seen: int = 0
+    ready_requests_transition_samples: tuple[int, ...] = ()
+    ready_work_transition_samples: tuple[int, ...] = ()
+    ready_payload_bytes_transition_samples: tuple[int, ...] = ()
     submission_events: tuple[SubmissionLifecycleEvent, ...] = ()
 
 
@@ -210,6 +214,7 @@ class SynchronousScheduler:
         shared_credit_acquire_timeout_s: float | None = None,
         shared_ready_request_limit: int = 1,
         shared_ready_work_limit: int | None = None,
+        shared_ready_payload_bytes_limit: int | None = None,
         job_weight: int = 1,
         job_priority: int = 0,
         job_slo_target_s: float | None = None,
@@ -240,6 +245,14 @@ class SynchronousScheduler:
         if shared_ready_request_limit > 1 and shared_ready_work_limit is None:
             raise ValueError(
                 "a multi-candidate ready window requires a work limit"
+            )
+        if shared_ready_payload_bytes_limit is not None and (
+            not isinstance(shared_ready_payload_bytes_limit, int)
+            or isinstance(shared_ready_payload_bytes_limit, bool)
+            or shared_ready_payload_bytes_limit <= 0
+        ):
+            raise ValueError(
+                "shared_ready_payload_bytes_limit must be positive"
             )
         if shared_credit_acquire_timeout_s is not None and (
             not isinstance(shared_credit_acquire_timeout_s, (int, float))
@@ -286,6 +299,9 @@ class SynchronousScheduler:
         self.shared_credit_acquire_timeout_s = shared_credit_acquire_timeout_s
         self.shared_ready_request_limit = shared_ready_request_limit
         self.shared_ready_work_limit = shared_ready_work_limit
+        self.shared_ready_payload_bytes_limit = (
+            shared_ready_payload_bytes_limit
+        )
         self.job_weight = job_weight
         self.job_priority = job_priority
         self.job_slo_target_s = job_slo_target_s
@@ -538,12 +554,17 @@ class SynchronousScheduler:
         ready = BoundedReadyWindow(
             request_limit=self.shared_ready_request_limit,
             work_limit=self.shared_ready_work_limit,
+            payload_bytes_limit=self.shared_ready_payload_bytes_limit,
         )
         deferred_envelope: PayloadEnvelope | None = None
         source_exhausted = False
         shared_credit_jobs: set[str] = set()
         max_ready_requests_seen = 0
         max_ready_work_seen = 0
+        max_ready_payload_bytes_seen = 0
+        ready_requests_transition_samples = [0]
+        ready_work_transition_samples = [0]
+        ready_payload_bytes_transition_samples = [0]
         max_inflight_seen = 0
         max_active_work_per_endpoint_seen = 0
         bounded_wait_samples: list[float] = []
@@ -583,7 +604,13 @@ class SynchronousScheduler:
                         1,
                         envelope.request.estimated_work_units,
                     )
-                    if not ready.can_accept(request_work):
+                    request_payload_bytes = (
+                        envelope.request.estimated_payload_bytes
+                    )
+                    if not ready.can_accept(
+                        request_work,
+                        request_payload_bytes,
+                    ):
                         break
 
                     ready_epoch_s = self.epoch_clock()
@@ -606,6 +633,15 @@ class SynchronousScheduler:
                     max_ready_work_seen = max(
                         max_ready_work_seen,
                         ready.work,
+                    )
+                    max_ready_payload_bytes_seen = max(
+                        max_ready_payload_bytes_seen,
+                        ready.payload_bytes,
+                    )
+                    ready_requests_transition_samples.append(len(ready))
+                    ready_work_transition_samples.append(ready.work)
+                    ready_payload_bytes_transition_samples.append(
+                        ready.payload_bytes
                     )
 
                 now_monotonic_s = time.monotonic()
@@ -668,6 +704,11 @@ class SynchronousScheduler:
                         submit_epoch_s=self.epoch_clock(),
                     )
                     ready.remove(candidate)
+                    ready_requests_transition_samples.append(len(ready))
+                    ready_work_transition_samples.append(ready.work)
+                    ready_payload_bytes_transition_samples.append(
+                        ready.payload_bytes
+                    )
                     made_progress = True
                     max_inflight_seen = max(
                         max_inflight_seen,
@@ -733,6 +774,16 @@ class SynchronousScheduler:
             ),
             max_ready_requests_seen=max_ready_requests_seen,
             max_ready_work_seen=max_ready_work_seen,
+            max_ready_payload_bytes_seen=max_ready_payload_bytes_seen,
+            ready_requests_transition_samples=tuple(
+                ready_requests_transition_samples
+            ),
+            ready_work_transition_samples=tuple(
+                ready_work_transition_samples
+            ),
+            ready_payload_bytes_transition_samples=tuple(
+                ready_payload_bytes_transition_samples
+            ),
         )
 
     def _register_ready_candidate(

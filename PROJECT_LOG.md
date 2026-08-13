@@ -6436,3 +6436,16 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   request/work/bytes 上限；若简单 internal control 已在同一 Pareto 前沿，则淘汰复杂 selector。
 - 本次只修正 baseline 身份、报告分层与下一步合同，不改变 2026-08-13 development 数据、门禁
   判决或代码。正式报告须把 native system comparison 与 Project mechanism ablation 分表呈现。
+## 2026-08-13：bounded-ready 观测面与 selector 解耦进入可执行内部归因门
+
+- 代码将 bounded concrete-ready observation 从 `saor_bounded_ready` selector 身份中解耦：
+  Project FIFO、DRR、external VTC-style、strict-priority 与 proposed 可显式共享同一
+  request/work/logical-payload-bytes 窗口；原生系统路径和 project frozen-static 不接入。
+- coordinator 仅在该 observation contract 开启时记录 selector-neutral register/grant 无损
+  生命周期，runner 对所有 Job 做 request-ID/epoch join；SAOR hold/debt 机制证据仍独立审计。
+- 新增 `deploy/autodl/saor_matched_ready_selector_ablation.example.json` 和
+  `matched_ready_selector_ablation` 静态 readiness profile，冻结六臂 Project internal
+  attribution rehearsal；不注册 formal、不改变既有原生 baseline 身份。
+- ready buffer 新增 logical Arrow bytes 硬上限和 request/work/bytes transition
+  mean/P95/max；组资源证据新增 host CPU/memory 分布。logical bytes 不等同物理 RSS，
+  host 指标也不冒充 coordinator process attribution。

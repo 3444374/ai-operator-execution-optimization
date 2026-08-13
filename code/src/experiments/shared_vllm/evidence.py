@@ -327,6 +327,27 @@ def _validate_job_evidence(
         "max_ready_work_seen": int(
             summary.get("max_ready_work_seen", "0") or 0
         ),
+        "max_ready_payload_bytes_seen": int(
+            summary.get("max_ready_payload_bytes_seen", "0") or 0
+        ),
+        "ready_requests_transition_mean": float(
+            summary.get("ready_requests_transition_mean", "0") or 0
+        ),
+        "ready_requests_transition_p95": float(
+            summary.get("ready_requests_transition_p95", "0") or 0
+        ),
+        "ready_work_transition_mean": float(
+            summary.get("ready_work_transition_mean", "0") or 0
+        ),
+        "ready_work_transition_p95": float(
+            summary.get("ready_work_transition_p95", "0") or 0
+        ),
+        "ready_payload_bytes_transition_mean": float(
+            summary.get("ready_payload_bytes_transition_mean", "0") or 0
+        ),
+        "ready_payload_bytes_transition_p95": float(
+            summary.get("ready_payload_bytes_transition_p95", "0") or 0
+        ),
     }
 
 def _sum_semicolon_integers(value: object) -> int:
@@ -566,6 +587,9 @@ def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
         "service_metadata": dict(config.service_metadata),
         "fail_closed_rehearsal": config.fail_closed_rehearsal,
         "ready_observation_contract": config.ready_observation_contract,
+        "ready_payload_bytes_limit_per_job": (
+            config.ready_payload_bytes_limit_per_job
+        ),
         "calibration_contract": (
             {
                 "path": config.calibration_contract.path,

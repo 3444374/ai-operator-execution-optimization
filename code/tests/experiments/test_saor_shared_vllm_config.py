@@ -34,6 +34,7 @@ class SaorSharedVllmConfigTest(unittest.TestCase):
         payload["ready_observation_contract"] = (
             "bounded_concrete_pre_registration"
         )
+        payload["ready_payload_bytes_limit_per_job"] = 1048576
         with patch.object(Path, "read_text", return_value=json.dumps(payload)):
             config = load_config(Path("bounded-ready.json"))
         scenario = config.scenarios[0]
@@ -61,6 +62,59 @@ class SaorSharedVllmConfigTest(unittest.TestCase):
         self.assertEqual(
             self._flag(command, "--shared-credit-policy"),
             "saor_bounded_ready",
+        )
+        self.assertEqual(
+            self._flag(command, "--shared-ready-observation-contract"),
+            "bounded_concrete_pre_registration",
+        )
+
+    def test_matched_ready_observation_is_independent_of_selector(self) -> None:
+        payload = self._bounded_priority_payload()
+        payload["ready_observation_contract"] = (
+            "bounded_concrete_pre_registration"
+        )
+        payload["ready_payload_bytes_limit_per_job"] = 1048576
+        payload["scenarios"] = [
+            {
+                "scenario_id": "fifo",
+                "policy": "shared_fifo",
+                "ready_observation_contract": (
+                    "bounded_concrete_pre_registration"
+                ),
+                "job_count": 2,
+                "rows_per_job": 1,
+                "arrival_offsets_s": [0.0, 5.0],
+            }
+        ]
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            config = load_config(Path("matched-ready.json"))
+        command = build_job_command(
+            RunnerOptions(
+                config_path=Path("matched-ready.json"),
+                profiler_path=Path("profile.py"),
+                python_executable=Path("python"),
+                output_dir=Path("out"),
+                health_url="http://127.0.0.1/health",
+                metrics_urls=("http://127.0.0.1/metrics",),
+                ray_address="local",
+                idle_timeout_s=1.0,
+            ),
+            config,
+            config.scenarios[0],
+            GroupRunIdentity("rehearsal", 0, 0),
+            job_index=0,
+            start_epoch_s=1.0,
+            coordinator_name="matched-ready",
+        )
+
+        self.assertEqual(self._flag(command, "--shared-credit-policy"), "fifo")
+        self.assertEqual(
+            self._flag(command, "--shared-ready-observation-contract"),
+            "bounded_concrete_pre_registration",
+        )
+        self.assertEqual(
+            self._flag(command, "--shared-ready-payload-bytes-limit"),
+            "1048576",
         )
 
     def test_bounded_priority_uses_explicit_per_job_contract(self) -> None:

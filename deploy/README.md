@@ -49,6 +49,14 @@ ready-set observation 修订使用独立模板
 预注册；旧模板不改写。先用 `--profile bounded_ready_development` 做静态预检，且只允许
 development rehearsal，不启动 formal。
 
+matched-observation 归因使用
+`autodl/saor_matched_ready_selector_ablation.example.json`。它只包含项目
+frozen-static reference，以及共享同一 bounded-ready request/work/logical-bytes
+合同的 FIFO、DRR、VTC-style、strict-priority 和 guarded-debt selector；后五者全部是
+project internal controls/ablations，不是 Daft、Ray Data、vLLM 或数据库产品原生 baseline。
+先用 `--profile matched_ready_selector_ablation` 做静态预检，再最多运行两个全新
+development rehearsal root；禁止直接启动 formal。
+
 ## 与其他目录的关系
 
 - 实验脚本：`motivation/benchmarks/`、`code/scripts/`

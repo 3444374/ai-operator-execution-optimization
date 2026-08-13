@@ -1350,6 +1350,10 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "max_active_work_per_endpoint_seen",
                 "max_ready_requests_seen",
                 "max_ready_work_seen",
+                "max_ready_payload_bytes_seen",
+                "ready_requests_transition_samples",
+                "ready_work_transition_samples",
+                "ready_payload_bytes_transition_samples",
                 "bounded_wait_s",
                 "avg_bounded_wait_s",
                 "fanin_s",
@@ -1370,9 +1374,16 @@ class SchedulingProfileHelperTests(unittest.TestCase):
             profile_ray._shared_ready_window_limits(
                 256,
                 ["endpoint-0", "endpoint-1"],
-                {"policy": "saor_bounded_ready", "work_limit": 65536},
+                {
+                    "policy": "fifo",
+                    "work_limit": 65536,
+                    "ready_observation_contract": (
+                        "bounded_concrete_pre_registration"
+                    ),
+                    "ready_payload_bytes_limit": 1048576,
+                },
             ),
-            (256, 131072),
+            (256, 131072, 1048576),
         )
         self.assertEqual(
             profile_ray._shared_ready_window_limits(
@@ -1380,7 +1391,7 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 ["endpoint-0", "endpoint-1"],
                 {"policy": "saor_bounded_priority", "work_limit": 65536},
             ),
-            (1, None),
+            (1, None, None),
         )
 
     def test_service_metrics_snapshot_maps_available_vllm_gauges(self) -> None:

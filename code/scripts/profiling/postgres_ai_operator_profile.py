@@ -251,11 +251,17 @@ def _merge_submit_metrics(
     aggregate: dict,
     addition: Mapping[str, object],
 ) -> None:
+    sample_fields = {
+        "ready_requests_transition_samples",
+        "ready_work_transition_samples",
+        "ready_payload_bytes_transition_samples",
+    }
     maximum_fields = {
         "max_inflight",
         "max_active_work_per_endpoint_seen",
         "max_ready_requests_seen",
         "max_ready_work_seen",
+        "max_ready_payload_bytes_seen",
         "adaptive_limit_mean",
         "endpoint_count",
         "actor_worker_count",
@@ -266,6 +272,8 @@ def _merge_submit_metrics(
                 str(aggregate[key]),
                 str(addition.get(key, "")),
             )
+        elif key in sample_fields:
+            aggregate[key].extend(addition.get(key, ()))
         elif key in maximum_fields:
             aggregate[key] = max(aggregate[key], addition.get(key, 0))
         else:
@@ -1675,6 +1683,12 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ),
             "acquire_timeout_s": request_timeout_s,
             "policy": args.shared_credit_policy,
+            "ready_observation_contract": (
+                args.shared_ready_observation_contract
+            ),
+            "ready_payload_bytes_limit": (
+                args.shared_ready_payload_bytes_limit
+            ),
             "saor_release": (
                 {
                     "entitlement_weight": args.saor_entitlement_weight,
@@ -1853,6 +1867,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "max_active_work_per_endpoint_seen": 0,
             "max_ready_requests_seen": 0,
             "max_ready_work_seen": 0,
+            "max_ready_payload_bytes_seen": 0,
+            "ready_requests_transition_samples": [],
+            "ready_work_transition_samples": [],
+            "ready_payload_bytes_transition_samples": [],
             "shared_credit_coordinator_name": (
                 args.shared_credit_coordinator_name
             ),
@@ -1874,6 +1892,16 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
                 args.shared_credit_policy
                 if args.shared_credit_coordinator_name
                 else ""
+            ),
+            "shared_ready_observation_contract": (
+                args.shared_ready_observation_contract
+                if args.shared_credit_coordinator_name
+                else ""
+            ),
+            "shared_ready_payload_bytes_limit": (
+                args.shared_ready_payload_bytes_limit
+                if args.shared_credit_coordinator_name
+                else 0
             ),
             "saor_entitlement_weight": (
                 args.saor_entitlement_weight
@@ -2249,6 +2277,10 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             "max_active_work_per_endpoint_seen": 0,
             "max_ready_requests_seen": 0,
             "max_ready_work_seen": 0,
+            "max_ready_payload_bytes_seen": 0,
+            "ready_requests_transition_samples": [],
+            "ready_work_transition_samples": [],
+            "ready_payload_bytes_transition_samples": [],
         }
 
         operator_wall_s = 0.0
@@ -3106,6 +3138,44 @@ def run_once(args: argparse.Namespace, phase: str, repeat_index: int) -> dict:
             ),
             "max_ready_work_seen": int(
                 submit_metrics["max_ready_work_seen"]
+            ),
+            "max_ready_payload_bytes_seen": int(
+                submit_metrics["max_ready_payload_bytes_seen"]
+            ),
+            "ready_requests_transition_mean": (
+                statistics.mean(
+                    submit_metrics["ready_requests_transition_samples"]
+                )
+                if submit_metrics["ready_requests_transition_samples"]
+                else 0.0
+            ),
+            "ready_requests_transition_p95": percentile(
+                submit_metrics["ready_requests_transition_samples"], 95
+            ),
+            "ready_work_transition_mean": (
+                statistics.mean(
+                    submit_metrics["ready_work_transition_samples"]
+                )
+                if submit_metrics["ready_work_transition_samples"]
+                else 0.0
+            ),
+            "ready_work_transition_p95": percentile(
+                submit_metrics["ready_work_transition_samples"], 95
+            ),
+            "ready_payload_bytes_transition_mean": (
+                statistics.mean(
+                    submit_metrics[
+                        "ready_payload_bytes_transition_samples"
+                    ]
+                )
+                if submit_metrics[
+                    "ready_payload_bytes_transition_samples"
+                ]
+                else 0.0
+            ),
+            "ready_payload_bytes_transition_p95": percentile(
+                submit_metrics["ready_payload_bytes_transition_samples"],
+                95,
             ),
             "shared_credit_coordinator_name": (
                 args.shared_credit_coordinator_name

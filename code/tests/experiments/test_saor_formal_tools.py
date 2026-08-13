@@ -46,9 +46,30 @@ BOUNDED_SUMMARY = _load(
     "summarize_saor_bounded_priority_gate",
     "code/scripts/analysis/summarize_saor_bounded_priority_gate.py",
 )
+MATCHED_READY_SUMMARY = _load(
+    "summarize_saor_matched_ready_ablation",
+    "code/scripts/analysis/summarize_saor_matched_ready_ablation.py",
+)
 
 
 class SaorFormalToolsTests(unittest.TestCase):
+    def test_matched_ready_summary_preserves_internal_ablation_identity(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            matrix = root / "round-1"
+            self._write_matched_ready_matrix(matrix)
+
+            result = MATCHED_READY_SUMMARY.summarize(
+                (matrix,), root / "summary"
+            )
+
+            self.assertEqual(result["status"], "passed")
+            self.assertEqual(result["native_baseline_count"], 0)
+            self.assertFalse(result["selector_victory_decided"])
+            self.assertFalse(result["formal_authorized"])
+
     def test_bounded_gate_uses_lossless_events_not_sampled_snapshots(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -505,6 +526,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                 "SAOR_ARRIVAL_TIME_SCALE": "0.001",
                 "SAOR_MAX_EFFECTIVE_MANIFEST_SPAN_S": "120",
                 "SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES": "0.0001",
+                "SAOR_READY_PAYLOAD_BYTES_LIMIT_PER_JOB": "67108864",
                 "SAOR_BULK_MANIFEST": str(bulk),
                 "SAOR_FOREGROUND_MANIFEST": str(foreground),
             }
@@ -528,6 +550,11 @@ class SaorFormalToolsTests(unittest.TestCase):
                     / "deploy/autodl/saor_bounded_ready.example.json",
                     profile="bounded_ready_development",
                 )
+                matched_ready_result = AUDIT.audit(
+                    REPOSITORY
+                    / "deploy/autodl/saor_matched_ready_selector_ablation.example.json",
+                    profile="matched_ready_selector_ablation",
+                )
             environment["SAOR_MIN_PRE_FOREGROUND_WORK_ENVELOPES"] = "1"
             with patch.dict(os.environ, environment, clear=True):
                 insufficient_supply = AUDIT.audit(
@@ -543,6 +570,8 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(bounded_result["scenario_count"], 4)
         self.assertEqual(bounded_ready_result["status"], "passed")
         self.assertEqual(bounded_ready_result["scenario_count"], 4)
+        self.assertEqual(matched_ready_result["status"], "passed")
+        self.assertEqual(matched_ready_result["scenario_count"], 6)
         self.assertIsNone(priority_result["direct_contract"])
         self.assertEqual(result["direct_contract"]["protocol"], "completions")
         self.assertEqual(result["direct_contract"]["prompt_format"], "raw")
@@ -860,6 +889,76 @@ class SaorFormalToolsTests(unittest.TestCase):
                     }
                 )
         return rows
+
+    @staticmethod
+    def _write_matched_ready_matrix(root: Path) -> None:
+        root.mkdir(parents=True)
+        (root / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "status": "completed",
+                    "execution_mode": "rehearsal",
+                    "incidents": [],
+                    "config_fingerprint": "same-config",
+                    "repository_commit": "same-commit",
+                    "redacted_config": {
+                        "service_metadata": {
+                            "vllm_version": "test",
+                            "scheduling_policy": "fcfs",
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        scenarios = tuple(MATCHED_READY_SUMMARY.EXPECTED.items())
+        rows = []
+        for scenario_id, (policy, identity, observation) in scenarios:
+            bounded = observation == "bounded_concrete_pre_registration"
+            proposed = policy == "saor_bounded_ready"
+            rows.append(
+                {
+                    "scenario_id": scenario_id,
+                    "policy": policy,
+                    "experiment_identity": identity,
+                    "ready_observation_contract": observation,
+                    "phase": "warmup",
+                    "execution_mode": "rehearsal",
+                    "incidents": 0,
+                    "actor_worker_failures": 0,
+                    "metrics_status": "ok",
+                    "resource_metrics_status": "ok",
+                    "active_set_lifecycle_passed": True,
+                    "job_arrived_rows": "[512, 512]",
+                    "job_completed_rows": "[512, 512]",
+                    "job_failed_rows": "[0, 0]",
+                    "job_p99_s": "[60, 20]",
+                    "job_slo_violation_ratio": "[0.6, 0]",
+                    "job_jct_s": "[70, 30]",
+                    "tokens_per_s": 10000,
+                    "jain_fairness": 0.9,
+                    "bounded_ready_event_status": (
+                        "ok:actor_event_join" if bounded else "not_applicable"
+                    ),
+                    "bounded_ready_lifecycle_complete": bounded,
+                    "bounded_ready_jobs_with_intervals": 2 if bounded else 0,
+                    "bounded_ready_intervals": 1024 if bounded else 0,
+                    "bounded_ready_max_ready_requests_seen": 128 if bounded else 0,
+                    "bounded_ready_max_ready_work_seen": 65536 if bounded else 0,
+                    "bounded_ready_max_ready_payload_bytes_seen": 1024 if bounded else 0,
+                    "bounded_ready_foreign_fallback_events": 0,
+                    "bounded_saor_event_status": (
+                        "ok:lossless_ledger" if proposed else "unavailable"
+                    ),
+                    "bounded_saor_event_sequence_complete": proposed,
+                    "bounded_saor_slo_priority_grants": 1 if proposed else 0,
+                    "bounded_saor_debt_recovery_grants": 1 if proposed else 0,
+                    "bounded_saor_avoidable_idle_events": 0,
+                    "bounded_saor_foreign_grant_over_debt_critical_events": 0,
+                    "bounded_saor_recovery_inflight_max": 1 if proposed else 0,
+                }
+            )
+        SaorFormalToolsTests._write_group_rows(root / "group_runs.csv", rows)
 
     @staticmethod
     def _write_bounded_matrix(

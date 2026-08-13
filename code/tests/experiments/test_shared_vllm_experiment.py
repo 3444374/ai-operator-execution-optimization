@@ -140,6 +140,9 @@ class SharedVllmExperimentTests(unittest.TestCase):
             slo_targets_s=(None, 30.0),
             priority_windows_s=(None, 30.0),
             debt_cap_fractions=(0.125, None),
+            ready_observation_contract=(
+                "bounded_concrete_pre_registration"
+            ),
         )
         record = {
             "execution_mode": "rehearsal",
@@ -157,6 +160,11 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "bounded_saor_recovery_inflight_max": 1,
             "bounded_ready_event_status": "ok:actor_event_join",
             "bounded_ready_lifecycle_complete": True,
+            "bounded_ready_intervals": 2,
+            "bounded_ready_jobs_with_intervals": 2,
+            "bounded_ready_max_ready_requests_seen": 2,
+            "bounded_ready_max_ready_work_seen": 100,
+            "bounded_ready_max_ready_payload_bytes_seen": 200,
             "bounded_ready_foreground_intervals": 1,
             "bounded_ready_foreign_fallback_events": 0,
             "bounded_ready_foreground_max_ready_requests_seen": 2,
@@ -168,6 +176,47 @@ class SharedVllmExperimentTests(unittest.TestCase):
             _validate_rehearsal_record(
                 scenario,
                 {**record, "bounded_ready_foreign_fallback_events": 1},
+            )
+
+    def test_matched_fifo_requires_ready_lifecycle_not_saor_mechanism(self) -> None:
+        scenario = SharedVllmScenario(
+            scenario_id="active_set_shared_fifo_matched_ready",
+            policy="shared_fifo",
+            job_count=2,
+            rows_per_job=1,
+            weights=(1, 1),
+            arrival_offsets_s=(0.0, 5.0),
+        )
+        record = {
+            "execution_mode": "rehearsal",
+            "metrics_status": "ok",
+            "resource_metrics_status": "ok",
+            "incidents": 0,
+            "actor_worker_failures": 0,
+            "active_set_lifecycle_passed": True,
+            "active_set_mechanism_applicable": True,
+            "active_set_mechanism_passed": True,
+            "bounded_ready_event_status": "ok:actor_event_join",
+            "bounded_ready_lifecycle_complete": True,
+            "bounded_ready_intervals": 2,
+            "bounded_ready_jobs_with_intervals": 2,
+            "bounded_ready_max_ready_requests_seen": 2,
+            "bounded_ready_max_ready_work_seen": 100,
+            "bounded_ready_max_ready_payload_bytes_seen": 200,
+        }
+
+        _validate_rehearsal_record(
+            scenario,
+            record,
+            ready_observation_contract="bounded_concrete_pre_registration",
+        )
+        with self.assertRaisesRegex(RuntimeError, "observation gate"):
+            _validate_rehearsal_record(
+                scenario,
+                {**record, "bounded_ready_jobs_with_intervals": 1},
+                ready_observation_contract=(
+                    "bounded_concrete_pre_registration"
+                ),
             )
 
     def test_rehearsal_runs_one_nonformal_cell_per_scenario(self) -> None:
@@ -1036,6 +1085,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             },
             quantum=2048,
             policy="drr",
+            record_ready_lifecycle_events=False,
         )
         self.assertEqual(
             [call.args for call in client.snapshot.call_args_list],
@@ -1083,12 +1133,27 @@ class SharedVllmExperimentTests(unittest.TestCase):
 
     def test_bounded_ready_join_rejects_foreign_fallback(self) -> None:
         job_evidence = [
-            {"runtime_job_id": "bulk", "ready_lifecycle_rows": []},
+            {
+                "runtime_job_id": "bulk",
+                "ready_lifecycle_complete": True,
+                "max_ready_requests_seen": 1,
+                "max_ready_work_seen": 10,
+                "max_ready_payload_bytes_seen": 20,
+                "ready_lifecycle_rows": [
+                    {
+                        "request_id": "bulk-r0",
+                        "endpoint_id": "task-0",
+                        "registered_epoch_s": 99.0,
+                        "granted_epoch_s": 101.0,
+                    }
+                ],
+            },
             {
                 "runtime_job_id": "foreground",
                 "ready_lifecycle_complete": True,
                 "max_ready_requests_seen": 2,
                 "max_ready_work_seen": 100,
+                "max_ready_payload_bytes_seen": 200,
                 "ready_lifecycle_rows": [
                     {
                         "request_id": "foreground-r0",
@@ -1104,6 +1169,15 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "action": "register",
                 "tier": "ready_registration",
                 "event_seq": 1,
+                "event_epoch_s": 99.0,
+                "endpoint_id": "task-0",
+                "selected_job_id": "bulk",
+                "selected_request_id": "bulk-r0",
+            },
+            {
+                "action": "register",
+                "tier": "ready_registration",
+                "event_seq": 2,
                 "event_epoch_s": 100.0,
                 "endpoint_id": "task-0",
                 "selected_job_id": "foreground",
@@ -1112,7 +1186,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             {
                 "action": "grant",
                 "tier": "saor_fallback",
-                "event_seq": 2,
+                "event_seq": 3,
                 "event_epoch_s": 101.0,
                 "endpoint_id": "task-0",
                 "selected_job_id": "bulk",
@@ -1121,7 +1195,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             {
                 "action": "grant",
                 "tier": "slo_priority",
-                "event_seq": 3,
+                "event_seq": 4,
                 "event_epoch_s": 102.0,
                 "endpoint_id": "task-0",
                 "selected_job_id": "foreground",
@@ -1144,6 +1218,40 @@ class SharedVllmExperimentTests(unittest.TestCase):
             summary["bounded_ready_foreground_max_ready_requests_seen"],
             2,
         )
+
+    def test_bounded_ready_join_requires_every_job_lifecycle(self) -> None:
+        evidence = [
+            {
+                "runtime_job_id": "bulk",
+                "ready_lifecycle_complete": True,
+                "max_ready_requests_seen": 2,
+                "max_ready_work_seen": 20,
+                "max_ready_payload_bytes_seen": 40,
+                "ready_lifecycle_rows": [
+                    {
+                        "request_id": "bulk-r0",
+                        "endpoint_id": "task-0",
+                        "registered_epoch_s": 100.0,
+                        "granted_epoch_s": 101.0,
+                    }
+                ],
+            },
+            {
+                "runtime_job_id": "foreground",
+                "ready_lifecycle_complete": False,
+                "max_ready_requests_seen": 0,
+                "max_ready_work_seen": 0,
+                "max_ready_payload_bytes_seen": 0,
+                "ready_lifecycle_rows": [],
+            },
+        ]
+
+        summary = shared_vllm.bounded_ready_event_summary(
+            [], evidence, foreground_job_index=1
+        )
+
+        self.assertFalse(summary["bounded_ready_lifecycle_complete"])
+        self.assertEqual(summary["bounded_ready_jobs_with_intervals"], 1)
 
     def test_request_trace_success_matches_profiler_schema(self) -> None:
         self.assertTrue(
@@ -2005,6 +2113,10 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "waiting": waiting,
                 "kv_usage": kv,
                 "gpu_utilization_pct": gpu,
+                "host_cpu_busy_cores": float(gpu) / 10,
+                "host_cpu_per_core_max_pct": gpu,
+                "host_memory_used_pct": 25 + epoch,
+                "host_memory_available_mib": 1000 - 100 * epoch,
             }
             for epoch, gpu, values in (
                 (1.0, "50", ((2, 1, 0.2), (3, 0, 0.3))),
@@ -2024,6 +2136,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
         self.assertEqual(summary["vllm_running_mean"], 7.0)
         self.assertEqual(summary["vllm_running_max"], 9.0)
         self.assertEqual(summary["vllm_waiting_max"], 2.0)
+        self.assertEqual(summary["host_cpu_busy_cores_mean"], 7.5)
+        self.assertEqual(summary["host_memory_available_mib_max"], 900.0)
 
     def test_job_evidence_reports_nearest_rank_p99(self) -> None:
         options = RunnerOptions(

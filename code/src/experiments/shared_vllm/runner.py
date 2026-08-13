@@ -137,6 +137,8 @@ def _text_state_calibration_signature(config: SharedVllmConfig) -> str:
 def _validate_rehearsal_record(
     scenario: SharedVllmScenario,
     record: dict[str, object],
+    *,
+    ready_observation_contract: str | None = None,
 ) -> None:
     """Fail closed on evidence gates before a formal matrix is allowed."""
 
@@ -182,25 +184,34 @@ def _validate_rehearsal_record(
             or int(record.get("bounded_saor_recovery_inflight_max", 2)) > 1
         ):
             raise RuntimeError("rehearsal bounded-SAOR mechanism gate failed")
-        if scenario.policy == "saor_bounded_ready" and (
+    observation_contract = (
+        scenario.ready_observation_contract
+        if ready_observation_contract is None
+        else ready_observation_contract
+    )
+    if observation_contract == "bounded_concrete_pre_registration":
+        if (
             record.get("bounded_ready_event_status") != "ok:actor_event_join"
             or record.get("bounded_ready_lifecycle_complete") is not True
-            or int(record.get("bounded_ready_foreground_intervals", 0)) < 1
+            or int(record.get("bounded_ready_intervals", 0))
+            < scenario.job_count
+            or int(record.get("bounded_ready_jobs_with_intervals", 0))
+            != scenario.job_count
+            or int(record.get("bounded_ready_max_ready_requests_seen", 0)) < 2
+            or int(record.get("bounded_ready_max_ready_work_seen", 0)) <= 0
             or int(
-                record.get(
-                    "bounded_ready_foreground_max_ready_requests_seen",
-                    0,
-                )
-            )
-            < 2
-            or int(
-                record.get("bounded_ready_foreground_max_ready_work_seen", 0)
+                record.get("bounded_ready_max_ready_payload_bytes_seen", 0)
             )
             <= 0
-            or int(record.get("bounded_ready_foreign_fallback_events", -1))
+        ):
+            raise RuntimeError("rehearsal bounded-ready observation gate failed")
+        if (
+            scenario.policy == "saor_bounded_ready"
+            and int(record.get("bounded_ready_foreign_fallback_events", -1))
             != 0
         ):
             raise RuntimeError("rehearsal bounded-ready observation gate failed")
+    if scenario.policy in {"saor_bounded_priority", "saor_bounded_ready"}:
         return
     mechanism_applicable = record.get("active_set_mechanism_applicable") is True
     if scenario.policy in _REHEARSAL_CREDIT_POLICIES:
@@ -552,7 +563,13 @@ def _run_locked(
                     idle_gate=idle_gate,
                 )
             if options.rehearsal and config.fail_closed_rehearsal:
-                _validate_rehearsal_record(scenario, record)
+                _validate_rehearsal_record(
+                    scenario,
+                    record,
+                    ready_observation_contract=(
+                        scenario.ready_observation_contract
+                    ),
+                )
         except Exception as exc:
             manifest["incidents"].append(
                 {
@@ -736,6 +753,10 @@ def _run_group(
                     and config.saor_release_control is not None
                     else None
                 ),
+                record_ready_lifecycle_events=(
+                    scenario.ready_observation_contract
+                    == "bounded_concrete_pre_registration"
+                ),
             )
         start_epoch_s = time.time() + options.start_delay_s
         commands = (
@@ -835,10 +856,9 @@ def _run_group(
             if observer is not None:
                 credit_batch = observer.sample(group_launch_epoch_s)
                 credit_samples.extend(credit_batch)
-                if scenario.policy in {
-                    "saor_bounded_priority",
-                    "saor_bounded_ready",
-                }:
+                if scenario.ready_observation_contract == (
+                    "bounded_concrete_pre_registration"
+                ) or scenario.policy == "saor_bounded_priority":
                     release_events.extend(
                         observer.drain_release_events(group_launch_epoch_s)
                     )
@@ -903,10 +923,9 @@ def _run_group(
         final_credit = []
         if observer is not None:
             credit_samples.extend(observer.sample(group_launch_epoch_s))
-            if scenario.policy in {
-                "saor_bounded_priority",
-                "saor_bounded_ready",
-            }:
+            if scenario.ready_observation_contract == (
+                "bounded_concrete_pre_registration"
+            ) or scenario.policy == "saor_bounded_priority":
                 release_events.extend(
                     observer.drain_release_events(group_launch_epoch_s)
                 )
@@ -1000,6 +1019,17 @@ def _run_group(
             "repeat_index": identity.repeat_index,
             "order_index": identity.order_index,
             "policy": scenario.policy,
+            "experiment_identity": (
+                "project_internal_selector_ablation"
+                if scenario.ready_observation_contract
+                == "bounded_concrete_pre_registration"
+                else "project_frozen_static_reference"
+                if scenario.policy == "static_partition"
+                else "project_policy"
+            ),
+            "ready_observation_contract": (
+                scenario.ready_observation_contract
+            ),
             "job_count": scenario.job_count,
             "static_partition_count": (
                 scenario.static_partition_count
@@ -1135,10 +1165,22 @@ def _run_group(
                         key=scenario.job_priority,
                     ),
                 )
-                if scenario.policy == "saor_bounded_ready"
+                if scenario.ready_observation_contract
+                == "bounded_concrete_pre_registration"
                 else {
                     "bounded_ready_event_status": "not_applicable",
                     "bounded_ready_lifecycle_complete": False,
+                    "bounded_ready_intervals": 0,
+                    "bounded_ready_jobs_with_intervals": 0,
+                    "bounded_ready_max_ready_requests_seen": 0,
+                    "bounded_ready_max_ready_work_seen": 0,
+                    "bounded_ready_max_ready_payload_bytes_seen": 0,
+                    "bounded_ready_requests_transition_mean_max": 0.0,
+                    "bounded_ready_requests_transition_p95_max": 0.0,
+                    "bounded_ready_work_transition_mean_max": 0.0,
+                    "bounded_ready_work_transition_p95_max": 0.0,
+                    "bounded_ready_payload_bytes_transition_mean_max": 0.0,
+                    "bounded_ready_payload_bytes_transition_p95_max": 0.0,
                     "bounded_ready_foreground_intervals": 0,
                     "bounded_ready_foreign_fallback_events": 0,
                     "bounded_ready_foreground_max_ready_requests_seen": 0,
@@ -1297,10 +1339,9 @@ def _run_group(
                 credit_samples.extend(
                     observer.sample(group_launch_epoch_s)
                 )
-                if scenario.policy in {
-                    "saor_bounded_priority",
-                    "saor_bounded_ready",
-                }:
+                if scenario.ready_observation_contract == (
+                    "bounded_concrete_pre_registration"
+                ) or scenario.policy == "saor_bounded_priority":
                     release_events.extend(
                         observer.drain_release_events(group_launch_epoch_s)
                     )

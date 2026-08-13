@@ -119,6 +119,7 @@ class FairEndpointCreditCoordinator:
         quantum: int,
         policy: str = "drr",
         saor_release_config: SaorReleaseConfig | None = None,
+        record_ready_lifecycle_events: bool = False,
         clock: Callable[[], float] = time.monotonic,
         epoch_clock: Callable[[], float] = time.time,
     ) -> None:
@@ -160,6 +161,9 @@ class FairEndpointCreditCoordinator:
         self._quantum = quantum
         self._policy = policy
         self._saor_release_config = saor_release_config
+        self._record_ready_lifecycle_events = bool(
+            record_ready_lifecycle_events
+        )
         self._clock = clock
         self._epoch_clock = epoch_clock
         self._active: dict[tuple[str, str], CreditLease] = {}
@@ -340,13 +344,20 @@ class FairEndpointCreditCoordinator:
             self._queued_request_keys.add(request_key)
             if self._policy == "fifo":
                 self._fifo_order[endpoint_id].append(request_key)
-            if self._policy == "saor_bounded_ready":
+            if (
+                self._policy == "saor_bounded_ready"
+                or self._record_ready_lifecycle_events
+            ):
                 self._record_release_event(
                     endpoint_id,
                     action="register",
                     tier="ready_registration",
                     lease=lease,
-                    states=self._bounded_saor_states(endpoint_id),
+                    states=(
+                        self._bounded_saor_states(endpoint_id)
+                        if self._policy == "saor_bounded_ready"
+                        else ()
+                    ),
                 )
         self._grant_waiters(endpoint_id)
         return request_key in self._active
@@ -651,26 +662,7 @@ class FairEndpointCreditCoordinator:
             request_key = (lease.job_id, lease.request_id)
             self._queued_request_keys.remove(request_key)
             self._deficits[deficit_key] -= lease.estimated_work
-            self._active[request_key] = lease
-            self._active_requests[endpoint_id] += 1
-            self._active_work[endpoint_id] += lease.estimated_work
-            self._max_active_requests[endpoint_id] = max(
-                self._max_active_requests[endpoint_id],
-                self._active_requests[endpoint_id],
-            )
-            self._max_active_work[endpoint_id] = max(
-                self._max_active_work[endpoint_id],
-                self._active_work[endpoint_id],
-            )
-            granted_requests = self._granted_requests[endpoint_id]
-            granted_requests[lease.job_id] = (
-                granted_requests.get(lease.job_id, 0) + 1
-            )
-            granted_work = self._granted_work[endpoint_id]
-            granted_work[lease.job_id] = (
-                granted_work.get(lease.job_id, 0)
-                + lease.estimated_work
-            )
+            self._activate(endpoint_id, lease)
             visits_without_grant = 0
 
     def _grant_vtc_waiters(self, endpoint_id: str) -> None:
@@ -1209,3 +1201,15 @@ class FairEndpointCreditCoordinator:
         granted_work[lease.job_id] = (
             granted_work.get(lease.job_id, 0) + lease.estimated_work
         )
+        if (
+            self._record_ready_lifecycle_events
+            and self._policy
+            not in {"saor_bounded_priority", "saor_bounded_ready"}
+        ):
+            self._record_release_event(
+                endpoint_id,
+                action="grant",
+                tier=f"selector_grant:{self._policy}",
+                lease=lease,
+                states=(),
+            )

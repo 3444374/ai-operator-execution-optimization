@@ -1232,6 +1232,35 @@ cap，也不得把这个两轮 rehearsal 写成 formal 结果。首次失败 roo
 submission trace 的 ready/registered/granted 必须按 `submission_id` 与 request trace 的 submit
 连接；禁止为方便审计复制或伪造时间列。
 
+selector 归因必须另用项目内部消融模板，不得把原生系统塞入 bounded-ready：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/audit_saor_formal_readiness.py \
+  --profile matched_ready_selector_ablation \
+  --config deploy/autodl/saor_matched_ready_selector_ablation.example.json \
+  --output "$ARTIFACT_ROOT/saor_matched_ready_selector_readiness.json"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_shared_vllm_experiment.py \
+  --rehearsal \
+  --config deploy/autodl/saor_matched_ready_selector_ablation.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_matched_ready_selector_rehearsal_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+```
+
+模板中的 `SAOR_READY_PAYLOAD_BYTES_LIMIT_PER_JOB` 是每 Job logical Arrow payload
+上限，必须由同机 rehearsal/calibration 冻结，不是物理 RSS，也不能写死为跨硬件常数。
+后五个 selector arm 的所有 Job 共用同一 request/work/bytes 窗口；project frozen-static
+保持既有静态路径。它们全部是项目内部 control/ablation，不进入原生 baseline 排名。
+完成一个或两个 root 后，用
+`code/scripts/analysis/summarize_saor_matched_ready_ablation.py` 只做证据完整性汇总；其
+`validation.json` 不授权 formal，也不自动判 selector 胜负。
+
 正式运行优先使用 audit-aware wrapper，避免手工设置上述逐 Job 变量：
 
 ```bash

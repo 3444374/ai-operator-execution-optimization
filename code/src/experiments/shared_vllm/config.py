@@ -71,6 +71,8 @@ _RUNNER_OWNED_FLAGS = {
     "--shared-credit-quantum",
     "--shared-credit-request-limit",
     "--shared-credit-work-limit",
+    "--shared-ready-observation-contract",
+    "--shared-ready-payload-bytes-limit",
     "--saor-entitlement-weight",
     "--saor-fairness-weight",
     "--saor-queue-weight",
@@ -123,6 +125,7 @@ class SharedVllmScenario:
     slo_targets_s: tuple[float | None, ...] = ()
     priority_windows_s: tuple[float | None, ...] = ()
     debt_cap_fractions: tuple[float | None, ...] = ()
+    ready_observation_contract: str = "single_head"
 
     def row_count(self, job_index: int) -> int:
         """Return the immutable request count for one job."""
@@ -231,6 +234,7 @@ class SharedVllmConfig:
     saor_capacity_control: SaorCapacityControlConfig | None = None
     saor_release_control: SaorReleaseControlConfig | None = None
     ready_observation_contract: str = "single_head"
+    ready_payload_bytes_limit_per_job: int = 0
 
 def load_config(path: Path) -> SharedVllmConfig:
     decoded = json.loads(path.read_text(encoding="utf-8"))
@@ -248,6 +252,13 @@ def load_config(path: Path) -> SharedVllmConfig:
         "bounded_concrete_pre_registration",
     }:
         raise ValueError("ready_observation_contract is unsupported")
+    ready_payload_bytes_limit_per_job = _nonnegative_integer(
+        _expand_scalar(
+            decoded.get("ready_payload_bytes_limit_per_job", 0),
+            "ready_payload_bytes_limit_per_job",
+        ),
+        "ready_payload_bytes_limit_per_job",
+    )
     experiment_id = _nonempty_string(
         decoded.get("experiment_id"),
         "experiment_id",
@@ -320,7 +331,12 @@ def load_config(path: Path) -> SharedVllmConfig:
     if not isinstance(scenarios_raw, list) or not scenarios_raw:
         raise ValueError("scenarios must be a non-empty list")
     scenarios = tuple(
-        _load_scenario(item, request_limit, work_limit)
+        _load_scenario(
+            item,
+            request_limit,
+            work_limit,
+            legacy_ready_observation_contract=ready_observation_contract,
+        )
         for item in scenarios_raw
     )
     scenario_ids = [item.scenario_id for item in scenarios]
@@ -419,18 +435,42 @@ def load_config(path: Path) -> SharedVllmConfig:
     )
     if uses_saor_release and saor_release_control is None:
         raise ValueError("saor_release policy requires saor_release_control")
-    uses_bounded_ready = any(
-        scenario.policy == "saor_bounded_ready" for scenario in scenarios
+    bounded_ready_scenarios = tuple(
+        scenario
+        for scenario in scenarios
+        if scenario.ready_observation_contract
+        == "bounded_concrete_pre_registration"
     )
-    if uses_bounded_ready and ready_observation_contract != (
-        "bounded_concrete_pre_registration"
+    if any(
+        scenario.policy == "saor_bounded_ready"
+        and scenario not in bounded_ready_scenarios
+        for scenario in scenarios
     ):
         raise ValueError(
             "saor_bounded_ready requires bounded concrete pre-registration"
         )
-    if not uses_bounded_ready and ready_observation_contract != "single_head":
+    if bounded_ready_scenarios and ready_payload_bytes_limit_per_job <= 0:
         raise ValueError(
-            "bounded concrete pre-registration requires saor_bounded_ready"
+            "bounded concrete pre-registration requires a positive per-Job "
+            "logical payload-byte limit"
+        )
+    shared_policies = {
+        "shared_drr",
+        "shared_fifo",
+        "external_vtc",
+        "saor_release",
+        "saor_bounded_priority",
+        "saor_bounded_ready",
+        "foreground_strict_priority",
+        "state_aware_adaptive",
+        "saor_capacity",
+    }
+    if any(
+        scenario.policy not in shared_policies
+        for scenario in bounded_ready_scenarios
+    ):
+        raise ValueError(
+            "bounded concrete pre-registration requires a shared-credit policy"
         )
     if state_aware_control is not None and (
         state_aware_control.initial_request_limit != request_limit
@@ -474,6 +514,9 @@ def load_config(path: Path) -> SharedVllmConfig:
         saor_capacity_control=saor_capacity_control,
         saor_release_control=saor_release_control,
         ready_observation_contract=ready_observation_contract,
+        ready_payload_bytes_limit_per_job=(
+            ready_payload_bytes_limit_per_job
+        ),
     )
 
 def build_job_command(
@@ -605,8 +648,19 @@ def build_job_command(
                 str(scenario.weights[job_index]),
                 "--shared-credit-job-priority",
                 str(scenario.job_priority(job_index)),
+                "--shared-ready-observation-contract",
+                scenario.ready_observation_contract,
             ]
         )
+        if scenario.ready_observation_contract == (
+            "bounded_concrete_pre_registration"
+        ):
+            command.extend(
+                [
+                    "--shared-ready-payload-bytes-limit",
+                    str(config.ready_payload_bytes_limit_per_job),
+                ]
+            )
         if scenario.policy in {"saor_bounded_priority", "saor_bounded_ready"}:
             slo_target_s = scenario.job_slo_target_s(job_index)
             priority_window_s = scenario.job_priority_window_s(job_index)
@@ -655,6 +709,8 @@ def _load_scenario(
     raw: object,
     request_limit: int,
     work_limit: int,
+    *,
+    legacy_ready_observation_contract: str,
 ) -> SharedVllmScenario:
     if not isinstance(raw, dict):
         raise ValueError("each scenario must be an object")
@@ -664,6 +720,18 @@ def _load_scenario(
     policy = _nonempty_string(raw.get("policy"), "policy")
     if policy not in POLICIES:
         raise ValueError(f"unknown shared-vLLM policy: {policy}")
+    scenario_ready_observation = raw.get("ready_observation_contract")
+    if scenario_ready_observation is None:
+        scenario_ready_observation = (
+            legacy_ready_observation_contract
+            if policy == "saor_bounded_ready"
+            else "single_head"
+        )
+    if scenario_ready_observation not in {
+        "single_head",
+        "bounded_concrete_pre_registration",
+    }:
+        raise ValueError("scenario ready_observation_contract is unsupported")
     job_count = _positive_integer(raw.get("job_count"), "job_count")
     scenario_request_raw = raw.get("request_limit_per_endpoint")
     scenario_work_raw = raw.get("work_limit_per_endpoint")
@@ -845,6 +913,7 @@ def _load_scenario(
         slo_targets_s=slo_targets_s,
         priority_windows_s=priority_windows_s,
         debt_cap_fractions=debt_cap_fractions,
+        ready_observation_contract=scenario_ready_observation,
     )
 
 def _local_limits(

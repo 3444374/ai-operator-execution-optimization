@@ -294,10 +294,21 @@ def bounded_saor_event_summary(
     }
     if not events:
         return base
+    all_events = events
+    bounded_actions = {"hold_start", "hold_end"}
+    bounded_tiers = {"slo_priority", "debt_recovery", "saor_fallback"}
+    mechanism_events = [
+        event
+        for event in events
+        if event.get("action") in bounded_actions
+        or event.get("tier") in bounded_tiers
+    ]
+    if not mechanism_events:
+        return base
     sequences: dict[str, list[int]] = {}
     hold_durations = []
     max_recovery = 0
-    for event in events:
+    for event in all_events:
         endpoint_id = str(event["endpoint_id"])
         sequences.setdefault(endpoint_id, []).append(int(event["event_seq"]))
         raw_recovery = event.get("recovery_inflight_by_job", ())
@@ -309,7 +320,6 @@ def bounded_saor_event_summary(
         sequence == list(range(1, len(sequence) + 1))
         for sequence in sequences.values()
     )
-    tiers = [str(event.get("tier", "")) for event in events]
     base.update(
         {
             "bounded_saor_event_status": (
@@ -318,24 +328,26 @@ def bounded_saor_event_summary(
                 else "invalid:event_sequence_gap_or_duplicate"
             ),
             "bounded_saor_event_sequence_complete": sequence_complete,
-            "bounded_saor_event_count": len(events),
+            "bounded_saor_event_count": len(all_events),
             "bounded_saor_slo_priority_grants": sum(
                 event.get("action") == "grant" and event.get("tier") == "slo_priority"
-                for event in events
+                for event in mechanism_events
             ),
             "bounded_saor_debt_recovery_grants": sum(
                 event.get("action") == "grant" and event.get("tier") == "debt_recovery"
-                for event in events
+                for event in mechanism_events
             ),
             "bounded_saor_fallback_grants": sum(
                 event.get("action") == "grant" and event.get("tier") == "saor_fallback"
-                for event in events
+                for event in mechanism_events
             ),
             "bounded_saor_hold_count": sum(
-                event.get("action") == "hold_start" for event in events
+                event.get("action") == "hold_start"
+                for event in mechanism_events
             ),
             "bounded_saor_hold_completed_count": sum(
-                event.get("action") == "hold_end" for event in events
+                event.get("action") == "hold_end"
+                for event in mechanism_events
             ),
             "bounded_saor_hold_duration_total_s": sum(hold_durations),
             "bounded_saor_hold_duration_p95_s": (
@@ -343,19 +355,24 @@ def bounded_saor_event_summary(
             ),
             "bounded_saor_hold_duration_max_s": max(hold_durations, default=0.0),
             "bounded_saor_reclaim_debt_max": max(
-                (int(event.get("reclaim_debt", 0)) for event in events),
+                (
+                    int(event.get("reclaim_debt", 0))
+                    for event in mechanism_events
+                ),
                 default=0,
             ),
             "bounded_saor_constraint_conflicts": sum(
-                bool(event.get("constraint_conflict")) for event in events
+                bool(event.get("constraint_conflict"))
+                for event in mechanism_events
             ),
             "bounded_saor_recovery_inflight_max": max_recovery,
             "bounded_saor_avoidable_idle_events": sum(
-                bool(event.get("avoidable_idle")) for event in events
+                bool(event.get("avoidable_idle"))
+                for event in mechanism_events
             ),
             "bounded_saor_foreign_grant_over_debt_critical_events": sum(
                 bool(event.get("foreign_grant_over_debt_critical"))
-                for event in events
+                for event in mechanism_events
             ),
         }
     )
@@ -368,11 +385,27 @@ def bounded_ready_event_summary(
     *,
     foreground_job_index: int,
 ) -> dict[str, int | bool | str]:
-    """Prove ready visibility using one lossless coordinator event domain."""
+    """Prove the project ready-window lifecycle for every participating Job.
+
+    This audit is selector-neutral.  It is valid only for project-internal
+    controls that explicitly enable bounded concrete pre-registration; native
+    system baselines never enter this evidence domain.
+    """
 
     base: dict[str, int | bool | str] = {
         "bounded_ready_event_status": "unavailable:no_ready_lifecycle",
         "bounded_ready_lifecycle_complete": False,
+        "bounded_ready_intervals": 0,
+        "bounded_ready_jobs_with_intervals": 0,
+        "bounded_ready_max_ready_requests_seen": 0,
+        "bounded_ready_max_ready_work_seen": 0,
+        "bounded_ready_max_ready_payload_bytes_seen": 0,
+        "bounded_ready_requests_transition_mean_max": 0.0,
+        "bounded_ready_requests_transition_p95_max": 0.0,
+        "bounded_ready_work_transition_mean_max": 0.0,
+        "bounded_ready_work_transition_p95_max": 0.0,
+        "bounded_ready_payload_bytes_transition_mean_max": 0.0,
+        "bounded_ready_payload_bytes_transition_p95_max": 0.0,
         "bounded_ready_foreground_intervals": 0,
         "bounded_ready_foreign_fallback_events": 0,
         "bounded_ready_foreground_max_ready_requests_seen": 0,
@@ -381,8 +414,69 @@ def bounded_ready_event_summary(
     if not 0 <= foreground_job_index < len(job_evidence):
         raise ValueError("foreground_job_index is outside job evidence")
     evidence = job_evidence[foreground_job_index]
+    jobs_with_intervals = sum(
+        bool(item.get("ready_lifecycle_rows")) for item in job_evidence
+    )
+    all_intervals = [
+        (str(item["runtime_job_id"]), interval)
+        for item in job_evidence
+        for interval in item.get("ready_lifecycle_rows", ())
+    ]
+    complete = bool(job_evidence) and all(
+        item.get("ready_lifecycle_complete") is True
+        and bool(item.get("ready_lifecycle_rows"))
+        for item in job_evidence
+    )
     base.update(
         {
+            "bounded_ready_lifecycle_complete": complete,
+            "bounded_ready_intervals": len(all_intervals),
+            "bounded_ready_jobs_with_intervals": jobs_with_intervals,
+            "bounded_ready_max_ready_requests_seen": max(
+                (int(item.get("max_ready_requests_seen", 0))
+                 for item in job_evidence),
+                default=0,
+            ),
+            "bounded_ready_max_ready_work_seen": max(
+                (int(item.get("max_ready_work_seen", 0))
+                 for item in job_evidence),
+                default=0,
+            ),
+            "bounded_ready_max_ready_payload_bytes_seen": max(
+                (int(item.get("max_ready_payload_bytes_seen", 0))
+                 for item in job_evidence),
+                default=0,
+            ),
+            "bounded_ready_requests_transition_mean_max": max(
+                (float(item.get("ready_requests_transition_mean", 0))
+                 for item in job_evidence),
+                default=0.0,
+            ),
+            "bounded_ready_requests_transition_p95_max": max(
+                (float(item.get("ready_requests_transition_p95", 0))
+                 for item in job_evidence),
+                default=0.0,
+            ),
+            "bounded_ready_work_transition_mean_max": max(
+                (float(item.get("ready_work_transition_mean", 0))
+                 for item in job_evidence),
+                default=0.0,
+            ),
+            "bounded_ready_work_transition_p95_max": max(
+                (float(item.get("ready_work_transition_p95", 0))
+                 for item in job_evidence),
+                default=0.0,
+            ),
+            "bounded_ready_payload_bytes_transition_mean_max": max(
+                (float(item.get("ready_payload_bytes_transition_mean", 0))
+                 for item in job_evidence),
+                default=0.0,
+            ),
+            "bounded_ready_payload_bytes_transition_p95_max": max(
+                (float(item.get("ready_payload_bytes_transition_p95", 0))
+                 for item in job_evidence),
+                default=0.0,
+            ),
             "bounded_ready_foreground_max_ready_requests_seen": int(
                 evidence.get("max_ready_requests_seen", 0)
             ),
@@ -391,36 +485,41 @@ def bounded_ready_event_summary(
             ),
         }
     )
-    intervals = tuple(evidence.get("ready_lifecycle_rows", ()))
-    complete = bool(evidence.get("ready_lifecycle_complete"))
-    if not complete or not intervals:
+    if not complete or not all_intervals:
         return base
     foreground_job_id = str(evidence["runtime_job_id"])
     registration_events = [
         event
         for event in events
         if event.get("action") == "register"
-        and str(event.get("selected_job_id", "")) == foreground_job_id
     ]
     grant_events = [
         event
         for event in events
         if event.get("action") == "grant"
-        and str(event.get("selected_job_id", "")) == foreground_job_id
     ]
     registration_ids = [
-        str(event.get("selected_request_id", ""))
+        (
+            str(event.get("selected_job_id", "")),
+            str(event.get("selected_request_id", "")),
+        )
         for event in registration_events
     ]
     grant_ids = [
-        str(event.get("selected_request_id", ""))
+        (
+            str(event.get("selected_job_id", "")),
+            str(event.get("selected_request_id", "")),
+        )
         for event in grant_events
     ]
-    lifecycle_ids = [str(interval["request_id"]) for interval in intervals]
+    lifecycle_ids = [
+        (job_id, str(interval["request_id"]))
+        for job_id, interval in all_intervals
+    ]
     if (
-        "" in registration_ids
-        or "" in grant_ids
-        or "" in lifecycle_ids
+        any("" in item for item in registration_ids)
+        or any("" in item for item in grant_ids)
+        or any("" in item for item in lifecycle_ids)
         or len(set(registration_ids)) != len(registration_ids)
         or len(set(grant_ids)) != len(grant_ids)
         or len(set(lifecycle_ids)) != len(lifecycle_ids)
@@ -433,7 +532,8 @@ def bounded_ready_event_summary(
     registrations = dict(zip(registration_ids, registration_events))
     grants = dict(zip(grant_ids, grant_events))
     lifecycle_by_request = {
-        str(interval["request_id"]): interval for interval in intervals
+        (job_id, str(interval["request_id"])): interval
+        for job_id, interval in all_intervals
     }
     lifecycle_request_ids = set(lifecycle_by_request)
     if (
@@ -446,10 +546,10 @@ def bounded_ready_event_summary(
             "bounded_ready_lifecycle_complete": True,
         }
     waiting_intervals = []
-    for request_id in sorted(lifecycle_request_ids):
-        registered = registrations[request_id]
-        granted = grants[request_id]
-        lifecycle = lifecycle_by_request[request_id]
+    for request_key in sorted(lifecycle_request_ids):
+        registered = registrations[request_key]
+        granted = grants[request_key]
+        lifecycle = lifecycle_by_request[request_key]
         if (
             registered.get("event_epoch_s") in (None, "")
             or granted.get("event_epoch_s") in (None, "")
@@ -484,13 +584,10 @@ def bounded_ready_event_summary(
                 "bounded_ready_event_status": "invalid:event_order",
                 "bounded_ready_lifecycle_complete": True,
             }
-        waiting_intervals.append(
-            (
-                endpoint_id,
-                registered_seq,
-                granted_seq,
+        if request_key[0] == foreground_job_id:
+            waiting_intervals.append(
+                (endpoint_id, registered_seq, granted_seq)
             )
-        )
     if not waiting_intervals:
         return {
             **base,
@@ -518,7 +615,9 @@ def bounded_ready_event_summary(
         **base,
         "bounded_ready_event_status": "ok:actor_event_join",
         "bounded_ready_lifecycle_complete": True,
-        "bounded_ready_foreground_intervals": len(waiting_intervals),
+        "bounded_ready_foreground_intervals": sum(
+            job_id == foreground_job_id for job_id, _ in lifecycle_ids
+        ),
         "bounded_ready_foreign_fallback_events": violations,
     }
 
@@ -967,6 +1066,10 @@ def group_resource_summary(
     running_values = []
     waiting_values = []
     kv_values = []
+    host_cpu_busy_cores = []
+    host_cpu_per_core_max_pct = []
+    host_memory_used_pct = []
+    host_memory_available_mib = []
     for epoch_samples in by_epoch.values():
         gpu_value = _optional_float(
             epoch_samples[0].get("gpu_utilization_pct")
@@ -994,6 +1097,15 @@ def group_resource_summary(
             waiting_values.append(sum(waiting))
         if kv:
             kv_values.append(max(kv))
+        for field, target in (
+            ("host_cpu_busy_cores", host_cpu_busy_cores),
+            ("host_cpu_per_core_max_pct", host_cpu_per_core_max_pct),
+            ("host_memory_used_pct", host_memory_used_pct),
+            ("host_memory_available_mib", host_memory_available_mib),
+        ):
+            value = _optional_float(epoch_samples[0].get(field))
+            if value is not None:
+                target.append(value)
     if not by_epoch:
         return {
             "resource_metrics_status": "unavailable:no_samples",
@@ -1009,6 +1121,10 @@ def group_resource_summary(
             "vllm_kv_usage_mean": "",
             "vllm_kv_usage_p95": "",
             "vllm_kv_usage_max": "",
+            **_distribution_fields("host_cpu_busy_cores", []),
+            **_distribution_fields("host_cpu_per_core_max_pct", []),
+            **_distribution_fields("host_memory_used_pct", []),
+            **_distribution_fields("host_memory_available_mib", []),
         }
     status = (
         "ok"
@@ -1021,6 +1137,16 @@ def group_resource_summary(
         **_distribution_fields("vllm_running", running_values),
         **_distribution_fields("vllm_waiting", waiting_values),
         **_distribution_fields("vllm_kv_usage", kv_values),
+        **_distribution_fields("host_cpu_busy_cores", host_cpu_busy_cores),
+        **_distribution_fields(
+            "host_cpu_per_core_max_pct",
+            host_cpu_per_core_max_pct,
+        ),
+        **_distribution_fields("host_memory_used_pct", host_memory_used_pct),
+        **_distribution_fields(
+            "host_memory_available_mib",
+            host_memory_available_mib,
+        ),
     }
 
 def _optional_float(value: object) -> float | None:

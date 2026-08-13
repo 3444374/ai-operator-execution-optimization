@@ -21,6 +21,47 @@ from src.scheduling.submission_control.saor import (  # noqa: E402
 
 
 class SharedCreditCoordinatorTests(unittest.TestCase):
+    def test_matched_ready_fifo_records_selector_neutral_lifecycle(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="fifo",
+            record_ready_lifecycle_events=True,
+        )
+
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="r0",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=10,
+            )
+        )
+        events = coordinator.drain_release_events("gpu0")
+        self.assertEqual(
+            [(event.action, event.tier) for event in events],
+            [
+                ("register", "ready_registration"),
+                ("grant", "selector_grant:fifo"),
+            ],
+        )
+
+    def test_native_style_fifo_does_not_record_project_ready_events(self) -> None:
+        coordinator = FairEndpointCreditCoordinator(
+            {"gpu0": (1, 100)},
+            quantum=100,
+            policy="fifo",
+        )
+        self.assertTrue(
+            coordinator.try_acquire(
+                request_id="r0",
+                job_id="bulk",
+                endpoint_id="gpu0",
+                estimated_work=10,
+            )
+        )
+        self.assertEqual(coordinator.drain_release_events("gpu0"), ())
+
     def test_bounded_ready_policy_uses_bounded_priority_selector(self) -> None:
         epochs = iter((100.0, 101.0))
         coordinator = FairEndpointCreditCoordinator(

@@ -118,6 +118,7 @@ def _batch_envelope(
             oldest_arrival_s=oldest_arrival_s,
             payload_id=request_id,
             planning_batch_id=planning_batch_id,
+            estimated_payload_bytes=int(batch.nbytes),
             service_quantum_index=service_quantum_index,
             service_quantum_oversized=service_quantum_oversized,
             preferred_endpoint_id=preferred_endpoint_id,
@@ -460,6 +461,7 @@ def _arrow_envelope(
             payload_id=request_id,
             planning_batch_id=request_id,
             preferred_endpoint_id=_preferred_endpoint_id(payload),
+            estimated_payload_bytes=int(payload.nbytes),
         ),
         payload=payload,
     )
@@ -492,6 +494,7 @@ def _request_envelopes(
                     preferred_endpoint_id=_preferred_endpoint_id(
                         row.payload_ref
                     ),
+                    estimated_payload_bytes=int(row.payload_ref.nbytes),
                 ),
                 payload=row.payload_ref,
             )

@@ -19,7 +19,12 @@ from src.scheduling.core.ready_window import (  # noqa: E402
 )
 
 
-def candidate(request_id: str, work: int) -> ReadySubmission:
+def candidate(
+    request_id: str,
+    work: int,
+    *,
+    payload_bytes: int = 0,
+) -> ReadySubmission:
     request = BatchRequest(
         request_id=request_id,
         job_id="job",
@@ -31,6 +36,7 @@ def candidate(request_id: str, work: int) -> ReadySubmission:
         first_arrival_s=0.0,
         oldest_arrival_s=0.0,
         payload_id=request_id,
+        estimated_payload_bytes=payload_bytes,
     )
     return ReadySubmission(
         PayloadEnvelope(request, request_id),
@@ -43,6 +49,22 @@ def candidate(request_id: str, work: int) -> ReadySubmission:
 
 
 class BoundedReadyWindowTests(unittest.TestCase):
+    def test_window_bounds_logical_payload_bytes_independently(self) -> None:
+        window = BoundedReadyWindow(
+            request_limit=4,
+            work_limit=100,
+            payload_bytes_limit=30,
+        )
+        first = candidate("r0", 10, payload_bytes=20)
+        second = candidate("r1", 10, payload_bytes=11)
+
+        window.append(first)
+
+        self.assertEqual(window.payload_bytes, 20)
+        self.assertFalse(
+            window.can_accept(second.estimated_work, second.payload_bytes)
+        )
+
     def test_rejects_invalid_limits(self) -> None:
         for request_limit, work_limit in ((0, 1), (1, 0), (True, 1)):
             with self.subTest(

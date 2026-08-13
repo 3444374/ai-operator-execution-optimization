@@ -30,6 +30,7 @@ class BatchRequest:
     preferred_endpoint_id: str = ""
     work_units: int | None = None
     work_unit: str = "tokens"
+    estimated_payload_bytes: int = 0
     work_descriptor: WorkDescriptor | None = None
     oldest_arrival_epoch_s: float | None = None
 
@@ -46,6 +47,14 @@ class BatchRequest:
             raise ValueError("work_units must be a non-negative integer when present")
         if not isinstance(self.work_unit, str) or not self.work_unit:
             raise ValueError("work_unit must be a non-empty string")
+        if (
+            not isinstance(self.estimated_payload_bytes, int)
+            or isinstance(self.estimated_payload_bytes, bool)
+            or self.estimated_payload_bytes < 0
+        ):
+            raise ValueError(
+                "estimated_payload_bytes must be a non-negative integer"
+            )
         if self.work_descriptor is not None:
             primary = self.work_descriptor.primary
             if self.work_units is not None and self.work_units != primary.units:

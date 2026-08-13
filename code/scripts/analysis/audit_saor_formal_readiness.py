@@ -67,6 +67,20 @@ BOUNDED_READY_EXPECTED = {
     "active_set_saor_bounded_ready_0125k": ("saor_bounded_ready", 2),
     "active_set_saor_bounded_ready_025k": ("saor_bounded_ready", 2),
 }
+MATCHED_READY_ABLATION_EXPECTED = {
+    "active_set_project_frozen_static": ("static_partition", 2),
+    "active_set_project_bounded_ready_fifo": ("shared_fifo", 2),
+    "active_set_project_bounded_ready_drr": ("shared_drr", 2),
+    "active_set_project_bounded_ready_vtc_style": ("external_vtc", 2),
+    "active_set_project_bounded_ready_strict_priority": (
+        "foreground_strict_priority",
+        2,
+    ),
+    "active_set_project_bounded_ready_guarded_debt_0125we": (
+        "saor_bounded_ready",
+        2,
+    ),
+}
 
 
 def _args() -> argparse.Namespace:
@@ -80,6 +94,7 @@ def _args() -> argparse.Namespace:
             "priority_reachability",
             "bounded_priority_development",
             "bounded_ready_development",
+            "matched_ready_selector_ablation",
         ),
         default="formal",
     )
@@ -100,6 +115,8 @@ def audit(
         if profile == "bounded_priority_development"
         else BOUNDED_READY_EXPECTED
         if profile == "bounded_ready_development"
+        else MATCHED_READY_ABLATION_EXPECTED
+        if profile == "matched_ready_selector_ablation"
         else None
     )
     if expected is None:
@@ -158,7 +175,47 @@ def audit(
             (0.125, None),
             (0.25, None),
         ]:
-            errors.append("bounded debt caps must be frozen at 0.125K and 0.25K")
+            errors.append(
+                "bounded debt caps must be frozen at 0.125W_e and 0.25W_e"
+            )
+    if profile == "matched_ready_selector_ablation":
+        project_controls = [
+            scenario
+            for scenario in config.scenarios
+            if scenario.policy != "static_partition"
+        ]
+        if not project_controls or any(
+            scenario.ready_observation_contract
+            != "bounded_concrete_pre_registration"
+            for scenario in project_controls
+        ):
+            errors.append(
+                "every project selector ablation must use matched bounded-ready"
+            )
+        static = [
+            scenario
+            for scenario in config.scenarios
+            if scenario.policy == "static_partition"
+        ]
+        if len(static) != 1 or static[0].ready_observation_contract != "single_head":
+            errors.append(
+                "project frozen-static reference must not use bounded-ready"
+            )
+        proposed = [
+            scenario
+            for scenario in config.scenarios
+            if scenario.policy == "saor_bounded_ready"
+        ]
+        if (
+            len(proposed) != 1
+            or proposed[0].priorities != (0, 1)
+            or proposed[0].slo_targets_s != (None, 30.0)
+            or proposed[0].priority_windows_s != (None, 30.0)
+            or proposed[0].debt_cap_fractions != (0.125, None)
+        ):
+            errors.append(
+                "proposed must freeze H_B=0.125W_e and foreground SLO at 30s"
+            )
     if profile == "formal":
         try:
             direct = direct_control_contract(config)

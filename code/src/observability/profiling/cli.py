@@ -268,6 +268,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ],
         default="drr",
     )
+    parser.add_argument(
+        "--shared-ready-observation-contract",
+        choices=["single_head", "bounded_concrete_pre_registration"],
+        default="single_head",
+    )
+    parser.add_argument(
+        "--shared-ready-payload-bytes-limit",
+        type=int,
+        default=0,
+        help=(
+            "Per-Job logical Arrow payload-byte bound for a bounded concrete "
+            "ready window; this is not a physical RSS limit."
+        ),
+    )
     parser.add_argument("--shared-credit-job-weight", type=int, default=1)
     parser.add_argument("--shared-credit-job-priority", type=int, default=0)
     parser.add_argument("--shared-credit-job-slo-ms", type=float, default=0.0)

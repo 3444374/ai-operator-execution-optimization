@@ -108,6 +108,27 @@ def ray_worker_options(
 def validate_shared_credit_policy_args(args: argparse.Namespace) -> None:
     """Fail closed on bounded-priority policy inputs before runtime setup."""
 
+    observation = args.shared_ready_observation_contract
+    ready_bytes = args.shared_ready_payload_bytes_limit
+    if observation == "bounded_concrete_pre_registration":
+        if not args.shared_credit_coordinator_name:
+            raise SystemExit(
+                "bounded ready observation requires shared credit"
+            )
+        if args.submission_granularity != "request":
+            raise SystemExit(
+                "bounded ready observation requires request granularity"
+            )
+        if ready_bytes <= 0:
+            raise SystemExit(
+                "bounded ready observation requires a positive logical "
+                "payload-byte limit"
+            )
+    elif ready_bytes != 0:
+        raise SystemExit(
+            "shared ready payload-byte limit requires bounded ready observation"
+        )
+
     if args.shared_credit_policy not in {
         "saor_bounded_priority",
         "saor_bounded_ready",
