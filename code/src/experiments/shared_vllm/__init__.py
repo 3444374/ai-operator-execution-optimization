@@ -25,6 +25,7 @@ from .metrics import (
     active_set_phase_summary,
     bounded_ready_event_summary,
     bounded_saor_event_summary,
+    completion_accounted_service_fairness,
     cumulative_service_disparity,
     group_metric_delta,
     group_resource_summary,

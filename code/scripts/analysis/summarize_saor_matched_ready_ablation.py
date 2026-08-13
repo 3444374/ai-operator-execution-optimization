@@ -15,6 +15,10 @@ import json
 import math
 from pathlib import Path
 
+from src.experiments.shared_vllm.metrics import (
+    completion_accounted_service_fairness,
+)
+
 
 EXPECTED = {
     "active_set_project_frozen_static": (
@@ -81,6 +85,97 @@ def _array(row: dict[str, str], key: str) -> list[float]:
     if any(not math.isfinite(value) for value in resolved):
         raise ValueError(f"{key} contains a non-finite value")
     return resolved
+
+
+def _completion_fairness_from_raw(
+    root: Path,
+    row: dict[str, str],
+) -> dict[str, float | int | str]:
+    """Replay registered-ready service fairness from per-request raw traces."""
+
+    if not (root / "jobs").is_dir():
+        return completion_accounted_service_fairness(
+            [
+                {
+                    "ready_lifecycle_complete": False,
+                    "ready_lifecycle_rows": [],
+                }
+                for _index in range(2)
+            ],
+            (1, 1),
+        )
+    evidence = []
+    order = int(row["order_index"])
+    phase = row["phase"]
+    repeat = int(row["repeat_index"])
+    scenario = row["scenario_id"]
+    for job_index in range(2):
+        stem = (
+            f"{order:03d}_{phase}_{repeat}_{scenario}_job{job_index}"
+        )
+        request_path = root / "jobs" / f"{stem}.requests.csv"
+        submission_path = root / "jobs" / f"{stem}.submissions.csv"
+        if not request_path.is_file() or not submission_path.is_file():
+            return completion_accounted_service_fairness(
+                [
+                    {
+                        "ready_lifecycle_complete": False,
+                        "ready_lifecycle_rows": [],
+                    }
+                    for _index in range(2)
+                ],
+                (1, 1),
+            )
+        requests = _read(request_path)
+        submissions = _read(submission_path)
+        service_by_id = {}
+        for request in requests:
+            submission_id = str(request.get("submission_id", "") or "")
+            actual_output = request.get("actual_output_tokens", "")
+            output_work = int(
+                actual_output
+                if actual_output not in (None, "")
+                else request.get("client_estimated_output_tokens", "")
+                or request["estimated_output_tokens"]
+            )
+            service_by_id[submission_id] = (
+                float(request["completion_epoch_s"]),
+                int(request["prompt_tokens"]) + output_work,
+            )
+        lifecycle = []
+        for submission in submissions:
+            ready = submission.get("ready_epoch_s", "")
+            registered = submission.get("credit_registered_epoch_s", "")
+            granted = submission.get("credit_granted_epoch_s", "")
+            if not ready and not registered and not granted:
+                continue
+            submission_id = str(submission.get("submission_id", "") or "")
+            if (
+                not ready
+                or not registered
+                or not granted
+                or submission_id not in service_by_id
+            ):
+                raise ValueError(
+                    f"{stem} has an incomplete registered-ready service join"
+                )
+            completion, work = service_by_id[submission_id]
+            lifecycle.append(
+                {
+                    "registered_epoch_s": float(registered),
+                    "completion_epoch_s": completion,
+                    "actual_work": work,
+                }
+            )
+        evidence.append(
+            {
+                "ready_lifecycle_complete": (
+                    bool(requests) and len(lifecycle) == len(requests)
+                ),
+                "ready_lifecycle_rows": lifecycle,
+            }
+        )
+    return completion_accounted_service_fairness(evidence, (1, 1))
 
 
 def summarize(
@@ -180,6 +275,7 @@ def summarize(
                 )
             )
             proposed = expected_identity[0] == "saor_bounded_ready"
+            completion_fairness = _completion_fairness_from_raw(root, row)
             mechanism = bool(
                 not proposed
                 or (
@@ -222,7 +318,11 @@ def summarize(
                     "observation_passed": observation,
                     "mechanism_passed": mechanism,
                     "cell_evidence_passed": cell_passed,
+                    "evaluation_scope": "single_tenant_multi_job",
+                    "fairness_mode": "differentiated_service",
                     "tokens_per_s": float(row["tokens_per_s"]),
+                    "group_jct_s": float(row["duration_s"]),
+                    "mfu_fraction": float(row["mfu_estimate"]),
                     "bulk_jct_s": jct[0],
                     "foreground_jct_s": jct[1],
                     "bulk_p99_s": p99[0],
@@ -230,6 +330,13 @@ def summarize(
                     "bulk_slo_violation": slo[0],
                     "foreground_slo_violation": slo[1],
                     "jain_fairness": float(row.get("jain_fairness", "nan")),
+                    "max_overlap_service_disparity_work": float(
+                        row.get(
+                            "max_overlap_normalized_service_disparity",
+                            "0",
+                        )
+                    ),
+                    **completion_fairness,
                     "ready_requests_p95": row.get(
                         "bounded_ready_requests_transition_p95_max", ""
                     ),
@@ -268,6 +375,8 @@ def summarize(
             else "diagnostic_only"
         ),
         "experiment_layer": "project_internal_selector_ablation",
+        "evaluation_scope": "single_tenant_multi_job",
+        "fairness_mode": "differentiated_service",
         "native_baseline_count": 0,
         "matrix_roots": [str(root) for root in roots],
         "round_count": len(roots),

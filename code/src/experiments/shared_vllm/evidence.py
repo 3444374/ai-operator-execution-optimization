@@ -262,6 +262,20 @@ def _validate_job_evidence(
         int(row["prompt_tokens"]) + output_work
         for row, output_work in zip(request_rows, actual_output_work_by_request)
     ]
+    request_service_by_submission_id = {
+        str(row.get("submission_id", "") or ""): (
+            float(row["completion_epoch_s"]),
+            actual_work_by_request[index],
+        )
+        for index, row in enumerate(request_rows)
+        if str(row.get("submission_id", "") or "")
+    }
+    for lifecycle in ready_lifecycle_rows:
+        completion_epoch_s, actual_request_work = (
+            request_service_by_submission_id[str(lifecycle["request_id"])]
+        )
+        lifecycle["completion_epoch_s"] = completion_epoch_s
+        lifecycle["actual_work"] = actual_request_work
     actual_work = sum(actual_work_by_request)
     slo_token_goodput = sum(
         work

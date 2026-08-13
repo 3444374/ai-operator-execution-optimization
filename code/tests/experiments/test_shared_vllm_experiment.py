@@ -37,6 +37,7 @@ from src.experiments.shared_vllm import (  # noqa: E402
     active_set_phase_summary,
     bounded_saor_event_summary,
     build_job_command,
+    completion_accounted_service_fairness,
     cumulative_service_disparity,
     group_resource_summary,
     group_metric_delta,
@@ -2283,6 +2284,8 @@ class SharedVllmExperimentTests(unittest.TestCase):
                 "registered_epoch_s": 100.1,
                 "granted_epoch_s": 100.2,
                 "submit_epoch_s": 100.3,
+                "completion_epoch_s": 101.0,
+                "actual_work": 30,
             }],
         )
 
@@ -2334,6 +2337,62 @@ class SharedVllmExperimentTests(unittest.TestCase):
             metrics["max_overlap_normalized_service_disparity"],
             1000.0,
         )
+
+    def test_completion_accounted_fairness_uses_registered_backlog(self) -> None:
+        evidence = [
+            {
+                "ready_lifecycle_complete": True,
+                "ready_lifecycle_rows": [
+                    {
+                        "registered_epoch_s": 0.0,
+                        "completion_epoch_s": 2.0,
+                        "actual_work": 100.0,
+                    },
+                    {
+                        "registered_epoch_s": 0.0,
+                        "completion_epoch_s": 4.0,
+                        "actual_work": 100.0,
+                    },
+                ],
+            },
+            {
+                "ready_lifecycle_complete": True,
+                "ready_lifecycle_rows": [
+                    {
+                        "registered_epoch_s": 0.0,
+                        "completion_epoch_s": 3.0,
+                        "actual_work": 100.0,
+                    },
+                ],
+            },
+        ]
+
+        metrics = completion_accounted_service_fairness(evidence, (1, 1))
+
+        self.assertEqual(
+            metrics["completion_service_lag_status"],
+            "ok:registered_backlog_completion_accounted_empirical",
+        )
+        self.assertEqual(metrics["completion_service_lag_samples"], 4)
+        self.assertEqual(metrics["completion_service_lag_max_work"], 50.0)
+        self.assertEqual(metrics["completion_longest_no_service_s"], 3.0)
+
+    def test_completion_accounted_fairness_requires_ready_lifecycle(self) -> None:
+        metrics = completion_accounted_service_fairness(
+            [
+                {
+                    "ready_lifecycle_complete": False,
+                    "ready_lifecycle_rows": [],
+                },
+                {
+                    "ready_lifecycle_complete": False,
+                    "ready_lifecycle_rows": [],
+                },
+            ],
+            (1, 1),
+        )
+
+        self.assertIn("unavailable", metrics["completion_service_lag_status"])
 
     def test_replay_start_validation_rejects_late_or_skewed_jobs(self) -> None:
         skewed_barrier = [

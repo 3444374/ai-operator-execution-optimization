@@ -215,6 +215,138 @@ def cumulative_service_disparity(
     }
 
 
+def completion_accounted_service_fairness(
+    job_evidence: list[dict[str, object]],
+    weights: tuple[int, ...],
+) -> dict[str, float | int | str]:
+    """Replay empirical weighted service from registered-ready completions.
+
+    Actual work is charged only when a request completes.  Consequently these
+    are upstream, completion-granularity empirical metrics, not continuous
+    token service or a VTC/GPS theoretical bound.
+    """
+
+    unavailable: dict[str, float | int | str] = {
+        "completion_service_lag_status": (
+            "unavailable:requires_complete_registered_ready_ledger"
+        ),
+        "completion_service_lag_samples": 0,
+        "completion_service_lag_p95_work": 0.0,
+        "completion_service_lag_max_work": 0.0,
+        "completion_service_lag_job_max_work": "[]",
+        "completion_longest_no_service_s": 0.0,
+        "completion_longest_no_service_by_job_s": "[]",
+    }
+    if len(job_evidence) != len(weights) or not job_evidence:
+        raise ValueError("job evidence and weights must be aligned and non-empty")
+    if any(weight <= 0 for weight in weights):
+        raise ValueError("service weights must be positive")
+    if not all(
+        evidence.get("ready_lifecycle_complete") is True
+        and evidence.get("ready_lifecycle_rows")
+        for evidence in job_evidence
+    ):
+        return unavailable
+
+    intervals_by_job: list[list[tuple[float, float]]] = []
+    events_by_epoch: dict[float, list[tuple[int, float]]] = {}
+    for job_index, evidence in enumerate(job_evidence):
+        intervals = []
+        for row in evidence.get("ready_lifecycle_rows", ()):
+            registered = float(row["registered_epoch_s"])
+            completed = float(row["completion_epoch_s"])
+            work = float(row["actual_work"])
+            if (
+                not math.isfinite(registered)
+                or not math.isfinite(completed)
+                or completed < registered
+                or not math.isfinite(work)
+                or work < 0
+            ):
+                raise ValueError("ready lifecycle service evidence is invalid")
+            intervals.append((registered, completed))
+            events_by_epoch.setdefault(completed, []).append((job_index, work))
+        intervals_by_job.append(sorted(intervals))
+
+    ideal = [0.0] * len(job_evidence)
+    actual = [0.0] * len(job_evidence)
+    positive_lag_samples: list[float] = []
+    max_lag_by_job = [0.0] * len(job_evidence)
+    for completed_at, completions in sorted(events_by_epoch.items()):
+        active = [
+            job_index
+            for job_index, intervals in enumerate(intervals_by_job)
+            if any(start <= completed_at <= end for start, end in intervals)
+        ]
+        if not active:
+            raise ValueError("completion event has no registered backlog owner")
+        completed_work = sum(work for _job_index, work in completions)
+        active_weight = sum(weights[job_index] for job_index in active)
+        for job_index in active:
+            ideal[job_index] += (
+                completed_work * weights[job_index] / active_weight
+            )
+        for job_index, work in completions:
+            actual[job_index] += work
+        if len(active) >= 2:
+            for job_index in active:
+                lag = max(0.0, ideal[job_index] - actual[job_index])
+                positive_lag_samples.append(lag)
+                max_lag_by_job[job_index] = max(
+                    max_lag_by_job[job_index], lag
+                )
+
+    longest_no_service_by_job = []
+    for job_index, intervals in enumerate(intervals_by_job):
+        merged: list[list[float]] = []
+        for start, end in intervals:
+            if not merged or start > merged[-1][1]:
+                merged.append([start, end])
+            else:
+                merged[-1][1] = max(merged[-1][1], end)
+        completions = sorted(
+            completed_at
+            for completed_at, rows in events_by_epoch.items()
+            if any(owner == job_index for owner, _work in rows)
+        )
+        longest = 0.0
+        for start, end in merged:
+            service_epochs = [
+                epoch for epoch in completions if start <= epoch <= end
+            ]
+            points = [start, *service_epochs, end]
+            longest = max(
+                longest,
+                max(
+                    (right - left for left, right in zip(points, points[1:])),
+                    default=0.0,
+                ),
+            )
+        longest_no_service_by_job.append(longest)
+
+    return {
+        "completion_service_lag_status": (
+            "ok:registered_backlog_completion_accounted_empirical"
+        ),
+        "completion_service_lag_samples": len(positive_lag_samples),
+        "completion_service_lag_p95_work": (
+            percentile(positive_lag_samples, 95)
+            if positive_lag_samples
+            else 0.0
+        ),
+        "completion_service_lag_max_work": max(
+            positive_lag_samples, default=0.0
+        ),
+        "completion_service_lag_job_max_work": json.dumps(max_lag_by_job),
+        "completion_longest_no_service_s": max(
+            longest_no_service_by_job, default=0.0
+        ),
+        "completion_longest_no_service_by_job_s": json.dumps(
+            longest_no_service_by_job
+        ),
+    }
+
+
 def shared_credit_trace_summary(
     samples: list[dict[str, object]],
     *,

@@ -69,6 +69,7 @@ from .metrics import (
     active_set_phase_summary,
     bounded_saor_event_summary,
     bounded_ready_event_summary,
+    completion_accounted_service_fairness,
     cumulative_service_disparity,
     group_metric_delta,
     group_resource_summary,
@@ -1011,6 +1012,11 @@ def _run_group(
             job_evidence,
             scenario.weights,
         )
+        completion_fairness = completion_accounted_service_fairness(
+            job_evidence,
+            scenario.weights,
+        )
+        lag_work_limit = max(1, endpoint_work_limit)
         record = {
             "schema_version": 2,
             "experiment_id": config.experiment_id,
@@ -1144,6 +1150,15 @@ def _run_group(
             **cumulative_service_disparity(
                 job_evidence,
                 scenario.weights,
+            ),
+            **completion_fairness,
+            "completion_service_lag_p95_work_envelopes": (
+                float(completion_fairness["completion_service_lag_p95_work"])
+                / lag_work_limit
+            ),
+            "completion_service_lag_max_work_envelopes": (
+                float(completion_fairness["completion_service_lag_max_work"])
+                / lag_work_limit
             ),
             **shared_credit_trace_summary(
                 credit_samples,

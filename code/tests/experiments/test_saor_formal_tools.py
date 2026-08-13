@@ -67,6 +67,12 @@ class SaorFormalToolsTests(unittest.TestCase):
 
             self.assertEqual(result["status"], "passed")
             self.assertEqual(result["native_baseline_count"], 0)
+            self.assertEqual(
+                result["evaluation_scope"], "single_tenant_multi_job"
+            )
+            self.assertEqual(
+                result["fairness_mode"], "differentiated_service"
+            )
             self.assertFalse(result["selector_victory_decided"])
             self.assertFalse(result["formal_authorized"])
 
@@ -936,7 +942,10 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "job_slo_violation_ratio": "[0.6, 0]",
                     "job_jct_s": "[70, 30]",
                     "tokens_per_s": 10000,
+                    "duration_s": 70,
+                    "mfu_estimate": 0.4,
                     "jain_fairness": 0.9,
+                    "max_overlap_normalized_service_disparity": 100,
                     "bounded_ready_event_status": (
                         "ok:actor_event_join" if bounded else "not_applicable"
                     ),
