@@ -32,9 +32,13 @@
   `development-run/not-promoted/not-formal-registered`。bounded-ready 修订随后从两个全新 root
   完成 8/8 cell：$0.125W_e$ 两轮约 12.36K tok/s、fg P99 17.58–18.15s、fg SLO 0%、bulk
   30s miss 65.8%–66.6%，通过开发门；$0.25W_e$ 被 bulk guard 拒绝。但 ready-window 与 selector
-  同时变化，当前状态增加 `matched-observation-attribution-required`：先让**项目内部** FIFO/DRR/
-  VTC-style/strict-priority 使用相同 ready-window，再决定 selector 是否值得 formal。Daft/Ray Data/
-  产品原生 baseline 不使用 bounded-ready；reservation 仍后置。
+  同时变化，随后完成了同 ready-window 的**项目内部** FIFO/DRR/VTC-style/strict-priority/
+  proposed 双轮归因：DRR/VTC-style 约 12.90K tok/s、fg P99 27.23/26.16s、30s SLO 零违约；
+  proposed 12.28K tok/s、fg P99 17.85s。proposed 是用约 4.8% 吞吐与约 5.2% bulk JCT 换 tail
+  的观测非支配折中点，不是 selector winner；固定顺序 n=2，`formal_authorized=false`。
+  下一步补 Daft Native/Daft Ray/Ray Data/project static/proposed 的 PG source/sink matched
+  comparison，并补 `single-head + shared FIFO` observation bridge。原生 baseline 不使用
+  bounded-ready；reservation 仍后置。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
   least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
   已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值

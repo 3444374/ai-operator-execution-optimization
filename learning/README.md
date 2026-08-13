@@ -1,5 +1,15 @@
 # Learning Notes
 
+## 2026-08-13 为什么还要补 single-head shared FIFO
+
+当前 frozen-static 与 bounded-ready FIFO 之间同时变化了两件事：每个 Job 的固定分区变成共享
+容量，以及调度器从只看每个 Job 的一个队首变成看见有限个 concrete-ready requests。因此二者
+的吞吐差不能全部写成 bounded-ready 的收益。新的三臂 bridge 固定同一 workload、K/W、vLLM
+FCFS 和 FIFO 顺序：`frozen-static → single-head shared FIFO` 只观察共享容量；
+`single-head shared FIFO → bounded-ready FIFO` 才观察 ready exposure 与对应执行路径。
+汇总器只报告这两个观测效应，不自动判胜负或授权 formal。这仍是项目内部消融；Daft Native、
+Daft Ray 和 Ray Data native 不接 bounded-ready，必须在另一张系统级表中比较。
+
 ## 2026-08-13 bounded ready-set 为什么不是扩大 K
 
 `experiment_walkthrough.md` 新增 ready-set observation 修订说明。新 policy

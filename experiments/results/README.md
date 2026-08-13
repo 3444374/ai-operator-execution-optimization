@@ -14,6 +14,7 @@
 | `saor_priority_reachability_smoke_20260812_91ffcaa/` | static/SAOR/foreground strict-priority 三臂，两轮 rehearsal-only release 上界短测 | strict-priority 11,791 tok/s、fg JCT/P99 20.04/14.27s、fg SLO 0%；相对 SAOR fg P99 −73.02%，但 formal repeats=0，仅证明 release-only 可达性，不是 proposed/winner。 |
 | `state_aware_work_unit/saor_bounded_priority_gate_20260813/` | static/SAOR/$0.125W_e$/$0.25W_e$ 两轮 bounded-priority development gate | 第 2 轮 $0.25W_e$ debt-recovery=0 被 fail-closed；两 cap fg P99 49–56s、SLO violation 85%–95%，均未晋级。交叉验证定位 ready backlog 未完整暴露给 coordinator；formal/4-Job/reservation 未运行。 |
 | `state_aware_work_unit/saor_bounded_ready_gate_20260813/` | 同 selector、改为项目自有的有界 concrete-ready 预注册后的两轮四臂 development gate | 8/8 cell、0 incident；$0.125W_e$ 两轮全过，均值 12,361 tok/s、fg P99 17.87s、fg SLO 0%、bulk 30s miss 0.662；$0.25W_e$ 被拒绝。候选需先过 project-only matched-observation 归因门，formal 尚未运行；原生 baseline 不使用该机制。 |
+| `state_aware_work_unit/saor_matched_ready_selector_rehearsal_20260813/` | frozen-static 与同 bounded-ready observation 下 FIFO/DRR/VTC-style/strict-priority/SAOR 的双轮 Project 内部 selector 归因 rehearsal | 12/12 cell、0 incident；DRR/VTC-style 约 12.90K tok/s 且 fg 30s SLO 零违约，SAOR 12.28K tok/s、fg P99 17.85s。SAOR 是观测到的效率—tail 非支配折中点，不是 selector winner；固定顺序 n=2 且 selector 级 non-inferiority margin 未预注册，`formal_authorized=false`。原生 baseline 数量为 0。 |
 
 ## 开题统一文本 database-E2E（2026-08-08 correctness 护栏）
 

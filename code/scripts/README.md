@@ -65,6 +65,15 @@ correctness、全 Job ready lifecycle 和 proposed 的 guarded-debt 机制证据
 但固定写明 `selector_victory_decided=false`、`formal_authorized=false`；效应量与
 non-inferiority 边界未预注册前，工具不会替研究者宣布 proposed 胜出。
 
+`analysis/audit_saor_formal_readiness.py --profile ready_observation_bridge`
+审计三臂 Project observation bridge：frozen-static/single-head、shared FIFO/single-head、
+shared FIFO/bounded-ready。第一段隔离 static partition→shared capacity，第二段在 FIFO 固定时
+隔离 single-head→bounded-ready。配置入口为
+`deploy/autodl/saor_ready_observation_bridge.example.json`。
+`analysis/summarize_saor_ready_observation_bridge.py` 要求一到两个干净 rehearsal root，输出
+`bridge_metrics.csv` 与 `bridge_effects.csv`，同时固定 native baseline 数为 0、两个效应均为
+`decided=false`、`formal_authorized=false`；该桥是项目内部归因，不是原生系统比较。
+
 `analysis/summarize_opening_short_job_interference.py` 对 exact-short 项目
 full/half 控制、项目 short/long static/shared、Daft Native/Ray 与 Ray Data
 single/two-job 原生观察做统一 fail-closed 汇总。它显式保留 request P99 仅项目可用、

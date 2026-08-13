@@ -81,6 +81,11 @@ MATCHED_READY_ABLATION_EXPECTED = {
         2,
     ),
 }
+READY_OBSERVATION_BRIDGE_EXPECTED = {
+    "active_set_project_frozen_static": ("static_partition", 2),
+    "active_set_project_single_head_shared_fifo": ("shared_fifo", 2),
+    "active_set_project_bounded_ready_fifo": ("shared_fifo", 2),
+}
 
 
 def _args() -> argparse.Namespace:
@@ -95,6 +100,7 @@ def _args() -> argparse.Namespace:
             "bounded_priority_development",
             "bounded_ready_development",
             "matched_ready_selector_ablation",
+            "ready_observation_bridge",
         ),
         default="formal",
     )
@@ -117,6 +123,8 @@ def audit(
         if profile == "bounded_ready_development"
         else MATCHED_READY_ABLATION_EXPECTED
         if profile == "matched_ready_selector_ablation"
+        else READY_OBSERVATION_BRIDGE_EXPECTED
+        if profile == "ready_observation_bridge"
         else None
     )
     if expected is None:
@@ -216,6 +224,30 @@ def audit(
             errors.append(
                 "proposed must freeze H_B=0.125W_e and foreground SLO at 30s"
             )
+    if profile == "ready_observation_bridge":
+        by_id = {scenario.scenario_id: scenario for scenario in config.scenarios}
+        static = by_id.get("active_set_project_frozen_static")
+        single_head = by_id.get("active_set_project_single_head_shared_fifo")
+        bounded = by_id.get("active_set_project_bounded_ready_fifo")
+        if (
+            static is None
+            or static.policy != "static_partition"
+            or static.ready_observation_contract != "single_head"
+        ):
+            errors.append("bridge static reference must use single-head observation")
+        if (
+            single_head is None
+            or single_head.policy != "shared_fifo"
+            or single_head.ready_observation_contract != "single_head"
+        ):
+            errors.append("bridge shared-capacity control must use single-head FIFO")
+        if (
+            bounded is None
+            or bounded.policy != "shared_fifo"
+            or bounded.ready_observation_contract
+            != "bounded_concrete_pre_registration"
+        ):
+            errors.append("bridge observation control must use bounded-ready FIFO")
     if profile == "formal":
         try:
             direct = direct_control_contract(config)

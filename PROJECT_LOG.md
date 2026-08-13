@@ -1,5 +1,38 @@
 # 项目日志
 
+## 2026-08-13 ready-observation 三臂桥接合同实现
+
+- 新增 `saor_ready_observation_bridge.example.json`：冻结
+  frozen-static/single-head、shared FIFO/single-head、shared FIFO/bounded-ready 三臂；不修改
+  vLLM FCFS、K/W、workload 或物理资源。
+- readiness 新增 `ready_observation_bridge` profile，fail-closed 检查三臂身份、相同 manifests、
+  arrival offsets、校准和服务签名；不把项目臂标成原生 baseline。
+- 新增 bridge 汇总器：分别输出 shared-capacity 与 bounded-ready-observation raw effect，固定
+  `native_baseline_count=0`、两个 effect 均 `decided=false`、`formal_authorized=false`。
+- 补单元测试、脚本入口、索引和学习说明。该实现只为下一轮 rehearsal 做好可执行合同；尚无新
+  GPU 数据，不改变 matched-ready 双轮“SAOR 是观测非支配折中、formal 未授权”的结论。
+
+## 2026-08-13 SAOR matched-ready 双轮归因完成，formal 保持未授权
+
+- 从两个独立 2×4090 rehearsal root 归档 frozen-static、bounded-ready FIFO/DRR/VTC-style/
+  strict-priority/guarded-debt 共 12 个 cell：12,288/12,288 requests、0 incident，身份、ready
+  lifecycle、模型/资源指标和 proposed 无损机制账本均通过。
+- 新增 completion-accounted registered-ready empirical lag 与 longest no-service 离线重算；static
+  因无完整 registered-ready ledger 明确标 `unavailable`，不把占位 0 当公平结果。
+- DRR/VTC-style 双轮约 12.90K tok/s、foreground P99 27.23/26.16s、30s SLO violation 0；
+  guarded debt 12.28K tok/s、foreground P99 17.85s、SLO violation 0。相对 VTC-style，后者以
+  4.81% 吞吐、5.15% bulk JCT 和 22.68% longest-no-service 代价换 31.78% fg P99 与 11.67%
+  lag P95 改善，记为 observed nondominated tradeoff，不记 selector victory。
+- 两轮固定顺序、每臂 n=2，且 selector 级 protected non-inferiority margin 未在见数据前精确
+  冻结；validation 保持 `selector_victory_decided=false`、`formal_authorized=false`，不事后调
+  阈值启动 1+3 selector formal。
+- 下一步改为：① 同一 PG source/sink、2-Job arrival、模型/vLLM/资源合同下运行 Daft Native、
+  Daft Ray、Ray Data native、project frozen-static 与 SAOR system-level matched comparison；
+  ② 补 `single-head + shared FIFO` bridge 分离共享容量与 bounded-ready observation。历史 JSONL
+  native multi-job 数据因 source/计时边界和 request-tail schema 不匹配，不直接复用。
+- 新增结果目录 `experiments/results/state_aware_work_unit/saor_matched_ready_selector_rehearsal_20260813/`，
+  保存 compact manifest/group/summary/preflight；服务器仓库外完整归档 SHA 已记录。
+
 ## 2026-08-13 Bounded-ready 归因审核与多 Job 评价合同再收紧
 
 - 审核确认开发报告中的 `0.125K/0.25K` 是显示误名：配置 fraction 实际乘单 endpoint

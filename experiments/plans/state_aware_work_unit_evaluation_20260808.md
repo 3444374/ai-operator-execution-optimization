@@ -1038,13 +1038,16 @@ observation-gap 定位臂。
 服务签名、PG source/sink 和计时边界、协议/输出 cap、硬件/endpoint、correctness 以及上述指标
 schema 全部一致时才能复用；缺一项就重跑，不能把不匹配的历史数字拼进系统级表。
 
-截至 2026-08-13 对话收到的第一轮 rehearsal 中间回报（尚无仓库内完整 artifact，故不登记为
-实验结论）显示 DRR/VTC-style 约 12.9K tok/s 且 foreground 零 SLO violation，proposed 约
-12.27K tok/s。若第二轮和完整证据重复该形状，且 DRR/VTC-style 的 bulk starvation、service lag
-与资源开销也不更差，则即使 proposed 相对原生系统更快，也只能把优势归给完整 Project/
-bounded-ready 系统，不能把全部收益归给 guarded-debt selector；DRR/VTC-style 已足够时按停止门
-淘汰复杂 selector。反之，proposed 只有在预注册的 bulk guard、service lag、债务偿还或 SLO
-约束上形成简单 selector 不具备的 Pareto 点，才保留其独立算法价值。
+2026-08-13 matched-observation selector gate 已从两个独立 root 完成并归档：12/12 cell、
+12,288/12,288 requests、0 incident，completion-accounted registered-ready ledger 对五个
+bounded-ready 臂均完整。DRR/VTC-style 双轮均值约 12.90K tok/s、foreground P99
+27.23/26.16s、30s SLO violation 0；proposed 为 12.28K tok/s、foreground P99 17.85s、SLO
+violation 0。相对 VTC-style，proposed 的 foreground P99 −31.78%、lag P95 −11.67%，但吞吐
+−4.81%、bulk JCT +5.15%、longest no-service +22.68%。因此它是两轮观测中的非支配折中点，
+不是 selector victory。固定顺序、每臂 n=2，且 selector 级 protected margins 未在看结果前精确
+冻结，汇总保持 `selector_victory_decided=false`、`formal_authorized=false`；不事后调阈值授权
+formal。即使完整 Project 系统相对原生框架更快，也不能把全部收益归给 guarded-debt selector。
+完整报告见 `experiments/results/state_aware_work_unit/saor_matched_ready_selector_rehearsal_20260813/`。
 
 dynamic capacity 保持 `parked-conditional`；若未来恢复，才独立比较 frozen lower/upper、
 state-observed no-op、threshold/deadband、governor 和 offline oracle。
@@ -1176,6 +1179,7 @@ organization 是输入，多模态是外部有效性验证。若同 observation 
 | 2026-08-13 | `saor-v0.5.2-bounded-ready-local` | 新增独立 `saor_bounded_ready` observation contract：每 Job 预注册已到达的 concrete request 有界 ready set，request 上限由 effective K 派生、work 上限由 endpoint 数×W 派生；新增 ready→register→grant→submit→completion lifecycle；coordinator 在同一无损事件域记录 register/grant request ID+epoch，旧单-head policy 不变 | 本地 targeted unit/architecture tests + compile/diff；尚未运行 GPU development rehearsal | 状态仅 `local-implemented/development-unrun/not-formal-registered`。异常退出只撤销未提交 waiter/lease，已提交 request 的 credit 保留到整组 fail-closed cleanup，避免服务端仍执行时容量超卖；未过双轮 ready-set 门前不做 formal、reservation、4-Job 或动态 K |
 | 2026-08-13 | `saor-v0.5.2-bounded-ready-gated` | 首次服务器运行因跨 trace 错误假设 `submit_epoch_s` 而 fail closed；按 `submission_id` 连接 submission 生命周期与 request submit 后，从两个全新 root 重跑冻结四臂 | 2×4090 两轮 development rehearsal；8/8 cell、0 incident；lossless event + group/request/submission/resource evidence | $0.125W_e$ 两轮全过并注册候选参数：12.36K tok/s、fg P99 17.58–18.15s、fg SLO 0%、bulk miss 65.8%–66.6%；$0.25W_e$ 因 bulk miss 74.4%–75.2% 两轮越界拒绝。尚不能把组合收益归因给 selector |
 | 2026-08-13 | `saor-v0.5.3-attribution-review` | 审核确认 `saor_bounded_ready` 同时改变 observation/execution path 与 priority/debt selector；修正 cap 记号为 $H_B/W_e$，把 equal-share 与 differentiated-service 公平拆轨，并冻结同 ready-window 的 Project FIFO/DRR/VTC/strict-priority internal controls | 本地代码语义审计 + 双轮 gate + VTC/DLPM、Themis/Pollux、JITServe/SCORPIO、Agentix/BatchGen 文献迁移 | 保持 `development-gated/formal-registration-candidate`，但增加 `matched-observation-attribution-required`：先做 1--2 轮项目内部归因 gate，通过后才启动 1+3 formal；原生 baseline 不接 bounded-ready，不扫 cap、不扩 4-Job/reservation/dynamic K |
+| 2026-08-13 | `saor-v0.5.4-matched-ready-observed` | frozen-static 与 bounded-ready FIFO/DRR/VTC-style/strict-priority/guarded-debt 在同 observation 下完成两轮；新增 completion-accounted lag、最长无服务、ready bytes/CPU/memory 重汇总 | 2×4090 双轮 development rehearsal；12/12 cell、0 incident；仓库 compact + 服务器完整 archive | proposed 相对 VTC-style 用 4.81% 吞吐、5.15% bulk JCT 和 22.68% no-service 代价换 31.78% fg P99 与 11.67% lag 改善；记为 observed nondominated tradeoff，不判 selector victory、不授权 formal。下一步先做 native matched comparison + single-head/shared-FIFO bridge |
 
 状态只允许按以下顺序变化：
 

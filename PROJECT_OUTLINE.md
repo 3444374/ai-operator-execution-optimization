@@ -53,6 +53,10 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 固定总 envelope，只动态决定活跃 Job 间的份额借用、completion-time 回收与 release order。
 项目 selector 必须在相同 bounded-ready observation 下超过 FIFO、DRR/VTC-style 等项目内部
 消融；吞吐接近时继续评价 tail/SLO/fairness，均无改善则淘汰 SAOR，不更换 workload 追正。
+2026-08-13 双轮 matched-ready rehearsal 已完成：DRR/VTC-style 约 12.90K tok/s 且 30s
+foreground SLO 零违约；SAOR 约 12.28K tok/s、foreground P99 17.85s。SAOR 用约 4.8%
+吞吐和约 5.2% bulk JCT 代价进一步降低 tail，属于观测到的非支配折中点，但固定顺序 n=2、
+selector 级 non-inferiority margin 未预注册，故 `formal_authorized=false`，不写 selector 胜出。
 FIFO、DRR、VTC-style 的 canonical 身份是 single-head/no-bounded-ready 调度算法 baselines；
 bounded-ready 副本只是在 Project harness 中配平候选集的 matched controls，不替代 baseline，
 也不表示这些算法包含本项目机制。报告中必须显式区分 observation contract。
@@ -60,6 +64,8 @@ bounded-ready 副本只是在 Project harness 中配平候选集的 matched cont
 native、project frozen-static 与 proposed 作 system-level matched comparison：原生臂保留自身
 调度且不注入 Project K/W，Project 两臂冻结同 K/W。该比较只能说明完整系统经验表现；要单独
 归因 bounded-ready，还需 `single-head + shared FIFO` 桥接共享容量与 observation 的变化。
+历史 JSONL native multi-job 结果把 PG export 放在计时外，且 Daft/Ray Data 当前只可靠提供
+shard/Job barrier，不满足新 system-level PG source/sink 与 request-tail schema，禁止直接拼表。
 
 当前主场景是**单租户多 Job/workload class**，不是多租户资源管理；按 `job_id` 记账与当前范围
 一致。多 Job 不由单一 VTC/Jain 指标判定。每个 Job 同时报 `multi/full-solo`（总体干扰）、
