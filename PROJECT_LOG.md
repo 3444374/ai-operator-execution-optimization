@@ -21,6 +21,29 @@
   `experiments/results/state_aware_work_unit/saor_bounded_priority_gate_20260813/`；服务器完整归档
   2.2 MiB，SHA256 `be6ce0a3c81351276f8e603cbbe6100b9e8b72fbfe70e75c142ca3b0658a2bb4`。
 
+## 2026-08-13 多 Job 评价合同扩展与四 Job 结论重解释
+
+- 将多 Job 判定依据从 VTC/Jain 单中心扩展为四组一手文献：DRF/Pisces/DRFT 的份额、隔离和
+  work conservation；Themis/Tiresias/Pollux 的 finish-time、attained service、starvation 与
+  useful progress；VTC/DLPM/Agentix 的服务量、locality 和程序级上下文；Sarathi-Serve/
+  DistServe/Llumnix 的 SLO goodput、tail 与 priority isolation。
+- 在 `research/evaluation_metrics_survey_20260731.md`、`research/knowledge_hub.md` 和
+  `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 冻结约束下多目标合同：每个
+  Job 同时报 `multi/full-solo`、`multi/reserved-solo`、`policy-multi/static-multi` 三种反事实；
+  共同积压窗口另报 empirical GPS lag、最长连续无服务和 avoidable idle；Jain 只作均匀度描述，
+  理论 fairness/Pareto 性质没有证明即保持 unavailable。
+- 重新审计 `opening_fourjob_interference_20260809`：按三次 formal 均值，shared 相对 static
+  使 group throughput +8.68%、四个 Job JCT 全部改善，可称效率/JCT 子向量的 baseline-relative empirical Pareto；
+  但 shared/quarter-solo 为 0.45/1.29/1.14/0.68，long1/2 未达到经验性保留份额非劣，且
+  raw-work Jain 0.960→0.923 只表示收益更不均。该结论不是完整多目标或 DRF Pareto efficiency、sharing
+  incentive、Themis finish-time fairness 或 VTC service bound。
+- 历史 Git compact CSV 只能计算三个 JCT 反事实、worst Job 和 normalized progress，不能无损
+  重建动态 active set 的 event-level lag/starvation。新 formal 增加 completion event、ready/
+  backlogged interval、active-set/weight 和 actual-work ledger 门禁；不从三阶段均值插值补造。
+- 同步更新 `PROJECT_OUTLINE.md`、`opening/claim_matrix.md`、开题报告/答辩提纲/问答库及结果
+  索引。此次只修改文献、实验合同和既有结果表述，不改代码、不新增实验、不提升 SAOR 当前
+  `formal-valid/not-promoted` 状态。
+
 ## 2026-08-13 SAOR bounded-priority 远端执行入口修正
 
 - 执行前审计发现唯一计划 Task 8 误用单 profiler 的

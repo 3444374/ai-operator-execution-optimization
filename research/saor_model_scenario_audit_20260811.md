@@ -33,8 +33,11 @@
   且未改善 Job B tail 或 Jain。因此动态 K 当前应淘汰出主线。
 - eager 两 Job 中，固定分区使 short 的 quota-only JCT 增加 59.00%；相同总上限下 shared
   相对 static 使 short JCT 降低 48.94%、总吞吐提高 31.85%、long JCT 降低 25.75%。四 Job
-  中 shared 相对 static 总吞吐提高 8.68%、short JCT 降低 72.23%，但 Jain 从 0.960 降到
-  0.923。这证明静态分区会浪费或错配份额，也证明无约束共享会产生公平/稳定性代价。
+  中按三次 formal 均值，shared 相对 static 总吞吐提高 8.68%，四个 Job JCT 全部改善，是
+  效率/JCT 子向量的 baseline-relative empirical Pareto；但 raw-work Jain 从 0.960 降到 0.923、long 收益和
+  稳定性更不均，且 long1/2 未达到 quarter-solo 的经验性非劣。这证明静态分区会浪费或错配
+  份额，也说明无约束共享仍缺稳定的 per-Job floor/SLO/service-lag 约束；不能单凭 Jain 下降
+  宣称已违反某个正式公平保证。
 - online replay 中结论方向不同：shared 提高总吞吐却伤害 short/Jain。因此 arrival、active、
   drain 状态确实影响正确的份额分配，但还不能推出 SAOR 已解决该问题。
 

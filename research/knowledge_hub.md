@@ -1,6 +1,6 @@
 # 知识库总汇：数据库 AI 负载的上游执行链路优化
 
-生成日期：2026-07-16（2026-07-17 更新：新增 §10 Daft+Ray 多模态与具身智能）
+生成日期：2026-07-16（最近更新：2026-08-13，新增多 Job 多文献评价合同）
 用途：集思广益入口——快速定位任何设计问题对应的参考资料、已知结论和待研究问题。
 涵盖：vLLM 机制 + Ray 架构 + 分级文献基线（Top 15 / 核心补充 / 工程资料）+ 策略设计 + 实验证据 + 知识缺口 + Daft+Ray 多模态延伸
 
@@ -351,7 +351,10 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
 | HedraRAG (SOSP 2025) | RAG 中 CPU/GPU 协调 | 仅 RAG，非通用 AI SQL |
 | Parrot (OSDI 2024) | Semantic variable prompt 共享 | 仅 GPU 侧，不涉及上游 |
 | Clipper (NSDI 2017) | AIMD 自适应 batching | 不涉及 LLM、token、continuous batching |
+| DRF / Pisces / DRFT | 多资源或多租户的 share guarantee、weighted fairness、work conservation、隔离与 admission control | 资源模型分别是集群 slot、KV-store/服务和事务；当前项目未证明 dominant share 或事务级 guarantee |
+| Themis / Tiresias / Pollux | finish-time fairness、attained service/starvation、useful progress/goodput | 面向 gang-scheduled DL training；只迁移独占/保留份额反事实和评价，不迁移训练统计效率或 placement 机制 |
 | VTC (OSDI 2024) | token-cost 公平、work-conserving service counter | 位于 serving scheduler 内，不含数据库数据组织和 Daft/Ray runtime |
+| DLPM / Agentix | prefix locality 与 fairness/load balance；程序级 attained service/JCT | DLPM 是预印本且机制在 serving 层；Agentix 的程序 DAG/agent 语义不等于数据库 Job |
 | Llumnix (OSDI 2024) | 多实例动态调度与 KV live migration | 依赖 serving 内部迁移，不覆盖固定 endpoint 的上游 shared credit |
 | LOTUS / Palimpzest / Abacus | semantic operator 的质量、成本和物理计划优化 | 不研究固定模型服务下的最小饱和 active work 和 request-level refill |
 | SemBench (PVLDB 2026) | 多系统、多模态 semantic query benchmark | 提供 workload/指标，不提出上游调度算法 |
@@ -714,7 +717,29 @@ LEADS (VLDB '24)             DistServe (OSDI '24)         Milvus (SIGMOD '21)
   fg SLO violation≤1%。实测 fg P99 14.27s、SLO 0%，但 formal repeats=0；它只诊断 release-only
   可达域，不能称 SAOR 改进或通用 hard-priority 策略胜出。
 
-#### 5.7.6 模式优先级矩阵
+#### 5.7.6 多 Job 评价模式：不是只看 VTC 或 Jain（2026-08-13）
+
+文献交叉后冻结四个互补视角：DRF/Pisces/DRFT 约束“份额与隔离如何定义”，Themis/Tiresias/
+Pollux 约束“Job 完成体验和未知时长如何评价”，VTC/DLPM 约束“共同积压服务差与 locality
+冲突”，Sarathi-Serve/DistServe/Llumnix 约束“SLO goodput 和 tail”。任何单篇都不能单独成为
+本项目判定多 Job 调度好坏的完整依据。
+
+每个 Job 固定三种反事实：`multi/full-solo` 看总体干扰，`multi/reserved-solo` 看经验性保留份额
+非劣，`policy-multi/static-multi` 看同竞争条件下 scheduler 增量。共同积压窗口另报 weighted
+actual service、empirical GPS lag、最长连续无服务和 avoidable idle；用户层另报 worst-Job
+JCT/P99/SLO。Jain 只表示均匀度：所有 Job 相对 static 都改善而 Jain 下降时，正确表述是
+“baseline-relative empirical JCT Pareto improvement, uneven benefit”，不是单凭 Jain 判定正式
+公平性质失败；高 Jain 也可能只是所有 Job 同样慢。
+
+现有文本四 Job compact evidence 能计算三个 JCT 反事实，但不能事后还原 event-level lag 或
+starvation。新 formal 必须保存无损 completion event、ready/backlogged interval、active-set/
+weight 变化和 actual work；没有证明时，理论 service bound、DRF sharing incentive、Themis
+finish-time fairness 均保持 unavailable。图像 CPU/GPU/bytes 在资源向量和 normalized capacity
+未校准前只作 stage mechanism，不冒充 dominant-resource fairness。完整公式与晋级合同见
+`evaluation_metrics_survey_20260731.md` §9.3 和
+`../experiments/plans/state_aware_work_unit_evaluation_20260808.md` §5.2.10–5.2.12。
+
+#### 5.7.7 模式优先级矩阵
 
 ```
                     落地难度 →

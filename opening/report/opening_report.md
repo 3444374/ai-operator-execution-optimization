@@ -30,6 +30,12 @@ Cortex AISQL 把 `AI_COMPLETE`、`AI_EMBED`、`AI_FILTER`、`AI_CLASSIFY` 和语
 
 Orca 提出 iteration-level scheduling，vLLM 通过 PagedAttention 和 continuous batching 提高 KV 利用率与吞吐，Sarathi-Serve 通过 chunked prefill 缓解 prefill/decode 干扰[11-13]。DistServe、Parrot、Llumnix、公平 LLM serving 与 SGLang 继续研究阶段分离、prefix 共享、动态调度和多租户公平性[14-17,31]。
 
+多作业评价还不能只依赖 VTC 或 Jain。DRF、Pisces 与 DRFT 分别从多资源份额、全局
+work-conserving 隔离和数据库事务资源记账定义公平性质；Themis、Tiresias 与 Pollux 从
+finish time、attained service、饥饿和 useful progress 评价作业体验[32-37]。本课题据此同时
+使用 full-solo、reserved-solo 和 static-multi 三种反事实，并把共同积压 service lag、
+worst-Job JCT/P99 与 SLO 作为独立维度；Jain 只描述分配均匀度，不替代份额保证。
+
 这些系统把“已经到达服务端的请求”作为基本输入。它们不负责解释数据库行如何组合成请求，也不知道 source scan、作业剩余 work、结果 exactly-once 或数据库 sink。因而，本课题不重复 vLLM 内部调度，而是在其上游形成容量受控的请求流，并将 vLLM 指标作为可观测信号而不是待修改对象。
 
 ### 2.3 分布式数据执行与异构流水线
@@ -196,10 +202,14 @@ Project eager 多 Job 配对随后补齐 full-pool single、half-pool single、s
 从而把quota-only与真实竞争分离。full→quarter使short JCT +180.38%，在相同quarter上限
 下加入其它Job又使static short +60.40%；shared相对static使short/long1/2/3 JCT分别
 −72.23%/−8.28%/−20.24%/−52.66%，group throughput +8.68%、MFU +8.56个百分点，
-但Jain 0.960→0.923且long收益与CV不均。Daft Native、Daft Ray、Ray Data保持各自
+所以按三次formal均值，在效率/JCT子向量上构成相对static的经验性Pareto改善；但raw-work Jain
+0.960→0.923，表示收益分配更不均。shared相对quarter-solo的JCT比为
+0.45/1.29/1.14/0.68，long1/2未达到经验性保留份额非劣。Daft Native、Daft Ray、Ray Data保持各自
 vendor-owned graph，未注入项目调度；它们的short与三个long相对各自single也全部退化，
 并分别呈现high-waiting/high-KV或low-running/low-MFU。四Job证据因此支持idle borrowing
-与fairness/SLO guard必须同时设计，不支持Project或dynamic普遍胜出。
+与fairness/SLO guard必须同时设计，不支持Project或dynamic普遍胜出；这里不是完整多目标
+Pareto改善，也不是DRF Pareto efficiency，Jain也不是share guarantee。历史紧凑数据不能还原event-level
+service lag/starvation，相关保证留待带无损completion/backlog ledger的新formal验证。
 
 ![原生执行图中 Short 与全部 Long Job 的四 Job 归一化影响](../../figures/opening_figure_set/main_png/P09_文本多作业_原生路径并发干扰.png)
 
@@ -386,3 +396,15 @@ observe-only 记录，不驱动 credit 或路由，而且 shared/static group JC
 [30] Y. Yuan, et al. NeuStream: Bridging Deep Learning Serving and Stream Processing. In: Proceedings of the Twentieth European Conference on Computer Systems. 2025
 
 [31] L. Zheng, L. Yin, Z. Xie, et al. SGLang: Efficient Execution of Structured Language Model Programs. In: Advances in Neural Information Processing Systems 37. 2024
+
+[32] A. Ghodsi, M. Zaharia, B. Hindman, et al. Dominant Resource Fairness: Fair Allocation of Multiple Resource Types. In: 8th USENIX Symposium on Networked Systems Design and Implementation. 2011
+
+[33] D. Shue, M. J. Freedman, A. Shaikh. Performance Isolation and Fairness for Multi-Tenant Cloud Storage. In: 10th USENIX Symposium on Operating Systems Design and Implementation. 2012
+
+[34] A. Cheng, A. Kabcenell, X. Shi, et al. Fair Transaction Processing for Multi-Tenant Databases. Proceedings of the VLDB Endowment, 2025, 18(8): 2602-2615
+
+[35] K. Mahajan, A. Balasubramanian, A. Singhvi, et al. Themis: Fair and Efficient GPU Cluster Scheduling. In: 17th USENIX Symposium on Networked Systems Design and Implementation. 2020
+
+[36] J. Gu, M. Chowdhury, K. G. Shin, et al. Tiresias: A GPU Cluster Manager for Distributed Deep Learning. In: 16th USENIX Symposium on Networked Systems Design and Implementation. 2019
+
+[37] A. Qiao, S. K. Choe, S. J. Subramanya, et al. Pollux: Co-adaptive Cluster Scheduling for Goodput-Optimized Deep Learning. In: 15th USENIX Symposium on Operating Systems Design and Implementation. 2021

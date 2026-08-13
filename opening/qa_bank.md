@@ -68,7 +68,7 @@
 
 ### 一个 short 加一个 long 足以说明多 Job 管理的必要性吗？为什么不直接做四个 Job？
 
-> 两个 Job 足以回答最小因果问题，因为 arrival、quota 和竞争最容易分离；但现在也已补完受控 `short@0s→3 long@5s` 四 Job 扩展。四个 Job 都是512行，Project有full/quarter single、static/shared配对，三条原生路径各自运行single→four-job三重复。结果显示Project shared相对static总吞吐+8.68%、short JCT−72.23%，但Jain 0.960→0.923且long收益不均；三条原生路径的short和long也全部退化。因此两Job负责干净因果，四Job负责验证多long干扰与公平问题。现有数据仍不足以证明weighted fairness、SLO guard、Long→Short或新workload稳定性，这些留论文阶段。
+> 两个 Job 足以回答最小因果问题，因为 arrival、quota 和竞争最容易分离；但现在也已补完受控 `short@0s→3 long@5s` 四 Job 扩展。四个 Job 都是512行，Project有full/quarter single、static/shared配对，三条原生路径各自运行single→four-job三重复。按三次formal均值，shared相对static总吞吐+8.68%，四个Job JCT全部改善，是效率/JCT子向量的baseline-relative empirical Pareto；但这不是完整多目标Pareto。raw-work Jain 0.960→0.923只说明收益更不均，不能单独判定正式公平性质。shared/quarter-solo为0.45/1.29/1.14/0.68，long1/2未达到经验性保留份额非劣；三条原生路径的short和long也全部退化。因此两Job负责干净因果，四Job负责验证多long干扰与三种反事实。现有compact数据不能还原event-level service lag/starvation，也不足以证明weighted fairness、SLO guard、DRF/Themis/VTC性质、Long→Short或新workload稳定性，这些留论文阶段。
 
 ### 当前 short/long 多 Job 是文本还是图像？
 

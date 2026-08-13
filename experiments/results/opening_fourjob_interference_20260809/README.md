@@ -86,6 +86,31 @@ shared 相对 static 明显改善全部四个 Job，但收益分配不均：long
 −20.24%、−52.66%。long2/long3 的 shared JCT CV 分别为 12.93%/10.19%，而 static
 均低于 0.2%；现有共享策略提高效率，但仍缺少稳定的 per-job floor/SLO/fairness guard。
 
+#### 4.1.1 三个反事实必须同时看
+
+按 2026-08-13 扩展后的多 Job 评价合同，对 shared 为每个 Job 计算三个比率：
+
+- `shared/full-solo`：满资源干扰比，回答共享后相对独占全部资源慢多少；
+- `shared/quarter-solo`：经验性保留份额非劣比，回答 shared 是否至少达到同 Job 独占名义
+  1/4 份额时的 JCT；
+- `shared/static-multi`：同竞争条件下的 scheduler effect，只换 shared/static 调度。
+
+| Job | shared/full-solo | shared/quarter-solo | shared/static-multi |
+|---|---:|---:|---:|
+| short | 1.25× | **0.45×** | **0.28×** |
+| long1 | 3.21× | 1.29× | **0.92×** |
+| long2 | 2.72× | 1.14× | **0.80×** |
+| long3 | 1.60× | **0.68×** | **0.47×** |
+
+三个比率给出不同答案：按三次 formal 均值，shared 相对 static 使四个 Job JCT 全部改善，
+因此在“同一竞争条件下的 group throughput/JCT 与四个 per-Job JCT”这个**效率/JCT 子向量**
+上，是一个相对 static 的经验性 Pareto 改善；它不是包含公平/SLO 的完整评价向量改善，也不是
+DRF 的 Pareto efficiency。相对 quarter-solo，short/long3 达到经验性
+非劣，而 long1/long2 仍慢 29%/14%，所以不能说每个 Job 的名义保留份额都得到保障。所有
+`shared/full-solo>1` 又说明并发干扰没有消失。`shared/quarter-solo≤1` 也只能称
+reserved-share non-inferiority，不能称 DRF sharing incentive 或 Themis finish-time fairness
+定理，因为本实验的离散请求、资源和干扰模型不满足那些论文的原假设。
+
 ### 4.2 原生框架：只比较各自 single→four-job
 
 | 系统 | Job | single JCT | four-job JCT | 变化 | four-job CV |
@@ -124,8 +149,10 @@ waiting、低 KV 与低 MFU，即使 GPU utilization 仍接近 90%。这直接�
 GPU util 或 Job 数，至少要联合 completed work rate、running/waiting、KV、MFU 和 tail。
 
 Project shared 相对 static：group tok/s +8.68%、group JCT −7.97%、MFU +8.56 个百分点、
-running +24.77、KV +0.120，但 Jain 从 0.960 降到 0.923。共享更多 work 是有效机制，
-但“提高总效率”与“公平地服务每个 Job”不是同一个目标。
+running +24.77、KV +0.120，但 raw-work Jain 从 0.960 降到 0.923。该 Jain 变化说明实际
+work-rate 的分配更不均，**不能单独证明份额公平性变坏**：同一对照中四个 Job JCT 都改善，
+只是受益幅度差异很大。应把它与保留份额反事实、最坏 Job、service lag、SLO 和 starvation
+共同解释，而不是把“提高总效率”与“Jain 下降”简化成一个胜负结论。
 
 为与 VTC/FairServe 的 work-based fairness 思路对齐，又从同一
 `job_slowdown_comparisons.csv` 计算 isolated-normalized progress：对每个完整 Job 定义
@@ -147,6 +174,13 @@ Daft/Ray Data/Project barrier 证据的系统内 slowdown fairness；值越高�
 normalized-progress Jain 又会遗漏总效率。正式讲述必须把 group throughput/MFU、原始
 work-service Jain、isolated-normalized progress Jain 和最坏 Job JCT/P99 并列。
 
+**证据可计算性边界**：当前 Git 中的 compact CSV 能重算上述三个 JCT 反事实、最终
+normalized progress 和 worst Job；它不能无损重建动态 active set 下每个共同积压区间的理想
+GPS service、max/P95 lag、最长连续 no-service 或 lag 偿还时间。现有汇总中的
+`normalized_service_disparity` 是终态描述量，不是 VTC/DLPM service-difference bound。除非从
+完整 archive 的 request completion 与 backlog interval 重新通过事件级审计，否则这些指标必须
+保持 unavailable，不能从三阶段均值插值补造。
+
 ### 4.4 Project 三阶段状态
 
 | 阶段 | static 时长 / running / completed work/s | shared 时长 / running / completed work/s | 解释边界 |
@@ -167,7 +201,9 @@ static 四个 Job 都约 39 ms。该差异与 long JCT 分配不均相吻合，�
 2. Project 的静态四分区同时包含 quota loss 和真实竞争；配对 single-quarter 已将二者分开。
 3. 三条原生路径中，short 和三个 long 在四 Job 重叠时均相对自身 single 退化。
 4. 原生系统落入不同服务压力形态；GPU utilization 单指标不能区分 overqueue 和 underfeed。
-5. Project shared 提高 aggregate 效率并改善所有 Job JCT，但 Jain 和 long 间稳定性回退。
+5. 按三次 formal 均值，Project shared 提高 aggregate 效率并改善所有 Job JCT，构成相对
+   static、限于效率/JCT 子向量的经验性 Pareto 改善；但收益分配和 long 间稳定性更不均，且 long1/long2 未达到
+   quarter-solo 的经验性非劣。
 
 ### 推断与对课题的含义
 
@@ -185,8 +221,9 @@ static 四个 Job 都约 39 ms。该差异与 long JCT 分配不均相吻合，�
 
 - 不能说 Project 普遍优于 Daft 或 Ray Data；原生与 Project 的完整 T0/执行边界不同。
 - 不能按组级表跨系统排名 `service tok/s` 或 MFU；实际 token-work 基数和执行边界不同。
-- 不能说 shared/dynamic 已全面优于 static；本实验中 Jain 与 long 稳定性回退，旧在线
-  replay 中也出现 shared 伤害 short 的相反方向。
+- 不能说 shared/dynamic 已全面优于 static；它只在本实验的效率与 per-Job JCT 维度相对
+  static 改善，尚未满足所有 Job 的 reserved-share non-inferiority，也没有 event-level service
+  lag、starvation 或理论 fairness guarantee；旧在线 replay 还出现 shared 伤害 short 的相反方向。
 - 不能把 Daft/Ray Data 的外部状态归因于其内部调度算法。
 - 不能伪造原生 request P95/P99，也不能把短 single cell 当成 ≥60 s 框架容量排名。
 - 不能外推到 weighted priority、Long→Short 前台到达、图像 phase-change、音频或视频。
@@ -245,5 +282,7 @@ db705caac77c438f272a9ac1e4687b69dfef3be96500f768b9e7ca5d1ca416fb
 开题实验层已足以说明：多 Job 共享服务会产生 quota、竞争、状态与公平问题；Work Unit、
 状态感知、动态调度和代价估计各自有对应证据/设计职责。停止继续扩大 offset、Job 数或原生
 框架参数矩阵。代码优化的最小方向是给 shared scheduler 增加 per-job floor/SLO/fairness
-guard，并以同一 full/quarter/static/shared 合同做消融；图像 phase-change 与 weighted
+guard，并以同一 full/quarter/static/shared 合同做消融。新 formal 需保存无损 completion
+event、ready/backlogged interval、active-set/weight 变化与 actual work，报告 empirical GPS
+lag、最长连续 no-service、avoidable idle 和三个 JCT 反事实；图像 phase-change 与 weighted
 priority 留论文阶段，不作为当前开题 blocker。

@@ -79,6 +79,7 @@ PostgreSQL → Daft → Ray organizer / scheduler → vLLM → PostgreSQL
 | ShareGPT bounded C32/C64/C128/C256：9,455/14,058/17,834/18,158 tok/s | C128 是达到已测峰值 97% 的最小点；C256 waiting/KV/TTFT 显著恶化，支持状态感知与有界提交动机 |
 | 原生单 job 1+3：bounded/Daft Native/Daft Ray/Ray Data=17,800/17,286/16,747/3,551 tok/s | Daft 两臂稳定过量排队，Ray Data 当前路径稳定欠供给；同一服务需要 work-rate + running/waiting/KV/MFU 联合感知 |
 | 5s guaranteed-overlap：原生三轨 short JCT +82.42%/+104.84%/+32.76%；Project online 下 shared 提升aggregate但伤short/Jain，eager下quota-only +59.00%、matched static+long +58.77%、shared+long +28.90%，shared相对static short JCT−48.94% | 后到Job干扰、idle borrowing和arrival-regime dependence已证明；只比较各轨内部normalized impact，跨轨T0/绝对JCT不排名 |
+| 四 Job full/quarter/static/shared：按三次 formal 均值，shared 相对 static 总吞吐 +8.68%，四个 Job JCT 均改善；shared/quarter-solo=0.45/1.29/1.14/0.68，raw-work Jain 0.960→0.923 | 仅效率/JCT 子向量构成 baseline-relative empirical Pareto；long1/2 未达到经验性保留份额非劣，Jain 表示收益更不均。compact 数据不能补 event-level lag/starvation，不称 DRF/Themis/VTC 性质 |
 | DuckDB AI ShareGPT：service tok/s≈direct，4,921/6,144 cap 语义失败 | 产品语义兼容性必须进入 correct throughput，不能把问题写成纯速度排名 |
 | 65,536 active work/endpoint 达最大吞吐的 97.8% | 固定 token-aware credit 是当前简单、稳健的文本默认点 |
 | AIMD/PID/EWMA、动态 flush、多 actor 及 capacity-only SAOR 多数未过强静态门槛 | dynamic K 不作为主方法；不能声称复杂动态策略普遍胜过强静态 baseline |

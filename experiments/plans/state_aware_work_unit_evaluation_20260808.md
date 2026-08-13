@@ -3,7 +3,9 @@
 日期：2026-08-08（2026-08-09 更新：开题两作业 guaranteed-overlap 已完成；
 2026-08-11 更新：新增 SAOR 动态调度设计维护入口；2026-08-12 更新：fixed-envelope
 2-Job formal 已运行并经 resolution-aware v2 完整 validation；通用有界优先级 v0.5.1 已完成
-本地实现与门禁工具，服务器关机期间不运行 GPU rehearsal/formal）
+本地实现与门禁工具；2026-08-13 更新：按 DRF/Pisces/DRFT、Themis/Tiresias/Pollux、
+VTC/DLPM 与 SLO-serving 文献收紧多 Job 评价合同，并完成双轮 bounded-priority GPU
+development gate；结果未晋级，新增 ready-set observation 修订任务）
 
 > **动态调度算法唯一维护入口**：本文 §5.2。当前状态为
 > `formal-valid / not-promoted`，不是已完成方法，
@@ -26,7 +28,10 @@
 ## 2. 成功标准
 
 - correctness、exactly-once、任务质量、feeding-saturation、稳定性与资源门禁全部通过；
-- 相对同资源、同上限 frozen-static，correct throughput、SLO goodput、P99/JCT 或 fairness 至少一项改善约 5%，且其他关键指标和 failure 不出现不可接受退化；
+- 相对同资源、同上限 frozen-static，至少一个**预注册 headline**（correct throughput、
+  SLO goodput、worst-Job P99/JCT 或 empirical service lag）改善约 5%；同时为每个 protected
+  metric 分别冻结方向与非劣/SLO 边界，不能事后用“无不可接受退化”替代明确阈值，也不能
+  把 5% 机械套给所有指标；
 - steady control 不要求动态胜出，但控制开销和回退不得造成约 5% 以上退化；
 - 若所有目标指标均未改善，记录动态控制失效边界，不更换弱 baseline。
 
@@ -847,7 +852,8 @@ $\arg\min_a\Psi(a)=\arg\min_a[\Psi(a)-\Psi(hold)]$，不会改变动作排序。
 #### 5.2.10 公平评价合同
 
 主公平定义：**共同积压 Job 的长期加权 attained service**。不以原始 TTFT 相等、请求条数
-相等或静态配额未超限替代。
+相等、静态配额未超限或单一 Jain 替代。公平评价与效率/SLO 形成约束下多目标向量，不压成
+一个 composite score。
 
 1. 加权服务 Jain。共同积压窗口内令 $x_j=S_j/\phi_j$：
 
@@ -868,23 +874,52 @@ $\arg\min_a\Psi(a)=\arg\min_a[\Psi(a)-\Psi(hold)]$，不会改变动作排序。
    报告最大正 lag、P95 lag 和 phase change 后的偿还时间。没有定理时只称 empirical service
    lag，不能称 VTC service-difference bound。
 
-3. 用户体验隔离。相对同一 Job 的匹配独占控制：
+3. 用户体验隔离。每个 Job 必须有三个反事实，而不是只选一个有利分母：
 
    $$
-   slowdown_j=\frac{JCT_j^{shared}}{JCT_j^{solo}},
-   \qquad
-   progress_j=\frac{JCT_j^{solo}}{JCT_j^{shared}}.
+   R_j^{full}=\frac{JCT_j^{policy,multi}}{JCT_j^{\mathrm{full\text{-}solo}}},\qquad
+   R_j^{reserve}=\frac{JCT_j^{policy,multi}}{JCT_j^{\mathrm{reserved\text{-}solo}}},\qquad
+   R_j^{sched}=\frac{JCT_j^{policy,multi}}{JCT_j^{static,multi}}.
    $$
 
-   报告 max slowdown、progress Jain、TTFT/JCT P95/P99 和 SLO miss；Jain 高但所有 Job 都
-   同样慢不能称为好调度。
+   `full` 回答总体干扰，`reserve` 回答策略是否达到同 Job 独占名义份额时的经验性能，
+   `sched` 隔离同一竞争条件下 scheduler 的增量。报告 max ratio、progress Jain、TTFT/JCT
+   P95/P99 和 SLO miss；Jain 高但所有 Job 都同样慢不能称为好调度。$R^{reserve}\le1$ 只能称
+   **reserved-share non-inferiority**，不是 DRF sharing incentive 或 Themis finish-time fairness
+   定理，因为资源模型、离散请求和服务干扰假设不同。
 
-4. 饥饿和工作守恒。报告最大 waiting age、未完成请求、以及“存在 eligible ready work 且
+4. 饥饿和工作守恒。报告最长连续 no-service interval、最大 waiting age、未完成请求、以及
+   “存在 eligible ready work 且
    健康 endpoint 仍有可用安全容量”的 avoidable-idle ratio。GPU idle 但无 ready work 不算
    调度器不工作守恒。
 
 5. 效率—公平 Pareto。吞吐/goodput、tail、energy 与 service lag 分开报告，不压成一个 headline
-   composite score。
+   composite score。若 policy 相对 static 使所有 Job JCT 都不增、至少一个严格改善，同时
+   aggregate 指标也不退化，可称“**相对该 baseline 和已观测维度的经验性 Pareto 改善**”；
+   这不是 DRF 的 Pareto efficiency。Jain 下降但所有 Job JCT 改善时，应表述为“收益更不均”，
+   不能只凭 Jain 宣称份额保证失败；最终结论仍由 service lag、保留份额与 SLO 共同决定。
+
+6. 数据与可计算性门禁。历史 compact CSV 可计算三个 JCT 反事实、worst Job 和 normalized
+   progress，但不能无损重建动态 active set 下的 GPS lag、最长连续 no-service 或偿还时间。
+   新 formal 必须保存 request ready/backlogged interval、completion event、actual completed
+   work、权重/active-set 变化和 release/submit/complete 时间；缺一项就把对应字段记为
+   `unavailable`，禁止从 phase aggregate 插值制造公平轨迹。当前
+   `cumulative_service_disparity` 是 empirical 描述量，不冒充理想 GPS lag 或理论上界。
+
+7. 多资源边界。图像 prepare CPU work、ready bytes 和 GPU model work 先分别作为 stage
+   mechanism 指标。只有校准出同时可消费的资源向量、每种容量的归一化单位及 dominant share
+   后，才增加 DRF-style headline；当前 scalar token/frame work 与阶段利用率不能称 dominant
+   resource fairness。
+
+8. 可行性裁决。三个 JCT 反事实只需现有 matched controls，立即可行；event-level empirical
+   lag/starvation 可在不修改 vLLM 的前提下离线重放 completion/backlog ledger，工程上可行，
+   但前提是 coordinator 能看到完整 bounded ready set。2026-08-13 bounded-priority gate 已证明
+   “只暴露一个 Job head”会造成 observation gap，因此该 gate 也适用于公平指标本身：ready/
+   backlogged 语义不完整时，lag 必须 unavailable。当前不合理的目标是直接承诺 VTC 式端到端
+   service bound 或 DRF dominant-share 定理——上游不能抢占已进入未修改 vLLM 的请求，输出
+   work 未知，内部 continuous batching 还会改变完成顺序。可行的论文承诺是约束下经验评价，
+   以及在明示不可抢占/估计误差假设后，对**上游 release/credit 层**证明有限性质；不能把后者
+   自动外推为模型服务端到端公平保证。
 
 #### 5.2.11 交叉验证、baseline 与淘汰门
 
@@ -914,7 +949,9 @@ lower/upper、state-observed no-op、threshold/deadband、governor 和 offline o
 
 - 与 frozen-static 保持同最大 request/work 上限、source/sink、manifest 和服务配置；
 - correctness、exactly-once、质量、feeding-saturation 和稳定性门禁通过；
-- 至少一个预注册主要指标改善约 5%，且 throughput、P99/SLO、公平或 failure 无不可接受退化；
+- 至少一个预注册主要指标改善约 5%；每个 protected metric 必须在 run 前写明方向、
+  non-inferiority/SLO margin 和统计汇总方式，并全部满足。通用 5% effect-size gate 与具体保护
+  边界是两件事，禁止事后以“无不可接受退化”放宽；
 - 相比简单 threshold controller 的 recovery/overshoot/regret 有可复现增量；
 - 控制轨迹确实不同，非零动作覆盖足够时长；否则按 effect-range gate 停止；
 - cost/状态估计换成 oracle 后仍无收益，则淘汰调度结构；oracle 有收益而在线无收益，则归因于
@@ -922,10 +959,37 @@ lower/upper、state-observed no-op、threshold/deadband、governor 和 offline o
 
 #### 5.2.12 相关工作边界与可写贡献
 
-最接近的重叠方向包括 VTC 的 in-engine token fairness、EWSJF 的 upstream mixed-workload
-排序、Equinox 的预测/双维公平，以及 CONCUR 的外部 congestion admission：
+相关工作不能只围绕 VTC。当前评价与设计边界至少来自四组互补文献：
+
+- **共享资源与数据库多租户**：DRF 定义 sharing incentive、strategy-proofness、envy-free 与
+  Pareto efficiency；Pisces 强调全局 weighted fairness、work conservation 与隔离；DRFT 把
+  accurate incremental resource usage、share guarantee 和 admission control 带入多租户事务。
+  它们约束“份额保证应如何表述”，但本项目当前还没有多资源 dominant-share 定理；
+- **作业完成与未知时长**：Themis 用独占/共享 finish-time 比约束训练作业；Tiresias 用
+  attained service、JCT 与 starvation promotion 处理未知时长；Pollux 以 useful progress/
+  goodput 连接资源分配与效率。它们支持 reserved/full solo 反事实和最坏 Job 评价，但 gang
+  placement、训练收敛效率不能直接迁移到不可抢占的 vLLM request release；
+- **LLM serving 公平与 SLO**：VTC/DLPM 提供 token/service disparity、work conservation 和
+  prefix-locality 冲突；Sarathi-Serve、DistServe、Llumnix 提供 SLO goodput、TTFT/TBT/P99、
+  priority/isolation 评价。它们大多位于 serving 内部，本项目只迁移 work accounting 与指标；
+- **上游/程序级调度候选**：EWSJF 的 upstream mixed-workload 排序、Equinox 的预测/双维公平、
+  CONCUR 的外部 congestion admission，以及 Agentix 的 program-level attained service/JCT，
+  用于校验上游定位和 baseline，而不自动构成项目创新。
+
+一手入口：
 
 - VTC：<https://www.usenix.org/conference/osdi24/presentation/sheng>；
+- DRF：<https://www.usenix.org/conference/nsdi11/dominant-resource-fairness-fair-allocation-multiple-resource-types>；
+- Pisces：<https://www.usenix.org/system/files/conference/osdi12/osdi12-final-215.pdf>；
+- DRFT：<https://doi.org/10.14778/3742728.3742751>；
+- Themis：<https://www.usenix.org/conference/nsdi20/presentation/mahajan>；
+- Tiresias：<https://www.usenix.org/conference/nsdi19/presentation/gu>；
+- Pollux：<https://www.usenix.org/conference/osdi21/presentation/qiao>；
+- DLPM：<https://arxiv.org/abs/2501.14312>（预印本）；
+- Agentix：<https://www.usenix.org/conference/nsdi26/presentation/luo>；
+- Sarathi-Serve：<https://www.usenix.org/conference/osdi24/presentation/agrawal>；
+- DistServe：<https://www.usenix.org/conference/osdi24/presentation/zhong-yinmin>；
+- Llumnix：<https://www.usenix.org/conference/osdi24/presentation/sun-biao>；
 - EWSJF：<https://arxiv.org/abs/2601.21758>（预印本）；
 - Equinox：<https://arxiv.org/abs/2508.16646>（预印本）；
 - CONCUR：<https://arxiv.org/abs/2601.22705>（预印本）。
@@ -968,6 +1032,8 @@ token organization 是输入，priority 是消融，多模态是外部有效性�
 | 2026-08-12 | `saor-v0.4.10-resolution-aware-full` | 默认 formal summarizer 写出 resolution-aware v2、采样周期、完整 validation 更新标志与 legacy 重分类清单；在服务器完整 artifact 上旁路重汇总 | 本地/服务器 6 个真假阴性回归 + source SHA 绑定 | validation passed、credit effective 12/12；原 failed 文件保留审计，性能排序不变，SAOR 仍 not-promoted |
 | 2026-08-12 | `saor-v0.5-bounded-priority-design` | 将后继冻结为通用有界词典序 release：显式 per-Job priority/剩余 SLO 预算、completion-corrected actual-work debt cap、单 recovery lease、guard drain/普通 priority fitting-head fallback 与 event-level 机制证据；首轮只做 2-Job 两个 cap | formal/strict-priority GPU 证据 + 实现断点审计 + DRR/VTC/EDF 理论边界 | 仅设计冻结；尚未实现/短测/证明，SAOR 保持 `formal-valid/not-promoted`；reservation 降为通过 guard 后的鲁棒性消融 |
 | 2026-08-12 | `saor-v0.5.1-reclaim-barrier` | 把 guard drain 收紧为只面向一个 debt-critical ready head 的 reclaim barrier；recovery 发出后立即解除全局 guard；首轮 cap 改为 0.125K/0.25K，bulk slowdown 降为诊断；实现 selector/coordinator/SLO plumbing/timeout cleanup/Ray lossless ledger/readiness/two-round summary | 设计复核 + 本地受影响套件 291 tests + compile/diff/secret scan | 本地代码与证据工具完成；GPU rehearsal 因服务器关机未运行，状态 `development-unrun/not-formal-registered`；避免无限 hold 与 0.50K 近似无限 cap 的低信息量实验 |
+| 2026-08-13 | `multi-job-eval-v1` | 将公平评价从 VTC+Jain 单中心扩展为三个 JCT 反事实、共同积压 service lag、starvation/work conservation、SLO 与约束下 Pareto；区分经验性 baseline-relative 改善和 DRF/Themis/VTC 理论性质 | DRF/Pisces/DRFT、Themis/Tiresias/Pollux、VTC/DLPM、Sarathi/DistServe/Llumnix/Agentix 一手文献 + 现有四 Job compact evidence 可计算性审计 | 不改变 SAOR `formal-valid/not-promoted` 状态；新 formal 增 event-ledger 证明义务，历史四 Job 只重解释、不补造 lag |
+| 2026-08-13 | `saor-v0.5.1-ready-set-gap` | 按冻结四臂执行两轮 GPU gate，并用 lossless event + request trace 分解 selector→submit→service | Round 1 clean；Round 2 0.25K debt-recovery=0 被 fail closed；8 个 cell 全部 exactly-once、GPU mean≥95.8% | 两 cap foreground 门均失败，formal 不注册。所有可见 fg head 均获 priority，但单-head pull 使完整 ready backlog 间歇不可见；下一修订先改 observation contract，不扫 cap、不扩 4-Job/reservation |
 
 状态只允许按以下顺序变化：
 
@@ -1508,10 +1574,15 @@ prompt-work skew 为 3.58%，原生门禁按不重排同一输入的原则冻结
 4. `single_full → shared_4job`：共享 work-credit 下的总干扰；
 5. `static_4job → shared_4job`：同全局 K/W 上限的调度策略因果对比。
 
+结果解释再统一映射到 §5.2.10 的三个反事实：`policy/full-solo`、
+`policy/reserved-quarter-solo`、`policy/static-multi`。历史 compact 结果只补这三类 JCT 比率；
+共同积压 GPS lag、最长连续 no-service 和偿还时间必须来自新 formal 的无损 completion/backlog
+ledger，不能从下述三段聚合事后推算。
+
 逐 Job 必须报告 JCT、P95/P99（native adapter 无可靠 request timestamp 时明确不可用）、
 actual work、work/s、相对自身 single-full slowdown、开始/结束和与其它 Job 的重叠时长。
 三个 long 还要报告 slowdown/JCT 的 max-min、CV、最慢 Job、pairwise overlap 和完成顺序。
-组级报告总 tokens/s、Jain fairness、max/min service、GPU util、MFU、running/waiting/KV、
+组级报告总 tokens/s、描述性的 Jain fairness、max/min service、GPU util、MFU、running/waiting/KV、
 能耗、exactly-once；Project 按 `short-only / four-job overlap / long-only drain` 三段重算
 完成 work rate 与服务状态。只有四个 Job 全部完成、实际 overlap>0、manifest 和资源
 合同一致的 formal run 才进入比较。每场景 1 warm-up + 3 formal；短于60秒的单 Job
@@ -1662,10 +1733,12 @@ running/waiting 均归零。该单次结果明确为 `comparison_admission=not_r
    Gamma burst、request-rate、max-concurrency 与 ramp-up；它只作 serving ceiling/control，
    不代表多 Job 数据流。远端 vLLM 0.25.1 实测没有新版文档中的 `probe-request-rate`，不开
    升级或自写仿 probe 客户端；现有独立 Job runner 已覆盖更完整的干扰观测。
-2. **多租户公平定义**：复用 VTC 的 actual token-work accounting、work-conserving、
-   cumulative service disparity 和 per-client completion；项目 runner 已保存 normalized
-   service/Jain/disparity。VTC 位于服务内部，本项目不修改 vLLM，故只迁移指标和 counter
-   思路，不把 VTC artifact 当同层系统 baseline。
+2. **多租户评价定义**：组合 DRF/Pisces/DRFT 的 share/isolation/work-conservation、
+   Themis/Tiresias 的 full/reserved finish-time 与 attained service，以及 VTC/DLPM 的 actual
+   token-work、共同积压 service disparity 和 locality。项目 runner 已保存 normalized
+   service/Jain/描述性 disparity；还需完整 ready/backlogged ledger 才能算 empirical GPS lag/
+   starvation。VTC 位于服务内部，本项目不修改 vLLM，故只迁移指标和 counter 思路，不把
+   VTC artifact 当同层系统 baseline，也不称已获得 VTC bound。
 3. **多模态 workload/native graph**：复用 Daft/Ray Data 官方 image/document/audio/video
    benchmark 的 workload 形态与 vendor-owned graph；本项目只增加 single controls、独立
    graph 并发、ready/start barrier、统一 source/质量与状态采集。
@@ -1754,10 +1827,11 @@ VTC on/off 与 8-client suite，因为给官方 graph 注入外部 per-client pa
 
 每条公开 benchmark run 除现有 E2E/GPU/MFU/能耗指标外，必须输出：per-job arrived/
 completed/failed requests、actual prompt/output/weighted service、JCT/TTFT/P99/SLO goodput、
-solo-normalized progress、Jain、持续 backlogged window 的 cumulative service
-max-min/mean disparity、idle time、borrowed work 和 endpoint running/waiting/KV。VTC 式
-service disparity 只在至少两个 Job **同时持续 backlogged** 的窗口计算，不能把未到达或已
-drain 的 Job 计入分母制造“公平”。
+三个 JCT 反事实、solo-normalized progress、描述性 Jain、持续 backlogged window 的
+empirical GPS lag/max-min disparity、最长连续 no-service、偿还时间、idle time、borrowed work
+和 endpoint running/waiting/KV。service lag/disparity 只在至少两个 Job **同时持续
+backlogged** 的窗口计算，不能把未到达或已 drain 的 Job 计入分母制造“公平”；没有证明时
+不称 VTC 式 service-difference bound。
 
 准备阶段通过标准：转换 deterministic；Job/manifest doc-id 互斥；faithful-timed arms 的
 arrival 重放误差 P95 <= 50 ms；token-length 匹配误差有审计；exactly-once；同一资源/

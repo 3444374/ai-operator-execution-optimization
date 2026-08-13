@@ -311,13 +311,19 @@ K/active-work 全扫描、完整 estimator 表、WorkDescriptor 全字段和指�
 - **反事实控制**：full/quarter single 用于分离配额损失；static partition 与 shared pool 才是
   同一全局上限下互斥的调度 A/B。
 - **当前结果**：shared 相对 static 的 group throughput +8.68%、Group JCT −7.97%；MFU
-  从 38.2% 升至 46.8%，即 +8.56 个百分点（相对 +22.41%），但不同 Job 收益不均。按实际完成 work 计算的 group Jain 为 0.960→0.923；
-  图中按各自 single control 归一化的进度 Jain 为 0.998→0.876。两种 Jain 口径不能混用。
+  从 38.2% 升至 46.8%，即 +8.56 个百分点（相对 +22.41%），四个 Job JCT 全部下降，
+  因而按三次 formal 均值，是效率/JCT 子向量上相对 static 的经验性 Pareto 改善；但不同 Job 收益不均。按
+  实际完成 work 计算的 group Jain 为 0.960→0.923，图中按各自 single control 归一化的
+  进度 Jain 为 0.998→0.876。两种 Jain 口径不能混用，也不能单独当成 share guarantee。
+- **保留份额检查**：shared/quarter-solo JCT 比为 0.45/1.29/1.14/0.68；long1/2 未达到
+  经验性非劣，因此不能称每个 Job 都获得了名义份额保证。
 - **机制关系**：idle borrowing 提高 work conservation；per-Job floor/cap、work-fair deficit
   和 SLO guard 约束隔离；状态感知再决定总准入与路由。
-- **页面结论**：动态调度不是单目标提吞吐，需要同时评价 efficiency、isolation 和 fairness。
+- **页面结论**：动态调度不是单目标提吞吐，需要同时评价 efficiency、isolation、service lag
+  和 SLO；效率/JCT 子向量的经验性 Pareto 不是完整多目标或 DRF Pareto efficiency，Jain 下降应读作收益更不均。
 - **证据缺口**：现有矩阵缺 global FIFO/no project Job scheduler；下一项 formal 必须加入
-  FIFO 与 DRR killer baseline，简单策略达到同一 Pareto 前沿即采用简单策略。
+  FIFO 与 DRR killer baseline，并保存无损 completion/backlog ledger 计算 event-level lag 与
+  starvation；简单策略达到同一 Pareto 前沿即采用简单策略。
 - **转场**：组织、准入和公平决策都需要一个可比较的代价信号。
 
 #### 第 16 页：代价估计需要同时评价预测质量和决策质量

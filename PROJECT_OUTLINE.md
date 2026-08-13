@@ -53,6 +53,13 @@ Daft、Ray、vLLM、PostgreSQL、pgvector 和 CLIP 是实现与验证平台，�
 它必须同时超过 global FIFO/no project Job scheduler 和简单 DRR/VTC-style 强 baseline；吞吐
 接近时继续评价 tail/SLO/fairness，均无改善则淘汰 SAOR，不更换 workload 追正。
 
+多 Job 不由单一 VTC/Jain 指标判定。每个 Job 同时报 `multi/full-solo`（总体干扰）、
+`multi/reserved-solo`（经验性保留份额非劣）和 `policy-multi/static-multi`（同竞争调度增量）；
+共同积压窗口另报 weighted actual service、empirical GPS lag、最长连续无服务和 avoidable idle，
+用户层报 worst-Job JCT/P99/SLO。评价采用明确保护约束下的多目标/Pareto，不压成 composite。
+baseline-relative empirical Pareto improvement 不等于 DRF Pareto efficiency；Jain 只表示均匀度，
+不能单独证明或否定 share guarantee。
+
 ### 2.3 共同使能组件：算子代价估计
 
 首版采用解析 work 特征、profile 校准和 residual correction，预测文本/图像的 stage work、operator service、JCT、remaining work 与 SLO slack。它同时服务于 active-work 初始化、`WorkDescriptor`/组织预算、路由、提交与多 job，不单列为第三项研究内容。
@@ -114,8 +121,11 @@ PostgreSQL source
 - 图像 matched-resource 静态执行结构有可重复收益：主报告冻结约 13%–15% operator-JCT 改善；旧 45.7% 资源不匹配，不再使用。
 - 多 Job 干扰已从两作业扩展到受控 `short@0s → 3 long@5s`：Project full/quarter
   single 将 quota 与竞争分离；三条原生路径全部 Job 均出现轨内退化。Project shared 相对
-  static 总吞吐 +8.68%、short JCT −72.23%，但 Jain 0.960→0.923且 long 收益/稳定性不均，
-  支撑 idle borrowing 与 fairness guard 同时存在的研究问题，不证明 dynamic 普遍胜出。
+  static 总吞吐 +8.68%，四个 Job JCT 分别 −72.23%/−8.28%/−20.24%/−52.66%，因此在
+  效率/JCT 子向量上是相对 static 的经验性 Pareto 改善；但 raw-work Jain 0.960→0.923、
+  long 收益/稳定性不均，且 long1/2 相对 quarter-solo 仍慢 29%/14%。这支撑 idle borrowing
+  与 fairness/SLO guard 同时存在的研究问题，不证明 dynamic 普遍胜出、份额保证或理论
+  Pareto efficiency。
 
 ### 5.2 条件性
 
