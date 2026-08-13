@@ -123,6 +123,18 @@ def summarize(root: Path, output: Path) -> None:
         )
         run_slowdowns: list[list[float]] = []
         for row in scenario_rows:
+            if row.get("metrics_status") != "ok":
+                formal_gate_errors.append(
+                    f"{scenario} repeat {row['repeat_index']} lacks model metrics"
+                )
+            if row.get("resource_metrics_status") != "ok":
+                formal_gate_errors.append(
+                    f"{scenario} repeat {row['repeat_index']} lacks resource metrics"
+                )
+            if int(row.get("actor_worker_failures", "-1")) != 0:
+                formal_gate_errors.append(
+                    f"{scenario} repeat {row['repeat_index']} has actor failures"
+                )
             if row.get("active_set_lifecycle_passed", "").lower() != "true":
                 formal_gate_errors.append(
                     f"{scenario} repeat {row['repeat_index']} failed lifecycle gate"

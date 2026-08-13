@@ -1022,6 +1022,31 @@ request K、协议、prompt format、immutable manifests、vLLM counters、资�
 只跳过 Daft/Ray Job credit/fair queue，因此回答“同 request window 下简单 merged arrival 是否
 已足够”；它是 project-authored control，不是 vendor-native baseline。
 
+机器 runtime 与本次 formal 合同分开保存。`ai-operator-runtime.env` 负责数据库、服务和机器
+路径；`saor_active_set_formal.env.example` 冻结当前 2×4090/Qwen2.5-7B/ShareGPT active-set
+证据合同。后者不含凭据，复制到仓库外后使用；不要把二者手工合成一串临时 `export`，否则新
+SSH 会话无法复现。由于 env 文件采用普通 shell assignment，必须在 `set -a` 区间 source，确保
+其值传给 Python 子进程：
+
+```bash
+install -d -m 700 /root/autodl-tmp/runtime
+cp deploy/autodl/saor_active_set_formal.env.example \
+  /root/autodl-tmp/runtime/saor-active-set-formal.env
+chmod 600 /root/autodl-tmp/runtime/saor-active-set-formal.env
+
+set -a
+source /root/autodl-tmp/ai-operator-runtime.env
+source /root/autodl-tmp/runtime/saor-active-set-formal.env
+set +a
+```
+
+当前最终通过的 rehearsal 权威值是 `chat_completions` + `/v1/chat/completions`、
+`SAOR_ACTIVE_SET_WORKLOAD=sharegpt_multiturn` 和 `SAOR_ARRIVAL_TIME_SCALE=0.0001`。
+`0.001` 是供给可达性门失败的旧 rehearsal：5 s 前每 endpoint 仅约 10K predicted work；不得
+从旧 readiness 或通用 runtime env 恢复它。通用 runtime env 的 `/v1/completions` 也不能覆盖
+本矩阵已校准的 Chat 请求合同。正式前的 readiness resolved evidence 必须再次显示协议、URL、
+scale、校准 SHA 与 pre-foreground work，任何不一致立即停止。
+
 项目与 direct 的 persistent HTTP/1.1 client 必须共享同一连接生命周期合同。设置
 `COMPLETION_HTTP_KEEPALIVE_EXPIRY_S=4`，要求它短于当前 vLLM/Uvicorn 的 5 s server
 keep-alive；readiness 会记录 direct 实际值，project profiler 也会把值写入结果。这个参数
@@ -1045,14 +1070,20 @@ burst 合同冻结 `0.0001` scale：5 s 前两 endpoint 分别约 140K/138K pred
 门禁分两层，不能混写：所有六个 active-set 臂都必须从 request evidence 观察到
 `bulk starts → foreground overlaps` 且两 Job exactly-once 完成；`foreground drains first` 是
 策略结果，单独报告，不能作为筛选 baseline 的有效性门。只有四个 credit
-策略还必须从 credit trace 观察到 pre/overlap/post 三段借用机制。static/direct 的机制门禁为
-`not_applicable:no_credit_trace`，不是失败。任一适用门禁未过，不抽策略结论。
+策略还必须从 credit trace 观察到三段机制：单 Job 阶段占用超过等份；第二 Job 加入后两者
+同时 active 且先到 Job 的份额相对 pre-borrow 峰值下降；任一 Job 先 drain 后，剩余 Job 的
+request/work dominant share 可观测；若仍有 waiting work，则逐 endpoint 验证队首请求至少被
+request slot 或 work slack 之一阻挡。若队首明明同时装得进 request/work envelope 却仍在等待，
+work-conserving 门必须失败；没有 waiting work 时允许按实际剩余量自然排空。static/direct 的
+机制门禁为 `not_applicable:no_credit_trace`，不是失败。任一适用门禁未过，不抽策略结论。
 
 formal 前先运行纯静态 fail-closed audit；它解析模板、校准合同、十臂矩阵、manifest 行数/
 SHA/endpoint 覆盖和 direct/project 请求合同，不发送请求：
 
 ```bash
-PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
+DRIVER_PYTHON="${DRIVER_PYTHON:-$(command -v python)}"
+test -x "$DRIVER_PYTHON"
+PYTHONPATH=code "$DRIVER_PYTHON" \
   code/scripts/analysis/audit_saor_formal_readiness.py \
   --config deploy/autodl/saor_active_set_release.example.json \
   --output "$ARTIFACT_ROOT/saor_active_set_readiness.json"
@@ -1062,27 +1093,28 @@ PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
 `warmup` identity，绝不会写 formal identity；输出目录必须与 formal 分离：
 
 ```bash
-PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
+PYTHONPATH=code "$DRIVER_PYTHON" \
   code/scripts/experiments/run_shared_vllm_experiment.py \
   --rehearsal \
   --config deploy/autodl/saor_active_set_release.example.json \
   --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
-  --python-executable "$VENV_ROOT/driver/bin/python" \
+  --python-executable "$DRIVER_PYTHON" \
   --output-dir "$ARTIFACT_ROOT/saor_active_set_release_rehearsal" \
   --health-url http://127.0.0.1:8000/health \
   --metrics-urls "$MODEL_METRICS_URLS" \
   --ray-address "$RAY_ADDRESS"
 ```
 
-只有 rehearsal `manifest.status=completed`、0 incident、十个 cell 全部完成，且六个 active-set
-cell 均通过 lifecycle gate、四个 credit cell 通过 mechanism gate，才允许移除 `--rehearsal`
-并换新输出目录启动 formal。禁止把 rehearsal 合并进 formal 统计。
+runner 对 rehearsal fail-closed：只有 `manifest.status=completed`、0 incident、十个 cell
+全部完成、metrics/resources 完整、六个 active-set cell 通过 lifecycle gate，且四个 credit
+cell 通过 mechanism gate 才返回成功；否则 manifest 标为 failed。通过后才允许移除
+`--rehearsal` 并换新输出目录启动 formal。禁止把 rehearsal 合并进 formal 统计。
 
 runner 完成后必须由 fail-closed 汇总器复算 formal 重复、生命周期/机制门禁、project/direct
 matched-solo slowdown、Jain、SLO 和资源时序：
 
 ```bash
-PYTHONPATH=code "$VENV_ROOT/driver/bin/python" \
+PYTHONPATH=code "$DRIVER_PYTHON" \
   code/scripts/analysis/summarize_saor_active_set.py \
   --matrix-root "$ARTIFACT_ROOT/saor_active_set_release_formal" \
   --output-dir "$ARTIFACT_ROOT/saor_active_set_release_formal/summary"

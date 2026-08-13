@@ -1,5 +1,21 @@
 # 项目日志
 
+## 2026-08-12 SAOR formal 双层 env 合同补全
+
+- 复核服务器最终 `7c11cc7c` rehearsal 的 `readiness.json` 与 redacted resolved config，消除
+  交接文字歧义：正式合同为 `chat_completions`、`/v1/chat/completions`、
+  `sharegpt_multiturn`、output cap 256 和 `arrival_time_scale=0.0001`；`0.001` 是首次
+  pre-foreground supply 门失败的旧配置，不得恢复。
+- 发现旧 rehearsal 依赖同一 SSH 进程中的临时 `export`；主
+  `/root/autodl-tmp/ai-operator-runtime.env` 只持久化了 34 个模板变量中的 14 个，且普通
+  `source` 不会自动把非 export assignment 传给 Python 子进程。新增无凭据
+  `saor_active_set_formal.env.example`，明确 machine runtime 与 evidence-bound formal contract
+  分层，并要求在 `set -a` 区间依次 source。
+- 服务器仓库外已建立 mode 600 的 `/root/autodl-tmp/runtime/saor-active-set-formal.env`；使用
+  `env -i` 的全新 shell 仅加载两份 env 后，静态 readiness 返回 passed，校准 SHA 保持
+  `bc2042d7...aa41`，5 s 前两 endpoint predicted work 为 140,417/137,617。未发送模型请求，
+  未启动 formal。
+
 ## 2026-08-12 SAOR 服务器清理与 replay-duration readiness 修正
 
 - 服务器旧现场审计后，将两个脏开发 worktree 的 tracked patch/untracked 文件和根目录 481 类
@@ -33,6 +49,21 @@
   pre-foreground predicted-work 门，要求至少覆盖一个完整 envelope。真实 manifest 离线计算：
   `scale=0.001` 的 5 s 前每 endpoint 约 10K（失败），`0.0001` 约 140K/138K（通过）；下一次
   rehearsal 冻结为独立 burst 合同，不把 scale 搜索或前三次失败结果混入 formal。
+- `0.0001` burst rehearsal 在 commit `bedb751b` 上完成 10/10、0 incident、metrics/resources 与
+  exactly-once 全通过；六个 active-set 臂均真实 overlap，四个 credit 臂 pre-borrow 均达到
+  95.0%。旧 post gate 仍失败，因为它只检查 bulk 且无条件要求剩余 active work >50%；实际
+  FIFO/DRR 可由 bulk 先结束，VTC/SAOR 在 post 段 coordinator waiting work 已为 0。
+- 将 post 机制定义改为任一 Job 先退出后的剩余 Job，逐 endpoint 检查 waiting head 是否同时
+  装得进 request/work 两维 envelope；能装却未释放才判非工作守恒，避免把不可分 request
+  碎片误判成 quota loss。overlap 同时要求两 Job active 且先到 Job 相对 pre-borrow 峰值发生
+  回收。rehearsal runner 新增 fail-closed record gate；这次旧 commit 的单次 warm-up 仍只作
+  gate 设计证据，必须新 commit 全量复验。
+- commit `7c11cc7c` 的最终 2×4090 burst rehearsal 由 runner 自身 fail-closed 返回 0：10/10
+  warmup cell、0 formal identity、0 incident，所有 metrics/resources、512/512 exactly-once、
+  actor failure=0；六个 active-set lifecycle 全通过，四个 credit 臂 pre dominant share
+  均为 0.9502、overlap reclaim 全观察到、post head-fit violation=0 且 work-conserving drain
+  全通过。工程现为服务器 formal-ready，但该单次 warmup 不进入性能统计，不证明 SAOR 胜出；
+  先跑两 Job 1+3，只有进入 FIFO/DRR Pareto 前沿才补四 Job 外部有效性。
 
 ## 2026-08-12 SAOR fixed-envelope formal harness 闭合
 
@@ -107,8 +138,8 @@
   envelope，按 active-set weighted dominant-share deficit、queue/fairness debt选择 fitting Job
   head，completion 后用 actual work 修正并补位；不修改 vLLM FCFS/continuous batching。
 - shared-vLLM runner 新增 `saor_release` 正式配置、权重 provenance、fairness-debt trace 和
-  `bulk-only → foreground-arrival → foreground-drain` 实际生命周期审计。未观察到 borrow、
-  overlap/reclaim、foreground 先 drain 与 bulk 后重借时，明确标记合同未发生。
+  `bulk-only → foreground-arrival → overlap → either-job drain` 实际生命周期审计。pre-borrow、
+  overlap/reclaim 与 post-drain work conservation 分段审计，不把 foreground-first 当作有效性。
 - 区分两个容易混淆的 FIFO：`shared_fifo` 是 project-owned shared-envelope FIFO；新增
   `run-jobs-control` 将多个 immutable Job arrival 合并，仅施加 endpoint-local HTTP bound 后交给
   vLLM FCFS，作为 no-project Job scheduler killer control，不冒充 vendor-native baseline。

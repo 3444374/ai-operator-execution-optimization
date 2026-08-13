@@ -44,6 +44,7 @@ class SaorSharedVllmConfigTest(unittest.TestCase):
             payload["work_limit_per_endpoint"],
             "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
         )
+        self.assertIs(payload["fail_closed_rehearsal"], True)
         arrival_scale_index = payload["common_args"].index("--arrival-time-scale")
         self.assertEqual(
             payload["common_args"][arrival_scale_index + 1],

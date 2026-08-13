@@ -190,6 +190,7 @@ class SharedVllmConfig:
     common_args: tuple[str, ...]
     scenarios: tuple[SharedVllmScenario, ...]
     service_metadata: tuple[tuple[str, object], ...]
+    fail_closed_rehearsal: bool = False
     calibration_contract: CalibrationContract | None = None
     state_aware_control: StateAwareControlConfig | None = None
     saor_capacity_control: SaorCapacityControlConfig | None = None
@@ -199,6 +200,9 @@ def load_config(path: Path) -> SharedVllmConfig:
     decoded = json.loads(path.read_text(encoding="utf-8"))
     if decoded.get("schema_version") != 1:
         raise ValueError("shared-vLLM config schema_version must be 1")
+    fail_closed_rehearsal = decoded.get("fail_closed_rehearsal", False)
+    if not isinstance(fail_closed_rehearsal, bool):
+        raise ValueError("fail_closed_rehearsal must be a boolean")
     experiment_id = _nonempty_string(
         decoded.get("experiment_id"),
         "experiment_id",
@@ -401,6 +405,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         common_args=common_args,
         scenarios=scenarios,
         service_metadata=expanded_metadata,
+        fail_closed_rehearsal=fail_closed_rehearsal,
         calibration_contract=calibration_contract,
         state_aware_control=state_aware_control,
         saor_capacity_control=saor_capacity_control,

@@ -277,7 +277,8 @@ def active_set_phase_summary(
 
     The audit derives phase boundaries from request arrival/completion evidence,
     never from configured labels. Lifecycle applies to every arm. Credit
-    borrow/reclaim/reborrow only applies to policies that emit a credit trace.
+    borrow/reclaim/work-conserving drain only applies to policies that emit a
+    credit trace.
     Neither gate claims that the selected policy improved performance.
     """
 
@@ -293,11 +294,25 @@ def active_set_phase_summary(
         "active_set_foreground_job_index": -1,
         "active_set_overlap_s": 0.0,
         "active_set_foreground_drained_first": False,
+        "active_set_first_drained_job_index": -1,
+        "active_set_remaining_job_index": -1,
         "active_set_bulk_only_pre_samples": 0,
         "active_set_overlap_samples": 0,
+        "active_set_overlap_reclaim_observed": False,
+        "active_set_overlap_reclaim_competition_samples": 0,
+        "active_set_overlap_bulk_fraction_min": 0.0,
+        "active_set_overlap_foreground_fraction_max": 0.0,
+        "active_set_overlap_bulk_dominant_share_min": 0.0,
+        "active_set_overlap_foreground_dominant_share_max": 0.0,
         "active_set_bulk_only_post_samples": 0,
         "active_set_bulk_borrow_fraction_max": 0.0,
+        "active_set_pre_bulk_dominant_share_max": 0.0,
         "active_set_bulk_reborrow_fraction_max": 0.0,
+        "active_set_post_remaining_fraction_max": 0.0,
+        "active_set_post_remaining_dominant_share_max": 0.0,
+        "active_set_post_remaining_waiting_work_max": 0.0,
+        "active_set_post_fit_violation_samples": 0,
+        "active_set_post_work_conserving_passed": False,
     }
     if len(job_evidence) != 2:
         return unavailable
@@ -324,6 +339,17 @@ def active_set_phase_summary(
         and overlap_s > 0
     )
     foreground_drained_first = foreground_end < bulk_end
+    first_drained_index = min(
+        range(2),
+        key=lambda index: float(job_evidence[index]["completion_end_epoch_s"]),
+    )
+    remaining_index = 1 - first_drained_index
+    first_drained_end = float(
+        job_evidence[first_drained_index]["completion_end_epoch_s"]
+    )
+    remaining_end = float(
+        job_evidence[remaining_index]["completion_end_epoch_s"]
+    )
     lifecycle_status = (
         "ok:observed_staggered_two_job_overlap"
         if lifecycle_passed
@@ -336,12 +362,39 @@ def active_set_phase_summary(
         observed_at = float(sample["observed_epoch_s"])
         aggregate = by_epoch.setdefault(
             observed_at,
-            {"work_limit": 0.0, "active_work_by_job": {}},
+            {
+                "work_limit": 0.0,
+                "request_limit": 0.0,
+                "active_by_job": {},
+                "active_work_by_job": {},
+                "waiting_work_by_job": {},
+                "endpoint_samples": [],
+            },
         )
         work_limit = float(sample["work_limit"])
         if work_limit <= 0:
             raise ValueError("active-set trace work limit must be positive")
         aggregate["work_limit"] = float(aggregate["work_limit"]) + work_limit
+        request_limit = float(sample["request_limit"])
+        if request_limit <= 0:
+            raise ValueError("active-set trace request limit must be positive")
+        aggregate["request_limit"] = (
+            float(aggregate["request_limit"]) + request_limit
+        )
+        raw_active = sample.get("active_by_job", ())
+        active_pairs = (
+            json.loads(raw_active)
+            if isinstance(raw_active, str)
+            else raw_active
+        )
+        aggregate_active_by_job = aggregate["active_by_job"]
+        if not isinstance(aggregate_active_by_job, dict):
+            raise ValueError("active-set aggregate has invalid active mapping")
+        for job_id, requests in active_pairs:
+            key = str(job_id)
+            aggregate_active_by_job[key] = (
+                aggregate_active_by_job.get(key, 0.0) + float(requests)
+            )
         raw = sample.get("active_work_by_job", ())
         pairs = json.loads(raw) if isinstance(raw, str) else raw
         aggregate_by_job = aggregate["active_work_by_job"]
@@ -350,16 +403,52 @@ def active_set_phase_summary(
         for job_id, work in pairs:
             key = str(job_id)
             aggregate_by_job[key] = aggregate_by_job.get(key, 0.0) + float(work)
+        raw_waiting = sample.get("waiting_work_by_job", ())
+        waiting_pairs = (
+            json.loads(raw_waiting)
+            if isinstance(raw_waiting, str)
+            else raw_waiting
+        )
+        aggregate_waiting_by_job = aggregate["waiting_work_by_job"]
+        if not isinstance(aggregate_waiting_by_job, dict):
+            raise ValueError("active-set aggregate has invalid waiting mapping")
+        for job_id, work in waiting_pairs:
+            key = str(job_id)
+            aggregate_waiting_by_job[key] = (
+                aggregate_waiting_by_job.get(key, 0.0) + float(work)
+            )
+        endpoint_samples = aggregate["endpoint_samples"]
+        if not isinstance(endpoint_samples, list):
+            raise ValueError("active-set aggregate has invalid endpoint samples")
+        endpoint_samples.append(sample)
 
     pre_samples = 0
     overlap_samples = 0
     post_samples = 0
     post_bulk_fractions = []
     pre_bulk_fractions = []
+    pre_bulk_dominant_shares = []
+    overlap_bulk_fractions = []
+    overlap_foreground_fractions = []
+    overlap_bulk_dominant_shares = []
+    overlap_foreground_dominant_shares = []
+    overlap_reclaim_competition_samples = 0
+    post_remaining_fractions = []
+    post_remaining_dominant_shares = []
+    post_remaining_waiting_work = []
+    post_fit_violation_samples = 0
+    first_drained_job_id = str(job_evidence[first_drained_index]["runtime_job_id"])
+    remaining_job_id = str(job_evidence[remaining_index]["runtime_job_id"])
     for observed_at, aggregate in sorted(by_epoch.items()):
         by_job = aggregate["active_work_by_job"]
         if not isinstance(by_job, dict):
             raise ValueError("active-set aggregate has invalid job mapping")
+        waiting_by_job = aggregate["waiting_work_by_job"]
+        if not isinstance(waiting_by_job, dict):
+            raise ValueError("active-set aggregate has invalid waiting mapping")
+        active_by_job = aggregate["active_by_job"]
+        if not isinstance(active_by_job, dict):
+            raise ValueError("active-set aggregate has invalid active mapping")
         bulk_work = by_job.get(bulk_job_id, 0.0)
         foreground_work = by_job.get(foreground_job_id, 0.0)
         if observed_at < foreground_start:
@@ -369,30 +458,132 @@ def active_set_phase_summary(
                 pre_bulk_fractions.append(
                     bulk_work / float(aggregate["work_limit"])
                 )
+                pre_bulk_dominant_shares.append(
+                    max(
+                        bulk_work / float(aggregate["work_limit"]),
+                        active_by_job.get(bulk_job_id, 0.0)
+                        / float(aggregate["request_limit"]),
+                    )
+                )
         elif observed_at <= foreground_end:
-            overlap_samples += bulk_work > 0 and foreground_work > 0
+            both_active = bulk_work > 0 and foreground_work > 0
+            overlap_samples += both_active
+            if both_active:
+                work_limit = float(aggregate["work_limit"])
+                overlap_bulk_fractions.append(bulk_work / work_limit)
+                overlap_foreground_fractions.append(
+                    foreground_work / work_limit
+                )
+                overlap_bulk_dominant_shares.append(
+                    max(
+                        bulk_work / work_limit,
+                        active_by_job.get(bulk_job_id, 0.0)
+                        / float(aggregate["request_limit"]),
+                    )
+                )
+                overlap_foreground_dominant_shares.append(
+                    max(
+                        foreground_work / work_limit,
+                        active_by_job.get(foreground_job_id, 0.0)
+                        / float(aggregate["request_limit"]),
+                    )
+                )
+                overlap_reclaim_competition_samples += (
+                    waiting_by_job.get(bulk_job_id, 0.0) > 0
+                )
         elif observed_at <= bulk_end:
             is_bulk_only = bulk_work > 0 and foreground_work == 0
             post_samples += is_bulk_only
             if is_bulk_only:
                 work_limit = float(aggregate["work_limit"])
                 post_bulk_fractions.append(bulk_work / work_limit)
+        if first_drained_end < observed_at <= remaining_end:
+            remaining_work = by_job.get(remaining_job_id, 0.0)
+            first_drained_work = by_job.get(first_drained_job_id, 0.0)
+            remaining_waiting_work = waiting_by_job.get(remaining_job_id, 0.0)
+            if (
+                first_drained_work == 0
+                and (remaining_work > 0 or remaining_waiting_work > 0)
+            ):
+                post_remaining_fractions.append(
+                    remaining_work / float(aggregate["work_limit"])
+                )
+                post_remaining_dominant_shares.append(
+                    max(
+                        remaining_work / float(aggregate["work_limit"]),
+                        active_by_job.get(remaining_job_id, 0.0)
+                        / float(aggregate["request_limit"]),
+                    )
+                )
+                post_remaining_waiting_work.append(
+                    remaining_waiting_work
+                )
+                endpoint_samples = aggregate["endpoint_samples"]
+                if not isinstance(endpoint_samples, list):
+                    raise ValueError(
+                        "active-set aggregate has invalid endpoint samples"
+                    )
+                fit_violation = False
+                for endpoint_sample in endpoint_samples:
+                    raw_endpoint_waiting = endpoint_sample.get(
+                        "waiting_by_job",
+                        (),
+                    )
+                    endpoint_waiting = dict(
+                        json.loads(raw_endpoint_waiting)
+                        if isinstance(raw_endpoint_waiting, str)
+                        else raw_endpoint_waiting
+                    )
+                    if float(endpoint_waiting.get(remaining_job_id, 0.0)) <= 0:
+                        continue
+                    raw_heads = endpoint_sample.get(
+                        "waiting_head_work_by_job",
+                        (),
+                    )
+                    endpoint_heads = dict(
+                        json.loads(raw_heads)
+                        if isinstance(raw_heads, str)
+                        else raw_heads
+                    )
+                    head_work = float(endpoint_heads.get(remaining_job_id, 0.0))
+                    if head_work <= 0:
+                        raise ValueError(
+                            "waiting Job has no positive head-work evidence"
+                        )
+                    request_fits = (
+                        float(endpoint_sample["active_requests"]) + 1
+                        <= float(endpoint_sample["request_limit"])
+                    )
+                    work_fits = (
+                        float(endpoint_sample["active_work"]) + head_work
+                        <= float(endpoint_sample["work_limit"])
+                    )
+                    fit_violation |= request_fits and work_fits
+                post_fit_violation_samples += fit_violation
     mechanism_applicable = bool(samples)
     equal_share_fraction = 1.0 / len(job_evidence)
     pre_borrow_observed = bool(
-        pre_bulk_fractions
-        and max(pre_bulk_fractions) > equal_share_fraction
+        pre_bulk_dominant_shares
+        and max(pre_bulk_dominant_shares) > equal_share_fraction
     )
-    post_reborrow_observed = bool(
-        post_bulk_fractions
-        and max(post_bulk_fractions) > equal_share_fraction
+    overlap_reclaim_observed = bool(
+        pre_bulk_dominant_shares
+        and overlap_bulk_dominant_shares
+        and overlap_foreground_dominant_shares
+        and overlap_reclaim_competition_samples > 0
+        and min(overlap_bulk_dominant_shares)
+        < max(pre_bulk_dominant_shares)
+    )
+    post_work_conserving = bool(
+        post_remaining_fractions
+        and post_fit_violation_samples == 0
     )
     mechanism_passed = bool(
         mechanism_applicable
         and lifecycle_passed
         and pre_borrow_observed
-        and overlap_samples
-        and post_reborrow_observed
+        and overlap_reclaim_observed
+        and post_work_conserving
     )
     return {
         "active_set_contract_status": lifecycle_status,
@@ -401,7 +592,7 @@ def active_set_phase_summary(
         "active_set_lifecycle_passed": lifecycle_passed,
         "active_set_mechanism_applicable": mechanism_applicable,
         "active_set_mechanism_status": (
-            "ok:observed_bulk_borrow_reclaim_reborrow"
+            "ok:observed_borrow_reclaim_work_conserving_drain"
             if mechanism_passed
             else "active_set_mechanism_not_observed"
             if mechanism_applicable
@@ -412,15 +603,59 @@ def active_set_phase_summary(
         "active_set_foreground_job_index": foreground_index,
         "active_set_overlap_s": overlap_s,
         "active_set_foreground_drained_first": foreground_drained_first,
+        "active_set_first_drained_job_index": first_drained_index,
+        "active_set_remaining_job_index": remaining_index,
         "active_set_bulk_only_pre_samples": pre_samples,
         "active_set_overlap_samples": overlap_samples,
+        "active_set_overlap_reclaim_observed": overlap_reclaim_observed,
+        "active_set_overlap_reclaim_competition_samples": (
+            overlap_reclaim_competition_samples
+        ),
+        "active_set_overlap_bulk_fraction_min": (
+            min(overlap_bulk_fractions) if overlap_bulk_fractions else 0.0
+        ),
+        "active_set_overlap_foreground_fraction_max": (
+            max(overlap_foreground_fractions)
+            if overlap_foreground_fractions
+            else 0.0
+        ),
+        "active_set_overlap_bulk_dominant_share_min": (
+            min(overlap_bulk_dominant_shares)
+            if overlap_bulk_dominant_shares
+            else 0.0
+        ),
+        "active_set_overlap_foreground_dominant_share_max": (
+            max(overlap_foreground_dominant_shares)
+            if overlap_foreground_dominant_shares
+            else 0.0
+        ),
         "active_set_bulk_only_post_samples": post_samples,
         "active_set_bulk_borrow_fraction_max": (
             max(pre_bulk_fractions) if pre_bulk_fractions else 0.0
         ),
+        "active_set_pre_bulk_dominant_share_max": (
+            max(pre_bulk_dominant_shares)
+            if pre_bulk_dominant_shares
+            else 0.0
+        ),
         "active_set_bulk_reborrow_fraction_max": (
             max(post_bulk_fractions) if post_bulk_fractions else 0.0
         ),
+        "active_set_post_remaining_fraction_max": (
+            max(post_remaining_fractions) if post_remaining_fractions else 0.0
+        ),
+        "active_set_post_remaining_dominant_share_max": (
+            max(post_remaining_dominant_shares)
+            if post_remaining_dominant_shares
+            else 0.0
+        ),
+        "active_set_post_remaining_waiting_work_max": (
+            max(post_remaining_waiting_work)
+            if post_remaining_waiting_work
+            else 0.0
+        ),
+        "active_set_post_fit_violation_samples": post_fit_violation_samples,
+        "active_set_post_work_conserving_passed": post_work_conserving,
     }
 
 def group_resource_summary(
