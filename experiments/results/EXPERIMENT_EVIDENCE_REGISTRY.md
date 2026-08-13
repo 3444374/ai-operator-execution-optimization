@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-更新日期：2026-08-12
+更新日期：2026-08-13
 
 本文是正式方法实验的统一入口，回答三个问题：机制是否已经实现、是否只通过了功能测试、是否已有真实 GPU 性能证据。具体数字和逐次运行证据仍以各结果目录的 `README.md`、`manifest.json` 和 CSV 为准。2026-08-01 起内部执行方向转为 image-first A+B；文本遗留 formal 为 `parked-conditional`，状态以 `experiments/plans/experiment_status_and_gaps.md` §0 为准。
 
@@ -38,6 +38,7 @@
 | SAOR capacity-only development | `scheduling/submission_control/saor.py`、`scheduling/runtime/saor_capacity.py`、shared-vLLM adapter 与 SAOR tests | `saor_capacity_development_20260811/` | 纯策略、非因果 paired replay 与真实 capacity actuation 已接。四臂各一次：SAOR 相对 K128 +4.36%，但相对 K160 +0.52%、相对 threshold −1.46%，Jain 最低；未过晋级门。完整 ordered release/fairness/stage queues 未执行，不能称完整 SAOR 或定理已验证。 |
 | SAOR fixed-envelope active-set release | named shared-credit runtime、direct/project 统一 runner、matched solo、lifecycle/mechanism fail-closed 汇总 | `saor_active_set_release_formal_20260812_69affc7e/` | 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上重汇总为 passed，credit mechanism effective 12/12；原 failed 文件保留审计。SAOR 12,393 tok/s、fg P99 50.3s，为 credit 臂 fg 最好；static fg P99 29.2s/SLO 0%，故 SAOR 未晋级。 |
 | Foreground strict-priority release-only upper bound | shared-credit `strict_priority`、Job lifecycle close、priority evidence、三臂 readiness/summary | `saor_priority_reachability_smoke_20260812_91ffcaa/` | 两轮 rehearsal-only：11,791 tok/s、fg JCT/P99 20.04/14.27s、SLO 0%，相对 SAOR fg P99 −73.02%。证明 non-preemptive release ordering 可达，不是 formal/proposed；hard priority 仍缺 anti-starvation 和 bulk lag/SLO guard。 |
+| SAOR bounded-priority development | `saor_bounded_priority` selector、actual-work debt/reclaim barrier、lossless event ledger、双轮 fail-closed 汇总 | `state_aware_work_unit/saor_bounded_priority_gate_20260813/` | 双轮四臂 GPU gate 无 cap 晋级：0.25K 第 2 轮 debt-recovery=0；两个 cap fg P99 49–56s、SLO violation 85%–95%。event ledger 证明可见前台 head 都获 priority，但 per-Job 同步 pull 只暴露单 head，完整 ready backlog 不可见；先修 observation contract，不启动 formal/4-Job/reservation。 |
 | Actor pool 分池与 endpoint routing | `code/src/scheduling/runtime/ray_adapter.py`、profiler/trace 与契约测试 | `dual_gpu_actor_pool_shape_20260729/` | 固定 65K work、256 slots 和 0.5 CPU/endpoint 的三次重复已完成；2×128/4×64 相对 1×256 仅 +2.00%/+0.75%，未达 5% 晋升门槛。当前同构单 job 保留 1×256；多 job 分池仍待验证。 |
 | Shared-vLLM endpoint credit 与 DRR | `code/src/shared_vllm_experiment.py`、named shared-credit actor、group runner 与测试 | `dual_gpu_shared_vllm_formal_20260729_1135/` | 双 4090 36/36 group run、0 incident；全局 256 request/65,536 work 安全与归零通过。2-job 无增量；4-job 聚合吞吐 +9.57%、max P99 -22.52%，但逐 repeat 不稳定，暂作高竞争条件性候选。 |
 | Batching × submission 联合搜索 | scenario runner 与汇总工具 | `joint_batching_submission_512_20260726/` | 18 单元筛选和候选重复完成；当前单 GPU 下联合候选未显著优于独立拼接。 |
@@ -61,6 +62,7 @@
 | `saor_capacity_development_20260811/` | 两档 capacity-only SAOR 与 frozen lower/upper、legacy threshold 的开发门 | 4/4 arm、5,266 requests/arm、0 incident；真实动作安全，但一次顺序运行、server dirty-worktree provenance 和旧 manifest 漏字段使其只作 development。当前分支 `not-promoted`。 |
 | `saor_active_set_release_formal_20260812_69affc7e/` | fixed-envelope 2-Job active-set killer matrix | 40/40、0 incident、exactly-once；原始 failed validation 保留，resolution-aware v2 完整 validation passed、effective 12/12。SAOR 未越过 static，状态为 `formal-valid/not-promoted`。 |
 | `saor_priority_reachability_smoke_20260812_91ffcaa/` | strict-priority release-only upper bound | 两轮短测均过 lifecycle/mechanism，foreground P99 14.27s、SLO 0%；development smoke only，不作正式排名。 |
+| `state_aware_work_unit/saor_bounded_priority_gate_20260813/` | bounded-priority 双轮开发门 | Round 1 clean；Round 2 的 0.25K 机制门 fail-closed，汇总结论 `diagnostic_only`。所有请求正确完成且 GPU 饱和，负结果不是欠供给；ready-set 可见性断点阻塞 formal。 |
 | `opening_text_native_gate_20260808/` | 开题文本原生框架 capability gate 与 Ray Data C4/C8/C16 最小筛选 | 6/6 gate 通过；冻结单次 measured peak C8/B16 供正式矩阵。只有一次 256-row gate，不支持框架正式性能排名。 |
 | `opening_text_native_single_job_formal_20260808/` | ShareGPT 原生单 job 1+3 同环境正式观察 | bounded/Daft Native/Daft Ray/Ray Data=17,800/17,286/16,747/3,551 tok/s；状态指纹稳定。官方 graph 外部现象可报告，内部归因与项目优势不可声称。 |
 | `opening_multijob_interference_20260809/` | short/long guaranteed-overlap 的 online/eager、single/multi、project/native 统一证据与 request-time 分解 | online quota-only≈0但eager quota-only+59.00%；long同时影响service与上游pending。Project/原生只作各轨normalized影响，完整raw留服务器，Git保存紧凑派生数据。 |

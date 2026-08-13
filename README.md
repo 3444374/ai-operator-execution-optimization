@@ -4,7 +4,7 @@
 
 > 数据库 AI 负载的执行优化与调度研究方向。
 
-> **当前状态（2026-08-12）**：开题 framing、四级 Claim Matrix、K128 replacement
+> **当前状态（2026-08-13）**：开题 framing、四级 Claim Matrix、K128 replacement
 > database-E2E、文本原生单/多 Job 与图像静态 baseline 证据已冻结；PPT/飞书/Wiki 暂停，
 > 本地 Markdown 与 CSV 是权威来源。图像原生 single→four-job 40/40 passed；Project
 > staged descriptor + observe-only snapshot 正式矩阵也已 24/24 passed、99K formal rows
@@ -15,9 +15,11 @@
 > credit 臂内 fg 最好、仍未越过 static。strict-priority release-only 两轮短测达到 fg P99 14.27s、
 > SLO 0%，但仅是能力上界，尚非 formal/proposed。下一版已冻结为显式 per-Job priority/SLO budget
 > 与 actual-work debt cap 的有界词典序 release；debt-critical ready head 不 fit 时只为该队首建立
-> reclaim barrier。v0.5.1 本地实现、无损事件账本、四臂 readiness 与两轮汇总器已完成；服务器
-> 已关机，0.125K/0.25K GPU rehearsal 未运行，仍为 `development-unrun/not-formal-registered`。
-> reservation 不先验进入方法。
+> reclaim barrier。v0.5.1 双轮 GPU development gate 已执行：第 2 轮 0.25K 因
+> debt-recovery=0 被 fail-closed，两个 cap 的 foreground P99 均约 49–56s、SLO violation
+> 85%–95%，未晋级 formal。事件/请求交叉验证定位到完整 ready-backlog 模型与每 Job 单 head
+> pull 实现不一致；下一步先修 ready-set observation contract，不继续扫 cap、不扩 4-Job，
+> reservation 仍不先验进入方法。
 
 > **状态感知补充（2026-08-11）**：修正执行与门禁后的两 Job phase-change 实验在
 > pressure gate 提前停止。A-only K160 相对 K128 每 endpoint service rate +7.77%，
@@ -172,7 +174,7 @@ Baseline / benchmark 不再从多份旧计划拼接：统一从
   12,393 tok/s、fg P99 50.3s，在 credit 臂内最好，但 static 以 9,508 tok/s 换得 fg P99
   29.2s 和 0% SLO violation。原始 gate 因 DRR/VTC rep2 无 post-drain 样本而 fail-closed；
   250 ms resolution-aware v2 已在完整 artifact 上重汇总为 passed，仅修审计假阴性、不改变排序。当前
-  `slo_weight=0`；strict-priority 两轮短测虽显著改善 fg，但 hard priority 缺少 anti-starvation/lag guard，不能称 SLO-aware 或策略胜出。`saor-v0.5.1` 已完成本地有界词典序实现与 fail-closed 事件门；GPU rehearsal 尚未运行，仍不能声称性能改善或策略胜出。
+  `slo_weight=0`；strict-priority 两轮短测虽显著改善 fg，但 hard priority 缺少 anti-starvation/lag guard，不能称 SLO-aware 或策略胜出。`saor-v0.5.1` 双轮 development gate 未晋级：0.25K 机制不稳定，两个 cap 的 fg P99/SLO 均未过门；根因收紧为 ready-set 只暴露单个 pull head。formal、4-Job 与 reservation 消融继续阻塞。
 - **文本策略具有 regime 依赖**：2-endpoint KV 无压力时多数数据组织策略接近；
   4-endpoint KV 饱和时排名和 prefix-cache 行为明显分化。相关结论不能脱离 endpoint/
   KV 条件外推。

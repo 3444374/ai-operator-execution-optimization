@@ -12,6 +12,7 @@
 | `saor_capacity_development_20260811/` | SAOR 控制 microbenchmark、paired trace replay 与 2×4090 四臂 capacity-only development gate | 4/4 arm、0 incident；SAOR 相对 K128 +4.36%，相对 K160 +0.52%、相对简单 threshold −1.46%，未晋级。一次顺序运行且 provenance 有已修复缺口，不作 formal 排名。 |
 | `saor_active_set_release_formal_20260812_69affc7e/` | fixed-envelope 2-Job 六 active-set 臂 + 四 matched-solo，1+3 formal | 40/40、0 incident、exactly-once；resolution-aware v2 完整 validation passed、credit mechanism effective 12/12。SAOR 在 credit 臂内 fg 最好，但 static 显著更强，未晋级。 |
 | `saor_priority_reachability_smoke_20260812_91ffcaa/` | static/SAOR/foreground strict-priority 三臂，两轮 rehearsal-only release 上界短测 | strict-priority 11,791 tok/s、fg JCT/P99 20.04/14.27s、fg SLO 0%；相对 SAOR fg P99 −73.02%，但 formal repeats=0，仅证明 release-only 可达性，不是 proposed/winner。 |
+| `state_aware_work_unit/saor_bounded_priority_gate_20260813/` | static/SAOR/0.125K/0.25K 两轮 bounded-priority development gate | 第 2 轮 0.25K debt-recovery=0 被 fail-closed；两 cap fg P99 49–56s、SLO violation 85%–95%，均未晋级。交叉验证定位 ready backlog 未完整暴露给 coordinator；formal/4-Job/reservation 未运行。 |
 
 ## 开题统一文本 database-E2E（2026-08-08 correctness 护栏）
 

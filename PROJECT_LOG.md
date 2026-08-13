@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-08-13 SAOR bounded-priority 双轮 GPU gate 未晋级
+
+- 在服务器 `2de6f93` 上恢复 PostgreSQL/Ray/双 vLLM；runtime preflight=`ok`、
+  bounded-priority readiness=`passed`。两个实际 vLLM 0.25.1 进程显式使用 FCFS、continuous
+  batching/chunked prefill/prefix cache ON；运行前无旧 runner、端点空闲。
+- 按冻结 static/SAOR/0.125K/0.25K 四臂执行两个全新 development rehearsal root。Round 1
+  4/4、0 incident；Round 2 的 0.25K 虽 1024/1024 exactly-once、metrics/resources 完整，
+  但 debt-recovery grant=0，runner fail closed。跨轮汇总器继续拒绝非 clean rehearsal，结论
+  `diagnostic_only`；未启动 formal、未补第三轮、未扫新 cap。
+- 两 cap 的 foreground P99 为 49–56s、SLO violation 85%–95%，均未过 30.7s/1% 门；
+  GPU mean 95.84%–97.63%、tokens/s 12.2–12.4K，排除欠供给。static 两轮 fg P99 29.72/29.21s、
+  SLO violation 0%，但吞吐低于 frozen 9,984 floor，继续体现效率—隔离权衡。
+- lossless event 与 request trace 交叉验证定位模型—实现断点：所有已注册 foreground head 都获
+  `slo_priority`，submit→service 只有毫秒级；但 per-Job scheduler 同步 acquire 一次只注册一个
+  head，相邻请求间 coordinator 看不到 Daft/Ray 完整 ready backlog，仍可向 bulk fallback。
+  因此下一修订先实现 bounded async ready-set 或显式 `ready_count/ready_work +
+  unfinished_priority_epoch`，不先加 reservation、不扩 4-Job、不继续 cap 密扫。
+- compact evidence 与七步报告归档到
+  `experiments/results/state_aware_work_unit/saor_bounded_priority_gate_20260813/`；服务器完整归档
+  2.2 MiB，SHA256 `be6ce0a3c81351276f8e603cbbe6100b9e8b72fbfe70e75c142ca3b0658a2bb4`。
+
 ## 2026-08-13 SAOR bounded-priority 远端执行入口修正
 
 - 执行前审计发现唯一计划 Task 8 误用单 profiler 的

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "repository_commit": "2de6f931ef50a19ffaf33661f66c5e91295e5ac5",
+  "config_fingerprint": "a3d19323a510f30fdbf0b33c82877971052a2efc6e5dec6b7bda021f9b0c582a",
+  "full_archive": {
+    "path": "/root/autodl-tmp/experiment-artifacts/saor_bounded_priority_gate_20260813_2de6f93_full.tar.gz",
+    "size_mib": 2.2,
+    "sha256": "be6ce0a3c81351276f8e603cbbe6100b9e8b72fbfe70e75c142ca3b0658a2bb4"
+  },
+  "component_sha256": {
+    "preflight.json": "e6631d9882feb4701e928929b627c7e3a397f9aab715aeba8a389693e7378c35",
+    "readiness.json": "8df6814914328af0e25db24b433ec64e45015316f315b8f32b13090aa8e94bd9",
+    "r1_manifest.json": "d7e93bcd50078c7e6bc838a1b431441b62fd68cbcd6cc645064fba0217a737ec",
+    "r2_manifest.json": "8a324262baa2816a1002cfa40c1d34372521d7be88648c42d35ddf463ac15987"
+  },
+  "service": {
+    "vllm_version": "0.25.1",
+    "model": "qwen2.5-7b",
+    "endpoint_ports": [8000, 8001],
+    "gpu_memory_utilization": 0.9,
+    "max_model_len": 8192,
+    "max_num_batched_tokens": 8192,
+    "max_num_seqs": 256,
+    "scheduling_policy": "fcfs",
+    "prefix_caching": true,
+    "mfu_metrics": true
+  },
+  "summary_exit_code": 1,
+  "summary_exit_reason": "round 2 is not a clean rehearsal; round 2 does not contain the frozen four arms"
+}

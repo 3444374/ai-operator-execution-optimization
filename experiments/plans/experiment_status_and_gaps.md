@@ -1,7 +1,7 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-12；开题证据冻结，SAOR fixed-envelope formal 已
-fail-closed 完成，bounded-priority v0.5.1 本地实现完成、GPU rehearsal 因服务器关机延后，
+Date: 2026-07-20（最后更新：2026-08-13；开题证据冻结，SAOR fixed-envelope formal 已
+fail-closed 完成，bounded-priority v0.5.1 双轮 GPU development gate 未晋级，
 dynamic-K 仍退出主线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
@@ -45,8 +45,17 @@ credit 作为鲁棒性消融。达到 static fg 非劣、吞吐≥static+5% 且 
 recovery lease、ready-head reclaim barrier、显式 priority/SLO window、旧 SAOR fallback、
 timeout waiter cleanup 和 Ray lossless release-event ledger；四臂模板只含 static、release-only、
 0.125K/0.25K。readiness 与两轮汇总器均 fail closed，机制门不再使用 250 ms snapshot 猜测
-短转换；缺账本/空账本/序号缺口/重复一律失败。本地受影响套件通过，代码已推送；服务器已
-关机，故两轮 GPU rehearsal 与任何 formal registration 均未发生，不新增性能结论。
+短转换；缺账本/空账本/序号缺口/重复一律失败。本地受影响套件通过，代码已推送。
+
+2026-08-13 双轮 GPU development gate 已按冻结合同执行并停止。Round 1 四臂 clean；Round 2
+0.25K 的 debt-recovery grant 为 0，runner 和跨轮汇总器均 fail closed。0.125K 两轮 fg P99
+56.47/56.29s、SLO violation 94.5%/92.6%；0.25K 为 49.03/50.10s、85.2%/87.5%，均未达到
+30.7s/1% 门。GPU mean 95.8%–97.6%、tokens/s 12.2–12.4K，排除欠供给解释。逐请求/event
+交叉验证进一步定位 observation gap：所有已注册 foreground head 都获 `slo_priority`，但当前
+每 Job 同步 pull 一次只注册一个 head；相邻 acquire 间 coordinator 看不到 Daft/Ray 的完整 ready
+backlog，因而仍向 bulk fallback。v0.5.1 状态改为
+`development-run/not-promoted/not-formal-registered`；停止 cap 密扫和 4-Job，先修 bounded
+ready-set/unfinished-priority observation contract，reservation 继续后置。
 
 ## 图像状态增量（2026-08-10）
 

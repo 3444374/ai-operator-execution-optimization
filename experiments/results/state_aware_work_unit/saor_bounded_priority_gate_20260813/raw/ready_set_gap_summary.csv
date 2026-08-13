@@ -1,0 +1,5 @@
+round,cap_fraction,foreground_arrival_to_submit_p50_s,foreground_arrival_to_submit_p95_s,foreground_arrival_to_submit_p99_s,foreground_grants_within_30s,foreground_requests,submit_to_service_p50_s,submit_to_service_p95_s,submit_to_service_p99_s,bulk_grants_after_foreground_arrival
+1,0.125,39.818,49.187,49.539,53,512,0.003155,0.004570,0.007661,421
+1,0.25,31.038,38.533,39.177,145,512,0.003027,0.004072,0.005231,421
+2,0.125,40.437,49.208,49.655,70,512,0.002444,0.003608,0.004993,421
+2,0.25,32.076,39.485,40.159,122,512,0.002393,0.003221,0.004728,421

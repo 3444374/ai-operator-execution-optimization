@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-08-09
+更新时间：2026-08-13
 
 本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`；开题材料必须服从 `opening/claim_matrix.md`。
 
@@ -137,12 +137,14 @@ PostgreSQL source
   可达。`saor-v0.5` 已冻结为通用有界词典序 release：显式 per-Job priority/剩余 SLO 预算，
   completion-corrected actual-work debt cap 优先阻止饥饿，无 guard 时回退 SAOR；debt-critical
   ready head 不 fit 时只为该队首建立 reclaim barrier，其余只在 fitting heads 间选择；首轮只做
-  两 Job 的 0.125K/0.25K 两个 cap。v0.5.1 已完成本地 selector/coordinator/scheduler/Ray/runner、
+  两 Job 的 0.125K/0.25K 两个 cap。v0.5.1 已完成 selector/coordinator/scheduler/Ray/runner、
   timeout 清理、lossless event ledger、readiness 与两轮汇总器；事件机制门不再依赖 250 ms
-  snapshot，缺失/不连续账本仍 fail closed。服务器已关机，GPU rehearsal 未运行，状态保持
-  `development-unrun/not-formal-registered`。reservation 与
-  upper-bound resource work 仅作 guard 通过后的鲁棒性消融。两 Job 未达到 static fg
-  非劣且吞吐≥static+5% 前不跑 4-Job，也不声称定理证明；
+  snapshot。双轮 GPU development gate 没有 cap 晋级：0.25K 第 2 轮 debt-recovery=0，两个
+  cap 的 fg P99 约 49–56s、SLO violation 85%–95%。request/event 交叉验证定位 per-Job 单-head
+  pull 没有把完整 Daft/Ray ready backlog 暴露给 coordinator；状态为
+  `development-run/not-promoted/not-formal-registered`。先修 bounded ready-set observation，
+  reservation 与 upper-bound resource work 仍作其后的鲁棒性消融。两 Job 未闭环前不跑
+  4-Job，也不声称定理证明；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、

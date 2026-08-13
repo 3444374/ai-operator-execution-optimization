@@ -1,6 +1,6 @@
 # 当前方向与计划
 
-最后更新：2026-08-12
+最后更新：2026-08-13
 
 > 本文是两分钟快速参考卡片。完整定义以 `PROJECT_OUTLINE.md` 为准；当前执行顺序以
 > `opening/claim_matrix.md` 与 `experiments/plans/experiment_status_and_gaps.md` 顶部
@@ -24,8 +24,12 @@
   通用有界词典序 release（显式 priority/SLO budget + actual-work debt cap + 队首定向 reclaim
   barrier/普通 priority fitting-head fallback），首轮只测 2 Job 的 0.125K/0.25K 两个 cap；
   selector/coordinator/scheduler/Ray/runner、timeout cleanup、无损事件账本、四臂 readiness 与
-  两轮 fail-closed 汇总器已在本地完成并推送。服务器已关机，GPU rehearsal 尚未运行，故仍是
-  `development-unrun/not-formal-registered`；reservation 作通过后的鲁棒性消融。
+  两轮 fail-closed 汇总器已完成。双轮 GPU development gate 没有任何 cap 全过：0.25K 第 2
+  轮 debt-recovery=0，0.125K/0.25K 的 fg P99 约 56/49–50s、SLO violation 93–95%/85–88%。
+  请求/event 交叉验证显示每个可见前台 head 都获 priority，但 per-Job 同步 pull 只向 coordinator
+  暴露一个 head，完整 ready backlog 在相邻 acquire 间不可见。状态为
+  `development-run/not-promoted/not-formal-registered`；先修 ready-set observation contract，
+  reservation 作其后的鲁棒性消融。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
   least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
   已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值
@@ -101,10 +105,11 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    FIFO/no project Job scheduler 对照，不能单独证明 SAOR 必要。
 4. SAOR fixed-envelope 2-Job killer benchmark 已完成；原始 failed validation 保留作审计，
    resolution-aware v2 完整重汇总已 passed。foreground strict-priority 两轮短测已证明
-   release-only 上界可达；`saor-v0.5` 接口按任意 Job 数设计，首轮只做 2 Job 的
-   0.125K/0.25K actual-work debt cap，并输出 event-level 选择原因、reclaim debt/hold 时间以避免采样假阴性。
-   reservation/upper-bound work credit 只作 guard 通过后的未知到达和预测误差鲁棒性消融。达到 static fg 非劣、
-   吞吐≥static+5% 且 bulk lag/SLO 不越界才注册 formal；两 Job 未闭环前不跑 4-Job。
+   release-only 上界可达；`saor-v0.5.1` 的 0.125K/0.25K 双轮 development gate 已按门禁停止，
+   没有 formal candidate。当前先把 Daft/Ray ready work 以 bounded async ready-set/ready-count
+   显式暴露给 coordinator，验证 foreground ready 时无 bulk fallback，再复验同一四臂。
+   reservation/upper-bound work credit 只作 observation contract 闭合后的未知到达和预测误差鲁棒性消融；
+   两 Job 未闭环前不跑 4-Job。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。
 
 晋级门槛：相对各自独立标定的强静态/系统 baseline 至少改善约 5%，重复方向一致，且质量不退化。

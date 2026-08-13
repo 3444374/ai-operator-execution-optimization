@@ -123,7 +123,7 @@ observe-only snapshot → no-op/fallback gate → 单一控制动作；不先把
 |---|---|
 | 工作名称 | SAOR：Stage-Aware Ordered Release（阶段感知有序释放） |
 | policy revision | runtime/formal contract `saor-v0.4.6-work-conserving-gate`；resolution-aware audit `saor-v0.4.10-resolution-aware-full`；priority diagnostic `saor-v0.4.9-release-upper-bound`；development candidate `saor-v0.5.1-reclaim-barrier`；core implementation `saor-core-v0.2`；capacity adapter `saor-v0.2-development/not-promoted` |
-| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上 validation passed、credit mechanism effective 12/12，原 failed 文件保留审计。SAOR 在 credit 臂内 fg 最好但未越过 static；strict-priority 两轮 GPU 短测达到 11,791 tok/s、fg P99 14.27s/SLO 0%，但 formal repeats=0。旧 runtime 的 `slo_weight=0`，不是完整 SLO-aware 方法；dynamic K 为 `parked-conditional`。v0.5.1 已完成本地 selector/coordinator/scheduler/Ray/runner/event-ledger/readiness/summary 实现；GPU rehearsal 未运行，仍是 `development-unrun/not-formal-registered`，定理证明也未完成 |
+| 状态 | 2×4090 fixed-envelope 2-Job formal 已完成 40/40、0 incident、exactly-once；resolution-aware v2 在服务器完整 artifact 上 validation passed、credit mechanism effective 12/12，原 failed 文件保留审计。SAOR 在 credit 臂内 fg 最好但未越过 static；strict-priority 两轮 GPU 短测达到 11,791 tok/s、fg P99 14.27s/SLO 0%，但 formal repeats=0。旧 runtime 的 `slo_weight=0`，不是完整 SLO-aware 方法；dynamic K 为 `parked-conditional`。v0.5.1 双轮 GPU development gate 已运行：0.25K 第 2 轮机制门失败，两个 cap 的 fg P99/SLO 均未过门；状态 `development-run/not-promoted/not-formal-registered`。根因定位为数学模型的完整 ready backlog 与 per-Job 单-head pull observation 不一致；定理证明也未完成 |
 | vLLM 合同 | 未经修改的 vLLM；主臂显式 `--scheduling-policy fcfs` |
 | 内部能力 | continuous batching、chunked prefill、PagedAttention/KV、prefix cache 按冻结配置工作 |
 | 外部控制对象 | Job/request 的释放顺序、endpoint 路由、request/work active window |
@@ -1037,7 +1037,7 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 | 7 | ✅ 本地收尾 | 受影响套件 291 tests passed（仓库内固定临时目录绕过 Windows sandbox temp ACL），selector 89 physical/34 statement lines，compileall/diff/secrets passed；完整 discovery 1,154 tests 中 24 个因本机缺 Ray/Daft 或 Windows 无 POSIX `os.killpg` 报错，故不记 full pass；本机未安装 ruff，不临时装依赖 |
 | 8 | ⏸ 延后 | 用户已关闭服务器；未连接远端、未生成新结果目录、未运行 rehearsal 或 formal。服务器恢复后仍只按本节跑两轮 rehearsal |
 
-下方 checkbox 保留为逐步复现清单；状态以上表为准。Task 8 未完成前，不得把
+下方 checkbox 保留为逐步复现清单；状态以上表为准。Task 8 已按 fail-closed 合同完成；不得把
 `formal_registration_candidate`、性能变化或 winner 写入项目结论。
 
 ##### Task 1：先冻结纯选择器的可证伪语义
@@ -1333,23 +1333,23 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
   python code/scripts/environment/scan_git_secrets.py --all
   ```
 
-- [ ] 提交推送，commit message：`Complete bounded-priority SAOR development gate`。commit 前确认
+- [x] 提交推送，commit message：`Complete bounded-priority SAOR development gate`。commit 前确认
   无服务器 host、用户名、口令、runtime env、raw workload 或输出 artifact 进入 Git。
 
-##### Task 8：远端只跑两轮 rehearsal，不启动长 formal
+##### Task 8：远端只跑两轮 rehearsal，不启动长 formal（2026-08-13 已完成，未晋级）
 
 **Files**
 
-- Create after successful run:
-  `experiments/results/state_aware_work_unit/saor_bounded_priority_gate_20260812/README.md`
-- Create after successful run:
-  `experiments/results/state_aware_work_unit/saor_bounded_priority_gate_20260812/raw/`
+- Created after fail-closed run:
+  `experiments/results/state_aware_work_unit/saor_bounded_priority_gate_20260813/README.md`
+- Created after fail-closed run:
+  `experiments/results/state_aware_work_unit/saor_bounded_priority_gate_20260813/raw/`
 - Modify after interpretation: `experiments/results/README.md`
 - Modify after interpretation: `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`
 - Modify after interpretation: `experiments/plans/experiment_status_and_gaps.md`
 - Modify after interpretation: `PROJECT_LOG.md`
 
-- [ ] 远端先 `git pull --ff-only` 到 Task 7 commit；使用仓库外 runtime env，保存只读机器报告：
+- [x] 远端先同步到 Task 7/入口修正 commit；使用仓库外 runtime env，保存只读机器报告：
 
   ```bash
   cd /root/autodl-tmp/ai-operator
@@ -1364,10 +1364,10 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
     --json-out "/root/autodl-tmp/experiment-artifacts/saor_bounded_priority_preflight_${SAOR_REVISION}.json"
   ```
 
-- [ ] 按 `deploy/autodl/README.md` 只读检查 endpoint/PG/Ray/runner lease/GPU；若 Ray stale，必须先停
+- [x] 按 `deploy/autodl/README.md` 只读检查 endpoint/PG/Ray/runner lease/GPU；Ray stale 已先停
   Ray 再只删除 `/tmp/ray/ray_current_cluster`。任何另一 runner、非空 vLLM waiting、endpoint
   配置漂移或 preflight failure 都停止，不安装依赖、不重启健康服务追结果。
-- [ ] 运行静态 readiness，随后用两个全新且预先确认不存在的输出目录各跑一次 `--rehearsal`：
+- [x] 运行静态 readiness，随后用两个全新且预先确认不存在的输出目录各跑一次 `--rehearsal`：
 
   ```bash
   PYTHONPATH=code /root/miniconda3/bin/python \
@@ -1405,15 +1405,32 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
     --output-dir /root/autodl-tmp/experiment-artifacts/saor_bounded_priority_gate_20260812_summary
   ```
 
-- [ ] 用新汇总器同时消费 r1/r2；先保存全部 per-run 数字与机制事件，再判定：
+- [x] 用新汇总器同时消费 r1/r2；Round 2 非 clean 被汇总器拒绝，结论 `diagnostic_only`：
   1. 任一 cap 通过全部门 → 只注册后续 formal 候选，本轮停止；
   2. 两 cap 均 foreground 过、bulk/efficiency 失败 → 记 priority/fairness constraint conflict，停止
      cap 密扫；
   3. 两 cap 均 foreground 失败 → 回到 non-preemptive residual-work 下界，不能加大 SLO 软权重；
   4. 机制门失败 → 只诊断代码/供给/事件合同，不解释性能。
-- [ ] 结果 README 按项目七步结构记录设置、设计、合规、自全表数据、事实/推断/不能声称、课题含义、
+- [x] 结果 README 按项目七步结构记录设置、设计、合规、全表数据、事实/推断/不能声称、课题含义、
   下一步。短测明确标 `development rehearsal`；提交结果文档前再次跑 secret scanner。按用户要求
   不同步 Wiki。
+
+**Task 8 事实判决**：0.125K 两轮机制可达但 fg P99/SLO 均失败；0.25K 第 2 轮
+debt-recovery=0 且 fg 门失败。GPU/throughput/correctness 门排除欠供给。事件与 request trace
+显示每个已注册 foreground head 都被优先选择，但 per-Job scheduler 同步等待 acquire 后才注册
+下一 head，导致 coordinator 在相邻请求间看不到实际 ready backlog 并向 bulk fallback。按预注册
+规则不启动 formal、不补第三轮、不扫描额外 cap。
+
+##### Task 9：ready-set observation 修订（下一项，未实现）
+
+- [ ] 把数学状态从单一 `waiting` 拆为 source backlog、Daft/Ray ready backlog、coordinator
+  registered waiting、granted active 与 vLLM running/waiting；明确 freshness 和所有权。
+- [ ] 工程上选一个最小模块化接口：bounded async waiter pre-registration，或 coordinator 中显式
+  per-Job `ready_count/ready_work + unfinished_priority_epoch`。不得靠某个 workload 的行数/offset 硬编码。
+- [ ] 新机制门：foreground ready count/work>0 时，除预注册 debt-recovery lease 外不得出现 bulk
+  fallback；grant→submit 与 submit→service 分开审计，避免只看 GPU utilization。
+- [ ] 先跑纯控制器与 fake-Ray exactly-once/cancel/timeout/finite-buffer 测试，再复用同一四臂做两轮
+  development rehearsal。过门前 reservation、4-Job、动态 K 与 formal 均保持阻塞。
 
 ##### Plan self-review（写码前必须再核对）
 
