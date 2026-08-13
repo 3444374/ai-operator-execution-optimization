@@ -13,13 +13,15 @@
 > dynamic K 已退出主线；fixed-envelope 2-Job formal 已 40/40，原始 failed gate 保留作审计。
 > resolution-aware v2 已在完整 artifact 上重汇总为 passed、credit mechanism effective 12/12；SAOR 在
 > credit 臂内 fg 最好、仍未越过 static。strict-priority release-only 两轮短测达到 fg P99 14.27s、
-> SLO 0%，但仅是能力上界，尚非 formal/proposed。下一版已冻结为显式 per-Job priority/SLO budget
-> 与 actual-work debt cap 的有界词典序 release；debt-critical ready head 不 fit 时只为该队首建立
-> reclaim barrier。v0.5.1 双轮 GPU development gate 已执行：第 2 轮 0.25K 因
-> debt-recovery=0 被 fail-closed，两个 cap 的 foreground P99 均约 49–56s、SLO violation
-> 85%–95%，未晋级 formal。事件/请求交叉验证定位到完整 ready-backlog 模型与每 Job 单 head
-> pull 实现不一致；下一步先修 ready-set observation contract，不继续扫 cap、不扩 4-Job，
-> reservation 仍不先验进入方法。
+> SLO 0%，但仅是能力上界，尚非 formal/proposed。旧 single-head bounded-priority 双轮 GPU
+> development gate 因 ready-backlog 不可见而未晋级；独立 bounded-ready 修订随后完成 8/8 cell，
+> 仅 $0.125W_e$ 以约 12.36K tok/s、foreground P99 17.58–18.15s、foreground SLO 0% 通过开发门，
+> $0.25W_e$ 被 bulk guard 拒绝。同 ready-window 的 Project FIFO/DRR/VTC-style/strict-priority/
+> guarded-debt 双轮归因与 single-head→bounded-ready observation bridge 均已完成：guarded-debt
+> 是用约 4.8% 吞吐和约 5.2% bulk JCT 换取更低 foreground tail 的观测非支配折中点，不是
+> selector winner，`formal_authorized=false`。下一步只补同一 2-Job 合同的 Daft Native、Daft Ray、
+> Ray Data、project frozen-static 与 proposed 系统级 matched comparison；原生臂不注入 Project
+> bounded-ready/K/W。selector formal、4-Job、reservation 和 dynamic K 继续后置。
 
 > **状态感知补充（2026-08-11）**：修正执行与门禁后的两 Job phase-change 实验在
 > pressure gate 提前停止。A-only K160 相对 K128 每 endpoint service rate +7.77%，

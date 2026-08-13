@@ -1,10 +1,12 @@
 # SAOR 数学模型、控制分层与适用场景审计
 
-> 状态：`saor-v0.5.1-reclaim-barrier`。本文依据 2026-08-11 capacity-only 负结果和既有两/四 Job
+> 状态：`saor-v0.5.5-observation-bridge-observed`。本文依据 2026-08-11 capacity-only 负结果和既有两/四 Job
 > 干扰结果，对 SAOR 的控制对象、
 > 可证明部分、经验控制部分和 benchmark 重新分层。它不把一次 development run 写成算法结论，
 > 也不宣称实际实现已经获得 MaxWeight/VTC 的理论保证。2026-08-12 已接入固定包络
-> `saor_release` runtime 与 active-set trace audit；这提高的是可执行性，不等于证明完成。
+> `saor_release` runtime 与 active-set trace audit；2026-08-13 又完成 bounded-ready、同窗口
+> selector 归因与 FIFO observation bridge。这些提高了可执行性和因果分解能力，但 SAOR 只形成
+> 观测非支配折中，`formal_authorized=false`，不等于 selector 胜出或证明完成。
 
 ## 1. 审计结论
 
@@ -875,3 +877,30 @@ priority/debt 选择器，现有实验没有同 ready-window 的项目简单 sel
 正式运行还必须匹配 active K/W 之外的 ready bytes/host buffer，并用 balanced/interleaved order
 控制 prefix-cache warm state。否则“固定 envelope”只指 active credit，不代表相同总内存和
 backpressure footprint。
+
+### 12.9 同窗口 selector 与 observation bridge 判决（2026-08-13）
+
+后续两个独立 rehearsal root 已完成 frozen-static、bounded-ready FIFO/DRR/VTC-style/
+strict-priority/guarded-debt 六臂 Project 内部归因，共 12/12 cell、0 incident。DRR/VTC-style
+双轮均值约 12.90K tok/s、foreground P99 27.23/26.16s、30s SLO violation 0；guarded-debt
+约 12.28K tok/s、foreground P99 17.85s、SLO violation 0。相对 VTC-style，guarded-debt
+以约 4.8% 吞吐、5.2% bulk JCT 和 22.7% longest-no-service 代价换取约 31.8% foreground P99
+与 11.7% completion-lag P95 改善。因此它是观测到的效率—tail 非支配折中，不是 selector
+胜出；固定顺序、每臂 n=2 且 selector protected margins 未在看结果前冻结，不能事后授权 formal。
+
+三臂 observation bridge 也已完成 6/6 cell：`frozen-static→single-head shared FIFO` 使 tok/s
++25.96%、group JCT −20.58%，但 foreground P99 +99.17%；同 FIFO 下切到 bounded-ready 又使
+tok/s +7.30%、foreground P99 −33.62%，但 foreground SLO violation 仍约 39.7%。这把固定分区
+隔离、共享容量效率与 ready exposure 分成三个效应，不能把完整包收益全部归因于 guarded-debt。
+
+当前数学与实验边界据此收紧：
+
+1. FIFO/DRR/VTC-style 是 Project coordinator 内的标准算法 controls，不是 Daft/Ray/vLLM 原生实现；
+2. 下一步只做同一 2-Job manifest/arrival/PG source-sink/服务签名下的 Daft Native、Daft Ray、
+   Ray Data、project frozen-static 与 proposed 系统级 matched comparison；原生臂不注入 Project
+   K/W、credit 或 bounded-ready；
+3. 即使完整 Project 系统超过原生框架，也不能把差值全部归因于 guarded-debt selector；
+4. 只有业务合同明确要求比 30s 更紧的 foreground tail，并预注册接受相应 efficiency/bulk-JCT
+   代价后，才有理由另起 selector formal；否则贡献收敛为 bounded ready-state exposure + 简单
+   guarded release，或淘汰复杂 selector；
+5. reservation、4-Job、dynamic K 和理论 $O(1/V)$/fairness/SLO 保证继续后置。

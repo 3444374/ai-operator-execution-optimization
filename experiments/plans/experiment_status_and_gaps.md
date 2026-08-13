@@ -262,8 +262,9 @@ frame/preprocess work/credit；Daft built-in、Ray Data native、typed Ray actor
 1/2/4-job 先验证据，并已完成一个 5s short/long guaranteed-overlap 两 job 因果点；
 1-short+3-long 四作业补充也已完成。weighted/SLO、异构 burst 与图像 phase-change 仍未
 完成，不能写成已覆盖。图像四作业已完成 2K short + 3×3K long、0.5s offset 的
-immutable manifest/config/runner/指标合同、64-row correctness gate 和一次 full-size
-overlap rehearsal；Daft built-in、Ray Data 与 project formal 均未启动。DuckDB
+immutable manifest/config/runner/指标合同；Daft built-in/Ray Data 原生 40/40 runs、30 formal
+group 与 Project staged descriptor + observe-only 24/24 group 均已归档，只作系统内干扰和
+观测接入证据，不作动态胜出或跨框架排名。DuckDB
 bounded-output SQuAD 四作业的 128-row native gate 也已通过，512 outputs 全部 non-empty、
 0 error、exactly-once，short/long overlap 2.948s；single controls 和 formal 均未运行。
 后续项目感知/动态

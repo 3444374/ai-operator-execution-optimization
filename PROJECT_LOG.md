@@ -1,5 +1,27 @@
 # 项目日志
 
+## 2026-08-13 SAOR 文档状态收口与下一步统一
+
+- 清理根 `README.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、
+  `experiments/plans/README.md`、`code/INFRA_STATUS.md` 和 `PROJECT_INDEX.md` 中停留在
+  single-head observation gap、matched-selector 待运行或图像 four-job formal 未启动的过期状态。
+- 当前统一口径为：bounded-ready $0.125W_e$ 已通过双轮开发门，$0.25W_e$ 被 bulk guard 拒绝；
+  同 ready-window 的 Project selector 双轮归因与 single-head→bounded-ready FIFO bridge 均已完成。
+  guarded-debt 是用约 4.8% 吞吐和约 5.2% bulk JCT 换更低 foreground tail 的观测非支配折中，
+  不是 selector winner，`formal_authorized=false`。
+- 下一步统一为同一 2-Job 合同下的 Daft Native、Daft Ray、Ray Data、project frozen-static 与
+  proposed native-system matched comparison；原生臂保留自身调度，不注入 Project K/W、credit
+  或 bounded-ready。selector 1+3 formal、cap 扩展、4-Job、reservation 和 dynamic K 继续后置。
+- 将 SAOR v0.5.1 Task 1–7 的历史实施复现清单统一勾选，并补齐 Task 8/9 的真实 GPU 判决；保留
+  旧 decision-log 中“当时尚未运行”的时间点事实，不改写失败证据或审计历史。
+- 同步 `research/saor_model_scenario_audit_20260811.md`：保留 bounded-ready 事前归因门，并新增
+  §12.9 记录同窗口 selector 与 observation bridge 的事后判决，收紧 formal、原生 baseline、
+  reservation 和理论保证边界；更新 `research/README.md` 入口说明。
+- 图像状态同步为：Daft built-in/Ray Data 原生 four-job 40/40、Project observe-only 24/24 已完成；
+  当前缺口是 HSE static GPU 非劣门、两级 stage controller/CE5 在线接线与小规模 pgvector 质量闭环，
+  不再把 native gate、host-path 或 four-job formal 写成待运行。
+- 按用户要求不触发 Wiki 或普通飞书云文档同步。
+
 ## 2026-08-13 ready-observation bridge 双轮完成与“原生”身份纠偏
 
 - 服务器以执行提交 `3cfc5eb2` 完成两个独立三臂 rehearsal root：6/6 cell、6,144/6,144

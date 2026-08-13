@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-日期：2026-08-12
+日期：2026-08-13
 
 本文说明当前 Daft + Ray 上游执行基础设施已经完成什么、实际执行流程、研究证据
 边界，以及下一步还需要实现和验证的内容。研究方向仍是数据库 AI 算子外部执行
@@ -31,8 +31,7 @@ PostgreSQL
 CLIP 5K profile 与不含写回的 operator-E2E 已通过门禁。下图中 PostgreSQL→Daft→
 Ray CPU preprocess→typed CLIP actor 已跑通；分阶段 work/state 合同、真实 ready broker 与
 static HSE adapter 已接入 image runner，但尚未运行 GPU 对照门，动态 SAOR 也未接入该路径；
-最终 pgvector sink 与性能
-验证仍是**待实现目标**：
+小规模 pgvector sink/质量闭环与动态性能验证仍是**待实现目标**：
 
 ```text
 PostgreSQL image source
@@ -118,13 +117,23 @@ PostgreSQL image source
 - bounded-SAOR 机制审计使用 coordinator 单调序号的 lossless release-event ledger；runner 在
   采样、成功结束和失败落盘前 drain。5 ms 转换不会再被 250 ms snapshot 漏采判成失败，
   而账本缺失、为空、序号缺口或重复仍 fail closed。
+- `saor_bounded_ready` development path：每 Job 用由冻结 K/W 派生的有限 ready-window 预注册
+  已 concrete-ready 请求，trace 分开 ready/registered/granted/submit/service；coordinator 对
+  register/grant 记录 request ID 与 epoch，跨 trace join 不完整时 fail closed。旧 single-head
+  bounded-priority 保留为 observation-gap 回归对照。
+- Project bounded-ready FIFO/DRR/VTC-style/strict-priority/guarded-debt matched controls 与
+  single-head→bounded-ready FIFO observation bridge 已接入 readiness、runner、无损 ledger 和
+  双轮汇总；这些是 Project 实现的算法 controls，不是 Daft/Ray/vLLM 原生 baseline。
 - 新增 `BoundedStageWorkController` 纯策略候选：仅在离线校准的离散 work-credit
   集合内单步升降，观测 stale、stage 缺失或 calibration signature 不一致时回退
   workload-specific frozen-static。尚未接入 runner，也没有性能收益 claim。
 
-`saor_bounded_priority` 当前只完成本地实现、配置/readiness、两轮 rehearsal 汇总器和测试。
-服务器已关机，0.125K/0.25K 两轮 GPU rehearsal 未运行；因此状态是
-`code-complete / development-unrun / not-formal-registered`，不是 SAOR 胜出证据。
+GPU development 已完成：旧 single-head bounded-priority 两 cap 均未过 foreground 门并定位
+ready-backlog observation gap；bounded-ready $0.125W_e$ 随后通过双轮开发门，$0.25W_e$ 被 bulk
+guard 拒绝。同 ready-window 双轮归因中 guarded-debt 用约 4.8% 吞吐和约 5.2% bulk JCT 换取
+更低 foreground tail，只形成观测非支配折中；固定顺序 n=2 且未预注册 selector non-inferiority
+margin，故 `formal_authorized=false`。下一工程缺口是同一 2-Job 合同的 Daft Native/Daft Ray/
+Ray Data/project static/proposed 系统级 matched comparison，不是继续扫 cap 或直接跑 selector formal。
 
 ### 当前流程
 
@@ -277,7 +286,8 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
   3 repeat 不重叠、CV≤0.9%）跨过 5% 门禁。后续 matched-KV 扫描表明 2-ep/1.5B
   在 gpu_mem_util 0.3–0.9 均中性，因此当前更支持 endpoint consolidation，而非
   单纯 per-endpoint KV 大小，是驱动；4-ep 饱和深度仍未完全隔离。文本残留已 parked。
-  尚未完成的是图像 frame/pixel cost adapter 的多模态复用验证。
+  图像侧已有 stage descriptor、physical byte/work 和 observe-only fresh snapshot；尚未完成的是
+  frame/prepare/model cost 对组织与调度决策的在线驱动和跨模态 held-out 验证。
 - **研究内容二——调度与提交控制**：static K_max、arrival replay、flush、
   非阻塞 service observation、typed controller、pool/endpoint routing 和
   lifecycle trace 已形成完整流程。当前证据选择 static `K_max=8` + fixed
@@ -289,15 +299,13 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
   CLIP 初始 slow-path 与当前实现边界画像均完成。tensor fast path 相对
   production-np 串行 profile 约 1.14–1.22×，但 CPU prepare 仍为 actor 的
   13.8–31.2×，因此 E2E build 动机保留。
-  lazy image source、项目自写 fused Daft UDF diagnostic 与 bounded Ray CPU→GPU operator-E2E
-  runner/formal 已完成：独立校准后 project 相对单卡 `daft_native` UDF 1.296×、双卡 `daft_ray` UDF
-  1.138×。旧字段尚不能定位 CPU/Ray/PCIe/GPU 主瓶颈；schema v2 已补 CPU、
-  active-device GPU、逻辑字节与可选侵入式 CUDA stage telemetry，等待按 R0→R4
-  表示阶梯复测。Daft 内置 `embed_image` native arm 已接入；Ray Data graph 已移除
-  项目 `max_active_batches`，由 Ray Data 原生调度。旧自写 Daft staged 及旧版含项目
-  active-window 的 Ray Data adapter 256 行 gate 只作可行性证据，native gate 需重跑。官方 ResNet18 parity、
-  独立 calibration/formal、统一 pgvector sink、CPU-budget-normalized curve、
-  frame-cost 策略接线、CLIP HTTP/vLLM pooling 对照和正式策略结果尚未完成。
+  lazy image source、Daft built-in、Ray Data native graph 与 bounded Ray CPU→GPU operator-E2E 已完成
+  provenance/correctness/matched-resource 正式证据；Daft 60K object-store 容量失败单列。原生图像
+  single→four-job 40/40 runs、30 formal group 与 Project staged descriptor + observe-only 24/24 group
+  已归档。Project snapshot 100% fresh、构建均值 0.141 ms，但 static/proposed-role group JCT 只差
+  0.98%，因此尚未证明 state-aware 收益。官方 ResNet18 vendor-code parity、vLLM pooling 当前
+  blocked，不阻塞主线；仍缺 HSE static GPU 非劣门、两级 stage controller/CE5 在线接线、统一小规模
+  pgvector sink 质量闭环及跨 workload/硬件验证。
 - **算子代价估计（共同使能组件）**：CE1–CE5 与 429 formal/20-context context-LOO
   已完成；CE5 pooled/macro/max regret=1.67%/2.90%/14.72%、candidate pairwise=0.808，
   只算贴线的文本配置选择可行性。它仍是离线分析器，未在线驱动 organizer/scheduler；
@@ -319,7 +327,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
 | Actor pool / endpoint routing | 高（有界 slots/trace） | 双 GPU 1×256/2×128/4×64 formal | 多 actor 未过 5% 门槛；单 job 保留 1×256，多 job 分池待测 |
 | Shared-vLLM group runner | 高（代码/模板/真实 formal） | equal-workload 36/36 group + 5s short/long static/shared 6 formal | shared-credit 容量安全；4-job 仅条件性。5s A/B 证明效率—隔离—公平权衡，不称全面胜出 |
 | 联合 batching × submission 搜索 | 高（本地单 GPU） | 18 单元筛选 + 4 候选重复 | 独立拼接与联合最优不可分辨 |
-| 多模态复用 | 中（native + diagnostic + project operator runner） | 5K CLIP diagnostic + 旧 staged 256-row resource gate | 当前主线；待 Daft built-in/Ray Data native gate、官方 ResNet18 parity、pgvector sink、frame-cost/state-aware policy 与完整服务 baseline |
+| 多模态复用 | 中高（native + project staged observation） | Daft built-in/Ray Data/project matched-resource formal + 原生 40/40 four-job + Project observe-only 24/24 | 静态/观测证据已闭合；待 HSE static GPU 门、stage-aware/CE5 在线决策、小规模 pgvector 质量闭环与 held-out |
 | 算子代价估计 | 中（离线） | 429 formal、20 context × 4 candidate context-LOO | CE5 配置选择 marginal pass；尚未在线驱动或验证跨模态 remaining work/SLO |
 
 ## 7. 后续设计与实施顺序
@@ -330,13 +338,12 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
    typed batch/result、CPU CLIP preprocessor 和常驻 tensor actor 已实现并有单测；
 2. ✅ PG→Daft→Ray CPU preprocess→Ray CLIP GPU actor operator-E2E、exactly-once、
    fused Daft actor shape 与 ours 静态 shape 已完成；
-3. 先跑 image host data path R0→R4 动机实验，判定 CPU/Ray/PCIe/GPU 主限制；
-4. Daft built-in 已接入，Ray Data native graph 已移除项目式 inflight；下一步重做
-   native gate，并固定 upstream commit 运行官方 ResNet18 parity，再接统一 pgvector
-   sink，补 system-E2E、任务 ground truth、
-   CPU-budget-normalized curve，并继续校准 bounded direct、vLLM pooling、naive；
-5. 在强静态点上实现 endpoint-state-aware 请求成形和 `<100 LOC` 代价模型 v1；
-6. 正式报告吞吐/JCT/tail/SLO、overlap、GPU busy、能耗和 Recall@10。
+3. ✅ host-path/matched-resource 与原生图像 single→four-job、Project observe-only 已完成，瓶颈收紧为
+   CPU prepare 与 driver/Ray submission 的组合；
+4. 先在冻结 project best-static 上运行 direct-dependency vs HSE static GPU 非劣门；
+5. 非劣通过后，把两级 stage controller 与 CE5 接入 Project runner，保留 stale/signature mismatch
+   回退，并只重跑同 manifest 的 project static/proposed；
+6. 小规模接 pgvector sink 做 embedding 检索质量闭环，再补跨 workload/时间段/硬件 held-out。
 
 5K CLIP operator-E2E 只证明静态阶段拆分优于独立校准的项目自写 fused Daft UDF；
 这不代表优于 Daft/Ray Data 官方 native pipeline、完整 system-E2E，或状态感知策略
@@ -506,7 +513,8 @@ start、response headers、body complete、headers wait 和 body read。校准�
   不返回 output usage 时不同 arm 的吞吐口径不一致；Daft barrier 仍不能冒充 request P99。
 - 新复测按 64 行 validity → 512 行独立 calibration → 4,096 held-out、至少 60 秒、
   1 warmup + 3 interleaved repeats 执行。完整合同见
-  `experiments/plans/text_native_baseline_rerun_20260802.md`。服务器当前关机，尚未远端运行。
+  `experiments/plans/text_native_baseline_rerun_20260802.md`。后续 capability、单 Job 1+3 和多 Job
+  观察矩阵均已完成；真实状态以 `experiments/results/README.md` 和 evidence registry 为准。
 
 完整顺序与放弃条件见
 `experiments/plans/literature_driven_pipeline_optimization_guide.md`。
@@ -515,9 +523,8 @@ start、response headers、body complete、headers wait 和 body read。校准�
 
 - 多 GPU：先部署同构、各自独立占用 GPU 的双 service endpoint，再做异构池；
   验证健康回退、队列均衡和公平性。
-- 多模态：5K CLIP 画像和静态 operator-E2E 已完成，但 CPU/Ray/PCIe/GPU 归因仍
-  未闭合；下一步先跑 R0→R4 host data path，再接 pgvector sink、frame/pixel cost
-  adapter 与 endpoint-state trace。
+- 多模态：5K CLIP 画像、matched-resource operator-E2E、原生 four-job 和 Project observe-only
+  均已完成；当前先过 HSE static GPU 非劣门，再接 stage controller、CE5 和小规模 pgvector 质量闭环。
 - 代价估计：当前 grouped held-out 五切分平均 MAE 11.68s、MAPE 50.60%、
   R² 0.776；相对误差仍不稳定，下一步增加独立时间段/新 workload 校准和
   预测区间，不新增独立系统层。

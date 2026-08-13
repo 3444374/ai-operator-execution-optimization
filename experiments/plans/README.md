@@ -56,7 +56,7 @@ AI_CLASSIFY 的**唯一总入口**，集中维护四层对照、原生性准入�
 | `sink_writeback_coordination.md` | **写回工程参考**（已降级为实验设置，不作为独立实验阶段） | COPY + deferred index baseline，仅在实验设置中说明 |
 | `operator_cost_profile_dual4090_formal_20260804.md` | **算子代价估计共同使能组件** | 当前 320-run formal 合同；§8 保留通过晋级门槛后才启动的 TPC-H-derived AI 查询计划 held-out |
 | `opening_database_e2e_p0_20260807.md` | **开题前证据闭环** | 仅允许的两组文本三臂统一 database-E2E：SQuAD 均匀控制组与 ShareGPT controlled-skew；冻结 source/manifest/sink/计时/质量/资源合同和停止规则 |
-| `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同 + SAOR 唯一维护入口（§5.2）** | fixed-envelope 2-Job formal 已完成但旧 SAOR 未越过 static；v0.5.1 定位 single-head observation gap。bounded-ready $0.125W_e$ 双轮全过、$0.25W_e$ 被 bulk guard 拒绝；当前先做同窗口 selector attribution，随后必须补 Daft Native/Daft Ray/Ray Data/project static/proposed 系统级 matched comparison；FIFO/DRR/VTC 的 canonical baseline 保持 no-bounded-ready，另设 bounded-ready matched-control 副本，独立归因至少需 single-head + shared FIFO 桥接。原生系统 baseline 不接 bounded-ready；4-Job/reservation 仍阻塞 |
+| `state_aware_work_unit_evaluation_20260808.md` | **开题最小方法证据 + 论文主实验总合同 + SAOR 唯一维护入口（§5.2）** | fixed-envelope 2-Job formal 已完成但旧 SAOR 未越过 static；bounded-ready 只冻结 $0.125W_e$。同窗口 selector attribution 与 single-head→bounded-ready FIFO observation bridge 均已完成，SAOR 是观测非支配折中而非 selector winner，`formal_authorized=false`。下一步只补 Daft Native/Daft Ray/Ray Data/project static/proposed 系统级 matched comparison；原生系统 baseline 不接 bounded-ready，4-Job/reservation/dynamic K 仍后置 |
 
 双 GPU 7B 复验遵循分层门禁：先在 `service_scheduling_backpressure.md` 确定
 相同 per-GPU credit 下的容量曲线，再按 `data_organization_batching.md` 关闭

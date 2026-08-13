@@ -8,10 +8,13 @@ VTC/DLPM 与 SLO-serving 文献收紧多 Job 评价合同，并完成双轮 boun
 development gate；结果未晋级，新增 ready-set observation 修订任务；同日 bounded-ready
 $0.125W_e$ 双轮通过开发门，但审核发现 observation 与 selector 归因混杂，formal 前新增
 项目内部 matched-observation attribution gate；原生 baseline 不接入 bounded-ready；完整系统
-价值另需同一 2-Job 合同下的 native-system matched comparison）
+价值另需同一 2-Job 合同下的 native-system matched comparison；同日 matched-observation
+selector 双轮与 single-head→bounded-ready FIFO observation bridge 均已完成，SAOR 只形成
+观测非支配折中，`formal_authorized=false`）
 
 > **动态调度算法唯一维护入口**：本文 §5.2。当前状态为
-> `formal-valid / not-promoted`，不是已完成方法，
+> 旧 fixed-envelope formal `formal-valid / not-promoted`；当前 guarded-debt selector
+> `development-observed / formal_authorized=false`，不是已完成方法，
 > 也不替代 §5 的简单阈值/滞回控制 baseline。后续算法假设、公式、工程映射、实验门禁和
 > 结论状态统一在 §5.2 调整，避免散落到报告、代码注释或结果文档中形成不兼容版本。
 
@@ -1240,17 +1243,19 @@ transport、配置与证据落盘。首轮 workload 保持 2 Job，通用接口�
 **Tech stack:** Python dataclasses/protocols、Ray named actor、`unittest`、CSV/JSON evidence、现有
 shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖。
 
-**执行状态（2026-08-12）**：
+**执行状态（2026-08-13）**：
 
 | Task | 状态 | 证据/边界 |
 |---:|---|---|
 | 1–2 | ✅ 完成并推送 | 纯 selector、completion-corrected debt、单 recovery lease、队首 reclaim hold；commit `b59ce7e` |
 | 3–6 | ✅ 完成并推送 | arrival epoch/剩余 SLO、timeout cancel、Ray lossless ledger、四臂配置/readiness、两轮 fail-closed 汇总；commit `60559d7` |
-| 7 | ✅ 本地收尾 | 受影响套件 291 tests passed（仓库内固定临时目录绕过 Windows sandbox temp ACL），selector 89 physical/34 statement lines，compileall/diff/secrets passed；完整 discovery 1,154 tests 中 24 个因本机缺 Ray/Daft 或 Windows 无 POSIX `os.killpg` 报错，故不记 full pass；本机未安装 ruff，不临时装依赖 |
-| 8 | ⏸ 延后 | 用户已关闭服务器；未连接远端、未生成新结果目录、未运行 rehearsal 或 formal。服务器恢复后仍只按本节跑两轮 rehearsal |
+| 7 | ✅ 完成并推送 | 受影响套件 291 tests passed（仓库内固定临时目录绕过 Windows sandbox temp ACL），selector 89 physical/34 statement lines，compileall/diff/secrets passed；完整 discovery 1,154 tests 中 24 个因本机缺 Ray/Daft 或 Windows 无 POSIX `os.killpg` 报错，故不记 full pass；本机未安装 ruff，不临时装依赖；commit `8600044` |
+| 8 | ✅ 双轮 GPU gate 完成、未晋级 | single-head bounded-priority 两 cap 均未过 foreground 门；$0.25W_e$ 第 2 轮机制门 fail-closed，定位为 ready-backlog observation gap；未启动 formal |
+| 9 | ✅ bounded-ready 修订与双轮 gate 完成 | $0.125W_e$ 通过开发门，$0.25W_e$ 被 bulk guard 拒绝；后续同窗口 selector attribution 与 FIFO observation bridge 也已完成，SAOR 是观测非支配折中，不是 selector winner |
 
-下方 checkbox 保留为逐步复现清单；状态以上表为准。Task 8 已按 fail-closed 合同完成；不得把
-`formal_registration_candidate`、性能变化或 winner 写入项目结论。
+下方 checkbox 是已经执行完毕的历史复现清单，现统一勾选；真实 GPU 判决仍以 Task 8/9 和对应
+results 报告为准。不得把 `formal_registration_candidate`、development 性能变化或观测非支配点
+写成 formal/winner。
 
 ##### Task 1：先冻结纯选择器的可证伪语义
 
@@ -1259,7 +1264,7 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 - Modify: `code/tests/scheduling/test_saor.py`
 - Modify: `code/src/scheduling/submission_control/saor.py`
 
-- [ ] 在 `test_saor.py` 先写以下失败测试：
+- [x] 在 `test_saor.py` 先写以下失败测试：
   1. debt-critical 且 fitting 的 Job 一定越过 priority/soft-score Job；
   2. 最大 $F/H$ 的 ready debt-critical head 不 fit、且没有其它 fitting debt-critical head 时返回
      `guard_reclaim_hold`，`reclaim_debt=head_work-(K_work-active_work)`；
@@ -1269,7 +1274,7 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
   6. priority window 内按 `(priority, -remaining_slo_budget)` 选择；窗口外回退原 selector；
   7. debt guard 与 priority 同时触发时 `constraint_conflict=true` 且 debt 层优先；
   8. duplicate Job、非正 cap/window、head 超 envelope、缺 SLO budget 均 fail closed。
-- [ ] 运行红测：
+- [x] 运行红测：
 
   ```powershell
   python -m unittest discover -s code/tests -t code -p 'test_saor.py'
@@ -1277,7 +1282,7 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 
   预期：新增 import/test 因 bounded selector 尚不存在而失败；现有 SAOR 测试仍通过。
 
-- [ ] 在 `saor.py` 增加明确的 typed contract，不改变旧 `select_saor_release_job`：
+- [x] 在 `saor.py` 增加明确的 typed contract，不改变旧 `select_saor_release_job`：
 
   ```python
   @dataclass(frozen=True)
@@ -1308,7 +1313,7 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
   `select_bounded_saor_release(...)` 只做四层词典序，不读 Ray/Daft/vLLM；同层 tie-break 固定为
   debt ratio、priority/remaining budget、原 SAOR score、arrival order、Job ID。`hold` 只允许
   `debt>=cap && ready && !fits && !recovery_inflight` 的具体 head 触发。
-- [ ] 重跑同一命令，预期全部通过；用下式逐条核对反例，而不是只核对返回 Job：
+- [x] 重跑同一命令，预期全部通过；用下式逐条核对反例，而不是只核对返回 Job：
 
   $$
   D^{reclaim}=\max\{0,w_{head}-(K^{work}-R^{active})\}.
@@ -1322,7 +1327,7 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 - Modify: `code/src/scheduling/submission_control/shared_credit.py`
 - Modify: `code/src/scheduling/submission_control/__init__.py`
 
-- [ ] 先新增 coordinator 红测：
+- [x] 先新增 coordinator 红测：
   1. `saor_bounded_priority` 只接受显式 priority/SLO/window/debt-cap 组合；同一 Job 配置改变即拒绝；
   2. estimated work grant、actual work completion correction后，公平债务严格符合
      $F_j^+=[F_j+\rho_jc-\mathbf 1\{j=k\}c]^+$；
@@ -1334,25 +1339,25 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
   6. 任意 grant 后 `active_requests<=K_req`、`active_work<=K_work`；超 envelope 请求仍在入队前拒绝；
   7. `drain_release_events()` 恰好一次返回事件，第二次为空，避免 observer 重复计数；
   8. completed hold episode 的 duration/reclaim debt/target Job 可审计，未结束 hold 在 snapshot 中可见。
-- [ ] 运行红测：
+- [x] 运行红测：
 
   ```powershell
   python -m unittest discover -s code/tests -t code -p 'test_shared_credit.py'
   ```
 
-- [ ] 增加 `CreditLease.slo_deadline_s`、`SaorReleaseEvent` 和 coordinator 状态：稳定 per-Job
+- [x] 增加 `CreditLease.slo_deadline_s`、`SaorReleaseEvent` 和 coordinator 状态：稳定 per-Job
   priority/window/cap、endpoint-local recovery request key、当前 hold episode、单调 event sequence。
   新 policy 复用既有 `SaorReleaseConfig` 作为第 4 层 fallback，不扩 actor configuration tuple。
-- [ ] `_grant_bounded_saor_waiters` 每轮只执行一个 pure selection：grant 后写 event 并继续；hold 时
+- [x] `_grant_bounded_saor_waiters` 每轮只执行一个 pure selection：grant 后写 event 并继续；hold 时
   只开启/维持一个 episode 后返回。相同 target/reclaim 状态的 polling 不重复写 event；当 target
   fit、消失或完成时关闭 episode并写一条带 duration 的 `guard_reclaim_hold` event。
-- [ ] `release()` 先移除完成的 recovery key，再用 actual work 更新 debt，最后重新 grant；这样
+- [x] `release()` 先移除完成的 recovery key，再用 actual work 更新 debt，最后重新 grant；这样
   “一张 recovery 在途”依据真实 completion correction，而不是 grant-time 估计。
-- [ ] 事件至少包含：`event_seq/event_time_s/endpoint_id/action/tier/selected_job_id/
+- [x] 事件至少包含：`event_seq/event_time_s/endpoint_id/action/tier/selected_job_id/
   selected_request_id/target_job_id/head_work/reclaim_debt/hold_duration_s/constraint_conflict/
   ready_jobs/fitting_jobs/debt_by_job/debt_cap_by_job/recovery_inflight_by_job/active_requests/
   active_work/avoidable_idle/foreign_grant_over_debt_critical`。
-- [ ] 重跑 Task 1–2 测试并提交推送；commit message：
+- [x] 重跑 Task 1–2 测试并提交推送；commit message：
   `Implement bounded-priority SAOR core`。
 
 ##### Task 3：显式传播 arrival epoch 与剩余 SLO 预算
@@ -1369,22 +1374,22 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 - Modify: `code/src/observability/profiling/config.py`
 - Modify: `code/scripts/profiling/postgres_ai_operator_profile.py`
 
-- [ ] 先写红测锁定时钟语义：`arrival_time_s` 仍是 workload-relative；replay 另写
+- [x] 先写红测锁定时钟语义：`arrival_time_s` 仍是 workload-relative；replay 另写
   `BatchRequest.oldest_arrival_epoch_s`。scheduler 在 epoch clock=110、arrival epoch=100、
   target=30 时传 20 秒 remaining budget；不得计算 `110-relative_arrival`。
-- [ ] 写参数门禁红测：bounded policy 必须是 request granularity + arrival replay；priority>0 必须
+- [x] 写参数门禁红测：bounded policy 必须是 request granularity + arrival replay；priority>0 必须
   同时具有正 SLO target/window；cap 必须为正 work；shared-credit acquire timeout 必须为正。
-- [ ] 运行：
+- [x] 运行：
 
   ```powershell
   python -m unittest discover -s code/tests -t code -p 'test_scheduler.py'
   python -m unittest discover -s code/tests -t code -p 'test_postgres_profile_scheduling.py'
   ```
 
-- [ ] 给 `BatchRequest` 增加向后兼容的 `oldest_arrival_epoch_s: float | None = None`。arrival replay
+- [x] 给 `BatchRequest` 增加向后兼容的 `oldest_arrival_epoch_s: float | None = None`。arrival replay
   在已经计算 `intended_arrival_epochs` 的同一处用 `dataclasses.replace` 写入 envelope；request
   granularity 一行一 deadline，batch/quantum 只保存最老 arrival epoch。
-- [ ] `SynchronousScheduler` 增加 `job_slo_target_s/job_priority_window_s/job_fairness_debt_cap/
+- [x] `SynchronousScheduler` 增加 `job_slo_target_s/job_priority_window_s/job_fairness_debt_cap/
   shared_credit_acquire_timeout_s`。第一次 enqueue 前计算：
 
   ```python
@@ -1397,10 +1402,10 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
   remaining budget 允许为负；缺 arrival epoch 时有 priority window 的策略 fail closed。credit wait
   达到现有 transport/request timeout 时抛 `TimeoutError`，交给 runner 记录 incident，不加静默
   `max_hold` 回退。
-- [ ] profiler 新增 runner-owned flags：`--shared-credit-job-slo-ms`、
+- [x] profiler 新增 runner-owned flags：`--shared-credit-job-slo-ms`、
   `--shared-credit-priority-window-ms`、`--shared-credit-job-debt-cap-work`；bounded policy 自动把
   `--completion-request-timeout-s` 用作 acquire timeout。旧 policy 的默认值均为 disabled。
-- [ ] 重跑上述测试，预期 remaining budget、negative slack、timeout、legacy compatibility 全通过。
+- [x] 重跑上述测试，预期 remaining budget、negative slack、timeout、legacy compatibility 全通过。
 
 ##### Task 4：Ray transport 与事件账本必须无采样假阴性
 
@@ -1413,24 +1418,24 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 - Modify: `code/src/experiments/shared_vllm/runner.py`
 - Modify: `code/src/experiments/shared_vllm/metrics.py`
 
-- [ ] 先写 fake-Ray/runner 红测：bounded coordinator 配置能被旧 3-tuple、现 4-tuple兼容检查；
+- [x] 先写 fake-Ray/runner 红测：bounded coordinator 配置能被旧 3-tuple、现 4-tuple兼容检查；
   `drain_release_events` 跨 actor/client 保序且不重复；runner 成功与失败路径都保存 events CSV。
-- [ ] 增加真假阴性回归：两个 grant/hold 事件间隔 5 ms，而 observer 仍每 250 ms sample，事件门必须
+- [x] 增加真假阴性回归：两个 grant/hold 事件间隔 5 ms，而 observer 仍每 250 ms sample，事件门必须
   正确计数；缺 event 文件不得用 credit snapshot 推测 priority/debt tier 已触发。
-- [ ] 运行：
+- [x] 运行：
 
   ```powershell
   python -m unittest discover -s code/tests -t code -p 'test_shared_credit_ray.py'
   python -m unittest discover -s code/tests -t code -p 'test_shared_vllm_experiment.py'
   ```
 
-- [ ] actor/client 暴露 `drain_release_events(endpoint_id)`；`_RayCreditObserver` 分别提供 sampled
+- [x] actor/client 暴露 `drain_release_events(endpoint_id)`；`_RayCreditObserver` 分别提供 sampled
   snapshot 与 lossless drained events。runner 在每次 sample、正常结束、异常落盘前三处 drain，
   写 `traces/<run_stem>.release_events.csv`；schema/version 与路径进入 group record/failure JSON。
-- [ ] `bounded_saor_event_summary` 只从 event ledger 计算：tier counts、hold count/total/P95/max、
+- [x] `bounded_saor_event_summary` 只从 event ledger 计算：tier counts、hold count/total/P95/max、
   max reclaim debt、constraint conflicts、max recovery in-flight、avoidable idle、foreign-over-critical。
   250 ms credits trace 继续用于 phase/资源图，不再作为新机制是否触发的真值源。
-- [ ] 重跑测试，预期 5 ms 回归通过、事件第二次 drain 为空、失败 run 仍保留最后事件。
+- [x] 重跑测试，预期 5 ms 回归通过、事件第二次 drain 为空、失败 run 仍保留最后事件。
 
 ##### Task 5：配置冻结为显式 per-Job 语义和两档 cap
 
@@ -1445,28 +1450,28 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 - Modify: `deploy/README.md`
 - Modify: `PROJECT_INDEX.md`
 
-- [ ] 先写配置红测：`saor_bounded_priority` 支持任意 Job 数的等长数组
+- [x] 先写配置红测：`saor_bounded_priority` 支持任意 Job 数的等长数组
   `priorities/slo_targets_s/priority_windows_s/debt_cap_fractions`；禁止由 offset/Job 名推断；
   priority>0 缺 SLO/window、cap fraction 不在 `(0,1]`、数组长度不等、bounded policy 缺
   `saor_release_control` 均拒绝。
-- [ ] 写 command 红测，2 Job 应精确生成：bulk priority=0、无 priority window、debt cap 分别为
+- [x] 写 command 红测，2 Job 应精确生成：bulk priority=0、无 priority window、debt cap 分别为
   `8192/16384` work；foreground priority=1、SLO/window=30 s、无 debt cap；coordinator policy 为
   `saor_bounded_priority`。
-- [ ] 运行红测：
+- [x] 运行红测：
 
   ```powershell
   python -m unittest discover -s code/tests -t code -p 'test_saor_shared_vllm_config.py'
   python -m unittest discover -s code/tests -t code -p 'test_saor_formal_tools.py'
   ```
 
-- [ ] 新模板固定四臂且不加参数：`static_partition`、现 `saor_release`、
+- [x] 新模板固定四臂且不加参数：`static_partition`、现 `saor_release`、
   `saor_bounded_priority_0125k`、`saor_bounded_priority_025k`。两档只改变 bulk
   `debt_cap_fractions=[0.125,null]` / `[0.25,null]`；两档均为
   `priorities=[0,1]`、`slo_targets_s=[null,30]`、`priority_windows_s=[null,30]`。
-- [ ] readiness 新增 `bounded_priority_development` profile，复用同一 immutable manifests、
+- [x] readiness 新增 `bounded_priority_development` profile，复用同一 immutable manifests、
   offset、K/W、model/protocol/calibration SHA，且检查 `request_slo_ms=30000` 与 foreground policy
   SLO 一致。该 profile 只准 `--rehearsal`；不把 1-run development 写成 formal。
-- [ ] 重跑 Task 3–5 测试，运行 template readiness，预期 `status=passed`、scenario_count=4；提交
+- [x] 重跑 Task 3–5 测试，运行 template readiness，预期 `status=passed`、scenario_count=4；提交
   推送，commit message：`Wire bounded-priority SAOR evidence path`。
 
 ##### Task 6：实现两轮 development gate 汇总，不混淆结果与机制
@@ -1477,9 +1482,9 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 - Modify: `code/tests/experiments/test_saor_formal_tools.py`
 - Modify: `code/scripts/README.md`
 
-- [ ] 先用两个人工 matrix root 写红测；汇总器接受两次 `--matrix-root`，每个 root 必须是 clean
+- [x] 先用两个人工 matrix root 写红测；汇总器接受两次 `--matrix-root`，每个 root 必须是 clean
   rehearsal、四臂各一 run、相同 config fingerprint/commit/service signature。
-- [ ] 锁定硬门，不允许用 slowdown 误杀：
+- [x] 锁定硬门，不允许用 slowdown 误杀：
 
   | 维度 | 每个 cap 的判据 |
   |---|---|
@@ -1490,11 +1495,11 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
   | mechanism | priority/debt tier 均至少触发；avoidable idle=0；foreign-over-critical=0；max recovery in-flight≤1；event ledger 完整 |
   | stability | 两轮 gate 方向一致；输出 mean、全部单次值和 sample CV（可计算时） |
 
-- [ ] 单独写 false-negative 测试：event ledger 已证明 tier 触发时，即使 snapshot trace 没采到中间
+- [x] 单独写 false-negative 测试：event ledger 已证明 tier 触发时，即使 snapshot trace 没采到中间
   状态也应 pass；event ledger 缺失/sequence gap/duplicate 则 fail closed。
-- [ ] 输出 `gate_summary.csv`、`mechanism_summary.csv`、`validation.json`；结论字段只允许
+- [x] 输出 `gate_summary.csv`、`mechanism_summary.csv`、`validation.json`；结论字段只允许
   `formal_registration_candidate`、`diagnostic_only` 或 `constraint_conflict_stop`，不能输出 winner。
-- [ ] 运行：
+- [x] 运行：
 
   ```powershell
   python -m unittest discover -s code/tests -t code -p 'test_saor_formal_tools.py'
@@ -1514,10 +1519,10 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 - Modify: `overview/current_direction_and_plan.md`
 - Modify: `PROJECT_LOG.md`
 
-- [ ] 更新学习讲解，明确：release-only 非抢占下界、actual-work debt、为什么 barrier 只针对 ready
+- [x] 更新学习讲解，明确：release-only 非抢占下界、actual-work debt、为什么 barrier 只针对 ready
   head、为什么 recovery 只允许一张、priority/SLO 与 fairness 的词典序冲突、事件账本如何消除
   sampling false negative。
-- [ ] 运行受影响套件：
+- [x] 运行受影响套件：
 
   ```powershell
   python -m unittest discover -s code/tests -t code -p 'test_saor.py'
@@ -1531,14 +1536,14 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
   python -m compileall -q code/src code/scripts code/tests
   ```
 
-- [ ] 再运行完整 discovery；本机缺 Ray/Daft/psycopg 等环境错误必须逐项列出，不能把部分套件写成
+- [x] 再运行完整 discovery；本机缺 Ray/Daft/psycopg 等环境错误必须逐项列出，不能把部分套件写成
   full pass：
 
   ```powershell
   python -m unittest discover -s code/tests -t code -p 'test_*.py'
   ```
 
-- [ ] 检查 diff、文档入口与策略实现行数，再扫 secrets：
+- [x] 检查 diff、文档入口与策略实现行数，再扫 secrets：
 
   ```powershell
   git diff --check
@@ -1815,7 +1820,7 @@ Daft Native同边界只差约2.5%–2.7%。它回答的是“此前71.24s是否�
 使short JCT +59.00%，说明quota效应依赖arrival regime；两者必须分轨保留。当前
 all-at-t0诊断已经排除“项目模型请求路径慢6.4×”，因此不扫K256/K512。
 
-### 7.3 图像四作业：gate/rehearsal 已通过，尚未启动正式实验
+### 7.3 图像四作业：原生 formal 与 Project observe-only formal 已完成
 
 图像多作业不复制文本的 5 s offset。既有单作业结果表明 Ray Data/project 的图像作业
 远快于 Daft built-in；若仍用 5 s，前台 short 很可能已经结束，实验无法回答“后到作业
@@ -1859,7 +1864,7 @@ first output、completion/JCT、images/s、single→four-job slowdown、source/q
 host memory/network/disk、Ray available CPU/GPU、`/dev/shm` 峰值；project 另保存逐事件
 ready/active-by-job trace。Daft/Ray Data 隐藏阶段无法可靠归因的字段留空，不补造。
 
-执行顺序固定为：环境/数据库/模型只读 preflight → 停止文本 vLLM 并清理 stale Ray →
+冻结执行顺序为：环境/数据库/模型只读 preflight → 停止文本 vLLM 并清理 stale Ray →
 生成候选 manifest 并记录 SHA256 → 64-row correctness/capability gate → 一次 overlap rehearsal
 并封存 manifest → 启动
 共享 32-CPU/2-GPU Ray → 原生 1 warm-up + 3 balanced formal → project 1+3 → fail-closed
@@ -1868,8 +1873,11 @@ ready/active-by-job trace。Daft/Ray Data 隐藏阶段无法可靠归因的字�
 autoscaling ActorPool 后与 Daft built-in、project static/proposed gate 均通过。候选
 2K+3×3K manifest 的一次 full-size rehearsal 也通过：Daft、Ray Data、project static、
 project proposed 的 short/long overlap 分别约 19.62/20.43/6.19/2.27 s，证明 0.5 s offset
-能测到真实并发。该 rehearsal 只有一次、`proposed` 仍是当前占位实现，所有绝对值和臂间
-差异都只用于流程诊断，**没有启动 formal，也不构成策略收益结论**。
+能测到真实并发。后续 Daft built-in/Ray Data 原生矩阵已完成 40/40 runs、30 formal group；
+Project staged descriptor + observe-only snapshot 矩阵也已完成 24/24 group、99K formal rows
+exactly-once，3,114 个 snapshot 全部 fresh、构建均值 0.141 ms，static/proposed-role group JCT
+仅差 0.98%。因此当前只证明原生执行图内的多 Job 干扰和 Project 观测接入，不构成跨框架绝对
+排名或 state-aware 策略收益；真正动态实现仍须相对同次 frozen-static 重跑 Project 矩阵。
 
 未来只重测 project 的复用门禁：native 结果的 manifest SHA、model/processor、输出语义、
 硬件/资源、batch/source-shard、计时边界和 metric schema 全部与新 project run 一致；否则
@@ -1887,7 +1895,7 @@ project work credit、路由或重新分区。必须记录每 Job barrier JCT、
 output-length/quality error、服务 token counter、running/waiting/KV、GPU/MFU/energy、组级
 Jain 与 single→four-job slowdown；缺少可靠逐请求时间戳时不伪造 P95/P99。
 
-DuckDB 与图像矩阵同样先只做 manifest/config/capability gate，不跑 formal。64-row
+DuckDB 当前仍只做 manifest/config/capability gate，不跑 formal；图像 formal 状态以 §7.3 为准。64-row
 候选先被 endpoint-work skew 4.68% 门禁正确拒绝，未放宽冻结 4% 合同；重新生成的 128-row
 gate 通过，四个 Job 共 512 rows 全部 non-empty、0 error、exactly-once，short 从 0 s
 运行至 3.448 s，三个 long 在 0.5 s 到达，实测 short/long overlap 2.948 s，终态服务

@@ -192,13 +192,14 @@ PostgreSQL source
   P99 17.58–18.15s、foreground SLO 0% 和 bulk SLO 65.8%–66.6% 通过全部门，注册 formal
   candidate；$0.25W_e$ 因 bulk 30s miss 74.4%–75.2% 两轮越界拒绝。状态为
   `development-gated/formal-registration-candidate-0125k-only`，不是 formal 胜出。post-hoc
-  归因审核确认 bounded-ready 同时改变 observation/execution path 与 selector，因此 formal 前先让
-  **项目内部** FIFO、DRR/WFQ、external VTC-style、strict-priority 和 proposed 使用相同 ready-window；
-  Daft/Ray Data/产品原生 baseline 不接入该机制。只有 proposed 越过同 observation 的项目简单
-  消融 Pareto 前沿才进入 1+3 formal；否则贡献收敛为 bounded ready-state exposure + 最小
-  guarded release，或淘汰复杂 selector。无论 selector 是否晋级，若论文声称完整 SAOR 系统
-  相对原生框架有价值，都必须补同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/
-  project static/proposed 系统级 matched comparison；历史数据签名不完全一致即重跑；
+  归因审核确认 bounded-ready 同时改变 observation/execution path 与 selector；随后已完成
+  **项目内部** FIFO、DRR/WFQ、external VTC-style、strict-priority 和 proposed 的同 ready-window
+  双轮归因，以及 single-head shared FIFO→bounded-ready FIFO 的 observation bridge。proposed
+  相对 VTC-style 用约 4.8% 吞吐、5.2% bulk JCT 和更长 no-service interval 换取约 31.8%
+  foreground P99 改善，是观测非支配折中而不是 selector 胜出；固定顺序 n=2 且未预注册
+  selector non-inferiority margin，故 `formal_authorized=false`。下一步必须补同一 2-Job workload
+  的 Daft Native/Daft Ray/Ray Data native/project static/proposed 系统级 matched comparison；
+  原生臂保留自身调度且不接 Project bounded-ready，历史数据签名不完全一致即重跑；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、
@@ -217,10 +218,11 @@ PostgreSQL source
 - prompt 变化感知、exact/semantic 结果复用、数据库级/模型内部增量推理已进入
   `parked-conditional` 清单；当前不实现，主路径完成后仅在真实 reuse opportunity≥10% 且扣除
   lookup/build/refresh 后 oracle 潜力≥5% 时重新激活。
-- 图像 short→3×long 多作业已完成 immutable manifest、64-row correctness gate 和一次
-  full-size overlap rehearsal；DuckDB bounded-output 四作业已完成 128-row native gate。
-  两者均未启动 formal、不能用于系统排名或策略收益；图像 proposed 角色已与具体算法名
-  解耦，后续状态感知/动态调度调整只需版本化并重跑 project static/proposed。
+- 图像 short→3×long 多作业已完成原生 Daft built-in/Ray Data 40/40 runs、30 formal group，
+  Project staged descriptor + observe-only snapshot 也已完成 24/24 group；这些结果只证明各原生
+  执行图内的多 Job 干扰和 Project 观测接入，不证明动态策略胜出。DuckDB bounded-output 四作业
+  仅完成 128-row native gate，single controls/formal 尚未运行且不阻塞当前主线。图像 proposed
+  角色已与具体算法名解耦，后续状态感知/动态调度调整只需版本化并重跑 project static/proposed。
 
 ### 5.4 不能声称
 
@@ -270,11 +272,13 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 1. 第一性原理 framing、Claim Matrix、staged WorkDescriptor/状态合同与共同 cost enabler 已完成。图像 production descriptor builder 与 fresh snapshot 已以 observe-only 方式接入 project runner，legacy model-pixel credit 和调度决策保持不变；原生图像 single→four-job 40/40 passed，Project observe-only 24/24 passed、99K formal rows exactly-once、snapshot 100% fresh/构建均值 0.141 ms。static/proposed group JCT 只差 0.98%，因此只验收观测接入；stage controller 决策接线和 CE5 在线驱动仍待验证，不能将原生观察或 observe-only 写成动态方法胜出。
 2. K128 replacement database-E2E 已通过并归档；旧 failed-feeding 结果只作历史诊断，不再进入当前数字口径。
 3. 权威内容入口改为 `opening/opening_defense_outline_20260808.md`；当前只更新实验报告、紧凑数据和待画图合同，不生成新图，也不生成、覆盖或同步新的 PPT/云文档。
-4. 文本原生单 job、5s 两 job 与四 job 矩阵均已完成。图像 Daft built-in/Ray Data/project
-   四作业和 DuckDB bounded-output 四作业只完成冻结准备，不跑 formal；图像使用 0.5s
-   offset 并要求实际 overlap。后续先完成 capability/rehearsal，再跑 native 一次；项目
-   感知/动态实现调整后只重跑同 manifest 的 project static/proposed。
-5. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
+4. 文本原生单 job、5s 两 job 与四 job 矩阵均已完成；图像 Daft built-in/Ray Data 原生四作业
+   40/40 和 Project observe-only 24/24 也已归档。DuckDB 四作业仍停在 capability gate，不为开题
+   扩展 formal。
+5. SAOR bounded-ready、matched-ready selector 归因和 observation bridge 已完成 development
+   rehearsal；下一步只做同一 2-Job 合同的 native-system matched comparison，不直接启动 selector
+   1+3 formal，也不扩 cap、4-Job、reservation 或 dynamic K。
+6. 用户已明确不需要 Wiki 同步；当前也暂停普通飞书云文档覆盖，只完成本地材料与 Git 发布。
 
 2026-08-11 修正后的文本 phase-change 门禁显示：A-only K160 相对 K128 的每 endpoint
 service rate 提升 7.77%，低压升档动机成立；但 B=2.5/3.5/4.5 均未在两个 ON 周期、

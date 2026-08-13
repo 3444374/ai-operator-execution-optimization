@@ -128,12 +128,13 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    由冻结 effective K 与 endpoint 数×W 派生，trace 分开 ready/registered/granted/submit；
    coordinator 对 register/grant 记录 request ID+epoch，并在 actor 同一时钟域内要求 foreground
    registered-ready 时 foreign fallback=0。两个全新 development root 已完成：只冻结
-   $0.125W_e$ 候选；$0.25W_e$ 两轮 bulk miss 越界已拒绝。下一步不是直接 formal，而是先把
-   ready observation 从 selector 解耦，做 project bounded-ready + FIFO、DRR/WFQ、strict-priority、
-   external VTC-style 与 proposed 的最小**项目内部归因 gate**；这些臂不是原生 baseline。通过后
-   再做 1+3 formal，原生 baseline 继续使用各自调度。若简单策略已在同一
-   Pareto 前沿，贡献收敛为 bounded ready-state exposure + 最小 guarded release。期间不扫 cap，
-   不跑 4-Job/reservation/dynamic K。
+   $0.125W_e$ 候选；$0.25W_e$ 两轮 bulk miss 越界已拒绝。同 ready-window 的 Project FIFO、
+   DRR/WFQ、VTC-style、strict-priority 与 proposed 双轮归因，以及 single-head shared FIFO→
+   bounded-ready FIFO observation bridge 均已完成。proposed 是以约 4.8% 吞吐和约 5.2% bulk
+   JCT 代价换更低 foreground tail 的观测非支配折中，不是 selector winner；固定顺序 n=2，
+   `formal_authorized=false`。下一步只做 Daft Native/Daft Ray/Ray Data/project frozen-static/
+   proposed 的同一 2-Job native-system matched comparison；原生 baseline 继续使用自身调度。
+   期间不事后补 selector margin，不扫 cap，不跑 selector formal、4-Job/reservation/dynamic K。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。
 
 晋级门槛：相对各自独立标定的强静态/系统 baseline 至少改善约 5%，重复方向一致，且质量不退化。
