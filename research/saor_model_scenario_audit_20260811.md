@@ -828,7 +828,9 @@ Job、`guard_reclaim_hold`、`guard_recovery_pending`、`constraint_conflict` �
 
 接口一次按任意 Job 数实现，但首轮只复用冻结的 `bulk@0 → foreground@5s → overlap → drain`
 两 Job workload，暂不跑长时间 formal。除 static/current-SAOR/strict-priority 控制外，只测
-$H_B/K^{work}\in\{0.125,0.25\}$ 两个有界点；foreground 取 $p_F=1$、$g_F=\tau_F$，bulk
+$H_B/W_e\in\{0.125,0.25\}$ 两个有界点；$W_e=65,536$ 是单 endpoint work-credit limit，
+因此两个 actual-work debt cap 为 8,192/16,384，不是 request K 的比例。foreground 取
+$p_F=1$、$g_F=\tau_F$，bulk
 取 $p_B=0$，其他参数、总 request/work envelope、manifest 和 vLLM 配置不变。
 
 等权两 Job 下，每完成 $c$ 单位 foreground actual work，bulk debt 增加 $c/2$。当前 formal 的
@@ -847,5 +849,27 @@ strict-priority 的无限 cap 极限，故不进入首轮。
 
 停止规则：两个有限 cap 均不能同时通过 foreground、bulk 与 efficiency 门时，不继续密集扫描
 cap/权重，也不扩 4-Job；先用事件账本区分“release-only 的约束不可同时满足”与实现错误。
-只有至少一个 cap 通过，才允许在该 cap 下单独做 `reserve=0` 对 `0.25K`、point estimate 对
-保守 upper-bound 的鲁棒性消融；reservation 不先验进入主方法。
+至少一个 cap 通过时也不直接启动 formal：bounded ready-set observation 必须与 selector 解耦，
+先在相同 ready-window 下比较 FIFO、DRR/WFQ、external VTC-style、strict-priority 与 proposed。
+若简单 selector 已在同一 Pareto 前沿，组合收益不能归因给 SAOR selector；贡献收敛为 bounded
+ready-state exposure + 最小 guarded release，或淘汰复杂 selector。reservation、point estimate/
+upper-bound 鲁棒性消融只在 matched-observation gate 和 2-Job formal 均闭合后启动。
+
+### 12.8 Bounded-ready 双轮结果与 post-hoc 归因边界（2026-08-13）
+
+两轮 2×4090 development rehearsal 已证明 $H_B=0.125W_e$ 组合同时通过 correctness、机制、
+foreground、bulk miss guard 与 efficiency 门；$0.25W_e$ 被 bulk guard 拒绝。该结果修复了
+single-head observation gap，但 `saor_bounded_ready` 同时引入多 concrete request 预注册和
+priority/debt 选择器，现有实验没有 matched-ready 简单 selector，故只能声称：
+
+1. finite concrete-ready exposure 是当前 workload 上可行且必要检查的执行合同；
+2. bounded-ready + guarded priority/debt 组合值得进入归因门；
+3. 不能声称 debt selector 已独立超过 FIFO/DRR/VTC，不能把 development 结果写成 formal；
+4. 当前 foreground 的完整 30s priority window 使其从进入系统起一直为高优先级，首轮策略更准确
+   地称为 bounded priority + service-debt guard，而不是已接完整 runtime slack controller；
+5. 调度公平 backlog 从 concrete-ready/registered 开始；arrival→ready 属于用户 E2E/source
+   pipeline，不进入上游 selector 的 GPS active set。
+
+正式运行还必须匹配 active K/W 之外的 ready bytes/host buffer，并用 balanced/interleaved order
+控制 prefix-cache warm state。否则“固定 envelope”只指 active credit，不代表相同总内存和
+backpressure footprint。

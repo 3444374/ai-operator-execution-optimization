@@ -706,3 +706,12 @@
   overflow、notes、模板保真和 contact sheet 复核全部通过。
 - 修订 P03 的流程表达：加大右侧步骤卡间距，确保五条蓝色向下连接都有线身；三条状态反馈支线
   独立带箭头，补充线型/边框图例并统一卡内文字居中。
+
+## 2026-08-13 Claim Matrix 同步 bounded-ready 归因门
+
+- 只更新 Claim Matrix 中“固定总并发上限下的状态感知有序释放”一项，不改报告正文、PPT 或
+  飞书：证据等级仍为未证明；补入 bounded-ready $0.125W_e$ 双轮 development 结果和
+  $0.25W_e$ bulk guard 拒绝。
+- 下一步从“继续实现有界 guard”改为“先让 FIFO/DRR/VTC/strict-priority 使用相同 ready-window
+  做归因门，通过后才 formal”。若简单 selector 已在同一 Pareto 前沿，则收敛为 observation
+  contract 或淘汰复杂 selector；这收紧而非提升开题 claim。

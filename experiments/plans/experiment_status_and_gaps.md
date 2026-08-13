@@ -1,8 +1,8 @@
 # 实验状态与缺口分析
 
 Date: 2026-07-20（最后更新：2026-08-13；开题证据冻结，SAOR fixed-envelope formal 已
-完成但未晋级；bounded-ready v0.5.2 的 0.125K 双轮 GPU development gate 已注册 formal
-candidate，dynamic-K 仍退出主线）
+完成但未晋级；bounded-ready v0.5.2 的 $0.125W_e$ 双轮 GPU development gate 已冻结候选参数，
+formal 前需 matched-observation 归因门；dynamic-K 仍退出主线）
 
 本文档是对 2026-07-18/19 本地 vLLM + Qwen2.5-1.5B AI_COMPLETE baseline 系列的全面审计，记录已完成实验、已证明的 claim、未完成的缺口、指标盲区、下一步实验路线图，以及 2026-07-23 完整问题审计（P0/P1/P2 分级 + 认知债务清单）。
 
@@ -44,12 +44,13 @@ credit 作为鲁棒性消融。达到 static fg 非劣、吞吐≥static+5% 且 
 2026-08-12 本地工程增量：`saor_bounded_priority` 已接通 actual-work debt cap、每 Job 单张
 recovery lease、ready-head reclaim barrier、显式 priority/SLO window、旧 SAOR fallback、
 timeout waiter cleanup 和 Ray lossless release-event ledger；四臂模板只含 static、release-only、
-0.125K/0.25K。readiness 与两轮汇总器均 fail closed，机制门不再使用 250 ms snapshot 猜测
+$0.125W_e/0.25W_e$（历史 scenario ID 写 K，但实现 fraction 乘 endpoint work limit）。readiness
+与两轮汇总器均 fail closed，机制门不再使用 250 ms snapshot 猜测
 短转换；缺账本/空账本/序号缺口/重复一律失败。本地受影响套件通过，代码已推送。
 
 2026-08-13 双轮 GPU development gate 已按冻结合同执行并停止。Round 1 四臂 clean；Round 2
-0.25K 的 debt-recovery grant 为 0，runner 和跨轮汇总器均 fail closed。0.125K 两轮 fg P99
-56.47/56.29s、SLO violation 94.5%/92.6%；0.25K 为 49.03/50.10s、85.2%/87.5%，均未达到
+$0.25W_e$ 的 debt-recovery grant 为 0，runner 和跨轮汇总器均 fail closed。$0.125W_e$ 两轮 fg P99
+56.47/56.29s、SLO violation 94.5%/92.6%；$0.25W_e$ 为 49.03/50.10s、85.2%/87.5%，均未达到
 30.7s/1% 门。GPU mean 95.8%–97.6%、tokens/s 12.2–12.4K，排除欠供给解释。逐请求/event
 交叉验证进一步定位 observation gap：所有已注册 foreground head 都获 `slo_priority`，但当前
 每 Job 同步 pull 一次只注册一个 head；相邻 acquire 间 coordinator 看不到 Daft/Ray 的完整 ready
@@ -70,12 +71,22 @@ bulk fallback=0。
 submission trace 含 `submit_epoch_s` 而 fail closed；真实 schema 要求 submission trace 的
 ready/registered/granted 与 request trace 的 submit 按 `submission_id` 连接。commit
 `6728c569` 修复并新增生产 schema 回归后，从两个全新 root 重跑 8/8 cell、0 incident，跨轮
-汇总 `status=passed`、`conclusion=formal_registration_candidate`。0.125K 两轮均通过全部门：
+汇总 `status=passed`、`conclusion=formal_registration_candidate`。$0.125W_e$ 两轮均通过全部门：
 12,355/12,367 tok/s、foreground P99 18.15/17.58s、foreground SLO violation 0、bulk SLO
-violation 0.658/0.666；0.25K 虽保护 foreground，但 bulk SLO 0.752/0.744 两轮越过 0.723，
+violation 0.658/0.666；$0.25W_e$ 虽保护 foreground，但 bulk miss 0.752/0.744 两轮越过 0.723，
 拒绝。当前状态改为 `development-gated/formal-registration-candidate-0125k-only`；正式重复尚未
-运行，0.25K、4-Job、reservation 和 dynamic K 均不扩展。完整结论见
+运行，$0.25W_e$、4-Job、reservation 和 dynamic K 均不扩展。完整结论见
 `experiments/results/state_aware_work_unit/saor_bounded_ready_gate_20260813/README.md`。
+
+同日 post-hoc 归因审核增加阻塞门：bounded-ready 同时改变 multiple concrete-ready
+pre-registration/execution path 与 priority/debt selector，旧 single-head FIFO/DRR/VTC/SAOR 不能
+作为 selector 的干净因果对照。先做 1--2 轮 matched-observation rehearsal，使 bounded-ready
+FIFO、DRR/WFQ、external VTC-style、strict-priority 与 proposed 共享相同 ready-window、active
+K/W、ready bytes、arrival/cache/服务合同。只有 proposed 超过最强简单 Pareto 前沿才启动 1+3
+formal；否则贡献收敛为 bounded ready-state exposure + 最小 guarded release，或淘汰复杂 selector。
+formal 另需把 equal-share fairness 与 foreground/bulk differentiated service 分轨，使用
+registered-ready backlog、completion-accounted empirical lag、三个 JCT 反事实、request/token
+SLO goodput、最长 no-service 和 ready buffer/CPU/memory 指标。
 
 ## 图像状态增量（2026-08-10）
 

@@ -1,5 +1,30 @@
 # 项目日志
 
+## 2026-08-13 Bounded-ready 归因审核与多 Job 评价合同再收紧
+
+- 审核确认开发报告中的 `0.125K/0.25K` 是显示误名：配置 fraction 实际乘单 endpoint
+  `work_limit=65,536`，正式记号改为 $H_B/W_e\in\{0.125,0.25\}$，即 8,192/16,384
+  actual-work debt units；历史 scenario ID 保留用于复现，不把 request K 与 work W 混用。
+- 保留双轮事实不变：$0.125W_e$ 为 formal registration candidate，$0.25W_e$ 被 bulk 30s
+  miss guard 拒绝；但 `saor_bounded_ready` 同时改变 ready-set pre-registration/execution path 与
+  priority/debt selector，因此不能把组合改善全部归因给 SAOR selector。正式重复前新增
+  `matched-observation-attribution-required` 门：bounded-ready FIFO、DRR/WFQ、external
+  VTC-style、strict-priority 与 proposed 共享同 ready-window、active K/W、ready bytes、arrival/
+  cache/服务合同，先做 1--2 轮 rehearsal。
+- 若简单 matched-ready 策略已进入同一 Pareto 前沿，贡献收敛为 bounded ready-state exposure +
+  最小 guarded release，或淘汰复杂 selector；只有 proposed 有独立增量才启动 1 warm-up + 3
+  balanced/interleaved formal。期间停止 cap 扫描、dynamic K、reservation、4-Job 与图像泛化。
+- 多 Job 评价拆为 equal-share fairness 与 foreground/bulk differentiated service：前者看共同积压
+  weighted service lag，后者看 foreground SLO isolation + bulk reserved-share JCT、max/P95 lag、
+  longest no-service。bulk 30s 在 static 下约 67% miss，缺业务合同前只称相对保护 guard。
+- 指标合同补充 scheduler backlog 从 concrete-ready/registered 开始、completion-accounted
+  empirical lag、request/token SLO goodput、分阶段 ready→grant→submit→completion tail，以及
+  ready requests/work/bytes、host memory 和 coordinator CPU；bounded active K/W 不再被误写成
+  相同总缓冲成本。
+- 同步更新结果报告、SAOR 唯一实验计划、数学审计、指标综述、知识库、baseline/status 表、
+  Claim Matrix、总纲、快速卡片和索引。文献补充 JITServe、SCORPIO、ProServe、Agentix 与 BatchGen；明确
+  in-engine 工作只迁移指标/设计模式，不冒充上游 executable baseline。
+
 ## 2026-08-13 SAOR bounded-priority 双轮 GPU gate 未晋级
 
 - 在服务器 `2de6f93` 上恢复 PostgreSQL/Ray/双 vLLM；runtime preflight=`ok`、

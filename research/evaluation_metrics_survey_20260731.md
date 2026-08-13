@@ -629,6 +629,13 @@ SQL、单纯向量索引和用户自写 HTTP UDF 是四种不同系统；它们�
 
 #### 第四层：多 Job 的反事实、服务公平与晋级规则
 
+先区分评价对象。**Equal-share fairness** 把同权/显式权重 tenant 视为平等参与者，主看共同
+积压 attained service、lag 与 work conservation；**differentiated service** 允许 foreground
+业务优先级高于 bulk，主看 foreground SLO isolation，同时给 bulk 设置 service/JCT/starvation
+下界。两者不能共用“延迟越接近越公平”的判据：当前 long bulk + delayed foreground 属于
+后者；若 bulk 的 30s deadline 没有外部应用语义，它只能作相对 static miss-rate guard，主要
+保护指标应是 reserved-share JCT、max/P95 service lag、最长 no-service 与 work goodput。
+
 先为每个 Job $i$ 冻结三个互补反事实：
 
 | 比率 | 定义 | 回答的问题 | 不能替代的性质 |
@@ -641,7 +648,8 @@ SQL、单纯向量索引和用户自写 HTTP UDF 是四种不同系统；它们�
 
 1. **有效性硬门**：语义、质量、exactly-once、资源/上限、arrival fidelity、feeding 和稳定性先通过；
 2. **效率与 SLO**：correct throughput、SLO goodput、group JCT、P95/P99、能耗；
-3. **服务份额**：共同积压窗口的 weighted actual service、max/P95 empirical GPS lag、偿还时间、最长连续无服务和 avoidable idle；
+3. **服务份额**：共同积压窗口的 weighted actual service、max/P95 empirical GPS lag、按 work
+   envelope/quantum 归一化的 lag、偿还时间、`min/mean`、`max/min`、最长连续无服务和 avoidable idle；
 4. **作业完成体验**：三个反事实比率、worst Job、SLO miss、JCT/P99 spread；
 5. **分配描述**：raw-work Jain 与 normalized-progress Jain 仅描述“均匀程度”。Jain 下降而所有 Job JCT 都相对 static 改善时，应写成“**基线相对的经验性 JCT Pareto 改善，但收益分配更不均**”，不能仅凭 Jain 宣判正式公平性质变坏；反之，高 Jain 也可能只是所有 Job 同样慢。
 
@@ -653,6 +661,36 @@ SQL、单纯向量索引和用户自写 HTTP UDF 是四种不同系统；它们�
 - 历史汇总不能无损重建每个共同积压区间的动态理想份额、max continuous no-service 或 event-level lag，因此不能事后补出 VTC/DLPM 式界；
 - 新 formal 必须保存 completion event、request ready/backlogged interval、active-set/weight 变化、release/submit/complete 时间和实际完成 work。当前代码已有 completion ledger 与 `service_disparity_bound_status=unavailable:not_proven` 的 fail-closed 语义，可在此基础上补 empirical GPS lag；
 - 图像的 CPU prepare、ready bytes 与 GPU model work 先作为**分阶段机制维度**分别报告。只有证明了可同时消费的资源向量、归一化容量和 dominant share 语义后，才把 DRF 式多资源公平作为 headline；否则不能把 token/frame 标量或阶段利用率直接称为 dominant resource fairness。
+
+backlog 起点按层次分开：用户等待用 `arrival→completion`，上游 scheduler 公平只从请求
+`concrete-ready/credit-registered` 开始；尚未由 source/Daft 物化的请求不是 coordinator 可选择的
+backlog。若 actual service 只在 completion 时记账，指标应称 `completion-accounted empirical
+service lag`，而不是连续 token service 或 VTC bound。请求尾延迟按 class/job 报 P50/P95/P99，
+并拆 ready→registered、registered→grant、grant→submit、submit→completion；SLO goodput 同时报
+request/s 与 token/work/s，防止短请求条数掩盖资源占用。
+
+#### 第五层：同 observation 的算法归因与隐藏缓冲成本
+
+动态策略必须同时匹配“选择器看到什么”和“选择器怎么选”。如果 proposed 预注册多个 concrete
+ready request，而 FIFO/DRR/VTC 仍只看到单 Job head，则差异混合了 pre-registration/prefetch、
+head-of-line visibility 与 selector；不能全部归因给公平或 SLO 算法。正确顺序是：
+
+1. direct bounded HTTP 单列 saturation ceiling，不作公平 baseline；
+2. static partition 作隔离/Pareto 锚点；
+3. bounded-ready FIFO、DRR/WFQ、external VTC-style、strict-priority/EDF 与 proposed 共享同一
+   ready-window、active K/W、ready bytes 和 immutable arrival trace；
+4. old single-head policy 只作 observation-gap 消融；in-engine VTC/DLPM/JITServe/Llumnix 等只作
+   理论/系统上界参考，不冒充同层 executable baseline；
+5. Daft Native、Ray Data 评价完整 runtime graph，不进入 project selector 排名。
+
+bounded-ready 可能不扩大 active K/W，却增加 active 之外的 host buffer。故资源等价门还需报告
+ready requests/work/bytes mean/P95/max、host memory、coordinator CPU、registration→grant tail 与
+随 Job 数的扩展。文本 token work 不能约束 payload bytes；图像必须显式 byte-bounded，否则不能
+称与 static 同一 memory/backpressure envelope。
+
+prefix cache ON 时采用 balanced/interleaved repeats，并明示 warm-cache steady-state 或 cell reset；
+保存每 cell cache counter 起止值。所有“无恶化”按预注册 non-inferiority/equivalence margin 和
+配对差异判断，不以两次 rehearsal 均值接近替代统计结论。
 
 ### 9.4 AI 算子代价估计：文献真正看重的指标
 
@@ -772,9 +810,13 @@ operator JCT
 - Goodput-aware scheduling: [Pollux](https://www.usenix.org/conference/osdi21/presentation/qiao)
 - Prefix locality with fairness: [DLPM](https://arxiv.org/abs/2501.14312)（预印本）
 - Program-level attained service: [Agentix](https://www.usenix.org/conference/nsdi26/presentation/luo)
+- Batch inference as a first-class execution mode: [BatchGen](https://www.usenix.org/conference/osdi26/presentation/xu-tairan)
 - Chunked prefill/service metrics: [Sarathi-Serve](https://www.usenix.org/conference/osdi24/presentation/agrawal)
 - SLO-constrained serving capacity: [DistServe](https://www.usenix.org/conference/osdi24/presentation/zhong-yinmin)
 - Tail and priority isolation: [Llumnix](https://www.usenix.org/conference/osdi24/presentation/sun-biao)
+- SLO token goodput under imprecise request information: [JITServe](https://www.usenix.org/conference/nsdi26/presentation/zhang-wei)
+- Heterogeneous SLO scheduling: [SCORPIO](https://arxiv.org/abs/2505.23022)（预印本）
+- Priority-aware serving: [ProServe](https://arxiv.org/abs/2512.12928)（预印本）
 - Prediction fragility and tail risk: [Beyond Prediction: Tail-Aware Scheduling for LLM Serving](https://arxiv.org/abs/2606.18431)
 
 产品场景和可安装性的一手入口统一维护在

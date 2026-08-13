@@ -147,9 +147,9 @@ PostgreSQL source
   可达。`saor-v0.5` 已冻结为通用有界词典序 release：显式 per-Job priority/剩余 SLO 预算，
   completion-corrected actual-work debt cap 优先阻止饥饿，无 guard 时回退 SAOR；debt-critical
   ready head 不 fit 时只为该队首建立 reclaim barrier，其余只在 fitting heads 间选择；首轮只做
-  两 Job 的 0.125K/0.25K 两个 cap。v0.5.1 已完成 selector/coordinator/scheduler/Ray/runner、
+  两 Job 的 $0.125W_e/0.25W_e$ 两个 cap（$W_e$ 是 endpoint work limit，不是 request K）。v0.5.1 已完成 selector/coordinator/scheduler/Ray/runner、
   timeout 清理、lossless event ledger、readiness 与两轮汇总器；事件机制门不再依赖 250 ms
-  snapshot。双轮 GPU development gate 没有 cap 晋级：0.25K 第 2 轮 debt-recovery=0，两个
+  snapshot。旧 single-head 双轮 GPU development gate 没有 cap 晋级：$0.25W_e$ 第 2 轮 debt-recovery=0，两个
   cap 的 fg P99 约 49–56s、SLO violation 85%–95%。request/event 交叉验证定位 per-Job 单-head
   pull 没有把完整 Daft/Ray ready backlog 暴露给 coordinator；该失败版本状态为
   `development-run/not-promoted/not-formal-registered`。2026-08-13 已完成独立
@@ -159,10 +159,14 @@ PostgreSQL source
   granted、submit/service；coordinator release-event schema 2 对 ready registration 与 grant
   统一记录 request ID 和 epoch。runner 先用 submission trace 证明 concrete-ready lifecycle 完整，
   再在 actor 同一时钟域内配对 foreground register→grant，并 fail closed 检查区间内 foreign
-  fallback=0。两轮 GPU development gate 已完成：0.125K 两轮以约 12.36K tok/s、foreground
+  fallback=0。两轮 GPU development gate 已完成：$0.125W_e$ 两轮以约 12.36K tok/s、foreground
   P99 17.58–18.15s、foreground SLO 0% 和 bulk SLO 65.8%–66.6% 通过全部门，注册 formal
-  candidate；0.25K 因 bulk SLO 74.4%–75.2% 两轮越界拒绝。状态为
-  `development-gated/formal-registration-candidate-0125k-only`，不是 formal 胜出；
+  candidate；$0.25W_e$ 因 bulk 30s miss 74.4%–75.2% 两轮越界拒绝。状态为
+  `development-gated/formal-registration-candidate-0125k-only`，不是 formal 胜出。post-hoc
+  归因审核确认 bounded-ready 同时改变 observation/execution path 与 selector，因此 formal 前先让
+  FIFO、DRR/WFQ、external VTC-style、strict-priority 和 proposed 使用相同 ready-window。只有
+  proposed 越过 matched-ready 简单 Pareto 前沿才进入 1+3 formal；否则贡献收敛为 bounded
+  ready-state exposure + 最小 guarded release，或淘汰复杂 selector；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；
 - fixed-K active-set change、burst、mixed-cost 下 ordered release 的响应时间、SLO goodput 与 tail；
 - 多 job 的 5s 两作业与 1-short+3-long 四作业均已完成；仍待新 workload held-out、

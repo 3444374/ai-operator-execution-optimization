@@ -52,6 +52,29 @@
 | project image static | 60K unique 数据和 2-pass formal 配置已准备 | 先过语义/原生 baseline 门禁，再运行交错 formal |
 | Snowflake/BigQuery/PolarDB/学术系统 | external/capability evidence | 仅在语义、质量、模型和计时边界可对齐时升级为数字比较 |
 
+### 0.1 多 Job fixed-envelope 调度的同层 baseline（2026-08-13 归因审核）
+
+多 Job 算法排名必须匹配 selector 的**可见 ready set**，不能只匹配 active K/W。当前 baseline
+身份冻结为：
+
+| 身份 | 对象 | 回答的问题 | 是否进入 selector 排名 |
+|---|---|---|---|
+| saturation ceiling | bounded direct HTTP/vLLM Bench | 同协议服务上限与 feeding | 否 |
+| isolation/Pareto anchor | static partition/reservation | 为 foreground 付出多少共享效率 | 是，分栏锚点 |
+| observation-only killer | bounded-ready global FIFO | ready-state exposure 本身带来多少收益 | 是，必须 |
+| simple fairness killers | bounded-ready DRR/WFQ、external VTC-style actual-work counter | 简单份额/服务计账是否已足够 | 是，必须 |
+| SLO upper/simple killer | bounded-ready strict-priority 或 EDF | SLO 可达上界与 starvation 代价 | 是，必须 |
+| proposed | bounded-ready $H_B=0.125W_e$ guarded priority/debt | debt guard 是否有独立 Pareto 增量 | 是 |
+| historical ablation | old single-head SAOR/FIFO/DRR/VTC | observation gap 的损失 | 否，诊断分栏 |
+| runtime graph baseline | Daft Native、Ray Data native | 整个框架执行图影响 | 否，不与 project selector 混排 |
+| in-engine related work | VTC、DLPM、JITServe、Llumnix、SCORPIO、ProServe | 理论/系统上界、指标与设计模式 | 否，除非同层可执行实现 |
+
+所有 matched-ready 算法臂共享 immutable manifest、arrival、vLLM FCFS、prefix-cache 生命周期、
+active request/work envelope、ready request/work/bytes、CPU/GPU/endpoint 和 balanced run order。
+若 proposed 只赢旧 single-head baseline 而不赢 matched-ready 简单策略，不能写 SAOR selector
+胜出。equal-share 场景用同权 DRR/VTC 和 service lag；foreground/bulk differentiated-service
+场景用 strict-priority/EDF、foreground SLO goodput 与 bulk reserved-share JCT/starvation guard。
+
 正式报告必须分别给出：① 外部公开 benchmark 锚点；② 同机原生系统排名；③ 数据库
 AI 算子的 quality-cost-time；④ project frozen-static/dynamic 消融。只给 tokens/s 或
 images/s 不能构成完整的数据库 AI 算子评价。

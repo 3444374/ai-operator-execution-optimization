@@ -22,14 +22,18 @@
   credit mechanism effective 12/12。当前实现 `slo_weight=0`，只验证了
   fairness/release；strict-priority upper-bound 两轮短测 fg P99 14.27s、SLO 0%。下一候选已冻结为
   通用有界词典序 release（显式 priority/SLO budget + actual-work debt cap + 队首定向 reclaim
-  barrier/普通 priority fitting-head fallback），首轮只测 2 Job 的 0.125K/0.25K 两个 cap；
+  barrier/普通 priority fitting-head fallback），首轮只测 2 Job 的 $0.125W_e/0.25W_e$ 两个 cap；
   selector/coordinator/scheduler/Ray/runner、timeout cleanup、无损事件账本、四臂 readiness 与
-  两轮 fail-closed 汇总器已完成。双轮 GPU development gate 没有任何 cap 全过：0.25K 第 2
-  轮 debt-recovery=0，0.125K/0.25K 的 fg P99 约 56/49–50s、SLO violation 93–95%/85–88%。
+  两轮 fail-closed 汇总器已完成。旧 single-head 双轮 GPU development gate 没有任何 cap 全过：
+  $0.25W_e$ 第 2 轮 debt-recovery=0，两个 cap 的 fg P99 约 56/49–50s、SLO violation
+  93–95%/85–88%。
   请求/event 交叉验证显示每个可见前台 head 都获 priority，但 per-Job 同步 pull 只向 coordinator
   暴露一个 head，完整 ready backlog 在相邻 acquire 间不可见。状态为
-  `development-run/not-promoted/not-formal-registered`；先修 ready-set observation contract，
-  reservation 作其后的鲁棒性消融。
+  `development-run/not-promoted/not-formal-registered`。bounded-ready 修订随后从两个全新 root
+  完成 8/8 cell：$0.125W_e$ 两轮约 12.36K tok/s、fg P99 17.58–18.15s、fg SLO 0%、bulk
+  30s miss 65.8%–66.6%，通过开发门；$0.25W_e$ 被 bulk guard 拒绝。但 ready-window 与 selector
+  同时变化，当前状态增加 `matched-observation-attribution-required`：先让 FIFO/DRR/VTC/
+  strict-priority 使用相同 ready-window，再决定 selector 是否值得 formal。reservation 仍后置。
 - **实现边界已审计**：shared work credit、completion release、neutral work admission 和
   least-work routing 已进入调度器；图像 staged descriptor 与 observe-only fresh snapshot
   已接入 project runner 且 24/24 正式门通过，但不改变决策；snapshot 100% fresh、构建均值
@@ -106,15 +110,17 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    FIFO/no project Job scheduler 对照，不能单独证明 SAOR 必要。
 4. SAOR fixed-envelope 2-Job killer benchmark 已完成；原始 failed validation 保留作审计，
    resolution-aware v2 完整重汇总已 passed。foreground strict-priority 两轮短测已证明
-   release-only 上界可达；`saor-v0.5.1` 的 0.125K/0.25K 双轮 development gate 已按门禁停止，
+   release-only 上界可达；`saor-v0.5.1` 的 $0.125W_e/0.25W_e$ 双轮 development gate 已按门禁停止，
    没有 formal candidate。随后把 Daft/Ray ready work 以 bounded async ready-set/ready-count
    显式暴露给 coordinator。独立 `saor_bounded_ready` 路径已完成：旧 policy 不改写，窗口
    由冻结 effective K 与 endpoint 数×W 派生，trace 分开 ready/registered/granted/submit；
    coordinator 对 register/grant 记录 request ID+epoch，并在 actor 同一时钟域内要求 foreground
-   registered-ready 时 foreign fallback=0。两个全新 development root 已完成：只允许 0.125K
-   注册 formal candidate；0.25K 两轮 bulk SLO 越界已拒绝。下一步冻结 0.125K 做正式重复，
-   不继续扫 cap。reservation/upper-bound work credit 仍只作 formal 闭合后的未知到达和预测误差
-   鲁棒性消融；formal 前不跑 4-Job。
+   registered-ready 时 foreign fallback=0。两个全新 development root 已完成：只冻结
+   $0.125W_e$ 候选；$0.25W_e$ 两轮 bulk miss 越界已拒绝。下一步不是直接 formal，而是先把
+   ready observation 从 selector 解耦，做 matched-ready FIFO、DRR/WFQ、strict-priority、
+   external VTC-style 与 proposed 的最小归因 gate；通过后再做 1+3 formal。若简单策略已在同一
+   Pareto 前沿，贡献收敛为 bounded ready-state exposure + 最小 guarded release。期间不扫 cap，
+   不跑 4-Job/reservation/dynamic K。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。
 
 晋级门槛：相对各自独立标定的强静态/系统 baseline 至少改善约 5%，重复方向一致，且质量不退化。

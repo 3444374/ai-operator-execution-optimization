@@ -739,6 +739,40 @@ finish-time fairness 均保持 unavailable。图像 CPU/GPU/bytes 在资源向�
 `evaluation_metrics_survey_20260731.md` §9.3 和
 `../experiments/plans/state_aware_work_unit_evaluation_20260808.md` §5.2.10–5.2.12。
 
+#### 5.7.6.1 Bounded-ready 正结果后的归因审核（2026-08-13）
+
+- **开发事实**：在相同 2×4090、K128/$W_e=65,536$、long bulk→5s 后 short foreground 合同下，
+  bounded-ready $H_B=0.125W_e$ 两轮达到 12,355/12,367 tok/s、foreground P99
+  18.15/17.58s、foreground miss 0%、bulk 30s miss 65.8%/66.6%，通过开发门；$0.25W_e$
+  因 bulk miss 75.2%/74.4% 被拒绝。旧文档的 `0.125K/0.25K` 是显示误名：实现实际计算
+  `fraction × endpoint work_limit`，不是 request K。
+- **归因缺口**：`saor_bounded_ready` 同时改变 concrete-ready pre-registration/execution path 与
+  priority/debt selector。现有 static/old-SAOR/FIFO/DRR/VTC 使用 single-head observation，不能回答
+  “简单 selector 获得同一个 ready set 后是否已经足够”。当前事实只支持 bounded-ready + guarded
+  priority 组合可行，不能把约 30% 吞吐与 foreground tail 改善全部归因给 SAOR 算法。
+- **最小决定性门**：在 formal 前把 ready-window 从 selector 解耦，用相同 active K/W、ready
+  bytes、arrival、服务与 cache 合同比较 bounded-ready FIFO、DRR/WFQ、external VTC-style、
+  strict-priority/EDF 和 proposed。若简单策略进入同一 Pareto 前沿，论文贡献收敛为 **bounded
+  ready-state exposure contract + 最小 guarded release**，删除不必要的复杂 selector；只有
+  proposed 有独立增量才进入 1+3 formal。
+- **公平分轨**：equal-share tenant 场景评价 weighted service lag、worst Job 和 work conservation；
+  foreground/bulk 是 differentiated service，评价 foreground SLO isolation + bulk reserved-share
+  JCT/max lag/longest no-service。bulk 30s 在 static 下已约 67% miss，缺外部业务依据时只作相对
+  static guard，不称绝对 bulk SLO。
+- **指标修正**：用户 E2E backlog 从 arrival 开始，scheduler 公平 backlog 从
+  concrete-ready/registered 开始；completion 时才入账的 actual work 只能构造
+  `completion-accounted empirical service lag`。Jain 需配合 max/P95 lag、min/mean、最长无服务、
+  三个 JCT 反事实和 request/token SLO goodput。bounded-ready 另报 ready requests/work/bytes、host
+  memory、coordinator CPU 与 registration→grant tail，避免只匹配 active envelope 却隐藏缓冲成本。
+- **文献补充**：VTC/DLPM 约束共同积压服务与 prefix-locality，Themis/Pollux/PCS 支持 Job 完成
+  反事实与多目标 Pareto，JITServe/SCORPIO/ProServe 支持 SLO token goodput、输出不确定性与
+  priority 隔离；Agentix/BatchGen 支持把 program/job/batch 作为一等调度对象。它们多数位于
+  serving 内部，只迁移指标、work accounting 与 oracle，不作为上游同层 executable baseline。
+
+当前方向裁决为 `Accept with Revisions / attribution-gate-first`。formal 前不继续扫 cap、dynamic K、
+reservation、4-Job 或图像；matched-observation gate 通过后先完成 2-Job formal，再只选一个
+不调参 held-out（reverse/simultaneous arrival、on/off burst 或 prefix-rich）。
+
 #### 5.7.7 模式优先级矩阵
 
 ```
