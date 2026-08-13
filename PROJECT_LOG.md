@@ -11,6 +11,9 @@
   `native_baseline_count=0`、两个 effect 均 `decided=false`、`formal_authorized=false`。
 - 补单元测试、脚本入口、索引和学习说明。该实现只为下一轮 rehearsal 做好可执行合同；尚无新
   GPU 数据，不改变 matched-ready 双轮“SAOR 是观测非支配折中、formal 未授权”的结论。
+- 首轮服务器 rehearsal 后修正 bridge 汇总列映射：使用 runner 的正式
+  `completion_service_lag_status` / `completion_longest_no_service_s` 字段；single-head 无完整
+  registered-ready ledger 时数值留空而不是输出 0，防止把 unavailable 误读为零 lag。
 
 ## 2026-08-13 SAOR matched-ready 双轮归因完成，formal 保持未授权
 

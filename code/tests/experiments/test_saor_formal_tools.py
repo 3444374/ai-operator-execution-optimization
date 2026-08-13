@@ -80,6 +80,18 @@ class SaorFormalToolsTests(unittest.TestCase):
                 [row["effect"] for row in effects],
                 ["shared_capacity", "bounded_ready_observation"],
             )
+            metrics = list(
+                csv.DictReader(
+                    (root / "summary/bridge_metrics.csv").read_text(
+                        encoding="utf-8"
+                    ).splitlines()
+                )
+            )
+            self.assertEqual(
+                metrics[0]["completion_service_lag_status"],
+                "unavailable:requires_complete_registered_ready_ledger",
+            )
+            self.assertEqual(metrics[0]["completion_service_lag_p95_work"], "")
 
     def test_matched_ready_summary_preserves_internal_ablation_identity(
         self,

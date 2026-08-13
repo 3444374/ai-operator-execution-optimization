@@ -79,6 +79,11 @@ def _cell_metrics(
     p99 = _pair(row, "job_p99_s")
     slo = _pair(row, "job_slo_violation_ratio")
     bounded = expected[2] == "bounded_concrete_pre_registration"
+    lag_status = row.get(
+        "completion_service_lag_status",
+        "unavailable:requires_complete_registered_ready_ledger",
+    )
+    lag_available = lag_status.startswith("ok:")
     correctness = bool(
         row.get("execution_mode") == "rehearsal"
         and row.get("phase") == "warmup"
@@ -131,13 +136,17 @@ def _cell_metrics(
         "ready_payload_bytes_p95": row.get(
             "bounded_ready_payload_bytes_transition_p95_max", ""
         ),
-        "completion_fairness_status": row.get(
-            "completion_fairness_status", "unavailable"
+        "completion_service_lag_status": lag_status,
+        "completion_service_lag_p95_work": (
+            row.get("completion_service_lag_p95_work", "")
+            if lag_available
+            else ""
         ),
-        "completion_service_lag_p95_work": row.get(
-            "completion_service_lag_p95_work", ""
+        "completion_longest_no_service_s": (
+            row.get("completion_longest_no_service_s", "")
+            if lag_available
+            else ""
         ),
-        "longest_no_service_s": row.get("longest_no_service_s", ""),
     }
     return metrics, correctness and observation
 
