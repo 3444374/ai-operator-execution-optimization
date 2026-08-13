@@ -29,6 +29,7 @@
   "warmup_runs_per_scenario": 1,
   "formal_repeats": 3,
   "endpoint_ids": ["endpoint-0", "endpoint-1"],
+  "service_signature": {"model": "${COMPLETION_MODEL}", "service": "${VLLM_VERSION}"},
   "request_limit_per_endpoint": "${PROJECT_STATIC_K_PER_ENDPOINT}",
   "work_limit_per_endpoint": "${PROJECT_ACTIVE_WORK_PER_ENDPOINT}",
   "credit_quantum": "${PROJECT_SHARED_CREDIT_QUANTUM}",

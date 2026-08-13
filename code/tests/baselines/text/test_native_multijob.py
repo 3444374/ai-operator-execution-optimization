@@ -157,6 +157,10 @@ class NativeMultiJobTests(unittest.TestCase):
                 "http://127.0.0.1:8001/v1/chat/completions",
             ],
             "model": "qwen", "api_key_env": None,
+            "service_signature": {"model": "qwen", "service": "vllm-test"},
+            "endpoint_ids": ["endpoint-0", "endpoint-1"],
+            "protocol": "chat_completions", "output_cap": 8,
+            "organizer": "daft",
             "source": {
                 "kind": "timed_postgres_manifest",
                 "database_url": "postgresql://postgres:postgres@localhost:5432/ai_operator",
@@ -344,6 +348,16 @@ class NativeMultiJobTests(unittest.TestCase):
             path = root / "untimed.json"
             path.write_text(json.dumps(payload), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "missing=.*source"):
+                load_native_multijob_config(path)
+
+    def test_native_config_requires_matching_explicit_service_signature(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._config(Path(directory))
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload["service_signature"]["model"] = "different-model"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "service_signature.model"):
                 load_native_multijob_config(path)
 
     def test_runs_four_native_shards_per_arm_and_preserves_job_evidence(self) -> None:

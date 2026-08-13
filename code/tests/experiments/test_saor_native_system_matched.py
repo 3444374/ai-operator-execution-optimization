@@ -12,6 +12,8 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
+from src.baselines.common.contracts import ChatRequest
+from src.baselines.common.manifests import write_manifest
 from src.experiments.saor.native_system_matched import (
     REQUIRED_ARM_IDS,
     SELECTOR_SANITY_ARM_IDS,
@@ -21,10 +23,160 @@ from src.experiments.saor.native_system_matched import (
     load_matched_system_config,
     run_matched_system,
 )
-from scripts.experiments.run_saor_native_system_matched import parse_args
+from scripts.experiments.run_saor_native_system_matched import (
+    _normalize_project,
+    _validate_executor_bindings,
+    parse_args,
+)
 
 
 class MatchedSystemContractTest(unittest.TestCase):
+    def test_project_normalization_uses_child_arrival_and_completion_times(self) -> None:
+        with self._config() as path:
+            arm = next(
+                item
+                for item in load_matched_system_config(path).arms
+                if item.arm_id == "project_frozen_static"
+            )
+            output_dir = path.parent / "project-cell"
+            (output_dir / "jobs").mkdir(parents=True)
+            (output_dir / "traces").mkdir()
+            for index, total_rows in enumerate((2, 1)):
+                (output_dir / "jobs" / f"job{index}.runs.csv").write_text(
+                    "total_rows,request_manifest_validation_status,db_fetch_s\n"
+                    f"{total_rows},ok,0.1\n",
+                    encoding="utf-8",
+                )
+            (output_dir / "traces" / "cell.commands.json").write_text(
+                json.dumps({"commands": [["runner"], ["runner"]]}),
+                encoding="utf-8",
+            )
+            (output_dir / "traces" / "cell.resources.csv").write_text(
+                "observed_epoch_s,gpu_utilization_pct\n100.5,80\n",
+                encoding="utf-8",
+            )
+            record = {
+                "replay_configured_start_epoch_s": "[90.0, 95.0]",
+                "replay_observed_start_epoch_s": "[90.0, 95.0]",
+                "job_actual_work": "[10, 20]",
+                "job_completed_count": "[2, 1]",
+                "job_expected_count": "[2, 2]",
+                "job_exactly_once": "[true, false]",
+                "job_jct_s": "[1.0, 1.0]",
+                "job_arrival_start_epoch_s": "[100.0, 105.0]",
+                "job_completion_end_epoch_s": "[110.0, 108.0]",
+                "start_epoch_s": 90.0,
+                "end_epoch_s": 111.0,
+                "metrics_status": "ok",
+                "prompt_tokens_delta": 10,
+                "generation_tokens_delta": 20,
+                "resource_metrics_status": "ok",
+            }
+
+            normalized = _normalize_project(arm, record, output_dir)
+
+            self.assertEqual(
+                [job["actual_launch_epoch_s"] for job in normalized["jobs"]],
+                [100.0, 105.0],
+            )
+            self.assertEqual(
+                [job["ended_epoch_s"] for job in normalized["jobs"]],
+                [110.0, 108.0],
+            )
+            self.assertEqual(
+                [job["completed_count"] for job in normalized["jobs"]],
+                [2, 1],
+            )
+            self.assertEqual(
+                [job["exactly_once"] for job in normalized["jobs"]],
+                [True, False],
+            )
+            self.assertFalse(normalized["exactly_once"])
+
+    def test_executor_bindings_fail_closed_on_actual_config_drift(self) -> None:
+        with self._config() as path:
+            matched = load_matched_system_config(path)
+            combined = Path(matched.arms[0].manifest_path)
+            requests = tuple(
+                ChatRequest(**json.loads(line))
+                for line in combined.read_text(encoding="utf-8").splitlines()
+            )
+            job_paths = (path.parent / "job0.jsonl", path.parent / "job1.jsonl")
+            write_manifest(job_paths[0], requests[:2])
+            write_manifest(job_paths[1], requests[2:])
+            source = SimpleNamespace(
+                database_url="postgresql://localhost/test",
+                workload_name="test",
+            )
+            native = SimpleNamespace(
+                endpoint_ids=("endpoint-0", "endpoint-1"),
+                service_signature=(("model", "test"), ("service", "vllm")),
+                protocol="completions", output_cap=256,
+                job_internal_arrival_contract="eager", source=source,
+                organizer="daft",
+                arms=tuple(
+                    SimpleNamespace(
+                        arm_id=arm_id,
+                        jobs=tuple(
+                            SimpleNamespace(manifest=job_paths[index], offset_s=float(index * 5))
+                            for index in range(2)
+                        ),
+                    )
+                    for arm_id in ("daft_native", "daft_ray", "ray_data_http")
+                ),
+            )
+            scenarios = tuple(
+                SimpleNamespace(
+                    scenario_id=arm.arm_id,
+                    request_manifests=tuple(str(item) for item in job_paths),
+                    source_row_offsets=(0, 0),
+                    arrival_offsets_s=(0.0, 5.0), policy=arm.project_value("policy"),
+                    debt_cap_fractions=(
+                        arm.project_value("debt_caps") or ()
+                    ),
+                    ready_observation_contract=(
+                        arm.project_value("ready_observation") or "single_head"
+                    ),
+                    request_limit_per_endpoint=arm.project_value("k_per_endpoint"),
+                    work_limit_per_endpoint=arm.project_value("work_limit_per_endpoint"),
+                    endpoint_limits=lambda request, work: (request, work),
+                )
+                for arm in matched.arms if arm.kind == "project"
+            )
+            project = SimpleNamespace(
+                endpoint_ids=("endpoint-0", "endpoint-1"),
+                service_signature=(("model", "test"), ("service", "vllm")),
+                job_internal_arrival_contract="eager", scenarios=scenarios,
+                request_limit_per_endpoint=8, work_limit_per_endpoint=65536,
+                ready_payload_bytes_limit_per_job=4096,
+                common_args=(
+                    "--database-url", "postgresql://localhost/test",
+                    "--source-workload-name", "test", "--completion-protocol",
+                    "completions", "--completion-max-tokens", "256",
+                    "--organizer", "daft", "--actor-workers-per-endpoint", "1",
+                    "--ray-actor-max-concurrency", "256",
+                ),
+                calibration_contract=SimpleNamespace(path="project-calibration.json"),
+            )
+
+            _validate_executor_bindings(matched, native, project)
+            native.service_signature = (("model", "test"), ("service", "other"))
+            with self.assertRaisesRegex(ValueError, "service_signature"):
+                _validate_executor_bindings(matched, native, project)
+            native.service_signature = (("model", "test"), ("service", "vllm"))
+            saor = next(
+                item
+                for item in project.scenarios
+                if item.scenario_id == "project_bounded_ready_saor_0125we"
+            )
+            saor.debt_cap_fractions = (0.2, None)
+            with self.assertRaisesRegex(ValueError, "debt_caps"):
+                _validate_executor_bindings(matched, native, project)
+            saor.debt_cap_fractions = (0.125, None)
+            saor.source_row_offsets = (1, 0)
+            with self.assertRaisesRegex(ValueError, "source_row_offsets"):
+                _validate_executor_bindings(matched, native, project)
+
     def test_arm_identity_has_eight_unique_physical_arms_and_shared_saor(self) -> None:
         self.assertEqual(
             SYSTEM_ARM_IDS,
@@ -268,6 +420,62 @@ class MatchedSystemContractTest(unittest.TestCase):
             )
             self.assertTrue(lease.released)
 
+    def test_matrix_preserves_primary_error_and_records_after_idle_error(self) -> None:
+        with self._config() as path:
+            lease = SimpleNamespace(released=False)
+            lease.release = lambda: setattr(lease, "released", True)
+            idle_calls: list[str] = []
+
+            def idle_gate(position: str) -> None:
+                idle_calls.append(position)
+                if position == "after":
+                    raise RuntimeError("after idle failed")
+
+            with self.assertRaisesRegex(RuntimeError, "executor failed"):
+                run_matched_system(
+                    path,
+                    native_executor=lambda *_args: (_ for _ in ()).throw(
+                        RuntimeError("executor failed")
+                    ),
+                    project_executor=lambda *_args: {},
+                    idle_gate=idle_gate,
+                    instrumenter=lambda *_args: None,
+                    repository_commit_getter=lambda: "abc123",
+                    host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                )
+
+            self.assertEqual(idle_calls, ["before", "after"])
+            persisted = json.loads((path.parent / "matrix_index.json").read_text())
+            self.assertIn("executor failed", persisted["cells"][0]["error"])
+            self.assertIn(
+                "after idle failed",
+                persisted["cells"][0]["details"]["after_idle_error"],
+            )
+
+    def test_matrix_attempts_after_idle_when_before_idle_fails(self) -> None:
+        with self._config() as path:
+            lease = SimpleNamespace(released=False)
+            lease.release = lambda: setattr(lease, "released", True)
+            idle_calls: list[str] = []
+
+            def idle_gate(position: str) -> None:
+                idle_calls.append(position)
+                if position == "before":
+                    raise RuntimeError("before idle failed")
+
+            with self.assertRaisesRegex(RuntimeError, "before idle failed"):
+                run_matched_system(
+                    path,
+                    native_executor=lambda *_args: {},
+                    project_executor=lambda *_args: {},
+                    idle_gate=idle_gate,
+                    instrumenter=lambda *_args: None,
+                    repository_commit_getter=lambda: "abc123",
+                    host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                )
+
+            self.assertEqual(idle_calls, ["before", "after"])
+
     def test_matrix_rejects_existing_output_root_before_lease(self) -> None:
         with self._config() as path:
             (path.parent / "matrix_index.json").write_text("{}", encoding="utf-8")
@@ -279,6 +487,24 @@ class MatchedSystemContractTest(unittest.TestCase):
                     idle_gate=lambda _position: None,
                     instrumenter=lambda *_args: None,
                 )
+
+    def test_matrix_records_lease_acquisition_failure(self) -> None:
+        with self._config() as path:
+            with self.assertRaisesRegex(RuntimeError, "lease unavailable"):
+                run_matched_system(
+                    path,
+                    native_executor=lambda *_args: {},
+                    project_executor=lambda *_args: {},
+                    idle_gate=lambda _position: None,
+                    instrumenter=lambda *_args: None,
+                    repository_commit_getter=lambda: "abc123",
+                    host_lease_acquirer=lambda *_args, **_kwargs: (
+                        (_ for _ in ()).throw(RuntimeError("lease unavailable"))
+                    ),
+                )
+            persisted = json.loads((path.parent / "matrix_index.json").read_text())
+            self.assertEqual(persisted["status"], "failed")
+            self.assertIn("lease unavailable", persisted["lease_error"])
 
     def test_matrix_rejects_missing_job_overlap_evidence(self) -> None:
         with self._config() as path:
@@ -302,6 +528,43 @@ class MatchedSystemContractTest(unittest.TestCase):
                 )
             self.assertTrue(lease.released)
 
+    def test_matrix_rejects_status_only_counter_and_resource_evidence(self) -> None:
+        mutations = {
+            "row count": lambda evidence, _root: evidence["jobs"][0].update(
+                {"completed_count": 1, "expected_count": 2}
+            ),
+            "token delta": lambda evidence, _root: evidence["service_metrics"].update(
+                {"prompt_tokens_delta": 0, "generation_tokens_delta": 0}
+            ),
+            "empty resource": lambda evidence, root: Path(
+                evidence["resource_metrics"]["path"]
+            ).write_text("observed_epoch_s,gpu\n", encoding="utf-8"),
+            "untimed resource": lambda evidence, root: Path(
+                evidence["resource_metrics"]["path"]
+            ).write_text("gpu_utilization_pct\n80\n", encoding="utf-8"),
+            "missing output": lambda evidence, root: evidence["output_paths"].update(
+                {"commands": str(root / "missing.json")}
+            ),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name), self._config() as path:
+                lease = SimpleNamespace(released=False)
+                lease.release = lambda: setattr(lease, "released", True)
+
+                def executor(arm, identity, output_dir):
+                    evidence = self._cell_evidence(arm, identity, output_dir)
+                    mutate(evidence, output_dir)
+                    return evidence
+
+                with self.assertRaises(RuntimeError):
+                    run_matched_system(
+                        path, native_executor=executor, project_executor=executor,
+                        idle_gate=lambda _position: None,
+                        instrumenter=lambda *_args: None,
+                        repository_commit_getter=lambda: "abc123",
+                        host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                    )
+
     def test_cli_accepts_runner_profiler_and_lifecycle_options(self) -> None:
         options = parse_args(
             [
@@ -314,21 +577,56 @@ class MatchedSystemContractTest(unittest.TestCase):
                 "--health-url", "http://health",
                 "--metrics-urls", "http://metrics0,http://metrics1",
                 "--ray-address", "ray://cluster",
-                "--rehearsal", "--resume", "--recover-stale-lease",
+                "--rehearsal",
             ]
         )
 
         self.assertEqual(options.metrics_urls, ("http://metrics0", "http://metrics1"))
         self.assertTrue(options.rehearsal)
-        self.assertTrue(options.resume)
-        self.assertTrue(options.recover_stale_lease)
+
+    def test_cli_rejects_unsupported_resume_flags_at_parse_time(self) -> None:
+        base = [
+            "--config", "matched.json", "--native-config", "native.json",
+            "--project-config", "project.json", "--native-runner", "native.py",
+            "--profiler", "profiler.py", "--python-executable", sys.executable,
+            "--health-url", "http://health", "--metrics-urls", "http://metrics",
+            "--ray-address", "ray://cluster",
+        ]
+        for flag in ("--resume", "--recover-stale-lease"):
+            with self.subTest(flag=flag), self.assertRaises(SystemExit):
+                parse_args([*base, flag])
+
+    def test_rehearsal_runs_all_eight_warmup_cells_once_and_no_other_phase(self) -> None:
+        with self._config() as path:
+            calls = []
+            lease = SimpleNamespace(released=False)
+            lease.release = lambda: setattr(lease, "released", True)
+
+            def executor(arm, identity, output_dir):
+                calls.append(identity)
+                return self._cell_evidence(arm, identity, output_dir)
+
+            run_matched_system(
+                path, native_executor=executor, project_executor=executor,
+                idle_gate=lambda _position: None, instrumenter=lambda *_args: None,
+                repository_commit_getter=lambda: "abc123",
+                host_lease_acquirer=lambda *_args, **_kwargs: lease,
+                rehearsal=True,
+            )
+
+            self.assertEqual(len(calls), 8)
+            self.assertEqual({item.phase for item in calls}, {"warmup"})
+            self.assertEqual({item.repeat for item in calls}, {1})
+            self.assertEqual(len({item.arm_id for item in calls}), 8)
 
     @staticmethod
     def _cell_evidence(arm, identity, output_dir: Path) -> dict[str, object]:
         output_dir.mkdir(parents=True)
         command = ["runner", "--adapter", arm.arm_id]
         (output_dir / "commands.json").write_text(json.dumps(command), encoding="utf-8")
-        (output_dir / "resources.csv").write_text("sample,gpu\n0,0\n", encoding="utf-8")
+        (output_dir / "resources.csv").write_text(
+            "observed_epoch_s,gpu\n100.5,0\n", encoding="utf-8"
+        )
         return {
             "command": command,
             "implementation_source": "official_native" if arm.kind == "native" else "project_runner",
@@ -341,6 +639,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                     "actual_launch_epoch_s": 100.0,
                     "ended_epoch_s": 106.0,
                     "completed_count": 2,
+                    "expected_count": 2,
                     "exactly_once": True,
                     "shard_provenance": [{
                         "source_kind": "timed_postgres_manifest",
@@ -353,6 +652,7 @@ class MatchedSystemContractTest(unittest.TestCase):
                     "actual_launch_epoch_s": 105.0,
                     "ended_epoch_s": 105.4,
                     "completed_count": 2,
+                    "expected_count": 2,
                     "exactly_once": True,
                     "shard_provenance": [{
                         "source_kind": "timed_postgres_manifest",
@@ -361,7 +661,10 @@ class MatchedSystemContractTest(unittest.TestCase):
                     }],
                 },
             ],
-            "service_metrics": {"metrics_status": "ok", "request_success_delta": 4},
+            "service_metrics": {
+                "metrics_status": "ok", "request_success_delta": 4,
+                "prompt_tokens_delta": 10, "generation_tokens_delta": 10,
+            },
             "resource_metrics": {"resource_metrics_status": "ok", "path": str(output_dir / "resources.csv")},
             "exactly_once": True,
             "request_tail_status": dict(arm.unsupported_request_tails),
@@ -374,7 +677,18 @@ class MatchedSystemContractTest(unittest.TestCase):
             self._temporary = tempfile.TemporaryDirectory()
             self.path = Path(self._temporary.name) / "config.json"
             manifest = Path(self._temporary.name) / "manifest.jsonl"
-            manifest.write_text('{"id": 1}\n', encoding="utf-8")
+            write_manifest(
+                manifest,
+                tuple(
+                    ChatRequest(
+                        doc_id=index, prompt=f"p-{index}", arrival_time_s=0.0,
+                        prompt_tokens=10, max_output_tokens=256,
+                        estimated_output_tokens=256, source_row_hash=f"row-{index}",
+                        endpoint_index=(index - 1) % 2,
+                    )
+                    for index in range(1, 5)
+                ),
+            )
             digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
             common = {
                 "manifest_path": str(manifest), "manifest_sha256": digest,

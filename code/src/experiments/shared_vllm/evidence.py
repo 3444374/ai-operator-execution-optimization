@@ -297,6 +297,12 @@ def _validate_job_evidence(
             endpoint_counts.get(endpoint_id, 0) + 1
         )
     return {
+        "completed_count": len(request_rows),
+        "expected_count": expected_rows,
+        "exactly_once": (
+            len(request_rows) == expected_rows
+            and len(submission_rows) == expected_rows
+        ),
         "jct_s": jct_s,
         "p99_s": percentile(e2e, 99),
         "completion_lag_s": max(completion) - max(arrival),
@@ -594,6 +600,7 @@ def _redacted_config(config: SharedVllmConfig) -> dict[str, object]:
         "warmup_runs_per_scenario": config.warmup_runs_per_scenario,
         "formal_repeats": config.formal_repeats,
         "endpoint_ids": config.endpoint_ids,
+        "service_signature": dict(config.service_signature),
         "request_limit_per_endpoint": config.request_limit_per_endpoint,
         "work_limit_per_endpoint": config.work_limit_per_endpoint,
         "credit_quantum": config.credit_quantum,

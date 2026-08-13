@@ -22,7 +22,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Literal, Mapping, Sequence
 
 from src.baselines.common.cell_instrumentation import instrumented_cell
 from src.baselines.common.contracts import BaselineRequestResult
@@ -104,7 +104,12 @@ class NativeMultiJobConfig:
     experiment_id: str
     output_root: Path
     endpoint_urls: tuple[str, str]
+    endpoint_ids: tuple[str, str]
     model: str
+    service_signature: tuple[tuple[str, object], ...]
+    protocol: str
+    output_cap: int
+    organizer: str
     api_key_env: str | None
     service_prefix_caching: str
     service_max_num_seqs: int
@@ -117,7 +122,7 @@ class NativeMultiJobConfig:
     endpoint_work_skew_max: float
     minimum_measurement_seconds: float
     source: TimedPostgresManifestSource
-    job_internal_arrival_contract: str
+    job_internal_arrival_contract: Literal["manifest_timed", "eager"]
     arms: tuple[NativeMultiJobArm, ...]
 
 
@@ -283,6 +288,8 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         "api_key_env", "service", "idle_timeout_s", "launch_lead_s", "warmup_repeats",
         "formal_repeats", "schedule_seed", "endpoint_work_skew_max", "arms",
         "minimum_measurement_seconds", "source", "job_internal_arrival_contract",
+        "endpoint_ids", "service_signature", "protocol", "output_cap",
+        "organizer",
     }
     missing = required - set(payload)
     unknown = set(payload) - required
@@ -312,6 +319,21 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
     service = payload["service"]
     if not isinstance(service, dict) or set(service) != {"prefix_caching", "max_num_seqs", "max_num_batched_tokens"}:
         raise ValueError("service must contain prefix_caching, max_num_seqs, max_num_batched_tokens")
+    model = _string(payload["model"], "model")
+    signature = payload["service_signature"]
+    if not isinstance(signature, dict):
+        raise ValueError("service_signature must be an object")
+    if _string(signature.get("model"), "service_signature.model") != model:
+        raise ValueError("service_signature.model must equal model")
+    _string(signature.get("service"), "service_signature.service")
+    endpoint_ids = payload["endpoint_ids"]
+    if (
+        not isinstance(endpoint_ids, list)
+        or len(endpoint_ids) != 2
+        or len(set(endpoint_ids)) != 2
+        or any(not isinstance(item, str) or not item for item in endpoint_ids)
+    ):
+        raise ValueError("endpoint_ids must contain two unique non-empty strings")
     prefix = _string(service["prefix_caching"], "service.prefix_caching")
     if prefix not in {"enabled", "disabled", "unknown"}:
         raise ValueError("service.prefix_caching must be enabled/disabled/unknown")
@@ -333,7 +355,12 @@ def load_native_multijob_config(path: str | Path) -> NativeMultiJobConfig:
         experiment_id=_string(payload["experiment_id"], "experiment_id"),
         output_root=output_root,
         endpoint_urls=(endpoints[0], endpoints[1]),
-        model=_string(payload["model"], "model"),
+        endpoint_ids=(endpoint_ids[0], endpoint_ids[1]),
+        model=model,
+        service_signature=tuple(sorted(signature.items())),
+        protocol=_string(payload["protocol"], "protocol"),
+        output_cap=_positive_int(payload["output_cap"], "output_cap"),
+        organizer=_string(payload["organizer"], "organizer"),
         api_key_env=api_key_env,
         service_prefix_caching=prefix,
         service_max_num_seqs=_positive_int(service["max_num_seqs"], "service.max_num_seqs"),
@@ -658,7 +685,8 @@ def _run_job(
         record.update({
             "status": "passed", "exactly_once": True,
             "shard_provenance": provenance,
-            "completed_count": len(results), "input_tokens": input_tokens,
+            "completed_count": len(results), "expected_count": len(requests),
+            "input_tokens": input_tokens,
             "output_tokens": output_tokens, "total_tokens": input_tokens + output_tokens,
             "job_barrier_tokens_per_s": (
                 (input_tokens + output_tokens) / (ended - launched) if ended > launched else 0.0

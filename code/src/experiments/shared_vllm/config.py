@@ -7,6 +7,7 @@ import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from src.experiments.calibration.contracts import (
     CalibrationContract,
@@ -219,6 +220,7 @@ class SharedVllmConfig:
     warmup_runs_per_scenario: int
     formal_repeats: int
     endpoint_ids: tuple[str, ...]
+    service_signature: tuple[tuple[str, object], ...]
     request_limit_per_endpoint: int
     work_limit_per_endpoint: int
     credit_quantum: int
@@ -235,7 +237,9 @@ class SharedVllmConfig:
     saor_release_control: SaorReleaseControlConfig | None = None
     ready_observation_contract: str = "single_head"
     ready_payload_bytes_limit_per_job: int = 0
-    job_internal_arrival_contract: str = "manifest_timed"
+    job_internal_arrival_contract: Literal["manifest_timed", "eager"] = (
+        "manifest_timed"
+    )
 
 def load_config(path: Path) -> SharedVllmConfig:
     decoded = json.loads(path.read_text(encoding="utf-8"))
@@ -317,6 +321,28 @@ def load_config(path: Path) -> SharedVllmConfig:
         decoded.get("common_args", []),
         "common_args",
     )
+    service_signature_raw = decoded.get("service_signature")
+    if not isinstance(service_signature_raw, dict):
+        raise ValueError("service_signature must be an object")
+    service_signature = tuple(
+        sorted(
+            (
+                _nonempty_string(key, "service_signature key"),
+                _expand_scalar(value, f"service_signature.{key}"),
+            )
+            for key, value in service_signature_raw.items()
+        )
+    )
+    signature = dict(service_signature)
+    signature_model = _nonempty_string(
+        signature.get("model"), "service_signature.model"
+    )
+    _nonempty_string(signature.get("service"), "service_signature.service")
+    configured_model = _argument_value(common_args, "--completion-model", "")
+    if configured_model and signature_model != configured_model:
+        raise ValueError(
+            "service_signature.model must equal --completion-model"
+        )
     arrival_contract = decoded.get(
         "job_internal_arrival_contract", "manifest_timed"
     )
@@ -513,6 +539,7 @@ def load_config(path: Path) -> SharedVllmConfig:
         warmup_runs_per_scenario=warmups,
         formal_repeats=repeats,
         endpoint_ids=tuple(endpoint_ids_raw),
+        service_signature=service_signature,
         request_limit_per_endpoint=request_limit,
         work_limit_per_endpoint=work_limit,
         credit_quantum=quantum,

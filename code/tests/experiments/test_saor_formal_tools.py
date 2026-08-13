@@ -409,6 +409,7 @@ class SaorFormalToolsTests(unittest.TestCase):
                 warmup_runs_per_scenario=0,
                 formal_repeats=1,
                 endpoint_ids=("endpoint-0", "endpoint-1"),
+                service_signature=(("model", "qwen"), ("service", "vllm-test")),
                 request_limit_per_endpoint=128,
                 work_limit_per_endpoint=65536,
                 credit_quantum=2048,

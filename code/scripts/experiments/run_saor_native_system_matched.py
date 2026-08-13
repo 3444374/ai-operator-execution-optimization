@@ -25,9 +25,11 @@ from src.baselines.text.orchestration.native_multijob import (  # noqa: E402
     load_native_multijob_config,
     run_native_multijob_cell,
 )
+from src.baselines.common.manifests import read_manifest  # noqa: E402
 from src.experiments.saor.native_system_matched import (  # noqa: E402
     MatchedArm,
     ScheduledMatchedCell,
+    load_matched_system_config,
     run_matched_system,
 )
 from src.experiments.shared_vllm import (  # noqa: E402
@@ -56,6 +58,170 @@ class CliOptions:
     recover_stale_lease: bool
 
 
+def _argument_value(arguments: tuple[str, ...], flag: str) -> str:
+    try:
+        index = arguments.index(flag)
+    except ValueError as exc:
+        raise ValueError(f"Project config is missing {flag}") from exc
+    if index + 1 >= len(arguments):
+        raise ValueError(f"Project config {flag} has no value")
+    return arguments[index + 1]
+
+
+def _validate_combined_manifest(
+    matched_path: str,
+    job_paths: tuple[str | Path, ...],
+) -> None:
+    if len(job_paths) != 2:
+        raise ValueError("executor must define exactly two Job manifests")
+    matched = read_manifest(matched_path)
+    combined = tuple(
+        request
+        for path in job_paths
+        for request in read_manifest(path)
+    )
+    if matched != combined:
+        raise ValueError(
+            "executor Job manifests do not equal the authoritative matched "
+            "combined manifest in Job order"
+        )
+
+
+def _validate_executor_bindings(matched, native, project) -> None:
+    """Fail before dispatch when actual executor contracts drift."""
+
+    native_by_id = {item.arm_id: item for item in native.arms}
+    project_by_id = {item.scenario_id: item for item in project.scenarios}
+    project_protocol = _argument_value(project.common_args, "--completion-protocol")
+    project_output_cap = int(
+        _argument_value(project.common_args, "--completion-max-tokens")
+    )
+    project_organizer = _argument_value(project.common_args, "--organizer")
+    project_database_url = _argument_value(project.common_args, "--database-url")
+    project_workload = _argument_value(
+        project.common_args, "--source-workload-name"
+    )
+    actor_topology = {
+        "workers": int(
+            _argument_value(project.common_args, "--actor-workers-per-endpoint")
+        ),
+        "concurrency": int(
+            _argument_value(project.common_args, "--ray-actor-max-concurrency")
+        ),
+    }
+    for arm in matched.arms:
+        expected_source = dict(arm.source)
+        if arm.kind == "native":
+            actual = native_by_id.get(arm.arm_id)
+            if actual is None:
+                raise ValueError(f"native config is missing arm {arm.arm_id}")
+            comparisons = {
+                "endpoint_ids": (native.endpoint_ids, arm.endpoint_ids),
+                "service_signature": (
+                    native.service_signature, arm.service_signature
+                ),
+                "protocol": (native.protocol, arm.protocol),
+                "output_cap": (native.output_cap, arm.output_cap),
+                "arrival_offsets_s": (
+                    tuple(job.offset_s for job in actual.jobs),
+                    arm.arrival_offsets_s,
+                ),
+                "job_internal_arrival_contract": (
+                    native.job_internal_arrival_contract,
+                    arm.job_internal_arrival_contract,
+                ),
+                "organizer": (native.organizer, arm.organizer),
+                "source.database_url": (
+                    native.source.database_url,
+                    expected_source["database_url"],
+                ),
+                "source.workload_name": (
+                    native.source.workload_name,
+                    expected_source["workload_name"],
+                ),
+            }
+            _validate_combined_manifest(
+                arm.manifest_path,
+                tuple(job.manifest for job in actual.jobs),
+            )
+        else:
+            actual = project_by_id.get(arm.arm_id)
+            if actual is None:
+                raise ValueError(f"Project config is missing scenario {arm.arm_id}")
+            request_limit, work_limit = actual.endpoint_limits(
+                project.request_limit_per_endpoint,
+                project.work_limit_per_endpoint,
+            )
+            comparisons = {
+                "endpoint_ids": (project.endpoint_ids, arm.endpoint_ids),
+                "service_signature": (
+                    project.service_signature, arm.service_signature
+                ),
+                "protocol": (project_protocol, arm.protocol),
+                "output_cap": (project_output_cap, arm.output_cap),
+                "arrival_offsets_s": (
+                    actual.arrival_offsets_s, arm.arrival_offsets_s
+                ),
+                "job_internal_arrival_contract": (
+                    project.job_internal_arrival_contract,
+                    arm.job_internal_arrival_contract,
+                ),
+                "organizer": (project_organizer, arm.organizer),
+                "source.database_url": (
+                    project_database_url, expected_source["database_url"]
+                ),
+                "source.workload_name": (
+                    project_workload, expected_source["workload_name"]
+                ),
+                "source_row_offsets": (
+                    actual.source_row_offsets,
+                    tuple(
+                        expected_source.get(
+                            "source_row_offsets",
+                            (0,) * len(actual.request_manifests),
+                        )
+                    ),
+                ),
+                "k_per_endpoint": (
+                    request_limit, arm.project_value("k_per_endpoint")
+                ),
+                "work_limit_per_endpoint": (
+                    work_limit, arm.project_value("work_limit_per_endpoint")
+                ),
+                "ready_bytes": (
+                    project.ready_payload_bytes_limit_per_job,
+                    arm.project_value("ready_bytes"),
+                ),
+                "actor_topology": (
+                    tuple(sorted(actor_topology.items())),
+                    arm.project_value("actor_topology"),
+                ),
+                "policy": (actual.policy, arm.project_value("policy")),
+                "ready_observation": (
+                    actual.ready_observation_contract,
+                    arm.project_value("ready_observation") or "single_head",
+                ),
+                "debt_caps": (
+                    actual.debt_cap_fractions,
+                    arm.project_value("debt_caps") or (),
+                ),
+                "calibration_path": (
+                    project.calibration_contract.path
+                    if project.calibration_contract is not None else None,
+                    arm.calibration_path,
+                ),
+            }
+            _validate_combined_manifest(
+                arm.manifest_path,
+                tuple(actual.request_manifests),
+            )
+        drift = [name for name, values in comparisons.items() if values[0] != values[1]]
+        if drift:
+            raise ValueError(
+                f"{arm.arm_id} executor contract drift: {', '.join(drift)}"
+            )
+
+
 def parse_args(argv: list[str] | None = None) -> CliOptions:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True, type=Path)
@@ -70,14 +236,10 @@ def parse_args(argv: list[str] | None = None) -> CliOptions:
     parser.add_argument("--idle-timeout-s", type=float, default=60.0)
     parser.add_argument("--start-delay-s", type=float, default=15.0)
     parser.add_argument("--rehearsal", action="store_true")
-    parser.add_argument("--resume", action="store_true")
-    parser.add_argument("--recover-stale-lease", action="store_true")
     args = parser.parse_args(argv)
     metrics_urls = tuple(item.strip() for item in args.metrics_urls.split(",") if item.strip())
     if not metrics_urls:
         parser.error("--metrics-urls must contain at least one URL")
-    if args.recover_stale_lease and not args.resume:
-        parser.error("--recover-stale-lease requires --resume")
     return CliOptions(
         config=args.config.resolve(),
         native_config=args.native_config.resolve(),
@@ -91,8 +253,8 @@ def parse_args(argv: list[str] | None = None) -> CliOptions:
         idle_timeout_s=args.idle_timeout_s,
         start_delay_s=args.start_delay_s,
         rehearsal=args.rehearsal,
-        resume=args.resume,
-        recover_stale_lease=args.recover_stale_lease,
+        resume=False,
+        recover_stale_lease=False,
     )
 
 
@@ -100,6 +262,15 @@ def _normalize_native(
     arm: MatchedArm, record: dict[str, object]
 ) -> dict[str, object]:
     jobs = record["jobs"]
+    service_path = Path(str(record["service_counters"]))
+    service_payload = json.loads(service_path.read_text(encoding="utf-8"))
+    deltas = service_payload.get("delta", {})
+    prompt_delta = sum(
+        int(row.get("prompt_tokens", 0)) for row in deltas.values()
+    )
+    generation_delta = sum(
+        int(row.get("generation_tokens", 0)) for row in deltas.values()
+    )
     return {
         **record,
         "command": record.get("command", []),
@@ -110,6 +281,8 @@ def _normalize_native(
         "service_metrics": {
             "metrics_status": "ok",
             "service_counters_path": record["service_counters"],
+            "prompt_tokens_delta": prompt_delta,
+            "generation_tokens_delta": generation_delta,
         },
         "resource_metrics": {
             "resource_metrics_status": "ok",
@@ -119,7 +292,6 @@ def _normalize_native(
         },
         "request_tail_status": dict(arm.unsupported_request_tails),
         "output_paths": {
-            "root": record["output_root"],
             "service_counters": record["service_counters"],
             "resources": record["gpu_resource_trace"],
         },
@@ -133,8 +305,12 @@ def _normalize_project(
     output_dir: Path,
 ) -> dict[str, object]:
     configured = json.loads(str(record["replay_configured_start_epoch_s"]))
-    observed = json.loads(str(record["replay_observed_start_epoch_s"]))
+    observed = json.loads(str(record["job_arrival_start_epoch_s"]))
+    completed = json.loads(str(record["job_completion_end_epoch_s"]))
     actual_work = json.loads(str(record["job_actual_work"]))
+    expected_counts = json.loads(str(record["job_expected_count"]))
+    completed_counts = json.loads(str(record["job_completed_count"]))
+    exactly_once = json.loads(str(record["job_exactly_once"]))
     summaries = []
     for path in sorted((output_dir / "jobs").glob("*.runs.csv")):
         with path.open(encoding="utf-8", newline="") as stream:
@@ -148,15 +324,14 @@ def _normalize_project(
         {
             "job_id": f"job-{index}",
             "actual_launch_epoch_s": float(observed[index]),
-            "ended_epoch_s": float(observed[index]) + float(
-                json.loads(str(record["job_jct_s"]))[index]
-            ),
-            "completed_count": int(summaries[index]["total_rows"]),
+            "ended_epoch_s": float(completed[index]),
+            "completed_count": int(completed_counts[index]),
+            "expected_count": int(expected_counts[index]),
             "actual_work": int(actual_work[index]),
-            "exactly_once": True,
+            "exactly_once": bool(exactly_once[index]),
             "shard_provenance": [{
-                "source_kind": "timed_postgres_manifest",
-                "source_timing_boundary": "inside_job_barrier",
+                "source_kind": dict(arm.source)["kind"],
+                "source_timing_boundary": dict(arm.source)["timing_boundary"],
                 "source_validation_status": (
                     "ok"
                     if summaries[index].get(
@@ -188,26 +363,34 @@ def _normalize_project(
         "implementation_source": "project_shared_vllm_single_cell_runner",
         "database_operator_e2e_s": float(record["end_epoch_s"]) - float(record["start_epoch_s"]),
         "jobs": jobs,
-        "service_metrics": {"metrics_status": record["metrics_status"]},
+        "service_metrics": {
+            "metrics_status": record["metrics_status"],
+            "prompt_tokens_delta": record["prompt_tokens_delta"],
+            "generation_tokens_delta": record["generation_tokens_delta"],
+        },
         "resource_metrics": {
             "resource_metrics_status": record["resource_metrics_status"],
-            "path": str(output_dir / "traces"),
+            "path": str(
+                next((output_dir / "traces").glob("*.resources.csv"))
+            ),
         },
-        "exactly_once": True,
+        "exactly_once": all(bool(value) for value in exactly_once),
         "request_tail_status": dict(arm.unsupported_request_tails),
-        "output_paths": {"root": str(output_dir)},
+        "output_paths": {
+            "commands": str(command_files[0]),
+            "resources": str(
+                next((output_dir / "traces").glob("*.resources.csv"))
+            ),
+        },
         "status": "passed",
     }
 
 
 def run(options: CliOptions) -> dict[str, object]:
-    if options.resume:
-        raise ValueError(
-            "matched-system resume is accepted for interface compatibility "
-            "but fail-closed until durable cell-resume validation is implemented"
-        )
     native = load_native_multijob_config(options.native_config)
     project = load_project_config(options.project_config)
+    matched = load_matched_system_config(options.config)
+    _validate_executor_bindings(matched, native, project)
     repository_commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         check=True,
@@ -275,6 +458,7 @@ def run(options: CliOptions) -> dict[str, object]:
         ),
         instrumenter=lambda *_args: None,
         repository_commit_getter=lambda: repository_commit,
+        rehearsal=options.rehearsal,
     )
 
 

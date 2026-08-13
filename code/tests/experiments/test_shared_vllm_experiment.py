@@ -58,14 +58,17 @@ class SharedVllmExperimentTests(unittest.TestCase):
     def test_eager_job_launch_waits_for_absolute_job_offset(self) -> None:
         now_values = iter((100.0, 104.0, 105.0))
         sleeps: list[float] = []
+        samples: list[str] = []
 
         observed = _wait_for_eager_job_launch(
             105.0,
             now=lambda: next(now_values),
             sleep=lambda seconds: sleeps.append(seconds),
+            on_wait=lambda: samples.append("sample"),
         )
 
         self.assertEqual(sleeps, [0.05, 0.05])
+        self.assertEqual(samples, ["sample", "sample"])
         self.assertEqual(observed, 105.0)
 
     def test_single_group_cell_uses_explicit_identity_without_matrix_schedule(self) -> None:
@@ -104,6 +107,17 @@ class SharedVllmExperimentTests(unittest.TestCase):
             with self.subTest(contract=contract), patch.object(
                 Path, "read_text", return_value=json.dumps(payload)
             ), self.assertRaisesRegex(ValueError, expected):
+                load_config(Path("config.json"))
+
+    def test_project_config_requires_matching_explicit_service_signature(self) -> None:
+        payload = self._config_payload()
+        payload["service_signature"] = {
+            "model": "different-model",
+            "service": "vllm-test",
+        }
+        payload["common_args"].extend(["--completion-model", "qwen"])
+        with patch.object(Path, "read_text", return_value=json.dumps(payload)):
+            with self.assertRaisesRegex(ValueError, "service_signature.model"):
                 load_config(Path("config.json"))
     def test_rehearsal_record_gate_is_fail_closed(self) -> None:
         scenario = SharedVllmScenario(
@@ -298,6 +312,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             warmup_runs_per_scenario=1,
             formal_repeats=3,
             endpoint_ids=("endpoint-0",),
+            service_signature=(("model", "qwen"), ("service", "vllm-test")),
             request_limit_per_endpoint=1,
             work_limit_per_endpoint=1,
             credit_quantum=1,
@@ -906,6 +921,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                         "warmup_runs_per_scenario": 0,
                         "formal_repeats": 1,
                         "endpoint_ids": ["endpoint-0", "endpoint-1"],
+                        "service_signature": {"model": "test", "service": "test"},
                         "request_limit_per_endpoint": 8,
                         "work_limit_per_endpoint": 1024,
                         "credit_quantum": 128,
@@ -943,6 +959,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
                         "warmup_runs_per_scenario": 1,
                         "formal_repeats": 0,
                         "endpoint_ids": ["endpoint-0", "endpoint-1"],
+                        "service_signature": {"model": "test", "service": "test"},
                         "request_limit_per_endpoint": 8,
                         "work_limit_per_endpoint": 4096,
                         "credit_quantum": 512,
@@ -2851,6 +2868,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             "warmup_runs_per_scenario": 0,
             "formal_repeats": 1,
             "endpoint_ids": ["task-0", "task-1"],
+            "service_signature": {"model": "qwen", "service": "vllm-test"},
             "request_limit_per_endpoint": 256,
             "work_limit_per_endpoint": 65536,
             "credit_quantum": 2048,
@@ -2901,6 +2919,7 @@ class SharedVllmExperimentTests(unittest.TestCase):
             warmup_runs_per_scenario=0,
             formal_repeats=1,
             endpoint_ids=("task-0", "task-1"),
+            service_signature=(("model", "qwen"), ("service", "vllm-test")),
             request_limit_per_endpoint=256,
             work_limit_per_endpoint=65536,
             credit_quantum=2048,

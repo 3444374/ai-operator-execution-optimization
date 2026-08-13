@@ -621,6 +621,7 @@ def _wait_for_eager_job_launch(
     *,
     now: Callable[[], float] = time.time,
     sleep: Callable[[float], None] = time.sleep,
+    on_wait: Callable[[], None] | None = None,
 ) -> float:
     """Cross one absolute Job barrier without imposing request replay."""
 
@@ -629,6 +630,8 @@ def _wait_for_eager_job_launch(
         remaining = target_epoch_s - current
         if remaining <= 0:
             return current
+        if on_wait is not None:
+            on_wait()
         sleep(min(remaining, 0.05))
 
 
@@ -827,6 +830,57 @@ def _run_group(
             scrape_prometheus_metrics(url)
             for url in options.metrics_urls
         ]
+
+        def sample_executor_state() -> None:
+            resource_batch = _resource_sample(
+                options.metrics_urls,
+                group_launch_epoch_s,
+            )
+            resource_samples.extend(resource_batch)
+            service_rates = service_rate_tracker.update(
+                resource_batch,
+                endpoint_ids=config.endpoint_ids,
+            )
+            if observer is None:
+                return
+            credit_batch = observer.sample(group_launch_epoch_s)
+            credit_samples.extend(credit_batch)
+            if scenario.ready_observation_contract == (
+                "bounded_concrete_pre_registration"
+            ) or scenario.policy == "saor_bounded_priority":
+                release_events.extend(
+                    observer.drain_release_events(group_launch_epoch_s)
+                )
+            state_rows = build_observe_only_text_state_rows(
+                credit_batch,
+                resource_batch,
+                endpoint_ids=config.endpoint_ids,
+                calibration_signature=state_signature,
+                service_rates=service_rates,
+            )
+            if saor_controllers and saor_control is not None:
+                state_rows = _apply_saor_capacity_control(
+                    state_rows,
+                    controllers=saor_controllers,
+                    observation_model=saor_control.observation_model,
+                    observer=observer,
+                    calibration_signature=state_signature,
+                    max_state_age_s=saor_control.max_state_age_s,
+                )
+            else:
+                state_rows = _apply_state_control(
+                    state_rows,
+                    controllers=controllers,
+                    observer=observer,
+                    calibration_signature=state_signature,
+                    max_state_age_s=(
+                        control.max_state_age_s
+                        if control is not None
+                        else 1.0
+                    ),
+                )
+            state_samples.extend(state_rows)
+
         if scenario.policy == "direct_no_job":
             direct_executor = ThreadPoolExecutor(
                 max_workers=1,
@@ -843,7 +897,8 @@ def _run_group(
         for job_index, command in enumerate(commands):
             if config.job_internal_arrival_contract == "eager":
                 eager_job_launches.append(_wait_for_eager_job_launch(
-                    start_epoch_s + scenario.arrival_offsets_s[job_index]
+                    start_epoch_s + scenario.arrival_offsets_s[job_index],
+                    on_wait=sample_executor_state,
                 ))
             stdout_path = (
                 options.output_dir
@@ -881,53 +936,7 @@ def _run_group(
                 raise RuntimeError(
                     f"profiler child failed with exit code {failed[0]}"
                 )
-            resource_batch = _resource_sample(
-                options.metrics_urls,
-                group_launch_epoch_s,
-            )
-            resource_samples.extend(resource_batch)
-            service_rates = service_rate_tracker.update(
-                resource_batch,
-                endpoint_ids=config.endpoint_ids,
-            )
-            if observer is not None:
-                credit_batch = observer.sample(group_launch_epoch_s)
-                credit_samples.extend(credit_batch)
-                if scenario.ready_observation_contract == (
-                    "bounded_concrete_pre_registration"
-                ) or scenario.policy == "saor_bounded_priority":
-                    release_events.extend(
-                        observer.drain_release_events(group_launch_epoch_s)
-                    )
-                state_rows = build_observe_only_text_state_rows(
-                    credit_batch,
-                    resource_batch,
-                    endpoint_ids=config.endpoint_ids,
-                    calibration_signature=state_signature,
-                    service_rates=service_rates,
-                )
-                if saor_controllers and saor_control is not None:
-                    state_rows = _apply_saor_capacity_control(
-                        state_rows,
-                        controllers=saor_controllers,
-                        observation_model=saor_control.observation_model,
-                        observer=observer,
-                        calibration_signature=state_signature,
-                        max_state_age_s=saor_control.max_state_age_s,
-                    )
-                else:
-                    state_rows = _apply_state_control(
-                        state_rows,
-                        controllers=controllers,
-                        observer=observer,
-                        calibration_signature=state_signature,
-                        max_state_age_s=(
-                            control.max_state_age_s
-                            if control is not None
-                            else 1.0
-                        ),
-                    )
-                state_samples.extend(state_rows)
+            sample_executor_state()
             time.sleep(_TRACE_SAMPLE_INTERVAL_S)
         return_codes = [process.wait() for process in processes]
         if any(code != 0 for code in return_codes):
@@ -1251,6 +1260,18 @@ def _run_group(
             "job_jct_s": json.dumps(
                 [evidence["jct_s"] for evidence in job_evidence]
             ),
+            "job_arrival_start_epoch_s": json.dumps(
+                [
+                    evidence["arrival_start_epoch_s"]
+                    for evidence in job_evidence
+                ]
+            ),
+            "job_completion_end_epoch_s": json.dumps(
+                [
+                    evidence["completion_end_epoch_s"]
+                    for evidence in job_evidence
+                ]
+            ),
             "job_priorities": json.dumps(
                 [
                     scenario.job_priority(index)
@@ -1292,6 +1313,15 @@ def _run_group(
             ),
             "job_actual_work": json.dumps(
                 [evidence["actual_work"] for evidence in job_evidence]
+            ),
+            "job_expected_count": json.dumps(
+                [evidence["expected_count"] for evidence in job_evidence]
+            ),
+            "job_completed_count": json.dumps(
+                [evidence["completed_count"] for evidence in job_evidence]
+            ),
+            "job_exactly_once": json.dumps(
+                [evidence["exactly_once"] for evidence in job_evidence]
             ),
             **(
                 {

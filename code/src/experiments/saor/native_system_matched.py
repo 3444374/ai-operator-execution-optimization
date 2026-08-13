@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import csv
 import json
 import random
 import subprocess
@@ -24,6 +25,7 @@ SELECTOR_SANITY_ARM_IDS = (
     "project_bounded_ready_saor_0125we",
 )
 REQUIRED_ARM_IDS = tuple(dict.fromkeys(SYSTEM_ARM_IDS + SELECTOR_SANITY_ARM_IDS))
+JOB_OFFSET_TOLERANCE_S = 0.5
 
 _PROJECT_FIELDS = {
     "k_per_endpoint", "work_limit_per_endpoint", "ready_bytes", "actor_topology",
@@ -218,7 +220,11 @@ def _repository_commit() -> str:
     ).stdout.strip()
 
 
-def _all_cells(config: MatchedSystemConfig) -> tuple[ScheduledMatchedCell, ...]:
+def _all_cells(
+    config: MatchedSystemConfig, *, rehearsal: bool = False
+) -> tuple[ScheduledMatchedCell, ...]:
+    if rehearsal:
+        return balanced_matched_schedule(config, phase="warmup", repeat=1)
     return tuple(
         cell
         for phase, count in (
@@ -270,6 +276,12 @@ def _validate_cell_evidence(
             raise RuntimeError("Job exactly-once evidence is incomplete")
         if not isinstance(job.get("completed_count"), int):
             raise RuntimeError("Job counter evidence is incomplete")
+        if (
+            not isinstance(job.get("expected_count"), int)
+            or job["completed_count"] != job["expected_count"]
+            or job["completed_count"] <= 0
+        ):
+            raise RuntimeError("Job completed/expected row counts do not match")
         provenance = job.get("shard_provenance")
         if not isinstance(provenance, list) or not provenance:
             raise RuntimeError("Job source/provenance evidence is incomplete")
@@ -284,7 +296,8 @@ def _validate_cell_evidence(
             ):
                 raise RuntimeError("timed PostgreSQL source evidence is invalid")
     starts = [float(job["actual_launch_epoch_s"]) for job in jobs]
-    if abs((starts[1] - starts[0]) - 5.0) > 0.5:
+    actual_offset_s = starts[1] - starts[0]
+    if abs(actual_offset_s - 5.0) > JOB_OFFSET_TOLERANCE_S:
         raise RuntimeError("Job overlap/offset evidence is invalid")
     if float(jobs[0]["ended_epoch_s"]) <= starts[1]:
         raise RuntimeError("Job overlap evidence is missing")
@@ -292,8 +305,48 @@ def _validate_cell_evidence(
     resource = evidence["resource_metrics"]
     if not isinstance(service, dict) or service.get("metrics_status") != "ok":
         raise RuntimeError("service counter evidence is incomplete")
+    prompt_delta = service.get("prompt_tokens_delta")
+    generation_delta = service.get("generation_tokens_delta")
+    if (
+        not isinstance(prompt_delta, (int, float))
+        or not isinstance(generation_delta, (int, float))
+        or prompt_delta < 0
+        or generation_delta < 0
+        or prompt_delta + generation_delta <= 0
+    ):
+        raise RuntimeError("service token counter evidence is invalid")
     if not isinstance(resource, dict) or resource.get("resource_metrics_status") != "ok":
         raise RuntimeError("resource evidence is incomplete")
+    resource_path = Path(str(resource.get("path", "")))
+    if not resource_path.is_file() or resource_path.stat().st_size <= 0:
+        raise RuntimeError("resource trace artifact is missing or empty")
+    with resource_path.open(encoding="utf-8", newline="") as stream:
+        resource_rows = list(csv.DictReader(stream))
+    if not resource_rows:
+        raise RuntimeError("resource trace has no samples")
+    observed = [
+        float(row["observed_epoch_s"])
+        for row in resource_rows
+        if row.get("observed_epoch_s") not in (None, "")
+    ]
+    relative = [
+        float(row["sample_epoch_s"])
+        for row in resource_rows
+        if row.get("sample_epoch_s") not in (None, "")
+    ]
+    if observed and not any(float(start) <= item <= float(end) for item in observed):
+        raise RuntimeError("resource trace has no in-boundary sample")
+    if relative and not any(0.0 <= item <= float(boundary) for item in relative):
+        raise RuntimeError("resource trace has no in-boundary relative sample")
+    if not observed and not relative:
+        raise RuntimeError("resource trace has no timestamped samples")
+    output_paths = evidence["output_paths"]
+    if not isinstance(output_paths, dict) or not output_paths:
+        raise RuntimeError("output artifact evidence is incomplete")
+    for name, value in output_paths.items():
+        artifact = Path(str(value))
+        if not artifact.exists() or (artifact.is_file() and artifact.stat().st_size <= 0):
+            raise RuntimeError(f"output artifact {name} is missing or empty")
     if dict(arm.unsupported_request_tails) != evidence["request_tail_status"]:
         raise RuntimeError("unsupported request-tail evidence drifted")
     command = evidence.get("command", [])
@@ -304,6 +357,9 @@ def _validate_cell_evidence(
         raise RuntimeError("native dispatch contains Project flags")
     return {
         **evidence,
+        "actual_job_offset_s": actual_offset_s,
+        "job_offset_deviation_s": actual_offset_s - 5.0,
+        "job_offset_tolerance_s": JOB_OFFSET_TOLERANCE_S,
         "arm_id": arm.arm_id,
         "report_blocks": list(cell.report_blocks),
         "scheduler_owner": arm.scheduler_owner,
@@ -323,6 +379,7 @@ def run_matched_system(
     instrumenter: Callable[..., object],
     repository_commit_getter: Callable[[], str] = _repository_commit,
     host_lease_acquirer: Callable[..., object] = acquire_host_runner_lease,
+    rehearsal: bool = False,
 ) -> dict[str, object]:
     """Run the balanced eight-arm matrix; executors retain all instrumentation."""
 
@@ -338,17 +395,29 @@ def run_matched_system(
         "schema_version": 1,
         "status": "running",
         "repository_commit": repository_commit,
-        "schedule": [cell.__dict__ for cell in _all_cells(config)],
+        "schedule": [
+            cell.__dict__ for cell in _all_cells(config, rehearsal=rehearsal)
+        ],
         "cells": [],
     }
     _atomic_json(matrix_root, index)
-    lease = host_lease_acquirer(
-        config_path.parent,
-        repository_commit=repository_commit,
-    )
+    try:
+        lease = host_lease_acquirer(
+            config_path.parent,
+            repository_commit=repository_commit,
+        )
+    except Exception as exc:
+        index.update(
+            {
+                "status": "failed",
+                "lease_error": f"{type(exc).__name__}: {exc}",
+            }
+        )
+        _atomic_json(matrix_root, index)
+        raise
     by_id = {arm.arm_id: arm for arm in config.arms}
     try:
-        for ordinal, cell in enumerate(_all_cells(config)):
+        for ordinal, cell in enumerate(_all_cells(config, rehearsal=rehearsal)):
             arm = by_id[cell.arm_id]
             output_dir = Path(arm.output_root) / (
                 f"{ordinal:03d}_{cell.phase}_{cell.repeat:02d}_{arm.arm_id}"
@@ -366,8 +435,8 @@ def run_matched_system(
             index["cells"].append(running)  # type: ignore[index]
             _atomic_json(matrix_root, index)
             try:
-                idle_gate("before")
                 try:
+                    idle_gate("before")
                     executor = (
                         native_executor if arm.kind == "native" else project_executor
                     )
@@ -378,8 +447,22 @@ def run_matched_system(
                         repository_commit,
                     )
                     running.update(completed)
-                finally:
+                    primary_error: Exception | None = None
+                except Exception as exc:
+                    primary_error = exc
+                try:
                     idle_gate("after")
+                    after_idle_error: Exception | None = None
+                except Exception as exc:
+                    after_idle_error = exc
+                if after_idle_error is not None:
+                    running.setdefault("details", {})["after_idle_error"] = (
+                        f"{type(after_idle_error).__name__}: {after_idle_error}"
+                    )
+                if primary_error is not None:
+                    raise primary_error
+                if after_idle_error is not None:
+                    raise after_idle_error
             except Exception as exc:
                 running.update(
                     {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
