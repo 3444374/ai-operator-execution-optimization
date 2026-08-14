@@ -38,7 +38,8 @@
   的观测非支配折中点，不是 selector winner；固定顺序 n=2，`formal_authorized=false`。
   现已另建位置平衡六臂 1+3 Project mechanism 合同，冻结 5% headline 与 throughput/JCT/SLO/
   no-service/repayment 保护边界；`63d17300` final rehearsal 已通过固定 output cap 与 repayment
-  证据门，当前只进入独立审核，仍不授权 formal。系统层另补 Daft
+  证据门，独立 raw/SHA/指标复核也已通过；formal 仍须修授权字段与证据绑定、补同签名 feeding
+  和全组件汇总并重跑 readiness，不直接授权。系统层另补 Daft
   Native/Daft Ray/Ray Data/project static/proposed 的 PG source/sink matched comparison。
   `single-head + shared FIFO` bridge 已完成：shared capacity 使 tok/s +25.96%
   但 fg P99 +99.17%；bounded-ready 在同 FIFO 下再使 tok/s +7.30%、fg P99 −33.62%，但
@@ -140,8 +141,8 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    `63d17300` 全新六臂 rehearsal 已通过：固定 admission output cap=256 的 6,144-request audit
    通过，15/15 repayment completed、P95 3.234s、0 unresolved，1,108/1,108 离线投影一致。
    单次 SAOR 相对 VTC-style 的 service lag P95 改善 13.15%，longest no-service 仅 +0.014%，
-   故只说明值得做 1+3，不是 winner。审核已登记的 validation/archive SHA 后
-   才能由单独提交解锁 1+3 formal。Daft Native/Daft Ray/Ray Data/project frozen-static/proposed 的同一
+   故只说明值得做 1+3，不是 winner。独立证据审核已通过；统一授权 schema/证据绑定并补
+   feeding/全组件报告后，才能由单独提交解锁 1+3 formal。Daft Native/Daft Ray/Ray Data/project frozen-static/proposed 的同一
    2-Job native-system matched comparison 独立推进，原生 baseline 继续使用自身调度。期间不扫
    cap，不跑 4-Job/reservation/dynamic K。
 5. 当前暂停新图、PPT、云文档和 Wiki，只同步本地报告、聚合数据、待画图清单与 Git。

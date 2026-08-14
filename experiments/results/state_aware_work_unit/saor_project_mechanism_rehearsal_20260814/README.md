@@ -103,6 +103,16 @@ SAOR 相对冻结主参照 VTC-style 的单次差异：
 strict-priority 把 foreground P99 降至 13.264s，但相对 SAOR 吞吐低约 5.87%、bulk JCT 高约
 5.76%、no-service 达 16.837s；它是 SLO boundary control，不是 equal-share 公平 comparator。
 
+### 4.1 Service lag 的归一化与机制对应
+
+VTC-style 与 SAOR 的 lag P95 分别为 $62,607.5/65,536=0.955W_e$ 与
+$54,376/65,536=0.830W_e$；绝对差为 8,231.5 work。SAOR 的冻结 debt cap 为
+$H_B=0.125W_e=8,192$，故观测差值约为 $1.005H_B$。这与 projected-debt recovery 直接限制
+累计服务欠账的设计方向一致，但不是数学恒等式：在线 debt 按 endpoint-local active set 更新，
+离线 completion lag 按全局 registered-ready completion 回放。该接近关系属于**机制一致性证据**，
+不能把 lag 这个目标邻近指标单独解释为用户 tail 收益；仍须同时检查 JCT、P99、SLO、
+longest no-service 与吞吐保护。
+
 ## 5. 结果解释
 
 ### 事实
@@ -127,6 +137,30 @@ strict-priority 把 foreground P99 降至 13.264s，但相对 SAOR 吞吐低约 
 - 不能用 Jain 单指标替代 service lag、最长无服务、SLO/JCT 和隔离评价。
 - 不能声称理论 repayment bound 已证明；这里只验证冻结假设下的经验 episode 和离散 overshoot。
 - 不能外推到 4 Job、跨租户、其他硬件或原生 Daft/Ray baseline。
+- strict-priority 只能称经验性 latency boundary control；当前没有可称“理论边界”的下界证明。
+
+### 独立代码与证据审核（2026-08-14）
+
+**证据审核已通过。** 审核从完整 archive 解包后，用当前代码重新执行 6-cell/6,144-request
+work-cost audit，得到相同 input-files manifest SHA 与每 cell actual/estimated work；报告中的
+配对百分比、五个登记 SHA、96/96 recovery、15/15 repayment、1,108/1,108 projection、
+GPU utilization 97.03% 和 MFU 47.91% 均可由 raw 复核。相关本地测试 170 项通过。
+
+**formal 启动审核尚未通过。** 这是授权与报告合同缺口，不推翻本 rehearsal 的机制证据：
+
+1. post-run contract 写入 `rehearsal_validation.validation_sha256`，但当前授权 validator 读取
+   `rehearsal_validation.sha256`；授权前必须统一字段，并同时绑定 `repository_commit`、`root_id`、
+   `archive_sha256` 与 `valid_rehearsal=true`。独立审核已经完成；若状态机需要保留中间态，应命名为
+   `locked_pending_formal_readiness`，不能继续写成“待独立审核”，再由单独提交切换
+   `formal_ready/true`；
+2. 公平 trace 不完整的 fail-closed 分支引用未定义的 `stem`，应修成可审计的 `ValueError` 并补
+   反例测试；
+3. 本报告尚未登记同签名 bounded-client 的 feeding-saturation ratio，也未把六臂 TTFT/ITL、
+   queue/prefill/decode、KV/prefix、能耗和 pipeline stage 汇总成全组件表。GPU busy 证据不能
+   代替 feeding 门；可从现有 raw 恢复的指标先重汇总，确实不可恢复的字段标明 unavailable，
+   不从单点快照补造。
+4. predecessor failed root 目前只在合同中登记名称和 SHA，仓库内没有可复核实物。若“失败 root
+   永久保留”是硬要求，还须登记可访问归档位置或外部 manifest；这不影响当前有效 root 的核真。
 
 ## 6. 对课题的含义
 
@@ -137,10 +171,14 @@ SLO、隔离、公平和机制证据。
 
 ## 7. 下一步
 
-1. 独立复核 report、pre-run contract snapshot、work-cost audit 和完整归档 SHA；
-2. 复核通过后，另行决定是否授权冻结的 1+3 formal；本次提交不授权 formal；
-3. formal 不再调整门槛、workload 或参数，失败即记录 valid negative；
-4. 原生 Daft Native/Daft Ray/Ray Data matched comparison 作为独立系统层证据推进。
+1. 保留本 root 与所有 SHA 不变；它已通过独立证据复核，不因后续授权代码修正重写 raw；
+2. 修复 formal 授权 schema/证据绑定与不完整公平 trace 的 `stem` 分支，用新 validator 对本封存
+   artifact 重验；这些修改不改变 selector，无需自动重跑 rehearsal；
+3. 补同签名 bounded-client feeding ratio 与六臂全组件重汇总；如既有 bounded 数据签名不一致，
+   只补 ceiling 对照，不重跑或调参本六臂；
+4. 上述门全部关闭后，由单独提交显式授权并重跑 readiness，再执行冻结的 position-balanced
+   `1 warm-up + 3 formal`；不再调整门槛、workload、参数或 $0.125W_e$，失败即记录 valid negative；
+5. 原生 Daft Native/Daft Ray/Ray Data matched comparison 作为独立系统层证据推进。
 
 ## 证据与完整性
 
@@ -160,5 +198,6 @@ SLO、隔离、公平和机制证据。
 
 archive 内含所有 request/submission/flush/resource/release-event traces、per-cell records 与日志。
 仓库中的 contract snapshot 是运行前的原始快照；`deploy/autodl/` 下的 post-run contract 只登记
-本次证据和待独立审核状态，不反向改写已运行的 root。旧 `d6259f5f` root 缺少逐请求固定输出
+本次证据和运行后当时的待独立审核状态，不反向改写已运行的 root；审核结论与剩余 formal
+放行门见上文“独立代码与证据审核”。旧 `d6259f5f` root 缺少逐请求固定输出
 上界门，仅作 diagnostic，不进入最终 rehearsal 证据。

@@ -1104,6 +1104,35 @@ foreground P99 +0.11%、P95 service lag −13.15%、longest no-service +0.014%�
 system matched comparison 继续作为完整系统层证据，不能替代该机制主命题，也不与内部 selector
 表混排。
 
+#### 独立审核后的 formal 放行门（2026-08-14）
+
+`63d17300` root 的**证据真实性与机制闭环已通过独立复核**：archive/work-cost/validation SHA、
+6,144-request endpoint-source join、配对效应和 mechanism counters 均可由封存 raw 重算。该结论只把
+root 从“待核真”推进为“valid rehearsal evidence”，不改变
+`performance_ranking_decided=false`，也不自动授权 formal。
+
+formal readiness 必须按以下顺序关闭，任一未完成则保持锁定：
+
+1. 统一授权 schema：contract 与 validator 使用同一个 `validation_sha256` 字段，并同时等值绑定
+   rehearsal `repository_commit`、`root_id`、`archive_sha256` 与 `valid_rehearsal=true`；随后才允许
+   已完成的独立审核结果登记为 evidence；如需增加中间状态，应明确为
+   `locked_pending_formal_readiness`，再由独立提交切为 `formal_ready/formal_authorized=true`；
+2. 修复 completion fairness 不完整 trace 分支的未定义 `stem`，加入缺 registration/grant/completion
+   join 时必须结构化 fail-closed 的反例；
+3. 登记同 workload/protocol/model/service signature 的 bounded-client feeding ratio。若旧 ceiling
+   签名不一致，补 ceiling 对照；GPU utilization、running 或 MFU 均不能替代 ≥95% feeding 门；
+4. 从已有 raw 重汇总六臂 TTFT/ITL、queue/prefill/decode、KV/prefix、energy 与 pipeline stage；
+   不可恢复项显式 `unavailable`，不得由 before/after 或单点快照补造；
+5. predecessor failed root 若作为永久审计证据保留，登记可访问 archive location/manifest；仅有
+   名称和 SHA 不能证明实物仍可取；
+6. 用修正后的 validator 复核封存 rehearsal，通过后重跑 formal readiness，再运行冻结的
+   position-balanced `1 warm-up + 3 formal`。不改 workload、阈值、$0.125W_e$ 或 selector；未过
+   effect/protection 门即记录 valid negative。
+
+lag P95 还应同时报告 work 与 envelope 归一化值：VTC-style 为 $0.955W_e$、SAOR 为
+$0.830W_e$，差值 8,231.5 work，约为 $1.005H_B$。这是 debt-cap 作用方向的机制一致性证据，
+不是独立用户收益；headline 仍须与 JCT/P99/SLO/no-service/throughput 保护联合判定。
+
 dynamic capacity 保持 `parked-conditional`；若未来恢复，才独立比较 frozen lower/upper、
 state-observed no-op、threshold/deadband、governor 和 offline oracle。
 
@@ -1238,7 +1267,7 @@ organization 是输入，多模态是外部有效性验证。若同 observation 
 | 2026-08-13 | `saor-v0.5.5-observation-bridge-observed` | frozen-static/single-head shared FIFO/bounded-ready FIFO 在同 K/W、FIFO、manifest 与服务签名下完成双轮 | 2×4090 双轮 development rehearsal；6/6 cell、0 incident；Project implementation + compact/full archive | shared capacity 解释效率提升与 foreground 隔离损失；bounded-ready 额外提升效率并部分恢复 foreground，但 FIFO 仍约 40% SLO violation。bridge 完成，dynamic 证据收紧为 fixed-envelope Job 份额/ordering；下一步只做 native-system matched comparison |
 | 2026-08-14 | `saor-v0.5.6-native-system-matched-local` | 八个唯一物理臂的本地合同/薄编排 + 两层离线 fail-closed 汇总；系统表 5 臂，Project sanity 表 4 臂，共享同一 SAOR run | 本地 synthetic/corruption unit tests；未连接服务器、未运行 GPU/rehearsal/formal | 只完成可执行基础设施。共同 Job release `[0,5]`、Job 内 eager、PostgreSQL source→validated gather 计时；FIFO 全名为 **Project bounded-ready + global FIFO matched-control**；native request tail 不支持时为 `unavailable`。后续只能按 runtime preflight→static readiness→small correctness/local fake rehearsal→review→单独授权 GPU execution 推进 |
 | 2026-08-14 | `saor-v0.5.7-fail-closed-evidence` | 修正 avoidable-idle 的事件域 `hold_start`；matched-ready 对五个 bounded 臂强制 completion fairness，frozen-static 按生产路径标 N/A；runtime Job ID 必须非空/单 Job 一致/跨 Job 唯一；selector/bridge readiness 冻结 effective K/W 与 weights | SAOR/shared-credit/shared-vLLM 回归 + 旧完整 artifact applicability 复核 + 新 2×4090 四臂 development regression | 旧五个 bounded-ready 臂各 Job 512/512 lifecycle，frozen-static 0/512；等待最终语义重签 validation，跨 static lag 不排名。新回归四臂均 exactly-once/Job ID 合同通过；$0.125W_e$ recovery=1，$0.25W_e$ recovery=0 被 runner fail closed。formal 继续锁定，性能重复不增加 |
-| 2026-08-14 | `saor-v0.5.8-projected-debt-rehearsed` | 用全部 own in-flight 与 foreign residual 计算 projected debt；chat template overhead 由 raw request/submission 独立校准，固定 output cap=256 逐请求验证；仍保留 raw prompt evidence | 2×4090 `63d17300` 六臂全新 root；6,144-request work-cost audit；projection/repayment/overshoot/work-conservation fail-closed validation | 6/6、0 incident；96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved，1,108/1,108 projection 一致且 estimate overrun=0。单次相对 VTC-style lag P95 −13.15%、no-service +0.014%，只通过 rehearsal 证据链，不判 winner；formal 仍锁定待独立审核 |
+| 2026-08-14 | `saor-v0.5.8-projected-debt-rehearsed` | 用全部 own in-flight 与 foreign residual 计算 projected debt；chat template overhead 由 raw request/submission 独立校准，固定 output cap=256 逐请求验证；仍保留 raw prompt evidence | 2×4090 `63d17300` 六臂全新 root；6,144-request work-cost audit；projection/repayment/overshoot/work-conservation fail-closed validation | 6/6、0 incident；96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved，1,108/1,108 projection 一致且 estimate overrun=0。单次相对 VTC-style lag P95 −13.15%、no-service +0.014%，只通过 rehearsal 证据链，不判 winner；独立证据审核已过，formal 仍锁定待授权 schema/feeding/全组件门 |
 
 状态只允许按以下顺序变化：
 
@@ -1308,7 +1337,7 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 | 7 | ✅ 完成并推送 | 受影响套件 291 tests passed（仓库内固定临时目录绕过 Windows sandbox temp ACL），selector 89 physical/34 statement lines，compileall/diff/secrets passed；完整 discovery 1,154 tests 中 24 个因本机缺 Ray/Daft 或 Windows 无 POSIX `os.killpg` 报错，故不记 full pass；本机未安装 ruff，不临时装依赖；commit `8600044` |
 | 8 | ✅ 双轮 GPU gate 完成、未晋级 | single-head bounded-priority 两 cap 均未过 foreground 门；$0.25W_e$ 第 2 轮机制门 fail-closed，定位为 ready-backlog observation gap；未启动 formal |
 | 9 | ✅ bounded-ready 修订与双轮 gate 完成 | $0.125W_e$ 通过开发门，$0.25W_e$ 被 bulk guard 拒绝；后续同窗口 selector attribution 与 FIFO observation bridge 也已完成，SAOR 是观测非支配折中，不是 selector winner |
-| 10 | ✅ final rehearsal 已通过、formal 待独立审核解锁 | `63d17300` 六臂 0 incident；固定 output cap=256 的 6,144-request audit 通过，96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved；1,108/1,108 projection 一致，estimate/overshoot-bound violation=0。单次 VTC 配对 service lag P95 −13.15%、no-service +0.014%，不能据 rehearsal 判 winner或自动跑 formal |
+| 10 | ✅ final rehearsal/独立证据审核已通过；formal 仍锁定 | `63d17300` 六臂 0 incident；固定 output cap=256 的 6,144-request audit 通过，96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved；1,108/1,108 projection 一致，estimate/overshoot-bound violation=0。单次 VTC 配对 service lag P95 −13.15%、no-service +0.014%；须先修授权 schema/证据绑定并补 feeding/全组件门，不能据 rehearsal 判 winner或自动跑 formal |
 
 下方 checkbox 是已经执行完毕的历史复现清单，现统一勾选；其中“单 recovery lease”语义已被
 Task 10 的反例推翻，不再是当前算法约束。真实 GPU 判决仍以 Task 8/9/10 和对应

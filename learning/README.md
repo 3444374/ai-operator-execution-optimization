@@ -458,3 +458,27 @@ KV/waiting/GPU 信号阈值、控制周期、endpoint 数和 token/frame/pixel �
 配置或模态 adapter；动作构造还要求显式提供相对 hold 的 service/goodput/tail/energy/switch
 边际预测，缺一项就拒绝构造，核心没有静默默认。phase-change 提前停止实验目前只支持低压增档动机，
 没有建立可靠降档区，所以还不能把某个 KV 峰值写进算法。
+
+## 2026-08-14 怎样读 SAOR final rehearsal
+
+这次实验先回答“算法账本是否真的闭环”，再回答“单次性能是否值得继续”，两者不能交换顺序。
+
+1. request admission 使用运行前已知的 `raw prompt + 29 template tokens + 256 output cap`；
+2. completion 后以 endpoint total tokens 作为 actual work，修正在线 debt；
+3. 离线 service lag 复用同一 endpoint actual work，但按 registered-ready completion 重放理想份额；
+4. 96/96 recovery、15/15 repayment 与 1,108/1,108 projection 证明这个冻结 workload 中机制闭环，
+   不构成任意到达或任意预测误差下的理论界。
+
+VTC-style 的 lag P95 为 $62,607.5=0.955W_e$，SAOR 为 $54,376=0.830W_e$；差值
+8,231.5 work 约等于 debt cap $H_B=8,192$。这说明算法确实在它直接控制的“累计服务欠账”方向
+产生作用，但不能把它直接翻译成“请求快了 13.15%”：本轮 foreground P99 反而略差 0.11%，
+只是吞吐、JCT、SLO 和最长无服务均保持在冻结保护范围内。
+
+strict-priority 的 foreground P99 更低，是以吞吐、bulk JCT/SLO 和最长无完成恶化换来的经验性
+latency boundary control；当前没有理论下界，不能称“理论边界”。frozen-static 不经过 shared-credit
+registered-ready ledger，因此 lag/no-service 是 N/A，不是 0。
+
+独立审核已经确认本 rehearsal 的 raw、SHA、指标和代码口径一致，但 formal 仍不能启动：授权合同的
+SHA 字段尚未与 validator 统一并绑定 commit/root/archive，报告还缺同签名 bounded-client feeding
+ratio 与六臂全组件汇总。关闭这些门、用新 validator 复核封存 artifact 并重跑 readiness 后，才运行
+冻结的 `1 warm-up + 3 formal`；该 formal 检验稳定性，不再用于调阈值追正。

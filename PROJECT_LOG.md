@@ -6770,3 +6770,30 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   SHA256 为 `5f267dc5847529e8dcea7a4415d52a3e1675a4a983c5190c164ef67af552cedd`。仓库保存 compact
   evidence 与完整归档；合同只登记 `passed_pending_independent_review`，状态仍为
   `locked_pending_rehearsal/formal_authorized=false`，不自动运行位置平衡 1+3 formal。
+
+## 2026-08-14 final rehearsal 独立审核与 formal 放行缺口
+
+- 使用当前代码从仓库完整 archive 解包并独立重跑 6-cell/6,144-request work-cost audit；每 cell
+  actual/estimated work、input-files manifest SHA、五个登记 SHA、配对百分比及 96/96 recovery、
+  15/15 repayment、1,108/1,108 projection 均与报告一致。相关本地测试 170 项通过，故
+  `63d17300` root 的证据真实性与机制闭环审核通过；仍不产生 performance winner。
+- 归一化 lag P95：VTC-style 为 $0.955W_e$、SAOR 为 $0.830W_e$；差值 8,231.5 work 约为
+  $1.005H_B$。该现象标记为 debt-cap 作用方向的合理推断，不把目标邻近 lag 单独写成用户 tail
+  收益；foreground P99 本轮实际略差 0.11%。
+- formal 启动审核未通过：post-run contract 使用 `validation_sha256`，授权 validator 却读取
+  `sha256`，且尚未把 commit/root/archive/`valid_rehearsal` 做等值绑定；completion fairness 的
+  不完整 trace 分支还引用未定义 `stem`。修复后用新 validator 复核封存 artifact，不自动重跑
+  selector rehearsal；若扩展状态机，审核完成后的锁定态应命名为
+  `locked_pending_formal_readiness`，与历史 `locked_pending_rehearsal` 明确区分。
+- predecessor failed root 当前只登记名称和 SHA，仓库内不能核实归档仍可取；若把失败 root
+  preservation 作为硬要求，须补可访问位置或外部 manifest。
+- 非阻断工程债：typed `CompletionWorkCostConfig` 已收束 work-cost 语义，但
+  `SharedVllmConfig.completion_work_cost` 仍从 `common_args` 字符串反向解析；后续可在 config load
+  边界一次解析为字段，避免再次混淆同名 token 量。该重构不与 formal 授权修复捆绑，防止扩大
+  下一次服务器运行的代码差异。
+- 性能合规仍缺同 workload/protocol/model/service signature 的 bounded-client feeding ratio，以及
+  六臂 TTFT/ITL、queue/prefill/decode、KV/prefix、energy 与 pipeline stage 全组件汇总。可从 raw
+  恢复的先重汇总，不可恢复项标 `unavailable`；GPU utilization/MFU 不替代 feeding 门。
+- 只有上述代码/证据门关闭、单独提交显式切换 `formal_ready/formal_authorized=true` 并重跑
+  readiness 后，才运行冻结的 position-balanced 1+3 formal；不再调 workload、阈值、
+  $0.125W_e$ 或 selector，失败保留为 valid negative。

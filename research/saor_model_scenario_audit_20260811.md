@@ -451,7 +451,7 @@ censor episode。显式结束时仍 critical 的 episode 才记为 right-censore
 完整 episode，censored 单列，持续可偿还但 run 结束的 unresolved 必须为 0。该条件命题仍需
 最终 trace 核对假设与常数，不能仅凭代码结构宣布定理完成。
 
-最终 `63d17300` 全新六臂 GPU rehearsal 已完成这一步经验核对，但没有把条件命题升级为普遍
+**来源类型：本地 GPU rehearsal 事实。** 最终 `63d17300` 全新六臂 GPU rehearsal 已完成这一步经验核对，但没有把条件命题升级为普遍
 定理。结果为 96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 censored/
 unresolved；1,108/1,108 raw projection 事件离线复算一致，projection violation、fixed-cap
 estimate overrun、单 quantum overshoot-bound violation均为 0。最大同时 recovery commitment
@@ -464,12 +464,18 @@ estimate overrun、单 quantum overshoot-bound violation均为 0。最大同时 
 work 中加入签名化 overhead。模型、tokenizer、chat template、message shape 或 protocol 变化时
 必须重新校准，29 不进入 selector 常量或定理假设。
 
-最终有效 root 还逐请求冻结并验证 `output_bound_source=fixed_output_cap`、cap=256；客户端事后
+**来源类型：本地 GPU rehearsal 事实。** 最终有效 root 还逐请求冻结并验证
+`output_bound_source=fixed_output_cap`、cap=256；客户端事后
 重分词只作诊断，不能放大 admission estimate。性能上，单次 SAOR 相对同 observation 的
 VTC-style 吞吐 +0.43%、foreground P99 +0.11%、P95 completion service lag −13.15%、longest
 no-service +0.014%，保护门未越界。这支持“机制可运行且是 Pareto 候选”，不支持“SAOR 已胜出”。
-只有独立审核后的位置平衡 1+3
-formal 才能检验该差异是否稳定；若仍越界，应保留为 valid negative。
+独立审核已从封存 raw 复算上述数字与 SHA；formal 启动仍须先修授权 schema/证据绑定并补
+同签名 feeding 与全组件报告，再运行位置平衡 1+3 检验稳定性；若仍越界，应保留为 valid negative。
+
+**来源类型：合理推断。** VTC-style 与 SAOR 的 lag P95 差值为 8,231.5 work，约为冻结
+$H_B=8,192$ 的 $1.005$ 倍，且归一化后由 $0.955W_e$ 降到 $0.830W_e$。这与 debt-cap recovery
+直接限制累计欠账的作用方向一致，但 service lag 是目标邻近指标，不等于独立用户收益；论文仍须
+联合 JCT、P99、SLO、no-service 与 throughput 保护解释。
 
 VTC artifact 已公开 overload、proportional、on/off、Poisson short/long、increase 和 distribution
 shift suites，可借其 **workload shape 与指标定义**，但实现仍是 S-LoRA artifact，不能和本项目

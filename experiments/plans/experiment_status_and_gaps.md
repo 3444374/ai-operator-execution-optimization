@@ -5,8 +5,9 @@ Date: 2026-07-20（最后更新：2026-08-14；开题证据冻结，SAOR fixed-e
 2026-08-14 fail-closed 复核已将 completion fairness applicability、Job identity、K/W/weights、
 projected-debt repayment 和 admission work-cost 上界统一闭环。最终 `63d17300` 六臂 rehearsal
 6/6、0 incident，6,144-request fixed-output-cap audit 与 15/15 repayment episode 均通过；
-`formal_authorized=false`，单次结果不判策略排名。下一步先独立审核 validation/archive SHA，再
-决定是否授权位置平衡 1+3 Project mechanism formal，并独立准备同一 2-Job native-system matched
+`formal_authorized=false`，单次结果不判策略排名。独立审核已确认 validation/archive SHA、raw
+复算和机制 counters 一致，但 formal 启动仍被授权 schema/证据绑定、同签名 feeding ratio 与
+全组件汇总三项阻断。关闭这些门并重跑 readiness 后，才决定是否授权位置平衡 1+3 Project mechanism formal，并独立准备同一 2-Job native-system matched
 comparison；原生 baseline 不接 bounded-ready，
 dynamic-K 仍退出主线）
 
@@ -119,7 +120,11 @@ non-preemptible foreign residual 都进入投影，显式 `finish_job` 才能 ce
 projection 一致且 estimate/overshoot 门通过。单次相对 VTC-style 的 service lag P95 −13.15%、
 longest no-service +0.014%。当前合同为
 `locked_pending_rehearsal/formal_authorized=false`，已登记 candidate validation/archive SHA；必须
-独立复核后由单独提交解锁，不能用历史 n=2 或单次 rehearsal 直接宣布胜出。
+先修 contract `validation_sha256` 与 validator `sha256` 字段不一致，并绑定 commit/root/archive/
+`valid_rehearsal`；同时修复不完整 fairness trace 的未定义 `stem`、补同签名 bounded-client
+feeding ratio 和六臂全组件重汇总。用新 validator 对封存 root 复核并重跑 readiness 后，才可由
+单独提交解锁；不能用历史 n=2 或单次 rehearsal 直接宣布胜出。证据复算本身已通过，因此上述
+授权/报告修正不要求自动重跑六臂 rehearsal。
 formal 把 equal-share fairness 与 foreground/bulk differentiated service 分轨，使用
 registered-ready backlog、completion-accounted empirical lag、三个 JCT 反事实、request/token
 SLO goodput、最长 no-service 和 ready buffer/CPU/memory 指标。
