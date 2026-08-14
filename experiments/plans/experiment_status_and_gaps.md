@@ -120,7 +120,8 @@ non-preemptible foreign residual 都进入投影，显式 `finish_job` 才能 ce
 projection 一致且 estimate/overshoot 门通过。单次相对 VTC-style 的 service lag P95 −13.15%、
 longest no-service +0.014%。授权字段逐项绑定、不完整 fairness trace 的 fail-closed 路径和六臂
 全组件重汇总已经完成；当前完整签名 direct ceiling 为 13,684.90 tok/s，封存 SAOR 为
-12,713.03 tok/s，feeding ratio=92.898%<95%，且 evidence valid。合同已冻结为
+12,713.03 tok/s，feeding ratio=92.898%<95%。group/manifest/运行合同/validation/archive SHA 已
+绑定，足以执行一次性预注册负判决；PG/Ray clean gate 未结构化落盘，不能声称稳定 7.10% 损失。合同已冻结为
 `locked_failed_feeding/formal_authorized=false`；本候选保留为 valid feeding-negative，不启动 1+3
 formal，也不改 95% 门、K/W 或冻结 $0.125W_e$。不能用历史
 n=2 或单次 rehearsal 直接宣布胜出；授权/报告修正本身不要求重跑六臂 rehearsal。

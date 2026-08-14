@@ -797,7 +797,9 @@ cap=256 的 6,144-request audit 通过，15/15 repayment completed、P95 3.234s�
 +0.014%，尚不判 winner。独立 raw/SHA 复核已通过。authorization 已逐字段绑定 validation SHA、
 commit/root/archive/valid-rehearsal，公平 trace 错误分支已 fail closed，六臂服务延迟、资源/能耗与
 pipeline 也已从封存 raw 重汇总。当前完整签名 direct ceiling 为 13,684.90 tok/s，封存 SAOR 为
-12,713.03 tok/s，feeding ratio=92.898%<95%；证据结构有效，因此 contract 已冻结为
+12,713.03 tok/s，feeding ratio=92.898%<95%；两侧 group/manifest/运行合同/validation/archive SHA
+已绑定，足以执行一次性 gate 负判决。由于 PG/Ray clean 未结构化落盘且 n=1，不能声称稳定损失
+7.10%；contract 已冻结为
 `locked_failed_feeding/formal_authorized=false`，停止当前 1+3 formal，不改门槛、K/W 或
 $0.125W_e$。**来源类型：本地 GPU ceiling 事实。**
 **来源类型：合理推断。** lag 绝对差 8,231.5 work 约等于 $1.005H_B$，说明结果与 debt-cap

@@ -1119,7 +1119,8 @@ formal readiness 必须按以下顺序关闭，任一未完成则保持锁定：
 2. **已完成**：修复 completion fairness 不完整 trace 分支的未定义 `stem`，加入缺 registration/grant/completion
    join 时必须结构化 fail-closed 的反例；
 3. **已完成且失败**：同 workload/protocol/model/service signature 的 bounded-client ceiling 为
-   13,684.90 tok/s，封存 SAOR 为 12,713.03 tok/s，feeding ratio=92.898%<95%。证据有效，故合同
+   13,684.90 tok/s，封存 SAOR 为 12,713.03 tok/s，feeding ratio=92.898%<95%。两侧 artifact SHA
+   已绑定，足以执行一次性 gate；PG/Ray clean 未结构化保存，不能外推稳定损失。合同
    冻结为 `locked_failed_feeding/formal_authorized=false`；GPU utilization、running 或 MFU 均不能
    替代 ≥95% 门；
 4. **已完成**：从已有 raw 重汇总六臂 TTFT/ITL、queue/prefill/decode、KV/prefix、energy 与 pipeline stage；
@@ -1338,7 +1339,7 @@ shared-vLLM runner；不修改 vLLM 内部 scheduler，不新增第三方依赖�
 | 7 | ✅ 完成并推送 | 受影响套件 291 tests passed（仓库内固定临时目录绕过 Windows sandbox temp ACL），selector 89 physical/34 statement lines，compileall/diff/secrets passed；完整 discovery 1,154 tests 中 24 个因本机缺 Ray/Daft 或 Windows 无 POSIX `os.killpg` 报错，故不记 full pass；本机未安装 ruff，不临时装依赖；commit `8600044` |
 | 8 | ✅ 双轮 GPU gate 完成、未晋级 | single-head bounded-priority 两 cap 均未过 foreground 门；$0.25W_e$ 第 2 轮机制门 fail-closed，定位为 ready-backlog observation gap；未启动 formal |
 | 9 | ✅ bounded-ready 修订与双轮 gate 完成 | $0.125W_e$ 通过开发门，$0.25W_e$ 被 bulk guard 拒绝；后续同窗口 selector attribution 与 FIFO observation bridge 也已完成，SAOR 是观测非支配折中，不是 selector winner |
-| 10 | ✅ final rehearsal 有效；❌ 当前候选 formal 因 feeding 门终止 | `63d17300` 六臂 0 incident；固定 output cap=256 的 6,144-request audit 通过，96/96 recovery completion、15/15 repayment completed、P95 3.234s、0 unresolved；1,108/1,108 projection 一致。当前完整签名 direct ceiling 13,684.90 tok/s 对 SAOR 12,713.03，ratio=92.898%<95%；合同 `locked_failed_feeding/false`，不启动 1+3 |
+| 10 | ✅ final rehearsal 有效；❌ 当前候选 formal 因 feeding 门终止 | `63d17300` 六臂机制证据闭合。一次性当前签名 direct 13,684.90 tok/s 对 SAOR 12,713.03，ratio=92.898%<95%；完整 artifact identity 已绑定，PG/Ray clean record unavailable，故只作冻结 gate 负判决，不作稳定损失估计；合同 `locked_failed_feeding/false` |
 
 下方 checkbox 是已经执行完毕的历史复现清单，现统一勾选；其中“单 recovery lease”语义已被
 Task 10 的反例推翻，不再是当前算法约束。真实 GPU 判决仍以 Task 8/9/10 和对应

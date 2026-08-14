@@ -161,6 +161,7 @@ def run_direct_control(
         _argument_value(config.common_args, "--request-slo-ms", "0")
     )
     slo_s = slo_ms / 1000.0 if slo_ms > 0 else None
+    work_cost = config.completion_work_cost
     evidence = []
     for index, (job, requests, manifest_path) in enumerate(
         zip(jobs, requests_by_job, manifests)
@@ -205,7 +206,13 @@ def run_direct_control(
                     if met
                 )
                 / jct_s,
-                "predicted_work": sum(request.estimated_work for request in requests),
+                "predicted_work": sum(
+                    work_cost.estimated_work(
+                        request.prompt_tokens,
+                        request.estimated_output_tokens,
+                    )
+                    for request in requests
+                ),
                 "actual_work": sum(actual_work_by_request),
                 "expected_count": len(requests),
                 "completed_count": len(results),

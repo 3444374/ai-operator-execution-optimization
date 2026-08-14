@@ -40,8 +40,9 @@
   no-service/repayment 保护边界；`63d17300` final rehearsal 已通过固定 output cap 与 repayment
   证据门，独立 raw/SHA/指标复核也已通过。授权字段已逐项绑定，公平 trace 的 fail-closed
   异常路径已修复，六臂 TTFT/ITL、queue/prefill/decode、KV/prefix、energy 和 pipeline 已从封存
-  raw 重汇总。当前完整签名 direct ceiling 为 13,684.90 tok/s，SAOR feeding=92.898%，有效低于
-  95%；合同已冻结为 `locked_failed_feeding/false`，当前 1+3 formal 停止，不调 K/W、门槛或
+  raw 重汇总。当前一次性完整签名 direct ceiling 为 13,684.90 tok/s，SAOR feeding=92.898%，低于
+  95%；artifact identity/算术已由完整 SHA 链绑定，但 PG/Ray clean gate 未结构化保存，故只用于
+  停止当前 formal，不写成稳定 7.10% 损失。合同已冻结为 `locked_failed_feeding/false`，不调 K/W、门槛或
   `$0.125W_e$` 追正。系统层另补 Daft
   Native/Daft Ray/Ray Data/project static/proposed 的 PG source/sink matched comparison。
   `single-head + shared FIFO` bridge 已完成：shared capacity 使 tok/s +25.96%
@@ -145,7 +146,8 @@ CLIP 画像进一步表明主要瓶颈位于 CPU processor 整体（fast path �
    通过，15/15 repayment completed、P95 3.234s、0 unresolved，1,108/1,108 离线投影一致。
    单次 SAOR 相对 VTC-style 的 service lag P95 改善 13.15%，longest no-service 仅 +0.014%，
    故只说明值得做 1+3，不是 winner。独立证据审核、授权 schema/证据绑定和全组件报告已完成；
-   当前签名 bounded ceiling 已以 13,684.90 tok/s 复核：SAOR ratio=92.898%<95%，证据有效，
+   当前签名 bounded ceiling 已以 13,684.90 tok/s 复核：一次性 SAOR ratio=92.898%<95%，
+   identity-bound artifact/算术有效但 paper reproducibility 不完整，
    因而保留 valid feeding-negative 并停止 1+3 formal。Daft Native/Daft Ray/Ray Data/project frozen-static/proposed 的同一
    2-Job native-system matched comparison 独立推进，原生 baseline 继续使用自身调度。期间不扫
    cap，不跑 4-Job/reservation/dynamic K。

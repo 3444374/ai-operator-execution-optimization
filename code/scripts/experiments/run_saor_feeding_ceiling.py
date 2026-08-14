@@ -16,12 +16,6 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-from scripts.experiments.run_ai_operator_scenarios import (  # noqa: E402
-    wait_for_idle,
-)
-from scripts.experiments.run_shared_vllm_experiment import (  # noqa: E402
-    parse_args as parse_runner_args,
-)
 from src.experiments.saor.feeding_ceiling import (  # noqa: E402
     validate_ceiling_config,
 )
@@ -32,6 +26,8 @@ from src.experiments.saor.project_mechanism_formal import (  # noqa: E402
     validate_contract,
 )
 from src.experiments.shared_vllm.config import load_config  # noqa: E402
+from src.experiments.shared_vllm.cli import parse_runner_args  # noqa: E402
+from src.experiments.shared_vllm.preflight import wait_for_idle  # noqa: E402
 from src.experiments.shared_vllm.runner import run_experiment  # noqa: E402
 
 

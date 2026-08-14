@@ -61,13 +61,14 @@ mean/p95 为 97.03%/100%，running mean/p95 为 119.32/232，waiting mean/p95/ma
 feeding-saturation 已由当前完整签名的独立新 root 做出正式负判决。direct bounded ceiling 为
 13,684.90 tok/s，封存 SAOR 为 12,713.03 tok/s，feeding ratio 为 **92.898%**，低于预注册
 95%。ceiling wrapper 已逐字段匹配 model/tokenizer/template、服务参数、协议、K/W、manifest、
-arrival 与 prompt work，且 `evidence_valid=true`，因此这不是缺证据或环境失败，而是有效的
-`failed_feeding`。完整报告见
+arrival 与 prompt work。更新后的 summarizer 还绑定两侧 group/manifest/运行时合同/rehearsal
+validation/archive SHA；`evidence_valid=true` 只表示 artifact identity 与 feeding 算术有效。运行前
+PG/Ray clean 未结构化落盘，`paper_reproducibility_complete=false`。完整报告见
 [SAOR 当前签名 feeding ceiling](../saor_project_feeding_ceiling_20260814/README.md)。
 
 direct GPU utilization mean 为 98.83%、MFU 为 55.39%，SAOR 分别为 97.03%/47.91%；两者 GPU
-utilization 都接近 100%，仍存在 7.10% 吞吐差，进一步证明 GPU utilization 不能替代 service
-feeding。当前合同已冻结为 `locked_failed_feeding/formal_authorized=false`，不启动 1+3，也不因
+utilization 都接近 100%，单次 gate 仍观察到 7.10% 吞吐差，进一步证明 GPU utilization 不能替代
+service feeding。当前合同已冻结为 `locked_failed_feeding/formal_authorized=false`，不启动 1+3，也不因
 差距接近门槛而改 K/W、$0.125W_e$ 或 95% 门。
 
 ### 3.3 SAOR 机制门
@@ -221,8 +222,9 @@ GPU utilization 97.03% 和 MFU 47.91% 均可由 raw 复核。相关本地测试 
    变量抛出不可解释的 `NameError`；
 3. 六臂 TTFT/ITL、queue/prefill/decode、KV/prefix、CPU/内存、能耗和 pipeline stage 已从封存 raw
    重汇总。通用 group resource summary 也新增双 GPU 功率/能量积分，后续 formal 会直接落列；
-4. 当前完整签名 ceiling 给出 92.898%，`evidence_valid=true` 且 `feeding_gate_passed=false`；
-   这是终止当前候选 formal 的有效前置负结果，不再是待补项。
+4. 当前完整签名 ceiling 给出 92.898%，artifact evidence valid 且 feeding gate failed；这是终止
+   当前候选 formal 的一次性前置负结果，不是稳定损失估计。direct raw 的 predicted work 漏掉每请求
+   29-token overhead，附属 predicted/normalized-service 字段禁用，但 actual-token feeding 不受影响。
 5. predecessor failed root 目前只在合同中登记名称和 SHA，仓库内没有可复核实物。若“失败 root
    永久保留”是硬要求，还须登记可访问归档位置或外部 manifest；这不影响当前有效 root 的核真。
 

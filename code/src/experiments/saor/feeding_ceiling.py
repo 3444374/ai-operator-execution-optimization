@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 from pathlib import Path
 
 from src.experiments.shared_vllm.config import SharedVllmConfig
 
-from .project_mechanism_formal import PROPOSED
+from .project_mechanism_formal import (
+    FROZEN_FEEDING_EVIDENCE,
+    PROPOSED,
+    REVIEWED_REHEARSAL_EVIDENCE,
+)
 
 
 CEILING_SCENARIO = "active_set_project_direct_bounded_ceiling"
@@ -84,13 +89,58 @@ def summarize_feeding_ceiling(
     project_root: Path,
     ceiling_root: Path,
     *,
+    evidence_contract: dict[str, object] | None = None,
+    project_archive: Path | None = None,
+    ceiling_archive: Path | None = None,
     ratio_min: float = 0.95,
 ) -> dict[str, object]:
-    """Validate one ceiling cell and compare it with the sealed SAOR cell."""
+    """Compare only artifacts bound by the frozen evidence contract."""
 
-    project_rows = _read_csv(project_root / "group_runs.csv")
-    ceiling_rows = _read_csv(ceiling_root / "group_runs.csv")
     errors: list[str] = []
+    rehearsal_identity = (
+        evidence_contract.get("rehearsal_validation")
+        if isinstance(evidence_contract, dict)
+        else None
+    )
+    ceiling_identity = (
+        evidence_contract.get("feeding_validation")
+        if isinstance(evidence_contract, dict)
+        else None
+    )
+    if not isinstance(rehearsal_identity, dict):
+        errors.append("feeding summary lacks frozen rehearsal identity")
+    elif rehearsal_identity != REVIEWED_REHEARSAL_EVIDENCE:
+        errors.append("feeding summary rehearsal identity is not frozen")
+    if not isinstance(ceiling_identity, dict):
+        errors.append("feeding summary lacks frozen ceiling identity")
+    elif ceiling_identity != FROZEN_FEEDING_EVIDENCE:
+        errors.append("feeding summary ceiling identity is not frozen")
+    if isinstance(ceiling_identity, dict):
+        try:
+            frozen_ratio_min = float(ceiling_identity["ratio_min"])
+        except (KeyError, TypeError, ValueError):
+            errors.append("frozen feeding ratio threshold is invalid")
+        else:
+            if frozen_ratio_min != ratio_min:
+                errors.append("feeding ratio threshold drifted")
+    if isinstance(rehearsal_identity, dict):
+        errors.extend(
+            _project_identity_errors(
+                project_root,
+                project_archive,
+                rehearsal_identity,
+            )
+        )
+    if isinstance(ceiling_identity, dict):
+        errors.extend(
+            _ceiling_identity_errors(
+                ceiling_root,
+                ceiling_archive,
+                ceiling_identity,
+            )
+        )
+    project_rows = _read_csv(project_root / "group_runs.csv", errors)
+    ceiling_rows = _read_csv(ceiling_root / "group_runs.csv", errors)
     proposed = [row for row in project_rows if row.get("scenario_id") == PROPOSED]
     if len(proposed) != 1:
         errors.append("project root must contain exactly one SAOR rehearsal cell")
@@ -98,7 +148,7 @@ def summarize_feeding_ceiling(
         errors.append("ceiling root must contain exactly one result cell")
     if errors:
         return {
-            "schema_version": 1,
+            "schema_version": 2,
             "status": "invalid_evidence",
             "evidence_valid": False,
             "feeding_gate_passed": False,
@@ -148,7 +198,7 @@ def summarize_feeding_ceiling(
     )
     gate_passed = bool(ratio is not None and ratio >= ratio_min)
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": (
             "passed"
             if gate_passed
@@ -164,13 +214,172 @@ def summarize_feeding_ceiling(
         "project_tokens_per_s": project_tokens_per_s,
         "ceiling_tokens_per_s": ceiling_tokens_per_s,
         "feeding_ratio": ratio,
+        "evidence_scope": "sealed_artifact_identity_and_feeding_arithmetic",
+        "pre_run_clean_gate_evidence_status": (
+            "unavailable:not_structured_for_postgresql_and_ray"
+        ),
+        "paper_reproducibility_complete": False,
+        "artifact_identity": {
+            "project_root_id": (
+                rehearsal_identity.get("root_id")
+                if isinstance(rehearsal_identity, dict)
+                else None
+            ),
+            "ceiling_root_id": (
+                ceiling_identity.get("root_id")
+                if isinstance(ceiling_identity, dict)
+                else None
+            ),
+            "project_group_runs_sha256": _optional_sha256(
+                project_root / "group_runs.csv"
+            ),
+            "ceiling_group_runs_sha256": _optional_sha256(
+                ceiling_root / "group_runs.csv"
+            ),
+            "project_archive_sha256": _optional_sha256(project_archive),
+            "ceiling_archive_sha256": _optional_sha256(ceiling_archive),
+        },
         "errors": errors,
     }
 
 
-def _read_csv(path: Path) -> list[dict[str, str]]:
-    with path.open("r", newline="", encoding="utf-8") as handle:
-        return list(csv.DictReader(handle))
+def _project_identity_errors(
+    root: Path,
+    archive: Path | None,
+    expected: dict[str, object],
+) -> list[str]:
+    errors = _common_identity_errors(root, archive, expected, "project")
+    snapshot = _checked_json(
+        root / "project_mechanism_contract.json",
+        expected.get("contract_snapshot_sha256"),
+        "project contract snapshot",
+        errors,
+    )
+    if snapshot is not None and (
+        snapshot.get("contract_sha256") != expected.get("run_contract_sha256")
+    ):
+        errors.append("project run contract SHA drifted")
+    validation_path = root / "rehearsal_validation.json"
+    if _optional_sha256(validation_path) != expected.get("validation_sha256"):
+        errors.append("project rehearsal validation SHA drifted")
+    validation = _read_json(validation_path, "project rehearsal validation", errors)
+    if validation is not None:
+        if validation.get("status") != "passed":
+            errors.append("project rehearsal validation did not pass")
+        if validation.get("errors") != []:
+            errors.append("project rehearsal validation contains errors")
+    return errors
+
+
+def _ceiling_identity_errors(
+    root: Path,
+    archive: Path | None,
+    expected: dict[str, object],
+) -> list[str]:
+    errors = _common_identity_errors(root, archive, expected, "ceiling")
+    snapshot = _checked_json(
+        root / "feeding_ceiling_contract.json",
+        expected.get("contract_snapshot_sha256"),
+        "ceiling contract snapshot",
+        errors,
+    )
+    if snapshot is not None:
+        for field in (
+            "reference_contract_sha256",
+            "reference_config_sha256",
+            "ceiling_config_sha256",
+        ):
+            if snapshot.get(field) != expected.get(field):
+                errors.append(f"ceiling snapshot {field} drifted")
+    return errors
+
+
+def _common_identity_errors(
+    root: Path,
+    archive: Path | None,
+    expected: dict[str, object],
+    label: str,
+) -> list[str]:
+    errors: list[str] = []
+    group_path = root / "group_runs.csv"
+    if _optional_sha256(group_path) != expected.get("group_runs_sha256"):
+        errors.append(f"{label} group_runs SHA drifted")
+    manifest = _checked_json(
+        root / "manifest.json",
+        expected.get("manifest_sha256"),
+        f"{label} manifest",
+        errors,
+    )
+    if manifest is not None:
+        for field in (
+            "experiment_id",
+            "repository_commit",
+            "config_fingerprint",
+        ):
+            if manifest.get(field) != expected.get(field):
+                errors.append(f"{label} manifest {field} drifted")
+        if manifest.get("status") != "completed":
+            errors.append(f"{label} manifest is not completed")
+        if manifest.get("incidents") != []:
+            errors.append(f"{label} manifest contains incidents")
+        run_instance_id = manifest.get("run_instance_id")
+        root_id = expected.get("root_id")
+        if not (
+            isinstance(run_instance_id, str)
+            and isinstance(root_id, str)
+            and run_instance_id.startswith(f"{root_id}-")
+        ):
+            errors.append(f"{label} manifest root identity drifted")
+    if archive is None:
+        errors.append(f"{label} archive was not supplied")
+    elif _optional_sha256(archive) != expected.get("archive_sha256"):
+        errors.append(f"{label} archive SHA drifted")
+    return errors
+
+
+def _checked_json(
+    path: Path,
+    expected_sha256: object,
+    label: str,
+    errors: list[str],
+) -> dict[str, object] | None:
+    if _optional_sha256(path) != expected_sha256:
+        errors.append(f"{label} SHA drifted")
+    return _read_json(path, label, errors)
+
+
+def _read_json(
+    path: Path,
+    label: str,
+    errors: list[str],
+) -> dict[str, object] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        errors.append(f"{label} is unavailable or invalid")
+        return None
+    if not isinstance(payload, dict):
+        errors.append(f"{label} must be a JSON object")
+        return None
+    return payload
+
+
+def _read_csv(
+    path: Path,
+    errors: list[str],
+) -> list[dict[str, str]]:
+    try:
+        with path.open("r", newline="", encoding="utf-8") as handle:
+            return list(csv.DictReader(handle))
+    except OSError:
+        errors.append(f"{path.name} is unavailable")
+        return []
+
+
+def _optional_sha256(path: Path | None) -> str | None:
+    if path is None or not path.is_file():
+        return None
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def write_summary(path: Path, payload: dict[str, object]) -> None:

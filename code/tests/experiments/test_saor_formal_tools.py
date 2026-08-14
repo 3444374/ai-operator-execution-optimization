@@ -578,9 +578,138 @@ class SaorFormalToolsTests(unittest.TestCase):
                 ],
             )
 
-            result = summarize_feeding_ceiling(project, ceiling)
+            csv_only = summarize_feeding_ceiling(project, ceiling)
+            self.assertFalse(csv_only["evidence_valid"])
+            self.assertEqual(csv_only["status"], "invalid_evidence")
+
+            project_manifest = {
+                "experiment_id": "project-experiment",
+                "repository_commit": "a" * 40,
+                "config_fingerprint": "project-config",
+                "run_instance_id": "project-root-run",
+                "status": "completed",
+                "incidents": [],
+            }
+            ceiling_manifest = {
+                "experiment_id": "ceiling-experiment",
+                "repository_commit": "b" * 40,
+                "config_fingerprint": "ceiling-config",
+                "run_instance_id": "ceiling-root-run",
+                "status": "completed",
+                "incidents": [],
+            }
+            project_snapshot = {"contract_sha256": "run-contract"}
+            ceiling_snapshot = {
+                "reference_contract_sha256": "reference-contract",
+                "reference_config_sha256": "reference-config",
+                "ceiling_config_sha256": "ceiling-config-file",
+            }
+            project_validation = {"status": "passed", "errors": []}
+            for path, payload in (
+                (project / "manifest.json", project_manifest),
+                (
+                    project / "project_mechanism_contract.json",
+                    project_snapshot,
+                ),
+                (
+                    project / "rehearsal_validation.json",
+                    project_validation,
+                ),
+                (ceiling / "manifest.json", ceiling_manifest),
+                (
+                    ceiling / "feeding_ceiling_contract.json",
+                    ceiling_snapshot,
+                ),
+            ):
+                path.write_text(json.dumps(payload), encoding="utf-8")
+            project_archive = root / "project.tar.gz"
+            ceiling_archive = root / "ceiling.tar.gz"
+            project_archive.write_bytes(b"project archive")
+            ceiling_archive.write_bytes(b"ceiling archive")
+            evidence_contract = {
+                "rehearsal_validation": {
+                    "experiment_id": project_manifest["experiment_id"],
+                    "repository_commit": project_manifest[
+                        "repository_commit"
+                    ],
+                    "config_fingerprint": project_manifest[
+                        "config_fingerprint"
+                    ],
+                    "root_id": "project-root",
+                    "group_runs_sha256": project_formal_sha256(
+                        project / "group_runs.csv"
+                    ),
+                    "manifest_sha256": project_formal_sha256(
+                        project / "manifest.json"
+                    ),
+                    "contract_snapshot_sha256": project_formal_sha256(
+                        project / "project_mechanism_contract.json"
+                    ),
+                    "run_contract_sha256": "run-contract",
+                    "validation_sha256": project_formal_sha256(
+                        project / "rehearsal_validation.json"
+                    ),
+                    "archive_sha256": project_formal_sha256(project_archive),
+                },
+                "feeding_validation": {
+                    "experiment_id": ceiling_manifest["experiment_id"],
+                    "repository_commit": ceiling_manifest[
+                        "repository_commit"
+                    ],
+                    "config_fingerprint": ceiling_manifest[
+                        "config_fingerprint"
+                    ],
+                    "root_id": "ceiling-root",
+                    "group_runs_sha256": project_formal_sha256(
+                        ceiling / "group_runs.csv"
+                    ),
+                    "manifest_sha256": project_formal_sha256(
+                        ceiling / "manifest.json"
+                    ),
+                    "contract_snapshot_sha256": project_formal_sha256(
+                        ceiling / "feeding_ceiling_contract.json"
+                    ),
+                    "reference_contract_sha256": "reference-contract",
+                    "reference_config_sha256": "reference-config",
+                    "ceiling_config_sha256": "ceiling-config-file",
+                    "archive_sha256": project_formal_sha256(ceiling_archive),
+                    "ratio_min": 0.95,
+                },
+            }
+            self_authored = summarize_feeding_ceiling(
+                project,
+                ceiling,
+                evidence_contract=evidence_contract,
+                project_archive=project_archive,
+                ceiling_archive=ceiling_archive,
+            )
+            self.assertFalse(self_authored["evidence_valid"])
+            self.assertIn(
+                "feeding summary rehearsal identity is not frozen",
+                self_authored["errors"],
+            )
+            with (
+                patch(
+                    "src.experiments.saor.feeding_ceiling."
+                    "REVIEWED_REHEARSAL_EVIDENCE",
+                    evidence_contract["rehearsal_validation"],
+                ),
+                patch(
+                    "src.experiments.saor.feeding_ceiling."
+                    "FROZEN_FEEDING_EVIDENCE",
+                    evidence_contract["feeding_validation"],
+                ),
+            ):
+                result = summarize_feeding_ceiling(
+                    project,
+                    ceiling,
+                    evidence_contract=evidence_contract,
+                    project_archive=project_archive,
+                    ceiling_archive=ceiling_archive,
+                )
             self.assertTrue(result["evidence_valid"])
             self.assertFalse(result["feeding_gate_passed"])
+            self.assertFalse(result["paper_reproducibility_complete"])
             self.assertEqual(result["status"], "failed_feeding")
 
             rows = list(
@@ -592,7 +721,25 @@ class SaorFormalToolsTests(unittest.TestCase):
             )
             rows[0]["request_manifest_sha256"] = '["x", "y"]'
             self._write_group_rows(ceiling / "group_runs.csv", rows)
-            invalid = summarize_feeding_ceiling(project, ceiling)
+            with (
+                patch(
+                    "src.experiments.saor.feeding_ceiling."
+                    "REVIEWED_REHEARSAL_EVIDENCE",
+                    evidence_contract["rehearsal_validation"],
+                ),
+                patch(
+                    "src.experiments.saor.feeding_ceiling."
+                    "FROZEN_FEEDING_EVIDENCE",
+                    evidence_contract["feeding_validation"],
+                ),
+            ):
+                invalid = summarize_feeding_ceiling(
+                    project,
+                    ceiling,
+                    evidence_contract=evidence_contract,
+                    project_archive=project_archive,
+                    ceiling_archive=ceiling_archive,
+                )
             self.assertFalse(invalid["evidence_valid"])
             self.assertEqual(invalid["status"], "invalid_evidence")
 
@@ -1262,6 +1409,12 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "completions",
                     "--completion-prompt-format",
                     "raw",
+                    "--completion-prompt-token-overhead",
+                    "29",
+                    "--completion-max-tokens",
+                    "8",
+                    "--output-cost-mode",
+                    "fixed_output_cap",
                     "--completion-temperature",
                     "0",
                     "--request-slo-ms",
@@ -1312,6 +1465,7 @@ class SaorFormalToolsTests(unittest.TestCase):
 
             self.assertEqual(len(evidence), 2)
             self.assertEqual(evidence[0]["actual_work"], 24)
+            self.assertEqual(evidence[0]["predicted_work"], 82)
             self.assertEqual(evidence[0]["expected_count"], 2)
             self.assertEqual(evidence[0]["completed_count"], 2)
             self.assertTrue(evidence[0]["exactly_once"])

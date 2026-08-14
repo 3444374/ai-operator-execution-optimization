@@ -183,6 +183,11 @@ feeding-saturation 又是另一层门：GPU utilization、MFU、功率、running
 13,684.90/12,713.03 tok/s，即 92.898%；因此结论是 evidence-valid feeding-negative，而不是“GPU
 已经很忙所以可以继续 formal”。
 
+`evidence_valid` 也必须写清适用域。本次 schema 2 表示封存 artifact identity 和 feeding arithmetic
+闭合：group、manifest、合同快照、validation、archive SHA 全匹配；它不自动证明运行前 PG/Ray
+clean，也不把单个 warmup-identity ceiling 变成稳定性统计。predicted work 若未使用同一个 typed
+chat-template overhead，只能标“坏，不用”，不能混入 normalized-service 解释。
+
 本次 profiler CSV 字段发生变化，下一轮必须使用新的结果目录，不能向旧 header
 追加。vLLM 版本若不暴露 histogram bucket，TTFT/ITL 分位状态会是 unavailable；
 价格、检索真值或多候选 decision context 缺失时同样 fail-closed。这样的“缺失”是

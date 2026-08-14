@@ -21,13 +21,13 @@ from src.experiments.scenarios.core import (  # noqa: E402
     build_scenario_schedule,
     validate_service_metadata,
 )
+from src.experiments.shared_vllm.preflight import wait_for_idle  # noqa: E402
 from scripts.experiments.run_ai_operator_scenarios import (  # noqa: E402
     RunnerOptions,
     _load_config,
     _verify_service_flags_match_live,
     parse_args,
     run_experiment,
-    wait_for_idle,
 )
 
 
@@ -559,14 +559,14 @@ class ExperimentScenarioTests(unittest.TestCase):
         health_response.__exit__.return_value = False
         with (
             patch(
-                "scripts.experiments.run_ai_operator_scenarios.request.urlopen",
+                "src.experiments.shared_vllm.preflight.request.urlopen",
                 side_effect=[health_response, OSError("metrics unavailable")],
             ),
             patch(
-                "scripts.experiments.run_ai_operator_scenarios.time.monotonic",
+                "src.experiments.shared_vllm.preflight.time.monotonic",
                 side_effect=[0.0, 0.0, 2.0],
             ),
-            patch("scripts.experiments.run_ai_operator_scenarios.time.sleep"),
+            patch("src.experiments.shared_vllm.preflight.time.sleep"),
         ):
             with self.assertRaisesRegex(
                 TimeoutError,
@@ -589,14 +589,14 @@ class ExperimentScenarioTests(unittest.TestCase):
         metrics_response.__exit__.return_value = False
         with (
             patch(
-                "scripts.experiments.run_ai_operator_scenarios.request.urlopen",
+                "src.experiments.shared_vllm.preflight.request.urlopen",
                 side_effect=[health_response, metrics_response],
             ),
             patch(
-                "scripts.experiments.run_ai_operator_scenarios.time.monotonic",
+                "src.experiments.shared_vllm.preflight.time.monotonic",
                 side_effect=[0.0, 0.0, 2.0],
             ),
-            patch("scripts.experiments.run_ai_operator_scenarios.time.sleep"),
+            patch("src.experiments.shared_vllm.preflight.time.sleep"),
         ):
             with self.assertRaisesRegex(
                 TimeoutError,

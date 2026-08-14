@@ -12,11 +12,9 @@ import os
 import re
 import subprocess
 import sys
-import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable
-from urllib import error, request
 
 CODE_ROOT = next(
     parent
@@ -36,7 +34,7 @@ from src.experiments.scenarios.core import (  # noqa: E402
     build_scenario_schedule,
     validate_service_metadata,
 )
-from src.observability.metrics import parse_prometheus_metrics  # noqa: E402
+from src.experiments.shared_vllm.preflight import wait_for_idle  # noqa: E402
 from src.baselines.common.redact import (  # noqa: E402
     redact_argument_list as _redact_argument_list,
     redact_database_url as _redact_database_url,
@@ -559,53 +557,6 @@ def _run_key_from_mapping(item: dict) -> tuple[str, str, int]:
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("manifest contains an invalid run identity") from exc
-
-
-def wait_for_idle(
-    health_url: str,
-    metrics_urls: tuple[str, ...],
-    timeout_s: float,
-) -> None:
-    deadline_s = time.monotonic() + timeout_s
-    last_reason = "not checked"
-    while time.monotonic() < deadline_s:
-        try:
-            with request.urlopen(health_url, timeout=2.0) as response:
-                healthy = response.status == 200
-        except (OSError, error.URLError) as exc:
-            healthy = False
-            last_reason = f"health:{type(exc).__name__}"
-        if healthy:
-            all_idle = True
-            for metrics_url in metrics_urls:
-                try:
-                    with request.urlopen(metrics_url, timeout=2.0) as response:
-                        metrics = parse_prometheus_metrics(
-                            response.read().decode("utf-8", errors="replace")
-                        )
-                    running = metrics.get("vllm:num_requests_running")
-                    waiting = metrics.get("vllm:num_requests_waiting")
-                    if running is None or waiting is None:
-                        all_idle = False
-                        last_reason = f"missing_idle_metrics_at_{metrics_url}"
-                        break
-                    if running != 0 or waiting != 0:
-                        all_idle = False
-                        last_reason = (
-                            f"busy_at_{metrics_url}:"
-                            f"running={running},waiting={waiting}"
-                        )
-                        break
-                except (OSError, error.URLError) as exc:
-                    all_idle = False
-                    last_reason = (
-                        f"metrics_at_{metrics_url}:{type(exc).__name__}"
-                    )
-                    break
-            if all_idle:
-                return
-        time.sleep(0.25)
-    raise TimeoutError(f"model service did not become idle: {last_reason}")
 
 
 def _load_config(path: Path) -> ScenarioExperimentConfig:

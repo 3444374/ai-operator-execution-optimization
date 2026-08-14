@@ -494,3 +494,10 @@ registered-ready ledger，因此 lag/no-service 是 N/A，不是 0。
 补齐。但当前完整签名 bounded-client 为 13,684.90 tok/s，SAOR 为 12,713.03 tok/s，feeding ratio
 只有 92.898%，没有达到预注册 95%。所以机制 rehearsal 仍有效，当前性能 formal 却必须停止：
 不能因为 GPU utilization 接近 100% 而跳过门禁，也不能调 K/W、降低阈值或重跑到通过。
+
+这里的“有效”要再拆一层：新汇总器已经证明两侧 group CSV、manifest、运行合同、validation 与
+archive SHA 属于冻结 artifact，并复算 ratio；但运行前 PostgreSQL/Ray clean 没有结构化记录，且
+ceiling 只有一个 warmup-identity cell。因此论文只能写“一次性 gate 的负判决”，不能写“稳定损失
+7.10%”。封存 direct 的 predicted work 还漏掉每请求 29 个模板 token；它不影响 actual-token
+feeding，但 predicted/normalized-service 附属字段必须禁用。新代码已通过 typed work-cost 修正未来
+证据，不修改旧 raw。

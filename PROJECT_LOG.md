@@ -6836,3 +6836,21 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   `evidence_valid=true AND feeding_gate_passed=true`，因此不能绕过该负结果。
 - 当前六臂 rehearsal 的机制闭环仍有效，但性能归因 1+3 停止。若继续研究 7.10% gap，必须另立
   diagnostic/候选合同分解 W envelope、actor transport 与固定路径开销，不修改原合同或重跑追正。
+
+## 2026-08-14 SAOR feeding 证据工具与结论强度复核
+
+- 修正 feeding summarizer 的过强 `evidence_valid`：旧实现只比较两份 `group_runs.csv`，人工两行也能
+  通过。新 schema 2 强制传入 evaluation contract 与 project/ceiling 两个 archive，并逐项核验两侧
+  group CSV、completed manifest（commit/config/root/incident）、运行时合同快照、project rehearsal
+  validation 和 archive SHA；任一缺失/漂移均为 `invalid_evidence`。
+- 离线重算保持 13,684.8971/12,713.0254 tok/s 与 ratio=0.928982 不变；新 validation SHA 为
+  `b439fe08bbc6fe187bce3a48926a653e1a0b40938562bb0ed1f61f026a3bfbb1`。输出明确限定 scope 为
+  sealed artifact identity + feeding arithmetic，并因历史运行缺结构化 PG/Ray clean gate 标记
+  `paper_reproducibility_complete=false`。
+- direct predicted work 改用 typed `CompletionWorkCostConfig.estimated_work()`，补入每请求 29-token
+  overhead。封存 raw 的 699,113/169,713 各少 14,848，相关 predicted/normalized-service 附属指标
+  标坏、不回写 archive；actual-token feeding ratio 不受影响。
+- 将 shared-vLLM runner CLI 解析和 endpoint idle gate 移到 `code/src/experiments/shared_vllm/`；feeding
+  CLI 不再跨 `scripts/` 导入。服务器已关机，本轮只做本地离线重算与测试，不连接或启动 GPU。
+- 结论措辞收紧为“在冻结的一次性 feeding gate 下得到有效负判决”；n=1 且跨时间封存比较不能写成
+  “统计证明 Project 路径稳定损失 7.10%”。formal 停止判决不变。

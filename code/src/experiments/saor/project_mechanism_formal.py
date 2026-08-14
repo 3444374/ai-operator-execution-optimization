@@ -53,8 +53,24 @@ EXPECTED_SCENARIOS = {
 # update before a formal run can be authorized.
 REVIEWED_REHEARSAL_EVIDENCE: dict[str, object] = {
     "status": "passed_independent_review",
+    "experiment_id": "saor_project_mechanism_formal",
     "repository_commit": "63d1730058923609808bec6e3b91ed26a2cd581a",
     "root_id": "saor_project_mechanism_rehearsal_63d17300_20260814",
+    "config_fingerprint": (
+        "32097c6a648feb3bc2353a7840b795c743c9430e05efedef582acb3461525ca7"
+    ),
+    "group_runs_sha256": (
+        "6343eb230d7fa537463fbc8381b18434bae30353d2135a5e21c6a4d3804547d5"
+    ),
+    "manifest_sha256": (
+        "d93a72c4a5a4a9f1ca36812ba70eb6a0c9a4b70bd59abc0b9d94fc61edfa8d6b"
+    ),
+    "contract_snapshot_sha256": (
+        "566a3a30b154bc315dd2232182f70b92f3d83e698d9ef8ff6ff9d0e91e2a2cae"
+    ),
+    "run_contract_sha256": (
+        "e493b3cebf674890ee7c0003ee797e9364a6b9fb76dbc489346da67b80caca55"
+    ),
     "validation_sha256": (
         "4f19e0b70c13d4a67a24015ff33444a95a8bab4b773052b62716bfc39540b668"
     ),
@@ -73,10 +89,32 @@ REVIEWED_REHEARSAL_EVIDENCE: dict[str, object] = {
 # rather than rewriting this result or lowering the threshold.
 FROZEN_FEEDING_EVIDENCE: dict[str, object] = {
     "status": "failed_feeding",
+    "experiment_id": "saor_project_feeding_ceiling",
     "repository_commit": "c988622a643699925faeeb3cecc4c351913b728b",
     "root_id": "saor_project_feeding_ceiling_c988622a_20260814_retry2",
+    "config_fingerprint": (
+        "ae0e67f49d87af575b18231f8f4d2a52e9b47f3ea76fd012a9ef866183b4a0ec"
+    ),
+    "group_runs_sha256": (
+        "869e44fde23e36c4f8f161edd643b5264c07ca8a50aba453c3eeb81fa78fa489"
+    ),
+    "manifest_sha256": (
+        "cc708717c2b1a1debe417365ae8b17b527e063d9bcfb445e7613b9a524914e34"
+    ),
+    "contract_snapshot_sha256": (
+        "e4608a84f0710d756fa7e2812472f8bd0284893247da913723efc3cbf9de8e92"
+    ),
+    "reference_contract_sha256": (
+        "a52066ca50584fb4321e17b23a7b41754fafc668577ffcf921d2d33bbd029633"
+    ),
+    "reference_config_sha256": (
+        "2a38363494935bbefd8ca830bb0795d478b33b4753415d07c8bb156c33e54ae5"
+    ),
+    "ceiling_config_sha256": (
+        "eca442cff77109b6b02663fde34244cc05a9a08d156ef25af817bbe4a584d527"
+    ),
     "validation_sha256": (
-        "6c656f25b8128fe102a06b65093c8be7e593f182029febc68201af265cdba3d5"
+        "b439fe08bbc6fe187bce3a48926a653e1a0b40938562bb0ed1f61f026a3bfbb1"
     ),
     "archive_sha256": (
         "ebf5c35a699ff034891855d14c3332dbe42dabef3ede1f0641d3ac18a4079fb2"
@@ -87,6 +125,11 @@ FROZEN_FEEDING_EVIDENCE: dict[str, object] = {
     "project_tokens_per_s": 12713.02535346175,
     "ceiling_tokens_per_s": 13684.897101379862,
     "feeding_ratio": 0.9289821661998381,
+    "evidence_scope": "sealed_artifact_identity_and_feeding_arithmetic",
+    "pre_run_clean_gate_evidence_status": (
+        "unavailable:not_structured_for_postgresql_and_ray"
+    ),
+    "paper_reproducibility_complete": False,
 }
 
 

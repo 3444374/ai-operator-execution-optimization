@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "status": "failed_feeding",
   "evidence_valid": true,
   "feeding_gate_passed": false,
@@ -9,5 +9,16 @@
   "project_tokens_per_s": 12713.02535346175,
   "ceiling_tokens_per_s": 13684.897101379862,
   "feeding_ratio": 0.9289821661998381,
+  "evidence_scope": "sealed_artifact_identity_and_feeding_arithmetic",
+  "pre_run_clean_gate_evidence_status": "unavailable:not_structured_for_postgresql_and_ray",
+  "paper_reproducibility_complete": false,
+  "artifact_identity": {
+    "project_root_id": "saor_project_mechanism_rehearsal_63d17300_20260814",
+    "ceiling_root_id": "saor_project_feeding_ceiling_c988622a_20260814_retry2",
+    "project_group_runs_sha256": "6343eb230d7fa537463fbc8381b18434bae30353d2135a5e21c6a4d3804547d5",
+    "ceiling_group_runs_sha256": "869e44fde23e36c4f8f161edd643b5264c07ca8a50aba453c3eeb81fa78fa489",
+    "project_archive_sha256": "5f267dc5847529e8dcea7a4415d52a3e1675a4a983c5190c164ef67af552cedd",
+    "ceiling_archive_sha256": "ebf5c35a699ff034891855d14c3332dbe42dabef3ede1f0641d3ac18a4079fb2"
+  },
   "errors": []
 }

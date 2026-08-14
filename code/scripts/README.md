@@ -91,6 +91,10 @@ HTTP semaphore + vLLM FCFS。`analysis/summarize_saor_feeding_ceiling.py` 再区
 与 ≥95% feeding gate：合法的 92% 结果写为 `failed_feeding` 且退出码仍允许归档，不会被伪装成
 基础设施失败或自动授权 formal。当前冻结结果为 direct 13,684.90 tok/s、SAOR 12,713.03 tok/s、
 ratio=92.898%，因此当前合同不再等待 ceiling，而是终止 formal。
+汇总 CLI 现在强制传入 evaluation contract 与 project/ceiling 两个完整 archive；只有 group CSV、
+manifest commit/config/root、运行时合同快照、rehearsal validation 和 archive SHA 全部匹配，才会
+设置 `evidence_valid=true`。可复用 runner 参数解析和 endpoint idle gate 位于
+`src/experiments/shared_vllm/{cli,preflight}.py`，feeding CLI 不再跨 `scripts/` 导入。
 
 `analysis/audit_chat_prompt_overhead.py` 从 `jobs/*.requests.csv` 与
 `jobs/*.submissions.csv` 按 submission ID 独立重算

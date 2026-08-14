@@ -219,8 +219,9 @@ PostgreSQL source
   service lag −13.15%、longest no-service +0.014%，因此只晋级为待 1+3 验证的 Pareto 候选，
   未证明胜出。独立 raw/SHA/指标复核已通过；授权 validator 已逐字段绑定 validation SHA、
   commit/root/archive/valid-rehearsal，不完整 fairness trace 分支也已 fail-closed 修复，六臂全组件
-  指标已重汇总。当前完整签名 direct ceiling 为 13,684.90 tok/s，SAOR feeding=92.898%，
-  `evidence_valid=true` 但低于 95%；wrapper/formal contract 已冻结为
+  指标已重汇总。当前一次性完整签名 direct ceiling 为 13,684.90 tok/s，SAOR
+  feeding=92.898%<95%；两侧 group/manifest/运行合同/validation/archive SHA 已绑定，足以按冻结 gate
+  停止当前 formal，但缺结构化 PG/Ray clean record，不能声称稳定损失 7.10%。wrapper/formal contract 已冻结为
   `locked_failed_feeding/formal_authorized=false`，当前 1+3 formal 停止。不能下调门槛、调 K/W 或
   重跑六臂追正。并行的系统问题
   仍需补同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/project static/proposed

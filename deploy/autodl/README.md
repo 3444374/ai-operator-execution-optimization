@@ -1370,6 +1370,9 @@ PYTHONPATH=code "$DRIVER_PYTHON" \
   code/scripts/analysis/summarize_saor_feeding_ceiling.py \
   --project-root "$ARTIFACT_ROOT/saor_project_mechanism_rehearsal_63d17300_20260814" \
   --ceiling-root "$ARTIFACT_ROOT/saor_project_feeding_ceiling_<unique-id>" \
+  --evaluation-contract deploy/autodl/saor_project_mechanism_formal_contract.json \
+  --project-archive "$ARTIFACT_ROOT/saor_project_mechanism_rehearsal_63d17300_20260814.tar.gz" \
+  --ceiling-archive "$ARTIFACT_ROOT/saor_project_feeding_ceiling_<unique-id>.tar.gz" \
   --output "$ARTIFACT_ROOT/saor_project_feeding_ceiling_<unique-id>/feeding_validation.json"
 ```
 
@@ -1377,6 +1380,12 @@ summarizer 返回 0 表示证据结构有效，不等于 feeding 通过；必须
 `feeding_gate_passed`。若 ratio<0.95，保留 `failed_feeding` root 并停止 formal，不重跑六臂、
 不调 K/W、$0.125W_e$ 或 95% 门槛。当前 root 的 ratio=92.898%，所以后续“解锁后的 formal”
 命令仅保留为合同说明，当前不得执行。
+
+feeding summarizer 不再接受只有两行 `group_runs.csv` 的孤立输入；它逐项校验两侧 group CSV、
+manifest（completed/commit/config fingerprint/root identity）、运行时合同快照、project rehearsal
+validation 与完整 archive SHA。当前 sealed output 的 `evidence_valid` 仅表示这些 artifact identity
+和 feeding 算术闭合；旧运行没有保存结构化 PostgreSQL/Ray clean gate，故另报
+`paper_reproducibility_complete=false`，不得把一次 warmup-identity ceiling 写成稳定损失估计。
 
 解锁后的 formal 汇总入口为：
 
