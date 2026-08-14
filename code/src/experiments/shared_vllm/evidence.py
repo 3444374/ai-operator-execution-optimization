@@ -21,6 +21,7 @@ from .config import (
     SharedVllmScenario,
     _csv_argument_values,
 )
+from .work_evidence import join_request_submission_work
 
 _CODE_ROOT = Path(__file__).resolve().parents[3]
 
@@ -112,6 +113,8 @@ def _validate_job_evidence(
     scenario: SharedVllmScenario,
     identity: GroupRunIdentity,
     job_index: int,
+    *,
+    config: SharedVllmConfig | None = None,
 ) -> dict[str, object]:
     run_stem = (
         f"{identity.order_index:03d}_{identity.phase}_"
@@ -252,21 +255,73 @@ def _validate_job_evidence(
     ]
     jct_s = max(completion) - min(arrival)
     completed_in_slo = sum(slo_met)
-    actual_prompt_work = sum(int(row["prompt_tokens"]) for row in request_rows)
-    actual_output_work_by_request = []
-    for row in request_rows:
-        observed = row.get("actual_output_tokens")
-        fallback = (
-            row.get("client_estimated_output_tokens")
-            or row["estimated_output_tokens"]
+    if config is not None and config.fail_closed_rehearsal:
+        joined_work = join_request_submission_work(
+            request_rows,
+            submission_rows,
+            work_cost=config.completion_work_cost,
+            context=f"{scenario.scenario_id}/job-{job_index}",
+            require_endpoint_usage=True,
+            require_estimate_upper_bound=True,
         )
-        actual_output_work_by_request.append(
-            int(observed) if observed not in (None, "") else int(fallback)
+        work_by_submission_id = {
+            item.submission_id: item for item in joined_work
+        }
+        actual_prompt_work = sum(
+            item.endpoint_prompt_tokens for item in joined_work
         )
-    actual_work_by_request = [
-        int(row["prompt_tokens"]) + output_work
-        for row, output_work in zip(request_rows, actual_output_work_by_request)
-    ]
+        actual_output_work_by_request = [
+            work_by_submission_id[str(row["submission_id"])].endpoint_output_tokens
+            for row in request_rows
+        ]
+        actual_work_by_request = [
+            work_by_submission_id[str(row["submission_id"])].actual_work
+            for row in request_rows
+        ]
+        predicted_work = sum(item.estimated_work for item in joined_work)
+        estimate_overrun_count = sum(
+            item.actual_work > item.estimated_work for item in joined_work
+        )
+        estimate_overrun_max = max(
+            (
+                item.actual_work - item.estimated_work
+                for item in joined_work
+            ),
+            default=0,
+        )
+        actual_work_source = "endpoint_usage_total_tokens"
+    else:
+        actual_prompt_work = sum(
+            int(row["prompt_tokens"]) for row in request_rows
+        )
+        actual_output_work_by_request = []
+        for row in request_rows:
+            observed = row.get("actual_output_tokens")
+            fallback = (
+                row.get("client_estimated_output_tokens")
+                or row["estimated_output_tokens"]
+            )
+            actual_output_work_by_request.append(
+                int(observed) if observed not in (None, "") else int(fallback)
+            )
+        actual_work_by_request = [
+            int(row["prompt_tokens"]) + output_work
+            for row, output_work in zip(
+                request_rows,
+                actual_output_work_by_request,
+            )
+        ]
+        predicted_work = sum(
+            int(row["prompt_tokens"])
+            + int(
+                row["client_estimated_output_tokens"]
+                or row["estimated_output_tokens"]
+            )
+            for row in request_rows
+        )
+        estimate_overrun_count = 0
+        estimate_overrun_max = 0
+        actual_work_source = "raw_prompt_plus_request_output"
     request_service_by_submission_id = {
         str(row.get("submission_id", "") or ""): (
             float(row["completion_epoch_s"]),
@@ -287,14 +342,6 @@ def _validate_job_evidence(
         for work, met in zip(actual_work_by_request, slo_met)
         if met
     ) / jct_s
-    predicted_work = sum(
-        int(row["prompt_tokens"])
-        + int(
-            row["client_estimated_output_tokens"]
-            or row["estimated_output_tokens"]
-        )
-        for row in request_rows
-    )
     endpoint_counts: dict[str, int] = {}
     for row in request_rows:
         endpoint_id = row["endpoint_id"]
@@ -318,9 +365,9 @@ def _validate_job_evidence(
         "actual_work": actual_work,
         "actual_prompt_work": actual_prompt_work,
         "actual_output_work": sum(actual_output_work_by_request),
-        "actual_work_source": (
-            "prompt_plus_actual_or_client_estimate_fallback"
-        ),
+        "actual_work_source": actual_work_source,
+        "actual_work_estimate_overrun_count": estimate_overrun_count,
+        "actual_work_estimate_overrun_max": estimate_overrun_max,
         "source_row_offset": expected_offset,
         "request_manifest_path": observed_manifest,
         "request_manifest_sha256": str(

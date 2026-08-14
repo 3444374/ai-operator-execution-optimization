@@ -1,6 +1,7 @@
 """Shared-vLLM multi-job configuration, metrics, evidence, and runner."""
 
 from .config import (
+    CompletionWorkCostConfig,
     GroupRunIdentity,
     RunnerOptions,
     SharedVllmConfig,

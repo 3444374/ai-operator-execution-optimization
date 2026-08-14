@@ -138,7 +138,11 @@ class ModelBackendTests(unittest.TestCase):
                         "finish_reason": "stop",
                     }
                 ],
-                "usage": {"total_tokens": 6},
+                "usage": {
+                    "prompt_tokens": 4,
+                    "completion_tokens": 2,
+                    "total_tokens": 6,
+                },
             }
         ).encode("utf-8")
 
@@ -288,6 +292,8 @@ class ModelBackendTests(unittest.TestCase):
         )
         self.assertNotIn("prompt", sent)
         self.assertEqual(result.outputs, ["answer"])
+        self.assertEqual(result.prompt_tokens, 4)
+        self.assertEqual(result.completion_tokens, 2)
 
     def test_fake_embedding_batch_returns_expected_shape(self) -> None:
         result = fake_embed_batch(sample_table(), embedding_dim=4, service_tokens_per_s=1_000_000.0)
@@ -426,6 +432,7 @@ class AsyncModelBackendTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(readiness["client_initialized"])
         self.assertEqual(first["output_text"], ["first", "second"])
         self.assertEqual(second["token_count"], 9)
+        self.assertEqual(second["token_count_source"], "endpoint_usage_total_tokens")
 
         await actor.close()
         self.assertTrue(client.is_closed)
@@ -442,7 +449,11 @@ class AsyncModelBackendTests(unittest.IsolatedAsyncioTestCase):
                         "finish_reason": "stop",
                     }
                 ],
-                "usage": {"total_tokens": 6},
+                "usage": {
+                    "prompt_tokens": 4,
+                    "completion_tokens": 2,
+                    "total_tokens": 6,
+                },
             }
         ).encode("utf-8")
 
@@ -495,6 +506,12 @@ class AsyncModelBackendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["rows"], 2)
         self.assertEqual(result["output_text"], ["answer", "answer"])
         self.assertEqual(result["token_count"], 12)
+        self.assertEqual(result["input_token_count"], 8)
+        self.assertEqual(result["output_token_count"], 4)
+        self.assertEqual(
+            result["input_token_count_source"],
+            "endpoint_usage_prompt_tokens",
+        )
         self.assertEqual((await actor.ready())["keepalive_expiry_s"], 3.5)
         for _, _, kwargs in actor._client.calls:
             self.assertEqual(len(kwargs["json"]["messages"]), 1)

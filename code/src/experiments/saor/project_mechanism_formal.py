@@ -6,16 +6,24 @@ an experiment can be valid while the proposed selector fails its Pareto gate.
 
 from __future__ import annotations
 
-import csv
 import hashlib
 import json
 import math
 from pathlib import Path
 
 from src.experiments.scenarios.core import build_scenario_schedule
-from src.experiments.shared_vllm.config import SharedVllmConfig
+from src.experiments.shared_vllm.config import (
+    CompletionWorkCostConfig,
+    SharedVllmConfig,
+)
 from src.experiments.shared_vllm.metrics import (
     completion_accounted_service_fairness,
+)
+from src.experiments.shared_vllm.work_evidence import (
+    cell_trace_paths,
+    joined_cell_work,
+    model_artifact_calibration_identity,
+    read_csv,
 )
 
 
@@ -39,21 +47,16 @@ EXPECTED_SCENARIOS = {
 }
 
 
-def _common_argument_value(
-    args: tuple[str, ...],
-    name: str,
-) -> str | None:
-    try:
-        index = args.index(name)
-    except ValueError:
-        return None
-    if index + 1 >= len(args):
-        return None
-    return args[index + 1]
-
-
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _is_sha256(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
 
 
 def load_contract(path: Path) -> dict[str, object]:
@@ -61,6 +64,102 @@ def load_contract(path: Path) -> dict[str, object]:
     if not isinstance(payload, dict):
         raise ValueError("Project mechanism contract must be a JSON object")
     return payload
+
+
+def work_cost_from_contract(
+    payload: dict[str, object],
+) -> CompletionWorkCostConfig:
+    work_cost = payload.get("work_cost_contract")
+    if not isinstance(work_cost, dict):
+        raise ValueError("mechanism contract lacks work_cost_contract")
+    protocol = work_cost.get("completion_protocol")
+    if protocol not in {"completions", "chat_completions"}:
+        raise ValueError("mechanism completion protocol is invalid")
+    overhead = work_cost.get("prompt_token_overhead_per_request")
+    if not isinstance(overhead, int) or isinstance(overhead, bool) or overhead < 0:
+        raise ValueError("mechanism prompt overhead is invalid")
+    return CompletionWorkCostConfig(
+        protocol=protocol,
+        prompt_token_overhead_per_request=overhead,
+    )
+
+
+def validate_calibration_artifact(
+    payload: dict[str, object],
+    config: SharedVllmConfig,
+) -> tuple[dict[str, object], list[str]]:
+    """Verify the runtime tokenizer/template artifact against the contract."""
+
+    errors: list[str] = []
+    work_cost = payload.get("work_cost_contract")
+    identity = (
+        work_cost.get("calibration_identity")
+        if isinstance(work_cost, dict)
+        else None
+    )
+    if not isinstance(identity, dict):
+        return {}, ["mechanism work-cost lacks calibration identity"]
+    try:
+        observed = model_artifact_calibration_identity(
+            config.completion_tokenizer_path
+        )
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        return {}, [str(exc)]
+    for key, value in observed.items():
+        if identity.get(key) != value:
+            errors.append(f"runtime calibration artifact {key} drifted")
+    expected_shape = (
+        "single_user_message_no_system"
+        if config.completion_work_cost.protocol == "chat_completions"
+        else "raw_prompt_array"
+    )
+    runtime_contract = {
+        "message_shape": expected_shape,
+        "prompt_format": config.completion_prompt_format,
+        "return_token_ids": config.completion_returns_token_ids,
+    }
+    for key, value in runtime_contract.items():
+        if identity.get(key) != value:
+            errors.append(f"runtime completion request {key} drifted")
+    return {**observed, **runtime_contract}, errors
+
+
+def calibration_snapshot_errors(
+    snapshot: dict[str, object],
+    payload: dict[str, object],
+) -> list[str]:
+    work_cost = payload.get("work_cost_contract")
+    expected = (
+        work_cost.get("calibration_identity")
+        if isinstance(work_cost, dict)
+        else None
+    )
+    readiness = snapshot.get("readiness")
+    observed = (
+        readiness.get("work_cost_calibration_identity")
+        if isinstance(readiness, dict)
+        else None
+    )
+    if not isinstance(expected, dict) or not isinstance(observed, dict):
+        return ["run snapshot lacks work-cost calibration identity"]
+    errors = []
+    for key, value in observed.items():
+        if expected.get(key) != value:
+            errors.append(f"run calibration snapshot {key} drifted")
+    required = {
+        "model_revision",
+        "tokenizer_revision",
+        "model_config_sha256",
+        "tokenizer_config_sha256",
+        "tokenizer_json_sha256",
+        "chat_template_sha256",
+        "message_shape",
+        "prompt_format",
+        "return_token_ids",
+    }
+    if set(observed) != required:
+        errors.append("run calibration snapshot field set is incomplete")
+    return errors
 
 
 def validate_contract(
@@ -101,6 +200,7 @@ def validate_contract(
     if observed != EXPECTED_SCENARIOS:
         errors.append("mechanism config does not match the frozen six-arm matrix")
 
+    authorized = payload.get("formal_authorized") is True
     work_cost = payload.get("work_cost_contract")
     if not isinstance(work_cost, dict):
         errors.append("mechanism contract lacks work_cost_contract")
@@ -109,30 +209,72 @@ def validate_contract(
             "completion_protocol": "chat_completions",
             "prompt_token_overhead_per_request": 29,
             "calibration_method": (
-                "endpoint_usage_minus_raw_prompt_minus_actual_output"
+                "endpoint_usage_prompt_tokens_minus_raw_prompt_tokens"
             ),
             "calibration_requests": 6144,
             "observed_min_tokens": 29,
             "observed_max_tokens": 29,
         }
-        if work_cost != expected_work_cost:
-            errors.append("mechanism work-cost calibration contract drifted")
-        configured_protocol = _common_argument_value(
-            config.common_args,
-            "--completion-protocol",
-        )
-        configured_overhead = _common_argument_value(
-            config.common_args,
-            "--completion-prompt-token-overhead",
-        )
-        if configured_protocol != work_cost.get("completion_protocol"):
-            errors.append("mechanism completion protocol drifted from work cost")
+        for key, expected in expected_work_cost.items():
+            if work_cost.get(key) != expected:
+                errors.append(f"mechanism work-cost {key} drifted")
         try:
-            overhead = int(configured_overhead or "")
-        except ValueError:
-            overhead = -1
-        if overhead != work_cost.get("prompt_token_overhead_per_request"):
-            errors.append("mechanism prompt-token overhead drifted from calibration")
+            configured_work_cost = config.completion_work_cost
+            contract_work_cost = work_cost_from_contract(payload)
+        except ValueError as exc:
+            errors.append(str(exc))
+        else:
+            if configured_work_cost != contract_work_cost:
+                errors.append(
+                    "mechanism typed work-cost config drifted from calibration"
+                )
+        calibration_identity = work_cost.get("calibration_identity")
+        required_identity = {
+            "model_id": "Qwen/Qwen2.5-7B-Instruct",
+            "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+            "model_config_sha256": (
+                "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c"
+            ),
+            "tokenizer_id": "Qwen/Qwen2.5-7B-Instruct",
+            "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+            "tokenizer_config_sha256": (
+                "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583"
+            ),
+            "tokenizer_json_sha256": (
+                "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539"
+            ),
+            "chat_template_sha256": (
+                "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f"
+            ),
+            "message_shape": "single_user_message_no_system",
+            "prompt_format": "raw",
+            "return_token_ids": True,
+        }
+        if calibration_identity != required_identity:
+            errors.append("mechanism work-cost calibration identity drifted")
+        calibration_evidence = work_cost.get("calibration_evidence")
+        if not isinstance(calibration_evidence, dict):
+            errors.append("mechanism work-cost lacks calibration evidence")
+        else:
+            predecessor = calibration_evidence.get(
+                "predecessor_failed_archive_sha256"
+            )
+            if not _is_sha256(predecessor):
+                errors.append("predecessor calibration archive SHA is invalid")
+            evidence_status = calibration_evidence.get("status")
+            if evidence_status not in {
+                "locked_pending_source_verified_rehearsal",
+                "source_verified_rehearsal",
+            }:
+                errors.append("work-cost calibration evidence status is invalid")
+            if authorized or evidence_status == "source_verified_rehearsal":
+                for key in (
+                    "calibration_artifact_sha256",
+                    "input_files_manifest_sha256",
+                    "validated_archive_sha256",
+                ):
+                    if not _is_sha256(calibration_evidence.get(key)):
+                        errors.append(f"work-cost calibration {key} is invalid")
 
     schedule = build_scenario_schedule(
         tuple(EXPECTED_SCENARIOS),
@@ -208,13 +350,15 @@ def validate_contract(
         ):
             errors.append("discrete recovery overshoot bound drifted")
 
-    authorized = payload.get("formal_authorized") is True
     if authorized:
         if payload.get("status") != "formal_ready":
             errors.append("authorized contract status must be formal_ready")
         rehearsal = payload.get("rehearsal_validation")
         if not isinstance(rehearsal, dict) or not rehearsal.get("sha256"):
             errors.append("formal authorization requires frozen rehearsal evidence")
+    else:
+        if payload.get("status") != "locked_pending_rehearsal":
+            errors.append("unauthorized contract must remain locked_pending_rehearsal")
     if formal_run and not authorized:
         errors.append("formal run is not authorized by the frozen contract")
     return errors
@@ -234,15 +378,11 @@ def contract_snapshot(
     }
 
 
-def read_csv(path: Path) -> list[dict[str, str]]:
-    with path.open(newline="", encoding="utf-8") as handle:
-        return list(csv.DictReader(handle))
-
-
 def completion_fairness_from_raw(
     root: Path,
     row: dict[str, str],
     *,
+    work_cost: CompletionWorkCostConfig | None = None,
     job_count: int = 2,
     weights: tuple[int, ...] = (1, 1),
 ) -> dict[str, float | int | str]:
@@ -254,33 +394,51 @@ def completion_fairness_from_raw(
     ]
     if not (root / "jobs").is_dir():
         return completion_accounted_service_fairness(unavailable, weights)
-    evidence = []
-    order = int(row["order_index"])
-    phase = row["phase"]
-    repeat = int(row["repeat_index"])
-    scenario = row["scenario_id"]
-    for job_index in range(job_count):
-        stem = f"{order:03d}_{phase}_{repeat}_{scenario}_job{job_index}"
-        request_path = root / "jobs" / f"{stem}.requests.csv"
-        submission_path = root / "jobs" / f"{stem}.submissions.csv"
-        if not request_path.is_file() or not submission_path.is_file():
+    if work_cost is None:
+        first_request_path, _first_submission_path = cell_trace_paths(
+            root,
+            row,
+            job_count=job_count,
+        )[0]
+        summary_path = first_request_path.with_name(
+            first_request_path.name.replace(".requests.csv", ".runs.csv")
+        )
+        if not summary_path.is_file():
             return completion_accounted_service_fairness(unavailable, weights)
-        requests = read_csv(request_path)
+        summary_rows = read_csv(summary_path)
+        if len(summary_rows) != 1:
+            return completion_accounted_service_fairness(unavailable, weights)
+        summary = summary_rows[0]
+        protocol = summary.get("completion_protocol", "")
+        if protocol not in {"completions", "chat_completions"}:
+            raise ValueError("raw fairness evidence has invalid protocol")
+        work_cost = CompletionWorkCostConfig(
+            protocol=protocol,
+            prompt_token_overhead_per_request=int(
+                summary.get("completion_prompt_token_overhead", "")
+            ),
+        )
+    try:
+        joined_by_job, _input_paths = joined_cell_work(
+            root,
+            row,
+            work_cost=work_cost,
+            job_count=job_count,
+            require_estimate_upper_bound=False,
+        )
+    except (OSError, TypeError, ValueError):
+        raise
+    evidence = []
+    trace_paths = cell_trace_paths(root, row, job_count=job_count)
+    for joined, (_request_path, submission_path) in zip(
+        joined_by_job,
+        trace_paths,
+    ):
         submissions = read_csv(submission_path)
-        service_by_id: dict[str, tuple[float, int]] = {}
-        for request in requests:
-            submission_id = str(request.get("submission_id", "") or "")
-            actual_output = request.get("actual_output_tokens", "")
-            output_work = int(
-                actual_output
-                if actual_output not in (None, "")
-                else request.get("client_estimated_output_tokens", "")
-                or request["estimated_output_tokens"]
-            )
-            service_by_id[submission_id] = (
-                float(request["completion_epoch_s"]),
-                int(request["prompt_tokens"]) + output_work,
-            )
+        service_by_id = {
+            item.submission_id: (item.completion_epoch_s, item.actual_work)
+            for item in joined
+        }
         lifecycle = []
         for submission in submissions:
             ready = submission.get("ready_epoch_s", "")
@@ -309,7 +467,7 @@ def completion_fairness_from_raw(
         evidence.append(
             {
                 "ready_lifecycle_complete": (
-                    bool(requests) and len(lifecycle) == len(requests)
+                    bool(joined) and len(lifecycle) == len(joined)
                 ),
                 "ready_lifecycle_rows": lifecycle,
             }

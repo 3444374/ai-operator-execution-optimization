@@ -214,6 +214,31 @@ class SaorReleaseControlConfig:
 
 
 @dataclass(frozen=True)
+class CompletionWorkCostConfig:
+    """Typed request-work contract shared by admission and evidence audits."""
+
+    protocol: Literal["completions", "chat_completions"]
+    prompt_token_overhead_per_request: int
+
+    def estimated_work(
+        self,
+        raw_prompt_tokens: int,
+        estimated_output_tokens: int,
+    ) -> int:
+        for value, name in (
+            (raw_prompt_tokens, "raw_prompt_tokens"),
+            (estimated_output_tokens, "estimated_output_tokens"),
+        ):
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                raise ValueError(f"{name} must be a non-negative integer")
+        return (
+            raw_prompt_tokens
+            + self.prompt_token_overhead_per_request
+            + estimated_output_tokens
+        )
+
+
+@dataclass(frozen=True)
 class SharedVllmConfig:
     experiment_id: str
     seed: int
@@ -240,6 +265,59 @@ class SharedVllmConfig:
     job_internal_arrival_contract: Literal["manifest_timed", "eager"] = (
         "manifest_timed"
     )
+
+    @property
+    def completion_work_cost(self) -> CompletionWorkCostConfig:
+        """Expose the CLI work-cost flags as one validated typed contract."""
+
+        protocol = _argument_value(
+            self.common_args,
+            "--completion-protocol",
+            "completions",
+        )
+        if protocol not in {"completions", "chat_completions"}:
+            raise ValueError("--completion-protocol is unsupported")
+        overhead_raw = _argument_value(
+            self.common_args,
+            "--completion-prompt-token-overhead",
+            "0",
+        )
+        try:
+            overhead = int(overhead_raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "--completion-prompt-token-overhead must be an integer"
+            ) from exc
+        if overhead < 0:
+            raise ValueError(
+                "--completion-prompt-token-overhead must be non-negative"
+            )
+        return CompletionWorkCostConfig(
+            protocol=protocol,
+            prompt_token_overhead_per_request=overhead,
+        )
+
+    @property
+    def completion_tokenizer_path(self) -> Path:
+        value = _argument_value(self.common_args, "--cost-tokenizer-id", "")
+        if not value:
+            raise ValueError("--cost-tokenizer-id is required")
+        return Path(value)
+
+    @property
+    def completion_prompt_format(self) -> str:
+        value = _argument_value(
+            self.common_args,
+            "--completion-prompt-format",
+            "raw",
+        )
+        if value not in {"raw", "chatml"}:
+            raise ValueError("--completion-prompt-format is unsupported")
+        return value
+
+    @property
+    def completion_returns_token_ids(self) -> bool:
+        return "--completion-return-token-ids" in self.common_args
 
 def load_config(path: Path) -> SharedVllmConfig:
     decoded = json.loads(path.read_text(encoding="utf-8"))

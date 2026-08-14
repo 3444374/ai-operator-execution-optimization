@@ -12,10 +12,31 @@
   "work_cost_contract": {
     "completion_protocol": "chat_completions",
     "prompt_token_overhead_per_request": 29,
-    "calibration_method": "endpoint_usage_minus_raw_prompt_minus_actual_output",
+    "calibration_method": "endpoint_usage_prompt_tokens_minus_raw_prompt_tokens",
     "calibration_requests": 6144,
     "observed_min_tokens": 29,
-    "observed_max_tokens": 29
+    "observed_max_tokens": 29,
+    "calibration_identity": {
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+      "model_config_sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+      "tokenizer_id": "Qwen/Qwen2.5-7B-Instruct",
+      "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+      "tokenizer_config_sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+      "tokenizer_json_sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "chat_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+      "message_shape": "single_user_message_no_system",
+      "prompt_format": "raw",
+      "return_token_ids": true
+    },
+    "calibration_evidence": {
+      "status": "locked_pending_source_verified_rehearsal",
+      "predecessor_failed_root": "saor_project_mechanism_rehearsal_d85724fb_20260814",
+      "predecessor_failed_archive_sha256": "d6173313aeb9cc2ca60d2c5084fc346bfe8d3f7424546b1ae723cb3d485cfa4b",
+      "calibration_artifact_sha256": null,
+      "input_files_manifest_sha256": null,
+      "validated_archive_sha256": null
+    }
   },
   "decision_contract": {
     "reference_scenario_id": "active_set_project_bounded_ready_vtc_style",

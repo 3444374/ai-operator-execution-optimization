@@ -3947,6 +3947,9 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                         "token_count": 30,
                         "input_token_count": 20,
                         "output_token_count": 10,
+                        "token_count_source": "endpoint_usage_total_tokens",
+                        "input_token_count_source": "endpoint_usage_prompt_tokens",
+                        "output_token_count_source": "endpoint_usage_completion_tokens",
                         "service_s": 0.2,
                         "service_start_epoch_s": 100.0,
                         "service_end_epoch_s": 100.2,
@@ -4020,7 +4023,11 @@ class SchedulingProfileHelperTests(unittest.TestCase):
                 "RayActorError: worker unavailable",
             )
             self.assertEqual(submission[1]["rows"], "0")
-            self.assertEqual(submission[0]["schema_version"], "6")
+            self.assertEqual(submission[0]["schema_version"], "7")
+            self.assertEqual(
+                submission[0]["token_count_source"],
+                "endpoint_usage_total_tokens",
+            )
             self.assertEqual(submission[0]["submission_id"], "9:request:11")
             self.assertEqual(submission[0]["planning_batch_id"], "9:batch:0")
             self.assertEqual(submission[0]["service_quantum_index"], "1")

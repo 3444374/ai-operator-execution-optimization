@@ -29,6 +29,7 @@ from scripts.experiments.run_shared_vllm_experiment import (  # noqa: E402
 from src.experiments.saor.project_mechanism_formal import (  # noqa: E402
     contract_snapshot,
     load_contract,
+    validate_calibration_artifact,
     validate_contract,
 )
 from src.experiments.shared_vllm.config import (  # noqa: E402
@@ -64,6 +65,15 @@ def prepare(
     )
     if readiness["status"] != "passed":
         errors.extend(str(error) for error in readiness["errors"])
+    calibration_identity, calibration_errors = validate_calibration_artifact(
+        payload,
+        config,
+    )
+    errors.extend(calibration_errors)
+    readiness = {
+        **readiness,
+        "work_cost_calibration_identity": calibration_identity,
+    }
     if errors:
         raise ValueError("; ".join(errors))
     return contract_snapshot(contract_path, payload, readiness)

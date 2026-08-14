@@ -1052,6 +1052,7 @@ def _run_group(
                     scenario,
                     identity,
                     job_index,
+                    config=config,
                 )
                 for job_index in range(scenario.job_count)
             ]

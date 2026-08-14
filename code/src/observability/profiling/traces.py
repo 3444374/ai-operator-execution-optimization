@@ -146,7 +146,7 @@ def write_submission_trace(
         append_metrics(
             output_path,
             {
-                "schema_version": 6,
+                "schema_version": 7,
                 "experiment_id": experiment_id,
                 "phase": phase,
                 "repeat_index": repeat_index,
@@ -272,6 +272,18 @@ def write_submission_trace(
                 "output_token_count": resolved_result.get(
                     "output_token_count",
                     0,
+                ),
+                "token_count_source": resolved_result.get(
+                    "token_count_source",
+                    "",
+                ),
+                "input_token_count_source": resolved_result.get(
+                    "input_token_count_source",
+                    "",
+                ),
+                "output_token_count_source": resolved_result.get(
+                    "output_token_count_source",
+                    "",
                 ),
                 "service_s": resolved_result.get("service_s", 0.0),
                 "service_start_epoch_s": resolved_result.get(

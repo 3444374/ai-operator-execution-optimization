@@ -27,10 +27,22 @@ from src.experiments.saor.project_mechanism_formal import (  # noqa: E402
     STATIC,
     STRICT_PRIORITY,
     VTC,
+    calibration_snapshot_errors,
     completion_fairness_from_raw,
     load_contract,
     read_csv,
     sha256_file,
+    work_cost_from_contract,
+)
+from src.experiments.shared_vllm.config import (  # noqa: E402
+    CompletionWorkCostConfig,
+)
+from src.experiments.shared_vllm.metrics import (  # noqa: E402
+    completion_accounted_service_fairness,
+)
+from src.experiments.shared_vllm.work_evidence import (  # noqa: E402
+    audit_work_cost_matrix,
+    joined_cell_work,
 )
 
 
@@ -69,6 +81,7 @@ def _cell_metrics(
     root: Path,
     row: dict[str, str],
     *,
+    work_cost: CompletionWorkCostConfig,
     expected_phase: str = "formal",
     expected_execution_mode: str = "configured_matrix",
 ) -> tuple[dict[str, object], list[str]]:
@@ -113,7 +126,53 @@ def _cell_metrics(
             > 0
         )
     )
-    fairness = completion_fairness_from_raw(root, row)
+    work_audit_passed = False
+    work_audit_requests = 0
+    work_audit_actual = 0
+    work_audit_estimated = 0
+    work_audit_overrun_events = 0
+    work_audit_overrun_max = 0
+    try:
+        work_by_job, _work_paths = joined_cell_work(
+            root,
+            row,
+            work_cost=work_cost,
+            require_estimate_upper_bound=False,
+        )
+        joined_work = [item for job in work_by_job for item in job]
+        overruns = [
+            item.actual_work - item.estimated_work
+            for item in joined_work
+            if item.actual_work > item.estimated_work
+        ]
+        work_audit_requests = len(joined_work)
+        work_audit_actual = sum(item.actual_work for item in joined_work)
+        work_audit_estimated = sum(item.estimated_work for item in joined_work)
+        work_audit_overrun_events = len(overruns)
+        work_audit_overrun_max = max(overruns, default=0)
+        work_audit_passed = bool(joined_work and not overruns)
+    except (OSError, TypeError, ValueError) as exc:
+        errors.append(
+            f"repeat {row.get('repeat_index')} {scenario_id} work audit: {exc}"
+        )
+        joined_work = []
+    try:
+        fairness = completion_fairness_from_raw(
+            root,
+            row,
+            work_cost=work_cost,
+        )
+    except (OSError, TypeError, ValueError) as exc:
+        errors.append(
+            f"repeat {row.get('repeat_index')} {scenario_id} fairness join: {exc}"
+        )
+        fairness = completion_accounted_service_fairness(
+            [
+                {"ready_lifecycle_complete": False, "ready_lifecycle_rows": []},
+                {"ready_lifecycle_complete": False, "ready_lifecycle_rows": []},
+            ],
+            (1, 1),
+        )
     fairness_available = bool(
         fairness["completion_service_lag_status"]
         == "ok:registered_backlog_completion_accounted_empirical"
@@ -196,11 +255,17 @@ def _cell_metrics(
             )
         )
     )
-    evidence_passed = correctness and observation and fairness_gate and mechanism
+    evidence_passed = bool(
+        correctness
+        and observation
+        and work_audit_passed
+        and fairness_gate
+        and mechanism
+    )
     if not evidence_passed:
         errors.append(
             f"repeat {row.get('repeat_index')} {scenario_id} failed formal "
-            "correctness, observation, fairness, or mechanism evidence"
+            "correctness, observation, work-cost, fairness, or mechanism evidence"
         )
     metrics: dict[str, object] = {
         "scenario_id": scenario_id,
@@ -210,6 +275,12 @@ def _cell_metrics(
         "order_index": int(row["order_index"]),
         "correctness_passed": correctness,
         "observation_passed": observation,
+        "work_cost_audit_passed": work_audit_passed,
+        "work_cost_audited_requests": work_audit_requests,
+        "work_cost_actual_work": work_audit_actual,
+        "work_cost_estimated_work": work_audit_estimated,
+        "work_cost_estimate_overrun_events": work_audit_overrun_events,
+        "work_cost_estimate_overrun_max_work": work_audit_overrun_max,
         "fairness_evidence_applicable": fairness_applicable,
         "fairness_evidence_passed": fairness_available,
         "fairness_gate_passed": fairness_gate,
@@ -575,6 +646,7 @@ def validate_rehearsal_root(
 
     errors: list[str] = []
     contract = load_contract(contract_path)
+    work_cost = work_cost_from_contract(contract)
     try:
         snapshot = json.loads(
             (root / "project_mechanism_contract.json").read_text(
@@ -593,6 +665,7 @@ def validate_rehearsal_root(
         errors.append("rehearsal contract payload drifted")
     if snapshot.get("readiness", {}).get("status") != "passed":
         errors.append("rehearsal lacks a passed readiness snapshot")
+    errors.extend(calibration_snapshot_errors(snapshot, contract))
     if (
         manifest.get("status") != "completed"
         or manifest.get("execution_mode") != "rehearsal"
@@ -603,6 +676,20 @@ def validate_rehearsal_root(
         errors.append("rehearsal must contain exactly one cell per frozen arm")
     if {row.get("scenario_id") for row in rows} != set(EXPECTED_SCENARIOS):
         errors.append("rehearsal does not contain the frozen six-arm set")
+    work_cost_audit = audit_work_cost_matrix(
+        root,
+        work_cost=work_cost,
+        expected_scenarios=EXPECTED_SCENARIOS,
+        expected_phase="warmup",
+        expected_repeat_indexes=(1,),
+        expected_requests_per_cell=1024,
+    )
+    (root / "work_cost_audit.json").write_text(
+        json.dumps(work_cost_audit, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    if work_cost_audit["status"] != "passed":
+        errors.append("rehearsal six-arm work-cost audit failed")
     metrics: list[dict[str, object]] = []
     for row in rows:
         scenario_id = row.get("scenario_id", "")
@@ -611,6 +698,7 @@ def validate_rehearsal_root(
         cell, cell_errors = _cell_metrics(
             root,
             row,
+            work_cost=work_cost,
             expected_phase="warmup",
             expected_execution_mode="rehearsal",
         )
@@ -634,6 +722,10 @@ def validate_rehearsal_root(
         "formal_authorized": False,
         "performance_ranking_decided": False,
         "absolute_safety_gates": safety,
+        "work_cost_audit_status": work_cost_audit["status"],
+        "work_cost_audit_input_files_manifest_sha256": work_cost_audit[
+            "input_files_manifest_sha256"
+        ],
         "errors": errors,
     }
     (root / "rehearsal_validation.json").write_text(
@@ -652,6 +744,7 @@ def summarize(
 ) -> dict[str, object]:
     errors: list[str] = []
     contract = load_contract(contract_path)
+    work_cost = work_cost_from_contract(contract)
     if contract.get("formal_authorized") is not True:
         errors.append("evaluation contract did not authorize the formal run")
     try:
@@ -672,6 +765,7 @@ def summarize(
         errors.append("formal root contract payload drifted")
     if snapshot.get("readiness", {}).get("status") != "passed":
         errors.append("formal root lacks a passed readiness snapshot")
+    errors.extend(calibration_snapshot_errors(snapshot, contract))
     if (
         manifest.get("status") != "completed"
         or manifest.get("execution_mode") != "configured_matrix"
@@ -694,13 +788,39 @@ def summarize(
     if len(formal) != 3 * len(EXPECTED_SCENARIOS):
         errors.append("formal root does not contain exactly eighteen formal cells")
 
+    warmup_work_audit = audit_work_cost_matrix(
+        root,
+        work_cost=work_cost,
+        expected_scenarios=EXPECTED_SCENARIOS,
+        expected_phase="warmup",
+        expected_repeat_indexes=(1,),
+        expected_requests_per_cell=1024,
+    )
+    formal_work_audit = audit_work_cost_matrix(
+        root,
+        work_cost=work_cost,
+        expected_scenarios=EXPECTED_SCENARIOS,
+        expected_phase="formal",
+        expected_repeat_indexes=(1, 2, 3),
+        expected_requests_per_cell=1024,
+    )
+    if (
+        warmup_work_audit["status"] != "passed"
+        or formal_work_audit["status"] != "passed"
+    ):
+        errors.append("formal matrix work-cost audit failed")
+
     metrics: list[dict[str, object]] = []
     for row in formal:
         scenario_id = row.get("scenario_id", "")
         if scenario_id not in EXPECTED_SCENARIOS:
             errors.append(f"unexpected formal scenario: {scenario_id}")
             continue
-        cell, cell_errors = _cell_metrics(root, row)
+        cell, cell_errors = _cell_metrics(
+            root,
+            row,
+            work_cost=work_cost,
+        )
         metrics.append(cell)
         errors.extend(cell_errors)
 
@@ -717,6 +837,18 @@ def summarize(
     _write(output / "formal_runs.csv", metrics)
     _write(output / "arm_summary.csv", _arm_summary(metrics))
     _write(output / "paired_vtc_comparison.csv", paired)
+    (output / "work_cost_audit.json").write_text(
+        json.dumps(
+            {
+                "warmup": warmup_work_audit,
+                "formal": formal_work_audit,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     payload: dict[str, object] = {
         "schema_version": 1,
         "status": "passed" if not errors else "failed",
@@ -725,6 +857,12 @@ def summarize(
         "native_baseline_count": 0,
         "fairness_scope": "single_tenant_multi_job_differentiated_service",
         "static_fairness_applicability": "not_applicable",
+        "work_cost_audit_status": (
+            "passed"
+            if warmup_work_audit["status"] == "passed"
+            and formal_work_audit["status"] == "passed"
+            else "failed"
+        ),
         "claim_language": (
             "baseline-relative empirical constrained Pareto support"
         ),

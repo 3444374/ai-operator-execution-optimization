@@ -17,14 +17,20 @@ from src.experiments.saor.project_mechanism_formal import (
     EXPECTED_SCENARIOS as PROJECT_FORMAL_SCENARIOS,
     PROPOSED as PROJECT_FORMAL_PROPOSED,
     VTC as PROJECT_FORMAL_VTC,
+    completion_fairness_from_raw,
     load_contract as load_project_formal_contract,
     sha256_file as project_formal_sha256,
     validate_contract as validate_project_formal_contract,
 )
 from src.experiments.shared_vllm.config import (
+    CompletionWorkCostConfig,
     SharedVllmConfig,
     SharedVllmScenario,
     load_config,
+)
+from src.experiments.shared_vllm.work_evidence import (
+    audit_work_cost_matrix,
+    join_request_submission_work,
 )
 from src.experiments.shared_vllm.direct_control import run_direct_control
 
@@ -70,12 +76,6 @@ PROJECT_FORMAL_SUMMARY = _load(
     "summarize_saor_project_mechanism_formal",
     "code/scripts/analysis/summarize_saor_project_mechanism_formal.py",
 )
-PROMPT_OVERHEAD_AUDIT = _load(
-    "audit_chat_prompt_overhead",
-    "code/scripts/analysis/audit_chat_prompt_overhead.py",
-)
-
-
 class SaorFormalToolsTests(unittest.TestCase):
     def test_prompt_overhead_audit_recomputes_uniform_chat_cost(self) -> None:
         with TemporaryDirectory() as directory:
@@ -85,48 +85,83 @@ class SaorFormalToolsTests(unittest.TestCase):
             self._write_group_rows(
                 jobs / "cell.requests.csv",
                 [
-                    {
-                        "submission_id": "job:request:1",
-                        "scenario_id": "cell",
-                        "status": "completed",
-                        "prompt_tokens": 36,
-                        "actual_output_tokens": 256,
-                    },
-                    {
-                        "submission_id": "job:request:2",
-                        "scenario_id": "cell",
-                        "status": "completed",
-                        "prompt_tokens": 41,
-                        "actual_output_tokens": 100,
-                    },
+                    self._work_request_row(
+                        scenario_id="cell",
+                        job_id="job",
+                        endpoint_id="endpoint-0",
+                        submission_id="job:request:1",
+                        doc_id="1",
+                        completion_epoch_s=1.0,
+                        raw_prompt_tokens=36,
+                        output_tokens=256,
+                        estimated_output_tokens=256,
+                    ),
+                    self._work_request_row(
+                        scenario_id="cell",
+                        job_id="job",
+                        endpoint_id="endpoint-0",
+                        submission_id="job:request:2",
+                        doc_id="2",
+                        completion_epoch_s=2.0,
+                        raw_prompt_tokens=41,
+                        output_tokens=100,
+                        estimated_output_tokens=100,
+                    ),
                 ],
             )
             self._write_group_rows(
                 jobs / "cell.submissions.csv",
                 [
-                    {
-                        "submission_id": "job:request:1",
-                        "status": "completed",
-                        "rows": 1,
-                        "token_count": 321,
-                    },
-                    {
-                        "submission_id": "job:request:2",
-                        "status": "completed",
-                        "rows": 1,
-                        "token_count": 170,
-                    },
+                    self._work_submission_row(
+                        job_id="job",
+                        endpoint_id="endpoint-0",
+                        submission_id="job:request:1",
+                        doc_id="1",
+                        raw_prompt_tokens=36,
+                        output_tokens=256,
+                    ),
+                    self._work_submission_row(
+                        job_id="job",
+                        endpoint_id="endpoint-0",
+                        submission_id="job:request:2",
+                        doc_id="2",
+                        raw_prompt_tokens=41,
+                        output_tokens=100,
+                    ),
                 ],
             )
 
-            result = PROMPT_OVERHEAD_AUDIT.audit_prompt_overhead(
-                root,
-                expected_overhead=29,
-                expected_requests=2,
+            requests = list(
+                csv.DictReader(
+                    (jobs / "cell.requests.csv").read_text(
+                        encoding="utf-8"
+                    ).splitlines()
+                )
+            )
+            submissions = list(
+                csv.DictReader(
+                    (jobs / "cell.submissions.csv").read_text(
+                        encoding="utf-8"
+                    ).splitlines()
+                )
+            )
+            submissions = list(
+                csv.DictReader(
+                    (jobs / "cell.submissions.csv").read_text(
+                        encoding="utf-8"
+                    ).splitlines()
+                )
+            )
+            joined = join_request_submission_work(
+                requests,
+                submissions,
+                work_cost=CompletionWorkCostConfig("chat_completions", 29),
+                context="cell",
+                require_endpoint_usage=True,
+                require_estimate_upper_bound=True,
             )
 
-            self.assertEqual(result["status"], "passed")
-            self.assertEqual(result["overhead_distribution"], {"29": 2})
+            self.assertEqual([item.prompt_overhead_tokens for item in joined], [29, 29])
 
     def test_prompt_overhead_audit_fails_nonuniform_or_batched_evidence(
         self,
@@ -138,48 +173,206 @@ class SaorFormalToolsTests(unittest.TestCase):
             self._write_group_rows(
                 jobs / "cell.requests.csv",
                 [
-                    {
-                        "submission_id": "job:request:1",
-                        "scenario_id": "cell",
-                        "status": "completed",
-                        "prompt_tokens": 36,
-                        "actual_output_tokens": 256,
-                    },
-                    {
-                        "submission_id": "job:request:2",
-                        "scenario_id": "cell",
-                        "status": "completed",
-                        "prompt_tokens": 41,
-                        "actual_output_tokens": 100,
-                    },
+                    self._work_request_row(
+                        scenario_id="cell",
+                        job_id="job",
+                        endpoint_id="endpoint-0",
+                        submission_id="job:request:1",
+                        doc_id="1",
+                        completion_epoch_s=1.0,
+                        raw_prompt_tokens=36,
+                        output_tokens=256,
+                        estimated_output_tokens=256,
+                    ),
+                    self._work_request_row(
+                        scenario_id="cell",
+                        job_id="job",
+                        endpoint_id="endpoint-0",
+                        submission_id="job:request:2",
+                        doc_id="2",
+                        completion_epoch_s=2.0,
+                        raw_prompt_tokens=41,
+                        output_tokens=100,
+                        estimated_output_tokens=100,
+                    ),
                 ],
             )
             self._write_group_rows(
                 jobs / "cell.submissions.csv",
                 [
+                    self._work_submission_row(
+                        job_id="job",
+                        endpoint_id="endpoint-0",
+                        submission_id="job:request:1",
+                        doc_id="1",
+                        raw_prompt_tokens=36,
+                        output_tokens=256,
+                    ),
                     {
-                        "submission_id": "job:request:1",
-                        "status": "completed",
-                        "rows": 1,
-                        "token_count": 321,
-                    },
-                    {
-                        "submission_id": "job:request:2",
-                        "status": "completed",
+                        **self._work_submission_row(
+                            job_id="job",
+                            endpoint_id="endpoint-0",
+                            submission_id="job:request:2",
+                            doc_id="2",
+                            raw_prompt_tokens=41,
+                            output_tokens=100,
+                        ),
                         "rows": 2,
-                        "token_count": 171,
                     },
                 ],
             )
 
-            result = PROMPT_OVERHEAD_AUDIT.audit_prompt_overhead(
+            requests = list(
+                csv.DictReader(
+                    (jobs / "cell.requests.csv").read_text(
+                        encoding="utf-8"
+                    ).splitlines()
+                )
+            )
+            submissions = list(
+                csv.DictReader(
+                    (jobs / "cell.submissions.csv").read_text(
+                        encoding="utf-8"
+                    ).splitlines()
+                )
+            )
+            with self.assertRaisesRegex(ValueError, "one row"):
+                join_request_submission_work(
+                    requests,
+                    submissions,
+                    work_cost=CompletionWorkCostConfig(
+                        "chat_completions",
+                        29,
+                    ),
+                    context="cell",
+                    require_endpoint_usage=True,
+                    require_estimate_upper_bound=True,
+                )
+
+    def test_work_join_rejects_fallback_sources_and_estimate_overrun(
+        self,
+    ) -> None:
+        request = self._work_request_row(
+            scenario_id="cell",
+            job_id="job",
+            endpoint_id="endpoint-0",
+            submission_id="submission-1",
+            doc_id="1",
+            completion_epoch_s=1.0,
+            output_tokens=10,
+            estimated_output_tokens=9,
+        )
+        submission = self._work_submission_row(
+            job_id="job",
+            endpoint_id="endpoint-0",
+            submission_id="submission-1",
+            doc_id="1",
+            output_tokens=10,
+        )
+        fallback = {**submission, "token_count_source": "resolved_input_plus_output"}
+        with self.assertRaisesRegex(ValueError, "not endpoint usage"):
+            join_request_submission_work(
+                [request],
+                [fallback],
+                work_cost=CompletionWorkCostConfig("chat_completions", 29),
+                context="cell",
+                require_endpoint_usage=True,
+                require_estimate_upper_bound=True,
+            )
+        with self.assertRaisesRegex(ValueError, "exceeds estimate"):
+            join_request_submission_work(
+                [request],
+                [submission],
+                work_cost=CompletionWorkCostConfig("chat_completions", 29),
+                context="cell",
+                require_endpoint_usage=True,
+                require_estimate_upper_bound=True,
+            )
+
+    def test_completion_fairness_charges_endpoint_total_work(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            jobs = root / "jobs"
+            jobs.mkdir()
+            scenario_id = "cell"
+            row = {
+                "order_index": "0",
+                "phase": "warmup",
+                "repeat_index": "1",
+                "scenario_id": scenario_id,
+            }
+            for job_index, completion in enumerate((1.0, 2.0)):
+                stem = f"000_warmup_1_{scenario_id}_job{job_index}"
+                submission_id = f"submission-{job_index}"
+                self._write_group_rows(
+                    jobs / f"{stem}.requests.csv",
+                    [
+                        self._work_request_row(
+                            scenario_id=scenario_id,
+                            job_id=f"job-{job_index}",
+                            endpoint_id=f"endpoint-{job_index}",
+                            submission_id=submission_id,
+                            doc_id=str(job_index),
+                            completion_epoch_s=completion,
+                        )
+                    ],
+                )
+                self._write_group_rows(
+                    jobs / f"{stem}.submissions.csv",
+                    [
+                        self._work_submission_row(
+                            job_id=f"job-{job_index}",
+                            endpoint_id=f"endpoint-{job_index}",
+                            submission_id=submission_id,
+                            doc_id=str(job_index),
+                            ready_epoch_s=0.0,
+                            registered_epoch_s=0.0,
+                            granted_epoch_s=0.0,
+                        )
+                    ],
+                )
+
+            fairness = completion_fairness_from_raw(
                 root,
-                expected_overhead=29,
-                expected_requests=2,
+                row,
+                work_cost=CompletionWorkCostConfig("chat_completions", 29),
+            )
+
+            self.assertEqual(
+                fairness["completion_service_lag_status"],
+                "ok:registered_backlog_completion_accounted_empirical",
+            )
+            self.assertEqual(fairness["completion_service_lag_p95_work"], 24.5)
+
+    def test_matrix_work_audit_rejects_missing_frozen_arm(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            rows = [
+                {
+                    "scenario_id": scenario_id,
+                    "phase": "warmup",
+                    "repeat_index": 1,
+                    "order_index": index,
+                }
+                for index, scenario_id in enumerate(
+                    tuple(PROJECT_FORMAL_SCENARIOS)[:-1]
+                )
+            ]
+            self._write_group_rows(root / "group_runs.csv", rows)
+
+            result = audit_work_cost_matrix(
+                root,
+                work_cost=CompletionWorkCostConfig("chat_completions", 29),
+                expected_scenarios=PROJECT_FORMAL_SCENARIOS,
+                expected_phase="warmup",
+                expected_repeat_indexes=(1,),
+                expected_requests_per_cell=1024,
             )
 
             self.assertEqual(result["status"], "failed")
-            self.assertTrue(any("rows=2" in error for error in result["errors"]))
+            self.assertTrue(
+                any("matrix cells differ" in error for error in result["errors"])
+            )
 
     def test_project_rehearsal_validator_writes_absolute_gate_result(
         self,
@@ -198,7 +391,16 @@ class SaorFormalToolsTests(unittest.TestCase):
                     {
                         "contract_sha256": project_formal_sha256(contract_path),
                         "contract": contract,
-                        "readiness": {"status": "passed"},
+                        "readiness": {
+                            "status": "passed",
+                            "work_cost_calibration_identity": {
+                                key: value
+                                for key, value in contract[
+                                    "work_cost_contract"
+                                ]["calibration_identity"].items()
+                                if key not in {"model_id", "tokenizer_id"}
+                            },
+                        },
                     }
                 ),
                 encoding="utf-8",
@@ -236,10 +438,20 @@ class SaorFormalToolsTests(unittest.TestCase):
                     [],
                 )
 
-            with patch.object(
-                PROJECT_FORMAL_SUMMARY,
-                "_cell_metrics",
-                side_effect=fake_cell,
+            with (
+                patch.object(
+                    PROJECT_FORMAL_SUMMARY,
+                    "_cell_metrics",
+                    side_effect=fake_cell,
+                ),
+                patch.object(
+                    PROJECT_FORMAL_SUMMARY,
+                    "audit_work_cost_matrix",
+                    return_value={
+                        "status": "passed",
+                        "input_files_manifest_sha256": "a" * 64,
+                    },
+                ),
             ):
                 result = PROJECT_FORMAL_SUMMARY.validate_rehearsal_root(
                     root,
@@ -275,11 +487,16 @@ class SaorFormalToolsTests(unittest.TestCase):
                 project_formal_sha256(contract_path),
             )
 
-            result = PROJECT_FORMAL_SUMMARY.summarize(
-                matrix,
-                contract_path,
-                root / "summary",
-            )
+            with patch.object(
+                PROJECT_FORMAL_SUMMARY,
+                "audit_work_cost_matrix",
+                return_value={"status": "passed"},
+            ):
+                result = PROJECT_FORMAL_SUMMARY.summarize(
+                    matrix,
+                    contract_path,
+                    root / "summary",
+                )
 
             self.assertTrue(result["evidence_valid"])
             self.assertTrue(result["claim_gate_passed"])
@@ -1027,6 +1244,17 @@ class SaorFormalToolsTests(unittest.TestCase):
                     project_formal_config,
                     formal_run=False,
                 )
+                drifted_evidence_contract = json.loads(
+                    json.dumps(project_formal_contract)
+                )
+                drifted_evidence_contract["work_cost_contract"][
+                    "calibration_evidence"
+                ]["predecessor_failed_archive_sha256"] = "not-a-sha"
+                project_evidence_errors = validate_project_formal_contract(
+                    drifted_evidence_contract,
+                    project_formal_config,
+                    formal_run=False,
+                )
                 project_formal_lock_errors = validate_project_formal_contract(
                     project_formal_contract,
                     project_formal_config,
@@ -1079,7 +1307,11 @@ class SaorFormalToolsTests(unittest.TestCase):
         self.assertEqual(project_formal_result["status"], "passed")
         self.assertEqual(project_contract_errors, [])
         self.assertTrue(
-            any("work-cost calibration" in error for error in project_work_cost_errors)
+            any("work-cost" in error for error in project_work_cost_errors)
+        )
+        self.assertIn(
+            "predecessor calibration archive SHA is invalid",
+            project_evidence_errors,
         )
         self.assertEqual(
             project_formal_lock_errors,
@@ -1357,6 +1589,80 @@ class SaorFormalToolsTests(unittest.TestCase):
             writer.writerows(rows)
 
     @staticmethod
+    def _work_request_row(
+        *,
+        scenario_id: str,
+        job_id: str,
+        endpoint_id: str,
+        submission_id: str,
+        doc_id: str,
+        completion_epoch_s: float,
+        raw_prompt_tokens: int = 10,
+        output_tokens: int = 10,
+        estimated_output_tokens: int = 10,
+        phase: str = "warmup",
+        repeat_index: int = 1,
+    ) -> dict[str, object]:
+        return {
+            "experiment_id": "test",
+            "phase": phase,
+            "repeat_index": repeat_index,
+            "scenario_id": scenario_id,
+            "job_id": job_id,
+            "request_id": f"request-{submission_id}",
+            "submission_id": submission_id,
+            "doc_id": doc_id,
+            "endpoint_id": endpoint_id,
+            "status": "completed",
+            "error_type": "",
+            "prompt_tokens": raw_prompt_tokens,
+            "actual_output_tokens": output_tokens,
+            "client_estimated_output_tokens": estimated_output_tokens,
+            "estimated_output_tokens": estimated_output_tokens,
+            "output_token_source": "endpoint_request",
+            "total_tokens": raw_prompt_tokens + output_tokens,
+            "completion_epoch_s": completion_epoch_s,
+        }
+
+    @staticmethod
+    def _work_submission_row(
+        *,
+        job_id: str,
+        endpoint_id: str,
+        submission_id: str,
+        doc_id: str,
+        raw_prompt_tokens: int = 10,
+        output_tokens: int = 10,
+        phase: str = "warmup",
+        repeat_index: int = 1,
+        ready_epoch_s: float | str = "",
+        registered_epoch_s: float | str = "",
+        granted_epoch_s: float | str = "",
+    ) -> dict[str, object]:
+        endpoint_prompt = raw_prompt_tokens + 29
+        return {
+            "experiment_id": "test",
+            "phase": phase,
+            "repeat_index": repeat_index,
+            "job_id": job_id,
+            "submission_id": submission_id,
+            "doc_ids": doc_id,
+            "endpoint_id": endpoint_id,
+            "status": "completed",
+            "error": "",
+            "rows": 1,
+            "token_count": endpoint_prompt + output_tokens,
+            "input_token_count": endpoint_prompt,
+            "output_token_count": output_tokens,
+            "token_count_source": "endpoint_usage_total_tokens",
+            "input_token_count_source": "endpoint_usage_prompt_tokens",
+            "output_token_count_source": "endpoint_usage_completion_tokens",
+            "ready_epoch_s": ready_epoch_s,
+            "credit_registered_epoch_s": registered_epoch_s,
+            "credit_granted_epoch_s": granted_epoch_s,
+        }
+
+    @staticmethod
     def _write_clean_manifest(root: Path) -> None:
         (root / "manifest.json").write_text(
             json.dumps({"status": "completed", "incidents": []}),
@@ -1510,24 +1816,36 @@ class SaorFormalToolsTests(unittest.TestCase):
                     SaorFormalToolsTests._write_group_rows(
                         root / "jobs" / f"{stem}.requests.csv",
                         [
-                            {
-                                "submission_id": submission_id,
-                                "completion_epoch_s": 2.0 + job_index,
-                                "prompt_tokens": 10,
-                                "actual_output_tokens": 10,
-                                "client_estimated_output_tokens": 10,
-                                "estimated_output_tokens": 10,
-                            }
+                            SaorFormalToolsTests._work_request_row(
+                                scenario_id=scenario_id,
+                                job_id=f"job-{job_index}",
+                                endpoint_id=f"endpoint-{job_index}",
+                                submission_id=submission_id,
+                                doc_id=f"doc-{job_index}",
+                                completion_epoch_s=2.0 + job_index,
+                            )
                         ],
                     )
                     SaorFormalToolsTests._write_group_rows(
                         root / "jobs" / f"{stem}.submissions.csv",
                         [
+                            SaorFormalToolsTests._work_submission_row(
+                                job_id=f"job-{job_index}",
+                                endpoint_id=f"endpoint-{job_index}",
+                                submission_id=submission_id,
+                                doc_id=f"doc-{job_index}",
+                                ready_epoch_s=0.0,
+                                registered_epoch_s=0.1,
+                                granted_epoch_s=0.2,
+                            )
+                        ],
+                    )
+                    SaorFormalToolsTests._write_group_rows(
+                        root / "jobs" / f"{stem}.runs.csv",
+                        [
                             {
-                                "submission_id": submission_id,
-                                "ready_epoch_s": 0.0,
-                                "credit_registered_epoch_s": 0.1,
-                                "credit_granted_epoch_s": 0.2,
+                                "completion_protocol": "chat_completions",
+                                "completion_prompt_token_overhead": 29,
                             }
                         ],
                     )
@@ -1547,7 +1865,16 @@ class SaorFormalToolsTests(unittest.TestCase):
                     "contract_path": "test",
                     "contract_sha256": contract_sha256,
                     "contract": contract,
-                    "readiness": {"status": "passed"},
+                    "readiness": {
+                        "status": "passed",
+                        "work_cost_calibration_identity": {
+                            key: value
+                            for key, value in contract[
+                                "work_cost_contract"
+                            ]["calibration_identity"].items()
+                            if key not in {"model_id", "tokenizer_id"}
+                        },
+                    },
                 }
             ),
             encoding="utf-8",
@@ -1652,39 +1979,45 @@ class SaorFormalToolsTests(unittest.TestCase):
                         "active_set_post_work_conserving_passed": proposed,
                     }
                 )
-                if bounded:
-                    for job_index in range(2):
-                        stem = (
-                            f"{order_index:03d}_formal_{repeat}_{scenario_id}_"
-                            f"job{job_index}"
-                        )
-                        submission_id = (
-                            f"{scenario_id}-{repeat}-job{job_index}-r0"
-                        )
-                        SaorFormalToolsTests._write_group_rows(
-                            root / "jobs" / f"{stem}.requests.csv",
-                            [
-                                {
-                                    "submission_id": submission_id,
-                                    "completion_epoch_s": 2.0 + job_index,
-                                    "prompt_tokens": 10,
-                                    "actual_output_tokens": 10,
-                                    "client_estimated_output_tokens": 10,
-                                    "estimated_output_tokens": 10,
-                                }
-                            ],
-                        )
-                        SaorFormalToolsTests._write_group_rows(
-                            root / "jobs" / f"{stem}.submissions.csv",
-                            [
-                                {
-                                    "submission_id": submission_id,
-                                    "ready_epoch_s": 0.0,
-                                    "credit_registered_epoch_s": 0.1,
-                                    "credit_granted_epoch_s": 0.2,
-                                }
-                            ],
-                        )
+                for job_index in range(2):
+                    stem = (
+                        f"{order_index:03d}_formal_{repeat}_{scenario_id}_"
+                        f"job{job_index}"
+                    )
+                    submission_id = (
+                        f"{scenario_id}-{repeat}-job{job_index}-r0"
+                    )
+                    SaorFormalToolsTests._write_group_rows(
+                        root / "jobs" / f"{stem}.requests.csv",
+                        [
+                            SaorFormalToolsTests._work_request_row(
+                                scenario_id=scenario_id,
+                                job_id=f"job-{job_index}",
+                                endpoint_id=f"endpoint-{job_index}",
+                                submission_id=submission_id,
+                                doc_id=f"doc-{repeat}-{job_index}",
+                                completion_epoch_s=2.0 + job_index,
+                                phase="formal",
+                                repeat_index=repeat,
+                            )
+                        ],
+                    )
+                    SaorFormalToolsTests._write_group_rows(
+                        root / "jobs" / f"{stem}.submissions.csv",
+                        [
+                            SaorFormalToolsTests._work_submission_row(
+                                job_id=f"job-{job_index}",
+                                endpoint_id=f"endpoint-{job_index}",
+                                submission_id=submission_id,
+                                doc_id=f"doc-{repeat}-{job_index}",
+                                phase="formal",
+                                repeat_index=repeat,
+                                ready_epoch_s=(0.0 if bounded else ""),
+                                registered_epoch_s=(0.1 if bounded else ""),
+                                granted_epoch_s=(0.2 if bounded else ""),
+                            )
+                        ],
+                    )
         for scenario_id, (policy, observation) in scenarios:
             rows.append(
                 {
