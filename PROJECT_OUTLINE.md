@@ -216,15 +216,17 @@ PostgreSQL source
   1,108/1,108 projection 离线一致，estimate/overshoot-bound violation 均为 0；6,144 条 request
   独立证明当前 chat template overhead 恒为 29、`fixed_output_cap=256`，且公平 service work 使用
   endpoint total token。单次 SAOR 相对 VTC-style 吞吐 +0.43%、foreground P99 +0.11%、P95
-  service lag −13.15%、longest no-service +0.014%，因此只晋级为待 1+3 验证的 Pareto 候选，
+  service lag −13.15%、longest no-service +0.014%，在 feeding gate 前只构成 Pareto 候选，
   未证明胜出。独立 raw/SHA/指标复核已通过；授权 validator 已逐字段绑定 validation SHA、
   commit/root/archive/valid-rehearsal，不完整 fairness trace 分支也已 fail-closed 修复，六臂全组件
   指标已重汇总。当前一次性完整签名 direct ceiling 为 13,684.90 tok/s，SAOR
   feeding=92.898%<95%；两侧 group/manifest/运行合同/validation/archive SHA 已绑定，足以按冻结 gate
   停止当前 formal，但缺结构化 PG/Ray clean record，不能声称稳定损失 7.10%。wrapper/formal contract 已冻结为
   `locked_failed_feeding/formal_authorized=false`，当前 1+3 formal 停止。不能下调门槛、调 K/W 或
-  重跑六臂追正。并行的系统问题
-  仍需补同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/project static/proposed
+  重跑六臂追正。当前仅先做同签名 D0 direct K-only、D1 direct K+W、P0 bounded-ready FIFO K+W
+  的三臂 1+3 配对诊断，分别隔离 W envelope 与 Project plumbing；旧负判决不可被诊断结果撤销。
+  代码/合同/结构化 PG-Ray-endpoint clean gate 已就绪，服务器关机故尚无新性能数据。诊断后才补
+  同一 2-Job workload 的 Daft Native/Daft Ray/Ray Data native/project static/proposed
   matched comparison；
   原生臂保留自身调度且不接 Project bounded-ready，历史数据签名不完全一致即重跑；
 - runtime-state-aware 请求成形、提交或路由能否超过同上限 frozen-static；

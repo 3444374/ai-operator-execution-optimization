@@ -6854,3 +6854,25 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   CLI 不再跨 `scripts/` 导入。服务器已关机，本轮只做本地离线重算与测试，不连接或启动 GPU。
 - 结论措辞收紧为“在冻结的一次性 feeding gate 下得到有效负判决”；n=1 且跨时间封存比较不能写成
   “统计证明 Project 路径稳定损失 7.10%”。formal 停止判决不变。
+
+## 2026-08-15 冻结 SAOR feeding gap 三臂归因诊断
+
+- 保持 `saor_project_mechanism_formal_contract.json` 的
+  `locked_failed_feeding/formal_authorized=false` 与 sealed SHA 不变；停止 SAOR formal，也不继续修改
+  旧 feeding/rehearsal 证据工具。新增独立 diagnostic contract，明确任何分类均不得复活旧合同。
+- 冻结同 manifest/service/work-cost/K128 的 `1 warm-up + 3 measured repeats`：D0 direct K-only；
+  D1 direct K+W65536；P0 bounded-ready FIFO K+W65536。D1 只实现 endpoint-local typed estimated-work
+  reservation 和 completion release，不读取 Job identity/weights、bounded-ready 或 SAOR selector，身份为
+  Project diagnostic control，不是原生 baseline。
+- direct HTTP control 新增 lossless acquire/release ledger、request/work occupancy 和 admission-wait
+  统计；D0 保留原 semaphore 行为，仅旁路观测 estimated work，D1 原子约束 K 与 W。shared-vLLM
+  group schema 标明 envelope owner，P0 继续复用现有 FIFO/credit/Daft-Ray 路径。
+- 新 runner 在 matrix manifest 前结构化保存 PostgreSQL、Ray diagnostic namespace/held CPU-GPU 和全部 vLLM endpoint
+  clean gate；新 summarizer 要求 exactly-once、W/request occupancy、Ray submit/actor-ready、vLLM
+  running/waiting/KV、MFU、TTFT/ITL、Job JCT/SLO 与能耗完整，再按 repeat 配对计算 D1/D0、P0/D1。
+  四种 0.95 结论为 W 主因、Project path 主因、共同损失或旧 gap 未复现；缺证据只返回 invalid。
+- 去留规则：W 主因则分开“Project K+W/direct K+W 实现效率”和“Project K+W/direct K-only 保护成本”；
+  Project path 主因只允许一个简单 selector-neutral 修正；没有单一简单原因则关闭文本 SAOR headline，
+  回到图像 HSE static GPU 非劣门与两级 stage controller。原生 Daft/Ray Data 多 Job comparison 排在诊断后。
+- 本地 direct gate、合同/分类、clean gate、shared-vLLM runner/runtime 与既有 SAOR/formal/config 回归共 198 项通过。服务器当前关机，未运行
+  diagnostic、未产生新 GPU 性能数据。

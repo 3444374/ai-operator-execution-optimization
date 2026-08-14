@@ -1131,6 +1131,35 @@ formal readiness 必须按以下顺序关闭，任一未完成则保持锁定：
    workload、阈值、K/W、$0.125W_e$ 或 selector。若研究 7.10% gap，另立诊断合同，不复活本合同
    追正。
 
+#### 7.10% feeding gap 最小归因诊断（2026-08-15 冻结，尚未运行）
+
+`locked_failed_feeding/formal_authorized=false` 是永久负判决；下面的诊断只解释一次性
+92.898% 信号可能来自哪里，任何结果都不能修改该合同。固定同一 immutable manifest、模型/服务/
+protocol/work-cost signature、K128 与 W65536，三个臂按 repeat 交错运行 `1 warm-up + 3 measured
+repeats`：
+
+| 诊断臂 | 执行合同 | 单独回答的问题 |
+|---|---|---|
+| D0 `feeding_gap_d0_direct_k_only` | direct HTTP，仅 endpoint-local K | 当前服务容量 ceiling |
+| D1 `feeding_gap_d1_direct_k_work` | direct HTTP，endpoint-local K+W；typed estimated work 预留、completion release | W envelope 本身的吞吐代价 |
+| P0 `feeding_gap_p0_project_bounded_ready_fifo` | PostgreSQL→Daft→Ray→coordinator，bounded-ready FIFO，K+W | Project plumbing 相对同 W control 的额外代价 |
+
+D1 是 Project diagnostic control，不是原生 baseline；它不读取 Job 权重、不维护 bounded-ready，也不运行
+SAOR selector。判决对三次 repeat 的配对比值取算术平均，阈值在运行前固定为 0.95：
+
+- `D1/D0<0.95` 且 `P0/D1≥0.95`：`work_envelope_primary`；
+- `D1/D0≥0.95` 且 `P0/D1<0.95`：`project_path_primary`；
+- 两者均低于 0.95：`work_envelope_and_project_path`；
+- 两者均达到 0.95：`original_gap_not_reproduced`，只说明旧跨时间单点不能解释成稳定 7.10% 损失。
+
+每个 cell 必须保存 request/work occupancy、admission wait、Ray submit/actor-ready、vLLM
+running/waiting/KV、MFU、TTFT/ITL、Job JCT/SLO 与能耗；运行前另存 PostgreSQL、Ray、全部 endpoint
+clean gate。缺任一证据族时只输出 `invalid_evidence`。若 W 是主因，后续把“Project K+W / direct
+K+W”的实现效率与“Project K+W / direct K-only”的保护容量成本分开报告；若 Project path 是主因，
+只允许一个 selector-neutral、简单可验证的工程修正。没有单一简单原因则关闭文本 SAOR headline，
+回到图像 HSE static GPU 非劣门和两级 stage controller。服务器当前关机，本节只有已测试的合同与
+runner，尚无新 GPU 性能结果。
+
 lag P95 还应同时报告 work 与 envelope 归一化值：VTC-style 为 $0.955W_e$、SAOR 为
 $0.830W_e$，差值 8,231.5 work，约为 $1.005H_B$。这是 debt-cap 作用方向的机制一致性证据，
 不是独立用户收益；headline 仍须与 JCT/P99/SLO/no-service/throughput 保护联合判定。

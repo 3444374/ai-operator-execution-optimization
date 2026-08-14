@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 from src.baselines.common.contracts import BaselineRequestResult, ChatRequest
 from src.baselines.common.manifests import write_manifest
+from src.baselines.text.controls import HttpAdmissionEvent
 from src.experiments.saor.project_mechanism_formal import (
     EXPECTED_SCENARIOS as PROJECT_FORMAL_SCENARIOS,
     FROZEN_FEEDING_EVIDENCE,
@@ -1424,8 +1425,18 @@ class SaorFormalToolsTests(unittest.TestCase):
                 service_metadata=(),
             )
 
-            async def fake_jobs(jobs, _contract):
-                return {
+            async def fake_jobs(
+                jobs,
+                _contract,
+                *,
+                work_limit_per_endpoint=None,
+                request_work_estimator=None,
+                admission_event_sink=None,
+            ):
+                self.assertIsNone(work_limit_per_endpoint)
+                self.assertIsNotNone(request_work_estimator)
+                self.assertIsNotNone(admission_event_sink)
+                grouped = {
                     job.job_id: tuple(
                         BaselineRequestResult(
                             doc_id=request.doc_id,
@@ -1450,6 +1461,39 @@ class SaorFormalToolsTests(unittest.TestCase):
                     )
                     for job in jobs
                 }
+                for job in jobs:
+                    for index, request in enumerate(job.requests):
+                        work = request_work_estimator(request)
+                        started = 100.0 + job.arrival_offset_s + index * 0.1
+                        admission_event_sink(
+                            HttpAdmissionEvent(
+                                event_epoch_s=started,
+                                action="acquire",
+                                doc_id=request.doc_id,
+                                endpoint_index=request.endpoint_index,
+                                estimated_work=work,
+                                active_requests=1,
+                                active_work=work,
+                                request_limit=128,
+                                work_limit=None,
+                                admission_wait_s=0.0,
+                            )
+                        )
+                        admission_event_sink(
+                            HttpAdmissionEvent(
+                                event_epoch_s=started + 1.0,
+                                action="release",
+                                doc_id=request.doc_id,
+                                endpoint_index=request.endpoint_index,
+                                estimated_work=work,
+                                active_requests=0,
+                                active_work=0,
+                                request_limit=128,
+                                work_limit=None,
+                                admission_wait_s=0.0,
+                            )
+                        )
+                return grouped
 
             with patch(
                 "src.experiments.shared_vllm.direct_control.run_bounded_http_jobs",

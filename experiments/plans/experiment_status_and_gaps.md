@@ -1,15 +1,25 @@
 # 实验状态与缺口分析
 
-Date: 2026-07-20（最后更新：2026-08-14；开题证据冻结，SAOR fixed-envelope formal 已
+Date: 2026-07-20（最后更新：2026-08-15；开题证据冻结，SAOR fixed-envelope formal 已
 完成但未晋级；bounded-ready v0.5.2 的 matched-observation selector 双轮 rehearsal 已完成，
 2026-08-14 fail-closed 复核已将 completion fairness applicability、Job identity、K/W/weights、
 projected-debt repayment 和 admission work-cost 上界统一闭环。最终 `63d17300` 六臂 rehearsal
 6/6、0 incident，6,144-request fixed-output-cap audit 与 15/15 repayment episode 均通过；
 `formal_authorized=false`，单次结果不判策略排名。独立审核已确认 validation/archive SHA、raw
-复算和机制 counters 一致，但 formal 启动仍被授权 schema/证据绑定、同签名 feeding ratio 与
-全组件汇总三项阻断。关闭这些门并重跑 readiness 后，才决定是否授权位置平衡 1+3 Project mechanism formal，并独立准备同一 2-Job native-system matched
-comparison；原生 baseline 不接 bounded-ready，
-dynamic-K 仍退出主线）
+复算和机制 counters 一致；同签名 direct ceiling 最终给出 92.898%<95% 的有效一次性负判决，
+formal 合同已永久冻结为 `locked_failed_feeding`，不再补工具或尝试解锁。当前只允许先运行独立
+D0/D1/P0 feeding-gap diagnostic，再决定是否有一个简单 selector-neutral 工程缺口；原生 Daft/Ray
+Data 多 Job comparison 排在该诊断之后，原生 baseline 不接 bounded-ready，dynamic-K 仍退出主线）
+
+2026-08-15 已完成但未上服务器的最小诊断设施：D0=direct K-only、D1=direct K+W65536、
+P0=bounded-ready FIFO K+W65536，固定 K128、同 manifest/service/work-cost，按 `1 warm-up + 3`
+配对交错执行。D1 仅用 endpoint-local typed-work reservation/completion release，不含 Job fairness、
+ready window 或 SAOR selector；因此它是 Project diagnostic control，不是原生 baseline。runner 结构化
+保存 PG/Ray/endpoint clean gate，direct 侧保存 request/work occupancy 与 admission wait，P0 复用
+credit trace 并汇总 Ray submit/actor-ready；共同保存 vLLM、MFU、TTFT/ITL、JCT/SLO 与能耗。当前
+服务器关机，所以状态是 `code-and-contract-ready / gpu-unrun`，没有新性能数字。四种 0.95 配对判决
+及退出规则只见 `state_aware_work_unit_evaluation_20260808.md` §5.2，任何结果均不得修改旧
+`locked_failed_feeding`。
 
 2026-08-14 本地基础设施状态：native-system matched comparison 的八臂合同、薄编排器与
 两层 offline fail-closed summarizer 已完成本地测试，但用户已取消本轮服务器 rehearsal，故

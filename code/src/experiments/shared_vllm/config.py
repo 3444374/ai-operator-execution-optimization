@@ -26,6 +26,7 @@ from src.scheduling.runtime.saor_capacity import (
 
 POLICIES = {
     "direct_no_job",
+    "direct_work_limited",
     "independent_full",
     "static_partition",
     "shared_drr",
@@ -38,6 +39,7 @@ POLICIES = {
     "state_aware_adaptive",
     "saor_capacity",
 }
+DIRECT_CONTROL_POLICIES = {"direct_no_job", "direct_work_limited"}
 
 _SCENARIO_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
 
@@ -527,7 +529,7 @@ def load_config(path: Path) -> SharedVllmConfig:
     scenario_ids = [item.scenario_id for item in scenarios]
     if len(set(scenario_ids)) != len(scenario_ids):
         raise ValueError("scenario_id values must be unique")
-    if any(scenario.policy == "direct_no_job" for scenario in scenarios):
+    if any(scenario.policy in DIRECT_CONTROL_POLICIES for scenario in scenarios):
         protocol = _argument_value(
             common_args,
             "--completion-protocol",
@@ -550,7 +552,7 @@ def load_config(path: Path) -> SharedVllmConfig:
             or any(not url.endswith(expected_path) for url in endpoint_urls)
         ):
             raise ValueError(
-                "direct_no_job completion endpoints must match protocol/topology"
+                "direct control completion endpoints must match protocol/topology"
             )
     executor = _argument_value(common_args, "--executor", "")
     if executor == "ray_actor":
@@ -716,8 +718,8 @@ def build_job_command(
     start_epoch_s: float,
     coordinator_name: str,
 ) -> list[str]:
-    if scenario.policy == "direct_no_job":
-        raise ValueError("direct_no_job is executed in-process by the group runner")
+    if scenario.policy in DIRECT_CONTROL_POLICIES:
+        raise ValueError("direct controls are executed in-process by the group runner")
     if not 0 <= job_index < scenario.job_count:
         raise ValueError("job_index is outside scenario job_count")
     if not options.ray_address:
@@ -954,7 +956,11 @@ def _load_scenario(
         else None
     )
     if (
-        policy in {"state_aware_adaptive", "saor_capacity", "direct_no_job"}
+        policy in {
+            "state_aware_adaptive",
+            "saor_capacity",
+            *DIRECT_CONTROL_POLICIES,
+        }
         and scenario_request_limit is not None
     ):
         raise ValueError(
@@ -1082,8 +1088,8 @@ def _load_scenario(
     )
     if any(request_manifests) and not all(request_manifests):
         raise ValueError("request_manifests must be provided for every job or none")
-    if policy == "direct_no_job" and not all(request_manifests):
-        raise ValueError("direct_no_job requires immutable request_manifests")
+    if policy in DIRECT_CONTROL_POLICIES and not all(request_manifests):
+        raise ValueError("direct controls require immutable request_manifests")
     if all(request_manifests) and any(source_row_offsets):
         raise ValueError(
             "manifest-selected jobs require zero source_row_offsets"

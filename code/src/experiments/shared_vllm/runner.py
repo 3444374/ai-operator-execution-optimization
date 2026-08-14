@@ -36,6 +36,7 @@ from src.scheduling.runtime.saor_capacity import (
 from src.scheduling.submission_control.saor import SaorReleaseConfig
 
 from .config import (
+    DIRECT_CONTROL_POLICIES,
     GroupRunIdentity,
     RunnerOptions,
     SharedVllmConfig,
@@ -864,7 +865,7 @@ def _run_group(
         start_epoch_s = time.time() + options.start_delay_s
         commands = (
             []
-            if scenario.policy == "direct_no_job"
+            if scenario.policy in DIRECT_CONTROL_POLICIES
             else [
                 build_job_command(
                     options,
@@ -883,7 +884,9 @@ def _run_group(
             {
                 "schema_version": 1,
                 "execution_owner": (
-                    "bounded_http_then_vllm_fcfs"
+                    "bounded_http_k_work_then_vllm_fcfs"
+                    if scenario.policy == "direct_work_limited"
+                    else "bounded_http_then_vllm_fcfs"
                     if scenario.policy == "direct_no_job"
                     else "project_daft_ray_profiler"
                 ),
@@ -948,7 +951,7 @@ def _run_group(
                 )
             state_samples.extend(state_rows)
 
-        if scenario.policy == "direct_no_job":
+        if scenario.policy in DIRECT_CONTROL_POLICIES:
             direct_executor = ThreadPoolExecutor(
                 max_workers=1,
                 thread_name_prefix="direct-no-job",
@@ -1013,15 +1016,15 @@ def _run_group(
         direct_job_evidence = (
             direct_future.result() if direct_future is not None else None
         )
-        if scenario.policy == "direct_no_job":
+        if scenario.policy in DIRECT_CONTROL_POLICIES:
             if direct_job_evidence is None:
-                raise RuntimeError("direct_no_job returned no job evidence")
+                raise RuntimeError("direct control returned no job evidence")
             group_end_epoch_s = max(
                 float(item["completion_end_epoch_s"])
                 for item in direct_job_evidence
             )
             if idle_gate is None:
-                raise RuntimeError("direct_no_job requires the final idle gate")
+                raise RuntimeError("direct control requires the final idle gate")
             idle_gate(
                 options.health_url,
                 options.metrics_urls,
@@ -1142,6 +1145,40 @@ def _run_group(
             scenario.weights,
         )
         lag_work_limit = max(1, endpoint_work_limit)
+        direct_admission = (
+            {
+                key: value
+                for key, value in job_evidence[0].items()
+                if key.startswith("direct_")
+            }
+            if scenario.policy in DIRECT_CONTROL_POLICIES
+            else {
+                "direct_admission_trace_status": "not_applicable",
+                "direct_admission_trace_path": "",
+                "direct_admission_events": 0,
+                "direct_work_limit_applied": False,
+                "direct_request_occupancy_max": 0,
+                "direct_estimated_work_occupancy_max": 0,
+                "direct_request_occupancy_fraction_mean": 0.0,
+                "direct_estimated_work_to_reference_w_fraction_mean": 0.0,
+                "direct_request_occupancy_max_by_endpoint": "{}",
+                "direct_estimated_work_occupancy_max_by_endpoint": "{}",
+                "direct_admission_wait_p50_s": 0.0,
+                "direct_admission_wait_p95_s": 0.0,
+                "direct_admission_wait_p99_s": 0.0,
+                "direct_admission_wait_max_s": 0.0,
+            }
+        )
+        if scenario.policy in DIRECT_CONTROL_POLICIES and any(
+            {
+                key: value
+                for key, value in evidence.items()
+                if key.startswith("direct_")
+            }
+            != direct_admission
+            for evidence in job_evidence[1:]
+        ):
+            raise RuntimeError("direct admission summaries disagree across Jobs")
         record = {
             "schema_version": 2,
             "experiment_id": config.experiment_id,
@@ -1185,11 +1222,14 @@ def _run_group(
             ),
             "work_limit_per_endpoint": endpoint_work_limit,
             "request_envelope_owner": (
-                "direct_endpoint_http_semaphore"
+                "direct_endpoint_request_work_gate"
+                if scenario.policy == "direct_work_limited"
+                else "direct_endpoint_http_semaphore"
                 if scenario.policy == "direct_no_job"
                 else "project_admission"
             ),
             "work_envelope_applied": scenario.policy != "direct_no_job",
+            **direct_admission,
             "http_keepalive_expiry_s": _common_arg_value(
                 config.common_args,
                 "--completion-http-keepalive-expiry-s",
@@ -1208,6 +1248,8 @@ def _run_group(
                 else "observe_only" if observer is not None
                 else "direct_no_job_control"
                 if scenario.policy == "direct_no_job"
+                else "direct_k_work_diagnostic_control"
+                if scenario.policy == "direct_work_limited"
                 else "unavailable"
             ),
             "runtime_state_calibration_signature": (
@@ -1243,7 +1285,9 @@ def _run_group(
             ),
             "ray_address": options.ray_address,
             "scheduler_owner": (
-                "endpoint_http_bound_then_vllm_fcfs"
+                "endpoint_http_k_work_gate_then_vllm_fcfs"
+                if scenario.policy == "direct_work_limited"
+                else "endpoint_http_bound_then_vllm_fcfs"
                 if scenario.policy == "direct_no_job"
                 else "project_daft_ray_submission_then_vllm_fcfs"
             ),

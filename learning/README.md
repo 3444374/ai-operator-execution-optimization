@@ -1,5 +1,25 @@
 # Learning Notes
 
+## 2026-08-15 怎么把 7.10% 拆成 W 代价和 Project 路径代价
+
+旧 feeding gate 只比较了两个跨时间点：direct K-only 为 13,684.90 tok/s，完整 SAOR Project
+路径为 12,713.03 tok/s。它足以按预注册 95% 门停止 formal，却不能回答损失来自 work envelope、
+Ray/Daft/coordinator，还是两次运行的状态波动。因此新诊断在同一轮交错三条路径：D0 只有 K，D1
+在相同 direct HTTP 上增加 W，P0 再把相同 K+W 放回 PostgreSQL→Daft→Ray→bounded-ready FIFO。
+
+读比值时先看 `D1/D0`：它只改变 W，所以低于 95% 表示 W 本身有可复现容量代价。再看
+`P0/D1`：二者都有 K+W，低于 95% 才把额外差距指向 Project plumbing。D1 不看 Job ID、权重或
+ready window，所以它不是公平算法，也不是 Daft/Ray 原生 baseline，只是一个隔离变量的 Project
+diagnostic control。即便两项都通过，也只能说旧单点 7.10% 没有在本轮复现；旧
+`locked_failed_feeding` 仍永久保留。
+
+为什么不能只看 GPU utilization：D0、D1、P0 都可能显示 GPU 约 95% 以上，但 W admission 的空洞、
+Ray actor-ready、coordinator bounded wait 或 vLLM running 深度不同，仍会产生 tokens/s 差异。因此
+诊断同时保存 request/work occupancy、admission wait、Ray submit/actor-ready、vLLM
+running/waiting/KV、MFU、TTFT/ITL、JCT/SLO 与能耗。运行前 PG/Ray/endpoint clean 也单独落盘，
+避免再次把跨时间状态混成调度代价。服务器当前关机，现阶段只有合同、代码和本地测试，没有新 GPU
+性能结论。
+
 ## 2026-08-14 direct ceiling 为什么也要显式 exactly-once evidence
 
 `direct_no_job` 会先用 `validate_results()` 验证 manifest request 与 HTTP completion 一一对应，但

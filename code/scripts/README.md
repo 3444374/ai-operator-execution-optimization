@@ -96,6 +96,18 @@ manifest commit/config/root、运行时合同快照、rehearsal validation 和 a
 设置 `evidence_valid=true`。可复用 runner 参数解析和 endpoint idle gate 位于
 `src/experiments/shared_vllm/{cli,preflight}.py`，feeding CLI 不再跨 `scripts/` 导入。
 
+`experiments/run_saor_feeding_gap_diagnostic.py` 是终止 formal 后唯一允许的文本差距归因入口。
+它验证旧合同仍为 `locked_failed_feeding` 且 SHA 未变，再执行 D0 direct K-only、D1 direct K+W、
+P0 bounded-ready FIFO K+W 的平衡 `1+3` diagnostic matrix。D1 使用 endpoint-local typed-work
+reservation/completion release，但不读取 Job 身份、权重或 ready window，因此是 Project diagnostic
+control，不是原生 baseline。入口会先结构化保存 PG/Ray/全部 endpoint clean gate；失败 root 不得
+续跑或覆盖。
+
+`analysis/summarize_saor_feeding_gap_diagnostic.py` 从 group、direct admission ledger、P0 credit trace
+和 Job runs 重算 W/request occupancy、admission wait、Ray submit/actor-ready、vLLM、MFU、TTFT/ITL、
+JCT/SLO 与 energy，并对三个 measured repeat 配对计算 D1/D0 和 P0/D1。缺任一证据族只输出
+`invalid_evidence`；四种 0.95 分类均显式保留旧负判决，不能授权 SAOR formal。
+
 `analysis/audit_chat_prompt_overhead.py` 从 `jobs/*.requests.csv` 与
 `jobs/*.submissions.csv` 按 submission ID 独立重算
 `service total - raw prompt - actual output`。它只接受一请求一 submission、全完成、非负且

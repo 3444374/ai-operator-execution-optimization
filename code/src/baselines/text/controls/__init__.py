@@ -2,6 +2,7 @@
 
 from .async_http import (
     BoundedHttpConfig,
+    HttpAdmissionEvent,
     TimedHttpJob,
     run_bounded_http,
     run_bounded_http_jobs,
@@ -14,6 +15,7 @@ from .batched_completions import (
 __all__ = [
     "BatchedCompletionsConfig",
     "BoundedHttpConfig",
+    "HttpAdmissionEvent",
     "TimedHttpJob",
     "run_batched_completions",
     "run_bounded_http",

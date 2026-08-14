@@ -14,6 +14,14 @@ actual-launch jitter diagnostics, and keeps unsupported native request P99 and S
 `unavailable` with reasons. Publication is fail-closed rather than generation-atomic: a non-passed
 marker precedes individual CSV replacement, and passed `validation.json` is published last.
 
+The current text-SAOR formal contract is permanently `locked_failed_feeding`; it is not an
+execution target. The only active text diagnostic is the isolated D0/D1/P0 feeding-gap matrix:
+direct K-only, direct K+W, and Project bounded-ready FIFO K+W. Its direct K+W gate is endpoint-local
+and Job-unaware, while the Project arm reuses the existing Daft/Ray/shared-credit path. The runner
+stores a structured PostgreSQL/Ray/endpoint clean gate plus lossless K/W occupancy evidence, and the
+offline summary cannot alter the sealed negative formal decision. This infrastructure is locally
+tested but has not been run on the powered-off GPU server.
+
 全项目代码分层、文本/图像模态边界与分阶段迁移计划见
 [`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、
 文本/图像模态隔离、baseline 分层、旧兼容入口清理，以及 metrics、model backend、

@@ -1387,7 +1387,46 @@ validation 与完整 archive SHA。当前 sealed output 的 `evidence_valid` 仅
 和 feeding 算术闭合；旧运行没有保存结构化 PostgreSQL/Ray clean gate，故另报
 `paper_reproducibility_complete=false`，不得把一次 warmup-identity ceiling 写成稳定损失估计。
 
-解锁后的 formal 汇总入口为：
+当前下一步不是 formal，也不是重跑 ceiling，而是独立的三臂 feeding-gap diagnostic。服务器恢复后
+先按 `deploy/runtime/README.md` 保存 `manage_environment.py check` 机器报告并恢复 PG/Ray/vLLM；随后
+必须使用全新 output root，**不要**传 `--rehearsal`（该诊断自身已冻结 `1 warm-up + 3 measured
+repeats`）：
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/environment/manage_environment.py check \
+  --groups core,text,analysis \
+  --json-out "$ARTIFACT_ROOT/saor_feeding_gap_environment.json"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/experiments/run_saor_feeding_gap_diagnostic.py \
+  --diagnostic-contract deploy/autodl/saor_feeding_gap_diagnostic_contract.json \
+  --prior-failed-contract deploy/autodl/saor_project_mechanism_formal_contract.json \
+  --reference-config deploy/autodl/saor_project_mechanism_formal.example.json \
+  --config deploy/autodl/saor_feeding_gap_diagnostic.example.json \
+  --profiler code/scripts/profiling/postgres_ai_operator_profile.py \
+  --python-executable "$DRIVER_PYTHON" \
+  --output-dir "$ARTIFACT_ROOT/saor_feeding_gap_diagnostic_<unique-id>" \
+  --health-url http://127.0.0.1:8000/health \
+  --metrics-urls "$MODEL_METRICS_URLS" \
+  --ray-address "$RAY_ADDRESS"
+
+PYTHONPATH=code "$DRIVER_PYTHON" \
+  code/scripts/analysis/summarize_saor_feeding_gap_diagnostic.py \
+  --output-root "$ARTIFACT_ROOT/saor_feeding_gap_diagnostic_<unique-id>" \
+  --diagnostic-contract deploy/autodl/saor_feeding_gap_diagnostic_contract.json \
+  --prior-failed-contract deploy/autodl/saor_project_mechanism_formal_contract.json
+```
+
+D0 是 direct K-only ceiling；D1 是 direct K+W diagnostic control，不是原生 baseline；P0 是
+bounded-ready FIFO Project path。wrapper 会在创建 matrix manifest 前写
+`pre_run_clean_gate.json`，分别证明 PG 无其它 non-idle session、诊断 namespace 无残留 Ray named
+actor 且 Ray CPU/GPU 无显著 held resource、两个 endpoint health 且 running/waiting 为 0。D0/D1 保存 lossless direct admission ledger；
+P0 保存 credit 与 Ray job traces。summarizer 缺任何 occupancy、admission wait、Ray submit/actor-ready、
+vLLM、MFU、TTFT/ITL、JCT/SLO 或能耗字段均返回 `invalid_evidence`。四种 0.95 判决只做差距归因，
+contract 明确禁止改变既有 `locked_failed_feeding/formal_authorized=false`。
+
+历史保留的 formal 汇总入口如下，但当前合同永久锁定，不能启动对应运行：
 
 ```bash
 PYTHONPATH=code "$DRIVER_PYTHON" \

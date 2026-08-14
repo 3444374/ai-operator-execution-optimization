@@ -4,7 +4,7 @@
 
 > 数据库 AI 负载的执行优化与调度研究方向。
 
-> **当前状态（2026-08-13）**：开题 framing、四级 Claim Matrix、K128 replacement
+> **当前状态（2026-08-15）**：开题 framing、四级 Claim Matrix、K128 replacement
 > database-E2E、文本原生单/多 Job 与图像静态 baseline 证据已冻结；PPT/飞书/Wiki 暂停，
 > 本地 Markdown 与 CSV 是权威来源。图像原生 single→four-job 40/40 passed；Project
 > staged descriptor + observe-only snapshot 正式矩阵也已 24/24 passed、99K formal rows
@@ -19,9 +19,12 @@
 > $0.25W_e$ 被 bulk guard 拒绝。同 ready-window 的 Project FIFO/DRR/VTC-style/strict-priority/
 > guarded-debt 双轮归因与 single-head→bounded-ready observation bridge 均已完成：guarded-debt
 > 是用约 4.8% 吞吐和约 5.2% bulk JCT 换取更低 foreground tail 的观测非支配折中点，不是
-> selector winner，`formal_authorized=false`。下一步只补同一 2-Job 合同的 Daft Native、Daft Ray、
-> Ray Data、project frozen-static 与 proposed 系统级 matched comparison；原生臂不注入 Project
-> bounded-ready/K/W。selector formal、4-Job、reservation 和 dynamic K 继续后置。
+> selector winner。最终六臂 rehearsal 的机制证据有效，但同签名 direct ceiling 只得到
+> 92.898% feeding ratio，合同已永久冻结为 `locked_failed_feeding/formal_authorized=false`，不跑
+> SAOR formal。下一步只先做 D0 direct K-only、D1 direct K+W、P0 bounded-ready FIFO K+W 的
+> 小型 1+3 差距归因；代码/合同已就绪但服务器关机、尚无新 GPU 结果。之后才补同一 2-Job 合同的
+> Daft Native、Daft Ray、Ray Data、project frozen-static 与 proposed 系统级 matched comparison；
+> 原生臂不注入 Project bounded-ready/K/W。4-Job、reservation 和 dynamic K 继续后置。
 
 > **状态感知补充（2026-08-11）**：修正执行与门禁后的两 Job phase-change 实验在
 > pressure gate 提前停止。A-only K160 相对 K128 每 endpoint service rate +7.77%，
